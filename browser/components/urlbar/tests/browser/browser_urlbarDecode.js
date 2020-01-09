@@ -1,3 +1,6 @@
+
+
+
 "use strict";
 
 
@@ -57,14 +60,14 @@ add_task(async function actionURILosslessDecode() {
   
   
   
-
   do {
-    gURLBar.controller.handleKeyNavigation(KeyEvent.DOM_VK_DOWN);
-  } while (gURLBar.popup.selectedIndex != 0);
+    EventUtils.synthesizeKey("KEY_ArrowDown");
+  } while (UrlbarTestUtils.getSelectedIndex(window) != 0);
 
-  let [, type ] = gURLBar.value.match(/^moz-action:([^,]+),(.*)$/);
-  Assert.equal(type, "visiturl",
-               "visiturl action URI should be in the urlbar");
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+
+  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.URL,
+    "Should have selected a result of URL type");
 
   Assert.equal(gURLBar.inputField.value, urlNoScheme,
                "The string displayed in the textbox should not be escaped");
@@ -77,8 +80,7 @@ add_task(async function actionURILosslessDecode() {
 async function checkInput(inputStr) {
   await promiseAutocompleteResultPopup(inputStr);
 
-  let item = gURLBar.popup.richlistbox.firstElementChild;
-  Assert.ok(item, "Should have a result");
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
 
   
   let fixupInfo = Services.uriFixup.getFixupURIInfo(inputStr,
@@ -87,23 +89,28 @@ async function checkInput(inputStr) {
   );
   let expectedVisitURL = fixupInfo.fixedURI.spec;
 
-  let type = "visiturl";
-  let params = {
-    url: expectedVisitURL,
-    input: inputStr,
-  };
-  for (let key in params) {
-    params[key] = encodeURIComponent(params[key]);
+  if (!UrlbarPrefs.get("quantumbar")) {
+    let type = "visiturl";
+    let params = {
+      url: expectedVisitURL,
+      input: inputStr,
+    };
+    for (let key in params) {
+      params[key] = encodeURIComponent(params[key]);
+    }
+    expectedVisitURL = "moz-action:" + type + "," + JSON.stringify(params);
   }
-  let expectedURL = "moz-action:" + type + "," + JSON.stringify(params);
-  Assert.equal(item.getAttribute("url"), expectedURL, "url");
 
-  Assert.equal(item.getAttribute("title"), inputStr.replace("\\", "/"), "title");
-  Assert.equal(item.getAttribute("text"), inputStr, "text");
+  Assert.equal(result.url, expectedVisitURL, "Should have the correct URL");
+  Assert.equal(result.title, inputStr.replace("\\", "/"),
+    "Should have the correct title");
+  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.URL,
+    "Should have be a result of type URL");
 
-  let itemType = item.getAttribute("type");
-  Assert.equal(itemType, "visiturl");
-
-  Assert.equal(item._titleText.textContent, inputStr.replace("\\", "/"), "Visible title");
-  Assert.equal(item._actionText.textContent, "Visit", "Visible action");
+  Assert.equal(result.displayed.title, inputStr.replace("\\", "/"),
+    "Should be displaying the correct text");
+  Assert.equal(result.displayed.action,
+    Services.strings.createBundle("chrome://global/locale/autocomplete.properties")
+            .GetStringFromName("visit"),
+    "Should be displaying the correct action text");
 }

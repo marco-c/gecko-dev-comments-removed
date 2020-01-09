@@ -1,3 +1,13 @@
+
+
+
+"use strict";
+
+
+
+
+
+
 const TEST_PATH = getRootDirectory(gTestPath)
   .replace("chrome://mochitests/content", "http://example.com");
 const TEST_URL = `${TEST_PATH}dummy_page.html`;
@@ -60,10 +70,10 @@ async function runTest(aSourceWindow, aDestWindow, aExpectSwitch, aCallback) {
 
   info(`awesomebar popup appeared. aExpectSwitch: ${aExpectSwitch}`);
   
-  let {controller, popup} = aDestWindow.gURLBar;
-  while (popup.selectedIndex < controller.matchCount - 1) {
+  while (UrlbarTestUtils.getSelectedIndex(aDestWindow) <
+         UrlbarTestUtils.getResultCount(aDestWindow) - 1) {
     info("handling key navigation for DOM_VK_DOWN key");
-    controller.handleKeyNavigation(KeyEvent.DOM_VK_DOWN);
+    EventUtils.synthesizeKey("KEY_ArrowDown", {}, aDestWindow);
   }
 
   let awaitTabSwitch;
@@ -72,7 +82,7 @@ async function runTest(aSourceWindow, aDestWindow, aExpectSwitch, aCallback) {
   }
 
   
-  controller.handleEnter(true);
+  EventUtils.synthesizeKey("KEY_Enter", {}, aDestWindow);
   info("sent Enter command to the controller");
 
   if (aExpectSwitch) {

@@ -1,3 +1,12 @@
+
+
+
+"use strict";
+
+
+
+
+
 add_task(async function() {
   let bm = await PlacesUtils.bookmarks.insert({ parentGuid: PlacesUtils.bookmarks.unfiledGuid,
                                                 url: "http://bug1105244.example.com/",
@@ -12,7 +21,7 @@ add_task(async function() {
 
 function sendHome() {
   
-  if (Services.appinfo.OS == "Darwin") {
+  if (AppConstants.platform == "macosx") {
     EventUtils.synthesizeKey("KEY_ArrowLeft", {metaKey: true});
   } else {
     EventUtils.synthesizeKey("KEY_Home");
@@ -28,11 +37,11 @@ async function testDelete() {
 
   
   sendHome();
-  
-  sendDelete();
-  Assert.equal(gURLBar.inputField.value, "ug1105244.example.com/");
 
-  await promisePopupShown(gURLBar.popup);
+  
+  await UrlbarTestUtils.promisePopupOpen(window, sendDelete);
+
+  Assert.equal(gURLBar.inputField.value, "ug1105244.example.com/");
 
   sendDelete();
   Assert.equal(gURLBar.inputField.value, "g1105244.example.com/");
