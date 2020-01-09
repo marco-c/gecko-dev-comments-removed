@@ -125,7 +125,6 @@ def set_vars_from_script(script, vars):
         parse_state = 'scanning'
     stdout = subprocess.check_output(['sh', '-x', '-c', script_text])
     tograb = vars[:]
-    originals = {}
     for line in stdout.splitlines():
         if parse_state == 'scanning':
             if line == 'VAR SETTINGS:':
@@ -140,18 +139,6 @@ def set_vars_from_script(script, vars):
                 if var in tograb:
                     env[var] = value
                     info("Setting %s = %s" % (var, value))
-                if var.startswith("ORIGINAL_"):
-                    originals[var[9:]] = value
-
-    
-    
-    
-    
-    
-    if platform.system() == 'Windows':
-        for var in vars:
-            if var in originals and len(originals[var]) > 0:
-                env[var] = "%s;%s" % (env[var], originals[var])
 
 
 def ensure_dir_exists(name, clobber=True, creation_marker_filename="CREATED-BY-AUTOSPIDER"):
@@ -276,7 +263,7 @@ elif platform.system() == 'Windows':
     if word_bits == 64:
         os.environ['USE_64BIT'] = '1'
     set_vars_from_script(posixpath.join(PDIR.scripts, 'winbuildenv.sh'),
-                         ['PATH', 'INCLUDE', 'LIB', 'LIBPATH', 'CC', 'CXX',
+                         ['PATH', 'VC_PATH', 'DIA_SDK_PATH', 'CC', 'CXX',
                           'WINDOWSSDKDIR'])
 
 
