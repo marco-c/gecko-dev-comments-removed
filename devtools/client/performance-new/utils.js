@@ -3,6 +3,8 @@
 
 "use strict";
 
+const { OS } = require("resource://gre/modules/osfile.jsm");
+
 const recordingState = {
   
   NOT_YET_KNOWN: "not-yet-known",
@@ -174,10 +176,68 @@ function calculateOverhead(interval, bufferSize, features) {
   );
 }
 
+
+
+
+
+
+
+
+
+
+
+
+function withCommonPathPrefixRemoved(pathArray) {
+  if (pathArray.length === 0) {
+    return [];
+  }
+  const splitPaths = pathArray.map(path => OS.Path.split(path));
+  if (!splitPaths.every(sp => sp.absolute)) {
+    
+    
+    return pathArray;
+  }
+  const [firstSplitPath, ...otherSplitPaths] = splitPaths;
+  if ("winDrive" in firstSplitPath) {
+    const winDrive = firstSplitPath.winDrive;
+    if (!otherSplitPaths.every(sp => sp.winDrive === winDrive)) {
+      return pathArray;
+    }
+  } else if (otherSplitPaths.some(sp => ("winDrive" in sp))) {
+    
+    return pathArray;
+  }
+  
+  
+  
+  
+  const prefix = firstSplitPath.components.slice(0, -1);
+  for (const sp of otherSplitPaths) {
+    prefix.length = Math.min(prefix.length, sp.components.length - 1);
+    for (let i = 0; i < prefix.length; i++) {
+      if (prefix[i] !== sp.components[i]) {
+        prefix.length = i;
+        break;
+      }
+    }
+  }
+  if (prefix.length === 0 || (prefix.length === 1 && prefix[0] === "")) {
+    
+    
+    
+    
+    
+    
+    return pathArray;
+  }
+  return splitPaths.map(sp => OS.Path.join(...sp.components.slice(prefix.length)));
+}
+
 module.exports = {
   formatFileSize,
   makeExponentialScale,
   scaleRangeWithClamping,
   calculateOverhead,
   recordingState,
+  withCommonPathPrefixRemoved,
 };

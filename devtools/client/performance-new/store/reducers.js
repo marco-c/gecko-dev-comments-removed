@@ -117,6 +117,21 @@ function threads(state = ["GeckoMain", "Compositor"], action) {
 
 
 
+function objdirs(state = [], action) {
+  switch (action.type) {
+    case "CHANGE_OBJDIRS":
+      return action.objdirs;
+    case "INITIALIZE_STORE":
+      return action.recordingSettingsFromPreferences.objdirs;
+    default:
+      return state;
+  }
+}
+
+
+
+
+
 
 
 
@@ -145,5 +160,6 @@ module.exports = combineReducers({
   entries,
   features,
   threads,
+  objdirs,
   initializedValues,
 });

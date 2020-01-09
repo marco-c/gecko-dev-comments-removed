@@ -9,6 +9,7 @@ const SYMBOL_TABLE_REQUEST_EVENT = "devtools:perf-html-request-symbol-table";
 const SYMBOL_TABLE_RESPONSE_EVENT = "devtools:perf-html-reply-symbol-table";
 const UI_BASE_URL_PREF = "devtools.performance.recording.ui-base-url";
 const UI_BASE_URL_DEFAULT = "https://perf-html.io";
+const OBJDIRS_PREF = "devtools.performance.recording.objdirs";
 
 
 
@@ -101,6 +102,31 @@ async function _getArrayOfStringsPref(preferenceFront, prefName, defaultValue) {
 
 
 
+
+
+async function _getArrayOfStringsHostPref(prefName, defaultValue) {
+  let array;
+  try {
+    const text = Services.prefs.getStringPref(prefName, JSON.stringify(defaultValue));
+    array = JSON.parse(text);
+  } catch (error) {
+    return defaultValue;
+  }
+
+  if (Array.isArray(array) && array.every(feature => typeof feature === "string")) {
+    return array;
+  }
+
+  return defaultValue;
+}
+
+
+
+
+
+
+
+
 async function _getIntPref(preferenceFront, prefName, defaultValue) {
   try {
     return await preferenceFront.getIntPref(prefName);
@@ -120,7 +146,7 @@ async function _getIntPref(preferenceFront, prefName, defaultValue) {
 
 
 async function getRecordingPreferences(preferenceFront, defaultSettings = {}) {
-  const [ entries, interval, features, threads ] = await Promise.all([
+  const [ entries, interval, features, threads, objdirs ] = await Promise.all([
     _getIntPref(
       preferenceFront,
       `devtools.performance.recording.entries`,
@@ -141,12 +167,17 @@ async function getRecordingPreferences(preferenceFront, defaultSettings = {}) {
       `devtools.performance.recording.threads`,
       defaultSettings.threads
     ),
+    _getArrayOfStringsHostPref(
+      OBJDIRS_PREF,
+      defaultSettings.objdirs
+    ),
   ]);
 
   
   const newInterval = interval / 1000;
-  return { entries, interval: newInterval, features, threads };
+  return { entries, interval: newInterval, features, threads, objdirs };
 }
+
 
 
 
@@ -174,6 +205,10 @@ async function setRecordingPreferences(preferenceFront, settings) {
     preferenceFront.setCharPref(
       `devtools.performance.recording.threads`,
       JSON.stringify(settings.threads)
+    ),
+    Services.prefs.setCharPref(
+      OBJDIRS_PREF,
+      JSON.stringify(settings.objdirs)
     ),
   ]);
 }

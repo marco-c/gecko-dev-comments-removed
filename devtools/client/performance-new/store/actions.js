@@ -96,6 +96,15 @@ exports.changeThreads = threads => _dispatchAndUpdatePreferences({
 
 
 
+exports.changeObjdirs = objdirs => _dispatchAndUpdatePreferences({
+  type: "CHANGE_OBJDIRS",
+  objdirs,
+});
+
+
+
+
+
 
 exports.initializeStore = values => ({
   type: "INITIALIZE_STORE",
