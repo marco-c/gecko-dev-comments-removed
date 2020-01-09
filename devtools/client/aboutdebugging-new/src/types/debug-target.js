@@ -5,6 +5,7 @@
 "use strict";
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { DEBUG_TARGETS } = require("../constants");
 
 const extensionTargetDetails = {
   
@@ -60,7 +61,7 @@ const debugTarget = {
   
   name: PropTypes.string.isRequired,
   
-  type: PropTypes.string.isRequired,
+  type: PropTypes.oneOf(Object.values(DEBUG_TARGETS)).isRequired,
 };
 
 exports.debugTarget = PropTypes.shape(debugTarget);
