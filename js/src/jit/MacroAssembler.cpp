@@ -3429,10 +3429,6 @@ void MacroAssembler::wasmInterruptCheck(Register tls,
 
 void MacroAssembler::wasmReserveStackChecked(uint32_t amount,
                                              wasm::BytecodeOffset trapOffset) {
-  if (!amount) {
-    return;
-  }
-
   
   
 
