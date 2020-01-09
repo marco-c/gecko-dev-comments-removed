@@ -401,6 +401,9 @@ class nsDocShell final : public nsDocLoader,
   nsresult InternalLoad(nsDocShellLoadState* aLoadState,
                         nsIDocShell** aDocShell, nsIRequest** aRequest);
 
+  
+  void MaybeClearStorageAccessFlag();
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;
