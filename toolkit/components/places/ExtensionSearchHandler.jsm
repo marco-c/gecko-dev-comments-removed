@@ -203,9 +203,19 @@ var ExtensionSearchHandler = Object.freeze({
 
 
 
-  handleSearch(keyword, text, callback) {
-    if (!gKeywordMap.has(keyword)) {
+
+
+
+  handleSearch(data, callback) {
+    let {keyword, text} = data;
+    let keywordInfo = gKeywordMap.get(keyword);
+    if (!keywordInfo) {
       throw new Error(`The keyword provided is not registered: "${keyword}"`);
+    }
+
+    let {extension} = keywordInfo;
+    if (data.inPrivateWindow && !extension.privateBrowsingAllowed) {
+      return Promise.resolve(false);
     }
 
     if (gActiveInputSession && gActiveInputSession.keyword != keyword) {
@@ -229,7 +239,7 @@ var ExtensionSearchHandler = Object.freeze({
     
     
     if (!gActiveInputSession) {
-      gActiveInputSession = new InputSession(keyword, gKeywordMap.get(keyword).extension);
+      gActiveInputSession = new InputSession(keyword, extension);
       gActiveInputSession.start(this.MSG_INPUT_STARTED);
 
       
