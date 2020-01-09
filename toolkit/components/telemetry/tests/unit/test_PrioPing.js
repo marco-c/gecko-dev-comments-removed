@@ -80,22 +80,13 @@ add_task(async function test_limit_reached() {
 });
 
 add_task(async function test_periodic() {
-  
-  let fireTimerNow;
-  fakePolicy(callback => fireTimerNow = callback, pass, (type, payload, options) => {
+  fakePolicy(pass, pass, (type, payload, options) => {
     checkPingStructure(type, payload, options);
-
-    
-    fakePolicy(pass, pass, (type2, payload2, options2) => {
-      checkPingStructure(type2, payload2, options2);
-      Assert.equal(payload2.reason, TelemetryPrioPing.Reason.PERIODIC, "Sent with periodic reason.");
-    }, fakeSnapshot);
-
-    
-    
-    fireTimerNow();
+    Assert.equal(payload.reason, TelemetryPrioPing.Reason.PERIODIC, "Sent with periodic reason.");
   }, fakeSnapshot);
-  Services.obs.notifyObservers(null, "origin-telemetry-storage-limit-reached");
+
+  
+  TelemetryPrioPing.periodicPing();
 });
 
 add_task(async function test_shutdown() {

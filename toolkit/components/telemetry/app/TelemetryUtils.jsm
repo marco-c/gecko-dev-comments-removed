@@ -62,7 +62,6 @@ var TelemetryUtils = {
 
     
     PrioPingEnabled: "toolkit.telemetry.prioping.enabled",
-    PrioPingFrequency: "toolkit.telemetry.prioping.frequency",
     PrioPingDataLimit: "toolkit.telemetry.prioping.dataLimit",
 
     
