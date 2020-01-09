@@ -129,6 +129,14 @@ function connectRuntime(id) {
         await clientWrapper.getPreference(SERVICE_WORKERS_ENABLED, true);
       const serviceWorkersAvailable = serviceWorkersEnabled && !privateBrowsing;
 
+      
+      
+      
+
+      
+      
+      const runtimeName = runtime.isFenix ? runtime.name : deviceDescription.name;
+
       const runtimeDetails = {
         clientWrapper,
         compatibilityReport,
@@ -137,7 +145,7 @@ function connectRuntime(id) {
         info: {
           deviceName: deviceDescription.deviceName,
           icon,
-          name: deviceDescription.name,
+          name: runtimeName,
           os: deviceDescription.os,
           type: runtime.type,
           version: deviceDescription.version,
@@ -345,6 +353,7 @@ function updateNetworkRuntimes(locations) {
       isConnectionFailed: false,
       isConnectionNotResponding: false,
       isConnectionTimeout: false,
+      isFenix: false,
       isUnavailable: false,
       isUnplugged: false,
       isUnknown: false,
@@ -371,6 +380,7 @@ function updateUSBRuntimes(adbRuntimes) {
       isConnectionFailed: false,
       isConnectionNotResponding: false,
       isConnectionTimeout: false,
+      isFenix: adbRuntime.isFenix,
       isUnavailable: adbRuntime.isUnavailable,
       isUnplugged: adbRuntime.isUnplugged,
       name: adbRuntime.shortName,

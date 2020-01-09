@@ -19,6 +19,10 @@ class AdbRuntime {
     return this._adbDevice.id + "|" + this._socketPath;
   }
 
+  get isFenix() {
+    return this._packageName().includes("org.mozilla.fenix");
+  }
+
   get deviceId() {
     return this._adbDevice.id;
   }
@@ -28,7 +32,30 @@ class AdbRuntime {
   }
 
   get shortName() {
-    return `Firefox ${this._channel()}`;
+    const packageName = this._packageName();
+
+    switch (packageName) {
+      case "org.mozilla.firefox":
+        return "Firefox";
+      case "org.mozilla.firefox_beta":
+        return "Firefox Beta";
+      case "org.mozilla.fennec":
+      case "org.mozilla.fennec_aurora":
+        
+        
+        
+        return "Firefox Nightly";
+      case "org.mozilla.fenix":
+        
+        
+        return "Firefox Preview";
+      case "org.mozilla.fenix.beta":
+        return "Firefox Preview Beta";
+      case "org.mozilla.fenix.nightly":
+        return "Firefox Preview Nightly";
+      default:
+        return "Firefox Custom";
+    }
   }
 
   get socketPath() {
@@ -45,25 +72,6 @@ class AdbRuntime {
       connection.port = port;
       connection.connect();
     });
-  }
-
-  _channel() {
-    const packageName = this._packageName();
-
-    switch (packageName) {
-      case "org.mozilla.firefox":
-        return "";
-      case "org.mozilla.firefox_beta":
-        return "Beta";
-      case "org.mozilla.fennec":
-      case "org.mozilla.fennec_aurora":
-        
-        
-        
-        return "Nightly";
-      default:
-        return "Custom";
-    }
   }
 
   _packageName() {
