@@ -1542,8 +1542,8 @@ nsresult XMLHttpRequestMainThread::StreamReaderFunc(
     
     
     nsCOMPtr<nsIInputStream> copyStream;
-    rv = NS_NewByteInputStream(getter_AddRefs(copyStream), fromRawSegment,
-                               count);
+    rv = NS_NewByteInputStream(getter_AddRefs(copyStream),
+                               MakeSpan(fromRawSegment, count));
 
     if (NS_SUCCEEDED(rv) && xmlHttpRequest->mXMLParserStreamListener) {
       NS_ASSERTION(copyStream, "NS_NewByteInputStream lied");
