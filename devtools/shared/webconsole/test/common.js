@@ -261,8 +261,8 @@ function withActiveServiceWorker(win, url, scope) {
 
 
 
-function consoleAPICall(debuggerClient, consoleCall) {
-  const onConsoleAPICall = debuggerClient.addOneTimeListener("consoleAPICall");
+function consoleAPICall(consoleFront, consoleCall) {
+  const onConsoleAPICall = consoleFront.once("consoleAPICall");
   consoleCall();
   return onConsoleAPICall;
 }
