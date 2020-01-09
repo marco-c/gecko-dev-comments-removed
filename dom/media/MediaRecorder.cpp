@@ -572,6 +572,19 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
       mEncoder->Stop();
     }
 
+    
+    if (mMediaStream) {
+      mMediaStream->UnregisterTrackListener(this);
+      mMediaStream = nullptr;
+    }
+
+    {
+      auto tracks(std::move(mMediaStreamTracks));
+      for (RefPtr<MediaStreamTrack>& track : tracks) {
+        track->RemovePrincipalChangeObserver(this);
+      }
+    }
+
     if (mRunningState.isOk() &&
         mRunningState.unwrap() == RunningState::Idling) {
       LOG(LogLevel::Debug, ("Session.Stop Explicit end task %p", this));
