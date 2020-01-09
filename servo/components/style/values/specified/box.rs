@@ -21,22 +21,17 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, KeywordsCollectFn, ParseError};
 use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 
-fn in_ua_or_chrome_sheet(context: &ParserContext) -> bool {
-    use crate::stylesheets::Origin;
-    context.stylesheet_origin == Origin::UserAgent || context.chrome_rules_enabled()
-}
-
 #[cfg(feature = "gecko")]
 fn moz_display_values_enabled(context: &ParserContext) -> bool {
     use crate::gecko_bindings::structs;
-    in_ua_or_chrome_sheet(context) ||
+    context.in_ua_or_chrome_sheet() ||
         unsafe { structs::StaticPrefs_sVarCache_layout_css_xul_display_values_content_enabled }
 }
 
 #[cfg(feature = "gecko")]
 fn moz_box_display_values_enabled(context: &ParserContext) -> bool {
     use crate::gecko_bindings::structs;
-    in_ua_or_chrome_sheet(context) ||
+    context.in_ua_or_chrome_sheet() ||
         unsafe {
             structs::StaticPrefs_sVarCache_layout_css_xul_box_display_values_content_enabled
         }
@@ -988,27 +983,27 @@ pub enum Appearance {
     
     Button,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ButtonArrowDown,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ButtonArrowNext,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ButtonArrowPrevious,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ButtonArrowUp,
     
     
     ButtonBevel,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ButtonFocus,
     
     Caret,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Dualbutton,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Groupbox,
     
     InnerSpinButton,
@@ -1017,17 +1012,17 @@ pub enum Appearance {
     
     Listitem,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menubar,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuitem,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Checkmenuitem,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Radiomenuitem,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuitemtext,
     
     Menulist,
@@ -1038,28 +1033,28 @@ pub enum Appearance {
     
     MenulistTextfield,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menupopup,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menucheckbox,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuradio,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuseparator,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuarrow,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Menuimage,
     
     #[parse(aliases = "meterbar")]
     Meter,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Meterchunk,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMenulistButton,
     
     NumberInput,
@@ -1067,7 +1062,7 @@ pub enum Appearance {
     #[parse(aliases = "progressbar")]
     ProgressBar,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Progresschunk,
     
     ProgressbarVertical,
@@ -1077,25 +1072,25 @@ pub enum Appearance {
     Radio,
     
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     CheckboxContainer,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     RadioContainer,
     
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     CheckboxLabel,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     RadioLabel,
     
     Range,
     RangeThumb,
     
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Resizerpanel,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Resizer,
     
     ScaleHorizontal,
@@ -1109,26 +1104,26 @@ pub enum Appearance {
     
     Scalethumbtick,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Scrollbar,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarSmall,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarHorizontal,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarVertical,
     
     
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarbuttonUp,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarbuttonDown,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarbuttonLeft,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ScrollbarbuttonRight,
     
     ScrollbarthumbHorizontal,
@@ -1137,47 +1132,47 @@ pub enum Appearance {
     ScrollbartrackHorizontal,
     ScrollbartrackVertical,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Scrollcorner,
     
     Searchfield,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Separator,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Spinner,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     SpinnerUpbutton,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     SpinnerDownbutton,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     SpinnerTextfield,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Splitter,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Statusbar,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Statusbarpanel,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Tab,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Tabpanel,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Tabpanels,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     TabScrollArrowBack,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     TabScrollArrowForward,
     
     #[parse(aliases = "textfield-multiline")]
@@ -1185,119 +1180,119 @@ pub enum Appearance {
     
     Textfield,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Toolbar,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Toolbarbutton,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     ToolbarbuttonDropdown,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Toolbargripper,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Toolbox,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Tooltip,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Treeheader,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Treeheadercell,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Treeheadersortarrow,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Treeitem,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Treeline,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Treetwisty,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Treetwistyopen,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Treeview,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Window,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Dialog,
 
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWinCommunicationsToolbox,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWinMediaToolbox,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWinBrowsertabbarToolbox,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWinGlass,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWinBorderlessGlass,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWinExcludeGlass,
 
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacFullscreenButton,
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacHelpButton,
 
     
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowButtonBox,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowButtonBoxMaximized,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowButtonClose,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowButtonMaximize,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowButtonMinimize,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowButtonRestore,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowFrameBottom,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowFrameLeft,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowFrameRight,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowTitlebar,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowTitlebarMaximized,
 
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozGtkInfoBar,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacActiveSourceListSelection,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacDisclosureButtonClosed,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacDisclosureButtonOpen,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacSourceList,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacSourceListSelection,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacVibrancyDark,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacVibrancyLight,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacVibrantTitlebarDark,
-    #[parse(condition = "in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacVibrantTitlebarLight,
 
     

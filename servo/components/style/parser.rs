@@ -147,8 +147,21 @@ impl<'a> ParserContext<'a> {
     }
 
     
+    #[inline]
+    pub fn in_ua_sheet(&self) -> bool {
+        self.stylesheet_origin == Origin::UserAgent
+    }
+
+    
+    #[inline]
     pub fn chrome_rules_enabled(&self) -> bool {
         self.url_data.is_chrome() || self.stylesheet_origin == Origin::User
+    }
+
+    
+    #[inline]
+    pub fn in_ua_or_chrome_sheet(&self) -> bool {
+        self.in_ua_sheet() || self.chrome_rules_enabled()
     }
 }
 
