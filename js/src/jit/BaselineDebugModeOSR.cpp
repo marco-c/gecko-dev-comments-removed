@@ -166,14 +166,18 @@ static bool CollectJitStackScripts(JSContext* cx,
           break;
         }
 
-        
         BaselineFrame* baselineFrame = frame.baselineFrame();
-        if (baselineFrame->runningInInterpreter()) {
-          break;
-        }
 
-        if (BaselineDebugModeOSRInfo* info =
-                baselineFrame->getDebugModeOSRInfo()) {
+        if (baselineFrame->runningInInterpreter()) {
+          
+          
+          
+          
+          if (!entries.append(DebugModeOSREntry(script))) {
+            return false;
+          }
+        } else if (BaselineDebugModeOSRInfo* info =
+                       baselineFrame->getDebugModeOSRInfo()) {
           
           
           
@@ -362,15 +366,17 @@ static void PatchBaselineFramesForDebugMode(
           break;
         }
 
-        
-        BaselineFrame* baselineFrame = frame.baselineFrame();
-        if (baselineFrame->runningInInterpreter()) {
-          break;
-        }
-
         DebugModeOSREntry& entry = entries[entryIndex];
 
         if (!entry.recompiled()) {
+          entryIndex++;
+          break;
+        }
+
+        BaselineFrame* baselineFrame = frame.baselineFrame();
+        if (baselineFrame->runningInInterpreter()) {
+          
+          
           entryIndex++;
           break;
         }

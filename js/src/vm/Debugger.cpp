@@ -2988,15 +2988,7 @@ static bool UpdateExecutionObservabilityOfScriptsInZone(
       const JSJitFrameIter& frame = iter.frame();
       switch (frame.type()) {
         case FrameType::BaselineJS:
-          
-          
-          
-          
-          
-          
-          if (!frame.baselineFrame()->runningInInterpreter()) {
-            MarkTypeScriptActiveIfObservable(frame.script(), obs);
-          }
+          MarkTypeScriptActiveIfObservable(frame.script(), obs);
           break;
         case FrameType::IonJS:
           MarkTypeScriptActiveIfObservable(frame.script(), obs);
