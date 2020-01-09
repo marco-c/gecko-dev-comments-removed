@@ -1,0 +1,46 @@
+
+
+
+
+#ifndef mozilla_ScrollTypes_h
+#define mozilla_ScrollTypes_h
+
+
+
+namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class ScrollMode { eInstant, eSmooth, eSmoothMsd, eNormal };
+
+}  
+
+#endif  

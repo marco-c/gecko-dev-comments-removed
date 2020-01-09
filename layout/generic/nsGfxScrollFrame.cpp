@@ -1395,14 +1395,14 @@ static nsRect GetOnePixelRangeAroundPoint(const nsPoint& aPoint,
 void ScrollFrameHelper::ScrollByPage(
     nsScrollbarFrame* aScrollbar, int32_t aDirection,
     nsIScrollbarMediator::ScrollSnapMode aSnap) {
-  ScrollByUnit(aScrollbar, nsIScrollableFrame::SMOOTH, aDirection,
+  ScrollByUnit(aScrollbar, ScrollMode::eSmooth, aDirection,
                nsIScrollableFrame::PAGES, aSnap);
 }
 
 void ScrollFrameHelper::ScrollByWhole(
     nsScrollbarFrame* aScrollbar, int32_t aDirection,
     nsIScrollbarMediator::ScrollSnapMode aSnap) {
-  ScrollByUnit(aScrollbar, nsIScrollableFrame::INSTANT, aDirection,
+  ScrollByUnit(aScrollbar, ScrollMode::eInstant, aDirection,
                nsIScrollableFrame::WHOLE, aSnap);
 }
 
@@ -1438,9 +1438,8 @@ void ScrollFrameHelper::ScrollByLine(
   }
 
   nsIntPoint overflow;
-  ScrollBy(delta, nsIScrollableFrame::LINES, nsIScrollableFrame::SMOOTH,
-           &overflow, nsGkAtoms::other, nsIScrollableFrame::NOT_MOMENTUM,
-           aSnap);
+  ScrollBy(delta, nsIScrollableFrame::LINES, ScrollMode::eSmooth, &overflow,
+           nsGkAtoms::other, nsIScrollableFrame::NOT_MOMENTUM, aSnap);
 }
 
 void ScrollFrameHelper::RepeatButtonScroll(nsScrollbarFrame* aScrollbar) {
@@ -1467,7 +1466,7 @@ void ScrollFrameHelper::ThumbMoved(nsScrollbarFrame* aScrollbar,
     return;
   }
 
-  ScrollTo(dest, nsIScrollableFrame::INSTANT, nsGkAtoms::other, &allowedRange);
+  ScrollTo(dest, ScrollMode::eInstant, nsGkAtoms::other, &allowedRange);
 }
 
 void ScrollFrameHelper::ScrollbarReleased(nsScrollbarFrame* aScrollbar) {
@@ -1477,12 +1476,12 @@ void ScrollFrameHelper::ScrollbarReleased(nsScrollbarFrame* aScrollbar) {
 
   
   
-  ScrollSnap(mDestination, nsIScrollableFrame::SMOOTH);
+  ScrollSnap(mDestination, ScrollMode::eSmooth);
 }
 
 void ScrollFrameHelper::ScrollByUnit(
-    nsScrollbarFrame* aScrollbar, nsIScrollableFrame::ScrollMode aMode,
-    int32_t aDirection, nsIScrollableFrame::ScrollUnit aUnit,
+    nsScrollbarFrame* aScrollbar, ScrollMode aMode, int32_t aDirection,
+    nsIScrollableFrame::ScrollUnit aUnit,
     nsIScrollbarMediator::ScrollSnapMode aSnap) {
   MOZ_ASSERT(aScrollbar != nullptr);
   bool isHorizontal = aScrollbar->IsXULHorizontal();
@@ -2167,8 +2166,7 @@ bool ScrollFrameHelper::HasBgAttachmentLocal() const {
   return bg->HasLocalBackground();
 }
 
-void ScrollFrameHelper::ScrollTo(nsPoint aScrollPosition,
-                                 nsIScrollableFrame::ScrollMode aMode,
+void ScrollFrameHelper::ScrollTo(nsPoint aScrollPosition, ScrollMode aMode,
                                  nsAtom* aOrigin, const nsRect* aRange,
                                  nsIScrollbarMediator::ScrollSnapMode aSnap) {
   if (aOrigin == nullptr) {
@@ -2178,8 +2176,7 @@ void ScrollFrameHelper::ScrollTo(nsPoint aScrollPosition,
 }
 
 void ScrollFrameHelper::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
-                                          nsIScrollableFrame::ScrollMode aMode,
-                                          nsAtom* aOrigin) {
+                                          ScrollMode aMode, nsAtom* aOrigin) {
   nsPoint current = GetScrollPosition();
   CSSIntPoint currentCSSPixels = GetScrollPositionCSSPixels();
   nsPoint pt = CSSPoint::ToAppUnits(aScrollPosition);
@@ -2212,7 +2209,7 @@ void ScrollFrameHelper::ScrollToCSSPixelsApproximate(
   nscoord halfRange = nsPresContext::CSSPixelsToAppUnits(1000);
   nsRect range(pt.x - halfRange, pt.y - halfRange, 2 * halfRange - 1,
                2 * halfRange - 1);
-  ScrollToWithOrigin(pt, nsIScrollableFrame::INSTANT, aOrigin, &range);
+  ScrollToWithOrigin(pt, ScrollMode::eInstant, aOrigin, &range);
   
 }
 
@@ -2225,9 +2222,8 @@ CSSIntPoint ScrollFrameHelper::GetScrollPositionCSSPixels() {
 
 
 void ScrollFrameHelper::ScrollToWithOrigin(
-    nsPoint aScrollPosition, nsIScrollableFrame::ScrollMode aMode,
-    nsAtom* aOrigin, const nsRect* aRange,
-    nsIScrollbarMediator::ScrollSnapMode aSnap) {
+    nsPoint aScrollPosition, ScrollMode aMode, nsAtom* aOrigin,
+    const nsRect* aRange, nsIScrollbarMediator::ScrollSnapMode aSnap) {
   if (aOrigin != nsGkAtoms::restore) {
     
     
@@ -2250,13 +2246,13 @@ void ScrollFrameHelper::ScrollToWithOrigin(
 
   nsRect range = aRange ? *aRange : nsRect(aScrollPosition, nsSize(0, 0));
 
-  if (aMode != nsIScrollableFrame::SMOOTH_MSD) {
+  if (aMode != ScrollMode::eSmoothMsd) {
     
     
     mApzSmoothScrollDestination = Nothing();
   }
 
-  if (aMode == nsIScrollableFrame::INSTANT) {
+  if (aMode == ScrollMode::eInstant) {
     
     
     CompleteAsyncScroll(range, aOrigin);
@@ -2269,12 +2265,12 @@ void ScrollFrameHelper::ScrollToWithOrigin(
           ? presContext->RefreshDriver()->MostRecentRefresh()
           : TimeStamp::Now();
   bool isSmoothScroll =
-      (aMode == nsIScrollableFrame::SMOOTH) && IsSmoothScrollingEnabled();
+      (aMode == ScrollMode::eSmooth) && IsSmoothScrollingEnabled();
 
   nsSize currentVelocity(0, 0);
 
   if (gfxPrefs::ScrollBehaviorEnabled()) {
-    if (aMode == nsIScrollableFrame::SMOOTH_MSD) {
+    if (aMode == ScrollMode::eSmoothMsd) {
       mIgnoreMomentumScroll = true;
       if (!mAsyncSmoothMSDScroll) {
         nsPoint sv = mVelocityQueue.GetVelocity();
@@ -4110,8 +4106,8 @@ static void CalcRangeForScrollBy(int32_t aDelta, nscoord aPos,
 
 void ScrollFrameHelper::ScrollBy(nsIntPoint aDelta,
                                  nsIScrollableFrame::ScrollUnit aUnit,
-                                 nsIScrollableFrame::ScrollMode aMode,
-                                 nsIntPoint* aOverflow, nsAtom* aOrigin,
+                                 ScrollMode aMode, nsIntPoint* aOverflow,
+                                 nsAtom* aOrigin,
                                  nsIScrollableFrame::ScrollMomentum aMomentum,
                                  nsIScrollbarMediator::ScrollSnapMode aSnap) {
   
@@ -4245,8 +4241,7 @@ void ScrollFrameHelper::ScrollBy(nsIntPoint aDelta,
 }
 
 void ScrollFrameHelper::ScrollByCSSPixels(const CSSIntPoint& aDelta,
-                                          nsIScrollableFrame::ScrollMode aMode,
-                                          nsAtom* aOrigin) {
+                                          ScrollMode aMode, nsAtom* aOrigin) {
   nsPoint current = GetScrollPosition();
   nsPoint pt = current + CSSPoint::ToAppUnits(aDelta);
   nscoord halfPixel = nsPresContext::CSSPixelsToAppUnits(0.5f);
@@ -4273,7 +4268,7 @@ void ScrollFrameHelper::ScrollByCSSPixels(const CSSIntPoint& aDelta,
   
 }
 
-void ScrollFrameHelper::ScrollSnap(nsIScrollableFrame::ScrollMode aMode) {
+void ScrollFrameHelper::ScrollSnap(ScrollMode aMode) {
   float flingSensitivity = gfxPrefs::ScrollSnapPredictionSensitivity();
   int maxVelocity = gfxPrefs::ScrollSnapPredictionMaxVelocity();
   maxVelocity = nsPresContext::CSSPixelsToAppUnits(maxVelocity);
@@ -4289,7 +4284,7 @@ void ScrollFrameHelper::ScrollSnap(nsIScrollableFrame::ScrollMode aMode) {
 }
 
 void ScrollFrameHelper::ScrollSnap(const nsPoint& aDestination,
-                                   nsIScrollableFrame::ScrollMode aMode) {
+                                   ScrollMode aMode) {
   nsRect scrollRange = GetScrollRangeForClamping();
   nsPoint pos = GetScrollPosition();
   nsPoint snapDestination = scrollRange.ClampPoint(aDestination);
@@ -4470,7 +4465,7 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
       AutoWeakFrame weakFrame(mOuter);
       
       
-      ScrollToWithOrigin(layoutScrollToPos, nsIScrollableFrame::INSTANT,
+      ScrollToWithOrigin(layoutScrollToPos, ScrollMode::eInstant,
                          nsGkAtoms::restore, nullptr);
       if (!weakFrame.IsAlive()) {
         return;
@@ -4993,10 +4988,9 @@ void ScrollFrameHelper::CurPosAttributeChanged(nsIContent* aContent,
   }
 
   if (aDoScroll) {
-    ScrollToWithOrigin(
-        dest,
-        isSmooth ? nsIScrollableFrame::SMOOTH : nsIScrollableFrame::INSTANT,
-        nsGkAtoms::scrollbars, &allowedRange);
+    ScrollToWithOrigin(dest,
+                       isSmooth ? ScrollMode::eSmooth : ScrollMode::eInstant,
+                       nsGkAtoms::scrollbars, &allowedRange);
   }
   
 }
@@ -6582,7 +6576,7 @@ bool ScrollFrameHelper::DragScroll(WidgetEvent* aEvent) {
   }
 
   if (offset.x || offset.y) {
-    ScrollTo(GetScrollPosition() + offset, nsIScrollableFrame::NORMAL,
+    ScrollTo(GetScrollPosition() + offset, ScrollMode::eNormal,
              nsGkAtoms::other);
   }
 

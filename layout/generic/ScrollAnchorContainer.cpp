@@ -350,7 +350,7 @@ void ScrollAnchorContainer::ApplyAdjustments() {
   
   mApplyingAnchorAdjustment = true;
   mScrollFrame->ScrollTo(mScrollFrame->GetScrollPosition() + physicalAdjustment,
-                         nsIScrollableFrame::INSTANT, nsGkAtoms::relative);
+                         ScrollMode::eInstant, nsGkAtoms::relative);
   mApplyingAnchorAdjustment = false;
 
   nsPresContext* pc = Frame()->PresContext();

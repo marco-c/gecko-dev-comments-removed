@@ -15,6 +15,7 @@
 #include "DisplayItemClip.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ScrollStyles.h"
+#include "mozilla/ScrollTypes.h"
 #include "mozilla/gfx/Point.h"
 #include "nsIScrollbarMediator.h"
 #include "Units.h"
@@ -55,6 +56,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::layers::ScrollSnapInfo ScrollSnapInfo;
   typedef mozilla::layout::ScrollAnchorContainer ScrollAnchorContainer;
+  typedef mozilla::ScrollMode ScrollMode;
 
   NS_DECL_QUERYFRAME_TARGET(nsIScrollableFrame)
 
@@ -198,34 +200,6 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  enum ScrollMode { INSTANT, SMOOTH, SMOOTH_MSD, NORMAL };
-  
-
-
-
-
-
-
-
   enum ScrollMomentum { NOT_MOMENTUM, SYNTHESIZED_MOMENTUM_EVENT };
   
 
@@ -257,10 +231,9 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual void ScrollToCSSPixels(
-      const CSSIntPoint& aScrollPosition,
-      nsIScrollableFrame::ScrollMode aMode = nsIScrollableFrame::INSTANT,
-      nsAtom* aOrigin = nullptr) = 0;
+  virtual void ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
+                                 ScrollMode aMode = ScrollMode::eInstant,
+                                 nsAtom* aOrigin = nullptr) = 0;
   
 
 
@@ -298,10 +271,9 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
                         nsIScrollbarMediator::ScrollSnapMode aSnap =
                             nsIScrollbarMediator::DISABLE_SNAP) = 0;
 
-  virtual void ScrollByCSSPixels(
-      const CSSIntPoint& aDelta,
-      nsIScrollableFrame::ScrollMode aMode = nsIScrollableFrame::INSTANT,
-      nsAtom* aOrigin = nullptr) = 0;
+  virtual void ScrollByCSSPixels(const CSSIntPoint& aDelta,
+                                 ScrollMode aMode = ScrollMode::eInstant,
+                                 nsAtom* aOrigin = nullptr) = 0;
 
   
 
