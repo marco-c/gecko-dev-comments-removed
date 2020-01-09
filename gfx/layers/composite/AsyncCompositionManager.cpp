@@ -1213,6 +1213,12 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
           if (Maybe<ScrollableLayerGuid::ViewID> zoomedScrollId =
                   layer->IsAsyncZoomContainer()) {
             if (zoomedMetrics) {
+              
+              
+              
+              AutoApplyAsyncTestAttributes testAttributeApplier(
+                  zoomedMetrics->GetApzc());
+
               AsyncTransform zoomTransform = sampler->GetCurrentAsyncTransform(
                   *zoomedMetrics, {AsyncTransformComponent::eZoom});
               hasAsyncTransform = true;
@@ -1228,6 +1234,12 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
           if (zoomedMetrics && layer->GetIsFixedPosition() &&
               !layer->GetParent()->GetIsFixedPosition() &&
               IsFixedToZoomContainer(layer)) {
+            
+            
+            
+            AutoApplyAsyncTestAttributes testAttributeApplier(
+                zoomedMetrics->GetApzc());
+
             LayerToParentLayerMatrix4x4 currentTransform;
             LayerToParentLayerMatrix4x4 previousTransform =
                 CSSTransformMatrix() *
