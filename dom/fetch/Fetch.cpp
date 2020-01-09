@@ -1187,7 +1187,8 @@ void FetchBody<Derived>::SetMimeType() {
   
   
   if (!contentTypeValues.IsVoid() && contentTypeValues.Find(",") == -1) {
-    mMimeType = contentTypeValues;
+    
+    CopyLatin1toUTF8(contentTypeValues, mMimeType);
     ToLowerCase(mMimeType);
   }
 }
