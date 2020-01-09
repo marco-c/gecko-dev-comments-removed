@@ -13,14 +13,14 @@
 
 namespace mozilla {
 
-
-ContentProcessSandboxParams ContentProcessSandboxParams::ForThisProcess(
-    const dom::MaybeFileDesc& aBroker) {
+ ContentProcessSandboxParams
+ContentProcessSandboxParams::ForThisProcess(
+    const Maybe<ipc::FileDescriptor>& aBroker) {
   ContentProcessSandboxParams params;
   params.mLevel = GetEffectiveContentSandboxLevel();
 
-  if (aBroker.type() == dom::MaybeFileDesc::TFileDescriptor) {
-    auto fd = aBroker.get_FileDescriptor().ClonePlatformHandle();
+  if (aBroker.isSome()) {
+    auto fd = aBroker.value().ClonePlatformHandle();
     params.mBrokerFd = fd.release();
     
     
