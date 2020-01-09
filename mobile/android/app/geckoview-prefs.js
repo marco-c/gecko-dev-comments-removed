@@ -36,7 +36,7 @@ pref("dom.storageManager.enabled", true);
 pref("dom.visualviewport.enabled", true);
 
 
-pref("layout.scroll.root-frame-containers", 0);
+pref("layout.scroll.root-frame-containers", false);
 
 
 pref("intl.locale.requested", "");

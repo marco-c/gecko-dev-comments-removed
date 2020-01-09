@@ -724,7 +724,7 @@ class gfxPrefs final {
   DECL_GFX_PREF(Once, "layout.paint_rects_separately",         LayoutPaintRectsSeparately, bool, true);
 
   
-  DECL_OVERRIDE_PREF(Live, "layout.scroll.root-frame-containers",   LayoutUseContainersForRootFrames, !OverrideBase_WebRender());
+  DECL_GFX_PREF(Live, "layout.scroll.root-frame-containers",   LayoutUseContainersForRootFrames, bool, false);
   
   DECL_GFX_PREF(Live, "layout.scrollbars.always-layerize-track", AlwaysLayerizeScrollbarTrackTestOnly, bool, false);
   DECL_GFX_PREF(Live, "layout.smaller-painted-layers",         LayoutSmallerPaintedLayers, bool, false);
