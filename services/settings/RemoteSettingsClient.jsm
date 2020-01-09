@@ -385,7 +385,7 @@ class RemoteSettingsClient extends EventEmitter {
       }
     } catch (e) {
       
-      if (/(AbortError|ConstraintError|QuotaExceededError|VersionError)/.test(e.message)) {
+      if (/(IndexedDB|AbortError|ConstraintError|QuotaExceededError|VersionError)/.test(e.message)) {
         reportStatus = UptakeTelemetry.STATUS.CUSTOM_1_ERROR;
       }
       

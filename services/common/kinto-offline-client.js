@@ -565,7 +565,7 @@ class IDB extends _base.default {
   }
 
   _handleError(method, err) {
-    const error = new Error(method + "() " + err.message);
+    const error = new Error(`IndexedDB ${method}() ${err.message}`);
     error.stack = err.stack;
     throw error;
   }
@@ -614,7 +614,7 @@ class IDB extends _base.default {
         records,
         timestamp
       } = dataToMigrate;
-      await this.loadDump(records);
+      await this.importBulk(records);
       await this.saveLastModified(timestamp);
       console.log(`${this.cid}: data was migrated successfully.`); 
 
@@ -892,7 +892,20 @@ class IDB extends _base.default {
 
 
 
+
   async loadDump(records) {
+    return this.importBulk(records);
+  }
+  
+
+
+
+
+
+
+
+
+  async importBulk(records) {
     try {
       await this.execute(transaction => {
         
@@ -920,7 +933,7 @@ class IDB extends _base.default {
 
       return records;
     } catch (e) {
-      this._handleError("loadDump", e);
+      this._handleError("importBulk", e);
     }
   }
 
@@ -1125,6 +1138,19 @@ class BaseAdapter {
 
 
 
+  importBulk(records) {
+    throw new Error("Not Implemented.");
+  }
+  
+
+
+
+
+
+
+
+
+
   loadDump(records) {
     throw new Error("Not Implemented.");
   }
@@ -1140,7 +1166,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.recordsEqual = recordsEqual;
-exports.CollectionTransaction = exports.default = exports.SyncResultObject = void 0;
+exports.CollectionTransaction = exports.default = exports.ServerWasFlushedError = exports.SyncResultObject = void 0;
 
 var _base = _interopRequireDefault(require("./adapters/base"));
 
@@ -1262,6 +1288,22 @@ class SyncResultObject {
 }
 
 exports.SyncResultObject = SyncResultObject;
+
+class ServerWasFlushedError extends Error {
+  constructor(clientTimestamp, serverTimestamp, message) {
+    super(message);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ServerWasFlushedError);
+    }
+
+    this.clientTimestamp = clientTimestamp;
+    this.serverTimestamp = serverTimestamp;
+  }
+
+}
+
+exports.ServerWasFlushedError = ServerWasFlushedError;
 
 function createUUIDSchema() {
   return {
@@ -2262,7 +2304,8 @@ class Collection {
     const emptyCollection = data.length === 0;
 
     if (!options.exclude && localSynced && serverChanged && emptyCollection) {
-      throw Error("Server has been flushed.");
+      const e = new ServerWasFlushedError(localSynced, unquoted, "Server has been flushed. Client Side Timestamp: " + localSynced + " Server Side Timestamp: " + unquoted);
+      throw e;
     }
 
     syncResultObject.lastModified = unquoted; 
@@ -2583,7 +2626,22 @@ class Collection {
 
 
 
+
   async loadDump(records) {
+    return this.importBulk(records);
+  }
+  
+
+
+
+
+
+
+
+
+
+
+  async importBulk(records) {
     if (!Array.isArray(records)) {
       throw new Error("Records is not an array.");
     }
@@ -2619,7 +2677,7 @@ class Collection {
       record.last_modified > localRecord.last_modified;
       return shouldKeep;
     });
-    return await this.db.loadDump(newRecords.map(markSynced));
+    return await this.db.importBulk(newRecords.map(markSynced));
   }
 
 }

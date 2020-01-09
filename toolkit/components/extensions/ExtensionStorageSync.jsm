@@ -1057,7 +1057,7 @@ class ExtensionStorageSync {
           e instanceof ServerKeyringDeleted ||
           
           
-          e.message == "Server has been flushed.") {
+          e.message.includes("Server has been flushed.")) {
         
         
         const isSessionValid = await this._fxaService.sessionStatus();
