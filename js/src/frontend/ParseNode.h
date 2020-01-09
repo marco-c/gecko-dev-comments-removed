@@ -529,6 +529,7 @@ enum ParseNodeArity {
   PN_MODULE,   
   PN_LIST,     
   PN_NAME,     
+  PN_FIELD,    
   PN_NUMBER,   
   PN_BIGINT,   
   PN_REGEXP,   
@@ -1542,9 +1543,9 @@ class BigIntLiteral : public ParseNode {
     return true;
   }
 
-#ifdef DEBUG
+#  ifdef DEBUG
   void dump(GenericPrinter& out, int indent);
-#endif
+#  endif
 
   BigIntBox* box() const { return box_; }
 };
@@ -1953,28 +1954,49 @@ class ClassMethod : public BinaryNode {
   bool isStatic() const { return isStatic_; }
 };
 
-class ClassField : public BinaryNode {
+class ClassField : public ParseNode {
+  ParseNode* name_;
+  ParseNode* initializer_; 
+
  public:
   ClassField(ParseNode* name, ParseNode* initializer)
-      : BinaryNode(ParseNodeKind::ClassField, JSOP_NOP,
-                   initializer == nullptr
-                       ? name->pn_pos
-                       : TokenPos::box(name->pn_pos, initializer->pn_pos),
-                   name, initializer) {}
+      : ParseNode(ParseNodeKind::ClassField, JSOP_NOP,
+                  initializer == nullptr
+                      ? name->pn_pos
+                      : TokenPos::box(name->pn_pos, initializer->pn_pos)),
+        name_(name),
+        initializer_(initializer) {}
 
   static bool test(const ParseNode& node) {
     bool match = node.isKind(ParseNodeKind::ClassField);
-    MOZ_ASSERT_IF(match, node.isArity(PN_BINARY));
+    MOZ_ASSERT_IF(match, node.isArity(PN_FIELD));
     return match;
   }
 
-  static constexpr ParseNodeArity arity() { return PN_BINARY; }
+  static constexpr ParseNodeArity arity() { return PN_FIELD; }
 
-  ParseNode& name() const { return *left(); }
+  template <typename Visitor>
+  bool accept(Visitor& visitor) {
+    if (!visitor.visit(name_)) {
+      return false;
+    }
+    if (initializer_) {
+      if (!visitor.visit(initializer_)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
-  bool hasInitializer() const { return right() != nullptr; }
+  ParseNode& name() const { return *name_; }
 
-  FunctionNode& initializer() const { return right()->as<FunctionNode>(); }
+  bool hasInitializer() const { return initializer_ != nullptr; }
+
+  ParseNode& initializer() const { return *initializer_; }
+
+#ifdef DEBUG
+  void dump(GenericPrinter& out, int indent);
+#endif
 };
 
 class SwitchStatement : public BinaryNode {

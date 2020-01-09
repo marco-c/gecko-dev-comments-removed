@@ -2128,7 +2128,7 @@ JSFunction* AllocNewFunction(JSContext* cx, HandleAtom atom,
 JSFunction* ParserBase::newFunction(HandleAtom atom, FunctionSyntaxKind kind,
                                     GeneratorKind generatorKind,
                                     FunctionAsyncKind asyncKind,
-                                    HandleObject proto ) {
+                                    HandleObject proto) {
   return AllocNewFunction(context, atom, kind, generatorKind, asyncKind, proto,
                           options().selfHostingMode, pc->isFunctionBox());
 }
@@ -6870,15 +6870,15 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
     return null();
   }
 
-  RootedPropertyName className(context);
+  RootedPropertyName name(context);
   if (TokenKindIsPossibleIdentifier(tt)) {
-    className = bindingIdentifier(yieldHandling);
-    if (!className) {
+    name = bindingIdentifier(yieldHandling);
+    if (!name) {
       return null();
     }
   } else if (classContext == ClassStatement) {
     if (defaultHandling == AllowDefaultName) {
-      className = context->names().default_;
+      name = context->names().default_;
       anyChars.ungetToken();
     } else {
       
@@ -6900,7 +6900,7 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
   
   Maybe<ParseContext::Statement> innerScopeStmt;
   Maybe<ParseContext::Scope> innerScope;
-  if (className) {
+  if (name) {
     innerScopeStmt.emplace(pc, StatementKind::Block);
     innerScope.emplace(this);
     if (!innerScope->init(pc)) {
@@ -6938,7 +6938,6 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
   }
 
   Maybe<DeclarationKind> declKind = Nothing();
-  size_t numFieldsWithInitializers = 0;
   for (;;) {
     TokenKind tt;
     if (!tokenStream.getToken(&tt)) {
@@ -6972,8 +6971,8 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
       anyChars.ungetToken();
     }
 
-    uint32_t propNameOffset;
-    if (!tokenStream.peekOffset(&propNameOffset)) {
+    uint32_t nameOffset;
+    if (!tokenStream.peekOffset(&nameOffset)) {
       return null();
     }
 
@@ -6986,21 +6985,18 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
 
     if (propType == PropertyType::Field) {
       if (isStatic) {
-        errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
+        errorAt(nameOffset, JSMSG_BAD_METHOD_DEF);
         return null();
       }
       if (!tokenStream.getToken(&tt)) {
         return null();
       }
-
-      FunctionNodeType initializer = null();
+      Node initializer = null();
       if (tt == TokenKind::Assign) {
-        initializer = fieldInitializer(yieldHandling, propAtom);
+        initializer = assignExpr(InAllowed, yieldHandling, TripledotProhibited);
         if (!initializer) {
           return null();
         }
-
-        numFieldsWithInitializers++;
         if (!tokenStream.getToken(&tt)) {
           return null();
         }
@@ -7020,9 +7016,8 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
       
       
       
-      
-      
-      continue;
+      errorAt(nameOffset, JSMSG_FIELDS_NOT_SUPPORTED);
+      return null();
     }
 
     if (propType != PropertyType::Getter && propType != PropertyType::Setter &&
@@ -7030,24 +7025,24 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
         propType != PropertyType::GeneratorMethod &&
         propType != PropertyType::AsyncMethod &&
         propType != PropertyType::AsyncGeneratorMethod) {
-      errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
+      errorAt(nameOffset, JSMSG_BAD_METHOD_DEF);
       return null();
     }
 
     bool isConstructor = !isStatic && propAtom == context->names().constructor;
     if (isConstructor) {
       if (propType != PropertyType::Method) {
-        errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
+        errorAt(nameOffset, JSMSG_BAD_METHOD_DEF);
         return null();
       }
       if (classStmt.constructorBox) {
-        errorAt(propNameOffset, JSMSG_DUPLICATE_PROPERTY, "constructor");
+        errorAt(nameOffset, JSMSG_DUPLICATE_PROPERTY, "constructor");
         return null();
       }
       propType = hasHeritage ? PropertyType::DerivedConstructor
                              : PropertyType::Constructor;
     } else if (isStatic && propAtom == context->names().prototype) {
-      errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
+      errorAt(nameOffset, JSMSG_BAD_METHOD_DEF);
       return null();
     }
 
@@ -7064,7 +7059,7 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
         break;
       case PropertyType::Constructor:
       case PropertyType::DerivedConstructor:
-        funName = className;
+        funName = name;
         break;
       default:
         if (!anyChars.isCurrentTokenType(TokenKind::RightBracket)) {
@@ -7076,7 +7071,7 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
     
     
     FunctionNodeType funNode = methodDefinition(
-        isConstructor ? classStartOffset : propNameOffset, propType, funName);
+        isConstructor ? classStartOffset : nameOffset, propType, funName);
     if (!funNode) {
       return null();
     }
@@ -7090,68 +7085,23 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
 
   
   
-  
-  if (classStmt.constructorBox == nullptr && numFieldsWithInitializers > 0) {
-    
-    FunctionNodeType synthesizedCtor =
-        synthesizeConstructor(className, classStartOffset);
-    if (!synthesizedCtor) {
-      return null();
-    }
-
-    MOZ_ASSERT(classStmt.constructorBox != nullptr);
-
-    
-    
-    Node constructorNameNode = handler.newObjectLiteralPropertyName(
-        context->names().constructor, pos());
-    if (!constructorNameNode) {
-      return null();
-    }
-
-    if (!handler.addClassMethodDefinition(classMembers, constructorNameNode,
-                                          synthesizedCtor, AccessorType::None,
-                                           false)) {
-      return null();
-    }
-  }
-
   uint32_t classEndOffset = pos().end;
   if (FunctionBox* ctorbox = classStmt.constructorBox) {
-    
-    
-    ctorbox->toStringEnd = classEndOffset;
-
-    if (numFieldsWithInitializers > 0) {
-      
-      ctorbox->setHasThisBinding();
-    }
-
-    
     if (ctorbox->function()->isInterpretedLazy()) {
       ctorbox->function()->lazyScript()->setToStringEnd(classEndOffset);
-
-      if (numFieldsWithInitializers > 0) {
-        ctorbox->function()->lazyScript()->setHasThisBinding();
-      }
-
-      
-      
-      
-      FieldInitializers fieldInfo(numFieldsWithInitializers);
-      ctorbox->function()->lazyScript()->setFieldInitializers(fieldInfo);
     }
+    ctorbox->toStringEnd = classEndOffset;
   }
 
   Node nameNode = null();
   Node membersOrBlock = classMembers;
-  if (className) {
+  if (name) {
     
-    if (!noteDeclaredName(className, DeclarationKind::Const, namePos)) {
+    if (!noteDeclaredName(name, DeclarationKind::Const, namePos)) {
       return null();
     }
 
-    NameNodeType innerName = newName(className, namePos);
+    NameNodeType innerName = newName(name, namePos);
     if (!innerName) {
       return null();
     }
@@ -7170,11 +7120,11 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
     NameNodeType outerName = null();
     if (classContext == ClassStatement) {
       
-      if (!noteDeclaredName(className, DeclarationKind::Class, namePos)) {
+      if (!noteDeclaredName(name, DeclarationKind::Class, namePos)) {
         return null();
       }
 
-      outerName = newName(className, namePos);
+      outerName = newName(name, namePos);
       if (!outerName) {
         return null();
       }
@@ -7190,222 +7140,6 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
 
   return handler.newClass(nameNode, classHeritage, membersOrBlock,
                           TokenPos(classStartOffset, classEndOffset));
-}
-
-template <class ParseHandler, typename Unit>
-typename ParseHandler::FunctionNodeType
-GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
-    HandleAtom className, uint32_t classNameOffset) {
-  FunctionSyntaxKind functionSyntaxKind = FunctionSyntaxKind::ClassConstructor;
-
-  
-  RootedFunction fun(context, newFunction(className, functionSyntaxKind,
-                                          GeneratorKind::NotGenerator,
-                                          FunctionAsyncKind::SyncFunction));
-  if (!fun) {
-    return null();
-  }
-
-  
-  FunctionNodeType funNode = handler.newFunction(functionSyntaxKind, pos());
-  if (!funNode) {
-    return null();
-  }
-
-  
-  Directives directives(true);
-  FunctionBox* funbox = newFunctionBox(funNode, fun, classNameOffset,
-                                       directives, GeneratorKind::NotGenerator,
-                                       FunctionAsyncKind::SyncFunction);
-  if (!funbox) {
-    return null();
-  }
-  funbox->initWithEnclosingParseContext(pc, functionSyntaxKind);
-  handler.setFunctionBox(funNode, funbox);
-  funbox->setEnd(anyChars);
-
-  
-  SourceParseContext funpc(this, funbox,  nullptr);
-  if (!funpc.init()) {
-    return null();
-  }
-
-  TokenPos synthesizedBodyPos = TokenPos(classNameOffset, classNameOffset + 1);
-  
-  ListNodeType argsbody =
-      handler.newList(ParseNodeKind::ParamsBody, synthesizedBodyPos);
-  if (!argsbody) {
-    return null();
-  }
-  handler.setFunctionFormalParametersAndBody(funNode, argsbody);
-  funbox->function()->setArgCount(0);
-  tokenStream.setFunctionStart(funbox);
-
-  
-  ParseContext::Scope lexicalScope(this);
-  if (!lexicalScope.init(pc)) {
-    return null();
-  }
-
-  auto stmtList = handler.newStatementList(synthesizedBodyPos);
-  if (!stmtList) {
-    return null();
-  }
-
-  if (!noteUsedName(context->names().dotThis)) {
-    return null();
-  }
-
-  if (!declareFunctionThis()) {
-    return null();
-  }
-
-  
-  auto initializerBody = finishLexicalScope(lexicalScope, stmtList);
-  if (!initializerBody) {
-    return null();
-  }
-  handler.setBeginPosition(initializerBody, stmtList);
-  handler.setEndPosition(initializerBody, stmtList);
-
-  handler.setFunctionBody(funNode, initializerBody);
-
-  if (!finishFunction()) {
-    return null();
-  }
-
-  
-  
-  
-
-  return funNode;
-}
-
-template <class ParseHandler, typename Unit>
-typename ParseHandler::FunctionNodeType
-GeneralParser<ParseHandler, Unit>::fieldInitializer(YieldHandling yieldHandling,
-                                                    HandleAtom propAtom) {
-  TokenPos fieldPos = pos();
-
-  
-  RootedFunction fun(context,
-                     newFunction(propAtom, FunctionSyntaxKind::Expression,
-                                 GeneratorKind::NotGenerator,
-                                 FunctionAsyncKind::SyncFunction));
-  if (!fun) {
-    return null();
-  }
-
-  
-  FunctionNodeType funNode =
-      handler.newFunction(FunctionSyntaxKind::Expression, fieldPos);
-  if (!funNode) {
-    return null();
-  }
-
-  
-  Directives directives(true);
-  FunctionBox* funbox = newFunctionBox(funNode, fun, fieldPos.begin, directives,
-                                       GeneratorKind::NotGenerator,
-                                       FunctionAsyncKind::SyncFunction);
-  if (!funbox) {
-    return null();
-  }
-  funbox->initWithEnclosingParseContext(pc, FunctionSyntaxKind::Expression);
-  handler.setFunctionBox(funNode, funbox);
-
-  
-  SourceParseContext funpc(this, funbox,  nullptr);
-  if (!funpc.init()) {
-    return null();
-  }
-
-  
-  ParseContext::VarScope varScope(this);
-  if (!varScope.init(pc)) {
-    return null();
-  }
-
-  
-  ParseContext::Scope lexicalScope(this);
-  if (!lexicalScope.init(pc)) {
-    return null();
-  }
-
-  
-  ListNodeType argsbody = handler.newList(ParseNodeKind::ParamsBody, fieldPos);
-  if (!argsbody) {
-    return null();
-  }
-  handler.setFunctionFormalParametersAndBody(funNode, argsbody);
-  funbox->function()->setArgCount(0);
-
-  tokenStream.setFunctionStart(funbox);
-
-  
-  Node initializerExpr =
-      assignExpr(InAllowed, yieldHandling, TripledotProhibited);
-  if (!initializerExpr) {
-    return null();
-  }
-
-  funbox->setEnd(anyChars);
-
-  funbox->usesThis = true;
-  NameNodeType thisName = newThisName();
-  if (!thisName) {
-    return null();
-  }
-
-  
-  ThisLiteralType propAssignThis = handler.newThisLiteral(fieldPos, thisName);
-  if (!propAssignThis) {
-    return null();
-  }
-
-  NameNodeType propAssignName =
-      handler.newPropertyName(propAtom->asPropertyName(), fieldPos);
-  if (!propAssignName) {
-    return null();
-  }
-
-  PropertyAccessType propAssignFieldAccess =
-      handler.newPropertyAccess(propAssignThis, propAssignName);
-  if (!propAssignFieldAccess) {
-    return null();
-  }
-  handler.setBeginPosition(propAssignFieldAccess, propAssignName);
-  handler.setEndPosition(propAssignFieldAccess, propAssignName);
-
-  
-  AssignmentNodeType initializerAssignment = handler.newAssignment(
-      ParseNodeKind::AssignExpr, propAssignFieldAccess, initializerExpr);
-  if (!initializerAssignment) {
-    return null();
-  }
-  handler.setBeginPosition(initializerAssignment, initializerExpr);
-  handler.setEndPosition(initializerAssignment, initializerExpr);
-
-  if (!declareFunctionThis()) {
-    return null();
-  }
-
-  
-  LexicalScopeNodeType initializerBody =
-      finishLexicalScope(lexicalScope, initializerAssignment);
-  if (!initializerBody) {
-    return null();
-  }
-  handler.setBeginPosition(initializerBody, initializerAssignment);
-  handler.setEndPosition(initializerBody, initializerAssignment);
-
-  handler.setFunctionBody(funNode, initializerBody);
-
-  if (!finishFunction()) {
-    return null();
-  }
-
-  return funNode;
 }
 
 bool ParserBase::nextTokenContinuesLetDeclaration(TokenKind next) {

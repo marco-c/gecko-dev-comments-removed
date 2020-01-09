@@ -167,9 +167,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   EmitterScope* innermostEmitterScope_;
   TDZCheckCache* innermostTDZCheckCache;
 
-  
-  FieldInitializers fieldInitializers_;
-
 #ifdef DEBUG
   bool unstableEmitterScope;
 
@@ -488,8 +485,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   MOZ_MUST_USE bool emitScript(ParseNode* body);
-
-  MOZ_MUST_USE bool emitInitializeInstanceFields();
 
   
   enum class TopLevelFunction { No, Yes };
