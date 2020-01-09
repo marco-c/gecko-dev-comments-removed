@@ -847,10 +847,7 @@ add_task(async function testExtensionControlledProxyConfig() {
   verifyState(mainDoc, false);
 
   
-  
-  
   let extension = ExtensionTestUtils.loadExtension({
-    incognitoOverride: "spanning",
     useAddonManager: "permanent",
     manifest: {
       name: "set_proxy",
