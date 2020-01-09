@@ -830,6 +830,8 @@ class nsDisplayListBuilder {
 
 
   bool IsInTransform() const { return mInTransform; }
+
+  bool InEventsAndPluginsOnly() const { return mInEventsAndPluginsOnly; }
   
 
 
@@ -1238,6 +1240,23 @@ class nsDisplayListBuilder {
     }
 
     ~AutoInTransformSetter() { mBuilder->mInTransform = mOldValue; }
+
+   private:
+    nsDisplayListBuilder* mBuilder;
+    bool mOldValue;
+  };
+
+  class AutoInEventsAndPluginsOnly {
+   public:
+    AutoInEventsAndPluginsOnly(nsDisplayListBuilder* aBuilder,
+                               bool aInEventsAndPluginsOnly)
+        : mBuilder(aBuilder), mOldValue(aBuilder->mInEventsAndPluginsOnly) {
+      aBuilder->mInEventsAndPluginsOnly |= aInEventsAndPluginsOnly;
+    }
+
+    ~AutoInEventsAndPluginsOnly() {
+      mBuilder->mInEventsAndPluginsOnly = mOldValue;
+    }
 
    private:
     nsDisplayListBuilder* mBuilder;
@@ -2006,6 +2025,7 @@ class nsDisplayListBuilder {
   
   
   bool mInTransform;
+  bool mInEventsAndPluginsOnly;
   bool mInFilter;
   bool mInPageSequence;
   bool mIsInChromePresContext;
@@ -2066,6 +2086,16 @@ template <typename T, typename... Args>
 MOZ_ALWAYS_INLINE T* MakeDisplayItem(nsDisplayListBuilder* aBuilder,
                                      Args&&... aArgs) {
   T* item = new (aBuilder) T(aBuilder, std::forward<Args>(aArgs)...);
+
+  
+  
+  
+  if (aBuilder->InEventsAndPluginsOnly() &&
+      item->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO &&
+      item->GetType() != DisplayItemType::TYPE_PLUGIN && !item->GetChildren()) {
+    item->Destroy(aBuilder);
+    return nullptr;
+  }
 
   const mozilla::SmallPointerArray<mozilla::DisplayItemData>& array =
       item->Frame()->DisplayItemData();
