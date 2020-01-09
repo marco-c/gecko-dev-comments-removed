@@ -105,8 +105,9 @@ class VMSharingPolicyShared<MMPolicyInProcess, kChunkSize>
   }
 
   bool ShouldUnhookUponDestruction() const {
-    AutoCriticalSection lock(&sCS);
-    return sUniqueVM.ShouldUnhookUponDestruction();
+    
+    
+    return false;
   }
 
   bool Reserve(uint32_t aCount, const ReservationFlags aFlags) {
