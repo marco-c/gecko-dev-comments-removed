@@ -15,11 +15,10 @@
 
 
 
+#ifndef LINUX
+#error __FILE__ only builds on Linux.
+#endif
 
-
-
-
-#ifdef XP_UNIX
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -150,44 +149,6 @@ userCanModifySystemDB()
     return (access(NSS_DEFAULT_SYSTEM, W_OK) == 0);
 }
 
-#else
-#ifdef XP_WIN
-static char *
-getUserDB(void)
-{
-    
-
-    return NULL;
-}
-
-static char *
-getSystemDB(void)
-{
-    
-
-    return NULL;
-}
-
-static PRBool
-userIsRoot()
-{
-    
-    return PR_FALSE;
-}
-
-static PRBool
-userCanModifySystemDB()
-{
-    
-
-    return PR_FALSE;
-}
-
-#else
-#error "Need to write getUserDB, SystemDB, userIsRoot, and userCanModifySystemDB functions"
-#endif
-#endif
-
 static PRBool
 getFIPSEnv(void)
 {
@@ -203,7 +164,6 @@ getFIPSEnv(void)
     }
     return PR_FALSE;
 }
-#ifdef XP_LINUX
 
 static PRBool
 getFIPSMode(void)
@@ -227,14 +187,6 @@ getFIPSMode(void)
         return PR_FALSE;
     return PR_TRUE;
 }
-
-#else
-static PRBool
-getFIPSMode(void)
-{
-    return getFIPSEnv();
-}
-#endif
 
 #define NSS_DEFAULT_FLAGS "flags=readonly"
 

@@ -87,7 +87,9 @@ void
 NSS_CMSEncryptedData_Destroy(NSSCMSEncryptedData *encd)
 {
     
-    NSS_CMSContentInfo_Destroy(&(encd->contentInfo));
+    if (encd != NULL) {
+        NSS_CMSContentInfo_Destroy(&(encd->contentInfo));
+    }
     return;
 }
 

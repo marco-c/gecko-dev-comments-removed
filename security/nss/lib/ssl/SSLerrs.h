@@ -9,10 +9,10 @@
 
 
 ER3(SSL_ERROR_EXPORT_ONLY_SERVER, SSL_ERROR_BASE + 0,
-    "Unable to communicate securely.  Peer does not support high-grade encryption.")
+    "Unable to communicate securely. Peer does not support high-grade encryption.")
 
 ER3(SSL_ERROR_US_ONLY_SERVER, SSL_ERROR_BASE + 1,
-    "Unable to communicate securely.  Peer requires high-grade encryption which is not supported.")
+    "Unable to communicate securely. Peer requires high-grade encryption which is not supported.")
 
 ER3(SSL_ERROR_NO_CYPHER_OVERLAP, SSL_ERROR_BASE + 2,
     "Cannot communicate securely with peer: no common encryption algorithm(s).")

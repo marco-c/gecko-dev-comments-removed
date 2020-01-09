@@ -56,7 +56,9 @@ void
 NSS_CMSDigestedData_Destroy(NSSCMSDigestedData *digd)
 {
     
-    NSS_CMSContentInfo_Destroy(&(digd->contentInfo));
+    if (digd != NULL) {
+        NSS_CMSContentInfo_Destroy(&(digd->contentInfo));
+    }
     return;
 }
 
