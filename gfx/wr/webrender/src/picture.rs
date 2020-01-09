@@ -1524,20 +1524,18 @@ impl TileCache {
                 
                 if tile.same_frames >= FRAMES_BEFORE_PICTURE_CACHING {
                     
-                    if !resource_cache.texture_cache.is_allocated(&tile.handle) {
-                        resource_cache.texture_cache.update(
-                            &mut tile.handle,
-                            descriptor,
-                            TextureFilter::Linear,
-                            None,
-                            [0.0; 3],
-                            DirtyRect::All,
-                            gpu_cache,
-                            None,
-                            UvRectKind::Rect,
-                            Eviction::Eager,
-                        );
-                    }
+                    resource_cache.texture_cache.update(
+                        &mut tile.handle,
+                        descriptor,
+                        TextureFilter::Linear,
+                        None,
+                        [0.0; 3],
+                        DirtyRect::All,
+                        gpu_cache,
+                        None,
+                        UvRectKind::Rect,
+                        Eviction::Eager,
+                    );
 
                     let cache_item = resource_cache
                         .get_texture_cache_item(&tile.handle);
@@ -2193,6 +2191,8 @@ pub struct PicturePrimitive {
     
     pub local_clip_rect: LayoutRect,
 
+    pub gpu_location: GpuCacheHandle,
+
     
     #[cfg_attr(feature = "capture", serde(skip))] 
     pub tile_cache: Option<TileCache>,
@@ -2306,6 +2306,7 @@ impl PicturePrimitive {
             spatial_node_index,
             local_rect: LayoutRect::zero(),
             local_clip_rect,
+            gpu_location: GpuCacheHandle::new(),
             tile_cache,
             options,
         }
@@ -2385,6 +2386,7 @@ impl PicturePrimitive {
 
         let state = PictureState {
             
+            is_cacheable: true,
             map_local_to_pic,
             map_pic_to_world,
             map_pic_to_raster,
@@ -2431,6 +2433,7 @@ impl PicturePrimitive {
 
         let context = PictureContext {
             pic_index,
+            pipeline_id: self.pipeline_id,
             apply_local_clip_rect: self.apply_local_clip_rect,
             allow_subpixel_aa,
             is_passthrough: self.raster_config.is_none(),
@@ -2797,6 +2800,7 @@ impl PicturePrimitive {
             
             
             if self.local_rect != surface_rect {
+                gpu_cache.invalidate(&self.gpu_location);
                 if let PictureCompositeMode::Filter(FilterOp::DropShadow(..)) = raster_config.composite_mode {
                     gpu_cache.invalidate(&self.extra_gpu_data_handle);
                 }
@@ -2956,7 +2960,7 @@ impl PicturePrimitive {
             PictureCompositeMode::Filter(FilterOp::DropShadow(offset, blur_radius, color)) => {
                 let blur_std_deviation = blur_radius * frame_context.device_pixel_scale.0;
                 let blur_range = (blur_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
-
+                let rounded_std_dev = blur_std_deviation.round();
                 
                 
                 
@@ -2965,10 +2969,13 @@ impl PicturePrimitive {
                 
                 
                 
-                let device_rect = clipped
-                    .inflate(blur_range, blur_range)
-                    .intersection(&unclipped.to_i32())
-                    .unwrap();
+                let mut device_rect = clipped.inflate(blur_range, blur_range)
+                        .intersection(&unclipped.to_i32())
+                        .unwrap();
+                device_rect.size = RenderTask::adjusted_blur_source_size(
+                    device_rect.size,
+                    rounded_std_dev,
+                );
 
                 let uv_rect_kind = calculate_uv_rect_kind(
                     &pic_rect,
@@ -2992,7 +2999,7 @@ impl PicturePrimitive {
                 let picture_task_id = frame_state.render_tasks.add(picture_task);
 
                 let blur_render_task = RenderTask::new_blur(
-                    blur_std_deviation.round(),
+                    rounded_std_dev,
                     picture_task_id,
                     frame_state.render_tasks,
                     RenderTargetKind::Color,
