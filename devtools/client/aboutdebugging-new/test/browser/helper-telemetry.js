@@ -13,8 +13,8 @@ function setupTelemetryTest() {
   Services.telemetry.clearEvents();
 
   
-  const OPTOUT = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
-  const snapshot = Services.telemetry.snapshotEvents(OPTOUT, true);
+  const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
+  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
   ok(!snapshot.parent, "No events have been logged for the main process");
 }
 
@@ -70,9 +70,9 @@ function getOpenEventSessionId() {
 
 
 function readAboutDebuggingEvents() {
-  const OPTOUT = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
+  const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
   
-  const snapshot = Services.telemetry.snapshotEvents(OPTOUT, true);
+  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
   
   const parentEvents = snapshot.parent || [];
 

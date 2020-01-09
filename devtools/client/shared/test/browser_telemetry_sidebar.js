@@ -5,7 +5,7 @@
 "use strict";
 
 const TEST_URI = "data:text/html;charset=utf-8,<p>browser_telemetry_sidebar.js</p>";
-const OPTOUT = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
+const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
 
 
 
@@ -107,7 +107,7 @@ add_task(async function() {
   Services.telemetry.clearEvents();
 
   
-  const snapshot = Services.telemetry.snapshotEvents(OPTOUT, true);
+  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
   ok(!snapshot.parent, "No events have been logged for the main process");
 
   await addTab(TEST_URI);
@@ -165,7 +165,7 @@ function checkResults() {
 }
 
 function checkEventTelemetry() {
-  const snapshot = Services.telemetry.snapshotEvents(OPTOUT, true);
+  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
   const events = snapshot.parent.filter(event => event[1] === "devtools.main" &&
                                                   event[2] === "sidepanel_changed" &&
                                                   event[3] === "inspector" &&

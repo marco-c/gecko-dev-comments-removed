@@ -41,7 +41,7 @@ add_task(async function test_install_extension_from_local_file() {
 
   
   let snapshot = Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
+    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS, true);
 
   
   ok(snapshot.parent && snapshot.parent.length > 0, "Got parent telemetry events in the snapshot");

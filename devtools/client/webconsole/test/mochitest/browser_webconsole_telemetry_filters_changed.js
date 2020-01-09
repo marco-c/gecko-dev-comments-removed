@@ -11,14 +11,14 @@ const TEST_URI = `data:text/html,<meta charset=utf8><script>
   console.log("test message");
 </script>`;
 
-const OPTOUT = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
+const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
 
 add_task(async function() {
   
   Services.telemetry.clearEvents();
 
   
-  const snapshot = Services.telemetry.snapshotEvents(OPTOUT, true);
+  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
   ok(!snapshot.parent, "No events have been logged for the main process");
 
   const hud = await openNewTabAndConsole(TEST_URI);
@@ -85,7 +85,7 @@ function checkTelemetryEvent(expectedEvent) {
 
 function getFiltersChangedEventsExtra() {
   
-  const snapshot = Services.telemetry.snapshotEvents(OPTOUT, true);
+  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
 
   const filtersChangedEvents = snapshot.parent.filter(event =>
     event[1] === "devtools.main" &&
