@@ -3239,12 +3239,6 @@ void APZCTreeManager::CollectTransformsForChromeMainThread(
   if (!controller) {
     return;
   }
-  if (controller->IsRemote() && !gfxPrefs::FissionApzMatricesWithGpuProcess()) {
-    
-    
-    
-    return;
-  }
   nsTArray<MatrixMessage> messages;
   {
     RecursiveMutexAutoLock lock(mTreeLock);
