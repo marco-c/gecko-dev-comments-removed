@@ -1335,8 +1335,9 @@ var PanelView = class extends AssociatedToNode {
         if (element.closest("[hidden]")) {
           continue;
         }
+
         
-        element = element.labelElement || element;
+        element = element.multilineLabel || element;
 
         let bounds = element.getBoundingClientRect();
         let previous = gMultiLineElementsMap.get(element);
