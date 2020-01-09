@@ -111,6 +111,27 @@ add_task(async function testExecuteScript() {
 
   await extension.awaitFinish("removeCSS");
 
+  
+  
+  await ContentTask.spawn(tab.linkedBrowser, extension.id, async (extId) => {
+    const {
+      DocumentManager,
+    } = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", {});
+
+    let contentScriptContext = Array.from(
+      DocumentManager.getContexts(content.window).values()
+    ).find(context => context.extension.id === extId);
+
+    for (let script of contentScriptContext.scripts) {
+      if (script.matcher.removeCSS && script.requiresCleanup) {
+        throw new Error("tabs.removeCSS scripts should not require cleanup");
+      }
+    }
+  }).catch(err => {
+    
+    ok(false, err);
+  });
+
   await extension.unload();
 
   BrowserTestUtils.removeTab(tab);
