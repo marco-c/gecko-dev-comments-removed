@@ -59,6 +59,16 @@ class XHRBreakpoints extends Component<Props, State> {
     };
   }
 
+  componentDidMount() {
+    const { showInput } = this.props;
+
+    
+    
+    if (this._input && showInput) {
+      this._input.focus();
+    }
+  }
+
   componentDidUpdate(prevProps, prevState) {
     const input = this._input;
 

@@ -71,9 +71,16 @@ class Expressions extends Component<Props, State> {
   }
 
   componentDidMount() {
-    const { expressions, evaluateExpressions } = this.props;
+    const { expressions, evaluateExpressions, showInput } = this.props;
+
     if (expressions.size > 0) {
       evaluateExpressions();
+    }
+
+    
+    
+    if (showInput && this._input) {
+      this._input.focus();
     }
   }
 
