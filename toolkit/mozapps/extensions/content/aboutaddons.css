@@ -57,10 +57,12 @@ addon-list .addon.card {
 
 
 .card-heading-image {
+  
+
   width: var(--section-width);
   
-  height: 89px;
-  object-fit: cover;
+
+  height: calc(var(--section-width) * 92 / 680);
 }
 
 .card-heading-icon {

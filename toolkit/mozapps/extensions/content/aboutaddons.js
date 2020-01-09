@@ -169,6 +169,30 @@ function nl2br(text) {
 
 
 
+function getScreenshotUrlForAddon(addon) {
+  let {screenshots} = addon;
+  if (!screenshots || !screenshots.length) {
+    return null;
+  }
+
+  
+  
+  
+  let screenshot = screenshots.find(s => s.width === 680 && s.height === 92);
+  if (!screenshot) {
+    console.warn(`Did not find screenshot with desired size for ${addon.id}.`);
+    screenshot = screenshots[0];
+  }
+  return screenshot.url;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -849,38 +873,6 @@ class AddonCard extends HTMLElement {
     }
   }
 
-  
-
-
-
-
-
-  screenshotForImg(img) {
-    let {addon} = this;
-    if (addon.screenshots && addon.screenshots[0]) {
-      let {width, height} = getComputedStyle(img);
-      let sectionWidth = parseInt(width, 10);
-      let sectionHeight = parseInt(height, 10);
-      let screenshots = addon.screenshots
-        
-        .filter(s => s.width && s.height)
-        
-        
-        .sort((a, b) => {
-          let aCloseness =
-            Math.abs((a.width - sectionWidth) * (a.height - sectionHeight));
-          let bCloseness =
-            Math.abs((b.width - sectionWidth) * (b.height - sectionHeight));
-          if (aCloseness == bCloseness) {
-            return 0;
-          }
-          return aCloseness < bCloseness ? -1 : 1;
-        });
-      return screenshots[0];
-    }
-    return null;
-  }
-
   async handleEvent(e) {
     let {addon} = this;
     let action = e.target.getAttribute("action");
@@ -1081,9 +1073,9 @@ class AddonCard extends HTMLElement {
     let preview = card.querySelector(".card-heading-image");
     preview.hidden = true;
     if (addon.type == "theme") {
-      let screenshot = this.screenshotForImg(preview);
-      if (screenshot) {
-        preview.src = screenshot.url;
+      let screenshotUrl = getScreenshotUrlForAddon(addon);
+      if (screenshotUrl) {
+        preview.src = screenshotUrl;
         preview.hidden = false;
       }
     }
@@ -1245,10 +1237,9 @@ class RecommendedAddonCard extends HTMLElement {
     let preview = card.querySelector(".card-heading-image");
     preview.hidden = true;
     if (addon.type == "theme") {
-      let screenshot =
-        AddonCard.prototype.screenshotForImg.call({addon}, preview);
-      if (screenshot) {
-        preview.src = screenshot.url;
+      let screenshotUrl = getScreenshotUrlForAddon(addon);
+      if (screenshotUrl) {
+        preview.src = screenshotUrl;
         preview.hidden = false;
       }
     }
