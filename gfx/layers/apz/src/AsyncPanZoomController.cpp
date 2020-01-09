@@ -4468,9 +4468,10 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       
       
       
-      if ((!mAnimation && !CanHandleScrollOffsetUpdate(mState)) ||
-          (mAnimation &&
-           !mAnimation->HandleScrollOffsetUpdate(relativeDelta))) {
+      if (relativeDelta != Some(CSSPoint()) &&
+          ((!mAnimation && !CanHandleScrollOffsetUpdate(mState)) ||
+           (mAnimation &&
+            !mAnimation->HandleScrollOffsetUpdate(relativeDelta)))) {
         
         
         
