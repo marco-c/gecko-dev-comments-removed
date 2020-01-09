@@ -57,6 +57,8 @@ class WidgetRenderingContext;
 }  
 }  
 
+@class PixelHostingView;
+
 @interface NSEvent (Undocumented)
 
 
@@ -207,6 +209,10 @@ class WidgetRenderingContext;
   NSView* mNonDraggableViewsContainer;  
 
   
+  
+  PixelHostingView* mPixelHostingView;
+
+  
   NSInteger mLastPressureStage;
 }
 
@@ -236,6 +242,7 @@ class WidgetRenderingContext;
 
 - (NSView*)vibrancyViewsContainer;
 - (NSView*)nonDraggableViewsContainer;
+- (NSView*)pixelHostingView;
 
 - (BOOL)isCoveringTitlebar;
 
