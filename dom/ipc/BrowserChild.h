@@ -915,8 +915,6 @@ class BrowserChild final : public BrowserChildBase,
 #endif
   bool mCoalesceMouseMoveEvents;
 
-  bool mShouldSendWebProgressEventsToParent;
-
   
   
   
