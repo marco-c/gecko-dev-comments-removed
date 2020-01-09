@@ -75,6 +75,14 @@ class nsCSSPropertyIDSet {
     return COMPOSITOR_ANIMATABLE_PROPERTY_LIST_LENGTH;
   }
 
+  static constexpr size_t CompositorAnimatableDisplayItemCount() {
+    
+    
+    
+    
+    return COMPOSITOR_ANIMATABLE_PROPERTY_LIST_LENGTH - 3;
+  }
+
   static constexpr nsCSSPropertyIDSet TransformLikeProperties() {
     
     return nsCSSPropertyIDSet{eCSSProperty_transform, eCSSProperty_translate,
