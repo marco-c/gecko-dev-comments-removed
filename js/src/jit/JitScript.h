@@ -314,6 +314,14 @@ class MOZ_RAII AutoKeepJitScripts {
   inline ~AutoKeepJitScripts();
 };
 
+
+
+void MarkActiveJitScripts(Zone* zone);
+
+#ifdef JS_STRUCTURED_SPEW
+void JitSpewBaselineICStats(JSScript* script, const char* dumpReason);
+#endif
+
 }  
 }  
 
