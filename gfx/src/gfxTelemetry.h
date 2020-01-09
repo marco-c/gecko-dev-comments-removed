@@ -19,6 +19,11 @@ enum class FeatureStatus {
   
   
   Unavailable,
+  UnavailableInSafeMode,
+  UnavailableNoGpuProcess,
+  UnavailableNoHwCompositing,
+  UnavailableNotBuilt,
+  UnavailableNoAngle,
 
   
   
@@ -27,6 +32,14 @@ enum class FeatureStatus {
   
   
   Blocked,
+  BlockedDeviceUnknown,
+  BlockedDeviceTooOld,
+  BlockedVendorUnsupported,
+  BlockedHasBattery,
+  BlockedScreenTooLarge,
+  BlockedScreenUnknown,
+  BlockedNoGfxInfo,
+  BlockedOverride,
 
   
   Blacklisted,
