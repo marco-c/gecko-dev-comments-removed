@@ -100,7 +100,7 @@ uint32_t OptimizationInfo::compilerWarmUpThreshold(JSScript* script,
   
   uint32_t loopDepth = LoopEntryDepthHint(pc);
   MOZ_ASSERT(loopDepth > 0);
-  return warmUpThreshold + loopDepth * 100;
+  return warmUpThreshold + loopDepth * (baseCompilerWarmUpThreshold() / 10);
 }
 
 OptimizationLevelInfo::OptimizationLevelInfo() {
