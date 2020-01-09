@@ -39,11 +39,6 @@ inline void HandleLauncherError(
   HandleLauncherError(r);
 }
 
-
-struct StaticXREAppData;
-
-void SetLauncherErrorAppData(const StaticXREAppData& aAppData);
-
 }  
 
 #endif  
