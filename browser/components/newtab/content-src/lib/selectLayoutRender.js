@@ -1,19 +1,5 @@
 import {createSelector} from "reselect";
 
-function calculateSpocs(component, spocs) {
-  let spocIndex = 0;
-  return component.spocs.positions.map(position => {
-    const rickRoll = Math.random();
-    if (spocs.data.spocs[spocIndex] && rickRoll <= component.spocs.probability) {
-      return {
-        ...position,
-        result: spocs.data.spocs[spocIndex++],
-      };
-    }
-    return position;
-  });
-}
-
 export const selectLayoutRender = createSelector(
   
   
@@ -26,6 +12,21 @@ export const selectLayoutRender = createSelector(
   
   
   function layoutRender(layout, feeds, spocs) {
+    let spocIndex = 0;
+
+    function calculateSpocs(component) {
+      return component.spocs.positions.map(position => {
+        const rickRoll = Math.random();
+        if (spocs.data.spocs[spocIndex] && rickRoll <= component.spocs.probability) {
+          return {
+            ...position,
+            result: spocs.data.spocs[spocIndex++],
+          };
+        }
+        return position;
+      });
+    }
+
     return layout.map(row => ({
       ...row,
 
@@ -40,7 +41,7 @@ export const selectLayoutRender = createSelector(
         if (component.spocs && spocs.data.spocs && spocs.data.spocs.length) {
           component.spocs = {
             ...component.spocs,
-            positions: calculateSpocs(component, spocs),
+            positions: calculateSpocs(component),
           };
         }
 
