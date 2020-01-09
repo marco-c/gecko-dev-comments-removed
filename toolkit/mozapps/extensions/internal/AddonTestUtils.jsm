@@ -748,6 +748,8 @@ var AddonTestUtils = {
 
     this.emit("addon-manager-started");
 
+    await Promise.all(XPIScope.XPIProvider.startupPromises);
+
     
     await this.loadAddonsList(true);
 

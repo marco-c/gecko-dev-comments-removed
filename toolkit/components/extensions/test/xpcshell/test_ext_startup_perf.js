@@ -25,6 +25,8 @@ if (!Services.prefs.getBoolPref("extensions.webextensions.remote")) {
     "resource://gre/modules/ExtensionPageChild.jsm");
 }
 
+AddonTestUtils.init(this);
+
 
 
 add_task(async function test_loaded_scripts() {

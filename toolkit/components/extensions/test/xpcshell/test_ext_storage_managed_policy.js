@@ -15,6 +15,8 @@ registerCleanupFunction(() => {
 
 Services.policies; 
 
+AddonTestUtils.init(this);
+
 add_task(async function test_storage_managed_policy() {
   await ExtensionTestUtils.startAddonManager();
 
