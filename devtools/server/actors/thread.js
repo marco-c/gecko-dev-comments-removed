@@ -859,7 +859,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
               olderFrame = olderFrame.older;
             }
             if (olderFrame) {
-              olderFrame.setReplayingOnStep(onStep, [olderFrame.offset]);
+              
+              
+              
+              const offsets = this._findReplayingStepOffsets({}, olderFrame, true);
+              olderFrame.setReplayingOnStep(onStep, offsets);
             }
           } else {
             stepFrame.onPop = onPop;
