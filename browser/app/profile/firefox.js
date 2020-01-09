@@ -242,6 +242,8 @@ pref("browser.startup.homepage",            "about:home");
 
 pref("browser.startup.firstrunSkipsHomepage", true);
 
+pref("browser.dedicatedprofile.welcome.accounts.endpoint", "https://accounts.firefox.com/");
+
 
 
 
@@ -1707,10 +1709,11 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 #ifdef NIGHTLY_BUILD
 pref("extensions.formautofill.available", "on");
+pref("extensions.formautofill.creditCards.available", true);
 #else
 pref("extensions.formautofill.available", "detect");
-#endif
 pref("extensions.formautofill.creditCards.available", false);
+#endif
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.creditCards.enabled", true);
 
