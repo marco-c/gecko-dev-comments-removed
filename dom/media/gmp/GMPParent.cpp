@@ -392,7 +392,7 @@ bool GMPCapability::Supports(const nsTArray<GMPCapability>& aCapabilities,
         
         
         
-        if (tag.Equals(kEMEKeySystemClearkey)) {
+        if (tag.EqualsLiteral(EME_KEY_SYSTEM_CLEARKEY)) {
           if (capabilities.mAPIName.EqualsLiteral(GMP_API_VIDEO_DECODER)) {
             if (!WMFDecoderModule::HasH264()) {
               continue;
@@ -708,20 +708,20 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
   
   
   if (mDisplayName.EqualsASCII("clearkey")) {
-    kEMEKeySystem = kEMEKeySystemClearkey;
+    kEMEKeySystem.AssignLiteral(EME_KEY_SYSTEM_CLEARKEY);
 #if XP_WIN
     mLibs = NS_LITERAL_CSTRING(
         "dxva2.dll, msmpeg2vdec.dll, evr.dll, mfh264dec.dll, mfplat.dll");
 #endif
   } else if (mDisplayName.EqualsASCII("WidevineCdm")) {
-    kEMEKeySystem = kEMEKeySystemWidevine;
+    kEMEKeySystem.AssignLiteral(EME_KEY_SYSTEM_WIDEVINE);
 #if XP_WIN
     
     
     mLibs = NS_LITERAL_CSTRING("dxva2.dll, psapi.dll");
 #endif
   } else if (mDisplayName.EqualsASCII("fake")) {
-    kEMEKeySystem = NS_LITERAL_CSTRING("fake");
+    kEMEKeySystem.AssignLiteral("fake");
 #if XP_WIN
     mLibs = NS_LITERAL_CSTRING("dxva2.dll");
 #endif
