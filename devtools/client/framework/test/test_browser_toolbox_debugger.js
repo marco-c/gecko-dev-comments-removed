@@ -16,11 +16,10 @@ info(`START: ${new Error().lineNumber}`);
 
   await waitForSources(dbg, testUrl);
 
-
   info("Loaded, selecting the test script to debug");
   
   const domain = [...document.querySelectorAll(".tree-node")].find(node => {
-    return node.textContent.trim() == "mozilla.org";
+    return node.querySelector(".label").textContent.trim() == "mozilla.org";
   });
   const arrow = domain.querySelector(".arrow");
   arrow.click();
