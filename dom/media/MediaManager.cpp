@@ -3015,7 +3015,9 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetDisplayMedia(
 
 
 void MediaManager::AnonymizeDevices(MediaDeviceSet& aDevices,
-                                    const nsACString& aOriginKey) {
+                                    const nsACString& aOriginKey,
+                                    const uint64_t aWindowId) {
+
   if (!aOriginKey.IsEmpty()) {
     for (RefPtr<MediaDevice>& device : aDevices) {
       nsString id;
@@ -3025,6 +3027,12 @@ void MediaManager::AnonymizeDevices(MediaDeviceSet& aDevices,
 
       nsString groupId;
       device->GetGroupId(groupId);
+      
+      
+      
+      
+      
+      groupId.AppendInt(aWindowId);
       AnonymizeId(groupId, aOriginKey);
 
       device = new MediaDevice(device, id, groupId, rawId);
@@ -3206,7 +3214,8 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateDevicesImpl(
                      MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
                      __func__);
                }
-               MediaManager::AnonymizeDevices(*aOutDevices, *originKey);
+               MediaManager::AnonymizeDevices(*aOutDevices, *originKey,
+                                              aWindowId);
                return MgrPromise::CreateAndResolve(false, __func__);
              },
              [](RefPtr<MediaMgrError>&& aError) {
