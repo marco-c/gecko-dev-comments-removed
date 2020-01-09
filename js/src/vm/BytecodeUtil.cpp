@@ -2846,6 +2846,8 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
                              GenericPrinter& out) {
   JSRuntime* rt = cx->runtime();
 
+  AutoRealmUnchecked ar(cx, realm);
+
   
   { js::gc::AutoPrepareForTracing apft(cx); }
 

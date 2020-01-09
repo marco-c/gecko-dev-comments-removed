@@ -1544,7 +1544,10 @@ static JSAtom* AppendBoundFunctionPrefix(JSContext* cx, JSString* str) {
  bool JSFunction::createScriptForLazilyInterpretedFunction(
     JSContext* cx, HandleFunction fun) {
   MOZ_ASSERT(fun->isInterpretedLazy());
+  MOZ_ASSERT(cx->compartment() == fun->compartment());
 
+  
+  
   AutoRealm ar(cx, fun);
 
   Rooted<LazyScript*> lazy(cx, fun->lazyScriptOrNull());
