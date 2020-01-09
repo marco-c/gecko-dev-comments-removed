@@ -175,7 +175,7 @@
   background-position: center;
   background-repeat: no-repeat;
   -moz-context-properties: fill;
-  fill: var(--theme-content-color3);
+  fill: var(--theme-icon-dimmed-color);
   
   background-size: 8px;
   cursor: pointer;
