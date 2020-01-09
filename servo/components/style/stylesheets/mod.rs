@@ -23,6 +23,10 @@ mod stylesheet;
 pub mod supports_rule;
 pub mod viewport_rule;
 
+#[cfg(feature = "gecko")]
+use crate::gecko_bindings::sugar::refptr::RefCounted;
+#[cfg(feature = "gecko")]
+use crate::gecko_bindings::{bindings, structs};
 use crate::parser::ParserContext;
 use crate::shared_lock::{DeepCloneParams, DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
@@ -32,6 +36,8 @@ use cssparser::{parse_one_rule, Parser, ParserInput};
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use servo_arc::Arc;
 use std::fmt;
+#[cfg(feature = "gecko")]
+use std::mem;
 use style_traits::ParsingMode;
 
 pub use self::counter_style_rule::CounterStyleRule;
@@ -60,18 +66,56 @@ pub use self::viewport_rule::ViewportRule;
 pub type UrlExtraData = ::servo_url::ServoUrl;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg(feature = "gecko")]
-#[derive(Clone, PartialEq)]
-pub struct UrlExtraData(
-    pub crate::gecko_bindings::sugar::refptr::RefPtr<crate::gecko_bindings::structs::URLExtraData>,
-);
+#[derive(PartialEq)]
+pub struct UrlExtraData(usize);
+
+#[cfg(feature = "gecko")]
+impl Clone for UrlExtraData {
+    fn clone(&self) -> UrlExtraData {
+        UrlExtraData::new(self.ptr())
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl Drop for UrlExtraData {
+    fn drop(&mut self) {
+        
+        if self.0 & 1 == 0 {
+            unsafe {
+                self.as_ref().release();
+            }
+        }
+    }
+}
 
 #[cfg(feature = "gecko")]
 impl UrlExtraData {
     
+    
+    pub fn new(ptr: *mut structs::URLExtraData) -> UrlExtraData {
+        unsafe {
+            (*ptr).addref();
+        }
+        UrlExtraData(ptr as usize)
+    }
+
+    
     #[inline]
     pub fn is_chrome(&self) -> bool {
-        self.0.mIsChrome
+        self.as_ref().mIsChrome
     }
 
     
@@ -80,16 +124,30 @@ impl UrlExtraData {
     
     
     #[inline]
-    pub unsafe fn from_ptr_ref(ptr: &*mut crate::gecko_bindings::structs::URLExtraData) -> &Self {
-        ::std::mem::transmute(ptr)
+    pub unsafe fn from_ptr_ref(ptr: &*mut structs::URLExtraData) -> &Self {
+        mem::transmute(ptr)
+    }
+
+    
+    pub fn ptr(&self) -> *mut structs::URLExtraData {
+        if self.0 & 1 == 0 {
+            self.0 as *mut structs::URLExtraData
+        } else {
+            unsafe {
+                let sheet_id = self.0 >> 1;
+                structs::URLExtraData_sShared[sheet_id].mRawPtr
+            }
+        }
+    }
+
+    fn as_ref(&self) -> &structs::URLExtraData {
+        unsafe { &*(self.ptr() as *const structs::URLExtraData) }
     }
 }
 
 #[cfg(feature = "gecko")]
 impl fmt::Debug for UrlExtraData {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        use crate::gecko_bindings::{bindings, structs};
-
         struct DebugURI(*mut structs::nsIURI);
         impl fmt::Debug for DebugURI {
             fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -105,10 +163,13 @@ impl fmt::Debug for UrlExtraData {
         formatter
             .debug_struct("URLExtraData")
             .field("is_chrome", &self.is_chrome())
-            .field("base", &DebugURI(self.0.mBaseURI.raw::<structs::nsIURI>()))
+            .field(
+                "base",
+                &DebugURI(self.as_ref().mBaseURI.raw::<structs::nsIURI>()),
+            )
             .field(
                 "referrer",
-                &DebugURI(self.0.mReferrer.raw::<structs::nsIURI>()),
+                &DebugURI(self.as_ref().mReferrer.raw::<structs::nsIURI>()),
             )
             .finish()
     }

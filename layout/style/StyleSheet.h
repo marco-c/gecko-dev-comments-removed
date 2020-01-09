@@ -395,7 +395,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   bool AreRulesAvailable(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
 
-  already_AddRefed<URLExtraData> CreateURLExtraData() const;
+  void SetURLExtraData();
 
  protected:
   
