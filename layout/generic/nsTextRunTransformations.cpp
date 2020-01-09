@@ -219,11 +219,12 @@ gfxTextRunFactory::Parameters GetParametersForInner(
 
 
 enum LanguageSpecificCasingBehavior {
-  eLSCB_None,    
-  eLSCB_Dutch,   
-  eLSCB_Greek,   
-  eLSCB_Irish,   
-  eLSCB_Turkish  
+  eLSCB_None,       
+  eLSCB_Dutch,      
+  eLSCB_Greek,      
+  eLSCB_Irish,      
+  eLSCB_Turkish,    
+  eLSCB_Lithuanian  
 };
 
 static LanguageSpecificCasingBehavior GetCasingFor(const nsAtom* aLang) {
@@ -243,6 +244,9 @@ static LanguageSpecificCasingBehavior GetCasingFor(const nsAtom* aLang) {
   }
   if (aLang == nsGkAtoms::ga) {
     return eLSCB_Irish;
+  }
+  if (aLang == nsGkAtoms::lt_) {
+    return eLSCB_Lithuanian;
   }
 
   
@@ -277,6 +281,8 @@ bool nsCaseTransformTextRunFactory::TransformString(
   bool prevIsLetter = false;
   bool ntPrefix = false;  
                           
+  bool seenSoftDotted = false;  
+                                
   uint32_t sigmaIndex = uint32_t(-1);
   nsUGenCategory cat;
 
@@ -353,6 +359,60 @@ bool nsCaseTransformTextRunFactory::TransformString(
           }
         }
 
+        if (languageSpecificCasing == eLSCB_Lithuanian) {
+          
+          
+
+
+
+
+
+
+
+
+
+
+
+          
+          if (ch == 'I' || ch == 'J' || ch == 0x012E) {
+            ch = ToLowerCase(ch);
+            prevIsLetter = true;
+            seenSoftDotted = true;
+            sigmaIndex = uint32_t(-1);
+            break;
+          }
+          if (ch == 0x00CC) {
+            aConvertedString.Append('i');
+            aConvertedString.Append(0x0307);
+            extraChars += 2;
+            ch = 0x0300;
+            prevIsLetter = true;
+            seenSoftDotted = false;
+            sigmaIndex = uint32_t(-1);
+            break;
+          }
+          if (ch == 0x00CD) {
+            aConvertedString.Append('i');
+            aConvertedString.Append(0x0307);
+            extraChars += 2;
+            ch = 0x0301;
+            prevIsLetter = true;
+            seenSoftDotted = false;
+            sigmaIndex = uint32_t(-1);
+            break;
+          }
+          if (ch == 0x0128) {
+            aConvertedString.Append('i');
+            aConvertedString.Append(0x0307);
+            extraChars += 2;
+            ch = 0x0303;
+            prevIsLetter = true;
+            seenSoftDotted = false;
+            sigmaIndex = uint32_t(-1);
+            break;
+          }
+        }
+
         cat = mozilla::unicode::GetGenCategory(ch);
 
         if (languageSpecificCasing == eLSCB_Irish &&
@@ -370,6 +430,15 @@ bool nsCaseTransformTextRunFactory::TransformString(
         } else {
           ntPrefix = false;
         }
+
+        if (seenSoftDotted && cat == nsUGenCategory::kMark) {
+          
+          if (ch == 0x0300 || ch == 0x0301 || ch == 0x0303) {
+            aConvertedString.Append(0x0307);
+            ++extraChars;
+          }
+        }
+        seenSoftDotted = false;
 
         
         
@@ -461,6 +530,26 @@ bool nsCaseTransformTextRunFactory::TransformString(
             greekMark = uint32_t(-1);
           }
           break;
+        }
+
+        if (languageSpecificCasing == eLSCB_Lithuanian) {
+          
+
+
+
+
+          if (ch == 'i' || ch == 'j' || ch == 0x012F) {
+            seenSoftDotted = true;
+            ch = ToTitleCase(ch);
+            break;
+          }
+          if (seenSoftDotted) {
+            seenSoftDotted = false;
+            if (ch == 0x0307) {
+              ch = uint32_t(-1);
+              break;
+            }
+          }
         }
 
         if (languageSpecificCasing == eLSCB_Irish) {
@@ -564,6 +653,25 @@ bool nsCaseTransformTextRunFactory::TransformString(
               ch = 'I';
               capitalizeDutchIJ = true;
               break;
+            }
+            if (languageSpecificCasing == eLSCB_Lithuanian) {
+              
+
+
+
+
+              if (ch == 'i' || ch == 'j' || ch == 0x012F) {
+                seenSoftDotted = true;
+                ch = ToTitleCase(ch);
+                break;
+              }
+              if (seenSoftDotted) {
+                seenSoftDotted = false;
+                if (ch == 0x0307) {
+                  ch = uint32_t(-1);
+                  break;
+                }
+              }
             }
 
             mcm = mozilla::unicode::SpecialTitle(ch);
