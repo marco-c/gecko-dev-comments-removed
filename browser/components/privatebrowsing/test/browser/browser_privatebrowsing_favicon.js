@@ -244,11 +244,12 @@ add_task(async function test_favicon_cache_privateBrowsing() {
 
   
   let promiseFaviconLoaded = waitOnFaviconLoaded(FAVICON_CACHE_URI);
+  let promiseFaviconResponse = waitOnFaviconResponse(FAVICON_CACHE_URI);
 
   
   let tabInfoNonPrivate = await openTab(gBrowser, TEST_CACHE_PAGE);
 
-  let response = await waitOnFaviconResponse(FAVICON_CACHE_URI);
+  let response = await promiseFaviconResponse;
 
   await promiseFaviconLoaded;
 
@@ -266,11 +267,13 @@ add_task(async function test_favicon_cache_privateBrowsing() {
     url: TEST_CACHE_PAGE,
   });
 
+  promiseFaviconResponse = waitOnFaviconResponse(FAVICON_CACHE_URI);
+
   
   let tabInfoPrivate = await openTab(privateWindow.gBrowser, TEST_CACHE_PAGE);
 
   
-  response = await waitOnFaviconResponse(FAVICON_CACHE_URI);
+  response = await promiseFaviconResponse;
 
   
   is(response.topic, "http-on-examine-response", "The favicon image should be loaded through the network again.");
