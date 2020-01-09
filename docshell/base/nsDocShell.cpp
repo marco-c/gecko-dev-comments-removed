@@ -5657,11 +5657,10 @@ nsresult nsDocShell::SetCurScrollPosEx(int32_t aCurHorizontalPos,
     return NS_OK;
   }
 
-  
-  
-  
   shell->ScrollToVisual(targetPos, layers::FrameMetrics::eMainThread,
-                        nsIPresShell::ScrollMode::eInstant);
+                        scrollMode == nsIScrollableFrame::INSTANT
+                            ? nsIPresShell::ScrollMode::eInstant
+                            : nsIPresShell::ScrollMode::eSmooth);
 
   return NS_OK;
 }
