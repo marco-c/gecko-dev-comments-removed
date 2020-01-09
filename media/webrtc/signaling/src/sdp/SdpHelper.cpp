@@ -400,6 +400,7 @@ nsresult SdpHelper::GetMsids(const SdpMediaSection& msection,
                              std::vector<SdpMsidAttributeList::Msid>* msids) {
   if (msection.GetAttributeList().HasAttribute(SdpAttribute::kMsidAttribute)) {
     *msids = msection.GetAttributeList().GetMsid().mMsids;
+    return NS_OK;
   }
 
   
