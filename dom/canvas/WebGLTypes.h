@@ -15,17 +15,6 @@ typedef int64_t WebGLsizeiptr;
 typedef int64_t WebGLintptr;
 typedef bool WebGLboolean;
 
-
-
-
-template<typename RequireSizeT1, typename RequireSizeT2>
-void* calloc(RequireSizeT1 n, RequireSizeT2 size) = delete;
-
-template<typename RequireSizeT>
-void* malloc(RequireSizeT size) = delete;
-
-
-
 namespace mozilla {
 namespace gl {
 class GLContext;  
