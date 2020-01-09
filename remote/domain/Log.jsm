@@ -49,35 +49,43 @@ class Log extends Domain {
     if (!this.enabled) {
       this.enabled = true;
 
-      
-      
-      
-      
-      
-      Services.mm.addMessageListener("RemoteAgent:Log:OnConsoleAPIEvent", this);
-      Services.mm.addMessageListener("RemoteAgent:Log:OnConsoleServiceMessage", this);
+      Services.console.registerListener(this);
+      Services.obs.addObserver(this, "console-api-log-event");
     }
   }
 
   disable() {
     if (this.enabled) {
-      Services.mm.removeMessageListener("RemoteAgent:Log:OnConsoleAPIEvent", this);
-      Services.mm.removeMessageListener("RemoteAgent:Log:OnConsoleServiceMessage", this);
       this.enabled = false;
+      Services.console.unregisterListener(this);
+      Services.obs.removeObserver(this, "console-api-log-event");
     }
   }
 
   
 
-  receiveMessage({target, name, data}) {
-    
-    
-    if (name == "RemoteAgent:Log:OnConsoleAPIEvent" &&
-        this.target.id !== data.browsingContextId) {
-      return;
+  
+
+
+
+
+
+
+  observe(message, topic) {
+    let entry;
+    if (message instanceof Ci.nsIScriptError) {
+      entry = fromScriptError(message);
+    } else if (message instanceof Ci.nsIConsoleMessage) {
+      entry = fromConsoleMessage(message);
+    } else if (topic == "console-api-log-event") {
+      entry = fromConsoleAPI(message.wrappedJSObject);
     }
 
-    this.emit("Log.entryAdded", {entry: data});
+    this.emit("Log.entryAdded", {entry});
+  }
+
+  get QueryInterface() {
+    return ChromeUtils.generateQI([Ci.nsIConsoleListener]);
   }
 
   static get schema() {
@@ -107,3 +115,73 @@ Log.LogEntry = {
     args: t.Optional(t.Array(Runtime.RemoteObject.schema)),
   },
 };
+
+function fromConsoleMessage(message) {
+  const levels = {
+    [Ci.nsIConsoleMessage.debug]: "verbose",
+    [Ci.nsIConsoleMessage.info]: "info",
+    [Ci.nsIConsoleMessage.warn]: "warning",
+    [Ci.nsIConsoleMessage.error]: "error",
+  };
+  const level = levels[message.logLevel];
+
+  return {
+    source: "javascript",
+    level,
+    text: message.message,
+    timestamp: Date.now(),
+  };
+}
+
+function fromConsoleAPI(message) {
+  
+  
+
+  
+  
+  const levels = {
+    "log": "verbose",
+    "info": "info",
+    "warn": "warning",
+    "error": "error",
+    "exception": "error",
+
+  };
+  const level = levels[message.level] || "info";
+
+  return {
+    source: "javascript",
+    level,
+    text: message.arguments,
+    url: message.filename,
+    lineNumber: message.lineNumber,
+    stackTrace: message.stacktrace,
+    timestamp: Date.now(),
+  };
+}
+
+function fromScriptError(error) {
+  const {flags, errorMessage, sourceName, lineNumber, stack} = error;
+
+  
+  let level = "verbose";
+  if ((flags & Ci.nsIScriptError.exceptionFlag) ||
+      (flags & Ci.nsIScriptError.errorFlag)) {
+    level = "error";
+  } else if ((flags & Ci.nsIScriptError.warningFlag) ||
+      (flags & Ci.nsIScriptError.strictFlag)) {
+    level = "warning";
+  } else if (flags & Ci.nsIScriptError.infoFlag) {
+    level = "info";
+  }
+
+  return {
+    source: "javascript",
+    level,
+    text: errorMessage,
+    timestamp: Date.now(),
+    url: sourceName,
+    lineNumber,
+    stackTrace: stack,
+  };
+}
