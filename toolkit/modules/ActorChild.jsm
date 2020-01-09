@@ -16,7 +16,7 @@ var EXPORTED_SYMBOLS = ["ActorChild"];
 
 
 
-class ActorChild {
+this.ActorChild = class ActorChild {
   constructor(dispatcher) {
     this._dispatcher = dispatcher;
     this.mm = dispatcher.mm;
@@ -47,4 +47,4 @@ class ActorChild {
   cleanup() {
     this._dispatcher = null;
   }
-}
+};
