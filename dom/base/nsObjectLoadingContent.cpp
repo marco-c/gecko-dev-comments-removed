@@ -1637,16 +1637,9 @@ nsObjectLoadingContent::UpdateObjectParameters() {
     
     
     
-    
-    
-    
 
     bool overrideChannelType = false;
-    if (thisElement->HasAttr(kNameSpaceID_None, nsGkAtoms::typemustmatch)) {
-      if (!typeAttr.LowerCaseEqualsASCII(channelType.get())) {
-        stateInvalid = true;
-      }
-    } else if (IsPluginType(typeHint)) {
+    if (IsPluginType(typeHint)) {
       LOG(("OBJLC [%p]: Using plugin type hint in favor of any channel type",
            this));
       overrideChannelType = true;

@@ -59,7 +59,6 @@ var embeddedElements = {
     
     data: "url",
     type: "string",
-    typeMustMatch: "boolean",
     name: "string",
     useMap: "string",
     width: "string",
