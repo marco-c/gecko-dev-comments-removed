@@ -1097,13 +1097,12 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 
   masm.assertStackAlignment(WasmStackAlignment);
   masm.callJit(ImmPtr(callee));
-  masm.assertStackAlignment(WasmStackAlignment);
-
 #ifdef JS_CODEGEN_ARM64
   
   
   masm.initPseudoStackPtr();
 #endif
+  masm.assertStackAlignment(WasmStackAlignment);
 
   masm.branchPtr(Assembler::Equal, FramePointer, Imm32(wasm::FailFP),
                  masm.exceptionLabel());
