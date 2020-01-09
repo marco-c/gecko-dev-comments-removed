@@ -17,7 +17,7 @@ namespace net {
 
 namespace {
 
-#define CRYPTOMINING_FEATURE_NAME "cryptomining-protection"
+#define CRYPTOMINING_FEATURE_NAME "cryptomining"
 
 #define URLCLASSIFIER_CRYPTOMINING_BLACKLIST \
   "urlclassifier.features.cryptomining.blacklistTables"
@@ -143,30 +143,38 @@ UrlClassifierFeatureCryptominingProtection::ProcessChannel(
   NS_ENSURE_ARG_POINTER(aChannel);
   NS_ENSURE_ARG_POINTER(aShouldContinue);
 
-  bool isAllowListed = UrlClassifierCommon::IsAllowListed(
-      aChannel, AntiTrackingCommon::eCryptomining);
+  bool isAllowListed =
+      IsAllowListed(aChannel, AntiTrackingCommon::eCryptomining);
 
   
   *aShouldContinue = isAllowListed;
 
   if (isAllowListed) {
-    return NS_OK;
-  }
-
-  UrlClassifierCommon::SetBlockedContent(aChannel, NS_ERROR_CRYPTOMINING_URI,
-                                         aList, EmptyCString(), EmptyCString());
-
-  UC_LOG(
-      ("UrlClassifierFeatureCryptominingProtection::ProcessChannel, "
-       "cancelling "
-       "channel[%p]",
-       aChannel));
-  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
-
-  if (httpChannel) {
-    Unused << httpChannel->CancelByChannelClassifier(NS_ERROR_CRYPTOMINING_URI);
+    
+    
+    
+    
+    
+    UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
+        aChannel, nsIWebProgressListener::STATE_LOADED_CRYPTOMINING_CONTENT);
   } else {
-    Unused << aChannel->Cancel(NS_ERROR_CRYPTOMINING_URI);
+    UrlClassifierCommon::SetBlockedContent(aChannel, NS_ERROR_CRYPTOMINING_URI,
+                                           aList, EmptyCString(),
+                                           EmptyCString());
+
+    UC_LOG(
+        ("UrlClassifierFeatureCryptominingProtection::ProcessChannel, "
+         "cancelling "
+         "channel[%p]",
+         aChannel));
+    nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
+
+    if (httpChannel) {
+      Unused << httpChannel->CancelByChannelClassifier(
+          NS_ERROR_CRYPTOMINING_URI);
+    } else {
+      Unused << aChannel->Cancel(NS_ERROR_CRYPTOMINING_URI);
+    }
   }
 
   return NS_OK;

@@ -2007,32 +2007,22 @@ VARCACHE_PREF(
 )
 
 
+# define PREF_VALUE false
 VARCACHE_PREF(
   "privacy.trackingprotection.fingerprinting.enabled",
    privacy_trackingprotection_fingerprinting_enabled,
-  bool, false
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 
-VARCACHE_PREF(
-  "privacy.trackingprotection.fingerprinting.annotate.enabled",
-   privacy_trackingprotection_fingerprinting_annotate_enabled,
-  bool, false
-)
-
-
+# define PREF_VALUE false
 VARCACHE_PREF(
   "privacy.trackingprotection.cryptomining.enabled",
    privacy_trackingprotection_cryptomining_enabled,
-  bool, false
+  bool, PREF_VALUE
 )
-
-
-VARCACHE_PREF(
-  "privacy.trackingprotection.cryptomining.annotate.enabled",
-   privacy_trackingprotection_cryptomining_annotate_enabled,
-  bool, false
-)
+#undef PREF_VALUE
 
 
 
