@@ -352,6 +352,13 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
 #else
   ANCHOR_LOG("\t\tVisiting frame=%p.\n", aFrame);
 #endif
+  bool isText = !!Text::FromNodeOrNull(aFrame->GetContent());
+  bool isContinuation = !!aFrame->GetPrevContinuation();
+
+  if (isText && isContinuation) {
+    ANCHOR_LOG("\t\tExcluding continuation text node.\n");
+    return ExamineResult::Exclude;
+  }
 
   
   
@@ -405,10 +412,8 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
 
   
   bool isBlockOutside = aFrame->IsBlockOutside();
-  bool isText = !!Text::FromNodeOrNull(aFrame->GetContent());
   bool isAnonBox = aFrame->Style()->IsAnonBox() && !isText;
   bool isInlineOutside = aFrame->IsInlineOutside() && !isText;
-  bool isContinuation = !!aFrame->GetPrevContinuation();
 
   
   
