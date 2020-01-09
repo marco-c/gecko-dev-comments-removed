@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#if defined(OS_MACOSX)
+#if defined(OS_MACOSX) || defined(OS_NETBSD)
 #  include <sched.h>
 #endif
 #include <stddef.h>
@@ -700,7 +700,8 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
           
           
           break;
-#if defined(OS_MACOSX)
+#if defined(OS_MACOSX) || defined(OS_NETBSD)
+          
           
           
           
