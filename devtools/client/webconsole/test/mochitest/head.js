@@ -825,7 +825,8 @@ async function waitForBrowserConsole() {
 
 
 async function getFilterState(hud) {
-  const filterBar = await setFilterBarVisible(hud, true);
+  const {outputNode} = hud.ui;
+  const filterBar = outputNode.querySelector(".webconsole-filterbar-secondary");
   const buttons = filterBar.querySelectorAll("button");
   const result = { };
 
@@ -862,7 +863,8 @@ async function getFilterState(hud) {
 
 
 async function setFilterState(hud, settings) {
-  const filterBar = await setFilterBarVisible(hud, true);
+  const {outputNode} = hud.ui;
+  const filterBar = outputNode.querySelector(".webconsole-filterbar-secondary");
 
   for (const category in settings) {
     const setActive = settings[category];
@@ -885,46 +887,6 @@ async function setFilterState(hud, settings) {
       });
     }
   }
-}
-
-
-
-
-
-
-
-
-async function setFilterBarVisible(hud, state) {
-  info(`Setting the filter bar visibility to ${state}`);
-
-  const outputNode = hud.ui.outputNode;
-  const toolbar = await waitFor(() => {
-    return outputNode.querySelector(".webconsole-filterbar-primary");
-  });
-  let filterBar = outputNode.querySelector(".webconsole-filterbar-secondary");
-
-  
-  if (state) {
-    if (!filterBar) {
-      
-      toolbar.querySelector(".devtools-filter-icon").click();
-      filterBar = await waitFor(() => {
-        return outputNode.querySelector(".webconsole-filterbar-secondary");
-      });
-    }
-    return filterBar;
-  }
-
-  
-  if (filterBar) {
-    
-    toolbar.querySelector(".devtools-filter-icon").click();
-    await waitFor(() => {
-      return !outputNode.querySelector(".webconsole-filterbar-secondary");
-    });
-  }
-
-  return null;
 }
 
 
