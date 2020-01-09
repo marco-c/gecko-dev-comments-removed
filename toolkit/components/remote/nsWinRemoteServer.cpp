@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+#include "nsWinRemoteServer.h"
+
+nsresult nsWinRemoteServer::Startup(const char* aAppName,
+    const char* aProfileName) {
+  return NS_OK;
+}
+
+void nsWinRemoteServer::Shutdown() {
+}
