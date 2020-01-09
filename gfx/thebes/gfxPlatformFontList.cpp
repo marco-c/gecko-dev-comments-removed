@@ -889,7 +889,7 @@ void gfxPlatformFontList::RemoveCmap(const gfxCharacterMap* aCharMap) {
 
 void gfxPlatformFontList::ResolveGenericFontNames(
     FontFamilyType aGenericType, eFontPrefLang aPrefLang,
-    nsTArray<RefPtr<gfxFontFamily>>* aGenericFamilies) {
+    PrefFontList* aGenericFamilies) {
   const char* langGroupStr = GetPrefLangName(aPrefLang);
   const char* generic = GetGenericName(aGenericType);
 
@@ -924,7 +924,7 @@ void gfxPlatformFontList::ResolveGenericFontNames(
 }
 
 void gfxPlatformFontList::ResolveEmojiFontNames(
-    nsTArray<RefPtr<gfxFontFamily>>* aGenericFamilies) {
+    PrefFontList* aGenericFamilies) {
   
   AutoTArray<nsCString, 4> genericFamilies;
 
@@ -937,7 +937,7 @@ void gfxPlatformFontList::ResolveEmojiFontNames(
 
 void gfxPlatformFontList::GetFontFamiliesFromGenericFamilies(
     nsTArray<nsCString>& aGenericNameFamilies, nsAtom* aLangGroup,
-    nsTArray<RefPtr<gfxFontFamily>>* aGenericFamilies) {
+    PrefFontList* aGenericFamilies) {
   
   for (const nsCString& genericFamily : aGenericNameFamilies) {
     gfxFontStyle style;
@@ -953,7 +953,7 @@ void gfxPlatformFontList::GetFontFamiliesFromGenericFamilies(
   }
 }
 
-nsTArray<RefPtr<gfxFontFamily>>* gfxPlatformFontList::GetPrefFontsLangGroup(
+gfxPlatformFontList::PrefFontList* gfxPlatformFontList::GetPrefFontsLangGroup(
     mozilla::FontFamilyType aGenericType, eFontPrefLang aPrefLang) {
   
   if (aGenericType == eFamily_moz_fixed) {
@@ -990,8 +990,7 @@ void gfxPlatformFontList::AddGenericFonts(
   eFontPrefLang prefLang = GetFontPrefLangFor(langGroup);
 
   
-  nsTArray<RefPtr<gfxFontFamily>>* prefFonts =
-      GetPrefFontsLangGroup(aGenericType, prefLang);
+  PrefFontList* prefFonts = GetPrefFontsLangGroup(aGenericType, prefLang);
 
   if (!prefFonts->IsEmpty()) {
     aFamilyList.SetCapacity(aFamilyList.Length() + prefFonts->Length());
