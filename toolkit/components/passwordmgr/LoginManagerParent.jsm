@@ -15,6 +15,8 @@ ChromeUtils.defineModuleGetter(this, "DeferredTask",
                                "resource://gre/modules/DeferredTask.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginHelper",
                                "resource://gre/modules/LoginHelper.jsm");
+ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
+                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   let logger = LoginHelper.createLogger("LoginManagerParent");
@@ -315,6 +317,10 @@ var LoginManagerParent = {
     }
 
     function recordLoginUse(login) {
+      if (!target || PrivateBrowsingUtils.isBrowserPrivate(target)) {
+        
+        return;
+      }
       
       let propBag = Cc["@mozilla.org/hash-property-bag;1"].
                     createInstance(Ci.nsIWritablePropertyBag);
