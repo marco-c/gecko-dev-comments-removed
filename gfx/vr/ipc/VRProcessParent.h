@@ -13,6 +13,9 @@
 #include "mozilla/ipc/TaskFactory.h"
 
 namespace mozilla {
+namespace ipc {
+class SharedPreferenceSerializer;
+}
 namespace gfx {
 
 class VRChild;
@@ -31,6 +34,10 @@ class VRProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
 
   explicit VRProcessParent(Listener* aListener);
 
+  
+  
+  
+  
   bool Launch();
   
   
@@ -71,6 +78,7 @@ class VRProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
   LaunchPhase mLaunchPhase;
   bool mChannelClosed;
   bool mShutdownRequested;
+  UniquePtr<mozilla::ipc::SharedPreferenceSerializer> mPrefSerializer;
 };
 
 }  
