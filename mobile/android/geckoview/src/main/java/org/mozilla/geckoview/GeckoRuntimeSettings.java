@@ -21,7 +21,6 @@ import android.support.annotation.Nullable;
 
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
-import org.mozilla.geckoview.GeckoSession.TrackingProtectionDelegate;
 
 @AnyThread
 public final class GeckoRuntimeSettings extends RuntimeSettings {
@@ -147,45 +146,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-        public @NonNull Builder cookieBehavior(@CookieBehavior int behavior) {
-            getSettings().mCookieBehavior.set(behavior);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder cookieLifetime(@CookieLifetime int lifetime) {
-            getSettings().mCookieLifetime.set(lifetime);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        public @NonNull Builder trackingProtectionCategories(
-                @TrackingProtectionDelegate.Category int categories) {
-            getSettings().mTrackingProtection
-                     .set(TrackingProtection.buildPrefValue(categories));
-            return this;
-        }
-
-        
-
-
-
-
-
-
 
 
 
@@ -202,37 +162,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
         public @NonNull Builder displayDensityOverride(float density) {
             getSettings().mDisplayDensityOverride = density;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder blockMalware(boolean enabled) {
-            getSettings().mSafebrowsingMalware.set(enabled);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder blockPhishing(boolean enabled) {
-            getSettings().mSafebrowsingPhishing.set(enabled);
             return this;
         }
 
@@ -308,6 +237,12 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mRequestedLocales = requestedLocales;
             return this;
         }
+
+        public @NonNull Builder contentBlocking(
+                final @NonNull ContentBlocking.Settings cb) {
+            getSettings().mContentBlocking = cb;
+            return this;
+        }
     }
 
     private GeckoRuntime mRuntime;
@@ -315,29 +250,20 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
      String[] mArgs;
      Bundle mExtras;
 
+     ContentBlocking.Settings mContentBlocking;
+
+    public @NonNull ContentBlocking.Settings getContentBlocking() {
+        return mContentBlocking;
+    }
+
      final Pref<Boolean> mJavaScript = new Pref<Boolean>(
         "javascript.enabled", true);
      final Pref<Boolean> mRemoteDebugging = new Pref<Boolean>(
         "devtools.debugger.remote-enabled", false);
      final Pref<Integer> mWebFonts = new Pref<Integer>(
         "browser.display.use_document_fonts", 1);
-     final Pref<Integer> mCookieBehavior = new Pref<Integer>(
-        "network.cookie.cookieBehavior", COOKIE_ACCEPT_ALL);
-     final Pref<Integer> mCookieLifetime = new Pref<Integer>(
-        "network.cookie.lifetimePolicy", COOKIE_LIFETIME_NORMAL);
-     final Pref<String> mTrackingProtection = new Pref<String>(
-        "urlclassifier.trackingTable",
-        TrackingProtection.buildPrefValue(
-            TrackingProtectionDelegate.CATEGORY_TEST |
-            TrackingProtectionDelegate.CATEGORY_ANALYTIC |
-            TrackingProtectionDelegate.CATEGORY_SOCIAL |
-            TrackingProtectionDelegate.CATEGORY_AD));
      final Pref<Boolean> mConsoleOutput = new Pref<Boolean>(
         "geckoview.console.enabled", false);
-     final Pref<Boolean> mSafebrowsingMalware = new Pref<Boolean>(
-        "browser.safebrowsing.malware.enabled", true);
-     final Pref<Boolean> mSafebrowsingPhishing = new Pref<Boolean>(
-        "browser.safebrowsing.phishing.enabled", true);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -372,6 +298,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         if (settings == null) {
             mArgs = new String[0];
             mExtras = new Bundle();
+            mContentBlocking = new ContentBlocking.Settings(
+                    this , null );
             return;
         }
 
@@ -384,6 +312,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         mUseContentProcess = settings.getUseContentProcessHint();
         mArgs = settings.getArguments().clone();
         mExtras = new Bundle(settings.getExtras());
+        mContentBlocking = new ContentBlocking.Settings(
+                this , settings.mContentBlocking);
 
         mDebugPause = settings.mDebugPause;
         mUseMaxScreenDepth = settings.mUseMaxScreenDepth;
@@ -571,127 +501,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     }
 
     
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ COOKIE_ACCEPT_ALL, COOKIE_ACCEPT_FIRST_PARTY,
-              COOKIE_ACCEPT_NONE, COOKIE_ACCEPT_VISITED,
-              COOKIE_ACCEPT_NON_TRACKERS })
-     @interface CookieBehavior {}
-
-    
-
-
-    public static final int COOKIE_ACCEPT_ALL = 0;
-    
-
-
-
-    public static final int COOKIE_ACCEPT_FIRST_PARTY = 1;
-    
-
-
-    public static final int COOKIE_ACCEPT_NONE = 2;
-    
-
-
-
-    public static final int COOKIE_ACCEPT_VISITED = 3;
-    
-
-
-
-
-    public static final int COOKIE_ACCEPT_NON_TRACKERS = 4;
-
-    
-
-
-
-
-    public @CookieBehavior int getCookieBehavior() {
-        return mCookieBehavior.get();
-    }
-
-    
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setCookieBehavior(
-            @CookieBehavior int behavior) {
-        mCookieBehavior.commit(behavior);
-        return this;
-    }
-
-    
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ COOKIE_LIFETIME_NORMAL, COOKIE_LIFETIME_RUNTIME,
-              COOKIE_LIFETIME_DAYS })
-     @interface CookieLifetime {}
-
-    
-
-
-    public static final int COOKIE_LIFETIME_NORMAL = 0;
-    
-
-
-    public static final int COOKIE_LIFETIME_RUNTIME = 2;
-    
-
-
-
-    public static final int COOKIE_LIFETIME_DAYS = 3;
-
-    
-
-
-
-
-    public @CookieBehavior int getCookieLifetime() {
-        return mCookieLifetime.get();
-    }
-
-    
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setCookieLifetime(
-            @CookieLifetime int lifetime) {
-        mCookieLifetime.commit(lifetime);
-        return this;
-    }
-
-    
-
-
-
-
-
-
-    public @TrackingProtectionDelegate.Category int getTrackingProtectionCategories() {
-        return TrackingProtection.listToCategory(mTrackingProtection.get());
-    }
-
-    
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setTrackingProtectionCategories(
-            @TrackingProtectionDelegate.Category int categories) {
-        mTrackingProtection.commit(TrackingProtection.buildPrefValue(categories));
-        return this;
-    }
-
-    
 
 
 
@@ -714,54 +523,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public boolean getConsoleOutputEnabled() {
         return mConsoleOutput.get();
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setBlockMalware(boolean enabled) {
-        mSafebrowsingMalware.commit(enabled);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getBlockMalware() {
-        return mSafebrowsingMalware.get();
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setBlockPhishing(boolean enabled) {
-        mSafebrowsingPhishing.commit(enabled);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getBlockPhishing() {
-        return mSafebrowsingPhishing.get();
     }
 
     @Override 
