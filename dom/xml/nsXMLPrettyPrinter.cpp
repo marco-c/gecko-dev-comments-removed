@@ -44,6 +44,17 @@ nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
   }
 
   
+  RefPtr<Element> rootElement = aDocument->GetRootElement();
+  NS_ENSURE_TRUE(rootElement, NS_ERROR_UNEXPECTED);
+
+  
+  
+  if (rootElement->CanAttachShadowDOM()) {
+    MOZ_DIAGNOSTIC_ASSERT(false, "We shouldn't be getting this root element");
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  
   *aDidPrettyPrint = true;
   nsresult rv = NS_OK;
 
@@ -74,10 +85,6 @@ nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
   }
-
-  
-  RefPtr<Element> rootElement = aDocument->GetRootElement();
-  NS_ENSURE_TRUE(rootElement, NS_ERROR_UNEXPECTED);
 
   
   rootElement->AttachAndSetUAShadowRoot();

@@ -1102,6 +1102,19 @@ bool Element::CanAttachShadowDOM() const {
 
 
 
+  if (!IsHTMLElement() &&
+      !(XRE_IsParentProcess() && IsXULElement() &&
+        nsContentUtils::AllowXULXBLForPrincipal(NodePrincipal()))) {
+    return false;
+  }
+
+  
+
+
+
+
+
+
   nsAtom* nameAtom = NodeInfo()->NameAtom();
   if (!(nsContentUtils::IsCustomElementName(nameAtom,
                                             NodeInfo()->NamespaceID()) ||
@@ -1126,15 +1139,6 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
   
 
 
-
-  if (!IsHTMLElement() &&
-      !(XRE_IsParentProcess() && IsXULElement() &&
-        nsContentUtils::AllowXULXBLForPrincipal(NodePrincipal()))) {
-    aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return nullptr;
-  }
-
-  
 
 
 
