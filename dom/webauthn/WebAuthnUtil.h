@@ -20,7 +20,7 @@ namespace dom {
 enum class U2FOperation { Register, Sign };
 
 bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
-                   const U2FOperation& aOp,  nsString& aAppId);
+                    nsString& aAppId);
 
 nsresult AssembleAuthenticatorData(const CryptoBuffer& rpIdHashBuf,
                                    const uint8_t flags,

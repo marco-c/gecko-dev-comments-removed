@@ -1148,7 +1148,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "TreeWalker", insecureContext: true},
 
-    {name: "U2F", insecureContext: true, disabled: true},
+    {name: "U2F", insecureContext: false},
 
     {name: "UIEvent", insecureContext: true},
 

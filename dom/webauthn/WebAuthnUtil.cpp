@@ -23,7 +23,7 @@ const uint8_t FLAG_TUP = 0x01;
 const uint8_t FLAG_AT = 0x40;   
 
 bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
-                   const U2FOperation& aOp,  nsString& aAppId) {
+                    nsString& aAppId) {
   
   nsAutoCString facetString = NS_ConvertUTF16toUTF8(aOrigin);
   nsCOMPtr<nsIURI> facetUri;
@@ -101,8 +101,7 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
   }
 
   
-  if (aOp == U2FOperation::Sign &&
-      lowestFacetHost.EqualsLiteral("google.com") &&
+  if (lowestFacetHost.EqualsLiteral("google.com") &&
       (aAppId.Equals(kGoogleAccountsAppId1) ||
        aAppId.Equals(kGoogleAccountsAppId2))) {
     return true;
