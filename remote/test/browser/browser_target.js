@@ -6,6 +6,7 @@
 
 
 const {RemoteAgent} = ChromeUtils.import("chrome://remote/content/RemoteAgent.jsm");
+const {RemoteAgentError} = ChromeUtils.import("chrome://remote/content/Error.jsm");
 
 
 
@@ -16,7 +17,7 @@ add_task(async function() {
     
     
     if (e.response) {
-      throw new Error("CDP Exception:\n" + e.response + "\n");
+      throw RemoteAgentError.fromJSON(e.response);
     } else {
       throw e;
     }
