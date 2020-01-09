@@ -3327,7 +3327,9 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
             } else {
               
               
-              mTransparencyBitmapForTitlebar = true;
+              
+              
+              mTransparencyBitmapForTitlebar = TitlebarCanUseShapeMask();
             }
           }
         }
@@ -6473,7 +6475,7 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
   if (currentDesktop) {
     
     if (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr) {
-      sCSDSupportLevel = CSD_SUPPORT_CLIENT;
+      sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
       
     } else if (strstr(currentDesktop, "GNOME") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_SYSTEM;
@@ -6530,14 +6532,41 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
   return sCSDSupportLevel;
 }
 
+
+
+
+bool nsWindow::TitlebarCanUseShapeMask()
+{
+  static int canUseShapeMask = -1;
+  if (canUseShapeMask != -1) {
+    return canUseShapeMask;
+  }
+  canUseShapeMask = true;
+
+  const char *currentDesktop = getenv("XDG_CURRENT_DESKTOP");
+  if (!currentDesktop) {
+    return canUseShapeMask;
+  }
+
+  if (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
+      strstr(currentDesktop, "GNOME") != nullptr) {
+    const char *sessionType = getenv("XDG_SESSION_TYPE");
+    canUseShapeMask = (sessionType && strstr(sessionType, "x11") == nullptr);
+  }
+
+  return canUseShapeMask;
+}
+
 bool nsWindow::HideTitlebarByDefault() {
   static int hideTitlebar = -1;
   if (hideTitlebar != -1) {
     return hideTitlebar;
   }
 
-  if (!Preferences::GetBool("widget.default-hidden-titlebar", false)) {
-    hideTitlebar = false;
+  
+  
+  if (Preferences::HasUserValue("widget.default-hidden-titlebar")) {
+    hideTitlebar = Preferences::GetBool("widget.default-hidden-titlebar", false);
     return hideTitlebar;
   }
 
@@ -6545,10 +6574,17 @@ bool nsWindow::HideTitlebarByDefault() {
   hideTitlebar =
       (currentDesktop && GetSystemCSDSupportLevel() != CSD_SUPPORT_NONE);
 
+  
+  
   if (hideTitlebar) {
     hideTitlebar =
         (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
          strstr(currentDesktop, "GNOME") != nullptr);
+  }
+
+  
+  if (hideTitlebar) {
+    hideTitlebar = TitlebarCanUseShapeMask();
   }
 
   return hideTitlebar;
