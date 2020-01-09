@@ -4840,6 +4840,8 @@ static void DropStringWrappers(JSRuntime* rt) {
 
 
 
+
+
 bool Compartment::findSweepGroupEdges() {
   Zone* source = zone();
   for (js::WrapperMap::Enum e(crossCompartmentWrappers); !e.empty();
@@ -4847,6 +4849,7 @@ bool Compartment::findSweepGroupEdges() {
     CrossCompartmentKey& key = e.front().mutableKey();
     MOZ_ASSERT(!key.is<JSString*>());
 
+    
     
     
 
