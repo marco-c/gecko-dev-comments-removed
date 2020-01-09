@@ -25,14 +25,23 @@ class WebAuthnTransactionChild final : public PWebAuthnTransactionChild {
   NS_INLINE_DECL_REFCOUNTING(WebAuthnTransactionChild);
   explicit WebAuthnTransactionChild(WebAuthnManagerBase* aManager);
 
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvConfirmRegister(
       const uint64_t& aTransactionId,
       const WebAuthnMakeCredentialResult& aResult);
 
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvConfirmSign(
       const uint64_t& aTransactionId,
       const WebAuthnGetAssertionResult& aResult);
 
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvAbort(const uint64_t& aTransactionId,
                                     const nsresult& aError);
 
