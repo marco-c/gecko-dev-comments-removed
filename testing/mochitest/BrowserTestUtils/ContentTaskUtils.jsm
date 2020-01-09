@@ -16,6 +16,7 @@ var EXPORTED_SYMBOLS = [
   "ContentTaskUtils",
 ];
 
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {clearInterval, setInterval, setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 var ContentTaskUtils = {
@@ -162,5 +163,37 @@ var ContentTaskUtils = {
         }
       }, capture, wantsUntrusted);
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+  getEventUtils(content) {
+    if (content._EventUtils) {
+      return content._EventUtils;
+    }
+
+    let EventUtils = content._EventUtils = {};
+
+    EventUtils.window = {};
+    EventUtils.parent = EventUtils.window;
+    
+    EventUtils._EU_Ci = Ci;
+    EventUtils._EU_Cc = Cc;
+    
+    
+    EventUtils.navigator = content.navigator;
+    EventUtils.KeyboardEvent = content.KeyboardEvent;
+
+    Services.scriptloader.loadSubScript(
+      "chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
+
+    return EventUtils;
   },
 };
