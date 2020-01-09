@@ -191,7 +191,6 @@ VideoEngine::GetOrCreateVideoCaptureDeviceInfo() {
     }
     
     case webrtc::CaptureDeviceType::Window:
-    case webrtc::CaptureDeviceType::Application:
     case webrtc::CaptureDeviceType::Screen: {
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
       mDeviceInfo.reset(webrtc::DesktopCaptureImpl::CreateDeviceInfo(

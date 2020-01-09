@@ -1259,7 +1259,6 @@ class GetUserMediaStreamRunnable : public Runnable {
         switch (source) {
           case MediaSourceEnum::Browser:
           case MediaSourceEnum::Screen:
-          case MediaSourceEnum::Application:
           case MediaSourceEnum::Window:
             
             
@@ -2465,7 +2464,6 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
         }
         MOZ_FALLTHROUGH;
       case MediaSourceEnum::Screen:
-      case MediaSourceEnum::Application:
       case MediaSourceEnum::Window:
         
         
@@ -2524,7 +2522,6 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
       
 
       if (videoType == MediaSourceEnum::Screen ||
-          videoType == MediaSourceEnum::Application ||
           videoType == MediaSourceEnum::Browser) {
         videoType = MediaSourceEnum::Window;
         vc.mMediaSource.AssignASCII(
@@ -4464,8 +4461,6 @@ void SourceListener::StopSharing() {
 
   if (mVideoDeviceState && (mVideoDeviceState->mDevice->GetMediaSource() ==
                                 MediaSourceEnum::Screen ||
-                            mVideoDeviceState->mDevice->GetMediaSource() ==
-                                MediaSourceEnum::Application ||
                             mVideoDeviceState->mDevice->GetMediaSource() ==
                                 MediaSourceEnum::Window)) {
     
