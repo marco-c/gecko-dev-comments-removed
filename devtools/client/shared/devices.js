@@ -84,6 +84,29 @@ async function addDevice(device, type = "phones") {
 
 
 
+async function editDevice(oldDevice, newDevice, type = "phones") {
+  await loadLocalDevices();
+  const list = localDevices[type];
+  if (!list) {
+    return false;
+  }
+
+  const index = list.findIndex(entry => entry.name == oldDevice.name);
+  if (index == -1) {
+    return false;
+  }
+
+  
+  list.splice(index, 1, newDevice);
+  await asyncStorage.setItem(LOCAL_DEVICES, JSON.stringify(localDevices));
+
+  return true;
+}
+
+
+
+
+
 async function removeDevice(device, type = "phones") {
   await loadLocalDevices();
   const list = localDevices[type];
@@ -136,6 +159,7 @@ function getDeviceString(deviceType) {
 
 module.exports = {
   addDevice,
+  editDevice,
   removeDevice,
   removeLocalDevices,
   getDevices,

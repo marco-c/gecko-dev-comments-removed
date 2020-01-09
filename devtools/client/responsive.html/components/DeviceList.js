@@ -17,21 +17,42 @@ const Device = createFactory(require("./Device"));
 class DeviceList extends PureComponent {
   static get propTypes() {
     return {
+      
       devices: PropTypes.shape(Types.devices).isRequired,
+      isDeviceFormShown: PropTypes.bool.isRequired,
       onDeviceCheckboxChange: PropTypes.func.isRequired,
+      onDeviceFormHide: PropTypes.func.isRequired,
+      onDeviceFormShow: PropTypes.func.isRequired,
       onRemoveCustomDevice: PropTypes.func.isRequired,
       type: PropTypes.string.isRequired,
     };
   }
 
   renderCustomDevice(device) {
-    const { onRemoveCustomDevice, onDeviceCheckboxChange, type } = this.props;
+    const {
+      isDeviceFormShown,
+      type,
+      onDeviceCheckboxChange,
+      onRemoveCustomDevice,
+    } = this.props;
 
     
     const removeDeviceButton = dom.button({
-        id: "device-editor-remove",
+        id: "device-edit-remove",
         className: "device-remove-button devtools-button",
-        onClick: () => onRemoveCustomDevice(device),
+        onClick: () => {
+          onRemoveCustomDevice(device);
+          this.props.onDeviceFormHide();
+        },
+    });
+
+    
+    const editButton = dom.button({
+      id: "device-edit-button",
+      className: "devtools-button",
+      onClick: () => {
+        this.props.onDeviceFormShow("edit", device);
+      },
     });
 
     return Device(
@@ -41,7 +62,9 @@ class DeviceList extends PureComponent {
         type,
         onDeviceCheckboxChange,
       },
-      removeDeviceButton
+      
+      !isDeviceFormShown ? editButton : null,
+      !isDeviceFormShown ? removeDeviceButton : null,
     );
   }
 

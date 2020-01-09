@@ -49,6 +49,9 @@ createEnum([
   "CHANGE_PIXEL_RATIO",
 
   
+  "EDIT_DEVICE",
+
+  
   "LOAD_DEVICE_LIST_START",
 
   

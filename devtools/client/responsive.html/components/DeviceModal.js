@@ -23,6 +23,7 @@ class DeviceModal extends PureComponent {
       devices: PropTypes.shape(Types.devices).isRequired,
       onAddCustomDevice: PropTypes.func.isRequired,
       onDeviceListUpdate: PropTypes.func.isRequired,
+      onEditCustomDevice: PropTypes.func.isRequired,
       onRemoveCustomDevice: PropTypes.func.isRequired,
       onUpdateDeviceDisplayed: PropTypes.func.isRequired,
       onUpdateDeviceModal: PropTypes.func.isRequired,
@@ -33,7 +34,13 @@ class DeviceModal extends PureComponent {
     super(props);
 
     this.state = {
-      isDeviceFormShown: false,
+      
+      
+      
+      
+      deviceFormType: "",
+      
+      editingDevice: null,
     };
     for (const type of this.props.devices.types) {
       for (const device of this.props.devices[type]) {
@@ -46,8 +53,8 @@ class DeviceModal extends PureComponent {
     this.onDeviceFormShow = this.onDeviceFormShow.bind(this);
     this.onDeviceFormHide = this.onDeviceFormHide.bind(this);
     this.onDeviceModalSubmit = this.onDeviceModalSubmit.bind(this);
+    this.onEditCustomDevice = this.onEditCustomDevice.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
-    this.validateAddDeviceFormNameField = this.validateAddDeviceFormNameField.bind(this);
   }
 
   componentDidMount() {
@@ -76,12 +83,18 @@ class DeviceModal extends PureComponent {
     });
   }
 
-  onDeviceFormShow() {
-    this.setState({ isDeviceFormShown: true });
+  onDeviceFormShow(type, device) {
+    this.setState({
+      deviceFormType: type,
+      editingDevice: device,
+    });
   }
 
   onDeviceFormHide() {
-    this.setState({ isDeviceFormShown: false });
+    this.setState({
+      deviceFormType: "",
+      editingDevice: null,
+    });
   }
 
   onDeviceModalSubmit() {
@@ -117,6 +130,17 @@ class DeviceModal extends PureComponent {
     onUpdateDeviceModal(false);
   }
 
+  onEditCustomDevice(newDevice) {
+    this.props.onEditCustomDevice(this.state.editingDevice, newDevice);
+
+    
+    
+    this.setState({
+      [this.state.editingDevice.name]: null,
+      [newDevice.name]: true,
+    });
+  }
+
   onKeyDown(event) {
     if (!this.props.devices.isModalOpen) {
       return;
@@ -130,13 +154,14 @@ class DeviceModal extends PureComponent {
     }
   }
 
-  renderAddDeviceForm(devices, viewportTemplate) {
+  renderAddForm() {
     
     
     
-    const deviceTemplate = viewportTemplate;
+    const { deviceAdderViewportTemplate: viewportTemplate } = this.props;
+    const deviceTemplate = this.props.deviceAdderViewportTemplate;
     if (viewportTemplate.device) {
-      const device = devices[viewportTemplate.deviceType].find(d => {
+      const device = this.props.devices[viewportTemplate.deviceType].find(d => {
         return d.name == viewportTemplate.device;
       });
       Object.assign(deviceTemplate, {
@@ -157,12 +182,10 @@ class DeviceModal extends PureComponent {
     return (
       DeviceForm({
         formType: "add",
-        buttonText: getStr("responsive.addDevice2"),
         device: deviceTemplate,
+        devices: this.props.devices,
         onDeviceFormHide: this.onDeviceFormHide,
-        onDeviceFormShow: this.onDeviceFormShow,
         onSave: this.onAddCustomDevice,
-        validateName: this.validateAddDeviceFormNameField,
         viewportTemplate,
       })
     );
@@ -190,8 +213,12 @@ class DeviceModal extends PureComponent {
             dom.header({ className: "device-header" }, type),
             DeviceList({
               devices: sortedDevices,
+              isDeviceFormShown: this.state.deviceFormType,
               type,
               onDeviceCheckboxChange: this.onDeviceCheckboxChange,
+              onDeviceFormHide: this.onDeviceFormHide,
+              onDeviceFormShow: this.onDeviceFormShow,
+              onEditCustomDevice: this.onEditCustomDevice,
               onRemoveCustomDevice: this.props.onRemoveCustomDevice,
             })
           )
@@ -201,28 +228,37 @@ class DeviceModal extends PureComponent {
     );
   }
 
-  
+  renderEditForm() {
+    return (
+      DeviceForm({
+        formType: "edit",
+        device: this.state.editingDevice,
+        devices: this.props.devices,
+        onDeviceFormHide: this.onDeviceFormHide,
+        onSave: this.onEditCustomDevice,
+        viewportTemplate: {
+          width: this.state.editingDevice.width,
+          height: this.state.editingDevice.height,
+        },
+      })
+    );
+  }
 
+  renderForm() {
+    let form = null;
 
+    if (this.state.deviceFormType === "add") {
+      form = this.renderAddForm();
+    } else if (this.state.deviceFormType === "edit") {
+      form = this.renderEditForm();
+    }
 
-
-
-
-
-  validateAddDeviceFormNameField(value) {
-    const { devices } = this.props;
-    const nameFieldValue = value.trim();
-    const deviceFound = devices.custom.find(device => device.name == nameFieldValue);
-
-    return !deviceFound;
+    return form;
   }
 
   render() {
-    const {
-      deviceAdderViewportTemplate,
-      devices,
-      onUpdateDeviceModal,
-    } = this.props;
+    const { onUpdateDeviceModal } = this.props;
+    const isDeviceFormShown = this.state.deviceFormType;
 
     return (
       dom.div(
@@ -232,24 +268,31 @@ class DeviceModal extends PureComponent {
         },
         dom.div({ className: "device-modal" },
           dom.div({ className: "device-modal-header" },
-            !this.state.isDeviceFormShown ?
+            !isDeviceFormShown ?
               dom.header({ className: "device-modal-title" },
                 getStr("responsive.deviceSettings"),
                 dom.button({
                   id: "device-close-button",
                   className: "devtools-button",
                   onClick: () => onUpdateDeviceModal(false),
-                })
+                }),
               )
               :
               null,
-            this.renderAddDeviceForm(devices, deviceAdderViewportTemplate)
+            !isDeviceFormShown ?
+              dom.button(
+                {
+                  id: "device-add-button",
+                  onClick: () => this.onDeviceFormShow("add"),
+                },
+                getStr("responsive.addDevice2")
+              )
+              :
+              null,
+            this.renderForm(),
           ),
-          dom.div({
-            className: `device-modal-content
-              ${this.state.isDeviceFormShown ? " form-shown" : ""}`,
-          },
-          this.renderDevices()
+          dom.div({ className: "device-modal-content" },
+            this.renderDevices()
           ),
         ),
         dom.div(
