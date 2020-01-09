@@ -433,15 +433,51 @@ Instance::memCopy(Instance* instance, uint32_t dstByteOffset,
     }
   } else {
     
-    CheckedU32 lenMinus1 = CheckedU32(len - 1);
-    CheckedU32 highestDstOffset = CheckedU32(dstByteOffset) + lenMinus1;
-    CheckedU32 highestSrcOffset = CheckedU32(srcByteOffset) + lenMinus1;
-    if (highestDstOffset.isValid() && highestSrcOffset.isValid() &&
-        highestDstOffset.value() < memLen &&
-        highestSrcOffset.value() < memLen) {
-      ArrayBufferObjectMaybeShared& arrBuf = mem->buffer();
-      uint8_t* rawBuf = arrBuf.dataPointerEither().unwrap();
-      memmove(rawBuf + dstByteOffset, rawBuf + srcByteOffset, size_t(len));
+    bool mustTrap = false;
+
+    
+    
+    uint64_t highestDstOffset = uint64_t(dstByteOffset) + uint64_t(len - 1);
+    uint64_t highestSrcOffset = uint64_t(srcByteOffset) + uint64_t(len - 1);
+
+    bool copyDown =
+      srcByteOffset < dstByteOffset && dstByteOffset < highestSrcOffset;
+
+    if (highestDstOffset >= memLen || highestSrcOffset >= memLen) {
+      
+      
+      if (copyDown) {
+        
+        
+        len = 0;
+      } else {
+        
+        
+        uint64_t srcAvail = memLen < srcByteOffset ? 0 : memLen - srcByteOffset;
+        uint64_t dstAvail = memLen < dstByteOffset ? 0 : memLen - dstByteOffset;
+        MOZ_ASSERT(len > Min(srcAvail, dstAvail));
+        len = uint32_t(Min(srcAvail, dstAvail));
+      }
+      mustTrap = true;
+    }
+
+    if (len > 0) {
+      
+      
+      
+      
+      SharedMem<uint8_t*> dataPtr = mem->buffer().dataPointerEither();
+      if (mem->isShared()) {
+        AtomicOperations::memmoveSafeWhenRacy(dataPtr + dstByteOffset,
+                                              dataPtr + srcByteOffset,
+                                              size_t(len));
+      } else {
+        uint8_t* rawBuf = dataPtr.unwrap();
+        memmove(rawBuf + dstByteOffset, rawBuf + srcByteOffset, size_t(len));
+      }
+    }
+
+    if (!mustTrap) {
       return 0;
     }
   }
@@ -484,11 +520,35 @@ Instance::memFill(Instance* instance, uint32_t byteOffset, uint32_t value,
     }
   } else {
     
-    CheckedU32 highestOffset = CheckedU32(byteOffset) + CheckedU32(len - 1);
-    if (highestOffset.isValid() && highestOffset.value() < memLen) {
-      ArrayBufferObjectMaybeShared& arrBuf = mem->buffer();
-      uint8_t* rawBuf = arrBuf.dataPointerEither().unwrap();
-      memset(rawBuf + byteOffset, int(value), size_t(len));
+
+    bool mustTrap = false;
+
+    
+    
+    uint64_t highestOffset = uint64_t(byteOffset) + uint64_t(len - 1);
+    if (highestOffset >= memLen) {
+      
+      
+      uint64_t avail = memLen < byteOffset ? 0 : memLen - byteOffset;
+      MOZ_ASSERT(len > avail);
+      len = uint32_t(avail);
+      mustTrap = true;
+    }
+
+    if (len > 0) {
+      
+      
+      SharedMem<uint8_t*> dataPtr = mem->buffer().dataPointerEither();
+      if (mem->isShared()) {
+        AtomicOperations::memsetSafeWhenRacy(dataPtr + byteOffset, int(value),
+                                             size_t(len));
+      } else {
+        uint8_t* rawBuf = dataPtr.unwrap();
+        memset(rawBuf + byteOffset, int(value), size_t(len));
+      }
+    }
+
+    if (!mustTrap) {
       return 0;
     }
   }
@@ -532,16 +592,42 @@ Instance::memInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
     }
   } else {
     
-    CheckedU32 lenMinus1 = CheckedU32(len - 1);
-    CheckedU32 highestDstOffset = CheckedU32(dstOffset) + lenMinus1;
-    CheckedU32 highestSrcOffset = CheckedU32(srcOffset) + lenMinus1;
-    if (highestDstOffset.isValid() && highestSrcOffset.isValid() &&
-        highestDstOffset.value() < memLen &&
-        highestSrcOffset.value() < segLen) {
-      ArrayBufferObjectMaybeShared& arrBuf = mem->buffer();
-      uint8_t* memoryBase = arrBuf.dataPointerEither().unwrap();
-      memcpy(memoryBase + dstOffset, (const char*)seg.bytes.begin() + srcOffset,
-             len);
+
+    bool mustTrap = false;
+
+    
+    
+    uint64_t highestDstOffset = uint64_t(dstOffset) + uint64_t(len - 1);
+    uint64_t highestSrcOffset = uint64_t(srcOffset) + uint64_t(len - 1);
+
+    if (highestDstOffset >= memLen || highestSrcOffset >= segLen) {
+      
+      
+      
+      uint64_t srcAvail = segLen < srcOffset ? 0 : segLen - srcOffset;
+      uint64_t dstAvail = memLen < dstOffset ? 0 : memLen - dstOffset;
+      MOZ_ASSERT(len > Min(srcAvail, dstAvail));
+      len = uint32_t(Min(srcAvail, dstAvail));
+      mustTrap = true;
+    }
+
+    if (len > 0) {
+      
+      
+      SharedMem<uint8_t*> dataPtr = mem->buffer().dataPointerEither();
+      if (mem->isShared()) {
+        AtomicOperations::memcpySafeWhenRacy(
+          dataPtr + dstOffset,
+          (uint8_t*)seg.bytes.begin() + srcOffset,
+          len);
+      } else {
+        uint8_t* rawBuf = dataPtr.unwrap();
+        memcpy(rawBuf + dstOffset, (const char*)seg.bytes.begin() + srcOffset,
+               len);
+      }
+    }
+
+    if (!mustTrap) {
       return 0;
     }
   }
