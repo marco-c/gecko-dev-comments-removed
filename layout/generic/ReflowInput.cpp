@@ -688,7 +688,7 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     
     
     SetBResize(mCBReflowInput->IsBResizeForWM(wm));
-  } else if (mCBReflowInput && !nsLayoutUtils::GetAsBlock(mFrame)) {
+  } else if (mCBReflowInput && !mFrame->IsBlockFrameOrSubclass()) {
     
     
     

@@ -4614,7 +4614,7 @@ static FrameContentRange GetRangeForFrame(nsIFrame* aFrame) {
   }
 
   nsIContent* parent = content->GetParent();
-  if (nsLayoutUtils::GetAsBlock(aFrame) || !parent) {
+  if (aFrame->IsBlockFrameOrSubclass() || !parent) {
     return FrameContentRange(content, 0, content->GetChildCount());
   }
 
@@ -7879,7 +7879,7 @@ static nsContentAndOffset FindBlockFrameOrBR(nsIFrame* aFrame,
   
   
   
-  if ((nsLayoutUtils::GetAsBlock(aFrame) &&
+  if ((aFrame->IsBlockFrameOrSubclass() &&
        !(aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT)) ||
       aFrame->IsBrFrame()) {
     nsIContent* content = aFrame->GetContent();
@@ -7925,7 +7925,7 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
   nsIFrame* frame = this;
   nsContentAndOffset blockFrameOrBR;
   blockFrameOrBR.mContent = nullptr;
-  bool reachedBlockAncestor = !!nsLayoutUtils::GetAsBlock(frame);
+  bool reachedBlockAncestor = frame->IsBlockFrameOrSubclass();
 
   
   
@@ -7952,7 +7952,7 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
         break;
       }
       frame = parent;
-      reachedBlockAncestor = (nsLayoutUtils::GetAsBlock(frame) != nullptr);
+      reachedBlockAncestor = (frame && frame->IsBlockFrameOrSubclass());
     }
     if (reachedBlockAncestor) {  
       aPos->mResultContent = frame->GetContent();
@@ -7978,7 +7978,7 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
         break;
       }
       frame = parent;
-      reachedBlockAncestor = !!nsLayoutUtils::GetAsBlock(frame);
+      reachedBlockAncestor = (frame && frame->IsBlockFrameOrSubclass());
     }
     if (reachedBlockAncestor) {  
       aPos->mResultContent = frame->GetContent();

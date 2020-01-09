@@ -5509,7 +5509,7 @@ nsresult nsXULScrollFrame::XULLayout(nsBoxLayoutState& aState) {
   
   
   nsIFrame* f = mHelper.mScrolledFrame->GetContentInsertionFrame();
-  if (nsLayoutUtils::GetAsBlock(f)) {
+  if (f && f->IsBlockFrameOrSubclass()) {
     nsRect origRect = f->GetRect();
     nsRect clippedRect = origRect;
     clippedRect.MoveBy(mHelper.mScrollPort.TopLeft());
