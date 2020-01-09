@@ -134,7 +134,8 @@ bool ImageCacheKey::SchemeIs(const char* aScheme) {
 
   
   
-  if (nsContentUtils::IsTrackingResourceWindow(aDocument->GetInnerWindow())) {
+  if (nsContentUtils::IsThirdPartyTrackingResourceWindow(
+          aDocument->GetInnerWindow())) {
     return nsContentUtils::StorageDisabledByAntiTracking(aDocument, aURI)
                ? aDocument
                : nullptr;
