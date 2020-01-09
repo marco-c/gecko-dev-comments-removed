@@ -3244,7 +3244,7 @@ bool nsCookieService::CanSetCookie(nsIURI *aHostURI, const nsCookieKey &aKey,
   
   
   
-  bool isHTTPS;
+  bool isHTTPS = true;
   nsresult rv = aHostURI->SchemeIs("https", &isHTTPS);
   if (NS_SUCCEEDED(rv)) {
     Telemetry::Accumulate(Telemetry::COOKIE_SCHEME_SECURITY,
@@ -3345,15 +3345,10 @@ bool nsCookieService::CanSetCookie(nsIURI *aHostURI, const nsCookieKey &aKey,
     return newCookie;
   }
 
-  bool isSecure = true;
-  if (aHostURI) {
-    aHostURI->SchemeIs("https", &isSecure);
-  }
-
   
   
   
-  if (aCookieAttributes.isSecure && !isSecure) {
+  if (aCookieAttributes.isSecure && !isHTTPS) {
     COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
                       "non-https cookie can't set secure flag");
     return newCookie;
