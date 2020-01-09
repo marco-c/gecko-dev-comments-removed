@@ -25,7 +25,6 @@ class Connection {
 
   send(message) {
     log.trace(`<-(connection ${this.id}) ${JSON.stringify(message)}`);
-    
     this.transport.send(message);
   }
 
@@ -40,11 +39,7 @@ class Connection {
   deserialize(data) {
     const id = data.id;
     const method = data.method;
-    
     const params = data.params || {};
-
-    
-
     return {id, method, params};
   }
 
