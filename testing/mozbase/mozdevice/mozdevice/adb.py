@@ -1818,7 +1818,7 @@ class ADBDevice(ADBCommand):
             
             
             
-            self._logger.warning('Ignoring attempt to chmod external storage')
+            self._logger.debug('Ignoring attempt to chmod external storage')
             return
 
         
