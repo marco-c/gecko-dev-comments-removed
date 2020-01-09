@@ -43,29 +43,32 @@ void BrowsingContextGroup::EnsureSubscribed(ContentParent* aProcess) {
     return;
   }
 
-  
   Subscribe(aProcess);
 
-  
-  
-  
   nsTArray<BrowsingContext::IPCInitializer> inits(mContexts.Count());
-  for (auto iter = mContexts.Iter(); !iter.Done(); iter.Next()) {
-    auto* context = iter.Get()->GetKey();
 
-    
-    
-    if (context->GetParent() &&
-        context->GetParent()->GetChildren().IndexOf(context) !=
-            BrowsingContext::Children::NoIndex) {
-      continue;
-    }
+  
+  
+  for (auto& context : mToplevels) {
+    MOZ_DIAGNOSTIC_ASSERT(!IsContextCached(context),
+                          "cached contexts must have a parent");
 
-    
     context->PreOrderWalk([&](BrowsingContext* aContext) {
       inits.AppendElement(aContext->GetIPCInitializer());
     });
   }
+
+  
+  
+  for (auto iter = mCachedContexts.Iter(); !iter.Done(); iter.Next()) {
+    iter.Get()->GetKey()->PreOrderWalk([&](BrowsingContext* aContext) {
+      inits.AppendElement(aContext->GetIPCInitializer());
+    });
+  }
+
+  
+  MOZ_DIAGNOSTIC_ASSERT(inits.Length() == mContexts.Count(),
+                        "Visited the wrong number of contexts!");
 
   
   Unused << aProcess->SendRegisterBrowsingContextGroup(inits);
