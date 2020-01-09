@@ -284,6 +284,17 @@ LoadInfo::LoadInfo(
 
   
   
+  
+  
+  
+  if (!mCookieSettings &&
+      (aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER ||
+       aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER)) {
+    mCookieSettings = CookieSettings::Create();
+  }
+
+  
+  
   if (!mEnforceSRI) {
     
     
