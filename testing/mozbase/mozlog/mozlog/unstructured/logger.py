@@ -150,7 +150,7 @@ class MozFormatter(Formatter):
         
         
         self._fmt = fmt
-        return Formatter.format(self, record)
+        return Formatter(fmt=fmt).format(record)
 
 
 def getLogger(name, handler=None):

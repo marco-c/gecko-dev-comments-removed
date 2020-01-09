@@ -78,14 +78,15 @@ class StreamHandler(BaseHandler):
     def __init__(self, stream, formatter):
         BaseHandler.__init__(self, formatter)
         assert stream is not None
-        
-        
-        
-        
-        
-        
-        if isinstance(stream, codecs.StreamWriter):
-            stream = stream.stream
+        if six.PY2:
+            
+            
+            
+            
+            
+            
+            if isinstance(stream, codecs.StreamWriter):
+                stream = stream.stream
 
         self.formatter = formatter
         self.stream = stream
@@ -98,11 +99,23 @@ class StreamHandler(BaseHandler):
         if not formatted:
             return
         with self._lock:
-            if isinstance(formatted, six.text_type):
-                self.stream.write(formatted.encode("utf-8", "replace"))
-            elif isinstance(formatted, str):
+            if six.PY3:
+                import io
+                import mozfile
+                if isinstance(self.stream, io.StringIO) and isinstance(formatted, bytes):
+                    formatted = formatted.decode()
+                elif (
+                     isinstance(self.stream, io.BytesIO)
+                     or isinstance(self.stream, mozfile.NamedTemporaryFile)
+                     ) and isinstance(formatted, str):
+                    formatted = formatted.encode()
                 self.stream.write(formatted)
             else:
-                assert False, "Got output from the formatter of an unexpected type"
+                if isinstance(formatted, six.text_type):
+                    self.stream.write(formatted.encode("utf-8", "replace"))
+                elif isinstance(formatted, str):
+                    self.stream.write(formatted)
+                else:
+                    assert False, "Got output from the formatter of an unexpected type"
 
             self.stream.flush()
