@@ -23,7 +23,6 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ParentSHistory.h"
-#include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsStubMutationObserver.h"
@@ -93,9 +92,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
                             public nsWrapperCache {
   friend class AutoResetInShow;
   friend class AutoResetInFrameSwap;
+  typedef mozilla::dom::PBrowserParent PBrowserParent;
   typedef mozilla::dom::Document Document;
   typedef mozilla::dom::BrowserParent BrowserParent;
-  typedef mozilla::dom::BrowserBridgeChild BrowserBridgeChild;
   typedef mozilla::dom::BrowsingContext BrowsingContext;
   typedef mozilla::layout::RenderFrame RenderFrame;
 
@@ -312,13 +311,13 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  BrowserParent* GetBrowserParent() const;
+  PBrowserParent* GetRemoteBrowser() const;
 
   
 
 
 
-  BrowserBridgeChild* GetBrowserBridgeChild() const;
+  mozilla::dom::BrowserBridgeChild* GetBrowserBridgeChild() const;
 
   
 
@@ -343,7 +342,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  void InitializeFromBrowserParent(BrowserParent* aBrowserParent);
+  void SetRemoteBrowser(nsIRemoteTab* aBrowserParent);
 
   
 
@@ -447,10 +446,6 @@ class nsFrameLoader final : public nsStubMutationObserver,
   nsresult ReallyStartLoadingInternal();
 
   
-  
-  bool EnsureRemoteBrowser();
-
-  
   bool TryRemoteBrowser();
 
   
@@ -497,8 +492,11 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   uint64_t mPendingSwitchID;
 
+  RefPtr<BrowserParent> mBrowserParent;
   uint64_t mChildID;
-  RefPtr<mozilla::dom::RemoteBrowser> mRemoteBrowser;
+
+  
+  RefPtr<mozilla::dom::BrowserBridgeChild> mBrowserBridgeChild;
 
   
   mozilla::ScreenIntSize mLazySize;

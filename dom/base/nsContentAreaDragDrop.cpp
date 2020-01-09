@@ -552,11 +552,11 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
     if (flo) {
       RefPtr<nsFrameLoader> fl = flo->GetFrameLoader();
       if (fl) {
-        BrowserParent* bp = fl->GetBrowserParent();
-        if (bp) {
+        BrowserParent* tp = static_cast<BrowserParent*>(fl->GetRemoteBrowser());
+        if (tp) {
           
           
-          bp->AddInitialDnDDataTo(aDataTransfer, aPrincipal);
+          tp->AddInitialDnDDataTo(aDataTransfer, aPrincipal);
         }
       }
     }

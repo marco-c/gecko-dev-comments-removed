@@ -19,7 +19,6 @@
 
 namespace mozilla {
 namespace dom {
-class BrowserParent;
 template <typename>
 struct Nullable;
 class WindowProxyHolder;
@@ -90,31 +89,6 @@ class nsGenericHTMLFrameElement : public nsGenericHTMLElement,
   void PresetOpenerWindow(const mozilla::dom::Nullable<
                               mozilla::dom::WindowProxyHolder>& aOpenerWindow,
                           mozilla::ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void DisallowCreateFrameLoader();
-  void AllowCreateFrameLoader();
-
-  
-
-
-
-
-
-  void CreateRemoteFrameLoader(mozilla::dom::BrowserParent* aBrowserParent);
 
   static void InitStatics();
   static bool BrowserFramesEnabled();

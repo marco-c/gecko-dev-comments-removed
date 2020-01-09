@@ -2331,7 +2331,7 @@ var SessionStoreInternal = {
     
     let remoteTab = aBrowser.frameLoader.remoteTab;
     debug(`[process-switch]: new tabID: ${remoteTab.tabId}`);
-    return remoteTab.contentProcessId;
+    return remoteTab;
   },
 
   
