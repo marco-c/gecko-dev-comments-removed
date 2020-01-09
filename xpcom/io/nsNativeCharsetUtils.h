@@ -23,6 +23,9 @@
 
 
 
+#include "nsError.h"
+#include "nsStringFwd.h"
+
 
 
 
