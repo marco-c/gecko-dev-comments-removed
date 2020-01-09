@@ -98,6 +98,8 @@ class SVGUseElement final : public SVGUseElementBase,
                         nsIPrincipal* aSubjectPrincipal, bool aNotify) final;
 
  protected:
+  bool IsCyclicReferenceTo(const Element& aTarget) const;
+
   
 
 
@@ -145,7 +147,7 @@ class SVGUseElement final : public SVGUseElementBase,
   SVGString mStringAttributes[2];
   static StringInfo sStringInfo[2];
 
-  nsCOMPtr<nsIContent> mOriginal;  
+  RefPtr<SVGUseElement> mOriginal;  
   ElementTracker mReferencedElementTracker;
   RefPtr<URLExtraData> mContentURLData;  
 };

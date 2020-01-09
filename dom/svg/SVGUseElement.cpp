@@ -236,6 +236,27 @@ void SVGUseElement::NodeWillBeDestroyed(const nsINode* aNode) {
   UnlinkSource();
 }
 
+bool SVGUseElement::IsCyclicReferenceTo(const Element& aTarget) const {
+  if (&aTarget == this) {
+    return true;
+  }
+  if (mOriginal && mOriginal->IsCyclicReferenceTo(aTarget)) {
+    return true;
+  }
+  for (nsINode* parent = GetParentOrHostNode(); parent;
+       parent = parent->GetParentOrHostNode()) {
+    if (parent == &aTarget) {
+      return true;
+    }
+    if (auto* use = SVGUseElement::FromNode(*parent)) {
+      if (mOriginal && use->mOriginal == mOriginal) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 
 
 void SVGUseElement::UpdateShadowTree() {
@@ -281,21 +302,8 @@ void SVGUseElement::UpdateShadowTree() {
 
   
 
-  
-  if (nsContentUtils::ContentIsShadowIncludingDescendantOf(this,
-                                                           targetElement)) {
+  if (IsCyclicReferenceTo(*targetElement)) {
     return;
-  }
-
-  
-  if (mOriginal) {
-    for (nsINode* parent = GetParentOrHostNode(); parent;
-         parent = parent->GetParentOrHostNode()) {
-      SVGUseElement* use = SVGUseElement::FromNode(*parent);
-      if (use && use->mOriginal == mOriginal) {
-        return;
-      }
-    }
   }
 
   nsCOMPtr<nsIURI> baseURI = targetElement->GetBaseURI();
