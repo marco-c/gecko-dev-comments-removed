@@ -180,7 +180,6 @@ var gEnvXPCOMDebugBreak;
 var gEnvXPCOMMemLeakLog;
 var gEnvDyldLibraryPath;
 var gEnvLdLibraryPath;
-var gASanOptions;
 
 
 
@@ -4264,14 +4263,6 @@ function setEnvironment() {
 
   gShouldResetEnv = true;
 
-  
-  if (gEnv.exists("ASAN_OPTIONS")) {
-    gASanOptions = gEnv.get("ASAN_OPTIONS");
-    gEnv.set("ASAN_OPTIONS", gASanOptions + ":detect_leaks=0");
-  } else {
-    gEnv.set("ASAN_OPTIONS", "detect_leaks=0");
-  }
-
   if (IS_WIN && !gEnv.exists("XRE_NO_WINDOWS_CRASH_DIALOG")) {
     gAddedEnvXRENoWindowsCrashDialog = true;
     debugDump("setting the XRE_NO_WINDOWS_CRASH_DIALOG environment " +
@@ -4352,9 +4343,6 @@ function resetEnvironment() {
   }
 
   gShouldResetEnv = false;
-
-  
-  gEnv.set("ASAN_OPTIONS", gASanOptions ? gASanOptions : "");
 
   if (gEnvXPCOMMemLeakLog) {
     debugDump("setting the XPCOM_MEM_LEAK_LOG environment variable back to " +
