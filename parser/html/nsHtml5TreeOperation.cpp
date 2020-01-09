@@ -1116,7 +1116,9 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
           aInterrupted);  
       return NS_OK;
     }
-    default: { MOZ_CRASH("Bogus tree op"); }
+    default: {
+      MOZ_CRASH("Bogus tree op");
+    }
   }
   return NS_OK;  
 }

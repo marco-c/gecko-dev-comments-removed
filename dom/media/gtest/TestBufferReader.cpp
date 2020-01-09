@@ -6,7 +6,8 @@
 #include "gtest/gtest.h"
 #include "BufferReader.h"
 
-TEST(BufferReader, ReaderCursor) {
+TEST(BufferReader, ReaderCursor)
+{
   
   const size_t BUFFER_SIZE = 10;
   uint8_t buffer[BUFFER_SIZE] = {0};

@@ -489,6 +489,7 @@ bool NS_ProcessNextEvent(nsIThread* aThread, bool aMayWait) {
 void NS_SetCurrentThreadName(const char* aName) {
 #if defined(ANDROID)
   
+  
   prctl(PR_SET_NAME, reinterpret_cast<unsigned long>(aName));
 #else
   PR_SetCurrentThreadName(aName);

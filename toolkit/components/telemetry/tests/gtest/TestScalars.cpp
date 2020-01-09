@@ -259,7 +259,8 @@ TEST_F(TelemetryTestFixture, ScalarUnknownID) {
     
     JS::RootedValue scalarsSnapshot(cx.GetJSContext());
     GetScalarsSnapshot(false, cx.GetJSContext(), &scalarsSnapshot);
-    ASSERT_TRUE(scalarsSnapshot.isUndefined()) << "No scalar must be recorded";
+    ASSERT_TRUE(scalarsSnapshot.isUndefined())
+    << "No scalar must be recorded";
 
     
     Telemetry::ScalarSet(scalarId, NS_LITERAL_STRING("key1"),
@@ -272,7 +273,7 @@ TEST_F(TelemetryTestFixture, ScalarUnknownID) {
     JS::RootedValue keyedSnapshot(cx.GetJSContext());
     GetScalarsSnapshot(true, cx.GetJSContext(), &keyedSnapshot);
     ASSERT_TRUE(keyedSnapshot.isUndefined())
-        << "No keyed scalar must be recorded";
+    << "No keyed scalar must be recorded";
   }
 #endif
 }

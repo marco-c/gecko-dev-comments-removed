@@ -262,21 +262,22 @@ nsresult VideoSink::Start(const TimeUnit& aStartTime, const MediaInfo& aInfo) {
     RefPtr<EndedPromise> p = mAudioSink->OnEnded(TrackInfo::kVideoTrack);
     if (p) {
       RefPtr<VideoSink> self = this;
-      p->Then(mOwnerThread, __func__,
-              [self]() {
-                self->mVideoSinkEndRequest.Complete();
-                self->TryUpdateRenderedVideoFrames();
-                
-                
-                
-                
-                self->MaybeResolveEndPromise();
-              },
-              [self]() {
-                self->mVideoSinkEndRequest.Complete();
-                self->TryUpdateRenderedVideoFrames();
-                self->MaybeResolveEndPromise();
-              })
+      p->Then(
+           mOwnerThread, __func__,
+           [self]() {
+             self->mVideoSinkEndRequest.Complete();
+             self->TryUpdateRenderedVideoFrames();
+             
+             
+             
+             
+             self->MaybeResolveEndPromise();
+           },
+           [self]() {
+             self->mVideoSinkEndRequest.Complete();
+             self->TryUpdateRenderedVideoFrames();
+             self->MaybeResolveEndPromise();
+           })
           ->Track(mVideoSinkEndRequest);
     }
 

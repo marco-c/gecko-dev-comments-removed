@@ -806,32 +806,33 @@ nsresult EditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher) {
       RefPtr<EditorSpellCheck> self = this;
       RefPtr<DictionaryFetcher> fetcher = aFetcher;
       mSpellChecker->SetCurrentDictionaryFromList(tryDictList)
-          ->Then(GetMainThreadSerialEventTarget(), __func__,
-                 [self, fetcher]() {
+          ->Then(
+              GetMainThreadSerialEventTarget(), __func__,
+              [self, fetcher]() {
 #ifdef DEBUG_DICT
-                   printf("***** Assigned from content preferences |%s|\n",
-                          NS_ConvertUTF16toUTF8(dictName).get());
+                printf("***** Assigned from content preferences |%s|\n",
+                       NS_ConvertUTF16toUTF8(dictName).get());
 #endif
-                   
-                   
-                   self->DeleteSuggestedWordList();
+                
+                
+                self->DeleteSuggestedWordList();
 
-                   self->EndUpdateDictionary();
-                   if (fetcher->mCallback) {
-                     fetcher->mCallback->EditorSpellCheckDone();
-                   }
-                 },
-                 [self, fetcher](nsresult aError) {
-                   if (aError == NS_ERROR_ABORT) {
-                     return;
-                   }
-                   
-                   
-                   ClearCurrentDictionary(self->mEditor);
+                self->EndUpdateDictionary();
+                if (fetcher->mCallback) {
+                  fetcher->mCallback->EditorSpellCheckDone();
+                }
+              },
+              [self, fetcher](nsresult aError) {
+                if (aError == NS_ERROR_ABORT) {
+                  return;
+                }
+                
+                
+                ClearCurrentDictionary(self->mEditor);
 
-                   
-                   self->SetFallbackDictionary(fetcher);
-                 });
+                
+                self->SetFallbackDictionary(fetcher);
+              });
       return NS_OK;
     }
   }

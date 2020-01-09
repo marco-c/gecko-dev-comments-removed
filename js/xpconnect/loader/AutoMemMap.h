@@ -42,8 +42,7 @@ class AutoMemMap {
   
   
   
-  Result<Ok, nsresult> initWithHandle(const FileDescriptor& file,
-                                      size_t size,
+  Result<Ok, nsresult> initWithHandle(const FileDescriptor& file, size_t size,
                                       PRFileMapProtect prot = PR_PROT_READONLY);
 
   void reset();

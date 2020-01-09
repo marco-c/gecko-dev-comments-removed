@@ -15,7 +15,8 @@ struct TestData {
   const bool mExpectedValue;
 };
 
-TEST(ExtractVPXCodecDetails, TestDataLength) {
+TEST(ExtractVPXCodecDetails, TestDataLength)
+{
   TestData tests[] = {
       {u"vp09.00.11.08", true},     
       {u"vp09.00.11.08.00", true},  
@@ -38,7 +39,8 @@ TEST(ExtractVPXCodecDetails, TestDataLength) {
   }
 }
 
-TEST(ExtractVPXCodecDetails, TestInputData) {
+TEST(ExtractVPXCodecDetails, TestInputData)
+{
   TestData tests[] = {
       {u"vp09.02..08", false},       
       {u"vp9.02.10.08", false},      
@@ -74,7 +76,8 @@ TEST(ExtractVPXCodecDetails, TestInputData) {
   }
 }
 
-TEST(ExtractVPXCodecDetails, TestParsingOutput) {
+TEST(ExtractVPXCodecDetails, TestParsingOutput)
+{
   uint8_t profile = 0;
   uint8_t level = 0;
   uint8_t bitDepth = 0;

@@ -1491,8 +1491,8 @@ nsresult XMLHttpRequestMainThread::StreamReaderFunc(
     xmlHttpRequest->MaybeCreateBlobStorage();
     rv = xmlHttpRequest->mBlobStorage->Append(fromRawSegment, count);
   } else if (xmlHttpRequest->mResponseType ==
-                  XMLHttpRequestResponseType::Arraybuffer &&
-              !xmlHttpRequest->mIsMappedArrayBuffer) {
+                 XMLHttpRequestResponseType::Arraybuffer &&
+             !xmlHttpRequest->mIsMappedArrayBuffer) {
     
     
     if (xmlHttpRequest->mArrayBufferBuilder.capacity() == 0)
