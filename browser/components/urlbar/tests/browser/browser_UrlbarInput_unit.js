@@ -9,9 +9,6 @@
 "use strict";
 
 let fakeController;
-let generalListener;
-let input;
-let inputOptions;
 
 
 
@@ -56,16 +53,13 @@ function checkStartQueryCall(stub, expectedQueryContextProps) {
   }
 }
 
-add_task(async function setup() {
-  sandbox = sinon.sandbox.create();
 
-  fakeController = new UrlbarController({
-    browserWindow: window,
-  });
 
-  sandbox.stub(fakeController, "startQuery");
-  sandbox.stub(PrivateBrowsingUtils, "isWindowPrivate").returns(false);
 
+
+
+
+async function withNewWindow(callback) {
   
   
   let gTestRoot = getRootDirectory(gTestPath);
@@ -76,11 +70,6 @@ add_task(async function setup() {
 
   win.gBrowser = {};
 
-  registerCleanupFunction(async () => {
-    await BrowserTestUtils.closeWindow(win);
-    sandbox.restore();
-  });
-
   
   
   let doc = win.document;
@@ -89,48 +78,78 @@ add_task(async function setup() {
   let panel = doc.importNode(document.getElementById("urlbar-results"), true);
   doc.documentElement.appendChild(panel);
 
-  inputOptions = {
+  let inputOptions = {
     textbox,
     panel,
     controller: fakeController,
   };
 
-  input = new UrlbarInput(inputOptions);
-});
+  let input = new UrlbarInput(inputOptions);
 
-add_task(function test_input_starts_query() {
-  input.inputField.value = "search";
-  input.handleEvent({
-    target: input.inputField,
-    type: "input",
+  await callback(input);
+
+  await BrowserTestUtils.closeWindow(win);
+
+  
+  input.textbox = null;
+  input.panel = null;
+  input.window = null;
+  input.document = null;
+  input.view = null;
+
+  Assert.ok(fakeController.view);
+  fakeController.removeQueryListener(fakeController.view);
+  fakeController.view = null;
+}
+
+add_task(async function setup() {
+  sandbox = sinon.sandbox.create();
+
+  fakeController = new UrlbarController({
+    browserWindow: window,
   });
 
-  checkStartQueryCall(fakeController.startQuery, {
-    searchString: "search",
-    isPrivate: false,
-    maxResults: UrlbarPrefs.get("maxRichResults"),
-  });
+  sandbox.stub(fakeController, "startQuery");
+  sandbox.stub(PrivateBrowsingUtils, "isWindowPrivate").returns(false);
 
-  sandbox.resetHistory();
+  registerCleanupFunction(async () => {
+    sandbox.restore();
+  });
 });
 
-add_task(function test_input_with_private_browsing() {
+add_task(async function test_input_starts_query() {
+  await withNewWindow(input => {
+    input.inputField.value = "search";
+    input.handleEvent({
+      target: input.inputField,
+      type: "input",
+    });
+
+    checkStartQueryCall(fakeController.startQuery, {
+      searchString: "search",
+      isPrivate: false,
+      maxResults: UrlbarPrefs.get("maxRichResults"),
+    });
+
+    sandbox.resetHistory();
+  });
+});
+
+add_task(async function test_input_with_private_browsing() {
   PrivateBrowsingUtils.isWindowPrivate.returns(true);
 
-  
-  
-  let privateInput = new UrlbarInput(inputOptions);
+  await withNewWindow(privateInput => {
+    privateInput.inputField.value = "search";
+    privateInput.handleEvent({
+      target: privateInput.inputField,
+      type: "input",
+    });
 
-  privateInput.inputField.value = "search";
-  privateInput.handleEvent({
-    target: privateInput.inputField,
-    type: "input",
+    checkStartQueryCall(fakeController.startQuery, {
+      searchString: "search",
+      isPrivate: true,
+    });
+
+    sandbox.resetHistory();
   });
-
-  checkStartQueryCall(fakeController.startQuery, {
-    searchString: "search",
-    isPrivate: true,
-  });
-
-  sandbox.resetHistory();
 });
