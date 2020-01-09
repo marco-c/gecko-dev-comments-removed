@@ -4057,6 +4057,9 @@ bool EventStateManager::IsUserInteractionEvent(const WidgetEvent* aEvent) {
       
       return aEvent->AsKeyboardEvent()->CanTreatAsUserInput();
     
+    case eFormChange:
+    
+    case eMouseClick:
     case eMouseDown:
     case eMouseUp:
     
