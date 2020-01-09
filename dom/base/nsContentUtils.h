@@ -1004,6 +1004,15 @@ class nsContentUtils {
   
 
 
+
+
+
+  static bool IsInInteractiveHTMLContent(const Element* aElement,
+                                         const Element* aStop);
+
+  
+
+
   static nsIXPConnect* XPConnect() { return sXPConnect; }
 
   
