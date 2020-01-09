@@ -2660,8 +2660,7 @@ pub fn resolve_image(
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipBatchList {
     
-    pub slow_rectangles: Vec<ClipMaskInstance>,
-    pub fast_rectangles: Vec<ClipMaskInstance>,
+    pub rectangles: Vec<ClipMaskInstance>,
     
     pub images: FastHashMap<TextureSource, Vec<ClipMaskInstance>>,
     pub box_shadows: FastHashMap<TextureSource, Vec<ClipMaskInstance>>,
@@ -2670,8 +2669,7 @@ pub struct ClipBatchList {
 impl ClipBatchList {
     fn new() -> Self {
         ClipBatchList {
-            slow_rectangles: Vec::new(),
-            fast_rectangles: Vec::new(),
+            rectangles: Vec::new(),
             images: FastHashMap::default(),
             box_shadows: FastHashMap::default(),
         }
@@ -2728,7 +2726,7 @@ impl ClipBatcher {
             device_pixel_scale,
         };
 
-        self.primary_clips.slow_rectangles.push(instance);
+        self.primary_clips.rectangles.push(instance);
     }
 
     
@@ -2810,7 +2808,7 @@ impl ClipBatcher {
                 
                 
                 if !world_device_rect.contains_rect(&world_sub_rect) {
-                    clip_list.slow_rectangles.push(ClipMaskInstance {
+                    clip_list.rectangles.push(ClipMaskInstance {
                         clip_data_address: gpu_address,
                         sub_rect: normalized_sub_rect,
                         ..*instance
@@ -2966,7 +2964,7 @@ impl ClipBatcher {
                     let gpu_address =
                         gpu_cache.get_address(&clip_node.gpu_cache_handle);
                     self.get_batch_list(is_first_clip)
-                        .slow_rectangles
+                        .rectangles
                         .push(ClipMaskInstance {
                             clip_data_address: gpu_address,
                             ..instance
@@ -2992,7 +2990,7 @@ impl ClipBatcher {
                             is_first_clip,
                         ) {
                             self.get_batch_list(is_first_clip)
-                                .slow_rectangles
+                                .rectangles
                                 .push(ClipMaskInstance {
                                     clip_data_address: gpu_address,
                                     ..instance
@@ -3005,16 +3003,12 @@ impl ClipBatcher {
                 ClipItem::RoundedRectangle(..) => {
                     let gpu_address =
                         gpu_cache.get_address(&clip_node.gpu_cache_handle);
-                    let batch_list = self.get_batch_list(is_first_clip);
-                    let instance = ClipMaskInstance {
-                        clip_data_address: gpu_address,
-                        ..instance
-                    };
-                    if clip_instance.flags.contains(ClipNodeFlags::USE_FAST_PATH) {
-                        batch_list.fast_rectangles.push(instance);
-                    } else {
-                        batch_list.slow_rectangles.push(instance);
-                    }
+                    self.get_batch_list(is_first_clip)
+                        .rectangles
+                        .push(ClipMaskInstance {
+                            clip_data_address: gpu_address,
+                            ..instance
+                        });
 
                     true
                 }
