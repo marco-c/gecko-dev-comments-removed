@@ -248,15 +248,15 @@ class nsLineBox final : public nsLineLink {
   }
 
   
-  void SetHasBullet() {
-    mFlags.mHasBullet = true;
+  void SetHasMarker() {
+    mFlags.mHasMarker = true;
     InvalidateCachedIsEmpty();
   }
-  void ClearHasBullet() {
-    mFlags.mHasBullet = false;
+  void ClearHasMarker() {
+    mFlags.mHasMarker = false;
     InvalidateCachedIsEmpty();
   }
-  bool HasBullet() const { return mFlags.mHasBullet; }
+  bool HasMarker() const { return mFlags.mHasMarker; }
 
   
   void SetHadFloatPushed() { mFlags.mHadFloatPushed = true; }
@@ -599,7 +599,7 @@ class nsLineBox final : public nsLineLink {
     bool mEmptyCacheState : 1;
     
     
-    bool mHasBullet : 1;
+    bool mHasMarker : 1;
     
     
     bool mHadFloatPushed : 1;

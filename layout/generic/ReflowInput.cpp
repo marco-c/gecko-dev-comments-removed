@@ -131,7 +131,7 @@ static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
 
   
   const nsBlockFrame* blockFrame = static_cast<const nsBlockFrame*>(aFrame);
-  if (!blockFrame->HasBullet()) {
+  if (!blockFrame->HasMarker()) {
     return 0;
   }
 

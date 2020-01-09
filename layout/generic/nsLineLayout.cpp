@@ -13,7 +13,6 @@
 #include "LayoutLogging.h"
 #include "SVGTextFrame.h"
 #include "nsBlockFrame.h"
-#include "nsBulletFrame.h"
 #include "nsFontMetrics.h"
 #include "nsStyleConsts.h"
 #include "nsContainerFrame.h"
@@ -76,7 +75,7 @@ nsLineLayout::nsLineLayout(nsPresContext* aPresContext,
       mInFirstLine(false),
       mGotLineBox(false),
       mInFirstLetter(false),
-      mHasBullet(false),
+      mHasMarker(false),
       mDirtyNextLine(false),
       mLineAtStart(false),
       mHasRuby(false),
@@ -191,7 +190,7 @@ void nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
   mMaxStartBoxBSize = mMaxEndBoxBSize = 0;
 
   if (mGotLineBox) {
-    mLineBox->ClearHasBullet();
+    mLineBox->ClearHasMarker();
   }
 
   PerSpanData* psd = NewPerSpanData();
@@ -629,7 +628,7 @@ nsLineLayout::PerFrameData* nsLineLayout::NewPerFrameData(nsIFrame* aFrame) {
   pfd->mIsNonWhitespaceTextFrame = false;
   pfd->mIsLetterFrame = false;
   pfd->mRecomputeOverflow = false;
-  pfd->mIsBullet = false;
+  pfd->mIsMarker = false;
   pfd->mSkipWhenTrimmingWhitespace = false;
   pfd->mIsEmpty = false;
   pfd->mIsPlaceholder = false;
@@ -1384,29 +1383,29 @@ void nsLineLayout::PlaceFrame(PerFrameData* pfd, ReflowOutput& aMetrics) {
   }
 }
 
-void nsLineLayout::AddBulletFrame(nsIFrame* aFrame,
+void nsLineLayout::AddMarkerFrame(nsIFrame* aFrame,
                                   const ReflowOutput& aMetrics) {
   NS_ASSERTION(mCurrentSpan == mRootSpan, "bad linelayout user");
   NS_ASSERTION(mGotLineBox, "must have line box");
 
   nsBlockFrame* blockFrame = do_QueryFrame(mBlockReflowInput->mFrame);
   MOZ_ASSERT(blockFrame, "must be for block");
-  if (!blockFrame->BulletIsEmpty()) {
-    mHasBullet = true;
-    mLineBox->SetHasBullet();
+  if (!blockFrame->MarkerIsEmpty()) {
+    mHasMarker = true;
+    mLineBox->SetHasMarker();
   }
 
   WritingMode lineWM = mRootSpan->mWritingMode;
   PerFrameData* pfd = NewPerFrameData(aFrame);
   PerSpanData* psd = mRootSpan;
 
-  MOZ_ASSERT(psd->mFirstFrame, "adding bullet to an empty line?");
+  MOZ_ASSERT(psd->mFirstFrame, "adding marker to an empty line?");
   
   psd->mFirstFrame->mPrev = pfd;
   pfd->mNext = psd->mFirstFrame;
   psd->mFirstFrame = pfd;
 
-  pfd->mIsBullet = true;
+  pfd->mIsMarker = true;
   if (aMetrics.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
     pfd->mAscent = aFrame->GetLogicalBaseline(lineWM);
   } else {
@@ -1418,13 +1417,13 @@ void nsLineLayout::AddBulletFrame(nsIFrame* aFrame,
   pfd->mOverflowAreas = aMetrics.mOverflowAreas;
 }
 
-void nsLineLayout::RemoveBulletFrame(nsIFrame* aFrame) {
+void nsLineLayout::RemoveMarkerFrame(nsIFrame* aFrame) {
   PerSpanData* psd = mCurrentSpan;
-  MOZ_ASSERT(psd == mRootSpan, "bullet on non-root span?");
+  MOZ_ASSERT(psd == mRootSpan, "::marker on non-root span?");
   MOZ_ASSERT(psd->mFirstFrame->mFrame == aFrame,
-             "bullet is not the first frame?");
+             "::marker is not the first frame?");
   PerFrameData* pfd = psd->mFirstFrame;
-  MOZ_ASSERT(pfd != psd->mLastFrame, "bullet is the only frame?");
+  MOZ_ASSERT(pfd != psd->mLastFrame, "::marker is the only frame?");
   pfd->mNext->mPrev = nullptr;
   psd->mFirstFrame = pfd->mNext;
   FreeFrame(pfd);
@@ -2253,7 +2252,7 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
     
 
     
-    bool applyMinLH = !zeroEffectiveSpanBox || mHasBullet;
+    bool applyMinLH = !zeroEffectiveSpanBox || mHasMarker;
     bool isLastLine =
         !mGotLineBox || (!mLineBox->IsLineWrapped() && !mLineEndsInBR);
     if (!applyMinLH && isLastLine) {
@@ -2267,7 +2266,7 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
       }
     }
     if (applyMinLH) {
-      if (psd->mHasNonemptyContent || preMode || mHasBullet) {
+      if (psd->mHasNonemptyContent || preMode || mHasMarker) {
 #ifdef NOISY_BLOCKDIR_ALIGN
         printf("  [span]==> adjusting min/maxBCoord: currentValues: %d,%d",
                minBCoord, maxBCoord);
@@ -2619,7 +2618,7 @@ bool nsLineLayout::TrimTrailingWhiteSpace() {
 }
 
 bool nsLineLayout::PerFrameData::ParticipatesInJustification() const {
-  if (mIsBullet || mIsEmpty || mSkipWhenTrimmingWhitespace) {
+  if (mIsMarker || mIsEmpty || mSkipWhenTrimmingWhitespace) {
     
     return false;
   }
@@ -3178,11 +3177,11 @@ void nsLineLayout::TextAlignLine(nsLineBox* aLine, bool aIsLastLine) {
       (!mPresContext->IsVisualMode() || !lineWM.IsBidiLTR())) {
     PerFrameData* startFrame = psd->mFirstFrame;
     MOZ_ASSERT(startFrame, "empty line?");
-    if (startFrame->mIsBullet) {
+    if (startFrame->mIsMarker) {
       
       startFrame = startFrame->mNext;
-      MOZ_ASSERT(startFrame, "no frame after bullet?");
-      MOZ_ASSERT(!startFrame->mIsBullet, "multiple bullets?");
+      MOZ_ASSERT(startFrame, "no frame after ::marker?");
+      MOZ_ASSERT(!startFrame->mIsMarker, "multiple ::markers?");
     }
     nsBidiPresUtils::ReorderFrames(startFrame->mFrame, aLine->GetChildCount(),
                                    lineWM, mContainerSize,

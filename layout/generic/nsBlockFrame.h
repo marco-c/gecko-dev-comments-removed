@@ -232,38 +232,38 @@ class nsBlockFrame : public nsContainerFrame {
   
   
   
-  bool BulletIsEmpty() const;
+  bool MarkerIsEmpty() const;
 
   
 
 
-  void GetSpokenBulletText(nsAString& aText) const;
+  void GetSpokenMarkerText(nsAString& aText) const;
 
   
 
 
-  bool HasBullet() const { return HasOutsideBullet() || HasInsideBullet(); }
+  bool HasMarker() const { return HasOutsideMarker() || HasInsideMarker(); }
 
   
 
 
-  bool HasInsideBullet() const {
-    return 0 != (mState & NS_BLOCK_FRAME_HAS_INSIDE_BULLET);
+  bool HasInsideMarker() const {
+    return 0 != (mState & NS_BLOCK_FRAME_HAS_INSIDE_MARKER);
   }
 
   
 
 
-  bool HasOutsideBullet() const {
-    return 0 != (mState & NS_BLOCK_FRAME_HAS_OUTSIDE_BULLET);
+  bool HasOutsideMarker() const {
+    return 0 != (mState & NS_BLOCK_FRAME_HAS_OUTSIDE_MARKER);
   }
 
   
 
 
-  nsIFrame* GetBullet() const {
-    nsIFrame* outside = GetOutsideBullet();
-    return outside ? outside : GetInsideBullet();
+  nsIFrame* GetMarker() const {
+    nsIFrame* outside = GetOutsideMarker();
+    return outside ? outside : GetInsideMarker();
   }
 
   
@@ -819,8 +819,8 @@ class nsBlockFrame : public nsContainerFrame {
   
   
 
-  void ReflowBullet(nsIFrame* aBulletFrame, BlockReflowInput& aState,
-                    ReflowOutput& aMetrics, nscoord aLineTop);
+  void ReflowOutsideMarker(nsIFrame* aMarkerFrame, BlockReflowInput& aState,
+                           ReflowOutput& aMetrics, nscoord aLineTop);
 
   
 
@@ -866,17 +866,17 @@ class nsBlockFrame : public nsContainerFrame {
   
 
 
-  nsIFrame* GetInsideBullet() const;
+  nsIFrame* GetInsideMarker() const;
 
   
 
 
-  nsIFrame* GetOutsideBullet() const;
+  nsIFrame* GetOutsideMarker() const;
 
   
 
 
-  nsFrameList* GetOutsideBulletList() const;
+  nsFrameList* GetOutsideMarkerList() const;
 
   
 
