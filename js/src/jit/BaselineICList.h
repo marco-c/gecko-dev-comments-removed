@@ -11,6 +11,7 @@ namespace js {
 namespace jit {
 
 
+
 #define IC_BASELINE_STUB_KIND_LIST(_) \
   _(WarmUpCounter_Fallback)           \
                                       \
@@ -60,7 +61,6 @@ namespace jit {
   _(GetIterator_Fallback)             \
                                       \
   _(InstanceOf_Fallback)              \
-  _(InstanceOf_Function)              \
                                       \
   _(TypeOf_Fallback)                  \
                                       \
@@ -75,6 +75,41 @@ namespace jit {
   _(CacheIR_Regular)                  \
   _(CacheIR_Monitored)                \
   _(CacheIR_Updated)
+
+
+
+
+
+
+#define IC_BASELINE_FALLBACK_CODE_KIND_LIST(_) \
+  _(WarmUpCounter)                             \
+  _(TypeMonitor)                               \
+  _(TypeUpdate)                                \
+  _(NewArray)                                  \
+  _(NewObject)                                 \
+  _(ToBool)                                    \
+  _(UnaryArith)                                \
+  _(Call)                                      \
+  _(CallConstructing)                          \
+  _(SpreadCall)                                \
+  _(SpreadCallConstructing)                    \
+  _(GetElem)                                   \
+  _(GetElemSuper)                              \
+  _(SetElem)                                   \
+  _(In)                                        \
+  _(HasOwn)                                    \
+  _(GetName)                                   \
+  _(BindName)                                  \
+  _(GetIntrinsic)                              \
+  _(SetProp)                                   \
+  _(GetIterator)                               \
+  _(InstanceOf)                                \
+  _(TypeOf)                                    \
+  _(Rest)                                      \
+  _(BinaryArith)                               \
+  _(Compare)                                   \
+  _(GetProp)                                   \
+  _(GetPropSuper)
 
 }  
 }  
