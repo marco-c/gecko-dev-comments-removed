@@ -650,7 +650,6 @@ this.TopSitesFeed = class TopSitesFeed {
         this.refresh({broadcast: false});
         break;
       
-      case at.MIGRATION_COMPLETED:
       case at.PLACES_HISTORY_CLEARED:
       case at.PLACES_LINK_DELETED:
         this.frecentCache.expire();
