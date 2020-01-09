@@ -54,6 +54,9 @@ Preferences.addAll([
   { id: "privacy.trackingprotection.cryptomining.enabled", type: "bool" },
 
   
+  { id: "urlclassifier.trackingTable", type: "string"},
+
+  
   { id: "pref.privacy.disable_button.cookie_exceptions", type: "bool" },
   { id: "pref.privacy.disable_button.view_cookies", type: "bool" },
   { id: "pref.privacy.disable_button.change_blocklist", type: "bool" },
@@ -463,6 +466,15 @@ var gPrivacyPane = {
       gPrivacyPane.readBlockCookies.bind(gPrivacyPane));
     Preferences.get("browser.contentblocking.category").on("change",
       gPrivacyPane.highlightCBCategory);
+
+    
+    
+    for (let pref of CONTENT_BLOCKING_PREFS) {
+      Preferences.get(pref).on("change", gPrivacyPane.notifyUserToReload);
+    }
+    for (let button of document.querySelectorAll(".reload-tabs-button")) {
+      button.addEventListener("command", gPrivacyPane.reloadAllTabs);
+    }
 
     let cryptoMinersOption = document.getElementById("contentBlockingCryptominersOption");
     let fingerprintersOption = document.getElementById("contentBlockingFingerprintersOption");
@@ -1009,6 +1021,25 @@ var gPrivacyPane = {
         return Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN;
       default:
         return undefined;
+    }
+  },
+
+  
+
+
+  reloadAllTabs() {
+    for (let win of window.BrowserWindowTracker.orderedWindows) {
+      let tabbrowser = win.getBrowser();
+      tabbrowser.reloadTabs(tabbrowser.tabs);
+    }
+  },
+
+  
+
+
+  notifyUserToReload() {
+    for (let notification of document.querySelectorAll(".reload-tabs")) {
+      notification.hidden = false;
     }
   },
 
