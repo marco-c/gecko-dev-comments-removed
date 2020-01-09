@@ -10,6 +10,7 @@ var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   SpellCheckHelper: "resource://gre/modules/InlineSpellChecker.jsm",
   LoginHelper: "resource://gre/modules/LoginHelper.jsm",
   LoginManagerContextMenu: "resource://gre/modules/LoginManagerContextMenu.jsm",
@@ -230,6 +231,8 @@ nsContextMenu.prototype = {
 
     
     this.ownerDoc = this.target.ownerDocument;
+
+    this.csp = E10SUtils.deserializeCSP(context.csp);
 
     
     
@@ -777,6 +780,7 @@ nsContextMenu.prototype = {
     let params = { charset: gContextMenuContentData.charSet,
                    originPrincipal: this.principal,
                    triggeringPrincipal: this.principal,
+                   csp: this.csp,
                    referrerURI: gContextMenuContentData.documentURIObject,
                    referrerPolicy: gContextMenuContentData.referrerPolicy,
                    frameOuterWindowID: gContextMenuContentData.frameOuterWindowID,
