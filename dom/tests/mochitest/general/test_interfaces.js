@@ -836,6 +836,10 @@ var interfaceNamesInGlobalScope =
 
     {name: "ResizeObserver", insecureContext: true, nightly: true},
 
+    {name: "ResizeObserverEntry", insecureContext: true, nightly: true},
+
+    {name: "ResizeObserverSize", insecureContext: true, nightly: true},
+
     {name: "Response", insecureContext: true},
 
     {name: "RTCCertificate", insecureContext: true},

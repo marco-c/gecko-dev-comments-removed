@@ -8,11 +8,14 @@
 #define mozilla_dom_ResizeObserver_h
 
 #include "js/TypeDecls.h"
+#include "mozilla/AppUnits.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/WritingModes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ResizeObserverBinding.h"
+#include "nsCoord.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTArray.h"
@@ -36,16 +39,19 @@ class ResizeObservation final : public LinkedListElement<ResizeObservation> {
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ResizeObservation)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ResizeObservation)
 
-  explicit ResizeObservation(Element& aTarget)
-      : mTarget(&aTarget), mBroadcastWidth(0), mBroadcastHeight(0) {
+  ResizeObservation(Element& aTarget, ResizeObserverBoxOptions aBox,
+                    const WritingMode aWM)
+      : mTarget(&aTarget),
+        mObservedBox(aBox),
+        
+        mLastReportedSize(aWM),
+        mLastReportedWM(aWM) {
     MOZ_ASSERT(mTarget, "Need a non-null target element");
   }
 
   Element* Target() const { return mTarget; }
 
-  nscoord BroadcastWidth() const { return mBroadcastWidth; }
-
-  nscoord BroadcastHeight() const { return mBroadcastHeight; }
+  ResizeObserverBoxOptions BoxOptions() const { return mObservedBox; }
 
   
 
@@ -56,23 +62,21 @@ class ResizeObservation final : public LinkedListElement<ResizeObservation> {
   
 
 
-  void UpdateBroadcastSize(const nsSize& aSize);
-
-  
-
-
-
-  nsRect GetTargetRect() const;
+  void UpdateLastReportedSize(const nsSize& aSize);
 
  protected:
   ~ResizeObservation() = default;
 
   nsCOMPtr<Element> mTarget;
 
+  const ResizeObserverBoxOptions mObservedBox;
+
   
   
-  nscoord mBroadcastWidth;
-  nscoord mBroadcastHeight;
+  
+  
+  LogicalSize mLastReportedSize;
+  WritingMode mLastReportedWM;
 };
 
 
@@ -101,7 +105,8 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
       const GlobalObject& aGlobal, ResizeObserverCallback& aCb,
       ErrorResult& aRv);
 
-  void Observe(Element& target, ErrorResult& aRv);
+  void Observe(Element& aTarget, const ResizeObserverOptions& aOptions,
+               ErrorResult& aRv);
 
   void Unobserve(Element& target, ErrorResult& aRv);
 
@@ -135,6 +140,7 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT uint32_t BroadcastActiveObservations();
 
  protected:
@@ -143,6 +149,10 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsPIDOMWindowInner> mOwner;
   RefPtr<ResizeObserverCallback> mCallback;
   nsTArray<RefPtr<ResizeObservation>> mActiveTargets;
+  
+  
+  
+  
   bool mHasSkippedTargets;
 
   
@@ -189,14 +199,63 @@ class ResizeObserverEntry final : public nsISupports, public nsWrapperCache {
 
   DOMRectReadOnly* ContentRect() const { return mContentRect; }
 
-  void SetContentRect(const nsRect& aRect);
+  
+
+
+
+  ResizeObserverSize* BorderBoxSize() const { return mBorderBoxSize; }
+  ResizeObserverSize* ContentBoxSize() const { return mContentBoxSize; }
+
+  
+  void SetBorderBoxSize(const nsSize& aSize);
+  
+  void SetContentRectAndSize(const nsSize& aSize);
 
  protected:
   ~ResizeObserverEntry() = default;
 
   nsCOMPtr<nsISupports> mOwner;
   nsCOMPtr<Element> mTarget;
+
   RefPtr<DOMRectReadOnly> mContentRect;
+  RefPtr<ResizeObserverSize> mBorderBoxSize;
+  RefPtr<ResizeObserverSize> mContentBoxSize;
+};
+
+class ResizeObserverSize final : public nsISupports, public nsWrapperCache {
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ResizeObserverSize)
+
+  
+  
+  ResizeObserverSize(nsISupports* aOwner, const nsSize& aSize,
+                     const WritingMode aWM)
+      : mOwner(aOwner), mSize(aWM, aSize), mWM(aWM) {
+    MOZ_ASSERT(mOwner, "Need a non-null owner");
+  }
+
+  nsISupports* GetParentObject() const { return mOwner; }
+
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override {
+    return ResizeObserverSize_Binding::Wrap(aCx, this, aGivenProto);
+  }
+
+  double InlineSize() const {
+    return NSAppUnitsToDoublePixels(mSize.ISize(mWM), AppUnitsPerCSSPixel());
+  }
+
+  double BlockSize() const {
+    return NSAppUnitsToDoublePixels(mSize.BSize(mWM), AppUnitsPerCSSPixel());
+  }
+
+ protected:
+  ~ResizeObserverSize() = default;
+
+  nsCOMPtr<nsISupports> mOwner;
+  const LogicalSize mSize;
+  const WritingMode mWM;
 };
 
 }  
