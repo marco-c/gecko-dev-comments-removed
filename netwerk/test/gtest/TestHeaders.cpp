@@ -2,7 +2,8 @@
 
 #include "nsHttpHeaderArray.h"
 
-TEST(TestHeaders, DuplicateHSTS) {
+TEST(TestHeaders, DuplicateHSTS)
+{
   
   
   

@@ -16,7 +16,8 @@ struct TestingData {
 
 static bool runOneTest(TestingData& aData);
 
-TEST(UrlClassifierRiceDeltaDecoder, SingleEncodedValue) {
+TEST(UrlClassifierRiceDeltaDecoder, SingleEncodedValue)
+{
   TestingData td = {{99}, {99}, 0};
 
   ASSERT_TRUE(runOneTest(td));
@@ -25,7 +26,8 @@ TEST(UrlClassifierRiceDeltaDecoder, SingleEncodedValue) {
 
 
 
-TEST(UrlClassifierRiceDeltaDecoder, Empty) {
+TEST(UrlClassifierRiceDeltaDecoder, Empty)
+{
   
   
   

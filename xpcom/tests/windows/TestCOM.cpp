@@ -104,7 +104,8 @@ nsresult nsTestComFactory::CreateInstance(nsISupports *aOuter,
   return res;
 }
 
-TEST(TestCOM, WindowsInterop) {
+TEST(TestCOM, WindowsInterop)
+{
   nsTestComFactory *inst = new nsTestComFactory();
 
   

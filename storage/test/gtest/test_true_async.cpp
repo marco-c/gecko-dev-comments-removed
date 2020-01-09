@@ -9,7 +9,8 @@
 
 
 
-TEST(storage_true_async, TrueAsyncStatement) {
+TEST(storage_true_async, TrueAsyncStatement)
+{
   HookSqliteMutex hook;
 
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
@@ -67,7 +68,8 @@ TEST(storage_true_async, TrueAsyncStatement) {
 
 
 
-TEST(storage_true_async, AsyncCancellation) {
+TEST(storage_true_async, AsyncCancellation)
+{
   HookSqliteMutex hook;
 
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
@@ -136,7 +138,8 @@ TEST(storage_true_async, AsyncCancellation) {
 
 
 
-TEST(storage_true_async, AsyncDestructorFinalizesOnAsyncThread) {
+TEST(storage_true_async, AsyncDestructorFinalizesOnAsyncThread)
+{
   HookSqliteMutex hook;
 
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());

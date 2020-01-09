@@ -217,7 +217,8 @@ static nsresult CreateIFoo(IFoo** result)
 
 using namespace TestHashtables;
 
-TEST(Hashtable, THashtable) {
+TEST(Hashtable, THashtable)
+{
   
   nsTHashtable<EntityToUnicodeEntry> EntityToUnicode(ENTITY_COUNT);
 
@@ -237,7 +238,8 @@ TEST(Hashtable, THashtable) {
   ASSERT_EQ(count, uint32_t(0));
 }
 
-TEST(Hashtable, Move) {
+TEST(Hashtable, Move)
+{
   const void* kPtr = reinterpret_cast<void*>(static_cast<uintptr_t>(0xbadc0de));
 
   nsTHashtable<nsPtrHashKey<const void>> table;
@@ -251,7 +253,8 @@ TEST(Hashtable, Move) {
   EXPECT_FALSE(table.Contains(kPtr));
 }
 
-TEST(Hashtables, DataHashtable) {
+TEST(Hashtables, DataHashtable)
+{
   
   nsDataHashtable<nsUint32HashKey, const char*> UniToEntity(ENTITY_COUNT);
 
@@ -283,7 +286,8 @@ TEST(Hashtables, DataHashtable) {
   ASSERT_EQ(count, uint32_t(0));
 }
 
-TEST(Hashtables, ClassHashtable) {
+TEST(Hashtables, ClassHashtable)
+{
   
   nsClassHashtable<nsCStringHashKey, TestUniChar> EntToUniClass(ENTITY_COUNT);
 
@@ -315,7 +319,8 @@ TEST(Hashtables, ClassHashtable) {
   ASSERT_EQ(count, uint32_t(0));
 }
 
-TEST(Hashtables, DataHashtableWithInterfaceKey) {
+TEST(Hashtables, DataHashtableWithInterfaceKey)
+{
   
   nsDataHashtable<nsISupportsHashKey, uint32_t> EntToUniClass2(ENTITY_COUNT);
 
@@ -360,7 +365,8 @@ TEST(Hashtables, DataHashtableWithInterfaceKey) {
   ASSERT_EQ(count, uint32_t(0));
 }
 
-TEST(Hashtables, InterfaceHashtable) {
+TEST(Hashtables, InterfaceHashtable)
+{
   
   nsInterfaceHashtable<nsUint32HashKey, IFoo> UniToEntClass2(ENTITY_COUNT);
 
@@ -402,7 +408,8 @@ TEST(Hashtables, InterfaceHashtable) {
   ASSERT_EQ(count, uint32_t(0));
 }
 
-TEST(Hashtables, DataHashtable_LookupForAdd) {
+TEST(Hashtables, DataHashtable_LookupForAdd)
+{
   
   nsDataHashtable<nsUint32HashKey, const char*> UniToEntity(ENTITY_COUNT);
 
@@ -467,7 +474,8 @@ TEST(Hashtables, DataHashtable_LookupForAdd) {
   ASSERT_TRUE(0 == UniToEntity.Count());
 }
 
-TEST(Hashtables, ClassHashtable_LookupForAdd) {
+TEST(Hashtables, ClassHashtable_LookupForAdd)
+{
   
   nsClassHashtable<nsCStringHashKey, TestUniChar> EntToUniClass(ENTITY_COUNT);
 

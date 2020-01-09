@@ -102,7 +102,8 @@ void StaticAssertions() {
   Unused << z;
 }
 
-TEST(MozDbg, ObjectValues) {
+TEST(MozDbg, ObjectValues)
+{
   
   
 

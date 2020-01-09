@@ -11,7 +11,8 @@
 
 
 
-TEST(MatchAutocompleteCasing, CaseAssumption) {
+TEST(MatchAutocompleteCasing, CaseAssumption)
+{
   for (uint32_t c = 128; c < 0x110000; c++) {
     if (c != 304 && c != 8490) {
       ASSERT_GE(mozilla::unicode::GetLowercase(c), 128U);
@@ -20,7 +21,8 @@ TEST(MatchAutocompleteCasing, CaseAssumption) {
 }
 
 
-TEST(MatchAutocompleteCasing, CaseAssumption2) {
+TEST(MatchAutocompleteCasing, CaseAssumption2)
+{
   for (uint32_t c = 0; c < 128; c++) {
     ASSERT_LT(mozilla::unicode::GetLowercase(c), 128U);
   }

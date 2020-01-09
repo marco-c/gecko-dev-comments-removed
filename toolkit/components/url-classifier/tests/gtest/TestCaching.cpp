@@ -96,21 +96,24 @@ void TestCache(const _Fragment& aFragment, bool aExpectedHas,
 
 
 
-TEST(UrlClassifierCaching, NotFound) {
+TEST(UrlClassifierCaching, NotFound)
+{
   TestCache<LookupCacheV2>(_Fragment("nomatch.com/"), false, false, false);
   TestCache<LookupCacheV4>(_Fragment("nomatch.com/"), false, false, false);
 }
 
 
 
-TEST(UrlClassifierCaching, NotInCache) {
+TEST(UrlClassifierCaching, NotInCache)
+{
   TestCache<LookupCacheV2>(_Fragment("gound.com/"), true, false, false);
   TestCache<LookupCacheV4>(_Fragment("gound.com/"), true, false, false);
 }
 
 
 
-TEST(UrlClassifierCaching, InPositiveCacheNotExpired) {
+TEST(UrlClassifierCaching, InPositiveCacheNotExpired)
+{
   TestCache<LookupCacheV2>(_Fragment("cache.notexpired.com/"), true, true,
                            true);
   TestCache<LookupCacheV4>(_Fragment("cache.notexpired.com/"), true, true,
@@ -119,14 +122,16 @@ TEST(UrlClassifierCaching, InPositiveCacheNotExpired) {
 
 
 
-TEST(UrlClassifierCaching, InPositiveCacheExpired) {
+TEST(UrlClassifierCaching, InPositiveCacheExpired)
+{
   TestCache<LookupCacheV2>(_Fragment("cache.expired.com/"), true, false, true);
   TestCache<LookupCacheV4>(_Fragment("cache.expired.com/"), true, false, true);
 }
 
 
 
-TEST(UrlClassifierCaching, InNegativeCacheNotExpired) {
+TEST(UrlClassifierCaching, InNegativeCacheNotExpired)
+{
   
   
 
@@ -148,7 +153,8 @@ TEST(UrlClassifierCaching, InNegativeCacheNotExpired) {
 
 
 
-TEST(UrlClassifierCaching, InNegativeCacheExpired) {
+TEST(UrlClassifierCaching, InNegativeCacheExpired)
+{
   
 
   Completion prefix;
@@ -209,18 +215,17 @@ void TestInvalidateExpiredCacheEntry() {
   TestCache<T>(POS_CACHE_EXPIRED_URL, true, false, true, cache.get());
 }
 
-TEST(UrlClassifierCaching, InvalidateExpiredCacheEntryV2) {
-  TestInvalidateExpiredCacheEntry<LookupCacheV2>();
-}
+TEST(UrlClassifierCaching, InvalidateExpiredCacheEntryV2)
+{ TestInvalidateExpiredCacheEntry<LookupCacheV2>(); }
 
-TEST(UrlClassifierCaching, InvalidateExpiredCacheEntryV4) {
-  TestInvalidateExpiredCacheEntry<LookupCacheV4>();
-}
+TEST(UrlClassifierCaching, InvalidateExpiredCacheEntryV4)
+{ TestInvalidateExpiredCacheEntry<LookupCacheV4>(); }
 
 
 
 
-TEST(UrlClassifierCaching, NegativeCacheExpireV2) {
+TEST(UrlClassifierCaching, NegativeCacheExpireV2)
+{
   _PrefixArray array = {GeneratePrefix(NEG_CACHE_EXPIRED_URL, 8)};
   RefPtr<LookupCacheV2> cache = SetupLookupCache<LookupCacheV2>(array);
 
@@ -242,7 +247,8 @@ TEST(UrlClassifierCaching, NegativeCacheExpireV2) {
                            cache.get());
 }
 
-TEST(UrlClassifierCaching, NegativeCacheExpireV4) {
+TEST(UrlClassifierCaching, NegativeCacheExpireV4)
+{
   _PrefixArray array = {GeneratePrefix(NEG_CACHE_EXPIRED_URL, 8)};
   RefPtr<LookupCacheV4> cache = SetupLookupCache<LookupCacheV4>(array);
 

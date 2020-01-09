@@ -20,7 +20,8 @@ bool has_transaction(mozIStorageConnection* aDB) {
 
 
 
-TEST(storage_transaction_helper, Commit) {
+TEST(storage_transaction_helper, Commit)
+{
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -39,7 +40,8 @@ TEST(storage_transaction_helper, Commit) {
   do_check_true(exists);
 }
 
-TEST(storage_transaction_helper, Rollback) {
+TEST(storage_transaction_helper, Rollback)
+{
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -58,7 +60,8 @@ TEST(storage_transaction_helper, Rollback) {
   do_check_false(exists);
 }
 
-TEST(storage_transaction_helper, AutoCommit) {
+TEST(storage_transaction_helper, AutoCommit)
+{
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -76,7 +79,8 @@ TEST(storage_transaction_helper, AutoCommit) {
   do_check_true(exists);
 }
 
-TEST(storage_transaction_helper, AutoRollback) {
+TEST(storage_transaction_helper, AutoRollback)
+{
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -95,7 +99,8 @@ TEST(storage_transaction_helper, AutoRollback) {
   do_check_false(exists);
 }
 
-TEST(storage_transaction_helper, null_database_connection) {
+TEST(storage_transaction_helper, null_database_connection)
+{
   
   
   mozStorageTransaction transaction(nullptr, false);
@@ -103,7 +108,8 @@ TEST(storage_transaction_helper, null_database_connection) {
   do_check_true(NS_SUCCEEDED(transaction.Rollback()));
 }
 
-TEST(storage_transaction_helper, async_Commit) {
+TEST(storage_transaction_helper, async_Commit)
+{
   HookSqliteMutex hook;
 
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());

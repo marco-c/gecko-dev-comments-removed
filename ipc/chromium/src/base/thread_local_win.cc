@@ -33,7 +33,8 @@ void* ThreadLocalPlatform::GetValueFromSlot(SlotType& slot) {
 
 void ThreadLocalPlatform::SetValueInSlot(SlotType& slot, void* value) {
   if (!TlsSetValue(slot, value)) {
-    CHECK(false) << "Failed to TlsSetValue().";
+    CHECK(false)
+    << "Failed to TlsSetValue().";
   }
 }
 
