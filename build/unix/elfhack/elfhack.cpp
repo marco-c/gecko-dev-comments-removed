@@ -177,6 +177,7 @@ class ElfRelHackCode_Section : public ElfSection {
       
       if (shdr.sh_addralign < (*c)->getAddrAlign())
         shdr.sh_addralign = (*c)->getAddrAlign();
+      last = *c;
     }
     shdr.sh_size = code.back()->getAddr() + code.back()->getSize();
     data = static_cast<char *>(malloc(shdr.sh_size));
