@@ -25,10 +25,10 @@ NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 StaticRefPtr<nsIWebVTTParserWrapper> TextTrackCue::sParserWrapper;
 
 
-
 void TextTrackCue::SetDefaultCueSettings() {
   mPositionIsAutoKeyword = true;
-  mPositionAlign = PositionAlignSetting::Center;
+  
+  mPositionAlign = PositionAlignSetting::Auto;
   mSize = 100.0;
   mPauseOnExit = false;
   mSnapToLines = true;
