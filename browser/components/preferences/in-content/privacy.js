@@ -565,6 +565,9 @@ var gPrivacyPane = {
         case "cookieBehavior4":
           document.querySelector(selector + " .third-party-tracking-cookies-option").hidden = false;
           break;
+        case "cookieBehavior5":
+          
+          break;
         }
       }
       
