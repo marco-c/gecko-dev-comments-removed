@@ -384,8 +384,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   async openWorkerToolbox(workerTarget, toolId) {
-    const toolbox = await gDevTools.showToolbox(workerTarget, toolId, Toolbox.HostType.WINDOW);
-    toolbox.once("destroy", () => workerTarget.detach());
+    await gDevTools.showToolbox(workerTarget, toolId, Toolbox.HostType.WINDOW);
   },
 
   
