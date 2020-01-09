@@ -5,32 +5,8 @@
 
 
 const Services = require("Services");
-const {LocalizationHelper} = require("devtools/shared/l10n");
-const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties");
 
-function handleThreadState(toolbox, event, packet) {
-  
-  
-  if (event === "paused" && packet.why.type === "interrupted") {
-    return;
-  }
-
-  if (event === "paused") {
-    toolbox.highlightTool("jsdebugger");
-
-    if (packet.why.type === "debuggerStatement" ||
-       packet.why.type === "breakpoint" ||
-       packet.why.type === "exception") {
-      toolbox.raise();
-      toolbox.selectTool("jsdebugger", packet.why.type);
-    }
-  } else if (event === "resumed") {
-    toolbox.unhighlightTool("jsdebugger");
-  }
-}
-
-async function attachThread(toolbox) {
-  const target = toolbox.target;
+async function attachThread(target) {
   const threadOptions = {
     autoBlackBox: false,
     ignoreFrameEnvironment: true,
@@ -44,31 +20,7 @@ async function attachThread(toolbox) {
   if (!threadClient.paused) {
     throw new Error("Thread in wrong state when starting up, should be paused.");
   }
-
-  try {
-    await threadClient.resume();
-  } catch (ex) {
-    
-    if (ex.error === "wrongOrder") {
-      const box = toolbox.getNotificationBox();
-      box.appendNotification(
-        L10N.getStr("toolbox.resumeOrderWarning"),
-        "wrong-resume-order",
-        "",
-        box.PRIORITY_WARNING_HIGH
-      );
-    } else {
-      throw ex;
-    }
-  }
-  threadClient.addListener("paused", handleThreadState.bind(null, toolbox));
-  threadClient.addListener("resumed", handleThreadState.bind(null, toolbox));
   return threadClient;
 }
 
-function detachThread(threadClient) {
-  threadClient.removeListener("paused");
-  threadClient.removeListener("resumed");
-}
-
-module.exports = { attachThread, detachThread };
+module.exports = { attachThread };
