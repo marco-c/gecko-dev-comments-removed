@@ -563,8 +563,32 @@ function getPropertiesFromAstExpression(ast) {
 }
 
 function wrapMatchesInQuotes(matches, quote = `"`) {
-  return new Set([...matches].map(p =>
-    `${quote}${p.replace(new RegExp(`${quote}`, "g"), `\\${quote}`)}${quote}`));
+  return new Set([...matches].map(p => {
+    
+    p = JSON.stringify(p);
+
+    
+    if (quote == `"`) {
+      return p;
+    }
+
+    
+    p = p.slice(1, -1);
+
+    
+    p = p.replace(/\\(?=")/g, "");
+
+    
+    p = p.replace(new RegExp(quote, "g"), "\\$&");
+
+    
+    if (quote == "`") {
+      p = p.replace(/\${/g, "\\$&");
+    }
+
+    
+    return `${quote}${p}${quote}`;
+  }));
 }
 
 
