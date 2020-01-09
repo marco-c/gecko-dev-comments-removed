@@ -31,7 +31,6 @@
 #include "irregexp/RegExpStack.h"
 #include "js/BuildId.h"  
 #include "js/Debug.h"
-#include "js/experimental/SourceHook.h"  
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #ifdef DEBUG

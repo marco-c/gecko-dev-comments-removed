@@ -396,6 +396,51 @@ namespace js {
 
 
 
+class SourceHook {
+ public:
+  virtual ~SourceHook() {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  virtual bool load(JSContext* cx, const char* filename,
+                    char16_t** twoByteSource, char** utf8Source,
+                    size_t* length) = 0;
+};
+
+
+
+
+
+
+
+extern JS_FRIEND_API void SetSourceHook(JSContext* cx,
+                                        mozilla::UniquePtr<SourceHook> hook);
+
+
+extern JS_FRIEND_API mozilla::UniquePtr<SourceHook> ForgetSourceHook(
+    JSContext* cx);
+
+
+
+
+
+
+
+
+
+
+
+
 
 extern JS_FRIEND_API bool UseInternalJobQueues(JSContext* cx);
 
