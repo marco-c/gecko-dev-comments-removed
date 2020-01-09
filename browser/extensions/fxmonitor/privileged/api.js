@@ -43,13 +43,6 @@ this.FirefoxMonitor = {
 
   
   
-  warnedHostsSet: new Set(),
-
-  
-  kWarnedHostsPref: "extensions.fxmonitor.warnedHosts",
-
-  
-  
   extension: null,
 
   
@@ -131,6 +124,10 @@ this.FirefoxMonitor = {
 
     this._delayedInited = true;
 
+    XPCOMUtils.defineLazyServiceGetter(this, "_contentPrefService",
+      "@mozilla.org/content-pref/service;1",
+      "nsIContentPrefService2");
+
     
     
     let telemetryExpiryDate = new Date(2019, 10, 1); 
@@ -154,17 +151,6 @@ this.FirefoxMonitor = {
 
     let telemetryEnabled = !Preferences.get(this.kTelemetryDisabledPref);
     Services.telemetry.setEventRecordingEnabled("fxmonitor", telemetryEnabled);
-
-    let warnedHostsJSON = Preferences.get(this.kWarnedHostsPref, "");
-    if (warnedHostsJSON) {
-      try {
-        let json = JSON.parse(warnedHostsJSON);
-        this.warnedHostsSet = new Set(json);
-      } catch (ex) {
-        
-        Preferences.reset(this.kWarnedHostsPref);
-      }
-    }
 
     XPCOMUtils.defineLazyPreferenceGetter(this, "FirefoxMonitorURL",
       this.kFirefoxMonitorURLPref, this.kDefaultFirefoxMonitorURL);
@@ -355,8 +341,29 @@ this.FirefoxMonitor = {
     this.observerAdded = false;
   },
 
-  warnIfNeeded(browser, host) {
-    if (!this.enabled || this.warnedHostsSet.has(host) || !this.domainMap.has(host)) {
+  async hostAlreadyWarned(browser, host) {
+    return new Promise((resolve, reject) => {
+      this._contentPrefService.getByDomainAndName(
+        host,
+        "extensions.fxmonitor.hostAlreadyWarned",
+        browser.loadContext,
+        {
+          handleCompletion: () => resolve(false),
+          handleResult: (result) => resolve(result.value),
+        });
+    });
+  },
+
+  rememberWarnedHost(browser, host) {
+    this._contentPrefService.set(
+      host,
+      "extensions.fxmonitor.hostAlreadyWarned",
+      true,
+      browser.loadContext);
+  },
+
+  async warnIfNeeded(browser, host) {
+    if (!this.enabled || await this.hostAlreadyWarned(browser, host) || !this.domainMap.has(host)) {
       return;
     }
 
@@ -378,8 +385,7 @@ this.FirefoxMonitor = {
       Preferences.set(this.kFirstAlertShownPref, true);
     }
 
-    this.warnedHostsSet.add(host);
-    Preferences.set(this.kWarnedHostsPref, JSON.stringify([...this.warnedHostsSet]));
+    this.rememberWarnedHost(browser, host);
 
     let doc = browser.ownerDocument;
     let win = doc.defaultView;
