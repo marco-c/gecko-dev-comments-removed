@@ -494,6 +494,8 @@ function showFxaToolbarMenu(enable) {
   mainWindowEl.setAttribute("fxastatus", "not_configured");
   fxaPanelEl.addEventListener("ViewShowing", gSync.updateSendToDeviceTitle);
 
+  Services.telemetry.setEventRecordingEnabled("fxa_app_menu", true);
+
   if (enable && syncEnabled) {
     mainWindowEl.setAttribute("fxatoolbarmenu", "visible");
 
@@ -502,7 +504,6 @@ function showFxaToolbarMenu(enable) {
     
     gSync.maybeUpdateUIState();
 
-    
     Services.telemetry.setEventRecordingEnabled("fxa_avatar_menu", true);
 
     
