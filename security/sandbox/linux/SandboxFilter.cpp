@@ -292,6 +292,24 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     return broker->Readlink(path, buf, size);
   }
 
+  static intptr_t SocketpairDatagramTrap(ArgsRef aArgs, void* aux) {
+    auto fds = reinterpret_cast<int*>(aArgs.args[3]);
+    
+    
+    return ConvertError(socketpair(AF_UNIX, SOCK_SEQPACKET, 0, fds));
+  }
+
+  static intptr_t SocketpairUnpackTrap(ArgsRef aArgs, void* aux) {
+#ifdef __NR_socketpair
+    auto argsPtr = reinterpret_cast<unsigned long*>(aArgs.args[1]);
+    return DoSyscall(__NR_socketpair, argsPtr[0], argsPtr[1], argsPtr[2],
+                     argsPtr[3]);
+#else
+    MOZ_CRASH("unreachable?");
+    return -ENOSYS;
+#endif
+  }
+
  public:
   ResultExpr InvalidSyscall() const override {
     return Trap(BlockedSyscallTrap, nullptr);
@@ -341,6 +359,39 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       case SYS_RECVMSG:
       case SYS_SENDMSG:
         return Some(Allow());
+
+      case SYS_SOCKETPAIR: {
+        
+        
+        if (mBroker == nullptr) {
+          return Nothing();
+        }
+        
+        if (!aHasArgs) {
+          
+          
+          
+          if (HasSeparateSocketCalls()) {
+            return Some(Trap(SocketpairUnpackTrap, nullptr));
+          }
+          
+          
+          return Some(Allow());
+        }
+        Arg<int> domain(0), type(1);
+        return Some(
+            If(domain == AF_UNIX,
+               Switch(type & ~(SOCK_CLOEXEC | SOCK_NONBLOCK))
+                   .Case(SOCK_STREAM, Allow())
+                   .Case(SOCK_SEQPACKET, Allow())
+                   
+                   
+                   
+                   .Case(SOCK_DGRAM, Trap(SocketpairDatagramTrap, nullptr))
+                   .Default(InvalidSyscall()))
+                .Else(InvalidSyscall()));
+      }
+
       default:
         return Nothing();
     }
@@ -601,48 +652,11 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
     return AllowBelowLevel(aLevel, InvalidSyscall());
   }
 
-  
-  
-  static bool HasSeparateSocketCalls() {
-#  ifdef __NR_socket
-    
-#    ifdef __NR_socketcall
-    int fd = syscall(__NR_socket, AF_LOCAL, SOCK_STREAM, 0);
-    if (fd < 0) {
-      MOZ_DIAGNOSTIC_ASSERT(errno == ENOSYS);
-      return false;
-    }
-    close(fd);
-#    endif  
-    return true;
-#  else   
-    return false;
-#  endif  
-  }
-
   static intptr_t GetPPidTrap(ArgsRef aArgs, void* aux) {
     
     
     
     return 0;
-  }
-
-  static intptr_t SocketpairDatagramTrap(ArgsRef aArgs, void* aux) {
-    auto fds = reinterpret_cast<int*>(aArgs.args[3]);
-    
-    
-    return ConvertError(socketpair(AF_UNIX, SOCK_SEQPACKET, 0, fds));
-  }
-
-  static intptr_t SocketpairUnpackTrap(ArgsRef aArgs, void* aux) {
-#  ifdef __NR_socketpair
-    auto argsPtr = reinterpret_cast<unsigned long*>(aArgs.args[1]);
-    return DoSyscall(__NR_socketpair, argsPtr[0], argsPtr[1], argsPtr[2],
-                     argsPtr[3]);
-#  else
-    MOZ_CRASH("unreachable?");
-    return -ENOSYS;
-#  endif
   }
 
   static intptr_t StatFsTrap(ArgsRef aArgs, void* aux) {
@@ -810,30 +824,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
       case SYS_SENDTO:
       case SYS_SENDMMSG:  
         return Some(Allow());
-
-      case SYS_SOCKETPAIR: {
-        
-        if (!aHasArgs) {
-          
-          
-          
-          if (HasSeparateSocketCalls()) {
-            return Some(Trap(SocketpairUnpackTrap, nullptr));
-          }
-          
-          
-          return Some(Allow());
-        }
-        Arg<int> domain(0), type(1);
-        return Some(
-            If(domain == AF_UNIX,
-               Switch(type & ~(SOCK_CLOEXEC | SOCK_NONBLOCK))
-                   .Case(SOCK_STREAM, Allow())
-                   .Case(SOCK_SEQPACKET, Allow())
-                   .Case(SOCK_DGRAM, Trap(SocketpairDatagramTrap, nullptr))
-                   .Default(InvalidSyscall()))
-                .Else(InvalidSyscall()));
-      }
 
 #  ifdef ANDROID
       case SYS_SOCKET:

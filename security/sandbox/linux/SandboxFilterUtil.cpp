@@ -10,6 +10,9 @@
 #  include <linux/ipc.h>
 #endif
 #include <linux/net.h>
+#include <sys/socket.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 #include "mozilla/UniquePtr.h"
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
@@ -118,6 +121,25 @@ sandbox::bpf_dsl::ResultExpr SandboxPolicyBase::EvaluateSyscall(
     default:
       return InvalidSyscall();
   }
+}
+
+ bool SandboxPolicyBase::HasSeparateSocketCalls() {
+#ifdef __NR_socket
+  
+#  ifdef __NR_socketcall
+  
+  
+  int fd = syscall(__NR_socket, AF_LOCAL, SOCK_STREAM, 0);
+  if (fd < 0) {
+    MOZ_DIAGNOSTIC_ASSERT(errno == ENOSYS);
+    return false;
+  }
+  close(fd);
+#  endif  
+  return true;
+#else   
+  return false;
+#endif  
 }
 
 }  

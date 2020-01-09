@@ -49,6 +49,10 @@ class SandboxPolicyBase : public sandbox::bpf_dsl::Policy {
     return Nothing();
   }
 #endif
+
+  
+  
+  static bool HasSeparateSocketCalls();
 };
 
 }  
