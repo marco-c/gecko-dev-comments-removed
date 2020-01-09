@@ -17,7 +17,7 @@ add_task(async function() {
 
   const mocks = new Mocks();
 
-  const { document, tab } = await openAboutDebugging();
+  const { document, tab, window } = await openAboutDebugging();
 
   const usbRuntime = mocks.createUSBRuntime(RUNTIME_ID, {
     deviceName: RUNTIME_DEVICE_NAME,
@@ -38,11 +38,23 @@ add_task(async function() {
   ok(mainProcessItem.textContent.includes("Main Process for the target runtime"),
      "Debug target item of the main process should contains the description");
 
+  info("Inspect main process");
+  const { devtoolsTab, devtoolsWindow } =
+    await openAboutDevtoolsToolbox(document, tab, window, MAIN_PROCESS_NAME, false);
+
+  const url = new window.URL(devtoolsWindow.location.href);
+  const processID = url.searchParams.get("id");
+  is(processID, "0", "Correct process id");
+  const remoteID = url.searchParams.get("remoteId");
+  is(remoteID, `${ RUNTIME_ID }-usb`, "Correct remote runtime id");
+
   info("Remove USB runtime");
   mocks.removeUSBRuntime(RUNTIME_ID);
   mocks.emitUSBUpdate();
   info("Wait until the USB sidebar item disappears");
   await waitUntil(() => !findSidebarItemByText(RUNTIME_DEVICE_NAME, document));
 
+  await removeTab(devtoolsTab);
+  await waitUntil(() => !findDebugTargetByText("about:devtools-toolbox?", document));
   await removeTab(tab);
 });
