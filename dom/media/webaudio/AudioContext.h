@@ -310,8 +310,6 @@ class AudioContext final : public DOMEventTargetHelper,
 
   BasicWaveFormCache* GetBasicWaveFormCache();
 
-  bool CheckClosed(ErrorResult& aRv);
-
   
   void SetParamMapForWorkletName(const nsAString& aName,
                                  AudioParamDescriptorMap* aParamMap);
