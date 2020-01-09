@@ -44,11 +44,11 @@ class Table : public ShareableBase<Table> {
   using InstanceSet = JS::WeakCache<GCHashSet<
       WeakHeapPtrWasmInstanceObject,
       MovableCellHasher<WeakHeapPtrWasmInstanceObject>, SystemAllocPolicy>>;
-  using UniqueAnyFuncArray = UniquePtr<FunctionTableElem[], JS::FreePolicy>;
+  using UniqueFuncRefArray = UniquePtr<FunctionTableElem[], JS::FreePolicy>;
 
   WeakHeapPtrWasmTableObject maybeObject_;
   InstanceSet observers_;
-  UniqueAnyFuncArray functions_;  
+  UniqueFuncRefArray functions_;  
   TableAnyRefVector objects_;     
   const TableKind kind_;
   uint32_t length_;
@@ -57,7 +57,7 @@ class Table : public ShareableBase<Table> {
   template <class>
   friend struct js::MallocProvider;
   Table(JSContext* cx, const TableDesc& td, HandleWasmTableObject maybeObject,
-        UniqueAnyFuncArray functions);
+        UniqueFuncRefArray functions);
   Table(JSContext* cx, const TableDesc& td, HandleWasmTableObject maybeObject,
         TableAnyRefVector&& objects);
 
@@ -72,7 +72,7 @@ class Table : public ShareableBase<Table> {
   TableKind kind() const { return kind_; }
   bool isTypedFunction() const { return kind_ == TableKind::TypedFunction; }
   bool isFunction() const {
-    return kind_ == TableKind::AnyFunction || kind_ == TableKind::TypedFunction;
+    return kind_ == TableKind::FuncRef || kind_ == TableKind::TypedFunction;
   }
   uint32_t length() const { return length_; }
   Maybe<uint32_t> maximum() const { return maximum_; }
@@ -83,8 +83,8 @@ class Table : public ShareableBase<Table> {
   
   
   
-  const FunctionTableElem& getAnyFunc(uint32_t index) const;
-  void setAnyFunc(uint32_t index, void* code, const Instance* instance);
+  const FunctionTableElem& getFuncRef(uint32_t index) const;
+  void setFuncRef(uint32_t index, void* code, const Instance* instance);
 
   AnyRef getAnyRef(uint32_t index) const;
   const void* getShortlivedAnyRefLocForCompiledCode(uint32_t index) const;

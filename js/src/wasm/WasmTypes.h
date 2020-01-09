@@ -1969,7 +1969,7 @@ struct Limits {
 
 
 
-enum class TableKind { AnyFunction, AnyRef, TypedFunction };
+enum class TableKind { FuncRef, AnyRef, TypedFunction };
 
 struct TableDesc {
   TableKind kind;
