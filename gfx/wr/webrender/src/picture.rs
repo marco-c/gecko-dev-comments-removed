@@ -8,7 +8,7 @@ use api::{DevicePixelScale, RasterRect, RasterSpace, ColorF, ImageKey, DirtyRect
 use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, ImageFormat, ImageDescriptor, WorldVector2D, LayoutPoint};
 use api::{DebugFlags, DeviceVector2D};
 use box_shadow::{BLUR_SAMPLE_SCALE};
-use clip::{ClipStore, ClipChainId, ClipChainNode, ClipItem};
+use clip::{ClipChainId, ClipChainNode, ClipItem};
 use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex, CoordinateSystemId};
 use debug_colors;
 use device::TextureFilter;
@@ -32,7 +32,6 @@ use resource_cache::ResourceCache;
 use scene::{FilterOpHelpers, SceneProperties};
 use scene_builder::Interners;
 use smallvec::SmallVec;
-use surface::{SurfaceDescriptor};
 use std::{mem, u16};
 use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
 use texture_cache::{Eviction, TextureCacheHandle};
@@ -1909,6 +1908,21 @@ impl PrimitiveList {
     }
 }
 
+
+pub struct PictureOptions {
+    
+    
+    pub inflate_if_required: bool,
+}
+
+impl Default for PictureOptions {
+    fn default() -> Self {
+        PictureOptions {
+            inflate_if_required: true,
+        }
+    }
+}
+
 pub struct PicturePrimitive {
     
     pub prim_list: PrimitiveList,
@@ -1959,13 +1973,13 @@ pub struct PicturePrimitive {
     
     pub local_clip_rect: LayoutRect,
 
-    
-    surface_desc: Option<SurfaceDescriptor>,
-
     pub gpu_location: GpuCacheHandle,
 
     
     pub tile_cache: Option<TileCache>,
+
+    
+    options: PictureOptions,
 }
 
 impl PicturePrimitive {
@@ -2041,6 +2055,10 @@ impl PicturePrimitive {
         }
     }
 
+    
+    
+    
+    
     pub fn new_image(
         requested_composite_mode: Option<PictureCompositeMode>,
         context_3d: Picture3DContext<OrderedPictureChild>,
@@ -2051,33 +2069,10 @@ impl PicturePrimitive {
         prim_list: PrimitiveList,
         spatial_node_index: SpatialNodeIndex,
         local_clip_rect: LayoutRect,
-        clip_store: &ClipStore,
         tile_cache: Option<TileCache>,
+        options: PictureOptions,
     ) -> Self {
-        
-        
-        
-        let create_cache_descriptor = match requested_composite_mode {
-            Some(PictureCompositeMode::Filter(FilterOp::Blur(blur_radius))) => {
-                blur_radius > 0.0
-            }
-            Some(_) | None => {
-                false
-            }
-        };
-
-        let surface_desc = if create_cache_descriptor {
-            SurfaceDescriptor::new(
-                &prim_list.prim_instances,
-                spatial_node_index,
-                clip_store,
-            )
-        } else {
-            None
-        };
-
         PicturePrimitive {
-            surface_desc,
             prim_list,
             state: None,
             secondary_render_task_id: None,
@@ -2094,6 +2089,7 @@ impl PicturePrimitive {
             local_clip_rect,
             gpu_location: GpuCacheHandle::new(),
             tile_cache,
+            options,
         }
     }
 
@@ -2391,17 +2387,17 @@ impl PicturePrimitive {
             let parent_raster_spatial_node_index = state.current_surface().raster_spatial_node_index;
             let surface_spatial_node_index = self.spatial_node_index;
 
-            
-            
-            
-            
-            let raster_space = RasterSpace::Screen;
-
             let inflation_factor = match composite_mode {
                 PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)) => {
                     
                     
-                    BLUR_SAMPLE_SCALE * blur_radius
+                    if self.options.inflate_if_required {
+                        
+                        
+                        BLUR_SAMPLE_SCALE * blur_radius
+                    } else {
+                        0.0
+                    }
                 }
                 _ => {
                     0.0
@@ -2443,17 +2439,6 @@ impl PicturePrimitive {
                     &frame_context.clip_scroll_tree,
                 );
             };
-
-            
-            
-            if let Some(ref mut surface_desc) = self.surface_desc {
-                surface_desc.update(
-                    surface_spatial_node_index,
-                    surface.raster_spatial_node_index,
-                    frame_context.clip_scroll_tree,
-                    raster_space,
-                );
-            }
 
             self.raster_config = Some(RasterConfig {
                 composite_mode,
@@ -2535,7 +2520,9 @@ impl PicturePrimitive {
 
         
         let inflation_size = match self.raster_config {
-            Some(RasterConfig { composite_mode: PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)), .. }) |
+            Some(RasterConfig { surface_index, composite_mode: PictureCompositeMode::Filter(FilterOp::Blur(_)), .. }) => {
+                Some(state.surfaces[surface_index.0].inflation_factor)
+            }
             Some(RasterConfig { composite_mode: PictureCompositeMode::Filter(FilterOp::DropShadow(_, blur_radius, _)), .. }) => {
                 Some((blur_radius * BLUR_SAMPLE_SCALE).ceil())
             }
@@ -2670,7 +2657,8 @@ impl PicturePrimitive {
             }
             PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)) => {
                 let blur_std_deviation = blur_radius * frame_context.device_pixel_scale.0;
-                let blur_range = (blur_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
+                let inflation_factor = surfaces[raster_config.surface_index.0].inflation_factor;
+                let inflation_factor = (inflation_factor * frame_context.device_pixel_scale.0).ceil() as i32;
 
                 
                 
@@ -2681,7 +2669,7 @@ impl PicturePrimitive {
                 
                 
                 let device_rect = clipped
-                    .inflate(blur_range, blur_range)
+                    .inflate(inflation_factor, inflation_factor)
                     .intersection(&unclipped.to_i32())
                     .unwrap();
 
