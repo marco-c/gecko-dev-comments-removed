@@ -363,7 +363,8 @@ struct ReflowInput : public SizeComputationInput {
 
   
   
-  const ReflowInput* mCBReflowInput;
+  
+  const ReflowInput* mCBReflowInput = nullptr;
 
   
   
@@ -378,7 +379,7 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  nscoord mBlockDelta;
+  nscoord mBlockDelta = 0;
 
   
   
@@ -387,7 +388,7 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  nscoord mOrthogonalLimit;
+  nscoord mOrthogonalLimit = NS_UNCONSTRAINEDSIZE;
 
   
   
@@ -569,7 +570,7 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  nscoord mAvailableWidth;
+  nscoord mAvailableWidth = 0;
 
   
   
@@ -579,7 +580,7 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
-  nscoord mAvailableHeight;
+  nscoord mAvailableHeight = 0;
 
   
   
@@ -622,8 +623,7 @@ struct ReflowInput : public SizeComputationInput {
 
  public:
   
-  MOZ_INIT_OUTSIDE_CTOR
-  LogicalSize mContainingBlockSize;
+  LogicalSize mContainingBlockSize = LogicalSize(mWritingMode);
 
   
   MOZ_INIT_OUTSIDE_CTOR
@@ -660,7 +660,7 @@ struct ReflowInput : public SizeComputationInput {
 
   
   
-  int16_t mReflowDepth;
+  int16_t mReflowDepth = 0;
 
   
   
