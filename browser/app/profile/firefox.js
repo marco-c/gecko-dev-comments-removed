@@ -706,14 +706,21 @@ pref("plugins.testmode", false);
 
 pref("plugins.show_infobar", false);
 
+#if defined(_ARM64_) && defined(XP_WIN)
+pref("plugin.default.state", 0);
+#else
 pref("plugin.default.state", 1);
+#endif
 
 
 pref("plugin.defaultXpi.state", 2);
 
 
-
+#if defined(_ARM64_) && defined(XP_WIN)
+pref("plugin.state.flash", 0);
+#else
 pref("plugin.state.flash", 1);
+#endif
 
 
 pref("plugins.flashBlock.enabled", true);
