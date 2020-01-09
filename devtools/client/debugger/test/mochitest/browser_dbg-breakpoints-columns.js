@@ -1,111 +1,104 @@
 
 
 
-function getColumnBreakpointElements(dbg) {
-  return findAllElementsWithSelector(dbg, ".column-breakpoint");
+
+async function enableFirstBreakpoint(dbg) {
+  getCM(dbg).setCursor({ line: 32, ch: 0 });
+  await addBreakpoint(dbg, "long", 32);
+  const bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
+
+  ok(bpMarkers.length === 2, "2 column breakpoints");
+  assertClass(bpMarkers[0], "active");
+  assertClass(bpMarkers[1], "active", false);
 }
 
-async function assertConditionalBreakpointIsFocused(dbg) {
-  const input = findElement(dbg, "conditionalPanelInput");
-  await waitForElementFocus(dbg, input);
-}
+async function enableSecondBreakpoint(dbg) {
+  let bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
 
-function waitForElementFocus(dbg, el) {
-  const doc = dbg.win.document;
-  return waitFor(() => doc.activeElement == el && doc.hasFocus());
-}
+  bpMarkers[1].click();
+  await waitForBreakpointCount(dbg, 2);
 
-function hasCondition(marker) {
-  return marker.classList.contains("has-condition");
+  bpMarkers = findAllElements(dbg, "columnBreakpoints");
+  assertClass(bpMarkers[1], "active");
+  await waitForAllElements(dbg, "breakpointItems", 2);
 }
 
 async function setConditionalBreakpoint(dbg, index, condition) {
-  const {
-      addConditionalBreakpoint,
-      editConditionalBreakpoint
-  } = selectors.gutterContextMenu;
-  
-  const selector = `${addConditionalBreakpoint},${editConditionalBreakpoint}`;
+  let bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
+  rightClickEl(dbg, bpMarkers[index]);
+  selectContextMenuItem(dbg, selectors.addConditionItem);
+  await typeInPanel(dbg, condition);
+  await waitForCondition(dbg, condition);
 
-  rightClickElement(dbg, "breakpointItem", index);
-  selectContextMenuItem(dbg, selector);
-  await waitForElement(dbg, "conditionalPanelInput");
-  await assertConditionalBreakpointIsFocused(dbg);
-
-  
-  pressKey(dbg, "End");
-  type(dbg, condition);
-  pressKey(dbg, "Enter");
+  bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
+  assertClass(bpMarkers[index], "has-condition");
 }
 
-function removeBreakpointViaContext(dbg, index) {
-  rightClickElement(dbg, "breakpointItem", index);
-  selectContextMenuItem(dbg, "#node-menu-delete-self");
+async function setLogPoint(dbg, index, expression) {
+  let bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
+  rightClickEl(dbg, bpMarkers[index]);
+
+  selectContextMenuItem(dbg, selectors.addLogItem);
+  await typeInPanel(dbg, expression);
+  await waitForLog(dbg, expression);
+
+  bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
+  assertClass(bpMarkers[index], "has-log");
 }
 
+async function disableBreakpoint(dbg, index) {
+  rightClickElement(dbg, "columnBreakpoints");
+  selectContextMenuItem(dbg, selectors.disableItem);
+
+  await waitForState(dbg, state => {
+    const bp = dbg.selectors.getBreakpointsList(state)[index];
+    return bp.disabled;
+  });
+
+  const bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
+  assertClass(bpMarkers[0], "disabled");
+}
+
+async function removeFirstBreakpoint(dbg) {
+  let bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
+
+  bpMarkers[0].click();
+  bpMarkers = await waitForAllElements(dbg, "columnBreakpoints");
+  assertClass(bpMarkers[0], "active", false);
+}
+
+async function removeAllBreakpoints(dbg, line, count) {
+  clickGutter(dbg, 32);
+  await waitForBreakpointCount(dbg, 0);
+
+  ok(findAllElements(dbg, "columnBreakpoints").length == 0);
+}
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "simple1");
-  await pushPref("devtools.debugger.features.column-breakpoints", false);
+  await selectSource(dbg, "long");
 
-  if(!Services.prefs.getBoolPref("devtools.debugger.features.column-breakpoints")) {
-    ok(true, "This test only applies when column breakpoints are on");
-    return;
-  }
+  info("1. Add a column breakpoint on line 32");
+  await enableFirstBreakpoint(dbg);
 
-  await selectSource(dbg, "simple1");
+  info("2. Click on the second breakpoint on line 32");
+  await enableSecondBreakpoint(dbg);
 
-  
-  getCM(dbg).setCursor({ line: 15, ch: 0 });
+  info("3. Add a condition to the first breakpoint");
+  await setConditionalBreakpoint(dbg, 0, "foo");
 
-  
-  await addBreakpoint(dbg, "simple1", 15);
+  info("4. Add a log to the first breakpoint");
+  await setLogPoint(dbg, 0, "bar");
 
-  
-  await waitForElementWithSelector(dbg, ".column-breakpoint");
+  info("5. Disable the first breakpoint");
+  await disableBreakpoint(dbg, 0);
 
-  let columnBreakpointMarkers = getColumnBreakpointElements(dbg);
-  ok(
-    columnBreakpointMarkers.length === 2,
-      "2 column breakpoint markers display"
-  );
+  info("6. Remove the first breakpoint");
+  await removeFirstBreakpoint(dbg);
 
-  
-  columnBreakpointMarkers[0].click();
+  info("7. Add a condition to the second breakpoint");
+  await setConditionalBreakpoint(dbg, 1, "foo2");
 
-  
-  columnBreakpointMarkers[1].click();
-
-  
-  await waitForState(dbg, state => {
-    return dbg.win.document.querySelectorAll(".breakpoints-list .breakpoint").length === 3;
-  })
-
-  
-  dbg.win.document.querySelector(".secondary-panes").scrollTop = 100;
-
-  
-  await setConditionalBreakpoint(dbg, 4, "Eight");
-
-  
-  await waitForElementWithSelector(dbg, ".column-breakpoint.has-condition");
-
-  
-  removeBreakpointViaContext(dbg, 3);
-
-  
-  await waitForState(dbg, state => dbg.selectors.getBreakpointCount(state) == 2);
-  await waitForElementWithSelector(dbg, ".column-breakpoint.has-condition");
-  columnBreakpointMarkers = getColumnBreakpointElements(dbg);
-  ok(hasCondition(columnBreakpointMarkers[0]), "First column breakpoint has conditional style");
-
-  
-  removeBreakpointViaContext(dbg, 3);
-
-  
-  await waitForState(dbg, state => dbg.selectors.getBreakpointCount(state) == 1);
-  await waitForElementWithSelector(dbg, ".column-breakpoint");
-
-  
-  await waitFor(() => !hasCondition(getColumnBreakpointElements(dbg)[0]));
+  info("8. test removing the breakpoints by clicking in the gutter");
+  await removeAllBreakpoints(dbg, 32, 0);
 });
