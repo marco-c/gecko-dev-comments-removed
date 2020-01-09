@@ -14,10 +14,12 @@ async function clickFirstStackElement(hud, message) {
 
   button.click();
 
-  
-  await waitForTime(100);
+  let frame;
+  await waitUntil(() => {
+    frame = message.querySelector(".frame");
+    return !!frame;
+  });
 
-  const frame = message.querySelector(".frame");
   EventUtils.sendMouseEvent({ type: "mousedown" }, frame);
 
   await once(hud.ui, "source-in-debugger-opened");
