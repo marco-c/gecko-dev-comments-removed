@@ -17,8 +17,56 @@ self.createIframe = (url, t) => new Promise(resolve => {
 
 
 
+
+
+
+
+self.createServiceWorker = async (t, sw_registration_name, scope_url) => {
+  let registration = await navigator.serviceWorker.getRegistration(scope_url);
+  if (registration)
+    await registration.unregister();
+
+  registration = await navigator.serviceWorker.register(sw_registration_name,
+      {scope_url});
+  t.add_cleanup(() => registration.unregister());
+
+  return new Promise(resolve => {
+    const serviceWorker = registration.installing || registration.active ||
+        registration.waiting;
+    serviceWorker.addEventListener('statechange', event => {
+      if (event.target.state === 'activated') {
+        resolve(serviceWorker);
+      }
+    });
+  })
+}
+
+
+
+
+
 self.waitForMessage = () => new Promise(resolve => {
   window.addEventListener('message', event => {
     resolve(event.data);
   }, {once: true});
 });
+
+
+
+
+
+
+self.sendMessageOverChannel = (message, target) => {
+  return new Promise(function(resolve, reject) {
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = event => {
+      if (event.data.error) {
+        reject(event.data.error);
+      } else {
+        resolve(event.data);
+      }
+    };
+
+    target.postMessage(message, [messageChannel.port2]);
+  })
+};
