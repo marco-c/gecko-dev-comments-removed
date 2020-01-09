@@ -9,6 +9,7 @@ package org.mozilla.geckoview;
 import org.mozilla.gecko.AndroidGamepadManager;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.InputMethods;
+import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.util.ActivityUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
@@ -17,6 +18,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -165,6 +167,22 @@ public class GeckoView extends FrameLayout {
 
         public boolean shouldPinOnScreen() {
             return mDisplay != null ? mDisplay.shouldPinOnScreen() : false;
+        }
+
+        
+
+
+
+
+
+
+        @UiThread
+        @NonNull GeckoResult<Bitmap> capturePixels() {
+            if (mDisplay == null) {
+                return GeckoResult.fromException(new IllegalStateException("Display must be created before pixels can be captured"));
+            }
+
+            return mDisplay.capturePixels();
         }
     }
 
@@ -708,5 +726,19 @@ public class GeckoView extends FrameLayout {
             }
         }
         mSession.getTextInput().autofill(strValues);
+    }
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
+    public @NonNull GeckoResult<Bitmap> capturePixels() {
+        return mDisplay.capturePixels();
     }
 }
