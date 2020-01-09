@@ -709,6 +709,30 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
+
+
+
+
+    nsIFrame* ComputeRootFrameToHandleEvent(nsIFrame* aFrameForPresShell,
+                                            WidgetGUIEvent* aGUIEvent,
+                                            nsIContent* aCapturingContent,
+                                            bool* aIsCapturingContentIgnored,
+                                            bool* aIsCaptureRetargeted);
+
+    
+
+
+
+
+
+
+
+
+
+
     MOZ_CAN_RUN_SCRIPT
     nsresult HandleEventInternal(WidgetEvent* aEvent,
                                  nsEventStatus* aEventStatus,
