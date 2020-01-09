@@ -2007,13 +2007,18 @@ VARCACHE_PREF(
 )
 
 
-# define PREF_VALUE false
 VARCACHE_PREF(
   "privacy.trackingprotection.fingerprinting.enabled",
    privacy_trackingprotection_fingerprinting_enabled,
-  bool, PREF_VALUE
+  bool, false
 )
-#undef PREF_VALUE
+
+
+VARCACHE_PREF(
+  "privacy.trackingprotection.fingerprinting.annotate.enabled",
+   privacy_trackingprotection_fingerprinting_annotate_enabled,
+  bool, false
+)
 
 
 # define PREF_VALUE false
