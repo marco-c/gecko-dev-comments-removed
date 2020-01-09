@@ -2614,7 +2614,7 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
         
         
         if (aFlags & nsTextEditorState::eSetValue_ByContent) {
-          MaybeUpdateAllValidityStates();
+          MaybeUpdateAllValidityStates(!mDoneCreating);
         }
       } else {
         free(mInputData.mValue);

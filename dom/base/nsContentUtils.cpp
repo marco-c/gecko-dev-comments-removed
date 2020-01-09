@@ -4151,7 +4151,9 @@ nsresult nsContentUtils::DispatchInputEvent(Element* aEventTargetElement,
   HTMLInputElement* inputElement =
       HTMLInputElement::FromNode(aEventTargetElement);
   if (inputElement) {
-    inputElement->MaybeUpdateAllValidityStates();
+    MOZ_KnownLive(inputElement)->MaybeUpdateAllValidityStates(true);
+    
+    
   }
 
   if (!useInputEvent) {

@@ -345,11 +345,12 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
   
   
   void UpdateAllValidityStates(bool aNotify);
-  void MaybeUpdateAllValidityStates() {
+  MOZ_CAN_RUN_SCRIPT
+  void MaybeUpdateAllValidityStates(bool aNotify) {
     
     
     if (mType == NS_FORM_INPUT_EMAIL) {
-      UpdateAllValidityStates(!mDoneCreating);
+      UpdateAllValidityStates(aNotify);
     }
   }
 
