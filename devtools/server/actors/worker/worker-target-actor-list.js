@@ -31,11 +31,40 @@ function matchWorkerDebugger(dbg, options) {
   return true;
 }
 
+
+
+
+
+
+
+function PauseMatchingWorkers(options) {
+  this._options = options;
+  this.onRegister = this._onRegister.bind(this);
+  this.onUnregister = () => {};
+
+  wdm.addListener(this);
+}
+
+PauseMatchingWorkers.prototype = {
+  destroy() {
+    wdm.removeListener(this);
+  },
+
+  _onRegister(dbg) {
+    if (matchWorkerDebugger(dbg, this._options)) {
+      
+      
+      dbg.setDebuggerReady(false);
+    }
+  },
+};
+
 function WorkerTargetActorList(conn, options) {
   this._conn = conn;
   this._options = options;
   this._actors = new Map();
   this._onListChanged = null;
+  this._pauseMatchingWorkers = null;
   this._mustNotify = false;
   this.onRegister = this.onRegister.bind(this);
   this.onUnregister = this.onUnregister.bind(this);
@@ -121,6 +150,17 @@ WorkerTargetActorList.prototype = {
   onUnregister(dbg) {
     if (matchWorkerDebugger(dbg, this._options)) {
       this._notifyListChanged();
+    }
+  },
+
+  setPauseMatchingWorkers(shouldPause) {
+    if (shouldPause != !!this._pauseMatchingWorkers) {
+      if (shouldPause) {
+        this._pauseMatchingWorkers = new PauseMatchingWorkers(this._options);
+      } else {
+        this._pauseMatchingWorkers.destroy();
+        this._pauseMatchingWorkers = null;
+      }
     }
   },
 };

@@ -67,13 +67,6 @@ var DebuggerServer = {
 
 
 
-  keepAlive: false,
-
-  
-
-
-
-
   get rootlessServer() {
     return !this.createRootActor;
   },
@@ -398,6 +391,11 @@ var DebuggerServer = {
           onMessage: (message) => {
             message = JSON.parse(message);
             if (message.type !== "rpc") {
+              if (message.type == "attached") {
+                
+                
+                dbg.setDebuggerReady(true);
+              }
               return;
             }
 

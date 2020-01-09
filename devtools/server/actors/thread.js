@@ -272,6 +272,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     this.dbg.addDebuggees();
     this.dbg.enabled = true;
+
+    
+    
+    
+    if (this._parent.onThreadAttached) {
+      this._parent.onThreadAttached();
+    }
+
     try {
       
       const packet = this._paused();
@@ -447,6 +455,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     if ("skipBreakpoints" in options) {
       this.skipBreakpoints = options.skipBreakpoints;
+    }
+
+    if ("pauseWorkersUntilAttach" in options) {
+      if (this._parent.pauseWorkersUntilAttach) {
+        this._parent.pauseWorkersUntilAttach(options.pauseWorkersUntilAttach);
+      }
     }
 
     Object.assign(this._options, options);
@@ -1296,13 +1310,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return undefined;
     }
 
-    this._state = "paused";
-
     
     this.dbg.onEnterFrame = undefined;
     this.dbg.replayingOnPopFrame = undefined;
     this.dbg.onExceptionUnwind = undefined;
     this._clearSteppingHooks();
+
+    this._state = "paused";
 
     
     
