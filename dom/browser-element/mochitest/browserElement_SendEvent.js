@@ -25,6 +25,8 @@ function runTest() {
   
 
   iframe.addEventListener("mozbrowserloadend", function onloadend(e) {
+    
+    iframe.getBoundingClientRect();
     iframe.sendMouseEvent("mousedown", x, y, 0, 1, 0);
   });
 
