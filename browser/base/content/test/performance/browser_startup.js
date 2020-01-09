@@ -27,8 +27,6 @@ const startupPhases = {
   
   "before profile selection": {whitelist: {
     components: new Set([
-      "MainProcessSingleton.js",
-
       
       "PushComponents.js", 
     ]),
@@ -38,6 +36,7 @@ const startupPhases = {
       "resource://gre/modules/ActorManagerParent.jsm",
       "resource://gre/modules/CustomElementsListener.jsm",
       "resource://gre/modules/ExtensionUtils.jsm",
+      "resource://gre/modules/MainProcessSingleton.jsm",
       "resource://gre/modules/XPCOMUtils.jsm",
       "resource://gre/modules/Services.jsm",
     ]),
