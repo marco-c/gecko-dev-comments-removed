@@ -31,6 +31,8 @@ ChromeUtils.defineModuleGetter(this, "ResetProfile",
   "resource://gre/modules/ResetProfile.jsm");
 ChromeUtils.defineModuleGetter(this, "UpdateUtils",
   "resource://gre/modules/UpdateUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "UrlbarPrefs",
+  "resource:///modules/UrlbarPrefs.jsm");
 
 
 const PREF_LOG_LEVEL      = "browser.uitour.loglevel";
@@ -1321,22 +1323,29 @@ var UITour = {
       }
       pageAction.doCommand(aWindow);
     } else if (aMenuName == "urlbar") {
-      this.getTarget(aWindow, "urlbar").then(target => {
-        let urlbar = target.node;
-        if (aOpenCallback) {
+      let urlbar = aWindow.gURLBar;
+      let quantumbar = UrlbarPrefs.get("quantumbar");
+      if (aOpenCallback) {
+        if (quantumbar) {
+          urlbar.panel.addEventListener("popupshown", aOpenCallback, { once: true });
+        } else {
           urlbar.popup.addEventListener("popupshown", aOpenCallback, { once: true });
         }
-        urlbar.focus();
-        
-        
-        
-        
-        
-        const SEARCH_STRING = "Firefox";
-        urlbar.value = SEARCH_STRING;
-        urlbar.select();
+      }
+      urlbar.focus();
+      
+      
+      
+      
+      
+      const SEARCH_STRING = "Firefox";
+      urlbar.value = SEARCH_STRING;
+      urlbar.select();
+      if (quantumbar) {
+        urlbar.startQuery();
+      } else {
         urlbar.controller.startSearch(SEARCH_STRING);
-      }).catch(Cu.reportError);
+      }
     }
   },
 
