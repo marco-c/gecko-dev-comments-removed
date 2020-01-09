@@ -188,6 +188,13 @@ ContentRestoreInternal.prototype = {
       if (loadArguments) {
         
         
+        if (loadArguments.redirectLoadSwitchId) {
+          webNavigation.resumeRedirectedLoad(loadArguments.redirectLoadSwitchId);
+          return true;
+        }
+
+        
+        
         let referrer = loadArguments.referrer ?
                        Services.io.newURI(loadArguments.referrer) : null;
         let referrerPolicy = ("referrerPolicy" in loadArguments

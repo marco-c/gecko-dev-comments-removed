@@ -15,6 +15,8 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "allowLinkedWebInFileUriProcess",
                                       "browser.tabs.remote.allowLinkedWebInFileUriProcess", false);
 XPCOMUtils.defineLazyPreferenceGetter(this, "useSeparatePrivilegedContentProcess",
                                       "browser.tabs.remote.separatePrivilegedContentProcess", false);
+XPCOMUtils.defineLazyPreferenceGetter(this, "useHttpResponseProcessSelection",
+                                      "browser.tabs.remote.useHTTPResponseProcessSelection", false);
 ChromeUtils.defineModuleGetter(this, "Utils",
                                "resource://gre/modules/sessionstore/Utils.jsm");
 
@@ -89,6 +91,10 @@ var E10SUtils = {
   EXTENSION_REMOTE_TYPE,
   PRIVILEGED_REMOTE_TYPE,
   LARGE_ALLOCATION_REMOTE_TYPE,
+
+  useHttpResponseProcessSelection() {
+    return useHttpResponseProcessSelection;
+  },
 
   canLoadURIInRemoteType(aURL, aRemoteType = DEFAULT_REMOTE_TYPE) {
     
@@ -226,6 +232,36 @@ var E10SUtils = {
     }
   },
 
+  getRemoteTypeForPrincipal(aPrincipal, aMultiProcess,
+                            aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
+                            aCurrentPrincipal) {
+    if (!aMultiProcess) {
+      return NOT_REMOTE;
+    }
+
+    
+    
+    if (aPrincipal.isSystemPrincipal || aPrincipal.isExpandedPrincipal) {
+      throw Cr.NS_ERROR_UNEXPECTED;
+    }
+
+    
+    if (aPrincipal.isNullPrincipal) {
+      return aPreferredRemoteType == NOT_REMOTE ? DEFAULT_REMOTE_TYPE
+                                                : aPreferredRemoteType;
+    }
+
+    
+    
+    
+    let currentURI = (aCurrentPrincipal && aCurrentPrincipal.isCodebasePrincipal)
+                     ? aCurrentPrincipal.URI : null;
+    return E10SUtils.getRemoteTypeForURIObject(aPrincipal.URI,
+                                               aMultiProcess,
+                                               aPreferredRemoteType,
+                                               currentURI);
+  },
+
   shouldLoadURIInBrowser(browser, uri, multiProcess = true,
                          flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE) {
     let currentRemoteType = browser.remoteType;
@@ -276,8 +312,21 @@ var E10SUtils = {
 
   shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData) {
     
-    if (aDocShell.sameTypeParent)
+    if (aDocShell.sameTypeParent) {
       return true;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (useHttpResponseProcessSelection &&
+        (aURI.scheme == "http" || aURI.scheme == "https") &&
+        Services.appinfo.remoteType != NOT_REMOTE) {
+      return true;
+    }
 
     
     

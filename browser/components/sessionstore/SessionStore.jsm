@@ -48,6 +48,9 @@ const OBSERVING = [
   "quit-application", "browser:purge-session-history",
   "browser:purge-session-history-for-domain",
   "idle-daily", "clear-origin-attributes-data",
+  "http-on-examine-response",
+  "http-on-examine-merged-response",
+  "http-on-examine-cached-response",
 ];
 
 
@@ -171,6 +174,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.jsm",
+  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   GlobalState: "resource:///modules/sessionstore/GlobalState.jsm",
   HomePage: "resource:///modules/HomePage.jsm",
   PrivacyFilter: "resource://gre/modules/sessionstore/PrivacyFilter.jsm",
@@ -447,6 +451,9 @@ var SessionStoreInternal = {
 
   
   _nextClosedId: 0,
+
+  
+  _switchIdMonotonic: 0,
 
   
   
@@ -803,8 +810,15 @@ var SessionStoreInternal = {
         try {
           userContextId = JSON.parse(aData).userContextId;
         } catch (e) {}
-        if (userContextId)
+        if (userContextId) {
           this._forgetTabsWithUserContextId(userContextId);
+        }
+        break;
+      case "http-on-examine-response":
+      case "http-on-examine-cached-response":
+      case "http-on-examine-merged-response":
+        this.onExamineResponse(aSubject);
+        break;
     }
   },
 
@@ -2268,6 +2282,104 @@ var SessionStoreInternal = {
 
   
 
+
+
+
+  async _doProcessSwitch(aBrowser, aRemoteType, aChannel, aSwitchId) {
+    
+    await aBrowser.ownerGlobal.delayedStartupPromise;
+
+    
+    let tab = aBrowser.ownerGlobal.gBrowser.getTabForBrowser(aBrowser);
+    let loadArguments = {
+      newFrameloader: true,  
+      remoteType: aRemoteType,  
+
+      
+      redirectLoadSwitchId: aSwitchId,
+    };
+
+    await SessionStore.navigateAndRestore(tab, loadArguments, -1);
+
+    
+    
+    if (aBrowser.remoteType != aRemoteType ||
+        !aBrowser.frameLoader || !aBrowser.frameLoader.tabParent) {
+      throw Cr.NS_ERROR_FAILURE;
+    }
+
+    
+    return aBrowser.frameLoader.tabParent;
+  },
+
+  
+  
+  onExamineResponse(aChannel) {
+    if (!E10SUtils.useHttpResponseProcessSelection()) {
+      return;
+    }
+
+    if (!aChannel.isDocument || !aChannel.loadInfo) {
+      return; 
+    }
+
+    let browsingContext = aChannel.loadInfo.browsingContext;
+    if (!browsingContext) {
+      return; 
+    }
+
+    if (browsingContext.parent) {
+      return; 
+    }
+
+    
+    let currentPrincipal = null;
+    if (browsingContext.currentWindowGlobal) {
+      currentPrincipal = browsingContext.currentWindowGlobal.documentPrincipal;
+    }
+
+    let parentChannel = aChannel.notificationCallbacks
+                                .getInterface(Ci.nsIParentChannel);
+    if (!parentChannel) {
+      return; 
+    }
+
+    let tabParent = parentChannel.QueryInterface(Ci.nsIInterfaceRequestor)
+                                 .getInterface(Ci.nsITabParent);
+    if (!tabParent || !tabParent.ownerElement) {
+      console.warn("warning: Missing tabParent");
+      return; 
+    }
+
+    let browser = tabParent.ownerElement;
+    if (browser.tagName !== "browser") {
+      console.warn("warning: Not a xul:browser element:", browser.tagName);
+      return; 
+    }
+
+    let resultPrincipal =
+      Services.scriptSecurityManager.getChannelResultPrincipal(aChannel);
+    let useRemoteTabs = browser.ownerGlobal.gMultiProcessBrowser;
+    let remoteType = E10SUtils.getRemoteTypeForPrincipal(resultPrincipal,
+                                                         useRemoteTabs,
+                                                         browser.remoteType,
+                                                         currentPrincipal);
+    if (browser.remoteType == remoteType) {
+      return; 
+    }
+
+    
+    
+    
+    
+    let identifier = ++this._switchIdMonotonic;
+    let tabPromise = this._doProcessSwitch(browser, remoteType,
+                                           aChannel, identifier);
+    aChannel.switchProcessTo(tabPromise, identifier);
+  },
+
+  
+
   getBrowserState: function ssi_getBrowserState() {
     let state = this.getCurrentState();
 
@@ -3004,31 +3116,40 @@ var SessionStoreInternal = {
 
 
 
+
+
+
+
   navigateAndRestore(tab, loadArguments, historyIndex) {
     let window = tab.ownerGlobal;
 
     if (!window.__SSi) {
       Cu.reportError("Tab's window must be tracked.");
-      return;
+      return Promise.reject();
     }
 
     let browser = tab.linkedBrowser;
 
     
     
-    let alreadyRestoring =
-      this._remotenessChangingBrowsers.has(browser.permanentKey);
-
     
-    
-    this._remotenessChangingBrowsers.set(browser.permanentKey, loadArguments);
-
-    if (alreadyRestoring) {
+    if (this._remotenessChangingBrowsers.has(browser.permanentKey)) {
+      let opts = this._remotenessChangingBrowsers.get(browser.permanentKey);
       
       
-      return;
+      
+      opts.loadArguments = loadArguments;
+      return opts.promise;
     }
 
+    
+    
+    let promise = this._asyncNavigateAndRestore(tab);
+    this._remotenessChangingBrowsers.set(
+      browser.permanentKey, {loadArguments, historyIndex, promise});
+
+    
+    
     let uriObj;
     try {
       uriObj = Services.io.newURI(loadArguments.uri);
@@ -3046,60 +3167,74 @@ var SessionStoreInternal = {
     
     window.gBrowser.setDefaultIcon(tab, uriObj);
 
-    
-    TabStateFlusher.flush(browser).then(() => {
-      
-      
-      
-      let recentLoadArguments =
-        this._remotenessChangingBrowsers.get(browser.permanentKey);
-      this._remotenessChangingBrowsers.delete(browser.permanentKey);
-
-      
-      if (tab.closing || !tab.linkedBrowser) {
-        return;
-      }
-
-      let refreshedWindow = tab.ownerGlobal;
-
-      
-      if (!refreshedWindow || !refreshedWindow.__SSi || refreshedWindow.closed) {
-        return;
-      }
-
-      let tabState = TabState.clone(tab, TAB_CUSTOM_VALUES.get(tab));
-      let options = {
-        restoreImmediately: true,
-        
-        
-        
-        newFrameloader: recentLoadArguments.newFrameloader,
-        remoteType: recentLoadArguments.remoteType,
-        
-        
-        restoreContentReason: RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE,
-      };
-
-      if (historyIndex >= 0) {
-        tabState.index = historyIndex + 1;
-        tabState.index = Math.max(1, Math.min(tabState.index, tabState.entries.length));
-      } else {
-        options.loadArguments = recentLoadArguments;
-      }
-
-      
-      if (TAB_STATE_FOR_BROWSER.has(tab.linkedBrowser)) {
-        this._resetLocalTabRestoringState(tab);
-      }
-
-      
-      this.restoreTab(tab, tabState, options);
-    });
-
     TAB_STATE_FOR_BROWSER.set(tab.linkedBrowser, TAB_STATE_WILL_RESTORE);
 
     
     this._notifyOfClosedObjectsChange();
+
+    return promise;
+  },
+
+  
+
+
+
+
+
+
+
+
+  async _asyncNavigateAndRestore(tab) {
+    let initialBrowser = tab.linkedBrowser;
+    
+    
+    await TabStateFlusher.flush(initialBrowser);
+
+    
+    
+    
+    let {loadArguments, historyIndex} =
+      this._remotenessChangingBrowsers.get(initialBrowser.permanentKey);
+    this._remotenessChangingBrowsers.delete(initialBrowser.permanentKey);
+
+    
+    if (tab.closing || !tab.linkedBrowser) {
+      return;
+    }
+
+    
+    let window = tab.ownerGlobal;
+    if (!window || !window.__SSi || window.closed) {
+      return;
+    }
+
+    let tabState = TabState.clone(tab, TAB_CUSTOM_VALUES.get(tab));
+    let options = {
+      restoreImmediately: true,
+      
+      
+      
+      newFrameloader: loadArguments.newFrameloader,
+      remoteType: loadArguments.remoteType,
+      
+      
+      restoreContentReason: RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE,
+    };
+
+    if (historyIndex >= 0) {
+      tabState.index = historyIndex + 1;
+      tabState.index = Math.max(1, Math.min(tabState.index, tabState.entries.length));
+    } else {
+      options.loadArguments = loadArguments;
+    }
+
+    
+    if (TAB_STATE_FOR_BROWSER.has(tab.linkedBrowser)) {
+      this._resetLocalTabRestoringState(tab);
+    }
+
+    
+    this.restoreTab(tab, tabState, options);
   },
 
   
