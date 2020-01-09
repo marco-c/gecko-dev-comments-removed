@@ -55,6 +55,13 @@ const DownloadsButton = {
 
 
 
+  _uninitialized: false,
+
+  
+
+
+
+
 
   initializeIndicator() {
     DownloadsIndicatorView.ensureInitialized();
@@ -159,6 +166,9 @@ const DownloadsButton = {
   },
 
   checkForAutoHide() {
+    if (this._uninitialized) {
+      return;
+    }
     let button = this._placeholder;
     if (!this._customizing && this.autoHideDownloadsButton &&
         button && button.closest("toolbar")) {
@@ -213,6 +223,7 @@ const DownloadsButton = {
   },
 
   uninit() {
+    this._uninitialized = true;
     CustomizableUI.removeListener(this);
   },
 
