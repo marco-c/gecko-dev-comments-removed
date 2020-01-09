@@ -156,3 +156,7 @@ const { PromiseTestUtils } = scopedCuImport(
   "resource://testing-common/PromiseTestUtils.jsm"
 );
 PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_NOT_INITIALIZED/);
+
+
+
+PromiseTestUtils.whitelistRejectionsGlobally(/Current thread has paused or resumed/);
