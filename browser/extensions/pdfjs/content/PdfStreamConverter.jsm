@@ -223,6 +223,14 @@ class ChromeActions {
     return PrivateBrowsingUtils.isContentWindowPrivate(this.domWindow);
   }
 
+  getWindowOriginAttributes() {
+    try {
+      return this.domWindow.document.nodePrincipal.originAttributes;
+    } catch (err) {
+      return {};
+    }
+  }
+
   download(data, sendResponse) {
     var self = this;
     var originalUrl = data.originalUrl;
@@ -582,6 +590,9 @@ class RangedChromeActions extends ChromeActions {
     var xhr_onreadystatechange = function xhr_onreadystatechange() {
       if (this.readyState === 1) { 
         var netChannel = this.channel;
+        
+        
+        this.setOriginAttributes(self.getWindowOriginAttributes());
         if ("nsIPrivateBrowsingChannel" in Ci &&
             netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
           var docIsPrivate = self.isInPrivateBrowsing();
