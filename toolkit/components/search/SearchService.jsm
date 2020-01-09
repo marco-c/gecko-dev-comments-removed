@@ -176,7 +176,7 @@ const SEARCH_GEO_DEFAULT_UPDATE_INTERVAL = 2592000;
 
 
 const MULTI_LOCALE_ENGINES = [
-  "amazon", "amazondotcom", "bolcom", "ebay", "google", "markplaats",
+  "amazon", "amazondotcom", "bolcom", "ebay", "google", "marktplaats",
   "mercadolibre", "twitter", "wikipedia", "wiktionary", "yandex", "multilocale",
 ];
 
