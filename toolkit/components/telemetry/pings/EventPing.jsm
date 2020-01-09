@@ -65,6 +65,8 @@ var TelemetryEventPing = {
   
   _lastSendTime: -DEFAULT_MIN_FREQUENCY_MS,
 
+  _processStartTimestamp: 0,
+
   get dataset() {
     return Telemetry.canRecordPrereleaseData ? Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN
                                              : Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
@@ -75,6 +77,10 @@ var TelemetryEventPing = {
       return;
     }
     this._log.trace("Starting up.");
+
+    
+    this._processStartTimestamp = Math.round((Date.now() - TelemetryUtils.monotonicNow()) / MS_IN_A_MINUTE) * MS_IN_A_MINUTE;
+
     Services.obs.addObserver(this, EVENT_LIMIT_REACHED_TOPIC);
 
     XPCOMUtils.defineLazyPreferenceGetter(this, "maxEventsPerPing",
@@ -165,11 +171,9 @@ var TelemetryEventPing = {
     
     let sessionMeta = TelemetrySession.getMetadata(reason);
 
-    let processStartTimestamp = Math.round((Date.now() - TelemetryUtils.monotonicNow()) / MS_IN_A_MINUTE) * MS_IN_A_MINUTE;
-
     let payload = {
       reason,
-      processStartTimestamp,
+      processStartTimestamp: this._processStartTimestamp,
       sessionId: sessionMeta.sessionId,
       subsessionId: sessionMeta.subsessionId,
       lostEventsCount: 0,
