@@ -23,7 +23,6 @@ class AbstractGeneratorObject : public NativeObject {
   
   
   static const int32_t RESUME_INDEX_RUNNING = INT32_MAX;
-  static const int32_t RESUME_INDEX_CLOSING = INT32_MAX - 1;
 
   enum {
     CALLEE_SLOT = 0,
@@ -122,7 +121,6 @@ class AbstractGeneratorObject : public NativeObject {
   
   
   
-  
 
   bool isBeforeInitialYield() const {
     return getFixedSlot(RESUME_INDEX_SLOT).isUndefined();
@@ -130,24 +128,15 @@ class AbstractGeneratorObject : public NativeObject {
   bool isRunning() const {
     return getFixedSlot(RESUME_INDEX_SLOT) == Int32Value(RESUME_INDEX_RUNNING);
   }
-  bool isClosing() const {
-    return getFixedSlot(RESUME_INDEX_SLOT) == Int32Value(RESUME_INDEX_CLOSING);
-  }
   bool isSuspended() const {
     
     
-    static_assert(RESUME_INDEX_CLOSING < RESUME_INDEX_RUNNING,
-                  "test below should return false for RESUME_INDEX_RUNNING");
     Value resumeIndex = getFixedSlot(RESUME_INDEX_SLOT);
-    return resumeIndex.isInt32() && resumeIndex.toInt32() < RESUME_INDEX_CLOSING;
+    return resumeIndex.isInt32() && resumeIndex.toInt32() < RESUME_INDEX_RUNNING;
   }
   void setRunning() {
     MOZ_ASSERT(isSuspended());
     setFixedSlot(RESUME_INDEX_SLOT, Int32Value(RESUME_INDEX_RUNNING));
-  }
-  void setClosing() {
-    MOZ_ASSERT(isRunning());
-    setFixedSlot(RESUME_INDEX_SLOT, Int32Value(RESUME_INDEX_CLOSING));
   }
   void setResumeIndex(jsbytecode* pc) {
     MOZ_ASSERT(*pc == JSOP_INITIALYIELD || *pc == JSOP_YIELD ||
@@ -155,10 +144,10 @@ class AbstractGeneratorObject : public NativeObject {
 
     MOZ_ASSERT_IF(JSOp(*pc) == JSOP_INITIALYIELD,
                   getFixedSlot(RESUME_INDEX_SLOT).isUndefined());
-    MOZ_ASSERT_IF(JSOp(*pc) != JSOP_INITIALYIELD, isRunning() || isClosing());
+    MOZ_ASSERT_IF(JSOp(*pc) != JSOP_INITIALYIELD, isRunning());
 
     uint32_t resumeIndex = GET_UINT24(pc);
-    MOZ_ASSERT(resumeIndex < uint32_t(RESUME_INDEX_CLOSING));
+    MOZ_ASSERT(resumeIndex < uint32_t(RESUME_INDEX_RUNNING));
 
     setFixedSlot(RESUME_INDEX_SLOT, Int32Value(resumeIndex));
     MOZ_ASSERT(isSuspended());

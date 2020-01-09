@@ -4364,7 +4364,7 @@ bool CacheIRCompiler::emitCallIsSuspendedGeneratorResult() {
   masm.branchTestInt32(Assembler::NotEqual, addr, &returnFalse);
   masm.unboxInt32(addr, scratch);
   masm.branch32(Assembler::AboveOrEqual, scratch,
-                Imm32(AbstractGeneratorObject::RESUME_INDEX_CLOSING),
+                Imm32(AbstractGeneratorObject::RESUME_INDEX_RUNNING),
                 &returnFalse);
 
   masm.moveValue(BooleanValue(true), output.valueReg());
