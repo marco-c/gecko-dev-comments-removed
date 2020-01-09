@@ -70,9 +70,14 @@ const dump = RecordReplayControl.dump;
 
 function assert(v) {
   if (!v) {
-    dump("Assertion Failed: " + (new Error()).stack + "\n");
+    dump(`Assertion Failed: ${Error().stack}\n`);
     throw new Error("Assertion Failed!");
   }
+}
+
+function throwError(v) {
+  dump(`Error: ${v}\n`);
+  throw new Error(v);
 }
 
 
@@ -103,10 +108,6 @@ IdMap.prototype = {
     for (let i = 1; i < this._idToObject.length; i++) {
       callback(i, this._idToObject[i]);
     }
-  },
-
-  lastId() {
-    return this._idToObject.length - 1;
   },
 };
 
@@ -154,6 +155,9 @@ function isNonNullObject(obj) {
 
 const gScripts = new IdMap();
 
+
+const gNewScripts = [];
+
 function addScript(script) {
   gScripts.add(script);
   script.getChildScripts().forEach(addScript);
@@ -196,7 +200,9 @@ dbg.onNewScript = function(script) {
   
   RecordReplayControl.advanceProgressCounter();
 
-  hitGlobalHandler("NewScript");
+  if (gManifest.kind == "resume") {
+    gNewScripts.push(getScriptData(gScripts.getId(script)));
+  }
 
   
   
@@ -251,23 +257,24 @@ function makeObjectSnapshot(object) {
 
 
 
+
 const gConsoleMessages = [];
 
-function newConsoleMessage(messageType, executionPoint, contents) {
-  
-  
-  RecordReplayControl.advanceProgressCounter();
 
+const gNewConsoleMessages = [];
+
+function newConsoleMessage(messageType, executionPoint, contents) {
   if (!executionPoint) {
-    executionPoint =
-      RecordReplayControl.currentExecutionPoint({ kind: "ConsoleMessage" });
+    executionPoint = currentScriptedExecutionPoint();
   }
 
   contents.messageType = messageType;
   contents.executionPoint = executionPoint;
   gConsoleMessages.push(contents);
 
-  hitGlobalHandler("ConsoleMessage");
+  if (gManifest.kind == "resume") {
+    gNewConsoleMessages.push(contents);
+  }
 }
 
 function convertStack(stack) {
@@ -280,6 +287,10 @@ function convertStack(stack) {
 }
 
 
+
+const gWarpTargetPoints = [ null ];
+
+
 Services.console.registerListener({
   QueryInterface: ChromeUtils.generateQI([Ci.nsIConsoleListener]),
 
@@ -288,11 +299,7 @@ Services.console.registerListener({
       
       
       
-      let executionPoint;
-      if (message.timeWarpTarget) {
-        executionPoint =
-          RecordReplayControl.timeWarpTargetExecutionPoint(message.timeWarpTarget);
-      }
+      const executionPoint = gWarpTargetPoints[message.timeWarpTarget];
 
       const contents = JSON.parse(JSON.stringify(message));
       contents.stack = convertStack(message.stack);
@@ -327,6 +334,41 @@ Services.obs.addObserver({
 }, "console-api-log-event");
 
 
+function NewTimeWarpTarget() {
+  
+  
+  gWarpTargetPoints.push(currentScriptedExecutionPoint());
+  return gWarpTargetPoints.length - 1;
+}
+
+
+
+
+
+const gScannedScripts = new Set();
+
+function startScanningScript(script) {
+  const id = gScripts.getId(script);
+  const offsets = script.getPossibleBreakpointOffsets();
+  let lastFrame = null, lastFrameIndex = 0;
+  for (const offset of offsets) {
+    const handler = {
+      hit(frame) {
+        let frameIndex;
+        if (frame == lastFrame) {
+          frameIndex = lastFrameIndex;
+        } else {
+          lastFrame = frame;
+          lastFrameIndex = frameIndex = countScriptFrames() - 1;
+        }
+        RecordReplayControl.addScriptHit(id, offset, frameIndex);
+      },
+    };
+    script.setBreakpoint(offset, handler);
+  }
+}
+
+
 
 
 
@@ -347,8 +389,7 @@ const gInstalledPcHandlers = [];
 
 const gOnPopFilters = [];
 
-
-function ClearPositionHandlers() {
+function clearPositionHandlers() {
   dbg.clearAllBreakpoints();
   dbg.onEnterFrame = undefined;
 
@@ -362,14 +403,14 @@ function installPendingHandlers() {
   const pending = gPendingPcHandlers.map(position => position);
   gPendingPcHandlers.length = 0;
 
-  pending.forEach(EnsurePositionHandler);
+  pending.forEach(ensurePositionHandler);
 }
 
 
 
-function hitGlobalHandler(kind) {
+function hitGlobalHandler(kind, frame) {
   if (gPositionHandlerKinds[kind]) {
-    RecordReplayControl.positionHit({ kind });
+    positionHit({ kind }, frame);
   }
 }
 
@@ -378,7 +419,7 @@ let gPopFrameResult = null;
 
 function onPopFrame(completion) {
   gPopFrameResult = completion;
-  RecordReplayControl.positionHit({
+  positionHit({
     kind: "OnPop",
     script: gScripts.getId(this.script),
     frameIndex: countScriptFrames() - 1,
@@ -387,9 +428,9 @@ function onPopFrame(completion) {
 }
 
 function onEnterFrame(frame) {
-  hitGlobalHandler("EnterFrame");
-
   if (considerScript(frame.script)) {
+    hitGlobalHandler("EnterFrame", frame);
+
     gOnPopFilters.forEach(filter => {
       if (filter(frame)) {
         frame.onPop = onPopFrame;
@@ -411,7 +452,7 @@ function addOnPopFilter(filter) {
   dbg.onEnterFrame = onEnterFrame;
 }
 
-function EnsurePositionHandler(position) {
+function ensurePositionHandler(position) {
   gPositionHandlerKinds[position.kind] = true;
 
   switch (position.kind) {
@@ -438,42 +479,24 @@ function EnsurePositionHandler(position) {
     gInstalledPcHandlers.push({ script: position.script, offset: position.offset });
 
     debugScript.setBreakpoint(position.offset, {
-      hit() {
-        RecordReplayControl.positionHit({
+      hit(frame) {
+        positionHit({
           kind: "OnStep",
           script: position.script,
           offset: position.offset,
           frameIndex: countScriptFrames() - 1,
-        });
+        }, frame);
       },
     });
     break;
   case "OnPop":
-    if (position.script) {
-      addOnPopFilter(frame => gScripts.getId(frame.script) == position.script);
-    } else {
-      addOnPopFilter(frame => true);
-    }
+    assert(position.script);
+    addOnPopFilter(frame => gScripts.getId(frame.script) == position.script);
     break;
   case "EnterFrame":
     dbg.onEnterFrame = onEnterFrame;
     break;
   }
-}
-
-
-function GetEntryPosition(position) {
-  if (position.kind == "Break" || position.kind == "OnStep") {
-    const script = gScripts.getObject(position.script);
-    if (script) {
-      return {
-        kind: "Break",
-        script: position.script,
-        offset: script.mainOffset,
-      };
-    }
-  }
-  return null;
 }
 
 
@@ -534,7 +557,7 @@ function convertCompletionValue(value, options) {
   if ("throw" in value) {
     return { throw: convertValue(value.throw, options) };
   }
-  throw new Error("Unexpected completion value");
+  throwError("Unexpected completion value");
 }
 
 
@@ -589,6 +612,312 @@ function ClearPausedState() {
 
 
 
+
+let gManifest;
+
+
+
+let gTimeWhenResuming;
+
+
+
+const gManifestStartHandlers = {
+  resume({ breakpoints }) {
+    RecordReplayControl.resumeExecution();
+    gTimeWhenResuming = RecordReplayControl.currentExecutionTime();
+    breakpoints.forEach(ensurePositionHandler);
+  },
+
+  restoreCheckpoint({ target }) {
+    RecordReplayControl.restoreCheckpoint(target);
+    throwError("Unreachable!");
+  },
+
+  runToPoint({ needSaveCheckpoints }) {
+    for (const checkpoint of needSaveCheckpoints) {
+      RecordReplayControl.saveCheckpoint(checkpoint);
+    }
+    RecordReplayControl.resumeExecution();
+  },
+
+  scanRecording(manifest) {
+    gManifestStartHandlers.runToPoint(manifest);
+  },
+
+  findHits({ position, startpoint, endpoint }) {
+    const { kind, script, offset, frameIndex: bpFrameIndex } = position;
+    const hits = [];
+    const allHits = RecordReplayControl.findScriptHits(script, offset);
+    for (const { checkpoint, progress, frameIndex } of allHits) {
+      if (checkpoint >= startpoint && checkpoint < endpoint) {
+        switch (kind) {
+        case "OnStep":
+          if (bpFrameIndex != frameIndex) {
+            continue;
+          }
+          
+        case "Break":
+          hits.push({
+            checkpoint,
+            progress,
+            position: { kind: "OnStep", script, offset, frameIndex },
+          });
+        }
+      }
+    }
+    RecordReplayControl.manifestFinished(hits);
+  },
+
+  findFrameSteps({ entryPoint }) {
+    assert(entryPoint.position.kind == "EnterFrame");
+    const frameIndex = countScriptFrames() - 1;
+    const script = getFrameData(frameIndex).script;
+    const offsets = gScripts.getObject(script).getPossibleBreakpointOffsets();
+    for (const offset of offsets) {
+      ensurePositionHandler({ kind: "OnStep", script, offset, frameIndex });
+    }
+    ensurePositionHandler({ kind: "EnterFrame" });
+    ensurePositionHandler({ kind: "OnPop", script, frameIndex });
+
+    gFrameSteps = [ entryPoint ];
+    gFrameStepsFrameIndex = frameIndex;
+    RecordReplayControl.resumeExecution();
+  },
+
+  flushRecording() {
+    RecordReplayControl.flushRecording();
+    RecordReplayControl.manifestFinished();
+  },
+
+  setMainChild() {
+    const endpoint = RecordReplayControl.setMainChild();
+    RecordReplayControl.manifestFinished({ endpoint });
+  },
+
+  debuggerRequest({ request }) {
+    const response = processRequest(request);
+    RecordReplayControl.manifestFinished({
+      response,
+      divergedFromRecording: gDivergedFromRecording,
+    });
+  },
+
+  batchDebuggerRequest({ requests }) {
+    for (const request of requests) {
+      processRequest(request);
+    }
+    RecordReplayControl.manifestFinished();
+  },
+
+  hitLogpoint({ text, condition }) {
+    divergeFromRecording();
+
+    const frame = scriptFrameForIndex(countScriptFrames() - 1);
+    if (condition) {
+      const crv = frame.eval(condition);
+      if ("return" in crv && !crv.return) {
+        RecordReplayControl.manifestFinished({ result: null });
+        return;
+      }
+    }
+
+    const rv = frame.eval(text);
+    const converted = convertCompletionValue(rv, { snapshot: true });
+    RecordReplayControl.manifestFinished({ result: converted });
+  },
+};
+
+
+function ManifestStart(manifest) {
+  try {
+    gManifest = manifest;
+
+    if (gManifestStartHandlers[manifest.kind]) {
+      gManifestStartHandlers[manifest.kind](manifest);
+    } else {
+      dump(`Unknown manifest: ${JSON.stringify(manifest)}\n`);
+    }
+  } catch (e) {
+    printError("ManifestStart", e);
+  }
+}
+
+
+function BeforeCheckpoint() {
+  clearPositionHandlers();
+  gScannedScripts.clear();
+}
+
+const FirstCheckpointId = 1;
+
+
+let gLastCheckpoint;
+
+function currentExecutionPoint(position) {
+  const checkpoint = gLastCheckpoint;
+  const progress = RecordReplayControl.progressCounter();
+  return { checkpoint, progress, position };
+}
+
+function currentScriptedExecutionPoint() {
+  const numFrames = countScriptFrames();
+  if (!numFrames) {
+    return null;
+  }
+  const frame = getFrameData(numFrames - 1);
+  return currentExecutionPoint({
+    kind: "OnStep",
+    script: frame.script,
+    offset: frame.offset,
+    frameIndex: frame.index,
+  });
+}
+
+
+
+const gManifestFinishedAfterCheckpointHandlers = {
+  resume(_, point) {
+    RecordReplayControl.manifestFinished({
+      point,
+      duration: RecordReplayControl.currentExecutionTime() - gTimeWhenResuming,
+      consoleMessages: gNewConsoleMessages,
+      scripts: gNewScripts,
+    });
+    gNewConsoleMessages.length = 0;
+    gNewScripts.length = 0;
+  },
+
+  runToPoint({ endpoint }, point) {
+    if (!endpoint.position && point.checkpoint == endpoint.checkpoint) {
+      RecordReplayControl.manifestFinished({ point });
+    }
+  },
+
+  scanRecording({ endpoint }, point) {
+    if (point.checkpoint == endpoint) {
+      RecordReplayControl.manifestFinished({ point });
+    }
+  },
+};
+
+
+
+
+
+
+
+const gManifestPrepareAfterCheckpointHandlers = {
+  runToPoint({ endpoint }, point) {
+    if (point.checkpoint == endpoint.checkpoint) {
+      assert(endpoint.position);
+      ensurePositionHandler(endpoint.position);
+    }
+  },
+
+  scanRecording() {
+    dbg.onEnterFrame = frame => {
+      if (considerScript(frame.script) && !gScannedScripts.has(frame.script)) {
+        startScanningScript(frame.script);
+        gScannedScripts.add(frame.script);
+      }
+    };
+  },
+};
+
+function processManifestAfterCheckpoint(point, restoredCheckpoint) {
+  
+  
+  if (restoredCheckpoint) {
+    RecordReplayControl.manifestFinished({
+      restoredCheckpoint,
+      point: currentExecutionPoint(),
+    });
+  }
+
+  if (!gManifest) {
+    
+    
+    assert(point.checkpoint == FirstCheckpointId);
+    RecordReplayControl.manifestFinished({ point });
+    assert(gManifest);
+  } else if (gManifestFinishedAfterCheckpointHandlers[gManifest.kind]) {
+    gManifestFinishedAfterCheckpointHandlers[gManifest.kind](gManifest, point);
+  }
+
+  if (gManifestPrepareAfterCheckpointHandlers[gManifest.kind]) {
+    gManifestPrepareAfterCheckpointHandlers[gManifest.kind](gManifest, point);
+  }
+}
+
+
+function AfterCheckpoint(id, restoredCheckpoint) {
+  gLastCheckpoint = id;
+  const point = currentExecutionPoint();
+
+  try {
+    processManifestAfterCheckpoint(point, restoredCheckpoint);
+  } catch (e) {
+    printError("AfterCheckpoint", e);
+  }
+}
+
+
+let gFrameSteps = null;
+
+let gFrameStepsFrameIndex = 0;
+
+
+
+const gManifestPositionHandlers = {
+  resume(manifest, point) {
+    RecordReplayControl.manifestFinished({
+      point,
+      consoleMessages: gNewConsoleMessages,
+      scripts: gNewScripts,
+    });
+  },
+
+  runToPoint({ endpoint }, point) {
+    if (point.progress == endpoint.progress &&
+        point.position.frameIndex == endpoint.position.frameIndex) {
+      clearPositionHandlers();
+      RecordReplayControl.manifestFinished({ point });
+    }
+  },
+
+  findFrameSteps(_, point) {
+    switch (point.position.kind) {
+    case "OnStep":
+      gFrameSteps.push(point);
+      break;
+    case "EnterFrame":
+      if (countScriptFrames() == gFrameStepsFrameIndex + 2) {
+        gFrameSteps.push(point);
+      }
+      break;
+    case "OnPop":
+      gFrameSteps.push(point);
+      clearPositionHandlers();
+      RecordReplayControl.manifestFinished({ point, frameSteps: gFrameSteps });
+      break;
+    }
+  },
+};
+
+function positionHit(position, frame) {
+  const point = currentExecutionPoint(position);
+
+  if (gManifestPositionHandlers[gManifest.kind]) {
+    gManifestPositionHandlers[gManifest.kind](gManifest, point);
+  } else {
+    throwError(`Unexpected manifest in positionHit: ${gManifest.kind}`);
+  }
+}
+
+
+
+
+
 function getScriptData(id) {
   const script = gScripts.getObject(id);
   return {
@@ -601,6 +930,7 @@ function getScriptData(id) {
     displayName: script.displayName,
     url: script.url,
     format: script.format,
+    firstBreakpointOffset: script.getPossibleBreakpointOffsets()[0],
   };
 }
 
@@ -705,7 +1035,7 @@ function getObjectData(id) {
       optimizedOut: object.optimizedOut,
     };
   }
-  throw new Error("Unknown object kind");
+  throwError("Unknown object kind");
 }
 
 function getObjectProperties(object) {
@@ -921,12 +1251,19 @@ function getPauseData() {
 
 
 
+let gDivergedFromRecording = false;
+
+function divergeFromRecording() {
+  RecordReplayControl.divergeFromRecording();
+
+  
+  gDivergedFromRecording = true;
+}
+
 const gRequestHandlers = {
 
   repaint() {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return {};
-    }
+    divergeFromRecording();
     return RecordReplayControl.repaint();
   },
 
@@ -959,10 +1296,6 @@ const gRequestHandlers = {
     return getScriptData(request.id);
   },
 
-  getNewScript(request) {
-    return getScriptData(gScripts.lastId());
-  },
-
   getContent(request) {
     return RecordReplayControl.getContent(request.url);
   },
@@ -984,18 +1317,13 @@ const gRequestHandlers = {
   },
 
   getObjectProperties(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return unknownObjectProperties("Recording divergence in getObjectProperties");
-    }
-
+    divergeFromRecording();
     const object = gPausedObjects.getObject(request.id);
     return getObjectProperties(object);
   },
 
   objectApply(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return { throw: "Recording divergence in objectApply" };
-    }
+    divergeFromRecording();
     const obj = gPausedObjects.getObject(request.id);
     const thisv = convertValueFromParent(request.thisv);
     const args = request.args.map(v => convertValueFromParent(v));
@@ -1004,11 +1332,7 @@ const gRequestHandlers = {
   },
 
   getEnvironmentNames(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return [{name: "Unknown names",
-               value: "Recording divergence in getEnvironmentNames" }];
-    }
-
+    divergeFromRecording();
     const env = gPausedObjects.getObject(request.id);
     return getEnvironmentNames(env);
   },
@@ -1028,10 +1352,7 @@ const gRequestHandlers = {
   },
 
   pauseData(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return { error: "Recording divergence in pauseData" };
-    }
-
+    divergeFromRecording();
     return getPauseData();
   },
 
@@ -1045,10 +1366,7 @@ const gRequestHandlers = {
   getPossibleBreakpointOffsets: forwardToScript("getPossibleBreakpointOffsets"),
 
   frameEvaluate(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return { throw: "Recording divergence in frameEvaluate" };
-    }
-
+    divergeFromRecording();
     const frame = scriptFrameForIndex(request.index);
     const rv = frame.eval(request.text, request.options);
     return convertCompletionValue(rv, request.convertOptions);
@@ -1062,27 +1380,12 @@ const gRequestHandlers = {
     return gConsoleMessages;
   },
 
-  getNewConsoleMessage(request) {
-    return gConsoleMessages[gConsoleMessages.length - 1];
-  },
-
-  currentExecutionPoint(request) {
-    return RecordReplayControl.currentExecutionPoint();
-  },
-
-  recordingEndpoint(request) {
-    return RecordReplayControl.recordingEndpoint();
-  },
-
   
   
   
 
   getFixedObjects(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return { throw: "Recording divergence in getWindow" };
-    }
-
+    divergeFromRecording();
     const window = getWindow();
     return {
       window: getObjectId(makeDebuggeeValue(window)),
@@ -1094,20 +1397,14 @@ const gRequestHandlers = {
   },
 
   newDeepTreeWalker(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return { throw: "Recording divergence in newDeepTreeWalker" };
-    }
-
+    divergeFromRecording();
     const walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"]
       .createInstance(Ci.inIDeepTreeWalker);
     return { id: getObjectId(makeDebuggeeValue(walker)) };
   },
 
   getObjectPropertyValue(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return { throw: "Recording divergence in getObjectPropertyValue" };
-    }
-
+    divergeFromRecording();
     const object = gPausedObjects.getObject(request.id);
 
     try {
@@ -1119,10 +1416,7 @@ const gRequestHandlers = {
   },
 
   setObjectPropertyValue(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return { throw: "Recording divergence in getObjectPropertyValue" };
-    }
-
+    divergeFromRecording();
     const object = gPausedObjects.getObject(request.id);
     const value = getDebuggeeValue(convertValueFromParent(request.value));
 
@@ -1151,30 +1445,32 @@ const gRequestHandlers = {
   },
 };
 
-
-function ProcessRequest(request) {
+function processRequest(request) {
   try {
     if (gRequestHandlers[request.type]) {
       return gRequestHandlers[request.type](request);
     }
     return { exception: "No handler for " + request.type };
   } catch (e) {
-    let msg;
-    try {
-      msg = "" + e + " line " + e.lineNumber;
-    } catch (ee) {
-      msg = "Unknown";
-    }
-    dump("ReplayDebugger Record/Replay Error: " + msg + "\n");
-    return { exception: msg };
+    printError("processRequest", e);
+    return { exception: `Request failed: ${request.type}` };
   }
+}
+
+function printError(why, e) {
+  let msg;
+  try {
+    msg = "" + e + " line " + e.lineNumber;
+  } catch (ee) {
+    msg = "Unknown";
+  }
+  dump(`Record/Replay Error: ${why}: ${msg}\n`);
 }
 
 
 var EXPORTED_SYMBOLS = [
-  "EnsurePositionHandler",
-  "ClearPositionHandlers",
-  "ClearPausedState",
-  "ProcessRequest",
-  "GetEntryPosition",
+  "ManifestStart",
+  "BeforeCheckpoint",
+  "AfterCheckpoint",
+  "NewTimeWarpTarget",
 ];
