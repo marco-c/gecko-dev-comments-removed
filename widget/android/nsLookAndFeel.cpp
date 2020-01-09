@@ -400,6 +400,16 @@ nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       aResult = java::GeckoAppShell::GetAllPointerCapabilities();
       break;
 
+    case eIntID_SystemUsesDarkTheme:
+      
+      
+      
+      if (!jni::IsAvailable()) {
+        return NS_ERROR_FAILURE;
+      }
+      aResult = java::GeckoSystemStateListener::IsNightMode() ? 1 : 0;
+      break;
+
     default:
       aResult = 0;
       rv = NS_ERROR_FAILURE;
