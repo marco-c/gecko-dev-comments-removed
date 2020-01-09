@@ -214,6 +214,17 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(PaintFlags)
 
 enum class PaintType { Default, DelayedCompress };
 
+
+
+
+enum class RenderingStateFlags : uint8_t {
+  None = 0,
+  IgnoringViewportScrolling = 1 << 0,
+  DrawWindowNotFlushing = 1 << 1,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RenderingStateFlags)
+
 #ifdef DEBUG
 
 enum class VerifyReflowFlags {

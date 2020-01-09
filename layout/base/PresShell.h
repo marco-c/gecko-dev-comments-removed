@@ -66,8 +66,12 @@ class PresShell final : public nsIPresShell,
                         public nsISelectionController,
                         public nsIObserver,
                         public nsSupportsWeakReference {
-  typedef layers::FocusTarget FocusTarget;
+  typedef dom::Document Document;
   typedef dom::Element Element;
+  typedef gfx::SourceSurface SourceSurface;
+  typedef layers::FocusTarget FocusTarget;
+  typedef layers::FrameMetrics FrameMetrics;
+  typedef layers::LayerManager LayerManager;
 
   
   
@@ -863,7 +867,8 @@ class PresShell final : public nsIPresShell,
 
   void SetIgnoreViewportScrolling(bool aIgnore);
   bool IgnoringViewportScrolling() const {
-    return mRenderFlags & STATE_IGNORING_VIEWPORT_SCROLLING;
+    return !!(mRenderingStateFlags &
+              RenderingStateFlags::IgnoringViewportScrolling);
   }
 
   float GetResolution() const { return mResolution.valueOr(1.0); }
@@ -899,7 +904,8 @@ class PresShell final : public nsIPresShell,
 
 
   bool InDrawWindowNotFlushing() const {
-    return mRenderFlags & STATE_DRAWWINDOW_NOT_FLUSHING;
+    return !!(mRenderingStateFlags &
+              RenderingStateFlags::DrawWindowNotFlushing);
   }
 
   
@@ -1695,9 +1701,9 @@ class PresShell final : public nsIPresShell,
   struct RenderingState {
     explicit RenderingState(PresShell* aPresShell)
         : mResolution(aPresShell->mResolution),
-          mRenderFlags(aPresShell->mRenderFlags) {}
+          mRenderingStateFlags(aPresShell->mRenderingStateFlags) {}
     Maybe<float> mResolution;
-    RenderFlags mRenderFlags;
+    RenderingStateFlags mRenderingStateFlags;
   };
 
   struct AutoSaveRestoreRenderingState {
@@ -1705,23 +1711,16 @@ class PresShell final : public nsIPresShell,
         : mPresShell(aPresShell), mOldState(aPresShell) {}
 
     ~AutoSaveRestoreRenderingState() {
-      mPresShell->mRenderFlags = mOldState.mRenderFlags;
+      mPresShell->mRenderingStateFlags = mOldState.mRenderingStateFlags;
       mPresShell->mResolution = mOldState.mResolution;
     }
 
     PresShell* mPresShell;
     RenderingState mOldState;
   };
-  static RenderFlags ChangeFlag(RenderFlags aFlags, bool aOnOff,
-                                eRenderFlag aFlag) {
-    return aOnOff ? (aFlags | aFlag) : (aFlag & ~aFlag);
-  }
-
   void SetRenderingState(const RenderingState& aState);
 
   friend class ::nsPresShellEventCB;
-
-  bool mCaretEnabled;
 
   
 
@@ -2671,23 +2670,105 @@ class PresShell final : public nsIPresShell,
   nsIFrame* mDrawEventTargetFrame = nullptr;
 #endif  
 
+ private:
+  
+  
+  
+
+  
+  
+  RefPtr<Document> mDocument;
+  RefPtr<nsPresContext> mPresContext;
+  
+  RefPtr<StyleSheet> mPrefStyleSheet;
+  UniquePtr<nsCSSFrameConstructor> mFrameConstructor;
+  nsViewManager* mViewManager;  
+  RefPtr<nsFrameSelection> mSelection;
+  RefPtr<nsCaret> mCaret;
+  RefPtr<nsCaret> mOriginalCaret;
+  RefPtr<AccessibleCaretEventHub> mAccessibleCaretEventHub;
+  
+  
+  nsFrameManager* mFrameManager;
+  WeakPtr<nsDocShell> mForwardingContainer;
+
+  
+  DOMHighResTimeStamp mLastReflowStart{0.0};
+
   
   
   
   
+  nsCOMPtr<nsITimer> mReflowContinueTimer;
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  
+  
+  nsTHashtable<nsPtrHashKey<void>> mAllocatedPointers;
+#endif
+
+  
+  
+  AutoWeakFrame* mAutoWeakFrames;
+
+  
+  nsTHashtable<nsPtrHashKey<WeakFrame>> mWeakFrames;
+
+  class DirtyRootsList {
+   public:
+    
+    void Add(nsIFrame* aFrame);
+    
+    void Remove(nsIFrame* aFrame);
+    
+    
+    nsIFrame* PopShallowestRoot();
+    
+    void Clear();
+    
+    bool Contains(nsIFrame* aFrame) const;
+    
+    bool IsEmpty() const;
+    
+    bool FrameIsAncestorOfDirtyRoot(nsIFrame* aFrame) const;
+
+   private:
+    struct FrameAndDepth {
+      nsIFrame* mFrame;
+      const uint32_t mDepth;
+
+      
+      operator nsIFrame*() const { return mFrame; }
+
+      
+      class CompareByReverseDepth {
+       public:
+        bool Equals(const FrameAndDepth& aA, const FrameAndDepth& aB) const {
+          return aA.mDepth == aB.mDepth;
+        }
+        bool LessThan(const FrameAndDepth& aA, const FrameAndDepth& aB) const {
+          
+          return aA.mDepth > aB.mDepth;
+        }
+      };
+    };
+    
+    nsTArray<FrameAndDepth> mList;
+  };
+
+  
+  DirtyRootsList mDirtyRoots;
+
+#ifdef MOZ_GECKO_PROFILER
   
   
   
-  
-  nsPoint mMouseLocation;
-  
-  
-  
-  layers::ScrollableLayerGuid mMouseEventTargetGuid;
+  UniqueProfilerBacktrace mStyleCause;
+  UniqueProfilerBacktrace mReflowCause;
+#endif
 
   nsTArray<UniquePtr<DelayedEvent>> mDelayedEvents;
 
- private:
   nsRevocableEventPtr<nsSynthMouseMoveEvent> mSynthMouseMoveEvent;
 
   TouchManager mTouchManager;
@@ -2702,8 +2783,6 @@ class PresShell final : public nsIPresShell,
   nsCOMPtr<nsITimer> mPaintSuppressionTimer;
 
   nsCOMPtr<nsITimer> mDelayedPaintTimer;
-
-  TimeStamp mLoadBegin;  
 
   
   
@@ -2723,7 +2802,39 @@ class PresShell final : public nsIPresShell,
   a11y::DocAccessible* mDocAccessible;
 #endif  
 
+  nsIFrame* mCurrentEventFrame;
+  nsCOMPtr<nsIContent> mCurrentEventContent;
+  nsTArray<nsIFrame*> mCurrentEventFrameStack;
+  nsCOMArray<nsIContent> mCurrentEventContentStack;
+  
+  
+  nsTHashtable<nsPtrHashKey<nsIFrame>> mFramesToDirty;
+  nsTHashtable<nsPtrHashKey<nsIScrollableFrame>> mPendingScrollAnchorSelection;
+  nsTHashtable<nsPtrHashKey<nsIScrollableFrame>> mPendingScrollAnchorAdjustment;
+
+  nsCallbackEventRequest* mFirstCallbackEventRequest = nullptr;
+  nsCallbackEventRequest* mLastCallbackEventRequest = nullptr;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsPoint mMouseLocation;
+  
+  
+  
+  layers::ScrollableLayerGuid mMouseEventTargetGuid;
+
   nsSize mVisualViewportSize;
+
+  
+  FocusTarget mAPZFocusTarget;
+
+  nsPresArena<8192> mFrameArena;
 
   Maybe<nsPoint> mVisualViewportOffset;
 
@@ -2732,16 +2843,56 @@ class PresShell final : public nsIPresShell,
   
   Maybe<VisualScrollUpdate> mPendingVisualScrollUpdate;
 
+  
+  
+  Maybe<float> mResolution;
+
+  TimeStamp mLoadBegin;  
+
   TimeStamp mLastOSWake;
 
   
-  uint64_t mAPZFocusSequenceNumber;
+  uint64_t mPaintCount;
+
   
-  FocusTarget mAPZFocusTarget;
+  uint64_t mAPZFocusSequenceNumber;
 
   nscoord mLastAnchorScrollPositionY = 0;
 
+  
+  nscolor mCanvasBackgroundColor;
+
   int32_t mActiveSuppressDisplayport;
+
+  uint32_t mPresShellId;
+
+  
+  
+  uint32_t mFontSizeInflationEmPerLine;
+  uint32_t mFontSizeInflationMinTwips;
+  uint32_t mFontSizeInflationLineThreshold;
+
+  int16_t mSelectionFlags;
+
+  
+  
+  
+  uint16_t mChangeNestCount;
+
+  
+  
+  
+  
+  
+  RenderingStateFlags mRenderingStateFlags;
+
+  
+  
+  
+  
+  bool mInFlush;
+
+  bool mCaretEnabled : 1;
 
   
   bool mNeedLayoutFlush : 1;
@@ -2754,6 +2905,70 @@ class PresShell final : public nsIPresShell,
   bool mNeedThrottledAnimationFlush : 1;
 
   bool mVisualViewportSizeSet : 1;
+
+  bool mDidInitialize : 1;
+  bool mIsDestroying : 1;
+  bool mIsReflowing : 1;
+  bool mIsObservingDocument : 1;
+
+  
+  
+  
+  
+  bool mForbiddenToFlush : 1;
+
+  
+  
+  bool mIsDocumentGone : 1;
+  bool mHaveShutDown : 1;
+
+  
+  bool mPaintingSuppressed : 1;
+
+  bool mLastRootReflowHadUnconstrainedBSize : 1;
+
+  
+  
+  bool mShouldUnsuppressPainting : 1;
+
+  bool mIgnoreFrameDestruction : 1;
+
+  bool mIsActive : 1;
+  bool mFrozen : 1;
+  bool mIsFirstPaint : 1;
+  bool mObservesMutationsForPrint : 1;
+
+  
+  bool mWasLastReflowInterrupted : 1;
+
+  
+  bool mObservingStyleFlushes : 1;
+
+  
+  
+  
+  
+  bool mObservingLayoutFlushes : 1;
+
+  bool mResizeEventPending : 1;
+
+  bool mFontSizeInflationForceEnabled : 1;
+  bool mFontSizeInflationDisabledInMasterProcess : 1;
+  bool mFontSizeInflationEnabled : 1;
+
+  bool mPaintingIsFrozen : 1;
+
+  
+  
+  
+  bool mIsNeverPainting : 1;
+
+  
+  
+  bool mResolutionUpdated : 1;
+
+  
+  bool mResolutionUpdatedByApz : 1;
 
   bool mDocumentLoading : 1;
   bool mNoDelayedMouseEvents : 1;
