@@ -301,7 +301,10 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (!IsVisibleForPainting()) return;
 
   nsFrameLoader* frameLoader = FrameLoader();
-  bool isRemoteFrame = frameLoader && frameLoader->IsRemoteFrame();
+  RenderFrame* rf = nullptr;
+  if (frameLoader) {
+    rf = frameLoader->GetCurrentRenderFrame();
+  }
 
   
   bool pointerEventsNone =
@@ -309,7 +312,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (!aBuilder->IsForEventDelivery() || !pointerEventsNone) {
     nsDisplayListCollection decorations(aBuilder);
     DisplayBorderBackgroundOutline(aBuilder, decorations);
-    if (isRemoteFrame) {
+    if (rf) {
       
       
       
@@ -332,7 +335,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return;
   }
 
-  if (isRemoteFrame) {
+  if (rf) {
     
     
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
@@ -993,6 +996,10 @@ nsFrameLoader* nsSubDocumentFrame::FrameLoader() const {
     }
   }
   return mFrameLoader;
+}
+
+mozilla::layout::RenderFrame* nsSubDocumentFrame::GetRenderFrame() const {
+  return FrameLoader() ? FrameLoader()->GetCurrentRenderFrame() : nullptr;
 }
 
 
