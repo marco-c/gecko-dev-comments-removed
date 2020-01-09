@@ -1559,6 +1559,10 @@ this.VideoControlsImplWidget = class {
       },
 
       get isClosedCaptionAvailable() {
+        
+        if (!this.video.videoWidth || !this.video.videoHeight) {
+          return false;
+        }
         return this.overlayableTextTracks.length;
       },
 
