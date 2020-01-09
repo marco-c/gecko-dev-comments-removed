@@ -269,8 +269,11 @@ class MOZ_STACK_CLASS ParserSharedBase : private JS::AutoGCRooter {
   
   friend void js::frontend::TraceParser(JSTracer* trc,
                                         JS::AutoGCRooter* parser);
+
+#if defined(JS_BUILD_BINAST)
   friend void js::frontend::TraceBinParser(JSTracer* trc,
                                            JS::AutoGCRooter* parser);
+#endif  
 
  private:
   
