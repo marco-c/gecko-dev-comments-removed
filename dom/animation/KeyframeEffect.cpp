@@ -1498,13 +1498,6 @@ bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
     }
   }
 
-  
-  
-  
-  if (aFrame->StyleDisplay()->HasIndividualTransform()) {
-    return true;
-  }
-
   return false;
 }
 
