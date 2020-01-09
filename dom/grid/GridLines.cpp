@@ -209,6 +209,82 @@ void GridLines::SetLineInfo(const ComputedGridTrackInfo* aTrackInfo,
         lastTrackEdge = aTrackInfo->mPositions[i] + aTrackInfo->mSizes[i];
       }
     }
+
+    
+    
+    
+    const int32_t lineCount = mLines.Length();
+    const uint32_t lastLineNumber = mLines[lineCount - 1]->Number();
+    auto IndexForLineNumber =
+        [lineCount, lastLineNumber](uint32_t aLineNumber) -> int32_t {
+      if (lastLineNumber == 0) {
+        
+        
+        return -1;
+      }
+
+      int32_t possibleIndex = (int32_t)aLineNumber - 1;
+      if (possibleIndex < 0 || possibleIndex > lineCount - 1) {
+        
+        return -1;
+      }
+
+      return possibleIndex;
+    };
+
+    
+    for (const auto& area : aAreas) {
+      if (area->Type() == GridDeclaration::Implicit) {
+        
+        
+        int32_t startIndex =
+            IndexForLineNumber(aIsRow ? area->RowStart() : area->ColumnStart());
+        int32_t endIndex =
+            IndexForLineNumber(aIsRow ? area->RowEnd() : area->ColumnEnd());
+
+        
+        
+        if (startIndex < 0 && endIndex < 0) {
+          break;
+        }
+
+        
+        nsAutoString startLineName;
+        area->GetName(startLineName);
+        startLineName.AppendLiteral("-start");
+        nsAutoString endLineName;
+        area->GetName(endLineName);
+        endLineName.AppendLiteral("-end");
+
+        
+        
+        
+        RefPtr<GridLine> dummyLine = new GridLine(this);
+        RefPtr<GridLine> areaStartLine =
+            startIndex > -1 ? mLines[startIndex] : dummyLine;
+        nsTArray<nsString> startLineNames;
+        areaStartLine->GetNames(startLineNames);
+
+        RefPtr<GridLine> areaEndLine =
+            endIndex > -1 ? mLines[endIndex] : dummyLine;
+        nsTArray<nsString> endLineNames;
+        areaEndLine->GetNames(endLineNames);
+
+        if (startLineNames.Contains(endLineName) ||
+            endLineNames.Contains(startLineName)) {
+          
+          AddLineNameIfNotPresent(startLineNames, endLineName);
+          AddLineNameIfNotPresent(endLineNames, startLineName);
+        } else {
+          
+          AddLineNameIfNotPresent(startLineNames, startLineName);
+          AddLineNameIfNotPresent(endLineNames, endLineName);
+        }
+
+        areaStartLine->SetLineNames(startLineNames);
+        areaEndLine->SetLineNames(endLineNames);
+      }
+    }
   }
 }
 
