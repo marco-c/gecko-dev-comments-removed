@@ -483,19 +483,19 @@ class SyntaxParseHandler {
     return true;
   }
 
-  FunctionNodeType newFunctionStatement(const TokenPos& pos) {
-    return NodeFunctionStatement;
-  }
-
-  FunctionNodeType newFunctionExpression(const TokenPos& pos) {
-    
-    
-    
-    return NodeFunctionExpression;
-  }
-
-  FunctionNodeType newArrowFunction(const TokenPos& pos) {
-    return NodeFunctionArrow;
+  FunctionNodeType newFunction(FunctionSyntaxKind syntaxKind,
+                               const TokenPos& pos) {
+    switch (syntaxKind) {
+      case FunctionSyntaxKind::Statement:
+        return NodeFunctionStatement;
+      case FunctionSyntaxKind::Arrow:
+        return NodeFunctionArrow;
+      default:
+        
+        
+        
+        return NodeFunctionExpression;
+    }
   }
 
   void setFunctionFormalParametersAndBody(FunctionNodeType funNode,
