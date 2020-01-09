@@ -95,13 +95,13 @@ class PanelList extends HTMLElement {
   }
 
   show(triggeringEvent) {
-    this.open = true;
     this.triggeringEvent = triggeringEvent;
+    this.open = true;
   }
 
   hide(triggeringEvent) {
-    this.open = false;
     this.triggeringEvent = triggeringEvent;
+    this.open = false;
   }
 
   toggle(triggeringEvent) {
@@ -166,6 +166,8 @@ class PanelList extends HTMLElement {
     
     document.addEventListener("focusin", this);
     
+    this.focusHasChanged = false;
+    
     window.addEventListener("resize", this);
     window.addEventListener("scroll", this);
     window.addEventListener("blur", this);
@@ -201,8 +203,18 @@ class PanelList extends HTMLElement {
       case "focusin":
         
         
-        if (!e.target || e.target.closest("panel-list") != this) {
+        
+        if (this.triggeringEvent &&
+            e.target == this.triggeringEvent.target &&
+            !this.focusHasChanged) {
+          this.focusHasChanged = true;
+        
+        
+        } else if (!e.target || e.target.closest("panel-list") != this) {
           this.hide();
+        
+        } else {
+          this.focusHasChanged = true;
         }
         break;
     }
