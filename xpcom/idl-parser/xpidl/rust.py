@@ -1,38 +1,38 @@
-# rust.py - Generate rust bindings from IDL.
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 """Print a runtime Rust bindings file for the IDL file specified"""
 
-# --- Safety Hazards ---
 
-# We currently don't generate some bindings for some IDL methods in rust code,
-# due to there being ABI safety hazards if we were to do so. This is the
-# documentation for the reasons why we don't generate certain types of bindings,
-# so that we don't accidentally start generating them in the future.
 
-# notxpcom methods and attributes return their results directly by value. The x86
-# windows stdcall ABI returns aggregates by value differently for methods than
-# functions, and rust only exposes the function ABI, so that's the one we're
-# using. The correct ABI can be emulated for notxpcom methods returning aggregates
-# by passing an &mut ReturnType parameter as the second parameter.  This strategy
-# is used by the winapi-rs crate.
-# https://github.com/retep998/winapi-rs/blob/7338a5216a6a7abeefcc6bb1bc34381c81d3e247/src/macros.rs#L220-L231
-#
-# Right now we can generate code for notxpcom methods and attributes, as we don't
-# support passing aggregates by value over these APIs ever (the types which are
-# allowed in xpidl.py shouldn't include any aggregates), so the code is
-# correct. In the future if we want to start supporting returning aggregates by
-# value, we will need to use a workaround such as the one used by winapi.rs.
 
-# nostdcall methods on x86 windows will use the thiscall ABI, which is not
-# stable in rust right now, so we cannot generate bindings to them.
 
-# In general, passing C++ objects by value over the C ABI is not a good idea,
-# and when possible we should avoid doing so. We don't generate bindings for
-# these methods here currently.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import os.path
 import re
@@ -85,7 +85,7 @@ def rustSanitize(s):
     return s
 
 
-# printdoccomments = False
+
 printdoccomments = True
 
 if printdoccomments:
@@ -114,7 +114,7 @@ def firstCap(str):
     return str[0].upper() + str[1:]
 
 
-# Attribute VTable Methods
+
 def attributeNativeName(a, getter):
     binaryname = rustSanitize(a.binaryname if a.binaryname else firstCap(a.name))
     return "%s%s" % ('Get' if getter else 'Set', binaryname)
@@ -163,7 +163,7 @@ def attrAsVTableEntry(iface, m, getter):
 pub %s: *const ::libc::c_void""" % (reason, attributeNativeName(m, getter))
 
 
-# Method VTable generation functions
+
 def methodNativeName(m):
     binaryname = m.binaryname is not None and m.binaryname or firstCap(m.name)
     return rustSanitize(binaryname)
@@ -232,8 +232,8 @@ def methodAsWrapper(iface, m):
             'args': ', '.join(args),
         }
     except xpidl.RustNoncompat:
-        # Dummy field for the doc comments to attach to.
-        # Private so that it's not shown in rustdoc.
+        
+        
         return "const _%s: () = ();" % methodNativeName(m)
 
 
@@ -242,7 +242,7 @@ infallible_impl_tmpl = """\
 pub unsafe fn %(name)s(&self) -> %(realtype)s {
     let mut result = <%(realtype)s as ::std::default::Default>::default();
     let _rv = ((*self.vtable).%(name)s)(self, &mut result);
-    debug_assert!(_rv.suceeded());
+    debug_assert!(::nserror::NsresultExt::succeeded(_rv));
     result
 }
 """
@@ -259,7 +259,7 @@ def attrAsWrapper(iface, m, getter):
         name = attributeParamName(m)
 
         if getter and m.infallible and m.realtype.kind == 'builtin':
-            # NOTE: We don't support non-builtin infallible getters in Rust code.
+            
             return infallible_impl_tmpl % {
                 'name': attributeNativeName(m, getter),
                 'realtype': m.realtype.rustType('in'),
@@ -275,8 +275,8 @@ def attrAsWrapper(iface, m, getter):
         }
 
     except xpidl.RustNoncompat:
-        # Dummy field for the doc comments to attach to.
-        # Private so that it's not shown in rustdoc.
+        
+        
         return "const _%s: () = ();" % attributeNativeName(m, getter)
 
 
@@ -298,9 +298,9 @@ def print_rust_bindings(idl, fd, filename):
 
     fd.write(header % {'filename': filename})
 
-    # All of the idl files will be included into the same rust module, as we
-    # can't do forward declarations. Because of this, we want to ignore all
-    # import statements
+    
+    
+    
 
     for p in idl.productions:
         if p.kind == 'include' or p.kind == 'cdata' or p.kind == 'forward':
@@ -312,7 +312,7 @@ def print_rust_bindings(idl, fd, filename):
 
         if p.kind == 'typedef':
             try:
-                # We have to skip the typedef of bool to bool (it doesn't make any sense anyways)
+                
                 if p.name == "bool":
                     continue
 
@@ -347,7 +347,7 @@ pub struct %(name)sVTable {%(base)s%(entries)s}
 """
 
 
-# NOTE: This template is not generated for nsISupports, as it has no base interfaces.
+
 deref_tmpl = """\
 // Every interface struct type implements `Deref` to its base interface. This
 // causes methods on the base interfaces to be directly avaliable on the
@@ -479,14 +479,14 @@ def write_interface(iface, fd):
     if iface.namemap is None:
         raise Exception("Interface was not resolved.")
 
-    # if we see a base class-less type other than nsISupports, we just need
-    # to discard anything else about it other than its constants.
+    
+    
     if iface.base is None and iface.name != "nsISupports":
         assert len([m for m in iface.members
                     if type(m) == xpidl.Attribute or type(m) == xpidl.Method]) == 0
         return
 
-    # Extract the UUID's information so that it can be written into the struct definition
+    
     names = uuid_decoder.match(iface.attributes.uuid).groupdict()
     m3str = names['m3'] + names['m4']
     names['m3joined'] = ", ".join(["0x%s" % m3str[i:i+2] for i in xrange(0, 16, 2)])
@@ -533,7 +533,7 @@ def write_interface(iface, fd):
         'entries': '\n'.join(entries),
     })
 
-    # Get all of the constants
+    
     consts = []
     for member in iface.members:
         if type(member) == xpidl.ConstMember:
