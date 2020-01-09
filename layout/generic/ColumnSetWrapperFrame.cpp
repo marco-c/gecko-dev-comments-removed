@@ -33,6 +33,15 @@ NS_QUERYFRAME_TAIL_INHERITING(nsBlockFrame)
 ColumnSetWrapperFrame::ColumnSetWrapperFrame(ComputedStyle* aStyle)
     : nsBlockFrame(aStyle, kClassID) {}
 
+void ColumnSetWrapperFrame::Init(nsIContent* aContent,
+                                 nsContainerFrame* aParent,
+                                 nsIFrame* aPrevInFlow) {
+  nsBlockFrame::Init(aContent, aParent, aPrevInFlow);
+
+  
+  RemoveStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION);
+}
+
 nsContainerFrame* ColumnSetWrapperFrame::GetContentInsertionFrame() {
   nsIFrame* columnSet = PrincipalChildList().OnlyChild();
   if (columnSet) {
@@ -125,6 +134,16 @@ void ColumnSetWrapperFrame::RemoveFrame(ChildListID aListID,
                                         nsIFrame* aOldFrame) {
   MOZ_ASSERT_UNREACHABLE("Unsupported operation!");
   nsBlockFrame::RemoveFrame(aListID, aOldFrame);
+}
+
+void ColumnSetWrapperFrame::MarkIntrinsicISizesDirty() {
+  nsBlockFrame::MarkIntrinsicISizesDirty();
+
+  
+  
+  for (nsIFrame* f = FirstContinuation(); f; f = f->GetNextContinuation()) {
+    f->RemoveStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION);
+  }
 }
 
 #ifdef DEBUG
