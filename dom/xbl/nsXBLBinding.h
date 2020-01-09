@@ -150,7 +150,6 @@ class nsXBLBinding final {
   
  protected:
   bool mMarkedForDeath;
-  bool mUsingContentXBLScope;
 
   nsXBLPrototypeBinding*
       mPrototypeBinding;  
