@@ -1355,6 +1355,13 @@ bool CanvasRenderingContext2D::TrySharedTarget(
     return false;
   }
 
+#ifdef XP_WIN
+  
+  if (gfxPlatform::GetPlatform()->GetPreferredCanvasBackend() == BackendType::DIRECT2D1_1) {
+    return false;
+  }
+#endif
+
   RefPtr<LayerManager> layerManager =
       LayerManagerFromCanvasElement(mCanvasElement);
 
@@ -4557,7 +4564,10 @@ void CanvasRenderingContext2D::DrawWindow(nsGlobalWindowInner& aWindow,
   CompositionOp op = UsedOperation();
   bool discardContent =
       GlobalAlpha() == 1.0f &&
-      (op == CompositionOp::OP_OVER || op == CompositionOp::OP_SOURCE);
+      (op == CompositionOp::OP_OVER || op == CompositionOp::OP_SOURCE) &&
+      (!mBufferProvider ||
+        (mBufferProvider->GetType() != LayersBackend::LAYERS_CLIENT &&
+         mBufferProvider->GetType() != LayersBackend::LAYERS_WR));
   const gfx::Rect drawRect(aX, aY, aW, aH);
   EnsureTarget(discardContent ? &drawRect : nullptr);
   if (!IsTargetValid()) {
