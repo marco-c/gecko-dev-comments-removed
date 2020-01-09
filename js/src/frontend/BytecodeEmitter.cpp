@@ -2478,8 +2478,7 @@ bool BytecodeEmitter::emitFunctionScript(FunctionNode* funNode,
                                 parser->errorReporter(), funbox);
 
   MOZ_ASSERT((fieldInitializers_.valid) ==
-             (funbox->kind() ==
-              JSFunction::FunctionKind::ClassConstructor));
+             (funbox->kind() == JSFunction::FunctionKind::ClassConstructor));
 
   setScriptStartOffsetIfUnset(paramsBody->pn_pos.begin);
 
@@ -2752,7 +2751,7 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
         if (!eoe.skipObjAndKeyAndRhs()) {
           return false;
         }
-        if (!eoe.emitAssignment()) {
+        if (!eoe.emitAssignment(ElemOpEmitter::EmitSetFunctionName::No)) {
           
           return false;
         }
@@ -4045,19 +4044,28 @@ bool BytecodeEmitter::emitSingleDeclaration(ListNode* declList, NameNode* decl,
   return true;
 }
 
-static bool EmitAssignmentRhs(BytecodeEmitter* bce, ParseNode* rhs,
-                              uint8_t offset) {
-  
-  if (rhs) {
-    return bce->emitTree(rhs);
+bool BytecodeEmitter::emitAssignmentRhs(ParseNode* rhs,
+                                        HandleAtom anonFunctionName,
+                                        bool* emitSetFunName) {
+  *emitSetFunName = false;
+  if (rhs->isDirectRHSAnonFunction()) {
+    if (anonFunctionName) {
+      return emitAnonymousFunctionWithName(rhs, anonFunctionName);
+    }
+    
+    
+    *emitSetFunName = true;
   }
+  return emitTree(rhs);
+}
 
-  
-  
-  
-  
-  if (offset != 1 && !bce->emit2(JSOP_PICK, offset - 1)) {
-    return false;
+
+
+
+
+bool BytecodeEmitter::emitAssignmentRhs(uint8_t offset) {
+  if (offset != 1) {
+    return emit2(JSOP_PICK, offset - 1);
   }
 
   return true;
@@ -4103,6 +4111,8 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
   JSOp compoundOp = CompoundAssignmentParseNodeKindToJSOp(kind);
   bool isCompound = compoundOp != JSOP_NOP;
   bool isInit = kind == ParseNodeKind::InitExpr;
+  ElemOpEmitter::EmitSetFunctionName emitSetFunName =
+      ElemOpEmitter::EmitSetFunctionName::No;
 
   MOZ_ASSERT_IF(isInit, lhs->isKind(ParseNodeKind::DotExpr) ||
                             lhs->isKind(ParseNodeKind::ElemExpr));
@@ -4120,18 +4130,19 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
       return false;
     }
 
-    if (rhs && rhs->isDirectRHSAnonFunction()) {
-      MOZ_ASSERT(!nameNode->isInParens());
-      MOZ_ASSERT(!isCompound);
-      if (!emitAnonymousFunctionWithName(rhs, name)) {
+    if (rhs) {
+      bool emitSetFunctionName;
+      if (!emitAssignmentRhs(rhs, name, &emitSetFunctionName)) {
         
         return false;
       }
+      
+      
+      MOZ_ASSERT(!emitSetFunctionName);
     } else {
-      
-      
       uint8_t offset = noe.emittedBindOp() ? 2 : 1;
-      if (!EmitAssignmentRhs(this, rhs, offset)) {
+      
+      if (!emitAssignmentRhs(offset)) {
         
         return false;
       }
@@ -4158,6 +4169,7 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
   
   uint8_t offset = 1;
 
+  RootedAtom anonFunctionName(cx);
   switch (lhs->getKind()) {
     case ParseNodeKind::DotExpr: {
       PropertyAccess* prop = &lhs->as<PropertyAccess>();
@@ -4171,6 +4183,7 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
       if (!poe->prepareForObj()) {
         return false;
       }
+      anonFunctionName = &prop->name();
       if (isSuper) {
         UnaryNode* base = &prop->expression().as<UnaryNode>();
         if (!emitGetThisForSuperBase(base)) {
@@ -4301,9 +4314,29 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
       break;
   }
 
-  if (!EmitAssignmentRhs(this, rhs, offset)) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (rhs) {
+    bool emitSetFunctionName;
+    if (!emitAssignmentRhs(rhs, anonFunctionName, &emitSetFunctionName)) {
+      
+      return false;
+    }
+    emitSetFunName = emitSetFunctionName
+                         ? ElemOpEmitter::EmitSetFunctionName::Yes
+                         : ElemOpEmitter::EmitSetFunctionName::No;
+  } else {
     
-    return false;
+    if (!emitAssignmentRhs(offset)) {
+      
+      return false;
+    }
   }
 
   
@@ -4334,7 +4367,9 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
       
       break;
     case ParseNodeKind::ElemExpr: {
-      if (!eoe->emitAssignment()) {
+      MOZ_ASSERT((!anonFunctionName && rhs && rhs->isDirectRHSAnonFunction()) ==
+                 (emitSetFunName == ElemOpEmitter::EmitSetFunctionName::Yes));
+      if (!eoe->emitAssignment(emitSetFunName)) {
         
         return false;
       }
@@ -5632,8 +5667,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
   RootedFunction fun(cx, funbox->function());
 
   MOZ_ASSERT((classContentsIfConstructor != nullptr) ==
-             (funbox->kind() ==
-              JSFunction::FunctionKind::ClassConstructor));
+             (funbox->kind() == JSFunction::FunctionKind::ClassConstructor));
 
   
 
@@ -8080,8 +8114,7 @@ const FieldInitializers& BytecodeEmitter::findFieldInitializersForCall() {
   for (BytecodeEmitter* current = this; current; current = current->parent) {
     if (current->sc->isFunctionBox()) {
       FunctionBox* box = current->sc->asFunctionBox();
-      if (box->kind() ==
-          JSFunction::FunctionKind::ClassConstructor) {
+      if (box->kind() == JSFunction::FunctionKind::ClassConstructor) {
         const FieldInitializers& fieldInitializers =
             current->getFieldInitializers();
         MOZ_ASSERT(fieldInitializers.valid);
