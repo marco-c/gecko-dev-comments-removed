@@ -80,7 +80,8 @@ nsresult PopulateContentSecurityPolicies(
 
 
 nsresult PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
-                                  PrincipalInfo* aPrincipalInfo);
+                                  PrincipalInfo* aPrincipalInfo,
+                                  bool aSkipBaseDomain = false);
 
 
 
