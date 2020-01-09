@@ -731,6 +731,7 @@ var SessionStoreInternal = {
     this._prefBranch.addObserver("sessionstore.max_windows_undo", this, true);
 
     this._restore_on_demand = this._prefBranch.getBoolPref("sessionstore.restore_on_demand");
+    this._restore_pinned_tabs_on_demand = this._prefBranch.getBoolPref("sessionstore.restore_pinned_tabs_on_demand");
     this._prefBranch.addObserver("sessionstore.restore_on_demand", this, true);
 
     gResistFingerprintingEnabled = Services.prefs.getBoolPref("privacy.resistFingerprinting");
@@ -3203,6 +3204,7 @@ var SessionStoreInternal = {
     if (!uriObj || (uriObj && !window.gBrowser.isLocalAboutURI(uriObj))) {
       tab.setAttribute("busy", "true");
     }
+    tab.removeAttribute("preopened");
 
     
     
@@ -3650,7 +3652,7 @@ var SessionStoreInternal = {
 
     
     
-    let initialTabs;
+    let initialTabs = [];
     if (!overwriteTabs && firstWindow) {
       initialTabs = Array.slice(tabbrowser.tabs);
     }
@@ -3658,8 +3660,11 @@ var SessionStoreInternal = {
     
     if (overwriteTabs) {
       for (let i = tabbrowser.browsers.length - 1; i >= 0; i--) {
-        if (!tabbrowser.tabs[i].selected) {
+        if (!tabbrowser.tabs[i].selected &&
+            !tabbrowser.tabs[i].hasAttribute("preopened")) {
           tabbrowser.removeTab(tabbrowser.tabs[i]);
+        } else if (tabbrowser.tabs[i].hasAttribute("preopened")) {
+          initialTabs.push(tabbrowser.tabs[i]);
         }
       }
     }
@@ -3678,13 +3683,24 @@ var SessionStoreInternal = {
       if (select &&
           tabbrowser.selectedTab.userContextId == userContextId) {
         tab = tabbrowser.selectedTab;
-        if (!tabData.pinned) {
+        if (tab.pinned && !tabData.pinned) {
           tabbrowser.unpinTab(tab);
+        } else if (!tab.pinned && tabData.pinned) {
+          tabbrowser.removeTab(tabbrowser.tabs[t]);
+          tabbrowser.pinTab(tab);
+          tabbrowser.moveTabTo(tab, t);
         }
+
         tabbrowser.moveTabToEnd();
         if (aWindow.gMultiProcessBrowser && !tab.linkedBrowser.isRemoteBrowser) {
           tabbrowser.updateBrowserRemoteness(tab.linkedBrowser, true);
         }
+      } else if (tabData.pinned &&
+          tabbrowser.tabs[t] &&
+          tabbrowser.tabs[t].pinned &&
+          !tabbrowser.tabs[t].linkedPanel) {
+        tab = tabbrowser.tabs[t];
+        tabbrowser.activatePreopenedPinnedTab(tab);
       }
 
       
@@ -3733,11 +3749,14 @@ var SessionStoreInternal = {
     }
 
     
-    if (initialTabs) {
-      let endPosition = tabbrowser.tabs.length - 1;
-      for (let i = 0; i < initialTabs.length; i++) {
-        tabbrowser.unpinTab(initialTabs[i]);
-        tabbrowser.moveTabTo(initialTabs[i], endPosition);
+    let endPosition = tabbrowser.tabs.length - 1;
+    for (let tab of initialTabs) {
+      if (tab.hasAttribute("preopened") &&
+          !tab.linkedPanel) {
+        tabbrowser.removeTab(tab);
+      } else if (!tab.hasAttribute("preopened")) {
+        tabbrowser.unpinTab(tab);
+        tabbrowser.moveTabTo(tab, endPosition);
       }
     }
 
@@ -3818,7 +3837,7 @@ var SessionStoreInternal = {
       });
       let sc = Services.io.QueryInterface(Ci.nsISpeculativeConnect);
       let uri = Services.io.newURI(url);
-      sc.speculativeConnect(uri, principal, null);
+      sc.speculativeConnect2(uri, principal, null);
       return true;
     }
     return false;
@@ -3998,6 +4017,9 @@ var SessionStoreInternal = {
     for (let t = 0; t < aTabs.length; t++) {
       if (t != selectedIndex) {
         this.restoreTab(aTabs[t], aTabData[t]);
+        if (this._restore_pinned_tabs_on_demand) {
+          aTabs[t].removeAttribute("preopened");
+        }
       }
     }
   },
