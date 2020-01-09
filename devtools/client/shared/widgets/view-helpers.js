@@ -50,45 +50,6 @@ exports.clearNamedTimeout = clearNamedTimeout;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-const setConditionalTimeout = function setConditionalTimeout(id, wait,
-                                                             predicate,
-                                                             callback) {
-  setNamedTimeout(id, wait, function maybeCallback() {
-    if (predicate()) {
-      callback();
-      return;
-    }
-    setConditionalTimeout(id, wait, predicate, callback);
-  });
-};
-exports.setConditionalTimeout = setConditionalTimeout;
-
-
-
-
-
-
-
-
-const clearConditionalTimeout = function clearConditionalTimeout(id) {
-  clearNamedTimeout(id);
-};
-exports.clearConditionalTimeout = clearConditionalTimeout;
-
-
-
-
 exports.ViewHelpers = {
   
 
