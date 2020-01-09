@@ -190,22 +190,33 @@ class Targets {
   }
 
   
-  connect(subject) {
-    let target = subject;
-    if (!(subject instanceof Target)) {
-      target = new Target(subject);
+  async connect(browser) {
+    
+    
+    
+    
+    if (!browser.browsingContext) {
+      await new Promise(resolve => {
+        const onInit = () => {
+          browser.messageManager.removeMessageListener("Browser:Init", onInit);
+          resolve();
+        };
+        browser.messageManager.addMessageListener("Browser:Init", onInit);
+      });
     }
+    const target = new Target(browser);
 
     target.connect();
     this._targets.set(target.id, target);
   }
 
   
-  disconnect(subject) {
-    let target = subject;
-    if (!(subject instanceof Target)) {
-      target = this._targets.get(subject.browsingContext.id);
+  disconnect(browser) {
+    
+    if (!browser.browsingContext) {
+      return;
     }
+    let target = this._targets.get(browser.browsingContext.id);
 
     if (target) {
       target.disconnect();
@@ -215,7 +226,7 @@ class Targets {
 
   clear() {
     for (const target of this) {
-      this.disconnect(target);
+      this.disconnect(target.browser);
     }
   }
 

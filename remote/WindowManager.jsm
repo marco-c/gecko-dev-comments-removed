@@ -135,6 +135,11 @@ class TabObserver {
     }
 
     for (const tab of window.gBrowser.tabs) {
+      
+      
+      if (!tab.linkedBrowser) {
+        continue;
+      }
       this.onTabOpen(tab);
     }
 
