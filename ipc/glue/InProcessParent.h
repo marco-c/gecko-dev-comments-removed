@@ -57,7 +57,7 @@ class InProcessParent : public nsIObserver, public PInProcessParent {
  private:
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
-  virtual void DeallocPInProcessParent() override;
+  virtual void ActorDealloc() override;
   ~InProcessParent() = default;
 
   static void Startup();

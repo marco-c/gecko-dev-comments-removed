@@ -53,7 +53,7 @@ class InProcessChild : public PInProcessChild {
   
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
-  virtual void DeallocPInProcessChild() override;
+  virtual void ActorDealloc() override;
   ~InProcessChild() = default;
 
   static StaticRefPtr<InProcessChild> sSingleton;

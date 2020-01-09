@@ -56,7 +56,7 @@ class VideoBridgeParent final : public PVideoBridgeParent,
   void DeallocShmem(ipc::Shmem& aShmem) override;
 
  private:
-  void DeallocPVideoBridgeParent() override;
+  void ActorDealloc() override;
 
   
   
