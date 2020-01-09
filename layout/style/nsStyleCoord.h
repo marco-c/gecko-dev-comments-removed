@@ -55,13 +55,36 @@ LengthPercentage LengthPercentage::FromAppUnits(nscoord aCoord) {
           false};
 }
 
+CSSCoord LengthPercentage::LengthInCSSPixels() const { return length._0; }
+
+float LengthPercentage::Percentage() const { return percentage._0; }
+
 bool LengthPercentage::HasPercent() const { return has_percentage; }
 
 bool LengthPercentage::ConvertsToLength() const { return !HasPercent(); }
 
+nscoord LengthPercentage::LengthComponent() const {
+  
+  
+  
+  
+  
+  
+  
+  
+  float length = LengthInCSSPixels() * float(mozilla::AppUnitsPerCSSPixel());
+  if (length >= nscoord_MAX) {
+    return nscoord_MAX;
+  }
+  if (length <= nscoord_MIN) {
+    return nscoord_MIN;
+  }
+  return roundf(length);
+}
+
 nscoord LengthPercentage::ToLength() const {
   MOZ_ASSERT(ConvertsToLength());
-  return CSSPixel::ToAppUnits(length._0);
+  return LengthComponent();
 }
 
 bool LengthPercentage::ConvertsToPercentage() const {
@@ -76,10 +99,6 @@ float LengthPercentage::ToPercentage() const {
 bool LengthPercentage::HasLengthAndPercentage() const {
   return !ConvertsToLength() && !ConvertsToPercentage();
 }
-
-CSSCoord LengthPercentage::LengthInCSSPixels() const { return length._0; }
-
-float LengthPercentage::Percentage() const { return percentage._0; }
 
 CSSCoord LengthPercentage::ResolveToCSSPixels(CSSCoord aPercentageBasis) const {
   return LengthInCSSPixels() + Percentage() * aPercentageBasis;
@@ -97,7 +116,7 @@ CSSCoord LengthPercentage::ResolveToCSSPixelsWith(T aPercentageGetter) const {
 
 nscoord LengthPercentage::Resolve(nscoord aPercentageBasis) const {
   NS_WARNING_ASSERTION(aPercentageBasis >= 0, "nscoord overflow?");
-  return CSSPixel::ToAppUnits(LengthInCSSPixels()) +
+  return LengthComponent() +
          NSToCoordFloorClamped(aPercentageBasis * Percentage());
 }
 
