@@ -285,6 +285,14 @@
   border-right: none;
 }
 
+.font-value-label {
+  
+  width: calc(60px + 3.8em);
+  margin-left: 10px;
+  padding-top: 2px;
+  padding-bottom: 4px;
+}
+
 
 .theme-dark .font-value-input + .font-value-select {
   margin-left: 2px;
