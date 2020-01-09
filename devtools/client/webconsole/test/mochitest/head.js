@@ -398,6 +398,26 @@ function hasFocus(node) {
 
 
 
+function getInputValue(hud) {
+  return hud.jsterm.getInputValue();
+}
+
+
+
+
+
+
+
+function setInputValue(hud, value) {
+  return hud.jsterm.setInputValue(value);
+}
+
+
+
+
+
+
+
 
 
 
@@ -409,7 +429,8 @@ async function setInputValueForAutocompletion(
   caretPosition = value.length,
 ) {
   const {jsterm} = hud;
-  jsterm.setInputValue("");
+
+  setInputValue(hud, "");
   jsterm.focus();
 
   const updated = jsterm.once("autocomplete-updated");
@@ -511,7 +532,7 @@ function checkInputValueAndCursorPosition(hud, expectedStringWithCursor, asserti
 
   const inputValue = expectedStringWithCursor.replace("|", "");
   const {jsterm} = hud;
-  is(jsterm.getInputValue(), inputValue, "jsterm has expected value");
+  is(getInputValue(hud), inputValue, "console input has expected value");
   if (jsterm.inputNode) {
     is(jsterm.inputNode.selectionStart, jsterm.inputNode.selectionEnd);
     is(jsterm.inputNode.selectionStart, expectedStringWithCursor.indexOf("|"),
