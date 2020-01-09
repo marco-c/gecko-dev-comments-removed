@@ -49,18 +49,19 @@ GeckoViewPermission.prototype = {
   receiveMessage(aMsg) {
     switch (aMsg.name) {
       case "GeckoView:AddCameraPermission": {
-        let uri;
+        let principal;
         try {
           
-          uri = Services.io.newURI(aMsg.data.origin);
+          principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(aMsg.data.origin);
         } catch (e) {
-          uri = Services.io.newURI(aMsg.data.documentURI);
+          principal = Services.scriptSecurityManager.createCodebasePrincipal(
+            Services.io.newURI(aMsg.data.documentURI), {});
         }
         
         
-        Services.perms.add(uri, "MediaManagerVideo",
-                           Services.perms.ALLOW_ACTION,
-                           Services.perms.EXPIRE_SESSION);
+        Services.perms.addFromPrincipal(principal, "MediaManagerVideo",
+                                        Services.perms.ALLOW_ACTION,
+                                        Services.perms.EXPIRE_SESSION);
         break;
       }
     }
