@@ -8174,14 +8174,6 @@ void nsContentUtils::GetCookieLifetimePolicyForPrincipal(
     case nsICookiePermission::ACCESS_SESSION:
       *aLifetimePolicy = nsICookieService::ACCEPT_SESSION;
       break;
-    case nsICookiePermission::ACCESS_ALLOW_FIRST_PARTY_ONLY:
-      
-      
-      
-      
-      
-      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
-      break;
   }
 }
 
