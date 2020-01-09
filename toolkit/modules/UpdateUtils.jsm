@@ -177,8 +177,11 @@ var UpdateUtils = {
         Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO_MIGRATED, true);
         return configValue;
       } catch (e) {
-        Cu.reportError("UpdateUtils.getAppUpdateAutoEnabled - Unable to read " +
-                       "app update configuration file. Exception: " + e);
+        
+        
+        Services.console.logStringMessage(
+          "UpdateUtils.getAppUpdateAutoEnabled - Unable to read app update " +
+          "configuration file. Exception: " + e);
         let valueMigrated = Services.prefs.getBoolPref(
                               PREF_APP_UPDATE_AUTO_MIGRATED,
                               false);
