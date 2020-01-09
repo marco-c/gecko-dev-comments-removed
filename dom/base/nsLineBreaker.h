@@ -251,6 +251,7 @@ class nsLineBreaker {
   nsAtom* mCurrentWordLanguage;
   bool mCurrentWordContainsMixedLang;
   bool mCurrentWordContainsComplexChar;
+  bool mScriptIsChineseOrJapanese;
 
   
   bool mAfterBreakableSpace;
