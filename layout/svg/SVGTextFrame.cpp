@@ -3666,6 +3666,16 @@ uint32_t SVGTextFrame::GetNumberOfChars(nsIContent* aContent) {
 
 
 float SVGTextFrame::GetComputedTextLength(nsIContent* aContent) {
+  nsIFrame* kid = PrincipalChildList().FirstChild();
+  if (NS_SUBTREE_DIRTY(kid)) {
+    
+    
+    
+    
+    
+    return 0;
+  }
+
   UpdateGlyphPositioning();
 
   float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
