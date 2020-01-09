@@ -40,6 +40,9 @@
 #include "js/SliceBudget.h"
 #include "js/StableStringChars.h"
 #include "js/Wrapper.h"
+#if EXPOSE_INTL_API
+#  include "unicode/uloc.h"
+#endif
 #include "util/Windows.h"
 #include "vm/DateTime.h"
 #include "vm/Debugger.h"
@@ -536,7 +539,13 @@ const char* JSRuntime::getDefaultLocale() {
     return defaultLocale.ref().get();
   }
 
+  
+  
+#if EXPOSE_INTL_API
+  const char* locale = uloc_getDefault();
+#else
   const char* locale = setlocale(LC_ALL, nullptr);
+#endif
 
   
   if (!locale || !strcmp(locale, "C")) {
