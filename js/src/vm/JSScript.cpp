@@ -354,7 +354,6 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
   
 
   enum ScriptBits {
-    NeedsArgsObj,
     OwnSource,
     HasLazyScript,
   };
@@ -433,9 +432,6 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
     numBytecodeTypeSets = script->numBytecodeTypeSets();
     funLength = script->funLength();
 
-    if (script->analyzedArgsUsage() && script->needsArgsObj()) {
-      scriptBits |= (1 << NeedsArgsObj);
-    }
     MOZ_ASSERT_IF(sourceObjectArg,
                   sourceObjectArg->source() == script->scriptSource());
     if (!sourceObjectArg) {
@@ -553,9 +549,6 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
       
       
       script->setArgumentsHasVarBinding();
-    }
-    if (scriptBits & (1 << NeedsArgsObj)) {
-      script->setNeedsArgsObj(true);
     }
   }
 
