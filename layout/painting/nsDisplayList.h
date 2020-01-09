@@ -3542,11 +3542,48 @@ class RetainedDisplayList : public nsDisplayList {
   nsTArray<OldItemInfo> mOldItems;
 };
 
-class FlattenedDisplayItemIterator {
+class FlattenedDisplayListIterator {
  public:
-  FlattenedDisplayItemIterator(nsDisplayListBuilder* aBuilder,
+  FlattenedDisplayListIterator(nsDisplayListBuilder* aBuilder,
+                               nsDisplayList* aList)
+      : FlattenedDisplayListIterator(aBuilder, aList, true) {}
+
+  ~FlattenedDisplayListIterator() { MOZ_ASSERT(!HasNext()); }
+
+  virtual bool HasNext() const { return mNext || !mStack.IsEmpty(); }
+
+  nsDisplayItem* GetNextItem() {
+    MOZ_ASSERT(mNext);
+
+    nsDisplayItem* current = mNext;
+    nsDisplayItem* next = current->GetAbove();
+
+    
+    if (next && current->CanMerge(next)) {
+      
+      AutoTArray<nsDisplayItem*, 2> willMerge{current};
+
+      do {
+        willMerge.AppendElement(next);
+      } while ((next = next->GetAbove()) && current->CanMerge(next));
+
+      current = mBuilder->MergeItems(willMerge);
+    }
+
+    
+    
+    mNext = next;
+    ResolveFlattening();
+
+    return current;
+  }
+
+  nsDisplayItem* PeekNext() { return mNext; }
+
+ protected:
+  FlattenedDisplayListIterator(nsDisplayListBuilder* aBuilder,
                                nsDisplayList* aList,
-                               const bool aResolveFlattening = true)
+                               const bool aResolveFlattening)
       : mBuilder(aBuilder), mNext(aList->GetBottom()) {
     if (aResolveFlattening) {
       
@@ -3555,24 +3592,9 @@ class FlattenedDisplayItemIterator {
     }
   }
 
-  virtual ~FlattenedDisplayItemIterator() { MOZ_ASSERT(!HasNext()); }
+  virtual void EnterChildList(nsDisplayItem* aContainerItem) {}
+  virtual void ExitChildList() {}
 
-  nsDisplayItem* GetNext() {
-    nsDisplayItem* next = mNext;
-
-    
-    if (next) {
-      mNext = mNext->GetAbove();
-      ResolveFlattening();
-    }
-    return next;
-  }
-
-  bool HasNext() const { return mNext || !mStack.IsEmpty(); }
-
-  nsDisplayItem* PeekNext() { return mNext; }
-
- protected:
   bool AtEndOfNestedList() const { return !mNext && mStack.Length() > 0; }
 
   virtual bool ShouldFlattenNextItem() {
@@ -3585,17 +3607,16 @@ class FlattenedDisplayItemIterator {
     
     while (AtEndOfNestedList() || ShouldFlattenNextItem()) {
       if (AtEndOfNestedList()) {
+        ExitChildList();
+
         
-        mNext = mStack.LastElement();
-        ExitChildList(mNext);
-        mStack.RemoveElementAt(mStack.Length() - 1);
-        
-        mNext = mNext->GetAbove();
+        mNext = mStack.PopLastElement();
       } else {
-        
-        
-        mStack.AppendElement(mNext);
         EnterChildList(mNext);
+
+        
+        
+        mStack.AppendElement(mNext->GetAbove());
 
         nsDisplayList* childItems =
             mNext->GetType() != DisplayItemType::TYPE_TRANSFORM
@@ -3607,12 +3628,10 @@ class FlattenedDisplayItemIterator {
     }
   }
 
-  virtual void ExitChildList(nsDisplayItem* aItem) {}
-  virtual void EnterChildList(nsDisplayItem* aItem) {}
-
+ private:
   nsDisplayListBuilder* mBuilder;
   nsDisplayItem* mNext;
-  AutoTArray<nsDisplayItem*, 10> mStack;
+  AutoTArray<nsDisplayItem*, 16> mStack;
 };
 
 struct HitTestInfo {

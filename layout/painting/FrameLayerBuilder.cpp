@@ -155,12 +155,28 @@ enum class MarkerType { StartMarker, EndMarker };
 
 
 
+static bool IsOpacityAppliedToChildren(nsDisplayItem* aItem) {
+  MOZ_ASSERT(aItem->GetType() == DisplayItemType::TYPE_OPACITY);
+  return static_cast<nsDisplayOpacity*>(aItem)->OpacityAppliedToChildren();
+}
+
+
+
+
+static bool SupportsFlatteningWithMarkers(const DisplayItemType& aType) {
+  return aType == DisplayItemType::TYPE_OPACITY ||
+         aType == DisplayItemType::TYPE_TRANSFORM;
+}
+
+
+
+
+
 template <MarkerType markerType>
 static bool AddMarkerIfNeeded(nsDisplayItem* aItem,
                               std::deque<DisplayItemEntry>& aMarkers) {
   const DisplayItemType type = aItem->GetType();
-  if (type != DisplayItemType::TYPE_OPACITY &&
-      type != DisplayItemType::TYPE_TRANSFORM) {
+  if (!SupportsFlatteningWithMarkers(type)) {
     return false;
   }
 
@@ -176,6 +192,14 @@ static bool AddMarkerIfNeeded(nsDisplayItem* aItem,
 
   switch (type) {
     case DisplayItemType::TYPE_OPACITY:
+      if (IsOpacityAppliedToChildren(aItem)) {
+        
+        
+        
+        
+        return false;
+      }
+
       marker = GET_MARKER(DisplayItemEntryType::PUSH_OPACITY,
                           DisplayItemEntryType::POP_OPACITY);
       break;
@@ -1309,7 +1333,7 @@ class ContainerState {
 
  protected:
   friend class PaintedLayerData;
-  friend class FLBDisplayItemIterator;
+  friend class FLBDisplayListIterator;
 
   LayerManager::PaintedLayerCreationHint GetLayerCreationHint(
       AnimatedGeometryRoot* aAnimatedGeometryRoot);
@@ -1581,27 +1605,19 @@ class ContainerState {
   CachedScrollMetadata mCachedScrollMetadata;
 };
 
-class FLBDisplayItemIterator : protected FlattenedDisplayItemIterator {
+class FLBDisplayListIterator : public FlattenedDisplayListIterator {
  public:
-  FLBDisplayItemIterator(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
+  FLBDisplayListIterator(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
                          ContainerState* aState)
-      : FlattenedDisplayItemIterator(aBuilder, aList, false),
-        mState(aState),
-        mAddingEffectMarker(false) {
+      : FlattenedDisplayListIterator(aBuilder, aList, false), mState(aState) {
     MOZ_ASSERT(mState);
 
-    if (aState->mContainerItem) {
+    if (mState->mContainerItem) {
       
-      AddHitTestMarker(aState->mContainerItem);
+      AddHitTestMarkerIfNeeded(mState->mContainerItem);
     }
 
     ResolveFlattening();
-  }
-
-  void AddHitTestMarker(nsDisplayItem* aItem) {
-    if (aItem->HasHitTestInfo()) {
-      mMarkers.emplace_back(aItem, DisplayItemEntryType::HIT_TEST_INFO);
-    }
   }
 
   DisplayItemEntry GetNextEntry() {
@@ -1611,141 +1627,81 @@ class FLBDisplayItemIterator : protected FlattenedDisplayItemIterator {
       return entry;
     }
 
-    nsDisplayItem* next = GetNext();
-    return DisplayItemEntry{next, DisplayItemEntryType::ITEM};
+    return DisplayItemEntry{GetNextItem(), DisplayItemEntryType::ITEM};
   }
 
-  nsDisplayItem* GetNext() {
-    
-    
-    
-    MOZ_ASSERT(mMarkers.empty());
-
-    nsDisplayItem* next = mNext;
-
-    
-    if (next) {
-      nsDisplayItem* peek = next->GetAbove();
-
-      
-      
-      if (peek && next->CanMerge(peek)) {
-        
-        AutoTArray<nsDisplayItem*, 2> mergedItems{next, peek};
-        while ((peek = peek->GetAbove())) {
-          if (!next->CanMerge(peek)) {
-            break;
-          }
-
-          mergedItems.AppendElement(peek);
-        }
-
-        
-        
-        MOZ_ASSERT(mergedItems.Length() > 1);
-        next = mState->mBuilder->MergeItems(mergedItems);
-      }
-
-      
-      
-      mNext = peek;
-
-      ResolveFlattening();
-    }
-
-    return next;
+  bool HasNext() const override {
+    return FlattenedDisplayListIterator::HasNext() || !mMarkers.empty();
   }
-
-  bool HasNext() const {
-    return FlattenedDisplayItemIterator::HasNext() || !mMarkers.empty();
-  }
-
-  nsDisplayItem* PeekNext() { return mNext; }
 
  private:
+  void AddHitTestMarkerIfNeeded(nsDisplayItem* aItem) {
+    if (aItem->HasHitTestInfo()) {
+      mMarkers.emplace_back(aItem, DisplayItemEntryType::HIT_TEST_INFO);
+    }
+  }
+
   bool ShouldFlattenNextItem() override {
-    if (!mNext) {
+    if (!FlattenedDisplayListIterator::ShouldFlattenNextItem()) {
       return false;
     }
 
-    if (!mNext->ShouldFlattenAway(mBuilder)) {
-      return false;
-    }
-
-    const DisplayItemType type = mNext->GetType();
+    nsDisplayItem* next = PeekNext();
+    const DisplayItemType type = next->GetType();
 
     if (type == DisplayItemType::TYPE_SVG_WRAPPER) {
       
-      if (RefPtr<LayerManager> lm = mBuilder->GetWidgetLayerManager()) {
+      if (RefPtr<LayerManager> lm = mState->mBuilder->GetWidgetLayerManager()) {
         lm->SetContainsSVG(true);
       }
     }
 
-    if (type != DisplayItemType::TYPE_OPACITY &&
-        type != DisplayItemType::TYPE_TRANSFORM) {
+    if (!SupportsFlatteningWithMarkers(type)) {
       return true;
     }
 
-    if (type == DisplayItemType::TYPE_OPACITY) {
-      nsDisplayOpacity* opacity = static_cast<nsDisplayOpacity*>(mNext);
-
-      if (opacity->OpacityAppliedToChildren()) {
-        
-        
-        return true;
-      }
+    if (type == DisplayItemType::TYPE_OPACITY &&
+        IsOpacityAppliedToChildren(next)) {
+      
+      
+      return true;
     }
 
-    if (mState->IsInInactiveLayer() || !NextItemWantsInactiveLayer()) {
+    if (mState->IsInInactiveLayer() || !ItemWantsInactiveLayer(next)) {
       
       
       return false;
     }
 
     
-    mAddingEffectMarker = true;
+    
+    MOZ_ASSERT(type == DisplayItemType::TYPE_TRANSFORM ||
+               !IsOpacityAppliedToChildren(next));
     return true;
   }
 
-  void EnterChildList(nsDisplayItem* aItem) override {
-    if (!mAddingEffectMarker) {
-      
-      AddHitTestMarker(aItem);
-      return;
-    }
-
-    if (AddMarkerIfNeeded<MarkerType::StartMarker>(aItem, mMarkers)) {
-      mActiveMarkers.AppendElement(aItem);
-    }
-
-    
-    AddHitTestMarker(aItem);
-
-    mAddingEffectMarker = false;
+  void EnterChildList(nsDisplayItem* aContainerItem) override {
+    mFlattenedLists.AppendElement(aContainerItem);
+    AddMarkerIfNeeded<MarkerType::StartMarker>(aContainerItem, mMarkers);
+    AddHitTestMarkerIfNeeded(aContainerItem);
   }
 
-  void ExitChildList(nsDisplayItem* aItem) override {
-    if (mActiveMarkers.IsEmpty() || mActiveMarkers.LastElement() != aItem) {
-      
-      return;
-    }
-
-    if (AddMarkerIfNeeded<MarkerType::EndMarker>(aItem, mMarkers)) {
-      mActiveMarkers.RemoveLastElement();
-    }
+  void ExitChildList() override {
+    MOZ_ASSERT(!mFlattenedLists.IsEmpty());
+    nsDisplayItem* aContainerItem = mFlattenedLists.PopLastElement();
+    AddMarkerIfNeeded<MarkerType::EndMarker>(aContainerItem, mMarkers);
   }
 
-  bool NextItemWantsInactiveLayer() {
-    LayerState layerState = mNext->GetLayerState(
+  bool ItemWantsInactiveLayer(nsDisplayItem* aItem) {
+    const LayerState layerState = aItem->GetLayerState(
         mState->mBuilder, mState->mManager, mState->mParameters);
 
     return layerState == LayerState::LAYER_INACTIVE;
   }
 
   std::deque<DisplayItemEntry> mMarkers;
-  AutoTArray<nsDisplayItem*, 4> mActiveMarkers;
+  AutoTArray<nsDisplayItem*, 16> mFlattenedLists;
   ContainerState* mState;
-  bool mAddingEffectMarker;
 };
 
 class PaintedDisplayItemLayerUserData : public LayerUserData {
@@ -4441,7 +4397,7 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
     return selectedLayer && opacityIndices.Length() > 0;
   };
 
-  FLBDisplayItemIterator iter(mBuilder, aList, this);
+  FLBDisplayListIterator iter(mBuilder, aList, this);
   while (iter.HasNext()) {
     DisplayItemEntry e = iter.GetNextEntry();
     DisplayItemEntryType marker = e.mType;
@@ -4912,7 +4868,7 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
                                    DisplayItemType::TYPE_SCROLL_INFO_LAYER) {
           
           
-          iter.GetNext();
+          iter.GetNextItem();
         }
       }
 
