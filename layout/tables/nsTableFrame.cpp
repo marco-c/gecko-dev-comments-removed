@@ -1392,18 +1392,6 @@ void nsTableFrame::DisplayGenericTablePart(
   bool isVisible = aFrame->IsVisibleForPainting();
   bool isTable = aFrame->IsTableFrame();
 
-  
-  
-  
-  if (isVisible || !isTable) {
-    nsDisplayTableItem* currentItem = aBuilder->GetCurrentTableItem();
-    
-    
-    if (currentItem) {
-      currentItem->UpdateForFrameBackground(aFrame);
-    }
-  }
-
   if (isVisible) {
     
     
