@@ -21,6 +21,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/HTMLEditor.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/Telemetry.h"
 
@@ -52,7 +53,6 @@
 #include "nsThreadUtils.h"
 
 #include "nsPresContext.h"
-#include "nsIPresShell.h"
 #include "nsCaret.h"
 
 #include "nsITimer.h"
@@ -388,13 +388,13 @@ void Selection::Stringify(nsAString& aResult, FlushFrames aFlushFrames) {
     
     
     
-    nsCOMPtr<nsIPresShell> shell =
-        mFrameSelection ? mFrameSelection->GetShell() : nullptr;
-    if (!shell) {
+    RefPtr<PresShell> presShell =
+        mFrameSelection ? mFrameSelection->GetPresShell() : nullptr;
+    if (!presShell) {
       aResult.Truncate();
       return;
     }
-    shell->FlushPendingNotifications(FlushType::Frames);
+    presShell->FlushPendingNotifications(FlushType::Frames);
   }
 
   IgnoredErrorResult rv;
@@ -531,12 +531,12 @@ nsresult Selection::GetTableCellLocationFromRange(
 
   
   
-  nsCOMPtr<nsIPresShell> presShell = mFrameSelection->GetShell();
+  RefPtr<PresShell> presShell = mFrameSelection->GetPresShell();
   if (presShell) {
     presShell->FlushPendingNotifications(FlushType::Frames);
 
     
-    if (!mFrameSelection || !mFrameSelection->GetShell()) {
+    if (!mFrameSelection || !mFrameSelection->GetPresShell()) {
       return NS_ERROR_FAILURE;
     }
   }
@@ -2871,7 +2871,7 @@ nsPresContext* Selection::GetPresContext() const {
 nsIPresShell* Selection::GetPresShell() const {
   if (!mFrameSelection) return nullptr;  
 
-  return mFrameSelection->GetShell();
+  return mFrameSelection->GetPresShell();
 }
 
 Document* Selection::GetDocument() const {
@@ -3050,7 +3050,7 @@ nsresult Selection::ScrollIntoView(SelectionRegion aRegion,
     return NS_OK;
   }
 
-  nsIPresShell* presShell = mFrameSelection->GetShell();
+  PresShell* presShell = mFrameSelection->GetPresShell();
   if (!presShell || !presShell->GetDocument()) {
     return NS_OK;
   }
@@ -3064,7 +3064,7 @@ nsresult Selection::ScrollIntoView(SelectionRegion aRegion,
   
   
   
-  nsCOMPtr<nsIPresShell> kungFuDeathGrip(presShell);
+  RefPtr<PresShell> kungFuDeathGrip(presShell);
 
   
   
@@ -3075,8 +3075,10 @@ nsresult Selection::ScrollIntoView(SelectionRegion aRegion,
     presShell->GetDocument()->FlushPendingNotifications(FlushType::Layout);
 
     
-    presShell = mFrameSelection ? mFrameSelection->GetShell() : nullptr;
-    if (!presShell) return NS_OK;
+    presShell = mFrameSelection ? mFrameSelection->GetPresShell() : nullptr;
+    if (!presShell) {
+      return NS_OK;
+    }
   }
 
   
@@ -3377,10 +3379,11 @@ void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
       visual ? nsFrameSelection::eVisual : nsFrameSelection::eLogical);
 
   if (aGranularity.LowerCaseEqualsLiteral("line") && NS_FAILED(rv)) {
-    nsCOMPtr<nsISelectionController> shell =
-        do_QueryInterface(frameSelection->GetShell());
-    if (!shell) return;
-    shell->CompleteMove(forward, extend);
+    RefPtr<PresShell> presShell = frameSelection->GetPresShell();
+    if (!presShell) {
+      return;
+    }
+    presShell->CompleteMove(forward, extend);
   }
 }
 

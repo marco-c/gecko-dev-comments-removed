@@ -55,7 +55,9 @@ struct SelectionCustomColors {
   mozilla::Maybe<nscolor> mAltBackgroundColor;
 };
 
-class nsIPresShell;
+namespace mozilla {
+class PresShell;
+}  
 
 
 
@@ -229,7 +231,7 @@ class nsFrameSelection final {
 
 
 
-  void Init(nsIPresShell* aShell, nsIContent* aLimiter,
+  void Init(mozilla::PresShell* aPresShell, nsIContent* aLimiter,
             bool aAccessibleCaretEnabled);
 
   
@@ -713,7 +715,7 @@ class nsFrameSelection final {
   
   nsresult DeleteFromDocument();
 
-  nsIPresShell* GetShell() const { return mShell; }
+  mozilla::PresShell* GetPresShell() const { return mPresShell; }
 
   void DisconnectFromPresShell();
   nsresult ClearNormalSelection();
@@ -726,7 +728,7 @@ class nsFrameSelection final {
                      uint32_t aContentEndOffset, CaretAssociateHint aHint,
                      bool aContinueSelection, bool aMultipleSelection);
 
-  void BidiLevelFromMove(nsIPresShell* aPresShell, nsIContent* aNode,
+  void BidiLevelFromMove(mozilla::PresShell* aPresShell, nsIContent* aNode,
                          uint32_t aContentOffset, nsSelectionAmount aAmount,
                          CaretAssociateHint aHint);
   void BidiLevelFromClick(nsIContent* aNewFocus, uint32_t aContentOffset);
@@ -848,7 +850,7 @@ class nsFrameSelection final {
   
   nsCOMPtr<nsIContent> mAncestorLimiter;
 
-  nsIPresShell* mShell = nullptr;
+  mozilla::PresShell* mPresShell = nullptr;
   
   int16_t mSelectionChangeReason = nsISelectionListener::NO_REASON;
   
