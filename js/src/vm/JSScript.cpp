@@ -354,6 +354,7 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
   
 
   enum ScriptBits {
+    NeedsArgsObj,
     OwnSource,
     HasLazyScript,
   };
@@ -432,6 +433,9 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
     numBytecodeTypeSets = script->numBytecodeTypeSets();
     funLength = script->funLength();
 
+    if (script->analyzedArgsUsage() && script->needsArgsObj()) {
+      scriptBits |= (1 << NeedsArgsObj);
+    }
     MOZ_ASSERT_IF(sourceObjectArg,
                   sourceObjectArg->source() == script->scriptSource());
     if (!sourceObjectArg) {
@@ -549,6 +553,9 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
       
       
       script->setArgumentsHasVarBinding();
+    }
+    if (scriptBits & (1 << NeedsArgsObj)) {
+      script->setNeedsArgsObj(true);
     }
   }
 
@@ -1468,17 +1475,9 @@ void ScriptSourceObject::setPrivate(JSRuntime* rt, const Value& value) {
   
   JS::AutoSuppressGCAnalysis nogc;
   Value prevValue = getReservedSlot(PRIVATE_SLOT);
-  if (!prevValue.isUndefined()) {
-    if (auto releaseHook = rt->scriptPrivateReleaseHook) {
-      releaseHook(prevValue);
-    }
-  }
+  rt->releaseScriptPrivate(prevValue);
   setReservedSlot(PRIVATE_SLOT, value);
-  if (!value.isUndefined()) {
-    if (auto addRefHook = rt->scriptPrivateAddRefHook) {
-      addRefHook(value);
-    }
-  }
+  rt->addRefScriptPrivate(value);
 }
 
  bool JSScript::loadSource(JSContext* cx, ScriptSource* ss,
