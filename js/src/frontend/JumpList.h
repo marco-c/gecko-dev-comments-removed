@@ -55,7 +55,7 @@ namespace frontend {
 
 
 struct JumpTarget {
-  BytecodeOffset offset;
+  BytecodeOffset offset = BytecodeOffset::invalidOffset();
 };
 
 struct JumpList {

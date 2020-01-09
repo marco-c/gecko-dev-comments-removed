@@ -6580,7 +6580,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
   {
     
     JumpList beq;
-    JumpTarget breakTarget = {BytecodeOffset::invalidOffset()};
+    JumpTarget breakTarget;
     if (!emitBackwardJump(JSOP_GOTO, tryStart, &beq, &breakTarget)) {
       
       return false;

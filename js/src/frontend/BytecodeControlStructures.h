@@ -121,14 +121,14 @@ class LoopControl : public BreakableControl {
   JumpList entryJump_;
 
   
-  JumpTarget head_ = {BytecodeOffset::invalidOffset()};
+  JumpTarget head_;
 
   
-  JumpTarget breakTarget_ = {BytecodeOffset::invalidOffset()};
+  JumpTarget breakTarget_;
 
   
   
-  JumpTarget continueTarget_ = {BytecodeOffset::invalidOffset()};
+  JumpTarget continueTarget_;
 
   
   int32_t stackDepth_;

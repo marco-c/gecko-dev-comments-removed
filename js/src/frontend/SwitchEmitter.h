@@ -318,7 +318,7 @@ class MOZ_STACK_CLASS SwitchEmitter {
   BytecodeOffset lastCaseOffset_;
 
   
-  JumpTarget defaultJumpTargetOffset_ = {BytecodeOffset::invalidOffset()};
+  JumpTarget defaultJumpTargetOffset_;
 
   
   JumpList condSwitchDefaultOffset_;

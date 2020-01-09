@@ -252,7 +252,7 @@ class BytecodeSection {
   
 
   
-  JumpTarget lastTarget_ = {BytecodeOffset::invalidOffset()};
+  JumpTarget lastTarget_;
 
   
 
