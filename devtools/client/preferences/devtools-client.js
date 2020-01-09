@@ -295,6 +295,9 @@ pref("devtools.webconsole.input.editor", false);
 pref("devtools.performance.new-panel-enabled", false);
 
 
+pref("devtools.webconsole.groupWarningMessages", false);
+
+
 pref("devtools.source-map.client-service.enabled", true);
 
 
