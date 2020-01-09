@@ -2,19 +2,21 @@
 
 
 
-use api::{ColorF, ColorU, DevicePoint};
+use api::{ColorU, DevicePoint};
 use api::{FontInstanceFlags, FontInstancePlatformOptions};
-use api::{FontKey, FontRenderMode, FontTemplate, FontVariation};
+use api::{FontKey, FontInstanceKey, FontRenderMode, FontTemplate, FontVariation};
 use api::{GlyphIndex, GlyphDimensions, SyntheticItalics};
 use api::{LayoutPoint, LayoutToWorldTransform, WorldPoint};
 use app_units::Au;
 use euclid::approxeq::ApproxEq;
 use internal_types::ResourceCacheError;
+use wr_malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use platform::font::FontContext;
 use rayon::ThreadPool;
 use std::cmp;
 use std::hash::{Hash, Hasher};
 use std::mem;
+use std::ops::Deref;
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::sync::mpsc::{channel, Receiver, Sender};
 
@@ -164,18 +166,51 @@ impl<'a> From<&'a LayoutToWorldTransform> for FontTransform {
 
 pub const FONT_SIZE_LIMIT: f64 = 512.0;
 
-#[derive(Clone, Hash, PartialEq, Eq, Debug, Ord, PartialOrd, MallocSizeOf)]
+
+
+
+
+#[derive(Clone, PartialEq, Eq, Debug, Ord, PartialOrd)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct FontInstance {
-    pub font_key: FontKey,
+    pub base: Arc<BaseFontInstance>,
+    pub transform: FontTransform,
+    pub render_mode: FontRenderMode,
+    pub flags: FontInstanceFlags,
+    pub color: ColorU,
     
     
     
     
     
     pub size: Au,
-    pub color: ColorU,
+}
+
+impl Hash for FontInstance {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        
+        
+        self.base.instance_key.hash(state);
+        self.transform.hash(state);
+        self.render_mode.hash(state);
+        self.flags.hash(state);
+        self.color.hash(state);
+        self.size.hash(state);
+    }
+}
+
+
+
+
+
+#[derive(Clone, PartialEq, Eq, Debug, Ord, PartialOrd, MallocSizeOf)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct BaseFontInstance {
+    pub instance_key: FontInstanceKey,
+    pub font_key: FontKey,
+    pub size: Au,
     pub bg_color: ColorU,
     pub render_mode: FontRenderMode,
     pub flags: FontInstanceFlags,
@@ -183,36 +218,46 @@ pub struct FontInstance {
     #[cfg_attr(any(feature = "capture", feature = "replay"), serde(skip))]
     pub platform_options: Option<FontInstancePlatformOptions>,
     pub variations: Vec<FontVariation>,
-    pub transform: FontTransform,
+}
+
+impl Deref for FontInstance {
+    type Target = BaseFontInstance;
+    fn deref(&self) -> &BaseFontInstance {
+        self.base.as_ref()
+    }
+}
+
+impl MallocSizeOf for  FontInstance {
+    fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize { 0 }
 }
 
 impl FontInstance {
     pub fn new(
-        font_key: FontKey,
-        size: Au,
-        color: ColorF,
-        bg_color: ColorU,
+        base: Arc<BaseFontInstance>,
+        color: ColorU,
         render_mode: FontRenderMode,
         flags: FontInstanceFlags,
-        synthetic_italics: SyntheticItalics,
-        platform_options: Option<FontInstancePlatformOptions>,
-        variations: Vec<FontVariation>,
     ) -> Self {
-        
-        
-        debug_assert!(bg_color.a == 0 || bg_color.a == 255);
-
         FontInstance {
-            font_key,
-            size,
+            transform: FontTransform::identity(),
             color: color.into(),
-            bg_color,
+            size: base.size,
+            base,
             render_mode,
             flags,
-            synthetic_italics,
-            platform_options,
-            variations,
+        }
+    }
+
+    pub fn from_base(
+        base: Arc<BaseFontInstance>,
+    ) -> Self {
+        FontInstance {
             transform: FontTransform::identity(),
+            color: ColorU::new(0, 0, 0, 255),
+            size: base.size,
+            render_mode: base.render_mode,
+            flags: base.flags,
+            base,
         }
     }
 
@@ -714,13 +759,13 @@ mod test_glyph_rasterizer {
         use gpu_cache::GpuCache;
         use render_task::{RenderTaskCache, RenderTaskTree, RenderTaskTreeCounters};
         use profiler::TextureCacheProfileCounters;
-        use api::{FontKey, FontTemplate, FontRenderMode,
-                  IdNamespace, ColorF, ColorU, DevicePoint};
+        use api::{FontKey, FontInstanceKey, FontTemplate, FontRenderMode,
+                  IdNamespace, ColorU, DevicePoint};
         use render_backend::FrameId;
         use app_units::Au;
         use thread_profiler::register_thread_with_profiler;
         use std::sync::Arc;
-        use glyph_rasterizer::{FontInstance, GlyphKey, GlyphRasterizer};
+        use glyph_rasterizer::{FontInstance, BaseFontInstance, GlyphKey, GlyphRasterizer};
 
         let worker = ThreadPoolBuilder::new()
             .thread_name(|idx|{ format!("WRWorker#{}", idx) })
@@ -745,17 +790,18 @@ mod test_glyph_rasterizer {
         let font_key = FontKey::new(IdNamespace(0), 0);
         glyph_rasterizer.add_font(font_key, FontTemplate::Raw(Arc::new(font_data), 0));
 
-        let font = FontInstance::new(
+        let font = FontInstance::from_base(Arc::new(BaseFontInstance {
+            instance_key: FontInstanceKey(IdNamespace(0), 0),
             font_key,
-            Au::from_px(32),
-            ColorF::new(0.0, 0.0, 0.0, 1.0),
-            ColorU::new(0, 0, 0, 0),
-            FontRenderMode::Subpixel,
-            Default::default(),
-            Default::default(),
-            None,
-            Vec::new(),
-        );
+            size: Au::from_px(32),
+            bg_color: ColorU::new(0, 0, 0, 0),
+            render_mode: FontRenderMode::Subpixel,
+            flags: Default::default(),
+            synthetic_italics: Default::default(),
+            platform_options: None,
+            variations: Vec::new(),
+        }));
+
         let subpx_dir = font.get_subpx_dir();
 
         let mut glyph_keys = Vec::with_capacity(200);
