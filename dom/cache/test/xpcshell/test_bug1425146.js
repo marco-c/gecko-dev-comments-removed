@@ -42,12 +42,12 @@ async function run_test() {
   
   
   
-  create_test_profile('bug1425146_profile.zip');
+  create_test_profile("bug1425146_profile.zip");
 
   try {
     await caches.open("test");
     ok(true, "Should not have thrown");
-  } catch(ex) {
+  } catch (ex) {
     ok(false, "Should not have thrown");
   }
 
