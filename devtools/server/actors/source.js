@@ -445,11 +445,26 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     if (column === undefined) {
       
       
+      const lineMatches = [];
       for (const script of scripts) {
-        const offsets = script.getPossibleBreakpointOffsets({ line });
-        if (offsets.length > 0) {
-          entryPoints.push({ script, offsets: [offsets[0]] });
-          break;
+        const possibleBreakpoints = script.getPossibleBreakpoints({ line });
+        for (const possibleBreakpoint of possibleBreakpoints) {
+          lineMatches.push({ ...possibleBreakpoint, script });
+        }
+      }
+      lineMatches.sort((a, b) => a.columnNumber - b.columnNumber);
+
+      if (lineMatches.length > 0) {
+        
+        
+        
+        
+        const firstColumn = lineMatches[0].columnNumber;
+        const firstColumnMatches = lineMatches
+          .filter(m => m.columnNumber === firstColumn);
+
+        for (const { script, offset } of firstColumnMatches) {
+          entryPoints.push({ script, offsets: [offset] });
         }
       }
     } else {

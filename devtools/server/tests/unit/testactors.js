@@ -29,6 +29,14 @@ DebuggerServer.getTestGlobal = function(name) {
   return null;
 };
 
+var gAllowNewThreadGlobals = false;
+DebuggerServer.allowNewThreadGlobals = function() {
+  gAllowNewThreadGlobals = true;
+};
+DebuggerServer.disallowNewThreadGlobals = function() {
+  gAllowNewThreadGlobals = false;
+};
+
 
 
 
@@ -84,10 +92,15 @@ function TestTargetActor(connection, global) {
   this._extraActors = {};
   this.makeDebugger = makeDebugger.bind(null, {
     findDebuggees: () => [this._global],
-    shouldAddNewGlobalAsDebuggee: g => g.hostAnnotations &&
-                                       g.hostAnnotations.type == "document" &&
-                                       g.hostAnnotations.element === this._global,
+    shouldAddNewGlobalAsDebuggee: g => {
+      if (gAllowNewThreadGlobals) {
+        return true;
+      }
 
+      return g.hostAnnotations &&
+        g.hostAnnotations.type == "document" &&
+        g.hostAnnotations.element === this._global;
+    },
   });
 }
 

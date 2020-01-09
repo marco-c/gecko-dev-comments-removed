@@ -930,7 +930,7 @@ function threadClientTest(test, options = {}) {
       await attachTestTabAndResume(client, scriptName);
 
     
-    await test({ threadClient, debuggee, client, targetFront });
+    await test({ threadClient, debuggee, client, server, targetFront });
 
     
     await client.close();

@@ -1,0 +1,7 @@
+
+
+function init() {
+  var a = foo();
+}
+
+function foo() {}
