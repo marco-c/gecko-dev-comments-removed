@@ -164,7 +164,7 @@ macro_rules! counter_style_descriptors {
         $( #[$doc: meta] $name: tt $ident: ident / $setter: ident [$checker: tt]: $ty: ty, )+
     ) => {
         /// An @counter-style rule
-        #[derive(Clone, Debug)]
+        #[derive(Clone, Debug, ToShmem)]
         pub struct CounterStyleRuleData {
             name: CustomIdent,
             generation: Wrapping<u32>,
@@ -337,7 +337,7 @@ impl CounterStyleRuleData {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToShmem)]
 pub enum System {
     
     Cyclic,
@@ -410,7 +410,7 @@ impl ToCss for System {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss, ToShmem)]
 pub enum Symbol {
     
     String(String),
@@ -447,7 +447,7 @@ impl Symbol {
 }
 
 
-#[derive(Clone, Debug, ToCss)]
+#[derive(Clone, Debug, ToCss, ToShmem)]
 pub struct Negative(pub Symbol, pub Option<Symbol>);
 
 impl Parse for Negative {
@@ -465,11 +465,11 @@ impl Parse for Negative {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToShmem)]
 pub struct Ranges(pub Vec<Range<CounterBound>>);
 
 
-#[derive(Clone, Copy, Debug, ToCss)]
+#[derive(Clone, Copy, Debug, ToCss, ToShmem)]
 pub enum CounterBound {
     
     Integer(Integer),
@@ -548,7 +548,7 @@ where
 }
 
 
-#[derive(Clone, Debug, ToCss)]
+#[derive(Clone, Debug, ToCss, ToShmem)]
 pub struct Pad(pub Integer, pub Symbol);
 
 impl Parse for Pad {
@@ -564,7 +564,7 @@ impl Parse for Pad {
 }
 
 
-#[derive(Clone, Debug, ToCss)]
+#[derive(Clone, Debug, ToCss, ToShmem)]
 pub struct Fallback(pub CustomIdent);
 
 impl Parse for Fallback {
@@ -578,7 +578,7 @@ impl Parse for Fallback {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
+#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss, ToShmem)]
 pub struct Symbols(#[css(iterable)] pub Vec<Symbol>);
 
 impl Parse for Symbols {
@@ -602,7 +602,7 @@ impl Parse for Symbols {
 }
 
 
-#[derive(Clone, Debug, ToCss)]
+#[derive(Clone, Debug, ToCss, ToShmem)]
 pub struct AdditiveSymbols(pub Vec<AdditiveTuple>);
 
 impl Parse for AdditiveSymbols {
@@ -623,7 +623,7 @@ impl Parse for AdditiveSymbols {
 }
 
 
-#[derive(Clone, Debug, ToCss)]
+#[derive(Clone, Debug, ToCss, ToShmem)]
 pub struct AdditiveTuple {
     
     pub weight: Integer,
@@ -651,7 +651,7 @@ impl Parse for AdditiveTuple {
 }
 
 
-#[derive(Clone, Debug, ToCss)]
+#[derive(Clone, Debug, ToCss, ToShmem)]
 pub enum SpeakAs {
     
     Auto,

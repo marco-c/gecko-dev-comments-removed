@@ -19,7 +19,15 @@ use style_traits::{CssWriter, ToCss};
 
 #[allow(missing_docs)]
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToShmem,
 )]
 #[css(comma, function)]
 pub struct Matrix<T> {
@@ -35,7 +43,7 @@ pub struct Matrix<T> {
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[css(comma, function = "matrix3d")]
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo,
-         ToComputedValue, ToCss)]
+         ToComputedValue, ToCss, ToShmem)]
 pub struct Matrix3D<T> {
     pub m11: T, pub m12: T, pub m13: T, pub m14: T,
     pub m21: T, pub m22: T, pub m23: T, pub m24: T,
@@ -82,6 +90,7 @@ impl<T: Into<f64>> From<Matrix3D<T>> for Transform3D<f64> {
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 #[repr(C)]
 pub struct GenericTransformOrigin<H, V, Depth> {
@@ -110,7 +119,9 @@ fn is_same<N: PartialEq>(x: &N, y: &N) -> bool {
     x == y
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+)]
 
 pub enum TransformOperation<Angle, Number, Length, Integer, LengthPercentage>
 where
@@ -215,7 +226,9 @@ where
     },
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+)]
 
 pub struct Transform<T>(#[css(if_empty = "none", iterable)] pub Vec<T>);
 
@@ -537,7 +550,15 @@ pub fn get_normalized_vector_and_angle<T: Zero>(
 }
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToAnimatedZero, ToComputedValue,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToShmem,
 )]
 
 
@@ -599,7 +620,15 @@ where
 }
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToAnimatedZero, ToComputedValue,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToShmem,
 )]
 
 
@@ -648,6 +677,7 @@ impl<Number: ToCss + PartialEq> ToCss for Scale<Number> {
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 
 
@@ -680,7 +710,16 @@ where
 
 #[allow(missing_docs)]
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToShmem,
 )]
 pub enum TransformStyle {
     #[cfg(feature = "servo")]

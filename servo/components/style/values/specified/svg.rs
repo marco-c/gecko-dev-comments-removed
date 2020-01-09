@@ -128,7 +128,9 @@ const PAINT_ORDER_MASK: u8 = 0b11;
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem,
+)]
 pub struct SVGPaintOrder(pub u8);
 
 impl SVGPaintOrder {
@@ -235,7 +237,9 @@ impl ToCss for SVGPaintOrder {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+)]
 pub struct MozContextProperties(pub CustomIdent);
 
 impl Parse for MozContextProperties {

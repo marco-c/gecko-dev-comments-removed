@@ -15,7 +15,9 @@ use style_traits::{CssWriter, KeywordsCollectFn, ParseError};
 use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(
+    Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem,
+)]
 pub struct FeatureTagValue<Integer> {
     
     pub tag: FontTag,
@@ -56,6 +58,7 @@ where
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 pub struct VariationValue<Number> {
     
@@ -67,7 +70,9 @@ pub struct VariationValue<Number> {
 
 
 #[css(comma)]
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+)]
 pub struct FontSettings<T>(#[css(if_empty = "normal", iterable)] pub Box<[T]>);
 
 impl<T> FontSettings<T> {
@@ -103,7 +108,9 @@ impl<T: Parse> Parse for FontSettings<T> {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(
+    Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem,
+)]
 pub struct FontTag(pub u32);
 
 impl ToCss for FontTag {
@@ -149,6 +156,7 @@ impl Parse for FontTag {
     ToAnimatedValue,
     ToAnimatedZero,
     ToCss,
+    ToShmem,
 )]
 
 pub struct KeywordInfo<Length> {
@@ -205,6 +213,7 @@ impl<L> SpecifiedValueInfo for KeywordInfo<L> {
     ToAnimatedValue,
     ToAnimatedZero,
     ToCss,
+    ToShmem,
 )]
 #[allow(missing_docs)]
 pub enum KeywordSize {
@@ -254,6 +263,7 @@ impl Default for KeywordSize {
     SpecifiedValueInfo,
     ToAnimatedValue,
     ToAnimatedZero,
+    ToShmem,
 )]
 pub enum FontStyle<Angle> {
     #[animation(error)]

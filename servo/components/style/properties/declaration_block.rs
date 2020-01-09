@@ -90,7 +90,7 @@ impl Importance {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone)]
+#[derive(Clone, ToShmem)]
 pub struct PropertyDeclarationBlock {
     
     

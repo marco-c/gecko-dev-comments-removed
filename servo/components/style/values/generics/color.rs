@@ -6,7 +6,7 @@
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem)]
 pub struct ComplexColorRatios {
     
     pub bg: f32,
@@ -23,7 +23,7 @@ impl ComplexColorRatios {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem)]
 pub enum Color<RGBA> {
     
     Numeric(RGBA),
@@ -90,6 +90,7 @@ impl<RGBA> From<RGBA> for Color<RGBA> {
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 pub enum ColorOrAuto<C> {
     

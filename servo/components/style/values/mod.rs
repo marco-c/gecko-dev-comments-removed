@@ -134,6 +134,7 @@ impl Parse for Impossible {
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 pub enum Either<A, B> {
     
@@ -152,7 +153,9 @@ impl<A: Debug, B: Debug> Debug for Either<A, B> {
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(
+    Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem,
+)]
 pub struct CustomIdent(pub Atom);
 
 impl CustomIdent {
@@ -189,7 +192,7 @@ impl ToCss for CustomIdent {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, SpecifiedValueInfo, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, SpecifiedValueInfo, ToComputedValue, ToShmem)]
 pub enum KeyframesName {
     
     Ident(CustomIdent),

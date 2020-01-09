@@ -21,7 +21,7 @@ use style_traits::{CssWriter, ToCss};
 
 
 
-#[derive(Debug)]
+#[derive(Debug, ToShmem)]
 pub struct MediaRule {
     
     pub media_queries: Arc<Locked<MediaList>>,

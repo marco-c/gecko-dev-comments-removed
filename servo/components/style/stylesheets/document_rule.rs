@@ -20,7 +20,7 @@ use servo_arc::Arc;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
-#[derive(Debug)]
+#[derive(Debug, ToShmem)]
 
 pub struct DocumentRule {
     
@@ -72,7 +72,7 @@ impl DeepCloneWithLock for DocumentRule {
 }
 
 
-#[derive(Clone, Copy, Debug, Parse, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, Parse, PartialEq, ToCss, ToShmem)]
 #[allow(missing_docs)]
 pub enum MediaDocumentKind {
     All,
@@ -82,7 +82,7 @@ pub enum MediaDocumentKind {
 }
 
 
-#[derive(Clone, Debug, ToCss)]
+#[derive(Clone, Debug, ToCss, ToShmem)]
 pub enum DocumentMatchingFunction {
     
     
@@ -216,7 +216,7 @@ impl DocumentMatchingFunction {
 
 
 #[css(comma)]
-#[derive(Clone, Debug, ToCss)]
+#[derive(Clone, Debug, ToCss, ToShmem)]
 pub struct DocumentCondition(#[css(iterable)] Vec<DocumentMatchingFunction>);
 
 impl DocumentCondition {

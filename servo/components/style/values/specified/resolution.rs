@@ -12,7 +12,7 @@ use cssparser::{Parser, Token};
 use style_traits::{ParseError, StyleParseErrorKind};
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum Resolution {
     
     #[css(dimension)]

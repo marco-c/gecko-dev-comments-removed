@@ -11,7 +11,7 @@ use values::specified::ui::CursorKind;
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem)]
 pub struct Cursor<Image> {
     
     pub images: Box<[Image]>,
@@ -44,7 +44,7 @@ impl<Image: ToCss> ToCss for Cursor<Image> {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem)]
 pub struct CursorImage<ImageUrl, Number> {
     
     pub url: ImageUrl,
@@ -84,6 +84,7 @@ impl<ImageUrl: ToCss, Number: ToCss> ToCss for CursorImage<ImageUrl, Number> {
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 pub enum ScrollbarColor<Color> {
     

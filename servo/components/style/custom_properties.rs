@@ -96,7 +96,7 @@ pub fn parse_name(s: &str) -> Result<&str, ()> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct VariableValue {
     css: String,
 

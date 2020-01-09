@@ -204,7 +204,7 @@ impl Eq for UrlExtraData {}
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToShmem)]
 #[allow(missing_docs)]
 pub enum CssRule {
     

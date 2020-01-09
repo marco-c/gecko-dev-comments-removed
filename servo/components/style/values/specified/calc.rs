@@ -65,7 +65,7 @@ pub enum CalcUnit {
 
 
 
-#[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq, ToShmem)]
 #[allow(missing_docs)]
 pub struct CalcLengthPercentage {
     pub clamping_mode: AllowedNumericType,

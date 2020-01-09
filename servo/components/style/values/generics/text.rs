@@ -11,7 +11,15 @@ use style_traits::ParseError;
 
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToShmem,
 )]
 pub enum InitialLetter<Number, Integer> {
     
@@ -29,7 +37,9 @@ impl<N, I> InitialLetter<N, I> {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+)]
 pub enum Spacing<Value> {
     
     Normal,
@@ -81,6 +91,7 @@ fn line_height_moz_block_height_enabled(context: &ParserContext) -> bool {
     SpecifiedValueInfo,
     ToAnimatedValue,
     ToCss,
+    ToShmem,
     Parse,
 )]
 #[repr(C, u8)]

@@ -134,7 +134,7 @@ impl ToComputedValue for LineHeight {
 }
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum TextOverflowSide {
     
     Clip,
@@ -168,7 +168,7 @@ impl Parse for TextOverflowSide {
     }
 }
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 pub struct TextOverflow {
     
@@ -228,7 +228,7 @@ impl ToComputedValue for TextOverflow {
 }
 
 bitflags! {
-    #[derive(MallocSizeOf, SpecifiedValueInfo, ToComputedValue)]
+    #[derive(MallocSizeOf, SpecifiedValueInfo, ToComputedValue, ToShmem)]
     #[value_info(other_values = "none,underline,overline,line-through,blink")]
     #[repr(C)]
     /// Specified keyword values for the text-decoration-line property.
@@ -365,6 +365,7 @@ impl TextDecorationLine {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 #[allow(missing_docs)]
 pub enum TextAlignKeyword {
@@ -393,7 +394,7 @@ pub enum TextAlignKeyword {
 
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, Eq, Hash, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum TextAlign {
     
     Keyword(TextAlignKeyword),
@@ -470,7 +471,7 @@ impl ToComputedValue for TextAlign {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum TextEmphasisStyle {
     
     Keyword(TextEmphasisKeywordValue),
@@ -481,7 +482,7 @@ pub enum TextEmphasisStyle {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum TextEmphasisKeywordValue {
     
     Fill(TextEmphasisFillMode),
@@ -510,7 +511,9 @@ impl TextEmphasisKeywordValue {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+)]
 pub enum TextEmphasisFillMode {
     
     Filled,
@@ -519,7 +522,9 @@ pub enum TextEmphasisFillMode {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(
+    Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+)]
 pub enum TextEmphasisShapeKeyword {
     
     Dot,
@@ -669,6 +674,7 @@ impl Parse for TextEmphasisStyle {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 pub enum TextEmphasisHorizontalWritingModeValue {
     
@@ -689,6 +695,7 @@ pub enum TextEmphasisHorizontalWritingModeValue {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 pub enum TextEmphasisVerticalWritingModeValue {
     
@@ -699,7 +706,15 @@ pub enum TextEmphasisVerticalWritingModeValue {
 
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToShmem,
 )]
 pub struct TextEmphasisPosition(
     pub TextEmphasisHorizontalWritingModeValue,
@@ -800,6 +815,7 @@ impl From<TextEmphasisPosition> for u8 {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 #[allow(missing_docs)]
 pub enum WordBreak {
@@ -827,6 +843,7 @@ pub enum WordBreak {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 #[allow(missing_docs)]
 pub enum OverflowWrap {

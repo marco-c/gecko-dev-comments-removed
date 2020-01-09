@@ -221,8 +221,9 @@ pub trait Parser<'i> {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct SelectorList<Impl: SelectorImpl>(pub SmallVec<[Selector<Impl>; 1]>);
+#[derive(Clone, Debug, Eq, PartialEq, ToShmem)]
+#[shmem(no_bounds)]
+pub struct SelectorList<Impl: SelectorImpl>(#[shmem(field_bound)] pub SmallVec<[Selector<Impl>; 1]>);
 
 impl<Impl: SelectorImpl> SelectorList<Impl> {
     
@@ -507,8 +508,9 @@ pub fn namespace_empty_string<Impl: SelectorImpl>() -> Impl::NamespaceUrl {
 
 
 
-#[derive(Clone, Eq, PartialEq)]
-pub struct Selector<Impl: SelectorImpl>(ThinArc<SpecificityAndFlags, Component<Impl>>);
+#[derive(Clone, Eq, PartialEq, ToShmem)]
+#[shmem(no_bounds)]
+pub struct Selector<Impl: SelectorImpl>(#[shmem(field_bound)] ThinArc<SpecificityAndFlags, Component<Impl>>);
 
 impl<Impl: SelectorImpl> Selector<Impl> {
     #[inline]
@@ -776,7 +778,7 @@ impl<'a, Impl: SelectorImpl> Iterator for AncestorIter<'a, Impl> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToShmem)]
 pub enum Combinator {
     Child,        
     Descendant,   
@@ -824,22 +826,24 @@ impl Combinator {
 
 
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, ToShmem)]
+#[shmem(no_bounds)]
 pub enum Component<Impl: SelectorImpl> {
     Combinator(Combinator),
 
     ExplicitAnyNamespace,
     ExplicitNoNamespace,
-    DefaultNamespace(Impl::NamespaceUrl),
-    Namespace(Impl::NamespacePrefix, Impl::NamespaceUrl),
+    DefaultNamespace(#[shmem(field_bound)] Impl::NamespaceUrl),
+    Namespace(#[shmem(field_bound)] Impl::NamespacePrefix, #[shmem(field_bound)] Impl::NamespaceUrl),
 
     ExplicitUniversalType,
     LocalName(LocalName<Impl>),
 
-    ID(Impl::Identifier),
-    Class(Impl::ClassName),
+    ID(#[shmem(field_bound)] Impl::Identifier),
+    Class(#[shmem(field_bound)] Impl::ClassName),
 
     AttributeInNoNamespaceExists {
+        #[shmem(field_bound)]
         local_name: Impl::LocalName,
         local_name_lower: Impl::LocalName,
     },
@@ -847,6 +851,7 @@ pub enum Component<Impl: SelectorImpl> {
     AttributeInNoNamespace {
         local_name: Impl::LocalName,
         operator: AttrSelectorOperator,
+        #[shmem(field_bound)]
         value: Impl::AttrValue,
         case_sensitivity: ParsedCaseSensitivity,
         never_matches: bool,
@@ -878,7 +883,7 @@ pub enum Component<Impl: SelectorImpl> {
     FirstOfType,
     LastOfType,
     OnlyOfType,
-    NonTSPseudoClass(Impl::NonTSPseudoClass),
+    NonTSPseudoClass(#[shmem(field_bound)] Impl::NonTSPseudoClass),
     
     
     
@@ -902,7 +907,7 @@ pub enum Component<Impl: SelectorImpl> {
     
     
     Host(Option<Selector<Impl>>),
-    PseudoElement(Impl::PseudoElement),
+    PseudoElement(#[shmem(field_bound)] Impl::PseudoElement),
 }
 
 impl<Impl: SelectorImpl> Component<Impl> {
@@ -957,8 +962,10 @@ impl<Impl: SelectorImpl> Component<Impl> {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, ToShmem)]
+#[shmem(no_bounds)]
 pub struct LocalName<Impl: SelectorImpl> {
+    #[shmem(field_bound)]
     pub name: Impl::LocalName,
     pub lower_name: Impl::LocalName,
 }

@@ -27,7 +27,7 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 pub struct AspectRatio(pub u32, pub u32);
 
 impl ToCss for AspectRatio {
@@ -51,7 +51,7 @@ impl PartialOrd for AspectRatio {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 pub enum Range {
     
     Min,
@@ -60,7 +60,7 @@ pub enum Range {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 pub enum Operator {
     
     Equal,
@@ -93,7 +93,7 @@ impl ToCss for Operator {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 pub enum RangeOrOperator {
     
     Range(Range),
@@ -151,7 +151,7 @@ impl RangeOrOperator {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf, ToShmem)]
 pub struct MediaFeatureExpression {
     feature_index: usize,
     value: Option<MediaExpressionValue>,
@@ -467,7 +467,7 @@ impl MediaFeatureExpression {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub enum MediaExpressionValue {
     
     Length(Length),

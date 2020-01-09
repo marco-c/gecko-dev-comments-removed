@@ -56,7 +56,7 @@ pub fn au_to_int_px(au: f32) -> i32 {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum FontRelativeLength {
     
     #[css(dimension)]
@@ -236,7 +236,7 @@ impl FontRelativeLength {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum ViewportPercentageLength {
     
     #[css(dimension)]
@@ -285,7 +285,7 @@ impl ViewportPercentageLength {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub struct CharacterWidth(pub i32);
 
 impl CharacterWidth {
@@ -303,7 +303,7 @@ impl CharacterWidth {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum AbsoluteLength {
     
     #[css(dimension)]
@@ -409,7 +409,7 @@ impl Add<AbsoluteLength> for AbsoluteLength {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum NoCalcLength {
     
     
@@ -522,7 +522,7 @@ impl Zero for NoCalcLength {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum Length {
     
     NoCalc(NoCalcLength),
@@ -742,7 +742,7 @@ impl NonNegativeLength {
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum LengthPercentage {
     Length(NoCalcLength),
     Percentage(computed::Percentage),

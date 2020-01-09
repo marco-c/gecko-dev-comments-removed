@@ -40,6 +40,7 @@ use style_traits::{CssWriter, ParseError, ToCss};
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 #[repr(u8)]
 pub enum BorderStyle {
@@ -64,7 +65,7 @@ impl BorderStyle {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum BorderSideWidth {
     
     Thin,
@@ -249,7 +250,9 @@ impl Parse for BorderSpacing {
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(
+    Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+)]
 pub enum BorderImageRepeatKeyword {
     Stretch,
     Repeat,
@@ -260,7 +263,9 @@ pub enum BorderImageRepeatKeyword {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem,
+)]
 pub struct BorderImageRepeat(pub BorderImageRepeatKeyword, pub BorderImageRepeatKeyword);
 
 impl ToCss for BorderImageRepeat {

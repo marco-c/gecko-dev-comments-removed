@@ -232,7 +232,7 @@ impl Parse for Transform {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum OriginComponent<S> {
     
     Center,

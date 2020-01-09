@@ -34,7 +34,7 @@ use style_traits::{StyleParseErrorKind, ToCss};
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq, ToCss)]
+#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
 pub enum Source {
     
     Url(UrlSource),
@@ -68,7 +68,7 @@ pub enum FontFaceSourceListComponent {
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, ToShmem)]
 pub struct UrlSource {
     
     pub url: SpecifiedUrl,
@@ -101,7 +101,9 @@ impl ToCss for UrlSource {
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToComputedValue, ToCss)]
+#[derive(
+    Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToComputedValue, ToCss, ToShmem,
+)]
 #[repr(u8)]
 pub enum FontDisplay {
     Auto,
@@ -144,7 +146,7 @@ macro_rules! impl_range {
 
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, ToShmem)]
 pub struct FontWeightRange(pub AbsoluteFontWeight, pub AbsoluteFontWeight);
 impl_range!(FontWeightRange, AbsoluteFontWeight);
 
@@ -176,7 +178,7 @@ impl FontWeightRange {
 
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, ToShmem)]
 pub struct FontStretchRange(pub FontStretch, pub FontStretch);
 impl_range!(FontStretchRange, FontStretch);
 
@@ -205,7 +207,7 @@ impl FontStretchRange {
 
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, ToShmem)]
 #[allow(missing_docs)]
 pub enum FontStyle {
     Normal,
@@ -435,7 +437,7 @@ macro_rules! font_face_descriptors_common {
         /// Data inside a `@font-face` rule.
         ///
         /// <https://drafts.csswg.org/css-fonts/#font-face-rule>
-        #[derive(Clone, Debug, PartialEq)]
+        #[derive(Clone, Debug, PartialEq, ToShmem)]
         pub struct FontFaceRuleData {
             $(
                 #[$doc]

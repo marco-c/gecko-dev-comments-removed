@@ -81,7 +81,7 @@ pub const MAX_FONT_WEIGHT: f32 = 1000.;
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum FontWeight {
     
     Absolute(AbsoluteFontWeight),
@@ -143,7 +143,7 @@ impl ToComputedValue for FontWeight {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum AbsoluteFontWeight {
     
     
@@ -319,7 +319,7 @@ impl SpecifiedFontStyle {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 #[allow(missing_docs)]
 pub enum FontStyle {
     Specified(SpecifiedFontStyle),
@@ -358,7 +358,7 @@ impl ToComputedValue for FontStyle {
 
 
 #[allow(missing_docs)]
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 #[repr(u8)]
 pub enum FontStretch {
     Stretch(Percentage),
@@ -368,7 +368,9 @@ pub enum FontStretch {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+)]
 #[allow(missing_docs)]
 pub enum FontStretchKeyword {
     Normal,
@@ -481,7 +483,7 @@ impl ToComputedValue for FontStretch {
     }
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 pub enum FontSize {
     
@@ -513,7 +515,7 @@ impl From<LengthPercentage> for FontSize {
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, ToCss)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, ToCss, ToShmem)]
 pub enum FontFamily {
     
     #[css(comma)]
@@ -612,7 +614,7 @@ impl Parse for FamilyName {
     }
 }
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 pub enum FontSizeAdjust {
     
@@ -1002,7 +1004,7 @@ bitflags! {
     }
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 pub enum VariantAlternates {
     
@@ -1027,7 +1029,7 @@ pub enum VariantAlternates {
     HistoricalForms,
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 pub struct VariantAlternatesList(
     #[css(if_empty = "normal", iterable)] pub Box<[VariantAlternates]>,
@@ -1048,7 +1050,7 @@ impl VariantAlternatesList {
     }
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 pub enum FontVariantAlternates {
     
@@ -1195,7 +1197,7 @@ macro_rules! impl_variant_east_asian {
         )+
     } => {
         bitflags! {
-            #[derive(MallocSizeOf)]
+            #[derive(MallocSizeOf, ToShmem)]
             /// Vairants for east asian variant
             pub struct VariantEastAsian: u16 {
                 /// None of the features
@@ -1284,7 +1286,7 @@ impl VariantEastAsian {
 impl_gecko_keyword_conversions!(VariantEastAsian, u16);
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 pub enum FontVariantEastAsian {
     
@@ -1402,7 +1404,7 @@ macro_rules! impl_variant_ligatures {
         )+
     } => {
         bitflags! {
-            #[derive(MallocSizeOf)]
+            #[derive(MallocSizeOf, ToShmem)]
             /// Variants of ligatures
             pub struct VariantLigatures: u16 {
                 /// Specifies that common default features are enabled
@@ -1495,7 +1497,7 @@ impl VariantLigatures {
 impl_gecko_keyword_conversions!(VariantLigatures, u16);
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 
 pub enum FontVariantLigatures {
@@ -1624,7 +1626,7 @@ macro_rules! impl_variant_numeric {
         )+
     } => {
         bitflags! {
-            #[derive(MallocSizeOf)]
+            #[derive(MallocSizeOf, ToShmem)]
             /// Vairants of numeric values
             pub struct VariantNumeric: u8 {
                 /// None of other variants are enabled.
@@ -1711,7 +1713,7 @@ impl VariantNumeric {
 impl_gecko_keyword_conversions!(VariantNumeric, u8);
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 pub enum FontVariantNumeric {
     
@@ -1820,7 +1822,7 @@ pub type SpecifiedFontFeatureSettings = FontSettings<FeatureTagValue<Integer>>;
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum FontFeatureSettings {
     
     Value(SpecifiedFontFeatureSettings),
@@ -1864,7 +1866,9 @@ impl Parse for FontFeatureSettings {
     }
 }
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem,
+)]
 
 
 pub struct FontSynthesis {
@@ -1964,7 +1968,7 @@ impl From<FontSynthesis> for u8 {
     }
 }
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 
 pub enum FontLanguageOverride {
@@ -2068,7 +2072,7 @@ pub type SpecifiedFontVariationSettings = FontSettings<VariationValue<Number>>;
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum FontVariationSettings {
     
     Value(SpecifiedFontVariationSettings),
@@ -2155,7 +2159,15 @@ impl Parse for VariationValue<Number> {
 }
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToShmem,
 )]
 
 pub struct XTextZoom(#[css(skip)] pub bool);
@@ -2173,7 +2185,9 @@ impl Parse for XTextZoom {
     }
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(
+    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+)]
 
 pub struct XLang(#[css(skip)] pub Atom);
 
@@ -2199,7 +2213,7 @@ impl Parse for XLang {
 }
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 
 pub struct MozScriptMinSize(pub NoCalcLength);
@@ -2226,7 +2240,7 @@ impl Parse for MozScriptMinSize {
 }
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
 
 
@@ -2261,7 +2275,7 @@ impl Parse for MozScriptLevel {
 }
 
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss)]
+#[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem)]
 
 
 

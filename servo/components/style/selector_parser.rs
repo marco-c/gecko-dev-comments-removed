@@ -177,7 +177,7 @@ impl<T> PerPseudoElementMap<T> {
 
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 pub struct Direction(pub Atom);
 
 

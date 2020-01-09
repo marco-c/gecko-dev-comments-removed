@@ -26,11 +26,11 @@ use to_shmem::{SharedMemoryBuilder, ToShmem};
 
 
 #[css(function = "url")]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub struct CssUrl(pub Arc<CssUrlData>);
 
 
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub struct CssUrlData {
     
     serialization: String,
@@ -150,7 +150,7 @@ impl ToShmem for URLValueSource {
 }
 
 
-#[derive(Clone, Debug, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, SpecifiedValueInfo, ToCss, ToShmem)]
 pub struct SpecifiedUrl {
     
     pub url: CssUrl,
@@ -276,7 +276,7 @@ impl ToComputedValue for SpecifiedUrl {
 }
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub struct SpecifiedImageUrl(pub SpecifiedUrl);
 
 impl SpecifiedImageUrl {

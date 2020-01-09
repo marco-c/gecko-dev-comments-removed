@@ -15,7 +15,7 @@ use cssparser::{ParserInput, Token};
 
 
 #[css(comma, derive_debug)]
-#[derive(Clone, MallocSizeOf, ToCss)]
+#[derive(Clone, MallocSizeOf, ToCss, ToShmem)]
 pub struct MediaList {
     
     #[css(iterable)]

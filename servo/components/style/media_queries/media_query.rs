@@ -16,7 +16,7 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
 pub enum Qualifier {
     
     
@@ -27,7 +27,7 @@ pub enum Qualifier {
 }
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 pub struct MediaType(pub CustomIdent);
 
 impl MediaType {
@@ -58,7 +58,7 @@ impl MediaType {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct MediaQuery {
     
     pub qualifier: Option<Qualifier>,
@@ -151,7 +151,7 @@ impl MediaQuery {
 }
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 pub enum MediaQueryType {
     
     All,

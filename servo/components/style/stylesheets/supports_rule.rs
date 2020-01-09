@@ -26,7 +26,7 @@ use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 
 
-#[derive(Debug)]
+#[derive(Debug, ToShmem)]
 pub struct SupportsRule {
     
     pub condition: SupportsCondition,
@@ -76,7 +76,7 @@ impl DeepCloneWithLock for SupportsRule {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToShmem)]
 pub enum SupportsCondition {
     
     Not(Box<SupportsCondition>),
@@ -305,7 +305,7 @@ impl ToCss for SupportsCondition {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToShmem)]
 
 pub struct RawSelector(pub String);
 
@@ -367,7 +367,7 @@ impl RawSelector {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToShmem)]
 
 pub struct Declaration(pub String);
 

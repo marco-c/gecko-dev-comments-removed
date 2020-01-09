@@ -11,7 +11,7 @@ use cssparser::SourceLocation;
 use std::fmt::{self, Write};
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, ToShmem)]
 #[allow(missing_docs)]
 pub struct NamespaceRule {
     

@@ -10,7 +10,7 @@ use std::ops::BitOrAssign;
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToShmem)]
 #[repr(u8)]
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub enum Origin {

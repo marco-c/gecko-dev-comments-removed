@@ -25,7 +25,7 @@ use std::fmt::{self, Write};
 
 
 
-#[derive(Debug)]
+#[derive(Debug, ToShmem)]
 pub struct PageRule {
     
     pub block: Arc<Locked<PropertyDeclarationBlock>>,

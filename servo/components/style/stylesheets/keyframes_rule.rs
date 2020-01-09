@@ -26,7 +26,7 @@ use style_traits::{CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCs
 
 
 
-#[derive(Debug)]
+#[derive(Debug, ToShmem)]
 pub struct KeyframesRule {
     
     pub name: KeyframesName,
@@ -99,7 +99,7 @@ impl DeepCloneWithLock for KeyframesRule {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToShmem)]
 pub struct KeyframePercentage(pub f32);
 
 impl ::std::cmp::Ord for KeyframePercentage {
@@ -150,7 +150,7 @@ impl KeyframePercentage {
 
 
 #[css(comma)]
-#[derive(Clone, Debug, Eq, PartialEq, ToCss)]
+#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
 pub struct KeyframeSelector(#[css(iterable)] Vec<KeyframePercentage>);
 
 impl KeyframeSelector {
@@ -174,7 +174,7 @@ impl KeyframeSelector {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, ToShmem)]
 pub struct Keyframe {
     
     pub selector: KeyframeSelector,

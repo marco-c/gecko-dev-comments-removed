@@ -17,7 +17,7 @@ use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, ToCss};
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToCss, ToShmem)]
 pub enum AngleDimension {
     
     #[css(dimension)]
@@ -68,7 +68,7 @@ impl AngleDimension {
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct Angle {
     value: AngleDimension,
     was_calc: bool,

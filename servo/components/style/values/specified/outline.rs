@@ -22,6 +22,7 @@ use style_traits::ParseError;
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToShmem,
 )]
 #[repr(C, u8)]
 

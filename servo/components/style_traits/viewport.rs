@@ -80,7 +80,7 @@ impl ToCss for ViewportConstraints {
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, ToShmem)]
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub enum Zoom {
     
