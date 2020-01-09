@@ -85,8 +85,8 @@ class PictureInPictureToggleChild extends ActorChild {
         }
         break;
       }
-      case "click": {
-        
+      case "mousedown": {
+        this.onMouseDown(event);
         break;
       }
       case "mousemove": {
@@ -189,9 +189,12 @@ class PictureInPictureToggleChild extends ActorChild {
       }, MOUSEMOVE_PROCESSING_DELAY_MS);
     }
     this.content.document.addEventListener("mousemove", this,
-                                           { mozSystemGroup: true });
-    this.content.document.addEventListener("click", this,
-                                           { mozSystemGroup: true });
+                                           { mozSystemGroup: true, capture: true });
+    
+    
+    
+    this.content.document.addEventListener("mousedown", this,
+                                           { capture: true });
   }
 
   
@@ -203,12 +206,62 @@ class PictureInPictureToggleChild extends ActorChild {
     let state = this.docState;
     state.mousemoveDeferredTask.disarm();
     this.content.document.removeEventListener("mousemove", this,
-                                              { mozSystemGroup: true });
-    this.content.document.removeEventListener("click", this,
-                                              { mozSystemGroup: true });
+                                              { mozSystemGroup: true, capture: true });
+    this.content.document.removeEventListener("mousedown", this,
+                                              { capture: true });
     let oldOverVideo = state.weakOverVideo && state.weakOverVideo.get();
     if (oldOverVideo) {
       this.onMouseLeaveVideo(oldOverVideo);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  onMouseDown(event) {
+    let state = this.docState;
+    let video = state.weakOverVideo && state.weakOverVideo.get();
+    if (!video) {
+      return;
+    }
+
+    let shadowRoot = video.openOrClosedShadowRoot;
+    if (!shadowRoot) {
+      return;
+    }
+
+    let { clientX, clientY } = event;
+    let winUtils = this.content.windowUtils;
+    
+    
+    
+    
+    
+    
+    
+    let elements = winUtils.nodesFromRect(clientX, clientY, 1, 1, 1, 1, true,
+                                          false, true );
+    if (!Array.from(elements).includes(video)) {
+      return;
+    }
+
+    let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
+    if (this.isMouseOverToggle(toggle, event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      let pipEvent =
+        new this.content.CustomEvent("MozTogglePictureInPicture", {
+          bubbles: true,
+        });
+      video.dispatchEvent(pipEvent);
     }
   }
 
