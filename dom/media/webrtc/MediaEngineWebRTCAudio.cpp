@@ -555,7 +555,7 @@ nsresult MediaEngineWebRTCMicrophoneSource::Start() {
       mStream->GraphImpl()->InputDeviceID() != deviceID) {
     
     
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   RefPtr<MediaEngineWebRTCMicrophoneSource> that = this;
