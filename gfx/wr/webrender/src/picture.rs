@@ -598,6 +598,9 @@ pub struct TileCache {
     reference_prims: ReferencePrimitiveList,
     
     root_clip_chain_id: ClipChainId,
+    
+    
+    pub is_enabled: bool,
 }
 
 
@@ -721,6 +724,7 @@ impl TileCache {
             root_clip_rect: WorldRect::max_rect(),
             reference_prims,
             root_clip_chain_id,
+            is_enabled: true,
         }
     }
 
@@ -758,7 +762,24 @@ impl TileCache {
         pic_rect: LayoutRect,
         frame_context: &FrameVisibilityContext,
         frame_state: &mut FrameVisibilityState,
+        surface_index: SurfaceIndex,
     ) {
+        
+        
+        
+        
+        self.is_enabled = surface_index == SurfaceIndex(1);
+        if !self.is_enabled {
+            
+            
+            
+            
+            
+            
+            
+            return;
+        }
+
         let DeviceIntSize { width: tile_width, height: tile_height, _unit: _ } =
             self.tile_dimensions(frame_context.config.testing);
 
@@ -1033,6 +1054,13 @@ impl TileCache {
         opacity_binding_store: &OpacityBindingStorage,
         image_instances: &ImageInstanceStorage,
     ) -> bool {
+        
+        
+        if !self.is_enabled {
+            
+            return true;
+        }
+
         self.map_local_to_world.set_target_spatial_node(
             prim_instance.spatial_node_index,
             clip_scroll_tree,
@@ -1352,6 +1380,11 @@ impl TileCache {
     ) -> LayoutRect {
         self.dirty_region.clear();
         self.pending_blits.clear();
+
+        
+        if !self.is_enabled {
+            return LayoutRect::max_rect();
+        }
 
         let dim = self.tile_dimensions(frame_context.config.testing);
         let descriptor = ImageDescriptor::new(
@@ -2369,8 +2402,12 @@ impl PicturePrimitive {
         
         
         if let Some(ref tile_cache) = self.tile_cache {
-            frame_state.push_dirty_region(tile_cache.dirty_region.clone());
-            dirty_region_count += 1;
+            
+            
+            if tile_cache.is_enabled {
+                frame_state.push_dirty_region(tile_cache.dirty_region.clone());
+                dirty_region_count += 1;
+            }
         }
 
         if inflation_factor > 0.0 {
