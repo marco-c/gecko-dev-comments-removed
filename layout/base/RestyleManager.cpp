@@ -1615,6 +1615,24 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
         hint &= ~nsChangeHint_UpdatePostTransformOverflow;
       }
 
+      if ((hint & nsChangeHint_UpdateTransformLayer) &&
+          !(frame->GetStateBits() & NS_FRAME_MAY_BE_TRANSFORMED) &&
+          frame->HasAnimationOfTransform()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for (nsIFrame* cont = frame; cont;
+             cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
+          cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
+        }
+      }
+
       if (hint & nsChangeHint_AddOrRemoveTransform) {
         
         
