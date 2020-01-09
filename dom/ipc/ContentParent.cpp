@@ -3009,7 +3009,7 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     
     NS_LossyConvertUTF16toASCII strData(aData);
 
-    Pref pref(strData,  false, null_t(), null_t());
+    Pref pref(strData,  false, Nothing(), Nothing());
     Preferences::GetPreference(&pref);
     if (IsAlive()) {
       MOZ_ASSERT(mQueuedPrefs.IsEmpty());
