@@ -445,8 +445,6 @@ VIRTUAL_CALL_CLASSES = set([
     ("PTexture", "parent"),
 
     
-    ("PAsmJSCacheEntry", "child"),
-    ("PAsmJSCacheEntry", "parent"),
     ("PBackgroundFileHandle", "parent"),
     ("PBackgroundFileRequest", "parent"),
     ("PBackgroundIDBCursor", "parent"),
