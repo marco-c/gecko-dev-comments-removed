@@ -228,8 +228,8 @@ macro_rules! by_unit_check_simd {
 cfg_if! {
     if #[cfg(all(feature = "simd-accel", any(target_feature = "sse2", all(target_endian = "little", target_arch = "aarch64"), all(target_endian = "little", target_feature = "neon"))))] {
         use simd_funcs::*;
-        use simd::u8x16;
-        use simd::u16x8;
+        use packed_simd::u8x16;
+        use packed_simd::u16x8;
 
         const SIMD_ALIGNMENT: usize = 16;
 
@@ -631,7 +631,6 @@ cfg_if! {
 
 
 
-#[inline]
 pub fn is_ascii(buffer: &[u8]) -> bool {
     is_ascii_impl(buffer)
 }
@@ -641,7 +640,6 @@ pub fn is_ascii(buffer: &[u8]) -> bool {
 
 
 
-#[inline]
 pub fn is_basic_latin(buffer: &[u16]) -> bool {
     is_basic_latin_impl(buffer)
 }
@@ -651,7 +649,6 @@ pub fn is_basic_latin(buffer: &[u16]) -> bool {
 
 
 
-#[inline]
 pub fn is_utf8_latin1(buffer: &[u8]) -> bool {
     is_utf8_latin1_impl(buffer).is_none()
 }
@@ -661,7 +658,6 @@ pub fn is_utf8_latin1(buffer: &[u8]) -> bool {
 
 
 
-#[inline]
 pub fn is_str_latin1(buffer: &str) -> bool {
     is_str_latin1_impl(buffer).is_none()
 }
@@ -671,7 +667,6 @@ pub fn is_str_latin1(buffer: &str) -> bool {
 
 
 
-#[inline]
 pub fn is_utf16_latin1(buffer: &[u16]) -> bool {
     is_utf16_latin1_impl(buffer)
 }
@@ -1283,7 +1278,6 @@ pub fn is_str_bidi(buffer: &str) -> bool {
 
 
 
-#[inline]
 pub fn is_utf16_bidi(buffer: &[u16]) -> bool {
     is_utf16_bidi_impl(buffer)
 }
@@ -1416,7 +1410,6 @@ pub fn is_utf16_code_unit_bidi(u: u16) -> bool {
 
 
 
-#[inline]
 pub fn check_utf8_for_latin1_and_bidi(buffer: &[u8]) -> Latin1Bidi {
     if let Some(offset) = is_utf8_latin1_impl(buffer) {
         if is_utf8_bidi(&buffer[offset..]) {
@@ -1437,7 +1430,6 @@ pub fn check_utf8_for_latin1_and_bidi(buffer: &[u8]) -> Latin1Bidi {
 
 
 
-#[inline]
 pub fn check_str_for_latin1_and_bidi(buffer: &str) -> Latin1Bidi {
     
     
@@ -1460,7 +1452,6 @@ pub fn check_str_for_latin1_and_bidi(buffer: &str) -> Latin1Bidi {
 
 
 
-#[inline]
 pub fn check_utf16_for_latin1_and_bidi(buffer: &[u16]) -> Latin1Bidi {
     check_utf16_for_latin1_and_bidi_impl(buffer)
 }
@@ -1476,7 +1467,6 @@ pub fn check_utf16_for_latin1_and_bidi(buffer: &[u16]) -> Latin1Bidi {
 
 
 
-#[inline]
 pub fn convert_utf8_to_utf16(src: &[u8], dst: &mut [u16]) -> usize {
     
     
@@ -1516,7 +1506,6 @@ pub fn convert_utf8_to_utf16(src: &[u8], dst: &mut [u16]) -> usize {
 
 
 
-#[inline]
 pub fn convert_str_to_utf16(src: &str, dst: &mut [u16]) -> usize {
     assert!(
         dst.len() >= src.len(),
@@ -1683,7 +1672,6 @@ pub fn convert_utf16_to_utf8(src: &[u16], dst: &mut [u8]) -> usize {
 
 
 
-#[inline]
 pub fn convert_utf16_to_str_partial(src: &[u16], dst: &mut str) -> (usize, usize) {
     let bytes: &mut [u8] = unsafe { dst.as_bytes_mut() };
     let (read, written) = convert_utf16_to_utf8_partial(src, bytes);
@@ -1727,7 +1715,6 @@ pub fn convert_utf16_to_str(src: &[u16], dst: &mut str) -> usize {
 
 
 
-#[inline]
 pub fn convert_latin1_to_utf16(src: &[u8], dst: &mut [u16]) {
     assert!(
         dst.len() >= src.len(),
@@ -1755,7 +1742,6 @@ pub fn convert_latin1_to_utf16(src: &[u8], dst: &mut [u16]) {
 
 
 
-#[inline]
 pub fn convert_latin1_to_utf8_partial(src: &[u8], dst: &mut [u8]) -> (usize, usize) {
     let src_len = src.len();
     let src_ptr = src.as_ptr();
@@ -1894,7 +1880,6 @@ pub fn convert_latin1_to_str(src: &[u8], dst: &mut str) -> usize {
 
 
 
-#[inline]
 pub fn convert_utf8_to_latin1_lossy(src: &[u8], dst: &mut [u8]) -> usize {
     assert!(
         dst.len() >= src.len(),
@@ -1957,7 +1942,6 @@ pub fn convert_utf8_to_latin1_lossy(src: &[u8], dst: &mut [u8]) -> usize {
 
 
 
-#[inline]
 pub fn convert_utf16_to_latin1_lossy(src: &[u16], dst: &mut [u8]) {
     assert!(
         dst.len() >= src.len(),
@@ -2030,7 +2014,6 @@ pub fn encode_latin1_lossy<'a>(string: &'a str) -> Cow<'a, [u8]> {
 
 
 
-#[inline]
 pub fn utf16_valid_up_to(buffer: &[u16]) -> usize {
     utf16_valid_up_to_impl(buffer)
 }
@@ -2060,7 +2043,6 @@ pub fn ensure_utf16_validity(buffer: &mut [u16]) {
 
 
 
-#[inline]
 pub fn copy_ascii_to_ascii(src: &[u8], dst: &mut [u8]) -> usize {
     assert!(
         dst.len() >= src.len(),
@@ -2087,7 +2069,6 @@ pub fn copy_ascii_to_ascii(src: &[u8], dst: &mut [u8]) -> usize {
 
 
 
-#[inline]
 pub fn copy_ascii_to_basic_latin(src: &[u8], dst: &mut [u16]) -> usize {
     assert!(
         dst.len() >= src.len(),
@@ -2114,7 +2095,6 @@ pub fn copy_ascii_to_basic_latin(src: &[u8], dst: &mut [u16]) -> usize {
 
 
 
-#[inline]
 pub fn copy_basic_latin_to_ascii(src: &[u16], dst: &mut [u8]) -> usize {
     assert!(
         dst.len() >= src.len(),
