@@ -638,10 +638,6 @@ void APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
       continue;
     }
 
-    
-    
-    AutoApplyAsyncTestAttributes testAttributeApplier(apzc);
-
     ParentLayerPoint layerTranslation =
         apzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing)
             .mTranslation;
@@ -3144,9 +3140,6 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForNode(
   if (AsyncPanZoomController* apzc = aNode->GetApzc()) {
     
     
-    AutoApplyAsyncTestAttributes testAttributeApplier(apzc);
-    
-    
     AsyncTransformComponents components =
         mUsingAsyncZoomContainer && apzc->IsRootContent()
             ? AsyncTransformComponents{AsyncTransformComponent::eLayout}
@@ -3283,10 +3276,6 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
   }
 
   MOZ_RELEASE_ASSERT(aApzc);
-
-  
-  
-  AutoApplyAsyncTestAttributes testAttributeApplier(aApzc);
 
   AsyncTransformComponentMatrix asyncTransform =
       aApzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);

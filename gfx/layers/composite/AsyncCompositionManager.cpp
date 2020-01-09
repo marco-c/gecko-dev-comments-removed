@@ -996,11 +996,6 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
               continue;
             }
 
-            
-            
-            AutoApplyAsyncTestAttributes testAttributeApplier(
-                wrapper.GetApzc());
-
             const FrameMetrics& metrics = wrapper.Metrics();
             MOZ_ASSERT(metrics.IsScrollable());
 
@@ -1183,12 +1178,6 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
           if (Maybe<ScrollableLayerGuid::ViewID> zoomedScrollId =
                   layer->IsAsyncZoomContainer()) {
             if (zoomedMetrics) {
-              
-              
-              
-              AutoApplyAsyncTestAttributes testAttributeApplier(
-                  zoomedMetrics->GetApzc());
-
               AsyncTransform zoomTransform = sampler->GetCurrentAsyncTransform(
                   *zoomedMetrics, {AsyncTransformComponent::eVisual});
               hasAsyncTransform = true;

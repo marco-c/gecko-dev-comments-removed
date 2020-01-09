@@ -128,9 +128,14 @@ struct TargetConfirmationFlags {
 
 
 
+
+
+
+
+
 class MOZ_RAII AutoApplyAsyncTestAttributes {
  public:
-  explicit AutoApplyAsyncTestAttributes(AsyncPanZoomController*);
+  explicit AutoApplyAsyncTestAttributes(const AsyncPanZoomController*);
   ~AutoApplyAsyncTestAttributes();
 
  private:
