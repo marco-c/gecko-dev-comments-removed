@@ -16,7 +16,7 @@ const EXCLUDED_FILES = {
   "devtools-launchpad": "devtools/shared/flags",
 };
 
-const mappings =  Object.assign(
+const mappings = Object.assign(
   {
     "./source-editor": "devtools/client/shared/sourceeditor/editor",
     "../editor/source-editor": "devtools/client/shared/sourceeditor/editor",
@@ -64,6 +64,7 @@ const VENDORS = [
   "react-aria-components/src/tabs",
   "react-transition-group/Transition",
   "reselect",
+  "whatwg-url",
   "Svg",
 ];
 
