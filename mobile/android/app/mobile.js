@@ -539,12 +539,7 @@ pref("layers.low-precision-opacity", "1.0");
 pref("layers.max-active", 20);
 
 
-
-#ifdef NIGHTLY_BUILD
 pref("layout.scroll.root-frame-containers", 0);
-#else
-pref("layout.scroll.root-frame-containers", 1);
-#endif
 
 pref("notification.feature.enabled", true);
 pref("dom.webnotifications.enabled", true);

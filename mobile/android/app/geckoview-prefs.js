@@ -30,14 +30,7 @@ pref("geckoview.logging", "Debug");
 pref("dom.push.enabled", false);
 
 
-
-
-
-#ifdef NIGHTLY_BUILD
 pref("layout.scroll.root-frame-containers", 0);
-#else
-pref("layout.scroll.root-frame-containers", 2);
-#endif
 
 
 pref("intl.locale.requested", "");
