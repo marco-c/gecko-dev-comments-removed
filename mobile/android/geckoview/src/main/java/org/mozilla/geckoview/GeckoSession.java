@@ -5000,16 +5000,6 @@ public class GeckoSession implements Parcelable {
             
 
 
-            public static final int TYPE_CAMERA = 0;
-
-            
-
-
-            public static final int TYPE_MICROPHONE = 1;
-
-            
-
-
 
             public final @RecordingStatus long status;
 
