@@ -240,10 +240,7 @@ static already_AddRefed<Element> MakeAnonButton(Document* aDoc,
   }
 
   
-  
-  
-  buttonElement->SetTabIndex(aInputElement->TabIndex(), IgnoreErrors());
-
+  buttonElement->SetTabIndex(-1, IgnoreErrors());
   return button.forget();
 }
 

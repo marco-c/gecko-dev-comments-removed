@@ -2966,27 +2966,7 @@ void HTMLInputElement::Focus(ErrorResult& aError) {
     }
   }
 
-  if (mType != NS_FORM_INPUT_FILE) {
-    nsGenericHTMLElement::Focus(aError);
-    return;
-  }
-
-  
-  
-  
-  nsIFrame* frame = GetPrimaryFrame();
-  if (frame) {
-    for (nsIFrame* childFrame : frame->PrincipalChildList()) {
-      
-      if (childFrame->GetContent() &&
-          childFrame->GetContent()->IsHTMLElement(nsGkAtoms::button)) {
-        if (nsIFocusManager* fm = nsFocusManager::GetFocusManager()) {
-          fm->SetFocus(childFrame->GetContent()->AsElement(), 0);
-        }
-        break;
-      }
-    }
-  }
+  nsGenericHTMLElement::Focus(aError);
 }
 
 #if !defined(ANDROID) && !defined(XP_MACOSX)
@@ -3906,6 +3886,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
               case NS_FORM_INPUT_BUTTON:
               case NS_FORM_INPUT_RESET:
               case NS_FORM_INPUT_SUBMIT:
+              case NS_FORM_INPUT_FILE:
               case NS_FORM_INPUT_IMAGE:  
               case NS_FORM_INPUT_COLOR: {
                 DispatchSimulatedClick(this, aVisitor.mEvent->IsTrusted(),
@@ -6320,18 +6301,13 @@ bool HTMLInputElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   const bool defaultFocusable = true;
 #endif
 
-  if (mType == NS_FORM_INPUT_FILE || mType == NS_FORM_INPUT_NUMBER ||
-      mType == NS_FORM_INPUT_TIME || mType == NS_FORM_INPUT_DATE) {
+  if (mType == NS_FORM_INPUT_NUMBER || mType == NS_FORM_INPUT_TIME ||
+      mType == NS_FORM_INPUT_DATE) {
     if (aTabIndex) {
       
       *aTabIndex = -1;
     }
-    if (mType == NS_FORM_INPUT_NUMBER || mType == NS_FORM_INPUT_TIME ||
-        mType == NS_FORM_INPUT_DATE) {
-      *aIsFocusable = true;
-    } else {
-      *aIsFocusable = defaultFocusable;
-    }
+    *aIsFocusable = true;
     return true;
   }
 
