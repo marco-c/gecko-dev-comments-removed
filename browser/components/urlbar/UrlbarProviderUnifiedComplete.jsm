@@ -336,10 +336,12 @@ function makeUrlbarResult(tokens, info) {
   let source;
   let tags = [];
   let comment = info.comment;
-  let hasTags = info.style.includes("tag");
-  if (info.style.includes("bookmark") || hasTags) {
+  
+  
+  
+  if (info.style.includes("bookmark")) {
     source = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
-    if (hasTags) {
+    if (info.style.includes("tag")) {
       
       [comment, tags] = info.comment.split(TITLE_TAGS_SEPARATOR);
       
