@@ -193,7 +193,7 @@ mozilla::ipc::IPCResult LSRequestChild::RecvReady() {
 
   
   
-  MOZ_ALWAYS_TRUE(SendFinish());
+  MOZ_DIAGNOSTIC_ALWAYS_TRUE(SendFinish());
 
   return IPC_OK();
 }
