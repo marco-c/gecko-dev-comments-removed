@@ -743,6 +743,11 @@ var gIdentityHandler = {
       
     }
 
+    let readerStrippedURI = ReaderMode.getOriginalUrlObjectForDisplay(this._uri.displaySpec);
+    if (readerStrippedURI) {
+      host = readerStrippedURI.host;
+    }
+
     if (this._pageExtensionPolicy) {
       host = this._pageExtensionPolicy.name;
     }
