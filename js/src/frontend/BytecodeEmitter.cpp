@@ -252,11 +252,8 @@ bool BytecodeEmitter::emitCheck(JSOp op, ptrdiff_t delta, ptrdiff_t* offset) {
   if (BytecodeOpHasIC(op)) {
     
     
-    if (MOZ_UNLIKELY(bytecodeSection().numICEntries() == UINT32_MAX)) {
-      reportError(nullptr, JSMSG_NEED_DIET, js_script_str);
-      return false;
-    }
-
+    static_assert(MaxBytecodeLength + 1  + ARGC_LIMIT <= UINT32_MAX,
+                  "numICEntries must not overflow");
     bytecodeSection().incrementNumICEntries();
   }
 
