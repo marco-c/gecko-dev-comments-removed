@@ -781,6 +781,12 @@ var TelemetrySendImpl = {
 
     histograms.forEach(h => Telemetry.getHistogramById(h).clear());
 
+    const keyedHistograms = [
+      "TELEMETRY_SEND_FAILURE_TYPE_PER_PING",
+    ];
+
+    keyedHistograms.forEach(h => Telemetry.getKeyedHistogramById(h).clear());
+
     return SendScheduler.reset();
   },
 
@@ -1092,6 +1098,7 @@ var TelemetrySendImpl = {
       
       this._log.trace("_doPing - Too late to send ping " + ping.id);
       Telemetry.getHistogramById("TELEMETRY_SEND_FAILURE_TYPE").add("eTooLate");
+      Telemetry.getKeyedHistogramById("TELEMETRY_SEND_FAILURE_TYPE_PER_PING").add(ping.type, "eTooLate");
       return Promise.reject();
     }
 
@@ -1158,6 +1165,7 @@ var TelemetrySendImpl = {
       }
 
       Telemetry.getHistogramById("TELEMETRY_SEND_FAILURE_TYPE").add(failure);
+      Telemetry.getKeyedHistogramById("TELEMETRY_SEND_FAILURE_TYPE_PER_PING").add(ping.type, failure);
 
       this._log.error("_doPing - error making request to " + url + ": " + failure);
       onRequestFinished(false, event);
