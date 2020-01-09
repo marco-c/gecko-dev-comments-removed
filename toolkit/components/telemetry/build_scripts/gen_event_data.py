@@ -160,6 +160,7 @@ def generate_JSON_definitions(output, *filenames):
             'record_on_release': True if event.dataset_short == 'opt-out' else False,
             
             
+            'expires': event.expiry_version,
             'expired': False,
         })
 
