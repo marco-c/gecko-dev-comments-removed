@@ -2990,10 +2990,10 @@ void HttpBaseChannel::DoNotifyListener() {
 
   if (mListener && !mOnStartRequestCalled) {
     nsCOMPtr<nsIStreamListener> listener = mListener;
-    listener->OnStartRequest(this);
-
     mOnStartRequestCalled = true;
+    listener->OnStartRequest(this);
   }
+  mOnStartRequestCalled = true;
 
   
   
@@ -3002,10 +3002,10 @@ void HttpBaseChannel::DoNotifyListener() {
 
   if (mListener && !mOnStopRequestCalled) {
     nsCOMPtr<nsIStreamListener> listener = mListener;
-    listener->OnStopRequest(this, mStatus);
-
     mOnStopRequestCalled = true;
+    listener->OnStopRequest(this, mStatus);
   }
+  mOnStopRequestCalled = true;
 
   
   gHttpHandler->OnStopRequest(this);
