@@ -49,7 +49,7 @@ class ADBProcess(object):
         
         
         arg_string = ' '.join(self.args)
-        arg_string = re.sub(' -s \w+', '', arg_string)
+        arg_string = re.sub(' -s [\w-]+', '', arg_string)
         return ('args: %s, exitcode: %s, stdout: %s' % (
             arg_string, self.exitcode, self.stdout))
 
