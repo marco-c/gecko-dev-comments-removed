@@ -1,28 +1,5 @@
 "use strict";
 
-
-
-
-
-
-
-
-
-
-
-function promiseStylesheetsUpdated(browser) {
-  return ContentTask.spawn(browser, { PAGE }, async function(args) {
-    return new Promise((resolve) => {
-      addEventListener("pageshow", function onPageShow(e) {
-        if (e.target.location == args.PAGE) {
-          removeEventListener("pageshow", onPageShow);
-          content.setTimeout(resolve, 0);
-        }
-      });
-    });
-  });
-}
-
 const PAGE = "http://example.com/browser/browser/base/content/test/general/page_style_sample.html";
 
 

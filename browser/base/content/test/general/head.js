@@ -510,3 +510,18 @@ function getCertExceptionDialog(aLocation) {
   }
   return undefined;
 }
+
+
+
+
+
+
+
+
+async function promiseStylesheetsUpdated(browser) {
+  await BrowserTestUtils.waitForMessage(browser.messageManager,
+                                        "PageStyle:StyleSheets");
+  
+  
+  await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
+}
