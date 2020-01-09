@@ -23,6 +23,12 @@ static void Start(void* aArg) {
 GraphRunner::GraphRunner(MediaStreamGraphImpl* aGraph)
     : mMonitor("GraphRunner::mMonitor"),
       mGraph(aGraph),
+      mStateEnd(0),
+      mStillProcessing(true),
+      mShutdown(false),
+      mStarted(false),
+      
+      
       mThread(PR_CreateThread(PR_SYSTEM_THREAD, &Start, this,
                               PR_PRIORITY_URGENT, PR_GLOBAL_THREAD,
                               PR_JOINABLE_THREAD, 0)) {

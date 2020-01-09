@@ -61,17 +61,17 @@ class GraphRunner {
   
   MediaStreamGraphImpl* const mGraph;
   
+  
+  GraphTime mStateEnd;
+  
+  bool mStillProcessing;
+  
+  bool mShutdown;
+  
+  
+  bool mStarted;
+  
   PRThread* const mThread;
-  
-  
-  GraphTime mStateEnd = 0;
-  
-  bool mStillProcessing = true;
-  
-  bool mShutdown = false;
-  
-  
-  bool mStarted = false;
 
 #ifdef DEBUG
   
