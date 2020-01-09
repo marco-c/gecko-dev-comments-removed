@@ -240,7 +240,7 @@ pub struct ScrollFrameDisplayItem {
     
     
     
-    pub external_scroll_offset: LayoutPoint,
+    pub external_scroll_offset: LayoutVector2D,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]

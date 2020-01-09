@@ -56,7 +56,7 @@ impl Example for App {
                 vec![],
                 None,
                 ScrollSensitivity::ScriptAndInputEvents,
-                LayoutPoint::zero(),
+                LayoutVector2D::zero(),
             );
 
             
@@ -88,7 +88,7 @@ impl Example for App {
                 vec![],
                 None,
                 ScrollSensitivity::ScriptAndInputEvents,
-                LayoutPoint::zero(),
+                LayoutVector2D::zero(),
             );
 
             
