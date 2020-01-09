@@ -26,8 +26,8 @@ add_task(async function() {
   const hud1 = await openNewTabAndConsole(TEST_URI);
 
   const aTimerCompleted = await waitFor(() => findMessage(hud1, "aTimer: "));
-  ok(aTimerCompleted, "Calling console.time('a') and console.timeEnd('a')"
-    + "ends the 'a' timer");
+  ok(aTimerCompleted.textContent.includes("- timer ended"), "Calling "
+    + "console.time('a') and console.timeEnd('a')ends the 'a' timer");
 
   
   
