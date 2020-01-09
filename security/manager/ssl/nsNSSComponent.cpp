@@ -989,10 +989,11 @@ static const CipherPref sCipherPrefs[] = {
 
 
 
- void nsNSSComponent::FillTLSVersionRange(SSLVersionRange& rangeOut,
-                                                    uint32_t minFromPrefs,
-                                                    uint32_t maxFromPrefs,
-                                                    SSLVersionRange defaults) {
+
+void nsNSSComponent::FillTLSVersionRange(SSLVersionRange& rangeOut,
+                                         uint32_t minFromPrefs,
+                                         uint32_t maxFromPrefs,
+                                         SSLVersionRange defaults) {
   rangeOut = defaults;
   
   SSLVersionRange supported;
@@ -1998,7 +1999,8 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
- nsresult nsNSSComponent::GetNewPrompter(nsIPrompt** result) {
+
+nsresult nsNSSComponent::GetNewPrompter(nsIPrompt** result) {
   NS_ENSURE_ARG_POINTER(result);
   *result = nullptr;
 

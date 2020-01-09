@@ -84,9 +84,8 @@ GetPlainFileName(const wchar_t* aNTFileName, std::wstring* aFolder=nullptr)
   return nameCopy;
 }
 
- PermissionsService*
-PermissionsService::GetInstance()
-{
+
+PermissionsService* PermissionsService::GetInstance() {
   static PermissionsService sPermissionsService;
   return &sPermissionsService;
 }

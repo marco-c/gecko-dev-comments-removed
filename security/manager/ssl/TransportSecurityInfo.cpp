@@ -588,8 +588,8 @@ TransportSecurityInfo::GetClassIDNoAlloc(nsCID* aClassIDNoAlloc) {
 
 
 
- RememberCertErrorsTable* RememberCertErrorsTable::sInstance =
-    nullptr;
+
+RememberCertErrorsTable* RememberCertErrorsTable::sInstance = nullptr;
 
 RememberCertErrorsTable::RememberCertErrorsTable()
     : mErrorHosts(), mMutex("RememberCertErrorsTable::mMutex") {}

@@ -12,7 +12,8 @@ namespace mozilla {
 
 
 
- SandboxTarget* SandboxTarget::Instance() {
+
+SandboxTarget* SandboxTarget::Instance() {
   static SandboxTarget sb;
   return &sb;
 }

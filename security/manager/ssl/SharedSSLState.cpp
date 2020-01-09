@@ -158,14 +158,16 @@ bool SharedSSLState::SocketCreated() {
   return mSocketCreated;
 }
 
- void SharedSSLState::GlobalInit() {
+
+void SharedSSLState::GlobalInit() {
   MOZ_ASSERT(NS_IsMainThread(), "Not on main thread");
   gPublicState = new SharedSSLState();
   gPrivateState = new SharedSSLState();
   gPrivateState->NotePrivateBrowsingStatus();
 }
 
- void SharedSSLState::GlobalCleanup() {
+
+void SharedSSLState::GlobalCleanup() {
   MOZ_ASSERT(NS_IsMainThread(), "Not on main thread");
 
   if (gPrivateState) {
@@ -181,7 +183,8 @@ bool SharedSSLState::SocketCreated() {
   }
 }
 
- void SharedSSLState::NoteCertOverrideServiceInstantiated() {
+
+void SharedSSLState::NoteCertOverrideServiceInstantiated() {
   sCertOverrideSvcExists = true;
 }
 
