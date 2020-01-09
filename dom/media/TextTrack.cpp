@@ -318,6 +318,13 @@ void TextTrack::GetCurrentCuesAndOtherCues(
                  cue->StartTime(), cue->EndTime());
       aCurrentCues->AddCue(*cue);
     } else {
+      
+      
+      if (cue->EndTime() < cue->StartTime()) {
+        WEBVTT_LOG("[BAD TIME] skip cue %p [%f:%f] with negative length",
+                   cue, cue->StartTime(), cue->EndTime());
+        continue;
+      }
       media::TimeInterval cueInterval(
           media::TimeUnit::FromSeconds(cue->StartTime()),
           media::TimeUnit::FromSeconds(cue->EndTime()));
