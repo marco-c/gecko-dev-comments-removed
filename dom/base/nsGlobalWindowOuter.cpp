@@ -2509,6 +2509,9 @@ void nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
         
         
         nsGlobalWindowOuter::Cast(aOpener)->IsClosedOrClosing() ||
+        
+        
+        IsClosedOrClosing() ||
         aOpener->GetBrowsingContext()->Id() ==
             GetBrowsingContext()->GetOpenerId());
     
