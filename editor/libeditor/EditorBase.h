@@ -1841,6 +1841,29 @@ class EditorBase : public nsIEditor,
   
 
 
+
+
+  static inline nsresult ToGenericNSResult(nsresult aRv) {
+    switch (aRv) {
+      
+      
+      
+      case NS_ERROR_EDITOR_DESTROYED:
+        return NS_OK;
+      
+      
+      
+      
+      case NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE:
+        return NS_OK;
+      default:
+        return aRv;
+    }
+  }
+
+  
+
+
   nsresult GetDocumentCharsetInternal(nsACString& aCharset) const;
 
   
