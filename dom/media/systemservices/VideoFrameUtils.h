@@ -24,7 +24,7 @@ class VideoFrameUtils {
  public:
   
   
-  static size_t TotalRequiredBufferSize(const webrtc::VideoFrame& frame);
+  static uint32_t TotalRequiredBufferSize(const webrtc::VideoFrame& frame);
 
   
   static void InitFrameBufferProperties(
