@@ -2353,11 +2353,6 @@ class nsContentUtils {
   
 
 
-  static bool UseActivityCursor() { return sUseActivityCursor; }
-
-  
-
-
   static bool AnimationsAPICoreEnabled() { return sAnimationsAPICoreEnabled; }
 
   
@@ -3448,7 +3443,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sUseActivityCursor;
   static bool sAnimationsAPICoreEnabled;
   static bool sGetBoxQuadsEnabled;
   static bool sSkipCursorMoveForSameValueSet;

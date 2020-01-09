@@ -2495,6 +2495,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "ui.use_activity_cursor",
+   ui_use_activity_cursor,
+   bool, false
+)
+
+
 
 
 
