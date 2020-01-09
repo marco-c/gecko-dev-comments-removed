@@ -90,6 +90,9 @@ class BrowserHost : public RemoteBrowser,
   virtual ~BrowserHost() = default;
 
   
+  
+  TabId mId;
+  
   RefPtr<BrowserParent> mRoot;
 };
 
