@@ -175,12 +175,19 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   };
 
   enum BufferKind {
-    PLAIN = 0,  
-    WASM = 1,
-    MAPPED = 2,
-    EXTERNAL = 3,
+    PLAIN = 0b000,  
+    WASM = 0b001,
+    MAPPED = 0b010,
+    EXTERNAL = 0b011,
 
-    KIND_MASK = 0x3
+    
+    
+    BAD1 = 0b100,
+    BAD2 = 0b101,
+    BAD3 = 0b110,
+    BAD4 = 0b111,
+
+    KIND_MASK = 0b111
   };
 
  protected:
@@ -188,7 +195,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     
     BUFFER_KIND_MASK = BufferKind::KIND_MASK,
 
-    DETACHED = 0x4,
+    DETACHED = 0b1000,
 
     
     
@@ -199,14 +206,14 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     
     
     
-    OWNS_DATA = 0x8,
+    OWNS_DATA = 0b1'0000,
 
     
-    TYPED_OBJECT_VIEWS = 0x10,
+    TYPED_OBJECT_VIEWS = 0b10'0000,
 
     
     
-    FOR_ASMJS = 0x20
+    FOR_ASMJS = 0b100'0000,
   };
 
   static_assert(JS_ARRAYBUFFER_DETACHED_FLAG == DETACHED,
