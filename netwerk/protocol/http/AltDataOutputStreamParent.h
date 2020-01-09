@@ -30,7 +30,7 @@ class AltDataOutputStreamParent : public PAltDataOutputStreamParent,
   mozilla::ipc::IPCResult RecvWriteData(const nsCString& data);
   
   
-  mozilla::ipc::IPCResult RecvClose();
+  mozilla::ipc::IPCResult RecvClose(const nsresult& aStatus);
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   

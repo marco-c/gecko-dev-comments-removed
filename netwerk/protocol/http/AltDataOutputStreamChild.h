@@ -9,15 +9,16 @@
 #define mozilla_net_AltDataOutputStreamChild_h
 
 #include "mozilla/net/PAltDataOutputStreamChild.h"
-#include "nsIOutputStream.h"
+#include "nsIAsyncOutputStream.h"
 
 namespace mozilla {
 namespace net {
 
 class AltDataOutputStreamChild : public PAltDataOutputStreamChild,
-                                 public nsIOutputStream {
+                                 public nsIAsyncOutputStream {
  public:
   NS_DECL_ISUPPORTS
+  NS_DECL_NSIASYNCOUTPUTSTREAM
   NS_DECL_NSIOUTPUTSTREAM
   explicit AltDataOutputStreamChild();
 
@@ -31,12 +32,17 @@ class AltDataOutputStreamChild : public PAltDataOutputStreamChild,
   virtual ~AltDataOutputStreamChild() = default;
   
   bool WriteDataInChunks(const nsDependentCSubstring& data);
+  void NotifyListener();
 
   bool mIPCOpen;
   
   
   
   nsresult mError;
+
+  nsCOMPtr<nsIOutputStreamCallback> mCallback;
+  uint32_t mCallbackFlags;
+  nsCOMPtr<nsIEventTarget> mCallbackTarget;
 };
 
 }  
