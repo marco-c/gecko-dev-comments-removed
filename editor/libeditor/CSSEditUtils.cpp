@@ -812,8 +812,9 @@ int32_t CSSEditUtils::SetCSSEquivalentToHTMLStyle(Element* aElement,
   
   size_t count = cssPropertyArray.Length();
   for (size_t index = 0; index < count; index++) {
-    nsresult rv = SetCSSProperty(*aElement, *cssPropertyArray[index],
-                                 cssValueArray[index], aSuppressTransaction);
+    nsresult rv =
+        SetCSSProperty(*aElement, MOZ_KnownLive(*cssPropertyArray[index]),
+                       cssValueArray[index], aSuppressTransaction);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return 0;
     }

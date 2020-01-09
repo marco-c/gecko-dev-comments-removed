@@ -314,14 +314,14 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  nsresult rv = RefereshEditingUI();
+  nsresult rv = RefreshEditingUI();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return EditorBase::ToGenericNSResult(rv);
   }
   return NS_OK;
 }
 
-nsresult HTMLEditor::RefereshEditingUI() {
+nsresult HTMLEditor::RefreshEditingUI() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   

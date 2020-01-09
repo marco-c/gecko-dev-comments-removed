@@ -96,14 +96,17 @@ class CSSEditUtils final {
 
 
 
-  nsresult SetCSSProperty(dom::Element& aElement, nsAtom& aProperty,
-                          const nsAString& aValue, bool aSuppressTxn = false);
-  nsresult SetCSSPropertyPixels(dom::Element& aElement, nsAtom& aProperty,
-                                int32_t aIntValue);
-  MOZ_CAN_RUN_SCRIPT
-  nsresult RemoveCSSProperty(dom::Element& aElement, nsAtom& aProperty,
-                             const nsAString& aPropertyValue,
-                             bool aSuppressTxn = false);
+  MOZ_CAN_RUN_SCRIPT nsresult SetCSSProperty(dom::Element& aElement,
+                                             nsAtom& aProperty,
+                                             const nsAString& aValue,
+                                             bool aSuppressTxn = false);
+  MOZ_CAN_RUN_SCRIPT nsresult SetCSSPropertyPixels(dom::Element& aElement,
+                                                   nsAtom& aProperty,
+                                                   int32_t aIntValue);
+  MOZ_CAN_RUN_SCRIPT nsresult RemoveCSSProperty(dom::Element& aElement,
+                                                nsAtom& aProperty,
+                                                const nsAString& aPropertyValue,
+                                                bool aSuppressTxn = false);
 
   
 
@@ -244,10 +247,9 @@ class CSSEditUtils final {
 
 
 
-  int32_t SetCSSEquivalentToHTMLStyle(dom::Element* aElement, nsAtom* aProperty,
-                                      nsAtom* aAttribute,
-                                      const nsAString* aValue,
-                                      bool aSuppressTransaction);
+  MOZ_CAN_RUN_SCRIPT int32_t SetCSSEquivalentToHTMLStyle(
+      dom::Element* aElement, nsAtom* aProperty, nsAtom* aAttribute,
+      const nsAString* aValue, bool aSuppressTransaction);
 
   
 

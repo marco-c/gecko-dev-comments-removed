@@ -374,8 +374,8 @@ HTMLEditor::NotifySelectionChanged(Document* aDocument, Selection* aSelection,
       
       
       
-      DebugOnly<nsresult> rv = RefereshEditingUI();
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "RefereshEditingUI() failed");
+      DebugOnly<nsresult> rv = RefreshEditingUI();
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "RefreshEditingUI() failed");
     }
   }
 
@@ -4380,9 +4380,9 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
       } else if (startNode == endNode &&
                  startNode->IsHTMLElement(nsGkAtoms::body) && isCollapsed) {
         
-        mCSSEditUtils->SetCSSEquivalentToHTMLStyle(startNode->AsElement(),
-                                                   nullptr, nsGkAtoms::bgcolor,
-                                                   &aColor, false);
+        mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
+            MOZ_KnownLive(startNode->AsElement()), nullptr, nsGkAtoms::bgcolor,
+            &aColor, false);
       } else if (startNode == endNode && (endOffset - startOffset == 1 ||
                                           (!startOffset && !endOffset))) {
         
