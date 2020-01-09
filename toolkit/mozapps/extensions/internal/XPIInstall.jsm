@@ -82,6 +82,8 @@ const PREF_XPI_DIRECT_WHITELISTED     = "xpinstall.whitelist.directRequest";
 const PREF_XPI_FILE_WHITELISTED       = "xpinstall.whitelist.fileRequest";
 const PREF_XPI_WHITELIST_REQUIRED     = "xpinstall.whitelist.required";
 
+const PREF_SELECTED_LWT               = "lightweightThemes.selectedThemeID";
+
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
 
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";
@@ -178,6 +180,11 @@ const LOGGER_ID = "addons.xpi";
 
 
 var logger = Log.repository.getLogger(LOGGER_ID);
+
+
+
+
+let lastLightweightTheme = null;
 
 function getJarURI(file, path = "") {
   if (file instanceof Ci.nsIFile) {
@@ -3646,6 +3653,11 @@ var XPIInstall = {
 
 
   async installBuiltinAddon(base) {
+    if (lastLightweightTheme === null) {
+      lastLightweightTheme = Services.prefs.getCharPref(PREF_SELECTED_LWT, "");
+      Services.prefs.clearUserPref(PREF_SELECTED_LWT);
+    }
+
     let baseURL = Services.io.newURI(base);
 
     
@@ -3686,9 +3698,20 @@ var XPIInstall = {
     
     
     
-    if (addon.id === DEFAULT_THEME_ID &&
-        !XPIDatabase.getAddonsByType("theme").some(theme => !theme.disabled)) {
-      addon.userDisabled = false;
+    
+    
+    
+    
+    
+    
+    
+    if (addon.type === "theme") {
+      if (addon.id === lastLightweightTheme ||
+          (!lastLightweightTheme.endsWith("@mozilla.org") &&
+           addon.id === DEFAULT_THEME_ID &&
+           !XPIDatabase.getAddonsByType("theme").some(theme => !theme.disabled))) {
+        addon.userDisabled = false;
+      }
     }
     await this._activateAddon(addon);
   },
