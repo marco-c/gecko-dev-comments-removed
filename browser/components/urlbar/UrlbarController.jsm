@@ -92,9 +92,8 @@ class UrlbarController {
 
   async startQuery(queryContext) {
     
-    if (this._lastQueryContext) {
-      this.cancelQuery(this._lastQueryContext);
-    }
+    this.cancelQuery();
+
     this._lastQueryContext = queryContext;
 
     queryContext.lastResultCount = 0;
@@ -177,8 +176,11 @@ class UrlbarController {
 
 
 
-  tabContextChanged() {
-    
+
+
+  viewContextChanged() {
+    this.cancelQuery();
+    this._notify("onViewContextChanged");
   }
 
   
