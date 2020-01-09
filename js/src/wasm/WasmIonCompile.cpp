@@ -729,8 +729,11 @@ class FunctionCompiler {
   }
 
   MDefinition* derefTableElementPointer(MDefinition* base) {
+    
+    
     MWasmLoadRef* load =
-        MWasmLoadRef::New(alloc(), base, AliasSet::WasmTableElement);
+        MWasmLoadRef::New(alloc(), base, AliasSet::WasmTableElement,
+                           false);
     curBlock_->add(load);
     return load;
   }

@@ -858,6 +858,10 @@ Instance::tableInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
 
 
 
+
+
+
+
  void* 
 
 Instance::tableGet(Instance* instance, uint32_t index, uint32_t tableIndex) {
@@ -868,7 +872,7 @@ Instance::tableGet(Instance* instance, uint32_t index, uint32_t tableIndex) {
                               JSMSG_WASM_TABLE_OUT_OF_BOUNDS);
     return nullptr;
   }
-  return const_cast<void*>(table.getAnyRefLocForCompiledCode(index));
+  return const_cast<void*>(table.getShortlivedAnyRefLocForCompiledCode(index));
 }
 
  uint32_t 
