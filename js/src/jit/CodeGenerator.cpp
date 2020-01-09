@@ -1416,23 +1416,9 @@ void CodeGenerator::visitTestVAndBranch(LTestVAndBranch* lir) {
 void CodeGenerator::visitFunctionDispatch(LFunctionDispatch* lir) {
   MFunctionDispatch* mir = lir->mir();
   Register input = ToRegister(lir->input());
-  Label* lastLabel;
-  size_t casesWithFallback;
 
   
-  if (!mir->hasFallback()) {
-    MOZ_ASSERT(mir->numCases() > 0);
-    casesWithFallback = mir->numCases();
-    lastLabel = skipTrivialBlocks(mir->getCaseBlock(mir->numCases() - 1))
-                    ->lir()
-                    ->label();
-  } else {
-    casesWithFallback = mir->numCases() + 1;
-    lastLabel = skipTrivialBlocks(mir->getFallback())->lir()->label();
-  }
-
-  
-  for (size_t i = 0; i < casesWithFallback - 1; i++) {
+  for (size_t i = 0; i < mir->numCases(); i++) {
     MOZ_ASSERT(i < mir->numCases());
     LBlock* target = skipTrivialBlocks(mir->getCaseBlock(i))->lir();
     if (ObjectGroup* funcGroup = mir->getCaseObjectGroup(i)) {
@@ -1445,7 +1431,13 @@ void CodeGenerator::visitFunctionDispatch(LFunctionDispatch* lir) {
   }
 
   
-  masm.jump(lastLabel);
+  if (mir->hasFallback()) {
+    masm.jump(skipTrivialBlocks(mir->getFallback())->lir()->label());
+    return;
+  }
+
+  
+  masm.assumeUnreachable("Did not match input function!");
 }
 
 void CodeGenerator::visitObjectGroupDispatch(LObjectGroupDispatch* lir) {
