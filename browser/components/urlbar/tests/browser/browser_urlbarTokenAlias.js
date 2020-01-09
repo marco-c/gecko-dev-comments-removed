@@ -308,6 +308,37 @@ add_task(async function enterAndFillAlias() {
 });
 
 
+
+
+add_task(async function enterAutofillsAlias() {
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus,
+    value: ALIAS.substring(0, ALIAS.length - 1),
+    selectionStart: ALIAS.length - 1,
+    selectionEnd: ALIAS.length - 1,
+  });
+  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.ok(details.autofill);
+
+  
+  EventUtils.synthesizeKey("KEY_Enter");
+  await waitForAutocompleteResultAt(0);
+
+  
+  
+  let expectedString = `${ALIAS} `;
+  Assert.equal(gURLBar.textValue, expectedString);
+  Assert.equal(gURLBar.selectionStart, expectedString.length);
+  Assert.equal(gURLBar.selectionEnd, expectedString.length);
+  await assertAlias(true);
+
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
+});
+
+
 async function doSimpleTest(revertBetweenSteps) {
   
   
