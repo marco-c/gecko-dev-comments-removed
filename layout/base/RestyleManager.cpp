@@ -465,39 +465,45 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
 
 
 
-static nsChangeHint ChangeForContentStateChange(const Element& aElement,
-                                                EventStates aStateMask) {
-  auto changeHint = nsChangeHint(0);
 
+
+void RestyleManager::ContentStateChangedInternal(const Element& aElement,
+                                                 EventStates aStateMask,
+                                                 nsChangeHint* aOutChangeHint) {
+  MOZ_ASSERT(!mInStyleRefresh);
+  MOZ_ASSERT(aOutChangeHint);
+
+  *aOutChangeHint = nsChangeHint(0);
   
   
   
   
   
   
-  if (nsIFrame* primaryFrame = aElement.GetPrimaryFrame()) {
+  nsIFrame* primaryFrame = aElement.GetPrimaryFrame();
+  if (primaryFrame) {
     
     if (!primaryFrame->IsGeneratedContentFrame() &&
         aStateMask.HasAtLeastOneOfStates(
             NS_EVENT_STATE_BROKEN | NS_EVENT_STATE_USERDISABLED |
             NS_EVENT_STATE_SUPPRESSED | NS_EVENT_STATE_LOADING)) {
-      return nsChangeHint_ReconstructFrame;
-    }
-
-    auto* disp = primaryFrame->StyleDisplay();
-    if (disp->HasAppearance()) {
-      nsPresContext* pc = primaryFrame->PresContext();
-      nsITheme* theme = pc->GetTheme();
-      if (theme &&
-          theme->ThemeSupportsWidget(pc, primaryFrame, disp->mAppearance)) {
-        bool repaint = false;
-        theme->WidgetStateChanged(primaryFrame, disp->mAppearance, nullptr,
-                                  &repaint, nullptr);
-        if (repaint) {
-          changeHint |= nsChangeHint_RepaintFrame;
+      *aOutChangeHint = nsChangeHint_ReconstructFrame;
+    } else {
+      auto* disp = primaryFrame->StyleDisplay();
+      if (disp->HasAppearance()) {
+        nsITheme* theme = PresContext()->GetTheme();
+        if (theme && theme->ThemeSupportsWidget(PresContext(), primaryFrame,
+                                                disp->mAppearance)) {
+          bool repaint = false;
+          theme->WidgetStateChanged(primaryFrame, disp->mAppearance, nullptr,
+                                    &repaint, nullptr);
+          if (repaint) {
+            *aOutChangeHint |= nsChangeHint_RepaintFrame;
+          }
         }
       }
     }
+
     primaryFrame->ContentStatesChanged(aStateMask);
   }
 
@@ -505,10 +511,8 @@ static nsChangeHint ChangeForContentStateChange(const Element& aElement,
     
     
     
-    changeHint |= nsChangeHint_RepaintFrame;
+    *aOutChangeHint |= nsChangeHint_RepaintFrame;
   }
-
-  return changeHint;
 }
 
  nsCString RestyleManager::RestyleHintToString(
@@ -3216,10 +3220,12 @@ void RestyleManager::ContentStateChanged(nsIContent* aContent,
     }
   }
 
-  if (auto changeHint = ChangeForContentStateChange(element, aChangedBits)) {
-    Servo_NoteExplicitHints(&element, nsRestyleHint(0), changeHint);
-  }
+  nsChangeHint changeHint;
+  ContentStateChangedInternal(element, aChangedBits, &changeHint);
 
+  
+  
+  
   
   
   
@@ -3233,6 +3239,10 @@ void RestyleManager::ContentStateChanged(nsIContent* aContent,
   ServoElementSnapshot& snapshot = SnapshotFor(element);
   EventStates previousState = element.StyleState() ^ aChangedBits;
   snapshot.AddState(previousState);
+
+  if (changeHint) {
+    Servo_NoteExplicitHints(&element, nsRestyleHint(0), changeHint);
+  }
 
   
   
