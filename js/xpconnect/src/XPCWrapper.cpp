@@ -57,8 +57,6 @@ static bool XrayWrapperConstructor(JSContext* cx, unsigned argc, Value* vp) {
 
 bool AttachNewConstructorObject(JSContext* aCx,
                                 JS::HandleObject aGlobalObject) {
-  
-  
   JSAutoRealm ar(aCx, aGlobalObject);
   JSFunction* xpcnativewrapper = JS_DefineFunction(
       aCx, aGlobalObject, "XPCNativeWrapper", XrayWrapperConstructor, 1,
