@@ -2185,18 +2185,12 @@ void nsCookieService::SetCookieStringInternal(
   switch (cookieStatus) {
     case STATUS_REJECTED:
       NotifyRejected(aHostURI, aChannel, rejectedReason, OPERATION_WRITE);
-      if (aIsForeign) {
-        NotifyThirdParty(aHostURI, false, aChannel);
-      }
       return;  
     case STATUS_REJECTED_WITH_ERROR:
       return;
     case STATUS_ACCEPTED:  
     case STATUS_ACCEPT_SESSION:
       NotifyAccepted(aChannel);
-      if (aIsForeign) {
-        NotifyThirdParty(aHostURI, true, aChannel);
-      }
       break;
     default:
       break;
@@ -2232,59 +2226,6 @@ void nsCookieService::NotifyRejected(nsIURI* aHostURI, nsIChannel* aChannel,
 
   AntiTrackingCommon::NotifyBlockingDecision(
       aChannel, AntiTrackingCommon::BlockingDecision::eBlock, aRejectedReason);
-}
-
-
-
-void nsCookieService::NotifyThirdParty(nsIURI* aHostURI, bool aIsAccepted,
-                                       nsIChannel* aChannel) {
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (!os) {
-    return;
-  }
-
-  const char* topic;
-
-  if (mDBState != mPrivateDBState) {
-    
-    if (aIsAccepted) {
-      topic = "third-party-cookie-accepted";
-    } else {
-      topic = "third-party-cookie-rejected";
-    }
-  } else {
-    
-    if (aIsAccepted) {
-      topic = "private-third-party-cookie-accepted";
-    } else {
-      topic = "private-third-party-cookie-rejected";
-    }
-  }
-
-  do {
-    
-    if (!aChannel) {
-      break;
-    }
-    nsCOMPtr<nsIURI> channelURI;
-    nsresult rv = aChannel->GetURI(getter_AddRefs(channelURI));
-    if (NS_FAILED(rv)) {
-      break;
-    }
-
-    nsAutoCString referringHost;
-    rv = channelURI->GetHost(referringHost);
-    if (NS_FAILED(rv)) {
-      break;
-    }
-
-    nsAutoString referringHostUTF16 = NS_ConvertUTF8toUTF16(referringHost);
-    os->NotifyObservers(aHostURI, topic, referringHostUTF16.get());
-    return;
-  } while (false);
-
-  
-  os->NotifyObservers(aHostURI, topic, u"?");
 }
 
 
