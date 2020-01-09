@@ -252,7 +252,6 @@ extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
 
 
 
-
 class EnvironmentObject : public NativeObject {
  protected:
   
@@ -420,7 +419,7 @@ class ModuleEnvironmentObject : public EnvironmentObject {
   bool lookupImport(jsid name, ModuleEnvironmentObject** envOut,
                     Shape** shapeOut);
 
-  void fixEnclosingEnvironmentAfterCompartmentMerge(GlobalObject& global);
+  void fixEnclosingEnvironmentAfterRealmMerge(GlobalObject& global);
 
  private:
   static bool lookupProperty(JSContext* cx, HandleObject obj, HandleId id,
