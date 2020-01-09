@@ -89,6 +89,10 @@ class InputData {
   
   uint64_t mFocusSequenceNumber;
 
+  
+  
+  layers::LayersId mLayersId;
+
   Modifiers modifiers;
 
   INPUTDATA_AS_CHILD_TYPE(MultiTouchInput, MULTITOUCH_INPUT)
