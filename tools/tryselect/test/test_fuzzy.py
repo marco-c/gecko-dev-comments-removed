@@ -23,7 +23,7 @@ def test_paths(run_mach, capfd):
     
     expected = """
     "tasks": [
-        "test-linux64/opt-xpcshell-1"
+        "test-linux64/opt-xpcshell-1proc-1"
     ]""".lstrip()
 
     assert expected in output
