@@ -1449,3 +1449,18 @@ function assertTelemetryMatches(events, {filterMethods} = {}) {
   Assert.deepEqual(relatedEvents, events, "The events are recorded correctly");
 }
 
+
+function mockPromptService() {
+  let {prompt} = Services;
+  let promptService = {
+    
+    _response: 1,
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIPromptService]),
+    confirmEx: () => promptService._response,
+  };
+  Services.prompt = promptService;
+  registerCleanupFunction(() => {
+    Services.prompt = prompt;
+  });
+  return promptService;
+}

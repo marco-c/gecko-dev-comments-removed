@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 const {XPCOMUtils} = ChromeUtils.import(
@@ -316,12 +317,25 @@ class AddonCard extends HTMLElement {
           }
           break;
         case "remove":
-          await addon.uninstall();
+          {
+            panel.hide();
+            let response = windowRoot.ownerGlobal.promptRemoveExtension(addon);
+            if (response == 0) {
+              await addon.uninstall();
+              this.sendEvent("remove");
+            } else {
+              this.sendEvent("remove-cancelled");
+            }
+          }
           break;
       }
     });
 
     this.appendChild(this.card);
+  }
+
+  sendEvent(name, detail) {
+    this.dispatchEvent(new CustomEvent(name, {detail}));
   }
 }
 customElements.define("addon-card", AddonCard);
