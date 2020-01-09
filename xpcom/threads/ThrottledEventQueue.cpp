@@ -179,11 +179,14 @@ class ThrottledEventQueue::Inner final : public nsISupports {
 
     {
       MutexAutoLock lock(mMutex);
-
-      
-      
       event = mEventQueue.PeekEvent(lock);
-      MOZ_ALWAYS_TRUE(event);
+      
+      
+      
+      if (!event) {
+        aName.AssignLiteral("no runnables left in the ThrottledEventQueue");
+        return NS_OK;
+      }
     }
 
     if (nsCOMPtr<nsINamed> named = do_QueryInterface(event)) {
@@ -270,6 +273,11 @@ class ThrottledEventQueue::Inner final : public nsISupports {
     
     MutexAutoLock lock(mMutex);
     return mEventQueue.Count(lock);
+  }
+
+  already_AddRefed<nsIRunnable> GetEvent() {
+    MutexAutoLock lock(mMutex);
+    return mEventQueue.GetEvent(nullptr, lock);
   }
 
   void AwaitIdle() const {
@@ -378,6 +386,11 @@ already_AddRefed<ThrottledEventQueue> ThrottledEventQueue::Create(
 bool ThrottledEventQueue::IsEmpty() const { return mInner->IsEmpty(); }
 
 uint32_t ThrottledEventQueue::Length() const { return mInner->Length(); }
+
+
+already_AddRefed<nsIRunnable> ThrottledEventQueue::GetEvent() {
+  return mInner->GetEvent();
+}
 
 void ThrottledEventQueue::AwaitIdle() const { return mInner->AwaitIdle(); }
 
