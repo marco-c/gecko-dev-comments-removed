@@ -362,8 +362,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   
   
-  static void detach(JSContext* cx, Handle<ArrayBufferObject*> buffer,
-                     BufferContents newContents);
+  static void detach(JSContext* cx, Handle<ArrayBufferObject*> buffer);
 
  private:
   void setFirstView(JSObject* view);

@@ -464,8 +464,7 @@ static uint8_t* NewCopiedBufferContents(JSContext* cx,
 }
 
  void ArrayBufferObject::detach(JSContext* cx,
-                                            Handle<ArrayBufferObject*> buffer,
-                                            BufferContents newContents) {
+                                            Handle<ArrayBufferObject*> buffer) {
   cx->check(buffer);
   MOZ_ASSERT(!buffer->isPreparedForAsmJS());
 
@@ -489,11 +488,10 @@ static uint8_t* NewCopiedBufferContents(JSContext* cx,
     cx->zone()->detachedTypedObjects = 1;
   }
 
-  auto NoteViewBufferWasDetached = [&cx,
-                                    &newContents](ArrayBufferViewObject* view) {
+  auto NoteViewBufferWasDetached = [&cx](ArrayBufferViewObject* view) {
     MOZ_ASSERT(!view->isSharedMemory());
 
-    view->notifyBufferDetached(newContents.data());
+    view->notifyBufferDetached();
 
     
     MarkObjectStateChange(cx, view);
@@ -518,8 +516,9 @@ static uint8_t* NewCopiedBufferContents(JSContext* cx,
     buffer->setFirstView(nullptr);
   }
 
-  if (newContents.data() != buffer->dataPointer()) {
-    buffer->setNewData(cx->runtime()->defaultFreeOp(), newContents);
+  if (buffer->dataPointer()) {
+    buffer->setNewData(cx->runtime()->defaultFreeOp(),
+                       BufferContents::createNoData());
   }
 
   buffer->setByteLength(0);
@@ -1074,11 +1073,10 @@ static void CheckStealPreconditions(Handle<ArrayBufferObject*> buffer,
   BufferContents oldContents = oldBuf->contents();
 
   
-  BufferContents detachedContents = BufferContents::createNoData();
-  oldBuf->setDataPointer(detachedContents);
+  oldBuf->setDataPointer(BufferContents::createNoData());
 
   
-  ArrayBufferObject::detach(cx, oldBuf, detachedContents);
+  ArrayBufferObject::detach(cx, oldBuf);
 
   
   newBuf->initialize(newSize, oldContents);
@@ -1117,7 +1115,7 @@ static void CheckStealPreconditions(Handle<ArrayBufferObject*> buffer,
   newBuf->initialize(newSize, contents);
 
   memcpy(newBuf->dataPointer(), oldBuf->dataPointer(), oldBuf->byteLength());
-  ArrayBufferObject::detach(cx, oldBuf, BufferContents::createNoData());
+  ArrayBufferObject::detach(cx, oldBuf);
   return true;
 }
 
@@ -1324,11 +1322,10 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
 
       
       
-      BufferContents newContents = BufferContents::createNoData();
-      buffer->setDataPointer(newContents);
+      buffer->setDataPointer(BufferContents::createNoData());
 
       
-      ArrayBufferObject::detach(cx, buffer, newContents);
+      ArrayBufferObject::detach(cx, buffer);
       return stolenData;
     }
 
@@ -1345,7 +1342,7 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
 
       
       
-      ArrayBufferObject::detach(cx, buffer, BufferContents::createNoData());
+      ArrayBufferObject::detach(cx, buffer);
       return copiedData;
     }
 
@@ -1381,7 +1378,7 @@ ArrayBufferObject::extractStructuredCloneContents(
         return BufferContents::createFailed();
       }
 
-      ArrayBufferObject::detach(cx, buffer, BufferContents::createNoData());
+      ArrayBufferObject::detach(cx, buffer);
       return BufferContents::createMalloced(copiedData);
     }
 
@@ -1390,11 +1387,10 @@ ArrayBufferObject::extractStructuredCloneContents(
       MOZ_ASSERT(contents);
 
       
-      BufferContents newContents = BufferContents::createNoData();
-      buffer->setDataPointer(newContents);
+      buffer->setDataPointer(BufferContents::createNoData());
 
       
-      ArrayBufferObject::detach(cx, buffer, newContents);
+      ArrayBufferObject::detach(cx, buffer);
       return contents;
     }
 
@@ -1684,8 +1680,7 @@ JS_FRIEND_API bool JS_DetachArrayBuffer(JSContext* cx, HandleObject obj) {
     return false;
   }
 
-  ArrayBufferObject::detach(cx, buffer,
-                            ArrayBufferObject::BufferContents::createNoData());
+  ArrayBufferObject::detach(cx, buffer);
   return true;
 }
 
