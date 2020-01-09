@@ -570,6 +570,11 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   void ReleaseMainThreadOnlyReferences();
 
+  
+  
+  
+  void ReEvaluateReferrerAfterTrackingStatusIsKnown();
+
  private:
   nsCOMPtr<nsICancelable> mProxyRequest;
 

@@ -1770,7 +1770,18 @@ pref("network.http.referer.defaultPolicy", 3);
 
 
 
+
+pref("network.http.referer.defaultPolicy.trackers", 3);
+
+
+
 pref("network.http.referer.defaultPolicy.pbmode", 2);
+
+
+
+
+
+pref("network.http.referer.defaultPolicy.trackers.pbmode", 2);
 
 pref("network.http.referer.spoofSource", false);
 

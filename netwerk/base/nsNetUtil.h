@@ -36,6 +36,7 @@ class nsIDownloadObserver;
 class nsIEventTarget;
 class nsIFileProtocolHandler;
 class nsIFileStream;
+class nsIHttpChannel;
 class nsIInputStream;
 class nsIInputStreamPump;
 class nsIInterfaceRequestor;
@@ -902,7 +903,13 @@ nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel *aChannel);
 
 
 
-uint32_t NS_GetDefaultReferrerPolicy(bool privateBrowsing = false);
+
+
+
+
+uint32_t NS_GetDefaultReferrerPolicy(nsIHttpChannel *aChannel = nullptr,
+                                     nsIURI *aURI = nullptr,
+                                     bool privateBrowsing = false);
 
 namespace mozilla {
 namespace net {

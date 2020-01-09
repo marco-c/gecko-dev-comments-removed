@@ -442,6 +442,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
     if (NS_FAILED(rv)) {
       return rv;
     }
+    mOriginalReferrer = referrer;
     mReferrer = referrer;
     mReferrerPolicy = referrerPolicy;
     rv = mRequestHead.SetHeader(nsHttp::Referer, spec);
@@ -545,6 +546,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
   nsCOMPtr<nsILoadInfo> mLoadInfo;
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
   nsCOMPtr<nsIProgressEventSink> mProgressSink;
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> mOriginalReferrer;
   nsCOMPtr<nsIURI> mReferrer;
   nsCOMPtr<nsIApplicationCache> mApplicationCache;
   nsCOMPtr<nsIURI> mAPIRedirectToURI;

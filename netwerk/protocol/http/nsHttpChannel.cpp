@@ -6631,6 +6631,8 @@ nsresult nsHttpChannel::BeginConnectActual() {
     return NS_OK;
   }
 
+  ReEvaluateReferrerAfterTrackingStatusIsKnown();
+
   MaybeStartDNSPrefetch();
 
   nsresult rv = ContinueBeginConnectWithResult();
@@ -9994,6 +9996,23 @@ nsresult nsHttpChannel::RedirectToInterceptedChannel() {
   }
 
   return rv;
+}
+
+void nsHttpChannel::ReEvaluateReferrerAfterTrackingStatusIsKnown() {
+  if (StaticPrefs::network_cookie_cookieBehavior() ==
+      nsICookieService::BEHAVIOR_REJECT_TRACKER) {
+    
+    
+    
+    
+    bool isPrivate =
+        mLoadInfo && mLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+    if (mOriginalReferrer &&
+        mReferrerPolicy ==
+            NS_GetDefaultReferrerPolicy(nullptr, nullptr, isPrivate)) {
+      SetReferrer(mOriginalReferrer);
+    }
+  }
 }
 
 }  
