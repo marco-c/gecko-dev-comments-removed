@@ -85,14 +85,6 @@ module.exports = {
       "no-undef": "off",
     }
   }, {
-    
-    "files": [
-      "xpcom/tests/unit/test_iniParser.js",
-    ],
-    "rules": {
-      "no-throw-literal": "off",
-    }
-  }, {
     ...removeOverrides(xpcshellTestConfig),
     "files": xpcshellTestPaths.map(path => `${path}**`),
     "excludedFiles": "devtools/**"
