@@ -3086,6 +3086,10 @@ void nsDisplayList::SortByContentOrder(nsIContent* aCommonAncestor) {
   Sort<nsDisplayItem*>(ContentComparator(aCommonAncestor));
 }
 
+#ifndef DEBUG
+static_assert(sizeof(nsDisplayItem) <= 176, "nsDisplayItem has grown");
+#endif
+
 nsDisplayItem::nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
     : nsDisplayItem(aBuilder, aFrame, aBuilder->CurrentActiveScrolledRoot()) {}
 
@@ -3098,7 +3102,6 @@ nsDisplayItem::nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
       mForceNotVisible(aBuilder->IsBuildingInvisibleItems()),
       mDisableSubpixelAA(false),
       mReusedItem(false),
-      mBackfaceHidden(mFrame->In3DContextAndBackfaceIsHidden()),
       mPaintRectValid(false),
       mCanBeReused(true)
 #ifdef MOZ_DUMP_PAINTING
@@ -3129,6 +3132,11 @@ nsDisplayItem::nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   nsRect visible = aBuilder->GetVisibleRect() +
                    aBuilder->GetCurrentFrameOffsetToReferenceFrame();
   SetBuildingRect(visible);
+
+  const nsStyleDisplay* disp = mFrame->StyleDisplay();
+  mBackfaceIsHidden = mFrame->BackfaceIsHidden(disp);
+  mCombines3DTransformWithAncestors =
+      mFrame->Combines3DTransformWithAncestors(disp);
 }
 
 
@@ -7924,7 +7932,7 @@ bool nsDisplayTransform::ShouldBuildLayerEvenIfInvisible(
   
   
   
-  return MayBeAnimated(aBuilder) || mFrame->Combines3DTransformWithAncestors();
+  return MayBeAnimated(aBuilder) || Combines3DTransformWithAncestors();
 }
 
 bool nsDisplayTransform::CreateWebRenderCommands(
@@ -8103,7 +8111,7 @@ nsDisplayItem::LayerState nsDisplayTransform::GetLayerState(
   
   
   
-  if (!GetTransform().Is2D() || mFrame->Combines3DTransformWithAncestors() ||
+  if (!GetTransform().Is2D() || Combines3DTransformWithAncestors() ||
       mIsTransformSeparator || mFrame->HasPerspective()) {
     return LAYER_ACTIVE_FORCE;
   }
@@ -8129,7 +8137,7 @@ bool nsDisplayTransform::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   
   
   
-  if (mFrame->Extend3DContext() || mFrame->Combines3DTransformWithAncestors()) {
+  if (mFrame->Extend3DContext() || Combines3DTransformWithAncestors()) {
     return true;
   }
 
@@ -8222,7 +8230,7 @@ void nsDisplayTransform::UpdateBounds(nsDisplayListBuilder* aBuilder) {
     return;
   }
 
-  if (!mFrame->Combines3DTransformWithAncestors()) {
+  if (!Combines3DTransformWithAncestors()) {
     if (mFrame->Extend3DContext()) {
       
       

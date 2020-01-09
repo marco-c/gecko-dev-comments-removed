@@ -4683,10 +4683,9 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
 
       
       
-      bool mayDrawOutOfOrder =
-          itemType == DisplayItemType::TYPE_TRANSFORM &&
-          (item->Frame()->Combines3DTransformWithAncestors() ||
-           item->Frame()->Extend3DContext());
+      bool mayDrawOutOfOrder = itemType == DisplayItemType::TYPE_TRANSFORM &&
+                               (item->Combines3DTransformWithAncestors() ||
+                                item->Frame()->Extend3DContext());
 
       
       
@@ -4969,8 +4968,8 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
         newLayerEntry->mLayerContentsVisibleRect = layerContentsVisibleRect;
         if (itemType == DisplayItemType::TYPE_PERSPECTIVE ||
             (itemType == DisplayItemType::TYPE_TRANSFORM &&
-             (item->Frame()->Extend3DContext() ||
-              item->Frame()->Combines3DTransformWithAncestors() ||
+             (item->Combines3DTransformWithAncestors() ||
+              item->Frame()->Extend3DContext() ||
               item->Frame()->HasPerspective()))) {
           
           
