@@ -722,6 +722,21 @@ class AsyncPanZoomController {
 
 
 
+  void ClampCompositedScrollOffset();
+
+  
+
+
+
+
+
+  void RecalculateCompositedLayoutViewport();
+
+  
+
+
+
+
   void ScrollBy(const CSSPoint& aOffset);
 
   
