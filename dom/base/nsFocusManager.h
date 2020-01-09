@@ -424,21 +424,6 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  nsIContent* FindOwner(nsIContent* aContent);
-
-  
-
-
-
-
-
-  int32_t HostOrSlotTabIndexValue(nsIContent* aContent,
-                                  bool* aIsFocusable = nullptr);
-
-  
-
-
-
 
 
 
@@ -501,9 +486,12 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
+
+
   nsIContent* GetNextTabbableContentInAncestorScopes(
-      nsIContent** aStartContent, nsIContent* aOriginalStartContent,
-      bool aForward, int32_t* aCurrentTabIndex, bool aIgnoreTabIndex,
+      nsIContent* aStartOwner, nsIContent** aStartContent,
+      nsIContent* aOriginalStartContent, bool aForward,
+      int32_t* aCurrentTabIndex, bool aIgnoreTabIndex,
       bool aForDocumentNavigation);
 
   
