@@ -1,3 +1,6 @@
+
+
+
 "use strict";
 
 
@@ -15,7 +18,7 @@ add_task(async function() {
   urlbar.dispatchEvent(focusEv);
   
   let inputEv = new InputEvent("input", {data: "", view: win, bubbles: true});
-  urlbar.onInput(inputEv);
+  urlbar.inputField.dispatchEvent(inputEv);
   
   is(urlbar.value, urlbarTestValue, "URL bar value should be there");
   is(win.gBrowser.selectedBrowser.userTypedValue, urlbarTestValue, "browser object should know the url bar value");
