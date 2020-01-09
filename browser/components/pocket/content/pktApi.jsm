@@ -138,9 +138,9 @@ var pktApi = (function() {
         
         
 
-        if (!value)
+        if (!value) {
             prefBranch.clearUserPref(key);
-        else {
+        } else {
             
             prefBranch.setStringPref(key, value);
         }

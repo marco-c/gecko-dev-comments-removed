@@ -1222,9 +1222,9 @@ MockInstall.prototype = {
         this.type = this._type;
 
         
-        if (this._addonToInstall)
+        if (this._addonToInstall) {
           this.addon = this._addonToInstall;
-        else {
+        } else {
           this.addon = new MockAddon("", this.name, this.type);
           this.addon.version = this.version;
           this.addon.pendingOperations = AddonManager.PENDING_INSTALL;

@@ -504,7 +504,9 @@ function cartProd(aSequences, aCallback) {
         
         if (seqPtr < 0)
           done = true;
-      } else break;
+      } else {
+        break;
+      }
     }
   }
   return numProds;
@@ -561,9 +563,9 @@ function choose(aSet, aHowMany, aCallback) {
       }
 
       
-      if (pi < 0)
+      if (pi < 0) {
         done = true;
-      else {
+      } else {
         
         
         
@@ -594,12 +596,14 @@ function flagSwitchMatches(aQuery1, aQuery2) {
         if (aQuery1[p] instanceof Ci.nsIURI) {
           if (!aQuery1[p].equals(aQuery2[p]))
             return false;
-        } else if (aQuery1[p] !== aQuery2[p])
+        } else if (aQuery1[p] !== aQuery2[p]) {
           return false;
+        }
       }
     }
-  } else if (aQuery1[this.flag] || aQuery2[this.flag])
+  } else if (aQuery1[this.flag] || aQuery2[this.flag]) {
     return false;
+  }
 
   return true;
 }

@@ -319,8 +319,9 @@ const Preferences = window.Preferences = (function() {
         
         
         this._value = preference ? preference.value : this.valueFromPreferences;
-      } else
+      } else {
         this._value = this.valueFromPreferences;
+      }
     }
 
     reset() {
@@ -385,16 +386,17 @@ const Preferences = window.Preferences = (function() {
           element.setAttribute(attribute, value);
         }
       }
-      if (aElement.localName == "checkbox")
+      if (aElement.localName == "checkbox") {
         setValue(aElement, "checked", val);
-      else if (aElement.localName == "textbox") {
+      } else if (aElement.localName == "textbox") {
         
         
         
         if (aElement.value !== val)
           setValue(aElement, "value", val);
-      } else
+      } else {
         setValue(aElement, "value", val);
+      }
     }
 
     getElementValue(aElement) {
@@ -609,8 +611,9 @@ const Preferences = window.Preferences = (function() {
           lf.persistentDescriptor = val;
           if (!lf.exists())
             lf.initWithPath(val);
-        } else
+        } else {
           lf = val.QueryInterface(Ci.nsIFile);
+        }
         Services.prefs
             .setComplexValue(this.name, Ci.nsIFile, lf);
         break;

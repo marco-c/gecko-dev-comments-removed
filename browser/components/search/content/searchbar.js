@@ -357,8 +357,9 @@ class MozSearchbar extends MozXULElement {
         
         Services.search.addEngine(target.getAttribute("uri"), null,
           target.getAttribute("src"), false).then(engine => this.currentEngine = engine);
-      } else
+      } else {
         return;
+      }
 
       this.focus();
       this.select();

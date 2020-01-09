@@ -169,7 +169,9 @@ function cartProd(aSequences, aCallback) {
         
         if (seqPtr < 0)
           done = true;
-      } else break;
+      } else {
+        break;
+      }
     }
   }
   return numProds;

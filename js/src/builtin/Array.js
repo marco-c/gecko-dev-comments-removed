@@ -23,10 +23,10 @@ function ArrayIndexOf(searchElement) {
 
     var k;
     
-    if (n >= 0)
+    if (n >= 0) {
         k = n;
     
-    else {
+    } else {
         
         k = len + n;
         

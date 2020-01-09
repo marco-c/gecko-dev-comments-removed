@@ -479,9 +479,9 @@ async function makeGeneralTab(metaViewRows, docInfo) {
   let length = metaViewRows.length;
 
   var metaGroup = document.getElementById("metaTags");
-  if (!length)
+  if (!length) {
     metaGroup.style.visibility = "hidden";
-  else {
+  } else {
     document.l10n.setAttributes(document.getElementById("metaTagsCaption"),
                                 "general-meta-tags", {"tags": length});
 
@@ -916,19 +916,20 @@ function makeBlockImage(url) {
 
   var checkbox = document.getElementById("blockImage");
   var imagePref = Services.prefs.getIntPref("permissions.default.image");
-  if (!(/^https?:/.test(url)) || imagePref == 2)
+  if (!(/^https?:/.test(url)) || imagePref == 2) {
     
     
     checkbox.hidden = true;
-  else {
+  } else {
     var uri = Services.io.newURI(url);
     if (uri.host) {
       checkbox.hidden = false;
       document.l10n.setAttributes(checkbox, "media-block-image", {"website": uri.host});
       var perm = permissionManager.testPermission(uri, "image");
       checkbox.checked = perm == nsIPermissionManager.DENY_ACTION;
-    } else
+    } else {
       checkbox.hidden = true;
+    }
   }
 }
 
@@ -965,8 +966,9 @@ function setItemValue(id, value) {
   if (value) {
     item.parentNode.collapsed = false;
     item.value = value;
-  } else
+  } else {
     item.parentNode.collapsed = true;
+  }
 }
 
 function formatNumber(number) {

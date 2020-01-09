@@ -122,8 +122,9 @@ Observer.prototype = {
         this.callback.call(this.thisObject, subject, data);
       else
         this.callback(subject, data);
-    } else 
+    } else { 
       this.callback.observe(subject, topic, data);
+    }
   },
 };
 

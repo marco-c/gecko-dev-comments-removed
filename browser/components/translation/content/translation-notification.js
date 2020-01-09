@@ -281,9 +281,9 @@ class MozTranslationNotification extends MozElements.Notification {
   optionsShowing() {
     
     let lang;
-    if (this.state == Translation.STATE_OFFER)
+    if (this.state == Translation.STATE_OFFER) {
       lang = this._getAnonElt("detectedLanguage").value;
-    else {
+    } else {
       lang = this._getAnonElt("fromLanguage").value;
 
       

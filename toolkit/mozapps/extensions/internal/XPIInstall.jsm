@@ -205,6 +205,10 @@ class Package {
 
   close() {}
 
+  getURI(...path) {
+    return Services.io.newURI(path.join("/"), null, this.rootURI);
+  }
+
   async readString(...path) {
     let buffer = await this.readBinary(...path);
     return new TextDecoder().decode(buffer);
@@ -374,8 +378,14 @@ function waitForAllPromises(promises) {
 
 
 
-async function loadManifestFromWebManifest(aPackage) {
-  let extension = new ExtensionData(aPackage.rootURI);
+
+
+async function loadManifestFromWebManifest(aUri, aPackage) {
+  
+  
+  let uri = Services.io.newURI("./", null, aUri);
+
+  let extension = new ExtensionData(uri);
 
   let manifest = await extension.loadManifest();
 
@@ -527,7 +537,7 @@ function generateTemporaryInstallID(aFile) {
 var loadManifest = async function(aPackage, aLocation, aOldAddon) {
   let addon;
   if (await aPackage.hasResource("manifest.json")) {
-    addon = await loadManifestFromWebManifest(aPackage);
+    addon = await loadManifestFromWebManifest(aPackage.rootURI, aPackage);
   } else {
     for (let loader of AddonManagerPrivate.externalExtensionLoaders.values()) {
       if (await aPackage.hasResource(loader.manifestFile)) {
@@ -543,7 +553,6 @@ var loadManifest = async function(aPackage, aLocation, aOldAddon) {
   }
 
   addon._sourceBundle = aPackage.file;
-  addon.rootURI = aPackage.rootURI.spec;
   addon.location = aLocation;
 
   let {signedState, cert} = await aPackage.verifySignedState(addon);
@@ -2121,9 +2130,10 @@ var DownloadAddonInstall = class extends AddonInstall {
     if (this.state == AddonManager.STATE_DOWNLOAD_FAILED) {
       logger.debug("downloadFailed: removing temp file for " + this.sourceURI.spec);
       this.removeTemporaryFile();
-    } else
+    } else {
       logger.debug("downloadFailed: listener changed AddonInstall state for " +
           this.sourceURI.spec + " to " + this.state);
+    }
   }
 
   
@@ -2473,8 +2483,9 @@ UpdateChecker.prototype = {
         if (currentInstall.state == AddonManager.STATE_AVAILABLE) {
           logger.debug("Found an existing AddonInstall for " + this.addon.id);
           sendUpdateAvailableMessages(this, currentInstall);
-        } else
+        } else {
           sendUpdateAvailableMessages(this, null);
+        }
         return;
       }
 
@@ -3305,8 +3316,7 @@ var XPIInstall = {
           let newVersion = existingAddon.version;
           let reason = newVersionReason(existingAddon.version, newVersion);
 
-          XPIInternal.BootstrapScope.get(existingAddon)
-                     .uninstall(reason, {newVersion});
+          XPIInternal.get(existingAddon).uninstall(reason, {newVersion});
         }
       } catch (e) {
         Cu.reportError(e);
@@ -3661,7 +3671,7 @@ var XPIInstall = {
 
     
     let pkg = {
-      rootURI,
+      rootURI: Services.io.newURI("manifest.json", null, rootURI),
       filePath: baseURL,
       file: null,
       verifySignedState() {

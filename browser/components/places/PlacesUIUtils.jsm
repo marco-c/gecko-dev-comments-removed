@@ -751,8 +751,9 @@ var PlacesUIUtils = {
         
         title = "";
       }
-    } else
+    } else {
       title = aNode.title;
+    }
 
     return title || this.getString("noTitle");
   },

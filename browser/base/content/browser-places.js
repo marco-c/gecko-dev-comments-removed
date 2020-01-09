@@ -794,9 +794,9 @@ var BookmarksEventHandler = {
       
       
       var tooltipNode = aDocument.tooltipNode;
-      if (tooltipNode._placesNode)
+      if (tooltipNode._placesNode) {
         node = tooltipNode._placesNode;
-      else {
+      } else {
         
         targetURI = tooltipNode.getAttribute("targetURI");
       }

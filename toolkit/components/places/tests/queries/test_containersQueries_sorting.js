@@ -121,7 +121,9 @@ function cartProd(aSequences, aCallback) {
         
         if (seqPtr < 0)
           done = true;
-      } else break;
+      } else {
+        break;
+      }
     }
   }
   return numProds;
@@ -171,8 +173,9 @@ function test_query_callback(aSequence) {
     
     check_children_sorting(root,
                            Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING);
-  } else
+  } else {
     check_children_sorting(root, sortingMode.value);
+  }
 
   
   var container = root.getChild(0)
@@ -198,8 +201,9 @@ function test_query_callback(aSequence) {
     
     check_children_sorting(container,
                            Ci.nsINavHistoryQueryOptions.SORT_BY_NONE);
-  } else
+  } else {
     check_children_sorting(container, sortingMode.value);
+  }
 
   container.containerOpen = false;
   root.containerOpen = false;
@@ -241,8 +245,9 @@ function test_result_sortingMode_change(aResult, aResultType, aOriginalSortingMo
       
       check_children_sorting(root,
                              Ci.nsINavHistoryQueryOptions.SORT_BY_NONE);
-    } else
+    } else {
       check_children_sorting(root, aOriginalSortingMode.value);
+    }
 
     
     var container = root.getChild(0)
@@ -272,8 +277,9 @@ function test_result_sortingMode_change(aResult, aResultType, aOriginalSortingMo
               aOriginalSortingMode.value == Ci.nsINavHistoryQueryOptions.SORT_BY_DATE_DESCENDING)) {
         
         check_children_sorting(root, Ci.nsINavHistoryQueryOptions.SORT_BY_NONE);
-      } else
+      } else {
         check_children_sorting(root, aOriginalSortingMode.value);
+      }
 
       
       check_children_sorting(container, aForcedSortingMode.value);
