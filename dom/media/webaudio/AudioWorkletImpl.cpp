@@ -58,15 +58,6 @@ JSObject* AudioWorkletImpl::WrapWorklet(JSContext* aCx, dom::Worklet* aWorklet,
 
 nsresult AudioWorkletImpl::SendControlMessage(
     already_AddRefed<nsIRunnable> aRunnable) {
-  MediaStreamGraph* graph = mDestinationStream->Graph();
-  if (!graph->IsNonRealtime()) {
-    
-    
-    
-    
-    return WorkletImpl::SendControlMessage(std::move(aRunnable));
-  }
-
   mDestinationStream->SendRunnable(std::move(aRunnable));
   return NS_OK;
 }
