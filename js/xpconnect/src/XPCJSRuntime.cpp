@@ -3128,6 +3128,7 @@ bool XPCJSRuntime::NoteCustomGCThingXPCOMChildren(
   
   
   
+  
   XPCWrappedNativeTearOff* to =
       static_cast<XPCWrappedNativeTearOff*>(xpc_GetJSPrivate(obj));
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "xpc_GetJSPrivate(obj)->mNative");
