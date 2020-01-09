@@ -16,8 +16,11 @@ add_task(async function test_regular_init() {
     };
     Services.obs.addObserver(obs, SEARCH_SERVICE_TOPIC);
 
-    await Promise.all([Services.search.init(),
-      waitForSearchNotification("ensure-known-region-done"), promiseAfterCache()]);
+    await Promise.all([
+      Services.search.init(),
+      SearchTestUtils.promiseSearchNotification("ensure-known-region-done"),
+      promiseAfterCache(),
+    ]);
     checkRequest(requests);
 
     
@@ -49,8 +52,11 @@ add_task(async function test_init_with_skip_regioncheck() {
 
     
     await asyncReInit();
-    let otherPromises = [waitForSearchNotification("ensure-known-region-done"),
-      promiseAfterCache(), waitForSearchNotification("engine-default", SEARCH_ENGINE_TOPIC)];
+    let otherPromises = [
+      SearchTestUtils.promiseSearchNotification("ensure-known-region-done"),
+      promiseAfterCache(),
+      SearchTestUtils.promiseSearchNotification("engine-default", SEARCH_ENGINE_TOPIC),
+    ];
 
     
     Services.search.resetToOriginalDefaultEngine();
@@ -92,7 +98,8 @@ add_task(async function test_init_with_skip_regioncheck_no_engine_change() {
     await promiseSaveGlobalMetadata(metadata);
 
     
-    await Promise.all([asyncReInit(), waitForSearchNotification("ensure-known-region-done"),
+    await Promise.all([asyncReInit(),
+      SearchTestUtils.promiseSearchNotification("ensure-known-region-done"),
       promiseAfterCache()]);
 
     checkRequest(requests);

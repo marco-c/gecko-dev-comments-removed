@@ -50,7 +50,7 @@ function run_test() {
     
     equal(getProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS"), 0);
 
-    waitForSearchNotification("geoip-lookup-xhr-complete").then(() => {
+    SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-complete").then(() => {
       
       
       

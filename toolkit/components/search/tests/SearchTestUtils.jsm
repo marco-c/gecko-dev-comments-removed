@@ -31,4 +31,29 @@ var SearchTestUtils = Object.freeze({
     gTestGlobals.registerCleanupFunction(async () => Services.search.removeEngine(engine));
     return engine;
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  promiseSearchNotification(expectedData, topic = "browser-search-service") {
+    return new Promise(resolve => {
+      Services.obs.addObserver(function observer(aSubject, aTopic, aData) {
+        if (aData != expectedData)
+          return;
+
+        Services.obs.removeObserver(observer, topic);
+        resolve(aSubject);
+      }, topic);
+    });
+  },
 });

@@ -40,7 +40,7 @@ function run_test() {
   Services.prefs.setCharPref("browser.search.geoip.url", url);
   
   Services.prefs.setIntPref("browser.search.geoip.timeout", 10);
-  let promiseXHRStarted = waitForSearchNotification("geoip-lookup-xhr-starting");
+  let promiseXHRStarted = SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-starting");
   Services.search.init().then(() => {
     ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
     
@@ -60,7 +60,7 @@ function run_test() {
       
       xhr.timeout = 10;
       
-      waitForSearchNotification("geoip-lookup-xhr-complete").then(() => {
+      SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-complete").then(() => {
         
         checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.XHRTIMEOUT);
         
