@@ -68,7 +68,8 @@ Realm::~Realm() {
 
   
   
-  MOZ_ASSERT(!isDebuggee());
+  MOZ_ASSERT_IF(runtime_->gc.shutdownCollectedEverything(), !isDebuggee());
+  unsetIsDebuggee();
 
   MOZ_ASSERT(runtime_->numRealms > 0);
   runtime_->numRealms--;
