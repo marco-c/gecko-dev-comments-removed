@@ -97,8 +97,16 @@ this.backgroundPage = class extends ExtensionAPI {
     EventManager.primeListeners(extension);
 
     extension.once("start-background-page", async () => {
+      if (!this.extension) {
+        
+        
+        return;
+      }
       await this.build();
-      EventManager.clearPrimedListeners(extension);
+      
+      
+      
+      EventManager.clearPrimedListeners(extension, !!this.extension);
     });
 
     
@@ -121,6 +129,8 @@ this.backgroundPage = class extends ExtensionAPI {
   onShutdown() {
     if (this.bgPage) {
       this.bgPage.shutdown();
+    } else {
+      EventManager.clearPrimedListeners(this.extension, false);
     }
   }
 };

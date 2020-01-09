@@ -2157,7 +2157,10 @@ class EventManager {
 
   
   
-  static clearPrimedListeners(extension) {
+  
+  
+  
+  static clearPrimedListeners(extension, clearPersistent = true) {
     for (let [module, moduleEntry] of extension.persistentListeners) {
       for (let [event, listeners] of moduleEntry) {
         for (let [key, listener] of listeners) {
@@ -2170,7 +2173,9 @@ class EventManager {
             evt.reject(new Error("listener not re-registered"));
           }
 
-          EventManager.clearPersistentListener(extension, module, event, key);
+          if (clearPersistent) {
+            EventManager.clearPersistentListener(extension, module, event, key);
+          }
           primed.unregister();
         }
       }
