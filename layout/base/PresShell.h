@@ -111,6 +111,30 @@ class PresShell final : public nsIPresShell,
   
   static void ClearMouseCapture(nsIFrame* aFrame);
 
+#ifdef ACCESSIBILITY
+  
+
+
+  a11y::DocAccessible* GetDocAccessible() const { return mDocAccessible; }
+
+  
+
+
+  void SetDocAccessible(a11y::DocAccessible* aDocAccessible) {
+    mDocAccessible = aDocAccessible;
+  }
+
+  
+
+
+  static bool IsAccessibilityActive();
+
+  
+
+
+  static nsAccessibilityService* GetAccessibilityService();
+#endif  
+
   void Init(Document*, nsPresContext*, nsViewManager*);
   void Destroy() override;
 
@@ -1778,6 +1802,10 @@ class PresShell final : public nsIPresShell,
   
   
   nsCOMPtr<nsIContent> mContentToScrollTo;
+
+#ifdef ACCESSIBILITY
+  a11y::DocAccessible* mDocAccessible;
+#endif  
 
   nsSize mVisualViewportSize;
 
