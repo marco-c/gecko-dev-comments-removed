@@ -782,6 +782,16 @@ inline bool TryToOuterize(JS::MutableHandle<JS::Value> rval) {
   return true;
 }
 
+inline bool TryToOuterize(JS::MutableHandle<JSObject*> obj) {
+  if (js::IsWindow(obj)) {
+    JSObject* proxy = js::ToWindowProxyIfWindow(obj);
+    MOZ_ASSERT(proxy);
+    obj.set(proxy);
+  }
+
+  return true;
+}
+
 
 
 MOZ_ALWAYS_INLINE
@@ -810,6 +820,25 @@ bool MaybeWrapObjectValue(JSContext* cx, JS::MutableHandle<JS::Value> rval) {
   
   if (IsDOMObject(obj)) {
     return TryToOuterize(rval);
+  }
+
+  
+  
+  return true;
+}
+
+
+
+MOZ_ALWAYS_INLINE
+bool MaybeWrapObject(JSContext* cx, JS::MutableHandle<JSObject*> obj) {
+  if (js::GetObjectCompartment(obj) != js::GetContextCompartment(cx)) {
+    return JS_WrapObject(cx, obj);
+  }
+
+  
+  
+  if (IsDOMObject(obj)) {
+    return TryToOuterize(obj);
   }
 
   
