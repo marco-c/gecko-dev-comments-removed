@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/shared/flags"), require("devtools/client/shared/vendor/react-dom"), require("devtools/client/shared/vendor/lodash"));
+		module.exports = factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/shared/flags"), require("devtools/client/shared/vendor/react-dom"), require("devtools/client/shared/vendor/lodash"), require("devtools/client/framework/menu"), require("devtools/client/framework/menu-item"));
 	else if(typeof define === 'function' && define.amd)
-		define(["devtools/client/shared/vendor/react-prop-types", "devtools/client/shared/vendor/react-dom-factories", "devtools/client/shared/vendor/react", "Services", "devtools/shared/flags", "devtools/client/shared/vendor/react-dom", "devtools/client/shared/vendor/lodash"], factory);
+		define(["devtools/client/shared/vendor/react-prop-types", "devtools/client/shared/vendor/react-dom-factories", "devtools/client/shared/vendor/react", "Services", "devtools/shared/flags", "devtools/client/shared/vendor/react-dom", "devtools/client/shared/vendor/lodash", "devtools/client/framework/menu", "devtools/client/framework/menu-item"], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/shared/flags"), require("devtools/client/shared/vendor/react-dom"), require("devtools/client/shared/vendor/lodash")) : factory(root["devtools/client/shared/vendor/react-prop-types"], root["devtools/client/shared/vendor/react-dom-factories"], root["devtools/client/shared/vendor/react"], root["Services"], root["devtools/shared/flags"], root["devtools/client/shared/vendor/react-dom"], root["devtools/client/shared/vendor/lodash"]);
+		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/shared/flags"), require("devtools/client/shared/vendor/react-dom"), require("devtools/client/shared/vendor/lodash"), require("devtools/client/framework/menu"), require("devtools/client/framework/menu-item")) : factory(root["devtools/client/shared/vendor/react-prop-types"], root["devtools/client/shared/vendor/react-dom-factories"], root["devtools/client/shared/vendor/react"], root["Services"], root["devtools/shared/flags"], root["devtools/client/shared/vendor/react-dom"], root["devtools/client/shared/vendor/lodash"], root["devtools/client/framework/menu"], root["devtools/client/framework/menu-item"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_6__, __WEBPACK_EXTERNAL_MODULE_37__, __WEBPACK_EXTERNAL_MODULE_103__, __WEBPACK_EXTERNAL_MODULE_112__, __WEBPACK_EXTERNAL_MODULE_417__) {
+})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_6__, __WEBPACK_EXTERNAL_MODULE_37__, __WEBPACK_EXTERNAL_MODULE_103__, __WEBPACK_EXTERNAL_MODULE_112__, __WEBPACK_EXTERNAL_MODULE_417__, __WEBPACK_EXTERNAL_MODULE_490__, __WEBPACK_EXTERNAL_MODULE_491__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -1476,8 +1476,6 @@ module.exports = g;
 
 
 
-const Menu = __webpack_require__(421);
-const MenuItem = __webpack_require__(423);
 const { PrefsHelper } = __webpack_require__(424);
 const KeyShortcuts = __webpack_require__(425);
 const { ZoomKeys } = __webpack_require__(426);
@@ -1489,8 +1487,6 @@ const { getUnicodeHostname, getUnicodeUrlPath, getUnicodeUrl } = __webpack_requi
 
 module.exports = {
   KeyShortcuts,
-  Menu,
-  MenuItem,
   PrefsHelper,
   ZoomKeys,
   asyncStorage,
@@ -2529,7 +2525,8 @@ var substr = 'ab'.substr(-1) === 'b'
 
 
 
-const { Menu, MenuItem } = __webpack_require__(183);
+const Menu = __webpack_require__(490);
+const MenuItem = __webpack_require__(491);
 
 function inToolbox() {
   try {
@@ -2671,257 +2668,6 @@ module.exports = {
 
  }),
 
- 421:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _devtoolsServices = __webpack_require__(37);
-
-var _devtoolsServices2 = _interopRequireDefault(_devtoolsServices);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-const { appinfo } = _devtoolsServices2.default; 
-
-
-
-const isMacOS = appinfo.OS === "Darwin";
-
-const EventEmitter = __webpack_require__(65);
-
-
-
-
-
-
-
-
-
-
-
-
-
-function formatKeyShortcut(shortcut) {
-  if (isMacOS) {
-    return shortcut.replace(/Shift\+/g, "\u21E7").replace(/Command\+|Cmd\+/g, "\u2318").replace(/CommandOrControl\+|CmdOrCtrl\+/g, "\u2318").replace(/Alt\+/g, "\u2325");
-  }
-  return shortcut.replace(/CommandOrControl\+|CmdOrCtrl\+/g, `${L10N.getStr("ctrl")}+`).replace(/Shift\+/g, "Shift+");
-}
-
-function inToolbox() {
-  try {
-    return window.parent.document.documentURI.startsWith("about:devtools-toolbox");
-  } catch (e) {
-    
-    return true;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-function Menu({ id = null } = {}) {
-  this.menuitems = [];
-  this.id = id;
-
-  Object.defineProperty(this, "items", {
-    get() {
-      return this.menuitems;
-    }
-  });
-
-  EventEmitter.decorate(this);
-}
-
-
-
-
-
-
-Menu.prototype.append = function (menuItem) {
-  this.menuitems.push(menuItem);
-};
-
-
-
-
-
-
-
-Menu.prototype.insert = function (pos, menuItem) {
-  throw Error("Not implemented");
-};
-
-
-function getTopWindow(win) {
-  return win.windowRoot ? win.windowRoot.ownerGlobal : win.top;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-Menu.prototype.popup = function (screenX, screenY, doc) {
-  const win = doc.defaultView;
-  doc = getTopWindow(doc.defaultView).document;
-  let popupset = doc.querySelector("popupset");
-  if (!popupset) {
-    popupset = doc.createXULElement("popupset");
-    doc.documentElement.appendChild(popupset);
-  }
-  
-  
-  
-  
-  let popup = popupset.querySelector("menupopup[menu-api=\"true\"]");
-  if (popup) {
-    popup.hidePopup();
-  }
-
-  popup = this.createPopup(doc);
-  popup.setAttribute("menu-api", "true");
-
-  if (this.id) {
-    popup.id = this.id;
-  }
-  this._createMenuItems(popup);
-  
-  
-  const onWindowUnload = () => popup.hidePopup();
-  win.addEventListener("unload", onWindowUnload);
-
-  
-  popup.addEventListener("popuphidden", e => {
-    if (e.target === popup) {
-      win.removeEventListener("unload", onWindowUnload);
-      popup.remove();
-      this.emit("close", popup);
-    }
-  });
-
-  popup.addEventListener("popupshown", e => {
-    if (e.target === popup) {
-      this.emit("open", popup);
-    }
-  });
-
-  popupset.appendChild(popup);
-  popup.openPopupAtScreen(screenX, screenY, true);
-};
-
-Menu.prototype.createPopup = function (doc) {
-  const popup = doc.createXULElement("menupopup");
-  popup.setAttribute("menu-api", "true");
-  popup.setAttribute("consumeoutsideclicks", "false");
-  popup.setAttribute("incontentshell", "false");
-  return popup;
-};
-
-Menu.prototype._createMenuItems = function (parent) {
-  let doc = parent.ownerDocument;
-  this.menuitems.forEach(item => {
-    if (!item.visible) {
-      return;
-    }
-
-    if (item.submenu) {
-      let menupopup = doc.createXULElement("menupopup");
-      item.submenu._createMenuItems(menupopup);
-
-      let menuitem = doc.createXULElement("menuitem");
-      menuitem.setAttribute("label", item.label);
-      if (!inToolbox()) {
-        menuitem.textContent = item.label;
-      }
-
-      let menu = doc.createXULElement("menu");
-      menu.appendChild(menuitem);
-      menu.appendChild(menupopup);
-      if (item.disabled) {
-        menu.setAttribute("disabled", "true");
-      }
-      if (item.accesskey) {
-        menu.setAttribute("accesskey", item.accesskey);
-      }
-      if (item.id) {
-        menu.id = item.id;
-      }
-      if (item.accelerator) {
-        menuitem.setAttribute("acceltext", formatKeyShortcut(item.accelerator));
-      }
-      parent.appendChild(menu);
-    } else if (item.type === "separator") {
-      let menusep = doc.createXULElement("menuseparator");
-      parent.appendChild(menusep);
-    } else {
-      let menuitem = doc.createXULElement("menuitem");
-      menuitem.setAttribute("label", item.label);
-
-      if (!inToolbox()) {
-        menuitem.textContent = item.label;
-      }
-
-      menuitem.addEventListener("command", () => item.click());
-
-      if (item.type === "checkbox") {
-        menuitem.setAttribute("type", "checkbox");
-      }
-      if (item.type === "radio") {
-        menuitem.setAttribute("type", "radio");
-      }
-      if (item.disabled) {
-        menuitem.setAttribute("disabled", "true");
-      }
-      if (item.checked) {
-        menuitem.setAttribute("checked", "true");
-      }
-      if (item.accesskey) {
-        menuitem.setAttribute("accesskey", item.accesskey);
-      }
-      if (item.id) {
-        menuitem.id = item.id;
-      }
-      if (item.accelerator) {
-        menuitem.setAttribute("acceltext", formatKeyShortcut(item.accelerator));
-      }
-      parent.appendChild(menuitem);
-    }
-  });
-};
-
-Menu.setApplicationMenu = () => {
-  throw Error("Not implemented");
-};
-
-Menu.sendActionToFirstResponder = () => {
-  throw Error("Not implemented");
-};
-
-Menu.buildFromTemplate = () => {
-  throw Error("Not implemented");
-};
-
-module.exports = Menu;
-
- }),
-
  422:
  (function(module, exports, __webpack_require__) {
 
@@ -2957,79 +2703,6 @@ p.defer = function defer() {
 };
 
 module.exports = p;
-
- }),
-
- 423:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function MenuItem({
-  accesskey = null,
-  checked = false,
-  click = () => {},
-  disabled = false,
-  label = "",
-  id = null,
-  submenu = null,
-  type = "normal",
-  visible = true,
-  accelerator = ""
-} = {}) {
-  this.accesskey = accesskey;
-  this.checked = checked;
-  this.click = click;
-  this.disabled = disabled;
-  this.id = id;
-  this.label = label;
-  this.submenu = submenu;
-  this.type = type;
-  this.visible = visible;
-  this.accelerator = accelerator;
-}
-
-module.exports = MenuItem;
 
  }),
 
@@ -6037,6 +5710,10 @@ function createStructuredSelector(selectors) {
  445:
  (function(module, exports, __webpack_require__) {
 
+
+
+
+
 const SplitBox = __webpack_require__(446);
 
 module.exports = SplitBox;
@@ -6416,6 +6093,20 @@ function move(array, moveIndex, toIndex) {
   }
   return array;
 }
+
+ }),
+
+ 490:
+ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_490__;
+
+ }),
+
+ 491:
+ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_491__;
 
  }),
 
