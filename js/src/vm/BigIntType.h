@@ -208,6 +208,7 @@ class BigInt final : public js::gc::TenuredCell {
   
   
   
+  
   static constexpr size_t MaxBitLength = 1024 * 1024;
   static constexpr size_t MaxDigitLength = MaxBitLength / DigitBits;
 
