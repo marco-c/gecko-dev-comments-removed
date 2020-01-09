@@ -118,13 +118,13 @@ add_test(function() {
   var chan = make_channel(URL + '/body', null, function(chan) {
     chan.resetInterception();
   });
-  chan.asyncOpen2(new ChannelListener(handle_remote_response, null));
+  chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
 
 
 add_test(function() {
   var chan = make_channel(URL + '/body', NON_REMOTE_BODY);
-  chan.asyncOpen2(new ChannelListener(handle_synthesized_response, null, CL_ALLOW_UNKNOWN_CL));
+  chan.asyncOpen(new ChannelListener(handle_synthesized_response, null, CL_ALLOW_UNKNOWN_CL));
 });
 
 
@@ -133,13 +133,13 @@ add_test(function() {
   var chan = make_channel(URL + '/body', null, function(chan) {
     chan.resetInterception();
   });
-  chan.asyncOpen2(new ChannelListener(handle_remote_response, null));
+  chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
 
 
 add_test(function() {
   var chan = make_channel(URL + '/body', NON_REMOTE_BODY_2);
-  chan.asyncOpen2(new ChannelListener(handle_synthesized_response_2, null, CL_ALLOW_UNKNOWN_CL));
+  chan.asyncOpen(new ChannelListener(handle_synthesized_response_2, null, CL_ALLOW_UNKNOWN_CL));
 });
 
 
@@ -154,7 +154,7 @@ add_test(function() {
       channel.finishSynthesizedResponse();
     });
   });
-  chan.asyncOpen2(new ChannelListener(handle_synthesized_response, null));
+  chan.asyncOpen(new ChannelListener(handle_synthesized_response, null));
 });
 
 
@@ -164,7 +164,7 @@ add_test(function() {
       chan.resetInterception();
     });
   });
-  chan.asyncOpen2(new ChannelListener(handle_remote_response, null));
+  chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
 
 
@@ -180,7 +180,7 @@ add_test(function() {
     intercepted.startSynthesizedResponse(synthesized, null, null, '', false);
     intercepted.finishSynthesizedResponse();
   });
-  chan.asyncOpen2(new ChannelListener(handle_synthesized_response, null,
+  chan.asyncOpen(new ChannelListener(handle_synthesized_response, null,
 				     CL_ALLOW_UNKNOWN_CL | CL_SUSPEND | CL_EXPECT_3S_DELAY));
 });
 
@@ -189,7 +189,7 @@ add_test(function() {
   var chan = make_channel(URL + '/body', null, function(intercepted) {
     intercepted.cancelInterception(Cr.NS_BINDING_ABORTED);
   });
-  chan.asyncOpen2(new ChannelListener(run_next_test, null, CL_EXPECT_FAILURE));
+  chan.asyncOpen(new ChannelListener(run_next_test, null, CL_EXPECT_FAILURE));
 });
 
 
@@ -206,7 +206,7 @@ add_test(function() {
       Assert.ok(gotexception);
     });
   });
-  chan.asyncOpen2(new ChannelListener(handle_remote_response, null));
+  chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
 
 
@@ -221,7 +221,7 @@ add_test(function() {
     intercepted.finishSynthesizedResponse();
     channel.cancel(Cr.NS_BINDING_ABORTED);
   });
-  chan.asyncOpen2(new ChannelListener(run_next_test, null,
+  chan.asyncOpen(new ChannelListener(run_next_test, null,
                                      CL_EXPECT_FAILURE | CL_ALLOW_UNKNOWN_CL));
 });
 
@@ -239,7 +239,7 @@ add_test(function() {
     intercepted.startSynthesizedResponse(synthesized, null, null, '', false);
     intercepted.finishSynthesizedResponse();
   });
-  chan.asyncOpen2(new ChannelListener(run_next_test, null,
+  chan.asyncOpen(new ChannelListener(run_next_test, null,
                                      CL_EXPECT_FAILURE | CL_ALLOW_UNKNOWN_CL));
 });
 
@@ -250,7 +250,7 @@ add_test(function() {
   var chan = make_channel(URL + '/body', null, function(chan) {
     throw('boom');
   });
-  chan.asyncOpen2(new ChannelListener(handle_remote_response, null));
+  chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
 
 add_test(function() {

@@ -31,7 +31,7 @@ function run_test()
 
     
     var channel = setupChannel("/redirect1");
-    channel.asyncOpen2(new ChannelListener(checkValueAndTrigger, null));
+    channel.asyncOpen(new ChannelListener(checkValueAndTrigger, null));
     do_test_pending();
 }
 

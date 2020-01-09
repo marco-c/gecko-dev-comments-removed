@@ -96,7 +96,7 @@ function *testSteps() {
 
   
   var channel = make_channel("http://localhost:" + PORT + "/rcwn");
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   equal(gResponseCounter, 1);
   equal(g200Counter, 1, "check number of 200 responses");
@@ -104,7 +104,7 @@ function *testSteps() {
 
   
   var channel = make_channel("http://localhost:" + PORT + "/rcwn");
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   equal(gResponseCounter, 2);
   equal(g200Counter, 1, "check number of 200 responses");
@@ -114,7 +114,7 @@ function *testSteps() {
   var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_delayCacheEntryOpeningBy(200);
   let startTime = Date.now();
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   greaterOrEqual(Date.now() - startTime, 200, "Check that timer works properly");
   equal(gResponseCounter, 3);
@@ -124,7 +124,7 @@ function *testSteps() {
   
   var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_delayCacheEntryOpeningBy(100000);
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   do_timeout(50, function() {
     channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerDelayedOpenCacheEntry();
   });
@@ -136,7 +136,7 @@ function *testSteps() {
   
   var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_delayCacheEntryOpeningBy(100000);
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerNetwork(50);
   yield undefined;
@@ -149,7 +149,7 @@ function *testSteps() {
   
   var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_delayCacheEntryOpeningBy(100000);
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   do_timeout(50, function() {
     channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerNetwork(0);
     executeSoon(() => { channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerDelayedOpenCacheEntry(); });
@@ -162,7 +162,7 @@ function *testSteps() {
   
   var channel = make_channel("http://localhost:" + PORT + "/rcwn");
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_delayCacheEntryOpeningBy(100000);
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   do_timeout(50, function() {
     channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerDelayedOpenCacheEntry();
     channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerNetwork(0);
@@ -174,7 +174,7 @@ function *testSteps() {
 
   
   var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   equal(gResponseCounter, 8);
   equal(g200Counter, 4, "check number of 200 responses");
@@ -182,7 +182,7 @@ function *testSteps() {
 
   
   var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   yield undefined;
   equal(gResponseCounter, 9);
   equal(g200Counter, 4, "check number of 200 responses");
@@ -192,7 +192,7 @@ function *testSteps() {
   gIsFromCache = 0;
   var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_delayCacheEntryOpeningBy(100000);
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerNetwork(50);
   yield undefined;
@@ -204,7 +204,7 @@ function *testSteps() {
   
   var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
   channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_delayCacheEntryOpeningBy(100000);
-  channel.asyncOpen2(new ChannelListener(checkContent, null));
+  channel.asyncOpen(new ChannelListener(checkContent, null));
   do_timeout(50, function() {
     channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerNetwork(0);
     channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerDelayedOpenCacheEntry();
@@ -222,7 +222,7 @@ function *testSteps() {
   for (var i = 0; i < 50; i++) {
     var channel = make_channel("http://localhost:" + PORT + "/rcwn_cached");
     channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_delayCacheEntryOpeningBy(100000);
-    channel.asyncOpen2(new ChannelListener(checkContent, null));
+    channel.asyncOpen(new ChannelListener(checkContent, null));
     channel.QueryInterface(Ci.nsIRaceCacheWithNetwork).test_triggerNetwork(10);
     
     

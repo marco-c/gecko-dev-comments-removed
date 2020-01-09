@@ -76,7 +76,7 @@ function setup_test() {
   Assert.equal(setOK, "http://foo2.invalid:90/bar");
 
   
-  channel.asyncOpen2(new ChannelListener(checkRequestResponse, channel));
+  channel.asyncOpen(new ChannelListener(checkRequestResponse, channel));
 
   if (dbg) { print("============== setup_test: out"); }
 }

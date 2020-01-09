@@ -2457,7 +2457,7 @@ nsresult nsObjectLoadingContent::OpenChannel() {
   }
 
   
-  rv = chan->AsyncOpen2(shim);
+  rv = chan->AsyncOpen(shim);
   NS_ENSURE_SUCCESS(rv, rv);
   LOG(("OBJLC [%p]: Channel opened", this));
   mChannel = chan;

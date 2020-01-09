@@ -139,7 +139,7 @@ var tests = [
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       Assert.equal(body, "Response body 1");
       sync_and_run_next_test();
     }, null, CL_NOT_FROM_CACHE));
@@ -148,7 +148,7 @@ var tests = [
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       Assert.equal(body, "Response body 2");
       sync_and_run_next_test();
     }, null, CL_NOT_FROM_CACHE));
@@ -157,7 +157,7 @@ var tests = [
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       Assert.equal(body, "Response body 2");
       sync_and_run_next_test();
     }, null, CL_FROM_CACHE));
@@ -166,7 +166,7 @@ var tests = [
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       Assert.equal(body, "Response body 3");
       sync_and_run_next_test();
     }, null, CL_NOT_FROM_CACHE));
@@ -175,7 +175,7 @@ var tests = [
   
   function() {
     var ch = makeChan();
-    ch.asyncOpen2(new ChannelListener(function(req, body) {
+    ch.asyncOpen(new ChannelListener(function(req, body) {
       Assert.equal(body, "Response body 3");
       sync_and_run_next_test();
     }, null, CL_FROM_CACHE));

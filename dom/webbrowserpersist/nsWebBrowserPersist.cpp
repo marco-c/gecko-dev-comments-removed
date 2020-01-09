@@ -512,7 +512,7 @@ nsresult nsWebBrowserPersist::StartUpload(nsIInputStream *aInputStream,
   
   nsresult rv = uploadChannel->SetUploadStream(aInputStream, aContentType, -1);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-  rv = destChannel->AsyncOpen2(this);
+  rv = destChannel->AsyncOpen(this);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
   
@@ -1339,7 +1339,7 @@ nsresult nsWebBrowserPersist::SaveChannelInternal(nsIChannel *aChannel,
 
   if (fc && !fu) {
     nsCOMPtr<nsIInputStream> fileInputStream, bufferedInputStream;
-    nsresult rv = NS_MaybeOpenChannelUsingOpen2(
+    nsresult rv = NS_MaybeOpenChannelUsingOpen(
         aChannel, getter_AddRefs(fileInputStream));
     NS_ENSURE_SUCCESS(rv, rv);
     rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedInputStream),
@@ -1358,7 +1358,7 @@ nsresult nsWebBrowserPersist::SaveChannelInternal(nsIChannel *aChannel,
   }
 
   
-  nsresult rv = NS_MaybeOpenChannelUsingAsyncOpen2(aChannel, this);
+  nsresult rv = NS_MaybeOpenChannelUsingAsyncOpen(aChannel, this);
   if (rv == NS_ERROR_NO_CONTENT) {
     
     

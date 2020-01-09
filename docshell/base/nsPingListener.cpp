@@ -220,7 +220,7 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
   chan->SetLoadGroup(loadGroup);
 
   RefPtr<nsPingListener> pingListener = new nsPingListener();
-  chan->AsyncOpen2(pingListener);
+  chan->AsyncOpen(pingListener);
 
   
   

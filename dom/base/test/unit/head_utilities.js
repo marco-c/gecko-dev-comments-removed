@@ -31,7 +31,7 @@ function loadContentFile(aFile, aCharset) {
 
     var inputStream = Cc["@mozilla.org/intl/converter-input-stream;1"]
                        .createInstance(Ci.nsIConverterInputStream);
-    inputStream.init(chann.open2(), aCharset, 1024, replacementChar);
+    inputStream.init(chann.open(), aCharset, 1024, replacementChar);
     var str = {}, content = "";
     while (inputStream.readString(4096, str) != 0) {
         content += str.value;

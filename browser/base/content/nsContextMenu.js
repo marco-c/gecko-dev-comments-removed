@@ -1230,7 +1230,7 @@ nsContextMenu.prototype = {
                            timer.TYPE_ONE_SHOT);
 
     
-    channel.asyncOpen2(new saveAsListener());
+    channel.asyncOpen(new saveAsListener());
   },
 
   

@@ -222,7 +222,6 @@ class nsBaseChannel
   
   void ChannelDone() {
     mListener = nullptr;
-    mListenerContext = nullptr;
     OnChannelDone();
   }
 
@@ -279,7 +278,6 @@ class nsBaseChannel
   nsCOMPtr<nsILoadInfo> mLoadInfo;
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
   nsCOMPtr<nsIStreamListener> mListener;
-  nsCOMPtr<nsISupports> mListenerContext;
   nsresult mStatus;
   uint32_t mContentDispositionHint;
   nsAutoPtr<nsString> mContentDispositionFilename;

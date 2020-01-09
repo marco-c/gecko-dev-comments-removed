@@ -1220,7 +1220,7 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
   channel->SetLoadGroup(loadGroup);
 
   RefPtr<BeaconStreamListener> beaconListener = new BeaconStreamListener();
-  rv = channel->AsyncOpen2(beaconListener);
+  rv = channel->AsyncOpen(beaconListener);
   
   NS_ENSURE_SUCCESS(rv, false);
 

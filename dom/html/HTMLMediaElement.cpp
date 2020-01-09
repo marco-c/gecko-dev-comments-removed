@@ -1337,7 +1337,7 @@ class HTMLMediaElement::ChannelLoader final {
       aElement->SetRequestHeaders(hc);
     }
 
-    rv = channel->AsyncOpen2(loadListener);
+    rv = channel->AsyncOpen(loadListener);
     if (NS_FAILED(rv)) {
       
       aElement->NotifyLoadError(NS_LITERAL_CSTRING("Failed to open channel"));

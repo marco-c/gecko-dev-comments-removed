@@ -187,7 +187,7 @@ function makeAsyncTest(uri, headerValue, nextTask)
   var test = function()
   {
     var chan = make_channel(uri);
-    chan.asyncOpen2(new ChannelListener(verifier));
+    chan.asyncOpen(new ChannelListener(verifier));
   };
   return test;
 }

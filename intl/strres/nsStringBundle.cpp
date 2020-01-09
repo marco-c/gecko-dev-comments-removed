@@ -457,7 +457,7 @@ nsresult nsStringBundleBase::ParseProperties(nsIPersistentProperties** aProps) {
     
     channel->SetContentType(NS_LITERAL_CSTRING("text/plain"));
 
-    rv = channel->Open2(getter_AddRefs(in));
+    rv = channel->Open(getter_AddRefs(in));
     if (NS_FAILED(rv)) return rv;
   }
 

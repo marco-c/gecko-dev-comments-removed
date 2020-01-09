@@ -85,8 +85,8 @@ class nsSecCheckWrapChannel : public nsSecCheckWrapChannelBase {
   NS_IMETHOD GetLoadInfo(nsILoadInfo** aLoadInfo) override;
   NS_IMETHOD SetLoadInfo(nsILoadInfo* aLoadInfo) override;
 
-  NS_IMETHOD AsyncOpen2(nsIStreamListener* aListener) override;
-  NS_IMETHOD Open2(nsIInputStream** aStream) override;
+  NS_IMETHOD AsyncOpen(nsIStreamListener* aListener) override;
+  NS_IMETHOD Open(nsIInputStream** aStream) override;
 
   nsSecCheckWrapChannel(nsIChannel* aChannel, nsILoadInfo* aLoadInfo);
   static already_AddRefed<nsIChannel> MaybeWrap(nsIChannel* aChannel,

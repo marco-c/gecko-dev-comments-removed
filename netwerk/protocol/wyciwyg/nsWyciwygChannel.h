@@ -83,7 +83,6 @@ class nsWyciwygChannel final
   nsCOMPtr<nsIProgressEventSink> mProgressSink;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
   nsCOMPtr<nsIStreamListener> mListener;
-  nsCOMPtr<nsISupports> mListenerContext;
 
   
   nsCOMPtr<nsIInputStreamPump> mPump;

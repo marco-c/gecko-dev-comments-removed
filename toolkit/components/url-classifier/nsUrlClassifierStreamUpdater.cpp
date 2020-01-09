@@ -191,7 +191,7 @@ nsresult nsUrlClassifierStreamUpdater::FetchUpdate(
   }
 
   
-  rv = mChannel->AsyncOpen2(this);
+  rv = mChannel->AsyncOpen(this);
   NS_ENSURE_SUCCESS(rv, rv);
 
   mTelemetryClockStart = PR_IntervalNow();

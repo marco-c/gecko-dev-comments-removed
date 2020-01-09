@@ -749,9 +749,6 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
     MOZ_LOG(sCSMLog, LogLevel::Debug,
             ("  initalSecurityChecksDone: %s\n",
              aLoadInfo->GetInitialSecurityCheckDone() ? "true" : "false"));
-    MOZ_LOG(sCSMLog, LogLevel::Debug,
-            ("  enforceSecurity: %s\n",
-             aLoadInfo->GetEnforceSecurity() ? "true" : "false"));
 
     
     nsCOMPtr<nsIContentSecurityPolicy> csp;
@@ -819,13 +816,6 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
   nsresult rv = ValidateSecurityFlags(loadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
-  
-  
-  loadInfo->SetEnforceSecurity(true);
-
   if (loadInfo->GetSecurityMode() ==
       nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
     rv = DoCORSChecks(aChannel, loadInfo, aInAndOutListener);
@@ -855,8 +845,7 @@ nsContentSecurityManager::AsyncOnChannelRedirect(
     nsIChannel* aOldChannel, nsIChannel* aNewChannel, uint32_t aRedirFlags,
     nsIAsyncVerifyRedirectCallback* aCb) {
   nsCOMPtr<nsILoadInfo> loadInfo = aOldChannel->GetLoadInfo();
-  
-  if (loadInfo && loadInfo->GetEnforceSecurity()) {
+  if (loadInfo) {
     nsresult rv = CheckChannel(aNewChannel);
     if (NS_SUCCEEDED(rv)) {
       rv = CheckFTPSubresourceLoad(aNewChannel);

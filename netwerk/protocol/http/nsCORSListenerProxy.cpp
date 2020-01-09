@@ -982,7 +982,7 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   
   
   
-  if (!mWithCredentials && (!loadInfo || !loadInfo->GetEnforceSecurity())) {
+  if (!mWithCredentials) {
     nsLoadFlags flags;
     rv = http->GetLoadFlags(&flags);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1529,7 +1529,7 @@ nsresult nsCORSListenerProxy::StartCORSPreflight(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = preflightChannel->AsyncOpen2(preflightListener);
+  rv = preflightChannel->AsyncOpen(preflightListener);
   NS_ENSURE_SUCCESS(rv, rv);
 
   

@@ -53,7 +53,7 @@ function checkNormal(request, buffer)
 }
 add_test(function test_normal() {
   var chan = make_channel_for_offline_use(baseURI + normalEntry);
-  chan.asyncOpen2(new ChannelListener(checkNormal, chan));
+  chan.asyncOpen(new ChannelListener(checkNormal, chan));
 });
 
 
@@ -73,7 +73,7 @@ function checkNoStore(request, buffer)
 add_test(function test_noStore() {
   var chan = make_channel_for_offline_use(baseURI + noStoreEntry);
   
-  chan.asyncOpen2(new ChannelListener(checkNoStore, chan, CL_EXPECT_FAILURE));
+  chan.asyncOpen(new ChannelListener(checkNoStore, chan, CL_EXPECT_FAILURE));
 });
 
 function run_test()

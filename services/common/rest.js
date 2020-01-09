@@ -326,7 +326,7 @@ RESTRequest.prototype = {
 
     
     try {
-      channel.asyncOpen2(this);
+      channel.asyncOpen(this);
     } catch (ex) {
       
       this._log.warn("Caught an error in asyncOpen", ex);

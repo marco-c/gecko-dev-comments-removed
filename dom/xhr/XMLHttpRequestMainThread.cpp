@@ -2620,7 +2620,7 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
   }
 
   
-  rv = mChannel->AsyncOpen2(listener);
+  rv = mChannel->AsyncOpen(listener);
   listener = nullptr;
   if (NS_WARN_IF(NS_FAILED(rv))) {
     

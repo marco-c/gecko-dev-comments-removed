@@ -1110,7 +1110,7 @@ nsresult nsCSPContext::SendReports(
 
     RefPtr<CSPViolationReportListener> listener =
         new CSPViolationReportListener();
-    rv = reportChannel->AsyncOpen2(listener);
+    rv = reportChannel->AsyncOpen(listener);
 
     
     
