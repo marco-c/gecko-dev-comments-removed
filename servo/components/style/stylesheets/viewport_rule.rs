@@ -38,11 +38,8 @@ use style_traits::{CssWriter, ParseError, PinchZoomFactor, StyleParseErrorKind, 
 
 #[cfg(feature = "servo")]
 pub fn enabled() -> bool {
-    use servo_config::prefs::PREFS;
-    PREFS
-        .get("layout.viewport.enabled")
-        .as_boolean()
-        .unwrap_or(false)
+    use servo_config::pref;
+    pref!(layout.viewport.enabled)
 }
 
 
