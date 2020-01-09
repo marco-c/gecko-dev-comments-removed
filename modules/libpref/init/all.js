@@ -2350,7 +2350,6 @@ pref("network.proxy.failover_timeout",      1800);
 pref("network.online",                      true); 
 pref("network.cookie.thirdparty.sessionOnly", false);
 pref("network.cookie.thirdparty.nonsecureSessionOnly", false);
-pref("network.cookie.same-site.enabled",    true); 
 
 
 

@@ -80,7 +80,6 @@ using namespace mozilla::net;
 
 
 static StaticRefPtr<nsCookieService> gCookieService;
-bool nsCookieService::sSameSiteEnabled = false;
 
 
 
@@ -2976,16 +2975,6 @@ bool nsCookieService::DomainMatches(nsCookie* aCookie,
          (aCookie->IsDomain() && StringEndsWith(aHost, aCookie->Host()));
 }
 
-bool nsCookieService::IsSameSiteEnabled() {
-  static bool prefInitialized = false;
-  if (!prefInitialized) {
-    Preferences::AddBoolVarCache(&sSameSiteEnabled,
-                                 "network.cookie.same-site.enabled", false);
-    prefInitialized = true;
-  }
-  return sSameSiteEnabled;
-}
-
 bool nsCookieService::PathMatches(nsCookie* aCookie, const nsACString& aPath) {
   
   uint32_t cookiePathLen = aCookie->Path().Length();
@@ -3111,7 +3100,7 @@ void nsCookieService::GetCookiesForURI(
 
     int32_t sameSiteAttr = 0;
     cookie->GetSameSite(&sameSiteAttr);
-    if (aIsSameSiteForeign && IsSameSiteEnabled()) {
+    if (aIsSameSiteForeign) {
       
       
       if (sameSiteAttr == nsICookie2::SAMESITE_STRICT) {
@@ -3374,7 +3363,7 @@ bool nsCookieService::CanSetCookie(nsIURI* aHostURI, const nsCookieKey& aKey,
   
   
   if ((aCookieAttributes.sameSite != nsICookie2::SAMESITE_UNSET) &&
-      aThirdPartyUtil && IsSameSiteEnabled()) {
+      aThirdPartyUtil) {
     
     bool addonAllowsLoad = false;
     if (aChannel) {
