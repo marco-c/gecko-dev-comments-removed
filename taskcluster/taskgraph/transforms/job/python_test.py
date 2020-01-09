@@ -39,7 +39,7 @@ def configure_python_test(config, job, taskdesc):
 
     if worker['os'] == 'macosx' and run['python-version'] == 3:
         
-        run['python-version'] = '/usr/local/bin/python3'
+        run['python-version'] = '/tools/python36/bin/python3.6'
 
     
     run['mach'] = 'python-test --python {python-version} --subsuite {subsuite}'.format(**run)
