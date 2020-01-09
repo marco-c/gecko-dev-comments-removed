@@ -94,6 +94,10 @@ bool JS::IsArray(JSContext* cx, HandleObject obj, bool* isArray) {
   return true;
 }
 
+bool js::IsArrayFromJit(JSContext* cx, HandleObject obj, bool* isArray) {
+  return JS::IsArray(cx, obj, isArray);
+}
+
 
 static bool ToLengthClamped(JSContext* cx, HandleValue v, uint32_t* out) {
   if (v.isInt32()) {
