@@ -684,6 +684,11 @@ Simulator::VisitCallRedirection(const Instruction* instr)
   }
 
   
+  
+  for (int i = 1; i <= 18; i++) {
+    
+    set_xreg(i, int64_t(0xc0defeed1badda7a));
+  }
 
   
   VIXL_ASSERT(xreg(19) == x19);
