@@ -163,7 +163,7 @@ class nsAutoScrollTimer final : public nsITimerCallback, public nsINamed {
     
     mPresContext = aPresContext;
 
-    mContent = nsIPresShell::GetCapturingContent();
+    mContent = PresShell::GetCapturingContent();
 
     if (!mTimer) {
       mTimer = NS_NewTimer(

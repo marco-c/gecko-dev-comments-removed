@@ -6336,7 +6336,7 @@ void nsGlobalWindowOuter::EnterModalState() {
   
   
   Document* topDoc = topWin->GetExtantDoc();
-  nsIContent* capturingContent = nsIPresShell::GetCapturingContent();
+  nsIContent* capturingContent = PresShell::GetCapturingContent();
   if (capturingContent && topDoc &&
       nsContentUtils::ContentIsCrossDocDescendantOf(capturingContent, topDoc)) {
     PresShell::ReleaseCapturingContent();

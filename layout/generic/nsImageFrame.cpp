@@ -2231,7 +2231,7 @@ nsresult nsImageFrame::GetContentForEvent(WidgetEvent* aEvent,
   
   
   nsIContent* capturingContent = aEvent->HasMouseEventMessage()
-                                     ? nsIPresShell::GetCapturingContent()
+                                     ? PresShell::GetCapturingContent()
                                      : nullptr;
   if (capturingContent && capturingContent->GetPrimaryFrame() == this) {
     *aContent = capturingContent;

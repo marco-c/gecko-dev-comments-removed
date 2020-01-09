@@ -446,7 +446,7 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
     if (anchorRoot == contentRoot) {
       
       
-      nsIContent* capturedContent = nsIPresShell::GetCapturingContent();
+      nsIContent* capturedContent = PresShell::GetCapturingContent();
       if (capturedContent != content) {
         return NS_OK;
       }

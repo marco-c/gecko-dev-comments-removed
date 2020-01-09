@@ -73,6 +73,34 @@ class PresShell final : public nsIPresShell,
 
   static bool AccessibleCaretEnabled(nsIDocShell* aDocShell);
 
+  
+
+
+  static nsIContent* GetCapturingContent() {
+    return sCapturingContentInfo.mContent;
+  }
+
+  
+
+
+  static void AllowMouseCapture(bool aAllowed) {
+    sCapturingContentInfo.mAllowed = aAllowed;
+  }
+
+  
+
+
+
+  static bool IsMouseCapturePreventingDrag() {
+    return sCapturingContentInfo.mPreventDrag && sCapturingContentInfo.mContent;
+  }
+
+  static void ClearMouseCaptureOnView(nsView* aView);
+
+  
+  
+  static void ClearMouseCapture(nsIFrame* aFrame);
+
   void Init(Document*, nsPresContext*, nsViewManager*);
   void Destroy() override;
 
@@ -238,7 +266,6 @@ class PresShell final : public nsIPresShell,
 
   void ScheduleViewManagerFlush(PaintType aType = PaintType::Default);
 
-  void ClearMouseCaptureOnView(nsView* aView) override;
   bool IsVisible() override;
   void SuppressDisplayport(bool aEnabled) override;
   void RespectDisplayportSuppression(bool aEnabled) override;
@@ -1550,6 +1577,8 @@ class PresShell final : public nsIPresShell,
   
   nsCOMPtr<nsIContent> mContentToScrollTo;
 
+  TimeStamp mLastOSWake;
+
   
   uint64_t mAPZFocusSequenceNumber;
   
@@ -1597,9 +1626,23 @@ class PresShell final : public nsIPresShell,
   
   bool mInitializedWithClickEventDispatchingBlacklist : 1;
 
-  static bool sDisableNonTestMouseEvents;
+  struct CapturingContentInfo final {
+    CapturingContentInfo()
+        : mAllowed(false),
+          mPointerLock(false),
+          mRetargetToElement(false),
+          mPreventDrag(false) {}
 
-  TimeStamp mLastOSWake;
+    
+    StaticRefPtr<nsIContent> mContent;
+    bool mAllowed;
+    bool mPointerLock;
+    bool mRetargetToElement;
+    bool mPreventDrag;
+  };
+  static CapturingContentInfo sCapturingContentInfo;
+
+  static bool sDisableNonTestMouseEvents;
 
   static bool sProcessInteractable;
 };

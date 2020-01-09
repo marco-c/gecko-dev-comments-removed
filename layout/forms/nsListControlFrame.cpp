@@ -824,7 +824,7 @@ void nsListControlFrame::CaptureMouseEvents(bool aGrabMouseEvents) {
   if (aGrabMouseEvents) {
     PresShell::SetCapturingContent(mContent, CaptureFlags::IgnoreAllowedState);
   } else {
-    nsIContent* capturingContent = nsIPresShell::GetCapturingContent();
+    nsIContent* capturingContent = PresShell::GetCapturingContent();
 
     bool dropDownIsHidden = false;
     if (IsInDropDownMode()) {
@@ -1606,7 +1606,7 @@ nsresult nsListControlFrame::GetIndexFromDOMEvent(dom::Event* aMouseEvent,
                                                   int32_t& aCurIndex) {
   if (IgnoreMouseEventForSelection(aMouseEvent)) return NS_ERROR_FAILURE;
 
-  if (nsIPresShell::GetCapturingContent() != mContent) {
+  if (PresShell::GetCapturingContent() != mContent) {
     
     nsPoint pt =
         nsLayoutUtils::GetDOMEventCoordinatesRelativeTo(aMouseEvent, this);
