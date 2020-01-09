@@ -232,7 +232,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   UniqueCERTCertList& mBuiltChain;    
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname;  
-  nsCOMPtr<nsICertStorage> mCertBlocklist;
+  nsCOMPtr<nsICertStorage> mCertStorage;
   CertVerifier::OCSPStaplingStatus mOCSPStaplingStatus;
   
   UniqueSECItem mSCTListFromCertificate;
