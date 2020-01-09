@@ -118,6 +118,12 @@ export function setPreview(
           return;
         }
 
+        
+        
+        if (result.class && result.class.includes("InvisibleToDebugger")) {
+          return;
+        }
+
         const root = {
           name: expression,
           path: expression,
