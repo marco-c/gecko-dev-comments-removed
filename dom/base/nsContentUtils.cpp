@@ -9540,7 +9540,7 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
   
   
   
-  CustomElementDefinition* definition = aDefinition;
+  RefPtr<CustomElementDefinition> definition = aDefinition;
   if (isCustomElement && !definition) {
     MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
     definition = nsContentUtils::LookupCustomElementDefinition(
@@ -9620,8 +9620,9 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     
     if (synchronousCustomElements) {
       definition->mPrefixStack.AppendElement(nodeInfo->GetPrefixAtom());
-      DoCustomElementCreate(aResult, nodeInfo->GetDocument(), nodeInfo,
-                            definition->mConstructor, rv);
+      RefPtr<Document> doc = nodeInfo->GetDocument();
+      DoCustomElementCreate(aResult, doc, nodeInfo,
+                            MOZ_KnownLive(definition->mConstructor), rv);
       if (rv.MaybeSetPendingException(cx)) {
         if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
           NS_IF_ADDREF(*aResult = NS_NewHTMLUnknownElement(nodeInfo.forget(),
