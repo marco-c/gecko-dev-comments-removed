@@ -39,8 +39,15 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   if (mFrameLoader) {
     
     
+    bool isChromeRemoteToLocal =
+        XRE_IsParentProcess() && (!aOptions.mRemoteType.WasPassed() ||
+                                  aOptions.mRemoteType.Value().IsVoid());
+
     
-    if (!aOptions.mReplaceBrowsingContext) {
+    
+    
+    if (!aOptions.mReplaceBrowsingContext &&
+        !isChromeRemoteToLocal) {
       bc = mFrameLoader->GetBrowsingContext();
       mFrameLoader->SkipBrowsingContextDetach();
     }
