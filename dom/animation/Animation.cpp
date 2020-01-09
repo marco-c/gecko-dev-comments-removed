@@ -596,6 +596,23 @@ void Animation::Reverse(ErrorResult& aRv) {
   
 }
 
+void Animation::Persist() {
+  if (mReplaceState == AnimationReplaceState::Persisted) {
+    return;
+  }
+
+  bool wasRemoved = mReplaceState == AnimationReplaceState::Removed;
+
+  mReplaceState = AnimationReplaceState::Persisted;
+
+  
+  
+  if (wasRemoved) {
+    UpdateEffect(PostRestyleMode::IfNeeded);
+    PostUpdate();
+  }
+}
+
 
 
 
