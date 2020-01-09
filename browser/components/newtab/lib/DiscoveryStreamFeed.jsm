@@ -42,6 +42,12 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     return this._prefCache.config;
   }
 
+  get showSpocs() {
+    
+    
+    return this.store.getState().Prefs.values.showSponsored && this.config.show_spocs;
+  }
+
   setupPrefs() {
     Services.prefs.addObserver(CONFIG_PREF_NAME, this);
     
@@ -157,31 +163,40 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
   async loadSpocs() {
     const cachedData = await this.cache.get() || {};
-    let {spocs} = cachedData;
-    if (!spocs || !(Date.now() - spocs.lastUpdated < SPOCS_FEEDS_UPDATE_TIME)) {
-      const spocsResponse = await this.fetchSpocs();
-      if (spocsResponse) {
-        spocs = {
-          lastUpdated: Date.now(),
-          data: spocsResponse,
-        };
-        await this.cache.set("spocs", spocs);
-      } else {
-        Cu.reportError("No response for spocs_endpoint prop");
-        
-        spocs = spocs || {};
+    let spocs;
+
+    if (this.showSpocs) {
+      spocs = cachedData.spocs;
+      if (!spocs || !(Date.now() - spocs.lastUpdated < SPOCS_FEEDS_UPDATE_TIME)) {
+        const spocsResponse = await this.fetchSpocs();
+        if (spocsResponse) {
+          spocs = {
+            lastUpdated: Date.now(),
+            data: spocsResponse,
+          };
+          await this.cache.set("spocs", spocs);
+        } else {
+          Cu.reportError("No response for spocs_endpoint prop");
+        }
       }
     }
 
-    if (spocs) {
-      this.store.dispatch(ac.BroadcastToContent({
-        type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
-        data: {
-          lastUpdated: spocs.lastUpdated,
-          spocs: spocs.data,
-        },
-      }));
-    }
+    
+    
+    
+    
+    spocs = spocs || {
+      lastUpdated: Date.now(),
+      data: {},
+    };
+
+    this.store.dispatch(ac.BroadcastToContent({
+      type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
+      data: {
+        lastUpdated: spocs.lastUpdated,
+        spocs: spocs.data,
+      },
+    }));
   }
 
   async getComponentFeed(feedUrl) {
@@ -274,6 +289,12 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       case at.UNINIT:
         
         this.uninitPrefs();
+        break;
+      case at.PREF_CHANGED:
+        
+        if (action.data.name === "showSponsored") {
+          await this.loadSpocs();
+        }
         break;
     }
   }
