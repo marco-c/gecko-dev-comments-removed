@@ -483,10 +483,11 @@ VARCACHE_PREF(
 )
 
 
+
 VARCACHE_PREF(
   "dom.xhr.standard_content_type_normalization",
    dom_xhr_standard_content_type_normalization,
-  RelaxedAtomicBool, true
+  RelaxedAtomicBool, false
 )
 
 
