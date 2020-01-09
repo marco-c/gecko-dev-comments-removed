@@ -978,6 +978,10 @@ class CCacheStats(object):
 class BuildDriver(MozbuildObject):
     """Provides a high-level API for build actions."""
 
+    def __init__(self, *args, **kwargs):
+        MozbuildObject.__init__(self, *args, **kwargs)
+        self.mach_context = None
+
     def build(self, what=None, disable_extra_make_dependencies=None, jobs=0,
               directory=None, verbose=False, keep_going=False, mach_context=None):
         """Invoke the build backend.
@@ -985,6 +989,7 @@ class BuildDriver(MozbuildObject):
         ``what`` defines the thing to build. If not defined, the default
         target is used.
         """
+        self.mach_context = mach_context
         warnings_path = self._get_state_filename('warnings.json')
         monitor = self._spawn(BuildMonitor)
         monitor.init(warnings_path)
@@ -1054,11 +1059,15 @@ class BuildDriver(MozbuildObject):
 
             monitor.start_resource_recording()
 
+            self.mach_context.command_attrs['clobber'] = False
             config = None
             try:
                 config = self.config_environment
             except Exception:
-                pass
+                
+                
+                
+                self.mach_context.command_attrs['clobber'] = True
 
             
             
@@ -1226,6 +1235,11 @@ class BuildDriver(MozbuildObject):
                     status = 1
 
             monitor.finish(record_usage=status == 0)
+
+        if status == 0:
+            usage = monitor.get_resource_usage()
+            if usage:
+                self.mach_context.command_attrs['usage'] = usage
 
         
         
@@ -1535,6 +1549,8 @@ class BuildDriver(MozbuildObject):
                      {'msg': line.rstrip()}, '{msg}')
 
         clobber_required, clobber_performed, clobber_message = res
+        if self.mach_context is not None and clobber_performed:
+            self.mach_context.command_attrs['clobber'] = True
         if not clobber_required or clobber_performed:
             if clobber_performed and env.get('TINDERBOX_OUTPUT'):
                 self.log(logging.WARNING, 'clobber',
