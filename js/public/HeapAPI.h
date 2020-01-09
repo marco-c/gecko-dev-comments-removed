@@ -556,12 +556,6 @@ extern JS_PUBLIC_API void IncrementalPreWriteBarrier(GCCellPtr thing);
 
 
 
-extern JS_PUBLIC_API void IncrementalReadBarrier(GCCellPtr thing);
-
-
-
-
-
 
 extern JS_FRIEND_API bool UnmarkGrayGCThingRecursively(GCCellPtr thing);
 
@@ -569,6 +563,8 @@ extern JS_FRIEND_API bool UnmarkGrayGCThingRecursively(GCCellPtr thing);
 
 namespace js {
 namespace gc {
+
+extern JS_PUBLIC_API void PerformIncrementalReadBarrier(JS::GCCellPtr thing);
 
 static MOZ_ALWAYS_INLINE bool IsIncrementalBarrierNeededOnTenuredGCThing(
     const JS::GCCellPtr thing) {
@@ -599,12 +595,12 @@ static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
   }
 
   if (IsIncrementalBarrierNeededOnTenuredGCThing(thing)) {
-    JS::IncrementalReadBarrier(thing);
-  } else if (js::gc::detail::TenuredCellIsMarkedGray(thing.asCell())) {
+    PerformIncrementalReadBarrier(thing);
+  } else if (detail::TenuredCellIsMarkedGray(thing.asCell())) {
     JS::UnmarkGrayGCThingRecursively(thing);
   }
 
-  MOZ_ASSERT(!js::gc::detail::TenuredCellIsMarkedGray(thing.asCell()));
+  MOZ_ASSERT(!detail::TenuredCellIsMarkedGray(thing.asCell()));
 }
 
 template <typename T>
@@ -646,6 +642,7 @@ static MOZ_ALWAYS_INLINE void ExposeObjectToActiveJS(JSObject* obj) {
 }
 
 static MOZ_ALWAYS_INLINE void ExposeScriptToActiveJS(JSScript* script) {
+  MOZ_ASSERT(script);
   MOZ_ASSERT(!js::gc::EdgeNeedsSweepUnbarrieredSlow(&script));
   js::gc::ExposeGCThingToActiveJS(GCCellPtr(script));
 }
