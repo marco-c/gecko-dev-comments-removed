@@ -1602,17 +1602,9 @@ class nsDisplayListBuilder {
 
   void ClearWindowOpaqueRegion() { mWindowOpaqueRegion.SetEmpty(); }
 
-  void SetGlassDisplayItem(nsDisplayItem* aItem) {
-    if (mGlassDisplayItem) {
-      
-      
-      
-      
-      NS_WARNING("Multiple glass backgrounds found?");
-    } else {
-      mGlassDisplayItem = aItem;
-    }
-  }
+  void SetGlassDisplayItem(nsDisplayItem* aItem);
+  void ClearGlassDisplayItem() { mGlassDisplayItem = nullptr; }
+  nsDisplayItem* GetGlassDisplayItem() { return mGlassDisplayItem; }
 
   bool NeedToForceTransparentSurfaceForItem(nsDisplayItem* aItem);
 
@@ -1920,7 +1912,12 @@ class nsDisplayListBuilder {
   nsRegion mWindowOpaqueRegion;
 
   
+  
+  
   nsDisplayItem* mGlassDisplayItem;
+  
+  
+  bool mHasGlassItemDuringPartial;
   
   
   
@@ -2731,6 +2728,9 @@ class nsDisplayItem : public nsDisplayItemBase {
   void SetPainted() { mItemFlags += ItemFlag::Painted; }
 #endif
 
+  void SetIsGlassItem() { mItemFlags += ItemFlag::IsGlassItem; }
+  bool IsGlassItem() { return mItemFlags.contains(ItemFlag::IsGlassItem); }
+
   
 
 
@@ -3048,6 +3048,7 @@ class nsDisplayItem : public nsDisplayItemBase {
     DisableSubpixelAA,
     ForceNotVisible,
     PaintRectValid,
+    IsGlassItem,
 #ifdef MOZ_DUMP_PAINTING
     
     Painted,
