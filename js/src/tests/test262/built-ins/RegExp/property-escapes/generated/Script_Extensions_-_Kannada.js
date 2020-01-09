@@ -20,6 +20,7 @@ const matchSymbols = buildString({
     0x001CD0,
     0x001CD2,
     0x001CDA,
+    0x001CF2,
     0x001CF4
   ],
   ranges: [
@@ -71,7 +72,8 @@ const nonMatchSymbols = buildString({
     0x000CC9,
     0x000CDF,
     0x000CF0,
-    0x001CD1
+    0x001CD1,
+    0x001CF3
   ],
   ranges: [
     [0x00DC00, 0x00DFFF],
@@ -84,7 +86,7 @@ const nonMatchSymbols = buildString({
     [0x000CE4, 0x000CE5],
     [0x000CF3, 0x001CCF],
     [0x001CD3, 0x001CD9],
-    [0x001CDB, 0x001CF3],
+    [0x001CDB, 0x001CF1],
     [0x001CF5, 0x00A82F],
     [0x00A836, 0x00DBFF],
     [0x00E000, 0x10FFFF]
