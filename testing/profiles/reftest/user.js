@@ -4,8 +4,6 @@
 user_pref("app.normandy.api_url", "https://localhost/selfsupport-dummy/");
 user_pref("app.update.staging.enabled", false);
 user_pref("app.update.url.android", "");
-
-user_pref("browser.pagethumbnails.capturing_disabled", true);
 user_pref("browser.ping-centre.production.endpoint", "https://localhost");
 
 user_pref("browser.ping-centre.staging.endpoint", "https://localhost");
