@@ -206,7 +206,7 @@ var gPermissionManager = {
 
   addPermission(capability) {
     let textbox = document.getElementById("url");
-    let input_url = textbox.value.replace(/^\s*/, ""); 
+    let input_url = textbox.value.trim(); 
     let principals = [];
     try {
       
