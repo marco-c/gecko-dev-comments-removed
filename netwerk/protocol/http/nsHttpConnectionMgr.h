@@ -107,6 +107,11 @@ class nsHttpConnectionMgr final : public nsIObserver, public AltSvcCache {
   MOZ_MUST_USE nsresult AddTransaction(nsHttpTransaction *, int32_t priority);
 
   
+  MOZ_MUST_USE nsresult
+  AddTransactionWithStickyConn(nsHttpTransaction *trans, int32_t priority,
+                               nsHttpTransaction *transWithStickyConn);
+
+  
   
   MOZ_MUST_USE nsresult RescheduleTransaction(nsHttpTransaction *,
                                               int32_t priority);
@@ -161,8 +166,10 @@ class nsHttpConnectionMgr final : public nsIObserver, public AltSvcCache {
   
   
   
+  
+  
   MOZ_MUST_USE nsresult CompleteUpgrade(
-      nsAHttpConnection *aConn, nsIHttpUpgradeListener *aUpgradeListener);
+      nsHttpTransaction *aTrans, nsIHttpUpgradeListener *aUpgradeListener);
 
   
   
@@ -666,6 +673,7 @@ class nsHttpConnectionMgr final : public nsIObserver, public AltSvcCache {
   void OnMsgShutdown(int32_t, ARefBase *);
   void OnMsgShutdownConfirm(int32_t, ARefBase *);
   void OnMsgNewTransaction(int32_t, ARefBase *);
+  void OnMsgNewTransactionWithStickyConn(int32_t, ARefBase *);
   void OnMsgReschedTransaction(int32_t, ARefBase *);
   void OnMsgUpdateClassOfServiceOnTransaction(int32_t, ARefBase *);
   void OnMsgCancelTransaction(int32_t, ARefBase *);

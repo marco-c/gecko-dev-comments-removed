@@ -112,10 +112,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   nsHttpHeaderArray *TakeResponseTrailers();
 
   
-  
-  already_AddRefed<nsAHttpConnection> GetConnectionReference();
-
-  
   bool ResponseIsComplete() { return mResponseIsComplete; }
   void SetResponseIsComplete() { mResponseIsComplete = true; }
 
@@ -427,6 +423,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   bool EligibleForThrottling() const;
+
+  void DontReuseConnection();
 
  private:
   bool mSubmittedRatePacing;

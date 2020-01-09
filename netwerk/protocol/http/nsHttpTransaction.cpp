@@ -462,20 +462,6 @@ nsAHttpConnection *nsHttpTransaction::Connection() {
   return mConnection.get();
 }
 
-already_AddRefed<nsAHttpConnection>
-nsHttpTransaction::GetConnectionReference() {
-  if (mH2WSTransaction) {
-    
-    
-    
-    mH2WSTransaction->SetConnRefTaken();
-    mH2WSTransaction = nullptr;
-  }
-  MutexAutoLock lock(mLock);
-  RefPtr<nsAHttpConnection> connection(mConnection);
-  return connection.forget();
-}
-
 nsHttpResponseHead *nsHttpTransaction::TakeResponseHead() {
   MOZ_ASSERT(!mResponseHeadTaken, "TakeResponseHead called 2x");
 
@@ -880,6 +866,22 @@ bool nsHttpTransaction::ShouldThrottle() {
   }
 
   return true;
+}
+
+void nsHttpTransaction::DontReuseConnection() {
+  LOG(("nsHttpTransaction::DontReuseConnection %p\n", this));
+  if (!OnSocketThread()) {
+    LOG(("DontReuseConnection %p not on socket thread\n", this));
+    nsCOMPtr<nsIRunnable> event =
+        NewRunnableMethod("nsHttpTransaction::DontReuseConnection", this,
+                          &nsHttpTransaction::DontReuseConnection);
+    gSocketTransportService->Dispatch(event, NS_DISPATCH_NORMAL);
+    return;
+  }
+
+  if (mConnection) {
+    mConnection->DontReuse();
+  }
 }
 
 nsresult nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter *writer,

@@ -242,6 +242,16 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   
+  
+  MOZ_MUST_USE nsresult
+  InitiateTransactionWithStickyConn(nsHttpTransaction *trans, int32_t priority,
+                                    nsHttpTransaction *transWithStickyConn) {
+    return mConnMgr->AddTransactionWithStickyConn(trans, priority,
+                                                  transWithStickyConn);
+  }
+
+  
+  
   MOZ_MUST_USE nsresult RescheduleTransaction(nsHttpTransaction *trans,
                                               int32_t priority) {
     return mConnMgr->RescheduleTransaction(trans, priority);
