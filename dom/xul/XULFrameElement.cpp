@@ -92,7 +92,8 @@ void XULFrameElement::LoadSrc() {
     
     
     
-    mFrameLoader = nsFrameLoader::Create(this, opener, false);
+    mFrameLoader = nsFrameLoader::Create(
+        this, opener ? opener->GetDOMWindow() : nullptr, false);
     if (NS_WARN_IF(!mFrameLoader)) {
       return;
     }

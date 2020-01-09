@@ -152,8 +152,8 @@ typedef ScrollableLayerGuid::ViewID ViewID;
 
 #define MAX_DEPTH_CONTENT_FRAMES 10
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsFrameLoader, mBrowsingContext,
-                                      mMessageManager, mChildMessageManager,
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsFrameLoader, mDocShell, mMessageManager,
+                                      mChildMessageManager, mOpener,
                                       mParentSHistory, mRemoteBrowser)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsFrameLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFrameLoader)
@@ -165,11 +165,11 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFrameLoader)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
+nsFrameLoader::nsFrameLoader(Element* aOwner, nsPIDOMWindowOuter* aOpener,
                              bool aNetworkCreated)
-    : mBrowsingContext(aBrowsingContext),
-      mOwnerContent(aOwner),
+    : mOwnerContent(aOwner),
       mDetachedSubdocFrame(nullptr),
+      mOpener(aOpener),
       mRemoteBrowser(nullptr),
       mChildID(0),
       mDepthTooGreat(false),
@@ -185,15 +185,15 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
       mIsRemoteFrame(false),
       mObservingOwnerContent(false) {
   mIsRemoteFrame = ShouldUseRemoteProcess();
-  MOZ_ASSERT(!mIsRemoteFrame || !mBrowsingContext->HasOpener(),
+  MOZ_ASSERT(!mIsRemoteFrame || !aOpener,
              "Cannot pass aOpener for a remote frame!");
 }
 
-nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
+nsFrameLoader::nsFrameLoader(Element* aOwner,
                              const mozilla::dom::RemotenessOptions& aOptions)
-    : mBrowsingContext(aBrowsingContext),
-      mOwnerContent(aOwner),
+    : mOwnerContent(aOwner),
       mDetachedSubdocFrame(nullptr),
+      mOpener(nullptr),
       mRemoteBrowser(nullptr),
       mChildID(0),
       mDepthTooGreat(false),
@@ -212,6 +212,14 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
       (!aOptions.mRemoteType.Value().IsVoid())) {
     mIsRemoteFrame = true;
   }
+  bool hasOpener =
+      aOptions.mOpener.WasPassed() && !aOptions.mOpener.Value().IsNull();
+  MOZ_ASSERT(!mIsRemoteFrame || !hasOpener,
+             "Cannot pass aOpener for a remote frame!");
+  if (hasOpener) {
+    
+    mOpener = aOptions.mOpener.Value().Value().get()->GetDOMWindow();
+  }
 }
 
 nsFrameLoader::~nsFrameLoader() {
@@ -221,70 +229,9 @@ nsFrameLoader::~nsFrameLoader() {
   MOZ_RELEASE_ASSERT(mDestroyCalled);
 }
 
-static void GetFrameName(Element* aOwnerContent, nsAString& aFrameName) {
-  int32_t namespaceID = aOwnerContent->GetNameSpaceID();
-  if (namespaceID == kNameSpaceID_XHTML && !aOwnerContent->IsInHTMLDocument()) {
-    aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, aFrameName);
-  } else {
-    aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, aFrameName);
-    
-    
-    if (aFrameName.IsEmpty() && namespaceID == kNameSpaceID_XUL) {
-      aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, aFrameName);
-    }
-  }
-}
 
-static already_AddRefed<BrowsingContext> CreateBrowsingContext(
-    Element* aOwner, BrowsingContext* aOpener) {
-  Document* doc = aOwner->OwnerDoc();
-  
-  
-  
-
-  
-  RefPtr<nsDocShell> parentDocShell = nsDocShell::Cast(doc->GetDocShell());
-
-  if (NS_WARN_IF(!parentDocShell)) {
-    return nullptr;
-  }
-
-  RefPtr<BrowsingContext> parentContext = parentDocShell->GetBrowsingContext();
-
-  MOZ_DIAGNOSTIC_ASSERT(parentContext, "docShell must have BrowsingContext");
-
-  
-  nsAutoString frameName;
-  GetFrameName(aOwner, frameName);
-
-  
-  bool isContent =
-      parentContext->IsContent() ||
-      aOwner->AttrValueIs(
-          kNameSpaceID_None,
-          aOwner->IsXULElement() ? nsGkAtoms::type : nsGkAtoms::mozframetype,
-          nsGkAtoms::content, eIgnoreCase);
-
-  
-  
-  nsCOMPtr<nsIMozBrowserFrame> mozbrowser = aOwner->GetAsMozBrowserFrame();
-  if (!isContent && mozbrowser) {
-    mozbrowser->GetMozbrowser(&isContent);
-  }
-
-  
-  
-  if (isContent && !parentContext->IsContent()) {
-    parentContext = nullptr;
-  }
-
-  BrowsingContext::Type type = isContent ? BrowsingContext::Type::Content
-                                         : BrowsingContext::Type::Chrome;
-
-  return BrowsingContext::Create(parentContext, aOpener, frameName, type);
-}
-
-nsFrameLoader* nsFrameLoader::Create(Element* aOwner, BrowsingContext* aOpener,
+nsFrameLoader* nsFrameLoader::Create(Element* aOwner,
+                                     nsPIDOMWindowOuter* aOpener,
                                      bool aNetworkCreated) {
   NS_ENSURE_TRUE(aOwner, nullptr);
   Document* doc = aOwner->OwnerDoc();
@@ -314,8 +261,7 @@ nsFrameLoader* nsFrameLoader::Create(Element* aOwner, BrowsingContext* aOpener,
                       doc->IsStaticDocument()),
                  nullptr);
 
-  RefPtr<BrowsingContext> context = CreateBrowsingContext(aOwner, aOpener);
-  return new nsFrameLoader(aOwner, context, aNetworkCreated);
+  return new nsFrameLoader(aOwner, aOpener, aNetworkCreated);
 }
 
 
@@ -325,21 +271,7 @@ nsFrameLoader* nsFrameLoader::Create(
   NS_ENSURE_TRUE(aOwner, nullptr);
   
   
-
-  bool hasOpener =
-      aOptions.mOpener.WasPassed() && !aOptions.mOpener.Value().IsNull();
-  MOZ_ASSERT(!aOptions.mRemoteType.WasPassed() ||
-                 aOptions.mRemoteType.Value().IsVoid() || !hasOpener,
-             "Cannot pass aOpener for a remote frame!");
-
-  
-  RefPtr<BrowsingContext> opener;
-  if (hasOpener) {
-    opener = aOptions.mOpener.Value().Value().get();
-  }
-  RefPtr<BrowsingContext> context = CreateBrowsingContext(aOwner, opener);
-
-  return new nsFrameLoader(aOwner, context, aOptions);
+  return new nsFrameLoader(aOwner, aOptions);
 }
 
 void nsFrameLoader::LoadFrame(bool aOriginalSrc) {
@@ -497,8 +429,8 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
   if (NS_FAILED(rv)) {
     return rv;
   }
-  MOZ_ASSERT(GetDocShell(),
-             "MaybeCreateDocShell succeeded with a null docShell");
+  NS_ASSERTION(mDocShell,
+               "MaybeCreateDocShell succeeded with a null mDocShell");
 
   
   rv = CheckURILoad(mURIToLoad, mTriggeringPrincipal);
@@ -600,7 +532,7 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
   mNeedsAsyncDestroy = true;
   loadState->SetLoadFlags(flags);
   loadState->SetFirstParty(false);
-  rv = GetDocShell()->LoadURI(loadState);
+  rv = mDocShell->LoadURI(loadState);
   mNeedsAsyncDestroy = tmpState;
   mURIToLoad = nullptr;
   NS_ENSURE_SUCCESS(rv, rv);
@@ -659,11 +591,11 @@ nsDocShell* nsFrameLoader::GetDocShell(ErrorResult& aRv) {
       aRv.Throw(rv);
       return nullptr;
     }
-    MOZ_ASSERT(GetDocShell(),
-               "MaybeCreateDocShell succeeded, but null docShell");
+    NS_ASSERTION(mDocShell,
+                 "MaybeCreateDocShell succeeded, but null mDocShell");
   }
 
-  return GetDocShell();
+  return mDocShell;
 }
 
 static void SetTreeOwnerAndChromeEventHandlerOnDocshellTree(
@@ -809,20 +741,20 @@ bool nsFrameLoader::Show(int32_t marginWidth, int32_t marginHeight,
   if (NS_FAILED(rv)) {
     return false;
   }
-  MOZ_ASSERT(GetDocShell(), "MaybeCreateDocShell succeeded, but null docShell");
-  if (!GetDocShell()) {
+  NS_ASSERTION(mDocShell, "MaybeCreateDocShell succeeded, but null mDocShell");
+  if (!mDocShell) {
     return false;
   }
 
-  GetDocShell()->SetMarginWidth(marginWidth);
-  GetDocShell()->SetMarginHeight(marginHeight);
+  mDocShell->SetMarginWidth(marginWidth);
+  mDocShell->SetMarginHeight(marginHeight);
 
-  GetDocShell()->SetDefaultScrollbarPreferences(
-      nsIScrollable::ScrollOrientation_X, scrollbarPrefX);
-  GetDocShell()->SetDefaultScrollbarPreferences(
-      nsIScrollable::ScrollOrientation_Y, scrollbarPrefY);
+  mDocShell->SetDefaultScrollbarPreferences(nsIScrollable::ScrollOrientation_X,
+                                            scrollbarPrefX);
+  mDocShell->SetDefaultScrollbarPreferences(nsIScrollable::ScrollOrientation_Y,
+                                            scrollbarPrefY);
 
-  nsCOMPtr<nsIPresShell> presShell = GetDocShell()->GetPresShell();
+  nsCOMPtr<nsIPresShell> presShell = mDocShell->GetPresShell();
   if (presShell) {
     
     
@@ -837,7 +769,7 @@ bool nsFrameLoader::Show(int32_t marginWidth, int32_t marginHeight,
   nsView* view = frame->EnsureInnerView();
   if (!view) return false;
 
-  RefPtr<nsDocShell> baseWindow = GetDocShell();
+  RefPtr<nsDocShell> baseWindow = mDocShell;
   baseWindow->InitWindow(nullptr, view->GetWidget(), 0, 0, size.width,
                          size.height);
   
@@ -845,13 +777,13 @@ bool nsFrameLoader::Show(int32_t marginWidth, int32_t marginHeight,
   
   baseWindow->Create();
   baseWindow->SetVisibility(true);
-  NS_ENSURE_TRUE(GetDocShell(), false);
+  NS_ENSURE_TRUE(mDocShell, false);
 
   
   
   
   
-  presShell = GetDocShell()->GetPresShell();
+  presShell = mDocShell->GetPresShell();
   if (presShell) {
     Document* doc = presShell->GetDocument();
     nsHTMLDocument* htmlDoc =
@@ -864,7 +796,7 @@ bool nsFrameLoader::Show(int32_t marginWidth, int32_t marginHeight,
       if (designMode.EqualsLiteral("on")) {
         
         
-        RefPtr<HTMLEditor> htmlEditor = GetDocShell()->GetHTMLEditor();
+        RefPtr<HTMLEditor> htmlEditor = mDocShell->GetHTMLEditor();
         Unused << htmlEditor;
         htmlDoc->SetDesignMode(NS_LITERAL_STRING("off"), Nothing(),
                                IgnoreErrors());
@@ -874,9 +806,9 @@ bool nsFrameLoader::Show(int32_t marginWidth, int32_t marginHeight,
       } else {
         
         bool editable = false, hasEditingSession = false;
-        GetDocShell()->GetEditable(&editable);
-        GetDocShell()->GetHasEditingSession(&hasEditingSession);
-        RefPtr<HTMLEditor> htmlEditor = GetDocShell()->GetHTMLEditor();
+        mDocShell->GetEditable(&editable);
+        mDocShell->GetHasEditingSession(&hasEditingSession);
+        RefPtr<HTMLEditor> htmlEditor = mDocShell->GetHTMLEditor();
         if (editable && hasEditingSession && htmlEditor) {
           htmlEditor->PostCreate();
         }
@@ -896,24 +828,20 @@ bool nsFrameLoader::Show(int32_t marginWidth, int32_t marginHeight,
 void nsFrameLoader::MarginsChanged(uint32_t aMarginWidth,
                                    uint32_t aMarginHeight) {
   
-  if (IsRemoteFrame()) {
-    return;
-  }
+  if (IsRemoteFrame()) return;
 
   
   
   
-  if (!GetDocShell()) {
-    return;
-  }
+  if (!mDocShell) return;
 
   
-  GetDocShell()->SetMarginWidth(aMarginWidth);
-  GetDocShell()->SetMarginHeight(aMarginHeight);
+  mDocShell->SetMarginWidth(aMarginWidth);
+  mDocShell->SetMarginHeight(aMarginHeight);
 
   
   
-  if (Document* doc = GetDocShell()->GetDocument()) {
+  if (Document* doc = mDocShell->GetDocument()) {
     for (nsINode* cur = doc; cur; cur = cur->GetNextNode()) {
       if (cur->IsHTMLElement(nsGkAtoms::body)) {
         static_cast<HTMLBodyElement*>(cur)->ClearMappedServoStyle();
@@ -923,7 +851,7 @@ void nsFrameLoader::MarginsChanged(uint32_t aMarginWidth,
 
   
   
-  if (nsPresContext* presContext = GetDocShell()->GetPresContext()) {
+  if (nsPresContext* presContext = mDocShell->GetPresContext()) {
     
     
     presContext->RebuildAllStyleData(nsChangeHint(0),
@@ -1012,15 +940,13 @@ void nsFrameLoader::Hide() {
     return;
   }
 
-  if (!GetDocShell()) {
-    return;
-  }
+  if (!mDocShell) return;
 
   nsCOMPtr<nsIContentViewer> contentViewer;
-  GetDocShell()->GetContentViewer(getter_AddRefs(contentViewer));
+  mDocShell->GetContentViewer(getter_AddRefs(contentViewer));
   if (contentViewer) contentViewer->SetSticky(false);
 
-  RefPtr<nsDocShell> baseWin = GetDocShell();
+  RefPtr<nsDocShell> baseWin = mDocShell;
   baseWin->SetVisibility(false);
   baseWin->SetParentWidget(nullptr);
 }
@@ -1731,26 +1657,26 @@ void nsFrameLoader::StartDestroy() {
 
   
   if (dynamicSubframeRemoval) {
-    if (GetDocShell()) {
-      GetDocShell()->RemoveFromSessionHistory();
+    if (mDocShell) {
+      mDocShell->RemoveFromSessionHistory();
     }
   }
 
   
   if (mIsTopLevelContent) {
-    if (GetDocShell()) {
+    if (mDocShell) {
       nsCOMPtr<nsIDocShellTreeItem> parentItem;
-      GetDocShell()->GetParent(getter_AddRefs(parentItem));
+      mDocShell->GetParent(getter_AddRefs(parentItem));
       nsCOMPtr<nsIDocShellTreeOwner> owner = do_GetInterface(parentItem);
       if (owner) {
-        owner->ContentShellRemoved(GetDocShell());
+        owner->ContentShellRemoved(mDocShell);
       }
     }
   }
 
   
-  if (GetDocShell()) {
-    nsCOMPtr<nsPIDOMWindowOuter> win_private(GetDocShell()->GetWindow());
+  if (mDocShell) {
+    nsCOMPtr<nsPIDOMWindowOuter> win_private(mDocShell->GetWindow());
     if (win_private) {
       win_private->SetFrameElementInternal(nullptr);
     }
@@ -1830,11 +1756,10 @@ void nsFrameLoader::DestroyDocShell() {
   }
 
   
-  if (GetDocShell()) {
-    GetDocShell()->Destroy();
+  if (mDocShell) {
+    mDocShell->Destroy();
   }
-
-  mBrowsingContext = nullptr;
+  mDocShell = nullptr;
 
   if (mChildMessageManager) {
     
@@ -1966,8 +1891,37 @@ bool nsFrameLoader::ShouldUseRemoteProcess() {
                                     nsGkAtoms::_true, eCaseMatters);
 }
 
+static already_AddRefed<BrowsingContext> CreateBrowsingContext(
+    BrowsingContext* aParentContext, BrowsingContext* aOpenerContext,
+    const nsAString& aName, bool aIsContent) {
+  
+  
+  if (aIsContent && aParentContext && !aParentContext->IsContent()) {
+    aParentContext = nullptr;
+  }
+
+  BrowsingContext::Type type = aIsContent ? BrowsingContext::Type::Content
+                                          : BrowsingContext::Type::Chrome;
+
+  return BrowsingContext::Create(aParentContext, aOpenerContext, aName, type);
+}
+
+static void GetFrameName(Element* aOwnerContent, nsAString& aFrameName) {
+  int32_t namespaceID = aOwnerContent->GetNameSpaceID();
+  if (namespaceID == kNameSpaceID_XHTML && !aOwnerContent->IsInHTMLDocument()) {
+    aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, aFrameName);
+  } else {
+    aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, aFrameName);
+    
+    
+    if (aFrameName.IsEmpty() && namespaceID == kNameSpaceID_XUL) {
+      aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, aFrameName);
+    }
+  }
+}
+
 nsresult nsFrameLoader::MaybeCreateDocShell() {
-  if (GetDocShell()) {
+  if (mDocShell) {
     return NS_OK;
   }
   if (IsRemoteFrame()) {
@@ -1996,20 +1950,43 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  
   RefPtr<nsDocShell> parentDocShell = nsDocShell::Cast(doc->GetDocShell());
   if (NS_WARN_IF(!parentDocShell)) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  
-  
-  RefPtr<nsDocShell> docShell = nsDocShell::Create(mBrowsingContext);
-  NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);
+  RefPtr<BrowsingContext> parentBC = parentDocShell->GetBrowsingContext();
+  MOZ_ASSERT(parentBC, "docShell must have BrowsingContext");
 
-  mIsTopLevelContent =
-      mBrowsingContext->IsContent() && !mBrowsingContext->GetParent();
+  
+  nsAutoString frameName;
+  GetFrameName(mOwnerContent, frameName);
+
+  
+  bool isContent = parentBC->IsContent() ||
+                   mOwnerContent->AttrValueIs(kNameSpaceID_None, TypeAttrName(),
+                                              nsGkAtoms::content, eIgnoreCase);
+
+  
+  
+  nsCOMPtr<nsIMozBrowserFrame> mozbrowser =
+      mOwnerContent->GetAsMozBrowserFrame();
+  if (!isContent && mozbrowser) {
+    mozbrowser->GetMozbrowser(&isContent);
+  }
+
+  RefPtr<BrowsingContext> openerBC =
+      mOpener ? mOpener->GetBrowsingContext() : nullptr;
+  RefPtr<BrowsingContext> browsingContext =
+      CreateBrowsingContext(parentBC, openerBC, frameName, isContent);
+
+  mDocShell = nsDocShell::Create(browsingContext);
+  NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
+
+  mIsTopLevelContent = isContent && !parentBC->IsContent();
   if (!mNetworkCreated && !mIsTopLevelContent) {
-    docShell->SetCreatedDynamically(true);
+    mDocShell->SetCreatedDynamically(true);
   }
 
   if (mIsTopLevelContent) {
@@ -2018,20 +1995,19 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     
     
     
-    parentDocShell->AddChild(docShell);
+    parentDocShell->AddChild(mDocShell);
   }
 
   
   
   nsCOMPtr<nsIDocShellTreeOwner> parentTreeOwner;
   parentDocShell->GetTreeOwner(getter_AddRefs(parentTreeOwner));
-  AddTreeItemToTreeOwner(docShell, parentTreeOwner);
+  AddTreeItemToTreeOwner(mDocShell, parentTreeOwner);
 
   
   
   RefPtr<EventTarget> chromeEventHandler;
-  bool parentIsContent = parentDocShell->GetBrowsingContext()->IsContent();
-  if (parentIsContent) {
+  if (parentBC->IsContent()) {
     
     
     parentDocShell->GetChromeEventHandler(getter_AddRefs(chromeEventHandler));
@@ -2041,7 +2017,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     chromeEventHandler = mOwnerContent;
   }
 
-  docShell->SetChromeEventHandler(chromeEventHandler);
+  mDocShell->SetChromeEventHandler(chromeEventHandler);
 
   
   
@@ -2049,7 +2025,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
 
   
-  nsCOMPtr<nsPIDOMWindowOuter> newWindow = docShell->GetWindow();
+  nsCOMPtr<nsPIDOMWindowOuter> newWindow = mDocShell->GetWindow();
   if (NS_WARN_IF(!newWindow)) {
     
     NS_WARNING("Something wrong when creating the docshell for a frameloader!");
@@ -2060,8 +2036,11 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
 
   
   
-  if (RefPtr<BrowsingContext> opener = mBrowsingContext->GetOpener()) {
-    newWindow->SetOpenerWindow(opener->GetDOMWindow(), true);
+  
+  
+  if (mOpener) {
+    newWindow->SetOpenerWindow(mOpener, true);
+    mOpener = nullptr;
   }
 
   
@@ -2075,6 +2054,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
   
   
+  RefPtr<nsDocShell> docShell = mDocShell;
   if (NS_FAILED(docShell->Create())) {
     
     NS_WARNING("Something wrong when creating the docshell for a frameloader!");
@@ -2087,13 +2067,13 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   if (mIsTopLevelContent && mOwnerContent->IsXULElement(nsGkAtoms::browser) &&
       !mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::disablehistory)) {
     
-    nsresult rv = docShell->InitSessionHistory();
+    nsresult rv = mDocShell->InitSessionHistory();
     NS_ENSURE_SUCCESS(rv, rv);
     mParentSHistory = new ParentSHistory(this);
   }
 
   OriginAttributes attrs;
-  if (parentDocShell->ItemType() == docShell->ItemType()) {
+  if (parentDocShell->ItemType() == mDocShell->ItemType()) {
     attrs = parentDocShell->GetOriginAttributes();
   }
 
@@ -2104,7 +2084,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
   
   
-  if (parentIsContent &&
+  if (parentBC->IsContent() &&
       !nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()) &&
       !OwnerIsMozBrowserFrame()) {
     OriginAttributes oa = doc->NodePrincipal()->OriginAttributesRef();
@@ -2132,12 +2112,12 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   if (OwnerIsMozBrowserFrame()) {
     attrs.mAppId = nsIScriptSecurityManager::NO_APP_ID;
     attrs.mInIsolatedMozBrowser = OwnerIsIsolatedMozBrowserFrame();
-    docShell->SetFrameType(nsIDocShell::FRAME_TYPE_BROWSER);
+    mDocShell->SetFrameType(nsIDocShell::FRAME_TYPE_BROWSER);
   } else {
     nsCOMPtr<nsIDocShellTreeItem> parentCheck;
-    docShell->GetSameTypeParent(getter_AddRefs(parentCheck));
+    mDocShell->GetSameTypeParent(getter_AddRefs(parentCheck));
     if (!!parentCheck) {
-      docShell->SetIsFrame();
+      mDocShell->SetIsFrame();
     }
   }
 
@@ -2169,16 +2149,16 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     
     nsAutoString name;
     if (mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name)) {
-      docShell->SetName(name);
+      mDocShell->SetName(name);
     }
-    docShell->SetFullscreenAllowed(
+    mDocShell->SetFullscreenAllowed(
         mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::allowfullscreen) ||
         mOwnerContent->HasAttr(kNameSpaceID_None,
                                nsGkAtoms::mozallowfullscreen));
     bool isPrivate = mOwnerContent->HasAttr(kNameSpaceID_None,
                                             nsGkAtoms::mozprivatebrowsing);
     if (isPrivate) {
-      if (docShell->GetHasLoadedNonBlankURI()) {
+      if (mDocShell->GetHasLoadedNonBlankURI()) {
         nsContentUtils::ReportToConsoleNonLocalized(
             NS_LITERAL_STRING("We should not switch to Private Browsing after "
                               "loading a document."),
@@ -2192,28 +2172,30 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     }
   }
 
-  docShell->SetOriginAttributes(attrs);
+  nsDocShell::Cast(mDocShell)->SetOriginAttributes(attrs);
 
   
   
   
   
   nsCOMPtr<nsPIDOMWindowOuter> win = doc->GetWindow();
-  if (!docShell->GetIsMozBrowser() &&
-      parentDocShell->ItemType() == docShell->ItemType() &&
+  if (!mDocShell->GetIsMozBrowser() &&
+      parentDocShell->ItemType() == mDocShell->ItemType() &&
       !doc->IsStaticDocument() && win) {
     
     nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
     
     ancestorPrincipals = doc->AncestorPrincipals();
     ancestorPrincipals.InsertElementAt(0, doc->NodePrincipal());
-    docShell->SetAncestorPrincipals(std::move(ancestorPrincipals));
+    nsDocShell::Cast(mDocShell)->SetAncestorPrincipals(
+        std::move(ancestorPrincipals));
 
     
     nsTArray<uint64_t> ancestorOuterWindowIDs;
     ancestorOuterWindowIDs = doc->AncestorOuterWindowIDs();
     ancestorOuterWindowIDs.InsertElementAt(0, win->WindowID());
-    docShell->SetAncestorOuterWindowIDs(std::move(ancestorOuterWindowIDs));
+    nsDocShell::Cast(mDocShell)->SetAncestorOuterWindowIDs(
+        std::move(ancestorOuterWindowIDs));
   }
 
   ReallyLoadFrameScripts();
@@ -2270,19 +2252,19 @@ nsresult nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI) {
   if (NS_FAILED(rv)) {
     return rv;
   }
-  MOZ_ASSERT(GetDocShell(), "MaybeCreateDocShell succeeded, but null docShell");
-  if (!GetDocShell()) {
+  NS_ASSERTION(mDocShell, "MaybeCreateDocShell succeeded, but null mDocShell");
+  if (!mDocShell) {
     return NS_ERROR_FAILURE;
   }
 
   
   nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
-  GetDocShell()->GetTreeOwner(getter_AddRefs(treeOwner));
+  mDocShell->GetTreeOwner(getter_AddRefs(treeOwner));
   NS_WARNING_ASSERTION(treeOwner,
                        "Trying to load a new url to a docshell without owner!");
   NS_ENSURE_STATE(treeOwner);
 
-  if (GetDocShell()->ItemType() != nsIDocShellTreeItem::typeContent) {
+  if (mDocShell->ItemType() != nsIDocShellTreeItem::typeContent) {
     
     
     return NS_OK;
@@ -2291,7 +2273,7 @@ nsresult nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI) {
   
   
   nsCOMPtr<nsIDocShellTreeItem> parentAsItem;
-  GetDocShell()->GetSameTypeParent(getter_AddRefs(parentAsItem));
+  mDocShell->GetSameTypeParent(getter_AddRefs(parentAsItem));
   int32_t depth = 0;
   while (parentAsItem) {
     ++depth;
@@ -2323,7 +2305,7 @@ nsresult nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI) {
     }
   }
   int32_t matchCount = 0;
-  GetDocShell()->GetSameTypeParent(getter_AddRefs(parentAsItem));
+  mDocShell->GetSameTypeParent(getter_AddRefs(parentAsItem));
   while (parentAsItem) {
     
     nsCOMPtr<nsIWebNavigation> parentAsNav(do_QueryInterface(parentAsItem));
@@ -2601,15 +2583,27 @@ bool nsFrameLoader::TryRemoteBrowser() {
 
   
   if (XRE_IsContentProcess()) {
+    
+    nsAutoString frameName;
+    GetFrameName(mOwnerContent, frameName);
+
+    RefPtr<BrowsingContext> parentBC;
+    parentDocShell->GetBrowsingContext(getter_AddRefs(parentBC));
+    MOZ_ASSERT(parentBC, "docShell must have BrowsingContext");
+
+    
+    
+    RefPtr<BrowsingContext> browsingContext =
+        CreateBrowsingContext(parentBC, nullptr, frameName, true);
+
     mBrowserBridgeChild = BrowserBridgeChild::Create(
-        this, context, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE),
-        mBrowsingContext);
+        this, context, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE), browsingContext);
     return !!mBrowserBridgeChild;
   }
 
-  mRemoteBrowser = ContentParent::CreateBrowser(
-      context, ownerElement, mBrowsingContext, openerContentParent,
-      sameTabGroupAs, nextTabParentId);
+  mRemoteBrowser =
+      ContentParent::CreateBrowser(context, ownerElement, openerContentParent,
+                                   sameTabGroupAs, nextTabParentId);
   if (!mRemoteBrowser) {
     return false;
   }
@@ -2668,7 +2662,7 @@ bool nsFrameLoader::TryRemoteBrowser() {
 
 bool nsFrameLoader::IsRemoteFrame() {
   if (mIsRemoteFrame) {
-    MOZ_ASSERT(!GetDocShell(), "Found a remote frame with a DocShell");
+    MOZ_ASSERT(!mDocShell, "Found a remote frame with a DocShell");
     return true;
   }
   return false;
@@ -2741,13 +2735,13 @@ void nsFrameLoader::ActivateFrameEvent(const nsAString& aType, bool aCapture,
 
 nsresult nsFrameLoader::CreateStaticClone(nsFrameLoader* aDest) {
   aDest->MaybeCreateDocShell();
-  NS_ENSURE_STATE(aDest->GetDocShell());
+  NS_ENSURE_STATE(aDest->mDocShell);
 
-  nsCOMPtr<Document> kungFuDeathGrip = aDest->GetDocShell()->GetDocument();
+  nsCOMPtr<Document> kungFuDeathGrip = aDest->mDocShell->GetDocument();
   Unused << kungFuDeathGrip;
 
   nsCOMPtr<nsIContentViewer> viewer;
-  aDest->GetDocShell()->GetContentViewer(getter_AddRefs(viewer));
+  aDest->mDocShell->GetContentViewer(getter_AddRefs(viewer));
   NS_ENSURE_STATE(viewer);
 
   nsIDocShell* origDocShell = GetDocShell(IgnoreErrors());
@@ -2756,7 +2750,7 @@ nsresult nsFrameLoader::CreateStaticClone(nsFrameLoader* aDest) {
   nsCOMPtr<Document> doc = origDocShell->GetDocument();
   NS_ENSURE_STATE(doc);
 
-  nsCOMPtr<Document> clonedDoc = doc->CreateStaticClone(aDest->GetDocShell());
+  nsCOMPtr<Document> clonedDoc = doc->CreateStaticClone(aDest->mDocShell);
 
   viewer->SetDocument(clonedDoc);
   return NS_OK;
@@ -2894,13 +2888,13 @@ nsresult nsFrameLoader::EnsureMessageManager() {
     if (NS_FAILED(rv)) {
       return rv;
     }
-    MOZ_ASSERT(GetDocShell(),
-               "MaybeCreateDocShell succeeded, but null docShell");
-    if (!GetDocShell()) {
+    NS_ASSERTION(mDocShell,
+                 "MaybeCreateDocShell succeeded, but null mDocShell");
+    if (!mDocShell) {
       return NS_ERROR_FAILURE;
     }
     mChildMessageManager = InProcessTabChildMessageManager::Create(
-        GetDocShell(), mOwnerContent, mMessageManager);
+        mDocShell, mOwnerContent, mMessageManager);
     NS_ENSURE_TRUE(mChildMessageManager, NS_ERROR_UNEXPECTED);
   }
   return NS_OK;
@@ -2946,7 +2940,7 @@ nsIFrame* nsFrameLoader::GetDetachedSubdocFrame(
 }
 
 void nsFrameLoader::ApplySandboxFlags(uint32_t sandboxFlags) {
-  if (GetDocShell()) {
+  if (mDocShell) {
     uint32_t parentSandboxFlags = mOwnerContent->OwnerDoc()->GetSandboxFlags();
 
     
@@ -2956,11 +2950,11 @@ void nsFrameLoader::ApplySandboxFlags(uint32_t sandboxFlags) {
     
     
     nsAutoString presentationURL;
-    nsContentUtils::GetPresentationURL(GetDocShell(), presentationURL);
+    nsContentUtils::GetPresentationURL(mDocShell, presentationURL);
     if (!presentationURL.IsEmpty()) {
       sandboxFlags |= SANDBOXED_AUXILIARY_NAVIGATION;
     }
-    GetDocShell()->SetSandboxFlags(sandboxFlags);
+    mDocShell->SetSandboxFlags(sandboxFlags);
   }
 }
 
@@ -2986,13 +2980,13 @@ void nsFrameLoader::AttributeChanged(mozilla::dom::Element* aElement,
   
   
   
-  if (!GetDocShell()) {
+  if (!mDocShell) {
     MaybeUpdatePrimaryTabParent(eTabParentChanged);
     return;
   }
 
   nsCOMPtr<nsIDocShellTreeItem> parentItem;
-  GetDocShell()->GetParent(getter_AddRefs(parentItem));
+  mDocShell->GetParent(getter_AddRefs(parentItem));
   if (!parentItem) {
     return;
   }
@@ -3014,16 +3008,14 @@ void nsFrameLoader::AttributeChanged(mozilla::dom::Element* aElement,
   
   if (!is_primary) {
     nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm) {
-      pm->HidePopupsInDocShell(GetDocShell());
-    }
+    if (pm) pm->HidePopupsInDocShell(mDocShell);
   }
 #endif
 
-  parentTreeOwner->ContentShellRemoved(GetDocShell());
+  parentTreeOwner->ContentShellRemoved(mDocShell);
   if (aElement->AttrValueIs(kNameSpaceID_None, TypeAttrName(),
                             nsGkAtoms::content, eIgnoreCase)) {
-    parentTreeOwner->ContentShellAdded(GetDocShell(), is_primary);
+    parentTreeOwner->ContentShellAdded(mDocShell, is_primary);
   }
 }
 
@@ -3128,8 +3120,7 @@ already_AddRefed<mozilla::dom::Promise> nsFrameLoader::DrawSnapshot(
     gfx::CrossProcessPaint::StartRemote(mRemoteBrowser->GetTabId(), rect,
                                         aScale, color, promise);
   } else {
-    gfx::CrossProcessPaint::StartLocal(GetDocShell(), rect, aScale, color,
-                                       promise);
+    gfx::CrossProcessPaint::StartLocal(mDocShell, rect, aScale, color, promise);
   }
 
   return promise.forget();
@@ -3164,7 +3155,7 @@ already_AddRefed<BrowsingContext> nsFrameLoader::GetBrowsingContext() {
       browsingContext = mBrowserBridgeChild->GetBrowsingContext();
     }
   } else if (GetDocShell(IgnoreErrors())) {
-    browsingContext = GetDocShell()->GetBrowsingContext();
+    browsingContext = nsDocShell::Cast(mDocShell)->GetBrowsingContext();
   }
   return browsingContext.forget();
 }
@@ -3211,8 +3202,7 @@ void nsFrameLoader::StartPersistence(
     return;
   }
 
-  nsCOMPtr<Document> rootDoc =
-      GetDocShell() ? GetDocShell()->GetDocument() : nullptr;
+  nsCOMPtr<Document> rootDoc = mDocShell ? mDocShell->GetDocument() : nullptr;
   nsCOMPtr<Document> foundDoc;
   if (aOuterWindowID) {
     foundDoc = nsContentUtils::GetSubdocumentWithOuterWindowId(rootDoc,
