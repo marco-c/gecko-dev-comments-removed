@@ -100,6 +100,28 @@ def readRegistry(registry):
     variantMappings = {}
 
     
+    reUnicodeLanguageId = re.compile(
+        r"""
+        ^
+        # unicode_language_id = unicode_language_subtag
+        #     unicode_language_subtag = alpha{2,3} | alpha{5,8}
+        ([a-z]{2,3}|[a-z]{5,8})
+
+        # (sep unicode_script_subtag)?
+        #     unicode_script_subtag = alpha{4}
+        (-[a-z]{4})?
+
+        # (sep unicode_region_subtag)?
+        #     unicode_region_subtag = (alpha{2} | digit{3})
+        (-([a-z]{2}|[0-9]{3}))?
+
+        # (sep unicode_variant_subtag)*
+        #     unicode_variant_subtag = (alphanum{5,8} | digit alphanum{3})
+        (-([a-z0-9]{5,8}|[0-9][a-z0-9]{3}))*
+        $
+        """, re.IGNORECASE | re.VERBOSE)
+
+    
     SpecialCase = namedtuple("SpecialCase", ["Type", "Subtag", "Prefix", "Preferred_Value"])
     knownSpecialCases = {
         SpecialCase("variant", "arevela", "hy", None): "hy",
@@ -136,10 +158,14 @@ def readRegistry(registry):
             
             
             tag = record["Tag"]
-            if "Preferred-Value" in record:
-                grandfatheredMappings[tag.lower()] = record["Preferred-Value"]
-            else:
-                grandfatheredMappings[tag.lower()] = tag
+
+            
+            
+            if reUnicodeLanguageId.match(tag):
+                if "Preferred-Value" in record:
+                    grandfatheredMappings[tag.lower()] = record["Preferred-Value"]
+                else:
+                    grandfatheredMappings[tag.lower()] = tag
         elif record["Type"] == "redundant":
             
             

@@ -10,19 +10,38 @@
 
 
 
+
 assertEq("i-hak", "i-ha\u212A".toLowerCase());
 
 
 assertEq("I-HAK", "\u0131-hak".toUpperCase());
 
 
-assertEqArray(Intl.getCanonicalLocales("i-hak"), ["hak"]);
+assertThrowsInstanceOf(() => Intl.getCanonicalLocales("i-hak"), RangeError);
 
 
 assertThrowsInstanceOf(() => Intl.getCanonicalLocales("i-ha\u212A"), RangeError);
 
 
 assertThrowsInstanceOf(() => Intl.getCanonicalLocales("\u0131-hak"), RangeError);
+
+
+assertEq("zh-hakka", "zh-ha\u212A\u212Aa".toLowerCase());
+
+
+assertEqArray(Intl.getCanonicalLocales("zh-hakka"), ["hak"]);
+
+
+assertThrowsInstanceOf(() => Intl.getCanonicalLocales("zh-ha\u212A\u212Aa"), RangeError);
+
+
+assertEq("ZH-XIANG", "zh-x\u0131ang".toUpperCase());
+
+
+assertEqArray(Intl.getCanonicalLocales("zh-xiang"), ["hsn"]);
+
+
+assertThrowsInstanceOf(() => Intl.getCanonicalLocales("zh-x\u0131ang"), RangeError);
 
 if (typeof reportCompare === 'function')
     reportCompare(0, 0);

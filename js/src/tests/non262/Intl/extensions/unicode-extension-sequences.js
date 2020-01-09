@@ -12,9 +12,6 @@ const testcases = [
     { locale: "en-x-u-kf", start: -1, end: 0 },
 
     
-    { locale: "i-default", start: -1, end: 0 },
-
-    
     { locale: "x-only", start: -1, end: 0 },
     { locale: "x-only-u", start: -1, end: 0 },
     { locale: "x-only-u-kf", start: -1, end: 0 },
@@ -69,6 +66,9 @@ const testcases = [
 ];
 
 for (const {locale, start, end} of testcases) {
+    
+    assertEqArray(Intl.getCanonicalLocales(locale), [locale]);
+
     assertEq(startOfUnicodeExtensions(locale), start);
 
     if (start >= 0)

@@ -38,8 +38,8 @@ function startOfUnicodeExtensions(locale) {
 
     
     if (callFunction(std_String_charCodeAt, locale, 1) === HYPHEN) {
-        assert(locale[0] === "x" || locale[0] === "i",
-               "locale[1] === '-' implies a privateuse-only or grandfathered locale");
+        assert(locale[0] === "x",
+               "locale[1] === '-' implies a privateuse-only locale");
         return -1;
     }
 
@@ -131,6 +131,8 @@ function getUnicodeExtensions(locale) {
 
     return Substring(locale, start, end - start);
 }
+
+
 
 
 
@@ -426,50 +428,9 @@ function parseLanguageTag(locale) {
     }
 
     
-    
-    
-    if (token === NONE && !hasOwn(localeLowercase, grandfatheredMappings)) {
-        return {
-            language,
-            script,
-            region,
-            variants,
-            extensions,
-            privateuse,
-        };
-    }
+    if (token !== NONE)
+        return null;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    while (token !== NONE) {
-        if (!nextToken())
-            return null;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -487,7 +448,17 @@ function parseLanguageTag(locale) {
         };
     }
 
-    return null;
+    
+    
+    
+    return {
+        language,
+        script,
+        region,
+        variants,
+        extensions,
+        privateuse,
+    };
 
     #undef NONE
     #undef ALPHA
