@@ -2744,16 +2744,7 @@ void SourceMediaStream::AddDirectTrackListenerImpl(
     return;
   }
 
-  bool isAudio = track->GetType() == MediaSegment::AUDIO;
-  bool isVideo = track->GetType() == MediaSegment::VIDEO;
-  if (!isAudio && !isVideo) {
-    LOG(LogLevel::Warning,
-        ("%p: Source track for direct track listener %p is unknown",
-         GraphImpl(), listener.get()));
-    MOZ_ASSERT(false);
-    return;
-  }
-
+  MOZ_ASSERT(track->GetType() == MediaSegment::VIDEO);
   for (auto entry : mDirectTrackListeners) {
     if (entry.mListener == listener &&
         (entry.mTrackID == TRACK_ANY || entry.mTrackID == aTrackID)) {
@@ -2774,56 +2765,44 @@ void SourceMediaStream::AddDirectTrackListenerImpl(
       DirectMediaStreamTrackListener::InstallationResult::SUCCESS);
 
   
-  AudioSegment bufferedAudio;
-  VideoSegment bufferedVideo;
-  if (isAudio) {
-    
-    MediaSegment& trackSegment = *track->GetSegment();
-    if (mTracks.GetForgottenDuration() < trackSegment.GetDuration()) {
-      bufferedAudio.AppendSlice(trackSegment, mTracks.GetForgottenDuration(),
-                                trackSegment.GetDuration());
+  VideoSegment bufferedData;
+  size_t videoFrames = 0;
+  
+  
+  VideoSegment& trackSegment = static_cast<VideoSegment&>(*track->GetSegment());
+  for (VideoSegment::ConstChunkIterator iter(trackSegment); !iter.IsEnded();
+       iter.Next()) {
+    if (iter->IsNull()) {
+      continue;
     }
+    ++videoFrames;
+    MOZ_ASSERT(!iter->mTimeStamp.IsNull());
+    bufferedData.AppendFrame(do_AddRef(iter->mFrame.GetImage()),
+                             iter->mFrame.GetIntrinsicSize(),
+                             iter->mFrame.GetPrincipalHandle(),
+                             iter->mFrame.GetForceBlack(), iter->mTimeStamp);
+  }
 
-    if (TrackData* updateData = FindDataForTrack(aTrackID)) {
-      bufferedAudio.AppendSlice(*updateData->mData, 0,
-                                updateData->mData->GetDuration());
-    }
-  } else {
-    
-    
-    VideoSegment& trackSegment =
-        static_cast<VideoSegment&>(*track->GetSegment());
-    for (VideoSegment::ConstChunkIterator iter(trackSegment); !iter.IsEnded();
+  if (TrackData* updateData = FindDataForTrack(aTrackID)) {
+    VideoSegment& video = static_cast<VideoSegment&>(*updateData->mData);
+    for (VideoSegment::ConstChunkIterator iter(video); !iter.IsEnded();
          iter.Next()) {
       if (iter->IsNull()) {
         continue;
       }
-      MOZ_ASSERT(!iter->mTimeStamp.IsNull());
-      bufferedVideo.AppendFrame(do_AddRef(iter->mFrame.GetImage()),
-                                iter->mFrame.GetIntrinsicSize(),
-                                iter->mFrame.GetPrincipalHandle(),
-                                iter->mFrame.GetForceBlack(), iter->mTimeStamp);
-    }
-
-    if (TrackData* updateData = FindDataForTrack(aTrackID)) {
-      VideoSegment& video = static_cast<VideoSegment&>(*updateData->mData);
-      for (VideoSegment::ConstChunkIterator iter(video); !iter.IsEnded();
-           iter.Next()) {
-        if (iter->IsNull()) {
-          continue;
-        }
-        bufferedVideo.AppendFrame(
-            do_AddRef(iter->mFrame.GetImage()), iter->mFrame.GetIntrinsicSize(),
-            iter->mFrame.GetPrincipalHandle(), iter->mFrame.GetForceBlack(),
-            iter->mTimeStamp);
-      }
+      ++videoFrames;
+      bufferedData.AppendFrame(do_AddRef(iter->mFrame.GetImage()),
+                               iter->mFrame.GetIntrinsicSize(),
+                               iter->mFrame.GetPrincipalHandle(),
+                               iter->mFrame.GetForceBlack(), iter->mTimeStamp);
     }
   }
 
-  MediaSegment& bufferedData = isAudio
-                                   ? static_cast<MediaSegment&>(bufferedAudio)
-                                   : static_cast<MediaSegment&>(bufferedVideo);
-  if (bufferedData.GetDuration() != 0) {
+  LOG(LogLevel::Info,
+      ("%p: Notifying direct listener %p of %zu video frames and duration "
+       "%" PRId64,
+       GraphImpl(), listener.get(), videoFrames, bufferedData.GetDuration()));
+  if (!bufferedData.IsNull()) {
     listener->NotifyRealtimeTrackData(Graph(), 0, bufferedData);
   }
 }
