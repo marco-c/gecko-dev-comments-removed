@@ -652,8 +652,6 @@ void PeerConnectionMedia::OnCandidateFound_s(
 
   CSFLogDebug(LOGTAG, "%s: %s", __FUNCTION__, aTransportId.c_str());
 
-  MOZ_ASSERT(!aCandidateInfo.mUfrag.empty());
-
   
   
   
