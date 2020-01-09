@@ -16,7 +16,7 @@ namespace mozilla {
 
 namespace dom {
 class nsIContentChild;
-class nsIContentParent;
+class ContentParent;
 }  
 
 namespace wr {
@@ -73,7 +73,7 @@ class IPCStreamSource {
   
   
   static PParentToChildStreamParent* Create(nsIAsyncInputStream* aInputStream,
-                                            dom::nsIContentParent* aManager);
+                                            dom::ContentParent* aManager);
 
   
   

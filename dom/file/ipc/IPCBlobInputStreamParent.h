@@ -61,7 +61,7 @@ class IPCBlobInputStreamParent final
 
  private:
   IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize,
-                           nsIContentParent* aManager);
+                           ContentParent* aManager);
 
   IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize,
                            mozilla::ipc::PBackgroundParent* aManager);
@@ -73,7 +73,7 @@ class IPCBlobInputStreamParent final
 
   
   
-  nsIContentParent* mContentManager;
+  ContentParent* mContentManager;
   mozilla::ipc::PBackgroundParent* mPBackgroundManager;
 
   RefPtr<IPCBlobInputStreamParentCallback> mCallback;
