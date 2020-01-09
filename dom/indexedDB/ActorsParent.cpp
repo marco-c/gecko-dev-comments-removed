@@ -16226,7 +16226,12 @@ nsresult QuotaClient::GetDatabaseFilenames(
     
     
     
-    if (leafName.EqualsLiteral(DSSTORE_FILE_NAME)) {
+    if (QuotaManager::IsOSMetadata(leafName)) {
+      continue;
+    }
+
+    
+    if (QuotaManager::IsDotFile(leafName)) {
       continue;
     }
 
@@ -16307,6 +16312,11 @@ nsresult QuotaClient::GetUsageForDirectoryInternal(nsIFile* aDirectory,
     
     if (StringBeginsWith(leafName,
                          NS_LITERAL_STRING(IDB_DELETION_MARKER_FILE_PREFIX))) {
+      continue;
+    }
+
+    if (QuotaManager::IsOSMetadata(leafName) ||
+        QuotaManager::IsDotFile(leafName)) {
       continue;
     }
 

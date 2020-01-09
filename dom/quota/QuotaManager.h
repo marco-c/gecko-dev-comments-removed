@@ -115,6 +115,10 @@ class QuotaManager final : public BackgroundThreadObject {
   
   static bool IsShuttingDown();
 
+  static bool IsOSMetadata(const nsAString& aFileName);
+
+  static bool IsDotFile(const nsAString& aFileName);
+
   bool IsOriginInitialized(const nsACString& aOrigin) const {
     AssertIsOnIOThread();
 
