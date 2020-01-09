@@ -168,6 +168,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         await this.cache.set("spocs", spocs);
       } else {
         Cu.reportError("No response for spocs_endpoint prop");
+        
+        spocs = spocs || {};
       }
     }
 

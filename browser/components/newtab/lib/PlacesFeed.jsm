@@ -283,34 +283,69 @@ class PlacesFeed {
     _target.browser.ownerGlobal.gURLBar.search(`${data.label} `);
   }
 
-  handoffSearchToAwesomebar({_target, data, meta}) {
-    const urlBar = _target.browser.ownerGlobal.gURLBar;
+  _getSearchPrefix() {
+    const searchAliases = Services.search.defaultEngine.wrappedJSObject.__internalAliases;
+    if (searchAliases && searchAliases.length > 0) {
+      return `${searchAliases[0]} `;
+    }
+    return "";
+  }
 
-    if (!data.text) {
+  handoffSearchToAwesomebar({_target, data, meta}) {
+    const searchAlias = this._getSearchPrefix();
+    const urlBar = _target.browser.ownerGlobal.gURLBar;
+    let isFirstChange = true;
+
+    if (!data || !data.text) {
+      urlBar.setHiddenFocus();
+    } else {
       
-      urlBar.focus();
-      
-      return;
+      urlBar.search(`${searchAlias}${data.text}`);
+      isFirstChange = false;
     }
 
-    
-    urlBar.search(data.text);
+    const checkFirstChange = () => {
+      
+      
+      
+      if (isFirstChange) {
+        isFirstChange = false;
+        urlBar.removeHiddenFocus();
+        urlBar.search(searchAlias);
+        this.store.dispatch(ac.OnlyToOneContent({type: at.HIDE_SEARCH}, meta.fromTarget));
+        urlBar.removeEventListener("compositionstart", checkFirstChange);
+        urlBar.removeEventListener("paste", checkFirstChange);
+      }
+    };
+
+    const onKeydown = ev => {
+      
+      if (ev.key.length === 1 && !ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+        checkFirstChange();
+      }
+      
+      if (ev.key === "Escape") {
+        onDone(); 
+      }
+    };
 
     const onDone = () => {
       
       this.store.dispatch(ac.OnlyToOneContent({type: at.SHOW_SEARCH}, meta.fromTarget));
+      urlBar.removeHiddenFocus();
+
+      urlBar.removeEventListener("keydown", onKeydown);
       urlBar.removeEventListener("mousedown", onDone);
       urlBar.removeEventListener("blur", onDone);
+      urlBar.removeEventListener("compositionstart", checkFirstChange);
+      urlBar.removeEventListener("paste", checkFirstChange);
     };
-    const onKeydown = event => {
-      
-      if (event.key === "Escape") {
-        onDone();
-      }
-    };
+
     urlBar.addEventListener("keydown", onKeydown);
     urlBar.addEventListener("mousedown", onDone);
     urlBar.addEventListener("blur", onDone);
+    urlBar.addEventListener("compositionstart", checkFirstChange);
+    urlBar.addEventListener("paste", checkFirstChange);
   }
 
   onAction(action) {
