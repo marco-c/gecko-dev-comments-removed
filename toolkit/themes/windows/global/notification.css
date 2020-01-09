@@ -13,12 +13,6 @@
   height: 16px;
 }
 
-@media (-moz-windows-default-theme) {
-  .popup-notification-warning {
-    color: #aa1b08;
-  }
-}
-
 
 
 .popup-notification-primary-button {
