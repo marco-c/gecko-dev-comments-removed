@@ -1585,7 +1585,9 @@ class WebGLContext : public nsICanvasRenderingContextInternal,
 
  public:
   
-  bool IsExtensionEnabled(WebGLExtensionID ext) const;
+  bool IsExtensionEnabled(const WebGLExtensionID ext) const {
+    return mExtensions[ext];
+  }
 
  protected:
   
