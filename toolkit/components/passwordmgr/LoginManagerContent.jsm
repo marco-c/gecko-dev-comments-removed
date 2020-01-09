@@ -2,6 +2,13 @@
 
 
 
+
+
+
+
+
+
+
 "use strict";
 
 var EXPORTED_SYMBOLS = [ "LoginManagerContent",
@@ -236,10 +243,10 @@ var LoginManagerContent = {
     return deferred.promise;
   },
 
-  receiveMessage(msg, window) {
+  receiveMessage(msg, topWindow) {
     if (msg.name == "RemoteLogins:fillForm") {
       this.fillForm({
-        topDocument: window.document,
+        topDocument: topWindow.document,
         loginFormOrigin: msg.data.loginFormOrigin,
         loginsFound: LoginHelper.vanillaObjectsToLogins(msg.data.logins),
         recipes: msg.data.recipes,
@@ -261,8 +268,7 @@ var LoginManagerContent = {
       }
 
       case "RemoteLogins:loginsAutoCompleted": {
-        let loginsFound =
-          LoginHelper.vanillaObjectsToLogins(msg.data.logins);
+        let loginsFound = LoginHelper.vanillaObjectsToLogins(msg.data.logins);
         let messageManager = msg.target;
         request.promise.resolve({ logins: loginsFound, messageManager });
         break;
@@ -333,7 +339,7 @@ var LoginManagerContent = {
 
   setupEventListeners(global) {
     global.addEventListener("pageshow", (event) => {
-      this.onPageShow(event, global.content);
+      this.onPageShow(event);
     });
     global.addEventListener("blur", (event) => {
       this.onUsernameInput(event);
@@ -357,7 +363,7 @@ var LoginManagerContent = {
     }
   },
 
-  onDOMFormHasPassword(event, window) {
+  onDOMFormHasPassword(event) {
     if (!event.isTrusted) {
       return;
     }
@@ -365,10 +371,10 @@ var LoginManagerContent = {
     let form = event.target;
     let formLike = LoginFormFactory.createFromForm(form);
     log("onDOMFormHasPassword:", form, formLike);
-    this._fetchLoginsFromParentAndFillForm(formLike, window);
+    this._fetchLoginsFromParentAndFillForm(formLike);
   },
 
-  onDOMInputPasswordAdded(event, window) {
+  onDOMInputPasswordAdded(event, topWindow) {
     if (!event.isTrusted) {
       return;
     }
@@ -381,7 +387,7 @@ var LoginManagerContent = {
 
     
     
-    this.setupProgressListener(window);
+    this.setupProgressListener(topWindow);
 
     let formLike = LoginFormFactory.createFromField(pwField);
     log("onDOMInputPasswordAdded:", pwField, formLike);
@@ -397,12 +403,13 @@ var LoginManagerContent = {
         let formLike2 = this._formLikeByRootElement.get(formLike.rootElement);
         log("Running deferred processing of onDOMInputPasswordAdded", formLike2);
         this._deferredPasswordAddedTasksByRootElement.delete(formLike2.rootElement);
-        this._fetchLoginsFromParentAndFillForm(formLike2, window);
+        this._fetchLoginsFromParentAndFillForm(formLike2);
       }, PASSWORD_INPUT_ADDED_COALESCING_THRESHOLD_MS, 0);
 
       this._deferredPasswordAddedTasksByRootElement.set(formLike.rootElement, deferredTask);
     }
 
+    let window = pwField.ownerGlobal;
     if (deferredTask.isArmed) {
       log("DeferredTask is already armed so just updating the FormLike");
       
@@ -424,9 +431,9 @@ var LoginManagerContent = {
 
 
 
-
-  _fetchLoginsFromParentAndFillForm(form, window) {
-    this._detectInsecureFormLikes(window);
+  _fetchLoginsFromParentAndFillForm(form) {
+    let window = form.ownerDocument.defaultView;
+    this._detectInsecureFormLikes(window.top);
 
     let messageManager = window.docShell.messageManager;
     messageManager.sendAsyncMessage("LoginStats:LoginEncountered");
@@ -440,7 +447,8 @@ var LoginManagerContent = {
         .catch(Cu.reportError);
   },
 
-  onPageShow(event, window) {
+  onPageShow(event) {
+    let window = event.target.ownerGlobal;
     this._detectInsecureFormLikes(window);
   },
 
@@ -525,7 +533,7 @@ var LoginManagerContent = {
     if (LoginHelper.getLoginOrigin(topDocument.documentURI) != loginFormOrigin) {
       if (!inputElement ||
           LoginHelper.getLoginOrigin(inputElement.ownerDocument.documentURI) != loginFormOrigin) {
-        log("fillForm: The requested origin doesn't match the one form the",
+        log("fillForm: The requested origin doesn't match the one from the",
             "document. This may mean we navigated to a document from a different",
             "site before we had a chance to indicate this change in the user",
             "interface.");
