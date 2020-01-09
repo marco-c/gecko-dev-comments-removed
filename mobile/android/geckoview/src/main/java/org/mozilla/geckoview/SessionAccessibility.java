@@ -178,6 +178,7 @@ public class SessionAccessibility {
                     return true;
                 case AccessibilityNodeInfo.ACTION_NEXT_HTML_ELEMENT:
                 case AccessibilityNodeInfo.ACTION_PREVIOUS_HTML_ELEMENT:
+                    requestViewFocus();
                     if (arguments != null) {
                         data = new GeckoBundle(1);
                         data.putString("rule", arguments.getString(AccessibilityNodeInfo.ACTION_ARGUMENT_HTML_ELEMENT_STRING));
@@ -491,6 +492,7 @@ public class SessionAccessibility {
     final SparseArray<GeckoBundle> mFocusPathCache = new SparseArray<>();
     
     LinkedList<SparseArray<GeckoBundle>> mCaches = new LinkedList<>();
+    private boolean mViewFocusRequested = false;
 
      SessionAccessibility(final GeckoSession session) {
         mSession = session;
@@ -540,7 +542,28 @@ public class SessionAccessibility {
                 }
                 return mProvider;
             }
+
+            @Override
+            public void sendAccessibilityEvent(View host, int eventType) {
+                if (eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED) {
+                    
+                    return;
+                }
+
+                super.sendAccessibilityEvent(host, eventType);
+            }
         });
+    }
+
+    private boolean isInTest() {
+        return Build.VERSION.SDK_INT >= 17 && mView != null && mView.getDisplay() == null;
+    }
+
+    private void requestViewFocus() {
+        if (!mView.isFocused() && !isInTest()) {
+            mViewFocusRequested = true;
+            mView.requestFocus();
+        }
     }
 
     private static class Settings {
@@ -635,7 +658,7 @@ public class SessionAccessibility {
             return false;
         }
 
-        mView.requestFocus();
+        requestViewFocus();
 
         final GeckoBundle data = new GeckoBundle(2);
         data.putDoubleArray("coordinates", new double[] {event.getRawX(), event.getRawY()});
@@ -649,7 +672,14 @@ public class SessionAccessibility {
             return;
         }
 
-        if (!Settings.isPlatformEnabled() && (Build.VERSION.SDK_INT < 17 || mView.getDisplay() != null)) {
+        if (mViewFocusRequested && className == CLASSNAME_WEBVIEW) {
+            
+            
+            mViewFocusRequested = false;
+            return;
+        }
+
+        if (!Settings.isPlatformEnabled() && !isInTest()) {
             
             
             
@@ -721,6 +751,10 @@ public class SessionAccessibility {
                 break;
             case AccessibilityEvent.TYPE_VIEW_FOCUSED:
                 mFocusedNode = sourceId;
+                if (!mView.isFocused() && !isInTest()) {
+                    
+                    return;
+                }
                 break;
         }
 
