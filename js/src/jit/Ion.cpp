@@ -2252,7 +2252,7 @@ static MethodStatus Compile(JSContext* cx, HandleScript script,
   }
 
   if (!CanLikelyAllocateMoreExecutableMemory()) {
-    script->resetWarmUpCounter();
+    script->resetWarmUpCounterToDelayIonCompilation();
     return Method_Skipped;
   }
 
@@ -2513,7 +2513,7 @@ bool jit::IonCompileScriptForBaseline(JSContext* cx, BaselineFrame* frame,
     
     
     
-    script->resetWarmUpCounter();
+    script->resetWarmUpCounterToDelayIonCompilation();
     return true;
   }
 
@@ -2576,7 +2576,7 @@ bool jit::IonCompileScriptForBaseline(JSContext* cx, BaselineFrame* frame,
               "  Reset WarmUpCounter cantCompile=%s bailoutExpected=%s!",
               stat == Method_CantCompile ? "yes" : "no",
               bailoutExpected ? "yes" : "no");
-      script->resetWarmUpCounter();
+      script->resetWarmUpCounterToDelayIonCompilation();
     }
     return true;
   }
@@ -2799,7 +2799,7 @@ static void ClearIonScriptAfterInvalidation(JSContext* cx, JSScript* script,
   
   
   if (resetUses) {
-    script->resetWarmUpCounter();
+    script->resetWarmUpCounterToDelayIonCompilation();
   }
 }
 

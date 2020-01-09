@@ -36,6 +36,7 @@
 #include "jit/BaselineJIT.h"
 #include "jit/Ion.h"
 #include "jit/IonCode.h"
+#include "jit/JitOptions.h"
 #include "jit/JitRealm.h"
 #include "js/CompileOptions.h"
 #include "js/MemoryMetrics.h"
@@ -5463,6 +5464,18 @@ bool JSScript::hasLoops() {
 
 bool JSScript::mayReadFrameArgsDirectly() {
   return argumentsHasVarBinding() || hasRest();
+}
+
+void JSScript::resetWarmUpCounterToDelayIonCompilation() {
+  
+  
+  
+  
+
+  if (warmUpCount > jit::JitOptions.baselineWarmUpThreshold) {
+    incWarmUpResetCounter();
+    warmUpCount = jit::JitOptions.baselineWarmUpThreshold;
+  }
 }
 
 void JSScript::AutoDelazify::holdScript(JS::HandleFunction fun) {

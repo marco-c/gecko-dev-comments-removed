@@ -241,7 +241,7 @@ void Zone::discardJitCode(FreeOp* fop,
     
     
     
-    script->resetWarmUpCounter();
+    script->resetWarmUpCounterForGC();
 
     
     

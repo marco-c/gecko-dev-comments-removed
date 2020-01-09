@@ -215,7 +215,7 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
           
           
           
-          script->resetWarmUpCounter();
+          script->resetWarmUpCounterToDelayIonCompilation();
 
           if (*hitBailoutException) {
             break;
@@ -373,7 +373,7 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         
         
         
-        script->resetWarmUpCounter();
+        script->resetWarmUpCounterToDelayIonCompilation();
 
         
         rfe->kind = ResumeFromException::RESUME_CATCH;
