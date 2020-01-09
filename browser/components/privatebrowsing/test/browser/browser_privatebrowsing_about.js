@@ -47,6 +47,17 @@ async function testLinkOpensUrl({ win, tab, elementId, expectedUrl }) {
 
 
 
+function enableSearchUI() {
+  Services.prefs.setBoolPref("browser.privatebrowsing.searchUI", true);
+
+  registerCleanupFunction(function() {
+    Services.prefs.clearUserPref("browser.privatebrowsing.searchUI");
+  });
+}
+
+
+
+
 add_task(async function test_links() {
   
   Services.prefs.setCharPref("app.support.baseURL", "https://example.com/");
@@ -76,6 +87,7 @@ add_task(async function test_links() {
 
 
 add_task(async function test_myths_link() {
+  enableSearchUI();
   Services.prefs.setCharPref("app.support.baseURL", "https://example.com/");
   registerCleanupFunction(function() {
     Services.prefs.clearUserPref("app.support.baseURL");
@@ -103,6 +115,7 @@ function urlBarHasNormalFocus(win) {
 
 
 add_task(async function test_search_handoff_on_keydown() {
+  enableSearchUI();
   let { win, tab } = await openAboutPrivateBrowsing();
 
   await ContentTask.spawn(tab, null, async function() {
@@ -133,6 +146,7 @@ add_task(async function test_search_handoff_on_keydown() {
 
 
 add_task(async function test_search_handoff_on_composition_start() {
+  enableSearchUI();
   let { win, tab } = await openAboutPrivateBrowsing();
 
   await ContentTask.spawn(tab, null, async function() {
@@ -149,6 +163,7 @@ add_task(async function test_search_handoff_on_composition_start() {
 
 
 add_task(async function test_search_handoff_on_paste() {
+  enableSearchUI();
   let { win, tab } = await openAboutPrivateBrowsing();
 
   await ContentTask.spawn(tab, null, async function() {
