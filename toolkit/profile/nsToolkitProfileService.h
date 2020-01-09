@@ -76,6 +76,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   nsresult SelectStartupProfile(int* aArgc, char* aArgv[], bool aIsResetting,
                                 nsIFile** aRootDir, nsIFile** aLocalDir,
                                 nsIToolkitProfile** aProfile, bool* aDidCreate);
+  nsresult CreateResetProfile(nsIToolkitProfile** aNewProfile);
 
  private:
   friend class nsToolkitProfile;
@@ -91,15 +92,29 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   void GetProfileByDir(nsIFile* aRootDir, nsIFile* aLocalDir,
                        nsIToolkitProfile** aResult);
 
+  
   bool mStartupProfileSelected;
+  
   RefPtr<nsToolkitProfile> mFirst;
-  nsCOMPtr<nsIToolkitProfile> mChosen;
-  nsCOMPtr<nsIToolkitProfile> mDefault;
+  
+  nsCOMPtr<nsIToolkitProfile> mCurrent;
+  
+  nsCOMPtr<nsIToolkitProfile> mNormalDefault;
+  
+  
+  nsCOMPtr<nsIToolkitProfile> mDevEditionDefault;
+  
   nsCOMPtr<nsIFile> mAppData;
+  
   nsCOMPtr<nsIFile> mTempData;
+  
   nsCOMPtr<nsIFile> mListFile;
+  
   bool mStartWithLast;
+  
   bool mIsFirstRun;
+  
+  bool mUseDevEditionProfile;
 
   static nsToolkitProfileService* gService;
 
