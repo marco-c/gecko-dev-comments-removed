@@ -1375,6 +1375,16 @@ class UrlbarInput {
   }
 
   _on_keydown(event) {
+    
+    
+    
+    
+    
+    
+    
+    if (this.eventBufferer.shouldDeferEvent(event)) {
+      this.controller.handleKeyNavigation(event, false);
+    }
     this._toggleActionOverride(event);
     this.eventBufferer.maybeDeferEvent(event, () => {
       this.controller.handleKeyNavigation(event);
