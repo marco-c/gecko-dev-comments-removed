@@ -256,10 +256,6 @@ struct BaselineScript final {
 
     
     
-    ACTIVE = 1 << 1,
-
-    
-    
     MODIFIES_ARGUMENTS = 1 << 2,
 
     
@@ -353,10 +349,6 @@ struct BaselineScript final {
                               size_t* data) const {
     *data += mallocSizeOf(this);
   }
-
-  bool active() const { return flags_ & ACTIVE; }
-  void setActive() { flags_ |= ACTIVE; }
-  void resetActive() { flags_ &= ~ACTIVE; }
 
   void setModifiesArguments() { flags_ |= MODIFIES_ARGUMENTS; }
   bool modifiesArguments() { return flags_ & MODIFIES_ARGUMENTS; }
@@ -634,7 +626,7 @@ MOZ_MUST_USE bool BailoutIonToBaseline(
 
 
 
-void MarkActiveBaselineScripts(Zone* zone);
+void MarkActiveTypeScripts(Zone* zone);
 
 MethodStatus BaselineCompile(JSContext* cx, JSScript* script,
                              bool forceDebugInstrumentation = false);

@@ -1142,11 +1142,7 @@ void jit::FinishDiscardBaselineScript(FreeOp* fop, JSScript* script) {
     return;
   }
 
-  if (script->baselineScript()->active()) {
-    
-    
-    script->baselineScript()->resetActive();
-
+  if (script->typesDontCheckGeneration()->active()) {
     
     
     script->baselineScript()->clearIonCompiledOrInlined();
@@ -1216,31 +1212,31 @@ void jit::ToggleBaselineTraceLoggerEngine(JSRuntime* runtime, bool enable) {
 }
 #endif
 
-static void MarkActiveBaselineScripts(JSContext* cx,
-                                      const JitActivationIterator& activation) {
+static void MarkActiveTypeScripts(JSContext* cx,
+                                  const JitActivationIterator& activation) {
   for (OnlyJSJitFrameIter iter(activation); !iter.done(); ++iter) {
     const JSJitFrameIter& frame = iter.frame();
     switch (frame.type()) {
       case FrameType::BaselineJS:
-        frame.script()->baselineScript()->setActive();
+        frame.script()->typesDontCheckGeneration()->setActive();
         break;
       case FrameType::Exit:
         if (frame.exitFrame()->is<LazyLinkExitFrameLayout>()) {
           LazyLinkExitFrameLayout* ll =
               frame.exitFrame()->as<LazyLinkExitFrameLayout>();
-          ScriptFromCalleeToken(ll->jsFrame()->calleeToken())
-              ->baselineScript()
-              ->setActive();
+          JSScript* script =
+              ScriptFromCalleeToken(ll->jsFrame()->calleeToken());
+          script->typesDontCheckGeneration()->setActive();
         }
         break;
       case FrameType::Bailout:
       case FrameType::IonJS: {
         
         
-        frame.script()->baselineScript()->setActive();
+        frame.script()->typesDontCheckGeneration()->setActive();
         for (InlineFrameIterator inlineIter(cx, &frame); inlineIter.more();
              ++inlineIter) {
-          inlineIter.script()->baselineScript()->setActive();
+          inlineIter.script()->typesDontCheckGeneration()->setActive();
         }
         break;
       }
@@ -1249,14 +1245,14 @@ static void MarkActiveBaselineScripts(JSContext* cx,
   }
 }
 
-void jit::MarkActiveBaselineScripts(Zone* zone) {
+void jit::MarkActiveTypeScripts(Zone* zone) {
   if (zone->isAtomsZone()) {
     return;
   }
   JSContext* cx = TlsContext.get();
   for (JitActivationIterator iter(cx); !iter.done(); ++iter) {
     if (iter->compartment()->zone() == zone) {
-      MarkActiveBaselineScripts(cx, iter);
+      MarkActiveTypeScripts(cx, iter);
     }
   }
 }

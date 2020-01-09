@@ -206,17 +206,18 @@ void Zone::discardJitCode(FreeOp* fop,
     return;
   }
 
-  if (discardBaselineCode) {
+  if (discardBaselineCode || releaseTypes) {
 #ifdef DEBUG
     
     for (auto script = cellIter<JSScript>(); !script.done(); script.next()) {
-      MOZ_ASSERT_IF(script->hasBaselineScript(),
-                    !script->baselineScript()->active());
+      if (TypeScript* types = script->typesDontCheckGeneration()) {
+        MOZ_ASSERT(!types->active());
+      }
     }
 #endif
 
     
-    jit::MarkActiveBaselineScripts(this);
+    jit::MarkActiveTypeScripts(this);
   }
 
   
@@ -261,6 +262,11 @@ void Zone::discardJitCode(FreeOp* fop,
     
     if (discardBaselineCode && script->hasICScript()) {
       script->icScript()->purgeOptimizedStubs(script);
+    }
+
+    
+    if (TypeScript* types = script->typesDontCheckGeneration()) {
+      types->resetActive();
     }
   }
 

@@ -221,6 +221,10 @@ class TypeScript {
   uint32_t bytecodeTypeMapHint_;
 
   
+  
+  bool active_;
+
+  
   StackTypeSet typeArray_[1];
 
  public:
@@ -237,6 +241,10 @@ class TypeScript {
   uint32_t numTypeSets() const { return numTypeSets_; }
 
   uint32_t* bytecodeTypeMapHint() { return &bytecodeTypeMapHint_; }
+
+  bool active() const { return active_; }
+  void setActive() { active_ = true; }
+  void resetActive() { active_ = false; }
 
   jit::ICScript* icScript() const {
     MOZ_ASSERT(icScript_);
