@@ -586,6 +586,25 @@ void KeyframeEffect::SetIsRunningOnCompositor(nsCSSPropertyID aProperty,
   }
 }
 
+void KeyframeEffect::SetIsRunningOnCompositor(
+    const nsCSSPropertyIDSet& aPropertySet, bool aIsRunning) {
+  for (AnimationProperty& property : mProperties) {
+    if (aPropertySet.HasProperty(property.mProperty)) {
+      MOZ_ASSERT(nsCSSProps::PropHasFlags(property.mProperty,
+                                          CSSPropFlags::CanAnimateOnCompositor),
+                 "Property being animated on compositor is a recognized "
+                 "compositor-animatable property");
+      property.mIsRunningOnCompositor = aIsRunning;
+      
+      
+      
+      if (aIsRunning) {
+        property.mPerformanceWarning.reset();
+      }
+    }
+  }
+}
+
 void KeyframeEffect::ResetIsRunningOnCompositor() {
   for (AnimationProperty& property : mProperties) {
     property.mIsRunningOnCompositor = false;

@@ -245,6 +245,8 @@ class KeyframeEffect : public AnimationEffect {
   
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSPropertyID aProperty, bool aIsRunning);
+  void SetIsRunningOnCompositor(const nsCSSPropertyIDSet& aPropertySet,
+                                bool aIsRunning);
   void ResetIsRunningOnCompositor();
 
   
