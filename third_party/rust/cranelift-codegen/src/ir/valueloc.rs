@@ -3,9 +3,9 @@
 
 
 
-use ir::StackSlot;
-use isa::{RegInfo, RegUnit};
-use std::fmt;
+use crate::ir::StackSlot;
+use crate::isa::{RegInfo, RegUnit};
+use core::fmt;
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

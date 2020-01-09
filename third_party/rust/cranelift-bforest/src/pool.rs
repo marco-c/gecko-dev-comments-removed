@@ -3,10 +3,10 @@
 #[cfg(test)]
 use super::Comparator;
 use super::{Forest, Node, NodeData};
-use entity::PrimaryMap;
+use crate::entity::PrimaryMap;
 #[cfg(test)]
-use std::fmt;
-use std::ops::{Index, IndexMut};
+use core::fmt;
+use core::ops::{Index, IndexMut};
 
 
 pub(super) struct NodePool<F: Forest> {
@@ -63,7 +63,7 @@ impl<F: Forest> NodePool<F> {
     pub fn free_tree(&mut self, node: Node) {
         if let NodeData::Inner { size, tree, .. } = self[node] {
             
-            #[cfg_attr(feature = "cargo-clippy", allow(needless_range_loop))]
+            #[cfg_attr(feature = "cargo-clippy", allow(clippy::needless_range_loop))]
             for i in 0..usize::from(size + 1) {
                 
                 
@@ -83,9 +83,9 @@ impl<F: Forest> NodePool<F> {
         NodeData<F>: fmt::Display,
         F::Key: fmt::Display,
     {
-        use entity::SparseSet;
-        use std::borrow::Borrow;
-        use std::cmp::Ordering;
+        use crate::entity::SparseSet;
+        use core::borrow::Borrow;
+        use core::cmp::Ordering;
         use std::vec::Vec;
 
         

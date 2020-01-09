@@ -3,8 +3,8 @@
 
 
 
-use std::marker::PhantomData;
-use EntityRef;
+use crate::EntityRef;
+use core::marker::PhantomData;
 
 
 pub struct Keys<K: EntityRef> {

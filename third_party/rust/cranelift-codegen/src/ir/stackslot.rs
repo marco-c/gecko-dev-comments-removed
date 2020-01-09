@@ -3,14 +3,14 @@
 
 
 
-use entity::{Iter, IterMut, Keys, PrimaryMap};
-use ir::{StackSlot, Type};
-use packed_option::PackedOption;
-use std::cmp;
-use std::fmt;
-use std::ops::{Index, IndexMut};
-use std::slice;
-use std::str::FromStr;
+use crate::entity::{Iter, IterMut, Keys, PrimaryMap};
+use crate::ir::{StackSlot, Type};
+use crate::packed_option::PackedOption;
+use core::cmp;
+use core::fmt;
+use core::ops::{Index, IndexMut};
+use core::slice;
+use core::str::FromStr;
 use std::vec::Vec;
 
 
@@ -340,8 +340,8 @@ impl StackSlots {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ir::types;
-    use ir::Function;
+    use crate::ir::types;
+    use crate::ir::Function;
     use std::string::ToString;
 
     #[test]

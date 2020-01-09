@@ -1,7 +1,7 @@
 
 
-use std::fmt::{self, Display, Formatter};
-use std::str::FromStr;
+use core::fmt::{self, Display, Formatter};
+use core::str::FromStr;
 
 
 
@@ -43,6 +43,9 @@ pub enum TrapCode {
     BadConversionToInteger,
 
     
+    UnreachableCodeReached,
+
+    
     
     Interrupt,
 
@@ -63,6 +66,7 @@ impl Display for TrapCode {
             IntegerOverflow => "int_ovf",
             IntegerDivisionByZero => "int_divz",
             BadConversionToInteger => "bad_toint",
+            UnreachableCodeReached => "unreachable",
             Interrupt => "interrupt",
             User(x) => return write!(f, "user{}", x),
         };
@@ -85,6 +89,7 @@ impl FromStr for TrapCode {
             "int_ovf" => Ok(IntegerOverflow),
             "int_divz" => Ok(IntegerDivisionByZero),
             "bad_toint" => Ok(BadConversionToInteger),
+            "unreachable" => Ok(UnreachableCodeReached),
             "interrupt" => Ok(Interrupt),
             _ if s.starts_with("user") => s[4..].parse().map(User).map_err(|_| ()),
             _ => Err(()),
@@ -98,7 +103,7 @@ mod tests {
     use std::string::ToString;
 
     
-    const CODES: [TrapCode; 9] = [
+    const CODES: [TrapCode; 11] = [
         TrapCode::StackOverflow,
         TrapCode::HeapOutOfBounds,
         TrapCode::TableOutOfBounds,
@@ -108,6 +113,8 @@ mod tests {
         TrapCode::IntegerOverflow,
         TrapCode::IntegerDivisionByZero,
         TrapCode::BadConversionToInteger,
+        TrapCode::UnreachableCodeReached,
+        TrapCode::Interrupt,
     ];
 
     #[test]

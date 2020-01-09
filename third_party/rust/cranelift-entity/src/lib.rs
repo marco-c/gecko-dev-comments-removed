@@ -35,7 +35,7 @@
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
 #![cfg_attr(
     feature = "cargo-clippy",
-    allow(new_without_default, new_without_default_derive)
+    allow(clippy::new_without_default, clippy::new_without_default_derive)
 )]
 #![cfg_attr(
     feature = "cargo-clippy",
@@ -50,17 +50,15 @@
         clippy::use_self
     )
 )]
-
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 
-
 #[cfg(not(feature = "std"))]
-mod std {
-    extern crate alloc;
-    pub use self::alloc::{boxed, string, vec};
-    pub use core::*;
-}
+#[macro_use]
+extern crate alloc as std;
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate std;
 
 
 #[doc(hidden)]
@@ -71,7 +69,7 @@ pub extern crate core as __core;
 pub trait EntityRef: Copy + Eq {
     
     
-    fn new(usize) -> Self;
+    fn new(_: usize) -> Self;
 
     
     fn index(self) -> usize;

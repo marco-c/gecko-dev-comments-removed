@@ -1,9 +1,9 @@
 
 
-use keys::Keys;
-use std::marker::PhantomData;
+use crate::keys::Keys;
+use crate::EntityRef;
+use core::marker::PhantomData;
 use std::vec::Vec;
-use EntityRef;
 
 
 
@@ -80,7 +80,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::u32;
+    use core::u32;
 
     
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]

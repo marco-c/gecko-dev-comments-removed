@@ -1,13 +1,13 @@
 
 
-use isa::registers::{RegBank, RegClass, RegClassData, RegInfo, RegUnit};
+use crate::isa::registers::{RegBank, RegClass, RegClassData, RegInfo, RegUnit};
 
 include!(concat!(env!("OUT_DIR"), "/registers-arm32.rs"));
 
 #[cfg(test)]
 mod tests {
     use super::{D, GPR, INFO, S};
-    use isa::RegUnit;
+    use crate::isa::RegUnit;
     use std::string::{String, ToString};
 
     #[test]
@@ -34,7 +34,7 @@ mod tests {
     #[test]
     fn overlaps() {
         
-        use isa::regs_overlap;
+        use crate::isa::regs_overlap;
 
         let r0 = GPR.unit(0);
         let r1 = GPR.unit(1);

@@ -1,9 +1,9 @@
 
 
-use ir::immediates::{Imm64, Offset32};
-use ir::{ExternalName, GlobalValue, Type};
-use isa::TargetIsa;
-use std::fmt;
+use crate::ir::immediates::{Imm64, Offset32};
+use crate::ir::{ExternalName, GlobalValue, Type};
+use crate::isa::TargetIsa;
+use core::fmt;
 
 
 #[derive(Clone)]
@@ -27,6 +27,7 @@ pub enum GlobalValueData {
         
         global_type: Type,
 
+        
         
         readonly: bool,
     },

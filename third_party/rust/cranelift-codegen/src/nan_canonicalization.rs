@@ -2,13 +2,13 @@
 
 
 
-use cursor::{Cursor, FuncCursor};
-use ir::condcodes::FloatCC;
-use ir::immediates::{Ieee32, Ieee64};
-use ir::types;
-use ir::types::Type;
-use ir::{Function, Inst, InstBuilder, InstructionData, Opcode, Value};
-use timing;
+use crate::cursor::{Cursor, FuncCursor};
+use crate::ir::condcodes::FloatCC;
+use crate::ir::immediates::{Ieee32, Ieee64};
+use crate::ir::types;
+use crate::ir::types::Type;
+use crate::ir::{Function, Inst, InstBuilder, InstructionData, Opcode, Value};
+use crate::timing;
 
 
 static CANON_32BIT_NAN: u32 = 0b01111111110000000000000000000000;

@@ -7,11 +7,12 @@
 
 
 
-use ir::{InstructionData, Opcode};
-use ir::{StackSlot, Value, ValueLoc, ValueLocations};
-use isa::{RegInfo, RegUnit};
-use std::fmt;
-use std::vec::Vec;
+use crate::fx::FxHashMap;
+use crate::hash_map::{Entry, Iter};
+use crate::ir::{InstructionData, Opcode};
+use crate::ir::{StackSlot, Value, ValueLoc, ValueLocations};
+use crate::isa::{RegInfo, RegUnit};
+use core::fmt;
 
 
 
@@ -23,8 +24,6 @@ use std::vec::Vec;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Diversion {
     
-    pub value: Value,
-    
     pub from: ValueLoc,
     
     pub to: ValueLoc,
@@ -32,22 +31,22 @@ pub struct Diversion {
 
 impl Diversion {
     
-    pub fn new(value: Value, from: ValueLoc, to: ValueLoc) -> Self {
+    pub fn new(from: ValueLoc, to: ValueLoc) -> Self {
         debug_assert!(from.is_assigned() && to.is_assigned());
-        Self { value, from, to }
+        Self { from, to }
     }
 }
 
 
 pub struct RegDiversions {
-    current: Vec<Diversion>,
+    current: FxHashMap<Value, Diversion>,
 }
 
 impl RegDiversions {
     
     pub fn new() -> Self {
         Self {
-            current: Vec::new(),
+            current: FxHashMap::default(),
         }
     }
 
@@ -63,12 +62,12 @@ impl RegDiversions {
 
     
     pub fn diversion(&self, value: Value) -> Option<&Diversion> {
-        self.current.iter().find(|d| d.value == value)
+        self.current.get(&value)
     }
 
     
-    pub fn all(&self) -> &[Diversion] {
-        self.current.as_slice()
+    pub fn iter(&self) -> Iter<'_, Value, Diversion> {
+        self.current.iter()
     }
 
     
@@ -95,15 +94,22 @@ impl RegDiversions {
     
     pub fn divert(&mut self, value: Value, from: ValueLoc, to: ValueLoc) {
         debug_assert!(from.is_assigned() && to.is_assigned());
-        if let Some(i) = self.current.iter().position(|d| d.value == value) {
-            debug_assert_eq!(self.current[i].to, from, "Bad regmove chain for {}", value);
-            if self.current[i].from != to {
-                self.current[i].to = to;
-            } else {
-                self.current.swap_remove(i);
+        match self.current.entry(value) {
+            Entry::Occupied(mut e) => {
+                
+                {
+                    let d = e.get_mut();
+                    debug_assert_eq!(d.to, from, "Bad regmove chain for {}", value);
+                    if d.from != to {
+                        d.to = to;
+                        return;
+                    }
+                }
+                e.remove();
             }
-        } else {
-            self.current.push(Diversion::new(value, from, to));
+            Entry::Vacant(e) => {
+                e.insert(Diversion::new(from, to));
+            }
         }
     }
 
@@ -154,10 +160,7 @@ impl RegDiversions {
     
     
     pub fn remove(&mut self, value: Value) -> Option<ValueLoc> {
-        self.current
-            .iter()
-            .position(|d| d.value == value)
-            .map(|i| self.current.swap_remove(i).to)
+        self.current.remove(&value).map(|d| d.to)
     }
 
     
@@ -172,11 +175,11 @@ pub struct DisplayDiversions<'a>(&'a RegDiversions, Option<&'a RegInfo>);
 impl<'a> fmt::Display for DisplayDiversions<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{{")?;
-        for div in self.0.all() {
+        for (value, div) in self.0.iter() {
             write!(
                 f,
                 " {}: {} -> {}",
-                div.value,
+                value,
                 div.from.display(self.1),
                 div.to.display(self.1)
             )?
@@ -188,8 +191,8 @@ impl<'a> fmt::Display for DisplayDiversions<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use entity::EntityRef;
-    use ir::Value;
+    use crate::entity::EntityRef;
+    use crate::ir::Value;
 
     #[test]
     fn inserts() {
@@ -201,7 +204,6 @@ mod tests {
         assert_eq!(
             divs.diversion(v1),
             Some(&Diversion {
-                value: v1,
                 from: ValueLoc::Reg(10),
                 to: ValueLoc::Reg(12),
             })

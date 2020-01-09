@@ -7,10 +7,10 @@
 
 
 
-use binemit::CodeOffset;
-use ir::{Function, Inst, ValueLoc};
-use isa::{RegClass, RegUnit};
-use regalloc::RegDiversions;
+use crate::binemit::CodeOffset;
+use crate::ir::{Function, Inst, ValueLoc};
+use crate::isa::{RegClass, RegUnit};
+use crate::regalloc::RegDiversions;
 
 
 #[derive(PartialEq, Debug)]

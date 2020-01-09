@@ -20,16 +20,13 @@
 
 
 
-use constant_hash::{probe, simple_hash};
-use isa::TargetIsa;
+use crate::constant_hash::{probe, simple_hash};
+use crate::isa::TargetIsa;
+use core::fmt;
+use core::str;
+use failure_derive::Fail;
 use std::boxed::Box;
-use std::fmt;
-use std::str;
 use std::string::{String, ToString};
-
-
-#[cfg(not(feature = "std"))]
-use std::slice::SliceConcatExt;
 
 
 
@@ -110,10 +107,21 @@ fn parse_bool_value(value: &str) -> SetResult<bool> {
 fn parse_enum_value(value: &str, choices: &[&str]) -> SetResult<u8> {
     match choices.iter().position(|&tag| tag == value) {
         Some(idx) => Ok(idx as u8),
-        None => Err(SetError::BadValue(format!(
-            "any among {}",
-            choices.join(", ")
-        ))),
+        None => {
+            
+            
+            let mut all_choices = String::new();
+            let mut first = true;
+            for choice in choices {
+                if first {
+                    first = false
+                } else {
+                    all_choices += ", ";
+                }
+                all_choices += choice;
+            }
+            Err(SetError::BadValue(format!("any among {}", all_choices)))
+        }
     }
 }
 
@@ -202,8 +210,8 @@ impl<'a> PredicateView<'a> {
 
 
 pub mod detail {
-    use constant_hash;
-    use std::fmt;
+    use crate::constant_hash;
+    use core::fmt;
 
     
     pub struct Template {

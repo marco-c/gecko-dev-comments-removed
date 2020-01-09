@@ -1,6 +1,7 @@
 
 
-use verifier::VerifierErrors;
+use crate::verifier::VerifierErrors;
+use failure_derive::Fail;
 
 
 

@@ -7,8 +7,8 @@
 
 
 
-use std::fmt;
-use std::mem;
+use core::fmt;
+use core::mem;
 
 
 pub trait ReservedValue: Eq {

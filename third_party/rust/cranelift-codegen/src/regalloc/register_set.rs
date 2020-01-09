@@ -5,11 +5,11 @@
 
 
 
-use isa::registers::{RegClass, RegInfo, RegUnit, RegUnitMask};
-use std::char;
-use std::fmt;
-use std::iter::ExactSizeIterator;
-use std::mem::size_of_val;
+use crate::isa::registers::{RegClass, RegInfo, RegUnit, RegUnitMask};
+use core::char;
+use core::fmt;
+use core::iter::ExactSizeIterator;
+use core::mem::size_of_val;
 
 
 #[derive(Clone)]
@@ -228,7 +228,7 @@ impl fmt::Display for RegisterSet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use isa::registers::{RegClass, RegClassData};
+    use crate::isa::registers::{RegClass, RegClassData};
     use std::vec::Vec;
 
     

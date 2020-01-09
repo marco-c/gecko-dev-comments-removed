@@ -11,15 +11,16 @@
 
 
 
-use dbg::DisplayList;
-use dominator_tree::DominatorTreePreorder;
-use entity::{EntityList, ListPool};
-use entity::{Keys, PrimaryMap, SecondaryMap};
-use ir::{Function, Value};
-use packed_option::PackedOption;
-use ref_slice::ref_slice;
-use std::cmp::Ordering;
-use std::fmt;
+use crate::dbg::DisplayList;
+use crate::dominator_tree::DominatorTreePreorder;
+use crate::entity::entity_impl;
+use crate::entity::{EntityList, ListPool};
+use crate::entity::{Keys, PrimaryMap, SecondaryMap};
+use crate::ir::{Function, Value};
+use crate::packed_option::PackedOption;
+use crate::ref_slice::ref_slice;
+use core::cmp::Ordering;
+use core::fmt;
 use std::vec::Vec;
 
 
@@ -96,7 +97,7 @@ impl VirtRegs {
     
     
     
-    #[cfg_attr(feature = "cargo-clippy", allow(trivially_copy_pass_by_ref))]
+    #[cfg_attr(feature = "cargo-clippy", allow(clippy::trivially_copy_pass_by_ref))]
     pub fn congruence_class<'a, 'b>(&'a self, value: &'b Value) -> &'b [Value]
     where
         'a: 'b,
@@ -399,8 +400,8 @@ impl VirtRegs {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use entity::EntityRef;
-    use ir::Value;
+    use crate::entity::EntityRef;
+    use crate::ir::Value;
 
     #[test]
     fn empty_union_find() {

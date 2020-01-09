@@ -6,19 +6,19 @@
 
 
 
-use std::fmt::{self, Display, Formatter};
-use std::ops::{Deref, DerefMut};
-use std::str::FromStr;
+use core::fmt::{self, Display, Formatter};
+use core::ops::{Deref, DerefMut};
+use core::str::FromStr;
 use std::vec::Vec;
 
-use ir;
-use ir::types;
-use ir::{Ebb, FuncRef, JumpTable, SigRef, Type, Value};
-use isa;
+use crate::ir;
+use crate::ir::types;
+use crate::ir::{Ebb, FuncRef, JumpTable, SigRef, Type, Value};
+use crate::isa;
 
-use bitset::BitSet;
-use entity;
-use ref_slice::{ref_slice, ref_slice_mut};
+use crate::bitset::BitSet;
+use crate::entity;
+use crate::ref_slice::{ref_slice, ref_slice_mut};
 
 
 
@@ -73,7 +73,7 @@ impl FromStr for Opcode {
 
     
     fn from_str(s: &str) -> Result<Self, &'static str> {
-        use constant_hash::{probe, simple_hash, Table};
+        use crate::constant_hash::{probe, simple_hash, Table};
 
         impl<'a> Table<&'a str> for [Option<Opcode>] {
             fn len(&self) -> usize {
@@ -561,7 +561,7 @@ mod tests {
 
     #[test]
     fn opcodes() {
-        use std::mem;
+        use core::mem;
 
         let x = Opcode::Iadd;
         let mut y = Opcode::Isub;
@@ -590,7 +590,7 @@ mod tests {
 
     #[test]
     fn instruction_data() {
-        use std::mem;
+        use core::mem;
         
         
         
@@ -645,7 +645,7 @@ mod tests {
 
     #[test]
     fn value_set() {
-        use ir::types::*;
+        use crate::ir::types::*;
 
         let vts = ValueTypeSet {
             lanes: BitSet16::from_range(0, 8),

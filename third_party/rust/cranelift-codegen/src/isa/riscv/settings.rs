@@ -1,7 +1,7 @@
 
 
-use settings::{self, detail, Builder};
-use std::fmt;
+use crate::settings::{self, detail, Builder};
+use core::fmt;
 
 
 
@@ -11,7 +11,7 @@ include!(concat!(env!("OUT_DIR"), "/settings-riscv.rs"));
 #[cfg(test)]
 mod tests {
     use super::{builder, Flags};
-    use settings::{self, Configurable};
+    use crate::settings::{self, Configurable};
     use std::string::ToString;
 
     #[test]

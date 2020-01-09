@@ -3,13 +3,14 @@
 
 
 
-use entity::SecondaryMap;
-use ir::progpoint::{ExpandedProgramPoint, ProgramOrder};
-use ir::{Ebb, Inst};
-use packed_option::PackedOption;
-use std::cmp;
-use std::iter::{IntoIterator, Iterator};
-use timing;
+use crate::entity::SecondaryMap;
+use crate::ir::progpoint::{ExpandedProgramPoint, ProgramOrder};
+use crate::ir::{Ebb, Inst};
+use crate::packed_option::PackedOption;
+use crate::timing;
+use core::cmp;
+use core::iter::{IntoIterator, Iterator};
+use log::debug;
 
 
 
@@ -741,10 +742,10 @@ impl<'f> DoubleEndedIterator for Insts<'f> {
 #[cfg(test)]
 mod tests {
     use super::Layout;
-    use cursor::{Cursor, CursorPosition};
-    use entity::EntityRef;
-    use ir::{Ebb, Inst, ProgramOrder, SourceLoc};
-    use std::cmp::Ordering;
+    use crate::cursor::{Cursor, CursorPosition};
+    use crate::entity::EntityRef;
+    use crate::ir::{Ebb, Inst, ProgramOrder, SourceLoc};
+    use core::cmp::Ordering;
     use std::vec::Vec;
 
     struct LayoutCursor<'f> {

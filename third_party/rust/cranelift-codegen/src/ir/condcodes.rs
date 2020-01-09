@@ -4,8 +4,8 @@
 
 
 
-use std::fmt::{self, Display, Formatter};
-use std::str::FromStr;
+use core::fmt::{self, Display, Formatter};
+use core::str::FromStr;
 
 
 pub trait CondCode: Copy {
