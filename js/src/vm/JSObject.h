@@ -33,10 +33,6 @@ namespace gc {
 class RelocationOverlay;
 }  
 
-namespace jit {
-class CacheIRCompiler;
-}
-
 
 
 class GlobalObject;
@@ -81,10 +77,17 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
 
 
 
+
+
+
+
+
+
+
 class JSObject : public js::gc::Cell {
  protected:
   js::GCPtrObjectGroup group_;
-  js::GCPtrShape shape_;
+  void* shapeOrExpando_;
 
  private:
   friend class js::Shape;
@@ -159,23 +162,8 @@ class JSObject : public js::gc::Cell {
   JS::Compartment* compartment() const { return group_->compartment(); }
   JS::Compartment* maybeCompartment() const { return compartment(); }
 
-  void initShape(js::Shape* shape) {
-    
-    
-    MOZ_ASSERT(zone() == shape->zone());
-    shape_.init(shape);
-  }
-  void setShape(js::Shape* shape) {
-    MOZ_ASSERT(zone() == shape->zone());
-    shape_ = shape;
-  }
-  js::Shape* shape() const { return shape_; }
-
-  void traceShape(JSTracer* trc) { TraceEdge(trc, shapePtr(), "shape"); }
-
-  static JSObject* fromShapeFieldPointer(uintptr_t p) {
-    return reinterpret_cast<JSObject*>(p - JSObject::offsetOfShape());
-  }
+  inline js::Shape* maybeShape() const;
+  inline js::Shape* ensureShape(JSContext* cx);
 
   enum GenerateShape { GENERATE_NONE, GENERATE_SHAPE };
 
@@ -568,17 +556,15 @@ class JSObject : public js::gc::Cell {
 
  protected:
   
-  MOZ_ALWAYS_INLINE js::GCPtrShape* shapePtr() { return &(this->shape_); }
-
-  
   
   
   
   friend class js::jit::MacroAssembler;
-  friend class js::jit::CacheIRCompiler;
 
   static constexpr size_t offsetOfGroup() { return offsetof(JSObject, group_); }
-  static constexpr size_t offsetOfShape() { return offsetof(JSObject, shape_); }
+  static constexpr size_t offsetOfShapeOrExpando() {
+    return offsetof(JSObject, shapeOrExpando_);
+  }
 
  private:
   JSObject() = delete;

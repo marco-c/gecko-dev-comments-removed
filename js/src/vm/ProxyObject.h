@@ -8,6 +8,7 @@
 #define vm_ProxyObject_h
 
 #include "js/Proxy.h"
+#include "vm/ShapedObject.h"
 
 namespace js {
 
@@ -22,7 +23,7 @@ namespace js {
 
 
 
-class ProxyObject : public JSObject {
+class ProxyObject : public ShapedObject {
   
   detail::ProxyDataLayout data;
 

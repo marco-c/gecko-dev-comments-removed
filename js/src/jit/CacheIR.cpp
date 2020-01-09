@@ -2652,7 +2652,7 @@ bool GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
   env = env_;
   while (env) {
     if (NeedEnvironmentShapeGuard(env)) {
-      writer.guardShape(lastObjId, env->shape());
+      writer.guardShape(lastObjId, env->maybeShape());
     }
 
     if (env == holder) {
@@ -2802,7 +2802,7 @@ bool BindNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
   env = env_;
   while (env) {
     if (NeedEnvironmentShapeGuard(env) && !env->is<GlobalObject>()) {
-      writer.guardShape(lastObjId, env->shape());
+      writer.guardShape(lastObjId, env->maybeShape());
     }
 
     if (env == holder) {
@@ -4401,6 +4401,7 @@ bool SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup,
   
   
   
+  MOZ_ASSERT(obj->is<ShapedObject>());
   writer.guardGroup(objId, oldGroup);
 
   

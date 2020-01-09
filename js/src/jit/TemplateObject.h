@@ -48,7 +48,7 @@ class TemplateObject {
   
   
   inline gc::Cell* group() const;
-  inline gc::Cell* shape() const;
+  inline gc::Cell* maybeShape() const;
 
   
   inline uint32_t getInlineTypedObjectSize() const;

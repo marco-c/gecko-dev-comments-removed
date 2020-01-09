@@ -21,6 +21,7 @@
 #include "js/Value.h"
 #include "vm/JSObject.h"
 #include "vm/Shape.h"
+#include "vm/ShapedObject.h"
 #include "vm/StringType.h"
 
 namespace js {
@@ -458,7 +459,7 @@ enum class ShouldUpdateTypes { Update, DontUpdate };
 
 
 
-class NativeObject : public JSObject {
+class NativeObject : public ShapedObject {
  protected:
   
   js::HeapSlot* slots_;
