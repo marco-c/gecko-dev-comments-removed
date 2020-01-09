@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import mozunit
 from mozpack.packager.formats import (
     FlatFormatter,

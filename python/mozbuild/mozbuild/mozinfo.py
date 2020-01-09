@@ -5,7 +5,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 
 import os
 import re
@@ -130,7 +130,7 @@ def build_dict(config, env=os.environ):
         d['platform_guess'] = guess_platform()
         d['buildtype_guess'] = guess_buildtype()
 
-    if d.get('buildapp', '') == 'mobile/android' and 'MOZ_ANDROID_MIN_SDK_VERSION' in substs:
+    if 'buildapp' in d and d['buildapp'] == 'mobile/android' and 'MOZ_ANDROID_MIN_SDK_VERSION' in substs:
         d['android_min_sdk'] = substs['MOZ_ANDROID_MIN_SDK_VERSION']
 
     return d

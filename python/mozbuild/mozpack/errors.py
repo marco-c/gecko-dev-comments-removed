@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 
 import sys
 from contextlib import contextmanager
@@ -97,7 +97,7 @@ class ErrorCollector(object):
             if self._count is None:
                 raise ErrorMessage(msg)
             self._count += 1
-        print(msg, file=self.out)
+        print >>self.out, msg
 
     def fatal(self, msg):
         self._handle(self.FATAL, msg)

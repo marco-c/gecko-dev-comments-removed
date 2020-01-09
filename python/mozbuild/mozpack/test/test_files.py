@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 from mozbuild.util import ensureParentDir
 
 from mozpack.errors import (

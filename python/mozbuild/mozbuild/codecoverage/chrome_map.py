@@ -2,11 +2,11 @@
 
 
 
-from __future__ import absolute_import, print_function
-
+from collections import defaultdict
 import json
 import os
 import re
+import urlparse
 
 from mach.config import ConfigSettings
 from mach.logging import LoggingManager
@@ -22,12 +22,10 @@ from mozpack.files import PreprocessedFile
 from mozpack.manifests import InstallManifest
 import mozpack.path as mozpath
 
-from .manifest_handler import ChromeManifestHandler
+from manifest_handler import ChromeManifestHandler
 
 
 _line_comment_re = re.compile('^//@line (\d+) "(.+)"$')
-
-
 def generate_pp_info(path, topsrcdir):
     with open(path) as fh:
         
@@ -56,8 +54,6 @@ def generate_pp_info(path, topsrcdir):
             finish_section(count + 2)
 
         return section_info
-
-
 
 
 
@@ -116,8 +112,6 @@ class ChromeMapBackend(CommonBackend):
                 pp_info = None
             self._install_mapping[dest] = src.path, pp_info
 
-        
-        
         
         
         

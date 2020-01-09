@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import os
 import tempfile
 import shutil
@@ -18,17 +16,16 @@ _MSI_ARCH = {
     'x86_64': 'x64',
 }
 
-
 def update_wsx(wfile, pvalues):
 
     parsed = minidom.parse(wfile)
 
     
     
-    for k, v in pvalues.items():
-        entry = parsed.createProcessingInstruction('define', k + ' = "' + v + '"')
-        root = parsed.firstChild
-        parsed.insertBefore(entry, root)
+    for k,v in pvalues.items():
+         entry = parsed.createProcessingInstruction('define', k + ' = "' + v + '"')
+         root = parsed.firstChild
+         parsed.insertBefore(entry, root)
     
     new_w_file = wfile + ".new"
     fh = open(new_w_file, "wb")
@@ -59,7 +56,7 @@ def repackage_msi(topsrcdir, wsx, version, locale, arch, setupexe, candle, light
         raise Exception("%s does not exist." % light)
     embeddedVersion = '0.0.0.0'
     
-    if 'a' not in version and 'b' not in version:
+    if not 'a' in version and not 'b' in version:
         if version.endswith('esr'):
             parts = version[:-3].split('.')
         else:
@@ -79,8 +76,8 @@ def repackage_msi(topsrcdir, wsx, version, locale, arch, setupexe, candle, light
         try:
             wsx_file = os.path.split(wsx)[1]
             shutil.copy(wsx, tmpdir)
-            temp_wsx_file = os.path.join(tmpdir, wsx_file)
-            temp_wsx_file = mozpath.realpath(temp_wsx_file)
+            temp_wsx_file  = os.path.join(tmpdir, wsx_file)
+            temp_wsx_file  = mozpath.realpath(temp_wsx_file)
             pre_values = {'Vendor': 'Mozilla',
                           'BrandFullName': 'Mozilla Firefox',
                           'Version': version,

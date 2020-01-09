@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import gyp
 import gyp.msvs_emulation
@@ -10,6 +10,7 @@ import sys
 import os
 import time
 import types
+import warnings
 
 import mozpack.path as mozpath
 from mozpack.files import FileFinder
@@ -22,7 +23,10 @@ from .context import (
 )
 from mozbuild.util import (
     expand_variables,
+    List,
+    memoize,
 )
+from .reader import SandboxValidationError
 
 
 
@@ -36,7 +40,7 @@ sys.modules['gyp.generator.mozbuild'] = sys.modules[__name__]
 
 
 chrome_src = mozpath.abspath(mozpath.join(mozpath.dirname(gyp.__file__),
-                                          '../../../../..'))
+    '../../../../..'))
 script_dir = mozpath.join(chrome_src, 'build')
 
 
@@ -70,11 +74,10 @@ class GypContext(TemplateContext):
     relobjdir is the object directory that will be used for this context,
     relative to the topobjdir defined in the ConfigEnvironment.
     """
-
     def __init__(self, config, relobjdir):
         self._relobjdir = relobjdir
         TemplateContext.__init__(self, template='Gyp',
-                                 allowed_variables=VARIABLES, config=config)
+            allowed_variables=VARIABLES, config=config)
 
 
 def handle_actions(actions, context, action_overrides):
@@ -85,15 +88,10 @@ def handle_actions(actions, context, action_overrides):
             raise RuntimeError('GYP action %s not listed in action_overrides' % name)
         outputs = action['outputs']
         if len(outputs) > 1:
-            raise NotImplementedError(
-                'GYP actions with more than one output not supported: %s' % name)
+            raise NotImplementedError('GYP actions with more than one output not supported: %s' % name)
         output = outputs[0]
         if not output.startswith(idir):
-            raise NotImplementedError(
-                'GYP actions outputting to somewhere other than '
-                '<(INTERMEDIATE_DIR) not supported: %s'
-                % output
-            )
+            raise NotImplementedError('GYP actions outputting to somewhere other than <(INTERMEDIATE_DIR) not supported: %s' % output)
         output = output[len(idir):]
         context['GENERATED_FILES'] += [output]
         g = context['GENERATED_FILES'][output]
@@ -106,8 +104,7 @@ def handle_copies(copies, context):
     for copy in copies:
         dest = copy['destination']
         if not dest.startswith(dist):
-            raise NotImplementedError(
-                'GYP copies to somewhere other than <(PRODUCT_DIR)/dist not supported: %s' % dest)
+            raise NotImplementedError('GYP copies to somewhere other than <(PRODUCT_DIR)/dist not supported: %s' % dest)
         dest_paths = dest[len(dist):].split('/')
         exports = context['EXPORTS']
         while dest_paths:
@@ -133,8 +130,8 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
         
         
         
-        reldir = mozpath.relpath(mozpath.dirname(build_file),
-                                 mozpath.dirname(path))
+        reldir  = mozpath.relpath(mozpath.dirname(build_file),
+                                  mozpath.dirname(path))
         subdir = '%s_%s' % (
             mozpath.splitext(mozpath.basename(build_file))[0],
             target_name,
@@ -158,13 +155,12 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
         target_conf = spec['configurations'][c]
 
         if 'actions' in spec:
-            handle_actions(spec['actions'], context, action_overrides)
+          handle_actions(spec['actions'], context, action_overrides)
         if 'copies' in spec:
-            handle_copies(spec['copies'], context)
+          handle_copies(spec['copies'], context)
 
         use_libs = []
         libs = []
-
         def add_deps(s):
             for t in s.get('dependencies', []) + s.get('dependencies_original', []):
                 ty = targets[t]['type']
@@ -183,20 +179,20 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
 
         os_libs = []
         for l in libs:
-            if l.startswith('-'):
-                os_libs.append(l)
-            elif l.endswith('.lib'):
-                os_libs.append(l[:-4])
-            elif l:
-                
-                use_libs.append(os.path.basename(l))
+          if l.startswith('-'):
+              os_libs.append(l)
+          elif l.endswith('.lib'):
+              os_libs.append(l[:-4])
+          elif l:
+            
+            use_libs.append(os.path.basename(l))
 
         if spec['type'] == 'none':
-            if not ('actions' in spec or 'copies' in spec):
-                continue
+          if not ('actions' in spec or 'copies' in spec):
+            continue
         elif spec['type'] in ('static_library', 'shared_library', 'executable'):
-                
-                
+            
+            
             name = spec['target_name']
             if spec['type'] in ('static_library', 'shared_library'):
                 if name.startswith('lib'):
@@ -207,8 +203,7 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
                 context['PROGRAM'] = name.decode('utf-8')
             if spec['type'] == 'shared_library':
                 context['FORCE_SHARED_LIB'] = True
-            elif spec['type'] == 'static_library' and \
-                    spec.get('variables', {}).get('no_expand_libs', '0') == '1':
+            elif spec['type'] == 'static_library' and spec.get('variables', {}).get('no_expand_libs', '0') == '1':
                 
                 
                 
@@ -227,9 +222,9 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
                 ext = mozpath.splitext(f)[-1]
                 extensions.add(ext)
                 if f.startswith('$INTERMEDIATE_DIR/'):
-                    s = ObjDirPath(context, f.replace('$INTERMEDIATE_DIR/', '!'))
+                  s = ObjDirPath(context, f.replace('$INTERMEDIATE_DIR/', '!'))
                 else:
-                    s = SourcePath(context, f)
+                  s = SourcePath(context, f)
                 if ext == '.h':
                     continue
                 if ext == '.def':
@@ -256,8 +251,7 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
                     name, value = define.split('=', 1)
                     
                     
-                    if name == 'NSS_ALLOW_SSLKEYLOGFILE' and \
-                            config.substs.get('RELEASE_OR_BETA', False):
+                    if name == 'NSS_ALLOW_SSLKEYLOGFILE' and config.substs.get('RELEASE_OR_BETA', False):
                         continue
                     context['DEFINES'][name] = value
                 else:
@@ -288,8 +282,7 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
                     if include.startswith('/'):
                         resolved = mozpath.abspath(mozpath.join(config.topsrcdir, include[1:]))
                     elif not include.startswith(('!', '%')):
-                        resolved = mozpath.abspath(mozpath.join(
-                            mozpath.dirname(build_file), include))
+                        resolved = mozpath.abspath(mozpath.join(mozpath.dirname(build_file), include))
                     if not include.startswith(('!', '%')) and not os.path.exists(resolved):
                         continue
                 context['LOCAL_INCLUDES'] += [include]
@@ -332,17 +325,17 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
             raise NotImplementedError('Unsupported gyp target type: %s' % spec['type'])
 
         if not no_chromium:
-            
-            
-            context['LOCAL_INCLUDES'] += [
-                '!/ipc/ipdl/_ipdlheaders',
-                '/ipc/chromium/src',
-                '/ipc/glue',
-            ]
-            
-            if config.substs['OS_TARGET'] == 'WINNT':
-                context['DEFINES']['UNICODE'] = True
-                context['DEFINES']['_UNICODE'] = True
+          
+          
+          context['LOCAL_INCLUDES'] += [
+              '!/ipc/ipdl/_ipdlheaders',
+              '/ipc/chromium/src',
+              '/ipc/glue',
+          ]
+          
+          if config.substs['OS_TARGET'] == 'WINNT':
+              context['DEFINES']['UNICODE'] = True
+              context['DEFINES']['_UNICODE'] = True
         context['COMPILE_FLAGS']['OS_INCLUDES'] = []
 
         for key, value in gyp_dir_attrs.sandbox_vars.items():
@@ -375,7 +368,6 @@ class GypProcessor(object):
     gyp dependencies will be. gyp_dir_attrs are attributes set for the dir
     from moz.build.
     """
-
     def __init__(self, config, gyp_dir_attrs, path, output, executor,
                  action_overrides, non_unified_sources):
         self._path = path

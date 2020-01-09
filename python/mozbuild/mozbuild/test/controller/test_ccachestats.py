@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import unicode_literals
 
 import time
 import unittest
@@ -290,7 +290,6 @@ class TestCcacheStats(unittest.TestCase):
         
         stat9 = CCacheStats(self.STAT9)
         self.assertTrue(stat9)
-
 
 if __name__ == '__main__':
     main()

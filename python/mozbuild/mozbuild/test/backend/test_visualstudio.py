@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import unicode_literals
 
 from xml.dom.minidom import parse
 import os
@@ -41,7 +41,7 @@ class TestVisualStudioBackend(BackendTester):
         els = d.getElementsByTagName('NMakeForcedIncludes')
         self.assertEqual(len(els), 1)
         self.assertEqual(els[0].firstChild.nodeValue,
-                         '$(TopObjDir)\\dist\\include\\mozilla-config.h')
+            '$(TopObjDir)\\dist\\include\\mozilla-config.h')
 
         
         els = d.getElementsByTagName('NMakeIncludeSearchPath')

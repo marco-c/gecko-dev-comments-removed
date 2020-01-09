@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import unicode_literals
 
 import unittest
 
@@ -52,14 +52,13 @@ VARIABLES = {
     'FUGA': (Fuga, unicode, None),
     'PIYO': (Piyo, unicode, None),
     'HOGERA': (ContextDerivedTypedList(Piyo, StrictOrderingOnAppendList),
-               list, None),
+        list, None),
     'HOGEHOGE': (ContextDerivedTypedListWithItems(
         Piyo,
         StrictOrderingOnAppendListWithFlagsFactory({
             'foo': bool,
         })), list, None),
 }
-
 
 class TestContext(unittest.TestCase):
     def test_key_rejection(self):
@@ -203,7 +202,6 @@ class TestContext(unittest.TestCase):
 
         with self.assertRaises(UnsortedError):
             ns['HOGEHOGE'] += ['f', 'e', 'd']
-
 
 if __name__ == '__main__':
     main()

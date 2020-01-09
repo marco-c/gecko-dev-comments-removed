@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 from mozbuild.pythonutil import iter_modules_in_path
 from mozunit import main
 import os

@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, unicode_literals, print_function
+from __future__ import unicode_literals, print_function
 
 import buildconfig
 import os
@@ -58,7 +58,7 @@ class TestBuild(unittest.TestCase):
                 backend(config).consume(definitions)
 
             yield config
-        except Exception:
+        except:
             raise
         finally:
             if not os.environ.get('MOZ_NO_CLEANUP'):
@@ -73,7 +73,7 @@ class TestBuild(unittest.TestCase):
 
         try:
             yield handle_make_line
-        except Exception:
+        except:
             print('\n'.join(lines))
             raise
 
@@ -232,7 +232,6 @@ class TestBuild(unittest.TestCase):
                 % (test_path),
             'bin/app/modules/foo.jsm': 'foo.jsm\n',
         })
-
 
 if __name__ == '__main__':
     main()

@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import json
 import os
 import tempfile
@@ -203,7 +201,6 @@ class TestWriteMozinfo(unittest.TestCase, Base):
     """
     Test the write_mozinfo function.
     """
-
     def setUp(self):
         fd, self.f = tempfile.mkstemp()
         os.close(fd)

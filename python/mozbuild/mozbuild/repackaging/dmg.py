@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import errno
 import os
 import tempfile
@@ -11,8 +9,7 @@ import tarfile
 import shutil
 import mozpack.path as mozpath
 from mozpack.dmg import create_dmg
-from mozbuild.repackaging.application_ini import get_application_ini_value
-
+from application_ini import get_application_ini_value
 
 def repackage_dmg(infile, output):
 

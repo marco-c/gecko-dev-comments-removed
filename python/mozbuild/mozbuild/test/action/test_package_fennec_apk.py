@@ -3,7 +3,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import unicode_literals
 
 import os
 import unittest
