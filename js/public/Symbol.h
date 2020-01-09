@@ -103,8 +103,9 @@ extern JS_PUBLIC_API Symbol* GetWellKnownSymbol(JSContext* cx,
 
 
 
-inline bool PropertySpecNameIsSymbol(uintptr_t name) {
-  return name != 0 && name - 1 < WellKnownSymbolLimit;
+inline bool PropertySpecNameIsSymbol(const char* name) {
+  uintptr_t u = reinterpret_cast<uintptr_t>(name);
+  return u != 0 && u - 1 < WellKnownSymbolLimit;
 }
 
 }  
