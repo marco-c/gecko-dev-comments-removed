@@ -2,11 +2,11 @@
 
 
 
-use api::{AlphaType, ClipMode, DeviceIntRect, DeviceIntPoint, DeviceIntSize};
-use api::{ExternalImageType, FilterOp, ImageRendering, LayoutRect};
-use api::{YuvColorSpace, YuvFormat, PictureRect, ColorDepth, LayoutPoint};
-use clip::{ClipDataStore, ClipNodeFlags, ClipNodeRange, ClipItem, ClipStore};
-use clip_scroll_tree::{ClipScrollTree, ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex};
+use api::{AlphaType, ClipMode, DeviceIntRect, DeviceIntPoint, DeviceIntSize, WorldRect};
+use api::{ExternalImageType, FilterOp, ImageRendering, LayoutRect, DeviceRect, DevicePixelScale};
+use api::{YuvColorSpace, YuvFormat, PictureRect, ColorDepth, LayoutPoint, DevicePoint, LayoutSize};
+use clip::{ClipDataStore, ClipNodeFlags, ClipNodeRange, ClipItem, ClipStore, ClipNodeInstance};
+use clip_scroll_tree::{ClipScrollTree, ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex, CoordinateSystemId};
 use glyph_rasterizer::GlyphFormat;
 use gpu_cache::{GpuCache, GpuCacheHandle, GpuCacheAddress};
 use gpu_types::{BrushFlags, BrushInstance, PrimitiveHeaders, ZBufferId, ZBufferIdGenerator};
@@ -28,7 +28,7 @@ use scene::FilterOpHelpers;
 use smallvec::SmallVec;
 use std::{f32, i32, usize};
 use tiling::{RenderTargetContext};
-use util::{TransformedRectKind};
+use util::{project_rect, TransformedRectKind};
 
 
 
@@ -36,6 +36,12 @@ const OPAQUE_TASK_ADDRESS: RenderTaskAddress = RenderTaskAddress(0x7fff);
 
 
 const INVALID_SEGMENT_INDEX: i32 = 0xffff;
+
+
+const CLIP_RECTANGLE_TILE_SIZE: i32 = 128;
+
+
+const CLIP_RECTANGLE_AREA_THRESHOLD: i32 = CLIP_RECTANGLE_TILE_SIZE * CLIP_RECTANGLE_TILE_SIZE * 4;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -2526,19 +2532,107 @@ impl ClipBatcher {
         task_address: RenderTaskAddress,
         clip_data_address: GpuCacheAddress,
         local_pos: LayoutPoint,
+        sub_rect: DeviceRect,
     ) {
         let instance = ClipMaskInstance {
             render_task_address: task_address,
             clip_transform_id: TransformPaletteId::IDENTITY,
             prim_transform_id: TransformPaletteId::IDENTITY,
-            segment: 0,
             clip_data_address,
             resource_address: GpuCacheAddress::invalid(),
             local_pos,
             tile_rect: LayoutRect::zero(),
+            sub_rect,
         };
 
         self.rectangles.push(instance);
+    }
+
+    
+    
+    fn add_tiled_clip_mask(
+        &mut self,
+        mask_screen_rect: DeviceIntRect,
+        clip_rect_size: LayoutSize,
+        clip_instance: &ClipNodeInstance,
+        clip_scroll_tree: &ClipScrollTree,
+        world_rect: &WorldRect,
+        device_pixel_scale: DevicePixelScale,
+        gpu_address: GpuCacheAddress,
+        instance: &ClipMaskInstance,
+    ) -> bool {
+        
+        if mask_screen_rect.area() < CLIP_RECTANGLE_AREA_THRESHOLD {
+            return false;
+        }
+
+        let clip_spatial_node = &clip_scroll_tree
+            .spatial_nodes[clip_instance.spatial_node_index.0 as usize];
+
+        
+        
+        
+        if clip_spatial_node.coordinate_system_id != CoordinateSystemId::root() {
+            return false;
+        }
+
+        
+        
+        let local_clip_rect = LayoutRect::new(
+            clip_instance.local_pos,
+            clip_rect_size,
+        );
+        let world_clip_rect = match project_rect(
+            &clip_spatial_node.world_content_transform.to_transform(),
+            &local_clip_rect,
+            world_rect,
+        ) {
+            Some(rect) => rect,
+            None => return false,
+        };
+
+        
+        
+        let world_device_rect = world_clip_rect * device_pixel_scale;
+        let x_tiles = (mask_screen_rect.size.width + CLIP_RECTANGLE_TILE_SIZE-1) / CLIP_RECTANGLE_TILE_SIZE;
+        let y_tiles = (mask_screen_rect.size.height + CLIP_RECTANGLE_TILE_SIZE-1) / CLIP_RECTANGLE_TILE_SIZE;
+
+        
+        
+        
+
+        for y in 0 .. y_tiles {
+            for x in 0 .. x_tiles {
+                let p0 = DeviceIntPoint::new(
+                    x * CLIP_RECTANGLE_TILE_SIZE,
+                    y * CLIP_RECTANGLE_TILE_SIZE,
+                );
+                let p1 = DeviceIntPoint::new(
+                    (p0.x + CLIP_RECTANGLE_TILE_SIZE).min(mask_screen_rect.size.width),
+                    (p0.y + CLIP_RECTANGLE_TILE_SIZE).min(mask_screen_rect.size.height),
+                );
+                let sub_rect = DeviceIntRect::new(
+                    p0,
+                    DeviceIntSize::new(
+                        p1.x - p0.x,
+                        p1.y - p0.y,
+                    ),
+                ).to_f32();
+
+                
+                
+                
+                if !world_device_rect.contains_rect(&sub_rect) {
+                    self.rectangles.push(ClipMaskInstance {
+                        clip_data_address: gpu_address,
+                        sub_rect,
+                        ..*instance
+                    });
+                }
+            }
+        }
+
+        true
     }
 
     pub fn add(
@@ -2552,6 +2646,9 @@ impl ClipBatcher {
         clip_scroll_tree: &ClipScrollTree,
         transforms: &mut TransformPalette,
         clip_data_store: &ClipDataStore,
+        actual_rect: DeviceIntRect,
+        world_rect: &WorldRect,
+        device_pixel_scale: DevicePixelScale,
     ) {
         for i in 0 .. clip_node_range.count {
             let clip_instance = clip_store.get_instance_from_range(&clip_node_range, i);
@@ -2573,11 +2670,14 @@ impl ClipBatcher {
                 render_task_address: task_address,
                 clip_transform_id,
                 prim_transform_id,
-                segment: 0,
                 clip_data_address: GpuCacheAddress::invalid(),
                 resource_address: GpuCacheAddress::invalid(),
                 local_pos: clip_instance.local_pos,
                 tile_rect: LayoutRect::zero(),
+                sub_rect: DeviceRect::new(
+                    DevicePoint::zero(),
+                    actual_rect.size.to_f32(),
+                ),
             };
 
             match clip_node.item {
@@ -2648,15 +2748,33 @@ impl ClipBatcher {
                             ..instance
                         });
                 }
-                ClipItem::Rectangle(_, mode) => {
-                    if !clip_instance.flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) ||
-                        mode == ClipMode::ClipOut {
-                        let gpu_address =
-                            gpu_cache.get_address(&clip_node.gpu_cache_handle);
-                        self.rectangles.push(ClipMaskInstance {
-                            clip_data_address: gpu_address,
-                            ..instance
-                        });
+                ClipItem::Rectangle(_, ClipMode::ClipOut) => {
+                    let gpu_address =
+                        gpu_cache.get_address(&clip_node.gpu_cache_handle);
+                    self.rectangles.push(ClipMaskInstance {
+                        clip_data_address: gpu_address,
+                        ..instance
+                    });
+                }
+                ClipItem::Rectangle(clip_rect_size, ClipMode::Clip) => {
+                    if !clip_instance.flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) {
+                        let gpu_address = gpu_cache.get_address(&clip_node.gpu_cache_handle);
+
+                        if !self.add_tiled_clip_mask(
+                            actual_rect,
+                            clip_rect_size,
+                            clip_instance,
+                            clip_scroll_tree,
+                            world_rect,
+                            device_pixel_scale,
+                            gpu_address,
+                            &instance,
+                        ) {
+                            self.rectangles.push(ClipMaskInstance {
+                                clip_data_address: gpu_address,
+                                ..instance
+                            });
+                        }
                     }
                 }
                 ClipItem::RoundedRectangle(..) => {
