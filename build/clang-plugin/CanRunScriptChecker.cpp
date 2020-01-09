@@ -114,6 +114,14 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
               
               
               
+              
+              
+              
+              
+              
+              
+              
+              
               cxxMemberCallExpr(on(allOf(hasType(isSmartPtrToRefCounted()),
                                          MozKnownLiveCall)))
             )
@@ -331,6 +339,6 @@ void CanRunScriptChecker::check(const MatchFinder::MatchResult &Result) {
         << CallRange;
 
     diag(ParentFunction->getCanonicalDecl()->getLocation(),
-	 NoteNonCanRunScriptParent, DiagnosticIDs::Note);
+         NoteNonCanRunScriptParent, DiagnosticIDs::Note);
   }
 }

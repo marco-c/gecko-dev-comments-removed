@@ -7321,7 +7321,7 @@ class CGCallGenerator(CGThing):
 
             
             
-            if a.type.isGeckoInterface():
+            if a.type.isGeckoInterface() or a.type.isCallback():
                 arg = CGWrapper(arg, pre="MOZ_KnownLive(", post=")")
 
             args.append(arg)
