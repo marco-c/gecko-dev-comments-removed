@@ -125,6 +125,8 @@ function addMessage(state, filtersState, prefsState, newMessage) {
   newMessage.groupId = currentGroup;
   newMessage.indent = parentGroups.length;
 
+  ensureExecutionPoint(state, newMessage);
+
   const addedMessage = Object.freeze(newMessage);
   state.messagesById.set(newMessage.id, addedMessage);
 
@@ -148,6 +150,7 @@ function addMessage(state, filtersState, prefsState, newMessage) {
 
   if (visible) {
     state.visibleMessages.push(newMessage.id);
+    maybeSortVisibleMessages(state);
   } else if (DEFAULT_FILTERS.includes(cause)) {
     state.filteredMessagesCount.global++;
     state.filteredMessagesCount[cause]++;
@@ -365,11 +368,14 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
         }
       });
 
-      return {
+      const filteredState = {
         ...state,
         visibleMessages: messagesToShow,
         filteredMessagesCount: filtered,
       };
+      maybeSortVisibleMessages(filteredState);
+
+      return filteredState;
   }
 
   return state;
@@ -937,6 +943,79 @@ function getDefaultFiltersCounter() {
   }, {});
   count.global = 0;
   return count;
+}
+
+
+
+function ensureExecutionPoint(state, newMessage) {
+  if (newMessage.executionPoint) {
+    return;
+  }
+
+  
+  
+  let point = { progress: 0 }, messageCount = 1;
+  if (state.visibleMessages.length) {
+    const lastId = state.visibleMessages[state.visibleMessages.length - 1];
+    const lastMessage = state.messagesById.get(lastId);
+    if (lastMessage.executionPoint) {
+      point = lastMessage.executionPoint;
+    } else {
+      point = lastMessage.lastExecutionPoint.point;
+      messageCount = lastMessage.lastExecutionPoint.messageCount + 1;
+    }
+  }
+  newMessage.lastExecutionPoint = { point, messageCount };
+}
+
+function messageExecutionPoint(state, id) {
+  const message = state.messagesById.get(id);
+  return message.executionPoint || message.lastExecutionPoint.point;
+}
+
+function messageCountSinceLastExecutionPoint(state, id) {
+  const message = state.messagesById.get(id);
+  return message.lastExecutionPoint ? message.lastExecutionPoint.messageCount : 0;
+}
+
+function maybeSortVisibleMessages(state) {
+  
+  
+  
+  
+  
+  
+  if (state.replayProgressMessages.size) {
+    state.visibleMessages.sort((a, b) => {
+      const pointA = messageExecutionPoint(state, a);
+      const pointB = messageExecutionPoint(state, b);
+      if (pointA.progress != pointB.progress) {
+        return pointA.progress > pointB.progress;
+      }
+      
+      
+      
+      if ("frameIndex" in pointA != "frameIndex" in pointB) {
+        return "frameIndex" in pointA;
+      }
+      
+      
+      
+      if (pointA.frameIndex != pointB.frameIndex) {
+        return pointA.frameIndex < pointB.frameIndex;
+      }
+      
+      if (pointA.offset != pointB.offset) {
+        return pointA.offset > pointB.offset;
+      }
+      
+      
+      
+      const countA = messageCountSinceLastExecutionPoint(state, a);
+      const countB = messageCountSinceLastExecutionPoint(state, b);
+      return countA > countB;
+    });
+  }
 }
 
 exports.messages = messages;
