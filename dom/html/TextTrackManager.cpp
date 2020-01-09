@@ -568,8 +568,7 @@ class TextTrackListInternal {
 };
 
 void TextTrackManager::DispatchUpdateCueDisplay() {
-  if (!mUpdateCueDisplayDispatched && !IsShutdown() &&
-      mMediaElement->IsCurrentlyPlaying()) {
+  if (!mUpdateCueDisplayDispatched && !IsShutdown()) {
     WEBVTT_LOG("DispatchUpdateCueDisplay");
     nsPIDOMWindowInner* win = mMediaElement->OwnerDoc()->GetInnerWindow();
     if (win) {
@@ -587,8 +586,7 @@ void TextTrackManager::DispatchTimeMarchesOn() {
   
   
   
-  if (!mTimeMarchesOnDispatched && !IsShutdown() &&
-      mMediaElement->IsCurrentlyPlaying()) {
+  if (!mTimeMarchesOnDispatched && !IsShutdown()) {
     WEBVTT_LOG("DispatchTimeMarchesOn");
     nsPIDOMWindowInner* win = mMediaElement->OwnerDoc()->GetInnerWindow();
     if (win) {
