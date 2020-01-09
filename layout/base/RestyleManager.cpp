@@ -1083,6 +1083,9 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
     }
     if ((aChange & nsChangeHint_UpdateTransformLayer) &&
         aFrame->IsTransformed()) {
+      
+      
+      
       ActiveLayerTracker::NotifyRestyle(aFrame, eCSSProperty_transform);
       
       
@@ -1107,6 +1110,9 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
                                  ->PrincipalChildList()
                                  .FirstChild();
       for (; childFrame; childFrame = childFrame->GetNextSibling()) {
+        
+        
+        
         ActiveLayerTracker::NotifyRestyle(childFrame, eCSSProperty_transform);
       }
     }
