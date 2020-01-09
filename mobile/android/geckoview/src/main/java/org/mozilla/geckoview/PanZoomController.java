@@ -55,6 +55,8 @@ public class PanZoomController extends JNIObject {
 
     private ArrayList<Pair<Integer, MotionEvent>> mQueuedEvents;
 
+    private boolean mSynthesizedEvent = false;
+
     @WrapForJNI(calledFrom = "ui")
     private native boolean handleMotionEvent(
             int action, int actionIndex, long time, int metaState,  float screenX, float screenY,
@@ -117,7 +119,10 @@ public class PanZoomController extends JNIObject {
 
         
         
-        mSession.onScreenOriginChanged((int)screenX, (int)screenY);
+        
+        if (!mSynthesizedEvent) {
+            mSession.onScreenOriginChanged((int)screenX, (int)screenY);
+        }
 
         return handleMotionEvent(action, event.getActionIndex(), event.getEventTime(),
                 event.getMetaState(), screenX, screenY, pointerId, x, y, orientation, pressure,
@@ -520,7 +525,10 @@ public class PanZoomController extends JNIObject {
              0,
              source,
              0);
+
+        mSynthesizedEvent = true;
         onTouchEvent(event);
+        mSynthesizedEvent = false;
 
         
         if (eventType == MotionEvent.ACTION_POINTER_UP ||
