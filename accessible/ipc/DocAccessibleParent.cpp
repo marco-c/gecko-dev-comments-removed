@@ -676,12 +676,17 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
     isActive = browserParent->GetDocShellIsActive();
   }
 
-  nsWinUtils::NativeWindowCreateProc onCreate([this](HWND aHwnd) -> void {
+  
+  
+  
+  RefPtr<DocAccessibleParent> thisRef = this;
+  nsWinUtils::NativeWindowCreateProc onCreate([thisRef](HWND aHwnd) -> void {
     IDispatchHolder hWndAccHolder;
 
-    ::SetPropW(aHwnd, kPropNameDocAccParent, reinterpret_cast<HANDLE>(this));
+    ::SetPropW(aHwnd, kPropNameDocAccParent,
+               reinterpret_cast<HANDLE>(thisRef.get()));
 
-    SetEmulatedWindowHandle(aHwnd);
+    thisRef->SetEmulatedWindowHandle(aHwnd);
 
     RefPtr<IAccessible> hwndAcc;
     if (SUCCEEDED(::AccessibleObjectFromWindow(
@@ -692,8 +697,9 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
           mscom::ToProxyUniquePtr(std::move(wrapped))));
     }
 
-    Unused << SendEmulatedWindow(
-        reinterpret_cast<uintptr_t>(mEmulatedWindowHandle), hWndAccHolder);
+    Unused << thisRef->SendEmulatedWindow(
+        reinterpret_cast<uintptr_t>(thisRef->mEmulatedWindowHandle),
+        hWndAccHolder);
   });
 
   HWND parentWnd = reinterpret_cast<HWND>(rootDocument->GetNativeWindow());
