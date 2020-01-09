@@ -2923,23 +2923,13 @@ void gfxPlatform::InitWebRenderConfig() {
     }
   }
 #if defined(MOZ_WIDGET_GTK)
-  else {
-    if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
-      
-      
-      
-      
-      gfxConfig::Disable(Feature::HW_COMPOSITING, FeatureStatus::Blocked,
-                         "Acceleration blocked by platform");
-    }
-
-    if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING) &&
-        !StaticPrefs::GPUProcessAllowSoftware()) {
-      
-      
-      gfxConfig::Disable(Feature::GPU_PROCESS, FeatureStatus::Unavailable,
-                         "Hardware compositing is unavailable.");
-    }
+  else if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
+    
+    
+    
+    
+    gfxConfig::Disable(Feature::HW_COMPOSITING, FeatureStatus::Blocked,
+                       "Acceleration blocked by platform");
   }
 #endif
 
