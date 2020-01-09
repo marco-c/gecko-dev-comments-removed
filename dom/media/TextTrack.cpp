@@ -73,33 +73,28 @@ JSObject* TextTrack::WrapObject(JSContext* aCx,
 }
 
 void TextTrack::SetMode(TextTrackMode aValue) {
-  if (mMode != aValue) {
-    mMode = aValue;
-    if (aValue == TextTrackMode::Disabled) {
-      
-      HTMLMediaElement* mediaElement = GetMediaElement();
-      if (mediaElement) {
-        for (size_t i = 0; i < mCueList->Length(); ++i) {
-          mediaElement->NotifyCueRemoved(*(*mCueList)[i]);
-        }
-      }
-      SetCuesInactive();
-    } else {
-      
-      HTMLMediaElement* mediaElement = GetMediaElement();
-      if (mediaElement) {
-        for (size_t i = 0; i < mCueList->Length(); ++i) {
-          mediaElement->NotifyCueAdded(*(*mCueList)[i]);
-        }
-      }
-    }
-    if (mTextTrackList) {
-      mTextTrackList->CreateAndDispatchChangeEvent();
-    }
-    
-    
-    NotifyCueUpdated(nullptr);
+  if (mMode == aValue) {
+    return;
   }
+  mMode = aValue;
+
+  HTMLMediaElement* mediaElement = GetMediaElement();
+  if (aValue == TextTrackMode::Disabled) {
+    for (size_t i = 0; i < mCueList->Length() && mediaElement; ++i) {
+      mediaElement->NotifyCueRemoved(*(*mCueList)[i]);
+    }
+    SetCuesInactive();
+  } else {
+    for (size_t i = 0; i < mCueList->Length() && mediaElement; ++i) {
+      mediaElement->NotifyCueAdded(*(*mCueList)[i]);
+    }
+  }
+  if (mediaElement) {
+    mediaElement->NotifyTextTrackModeChanged();
+  }
+  
+  
+  NotifyCueUpdated(nullptr);
 }
 
 void TextTrack::GetId(nsAString& aId) const {
