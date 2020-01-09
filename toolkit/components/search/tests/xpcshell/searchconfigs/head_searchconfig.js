@@ -13,6 +13,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const GLOBAL_SCOPE = this;
 
+const URLTYPE_SUGGEST_JSON = "application/x-suggestions+json";
+const URLTYPE_SEARCH_HTML  = "text/html";
+
 
 
 
@@ -101,7 +104,11 @@ class SearchConfigTest {
         await this._reinit(region, locale);
 
         this._assertDefaultEngines(region, locale);
-        await this._assertAvailableEngines(region, locale);
+        const engines = await Services.search.getVisibleEngines();
+        const isPresent = this._assertAvailableEngines(region, locale, engines);
+        if (isPresent) {
+          this._assertCorrectDomains(region, locale, engines);
+        }
       }
     }
 
@@ -213,14 +220,16 @@ class SearchConfigTest {
 
 
 
-  _enginesMatch(engines, identifier) {
+  _findEngine(engines, identifier) {
     if (identifier == "amazon") {
-      return !!engines.find(engine => engine.startsWith(identifier));
+      return engines.find(engine => engine.identifier.startsWith(identifier));
     }
-    return engines.includes(identifier);
+    return engines.find(engine => engine.identifier == identifier);
   }
 
   
+
+
 
 
 
@@ -237,14 +246,14 @@ class SearchConfigTest {
     const config = this._config[section];
     const hasIncluded = "included" in config;
     const hasExcluded = "excluded" in config;
-    const identifierIncluded = this._enginesMatch(engines, this._config.identifier);
+    const identifierIncluded = !!this._findEngine(engines, this._config.identifier);
 
     
     if (section == "default" && !hasIncluded && !hasExcluded) {
       Assert.ok(!identifierIncluded,
         `Should not be ${section} for any locale/region,
          currently set for ${infoString}`);
-      return;
+      return false;
     }
 
     
@@ -257,9 +266,10 @@ class SearchConfigTest {
 
     if (included || notExcluded) {
       Assert.ok(identifierIncluded, `Should be ${section} for ${infoString}`);
-      return;
+      return true;
     }
     Assert.ok(!identifierIncluded, `Should not be ${section} for ${infoString}`);
+    return false;
   }
 
   
@@ -271,8 +281,8 @@ class SearchConfigTest {
 
 
   _assertDefaultEngines(region, locale) {
-    const identifier = Services.search.originalDefaultEngine.identifier;
-    this._assertEngineRules([identifier], region, locale, "default");
+    this._assertEngineRules([Services.search.originalDefaultEngine], region,
+                            locale, "default");
   }
 
   
@@ -283,9 +293,56 @@ class SearchConfigTest {
 
 
 
-  async _assertAvailableEngines(region, locale) {
-    const engines = await Services.search.getVisibleEngines();
-    const engineNames = engines.map(engine => engine._shortName);
-    this._assertEngineRules(engineNames, region, locale, "available");
+
+
+
+
+  _assertAvailableEngines(region, locale, engines) {
+    return this._assertEngineRules(engines, region, locale, "available");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _assertCorrectDomains(region, locale, engines) {
+    const [expectedDomain, domainConfig] =
+      Object.entries(this._config.domains).find(([key, value]) =>
+        this._localeRegionInSection(value.included, region, locale));
+
+    Assert.ok(expectedDomain,
+      `Should have an expectedDomain for the engine in region: "${region}" locale: "${locale}"`);
+
+    const engine = this._findEngine(engines, this._config.identifier);
+    Assert.ok(engine, "Should have an engine present");
+
+    const searchForm = new URL(engine.searchForm);
+    Assert.ok(searchForm.host.endsWith(expectedDomain),
+      `Should have the correct search form domain for region: "${region}" locale: "${locale}".
+       Got "${searchForm.host}", expected to end with "${expectedDomain}".`);
+
+    for (const urlType of [URLTYPE_SUGGEST_JSON, URLTYPE_SEARCH_HTML]) {
+      info(`Checking urlType ${urlType}`);
+
+      const submission = engine.getSubmission("test", urlType);
+      if (urlType == URLTYPE_SUGGEST_JSON &&
+          (this._config.noSuggestionsURL || domainConfig.noSuggestionsURL)) {
+        Assert.ok(!submission, "Should not have a submission url");
+      } else if (this._config.searchUrlBase) {
+          Assert.equal(submission.uri.prePath + submission.uri.filePath,
+            this._config.searchUrlBase + domainConfig.searchUrlEnd,
+            `Should have the correct domain for region: "${region}" locale: "${locale}".`);
+      } else {
+        Assert.ok(submission.uri.host.endsWith(expectedDomain),
+          `Should have the correct domain for region: "${region}" locale: "${locale}".
+           Got "${submission.uri.host}", expected to end with "${expectedDomain}".`);
+      }
+    }
   }
 }
