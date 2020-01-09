@@ -711,9 +711,6 @@ pub type NonNegativeLengthOrAuto = generics::GenericLengthPercentageOrAuto<NonNe
 pub type LengthOrNumber = GenericLengthOrNumber<Length, Number>;
 
 
-pub type LengthOrNormal = Either<Length, Normal>;
-
-
 pub type NonNegativeLength = NonNegative<Length>;
 
 impl ToAnimatedValue for NonNegativeLength {
@@ -782,9 +779,6 @@ impl From<NonNegativeLength> for Au {
         Au::from(non_negative_len.0)
     }
 }
-
-
-pub type NonNegativeLengthOrNormal = Either<NonNegativeLength, Normal>;
 
 
 pub type NonNegativeLengthPercentageOrNormal = Either<NonNegativeLengthPercentage, Normal>;
