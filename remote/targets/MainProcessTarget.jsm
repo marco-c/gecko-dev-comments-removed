@@ -6,10 +6,8 @@
 
 var EXPORTED_SYMBOLS = ["MainProcessTarget"];
 
-const {Connection} = ChromeUtils.import("chrome://remote/content/Connection.jsm");
+const {Target} = ChromeUtils.import("chrome://remote/content/targets/Target.jsm");
 const {Session} = ChromeUtils.import("chrome://remote/content/sessions/Session.jsm");
-const {WebSocketDebuggerTransport} = ChromeUtils.import("chrome://remote/content/server/WebSocketTransport.jsm");
-const {WebSocketServer} = ChromeUtils.import("chrome://remote/content/server/WebSocket.jsm");
 
 
 
@@ -17,13 +15,12 @@ const {WebSocketServer} = ChromeUtils.import("chrome://remote/content/server/Web
 
 
 
-class MainProcessTarget {
+class MainProcessTarget extends Target {
   
 
 
   constructor(targets) {
-    this.targets = targets;
-    this.sessions = new Map();
+    super(targets, Session);
 
     this.type = "main-process";
   }
@@ -50,22 +47,5 @@ class MainProcessTarget {
       url: "",
       webSocketDebuggerUrl: this.wsDebuggerURL,
     };
-  }
-
-  
-
-  async handle(request, response) {
-    const so = await WebSocketServer.upgrade(request, response);
-    const transport = new WebSocketDebuggerTransport(so);
-    const conn = new Connection(transport);
-    this.sessions.set(conn, new Session(conn, this));
-  }
-
-  
-
-  get QueryInterface() {
-    return ChromeUtils.generateQI([
-      Ci.nsIHttpRequestHandler,
-    ]);
   }
 }
