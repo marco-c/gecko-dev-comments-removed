@@ -226,7 +226,7 @@ HTMLTextFieldAccessible::NativeAttributes() {
   
   
   
-  nsIContent* widgetElm = BindingParent();
+  nsIContent* widgetElm = BindingOrWidgetParent();
   if ((widgetElm && widgetElm->AsElement()->GetAttr(kNameSpaceID_None,
                                                     nsGkAtoms::type, type)) ||
       mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
@@ -259,7 +259,7 @@ ENameValueFlag HTMLTextFieldAccessible::NativeName(nsString& aName) const {
   if (!aName.IsEmpty()) return nameFlag;
 
   
-  nsIContent* widgetElm = BindingParent();
+  nsIContent* widgetElm = BindingOrWidgetParent();
   if (widgetElm) XULElmName(mDoc, widgetElm, aName);
 
   if (!aName.IsEmpty()) return eNameOK;
@@ -295,7 +295,7 @@ void HTMLTextFieldAccessible::ApplyARIAState(uint64_t* aState) const {
 
   
   
-  nsIContent* widgetElm = BindingParent();
+  nsIContent* widgetElm = BindingOrWidgetParent();
   if (widgetElm)
     aria::MapToState(aria::eARIAAutoComplete, widgetElm->AsElement(), aState);
 }
@@ -338,7 +338,7 @@ uint64_t HTMLTextFieldAccessible::NativeState() const {
     return state | states::SUPPORTS_AUTOCOMPLETION | states::HASPOPUP;
 
   
-  if (!BindingParent() && Preferences::GetBool("browser.formfill.enable")) {
+  if (!BindingOrWidgetParent() && Preferences::GetBool("browser.formfill.enable")) {
     
     
     

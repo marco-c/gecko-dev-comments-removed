@@ -100,7 +100,16 @@ class HTMLTextFieldAccessible final : public HyperTextAccessibleWrap {
   
 
 
-  nsIContent* BindingParent() const { return mContent->GetBindingParent(); }
+
+  nsIContent* BindingOrWidgetParent() const {
+    nsIContent * el = mContent->GetBindingParent();
+    if (el) {
+      return el;
+    }
+    
+    ErrorResult rv;
+    return Elm()->Closest(NS_LITERAL_STRING("textbox"), rv);
+  }
 };
 
 
