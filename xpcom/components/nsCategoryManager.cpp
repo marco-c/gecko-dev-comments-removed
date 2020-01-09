@@ -4,8 +4,8 @@
 
 
 
-#include "nsICategoryManager.h"
 #include "nsCategoryManager.h"
+#include "nsCategoryManagerUtils.h"
 
 #include "prio.h"
 #include "prlock.h"
