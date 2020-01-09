@@ -4470,6 +4470,10 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
       if (!weakFrame.IsAlive()) {
         return;
       }
+      if (mIsRoot && mOuter->PresContext()->IsRootContentDocument()) {
+        mOuter->PresShell()->SetPendingVisualScrollUpdate(
+            scrollToPos, FrameMetrics::eRestore);
+      }
       if (state == LoadingState::Loading || NS_SUBTREE_DIRTY(mOuter)) {
         
         
