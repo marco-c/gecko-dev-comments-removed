@@ -836,6 +836,7 @@ pub enum WordBreak {
     
     
     
+    #[cfg(feature = "gecko")]
     BreakWord,
 }
 
