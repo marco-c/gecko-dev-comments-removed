@@ -108,6 +108,7 @@ __inline HRESULT SHLoadLibraryFromKnownFolder(REFKNOWNFOLDERID aFolderId,
 }
 #  endif
 
+#  if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
 
 
 
@@ -135,6 +136,7 @@ static nsresult GetLibrarySaveToPath(int aFallbackFolderId,
 
   return GetWindowsFolder(aFallbackFolderId, aFile);
 }
+#  endif
 
 
 

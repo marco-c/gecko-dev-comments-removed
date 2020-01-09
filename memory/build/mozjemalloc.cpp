@@ -4351,13 +4351,14 @@ inline void MozJemalloc::moz_dispose_arena(arena_id_t aArenaId) {
 
 
 
+#ifndef XP_WIN
 
 
 
 
-#ifndef XP_DARWIN
+#  ifndef XP_DARWIN
 static
-#endif
+#  endif
     void
     _malloc_prefork(void) {
   
@@ -4372,9 +4373,9 @@ static
   huge_mtx.Lock();
 }
 
-#ifndef XP_DARWIN
+#  ifndef XP_DARWIN
 static
-#endif
+#  endif
     void
     _malloc_postfork_parent(void) {
   
@@ -4389,9 +4390,9 @@ static
   gArenas.mLock.Unlock();
 }
 
-#ifndef XP_DARWIN
+#  ifndef XP_DARWIN
 static
-#endif
+#  endif
     void
     _malloc_postfork_child(void) {
   
@@ -4405,6 +4406,7 @@ static
 
   gArenas.mLock.Init();
 }
+#endif  
 
 
 

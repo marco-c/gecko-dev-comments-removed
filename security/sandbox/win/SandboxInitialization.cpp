@@ -131,7 +131,7 @@ static sandbox::BrokerServices* InitializeBrokerServices() {
   
   
   scoped_refptr<sandbox::TargetPolicy> policy = brokerServices->CreatePolicy();
-  sandbox::ResultCode result = policy->CreateAlternateDesktop(true);
+  policy->CreateAlternateDesktop(true);
 
   return brokerServices;
 }

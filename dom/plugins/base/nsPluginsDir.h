@@ -44,7 +44,9 @@ struct nsPluginInfo {
 
 
 class nsPluginFile {
+#ifndef XP_WIN
   PRLibrary* pLibrary;
+#endif
   nsCOMPtr<nsIFile> mPlugin;
 
  public:

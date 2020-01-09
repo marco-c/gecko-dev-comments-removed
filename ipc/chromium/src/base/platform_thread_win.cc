@@ -13,17 +13,6 @@
 
 namespace {
 
-
-
-const DWORD kVCThreadNameException = 0x406D1388;
-
-typedef struct tagTHREADNAME_INFO {
-  DWORD dwType;      
-  LPCSTR szName;     
-  DWORD dwThreadID;  
-  DWORD dwFlags;     
-} THREADNAME_INFO;
-
 DWORD __stdcall ThreadFunc(void* closure) {
   PlatformThread::Delegate* delegate =
       static_cast<PlatformThread::Delegate*>(closure);

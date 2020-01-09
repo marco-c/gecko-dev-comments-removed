@@ -1351,6 +1351,7 @@ const char* Options::ModeString() const {
 
 
 
+#ifndef XP_WIN
 static void prefork() {
   if (gStateLock) {
     gStateLock->Lock();
@@ -1362,6 +1363,7 @@ static void postfork() {
     gStateLock->Unlock();
   }
 }
+#endif
 
 
 
