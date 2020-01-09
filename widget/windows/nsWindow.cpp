@@ -1340,7 +1340,8 @@ BOOL CALLBACK nsWindow::EnumAllThreadWindowProc(HWND aWnd, LPARAM aParam) {
   return TRUE;
 }
 
- nsTArray<nsWindow*> nsWindow::EnumAllWindows() {
+
+nsTArray<nsWindow*> nsWindow::EnumAllWindows() {
   nsTArray<nsWindow*> windows;
   EnumThreadWindows(GetCurrentThreadId(), EnumAllThreadWindowProc,
                     reinterpret_cast<LPARAM>(&windows));
@@ -3224,8 +3225,8 @@ class FullscreenTransitionData final : public nsISupports {
 
 NS_IMPL_ISUPPORTS0(FullscreenTransitionData)
 
- bool nsWindow::PrepareForFullscreenTransition(
-    nsISupports** aData) {
+
+bool nsWindow::PrepareForFullscreenTransition(nsISupports** aData) {
   
   
   
@@ -3267,9 +3268,11 @@ NS_IMPL_ISUPPORTS0(FullscreenTransitionData)
   return true;
 }
 
- void nsWindow::PerformFullscreenTransition(
-    FullscreenTransitionStage aStage, uint16_t aDuration, nsISupports* aData,
-    nsIRunnable* aCallback) {
+
+void nsWindow::PerformFullscreenTransition(FullscreenTransitionStage aStage,
+                                           uint16_t aDuration,
+                                           nsISupports* aData,
+                                           nsIRunnable* aCallback) {
   auto data = static_cast<FullscreenTransitionData*>(aData);
   nsCOMPtr<nsIRunnable> callback = aCallback;
   UINT msg = aStage == eBeforeFullscreenToggle ? WM_FULLSCREEN_TRANSITION_BEFORE
@@ -3278,7 +3281,8 @@ NS_IMPL_ISUPPORTS0(FullscreenTransitionData)
   ::PostMessage(data->mWnd, msg, wparam, (LPARAM)aDuration);
 }
 
- void nsWindow::CleanupFullscreenTransition() {
+
+void nsWindow::CleanupFullscreenTransition() {
   MOZ_ASSERT(NS_IsMainThread(),
              "CleanupFullscreenTransition "
              "should only run on the main thread");

@@ -186,8 +186,8 @@ static void SetWidgetStateSafe(uint8_t* aSafeVector,
   aSafeVector[key >> 3] |= (1 << (key & 7));
 }
 
- GtkTextDirection nsNativeThemeGTK::GetTextDirection(
-    nsIFrame* aFrame) {
+
+GtkTextDirection nsNativeThemeGTK::GetTextDirection(nsIFrame* aFrame) {
   
   
   

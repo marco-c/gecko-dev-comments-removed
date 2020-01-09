@@ -8,8 +8,10 @@
 namespace mozilla {
 namespace widget {
 
- uint32_t nsAutoRollup::sCount = 0;
- StaticRefPtr<nsIContent> nsAutoRollup::sLastRollup;
+
+uint32_t nsAutoRollup::sCount = 0;
+
+StaticRefPtr<nsIContent> nsAutoRollup::sLastRollup;
 
 nsAutoRollup::nsAutoRollup() {
   
@@ -33,16 +35,16 @@ nsAutoRollup::~nsAutoRollup() {
   sCount--;
 }
 
- void nsAutoRollup::SetLastRollup(nsIContent* aLastRollup) {
+
+void nsAutoRollup::SetLastRollup(nsIContent* aLastRollup) {
   
   MOZ_ASSERT(sCount);
 
   sLastRollup = aLastRollup;
 }
 
- nsIContent* nsAutoRollup::GetLastRollup() {
-  return sLastRollup.get();
-}
+
+nsIContent* nsAutoRollup::GetLastRollup() { return sLastRollup.get(); }
 
 }  
 }  

@@ -574,7 +574,8 @@ Modifier WidgetInputEvent::AccelModifier() {
 
 
 
- bool WidgetMouseEvent::IsMiddleClickPasteEnabled() {
+
+bool WidgetMouseEvent::IsMiddleClickPasteEnabled() {
   return Preferences::GetBool("middlemouse.paste", false);
 }
 
@@ -582,8 +583,9 @@ Modifier WidgetInputEvent::AccelModifier() {
 
 
 
- double WidgetWheelEvent::ComputeOverriddenDelta(
-    double aDelta, bool aIsForVertical) {
+
+double WidgetWheelEvent::ComputeOverriddenDelta(double aDelta,
+                                                bool aIsForVertical) {
   if (!gfxPrefs::MouseWheelHasRootScrollDeltaOverride()) {
     return aDelta;
   }
@@ -993,15 +995,17 @@ int32_t WidgetKeyboardEvent::ContentAccessModifierMaskPref() {
   return sValue;
 }
 
- void WidgetKeyboardEvent::Shutdown() {
+
+void WidgetKeyboardEvent::Shutdown() {
   delete sKeyNameIndexHashtable;
   sKeyNameIndexHashtable = nullptr;
   delete sCodeNameIndexHashtable;
   sCodeNameIndexHashtable = nullptr;
 }
 
- void WidgetKeyboardEvent::GetDOMKeyName(KeyNameIndex aKeyNameIndex,
-                                                     nsAString& aKeyName) {
+
+void WidgetKeyboardEvent::GetDOMKeyName(KeyNameIndex aKeyNameIndex,
+                                        nsAString& aKeyName) {
   if (aKeyNameIndex >= KEY_NAME_INDEX_USE_STRING) {
     aKeyName.Truncate();
     return;
@@ -1013,8 +1017,9 @@ int32_t WidgetKeyboardEvent::ContentAccessModifierMaskPref() {
   aKeyName = kKeyNames[aKeyNameIndex];
 }
 
- void WidgetKeyboardEvent::GetDOMCodeName(
-    CodeNameIndex aCodeNameIndex, nsAString& aCodeName) {
+
+void WidgetKeyboardEvent::GetDOMCodeName(CodeNameIndex aCodeNameIndex,
+                                         nsAString& aCodeName) {
   if (aCodeNameIndex >= CODE_NAME_INDEX_USE_STRING) {
     aCodeName.Truncate();
     return;
@@ -1026,8 +1031,8 @@ int32_t WidgetKeyboardEvent::ContentAccessModifierMaskPref() {
   aCodeName = kCodeNames[aCodeNameIndex];
 }
 
- KeyNameIndex WidgetKeyboardEvent::GetKeyNameIndex(
-    const nsAString& aKeyValue) {
+
+KeyNameIndex WidgetKeyboardEvent::GetKeyNameIndex(const nsAString& aKeyValue) {
   if (!sKeyNameIndexHashtable) {
     sKeyNameIndexHashtable = new KeyNameIndexHashtable(ArrayLength(kKeyNames));
     for (size_t i = 0; i < ArrayLength(kKeyNames); i++) {
@@ -1040,7 +1045,8 @@ int32_t WidgetKeyboardEvent::ContentAccessModifierMaskPref() {
   return result;
 }
 
- CodeNameIndex WidgetKeyboardEvent::GetCodeNameIndex(
+
+CodeNameIndex WidgetKeyboardEvent::GetCodeNameIndex(
     const nsAString& aCodeValue) {
   if (!sCodeNameIndexHashtable) {
     sCodeNameIndexHashtable =
@@ -1055,7 +1061,8 @@ int32_t WidgetKeyboardEvent::ContentAccessModifierMaskPref() {
   return result;
 }
 
- uint32_t WidgetKeyboardEvent::GetFallbackKeyCodeOfPunctuationKey(
+
+uint32_t WidgetKeyboardEvent::GetFallbackKeyCodeOfPunctuationKey(
     CodeNameIndex aCodeNameIndex) {
   switch (aCodeNameIndex) {
     case CODE_NAME_INDEX_Semicolon:  
@@ -1104,7 +1111,8 @@ int32_t WidgetKeyboardEvent::ContentAccessModifierMaskPref() {
   return kCommands[aCommand];
 }
 
- uint32_t WidgetKeyboardEvent::ComputeLocationFromCodeValue(
+
+uint32_t WidgetKeyboardEvent::ComputeLocationFromCodeValue(
     CodeNameIndex aCodeNameIndex) {
   
   
@@ -1154,7 +1162,8 @@ int32_t WidgetKeyboardEvent::ContentAccessModifierMaskPref() {
   }
 }
 
- uint32_t WidgetKeyboardEvent::ComputeKeyCodeFromKeyNameIndex(
+
+uint32_t WidgetKeyboardEvent::ComputeKeyCodeFromKeyNameIndex(
     KeyNameIndex aKeyNameIndex) {
   switch (aKeyNameIndex) {
     case KEY_NAME_INDEX_Cancel:
@@ -1325,8 +1334,8 @@ int32_t WidgetKeyboardEvent::ContentAccessModifierMaskPref() {
   }
 }
 
- CodeNameIndex
-WidgetKeyboardEvent::ComputeCodeNameIndexFromKeyNameIndex(
+
+CodeNameIndex WidgetKeyboardEvent::ComputeCodeNameIndexFromKeyNameIndex(
     KeyNameIndex aKeyNameIndex, const Maybe<uint32_t>& aLocation) {
   if (aLocation.isSome() &&
       aLocation.value() ==
@@ -1646,7 +1655,8 @@ WidgetKeyboardEvent::ComputeCodeNameIndexFromKeyNameIndex(
   }
 }
 
- Modifier WidgetKeyboardEvent::GetModifierForKeyName(
+
+Modifier WidgetKeyboardEvent::GetModifierForKeyName(
     KeyNameIndex aKeyNameIndex) {
   switch (aKeyNameIndex) {
     case KEY_NAME_INDEX_Alt:
@@ -1682,8 +1692,8 @@ WidgetKeyboardEvent::ComputeCodeNameIndexFromKeyNameIndex(
   }
 }
 
- bool WidgetKeyboardEvent::IsLockableModifier(
-    KeyNameIndex aKeyNameIndex) {
+
+bool WidgetKeyboardEvent::IsLockableModifier(KeyNameIndex aKeyNameIndex) {
   switch (aKeyNameIndex) {
     case KEY_NAME_INDEX_CapsLock:
     case KEY_NAME_INDEX_FnLock:
@@ -1709,13 +1719,15 @@ const char16_t* const InternalEditorInputEvent::kInputTypeNames[] = {
 InternalEditorInputEvent::InputTypeHashtable*
     InternalEditorInputEvent::sInputTypeHashtable = nullptr;
 
- void InternalEditorInputEvent::Shutdown() {
+
+void InternalEditorInputEvent::Shutdown() {
   delete sInputTypeHashtable;
   sInputTypeHashtable = nullptr;
 }
 
- void InternalEditorInputEvent::GetDOMInputTypeName(
-    EditorInputType aInputType, nsAString& aInputTypeName) {
+
+void InternalEditorInputEvent::GetDOMInputTypeName(EditorInputType aInputType,
+                                                   nsAString& aInputTypeName) {
   if (static_cast<size_t>(aInputType) >=
       static_cast<size_t>(EditorInputType::eUnknown)) {
     aInputTypeName.Truncate();
@@ -1728,7 +1740,8 @@ InternalEditorInputEvent::InputTypeHashtable*
   aInputTypeName.Assign(kInputTypeNames[static_cast<size_t>(aInputType)]);
 }
 
- EditorInputType InternalEditorInputEvent::GetEditorInputType(
+
+EditorInputType InternalEditorInputEvent::GetEditorInputType(
     const nsAString& aInputType) {
   if (aInputType.IsEmpty()) {
     return EditorInputType::eUnknown;

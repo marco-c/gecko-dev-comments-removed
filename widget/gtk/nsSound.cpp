@@ -187,7 +187,8 @@ nsSound::Init() {
   return NS_OK;
 }
 
- void nsSound::Shutdown() {
+
+void nsSound::Shutdown() {
   if (libcanberra) {
     PR_UnloadLibrary(libcanberra);
     libcanberra = nullptr;
@@ -199,7 +200,8 @@ namespace sound {
 StaticRefPtr<nsISound> sInstance;
 }
 }  
- already_AddRefed<nsISound> nsSound::GetInstance() {
+
+already_AddRefed<nsISound> nsSound::GetInstance() {
   using namespace mozilla::sound;
 
   if (!sInstance) {

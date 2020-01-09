@@ -38,7 +38,8 @@ static mozilla::LazyLogModule sWidgetFocusLog("WidgetFocus");
 
 #endif 
 
- already_AddRefed<nsIWidget> nsIWidget::CreateHeadlessWidget() {
+
+already_AddRefed<nsIWidget> nsIWidget::CreateHeadlessWidget() {
   nsCOMPtr<nsIWidget> widget = new mozilla::widget::HeadlessWidget();
   return widget.forget();
 }

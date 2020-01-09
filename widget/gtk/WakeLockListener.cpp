@@ -148,7 +148,8 @@ static _XScreenSaverQueryExtension_fn _XSSQueryExtension = nullptr;
 static _XScreenSaverQueryVersion_fn _XSSQueryVersion = nullptr;
 static _XScreenSaverSuspend_fn _XSSSuspend = nullptr;
 
- bool WakeLockTopic::CheckXScreenSaverSupport() {
+
+bool WakeLockTopic::CheckXScreenSaverSupport() {
   if (!sXssLib) {
     sXssLib = PR_LoadLibrary("libXss.so.1");
     if (!sXssLib) {
@@ -182,7 +183,8 @@ static _XScreenSaverSuspend_fn _XSSSuspend = nullptr;
   return true;
 }
 
- bool WakeLockTopic::InhibitXScreenSaver(bool inhibit) {
+
+bool WakeLockTopic::InhibitXScreenSaver(bool inhibit) {
   
   
   if (!_XSSSuspend) return false;
@@ -323,8 +325,9 @@ void WakeLockTopic::InhibitSucceeded(uint32_t aInhibitRequest) {
   }
 }
 
- void WakeLockTopic::ReceiveInhibitReply(DBusPendingCall* pending,
-                                                     void* user_data) {
+
+void WakeLockTopic::ReceiveInhibitReply(DBusPendingCall* pending,
+                                        void* user_data) {
   if (!WakeLockListener::GetSingleton(false)) {
     
     
@@ -353,7 +356,8 @@ void WakeLockTopic::InhibitSucceeded(uint32_t aInhibitRequest) {
 
 WakeLockListener::WakeLockListener() : mConnection(nullptr) {}
 
- WakeLockListener* WakeLockListener::GetSingleton(bool aCreate) {
+
+WakeLockListener* WakeLockListener::GetSingleton(bool aCreate) {
   if (!sSingleton && aCreate) {
     sSingleton = new WakeLockListener();
   }
@@ -361,7 +365,8 @@ WakeLockListener::WakeLockListener() : mConnection(nullptr) {}
   return sSingleton;
 }
 
- void WakeLockListener::Shutdown() { sSingleton = nullptr; }
+
+void WakeLockListener::Shutdown() { sSingleton = nullptr; }
 
 bool WakeLockListener::EnsureDBusConnection() {
   if (!mConnection) {

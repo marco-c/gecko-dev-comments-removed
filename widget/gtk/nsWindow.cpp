@@ -450,7 +450,8 @@ nsWindow::~nsWindow() {
   Destroy();
 }
 
- void nsWindow::ReleaseGlobals() {
+
+void nsWindow::ReleaseGlobals() {
   for (auto &cursor : gCursorCache) {
     if (cursor) {
       g_object_unref(cursor);
@@ -1239,7 +1240,8 @@ static void SetUserTimeAndStartupIDForActivatedWindow(GtkWidget *aWindow) {
   GTKToolkit->SetDesktopStartupID(EmptyCString());
 }
 
- guint32 nsWindow::GetLastUserInputTime() {
+
+guint32 nsWindow::GetLastUserInputTime() {
   
   
   
@@ -4674,8 +4676,8 @@ class FullscreenTransitionData {
   RefPtr<FullscreenTransitionWindow> mWindow;
 };
 
- gboolean FullscreenTransitionData::TimeoutCallback(
-    gpointer aData) {
+
+gboolean FullscreenTransitionData::TimeoutCallback(gpointer aData) {
   bool finishing = false;
   auto data = static_cast<FullscreenTransitionData *>(aData);
   gdouble opacity = (TimeStamp::Now() - data->mStartTime) / data->mDuration;
@@ -4696,8 +4698,8 @@ class FullscreenTransitionData {
   return FALSE;
 }
 
- bool nsWindow::PrepareForFullscreenTransition(
-    nsISupports **aData) {
+
+bool nsWindow::PrepareForFullscreenTransition(nsISupports **aData) {
   GdkScreen *screen = gtk_widget_get_screen(mShell);
   if (!gdk_screen_is_composited(screen)) {
     return false;
@@ -4706,9 +4708,11 @@ class FullscreenTransitionData {
   return true;
 }
 
- void nsWindow::PerformFullscreenTransition(
-    FullscreenTransitionStage aStage, uint16_t aDuration, nsISupports *aData,
-    nsIRunnable *aCallback) {
+
+void nsWindow::PerformFullscreenTransition(FullscreenTransitionStage aStage,
+                                           uint16_t aDuration,
+                                           nsISupports *aData,
+                                           nsIRunnable *aCallback) {
   auto data = static_cast<FullscreenTransitionWindow *>(aData);
   
   auto transitionData =

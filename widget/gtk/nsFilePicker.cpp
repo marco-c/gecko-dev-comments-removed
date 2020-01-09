@@ -495,13 +495,14 @@ nsFilePicker::Open(nsIFilePickerShownCallback *aCallback) {
   return NS_OK;
 }
 
- void nsFilePicker::OnResponse(void *file_chooser, gint response_id,
-                                           gpointer user_data) {
+
+void nsFilePicker::OnResponse(void *file_chooser, gint response_id,
+                              gpointer user_data) {
   static_cast<nsFilePicker *>(user_data)->Done(file_chooser, response_id);
 }
 
- void nsFilePicker::OnDestroy(GtkWidget *file_chooser,
-                                          gpointer user_data) {
+
+void nsFilePicker::OnDestroy(GtkWidget *file_chooser, gpointer user_data) {
   static_cast<nsFilePicker *>(user_data)->Done(file_chooser,
                                                GTK_RESPONSE_CANCEL);
 }

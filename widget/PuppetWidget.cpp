@@ -45,8 +45,8 @@ static void InvalidateRegion(nsIWidget* aWidget,
   }
 }
 
- already_AddRefed<nsIWidget> nsIWidget::CreatePuppetWidget(
-    TabChild* aTabChild) {
+
+already_AddRefed<nsIWidget> nsIWidget::CreatePuppetWidget(TabChild* aTabChild) {
   MOZ_ASSERT(!aTabChild || nsIWidget::UsePuppetWidgets(),
              "PuppetWidgets not allowed in this configuration");
 

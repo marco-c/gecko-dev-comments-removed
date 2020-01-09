@@ -1154,7 +1154,8 @@ nsWindow::GeckoViewSupport::~GeckoViewSupport() {
   }
 }
 
- void nsWindow::GeckoViewSupport::Open(
+
+void nsWindow::GeckoViewSupport::Open(
     const jni::Class::LocalRef& aCls, GeckoSession::Window::Param aWindow,
     jni::Object::Param aQueue, jni::Object::Param aCompositor,
     jni::Object::Param aDispatcher, jni::Object::Param aSessionAccessibility,
@@ -1319,13 +1320,14 @@ void nsWindow::InitNatives() {
   a11y::SessionAccessibility::Init();
 }
 
- already_AddRefed<nsWindow> nsWindow::From(
-    nsPIDOMWindowOuter* aDOMWindow) {
+
+already_AddRefed<nsWindow> nsWindow::From(nsPIDOMWindowOuter* aDOMWindow) {
   nsCOMPtr<nsIWidget> widget = WidgetUtils::DOMWindowToWidget(aDOMWindow);
   return From(widget);
 }
 
- already_AddRefed<nsWindow> nsWindow::From(nsIWidget* aWidget) {
+
+already_AddRefed<nsWindow> nsWindow::From(nsIWidget* aWidget) {
   
   
   

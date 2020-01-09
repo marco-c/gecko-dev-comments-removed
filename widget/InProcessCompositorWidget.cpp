@@ -17,7 +17,8 @@ namespace widget {
 
 
 #if !defined(MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING)
- RefPtr<CompositorWidget> CompositorWidget::CreateLocal(
+
+RefPtr<CompositorWidget> CompositorWidget::CreateLocal(
     const CompositorWidgetInitData& aInitData,
     const layers::CompositorOptions& aOptions, nsIWidget* aWidget) {
   MOZ_ASSERT(aWidget);

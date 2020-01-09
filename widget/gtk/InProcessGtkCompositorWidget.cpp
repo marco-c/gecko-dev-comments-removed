@@ -13,7 +13,8 @@
 namespace mozilla {
 namespace widget {
 
- RefPtr<CompositorWidget> CompositorWidget::CreateLocal(
+
+RefPtr<CompositorWidget> CompositorWidget::CreateLocal(
     const CompositorWidgetInitData& aInitData,
     const layers::CompositorOptions& aOptions, nsIWidget* aWidget) {
   if (aInitData.type() ==
