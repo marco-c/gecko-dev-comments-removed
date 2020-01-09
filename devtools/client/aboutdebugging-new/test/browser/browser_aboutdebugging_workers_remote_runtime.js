@@ -95,7 +95,7 @@ async function testWorkerOnMockedRemoteClient(testData, remoteClient, firefoxCli
     }],
   });
   remoteClient.listWorkers = () => workers;
-  remoteClient._eventEmitter.emit("workerListChanged");
+  remoteClient._eventEmitter.emit("workersUpdated");
 
   info("Wait until the worker appears");
   await waitUntil(() => !workersPane.querySelector(".js-debug-target-list-empty"));
@@ -109,7 +109,7 @@ async function testWorkerOnMockedRemoteClient(testData, remoteClient, firefoxCli
   remoteClient.listWorkers = () => EMPTY_WORKERS_RESPONSE;
 
   info("Simulate a worker update on the ThisFirefox client");
-  firefoxClient._eventEmitter.emit("workerListChanged");
+  firefoxClient._eventEmitter.emit("workersUpdated");
 
   
   
@@ -123,7 +123,7 @@ async function testWorkerOnMockedRemoteClient(testData, remoteClient, firefoxCli
   ok(findDebugTargetByText(workerName, document),
     "The test worker is still visible");
 
-  info("Emit `workerListChanged` on remoteClient and wait for the target list to update");
-  remoteClient._eventEmitter.emit("workerListChanged");
+  info("Emit `workersUpdated` on remoteClient and wait for the target list to update");
+  remoteClient._eventEmitter.emit("workersUpdated");
   await waitUntil(() => !findDebugTargetByText(workerName, document));
 }
