@@ -11,6 +11,7 @@
 #include "nsICharsetDetectionObserver.h"
 #include "nsHtml5MetaScanner.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/JapaneseDetector.h"
 #include "nsHtml5TreeOpExecutor.h"
 #include "nsHtml5OwningUTF16Buffer.h"
 #include "nsIInputStream.h"
@@ -147,6 +148,16 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   bool internalEncodingDeclaration(nsHtml5String aEncoding);
 
   
+
+  
+
+
+  void FeedJapaneseDetector(mozilla::Span<const uint8_t> aBuffer, bool aLast);
+
+  
+
+
+  void FeedDetector(mozilla::Span<const uint8_t> aBuffer, bool aLast);
 
   
 
@@ -413,7 +424,7 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   
 
 
-  const Encoding* mFeedChardetIfEncoding;
+  bool mFeedChardet;
 
   
 
@@ -532,6 +543,11 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
 
 
   nsCOMPtr<nsICharsetDetector> mChardet;
+
+  
+
+
+  mozilla::UniquePtr<mozilla::JapaneseDetector> mJapaneseDetector;
 
   
 
