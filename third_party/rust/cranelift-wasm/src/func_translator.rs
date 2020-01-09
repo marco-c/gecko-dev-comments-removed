@@ -4,14 +4,13 @@
 
 
 
-use crate::code_translator::translate_operator;
-use crate::environ::{FuncEnvironment, ReturnMode, WasmResult};
-use crate::state::TranslationState;
+use code_translator::translate_operator;
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::{self, Ebb, InstBuilder};
 use cranelift_codegen::timing;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
-use log::info;
+use environ::{FuncEnvironment, ReturnMode, WasmResult};
+use state::TranslationState;
 use wasmparser::{self, BinaryReader};
 
 
@@ -232,10 +231,9 @@ fn cur_srcloc(reader: &BinaryReader) -> ir::SourceLoc {
 #[cfg(test)]
 mod tests {
     use super::{FuncTranslator, ReturnMode};
-    use crate::environ::DummyEnvironment;
     use cranelift_codegen::ir::types::I32;
     use cranelift_codegen::{ir, isa, settings, Context};
-    use log::debug;
+    use environ::DummyEnvironment;
     use target_lexicon::PointerWidth;
 
     #[test]

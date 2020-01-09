@@ -244,8 +244,7 @@ class FieldPredicate(object):
         """
         
         args = (self.field.rust_name(),) + tuple(map(str, self.args))
-        return 'crate::predicates::{}({})'\
-            .format(self.function, ', '.join(args))
+        return '::predicates::{}({})'.format(self.function, ', '.join(args))
 
 
 class IsEqual(FieldPredicate):

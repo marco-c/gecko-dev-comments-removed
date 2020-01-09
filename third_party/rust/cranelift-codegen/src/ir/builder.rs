@@ -3,11 +3,11 @@
 
 
 
-use crate::ir;
-use crate::ir::types;
-use crate::ir::{DataFlowGraph, InstructionData};
-use crate::ir::{Inst, Opcode, Type, Value};
-use crate::isa;
+use ir;
+use ir::types;
+use ir::{DataFlowGraph, InstructionData};
+use ir::{Inst, Opcode, Type, Value};
+use isa;
 
 
 
@@ -59,7 +59,7 @@ pub trait InstInserterBase<'f>: Sized {
     fn insert_built_inst(self, inst: Inst, ctrl_typevar: Type) -> &'f mut DataFlowGraph;
 }
 
-use core::marker::PhantomData;
+use std::marker::PhantomData;
 
 
 
@@ -215,10 +215,10 @@ impl<'f> InstBuilderBase<'f> for ReplaceBuilder<'f> {
 
 #[cfg(test)]
 mod tests {
-    use crate::cursor::{Cursor, FuncCursor};
-    use crate::ir::condcodes::*;
-    use crate::ir::types::*;
-    use crate::ir::{Function, InstBuilder, ValueDef};
+    use cursor::{Cursor, FuncCursor};
+    use ir::condcodes::*;
+    use ir::types::*;
+    use ir::{Function, InstBuilder, ValueDef};
 
     #[test]
     fn types() {

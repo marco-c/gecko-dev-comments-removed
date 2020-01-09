@@ -3,12 +3,12 @@
 
 
 
-use crate::entity::SecondaryMap;
-use crate::ir::entities::AnyEntity;
-use crate::ir::{DataFlowGraph, Ebb, Function, Inst, SigRef, Type, Value, ValueDef};
-use crate::isa::{RegInfo, TargetIsa};
-use crate::packed_option::ReservedValue;
-use core::fmt::{self, Write};
+use entity::SecondaryMap;
+use ir::entities::AnyEntity;
+use ir::{DataFlowGraph, Ebb, Function, Inst, SigRef, Type, Value, ValueDef};
+use isa::{RegInfo, TargetIsa};
+use packed_option::ReservedValue;
+use std::fmt::{self, Write};
 use std::string::String;
 use std::vec::Vec;
 
@@ -37,16 +37,6 @@ pub trait FuncWriter {
 
     
     fn write_preamble(
-        &mut self,
-        w: &mut Write,
-        func: &Function,
-        regs: Option<&RegInfo>,
-    ) -> Result<bool, fmt::Error> {
-        self.super_preamble(w, func, regs)
-    }
-
-    
-    fn super_preamble(
         &mut self,
         w: &mut Write,
         func: &Function,
@@ -101,19 +91,8 @@ pub trait FuncWriter {
     }
 
     
-    fn write_entity_definition(
-        &mut self,
-        w: &mut Write,
-        func: &Function,
-        entity: AnyEntity,
-        value: &fmt::Display,
-    ) -> fmt::Result {
-        self.super_entity_definition(w, func, entity, value)
-    }
-
-    
     #[allow(unused_variables)]
-    fn super_entity_definition(
+    fn write_entity_definition(
         &mut self,
         w: &mut Write,
         func: &Function,
@@ -413,7 +392,7 @@ pub fn write_operands(
     inst: Inst,
 ) -> fmt::Result {
     let pool = &dfg.value_lists;
-    use crate::ir::instructions::InstructionData::*;
+    use ir::instructions::InstructionData::*;
     match dfg[inst] {
         Unary { arg, .. } => write!(w, " {}", arg),
         UnaryImm { imm, .. } => write!(w, " {}", imm),
@@ -663,9 +642,9 @@ impl<'a> fmt::Display for DisplayValuesWithDelimiter<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::cursor::{Cursor, CursorPosition, FuncCursor};
-    use crate::ir::types;
-    use crate::ir::{ExternalName, Function, InstBuilder, StackSlotData, StackSlotKind};
+    use cursor::{Cursor, CursorPosition, FuncCursor};
+    use ir::types;
+    use ir::{ExternalName, Function, InstBuilder, StackSlotData, StackSlotKind};
     use std::string::ToString;
 
     #[test]
@@ -714,7 +693,7 @@ mod tests {
 
     #[test]
     fn aliases() {
-        use crate::ir::InstBuilder;
+        use ir::InstBuilder;
 
         let mut func = Function::new();
         {

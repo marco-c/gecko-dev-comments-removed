@@ -3,10 +3,10 @@
 
 
 
-use crate::cursor::{Cursor, FuncCursor};
-use crate::flowgraph::ControlFlowGraph;
-use crate::ir::{self, InstBuilder};
-use crate::isa::TargetIsa;
+use cursor::{Cursor, FuncCursor};
+use flowgraph::ControlFlowGraph;
+use ir::{self, InstBuilder};
+use isa::TargetIsa;
 
 
 

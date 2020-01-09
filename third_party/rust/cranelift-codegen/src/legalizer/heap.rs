@@ -3,11 +3,11 @@
 
 
 
-use crate::cursor::{Cursor, FuncCursor};
-use crate::flowgraph::ControlFlowGraph;
-use crate::ir::condcodes::IntCC;
-use crate::ir::{self, InstBuilder};
-use crate::isa::TargetIsa;
+use cursor::{Cursor, FuncCursor};
+use flowgraph::ControlFlowGraph;
+use ir::condcodes::IntCC;
+use ir::{self, InstBuilder};
+use isa::TargetIsa;
 
 
 pub fn expand_heap_addr(
@@ -117,7 +117,7 @@ fn static_addr(
     }
 
     
-    let limit = bound - access_size;
+    let limit = bound - u64::from(access_size);
 
     
     

@@ -3,7 +3,7 @@
 
 
 
-use core::fmt;
+use std::fmt;
 
 
 
@@ -50,7 +50,7 @@ impl fmt::Display for SourceLoc {
 
 #[cfg(test)]
 mod tests {
-    use crate::ir::SourceLoc;
+    use ir::SourceLoc;
     use std::string::ToString;
 
     #[test]

@@ -8,9 +8,9 @@
 
 
 
-use crate::ir::{AbiParam, ArgumentLoc};
-use crate::isa::{ConstraintKind, OperandConstraint, RegClassIndex, RegInfo, TargetIsa};
-use core::fmt;
+use ir::{AbiParam, ArgumentLoc};
+use isa::{ConstraintKind, OperandConstraint, RegClassIndex, RegInfo, TargetIsa};
+use std::fmt;
 
 
 #[derive(Clone, Copy, Debug)]

@@ -1,7 +1,6 @@
 
-use core::u32;
-use cranelift_codegen::entity::entity_impl;
 use cranelift_codegen::ir;
+use std::u32;
 use wasmparser;
 
 

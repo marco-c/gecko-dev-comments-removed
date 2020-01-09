@@ -6,27 +6,27 @@
 #![cfg_attr(feature = "clippy", plugin(clippy(conf_file = "../../clippy.toml")))]
 #![cfg_attr(feature="cargo-clippy", allow(
 
-                clippy::while_let_loop,
+                while_let_loop,
 
-                clippy::needless_lifetimes,
+                needless_lifetimes,
 
-                clippy::many_single_char_names,
-                clippy::identity_op,
-                clippy::needless_borrow,
-                clippy::cast_lossless,
-                clippy::unreadable_literal,
-                clippy::assign_op_pattern,
-                clippy::empty_line_after_outer_attr,
+                many_single_char_names,
+                identity_op,
+                needless_borrow,
+                cast_lossless,
+                unreadable_literal,
+                assign_op_pattern,
+                empty_line_after_outer_attr,
 
-                clippy::cyclomatic_complexity,
-                clippy::too_many_arguments,
+                cyclomatic_complexity,
+                too_many_arguments,
 
-                clippy::match_same_arms,
+                match_same_arms,
 
-                clippy::new_without_default,
-                clippy::new_without_default_derive,
-                clippy::should_implement_trait,
-                clippy::len_without_is_empty))]
+                new_without_default,
+                new_without_default_derive,
+                should_implement_trait,
+                len_without_is_empty))]
 #![cfg_attr(
     feature = "cargo-clippy",
     warn(
@@ -40,28 +40,35 @@
         clippy::use_self
     )
 )]
-#![no_std]
+
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 
-#[cfg(not(feature = "std"))]
-#[macro_use]
-extern crate alloc as std;
-#[cfg(feature = "std")]
-#[macro_use]
-extern crate std;
+#![cfg_attr(not(feature = "std"), feature(slice_concat_ext))]
 
 #[cfg(not(feature = "std"))]
-use hashmap_core::{map as hash_map, HashMap, HashSet};
-#[cfg(feature = "std")]
-use std::collections::{hash_map, HashMap, HashSet};
+#[macro_use]
+extern crate alloc;
+extern crate failure;
+#[macro_use]
+extern crate failure_derive;
+#[cfg_attr(test, macro_use)]
+extern crate target_lexicon;
 
-pub use crate::context::Context;
-pub use crate::legalizer::legalize_function;
-pub use crate::verifier::verify_function;
-pub use crate::write::write_function;
+#[macro_use]
+extern crate log;
 
-pub use cranelift_bforest as bforest;
-pub use cranelift_entity as entity;
+pub use context::Context;
+pub use legalizer::legalize_function;
+pub use verifier::verify_function;
+pub use write::write_function;
+
+
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[macro_use]
+pub extern crate cranelift_entity as entity;
+pub extern crate cranelift_bforest as bforest;
 
 pub mod binemit;
 pub mod cfg_printer;
@@ -78,7 +85,7 @@ pub mod timing;
 pub mod verifier;
 pub mod write;
 
-pub use crate::entity::packed_option;
+pub use entity::packed_option;
 
 mod abi;
 mod bitset;
@@ -104,7 +111,19 @@ mod stack_layout;
 mod topo_order;
 mod unreachable_code;
 
-pub use crate::result::{CodegenError, CodegenResult};
+pub use result::{CodegenError, CodegenResult};
 
 
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+#[cfg(not(feature = "std"))]
+mod std {
+    pub use alloc::{boxed, slice, string, vec};
+    pub use core::*;
+    pub mod collections {
+        #[allow(unused_extern_crates)]
+        extern crate hashmap_core;
+
+        pub use self::hashmap_core::map as hash_map;
+        pub use self::hashmap_core::{HashMap, HashSet};
+        pub use alloc::collections::BTreeSet;
+    }
+}

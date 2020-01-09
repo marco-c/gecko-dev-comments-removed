@@ -1,12 +1,12 @@
 
 
-use crate::ir::{
+use ir::{
     types, AbiParam, ArgumentPurpose, ExtFuncData, ExternalName, FuncRef, Function, Inst, Opcode,
     Signature, Type,
 };
-use crate::isa::{CallConv, RegUnit, TargetIsa};
-use core::fmt;
-use core::str::FromStr;
+use isa::{CallConv, RegUnit, TargetIsa};
+use std::fmt;
+use std::str::FromStr;
 
 
 

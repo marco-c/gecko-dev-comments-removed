@@ -3,9 +3,9 @@
 
 
 
-use crate::ir::entities::Ebb;
-use core::fmt::{self, Display, Formatter};
-use core::slice::{Iter, IterMut};
+use ir::entities::Ebb;
+use std::fmt::{self, Display, Formatter};
+use std::slice::{Iter, IterMut};
 use std::vec::Vec;
 
 
@@ -83,8 +83,8 @@ impl Display for JumpTableData {
 #[cfg(test)]
 mod tests {
     use super::JumpTableData;
-    use crate::entity::EntityRef;
-    use crate::ir::Ebb;
+    use entity::EntityRef;
+    use ir::Ebb;
     use std::string::ToString;
 
     #[test]

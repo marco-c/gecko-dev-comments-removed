@@ -1,10 +1,10 @@
 
 
-use core::fmt::{Display, Formatter, Result, Write};
+use std::fmt::{Display, Formatter, Result, Write};
 
-use crate::flowgraph::{BasicBlock, ControlFlowGraph};
-use crate::ir::instructions::BranchInfo;
-use crate::ir::Function;
+use flowgraph::{BasicBlock, ControlFlowGraph};
+use ir::instructions::BranchInfo;
+use ir::Function;
 
 
 pub struct CFGPrinter<'a> {

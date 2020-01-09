@@ -5,9 +5,9 @@
 
 
 
-use core::convert::{From, Into};
-use core::mem::size_of;
-use core::ops::{Add, BitOr, Shl, Sub};
+use std::convert::{From, Into};
+use std::mem::size_of;
+use std::ops::{Add, BitOr, Shl, Sub};
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

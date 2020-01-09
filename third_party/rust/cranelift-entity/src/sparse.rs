@@ -7,12 +7,12 @@
 
 
 
-use crate::map::SecondaryMap;
-use crate::EntityRef;
-use core::mem;
-use core::slice;
-use core::u32;
+use map::SecondaryMap;
+use std::mem;
+use std::slice;
+use std::u32;
 use std::vec::Vec;
+use EntityRef;
 
 
 
@@ -23,7 +23,6 @@ pub trait SparseMapValue<K> {
     
     fn key(&self) -> K;
 }
-
 
 
 
@@ -231,7 +230,7 @@ pub type SparseSet<T> = SparseMap<T, T>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::EntityRef;
+    use EntityRef;
 
     
     #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]

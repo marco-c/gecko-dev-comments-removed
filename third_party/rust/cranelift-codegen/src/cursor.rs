@@ -2,8 +2,8 @@
 
 
 
-use crate::ir;
-use crate::isa::TargetIsa;
+use ir;
+use isa::TargetIsa;
 
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -751,7 +751,7 @@ impl<'c, 'f> ir::InstInserterBase<'c> for &'c mut EncCursor<'f> {
         }
         
         
-        #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_wild_err_arm))]
+        #[cfg_attr(feature = "cargo-clippy", allow(match_wild_err_arm))]
         match self
             .isa
             .encode(&self.func, &self.func.dfg[inst], ctrl_typevar)

@@ -1,14 +1,13 @@
 
-use crate::boxed_slice::BoxedSlice;
-use crate::iter::{Iter, IterMut};
-use crate::keys::Keys;
-use crate::EntityRef;
-use core::iter::FromIterator;
-use core::marker::PhantomData;
-use core::ops::{Index, IndexMut};
-use core::slice;
-use std::boxed::Box;
+use boxed_slice::BoxedSlice;
+use iter::{Iter, IterMut};
+use keys::Keys;
+use std::iter::FromIterator;
+use std::marker::PhantomData;
+use std::ops::{Index, IndexMut};
+use std::slice;
 use std::vec::Vec;
+use EntityRef;
 
 
 
@@ -134,11 +133,6 @@ where
     
     pub fn reserve_exact(&mut self, additional: usize) {
         self.elems.reserve_exact(additional)
-    }
-
-    
-    pub fn shrink_to_fit(&mut self) {
-        self.elems.shrink_to_fit()
     }
 
     

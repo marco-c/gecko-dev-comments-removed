@@ -9,7 +9,7 @@
 
 
 
-use crate::ir;
+use ir;
 
 
 #[allow(dead_code)]
@@ -93,7 +93,7 @@ mod tests {
 
     #[test]
     fn cvt_imm64() {
-        use crate::ir::immediates::Imm64;
+        use ir::immediates::Imm64;
 
         let x1 = Imm64::new(-8);
         let x2 = Imm64::new(8);

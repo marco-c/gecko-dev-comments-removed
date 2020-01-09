@@ -2,7 +2,7 @@
 
 
 
-use core::fmt;
+use std::fmt;
 
 pub use self::details::{add_to_current, take_current, PassTimes, TimingToken};
 
@@ -102,7 +102,6 @@ impl fmt::Display for Pass {
 #[cfg(feature = "std")]
 mod details {
     use super::{Pass, DESCRIPTIONS, NUM_PASSES};
-    use log::debug;
     use std::cell::{Cell, RefCell};
     use std::fmt;
     use std::mem;

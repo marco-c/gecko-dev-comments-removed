@@ -1,12 +1,11 @@
 
 
-use crate::iter::{Iter, IterMut};
-use crate::keys::Keys;
-use crate::EntityRef;
-use core::marker::PhantomData;
-use core::ops::{Index, IndexMut};
-use core::slice;
-use std::boxed::Box;
+use iter::{Iter, IterMut};
+use keys::Keys;
+use std::marker::PhantomData;
+use std::ops::{Index, IndexMut};
+use std::slice;
+use EntityRef;
 
 
 
@@ -85,6 +84,11 @@ where
     }
 
     
+    pub fn next_key(&self) -> K {
+        K::new(self.elems.len())
+    }
+
+    
     pub fn last(&self) -> Option<&V> {
         self.elems.last()
     }
@@ -140,8 +144,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::primary::PrimaryMap;
-    use std::vec::Vec;
+    use primary::PrimaryMap;
 
     
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]

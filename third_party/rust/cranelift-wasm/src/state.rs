@@ -3,11 +3,11 @@
 
 
 
-use super::HashMap;
-use crate::environ::{FuncEnvironment, GlobalVariable};
-use crate::translation_utils::{FuncIndex, GlobalIndex, MemoryIndex, SignatureIndex, TableIndex};
 use cranelift_codegen::ir::{self, Ebb, Inst, Value};
+use environ::{FuncEnvironment, GlobalVariable};
+use std::collections::HashMap;
 use std::vec::Vec;
+use translation_utils::{FuncIndex, GlobalIndex, MemoryIndex, SignatureIndex, TableIndex};
 
 
 

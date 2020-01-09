@@ -1,21 +1,14 @@
 
 
-
-
-
-
-
-
-use crate::translation_utils::{
-    FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, SignatureIndex, Table, TableIndex,
-};
-use core::convert::From;
 use cranelift_codegen::cursor::FuncCursor;
 use cranelift_codegen::ir::immediates::Offset32;
 use cranelift_codegen::ir::{self, InstBuilder};
 use cranelift_codegen::isa::TargetFrontendConfig;
-use failure_derive::Fail;
-use std::boxed::Box;
+use std::convert::From;
+use std::vec::Vec;
+use translation_utils::{
+    FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, SignatureIndex, Table, TableIndex,
+};
 use wasmparser::BinaryReaderError;
 
 
@@ -164,7 +157,7 @@ pub trait FuncEnvironment {
     
     
     
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::too_many_arguments))]
+    #[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
     fn translate_call_indirect(
         &mut self,
         pos: FuncCursor,
@@ -246,15 +239,10 @@ pub trait ModuleEnvironment<'data> {
     fn target_config(&self) -> TargetFrontendConfig;
 
     
-    
-    fn reserve_signatures(&mut self, _num: u32) {}
+    fn declare_signature(&mut self, sig: &ir::Signature);
 
     
-    fn declare_signature(&mut self, sig: ir::Signature);
-
-    
-    
-    fn reserve_imports(&mut self, _num: u32) {}
+    fn get_signature(&self, sig_index: SignatureIndex) -> &ir::Signature;
 
     
     fn declare_func_import(
@@ -265,70 +253,28 @@ pub trait ModuleEnvironment<'data> {
     );
 
     
-    fn declare_table_import(&mut self, table: Table, module: &'data str, field: &'data str);
-
-    
-    fn declare_memory_import(&mut self, memory: Memory, module: &'data str, field: &'data str);
-
-    
-    fn declare_global_import(&mut self, global: Global, module: &'data str, field: &'data str);
-
-    
-    fn finish_imports(&mut self) {}
-
-    
-    
-    fn reserve_func_types(&mut self, _num: u32) {}
+    fn get_num_func_imports(&self) -> usize;
 
     
     fn declare_func_type(&mut self, sig_index: SignatureIndex);
 
     
-    
-    fn reserve_tables(&mut self, _num: u32) {}
-
-    
-    fn declare_table(&mut self, table: Table);
-
-    
-    
-    fn reserve_memories(&mut self, _num: u32) {}
-
-    
-    fn declare_memory(&mut self, memory: Memory);
-
-    
-    
-    fn reserve_globals(&mut self, _num: u32) {}
+    fn get_func_type(&self, func_index: FuncIndex) -> SignatureIndex;
 
     
     fn declare_global(&mut self, global: Global);
 
     
-    
-    fn reserve_exports(&mut self, _num: u32) {}
+    fn declare_global_import(&mut self, global: Global, module: &'data str, field: &'data str);
 
     
-    fn declare_func_export(&mut self, func_index: FuncIndex, name: &'data str);
+    fn get_global(&self, global_index: GlobalIndex) -> &Global;
 
     
-    fn declare_table_export(&mut self, table_index: TableIndex, name: &'data str);
+    fn declare_table(&mut self, table: Table);
 
     
-    fn declare_memory_export(&mut self, memory_index: MemoryIndex, name: &'data str);
-
-    
-    fn declare_global_export(&mut self, global_index: GlobalIndex, name: &'data str);
-
-    
-    fn finish_exports(&mut self) {}
-
-    
-    fn declare_start_func(&mut self, index: FuncIndex);
-
-    
-    
-    fn reserve_table_elements(&mut self, _num: u32) {}
+    fn declare_table_import(&mut self, table: Table, module: &'data str, field: &'data str);
 
     
     fn declare_table_elements(
@@ -336,18 +282,13 @@ pub trait ModuleEnvironment<'data> {
         table_index: TableIndex,
         base: Option<GlobalIndex>,
         offset: usize,
-        elements: Box<[FuncIndex]>,
+        elements: Vec<FuncIndex>,
     );
+    
+    fn declare_memory(&mut self, memory: Memory);
 
     
-    
-    
-    
-    fn define_function_body(&mut self, body_bytes: &'data [u8]) -> WasmResult<()>;
-
-    
-    
-    fn reserve_data_initializers(&mut self, _num: u32) {}
+    fn declare_memory_import(&mut self, memory: Memory, module: &'data str, field: &'data str);
 
     
     fn declare_data_initialization(
@@ -357,4 +298,19 @@ pub trait ModuleEnvironment<'data> {
         offset: usize,
         data: &'data [u8],
     );
+
+    
+    fn declare_func_export(&mut self, func_index: FuncIndex, name: &'data str);
+    
+    fn declare_table_export(&mut self, table_index: TableIndex, name: &'data str);
+    
+    fn declare_memory_export(&mut self, memory_index: MemoryIndex, name: &'data str);
+    
+    fn declare_global_export(&mut self, global_index: GlobalIndex, name: &'data str);
+
+    
+    fn declare_start_func(&mut self, index: FuncIndex);
+
+    
+    fn define_function_body(&mut self, body_bytes: &'data [u8]) -> WasmResult<()>;
 }

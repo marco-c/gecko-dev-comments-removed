@@ -3,8 +3,8 @@
 
 
 
-use crate::ir::{AbiParam, ArgumentExtension, ArgumentLoc, Type};
-use core::cmp::Ordering;
+use ir::{AbiParam, ArgumentExtension, ArgumentLoc, Type};
+use std::cmp::Ordering;
 use std::vec::Vec;
 
 
@@ -182,8 +182,8 @@ pub fn legalize_abi_value(have: Type, arg: &AbiParam) -> ValueConversion {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ir::types;
-    use crate::ir::AbiParam;
+    use ir::types;
+    use ir::AbiParam;
 
     #[test]
     fn legalize() {

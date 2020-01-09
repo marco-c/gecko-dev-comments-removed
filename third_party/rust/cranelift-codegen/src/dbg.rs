@@ -1,5 +1,5 @@
 
-use core::fmt;
+use std::fmt;
 
 
 pub static LOG_FILENAME_PREFIX: &str = "cranelift.dbg.";

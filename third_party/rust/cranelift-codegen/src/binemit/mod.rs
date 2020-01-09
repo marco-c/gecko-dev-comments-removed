@@ -10,10 +10,10 @@ mod shrink;
 pub use self::memorysink::{MemoryCodeSink, NullTrapSink, RelocSink, TrapSink};
 pub use self::relaxation::relax_branches;
 pub use self::shrink::shrink_instructions;
-pub use crate::regalloc::RegDiversions;
+pub use regalloc::RegDiversions;
 
-use crate::ir::{ExternalName, Function, Inst, JumpTable, SourceLoc, TrapCode};
-use core::fmt;
+use ir::{ExternalName, Function, Inst, JumpTable, SourceLoc, TrapCode};
+use std::fmt;
 
 
 
@@ -72,28 +72,28 @@ pub trait CodeSink {
     fn offset(&self) -> CodeOffset;
 
     
-    fn put1(&mut self, _: u8);
+    fn put1(&mut self, u8);
 
     
-    fn put2(&mut self, _: u16);
+    fn put2(&mut self, u16);
 
     
-    fn put4(&mut self, _: u32);
+    fn put4(&mut self, u32);
 
     
-    fn put8(&mut self, _: u64);
+    fn put8(&mut self, u64);
 
     
-    fn reloc_ebb(&mut self, _: Reloc, _: CodeOffset);
+    fn reloc_ebb(&mut self, Reloc, CodeOffset);
 
     
-    fn reloc_external(&mut self, _: Reloc, _: &ExternalName, _: Addend);
+    fn reloc_external(&mut self, Reloc, &ExternalName, Addend);
 
     
-    fn reloc_jt(&mut self, _: Reloc, _: JumpTable);
+    fn reloc_jt(&mut self, Reloc, JumpTable);
 
     
-    fn trap(&mut self, _: TrapCode, _: SourceLoc);
+    fn trap(&mut self, TrapCode, SourceLoc);
 
     
     fn begin_rodata(&mut self);

@@ -107,12 +107,12 @@
 
 
 
-use crate::bforest;
-use crate::entity::SparseMapValue;
-use crate::ir::{Ebb, ExpandedProgramPoint, Inst, Layout, ProgramOrder, ProgramPoint, Value};
-use crate::regalloc::affinity::Affinity;
-use core::cmp::Ordering;
-use core::marker::PhantomData;
+use bforest;
+use entity::SparseMapValue;
+use ir::{Ebb, ExpandedProgramPoint, Inst, Layout, ProgramOrder, ProgramPoint, Value};
+use regalloc::affinity::Affinity;
+use std::cmp::Ordering;
+use std::marker::PhantomData;
 
 
 
@@ -457,11 +457,11 @@ impl<PO: ProgramOrder> SparseMapValue<Value> for GenLiveRange<PO> {
 #[cfg(test)]
 mod tests {
     use super::{GenLiveRange, LiveRangeContext};
-    use crate::bforest;
-    use crate::entity::EntityRef;
-    use crate::ir::{Ebb, Inst, Value};
-    use crate::ir::{ExpandedProgramPoint, ProgramOrder};
-    use core::cmp::Ordering;
+    use bforest;
+    use entity::EntityRef;
+    use ir::{Ebb, Inst, Value};
+    use ir::{ExpandedProgramPoint, ProgramOrder};
+    use std::cmp::Ordering;
     use std::vec::Vec;
 
     

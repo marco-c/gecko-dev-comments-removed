@@ -1,12 +1,12 @@
 
 
-use crate::iter::{Iter, IterMut};
-use crate::keys::Keys;
-use crate::EntityRef;
-use core::marker::PhantomData;
-use core::ops::{Index, IndexMut};
-use core::slice;
+use iter::{Iter, IterMut};
+use keys::Keys;
+use std::marker::PhantomData;
+use std::ops::{Index, IndexMut};
+use std::slice;
 use std::vec::Vec;
+use EntityRef;
 
 
 
@@ -97,7 +97,6 @@ where
     }
 
     
-    #[inline]
     pub fn resize(&mut self, n: usize) {
         self.elems.resize(n, self.default.clone());
     }
@@ -126,7 +125,6 @@ where
     K: EntityRef,
     V: Clone,
 {
-    #[inline]
     fn index_mut(&mut self, k: K) -> &mut V {
         let i = k.index();
         if i >= self.elems.len() {

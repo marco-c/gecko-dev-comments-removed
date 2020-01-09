@@ -1,7 +1,7 @@
 
 
-use crate::settings::{self, detail, Builder};
-use core::fmt;
+use settings::{self, detail, Builder};
+use std::fmt;
 
 
 
@@ -11,7 +11,7 @@ include!(concat!(env!("OUT_DIR"), "/settings-x86.rs"));
 #[cfg(test)]
 mod tests {
     use super::{builder, Flags};
-    use crate::settings::{self, Configurable};
+    use settings::{self, Configurable};
 
     #[test]
     fn presets() {

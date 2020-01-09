@@ -1,9 +1,9 @@
 
 
-use crate::EntityRef;
-use core::iter::Enumerate;
-use core::marker::PhantomData;
-use core::slice;
+use std::iter::Enumerate;
+use std::marker::PhantomData;
+use std::slice;
+use EntityRef;
 
 
 pub struct Iter<'a, K: EntityRef, V>

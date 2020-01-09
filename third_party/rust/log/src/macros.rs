@@ -197,7 +197,7 @@ macro_rules! trace {
 
 
 
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! log_enabled {
     (target: $target:expr, $lvl:expr) => {{
         let lvl = $lvl;

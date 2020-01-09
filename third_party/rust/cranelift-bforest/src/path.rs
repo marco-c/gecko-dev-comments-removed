@@ -2,11 +2,11 @@
 
 use super::node::Removed;
 use super::{slice_insert, slice_shift, Comparator, Forest, Node, NodeData, NodePool, MAX_PATH};
-use core::borrow::Borrow;
-use core::marker::PhantomData;
+use std::borrow::Borrow;
+use std::marker::PhantomData;
 
 #[cfg(test)]
-use core::fmt;
+use std::fmt;
 
 pub(super) struct Path<F: Forest> {
     
@@ -706,7 +706,7 @@ impl<F: Forest> fmt::Display for Path<F> {
 mod tests {
     use super::super::{Forest, NodeData, NodePool};
     use super::*;
-    use core::cmp::Ordering;
+    use std::cmp::Ordering;
 
     struct TC();
 
