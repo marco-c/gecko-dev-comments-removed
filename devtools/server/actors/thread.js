@@ -279,6 +279,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.dbg.addDebuggees();
     this.dbg.enabled = true;
 
+    if ("observeAsmJS" in this._options) {
+      this.dbg.allowUnobservedAsmJS = !this._options.observeAsmJS;
+    }
+
     
     
     
