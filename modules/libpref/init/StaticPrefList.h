@@ -2589,6 +2589,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "browser.safebrowsing.prefixset_max_array_size",
+   browser_safebrowsing_prefixset_max_array_size,
+  RelaxedAtomicUint32, 512*1024
+)
+
+
 
 VARCACHE_PREF("browser.tabs.remote.useCrossOriginPolicy",
               browser_tabs_remote_useCrossOriginPolicy,
