@@ -255,15 +255,6 @@ const MitigationFlags MITIGATION_IMAGE_LOAD_NO_LOW_LABEL = 0x00080000;
 
 const MitigationFlags MITIGATION_IMAGE_LOAD_PREFER_SYS32 = 0x00100000;
 
-
-
-
-
-
-
-
-const MitigationFlags MITIGATION_CONTROL_FLOW_GUARD_DISABLE = 0x80000000;
-
 }  
 
 #endif  
