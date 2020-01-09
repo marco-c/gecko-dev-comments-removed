@@ -1601,6 +1601,23 @@ var PanelView = class extends AssociatedToNode {
       return focus && this._isNavigableWithTabOnly(focus);
     };
 
+    
+    
+    
+    
+    let isContextMenuOpen = () => {
+      if (!focus) {
+        return false;
+      }
+      let contextNode = focus.closest("[context]");
+      if (!contextNode) {
+        return false;
+      }
+      let context = contextNode.getAttribute("context");
+      let popup = this.document.getElementById(context);
+      return popup && popup.state == "open";
+    };
+
     let keyCode = event.code;
     switch (keyCode) {
       case "ArrowDown":
@@ -1610,6 +1627,9 @@ var PanelView = class extends AssociatedToNode {
         }
         
       case "Tab": {
+        if (isContextMenuOpen()) {
+          break;
+        }
         stop();
         let isDown = (keyCode == "ArrowDown") ||
                      (keyCode == "Tab" && !event.shiftKey);
@@ -1618,14 +1638,14 @@ var PanelView = class extends AssociatedToNode {
         break;
       }
       case "Home":
-        if (tabOnly()) {
+        if (tabOnly() || isContextMenuOpen()) {
           break;
         }
         stop();
         this.focusFirstNavigableElement(true);
         break;
       case "End":
-        if (tabOnly()) {
+        if (tabOnly() || isContextMenuOpen()) {
           break;
         }
         stop();
@@ -1633,7 +1653,7 @@ var PanelView = class extends AssociatedToNode {
         break;
       case "ArrowLeft":
       case "ArrowRight": {
-        if (tabOnly()) {
+        if (tabOnly() || isContextMenuOpen()) {
           break;
         }
         stop();
@@ -1653,7 +1673,7 @@ var PanelView = class extends AssociatedToNode {
       case "Space":
       case "NumpadEnter":
       case "Enter": {
-        if (tabOnly()) {
+        if (tabOnly() || isContextMenuOpen()) {
           break;
         }
         let button = this.selectedElement;
