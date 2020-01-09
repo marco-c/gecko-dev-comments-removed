@@ -3853,7 +3853,10 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
 
     const bool differentAGR = buildingForChild.IsAnimatedGeometryRoot();
 
-    if (!awayFromCommonPath) {
+    if (!awayFromCommonPath &&
+        
+        
+        !child->IsFrameOfType(nsIFrame::eSVG)) {
       
       child->AddStateBits(NS_FRAME_SIMPLE_DISPLAYLIST);
     }
