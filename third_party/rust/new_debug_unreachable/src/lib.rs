@@ -4,15 +4,20 @@
 
 
 
+extern crate unreachable;
+
+#[doc(hidden)]
+pub use unreachable::unreachable as __unreachable;
+
 #[macro_export]
 
 macro_rules! debug_unreachable {
     () => { debug_unreachable!("entered unreachable code") };
     ($e:expr) => {
         if cfg!(debug_assertions) {
-            panic!($e)
+            panic!($e);
         } else {
-            core::hint::unreachable_unchecked()
+            $crate::__unreachable()
         }
     }
 }
