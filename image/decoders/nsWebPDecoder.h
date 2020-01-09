@@ -97,12 +97,6 @@ class nsWebPDecoder final : public Decoder {
 
   
   bool mGotColorProfile;
-
-  
-  qcms_profile* mInProfile;
-
-  
-  qcms_transform* mTransform;
 };
 
 }  

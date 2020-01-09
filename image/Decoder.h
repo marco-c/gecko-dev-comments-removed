@@ -19,6 +19,7 @@
 #include "SourceBuffer.h"
 #include "StreamingLexer.h"
 #include "SurfaceFlags.h"
+#include "qcms.h"
 
 namespace mozilla {
 
@@ -558,6 +559,12 @@ class Decoder {
 
  protected:
   Maybe<Downscaler> mDownscaler;
+
+  
+  qcms_profile* mInProfile;
+
+  
+  qcms_transform* mTransform;
 
   uint8_t* mImageData;  
   uint32_t mImageDataLength;
