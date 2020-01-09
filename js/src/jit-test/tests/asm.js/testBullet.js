@@ -1,13 +1,5 @@
 
 
-
-
-
-
-
-
-var code = "setIonCheckGraphCoherency(false); load('" + libdir + "bullet.js'); runBullet()";
-nestedShell("--js-cache", "--no-js-cache-per-process", "--execute=" + code);
 setIonCheckGraphCoherency(false);
 load(libdir + 'bullet.js');
 var results = runBullet();
