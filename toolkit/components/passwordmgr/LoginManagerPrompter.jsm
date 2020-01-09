@@ -1607,4 +1607,4 @@ XPCOMUtils.defineLazyGetter(this.LoginManagerPrompter.prototype, "log", () => {
   return logger.log.bind(logger);
 });
 
-var EXPORTED_SYMBOLS = ["LoginManagerPromptFactory", "LoginManagerPrompter"];
+const EXPORTED_SYMBOLS = ["LoginManagerPromptFactory", "LoginManagerPrompter"];

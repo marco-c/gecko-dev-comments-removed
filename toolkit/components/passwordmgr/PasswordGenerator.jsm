@@ -10,7 +10,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["PasswordGenerator"];
+const EXPORTED_SYMBOLS = ["PasswordGenerator"];
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -32,7 +32,7 @@ const REQUIRED_CHARACTER_CLASSES = [
   DIGITS,
 ];
 
-const PasswordGenerator = {
+this.PasswordGenerator = {
   
 
 

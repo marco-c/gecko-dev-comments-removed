@@ -4,6 +4,7 @@
 
 
 
+
 const ENCTYPE_BASE64 = 0;
 const ENCTYPE_SDR = 1;
 const PERMISSION_SAVE_LOGINS = "login-saving";
