@@ -157,8 +157,10 @@ var LoginManagerContent = {
              .getService(Ci.nsIUUIDGenerator).generateUUID().toString();
   },
 
-  _messages: [ "RemoteLogins:loginsFound",
-               "RemoteLogins:loginsAutoCompleted" ],
+  _messages: [
+    "RemoteLogins:loginsFound",
+    "RemoteLogins:loginsAutoCompleted",
+  ],
 
   
 
