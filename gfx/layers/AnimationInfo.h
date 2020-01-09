@@ -23,10 +23,10 @@ class Animation;
 class CompositorAnimations;
 class Layer;
 class LayerManager;
-struct AnimData;
+struct PropertyAnimationGroup;
 
 class AnimationInfo final {
-  typedef InfallibleTArray<Animation> AnimationArray;
+  typedef nsTArray<Animation> AnimationArray;
 
  public:
   AnimationInfo();
@@ -63,11 +63,12 @@ class AnimationInfo final {
   void TransferMutatedFlagToLayer(Layer* aLayer);
 
   uint64_t GetCompositorAnimationsId() { return mCompositorAnimationsId; }
-  RawServoAnimationValue* GetBaseAnimationStyle() const {
-    return mBaseAnimationStyle;
-  }
-  InfallibleTArray<AnimData>& GetAnimationData() { return mAnimationData; }
+  
+  
   AnimationArray& GetAnimations() { return mAnimations; }
+  nsTArray<PropertyAnimationGroup>& GetPropertyAnimationGroups() {
+    return mPropertyAnimationGroups;
+  }
   bool ApplyPendingUpdatesForThisTransaction();
   bool HasTransformAnimation() const;
 
@@ -90,14 +91,26 @@ class AnimationInfo final {
       const AnimationGenerationCallback& aCallback);
 
  protected:
+  
+  
+  
+  
+  
+  
+  
   AnimationArray mAnimations;
-  uint64_t mCompositorAnimationsId;
   nsAutoPtr<AnimationArray> mPendingAnimations;
-  InfallibleTArray<AnimData> mAnimationData;
+
+  uint64_t mCompositorAnimationsId;
+  
+  
+  
+  
+  
+  nsTArray<PropertyAnimationGroup> mPropertyAnimationGroups;
   
   
   Maybe<uint64_t> mAnimationGeneration;
-  RefPtr<RawServoAnimationValue> mBaseAnimationStyle;
   bool mMutated;
 };
 

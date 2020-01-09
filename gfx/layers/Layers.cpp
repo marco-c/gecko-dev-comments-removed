@@ -763,10 +763,6 @@ bool Layer::GetVisibleRegionRelativeToRootLayer(nsIntRegion& aResult,
   return true;
 }
 
-InfallibleTArray<AnimData>& Layer::GetAnimationData() {
-  return mAnimationInfo.GetAnimationData();
-}
-
 Maybe<ParentLayerIntRect> Layer::GetCombinedClipRect() const {
   Maybe<ParentLayerIntRect> clip = GetClipRect();
 
@@ -1773,6 +1769,12 @@ void Layer::PrintInfo(std::stringstream& aStream, const char* aPrefix) {
       AppendToString(aStream, mScrollMetadata[i], "", "]");
     }
   }
+  
+  
+  
+  
+  
+  
   if (!mAnimationInfo.GetAnimations().IsEmpty()) {
     aStream << nsPrintfCString(" [%d animations with id=%" PRIu64 " ]",
                                (int)mAnimationInfo.GetAnimations().Length(),

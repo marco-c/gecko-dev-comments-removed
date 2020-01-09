@@ -888,7 +888,7 @@ void CompositorBridgeParent::SetShadowProperties(Layer* aLayer) {
     
     HostLayer* layerCompositor = layer->AsHostLayer();
     
-    AnimationArray& animations = layer->GetAnimations();
+    const auto& animations = layer->GetPropertyAnimationGroups();
     
     
     

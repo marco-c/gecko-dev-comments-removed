@@ -16,16 +16,30 @@
 
 namespace mozilla {
 struct AnimationValue;
+
+namespace dom {
+enum class CompositeOperation : uint8_t;
+enum class IterationCompositeOperation : uint8_t;
+};  
+
 namespace layers {
 class Animation;
 
-typedef InfallibleTArray<layers::Animation> AnimationArray;
+typedef nsTArray<layers::Animation> AnimationArray;
 
-struct AnimData {
-  InfallibleTArray<RefPtr<RawServoAnimationValue>> mStartValues;
-  InfallibleTArray<RefPtr<RawServoAnimationValue>> mEndValues;
-  InfallibleTArray<Maybe<mozilla::ComputedTimingFunction>> mFunctions;
+struct PropertyAnimation {
+  struct SegmentData {
+    RefPtr<RawServoAnimationValue> mStartValue;
+    RefPtr<RawServoAnimationValue> mEndValue;
+    Maybe<mozilla::ComputedTimingFunction> mFunction;
+    float mStartPortion;
+    float mEndPortion;
+    dom::CompositeOperation mStartComposite;
+    dom::CompositeOperation mEndComposite;
+  };
+  nsTArray<SegmentData> mSegments;
   TimingParams mTiming;
+
   
   
   
@@ -35,6 +49,27 @@ struct AnimData {
   
   uint32_t mSegmentIndexOnLastCompose = 0;
   dom::Nullable<double> mPortionInSegmentOnLastCompose;
+
+  TimeStamp mOriginTime;
+  MaybeTimeDuration mStartTime;
+  TimeDuration mHoldTime;
+  float mPlaybackRate;
+  dom::IterationCompositeOperation mIterationComposite;
+  bool mIsNotPlaying;
+};
+
+struct PropertyAnimationGroup {
+  nsCSSPropertyID mProperty;
+  AnimationData mAnimationData;
+
+  nsTArray<PropertyAnimation> mAnimations;
+  RefPtr<RawServoAnimationValue> mBaseStyle;
+
+  bool IsEmpty() const { return mAnimations.IsEmpty(); }
+  void Clear() {
+    mAnimations.Clear();
+    mBaseStyle = nullptr;
+  }
 };
 
 struct AnimationTransform {
@@ -96,7 +131,8 @@ struct AnimatedValue {
 
 class CompositorAnimationStorage final {
   typedef nsClassHashtable<nsUint64HashKey, AnimatedValue> AnimatedValueTable;
-  typedef nsClassHashtable<nsUint64HashKey, AnimationArray> AnimationsTable;
+  typedef nsClassHashtable<nsUint64HashKey, nsTArray<PropertyAnimationGroup>>
+      AnimationsTable;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorAnimationStorage)
  public:
@@ -147,7 +183,7 @@ class CompositorAnimationStorage final {
   
 
 
-  AnimationArray* GetAnimations(const uint64_t& aId) const;
+  nsTArray<PropertyAnimationGroup>* GetAnimations(const uint64_t& aId) const;
 
   
 
@@ -198,16 +234,16 @@ class AnimationHelper {
 
   static SampleResult SampleAnimationForEachNode(
       TimeStamp aPreviousFrameTime, TimeStamp aCurrentFrameTime,
-      AnimationArray& aAnimations, InfallibleTArray<AnimData>& aAnimationData,
+      nsTArray<PropertyAnimationGroup>& aPropertyAnimationGroups,
       RefPtr<RawServoAnimationValue>& aAnimationValue,
       const AnimatedValue* aPreviousValue);
+
   
 
 
 
-  static void SetAnimations(
-      AnimationArray& aAnimations, InfallibleTArray<AnimData>& aAnimData,
-      RefPtr<RawServoAnimationValue>& aBaseAnimationStyle);
+  static nsTArray<PropertyAnimationGroup> ExtractAnimations(
+      const AnimationArray& aAnimations);
 
   
 
@@ -219,6 +255,8 @@ class AnimationHelper {
   static uint64_t GetNextCompositorAnimationsId();
 
   
+
+
 
 
 

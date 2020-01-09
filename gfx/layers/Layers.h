@@ -807,7 +807,7 @@ class LayerManager : public FrameRecorder {
 class Layer {
   NS_INLINE_DECL_REFCOUNTING(Layer)
 
-  typedef InfallibleTArray<Animation> AnimationArray;
+  typedef nsTArray<Animation> AnimationArray;
 
  public:
   
@@ -1444,21 +1444,20 @@ class Layer {
 
   
   
+  
   AnimationArray& GetAnimations() { return mAnimationInfo.GetAnimations(); }
   uint64_t GetCompositorAnimationsId() {
     return mAnimationInfo.GetCompositorAnimationsId();
   }
-  InfallibleTArray<AnimData>& GetAnimationData();
+  nsTArray<PropertyAnimationGroup>& GetPropertyAnimationGroups() {
+    return mAnimationInfo.GetPropertyAnimationGroups();
+  }
 
   Maybe<uint64_t> GetAnimationGeneration() const {
     return mAnimationInfo.GetAnimationGeneration();
   }
 
   bool HasTransformAnimation() const;
-
-  RawServoAnimationValue* GetBaseAnimationStyle() const {
-    return mAnimationInfo.GetBaseAnimationStyle();
-  }
 
   
 
