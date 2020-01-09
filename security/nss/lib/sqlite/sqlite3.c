@@ -18397,8 +18397,15 @@ static int sqlite3MemInit(void *NotUsed){
     malloc_zone_t* newzone = malloc_create_zone(4096, 0);
     malloc_set_zone_name(newzone, "Sqlite_Heap");
     do{
+      #ifdef DARWIN 
+      #pragma clang diagnostic push
+      #pragma clang diagnostic warning "-Wdeprecated-declarations"
+      #endif
       success = OSAtomicCompareAndSwapPtrBarrier(NULL, newzone, 
                                  (void * volatile *)&_sqliteZone_);
+      #ifdef DARWIN
+      #pragma clang diagnostic pop
+      #endif
     }while(!_sqliteZone_);
     if( !success ){
       
@@ -26957,7 +26964,14 @@ SQLITE_PRIVATE const char *sqlite3OpcodeName(int i){
        && (!defined(TARGET_IPHONE_SIMULATOR) || (TARGET_IPHONE_SIMULATOR==0))
 #    define HAVE_GETHOSTUUID 1
 #  else
+#    ifdef DARWIN 
+#    pragma clang diagnostic push
+#    pragma clang diagnostic warning "-W#warnings"
+#    endif
 #    warning "gethostuuid() is disabled."
+#    ifdef DARWIN
+#    pragma clang diagnostic pop
+#    endif
 #  endif
 #endif
 
