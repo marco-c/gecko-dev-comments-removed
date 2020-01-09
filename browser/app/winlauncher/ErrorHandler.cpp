@@ -683,12 +683,8 @@ static bool SendPing(const mozilla::LauncherError& aError) {
 #if defined(MOZ_TELEMETRY_REPORTING)
 #  if defined(MOZ_LAUNCHER_PROCESS)
   mozilla::LauncherRegistryInfo regInfo;
-  mozilla::LauncherResult<mozilla::LauncherRegistryInfo::EnabledState>
-      launcherEnabled = regInfo.IsEnabled();
-  if (launcherEnabled.isErr() ||
-      launcherEnabled.unwrap() ==
-          mozilla::LauncherRegistryInfo::EnabledState::ForceDisabled) {
-    
+  mozilla::LauncherResult<bool> telemetryEnabled = regInfo.IsTelemetryEnabled();
+  if (telemetryEnabled.isErr() || !telemetryEnabled.unwrap()) {
     
     return false;
   }
