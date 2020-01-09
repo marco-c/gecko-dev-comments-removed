@@ -47,27 +47,9 @@ void RenderCompositorOGL::EndFrame() { mGL->SwapBuffers(); }
 
 void RenderCompositorOGL::WaitForGPU() {}
 
-void RenderCompositorOGL::Pause() {
-#ifdef MOZ_WIDGET_ANDROID
-  if (!mGL || mGL->IsDestroyed()) {
-    return;
-  }
-  
-  mGL->ReleaseSurface();
-#endif
-}
+void RenderCompositorOGL::Pause() {}
 
-bool RenderCompositorOGL::Resume() {
-#ifdef MOZ_WIDGET_ANDROID
-  if (!mGL || mGL->IsDestroyed()) {
-    return false;
-  }
-  
-  return mGL->RenewSurface(mWidget);
-#else
-  return true;
-#endif
-}
+bool RenderCompositorOGL::Resume() { return true; }
 
 LayoutDeviceIntSize RenderCompositorOGL::GetBufferSize() {
   return mWidget->GetClientSize();
