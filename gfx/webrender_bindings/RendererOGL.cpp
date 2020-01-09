@@ -130,6 +130,8 @@ bool RendererOGL::UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
                          aReadbackBuffer.ref().length());
   }
 
+  mScreenshotGrabber.MaybeGrabScreenshot(mRenderer, size.ToUnknownSize());
+
   mCompositor->EndFrame();
 
   mCompositor->GetWidget()->PostRender(&widgetContext);
@@ -143,6 +145,8 @@ bool RendererOGL::UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
   
   mFrameStartTime = TimeStamp();
 #endif
+
+  mScreenshotGrabber.MaybeProcessQueue(mRenderer);
 
   
   
