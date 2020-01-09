@@ -477,26 +477,16 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
   std::stable_sort(negotiatedCodecs.begin(), negotiatedCodecs.end(),
                    CompareCodec);
 
-  
-  
-  
-  if (!negotiatedCodecs.empty() && !red) {
-    std::vector<UniquePtr<JsepCodecDescription>> codecsToKeep;
-
-    bool foundPreferredCodec = false;
-    for (auto& codec : negotiatedCodecs) {
-      if (codec.get() == dtmf) {
-        codecsToKeep.push_back(std::move(codec));
-        
-        
-        
-      } else if (!foundPreferredCodec) {
-        codecsToKeep.insert(codecsToKeep.begin(), std::move(codec));
-        foundPreferredCodec = true;
-      }
-    }
-
-    negotiatedCodecs = std::move(codecsToKeep);
+  if (!red) {
+    
+    negotiatedCodecs.erase(
+        std::remove_if(negotiatedCodecs.begin(), negotiatedCodecs.end(),
+                       [ulpfec](const UniquePtr<JsepCodecDescription>& codec) {
+                         return codec.get() == ulpfec;
+                       }),
+        negotiatedCodecs.end());
+    
+    ulpfec = nullptr;
   }
 
   return negotiatedCodecs;

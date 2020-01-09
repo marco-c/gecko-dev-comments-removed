@@ -2208,7 +2208,7 @@ TEST_P(JsepSessionTest, RenegotiationOffererDisablesTelephoneEvent) {
     const JsepTrackNegotiatedDetails* details = track.GetNegotiatedDetails();
     ASSERT_EQ(1U, details->GetEncodingCount());
     const JsepTrackEncoding& encoding = details->GetEncoding(0);
-    ASSERT_EQ(2U, encoding.GetCodecs().size());
+    ASSERT_EQ(5U, encoding.GetCodecs().size());
     ASSERT_TRUE(encoding.HasFormat("109"));
     ASSERT_TRUE(encoding.HasFormat("101"));
     for (const auto& codec : encoding.GetCodecs()) {
@@ -2221,7 +2221,7 @@ TEST_P(JsepSessionTest, RenegotiationOffererDisablesTelephoneEvent) {
   }
 
   std::string offer = CreateOffer();
-  ReplaceInSdp(&offer, " 109 101 ", " 109 ");
+  ReplaceInSdp(&offer, "8 101", "8");
   ReplaceInSdp(&offer, "a=fmtp:101 0-15\r\n", "");
   ReplaceInSdp(&offer, "a=rtpmap:101 telephone-event/8000/1\r\n", "");
   std::cerr << "modified OFFER: " << offer << std::endl;
@@ -2247,7 +2247,7 @@ TEST_P(JsepSessionTest, RenegotiationOffererDisablesTelephoneEvent) {
     const JsepTrackNegotiatedDetails* details = track.GetNegotiatedDetails();
     ASSERT_EQ(1U, details->GetEncodingCount());
     const JsepTrackEncoding& encoding = details->GetEncoding(0);
-    ASSERT_EQ(1U, encoding.GetCodecs().size());
+    ASSERT_EQ(4U, encoding.GetCodecs().size());
     ASSERT_TRUE(encoding.HasFormat("109"));
     
     const JsepAudioCodecDescription* audioCodec =
@@ -3476,7 +3476,7 @@ TEST_F(JsepSessionTest, ValidateNoFmtpLineForRedInOfferAndAnswer) {
                     .size());
 }
 
-TEST_F(JsepSessionTest, ValidateAnsweredCodecParams) {
+TEST_F(JsepSessionTest, ValidateAnsweredCodecParamsNoRed) {
   
   
   
@@ -3518,38 +3518,27 @@ TEST_F(JsepSessionTest, ValidateAnsweredCodecParams) {
   auto& video_attrs = video_section.GetAttributeList();
   ASSERT_EQ(SdpDirectionAttribute::kSendrecv, video_attrs.GetDirection());
 
-  
-  ASSERT_EQ(1U, video_section.GetFormats().size());
-  
+  ASSERT_EQ(2U, video_section.GetFormats().size());
   ASSERT_EQ("120", video_section.GetFormats()[0]);
-  
-  
-  
+  ASSERT_EQ("121", video_section.GetFormats()[1]);
 
   
   ASSERT_TRUE(video_attrs.HasAttribute(SdpAttribute::kRtpmapAttribute));
   auto& rtpmaps = video_attrs.GetRtpmap();
   ASSERT_TRUE(rtpmaps.HasEntry("120"));
-  
-  
-  
+  ASSERT_TRUE(rtpmaps.HasEntry("121"));
 
   auto& vp8_entry = rtpmaps.GetEntry("120");
-  
-  
-  
+  auto& vp9_entry = rtpmaps.GetEntry("121");
 
   ASSERT_EQ("VP8", vp8_entry.name);
-  
-  
-  
+  ASSERT_EQ("VP9", vp9_entry.name);
 
   
   ASSERT_TRUE(video_attrs.HasAttribute(SdpAttribute::kFmtpAttribute));
   auto& fmtps = video_attrs.GetFmtp().mFmtps;
 
-  ASSERT_EQ(1U, fmtps.size());
-  
+  ASSERT_EQ(2U, fmtps.size());
 
   
   ASSERT_EQ("120", fmtps[0].format);
@@ -3563,6 +3552,18 @@ TEST_F(JsepSessionTest, ValidateAnsweredCodecParams) {
   ASSERT_EQ((uint32_t)12288, parsed_vp8_params.max_fs);
   ASSERT_EQ((uint32_t)60, parsed_vp8_params.max_fr);
 
+  
+  ASSERT_EQ("121", fmtps[1].format);
+  ASSERT_TRUE(!!fmtps[1].parameters);
+  ASSERT_EQ(SdpRtpmapAttributeList::kVP9, fmtps[1].parameters->codec_type);
+
+  auto& parsed_vp9_params =
+      *static_cast<const SdpFmtpAttributeList::VP8Parameters*>(
+          fmtps[1].parameters.get());
+
+  ASSERT_EQ((uint32_t)12288, parsed_vp9_params.max_fs);
+  ASSERT_EQ((uint32_t)60, parsed_vp9_params.max_fr);
+
   SetLocalAnswer(answer);
   SetRemoteAnswer(answer);
 
@@ -3572,12 +3573,12 @@ TEST_F(JsepSessionTest, ValidateAnsweredCodecParams) {
   ASSERT_FALSE(IsNull(offerTransceivers[1]->mRecvTrack));
   ASSERT_TRUE(offerTransceivers[1]->mSendTrack.GetNegotiatedDetails());
   ASSERT_TRUE(offerTransceivers[1]->mRecvTrack.GetNegotiatedDetails());
-  ASSERT_EQ(1U, offerTransceivers[1]
+  ASSERT_EQ(2U, offerTransceivers[1]
                     ->mSendTrack.GetNegotiatedDetails()
                     ->GetEncoding(0)
                     .GetCodecs()
                     .size());
-  ASSERT_EQ(1U, offerTransceivers[1]
+  ASSERT_EQ(2U, offerTransceivers[1]
                     ->mRecvTrack.GetNegotiatedDetails()
                     ->GetEncoding(0)
                     .GetCodecs()
@@ -3589,12 +3590,12 @@ TEST_F(JsepSessionTest, ValidateAnsweredCodecParams) {
   ASSERT_FALSE(IsNull(answerTransceivers[1]->mRecvTrack));
   ASSERT_TRUE(answerTransceivers[1]->mSendTrack.GetNegotiatedDetails());
   ASSERT_TRUE(answerTransceivers[1]->mRecvTrack.GetNegotiatedDetails());
-  ASSERT_EQ(1U, answerTransceivers[1]
+  ASSERT_EQ(2U, answerTransceivers[1]
                     ->mSendTrack.GetNegotiatedDetails()
                     ->GetEncoding(0)
                     .GetCodecs()
                     .size());
-  ASSERT_EQ(1U, answerTransceivers[1]
+  ASSERT_EQ(2U, answerTransceivers[1]
                     ->mRecvTrack.GetNegotiatedDetails()
                     ->GetEncoding(0)
                     .GetCodecs()
@@ -5141,12 +5142,9 @@ TEST_F(JsepSessionTest, AudioOnlyG722Rejected) {
   SetLocalAnswer(answer);
   SetRemoteAnswer(answer);
 
-  
   ASSERT_NE(mSessionAns->GetLocalDescription(kJsepDescriptionCurrent)
-                .find("UDP/TLS/RTP/SAVPF 0\r"),
+                .find("UDP/TLS/RTP/SAVPF 0 8\r"),
             std::string::npos);
-  
-  
   ASSERT_NE(mSessionAns->GetLocalDescription(kJsepDescriptionCurrent)
                 .find("a=rtpmap:0 PCMU/8000"),
             std::string::npos);
