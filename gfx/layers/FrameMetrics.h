@@ -723,15 +723,15 @@ struct ScrollSnapInfo {
   }
 
   bool HasScrollSnapping() const {
-    return mScrollSnapTypeY != mozilla::StyleScrollSnapType::None ||
-           mScrollSnapTypeX != mozilla::StyleScrollSnapType::None;
+    return mScrollSnapTypeY != mozilla::StyleScrollSnapStrictness::None ||
+           mScrollSnapTypeX != mozilla::StyleScrollSnapStrictness::None;
   }
 
   
-  mozilla::StyleScrollSnapType mScrollSnapTypeX =
-      mozilla::StyleScrollSnapType::None;
-  mozilla::StyleScrollSnapType mScrollSnapTypeY =
-      mozilla::StyleScrollSnapType::None;
+  mozilla::StyleScrollSnapStrictness mScrollSnapTypeX =
+      mozilla::StyleScrollSnapStrictness::None;
+  mozilla::StyleScrollSnapStrictness mScrollSnapTypeY =
+      mozilla::StyleScrollSnapStrictness::None;
 
   
   Maybe<nscoord> mScrollSnapIntervalX;
