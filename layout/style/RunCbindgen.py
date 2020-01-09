@@ -10,6 +10,8 @@ import subprocess
 
 CARGO_LOCK = mozpath.join(buildconfig.topsrcdir, "Cargo.lock")
 
+
+
 def generate(output, cbindgen_crate_path, *in_tree_dependencies):
     env = os.environ.copy()
     env['CARGO'] = str(buildconfig.substs['CARGO'])

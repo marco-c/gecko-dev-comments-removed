@@ -279,13 +279,11 @@ inline bool BasePrincipal::FastEquals(nsIPrincipal* aOther) {
   
   
   
-  
-  
-  if (Kind() == eNullPrincipal || Kind() == eSystemPrincipal) {
+  if (Kind() == eSystemPrincipal) {
     return this == other;
   }
 
-  if (Kind() == eCodebasePrincipal) {
+  if (Kind() == eCodebasePrincipal || Kind() == eNullPrincipal) {
     return mOriginNoSuffix == other->mOriginNoSuffix &&
            mOriginSuffix == other->mOriginSuffix;
   }
@@ -308,13 +306,6 @@ inline bool BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther) {
 
 inline bool BasePrincipal::FastSubsumes(nsIPrincipal* aOther) {
   
-  
-  
-  
-  auto other = Cast(aOther);
-  if (Kind() == eNullPrincipal && other->Kind() == eNullPrincipal) {
-    return this == other;
-  }
   if (FastEquals(aOther)) {
     return true;
   }
