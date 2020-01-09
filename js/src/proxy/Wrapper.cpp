@@ -310,9 +310,7 @@ JSObject* Wrapper::wrappedObject(JSObject* wrapper) {
 
     
     
-    if (!wrapper->isMarkedGray()) {
-      JS::ExposeObjectToActiveJS(target);
-    }
+    JS::ExposeObjectToActiveJS(target);
   }
 
   return target;
