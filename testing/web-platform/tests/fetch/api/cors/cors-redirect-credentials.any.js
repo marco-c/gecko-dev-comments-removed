@@ -1,7 +1,6 @@
 
 
 
-
 function corsRedirectCredentials(desc, redirectUrl, redirectLocation, redirectStatus, locationCredentials) {
   var url = redirectUrl
   var urlParameters = "?redirect_status=" + redirectStatus;

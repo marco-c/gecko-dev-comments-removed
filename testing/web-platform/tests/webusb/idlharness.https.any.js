@@ -3,7 +3,6 @@
 
 
 
-
 'use strict';
 
 idl_test(

@@ -1,6 +1,5 @@
 
 
-
 var testOpen = async_test("Create Secure WebSocket - wsocket.extensions should be set to '' after connection is established - Connection should be opened");
 var testClose = async_test("Create Secure WebSocket - wsocket.extensions should be set to '' after connection is established - Connection should be closed");
 

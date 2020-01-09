@@ -1,4 +1,3 @@
-
 const blob = new Blob(['test']);
 const file = new File(['test'], 'name');
 

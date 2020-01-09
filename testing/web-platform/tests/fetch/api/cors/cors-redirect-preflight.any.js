@@ -2,7 +2,6 @@
 
 
 
-
 function corsRedirect(desc, redirectUrl, redirectLocation, redirectStatus, expectSuccess) {
   var urlBaseParameters = "&redirect_status=" + redirectStatus;
   var urlParametersSuccess = urlBaseParameters + "&allow_headers=x-w3c&location=" + encodeURIComponent(redirectLocation + "?allow_headers=x-w3c");

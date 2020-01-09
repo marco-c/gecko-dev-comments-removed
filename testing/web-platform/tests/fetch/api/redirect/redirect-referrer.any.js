@@ -2,7 +2,6 @@
 
 
 
-
 function testReferrerAfterRedirection(desc, redirectUrl, redirectLocation, referrerPolicy, redirectReferrerPolicy, expectedReferrer) {
   var url = redirectUrl;
   var urlParameters = "?location=" + encodeURIComponent(redirectLocation);
