@@ -3,6 +3,7 @@
 
 
 
+
 requestLongerTimeout(2);
 
 function assertBreakpointExists(dbg, source, line) {
@@ -22,10 +23,7 @@ async function assertEditorBreakpoint(dbg, line, shouldExist) {
   const exists = !!el.querySelector(".new-breakpoint");
   ok(
     exists === shouldExist,
-    "Breakpoint " +
-      (shouldExist ? "exists" : "does not exist") +
-      " on line " +
-      line
+    `Breakpoint ${shouldExist ? "exists" : "does not exist"} on line ${line}`
   );
 }
 
@@ -44,11 +42,14 @@ async function clickGutter(dbg, line) {
 
 add_task(async function() {
   
-  const dbg = await initDebugger("doc-sourcemaps.html", "entry.js", "output.js", "times2.js", "opts.js");
-  const {
-    selectors: { getBreakpoint, getBreakpointCount },
-    getState
-  } = dbg;
+  const dbg = await initDebugger(
+    "doc-sourcemaps.html",
+    "entry.js",
+    "output.js",
+    "times2.js",
+    "opts.js"
+  );
+  const { getState } = dbg;
 
   ok(true, "Original sources exist");
   const bundleSrc = findSource(dbg, "bundle.js");
@@ -61,11 +62,11 @@ add_task(async function() {
 
   await clickGutter(dbg, 70);
   await waitForDispatch(dbg, "ADD_BREAKPOINT");
-  assertEditorBreakpoint(dbg, 70, true);
+  await assertEditorBreakpoint(dbg, 70, true);
 
   await clickGutter(dbg, 70);
   await waitForDispatch(dbg, "REMOVE_BREAKPOINT");
-  is(getBreakpointCount(getState()), 0, "No breakpoints exists");
+  is(dbg.selectors.getBreakpointCount(getState()), 0, "No breakpoints exists");
 
   const entrySrc = findSource(dbg, "entry.js");
 
@@ -79,7 +80,7 @@ add_task(async function() {
 
   
   await addBreakpoint(dbg, "entry.js", 15);
-  is(getBreakpointCount(getState()), 1, "One breakpoint exists");
+  is(dbg.selectors.getBreakpointCount(getState()), 1, "One breakpoint exists");
   assertBreakpointExists(dbg, entrySrc, 15);
 
   invokeInTab("keepMeAlive");

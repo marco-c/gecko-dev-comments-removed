@@ -1,6 +1,7 @@
 
 
 
+
 function toggleBreakpoint(dbg, index) {
   const bp = findAllElements(dbg, "breakpointItems")[index];
   const input = bp.querySelector("input");
@@ -19,36 +20,6 @@ async function enableBreakpoint(dbg, index) {
   await enabled;
 }
 
-function toggleBreakpoints(dbg, count) {
-  clickElement(dbg, "toggleBreakpoints");
-}
-
-function disableBreakpoints(dbg, count) {
-  const toggled = waitForDispatch(dbg, "DISABLE_BREAKPOINT", count);
-  toggleBreakpoints(dbg);
-  return toggled;
-}
-
-function enableBreakpoints(dbg, count) {
-  const enabled = waitForDispatch(dbg, "ENABLE_BREAKPOINT", count);
-  toggleBreakpoints(dbg);
-  return enabled;
-}
-
-function every(array, predicate) {
-  return !array.some(item => !predicate(item));
-}
-
-function subset(subArray, superArray) {
-  return every(subArray, subItem => superArray.includes(subItem));
-}
-
-function assertEmptyLines(dbg, lines) {
-  const sourceId = dbg.selectors.getSelectedSourceId(dbg.store.getState());
-  const emptyLines = dbg.selectors.getEmptyLines(dbg.store.getState(), sourceId);
-  ok(subset(lines, emptyLines), 'empty lines should match');
-}
-
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "simple2");
@@ -60,7 +31,7 @@ add_task(async function() {
 
   
   await disableBreakpoint(dbg, 0);
-  let bp1 = findBreakpoint(dbg, "simple2", 3);
+  const bp1 = findBreakpoint(dbg, "simple2", 3);
   let bp2 = findBreakpoint(dbg, "simple2", 5);
   is(bp1.disabled, true, "first breakpoint is disabled");
   is(bp2.disabled, false, "second breakpoint is enabled");
@@ -79,7 +50,8 @@ add_task(async function() {
   await addBreakpoint(dbg, "simple2", 3);
   await addBreakpoint(dbg, "simple2", 5);
 
-  assertEmptyLines(dbg, [1,2]);
+  assertEmptyLines(dbg, [1, 2]);
+  assertBreakpointSnippet(dbg, 3, "return x + y;");
 
   rightClickElement(dbg, "breakpointItem", 3);
   const disableBreakpointDispatch = waitForDispatch(dbg, "DISABLE_BREAKPOINT");

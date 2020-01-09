@@ -6,6 +6,7 @@
 
 
 
+
 const { PromiseTestUtils } = scopedCuImport(
   "resource://testing-common/PromiseTestUtils.jsm"
 );
@@ -18,10 +19,7 @@ function clickGutter(dbg, line) {
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "simple1.js");
-  const {
-    selectors: { getBreakpoint, getBreakpointCount },
-    getState
-  } = dbg;
+  const { getState } = dbg;
   const source = findSource(dbg, "simple1.js");
 
   await selectSource(dbg, source.url);
@@ -29,12 +27,12 @@ add_task(async function() {
   
   clickGutter(dbg, 4);
   await waitForDispatch(dbg, "ADD_BREAKPOINT");
-  is(getBreakpointCount(getState()), 1, "One breakpoint exists");
-  assertEditorBreakpoint(dbg, 4, true);
+  is(dbg.selectors.getBreakpointCount(getState()), 1, "One breakpoint exists");
+  await assertEditorBreakpoint(dbg, 4, true);
 
   
   clickGutter(dbg, 4);
   await waitForDispatch(dbg, "REMOVE_BREAKPOINT");
-  is(getBreakpointCount(getState()), 0, "No breakpoints exist");
-  assertEditorBreakpoint(dbg, 4, false);
+  is(dbg.selectors.getBreakpointCount(getState()), 0, "No breakpoints exist");
+  await assertEditorBreakpoint(dbg, 4, false);
 });
