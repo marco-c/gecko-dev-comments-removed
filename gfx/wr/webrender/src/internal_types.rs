@@ -3,8 +3,8 @@
 
 
 use api::{DebugCommand, DocumentId, ExternalImageData, ExternalImageId};
-use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize};
-use api::{ImageFormat, WorldPixel, NotificationRequest};
+use api::{ImageFormat, NotificationRequest};
+use api::units::*;
 use device::TextureFilter;
 use renderer::PipelineInfo;
 use gpu_cache::GpuCacheUpdateList;

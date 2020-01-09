@@ -3,11 +3,11 @@
 
 
 use api::{
-    AlphaType, ColorDepth, ColorF, ColorU, DeviceIntRect, DeviceIntSideOffsets,
-    DeviceIntSize, ImageRendering, LayoutRect, LayoutSize, LayoutPrimitiveInfo,
-    PremultipliedColorF, Shadow, TileOffset, YuvColorSpace, YuvFormat, LayoutVector2D,
+    AlphaType, ColorDepth, ColorF, ColorU,
+    ImageKey as ApiImageKey, ImageRendering, LayoutPrimitiveInfo,
+    PremultipliedColorF, Shadow, YuvColorSpace, YuvFormat,
 };
-use api::ImageKey as ApiImageKey;
+use api::units::*;
 use display_list_flattener::{CreateShadow, IsVisible};
 use frame_builder::FrameBuildingState;
 use gpu_cache::{GpuDataRequest};

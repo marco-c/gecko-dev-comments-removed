@@ -14,6 +14,7 @@ mod boilerplate;
 use boilerplate::Example;
 use euclid::TypedScale;
 use webrender::api::*;
+use webrender::api::units::*;
 
 
 

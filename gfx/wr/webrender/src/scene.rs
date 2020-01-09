@@ -2,9 +2,10 @@
 
 
 
-use api::{BuiltDisplayList, ColorF, DynamicProperties, Epoch, LayoutSize};
-use api::{FilterOp, TempFilterData, FilterData, ComponentTransferFuncType, LayoutTransform};
+use api::{BuiltDisplayList, ColorF, DynamicProperties, Epoch};
+use api::{FilterOp, TempFilterData, FilterData, ComponentTransferFuncType};
 use api::{PipelineId, PropertyBinding, PropertyBindingId, ItemRange, MixBlendMode, StackingContext};
+use api::units::{LayoutSize, LayoutTransform};
 use internal_types::FastHashMap;
 use std::sync::Arc;
 

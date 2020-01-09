@@ -2,9 +2,9 @@
 
 
 
-use api::{DebugFlags, DeviceIntPoint, DeviceIntRect, DeviceIntSize};
-use api::{DirtyRect, ImageDirtyRect, DocumentId, ExternalImageType, ImageFormat};
-use api::{ImageDescriptor};
+use api::{DirtyRect, DocumentId, ExternalImageType, ImageFormat};
+use api::{DebugFlags, ImageDescriptor};
+use api::units::*;
 #[cfg(test)]
 use api::IdNamespace;
 use device::{TextureFilter, total_gpu_bytes_allocated};

@@ -2,7 +2,6 @@
 
 
 
-extern crate app_units;
 extern crate base64;
 extern crate bincode;
 extern crate byteorder;
@@ -80,6 +79,7 @@ use std::rc::Rc;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use webrender::DebugFlags;
 use webrender::api::*;
+use webrender::api::units::*;
 use winit::dpi::{LogicalPosition, LogicalSize};
 use winit::VirtualKeyCode;
 use wrench::{Wrench, WrenchThing};
