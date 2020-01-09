@@ -1252,7 +1252,7 @@ void CompositorD3D11::EndFrame() {
   
   if (mQuery) {
     BOOL result;
-    WaitForFrameGPUQuery(mDevice, mContext, mQuery, &result);
+    WaitForGPUQuery(mDevice, mContext, mQuery, &result);
   }
   
   mQuery = query;
