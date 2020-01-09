@@ -1305,14 +1305,6 @@ VARCACHE_PREF(
 )
 
 
-
-VARCACHE_PREF(
-  "layout.css.scroll-snap.enabled",
-   layout_css_scroll_snap_enabled,
-  bool, false
-)
-
-
 VARCACHE_PREF(
   "layout.css.shared-memory-ua-sheets.enabled",
    layout_css_shared_memory_ua_sheets_enabled,
