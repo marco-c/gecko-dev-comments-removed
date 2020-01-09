@@ -555,13 +555,11 @@ class FunctionBox : public ObjectBox, public SharedContext {
     startColumn = column;
   }
 
-  void setEnd(const TokenStreamAnyChars& anyChars) {
+  void setEnd(uint32_t end) {
     
     
     
-    uint32_t offset = anyChars.currentToken().pos.end;
-    bufEnd = offset;
-    toStringEnd = offset;
+    bufEnd = toStringEnd = end;
   }
 
   void trace(JSTracer* trc) override;

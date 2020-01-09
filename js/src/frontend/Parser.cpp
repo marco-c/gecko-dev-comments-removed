@@ -2912,6 +2912,10 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
   return funNode;
 }
 
+void ParserBase::setFunctionEndFromCurrentToken(FunctionBox* funbox) const {
+  funbox->setEnd(anyChars.currentToken().pos.end);
+}
+
 template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
     InHandling inHandling, YieldHandling yieldHandling,
@@ -3052,7 +3056,7 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
       return false;
     }
 
-    funbox->setEnd(anyChars);
+    setFunctionEndFromCurrentToken(funbox);
   } else {
     MOZ_ASSERT(kind == FunctionSyntaxKind::Arrow);
 
@@ -3060,7 +3064,7 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
       return false;
     }
 
-    funbox->setEnd(anyChars);
+    setFunctionEndFromCurrentToken(funbox);
 
     if (kind == FunctionSyntaxKind::Statement) {
       if (!matchOrInsertSemicolon()) {
@@ -7161,7 +7165,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   }
   funbox->initWithEnclosingParseContext(pc_, functionSyntaxKind);
   handler_.setFunctionBox(funNode, funbox);
-  funbox->setEnd(anyChars);
+  setFunctionEndFromCurrentToken(funbox);
 
   
   SourceParseContext funpc(this, funbox,  nullptr);
@@ -7352,7 +7356,7 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
 
   
   handler_.setEndPosition(funNode, wholeInitializerPos.end);
-  funbox->setEnd(anyChars);
+  setFunctionEndFromCurrentToken(funbox);
 
   
   ListNodeType argsbody =
