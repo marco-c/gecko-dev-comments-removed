@@ -100,6 +100,13 @@ typedef struct _nsCocoaWindowList {
 - (void)_setWindowNumber:(NSInteger)aNumber;
 
 
+
+
+
+- (void)setBottomCornerRounded:(BOOL)rounded;
+- (BOOL)bottomCornerRounded;
+
+
 - (NSRect)contentRectForFrameRect:(NSRect)windowFrame styleMask:(NSUInteger)windowStyle;
 - (NSRect)frameRectForContentRect:(NSRect)windowContentRect styleMask:(NSUInteger)windowStyle;
 
@@ -150,17 +157,10 @@ typedef struct _nsCocoaWindowList {
 - (void)sendToplevelDeactivateEvents;
 @end
 
-@interface TitlebarGradientView : NSView
-@end
+@class ToolbarWindow;
 
 
 @interface ToolbarWindow : BaseWindow {
-  
-  
-  
-  
-  TitlebarGradientView* mTitlebarGradientView;  
-
   CGFloat mUnifiedToolbarHeight;
   CGFloat mSheetAttachmentPosition;
   NSRect mWindowButtonsRect;
@@ -170,7 +170,8 @@ typedef struct _nsCocoaWindowList {
 - (CGFloat)unifiedToolbarHeight;
 - (CGFloat)titlebarHeight;
 - (NSRect)titlebarRect;
-- (void)setTitlebarNeedsDisplay;
+- (void)setTitlebarNeedsDisplayInRect:(NSRect)aRect sync:(BOOL)aSync;
+- (void)setTitlebarNeedsDisplayInRect:(NSRect)aRect;
 - (void)setDrawsContentsIntoWindowFrame:(BOOL)aState;
 - (void)setSheetAttachmentPosition:(CGFloat)aY;
 - (CGFloat)sheetAttachmentPosition;
@@ -178,7 +179,6 @@ typedef struct _nsCocoaWindowList {
 - (void)placeFullScreenButton:(NSRect)aRect;
 - (NSPoint)windowButtonsPositionWithDefaultPosition:(NSPoint)aDefaultPosition;
 - (NSPoint)fullScreenButtonPositionWithDefaultPosition:(NSPoint)aDefaultPosition;
-- (void)windowMainStateChanged;
 @end
 
 class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
@@ -240,7 +240,6 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
 
   virtual void Resize(double aWidth, double aHeight, bool aRepaint) override;
   virtual void Resize(double aX, double aY, double aWidth, double aHeight, bool aRepaint) override;
-  NSRect GetClientCocoaRect();
   virtual LayoutDeviceIntRect GetClientBounds() override;
   virtual LayoutDeviceIntRect GetScreenBounds() override;
   void ReportMoveEvent();
