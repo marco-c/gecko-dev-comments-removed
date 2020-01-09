@@ -47,6 +47,7 @@
 
 
 
+
 #include "CanRunScriptChecker.h"
 #include "CustomMatchers.h"
 #include "clang/Lex/Lexer.h"
@@ -66,6 +67,8 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   
   
+  
+  
   auto KnownLiveSmartPtr = anyOf(
     StackSmartPtr,
     ConstMemberOfThisSmartPtr,
@@ -77,9 +80,58 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   
   
+  auto KnownLiveParam = anyOf(
+      
+      cxxThisExpr(),
+      
+      declRefExpr(to(parmVarDecl())));
+
   
   
-  auto LocalKnownLive = anyOf(KnownLiveSmartPtr, MozKnownLiveCall);
+  auto KnownLiveBase = anyOf(
+      
+      KnownLiveSmartPtr,
+      
+      MozKnownLiveCall,
+      
+      KnownLiveParam,
+      
+      declRefExpr(to(varDecl(isConstexpr()))));
+
+  
+  
+  auto KnownLiveSimple = anyOf(
+      
+      KnownLiveBase,
+      
+      
+      
+      
+      
+      cxxMemberCallExpr(on(
+          allOf(hasType(isSmartPtrToRefCounted()),
+                KnownLiveBase))),
+      
+      cxxOperatorCallExpr(
+          anyOf(hasOverloadedOperatorName("*"),
+                hasOverloadedOperatorName("->")),
+          hasAnyArgument(KnownLiveBase),
+          argumentCountIs(1)),
+      
+      
+      
+      
+      
+      unaryOperator(
+          unaryDereferenceOperator(),
+          hasUnaryOperand(
+              
+              
+              
+              
+              
+              
+              ignoreTrivials(KnownLiveBase))));
 
   auto InvalidArg =
       ignoreTrivialsConditional(
@@ -94,76 +146,12 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
         
         expr(
           
-          unless(cxxThisExpr()),
-          
-          unless(KnownLiveSmartPtr),
-          
-          unless(cxxMemberCallExpr(on(KnownLiveSmartPtr))),
-          
-          
-          unless(
-            cxxOperatorCallExpr(
-              anyOf(hasOverloadedOperatorName("*"),
-                    hasOverloadedOperatorName("->")),
-              hasAnyArgument(LocalKnownLive),
-              argumentCountIs(1)
-            )
-          ),
-          
-          unless(declRefExpr(to(parmVarDecl()))),
-          
-          
-          
-          unless(declRefExpr(to(varDecl(isConstexpr())))),
+          unless(KnownLiveSimple),
           
           
           unless(cxxDefaultArgExpr(isNullDefaultArg())),
           
           unless(cxxNullPtrLiteralExpr()),
-          
-          
-          unless(
-            unaryOperator(
-              unaryDereferenceOperator(),
-              hasUnaryOperand(
-                anyOf(
-                  
-                  
-                  
-                  
-                  
-                  
-                  
-                  ignoreTrivials(declRefExpr(to(parmVarDecl()))),
-                  cxxThisExpr(),
-                  
-                  
-                  
-                  
-                  ignoreTrivials(declRefExpr(to(varDecl(isConstexpr()))))
-                )
-              )
-            )
-          ),
-          
-          unless(
-            anyOf(
-              MozKnownLiveCall,
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              cxxMemberCallExpr(on(allOf(hasType(isSmartPtrToRefCounted()),
-                                         MozKnownLiveCall)))
-            )
-          ),
           expr().bind("invalidArg")));
 
   
