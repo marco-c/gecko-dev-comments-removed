@@ -682,6 +682,7 @@ static unsigned __stdcall SendPingThread(void* aContext) {
 
 static bool SendPing(const mozilla::LauncherError& aError) {
 #if defined(MOZ_TELEMETRY_REPORTING)
+#if defined(MOZ_LAUNCHER_PROCESS)
   mozilla::LauncherRegistryInfo regInfo;
   mozilla::LauncherResult<mozilla::LauncherRegistryInfo::EnabledState>
       launcherEnabled = regInfo.IsEnabled();
@@ -692,6 +693,7 @@ static bool SendPing(const mozilla::LauncherError& aError) {
     
     return false;
   }
+#endif  
 
   
   
