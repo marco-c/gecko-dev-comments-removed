@@ -11,6 +11,7 @@
 #include "LayersTypes.h"                         
 #include "Units.h"                               
 #include "mozilla/Assertions.h"                  
+#include "mozilla/Attributes.h"                  
 #include "mozilla/DefineEnum.h"                  
 #include "mozilla/EventForwards.h"               
 #include "mozilla/layers/MatrixMessage.h"        
@@ -76,6 +77,7 @@ class GeckoContentController {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   virtual void HandleTap(TapType aType, const LayoutDevicePoint& aPoint,
                          Modifiers aModifiers, const ScrollableLayerGuid& aGuid,
                          uint64_t aInputBlockId) = 0;
