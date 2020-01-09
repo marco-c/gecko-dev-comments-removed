@@ -89,7 +89,7 @@ const reducers = {
     
     const weight = properties["font-weight"];
     if (axes.wght === undefined && parseFloat(weight).toString() === weight.toString()) {
-      axes.wght = weight;
+      axes.wght = parseFloat(weight);
     }
 
     
@@ -99,7 +99,7 @@ const reducers = {
     
     const match = stretch.trim().match(/^(\d+(.\d+)?)%$/);
     if (axes.wdth === undefined && match && match[1]) {
-      axes.wdth = match[1];
+      axes.wdth = parseFloat(match[1]);
     }
 
     return { ...state, axes, fonts, properties, id };

@@ -608,7 +608,7 @@ class FontInspector {
     this.snapshotChanges();
 
     const writer = this.getWriterForProperty(tag);
-    writer(value);
+    writer(value.toString());
   }
 
   
@@ -625,7 +625,7 @@ class FontInspector {
     value = (unit !== null) ? value + unit : value;
     this.store.dispatch(updateFontProperty(property, value));
     const writer = this.getWriterForProperty(property);
-    writer(value);
+    writer(value.toString());
   }
 
   
@@ -713,11 +713,9 @@ class FontInspector {
         unit = toUnit;
       }
 
-      
-      this.onFontPropertyUpdate(property, value + "", unit);
+      this.onFontPropertyUpdate(property, value, unit);
     } else {
-      
-      this.onAxisUpdate(property, value + "");
+      this.onAxisUpdate(property, value);
     }
   }
 
