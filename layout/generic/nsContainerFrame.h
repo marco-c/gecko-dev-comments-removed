@@ -66,9 +66,6 @@ class nsContainerFrame : public nsSplittableFrame {
       PeekOffsetCharacterOptions aOptions =
           PeekOffsetCharacterOptions()) override;
 
-  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                    int32_t aModType) override;
-
 #ifdef DEBUG_FRAME_DUMP
   void List(FILE* out = stderr, const char* aPrefix = "",
             uint32_t aFlags = 0) const override;
@@ -414,49 +411,6 @@ class nsContainerFrame : public nsSplittableFrame {
     else
       nsContainerFrame::PositionChildViews(aFrame);
   }
-
-  static bool FrameStartsCounterScope(nsIFrame* aFrame);
-
-  
-
-
-
-
-
-
-  bool RenumberList();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool RenumberFrameAndDescendants(int32_t* aOrdinal, int32_t aDepth,
-                                   int32_t aIncrement,
-                                   bool aForCounting) override;
-  
-
-
-
-  virtual bool RenumberChildFrames(int32_t* aOrdinal, int32_t aDepth,
-                                   int32_t aIncrement, bool aForCounting);
 
   
 

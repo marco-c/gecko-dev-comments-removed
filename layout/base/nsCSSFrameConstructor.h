@@ -350,6 +350,9 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 
+  
+  nsCounterManager* CounterManager() { return &mCounterManager; }
+
  private:
   struct FrameConstructionItem;
   class FrameConstructionItemList;

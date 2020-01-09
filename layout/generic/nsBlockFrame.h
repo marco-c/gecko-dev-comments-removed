@@ -317,9 +317,6 @@ class nsBlockFrame : public nsContainerFrame {
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;
 
-  nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
-
   
 
 
@@ -576,10 +573,6 @@ class nsBlockFrame : public nsContainerFrame {
     }
     return false;
   }
-
-  virtual bool RenumberChildFrames(int32_t* aOrdinal, int32_t aDepth,
-                                   int32_t aIncrement,
-                                   bool aForCounting) override;
 
   
   void AddSizeOfExcludingThisForTree(nsWindowSizes&) const override;
