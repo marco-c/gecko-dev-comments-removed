@@ -57,6 +57,7 @@
 #include "js/UniquePtr.h"
 #include "js/Vector.h"
 #include "js/Wrapper.h"
+#include "threading/CpuCount.h"
 #include "util/StringBuffer.h"
 #include "util/Text.h"
 #include "vm/AsyncFunction.h"
@@ -847,12 +848,13 @@ static bool WasmExtractCode(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  Rooted<WasmModuleObject*> module(
-      cx, args[0].toObject().maybeUnwrapIf<WasmModuleObject>());
-  if (!module) {
+  JSObject* unwrapped = CheckedUnwrap(&args.get(0).toObject());
+  if (!unwrapped || !unwrapped->is<WasmModuleObject>()) {
     JS_ReportErrorASCII(cx, "argument is not a WebAssembly.Module");
     return false;
   }
+
+  Rooted<WasmModuleObject*> module(cx, &unwrapped->as<WasmModuleObject>());
 
   bool stableTier = false;
   bool bestTier = false;
@@ -907,13 +909,13 @@ static bool WasmHasTier2CompilationCompleted(JSContext* cx, unsigned argc,
     return false;
   }
 
-  Rooted<WasmModuleObject*> module(
-      cx, args[0].toObject().maybeUnwrapIf<WasmModuleObject>());
-  if (!module) {
+  JSObject* unwrapped = CheckedUnwrap(&args.get(0).toObject());
+  if (!unwrapped || !unwrapped->is<WasmModuleObject>()) {
     JS_ReportErrorASCII(cx, "argument is not a WebAssembly.Module");
     return false;
   }
 
+  Rooted<WasmModuleObject*> module(cx, &unwrapped->as<WasmModuleObject>());
   args.rval().set(BooleanValue(!module->module().testingTier2Active()));
   return true;
 }
@@ -5071,6 +5073,19 @@ static bool SetTimeZone(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool GetCoreCount(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 0) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+  args.rval().setInt32(GetCPUCount());
+  return true;
+}
+
 static bool GetDefaultLocale(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   RootedObject callee(cx, &args.callee());
@@ -6290,6 +6305,11 @@ gc::ZealModeHelpText),
     JS_FN_HELP("getDefaultLocale", GetDefaultLocale, 0, 0,
 "getDefaultLocale()",
 "  Get the current default locale.\n"),
+
+    JS_FN_HELP("getCoreCount", GetCoreCount, 0, 0,
+"getCoreCount()",
+"  Get the number of CPU cores from the platform layer.  Typically this\n"
+"  means the number of hyperthreads on systems where that makes sense.\n"),
 
     JS_FN_HELP("setTimeResolution", SetTimeResolution, 2, 0,
 "setTimeResolution(resolution, jitter)",

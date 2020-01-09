@@ -5,11 +5,6 @@
 
 
 
-
-
-
-
-
 const DEBUG = 0;
 
 
@@ -20,9 +15,22 @@ const ITERATIONS = 100000;
 const NUMWORKERS = 2;
 const NUMAGENTS = NUMWORKERS + 1;
 
+
+
 if (!wasmThreadsSupported() || helperThreadCount() < NUMWORKERS) {
     if (DEBUG > 0)
         print("Threads not supported");
+    quit(0);
+}
+
+
+
+
+
+
+if (getCoreCount() < NUMAGENTS) {
+    if (DEBUG > 0)
+        print("Fake or feeble hardware");
     quit(0);
 }
 
