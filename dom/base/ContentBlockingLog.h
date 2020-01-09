@@ -29,6 +29,7 @@ class ContentBlockingLog final {
     uint32_t mRepeatCount;
     bool mBlocked;
     Maybe<AntiTrackingCommon::StorageAccessGrantedReason> mReason;
+    nsTArray<nsCString> mTrackingFullHashes;
   };
 
   struct OriginDataEntry {
@@ -75,15 +76,13 @@ class ContentBlockingLog final {
 
   void RecordLog(
       const nsACString& aOrigin, uint32_t aType, bool aBlocked,
-      const Maybe<AntiTrackingCommon::StorageAccessGrantedReason>& aReason) {
+      const Maybe<AntiTrackingCommon::StorageAccessGrantedReason>& aReason,
+      const nsTArray<nsCString>& aTrackingFullHashes) {
+    DebugOnly<bool> isCookiesBlockedTracker =
+        aType == nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER;
     MOZ_ASSERT_IF(aBlocked, aReason.isNothing());
-    MOZ_ASSERT_IF(
-        aType != nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
-        aReason.isNothing());
-    MOZ_ASSERT_IF(
-        !aBlocked &&
-            aType == nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
-        aReason.isSome());
+    MOZ_ASSERT_IF(!isCookiesBlockedTracker, aReason.isNothing());
+    MOZ_ASSERT_IF(isCookiesBlockedTracker && !aBlocked, aReason.isSome());
 
     if (aOrigin.IsVoid()) {
       return;
@@ -114,6 +113,13 @@ class ContentBlockingLog final {
           
           
           
+          
+          
+#ifdef DEBUG
+          for (const auto& hash : aTrackingFullHashes) {
+            MOZ_ASSERT(last.mTrackingFullHashes.Contains(hash));
+          }
+#endif
           return;
         }
       }
@@ -123,7 +129,9 @@ class ContentBlockingLog final {
         
         entry.mData->mLogs.RemoveElementAt(0);
       }
-      entry.mData->mLogs.AppendElement(LogEntry{aType, 1u, aBlocked, aReason});
+      entry.mData->mLogs.AppendElement(
+          LogEntry{aType, 1u, aBlocked, aReason,
+                   nsTArray<nsCString>(aTrackingFullHashes)});
       return;
     }
 
@@ -142,7 +150,9 @@ class ContentBlockingLog final {
       MOZ_ASSERT(entry->mData->mHasCookiesLoaded.isNothing());
       entry->mData->mHasCookiesLoaded.emplace(aBlocked);
     } else {
-      entry->mData->mLogs.AppendElement(LogEntry{aType, 1u, aBlocked, aReason});
+      entry->mData->mLogs.AppendElement(
+          LogEntry{aType, 1u, aBlocked, aReason,
+                   nsTArray<nsCString>(aTrackingFullHashes)});
     }
   }
 
