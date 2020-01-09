@@ -349,9 +349,8 @@ void ScrollAnchorContainer::ApplyAdjustments() {
   MOZ_ASSERT(!mApplyingAnchorAdjustment);
   
   mApplyingAnchorAdjustment = true;
-  mScrollFrame->ScrollTo(
-      mScrollFrame->GetScrollPosition() + physicalAdjustment,
-      nsIScrollableFrame::INSTANT, nsGkAtoms::relative);
+  mScrollFrame->ScrollTo(mScrollFrame->GetScrollPosition() + physicalAdjustment,
+                         nsIScrollableFrame::INSTANT, nsGkAtoms::relative);
   mApplyingAnchorAdjustment = false;
 
   nsPresContext* pc = Frame()->PresContext();

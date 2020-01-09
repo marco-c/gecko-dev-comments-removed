@@ -277,7 +277,6 @@ class ComputedStyle {
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const;
 
  protected:
-
   
   
   friend void ::Gecko_ComputedStyle_Destroy(ComputedStyle*);

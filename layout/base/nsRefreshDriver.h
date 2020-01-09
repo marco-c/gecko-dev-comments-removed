@@ -424,8 +424,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   void RunDelayedEventsSoon();
 
-  void InitializeTimer()
-  {
+  void InitializeTimer() {
     MOZ_ASSERT(!mActiveTimer);
     EnsureTimerStarted();
   }

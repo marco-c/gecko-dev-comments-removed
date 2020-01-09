@@ -627,8 +627,10 @@ void ImageBridgeChild::UpdateTextureFactoryIdentifier(
   
   
   
-  bool initializingWebRender = GetCompositorBackendType() != LayersBackend::LAYERS_WR &&
-                               aIdentifier.mParentBackend == LayersBackend::LAYERS_WR;
+  
+  bool initializingWebRender =
+      GetCompositorBackendType() != LayersBackend::LAYERS_WR &&
+      aIdentifier.mParentBackend == LayersBackend::LAYERS_WR;
 
   bool needsDrop = disablingWebRender || initializingWebRender;
 

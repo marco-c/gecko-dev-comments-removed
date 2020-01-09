@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef widget_windows_WinCompositorWindowThread_h
 #define widget_windows_WinCompositorWindowThread_h
@@ -23,8 +23,7 @@ struct WinCompositorWnds {
   HWND mCompositorWnd;
   HWND mInitialParentWnd;
   WinCompositorWnds(HWND aCompositorWnd, HWND aInitialParentWnd)
-      : mCompositorWnd(aCompositorWnd),
-        mInitialParentWnd(aInitialParentWnd) {}
+      : mCompositorWnd(aCompositorWnd), mInitialParentWnd(aInitialParentWnd) {}
 };
 
 class WinCompositorWindowThread final {
@@ -32,25 +31,25 @@ class WinCompositorWindowThread final {
       WinCompositorWindowThread)
 
  public:
-  /// Can be called from any thread.
+  
   static WinCompositorWindowThread* Get();
 
-  /// Can only be called from the main thread.
+  
   static void Start();
 
-  /// Can only be called from the main thread.
+  
   static void ShutDown();
 
-  /// Can be called from any thread.
+  
   static MessageLoop* Loop();
 
-  /// Can be called from any thread.
+  
   static bool IsInCompositorWindowThread();
 
-  /// Can be called from any thread.
+  
   static WinCompositorWnds CreateCompositorWindow();
 
-  /// Can be called from any thread.
+  
   static void DestroyCompositorWindow(WinCompositorWnds aWnds);
 
  private:
@@ -62,7 +61,7 @@ class WinCompositorWindowThread final {
   base::Thread* const mThread;
 };
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  
 
-#endif  // widget_windows_WinCompositorWindowThread_h
+#endif  

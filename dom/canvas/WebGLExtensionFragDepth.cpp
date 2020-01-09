@@ -24,6 +24,7 @@ bool WebGLExtensionFragDepth::IsSupported(const WebGLContext* webgl) {
   gl::GLContext* gl = webgl->GL();
   if (gl->IsGLES() && gl->Version() >= 300) {
     
+    
     return false;
   }
   return gl->IsSupported(gl::GLFeature::frag_depth);

@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "WinCompositorWidget.h"
 #include "gfxPrefs.h"
@@ -35,8 +35,8 @@ WinCompositorWidget::WinCompositorWidget(
       mLockedBackBufferData(nullptr) {
   MOZ_ASSERT(mWnd && ::IsWindow(mWnd));
 
-  // mNotDeferEndRemoteDrawing is set on the main thread during init,
-  // but is only accessed after on the compositor thread.
+  
+  
   mNotDeferEndRemoteDrawing = gfxPrefs::LayersCompositionFrameRate() == 0 ||
                               gfxPlatform::IsInLayoutAsapMode() ||
                               gfxPlatform::ForceSoftwareVsync();
@@ -51,10 +51,10 @@ void WinCompositorWidget::OnDestroyWindow() {
 }
 
 bool WinCompositorWidget::PreRender(WidgetRenderingContext* aContext) {
-  // This can block waiting for WM_SETTEXT to finish
-  // Using PreRender is unnecessarily pessimistic because
-  // we technically only need to block during the present call
-  // not all of compositor rendering
+  
+  
+  
+  
   mPresentLock.Enter();
   return true;
 }
@@ -81,8 +81,8 @@ already_AddRefed<gfx::DrawTarget> WinCompositorWidget::StartRemoteDrawing() {
     surf = EnsureTransparentSurface();
   }
 
-  // Must call this after EnsureTransparentSurface(), since it could update
-  // the DC.
+  
+  
   HDC dc = GetWindowSurface();
   if (!surf) {
     if (!dc) {
@@ -146,9 +146,9 @@ bool WinCompositorWidget::NeedsToDeferEndRemoteDrawing() {
     return false;
   }
 
-  // Check if there is a risk of tearing with GDI.
+  
   if (static_cast<int>(scanLine) > height / 2) {
-    // No need to defer.
+    
     return false;
   }
 
@@ -173,7 +173,7 @@ already_AddRefed<gfx::DrawTarget> WinCompositorWidget::GetBackBufferDrawTarget(
   int32_t destStride;
   SurfaceFormat destFormat;
   if (!target->LockBits(&destData, &destSize, &destStride, &destFormat)) {
-    // LockBits is not supported. Use original DrawTarget.
+    
     return target.forget();
   }
 
@@ -280,7 +280,7 @@ bool WinCompositorWidget::RedrawTransparentWindow() {
   RECT winRect;
   ::GetWindowRect(hWnd, &winRect);
 
-  // perform the alpha blend
+  
   return !!::UpdateLayeredWindow(hWnd, nullptr, (POINT*)&winRect, &winSize,
                                  mMemoryDC, &srcPos, 0, &bf, ULW_ALPHA);
 }
@@ -326,8 +326,9 @@ void WinCompositorWidget::UpdateCompositorWndSizeIfNecessary() {
     return;
   }
 
-  // Force a resize and redraw (but not a move, activate, etc.).
-  if (!::SetWindowPos(mCompositorWnds.mCompositorWnd, nullptr, 0, 0, size.width, size.height,
+  
+  if (!::SetWindowPos(mCompositorWnds.mCompositorWnd, nullptr, 0, 0, size.width,
+                      size.height,
                       SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOCOPYBITS |
                           SWP_NOOWNERZORDER | SWP_NOZORDER)) {
     return;
@@ -335,5 +336,5 @@ void WinCompositorWidget::UpdateCompositorWndSizeIfNecessary() {
   mLastCompositorWndSize = size;
 }
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  

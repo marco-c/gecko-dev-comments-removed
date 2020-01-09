@@ -3689,7 +3689,7 @@ static bool ShouldBlockCustomCursor(nsPresContext* aPresContext,
   
   
   nsPresContext* topLevel =
-    aPresContext->GetToplevelContentDocumentPresContext();
+      aPresContext->GetToplevelContentDocumentPresContext();
   if (!topLevel) {
     return false;
   }

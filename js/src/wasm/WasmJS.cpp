@@ -1492,16 +1492,15 @@ static bool EnsureLazyEntryStub(const Instance& instance,
 
     bool disableJitEntry = funcType.temporarilyUnsupportedAnyRef()
 #ifdef WASM_CODEGEN_DEBUG
-      || !JitOptions.enableWasmJitEntry;
+                           || !JitOptions.enableWasmJitEntry;
 #endif
     ;
 
     
     
     
-    JSFunction::Flags flags = disableJitEntry
-                                  ? JSFunction::ASMJS_NATIVE
-                                  : JSFunction::WASM_FUN;
+    JSFunction::Flags flags =
+        disableJitEntry ? JSFunction::ASMJS_NATIVE : JSFunction::WASM_FUN;
 
     fun.set(NewNativeFunction(cx, WasmCall, numArgs, name,
                               gc::AllocKind::FUNCTION_EXTENDED, SingletonObject,

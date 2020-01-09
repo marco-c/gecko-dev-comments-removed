@@ -7258,7 +7258,6 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
 
 nsIFrame* PresShell::EventHandler::MaybeFlushThrottledStyles(
     nsIFrame* aFrameForPresShell) {
-
   if (!GetDocument()) {
     
     

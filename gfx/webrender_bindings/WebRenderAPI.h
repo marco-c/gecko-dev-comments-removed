@@ -335,6 +335,7 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
   Maybe<nsDisplayTransform*> mDeferredTransformItem;
   
   
+  
   bool mAnimated = false;
   
   

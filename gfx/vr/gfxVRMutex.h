@@ -11,19 +11,14 @@ namespace mozilla {
 namespace gfx {
 
 #if defined(XP_WIN)
-class WaitForMutex
-{
-public:
-  explicit WaitForMutex(HANDLE handle)
-    : mHandle(handle)
-    , mStatus(false) {
-
+class WaitForMutex {
+ public:
+  explicit WaitForMutex(HANDLE handle) : mHandle(handle), mStatus(false) {
     MOZ_ASSERT(mHandle);
 
     DWORD dwWaitResult;
-    dwWaitResult = WaitForSingleObject(
-        mHandle,    
-        INFINITE);  
+    dwWaitResult = WaitForSingleObject(mHandle,    
+                                       INFINITE);  
 
     switch (dwWaitResult) {
       
@@ -45,8 +40,8 @@ public:
   ~WaitForMutex() {
     if (mHandle && !ReleaseMutex(mHandle)) {
       nsAutoCString msg;
-      msg.AppendPrintf("WaitForMutex %d ReleaseMutex error \"%lu\".",
-                        mHandle, GetLastError());
+      msg.AppendPrintf("WaitForMutex %d ReleaseMutex error \"%lu\".", mHandle,
+                       GetLastError());
       NS_WARNING(msg.get());
       MOZ_ASSERT(false, "Failed to release mutex.");
     }

@@ -30,7 +30,8 @@ StackingContextHelper::StackingContextHelper(
       mScale(1.0f, 1.0f),
       mDeferredTransformItem(aParams.mDeferredTransformItem),
       mIsPreserve3D(aParams.transform_style == wr::TransformStyle::Preserve3D),
-      mRasterizeLocally(aParams.mRasterizeLocally || aParentSC.mRasterizeLocally) {
+      mRasterizeLocally(aParams.mRasterizeLocally ||
+                        aParentSC.mRasterizeLocally) {
   
   
   gfx::Matrix transform2d;

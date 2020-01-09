@@ -446,19 +446,19 @@ VRSystemManagerExternal::VRSystemManagerExternal(
   mDoShutdown = false;
 
 #if defined(XP_WIN)
-  mMutex = CreateMutex(
-    NULL,                   
-    false,                  
-    TEXT("mozilla::vr::ShmemMutex"));  
+  mMutex = CreateMutex(NULL,   
+                       false,  
+                       TEXT("mozilla::vr::ShmemMutex"));  
 
   if (mMutex == NULL) {
     nsAutoCString msg;
     msg.AppendPrintf("VRSystemManagerExternal CreateMutex error \"%lu\".",
-                      GetLastError());
+                     GetLastError());
     NS_WARNING(msg.get());
     MOZ_ASSERT(false);
     return;
   }
+  
   
   
   

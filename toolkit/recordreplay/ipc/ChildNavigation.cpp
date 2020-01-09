@@ -274,7 +274,8 @@ class FindLastHitPhase final : public NavigationPhase {
              bool aIncludeEnd);
 
   void ToString(nsAutoCString& aStr) override {
-    aStr.AppendPrintf("FindLastHit #%zu:%zu", mStart.mNormal, mStart.mTemporary);
+    aStr.AppendPrintf("FindLastHit #%zu:%zu", mStart.mNormal,
+                      mStart.mTemporary);
     mEnd.ToString(aStr);
   }
 
@@ -409,9 +410,7 @@ class NavigationState {
     return mPhase->CurrentExecutionPoint();
   }
 
-  bool ShouldSendPaintMessage() {
-    return mPhase->ShouldSendPaintMessage();
-  }
+  bool ShouldSendPaintMessage() { return mPhase->ShouldSendPaintMessage(); }
 
   void SetRecordingEndpoint(size_t aIndex, const ExecutionPoint& aEndpoint) {
     
@@ -468,9 +467,8 @@ static NavigationState* gNavigation;
 
 
 
-static CheckpointId
-SkipUnknownTemporaryCheckpoints(const CheckpointId& aCheckpoint)
-{
+static CheckpointId SkipUnknownTemporaryCheckpoints(
+    const CheckpointId& aCheckpoint) {
   CheckpointId rval = aCheckpoint;
   while (rval.mTemporary &&
          rval.mNormal != gNavigation->LastCheckpoint().mNormal) {
@@ -561,7 +559,8 @@ void PausedPhase::Resume(bool aForward) {
   }
 
   start = SkipUnknownTemporaryCheckpoints(start);
-  gNavigation->mFindLastHitPhase.Enter(start, mPoint,  false);
+  gNavigation->mFindLastHitPhase.Enter(start, mPoint,
+                                        false);
   Unreachable();
 }
 
@@ -789,11 +788,7 @@ void ForwardPhase::HitRecordingEndpoint(const ExecutionPoint& aPoint) {
                                    true);
 }
 
-bool
-ForwardPhase::ShouldSendPaintMessage()
-{
-  return true;
-}
+bool ForwardPhase::ShouldSendPaintMessage() { return true; }
 
 
 
@@ -869,9 +864,7 @@ void ReachBreakpointPhase::PositionHit(const ExecutionPoint& aPoint) {
   }
 }
 
-bool
-ReachBreakpointPhase::ShouldSendPaintMessage()
-{
+bool ReachBreakpointPhase::ShouldSendPaintMessage() {
   
   
   return false;
@@ -961,9 +954,7 @@ void FindLastHitPhase::HitRecordingEndpoint(const ExecutionPoint& aPoint) {
   Unreachable();
 }
 
-bool
-FindLastHitPhase::ShouldSendPaintMessage()
-{
+bool FindLastHitPhase::ShouldSendPaintMessage() {
   
   
   
@@ -1197,9 +1188,7 @@ bool MaybeDivergeFromRecording() {
   return gNavigation->MaybeDivergeFromRecording();
 }
 
-bool ShouldSendPaintMessage() {
-  return gNavigation->ShouldSendPaintMessage();
-}
+bool ShouldSendPaintMessage() { return gNavigation->ShouldSendPaintMessage(); }
 
 }  
 }  

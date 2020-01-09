@@ -1281,7 +1281,6 @@ class HeapBase<JS::Value, Wrapper>
 
 
 
-
 template <typename F>
 auto MapGCThingTyped(const JS::Value& val, F&& f) {
   if (val.isString()) {
@@ -1317,7 +1316,12 @@ auto MapGCThingTyped(const JS::Value& val, F&& f) {
 
 template <typename F>
 bool ApplyGCThingTyped(const JS::Value& val, F&& f) {
-  return MapGCThingTyped(val, [&f](auto t) { f(t); return true; }).isSome();
+  return MapGCThingTyped(val,
+                         [&f](auto t) {
+                           f(t);
+                           return true;
+                         })
+      .isSome();
 }
 
 static inline JS::Value PoisonedObjectValue(uintptr_t poison) {

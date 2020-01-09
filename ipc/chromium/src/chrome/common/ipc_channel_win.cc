@@ -19,7 +19,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 
 #ifdef FUZZING
-#include "mozilla/ipc/Faulty.h"
+#  include "mozilla/ipc/Faulty.h"
 #endif
 
 

@@ -415,15 +415,13 @@ class Zone : public JS::shadow::Zone,
   
   
   NodeSet& gcSweepGroupEdges() {
-    return gcGraphEdges; 
+    return gcGraphEdges;  
   }
   MOZ_MUST_USE bool addSweepGroupEdgeTo(Zone* otherZone) {
     MOZ_ASSERT(otherZone->isGCMarking());
     return gcSweepGroupEdges().put(otherZone);
   }
-  void clearSweepGroupEdges() {
-    gcSweepGroupEdges().clear();
-  }
+  void clearSweepGroupEdges() { gcSweepGroupEdges().clear(); }
 
   
   
