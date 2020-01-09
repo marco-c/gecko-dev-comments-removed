@@ -165,11 +165,8 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   
   
-  static constexpr size_t MaxBufferByteLength = INT32_MAX;
 
-  
-  static constexpr size_t MaxInlineBytes =
-    (NativeObject::MAX_FIXED_SLOTS - RESERVED_SLOTS) * sizeof(JS::Value);
+  static const size_t MaxBufferByteLength = INT32_MAX;
 
  public:
   enum OwnsState {
@@ -179,33 +176,24 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   enum BufferKind {
     
-    INLINE_DATA = 0b000,
-
-    
-    MALLOCED = 0b001,
+    PLAIN_DATA = 0b000,
 
     
 
 
 
 
+    USER_OWNED = 0b001,
 
-    NO_DATA = 0b010,
-
-    
-
-
-
-
-    USER_OWNED = 0b011,
-
-    WASM = 0b100,
-    MAPPED = 0b101,
-    EXTERNAL = 0b110,
+    WASM = 0b010,
+    MAPPED = 0b011,
+    EXTERNAL = 0b100,
 
     
     
-    BAD1 = 0b111,
+    BAD1 = 0b101,
+    BAD2 = 0b110,
+    BAD3 = 0b111,
 
     KIND_MASK = 0b111
   };
@@ -231,8 +219,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     
     TYPED_OBJECT_VIEWS = 0b10'0000,
 
-    
-    
     
     
     
@@ -267,28 +253,17 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     }
 
    public:
-    static BufferContents createInlineData(void* data) {
-      return BufferContents(static_cast<uint8_t*>(data), INLINE_DATA);
+    template <BufferKind Kind>
+    static BufferContents create(void* data) {
+      return BufferContents(static_cast<uint8_t*>(data), Kind);
     }
 
-    static BufferContents createMalloced(void* data) {
-      return BufferContents(static_cast<uint8_t*>(data), MALLOCED);
-    }
-
-    static BufferContents createNoData() {
-      return BufferContents(nullptr, NO_DATA);
+    static BufferContents createPlainData(void* data) {
+      return BufferContents(static_cast<uint8_t*>(data), PLAIN_DATA);
     }
 
     static BufferContents createUserOwned(void* data) {
       return BufferContents(static_cast<uint8_t*>(data), USER_OWNED);
-    }
-
-    static BufferContents createWasm(void* data) {
-      return BufferContents(static_cast<uint8_t*>(data), WASM);
-    }
-
-    static BufferContents createMapped(void* data) {
-      return BufferContents(static_cast<uint8_t*>(data), MAPPED);
     }
 
     static BufferContents createExternal(void* data,
@@ -299,10 +274,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     }
 
     static BufferContents createFailed() {
-      
-      
-      
-      return BufferContents(nullptr, MALLOCED);
+      return BufferContents(nullptr, PLAIN_DATA);
     }
 
     uint8_t* data() const { return data_; }
@@ -327,12 +299,13 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static bool class_constructor(JSContext* cx, unsigned argc, Value* vp);
 
-  static ArrayBufferObject* createForContents(JSContext* cx, uint32_t nbytes,
-                                              BufferContents contents,
-                                              OwnsState ownsState = OwnsData);
-
-  static ArrayBufferObject* createZeroed(JSContext* cx, uint32_t nbytes,
-                                         HandleObject proto = nullptr);
+  static ArrayBufferObject* create(JSContext* cx, uint32_t nbytes,
+                                   BufferContents contents,
+                                   OwnsState ownsState = OwnsData,
+                                   HandleObject proto = nullptr,
+                                   NewObjectKind newKind = GenericObject);
+  static ArrayBufferObject* create(JSContext* cx, uint32_t nbytes,
+                                   HandleObject proto = nullptr);
 
   
   
@@ -351,21 +324,16 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static size_t objectMoved(JSObject* obj, JSObject* old);
 
+  static BufferContents externalizeContents(JSContext* cx,
+                                            Handle<ArrayBufferObject*> buffer,
+                                            bool hasStealableContents);
   static BufferContents stealContents(JSContext* cx,
                                       Handle<ArrayBufferObject*> buffer,
                                       bool hasStealableContents);
 
   bool hasStealableContents() const {
     
-    if (ownsData()) {
-      MOZ_ASSERT(!isInlineData(), "inline data is always DoesntOwnData");
-
-      
-      
-      return !isPreparedForAsmJS() && !isNoData() && !isWasm();
-    }
-
-    return false;
+    return ownsData() && !isPreparedForAsmJS() && !isWasm();
   }
 
   static void addSizeOfExcludingThis(JSObject* obj,
@@ -419,19 +387,22 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   void releaseData(FreeOp* fop);
 
+  
+
+
+
+  bool hasData() const { return getClass() == &class_; }
+
   BufferKind bufferKind() const {
     return BufferKind(flags() & BUFFER_KIND_MASK);
   }
 
-  bool isInlineData() const { return bufferKind() == INLINE_DATA; }
-  bool isMalloced() const { return bufferKind() == MALLOCED; }
-  bool isNoData() const { return bufferKind() == NO_DATA; }
+  bool isPlainData() const { return bufferKind() == PLAIN_DATA; }
   bool hasUserOwnedData() const { return bufferKind() == USER_OWNED; }
 
   bool isWasm() const { return bufferKind() == WASM; }
   bool isMapped() const { return bufferKind() == MAPPED; }
   bool isExternal() const { return bufferKind() == EXTERNAL; }
-
   bool isDetached() const { return flags() & DETACHED; }
   bool isPreparedForAsmJS() const { return flags() & FOR_ASMJS; }
 
@@ -455,6 +426,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static BufferContents createMappedContents(int fd, size_t offset,
                                              size_t length);
 
+  static size_t offsetOfFlagsSlot() { return getFixedSlotOffset(FLAGS_SLOT); }
   static size_t offsetOfDataSlot() { return getFixedSlotOffset(DATA_SLOT); }
 
   void setHasTypedObjectViews() { setFlags(flags() | TYPED_OBJECT_VIEWS); }
@@ -477,8 +449,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   void setIsPreparedForAsmJS() {
     MOZ_ASSERT(!isWasm());
     MOZ_ASSERT(!hasUserOwnedData());
-    MOZ_ASSERT(!isInlineData());
-    MOZ_ASSERT(isMalloced() || isMapped() || isExternal());
+    MOZ_ASSERT(isPlainData() || isMapped() || isExternal());
     setFlags(flags() | FOR_ASMJS);
   }
 
@@ -488,13 +459,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     setFlags(0);
     setFirstView(nullptr);
     setDataPointer(contents, ownsState);
-  }
-
-  void* initializeToInlineData(size_t byteLength) {
-    void* data = inlineDataPointer();
-    initialize(byteLength, BufferContents::createInlineData(data),
-               DoesntOwnData);
-    return data;
   }
 };
 
