@@ -18,6 +18,7 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Range.h"
+#include "mozilla/TypeTraits.h"
 #include "mozilla/Variant.h"
 #include "Units.h"
 #include "nsStyleConsts.h"
@@ -91,12 +92,11 @@ template <typename T>
 class RenderRootArray : public Array<T, kRenderRootCount> {
   typedef Array<T, kRenderRootCount> Super;
  public:
-  RenderRootArray() {}
-
-  explicit RenderRootArray(T aDefault) {
-    for (auto renderRoot : kRenderRoots) {
-      (*this)[renderRoot] = aDefault;
-    }
+  RenderRootArray() {
+    if (IsPod<T>::value) {
+      
+      PodArrayZero(*this);
+    } 
   }
 
   T& operator[](wr::RenderRoot aIndex) {
