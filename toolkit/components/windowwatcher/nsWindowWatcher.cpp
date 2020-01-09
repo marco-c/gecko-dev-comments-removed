@@ -967,10 +967,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   
   
+  JSContext* cx = nsContentUtils::GetCurrentJSContext();
   nsCOMPtr<nsIPrincipal> subjectPrincipal =
-      nsContentUtils::GetCurrentJSContext()
-          ? nsContentUtils::SubjectPrincipal()
-          : nsContentUtils::GetSystemPrincipal();
+      cx ? nsContentUtils::SubjectPrincipal()
+         : nsContentUtils::GetSystemPrincipal();
 
   bool isPrivateBrowsingWindow = false;
 
@@ -1088,11 +1088,20 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   
   
-  if (subjectPrincipal && loadState) {
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    rv = subjectPrincipal->GetCsp(getter_AddRefs(csp));
-    NS_ENSURE_SUCCESS(rv, rv);
-    loadState->SetCsp(csp);
+  
+  
+  
+  if (loadState && cx) {
+    nsGlobalWindowInner* win = xpc::CurrentWindowOrNull(cx);
+    if (win) {
+      nsCOMPtr<nsIPrincipal> principal = win->GetPrincipal();
+      if (principal) {
+        nsCOMPtr<nsIContentSecurityPolicy> csp;
+        rv = principal->GetCsp(getter_AddRefs(csp));
+        NS_ENSURE_SUCCESS(rv, rv);
+        loadState->SetCsp(csp);
+      }
+    }
   }
 
   if (isNewToplevelWindow) {
