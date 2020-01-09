@@ -32,8 +32,12 @@ struct RepaintRequest {
   
   MOZ_DEFINE_ENUM_WITH_BASE_AT_CLASS_SCOPE(
     ScrollOffsetUpdateType, uint8_t, (
-      eNone,             
-      eUserAction        
+        eNone,             
+        eUserAction,       
+                           
+        eVisualUpdate      
+                           
+                           
   ));
   
 

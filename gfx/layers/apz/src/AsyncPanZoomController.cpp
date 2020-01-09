@@ -4648,7 +4648,17 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     if (!mAnimation || !mAnimation->HandleScrollOffsetUpdate(Nothing())) {
       CancelAnimation();
     }
+    
+    
+    
+    
+    
+    
     needContentRepaint = true;
+    if (aLayerMetrics.GetVisualScrollUpdateType() ==
+        FrameMetrics::eMainThread) {
+      contentRepaintType = RepaintUpdateType::eVisualUpdate;
+    }
     ScheduleComposite();
   }
 

@@ -1695,6 +1695,10 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   
+  
+  
+  
+  
   void SetPendingVisualScrollUpdate(
       const nsPoint& aVisualViewportOffset,
       FrameMetrics::ScrollOffsetUpdateType aUpdateType);
