@@ -834,13 +834,6 @@ bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
   return true;
 }
 
-const gchar* dark_theme_setting = "gtk-application-prefer-dark-theme";
-static bool SystemPrefersDarkVariant(GtkSettings* aSettings) {
-  gboolean darkThemeDefault;
-  g_object_get(aSettings, dark_theme_setting, &darkThemeDefault, nullptr);
-  return darkThemeDefault;
-}
-
 
 
 static bool HasGoodContrastVisibility(GdkRGBA& aColor1, GdkRGBA& aColor2) {
@@ -901,7 +894,10 @@ static void ConfigureContentGtkTheme() {
   }
 
   
-  if (SystemPrefersDarkVariant(settings)) {
+  const gchar* dark_theme_setting = "gtk-application-prefer-dark-theme";
+  gboolean darkThemeDefault;
+  g_object_get(settings, dark_theme_setting, &darkThemeDefault, nullptr);
+  if (darkThemeDefault) {
     g_object_set(settings, dark_theme_setting, FALSE, nullptr);
   }
 
@@ -939,20 +935,6 @@ void nsLookAndFeel::EnsureInit() {
     
     
     ConfigureContentGtkTheme();
-  } else {
-    
-    
-    GtkSettings* settings =
-        gtk_settings_get_for_screen(gdk_screen_get_default());
-    if (SystemPrefersDarkVariant(settings)) {
-      bool allowDarkTheme =
-          (PR_GetEnv("MOZ_ALLOW_GTK_DARK_THEME") != nullptr) ||
-          mozilla::Preferences::GetBool("widget.chrome.allow-gtk-dark-theme",
-                                        false);
-      if (!allowDarkTheme) {
-        g_object_set(settings, dark_theme_setting, FALSE, nullptr);
-      }
-    }
   }
 
   
