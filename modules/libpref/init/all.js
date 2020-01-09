@@ -6028,6 +6028,14 @@ pref("asanreporter.clientid", "unknown");
 pref("toolkit.telemetry.overrideUpdateChannel", "nightly-asan");
 #endif
 
+#if defined(XP_WIN)
+pref("layers.mlgpu.enabled", true);
+
+
+
+pref("layers.mlgpu.enable-on-windows7", true);
+#endif
+
 
 pref("dom.xhr.lowercase_header.enabled", true);
 
