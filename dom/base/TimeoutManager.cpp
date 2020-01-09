@@ -741,11 +741,10 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
 
   
   
-  nsCOMPtr<nsIScriptGlobalObject> windowKungFuDeathGrip(&mWindow);
+  RefPtr<nsGlobalWindowInner> window(&mWindow);
   
   
   
-  Unused << windowKungFuDeathGrip;
 
   
   
@@ -977,7 +976,8 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
         mLastFiringIndex = timeout->mFiringIndex;
 #endif
         
-        bool timeout_was_cleared = mWindow.RunTimeoutHandler(timeout, scx);
+        bool timeout_was_cleared =
+            window->RunTimeoutHandler(timeout, scx);
 #if MOZ_GECKO_PROFILER
         if (profiler_is_active()) {
           TimeDuration elapsed = now - timeout->SubmitTime();

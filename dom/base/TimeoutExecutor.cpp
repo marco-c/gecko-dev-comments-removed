@@ -221,8 +221,9 @@ void TimeoutExecutor::Cancel() {
   mDeadline = TimeStamp();
 }
 
-NS_IMETHODIMP
-TimeoutExecutor::Run() {
+
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP TimeoutExecutor::Run() {
   
   
   MOZ_LOG(gTimeoutLog, LogLevel::Debug,
@@ -233,7 +234,9 @@ TimeoutExecutor::Run() {
   return NS_OK;
 }
 
-NS_IMETHODIMP
+
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 TimeoutExecutor::Notify(nsITimer* aTimer) {
   
   

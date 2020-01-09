@@ -1053,6 +1053,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
                                mozilla::ErrorResult& aError);
 
   
+  MOZ_CAN_RUN_SCRIPT
   bool RunTimeoutHandler(mozilla::dom::Timeout* aTimeout,
                          nsIScriptContext* aScx);
 
