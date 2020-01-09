@@ -841,8 +841,10 @@ nsToolkitProfileService::SelectStartupProfile(
   }
   argv[argc] = nullptr;
 
+  bool wasDefault;
   nsresult rv = SelectStartupProfile(&argc, argv.get(), aIsResetting, aRootDir,
-                                     aLocalDir, aProfile, aDidCreate);
+                                     aLocalDir, aProfile, aDidCreate,
+                                     &wasDefault);
 
   
   
@@ -874,13 +876,15 @@ nsToolkitProfileService::SelectStartupProfile(
 
 nsresult nsToolkitProfileService::SelectStartupProfile(
     int* aArgc, char* aArgv[], bool aIsResetting, nsIFile** aRootDir,
-    nsIFile** aLocalDir, nsIToolkitProfile** aProfile, bool* aDidCreate) {
+    nsIFile** aLocalDir, nsIToolkitProfile** aProfile, bool* aDidCreate,
+    bool* aWasDefaultSelection) {
   if (mStartupProfileSelected) {
     return NS_ERROR_ALREADY_INITIALIZED;
   }
 
   mStartupProfileSelected = true;
   *aDidCreate = false;
+  *aWasDefaultSelection = false;
 
   nsresult rv;
   const char* arg;
@@ -1093,17 +1097,18 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
   }
 
   
-  if (!mStartWithLast) {
-    return NS_ERROR_SHOW_PROFILE_MANAGER;
-  }
-
-  
   if (mIsFirstRun) {
     if (aIsResetting) {
       
       
       *aProfile = nullptr;
       return NS_OK;
+    }
+
+    
+    
+    if (!mStartWithLast) {
+      return NS_ERROR_SHOW_PROFILE_MANAGER;
     }
 
     if (mUseDedicatedProfile) {
@@ -1190,6 +1195,8 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
     return NS_ERROR_SHOW_PROFILE_MANAGER;
   }
 
+  
+  *aWasDefaultSelection = true;
   mStartupReason = NS_LITERAL_STRING("default");
 
   
