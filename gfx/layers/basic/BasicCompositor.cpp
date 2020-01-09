@@ -218,7 +218,14 @@ BasicCompositor::BasicCompositor(CompositorBridgeParent* aParent,
       mFullWindowRenderTarget(nullptr) {
   MOZ_COUNT_CTOR(BasicCompositor);
 
-  mMaxTextureSize = Factory::GetMaxSurfaceSize(gfxVars::ContentBackend());
+  
+  
+  
+  
+  mMaxTextureSize =
+      std::min(Factory::GetMaxSurfaceSize(gfxVars::ContentBackend()),
+               Factory::GetMaxSurfaceSize(BackendType::CAIRO));
+
 }
 
 BasicCompositor::~BasicCompositor() { MOZ_COUNT_DTOR(BasicCompositor); }
