@@ -4378,18 +4378,17 @@ static nsSize ComputeConcreteObjectSize(const nsSize& aConstraintSize,
 
 
 
-static bool IsCoord50Pct(const mozilla::Position::Coord& aCoord) {
-  return (aCoord.mLength == 0 && aCoord.mHasPercent && aCoord.mPercent == 0.5f);
+static bool IsCoord50Pct(const LengthPercentage& aCoord) {
+  return aCoord.ConvertsToPercentage() && aCoord.ToPercentage() == 0.5f;
 }
 
 
 
 static bool HasInitialObjectFitAndPosition(const nsStylePosition* aStylePos) {
-  const mozilla::Position& objectPos = aStylePos->mObjectPosition;
+  const Position& objectPos = aStylePos->mObjectPosition;
 
   return aStylePos->mObjectFit == NS_STYLE_OBJECT_FIT_FILL &&
-         IsCoord50Pct(objectPos.mXPosition) &&
-         IsCoord50Pct(objectPos.mYPosition);
+         IsCoord50Pct(objectPos.horizontal) && IsCoord50Pct(objectPos.vertical);
 }
 
  nsRect nsLayoutUtils::ComputeObjectDestRect(

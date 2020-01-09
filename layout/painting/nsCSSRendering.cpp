@@ -1129,23 +1129,18 @@ void nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
 
 
 
-static void ComputeObjectAnchorCoord(const Position::Coord& aCoord,
+static void ComputeObjectAnchorCoord(const LengthPercentage& aCoord,
                                      const nscoord aOriginBounds,
                                      const nscoord aImageSize,
                                      nscoord* aTopLeftCoord,
                                      nscoord* aAnchorPointCoord) {
-  *aAnchorPointCoord = aCoord.mLength;
-  *aTopLeftCoord = aCoord.mLength;
+  nscoord extraSpace = aOriginBounds - aImageSize;
 
-  if (aCoord.mHasPercent) {
-    
-    nscoord extraSpace = aOriginBounds - aImageSize;
-    *aTopLeftCoord += NSToCoordRound(aCoord.mPercent * extraSpace);
-
-    
-    
-    *aAnchorPointCoord += NSToCoordRound(aCoord.mPercent * aOriginBounds);
-  }
+  
+  
+  *aAnchorPointCoord = aCoord.Resolve(aOriginBounds, NSToCoordRoundWithClamp);
+  
+  *aTopLeftCoord = aCoord.Resolve(extraSpace, NSToCoordRoundWithClamp);
 }
 
 void nsImageRenderer::ComputeObjectAnchorPoint(const Position& aPos,
@@ -1153,10 +1148,10 @@ void nsImageRenderer::ComputeObjectAnchorPoint(const Position& aPos,
                                                const nsSize& aImageSize,
                                                nsPoint* aTopLeft,
                                                nsPoint* aAnchorPoint) {
-  ComputeObjectAnchorCoord(aPos.mXPosition, aOriginBounds.width,
+  ComputeObjectAnchorCoord(aPos.horizontal, aOriginBounds.width,
                            aImageSize.width, &aTopLeft->x, &aAnchorPoint->x);
 
-  ComputeObjectAnchorCoord(aPos.mYPosition, aOriginBounds.height,
+  ComputeObjectAnchorCoord(aPos.vertical, aOriginBounds.height,
                            aImageSize.height, &aTopLeft->y, &aAnchorPoint->y);
 }
 

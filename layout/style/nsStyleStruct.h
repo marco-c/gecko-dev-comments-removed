@@ -54,33 +54,22 @@ class ImageTracker;
 
 namespace mozilla {
 
-struct Position {
-  using Coord = nsStyleCoord::CalcValue;
+using Position = StylePosition;
 
-  Coord mXPosition, mYPosition;
 
-  
-  Position() {}
 
-  
-  
-  void SetInitialPercentValues(float aPercentVal);
 
-  
-  
-  void SetInitialZeroValues();
 
-  
-  
-  bool DependsOnPositioningAreaSize() const {
-    return mXPosition.mPercent != 0.0f || mYPosition.mPercent != 0.0f;
-  }
+template <>
+inline bool StylePosition::DependsOnPositioningAreaSize() const {
+  return horizontal.HasPercent() || vertical.HasPercent();
+}
 
-  bool operator==(const Position& aOther) const {
-    return mXPosition == aOther.mXPosition && mYPosition == aOther.mYPosition;
-  }
-  bool operator!=(const Position& aOther) const { return !(*this == aOther); }
-};
+template <>
+inline Position Position::FromPercentage(float aPercent) {
+  return {LengthPercentage::FromPercentage(aPercent),
+          LengthPercentage::FromPercentage(aPercent)};
+}
 
 }  
 
@@ -1708,9 +1697,9 @@ struct StyleAnimation {
 class StyleBasicShape final {
  public:
   explicit StyleBasicShape(StyleBasicShapeType type)
-      : mType(type), mFillRule(StyleFillRule::Nonzero) {
-    mPosition.SetInitialPercentValues(0.5f);
-  }
+      : mType(type),
+        mFillRule(StyleFillRule::Nonzero),
+        mPosition(Position::FromPercentage(0.5f)) {}
 
   StyleBasicShapeType GetShapeType() const { return mType; }
   nsCSSKeyword GetShapeTypeName() const;

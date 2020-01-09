@@ -298,19 +298,19 @@ void nsStyleUtil::AppendEscapedCSSString(const nsAString& aString,
 
 
 static bool ObjectPositionCoordMightCauseOverflow(
-    const Position::Coord& aCoord) {
+    const LengthPercentage& aCoord) {
   
   
   
-  if (aCoord.mLength != 0) {
+  if (aCoord.LengthInCSSPixels() != 0.) {
     return true;
   }
 
   
   
   
-  if (aCoord.mHasPercent &&
-      (aCoord.mPercent < 0.0f || aCoord.mPercent > 1.0f)) {
+  if (aCoord.HasPercent() &&
+      (aCoord.Percentage() < 0.0f || aCoord.Percentage() > 1.0f)) {
     return true;
   }
   return false;
@@ -332,8 +332,8 @@ static bool ObjectPositionCoordMightCauseOverflow(
   
   
   const Position& objectPosistion = aStylePos->mObjectPosition;
-  if (ObjectPositionCoordMightCauseOverflow(objectPosistion.mXPosition) ||
-      ObjectPositionCoordMightCauseOverflow(objectPosistion.mYPosition)) {
+  if (ObjectPositionCoordMightCauseOverflow(objectPosistion.horizontal) ||
+      ObjectPositionCoordMightCauseOverflow(objectPosistion.vertical)) {
     return true;
   }
 
