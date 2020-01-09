@@ -32,7 +32,7 @@ add_task(async function searchbar_in_panel() {
   await document.getElementById("nav-bar").overflowable.show();
 
   let searchbar = document.getElementById("searchbar");
-  await waitForCondition(() => "value" in searchbar && searchbar.value === "");
+  await TestUtils.waitForCondition(() => "value" in searchbar && searchbar.value === "");
 
   
   
