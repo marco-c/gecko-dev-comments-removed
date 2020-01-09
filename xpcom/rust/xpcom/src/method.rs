@@ -92,8 +92,34 @@ use nserror::{nsresult, NS_ERROR_NULL_POINTER};
 
 
 
+
+
+
 #[macro_export]
 macro_rules! xpcom_method {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    (@ensure_param $name:ident) => {
+        let $name = match $crate::Ensure::ensure($name) {
+            Ok(val) => val,
+            Err(result) => return result,
+        };
+    };
+
     
     
     
@@ -104,7 +130,7 @@ macro_rules! xpcom_method {
     ($rust_name:ident => $xpcom_name:ident($($param_name:ident: $param_type:ty),*) -> *const $retval:ty) => {
         #[allow(non_snake_case)]
         unsafe fn $xpcom_name(&self, $($param_name: $param_type,)* retval: *mut *const $retval) -> nsresult {
-            $(ensure_param!($param_name);)*
+            $(xpcom_method!(@ensure_param $param_name);)*
             match self.$rust_name($($param_name, )*) {
                 Ok(val) => {
                     val.forget(&mut *retval);
@@ -122,7 +148,7 @@ macro_rules! xpcom_method {
     ($rust_name:ident => $xpcom_name:ident($($param_name:ident: $param_type:ty),*) -> nsAString) => {
         #[allow(non_snake_case)]
         unsafe fn $xpcom_name(&self, $($param_name: $param_type,)* retval: *mut nsAString) -> nsresult {
-            $(ensure_param!($param_name);)*
+            $(xpcom_method!(@ensure_param $param_name);)*
             match self.$rust_name($($param_name, )*) {
                 Ok(val) => {
                     (*retval).assign(&val);
@@ -140,7 +166,7 @@ macro_rules! xpcom_method {
     ($rust_name:ident => $xpcom_name:ident($($param_name:ident: $param_type:ty),*) -> nsACString) => {
         #[allow(non_snake_case)]
         unsafe fn $xpcom_name(&self, $($param_name: $param_type,)* retval: *mut nsACString) -> nsresult {
-            $(ensure_param!($param_name);)*
+            $(xpcom_method!(@ensure_param $param_name);)*
             match self.$rust_name($($param_name, )*) {
                 Ok(val) => {
                     (*retval).assign(&val);
@@ -158,7 +184,7 @@ macro_rules! xpcom_method {
     ($rust_name:ident => $xpcom_name:ident($($param_name:ident: $param_type:ty),*) -> $retval:ty) => {
         #[allow(non_snake_case)]
         unsafe fn $xpcom_name(&self, $($param_name: $param_type,)* retval: *mut $retval) -> nsresult {
-            $(ensure_param!($param_name);)*
+            $(xpcom_method!(@ensure_param $param_name);)*
             match self.$rust_name($($param_name, )*) {
                 Ok(val) => {
                     *retval = val;
@@ -176,7 +202,7 @@ macro_rules! xpcom_method {
     ($rust_name:ident => $xpcom_name:ident($($param_name:ident: $param_type:ty),*)) => {
         #[allow(non_snake_case)]
         unsafe fn $xpcom_name(&self, $($param_name: $param_type,)*) -> nsresult {
-            $(ensure_param!($param_name);)*
+            $(xpcom_method!(@ensure_param $param_name);)*
             match self.$rust_name($($param_name, )*) {
                 Ok(_) => NS_OK,
                 Err(error) => {
@@ -184,78 +210,6 @@ macro_rules! xpcom_method {
                 }
             }
         }
-    };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! ensure_param {
-    ($name:ident) => {
-        let $name = match $crate::Ensure::ensure($name) {
-            Ok(val) => val,
-            Err(result) => return result,
-        };
     };
 }
 
