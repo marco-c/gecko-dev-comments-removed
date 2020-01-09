@@ -48,7 +48,7 @@ JSTerm.prototype = {
 
 
 
-  setInputValue(newValue) {
+  _setValue(newValue) {
     this.inputNode.value = newValue;
     
   },
@@ -57,14 +57,14 @@ JSTerm.prototype = {
 
 
 
-  getInputValue() {
+  _getValue() {
     return this.inputNode.value || "";
   },
 
   execute(executeString) {
     return new Promise(resolve => {
       
-      executeString = executeString || this.getInputValue();
+      executeString = executeString || this._getValue();
       if (!executeString) {
         return;
       }
@@ -95,7 +95,7 @@ JSTerm.prototype = {
       };
 
       this.requestEvaluation(executeString, options).then(onResult, onResult);
-      this.setInputValue("");
+      this._setValue("");
     });
   },
 
