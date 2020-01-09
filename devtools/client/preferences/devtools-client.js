@@ -241,6 +241,9 @@ pref("devtools.webconsole.filter.net", false);
 pref("devtools.webconsole.filter.netxhr", false);
 
 
+pref("devtools.webconsole.input.autocomplete",true);
+
+
 pref("devtools.browserconsole.filter.error", true);
 pref("devtools.browserconsole.filter.warn", true);
 pref("devtools.browserconsole.filter.info", true);
