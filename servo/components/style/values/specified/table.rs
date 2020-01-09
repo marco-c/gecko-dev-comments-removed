@@ -17,7 +17,6 @@ use style_traits::{ParseError, StyleParseErrorKind};
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
-    ToResolvedValue,
     ToShmem,
 )]
 

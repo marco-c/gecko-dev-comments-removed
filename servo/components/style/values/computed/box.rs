@@ -49,7 +49,6 @@ pub type Perspective = GenericPerspective<NonNegativeLength>;
     PartialEq,
     SpecifiedValueInfo,
     ToCss,
-    ToResolvedValue,
 )]
 #[repr(u8)]
 
@@ -119,7 +118,6 @@ impl ToComputedValue for SpecifiedFloat {
     PartialEq,
     SpecifiedValueInfo,
     ToCss,
-    ToResolvedValue,
 )]
 
 pub enum Clear {
@@ -180,7 +178,7 @@ impl ToComputedValue for SpecifiedClear {
 
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq, ToCss, ToResolvedValue)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq, ToCss)]
 #[repr(u8)]
 pub enum Resize {
     None,

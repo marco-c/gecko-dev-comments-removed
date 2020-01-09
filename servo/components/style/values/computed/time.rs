@@ -9,7 +9,7 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, ToResolvedValue)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub struct Time {
     seconds: CSSFloat,

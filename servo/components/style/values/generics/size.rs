@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! Generic type for CSS properties that are composed by two dimensions.
+
+
+
+
 
 use crate::parser::ParserContext;
 use crate::Zero;
@@ -10,8 +10,8 @@ use cssparser::Parser;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
 
-/// A generic size, for `border-*-radius` longhand properties, or
-/// `border-spacing`.
+
+
 #[derive(
     Animate,
     Clone,
@@ -24,7 +24,6 @@ use style_traits::{CssWriter, ParseError, ToCss};
     ToAnimatedZero,
     ToAnimatedValue,
     ToComputedValue,
-    ToResolvedValue,
     ToShmem,
 )]
 #[allow(missing_docs)]
@@ -36,22 +35,22 @@ pub struct Size2D<L> {
 
 impl<L> Size2D<L> {
     #[inline]
-    /// Create a new `Size2D` for an area of given width and height.
+    
     pub fn new(width: L, height: L) -> Self {
         Self { width, height }
     }
 
-    /// Returns the width component.
+    
     pub fn width(&self) -> &L {
         &self.width
     }
 
-    /// Returns the height component.
+    
     pub fn height(&self) -> &L {
         &self.height
     }
 
-    /// Parse a `Size2D` with a given parsing function.
+    
     pub fn parse_with<'i, 't, F>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,

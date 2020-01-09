@@ -188,6 +188,10 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   already_AddRefed<CSSValue> GetMarginWidthFor(mozilla::Side aSide);
 
+  already_AddRefed<CSSValue> GetFallbackValue(const nsStyleSVGPaint* aPaint);
+
+  already_AddRefed<CSSValue> GetSVGPaintFor(bool aFill);
+
   already_AddRefed<CSSValue> GetTransformValue(
       nsCSSValueSharedList* aSpecifiedTransform);
 
@@ -212,6 +216,15 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   bool GetLineHeightCoord(nscoord& aCoord);
 
+  already_AddRefed<CSSValue> GetCSSShadowArray(nsCSSShadowArray* aArray,
+                                               bool aIsBoxShadow);
+
+  void GetCSSGradientString(const nsStyleGradient* aGradient,
+                            nsAString& aString);
+  void GetImageRectString(nsIURI* aURI, const nsStyleSides& aCropRect,
+                          nsString& aString);
+  already_AddRefed<CSSValue> GetScrollSnapPoints(const nsStyleCoord& aCoord);
+
   bool ShouldHonorMinSizeAutoInAxis(mozilla::PhysicalAxis aAxis);
 
   
@@ -220,6 +233,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
 
   
+  already_AddRefed<CSSValue> DoGetBoxFlex();
 
   already_AddRefed<CSSValue> DoGetWidth();
   already_AddRefed<CSSValue> DoGetHeight();
@@ -233,13 +247,22 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetBottom();
 
   
+  already_AddRefed<CSSValue> DoGetColor();
+
+  
   already_AddRefed<CSSValue> DoGetOsxFontSmoothing();
 
   
+  already_AddRefed<CSSValue> DoGetGridAutoFlow();
   already_AddRefed<CSSValue> DoGetGridAutoColumns();
   already_AddRefed<CSSValue> DoGetGridAutoRows();
+  already_AddRefed<CSSValue> DoGetGridTemplateAreas();
   already_AddRefed<CSSValue> DoGetGridTemplateColumns();
   already_AddRefed<CSSValue> DoGetGridTemplateRows();
+  already_AddRefed<CSSValue> DoGetGridColumnStart();
+  already_AddRefed<CSSValue> DoGetGridColumnEnd();
+  already_AddRefed<CSSValue> DoGetGridRowStart();
+  already_AddRefed<CSSValue> DoGetGridRowEnd();
 
   
   already_AddRefed<CSSValue> DoGetImageLayerPosition(
@@ -256,6 +279,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   
   already_AddRefed<CSSValue> DoGetBorderSpacing();
+  already_AddRefed<CSSValue> DoGetVerticalAlign();
 
   
   already_AddRefed<CSSValue> DoGetBorderTopWidth();
@@ -264,29 +288,80 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetBorderRightWidth();
 
   
+  already_AddRefed<CSSValue> DoGetBorderImageWidth();
+
+  
+  already_AddRefed<CSSValue> DoGetBoxShadow();
+
+  
   already_AddRefed<CSSValue> DoGetMarginTopWidth();
   already_AddRefed<CSSValue> DoGetMarginBottomWidth();
   already_AddRefed<CSSValue> DoGetMarginLeftWidth();
   already_AddRefed<CSSValue> DoGetMarginRightWidth();
 
   
+  already_AddRefed<CSSValue> DoGetOutlineWidth();
+
+  
+  already_AddRefed<CSSValue> DoGetInitialLetter();
   already_AddRefed<CSSValue> DoGetLineHeight();
   already_AddRefed<CSSValue> DoGetTextDecoration();
   already_AddRefed<CSSValue> DoGetTextDecorationColor();
   already_AddRefed<CSSValue> DoGetTextDecorationStyle();
+  already_AddRefed<CSSValue> DoGetTextEmphasisPosition();
+  already_AddRefed<CSSValue> DoGetTextEmphasisStyle();
+  already_AddRefed<CSSValue> DoGetTextOverflow();
+  already_AddRefed<CSSValue> DoGetTextShadow();
+  already_AddRefed<CSSValue> DoGetWebkitTextStrokeWidth();
 
   
+  already_AddRefed<CSSValue> DoGetBinding();
+  already_AddRefed<CSSValue> DoGetDisplay();
+  already_AddRefed<CSSValue> DoGetWillChange();
   already_AddRefed<CSSValue> DoGetTransform();
   already_AddRefed<CSSValue> DoGetTransformOrigin();
   already_AddRefed<CSSValue> DoGetPerspectiveOrigin();
+  already_AddRefed<CSSValue> DoGetScrollSnapPointsX();
+  already_AddRefed<CSSValue> DoGetScrollSnapPointsY();
+  already_AddRefed<CSSValue> DoGetScrollbarColor();
 
   
+  already_AddRefed<CSSValue> DoGetCaretColor();
+  already_AddRefed<CSSValue> DoGetForceBrokenImageIcon();
+
+  
+  already_AddRefed<CSSValue> DoGetColumnCount();
   already_AddRefed<CSSValue> DoGetColumnRuleWidth();
+
+  
+  already_AddRefed<CSSValue> DoGetTransitionProperty();
+  already_AddRefed<CSSValue> DoGetTransitionDuration();
+  already_AddRefed<CSSValue> DoGetTransitionDelay();
+
+  
+  already_AddRefed<CSSValue> DoGetAnimationName();
+  already_AddRefed<CSSValue> DoGetAnimationDuration();
+  already_AddRefed<CSSValue> DoGetAnimationDelay();
+  already_AddRefed<CSSValue> DoGetAnimationIterationCount();
+
+  
+  already_AddRefed<CSSValue> DoGetFlexBasis();
+  already_AddRefed<CSSValue> DoGetFlexGrow();
+  already_AddRefed<CSSValue> DoGetFlexShrink();
 
   
   already_AddRefed<CSSValue> DoGetColumnGap();
   already_AddRefed<CSSValue> DoGetRowGap();
 
+  
+  already_AddRefed<CSSValue> DoGetFill();
+  already_AddRefed<CSSValue> DoGetStroke();
+  already_AddRefed<CSSValue> DoGetMarkerEnd();
+  already_AddRefed<CSSValue> DoGetMarkerMid();
+  already_AddRefed<CSSValue> DoGetMarkerStart();
+
+  already_AddRefed<CSSValue> DoGetFilter();
+  already_AddRefed<CSSValue> DoGetPaintOrder();
 
   
   
@@ -379,6 +454,8 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   
   void SetCssTextToCoord(nsAString& aCssText, const nsStyleCoord& aCoord,
                          bool aClampNegativeCalc);
+  already_AddRefed<CSSValue> CreatePrimitiveValueForStyleFilter(
+      const nsStyleFilter& aStyleFilter);
 
   template <typename ReferenceBox>
   already_AddRefed<CSSValue> CreatePrimitiveValueForShapeSource(
