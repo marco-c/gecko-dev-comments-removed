@@ -10,6 +10,11 @@ const LABELS_STARTUP_CACHE_REQUESTS = {
 };
 
 add_task(async function() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.newtab.preload", false]],
+  });
+
   Services.obs.notifyObservers(null, "startupcache-invalidate");
   Services.telemetry.getSnapshotForHistograms("main", true);
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
