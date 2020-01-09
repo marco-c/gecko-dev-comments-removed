@@ -18,8 +18,6 @@ user_pref("app.update.url.android", "");
 user_pref("apz.content_response_timeout", 60000);
 user_pref("browser.EULA.override", true);
 
-user_pref("browser.aboutHomeSnippets.updateUrl", "nonexistent://test");
-
 user_pref("browser.bookmarks.max_backups", 0);
 user_pref("browser.console.showInPanel", true);
 
