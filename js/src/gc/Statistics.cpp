@@ -606,7 +606,7 @@ UniqueChars Statistics::renderJsonMessage(uint64_t timestamp, Statistics::JSONUs
 
   json.beginObject();
   json.property("status", "completed");    
-  formatJsonDescription(timestamp, json);  
+  formatJsonDescription(timestamp, json, use);  
 
   if (use == Statistics::JSONUse::TELEMETRY) {
     json.beginListProperty("slices_list");  
@@ -626,7 +626,8 @@ UniqueChars Statistics::renderJsonMessage(uint64_t timestamp, Statistics::JSONUs
 }
 
 void Statistics::formatJsonDescription(uint64_t timestamp,
-                                       JSONPrinter& json) const {
+                                       JSONPrinter& json,
+                                       JSONUse use) const {
   
   
   
@@ -676,6 +677,10 @@ void Statistics::formatJsonDescription(uint64_t timestamp,
                   ExplainAbortReason(nonincrementalReason_));  
   }
   json.property("allocated_bytes", preHeapSize);  
+  if (use == Statistics::JSONUse::PROFILER) {
+    json.property("post_heap_size", postHeapSize);
+  }
+
   uint32_t addedChunks = getCount(COUNT_NEW_CHUNK);
   if (addedChunks) {
     json.property("added_chunks", addedChunks);  
@@ -742,6 +747,7 @@ Statistics::Statistics(JSRuntime* rt)
       nonincrementalReason_(gc::AbortReason::None),
       allocsSinceMinorGC({0, 0}),
       preHeapSize(0),
+      postHeapSize(0),
       thresholdTriggered(false),
       triggerAmount(0.0),
       triggerThreshold(0.0),
@@ -978,6 +984,7 @@ void Statistics::beginGC(JSGCInvocationKind kind) {
 void Statistics::endGC() {
   TimeDuration sccTotal, sccLongest;
   sccDurations(&sccTotal, &sccLongest);
+  postHeapSize = runtime->gc.heapSize.gcBytes();
 
   runtime->addTelemetry(JS_TELEMETRY_GC_IS_ZONE_GC,
                         !zoneStats.isFullCollection());
