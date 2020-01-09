@@ -426,8 +426,8 @@ VRSystemManagerExternal::VRSystemManagerExternal(
     VRExternalShmem* aAPIShmem )
     : mExternalShmem(aAPIShmem)
 #if !defined(MOZ_WIDGET_ANDROID)
-    , mMutex("VRSystemManagerExternal::mMutex")
-    , mSameProcess(aAPIShmem != nullptr)
+      ,
+      mSameProcess(aAPIShmem != nullptr)
 #endif
 {
 #if defined(XP_MACOSX)
@@ -844,10 +844,6 @@ void VRSystemManagerExternal::PushState(VRBrowserState* aBrowserState,
       pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->browserMutex));
     }
 #else
-    
-    
-    
-    MutexAutoLock lock(mMutex);
     mExternalShmem->browserGenerationA++;
     memcpy((void*)&(mExternalShmem->browserState), (void*)aBrowserState,
            sizeof(VRBrowserState));

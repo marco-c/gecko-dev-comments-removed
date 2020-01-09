@@ -68,9 +68,6 @@ VRService::VRService()
       mTargetShmemFile(0),
       mLastHapticState{},
       mFrameStartTime{},
-#if !defined(MOZ_WIDGET_ANDROID)
-      mMutex("VRService::mMutex"),
-#endif
       mVRProcessEnabled(gfxPrefs::VRProcessEnabled()) {
   
   
@@ -459,10 +456,6 @@ void VRService::PullState(mozilla::gfx::VRBrowserState& aState) {
     pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->browserMutex));
   }
 #else
-  
-  
-  
-  MutexAutoLock lock(mMutex);
   VRExternalShmem tmp;
   if (mAPIShmem->browserGenerationA != mBrowserGeneration) {
     memcpy(&tmp, mAPIShmem, sizeof(VRExternalShmem));
