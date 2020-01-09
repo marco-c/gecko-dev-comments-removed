@@ -2,14 +2,18 @@
 
 
 
+
+
 import assert from "../../utils/assert";
 import buildQuery from "../../utils/build-query";
+
+import type { SearchModifiers } from "../../types";
 
 export default function getMatches(
   query: string,
   text: string,
   modifiers: SearchModifiers
-): number {
+): Object[] {
   if (!query || !text || !modifiers) {
     return [];
   }
@@ -22,6 +26,11 @@ export default function getMatches(
     let singleMatch;
     const line = lines[i];
     while ((singleMatch = regexQuery.exec(line)) !== null) {
+      
+      if (!singleMatch) {
+        throw new Error("no singleMatch");
+      }
+
       matchedLocations.push({ line: i, ch: singleMatch.index });
 
       

@@ -5805,6 +5805,7 @@ const vendored = exports.vendored = {
   Svg: _Svg2.default
 };
 
+
  }),
 
  3750:

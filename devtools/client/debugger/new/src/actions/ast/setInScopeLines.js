@@ -2,12 +2,17 @@
 
 
 
+
+
 import { getOutOfScopeLocations, getSelectedSource } from "../../selectors";
 import { getSourceLineCount } from "../../utils/source";
 
 import { range, flatMap, uniq, without } from "lodash";
 
-function getOutOfScopeLines(outOfScopeLocations: AstLocation[]) {
+import type { ASTLocation } from "../../types";
+import type { ThunkArgs } from "../types";
+
+function getOutOfScopeLines(outOfScopeLocations: ASTLocation[]) {
   if (!outOfScopeLocations) {
     return null;
   }

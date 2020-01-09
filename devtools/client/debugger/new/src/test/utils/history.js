@@ -2,8 +2,10 @@
 
 
 
+
+
 let logs = [];
-export function getHistory(query: ?string = null) {
+export function getHistory(query: ?string = null): any {
   if (!query) {
     return logs;
   }
