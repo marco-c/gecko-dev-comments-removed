@@ -60,6 +60,7 @@ pub struct ImageCacheKey {
 
 
 #[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ImageInstance {
     pub opacity_binding_index: OpacityBindingIndex,
     pub segment_instance_index: SegmentInstanceIndex,

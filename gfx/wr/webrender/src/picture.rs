@@ -58,8 +58,10 @@ struct PictureInfo {
 
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct RetainedTiles {
     
+    #[cfg_attr(feature = "capture", serde(skip))] 
     pub tiles: Vec<Tile>,
     
     
@@ -1765,6 +1767,7 @@ impl<'a> PictureUpdateState<'a> {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct SurfaceIndex(pub usize);
 
 pub const ROOT_SURFACE_INDEX: SurfaceIndex = SurfaceIndex(0);
@@ -1838,6 +1841,7 @@ impl SurfaceInfo {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct RasterConfig {
     
     
@@ -1851,6 +1855,7 @@ pub struct RasterConfig {
 
 bitflags! {
     /// A set of flags describing why a picture may need a backing surface.
+    #[cfg_attr(feature = "capture", derive(Serialize))]
     pub struct BlitReason: u32 {
         /// Mix-blend-mode on a child that requires isolation.
         const ISOLATE = 1;
@@ -1865,6 +1870,7 @@ bitflags! {
 
 #[allow(dead_code)]
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum PictureCompositeMode {
     
     MixBlend(MixBlendMode),
@@ -1892,6 +1898,7 @@ pub enum PictureSurface {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum Picture3DContext<C> {
     
     Out,
@@ -1911,6 +1918,7 @@ pub enum Picture3DContext<C> {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct OrderedPictureChild {
     pub anchor: usize,
     pub spatial_node_index: SpatialNodeIndex,
@@ -1933,6 +1941,7 @@ struct PrimitiveClusterKey {
 
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveCluster {
     
     spatial_node_index: SpatialNodeIndex,
@@ -1967,6 +1976,7 @@ impl PrimitiveCluster {
 pub struct PrimitiveClusterIndex(pub u32);
 
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ClusterIndex(pub u16);
 
 impl ClusterIndex {
@@ -1981,6 +1991,7 @@ pub type PictureList = SmallVec<[(PictureIndex, ClipChainId); 4]>;
 
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PrimitiveList {
     
     pub prim_instances: Vec<PrimitiveInstance>,
@@ -2113,6 +2124,7 @@ impl PrimitiveList {
 }
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PictureOptions {
     
     
@@ -2127,10 +2139,12 @@ impl Default for PictureOptions {
     }
 }
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct PicturePrimitive {
     
     pub prim_list: PrimitiveList,
 
+    #[cfg_attr(feature = "capture", serde(skip))]
     pub state: Option<(PictureState, PictureContext)>,
 
     
@@ -2180,6 +2194,7 @@ pub struct PicturePrimitive {
     pub gpu_location: GpuCacheHandle,
 
     
+    #[cfg_attr(feature = "capture", serde(skip))] 
     pub tile_cache: Option<TileCache>,
 
     

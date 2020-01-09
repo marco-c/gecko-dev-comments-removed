@@ -190,6 +190,7 @@ bitflags! {
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, Hash)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ClipChainId(pub u32);
 
 
@@ -204,6 +205,7 @@ impl ClipChainId {
 
 
 #[derive(Clone, Debug, MallocSizeOf)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ClipChainNode {
     pub handle: ClipDataHandle,
     pub local_pos: LayoutPoint,
@@ -245,6 +247,7 @@ pub struct ClipNodeRange {
 
 
 #[derive(Debug, MallocSizeOf)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 enum ClipSpaceConversion {
     Local,
     ScaleOffset(ScaleOffset),
@@ -254,6 +257,7 @@ enum ClipSpaceConversion {
 
 
 #[derive(MallocSizeOf)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 struct ClipNodeInfo {
     conversion: ClipSpaceConversion,
     handle: ClipDataHandle,
@@ -431,6 +435,7 @@ impl ClipNode {
 
 
 #[derive(MallocSizeOf)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ClipStore {
     pub clip_chain_nodes: Vec<ClipChainNode>,
     clip_node_instances: Vec<ClipNodeInstance>,

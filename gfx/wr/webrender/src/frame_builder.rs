@@ -58,6 +58,7 @@ pub struct FrameBuilderConfig {
 }
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct FrameBuilder {
     screen_rect: DeviceIntRect,
     background_color: Option<ColorF>,
@@ -68,6 +69,7 @@ pub struct FrameBuilder {
     pending_retained_tiles: RetainedTiles,
     pub prim_store: PrimitiveStore,
     pub clip_store: ClipStore,
+    #[cfg_attr(feature = "capture", serde(skip))] 
     pub hit_testing_runs: Vec<HitTestingRun>,
     pub config: FrameBuilderConfig,
 }
