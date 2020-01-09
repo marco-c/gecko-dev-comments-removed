@@ -724,16 +724,24 @@ void APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
 
 
 template <class ScrollNode>
-static ParentLayerIntRegion ComputeClipRegion(const ScrollNode& aLayer) {
-  ParentLayerIntRegion clipRegion;
+Maybe<ParentLayerIntRegion> APZCTreeManager::ComputeClipRegion(
+    const ScrollNode& aLayer) {
+  Maybe<ParentLayerIntRegion> clipRegion;
   if (aLayer.GetClipRect()) {
-    clipRegion = *aLayer.GetClipRect();
+    clipRegion.emplace(*aLayer.GetClipRect());
+  } else if (aLayer.Metrics().IsRootContent() && mUsingAsyncZoomContainer) {
+    
+    
+    
+    
+    
+    
   } else {
     
     
     
     
-    clipRegion = RoundedToInt(aLayer.Metrics().GetCompositionBounds());
+    clipRegion.emplace(RoundedToInt(aLayer.Metrics().GetCompositionBounds()));
   }
 
   return clipRegion;
@@ -1052,7 +1060,7 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
                node->GetApzc()->Matches(guid));
 
     Maybe<ParentLayerIntRegion> clipRegion =
-        parentHasPerspective ? Nothing() : Some(ComputeClipRegion(aLayer));
+        parentHasPerspective ? Nothing() : ComputeClipRegion(aLayer);
     node->SetHitTestData(GetEventRegions(aLayer), aLayer.GetVisibleRegion(),
                          aLayer.GetTransformTyped(), clipRegion,
                          GetEventRegionsOverride(aParent, aLayer),
@@ -1156,7 +1164,7 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
     }
 
     Maybe<ParentLayerIntRegion> clipRegion =
-        parentHasPerspective ? Nothing() : Some(ComputeClipRegion(aLayer));
+        parentHasPerspective ? Nothing() : ComputeClipRegion(aLayer);
     node->SetHitTestData(GetEventRegions(aLayer), aLayer.GetVisibleRegion(),
                          aLayer.GetTransformTyped(), clipRegion,
                          GetEventRegionsOverride(aParent, aLayer),
