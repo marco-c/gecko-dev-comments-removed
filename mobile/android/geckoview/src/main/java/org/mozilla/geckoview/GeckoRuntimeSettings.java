@@ -497,14 +497,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-    public boolean getPauseForDebuggerEnabled() { return mDebugPause; }
+    public boolean getPauseForDebuggerEnabled() {
+        return mDebugPause;
+    }
 
     
 
 
 
 
-    public boolean getUseMaxScreenDepth() { return mUseMaxScreenDepth; }
+    public boolean getUseMaxScreenDepth() {
+        return mUseMaxScreenDepth;
+    }
 
     
 

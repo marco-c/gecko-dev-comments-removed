@@ -65,9 +65,7 @@ public class ContentUriUtils {
                 }
                 return !TextUtils.isEmpty(rootPath) ?
                         rootPath + "/" + docPath : null;
-            }
-            
-            else if (isDownloadsDocument(uri)) {
+            } else if (isDownloadsDocument(uri)) { 
                 final String id = DocumentsContract.getDocumentId(uri);
                 
                 
@@ -83,9 +81,7 @@ public class ContentUriUtils {
                         return null;
                     }
                 }
-            }
-            
-            else if (isMediaDocument(uri)) {
+            } else if (isMediaDocument(uri)) { 
                 final String docId = DocumentsContract.getDocumentId(uri);
                 final String[] split = docId.split(":");
                 final String type = split[0];
@@ -106,18 +102,13 @@ public class ContentUriUtils {
 
                 return getDataColumn(context, contentUri, selection, selectionArgs);
             }
-        }
-        
-        else if ("content".equalsIgnoreCase(uri.getScheme())) {
-
+        } else if ("content".equalsIgnoreCase(uri.getScheme())) { 
             
             if (isGooglePhotosUri(uri))
                 return uri.getLastPathSegment();
 
             return getDataColumn(context, uri, null, null);
-        }
-        
-        else if ("file".equalsIgnoreCase(uri.getScheme())) {
+        } else if ("file".equalsIgnoreCase(uri.getScheme())) { 
             return uri.getPath();
         }
 
