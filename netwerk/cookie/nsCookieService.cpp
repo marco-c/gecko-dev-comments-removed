@@ -3275,9 +3275,8 @@ bool nsCookieService::CanSetCookie(nsIURI *aHostURI, const nsCookieKey &aKey,
   int64_t currentTimeInUsec = PR_Now();
 
   
-  aCookieAttributes.isSession =
-      GetExpiry(aCookieAttributes, aServerTime,
-                currentTimeInUsec / PR_USEC_PER_SEC, aFromHttp);
+  aCookieAttributes.isSession = GetExpiry(aCookieAttributes, aServerTime,
+                                          currentTimeInUsec / PR_USEC_PER_SEC);
   if (aStatus == STATUS_ACCEPT_SESSION) {
     
     
@@ -4236,13 +4235,7 @@ bool nsCookieService::CheckPrefixes(nsCookieAttributes &aCookieAttributes,
 }
 
 bool nsCookieService::GetExpiry(nsCookieAttributes &aCookieAttributes,
-                                int64_t aServerTime, int64_t aCurrentTime,
-                                bool aFromHttp) {
-  
-  
-  int64_t maxageCap =
-      aFromHttp ? 0 : StaticPrefs::privacy_documentCookies_maxage();
-
+                                int64_t aServerTime, int64_t aCurrentTime) {
   
 
 
@@ -4265,11 +4258,7 @@ bool nsCookieService::GetExpiry(nsCookieAttributes &aCookieAttributes,
 
     
     
-    if (maxageCap) {
-      aCookieAttributes.expiryTime = aCurrentTime + std::min(maxage, maxageCap);
-    } else {
-      aCookieAttributes.expiryTime = aCurrentTime + maxage;
-    }
+    aCookieAttributes.expiryTime = aCurrentTime + maxage;
 
     
   } else if (!aCookieAttributes.expires.IsEmpty()) {
@@ -4286,15 +4275,8 @@ bool nsCookieService::GetExpiry(nsCookieAttributes &aCookieAttributes,
     
     
     
-    if (maxageCap) {
-      aCookieAttributes.expiryTime = std::min(
-          expires / int64_t(PR_USEC_PER_SEC), aCurrentTime + maxageCap);
-    } else {
-      aCookieAttributes.expiryTime = expires / int64_t(PR_USEC_PER_SEC);
-    }
+    aCookieAttributes.expiryTime = expires / int64_t(PR_USEC_PER_SEC);
 
-    
-    
     
   } else {
     return true;
