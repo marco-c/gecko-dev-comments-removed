@@ -40,6 +40,7 @@ class JSWindowActorService final {
   
   
   void ConstructActor(const nsAString& aName, bool aParentSide,
+                      BrowsingContext* aBrowsingContext,
                       JS::MutableHandleObject aActor, ErrorResult& aRv);
 
   void ReceiveMessage(JS::RootedObject& aObj, const nsString& aMessageName,
