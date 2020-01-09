@@ -1214,7 +1214,7 @@ class nsContentUtils {
   
 
 
-  static bool IsChromeDoc(Document* aDocument);
+  static bool IsChromeDoc(const Document* aDocument);
 
   
 
