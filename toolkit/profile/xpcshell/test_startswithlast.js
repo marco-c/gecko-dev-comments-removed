@@ -1,0 +1,23 @@
+
+
+
+
+
+add_task(async () => {
+  let defaultProfile = makeRandomProfileDir("default");
+
+  writeCompatibilityIni(defaultProfile);
+
+  writeProfilesIni({
+    options: {
+      startWithLastProfile: false,
+    },
+    profiles: [{
+      name: PROFILE_DEFAULT,
+      path: defaultProfile.leafName,
+      default: true,
+    }],
+  });
+
+  testStartsProfileManager();
+});

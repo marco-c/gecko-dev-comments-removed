@@ -1023,6 +1023,11 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
   }
 
   
+  if (!mStartWithLast) {
+    return NS_ERROR_SHOW_PROFILE_MANAGER;
+  }
+
+  
   if (mIsFirstRun) {
     if (aIsResetting) {
       
@@ -1122,11 +1127,6 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
       *aDidCreate = true;
       return NS_OK;
     }
-  }
-
-  
-  if (!mStartWithLast) {
-    return NS_ERROR_SHOW_PROFILE_MANAGER;
   }
 
   GetDefaultProfile(getter_AddRefs(mCurrent));
