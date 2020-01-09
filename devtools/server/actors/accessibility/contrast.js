@@ -11,6 +11,7 @@ loader.lazyRequireGetter(this, "getCurrentZoom", "devtools/shared/layout/utils",
 loader.lazyRequireGetter(this, "addPseudoClassLock", "devtools/server/actors/highlighters/utils/markup", true);
 loader.lazyRequireGetter(this, "removePseudoClassLock", "devtools/server/actors/highlighters/utils/markup", true);
 loader.lazyRequireGetter(this, "DevToolsWorker", "devtools/shared/worker/worker", true);
+loader.lazyRequireGetter(this, "accessibility", "devtools/shared/constants", true);
 
 const WORKER_URL = "resource://devtools/server/actors/accessibility/worker.js";
 const HIGHLIGHTED_PSEUDO_CLASS = ":-moz-devtools-highlighted";
@@ -118,6 +119,29 @@ function getImageCtx(win, bounds, zoom, scale, node) {
 
 
 
+function getContrastRatioScore(ratio, isLargeText) {
+  const { SCORES: { FAIL, AA, AAA } } = accessibility;
+  const levels = isLargeText ? { AA: 3, AAA: 4.5 } : { AA: 4.5, AAA: 7 };
+
+  let score = FAIL;
+  if (ratio >= levels.AAA) {
+    score = AAA;
+  } else if (ratio >= levels.AA) {
+    score = AA;
+  }
+
+  return score;
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -177,11 +201,13 @@ async function getContrastRatioFor(node, options = {}) {
   }
 
   if (rgba.value) {
+    const value = colorUtils.calculateContrastRatio(rgba.value, color);
     return {
-      value: colorUtils.calculateContrastRatio(rgba.value, color),
+      value,
       color,
       backgroundColor: rgba.value,
       isLargeText,
+      score: getContrastRatioScore(value, isLargeText),
     };
   }
 
@@ -194,6 +220,8 @@ async function getContrastRatioFor(node, options = {}) {
     [rgba.min, rgba.max] = [rgba.max, rgba.min];
   }
 
+  const score = getContrastRatioScore(min, isLargeText);
+
   return {
     min,
     max,
@@ -201,6 +229,9 @@ async function getContrastRatioFor(node, options = {}) {
     backgroundColorMin: rgba.min,
     backgroundColorMax: rgba.max,
     isLargeText,
+    score,
+    scoreMin: score,
+    scoreMax: getContrastRatioScore(max, isLargeText),
   };
 }
 

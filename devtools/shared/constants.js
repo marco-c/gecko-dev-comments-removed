@@ -17,7 +17,7 @@ exports.accessibility = {
   },
   
   
-  ColorContrastScores: {
+  SCORES: {
     FAIL: "fail",
     AA: "AA",
     AAA: "AAA",
