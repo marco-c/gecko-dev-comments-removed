@@ -1180,6 +1180,7 @@ SimpleTest.finish = function() {
         }
 
         let workers = SpecialPowers.registeredServiceWorkers();
+        let promise = null;
         if (SimpleTest._expectingRegisteredServiceWorker) {
             if (workers.length === 0) {
                 SimpleTest.ok(false, "This test is expected to leave a service worker registered");
@@ -1190,20 +1191,35 @@ SimpleTest.finish = function() {
                 for (let worker of workers) {
                     SimpleTest.ok(false, `Left over worker: ${worker.scriptSpec} (scope: ${worker.scope})`);
                 }
+                promise = SpecialPowers.removeAllServiceWorkerData();
             }
         }
 
-        if (parentRunner) {
-            
-            parentRunner.testFinished(SimpleTest._tests);
+        
+        
+        
+        
+        
+        
+        function finish() {
+            if (parentRunner) {
+                
+                parentRunner.testFinished(SimpleTest._tests);
+            }
+
+            if (!parentRunner || parentRunner.showTestReport) {
+                SpecialPowers.flushPermissions(function () {
+                  SpecialPowers.flushPrefEnv(function() {
+                    SimpleTest.showReport();
+                  });
+                });
+            }
         }
 
-        if (!parentRunner || parentRunner.showTestReport) {
-            SpecialPowers.flushPermissions(function () {
-              SpecialPowers.flushPrefEnv(function() {
-                SimpleTest.showReport();
-              });
-            });
+        if (promise) {
+            promise.then(finish);
+        } else {
+            finish();
         }
     }
 
