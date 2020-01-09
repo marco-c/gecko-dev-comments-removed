@@ -4907,7 +4907,7 @@ bool XRE_Win32kCallsAllowed() {
 
 
 enum {
-  kE10sEnabledByUser = 0,
+  
   kE10sEnabledByDefault = 1,
   kE10sDisabledByUser = 2,
   
@@ -4919,9 +4919,6 @@ enum {
   
   
 };
-
-const char* kForceEnableE10sPref = "browser.tabs.remote.force-enable";
-const char* kForceDisableE10sPref = "browser.tabs.remote.force-disable";
 
 namespace mozilla {
 
@@ -4937,25 +4934,28 @@ bool BrowserTabsRemoteAutostart() {
     return gBrowserTabsRemoteAutostart;
   }
 
-  bool optInPref = Preferences::GetBool("browser.tabs.remote.autostart", true);
+#if defined(MOZILLA_OFFICIAL) && MOZ_BUILD_APP_IS_BROWSER
+  bool allowSingleProcessOutsideAutomation = false;
+#else
+  bool allowSingleProcessOutsideAutomation = true;
+#endif
+
   int status = kE10sEnabledByDefault;
+  if (allowSingleProcessOutsideAutomation || xpc::IsInAutomation()) {
+    bool optInPref =
+        Preferences::GetBool("browser.tabs.remote.autostart", true);
 
-  if (optInPref) {
-    gBrowserTabsRemoteAutostart = true;
+    if (optInPref) {
+      gBrowserTabsRemoteAutostart = true;
+    } else {
+      status = kE10sDisabledByUser;
+    }
   } else {
-    status = kE10sDisabledByUser;
-  }
-
-  
-  if (Preferences::GetBool(kForceEnableE10sPref, false)) {
     gBrowserTabsRemoteAutostart = true;
-    status = kE10sEnabledByUser;
   }
 
   
-  if (gBrowserTabsRemoteAutostart &&
-      (Preferences::GetBool(kForceDisableE10sPref, false) ||
-       EnvHasValue("MOZ_FORCE_DISABLE_E10S"))) {
+  if (gBrowserTabsRemoteAutostart && EnvHasValue("MOZ_FORCE_DISABLE_E10S")) {
     gBrowserTabsRemoteAutostart = false;
     status = kE10sForceDisabled;
   }
