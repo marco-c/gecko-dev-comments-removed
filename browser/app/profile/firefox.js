@@ -510,8 +510,13 @@ pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", true);
 #endif
 
-
+#ifdef NIGHTLY_BUILD
 pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
+#else
+
+pref("browser.tabs.remote.useHTTPResponseProcessSelection", false);
+#endif
+
 
 
 pref("browser.tabs.unloadOnLowMemory", true);
