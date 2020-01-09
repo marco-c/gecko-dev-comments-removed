@@ -458,8 +458,8 @@ enum class Send {
 static void AddAnimationForProperty(nsIFrame* aFrame,
                                     const AnimationProperty& aProperty,
                                     dom::Animation* aAnimation,
-                                    AnimationInfo& aAnimationInfo,
-                                    AnimationData& aData, Send aSendFlag) {
+                                    const AnimationData& aData, Send aSendFlag,
+                                    AnimationInfo& aAnimationInfo) {
   MOZ_ASSERT(aAnimation->GetEffect(),
              "Should not be adding an animation without an effect");
   MOZ_ASSERT(!aAnimation->GetCurrentOrPendingStartTime().IsNull() ||
@@ -625,9 +625,110 @@ GroupAnimationsByProperty(const nsTArray<RefPtr<dom::Animation>>& aAnimations,
 }
 
 static void AddAnimationsForProperty(
-    nsIFrame* aFrame, nsDisplayListBuilder* aBuilder, nsDisplayItem* aItem,
-    nsCSSPropertyID aProperty, AnimationInfo& aAnimationInfo, Send aSendFlag,
-    layers::LayersBackend aLayersBackend) {
+    nsIFrame* aFrame, const EffectSet* aEffects,
+    const nsTArray<RefPtr<dom::Animation>>& aCompositorAnimations,
+    const AnimationData& aData, nsCSSPropertyID aProperty, Send aSendFlag,
+    AnimationInfo& aAnimationInfo) {
+  
+  for (dom::Animation* anim : aCompositorAnimations) {
+    if (!anim->IsRelevant()) {
+      continue;
+    }
+
+    dom::KeyframeEffect* keyframeEffect =
+        anim->GetEffect() ? anim->GetEffect()->AsKeyframeEffect() : nullptr;
+    MOZ_ASSERT(keyframeEffect,
+               "A playing animation should have a keyframe effect");
+    const AnimationProperty* property =
+        keyframeEffect->GetEffectiveAnimationOfProperty(aProperty, *aEffects);
+    if (!property) {
+      continue;
+    }
+
+    
+    
+    
+    
+    MOZ_ASSERT(
+        anim->CascadeLevel() != EffectCompositor::CascadeLevel::Animations ||
+            !aEffects->PropertiesWithImportantRules().HasProperty(aProperty),
+        "GetEffectiveAnimationOfProperty already tested the property "
+        "is not overridden by !important rules");
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (anim->Pending() &&
+        (anim->GetTimeline() && !anim->GetTimeline()->TracksWallclockTime())) {
+      continue;
+    }
+
+    AddAnimationForProperty(aFrame, *property, anim, aData, aSendFlag,
+                            aAnimationInfo);
+    keyframeEffect->SetIsRunningOnCompositor(aProperty, true);
+  }
+}
+
+static AnimationData CreateAnimationData(nsIFrame* aFrame, nsDisplayItem* aItem,
+                                         DisplayItemType aType,
+                                         layers::LayersBackend aLayersBackend) {
+  if (aType != DisplayItemType::TYPE_TRANSFORM) {
+    return AnimationData(null_t());
+  }
+
+  
+  
+  
+  
+  
+  TransformReferenceBox refBox(aFrame);
+  nsRect bounds(0, 0, refBox.Width(), refBox.Height());
+  
+  int32_t devPixelsToAppUnits = aFrame->PresContext()->AppUnitsPerDevPixel();
+  float scale = devPixelsToAppUnits;
+  Point3D offsetToTransformOrigin =
+      nsDisplayTransform::GetDeltaToTransformOrigin(aFrame, scale, &bounds);
+  nsPoint origin;
+  float scaleX = 1.0f;
+  float scaleY = 1.0f;
+  bool hasPerspectiveParent = false;
+  if (aLayersBackend == layers::LayersBackend::LAYERS_WR) {
+    
+    
+    
+  } else if (aItem) {
+    
+    
+    origin = aItem->ToReferenceFrame();
+  } else {
+    
+    
+    
+    
+    
+    nsIFrame* referenceFrame = nsLayoutUtils::GetReferenceFrame(
+        nsLayoutUtils::GetCrossDocParentFrame(aFrame));
+    origin = aFrame->GetOffsetToCrossDoc(referenceFrame);
+  }
+
+  return AnimationData(TransformData(origin, offsetToTransformOrigin, bounds,
+                                     devPixelsToAppUnits, scaleX, scaleY,
+                                     hasPerspectiveParent));
+}
+
+static void AddAnimationsForDisplayItem(nsIFrame* aFrame,
+                                        nsDisplayListBuilder* aBuilder,
+                                        nsDisplayItem* aItem,
+                                        DisplayItemType aType, Send aSendFlag,
+                                        layers::LayersBackend aLayersBackend,
+                                        AnimationInfo& aAnimationInfo) {
   if (aSendFlag == Send::NextTransaction) {
     aAnimationInfo.ClearAnimationsForNextTransaction();
   } else {
@@ -651,9 +752,9 @@ static void AddAnimationsForProperty(
       effects ? effects->GetAnimationGeneration() : 0;
   aAnimationInfo.SetAnimationGeneration(animationGeneration);
 
-  EffectCompositor::ClearIsRunningOnCompositor(styleFrame, aProperty);
-  
-  const nsCSSPropertyIDSet propertySet = nsCSSPropertyIDSet{aProperty};
+  EffectCompositor::ClearIsRunningOnCompositor(styleFrame, aType);
+  const nsCSSPropertyIDSet& propertySet =
+      LayerAnimationInfo::GetCSSPropertiesFor(aType);
   const nsTArray<RefPtr<dom::Animation>> matchedAnimations =
       EffectCompositor::GetAnimationsForCompositor(styleFrame, propertySet);
   if (matchedAnimations.IsEmpty()) {
@@ -671,122 +772,27 @@ static void AddAnimationsForProperty(
     return;
   }
 
-  AnimationData data;
-  if (aProperty == eCSSProperty_transform) {
-    
-    
-    
-    
-    
-    TransformReferenceBox refBox(aFrame);
-    nsRect bounds(0, 0, refBox.Width(), refBox.Height());
-    
-    int32_t devPixelsToAppUnits = aFrame->PresContext()->AppUnitsPerDevPixel();
-    float scale = devPixelsToAppUnits;
-    Point3D offsetToTransformOrigin =
-        nsDisplayTransform::GetDeltaToTransformOrigin(aFrame, scale, &bounds);
-    nsPoint origin;
-    float scaleX = 1.0f;
-    float scaleY = 1.0f;
-    bool hasPerspectiveParent = false;
-    if (aLayersBackend == layers::LayersBackend::LAYERS_WR) {
-      
-      
-      
-    } else if (aItem) {
-      
-      
-      origin = aItem->ToReferenceFrame();
-    } else {
-      
-      
-      
-      
-      
-      nsIFrame* referenceFrame = nsLayoutUtils::GetReferenceFrame(
-          nsLayoutUtils::GetCrossDocParentFrame(aFrame));
-      origin = aFrame->GetOffsetToCrossDoc(referenceFrame);
-    }
-
-    data = TransformData(origin, offsetToTransformOrigin, bounds,
-                         devPixelsToAppUnits, scaleX, scaleY,
-                         hasPerspectiveParent);
-  } else {
-    data = null_t();
-  }
-
-  MOZ_ASSERT(
-      nsCSSProps::PropHasFlags(aProperty, CSSPropFlags::CanAnimateOnCompositor),
-      "inconsistent property flags");
-
+  const AnimationData data =
+      CreateAnimationData(aFrame, aItem, aType, aLayersBackend);
   const HashMap<nsCSSPropertyID, nsTArray<RefPtr<dom::Animation>>>
       compositorAnimations =
           GroupAnimationsByProperty(matchedAnimations, propertySet);
-  
-  MOZ_ASSERT(compositorAnimations.has(aProperty));
-  const nsTArray<RefPtr<dom::Animation>>& animations =
-      compositorAnimations.lookup(aProperty)->value();
-  
-  for (size_t animIdx = 0; animIdx < animations.Length(); animIdx++) {
-    dom::Animation* anim = animations[animIdx];
-    if (!anim->IsRelevant()) {
-      continue;
-    }
-
-    dom::KeyframeEffect* keyframeEffect =
-        anim->GetEffect() ? anim->GetEffect()->AsKeyframeEffect() : nullptr;
-    MOZ_ASSERT(keyframeEffect,
-               "A playing animation should have a keyframe effect");
-    const AnimationProperty* property =
-        keyframeEffect->GetEffectiveAnimationOfProperty(aProperty, *effects);
-    if (!property) {
-      continue;
-    }
-
-    
-    
-    
-    
-    MOZ_ASSERT(
-        anim->CascadeLevel() != EffectCompositor::CascadeLevel::Animations ||
-            !EffectSet::GetEffectSet(styleFrame)
-                 ->PropertiesWithImportantRules()
-                 .HasProperty(aProperty),
-        "GetEffectiveAnimationOfProperty already tested the property "
-        "is not overridden by !important rules");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (anim->Pending() &&
-        (anim->GetTimeline() && !anim->GetTimeline()->TracksWallclockTime())) {
-      continue;
-    }
-
-    AddAnimationForProperty(aFrame, *property, anim, aAnimationInfo, data,
-                            aSendFlag);
-    keyframeEffect->SetIsRunningOnCompositor(aProperty, true);
+  for (auto iter = compositorAnimations.iter(); !iter.done(); iter.next()) {
+    AddAnimationsForProperty(aFrame, effects, iter.get().value(), data,
+                             iter.get().key(), aSendFlag, aAnimationInfo);
   }
 }
 
 static uint64_t AddAnimationsForWebRender(
-    nsDisplayItem* aItem, nsCSSPropertyID aProperty,
-    mozilla::layers::RenderRootStateManager* aManager,
+    nsDisplayItem* aItem, mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
   RefPtr<WebRenderAnimationData> animationData =
       aManager->CommandBuilder()
           .CreateOrRecycleWebRenderUserData<WebRenderAnimationData>(aItem);
   AnimationInfo& animationInfo = animationData->GetAnimationInfo();
-  AddAnimationsForProperty(aItem->Frame(), aDisplayListBuilder, aItem,
-                           aProperty, animationInfo, Send::Immediate,
-                           layers::LayersBackend::LAYERS_WR);
+  AddAnimationsForDisplayItem(aItem->Frame(), aDisplayListBuilder, aItem,
+                              aItem->GetType(), Send::Immediate,
+                              layers::LayersBackend::LAYERS_WR, animationInfo);
   animationInfo.StartPendingAnimations(
       aManager->LayerManager()->GetAnimationReadyTime());
 
@@ -866,11 +872,7 @@ static bool GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
 
 void nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
     Layer* aLayer, nsDisplayListBuilder* aBuilder, nsDisplayItem* aItem,
-    nsIFrame* aFrame, nsCSSPropertyID aProperty) {
-  MOZ_ASSERT(
-      nsCSSProps::PropHasFlags(aProperty, CSSPropFlags::CanAnimateOnCompositor),
-      "inconsistent property flags");
-
+    nsIFrame* aFrame, DisplayItemType aType) {
   
   
   
@@ -890,8 +892,9 @@ void nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
 
   Send sendFlag = !aBuilder ? Send::NextTransaction : Send::Immediate;
   AnimationInfo& animationInfo = aLayer->GetAnimationInfo();
-  AddAnimationsForProperty(aFrame, aBuilder, aItem, aProperty, animationInfo,
-                           sendFlag, layers::LayersBackend::LAYERS_CLIENT);
+  AddAnimationsForDisplayItem(aFrame, aBuilder, aItem, aType, sendFlag,
+                              layers::LayersBackend::LAYERS_CLIENT,
+                              animationInfo);
   animationInfo.TransferMutatedFlagToLayer(aLayer);
 }
 
@@ -4620,7 +4623,7 @@ already_AddRefed<Layer> nsDisplayBackgroundColor::BuildLayer(
       aContainerParameters.mOffset.x, aContainerParameters.mOffset.y, 0));
 
   nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
-      layer, aBuilder, this, mFrame, eCSSProperty_background_color);
+      layer, aBuilder, this, mFrame, GetType());
 
   return layer.forget();
 }
@@ -5877,7 +5880,7 @@ already_AddRefed<Layer> nsDisplayOpacity::BuildLayer(
 
   container->SetOpacity(mOpacity);
   nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
-      container, aBuilder, this, mFrame, eCSSProperty_opacity);
+      container, aBuilder, this, mFrame, GetType());
   return container.forget();
 }
 
@@ -6125,8 +6128,8 @@ bool nsDisplayOpacity::CreateWebRenderCommands(
     nsDisplayListBuilder* aDisplayListBuilder) {
   float* opacityForSC = &mOpacity;
 
-  uint64_t animationsId = AddAnimationsForWebRender(
-      this, eCSSProperty_opacity, aManager, aDisplayListBuilder);
+  uint64_t animationsId =
+      AddAnimationsForWebRender(this, aManager, aDisplayListBuilder);
   wr::WrAnimationProperty prop{
       wr::WrAnimationType::Opacity,
       animationsId,
@@ -7968,8 +7971,8 @@ bool nsDisplayTransform::CreateWebRenderCommands(
     position.Round();
   }
 
-  uint64_t animationsId = AddAnimationsForWebRender(
-      this, eCSSProperty_transform, aManager, aDisplayListBuilder);
+  uint64_t animationsId =
+      AddAnimationsForWebRender(this, aManager, aDisplayListBuilder);
   wr::WrAnimationProperty prop{
       wr::WrAnimationType::Transform,
       animationsId,
@@ -8076,7 +8079,7 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(
   }
 
   nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
-      container, aBuilder, this, mFrame, eCSSProperty_transform);
+      container, aBuilder, this, mFrame, GetType());
   if (mAllowAsyncAnimation && MayBeAnimated(aBuilder)) {
     
     
