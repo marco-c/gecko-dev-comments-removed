@@ -7,8 +7,13 @@
 @namespace url(http:
 @namespace xml url(http:
 
-style, script, symbol {
+style, script {
  display: none;
+}
+
+
+symbol {
+ display: none !important;
 }
 
 symbol:-moz-use-shadow-tree-root {
