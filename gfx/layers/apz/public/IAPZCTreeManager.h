@@ -9,6 +9,7 @@
 
 #include <stdint.h>  
 
+#include "mozilla/layers/APZTypes.h"
 #include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/ZoomConstraints.h"      
