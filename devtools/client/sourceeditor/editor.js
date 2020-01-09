@@ -1254,6 +1254,11 @@ Editor.prototype = {
 
 
   setupAutoCompletion: function() {
+    if (!this.config.autocomplete && !this.initializeAutoCompletion) {
+      
+      
+      return;
+    }
     
     
     if (!this.initializeAutoCompletion) {
