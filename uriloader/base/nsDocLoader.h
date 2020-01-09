@@ -23,7 +23,6 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIChannelEventSink.h"
-#include "nsISecurityEventSink.h"
 #include "nsISupportsPriority.h"
 #include "nsCOMPtr.h"
 #include "PLDHashTable.h"
@@ -50,7 +49,6 @@ class nsDocLoader : public nsIDocumentLoader,
                     public nsIWebProgress,
                     public nsIInterfaceRequestor,
                     public nsIChannelEventSink,
-                    public nsISecurityEventSink,
                     public nsISupportsPriority {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_THIS_DOCLOADER_IMPL_CID)
@@ -76,8 +74,6 @@ class nsDocLoader : public nsIDocumentLoader,
 
   
   NS_DECL_NSIPROGRESSEVENTSINK
-
-  NS_DECL_NSISECURITYEVENTSINK
 
   
   NS_DECL_NSIREQUESTOBSERVER
@@ -107,6 +103,23 @@ class nsDocLoader : public nsIDocumentLoader,
     
     unsigned long mNotifyMask;
   };
+
+  
+
+
+
+
+
+
+  void OnSecurityChange(nsISupports* aContext, uint32_t aState);
+  
+
+
+
+
+
+
+  void OnContentBlockingEvent(nsISupports* aContext, uint32_t aEvent);
 
  protected:
   virtual ~nsDocLoader();

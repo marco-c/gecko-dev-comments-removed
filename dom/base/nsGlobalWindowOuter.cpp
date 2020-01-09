@@ -468,6 +468,19 @@ class nsOuterWindowProxy : public MaybeCrossOriginObject<js::Wrapper> {
 
 
 
+  bool getPropertyDescriptor(
+      JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
+      JS::MutableHandle<JS::PropertyDescriptor> desc) const override;
+
+  
+
+
+
+
+
+
+
+
 
 
   bool hasOwn(JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
@@ -553,6 +566,43 @@ void nsOuterWindowProxy::finalize(JSFreeOp* fop, JSObject* proxy) const {
     
     outerWindow->PoisonOuterWindowProxy(proxy);
   }
+}
+
+bool nsOuterWindowProxy::getPropertyDescriptor(
+    JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
+    JS::MutableHandle<JS::PropertyDescriptor> desc) const {
+  
+  
+  
+  
+  
+  
+  
+  desc.object().set(nullptr);
+  if (!getOwnPropertyDescriptor(cx, proxy, id, desc)) {
+    return false;
+  }
+
+  if (desc.object()) {
+    return true;
+  }
+
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    return true;
+  }
+
+  
+  
+  
+  {
+    JSAutoRealm ar(cx, proxy);
+    JS_MarkCrossZoneId(cx, id);
+    if (!js::Wrapper::getPropertyDescriptor(cx, proxy, id, desc)) {
+      return false;
+    }
+  }
+
+  return JS_WrapPropertyDescriptor(cx, desc);
 }
 
 
@@ -5388,10 +5438,6 @@ void nsGlobalWindowOuter::NotifyContentBlockingEvent(unsigned aEvent,
 
         
         
-        nsresult rv = NS_OK;
-        nsCOMPtr<nsISecurityEventSink> eventSink =
-            do_QueryInterface(docShell, &rv);
-        NS_ENSURE_SUCCESS_VOID(rv);
         uint32_t event = 0;
         nsCOMPtr<nsISecureBrowserUI> securityUI;
         docShell->GetSecurityUI(getter_AddRefs(securityUI));
@@ -5476,7 +5522,8 @@ void nsGlobalWindowOuter::NotifyContentBlockingEvent(unsigned aEvent,
           return;
         }
 
-        eventSink->OnContentBlockingEvent(channel, event);
+        nsDocShell::Cast(docShell)->nsDocLoader::OnContentBlockingEvent(
+            aChannel, event);
       });
   nsresult rv;
   if (gSyncContentBlockingNotifications) {

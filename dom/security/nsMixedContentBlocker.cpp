@@ -11,8 +11,7 @@
 #include "nsThreadUtils.h"
 #include "nsINode.h"
 #include "nsCOMPtr.h"
-#include "nsIDocShell.h"
-#include "nsISecurityEventSink.h"
+#include "nsDocShell.h"
 #include "nsIWebProgressListener.h"
 #include "nsContentUtils.h"
 #include "nsIRequest.h"
@@ -82,8 +81,6 @@ class nsMixedContentEvent : public Runnable {
 
     
     
-    
-    
 
     
     
@@ -103,9 +100,7 @@ class nsMixedContentEvent : public Runnable {
     NS_ASSERTION(rootDoc,
                  "No root document from document shell root tree item.");
 
-    
-    nsCOMPtr<nsISecurityEventSink> eventSink = do_QueryInterface(docShell);
-    NS_ASSERTION(eventSink, "No eventSink from docShell.");
+    nsDocShell* nativeDocShell = nsDocShell::Cast(docShell);
     nsCOMPtr<nsIDocShell> rootShell = do_GetInterface(sameTypeRoot);
     NS_ASSERTION(rootShell,
                  "No root docshell from document shell root tree item.");
@@ -144,14 +139,14 @@ class nsMixedContentEvent : public Runnable {
             state |= nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
           }
 
-          eventSink->OnSecurityChange(
+          nativeDocShell->nsDocLoader::OnSecurityChange(
               mContext,
               (state |
                nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
         } else {
           
           if (NS_SUCCEEDED(stateRV)) {
-            eventSink->OnSecurityChange(
+            nativeDocShell->nsDocLoader::OnSecurityChange(
                 mContext,
                 (state |
                  nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
@@ -184,14 +179,14 @@ class nsMixedContentEvent : public Runnable {
             state |= nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
           }
 
-          eventSink->OnSecurityChange(
+          nativeDocShell->nsDocLoader::OnSecurityChange(
               mContext,
               (state |
                nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
         } else {
           
           if (NS_SUCCEEDED(stateRV)) {
-            eventSink->OnSecurityChange(
+            nativeDocShell->nsDocLoader::OnSecurityChange(
                 mContext,
                 (state |
                  nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
@@ -896,9 +891,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   nsCOMPtr<Document> rootDoc = sameTypeRoot->GetDocument();
   NS_ASSERTION(rootDoc, "No root document from document shell root tree item.");
 
-  
-  nsCOMPtr<nsISecurityEventSink> eventSink = do_QueryInterface(docShell);
-  NS_ASSERTION(eventSink, "No eventSink from docShell.");
+  nsDocShell* nativeDocShell = nsDocShell::Cast(docShell);
   nsCOMPtr<nsIDocShell> rootShell = do_GetInterface(sameTypeRoot);
   NS_ASSERTION(rootShell,
                "No root docshell from document shell root tree item.");
@@ -984,7 +977,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
           state |= nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
         }
 
-        eventSink->OnSecurityChange(
+        nativeDocShell->nsDocLoader::OnSecurityChange(
             aRequestingContext,
             (state |
              nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
@@ -992,7 +985,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
         
         
         if (NS_SUCCEEDED(stateRV)) {
-          eventSink->OnSecurityChange(
+          nativeDocShell->nsDocLoader::OnSecurityChange(
               aRequestingContext,
               (state |
                nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
@@ -1005,7 +998,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
       if (!rootDoc->GetHasMixedDisplayContentBlocked() &&
           NS_SUCCEEDED(stateRV)) {
         rootDoc->SetHasMixedDisplayContentBlocked(true);
-        eventSink->OnSecurityChange(
+        nativeDocShell->nsDocLoader::OnSecurityChange(
             aRequestingContext,
             (state |
              nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT));
@@ -1039,7 +1032,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
           state |= nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
         }
 
-        eventSink->OnSecurityChange(
+        nativeDocShell->nsDocLoader::OnSecurityChange(
             aRequestingContext,
             (state |
              nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
@@ -1049,7 +1042,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
         
         
         if (NS_SUCCEEDED(stateRV)) {
-          eventSink->OnSecurityChange(
+          nativeDocShell->nsDocLoader::OnSecurityChange(
               aRequestingContext,
               (state |
                nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
@@ -1072,7 +1065,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
       
       
       if (NS_SUCCEEDED(stateRV)) {
-        eventSink->OnSecurityChange(
+        nativeDocShell->nsDocLoader::OnSecurityChange(
             aRequestingContext,
             (state |
              nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT));

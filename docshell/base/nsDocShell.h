@@ -200,10 +200,6 @@ class nsDocShell final : public nsDocLoader,
   NS_FORWARD_SAFE_NSIDOMSTORAGEMANAGER(TopSessionStorageManager())
 
   
-  
-  NS_FORWARD_NSISECURITYEVENTSINK(nsDocLoader::)
-
-  
   static already_AddRefed<nsDocShell> Create(
       mozilla::dom::BrowsingContext* aBrowsingContext);
 

@@ -27,7 +27,6 @@
 #include "nsIProgressEventSink.h"
 #include "nsIRadioGroupContainer.h"
 #include "nsIScriptObjectPrincipal.h"
-#include "nsISecurityEventSink.h"
 #include "nsIScriptGlobalObject.h"  
 #include "nsIServiceManager.h"
 #include "nsIURI.h"  
@@ -408,7 +407,6 @@ class ExternalResourceMap {
     DECL_SHIM(nsILoadContext, NSILOADCONTEXT)
     DECL_SHIM(nsIProgressEventSink, NSIPROGRESSEVENTSINK)
     DECL_SHIM(nsIChannelEventSink, NSICHANNELEVENTSINK)
-    DECL_SHIM(nsISecurityEventSink, NSISECURITYEVENTSINK)
     DECL_SHIM(nsIApplicationCacheContainer, NSIAPPLICATIONCACHECONTAINER)
 #undef DECL_SHIM
   };

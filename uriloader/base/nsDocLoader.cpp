@@ -4,7 +4,6 @@
 
 
 #include "nspr.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/Logging.h"
 #include "mozilla/IntegerPrintfMacros.h"
 
@@ -41,7 +40,6 @@
 
 using mozilla::DebugOnly;
 using mozilla::LogLevel;
-using mozilla::dom::Document;
 
 
 
@@ -164,7 +162,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsDocLoader)
   NS_INTERFACE_MAP_ENTRY(nsIProgressEventSink)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
   NS_INTERFACE_MAP_ENTRY(nsIChannelEventSink)
-  NS_INTERFACE_MAP_ENTRY(nsISecurityEventSink)
   NS_INTERFACE_MAP_ENTRY(nsISupportsPriority)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(nsDocLoader)
 NS_INTERFACE_MAP_END
@@ -1344,19 +1341,12 @@ NS_IMETHODIMP nsDocLoader::AsyncOnChannelRedirect(
     }
 
     nsCOMPtr<nsIURI> newURI;
-    nsCOMPtr<nsILoadInfo> info;
     if (delegate) {
       
       aNewChannel->GetURI(getter_AddRefs(newURI));
-      aNewChannel->GetLoadInfo(getter_AddRefs(info));
     }
 
-    RefPtr<Document> loadingDoc;
-    if (info) {
-      info->GetLoadingDocument(getter_AddRefs(loadingDoc));
-    }
-
-    if (newURI && info && !loadingDoc) {
+    if (newURI) {
       const int where = nsIBrowserDOMWindow::OPEN_CURRENTWINDOW;
       bool loadURIHandled = false;
       nsresult rv = delegate->LoadURI(
@@ -1398,12 +1388,7 @@ NS_IMETHODIMP nsDocLoader::AsyncOnChannelRedirect(
   return NS_OK;
 }
 
-
-
-
-
-NS_IMETHODIMP nsDocLoader::OnSecurityChange(nsISupports* aContext,
-                                            uint32_t aState) {
+void nsDocLoader::OnSecurityChange(nsISupports* aContext, uint32_t aState) {
   
   
   
@@ -1418,11 +1403,10 @@ NS_IMETHODIMP nsDocLoader::OnSecurityChange(nsISupports* aContext,
   if (mParent) {
     mParent->OnSecurityChange(aContext, aState);
   }
-  return NS_OK;
 }
 
-NS_IMETHODIMP nsDocLoader::OnContentBlockingEvent(nsISupports* aContext,
-                                                  uint32_t aEvent) {
+void nsDocLoader::OnContentBlockingEvent(nsISupports* aContext,
+                                         uint32_t aEvent) {
   
   
   
@@ -1438,7 +1422,6 @@ NS_IMETHODIMP nsDocLoader::OnContentBlockingEvent(nsISupports* aContext,
   if (mParent) {
     mParent->OnContentBlockingEvent(aContext, aEvent);
   }
-  return NS_OK;
 }
 
 
