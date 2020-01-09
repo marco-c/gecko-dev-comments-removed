@@ -77,11 +77,7 @@ extern const wchar_t* kPropNameTabContent;
 #endif
 
 
-namespace mozilla {
-namespace widget {
 extern UINT sAppShellGeckoMsgId;
-}
-}  
 
 namespace {
 
@@ -390,7 +386,7 @@ ProcessOrDeferMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     default: {
       
       
-      if (uMsg && uMsg == mozilla::widget::sAppShellGeckoMsgId) {
+      if (uMsg && uMsg == sAppShellGeckoMsgId) {
         
         deferred = new DeferredSendMessage(hwnd, uMsg, wParam, lParam);
       }
