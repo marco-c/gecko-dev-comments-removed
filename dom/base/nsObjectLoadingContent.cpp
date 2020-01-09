@@ -1047,7 +1047,6 @@ nsObjectLoadingContent::OnStopRequest(nsIRequest* aRequest,
 
 NS_IMETHODIMP
 nsObjectLoadingContent::OnDataAvailable(nsIRequest* aRequest,
-                                        nsISupports* aContext,
                                         nsIInputStream* aInputStream,
                                         uint64_t aOffset, uint32_t aCount) {
   if (aRequest != mChannel) {
@@ -1057,7 +1056,7 @@ nsObjectLoadingContent::OnDataAvailable(nsIRequest* aRequest,
   if (mFinalListener) {
     
     nsCOMPtr<nsIStreamListener> listenerGrip(mFinalListener);
-    return listenerGrip->OnDataAvailable(aRequest, aContext, aInputStream,
+    return listenerGrip->OnDataAvailable(aRequest, aInputStream,
                                          aOffset, aCount);
   }
 

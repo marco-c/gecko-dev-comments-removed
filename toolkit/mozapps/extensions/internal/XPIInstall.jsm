@@ -1957,7 +1957,7 @@ var DownloadAddonInstall = class extends AddonInstall {
 
 
 
-  onDataAvailable(aRequest, aContext, aInputstream, aOffset, aCount) {
+  onDataAvailable(aRequest, aInputstream, aOffset, aCount) {
     this.crypto.updateFromStream(aInputstream, aCount);
     this.progress += aCount;
     if (!this._callInstallListeners("onDownloadProgress")) {

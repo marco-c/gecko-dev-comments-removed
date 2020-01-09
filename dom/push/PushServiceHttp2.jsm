@@ -61,7 +61,7 @@ PushSubscriptionListener.prototype = {
     
   },
 
-  onDataAvailable: function(aRequest, aContext, aStream, aOffset, aCount) {
+  onDataAvailable: function(aRequest, aStream, aOffset, aCount) {
     console.debug("PushSubscriptionListener: onDataAvailable()");
     
     
@@ -115,7 +115,7 @@ PushChannelListener.prototype = {
     this._ackUri = aRequest.URI.spec;
   },
 
-  onDataAvailable: function(aRequest, aContext, aStream, aOffset, aCount) {
+  onDataAvailable: function(aRequest, aStream, aOffset, aCount) {
     console.debug("PushChannelListener: onDataAvailable()");
 
     if (aCount === 0) {
@@ -171,7 +171,7 @@ PushServiceDelete.prototype = {
 
   onStartRequest: function(aRequest) {},
 
-  onDataAvailable: function(aRequest, aContext, aStream, aOffset, aCount) {
+  onDataAvailable: function(aRequest, aStream, aOffset, aCount) {
     
     
     if (aCount === 0) {
@@ -212,7 +212,7 @@ SubscriptionListener.prototype = {
 
   onStartRequest: function(aRequest) {},
 
-  onDataAvailable: function(aRequest, aContext, aStream, aOffset, aCount) {
+  onDataAvailable: function(aRequest, aStream, aOffset, aCount) {
     console.debug("SubscriptionListener: onDataAvailable()");
 
     
