@@ -2296,7 +2296,7 @@ var SessionStoreInternal = {
     }
   },
 
-  async _doTabProcessSwitch(aBrowser, aRemoteType, aChannel, aSwitchId) {
+  async _doTabProcessSwitch(aBrowser, aRemoteType, aChannel, aSwitchId, aReplaceBrowsingContext) {
     debug(`[process-switch]: performing switch from ${aBrowser.remoteType} to ${aRemoteType}`);
 
     
@@ -2310,6 +2310,10 @@ var SessionStoreInternal = {
 
       
       redirectLoadSwitchId: aSwitchId,
+
+      
+      
+      replaceBrowsingContext: aReplaceBrowsingContext,
     };
 
     await SessionStore.navigateAndRestore(tab, loadArguments, -1);
@@ -2332,7 +2336,7 @@ var SessionStoreInternal = {
 
 
 
-  async _doProcessSwitch(aBrowsingContext, aRemoteType, aChannel, aSwitchId) {
+  async _doProcessSwitch(aBrowsingContext, aRemoteType, aChannel, aSwitchId, aReplaceBrowsingContext) {
     
     
 
@@ -2341,7 +2345,7 @@ var SessionStoreInternal = {
     
     if (aBrowsingContext.embedderElement) {
       return this._doTabProcessSwitch(aBrowsingContext.embedderElement,
-                                      aRemoteType, aChannel, aSwitchId);
+                                      aRemoteType, aChannel, aSwitchId, aReplaceBrowsingContext);
     }
 
     let wg = aBrowsingContext.embedderWindowGlobal;
@@ -2443,13 +2447,17 @@ var SessionStoreInternal = {
       return;
     }
 
+    const isCOOPSwitch = E10SUtils.useCrossOriginOpenerPolicy() &&
+          aChannel.hasCrossOriginOpenerPolicyMismatch();
+
     
     
     
     
     let identifier = ++this._switchIdMonotonic;
     let tabPromise = this._doProcessSwitch(browsingContext, remoteType,
-                                           aChannel, identifier);
+                                           aChannel, identifier,
+                                           isCOOPSwitch);
     aChannel.switchProcessTo(tabPromise, identifier);
   },
 
@@ -3296,6 +3304,7 @@ var SessionStoreInternal = {
       
       newFrameloader: loadArguments.newFrameloader,
       remoteType: loadArguments.remoteType,
+      replaceBrowsingContext: loadArguments.replaceBrowsingContext,
       
       
       restoreContentReason: RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE,
@@ -4258,18 +4267,21 @@ var SessionStoreInternal = {
     this.markTabAsRestoring(aTab);
 
     let newFrameloader = aOptions.newFrameloader;
-
+    let replaceBrowsingContext = aOptions.replaceBrowsingContext;
     let isRemotenessUpdate;
     if (aOptions.remoteType !== undefined) {
       
       isRemotenessUpdate =
         tabbrowser.updateBrowserRemoteness(browser,
                                            { remoteType: aOptions.remoteType,
-                                             newFrameloader });
+                                             newFrameloader,
+                                             replaceBrowsingContext,
+                                           });
     } else {
       isRemotenessUpdate =
         tabbrowser.updateBrowserRemotenessByURL(browser, uri, {
           newFrameloader,
+          replaceBrowsingContext,
         });
     }
 

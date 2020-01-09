@@ -33,12 +33,17 @@ nsFrameLoaderOwner::GetBrowsingContext() {
 void nsFrameLoaderOwner::ChangeRemoteness(
     const mozilla::dom::RemotenessOptions& aOptions, mozilla::ErrorResult& rv) {
   RefPtr<mozilla::dom::BrowsingContext> bc;
+
+  
   
   if (mFrameLoader) {
-    bc = mFrameLoader->GetBrowsingContext();
-
     
-    mFrameLoader->SkipBrowsingContextDetach();
+    
+    
+    if (!aOptions.mReplaceBrowsingContext) {
+      bc = mFrameLoader->GetBrowsingContext();
+      mFrameLoader->SkipBrowsingContextDetach();
+    }
 
     mFrameLoader->Destroy();
     mFrameLoader = nullptr;
