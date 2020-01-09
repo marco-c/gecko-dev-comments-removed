@@ -147,7 +147,7 @@ LoginManager.prototype = {
     }
 
     clearAndGetHistogram("PWMGR_BLOCKLIST_NUM_SITES").add(
-      this.getAllDisabledHosts({}).length
+      this.getAllDisabledHosts().length
     );
     clearAndGetHistogram("PWMGR_NUM_SAVED_PASSWORDS").add(
       this.countLogins("", "", "")
@@ -347,7 +347,7 @@ LoginManager.prototype = {
 
 
 
-  getAllDisabledHosts(count) {
+  getAllDisabledHosts() {
     log.debug("Getting a list of all disabled origins");
 
     let disabledHosts = [];
@@ -356,10 +356,6 @@ LoginManager.prototype = {
         disabledHosts.push(perm.principal.URI.displayPrePath);
       }
     }
-
-    if (count) {
-      count.value = disabledHosts.length;
-    } 
 
     log.debug("getAllDisabledHosts: returning", disabledHosts.length, "disabled hosts.");
     return disabledHosts;
