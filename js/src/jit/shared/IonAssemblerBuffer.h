@@ -141,15 +141,11 @@ class AssemblerBuffer {
   Slice* tail;
 
   bool m_oom;
+  bool m_bail;
 
   
   
   uint32_t bufferSize;
-
-  
-  
-  
-  uint32_t maxSize;
 
   
   Slice* finger;
@@ -162,8 +158,8 @@ class AssemblerBuffer {
       : head(nullptr),
         tail(nullptr),
         m_oom(false),
+        m_bail(false),
         bufferSize(0),
-        maxSize(MaxCodeBytesPerBuffer),
         finger(nullptr),
         finger_offset(0),
         lifoAlloc_(8192) {}
@@ -174,13 +170,9 @@ class AssemblerBuffer {
     return !(size() & (alignment - 1));
   }
 
-  void setUnlimited() {
-    maxSize = MaxCodeBytesPerProcess;
-  }
-
  private:
   Slice* newSlice(LifoAlloc& a) {
-    if (size() > maxSize - sizeof(Slice)) {
+    if (size() > MaxCodeBytesPerProcess - sizeof(Slice)) {
       fail_oom();
       return nullptr;
     }
@@ -289,16 +281,15 @@ class AssemblerBuffer {
   }
   BufferOffset nextOffset() const { return BufferOffset(size()); }
 
-  bool oom() const { return m_oom; }
+  bool oom() const { return m_oom || m_bail; }
+  bool bail() const { return m_bail; }
 
   bool fail_oom() {
     m_oom = true;
-#ifdef DEBUG
-    JitContext* context = MaybeGetJitContext();
-    if (context) {
-      context->setOOM();
-    }
-#endif
+    return false;
+  }
+  bool fail_bail() {
+    m_bail = true;
     return false;
   }
 

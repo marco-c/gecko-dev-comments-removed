@@ -826,7 +826,7 @@ struct AssemblerBufferWithConstantPools
     
     MOZ_ASSERT_IF(numPoolEntries, !canNotPlacePool_);
 
-    if (this->oom()) {
+    if (this->oom() && !this->bail()) {
       return BufferOffset();
     }
 

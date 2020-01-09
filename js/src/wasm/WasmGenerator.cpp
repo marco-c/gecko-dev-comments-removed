@@ -78,7 +78,7 @@ ModuleGenerator::ModuleGenerator(const CompileArgs& args,
       taskState_(mutexid::WasmCompileTaskState),
       lifo_(GENERATOR_LIFO_DEFAULT_CHUNK_SIZE),
       masmAlloc_(&lifo_),
-      masm_(masmAlloc_,  false),
+      masm_(masmAlloc_),
       debugTrapCodeOffset_(),
       lastPatchedCallSite_(0),
       startOfUnpatchedCallsites_(0),
@@ -621,17 +621,6 @@ bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   
   
 
-  if (!InRange(startOfUnpatchedCallsites_,
-               masm_.size() + code.bytes.length())) {
-    startOfUnpatchedCallsites_ = masm_.size();
-    if (!linkCallSites()) {
-      return false;
-    }
-  }
-
-  
-  
-
   masm_.haltingAlign(CodeAlignment);
   const size_t offsetInModule = masm_.size();
   if (!masm_.appendRawCode(code.bytes.begin(), code.bytes.length())) {
@@ -777,6 +766,16 @@ bool ModuleGenerator::locallyCompileCurrentTask() {
 bool ModuleGenerator::finishTask(CompileTask* task) {
   masm_.haltingAlign(CodeAlignment);
 
+  
+  
+  if (!InRange(startOfUnpatchedCallsites_,
+               masm_.size() + task->output.bytes.length())) {
+    startOfUnpatchedCallsites_ = masm_.size();
+    if (!linkCallSites()) {
+      return false;
+    }
+  }
+
   if (!linkCompiledCode(task->output)) {
     return false;
   }
@@ -844,6 +843,21 @@ bool ModuleGenerator::compileFuncDef(uint32_t funcIndex,
   MOZ_ASSERT(!finishedFuncDefs_);
   MOZ_ASSERT(funcIndex < env_->numFuncs());
 
+  if (!currentTask_) {
+    if (freeTasks_.empty() && !finishOutstandingTask()) {
+      return false;
+    }
+    currentTask_ = freeTasks_.popCopy();
+  }
+
+  uint32_t funcBytecodeLength = end - begin;
+
+  FuncCompileInputVector& inputs = currentTask_->inputs;
+  if (!inputs.emplaceBack(funcIndex, lineOrBytecode, begin, end,
+                          std::move(lineNums))) {
+    return false;
+  }
+
   uint32_t threshold;
   switch (tier()) {
     case Tier::Baseline:
@@ -857,36 +871,9 @@ bool ModuleGenerator::compileFuncDef(uint32_t funcIndex,
       break;
   }
 
-  uint32_t funcBytecodeLength = end - begin;
-
-  
-  
-  
-  
-  
-
-  if (currentTask_ && currentTask_->inputs.length() &&
-      batchedBytecode_ + funcBytecodeLength > threshold) {
-    if (!launchBatchCompile()) {
-      return false;
-    }
-  }
-
-  if (!currentTask_) {
-    if (freeTasks_.empty() && !finishOutstandingTask()) {
-      return false;
-    }
-    currentTask_ = freeTasks_.popCopy();
-  }
-
-  if (!currentTask_->inputs.emplaceBack(funcIndex, lineOrBytecode, begin, end,
-                                        std::move(lineNums))) {
-    return false;
-  }
-
   batchedBytecode_ += funcBytecodeLength;
   MOZ_ASSERT(batchedBytecode_ <= MaxCodeSectionBytes);
-  return true;
+  return batchedBytecode_ <= threshold || launchBatchCompile();
 }
 
 bool ModuleGenerator::finishFuncDefs() {

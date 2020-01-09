@@ -409,9 +409,6 @@ class AssemblerX86Shared : public AssemblerShared {
 #endif
   }
 
-  void setUnlimitedBuffer() {
-    
-  }
   bool oom() const {
     return AssemblerShared::oom() || masm.oom() || jumpRelocations_.oom() ||
            dataRelocations_.oom();
