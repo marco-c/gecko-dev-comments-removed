@@ -100,14 +100,19 @@ var Async = {
   },
 
   
-  
-  jankYielder(yieldEvery = 50) {
+
+
+
+
+
+  yieldState(yieldEvery = 50) {
     let iterations = 0;
-    return async () => {
-      Async.checkAppReady(); 
-      if (++iterations % yieldEvery === 0) {
-        await Async.promiseYield();
-      }
+
+    return {
+      shouldYield() {
+        ++iterations;
+        return iterations % yieldEvery === 0;
+      },
     };
   },
 
@@ -123,13 +128,60 @@ var Async = {
 
 
 
-  async* yieldingIterator(iterable, maybeYield = 50) {
-    if (typeof maybeYield == "number") {
-      maybeYield = Async.jankYielder(maybeYield);
+
+
+
+
+
+
+
+  async yieldingForEach(iterable, fn, yieldEvery = 50) {
+    const yieldState = typeof yieldEvery === "number" ? Async.yieldState(yieldEvery) : yieldEvery;
+    let iteration = 0;
+
+    for (const item of iterable) {
+      let result = fn(item, iteration++);
+      if (typeof result !== "undefined" && typeof result.then !== "undefined") {
+        
+        
+        
+        result = await result;
+      }
+
+      if (result === true) {
+        return true;
+      }
+
+      if (yieldState.shouldYield()) {
+        await Async.promiseYield();
+        Async.checkAppReady();
+      }
     }
-    for (let item of iterable) {
-      await maybeYield();
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  async* yieldingIterator(iterable, yieldEvery = 50) {
+    const yieldState = typeof yieldEvery === "number" ? Async.yieldState(yieldEvery) : yieldEvery;
+
+    for (const item of iterable) {
       yield item;
+
+      if (yieldState.shouldYield()) {
+        await Async.promiseYield();
+        Async.checkAppReady();
+      }
     }
   },
 

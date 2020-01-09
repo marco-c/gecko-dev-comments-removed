@@ -127,9 +127,9 @@ const MIRROR_SCHEMA_VERSION = 4;
 const DEFAULT_MAX_FRECENCIES_TO_RECALCULATE = 400;
 
 
-XPCOMUtils.defineLazyGetter(this, "maybeYield", () => Async.jankYielder());
+XPCOMUtils.defineLazyGetter(this, "yieldState", () => Async.yieldState());
 function yieldingIterator(collection) {
-  return Async.yieldingIterator(collection, maybeYield);
+  return Async.yieldingIterator(collection, yieldState);
 }
 
 
