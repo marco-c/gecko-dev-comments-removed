@@ -17,10 +17,13 @@ namespace layers {
 
 
 
+
+
 class TouchCounter {
  public:
   TouchCounter();
   void Update(const MultiTouchInput& aInput);
+  void Update(const WidgetTouchEvent& aEvent);
   uint32_t GetActiveTouchCount() const;
 
  private:
