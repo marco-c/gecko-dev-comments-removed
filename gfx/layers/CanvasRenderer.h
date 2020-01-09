@@ -28,39 +28,30 @@ class CopyableCanvasRenderer;
 class PersistentBufferProvider;
 class WebRenderCanvasRendererAsync;
 
-struct CanvasInitializeData {
-  CanvasInitializeData()
-      : mBufferProvider(nullptr),
-        mGLContext(nullptr),
-        mRenderer(nullptr),
-        mPreTransCallback(nullptr),
-        mPreTransCallbackData(nullptr),
-        mDidTransCallback(nullptr),
-        mDidTransCallbackData(nullptr),
-        mSize(0, 0),
-        mHasAlpha(false),
-        mIsGLAlphaPremult(true) {}
+struct CanvasInitializeData final {
+  CanvasInitializeData();
+  ~CanvasInitializeData();
 
   
-  PersistentBufferProvider*
+  RefPtr<PersistentBufferProvider>
       mBufferProvider;  
-  mozilla::gl::GLContext* mGLContext;  
-  AsyncCanvasRenderer* mRenderer;      
+  RefPtr<mozilla::gl::GLContext> mGLContext;  
+  RefPtr<AsyncCanvasRenderer> mRenderer;      
 
   typedef void (*TransactionCallback)(void* closureData);
-  TransactionCallback mPreTransCallback;
-  void* mPreTransCallbackData;
-  TransactionCallback mDidTransCallback;
-  void* mDidTransCallbackData;
+  TransactionCallback mPreTransCallback = nullptr;
+  void* mPreTransCallbackData = nullptr;
+  TransactionCallback mDidTransCallback = nullptr;
+  void* mDidTransCallbackData = nullptr;
 
   
-  gfx::IntSize mSize;
+  gfx::IntSize mSize = {0,0};
 
   
-  bool mHasAlpha;
+  bool mHasAlpha = false;
 
   
-  bool mIsGLAlphaPremult;
+  bool mIsGLAlphaPremult = true;
 };
 
 
