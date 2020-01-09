@@ -2448,14 +2448,11 @@ static void UpdateThreadFunc(void *param) {
                      gInstallDirPath);
         MARChannelStringTable MARStrings;
         if (ReadMARChannelIDs(updateSettingsPath, &MARStrings) != OK) {
-          
-          
-          
-          MARStrings.MARChannelID[0] = '\0';
+          rv = UPDATE_SETTINGS_FILE_CHANNEL;
+        } else {
+          rv = gArchiveReader.VerifyProductInformation(MARStrings.MARChannelID,
+                                                       MOZ_APP_VERSION);
         }
-
-        rv = gArchiveReader.VerifyProductInformation(MARStrings.MARChannelID,
-                                                     MOZ_APP_VERSION);
       }
     }
 #endif

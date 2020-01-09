@@ -17,8 +17,7 @@ function run_test() {
     return;
   }
   gTestFiles = gTestFilesCompleteSuccess;
-  gTestFiles[gTestFiles.length - 2].originalContents =
-    UPDATE_SETTINGS_CONTENTS.replace("xpcshell-test", "wrong-channel");
+  gTestFiles[gTestFiles.length - 2].originalContents = null;
   gTestDirs = gTestDirsCompleteSuccess;
   setTestFilesAndDirsForFailure();
   setupUpdaterTest(FILE_COMPLETE_MAR, false);
@@ -37,7 +36,7 @@ function setupUpdaterTestFinished() {
 function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
-  checkUpdateLogContains(STATE_FAILED_MAR_CHANNEL_MISMATCH_ERROR);
+  checkUpdateLogContains(STATE_FAILED_UPDATE_SETTINGS_FILE_CHANNEL);
   executeSoon(waitForUpdateXMLFiles);
 }
 
@@ -46,6 +45,6 @@ function stageUpdateFinished() {
 
 function waitForUpdateXMLFilesFinished() {
   checkUpdateManager(STATE_NONE, false, STATE_FAILED,
-                     MAR_CHANNEL_MISMATCH_ERROR, 1);
+                     UPDATE_SETTINGS_FILE_CHANNEL, 1);
   waitForFilesInUse();
 }
