@@ -65,6 +65,7 @@ bool WebRenderCompositionRecorder::MaybeRecordFrame(
     
     
     
+    
 
     return false;
   }
@@ -104,6 +105,17 @@ void WebRenderCompositionRecorder::WriteCollectedFrames() {
   CompositionRecorder::WriteCollectedFrames();
 
   mFinishedRecording = true;
+}
+
+bool WebRenderCompositionRecorder::ForceFinishRecording() {
+  MutexAutoLock guard(mMutex);
+
+  bool wasRecording = !mFinishedRecording;
+  mFinishedRecording = true;
+
+  ClearCollectedFrames();
+
+  return wasRecording;
 }
 
 bool WebRenderCompositionRecorder::DidPaintContent(

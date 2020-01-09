@@ -236,6 +236,28 @@ void RenderThread::SetCompositionRecorderForWindow(
   MOZ_ASSERT(IsInRenderThread());
   MOZ_ASSERT(GetRenderer(aWindowId));
 
+  auto it = mCompositionRecorders.find(aWindowId);
+  if (it != mCompositionRecorders.end() && it->second->ForceFinishRecording()) {
+    
+    
+    
+    
+    
+    
+    
+    if (RendererOGL* renderer = GetRenderer(aWindowID)) {
+      wr_renderer_release_composition_recorder_structures(
+         renderer->GetRenderer());
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+
   mCompositionRecorders[aWindowId] = std::move(aCompositionRecorder);
 }
 
