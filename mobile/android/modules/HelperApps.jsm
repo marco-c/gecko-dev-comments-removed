@@ -20,6 +20,11 @@ XPCOMUtils.defineLazyGetter(this, "ContentAreaUtils", function() {
   return ContentAreaUtils;
 });
 
+const NON_FILE_URI_IGNORED_MIME_TYPES = new Set([
+  "text/html",
+  "application/xhtml+xml",
+]);
+
 var EXPORTED_SYMBOLS = ["App", "HelperApps"];
 
 class App {
@@ -57,7 +62,6 @@ var HelperApps =  {
     return {...httpHandlers, ...httpsHandlers};
   },
 
-  
   
   
   get defaultHtmlHandlers() {
@@ -194,6 +198,20 @@ var HelperApps =  {
     let mimeType = options.mimeType;
     if (uri && mimeType == undefined) {
       mimeType = ContentAreaUtils.getMIMETypeForURI(uri) || "";
+      if (uri.scheme != "file" && NON_FILE_URI_IGNORED_MIME_TYPES.has(mimeType)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        mimeType = "";
+      }
     }
 
     return {
