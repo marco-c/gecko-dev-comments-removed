@@ -2128,30 +2128,23 @@ void nsImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 bool nsImageFrame::ShouldDisplaySelection() {
   int16_t displaySelection = PresShell()->GetSelectionFlags();
-  if (!(displaySelection & nsISelectionDisplay::DISPLAY_IMAGES))
-    return false;  
-                   
+  if (!(displaySelection & nsISelectionDisplay::DISPLAY_IMAGES)) {
+    
+    return false;
+  }
+
+  if (displaySelection != nsISelectionDisplay::DISPLAY_ALL) {
+    return true;
+  }
 
   
   
-  if (displaySelection == nsISelectionDisplay::DISPLAY_ALL) {
-    if (const nsFrameSelection* frameSelection = GetConstFrameSelection()) {
-      const Selection* selection =
-          frameSelection->GetSelection(SelectionType::eNormal);
-      if (selection && selection->RangeCount() == 1) {
-        nsINode* parent = mContent->GetParent();
-        int32_t thisOffset = parent->ComputeIndexOf(mContent);
-        nsRange* range = selection->GetRangeAt(0);
-        if (range->GetStartContainer() == parent &&
-            range->GetEndContainer() == parent &&
-            static_cast<int32_t>(range->StartOffset()) == thisOffset &&
-            static_cast<int32_t>(range->EndOffset()) == thisOffset + 1) {
-          return false;
-        }
-      }
-    }
+  HTMLEditor* htmlEditor = nsContentUtils::GetHTMLEditor(PresContext());
+  if (!htmlEditor) {
+    return true;
   }
-  return true;
+
+  return htmlEditor->GetResizerTarget() != mContent;
 }
 
 nsImageMap* nsImageFrame::GetImageMap() {

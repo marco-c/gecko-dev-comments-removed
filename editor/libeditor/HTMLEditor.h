@@ -268,6 +268,8 @@ class HTMLEditor final : public TextEditor,
   }
   bool IsObjectResizerEnabled() const { return mIsObjectResizingEnabled; }
 
+  Element* GetResizerTarget() const { return mResizedObject; }
+
   
 
 
