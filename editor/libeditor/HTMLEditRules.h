@@ -230,6 +230,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillDeleteSelection(
       nsIEditor::EDirection aAction, nsIEditor::EStripWrappers aStripWrappers,
       bool* aCancel, bool* aHandled);
@@ -374,6 +375,7 @@ class HTMLEditRules : public TextEditRules {
   
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillMakeList(const nsAString* aListType,
                                      bool aEntireList,
                                      const nsAString* aBulletType,
@@ -388,6 +390,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillRemoveList(bool* aCancel, bool* aHandled);
 
   
@@ -397,6 +400,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillIndent(bool* aCancel, bool* aHandled);
 
   
@@ -406,6 +410,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillCSSIndent(bool* aCancel, bool* aHandled);
 
   
@@ -415,6 +420,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillHTMLIndent(bool* aCancel, bool* aHandled);
 
   
@@ -424,6 +430,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillOutdent(bool* aCancel, bool* aHandled);
 
   
@@ -435,6 +442,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult WillAlign(const nsAString& aAlignType, bool* aCancel,
                      bool* aHandled);
 
@@ -473,6 +481,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillMakeDefListItem(const nsAString* aBlockType,
                                             bool aEntireList, bool* aCancel,
                                             bool* aHandled);
@@ -485,6 +494,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillMakeBasicBlock(const nsAString& aBlockType,
                                            bool* aCancel, bool* aHandled);
 
@@ -501,6 +511,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult MakeBasicBlock(nsAtom& aBlockType);
 
   
@@ -519,6 +530,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillAbsolutePosition(bool* aCancel, bool* aHandled);
 
   
@@ -848,6 +860,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ExpandSelectionForDeletion();
 
   
@@ -856,6 +869,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult NormalizeSelection();
 
   
