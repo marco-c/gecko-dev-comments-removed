@@ -16,6 +16,15 @@ fn main() {
 
     
     
+    
+    if minor >= 26 {
+        println!("cargo:rustc-cfg=ops_bound");
+    } else if minor >= 17 && cfg!(feature = "std") {
+        println!("cargo:rustc-cfg=collections_bound");
+    }
+
+    
+    
     if minor >= 20 {
         println!("cargo:rustc-cfg=de_boxed_c_str");
     }
@@ -70,11 +79,6 @@ fn rustc_minor_version() -> Option<u32> {
         Ok(version) => version,
         Err(_) => return None,
     };
-
-    
-    if version.contains("0eb87c9bf") {
-        return Some(25);
-    }
 
     let mut pieces = version.split('.');
     if pieces.next() != Some("rustc 1") {

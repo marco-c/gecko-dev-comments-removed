@@ -75,14 +75,7 @@
 
 
 
-
-
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/serde/1.0.80")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.88")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -97,48 +90,31 @@
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(
-        cast_lossless,
+        
         const_static_lifetime,
-        doc_markdown,
-        linkedlist,
-        needless_pass_by_value,
+        empty_enum,
         redundant_field_names,
+        
+        cast_possible_truncation,
+        cast_possible_wrap,
+        cast_precision_loss,
+        cast_sign_loss,
+        
+        cast_lossless,
+        module_name_repetitions,
+        single_match_else,
         type_complexity,
-        unreadable_literal,
-        zero_prefixed_literal
+        use_self,
+        zero_prefixed_literal,
+        
+        needless_pass_by_value,
+        similar_names,
+        
+        doc_markdown,
     )
 )]
 
-#![cfg_attr(feature = "cargo-clippy", allow(
-
-    cast_possible_truncation,
-    cast_possible_wrap,
-    cast_precision_loss,
-    cast_sign_loss,
-
-    invalid_upcast_comparisons,
-
-    decimal_literal_representation,
-    option_unwrap_used,
-    result_unwrap_used,
-    shadow_reuse,
-    single_match_else,
-    stutter,
-    use_self,
-
-    indexing_slicing,
-    many_single_char_names,
-    missing_docs_in_private_items,
-    similar_names,
-
-    empty_enum,
-    use_debug,
-))]
-
-
-
-
-#![deny(missing_docs, )]
+#![deny(missing_docs, unused_imports)]
 
 
 
@@ -231,6 +207,12 @@ mod lib {
 
     #[cfg(range_inclusive)]
     pub use self::core::ops::RangeInclusive;
+
+    #[cfg(all(feature = "std", collections_bound))]
+    pub use std::collections::Bound;
+
+    #[cfg(ops_bound)]
+    pub use self::core::ops::Bound;
 }
 
 
@@ -256,40 +238,6 @@ pub mod export;
 
 #[doc(hidden)]
 pub mod private;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
