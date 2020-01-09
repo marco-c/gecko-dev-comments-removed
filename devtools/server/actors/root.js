@@ -202,7 +202,7 @@ RootActor.prototype = {
   destroy: function() {
     
     if (this._parameters.tabList) {
-      this._parameters.tabList.onListChanged = null;
+      this._parameters.tabList.destroy();
     }
     if (this._parameters.addonList) {
       this._parameters.addonList.onListChanged = null;
