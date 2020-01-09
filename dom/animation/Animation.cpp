@@ -690,6 +690,15 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   }
 
   
+  MutationClosureData closureData;
+  closureData.mClosure = nsDOMCSSAttributeDeclaration::MutationClosureFunction;
+  closureData.mElement = target->mElement;
+  DeclarationBlockMutationClosure beforeChangeClosure = {
+      nsDOMCSSAttributeDeclaration::MutationClosureFunction,
+      &closureData,
+  };
+
+  
   bool changed = false;
   nsCSSPropertyIDSet properties = keyframeEffect->GetPropertySet();
   for (nsCSSPropertyID property : properties) {
@@ -698,7 +707,7 @@ void Animation::CommitStyles(ErrorResult& aRv) {
             .Consume();
     if (computedValue) {
       changed |= Servo_DeclarationBlock_SetPropertyToAnimationValue(
-          declarationBlock->Raw(), computedValue);
+          declarationBlock->Raw(), computedValue, beforeChangeClosure);
     }
   }
 
@@ -707,11 +716,6 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   }
 
   
-  MutationClosureData closureData;
-  closureData.mClosure = nsDOMCSSAttributeDeclaration::MutationClosureFunction;
-  closureData.mElement = target->mElement;
-
-  target->mElement->InlineStyleDeclarationWillChange(closureData);
   target->mElement->SetInlineStyleDeclaration(*declarationBlock, closureData);
 }
 
