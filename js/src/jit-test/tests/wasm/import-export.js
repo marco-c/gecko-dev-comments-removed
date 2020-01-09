@@ -740,8 +740,8 @@ assertEq(e.call(), 1090);
             (func $test (result i32)
                 (i32.add
                     (i32.add
-                        (i32.add (current_memory) (call $imp1))
-                        (current_memory))
+                        (i32.add (memory.size) (call $imp1))
+                        (memory.size))
                     (call $imp2)))
             (export "impstub" $imp1)
             (export "test" $test))
@@ -757,7 +757,7 @@ assertEq(e.call(), 1090);
         (module
             (import $imp "a" "othertest" (result i32))
             (import "a" "m" (memory 1))
-            (func (result i32) (i32.add (call $imp) (current_memory)))
+            (func (result i32) (i32.add (call $imp) (memory.size)))
             (export "test" 1))
     `;
     g.i1 = i1;

@@ -135,8 +135,8 @@ const WASMPAGE = 65536;
 {
     let text = `(module
 		 (memory (export "memory") 2 4 shared)
-		 (func (export "c") (result i32) current_memory)
-		 (func (export "g") (result i32) (grow_memory (i32.const 1)))
+		 (func (export "c") (result i32) memory.size)
+		 (func (export "g") (result i32) (memory.grow (i32.const 1)))
 		 (func (export "l") (param i32) (result i32) (i32.load (get_local 0)))
 		 (func (export "s") (param i32) (param i32) (i32.store (get_local 0) (get_local 1))))`;
     let mod = new WebAssembly.Module(wasmTextToBinary(text));

@@ -312,7 +312,7 @@ Instance::callImport_anyref(Instance* instance, int32_t funcImportIndex,
 }
 
  uint32_t 
-Instance::growMemory_i32(Instance* instance, uint32_t delta) {
+Instance::memoryGrow_i32(Instance* instance, uint32_t delta) {
   MOZ_ASSERT(!instance->isAsmJS());
 
   JSContext* cx = TlsContext.get();
@@ -328,7 +328,7 @@ Instance::growMemory_i32(Instance* instance, uint32_t delta) {
 }
 
  uint32_t 
-Instance::currentMemory_i32(Instance* instance) {
+Instance::memorySize_i32(Instance* instance) {
   
   
   MOZ_ASSERT(TlsContext.get()->realm() == instance->realm());

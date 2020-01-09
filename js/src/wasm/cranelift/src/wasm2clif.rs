@@ -693,7 +693,7 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
         
         
         let (fnref, sigref) =
-            self.symbolic_funcref(pos.func, bd::SymbolicAddress::GrowMemory, || {
+            self.symbolic_funcref(pos.func, bd::SymbolicAddress::MemoryGrow, || {
                 let mut sig = ir::Signature::new(CallConv::Baldrdash);
                 sig.params.push(ir::AbiParam::new(native_pointer_type()));
                 sig.params.push(ir::AbiParam::new(ir::types::I32).uext());
@@ -729,7 +729,7 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
     ) -> WasmResult<ir::Value> {
         
         let (fnref, sigref) =
-            self.symbolic_funcref(pos.func, bd::SymbolicAddress::CurrentMemory, || {
+            self.symbolic_funcref(pos.func, bd::SymbolicAddress::MemorySize, || {
                 let mut sig = ir::Signature::new(CallConv::Baldrdash);
                 sig.params.push(ir::AbiParam::new(native_pointer_type()));
                 sig.params.push(ir::AbiParam::special(
