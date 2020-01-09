@@ -66,6 +66,13 @@ class BackgroundPage extends HiddenExtensionPage {
       context.listenerPromises = null;
     }
 
+    if (extension.persistentListeners) {
+      
+      
+      
+      EventManager.clearPrimedListeners(extension, !!this.extension);
+    }
+
     extension.emit("startup");
   }
 
@@ -113,10 +120,6 @@ this.backgroundPage = class extends ExtensionAPI {
         return;
       }
       await this.build();
-      
-      
-      
-      EventManager.clearPrimedListeners(extension, !!this.extension);
     });
 
     

@@ -26,6 +26,10 @@ function registerEvent(extension, eventName, fire, filter, info, tabParent = nul
     event.tabId = browserData.tabId;
 
     if (data.registerTraceableChannel) {
+      
+      
+      
+      
       if (fire.wakeup) {
         await fire.wakeup();
       }
