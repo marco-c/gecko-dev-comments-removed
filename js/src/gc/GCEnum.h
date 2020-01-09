@@ -13,12 +13,13 @@
 
 #include <stdint.h>
 
+#include "js/MemoryFunctions.h" 
+
 namespace js {
 namespace gc {
 
 
-
-enum class MarkColor : uint8_t { Gray = 1, Black = 2 };
+enum class MarkColor : uint32_t { Black = 0, Gray };
 
 
 #define GCSTATES(D) \
@@ -88,6 +89,21 @@ enum class ZealMode {
 };
 
 } 
+
+#define JS_FOR_EACH_INTERNAL_MEMORY_USE(_)      \
+  _(ArrayBufferContents)                        \
+  _(StringContents)
+
+#define JS_FOR_EACH_MEMORY_USE(_)               \
+  JS_FOR_EACH_PUBLIC_MEMORY_USE(_)              \
+  JS_FOR_EACH_INTERNAL_MEMORY_USE(_)
+
+enum class MemoryUse : uint8_t {
+#define DEFINE_MEMORY_USE(Name) Name,
+  JS_FOR_EACH_MEMORY_USE(DEFINE_MEMORY_USE)
+#undef DEFINE_MEMORY_USE
+};
+
 } 
 
 #endif 

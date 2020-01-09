@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"  
 
+#include "gc/GCEnum.h"                
 #include "jit/ExecutableAllocator.h"  
 #include "js/AllocPolicy.h"           
 #include "js/MemoryFunctions.h"       
@@ -18,8 +19,6 @@
 struct JSRuntime;
 
 namespace js {
-
-enum class MemoryUse : uint8_t;
 
 
 

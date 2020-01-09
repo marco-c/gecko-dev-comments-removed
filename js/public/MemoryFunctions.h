@@ -16,6 +16,7 @@
 #include "jstypes.h"  
 
 struct JSContext;
+class JSObject;
 struct JSRuntime;
 
 struct JSFreeOp {
