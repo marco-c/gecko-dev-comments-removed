@@ -9,6 +9,8 @@
 #ifndef js_Modules_h
 #define js_Modules_h
 
+#include "mozilla/Utf8.h"  
+
 #include <stdint.h>  
 
 #include "jstypes.h"  
@@ -90,6 +92,14 @@ extern JS_PUBLIC_API bool FinishDynamicModuleImport(
 extern JS_PUBLIC_API JSObject* CompileModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf);
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* CompileModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf);
 
 
 
