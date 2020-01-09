@@ -10,22 +10,19 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 import traceback
+
+from Queue import Queue, Empty
 from datetime import datetime
 
-import six
-import time
-
-if six.PY2:
-    from Queue import Queue, Empty  
-else:
-    from queue import Queue, Empty  
 
 __all__ = ['ProcessHandlerMixin', 'ProcessHandler', 'LogOutput',
            'StoreOutput', 'StreamOutput']
 
 
 MOZPROCESS_DEBUG = os.getenv("MOZPROCESS_DEBUG")
+
 
 INTERVAL_PROCESS_ALIVE_CHECK = 0.02
 
@@ -36,8 +33,8 @@ isPosix = os.name == "posix"
 if isWin:
     from ctypes import sizeof, addressof, c_ulong, byref, WinError, c_longlong
     from . import winprocess
-    from .qijo import JobObjectAssociateCompletionPortInformation, \
-        JOBOBJECT_ASSOCIATE_COMPLETION_PORT, JobObjectExtendedLimitInformation, \
+    from .qijo import JobObjectAssociateCompletionPortInformation,\
+        JOBOBJECT_ASSOCIATE_COMPLETION_PORT, JobObjectExtendedLimitInformation,\
         JOBOBJECT_BASIC_LIMIT_INFORMATION, JOBOBJECT_EXTENDED_LIMIT_INFORMATION, IO_COUNTERS
 
 
@@ -112,7 +109,6 @@ class ProcessHandlerMixin(object):
                 
                 def setpgidfn():
                     os.setpgid(0, 0)
-
                 preexec_fn = setpgidfn
 
             try:
@@ -131,15 +127,14 @@ class ProcessHandlerMixin(object):
             thread = threading.current_thread().name
             print("DBG::MOZPROC PID:{} ({}) | {}".format(self.pid, thread, msg))
 
-        def __del__(self):
+        def __del__(self, _maxint=sys.maxint):
             if isWin:
-                if six.PY2:
-                    _maxint = sys.maxint
-                else:
-                    _maxint = sys.maxsize
                 handle = getattr(self, '_handle', None)
                 if handle:
-                    self._internal_poll(_deadstate=_maxint)
+                    if hasattr(self, '_internal_poll'):
+                        self._internal_poll(_deadstate=_maxint)
+                    else:
+                        self.poll(_deadstate=sys.maxint)
                 if handle or self._job or self._io_port:
                     self._cleanup()
             else:
@@ -235,16 +230,8 @@ class ProcessHandlerMixin(object):
         if isWin:
             
             def _execute_child(self, *args_tuple):
-                if six.PY3:
-                    (args, executable, preexec_fn, close_fds,
-                     pass_fds, cwd, env,
-                     startupinfo, creationflags, shell,
-                     p2cread, p2cwrite,
-                     c2pread, c2pwrite,
-                     errread, errwrite,
-                     restore_signals, start_new_session) = args_tuple
                 
-                elif sys.hexversion < 0x02070600:  
+                if sys.hexversion < 0x02070600:  
                     (args, executable, preexec_fn, close_fds,
                      cwd, env, universal_newlines, startupinfo,
                      creationflags, shell,
@@ -259,7 +246,7 @@ class ProcessHandlerMixin(object):
                      p2cread, p2cwrite,
                      c2pread, c2pwrite,
                      errread, errwrite) = args_tuple
-                if not isinstance(args, six.string_types):
+                if not isinstance(args, basestring):
                     args = subprocess.list2cmdline(args)
 
                 
@@ -356,11 +343,11 @@ class ProcessHandlerMixin(object):
                         iocntr = IO_COUNTERS()
                         jeli = JOBOBJECT_EXTENDED_LIMIT_INFORMATION(
                             jbli,  
-                            iocntr,  
-                            0,  
-                            0,  
-                            0,  
-                            0)  
+                            iocntr,    
+                            0,    
+                            0,    
+                            0,    
+                            0)    
 
                         winprocess.SetInformationJobObject(self._job,
                                                            JobObjectExtendedLimitInformation,
@@ -502,7 +489,7 @@ falling back to not using job objects for managing child processes""", file=sys.
                                 countdowntokill = datetime.now()
                             elif pid.value in self._spawned_procs:
                                 
-                                del (self._spawned_procs[pid.value])
+                                del(self._spawned_procs[pid.value])
                         elif msgid.value == winprocess.JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS:
                             
                             self.debug("process id %s exited abnormally" % pid.value)
@@ -602,7 +589,7 @@ falling back to not using job objects for managing child processes""", file=sys.
                     self._job = None
 
                 if getattr(self, '_io_port', None) and \
-                        self._io_port != winprocess.INVALID_HANDLE_VALUE:
+                   self._io_port != winprocess.INVALID_HANDLE_VALUE:
                     self._io_port.Close()
                     self._io_port = None
                 else:
@@ -721,7 +708,6 @@ falling back to not using job objects for managing child processes""", file=sys.
             self.didOutputTimeout = self.reader.didOutputTimeout
             if kill_on_timeout:
                 self.kill()
-
         onTimeout.insert(0, on_timeout)
 
         self._stderr = subprocess.STDOUT
@@ -1095,7 +1081,7 @@ class StreamOutput(object):
 
     def __call__(self, line):
         try:
-            self.stream.write(line + '\n'.encode('utf8'))
+            self.stream.write(line + '\n')
         except UnicodeDecodeError:
             
             
