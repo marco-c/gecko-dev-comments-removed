@@ -7,8 +7,6 @@ import {
   getHiddenBreakpoint,
   isEvaluatingExpression,
   getSelectedFrame,
-  getSources,
-  getLastCommand,
   wasStepping
 } from "../../selectors";
 
@@ -16,21 +14,13 @@ import { mapFrames } from ".";
 import { removeBreakpoint } from "../breakpoints";
 import { evaluateExpressions } from "../expressions";
 import { selectLocation } from "../sources";
-import { loadSourceText } from "../sources/loadSourceText";
 import { togglePaneCollapse } from "../ui";
-import { command } from "./commands";
-import { shouldStep } from "../../utils/pause";
-
-import { updateFrameLocation } from "./mapFrames";
 
 import { fetchScopes } from "./fetchScopes";
 
-import type { Pause, Frame } from "../../types";
+import type { Pause } from "../../types";
 import type { ThunkArgs } from "../types";
 
-async function getOriginalSourceForFrame(state, frame: Frame) {
-  return getSources(state)[frame.location.sourceId];
-}
 
 
 
@@ -42,24 +32,6 @@ export function paused(pauseInfo: Pause) {
   return async function({ dispatch, getState, client, sourceMaps }: ThunkArgs) {
     const { thread, frames, why, loadedObjects } = pauseInfo;
     const topFrame = frames.length > 0 ? frames[0] : null;
-
-    
-    if (topFrame && !why.frameFinished && why.type == "resumeLimit") {
-      const mappedFrame = await updateFrameLocation(topFrame, sourceMaps);
-      const source = await getOriginalSourceForFrame(getState(), mappedFrame);
-
-      
-      await dispatch(loadSourceText(source));
-
-      if (shouldStep(mappedFrame, getState(), sourceMaps)) {
-        
-        
-        
-        const rewind = getLastCommand(getState(), thread) == "reverseStepOver";
-        dispatch(command(rewind ? "reverseStepOver" : "stepOver"));
-        return;
-      }
-    }
 
     dispatch({
       type: "PAUSED",

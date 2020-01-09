@@ -3,22 +3,24 @@
 
 
 
-
 import { groupBy, sortedUniqBy } from "lodash";
 import { createSelector } from "reselect";
 
-import { getViewport, getSelectedSource } from "../selectors";
+import {
+  getViewport,
+  getSelectedSource,
+  getBreakpointPositions
+} from "../selectors";
 import { getVisibleBreakpoints } from "./visibleBreakpoints";
-import { getVisiblePausePoints } from "./visiblePausePoints";
 import { makeBreakpointId } from "../utils/breakpoint";
-import type { Selector, PausePoint } from "../reducers/types";
+import type { Selector } from "../reducers/types";
 
 import type {
   SourceLocation,
   PartialPosition,
   Breakpoint,
   Range,
-  Source
+  BreakpointPositions
 } from "../types";
 
 export type ColumnBreakpoint = {|
@@ -36,6 +38,10 @@ function contains(location: PartialPosition, range: Range) {
       (location.column >= range.start.column &&
         location.column <= range.end.column))
   );
+}
+
+function inViewport(viewport, location) {
+  return viewport && contains(location, viewport);
 }
 
 function groupBreakpoints(breakpoints) {
@@ -87,12 +93,11 @@ export function formatColumnBreakpoints(columnBreakpoints: ColumnBreakpoints) {
 }
 
 export function getColumnBreakpoints(
-  pausePoints: ?(PausePoint[]),
+  positions: ?BreakpointPositions,
   breakpoints: ?(Breakpoint[]),
-  viewport: Range,
-  selectedSource: ?Source
+  viewport: Range
 ) {
-  if (!pausePoints) {
+  if (!positions) {
     return [];
   }
 
@@ -103,17 +108,10 @@ export function getColumnBreakpoints(
   
   
   
-  
 
-  let columnBreakpoints = pausePoints.filter(
-    ({ types, location }) =>
-      
-      types.break &&
-      
-      breakpointMap[location.line] &&
-      
-      viewport &&
-      contains(location, viewport)
+  let columnBreakpoints = positions.filter(
+    ({ location }) =>
+      breakpointMap[location.line] && inViewport(viewport, location)
   );
 
   
@@ -127,17 +125,22 @@ export function getColumnBreakpoints(
     ({ location: { line } }) => lineCount[line] > 1
   );
 
-  const sourceId = selectedSource && selectedSource.id;
   return (columnBreakpoints: any).map(({ location }) => ({
-    location: { ...location, sourceId },
+    location,
     breakpoint: findBreakpoint(location, breakpointMap)
   }));
 }
 
+const getVisibleBreakpointPositions = createSelector(
+  getSelectedSource,
+  getBreakpointPositions,
+  (source, positions) => source && positions[source.id]
+);
+
 export const visibleColumnBreakpoints: Selector<
   ColumnBreakpoints
 > = createSelector(
-  getVisiblePausePoints,
+  getVisibleBreakpointPositions,
   getVisibleBreakpoints,
   getViewport,
   getSelectedSource,
