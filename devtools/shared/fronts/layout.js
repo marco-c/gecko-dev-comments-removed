@@ -115,6 +115,13 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
   
 
 
+  get isSubgrid() {
+    return !!this._form.isSubgrid;
+  }
+
+  
+
+
 
   get writingMode() {
     if (!this._form.writingMode) {
