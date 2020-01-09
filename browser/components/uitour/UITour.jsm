@@ -87,7 +87,9 @@ var UITour = {
 
         
         let statusButton = aDocument.getElementById("appMenu-fxa-label");
-        return statusButton.icon;
+        return aDocument.getAnonymousElementByAttribute(statusButton,
+                                                        "class",
+                                                        "toolbarbutton-icon");
       },
       
       

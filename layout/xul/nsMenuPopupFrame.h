@@ -257,7 +257,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
-                   bool aSizedToPopup);
+                   nsIFrame* aAnchor, bool aSizedToPopup);
 
   nsView* GetRootViewForPopup(nsIFrame* aStartFrame);
 

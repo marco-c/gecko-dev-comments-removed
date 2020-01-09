@@ -1349,11 +1349,6 @@ var PanelView = class extends AssociatedToNode {
         }
 
         
-        if (element.tagName != "toolbarbutton" && element.closest("toolbarbutton")) {
-          continue;
-        }
-
-        
         element = element.multilineLabel || element;
 
         let bounds = element.getBoundingClientRect();

@@ -124,6 +124,12 @@ class nsMenuFrame final : public nsBoxFrame, public nsIReflowCallback {
   virtual nsIScrollableFrame* GetScrollTargetFrame() override;
 
   
+  
+  
+  
+  nsIContent* GetAnchor();
+
+  
 
 
   void OpenMenu(bool aSelectFirstItem);

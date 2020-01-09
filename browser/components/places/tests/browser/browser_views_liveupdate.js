@@ -289,7 +289,7 @@ function getNodeForToolbarItem(itemGuid, validator) {
       
       
       if (PlacesUtils.nodeIsFolder(child._placesNode)) {
-        var popup = child.menupopup;
+        var popup = child.lastElementChild;
         popup.openPopup();
         var foundNode = findNode(popup);
         popup.hidePopup();
