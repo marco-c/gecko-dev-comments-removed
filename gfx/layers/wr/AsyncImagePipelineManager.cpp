@@ -234,8 +234,7 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
   
   
   
-  bool useWrTextureWrapper = aPipeline->mImageHost->GetAsyncRef() &&
-                             useExternalImage && wrTexture &&
+  bool useWrTextureWrapper = useExternalImage && wrTexture &&
                              wrTexture->SupportsWrNativeTexture();
 
   
@@ -280,13 +279,13 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
     MOZ_ASSERT(canUpdate);
     
     
-    aPipeline->mWrTextureWrapper->UpdateWebRenderTextureHost(wrTexture);
+    aPipeline->mWrTextureWrapper->UpdateWebRenderTextureHost(aMaybeFastTxn, wrTexture);
     
     SetWillGenerateFrame();
   } else {
     if (useWrTextureWrapper) {
       aPipeline->mWrTextureWrapper = new WebRenderTextureHostWrapper(this);
-      aPipeline->mWrTextureWrapper->UpdateWebRenderTextureHost(wrTexture);
+      aPipeline->mWrTextureWrapper->UpdateWebRenderTextureHost(aMaybeFastTxn, wrTexture);
     }
     Range<wr::ImageKey> keys(&aKeys[0], aKeys.Length());
     auto externalImageKey =
