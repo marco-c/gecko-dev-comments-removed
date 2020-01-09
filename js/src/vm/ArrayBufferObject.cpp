@@ -34,7 +34,6 @@
 #include "builtin/Array.h"
 #include "builtin/DataViewObject.h"
 #include "gc/Barrier.h"
-#include "gc/FreeOp.h"
 #include "gc/Memory.h"
 #include "js/ArrayBuffer.h"
 #include "js/Conversions.h"
@@ -52,6 +51,7 @@
 #include "wasm/WasmSignalHandlers.h"
 #include "wasm/WasmTypes.h"
 
+#include "gc/FreeOp-inl.h"
 #include "gc/Marking-inl.h"
 #include "gc/Nursery-inl.h"
 #include "vm/JSAtom-inl.h"
@@ -944,7 +944,8 @@ void ArrayBufferObject::releaseData(FreeOp* fop) {
       
       break;
     case MALLOCED:
-      fop->free_(dataPointer());
+      fop->free_(this, dataPointer(), byteLength(),
+                 MemoryUse::ArrayBufferContents);
       break;
     case NO_DATA:
       
@@ -955,9 +956,12 @@ void ArrayBufferObject::releaseData(FreeOp* fop) {
       break;
     case MAPPED:
       gc::DeallocateMappedContent(dataPointer(), byteLength());
+      RemoveCellMemory(this, associatedBytes(),
+                       MemoryUse::ArrayBufferContents);
       break;
     case WASM:
       WasmArrayRawBuffer::Release(dataPointer());
+      RemoveCellMemory(this, byteLength(), MemoryUse::ArrayBufferContents);
       break;
     case EXTERNAL:
       if (freeInfo()->freeFunc) {
@@ -988,6 +992,16 @@ void ArrayBufferObject::setDataPointer(BufferContents contents) {
 
 uint32_t ArrayBufferObject::byteLength() const {
   return getFixedSlot(BYTE_LENGTH_SLOT).toInt32();
+}
+
+inline size_t ArrayBufferObject::associatedBytes() const {
+  if (bufferKind() == MALLOCED) {
+    return byteLength();
+  } else if (bufferKind() == MAPPED) {
+    return JS_ROUNDUP(byteLength(), js::gc::SystemPageSize());
+  } else {
+    MOZ_CRASH("Unexpected buffer kind");
+  }
 }
 
 void ArrayBufferObject::setByteLength(uint32_t length) {
@@ -1071,10 +1085,14 @@ bool ArrayBufferObject::wasmGrowToSizeInPlace(
   oldBuf->setDataPointer(BufferContents::createNoData());
 
   
+  RemoveCellMemory(oldBuf, oldBuf->byteLength(),
+                   MemoryUse::ArrayBufferContents);
   ArrayBufferObject::detach(cx, oldBuf);
 
   
   newBuf->initialize(newSize, oldContents);
+  AddCellMemory(newBuf, newSize, MemoryUse::ArrayBufferContents);
+
   return true;
 }
 
@@ -1106,6 +1124,9 @@ bool ArrayBufferObject::wasmMovingGrowToSize(
   if (!newRawBuf) {
     return false;
   }
+
+  AddCellMemory(newBuf, newSize, MemoryUse::ArrayBufferContents);
+
   BufferContents contents =
       BufferContents::createWasm(newRawBuf->dataPointer());
   newBuf->initialize(newSize, contents);
@@ -1175,6 +1196,7 @@ ArrayBufferObject* ArrayBufferObject::createForContents(
   
   size_t reservedSlots = JSCLASS_RESERVED_SLOTS(&class_);
 
+  size_t nAllocated = 0;
   size_t nslots = reservedSlots;
   if (contents.kind() == USER_OWNED) {
     
@@ -1187,19 +1209,13 @@ ArrayBufferObject* ArrayBufferObject::createForContents(
     nslots += freeInfoSlots;
   } else {
     
-    size_t nAllocated = nbytes;
+    nAllocated = nbytes;
     if (contents.kind() == MAPPED) {
       nAllocated = JS_ROUNDUP(nbytes, js::gc::SystemPageSize());
     } else {
       MOZ_ASSERT(contents.kind() == MALLOCED,
                  "should have handled all possible callers' kinds");
     }
-
-    
-    
-    
-    
-    cx->updateMallocCounter(nAllocated);
   }
 
   MOZ_ASSERT(!(class_.flags & JSCLASS_HAS_PRIVATE));
@@ -1218,6 +1234,10 @@ ArrayBufferObject* ArrayBufferObject::createForContents(
              "leak in some cases, so it can't be nursery-allocated");
 
   buffer->initialize(nbytes, contents);
+
+  if (contents.kind() == MAPPED || contents.kind() == MALLOCED) {
+    AddCellMemory(buffer, nAllocated, MemoryUse::ArrayBufferContents);
+  }
 
   return buffer;
 }
@@ -1267,6 +1287,7 @@ ArrayBufferObject* ArrayBufferObject::createZeroed(
 
   if (data) {
     buffer->initialize(nbytes, BufferContents::createMalloced(data));
+    AddCellMemory(buffer, nbytes, MemoryUse::ArrayBufferContents);
   } else {
     void* inlineData = buffer->initializeToInlineData(nbytes);
     memset(inlineData, 0, nbytes);
@@ -1302,7 +1323,7 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
   auto contents = BufferContents::createWasm(rawBuffer->dataPointer());
   buffer->setDataPointer(contents);
 
-  cx->updateMallocCounter(initialSize);
+  AddCellMemory(buffer, initialSize, MemoryUse::ArrayBufferContents);
 
   return buffer;
 }
@@ -1315,6 +1336,9 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
     case MALLOCED: {
       uint8_t* stolenData = buffer->dataPointer();
       MOZ_ASSERT(stolenData);
+
+      RemoveCellMemory(buffer, buffer->byteLength(),
+                       MemoryUse::ArrayBufferContents);
 
       
       
@@ -1381,6 +1405,9 @@ ArrayBufferObject::extractStructuredCloneContents(
     case MALLOCED:
     case MAPPED: {
       MOZ_ASSERT(contents);
+
+      RemoveCellMemory(buffer, buffer->associatedBytes(),
+                       MemoryUse::ArrayBufferContents);
 
       
       buffer->setDataPointer(BufferContents::createNoData());
