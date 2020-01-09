@@ -262,6 +262,8 @@ class nsWindow final : public nsBaseWidget {
   virtual MOZ_MUST_USE nsresult BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
                                                 int32_t aHorizontal,
                                                 int32_t aVertical) override;
+  virtual MOZ_MUST_USE nsresult
+  BeginMoveDrag(mozilla::WidgetMouseEvent* aEvent) override;
 
   MozContainer* GetMozContainer() { return mContainer; }
   
@@ -467,7 +469,6 @@ class nsWindow final : public nsBaseWidget {
   GtkWidget* mShell;
   MozContainer* mContainer;
   GdkWindow* mGdkWindow;
-  bool mWindowShouldStartDragging = false;
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate;
 
   uint32_t mHasMappedToplevel : 1, mIsFullyObscured : 1, mRetryPointerGrab : 1;

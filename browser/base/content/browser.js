@@ -1542,6 +1542,12 @@ var gBrowserInit = {
     gNavToolbox.addEventListener("customizationstarting", CustomizationHandler);
     gNavToolbox.addEventListener("customizationending", CustomizationHandler);
 
+    if (AppConstants.platform == "linux") {
+      let { WindowDraggingElement } =
+        ChromeUtils.import("resource://gre/modules/WindowDraggingUtils.jsm", {});
+      new WindowDraggingElement(document.getElementById("titlebar"));
+    }
+
     SessionStore.promiseInitialized.then(() => {
       
       if (window.closed) {
