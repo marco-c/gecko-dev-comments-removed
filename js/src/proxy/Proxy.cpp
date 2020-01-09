@@ -775,7 +775,7 @@ JS_FRIEND_API JSObject* js::NewProxyObject(JSContext* cx,
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   if (proto_ != TaggedProto::LazyProto) {
-    cx->check(proto_); 
+    cx->check(proto_);  
   }
 
   if (options.lazyProto()) {

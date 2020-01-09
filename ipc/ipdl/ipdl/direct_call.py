@@ -575,10 +575,6 @@ VIRTUAL_CALL_CLASSES = set([
     ("PSessionStorageObserver", "parent"),
 
     
-    
-    ("PBrowser", "child"),
-
-    
     ("PGMPContent", "parent"),
     ("PGMPService", "child"),
     ("PGMPService", "parent"),
