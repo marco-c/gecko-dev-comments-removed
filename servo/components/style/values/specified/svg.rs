@@ -6,11 +6,11 @@
 
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::svg as generic;
+use crate::values::specified::AllowQuirks;
 use crate::values::specified::color::Color;
 use crate::values::specified::url::SpecifiedUrl;
 use crate::values::specified::LengthPercentage;
-use crate::values::specified::{NonNegativeLengthPercentage, NonNegativeNumber};
-use crate::values::specified::{Number, Opacity};
+use crate::values::specified::{NonNegativeLengthPercentage, Opacity};
 use crate::values::CustomIdent;
 use cssparser::Parser;
 use std::fmt::{self, Write};
@@ -24,35 +24,52 @@ pub type SVGPaint = generic::SVGPaint<Color, SpecifiedUrl>;
 pub type SVGPaintKind = generic::SVGPaintKind<Color, SpecifiedUrl>;
 
 
-
-pub type SvgLengthPercentageOrNumber =
-    generic::SvgLengthPercentageOrNumber<LengthPercentage, Number>;
+pub type SVGLength = generic::SVGLength<LengthPercentage>;
 
 
-pub type SVGLength = generic::SVGLength<SvgLengthPercentageOrNumber>;
+pub type SVGWidth = generic::SVGLength<NonNegativeLengthPercentage>;
 
-impl From<SvgLengthPercentageOrNumber> for SVGLength {
-    fn from(length: SvgLengthPercentageOrNumber) -> Self {
-        generic::SVGLength::Length(length)
-    }
+
+pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeLengthPercentage>;
+
+
+#[cfg(feature = "gecko")]
+pub fn is_context_value_enabled() -> bool {
+    use crate::gecko_bindings::structs::mozilla;
+    unsafe { mozilla::StaticPrefs_sVarCache_gfx_font_rendering_opentype_svg_enabled }
 }
 
 
+#[cfg(not(feature = "gecko"))]
+pub fn is_context_value_enabled() -> bool {
+    false
+}
 
-pub type NonNegativeSvgLengthPercentageOrNumber =
-    generic::SvgLengthPercentageOrNumber<NonNegativeLengthPercentage, NonNegativeNumber>;
+macro_rules! parse_svg_length {
+    ($ty:ty, $lp:ty) => {
+        impl Parse for $ty {
+            fn parse<'i, 't>(
+                context: &ParserContext,
+                input: &mut Parser<'i, 't>,
+            ) -> Result<Self, ParseError<'i>> {
+                if let Ok(lp) = input.try(|i| {
+                    <$lp>::parse_quirky(context, i, AllowQuirks::Always)
+                }) {
+                    return Ok(generic::SVGLength::LengthPercentage(lp))
+                }
 
-
-pub type SVGWidth = generic::SVGLength<NonNegativeSvgLengthPercentageOrNumber>;
-
-impl From<NonNegativeSvgLengthPercentageOrNumber> for SVGWidth {
-    fn from(length: NonNegativeSvgLengthPercentageOrNumber) -> Self {
-        generic::SVGLength::Length(length)
+                try_match_ident_ignore_ascii_case! { input,
+                    "context-value" if is_context_value_enabled() => {
+                        Ok(generic::SVGLength::ContextValue)
+                    },
+                }
+            }
+        }
     }
 }
 
-
-pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeSvgLengthPercentageOrNumber>;
+parse_svg_length!(SVGLength, LengthPercentage);
+parse_svg_length!(SVGWidth, NonNegativeLengthPercentage);
 
 impl Parse for SVGStrokeDashArray {
     fn parse<'i, 't>(
@@ -61,14 +78,18 @@ impl Parse for SVGStrokeDashArray {
     ) -> Result<Self, ParseError<'i>> {
         if let Ok(values) = input.try(|i| {
             CommaWithSpace::parse(i, |i| {
-                NonNegativeSvgLengthPercentageOrNumber::parse(context, i)
+                NonNegativeLengthPercentage::parse_quirky(
+                    context,
+                    i,
+                    AllowQuirks::Always,
+                )
             })
         }) {
             return Ok(generic::SVGStrokeDashArray::Values(values));
         }
 
         try_match_ident_ignore_ascii_case! { input,
-            "context-value" if generic::is_context_value_enabled(context) => {
+            "context-value" if is_context_value_enabled() => {
                 Ok(generic::SVGStrokeDashArray::ContextValue)
             },
             "none" => Ok(generic::SVGStrokeDashArray::Values(vec![])),

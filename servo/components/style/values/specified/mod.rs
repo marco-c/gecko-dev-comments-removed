@@ -783,15 +783,21 @@ impl ClipRectOrAuto {
 #[derive(Clone, Copy, PartialEq)]
 pub enum AllowQuirks {
     
+    No,
+    
     Yes,
     
-    No,
+    Always,
 }
 
 impl AllowQuirks {
     
     pub fn allowed(self, quirks_mode: QuirksMode) -> bool {
-        self == AllowQuirks::Yes && quirks_mode == QuirksMode::Quirks
+        match self {
+            AllowQuirks::Always => true,
+            AllowQuirks::No => false,
+            AllowQuirks::Yes => quirks_mode == QuirksMode::Quirks,
+        }
     }
 }
 

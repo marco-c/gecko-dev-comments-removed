@@ -321,9 +321,9 @@ class SVGContentUtils {
 
 
 
-
   static float CoordToFloat(dom::SVGElement* aContent,
-                            const nsStyleCoord& aCoord);
+                            const nsStyleCoord& aCoord,
+                            bool aClampNegativeCalc);
   
 
 

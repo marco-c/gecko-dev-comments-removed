@@ -6,8 +6,7 @@
 
 use crate::values::computed::color::Color;
 use crate::values::computed::url::ComputedUrl;
-use crate::values::computed::{LengthPercentage, NonNegativeLengthPercentage};
-use crate::values::computed::{NonNegativeNumber, Number, Opacity};
+use crate::values::computed::{LengthPercentage, NonNegativeLengthPercentage, Opacity};
 use crate::values::generics::svg as generic;
 use crate::values::RGBA;
 use crate::Zero;
@@ -42,57 +41,30 @@ impl SVGPaint {
 }
 
 
-
-pub type SvgLengthPercentageOrNumber =
-    generic::SvgLengthPercentageOrNumber<LengthPercentage, Number>;
-
-
-pub type SVGLength = generic::SVGLength<SvgLengthPercentageOrNumber>;
+pub type SVGLength = generic::SVGLength<LengthPercentage>;
 
 impl SVGLength {
     
     pub fn zero() -> Self {
-        generic::SVGLength::Length(generic::SvgLengthPercentageOrNumber::LengthPercentage(
-            LengthPercentage::zero(),
-        ))
+        generic::SVGLength::LengthPercentage(LengthPercentage::zero())
     }
 }
 
 
-
-pub type NonNegativeSvgLengthPercentageOrNumber =
-    generic::SvgLengthPercentageOrNumber<NonNegativeLengthPercentage, NonNegativeNumber>;
-
-
-
-impl Into<NonNegativeSvgLengthPercentageOrNumber> for SvgLengthPercentageOrNumber {
-    fn into(self) -> NonNegativeSvgLengthPercentageOrNumber {
-        match self {
-            generic::SvgLengthPercentageOrNumber::LengthPercentage(lop) => {
-                generic::SvgLengthPercentageOrNumber::LengthPercentage(lop.into())
-            },
-            generic::SvgLengthPercentageOrNumber::Number(num) => {
-                generic::SvgLengthPercentageOrNumber::Number(num.into())
-            },
-        }
-    }
-}
-
-
-pub type SVGWidth = generic::SVGLength<NonNegativeSvgLengthPercentageOrNumber>;
+pub type SVGWidth = generic::SVGLength<NonNegativeLengthPercentage>;
 
 impl SVGWidth {
     
     pub fn one() -> Self {
         use crate::values::generics::NonNegative;
-        generic::SVGLength::Length(generic::SvgLengthPercentageOrNumber::LengthPercentage(
+        generic::SVGLength::LengthPercentage(
             NonNegative(LengthPercentage::one()),
-        ))
+        )
     }
 }
 
 
-pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeSvgLengthPercentageOrNumber>;
+pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeLengthPercentage>;
 
 impl Default for SVGStrokeDashArray {
     fn default() -> Self {

@@ -697,7 +697,8 @@ void nsSVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     
     
     if (maskUsage.shouldGenerateMaskLayer && maskFrame) {
-      StyleMaskMode maskMode = aFrame->StyleSVGReset()->mMask.mLayers[0].mMaskMode;
+      StyleMaskMode maskMode =
+          aFrame->StyleSVGReset()->mMask.mLayers[0].mMaskMode;
       nsSVGMaskFrame::MaskParams params(&aContext, aFrame, aTransform,
                                         maskUsage.opacity, &maskTransform,
                                         maskMode, aImgParams);
@@ -1541,8 +1542,7 @@ float nsSVGUtils::GetStrokeWidth(nsIFrame* aFrame,
   }
 
   SVGElement* ctx = static_cast<SVGElement*>(content);
-
-  return SVGContentUtils::CoordToFloat(ctx, style->mStrokeWidth);
+  return SVGContentUtils::CoordToFloat(ctx, style->mStrokeWidth, true);
 }
 
 void nsSVGUtils::SetupStrokeGeometry(nsIFrame* aFrame, gfxContext* aContext,
