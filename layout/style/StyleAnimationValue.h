@@ -37,6 +37,10 @@ namespace dom {
 class Element;
 }  
 
+namespace layers {
+class Animatable;
+}  
+
 enum class PseudoStyleType : uint8_t;
 struct PropertyStyleAnimationValuePair;
 
@@ -105,9 +109,13 @@ struct AnimationValue {
   static AnimationValue Opacity(float aOpacity);
   
   static AnimationValue Transform(nsCSSValueSharedList& aList);
-
-  static already_AddRefed<nsCSSValue::Array> AppendTransformFunction(
-      nsCSSKeyword aTransformFunction, nsCSSValueList**& aListTail);
+  
+  
+  
+  
+  
+  static already_AddRefed<RawServoAnimationValue> FromAnimatable(
+      nsCSSPropertyID aProperty, const layers::Animatable& aAnimatable);
 
   RefPtr<RawServoAnimationValue> mServo;
 };
