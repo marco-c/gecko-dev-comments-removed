@@ -283,7 +283,6 @@ class VirtualenvMixin(object):
         if not module and len(requirements) == 1:
             cwd = os.path.dirname(requirements[0])
 
-        quoted_command = subprocess.list2cmdline(command)
         
         
         self.retry(
@@ -293,8 +292,7 @@ class VirtualenvMixin(object):
             good_statuses=(0,),
             error_level=WARNING if optional else FATAL,
             error_message=(
-                'Could not install python package: '
-                + quoted_command + ' failed after %(attempts)d tries!'
+                'Could not install python package: failed all attempts.'
             ),
             args=[command, ],
             kwargs={
