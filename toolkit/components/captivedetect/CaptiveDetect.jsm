@@ -30,6 +30,8 @@ function URLFetcher(url, timeout) {
   
   xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
   
+  xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_DISABLE_TRR;
+  
   
   
   xhr.setRequestHeader("Cache-Control", "no-cache");
