@@ -41,6 +41,12 @@ function run_test() {
   Services.prefs.setBoolPref("services.settings.verify_signature", false);
 
   
+  
+  
+  
+  Services.prefs.setBoolPref("security.remote_settings.intermediates.enabled", false);
+
+  
   BlocklistClients.initialize();
 
   gBlocklistClients = [
