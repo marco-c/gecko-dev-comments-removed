@@ -1410,7 +1410,7 @@ void nsTableFrame::DisplayGenericTablePart(
     
 
     
-    if (aFrame->StyleEffects()->mBoxShadow) {
+    if (!aFrame->StyleEffects()->mBoxShadow.IsEmpty()) {
       aLists.BorderBackground()->AppendNewToTop<nsDisplayBoxShadowOuter>(
           aBuilder, aFrame);
     }
@@ -1483,7 +1483,7 @@ void nsTableFrame::DisplayGenericTablePart(
     
 
     
-    if (aFrame->StyleEffects()->mBoxShadow) {
+    if (!aFrame->StyleEffects()->mBoxShadow.IsEmpty()) {
       aLists.BorderBackground()->AppendNewToTop<nsDisplayBoxShadowInner>(
           aBuilder, aFrame);
     }

@@ -19,9 +19,10 @@
     ToResolvedValue,
     ToShmem,
 )]
-pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
+#[repr(C)]
+pub struct GenericBoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
     
-    pub base: SimpleShadow<Color, SizeLength, BlurShapeLength>,
+    pub base: GenericSimpleShadow<Color, SizeLength, BlurShapeLength>,
     
     pub spread: ShapeLength,
     
@@ -29,6 +30,8 @@ pub struct BoxShadow<Color, SizeLength, BlurShapeLength, ShapeLength> {
     #[css(represents_keyword)]
     pub inset: bool,
 }
+
+pub use self::GenericBoxShadow as BoxShadow;
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
@@ -100,7 +103,8 @@ pub enum Filter<Angle, Factor, Length, DropShadow, Url> {
     ToResolvedValue,
     ToShmem,
 )]
-pub struct SimpleShadow<Color, SizeLength, ShapeLength> {
+#[repr(C)]
+pub struct GenericSimpleShadow<Color, SizeLength, ShapeLength> {
     
     pub color: Color,
     
@@ -110,3 +114,5 @@ pub struct SimpleShadow<Color, SizeLength, ShapeLength> {
     
     pub blur: ShapeLength,
 }
+
+pub use self::GenericSimpleShadow as SimpleShadow;
