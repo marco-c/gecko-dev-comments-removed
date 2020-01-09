@@ -103,6 +103,9 @@ class Promise : public nsISupports, public SupportsWeakPtr<Promise> {
 
   void MaybeRejectWithUndefined();
 
+  void MaybeResolveWithClone(JSContext* aCx, JS::Handle<JS::Value> aValue);
+  void MaybeRejectWithClone(JSContext* aCx, JS::Handle<JS::Value> aValue);
+
   
   
   
