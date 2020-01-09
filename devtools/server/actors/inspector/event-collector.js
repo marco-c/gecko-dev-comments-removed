@@ -9,7 +9,6 @@
 
 const { Cu } = require("chrome");
 const Services = require("Services");
-const makeDebugger = require("devtools/server/actors/utils/make-debugger");
 const {
   isAfterPseudoElement,
   isBeforePseudoElement,
@@ -198,6 +197,18 @@ class MainEventCollector {
 
 
 
+  get chromeEnabled() {
+    if (typeof this._chromeEnabled === "undefined") {
+      this._chromeEnabled = Services.prefs.getBoolPref("devtools.chrome.enabled");
+    }
+
+    return this._chromeEnabled;
+  }
+
+  
+
+
+
 
 
 
@@ -265,6 +276,16 @@ class MainEventCollector {
   unwrap(obj) {
     return Cu.isXrayWrapper(obj) ? obj.wrappedJSObject : obj;
   }
+
+  isChromeHandler(handler) {
+    const handlerPrincipal = Cu.getObjectPrincipal(handler);
+
+    
+    
+    
+    
+    return handlerPrincipal.isSystemPrincipal || handlerPrincipal.isExpandedPrincipal;
+  }
 }
 
 
@@ -315,6 +336,12 @@ class DOMEventCollector extends MainEventCollector {
 
       
       if (!handler) {
+        continue;
+      }
+
+      
+      
+      if (!this.chromeEnabled && this.isChromeHandler(handler)) {
         continue;
       }
 
@@ -390,13 +417,20 @@ class JQueryEventCollector extends MainEventCollector {
           }
 
           if (typeof event === "function" || typeof event === "object") {
+            
+            
+            const handler = event.handler || event;
+            if (!this.chromeEnabled && this.isChromeHandler(handler)) {
+              continue;
+            }
+
             if (checkOnly) {
               return true;
             }
 
             const eventInfo = {
               type: type,
-              handler: event.handler || event,
+              handler: handler,
               tags: "jQuery",
               hide: {
                 capturing: true,
@@ -470,12 +504,19 @@ class JQueryLiveEventCollector extends MainEventCollector {
             }
 
             if (typeof event === "function" || typeof event === "object") {
+              
+              
+              const handler = event.handler || event;
+              if (!this.chromeEnabled && this.isChromeHandler(handler)) {
+                continue;
+              }
+
               if (checkOnly) {
                 return true;
               }
               const eventInfo = {
                 type: event.origType || event.type.substr(selector.length + 1),
-                handler: event.handler || event,
+                handler: handler,
                 tags: "jQuery,Live",
                 hide: {
                   dom0: true,
@@ -577,6 +618,10 @@ class ReactEventCollector extends MainEventCollector {
             continue;
           }
 
+          if (!this.chromeEnabled && this.isChromeHandler(listener)) {
+            continue;
+          }
+
           if (checkOnly) {
             return true;
           }
@@ -671,12 +716,6 @@ class EventCollector {
       new JQueryEventCollector(),
       new DOMEventCollector(),
     ];
-
-    
-    this.makeDebuggerForContent = makeDebugger.bind(null, {
-      findDebuggees: dbg => [],
-      shouldAddNewGlobalAsDebuggee: global => true,
-    });
   }
 
   
@@ -684,7 +723,6 @@ class EventCollector {
 
   destroy() {
     this.eventCollectors = null;
-    this.makeDebuggerForContent = null;
   }
 
   
@@ -701,6 +739,7 @@ class EventCollector {
         return true;
       }
     }
+
     return false;
   }
 
@@ -723,9 +762,7 @@ class EventCollector {
 
   getEventListeners(node) {
     const listenerArray = [];
-    const dbg = this.makeDebuggerForContent();
-    const global = Cu.getGlobalForObject(node);
-    const globalDO = dbg.addDebuggee(global);
+    const dbg = new Debugger();
 
     for (const collector of this.eventCollectors) {
       const listeners = collector.getListeners(node);
@@ -738,11 +775,9 @@ class EventCollector {
         if (collector.normalizeListener) {
           listener.normalizeListener = collector.normalizeListener;
         }
-        this.processHandlerForEvent(listenerArray, listener, globalDO);
+        this.processHandlerForEvent(listenerArray, listener, dbg);
       }
     }
-
-    dbg.removeDebuggee(globalDO);
 
     listenerArray.sort((a, b) => {
       return a.type.localeCompare(b.type);
@@ -776,128 +811,143 @@ class EventCollector {
 
 
 
-  processHandlerForEvent(listenerArray, listener, globalDO) {
-    const { capturing, handler } = listener;
-    let listenerDO = globalDO.makeDebuggeeValue(handler);
 
-    const { normalizeListener } = listener;
+  processHandlerForEvent(listenerArray, listener, dbg) {
+    let globalDO;
 
-    if (normalizeListener) {
-      listenerDO = normalizeListener(listenerDO, listener);
-    }
+    try {
+      const { capturing, handler } = listener;
+      const global = Cu.getGlobalForObject(handler);
 
-    const hide = listener.hide || {};
-    const override = listener.override || {};
-    const tags = listener.tags || "";
-    const type = listener.type || "";
-    let dom0 = false;
-    let functionSource = handler.toString();
-    let line = 0;
-    let native = false;
-    let url = "";
+      
+      
+      
+      globalDO = dbg.addDebuggee(global);
+      let listenerDO = globalDO.makeDebuggeeValue(handler);
 
-    
-    if (listenerDO.class === "Object" || /^XUL\w*Element$/.test(listenerDO.class)) {
-      let desc;
+      const { normalizeListener } = listener;
 
-      while (!desc && listenerDO) {
-        desc = listenerDO.getOwnPropertyDescriptor("handleEvent");
-        listenerDO = listenerDO.proto;
+      if (normalizeListener) {
+        listenerDO = normalizeListener(listenerDO, listener);
       }
 
-      if (desc && desc.value) {
-        listenerDO = desc.value;
-      }
-    }
-
-    
-    
-    if (listenerDO.isBoundFunction) {
-      listenerDO = listenerDO.boundTargetFunction;
-    }
-
-    const { isArrowFunction, name, script, parameterNames } = listenerDO;
-
-    if (script) {
-      const scriptSource = script.source.text;
+      const hide = listener.hide || {};
+      const override = listener.override || {};
+      const tags = listener.tags || "";
+      const type = listener.type || "";
+      let dom0 = false;
+      let functionSource = handler.toString();
+      let line = 0;
+      let native = false;
+      let url = "";
 
       
-      
-      if (script.source.element) {
-        dom0 = script.source.element.class !== "HTMLScriptElement";
-      } else {
-        dom0 = false;
-      }
+      if (listenerDO.class === "Object" || /^XUL\w*Element$/.test(listenerDO.class)) {
+        let desc;
 
-      line = script.startLine;
-      url = script.url;
+        while (!desc && listenerDO) {
+          desc = listenerDO.getOwnPropertyDescriptor("handleEvent");
+          listenerDO = listenerDO.proto;
+        }
 
-      
-      
-      
-      if (functionSource === "[object Object]" ||
-          functionSource === "[object XULElement]" ||
-          functionSource.includes("[native code]")) {
-        functionSource =
-          scriptSource.substr(script.sourceStart, script.sourceLength);
-
-        
-        
-        
-        if (!isArrowFunction) {
-          functionSource = "function " + functionSource;
+        if (desc && desc.value) {
+          listenerDO = desc.value;
         }
       }
-    } else {
+
+      
+      
+      if (listenerDO.isBoundFunction) {
+        listenerDO = listenerDO.boundTargetFunction;
+      }
+
+      const { isArrowFunction, name, script, parameterNames } = listenerDO;
+
+      if (script) {
+        const scriptSource = script.source.text;
+
+        
+        
+        if (script.source.element) {
+          dom0 = script.source.element.class !== "HTMLScriptElement";
+        } else {
+          dom0 = false;
+        }
+
+        line = script.startLine;
+        url = script.url;
+
+        
+        
+        
+        if (functionSource === "[object Object]" ||
+            functionSource === "[object XULElement]" ||
+            functionSource.includes("[native code]")) {
+          functionSource =
+            scriptSource.substr(script.sourceStart, script.sourceLength);
+
+          
+          
+          
+          if (!isArrowFunction) {
+            functionSource = "function " + functionSource;
+          }
+        }
+      } else {
+        
+        
+        
+        native = true;
+      }
+
       
       
       
-      native = true;
-    }
+      if (parameterNames && parameterNames.length > 0) {
+        const prefix = "function " + name + "()";
+        const paramString = parameterNames.join(", ");
 
-    
-    
-    
-    if (parameterNames && parameterNames.length > 0) {
-      const prefix = "function " + name + "()";
-      const paramString = parameterNames.join(", ");
+        if (functionSource.startsWith(prefix)) {
+          functionSource = functionSource.substr(prefix.length);
 
-      if (functionSource.startsWith(prefix)) {
-        functionSource = functionSource.substr(prefix.length);
+          functionSource = `function ${name} (${paramString})${functionSource}`;
+        }
+      }
 
-        functionSource = `function ${name} (${paramString})${functionSource}`;
+      
+      
+      let origin;
+      if (native) {
+        origin = "[native code]";
+      } else {
+        origin = url + ((dom0 || line === 0) ? "" : ":" + line);
+      }
+
+      const eventObj = {
+        type: override.type || type,
+        handler: override.handler || functionSource.trim(),
+        origin: override.origin || origin,
+        tags: override.tags || tags,
+        DOM0: typeof override.dom0 !== "undefined" ? override.dom0 : dom0,
+        capturing: typeof override.capturing !== "undefined" ?
+                          override.capturing : capturing,
+        hide: typeof override.hide !== "undefined" ? override.hide : hide,
+        native,
+      };
+
+      
+      
+      
+      if (native || dom0) {
+        eventObj.hide.debugger = true;
+      }
+      listenerArray.push(eventObj);
+    } finally {
+      
+      if (globalDO) {
+        dbg.removeDebuggee(globalDO);
       }
     }
-
-    
-    
-    let origin;
-    if (native) {
-      origin = "[native code]";
-    } else {
-      origin = url + ((dom0 || line === 0) ? "" : ":" + line);
-    }
-
-    const eventObj = {
-      type: override.type || type,
-      handler: override.handler || functionSource.trim(),
-      origin: override.origin || origin,
-      tags: override.tags || tags,
-      DOM0: typeof override.dom0 !== "undefined" ? override.dom0 : dom0,
-      capturing: typeof override.capturing !== "undefined" ?
-                        override.capturing : capturing,
-      hide: typeof override.hide !== "undefined" ? override.hide : hide,
-      native,
-    };
-
-    
-    
-    
-    if (native || dom0) {
-      eventObj.hide.debugger = true;
-    }
-
-    listenerArray.push(eventObj);
   }
 }
 

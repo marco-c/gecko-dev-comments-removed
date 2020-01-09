@@ -289,7 +289,10 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
   get _hasEventListeners() {
-    return this._eventCollector.hasEventListeners(this.rawNode);
+    
+    
+    const dbg = this.parent().targetActor.makeDebugger();
+    return this._eventCollector.hasEventListeners(this.rawNode, dbg);
   },
 
   writeAttrs: function() {
