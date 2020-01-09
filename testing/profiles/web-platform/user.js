@@ -34,3 +34,6 @@ user_pref("browser.safebrowsing.malware.enabled", false);
 user_pref("browser.safebrowsing.phishing.enabled", false);
 
 user_pref("dom.disable_beforeunload", true);
+
+
+user_pref("media.block-autoplay-until-in-foreground", false);
