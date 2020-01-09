@@ -20,11 +20,13 @@ const PREF_APP_UPDATE_ELEVATE_NEVER    = "app.update.elevate.never";
 var gAppUpdater;
 
 function onUnload(aEvent) {
-  if (gAppUpdater.isChecking)
-    gAppUpdater.checker.stopCurrentCheck();
-  
-  gAppUpdater.removeDownloadListener();
-  gAppUpdater = null;
+  if (gAppUpdater) {
+    if (gAppUpdater.isChecking)
+      gAppUpdater.checker.stopCurrentCheck();
+    
+    gAppUpdater.removeDownloadListener();
+    gAppUpdater = null;
+  }
 }
 
 
