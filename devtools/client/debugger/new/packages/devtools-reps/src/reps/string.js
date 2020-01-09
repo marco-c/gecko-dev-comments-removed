@@ -33,7 +33,8 @@ StringRep.propTypes = {
   object: PropTypes.object.isRequired,
   openLink: PropTypes.func,
   className: PropTypes.string,
-  title: PropTypes.string
+  title: PropTypes.string,
+  isInContentPage: PropTypes.bool
 };
 
 function StringRep(props) {
@@ -46,7 +47,8 @@ function StringRep(props) {
     escapeWhitespace = true,
     member,
     openLink,
-    title
+    title,
+    isInContentPage
   } = props;
 
   let text = object;
@@ -89,7 +91,12 @@ function StringRep(props) {
     if (containsURL(text)) {
       return span(
         config,
-        ...getLinkifiedElements(text, shouldCrop && cropLimit, openLink)
+        ...getLinkifiedElements(
+          text,
+          shouldCrop && cropLimit,
+          openLink,
+          isInContentPage
+        )
       );
     }
 
@@ -170,7 +177,9 @@ function maybeCropString(opts, text) {
 
 
 
-function getLinkifiedElements(text, cropLimit, openLink) {
+
+
+function getLinkifiedElements(text, cropLimit, openLink, isInContentPage) {
   const halfLimit = Math.ceil((cropLimit - ELLIPSIS.length) / 2);
   const startCropIndex = cropLimit ? halfLimit : null;
   const endCropIndex = cropLimit ? text.length - halfLimit : null;
@@ -210,6 +219,11 @@ function getLinkifiedElements(text, cropLimit, openLink) {
               className: "url",
               title: token,
               draggable: false,
+              
+              
+              
+              
+              href: openLink || isInContentPage ? token : null,
               onClick: openLink
                 ? e => {
                     e.preventDefault();
