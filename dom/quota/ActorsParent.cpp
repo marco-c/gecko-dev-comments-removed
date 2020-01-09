@@ -8,6 +8,7 @@
 
 #include "mozIStorageConnection.h"
 #include "mozIStorageService.h"
+#include "mozIThirdPartyUtil.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "nsIFile.h"
@@ -43,6 +44,7 @@
 #include "mozilla/dom/StorageDBUpdater.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
+#include "mozilla/net/MozURL.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
@@ -118,6 +120,7 @@ namespace dom {
 namespace quota {
 
 using namespace mozilla::ipc;
+using mozilla::net::MozURL;
 
 
 
@@ -5351,6 +5354,107 @@ void QuotaManager::GetStorageId(PersistenceType aPersistenceType,
   str.AppendInt(aClientType);
 
   aDatabaseId = str;
+}
+
+
+bool QuotaManager::IsPrincipalInfoValid(const PrincipalInfo& aPrincipalInfo) {
+  switch (aPrincipalInfo.type()) {
+    
+    case PrincipalInfo::TSystemPrincipalInfo: {
+      return true;
+    }
+
+    
+    
+    case PrincipalInfo::TContentPrincipalInfo: {
+      const ContentPrincipalInfo& info =
+          aPrincipalInfo.get_ContentPrincipalInfo();
+
+      
+      RefPtr<MozURL> specURL;
+      nsresult rv = MozURL::Init(getter_AddRefs(specURL), info.spec());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return false;
+      }
+
+      nsDependentCSubstring scheme = specURL->Scheme();
+
+      
+      RefPtr<MozURL> originNoSuffixURL;
+      rv = MozURL::Init(getter_AddRefs(originNoSuffixURL),
+                        info.originNoSuffix());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return false;
+      }
+
+      
+      
+      if (!scheme.EqualsLiteral("file") &&
+          !scheme.EqualsLiteral("indexeddb") &&
+          !scheme.EqualsLiteral("moz-extension") &&
+          !scheme.EqualsLiteral("moz-safe-about") &&
+          !scheme.EqualsLiteral("resource")) {
+        nsCString originNoSuffix;
+        specURL->Origin(originNoSuffix);
+
+        if (NS_WARN_IF(info.originNoSuffix() != originNoSuffix)) {
+          return false;
+        }
+      }
+
+      if (NS_WARN_IF(info.originNoSuffix().EqualsLiteral(kChromeOrigin))) {
+        return false;
+      }
+
+      
+      if (NS_WARN_IF(info.baseDomain().IsVoid())) {
+        return false;
+      }
+
+      
+      nsCString baseDomainForParsing;
+      if (!scheme.EqualsLiteral("indexeddb") &&
+          !scheme.EqualsLiteral("moz-safe-about")) {
+        baseDomainForParsing = scheme + NS_LITERAL_CSTRING("://");
+      }
+      baseDomainForParsing.Append(info.baseDomain());
+
+      RefPtr<MozURL> baseDomainURL;
+      rv = MozURL::Init(getter_AddRefs(baseDomainURL), baseDomainForParsing);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return false;
+      }
+
+      
+      
+      
+      if (!scheme.EqualsLiteral("file") &&
+          !scheme.EqualsLiteral("indexeddb") &&
+          !scheme.EqualsLiteral("moz-safe-about")) {
+        nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+            do_GetService(THIRDPARTYUTIL_CONTRACTID);
+
+        nsCString baseDomain;
+        rv = thirdPartyUtil->GetBaseDomainFromSchemeHost(specURL->Scheme(),
+                                                         specURL->Host(),
+                                                         baseDomain);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return false;
+        }
+
+        if (NS_WARN_IF(info.baseDomain() != baseDomain)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    default: { break; }
+  }
+
+  
+  return false;
 }
 
 
