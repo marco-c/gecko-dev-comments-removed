@@ -52,9 +52,11 @@ static ShCompileOptions ChooseValidatorCompileOptions(
     options |= SH_REGENERATE_STRUCT_NAMES;
     options |= SH_INIT_OUTPUT_VARIABLES;
 
-    
     if (gl->Vendor() == gl::GLVendor::Intel) {
+      
       options |= SH_ADD_AND_TRUE_TO_LOOP_CONDITION;
+
+      options |= SH_REWRITE_TEXELFETCHOFFSET_TO_TEXELFETCH;
     }
 #endif
 
