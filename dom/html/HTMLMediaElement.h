@@ -1315,7 +1315,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  Maybe<GraphTime> mSrcStreamPausedGraphTime;
+  GraphTime mSrcStreamPausedGraphTime = GRAPH_TIME_MAX;
 
   
   

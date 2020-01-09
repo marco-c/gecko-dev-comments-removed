@@ -81,6 +81,7 @@ void TrackUnionStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
   inputs.AppendElements(mSuspendedInputs);
 
   bool allFinished = !inputs.IsEmpty();
+  bool allHaveCurrentData = !inputs.IsEmpty();
   for (uint32_t i = 0; i < inputs.Length(); ++i) {
     MediaStream* stream = inputs[i]->GetSource();
     if (!stream->IsFinishedOnGraphThread()) {
@@ -88,6 +89,9 @@ void TrackUnionStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
       
       
       allFinished = false;
+    }
+    if (!stream->HasCurrentData()) {
+      allHaveCurrentData = false;
     }
     for (StreamTracks::TrackIter tracks(stream->GetStreamTracks());
          !tracks.IsEnded(); tracks.Next()) {
@@ -139,6 +143,10 @@ void TrackUnionStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
     
     
     FinishOnGraphThread();
+  }
+  if (allHaveCurrentData) {
+    
+    mHasCurrentData = true;
   }
 }
 

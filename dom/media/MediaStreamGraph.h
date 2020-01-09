@@ -490,6 +490,8 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   bool IsFinishedOnGraphThread() const { return mFinished; }
   virtual void FinishOnGraphThread();
 
+  bool HasCurrentData() const { return mHasCurrentData; }
+
   
 
 
@@ -608,6 +610,13 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
 
 
   bool mNotifiedFinished;
+  
+
+
+
+
+
+  bool mHasCurrentData;
 
   
   StreamTime mMainThreadCurrentTime;

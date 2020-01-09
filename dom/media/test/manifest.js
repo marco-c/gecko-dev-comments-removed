@@ -200,7 +200,7 @@ var gPlayTests = [
   
   { name:"bug482461-theora.ogv", type:"video/ogg", duration:4.138 },
   
-  { name:"bug500311.ogv", type:"video/ogg", duration:1.96, contentDuration:1.958 },
+  { name:"bug500311.ogv", type:"video/ogg", duration:1.96 },
   
   { name:"small-shot.ogg", type:"audio/ogg", duration:0.276 },
   
@@ -210,7 +210,7 @@ var gPlayTests = [
   
   { name:"bug516323.ogv", type:"video/ogg", duration:4.208 },
   
-  { name:"bug556821.ogv", type:"video/ogg", duration:2.936, contentDuration:2.903 },
+  { name:"bug556821.ogv", type:"video/ogg", duration:2.936 },
 
   
   { name:"beta-phrasebook.ogg", type:"audio/ogg", duration:4.01 },
@@ -220,21 +220,21 @@ var gPlayTests = [
   { name:"bug520500.ogg", type:"audio/ogg", duration:0.123 },
 
   
-  { name:"bug499519.ogv", type:"video/ogg", duration:0.24, contentDuration:0.22 },
+  { name:"bug499519.ogv", type:"video/ogg", duration:0.24 },
   { name:"bug506094.ogv", type:"video/ogg", duration:0 },
   { name:"bug498855-1.ogv", type:"video/ogg", duration:0.24 },
   { name:"bug498855-2.ogv", type:"video/ogg", duration:0.24 },
   { name:"bug498855-3.ogv", type:"video/ogg", duration:0.24 },
-  { name:"bug504644.ogv", type:"video/ogg", duration:1.6, contentDuration:1.52 },
-  { name:"chain.ogv", type:"video/ogg", duration:Number.NaN, contentDuration:0.266 },
-  { name:"bug523816.ogv", type:"video/ogg", duration:0.766, contentDuration:0 },
+  { name:"bug504644.ogv", type:"video/ogg", duration:1.6 },
+  { name:"chain.ogv", type:"video/ogg", duration:Number.NaN },
+  { name:"bug523816.ogv", type:"video/ogg", duration:0.766 },
   { name:"bug495129.ogv", type:"video/ogg", duration:2.41 },
-  { name:"bug498380.ogv", type:"video/ogg", duration:0.7663, contentDuration:0 },
+  { name:"bug498380.ogv", type:"video/ogg", duration:0.7663 },
   { name:"bug495794.ogg", type:"audio/ogg", duration:0.3 },
   { name:"bug557094.ogv", type:"video/ogg", duration:0.24 },
   { name:"multiple-bos.ogg", type:"video/ogg", duration:0.431 },
-  { name:"audio-overhang.ogg", type:"video/ogg", duration:2.3 },
-  { name:"video-overhang.ogg", type:"video/ogg", duration:3.966 },
+  { name:"audio-overhang.ogg", type:"audio/ogg", duration:2.3 },
+  { name:"video-overhang.ogg", type:"audio/ogg", duration:3.966 },
 
   
   { name:"audio-gaps.ogg", type:"audio/ogg", duration:2.208 },
@@ -261,11 +261,11 @@ var gPlayTests = [
   { name:"spacestorm-1000Hz-100ms.ogg", type:"audio/ogg", duration:0.099 },
 
   
-  { name:"detodos-short.opus", type:"audio/ogg; codecs=opus", duration:0.22, contentDuration:0.2135 },
+  { name:"detodos-short.opus", type:"audio/ogg; codecs=opus", duration:0.22 },
   
-  { name:"detodos-short.webm", type:"audio/webm; codecs=opus", duration:0.26, contentDuration:0.2535 },
+  { name:"detodos-short.webm", type:"audio/webm; codecs=opus", duration:0.26 },
   
-  { name:"opus-mapping2.webm", type:"audio/webm; codecs=opus", duration:10.01, contentDuration:9.99 },
+  { name:"opus-mapping2.webm", type:"audio/webm; codecs=opus", duration:10.01 },
   { name:"bug1066943.webm", type:"audio/webm; codecs=opus", duration:1.383 },
 
   
@@ -286,7 +286,7 @@ var gPlayTests = [
   
   { name:"ambisonics.mp4", type:"audio/mp4", duration:16.48 },
   
-  { name:"opus-sample.mp4", type:"audio/mp4; codecs=opus", duration:10.92, contentDuration:10.09 },
+  { name:"opus-sample.mp4", type:"audio/mp4; codecs=opus", duration:10.92 },
   
   { name:"opus-mapping2.mp4", type:"audio/mp4; codecs=opus", duration:10.0 },
 
@@ -308,13 +308,13 @@ var gPlayTests = [
   
   
   
-  { name:"vbr-head.mp3", type:"audio/mpeg", duration:10.00, contentDuration:1.019 },
+  { name:"vbr-head.mp3", type:"audio/mpeg", duration:10.00 },
 
   
   
   { name:"flac-noheader-s16.flac", type:"audio/flac", duration:4.0 },
   { name:"flac-s24.flac", type:"audio/flac", duration:4.04 },
-  { name:"flac-sample.mp4", type:"audio/mp4; codecs=flac", duration:4.95, contentDuration:5.03 },
+  { name:"flac-sample.mp4", type:"audio/mp4; codecs=flac", duration:4.95 },
   
   { name:"A4.ogv", type:"video/ogg", width:320, height:240, duration:3.13 },
 
@@ -354,7 +354,7 @@ var gSeekToNextFrameTests = [
 
   { name:"bug523816.ogv", type:"video/ogg", duration:0.766 },
 
-  { name:"bug498380.ogv", type:"video/ogg", duration:0.2 },
+  { name:"bug498380.ogv", type:"video/ogg", duration:0.766 },
   { name:"bug557094.ogv", type:"video/ogg", duration:0.24 },
   { name:"multiple-bos.ogg", type:"video/ogg", duration:0.431 },
   
