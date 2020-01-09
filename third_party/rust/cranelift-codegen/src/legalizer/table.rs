@@ -3,12 +3,12 @@
 
 
 
-use cursor::{Cursor, FuncCursor};
-use flowgraph::ControlFlowGraph;
-use ir::condcodes::IntCC;
-use ir::immediates::Offset32;
-use ir::{self, InstBuilder};
-use isa::TargetIsa;
+use crate::cursor::{Cursor, FuncCursor};
+use crate::flowgraph::ControlFlowGraph;
+use crate::ir::condcodes::IntCC;
+use crate::ir::immediates::Offset32;
+use crate::ir::{self, InstBuilder};
+use crate::isa::TargetIsa;
 
 
 pub fn expand_table_addr(

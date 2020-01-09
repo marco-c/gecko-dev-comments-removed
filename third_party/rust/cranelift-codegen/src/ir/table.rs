@@ -1,8 +1,8 @@
 
 
-use ir::immediates::Uimm64;
-use ir::{GlobalValue, Type};
-use std::fmt;
+use crate::ir::immediates::Uimm64;
+use crate::ir::{GlobalValue, Type};
+use core::fmt;
 
 
 #[derive(Clone)]

@@ -1,7 +1,7 @@
 
 
-use settings::{self, detail, Builder};
-use std::fmt;
+use crate::settings::{self, detail, Builder};
+use core::fmt;
 
 
 

@@ -1,8 +1,9 @@
 
-use std::marker::PhantomData;
-use std::mem;
+use crate::packed_option::ReservedValue;
+use crate::EntityRef;
+use core::marker::PhantomData;
+use core::mem;
 use std::vec::Vec;
-use EntityRef;
 
 
 
@@ -59,13 +60,13 @@ use EntityRef;
 
 
 #[derive(Clone, Debug)]
-pub struct EntityList<T: EntityRef> {
+pub struct EntityList<T: EntityRef + ReservedValue> {
     index: u32,
     unused: PhantomData<T>,
 }
 
 
-impl<T: EntityRef> Default for EntityList<T> {
+impl<T: EntityRef + ReservedValue> Default for EntityList<T> {
     fn default() -> Self {
         Self {
             index: 0,
@@ -76,7 +77,7 @@ impl<T: EntityRef> Default for EntityList<T> {
 
 
 #[derive(Clone, Debug)]
-pub struct ListPool<T: EntityRef> {
+pub struct ListPool<T: EntityRef + ReservedValue> {
     
     data: Vec<T>,
 
@@ -105,7 +106,7 @@ fn is_sclass_min_length(len: usize) -> bool {
     len > 3 && len.is_power_of_two()
 }
 
-impl<T: EntityRef> ListPool<T> {
+impl<T: EntityRef + ReservedValue> ListPool<T> {
     
     pub fn new() -> Self {
         Self {
@@ -141,6 +142,7 @@ impl<T: EntityRef> ListPool<T> {
     
     
     
+    
     fn alloc(&mut self, sclass: SizeClass) -> usize {
         
         match self.free.get(sclass as usize).cloned() {
@@ -155,9 +157,8 @@ impl<T: EntityRef> ListPool<T> {
             _ => {
                 
                 let offset = self.data.len();
-                
-                
-                self.data.resize(offset + sclass_size(sclass), T::new(0));
+                self.data
+                    .resize(offset + sclass_size(sclass), T::reserved_value());
                 offset
             }
         }
@@ -219,7 +220,7 @@ impl<T: EntityRef> ListPool<T> {
     }
 }
 
-impl<T: EntityRef> EntityList<T> {
+impl<T: EntityRef + ReservedValue> EntityList<T> {
     
     pub fn new() -> Self {
         Default::default()
@@ -483,7 +484,7 @@ impl<T: EntityRef> EntityList<T> {
 mod tests {
     use super::*;
     use super::{sclass_for_length, sclass_size};
-    use EntityRef;
+    use crate::EntityRef;
 
     
     #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]

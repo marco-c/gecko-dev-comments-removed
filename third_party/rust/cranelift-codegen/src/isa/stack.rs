@@ -4,8 +4,8 @@
 
 
 
-use ir::stackslot::{StackOffset, StackSlotKind, StackSlots};
-use ir::StackSlot;
+use crate::ir::stackslot::{StackOffset, StackSlotKind, StackSlots};
+use crate::ir::StackSlot;
 
 
 

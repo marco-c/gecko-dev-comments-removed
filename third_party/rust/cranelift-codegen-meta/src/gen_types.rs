@@ -7,9 +7,9 @@
 
 
 
-use cdsl::types as cdsl_types;
-use error;
-use srcgen;
+use crate::cdsl::types as cdsl_types;
+use crate::error;
+use crate::srcgen;
 
 
 fn emit_type(ty: &cdsl_types::ValueType, fmt: &mut srcgen::Formatter) -> Result<(), error::Error> {

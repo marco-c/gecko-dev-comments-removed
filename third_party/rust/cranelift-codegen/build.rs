@@ -18,9 +18,9 @@
 
 
 
-extern crate cranelift_codegen_meta as meta;
+use cranelift_codegen_meta as meta;
 
-use meta::isa::Isa;
+use crate::meta::isa::Isa;
 use std::env;
 use std::process;
 use std::time::Instant;

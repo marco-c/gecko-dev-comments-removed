@@ -64,10 +64,10 @@
 
 
 
-use cursor::{Cursor, CursorPosition, FuncCursor};
-use flowgraph::{BasicBlock, ControlFlowGraph};
-use ir::{self, Ebb, Inst, InstBuilder, InstructionData, Opcode, Type, Value, ValueDef};
-use std::iter;
+use crate::cursor::{Cursor, CursorPosition, FuncCursor};
+use crate::flowgraph::{BasicBlock, ControlFlowGraph};
+use crate::ir::{self, Ebb, Inst, InstBuilder, InstructionData, Opcode, Type, Value, ValueDef};
+use core::iter;
 use std::vec::Vec;
 
 

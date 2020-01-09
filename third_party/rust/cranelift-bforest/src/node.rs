@@ -1,8 +1,8 @@
 
 
 use super::{slice_insert, slice_shift, Forest, Node, SetValue, INNER_SIZE};
-use std::borrow::{Borrow, BorrowMut};
-use std::fmt;
+use core::borrow::{Borrow, BorrowMut};
+use core::fmt;
 
 
 
@@ -584,7 +584,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::mem;
+    use core::mem;
     use std::string::ToString;
 
     

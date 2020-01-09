@@ -4,10 +4,9 @@
 
 
 
-use fx::FxHashMap;
-use std::collections::hash_map;
-use std::hash::Hash;
-use std::mem;
+use crate::fx::FxHashMap;
+use core::hash::Hash;
+use core::mem;
 
 struct Val<K, V> {
     value: V,
@@ -17,7 +16,7 @@ struct Val<K, V> {
 
 
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
-    entry: hash_map::OccupiedEntry<'a, K, Val<K, V>>,
+    entry: super::hash_map::OccupiedEntry<'a, K, Val<K, V>>,
 }
 
 impl<'a, K, V> OccupiedEntry<'a, K, V> {
@@ -29,7 +28,7 @@ impl<'a, K, V> OccupiedEntry<'a, K, V> {
 
 
 pub struct VacantEntry<'a, K: 'a, V: 'a> {
-    entry: hash_map::VacantEntry<'a, K, Val<K, V>>,
+    entry: super::hash_map::VacantEntry<'a, K, Val<K, V>>,
     next_key: Option<K>,
     depth: usize,
 }
@@ -80,7 +79,7 @@ where
     
     
     pub fn entry(&mut self, key: K) -> Entry<K, V> {
-        use self::hash_map::Entry::*;
+        use super::hash_map::Entry::*;
         match self.map.entry(key) {
             Occupied(entry) => Entry::Occupied(OccupiedEntry { entry }),
             Vacant(entry) => {
@@ -104,7 +103,7 @@ where
     pub fn decrement_depth(&mut self) {
         
         while let Some(key) = self.last_insert.clone() {
-            use self::hash_map::Entry::*;
+            use crate::hash_map::Entry::*;
             match self.map.entry(key) {
                 Occupied(entry) => {
                     if entry.get().depth != self.current_depth {

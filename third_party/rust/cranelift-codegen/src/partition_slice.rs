@@ -1,6 +1,6 @@
 
 
-use std::mem;
+use core::mem;
 
 
 
