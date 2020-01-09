@@ -2705,12 +2705,7 @@ var AddonManagerInternal = {
           method: "amWebAPI",
         },
       }).then(install => {
-        let requireConfirm = true;
-        if (target.contentDocument &&
-            target.contentDocument.nodePrincipal.isSystemPrincipal) {
-          requireConfirm = false;
-        }
-        AddonManagerInternal.setupPromptHandler(target, null, install, requireConfirm, "AMO");
+        AddonManagerInternal.setupPromptHandler(target, null, install, false, "AMO");
 
         let id = this.nextInstall++;
         let {listener, installPromise} = makeListener(id, target.messageManager);
