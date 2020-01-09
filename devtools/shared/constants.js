@@ -15,4 +15,11 @@ exports.accessibility = {
   AUDIT_TYPE: {
     CONTRAST: "CONTRAST",
   },
+  
+  
+  ColorContrastScores: {
+    FAIL: "fail",
+    AA: "AA",
+    AAA: "AAA",
+  },
 };

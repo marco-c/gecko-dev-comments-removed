@@ -166,12 +166,27 @@ async function initAccessibilityPanel(tab = gBrowser.selectedTab) {
 
 
 
+
+
+
+function compareBadges(badges, expected = []) {
+  const badgeEls = badges ? [...badges.querySelectorAll(".badge")] : [];
+  return badgeEls.length === expected.length &&
+         badgeEls.every((badge, i) => badge.textContent === expected[i]);
+}
+
+
+
+
+
+
 async function checkTreeState(doc, expected) {
   info("Checking tree state.");
   const hasExpectedStructure = await BrowserTestUtils.waitForCondition(() =>
     [...doc.querySelectorAll(".treeRow")].every((row, i) =>
       row.querySelector(".treeLabelCell").textContent === expected[i].role &&
-      row.querySelector(".treeValueCell").textContent === expected[i].name),
+      row.querySelector(".treeValueCell").textContent === expected[i].name &&
+      compareBadges(row.querySelector(".badges"), expected[i].badges)),
     "Wait for the right tree update.");
 
   ok(hasExpectedStructure, "Tree structure is correct.");
