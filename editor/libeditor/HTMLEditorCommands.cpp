@@ -51,12 +51,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY
 
 
 
-NS_IMPL_ISUPPORTS(HTMLEditorCommandBase, nsIControllerCommand)
-
-
-
-
-
 nsRefPtrHashtable<nsCharPtrHashKey, nsAtom>
     StateUpdatingCommandBase::sTagNameTable;
 
