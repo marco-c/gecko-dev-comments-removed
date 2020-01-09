@@ -193,29 +193,6 @@ var WebConsoleUtils = {
         return null;
     }
   },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  removeFramesAboveDebuggerEval(stack) {
-    
-    const evalIndex = stack.findIndex(({ filename }) => {
-      return filename == "debugger eval code";
-    });
-    if (evalIndex != -1) {
-      return stack.slice(0, evalIndex + 1);
-    }
-    return stack;
-  },
 };
 
 exports.WebConsoleUtils = WebConsoleUtils;

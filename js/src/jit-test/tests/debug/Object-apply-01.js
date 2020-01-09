@@ -47,7 +47,7 @@ function test(usingApply) {
     dbg.onDebuggerStatement = function (frame) {
         var lose = frame.arguments[0];
         var cv = usingApply ? lose.apply(null, []) : lose.call(null);
-        assertEq(Object.keys(cv).join(","), "throw,stack");
+        assertEq(Object.keys(cv).join(","), "throw");
         assertEq(cv.throw, frame.callee);
         hits++;
     };
