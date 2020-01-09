@@ -174,9 +174,6 @@ var whitelist = [
    isFromDevTools: true},
   {file: "chrome://devtools/skin/images/next.svg", isFromDevTools: true},
   
-  
-  {file: "resource://gre/modules/kvstore.jsm"},
-  
   {file: "resource://app/localization/en-US/browser/touchbar/touchbar.ftl",
    platforms: ["linux", "win"]},
   
