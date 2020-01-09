@@ -72,7 +72,7 @@ class Browser extends PureComponent {
     
     
     await this.browserShown;
-    this.props.onBrowserMounted();
+    this.props.onBrowserMounted(this.browser);
 
     
     
