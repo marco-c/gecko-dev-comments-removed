@@ -435,22 +435,9 @@ bool MaybeCrossOriginObject<Base>::defineProperty(
 }
 
 template <typename Base>
-JSObject* MaybeCrossOriginObject<Base>::enumerate(
-    JSContext* cx, JS::Handle<JSObject*> proxy) const {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+bool MaybeCrossOriginObject<Base>::enumerate(JSContext* cx,
+                                             JS::Handle<JSObject*> proxy,
+                                             JS::AutoIdVector& props) const {
   
   
   
@@ -458,15 +445,10 @@ JSObject* MaybeCrossOriginObject<Base>::enumerate(
   
   JS::Rooted<JSObject*> self(cx, proxy);
   if (!MaybeWrapObject(cx, &self)) {
-    return nullptr;
+    return false;
   }
 
-  js::AutoIdVector props(cx);
-  if (!js::GetPropertyKeys(cx, self, 0, &props)) {
-    return nullptr;
-  }
-
-  return js::EnumeratedIdVectorToIterator(cx, self, props);
+  return js::GetPropertyKeys(cx, self, 0, &props);
 }
 
 

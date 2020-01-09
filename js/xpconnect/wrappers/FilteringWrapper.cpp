@@ -162,14 +162,13 @@ bool FilteringWrapper<Base, Policy>::getOwnEnumerablePropertyKeys(
 }
 
 template <typename Base, typename Policy>
-JSObject* FilteringWrapper<Base, Policy>::enumerate(
-    JSContext* cx, HandleObject wrapper) const {
+bool FilteringWrapper<Base, Policy>::enumerate(JSContext* cx,
+                                               HandleObject wrapper,
+                                               JS::AutoIdVector& props) const {
   assertEnteredPolicy(cx, wrapper, JSID_VOID, BaseProxyHandler::ENUMERATE);
   
   
-  
-  
-  return js::BaseProxyHandler::enumerate(cx, wrapper);
+  return js::BaseProxyHandler::enumerate(cx, wrapper, props);
 }
 
 template <typename Base, typename Policy>

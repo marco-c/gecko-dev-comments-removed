@@ -89,7 +89,8 @@ class CPOWProxyHandler : public BaseProxyHandler {
                                AutoIdVector& props) const override;
   virtual bool delete_(JSContext* cx, HandleObject proxy, HandleId id,
                        ObjectOpResult& result) const override;
-  virtual JSObject* enumerate(JSContext* cx, HandleObject proxy) const override;
+  virtual bool enumerate(JSContext* cx, HandleObject proxy,
+                         AutoIdVector& props) const override;
   virtual bool preventExtensions(JSContext* cx, HandleObject proxy,
                                  ObjectOpResult& result) const override;
   virtual bool isExtensible(JSContext* cx, HandleObject proxy,
@@ -247,11 +248,11 @@ bool WrapperOwner::delete_(JSContext* cx, HandleObject proxy, HandleId id,
   return ok(cx, status, result);
 }
 
-JSObject* CPOWProxyHandler::enumerate(JSContext* cx, HandleObject proxy) const {
+bool CPOWProxyHandler::enumerate(JSContext* cx, HandleObject proxy,
+                                 AutoIdVector& props) const {
   
   
-  
-  return BaseProxyHandler::enumerate(cx, proxy);
+  return BaseProxyHandler::enumerate(cx, proxy, props);
 }
 
 bool CPOWProxyHandler::has(JSContext* cx, HandleObject proxy, HandleId id,
