@@ -546,7 +546,7 @@ function verifyResults() {
   postToControlServer("results", results);
 }
 
-function postToControlServer(msgType, msgData) {
+function postToControlServer(msgType, msgData = "") {
   
   if (msgType == "status") {
     console.log(`\n${msgData}`);
@@ -599,7 +599,7 @@ function cleanUp() {
   }
 
   
-  postToControlServer("status", "__raptor_shutdownBrowser");
+  postToControlServer("shutdownBrowser");
 }
 
 function raptorRunner() {
