@@ -740,9 +740,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         if self.style.pseudo.is_some() {
             return;
         }
-        
-        
-        
+
         let increments = self.style.get_counters().clone_counter_increment();
         if increments.iter().any(|i| i.name.0 == atom!("list-item")) {
             return;
