@@ -4,6 +4,8 @@
   height: 12px;
   
   display: inline-block;
+  background: var(--theme-body-color);
+  mask-size: 100%;
 }
 
 .img.arrow.arrow.expanded {
