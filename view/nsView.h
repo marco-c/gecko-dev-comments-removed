@@ -22,6 +22,10 @@ class nsViewManager;
 class nsIWidget;
 class nsIFrame;
 
+namespace mozilla {
+class PresShell;
+}  
+
 
 
 
@@ -379,7 +383,7 @@ class nsView final : public nsIWidgetListener {
   }
 
   
-  virtual nsIPresShell* GetPresShell() override;
+  virtual mozilla::PresShell* GetPresShell() override;
   virtual nsView* GetView() override { return this; }
   virtual bool WindowMoved(nsIWidget* aWidget, int32_t x, int32_t y) override;
   virtual bool WindowResized(nsIWidget* aWidget, int32_t aWidth,

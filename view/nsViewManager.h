@@ -20,7 +20,10 @@ class nsIWidget;
 struct nsRect;
 class nsRegion;
 class nsDeviceContext;
-class nsIPresShell;
+
+namespace mozilla {
+class PresShell;
+}  
 
 class nsViewManager final {
   ~nsViewManager();
@@ -223,12 +226,12 @@ class nsViewManager final {
 
 
 
-  void SetPresShell(nsIPresShell* aPresShell) { mPresShell = aPresShell; }
+  void SetPresShell(mozilla::PresShell* aPresShell) { mPresShell = aPresShell; }
 
   
 
 
-  nsIPresShell* GetPresShell() { return mPresShell; }
+  mozilla::PresShell* GetPresShell() const { return mPresShell; }
 
   
 
@@ -385,7 +388,7 @@ class nsViewManager final {
   void PostPendingUpdate();
 
   RefPtr<nsDeviceContext> mContext;
-  nsIPresShell* mPresShell;
+  mozilla::PresShell* mPresShell;
 
   
   

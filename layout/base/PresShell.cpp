@@ -5443,8 +5443,7 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   
   
 
-  nsCOMPtr<nsIPresShell> shell = pointVM->GetPresShell();
-  if (shell) {
+  if (RefPtr<PresShell> presShell = pointVM->GetPresShell()) {
     
     
     
@@ -5452,7 +5451,7 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
     
     
     InputAPZContext apzContext(mMouseEventTargetGuid, 0, nsEventStatus_eIgnore);
-    shell->DispatchSynthMouseMove(&event);
+    presShell->DispatchSynthMouseMove(&event);
   }
 
   if (!aFromScroll) {
@@ -5523,7 +5522,7 @@ void PresShell::ClearApproximateFrameVisibilityVisited(nsView* aView,
                                                        bool aClear) {
   nsViewManager* vm = aView->GetViewManager();
   if (aClear) {
-    PresShell* presShell = static_cast<PresShell*>(vm->GetPresShell());
+    PresShell* presShell = vm->GetPresShell();
     if (!presShell->mApproximateFrameVisibilityVisited) {
       presShell->ClearApproximatelyVisibleFramesList();
     }

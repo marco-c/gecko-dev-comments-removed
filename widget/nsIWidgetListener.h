@@ -15,9 +15,12 @@
 #include "Units.h"
 
 class nsView;
-class nsIPresShell;
 class nsIWidget;
 class nsIXULWindow;
+
+namespace mozilla {
+class PresShell;
+}  
 
 
 
@@ -56,7 +59,7 @@ class nsIWidgetListener {
   
 
 
-  virtual nsIPresShell* GetPresShell();
+  virtual mozilla::PresShell* GetPresShell();
 
   
 
