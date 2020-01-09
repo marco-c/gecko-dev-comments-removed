@@ -287,6 +287,11 @@ pref("devtools.performance.new-panel-enabled", false);
 pref("devtools.webconsole.groupWarningMessages", false);
 
 
+pref("devtools.browserconsole.filterContentMessages", false);
+
+pref("devtools.browserconsole.contentMessages", false);
+
+
 pref("devtools.source-map.client-service.enabled", true);
 
 
