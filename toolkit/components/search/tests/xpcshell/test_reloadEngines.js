@@ -25,6 +25,14 @@ add_task(async function test_regular_init() {
       SearchTestUtils.promiseSearchNotification("ensure-known-region-done"),
       promiseAfterCache(),
     ]);
+    
+    
+    
+    
+    
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
     checkRequest(requests);
 
     
