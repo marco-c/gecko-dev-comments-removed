@@ -92,10 +92,11 @@ class WebRenderCommandBuilder {
                        nsDisplayListBuilder* aDisplayListBuilder);
 
   void CreateWebRenderCommandsFromDisplayList(
-      nsDisplayList* aDisplayList, nsDisplayItem* aOuterItem,
+      nsDisplayList* aDisplayList, nsDisplayItem* aWrappingItem,
       nsDisplayListBuilder* aDisplayListBuilder,
       const StackingContextHelper& aSc, wr::DisplayListBuilder& aBuilder,
-      wr::IpcResourceUpdateQueue& aResources);
+      wr::IpcResourceUpdateQueue& aResources,
+      nsDisplayItem* aOuterItem = nullptr);
 
   
   void DoGroupingForDisplayList(nsDisplayList* aDisplayList,
@@ -201,6 +202,7 @@ class WebRenderCommandBuilder {
   
   
   bool mDoGrouping;
+  Maybe<nsRect> mClippedGroupBounds;
 
   
   
