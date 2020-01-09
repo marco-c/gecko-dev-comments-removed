@@ -69,6 +69,7 @@ def get_environment_overlay(js_shell):
     Build a dict of additional environment variables that must be set to run
     tests successfully.
     """
+    
     env = {
         
         'TZ': 'PST8PDT',
