@@ -44,6 +44,7 @@
 #include "mozilla/RangeBoundary.h"      
 #include "mozilla/dom/Selection.h"      
 #include "mozilla/Services.h"           
+#include "mozilla/ServoCSSParser.h"     
 #include "mozilla/TextComposition.h"    
 #include "mozilla/TextInputListener.h"  
 #include "mozilla/TextServicesDocument.h"  
@@ -103,6 +104,7 @@
 #include "nsStyleConsts.h"     
 #include "nsStyleStruct.h"     
 #include "nsStyleStructFwd.h"  
+#include "nsStyleUtil.h"       
 #include "nsTextNode.h"        
 #include "nsThreadUtils.h"     
 #include "prtime.h"            
@@ -4865,6 +4867,40 @@ EditorBase::AutoEditActionDataSetter::~AutoEditActionDataSetter() {
     return;
   }
   mEditorBase.mEditActionData = mParentData;
+}
+
+void EditorBase::AutoEditActionDataSetter::SetColorData(
+    const nsAString& aData) {
+  if (aData.IsEmpty()) {
+    
+    MOZ_ASSERT(!EmptyString().IsVoid());
+    mData = EmptyString();
+    return;
+  }
+
+  bool wasCurrentColor = false;
+  nscolor color = NS_RGB(0, 0, 0);
+  if (!ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0), aData, &color,
+                                    &wasCurrentColor)) {
+    
+    
+    MOZ_ASSERT(!aData.IsVoid());
+    mData = aData;
+    return;
+  }
+
+  
+  
+  
+  if (wasCurrentColor) {
+    MOZ_ASSERT(!aData.IsVoid());
+    mData = aData;
+    return;
+  }
+
+  
+  nsStyleUtil::GetSerializedColorValue(color, mData);
+  MOZ_ASSERT(!mData.IsVoid());
 }
 
 }  

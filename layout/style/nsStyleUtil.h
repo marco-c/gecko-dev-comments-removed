@@ -93,6 +93,14 @@ class nsStyleUtil {
   
 
 
+
+
+  static void GetSerializedColorValue(nscolor aColor,
+                                      nsAString& aSerializedColor);
+
+  
+
+
   static bool IsSignificantChild(nsIContent* aChild,
                                  bool aWhitespaceIsSignificant);
 
