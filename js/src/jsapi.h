@@ -570,8 +570,17 @@ extern JS_PUBLIC_API void IterateRealmsInCompartment(
 
 }  
 
-typedef void (*JSIterateCompartmentCallback)(JSContext* cx, void* data,
-                                             JS::Compartment* compartment);
+
+
+
+
+namespace JS {
+enum class CompartmentIterResult { KeepGoing, Stop };
+}  
+
+typedef JS::CompartmentIterResult (*JSIterateCompartmentCallback)(
+    JSContext* cx, void* data, JS::Compartment* compartment);
+
 
 
 
