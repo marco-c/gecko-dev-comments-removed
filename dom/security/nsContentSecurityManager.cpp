@@ -777,6 +777,29 @@ static void AssertSystemPrincipalMustNotLoadRemoteDocuments(
       !nsContentUtils::SchemeIs(finalURI, "ftp")) {
     return;
   }
+
+  
+  
+  static nsAutoCString sDiscoveryPrePath;
+  static bool recvdPrefValue = false;
+  if (!recvdPrefValue) {
+    nsAutoCString discoveryURLString;
+    Preferences::GetCString("extensions.webservice.discoverURL", discoveryURLString);
+    
+    
+    nsCOMPtr<nsIURI> discoveryURL;
+    NS_NewURI(getter_AddRefs(discoveryURL), discoveryURLString);
+    if (discoveryURL) {
+      discoveryURL->GetPrePath(sDiscoveryPrePath);
+    }
+    recvdPrefValue = true;
+  }
+  nsAutoCString requestedPrePath;
+  finalURI->GetPrePath(requestedPrePath);
+  if (requestedPrePath.Equals(sDiscoveryPrePath)) {
+    return;
+  }
+
   if (xpc::AreNonLocalConnectionsDisabled()) {
     bool disallowSystemPrincipalRemoteDocuments = Preferences::GetBool(
         "security.disallow_non_local_systemprincipal_in_tests");
