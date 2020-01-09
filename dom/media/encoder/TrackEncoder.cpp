@@ -427,7 +427,28 @@ void VideoTrackEncoder::AppendVideoSegment(VideoSegment&& aSegment) {
     return;
   }
 
-  mIncomingBuffer.AppendFrom(&aSegment);
+  for (VideoSegment::ConstChunkIterator iter(aSegment); !iter.IsEnded();
+       iter.Next()) {
+    if (iter->IsNull()) {
+      
+      
+      mIncomingBuffer.Clear();
+      continue;  
+    }
+    if (VideoChunk* c = mIncomingBuffer.GetLastChunk()) {
+      if (iter->mTimeStamp < c->mTimeStamp) {
+        
+        
+        
+        mIncomingBuffer.Clear();
+      }
+    }
+    mIncomingBuffer.AppendFrame(do_AddRef(iter->mFrame.GetImage()),
+                                iter->mFrame.GetIntrinsicSize(),
+                                iter->mFrame.GetPrincipalHandle(),
+                                iter->mFrame.GetForceBlack(), iter->mTimeStamp);
+  }
+  aSegment.Clear();
 }
 
 void VideoTrackEncoder::TakeTrackData(VideoSegment& aSegment) {
@@ -574,8 +595,6 @@ void VideoTrackEncoder::AdvanceCurrentTime(const TimeStamp& aTime) {
   if (mEndOfStream) {
     return;
   }
-
-  MOZ_ASSERT(!mStartTime.IsNull());
 
   if (mSuspended) {
     TRACK_LOG(
