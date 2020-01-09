@@ -200,13 +200,23 @@ class nsAppShell : public nsBaseAppShell {
     }
 
     mozilla::UniquePtr<Event> Pop(bool mayWait) {
+#ifdef EARLY_BETA_OR_EARLIER
+      bool isQueueEmpty = false;
+      if (mayWait) {
+        mozilla::MonitorAutoLock lock(mMonitor);
+        isQueueEmpty = mQueue.isEmpty();
+      }
+      if (isQueueEmpty) {
+        
+        
+        
+        
+        nsAppShell::RecordLatencies();
+      }
+#endif
       mozilla::MonitorAutoLock lock(mMonitor);
 
       if (mayWait && mQueue.isEmpty()) {
-#ifdef EARLY_BETA_OR_EARLIER
-        
-        nsAppShell::RecordLatencies();
-#endif
         lock.Wait();
       }
 
