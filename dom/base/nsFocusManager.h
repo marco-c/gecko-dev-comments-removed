@@ -269,8 +269,10 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  mozilla::dom::Element* CheckIfFocusable(mozilla::dom::Element* aContent,
-                                          uint32_t aFlags);
+
+
+  mozilla::dom::Element* FlushAndCheckIfFocusable(
+      mozilla::dom::Element* aElement, uint32_t aFlags);
 
   
 

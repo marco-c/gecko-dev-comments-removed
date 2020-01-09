@@ -464,7 +464,7 @@ nsFocusManager::ElementIsFocusable(Element* aElement, uint32_t aFlags,
                                    bool* aIsFocusable) {
   NS_ENSURE_TRUE(aElement, NS_ERROR_INVALID_ARG);
 
-  *aIsFocusable = CheckIfFocusable(aElement, aFlags) != nullptr;
+  *aIsFocusable = FlushAndCheckIfFocusable(aElement, aFlags) != nullptr;
 
   return NS_OK;
 }
@@ -1123,7 +1123,8 @@ void nsFocusManager::ActivateOrDeactivate(nsPIDOMWindowOuter* aWindow,
 void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
                                    bool aFocusChanged, bool aAdjustWidget) {
   
-  RefPtr<Element> elementToFocus = CheckIfFocusable(aNewContent, aFlags);
+  RefPtr<Element> elementToFocus =
+      FlushAndCheckIfFocusable(aNewContent, aFlags);
   if (!elementToFocus) {
     return;
   }
@@ -1459,15 +1460,9 @@ bool nsFocusManager::IsNonFocusableRoot(nsIContent* aContent) {
           nsContentUtils::IsUserFocusIgnored(aContent));
 }
 
-Element* nsFocusManager::CheckIfFocusable(Element* aElement, uint32_t aFlags) {
+Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
+                                                  uint32_t aFlags) {
   if (!aElement) return nullptr;
-
-  
-  
-  RefPtr<Element> redirectedFocus = GetRedirectedFocus(aElement);
-  if (redirectedFocus) {
-    return CheckIfFocusable(redirectedFocus, aFlags);
-  }
 
   nsCOMPtr<Document> doc = aElement->GetComposedDoc();
   
@@ -1480,6 +1475,13 @@ Element* nsFocusManager::CheckIfFocusable(Element* aElement, uint32_t aFlags) {
   
   mEventHandlingNeedsFlush = false;
   doc->FlushPendingNotifications(FlushType::EnsurePresShellInitAndFrames);
+
+  
+  
+  RefPtr<Element> redirectedFocus = GetRedirectedFocus(aElement);
+  if (redirectedFocus) {
+    return FlushAndCheckIfFocusable(redirectedFocus, aFlags);
+  }
 
   PresShell* presShell = doc->GetPresShell();
   if (!presShell) {
@@ -1749,7 +1751,7 @@ void nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow, Element* aElement,
     
     
     
-    if (CheckIfFocusable(aElement, aFlags)) {
+    if (FlushAndCheckIfFocusable(aElement, aFlags)) {
       aWindow->SetFocusedElement(aElement, focusMethod);
       if (aFocusChanged) {
         ScrollIntoView(presShell, aElement, aFlags);
@@ -1829,7 +1831,7 @@ void nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow, Element* aElement,
 
   
   
-  if (CheckIfFocusable(aElement, aFlags) && mFocusedWindow == aWindow &&
+  if (FlushAndCheckIfFocusable(aElement, aFlags) && mFocusedWindow == aWindow &&
       mFocusedElement == nullptr) {
     mFocusedElement = aElement;
 
@@ -3770,7 +3772,8 @@ nsresult nsFocusManager::FocusFirst(Element* aRootElement,
       if (aRootElement->GetAttr(kNameSpaceID_None,
                                 nsGkAtoms::retargetdocumentfocus, retarget)) {
         nsCOMPtr<Element> element = doc->GetElementById(retarget);
-        nsCOMPtr<nsIContent> retargetElement = CheckIfFocusable(element, 0);
+        nsCOMPtr<nsIContent> retargetElement =
+            FlushAndCheckIfFocusable(element, 0);
         if (retargetElement) {
           retargetElement.forget(aNextContent);
           return NS_OK;
