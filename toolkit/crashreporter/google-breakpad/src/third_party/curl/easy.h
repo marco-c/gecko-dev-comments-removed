@@ -21,7 +21,6 @@
 
 
 
-
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -59,7 +58,7 @@ CURL_EXTERN CURLcode curl_easy_getinfo(CURL *curl, CURLINFO info, ...);
 
 
 
-CURL_EXTERN CURL* curl_easy_duphandle(CURL *curl);
+CURL_EXTERN CURL *curl_easy_duphandle(CURL *curl);
 
 
 
@@ -95,6 +94,16 @@ CURL_EXTERN CURLcode curl_easy_recv(CURL *curl, void *buffer, size_t buflen,
 
 CURL_EXTERN CURLcode curl_easy_send(CURL *curl, const void *buffer,
                                     size_t buflen, size_t *n);
+
+
+
+
+
+
+
+
+
+CURL_EXTERN CURLcode curl_easy_upkeep(CURL *curl);
 
 #ifdef  __cplusplus
 }

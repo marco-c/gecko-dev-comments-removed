@@ -46,14 +46,17 @@
 
 
 
-
 #include "curl.h"
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
+#if defined(BUILDING_LIBCURL) || defined(CURL_STRICTER)
+typedef struct Curl_multi CURLM;
+#else
 typedef void CURLM;
+#endif
 
 typedef enum {
   CURLM_CALL_MULTI_PERFORM = -1, 
@@ -65,6 +68,10 @@ typedef enum {
   CURLM_INTERNAL_ERROR,  
   CURLM_BAD_SOCKET,      
   CURLM_UNKNOWN_OPTION,  
+  CURLM_ADDED_ALREADY,   
+
+  CURLM_RECURSIVE_API_CALL, 
+
   CURLM_LAST
 } CURLMcode;
 
@@ -72,6 +79,11 @@ typedef enum {
 
 
 #define CURLM_CALL_MULTI_SOCKET CURLM_CALL_MULTI_PERFORM
+
+
+#define CURLPIPE_NOTHING   0L
+#define CURLPIPE_HTTP1     1L
+#define CURLPIPE_MULTIPLEX 2L
 
 typedef enum {
   CURLMSG_NONE, 
@@ -89,6 +101,19 @@ struct CURLMsg {
   } data;
 };
 typedef struct CURLMsg CURLMsg;
+
+
+
+
+#define CURL_WAIT_POLLIN    0x0001
+#define CURL_WAIT_POLLPRI   0x0002
+#define CURL_WAIT_POLLOUT   0x0004
+
+struct curl_waitfd {
+  curl_socket_t fd;
+  short events;
+  short revents; 
+};
 
 
 
@@ -133,6 +158,20 @@ CURL_EXTERN CURLMcode curl_multi_fdset(CURLM *multi_handle,
                                        fd_set *write_fd_set,
                                        fd_set *exc_fd_set,
                                        int *max_fd);
+
+
+
+
+
+
+
+
+
+CURL_EXTERN CURLMcode curl_multi_wait(CURLM *multi_handle,
+                                      struct curl_waitfd extra_fds[],
+                                      unsigned int extra_nfds,
+                                      int timeout_ms,
+                                      int *ret);
 
  
 
@@ -312,6 +351,37 @@ typedef enum {
   
   CINIT(MAXCONNECTS, LONG, 6),
 
+  
+  CINIT(MAX_HOST_CONNECTIONS, LONG, 7),
+
+  
+  CINIT(MAX_PIPELINE_LENGTH, LONG, 8),
+
+  
+
+  CINIT(CONTENT_LENGTH_PENALTY_SIZE, OFF_T, 9),
+
+  
+
+  CINIT(CHUNK_LENGTH_PENALTY_SIZE, OFF_T, 10),
+
+  
+
+  CINIT(PIPELINING_SITE_BL, OBJECTPOINT, 11),
+
+  
+
+  CINIT(PIPELINING_SERVER_BL, OBJECTPOINT, 12),
+
+  
+  CINIT(MAX_TOTAL_CONNECTIONS, LONG, 13),
+
+   
+  CINIT(PUSHFUNCTION, FUNCTIONPOINT, 14),
+
+  
+  CINIT(PUSHDATA, OBJECTPOINT, 15),
+
   CURLMOPT_LASTENTRY 
 } CURLMoption;
 
@@ -338,6 +408,31 @@ CURL_EXTERN CURLMcode curl_multi_setopt(CURLM *multi_handle,
 
 CURL_EXTERN CURLMcode curl_multi_assign(CURLM *multi_handle,
                                         curl_socket_t sockfd, void *sockp);
+
+
+
+
+
+
+
+
+
+
+#define CURL_PUSH_OK   0
+#define CURL_PUSH_DENY 1
+
+struct curl_pushheaders;  
+
+CURL_EXTERN char *curl_pushheader_bynum(struct curl_pushheaders *h,
+                                        size_t num);
+CURL_EXTERN char *curl_pushheader_byname(struct curl_pushheaders *h,
+                                         const char *name);
+
+typedef int (*curl_push_callback)(CURL *parent,
+                                  CURL *easy,
+                                  size_t num_headers,
+                                  struct curl_pushheaders *headers,
+                                  void *userp);
 
 #ifdef __cplusplus
 } 

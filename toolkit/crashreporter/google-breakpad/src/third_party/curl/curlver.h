@@ -26,18 +26,17 @@
 
 
 
-
-#define LIBCURL_COPYRIGHT "1996 - 2009 Daniel Stenberg, <daniel@haxx.se>."
-
+#define LIBCURL_COPYRIGHT "1996 - 2019 Daniel Stenberg, <daniel@haxx.se>."
 
 
-#define LIBCURL_VERSION "7.19.7"
+
+#define LIBCURL_VERSION "7.64.1-DEV"
 
 
 
 #define LIBCURL_VERSION_MAJOR 7
-#define LIBCURL_VERSION_MINOR 19
-#define LIBCURL_VERSION_PATCH 7
+#define LIBCURL_VERSION_MINOR 64
+#define LIBCURL_VERSION_PATCH 1
 
 
 
@@ -54,7 +53,11 @@
 
 
 
-#define LIBCURL_VERSION_NUM 0x071307
+
+
+
+
+#define LIBCURL_VERSION_NUM 0x074001
 
 
 
@@ -65,6 +68,10 @@
 
 
 
-#define LIBCURL_TIMESTAMP "Wed Nov  4 12:34:59 UTC 2009"
+#define LIBCURL_TIMESTAMP "[unreleased]"
+
+#define CURL_VERSION_BITS(x,y,z) ((x)<<16|(y)<<8|z)
+#define CURL_AT_LEAST_VERSION(x,y,z) \
+  (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS(x, y, z))
 
 #endif 
