@@ -31,6 +31,15 @@ txFormatNumberFunctionCall::txFormatNumberFunctionCall(
     txStylesheet* aStylesheet, txNamespaceMap* aMappings)
     : mStylesheet(aStylesheet), mMappings(aMappings) {}
 
+void txFormatNumberFunctionCall::ReportInvalidArg(txIEvalContext* aContext) {
+  nsAutoString err(INVALID_PARAM_VALUE);
+#ifdef TX_TO_STRING
+  err.AppendLiteral(": ");
+  toString(err);
+#endif
+  aContext->receiveError(err, NS_ERROR_XPATH_INVALID_ARG);
+}
+
 
 
 
@@ -135,24 +144,14 @@ nsresult txFormatNumberFunctionCall::evaluate(txIEvalContext* aContext,
             if (multiplier == 1)
               multiplier = 100;
             else {
-              nsAutoString err(INVALID_PARAM_VALUE);
-#ifdef TX_TO_STRING
-              err.AppendLiteral(": ");
-              toString(err);
-#endif
-              aContext->receiveError(err, NS_ERROR_XPATH_INVALID_ARG);
+              ReportInvalidArg(aContext);
               return NS_ERROR_XPATH_INVALID_ARG;
             }
           } else if (c == format->mPerMille) {
             if (multiplier == 1)
               multiplier = 1000;
             else {
-              nsAutoString err(INVALID_PARAM_VALUE);
-#ifdef TX_TO_STRING
-              err.AppendLiteral(": ");
-              toString(err);
-#endif
-              aContext->receiveError(err, NS_ERROR_XPATH_INVALID_ARG);
+              ReportInvalidArg(aContext);
               return NS_ERROR_XPATH_INVALID_ARG;
             }
           } else if (c == format->mDecimalSeparator ||
@@ -225,12 +224,7 @@ nsresult txFormatNumberFunctionCall::evaluate(txIEvalContext* aContext,
   
   if ((c != format->mPatternSeparator && pos < formatLen) || inQuote ||
       groupSize == 0) {
-    nsAutoString err(INVALID_PARAM_VALUE);
-#ifdef TX_TO_STRING
-    err.AppendLiteral(": ");
-    toString(err);
-#endif
-    aContext->receiveError(err, NS_ERROR_XPATH_INVALID_ARG);
+    ReportInvalidArg(aContext);
     return NS_ERROR_XPATH_INVALID_ARG;
   }
 

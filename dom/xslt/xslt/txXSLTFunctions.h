@@ -71,6 +71,9 @@ class txFormatNumberFunctionCall : public FunctionCall {
     Finished
   };
 
+  
+  void ReportInvalidArg(txIEvalContext* aContext);
+
   txStylesheet* mStylesheet;
   RefPtr<txNamespaceMap> mMappings;
 };
