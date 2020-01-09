@@ -993,14 +993,6 @@ var LoginManagerContent = {
         continue;
       }
 
-      if (ChromeUtils.getClassName(formRoot) === "HTMLFormElement") {
-        
-        
-        
-        log("Ignoring navigation for the form root to avoid multiple prompts " +
-            "since it was for a real <form>");
-        continue;
-      }
       let formLike = LoginFormFactory.getForRootElement(formRoot);
       this._onFormSubmit(formLike);
     }
