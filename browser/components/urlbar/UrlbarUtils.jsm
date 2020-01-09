@@ -256,12 +256,28 @@ var UrlbarUtils = {
         };
       case UrlbarUtils.RESULT_TYPE.SEARCH: {
         const engine = Services.search.getEngineByName(result.payload.engine);
-        let [url, postData] = getSearchQueryUrl(
+        let [url, postData] = this.getSearchQueryUrl(
           engine, result.payload.suggestion || result.payload.query);
         return {url, postData};
       }
     }
     return {url: null, postData: null};
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getSearchQueryUrl(engine, query) {
+    let submission = engine.getSubmission(query, null, "keyword");
+    return [submission.uri.spec, submission.postData];
   },
 
   
@@ -324,23 +340,6 @@ var UrlbarUtils = {
     return pasteData;
   },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getSearchQueryUrl(engine, query) {
-  let submission = engine.getSubmission(query, null, "keyword");
-  return [submission.uri.spec, submission.postData];
-}
 
 
 

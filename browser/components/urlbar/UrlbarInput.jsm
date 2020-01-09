@@ -222,38 +222,49 @@ class UrlbarInput {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    let selectedOneOff;
+    if (this.view.isOpen) {
+      selectedOneOff = this.view.oneOffSearchButtons.selectedButton;
+      if (selectedOneOff &&
+          isMouseEvent &&
+          event.target != selectedOneOff) {
+        selectedOneOff = null;
+      }
+      
+      if (selectedOneOff && !selectedOneOff.engine) {
+        selectedOneOff.doCommand();
+        return;
+      }
+    }
 
     
     
-    let result = this.view.selectedResult;
+    let result = !selectedOneOff && this.view.selectedResult;
     if (result) {
       this.pickResult(event, result);
       return;
     }
 
-    
-    
-    let url = this.value;
+    let url;
+    if (selectedOneOff) {
+      
+      
+      [url, openParams.postData] = UrlbarUtils.getSearchQueryUrl(
+        selectedOneOff.engine, this._lastSearchString);
+      this._recordSearch(selectedOneOff.engine, event);
+    } else {
+      
+      
+      url = this.value;
+      openParams.postData = null;
+    }
+
     if (!url) {
       return;
     }
 
     let where = openWhere || this._whereToOpen(event);
 
-    openParams.postData = null;
     openParams.allowInheritPrincipal = false;
 
     
