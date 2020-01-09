@@ -334,31 +334,40 @@ impl SpatialNode {
                 info.invertible = self.world_viewport_transform.is_invertible();
 
                 if info.invertible {
+                    let mut reset_cs_id = match info.transform_style {
+                        TransformStyle::Preserve3D => !state.preserves_3d,
+                        TransformStyle::Flat => state.preserves_3d,
+                    };
                     
                     
-                    match ScaleOffset::from_transform(&relative_transform) {
-                        Some(ref scale_offset) => {
-                            self.coordinate_system_relative_scale_offset =
-                                state.coordinate_system_relative_scale_offset.accumulate(scale_offset);
+                    if !reset_cs_id {
+                        
+                        
+                        match ScaleOffset::from_transform(&relative_transform) {
+                            Some(ref scale_offset) => {
+                                self.coordinate_system_relative_scale_offset =
+                                    state.coordinate_system_relative_scale_offset.accumulate(scale_offset);
+                            }
+                            None => reset_cs_id = true,
                         }
-                        None => {
-                            
-                            
-                            self.coordinate_system_relative_scale_offset = ScaleOffset::identity();
+                    }
+                    if reset_cs_id {
+                        
+                        
+                        self.coordinate_system_relative_scale_offset = ScaleOffset::identity();
 
-                            let transform = state.coordinate_system_relative_scale_offset
-                                                 .to_transform()
-                                                 .pre_mul(&relative_transform);
+                        let transform = state.coordinate_system_relative_scale_offset
+                            .to_transform()
+                            .pre_mul(&relative_transform);
 
-                            
-                            let coord_system = CoordinateSystem {
-                                transform,
-                                is_flatten_root: !state.preserves_3d && info.transform_style == TransformStyle::Preserve3D,
-                                parent: Some(state.current_coordinate_system_id),
-                            };
-                            state.current_coordinate_system_id = CoordinateSystemId(coord_systems.len() as u32);
-                            coord_systems.push(coord_system);
-                        }
+                        
+                        let coord_system = CoordinateSystem {
+                            transform,
+                            transform_style: info.transform_style,
+                            parent: Some(state.current_coordinate_system_id),
+                        };
+                        state.current_coordinate_system_id = CoordinateSystemId(coord_systems.len() as u32);
+                        coord_systems.push(coord_system);
                     }
                 }
 
@@ -631,6 +640,14 @@ impl SpatialNode {
         match self.node_type {
             SpatialNodeType::ScrollFrame(info) if info.external_id == Some(external_id) => true,
             _ => false,
+        }
+    }
+
+    pub fn transform_style(&self) -> TransformStyle {
+        match self.node_type {
+            SpatialNodeType::ReferenceFrame(ref info) => info.transform_style,
+            SpatialNodeType::StickyFrame(_) |
+            SpatialNodeType::ScrollFrame(_) => TransformStyle::Flat,
         }
     }
 }

@@ -30,9 +30,7 @@ pub struct CoordinateSystemId(pub u32);
 #[derive(Debug)]
 pub struct CoordinateSystem {
     pub transform: LayoutTransform,
-    
-    
-    pub is_flatten_root: bool,
+    pub transform_style: TransformStyle,
     pub parent: Option<CoordinateSystemId>,
 }
 
@@ -40,7 +38,7 @@ impl CoordinateSystem {
     fn root() -> Self {
         CoordinateSystem {
             transform: LayoutTransform::identity(),
-            is_flatten_root: true,
+            transform_style: TransformStyle::Flat,
             parent: None,
         }
     }
@@ -72,7 +70,7 @@ impl CoordinateSystemId {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum VisibleFace {
     Front,
     Back,
@@ -201,36 +199,57 @@ impl ClipScrollTree {
         let child = &self.spatial_nodes[child_index.0 as usize];
         let parent = &self.spatial_nodes[parent_index.0 as usize];
 
-        let mut coordinate_system_id = child.coordinate_system_id;
-        let mut transform = child.coordinate_system_relative_scale_offset.to_transform();
         let mut visible_face = VisibleFace::Front;
         let mut is_perspective = false;
 
-        while coordinate_system_id != parent.coordinate_system_id {
-            let coord_system = &self.coord_systems[coordinate_system_id.0 as usize];
-            coordinate_system_id = coord_system.parent.expect("invalid parent!");
-            transform = transform.post_mul(&coord_system.transform);
-            
-            
-            
-            if coord_system.is_flatten_root || coordinate_system_id == parent.coordinate_system_id {
-                visible_face = if transform.is_backface_visible() {
-                    VisibleFace::Back
-                } else {
-                    VisibleFace::Front
-                };
-                is_perspective = transform.has_perspective_component();
-            }
-            if coord_system.is_flatten_root {
-                
-                
-                
-                transform.m13 = 0.0;
-                transform.m23 = 0.0;
-                transform.m33 = 0.0;
-                transform.m43 = 0.0;
+        if child.coordinate_system_id == parent.coordinate_system_id {
+            return RelativeTransform {
+                flattened: parent.coordinate_system_relative_scale_offset
+                    .inverse()
+                    .accumulate(&child.coordinate_system_relative_scale_offset)
+                    .to_transform(),
+                visible_face,
+                is_perspective,
             }
         }
+
+        let mut coordinate_system_id = child.coordinate_system_id;
+        let mut transform = child.coordinate_system_relative_scale_offset.to_transform();
+        let mut transform_style = child.transform_style();
+
+        
+        
+        
+
+        while coordinate_system_id != parent.coordinate_system_id {
+            let coord_system = &self.coord_systems[coordinate_system_id.0 as usize];
+            let transform_style_changed = coord_system.transform_style != transform_style;
+
+            if coord_system.transform_style == TransformStyle::Flat {
+                is_perspective |= transform.has_perspective_component();
+                if transform_style_changed {
+                    
+                    
+                    
+                    transform.m13 = 0.0;
+                    transform.m23 = 0.0;
+                    transform.m33 = 0.0;
+                    transform.m43 = 0.0;
+                }
+            }
+
+            coordinate_system_id = coord_system.parent.expect("invalid parent!");
+            transform = transform.post_mul(&coord_system.transform);
+            transform_style = coord_system.transform_style;
+        }
+
+        visible_face = if transform.is_backface_visible() {
+            VisibleFace::Back
+        } else {
+            VisibleFace::Front
+        };
+
+        is_perspective |= transform.has_perspective_component();
 
         transform = transform.post_mul(
             &parent.coordinate_system_relative_scale_offset
@@ -554,6 +573,17 @@ impl ClipScrollTree {
         }
 
         pt.end_level();
+    }
+
+    
+    pub fn get_local_visible_face(&self, node_index: SpatialNodeIndex) -> VisibleFace {
+        let node = &self.spatial_nodes[node_index.0 as usize];
+        let parent_index = match node.parent {
+            Some(index) => index,
+            None => return VisibleFace::Front
+        };
+        self.get_relative_transform(node_index, parent_index)
+            .visible_face
     }
 
     #[allow(dead_code)]
