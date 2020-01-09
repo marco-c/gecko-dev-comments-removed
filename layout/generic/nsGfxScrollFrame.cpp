@@ -977,6 +977,28 @@ static void GetScrollableOverflowForPerspective(
   }
 }
 
+nscoord nsHTMLScrollFrame::GetLogicalBaseline(WritingMode aWritingMode) const {
+  
+  
+  
+  
+  
+  
+  
+  if (mHelper.mScrolledFrame->IsBlockFrame()) {
+    return nsContainerFrame::GetLogicalBaseline(aWritingMode);
+  }
+
+  
+  
+  
+  
+  LogicalMargin border = GetLogicalUsedBorder(aWritingMode);
+
+  return border.BStart(aWritingMode) +
+         mHelper.mScrolledFrame->GetLogicalBaseline(aWritingMode);
+}
+
 void nsHTMLScrollFrame::AdjustForPerspective(nsRect& aScrollableOverflow) {
   
   
