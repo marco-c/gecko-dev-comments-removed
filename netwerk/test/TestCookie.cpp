@@ -857,7 +857,7 @@ TEST(TestCookie, TestCookieMain)
                             true,       
                             INT64_MAX,  
                             &attrs,     
-                            nsICookie2::SAMESITE_UNSET)));
+                            nsICookie2::SAMESITE_NONE)));
   EXPECT_TRUE(NS_SUCCEEDED(
       cookieMgr2->AddNative(NS_LITERAL_CSTRING("cookiemgr.test"),  
                             NS_LITERAL_CSTRING("/foo"),            
@@ -868,7 +868,7 @@ TEST(TestCookie, TestCookieMain)
                             true,                            
                             PR_Now() / PR_USEC_PER_SEC + 2,  
                             &attrs,                          
-                            nsICookie2::SAMESITE_UNSET)));
+                            nsICookie2::SAMESITE_NONE)));
   EXPECT_TRUE(NS_SUCCEEDED(
       cookieMgr2->AddNative(NS_LITERAL_CSTRING("new.domain"),  
                             NS_LITERAL_CSTRING("/rabbit"),     
@@ -879,7 +879,7 @@ TEST(TestCookie, TestCookieMain)
                             true,                              
                             INT64_MAX,                         
                             &attrs,  
-                            nsICookie2::SAMESITE_UNSET)));
+                            nsICookie2::SAMESITE_NONE)));
   
   nsCOMPtr<nsISimpleEnumerator> enumerator;
   EXPECT_TRUE(
@@ -941,7 +941,7 @@ TEST(TestCookie, TestCookieMain)
                             true,                              
                             INT64_MIN,                         
                             &attrs,  
-                            nsICookie2::SAMESITE_UNSET)));
+                            nsICookie2::SAMESITE_NONE)));
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(
       NS_LITERAL_CSTRING("new.domain"), NS_LITERAL_CSTRING("/rabbit"),
       NS_LITERAL_CSTRING("test3"), &attrs, &found)));
@@ -1079,13 +1079,13 @@ TEST(TestCookie, TestCookieMain)
     int32_t sameSiteAttr;
     cookie2->GetSameSite(&sameSiteAttr);
     if (name.EqualsLiteral("unset")) {
-      EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_UNSET);
+      EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_NONE);
     } else if (name.EqualsLiteral("unspecified")) {
-      EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_UNSET);
+      EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_NONE);
     } else if (name.EqualsLiteral("empty")) {
-      EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_UNSET);
+      EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_NONE);
     } else if (name.EqualsLiteral("bogus")) {
-      EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_UNSET);
+      EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_NONE);
     } else if (name.EqualsLiteral("strict")) {
       EXPECT_TRUE(sameSiteAttr == nsICookie2::SAMESITE_STRICT);
     } else if (name.EqualsLiteral("lax")) {
