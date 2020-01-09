@@ -106,6 +106,7 @@ typedef struct SFTKOAEPEncryptInfoStr SFTKOAEPEncryptInfo;
 typedef struct SFTKOAEPDecryptInfoStr SFTKOAEPDecryptInfo;
 typedef struct SFTKSSLMACInfoStr SFTKSSLMACInfo;
 typedef struct SFTKChaCha20Poly1305InfoStr SFTKChaCha20Poly1305Info;
+typedef struct SFTKChaCha20CtrInfoStr SFTKChaCha20CtrInfo;
 typedef struct SFTKItemTemplateStr SFTKItemTemplate;
 
 
@@ -407,6 +408,14 @@ struct SFTKChaCha20Poly1305InfoStr {
     unsigned char ad[16];
     unsigned char *adOverflow;
     unsigned int adLen;
+};
+
+
+
+struct SFTKChaCha20CtrInfoStr {
+    PRUint8 key[32];
+    PRUint8 nonce[12];
+    PRUint32 counter;
 };
 
 

@@ -10,7 +10,7 @@
 
 #include "blapi.h"
 
-#define FREEBL_VERSION 0x0314
+#define FREEBL_VERSION 0x0315
 
 struct FREEBLVectorStr {
 
@@ -756,6 +756,12 @@ struct FREEBLVectorStr {
     unsigned int (*p_BLAKE2B_FlattenSize)(BLAKE2BContext *ctx);
     SECStatus (*p_BLAKE2B_Flatten)(BLAKE2BContext *ctx, unsigned char *space);
     BLAKE2BContext *(*p_BLAKE2B_Resurrect)(unsigned char *space, void *arg);
+
+    
+
+    SECStatus (*p_ChaCha20_Xor)(unsigned char *output, const unsigned char *block,
+                                unsigned int len, const unsigned char *k,
+                                const unsigned char *nonce, PRUint32 ctr);
 
     
 

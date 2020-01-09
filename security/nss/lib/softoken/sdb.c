@@ -941,9 +941,12 @@ sdb_GetAttributeValueNoLock(SDB *sdb, CK_OBJECT_HANDLE object_id,
                 blobSize = sqlite3_column_bytes(stmt, i);
                 blobData = sqlite3_column_blob(stmt, i);
                 if (blobData == NULL) {
+                    
+
+
                     template[i].ulValueLen = -1;
                     error = CKR_ATTRIBUTE_TYPE_INVALID;
-                    break;
+                    continue;
                 }
                 
 
@@ -954,9 +957,10 @@ sdb_GetAttributeValueNoLock(SDB *sdb, CK_OBJECT_HANDLE object_id,
                 }
                 if (template[i].pValue) {
                     if (template[i].ulValueLen < blobSize) {
+                        
                         template[i].ulValueLen = -1;
                         error = CKR_BUFFER_TOO_SMALL;
-                        break;
+                        continue;
                     }
                     PORT_Memcpy(template[i].pValue, blobData, blobSize);
                 }

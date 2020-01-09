@@ -167,7 +167,7 @@ export async function initFilter() {
   let comment = await getCommitComment();
 
   
-  let match = comment.match(/^\s*try:\s*(.*)\s*$/);
+  let match = comment.match(/\btry:\s*(.*)\s*$/m);
 
   
   if (match) {

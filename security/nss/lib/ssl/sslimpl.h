@@ -144,6 +144,11 @@ typedef enum {
     ticket_allow_psk_sign_auth = 16
 } TLS13SessionTicketFlags;
 
+typedef enum {
+    update_not_requested = 0,
+    update_requested = 1
+} tls13KeyUpdateRequest;
+
 struct sslNamedGroupDefStr {
     
     SSLNamedGroup name;
@@ -610,6 +615,7 @@ typedef struct SSL3HandshakeStateStr {
 
     PK11Context *md5;
     PK11Context *sha;
+    PK11Context *shaPostHandshake;
     SSLSignatureScheme signatureScheme;
     const ssl3KEADef *kea_def;
     ssl3CipherSuite cipher_suite;
@@ -742,6 +748,11 @@ struct ssl3StateStr {
     
 
     PRBool peerRequestedKeyUpdate;
+
+    
+
+    PRBool keyUpdateDeferred;
+    tls13KeyUpdateRequest deferredKeyUpdateRequest;
 
     
 
@@ -1213,15 +1224,24 @@ extern SECStatus Null_Cipher(void *ctx, unsigned char *output, unsigned int *out
                              unsigned int maxOutputLen, const unsigned char *input,
                              unsigned int inputLen);
 extern void ssl3_RestartHandshakeHashes(sslSocket *ss);
+typedef SECStatus (*sslUpdateHandshakeHashes)(sslSocket *ss,
+                                              const unsigned char *b,
+                                              unsigned int l);
 extern SECStatus ssl3_UpdateHandshakeHashes(sslSocket *ss,
                                             const unsigned char *b,
                                             unsigned int l);
+extern SECStatus ssl3_UpdatePostHandshakeHashes(sslSocket *ss,
+                                                const unsigned char *b,
+                                                unsigned int l);
 SECStatus
 ssl_HashHandshakeMessageInt(sslSocket *ss, SSLHandshakeType type,
                             PRUint32 dtlsSeq,
-                            const PRUint8 *b, PRUint32 length);
+                            const PRUint8 *b, PRUint32 length,
+                            sslUpdateHandshakeHashes cb);
 SECStatus ssl_HashHandshakeMessage(sslSocket *ss, SSLHandshakeType type,
                                    const PRUint8 *b, PRUint32 length);
+SECStatus ssl_HashPostHandshakeMessage(sslSocket *ss, SSLHandshakeType type,
+                                       const PRUint8 *b, PRUint32 length);
 
 
 

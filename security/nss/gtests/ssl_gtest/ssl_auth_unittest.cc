@@ -320,6 +320,46 @@ TEST_F(TlsConnectStreamTls13, PostHandshakeAuthConcurrent) {
   EXPECT_EQ(PR_WOULD_BLOCK_ERROR, PORT_GetError());
 }
 
+TEST_F(TlsConnectStreamTls13, PostHandshakeAuthBeforeKeyUpdate) {
+  client_->SetupClientAuth();
+  EXPECT_EQ(SECSuccess, SSL_OptionSet(client_->ssl_fd(),
+                                      SSL_ENABLE_POST_HANDSHAKE_AUTH, PR_TRUE));
+  Connect();
+  
+  EXPECT_EQ(SECSuccess, SSL_SendCertificateRequest(server_->ssl_fd()))
+      << "Unexpected error: " << PORT_ErrorToName(PORT_GetError());
+  
+  EXPECT_EQ(SECFailure, SSL_KeyUpdate(server_->ssl_fd(), PR_TRUE));
+  EXPECT_EQ(PR_WOULD_BLOCK_ERROR, PORT_GetError());
+}
+
+TEST_F(TlsConnectStreamTls13, PostHandshakeAuthDuringClientKeyUpdate) {
+  client_->SetupClientAuth();
+  EXPECT_EQ(SECSuccess, SSL_OptionSet(client_->ssl_fd(),
+                                      SSL_ENABLE_POST_HANDSHAKE_AUTH, PR_TRUE));
+  Connect();
+  CheckEpochs(3, 3);
+  
+  EXPECT_EQ(SECSuccess, SSL_SendCertificateRequest(server_->ssl_fd()))
+      << "Unexpected error: " << PORT_ErrorToName(PORT_GetError());
+  
+  EXPECT_EQ(SECSuccess, SSL_KeyUpdate(client_->ssl_fd(), PR_TRUE));
+  server_->SendData(50);   
+  client_->SendData(50);   
+  server_->ReadBytes(50);  
+  CheckEpochs(4, 3);
+  client_->ReadBytes(50);  
+  client_->SendData(
+      50);  
+  server_->ReadBytes(
+      50);  
+  client_->CheckEpochs(3, 4);
+  server_->CheckEpochs(4, 4);
+  server_->SendData(50);   
+  client_->ReadBytes(50);  
+  client_->CheckEpochs(4, 4);
+}
+
 TEST_F(TlsConnectStreamTls13, PostHandshakeAuthMissingExtension) {
   client_->SetupClientAuth();
   Connect();
@@ -454,6 +494,9 @@ TEST_F(TlsConnectStreamTls13, PostHandshakeAuthDecline) {
   client_->SetupClientAuth();
   EXPECT_EQ(SECSuccess, SSL_OptionSet(client_->ssl_fd(),
                                       SSL_ENABLE_POST_HANDSHAKE_AUTH, PR_TRUE));
+  EXPECT_EQ(SECSuccess,
+            SSL_OptionSet(server_->ssl_fd(), SSL_REQUIRE_CERTIFICATE,
+                          SSL_REQUIRE_ALWAYS));
   
   EXPECT_EQ(SECSuccess,
             SSL_GetClientAuthDataHook(
@@ -472,10 +515,13 @@ TEST_F(TlsConnectStreamTls13, PostHandshakeAuthDecline) {
   
   EXPECT_EQ(SECSuccess, SSL_SendCertificateRequest(server_->ssl_fd()))
       << "Unexpected error: " << PORT_ErrorToName(PORT_GetError());
-  server_->SendData(50);
-  client_->ReadBytes(50);
-  client_->SendData(50);
-  server_->ReadBytes(50);
+  server_->SendData(50);   
+  client_->ReadBytes(50);  
+  client_->SendData(50);   
+  server_->ExpectSendAlert(kTlsAlertCertificateRequired);
+  server_->ReadBytes(50);  
+  server_->ExpectReadWriteError();
+  server_->SendData(50);  
   
   
   EXPECT_EQ(0U, called);
