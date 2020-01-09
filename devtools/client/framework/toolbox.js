@@ -391,6 +391,10 @@ Toolbox.prototype = {
     return DevToolsUtils.getTopWindow(this.win);
   },
 
+  get topDoc() {
+    return this.topWindow.document;
+  },
+
   
 
 
@@ -3247,7 +3251,7 @@ Toolbox.prototype = {
 
 
   openTextBoxContextMenu: function(x, y) {
-    const menu = createEditContextMenu(this.win, "toolbox-menu");
+    const menu = createEditContextMenu(this.topWindow, "toolbox-menu");
 
     
     menu.once("open", () => this.emit("menu-open"));
