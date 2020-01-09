@@ -54,11 +54,18 @@ this.LoginManagerParent = {
   
   _lastMPLoginCancelled: Math.NEGATIVE_INFINITY,
 
+  
+
+
+
+
+
+
   _searchAndDedupeLogins(formOrigin,
                          actionOrigin,
                          {
-                           looseActionOriginMatch,
                            acceptDifferentSubdomains,
+                           ignoreActionAndRealm,
                          } = {}) {
     let logins;
     let matchData = {
@@ -66,7 +73,7 @@ this.LoginManagerParent = {
       schemeUpgrades: LoginHelper.schemeUpgrades,
       acceptDifferentSubdomains,
     };
-    if (!looseActionOriginMatch) {
+    if (!ignoreActionAndRealm) {
       matchData.formSubmitURL = actionOrigin;
     }
     try {
@@ -256,7 +263,7 @@ this.LoginManagerParent = {
     let logins = this._searchAndDedupeLogins(formOrigin,
                                              actionOrigin,
                                              {
-                                               looseActionOriginMatch: true,
+                                               ignoreActionAndRealm: true,
                                                acceptDifferentSubdomains: INCLUDE_OTHER_SUBDOMAINS_IN_LOOKUP,
                                              });
 
@@ -317,7 +324,7 @@ this.LoginManagerParent = {
       logins = this._searchAndDedupeLogins(formOrigin,
                                            actionOrigin,
                                            {
-                                             looseActionOriginMatch: true,
+                                             ignoreActionAndRealm: true,
                                              acceptDifferentSubdomains: INCLUDE_OTHER_SUBDOMAINS_IN_LOOKUP,
                                            });
     }
