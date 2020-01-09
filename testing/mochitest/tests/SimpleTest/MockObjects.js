@@ -33,7 +33,7 @@ MockObjectRegisterer.prototype = {
 
 
   register: function MOR_register() {
-    if (this._originalFactory)
+    if (this._originalCID)
       throw new Exception("Invalid object state when calling register()");
 
     
@@ -56,13 +56,11 @@ MockObjectRegisterer.prototype = {
       this._mockFactory = SpecialPowers.wrapCallbackObject(this._mockFactory);
     }
 
-    var retVal = SpecialPowers.swapFactoryRegistration(null, this._contractID, this._mockFactory, this._originalFactory);
+    var retVal = SpecialPowers.swapFactoryRegistration(null, this._contractID, this._mockFactory);
     if ('error' in retVal) {
       throw new Exception("ERROR: " + retVal.error);
-    } else if (!isChrome) {
-      this._originalFactory = SpecialPowers.wrap(retVal).originalFactory;
     } else {
-      this._originalFactory = retVal.originalFactory;
+      this._originalCID = retVal.originalCID;
     }
   },
 
@@ -70,14 +68,14 @@ MockObjectRegisterer.prototype = {
 
 
   unregister: function MOR_unregister() {
-    if (!this._originalFactory)
+    if (!this._originalCID)
       throw new Exception("Invalid object state when calling unregister()");
 
     
-    SpecialPowers.swapFactoryRegistration(null, this._contractID, this._originalFactory, this._mockFactory);
+    SpecialPowers.swapFactoryRegistration(this._originalCID, this._contractID);
 
     
-    this._originalFactory = null;
+    this._originalCID = null;
     this._mockFactory = null;
   },
 
@@ -86,7 +84,7 @@ MockObjectRegisterer.prototype = {
   
 
 
-  _originalFactory: null,
+  _originalCID: null,
 
   
 
