@@ -19,7 +19,6 @@ except ImportError:
     
     import which
 
-from StringIO import StringIO
 from mach.mixin.process import ProcessExecutionMixin
 from mozversioncontrol import (
     get_repository_from_build_config,
@@ -273,7 +272,7 @@ class MozbuildObject(ProcessExecutionMixin):
         
         
         
-        out = StringIO()
+        out = six.StringIO()
         env = os.environ
         if path and path != MozconfigLoader.AUTODETECT:
             env = dict(env)
