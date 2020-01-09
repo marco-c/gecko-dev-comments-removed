@@ -158,6 +158,13 @@ class CallbackObject : public nsISupports {
     eRethrowExceptions
   };
 
+  
+  
+  
+  
+  
+  void GetDescription(nsACString& aOutString);
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this);
   }
