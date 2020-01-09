@@ -253,8 +253,7 @@ function PopupNotifications(tabbrowser, panel,
         
         getNotificationFromElement(focusedElement) == notification ||
         notification.contains(focusedElement)) {
-      let escAction = notification.notification.options.escAction;
-      this._onButtonEvent(aEvent, escAction, "esc-press", notification);
+      this._onButtonEvent(aEvent, "secondarybuttoncommand", "esc-press", notification);
     }
   };
 
@@ -470,11 +469,6 @@ PopupNotifications.prototype = {
 
 
 
-
-
-
-
-
   show: function PopupNotifications_show(browser, id, message, anchorID,
                                          mainAction, secondaryActions, options) {
     function isInvalidAction(a) {
@@ -492,15 +486,6 @@ PopupNotifications.prototype = {
 
     let notification = new Notification(id, message, anchorID, mainAction,
                                         secondaryActions, browser, this, options);
-
-    if (options) {
-      let escAction = options.escAction;
-      if (escAction != "buttoncommand" ||
-          escAction != "secondarybuttoncommand") {
-        escAction = "secondarybuttoncommand";
-      }
-      notification.options.escAction = escAction;
-    }
 
     if (options && options.dismissed)
       notification.dismissed = true;
@@ -846,7 +831,7 @@ PopupNotifications.prototype = {
       popupnotification.setAttribute("popupid", n.id);
       popupnotification.setAttribute("oncommand", "PopupNotifications._onCommand(event);");
       if (Services.prefs.getBoolPref("privacy.permissionPrompts.showCloseButton")) {
-        popupnotification.setAttribute("closebuttoncommand", "PopupNotifications._onButtonEvent(event, '" + n.options.escAction + "', 'esc-press');");
+        popupnotification.setAttribute("closebuttoncommand", "PopupNotifications._onButtonEvent(event, 'secondarybuttoncommand', 'esc-press');");
       } else {
         popupnotification.setAttribute("closebuttoncommand", `PopupNotifications._dismiss(event, ${TELEMETRY_STAT_DISMISSAL_CLOSE_BUTTON});`);
       }
