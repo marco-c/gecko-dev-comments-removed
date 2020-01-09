@@ -7664,57 +7664,12 @@ nsresult PresShell::EventHandler::HandleEventInternal(
       case eKeyPress:
       case eKeyDown:
       case eKeyUp: {
-        Document* doc = mPresShell->GetCurrentEventContent()
-                            ? mPresShell->mCurrentEventContent->OwnerDoc()
-                            : nullptr;
-        auto keyCode = aEvent->AsKeyboardEvent()->mKeyCode;
-        if (keyCode == NS_VK_ESCAPE) {
-          Document* root = nsContentUtils::GetRootDocument(doc);
-          if (root && root->GetFullscreenElement()) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            aEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
-            aEvent->mFlags.mOnlyChromeDispatch = true;
-
-            
-            
-            if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed &&
-                aEvent->mMessage == eKeyUp) {
-              
-              
-              
-              Document::AsyncExitFullscreen(nullptr);
-            }
-          }
-          nsCOMPtr<Document> pointerLockedDoc =
-              do_QueryReferent(EventStateManager::sPointerLockedDoc);
-          if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed &&
-              pointerLockedDoc) {
-            
-            
-            
-            aEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
-            aEvent->mFlags.mOnlyChromeDispatch = true;
-            if (aEvent->mMessage == eKeyUp) {
-              Document::UnlockPointer();
-            }
-          }
-        }
+        WidgetKeyboardEvent* keyboardEvent = aEvent->AsKeyboardEvent();
+        MaybeHandleKeyboardEventBeforeDispatch(keyboardEvent);
         
         
         
-        isHandlingUserInput =
-            keyCode != NS_VK_ESCAPE && keyCode != NS_VK_SHIFT &&
-            keyCode != NS_VK_CONTROL && keyCode != NS_VK_ALT &&
-            keyCode != NS_VK_WIN && keyCode != NS_VK_META;
+        isHandlingUserInput = keyboardEvent->CanTreatAsUserInput();
         break;
       }
       case eMouseDown:
@@ -7916,6 +7871,59 @@ bool PresShell::EventHandler::PrepareToDispatchContextMenuEvent(
   return true;
 }
 
+void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
+    WidgetKeyboardEvent* aKeyboardEvent) {
+  MOZ_ASSERT(aKeyboardEvent);
+
+  if (aKeyboardEvent->mKeyCode != NS_VK_ESCAPE) {
+    return;
+  }
+
+  
+  
+  Document* doc = mPresShell->GetCurrentEventContent()
+                      ? mPresShell->mCurrentEventContent->OwnerDoc()
+                      : nullptr;
+  Document* root = nsContentUtils::GetRootDocument(doc);
+  if (root && root->GetFullscreenElement()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    aKeyboardEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
+    aKeyboardEvent->mFlags.mOnlyChromeDispatch = true;
+
+    
+    
+    if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed &&
+        aKeyboardEvent->mMessage == eKeyUp) {
+      
+      
+      
+      Document::AsyncExitFullscreen(nullptr);
+    }
+  }
+
+  nsCOMPtr<Document> pointerLockedDoc =
+      do_QueryReferent(EventStateManager::sPointerLockedDoc);
+  if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed && pointerLockedDoc) {
+    
+    
+    
+    aKeyboardEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
+    aKeyboardEvent->mFlags.mOnlyChromeDispatch = true;
+    if (aKeyboardEvent->mMessage == eKeyUp) {
+      Document::UnlockPointer();
+    }
+  }
+}
+
 void PresShell::EventHandler::RecordEventPreparationPerformance(
     const WidgetEvent* aEvent) {
   MOZ_ASSERT(aEvent);
@@ -7924,19 +7932,10 @@ void PresShell::EventHandler::RecordEventPreparationPerformance(
     case eKeyPress:
     case eKeyDown:
     case eKeyUp:
-      switch (aEvent->AsKeyboardEvent()->mKeyCode) {
-        case NS_VK_ESCAPE:
-        case NS_VK_SHIFT:
-        case NS_VK_CONTROL:
-        case NS_VK_ALT:
-        case NS_VK_WIN:
-        case NS_VK_META:
-          break;
-        default:
-          GetPresContext()->RecordInteractionTime(
-              nsPresContext::InteractionType::eKeyInteraction,
-              aEvent->mTimeStamp);
-          break;
+      if (aEvent->AsKeyboardEvent()->ShouldInteractionTimeRecorded()) {
+        GetPresContext()->RecordInteractionTime(
+            nsPresContext::InteractionType::eKeyInteraction,
+            aEvent->mTimeStamp);
       }
       Telemetry::AccumulateTimeDelta(Telemetry::INPUT_EVENT_QUEUED_KEYBOARD_MS,
                                      aEvent->mTimeStamp);
