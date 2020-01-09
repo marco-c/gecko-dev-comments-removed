@@ -120,14 +120,17 @@ MOZ_MUST_USE bool CompileLazyBinASTFunction(JSContext* cx,
 
 #endif  
 
+
 ModuleObject* CompileModule(JSContext* cx,
                             const JS::ReadOnlyCompileOptions& options,
                             JS::SourceText<char16_t>& srcBuf);
 
-ModuleObject* CompileModule(JSContext* cx,
-                            const JS::ReadOnlyCompileOptions& options,
-                            JS::SourceText<char16_t>& srcBuf,
-                            ScriptSourceObject** sourceObjectOut);
+
+
+ModuleObject* ParseModule(JSContext* cx,
+                          const JS::ReadOnlyCompileOptions& options,
+                          JS::SourceText<char16_t>& srcBuf,
+                          ScriptSourceObject** sourceObjectOut);
 
 
 
