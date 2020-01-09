@@ -2337,7 +2337,9 @@ class nsContentUtils {
 
 
 
-  static bool IsRequestFullscreenAllowed(mozilla::dom::CallerType aCallerType);
+
+  static const char* CheckRequestFullscreenAllowed(
+      mozilla::dom::CallerType aCallerType);
 
   
 

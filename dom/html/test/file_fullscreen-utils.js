@@ -72,12 +72,19 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
 
 
 function addFullscreenErrorContinuation(callback, inDoc) {
-  var doc = inDoc || document;
-  var listener = function(event) {
-    doc.removeEventListener("fullscreenerror", listener);
-    setTimeout(function(){callback(event);}, 0);
-  };
-  doc.addEventListener("fullscreenerror", listener);
+  return new Promise((resolve) => {
+    let doc = inDoc || document;
+    let listener = function(event) {
+      doc.removeEventListener("fullscreenerror", listener);
+      setTimeout(function(){
+        if(callback) {
+          callback(event);
+        }
+        resolve();
+      }, 0);
+    };
+    doc.addEventListener("fullscreenerror", listener);
+  })
 }
 
 
