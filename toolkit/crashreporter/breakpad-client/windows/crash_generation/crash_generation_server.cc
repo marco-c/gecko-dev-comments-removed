@@ -784,21 +784,22 @@ bool CrashGenerationServer::AddClient(ClientInfo* client_info) {
   client_info->set_dump_request_wait_handle(request_wait_handle);
 
   
-  HANDLE process_wait_handle = NULL;
-  if (!RegisterWaitForSingleObject(&process_wait_handle,
-                                   client_info->process_handle(),
-                                   OnClientEnd,
-                                   client_info,
-                                   INFINITE,
-                                   WT_EXECUTEONLYONCE)) {
-    return false;
-  }
-
-  client_info->set_process_exit_wait_handle(process_wait_handle);
-
-  
   {
     AutoCriticalSection lock(&sync_);
+
+    
+    HANDLE process_wait_handle = NULL;
+    if (!RegisterWaitForSingleObject(&process_wait_handle,
+                                     client_info->process_handle(),
+                                     OnClientEnd,
+                                     client_info,
+                                     INFINITE,
+                                     WT_EXECUTEONLYONCE)) {
+      return false;
+    }
+
+    client_info->set_process_exit_wait_handle(process_wait_handle);
+
     if (shutting_down_) {
       
       return false;
@@ -866,6 +867,8 @@ void CrashGenerationServer::HandleClientProcessExit(ClientInfo* client_info) {
     }
     clients_.remove(client_info);
   }
+
+  AutoCriticalSection lock(&sync_);
 
   
   
