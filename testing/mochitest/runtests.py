@@ -364,13 +364,31 @@ if mozinfo.isWin:
             pid)
         if not pHandle:
             return False
-        pExitCode = ctypes.wintypes.DWORD()
-        ctypes.windll.kernel32.GetExitCodeProcess(
-            pHandle,
-            ctypes.byref(pExitCode))
-        ctypes.windll.kernel32.CloseHandle(pHandle)
-        return pExitCode.value == STILL_ACTIVE
 
+        try:
+            pExitCode = ctypes.wintypes.DWORD()
+            ctypes.windll.kernel32.GetExitCodeProcess(
+                pHandle,
+                ctypes.byref(pExitCode))
+
+            if pExitCode.value != STILL_ACTIVE:
+                return False
+
+            
+            
+            
+            namesize = 1024
+            pName = ctypes.create_string_buffer(namesize)
+            namelen = ctypes.windll.kernel32.GetProcessImageFileNameA(pHandle,
+                                                                      pName,
+                                                                      namesize)
+            if namelen == 0:
+                
+                return True
+
+            return pName.value.endswith(('firefox.exe', 'plugin-container.exe'))
+        finally:
+            ctypes.windll.kernel32.CloseHandle(pHandle)
 else:
     import errno
 
