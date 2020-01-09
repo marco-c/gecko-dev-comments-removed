@@ -268,8 +268,8 @@ static bool sInitializedJS = false;
 
 
 EXPORT_XPCOM_API(nsresult)
-NS_InitXPCOM2(nsIServiceManager** aResult, nsIFile* aBinDirectory,
-              nsIDirectoryServiceProvider* aAppFileLocationProvider) {
+NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
+            nsIDirectoryServiceProvider* aAppFileLocationProvider) {
   static bool sInitialized = false;
   if (sInitialized) {
     return NS_ERROR_FAILURE;
