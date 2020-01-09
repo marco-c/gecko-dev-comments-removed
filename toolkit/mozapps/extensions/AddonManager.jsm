@@ -2059,6 +2059,23 @@ var AddonManagerInternal = {
                                .installTemporaryAddon(aFile);
   },
 
+  
+
+
+
+
+
+
+
+  installBuiltinAddon(aBase) {
+    if (!gStarted)
+      throw Components.Exception("AddonManager is not initialized",
+                                 Cr.NS_ERROR_NOT_INITIALIZED);
+
+    return AddonManagerInternal._getProviderByName("XPIProvider")
+                               .installBuiltinAddon(aBase);
+  },
+
    syncGetAddonIDByInstanceID(aInstanceID) {
      if (!gStarted)
        throw Components.Exception("AddonManager is not initialized",
@@ -3333,6 +3350,10 @@ var AddonManager = {
 
   installTemporaryAddon(aDirectory) {
     return AddonManagerInternal.installTemporaryAddon(aDirectory);
+  },
+
+  installBuiltinAddon(aBase) {
+    return AddonManagerInternal.installBuiltinAddon(aBase);
   },
 
   addManagerListener(aListener) {
