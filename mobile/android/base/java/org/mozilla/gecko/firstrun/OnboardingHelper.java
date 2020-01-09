@@ -146,6 +146,9 @@ public class OnboardingHelper implements MmaDelegate.MmaVariablesChangedListener
                 }
 
                 
+                saveOnboardingShownStatus();
+
+                
                 
                 
                 Telemetry.startUISession(TelemetryContract.Session.FIRSTRUN);
@@ -291,6 +294,10 @@ public class OnboardingHelper implements MmaDelegate.MmaVariablesChangedListener
     private void tryShowOnboarding(final boolean shouldUseLocalValues) {
         final AppCompatActivity activity = activityRef.get();
         if (activity == null) {
+            return;
+        }
+
+        if (Intent.ACTION_VIEW.equals(activityStartingIntent.getAction())) {
             return;
         }
 
