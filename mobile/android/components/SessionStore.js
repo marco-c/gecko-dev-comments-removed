@@ -9,6 +9,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
+  FormData: "resource://gre/modules/FormData.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PrivacyFilter: "resource://gre/modules/sessionstore/PrivacyFilter.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
@@ -1394,7 +1395,7 @@ SessionStore.prototype = {
         
         
         
-        return SessionStoreUtils.restoreFormData(frame.document, data);
+        return FormData.restore(frame, data);
       });
     }
   },

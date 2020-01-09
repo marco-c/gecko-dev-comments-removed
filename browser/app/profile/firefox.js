@@ -859,6 +859,8 @@ pref("browser.sessionstore.debug.no_auto_updates", false);
 
 pref("browser.sessionstore.cleanup.forget_closed_after", 1209600000);
 
+pref("browser.sessionstore.dom_storage_limit", 2048);
+
 pref("browser.sessionstore.max_write_failures", 5);
 
 
