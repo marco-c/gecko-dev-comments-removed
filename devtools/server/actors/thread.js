@@ -10,7 +10,6 @@ const Services = require("Services");
 const { Cr, Ci } = require("chrome");
 const { ActorPool } = require("devtools/server/actors/common");
 const { createValueGrip } = require("devtools/server/actors/object/utils");
-const { longStringGrip } = require("devtools/server/actors/object/long-string");
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { assert, dumpn } = DevToolsUtils;
@@ -1447,26 +1446,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       }
     }
     return {};
-  },
-
-  
-
-
-
-
-
-  pauseLongStringGrip: function(string) {
-    return longStringGrip(string, this._pausePool);
-  },
-
-  
-
-
-
-
-
-  threadLongStringGrip: function(string) {
-    return longStringGrip(string, this._threadLifetimePool);
   },
 
   
