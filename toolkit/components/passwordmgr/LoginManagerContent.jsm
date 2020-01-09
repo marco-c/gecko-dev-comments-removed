@@ -1084,6 +1084,11 @@ var LoginManagerContent = {
       return;
     }
 
+    if (usernameField && usernameField.value.match(/[•\*]{3,}/)) {
+      log(`usernameField.value "${usernameField.value}" looks munged, setting to null`);
+      usernameField = null;
+    }
+
     
     
     
