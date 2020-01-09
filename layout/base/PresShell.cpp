@@ -7178,38 +7178,46 @@ nsIFrame* PresShell::EventHandler::GetFrameForHandlingEventWith(
   MOZ_ASSERT(aGUIEvent);
   MOZ_ASSERT(aRetargetDocument);
 
-  nsCOMPtr<nsIPresShell> presShell = aRetargetDocument->GetShell();
+  nsCOMPtr<nsIPresShell> retargetPresShell = aRetargetDocument->GetShell();
   
   
   
-  if (!presShell) {
+  if (!retargetPresShell) {
     if (!aGUIEvent->HasKeyEventMessage()) {
       return nullptr;
     }
     Document* retargetEventDoc = aRetargetDocument;
-    while (!presShell) {
+    while (!retargetPresShell) {
       retargetEventDoc = retargetEventDoc->GetParentDocument();
       if (!retargetEventDoc) {
         return nullptr;
       }
-      presShell = retargetEventDoc->GetShell();
+      retargetPresShell = retargetEventDoc->GetShell();
     }
   }
 
-  if (presShell != mPresShell) {
-    nsIFrame* frame = presShell->GetRootFrame();
-    if (!frame) {
-      if (aGUIEvent->mMessage == eQueryTextContent ||
-          aGUIEvent->IsContentCommandEvent()) {
-        return nullptr;
-      }
-
-      frame = GetNearestFrameContainingPresShell(presShell);
-    }
-
-    return frame;
+  
+  
+  
+  if (retargetPresShell == mPresShell) {
+    return aFrameForPresShell;
   }
-  return aFrameForPresShell;
+
+  
+  nsIFrame* rootFrame = retargetPresShell->GetRootFrame();
+  if (rootFrame) {
+    return rootFrame;
+  }
+
+  
+  
+  if (aGUIEvent->mMessage == eQueryTextContent ||
+      aGUIEvent->IsContentCommandEvent()) {
+    return nullptr;
+  }
+
+  
+  return GetNearestFrameContainingPresShell(retargetPresShell);
 }
 
 Document* PresShell::GetPrimaryContentDocument() {
