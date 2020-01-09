@@ -10904,6 +10904,15 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
 
   
   result = CompositorHitTestFlags::eVisibleToHitTest;
+  if (nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this)) {
+    
+    
+    
+    if (!gfxVars::UseWebRender() ||
+        !nsSVGIntegrationUtils::UsingSimpleClipPathForFrame(this)) {
+      result += CompositorHitTestFlags::eIrregularArea;
+    }
+  }
 
   if (aBuilder->IsBuildingNonLayerizedScrollbar()) {
     
