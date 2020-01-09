@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+importScripts("/resources/testharness.js");
+
+
+
+
+test(() => {
+    assert_equals(1, 1, "1 == 1");
+  },
+  "Test that should pass"
+);
+
+
+
+
+
+
+
+
+
+
+done();
