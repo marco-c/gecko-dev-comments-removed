@@ -2,31 +2,23 @@
 
 
 
+
+
 import { annotateFrames } from "../annotateFrames";
+import { makeMockFrameWithURL } from "../../../test-mockup";
 
 describe("annotateFrames", () => {
   it("should return Angular", () => {
     const callstack = [
-      {
-        source: {
-          url: "https://cdnjs.cloudflare.com/ajax/libs/angular/angular.js"
-        }
-      },
-      {
-        source: {
-          url: "/node_modules/zone/zone.js"
-        }
-      },
-      {
-        source: {
-          url: "https://cdnjs.cloudflare.com/ajax/libs/angular/angular.js"
-        }
-      }
+      makeMockFrameWithURL(
+        "https://cdnjs.cloudflare.com/ajax/libs/angular/angular.js"
+      ),
+      makeMockFrameWithURL("/node_modules/zone/zone.js"),
+      makeMockFrameWithURL(
+        "https://cdnjs.cloudflare.com/ajax/libs/angular/angular.js"
+      )
     ];
     const frames = annotateFrames(callstack);
-    expect(frames).toEqual(
-      callstack.map(f => ({ ...f, library: "Angular" })),
-      "Angular (and zone.js) callstack is annotated as expected"
-    );
+    expect(frames).toEqual(callstack.map(f => ({ ...f, library: "Angular" })));
   });
 });
