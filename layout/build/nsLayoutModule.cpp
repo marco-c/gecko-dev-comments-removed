@@ -4,6 +4,8 @@
 
 
 
+#include "nsLayoutModule.h"
+
 #include "base/basictypes.h"
 
 #include "XPCModule.h"
