@@ -1737,6 +1737,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   virtual void MaybeBeginCloningVisually(){};
 
+  uint32_t GetPreloadDefault() const;
+  uint32_t GetPreloadDefaultAuto() const;
+
   
 
 
