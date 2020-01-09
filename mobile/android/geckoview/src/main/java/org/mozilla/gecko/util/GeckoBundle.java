@@ -392,20 +392,20 @@ public final class GeckoBundle implements Parcelable {
     }
 
     private void put(final String key, final Object value) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        throw new UnsupportedOperationException();
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      throw new UnsupportedOperationException();
     }
 
     
@@ -740,7 +740,7 @@ public final class GeckoBundle implements Parcelable {
     }
 
     @Override 
-    public boolean equals(final Object other) {
+    public boolean equals(Object other) {
         if (!(other instanceof GeckoBundle)) {
             return false;
         }
@@ -925,7 +925,7 @@ public final class GeckoBundle implements Parcelable {
         return new GeckoBundle(keys, values);
     }
 
-    private static Object fromJSONValue(final Object value) throws JSONException {
+    private static Object fromJSONValue(Object value) throws JSONException {
         if (value == null || value == JSONObject.NULL) {
             return null;
         } else if (value instanceof JSONObject) {

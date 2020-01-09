@@ -1,7 +1,8 @@
 package org.mozilla.gecko.mozglue;
 
 
-public abstract class JNIObject {
+public abstract class JNIObject
+{
     
     private long mHandle;
 

@@ -15,26 +15,26 @@ import android.support.annotation.NonNull;
 
 
 public class PermissionBlock {
-    private final PermissionsHelper mHelper;
+    private final PermissionsHelper helper;
 
-    private Context mContext;
-    private String[] mPermissions;
-    private boolean mOnUiThread;
-    private boolean mOnBackgroundThread;
-    private Runnable mOnPermissionsGranted;
-    private Runnable mOnPermissionsDenied;
-    private boolean mDoNotPrompt;
+    private Context context;
+    private String[] permissions;
+    private boolean onUIThread;
+    private boolean onBackgroundThread;
+    private Runnable onPermissionsGranted;
+    private Runnable onPermissionsDenied;
+    private boolean doNotPrompt;
 
-     PermissionBlock(final Context context, final PermissionsHelper helper) {
-        mContext = context;
-        mHelper = helper;
+     PermissionBlock(Context context, PermissionsHelper helper) {
+        this.context = context;
+        this.helper = helper;
     }
 
     
 
 
-    public PermissionBlock withPermissions(final @NonNull String... permissions) {
-        mPermissions = permissions;
+    public PermissionBlock withPermissions(@NonNull String... permissions) {
+        this.permissions = permissions;
         return this;
     }
 
@@ -42,7 +42,7 @@ public class PermissionBlock {
 
 
     public PermissionBlock onUIThread() {
-        mOnUiThread = true;
+        this.onUIThread = true;
         return this;
     }
 
@@ -50,7 +50,7 @@ public class PermissionBlock {
 
 
     public PermissionBlock onBackgroundThread() {
-        mOnBackgroundThread = true;
+        this.onBackgroundThread = true;
         return this;
     }
 
@@ -60,7 +60,7 @@ public class PermissionBlock {
 
 
     public PermissionBlock doNotPrompt() {
-        mDoNotPrompt = true;
+        doNotPrompt = true;
         return this;
     }
 
@@ -68,7 +68,7 @@ public class PermissionBlock {
 
 
 
-    public PermissionBlock doNotPromptIf(final boolean condition) {
+    public PermissionBlock doNotPromptIf(boolean condition) {
         if (condition) {
             doNotPrompt();
         }
@@ -87,53 +87,53 @@ public class PermissionBlock {
 
 
 
-    public void run(final Runnable onPermissionsGranted) {
-        if (!mDoNotPrompt && !(mContext instanceof Activity)) {
+    public void run(Runnable onPermissionsGranted) {
+        if (!doNotPrompt && !(context instanceof Activity)) {
             throw new IllegalStateException("You need to either specify doNotPrompt() or pass in an Activity context");
         }
 
-        mOnPermissionsGranted = onPermissionsGranted;
+        this.onPermissionsGranted = onPermissionsGranted;
 
-        if (hasPermissions(mContext)) {
+        if (hasPermissions(context)) {
             onPermissionsGranted();
-        } else if (mDoNotPrompt) {
+        } else if (doNotPrompt) {
             onPermissionsDenied();
         } else {
-            Permissions.prompt((Activity) mContext, this);
+            Permissions.prompt((Activity) context, this);
         }
 
         
-        mContext = null;
+        context = null;
     }
 
     
 
 
-    public PermissionBlock andFallback(final @NonNull Runnable onPermissionsDenied) {
-        mOnPermissionsDenied = onPermissionsDenied;
+    public PermissionBlock andFallback(@NonNull Runnable onPermissionsDenied) {
+        this.onPermissionsDenied = onPermissionsDenied;
         return this;
     }
 
      void onPermissionsGranted() {
-        executeRunnable(mOnPermissionsGranted);
+        executeRunnable(onPermissionsGranted);
     }
 
      void onPermissionsDenied() {
-        executeRunnable(mOnPermissionsDenied);
+        executeRunnable(onPermissionsDenied);
     }
 
-    private void executeRunnable(final Runnable runnable) {
+    private void executeRunnable(Runnable runnable) {
         if (runnable == null) {
             return;
         }
 
-        if (mOnUiThread && mOnBackgroundThread) {
+        if (onUIThread && onBackgroundThread) {
             throw new IllegalStateException("Cannot run callback on more than one thread");
         }
 
-        if (mOnUiThread && !ThreadUtils.isOnUiThread()) {
+        if (onUIThread && !ThreadUtils.isOnUiThread()) {
             ThreadUtils.postToUiThread(runnable);
-        } else if (mOnBackgroundThread && !ThreadUtils.isOnBackgroundThread()) {
+        } else if (onBackgroundThread && !ThreadUtils.isOnBackgroundThread()) {
             ThreadUtils.postToBackgroundThread(runnable);
         } else {
             runnable.run();
@@ -141,10 +141,10 @@ public class PermissionBlock {
     }
 
      String[] getPermissions() {
-        return mPermissions;
+        return permissions;
     }
 
-     boolean hasPermissions(final Context context) {
-        return mHelper.hasPermissions(context, mPermissions);
+     boolean hasPermissions(Context context) {
+        return helper.hasPermissions(context, permissions);
     }
 }

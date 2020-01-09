@@ -29,20 +29,19 @@ public final class BitmapUtils {
 
     private BitmapUtils() {}
 
-    public static Bitmap decodeByteArray(final byte[] bytes) {
+    public static Bitmap decodeByteArray(byte[] bytes) {
         return decodeByteArray(bytes, null);
     }
 
-    public static Bitmap decodeByteArray(final byte[] bytes, final BitmapFactory.Options options) {
+    public static Bitmap decodeByteArray(byte[] bytes, BitmapFactory.Options options) {
         return decodeByteArray(bytes, 0, bytes.length, options);
     }
 
-    public static Bitmap decodeByteArray(final byte[] bytes, final int offset, final int length) {
+    public static Bitmap decodeByteArray(byte[] bytes, int offset, int length) {
         return decodeByteArray(bytes, offset, length, null);
     }
 
-    public static Bitmap decodeByteArray(final byte[] bytes, final int offset, final int length,
-                                         final BitmapFactory.Options options) {
+    public static Bitmap decodeByteArray(byte[] bytes, int offset, int length, BitmapFactory.Options options) {
         if (bytes.length <= 0) {
             throw new IllegalArgumentException("bytes.length " + bytes.length
                                                + " must be a positive number");
@@ -72,7 +71,7 @@ public final class BitmapUtils {
         return bitmap;
     }
 
-    public static Bitmap decodeStream(final InputStream inputStream) {
+    public static Bitmap decodeStream(InputStream inputStream) {
         try {
             return BitmapFactory.decodeStream(inputStream);
         } catch (OutOfMemoryError e) {
@@ -81,11 +80,11 @@ public final class BitmapUtils {
         }
     }
 
-    public static Bitmap decodeUrl(final Uri uri) {
+    public static Bitmap decodeUrl(Uri uri) {
         return decodeUrl(uri.toString());
     }
 
-    public static Bitmap decodeUrl(final String urlString) {
+    public static Bitmap decodeUrl(String urlString) {
         URL url;
 
         try {
@@ -98,7 +97,7 @@ public final class BitmapUtils {
         return decodeUrl(url);
     }
 
-    public static Bitmap decodeUrl(final URL url) {
+    public static Bitmap decodeUrl(URL url) {
         InputStream stream = null;
 
         try {
@@ -124,12 +123,11 @@ public final class BitmapUtils {
         return bitmap;
     }
 
-    public static Bitmap decodeResource(final Context context, final int id) {
+    public static Bitmap decodeResource(Context context, int id) {
         return decodeResource(context, id, null);
     }
 
-    public static Bitmap decodeResource(final Context context, final int id,
-                                        final BitmapFactory.Options options) {
+    public static Bitmap decodeResource(Context context, int id, BitmapFactory.Options options) {
         Resources resources = context.getResources();
         try {
             return BitmapFactory.decodeResource(resources, id, options);
@@ -139,8 +137,7 @@ public final class BitmapUtils {
         }
     }
 
-    public static @ColorInt int getDominantColor(final Bitmap source,
-                                                 final @ColorInt int defaultColor) {
+    public static @ColorInt int getDominantColor(Bitmap source, @ColorInt int defaultColor) {
         if (HardwareUtils.isX86System()) {
             
             
@@ -163,75 +160,76 @@ public final class BitmapUtils {
         }
     }
 
-    public static @ColorInt int getDominantColorCustomImplementation(final Bitmap source) {
+    public static @ColorInt int getDominantColorCustomImplementation(Bitmap source) {
         return getDominantColorCustomImplementation(source, true, Color.WHITE);
     }
 
-    public static @ColorInt int getDominantColorCustomImplementation(
-            final Bitmap source, final boolean applyThreshold, final @ColorInt int defaultColor) {
-        if (source == null) {
-            return defaultColor;
+    public static @ColorInt int getDominantColorCustomImplementation(Bitmap source,
+                                                                     boolean applyThreshold,
+                                                                     @ColorInt int defaultColor) {
+      if (source == null) {
+          return defaultColor;
+      }
+
+      
+      
+      int[] colorBins = new int[36];
+
+      
+      
+      int maxBin = -1;
+
+      
+      
+      float[] sumHue = new float[36];
+      float[] sumSat = new float[36];
+      float[] sumVal = new float[36];
+      float[] hsv = new float[3];
+
+      int height = source.getHeight();
+      int width = source.getWidth();
+      int[] pixels = new int[width * height];
+      source.getPixels(pixels, 0, width, 0, 0, width, height);
+      for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+          int c = pixels[col + row * width];
+          
+          if (Color.alpha(c) < 128)
+            continue;
+
+          Color.colorToHSV(c, hsv);
+
+          
+          if (applyThreshold && (hsv[1] <= 0.35f || hsv[2] <= 0.35f))
+            continue;
+
+          
+          int bin = (int) Math.floor(hsv[0] / 10.0f);
+
+          
+          sumHue[bin] = sumHue[bin] + hsv[0];
+          sumSat[bin] = sumSat[bin] + hsv[1];
+          sumVal[bin] = sumVal[bin] + hsv[2];
+
+          
+          colorBins[bin]++;
+
+          
+          if (maxBin < 0 || colorBins[bin] > colorBins[maxBin])
+            maxBin = bin;
         }
+      }
 
-        
-        
-        int[] colorBins = new int[36];
+      
+      if (maxBin < 0) {
+          return defaultColor;
+      }
 
-        
-        
-        int maxBin = -1;
-
-        
-        
-        float[] sumHue = new float[36];
-        float[] sumSat = new float[36];
-        float[] sumVal = new float[36];
-        float[] hsv = new float[3];
-
-        int height = source.getHeight();
-        int width = source.getWidth();
-        int[] pixels = new int[width * height];
-        source.getPixels(pixels, 0, width, 0, 0, width, height);
-        for (int row = 0; row < height; row++) {
-            for (int col = 0; col < width; col++) {
-                int c = pixels[col + row * width];
-                
-                if (Color.alpha(c) < 128)
-                    continue;
-
-                Color.colorToHSV(c, hsv);
-
-                
-                if (applyThreshold && (hsv[1] <= 0.35f || hsv[2] <= 0.35f))
-                    continue;
-
-                
-                int bin = (int) Math.floor(hsv[0] / 10.0f);
-
-                
-                sumHue[bin] = sumHue[bin] + hsv[0];
-                sumSat[bin] = sumSat[bin] + hsv[1];
-                sumVal[bin] = sumVal[bin] + hsv[2];
-
-                
-                colorBins[bin]++;
-
-                
-                if (maxBin < 0 || colorBins[bin] > colorBins[maxBin])
-                    maxBin = bin;
-            }
-        }
-
-        
-        if (maxBin < 0) {
-            return defaultColor;
-        }
-
-        
-        hsv[0] = sumHue[maxBin] / colorBins[maxBin];
-        hsv[1] = sumSat[maxBin] / colorBins[maxBin];
-        hsv[2] = sumVal[maxBin] / colorBins[maxBin];
-        return Color.HSVToColor(hsv);
+      
+      hsv[0] = sumHue[maxBin] / colorBins[maxBin];
+      hsv[1] = sumSat[maxBin] / colorBins[maxBin];
+      hsv[2] = sumVal[maxBin] / colorBins[maxBin];
+      return Color.HSVToColor(hsv);
     }
 
     
@@ -240,7 +238,7 @@ public final class BitmapUtils {
 
 
 
-    public static Bitmap getBitmapFromDataURI(final String dataURI) {
+    public static Bitmap getBitmapFromDataURI(String dataURI) {
         if (dataURI == null) {
             return null;
         }
@@ -257,7 +255,7 @@ public final class BitmapUtils {
 
 
 
-    public static byte[] getBytesFromBase64(final String base64) {
+    public static byte[] getBytesFromBase64(String base64) {
         try {
             return Base64.decode(base64, Base64.DEFAULT);
         } catch (Exception e) {
@@ -267,12 +265,12 @@ public final class BitmapUtils {
         return null;
     }
 
-    public static byte[] getBytesFromDataURI(final String dataURI) {
+    public static byte[] getBytesFromDataURI(String dataURI) {
         final String base64 = dataURI.substring(dataURI.indexOf(',') + 1);
         return getBytesFromBase64(base64);
     }
 
-    public static Bitmap getBitmapFromDrawable(final Drawable drawable) {
+    public static Bitmap getBitmapFromDrawable(Drawable drawable) {
         if (drawable instanceof BitmapDrawable) {
             return ((BitmapDrawable) drawable).getBitmap();
         }

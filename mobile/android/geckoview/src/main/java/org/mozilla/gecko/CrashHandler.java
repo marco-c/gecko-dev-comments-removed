@@ -6,6 +6,7 @@
 package org.mozilla.gecko;
 
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -14,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
+import android.support.v4.app.JobIntentService;
 import android.util.Log;
 
 import org.mozilla.geckoview.BuildConfig;
@@ -54,12 +56,11 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-    public static Throwable getRootException(final Throwable exc) {
-        Throwable cause;
-        for (cause = exc; cause != null; cause = cause.getCause()) {
+    public static Throwable getRootException(Throwable exc) {
+        for (Throwable cause = exc; cause != null; cause = cause.getCause()) {
+            exc = cause;
         }
-
-        return cause;
+        return exc;
     }
 
     
@@ -446,28 +447,26 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
     @Override
-    public void uncaughtException(final Thread thread, final Throwable exc) {
+    public void uncaughtException(Thread thread, Throwable exc) {
         if (this.crashing) {
             
             return;
         }
 
-        Thread resolvedThread = thread;
-        if (resolvedThread == null) {
+        if (thread == null) {
             
-            resolvedThread = Thread.currentThread();
+            thread = Thread.currentThread();
         }
 
         try {
-            Throwable rootException = exc;
             if (!this.unregistered) {
                 
 
                 this.crashing = true;
-                rootException = getRootException(exc);
-                logException(resolvedThread, rootException);
+                exc = getRootException(exc);
+                logException(thread, exc);
 
-                if (reportException(resolvedThread, rootException)) {
+                if (reportException(thread, exc)) {
                     
                     return;
                 }
@@ -475,7 +474,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
             if (systemUncaughtHandler != null) {
                 
-                systemUncaughtHandler.uncaughtException(resolvedThread, rootException);
+                systemUncaughtHandler.uncaughtException(thread, exc);
             }
         } finally {
             terminateProcess();

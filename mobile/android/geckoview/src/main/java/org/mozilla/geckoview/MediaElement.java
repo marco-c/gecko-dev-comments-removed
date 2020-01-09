@@ -11,6 +11,7 @@ import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
+import android.util.Log;
 
 import org.mozilla.gecko.util.GeckoBundle;
 
@@ -216,7 +217,7 @@ public class MediaElement {
 
 
         public class TimeRange {
-            protected TimeRange(final double start, final double end) {
+            protected TimeRange(double start, double end) {
                 this.start = start;
                 this.end = end;
             }

@@ -23,7 +23,7 @@ public final class INIParser extends INISection {
 
     
     
-    public INIParser(final File iniFile) {
+    public INIParser(File iniFile) {
         super("");
         mFile = iniFile;
     }
@@ -34,7 +34,7 @@ public final class INIParser extends INISection {
     }
 
     
-    public void writeTo(final File f) {
+    public void writeTo(File f) {
         if (f == null)
             return;
 
@@ -56,7 +56,7 @@ public final class INIParser extends INISection {
     }
 
     @Override
-    public void write(final BufferedWriter writer) throws IOException {
+    public void write(BufferedWriter writer) throws IOException {
         super.write(writer);
 
         if (mSections != null) {
@@ -88,7 +88,7 @@ public final class INIParser extends INISection {
     }
 
     
-    private void parse(final File f) throws IOException {
+    private void parse(File f) throws IOException {
         
         mSections = new Hashtable<String, INISection>();
 
@@ -139,21 +139,21 @@ public final class INIParser extends INISection {
     }
 
     
-    public void addSection(final INISection sect) {
+    public void addSection(INISection sect) {
         
         getSections();
         mSections.put(sect.getName(), sect);
     }
 
     
-    public INISection getSection(final String key) {
+    public INISection getSection(String key) {
         
         getSections();
         return mSections.get(key);
     }
 
     
-    public void removeSection(final String name) {
+    public void removeSection(String name) {
         
         getSections();
         mSections.remove(name);
@@ -161,7 +161,7 @@ public final class INIParser extends INISection {
 
     
     
-    public void renameSection(final String oldName, final String newName) {
+    public void renameSection(String oldName, String newName) {
         
         getSections();
 

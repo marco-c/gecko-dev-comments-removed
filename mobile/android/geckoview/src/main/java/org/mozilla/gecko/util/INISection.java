@@ -17,12 +17,8 @@ public class INISection {
 
     
     private String mName;
-    public String getName() {
-        return mName;
-    }
-    public void setName(final String name) {
-        mName = name;
-    }
+    public String getName() { return mName; }
+    public void setName(String name) { mName = name; }
 
     
     private  boolean mDebug;
@@ -32,25 +28,25 @@ public class INISection {
 
     
     
-    public INISection(final String name) {
+    public INISection(String name) {
         mName = name;
     }
 
     
-    protected void debug(final String msg) {
+    protected void debug(String msg) {
         if (mDebug) {
             Log.i(LOGTAG, msg);
         }
     }
 
     
-    public Object getProperty(final String key) {
+    public Object getProperty(String key) {
         getProperties(); 
         return mProperties.get(key);
     }
 
     
-    public int getIntProperty(final String key) {
+    public int getIntProperty(String key) {
         Object val = getProperty(key);
         if (val == null)
             return -1;
@@ -59,10 +55,10 @@ public class INISection {
     }
 
     
-    public String getStringProperty(final String key) {
+    public String getStringProperty(String key) {
         Object val = getProperty(key);
         if (val == null)
-            return null;
+          return null;
 
         return val.toString();
     }
@@ -85,7 +81,7 @@ public class INISection {
     }
 
     
-    public void setProperty(final String key, final Object value) {
+    public void setProperty(String key, Object value) {
         getProperties(); 
         if (value == null)
             removeProperty(key);
@@ -94,13 +90,13 @@ public class INISection {
     }
 
     
-    public void removeProperty(final String name) {
+    public void removeProperty(String name) {
         
         getProperties();
         mProperties.remove(name);
     }
 
-    public void write(final BufferedWriter writer) throws IOException {
+    public void write(BufferedWriter writer) throws IOException {
         if (!TextUtils.isEmpty(mName)) {
             writer.write("[" + mName + "]");
             writer.newLine();
@@ -116,7 +112,7 @@ public class INISection {
     }
 
     
-    private void writeProperty(final BufferedWriter writer, final String key, final Object value) {
+    private void writeProperty(BufferedWriter writer, String key, Object value) {
         try {
             writer.write(key + "=" + value);
             writer.newLine();

@@ -11,7 +11,8 @@ import org.mozilla.gecko.mozglue.JNIObject;
 import android.graphics.SurfaceTexture;
 
  final class SurfaceTextureListener
-    extends JNIObject implements SurfaceTexture.OnFrameAvailableListener {
+    extends JNIObject implements SurfaceTexture.OnFrameAvailableListener
+{
     @WrapForJNI(calledFrom = "gecko")
     private SurfaceTextureListener() {
     }
@@ -28,7 +29,7 @@ import android.graphics.SurfaceTexture;
     private native void nativeOnFrameAvailable();
 
     @Override 
-    public void onFrameAvailable(final SurfaceTexture surfaceTexture) {
+    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         try {
             nativeOnFrameAvailable();
         } catch (final NullPointerException e) {

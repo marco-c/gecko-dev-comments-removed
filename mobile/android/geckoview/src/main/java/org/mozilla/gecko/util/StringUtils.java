@@ -12,6 +12,9 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 public class StringUtils {
@@ -45,15 +48,15 @@ public class StringUtils {
 
 
 
-    public static boolean isSearchQuery(final String text, final boolean wasSearchQuery) {
+    public static boolean isSearchQuery(String text, boolean wasSearchQuery) {
         
-        String trimmedText = text.trim();
-        if (trimmedText.length() == 0) {
+        text = text.trim();
+        if (text.length() == 0) {
             return wasSearchQuery;
         }
-        int colon = trimmedText.indexOf(':');
-        int dot = trimmedText.indexOf('.');
-        int space = trimmedText.indexOf(' ');
+        int colon = text.indexOf(':');
+        int dot = text.indexOf('.');
+        int space = text.indexOf(' ');
 
         
         if (space > -1) {
@@ -104,11 +107,11 @@ public class StringUtils {
         public static final int STRIP_HTTPS = 1;
     }
 
-    public static String stripScheme(final String url) {
+    public static String stripScheme(String url) {
         return stripScheme(url, UrlFlags.NONE);
     }
 
-    public static String stripScheme(final String url, final int flags) {
+    public static String stripScheme(String url, int flags) {
         if (url == null) {
             return url;
         }
@@ -128,7 +131,7 @@ public class StringUtils {
         return newURL;
     }
 
-    public static boolean isHttpOrHttps(final String url) {
+    public static boolean isHttpOrHttps(String url) {
         if (TextUtils.isEmpty(url)) {
             return false;
         }
@@ -136,7 +139,7 @@ public class StringUtils {
         return url.startsWith("http://") || url.startsWith("https://");
     }
 
-    public static String stripCommonSubdomains(final String host) {
+    public static String stripCommonSubdomains(String host) {
         if (host == null) {
             return host;
         }
@@ -159,7 +162,7 @@ public class StringUtils {
     
 
 
-    public static String getQueryParameter(final String url, final String desiredKey) {
+    public static String getQueryParameter(String url, String desiredKey) {
         if (TextUtils.isEmpty(url) || TextUtils.isEmpty(desiredKey)) {
             return null;
         }
@@ -192,7 +195,7 @@ public class StringUtils {
         return null;
     }
 
-    public static boolean isFilterUrl(final String url) {
+    public static boolean isFilterUrl(String url) {
         if (TextUtils.isEmpty(url)) {
             return false;
         }
@@ -200,7 +203,7 @@ public class StringUtils {
         return url.startsWith(FILTER_URL_PREFIX);
     }
 
-    public static String getFilterFromUrl(final String url) {
+    public static String getFilterFromUrl(String url) {
         if (TextUtils.isEmpty(url)) {
             return null;
         }
@@ -214,7 +217,7 @@ public class StringUtils {
                 "file".equals(scheme) || "resource".equals(scheme));
     }
 
-    public static boolean isUserEnteredUrl(final String url) {
+    public static boolean isUserEnteredUrl(String url) {
         return (url != null && url.startsWith(USER_ENTERED_URL_PREFIX));
     }
 
@@ -227,7 +230,7 @@ public class StringUtils {
 
 
 
-    public static String decodeUserEnteredUrl(final String url) {
+    public static String decodeUserEnteredUrl(String url) {
         Uri uri = Uri.parse(url);
         if ("user-entered".equals(uri.getScheme())) {
             return uri.getSchemeSpecificPart();
@@ -235,7 +238,7 @@ public class StringUtils {
         return url;
     }
 
-    public static String encodeUserEnteredUrl(final String url) {
+    public static String encodeUserEnteredUrl(String url) {
         return Uri.fromParts("user-entered", url, null).toString();
     }
 
@@ -250,14 +253,14 @@ public class StringUtils {
 
 
 
-    public static Set<String> getQueryParameterNames(final Uri uri) {
+    public static Set<String> getQueryParameterNames(Uri uri) {
         return uri.getQueryParameterNames();
     }
 
     
 
 
-    public static int pathStartIndex(final String text) {
+    public static int pathStartIndex(String text) {
         if (text.contains("://")) {
             return text.indexOf('/', text.indexOf("://") + 3);
         } else {
@@ -274,7 +277,7 @@ public class StringUtils {
     
 
 
-    public static boolean isRTL(final String text) {
+    public static boolean isRTL(String text) {
         if (TextUtils.isEmpty(text)) {
             return false;
         }
@@ -291,7 +294,7 @@ public class StringUtils {
     
 
 
-    public static String forceLTR(final String text) {
+    public static String forceLTR(String text) {
         if (!isRTL(text)) {
             return text;
         }
@@ -302,15 +305,14 @@ public class StringUtils {
     
 
 
-    public static boolean caseInsensitiveStartsWith(final String text, final String prefix) {
+    public static boolean caseInsensitiveStartsWith(String text, String prefix) {
         return caseInsensitiveStartsWith(text, prefix, 0);
     }
 
     
 
 
-    public static boolean caseInsensitiveStartsWith(final String text, final String prefix,
-                                                    final int start) {
+    public static boolean caseInsensitiveStartsWith(String text, String prefix, int start) {
         return text.regionMatches(true, start, prefix, 0, prefix.length());
     }
 
