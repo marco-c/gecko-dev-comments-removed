@@ -96,31 +96,31 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
     },
 
     start: function() {
-      t._constructSubresourceUrl();
-      t._constructExpectedReferrerUrl();
+      async_test(function(test) {
 
-      var test = async_test(t._testDescription);
+        t._constructSubresourceUrl();
+        t._constructExpectedReferrerUrl();
 
-      t._invokeSubresource(function(result) {
-        
-        sanityChecker.checkSubresourceResult(
-            test, t._scenario, t._subresourceUrl, result);
+        t._invokeSubresource(test.step_func(function(result) {
+          
+          sanityChecker.checkSubresourceResult(
+              test, t._scenario, t._subresourceUrl, result);
 
-        
-        test.step(function() {
-          assert_equals(result.referrer,
-                        t._expectedReferrerUrl,
-                        "Reported Referrer URL is '" +
-                        t._scenario.referrer_url + "'.");
-          assert_equals(result.headers.referer,
-                        t._expectedReferrerUrl,
-                        "Reported Referrer URL from HTTP header is '" +
-                        t._expectedReferrerUrl + "'");
-        }, "Reported Referrer URL is as expected: " + t._scenario.referrer_url);
+          
+          test.step(function() {
+            assert_equals(result.referrer,
+                          t._expectedReferrerUrl,
+                          "Reported Referrer URL is '" +
+                          t._scenario.referrer_url + "'.");
+            assert_equals(result.headers.referer,
+                          t._expectedReferrerUrl,
+                          "Reported Referrer URL from HTTP header is '" +
+                          t._expectedReferrerUrl + "'");
+          }, "Reported Referrer URL is as expected: " + t._scenario.referrer_url);
 
-        test.done();
-      }, test);
-
+          test.done();
+        }), test);
+      }, t._testDescription);
     }
   }
 
