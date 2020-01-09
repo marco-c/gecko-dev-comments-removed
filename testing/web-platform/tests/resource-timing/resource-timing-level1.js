@@ -53,34 +53,6 @@ window.onload =
                             "'Src' of new <iframe> must be 'about:blank'.");
                     }
             },
-            {
-                description: "Setting 'document.domain' does not effect same-origin checks",
-                test:
-                    function (test) {
-                        initiateFetch(
-                            test,
-                            "iframe",
-                            canonicalize("iframe-setdomain.sub.html"),
-                            function (initiator, entry) {
-                                
-                                assert_throws(
-                                    null,
-                                    function () {
-                                        assert_not_equals(frame.contentWindow.document, null);
-                                    },
-                                    "Test Error: IFrame is not recognized as cross-domain.");
-
-                                
-                                
-                                ["domainLookupStart", "domainLookupEnd", "connectStart", "connectEnd"]
-                                    .forEach(function(property) {
-                                        assert_greater_than(entry.connectEnd, 0,
-                                            "Property should be non-zero because timing allow check ignores 'document.domain'.");
-                                    });
-                                test.done();
-                            });
-                    }
-            }
         ];
 
         
@@ -324,7 +296,7 @@ window.onload =
             
             
             
-            window.setTimeout(
+            test.step_timeout(
                 test.step_func(
                     function () {
                         performance
@@ -468,7 +440,7 @@ window.onload =
 
         function createOnloadCallbackFn(test, initiator, url, onloadCallback) {
             
-            var beforeEntryCount = performance.getEntries().length;
+            var beforeEntryCount = performance.getEntriesByType("resource").length;
 
             return test.step_func(
                 function() {
@@ -480,7 +452,7 @@ window.onload =
                         }
                     }
 
-                    var entries = performance.getEntries();
+                    var entries = performance.getEntriesByType("resource");
                     var candidateEntry = entries[entries.length - 1];
 
                     switch (entries.length - beforeEntryCount)
