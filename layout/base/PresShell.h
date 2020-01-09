@@ -526,12 +526,14 @@ class PresShell final : public nsIPresShell,
 
 
 
+
     MOZ_CAN_RUN_SCRIPT
     nsresult HandleEvent(nsIFrame* aFrameForPresShell,
                          WidgetGUIEvent* aGUIEvent, bool aDontRetargetEvents,
                          nsEventStatus* aEventStatus);
 
     
+
 
 
 
