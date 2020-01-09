@@ -1500,7 +1500,7 @@ var BrowserApp = {
     }
 
     BrowserApp.sanitize(aClear.sanitize, function() {
-      let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"].getService(Ci.nsIAppStartup);
+      let appStartup = Services.startup;
       appStartup.quit(Ci.nsIAppStartup.eForceQuit);
     }, true);
   },
@@ -1722,6 +1722,7 @@ var BrowserApp = {
     Services.prefs.setComplexValue(pref, Ci.nsIPrefLocalizedString, pls);
   },
 
+  
   onEvent: function(event, data, callback) {
     let browser = this.selectedBrowser;
 
@@ -1792,12 +1793,7 @@ var BrowserApp = {
         Strings.flush();
 
         
-        let osLocale;
-        try {
-          
-          osLocale = Services.prefs.getCharPref("intl.locale.os");
-        } catch (e) {
-        }
+        let osLocale = Services.prefs.getCharPref("intl.locale.os");
 
         this.computeAcceptLanguages(osLocale, data && data.languageTag);
         break;
@@ -1888,6 +1884,7 @@ var BrowserApp = {
                 Telemetry.addData("TRACKING_PROTECTION_EVENTS", 1);
               }
             } else {
+              
               
               
               
@@ -3498,6 +3495,7 @@ function nsBrowserAccess() {
 nsBrowserAccess.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIBrowserDOMWindow]),
 
+  
   _getBrowser: function _getBrowser(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
     let isExternal = !!(aFlags & Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL);
     if (isExternal && aURI && aURI.schemeIs("chrome"))
@@ -3701,6 +3699,7 @@ function getBaseDomain(aURI) {
 }
 
 Tab.prototype = {
+  
   create: function(aURL, aParams) {
     if (this.browser)
       return;
@@ -4236,6 +4235,7 @@ Tab.prototype = {
       return Services.io.newURI(url);
   },
 
+  
   handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "DOMContentLoaded": {
@@ -4616,6 +4616,7 @@ Tab.prototype = {
     }
   },
 
+  
   onLocationChange: function(aWebProgress, aRequest, aLocationURI, aFlags) {
     let contentWin = aWebProgress.DOMWindow;
     let webNav = contentWin.docShell.QueryInterface(Ci.nsIWebNavigation);
@@ -5026,6 +5027,7 @@ var BrowserEventHandler = {
 };
 
 var ErrorPageEventHandler = {
+  
   handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "click": {
@@ -5092,7 +5094,7 @@ var ErrorPageEventHandler = {
           let isIframe = (errorDoc.defaultView.parent === errorDoc.defaultView);
           bucketName += isIframe ? "TOP_" : "FRAME_";
 
-          let formatter = Cc["@mozilla.org/toolkit/URLFormatterService;1"].getService(Ci.nsIURLFormatter);
+          let formatter = Services.urlFormatter;
 
           if (target == errorDoc.getElementById("getMeOutButton")) {
             if (sendTelemetry) {
@@ -5321,20 +5323,18 @@ var XPInstallObserver = {
 
     if (needsRestart) {
       this.showRestartPrompt();
-    } else {
+    } else if (!aInstall.existingAddon || !AddonManager.shouldAutoUpdate(aInstall.existingAddon)) {
       
-      if (!aInstall.existingAddon || !AddonManager.shouldAutoUpdate(aInstall.existingAddon)) {
-        let message = Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart.message");
-        Snackbars.show(message, Snackbars.LENGTH_LONG, {
-          action: {
-            label: Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart.action2"),
-            callback: () => {
-              UITelemetry.addEvent("show.1", "toast", null, "addons");
-              BrowserApp.selectOrAddTab("about:addons", { parentId: BrowserApp.selectedTab.id });
-            },
+      let message = Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart.message");
+      Snackbars.show(message, Snackbars.LENGTH_LONG, {
+        action: {
+          label: Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart.action2"),
+          callback: () => {
+            UITelemetry.addEvent("show.1", "toast", null, "addons");
+            BrowserApp.selectOrAddTab("about:addons", { parentId: BrowserApp.selectedTab.id });
           },
-        });
-      }
+        },
+      });
     }
   },
 
@@ -5407,10 +5407,10 @@ var XPInstallObserver = {
         Services.obs.notifyObservers(cancelQuit, "quit-application-requested", "restart");
 
         
-        if (cancelQuit.data == false) {
+        if (!cancelQuit.data) {
           Services.obs.notifyObservers(null, "quit-application-proceeding");
           SharedPreferences.forApp().setBoolPref("browser.sessionstore.resume_session_once", true);
-          let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"].getService(Ci.nsIAppStartup);
+          let appStartup = Services.startup;
           appStartup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit);
         }
       },
