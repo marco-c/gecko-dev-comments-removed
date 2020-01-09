@@ -26,8 +26,10 @@ class AndroidGamepadManager final
     if (aAdded) {
       const int svc_id = service->AddGamepad(
           "android", GamepadMappingType::Standard, GamepadHand::_empty,
-          kStandardGamepadButtons, kStandardGamepadAxes,
+          kStandardGamepadButtons, kStandardGamepadAxes, 0, 0,
           0);  
+      
+      
       java::AndroidGamepadManager::OnGamepadAdded(aID, svc_id);
 
     } else {

@@ -304,8 +304,9 @@ void DarwinGamepadService::DeviceAdded(IOHIDDeviceRef device) {
   uint32_t index = service->AddGamepad(
       buffer, mozilla::dom::GamepadMappingType::_empty,
       mozilla::dom::GamepadHand::_empty, (int)mGamepads[slot].numButtons(),
-      (int)mGamepads[slot].numAxes(),
+      (int)mGamepads[slot].numAxes(), 0, 0,
       0);  
+  
   mGamepads[slot].mSuperIndex = index;
 }
 
