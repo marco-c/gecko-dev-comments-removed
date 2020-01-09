@@ -60,7 +60,7 @@ function declTest(name, cfg) {
     
     let browser = win.gBrowser.selectedBrowser;
     BrowserTestUtils.loadURI(browser, url);
-    await BrowserTestUtils.browserLoaded(browser);
+    await BrowserTestUtils.browserLoaded(browser, false, url);
 
     
     info("browser ready");
