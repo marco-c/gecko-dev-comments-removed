@@ -504,8 +504,6 @@ class TabParent final : public PBrowserParent,
   
   LayoutDeviceIntPoint GetClientOffset();
 
-  LayoutDevicePoint AdjustTapToChildWidget(const LayoutDevicePoint& aPoint);
-
   
 
 
