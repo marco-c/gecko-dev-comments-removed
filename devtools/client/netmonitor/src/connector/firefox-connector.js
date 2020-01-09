@@ -238,6 +238,15 @@ class FirefoxConnector {
 
 
 
+  blockRequest(filter) {
+    return this.webConsoleClient.blockRequest(filter);
+  }
+
+  
+
+
+
+
 
   setPreferences(request) {
     return this.webConsoleClient.setPreferences(request);

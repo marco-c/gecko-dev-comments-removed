@@ -80,6 +80,22 @@ function sendCustomRequest(connector) {
 
 
 
+function blockSelectedRequestURL(connector) {
+  return (dispatch, getState) => {
+    const selected = getSelectedRequest(getState());
+
+    if (!selected) {
+      return;
+    }
+
+    const { url } = selected;
+    connector.blockRequest({ url });
+  };
+}
+
+
+
+
 
 function removeSelectedCustomRequest() {
   return {
@@ -104,6 +120,7 @@ function toggleRecording() {
 
 module.exports = {
   addRequest,
+  blockSelectedRequestURL,
   clearRequests,
   cloneSelectedRequest,
   removeSelectedCustomRequest,

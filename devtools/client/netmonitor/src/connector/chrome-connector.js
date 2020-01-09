@@ -89,6 +89,15 @@ class ChromeConnector {
     
   }
 
+  
+
+
+
+
+  blockRequest(filter) {
+    
+  }
+
   setPreferences() {
     
   }

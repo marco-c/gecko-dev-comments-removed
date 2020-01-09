@@ -6,7 +6,7 @@
 
 "use strict";
 
-const {Cc, Ci} = require("chrome");
+const {Cc, Ci, Cr} = require("chrome");
 const Services = require("Services");
 const flags = require("devtools/shared/flags");
 
@@ -125,6 +125,8 @@ function NetworkObserver(filters, owner) {
 
   this.openRequests = new Map();
   this.openResponses = new Map();
+
+  this.blockedURLs = new Set();
 
   this._httpResponseExaminer =
     DevToolsUtils.makeInfallible(this._httpResponseExaminer).bind(this);
@@ -649,12 +651,32 @@ NetworkObserver.prototype = {
 
 
 
+  blockRequest(filter) {
+    if (!filter || !filter.url) {
+      
+      
+      return;
+    }
+
+    this.blockedURLs.add(filter.url);
+  },
+
+  
+
+
+
+
 
 
 
   _setupResponseListener: function(httpActivity, fromCache) {
     const channel = httpActivity.channel;
     channel.QueryInterface(Ci.nsITraceableChannel);
+
+    if (this.blockedURLs.has(httpActivity.url)) {
+      channel.cancel(Cr.NS_BINDING_ABORTED);
+      return;
+    }
 
     if (!fromCache) {
       const throttler = this._getThrottler();
