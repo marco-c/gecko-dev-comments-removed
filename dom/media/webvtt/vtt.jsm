@@ -898,6 +898,108 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     }
   }
 
+  function adjustBoxPosition(styleBox, containerBox, controlBarBox) {
+    const cue = styleBox.cue;
+    const isWritingDirectionHorizontal = cue.vertical == "";
+    let box = new BoxPosition(styleBox);
+
+    
+    
+    
+    
+    const fullDimension = isWritingDirectionHorizontal ?
+      containerBox.height : containerBox.width;
+    if (cue.snapToLines) {
+      
+      
+      
+      
+      
+      let step = parseFloat(styleBox.fontSize.replace("px", ""));
+      if (step == 0) {
+        return;
+      }
+
+      let line = Math.floor(cue.computedLine + 0.5);
+      if (cue.vertical == "rl") {
+        line = -1 * (line + 1);
+      }
+
+      let position = step * line;
+      if (cue.vertical == "rl") {
+        position = position - box.width + step;
+      }
+
+      if (line < 0) {
+        position += fullDimension;
+        step = -1 * step;
+      }
+
+      if (isWritingDirectionHorizontal) {
+        box.top += position;
+      } else {
+        box.left += position;
+      }
+
+      function isBoxOutsideTheRenderingArea() {
+        if (isWritingDirectionHorizontal) {
+          
+          
+          return step < 0 && box.top < 0 ||
+                 step > 0 && box.bottom > fullDimension;
+        }
+        
+        
+        
+        return step < 0 && box.left < 0 ||
+               step > 0 && box.right > fullDimension;
+      }
+
+      
+      
+
+      
+      
+      if (isBoxOutsideTheRenderingArea()) {
+        step = -1 * step;
+        if (isWritingDirectionHorizontal) {
+          box.top += step;
+        } else {
+          box.left += step;
+        }
+      }
+    } else {
+      if (cue.lineAlign != "start") {
+        const isCenterAlign = cue.lineAlign == "center";
+        if (isWritingDirectionHorizontal) {
+          box.top += isCenterAlign ? box.height : box.height / 2;
+        } else {
+          box.left += isCenterAlign ? box.width : box.width / 2;
+        }
+      }
+      
+    }
+
+    
+    
+    function getPercentagePosition(position, fullDimension) {
+      return (position / fullDimension) * 100 + "%";
+    }
+    if (isWritingDirectionHorizontal) {
+      
+      const controlOffset = controlBarBox ? controlBarBox.height : 0;
+      styleBox.applyStyles({
+        top: getPercentagePosition(box.top - controlOffset, fullDimension),
+      });
+    } else {
+      styleBox.applyStyles({
+        left: getPercentagePosition(box.left, fullDimension),
+      });
+    }
+
+    return box;
+  }
+
   
   
   
@@ -1169,13 +1271,13 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           rootOfCues.appendChild(styleBox.div);
 
           
-          moveBoxToLinePosition(window, styleBox, containerBox, boxPositions);
+          let cueBox = adjustBoxPosition(styleBox, containerBox, controlBarBox);
 
           
           
           cue.displayState = styleBox.div;
 
-          boxPositions.push(new BoxPosition(styleBox));
+          boxPositions.push(cueBox);
         }
       }
     })();
