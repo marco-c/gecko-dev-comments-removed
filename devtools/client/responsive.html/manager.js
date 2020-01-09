@@ -352,6 +352,25 @@ ResponsiveUI.prototype = {
     debug("Wait until swap start");
     await this.swap.start();
 
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    const fullZoom = this.tab.linkedBrowser.fullZoom;
+    const textZoom = this.tab.linkedBrowser.textZoom;
+
+    ui.toolWindow.docShell.contentViewer.fullZoom = 1;
+    ui.toolWindow.docShell.contentViewer.textZoom = 1;
+
     this.tab.addEventListener("BeforeTabRemotenessChange", this);
 
     
@@ -370,6 +389,11 @@ ResponsiveUI.prototype = {
       this.settingOnboardingTooltip =
         new SettingOnboardingTooltip(ui.toolWindow.document);
     }
+
+    
+    
+    this.tab.linkedBrowser.fullZoom = fullZoom;
+    this.tab.linkedBrowser.textZoom = textZoom;
 
     
     message.post(this.toolWindow, "post-init");
