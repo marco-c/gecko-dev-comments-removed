@@ -6,8 +6,6 @@
 
 const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
 
-const noop = () => {};
-
 
 
 
@@ -61,21 +59,6 @@ SourceClient.prototype = {
       telemetry: "UNBLACKBOX",
     },
   ),
-
-  
-
-
-  getExecutableLines: function(cb = noop) {
-    const packet = {
-      to: this._form.actor,
-      type: "getExecutableLines",
-    };
-
-    return this._client.request(packet).then(res => {
-      cb(res.lines);
-      return res.lines;
-    });
-  },
 
   getBreakpointPositions: function(query) {
     const packet = {

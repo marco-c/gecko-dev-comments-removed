@@ -260,25 +260,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       });
   },
 
-  
-
-
-
-  getExecutableLines: async function() {
-    const offsetsLines = new Set();
-    for (const s of this._findDebuggeeScripts()) {
-      for (const offset of s.getPossibleBreakpoints()) {
-        offsetsLines.add(offset.lineNumber);
-      }
-    }
-
-    const lines = [...offsetsLines];
-    lines.sort((a, b) => {
-      return a - b;
-    });
-    return lines;
-  },
-
   getBreakpointPositions(query) {
     const {
       start: {
