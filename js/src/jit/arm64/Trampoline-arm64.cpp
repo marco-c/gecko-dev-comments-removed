@@ -102,6 +102,21 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
   
   
+  
+  
+  
+  
+
+  
+  masm.andToStackPtr(Imm32(~0xff));
+  
+  
+  masm.touchFrameValues(reg_argc, r20, r21);
+  
+  masm.moveToStackPtr(r19);
+
+  
+  
   {
     vixl::UseScratchRegisterScope temps(&masm.asVIXL());
 
