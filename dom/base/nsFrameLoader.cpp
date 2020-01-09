@@ -425,6 +425,12 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
     return NS_OK;
   }
 
+  if (mDocShell) {
+    
+    
+    mDocShell->MaybeClearStorageAccessFlag();
+  }
+
   nsresult rv = MaybeCreateDocShell();
   if (NS_FAILED(rv)) {
     return rv;
@@ -941,6 +947,8 @@ void nsFrameLoader::Hide() {
   }
 
   if (!mDocShell) return;
+
+  docShell->MaybeClearStorageAccessFlag();
 
   nsCOMPtr<nsIContentViewer> contentViewer;
   mDocShell->GetContentViewer(getter_AddRefs(contentViewer));
