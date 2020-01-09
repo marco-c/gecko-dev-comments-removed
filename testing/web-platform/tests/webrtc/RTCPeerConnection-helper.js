@@ -183,15 +183,26 @@ function exchangeIceCandidates(pc1, pc2) {
 
 
 
-function doSignalingHandshake(localPc, remotePc) {
-  return localPc.createOffer()
-  .then(offer => Promise.all([
-    localPc.setLocalDescription(offer),
-    remotePc.setRemoteDescription(offer)]))
-  .then(() => remotePc.createAnswer())
-  .then(answer => Promise.all([
-    remotePc.setLocalDescription(answer),
-    localPc.setRemoteDescription(answer)]))
+async function doSignalingHandshake(localPc, remotePc, options={}) {
+  let offer = await localPc.createOffer();
+  
+  if (options.modifyOffer) {
+    offer = await options.modifyOffer(offer);
+  }
+
+  
+  await localPc.setLocalDescription(offer);
+  await remotePc.setRemoteDescription(offer);
+
+  let answer = await remotePc.createAnswer();
+  
+  if (options.modifyAnswer) {
+    answer = await options.modifyAnswer(answer);
+  }
+
+  
+  await remotePc.setLocalDescription(answer);
+  await localPc.setRemoteDescription(answer);
 }
 
 
@@ -296,22 +307,24 @@ function blobToArrayBuffer(blob) {
 }
 
 
-function assert_equals_array_buffer(buffer1, buffer2) {
-  assert_true(buffer1 instanceof ArrayBuffer,
-    'Expect buffer to be instance of ArrayBuffer');
+function assert_equals_typed_array(array1, array2) {
+  const [view1, view2] = [array1, array2].map((array) => {
+    if (array instanceof ArrayBuffer) {
+      return new DataView(array);
+    } else {
+      assert_true(array.buffer instanceof ArrayBuffer,
+        'Expect buffer to be instance of ArrayBuffer');
+      return new DataView(array.buffer, array.byteOffset, array.byteLength);
+    }
+  });
 
-  assert_true(buffer2 instanceof ArrayBuffer,
-    'Expect buffer to be instance of ArrayBuffer');
+  assert_equals(view1.byteLength, view2.byteLength,
+    'Expect both arrays to be of the same byte length');
 
-  assert_equals(buffer1.byteLength, buffer2.byteLength,
-    'Expect both array buffers to be of the same byte length');
+  const byteLength = view1.byteLength;
 
-  const byteLength = buffer1.byteLength;
-  const byteArray1 = new Uint8Array(buffer1);
-  const byteArray2 = new Uint8Array(buffer2);
-
-  for(let i=0; i<byteLength; i++) {
-    assert_equals(byteArray1[i], byteArray2[i],
+  for (let i = 0; i < byteLength; ++i) {
+    assert_equals(view1.getUint8(i), view2.getUint8(i),
       `Expect byte at buffer position ${i} to be equal`);
   }
 }
@@ -480,16 +493,43 @@ async function exchangeOfferAndListenToOntrack(t, caller, callee) {
 
 
 
-class Resolver {
-  constructor() {
-    let promiseResolve;
-    let promiseReject;
-    this.promise = new Promise(function(resolve, reject) {
-      promiseResolve = resolve;
-      promiseReject = reject;
+class Resolver extends Promise {
+  constructor(executor) {
+    let resolve, reject;
+    super((resolve_, reject_) => {
+      resolve = resolve_;
+      reject = reject_;
+      if (executor) {
+        return executor(resolve_, reject_);
+      }
     });
-    this.resolve = promiseResolve;
-    this.reject = promiseReject;
+
+    this._done = false;
+    this._resolve = resolve;
+    this._reject = reject;
+  }
+
+  
+
+
+  get done() {
+    return this._done;
+  }
+
+  
+
+
+  resolve(...args) {
+    this._done = true;
+    return this._resolve(...args);
+  }
+
+  
+
+
+  reject(...args) {
+    this._done = true;
+    return this._reject(...args);
   }
 }
 
@@ -525,4 +565,24 @@ function findTransceiverForSender(pc, sender) {
       return transceivers[i];
   }
   return null;
+}
+
+
+class UniqueSet extends Set {
+  constructor(items) {
+    super();
+    if (items !== undefined) {
+      for (const item of items) {
+        this.add(item);
+      }
+    }
+  }
+
+  add(value, message) {
+    if (message === undefined) {
+      message = `Value '${value}' needs to be unique but it is already in the set`;
+    }
+    assert_true(!this.has(value), message);
+    super.add(value);
+  }
 }
