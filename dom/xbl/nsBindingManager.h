@@ -76,8 +76,6 @@ class nsBindingManager final : public nsStubMutationObserver {
                                    mozilla::dom::Document* aOldDocument,
                                    DestructorHandling aDestructorHandling);
 
-  nsAtom* ResolveTag(nsIContent* aContent, int32_t* aNameSpaceID);
-
   
 
 

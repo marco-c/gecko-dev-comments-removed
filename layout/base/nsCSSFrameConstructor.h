@@ -774,15 +774,13 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   struct MOZ_STACK_CLASS XBLBindingLoadInfo {
     RefPtr<ComputedStyle> mStyle;
     mozilla::UniquePtr<PendingBinding> mPendingBinding;
-    nsAtom* mTag = nullptr;
 
     
     XBLBindingLoadInfo(nsIContent&, ComputedStyle&);
 
     
     XBLBindingLoadInfo(already_AddRefed<ComputedStyle>&& aStyle,
-                       mozilla::UniquePtr<PendingBinding> aPendingBinding,
-                       nsAtom* aTag);
+                       mozilla::UniquePtr<PendingBinding> aPendingBinding);
 
     
     XBLBindingLoadInfo();
@@ -794,7 +792,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   const FrameConstructionData* FindDataForContent(nsIContent&, ComputedStyle&,
                                                   nsIFrame* aParentFrame,
-                                                  nsAtom* aTag,
                                                   uint32_t aFlags);
 
   
@@ -802,11 +799,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                                    nsIFrame* aParentFrame);
   const FrameConstructionData* FindElementData(const Element&, ComputedStyle&,
                                                nsIFrame* aParentFrame,
-                                               nsAtom* aTag, uint32_t aFlags);
+                                               uint32_t aFlags);
   const FrameConstructionData* FindElementTagData(const Element&,
                                                   ComputedStyle&,
                                                   nsIFrame* aParentFrame,
-                                                  nsAtom* aTag,
                                                   uint32_t aFlags);
 
   
@@ -828,7 +824,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
   static const FrameConstructionData* FindDataByTag(
-      nsAtom* aTag, const Element& aElement, ComputedStyle& aComputedStyle,
+      const Element& aElement, ComputedStyle& aComputedStyle,
       const FrameConstructionDataByTag* aDataPtr, uint32_t aDataLength);
 
   
@@ -1515,7 +1511,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   static const FrameConstructionData* FindXULTagData(const Element&,
-                                                     nsAtom* aTag,
                                                      ComputedStyle&);
   
 #ifdef MOZ_XUL
