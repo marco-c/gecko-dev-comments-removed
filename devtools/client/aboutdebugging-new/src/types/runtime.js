@@ -20,6 +20,12 @@ const runtimeInfo = {
   name: PropTypes.string.isRequired,
 
   
+  os: PropTypes.string.isRequired,
+
+  
+  type: PropTypes.string.isRequired,
+
+  
   version: PropTypes.string.isRequired,
 };
 
