@@ -75,11 +75,12 @@ class nsIGlobalObject : public nsISupports,
   bool IsDying() const { return mIsDying; }
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
+
   virtual JSObject* GetGlobalJSObject() = 0;
 
   

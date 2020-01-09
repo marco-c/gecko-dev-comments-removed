@@ -1652,6 +1652,8 @@ bool DOMXrayTraits::resolveOwnProperty(JSContext* cx, HandleObject wrapper,
       if (subframe) {
         subframe->EnsureInnerWindow();
         nsGlobalWindowOuter* global = nsGlobalWindowOuter::Cast(subframe);
+        
+        
         JSObject* obj = global->FastGetGlobalJSObject();
         if (MOZ_UNLIKELY(!obj)) {
           

@@ -235,6 +235,8 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   JSObject* GetGlobalJSObjectPreserveColor() const override;
 
   
+  
+  
   JSObject* FastGetGlobalJSObject() const { return GetWrapperPreserveColor(); }
 
   virtual nsresult EnsureScriptEnvironment() override;
