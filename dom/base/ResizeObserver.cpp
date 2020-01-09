@@ -7,12 +7,42 @@
 #include "mozilla/dom/ResizeObserver.h"
 
 #include "mozilla/dom/Document.h"
-#include "nsContentUtils.h"
+#include "nsIContent.h"
 #include "nsSVGUtils.h"
 #include <limits>
 
 namespace mozilla {
 namespace dom {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static uint32_t GetNodeDepth(nsINode* aNode) {
+  uint32_t depth = 1;
+
+  MOZ_ASSERT(aNode, "Node shouldn't be null");
+
+  
+  
+  while ((aNode = aNode->GetFlattenedTreeParentNode())) {
+    ++depth;
+  }
+
+  return depth;
+}
 
 NS_IMPL_CYCLE_COLLECTION(ResizeObservation, mTarget)
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(ResizeObservation, AddRef)
@@ -136,7 +166,7 @@ void ResizeObserver::GatherActiveObservations(uint32_t aDepth) {
       continue;
     }
 
-    uint32_t targetDepth = nsContentUtils::GetNodeDepth(observation->Target());
+    uint32_t targetDepth = GetNodeDepth(observation->Target());
 
     if (targetDepth > aDepth) {
       mActiveTargets.AppendElement(observation);
@@ -172,7 +202,7 @@ uint32_t ResizeObserver::BroadcastActiveObservations() {
     
     observation->UpdateBroadcastSize(rect.Size());
 
-    uint32_t targetDepth = nsContentUtils::GetNodeDepth(observation->Target());
+    uint32_t targetDepth = GetNodeDepth(observation->Target());
 
     if (targetDepth < shallowestTargetDepth) {
       shallowestTargetDepth = targetDepth;
