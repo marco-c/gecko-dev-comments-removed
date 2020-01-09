@@ -231,23 +231,28 @@ void BrowsingContext::Detach(bool aFromIPC) {
     MOZ_DIAGNOSTIC_ASSERT(!mGroup || !mGroup->Toplevels().Contains(this));
     sCachedBrowsingContexts->remove(p);
   } else {
-    Children& children = mParent ? mParent->mChildren : mGroup->Toplevels();
+    Children* children = nullptr;
+    if (mParent) {
+      children = &mParent->mChildren;
+    } else if (mGroup) {
+      children = &mGroup->Toplevels();
+    }
 
-    
-    
-    
-    
-    
-    MOZ_DIAGNOSTIC_ASSERT(children.IsEmpty() || children.Contains(this));
+    if (children) {
+      
+      
+      
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(children->IsEmpty() || children->Contains(this));
 
-    children.RemoveElement(this);
+      children->RemoveElement(this);
+    }
   }
 
-  Group()->Unregister(this);
-
-  
-  
-  mDocShell = nullptr;
+  if (mGroup) {
+    mGroup->Unregister(this);
+  }
 
   
   
