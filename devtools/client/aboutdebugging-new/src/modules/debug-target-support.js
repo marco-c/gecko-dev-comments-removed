@@ -29,6 +29,19 @@ const SUPPORTED_TARGET_PANE_BY_RUNTIME = {
 
 
 
+
+
+function isExtensionDebugSettingNeeded(runtimeType) {
+  
+  
+  return runtimeType === RUNTIMES.THIS_FIREFOX;
+}
+exports.isExtensionDebugSettingNeeded = isExtensionDebugSettingNeeded;
+
+
+
+
+
 function isSupportedDebugTargetPane(runtimeType, debugTargetPaneKey) {
   return SUPPORTED_TARGET_PANE_BY_RUNTIME[runtimeType].includes(debugTargetPaneKey);
 }
