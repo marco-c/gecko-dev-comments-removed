@@ -1459,9 +1459,11 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetSnapshot(
   uint8_t* buffer = bufferTexture->GetBuffer();
   IntSize size = bufferTexture->GetSize();
 
-  
   MOZ_ASSERT(buffer);
-  MOZ_ASSERT(bufferTexture->GetFormat() == SurfaceFormat::B8G8R8A8);
+  
+  
+  
+  MOZ_ASSERT(BytesPerPixel(bufferTexture->GetFormat()) == 4);
   uint32_t buffer_size = size.width * size.height * 4;
 
   
@@ -1470,7 +1472,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetSnapshot(
   FlushSceneBuilds();
   FlushFrameGeneration();
   Api(wr::RenderRoot::Default)
-      ->Readback(start, size, Range<uint8_t>(buffer, buffer_size));
+      ->Readback(start, size, bufferTexture->GetFormat(),
+                 Range<uint8_t>(buffer, buffer_size));
 
   return IPC_OK();
 }
