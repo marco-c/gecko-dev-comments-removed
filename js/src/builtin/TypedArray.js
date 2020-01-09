@@ -1373,7 +1373,10 @@ function TypedArraySubarray(begin, end) {
     }
 
     
-    var buffer = TypedArrayBuffer(obj);
+    var buffer = ViewedArrayBufferIfReified(obj);
+    if (buffer === null) {
+        buffer = TypedArrayBuffer(obj);
+    }
     var srcLength = TypedArrayLength(obj);
 
     
