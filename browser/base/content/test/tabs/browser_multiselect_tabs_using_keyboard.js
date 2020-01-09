@@ -22,8 +22,13 @@ add_task(async function setup() {
     set: [[PREF_MULTISELECT_TABS, true]],
   });
 
+  
+  
+  CustomizableUI.removeWidgetFromArea("developer-button");
+
   let prevActiveElement = document.activeElement;
   registerCleanupFunction(() => {
+    CustomizableUI.reset();
     prevActiveElement.focus();
   });
 });
