@@ -183,11 +183,17 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
   nsresult CreateAndInsertPI(const nsXULPrototypePI* aProtoPI);
   nsresult ExecuteScript(nsXULPrototypeScript* aScript);
   nsresult LoadScript(nsXULPrototypeScript* aScriptProto, bool* aBlock);
+
+  
+
+
+  nsresult ResumeWalk();
+
   
 
 
 
-  nsresult ResumeWalk();
+  nsresult ResumeWalkInternal();
 
   
 
