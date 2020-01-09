@@ -16,8 +16,7 @@
     }
 
     
-    
-    assertEq(displayName(o[index]), index === 0 ? "0" : "");
+    assertEq(displayName(o[index]), String(index));
 
     if (index === 0) {
         (function self() {
