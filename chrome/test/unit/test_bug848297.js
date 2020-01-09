@@ -8,7 +8,6 @@ var MANIFESTS = [
 ];
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 registerManifests(MANIFESTS);

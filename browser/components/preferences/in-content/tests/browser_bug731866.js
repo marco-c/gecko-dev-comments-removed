@@ -1,9 +1,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-
 const browserContainersGroupDisabled = !SpecialPowers.getBoolPref("privacy.userContext.ui.enabled");
 
 function test() {

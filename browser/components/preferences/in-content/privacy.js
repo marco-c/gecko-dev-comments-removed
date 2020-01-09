@@ -5,14 +5,10 @@
 
 
 
-
-
-
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-ChromeUtils.import("resource://gre/modules/PluralForm.jsm");
 
-ChromeUtils.defineModuleGetter(this, "PluralForm",
-  "resource://gre/modules/PluralForm.jsm");
+ChromeUtils.defineModuleGetter(this, "DownloadUtils",
+  "resource://gre/modules/DownloadUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginHelper",
   "resource://gre/modules/LoginHelper.jsm");
 ChromeUtils.defineModuleGetter(this, "SiteDataManager",
@@ -387,6 +383,19 @@ var gPrivacyPane = {
       Services.urlFormatter.formatURLPref("app.support.baseURL") + "push";
     document.getElementById("notificationPermissionsLearnMore").setAttribute("href",
       notificationInfoURL);
+    let drmInfoURL =
+      Services.urlFormatter.formatURLPref("app.support.baseURL") + "drm-content";
+    document.getElementById("playDRMContentLink").setAttribute("href", drmInfoURL);
+    let emeUIEnabled = Services.prefs.getBoolPref("browser.eme.ui.enabled");
+    
+    if (navigator.platform.toLowerCase().startsWith("win")) {
+      emeUIEnabled = emeUIEnabled && parseFloat(Services.sysinfo.get("version")) >= 6;
+    }
+    if (!emeUIEnabled) {
+      
+      
+      document.getElementById("drmGroup").setAttribute("style", "display: none !important");
+    }
 
     if (AppConstants.MOZ_DATA_REPORTING) {
       this.initDataCollection();

@@ -2,8 +2,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm");
 ChromeUtils.import("resource:///modules/SiteDataManager.jsm");
 

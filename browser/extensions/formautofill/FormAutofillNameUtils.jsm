@@ -6,8 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["FormAutofillNameUtils"];
 
-ChromeUtils.import("resource://formautofill/FormAutofillUtils.jsm");
-
 
 
 var FormAutofillNameUtils = {

@@ -17,8 +17,6 @@ var EXPORTED_SYMBOLS = [
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 ChromeUtils.defineModuleGetter(this, "OS",
                                "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(this, "Sqlite",

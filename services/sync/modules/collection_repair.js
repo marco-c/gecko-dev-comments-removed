@@ -3,7 +3,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://services-sync/main.js");
 
 ChromeUtils.defineModuleGetter(this, "BookmarkRepairRequestor",

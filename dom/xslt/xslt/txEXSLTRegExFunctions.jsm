@@ -3,8 +3,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 function match(str, regex, flags, doc) {
     var docFrag = doc.createDocumentFragment();
     var re = new RegExp(regex, flags);

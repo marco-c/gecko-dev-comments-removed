@@ -5,8 +5,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 do_get_profile();
 

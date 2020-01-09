@@ -3,8 +3,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 function RemoteController(browser) {
   this._browser = browser;
 

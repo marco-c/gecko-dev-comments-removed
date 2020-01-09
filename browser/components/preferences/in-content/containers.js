@@ -4,7 +4,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/ContextualIdentityService.jsm");
 
 const defaultContainerIcon = "fingerprint";

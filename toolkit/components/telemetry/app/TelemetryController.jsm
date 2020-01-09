@@ -12,7 +12,6 @@ ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/DeferredTask.jsm", this);
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
@@ -529,12 +528,8 @@ var Impl = {
     }
 
     try {
-      
-      
-      if (ping.clientId != Utils.knownClientID) {
-        await TelemetryStorage.addPendingPing(ping);
-        await TelemetryArchive.promiseArchivePing(ping);
-      }
+      await TelemetryStorage.addPendingPing(ping);
+      await TelemetryArchive.promiseArchivePing(ping);
     } catch (e) {
       this._log.error("checkAbortedSessionPing - Unable to add the pending ping", e);
     } finally {

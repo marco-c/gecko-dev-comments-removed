@@ -1,9 +1,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-
 function test() {
   waitForExplicitFinish();
 

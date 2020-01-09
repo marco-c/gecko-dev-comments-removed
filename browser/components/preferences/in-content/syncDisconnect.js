@@ -2,11 +2,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  SyncDisconnect: "resource://services-sync/SyncDisconnect.jsm",
-});
+ChromeUtils.defineModuleGetter(this, "SyncDisconnect",
+  "resource://services-sync/SyncDisconnect.jsm");
 
 let gSyncDisconnectDialog = {
   init() {
