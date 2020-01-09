@@ -202,13 +202,25 @@ nsStyleMargin::nsStyleMargin(const nsStyleMargin& aSrc)
 
 nsChangeHint nsStyleMargin::CalcDifference(
     const nsStyleMargin& aNewData) const {
-  if (mMargin == aNewData.mMargin) {
+  if (mMargin == aNewData.mMargin && mScrollMargin == aNewData.mScrollMargin) {
     return nsChangeHint(0);
   }
-  
-  
-  return nsChangeHint_NeedReflow | nsChangeHint_ReflowChangesSizeOrPosition |
-         nsChangeHint_ClearAncestorIntrinsics;
+
+  nsChangeHint hint = nsChangeHint(0);
+
+  if (mMargin != aNewData.mMargin) {
+    
+    
+    hint |= nsChangeHint_NeedReflow | nsChangeHint_ReflowChangesSizeOrPosition |
+            nsChangeHint_ClearAncestorIntrinsics;
+  }
+
+  if (mScrollMargin != aNewData.mScrollMargin) {
+    
+    hint |= nsChangeHint_NeutralChange;
+  }
+
+  return hint;
 }
 
 nsStylePadding::nsStylePadding(const Document& aDocument)
