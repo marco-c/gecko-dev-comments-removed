@@ -427,7 +427,7 @@ this.Download.prototype = {
         
         if (this._promiseCanceled) {
           
-          throw undefined;
+          throw new Error(undefined);
         }
 
         

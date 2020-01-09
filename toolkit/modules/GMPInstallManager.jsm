@@ -261,6 +261,7 @@ GMPInstallManager.prototype = {
         }
       }
       if (failureEncountered) {
+        
         throw {status:  "failed",
                results: installResults};
       }
