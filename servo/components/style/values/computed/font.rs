@@ -40,7 +40,9 @@ pub use crate::values::specified::font::{XLang, XTextZoom};
 
 
 
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
+#[derive(
+    Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue,
+)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub struct FontWeight(pub Number);
 
@@ -190,7 +192,9 @@ impl FontFamily {
     
     pub fn serif() -> Self {
         FontFamily {
-            families: FontFamilyList::new(Box::new([SingleFontFamily::Generic(GenericFontFamily::Serif)])),
+            families: FontFamilyList::new(Box::new([SingleFontFamily::Generic(
+                GenericFontFamily::Serif,
+            )])),
             is_system_font: false,
         }
     }
@@ -427,8 +431,10 @@ impl PartialEq for FontFamilyList {
             return false;
         }
         for (a, b) in self_list.mNames.iter().zip(other_list.mNames.iter()) {
-            if a.mSyntax != b.mSyntax || a.mName.mRawPtr != b.mName.mRawPtr ||
-                a.mGeneric != b.mGeneric {
+            if a.mSyntax != b.mSyntax ||
+                a.mName.mRawPtr != b.mName.mRawPtr ||
+                a.mGeneric != b.mGeneric
+            {
                 return false;
             }
         }
@@ -459,19 +465,15 @@ impl FontFamilyList {
 
         for family in families.iter() {
             match *family {
-                SingleFontFamily::FamilyName(ref f) => {
-                    unsafe {
-                        bindings::Gecko_nsTArray_FontFamilyName_AppendNamed(
-                            names,
-                            f.name.as_ptr(),
-                            f.syntax,
-                        );
-                    }
+                SingleFontFamily::FamilyName(ref f) => unsafe {
+                    bindings::Gecko_nsTArray_FontFamilyName_AppendNamed(
+                        names,
+                        f.name.as_ptr(),
+                        f.syntax,
+                    );
                 },
-                SingleFontFamily::Generic(family) => {
-                    unsafe {
-                        bindings::Gecko_nsTArray_FontFamilyName_AppendGeneric(names, family);
-                    }
+                SingleFontFamily::Generic(family) => unsafe {
+                    bindings::Gecko_nsTArray_FontFamilyName_AppendGeneric(names, family);
                 },
             }
         }
@@ -547,7 +549,17 @@ impl<'a> Iterator for FontFamilyNameIter<'a> {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    ToCss,
+    ToResolvedValue,
+)]
 pub enum FontSizeAdjust {
     #[animation(error)]
     
@@ -831,7 +843,9 @@ impl ToCss for FontStyle {
 
 
 
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
+#[derive(
+    Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue,
+)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub struct FontStretch(pub NonNegativePercentage);
 

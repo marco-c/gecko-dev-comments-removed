@@ -43,7 +43,11 @@ pub trait FontMetricsProvider {
     }
 
     
-    fn get_size(&self, font_name: &Atom, font_family: crate::values::computed::font::GenericFontFamily) -> Au;
+    fn get_size(
+        &self,
+        font_name: &Atom,
+        font_family: crate::values::computed::font::GenericFontFamily,
+    ) -> Au;
 
     
     fn create_from(context: &SharedStyleContext) -> Self

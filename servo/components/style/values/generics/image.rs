@@ -16,7 +16,9 @@ use style_traits::{CssWriter, ToCss};
 
 
 
-#[derive(Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem,
+)]
 pub enum Image<Gradient, MozImageRect, ImageUrl> {
     
     Url(ImageUrl),
@@ -73,7 +75,9 @@ pub enum GradientKind<LineDirection, Length, LengthPercentage, Position, Angle> 
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
+)]
 pub enum EndingShape<Length, LengthPercentage> {
     
     Circle(Circle<Length>),
@@ -91,7 +95,9 @@ pub enum Circle<Length> {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
+)]
 pub enum Ellipse<LengthPercentage> {
     
     Radii(LengthPercentage, LengthPercentage),
@@ -103,7 +109,17 @@ pub enum Ellipse<LengthPercentage> {
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
-    Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 pub enum ShapeExtent {
     ClosestSide,
@@ -116,7 +132,9 @@ pub enum ShapeExtent {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
+)]
 pub enum GradientItem<Color, LengthPercentage> {
     
     ColorStop(ColorStop<Color, LengthPercentage>),
@@ -126,7 +144,9 @@ pub enum GradientItem<Color, LengthPercentage> {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
+)]
 pub struct ColorStop<Color, LengthPercentage> {
     
     pub color: Color,
@@ -170,7 +190,15 @@ impl ToCss for PaintWorklet {
 #[allow(missing_docs)]
 #[css(comma, function)]
 #[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 pub struct MozImageRect<NumberOrPercentage, MozImageRectUrl> {
     pub url: MozImageRectUrl,

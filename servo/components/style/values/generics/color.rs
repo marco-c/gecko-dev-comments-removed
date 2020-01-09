@@ -40,7 +40,7 @@ pub enum GenericColor<RGBA> {
         color: RGBA,
         
         ratios: ComplexColorRatios,
-    }
+    },
 }
 
 pub use self::GenericColor as Color;
