@@ -96,10 +96,19 @@ namespace mozilla {
 
 class SandboxPolicyCommon : public SandboxPolicyBase {
  protected:
-  SandboxBrokerClient* mBroker;
+  enum class ShmemUsage {
+    MAY_CREATE,
+    ONLY_USE,
+  };
 
-  explicit SandboxPolicyCommon(SandboxBrokerClient* aBroker = nullptr)
-      : mBroker(aBroker) {}
+  SandboxBrokerClient* mBroker;
+  ShmemUsage mShmemUsage;
+
+  explicit SandboxPolicyCommon(SandboxBrokerClient* aBroker,
+                               ShmemUsage aShmemUsage = ShmemUsage::MAY_CREATE)
+      : mBroker(aBroker), mShmemUsage(aShmemUsage) {}
+
+  SandboxPolicyCommon() : SandboxPolicyCommon(nullptr, ShmemUsage::ONLY_USE) {}
 
   typedef const sandbox::arch_seccomp_data& ArgsRef;
 
@@ -491,6 +500,20 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       case __NR_readv:
       case __NR_writev:  
       CASES_FOR_lseek:
+        return Allow();
+
+      CASES_FOR_ftruncate:
+        switch (mShmemUsage) {
+          case ShmemUsage::MAY_CREATE:
+            return Allow();
+          case ShmemUsage::ONLY_USE:
+            return InvalidSyscall();
+          default:
+            MOZ_CRASH("unreachable");
+        }
+
+        
+      case __NR_dup:
         return Allow();
 
         
@@ -982,7 +1005,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
         return Allow();
 
       CASES_FOR_getdents:
-      CASES_FOR_ftruncate:
       case __NR_writev:
       case __NR_pread64:
 #  ifdef DESKTOP
@@ -1088,7 +1110,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
       case __NR_times:
         return Allow();
 
-      case __NR_dup:
       case __NR_dup2:  
         return Allow();
 
@@ -1365,9 +1386,6 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
         return Trap(UnameTrap, nullptr);
       CASES_FOR_fcntl:
         return Trap(FcntlTrap, nullptr);
-
-      case __NR_dup:
-        return Allow();
 
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
