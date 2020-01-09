@@ -1688,6 +1688,12 @@ class JSScript : public js::gc::TenuredCell {
     
     
     TrackRecordReplayProgress = 1 << 23,
+
+    
+    IsModule = 1 << 24,
+
+    
+    NeedsFunctionEnvironmentObjects = 1 << 25,
   };
 
  private:
@@ -2312,7 +2318,11 @@ class JSScript : public js::gc::TenuredCell {
 
   inline void ensureNonLazyCanonicalFunction();
 
-  bool isModule() const { return bodyScope()->is<js::ModuleScope>(); }
+  bool isModule() const {
+    MOZ_ASSERT(hasFlag(ImmutableFlags::IsModule) ==
+               bodyScope()->is<js::ModuleScope>());
+    return hasFlag(ImmutableFlags::IsModule);
+  }
   js::ModuleObject* module() const {
     if (isModule()) {
       return bodyScope()->as<js::ModuleScope>().module();
@@ -2408,6 +2418,10 @@ class JSScript : public js::gc::TenuredCell {
     
     size_t index = 0;
     return getScope(index);
+  }
+
+  bool needsFunctionEnvironmentObjects() const {
+    return hasFlag(ImmutableFlags::NeedsFunctionEnvironmentObjects);
   }
 
   bool functionHasExtraBodyVarScope() const {
