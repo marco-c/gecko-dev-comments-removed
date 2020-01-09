@@ -724,7 +724,7 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   
   RefPtr<nsXHRParseEndListener> mParseEndListener;
 
-  RefPtr<XMLHttpRequestDoneNotifier> mDelayedDoneNotifier;
+  XMLHttpRequestDoneNotifier* mDelayedDoneNotifier;
   void DisconnectDoneNotifier();
 
   
@@ -795,8 +795,9 @@ class XMLHttpRequestDoneNotifier : public Runnable {
   NS_IMETHOD Run() override {
     if (mXHR) {
       RefPtr<XMLHttpRequestMainThread> xhr = mXHR;
-      mXHR = nullptr;
+      
       xhr->ChangeStateToDoneInternal();
+      MOZ_ASSERT(!mXHR);
     }
     return NS_OK;
   }
@@ -804,7 +805,7 @@ class XMLHttpRequestDoneNotifier : public Runnable {
   void Disconnect() { mXHR = nullptr; }
 
  private:
-  XMLHttpRequestMainThread* mXHR;
+  RefPtr<XMLHttpRequestMainThread> mXHR;
 };
 
 class nsXHRParseEndListener : public nsIDOMEventListener {
