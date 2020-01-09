@@ -2163,7 +2163,7 @@ class Document : public nsINode,
   
 
 
-  bool HasPrototypeDocument() const { return mPrototypeDocument; }
+  bool LoadedFromPrototype() const { return mPrototypeDocument; }
 
   bool IsTopLevelContentDocument() const { return mIsTopLevelContentDocument; }
   void SetIsTopLevelContentDocument(bool aIsTopLevelContentDocument) {
