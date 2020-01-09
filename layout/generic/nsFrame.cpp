@@ -7440,10 +7440,7 @@ void nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix,
   aTo += nsPrintfCString(" [cs=%p", static_cast<void*>(mComputedStyle));
   if (mComputedStyle) {
     auto pseudoType = mComputedStyle->GetPseudoType();
-    if (pseudoType != PseudoStyleType::NotPseudo) {
-      
-      aTo += nsPrintfCString("pseudo: %d", static_cast<int>(pseudoType));
-    }
+    aTo += ToString(pseudoType).c_str();
   }
   aTo += "]";
 }
