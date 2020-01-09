@@ -1284,12 +1284,14 @@ function TypedArraySort(comparefn) {
         }
 
         
-        
+        if (v !== v)
+            return 0;
+
         
         return v;
     };
 
-    return QuickSort(obj, len, wrappedCompareFn);
+    return MergeSortTypedArray(obj, len, wrappedCompareFn);
 }
 
 
