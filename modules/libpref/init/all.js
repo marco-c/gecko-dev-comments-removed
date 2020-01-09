@@ -1765,11 +1765,18 @@ pref("network.http.referer.defaultPolicy", 3);
 
 
 
+#ifdef NIGHTLY_BUILD
+
+pref("network.http.referer.defaultPolicy.trackers", 2);
+#else
 pref("network.http.referer.defaultPolicy.trackers", 3);
+#endif
 
 
 
 pref("network.http.referer.defaultPolicy.pbmode", 2);
+
+
 
 
 
