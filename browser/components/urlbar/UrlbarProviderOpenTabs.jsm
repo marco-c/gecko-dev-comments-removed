@@ -11,7 +11,7 @@
 
 var EXPORTED_SYMBOLS = ["UrlbarProviderOpenTabs"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
@@ -100,7 +100,7 @@ class ProviderOpenTabs extends UrlbarProvider {
 
   get sources() {
     return [
-      UrlbarUtils.MATCH_SOURCE.TABS,
+      UrlbarUtils.RESULT_SOURCE.TABS,
     ];
   }
 
@@ -163,7 +163,7 @@ class ProviderOpenTabs extends UrlbarProvider {
         return;
       }
       addCallback(this, new UrlbarResult(UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-                                         UrlbarUtils.MATCH_SOURCE.TABS, {
+                                         UrlbarUtils.RESULT_SOURCE.TABS, {
         url: row.getResultByName("url"),
         userContextId: row.getResultByName("userContextId"),
       }));

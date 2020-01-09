@@ -16,7 +16,7 @@ var EXPORTED_SYMBOLS = [
   "UrlbarUtils",
 ];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   BinarySearch: "resource://gre/modules/BinarySearch.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
@@ -92,7 +92,7 @@ var UrlbarUtils = {
   
   
   
-  MATCH_SOURCE: {
+  RESULT_SOURCE: {
     BOOKMARKS: 1,
     HISTORY: 2,
     SEARCH: 3,

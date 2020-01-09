@@ -14,7 +14,7 @@
 
 var EXPORTED_SYMBOLS = ["UrlbarResult"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -36,7 +36,7 @@ class UrlbarResult {
 
 
 
-  constructor(resultType, matchSource, payload, payloadHighlights = {}) {
+  constructor(resultType, resultSource, payload, payloadHighlights = {}) {
     
     
     if (!Object.values(UrlbarUtils.RESULT_TYPE).includes(resultType)) {
@@ -46,10 +46,10 @@ class UrlbarResult {
 
     
     
-    if (!Object.values(UrlbarUtils.MATCH_SOURCE).includes(matchSource)) {
-      throw new Error("Invalid match source");
+    if (!Object.values(UrlbarUtils.RESULT_SOURCE).includes(resultSource)) {
+      throw new Error("Invalid result source");
     }
-    this.source = matchSource;
+    this.source = resultSource;
 
     
     

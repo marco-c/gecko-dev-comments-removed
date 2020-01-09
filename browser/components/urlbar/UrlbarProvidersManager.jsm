@@ -11,7 +11,7 @@
 
 var EXPORTED_SYMBOLS = ["UrlbarProvidersManager"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   PlacesUtils: "resource://modules/PlacesUtils.jsm",
@@ -432,14 +432,14 @@ function getAcceptableMatchSources(context) {
                                                  UrlbarTokenizer.TYPE.RESTRICT_SEARCH,
                                                ].includes(t.type));
   let restrictTokenType = restrictToken ? restrictToken.type : undefined;
-  for (let source of Object.values(UrlbarUtils.MATCH_SOURCE)) {
+  for (let source of Object.values(UrlbarUtils.RESULT_SOURCE)) {
     
     if (context.sources && !context.sources.includes(source)) {
       continue;
     }
     
     switch (source) {
-      case UrlbarUtils.MATCH_SOURCE.BOOKMARKS:
+      case UrlbarUtils.RESULT_SOURCE.BOOKMARKS:
         if (UrlbarPrefs.get("suggest.bookmark") &&
             (!restrictTokenType ||
              restrictTokenType === UrlbarTokenizer.TYPE.RESTRICT_BOOKMARK ||
@@ -447,33 +447,33 @@ function getAcceptableMatchSources(context) {
           acceptedSources.push(source);
         }
         break;
-      case UrlbarUtils.MATCH_SOURCE.HISTORY:
+      case UrlbarUtils.RESULT_SOURCE.HISTORY:
         if (UrlbarPrefs.get("suggest.history") &&
             (!restrictTokenType ||
              restrictTokenType === UrlbarTokenizer.TYPE.RESTRICT_HISTORY)) {
           acceptedSources.push(source);
         }
         break;
-      case UrlbarUtils.MATCH_SOURCE.SEARCH:
+      case UrlbarUtils.RESULT_SOURCE.SEARCH:
         if (UrlbarPrefs.get("suggest.searches") &&
             (!restrictTokenType ||
              restrictTokenType === UrlbarTokenizer.TYPE.RESTRICT_SEARCH)) {
           acceptedSources.push(source);
         }
         break;
-      case UrlbarUtils.MATCH_SOURCE.TABS:
+      case UrlbarUtils.RESULT_SOURCE.TABS:
         if (UrlbarPrefs.get("suggest.openpage") &&
             (!restrictTokenType ||
              restrictTokenType === UrlbarTokenizer.TYPE.RESTRICT_OPENPAGE)) {
           acceptedSources.push(source);
         }
         break;
-      case UrlbarUtils.MATCH_SOURCE.OTHER_NETWORK:
+      case UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK:
         if (!context.isPrivate && !restrictTokenType) {
           acceptedSources.push(source);
         }
         break;
-      case UrlbarUtils.MATCH_SOURCE.OTHER_LOCAL:
+      case UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL:
       default:
         if (!restrictTokenType) {
           acceptedSources.push(source);
