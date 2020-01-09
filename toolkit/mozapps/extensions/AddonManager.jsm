@@ -3168,6 +3168,9 @@ var AddonManager = {
   
   
   PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS: 32,
+  
+  
+  PERM_API_CAN_UNINSTALL: 64,
 
   
   

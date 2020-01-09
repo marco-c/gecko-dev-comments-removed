@@ -854,6 +854,10 @@ class XPIStateLocation extends Map {
     return false;
   }
 
+  get hidden() {
+    return this.isBuiltin;
+  }
+
   
   
   
@@ -913,6 +917,10 @@ var BuiltInLocation = new class _BuiltInLocation extends XPIStateLocation {
       installAddon() {},
       uninstallAddon() {},
     };
+  }
+
+  get hidden() {
+    return false;
   }
 
   get isBuiltin() {
