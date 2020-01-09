@@ -655,8 +655,8 @@ class LookAndFeel {
 
 
 
-  static bool GetFont(FontID aID, nsString& aName, gfxFontStyle& aStyle,
-                      float aDevPixPerCSSPixel);
+
+  static bool GetFont(FontID aID, nsString& aName, gfxFontStyle& aStyle);
 
   
 

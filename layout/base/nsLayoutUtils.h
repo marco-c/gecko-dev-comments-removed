@@ -1348,6 +1348,12 @@ class nsLayoutUtils {
   
 
 
+
+  static nsBlockFrame* GetAsBlock(nsIFrame* aFrame);
+
+  
+
+
   static bool IsNonWrapperBlock(nsIFrame* aFrame);
 
   
@@ -2354,6 +2360,11 @@ class nsLayoutUtils {
 
   static bool IsInterCharacterRubyEnabled();
 
+  
+
+
+  static bool IsContentSelectEnabled();
+
   static bool InterruptibleReflowEnabled() {
     return sInterruptibleReflowEnabled;
   }
@@ -2961,7 +2972,6 @@ class nsLayoutUtils {
 
   static void ComputeSystemFont(nsFont* aSystemFont,
                                 mozilla::LookAndFeel::FontID aFontID,
-                                const nsPresContext* aPresContext,
                                 const nsFont* aDefaultVariableFont);
 
   static void ComputeFontFeatures(const nsCSSValuePairList* aFeaturesList,

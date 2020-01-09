@@ -160,6 +160,7 @@ using mozilla::dom::HTMLMediaElement_Binding::HAVE_NOTHING;
 
 #define INTERCHARACTER_RUBY_ENABLED_PREF_NAME \
   "layout.css.ruby.intercharacter.enabled"
+#define CONTENT_SELECT_ENABLED_PREF_NAME "dom.select_popup_in_content.enabled"
 
 
 
@@ -501,6 +502,19 @@ bool nsLayoutUtils::IsInterCharacterRubyEnabled() {
   }
 
   return sInterCharacterRubyEnabled;
+}
+
+bool nsLayoutUtils::IsContentSelectEnabled() {
+  static bool sContentSelectEnabled;
+  static bool sContentSelectEnabledPrefCached = false;
+
+  if (!sContentSelectEnabledPrefCached) {
+    sContentSelectEnabledPrefCached = true;
+    Preferences::AddBoolVarCache(&sContentSelectEnabled,
+                                 CONTENT_SELECT_ENABLED_PREF_NAME, false);
+  }
+
+  return sContentSelectEnabled;
 }
 
 void nsLayoutUtils::UnionChildOverflow(nsIFrame* aFrame,
@@ -4488,11 +4502,16 @@ nsIFrame* nsLayoutUtils::FindChildContainingDescendant(
   return result;
 }
 
+nsBlockFrame* nsLayoutUtils::GetAsBlock(nsIFrame* aFrame) {
+  nsBlockFrame* block = do_QueryFrame(aFrame);
+  return block;
+}
+
 nsBlockFrame* nsLayoutUtils::FindNearestBlockAncestor(nsIFrame* aFrame) {
   nsIFrame* nextAncestor;
   for (nextAncestor = aFrame->GetParent(); nextAncestor;
        nextAncestor = nextAncestor->GetParent()) {
-    nsBlockFrame* block = do_QueryFrame(nextAncestor);
+    nsBlockFrame* block = GetAsBlock(nextAncestor);
     if (block) return block;
   }
   return nullptr;
@@ -6033,7 +6052,8 @@ void nsLayoutUtils::DrawUniDirString(const char16_t* aString, uint32_t aLength,
   if (aFrame->StyleDisplay()->IsContainLayout()) {
     return false;
   }
-  const nsBlockFrame* block = do_QueryFrame(aFrame);
+  const nsBlockFrame* block =
+      nsLayoutUtils::GetAsBlock(const_cast<nsIFrame*>(aFrame));
   if (!block) {
     
     
@@ -6135,7 +6155,8 @@ void nsLayoutUtils::DrawUniDirString(const char16_t* aString, uint32_t aLength,
     return false;
   }
 
-  const nsBlockFrame* block = do_QueryFrame(aFrame);
+  const nsBlockFrame* block =
+      nsLayoutUtils::GetAsBlock(const_cast<nsIFrame*>(aFrame));
   if (!block)
     
     return false;
@@ -6209,7 +6230,7 @@ static nscoord CalculateBlockContentBEnd(WritingMode aWM,
     nsIFrame::ChildListIDs skip = {nsIFrame::kOverflowList,
                                    nsIFrame::kExcessOverflowContainersList,
                                    nsIFrame::kOverflowOutOfFlowList};
-    nsBlockFrame* blockFrame = do_QueryFrame(aFrame);
+    nsBlockFrame* blockFrame = GetAsBlock(aFrame);
     if (blockFrame) {
       contentBEnd =
           std::max(contentBEnd, CalculateBlockContentBEnd(aWM, blockFrame));
@@ -6998,7 +7019,8 @@ static bool IsCornerAdjacentToSide(uint8_t aCorner, Side aSide) {
 static bool IsPopupFrame(const nsIFrame* aFrame) {
   
   LayoutFrameType frameType = aFrame->Type();
-  if (frameType == LayoutFrameType::ListControl) {
+  if (!nsLayoutUtils::IsContentSelectEnabled() &&
+      frameType == LayoutFrameType::ListControl) {
     const nsListControlFrame* lcf =
         static_cast<const nsListControlFrame*>(aFrame);
     return lcf->IsInDropDownMode();
@@ -8434,8 +8456,7 @@ nsLayoutUtils::SurfaceFromElementResult::GetSourceSurface() {
 
 
 bool nsLayoutUtils::IsNonWrapperBlock(nsIFrame* aFrame) {
-  MOZ_ASSERT(aFrame);
-  return aFrame->IsBlockFrameOrSubclass() && !aFrame->IsBlockWrapper();
+  return GetAsBlock(aFrame) && !aFrame->IsBlockWrapper();
 }
 
 bool nsLayoutUtils::NeedsPrintPreviewBackground(nsPresContext* aPresContext) {
@@ -9201,7 +9222,7 @@ nsRect nsLayoutUtils::GetSelectionBoundingRect(Selection* aSel) {
   while (ancestor && !ancestor->IsFloatContainingBlock()) {
     ancestor = ancestor->GetParent();
   }
-  MOZ_ASSERT(!ancestor || ancestor->IsBlockFrameOrSubclass(),
+  MOZ_ASSERT(!ancestor || GetAsBlock(ancestor),
              "Float containing block can only be block frame");
   return static_cast<nsBlockFrame*>(ancestor);
 }
@@ -9667,13 +9688,10 @@ already_AddRefed<nsFontMetrics> nsLayoutUtils::GetMetricsFor(
 
  void nsLayoutUtils::ComputeSystemFont(
     nsFont* aSystemFont, LookAndFeel::FontID aFontID,
-    const nsPresContext* aPresContext, const nsFont* aDefaultVariableFont) {
+    const nsFont* aDefaultVariableFont) {
   gfxFontStyle fontStyle;
-  float devPerCSS =
-      (float)AppUnitsPerCSSPixel() /
-      aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom();
   nsAutoString systemFontName;
-  if (LookAndFeel::GetFont(aFontID, systemFontName, fontStyle, devPerCSS)) {
+  if (LookAndFeel::GetFont(aFontID, systemFontName, fontStyle)) {
     systemFontName.Trim("\"'");
     aSystemFont->fontlist =
         FontFamilyList(NS_ConvertUTF16toUTF8(systemFontName), eUnquotedName);
@@ -9682,9 +9700,7 @@ already_AddRefed<nsFontMetrics> nsLayoutUtils::GetMetricsFor(
     aSystemFont->systemFont = fontStyle.systemFont;
     aSystemFont->weight = fontStyle.weight;
     aSystemFont->stretch = fontStyle.stretch;
-    aSystemFont->size = NSFloatPixelsToAppUnits(
-        fontStyle.size,
-        aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom());
+    aSystemFont->size = CSSPixel::ToAppUnits(fontStyle.size);
     
     aSystemFont->sizeAdjust = fontStyle.sizeAdjust;
 

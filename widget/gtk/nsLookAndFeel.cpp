@@ -767,18 +767,15 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
     
     size *= float(gfxPlatformGtk::GetFontScaleDPI()) / POINTS_PER_INCH_FLOAT;
   }
-  
-  
-  
 
+  
   aFontStyle->size = size;
 
   pango_font_description_free(desc);
 }
 
 bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
-                                gfxFontStyle& aFontStyle,
-                                float aDevPixPerCSSPixel) {
+                                gfxFontStyle& aFontStyle) {
   switch (aID) {
     case eFont_Menu:          
     case eFont_PullDownMenu:  
@@ -815,17 +812,17 @@ bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
       aFontStyle = mDefaultFontStyle;
       break;
   }
+
   
   double scaleFactor = nsIWidget::DefaultScaleOverride();
   if (scaleFactor > 0) {
     aFontStyle.size *=
-        mozilla::widget::ScreenHelperGTK::GetGTKMonitorScaleFactor();
+        widget::ScreenHelperGTK::GetGTKMonitorScaleFactor() / scaleFactor;
   } else {
     
-    
-    aFontStyle.size *=
-        aDevPixPerCSSPixel / gfxPlatformGtk::GetFontScaleFactor();
+    aFontStyle.size /= gfxPlatformGtk::GetFontScaleFactor();
   }
+
   return true;
 }
 

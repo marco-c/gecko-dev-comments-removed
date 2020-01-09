@@ -166,8 +166,7 @@ class gfxMacPlatformFontList : public gfxPlatformFontList {
   
   
   void LookupSystemFont(mozilla::LookAndFeel::FontID aSystemFontID,
-                        nsACString& aSystemFontName, gfxFontStyle& aFontStyle,
-                        float aDevPixPerCSSPixel);
+                        nsACString& aSystemFontName, gfxFontStyle& aFontStyle);
 
   
   
