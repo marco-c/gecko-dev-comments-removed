@@ -357,42 +357,16 @@ class DOMLocalization extends Localization {
 
 
 
-  translateFragment(frag) {
-    if (frag.localize) {
+  async translateFragment(frag) {
+    if (frag.ownerDocument.l10n) {
       
-      
-      
-      
-
-      
-      
-      const getTranslationsForItems = async l10nItems => {
-        const keys = l10nItems.map(
-          l10nItem => ({id: l10nItem.l10nId, args: l10nItem.l10nArgs}));
-        const translations = await this.formatMessages(keys);
-
-        
-        
-        
-        
-        
-        this.pauseObserving();
-        return translations;
-      };
-
-      return frag.localize(getTranslationsForItems.bind(this))
-        .then((errors) => {
-          if (errors) {
-            reportDOMOverlayErrors(errors);
-          }
-          this.resumeObserving();
-        })
-        .catch(e => {
-          this.resumeObserving();
-          throw e;
-        });
+      let errors = await frag.ownerDocument.l10n.translateFragment(frag);
+      if (errors) {
+        reportDOMOverlayErrors(errors);
+      }
+    } else {
+      await this.translateElements(this.getTranslatables(frag));
     }
-    return this.translateElements(this.getTranslatables(frag));
   }
 
   
