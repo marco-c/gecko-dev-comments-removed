@@ -97,13 +97,14 @@ void HLSLTypeString(std::ostringstream &ostream, GLenum type)
 
 const PixelShaderOutputVariable *FindOutputAtLocation(
     const std::vector<PixelShaderOutputVariable> &outputVariables,
-    unsigned int location)
+    unsigned int location,
+    size_t index = 0)
 {
-    for (size_t variableIndex = 0; variableIndex < outputVariables.size(); ++variableIndex)
+    for (auto &outputVar : outputVariables)
     {
-        if (outputVariables[variableIndex].outputIndex == location)
+        if (outputVar.outputLocation == location && outputVar.outputIndex == index)
         {
-            return &outputVariables[variableIndex];
+            return &outputVar;
         }
     }
 
@@ -288,7 +289,9 @@ std::string DynamicHLSL::generatePixelShaderForOutputSignature(
     {
         numOutputs = 1u;
     }
-    const PixelShaderOutputVariable defaultOutput(GL_FLOAT_VEC4, "dummy", "float4(0, 0, 0, 1)", 0);
+    const PixelShaderOutputVariable defaultOutput(GL_FLOAT_VEC4, "dummy", "float4(0, 0, 0, 1)", 0,
+                                                  0);
+    size_t outputIndex = 0;
 
     for (size_t layoutIndex = 0; layoutIndex < numOutputs; ++layoutIndex)
     {
@@ -297,12 +300,13 @@ std::string DynamicHLSL::generatePixelShaderForOutputSignature(
         if (binding != GL_NONE)
         {
             unsigned int location = (binding - GL_COLOR_ATTACHMENT0);
+            outputIndex =
+                layoutIndex > 0 && binding == outputLayout[layoutIndex - 1] ? outputIndex + 1 : 0;
 
             const PixelShaderOutputVariable *outputVariable =
                 outputLayout.empty() ? &defaultOutput
-                                     : FindOutputAtLocation(outputVariables, location);
+                                     : FindOutputAtLocation(outputVariables, location, outputIndex);
 
-            
             
             
             
@@ -1198,9 +1202,25 @@ void DynamicHLSL::getPixelShaderOutputKey(const gl::State &data,
             outputKeyVariable.name = "gl_Color" + Str(renderTargetIndex);
             outputKeyVariable.source =
                 broadcast ? "gl_Color[0]" : "gl_Color[" + Str(renderTargetIndex) + "]";
-            outputKeyVariable.outputIndex = renderTargetIndex;
+            outputKeyVariable.outputLocation = renderTargetIndex;
 
             outPixelShaderKey->push_back(outputKeyVariable);
+        }
+
+        if (metadata.usesSecondaryColor())
+        {
+            for (unsigned int secondaryIndex = 0;
+                 secondaryIndex < data.getExtensions().maxDualSourceDrawBuffers; secondaryIndex++)
+            {
+                PixelShaderOutputVariable outputKeyVariable;
+                outputKeyVariable.type           = GL_FLOAT_VEC4;
+                outputKeyVariable.name           = "gl_SecondaryColor" + Str(secondaryIndex);
+                outputKeyVariable.source         = "gl_SecondaryColor[" + Str(secondaryIndex) + "]";
+                outputKeyVariable.outputLocation = secondaryIndex;
+                outputKeyVariable.outputIndex    = 1;
+
+                outPixelShaderKey->push_back(outputKeyVariable);
+            }
         }
     }
     else
@@ -1232,7 +1252,39 @@ void DynamicHLSL::getPixelShaderOutputKey(const gl::State &data,
             outputKeyVariable.source =
                 variableName +
                 (outputVariable.isArray() ? ArrayString(outputLocation.arrayIndex) : "");
-            outputKeyVariable.outputIndex = outputLocationIndex;
+            outputKeyVariable.outputLocation = outputLocationIndex;
+
+            outPixelShaderKey->push_back(outputKeyVariable);
+        }
+
+        
+        for (size_t outputLocationIndex = 0u;
+             outputLocationIndex < programData.getSecondaryOutputLocations().size();
+             ++outputLocationIndex)
+        {
+            const VariableLocation &outputLocation =
+                programData.getSecondaryOutputLocations().at(outputLocationIndex);
+            if (!outputLocation.used())
+            {
+                continue;
+            }
+            const sh::ShaderVariable &outputVariable = shaderOutputVars[outputLocation.index];
+            const std::string &variableName          = "out_" + outputVariable.name;
+
+            
+            const std::string &elementString =
+                (outputVariable.isArray() ? Str(outputLocation.arrayIndex) : "");
+
+            ASSERT(outputVariable.active);
+
+            PixelShaderOutputVariable outputKeyVariable;
+            outputKeyVariable.type = outputVariable.type;
+            outputKeyVariable.name = variableName + elementString;
+            outputKeyVariable.source =
+                variableName +
+                (outputVariable.isArray() ? ArrayString(outputLocation.arrayIndex) : "");
+            outputKeyVariable.outputLocation = outputLocationIndex;
+            outputKeyVariable.outputIndex    = 1;
 
             outPixelShaderKey->push_back(outputKeyVariable);
         }

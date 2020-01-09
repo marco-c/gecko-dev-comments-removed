@@ -179,6 +179,11 @@ struct VariableLocation
     void markUnused() { index = kUnused; }
     void markIgnored() { ignored = true; }
 
+    bool operator==(const VariableLocation &other) const
+    {
+        return arrayIndex == other.arrayIndex && index == other.index;
+    }
+
     
     unsigned int arrayIndex;
     
@@ -473,6 +478,16 @@ class ProgramState final : angle::NonCopyable
     ActiveTextureMask mActiveImagesMask;
 };
 
+struct ProgramBinding
+{
+    ProgramBinding() : location(GL_INVALID_INDEX), aliased(false) {}
+    ProgramBinding(GLuint index) : location(index), aliased(false) {}
+
+    GLuint location;
+    
+    bool aliased;
+};
+
 class ProgramBindings final : angle::NonCopyable
 {
   public:
@@ -480,14 +495,15 @@ class ProgramBindings final : angle::NonCopyable
     ~ProgramBindings();
 
     void bindLocation(GLuint index, const std::string &name);
-    int getBinding(const std::string &name) const;
+    int getBindingByName(const std::string &name) const;
+    int getBinding(const sh::VariableWithLocation &variable) const;
 
-    using const_iterator = std::unordered_map<std::string, GLuint>::const_iterator;
+    using const_iterator = std::unordered_map<std::string, ProgramBinding>::const_iterator;
     const_iterator begin() const;
     const_iterator end() const;
 
   private:
-    std::unordered_map<std::string, GLuint> mBindings;
+    std::unordered_map<std::string, ProgramBinding> mBindings;
 };
 
 struct ProgramVaryingRef

@@ -142,7 +142,11 @@ GLint GetVariableLocation(const std::vector<VarT> &list,
 
         const VarT &variable = list[variableLocation.index];
 
-        if (angle::BeginsWith(variable.name, name))
+        
+        
+        
+        if (angle::BeginsWith(variable.name, name) &&
+            (!std::is_base_of<sh::OutputVariable, VarT>::value || variableLocation.arrayIndex == 0))
         {
             if (name.length() == variable.name.length())
             {
@@ -862,13 +866,56 @@ ProgramBindings::~ProgramBindings() {}
 
 void ProgramBindings::bindLocation(GLuint index, const std::string &name)
 {
-    mBindings[name] = index;
+    mBindings[name] = ProgramBinding(index);
+
+    
+    
+    
+    
+    
+    
+    size_t nameLengthWithoutArrayIndex;
+    unsigned int arrayIndex = ParseArrayIndex(name, &nameLengthWithoutArrayIndex);
+    if (arrayIndex == 0)
+    {
+        std::string baseName = name.substr(0u, nameLengthWithoutArrayIndex);
+        auto iter            = mBindings.find(baseName);
+        if (iter != mBindings.end())
+        {
+            iter->second.aliased = true;
+        }
+    }
 }
 
-int ProgramBindings::getBinding(const std::string &name) const
+int ProgramBindings::getBindingByName(const std::string &name) const
 {
     auto iter = mBindings.find(name);
-    return (iter != mBindings.end()) ? iter->second : -1;
+    return (iter != mBindings.end()) ? iter->second.location : -1;
+}
+
+int ProgramBindings::getBinding(const sh::VariableWithLocation &variable) const
+{
+    const std::string &name = variable.name;
+
+    
+    if (variable.isArray())
+    {
+        size_t nameLengthWithoutArrayIndex;
+        unsigned int arrayIndex = ParseArrayIndex(name, &nameLengthWithoutArrayIndex);
+        if (arrayIndex == 0)
+        {
+            std::string baseName = name.substr(0u, nameLengthWithoutArrayIndex);
+            auto iter            = mBindings.find(baseName);
+            
+            
+            if (iter != mBindings.end() && !iter->second.aliased)
+            {
+                return iter->second.location;
+            }
+        }
+    }
+
+    return getBindingByName(name);
 }
 
 ProgramBindings::const_iterator ProgramBindings::begin() const
@@ -1151,7 +1198,7 @@ BindingInfo Program::getFragmentInputBindingInfo(GLint index) const
 
     for (const auto &binding : mFragmentInputBindings)
     {
-        if (binding.second != static_cast<GLuint>(index))
+        if (binding.second.location != static_cast<GLuint>(index))
             continue;
 
         ret.valid = true;
@@ -1539,6 +1586,7 @@ void Program::unlink()
     mState.mAtomicCounterBuffers.clear();
     mState.mOutputVariables.clear();
     mState.mOutputLocations.clear();
+    mState.mSecondaryOutputLocations.clear();
     mState.mOutputVariableTypes.clear();
     mState.mDrawBufferTypeMask.reset();
     mState.mActiveOutputVariables.reset();
@@ -2929,7 +2977,7 @@ bool Program::linkValidateFragmentInputBindings(gl::InfoLog &infoLog) const
             continue;
         }
 
-        const auto inputBinding = mFragmentInputBindings.getBinding(input.name);
+        const auto inputBinding = mFragmentInputBindings.getBinding(input);
         if (inputBinding == -1)
             continue;
 
@@ -3120,7 +3168,7 @@ bool Program::linkAttributes(const Caps &caps, InfoLog &infoLog)
         
         ASSERT(!attribute.isArray() && !attribute.isStruct());
 
-        int bindingLocation = mAttributeBindings.getBinding(attribute.name);
+        int bindingLocation = mAttributeBindings.getBinding(attribute);
         if (attribute.location == -1 && bindingLocation != -1)
         {
             attribute.location = bindingLocation;
@@ -3708,7 +3756,7 @@ int Program::getOutputLocationForLink(const sh::OutputVariable &outputVariable) 
     {
         return outputVariable.location;
     }
-    int apiLocation = mFragmentOutputLocations.getBinding(outputVariable.name);
+    int apiLocation = mFragmentOutputLocations.getBinding(outputVariable);
     if (apiLocation != -1)
     {
         return apiLocation;
@@ -3723,7 +3771,7 @@ bool Program::isOutputSecondaryForLink(const sh::OutputVariable &outputVariable)
         ASSERT(outputVariable.index == 0 || outputVariable.index == 1);
         return (outputVariable.index == 1);
     }
-    int apiIndex = mFragmentOutputIndexes.getBinding(outputVariable.name);
+    int apiIndex = mFragmentOutputIndexes.getBinding(outputVariable);
     if (apiIndex != -1)
     {
         
@@ -3734,6 +3782,60 @@ bool Program::isOutputSecondaryForLink(const sh::OutputVariable &outputVariable)
     
     return false;
 }
+
+namespace
+{
+
+bool FindUsedOutputLocation(std::vector<VariableLocation> &outputLocations,
+                            unsigned int baseLocation,
+                            unsigned int elementCount,
+                            const std::vector<VariableLocation> &reservedLocations,
+                            unsigned int variableIndex)
+{
+    if (baseLocation + elementCount > outputLocations.size())
+    {
+        elementCount =
+            baseLocation < outputLocations.size() ? outputLocations.size() - baseLocation : 0;
+    }
+    for (unsigned int elementIndex = 0; elementIndex < elementCount; elementIndex++)
+    {
+        const unsigned int location = baseLocation + elementIndex;
+        if (outputLocations[location].used())
+        {
+            VariableLocation locationInfo(elementIndex, variableIndex);
+            if (std::find(reservedLocations.begin(), reservedLocations.end(), locationInfo) ==
+                reservedLocations.end())
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void AssignOutputLocations(std::vector<VariableLocation> &outputLocations,
+                           unsigned int baseLocation,
+                           unsigned int elementCount,
+                           const std::vector<VariableLocation> &reservedLocations,
+                           unsigned int variableIndex)
+{
+    if (baseLocation + elementCount > outputLocations.size())
+    {
+        outputLocations.resize(baseLocation + elementCount);
+    }
+    for (unsigned int elementIndex = 0; elementIndex < elementCount; elementIndex++)
+    {
+        VariableLocation locationInfo(elementIndex, variableIndex);
+        if (std::find(reservedLocations.begin(), reservedLocations.end(), locationInfo) ==
+            reservedLocations.end())
+        {
+            const unsigned int location = baseLocation + elementIndex;
+            outputLocations[location]   = locationInfo;
+        }
+    }
+}
+
+}  
 
 bool Program::linkOutputVariables(const Caps &caps,
                                   const Extensions &extensions,
@@ -3819,7 +3921,74 @@ bool Program::linkOutputVariables(const Caps &caps,
         }
     }
 
-    bool hasSecondaryOutputs = false;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    std::vector<VariableLocation> reservedLocations;
+
+    
+    for (const auto &binding : mFragmentOutputLocations)
+    {
+        size_t nameLengthWithoutArrayIndex;
+        unsigned int arrayIndex = ParseArrayIndex(binding.first, &nameLengthWithoutArrayIndex);
+        if (arrayIndex == 0 || arrayIndex == GL_INVALID_INDEX)
+        {
+            continue;
+        }
+        for (unsigned int outputVariableIndex = 0;
+             outputVariableIndex < mState.mOutputVariables.size(); outputVariableIndex++)
+        {
+            const sh::OutputVariable &outputVariable = mState.mOutputVariables[outputVariableIndex];
+            
+            if (outputVariable.isBuiltIn() || !outputVariable.isArray() ||
+                !angle::BeginsWith(outputVariable.name, binding.first,
+                                   nameLengthWithoutArrayIndex) ||
+                arrayIndex >= outputVariable.getOutermostArraySize())
+            {
+                continue;
+            }
+
+            
+            
+            auto &outputLocations = mFragmentOutputIndexes.getBindingByName(binding.first) == 1
+                                        ? mState.mSecondaryOutputLocations
+                                        : mState.mOutputLocations;
+            unsigned int location = binding.second.location;
+            VariableLocation locationInfo(arrayIndex, outputVariableIndex);
+            if (location >= outputLocations.size())
+            {
+                outputLocations.resize(location + 1);
+            }
+            if (outputLocations[location].used())
+            {
+                mInfoLog << "Location of variable " << outputVariable.name
+                         << " conflicts with another variable.";
+                return false;
+            }
+            outputLocations[location] = locationInfo;
+
+            
+            reservedLocations.push_back(locationInfo);
+        }
+    }
 
     
     
@@ -3832,51 +4001,30 @@ bool Program::linkOutputVariables(const Caps &caps,
         if (outputVariable.isBuiltIn())
             continue;
 
-        int baseLocation = getOutputLocationForLink(outputVariable);
-        if (baseLocation == -1)
+        int fixedLocation = getOutputLocationForLink(outputVariable);
+        if (fixedLocation == -1)
         {
             
             continue;
         }
+        unsigned int baseLocation = static_cast<unsigned int>(fixedLocation);
 
-        auto *outputLocations = &mState.mOutputLocations;
-        if (isOutputSecondaryForLink(outputVariable))
-        {
-            outputLocations = &mState.mSecondaryOutputLocations;
-            
-            
-            hasSecondaryOutputs = true;
-        }
+        auto &outputLocations = isOutputSecondaryForLink(outputVariable)
+                                    ? mState.mSecondaryOutputLocations
+                                    : mState.mOutputLocations;
 
         
         
         unsigned int elementCount          = outputVariable.getBasicTypeElementCount();
-        unsigned int outputLocationsNeeded = static_cast<unsigned int>(baseLocation) + elementCount;
-        if (outputLocationsNeeded > outputLocations->size())
+        if (FindUsedOutputLocation(outputLocations, baseLocation, elementCount, reservedLocations,
+                                   outputVariableIndex))
         {
-            outputLocations->resize(outputLocationsNeeded);
+            mInfoLog << "Location of variable " << outputVariable.name
+                     << " conflicts with another variable.";
+            return false;
         }
-        for (unsigned int elementIndex = 0; elementIndex < elementCount; elementIndex++)
-        {
-            const unsigned int location = static_cast<unsigned int>(baseLocation) + elementIndex;
-            ASSERT(location < outputLocations->size());
-            if (outputLocations->at(location).used())
-            {
-                mInfoLog << "Location of variable " << outputVariable.name
-                         << " conflicts with another variable.";
-                return false;
-            }
-            if (outputVariable.isArray())
-            {
-                (*outputLocations)[location] = VariableLocation(elementIndex, outputVariableIndex);
-            }
-            else
-            {
-                VariableLocation locationInfo;
-                locationInfo.index           = outputVariableIndex;
-                (*outputLocations)[location] = locationInfo;
-            }
-        }
+        AssignOutputLocations(outputLocations, baseLocation, elementCount, reservedLocations,
+                              outputVariableIndex);
     }
 
     
@@ -3885,7 +4033,7 @@ bool Program::linkOutputVariables(const Caps &caps,
     
     
     GLuint maxLocation = caps.maxDrawBuffers;
-    if (hasSecondaryOutputs)
+    if (!mState.mSecondaryOutputLocations.empty())
     {
         
         
@@ -3901,74 +4049,46 @@ bool Program::linkOutputVariables(const Caps &caps,
         if (outputVariable.isBuiltIn())
             continue;
 
-        if (getOutputLocationForLink(outputVariable) != -1)
-        {
-            continue;
-        }
-
-        auto *outputLocations = &mState.mOutputLocations;
-        if (isOutputSecondaryForLink(outputVariable))
-        {
-            outputLocations = &mState.mSecondaryOutputLocations;
-        }
-
-        int baseLocation          = 0;
+        int fixedLocation     = getOutputLocationForLink(outputVariable);
+        auto &outputLocations = isOutputSecondaryForLink(outputVariable)
+                                    ? mState.mSecondaryOutputLocations
+                                    : mState.mOutputLocations;
+        unsigned int baseLocation = 0;
         unsigned int elementCount = outputVariable.getBasicTypeElementCount();
-        bool elementsFit          = false;
-        while (!elementsFit)
+        if (fixedLocation != -1)
         {
             
-            elementsFit = true;
-            if (baseLocation + elementCount > maxLocation)
+            
+            
+            baseLocation = static_cast<unsigned int>(fixedLocation);
+        }
+        else
+        {
+            
+            
+            while (FindUsedOutputLocation(outputLocations, baseLocation, elementCount,
+                                          reservedLocations, outputVariableIndex))
             {
-                
-                
-                
-                
-                mInfoLog << "Could not fit output variable into available locations: "
-                         << outputVariable.name;
-                return false;
+                baseLocation++;
             }
-            unsigned int outputLocationsNeeded =
-                static_cast<unsigned int>(baseLocation) + elementCount;
-            if (outputLocationsNeeded > outputLocations->size())
-            {
-                outputLocations->resize(outputLocationsNeeded);
-            }
-            for (unsigned int elementIndex = 0; elementIndex < elementCount; elementIndex++)
-            {
-                const unsigned int location =
-                    static_cast<unsigned int>(baseLocation) + elementIndex;
-                ASSERT(location < outputLocations->size());
-                if (outputLocations->at(location).used())
-                {
-                    elementsFit = false;
-                    break;
-                }
-            }
-            if (elementsFit)
-            {
-                for (unsigned int elementIndex = 0; elementIndex < elementCount; elementIndex++)
-                {
-                    const unsigned int location =
-                        static_cast<unsigned int>(baseLocation) + elementIndex;
-                    if (outputVariable.isArray())
-                    {
-                        (*outputLocations)[location] =
-                            VariableLocation(elementIndex, outputVariableIndex);
-                    }
-                    else
-                    {
-                        VariableLocation locationInfo;
-                        locationInfo.index           = outputVariableIndex;
-                        (*outputLocations)[location] = locationInfo;
-                    }
-                }
-            }
-            else
-            {
-                ++baseLocation;
-            }
+            AssignOutputLocations(outputLocations, baseLocation, elementCount, reservedLocations,
+                                  outputVariableIndex);
+        }
+
+        
+        if (baseLocation + elementCount > maxLocation &&
+            (baseLocation >= maxLocation ||
+             FindUsedOutputLocation(outputLocations, maxLocation,
+                                    baseLocation + elementCount - maxLocation, reservedLocations,
+                                    outputVariableIndex)))
+        {
+            
+            
+            
+            
+            mInfoLog << "Could not fit output variable into available locations: "
+                     << outputVariable.name;
+            return false;
         }
     }
 
