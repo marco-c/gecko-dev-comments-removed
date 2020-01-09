@@ -300,6 +300,22 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
     return result;
   }
 
+  bool CanUserGestureActivateTarget() const {
+    
+    
+    
+    
+    
+    
+    const bool isCombiningWithOperationKeys = (IsControl() && !IsAltGraph()) ||
+                                              (IsAlt() && !IsAltGraph()) ||
+                                              IsMeta() || IsOS();
+    const bool isEnterOrSpaceKey =
+        mKeyNameIndex == KEY_NAME_INDEX_Enter || mKeyCode == NS_VK_SPACE;
+    return (PseudoCharCode() || isEnterOrSpaceKey) &&
+           !isCombiningWithOperationKeys;
+  }
+
   
   
   nsTArray<AlternativeCharCode> mAlternativeCharCodes;

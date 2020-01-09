@@ -831,10 +831,7 @@ void EventStateManager::NotifyTargetUserActivation(WidgetEvent* aEvent,
   
   
   WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
-  if (keyEvent && (!keyEvent->PseudoCharCode() ||
-                   (keyEvent->IsControl() && !keyEvent->IsAltGraph()) ||
-                   (keyEvent->IsAlt() && !keyEvent->IsAltGraph()) ||
-                   keyEvent->IsMeta() || keyEvent->IsOS())) {
+  if (keyEvent && !keyEvent->CanUserGestureActivateTarget()) {
     return;
   }
 
