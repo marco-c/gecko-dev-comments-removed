@@ -59,16 +59,16 @@
 
 #if defined(__clang__) && __cplusplus >= 201103L
 
-#define MOZ_FALLTHROUGH [[clang::fallthrough]]
+#  define MOZ_FALLTHROUGH [[clang::fallthrough]]
 #elif defined(_MSC_VER)
 
 
 
 
-#include <sal.h>
-#define MOZ_FALLTHROUGH __fallthrough
+#  include <sal.h>
+#  define MOZ_FALLTHROUGH __fallthrough
 #else
-#define MOZ_FALLTHROUGH
+#  define MOZ_FALLTHROUGH
 #endif
 
 
@@ -116,8 +116,8 @@ static void PrintAndFlush(const char* aFormat, ...) {
 
 
 
-#include <sys/types.h>
-#include <sys/sysctl.h>
+#  include <sys/types.h>
+#  include <sys/sysctl.h>
 
 
 
@@ -141,12 +141,12 @@ static void PrintAndFlush(const char* aFormat, ...) {
 
 
 
-#define dgPowerStat 17
+#  define dgPowerStat 17
 
 
 
-#define CPU_RTIME_BINS (12)
-#define CPU_ITIME_BINS (CPU_RTIME_BINS)
+#  define CPU_RTIME_BINS (12)
+#  define CPU_ITIME_BINS (CPU_RTIME_BINS)
 
 
 
@@ -174,9 +174,9 @@ typedef struct {
   uint64_t cpu_insns;
   uint64_t cpu_ucc;
   uint64_t cpu_urc;
-#if DIAG_ALL_PMCS           
-  uint64_t gpmcs[4];        
-#endif   
+#  if DIAG_ALL_PMCS           
+  uint64_t gpmcs[4];          
+#  endif   
 } core_energy_stat_t;
 
 typedef struct {
@@ -234,7 +234,7 @@ static int diagCall64(uint64_t aMode, void* aBuf) {
   
   
 
-#ifdef __x86_64__
+#  ifdef __x86_64__
   
   
   
@@ -256,9 +256,9 @@ static int diagCall64(uint64_t aMode, void* aBuf) {
       
       :  "rcx", "r11", "cc", "memory");
   return rv;
-#else
-#error Sorry, only x86-64 is supported
-#endif
+#  else
+#    error Sorry, only x86-64 is supported
+#  endif
 }
 
 static void diagCall64_dgPowerStat(pkg_energy_statistics_t* aPkes) {
@@ -416,8 +416,8 @@ class RAPL {
 
 #elif defined(__linux__)
 
-#include <linux/perf_event.h>
-#include <sys/syscall.h>
+#  include <linux/perf_event.h>
+#  include <sys/syscall.h>
 
 
 static int perf_event_open(struct perf_event_attr* aAttr, pid_t aPid, int aCpu,
@@ -574,7 +574,7 @@ class RAPL {
 
 
 
-#error Sorry, this platform is not supported
+#  error Sorry, this platform is not supported
 
 #endif  
 
@@ -731,7 +731,7 @@ static void PrintUsage() {
       "contents\n"
       "of /proc/sys/kernel/perf_event_paranoid is set to 0 or lower.\n"
 #else
-#error Sorry, this platform is not supported
+#  error Sorry, this platform is not supported
 #endif
       "\n");
 }

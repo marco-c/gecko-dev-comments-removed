@@ -12,10 +12,10 @@
 #include "chrome/common/chrome_switches.h"
 #include "chrome/common/process_watcher.h"
 #ifdef MOZ_WIDGET_COCOA
-#include "chrome/common/mach_ipc_mac.h"
-#include "base/rand_util.h"
-#include "nsILocalFileMac.h"
-#include "SharedMemoryBasic.h"
+#  include "chrome/common/mach_ipc_mac.h"
+#  include "base/rand_util.h"
+#  include "nsILocalFileMac.h"
+#  include "SharedMemoryBasic.h"
 #endif
 
 #include "MainThreadUtils.h"
@@ -24,8 +24,8 @@
 #include "nsXPCOMPrivate.h"
 
 #if defined(MOZ_CONTENT_SANDBOX)
-#include "mozilla/SandboxSettings.h"
-#include "nsAppDirectoryServiceDefs.h"
+#  include "mozilla/SandboxSettings.h"
+#  include "nsAppDirectoryServiceDefs.h"
 #endif
 
 #include "nsExceptionHandler.h"
@@ -44,19 +44,19 @@
 #include <sys/stat.h>
 
 #ifdef XP_WIN
-#include "nsIWinTaskbar.h"
-#include <stdlib.h>
-#define NS_TASKBAR_CONTRACTID "@mozilla.org/windows-taskbar;1"
+#  include "nsIWinTaskbar.h"
+#  include <stdlib.h>
+#  define NS_TASKBAR_CONTRACTID "@mozilla.org/windows-taskbar;1"
 
-#if defined(MOZ_SANDBOX)
-#include "mozilla/Preferences.h"
-#include "mozilla/sandboxing/sandboxLogging.h"
-#include "WinUtils.h"
-#endif
+#  if defined(MOZ_SANDBOX)
+#    include "mozilla/Preferences.h"
+#    include "mozilla/sandboxing/sandboxLogging.h"
+#    include "WinUtils.h"
+#  endif
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
-#include "mozilla/SandboxLaunch.h"
+#  include "mozilla/SandboxLaunch.h"
 #endif
 
 #include "nsTArray.h"
@@ -77,10 +77,10 @@ MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedPRFileDesc, PRFileDesc,
 using mozilla::ScopedPRFileDesc;
 
 #ifdef MOZ_WIDGET_ANDROID
-#include "AndroidBridge.h"
-#include "GeneratedJNIWrappers.h"
-#include "mozilla/jni/Refs.h"
-#include "mozilla/jni/Utils.h"
+#  include "AndroidBridge.h"
+#  include "GeneratedJNIWrappers.h"
+#  include "mozilla/jni/Refs.h"
+#  include "mozilla/jni/Utils.h"
 #endif
 
 static bool ShouldHaveDirectoryService() {
@@ -161,7 +161,7 @@ auto GeckoChildProcessHost::GetPathToBinary(FilePath& exePath,
     if (!::GetModuleFileNameW(nullptr, exePathBuf, MAXPATHLEN)) {
       MOZ_CRASH("GetModuleFileNameW failed (FIXME)");
     }
-#if defined(MOZ_SANDBOX)
+#  if defined(MOZ_SANDBOX)
     
     
     
@@ -169,14 +169,14 @@ auto GeckoChildProcessHost::GetPathToBinary(FilePath& exePath,
     if (widget::WinUtils::ResolveJunctionPointsAndSymLinks(exePathStr)) {
       exePath = FilePath::FromWStringHack(exePathStr);
     } else
-#endif
+#  endif
     {
       exePath = FilePath::FromWStringHack(exePathBuf);
     }
 #elif defined(OS_POSIX)
     exePath = FilePath(CommandLine::ForCurrentProcess()->argv()[0]);
 #else
-#error Sorry; target OS not supported yet.
+#  error Sorry; target OS not supported yet.
 #endif
     return BinaryPathType::Self;
   }
@@ -252,7 +252,7 @@ void GeckoChildProcessHost::PrepareLaunch() {
     InitWindowsGroupID();
   }
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_CONTENT_SANDBOX)
   
   if (mProcessType == GeckoProcessType_Content) {
     mSandboxLevel = GetEffectiveContentSandboxLevel();
@@ -284,17 +284,17 @@ void GeckoChildProcessHost::PrepareLaunch() {
       }
     }
   }
-#endif
+#  endif
 
-#if defined(MOZ_SANDBOX)
+#  if defined(MOZ_SANDBOX)
   
   
   
   mEnableSandboxLogging =
       mEnableSandboxLogging || !!PR_GetEnv("MOZ_SANDBOX_LOGGING");
-#endif
+#  endif
 #elif defined(XP_LINUX)
-#if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_CONTENT_SANDBOX)
   
   if (ShouldHaveDirectoryService()) {
     nsCOMPtr<nsIFile> contentTempDir;
@@ -304,7 +304,7 @@ void GeckoChildProcessHost::PrepareLaunch() {
       contentTempDir->GetNativePath(mTmpDirName);
     }
   }
-#endif
+#  endif
 #endif
 }
 
@@ -441,7 +441,7 @@ void GeckoChildProcessHost::GetChildLogName(const char* origLogName,
   
   char absPath[MAX_PATH + 2];
   if (_fullpath(absPath, origLogName, sizeof(absPath))) {
-#ifdef MOZ_SANDBOX
+#  ifdef MOZ_SANDBOX
     
     
     std::wstring resolvedPath(NS_ConvertUTF8toUTF16(absPath).get());
@@ -451,7 +451,7 @@ void GeckoChildProcessHost::GetChildLogName(const char* origLogName,
                    resolvedPath.size()),
           buffer);
     } else
-#endif
+#  endif
     {
       buffer.Append(absPath);
     }
@@ -627,8 +627,8 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   
   
 
-#if defined(OS_POSIX)
-#if defined(MOZ_WIDGET_GTK)
+#  if defined(OS_POSIX)
+#    if defined(MOZ_WIDGET_GTK)
   if (mProcessType == GeckoProcessType_Content) {
     
     mLaunchOptions->env_map["GTK_IM_MODULE"] = "gtk-im-context-simple";
@@ -638,7 +638,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
     
     mLaunchOptions->env_map["NO_AT_BRIDGE"] = "1";
   }
-#endif  
+#    endif  
 
   
   
@@ -648,23 +648,23 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
     MOZ_ASSERT(gGREBinPath);
     nsCString path;
     NS_CopyUnicodeToNative(nsDependentString(gGREBinPath), path);
-#if defined(OS_LINUX) || defined(OS_BSD)
+#    if defined(OS_LINUX) || defined(OS_BSD)
     const char* ld_library_path = PR_GetEnv("LD_LIBRARY_PATH");
     nsCString new_ld_lib_path(path.get());
 
-#ifdef MOZ_WIDGET_GTK
+#      ifdef MOZ_WIDGET_GTK
     if (mProcessType == GeckoProcessType_Plugin) {
       new_ld_lib_path.AppendLiteral("/gtk2:");
       new_ld_lib_path.Append(path.get());
     }
-#endif  
+#      endif  
     if (ld_library_path && *ld_library_path) {
       new_ld_lib_path.Append(':');
       new_ld_lib_path.Append(ld_library_path);
     }
     mLaunchOptions->env_map["LD_LIBRARY_PATH"] = new_ld_lib_path.get();
 
-#elif OS_MACOSX  
+#    elif OS_MACOSX  
     mLaunchOptions->env_map["DYLD_LIBRARY_PATH"] = path.get();
     
     
@@ -685,9 +685,9 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
     interpose.Append(path.get());
     interpose.AppendLiteral("/libplugin_child_interpose.dylib");
     mLaunchOptions->env_map["DYLD_INSERT_LIBRARIES"] = interpose.get();
-#endif           
+#    endif           
   }
-#endif  
+#  endif  
 
   FilePath exePath;
   BinaryPathType pathType = GetPathToBinary(exePath, mProcessType);
@@ -734,7 +734,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   childArgv.push_back(pidstring);
 
   if (!CrashReporter::IsDummy()) {
-#if defined(OS_LINUX) || defined(OS_BSD) || defined(OS_SOLARIS)
+#  if defined(OS_LINUX) || defined(OS_BSD) || defined(OS_SOLARIS)
     int childCrashFd, childCrashRemapFd;
     if (!CrashReporter::CreateNotificationPipeForChild(&childCrashFd,
                                                        &childCrashRemapFd)) {
@@ -750,17 +750,17 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
       
       childArgv.push_back("false");
     }
-#elif defined(MOZ_WIDGET_COCOA) 
+#  elif defined(MOZ_WIDGET_COCOA) 
 
     childArgv.push_back(CrashReporter::GetChildNotificationPipe());
-#endif  
+#  endif  
   }
 
   int fd = PR_FileDesc2NativeHandle(crashAnnotationWritePipe);
   mLaunchOptions->fds_to_remap.push_back(
       std::make_pair(fd, CrashReporter::GetAnnotationTimeCrashFd()));
 
-#ifdef MOZ_WIDGET_COCOA
+#  ifdef MOZ_WIDGET_COCOA
   
   
   
@@ -770,29 +770,29 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
       StringPrintf("org.mozilla.machname.%d",
                    base::RandInt(0, std::numeric_limits<int>::max()));
   childArgv.push_back(mach_connection_name.c_str());
-#endif  
+#  endif  
 
   childArgv.push_back(childProcessType);
 
-#ifdef MOZ_WIDGET_COCOA
+#  ifdef MOZ_WIDGET_COCOA
   
   
   ReceivePort parent_recv_port(mach_connection_name.c_str());
-#endif  
+#  endif  
 
-#if defined(MOZ_WIDGET_ANDROID)
+#  if defined(MOZ_WIDGET_ANDROID)
   LaunchAndroidService(childProcessType, childArgv,
                        mLaunchOptions->fds_to_remap, &process);
-#else   
+#  else   
   base::LaunchApp(childArgv, *mLaunchOptions, &process);
-#endif  
+#  endif  
 
   
   
   
   GetChannel()->CloseClientFileDescriptor();
 
-#ifdef MOZ_WIDGET_COCOA
+#  ifdef MOZ_WIDGET_COCOA
   
   const int kTimeoutMs = 10000;
 
@@ -866,7 +866,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
       process, parent_recv_port_memory, parent_recv_port_memory_ack,
       parent_send_port_memory, parent_send_port_memory_ack, false);
 
-#endif  
+#  endif  
 
 
 #elif defined(OS_WIN)  
@@ -903,7 +903,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
     }
   }
 
-#if defined(MOZ_SANDBOX)
+#  if defined(MOZ_SANDBOX)
   bool shouldSandboxCurrentProcess = false;
 
   
@@ -911,7 +911,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   
   switch (mProcessType) {
     case GeckoProcessType_Content:
-#if defined(MOZ_CONTENT_SANDBOX)
+#    if defined(MOZ_CONTENT_SANDBOX)
       if (mSandboxLevel > 0) {
         
         
@@ -921,7 +921,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
                                                          mIsFileContent);
         shouldSandboxCurrentProcess = true;
       }
-#endif  
+#    endif  
       break;
     case GeckoProcessType_Plugin:
       if (mSandboxLevel > 0 && !PR_GetEnv("MOZ_DISABLE_NPAPI_SANDBOX")) {
@@ -992,7 +992,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
       mSandboxBroker.AllowReadFile(it->c_str());
     }
   }
-#endif  
+#  endif    
 
   
   AddAppDirToCommandLine(cmdLine);
@@ -1020,7 +1020,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   
   cmdLine.AppendLooseValue(UTF8ToWide(childProcessType));
 
-#if defined(MOZ_SANDBOX)
+#  if defined(MOZ_SANDBOX)
   if (shouldSandboxCurrentProcess) {
     
     for (HANDLE h : mLaunchOptions->handles_to_inherit) {
@@ -1037,11 +1037,11 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
                  cmdLine.command_line_string().c_str());
     }
   } else
-#endif  
+#  endif  
   {
     base::LaunchApp(cmdLine, *mLaunchOptions, &process);
 
-#ifdef MOZ_SANDBOX
+#  ifdef MOZ_SANDBOX
     
     
     switch (mProcessType) {
@@ -1057,11 +1057,11 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
         }
         break;
     }
-#endif  
+#  endif  
   }
 
 #else  
-#error Sorry
+#  error Sorry
 #endif  
 
   if (!process) {

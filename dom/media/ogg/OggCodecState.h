@@ -4,29 +4,29 @@
 
 
 #if !defined(OggCodecState_h_)
-#define OggCodecState_h_
+#  define OggCodecState_h_
 
-#include <ogg/ogg.h>
+#  include <ogg/ogg.h>
 
-#include "FlacFrameParser.h"
-#include "VideoUtils.h"
-#include <nsDeque.h>
-#include <nsTArray.h>
-#include <nsClassHashtable.h>
+#  include "FlacFrameParser.h"
+#  include "VideoUtils.h"
+#  include <nsDeque.h>
+#  include <nsTArray.h>
+#  include <nsClassHashtable.h>
 
-#include <theora/theoradec.h>
-#ifdef MOZ_TREMOR
-#include <tremor/ivorbiscodec.h>
-#else
-#include <vorbis/codec.h>
-#endif
+#  include <theora/theoradec.h>
+#  ifdef MOZ_TREMOR
+#    include <tremor/ivorbiscodec.h>
+#  else
+#    include <vorbis/codec.h>
+#  endif
 
 
 
-#define VALIDATE_VORBIS_SAMPLE_CALCULATION
-#ifdef VALIDATE_VORBIS_SAMPLE_CALCULATION
-#include <map>
-#endif
+#  define VALIDATE_VORBIS_SAMPLE_CALCULATION
+#  ifdef VALIDATE_VORBIS_SAMPLE_CALCULATION
+#    include <map>
+#  endif
 
 struct OpusMSDecoder;
 
@@ -317,12 +317,12 @@ class VorbisState : public OggCodecState {
   
   int64_t mGranulepos;
 
-#ifdef VALIDATE_VORBIS_SAMPLE_CALCULATION
+#  ifdef VALIDATE_VORBIS_SAMPLE_CALCULATION
   
   
   
   std::map<ogg_packet*, long> mVorbisPacketSamples;
-#endif
+#  endif
 
   
   
@@ -435,7 +435,7 @@ class OpusState : public OggCodecState {
 
 
 
-#define SKELETON_VERSION(major, minor) (((major) << 16) | (minor))
+#  define SKELETON_VERSION(major, minor) (((major) << 16) | (minor))
 
 enum EMsgHeaderType {
   eContentType,

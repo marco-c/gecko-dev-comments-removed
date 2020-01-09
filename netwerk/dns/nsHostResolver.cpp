@@ -4,12 +4,12 @@
 
 
 #if defined(HAVE_RES_NINIT)
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <arpa/nameser.h>
-#include <resolv.h>
-#define RES_RETRY_ON_FAILURE
+#  include <sys/types.h>
+#  include <netinet/in.h>
+#  include <arpa/inet.h>
+#  include <arpa/nameser.h>
+#  include <resolv.h>
+#  define RES_RETRY_ON_FAILURE
 #endif
 
 #include <stdlib.h>

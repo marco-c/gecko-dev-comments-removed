@@ -10,12 +10,12 @@
 #include "base/basictypes.h"
 
 #if defined(OS_MACOSX)
-#if defined(__OBJC__)
+#  if defined(__OBJC__)
 @class NSAutoreleasePool;
-#else   
+#  else   
 class NSAutoreleasePool;
-#endif  
-#endif  
+#  endif  
+#endif    
 
 namespace base {
 

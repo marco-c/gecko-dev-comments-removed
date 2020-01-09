@@ -8,8 +8,8 @@
 
 
 #ifdef MOZ_RENDERTRACE
-#include "Layers.h"
-#include "TreeTraversal.h"  
+#  include "Layers.h"
+#  include "TreeTraversal.h"  
 
 namespace mozilla {
 namespace layers {

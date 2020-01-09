@@ -19,10 +19,10 @@
 #include "WorkerRunnable.h"
 #include "WorkerScope.h"
 #if defined(XP_WIN)
-#include <processthreadsapi.h>  
+#  include <processthreadsapi.h>  
 #else
-#include <unistd.h>  
-#endif               
+#  include <unistd.h>  
+#endif                 
 
 namespace mozilla {
 namespace dom {

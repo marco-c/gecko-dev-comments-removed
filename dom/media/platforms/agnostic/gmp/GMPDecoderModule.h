@@ -5,12 +5,10 @@
 
 
 #if !defined(GMPDecoderModule_h_)
-#define GMPDecoderModule_h_
+#  define GMPDecoderModule_h_
 
-#include "PlatformDecoderModule.h"
-#include "mozilla/Maybe.h"
-
-
+#  include "PlatformDecoderModule.h"
+#  include "mozilla/Maybe.h"
 
 
 
@@ -21,7 +19,9 @@
 
 
 
-#define SHARED_GMP_DECODING_NODE_ID NS_LITERAL_CSTRING("gmp-shared-decoding")
+
+
+#  define SHARED_GMP_DECODING_NODE_ID NS_LITERAL_CSTRING("gmp-shared-decoding")
 
 namespace mozilla {
 

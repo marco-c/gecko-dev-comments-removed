@@ -29,15 +29,15 @@
 #include <sys/types.h>
 
 #if defined(GP_OS_linux)
-#include <link.h>  
+#  include <link.h>  
 #elif defined(GP_OS_android)
-#include "AutoObjectMapper.h"
-#include "ElfLoader.h"  
+#  include "AutoObjectMapper.h"
+#  include "ElfLoader.h"  
 extern "C" MOZ_EXPORT __attribute__((weak)) int dl_iterate_phdr(
     int (*callback)(struct dl_phdr_info* info, size_t size, void* data),
     void* data);
 #else
-#error "Unexpected configuration"
+#  error "Unexpected configuration"
 #endif
 
 struct LoadedLibraryInfo {

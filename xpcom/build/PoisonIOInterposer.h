@@ -39,7 +39,7 @@ MOZ_END_EXTERN_C
 
 #if defined(XP_MACOSX) || (defined(XP_WIN) && !defined(__MINGW32__))
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 namespace mozilla {
 
 
@@ -55,7 +55,7 @@ bool IsDebugFile(intptr_t aFileID);
 
 void InitPoisonIOInterposer();
 
-#ifdef XP_MACOSX
+#    ifdef XP_MACOSX
 
 
 
@@ -63,7 +63,7 @@ void InitPoisonIOInterposer();
 
 
 void OnlyReportDirtyWrites();
-#endif 
+#    endif 
 
 
 
@@ -72,20 +72,20 @@ void OnlyReportDirtyWrites();
 void ClearPoisonIOInterposer();
 
 }  
-#endif 
+#  endif 
 
 #else 
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 namespace mozilla {
 inline bool IsDebugFile(intptr_t aFileID) { return true; }
 inline void InitPoisonIOInterposer() {}
 inline void ClearPoisonIOInterposer() {}
-#ifdef XP_MACOSX
+#    ifdef XP_MACOSX
 inline void OnlyReportDirtyWrites() {}
-#endif 
+#    endif 
 }  
-#endif 
+#  endif   
 
 #endif 
 

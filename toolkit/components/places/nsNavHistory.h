@@ -28,8 +28,8 @@
 #include "mozilla/Atomics.h"
 
 #ifdef XP_WIN
-#include "WinUtils.h"
-#include <wincrypt.h>
+#  include "WinUtils.h"
+#  include <wincrypt.h>
 #endif
 
 #define QUERYUPDATE_TIME 0
@@ -51,8 +51,8 @@
 
 #ifdef MOZ_XUL
 
-#define TOPIC_AUTOCOMPLETE_FEEDBACK_UPDATED \
-  "places-autocomplete-feedback-updated"
+#  define TOPIC_AUTOCOMPLETE_FEEDBACK_UPDATED \
+    "places-autocomplete-feedback-updated"
 #endif
 
 

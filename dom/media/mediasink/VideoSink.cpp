@@ -6,8 +6,8 @@
 
 #ifdef XP_WIN
 
-#include "windows.h"
-#include "mmsystem.h"
+#  include "windows.h"
+#  include "mmsystem.h"
 #endif
 
 #include "MediaQueue.h"

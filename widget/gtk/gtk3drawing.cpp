@@ -35,7 +35,7 @@ static ToolbarGTKMetrics sToolbarMetrics;
 #define ARROW_LEFT (G_PI + G_PI_2)
 
 #if !GTK_CHECK_VERSION(3, 14, 0)
-#define GTK_STATE_FLAG_CHECKED (1 << 11)
+#  define GTK_STATE_FLAG_CHECKED (1 << 11)
 #endif
 
 #if 0
@@ -391,15 +391,9 @@ static void CalculateToolbarButtonSpacing(WidgetNodeType aAppearance,
 }
 
 int GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout,
-                                int aMaxButtonNums,
-                                bool* aReversedButtonsPlacement) {
-#if DEBUG
-  if (aButtonLayout) {
-    NS_ASSERTION(
-        aMaxButtonNums >= TOOLBAR_BUTTONS,
-        "Requested number of buttons is higher than storage capacity!");
-  }
-#endif
+                                int aMaxButtonNums) {
+  NS_ASSERTION(aMaxButtonNums >= TOOLBAR_BUTTONS,
+               "Requested number of buttons is higher than storage capacity!");
 
   const gchar* decorationLayout = nullptr;
   GtkSettings* settings = gtk_settings_get_for_screen(gdk_screen_get_default());
@@ -407,28 +401,20 @@ int GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout,
 
   
   if (!decorationLayout) {
-    decorationLayout = "menu:minimize,maximize,close";
+    decorationLayout = "minimize,maximize,close";
   }
 
   
   
   int activeButtonNums = 0;
-  if (aButtonLayout) {
-    if (strstr(decorationLayout, "minimize") != nullptr) {
-      aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE;
-    }
-    if (strstr(decorationLayout, "maximize") != nullptr) {
-      aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE;
-    }
-    if (strstr(decorationLayout, "close") != nullptr) {
-      aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_CLOSE;
-    }
+  if (strstr(decorationLayout, "minimize") != nullptr) {
+    aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE;
   }
-
-  
-  
-  if (aReversedButtonsPlacement) {
-    *aReversedButtonsPlacement = strstr(decorationLayout, ":menu") != nullptr;
+  if (strstr(decorationLayout, "maximize") != nullptr) {
+    aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE;
+  }
+  if (strstr(decorationLayout, "close") != nullptr) {
+    aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_CLOSE;
   }
 
   return activeButtonNums;
@@ -449,7 +435,7 @@ static void EnsureToolbarMetrics(void) {
     
     WidgetNodeType aButtonLayout[TOOLBAR_BUTTONS];
     int activeButtonNums =
-        GetGtkHeaderBarButtonLayout(aButtonLayout, TOOLBAR_BUTTONS, nullptr);
+        GetGtkHeaderBarButtonLayout(aButtonLayout, TOOLBAR_BUTTONS);
 
     for (int i = 0; i < activeButtonNums; i++) {
       int buttonIndex = (aButtonLayout[i] - MOZ_GTK_HEADER_BAR_BUTTON_CLOSE);
@@ -2363,12 +2349,7 @@ gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
       style = GetStyleContext(MOZ_GTK_HEADER_BAR);
       moz_gtk_add_border_padding(style, left, top, right, bottom);
       *top = *bottom = 0;
-      bool leftButtonsPlacement;
-      GetGtkHeaderBarButtonLayout(nullptr, 0, &leftButtonsPlacement);
       if (direction == GTK_TEXT_DIR_RTL) {
-        leftButtonsPlacement = !leftButtonsPlacement;
-      }
-      if (leftButtonsPlacement) {
         *right = 0;
       } else {
         *left = 0;

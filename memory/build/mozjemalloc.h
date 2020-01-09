@@ -36,24 +36,24 @@
 
 template <typename T>
 struct Allocator : public T {
-#define MALLOC_DECL(name, return_type, ...) \
-  static return_type name(__VA_ARGS__);
-#include "malloc_decls.h"
+#  define MALLOC_DECL(name, return_type, ...) \
+    static return_type name(__VA_ARGS__);
+#  include "malloc_decls.h"
 };
 
 
 struct MozJemallocBase {};
 typedef Allocator<MozJemallocBase> MozJemalloc;
 
-#ifdef MOZ_REPLACE_MALLOC
+#  ifdef MOZ_REPLACE_MALLOC
 
 struct ReplaceMallocBase {};
 typedef Allocator<ReplaceMallocBase> ReplaceMalloc;
 
 typedef ReplaceMalloc DefaultMalloc;
-#else
+#  else
 typedef MozJemalloc DefaultMalloc;
-#endif
+#  endif
 
 #endif  
 

@@ -5,15 +5,15 @@
 
 
 #if defined(MOZILLA_INTERNAL_API)
-#error This code is NOT for internal Gecko use!
+#  error This code is NOT for internal Gecko use!
 #endif  
 
 #ifndef mozilla_a11y_HandlerChildEnumerator_h
-#define mozilla_a11y_HandlerChildEnumerator_h
+#  define mozilla_a11y_HandlerChildEnumerator_h
 
-#include "AccessibleHandler.h"
-#include "IUnknownImpl.h"
-#include "mozilla/RefPtr.h"
+#  include "AccessibleHandler.h"
+#  include "IUnknownImpl.h"
+#  include "mozilla/RefPtr.h"
 
 namespace mozilla {
 namespace a11y {

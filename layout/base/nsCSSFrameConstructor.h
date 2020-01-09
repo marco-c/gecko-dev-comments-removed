@@ -640,7 +640,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 #ifdef MOZ_XUL
   
 
-#define FCDATA_IS_POPUP 0x100
+#  define FCDATA_IS_POPUP 0x100
 #endif 
   
 
@@ -749,11 +749,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   };
 
 #ifdef DEBUG
-#define FCDATA_FOR_DISPLAY(_display, _fcdata) \
-  { _display, _fcdata }
+#  define FCDATA_FOR_DISPLAY(_display, _fcdata) \
+    { _display, _fcdata }
 #else
-#define FCDATA_FOR_DISPLAY(_display, _fcdata) \
-  { _fcdata }
+#  define FCDATA_FOR_DISPLAY(_display, _fcdata) \
+    { _fcdata }
 #endif
 
   
@@ -1527,11 +1527,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                                        ComputedStyle&);
   static const FrameConstructionData* FindXULDescriptionData(const Element&,
                                                              ComputedStyle&);
-#ifdef XP_MACOSX
+#  ifdef XP_MACOSX
   static const FrameConstructionData* FindXULMenubarData(const Element&,
                                                          ComputedStyle&);
-#endif 
-#endif 
+#  endif 
+#endif   
 
   
   

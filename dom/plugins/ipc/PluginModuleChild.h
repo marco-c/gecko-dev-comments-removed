@@ -24,7 +24,7 @@
 #include "nsHashKeys.h"
 
 #ifdef MOZ_WIDGET_COCOA
-#include "PluginInterposeOSX.h"
+#  include "PluginInterposeOSX.h"
 #endif
 
 #include "mozilla/plugins/PPluginModuleChild.h"
@@ -274,13 +274,13 @@ class PluginModuleChild : public PPluginModuleChild {
   
   
   guint mNestedLoopTimerId;
-#ifdef DEBUG
+#  ifdef DEBUG
   
   
   
   
   int mTopLoopDepth;
-#endif
+#  endif
 #endif
 
 #if defined(XP_WIN)

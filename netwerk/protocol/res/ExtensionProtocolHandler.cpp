@@ -43,8 +43,8 @@
 #include "SimpleChannel.h"
 
 #if defined(XP_WIN)
-#include "nsILocalFileWin.h"
-#include "WinUtils.h"
+#  include "nsILocalFileWin.h"
+#  include "WinUtils.h"
 #endif
 
 #define EXTENSION_SCHEME "moz-extension"
@@ -317,10 +317,10 @@ ExtensionProtocolHandler::GetSingleton() {
 ExtensionProtocolHandler::ExtensionProtocolHandler()
     : SubstitutingProtocolHandler(EXTENSION_SCHEME)
 #if !defined(XP_WIN)
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
       ,
       mAlreadyCheckedDevRepo(false)
-#endif 
+#  endif 
       ,
       mAlreadyCheckedAppDir(false)
 #endif 
@@ -499,15 +499,15 @@ Result<Ok, nsresult> ExtensionProtocolHandler::AllowExternalResource(
     return Ok();
   }
 
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
   
   
   
   MOZ_TRY(DevRepoContains(aRequestedFile, aResult));
-#endif 
+#  endif 
 
   return Ok();
-#endif 
+#endif   
 }
 
 #if defined(XP_MACOSX)

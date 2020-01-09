@@ -4,16 +4,16 @@
 
 
 #if !defined(VPXDecoder_h_)
-#define VPXDecoder_h_
+#  define VPXDecoder_h_
 
-#include "PlatformDecoderModule.h"
-#include "mozilla/Span.h"
+#  include "PlatformDecoderModule.h"
+#  include "mozilla/Span.h"
 
-#include <stdint.h>
-#define VPX_DONT_DEFINE_STDINT_TYPES
-#include "vpx/vp8dx.h"
-#include "vpx/vpx_codec.h"
-#include "vpx/vpx_decoder.h"
+#  include <stdint.h>
+#  define VPX_DONT_DEFINE_STDINT_TYPES
+#  include "vpx/vp8dx.h"
+#  include "vpx/vpx_codec.h"
+#  include "vpx/vpx_decoder.h"
 
 namespace mozilla {
 

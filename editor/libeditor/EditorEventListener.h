@@ -21,12 +21,12 @@ class nsPresContext;
 
 
 #ifdef KeyPress
-#undef KeyPress
+#  undef KeyPress
 #endif
 
 #ifdef XP_WIN
 
-#define HANDLE_NATIVE_TEXT_DIRECTION_SWITCH
+#  define HANDLE_NATIVE_TEXT_DIRECTION_SWITCH
 #endif
 
 namespace mozilla {

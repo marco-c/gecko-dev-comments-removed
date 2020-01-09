@@ -31,12 +31,12 @@
 #include "TiledLayerBuffer.h"
 #include "FrameLayerBuilder.h"  
 #ifdef MOZ_WIDGET_ANDROID
-#include "AndroidBridge.h"
-#include "LayerMetricsWrapper.h"
+#  include "AndroidBridge.h"
+#  include "LayerMetricsWrapper.h"
 #endif
 #ifdef XP_WIN
-#include "mozilla/gfx/DeviceManagerDx.h"
-#include "gfxDWriteFonts.h"
+#  include "mozilla/gfx/DeviceManagerDx.h"
+#  include "gfxDWriteFonts.h"
 #endif
 
 namespace mozilla {
@@ -277,7 +277,7 @@ bool ClientLayerManager::EndTransactionInternal(
   }
 
   PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Rasterization);
-  AUTO_PROFILER_TRACING("Paint", "Rasterize", GRAPHICS);
+  AUTO_PROFILER_TRACING("Paint", "Rasterize");
 
   Maybe<TimeStamp> startTime;
   if (gfxPrefs::LayersDrawFPS()) {
@@ -651,7 +651,7 @@ void ClientLayerManager::StopFrameTimeRecording(
 }
 
 void ClientLayerManager::ForwardTransaction(bool aScheduleComposite) {
-  AUTO_PROFILER_TRACING("Paint", "ForwardTransaction", GRAPHICS);
+  AUTO_PROFILER_TRACING("Paint", "ForwardTransaction");
   TimeStamp start = TimeStamp::Now();
 
   

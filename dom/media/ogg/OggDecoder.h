@@ -4,10 +4,10 @@
 
 
 #if !defined(OggDecoder_h_)
-#define OggDecoder_h_
+#  define OggDecoder_h_
 
-#include "mozilla/UniquePtr.h"
-#include "nsTArray.h"
+#  include "mozilla/UniquePtr.h"
+#  include "nsTArray.h"
 
 namespace mozilla {
 

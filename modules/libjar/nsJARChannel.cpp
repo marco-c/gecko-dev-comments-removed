@@ -43,7 +43,7 @@ static NS_DEFINE_CID(kZipReaderCID, NS_ZIPREADER_CID);
 
 
 #ifdef LOG
-#undef LOG
+#  undef LOG
 #endif
 
 

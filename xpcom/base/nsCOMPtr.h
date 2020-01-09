@@ -41,19 +41,19 @@
 
 #ifdef _MSC_VER
 
-#define NSCAP_FEATURE_INLINE_STARTASSIGNMENT
+#  define NSCAP_FEATURE_INLINE_STARTASSIGNMENT
 
 
 
 
-#pragma warning(disable : 4514)
+#  pragma warning(disable : 4514)
 #endif
 
 #define NSCAP_FEATURE_USE_BASE
 
 #ifdef DEBUG
-#define NSCAP_FEATURE_TEST_DONTQUERY_CASES
-#undef NSCAP_FEATURE_USE_BASE
+#  define NSCAP_FEATURE_TEST_DONTQUERY_CASES
+#  undef NSCAP_FEATURE_USE_BASE
 #endif
 
 #ifdef __GNUC__
@@ -63,13 +63,13 @@
 
 
 
-#define NS_MAY_ALIAS_PTR(t) t* __attribute__((__may_alias__))
+#  define NS_MAY_ALIAS_PTR(t) t* __attribute__((__may_alias__))
 #else
-#define NS_MAY_ALIAS_PTR(t) t*
+#  define NS_MAY_ALIAS_PTR(t) t*
 #endif
 
 #if defined(NSCAP_DISABLE_DEBUG_PTR_TYPES)
-#define NSCAP_FEATURE_USE_BASE
+#  define NSCAP_FEATURE_USE_BASE
 #endif
 
 
@@ -84,11 +84,11 @@
 
 
 #ifndef NSCAP_ADDREF
-#define NSCAP_ADDREF(this, ptr) (ptr)->AddRef()
+#  define NSCAP_ADDREF(this, ptr) (ptr)->AddRef()
 #endif
 
 #ifndef NSCAP_RELEASE
-#define NSCAP_RELEASE(this, ptr) (ptr)->Release()
+#  define NSCAP_RELEASE(this, ptr) (ptr)->Release()
 #endif
 
 
@@ -96,14 +96,14 @@
 
 
 
-#define NSCAP_LOG_EXTERNAL_ASSIGNMENT
+#  define NSCAP_LOG_EXTERNAL_ASSIGNMENT
 #else
 
-#define NSCAP_LOG_ASSIGNMENT(this, ptr)
+#  define NSCAP_LOG_ASSIGNMENT(this, ptr)
 #endif
 
 #ifndef NSCAP_LOG_RELEASE
-#define NSCAP_LOG_RELEASE(this, ptr)
+#  define NSCAP_LOG_RELEASE(this, ptr)
 #endif
 
 namespace mozilla {
@@ -385,12 +385,12 @@ class MOZ_IS_REFPTR nsCOMPtr final
 {
  private:
 #ifdef NSCAP_FEATURE_USE_BASE
-#define NSCAP_CTOR_BASE(x) nsCOMPtr_base(ToSupports(x))
+#  define NSCAP_CTOR_BASE(x) nsCOMPtr_base(ToSupports(x))
   void assign_assuming_AddRef(T* aNewPtr) {
     nsCOMPtr_base::assign_assuming_AddRef(ToSupports(aNewPtr));
   }
 #else
-#define NSCAP_CTOR_BASE(x) mRawPtr(x)
+#  define NSCAP_CTOR_BASE(x) mRawPtr(x)
 
   void assign_with_AddRef(nsISupports*);
   template <typename U>
@@ -456,9 +456,9 @@ class MOZ_IS_REFPTR nsCOMPtr final
     }
   }
 
-#define NSCAP_ASSERT_NO_QUERY_NEEDED() Assert_NoQueryNeeded();
+#  define NSCAP_ASSERT_NO_QUERY_NEEDED() Assert_NoQueryNeeded();
 #else
-#define NSCAP_ASSERT_NO_QUERY_NEEDED()
+#  define NSCAP_ASSERT_NO_QUERY_NEEDED()
 #endif
 
   
@@ -1285,14 +1285,14 @@ class nsGetterAddRefs {
 #if defined(NSCAP_FEATURE_TEST_DONTQUERY_CASES) || \
     defined(NSCAP_LOG_EXTERNAL_ASSIGNMENT)
   ~nsGetterAddRefs() {
-#ifdef NSCAP_LOG_EXTERNAL_ASSIGNMENT
+#  ifdef NSCAP_LOG_EXTERNAL_ASSIGNMENT
     NSCAP_LOG_ASSIGNMENT(reinterpret_cast<void*>(address_of(mTargetSmartPtr)),
                          mTargetSmartPtr.get());
-#endif
+#  endif
 
-#ifdef NSCAP_FEATURE_TEST_DONTQUERY_CASES
+#  ifdef NSCAP_FEATURE_TEST_DONTQUERY_CASES
     mTargetSmartPtr.Assert_NoQueryNeeded();
-#endif
+#  endif
   }
 #endif
 

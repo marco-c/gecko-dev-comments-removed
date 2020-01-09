@@ -4,11 +4,11 @@
 
 
 #if !defined(AudioCompactor_h)
-#define AudioCompactor_h
+#  define AudioCompactor_h
 
-#include "MediaQueue.h"
-#include "MediaData.h"
-#include "VideoUtils.h"
+#  include "MediaQueue.h"
+#  include "MediaData.h"
+#  include "VideoUtils.h"
 
 namespace mozilla {
 

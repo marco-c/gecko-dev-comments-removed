@@ -5,7 +5,7 @@
 
 #include "D3DMessageUtils.h"
 #if defined(XP_WIN)
-#include "gfxWindowsPlatform.h"
+#  include "gfxWindowsPlatform.h"
 #endif
 
 bool DxgiAdapterDesc::operator==(const DxgiAdapterDesc& aOther) const {

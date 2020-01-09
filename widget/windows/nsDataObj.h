@@ -26,12 +26,12 @@ class nsIPrincipal;
 
 
 #ifdef __IDataObjectAsyncCapability_INTERFACE_DEFINED__
-#define IAsyncOperation IDataObjectAsyncCapability
-#define IID_IAsyncOperation IID_IDataObjectAsyncCapability
+#  define IAsyncOperation IDataObjectAsyncCapability
+#  define IID_IAsyncOperation IID_IDataObjectAsyncCapability
 #else
 
 
-#ifndef __IAsyncOperation_INTERFACE_DEFINED__
+#  ifndef __IAsyncOperation_INTERFACE_DEFINED__
 
 EXTERN_C const IID IID_IAsyncOperation;
 
@@ -45,12 +45,12 @@ IAsyncOperation : public IUnknown {
       HRESULT hResult, IBindCtx * pbcReserved, DWORD dwEffects) = 0;
 };
 
-#ifndef FD_PROGRESSUI
-#define FD_PROGRESSUI 0x4000
-#endif
+#    ifndef FD_PROGRESSUI
+#      define FD_PROGRESSUI 0x4000
+#    endif
 
-#endif  
-#endif  
+#  endif  
+#endif    
 
 
 
@@ -59,10 +59,10 @@ IAsyncOperation : public IUnknown {
 
 
 #ifndef CFSTR_INETURLA
-#define CFSTR_INETURLA L"UniformResourceLocator"
+#  define CFSTR_INETURLA L"UniformResourceLocator"
 #endif
 #ifndef CFSTR_INETURLW
-#define CFSTR_INETURLW L"UniformResourceLocatorW"
+#  define CFSTR_INETURLW L"UniformResourceLocatorW"
 #endif
 
 
@@ -71,10 +71,10 @@ IAsyncOperation : public IUnknown {
 
 
 #ifndef CFSTR_FILEDESCRIPTORA
-#define CFSTR_FILEDESCRIPTORA L"FileGroupDescriptor"
+#  define CFSTR_FILEDESCRIPTORA L"FileGroupDescriptor"
 #endif
 #ifndef CFSTR_FILEDESCRIPTORW
-#define CFSTR_FILEDESCRIPTORW L"FileGroupDescriptorW"
+#  define CFSTR_FILEDESCRIPTORW L"FileGroupDescriptorW"
 #endif
 
 class CEnumFormatEtc;

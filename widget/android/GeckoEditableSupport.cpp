@@ -24,12 +24,12 @@
 #include <android/log.h>
 
 #ifdef DEBUG_ANDROID_IME
-#define ALOGIME(args...) \
-  __android_log_print(ANDROID_LOG_INFO, "GeckoEditableSupport", ##args)
+#  define ALOGIME(args...) \
+    __android_log_print(ANDROID_LOG_INFO, "GeckoEditableSupport", ##args)
 #else
-#define ALOGIME(args...) \
-  do {                   \
-  } while (0)
+#  define ALOGIME(args...) \
+    do {                   \
+    } while (0)
 #endif
 
 template <>
@@ -1051,9 +1051,6 @@ void GeckoEditableSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
 
 bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
                                          jni::String::Param aText) {
-  ALOGIME("IME: IME_REPLACE_TEXT: text=\"%s\"",
-          NS_ConvertUTF16toUTF8(aText->ToString()).get());
-
   
   
   
@@ -1300,7 +1297,6 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
   }
   mDispatcher->SetPendingComposition(string, mIMERanges);
   mDispatcher->FlushPendingComposition(status);
-  mIMEActiveCompositionCount++;
   mIMERanges->Clear();
   return true;
 }
@@ -1442,16 +1438,13 @@ nsresult GeckoEditableSupport::NotifyIME(
       
       
       
-      if (mIsRemote) {
-        OnNotifyIMEOfCompositionEventHandled();
-      } else {
-        
-        
-        
-        RefPtr<GeckoEditableSupport> self(this);
-        nsAppShell::PostEvent([this, self] {
-          OnNotifyIMEOfCompositionEventHandled();
-        });
+      if (!(--mIMEActiveCompositionCount) && mIMEDelaySynchronizeReply) {
+        FlushIMEChanges();
+      }
+
+      
+      if (mIMEMonitorCursor) {
+        UpdateCompositionRects();
       }
       break;
     }
@@ -1460,21 +1453,6 @@ nsresult GeckoEditableSupport::NotifyIME(
       break;
   }
   return NS_OK;
-}
-
-void GeckoEditableSupport::OnNotifyIMEOfCompositionEventHandled()
-{
-  
-  
-  mIMEActiveCompositionCount = 0;
-  if (mIMEDelaySynchronizeReply) {
-    FlushIMEChanges();
-  }
-
-  
-  if (mIMEMonitorCursor) {
-    UpdateCompositionRects();
-  }
 }
 
 void GeckoEditableSupport::OnRemovedFrom(

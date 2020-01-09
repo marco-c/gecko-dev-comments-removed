@@ -243,10 +243,10 @@ struct BaselineScript final {
 
   
 #ifdef JS_TRACE_LOGGING
-#ifdef DEBUG
+#  ifdef DEBUG
   bool traceLoggerScriptsEnabled_ = false;
   bool traceLoggerEngineEnabled_ = false;
-#endif
+#  endif
   TraceLoggerEvent traceLoggerScriptEvent_ = {};
 #endif
 

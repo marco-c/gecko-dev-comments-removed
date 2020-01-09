@@ -21,8 +21,8 @@
 
 
 #ifdef __MINGW32__
-#undef min
-#undef max
+#  undef min
+#  undef max
 #endif
 
 typedef struct hb_blob_t hb_blob_t;

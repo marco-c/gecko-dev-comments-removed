@@ -115,11 +115,11 @@ nsReturnRef<HRTFKernel> HRTFElevation::calculateKernelForAzimuthElevation(
   
   
 #ifdef MOZ_SAMPLE_TYPE_S16
-#define RESAMPLER_PROCESS speex_resampler_process_int
+#  define RESAMPLER_PROCESS speex_resampler_process_int
   const int16_t* response = impulse_response_data;
   const int16_t* resampledResponse;
 #else
-#define RESAMPLER_PROCESS speex_resampler_process_float
+#  define RESAMPLER_PROCESS speex_resampler_process_float
   float response[ResponseFrameSize];
   ConvertAudioSamples(impulse_response_data, response, ResponseFrameSize);
   float* resampledResponse;

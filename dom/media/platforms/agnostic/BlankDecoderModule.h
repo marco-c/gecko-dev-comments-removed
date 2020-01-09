@@ -4,10 +4,10 @@
 
 
 #if !defined(BlankDecoderModule_h_)
-#define BlankDecoderModule_h_
+#  define BlankDecoderModule_h_
 
-#include "DummyMediaDataDecoder.h"
-#include "PlatformDecoderModule.h"
+#  include "DummyMediaDataDecoder.h"
+#  include "PlatformDecoderModule.h"
 
 namespace mozilla {
 

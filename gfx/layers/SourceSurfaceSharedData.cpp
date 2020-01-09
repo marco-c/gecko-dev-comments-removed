@@ -19,7 +19,7 @@
 
 
 
-#define SHARED_SURFACE_PROTECT_FINALIZED
+#  define SHARED_SURFACE_PROTECT_FINALIZED
 #endif
 
 namespace mozilla {

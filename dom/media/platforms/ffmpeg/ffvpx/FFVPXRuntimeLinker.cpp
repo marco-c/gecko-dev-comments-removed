@@ -12,7 +12,7 @@
 #include "prmem.h"
 #include "prlink.h"
 #ifdef XP_WIN
-#include <windows.h>
+#  include <windows.h>
 #endif
 
 

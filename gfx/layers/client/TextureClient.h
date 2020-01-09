@@ -42,7 +42,7 @@ namespace mozilla {
 
 
 #ifdef DEBUG
-#define GFX_DEBUG_TRACK_CLIENTS_IN_POOL 1
+#  define GFX_DEBUG_TRACK_CLIENTS_IN_POOL 1
 #endif
 
 namespace layers {

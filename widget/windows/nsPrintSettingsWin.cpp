@@ -457,8 +457,8 @@ nsresult nsPrintSettingsWin::_Assign(nsIPrintSettings* aPS) {
 
 
 #ifdef DEBUG_rodsX
-#include "nsIPrintSettingsService.h"
-#include "nsIServiceManager.h"
+#  include "nsIPrintSettingsService.h"
+#  include "nsIServiceManager.h"
 class Tester {
  public:
   Tester();

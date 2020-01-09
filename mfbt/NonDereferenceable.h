@@ -17,9 +17,9 @@
 
 
 #if defined(__clang__)
-#define NO_POINTEE_CHECKS __attribute__((no_sanitize("vptr")))
+#  define NO_POINTEE_CHECKS __attribute__((no_sanitize("vptr")))
 #else
-#define NO_POINTEE_CHECKS
+#  define NO_POINTEE_CHECKS
 #endif
 
 namespace mozilla {

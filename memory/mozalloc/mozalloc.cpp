@@ -10,21 +10,21 @@
 #if defined(MOZ_MEMORY)
 
 
-#define MOZ_MEMORY_IMPL
-#include "mozmemory_wrap.h"
+#  define MOZ_MEMORY_IMPL
+#  include "mozmemory_wrap.h"
 
-#if defined(XP_DARWIN)
-#include <malloc/malloc.h>  
-#endif
-
-
+#  if defined(XP_DARWIN)
+#    include <malloc/malloc.h>  
+#  endif
 
 
 
-#define MALLOC_DECL(name, return_type, ...) \
-  MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
-#define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
-#include "malloc_decls.h"
+
+
+#  define MALLOC_DECL(name, return_type, ...) \
+    MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
+#  define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
+#  include "malloc_decls.h"
 
 MOZ_MEMORY_API char* strdup_impl(const char*);
 MOZ_MEMORY_API char* strndup_impl(const char*, size_t);
@@ -33,22 +33,22 @@ MOZ_MEMORY_API char* strndup_impl(const char*, size_t);
 
 
 
-#if defined(MALLOC_H)
-#include MALLOC_H    
-#endif               
-#include <stdlib.h>  
-#if defined(XP_UNIX)
-#include <unistd.h>
-#endif  
+#  if defined(MALLOC_H)
+#    include MALLOC_H  
+#  endif               
+#  include <stdlib.h>  
+#  if defined(XP_UNIX)
+#    include <unistd.h>
+#  endif  
 
-#define malloc_impl malloc
-#define calloc_impl calloc
-#define realloc_impl realloc
-#define free_impl free
-#define memalign_impl memalign
-#define malloc_usable_size_impl malloc_usable_size
-#define strdup_impl strdup
-#define strndup_impl strndup
+#  define malloc_impl malloc
+#  define calloc_impl calloc
+#  define realloc_impl realloc
+#  define free_impl free
+#  define memalign_impl memalign
+#  define malloc_usable_size_impl malloc_usable_size
+#  define strdup_impl strdup
+#  define strndup_impl strndup
 
 #endif
 
@@ -154,7 +154,7 @@ size_t moz_malloc_size_of(const void* ptr) {
 }
 
 #if defined(MOZ_MEMORY)
-#include "mozjemalloc_types.h"
+#  include "mozjemalloc_types.h"
 
 
 

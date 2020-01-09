@@ -4,13 +4,13 @@
 
 
 #if !defined(AOMDecoder_h_)
-#define AOMDecoder_h_
+#  define AOMDecoder_h_
 
-#include "PlatformDecoderModule.h"
-#include "mozilla/Span.h"
+#  include "PlatformDecoderModule.h"
+#  include "mozilla/Span.h"
 
-#include <stdint.h>
-#include "aom/aom_decoder.h"
+#  include <stdint.h>
+#  include "aom/aom_decoder.h"
 
 namespace mozilla {
 

@@ -15,18 +15,18 @@
 #include <string.h>
 
 #ifndef MSG_CMSG_CLOEXEC
-#ifdef XP_LINUX
+#  ifdef XP_LINUX
 
-#define MSG_CMSG_CLOEXEC 0x40000000
-#else
-
-
+#    define MSG_CMSG_CLOEXEC 0x40000000
+#  else
 
 
 
-#error "No MSG_CMSG_CLOEXEC?"
-#endif  
-#endif  
+
+
+#    error "No MSG_CMSG_CLOEXEC?"
+#  endif  
+#endif    
 
 namespace mozilla {
 

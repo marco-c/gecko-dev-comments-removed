@@ -50,7 +50,7 @@
 #include "nsSVGIntegrationUtils.h"
 
 #ifdef ACCESSIBILITY
-#include "nsAccessibilityService.h"
+#  include "nsAccessibilityService.h"
 #endif
 
 using mozilla::layers::AnimationInfo;
@@ -909,19 +909,8 @@ static bool HasBoxAncestor(nsIFrame* aFrame) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-static bool ContainingBlockChangeAffectsDescendants(
-    nsIFrame* aPossiblyChangingContainingBlock, nsIFrame* aFrame,
-    uint32_t aPositionMask, bool aIsContainingBlock) {
+static bool FrameHasPositionedPlaceholderDescendants(nsIFrame* aFrame,
+                                                     uint32_t aPositionMask) {
   MOZ_ASSERT(aPositionMask & (1 << NS_STYLE_POSITION_FIXED));
 
   for (nsIFrame::ChildListIterator lists(aFrame); !lists.IsDone();
@@ -934,27 +923,10 @@ static bool ContainingBlockChangeAffectsDescendants(
         NS_ASSERTION(!nsSVGUtils::IsInSVGTextSubtree(outOfFlow),
                      "SVG text frames can't be out of flow");
         if (aPositionMask & (1 << outOfFlow->StyleDisplay()->mPosition)) {
-          
-          
-          nsIFrame* parent = outOfFlow->GetParent()->FirstContinuation();
-          if (aIsContainingBlock) {
-            
-            
-            
-            if (parent != aPossiblyChangingContainingBlock &&
-                nsLayoutUtils::IsProperAncestorFrame(
-                    parent, aPossiblyChangingContainingBlock)) {
-              return true;
-            }
-          } else {
-            
-            
-            if (parent == aPossiblyChangingContainingBlock) {
-              return true;
-            }
-          }
+          return true;
         }
       }
+      uint32_t positionMask = aPositionMask;
       
       
       
@@ -963,9 +935,7 @@ static bool ContainingBlockChangeAffectsDescendants(
       
       
       
-      if (ContainingBlockChangeAffectsDescendants(
-              aPossiblyChangingContainingBlock, f, aPositionMask,
-              aIsContainingBlock)) {
+      if (FrameHasPositionedPlaceholderDescendants(f, positionMask)) {
         return true;
       }
     }
@@ -973,7 +943,7 @@ static bool ContainingBlockChangeAffectsDescendants(
   return false;
 }
 
-static bool NeedToReframeToUpdateContainingBlock(nsIFrame* aFrame) {
+static bool NeedToReframeForAddingOrRemovingTransform(nsIFrame* aFrame) {
   static_assert(
       0 <= NS_STYLE_POSITION_ABSOLUTE && NS_STYLE_POSITION_ABSOLUTE < 32,
       "Style constant out of range");
@@ -981,7 +951,6 @@ static bool NeedToReframeToUpdateContainingBlock(nsIFrame* aFrame) {
                 "Style constant out of range");
 
   uint32_t positionMask;
-  bool isContainingBlock;
   
   
   if (aFrame->IsAbsolutelyPositioned() || aFrame->IsRelativelyPositioned()) {
@@ -989,25 +958,16 @@ static bool NeedToReframeToUpdateContainingBlock(nsIFrame* aFrame) {
     
     
     
-    
     positionMask = 1 << NS_STYLE_POSITION_FIXED;
-    isContainingBlock = aFrame->IsFixedPosContainingBlock();
   } else {
     
     
     positionMask =
         (1 << NS_STYLE_POSITION_FIXED) | (1 << NS_STYLE_POSITION_ABSOLUTE);
-    isContainingBlock = aFrame->IsAbsPosContainingBlock() ||
-                        aFrame->IsFixedPosContainingBlock();
   }
-
-  MOZ_ASSERT(!aFrame->GetPrevContinuation(),
-             "We only process change hints on first continuations");
-
   for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
-    if (ContainingBlockChangeAffectsDescendants(aFrame, f, positionMask,
-                                                isContainingBlock)) {
+    if (FrameHasPositionedPlaceholderDescendants(f, positionMask)) {
       return true;
     }
   }
@@ -1485,7 +1445,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
 
     if ((hint & nsChangeHint_UpdateContainingBlock) && frame &&
         !(hint & nsChangeHint_ReconstructFrame)) {
-      if (NeedToReframeToUpdateContainingBlock(frame) ||
+      if (NeedToReframeForAddingOrRemovingTransform(frame) ||
           frame->IsFieldSetFrame() ||
           frame->GetContentInsertionFrame() != frame) {
         

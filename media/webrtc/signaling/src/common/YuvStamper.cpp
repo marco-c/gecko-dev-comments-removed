@@ -3,9 +3,9 @@
 
 
 #ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
+#  include <netinet/in.h>
 #elif defined XP_WIN
-#include <winsock2.h>
+#  include <winsock2.h>
 #endif
 #include <string.h>
 

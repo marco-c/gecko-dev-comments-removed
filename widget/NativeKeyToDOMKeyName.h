@@ -29,52 +29,57 @@
 #define KEY_MAP_ANDROID(aCPPKeyName, aNativeKey)
 
 #if defined(XP_WIN)
-#if defined(NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX)
+#  if defined(NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX)
 
-#undef KEY_MAP_WIN
-#define KEY_MAP_WIN(aCPPKeyName, aNativeKey) \
-  NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, KEY_NAME_INDEX_##aCPPKeyName)
-#elif defined(NS_JAPANESE_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX)
-
-
-#undef KEY_MAP_WIN_JPN
-#define KEY_MAP_WIN_JPN(aCPPKeyName, aNativeKey)           \
-  NS_JAPANESE_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, \
-                                               KEY_NAME_INDEX_##aCPPKeyName)
-#elif defined(NS_KOREAN_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX)
+#    undef KEY_MAP_WIN
+#    define KEY_MAP_WIN(aCPPKeyName, aNativeKey)      \
+      NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, \
+                                          KEY_NAME_INDEX_##aCPPKeyName)
+#  elif defined(NS_JAPANESE_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX)
 
 
-#undef KEY_MAP_WIN_KOR
-#define KEY_MAP_WIN_KOR(aCPPKeyName, aNativeKey)         \
-  NS_KOREAN_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, \
-                                             KEY_NAME_INDEX_##aCPPKeyName)
-#elif defined(NS_OTHER_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX)
+#    undef KEY_MAP_WIN_JPN
+#    define KEY_MAP_WIN_JPN(aCPPKeyName, aNativeKey) \
+      NS_JAPANESE_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(  \
+          aNativeKey, KEY_NAME_INDEX_##aCPPKeyName)
+#  elif defined(NS_KOREAN_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX)
 
 
-#undef KEY_MAP_WIN_OTH
-#define KEY_MAP_WIN_OTH(aCPPKeyName, aNativeKey)        \
-  NS_OTHER_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, \
-                                            KEY_NAME_INDEX_##aCPPKeyName)
-#elif defined(NS_APPCOMMAND_TO_DOM_KEY_NAME_INDEX)
+#    undef KEY_MAP_WIN_KOR
+#    define KEY_MAP_WIN_KOR(aCPPKeyName, aNativeKey)         \
+      NS_KOREAN_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, \
+                                                 KEY_NAME_INDEX_##aCPPKeyName)
+#  elif defined(NS_OTHER_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX)
 
-#undef KEY_MAP_WIN_CMD
-#define KEY_MAP_WIN_CMD(aCPPKeyName, aAppCommand) \
-  NS_APPCOMMAND_TO_DOM_KEY_NAME_INDEX(aAppCommand, KEY_NAME_INDEX_##aCPPKeyName)
-#else
-#error Any NS_*_TO_DOM_KEY_NAME_INDEX() is not defined.
-#endif  
+
+#    undef KEY_MAP_WIN_OTH
+#    define KEY_MAP_WIN_OTH(aCPPKeyName, aNativeKey)        \
+      NS_OTHER_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, \
+                                                KEY_NAME_INDEX_##aCPPKeyName)
+#  elif defined(NS_APPCOMMAND_TO_DOM_KEY_NAME_INDEX)
+
+#    undef KEY_MAP_WIN_CMD
+#    define KEY_MAP_WIN_CMD(aCPPKeyName, aAppCommand)  \
+      NS_APPCOMMAND_TO_DOM_KEY_NAME_INDEX(aAppCommand, \
+                                          KEY_NAME_INDEX_##aCPPKeyName)
+#  else
+#    error Any NS_*_TO_DOM_KEY_NAME_INDEX() is not defined.
+#  endif  
 #elif defined(XP_MACOSX)
-#undef KEY_MAP_COCOA
-#define KEY_MAP_COCOA(aCPPKeyName, aNativeKey) \
-  NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, KEY_NAME_INDEX_##aCPPKeyName)
+#  undef KEY_MAP_COCOA
+#  define KEY_MAP_COCOA(aCPPKeyName, aNativeKey)    \
+    NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, \
+                                        KEY_NAME_INDEX_##aCPPKeyName)
 #elif defined(MOZ_WIDGET_GTK)
-#undef KEY_MAP_GTK
-#define KEY_MAP_GTK(aCPPKeyName, aNativeKey) \
-  NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, KEY_NAME_INDEX_##aCPPKeyName)
+#  undef KEY_MAP_GTK
+#  define KEY_MAP_GTK(aCPPKeyName, aNativeKey)      \
+    NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, \
+                                        KEY_NAME_INDEX_##aCPPKeyName)
 #elif defined(ANDROID)
-#undef KEY_MAP_ANDROID
-#define KEY_MAP_ANDROID(aCPPKeyName, aNativeKey) \
-  NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, KEY_NAME_INDEX_##aCPPKeyName)
+#  undef KEY_MAP_ANDROID
+#  define KEY_MAP_ANDROID(aCPPKeyName, aNativeKey)  \
+    NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, \
+                                        KEY_NAME_INDEX_##aCPPKeyName)
 #endif
 
 

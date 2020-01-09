@@ -38,10 +38,10 @@
 #include "nsIXULRuntime.h"
 #include "nsTextFormatter.h"
 #ifdef XP_WIN
-#include <process.h>
-#define getpid _getpid
+#  include <process.h>
+#  define getpid _getpid
 #else
-#include <unistd.h>  
+#  include <unistd.h>  
 #endif
 #include "xpcpublic.h"
 
@@ -71,7 +71,7 @@
 
 #ifdef XP_MACOSX
 
-#undef check
+#  undef check
 #endif
 #include "AccessCheck.h"
 
@@ -101,7 +101,7 @@ const size_t gStackSize = 8192;
 
 
 #ifdef CompareString
-#undef CompareString
+#  undef CompareString
 #endif
 
 #define NS_SHRINK_GC_BUFFERS_DELAY 4000  // ms
@@ -961,7 +961,7 @@ nsresult nsJSContext::AddSupportsPrimitiveTojsvals(nsISupports* aArg,
 
 #ifdef MOZ_JPROF
 
-#include <signal.h>
+#  include <signal.h>
 
 inline bool IsJProfAction(struct sigaction* action) {
   return (action->sa_sigaction &&
@@ -1146,8 +1146,7 @@ static void FinishAnyIncrementalGC() {
 static void FireForgetSkippable(uint32_t aSuspected, bool aRemoveChildless,
                                 TimeStamp aDeadline) {
   AUTO_PROFILER_TRACING(
-      "CC", aDeadline.IsNull() ? "ForgetSkippable" : "IdleForgetSkippable",
-      GCCC);
+      "CC", aDeadline.IsNull() ? "ForgetSkippable" : "IdleForgetSkippable");
   PRTime startTime = PR_Now();
   TimeStamp startTimeStamp = TimeStamp::Now();
 
@@ -1422,8 +1421,7 @@ void nsJSContext::RunCycleCollectorSlice(TimeStamp aDeadline) {
     return;
   }
 
-  AUTO_PROFILER_TRACING("CC", aDeadline.IsNull() ? "CCSlice" : "IdleCCSlice",
-                        GCCC);
+  AUTO_PROFILER_TRACING("CC", aDeadline.IsNull() ? "CCSlice" : "IdleCCSlice");
 
   AUTO_PROFILER_LABEL("nsJSContext::RunCycleCollectorSlice", GCCC);
 

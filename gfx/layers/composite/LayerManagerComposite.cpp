@@ -27,7 +27,7 @@
 #include "gfxEnv.h"                          
 #include "gfxPrefs.h"                        
 #ifdef XP_MACOSX
-#include "gfxPlatformMac.h"
+#  include "gfxPlatformMac.h"
 #endif
 #include "gfxRect.h"                    
 #include "gfxUtils.h"                   
@@ -56,16 +56,16 @@
 #include "nsRect.h"           
 #include "nsRegion.h"         
 #if defined(MOZ_WIDGET_ANDROID)
-#include <android/log.h>
-#include <android/native_window.h>
-#include "mozilla/jni/Utils.h"
-#include "mozilla/widget/AndroidCompositorWidget.h"
-#include "opengl/CompositorOGL.h"
-#include "GLConsts.h"
-#include "GLContextEGL.h"
-#include "GLContextProvider.h"
-#include "mozilla/Unused.h"
-#include "ScopedGLHelpers.h"
+#  include <android/log.h>
+#  include <android/native_window.h>
+#  include "mozilla/jni/Utils.h"
+#  include "mozilla/widget/AndroidCompositorWidget.h"
+#  include "opengl/CompositorOGL.h"
+#  include "GLConsts.h"
+#  include "GLContextEGL.h"
+#  include "GLContextProvider.h"
+#  include "mozilla/Unused.h"
+#  include "ScopedGLHelpers.h"
 #endif
 #include "GeckoProfiler.h"
 #include "TextRenderer.h"  
@@ -73,7 +73,7 @@
 #include "TreeTraversal.h"  
 
 #ifdef USE_SKIA
-#include "PaintCounter.h"  
+#  include "PaintCounter.h"  
 #endif
 
 class gfxContext;

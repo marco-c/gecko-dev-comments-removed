@@ -57,7 +57,7 @@
 
 
 #ifdef SetProp
-#undef SetProp
+#  undef SetProp
 #endif
 
 class nsISupports;

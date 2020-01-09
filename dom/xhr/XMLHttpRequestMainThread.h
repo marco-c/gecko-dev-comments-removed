@@ -53,7 +53,7 @@
 #ifdef Status
 
 
-#undef Status
+#  undef Status
 #endif
 
 class nsIJARChannel;

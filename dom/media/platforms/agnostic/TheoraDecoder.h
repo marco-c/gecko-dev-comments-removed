@@ -4,12 +4,12 @@
 
 
 #if !defined(TheoraDecoder_h_)
-#define TheoraDecoder_h_
+#  define TheoraDecoder_h_
 
-#include "PlatformDecoderModule.h"
-#include "ogg/ogg.h"
-#include "theora/theoradec.h"
-#include <stdint.h>
+#  include "PlatformDecoderModule.h"
+#  include "ogg/ogg.h"
+#  include "theora/theoradec.h"
+#  include <stdint.h>
 
 namespace mozilla {
 

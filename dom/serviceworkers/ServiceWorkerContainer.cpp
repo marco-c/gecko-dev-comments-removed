@@ -42,7 +42,7 @@
 
 
 #ifdef DispatchMessage
-#undef DispatchMessage
+#  undef DispatchMessage
 #endif
 
 namespace mozilla {

@@ -29,7 +29,7 @@
 #include "nsIWidget.h"
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#  include "GeckoTaskTracer.h"
 #endif
 
 namespace mozilla {
@@ -1482,9 +1482,9 @@ nsSocketTransportService::GetSendBufferSize(int32_t *value) {
 
 
 #if defined(XP_WIN)
-#include <windows.h>
+#  include <windows.h>
 #elif defined(XP_UNIX) && !defined(AIX) && !defined(NEXTSTEP) && !defined(QNX)
-#include <sys/resource.h>
+#  include <sys/resource.h>
 #endif
 
 

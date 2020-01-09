@@ -30,22 +30,22 @@
 #include "mozilla/XREAppData.h"
 #include "mozilla/Bootstrap.h"
 #if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID)
-#include "nsUpdateDriver.h"
+#  include "nsUpdateDriver.h"
 #endif
 #include "ProfileReset.h"
 
 #ifdef MOZ_INSTRUMENT_EVENT_LOOP
-#include "EventTracer.h"
+#  include "EventTracer.h"
 #endif
 
 #ifdef XP_MACOSX
-#include "nsVersionComparator.h"
-#include "MacLaunchHelper.h"
-#include "MacApplicationDelegate.h"
-#include "MacAutoreleasePool.h"
+#  include "nsVersionComparator.h"
+#  include "MacLaunchHelper.h"
+#  include "MacApplicationDelegate.h"
+#  include "MacAutoreleasePool.h"
 
-#include <sys/types.h>
-#include <sys/sysctl.h>
+#  include <sys/types.h>
+#  include <sys/sysctl.h>
 #endif
 
 #include "prnetdb.h"
@@ -100,38 +100,38 @@
 #include "mozilla/Unused.h"
 
 #ifdef XP_WIN
-#include "nsIWinAppHelper.h"
-#include <windows.h>
-#include <intrin.h>
-#include <math.h>
-#include "cairo/cairo-features.h"
-#include "mozilla/WindowsDllBlocklist.h"
-#include "mozilla/WinHeaderOnlyUtils.h"
-#include "mozilla/mscom/MainThreadRuntime.h"
-#include "mozilla/widget/AudioSession.h"
+#  include "nsIWinAppHelper.h"
+#  include <windows.h>
+#  include <intrin.h>
+#  include <math.h>
+#  include "cairo/cairo-features.h"
+#  include "mozilla/WindowsDllBlocklist.h"
+#  include "mozilla/WinHeaderOnlyUtils.h"
+#  include "mozilla/mscom/MainThreadRuntime.h"
+#  include "mozilla/widget/AudioSession.h"
 
-#if defined(MOZ_LAUNCHER_PROCESS)
-#include "mozilla/LauncherRegistryInfo.h"
-#endif
+#  if defined(MOZ_LAUNCHER_PROCESS)
+#    include "mozilla/LauncherRegistryInfo.h"
+#  endif
 
-#ifndef PROCESS_DEP_ENABLE
-#define PROCESS_DEP_ENABLE 0x1
-#endif
+#  ifndef PROCESS_DEP_ENABLE
+#    define PROCESS_DEP_ENABLE 0x1
+#  endif
 #endif
 
 #if defined(MOZ_CONTENT_SANDBOX)
-#include "mozilla/SandboxSettings.h"
-#if (defined(XP_WIN) || defined(XP_MACOSX))
-#include "nsIUUIDGenerator.h"
-#endif
+#  include "mozilla/SandboxSettings.h"
+#  if (defined(XP_WIN) || defined(XP_MACOSX))
+#    include "nsIUUIDGenerator.h"
+#  endif
 #endif
 
 #ifdef ACCESSIBILITY
-#include "nsAccessibilityService.h"
-#if defined(XP_WIN)
-#include "mozilla/a11y/Compatibility.h"
-#include "mozilla/a11y/Platform.h"
-#endif
+#  include "nsAccessibilityService.h"
+#  if defined(XP_WIN)
+#    include "mozilla/a11y/Compatibility.h"
+#    include "mozilla/a11y/Platform.h"
+#  endif
 #endif
 
 #include "nsCRT.h"
@@ -161,57 +161,57 @@
 #include <locale.h>
 
 #ifdef XP_UNIX
-#include <errno.h>
-#include <pwd.h>
-#include <string.h>
-#include <sys/resource.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#  include <errno.h>
+#  include <pwd.h>
+#  include <string.h>
+#  include <sys/resource.h>
+#  include <sys/stat.h>
+#  include <unistd.h>
 #endif
 
 #ifdef XP_WIN
-#include <process.h>
-#include <shlobj.h>
-#include "mozilla/WinDllServices.h"
-#include "nsThreadUtils.h"
-#include <comdef.h>
-#include <wbemidl.h>
-#include "WinUtils.h"
+#  include <process.h>
+#  include <shlobj.h>
+#  include "mozilla/WinDllServices.h"
+#  include "nsThreadUtils.h"
+#  include <comdef.h>
+#  include <wbemidl.h>
+#  include "WinUtils.h"
 #endif
 
 #ifdef XP_MACOSX
-#include "nsILocalFileMac.h"
-#include "nsCommandLineServiceMac.h"
+#  include "nsILocalFileMac.h"
+#  include "nsCommandLineServiceMac.h"
 #endif
 
 
 #if defined(MOZ_WIDGET_GTK)
-#include "XRemoteClient.h"
-#include "nsIRemoteService.h"
-#include "nsProfileLock.h"
-#include "SpecialSystemDirectory.h"
-#include <sched.h>
-#ifdef MOZ_ENABLE_DBUS
-#include "DBusRemoteClient.h"
-#endif
+#  include "XRemoteClient.h"
+#  include "nsIRemoteService.h"
+#  include "nsProfileLock.h"
+#  include "SpecialSystemDirectory.h"
+#  include <sched.h>
+#  ifdef MOZ_ENABLE_DBUS
+#    include "DBusRemoteClient.h"
+#  endif
 
-#define MOZ_XREMOTE_START_TIMEOUT_SEC 5
+#  define MOZ_XREMOTE_START_TIMEOUT_SEC 5
 #endif
 
 #if defined(DEBUG) && defined(XP_WIN32)
-#include <malloc.h>
+#  include <malloc.h>
 #endif
 
 #if defined(XP_MACOSX)
-#include <Carbon/Carbon.h>
+#  include <Carbon/Carbon.h>
 #endif
 
 #ifdef DEBUG
-#include "mozilla/Logging.h"
+#  include "mozilla/Logging.h"
 #endif
 
 #ifdef MOZ_JPROF
-#include "jprof.h"
+#  include "jprof.h"
 #endif
 
 #include "nsExceptionHandler.h"
@@ -220,27 +220,27 @@
 #include "nsIPrefService.h"
 #include "nsIMemoryInfoDumper.h"
 #if defined(XP_LINUX) && !defined(ANDROID)
-#include "mozilla/widget/LSBUtils.h"
+#  include "mozilla/widget/LSBUtils.h"
 #endif
 
 #include "base/command_line.h"
 #include "GTestRunner.h"
 
 #ifdef MOZ_WIDGET_ANDROID
-#include "GeneratedJNIWrappers.h"
+#  include "GeneratedJNIWrappers.h"
 #endif
 
 #if defined(MOZ_SANDBOX)
-#if defined(XP_LINUX) && !defined(ANDROID)
-#include "mozilla/SandboxInfo.h"
-#elif defined(XP_WIN)
-#include "sandboxBroker.h"
-#include "sandboxPermissions.h"
-#endif
+#  if defined(XP_LINUX) && !defined(ANDROID)
+#    include "mozilla/SandboxInfo.h"
+#  elif defined(XP_WIN)
+#    include "sandboxBroker.h"
+#    include "sandboxPermissions.h"
+#  endif
 #endif
 
 #ifdef MOZ_CODE_COVERAGE
-#include "mozilla/CodeCoverageHandler.h"
+#  include "mozilla/CodeCoverageHandler.h"
 #endif
 
 #include "mozilla/mozalloc_oom.h"
@@ -274,21 +274,21 @@ bool gIsGtest = false;
 nsString gAbsoluteArgv0Path;
 
 #if defined(MOZ_WIDGET_GTK)
-#include <glib.h>
-#if defined(DEBUG) || defined(NS_BUILD_REFCNT_LOGGING)
-#define CLEANUP_MEMORY 1
-#define PANGO_ENABLE_BACKEND
-#include <pango/pangofc-fontmap.h>
-#endif
-#include <gtk/gtk.h>
-#ifdef MOZ_WAYLAND
-#include <gdk/gdkwayland.h>
-#endif
-#ifdef MOZ_X11
-#include <gdk/gdkx.h>
-#endif 
-#include "nsGTKToolkit.h"
-#include <fontconfig/fontconfig.h>
+#  include <glib.h>
+#  if defined(DEBUG) || defined(NS_BUILD_REFCNT_LOGGING)
+#    define CLEANUP_MEMORY 1
+#    define PANGO_ENABLE_BACKEND
+#    include <pango/pangofc-fontmap.h>
+#  endif
+#  include <gtk/gtk.h>
+#  ifdef MOZ_WAYLAND
+#    include <gdk/gdkwayland.h>
+#  endif
+#  ifdef MOZ_X11
+#    include <gdk/gdkx.h>
+#  endif 
+#  include "nsGTKToolkit.h"
+#  include <fontconfig/fontconfig.h>
 #endif
 #include "BinaryPath.h"
 
@@ -297,17 +297,17 @@ extern "C" MFBT_API bool IsSignalHandlingBroken();
 #endif
 
 #ifdef FUZZING
-#include "FuzzerRunner.h"
+#  include "FuzzerRunner.h"
 
 namespace mozilla {
 FuzzerRunner* fuzzerRunner = 0;
 }  
 
-#ifdef LIBFUZZER
+#  ifdef LIBFUZZER
 void XRE_LibFuzzerSetDriver(LibFuzzerDriver aDriver) {
   mozilla::fuzzerRunner->setParams(aDriver);
 }
-#endif
+#  endif
 #endif  
 
 namespace mozilla {
@@ -974,7 +974,7 @@ typedef enum {
 
 
 
-#define VistaTokenElevationType static_cast<TOKEN_INFORMATION_CLASS>(18)
+#  define VistaTokenElevationType static_cast<TOKEN_INFORMATION_CLASS>(18)
 
 NS_IMETHODIMP
 nsXULAppInfo::GetUserCanElevate(bool* aUserCanElevate) {
@@ -1302,7 +1302,7 @@ ScopedXPCOMStartup::~ScopedXPCOMStartup() {
     if (appStartup) appStartup->DestroyHiddenWindow();
 
     gDirServiceProvider->DoShutdown();
-    PROFILER_ADD_MARKER("Shutdown early", OTHER);
+    PROFILER_ADD_MARKER("Shutdown early");
 
     WriteConsoleLog();
 
@@ -1568,11 +1568,11 @@ static RemoteResult StartRemoteClient(const char* aDesktopStartupID,
 
   bool useX11Remote = GDK_IS_X11_DISPLAY(gdk_display_get_default());
 
-#if defined(MOZ_ENABLE_DBUS)
+#  if defined(MOZ_ENABLE_DBUS)
   if (!useX11Remote) {
     client = new DBusRemoteClient();
   }
-#endif
+#  endif
   if (useX11Remote) {
     client = new XRemoteClient();
   }
@@ -1608,8 +1608,8 @@ nsresult XRE_GetBinaryPath(nsIFile** aResult) {
 }
 
 #ifdef XP_WIN
-#include "nsWindowsRestart.cpp"
-#include <shellapi.h>
+#  include "nsWindowsRestart.cpp"
+#  include <shellapi.h>
 
 typedef BOOL(WINAPI* SetProcessDEPPolicyFunc)(DWORD dwFlags);
 
@@ -1651,7 +1651,7 @@ static void RegisterApplicationRestartChanged(const char* aPref, void* aData) {
   }
 }
 
-#if defined(MOZ_LAUNCHER_PROCESS)
+#  if defined(MOZ_LAUNCHER_PROCESS)
 
 static void OnLauncherPrefChanged(const char* aPref, void* aData) {
   bool prefVal = Preferences::GetBool(PREF_WIN_LAUNCHER_PROCESS_ENABLED, false);
@@ -1679,7 +1679,7 @@ static void SetupLauncherProcessPref() {
                                 PREF_WIN_LAUNCHER_PROCESS_ENABLED);
 }
 
-#endif  
+#  endif  
 
 #endif  
 
@@ -1709,15 +1709,15 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
 #endif  
 
 #if !defined(MOZ_WIDGET_ANDROID)  
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
   CommandLineServiceMac::SetupMacCommandLine(gRestartArgc, gRestartArgv, true);
   LaunchChildMac(gRestartArgc, gRestartArgv);
-#else
+#  else
   nsCOMPtr<nsIFile> lf;
   nsresult rv = XRE_GetBinaryPath(getter_AddRefs(lf));
   if (NS_FAILED(rv)) return rv;
 
-#if defined(XP_WIN)
+#    if defined(XP_WIN)
   nsAutoString exePath;
   rv = lf->GetPath(exePath);
   if (NS_FAILED(rv)) return rv;
@@ -1732,14 +1732,14 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
   mozilla::WaitForInputIdle(hProcess);
   ::CloseHandle(hProcess);
 
-#else
+#    else
   nsAutoCString exePath;
   rv = lf->GetNativePath(exePath);
   if (NS_FAILED(rv)) return rv;
 
-#if defined(XP_UNIX)
+#      if defined(XP_UNIX)
   if (execv(exePath.get(), gRestartArgv) == -1) return NS_ERROR_FAILURE;
-#else
+#      else
   PRProcess* process =
       PR_CreateProcess(exePath.get(), gRestartArgv, nullptr, nullptr);
   if (!process) return NS_ERROR_FAILURE;
@@ -1747,10 +1747,10 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
   int32_t exitCode;
   PRStatus failed = PR_WaitProcess(process, &exitCode);
   if (failed || exitCode) return NS_ERROR_FAILURE;
-#endif  
-#endif  
-#endif  
-#endif  
+#      endif  
+#    endif    
+#  endif      
+#endif        
 
   return NS_ERROR_LAUNCHED_CHILD_PROCESS;
 }
@@ -2421,9 +2421,9 @@ static bool RemoveComponentRegistries(nsIFile* aProfileDir,
   if (!file) return false;
 
 #if defined(XP_UNIX) || defined(XP_BEOS)
-#define PLATFORM_FASL_SUFFIX ".mfasl"
+#  define PLATFORM_FASL_SUFFIX ".mfasl"
 #elif defined(XP_WIN)
-#define PLATFORM_FASL_SUFFIX ".mfl"
+#  define PLATFORM_FASL_SUFFIX ".mfl"
 #endif
 
   file->AppendNative(NS_LITERAL_CSTRING("XUL" PLATFORM_FASL_SUFFIX));
@@ -2488,7 +2488,7 @@ const XREAppData* gAppData = nullptr;
 
 #ifdef MOZ_WIDGET_GTK
 static void MOZ_gdk_display_close(GdkDisplay* display) {
-#if CLEANUP_MEMORY
+#  if CLEANUP_MEMORY
   
   
   bool skip_display_close = false;
@@ -2502,10 +2502,10 @@ static void MOZ_gdk_display_close(GdkDisplay* display) {
     g_free(theme_name);
   }
 
-#ifdef MOZ_WIDGET_GTK
+#    ifdef MOZ_WIDGET_GTK
   
   if (gtk_check_version(3, 9, 8) != NULL) skip_display_close = true;
-#endif
+#    endif
 
   
   
@@ -2547,9 +2547,10 @@ static void MOZ_gdk_display_close(GdkDisplay* display) {
 
   
   
-#ifdef cairo_debug_reset_static_data
-#error "Looks like we're including Mozilla's cairo instead of system cairo"
-#endif
+#    ifdef cairo_debug_reset_static_data
+#      error \
+          "Looks like we're including Mozilla's cairo instead of system cairo"
+#    endif
   cairo_debug_reset_static_data();
   
   FcFini();
@@ -2557,11 +2558,11 @@ static void MOZ_gdk_display_close(GdkDisplay* display) {
   if (buggyCairoShutdown) {
     if (!skip_display_close) gdk_display_close(display);
   }
-#else  
+#  else  
   
   
   (void)display;
-#endif
+#  endif
 }
 #endif
 
@@ -2581,11 +2582,11 @@ NS_VISIBILITY_DEFAULT PRBool nspr_use_zone_allocator = PR_FALSE;
 
 #ifdef CAIRO_HAS_DWRITE_FONT
 
-#include <dwrite.h>
+#  include <dwrite.h>
 
-#ifdef DEBUG_DWRITE_STARTUP
+#  ifdef DEBUG_DWRITE_STARTUP
 
-#define LOGREGISTRY(msg) LogRegistryEvent(msg)
+#    define LOGREGISTRY(msg) LogRegistryEvent(msg)
 
 
 static void LogRegistryEvent(const wchar_t* msg) {
@@ -2599,11 +2600,11 @@ static void LogRegistryEvent(const wchar_t* msg) {
     RegCloseKey(dummyKey);
   }
 }
-#else
+#  else
 
-#define LOGREGISTRY(msg)
+#    define LOGREGISTRY(msg)
 
-#endif
+#  endif
 
 static DWORD WINAPI InitDwriteBG(LPVOID lpdwThreadParam) {
   SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
@@ -2705,12 +2706,12 @@ static SmprintfPointer FormatUid(uid_t aId) {
 static bool CheckForUserMismatch() {
   static char const* const kVars[] = {
       "HOME",
-#ifdef MOZ_WIDGET_GTK
+#  ifdef MOZ_WIDGET_GTK
       "XDG_RUNTIME_DIR",
-#endif
-#ifdef MOZ_X11
+#  endif
+#  ifdef MOZ_X11
       "XAUTHORITY",
-#endif
+#  endif
   };
 
   const uid_t euid = geteuid();
@@ -3052,13 +3053,13 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   if (mAppData->sandboxBrokerServices) {
     SandboxBroker::Initialize(mAppData->sandboxBrokerServices);
   } else {
-#if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_CONTENT_SANDBOX)
     
     
     if (BrowserTabsRemoteAutostart()) {
       MOZ_CRASH("Failed to initialize broker services, can't continue.");
     }
-#endif
+#  endif
     
     NS_WARNING(
         "Failed to initialize broker services, sandboxed processes will "
@@ -3425,11 +3426,11 @@ static void SetShutdownChecks() {
   
 
 #ifdef DEBUG
-#if defined(MOZ_CODE_COVERAGE)
+#  if defined(MOZ_CODE_COVERAGE)
   gShutdownChecks = SCM_NOTHING;
-#else
+#  else
   gShutdownChecks = SCM_CRASH;
-#endif  
+#  endif  
 #else
   const char* releaseChannel = NS_STRINGIFY(MOZ_UPDATE_CHANNEL);
   if (strcmp(releaseChannel, "nightly") == 0 ||
@@ -3531,7 +3532,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #if defined(MOZ_WIDGET_GTK)
   
   
-#define HAVE_DESKTOP_STARTUP_ID
+#  define HAVE_DESKTOP_STARTUP_ID
   const char* desktopStartupIDEnv = PR_GetEnv("DESKTOP_STARTUP_ID");
   if (desktopStartupIDEnv) {
     mDesktopStartupID.Assign(desktopStartupIDEnv);
@@ -3553,14 +3554,14 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
   
 
-#if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
+#  if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
   
   
   
   
   const char* useXI2 = PR_GetEnv("MOZ_USE_XINPUT2");
   if (!useXI2 || (*useXI2 == '0')) gdk_disable_multidevice();
-#endif
+#  endif
 
   
   
@@ -3616,14 +3617,14 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     }
 
     bool disableWayland = true;
-#if defined(MOZ_WAYLAND)
+#  if defined(MOZ_WAYLAND)
     
     
     
     
     disableWayland = (PR_GetEnv("GDK_BACKEND") == nullptr) ||
                      (gtk_check_version(3, 22, 0) != nullptr);
-#endif
+#  endif
     
     
     if (disableWayland && !display_name) {
@@ -3647,19 +3648,19 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
         if (GDK_IS_X11_DISPLAY(mGdkDisplay)) {
           SaveWordToEnv("DISPLAY", nsDependentCString(display_name));
         }
-#ifdef MOZ_WAYLAND
+#  ifdef MOZ_WAYLAND
         else if (!GDK_IS_X11_DISPLAY(mGdkDisplay)) {
           SaveWordToEnv("WAYLAND_DISPLAY", nsDependentCString(display_name));
         }
-#endif
+#  endif
       }
     }
-#ifdef MOZ_WIDGET_GTK
+#  ifdef MOZ_WIDGET_GTK
     else {
       mGdkDisplay =
           gdk_display_manager_open_display(gdk_display_manager_get(), nullptr);
     }
-#endif
+#  endif
   } else {
     mDisableRemote = true;
   }
@@ -3997,18 +3998,18 @@ void AddSandboxAnnotations() {
   
   bool sandboxCapable = false;
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   
   sandboxCapable = true;
-#elif defined(XP_MACOSX)
+#  elif defined(XP_MACOSX)
   
   sandboxCapable = true;
-#elif defined(XP_LINUX)
+#  elif defined(XP_LINUX)
   sandboxCapable = SandboxInfo::Get().CanSandboxContent();
-#elif defined(__OpenBSD__)
+#  elif defined(__OpenBSD__)
   sandboxCapable = true;
   StartOpenBSDSandbox(GeckoProcessType_Default);
-#endif
+#  endif
 
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::ContentSandboxCapable, sandboxCapable);
@@ -4283,9 +4284,9 @@ nsresult XREMain::XRE_mainRun() {
 #ifdef XP_WIN
     Preferences::RegisterCallbackAndCall(RegisterApplicationRestartChanged,
                                          PREF_WIN_REGISTER_APPLICATION_RESTART);
-#if defined(MOZ_LAUNCHER_PROCESS)
+#  if defined(MOZ_LAUNCHER_PROCESS)
     SetupLauncherProcessPref();
-#endif  
+#  endif  
 #endif
 
 #if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK)
@@ -4899,14 +4900,14 @@ void setASanReporterPath(nsIFile* aDir) {
 
   dir->Append(NS_LITERAL_STRING("ff_asan_log"));
 
-#ifdef XP_WIN
+#  ifdef XP_WIN
   nsAutoString nspathW;
   rv = dir->GetPath(nspathW);
   NS_ConvertUTF16toUTF8 nspath(nspathW);
-#else
+#  else
   nsAutoCString nspath;
   rv = dir->GetNativePath(nspath);
-#endif
+#  endif
   if (NS_FAILED(rv)) {
     MOZ_CRASH("[ASan Reporter] Unable to get native path for crash directory.");
   }

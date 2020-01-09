@@ -1078,7 +1078,7 @@ int ParseFTPList(const char *line, struct list_state *state,
           }
         }
 
-#if defined(SUPPORT_LSLF) 
+#  if defined(SUPPORT_LSLF) 
         if (result->fe_fnlen > 1) {
           p = result->fe_fname[result->fe_fnlen - 1];
           pos = result->fe_type;
@@ -1092,7 +1092,7 @@ int ParseFTPList(const char *line, struct list_state *state,
             result->fe_fnlen--; 
           }
         }
-#endif
+#  endif
 
         
 

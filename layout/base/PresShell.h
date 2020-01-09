@@ -60,9 +60,9 @@ typedef nsTHashtable<nsPtrHashKey<nsIFrame>> VisibleFrames;
 
 
 #ifdef MOZ_WIDGET_ANDROID
-#define PAINTLOCK_EVENT_DELAY 250
+#  define PAINTLOCK_EVENT_DELAY 250
 #else
-#define PAINTLOCK_EVENT_DELAY 5
+#  define PAINTLOCK_EVENT_DELAY 5
 #endif
 
 class PresShell final : public nsIPresShell,

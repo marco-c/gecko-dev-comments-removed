@@ -207,9 +207,9 @@ struct MapTypeToRootKind<JSFunction*> : public MapTypeToRootKind<JSObject*> {};
 
 
 #if (defined(_MSC_VER) && _MSC_VER < 1910) && !defined(__clang__)
-#define JS_DEPENDENT_TEMPLATE_HINT
+#  define JS_DEPENDENT_TEMPLATE_HINT
 #else
-#define JS_DEPENDENT_TEMPLATE_HINT template
+#  define JS_DEPENDENT_TEMPLATE_HINT template
 #endif
 template <typename F, typename... Args>
 auto DispatchTraceKindTyped(F f, JS::TraceKind traceKind, Args&&... args)

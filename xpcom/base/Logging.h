@@ -26,9 +26,9 @@
 
 
 #if !defined(ANDROID) || !defined(RELEASE_OR_BETA)
-#define MOZ_LOGGING_ENABLED 1
+#  define MOZ_LOGGING_ENABLED 1
 #else
-#define MOZ_LOGGING_ENABLED 0
+#  define MOZ_LOGGING_ENABLED 0
 #endif
 
 namespace mozilla {
@@ -199,7 +199,8 @@ void log_print(const LogModule* aModule, LogLevel aLevel, const char* aFmt, ...)
 #define MOZ_LOG_EXPAND_ARGS(...) __VA_ARGS__
 
 #if MOZ_LOGGING_ENABLED
-#define MOZ_LOG_TEST(_module, _level) mozilla::detail::log_test(_module, _level)
+#  define MOZ_LOG_TEST(_module, _level) \
+    mozilla::detail::log_test(_module, _level)
 #else
 
 
@@ -207,7 +208,7 @@ void log_print(const LogModule* aModule, LogLevel aLevel, const char* aFmt, ...)
 
 
 
-#define MOZ_LOG_TEST(_module, _level) false
+#  define MOZ_LOG_TEST(_module, _level) false
 #endif
 
 
@@ -248,21 +249,22 @@ void log_print(const LogModule* aModule, LogLevel aLevel, const char* aFmt, ...)
 
 
 #if MOZ_LOGGING_ENABLED
-#define MOZ_LOG(_module, _level, _args)                      \
-  do {                                                       \
-    const ::mozilla::LogModule* moz_real_module = _module;   \
-    if (MOZ_LOG_TEST(moz_real_module, _level)) {             \
-      mozilla::detail::log_print(moz_real_module, _level,    \
-                                 MOZ_LOG_EXPAND_ARGS _args); \
-    }                                                        \
-  } while (0)
+#  define MOZ_LOG(_module, _level, _args)                      \
+    do {                                                       \
+      const ::mozilla::LogModule* moz_real_module = _module;   \
+      if (MOZ_LOG_TEST(moz_real_module, _level)) {             \
+        mozilla::detail::log_print(moz_real_module, _level,    \
+                                   MOZ_LOG_EXPAND_ARGS _args); \
+      }                                                        \
+    } while (0)
 #else
-#define MOZ_LOG(_module, _level, _args)                                       \
-  do {                                                                        \
-    if (MOZ_LOG_TEST(_module, _level)) {                                      \
-      mozilla::detail::log_print(_module, _level, MOZ_LOG_EXPAND_ARGS _args); \
-    }                                                                         \
-  } while (0)
+#  define MOZ_LOG(_module, _level, _args)                      \
+    do {                                                       \
+      if (MOZ_LOG_TEST(_module, _level)) {                     \
+        mozilla::detail::log_print(_module, _level,            \
+                                   MOZ_LOG_EXPAND_ARGS _args); \
+      }                                                        \
+    } while (0)
 #endif
 
 

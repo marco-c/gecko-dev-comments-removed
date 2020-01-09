@@ -5,9 +5,9 @@
 
 
 #if !defined(OmxDecoderModule_h_)
-#define OmxDecoderModule_h_
+#  define OmxDecoderModule_h_
 
-#include "PlatformDecoderModule.h"
+#  include "PlatformDecoderModule.h"
 
 namespace mozilla {
 

@@ -78,8 +78,8 @@
 
 
 #if defined(OS_WIN)
-#define FILE_PATH_USES_DRIVE_LETTERS
-#define FILE_PATH_USES_WIN_SEPARATORS
+#  define FILE_PATH_USES_DRIVE_LETTERS
+#  define FILE_PATH_USES_WIN_SEPARATORS
 #endif  
 
 
@@ -241,9 +241,9 @@ class FilePath {
 
 
 #if defined(OS_POSIX)
-#define FILE_PATH_LITERAL(x) x
+#  define FILE_PATH_LITERAL(x) x
 #elif defined(OS_WIN)
-#define FILE_PATH_LITERAL(x) L##x
+#  define FILE_PATH_LITERAL(x) L##x
 #endif  
 
 

@@ -22,12 +22,12 @@
 
 
 #ifndef _LINUX_CAPABILITY_VERSION_3
-#define _LINUX_CAPABILITY_VERSION_3 0x20080522
-#define _LINUX_CAPABILITY_U32S_3 2
+#  define _LINUX_CAPABILITY_VERSION_3 0x20080522
+#  define _LINUX_CAPABILITY_U32S_3 2
 #endif
 #ifndef CAP_TO_INDEX
-#define CAP_TO_INDEX(x) ((x) >> 5)
-#define CAP_TO_MASK(x) (1 << ((x)&31))
+#  define CAP_TO_INDEX(x) ((x) >> 5)
+#  define CAP_TO_MASK(x) (1 << ((x)&31))
 #endif
 
 namespace mozilla {

@@ -9,50 +9,50 @@
 #include "nptypes.h"
 
 #if defined(_WIN32) && !defined(__SYMBIAN32__)
-#include <windef.h>
-#ifndef XP_WIN
-#define XP_WIN 1
-#endif
+#  include <windef.h>
+#  ifndef XP_WIN
+#    define XP_WIN 1
+#  endif
 #endif
 
 #if defined(__SYMBIAN32__)
-#ifndef XP_SYMBIAN
-#define XP_SYMBIAN 1
-#undef XP_WIN
-#endif
+#  ifndef XP_SYMBIAN
+#    define XP_SYMBIAN 1
+#    undef XP_WIN
+#  endif
 #endif
 
 #if defined(__APPLE_CC__) && !defined(XP_UNIX)
-#ifndef XP_MACOSX
-#define XP_MACOSX 1
-#endif
+#  ifndef XP_MACOSX
+#    define XP_MACOSX 1
+#  endif
 #endif
 
 #if defined(XP_MACOSX) && defined(__LP64__)
-#define NP_NO_QUICKDRAW
-#define NP_NO_CARBON
+#  define NP_NO_QUICKDRAW
+#  define NP_NO_CARBON
 #endif
 
 #if defined(XP_MACOSX)
-#include <ApplicationServices/ApplicationServices.h>
-#include <OpenGL/OpenGL.h>
-#ifndef NP_NO_CARBON
-#include <Carbon/Carbon.h>
-#endif
+#  include <ApplicationServices/ApplicationServices.h>
+#  include <OpenGL/OpenGL.h>
+#  ifndef NP_NO_CARBON
+#    include <Carbon/Carbon.h>
+#  endif
 #endif
 
 #if defined(XP_UNIX)
-#include <stdio.h>
-#if defined(MOZ_X11)
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include "X11UndefineNone.h"
-#endif
+#  include <stdio.h>
+#  if defined(MOZ_X11)
+#    include <X11/Xlib.h>
+#    include <X11/Xutil.h>
+#    include "X11UndefineNone.h"
+#  endif
 #endif
 
 #if defined(XP_SYMBIAN)
-#include <QEvent>
-#include <QRegion>
+#  include <QEvent>
+#  include <QRegion>
 #endif
 
 
@@ -119,11 +119,11 @@ typedef char* NPMIMEType;
 
 
 
-#if !defined(__LP64__)
-#if defined(XP_MACOSX)
-#pragma options align = mac68k
-#endif
-#endif 
+#  if !defined(__LP64__)
+#    if defined(XP_MACOSX)
+#      pragma options align = mac68k
+#    endif
+#  endif 
 
 
 
@@ -199,19 +199,19 @@ typedef struct _NPAsyncSurface {
       uint32_t stride;
       void* data;
     } bitmap;
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
     HANDLE sharedHandle;
-#endif
+#  endif
   };
 } NPAsyncSurface;
 
 
-#define kNPEventNotHandled 0
-#define kNPEventHandled 1
+#  define kNPEventNotHandled 0
+#  define kNPEventHandled 1
 
-#define kNPEventStartIME 2
+#  define kNPEventStartIME 2
 
-#if defined(XP_UNIX)
+#  if defined(XP_UNIX)
 
 
 
@@ -229,12 +229,12 @@ typedef struct {
 
 typedef struct {
   int32_t type;
-#if defined(MOZ_X11)
+#    if defined(MOZ_X11)
   Display* display;
   Visual* visual;
   Colormap colormap;
   unsigned int depth;
-#endif
+#    endif
 } NPSetWindowCallbackStruct;
 
 typedef struct {
@@ -242,9 +242,9 @@ typedef struct {
   FILE* fp;
 } NPPrintCallbackStruct;
 
-#endif 
+#  endif 
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
 
 
 
@@ -261,7 +261,7 @@ typedef struct _NPAudioDeviceChangeDetails {
                                  
 } NPAudioDeviceChangeDetails;
 
-#endif 
+#  endif 
 
 
 
@@ -276,41 +276,41 @@ typedef struct _NPAudioDeviceStateChanged {
 
 typedef enum {
   NPDrawingModelDUMMY
-#if defined(XP_MACOSX)
-#ifndef NP_NO_QUICKDRAW
+#  if defined(XP_MACOSX)
+#    ifndef NP_NO_QUICKDRAW
   ,
   NPDrawingModelQuickDraw = 0
-#endif
+#    endif
   ,
   NPDrawingModelCoreGraphics = 1,
   NPDrawingModelOpenGL = 2,
   NPDrawingModelCoreAnimation = 3,
   NPDrawingModelInvalidatingCoreAnimation = 4
-#endif
-#if defined(XP_WIN)
+#  endif
+#  if defined(XP_WIN)
   ,
   NPDrawingModelSyncWin = 5
-#endif
-#if defined(MOZ_X11)
+#  endif
+#  if defined(MOZ_X11)
   ,
   NPDrawingModelSyncX = 6
-#endif
+#  endif
   ,
   NPDrawingModelAsyncBitmapSurface = 7
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   ,
   NPDrawingModelAsyncWindowsDXGISurface = 8
-#endif
+#  endif
 } NPDrawingModel;
 
-#ifdef XP_MACOSX
+#  ifdef XP_MACOSX
 typedef enum {
-#ifndef NP_NO_CARBON
+#    ifndef NP_NO_CARBON
   NPEventModelCarbon = 0,
-#endif
+#    endif
   NPEventModelCocoa = 1
 } NPEventModel;
-#endif
+#  endif
 
 
 
@@ -325,25 +325,25 @@ typedef enum {
 
 
 
-#define NP_ABI_GCC3_MASK 0x10000000
+#  define NP_ABI_GCC3_MASK 0x10000000
 
 
 
 
-#if (defined(XP_UNIX) && defined(__GNUC__) && (__GNUC__ >= 3))
-#define _NP_ABI_MIXIN_FOR_GCC3 NP_ABI_GCC3_MASK
-#else
-#define _NP_ABI_MIXIN_FOR_GCC3 0
-#endif
+#  if (defined(XP_UNIX) && defined(__GNUC__) && (__GNUC__ >= 3))
+#    define _NP_ABI_MIXIN_FOR_GCC3 NP_ABI_GCC3_MASK
+#  else
+#    define _NP_ABI_MIXIN_FOR_GCC3 0
+#  endif
 
-#if defined(XP_MACOSX)
-#define NP_ABI_MACHO_MASK 0x01000000
-#define _NP_ABI_MIXIN_FOR_MACHO NP_ABI_MACHO_MASK
-#else
-#define _NP_ABI_MIXIN_FOR_MACHO 0
-#endif
+#  if defined(XP_MACOSX)
+#    define NP_ABI_MACHO_MASK 0x01000000
+#    define _NP_ABI_MIXIN_FOR_MACHO NP_ABI_MACHO_MASK
+#  else
+#    define _NP_ABI_MIXIN_FOR_MACHO 0
+#  endif
 
-#define NP_ABI_MASK (_NP_ABI_MIXIN_FOR_GCC3 | _NP_ABI_MIXIN_FOR_MACHO)
+#  define NP_ABI_MASK (_NP_ABI_MIXIN_FOR_GCC3 | _NP_ABI_MIXIN_FOR_MACHO)
 
 
 
@@ -395,7 +395,7 @@ typedef enum {
 
   
   NPPVpluginDrawingModel = 1000
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
   
   ,
   NPPVpluginEventModel = 1001
@@ -403,16 +403,16 @@ typedef enum {
 
   ,
   NPPVpluginCoreAnimationLayer = 1003
-#endif
+#  endif
   
   ,
   NPPVpluginIsPlayingAudio = 4000
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   
 
   ,
   NPPVpluginRequiresAudioDeviceChanges = 4001
-#endif
+#  endif
 
 } NPPVariable;
 
@@ -451,34 +451,34 @@ typedef enum {
 
   NPNVpluginDrawingModel =
       1000 
-#if defined(XP_MACOSX) || defined(XP_WIN)
+#  if defined(XP_MACOSX) || defined(XP_WIN)
   ,
   NPNVcontentsScaleFactor = 1001
-#endif
-#if defined(XP_MACOSX)
-#ifndef NP_NO_QUICKDRAW
+#  endif
+#  if defined(XP_MACOSX)
+#    ifndef NP_NO_QUICKDRAW
   ,
   NPNVsupportsQuickDrawBool = 2000
-#endif
+#    endif
   ,
   NPNVsupportsCoreGraphicsBool = 2001,
   NPNVsupportsOpenGLBool = 2002,
   NPNVsupportsCoreAnimationBool = 2003,
   NPNVsupportsInvalidatingCoreAnimationBool = 2004
-#endif
+#  endif
   ,
   NPNVsupportsAsyncBitmapSurfaceBool = 2007
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   ,
   NPNVsupportsAsyncWindowsDXGISurfaceBool = 2008,
   NPNVpreferredDXGIAdapter = 2009
-#endif
-#if defined(XP_MACOSX)
-#ifndef NP_NO_CARBON
+#  endif
+#  if defined(XP_MACOSX)
+#    ifndef NP_NO_CARBON
   ,
   NPNVsupportsCarbonBool =
       3000 
-#endif
+#    endif
   ,
   NPNVsupportsCocoaBool =
       3001 
@@ -486,24 +486,24 @@ typedef enum {
   NPNVsupportsUpdatedCocoaTextInputBool =
       3002 
 
-#endif
+#  endif
   ,
   NPNVmuteAudioBool =
       4000 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   ,
   NPNVaudioDeviceChangeDetails =
       4001 
   ,
   NPNVaudioDeviceStateChanged =
       4002 
-#endif
-#if defined(XP_MACOSX)
+#  endif
+#  if defined(XP_MACOSX)
   ,
   NPNVsupportsCompositingCoreAnimationPluginsBool =
       74656 
 
-#endif
+#  endif
   ,
   NPNVLast
 } NPNVariable;
@@ -530,9 +530,9 @@ typedef struct _NPWindow {
   uint32_t width; 
   uint32_t height;
   NPRect clipRect; 
-#if (defined(XP_UNIX) || defined(XP_SYMBIAN)) && !defined(XP_MACOSX)
+#  if (defined(XP_UNIX) || defined(XP_SYMBIAN)) && !defined(XP_MACOSX)
   void* ws_info;     
-#endif               
+#  endif             
   NPWindowType type; 
 } NPWindow;
 
@@ -571,49 +571,49 @@ typedef struct _NPPrint {
   } print;
 } NPPrint;
 
-#if defined(XP_MACOSX)
-#ifndef NP_NO_CARBON
+#  if defined(XP_MACOSX)
+#    ifndef NP_NO_CARBON
 typedef EventRecord NPEvent;
-#endif
-#elif defined(XP_SYMBIAN)
+#    endif
+#  elif defined(XP_SYMBIAN)
 typedef QEvent NPEvent;
-#elif defined(XP_WIN)
+#  elif defined(XP_WIN)
 typedef struct _NPEvent {
   uint16_t event;
   uintptr_t wParam;
   intptr_t lParam;
 } NPEvent;
-#elif defined(XP_UNIX) && defined(MOZ_X11)
+#  elif defined(XP_UNIX) && defined(MOZ_X11)
 typedef XEvent NPEvent;
-#else
+#  else
 typedef void* NPEvent;
-#endif
+#  endif
 
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
 typedef void* NPRegion;
-#ifndef NP_NO_QUICKDRAW
+#    ifndef NP_NO_QUICKDRAW
 typedef RgnHandle NPQDRegion;
-#endif
+#    endif
 typedef CGPathRef NPCGRegion;
-#elif defined(XP_WIN)
+#  elif defined(XP_WIN)
 typedef HRGN NPRegion;
-#elif defined(XP_UNIX) && defined(MOZ_X11)
+#  elif defined(XP_UNIX) && defined(MOZ_X11)
 typedef Region NPRegion;
-#elif defined(XP_SYMBIAN)
+#  elif defined(XP_SYMBIAN)
 typedef QRegion* NPRegion;
-#else
+#  else
 typedef void* NPRegion;
-#endif
+#  endif
 
 typedef struct _NPNSString NPNSString;
 typedef struct _NPNSWindow NPNSWindow;
 typedef struct _NPNSMenu NPNSMenu;
 
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
 typedef NPNSMenu NPMenu;
-#else
+#  else
 typedef void* NPMenu;
-#endif
+#  endif
 
 typedef enum {
   NPCoordinateSpacePlugin = 1,
@@ -623,15 +623,15 @@ typedef enum {
   NPCoordinateSpaceFlippedScreen
 } NPCoordinateSpace;
 
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
 
-#ifndef NP_NO_QUICKDRAW
+#    ifndef NP_NO_QUICKDRAW
 typedef struct NP_Port {
   CGrafPtr port;
   int32_t portx; 
   int32_t porty;
 } NP_Port;
-#endif 
+#    endif 
 
 
 
@@ -650,12 +650,12 @@ typedef struct NP_CGContext {
 
 typedef struct NP_GLContext {
   CGLContextObj context;
-#ifdef NP_NO_CARBON
+#    ifdef NP_NO_CARBON
   NPNSWindow* window;
-#else
+#    else
   void* window; 
 
-#endif
+#    endif
 } NP_GLContext;
 
 typedef enum {
@@ -712,7 +712,7 @@ typedef struct _NPCocoaEvent {
   } data;
 } NPCocoaEvent;
 
-#ifndef NP_NO_CARBON
+#    ifndef NP_NO_CARBON
 
 enum NPEventType {
   NPEventType_GetFocusEvent = (osEvt + 16),
@@ -723,114 +723,114 @@ enum NPEventType {
   NPEventType_ScrollingBeginsEvent = 1000,
   NPEventType_ScrollingEndsEvent
 };
-#endif 
+#    endif 
 
-#endif 
-
-
-
-
-#define NP_EMBED 1
-#define NP_FULL 2
+#  endif 
 
 
 
 
-#define NP_NORMAL 1
-#define NP_SEEK 2
-#define NP_ASFILE 3
-#define NP_ASFILEONLY 4
-
-#define NP_MAXREADY (((unsigned)(~0) << 1) >> 1)
+#  define NP_EMBED 1
+#  define NP_FULL 2
 
 
 
 
-#define NP_CLEAR_ALL 0
-#define NP_CLEAR_CACHE (1 << 0)
+#  define NP_NORMAL 1
+#  define NP_SEEK 2
+#  define NP_ASFILE 3
+#  define NP_ASFILEONLY 4
 
-#if !defined(__LP64__)
-#if defined(XP_MACOSX)
-#pragma options align = reset
-#endif
-#endif 
+#  define NP_MAXREADY (((unsigned)(~0) << 1) >> 1)
 
 
+
+
+#  define NP_CLEAR_ALL 0
+#  define NP_CLEAR_CACHE (1 << 0)
+
+#  if !defined(__LP64__)
+#    if defined(XP_MACOSX)
+#      pragma options align = reset
+#    endif
+#  endif 
 
 
 
 
 
 
-#define NPERR_BASE 0
-#define NPERR_NO_ERROR (NPERR_BASE + 0)
-#define NPERR_GENERIC_ERROR (NPERR_BASE + 1)
-#define NPERR_INVALID_INSTANCE_ERROR (NPERR_BASE + 2)
-#define NPERR_INVALID_FUNCTABLE_ERROR (NPERR_BASE + 3)
-#define NPERR_MODULE_LOAD_FAILED_ERROR (NPERR_BASE + 4)
-#define NPERR_OUT_OF_MEMORY_ERROR (NPERR_BASE + 5)
-#define NPERR_INVALID_PLUGIN_ERROR (NPERR_BASE + 6)
-#define NPERR_INVALID_PLUGIN_DIR_ERROR (NPERR_BASE + 7)
-#define NPERR_INCOMPATIBLE_VERSION_ERROR (NPERR_BASE + 8)
-#define NPERR_INVALID_PARAM (NPERR_BASE + 9)
-#define NPERR_INVALID_URL (NPERR_BASE + 10)
-#define NPERR_FILE_NOT_FOUND (NPERR_BASE + 11)
-#define NPERR_NO_DATA (NPERR_BASE + 12)
-#define NPERR_STREAM_NOT_SEEKABLE (NPERR_BASE + 13)
-#define NPERR_TIME_RANGE_NOT_SUPPORTED (NPERR_BASE + 14)
-#define NPERR_MALFORMED_SITE (NPERR_BASE + 15)
+
+
+#  define NPERR_BASE 0
+#  define NPERR_NO_ERROR (NPERR_BASE + 0)
+#  define NPERR_GENERIC_ERROR (NPERR_BASE + 1)
+#  define NPERR_INVALID_INSTANCE_ERROR (NPERR_BASE + 2)
+#  define NPERR_INVALID_FUNCTABLE_ERROR (NPERR_BASE + 3)
+#  define NPERR_MODULE_LOAD_FAILED_ERROR (NPERR_BASE + 4)
+#  define NPERR_OUT_OF_MEMORY_ERROR (NPERR_BASE + 5)
+#  define NPERR_INVALID_PLUGIN_ERROR (NPERR_BASE + 6)
+#  define NPERR_INVALID_PLUGIN_DIR_ERROR (NPERR_BASE + 7)
+#  define NPERR_INCOMPATIBLE_VERSION_ERROR (NPERR_BASE + 8)
+#  define NPERR_INVALID_PARAM (NPERR_BASE + 9)
+#  define NPERR_INVALID_URL (NPERR_BASE + 10)
+#  define NPERR_FILE_NOT_FOUND (NPERR_BASE + 11)
+#  define NPERR_NO_DATA (NPERR_BASE + 12)
+#  define NPERR_STREAM_NOT_SEEKABLE (NPERR_BASE + 13)
+#  define NPERR_TIME_RANGE_NOT_SUPPORTED (NPERR_BASE + 14)
+#  define NPERR_MALFORMED_SITE (NPERR_BASE + 15)
 
 
 
 
-#define NPRES_BASE 0
-#define NPRES_DONE (NPRES_BASE + 0)
-#define NPRES_NETWORK_ERR (NPRES_BASE + 1)
-#define NPRES_USER_BREAK (NPRES_BASE + 2)
+#  define NPRES_BASE 0
+#  define NPRES_DONE (NPRES_BASE + 0)
+#  define NPRES_NETWORK_ERR (NPRES_BASE + 1)
+#  define NPRES_USER_BREAK (NPRES_BASE + 2)
 
 
 
 
-#define NP_NOERR NP_NOERR_is_obsolete_use_NPERR_NO_ERROR
-#define NP_EINVAL NP_EINVAL_is_obsolete_use_NPERR_GENERIC_ERROR
-#define NP_EABORT NP_EABORT_is_obsolete_use_NPRES_USER_BREAK
+#  define NP_NOERR NP_NOERR_is_obsolete_use_NPERR_NO_ERROR
+#  define NP_EINVAL NP_EINVAL_is_obsolete_use_NPERR_GENERIC_ERROR
+#  define NP_EABORT NP_EABORT_is_obsolete_use_NPRES_USER_BREAK
 
 
 
 
-#define NPVERS_HAS_STREAMOUTPUT 8
-#define NPVERS_HAS_NOTIFICATION 9
-#define NPVERS_HAS_LIVECONNECT 9
-#define NPVERS_68K_HAS_LIVECONNECT 11
-#define NPVERS_HAS_WINDOWLESS 11
-#define NPVERS_HAS_XPCONNECT_SCRIPTING 13
-#define NPVERS_HAS_NPRUNTIME_SCRIPTING 14
-#define NPVERS_HAS_FORM_VALUES 15
-#define NPVERS_HAS_POPUPS_ENABLED_STATE 16
-#define NPVERS_HAS_RESPONSE_HEADERS 17
-#define NPVERS_HAS_NPOBJECT_ENUM 18
-#define NPVERS_HAS_PLUGIN_THREAD_ASYNC_CALL 19
-#define NPVERS_HAS_ALL_NETWORK_STREAMS 20
-#define NPVERS_HAS_URL_AND_AUTH_INFO 21
-#define NPVERS_HAS_PRIVATE_MODE 22
-#define NPVERS_MACOSX_HAS_COCOA_EVENTS 23
-#define NPVERS_HAS_ADVANCED_KEY_HANDLING 25
-#define NPVERS_HAS_URL_REDIRECT_HANDLING 26
-#define NPVERS_HAS_CLEAR_SITE_DATA 27
+#  define NPVERS_HAS_STREAMOUTPUT 8
+#  define NPVERS_HAS_NOTIFICATION 9
+#  define NPVERS_HAS_LIVECONNECT 9
+#  define NPVERS_68K_HAS_LIVECONNECT 11
+#  define NPVERS_HAS_WINDOWLESS 11
+#  define NPVERS_HAS_XPCONNECT_SCRIPTING 13
+#  define NPVERS_HAS_NPRUNTIME_SCRIPTING 14
+#  define NPVERS_HAS_FORM_VALUES 15
+#  define NPVERS_HAS_POPUPS_ENABLED_STATE 16
+#  define NPVERS_HAS_RESPONSE_HEADERS 17
+#  define NPVERS_HAS_NPOBJECT_ENUM 18
+#  define NPVERS_HAS_PLUGIN_THREAD_ASYNC_CALL 19
+#  define NPVERS_HAS_ALL_NETWORK_STREAMS 20
+#  define NPVERS_HAS_URL_AND_AUTH_INFO 21
+#  define NPVERS_HAS_PRIVATE_MODE 22
+#  define NPVERS_MACOSX_HAS_COCOA_EVENTS 23
+#  define NPVERS_HAS_ADVANCED_KEY_HANDLING 25
+#  define NPVERS_HAS_URL_REDIRECT_HANDLING 26
+#  define NPVERS_HAS_CLEAR_SITE_DATA 27
 
 
 
 
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif
+#  endif
 
 
 
-#if defined(XP_UNIX)
+#  if defined(XP_UNIX)
 const char* NPP_GetMIMEDescription(void);
-#endif
+#  endif
 
 NPError NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode,
                 int16_t argc, char* argn[], char* argv[], NPSavedData* saved);
@@ -913,9 +913,9 @@ NPError NPN_FinalizeAsyncSurface(NPP instance, NPAsyncSurface* surface);
 void NPN_SetCurrentAsyncSurface(NPP instance, NPAsyncSurface* surface,
                                 NPRect* changed);
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 } 
-#endif
+#  endif
 
 #endif 
 

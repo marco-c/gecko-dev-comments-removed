@@ -4,14 +4,14 @@
 
 
 #if !defined(MediaQueue_h_)
-#define MediaQueue_h_
+#  define MediaQueue_h_
 
-#include "mozilla/RecursiveMutex.h"
-#include "mozilla/TaskQueue.h"
+#  include "mozilla/RecursiveMutex.h"
+#  include "mozilla/TaskQueue.h"
 
-#include "nsDeque.h"
-#include "MediaEventSource.h"
-#include "TimeUnits.h"
+#  include "nsDeque.h"
+#  include "MediaEventSource.h"
+#  include "TimeUnits.h"
 
 namespace mozilla {
 

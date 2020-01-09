@@ -5,15 +5,15 @@
 
 
 #if !defined(MediaSystemResourceManager_h_)
-#define MediaSystemResourceManager_h_
+#  define MediaSystemResourceManager_h_
 
-#include <queue>
+#  include <queue>
 
-#include "MediaSystemResourceTypes.h"
-#include "mozilla/ReentrantMonitor.h"
-#include "mozilla/StaticPtr.h"
-#include "nsDataHashtable.h"
-#include "nsISupportsImpl.h"
+#  include "MediaSystemResourceTypes.h"
+#  include "mozilla/ReentrantMonitor.h"
+#  include "mozilla/StaticPtr.h"
+#  include "nsDataHashtable.h"
+#  include "nsISupportsImpl.h"
 
 namespace mozilla {
 

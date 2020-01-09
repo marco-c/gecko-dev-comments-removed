@@ -37,13 +37,13 @@ const int64_t kint64max = ((int64_t)GG_LONGLONG(0x7FFFFFFFFFFFFFFF));
 
 
 #if defined(OS_POSIX)
-#define PRId64L "I64d"
-#define PRIu64L "I64u"
-#define PRIx64L "I64x"
+#  define PRId64L "I64d"
+#  define PRIu64L "I64u"
+#  define PRIx64L "I64x"
 #elif defined(OS_WIN)
-#define PRId64L L"I64d"
-#define PRIu64L L"I64u"
-#define PRIx64L L"I64x"
+#  define PRId64L L"I64d"
+#  define PRIu64L L"I64u"
+#  define PRIx64L L"I64x"
 #endif
 
 
@@ -162,9 +162,9 @@ inline To implicit_cast(From const &f) {
 
 
 #if defined(__GNUC__)
-#define COMPILE_ASSERT_UNUSED_ATTRIBUTE __attribute__((unused))
+#  define COMPILE_ASSERT_UNUSED_ATTRIBUTE __attribute__((unused))
 #else
-#define COMPILE_ASSERT_UNUSED_ATTRIBUTE
+#  define COMPILE_ASSERT_UNUSED_ATTRIBUTE
 #endif
 
 
@@ -187,9 +187,9 @@ inline To implicit_cast(From const &f) {
 template <bool>
 struct CompileAssert {};
 
-#define COMPILE_ASSERT(expr, msg)     \
-  typedef CompileAssert<(bool(expr))> \
-      msg[bool(expr) ? 1 : -1] COMPILE_ASSERT_UNUSED_ATTRIBUTE
+#  define COMPILE_ASSERT(expr, msg)     \
+    typedef CompileAssert<(bool(expr))> \
+        msg[bool(expr) ? 1 : -1] COMPILE_ASSERT_UNUSED_ATTRIBUTE
 #endif
 
 

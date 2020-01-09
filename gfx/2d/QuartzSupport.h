@@ -8,13 +8,13 @@
 #define nsCoreAnimationSupport_h__
 #ifdef XP_MACOSX
 
-#import <OpenGL/OpenGL.h>
-#import <OpenGL/gl.h>
-#import "ApplicationServices/ApplicationServices.h"
-#include "gfxTypes.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/gfx/MacIOSurface.h"
-#include "nsError.h"
+#  import <OpenGL/OpenGL.h>
+#  import <OpenGL/gl.h>
+#  import "ApplicationServices/ApplicationServices.h"
+#  include "gfxTypes.h"
+#  include "mozilla/RefPtr.h"
+#  include "mozilla/gfx/MacIOSurface.h"
+#  include "nsError.h"
 
 
 CGColorSpaceRef CreateSystemColorSpace();
@@ -75,9 +75,9 @@ class nsCARenderer : public mozilla::RefCounted<nsCARenderer> {
   
   void DetachCALayer();
   void AttachCALayer(void *aCALayer);
-#ifdef DEBUG
+#  ifdef DEBUG
   static void SaveToDisk(MacIOSurface *surf);
-#endif
+#  endif
  private:
   
   

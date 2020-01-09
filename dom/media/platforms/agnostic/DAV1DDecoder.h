@@ -4,10 +4,10 @@
 
 
 #if !defined(DAV1DDecoder_h_)
-#define DAV1DDecoder_h_
+#  define DAV1DDecoder_h_
 
-#include "PlatformDecoderModule.h"
-#include "dav1d/dav1d.h"
+#  include "PlatformDecoderModule.h"
+#  include "dav1d/dav1d.h"
 
 namespace mozilla {
 

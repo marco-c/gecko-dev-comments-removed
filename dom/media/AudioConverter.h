@@ -5,9 +5,9 @@
 
 
 #if !defined(AudioConverter_h)
-#define AudioConverter_h
+#  define AudioConverter_h
 
-#include "MediaInfo.h"
+#  include "MediaInfo.h"
 
 
 typedef struct SpeexResamplerState_ SpeexResamplerState;

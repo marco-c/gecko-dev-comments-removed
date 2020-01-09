@@ -14,8 +14,8 @@
 #include "TabParent.h"
 
 #if defined(ANDROID) || defined(LINUX)
-#include <sys/time.h>
-#include <sys/resource.h>
+#  include <sys/time.h>
+#  include <sys/resource.h>
 #endif
 
 #include "chrome/common/process_watcher.h"
@@ -27,8 +27,8 @@
 #include "IHistory.h"
 #include "imgIContainer.h"
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
-#include "mozilla/a11y/AccessibleWrap.h"
-#include "mozilla/a11y/Compatibility.h"
+#  include "mozilla/a11y/AccessibleWrap.h"
+#  include "mozilla/a11y/Compatibility.h"
 #endif
 #include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/BasePrincipal.h"
@@ -215,33 +215,33 @@
 #include "mozilla/Sprintf.h"
 
 #ifdef MOZ_WEBRTC
-#include "signaling/src/peerconnection/WebrtcGlobalParent.h"
+#  include "signaling/src/peerconnection/WebrtcGlobalParent.h"
 #endif
 
 #if defined(XP_MACOSX)
-#include "nsMacUtilsImpl.h"
+#  include "nsMacUtilsImpl.h"
 #endif
 
 #if defined(ANDROID) || defined(LINUX)
-#include "nsSystemInfo.h"
+#  include "nsSystemInfo.h"
 #endif
 
 #if defined(XP_LINUX)
-#include "mozilla/Hal.h"
+#  include "mozilla/Hal.h"
 #endif
 
 #ifdef ANDROID
-#include "gfxAndroidPlatform.h"
+#  include "gfxAndroidPlatform.h"
 #endif
 
 #include "nsPermissionManager.h"
 
 #ifdef MOZ_WIDGET_ANDROID
-#include "AndroidBridge.h"
+#  include "AndroidBridge.h"
 #endif
 
 #ifdef MOZ_WIDGET_GTK
-#include <gdk/gdk.h>
+#  include <gdk/gdk.h>
 #endif
 
 #include "mozilla/RemoteSpellCheckEngineParent.h"
@@ -249,38 +249,38 @@
 #include "Crypto.h"
 
 #ifdef MOZ_WEBSPEECH
-#include "mozilla/dom/SpeechSynthesisParent.h"
+#  include "mozilla/dom/SpeechSynthesisParent.h"
 #endif
 
 #if defined(MOZ_CONTENT_SANDBOX)
-#include "mozilla/SandboxSettings.h"
-#if defined(XP_LINUX)
-#include "mozilla/SandboxInfo.h"
-#include "mozilla/SandboxBroker.h"
-#include "mozilla/SandboxBrokerPolicyFactory.h"
-#endif
+#  include "mozilla/SandboxSettings.h"
+#  if defined(XP_LINUX)
+#    include "mozilla/SandboxInfo.h"
+#    include "mozilla/SandboxBroker.h"
+#    include "mozilla/SandboxBrokerPolicyFactory.h"
+#  endif
 #endif
 
 #ifdef MOZ_TOOLKIT_SEARCH
-#include "nsIBrowserSearchService.h"
+#  include "nsIBrowserSearchService.h"
 #endif
 
 #ifdef XP_WIN
-#include "mozilla/audio/AudioNotificationSender.h"
-#include "mozilla/widget/AudioSession.h"
+#  include "mozilla/audio/AudioNotificationSender.h"
+#  include "mozilla/widget/AudioSession.h"
 #endif
 
 #ifdef ACCESSIBILITY
-#include "nsAccessibilityService.h"
+#  include "nsAccessibilityService.h"
 #endif
 
 #ifdef MOZ_GECKO_PROFILER
-#include "nsIProfiler.h"
-#include "ProfilerParent.h"
+#  include "nsIProfiler.h"
+#  include "ProfilerParent.h"
 #endif
 
 #ifdef MOZ_CODE_COVERAGE
-#include "mozilla/CodeCoverageHandler.h"
+#  include "mozilla/CodeCoverageHandler.h"
 #endif
 
 
@@ -1347,16 +1347,16 @@ void ContentParent::Init() {
   
   
   if (nsIPresShell::IsAccessibilityActive()) {
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
     
     if (!mozilla::a11y::Compatibility::IsOldJAWS()) {
       Unused << SendActivateA11y(
           ::GetCurrentThreadId(),
           a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
     }
-#else
+#  else
     Unused << SendActivateA11y(0, 0);
-#endif
+#  endif
   }
 #endif
 
@@ -2067,7 +2067,7 @@ static void CacheSandboxParams(std::vector<std::string>& aCachedParams) {
   }
 
   
-#ifdef DEBUG
+#  ifdef DEBUG
   
   
   
@@ -2080,7 +2080,7 @@ static void CacheSandboxParams(std::vector<std::string>& aCachedParams) {
     aCachedParams.push_back("-sbDebugWriteDir");
     aCachedParams.push_back(bloatDirectoryPath.get());
   }
-#endif  
+#  endif  
 }
 
 
@@ -2670,7 +2670,7 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   
   shouldSandbox = IsContentSandboxEnabled();
 
-#ifdef XP_LINUX
+#  ifdef XP_LINUX
   if (shouldSandbox) {
     MOZ_ASSERT(!mSandboxBroker);
     bool isFileProcess = mRemoteType.EqualsLiteral(FILE_REMOTE_TYPE);
@@ -2687,7 +2687,7 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
       MOZ_ASSERT(static_cast<const FileDescriptor&>(brokerFd).IsValid());
     }
   }
-#endif
+#  endif
   if (shouldSandbox && !SendSetProcessSandbox(brokerFd)) {
     KillHard("SandboxInitFailed");
   }
@@ -3145,7 +3145,7 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     if (*aData == '1') {
       
       
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
       
       
       if (!mozilla::a11y::Compatibility::IsOldJAWS()) {
@@ -3153,9 +3153,9 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
             ::GetCurrentThreadId(),
             a11y::AccessibleWrap::GetContentProcessIdFor(ChildID()));
       }
-#else
+#  else
       Unused << SendActivateA11y(0, 0);
-#endif
+#  endif
     } else {
       
       
@@ -5341,7 +5341,8 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordDiscardedData(
 
 
 PURLClassifierParent* ContentParent::AllocPURLClassifierParent(
-    const Principal& aPrincipal, bool* aSuccess) {
+    const Principal& aPrincipal, const bool& aUseTrackingProtection,
+    bool* aSuccess) {
   MOZ_ASSERT(NS_IsMainThread());
 
   *aSuccess = true;
@@ -5350,7 +5351,8 @@ PURLClassifierParent* ContentParent::AllocPURLClassifierParent(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvPURLClassifierConstructor(
-    PURLClassifierParent* aActor, const Principal& aPrincipal, bool* aSuccess) {
+    PURLClassifierParent* aActor, const Principal& aPrincipal,
+    const bool& aUseTrackingProtection, bool* aSuccess) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aActor);
   *aSuccess = false;
@@ -5361,7 +5363,7 @@ mozilla::ipc::IPCResult ContentParent::RecvPURLClassifierConstructor(
     actor->ClassificationFailed();
     return IPC_OK();
   }
-  return actor->StartClassify(principal, aSuccess);
+  return actor->StartClassify(principal, aUseTrackingProtection, aSuccess);
 }
 
 bool ContentParent::DeallocPURLClassifierParent(PURLClassifierParent* aActor) {

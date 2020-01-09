@@ -3,8 +3,8 @@
 
 
 #if defined(XP_WIN)
-#include <windows.h>
-#include <winioctl.h>  
+#  include <windows.h>
+#  include <winioctl.h>  
 #endif
 
 #include <stdio.h>
@@ -14,9 +14,9 @@
 
 #include "updatecommon.h"
 #ifdef XP_WIN
-#include "updatehelper.h"
-#include "nsWindowsHelpers.h"
-#include "mozilla/UniquePtr.h"
+#  include "updatehelper.h"
+#  include "nsWindowsHelpers.h"
+#  include "mozilla/UniquePtr.h"
 
 
 

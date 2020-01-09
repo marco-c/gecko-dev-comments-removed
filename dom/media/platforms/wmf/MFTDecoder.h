@@ -5,12 +5,12 @@
 
 
 #if !defined(MFTDecoder_h_)
-#define MFTDecoder_h_
+#  define MFTDecoder_h_
 
-#include "WMF.h"
-#include "mozilla/ReentrantMonitor.h"
-#include "mozilla/RefPtr.h"
-#include "nsIThread.h"
+#  include "WMF.h"
+#  include "mozilla/ReentrantMonitor.h"
+#  include "mozilla/RefPtr.h"
+#  include "nsIThread.h"
 
 namespace mozilla {
 

@@ -62,7 +62,7 @@ bool PluginProcessParent::Launch(
   
   
   
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   mSandboxLevel = aSandboxLevel;
 
   
@@ -71,7 +71,7 @@ bool PluginProcessParent::Launch(
         NS_ConvertUTF8toUTF16(mPluginFilePath.c_str()).get());
     mAllowedFilesRead.push_back(pluginFile);
   }
-#endif  
+#  endif  
 #else
   if (aSandboxLevel != 0) {
     MOZ_ASSERT(false,

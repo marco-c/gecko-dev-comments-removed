@@ -43,7 +43,6 @@
 #include "mozilla/net/ReferrerPolicy.h"  
 #include "mozilla/UseCounter.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/StaticPresData.h"
 #include "Units.h"
 #include "nsContentListDeclarations.h"
 #include "nsExpirationTracker.h"
@@ -64,11 +63,11 @@
 
 
 #ifdef CreateEvent
-#undef CreateEvent
+#  undef CreateEvent
 #endif
 
 #ifdef MOZILLA_INTERNAL_API
-#include "mozilla/dom/DocumentBinding.h"
+#  include "mozilla/dom/DocumentBinding.h"
 #else
 namespace mozilla {
 namespace dom {
@@ -124,7 +123,6 @@ class nsDOMCaretPosition;
 class nsViewportInfo;
 class nsIGlobalObject;
 class nsIXULWindow;
-struct nsFont;
 
 namespace mozilla {
 class AbstractThread;
@@ -3460,39 +3458,7 @@ class Document : public nsINode,
  public:
   bool IsThirdPartyForFlashClassifier();
 
- private:
-  void DoCacheAllKnownLangPrefs();
-  void RecomputeLanguageFromCharset();
-
- public:
-  void ResetLangPrefs() {
-    mLangGroupFontPrefs.Reset();
-    mFontGroupCacheDirty = true;
-  }
-
-  already_AddRefed<nsAtom> GetContentLanguageAsAtomForStyle() const;
-  already_AddRefed<nsAtom> GetLanguageForStyle() const;
-
-  
-
-
-
-  const LangGroupFontPrefs* GetFontPrefsForLang(
-      nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const;
-
-  void ForceCacheLang(nsAtom* aLanguage) {
-    if (!mLanguagesUsed.EnsureInserted(aLanguage)) {
-      return;
-    }
-    GetFontPrefsForLang(aLanguage);
-  }
-
-  void CacheAllKnownLangPrefs() {
-    if (!mFontGroupCacheDirty) {
-      return;
-    }
-    DoCacheAllKnownLangPrefs();
-  }
+  bool IsScopedStyleEnabled();
 
   nsINode* GetServoRestyleRoot() const { return mServoRestyleRoot; }
 
@@ -3838,8 +3804,6 @@ class Document : public nsINode,
 
   
   bool mBidiEnabled : 1;
-  
-  bool mFontGroupCacheDirty : 1;
   
   bool mMathMLEnabled : 1;
 
@@ -4286,6 +4250,13 @@ class Document : public nsINode,
   
   bool mHasUserInteractionTimerScheduled;
 
+  
+  
+  
+  
+  
+  bool mUserGestureActivated;
+
   mozilla::TimeStamp mPageUnloadingEventTimeStamp;
 
   RefPtr<mozilla::dom::DocGroup> mDocGroup;
@@ -4468,18 +4439,6 @@ class Document : public nsINode,
   
   
   nsTHashtable<nsPtrHashKey<SVGElement>> mLazySVGPresElements;
-
-  
-  
-  
-  
-  
-  LangGroupFontPrefs mLangGroupFontPrefs;
-
-  nsTHashtable<nsRefPtrHashKey<nsAtom>> mLanguagesUsed;
-
-  
-  RefPtr<nsAtom> mLanguageFromCharset;
 
   
   

@@ -20,9 +20,9 @@ class TabChild;
 }  
 
 #if defined(DEBUG)
-#define NECKO_ERRORS_ARE_FATAL_DEFAULT true
+#  define NECKO_ERRORS_ARE_FATAL_DEFAULT true
 #else
-#define NECKO_ERRORS_ARE_FATAL_DEFAULT false
+#  define NECKO_ERRORS_ARE_FATAL_DEFAULT false
 #endif
 
 

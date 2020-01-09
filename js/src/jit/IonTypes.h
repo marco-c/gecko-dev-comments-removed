@@ -706,11 +706,11 @@ static inline const char* PropertyNameToExtraName(PropertyName* name) {
 #ifdef DEBUG
 
 
-#define TRACK_SNAPSHOTS 1
+#  define TRACK_SNAPSHOTS 1
 
 
 
-#define CHECK_OSIPOINT_REGISTERS 1
+#  define CHECK_OSIPOINT_REGISTERS 1
 
 #endif  
 

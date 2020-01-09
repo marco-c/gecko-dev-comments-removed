@@ -33,12 +33,12 @@
 
 
 
-#define MAX_REFLOW_DEPTH 585
+#  define MAX_REFLOW_DEPTH 585
 #else
 
 
 
-#define MAX_REFLOW_DEPTH 1026
+#  define MAX_REFLOW_DEPTH 1026
 #endif
 
 
@@ -74,7 +74,7 @@
 #include "nsDisplayItemTypes.h"
 
 #ifdef ACCESSIBILITY
-#include "mozilla/a11y/AccTypes.h"
+#  include "mozilla/a11y/AccTypes.h"
 #endif
 
 

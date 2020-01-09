@@ -49,9 +49,9 @@ struct TypeAdapter<LocalRef<Cls>> {
 
 
 #ifdef __clang__
-#define MOZ_JNICALL_ABI JNICALL
+#  define MOZ_JNICALL_ABI JNICALL
 #else
-#define MOZ_JNICALL_ABI
+#  define MOZ_JNICALL_ABI
 #endif
 
 

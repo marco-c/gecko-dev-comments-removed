@@ -5,13 +5,13 @@
 
 
 #if defined(XP_WIN)
-#include <d3d9.h>  
-#include <stdio.h>
-#include <string>
-#include <vector>
-#include <windows.h>
+#  include <d3d9.h>  
+#  include <stdio.h>
+#  include <string>
+#  include <vector>
+#  include <windows.h>
 
-#include "opmapi.h"
+#  include "opmapi.h"
 #endif
 
 namespace mozilla {

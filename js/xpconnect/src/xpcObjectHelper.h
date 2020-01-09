@@ -9,9 +9,9 @@
 
 
 #ifdef XP_WIN
-#ifdef GetClassInfo
-#undef GetClassInfo
-#endif
+#  ifdef GetClassInfo
+#    undef GetClassInfo
+#  endif
 #endif
 
 #include "mozilla/Attributes.h"

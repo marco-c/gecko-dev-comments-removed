@@ -15,24 +15,24 @@
 
 #if defined(XP_WIN)
 
-#include <d3d11.h>
-#include "gfxWindowsPlatform.h"
-#include "../layers/d3d11/CompositorD3D11.h"
-#include "mozilla/gfx/DeviceManagerDx.h"
-#include "mozilla/layers/TextureD3D11.h"
+#  include <d3d11.h>
+#  include "gfxWindowsPlatform.h"
+#  include "../layers/d3d11/CompositorD3D11.h"
+#  include "mozilla/gfx/DeviceManagerDx.h"
+#  include "mozilla/layers/TextureD3D11.h"
 
 #elif defined(XP_MACOSX)
 
-#include "mozilla/gfx/MacIOSurface.h"
+#  include "mozilla/gfx/MacIOSurface.h"
 
 #endif
 
 #if defined(MOZ_WIDGET_ANDROID)
-#include "mozilla/layers/CompositorThread.h"
+#  include "mozilla/layers/CompositorThread.h"
 
 
 
-#define ANDROID_MAX_FRAME_DURATION 4000
+#  define ANDROID_MAX_FRAME_DURATION 4000
 #endif  
 
 using namespace mozilla;
@@ -175,7 +175,7 @@ void VRDisplayHost::RemoveLayer(VRLayerParent* aLayer) {
 }
 
 void VRDisplayHost::StartFrame() {
-  AUTO_PROFILER_TRACING("VR", "GetSensorState", OTHER);
+  AUTO_PROFILER_TRACING("VR", "GetSensorState");
 
   TimeStamp now = TimeStamp::Now();
 #if defined(MOZ_WIDGET_ANDROID)
@@ -283,7 +283,7 @@ void VRDisplayHost::SubmitFrameInternal(
 #if !defined(MOZ_WIDGET_ANDROID)
   MOZ_ASSERT(mSubmitThread->GetThread() == NS_GetCurrentThread());
 #endif  
-  AUTO_PROFILER_TRACING("VR", "SubmitFrameAtVRDisplayHost", OTHER);
+  AUTO_PROFILER_TRACING("VR", "SubmitFrameAtVRDisplayHost");
 
   if (!SubmitFrame(aTexture, aFrameId, aLeftEyeRect, aRightEyeRect)) {
     return;

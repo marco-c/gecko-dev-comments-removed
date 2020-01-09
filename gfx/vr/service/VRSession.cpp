@@ -3,7 +3,7 @@
 #include "moz_external_vr.h"
 
 #if defined(XP_WIN)
-#include <d3d11.h>
+#  include <d3d11.h>
 #endif  
 
 using namespace mozilla::gfx;

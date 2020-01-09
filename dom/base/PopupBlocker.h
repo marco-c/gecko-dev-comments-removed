@@ -61,9 +61,9 @@ class PopupBlocker final {
 }  
 
 #ifdef MOZILLA_INTERNAL_API
-#define NS_AUTO_POPUP_STATE_PUSHER nsAutoPopupStatePusherInternal
+#  define NS_AUTO_POPUP_STATE_PUSHER nsAutoPopupStatePusherInternal
 #else
-#define NS_AUTO_POPUP_STATE_PUSHER nsAutoPopupStatePusherExternal
+#  define NS_AUTO_POPUP_STATE_PUSHER nsAutoPopupStatePusherExternal
 #endif
 
 

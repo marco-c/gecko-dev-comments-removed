@@ -12,7 +12,7 @@
 #include "mozilla/Result.h"
 
 #if defined(MOZILLA_INTERNAL_API)
-#include "nsString.h"
+#  include "nsString.h"
 #endif  
 
 #include <windows.h>

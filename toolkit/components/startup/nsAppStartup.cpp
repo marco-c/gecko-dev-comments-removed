@@ -46,7 +46,7 @@
 
 #if defined(XP_WIN)
 
-#undef GetStartupInfo
+#  undef GetStartupInfo
 #endif
 
 #include "mozilla/IOInterposer.h"
@@ -61,7 +61,7 @@ static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 #define kPrefAlwaysUseSafeMode "toolkit.startup.always_use_safe_mode"
 
 #if defined(XP_WIN)
-#include "mozilla/perfprobe.h"
+#  include "mozilla/perfprobe.h"
 
 
 
@@ -70,35 +70,35 @@ static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 
 
 
-#define NS_APPLICATION_TRACING_CID                   \
-  {                                                  \
-    0x509962E0, 0x406B, 0x46F4, {                    \
-      0x99, 0xBA, 0x5A, 0x00, 0x9F, 0x8D, 0x22, 0x25 \
-    }                                                \
-  }
+#  define NS_APPLICATION_TRACING_CID                   \
+    {                                                  \
+      0x509962E0, 0x406B, 0x46F4, {                    \
+        0x99, 0xBA, 0x5A, 0x00, 0x9F, 0x8D, 0x22, 0x25 \
+      }                                                \
+    }
 
 
 
-#define NS_PLACES_INIT_COMPLETE_EVENT_CID            \
-  {                                                  \
-    0xA3DA04E0, 0x57D7, 0x482A, {                    \
-      0xA1, 0xC1, 0x61, 0xDA, 0x5F, 0x95, 0xBA, 0xCB \
-    }                                                \
-  }
+#  define NS_PLACES_INIT_COMPLETE_EVENT_CID            \
+    {                                                  \
+      0xA3DA04E0, 0x57D7, 0x482A, {                    \
+        0xA1, 0xC1, 0x61, 0xDA, 0x5F, 0x95, 0xBA, 0xCB \
+      }                                                \
+    }
 
-#define NS_SESSION_STORE_WINDOW_RESTORED_EVENT_CID   \
-  {                                                  \
-    0x917B96B1, 0xECAD, 0x4DAB, {                    \
-      0xA7, 0x60, 0x8D, 0x49, 0x02, 0x77, 0x48, 0xAE \
-    }                                                \
-  }
+#  define NS_SESSION_STORE_WINDOW_RESTORED_EVENT_CID   \
+    {                                                  \
+      0x917B96B1, 0xECAD, 0x4DAB, {                    \
+        0xA7, 0x60, 0x8D, 0x49, 0x02, 0x77, 0x48, 0xAE \
+      }                                                \
+    }
 
-#define NS_XPCOM_SHUTDOWN_EVENT_CID                  \
-  {                                                  \
-    0x26D1E091, 0x0AE7, 0x4F49, {                    \
-      0xA5, 0x54, 0x42, 0x14, 0x44, 0x5C, 0x50, 0x5C \
-    }                                                \
-  }
+#  define NS_XPCOM_SHUTDOWN_EVENT_CID                  \
+    {                                                  \
+      0x26D1E091, 0x0AE7, 0x4F49, {                    \
+        0xA5, 0x54, 0x42, 0x14, 0x44, 0x5C, 0x50, 0x5C \
+      }                                                \
+    }
 
 static NS_DEFINE_CID(kApplicationTracingCID, NS_APPLICATION_TRACING_CID);
 static NS_DEFINE_CID(kPlacesInitCompleteCID, NS_PLACES_INIT_COMPLETE_EVENT_CID);
@@ -362,7 +362,7 @@ nsAppStartup::Quit(uint32_t aMode) {
       }
     }
 
-    PROFILER_ADD_MARKER("Shutdown start", OTHER);
+    PROFILER_ADD_MARKER("Shutdown start");
     mozilla::RecordShutdownStartTimeStamp();
     mShuttingDown = true;
     if (!mRestart) {

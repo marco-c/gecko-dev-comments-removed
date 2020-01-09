@@ -45,7 +45,7 @@ namespace mozilla {
 
 
 #ifdef GetCurrentTime
-#undef GetCurrentTime
+#  undef GetCurrentTime
 #endif
 
 

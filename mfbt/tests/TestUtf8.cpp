@@ -22,8 +22,8 @@ using mozilla::Utf8Unit;
 
 
 #if defined(__clang__) && (__clang_major__ >= 6)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++2a-compat"
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wc++2a-compat"
 #endif
 
 static void TestUtf8Unit() {
@@ -743,5 +743,5 @@ int main() {
 }
 
 #if defined(__clang__) && (__clang_major__ >= 6)
-#pragma clang diagnostic pop
+#  pragma clang diagnostic pop
 #endif

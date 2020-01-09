@@ -376,7 +376,7 @@ static const unsigned SetFP = 3;
 static const unsigned PoppedFP = 4;
 static const unsigned PoppedTLSReg = 5;
 #else
-#error "Unknown architecture!"
+#  error "Unknown architecture!"
 #endif
 static constexpr unsigned SetJitEntryFP = PushedRetAddr + SetFP - PushedFP;
 
@@ -457,17 +457,17 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   }
 #else
   {
-#if defined(JS_CODEGEN_ARM)
+#  if defined(JS_CODEGEN_ARM)
     AutoForbidPools afp(&masm,  7);
 
     *entry = masm.currentOffset();
 
     MOZ_ASSERT(BeforePushRetAddr == 0);
     masm.push(lr);
-#else
+#  else
     *entry = masm.currentOffset();
     
-#endif
+#  endif
 
     MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
     masm.push(WasmTlsReg);
@@ -527,9 +527,9 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
 
 #else
   
-#if defined(JS_CODEGEN_ARM)
+#  if defined(JS_CODEGEN_ARM)
   AutoForbidPools afp(&masm,  7);
-#endif
+#  endif
 
   
   

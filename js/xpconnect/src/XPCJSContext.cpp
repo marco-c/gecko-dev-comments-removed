@@ -65,12 +65,12 @@
 
 #if defined(XP_LINUX) && !defined(ANDROID)
 
-#include <algorithm>
-#include <sys/resource.h>
+#  include <algorithm>
+#  include <sys/resource.h>
 #endif
 
 #ifdef XP_WIN
-#include <windows.h>
+#  include <windows.h>
 #endif
 
 static MOZ_THREAD_LOCAL(XPCJSContext*) gTlsContext;
@@ -83,7 +83,7 @@ using mozilla::dom::AutoEntryScript;
 
 
 #if !defined(PTHREAD_STACK_MIN)
-#define PTHREAD_STACK_MIN 0
+#  define PTHREAD_STACK_MIN 0
 #endif
 static constexpr size_t kWatchdogStackSize =
     PTHREAD_STACK_MIN < 32 * 1024 ? 32 * 1024 : PTHREAD_STACK_MIN;
@@ -989,13 +989,13 @@ static size_t GetWindowsStackSize() {
   
   
   const uint8_t* stackTop;
-#ifdef _WIN64
+#  ifdef _WIN64
   PNT_TIB64 pTib = reinterpret_cast<PNT_TIB64>(NtCurrentTeb());
   stackTop = reinterpret_cast<const uint8_t*>(pTib->StackBase);
-#else
+#  else
   PNT_TIB pTib = reinterpret_cast<PNT_TIB>(NtCurrentTeb());
   stackTop = reinterpret_cast<const uint8_t*>(pTib->StackBase);
-#endif
+#  endif
 
   
   
@@ -1095,15 +1095,15 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
   
   
   const size_t kStackQuotaMax = 8 * 1024 * 1024;
-#if defined(MOZ_ASAN) || defined(DEBUG)
+#  if defined(MOZ_ASAN) || defined(DEBUG)
   
   
   
   
   const size_t kStackQuotaMin = 2 * kDefaultStackQuota;
-#else
+#  else
   const size_t kStackQuotaMin = kDefaultStackQuota;
-#endif
+#  endif
   
   const size_t kStackSafeMargin = 128 * 1024;
 
@@ -1114,25 +1114,25 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
                               kStackQuotaMax - kStackSafeMargin),
                      kStackQuotaMin)
           : kStackQuotaMin;
-#if defined(MOZ_ASAN)
+#  if defined(MOZ_ASAN)
   
   const size_t kTrustedScriptBuffer = 450 * 1024;
-#else
+#  else
   const size_t kTrustedScriptBuffer = 180 * 1024;
-#endif
+#  endif
 #elif defined(XP_WIN)
   
   
   
   const size_t kStackQuota = GetWindowsStackSize();
-#if defined(MOZ_ASAN)
+#  if defined(MOZ_ASAN)
   
   const size_t kTrustedScriptBuffer = 450 * 1024;
-#else
+#  else
   const size_t kTrustedScriptBuffer = (sizeof(size_t) == 8)
                                           ? 180 * 1024   
                                           : 120 * 1024;  
-#endif
+#  endif
 #elif defined(MOZ_ASAN)
   
   
@@ -1153,11 +1153,11 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
   const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
 #else
   
-#if defined(DEBUG)
+#  if defined(DEBUG)
   const size_t kStackQuota = 2 * kDefaultStackQuota;
-#else
+#  else
   const size_t kStackQuota = kDefaultStackQuota;
-#endif
+#  endif
   
   
   const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;

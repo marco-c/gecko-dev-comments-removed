@@ -29,11 +29,11 @@
 
 #ifdef JS_DISASM_ARM
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+#  include <stdarg.h>
+#  include <stdio.h>
+#  include <string.h>
 
-#include "jit/arm/disasm/Constants-arm.h"
+#  include "jit/arm/disasm/Constants-arm.h"
 
 namespace js {
 namespace jit {
@@ -130,8 +130,8 @@ class Decoder {
 };
 
 
-#define STRING_STARTS_WITH(string, compare_string) \
-  (strncmp(string, compare_string, strlen(compare_string)) == 0)
+#  define STRING_STARTS_WITH(string, compare_string) \
+    (strncmp(string, compare_string, strlen(compare_string)) == 0)
 
 
 void Decoder::PrintChar(const char ch) { out_buffer_[out_buffer_pos_++] = ch; }
@@ -650,11 +650,11 @@ void Decoder::Format(Instruction* instr, const char* format) {
 
 
 
-#define VERIFY(condition) \
-  if (!(condition)) {     \
-    Unknown(instr);       \
-    return;               \
-  }
+#  define VERIFY(condition) \
+    if (!(condition)) {     \
+      Unknown(instr);       \
+      return;               \
+    }
 
 
 
@@ -1848,7 +1848,7 @@ void Decoder::DecodeSpecialCondition(Instruction* instr) {
   }
 }
 
-#undef VERIFIY
+#  undef VERIFIY
 
 bool Decoder::IsConstantPoolAt(uint8_t* instr_ptr) {
   int instruction_bits = *(reinterpret_cast<int*>(instr_ptr));
@@ -1929,8 +1929,8 @@ int Decoder::InstructionDecode(uint8_t* instr_ptr) {
 
 }  
 
-#undef STRING_STARTS_WITH
-#undef VERIFY
+#  undef STRING_STARTS_WITH
+#  undef VERIFY
 
 
 

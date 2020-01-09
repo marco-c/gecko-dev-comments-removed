@@ -38,7 +38,7 @@
 
 #if defined(XP_WIN)
 
-#undef LoadImage
+#  undef LoadImage
 #endif
 
 using namespace mozilla::gfx;

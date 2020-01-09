@@ -78,7 +78,7 @@
 #include "mozilla/dom/CSSMozDocumentRule.h"
 
 #if defined(MOZ_MEMORY)
-#include "mozmemory.h"
+#  include "mozmemory.h"
 #endif
 
 using namespace mozilla;
@@ -106,22 +106,16 @@ static const nsFont* ThreadSafeGetDefaultFontHelper(
   bool needsCache = false;
   const nsFont* retval;
 
-  auto GetDefaultFont = [&](bool* aNeedsToCache) {
-    auto* prefs =
-        aPresContext->Document()->GetFontPrefsForLang(aLanguage, aNeedsToCache);
-    return prefs ? prefs->GetDefaultFont(aGenericId) : nullptr;
-  };
-
   {
     AutoReadLock guard(*sServoFFILock);
-    retval = GetDefaultFont(&needsCache);
+    retval = aPresContext->GetDefaultFont(aGenericId, aLanguage, &needsCache);
   }
   if (!needsCache) {
     return retval;
   }
   {
     AutoWriteLock guard(*sServoFFILock);
-    retval = GetDefaultFont(nullptr);
+    retval = aPresContext->GetDefaultFont(aGenericId, aLanguage, nullptr);
   }
   return retval;
 }

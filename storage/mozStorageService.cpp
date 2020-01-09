@@ -29,7 +29,7 @@
 
 #ifdef XP_WIN
 
-#undef CompareString
+#  undef CompareString
 #endif
 
 #include "nsIPromptService.h"

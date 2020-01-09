@@ -55,12 +55,14 @@ namespace wr {
 
 
 
-#define DECLARE_MEMBER(id) uintptr_t id;
-struct InternerSubReport {
-  WEBRENDER_FOR_EACH_INTERNER(DECLARE_MEMBER)
+#define DECLARE_MEMBERS(id) \
+  uintptr_t id##_interner;  \
+  uintptr_t id##_data_store;
+struct InterningMemoryReport {
+  WEBRENDER_FOR_EACH_INTERNER(DECLARE_MEMBERS)
 };
 
-#undef DECLARE_MEMBER
+#undef DECLARE_MEMBERS
 
 struct FontInstanceFlags {
   uint32_t bits;
@@ -146,15 +148,15 @@ void apz_deregister_sampler(mozilla::wr::WrWindowId aWindowId);
 
 
 #ifdef MOZ_BUILD_WEBRENDER
-#define WR_INLINE
-#define WR_FUNC
-#define WR_DESTRUCTOR_SAFE_FUNC
+#  define WR_INLINE
+#  define WR_FUNC
+#  define WR_DESTRUCTOR_SAFE_FUNC
 #else
-#define WR_INLINE inline
-#define WR_FUNC \
-  { MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("WebRender disabled"); }
-#define WR_DESTRUCTOR_SAFE_FUNC \
-  {}
+#  define WR_INLINE inline
+#  define WR_FUNC \
+    { MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("WebRender disabled"); }
+#  define WR_DESTRUCTOR_SAFE_FUNC \
+    {}
 #endif
 
 #include "webrender_ffi_generated.h"

@@ -52,7 +52,7 @@ extern unsigned int _gdb_sleep_duration;
 
 
 #if defined(XP_MACOSX) && defined(MOZ_CODE_COVERAGE)
-#define DISABLE_STORAGE_SANITY5_DEATH_TEST
+#  define DISABLE_STORAGE_SANITY5_DEATH_TEST
 #endif
 
 

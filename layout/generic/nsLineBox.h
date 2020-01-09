@@ -1512,16 +1512,16 @@ class nsLineList {
 
 
 
-#define ASSIGN_FROM(other_)     \
-  mCurrent = other_.mCurrent;   \
-  mListLink = other_.mListLink; \
-  return *this;
+#  define ASSIGN_FROM(other_)     \
+    mCurrent = other_.mCurrent;   \
+    mListLink = other_.mListLink; \
+    return *this;
 
 #else 
 
-#define ASSIGN_FROM(other_)   \
-  mCurrent = other_.mCurrent; \
-  return *this;
+#  define ASSIGN_FROM(other_)   \
+    mCurrent = other_.mCurrent; \
+    return *this;
 
 #endif 
 

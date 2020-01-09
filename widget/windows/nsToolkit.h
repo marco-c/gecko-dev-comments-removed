@@ -14,10 +14,10 @@
 
 
 #ifndef GET_X_LPARAM
-#define GET_X_LPARAM(pt) (short(LOWORD(pt)))
+#  define GET_X_LPARAM(pt) (short(LOWORD(pt)))
 #endif
 #ifndef GET_Y_LPARAM
-#define GET_Y_LPARAM(pt) (short(HIWORD(pt)))
+#  define GET_Y_LPARAM(pt) (short(HIWORD(pt)))
 #endif
 
 

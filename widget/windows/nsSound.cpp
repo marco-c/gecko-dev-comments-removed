@@ -102,7 +102,7 @@ mozilla::StaticRefPtr<nsISound> nsSound::sInstance;
 #ifndef SND_PURGE
 
 
-#define SND_PURGE 0
+#  define SND_PURGE 0
 #endif
 
 NS_IMPL_ISUPPORTS(nsSound, nsISound, nsIStreamLoaderObserver, nsIObserver)

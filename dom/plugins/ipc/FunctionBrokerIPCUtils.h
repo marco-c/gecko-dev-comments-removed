@@ -5,11 +5,11 @@
 
 #if defined(XP_WIN)
 
-#define SECURITY_WIN32
-#include <security.h>
-#include <wininet.h>
-#include <schannel.h>
-#include <commdlg.h>
+#  define SECURITY_WIN32
+#  include <security.h>
+#  include <wininet.h>
+#  include <schannel.h>
+#  include <commdlg.h>
 
 #endif  
 
@@ -48,10 +48,10 @@ enum FunctionHookId {
   ID_FreeCredentialsHandle,
   ID_PrintDlgW,
   ID_CreateMutexW
-#if defined(MOZ_SANDBOX)
+#  if defined(MOZ_SANDBOX)
   ,
   ID_GetFileAttributesW
-#endif  
+#  endif  
   ,
   ID_FunctionHookCount
 #else   

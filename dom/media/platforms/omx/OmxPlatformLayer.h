@@ -5,13 +5,13 @@
 
 
 #if !defined(OmxPlatformLayer_h_)
-#define OmxPlatformLayer_h_
+#  define OmxPlatformLayer_h_
 
-#include "OMX_Core.h"
-#include "OMX_Types.h"
+#  include "OMX_Core.h"
+#  include "OMX_Types.h"
 
-#include "nsStringFwd.h"
-#include "OmxPromiseLayer.h"
+#  include "nsStringFwd.h"
+#  include "OmxPromiseLayer.h"
 
 namespace mozilla {
 

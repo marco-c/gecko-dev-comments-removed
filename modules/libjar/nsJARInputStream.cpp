@@ -8,7 +8,7 @@
 #include "nsJARInputStream.h"
 #include "zipstruct.h"  
 #ifdef MOZ_JAR_BROTLI
-#include "brotli/decode.h"  
+#  include "brotli/decode.h"  
 #endif
 #include "nsZipArchive.h"
 
@@ -17,7 +17,7 @@
 #include "nsDebug.h"
 #include <algorithm>
 #if defined(XP_WIN)
-#include <windows.h>
+#  include <windows.h>
 #endif
 
 

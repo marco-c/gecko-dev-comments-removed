@@ -4,11 +4,11 @@
 
 
 #if !defined(nsMediaFragmentURIParser_h__)
-#define nsMediaFragmentURIParser_h__
+#  define nsMediaFragmentURIParser_h__
 
-#include "mozilla/Maybe.h"
-#include "nsStringFwd.h"
-#include "nsRect.h"
+#  include "mozilla/Maybe.h"
+#  include "nsStringFwd.h"
+#  include "nsRect.h"
 
 class nsIURI;
 

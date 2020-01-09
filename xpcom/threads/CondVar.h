@@ -12,7 +12,7 @@
 #include "mozilla/Mutex.h"
 
 #ifdef MOZILLA_INTERNAL_API
-#include "GeckoProfiler.h"
+#  include "GeckoProfiler.h"
 #endif  
 
 namespace mozilla {
@@ -51,16 +51,16 @@ class OffTheBooksCondVar : BlockingResourceBase {
 
 #ifndef DEBUG
   void Wait() {
-#ifdef MOZILLA_INTERNAL_API
+#  ifdef MOZILLA_INTERNAL_API
     AUTO_PROFILER_THREAD_SLEEP;
-#endif  
+#  endif  
     mImpl.wait(*mLock);
   }
 
   CVStatus Wait(TimeDuration aDuration) {
-#ifdef MOZILLA_INTERNAL_API
+#  ifdef MOZILLA_INTERNAL_API
     AUTO_PROFILER_THREAD_SLEEP;
-#endif  
+#  endif  
     return mImpl.wait_for(*mLock, aDuration);
   }
 #else

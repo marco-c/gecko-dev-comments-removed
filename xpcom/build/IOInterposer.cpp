@@ -18,7 +18,7 @@
 #include "mozilla/ThreadLocal.h"
 #include "nscore.h"  
 #if !defined(XP_WIN)
-#include "NSPRInterposer.h"
+#  include "NSPRInterposer.h"
 #endif  
 #include "nsXULAppAPI.h"
 #include "PoisonIOInterposer.h"

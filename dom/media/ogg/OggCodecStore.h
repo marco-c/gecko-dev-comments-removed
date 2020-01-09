@@ -4,13 +4,13 @@
 
 
 #if !defined(OggCodecStore_h_)
-#define OggCodecStore_h_
+#  define OggCodecStore_h_
 
-#include <ogg/ogg.h>
+#  include <ogg/ogg.h>
 
-#include "OggCodecState.h"
-#include "VideoUtils.h"
-#include "mozilla/Monitor.h"
+#  include "OggCodecState.h"
+#  include "VideoUtils.h"
+#  include "mozilla/Monitor.h"
 
 namespace mozilla {
 

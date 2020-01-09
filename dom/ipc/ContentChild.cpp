@@ -5,7 +5,7 @@
 
 
 #ifdef MOZ_WIDGET_GTK
-#include <gtk/gtk.h>
+#  include <gtk/gtk.h>
 #endif
 
 #include "ContentChild.h"
@@ -98,26 +98,26 @@
 #include "nsGeolocation.h"
 
 #if !defined(XP_WIN)
-#include "mozilla/Omnijar.h"
+#  include "mozilla/Omnijar.h"
 #endif
 
 #ifdef MOZ_GECKO_PROFILER
-#include "ChildProfilerController.h"
+#  include "ChildProfilerController.h"
 #endif
 
 #if defined(MOZ_CONTENT_SANDBOX)
-#include "mozilla/SandboxSettings.h"
-#if defined(XP_WIN)
-#include "mozilla/sandboxTarget.h"
-#elif defined(XP_LINUX)
-#include "mozilla/Sandbox.h"
-#include "mozilla/SandboxInfo.h"
-#include "CubebUtils.h"
-#elif defined(XP_MACOSX)
-#include "mozilla/Sandbox.h"
-#elif defined(__OpenBSD__)
-#include <unistd.h>
-#endif
+#  include "mozilla/SandboxSettings.h"
+#  if defined(XP_WIN)
+#    include "mozilla/sandboxTarget.h"
+#  elif defined(XP_LINUX)
+#    include "mozilla/Sandbox.h"
+#    include "mozilla/SandboxInfo.h"
+#    include "CubebUtils.h"
+#  elif defined(XP_MACOSX)
+#    include "mozilla/Sandbox.h"
+#  elif defined(__OpenBSD__)
+#    include <unistd.h>
+#  endif
 #endif
 
 #include "mozilla/Unused.h"
@@ -157,7 +157,7 @@
 #include "nsContentPermissionHelper.h"
 #include "nsPluginHost.h"
 #ifdef NS_PRINTING
-#include "nsPrintingProxy.h"
+#  include "nsPrintingProxy.h"
 #endif
 #include "nsWindowMemoryReporter.h"
 
@@ -178,7 +178,7 @@
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 
 #ifdef MOZ_WEBRTC
-#include "signaling/src/peerconnection/WebrtcGlobalChild.h"
+#  include "signaling/src/peerconnection/WebrtcGlobalChild.h"
 #endif
 
 #include "nsPermission.h"
@@ -187,34 +187,34 @@
 #include "PermissionMessageUtils.h"
 
 #if defined(MOZ_WIDGET_ANDROID)
-#include "APKOpen.h"
+#  include "APKOpen.h"
 #endif
 
 #ifdef XP_WIN
-#include <process.h>
-#define getpid _getpid
-#include "mozilla/widget/AudioSession.h"
-#include "mozilla/audio/AudioNotificationReceiver.h"
+#  include <process.h>
+#  define getpid _getpid
+#  include "mozilla/widget/AudioSession.h"
+#  include "mozilla/audio/AudioNotificationReceiver.h"
 #endif
 
 #if defined(XP_MACOSX)
-#include "nsMacUtilsImpl.h"
-#include <CoreServices/CoreServices.h>
+#  include "nsMacUtilsImpl.h"
+#  include <CoreServices/CoreServices.h>
 
-#define MAC_DEV_REPO_KEY "MozillaDeveloperRepoPath"
+#  define MAC_DEV_REPO_KEY "MozillaDeveloperRepoPath"
 
-#define MAC_DEV_OBJ_KEY "MozillaDeveloperObjPath"
+#  define MAC_DEV_OBJ_KEY "MozillaDeveloperObjPath"
 #endif 
 
 #ifdef MOZ_X11
-#include "mozilla/X11Util.h"
+#  include "mozilla/X11Util.h"
 #endif
 
 #ifdef ACCESSIBILITY
-#include "nsAccessibilityService.h"
-#ifdef XP_WIN
-#include "mozilla/a11y/AccessibleWrap.h"
-#endif
+#  include "nsAccessibilityService.h"
+#  ifdef XP_WIN
+#    include "mozilla/a11y/AccessibleWrap.h"
+#  endif
 #endif
 
 #include "mozilla/dom/File.h"
@@ -223,7 +223,7 @@
 #include "mozilla/ipc/InputStreamUtils.h"
 
 #ifdef MOZ_WEBSPEECH
-#include "mozilla/dom/PSpeechSynthesisChild.h"
+#  include "mozilla/dom/PSpeechSynthesisChild.h"
 #endif
 
 #include "ClearOnShutdown.h"
@@ -247,11 +247,11 @@
 #include "MMPrinter.h"
 
 #ifdef MOZ_WIDGET_GTK
-#include "nsAppRunner.h"
+#  include "nsAppRunner.h"
 #endif
 
 #ifdef MOZ_CODE_COVERAGE
-#include "mozilla/CodeCoverageHandler.h"
+#  include "mozilla/CodeCoverageHandler.h"
 #endif
 
 using namespace mozilla;
@@ -556,9 +556,10 @@ ContentChild::ContentChild()
 }
 
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4722) /* Silence "destructor never returns" warning \
-                                 */
+#  pragma warning(push)
+#  pragma warning(                                                  \
+      disable : 4722) /* Silence "destructor never returns" warning \
+                       */
 #endif
 
 ContentChild::~ContentChild() {
@@ -568,7 +569,7 @@ ContentChild::~ContentChild() {
 }
 
 #ifdef _MSC_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
 
 NS_INTERFACE_MAP_BEGIN(ContentChild)
@@ -608,11 +609,11 @@ bool ContentChild::Init(MessageLoop* aIOLoop, base::ProcessId aParentPid,
   
   if (!gfxPlatform::IsHeadless()) {
     const char* display_name = PR_GetEnv("MOZ_GDK_DISPLAY");
-#ifndef MOZ_WAYLAND
+#  ifndef MOZ_WAYLAND
     if (!display_name) {
       display_name = PR_GetEnv("DISPLAY");
     }
-#endif
+#  endif
     if (display_name) {
       int argc = 3;
       char option_name[] = "--display";
@@ -1481,9 +1482,9 @@ static bool StartMacOSContentSandbox() {
           "security.sandbox.content.mac.disconnect-windowserver")) {
     CGError result = CGSSetDenyWindowServerConnections(true);
     MOZ_DIAGNOSTIC_ASSERT(result == kCGErrorSuccess);
-#if !MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#  if !MOZ_DIAGNOSTIC_ASSERT_ENABLED
     Unused << result;
-#endif
+#  endif
   }
 
   
@@ -1568,7 +1569,7 @@ static bool StartMacOSContentSandbox() {
     info.hasSandboxedProfile = false;
   }
 
-#ifdef DEBUG
+#  ifdef DEBUG
   
   
   
@@ -1580,7 +1581,7 @@ static bool StartMacOSContentSandbox() {
         nsMacUtilsImpl::GetDirectoryPath(bloatLog);
     info.debugWriteDir.assign(bloatDirectoryPath.get());
   }
-#endif  
+#  endif  
 
   std::string err;
   if (!mozilla::StartMacSandbox(info, err)) {
@@ -1598,7 +1599,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
   
 #if defined(MOZ_CONTENT_SANDBOX)
   bool sandboxEnabled = true;
-#if defined(XP_LINUX)
+#  if defined(XP_LINUX)
   
   if (!SandboxInfo::Get().CanSandboxContent()) {
     sandboxEnabled = false;
@@ -1613,11 +1614,11 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
     sandboxEnabled = SetContentProcessSandbox(
         ContentProcessSandboxParams::ForThisProcess(aBroker));
   }
-#elif defined(XP_WIN)
+#  elif defined(XP_WIN)
   mozilla::SandboxTarget::Instance()->StartSandbox();
-#elif defined(XP_MACOSX)
+#  elif defined(XP_MACOSX)
   sandboxEnabled = StartMacOSContentSandbox();
-#elif defined(__OpenBSD__)
+#  elif defined(__OpenBSD__)
   sandboxEnabled = StartOpenBSDSandbox(GeckoProcessType_Content);
   
   if (!PR_GetEnv("DBUS_SESSION_BUS_ADDRESS")) {
@@ -1626,15 +1627,15 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
             ("no session dbus found, faking one\n"));
     PR_SetEnv("DBUS_SESSION_BUS_ADDRESS=");
   }
-#endif
+#  endif
 
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::ContentSandboxEnabled, sandboxEnabled);
-#if defined(XP_LINUX) && !defined(OS_ANDROID)
+#  if defined(XP_LINUX) && !defined(OS_ANDROID)
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::ContentSandboxCapabilities,
       static_cast<int>(SandboxInfo::Get().AsInteger()));
-#endif 
+#  endif 
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RemoteType,
                                      NS_ConvertUTF16toUTF8(GetRemoteType()));
 #endif 
@@ -2441,13 +2442,13 @@ mozilla::ipc::IPCResult ContentChild::RecvFlushMemory(const nsString& reason) {
 mozilla::ipc::IPCResult ContentChild::RecvActivateA11y(
     const uint32_t& aMainChromeTid, const uint32_t& aMsaaID) {
 #ifdef ACCESSIBILITY
-#ifdef XP_WIN
+#  ifdef XP_WIN
   MOZ_ASSERT(aMainChromeTid != 0);
   mMainChromeTid = aMainChromeTid;
 
   MOZ_ASSERT(aMsaaID != 0);
   mMsaaID = aMsaaID;
-#endif  
+#  endif  
 
   
   
@@ -3195,7 +3196,8 @@ mozilla::ipc::IPCResult ContentChild::RecvGetFilesResponse(
 }
 
 PURLClassifierChild* ContentChild::AllocPURLClassifierChild(
-    const Principal& aPrincipal, bool* aSuccess) {
+    const Principal& aPrincipal, const bool& aUseTrackingProtection,
+    bool* aSuccess) {
   *aSuccess = true;
   return new URLClassifierChild();
 }
@@ -3591,7 +3593,7 @@ mozilla::ipc::IPCResult ContentChild::RecvWindowPostMessage(
 }  
 
 #if defined(__OpenBSD__) && defined(MOZ_CONTENT_SANDBOX)
-#include <unistd.h>
+#  include <unistd.h>
 
 static LazyLogModule sPledgeLog("SandboxPledge");
 

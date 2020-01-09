@@ -24,7 +24,7 @@ struct ParamTraits;
 #ifdef XP_WIN
 
 
-#include "TimeStamp_windows.h"
+#  include "TimeStamp_windows.h"
 #endif
 
 namespace mozilla {

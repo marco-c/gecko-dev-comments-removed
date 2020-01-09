@@ -56,8 +56,8 @@ nsresult NSSErrorsService::Init() {
 
 #if SEC_ERROR_BASE != EXPECTED_SEC_ERROR_BASE || \
     SSL_ERROR_BASE != EXPECTED_SSL_ERROR_BASE
-#error \
-    "Unexpected change of error code numbers in lib NSS, please adjust the mapping code"
+#  error \
+      "Unexpected change of error code numbers in lib NSS, please adjust the mapping code"
 
 
 

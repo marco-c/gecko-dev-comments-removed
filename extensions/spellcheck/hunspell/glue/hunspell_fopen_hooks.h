@@ -16,15 +16,15 @@
 #include <string.h>
 
 #if defined(XP_WIN)
-#include "nsNativeCharsetUtils.h"
-#include "nsString.h"
+#  include "nsNativeCharsetUtils.h"
+#  include "nsString.h"
 
-#include <fcntl.h>
-#include <windows.h>
+#  include <fcntl.h>
+#  include <windows.h>
 
-#undef near
+#  undef near
 
-#undef RemoveDirectory
+#  undef RemoveDirectory
 #endif 
 
 inline FILE* hunspell_fopen_readahead(const char* filename, const char* mode) {

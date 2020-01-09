@@ -5,10 +5,10 @@
 
 
 #ifdef XP_WIN
-#include "objbase.h"
+#  include "objbase.h"
 
 
-#undef GetCurrentTime
+#  undef GetCurrentTime
 #endif
 
 #include "mozilla/dom/HTMLMediaElement.h"
@@ -24,7 +24,7 @@
 #include "FrameStatistics.h"
 #include "GMPCrashHelper.h"
 #ifdef MOZ_ANDROID_HLS_SUPPORT
-#include "HLSDecoder.h"
+#  include "HLSDecoder.h"
 #endif
 #include "HTMLMediaElement.h"
 #include "ImageContainer.h"

@@ -13,7 +13,7 @@
 #include "mozilla/RecordReplay.h"
 
 #if !defined(XP_WIN)
-#include <pthread.h>
+#  include <pthread.h>
 #endif
 
 namespace mozilla {
@@ -54,14 +54,14 @@ class MutexImpl {
   static_assert(sizeof(pthread_mutex_t) / sizeof(void*) != 0 &&
                     sizeof(pthread_mutex_t) % sizeof(void*) == 0,
                 "pthread_mutex_t must have pointer alignment");
-#ifdef XP_DARWIN
+#  ifdef XP_DARWIN
   
   
   
   mozilla::Atomic<int32_t, mozilla::MemoryOrdering::Relaxed,
                   recordreplay::Behavior::DontPreserve>
       averageSpins;
-#endif
+#  endif
 #else
   void* platformData_[6];
 #endif

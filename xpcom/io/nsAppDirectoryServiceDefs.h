@@ -103,16 +103,16 @@
 
 
 
-#define NS_APP_CONTENT_PROCESS_TEMP_DIR "ContentTmpD"
+#  define NS_APP_CONTENT_PROCESS_TEMP_DIR "ContentTmpD"
 #else
 
-#define NS_APP_CONTENT_PROCESS_TEMP_DIR "TmpD"
+#  define NS_APP_CONTENT_PROCESS_TEMP_DIR "TmpD"
 #endif  
 
 #if defined(MOZ_SANDBOX)
-#define NS_APP_PLUGIN_PROCESS_TEMP_DIR "PluginTmpD"
+#  define NS_APP_PLUGIN_PROCESS_TEMP_DIR "PluginTmpD"
 #else
-#define NS_APP_PLUGIN_PROCESS_TEMP_DIR "TmpD"
+#  define NS_APP_PLUGIN_PROCESS_TEMP_DIR "TmpD"
 #endif
 
 #endif  

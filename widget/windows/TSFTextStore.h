@@ -27,10 +27,10 @@
 
 
 #ifdef INPUTSCOPE_INIT_GUID
-#include <initguid.h>
+#  include <initguid.h>
 #endif
 #ifdef TEXTATTRS_INIT_GUID
-#include <tsattrs.h>
+#  include <tsattrs.h>
 #endif
 #include <inputscope.h>
 

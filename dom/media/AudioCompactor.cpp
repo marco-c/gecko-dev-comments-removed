@@ -5,7 +5,7 @@
 
 #include "AudioCompactor.h"
 #if defined(MOZ_MEMORY)
-#include "mozmemory.h"
+#  include "mozmemory.h"
 #endif
 
 namespace mozilla {

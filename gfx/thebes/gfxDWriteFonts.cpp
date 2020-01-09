@@ -40,10 +40,10 @@ static inline cairo_antialias_t GetCairoAntialiasOption(
 
 
 #ifndef SPI_GETFONTSMOOTHINGTYPE
-#define SPI_GETFONTSMOOTHINGTYPE 0x200a
+#  define SPI_GETFONTSMOOTHINGTYPE 0x200a
 #endif
 #ifndef FE_FONTSMOOTHINGCLEARTYPE
-#define FE_FONTSMOOTHINGCLEARTYPE 2
+#  define FE_FONTSMOOTHINGCLEARTYPE 2
 #endif
 
 

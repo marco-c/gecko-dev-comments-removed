@@ -27,7 +27,7 @@
 #include "nsStyleConsts.h"
 
 #ifdef ACCESSIBILITY
-#include "nsAccessibilityService.h"
+#  include "nsAccessibilityService.h"
 #endif
 
 

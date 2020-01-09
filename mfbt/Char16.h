@@ -17,10 +17,10 @@
 
 
 
-#ifdef WIN32
-#define MOZ_USE_CHAR16_WRAPPER
-#include <cstdint>
-#include "mozilla/Attributes.h"
+#  ifdef WIN32
+#    define MOZ_USE_CHAR16_WRAPPER
+#    include <cstdint>
+#    include "mozilla/Attributes.h"
 
 
 
@@ -131,11 +131,11 @@ inline decltype((char*)0 - (char*)0) operator-(const char16_t* aX,
   return aX - static_cast<const char16_t*>(aY);
 }
 
-#else
+#  else
 
 typedef const char16_t* char16ptr_t;
 
-#endif
+#  endif
 
 static_assert(sizeof(char16_t) == 2, "Is char16_t type 16 bits?");
 static_assert(char16_t(-1) > char16_t(0), "Is char16_t type unsigned?");

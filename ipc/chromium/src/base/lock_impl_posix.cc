@@ -23,9 +23,9 @@ namespace internal {
 
 
 #if defined(OS_NACL) || defined(OS_ANDROID)
-#define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 0
+#  define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 0
 #else
-#define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 1
+#  define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 1
 #endif
 
 LockImpl::LockImpl() {

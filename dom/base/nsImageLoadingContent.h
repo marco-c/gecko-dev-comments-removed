@@ -41,7 +41,7 @@ class Element;
 
 #ifdef LoadImage
 
-#undef LoadImage
+#  undef LoadImage
 #endif
 
 class nsImageLoadingContent : public nsIImageLoadingContent {

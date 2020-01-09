@@ -4,10 +4,10 @@
 
 
 #if !defined(WaveDecoder_h_)
-#define WaveDecoder_h_
+#  define WaveDecoder_h_
 
-#include "mozilla/UniquePtr.h"
-#include "nsTArray.h"
+#  include "mozilla/UniquePtr.h"
+#  include "nsTArray.h"
 
 namespace mozilla {
 

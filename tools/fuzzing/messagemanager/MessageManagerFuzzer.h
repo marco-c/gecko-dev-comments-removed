@@ -29,7 +29,7 @@ class StructuredCloneData;
 
 #ifdef IsLoggingEnabled
 
-#undef IsLoggingEnabled
+#  undef IsLoggingEnabled
 #endif
 
 class MessageManagerFuzzer {

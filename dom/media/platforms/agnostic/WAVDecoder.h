@@ -5,9 +5,9 @@
 
 
 #if !defined(WaveDecoder_h_)
-#define WaveDecoder_h_
+#  define WaveDecoder_h_
 
-#include "PlatformDecoderModule.h"
+#  include "PlatformDecoderModule.h"
 
 namespace mozilla {
 

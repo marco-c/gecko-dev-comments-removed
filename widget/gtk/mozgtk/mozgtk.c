@@ -649,7 +649,7 @@ STUB(gtk_object_get_type)
 #ifndef GTK3_SYMBOLS
 
 
-#include <X11/Xlib.h>
+#  include <X11/Xlib.h>
 
 
 

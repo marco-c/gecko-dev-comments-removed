@@ -23,15 +23,15 @@
 #include "NSPRLogModulesParser.h"
 #include "LogCommandLineHandler.h"
 #ifdef MOZ_GECKO_PROFILER
-#include "ProfilerMarkerPayload.h"
+#  include "ProfilerMarkerPayload.h"
 #endif
 
 #include "prenv.h"
 #ifdef XP_WIN
-#include <process.h>
+#  include <process.h>
 #else
-#include <sys/types.h>
-#include <unistd.h>
+#  include <sys/types.h>
+#  include <unistd.h>
 #endif
 
 
@@ -412,7 +412,7 @@ class LogModuleManager {
 #ifdef MOZ_GECKO_PROFILER
     if (mAddProfilerMarker && profiler_is_active()) {
       profiler_add_marker(
-          "LogMessages", js::ProfilingStackFrame::Category::OTHER,
+          "LogMessages",
           MakeUnique<LogMarkerPayload>(aName, buffToWrite, TimeStamp::Now()));
     }
 #endif

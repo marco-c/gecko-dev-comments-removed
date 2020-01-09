@@ -25,9 +25,9 @@
 #include "secoidt.h"
 
 #ifdef XP_WIN
-#include <windows.h>
-#include <softpub.h>
-#include <wintrust.h>
+#  include <windows.h>
+#  include <softpub.h>
+#  include <wintrust.h>
 #endif  
 
 namespace mozilla {

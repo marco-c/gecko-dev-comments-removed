@@ -10,9 +10,9 @@
 
 #ifdef MOZILLA_INTERNAL_API
 
-#include "mozilla/Scoped.h"
-#include "nsString.h"
-#include "unicode/unum.h"  
+#  include "mozilla/Scoped.h"
+#  include "nsString.h"
+#  include "unicode/unum.h"  
 
 class nsIContent;
 
@@ -83,7 +83,7 @@ class ICUUtils {
 
   static nsresult UErrorToNsResult(const UErrorCode aErrorCode);
 
-#if 0
+#  if 0
   
   
 
@@ -94,7 +94,7 @@ class ICUUtils {
 
   static void ToMozString(UnicodeString& aICUString, nsAString& aMozString);
   static void ToICUString(nsAString& aMozString, UnicodeString& aICUString);
-#endif
+#  endif
 };
 
 #endif 

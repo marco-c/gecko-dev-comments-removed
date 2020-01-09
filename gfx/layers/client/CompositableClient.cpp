@@ -14,8 +14,8 @@
 #include "mozilla/mozalloc.h"  
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
 #ifdef XP_WIN
-#include "gfxWindowsPlatform.h"  
-#include "mozilla/layers/TextureD3D11.h"
+#  include "gfxWindowsPlatform.h"  
+#  include "mozilla/layers/TextureD3D11.h"
 #endif
 #include "gfxUtils.h"
 #include "IPDLActor.h"

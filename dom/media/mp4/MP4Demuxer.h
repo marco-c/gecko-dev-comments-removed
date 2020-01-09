@@ -5,12 +5,12 @@
 
 
 #if !defined(MP4Demuxer_h_)
-#define MP4Demuxer_h_
+#  define MP4Demuxer_h_
 
-#include "mozilla/Maybe.h"
-#include "mozilla/Monitor.h"
-#include "MediaDataDemuxer.h"
-#include "MediaResource.h"
+#  include "mozilla/Maybe.h"
+#  include "mozilla/Monitor.h"
+#  include "MediaDataDemuxer.h"
+#  include "MediaResource.h"
 
 namespace mozilla {
 class MP4TrackDemuxer;

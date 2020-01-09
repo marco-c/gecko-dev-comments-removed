@@ -18,8 +18,8 @@
 
 
 #if !defined(XP_MACOSX)
-#include "nsPrintProgress.h"
-#include "nsPrintProgressParams.h"
+#  include "nsPrintProgress.h"
+#  include "nsPrintProgressParams.h"
 
 static const char* kPrintProgressDialogURL =
     "chrome://global/content/printProgress.xul";

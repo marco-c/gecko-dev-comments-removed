@@ -4,10 +4,10 @@
 
 
 #if !defined(BackgroundVideoDecodingPermissionObserver_h_)
-#define BackgroundVideoDecodingPermissionObserver_h_
+#  define BackgroundVideoDecodingPermissionObserver_h_
 
-#include "nsIObserver.h"
-#include "nsISupportsImpl.h"
+#  include "nsIObserver.h"
+#  include "nsISupportsImpl.h"
 
 class nsISupports;
 class nsPIDOMWindowOuter;

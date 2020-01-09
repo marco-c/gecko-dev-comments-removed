@@ -17,17 +17,17 @@
 #ifdef DEBUG
 
 
-#define MOZ_CALLSTACK_DISABLED
+#  define MOZ_CALLSTACK_DISABLED
 
-#include "prinit.h"
+#  include "prinit.h"
 
-#include "nsString.h"
+#  include "nsString.h"
 
-#ifndef MOZ_CALLSTACK_DISABLED
-#include "nsTArray.h"
-#endif
+#  ifndef MOZ_CALLSTACK_DISABLED
+#    include "nsTArray.h"
+#  endif
 
-#include "nsXPCOM.h"
+#  include "nsXPCOM.h"
 #endif
 
 
@@ -97,11 +97,11 @@ class BlockingResourceBase {
   typedef DeadlockDetector<BlockingResourceBase> DDT;
 
  protected:
-#ifdef MOZ_CALLSTACK_DISABLED
+#  ifdef MOZ_CALLSTACK_DISABLED
   typedef bool AcquisitionState;
-#else
+#  else
   typedef AutoTArray<void*, 24> AcquisitionState;
-#endif
+#  endif
 
   
 
@@ -214,11 +214,11 @@ class BlockingResourceBase {
 
 
   void ClearAcquisitionState() {
-#ifdef MOZ_CALLSTACK_DISABLED
+#  ifdef MOZ_CALLSTACK_DISABLED
     mAcquired = false;
-#else
+#  else
     mAcquired.Clear();
-#endif
+#  endif
   }
 
   
@@ -228,11 +228,11 @@ class BlockingResourceBase {
 
 
   bool IsAcquired() const {
-#ifdef MOZ_CALLSTACK_DISABLED
+#  ifdef MOZ_CALLSTACK_DISABLED
     return mAcquired;
-#else
+#  else
     return !mAcquired.IsEmpty();
-#endif
+#  endif
   }
 
   
@@ -264,13 +264,13 @@ class BlockingResourceBase {
 
   AcquisitionState mAcquired;
 
-#ifndef MOZ_CALLSTACK_DISABLED
+#  ifndef MOZ_CALLSTACK_DISABLED
   
 
 
 
   AcquisitionState mFirstSeen;
-#endif
+#  endif
 
   
 
@@ -313,10 +313,10 @@ class BlockingResourceBase {
                                 void* aClosure);
   static void GetStackTrace(AcquisitionState& aState);
 
-#ifdef MOZILLA_INTERNAL_API
+#  ifdef MOZILLA_INTERNAL_API
   
   friend void LogTerm();
-#endif  
+#  endif  
 
 #else  
 

@@ -8,14 +8,14 @@
 
 #if defined(WCHAR_T_IS_UTF16)
 
-#error This file should not be used on 2-byte wchar_t systems
+#  error This file should not be used on 2-byte wchar_t systems
 
 
 
 
 #elif defined(WCHAR_T_IS_UTF32)
 
-#include "base/string_util.h"
+#  include "base/string_util.h"
 
 namespace base {
 

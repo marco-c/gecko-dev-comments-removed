@@ -8,7 +8,7 @@
 #define mozilla_a11y_IPCTypes_h
 
 #ifdef ACCESSIBILITY
-#include "mozilla/a11y/Role.h"
+#  include "mozilla/a11y/Role.h"
 
 namespace IPC {
 
@@ -36,25 +36,25 @@ typedef uint32_t role;
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
 
 
-#if !defined(COM_NO_WINDOWS_H)
-#define COM_NO_WINDOWS_H
-#endif  
+#  if !defined(COM_NO_WINDOWS_H)
+#    define COM_NO_WINDOWS_H
+#  endif  
 
 
 
-#if !defined(__XMLDocument_FWD_DEFINED__)
-#define __XMLDocument_FWD_DEFINED__
-#endif  
+#  if !defined(__XMLDocument_FWD_DEFINED__)
+#    define __XMLDocument_FWD_DEFINED__
+#  endif  
 
-#include <combaseapi.h>
+#  include <combaseapi.h>
 
-#include "mozilla/a11y/COMPtrTypes.h"
+#  include "mozilla/a11y/COMPtrTypes.h"
 
 
 
-#if defined(small)
-#undef small
-#endif  
+#  if defined(small)
+#    undef small
+#  endif  
 
 #else
 

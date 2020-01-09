@@ -545,9 +545,9 @@ struct Dispatcher {
 
 
 #ifdef __i386__
-#define MOZ_JNICALL JNICALL __attribute__((force_align_arg_pointer))
+#  define MOZ_JNICALL JNICALL __attribute__((force_align_arg_pointer))
 #else
-#define MOZ_JNICALL JNICALL
+#  define MOZ_JNICALL JNICALL
 #endif
 
 template <class Traits, class Impl, class Args = typename Traits::Args>

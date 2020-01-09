@@ -11,7 +11,7 @@
 
 #ifdef _MSC_VER
 
-#pragma pointers_to_members(full_generality, single_inheritance)
+#  pragma pointers_to_members(full_generality, single_inheritance)
 #endif
 
 #define VERIFY(arg)                          \

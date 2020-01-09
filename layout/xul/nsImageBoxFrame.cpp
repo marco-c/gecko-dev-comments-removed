@@ -57,7 +57,7 @@
 
 #if defined(XP_WIN)
 
-#undef LoadImage
+#  undef LoadImage
 #endif
 
 #define ONLOAD_CALLED_TOO_EARLY 1

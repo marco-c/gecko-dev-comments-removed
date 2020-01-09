@@ -4,10 +4,10 @@
 
 
 #if !defined(WebMDecoder_h_)
-#define WebMDecoder_h_
+#  define WebMDecoder_h_
 
-#include "mozilla/UniquePtr.h"
-#include "nsTArray.h"
+#  include "mozilla/UniquePtr.h"
+#  include "nsTArray.h"
 
 namespace mozilla {
 

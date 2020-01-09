@@ -2000,15 +2000,15 @@ TEST(TestTXMgr, AggregationBatchStressTest) {
 #ifdef DEBUG
       10
 #else
-#if defined(MOZ_ASAN) || defined(MOZ_WIDGET_ANDROID)
+#  if defined(MOZ_ASAN) || defined(MOZ_WIDGET_ANDROID)
       
       100
-#else
+#  else
       
       
       
       500
-#endif
+#  endif
 #endif
       ;
   stress_test(&factory, iterations);

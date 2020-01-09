@@ -127,9 +127,9 @@
              
 #include "SkiaGLGlue.h"
 #ifdef USE_SKIA
-#include "SurfaceTypes.h"
-#include "GLBlitHelper.h"
-#include "ScopedGLHelpers.h"
+#  include "SurfaceTypes.h"
+#  include "GLBlitHelper.h"
+#  include "ScopedGLHelpers.h"
 #endif
 
 using mozilla::gl::GLContext;
@@ -137,7 +137,7 @@ using mozilla::gl::GLContextProvider;
 using mozilla::gl::SkiaGLGlue;
 
 #ifdef XP_WIN
-#include "gfxWindowsPlatform.h"
+#  include "gfxWindowsPlatform.h"
 #endif
 
 

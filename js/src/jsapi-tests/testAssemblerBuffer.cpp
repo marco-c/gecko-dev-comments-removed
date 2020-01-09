@@ -518,7 +518,7 @@ END_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools_ShortBranch)
 
 #if defined(JS_CODEGEN_ARM64)
 
-#include "jit/MacroAssembler-inl.h"
+#  include "jit/MacroAssembler-inl.h"
 
 BEGIN_TEST(testAssemblerBuffer_ARM64) {
   using namespace js::jit;

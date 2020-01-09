@@ -296,16 +296,16 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
 
   
 #ifdef JS_USE_LINK_REGISTER
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || \
-    defined(JS_CODEGEN_MIPS64)
+#  if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || \
+      defined(JS_CODEGEN_MIPS64)
   masm.pushReturnAddress();
-#elif defined(JS_CODEGEN_ARM64)
+#  elif defined(JS_CODEGEN_ARM64)
   
   
   WasmPush(masm, lr);
-#else
+#  else
   MOZ_CRASH("Implement this");
-#endif
+#  endif
 #endif
 
   

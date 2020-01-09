@@ -332,15 +332,15 @@ int main() {
     
     
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4309)
+#  pragma warning(push)
+#  pragma warning(disable : 4309)
 #endif
     MOZ_RELEASE_ASSERT(LittleEndian::readUintptr(&unsigned_bytes[0]) ==
                        static_cast<uintptr_t>(0x0807060504030201ULL));
     MOZ_RELEASE_ASSERT(BigEndian::readUintptr(&unsigned_bytes[0]) ==
                        static_cast<uintptr_t>(0x0102030405060708ULL));
 #ifdef _MSC_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
   } else {
     MOZ_RELEASE_ASSERT(LittleEndian::readUintptr(&unsigned_bytes[0]) ==

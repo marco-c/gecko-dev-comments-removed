@@ -4,15 +4,15 @@
 
 
 #ifndef IN_GL_CONTEXT_PROVIDER_H
-#error GLContextProviderImpl.h must only be included from GLContextProvider.h
+#  error GLContextProviderImpl.h must only be included from GLContextProvider.h
 #endif
 
 #ifndef GL_CONTEXT_PROVIDER_NAME
-#error GL_CONTEXT_PROVIDER_NAME not defined
+#  error GL_CONTEXT_PROVIDER_NAME not defined
 #endif
 #if defined(MOZ_WIDGET_ANDROID)
-#include "GLTypes.h"  
-#endif                
+#  include "GLTypes.h"  
+#endif                  
 
 class GL_CONTEXT_PROVIDER_NAME {
  public:

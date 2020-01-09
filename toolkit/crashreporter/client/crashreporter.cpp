@@ -7,7 +7,7 @@
 
 #ifdef _MSC_VER
 
-#pragma warning(disable : 4530)
+#  pragma warning(disable : 4530)
 #endif
 
 #include <fstream>
@@ -20,7 +20,7 @@
 #include <string>
 
 #ifdef XP_LINUX
-#include <dlfcn.h>
+#  include <dlfcn.h>
 #endif
 
 #include "nss.h"
@@ -404,10 +404,10 @@ static string ComputeDumpHash() {
   
   const char* libnssNames[] = {
       "libnss3.so",
-#ifndef HAVE_64BIT_BUILD
+#  ifndef HAVE_64BIT_BUILD
       
       "/usr/lib32/libnss3.so",
-#endif
+#  endif
   };
   void* lib = nullptr;
 
@@ -774,7 +774,7 @@ int main(int argc, char** argv) {
 }
 
 #if defined(XP_WIN) && !defined(__GNUC__)
-#include <windows.h>
+#  include <windows.h>
 
 
 

@@ -13,7 +13,7 @@
 #include "WinTextEventDispatcherListener.h"
 
 #ifdef NS_ENABLE_TSF
-#include "TSFTextStore.h"
+#  include "TSFTextStore.h"
 #endif  
 
 #include "nsLookAndFeel.h"
@@ -23,7 +23,7 @@
 #include "nsIWindowsUIUtils.h"
 
 #ifdef ACCESSIBILITY
-#include "nsAccessibilityService.h"
+#  include "nsAccessibilityService.h"
 #endif  
 
 #include "shellapi.h"
@@ -577,11 +577,11 @@ void IMEHandler::InitInputContext(nsWindow* aWindow,
 #ifdef DEBUG
 
 bool IMEHandler::CurrentKeyboardLayoutHasIME() {
-#ifdef NS_ENABLE_TSF
+#  ifdef NS_ENABLE_TSF
   if (sIsInTSFMode) {
     return TSFTextStore::CurrentKeyboardLayoutHasIME();
   }
-#endif  
+#  endif  
 
   return IMMHandler::IsIMEAvailable();
 }

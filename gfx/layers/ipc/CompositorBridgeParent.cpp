@@ -22,7 +22,7 @@
 #include "gfxPlatform.h"              
 #include "TreeTraversal.h"            
 #ifdef MOZ_WIDGET_GTK
-#include "gfxPlatformGtk.h"  
+#  include "gfxPlatformGtk.h"  
 #endif
 #include "gfxPrefs.h"                 
 #include "mozilla/AutoRestore.h"      
@@ -67,7 +67,7 @@
 #include "mozilla/mozalloc.h"                          
 #include "mozilla/Telemetry.h"
 #ifdef MOZ_WIDGET_GTK
-#include "basic/X11BasicCompositor.h"  
+#  include "basic/X11BasicCompositor.h"  
 #endif
 #include "nsCOMPtr.h"         
 #include "nsDebug.h"          
@@ -77,8 +77,8 @@
 #include "nsThreadUtils.h"    
 #include "nsXULAppAPI.h"      
 #ifdef XP_WIN
-#include "mozilla/layers/CompositorD3D11.h"
-#include "mozilla/widget/WinCompositorWidget.h"
+#  include "mozilla/layers/CompositorD3D11.h"
+#  include "mozilla/widget/WinCompositorWidget.h"
 #endif
 #include "GeckoProfiler.h"
 #include "mozilla/ipc/ProtocolTypes.h"
@@ -88,18 +88,18 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
 #ifdef MOZ_GECKO_PROFILER
-#include "ProfilerMarkerPayload.h"
+#  include "ProfilerMarkerPayload.h"
 #endif
 #include "mozilla/VsyncDispatcher.h"
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-#include "VsyncSource.h"
+#  include "VsyncSource.h"
 #endif
 #include "mozilla/widget/CompositorWidget.h"
 #ifdef MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
-#include "mozilla/widget/CompositorWidgetParent.h"
+#  include "mozilla/widget/CompositorWidgetParent.h"
 #endif
 #ifdef XP_WIN
-#include "mozilla/gfx/DeviceManagerDx.h"
+#  include "mozilla/gfx/DeviceManagerDx.h"
 #endif
 
 #include "LayerScope.h"
@@ -904,7 +904,7 @@ void CompositorBridgeParent::ScheduleComposition() {
 
 void CompositorBridgeParent::CompositeToTarget(VsyncId aId, DrawTarget* aTarget,
                                                const gfx::IntRect* aRect) {
-  AUTO_PROFILER_TRACING("Paint", "Composite", GRAPHICS);
+  AUTO_PROFILER_TRACING("Paint", "Composite");
   AUTO_PROFILER_LABEL("CompositorBridgeParent::CompositeToTarget", GRAPHICS);
 
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread(),
@@ -1903,7 +1903,6 @@ static void InsertVsyncProfilerMarker(TimeStamp aVsyncTimestamp) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   if (profiler_thread_is_being_profiled()) {
     profiler_add_marker("VsyncTimestamp",
-                        js::ProfilingStackFrame::Category::GRAPHICS,
                         MakeUnique<VsyncMarkerPayload>(aVsyncTimestamp));
   }
 }
@@ -1934,11 +1933,11 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
       new widget::CompositorWidgetParent(aInitData, mOptions);
   widget->AddRef();
 
-#ifdef XP_WIN
+#  ifdef XP_WIN
   if (mOptions.UseWebRender() && DeviceManagerDx::Get()->CanUseDComp()) {
     widget->AsWindows()->EnsureCompositorWindow();
   }
-#endif
+#  endif
 
   
   mWidget = widget;
@@ -2248,7 +2247,7 @@ void CompositorBridgeParent::NotifyWebRenderContextPurge() {
 
 
 
-#define PLUGINS_LOG(...)
+#  define PLUGINS_LOG(...)
 
 bool CompositorBridgeParent::UpdatePluginWindowState(LayersId aId) {
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
@@ -2402,14 +2401,14 @@ void CompositorBridgeParent::HideAllPluginWindows() {
   mDeferPluginWindows = true;
   mPluginWindowsHidden = true;
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   
   mWaitForPluginsUntil = TimeStamp::Now() + mVsyncRate;
   Unused << SendCaptureAllPlugins(parentWidget);
-#else
+#  else
   Unused << SendHideAllPlugins(parentWidget);
   ScheduleComposition();
-#endif
+#  endif
 }
 #endif  
 
@@ -2452,8 +2451,7 @@ int32_t RecordContentFrameTime(
       }
     };
     profiler_add_marker_for_thread(
-        profiler_current_thread_id(),
-        js::ProfilingStackFrame::Category::GRAPHICS, "CONTENT_FRAME_TIME",
+        profiler_current_thread_id(), "CONTENT_FRAME_TIME",
         MakeUnique<ContentFramePayload>(aTxnStart, aCompositeEnd));
   }
 #endif

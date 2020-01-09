@@ -23,7 +23,7 @@ BOOL IsUnpromptedElevation(BOOL &isUnpromptedElevation);
 
 
 #ifndef EARLY_BETA_OR_EARLIER
-#define DISABLE_USER_IMPERSONATION
+#  define DISABLE_USER_IMPERSONATION
 #endif
 
 

@@ -13,6 +13,7 @@
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
+#include "mozilla/LauncherRegistryInfo.h"
 #include "mozilla/LauncherResult.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SafeMode.h"
@@ -31,8 +32,7 @@
 #include "ProcThreadAttributes.h"
 
 #if defined(MOZ_LAUNCHER_PROCESS)
-#include "mozilla/LauncherRegistryInfo.h"
-#include "SameBinary.h"
+#  include "SameBinary.h"
 #endif  
 
 
@@ -56,8 +56,8 @@ static mozilla::LauncherVoidResult PostCreationSetup(HANDLE aChildProcess,
 
 #if !defined( \
     PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_PREFER_SYSTEM32_ALWAYS_ON)
-#define PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_PREFER_SYSTEM32_ALWAYS_ON \
-  (0x00000001ULL << 60)
+#  define PROCESS_CREATION_MITIGATION_POLICY_IMAGE_LOAD_PREFER_SYSTEM32_ALWAYS_ON \
+    (0x00000001ULL << 60)
 #endif  
 
 #if (_WIN32_WINNT < 0x0602)
@@ -175,20 +175,19 @@ static bool DoLauncherProcessChecks(int& argc, wchar_t** argv) {
 namespace mozilla {
 
 bool RunAsLauncherProcess(int& argc, wchar_t** argv) {
-  bool runAsLauncher = DoLauncherProcessChecks(argc, argv);
+  LauncherRegistryInfo::ProcessType desiredType =
+      DoLauncherProcessChecks(argc, argv)
+          ? LauncherRegistryInfo::ProcessType::Launcher
+          : LauncherRegistryInfo::ProcessType::Browser;
 
   
-  if (!runAsLauncher &&
+  if (desiredType == LauncherRegistryInfo::ProcessType::Browser &&
       mozilla::CheckArg(argc, argv, L"contentproc",
                         static_cast<const wchar_t**>(nullptr),
                         mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND) {
     return false;
   }
 
-#if defined(MOZ_LAUNCHER_PROCESS)
-  LauncherRegistryInfo::ProcessType desiredType =
-      runAsLauncher ? LauncherRegistryInfo::ProcessType::Launcher
-                    : LauncherRegistryInfo::ProcessType::Browser;
   LauncherRegistryInfo regInfo;
   LauncherResult<LauncherRegistryInfo::ProcessType> runAsType =
       regInfo.Check(desiredType);
@@ -200,17 +199,13 @@ bool RunAsLauncherProcess(int& argc, wchar_t** argv) {
     return false;
   }
 
-  runAsLauncher =
-      runAsType.unwrap() == LauncherRegistryInfo::ProcessType::Launcher;
-#endif  
-
-  if (!runAsLauncher) {
+  if (runAsType.unwrap() == LauncherRegistryInfo::ProcessType::Browser) {
     
     
     MaybeBreakForBrowserDebugging();
   }
 
-  return runAsLauncher;
+  return runAsType.unwrap() == LauncherRegistryInfo::ProcessType::Launcher;
 }
 
 int LauncherMain(int argc, wchar_t* argv[]) {

@@ -7,9 +7,9 @@
 #include "nsDebug.h"
 
 #ifdef XP_WIN
-#include <stdlib.h>  
+#  include <stdlib.h>  
 #else
-#include <unistd.h>  
+#  include <unistd.h>  
 #endif
 
 #include "mozilla/ipc/IOThreadChild.h"

@@ -22,12 +22,12 @@
 
 
 #ifdef DEBUG
-#define ASSERT_OWNINGTHREAD(_class)                              \
-  if (nsAutoOwningThread* owningThread = _mOwningThread.get()) { \
-    owningThread->AssertOwnership(#_class " not thread-safe");   \
-  }
+#  define ASSERT_OWNINGTHREAD(_class)                              \
+    if (nsAutoOwningThread* owningThread = _mOwningThread.get()) { \
+      owningThread->AssertOwnership(#_class " not thread-safe");   \
+    }
 #else
-#define ASSERT_OWNINGTHREAD(_class) ((void)0)
+#  define ASSERT_OWNINGTHREAD(_class) ((void)0)
 #endif
 
 namespace IPC {

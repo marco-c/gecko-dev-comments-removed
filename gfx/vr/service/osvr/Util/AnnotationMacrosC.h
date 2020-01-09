@@ -34,42 +34,42 @@
 
 #ifndef OSVR_DISABLE_ANALYSIS
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1700)
+#  if defined(_MSC_VER) && (_MSC_VER >= 1700)
 
 
 
 
-#include <sal.h>
+#    include <sal.h>
 
-#define OSVR_IN _In_
-#define OSVR_IN_PTR _In_
-#define OSVR_IN_OPT _In_opt_
-#define OSVR_IN_STRZ _In_z_
-#define OSVR_IN_READS(NUM_ELEMENTS) _In_reads_(NUM_ELEMENTS)
+#    define OSVR_IN _In_
+#    define OSVR_IN_PTR _In_
+#    define OSVR_IN_OPT _In_opt_
+#    define OSVR_IN_STRZ _In_z_
+#    define OSVR_IN_READS(NUM_ELEMENTS) _In_reads_(NUM_ELEMENTS)
 
-#define OSVR_OUT _Out_
-#define OSVR_OUT_PTR _Outptr_
-#define OSVR_OUT_OPT _Out_opt_
+#    define OSVR_OUT _Out_
+#    define OSVR_OUT_PTR _Outptr_
+#    define OSVR_OUT_OPT _Out_opt_
 
-#define OSVR_INOUT _Inout_
-#define OSVR_INOUT_PTR _Inout_
+#    define OSVR_INOUT _Inout_
+#    define OSVR_INOUT_PTR _Inout_
 
-#define OSVR_RETURN_WARN_UNUSED _Must_inspect_result_
-#define OSVR_RETURN_SUCCESS_CONDITION(X) _Return_type_success_(X)
-
-
-#elif defined(__GNUC__) && (__GNUC__ >= 4)
+#    define OSVR_RETURN_WARN_UNUSED _Must_inspect_result_
+#    define OSVR_RETURN_SUCCESS_CONDITION(X) _Return_type_success_(X)
 
 
-#if defined(__clang__)
-
-#endif
-
-#define OSVR_FUNC_NONNULL(X) __attribute__((__nonnull__ X))
-#define OSVR_RETURN_WARN_UNUSED __attribute__((warn_unused_result))
+#  elif defined(__GNUC__) && (__GNUC__ >= 4)
 
 
-#endif
+#    if defined(__clang__)
+
+#    endif
+
+#    define OSVR_FUNC_NONNULL(X) __attribute__((__nonnull__ X))
+#    define OSVR_RETURN_WARN_UNUSED __attribute__((warn_unused_result))
+
+
+#  endif
 
 
 #endif
@@ -97,7 +97,7 @@
 
 
 #ifndef OSVR_IN
-#define OSVR_IN
+#  define OSVR_IN
 #endif
 
 
@@ -105,7 +105,7 @@
 
 
 #ifndef OSVR_IN_PTR
-#define OSVR_IN_PTR
+#  define OSVR_IN_PTR
 #endif
 
 
@@ -113,7 +113,7 @@
 
 
 #ifndef OSVR_IN_OPT
-#define OSVR_IN_OPT
+#  define OSVR_IN_OPT
 #endif
 
 
@@ -121,7 +121,7 @@
 
 
 #ifndef OSVR_IN_STRZ
-#define OSVR_IN_STRZ
+#  define OSVR_IN_STRZ
 #endif
 
 
@@ -131,7 +131,7 @@
 
 
 #ifndef OSVR_IN_READS
-#define OSVR_IN_READS(NUM_ELEMENTS)
+#  define OSVR_IN_READS(NUM_ELEMENTS)
 #endif
 
 
@@ -140,7 +140,7 @@
 
 
 #ifndef OSVR_OUT
-#define OSVR_OUT
+#  define OSVR_OUT
 #endif
 
 
@@ -148,7 +148,7 @@
 
 
 #ifndef OSVR_OUT_PTR
-#define OSVR_OUT_PTR
+#  define OSVR_OUT_PTR
 #endif
 
 
@@ -156,7 +156,7 @@
 
 
 #ifndef OSVR_OUT_OPT
-#define OSVR_OUT_OPT
+#  define OSVR_OUT_OPT
 #endif
 
 
@@ -167,7 +167,7 @@
 
 
 #ifndef OSVR_INOUT
-#define OSVR_INOUT
+#  define OSVR_INOUT
 #endif
 
 
@@ -175,7 +175,7 @@
 
 
 #ifndef OSVR_INOUT_PTR
-#define OSVR_INOUT_PTR
+#  define OSVR_INOUT_PTR
 #endif
 
 
@@ -199,7 +199,7 @@
 
 
 #ifndef OSVR_FUNC_NONNULL
-#define OSVR_FUNC_NONNULL(X)
+#  define OSVR_FUNC_NONNULL(X)
 #endif
 
 
@@ -210,7 +210,7 @@
 
 
 #ifndef OSVR_RETURN_WARN_UNUSED
-#define OSVR_RETURN_WARN_UNUSED
+#  define OSVR_RETURN_WARN_UNUSED
 #endif
 
 
@@ -224,7 +224,7 @@
 
 
 #ifndef OSVR_RETURN_SUCCESS_CONDITION
-#define OSVR_RETURN_SUCCESS_CONDITION(X)
+#  define OSVR_RETURN_SUCCESS_CONDITION(X)
 #endif
 
 

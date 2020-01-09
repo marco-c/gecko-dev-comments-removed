@@ -11,7 +11,7 @@
 
 #include "frontend/TokenStream.h"
 #ifdef ENABLE_BIGINT
-#include "vm/BigIntType.h"
+#  include "vm/BigIntType.h"
 #endif
 #include "vm/BytecodeUtil.h"
 #include "vm/Printer.h"
@@ -1154,9 +1154,6 @@ class ListNode : public ParseNode {
   
   static constexpr uint32_t hasNonConstInitializerBit = 0x04;
 
-  
-  static constexpr uint32_t emittedTopLevelFunctionDeclarationsBit = 0x08;
-
   void checkConsistency() const
 #ifndef DEBUG
   {
@@ -1230,12 +1227,6 @@ class ListNode : public ParseNode {
     return pn_u.list.xflags & hasTopLevelFunctionDeclarationsBit;
   }
 
-  MOZ_MUST_USE bool emittedTopLevelFunctionDeclarations() const {
-    MOZ_ASSERT(isKind(ParseNodeKind::StatementList));
-    MOZ_ASSERT(hasTopLevelFunctionDeclarations());
-    return pn_u.list.xflags & emittedTopLevelFunctionDeclarationsBit;
-  }
-
   MOZ_MUST_USE bool hasArrayHoleOrSpread() const {
     MOZ_ASSERT(isKind(ParseNodeKind::ArrayExpr));
     return pn_u.list.xflags & hasArrayHoleOrSpreadBit;
@@ -1250,12 +1241,6 @@ class ListNode : public ParseNode {
   void setHasTopLevelFunctionDeclarations() {
     MOZ_ASSERT(isKind(ParseNodeKind::StatementList));
     pn_u.list.xflags |= hasTopLevelFunctionDeclarationsBit;
-  }
-
-  void setEmittedTopLevelFunctionDeclarations() {
-    MOZ_ASSERT(isKind(ParseNodeKind::StatementList));
-    MOZ_ASSERT(hasTopLevelFunctionDeclarations());
-    pn_u.list.xflags |= emittedTopLevelFunctionDeclarationsBit;
   }
 
   void setHasArrayHoleOrSpread() {
@@ -1581,9 +1566,9 @@ class BigIntLiteral : public ParseNode {
     return true;
   }
 
-#ifdef DEBUG
+#  ifdef DEBUG
   void dump(GenericPrinter& out, int indent);
-#endif
+#  endif
 
   BigIntBox* box() const { return pn_u.bigint.box; }
 };

@@ -5,9 +5,9 @@
 
 
 #if !defined(WMFPlatformDecoderModule_h_)
-#define WMFPlatformDecoderModule_h_
+#  define WMFPlatformDecoderModule_h_
 
-#include "PlatformDecoderModule.h"
+#  include "PlatformDecoderModule.h"
 
 namespace mozilla {
 

@@ -30,7 +30,7 @@
 #include <math.h>
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#  include "GeckoTaskTracer.h"
 using namespace mozilla::tasktracer;
 #endif
 
@@ -1891,7 +1891,7 @@ void MessageChannel::RunMessage(MessageTask& aTask) {
 
   
 #if 0
-#ifdef DEBUG
+#  ifdef DEBUG
     nsCOMPtr<nsIEventTarget> messageTarget =
         mListener->GetMessageEventTarget(msg);
 
@@ -1908,7 +1908,7 @@ void MessageChannel::RunMessage(MessageTask& aTask) {
                    aTask.Msg().priority() != task->Msg().priority());
 
     }
-#endif
+#  endif
 #endif
 
   if (!mDeferred.empty()) {
@@ -2329,14 +2329,14 @@ bool MessageChannel::WaitResponse(bool aWaitTimedOut) {
 
 #ifndef OS_WIN
 bool MessageChannel::WaitForSyncNotify(bool ) {
-#ifdef DEBUG
+#  ifdef DEBUG
   
   
   
   if (mListener->ArtificialTimeout()) {
     return false;
   }
-#endif
+#  endif
 
   MOZ_RELEASE_ASSERT(!mIsSameThreadChannel,
                      "Wait on same-thread channel will deadlock!");

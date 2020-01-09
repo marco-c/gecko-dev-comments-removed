@@ -24,7 +24,7 @@
 
 
 
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+#  pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #endif
 
 namespace mozilla {
@@ -301,11 +301,11 @@ static inline AccessibleWrap *WrapperFor(const ProxyAccessible *aProxy) {
 
 #ifdef XP_WIN
 
-#undef GetMessage
-#undef CreateEvent
-#undef GetClassName
-#undef GetBinaryType
-#undef RemoveDirectory
+#  undef GetMessage
+#  undef CreateEvent
+#  undef GetClassName
+#  undef GetBinaryType
+#  undef RemoveDirectory
 #endif
 
 #endif

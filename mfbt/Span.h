@@ -20,38 +20,39 @@
 
 
 #ifndef mozilla_Span_h
-#define mozilla_Span_h
+#  define mozilla_Span_h
 
-#include "mozilla/Array.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/Casting.h"
-#include "mozilla/IntegerTypeTraits.h"
-#include "mozilla/Move.h"
-#include "mozilla/TypeTraits.h"
-#include "mozilla/UniquePtr.h"
+#  include "mozilla/Array.h"
+#  include "mozilla/Assertions.h"
+#  include "mozilla/Casting.h"
+#  include "mozilla/IntegerTypeTraits.h"
+#  include "mozilla/Move.h"
+#  include "mozilla/TypeTraits.h"
+#  include "mozilla/UniquePtr.h"
 
-#include <algorithm>
-#include <array>
-#include <cstring>
-#include <iterator>
+#  include <algorithm>
+#  include <array>
+#  include <cstring>
+#  include <iterator>
 
-#ifdef _MSC_VER
-#pragma warning(push)
-
-
-#pragma warning(disable : 4127)  // conditional expression is constant
+#  ifdef _MSC_VER
+#    pragma warning(push)
 
 
+#    pragma warning(disable : 4127)  // conditional expression is constant
 
 
-#pragma warning(disable : 26481 26482 26483 26485 26490 26491 26492 26493 26495)
 
-#if _MSC_VER < 1910
-#pragma push_macro("constexpr")
-#define constexpr
 
-#endif  
-#endif  
+#    pragma warning( \
+        disable : 26481 26482 26483 26485 26490 26491 26492 26493 26495)
+
+#    if _MSC_VER < 1910
+#      pragma push_macro("constexpr")
+#      define constexpr
+
+#    endif  
+#  endif    
 
 namespace mozilla {
 
@@ -928,14 +929,14 @@ inline Span<const char16_t> MakeStringSpan(const char16_t* aZeroTerminated) {
 
 }  
 
-#ifdef _MSC_VER
-#if _MSC_VER < 1910
-#undef constexpr
-#pragma pop_macro("constexpr")
+#  ifdef _MSC_VER
+#    if _MSC_VER < 1910
+#      undef constexpr
+#      pragma pop_macro("constexpr")
 
-#endif  
+#    endif  
 
-#pragma warning(pop)
-#endif  
+#    pragma warning(pop)
+#  endif  
 
 #endif  

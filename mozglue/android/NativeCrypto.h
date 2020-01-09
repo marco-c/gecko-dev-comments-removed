@@ -3,10 +3,10 @@
 
 
 #ifndef _Included_org_mozilla_gecko_background_nativecode_NativeCrypto
-#define _Included_org_mozilla_gecko_background_nativecode_NativeCrypto
-#ifdef __cplusplus
+#  define _Included_org_mozilla_gecko_background_nativecode_NativeCrypto
+#  ifdef __cplusplus
 extern "C" {
-#endif
+#  endif
 
 
 
@@ -52,7 +52,7 @@ JNIEXPORT jbyteArray JNICALL
 Java_org_mozilla_gecko_background_nativecode_NativeCrypto_sha256finalize(
     JNIEnv *, jclass, jbyteArray);
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif
+#  endif
 #endif

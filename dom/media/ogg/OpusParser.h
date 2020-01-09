@@ -4,10 +4,10 @@
 
 
 #if !defined(OpusParser_h_)
-#define OpusParser_h_
+#  define OpusParser_h_
 
-#include "nsTArray.h"
-#include "nsString.h"
+#  include "nsTArray.h"
+#  include "nsString.h"
 
 namespace mozilla {
 
@@ -24,11 +24,11 @@ class OpusParser {
   uint32_t mNominalRate;  
   int mChannels;          
   uint16_t mPreSkip;      
-#ifdef MOZ_SAMPLE_TYPE_FLOAT32
+#  ifdef MOZ_SAMPLE_TYPE_FLOAT32
   float mGain;  
-#else
+#  else
   int32_t mGain_Q16;  
-#endif
+#  endif
   int mChannelMapping;  
   int mStreams;         
   int mCoupledStreams;  

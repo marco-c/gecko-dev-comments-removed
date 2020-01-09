@@ -770,8 +770,8 @@ Statistics::Statistics(JSRuntime* rt)
 
 #ifdef DEBUG
   for (const auto& duration : totalTimes_) {
-#if defined(XP_WIN) || defined(XP_MACOSX) || \
-    (defined(XP_UNIX) && !defined(__clang__))
+#  if defined(XP_WIN) || defined(XP_MACOSX) || \
+      (defined(XP_UNIX) && !defined(__clang__))
     
     
     
@@ -783,7 +783,7 @@ Statistics::Statistics(JSRuntime* rt)
                   "Statistics::Statistics will only initialize "
                   "totalTimes_'s elements if their default constructor is "
                   "non-trivial");
-#endif  
+#  endif  
     MOZ_ASSERT(duration.IsZero(),
                "totalTimes_ default-initialization should have "
                "default-initialized every element of totalTimes_ to zero");

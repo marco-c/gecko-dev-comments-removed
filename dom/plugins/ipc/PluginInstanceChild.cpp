@@ -16,13 +16,13 @@
 #include "nsNPAPIPluginInstance.h"
 #include "mozilla/gfx/2D.h"
 #ifdef MOZ_X11
-#include "gfxXlibSurface.h"
+#  include "gfxXlibSurface.h"
 #endif
 #ifdef XP_WIN
-#include "mozilla/D3DMessageUtils.h"
-#include "mozilla/gfx/SharedDIBSurface.h"
-#include "nsCrashOnException.h"
-#include "gfxWindowsPlatform.h"
+#  include "mozilla/D3DMessageUtils.h"
+#  include "mozilla/gfx/SharedDIBSurface.h"
+#  include "nsCrashOnException.h"
+#  include "gfxWindowsPlatform.h"
 extern const wchar_t* kFlashFullscreenClass;
 using mozilla::gfx::SharedDIBSurface;
 #endif
@@ -48,21 +48,21 @@ using namespace std;
 
 #ifdef MOZ_WIDGET_GTK
 
-#include <gtk/gtk.h>
-#include <gdk/gdkx.h>
-#include <gdk/gdk.h>
-#include "gtk2xtbin.h"
+#  include <gtk/gtk.h>
+#  include <gdk/gdkx.h>
+#  include <gdk/gdk.h>
+#  include "gtk2xtbin.h"
 
 #elif defined(OS_WIN)
 
-#include <windows.h>
-#include <windowsx.h>
+#  include <windows.h>
+#  include <windowsx.h>
 
-#include "mozilla/widget/WinMessages.h"
-#include "mozilla/widget/WinModifierKeyState.h"
-#include "mozilla/widget/WinNativeEventData.h"
-#include "nsWindowsDllInterceptor.h"
-#include "X11UndefineNone.h"
+#  include "mozilla/widget/WinMessages.h"
+#  include "mozilla/widget/WinModifierKeyState.h"
+#  include "mozilla/widget/WinNativeEventData.h"
+#  include "nsWindowsDllInterceptor.h"
+#  include "X11UndefineNone.h"
 
 typedef BOOL(WINAPI* User32TrackPopupMenu)(HMENU hMenu, UINT uFlags, int x,
                                            int y, int nReserved, HWND hWnd,
@@ -98,8 +98,8 @@ static const TCHAR kPluginIgnoreSubclassProperty[] =
     TEXT("PluginIgnoreSubclassProperty");
 
 #elif defined(XP_MACOSX)
-#include <ApplicationServices/ApplicationServices.h>
-#include "PluginUtilsOSX.h"
+#  include <ApplicationServices/ApplicationServices.h>
+#  include "PluginUtilsOSX.h"
 #endif  
 
 
@@ -153,10 +153,10 @@ PluginInstanceChild::PluginInstanceChild(
       mWinlessHiddenMsgHWND(0)
 #endif  
 #if defined(MOZ_WIDGET_COCOA)
-#if defined(__i386__)
+#  if defined(__i386__)
       ,
       mEventModel(NPEventModelCarbon)
-#endif
+#  endif
       ,
       mShColorSpace(nullptr),
       mShContext(nullptr),
@@ -194,11 +194,11 @@ PluginInstanceChild::PluginInstanceChild(
 #if defined(MOZ_X11) && defined(XP_UNIX) && !defined(XP_MACOSX)
   mWindow.ws_info = &mWsInfo;
   memset(&mWsInfo, 0, sizeof(mWsInfo));
-#ifdef MOZ_WIDGET_GTK
+#  ifdef MOZ_WIDGET_GTK
   mWsInfo.display = nullptr;
-#else
+#  else
   mWsInfo.display = DefaultXDisplay();
-#endif
+#  endif
 #endif  
 #if defined(OS_WIN)
   InitPopupMenuHook();
@@ -480,25 +480,25 @@ NPError PluginInstanceChild::NPN_GetValue(NPNVariable aVar, void* aValue) {
       return NPERR_NO_ERROR;
     }
 
-#ifndef NP_NO_CARBON
+#  ifndef NP_NO_CARBON
     case NPNVsupportsCarbonBool: {
       *((NPBool*)aValue) = false;
       return NPERR_NO_ERROR;
     }
-#endif
+#  endif
 
     case NPNVsupportsUpdatedCocoaTextInputBool: {
       *static_cast<NPBool*>(aValue) = true;
       return NPERR_NO_ERROR;
     }
 
-#ifndef NP_NO_QUICKDRAW
+#  ifndef NP_NO_QUICKDRAW
     case NPNVsupportsQuickDrawBool: {
       *((NPBool*)aValue) = false;
       return NPERR_NO_ERROR;
     }
-#endif 
-#endif 
+#  endif 
+#endif   
 
 #if defined(XP_MACOSX) || defined(XP_WIN)
     case NPNVcontentsScaleFactor: {
@@ -533,7 +533,7 @@ NPError PluginInstanceChild::NPN_GetValue(NPNVariable aVar, void* aValue) {
 }
 
 #ifdef MOZ_WIDGET_COCOA
-#define DEFAULT_REFRESH_MS 20  // CoreAnimation: 50 FPS
+#  define DEFAULT_REFRESH_MS 20  // CoreAnimation: 50 FPS
 
 void CAUpdate(NPP npp, uint32_t timerID) {
   static_cast<PluginInstanceChild*>(npp->ndata)->Invalidate();
@@ -617,9 +617,9 @@ NPError PluginInstanceChild::NPN_SetValue(NPPVariable aVar, void* aValue) {
 
       if (!CallNPN_SetValue_NPPVpluginEventModel(eventModel, &rv))
         return NPERR_GENERIC_ERROR;
-#if defined(__i386__)
+#  if defined(__i386__)
       mEventModel = static_cast<NPEventModel>(eventModel);
-#endif
+#  endif
 
       PLUGIN_LOG_DEBUG(
           ("  Plugin requested event model id # %i\n", eventModel));
@@ -1062,14 +1062,14 @@ mozilla::ipc::IPCResult PluginInstanceChild::RecvContentsScaleFactorChanged(
     const double& aContentsScaleFactor) {
 #if defined(XP_MACOSX) || defined(XP_WIN)
   mContentsScaleFactor = aContentsScaleFactor;
-#if defined(XP_MACOSX)
+#  if defined(XP_MACOSX)
   if (mShContext) {
     
     
     ::CGContextRelease(mShContext);
     mShContext = nullptr;
   }
-#endif
+#  endif
   return IPC_OK();
 #else
   MOZ_CRASH("ContentsScaleFactorChanged is an Windows or OSX only message");
@@ -1214,7 +1214,7 @@ mozilla::ipc::IPCResult PluginInstanceChild::AnswerNPP_SetWindow(
 #elif defined(MOZ_WIDGET_UIKIT)
   
 #else
-#error Implement me for your OS
+#  error Implement me for your OS
 #endif
 
   return IPC_OK();
@@ -1705,7 +1705,7 @@ bool PluginInstanceChild::MaybePostKeyMessage(UINT message, WPARAM wParam,
 
 
 
-#ifdef _WIN64
+#  ifdef _WIN64
 typedef LONG_PTR(WINAPI* User32SetWindowLongPtrA)(HWND hWnd, int nIndex,
                                                   LONG_PTR dwNewLong);
 typedef LONG_PTR(WINAPI* User32SetWindowLongPtrW)(HWND hWnd, int nIndex,
@@ -1714,7 +1714,7 @@ static WindowsDllInterceptor::FuncHookType<User32SetWindowLongPtrA>
     sUser32SetWindowLongAHookStub;
 static WindowsDllInterceptor::FuncHookType<User32SetWindowLongPtrW>
     sUser32SetWindowLongWHookStub;
-#else
+#  else
 typedef LONG(WINAPI* User32SetWindowLongA)(HWND hWnd, int nIndex,
                                            LONG dwNewLong);
 typedef LONG(WINAPI* User32SetWindowLongW)(HWND hWnd, int nIndex,
@@ -1723,7 +1723,7 @@ static WindowsDllInterceptor::FuncHookType<User32SetWindowLongA>
     sUser32SetWindowLongAHookStub;
 static WindowsDllInterceptor::FuncHookType<User32SetWindowLongW>
     sUser32SetWindowLongWHookStub;
-#endif
+#  endif
 
 extern LRESULT CALLBACK NeuteredWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
                                            LPARAM lParam);
@@ -1751,14 +1751,14 @@ bool PluginInstanceChild::SetWindowLongHookCheck(HWND hWnd, int nIndex,
   return false;
 }
 
-#ifdef _WIN64
+#  ifdef _WIN64
 LONG_PTR WINAPI PluginInstanceChild::SetWindowLongPtrAHook(HWND hWnd,
                                                            int nIndex,
                                                            LONG_PTR newLong)
-#else
+#  else
 LONG WINAPI PluginInstanceChild::SetWindowLongAHook(HWND hWnd, int nIndex,
                                                     LONG newLong)
-#endif
+#  endif
 {
   if (SetWindowLongHookCheck(hWnd, nIndex, newLong))
     return sUser32SetWindowLongAHookStub(hWnd, nIndex, newLong);
@@ -1783,14 +1783,14 @@ LONG WINAPI PluginInstanceChild::SetWindowLongAHook(HWND hWnd, int nIndex,
   return proc;
 }
 
-#ifdef _WIN64
+#  ifdef _WIN64
 LONG_PTR WINAPI PluginInstanceChild::SetWindowLongPtrWHook(HWND hWnd,
                                                            int nIndex,
                                                            LONG_PTR newLong)
-#else
+#  else
 LONG WINAPI PluginInstanceChild::SetWindowLongWHook(HWND hWnd, int nIndex,
                                                     LONG newLong)
-#endif
+#  endif
 {
   if (SetWindowLongHookCheck(hWnd, nIndex, newLong))
     return sUser32SetWindowLongWHookStub(hWnd, nIndex, newLong);
@@ -1821,17 +1821,17 @@ void PluginInstanceChild::HookSetWindowLongPtr() {
   }
 
   sUser32Intercept.Init("user32.dll");
-#ifdef _WIN64
+#  ifdef _WIN64
   sUser32SetWindowLongAHookStub.Set(sUser32Intercept, "SetWindowLongPtrA",
                                     &SetWindowLongPtrAHook);
   sUser32SetWindowLongWHookStub.Set(sUser32Intercept, "SetWindowLongPtrW",
                                     &SetWindowLongPtrWHook);
-#else
+#  else
   sUser32SetWindowLongAHookStub.Set(sUser32Intercept, "SetWindowLongA",
                                     &SetWindowLongAHook);
   sUser32SetWindowLongWHookStub.Set(sUser32Intercept, "SetWindowLongW",
                                     &SetWindowLongWHook);
-#endif
+#  endif
 }
 
 
@@ -3083,11 +3083,11 @@ void PluginInstanceChild::UpdateWindowAttributes(bool aForceSetWindow) {
 
 #ifndef XP_MACOSX
   
-#ifndef XP_WIN
+#  ifndef XP_WIN
   
   
   mWindow.x = mWindow.y = 0;
-#endif
+#  endif
 
   if (IsVisible()) {
     

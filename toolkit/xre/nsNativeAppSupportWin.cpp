@@ -85,8 +85,8 @@ static void activateWindow(mozIDOMWindowProxy *win) {
 }
 
 #ifdef DEBUG_law
-#undef MOZ_DEBUG_DDE
-#define MOZ_DEBUG_DDE 1
+#  undef MOZ_DEBUG_DDE
+#  define MOZ_DEBUG_DDE 1
 #endif
 
 
@@ -773,10 +773,10 @@ nsNativeAppSupportWin::Enable() {
 
 #if MOZ_DEBUG_DDE
 
-#define XTYP_CASE(t) \
-  case t:            \
-    result = #t;     \
-    break
+#  define XTYP_CASE(t) \
+    case t:            \
+      result = #t;     \
+      break
 
 static nsCString uTypeDesc(UINT uType) {
   nsCString result;

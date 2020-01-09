@@ -22,59 +22,59 @@
 #include "base/string16.h"
 
 #if defined(COMPILER_MSVC) || (defined(ANDROID) && defined(_STLP_STD_NAME))
-#ifdef COMPILER_MSVC
-#pragma push_macro("_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS")
-#define _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS
-#endif
+#  ifdef COMPILER_MSVC
+#    pragma push_macro("_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS")
+#    define _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS
+#  endif
 
 
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-#if MOZ_GCC_VERSION_AT_LEAST(4, 9, 0)
-#pragma GCC diagnostic ignored "-Wshadow-local"
-#endif
-#endif
+#  ifdef __GNUC__
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wshadow"
+#    if MOZ_GCC_VERSION_AT_LEAST(4, 9, 0)
+#      pragma GCC diagnostic ignored "-Wshadow-local"
+#    endif
+#  endif
 
-#include <hash_map>
-#include <hash_set>
+#  include <hash_map>
+#  include <hash_set>
 
-#ifdef __GNUC__
-#if MOZ_GCC_VERSION_AT_LEAST(4, 9, 0)
-#pragma GCC diagnostic pop  // -Wshadow-local
-#endif
-#pragma GCC diagnostic pop  // -Wshadow
-#endif
+#  ifdef __GNUC__
+#    if MOZ_GCC_VERSION_AT_LEAST(4, 9, 0)
+#      pragma GCC diagnostic pop  // -Wshadow-local
+#    endif
+#    pragma GCC diagnostic pop  // -Wshadow
+#  endif
 
-#ifdef COMPILER_MSVC
-#pragma pop_macro("_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS")
-#endif
+#  ifdef COMPILER_MSVC
+#    pragma pop_macro("_SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS")
+#  endif
 namespace base {
-#ifdef ANDROID
+#  ifdef ANDROID
 using _STLP_STD_NAME::hash_map;
 using _STLP_STD_NAME::hash_set;
-#else
+#  else
 using stdext::hash_map;
 using stdext::hash_set;
-#endif
+#  endif
 }  
 #elif defined(COMPILER_GCC)
 
 
 
-#ifdef __DEPRECATED
-#define CHROME_OLD__DEPRECATED __DEPRECATED
-#undef __DEPRECATED
-#endif
+#  ifdef __DEPRECATED
+#    define CHROME_OLD__DEPRECATED __DEPRECATED
+#    undef __DEPRECATED
+#  endif
 
-#include <ext/hash_map>
-#include <ext/hash_set>
-#include <string>
+#  include <ext/hash_map>
+#  include <ext/hash_set>
+#  include <string>
 
-#ifdef CHROME_OLD__DEPRECATED
-#define __DEPRECATED CHROME_OLD__DEPRECATED
-#undef CHROME_OLD__DEPRECATED
-#endif
+#  ifdef CHROME_OLD__DEPRECATED
+#    define __DEPRECATED CHROME_OLD__DEPRECATED
+#    undef CHROME_OLD__DEPRECATED
+#  endif
 
 namespace base {
 using __gnu_cxx::hash_map;
@@ -88,18 +88,18 @@ namespace __gnu_cxx {
 
 
 
-#define DEFINE_TRIVIAL_HASH(integral_type)              \
-  template <>                                           \
-  struct hash<integral_type> {                          \
-    std::size_t operator()(integral_type value) const { \
-      return static_cast<std::size_t>(value);           \
-    }                                                   \
-  }
+#  define DEFINE_TRIVIAL_HASH(integral_type)              \
+    template <>                                           \
+    struct hash<integral_type> {                          \
+      std::size_t operator()(integral_type value) const { \
+        return static_cast<std::size_t>(value);           \
+      }                                                   \
+    }
 
 DEFINE_TRIVIAL_HASH(long long);
 DEFINE_TRIVIAL_HASH(unsigned long long);
 
-#undef DEFINE_TRIVIAL_HASH
+#  undef DEFINE_TRIVIAL_HASH
 
 
 
@@ -107,27 +107,27 @@ DEFINE_TRIVIAL_HASH(unsigned long long);
 
 
 
-#define DEFINE_STRING_HASH(string_type)                                  \
-  template <>                                                            \
-  struct hash<string_type> {                                             \
-    std::size_t operator()(const string_type& s) const {                 \
-      std::size_t result = 0;                                            \
-      for (string_type::const_iterator i = s.begin(); i != s.end(); ++i) \
-        result = (result * 131) + *i;                                    \
-      return result;                                                     \
-    }                                                                    \
-  }
+#  define DEFINE_STRING_HASH(string_type)                                  \
+    template <>                                                            \
+    struct hash<string_type> {                                             \
+      std::size_t operator()(const string_type& s) const {                 \
+        std::size_t result = 0;                                            \
+        for (string_type::const_iterator i = s.begin(); i != s.end(); ++i) \
+          result = (result * 131) + *i;                                    \
+        return result;                                                     \
+      }                                                                    \
+    }
 
 DEFINE_STRING_HASH(std::string);
 DEFINE_STRING_HASH(std::wstring);
 
-#if defined(WCHAR_T_IS_UTF32)
+#  if defined(WCHAR_T_IS_UTF32)
 
 
 DEFINE_STRING_HASH(string16);
-#endif  
+#  endif  
 
-#undef DEFINE_STRING_HASH
+#  undef DEFINE_STRING_HASH
 
 }  
 

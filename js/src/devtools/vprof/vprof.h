@@ -63,13 +63,13 @@
 
 
 #if defined(_MSC_VER)
-#define vprof_align8(t) __declspec(align(8)) t
+#  define vprof_align8(t) __declspec(align(8)) t
 #elif defined(__GNUC__)
-#define vprof_align8(t) t __attribute__((aligned(8)))
+#  define vprof_align8(t) t __attribute__((aligned(8)))
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#define vprof_align8(t) t __attribute__((aligned(8)))
+#  define vprof_align8(t) t __attribute__((aligned(8)))
 #elif defined(VMCFG_SYMBIAN)
-#define vprof_align8(t) t __attribute__((aligned(8)))
+#  define vprof_align8(t) t __attribute__((aligned(8)))
 #endif
 
 #ifdef __cplusplus
@@ -89,20 +89,20 @@ uint64_t readTimestampCounter();
 
 
 #ifndef DOPROF
-#define _nvprof(e, v)
-#ifndef VMCFG_SYMBIAN
-#define _vprof(v, ...)
-#define _hprof(v, n, ...)
-#define _nhprof(e, v, n, ...)
-#define _ntprof_begin(e)
-#define _ntprof_end(e)
-#define _jvprof_init(id, ...)
-#define _jnvprof_init(id, e, ...)
-#define _jhprof_init(id, n, ...)
-#define _jnhprof_init(id, e, n, ...)
-#define _jvprof(id, v)
-#define _jhprof(id, v)
-#endif  
+#  define _nvprof(e, v)
+#  ifndef VMCFG_SYMBIAN
+#    define _vprof(v, ...)
+#    define _hprof(v, n, ...)
+#    define _nhprof(e, v, n, ...)
+#    define _ntprof_begin(e)
+#    define _ntprof_end(e)
+#    define _jvprof_init(id, ...)
+#    define _jnvprof_init(id, e, ...)
+#    define _jhprof_init(id, n, ...)
+#    define _jnhprof_init(id, e, n, ...)
+#    define _jvprof(id, v)
+#    define _jhprof(id, v)
+#  endif  
 #else
 
 
@@ -113,87 +113,88 @@ uint64_t readTimestampCounter();
 
 
 
-#define _vprof(v, ...)                                                \
-  do {                                                                \
-    static void* id = 0;                                              \
-    if (id == 0)                                                      \
-      initValueProfile(&id, __FILE__, __LINE__, ##__VA_ARGS__, NULL); \
-    profileValue(id, (int64_t)(v));                                   \
-  } while (0)
+#  define _vprof(v, ...)                                                \
+    do {                                                                \
+      static void* id = 0;                                              \
+      if (id == 0)                                                      \
+        initValueProfile(&id, __FILE__, __LINE__, ##__VA_ARGS__, NULL); \
+      profileValue(id, (int64_t)(v));                                   \
+    } while (0)
 
-#define _nvprof(e, v)                                         \
-  do {                                                        \
-    static void* id = 0;                                      \
-    if (id == 0) initValueProfile(&id, (char*)(e), -1, NULL); \
-    profileValue(id, (int64_t)(v));                           \
-  } while (0)
+#  define _nvprof(e, v)                                         \
+    do {                                                        \
+      static void* id = 0;                                      \
+      if (id == 0) initValueProfile(&id, (char*)(e), -1, NULL); \
+      profileValue(id, (int64_t)(v));                           \
+    } while (0)
 
-#define _hprof(v, n, ...)                                                \
-  do {                                                                   \
-    static void* id = 0;                                                 \
-    if (id == 0)                                                         \
-      initHistProfile(&id, __FILE__, __LINE__, (int)(n), ##__VA_ARGS__); \
-    histValue(id, (int64_t)(v));                                         \
-  } while (0)
+#  define _hprof(v, n, ...)                                                \
+    do {                                                                   \
+      static void* id = 0;                                                 \
+      if (id == 0)                                                         \
+        initHistProfile(&id, __FILE__, __LINE__, (int)(n), ##__VA_ARGS__); \
+      histValue(id, (int64_t)(v));                                         \
+    } while (0)
 
-#define _nhprof(e, v, n, ...)                                        \
-  do {                                                               \
-    static void* id = 0;                                             \
-    if (id == 0)                                                     \
-      initHistProfile(&id, (char*)(e), -1, (int)(n), ##__VA_ARGS__); \
-    histValue(id, (int64_t)(v));                                     \
-  } while (0)
-
-
-
-
-
-
-#define _ntprof_begin(e)                                      \
-  do {                                                        \
-    static void* id = 0;                                      \
-    if (id == 0) initValueProfile(&id, (char*)(e), -1, NULL); \
-    ((entry_t)id)->i64var[0] = readTimestampCounter();        \
-  } while (0)
-
-
-#define TICKS_PER_USEC 2600
-
-#define _ntprof_end(e)                                        \
-  do {                                                        \
-    static void* id = 0;                                      \
-    uint64_t stop = readTimestampCounter();                   \
-    if (id == 0) initValueProfile(&id, (char*)(e), -1, NULL); \
-    uint64_t start = ((entry_t)id)->i64var[0];                \
-    uint64_t usecs = (stop - start) / TICKS_PER_USEC;         \
-    profileValue(id, usecs);                                  \
-  } while (0)
+#  define _nhprof(e, v, n, ...)                                        \
+    do {                                                               \
+      static void* id = 0;                                             \
+      if (id == 0)                                                     \
+        initHistProfile(&id, (char*)(e), -1, (int)(n), ##__VA_ARGS__); \
+      histValue(id, (int64_t)(v));                                     \
+    } while (0)
 
 
 
 
 
 
-#define _jvprof_init(id, ...) \
-  if (*(id) == 0)             \
-  initValueProfile((id), __FILE__, __LINE__, ##__VA_ARGS__, NULL)
-
-#define _jnvprof_init(id, e, ...) \
-  if (*(id) == 0) initValueProfile((id), (char*)(e), -1, ##__VA_ARGS__, NULL)
-
-#define _jhprof_init(id, n, ...) \
-  if (*(id) == 0)                \
-  initHistProfile((id), __FILE__, __LINE__, (int)(n), ##__VA_ARGS__)
-
-#define _jnhprof_init(id, e, n, ...) \
-  if (*(id) == 0) initHistProfile((id), (char*)(e), -1, (int)(n), ##__VA_ARGS__)
+#  define _ntprof_begin(e)                                      \
+    do {                                                        \
+      static void* id = 0;                                      \
+      if (id == 0) initValueProfile(&id, (char*)(e), -1, NULL); \
+      ((entry_t)id)->i64var[0] = readTimestampCounter();        \
+    } while (0)
 
 
+#  define TICKS_PER_USEC 2600
+
+#  define _ntprof_end(e)                                        \
+    do {                                                        \
+      static void* id = 0;                                      \
+      uint64_t stop = readTimestampCounter();                   \
+      if (id == 0) initValueProfile(&id, (char*)(e), -1, NULL); \
+      uint64_t start = ((entry_t)id)->i64var[0];                \
+      uint64_t usecs = (stop - start) / TICKS_PER_USEC;         \
+      profileValue(id, usecs);                                  \
+    } while (0)
 
 
-#define _jvprof(id, v) profileValue((id), (int64_t)(v))
 
-#define _jhprof(id, v) histValue((id), (int64_t)(v))
+
+
+
+#  define _jvprof_init(id, ...) \
+    if (*(id) == 0)             \
+    initValueProfile((id), __FILE__, __LINE__, ##__VA_ARGS__, NULL)
+
+#  define _jnvprof_init(id, e, ...) \
+    if (*(id) == 0) initValueProfile((id), (char*)(e), -1, ##__VA_ARGS__, NULL)
+
+#  define _jhprof_init(id, n, ...) \
+    if (*(id) == 0)                \
+    initHistProfile((id), __FILE__, __LINE__, (int)(n), ##__VA_ARGS__)
+
+#  define _jnhprof_init(id, e, n, ...) \
+    if (*(id) == 0)                    \
+    initHistProfile((id), (char*)(e), -1, (int)(n), ##__VA_ARGS__)
+
+
+
+
+#  define _jvprof(id, v) profileValue((id), (int64_t)(v))
+
+#  define _jhprof(id, v) histValue((id), (int64_t)(v))
 
 #endif
 

@@ -5,11 +5,11 @@
 
 
 #if !defined(CubebUtils_h_)
-#define CubebUtils_h_
+#  define CubebUtils_h_
 
-#include "cubeb/cubeb.h"
-#include "nsString.h"
-#include "mozilla/RefPtr.h"
+#  include "cubeb/cubeb.h"
+#  include "nsString.h"
+#  include "mozilla/RefPtr.h"
 
 class AudioDeviceInfo;
 
@@ -48,14 +48,14 @@ void GetDeviceCollection(nsTArray<RefPtr<AudioDeviceInfo>>& aDeviceInfos,
 cubeb_stream_prefs GetDefaultStreamPrefs();
 char* GetForcedOutputDevice();
 
-#ifdef MOZ_WIDGET_ANDROID
+#  ifdef MOZ_WIDGET_ANDROID
 uint32_t AndroidGetAudioOutputSampleRate();
 uint32_t AndroidGetAudioOutputFramesPerBuffer();
-#endif
+#  endif
 
-#ifdef ENABLE_SET_CUBEB_BACKEND
+#  ifdef ENABLE_SET_CUBEB_BACKEND
 void ForceSetCubebContext(cubeb* aCubebContext);
-#endif
+#  endif
 }  
 }  
 

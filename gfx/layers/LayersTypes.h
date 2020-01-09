@@ -22,7 +22,7 @@
 #include "mozilla/Logging.h"  
 
 #ifndef MOZ_LAYERS_HAVE_LOG
-#define MOZ_LAYERS_HAVE_LOG
+#  define MOZ_LAYERS_HAVE_LOG
 #endif
 #define MOZ_LAYERS_LOG(_args) \
   MOZ_LOG(LayerManager::GetLog(), LogLevel::Debug, _args)

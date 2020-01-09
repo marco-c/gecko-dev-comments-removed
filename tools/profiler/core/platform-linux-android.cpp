@@ -53,9 +53,9 @@
 #include <unistd.h>     
 #include <semaphore.h>
 #ifdef __GLIBC__
-#include <execinfo.h>  
-#endif                 
-#include <strings.h>   
+#  include <execinfo.h>  
+#endif                   
+#include <strings.h>     
 #include <errno.h>
 #include <stdarg.h>
 
@@ -104,12 +104,12 @@ static void PopulateRegsFromContext(Registers& aRegs, ucontext_t* aContext) {
   aRegs.mFP = reinterpret_cast<Address>(mcontext.gregs[30]);
 
 #else
-#error "bad platform"
+#  error "bad platform"
 #endif
 }
 
 #if defined(GP_OS_android)
-#define SYS_tgkill __NR_tgkill
+#  define SYS_tgkill __NR_tgkill
 #endif
 
 int tgkill(pid_t tgid, pid_t tid, int signalno) {

@@ -47,7 +47,7 @@ using namespace mozilla::dom;
 
 
 #if defined(XP_WIN)
-#define NS_CONTEXT_MENU_IS_MOUSEUP 1
+#  define NS_CONTEXT_MENU_IS_MOUSEUP 1
 #endif
 
 nsXULPopupListener::nsXULPopupListener(mozilla::dom::Element* aElement,

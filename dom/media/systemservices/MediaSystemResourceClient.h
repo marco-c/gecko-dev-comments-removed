@@ -5,14 +5,14 @@
 
 
 #if !defined(MediaSystemResourceClient_h_)
-#define MediaSystemResourceClient_h_
+#  define MediaSystemResourceClient_h_
 
-#include "MediaSystemResourceManager.h"
-#include "MediaSystemResourceTypes.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/media/MediaSystemResourceTypes.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/RefPtr.h"
+#  include "MediaSystemResourceManager.h"
+#  include "MediaSystemResourceTypes.h"
+#  include "mozilla/Atomics.h"
+#  include "mozilla/media/MediaSystemResourceTypes.h"
+#  include "mozilla/Monitor.h"
+#  include "mozilla/RefPtr.h"
 
 namespace mozilla {
 

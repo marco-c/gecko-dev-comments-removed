@@ -55,7 +55,7 @@
 
 #ifdef LoadImage
 
-#undef LoadImage
+#  undef LoadImage
 #endif
 
 using namespace mozilla;

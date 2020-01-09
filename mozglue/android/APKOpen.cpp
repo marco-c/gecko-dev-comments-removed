@@ -43,7 +43,7 @@
 
 
 #ifndef RUSAGE_THREAD
-#define RUSAGE_THREAD 1
+#  define RUSAGE_THREAD 1
 #endif
 
 #ifndef RELEASE_OR_BETA
@@ -143,9 +143,9 @@ static void* sqlite_handle = nullptr;
 static void* nspr_handle = nullptr;
 static void* plc_handle = nullptr;
 #else
-#define sqlite_handle nss_handle
-#define nspr_handle nss_handle
-#define plc_handle nss_handle
+#  define sqlite_handle nss_handle
+#  define nspr_handle nss_handle
+#  define plc_handle nss_handle
 #endif
 static void* nss_handle = nullptr;
 
@@ -432,7 +432,7 @@ static bool IsMediaProcess() {
 }
 
 #ifndef SYS_rt_tgsigqueueinfo
-#define SYS_rt_tgsigqueueinfo __NR_rt_tgsigqueueinfo
+#  define SYS_rt_tgsigqueueinfo __NR_rt_tgsigqueueinfo
 #endif
 
 

@@ -5,10 +5,10 @@
 
 
 #if !defined(PDMFactory_h_)
-#define PDMFactory_h_
+#  define PDMFactory_h_
 
-#include "PlatformDecoderModule.h"
-#include "mozilla/StaticMutex.h"
+#  include "PlatformDecoderModule.h"
+#  include "mozilla/StaticMutex.h"
 
 class CDMProxy;
 

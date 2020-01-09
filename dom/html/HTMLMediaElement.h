@@ -29,7 +29,7 @@
 
 
 #ifdef CurrentTime
-#undef CurrentTime
+#  undef CurrentTime
 #endif
 
 #include "mozilla/dom/HTMLMediaElementBinding.h"

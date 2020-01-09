@@ -289,10 +289,10 @@ nsresult nsMenuBarListener::KeyPress(Event* aKeyEvent) {
         ToggleMenuActiveState();
 
         if (mMenuBarFrame->IsActive()) {
-#ifdef MOZ_WIDGET_GTK
+#  ifdef MOZ_WIDGET_GTK
           
           mMenuBarFrame->GetCurrentMenuItem()->OpenMenu(false);
-#endif
+#  endif
           aKeyEvent->StopPropagation();
           aKeyEvent->PreventDefault();
         }

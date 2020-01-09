@@ -26,9 +26,9 @@
 
 #ifndef __MINGW32__
 
-#include <windows.ui.viewmanagement.h>
+#  include <windows.ui.viewmanagement.h>
 
-#pragma comment(lib, "runtimeobject.lib")
+#  pragma comment(lib, "runtimeobject.lib")
 
 using namespace mozilla;
 using namespace ABI::Windows::UI;
@@ -40,7 +40,7 @@ using namespace ABI::Windows::ApplicationModel::DataTransfer;
 
 
 
-#if WINVER_MAXVER < 0x0A00
+#  if WINVER_MAXVER < 0x0A00
 namespace ABI {
 namespace Windows {
 namespace UI {
@@ -54,14 +54,14 @@ enum UserInteractionMode {
 }  
 }  
 
-#endif
+#  endif
 
-#ifndef RuntimeClass_Windows_UI_ViewManagement_UIViewSettings
-#define RuntimeClass_Windows_UI_ViewManagement_UIViewSettings \
-  L"Windows.UI.ViewManagement.UIViewSettings"
-#endif
+#  ifndef RuntimeClass_Windows_UI_ViewManagement_UIViewSettings
+#    define RuntimeClass_Windows_UI_ViewManagement_UIViewSettings \
+      L"Windows.UI.ViewManagement.UIViewSettings"
+#  endif
 
-#if WINVER_MAXVER < 0x0A00
+#  if WINVER_MAXVER < 0x0A00
 namespace ABI {
 namespace Windows {
 namespace UI {
@@ -80,9 +80,9 @@ extern const __declspec(selectany) IID& IID_IUIViewSettings =
 }  
 }  
 }  
-#endif
+#  endif
 
-#ifndef IUIViewSettingsInterop
+#  ifndef IUIViewSettingsInterop
 
 typedef interface IUIViewSettingsInterop IUIViewSettingsInterop;
 
@@ -92,10 +92,10 @@ IUIViewSettingsInterop : public IInspectable {
   virtual HRESULT STDMETHODCALLTYPE GetForWindow(HWND hwnd, REFIID riid,
                                                  void** ppv) = 0;
 };
-#endif
+#  endif
 
-#ifndef __IDataTransferManagerInterop_INTERFACE_DEFINED__
-#define __IDataTransferManagerInterop_INTERFACE_DEFINED__
+#  ifndef __IDataTransferManagerInterop_INTERFACE_DEFINED__
+#    define __IDataTransferManagerInterop_INTERFACE_DEFINED__
 
 typedef interface IDataTransferManagerInterop IDataTransferManagerInterop;
 
@@ -107,7 +107,7 @@ IDataTransferManagerInterop : public IUnknown {
   virtual HRESULT STDMETHODCALLTYPE ShowShareUIForWindow(HWND appWindow) = 0;
 };
 
-#endif
+#  endif
 
 #endif
 

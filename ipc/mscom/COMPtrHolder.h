@@ -14,7 +14,7 @@
 #include "mozilla/mscom/ProxyStream.h"
 #include "mozilla/mscom/Ptr.h"
 #if defined(MOZ_CONTENT_SANDBOX)
-#include "mozilla/SandboxSettings.h"
+#  include "mozilla/SandboxSettings.h"
 #endif  
 #include "nsExceptionHandler.h"
 

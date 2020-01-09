@@ -25,7 +25,7 @@
 
 
 #ifdef CurrentTime
-#undef CurrentTime
+#  undef CurrentTime
 #endif
 
 namespace WebCore {
@@ -200,12 +200,6 @@ class AudioContext final : public DOMEventTargetHelper,
   already_AddRefed<Promise> Resume(ErrorResult& aRv);
   already_AddRefed<Promise> Close(ErrorResult& aRv);
   IMPL_EVENT_HANDLER(statechange)
-
-  
-  
-  
-  void SuspendFromChrome();
-  void ResumeFromChrome();
 
   already_AddRefed<AudioBufferSourceNode> CreateBufferSource(ErrorResult& aRv);
 
@@ -385,9 +379,6 @@ class AudioContext final : public DOMEventTargetHelper,
   bool mIsDisconnecting;
   
   bool mWasAllowedToStart;
-
-  
-  bool mSuspendedByContent;
 
   
   

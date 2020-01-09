@@ -16,7 +16,7 @@
 
 
 
-#define FPU_EXCEPTION_MASK 0x3f
+#  define FPU_EXCEPTION_MASK 0x3f
 
 
 
@@ -25,7 +25,7 @@
 
 
 
-#define FPU_STATUS_FLAGS 0xff
+#  define FPU_STATUS_FLAGS 0xff
 
 
 
@@ -34,7 +34,7 @@
 
 
 
-#define SSE_STATUS_FLAGS FPU_EXCEPTION_MASK
-#define SSE_EXCEPTION_MASK (FPU_EXCEPTION_MASK << 7)
+#  define SSE_STATUS_FLAGS FPU_EXCEPTION_MASK
+#  define SSE_EXCEPTION_MASK (FPU_EXCEPTION_MASK << 7)
 
 #endif

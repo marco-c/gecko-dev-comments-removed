@@ -16,18 +16,18 @@
 
 #ifdef XP_WIN
 
-#include "util/Windows.h"
-#include <psapi.h>
+#  include "util/Windows.h"
+#  include <psapi.h>
 
 #else
 
-#include <algorithm>
-#include <errno.h>
-#include <sys/mman.h>
-#include <sys/resource.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
+#  include <algorithm>
+#  include <errno.h>
+#  include <sys/mman.h>
+#  include <sys/resource.h>
+#  include <sys/stat.h>
+#  include <sys/types.h>
+#  include <unistd.h>
 
 #endif
 
@@ -272,7 +272,7 @@ static inline uint64_t GetNumberInRange(uint64_t minNum, uint64_t maxNum) {
   return minNum + rndNum;
 }
 
-#ifndef XP_WIN
+#  ifndef XP_WIN
 
 
 
@@ -353,7 +353,7 @@ static size_t FindAddressLimit() {
   
   return std::min(low + 1, size_t(47));
 }
-#endif  
+#  endif  
 
 #endif  
 
@@ -369,16 +369,16 @@ void InitMemorySubsystem() {
     allocGranularity = pageSize;
 #endif
 #ifdef JS_64BIT
-#ifdef XP_WIN
+#  ifdef XP_WIN
     minValidAddress = size_t(sysinfo.lpMinimumApplicationAddress);
     maxValidAddress = size_t(sysinfo.lpMaximumApplicationAddress);
     numAddressBits = mozilla::FloorLog2(maxValidAddress) + 1;
-#else
+#  else
     
     numAddressBits = FindAddressLimit();
     minValidAddress = allocGranularity;
     maxValidAddress = (UINT64_C(1) << numAddressBits) - 1 - allocGranularity;
-#endif
+#  endif
     
     uint64_t maxJSAddress = UINT64_C(0x00007fffffffffff) - allocGranularity;
     if (maxValidAddress > maxJSAddress) {

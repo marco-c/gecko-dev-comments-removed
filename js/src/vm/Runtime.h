@@ -35,7 +35,7 @@
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #ifdef DEBUG
-#include "js/Proxy.h"  
+#  include "js/Proxy.h"  
 #endif
 #include "js/Stream.h"
 #include "js/Symbol.h"

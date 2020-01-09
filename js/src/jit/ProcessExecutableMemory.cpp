@@ -21,7 +21,7 @@
 
 #include "gc/Memory.h"
 #ifdef JS_CODEGEN_ARM64
-#include "jit/arm64/vixl/Cpu-vixl.h"
+#  include "jit/arm64/vixl/Cpu-vixl.h"
 #endif
 #include "threading/LockGuard.h"
 #include "threading/Mutex.h"
@@ -29,24 +29,24 @@
 #include "vm/MutexIDs.h"
 
 #ifdef XP_WIN
-#include "mozilla/StackWalk_windows.h"
-#include "mozilla/WindowsVersion.h"
+#  include "mozilla/StackWalk_windows.h"
+#  include "mozilla/WindowsVersion.h"
 #else
-#include <sys/mman.h>
-#include <unistd.h>
+#  include <sys/mman.h>
+#  include <unistd.h>
 #endif
 
 #ifdef MOZ_VALGRIND
-#include <valgrind/valgrind.h>
+#  include <valgrind/valgrind.h>
 #endif
 
 using namespace js;
 using namespace js::jit;
 
 #ifdef XP_WIN
-#if defined(HAVE_64BIT_BUILD)
-#define NEED_JIT_UNWIND_HANDLING
-#endif
+#  if defined(HAVE_64BIT_BUILD)
+#    define NEED_JIT_UNWIND_HANDLING
+#  endif
 
 static void* ComputeRandomAllocationAddress() {
   
@@ -60,21 +60,21 @@ static void* ComputeRandomAllocationAddress() {
 
 
 
-#ifdef HAVE_64BIT_BUILD
+#  ifdef HAVE_64BIT_BUILD
   static const uintptr_t base = 0x0000000080000000;
   static const uintptr_t mask = 0x000003ffffff0000;
-#elif defined(_M_IX86) || defined(__i386__)
+#  elif defined(_M_IX86) || defined(__i386__)
   static const uintptr_t base = 0x04000000;
   static const uintptr_t mask = 0x3fff0000;
-#else
-#error "Unsupported architecture"
-#endif
+#  else
+#    error "Unsupported architecture"
+#  endif
 
   uint64_t rand = js::GenerateRandomSeed();
   return (void*)(base | (rand & mask));
 }
 
-#ifdef NEED_JIT_UNWIND_HANDLING
+#  ifdef NEED_JIT_UNWIND_HANDLING
 static js::JitExceptionHandler sJitExceptionHandler;
 
 JS_FRIEND_API void js::SetJitExceptionHandler(JitExceptionHandler handler) {
@@ -82,7 +82,7 @@ JS_FRIEND_API void js::SetJitExceptionHandler(JitExceptionHandler handler) {
   sJitExceptionHandler = handler;
 }
 
-#if defined(_M_ARM64)
+#    if defined(_M_ARM64)
 
 
 
@@ -103,7 +103,7 @@ struct UnwindInfo {
   uint32_t exceptionHandler;
 };
 static const unsigned ThunkLength = 20;
-#else
+#    else
 
 
 struct UnwindInfo {
@@ -116,7 +116,7 @@ struct UnwindInfo {
   ULONG exceptionHandler;
 };
 static const unsigned ThunkLength = 12;
-#endif
+#    endif
 
 struct ExceptionHandlerRecord {
   RUNTIME_FUNCTION runtimeFunction;
@@ -162,7 +162,7 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   
   
 
-#if defined(_M_ARM64)
+#    if defined(_M_ARM64)
   r->runtimeFunction.BeginAddress = pageSize;
   r->runtimeFunction.UnwindData = offsetof(ExceptionHandlerRecord, unwindInfo);
   static_assert(offsetof(ExceptionHandlerRecord, unwindInfo) % 4 == 0,
@@ -185,7 +185,7 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   thunk[2] = 0xf2c00000 | addr[2] << 5 | reg;  
   thunk[3] = 0xf2e00000 | addr[3] << 5 | reg;  
   thunk[4] = 0xd61f0000 | reg << 5;            
-#else
+#    else
   r->runtimeFunction.BeginAddress = pageSize;
   r->runtimeFunction.EndAddress = (DWORD)bytes;
   r->runtimeFunction.UnwindData = offsetof(ExceptionHandlerRecord, unwindInfo);
@@ -206,7 +206,7 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   
   r->thunk[10] = 0xff;
   r->thunk[11] = 0xe0;
-#endif
+#    endif
 
   DWORD oldProtect;
   if (!VirtualProtect(p, pageSize, PAGE_EXECUTE_READ, &oldProtect)) {
@@ -225,15 +225,15 @@ static void UnregisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   
   
 }
-#endif
+#  endif
 
 static void* ReserveProcessExecutableMemory(size_t bytes) {
-#ifdef NEED_JIT_UNWIND_HANDLING
+#  ifdef NEED_JIT_UNWIND_HANDLING
   size_t pageSize = gc::SystemPageSize();
   if (sJitExceptionHandler) {
     bytes += pageSize;
   }
-#endif
+#  endif
 
   void* p = nullptr;
   for (size_t i = 0; i < 10; i++) {
@@ -252,7 +252,7 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
     }
   }
 
-#ifdef NEED_JIT_UNWIND_HANDLING
+#  ifdef NEED_JIT_UNWIND_HANDLING
   if (sJitExceptionHandler) {
     if (!RegisterExecutableMemory(p, bytes, pageSize)) {
       VirtualFree(p, 0, MEM_RELEASE);
@@ -264,13 +264,13 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
   }
 
   RegisterJitCodeRegion((uint8_t*)p, bytes);
-#endif
+#  endif
 
   return p;
 }
 
 static void DeallocateProcessExecutableMemory(void* addr, size_t bytes) {
-#ifdef NEED_JIT_UNWIND_HANDLING
+#  ifdef NEED_JIT_UNWIND_HANDLING
   UnregisterJitCodeRegion((uint8_t*)addr, bytes);
 
   if (sJitExceptionHandler) {
@@ -278,7 +278,7 @@ static void DeallocateProcessExecutableMemory(void* addr, size_t bytes) {
     addr = (uint8_t*)addr - pageSize;
     UnregisterExecutableMemory(addr, bytes, pageSize);
   }
-#endif
+#  endif
 
   VirtualFree(addr, 0, MEM_RELEASE);
 }
@@ -315,19 +315,19 @@ static void DecommitPages(void* addr, size_t bytes) {
 static void* ComputeRandomAllocationAddress() {
   uint64_t rand = js::GenerateRandomSeed();
 
-#ifdef HAVE_64BIT_BUILD
+#  ifdef HAVE_64BIT_BUILD
   
   
   
   rand >>= 18;
-#else
+#  else
   
   
   
   
   rand >>= 34;
   rand += 512 * 1024 * 1024;
-#endif
+#  endif
 
   
   uintptr_t mask = ~uintptr_t(gc::SystemPageSize() - 1);
@@ -353,7 +353,7 @@ static void DeallocateProcessExecutableMemory(void* addr, size_t bytes) {
 }
 
 static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
-#ifdef MOZ_VALGRIND
+#  ifdef MOZ_VALGRIND
   
   
   
@@ -371,7 +371,7 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
   }
   
   
-#endif
+#  endif
   switch (protection) {
     case ProtectionSetting::Protected:
       return PROT_NONE;

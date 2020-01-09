@@ -19,7 +19,7 @@
 
 
 #ifdef CreateFile
-#undef CreateFile
+#  undef CreateFile
 #endif
 
 namespace mozilla {

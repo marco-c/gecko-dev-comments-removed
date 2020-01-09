@@ -43,7 +43,7 @@ class Lock {
     
     return true;
 #else
-#error Unsupported platform
+#  error Unsupported platform
 #endif
   }
 

@@ -257,7 +257,7 @@ struct TrackBound {
 
 
 #ifdef GetCurrentTime
-#undef GetCurrentTime
+#  undef GetCurrentTime
 #endif
 
 class MediaStream : public mozilla::LinkedListElement<MediaStream> {

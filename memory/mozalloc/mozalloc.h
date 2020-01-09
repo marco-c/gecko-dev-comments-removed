@@ -13,20 +13,20 @@
 
 
 #if defined(__cplusplus)
-#include <new>
+#  include <new>
 
 
 
 
-#include <cstdlib>
+#  include <cstdlib>
 #else
-#include <stdlib.h>
+#  include <stdlib.h>
 #endif
 
 #if defined(__cplusplus)
-#include "mozilla/fallible.h"
-#include "mozilla/mozalloc_abort.h"
-#include "mozilla/TemplateLib.h"
+#  include "mozilla/fallible.h"
+#  include "mozilla/mozalloc_abort.h"
+#  include "mozilla/TemplateLib.h"
 #endif
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
@@ -40,12 +40,12 @@ MOZ_BEGIN_EXTERN_C
 
 
 #ifndef free_impl
-#define free_impl free
-#define free_impl_
+#  define free_impl free
+#  define free_impl_
 #endif
 #ifndef malloc_impl
-#define malloc_impl malloc
-#define malloc_impl_
+#  define malloc_impl malloc
+#  define malloc_impl_
 #endif
 
 
@@ -113,19 +113,19 @@ MOZ_END_EXTERN_C
 
 
 
-#if defined(XP_MACOSX)
-#define MOZALLOC_EXPORT_NEW MFBT_API
-#else
-#define MOZALLOC_EXPORT_NEW
-#endif
+#  if defined(XP_MACOSX)
+#    define MOZALLOC_EXPORT_NEW MFBT_API
+#  else
+#    define MOZALLOC_EXPORT_NEW
+#  endif
 
 MOZALLOC_EXPORT_NEW
-#if defined(__GNUC__) && !defined(__clang__) && defined(__SANITIZE_ADDRESS__)
+#  if defined(__GNUC__) && !defined(__clang__) && defined(__SANITIZE_ADDRESS__)
 
 __attribute__((gnu_inline)) inline
-#else
+#  else
 MOZ_ALWAYS_INLINE_EVEN_DEBUG
-#endif
+#  endif
     void*
     operator new(size_t size) noexcept(false) {
   return moz_xmalloc(size);
@@ -166,7 +166,7 @@ MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator delete[](
   return free_impl(ptr);
 }
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
 
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator delete(
@@ -178,7 +178,7 @@ MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator delete[](
     void* ptr, size_t ) noexcept(true) {
   return free_impl(ptr);
 }
-#endif
+#  endif
 
 
 
@@ -236,12 +236,12 @@ class InfallibleAllocPolicy {
 #endif 
 
 #ifdef malloc_impl_
-#undef malloc_impl_
-#undef malloc_impl
+#  undef malloc_impl_
+#  undef malloc_impl
 #endif
 #ifdef free_impl_
-#undef free_impl_
-#undef free_impl
+#  undef free_impl_
+#  undef free_impl
 #endif
 
 #endif 

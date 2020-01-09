@@ -95,9 +95,9 @@
 
 #ifdef XP_WIN
 
-#ifdef CreateEvent
-#undef CreateEvent
-#endif
+#  ifdef CreateEvent
+#    undef CreateEvent
+#  endif
 #endif  
 
 static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);

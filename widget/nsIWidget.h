@@ -128,29 +128,29 @@ typedef void* nsNativeWidget;
 
 #define NS_RAW_NATIVE_IME_CONTEXT 14
 #ifdef XP_MACOSX
-#define NS_NATIVE_PLUGIN_PORT_QD 100
-#define NS_NATIVE_PLUGIN_PORT_CG 101
+#  define NS_NATIVE_PLUGIN_PORT_QD 100
+#  define NS_NATIVE_PLUGIN_PORT_CG 101
 #endif
 #ifdef XP_WIN
-#define NS_NATIVE_TSF_THREAD_MGR 100
-#define NS_NATIVE_TSF_CATEGORY_MGR 101
-#define NS_NATIVE_TSF_DISPLAY_ATTR_MGR 102
-#define NS_NATIVE_ICOREWINDOW 103  // winrt specific
-#define NS_NATIVE_CHILD_WINDOW 104
-#define NS_NATIVE_CHILD_OF_SHAREABLE_WINDOW 105
+#  define NS_NATIVE_TSF_THREAD_MGR 100
+#  define NS_NATIVE_TSF_CATEGORY_MGR 101
+#  define NS_NATIVE_TSF_DISPLAY_ATTR_MGR 102
+#  define NS_NATIVE_ICOREWINDOW 103  // winrt specific
+#  define NS_NATIVE_CHILD_WINDOW 104
+#  define NS_NATIVE_CHILD_OF_SHAREABLE_WINDOW 105
 #endif
 #if defined(MOZ_WIDGET_GTK)
 
-#define NS_NATIVE_PLUGIN_OBJECT_PTR 104
-#ifdef MOZ_X11
-#define NS_NATIVE_COMPOSITOR_DISPLAY 105
-#endif  
-#define NS_NATIVE_EGL_WINDOW 106
+#  define NS_NATIVE_PLUGIN_OBJECT_PTR 104
+#  ifdef MOZ_X11
+#    define NS_NATIVE_COMPOSITOR_DISPLAY 105
+#  endif  
+#  define NS_NATIVE_EGL_WINDOW 106
 #endif
 #ifdef MOZ_WIDGET_ANDROID
-#define NS_JAVA_SURFACE 100
-#define NS_PRESENTATION_WINDOW 101
-#define NS_PRESENTATION_SURFACE 102
+#  define NS_JAVA_SURFACE 100
+#  define NS_PRESENTATION_WINDOW 101
+#  define NS_PRESENTATION_SURFACE 102
 #endif
 
 
@@ -1460,6 +1460,12 @@ class nsIWidget : public nsISupports {
   virtual MOZ_MUST_USE nsresult BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
                                                 int32_t aHorizontal,
                                                 int32_t aVertical) = 0;
+
+  
+
+
+  virtual MOZ_MUST_USE nsresult
+  BeginMoveDrag(mozilla::WidgetMouseEvent* aEvent) = 0;
 
   enum Modifiers {
     CAPS_LOCK = 0x00000001,  

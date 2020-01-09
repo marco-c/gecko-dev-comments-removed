@@ -35,9 +35,9 @@
 
 
 #ifdef HAVE_SSIZE_T
-#define CTYPES_SSIZE_T ssize_t
+#  define CTYPES_SSIZE_T ssize_t
 #else
-#define CTYPES_SSIZE_T intptr_t
+#  define CTYPES_SSIZE_T intptr_t
 #endif
 
 

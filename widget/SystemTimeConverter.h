@@ -13,7 +13,7 @@
 
 
 #ifdef GetCurrentTime
-#undef GetCurrentTime
+#  undef GetCurrentTime
 #endif
 
 namespace mozilla {

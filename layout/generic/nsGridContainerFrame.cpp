@@ -6619,13 +6619,13 @@ nsGridContainerFrame::FindLastItemInGridOrder(
 #ifdef DEBUG
 void nsGridContainerFrame::SetInitialChildList(ChildListID aListID,
                                                nsFrameList& aChildList) {
-#ifdef DEBUG
+#  ifdef DEBUG
   ChildListIDs supportedLists = {kAbsoluteList, kFixedList, kPrincipalList};
   
   
   supportedLists += kBackdropList;
   MOZ_ASSERT(supportedLists.contains(aListID), "unexpected child list");
-#endif
+#  endif
 
   return nsContainerFrame::SetInitialChildList(aListID, aChildList);
 }

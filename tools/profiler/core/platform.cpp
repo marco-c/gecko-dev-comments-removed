@@ -77,64 +77,64 @@
 #include "js/TraceLoggerAPI.h"
 
 #if defined(XP_WIN)
-#include <processthreadsapi.h>  
+#  include <processthreadsapi.h>  
 #else
-#include <unistd.h>  
-#endif               
+#  include <unistd.h>  
+#endif                 
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#  include "GeckoTaskTracer.h"
 #endif
 
 #if defined(GP_OS_android)
-#include "FennecJNINatives.h"
-#include "FennecJNIWrappers.h"
+#  include "FennecJNINatives.h"
+#  include "FennecJNIWrappers.h"
 #endif
 
 
 
 #if defined(GP_PLAT_x86_windows)
-#define HAVE_NATIVE_UNWIND
-#define USE_FRAME_POINTER_STACK_WALK
+#  define HAVE_NATIVE_UNWIND
+#  define USE_FRAME_POINTER_STACK_WALK
 #endif
 
 
 
 #if defined(GP_PLAT_amd64_windows)
-#define HAVE_NATIVE_UNWIND
-#define USE_MOZ_STACK_WALK
+#  define HAVE_NATIVE_UNWIND
+#  define USE_MOZ_STACK_WALK
 #endif
 
 
 
 #if defined(GP_PLAT_arm64_windows)
-#define HAVE_NATIVE_UNWIND
-#define USE_MOZ_STACK_WALK
+#  define HAVE_NATIVE_UNWIND
+#  define USE_MOZ_STACK_WALK
 #endif
 
 
 
 
 #if defined(GP_OS_darwin) && defined(MOZ_PROFILING)
-#define HAVE_NATIVE_UNWIND
-#define USE_FRAME_POINTER_STACK_WALK
+#  define HAVE_NATIVE_UNWIND
+#  define USE_FRAME_POINTER_STACK_WALK
 #endif
 
 
 #if defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
-#define HAVE_NATIVE_UNWIND
-#define USE_EHABI_STACKWALK
-#include "EHABIStackWalk.h"
+#  define HAVE_NATIVE_UNWIND
+#  define USE_EHABI_STACKWALK
+#  include "EHABIStackWalk.h"
 #endif
 
 
 #if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux) ||    \
     defined(GP_PLAT_x86_android) || defined(GP_PLAT_mips64_linux) || \
     defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android)
-#define HAVE_NATIVE_UNWIND
-#define USE_LUL_STACKWALK
-#include "lul/LulMain.h"
-#include "lul/platform-linux-lul.h"
+#  define HAVE_NATIVE_UNWIND
+#  define USE_LUL_STACKWALK
+#  include "lul/LulMain.h"
+#  include "lul/platform-linux-lul.h"
 
 
 
@@ -145,9 +145,9 @@
 
 
 
-#if defined(MOZ_PROFILING)
-#define USE_FRAME_POINTER_STACK_WALK
-#endif
+#  if defined(MOZ_PROFILING)
+#    define USE_FRAME_POINTER_STACK_WALK
+#  endif
 #endif
 
 
@@ -155,17 +155,17 @@
 
 
 #if defined(USE_FRAME_POINTER_STACK_WALK) || defined(USE_MOZ_STACK_WALK)
-#define HAVE_FASTINIT_NATIVE_UNWIND
+#  define HAVE_FASTINIT_NATIVE_UNWIND
 #endif
 
 #ifdef MOZ_VALGRIND
-#include <valgrind/memcheck.h>
+#  include <valgrind/memcheck.h>
 #else
-#define VALGRIND_MAKE_MEM_DEFINED(_addr, _len) ((void)0)
+#  define VALGRIND_MAKE_MEM_DEFINED(_addr, _len) ((void)0)
 #endif
 
 #if defined(GP_OS_linux) || defined(GP_OS_android)
-#include <ucontext.h>
+#  include <ucontext.h>
 #endif
 
 using namespace mozilla;
@@ -1328,7 +1328,7 @@ static void DoEHABIBacktrace(PSLockRef aLock,
 #ifdef USE_LUL_STACKWALK
 
 
-#if defined(MOZ_HAVE_ASAN_BLACKLIST)
+#  if defined(MOZ_HAVE_ASAN_BLACKLIST)
 MOZ_ASAN_BLACKLIST static void ASAN_memcpy(void* aDst, const void* aSrc,
                                            size_t aLen) {
   
@@ -1342,7 +1342,7 @@ MOZ_ASAN_BLACKLIST static void ASAN_memcpy(void* aDst, const void* aSrc,
     dst[i] = src[i];
   }
 }
-#endif
+#  endif
 
 static void DoLULBacktrace(PSLockRef aLock,
                            const RegisteredThread& aRegisteredThread,
@@ -1356,33 +1356,33 @@ static void DoLULBacktrace(PSLockRef aLock,
   lul::UnwindRegs startRegs;
   memset(&startRegs, 0, sizeof(startRegs));
 
-#if defined(GP_PLAT_amd64_linux)
+#  if defined(GP_PLAT_amd64_linux)
   startRegs.xip = lul::TaggedUWord(mc->gregs[REG_RIP]);
   startRegs.xsp = lul::TaggedUWord(mc->gregs[REG_RSP]);
   startRegs.xbp = lul::TaggedUWord(mc->gregs[REG_RBP]);
-#elif defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
+#  elif defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
   startRegs.r15 = lul::TaggedUWord(mc->arm_pc);
   startRegs.r14 = lul::TaggedUWord(mc->arm_lr);
   startRegs.r13 = lul::TaggedUWord(mc->arm_sp);
   startRegs.r12 = lul::TaggedUWord(mc->arm_ip);
   startRegs.r11 = lul::TaggedUWord(mc->arm_fp);
   startRegs.r7 = lul::TaggedUWord(mc->arm_r7);
-#elif defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android)
+#  elif defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android)
   startRegs.pc = lul::TaggedUWord(mc->pc);
   startRegs.x29 = lul::TaggedUWord(mc->regs[29]);
   startRegs.x30 = lul::TaggedUWord(mc->regs[30]);
   startRegs.sp = lul::TaggedUWord(mc->sp);
-#elif defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android)
+#  elif defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android)
   startRegs.xip = lul::TaggedUWord(mc->gregs[REG_EIP]);
   startRegs.xsp = lul::TaggedUWord(mc->gregs[REG_ESP]);
   startRegs.xbp = lul::TaggedUWord(mc->gregs[REG_EBP]);
-#elif defined(GP_PLAT_mips64_linux)
+#  elif defined(GP_PLAT_mips64_linux)
   startRegs.pc = lul::TaggedUWord(mc->pc);
   startRegs.sp = lul::TaggedUWord(mc->gregs[29]);
   startRegs.fp = lul::TaggedUWord(mc->gregs[30]);
-#else
-#error "Unknown plat"
-#endif
+#  else
+#    error "Unknown plat"
+#  endif
 
   
   
@@ -1418,24 +1418,24 @@ static void DoLULBacktrace(PSLockRef aLock,
   lul::StackImage stackImg;
 
   {
-#if defined(GP_PLAT_amd64_linux)
+#  if defined(GP_PLAT_amd64_linux)
     uintptr_t rEDZONE_SIZE = 128;
     uintptr_t start = startRegs.xsp.Value() - rEDZONE_SIZE;
-#elif defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
+#  elif defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
     uintptr_t rEDZONE_SIZE = 0;
     uintptr_t start = startRegs.r13.Value() - rEDZONE_SIZE;
-#elif defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android)
+#  elif defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android)
     uintptr_t rEDZONE_SIZE = 0;
     uintptr_t start = startRegs.sp.Value() - rEDZONE_SIZE;
-#elif defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android)
+#  elif defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android)
     uintptr_t rEDZONE_SIZE = 0;
     uintptr_t start = startRegs.xsp.Value() - rEDZONE_SIZE;
-#elif defined(GP_PLAT_mips64_linux)
+#  elif defined(GP_PLAT_mips64_linux)
     uintptr_t rEDZONE_SIZE = 0;
     uintptr_t start = startRegs.sp.Value() - rEDZONE_SIZE;
-#else
-#error "Unknown plat"
-#endif
+#  else
+#    error "Unknown plat"
+#  endif
     uintptr_t end = reinterpret_cast<uintptr_t>(aRegisteredThread.StackTop());
     uintptr_t ws = sizeof(void*);
     start &= ~(ws - 1);
@@ -1458,11 +1458,11 @@ static void DoLULBacktrace(PSLockRef aLock,
       
       
       
-#if defined(MOZ_HAVE_ASAN_BLACKLIST)
+#  if defined(MOZ_HAVE_ASAN_BLACKLIST)
       ASAN_memcpy(&stackImg.mContents[0], (void*)start, nToCopy);
-#else
+#  else
       memcpy(&stackImg.mContents[0], (void*)start, nToCopy);
-#endif
+#  endif
       (void)VALGRIND_MAKE_MEM_DEFINED(&stackImg.mContents[0], nToCopy);
     }
   }
@@ -1493,17 +1493,17 @@ static void DoNativeBacktrace(PSLockRef aLock,
   
   
   
-#if defined(USE_LUL_STACKWALK)
+#  if defined(USE_LUL_STACKWALK)
   DoLULBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack);
-#elif defined(USE_EHABI_STACKWALK)
+#  elif defined(USE_EHABI_STACKWALK)
   DoEHABIBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack);
-#elif defined(USE_FRAME_POINTER_STACK_WALK)
+#  elif defined(USE_FRAME_POINTER_STACK_WALK)
   DoFramePointerBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack);
-#elif defined(USE_MOZ_STACK_WALK)
+#  elif defined(USE_MOZ_STACK_WALK)
   DoMozStackWalkBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack);
-#else
-#error "Invalid configuration"
-#endif
+#  else
+#    error "Invalid configuration"
+#  endif
 }
 #endif
 
@@ -2391,13 +2391,13 @@ void SamplerThread::Run() {
 
 
 #if defined(GP_OS_windows)
-#include "platform-win32.cpp"
+#  include "platform-win32.cpp"
 #elif defined(GP_OS_darwin)
-#include "platform-macos.cpp"
+#  include "platform-macos.cpp"
 #elif defined(GP_OS_linux) || defined(GP_OS_android)
-#include "platform-linux-android.cpp"
+#  include "platform-linux-android.cpp"
 #else
-#error "bad platform"
+#  error "bad platform"
 #endif
 
 UniquePlatformData AllocPlatformData(int aThreadId) {
@@ -3628,8 +3628,7 @@ void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {
 }
 
 static void racy_profiler_add_marker(
-    const char* aMarkerName, js::ProfilingStackFrame::Category aCategory,
-    UniquePtr<ProfilerMarkerPayload> aPayload) {
+    const char* aMarkerName, UniquePtr<ProfilerMarkerPayload> aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   
@@ -3649,12 +3648,11 @@ static void racy_profiler_add_marker(
                          ? aPayload->GetStartTime()
                          : TimeStamp::Now();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
-  racyRegisteredThread->AddPendingMarker(
-      aMarkerName, aCategory, std::move(aPayload), delta.ToMilliseconds());
+  racyRegisteredThread->AddPendingMarker(aMarkerName, std::move(aPayload),
+                                         delta.ToMilliseconds());
 }
 
 void profiler_add_marker(const char* aMarkerName,
-                         js::ProfilingStackFrame::Category aCategory,
                          UniquePtr<ProfilerMarkerPayload> aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
@@ -3663,19 +3661,11 @@ void profiler_add_marker(const char* aMarkerName,
     return;
   }
 
-  racy_profiler_add_marker(aMarkerName, aCategory, std::move(aPayload));
+  racy_profiler_add_marker(aMarkerName, std::move(aPayload));
 }
 
-void profiler_add_marker(const char* aMarkerName,
-                         js::ProfilingStackFrame::Category aCategory) {
-  profiler_add_marker(aMarkerName, aCategory, nullptr);
-}
-
-
-
-void profiler_add_js_marker(const char* aMarkerName) {
-  profiler_add_marker(aMarkerName, js::ProfilingStackFrame::Category::JS,
-                      nullptr);
+void profiler_add_marker(const char* aMarkerName) {
+  profiler_add_marker(aMarkerName, nullptr);
 }
 
 void profiler_add_network_marker(
@@ -3700,7 +3690,7 @@ void profiler_add_network_marker(
   char name[2048];
   SprintfLiteral(name, "Load %d: %s", id, PromiseFlatCString(spec).get());
   profiler_add_marker(
-      name, js::ProfilingStackFrame::Category::NETWORK,
+      name,
       MakeUnique<NetworkMarkerPayload>(
           static_cast<int64_t>(aChannelId), PromiseFlatCString(spec).get(),
           aType, aStart, aEnd, aPriority, aCount, aCacheDisposition, aTimings,
@@ -3709,9 +3699,7 @@ void profiler_add_network_marker(
 
 
 
-void profiler_add_marker_for_thread(int aThreadId,
-                                    js::ProfilingStackFrame::Category aCategory,
-                                    const char* aMarkerName,
+void profiler_add_marker_for_thread(int aThreadId, const char* aMarkerName,
                                     UniquePtr<ProfilerMarkerPayload> aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
@@ -3725,9 +3713,8 @@ void profiler_add_marker_for_thread(int aThreadId,
                          ? aPayload->GetStartTime()
                          : TimeStamp::Now();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
-  ProfilerMarker* marker =
-      new ProfilerMarker(aMarkerName, aCategory, aThreadId, std::move(aPayload),
-                         delta.ToMilliseconds());
+  ProfilerMarker* marker = new ProfilerMarker(
+      aMarkerName, aThreadId, std::move(aPayload), delta.ToMilliseconds());
 
 #ifdef DEBUG
   
@@ -3750,8 +3737,7 @@ void profiler_add_marker_for_thread(int aThreadId,
   buffer.AddEntry(ProfileBufferEntry::Marker(marker));
 }
 
-void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
-                      js::ProfilingStackFrame::Category aCategory,
+void profiler_tracing(const char* aCategory, const char* aMarkerName,
                       TracingKind aKind, const Maybe<nsID>& aDocShellId,
                       const Maybe<uint32_t>& aDocShellHistoryId) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
@@ -3763,13 +3749,12 @@ void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
     return;
   }
 
-  auto payload = MakeUnique<TracingMarkerPayload>(
-      aCategoryString, aKind, aDocShellId, aDocShellHistoryId);
-  racy_profiler_add_marker(aMarkerName, aCategory, std::move(payload));
+  auto payload = MakeUnique<TracingMarkerPayload>(aCategory, aKind, aDocShellId,
+                                                  aDocShellHistoryId);
+  racy_profiler_add_marker(aMarkerName, std::move(payload));
 }
 
-void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
-                      js::ProfilingStackFrame::Category aCategory,
+void profiler_tracing(const char* aCategory, const char* aMarkerName,
                       TracingKind aKind, UniqueProfilerBacktrace aCause,
                       const Maybe<nsID>& aDocShellId,
                       const Maybe<uint32_t>& aDocShellHistoryId) {
@@ -3782,10 +3767,9 @@ void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
     return;
   }
 
-  auto payload =
-      MakeUnique<TracingMarkerPayload>(aCategoryString, aKind, aDocShellId,
-                                       aDocShellHistoryId, std::move(aCause));
-  racy_profiler_add_marker(aMarkerName, aCategory, std::move(payload));
+  auto payload = MakeUnique<TracingMarkerPayload>(
+      aCategory, aKind, aDocShellId, aDocShellHistoryId, std::move(aCause));
+  racy_profiler_add_marker(aMarkerName, std::move(payload));
 }
 
 void profiler_set_js_context(JSContext* aCx) {
@@ -3893,14 +3877,14 @@ void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
           
           
           
-#if defined(USE_FRAME_POINTER_STACK_WALK)
+#  if defined(USE_FRAME_POINTER_STACK_WALK)
               DoFramePointerBacktrace(lock, registeredThread, aRegs,
                                       nativeStack);
-#elif defined(USE_MOZ_STACK_WALK)
+#  elif defined(USE_MOZ_STACK_WALK)
           DoMozStackWalkBacktrace(lock, registeredThread, aRegs, nativeStack);
-#else
-#error "Invalid configuration"
-#endif
+#  else
+#    error "Invalid configuration"
+#  endif
 
               MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
                           nativeStack, aCollector);

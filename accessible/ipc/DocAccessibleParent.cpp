@@ -13,12 +13,12 @@
 #include "nsCoreUtils.h"
 
 #if defined(XP_WIN)
-#include "AccessibleWrap.h"
-#include "Compatibility.h"
-#include "mozilla/mscom/PassthruProxy.h"
-#include "mozilla/mscom/Ptr.h"
-#include "nsWinUtils.h"
-#include "RootAccessible.h"
+#  include "AccessibleWrap.h"
+#  include "Compatibility.h"
+#  include "mozilla/mscom/PassthruProxy.h"
+#  include "mozilla/mscom/Ptr.h"
+#  include "nsWinUtils.h"
+#  include "RootAccessible.h"
 #endif
 
 namespace mozilla {
@@ -702,9 +702,9 @@ void DocAccessibleParent::SendParentCOMProxy() {
     return;
   }
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_CONTENT_SANDBOX)
   mParentProxyStream = holder.GetPreservedStream();
-#endif  
+#  endif  
 }
 
 void DocAccessibleParent::SetEmulatedWindowHandle(HWND aWindowHandle) {
@@ -716,7 +716,7 @@ void DocAccessibleParent::SetEmulatedWindowHandle(HWND aWindowHandle) {
 
 mozilla::ipc::IPCResult DocAccessibleParent::RecvGetWindowedPluginIAccessible(
     const WindowsHandle& aHwnd, IAccessibleHolder* aPluginCOMProxy) {
-#if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_CONTENT_SANDBOX)
   
   
   HWND childWnd = ::GetWindow(reinterpret_cast<HWND>(aHwnd), GW_CHILD);
@@ -738,9 +738,9 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvGetWindowedPluginIAccessible(
   aPluginCOMProxy->Set(IAccessibleHolder::COMPtrType(rawAccPlugin));
 
   return IPC_OK();
-#else
+#  else
   return IPC_FAIL(this, "Message unsupported in this build configuration");
-#endif
+#  endif
 }
 
 mozilla::ipc::IPCResult DocAccessibleParent::RecvFocusEvent(
@@ -779,7 +779,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvBatch(
     const uint64_t& aBatchType, nsTArray<BatchData>&& aData) {
   
   
-#if defined(ANDROID)
+#  if defined(ANDROID)
   nsTArray<ProxyAccessible*> proxies(aData.Length());
   for (size_t i = 0; i < aData.Length(); i++) {
     DocAccessibleParent* doc = static_cast<DocAccessibleParent*>(
@@ -790,7 +790,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvBatch(
     proxies.AppendElement(proxy);
   }
   ProxyBatch(this, aBatchType, proxies, aData);
-#endif  
+#  endif  
   return IPC_OK();
 }
 #endif  

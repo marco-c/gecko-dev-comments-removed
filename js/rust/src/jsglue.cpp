@@ -9,7 +9,7 @@
 
 #ifdef JS_DEBUG
 
-#define DEBUG 1
+#  define DEBUG 1
 #endif
 
 #include "jsapi.h"
@@ -581,15 +581,15 @@ bool AppendToAutoObjectVector(JS::AutoObjectVector* v, JSObject* obj) {
 void DeleteAutoObjectVector(JS::AutoObjectVector* v) { delete v; }
 
 #if defined(__linux__)
-#include <malloc.h>
+#  include <malloc.h>
 #elif defined(__APPLE__)
-#include <malloc/malloc.h>
+#  include <malloc/malloc.h>
 #elif defined(__MINGW32__) || defined(__MINGW64__)
 
 #elif defined(_MSC_VER)
 
 #else
-#error "unsupported platform"
+#  error "unsupported platform"
 #endif
 
 
@@ -603,7 +603,7 @@ static size_t MallocSizeOf(const void* aPtr) {
 #elif defined(_MSC_VER)
   return _msize((void*)aPtr);
 #else
-#error "unsupported platform"
+#  error "unsupported platform"
 #endif
 }
 

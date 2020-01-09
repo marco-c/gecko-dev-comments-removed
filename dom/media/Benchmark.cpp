@@ -25,7 +25,7 @@
 #include "nsIGfxInfo.h"
 
 #ifndef MOZ_WIDGET_ANDROID
-#include "WebMSample.h"
+#  include "WebMSample.h"
 #endif
 
 using namespace mozilla::gfx;
@@ -47,7 +47,7 @@ bool VP9Benchmark::ShouldRun() {
   
   return false;
 #else
-#if defined(MOZ_APPLEMEDIA)
+#  if defined(MOZ_APPLEMEDIA)
   const nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
   nsString vendorID, deviceID;
   gfxInfo->GetAdapterVendorID(vendorID);
@@ -57,7 +57,7 @@ bool VP9Benchmark::ShouldRun() {
     return false;
   }
   
-#endif
+#  endif
   return true;
 #endif
 }

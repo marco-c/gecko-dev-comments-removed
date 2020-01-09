@@ -20,9 +20,9 @@
 
 
 #ifdef WCHAR_T_IS_UTF16
-#define ICONV_WCHAR_T_ENCODING "UTF-16"
+#  define ICONV_WCHAR_T_ENCODING "UTF-16"
 #else
-#define ICONV_WCHAR_T_ENCODING "WCHAR_T"
+#  define ICONV_WCHAR_T_ENCODING "WCHAR_T"
 #endif
 
 

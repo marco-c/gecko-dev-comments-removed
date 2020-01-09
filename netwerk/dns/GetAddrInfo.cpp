@@ -25,10 +25,10 @@
 
 
 
-#undef UNICODE
-#include <ws2tcpip.h>
-#undef GetAddrInfo
-#include <windns.h>
+#  undef UNICODE
+#  include <ws2tcpip.h>
+#  undef GetAddrInfo
+#  include <windns.h>
 #endif
 
 namespace mozilla {

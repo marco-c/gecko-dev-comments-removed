@@ -5,12 +5,12 @@
 
 
 #if !defined(WMFAudioOutputSource_h_)
-#define WMFAudioOutputSource_h_
+#  define WMFAudioOutputSource_h_
 
-#include "MFTDecoder.h"
-#include "WMF.h"
-#include "WMFMediaDataDecoder.h"
-#include "mozilla/RefPtr.h"
+#  include "MFTDecoder.h"
+#  include "WMF.h"
+#  include "WMFMediaDataDecoder.h"
+#  include "mozilla/RefPtr.h"
 
 namespace mozilla {
 

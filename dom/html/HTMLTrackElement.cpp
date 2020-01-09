@@ -9,7 +9,7 @@
 #include "mozilla/dom/HTMLMediaElement.h"
 #ifdef XP_WIN
 
-#undef ERROR
+#  undef ERROR
 #endif
 #include "WebVTTListener.h"
 #include "mozilla/LoadInfo.h"

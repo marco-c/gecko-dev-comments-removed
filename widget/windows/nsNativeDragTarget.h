@@ -11,8 +11,8 @@
 #include <shlobj.h>
 
 #ifndef IDropTargetHelper
-#include <shobjidl.h>  
-#undef LogSeverity     // SetupAPI.h #defines this as DWORD
+#  include <shobjidl.h>  
+#  undef LogSeverity     // SetupAPI.h #defines this as DWORD
 #endif
 
 #include "mozilla/Attributes.h"

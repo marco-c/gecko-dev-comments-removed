@@ -17,7 +17,7 @@
 #if defined(DEBUG) || defined(MOZ_DUMP_PAINTING)
 
 
-#define DEBUG_FRAME_DUMP 1
+#  define DEBUG_FRAME_DUMP 1
 #endif
 
 class nsContainerFrame;

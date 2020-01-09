@@ -5,9 +5,9 @@
 
 
 #if !defined(PEMFactory_h_)
-#define PEMFactory_h_
+#  define PEMFactory_h_
 
-#include "PlatformEncoderModule.h"
+#  include "PlatformEncoderModule.h"
 
 namespace mozilla {
 

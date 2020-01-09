@@ -48,10 +48,10 @@ class nsLocalHandlerApp : public nsILocalHandlerApp {
 
 
 #ifdef XP_MACOSX
-#ifndef NSLOCALHANDLERAPPMAC_H_
-#include "mac/nsLocalHandlerAppMac.h"
+#  ifndef NSLOCALHANDLERAPPMAC_H_
+#    include "mac/nsLocalHandlerAppMac.h"
 typedef nsLocalHandlerAppMac PlatformLocalHandlerApp_t;
-#endif
+#  endif
 #else
 typedef nsLocalHandlerApp PlatformLocalHandlerApp_t;
 #endif

@@ -34,12 +34,12 @@ typedef struct _FILE_ID_INFO {
   FILE_ID_128 FileId;
 } FILE_ID_INFO;
 
-#define FileIdInfo ((FILE_INFO_BY_HANDLE_CLASS)18)
+#  define FileIdInfo ((FILE_INFO_BY_HANDLE_CLASS)18)
 
 #endif  
 
 #if !defined(STATUS_SUCCESS)
-#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
+#  define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 #endif  
 
 namespace mozilla {

@@ -4,12 +4,12 @@
 
 
 #if !defined(MediaSystemResourceManagerParent_h_)
-#define MediaSystemResourceManagerParent_h_
+#  define MediaSystemResourceManagerParent_h_
 
-#include "MediaSystemResourceManager.h"
-#include "MediaSystemResourceService.h"
-#include "MediaSystemResourceTypes.h"
-#include "mozilla/media/PMediaSystemResourceManagerParent.h"
+#  include "MediaSystemResourceManager.h"
+#  include "MediaSystemResourceService.h"
+#  include "MediaSystemResourceTypes.h"
+#  include "mozilla/media/PMediaSystemResourceManagerParent.h"
 
 namespace mozilla {
 namespace media {

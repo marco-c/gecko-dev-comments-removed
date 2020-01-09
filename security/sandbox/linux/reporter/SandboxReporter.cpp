@@ -23,11 +23,11 @@
 
 
 #if defined(__i386__)
-#define SANDBOX_ARCH_NAME "x86"
+#  define SANDBOX_ARCH_NAME "x86"
 #elif defined(__x86_64__)
-#define SANDBOX_ARCH_NAME "amd64"
+#  define SANDBOX_ARCH_NAME "amd64"
 #else
-#error "unrecognized architecture"
+#  error "unrecognized architecture"
 #endif
 
 namespace mozilla {

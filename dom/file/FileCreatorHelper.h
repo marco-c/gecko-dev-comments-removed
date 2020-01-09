@@ -15,7 +15,7 @@
 
 
 #ifdef CreateFile
-#undef CreateFile
+#  undef CreateFile
 #endif
 
 class nsIFile;

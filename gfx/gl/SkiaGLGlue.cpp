@@ -12,8 +12,8 @@
 
 
 #ifdef _WIN32
-#undef min
-#undef max
+#  undef min
+#  undef max
 #endif
 
 #include "GLContext.h"

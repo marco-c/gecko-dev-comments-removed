@@ -20,7 +20,7 @@
 
 
 #if defined(__ARM_PCS_VFP) || defined(XP_IOS)
-#define JS_CODEGEN_ARM_HARDFP
+#  define JS_CODEGEN_ARM_HARDFP
 #endif
 
 namespace js {
@@ -713,11 +713,11 @@ uint32_t GetARMFlags();
 bool UseHardFpABI();
 #else
 static inline bool UseHardFpABI() {
-#if defined(JS_CODEGEN_ARM_HARDFP)
+#  if defined(JS_CODEGEN_ARM_HARDFP)
   return true;
-#else
+#  else
   return false;
-#endif
+#  endif
 }
 #endif
 

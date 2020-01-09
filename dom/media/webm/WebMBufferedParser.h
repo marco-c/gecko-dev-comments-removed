@@ -4,12 +4,12 @@
 
 
 #if !defined(WebMBufferedParser_h_)
-#define WebMBufferedParser_h_
+#  define WebMBufferedParser_h_
 
-#include "nsISupportsImpl.h"
-#include "nsTArray.h"
-#include "mozilla/ReentrantMonitor.h"
-#include "MediaResource.h"
+#  include "nsISupportsImpl.h"
+#  include "nsTArray.h"
+#  include "mozilla/ReentrantMonitor.h"
+#  include "MediaResource.h"
 
 namespace mozilla {
 

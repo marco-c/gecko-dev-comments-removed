@@ -16,9 +16,9 @@
 #include <string.h>
 
 #if defined(WIN32)
-#include <windows.h>  
+#  include <windows.h>  
 #else
-#include <unistd.h>  
+#  include <unistd.h>  
 #endif
 
 #include "pkcs11.h"

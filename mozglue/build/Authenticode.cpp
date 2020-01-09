@@ -5,25 +5,25 @@
 
 
 #ifdef MOZ_MEMORY
-#define MOZ_MEMORY_IMPL
-#include "mozmemory_wrap.h"
-#define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
+#  define MOZ_MEMORY_IMPL
+#  include "mozmemory_wrap.h"
+#  define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
 
 
-#define MALLOC_DECL(name, return_type, ...) \
-  extern "C" MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
-#include "malloc_decls.h"
-#include "mozilla/mozalloc.h"
+#  define MALLOC_DECL(name, return_type, ...) \
+    extern "C" MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
+#  include "malloc_decls.h"
+#  include "mozilla/mozalloc.h"
 #endif
 
 
 #if defined(_WIN32_WINNT)
-#undef _WIN32_WINNT
-#define _WIN32_WINNT _WIN32_WINNT_WIN8
+#  undef _WIN32_WINNT
+#  define _WIN32_WINNT _WIN32_WINNT_WIN8
 #endif  
 #if defined(NTDDI_VERSION)
-#undef NTDDI_VERSION
-#define NTDDI_VERSION NTDDI_WIN8
+#  undef NTDDI_VERSION
+#  define NTDDI_VERSION NTDDI_WIN8
 #endif  
 
 #include "Authenticode.h"

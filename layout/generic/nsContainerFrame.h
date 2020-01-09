@@ -35,8 +35,8 @@ class nsOverflowContinuationTracker;
 
 
 
-#define CRAZY_COORD (10000000 * 60)
-#define CRAZY_SIZE(_x) (((_x) < -CRAZY_COORD) || ((_x) > CRAZY_COORD))
+#  define CRAZY_COORD (10000000 * 60)
+#  define CRAZY_SIZE(_x) (((_x) < -CRAZY_COORD) || ((_x) > CRAZY_COORD))
 #endif
 
 

@@ -4,13 +4,13 @@
 
 
 #if !defined(OpusDecoder_h_)
-#define OpusDecoder_h_
+#  define OpusDecoder_h_
 
-#include "PlatformDecoderModule.h"
+#  include "PlatformDecoderModule.h"
 
-#include "mozilla/Maybe.h"
-#include "nsAutoPtr.h"
-#include "nsTArray.h"
+#  include "mozilla/Maybe.h"
+#  include "nsAutoPtr.h"
+#  include "nsTArray.h"
 
 struct OpusMSDecoder;
 

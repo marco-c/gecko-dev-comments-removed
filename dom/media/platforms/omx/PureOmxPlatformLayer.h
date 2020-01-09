@@ -5,9 +5,9 @@
 
 
 #if !defined(PureOmxPlatformLayer_h_)
-#define PureOmxPlatformLayer_h_
+#  define PureOmxPlatformLayer_h_
 
-#include "OmxPlatformLayer.h"
+#  include "OmxPlatformLayer.h"
 
 namespace mozilla {
 

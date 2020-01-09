@@ -17,34 +17,34 @@
 #include "updatedefines.h"
 
 #ifdef XP_WIN
-#include <accctrl.h>
-#include <aclapi.h>
-#include <cstdarg>
-#include <errno.h>
-#include <objbase.h>
-#include <shellapi.h>
-#include <shlobj.h>
-#include <strsafe.h>
-#include <winerror.h>
-#include "nsWindowsHelpers.h"
-#include "win_dirent.h"
+#  include <accctrl.h>
+#  include <aclapi.h>
+#  include <cstdarg>
+#  include <errno.h>
+#  include <objbase.h>
+#  include <shellapi.h>
+#  include <shlobj.h>
+#  include <strsafe.h>
+#  include <winerror.h>
+#  include "nsWindowsHelpers.h"
+#  include "win_dirent.h"
 #endif
 
 #ifdef XP_WIN
 
 
 
-#define FALLBACK_VENDOR_NAME "Mozilla"
+#  define FALLBACK_VENDOR_NAME "Mozilla"
 
 
-#define UPDATE_PATH_MID_DIR_NAME "updates"
+#  define UPDATE_PATH_MID_DIR_NAME "updates"
 
 
 
-#define UPDATE_SUBDIRECTORY "updates"
+#  define UPDATE_SUBDIRECTORY "updates"
 
 
-#define PATCH_DIRECTORY "0"
+#  define PATCH_DIRECTORY "0"
 
 enum class WhichUpdateDir {
   CommonAppData,

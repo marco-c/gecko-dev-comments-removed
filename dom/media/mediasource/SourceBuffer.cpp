@@ -27,7 +27,7 @@
 
 
 #ifdef GetCurrentTime
-#undef GetCurrentTime
+#  undef GetCurrentTime
 #endif
 
 struct JSContext;

@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 #ifdef ANDROID
-#include <linux/ashmem.h>
+#  include <linux/ashmem.h>
 #endif
 
 #include "base/eintr_wrapper.h"
@@ -65,7 +65,7 @@ bool SharedMemory::AppendPosixShmPrefix(std::string* str, pid_t pid) {
   return false;
 #else
   *str += '/';
-#ifdef OS_LINUX
+#  ifdef OS_LINUX
   
   
   
@@ -82,12 +82,12 @@ bool SharedMemory::AppendPosixShmPrefix(std::string* str, pid_t pid) {
   if (kSnap) {
     StringAppendF(str, "snap.%s.", kSnap);
   }
-#endif  
+#  endif  
   
   
   StringAppendF(str, "org.mozilla.ipc.%d.", static_cast<int>(pid));
   return true;
-#endif  
+#endif    
 }
 
 bool SharedMemory::Create(size_t size) {

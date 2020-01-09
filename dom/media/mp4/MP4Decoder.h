@@ -4,11 +4,11 @@
 
 
 #if !defined(MP4Decoder_h_)
-#define MP4Decoder_h_
+#  define MP4Decoder_h_
 
-#include "mozilla/UniquePtr.h"
-#include "nsStringFwd.h"
-#include "nsTArray.h"
+#  include "mozilla/UniquePtr.h"
+#  include "nsStringFwd.h"
+#  include "nsTArray.h"
 
 namespace mozilla {
 

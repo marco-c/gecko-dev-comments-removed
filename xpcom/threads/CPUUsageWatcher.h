@@ -16,7 +16,7 @@
 
 
 #if defined(NIGHTLY_BUILD) && (defined(XP_WIN) || defined(XP_MACOSX))
-#define CPU_USAGE_WATCHER_ACTIVE
+#  define CPU_USAGE_WATCHER_ACTIVE
 #endif
 
 namespace mozilla {

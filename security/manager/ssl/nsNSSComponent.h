@@ -22,8 +22,8 @@
 #include "sslt.h"
 
 #ifdef XP_WIN
-#include "windows.h"  
-#include "wincrypt.h"
+#  include "windows.h"  
+#  include "wincrypt.h"
 #endif  
 
 class nsIDOMWindow;

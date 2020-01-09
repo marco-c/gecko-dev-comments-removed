@@ -5,10 +5,10 @@
 
 
 #if !defined(MediaSystemResourceMessageUtils_h_)
-#define MediaSystemResourceMessageUtils_h_
+#  define MediaSystemResourceMessageUtils_h_
 
-#include "ipc/IPCMessageUtils.h"
-#include "MediaSystemResourceTypes.h"
+#  include "ipc/IPCMessageUtils.h"
+#  include "MediaSystemResourceTypes.h"
 
 namespace IPC {
 

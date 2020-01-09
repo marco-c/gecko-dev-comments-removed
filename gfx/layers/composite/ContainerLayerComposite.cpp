@@ -38,7 +38,7 @@
 #include "GeckoProfiler.h"  
 
 #ifdef MOZ_GECKO_PROFILER
-#include "ProfilerMarkerPayload.h"  
+#  include "ProfilerMarkerPayload.h"  
 #endif
 
 #define CULLING_LOG(...)
@@ -101,7 +101,6 @@ static void PrintUniformityInfo(Layer* aLayer) {
 
   Point translation = transform.As2D().GetTranslation();
   profiler_add_marker("LayerTranslation",
-                      js::ProfilingStackFrame::Category::GRAPHICS,
                       MakeUnique<LayerTranslationMarkerPayload>(
                           aLayer, translation, TimeStamp::Now()));
 #endif

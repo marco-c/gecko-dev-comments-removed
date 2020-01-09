@@ -14,15 +14,15 @@
 #include "mozilla/TimeStamp.h"
 
 #ifdef MOZ_TASK_TRACER
-#include "GeckoTaskTracer.h"
+#  include "GeckoTaskTracer.h"
 #endif
 
 #if defined(OS_POSIX)
-#include "nsAutoPtr.h"
+#  include "nsAutoPtr.h"
 #endif
 
 #ifdef FUZZING
-#include "mozilla/ipc/Faulty.h"
+#  include "mozilla/ipc/Faulty.h"
 #endif
 
 namespace base {
@@ -318,10 +318,10 @@ class Message : public Pickle {
   bool ReadFileDescriptor(PickleIterator* iter,
                           base::FileDescriptor* descriptor) const;
 
-#if defined(OS_MACOSX)
+#  if defined(OS_MACOSX)
   void set_fd_cookie(uint32_t cookie) { header()->cookie = cookie; }
   uint32_t fd_cookie() const { return header()->cookie; }
-#endif
+#  endif
 #endif
 
   friend class Channel;
@@ -354,9 +354,9 @@ class Message : public Pickle {
     HeaderFlags flags;  
 #if defined(OS_POSIX)
     uint32_t num_fds;  
-#if defined(OS_MACOSX)
+#  if defined(OS_MACOSX)
     uint32_t cookie;  
-#endif
+#  endif
 #endif
     union {
       

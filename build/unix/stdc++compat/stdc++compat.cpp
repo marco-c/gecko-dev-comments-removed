@@ -38,8 +38,8 @@
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 18)
 
 
-#include <unordered_map>
-#include <tr1/unordered_map>
+#  include <unordered_map>
+#  include <tr1/unordered_map>
 namespace std {
 size_t __attribute__((weak))
 __detail::_Prime_rehash_policy::_M_next_bkt(size_t __n) const {
@@ -103,8 +103,8 @@ __attribute__((weak)) runtime_error::runtime_error(char const* s)
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 21)
 
-#define _GLIBCXX_THREAD_ABI_COMPAT 1
-#include <thread>
+#  define _GLIBCXX_THREAD_ABI_COMPAT 1
+#  include <thread>
 
 namespace std {
 
@@ -121,7 +121,7 @@ __attribute__((weak)) void thread::_M_start_thread(shared_ptr<_Impl_base> impl,
   _M_start_thread(std::move(impl));
 }
 
-#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 22)
+#  if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 22)
 
 
 struct StateWrapper : public thread::_Impl_base {
@@ -141,7 +141,7 @@ __attribute__((weak)) void thread::_M_start_thread(unique_ptr<_State> aState,
 
 
 __attribute__((weak)) thread::_State::~_State() = default;
-#endif
+#  endif
 }  
 #endif
 

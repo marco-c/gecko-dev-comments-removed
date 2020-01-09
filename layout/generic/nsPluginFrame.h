@@ -22,16 +22,16 @@
 #include "mozilla/webrender/WebRenderAPI.h"
 
 #ifdef XP_WIN
-#include <windows.h>  
+#  include <windows.h>  
 
-#undef GetMessage
-#undef CreateEvent
-#undef GetClassName
-#undef GetBinaryType
-#undef RemoveDirectory
-#undef LoadIcon
-#undef LoadImage
-#undef GetObject
+#  undef GetMessage
+#  undef CreateEvent
+#  undef GetClassName
+#  undef GetBinaryType
+#  undef RemoveDirectory
+#  undef LoadIcon
+#  undef LoadImage
+#  undef GetObject
 #endif
 
 class nsPresContext;
@@ -142,9 +142,9 @@ class nsPluginFrame final : public nsFrame,
   
 #ifdef ACCESSIBILITY
   virtual mozilla::a11y::AccType AccessibleType() override;
-#ifdef XP_WIN
+#  ifdef XP_WIN
   NS_IMETHOD GetPluginPort(HWND* aPort);
-#endif
+#  endif
 #endif
 
   

@@ -14,16 +14,16 @@
 #include "prio.h"
 
 #ifdef XP_WIN
-#include "nsIObserver.h"
-#include "nsIObserverService.h"
-#include "mozilla/ResultExtensions.h"
-#include "mozilla/Services.h"
-#include "nsIIdleService.h"
-#include "nsISimpleEnumerator.h"
-#include "nsIFile.h"
-#include "nsAutoPtr.h"
-#include "nsITimer.h"
-#include "nsCRT.h"
+#  include "nsIObserver.h"
+#  include "nsIObserverService.h"
+#  include "mozilla/ResultExtensions.h"
+#  include "mozilla/Services.h"
+#  include "nsIIdleService.h"
+#  include "nsISimpleEnumerator.h"
+#  include "nsIFile.h"
+#  include "nsAutoPtr.h"
+#  include "nsITimer.h"
+#  include "nsCRT.h"
 
 #endif
 
@@ -135,13 +135,13 @@ nsresult NS_OpenAnonymousTemporaryFile(PRFileDesc** aOutFileDesc) {
 
 
 
-#define TEMP_FILE_IDLE_TIME_S 30
+#  define TEMP_FILE_IDLE_TIME_S 30
 
 
 
-#define SCHEDULE_TIMEOUT_MS 3 * 60 * 1000
+#  define SCHEDULE_TIMEOUT_MS 3 * 60 * 1000
 
-#define XPCOM_SHUTDOWN_TOPIC "xpcom-shutdown"
+#  define XPCOM_SHUTDOWN_TOPIC "xpcom-shutdown"
 
 
 

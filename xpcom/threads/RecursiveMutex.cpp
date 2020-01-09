@@ -7,9 +7,9 @@
 #include "mozilla/RecursiveMutex.h"
 
 #ifdef XP_WIN
-#include <windows.h>
+#  include <windows.h>
 
-#define NativeHandle(m) (reinterpret_cast<CRITICAL_SECTION*>(&m))
+#  define NativeHandle(m) (reinterpret_cast<CRITICAL_SECTION*>(&m))
 #endif
 
 namespace mozilla {
@@ -28,14 +28,14 @@ RecursiveMutex::RecursiveMutex(
   
   static const DWORD sLockSpinCount = 100;
 
-#if defined(RELEASE_OR_BETA)
+#  if defined(RELEASE_OR_BETA)
   
   
   
   DWORD flags = CRITICAL_SECTION_NO_DEBUG_INFO;
-#else
+#  else
   DWORD flags = 0;
-#endif
+#  endif
   BOOL r =
       InitializeCriticalSectionEx(NativeHandle(mMutex), sLockSpinCount, flags);
   MOZ_RELEASE_ASSERT(r);

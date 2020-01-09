@@ -22,8 +22,8 @@
 #include "mozilla/dom/FakePluginTagInitBinding.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-#include "mozilla/SandboxSettings.h"
-#include "nsCocoaFeatures.h"
+#  include "mozilla/SandboxSettings.h"
+#  include "nsCocoaFeatures.h"
 #endif
 
 using mozilla::dom::FakePluginTagInit;
@@ -370,14 +370,14 @@ void nsPluginTag::InitSandboxLevel() {
         Preferences::GetInt("dom.ipc.plugins.sandbox-level.default");
   }
 
-#if defined(_AMD64_)
+#  if defined(_AMD64_)
   
   
   
   if (mIsFlashPlugin && mSandboxLevel < 2) {
     mSandboxLevel = 2;
   }
-#endif 
+#  endif 
 
 #elif defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   if (mIsFlashPlugin) {

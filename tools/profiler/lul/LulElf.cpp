@@ -69,12 +69,12 @@
 
 #if defined(GP_PLAT_arm_android) && !defined(SHT_ARM_EXIDX)
 
-#define SHT_ARM_EXIDX (SHT_LOPROC + 1)
+#  define SHT_ARM_EXIDX (SHT_LOPROC + 1)
 #endif
 
 
 #ifndef EM_AARCH64
-#define EM_AARCH64 183
+#  define EM_AARCH64 183
 #endif
 
 

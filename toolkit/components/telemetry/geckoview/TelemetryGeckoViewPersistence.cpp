@@ -48,18 +48,18 @@ using PathCharPtr = const PathChar*;
 
 #ifdef DEBUG
 
-#ifdef MOZ_WIDGET_ANDROID
-#include <android/log.h>
-#define ANDROID_LOG(fmt, ...) \
-  __android_log_print(ANDROID_LOG_DEBUG, "Telemetry", fmt, ##__VA_ARGS__)
+#  ifdef MOZ_WIDGET_ANDROID
+#    include <android/log.h>
+#    define ANDROID_LOG(fmt, ...) \
+      __android_log_print(ANDROID_LOG_DEBUG, "Telemetry", fmt, ##__VA_ARGS__)
+#  else
+
+
+#    define ANDROID_LOG(...) printf_stderr("\n**** TELEMETRY: " __VA_ARGS__)
+#  endif  
 #else
 
-
-#define ANDROID_LOG(...) printf_stderr("\n**** TELEMETRY: " __VA_ARGS__)
-#endif  
-#else
-
-#define ANDROID_LOG(...)
+#  define ANDROID_LOG(...)
 #endif  
 
 

@@ -16,11 +16,11 @@
 
 
 #ifdef NS_NO_XPCOM
-#define NS_WARNING(msg)
-#define NS_ASSERTION(cond, msg)
-#define NS_ERROR(msg)
+#  define NS_WARNING(msg)
+#  define NS_ASSERTION(cond, msg)
+#  define NS_ERROR(msg)
 #else
-#include "nsDebug.h"  
+#  include "nsDebug.h"  
 #endif
 
 

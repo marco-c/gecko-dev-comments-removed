@@ -4,14 +4,14 @@
 
 
 #if !defined(DXVA2Manager_h_)
-#define DXVA2Manager_h_
+#  define DXVA2Manager_h_
 
-#include "MediaInfo.h"
-#include "WMF.h"
-#include "mozilla/Mutex.h"
-#include "nsAutoPtr.h"
-#include "mozilla/gfx/Rect.h"
-#include "d3d11.h"
+#  include "MediaInfo.h"
+#  include "WMF.h"
+#  include "mozilla/Mutex.h"
+#  include "nsAutoPtr.h"
+#  include "mozilla/gfx/Rect.h"
+#  include "d3d11.h"
 
 namespace mozilla {
 

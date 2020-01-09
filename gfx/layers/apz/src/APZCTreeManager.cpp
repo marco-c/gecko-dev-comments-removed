@@ -23,7 +23,7 @@
 #include "mozilla/gfx/Logging.h"            
 #include "mozilla/gfx/Point.h"              
 #ifdef MOZ_WIDGET_ANDROID
-#include "mozilla/jni/Utils.h"  
+#  include "mozilla/jni/Utils.h"  
 #endif
 #include "mozilla/layers/APZSampler.h"      
 #include "mozilla/layers/APZThreadUtils.h"  
@@ -53,9 +53,9 @@
 
 
 #if ENABLE_APZCTM_LOGGING
-#define APZCTM_LOG(...) printf_stderr("APZCTM: " __VA_ARGS__)
+#  define APZCTM_LOG(...) printf_stderr("APZCTM: " __VA_ARGS__)
 #else
-#define APZCTM_LOG(...)
+#  define APZCTM_LOG(...)
 #endif
 
 

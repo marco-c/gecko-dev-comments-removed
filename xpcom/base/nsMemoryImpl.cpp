@@ -15,13 +15,13 @@
 #include "mozilla/Services.h"
 
 #ifdef ANDROID
-#include <stdio.h>
+#  include <stdio.h>
 
 
 
 
 
-#define LOW_MEMORY_THRESHOLD_KB (384 * 1024)
+#  define LOW_MEMORY_THRESHOLD_KB (384 * 1024)
 #endif
 
 static nsMemoryImpl sGlobalMemory;

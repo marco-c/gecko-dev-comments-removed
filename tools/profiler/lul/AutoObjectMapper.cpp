@@ -17,8 +17,8 @@
 #include "AutoObjectMapper.h"
 
 #if defined(GP_OS_android)
-#include <dlfcn.h>
-#include "mozilla/Types.h"
+#  include <dlfcn.h>
+#  include "mozilla/Types.h"
 
 
 
@@ -28,9 +28,9 @@ MFBT_API void* __dl_mmap(void* handle, void* addr, size_t length, off_t offset);
 MFBT_API void __dl_munmap(void* handle, void* addr, size_t length);
 }
 
-#include "nsString.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsDirectoryServiceDefs.h"
+#  include "nsString.h"
+#  include "nsDirectoryServiceUtils.h"
+#  include "nsDirectoryServiceDefs.h"
 #endif
 
 

@@ -5,19 +5,19 @@
 
 
 #if !defined(OmxDataDecoder_h_)
-#define OmxDataDecoder_h_
+#  define OmxDataDecoder_h_
 
-#include "mozilla/Monitor.h"
-#include "mozilla/StateWatching.h"
+#  include "mozilla/Monitor.h"
+#  include "mozilla/StateWatching.h"
 
-#include "AudioCompactor.h"
-#include "ImageContainer.h"
-#include "MediaInfo.h"
-#include "PlatformDecoderModule.h"
+#  include "AudioCompactor.h"
+#  include "ImageContainer.h"
+#  include "MediaInfo.h"
+#  include "PlatformDecoderModule.h"
 
-#include "OMX_Component.h"
+#  include "OMX_Component.h"
 
-#include "OmxPromiseLayer.h"
+#  include "OmxPromiseLayer.h"
 
 namespace mozilla {
 

@@ -4,23 +4,23 @@
 
 
 #if !defined(AudioStream_h_)
-#define AudioStream_h_
+#  define AudioStream_h_
 
-#include "AudioSampleFormat.h"
-#include "CubebUtils.h"
-#include "MediaInfo.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
-#include "nsAutoPtr.h"
-#include "nsCOMPtr.h"
-#include "nsThreadUtils.h"
-#include "soundtouch/SoundTouchFactory.h"
+#  include "AudioSampleFormat.h"
+#  include "CubebUtils.h"
+#  include "MediaInfo.h"
+#  include "mozilla/Monitor.h"
+#  include "mozilla/RefPtr.h"
+#  include "mozilla/TimeStamp.h"
+#  include "mozilla/UniquePtr.h"
+#  include "nsAutoPtr.h"
+#  include "nsCOMPtr.h"
+#  include "nsThreadUtils.h"
+#  include "soundtouch/SoundTouchFactory.h"
 
-#if defined(XP_WIN)
-#include "mozilla/audio/AudioNotificationReceiver.h"
-#endif
+#  if defined(XP_WIN)
+#    include "mozilla/audio/AudioNotificationReceiver.h"
+#  endif
 
 namespace mozilla {
 
@@ -152,9 +152,9 @@ class AudioBufferWriter : private AudioBufferCursor {
 
 
 class AudioStream final
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
     : public audio::DeviceChangeListener
-#endif
+#  endif
 {
   virtual ~AudioStream();
 
@@ -218,10 +218,10 @@ class AudioStream final
   
   void Resume();
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   
   void ResetDefaultDevice() override;
-#endif
+#  endif
 
   
   

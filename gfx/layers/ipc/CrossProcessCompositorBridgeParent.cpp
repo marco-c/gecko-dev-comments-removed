@@ -14,7 +14,7 @@
 #include "base/task.h"                
 #include "base/thread.h"              
 #ifdef XP_WIN
-#include "mozilla/gfx/DeviceManagerDx.h"  
+#  include "mozilla/gfx/DeviceManagerDx.h"  
 #endif
 #include "mozilla/ipc/Transport.h"           
 #include "mozilla/layers/AnimationHelper.h"  
@@ -380,8 +380,7 @@ void CrossProcessCompositorBridgeParent::ShadowLayersUpdated(
       }
     };
     profiler_add_marker_for_thread(
-        profiler_current_thread_id(),
-        js::ProfilingStackFrame::Category::GRAPHICS, "CONTENT_FULL_PAINT_TIME",
+        profiler_current_thread_id(), "CONTENT_FULL_PAINT_TIME",
         MakeUnique<ContentBuildPayload>(aInfo.transactionStart(), endTime));
   }
 #endif

@@ -13,7 +13,7 @@
 
 
 #ifdef KeyPress
-#undef KeyPress
+#  undef KeyPress
 #endif
 
 class nsMenuFrame;

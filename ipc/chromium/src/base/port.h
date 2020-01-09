@@ -11,11 +11,11 @@
 #include "build/build_config.h"
 
 #ifdef COMPILER_MSVC
-#define GG_LONGLONG(x) x##I64
-#define GG_ULONGLONG(x) x##UI64
+#  define GG_LONGLONG(x) x##I64
+#  define GG_ULONGLONG(x) x##UI64
 #else
-#define GG_LONGLONG(x) x##LL
-#define GG_ULONGLONG(x) x##ULL
+#  define GG_LONGLONG(x) x##LL
+#  define GG_ULONGLONG(x) x##ULL
 #endif
 
 
@@ -46,20 +46,20 @@ namespace base {
 
 
 #if defined(COMPILER_GCC)
-#define base_va_copy(_a, _b) ::va_copy(_a, _b)
+#  define base_va_copy(_a, _b) ::va_copy(_a, _b)
 #elif defined(COMPILER_MSVC)
-#define base_va_copy(_a, _b) (_a = _b)
+#  define base_va_copy(_a, _b) (_a = _b)
 #else
-#error No va_copy for your compiler
+#  error No va_copy for your compiler
 #endif
 
 }  
 
 
 #if defined(OS_WIN)
-#define API_CALL __stdcall
+#  define API_CALL __stdcall
 #elif defined(OS_LINUX) || defined(OS_MACOSX)
-#define API_CALL
+#  define API_CALL
 #endif
 
 #endif  

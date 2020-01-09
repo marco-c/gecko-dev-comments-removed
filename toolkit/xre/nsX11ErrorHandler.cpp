@@ -119,7 +119,7 @@ int X11Error(Display *display, XErrorEvent *event) {
   
   notes.AppendLiteral("; id=0x");
   notes.AppendInt(uint32_t(event->resourceid), 16);
-#ifdef MOZ_X11
+#  ifdef MOZ_X11
   
   
   
@@ -128,7 +128,7 @@ int X11Error(Display *display, XErrorEvent *event) {
         "\nRe-running with MOZ_X_SYNC=1 in the environment may give a more "
         "helpful backtrace.");
   }
-#endif
+#  endif
 #endif
 
   MOZ_CRASH_UNSAFE_OOL(notes.get());

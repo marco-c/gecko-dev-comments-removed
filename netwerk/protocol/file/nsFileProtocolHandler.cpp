@@ -18,18 +18,18 @@
 
 
 #ifdef XP_WIN
-#include <shlobj.h>
-#include <intshcut.h>
-#include "nsIFileURL.h"
-#ifdef CompareString
-#undef CompareString
-#endif
+#  include <shlobj.h>
+#  include <intshcut.h>
+#  include "nsIFileURL.h"
+#  ifdef CompareString
+#    undef CompareString
+#  endif
 #endif
 
 
 #ifdef XP_UNIX
-#include "nsINIParser.h"
-#define DESKTOP_ENTRY_SECTION "Desktop Entry"
+#  include "nsINIParser.h"
+#  define DESKTOP_ENTRY_SECTION "Desktop Entry"
 #endif
 
 

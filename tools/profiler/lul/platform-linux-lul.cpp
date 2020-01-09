@@ -32,13 +32,13 @@ void read_procmaps(lul::LUL* aLUL) {
 
     std::string nativePath = lib.GetNativeDebugPath();
 
-#if defined(GP_OS_android)
+#  if defined(GP_OS_android)
     
     AutoObjectMapperFaultyLib mapper(aLUL->mLog);
-#else
+#  else
     
     AutoObjectMapperPOSIX mapper(aLUL->mLog);
-#endif
+#  endif
 
     
     
@@ -63,7 +63,7 @@ void read_procmaps(lul::LUL* aLUL) {
   }
 
 #else
-#error "Unknown platform"
+#  error "Unknown platform"
 #endif
 }
 

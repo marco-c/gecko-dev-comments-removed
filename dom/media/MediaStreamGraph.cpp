@@ -48,7 +48,7 @@ namespace mozilla {
 
 LazyLogModule gMediaStreamGraphLog("MediaStreamGraph");
 #ifdef LOG
-#undef LOG
+#  undef LOG
 #endif  
 #define LOG(type, msg) MOZ_LOG(gMediaStreamGraphLog, type, msg)
 
@@ -912,7 +912,7 @@ void MediaStreamGraphImpl::NotifyInputData(const AudioDataValue* aBuffer,
     return;
   }
 #else
-#ifdef DEBUG
+#  ifdef DEBUG
   {
     MonitorAutoLock lock(mMonitor);
     
@@ -920,7 +920,7 @@ void MediaStreamGraphImpl::NotifyInputData(const AudioDataValue* aBuffer,
     
     MOZ_ASSERT(mInputDeviceID || CurrentDriver()->Switching());
   }
-#endif
+#  endif
   if (!mInputDeviceID) {
     return;
   }

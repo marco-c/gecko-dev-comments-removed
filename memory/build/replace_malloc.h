@@ -65,7 +65,7 @@
 
 
 #ifdef replace_malloc_bridge_h
-#error Do not include replace_malloc_bridge.h before replace_malloc.h. \
+#  error Do not include replace_malloc_bridge.h before replace_malloc.h. \
   In fact, you only need the latter.
 #endif
 
@@ -84,17 +84,17 @@ MOZ_BEGIN_EXTERN_C
 
 
 #ifndef MOZ_REPLACE_WEAK
-#define MOZ_REPLACE_WEAK
+#  define MOZ_REPLACE_WEAK
 #endif
 
 
 
 
 #ifdef MOZ_REPLACE_MALLOC_PREFIX
-#define replace_init MOZ_CONCAT(MOZ_REPLACE_MALLOC_PREFIX, _init)
-#define MOZ_REPLACE_PUBLIC
+#  define replace_init MOZ_CONCAT(MOZ_REPLACE_MALLOC_PREFIX, _init)
+#  define MOZ_REPLACE_PUBLIC
 #else
-#define MOZ_REPLACE_PUBLIC MOZ_EXPORT
+#  define MOZ_REPLACE_PUBLIC MOZ_EXPORT
 #endif
 
 struct ReplaceMallocBridge;

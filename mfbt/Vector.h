@@ -26,8 +26,8 @@
 
 
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4345)
+#  pragma warning(push)
+#  pragma warning(disable : 4345)
 #endif
 
 namespace mozilla {
@@ -378,8 +378,8 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
 
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4324)
+#  pragma warning(push)
+#  pragma warning(disable : 4324)
 #endif  
 
   template <size_t Capacity, size_t Dummy>
@@ -409,7 +409,7 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
   CRAndStorage<kInlineCapacity, 0> mTail;
 
 #ifdef _MSC_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif  
 
 #ifdef DEBUG
@@ -1479,7 +1479,7 @@ inline void Vector<T, N, AP>::swap(Vector& aOther) {
 }  
 
 #ifdef _MSC_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
 
 #endif 

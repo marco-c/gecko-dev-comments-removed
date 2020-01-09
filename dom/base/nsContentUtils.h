@@ -10,11 +10,11 @@
 #define nsContentUtils_h___
 
 #if defined(XP_WIN)
-#include <float.h>
+#  include <float.h>
 #endif
 
 #if defined(SOLARIS)
-#include <ieeefp.h>
+#  include <ieeefp.h>
 #endif
 
 #include "js/TypeDecls.h"
@@ -50,7 +50,7 @@
 
 #if defined(XP_WIN)
 
-#undef LoadImage
+#  undef LoadImage
 #endif
 
 class imgICache;
@@ -1214,7 +1214,7 @@ class nsContentUtils {
   
 
 
-  static bool IsChromeDoc(const Document* aDocument);
+  static bool IsChromeDoc(Document* aDocument);
 
   
 
@@ -3436,6 +3436,7 @@ class nsContentUtils {
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsFormAutofillAutocompleteEnabled;
   static bool sIsUAWidgetEnabled;
+  static bool sIsCustomElementsEnabled;
   static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;
   static bool sAnimationsAPICoreEnabled;

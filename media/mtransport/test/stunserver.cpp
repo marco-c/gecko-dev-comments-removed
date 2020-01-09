@@ -84,7 +84,7 @@
 
 
 #ifdef UNIMPLEMENTED
-#undef UNIMPLEMENTED
+#  undef UNIMPLEMENTED
 #endif
 
 extern "C" {

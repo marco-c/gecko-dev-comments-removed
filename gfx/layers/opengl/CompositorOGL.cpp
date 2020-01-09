@@ -33,7 +33,7 @@
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/PTextureParent.h"  
 #ifdef XP_DARWIN
-#include "mozilla/layers/TextureSync.h"  
+#  include "mozilla/layers/TextureSync.h"  
 #endif
 #include "mozilla/mozalloc.h"  
 #include "nsAppRunner.h"
@@ -53,7 +53,7 @@
 #include "mozilla/gfx/Swizzle.h"
 
 #if MOZ_WIDGET_ANDROID
-#include "GeneratedJNIWrappers.h"
+#  include "GeneratedJNIWrappers.h"
 #endif
 
 #include "GeckoProfiler.h"

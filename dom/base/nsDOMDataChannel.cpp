@@ -33,7 +33,7 @@
 
 
 #ifdef GetBinaryType
-#undef GetBinaryType
+#  undef GetBinaryType
 #endif
 
 using namespace mozilla;

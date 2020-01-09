@@ -39,10 +39,10 @@
 #include "VRThread.h"
 
 #ifdef XP_WIN
-#include <process.h>
-#define getpid _getpid
+#  include <process.h>
+#  define getpid _getpid
 #else
-#include <unistd.h>
+#  include <unistd.h>
 #endif
 
 #include "nsXULAppAPI.h"
@@ -50,23 +50,23 @@
 #include "nsDirectoryServiceDefs.h"
 
 #if defined(XP_WIN)
-#include "gfxWindowsPlatform.h"
+#  include "gfxWindowsPlatform.h"
 #elif defined(XP_MACOSX)
-#include "gfxPlatformMac.h"
-#include "gfxQuartzSurface.h"
-#include "nsCocoaFeatures.h"
+#  include "gfxPlatformMac.h"
+#  include "gfxQuartzSurface.h"
+#  include "nsCocoaFeatures.h"
 #elif defined(MOZ_WIDGET_GTK)
-#include "gfxPlatformGtk.h"
+#  include "gfxPlatformGtk.h"
 #elif defined(ANDROID)
-#include "gfxAndroidPlatform.h"
+#  include "gfxAndroidPlatform.h"
 #endif
 #if defined(MOZ_WIDGET_ANDROID)
-#include "mozilla/jni/Utils.h"  
+#  include "mozilla/jni/Utils.h"  
 #endif
 
 #ifdef XP_WIN
-#include "mozilla/WindowsVersion.h"
-#include "mozilla/gfx/DeviceManagerDx.h"
+#  include "mozilla/WindowsVersion.h"
+#  include "mozilla/gfx/DeviceManagerDx.h"
 #endif
 
 #include "nsGkAtoms.h"
@@ -103,23 +103,23 @@
 #include "mozilla/gfx/Logging.h"
 
 #ifdef USE_SKIA
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshadow"
-#endif
-#include "skia/include/core/SkGraphics.h"
-#ifdef USE_SKIA_GPU
-#include "skia/include/gpu/GrContext.h"
-#include "skia/include/gpu/gl/GrGLInterface.h"
-#include "SkiaGLGlue.h"
-#endif
-#ifdef MOZ_ENABLE_FREETYPE
-#include "skia/include/ports/SkTypeface_cairo.h"
-#endif
-#include "mozilla/gfx/SkMemoryReporter.h"
-#ifdef __GNUC__
-#pragma GCC diagnostic pop  // -Wshadow
-#endif
+#  ifdef __GNUC__
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wshadow"
+#  endif
+#  include "skia/include/core/SkGraphics.h"
+#  ifdef USE_SKIA_GPU
+#    include "skia/include/gpu/GrContext.h"
+#    include "skia/include/gpu/gl/GrGLInterface.h"
+#    include "SkiaGLGlue.h"
+#  endif
+#  ifdef MOZ_ENABLE_FREETYPE
+#    include "skia/include/ports/SkTypeface_cairo.h"
+#  endif
+#  include "mozilla/gfx/SkMemoryReporter.h"
+#  ifdef __GNUC__
+#    pragma GCC diagnostic pop  // -Wshadow
+#  endif
 static const uint32_t kDefaultGlyphCacheSize = -1;
 
 #endif
@@ -590,7 +590,7 @@ void WebRenderDebugPrefChangeCallback(const char* aPrefName, void*) {
 #if defined(USE_SKIA)
 static uint32_t GetSkiaGlyphCacheSize() {
   
-#if !defined(MOZ_WIDGET_ANDROID)
+#  if !defined(MOZ_WIDGET_ANDROID)
   
   
   
@@ -602,9 +602,9 @@ static uint32_t GetSkiaGlyphCacheSize() {
   }
 
   return cacheSize;
-#else
+#  else
   return kDefaultGlyphCacheSize;
-#endif  
+#  endif  
 }
 #endif
 
@@ -685,12 +685,12 @@ static void FinishAsyncMemoryReport() {
 
 
 #define REPORT_INTERNER(id)                      \
-  helper.Report(aReport.interning.interners.id, \
+  helper.Report(aReport.interning.id##_interner, \
                 "interning/" #id "/interners");
 
 
 #define REPORT_DATA_STORE(id)                      \
-  helper.Report(aReport.interning.data_stores.id, \
+  helper.Report(aReport.interning.id##_data_store, \
                 "interning/" #id "/data-stores");
 
 NS_IMPL_ISUPPORTS(WebRenderMemoryReporter, nsIMemoryReporter)
@@ -929,7 +929,7 @@ void gfxPlatform::Init() {
 #elif defined(ANDROID)
   gPlatform = new gfxAndroidPlatform;
 #else
-#error "No gfxPlatform implementation available"
+#  error "No gfxPlatform implementation available"
 #endif
   gPlatform->InitAcceleration();
   gPlatform->InitWebRenderConfig();
@@ -965,9 +965,9 @@ void gfxPlatform::Init() {
 
 #ifdef USE_SKIA
   SkGraphics::Init();
-#ifdef MOZ_ENABLE_FREETYPE
+#  ifdef MOZ_ENABLE_FREETYPE
   SkInitCairoFT(gPlatform->FontHintingEnabled());
-#endif
+#  endif
 #endif
 
   InitLayersIPC();
@@ -1312,15 +1312,15 @@ gfxPlatform::~gfxPlatform() {
   
   
 #ifdef NS_FREE_PERMANENT_DATA
-#ifdef USE_SKIA
+#  ifdef USE_SKIA
   
   
   SkGraphics::PurgeFontCache();
-#endif
+#  endif
 
-#if MOZ_TREE_CAIRO
+#  if MOZ_TREE_CAIRO
   cairo_debug_reset_static_data();
-#endif
+#  endif
 #endif
 }
 
@@ -1634,11 +1634,11 @@ void gfxPlatform::InitializeSkiaCacheLimits() {
     
     cacheSizeLimit = std::min(cacheSizeLimit, (uint64_t)SIZE_MAX);
 
-#ifdef DEBUG
+#  ifdef DEBUG
     printf_stderr("Determined SkiaGL cache limits: Size %" PRIu64
                   ", Items: %i\n",
                   cacheSizeLimit, cacheItemLimit);
-#endif
+#  endif
 
     mSkiaGlue->GetGrContext()->setResourceCacheLimits(cacheItemLimit,
                                                       (size_t)cacheSizeLimit);

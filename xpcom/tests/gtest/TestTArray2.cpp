@@ -937,15 +937,15 @@ TEST(TArray, test_fallible) {
     if (!success) {
       
       oomed = true;
-#ifdef XP_WIN
+#  ifdef XP_WIN
       
       
       
       
       const size_t kOOMIterations = 7;
-#else
+#  else
       const size_t kOOMIterations = 8;
-#endif
+#  endif
       ASSERT_GE(i, kOOMIterations)
           << "Got OOM on iteration " << i << ". Too early!";
     }

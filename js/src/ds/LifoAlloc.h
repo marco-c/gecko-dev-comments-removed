@@ -217,43 +217,44 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk> {
 #endif
 
 #if defined(DEBUG)
-#define LIFO_CHUNK_PROTECT 1
+#  define LIFO_CHUNK_PROTECT 1
 #endif
 
   
   
   
 #if defined(DEBUG)
-#define LIFO_HAVE_MEM_CHECKS 1
+#  define LIFO_HAVE_MEM_CHECKS 1
 
   
   static constexpr int undefinedChunkMemory = 0xcd;
   
   static constexpr int uninitializedChunkMemory = 0xce;
 
-#define LIFO_MAKE_MEM_NOACCESS(addr, size)  \
-  do {                                      \
-    uint8_t* base = (addr);                 \
-    size_t sz = (size);                     \
-    MOZ_MAKE_MEM_UNDEFINED(base, sz);       \
-    memset(base, undefinedChunkMemory, sz); \
-    MOZ_MAKE_MEM_NOACCESS(base, sz);        \
-  } while (0)
+#  define LIFO_MAKE_MEM_NOACCESS(addr, size)  \
+    do {                                      \
+      uint8_t* base = (addr);                 \
+      size_t sz = (size);                     \
+      MOZ_MAKE_MEM_UNDEFINED(base, sz);       \
+      memset(base, undefinedChunkMemory, sz); \
+      MOZ_MAKE_MEM_NOACCESS(base, sz);        \
+    } while (0)
 
-#define LIFO_MAKE_MEM_UNDEFINED(addr, size)     \
-  do {                                          \
-    uint8_t* base = (addr);                     \
-    size_t sz = (size);                         \
-    MOZ_MAKE_MEM_UNDEFINED(base, sz);           \
-    memset(base, uninitializedChunkMemory, sz); \
-    MOZ_MAKE_MEM_UNDEFINED(base, sz);           \
-  } while (0)
+#  define LIFO_MAKE_MEM_UNDEFINED(addr, size)     \
+    do {                                          \
+      uint8_t* base = (addr);                     \
+      size_t sz = (size);                         \
+      MOZ_MAKE_MEM_UNDEFINED(base, sz);           \
+      memset(base, uninitializedChunkMemory, sz); \
+      MOZ_MAKE_MEM_UNDEFINED(base, sz);           \
+    } while (0)
 
 #elif defined(MOZ_HAVE_MEM_CHECKS)
-#define LIFO_HAVE_MEM_CHECKS 1
-#define LIFO_MAKE_MEM_NOACCESS(addr, size) MOZ_MAKE_MEM_NOACCESS((addr), (size))
-#define LIFO_MAKE_MEM_UNDEFINED(addr, size) \
-  MOZ_MAKE_MEM_UNDEFINED((addr), (size))
+#  define LIFO_HAVE_MEM_CHECKS 1
+#  define LIFO_MAKE_MEM_NOACCESS(addr, size) \
+    MOZ_MAKE_MEM_NOACCESS((addr), (size))
+#  define LIFO_MAKE_MEM_UNDEFINED(addr, size) \
+    MOZ_MAKE_MEM_UNDEFINED((addr), (size))
 #endif
 
 #ifdef LIFO_HAVE_MEM_CHECKS

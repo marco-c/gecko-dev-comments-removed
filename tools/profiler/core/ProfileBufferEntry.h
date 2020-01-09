@@ -58,7 +58,7 @@ class ProfilerMarker;
 
 
 #if !defined(GP_ARCH_arm)
-#pragma pack(push, 1)
+#  pragma pack(push, 1)
 #endif
 
 class ProfileBufferEntry {
@@ -127,7 +127,7 @@ class ProfileBufferEntry {
 #if !defined(GP_ARCH_arm)
 
 static_assert(sizeof(ProfileBufferEntry) == 9, "bad ProfileBufferEntry size");
-#pragma pack(pop)
+#  pragma pack(pop)
 #endif
 
 class UniqueJSONStrings {

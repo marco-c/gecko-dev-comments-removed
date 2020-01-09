@@ -53,7 +53,7 @@
 
 
 #ifdef Status
-#undef Status
+#  undef Status
 #endif
 
 #include "protobuf/LayerScopePacket.pb.h"

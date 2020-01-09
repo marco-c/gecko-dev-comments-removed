@@ -4,17 +4,17 @@
 
 
 #if !defined(VorbisDecoder_h_)
-#define VorbisDecoder_h_
+#  define VorbisDecoder_h_
 
-#include "AudioConverter.h"
-#include "PlatformDecoderModule.h"
-#include "mozilla/Maybe.h"
+#  include "AudioConverter.h"
+#  include "PlatformDecoderModule.h"
+#  include "mozilla/Maybe.h"
 
-#ifdef MOZ_TREMOR
-#include "tremor/ivorbiscodec.h"
-#else
-#include "vorbis/codec.h"
-#endif
+#  ifdef MOZ_TREMOR
+#    include "tremor/ivorbiscodec.h"
+#  else
+#    include "vorbis/codec.h"
+#  endif
 
 namespace mozilla {
 

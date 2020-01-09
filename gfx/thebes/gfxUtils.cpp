@@ -50,7 +50,7 @@
 #include "gfxPrefs.h"
 
 #ifdef XP_WIN
-#include "gfxWindowsPlatform.h"
+#  include "gfxWindowsPlatform.h"
 #endif
 
 using namespace mozilla;
@@ -267,12 +267,12 @@ void gfxUtils::ConvertBGRAtoRGBA(uint8_t* aData, uint32_t aLength) {
 
 
 static CompositionOp OptimalFillOp() {
-#ifdef XP_WIN
+#  ifdef XP_WIN
   if (gfxWindowsPlatform::GetPlatform()->IsDirect2DBackend()) {
     
     return CompositionOp::OP_OVER;
   }
-#endif
+#  endif
   return CompositionOp::OP_SOURCE;
 }
 

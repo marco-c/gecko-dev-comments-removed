@@ -34,11 +34,11 @@
 
 
 #if defined(XP_UNIX)
-#include <unistd.h>
+#  include <unistd.h>
 #elif defined(XP_WIN)
-#include <windows.h>
-#undef CreateFile
-#undef CREATE_NEW
+#  include <windows.h>
+#  undef CreateFile
+#  undef CREATE_NEW
 #else
 
 #endif

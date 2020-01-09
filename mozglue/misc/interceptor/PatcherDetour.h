@@ -62,7 +62,7 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
 #elif defined(_M_ARM64)
     size_t nBytes = 4;
 #else
-#error "Unknown processor type"
+#  error "Unknown processor type"
 #endif
 
     const auto& tramps = this->mVMPolicy.Items();
@@ -141,7 +141,7 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
       Unused << opcode1;
       MOZ_RELEASE_ASSERT(false, "Shouldn't get here");
 #else
-#error "Unknown processor type"
+#  error "Unknown processor type"
 #endif
     }
 
@@ -579,9 +579,9 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
       } else if (*origBytes == 0xc2) {
         
         
-#if defined(MOZILLA_INTERNAL_API)
+#  if defined(MOZILLA_INTERNAL_API)
         NS_WARNING("Cannot hook method -- RET opcode found");
-#endif
+#  endif
         return;
       } else {
         
@@ -1044,7 +1044,7 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
 #elif defined(_M_ARM64)
     MOZ_RELEASE_ASSERT(false, "Shouldn't get here");
 #else
-#error "Unknown processor type"
+#  error "Unknown processor type"
 #endif
 
     if (origBytes.GetOffset() > 100) {

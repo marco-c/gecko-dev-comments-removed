@@ -20,15 +20,15 @@
 #include "mozpkix/pkixtypes.h"
 
 #if defined(_MSC_VER)
-#pragma warning(push)
+#  pragma warning(push)
 
 
-#pragma warning(disable : 4324)
+#  pragma warning(disable : 4324)
 #endif 
 #include "mozilla/BasePrincipal.h"
 #if defined(_MSC_VER)
-#pragma warning(pop) /* popping the pragma in this file */
-#endif               
+#  pragma warning(pop) /* popping the pragma in this file */
+#endif                 
 
 namespace mozilla {
 namespace ct {

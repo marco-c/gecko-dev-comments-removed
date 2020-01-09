@@ -12,7 +12,7 @@
 #include "mozilla/MathAlgorithms.h"
 
 #ifdef SOLARIS
-#define _REENTRANT 1
+#  define _REENTRANT 1
 #endif
 #include <string.h>
 #include <time.h>
@@ -21,23 +21,23 @@
 #include "jsutil.h"
 
 #ifdef XP_WIN
-#include <windef.h>
-#include <winbase.h>
-#include <crtdbg.h>   
-#include <mmsystem.h> 
-#include <stdlib.h>   
+#  include <windef.h>
+#  include <winbase.h>
+#  include <crtdbg.h>   
+#  include <mmsystem.h> 
+#  include <stdlib.h>   
 
-#include "prinit.h"
+#  include "prinit.h"
 
 #endif
 
 #ifdef XP_UNIX
 
-#ifdef _SVID_GETTOD 
+#  ifdef _SVID_GETTOD 
 extern int gettimeofday(struct timeval* tv);
-#endif
+#  endif
 
-#include <sys/time.h>
+#  include <sys/time.h>
 
 #endif 
 
@@ -63,11 +63,11 @@ int64_t PRMJ_Now() {
 static int64_t PRMJ_NowImpl() {
   struct timeval tv;
 
-#ifdef _SVID_GETTOD 
+#  ifdef _SVID_GETTOD 
   gettimeofday(&tv);
-#else
+#  else
   gettimeofday(&tv, 0);
-#endif 
+#  endif 
 
   return int64_t(tv.tv_sec) * PRMJ_USEC_PER_SEC + int64_t(tv.tv_usec);
 }
@@ -150,9 +150,9 @@ void PRMJ_NowInit() {
 
 void PRMJ_NowShutdown() { DeleteCriticalSection(&calibration.data_lock); }
 
-#define MUTEX_LOCK(m) EnterCriticalSection(m)
-#define MUTEX_UNLOCK(m) LeaveCriticalSection(m)
-#define MUTEX_SETSPINCOUNT(m, c) SetCriticalSectionSpinCount((m), (c))
+#  define MUTEX_LOCK(m) EnterCriticalSection(m)
+#  define MUTEX_UNLOCK(m) LeaveCriticalSection(m)
+#  define MUTEX_SETSPINCOUNT(m, c) SetCriticalSectionSpinCount((m), (c))
 
 
 static int64_t PRMJ_NowImpl() {
@@ -268,12 +268,12 @@ size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
   size_t result = 0;
 #if defined(XP_UNIX) || defined(XP_WIN)
   struct tm a;
-#ifdef XP_WIN
+#  ifdef XP_WIN
   _invalid_parameter_handler oldHandler;
-#ifndef __MINGW32__
+#    ifndef __MINGW32__
   int oldReportMode;
-#endif  
-#endif  
+#    endif  
+#  endif    
 
   memset(&a, 0, sizeof(struct tm));
 
@@ -289,7 +289,7 @@ size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
 
 
 
-#if defined(HAVE_LOCALTIME_R) && defined(HAVE_TM_ZONE_TM_GMTOFF)
+#  if defined(HAVE_LOCALTIME_R) && defined(HAVE_TM_ZONE_TM_GMTOFF)
   char emptyTimeZoneId[] = "";
   {
     
@@ -324,7 +324,7 @@ size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
       a.tm_zone = emptyTimeZoneId;
     }
   }
-#endif
+#  endif
 
   
 
@@ -352,25 +352,25 @@ size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
 
 
 
-#ifdef XP_WIN
+#  ifdef XP_WIN
   oldHandler = _set_invalid_parameter_handler(PRMJ_InvalidParameterHandler);
-#ifndef __MINGW32__
+#    ifndef __MINGW32__
   
 
 
 
   oldReportMode = _CrtSetReportMode(_CRT_ASSERT, 0);
-#endif  
-#endif  
+#    endif  
+#  endif    
 
   result = strftime(buf, buflen, fmt, &a);
 
-#ifdef XP_WIN
+#  ifdef XP_WIN
   _set_invalid_parameter_handler(oldHandler);
-#ifndef __MINGW32__
+#    ifndef __MINGW32__
   _CrtSetReportMode(_CRT_ASSERT, oldReportMode);
-#endif  
-#endif  
+#    endif  
+#  endif    
 
   if (fake_tm_year && result) {
     char real_year[16];

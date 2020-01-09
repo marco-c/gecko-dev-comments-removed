@@ -8,7 +8,7 @@
 
 #include "gfxPrefs.h"
 #ifdef GFX_DECL_PREF
-#error "This is not supposed to be defined outside of gfxPrefs.h"
+#  error "This is not supposed to be defined outside of gfxPrefs.h"
 #endif
 
 

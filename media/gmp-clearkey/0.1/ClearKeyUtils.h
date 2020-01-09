@@ -29,18 +29,18 @@
 
 #if 0
 void CK_Log(const char* aFmt, ...);
-#define CK_LOGE(...) CK_Log(__VA_ARGS__)
-#define CK_LOGD(...) CK_Log(__VA_ARGS__)
-#define CK_LOGW(...) CK_Log(__VA_ARGS__)
-#define CK_LOGARRAY(APREPEND, ADATA, ADATA_SIZE) \
-  CK_LogArray(APREPEND, ADATA, ADATA_SIZE)
+#  define CK_LOGE(...) CK_Log(__VA_ARGS__)
+#  define CK_LOGD(...) CK_Log(__VA_ARGS__)
+#  define CK_LOGW(...) CK_Log(__VA_ARGS__)
+#  define CK_LOGARRAY(APREPEND, ADATA, ADATA_SIZE) \
+    CK_LogArray(APREPEND, ADATA, ADATA_SIZE)
 #else
 
 
-#define CK_LOGE(...)
-#define CK_LOGD(...)
-#define CK_LOGW(...)
-#define CK_LOGARRAY(APREPEND, ADATA, ADATA_SIZE)
+#  define CK_LOGE(...)
+#  define CK_LOGD(...)
+#  define CK_LOGW(...)
+#  define CK_LOGARRAY(APREPEND, ADATA, ADATA_SIZE)
 #endif
 
 typedef std::vector<uint8_t> KeyId;

@@ -43,7 +43,7 @@
 
 
 #ifndef __MINGW32__
-#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:wmainCRTStartup")
+#  pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:wmainCRTStartup")
 #endif
 
 using namespace Gdiplus;

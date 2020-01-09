@@ -11,43 +11,44 @@
 
 
 #ifndef malloc_decls_h
-#define malloc_decls_h
+#  define malloc_decls_h
 
-#include "mozjemalloc_types.h"
+#  include "mozjemalloc_types.h"
 
-#define MALLOC_FUNCS_MALLOC_BASE 1
-#define MALLOC_FUNCS_MALLOC_EXTRA 2
-#define MALLOC_FUNCS_MALLOC \
-  (MALLOC_FUNCS_MALLOC_BASE | MALLOC_FUNCS_MALLOC_EXTRA)
-#define MALLOC_FUNCS_JEMALLOC 4
-#define MALLOC_FUNCS_ARENA_BASE 8
-#define MALLOC_FUNCS_ARENA_ALLOC 16
-#define MALLOC_FUNCS_ARENA (MALLOC_FUNCS_ARENA_BASE | MALLOC_FUNCS_ARENA_ALLOC)
-#define MALLOC_FUNCS_ALL \
-  (MALLOC_FUNCS_MALLOC | MALLOC_FUNCS_JEMALLOC | MALLOC_FUNCS_ARENA)
+#  define MALLOC_FUNCS_MALLOC_BASE 1
+#  define MALLOC_FUNCS_MALLOC_EXTRA 2
+#  define MALLOC_FUNCS_MALLOC \
+    (MALLOC_FUNCS_MALLOC_BASE | MALLOC_FUNCS_MALLOC_EXTRA)
+#  define MALLOC_FUNCS_JEMALLOC 4
+#  define MALLOC_FUNCS_ARENA_BASE 8
+#  define MALLOC_FUNCS_ARENA_ALLOC 16
+#  define MALLOC_FUNCS_ARENA \
+    (MALLOC_FUNCS_ARENA_BASE | MALLOC_FUNCS_ARENA_ALLOC)
+#  define MALLOC_FUNCS_ALL \
+    (MALLOC_FUNCS_MALLOC | MALLOC_FUNCS_JEMALLOC | MALLOC_FUNCS_ARENA)
 
 #endif  
 
 #ifndef MALLOC_FUNCS
-#define MALLOC_FUNCS MALLOC_FUNCS_ALL
+#  define MALLOC_FUNCS MALLOC_FUNCS_ALL
 #endif
 
 #ifdef MALLOC_DECL
-#if MALLOC_FUNCS & MALLOC_FUNCS_MALLOC_BASE
+#  if MALLOC_FUNCS & MALLOC_FUNCS_MALLOC_BASE
 MALLOC_DECL(malloc, void*, size_t)
 MALLOC_DECL(calloc, void*, size_t, size_t)
 MALLOC_DECL(realloc, void*, void*, size_t)
 MALLOC_DECL(free, void, void*)
 MALLOC_DECL(memalign, void*, size_t, size_t)
-#endif
-#if MALLOC_FUNCS & MALLOC_FUNCS_MALLOC_EXTRA
+#  endif
+#  if MALLOC_FUNCS & MALLOC_FUNCS_MALLOC_EXTRA
 MALLOC_DECL(posix_memalign, int, void**, size_t, size_t)
 MALLOC_DECL(aligned_alloc, void*, size_t, size_t)
 MALLOC_DECL(valloc, void*, size_t)
 MALLOC_DECL(malloc_usable_size, size_t, usable_ptr_t)
 MALLOC_DECL(malloc_good_size, size_t, size_t)
-#endif
-#if MALLOC_FUNCS & MALLOC_FUNCS_JEMALLOC
+#  endif
+#  if MALLOC_FUNCS & MALLOC_FUNCS_JEMALLOC
 MALLOC_DECL(jemalloc_stats, void, jemalloc_stats_t*)
 
 
@@ -87,9 +88,9 @@ MALLOC_DECL(jemalloc_thread_local_arena, void, bool)
 
 
 MALLOC_DECL(jemalloc_ptr_info, void, const void*, jemalloc_ptr_info_t*)
-#endif
+#  endif
 
-#if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_BASE
+#  if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_BASE
 
 
 
@@ -100,9 +101,9 @@ MALLOC_DECL(moz_create_arena_with_params, arena_id_t, arena_params_t*)
 
 
 MALLOC_DECL(moz_dispose_arena, void, arena_id_t)
-#endif
+#  endif
 
-#if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_ALLOC
+#  if MALLOC_FUNCS & MALLOC_FUNCS_ARENA_ALLOC
 
 
 
@@ -117,7 +118,7 @@ MALLOC_DECL(moz_arena_calloc, void*, arena_id_t, size_t, size_t)
 MALLOC_DECL(moz_arena_realloc, void*, arena_id_t, void*, size_t)
 MALLOC_DECL(moz_arena_free, void, arena_id_t, void*)
 MALLOC_DECL(moz_arena_memalign, void*, arena_id_t, size_t, size_t)
-#endif
+#  endif
 
 #endif  
 

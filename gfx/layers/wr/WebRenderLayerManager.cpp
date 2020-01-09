@@ -22,7 +22,7 @@
 #include "WebRenderCanvasRenderer.h"
 
 #ifdef XP_WIN
-#include "gfxDWriteFonts.h"
+#  include "gfxDWriteFonts.h"
 #endif
 
 namespace mozilla {
@@ -248,7 +248,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     nsDisplayList* aDisplayList, nsDisplayListBuilder* aDisplayListBuilder,
     const nsTArray<wr::FilterOp>& aFilters,
     WebRenderBackgroundData* aBackground) {
-  AUTO_PROFILER_TRACING("Paint", "RenderLayers", GRAPHICS);
+  AUTO_PROFILER_TRACING("Paint", "RenderLayers");
 
   
   mAnimationReadyTime = TimeStamp::Now();
@@ -353,7 +353,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   mLastDisplayListSize = dl.dl.inner.capacity;
 
   {
-    AUTO_PROFILER_TRACING("Paint", "ForwardDPTransaction", GRAPHICS);
+    AUTO_PROFILER_TRACING("Paint", "ForwardDPTransaction");
     WrBridge()->EndTransaction(contentSize, dl, resourceUpdates,
                                size.ToUnknownSize(), mLatestTransactionId,
                                mScrollData, containsSVGGroup,

@@ -99,12 +99,12 @@ struct AllocHookType<void, Args...> {
 }  
 }  
 
-#define MALLOC_DECL(name, return_type, ...)                                 \
-  typename mozilla::detail::AllocHookType<return_type, ##__VA_ARGS__>::Type \
-      name##_hook;
+#  define MALLOC_DECL(name, return_type, ...)                                 \
+    typename mozilla::detail::AllocHookType<return_type, ##__VA_ARGS__>::Type \
+        name##_hook;
 
 typedef struct {
-#include "malloc_decls.h"
+#  include "malloc_decls.h"
   
   
   void (*realloc_hook_before)(void* aPtr);
@@ -156,7 +156,7 @@ struct ReplaceMallocBridge {
     return nullptr;
   }
 
-#ifndef REPLACE_MALLOC_IMPL
+#  ifndef REPLACE_MALLOC_IMPL
   
   
   static ReplaceMallocBridge* Get(int aMinimumVersion) {
@@ -164,13 +164,13 @@ struct ReplaceMallocBridge {
     return (sSingleton && sSingleton->mVersion >= aMinimumVersion) ? sSingleton
                                                                    : nullptr;
   }
-#endif
+#  endif
 
  protected:
   const int mVersion;
 };
 
-#ifndef REPLACE_MALLOC_IMPL
+#  ifndef REPLACE_MALLOC_IMPL
 
 
 
@@ -200,7 +200,7 @@ struct ReplaceMalloc {
                      : nullptr;
   }
 };
-#endif
+#  endif
 
 #endif  
 

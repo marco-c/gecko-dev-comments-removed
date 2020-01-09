@@ -3,10 +3,10 @@
 
 
 #if !defined(LOCALGL_H_)
-#define LOCALGL_H_
+#  define LOCALGL_H_
 
-#include "GLTypes.h"
-#include "GLConsts.h"
+#  include "GLTypes.h"
+#  include "GLConsts.h"
 
 namespace mozilla {
 namespace gl {
@@ -15,8 +15,8 @@ bool CheckContextLost(const GLContext* gl);
 }  
 }  
 
-#define MOZ_GL_ASSERT(glContext, expr) \
-  MOZ_ASSERT((expr) || mozilla::gl::CheckContextLost(glContext))
+#  define MOZ_GL_ASSERT(glContext, expr) \
+    MOZ_ASSERT((expr) || mozilla::gl::CheckContextLost(glContext))
 
 
 

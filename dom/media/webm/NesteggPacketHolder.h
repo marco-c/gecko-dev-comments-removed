@@ -4,11 +4,11 @@
 
 
 #if !defined(NesteggPacketHolder_h_)
-#define NesteggPacketHolder_h_
+#  define NesteggPacketHolder_h_
 
-#include <stdint.h>
-#include "nsAutoRef.h"
-#include "nestegg/nestegg.h"
+#  include <stdint.h>
+#  include "nsAutoRef.h"
+#  include "nestegg/nestegg.h"
 
 namespace mozilla {
 

@@ -534,7 +534,7 @@ MediaResult AppleATDecoder::SetupDecoder(MediaRawData* aSample) {
   mOutputFormat.mBitsPerChannel = 16;
   mOutputFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | 0;
 #else
-#error Unknown audio sample type
+#  error Unknown audio sample type
 #endif
   
   mOutputFormat.mFramesPerPacket = 1;

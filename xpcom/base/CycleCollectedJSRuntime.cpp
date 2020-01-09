@@ -88,7 +88,7 @@
 #include "GeckoProfiler.h"
 
 #ifdef MOZ_GECKO_PROFILER
-#include "ProfilerMarkerPayload.h"
+#  include "ProfilerMarkerPayload.h"
 #endif
 
 #include "nsIException.h"
@@ -99,7 +99,7 @@
 #ifdef NIGHTLY_BUILD
 
 
-#define MOZ_JS_DEV_ERROR_INTERCEPTOR = 1
+#  define MOZ_JS_DEV_ERROR_INTERCEPTOR = 1
 #endif  
 
 using namespace mozilla;
@@ -798,16 +798,14 @@ void CycleCollectedJSRuntime::TraverseNativeRoots(
   if (profiler_thread_is_being_profiled()) {
     if (aProgress == JS::GC_CYCLE_END) {
       profiler_add_marker(
-          "GCMajor", js::ProfilingStackFrame::Category::GCCC,
-          MakeUnique<GCMajorMarkerPayload>(aDesc.startTime(aContext),
-                                           aDesc.endTime(aContext),
-                                           aDesc.formatJSONProfiler(aContext)));
+          "GCMajor", MakeUnique<GCMajorMarkerPayload>(
+                         aDesc.startTime(aContext), aDesc.endTime(aContext),
+                         aDesc.formatJSONProfiler(aContext)));
     } else if (aProgress == JS::GC_SLICE_END) {
-      profiler_add_marker(
-          "GCSlice", js::ProfilingStackFrame::Category::GCCC,
-          MakeUnique<GCSliceMarkerPayload>(
-              aDesc.lastSliceStart(aContext), aDesc.lastSliceEnd(aContext),
-              aDesc.sliceToJSONProfiler(aContext)));
+      profiler_add_marker("GCSlice", MakeUnique<GCSliceMarkerPayload>(
+                                         aDesc.lastSliceStart(aContext),
+                                         aDesc.lastSliceEnd(aContext),
+                                         aDesc.sliceToJSONProfiler(aContext)));
     }
   }
 #endif
@@ -885,10 +883,10 @@ class MinorGCMarker : public TimelineMarker {
 #ifdef MOZ_GECKO_PROFILER
   else if (aProgress == JS::GCNurseryProgress::GC_NURSERY_COLLECTION_END &&
            profiler_thread_is_being_profiled()) {
-    profiler_add_marker("GCMinor", js::ProfilingStackFrame::Category::GCCC,
-                        MakeUnique<GCMinorMarkerPayload>(
-                            self->mLatestNurseryCollectionStart,
-                            TimeStamp::Now(), JS::MinorGcToJSON(aContext)));
+    profiler_add_marker(
+        "GCMinor", MakeUnique<GCMinorMarkerPayload>(
+                       self->mLatestNurseryCollectionStart, TimeStamp::Now(),
+                       JS::MinorGcToJSON(aContext)));
   }
 #endif
 

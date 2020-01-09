@@ -5,8 +5,8 @@
 
 
 #ifdef XP_WIN
-#undef UNICODE
-#undef _UNICODE
+#  undef UNICODE
+#  undef _UNICODE
 #endif
 
 #include "VTuneProfiler.h"

@@ -21,7 +21,7 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 
 #if defined(XP_WIN)
-#include <d3d11_1.h>
+#  include <d3d11_1.h>
 #elif defined(XP_MACOSX)
 class MacIOSurface;
 #endif

@@ -18,7 +18,7 @@
 #include "mozilla/layers/LayerMetricsWrapper.h"  
 #include "mozilla/layers/TextureHostOGL.h"       
 #ifdef XP_DARWIN
-#include "mozilla/layers/TextureSync.h"  
+#  include "mozilla/layers/TextureSync.h"  
 #endif
 #include "nsAString.h"
 #include "nsDebug.h"          

@@ -18,23 +18,23 @@
 
 
 #if defined(OS_WIN)
-#include <windows.h>
+#  include <windows.h>
 typedef DWORD PlatformThreadId;
 typedef void* PlatformThreadHandle;  
 #elif defined(OS_POSIX)
-#include <pthread.h>
+#  include <pthread.h>
 typedef pthread_t PlatformThreadHandle;
-#if defined(OS_LINUX) || defined(OS_OPENBSD) || defined(OS_SOLARIS) || \
-    defined(__GLIBC__)
-#include <unistd.h>
+#  if defined(OS_LINUX) || defined(OS_OPENBSD) || defined(OS_SOLARIS) || \
+      defined(__GLIBC__)
+#    include <unistd.h>
 typedef pid_t PlatformThreadId;
-#elif defined(OS_BSD)
-#include <sys/types.h>
+#  elif defined(OS_BSD)
+#    include <sys/types.h>
 typedef lwpid_t PlatformThreadId;
-#elif defined(OS_MACOSX)
-#include <mach/mach.h>
+#  elif defined(OS_MACOSX)
+#    include <mach/mach.h>
 typedef mach_port_t PlatformThreadId;
-#endif
+#  endif
 #endif
 
 

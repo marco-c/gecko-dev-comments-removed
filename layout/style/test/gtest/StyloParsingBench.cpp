@@ -21,9 +21,9 @@ using namespace mozilla::net;
 
 #if !defined(_WIN32) && !defined(_WIN64)
 
-#define PARSING_REPETITIONS 20
-#define SETPROPERTY_REPETITIONS (1000 * 1000)
-#define GETPROPERTY_REPETITIONS (1000 * 1000)
+#  define PARSING_REPETITIONS 20
+#  define SETPROPERTY_REPETITIONS (1000 * 1000)
+#  define GETPROPERTY_REPETITIONS (1000 * 1000)
 
 static void ServoParsingBench(const StyleUseCounters* aCounters) {
   auto css = AsBytes(MakeStringSpan(EXAMPLE_STYLESHEET));

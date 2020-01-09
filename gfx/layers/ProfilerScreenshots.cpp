@@ -12,7 +12,7 @@
 #include "gfxUtils.h"
 #include "nsThreadUtils.h"
 #ifdef MOZ_GECKO_PROFILER
-#include "ProfilerMarkerPayload.h"
+#  include "ProfilerMarkerPayload.h"
 #endif
 
 using namespace mozilla;
@@ -59,8 +59,7 @@ void ProfilerScreenshots::SubmitScreenshot(
 
   if (!succeeded) {
     PROFILER_ADD_MARKER(
-        "NoCompositorScreenshot because aPopulateSurface callback failed",
-        GRAPHICS);
+        "NoCompositorScreenshot because aPopulateSurface callback failed");
     ReturnSurface(backingSurface);
     return;
   }
@@ -70,8 +69,7 @@ void ProfilerScreenshots::SubmitScreenshot(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       PROFILER_ADD_MARKER(
           "NoCompositorScreenshot because ProfilerScreenshots thread creation "
-          "failed",
-          DOM);
+          "failed");
       ReturnSurface(backingSurface);
       return;
     }
@@ -105,8 +103,7 @@ void ProfilerScreenshots::SubmitScreenshot(
           if (NS_SUCCEEDED(rv)) {
             
             profiler_add_marker_for_thread(
-                sourceThread, js::ProfilingStackFrame::Category::GRAPHICS,
-                "CompositorScreenshot",
+                sourceThread, "CompositorScreenshot",
                 MakeUnique<ScreenshotPayload>(timeStamp, std::move(dataURL),
                                               originalSize, windowIdentifier));
           }

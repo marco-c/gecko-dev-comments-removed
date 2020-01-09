@@ -23,7 +23,7 @@
 #include "nsIWindowProvider.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
-#include "nsIFile.h"
+#  include "nsIFile.h"
 #endif
 
 struct ChromePackage;
@@ -637,7 +637,8 @@ class ContentChild final : public PContentChild,
 
   
   virtual PURLClassifierChild* AllocPURLClassifierChild(
-      const Principal& aPrincipal, bool* aSuccess) override;
+      const Principal& aPrincipal, const bool& aUseTrackingProtection,
+      bool* aSuccess) override;
   virtual bool DeallocPURLClassifierChild(PURLClassifierChild* aActor) override;
 
   

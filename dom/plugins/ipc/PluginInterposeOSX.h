@@ -38,7 +38,7 @@
 #ifndef __OBJC__
 class NSCursor;
 #else
-#import <Cocoa/Cocoa.h>
+#  import <Cocoa/Cocoa.h>
 #endif
 
 

@@ -156,8 +156,8 @@ class EnumeratedRange {
 
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtype-limits"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
 
 
@@ -176,7 +176,7 @@ inline detail::EnumeratedRange<EnumType> MakeEnumeratedRange(EnumType aEnd) {
 }
 
 #ifdef __GNUC__
-#pragma GCC diagnostic pop
+#  pragma GCC diagnostic pop
 #endif
 
 }  

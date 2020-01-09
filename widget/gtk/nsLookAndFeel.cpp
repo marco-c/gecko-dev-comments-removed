@@ -44,7 +44,7 @@ using mozilla::LookAndFeel;
                     (int)((c).blue * 255), (int)((c).alpha * 255)))
 
 #if !GTK_CHECK_VERSION(3, 12, 0)
-#define GTK_STATE_FLAG_LINK (static_cast<GtkStateFlags>(1 << 9))
+#  define GTK_STATE_FLAG_LINK (static_cast<GtkStateFlags>(1 << 9))
 #endif
 
 nsLookAndFeel::nsLookAndFeel()
@@ -692,10 +692,6 @@ nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
     case eIntID_GTKCSDTransparentBackground:
       aResult = nsWindow::TopLevelWindowUseARGBVisual();
       break;
-    case eIntID_GTKCSDReversedPlacement:
-      EnsureInit();
-      aResult = mCSDReversedPlacement;
-      break;
     case eIntID_PrefersReducedMotion: {
       GtkSettings* settings;
       gboolean enableAnimations;
@@ -1125,8 +1121,8 @@ void nsLookAndFeel::EnsureInit() {
   
   WidgetNodeType buttonLayout[TOOLBAR_BUTTONS];
 
-  int activeButtons = GetGtkHeaderBarButtonLayout(buttonLayout, TOOLBAR_BUTTONS,
-                                                  &mCSDReversedPlacement);
+  int activeButtons =
+      GetGtkHeaderBarButtonLayout(buttonLayout, TOOLBAR_BUTTONS);
   for (int i = 0; i < activeButtons; i++) {
     switch (buttonLayout[i]) {
       case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
