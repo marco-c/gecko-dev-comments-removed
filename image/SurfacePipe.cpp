@@ -54,20 +54,14 @@ uint8_t* AbstractSurfaceSink::DoAdvanceRow() {
 }
 
 nsresult SurfaceSink::Configure(const SurfaceConfig& aConfig) {
-  
   IntSize surfaceSize = aConfig.mOutputSize;
 
   
   
-  IntRect frameRect(0, 0, surfaceSize.width, surfaceSize.height);
-
   
   
-  
-  
-  nsresult rv = aConfig.mDecoder->AllocateFrame(
-      surfaceSize, frameRect, aConfig.mFormat,
-       0, aConfig.mAnimParams);
+  nsresult rv = aConfig.mDecoder->AllocateFrame(surfaceSize, aConfig.mFormat,
+                                                aConfig.mAnimParams);
   if (NS_FAILED(rv)) {
     return rv;
   }

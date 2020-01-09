@@ -33,17 +33,10 @@ AnimationSurfaceProvider::AnimationSurfaceProvider(
 
   
   
-  size_t pixelSize = !aDecoder->ShouldBlendAnimation() &&
-                             aDecoder->GetType() == DecoderType::GIF
-                         ? sizeof(uint8_t)
-                         : sizeof(uint32_t);
-
-  
-  
   IntSize frameSize = aSurfaceKey.Size();
   size_t threshold =
       (size_t(gfxPrefs::ImageAnimatedDecodeOnDemandThresholdKB()) * 1024) /
-      (pixelSize * frameSize.width * frameSize.height);
+      (sizeof(uint32_t) * frameSize.width * frameSize.height);
   size_t batch = gfxPrefs::ImageAnimatedDecodeOnDemandBatchSize();
 
   mFrames.reset(
@@ -413,13 +406,8 @@ void AnimationSurfaceProvider::RequestFrameDiscarding() {
   auto oldFrameQueue =
       static_cast<AnimationFrameRetainedBuffer*>(mFrames.get());
 
-  
-  
-  
-  
   MOZ_ASSERT(!mDecoder->GetFrameRecycler());
-  if (gfxPrefs::ImageAnimatedDecodeOnDemandRecycle() &&
-      mDecoder->ShouldBlendAnimation()) {
+  if (gfxPrefs::ImageAnimatedDecodeOnDemandRecycle()) {
     mFrames.reset(new AnimationFrameRecyclingQueue(std::move(*oldFrameQueue)));
     mDecoder->SetFrameRecycler(this);
   } else {

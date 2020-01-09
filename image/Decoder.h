@@ -275,14 +275,6 @@ class Decoder {
 
 
 
-  bool ShouldBlendAnimation() const {
-    return bool(mDecoderFlags & DecoderFlags::BLEND_ANIMATION);
-  }
-
-  
-
-
-
 
   Maybe<uint32_t> TakeCompleteFrameCount();
 
@@ -418,20 +410,11 @@ class Decoder {
 
 
 
-  const RawAccessFrameRef& GetRestoreFrameRef() const {
-    MOZ_ASSERT(ShouldBlendAnimation());
-    return mRestoreFrame;
-  }
+  const RawAccessFrameRef& GetRestoreFrameRef() const { return mRestoreFrame; }
 
-  const gfx::IntRect& GetRestoreDirtyRect() const {
-    MOZ_ASSERT(ShouldBlendAnimation());
-    return mRestoreDirtyRect;
-  }
+  const gfx::IntRect& GetRestoreDirtyRect() const { return mRestoreDirtyRect; }
 
-  const gfx::IntRect& GetRecycleRect() const {
-    MOZ_ASSERT(ShouldBlendAnimation());
-    return mRecycleRect;
-  }
+  const gfx::IntRect& GetRecycleRect() const { return mRecycleRect; }
 
   const gfx::IntRect& GetFirstFrameRefreshArea() const {
     return mFirstFrameRefreshArea;
@@ -543,11 +526,8 @@ class Decoder {
   
 
 
-
-
   nsresult AllocateFrame(const gfx::IntSize& aOutputSize,
-                         const gfx::IntRect& aFrameRect,
-                         gfx::SurfaceFormat aFormat, uint8_t aPaletteDepth = 0,
+                         gfx::SurfaceFormat aFormat,
                          const Maybe<AnimationParams>& aAnimParams = Nothing());
 
  private:
@@ -572,8 +552,7 @@ class Decoder {
   }
 
   RawAccessFrameRef AllocateFrameInternal(
-      const gfx::IntSize& aOutputSize, const gfx::IntRect& aFrameRect,
-      gfx::SurfaceFormat aFormat, uint8_t aPaletteDepth,
+      const gfx::IntSize& aOutputSize, gfx::SurfaceFormat aFormat,
       const Maybe<AnimationParams>& aAnimParams,
       RawAccessFrameRef&& aPreviousFrame);
 
@@ -582,8 +561,6 @@ class Decoder {
 
   uint8_t* mImageData;  
   uint32_t mImageDataLength;
-  uint32_t* mColormap;  
-  uint32_t mColormapSize;
 
  private:
   RefPtr<RasterImage> mImage;

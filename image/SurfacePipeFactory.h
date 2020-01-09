@@ -59,10 +59,6 @@ enum class SurfacePipeFlags {
                                  
                                  
                                  
-
-  BLEND_ANIMATION = 1 << 4  
-                            
-                            
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SurfacePipeFlags)
 
@@ -102,8 +98,7 @@ class SurfacePipeFactory {
     const bool downscale = aInputSize != aOutputSize;
     const bool removeFrameRect = !aFrameRect.IsEqualEdges(
         nsIntRect(0, 0, aInputSize.width, aInputSize.height));
-    const bool blendAnimation =
-        bool(aFlags & SurfacePipeFlags::BLEND_ANIMATION);
+    const bool blendAnimation = aAnimParams.isSome();
 
     
     
@@ -117,8 +112,6 @@ class SurfacePipeFactory {
       MOZ_ASSERT_UNREACHABLE("ADAM7 deinterlacing is handled by libpng");
       return Nothing();
     }
-
-    MOZ_ASSERT_IF(blendAnimation, aAnimParams);
 
     
     

@@ -355,7 +355,7 @@ void CheckGeneratedSurface(SourceSurface* aSurface, const IntRect& aRect,
 
 void CheckGeneratedPalettedImage(Decoder* aDecoder, const IntRect& aRect) {
   RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-  IntSize imageSize = currentFrame->GetImageSize();
+  IntSize imageSize = currentFrame->GetSize();
 
   
   

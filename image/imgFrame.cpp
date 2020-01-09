@@ -96,12 +96,10 @@ static bool ShouldUseHeap(const IntSize& aSize, int32_t aStride,
 }
 
 static already_AddRefed<DataSourceSurface> AllocateBufferForImage(
-    const IntSize& size, SurfaceFormat format, bool aIsAnimated = false,
-    bool aIsFullFrame = true) {
+    const IntSize& size, SurfaceFormat format, bool aIsAnimated = false) {
   int32_t stride = VolatileSurfaceStride(size, format);
 
-  if (gfxVars::GetUseWebRenderOrDefault() && gfxPrefs::ImageMemShared() &&
-      aIsFullFrame) {
+  if (gfxVars::GetUseWebRenderOrDefault() && gfxPrefs::ImageMemShared()) {
     RefPtr<SourceSurfaceSharedData> newSurf = new SourceSurfaceSharedData();
     if (newSurf->Init(size, stride, format)) {
       return newSurf.forget();
@@ -176,21 +174,6 @@ static bool ClearSurface(DataSourceSurface* aSurface, const IntSize& aSize,
   return true;
 }
 
-static bool AllowedImageAndFrameDimensions(const nsIntSize& aImageSize,
-                                           const nsIntRect& aFrameRect) {
-  if (!SurfaceCache::IsLegalSize(aImageSize)) {
-    return false;
-  }
-  if (!SurfaceCache::IsLegalSize(aFrameRect.Size())) {
-    return false;
-  }
-  nsIntRect imageRect(0, 0, aImageSize.width, aImageSize.height);
-  if (!imageRect.Contains(aFrameRect)) {
-    NS_WARNING("Animated image frame does not fit inside bounds of image");
-  }
-  return true;
-}
-
 imgFrame::imgFrame()
     : mMonitor("imgFrame"),
       mDecoded(0, 0, 0, 0),
@@ -204,10 +187,7 @@ imgFrame::imgFrame()
       mDisposalMethod(DisposalMethod::NOT_SPECIFIED),
       mBlendMethod(BlendMethod::OVER),
       mFormat(SurfaceFormat::UNKNOWN),
-      mPalettedImageData(nullptr),
-      mPaletteDepth(0),
-      mNonPremult(false),
-      mIsFullFrame(false) {}
+      mNonPremult(false) {}
 
 imgFrame::~imgFrame() {
 #ifdef DEBUG
@@ -215,141 +195,95 @@ imgFrame::~imgFrame() {
   MOZ_ASSERT(mAborted || AreAllPixelsWritten());
   MOZ_ASSERT(mAborted || mFinished);
 #endif
-
-  free(mPalettedImageData);
-  mPalettedImageData = nullptr;
 }
 
 nsresult imgFrame::InitForDecoder(const nsIntSize& aImageSize,
-                                  const nsIntRect& aRect, SurfaceFormat aFormat,
-                                  uint8_t aPaletteDepth, bool aNonPremult,
+                                  SurfaceFormat aFormat, bool aNonPremult,
                                   const Maybe<AnimationParams>& aAnimParams,
-                                  bool aIsFullFrame, bool aShouldRecycle) {
+                                  bool aShouldRecycle) {
   
   
-  if (!AllowedImageAndFrameDimensions(aImageSize, aRect)) {
+  if (!SurfaceCache::IsLegalSize(aImageSize)) {
     NS_WARNING("Should have legal image size");
     mAborted = true;
     return NS_ERROR_FAILURE;
   }
 
   mImageSize = aImageSize;
-  mFrameRect = aRect;
 
   
   
   
-  mDirtyRect = aRect;
+  mDirtyRect = GetRect();
 
   if (aAnimParams) {
     mBlendRect = aAnimParams->mBlendRect;
     mTimeout = aAnimParams->mTimeout;
     mBlendMethod = aAnimParams->mBlendMethod;
     mDisposalMethod = aAnimParams->mDisposalMethod;
-    mIsFullFrame = aAnimParams->mFrameNum == 0 || aIsFullFrame;
   } else {
-    mBlendRect = aRect;
-    mIsFullFrame = true;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (aPaletteDepth == 0 &&
-      !mFrameRect.IsEqualEdges(IntRect(IntPoint(), mImageSize))) {
-    MOZ_ASSERT_UNREACHABLE(
-        "Creating a non-paletted imgFrame with a "
-        "non-trivial frame rect");
-    return NS_ERROR_FAILURE;
+    mBlendRect = GetRect();
   }
 
   if (aShouldRecycle) {
     
     
     
-    MOZ_ASSERT(mIsFullFrame);
-    MOZ_ASSERT(aPaletteDepth == 0);
     MOZ_ASSERT(aAnimParams);
     mFormat = SurfaceFormat::B8G8R8A8;
   } else {
     mFormat = aFormat;
   }
 
-  mPaletteDepth = aPaletteDepth;
   mNonPremult = aNonPremult;
   mShouldRecycle = aShouldRecycle;
 
-  if (aPaletteDepth != 0) {
-    
-    if (aPaletteDepth > 8) {
-      NS_WARNING("Should have legal palette depth");
-      NS_ERROR("This Depth is not supported");
-      mAborted = true;
-      return NS_ERROR_FAILURE;
-    }
+  MOZ_ASSERT(!mLockedSurface, "Called imgFrame::InitForDecoder() twice?");
 
-    
-    
-    size_t dataSize = PaletteDataLength() + mFrameRect.Area();
-    mPalettedImageData =
-        static_cast<uint8_t*>(calloc(dataSize, sizeof(uint8_t)));
-    if (!mPalettedImageData) {
-      NS_WARNING("Call to calloc for paletted image data should succeed");
-    }
-    NS_ENSURE_TRUE(mPalettedImageData, NS_ERROR_OUT_OF_MEMORY);
-  } else {
-    MOZ_ASSERT(!mLockedSurface, "Called imgFrame::InitForDecoder() twice?");
+  bool postFirstFrame = aAnimParams && aAnimParams->mFrameNum > 0;
+  mRawSurface = AllocateBufferForImage(mImageSize, mFormat, postFirstFrame);
+  if (!mRawSurface) {
+    mAborted = true;
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
-    bool postFirstFrame = aAnimParams && aAnimParams->mFrameNum > 0;
-    mRawSurface = AllocateBufferForImage(mFrameRect.Size(), mFormat,
-                                         postFirstFrame, mIsFullFrame);
-    if (!mRawSurface) {
+  if (StaticPrefs::browser_measurement_render_anims_and_video_solid() &&
+      aAnimParams) {
+    mBlankRawSurface = AllocateBufferForImage(mImageSize, mFormat);
+    if (!mBlankRawSurface) {
       mAborted = true;
       return NS_ERROR_OUT_OF_MEMORY;
     }
+  }
 
-    if (StaticPrefs::browser_measurement_render_anims_and_video_solid() &&
-        aAnimParams) {
-      mBlankRawSurface = AllocateBufferForImage(mFrameRect.Size(), mFormat);
-      if (!mBlankRawSurface) {
-        mAborted = true;
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
-    }
+  mLockedSurface = CreateLockedSurface(mRawSurface, mImageSize, mFormat);
+  if (!mLockedSurface) {
+    NS_WARNING("Failed to create LockedSurface");
+    mAborted = true;
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
-    mLockedSurface =
-        CreateLockedSurface(mRawSurface, mFrameRect.Size(), mFormat);
-    if (!mLockedSurface) {
-      NS_WARNING("Failed to create LockedSurface");
+  if (mBlankRawSurface) {
+    mBlankLockedSurface =
+        CreateLockedSurface(mBlankRawSurface, mImageSize, mFormat);
+    if (!mBlankLockedSurface) {
+      NS_WARNING("Failed to create BlankLockedSurface");
       mAborted = true;
       return NS_ERROR_OUT_OF_MEMORY;
     }
+  }
 
-    if (mBlankRawSurface) {
-      mBlankLockedSurface =
-          CreateLockedSurface(mBlankRawSurface, mFrameRect.Size(), mFormat);
-      if (!mBlankLockedSurface) {
-        NS_WARNING("Failed to create BlankLockedSurface");
-        mAborted = true;
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
-    }
+  if (!ClearSurface(mRawSurface, mImageSize, mFormat)) {
+    NS_WARNING("Could not clear allocated buffer");
+    mAborted = true;
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
-    if (!ClearSurface(mRawSurface, mFrameRect.Size(), mFormat)) {
-      NS_WARNING("Could not clear allocated buffer");
+  if (mBlankRawSurface) {
+    if (!GreenSurface(mBlankRawSurface, mImageSize, mFormat)) {
+      NS_WARNING("Could not clear allocated blank buffer");
       mAborted = true;
       return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    if (mBlankRawSurface) {
-      if (!GreenSurface(mBlankRawSurface, mFrameRect.Size(), mFormat)) {
-        NS_WARNING("Could not clear allocated blank buffer");
-        mAborted = true;
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
     }
   }
 
@@ -361,7 +295,6 @@ nsresult imgFrame::InitForDecoderRecycle(const AnimationParams& aAnimParams) {
   
   MonitorAutoLock lock(mMonitor);
 
-  MOZ_ASSERT(mIsFullFrame);
   MOZ_ASSERT(mLockCount > 0);
   MOZ_ASSERT(mLockedSurface);
 
@@ -417,7 +350,7 @@ nsresult imgFrame::InitForDecoderRecycle(const AnimationParams& aAnimParams) {
   mTimeout = aAnimParams.mTimeout;
   mBlendMethod = aAnimParams.mBlendMethod;
   mDisposalMethod = aAnimParams.mDisposalMethod;
-  mDirtyRect = mFrameRect;
+  mDirtyRect = GetRect();
 
   return NS_OK;
 }
@@ -435,10 +368,7 @@ nsresult imgFrame::InitWithDrawable(
   }
 
   mImageSize = aSize;
-  mFrameRect = IntRect(IntPoint(0, 0), aSize);
-
   mFormat = aFormat;
-  mPaletteDepth = 0;
 
   RefPtr<DrawTarget> target;
 
@@ -448,28 +378,27 @@ nsresult imgFrame::InitWithDrawable(
     
     MOZ_ASSERT(!mLockedSurface, "Called imgFrame::InitWithDrawable() twice?");
 
-    mRawSurface = AllocateBufferForImage(mFrameRect.Size(), mFormat);
+    mRawSurface = AllocateBufferForImage(mImageSize, mFormat);
     if (!mRawSurface) {
       mAborted = true;
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    mLockedSurface =
-        CreateLockedSurface(mRawSurface, mFrameRect.Size(), mFormat);
+    mLockedSurface = CreateLockedSurface(mRawSurface, mImageSize, mFormat);
     if (!mLockedSurface) {
       NS_WARNING("Failed to create LockedSurface");
       mAborted = true;
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    if (!ClearSurface(mRawSurface, mFrameRect.Size(), mFormat)) {
+    if (!ClearSurface(mRawSurface, mImageSize, mFormat)) {
       NS_WARNING("Could not clear allocated buffer");
       mAborted = true;
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
     target = gfxPlatform::CreateDrawTargetForData(
-        mLockedSurface->GetData(), mFrameRect.Size(), mLockedSurface->Stride(),
+        mLockedSurface->GetData(), mImageSize, mLockedSurface->Stride(),
         mFormat);
   } else {
     
@@ -479,14 +408,14 @@ nsresult imgFrame::InitWithDrawable(
     MOZ_ASSERT(!mOptSurface, "Called imgFrame::InitWithDrawable() twice?");
 
     if (aTargetDT && !gfxVars::UseWebRender()) {
-      target = aTargetDT->CreateSimilarDrawTarget(mFrameRect.Size(), mFormat);
+      target = aTargetDT->CreateSimilarDrawTarget(mImageSize, mFormat);
     } else {
       if (gfxPlatform::GetPlatform()->SupportsAzureContentForType(aBackend)) {
         target = gfxPlatform::GetPlatform()->CreateDrawTargetForBackend(
-            aBackend, mFrameRect.Size(), mFormat);
+            aBackend, mImageSize, mFormat);
       } else {
         target = gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
-            mFrameRect.Size(), mFormat);
+            mImageSize, mFormat);
       }
     }
   }
@@ -499,8 +428,8 @@ nsresult imgFrame::InitWithDrawable(
   
   RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(target);
   MOZ_ASSERT(ctx);  
-  gfxUtils::DrawPixelSnapped(ctx, aDrawable, SizeDouble(mFrameRect.Size()),
-                             ImageRegion::Create(ThebesRect(mFrameRect)),
+  gfxUtils::DrawPixelSnapped(ctx, aDrawable, SizeDouble(mImageSize),
+                             ImageRegion::Create(ThebesRect(GetRect())),
                              mFormat, aSamplingFilter, aImageFlags);
 
   if (canUseDataSurface && !mLockedSurface) {
@@ -557,7 +486,7 @@ nsresult imgFrame::Optimize(DrawTarget* aTarget) {
     return NS_OK;
   }
 
-  if (mPalettedImageData || mOptSurface) {
+  if (mOptSurface) {
     return NS_OK;
   }
 
@@ -660,13 +589,6 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
   NS_ASSERTION(!aRegion.IsRestricted() ||
                    !aRegion.Rect().Intersect(aRegion.Restriction()).IsEmpty(),
                "We must be allowed to sample *some* source pixels!");
-  MOZ_ASSERT(mFrameRect.IsEqualEdges(IntRect(IntPoint(), mImageSize)),
-             "Directly drawing an image with a non-trivial frame rect!");
-
-  if (mPalettedImageData) {
-    MOZ_ASSERT_UNREACHABLE("Directly drawing a paletted image!");
-    return false;
-  }
 
   
   
@@ -733,17 +655,12 @@ nsresult imgFrame::ImageUpdatedInternal(const nsIntRect& aUpdateRect) {
 
   
   
-  IntRect updateRect = mFrameRect.Intersect(aUpdateRect);
+  IntRect updateRect = aUpdateRect.Intersect(GetRect());
   if (updateRect.IsEmpty()) {
     return NS_OK;
   }
 
   mDecoded.UnionRect(mDecoded, updateRect);
-
-  
-  if (mPalettedImageData) {
-    return NS_OK;
-  }
 
   
   
@@ -761,27 +678,26 @@ void imgFrame::Finish(Opacity aFrameOpacity ,
   MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(mLockCount > 0, "Image data should be locked");
 
-  if (mPalettedImageData) {
-    ImageUpdatedInternal(mFrameRect);
-  } else if (!mDecoded.IsEqualEdges(mFrameRect)) {
+  IntRect frameRect(GetRect());
+  if (!mDecoded.IsEqualEdges(frameRect)) {
     
     
     
-    IntRect delta(0, 0, mFrameRect.width, 0);
+    IntRect delta(0, 0, frameRect.width, 0);
     if (mDecoded.y == 0) {
       delta.y = mDecoded.height;
-      delta.height = mFrameRect.height - mDecoded.height;
-    } else if (mDecoded.y + mDecoded.height == mFrameRect.height) {
-      delta.height = mFrameRect.height - mDecoded.y;
+      delta.height = frameRect.height - mDecoded.height;
+    } else if (mDecoded.y + mDecoded.height == frameRect.height) {
+      delta.height = frameRect.height - mDecoded.y;
     } else {
       MOZ_ASSERT_UNREACHABLE("Decoder only updated middle of image!");
-      delta = mFrameRect;
+      delta = frameRect;
     }
 
     ImageUpdatedInternal(delta);
   }
 
-  MOZ_ASSERT(mDecoded.IsEqualEdges(mFrameRect));
+  MOZ_ASSERT(mDecoded.IsEqualEdges(frameRect));
 
   if (aFinalize) {
     FinalizeSurfaceInternal();
@@ -797,18 +713,14 @@ uint32_t imgFrame::GetImageBytesPerRow() const {
   mMonitor.AssertCurrentThreadOwns();
 
   if (mRawSurface) {
-    return mFrameRect.Width() * BytesPerPixel(mFormat);
-  }
-
-  if (mPaletteDepth) {
-    return mFrameRect.Width();
+    return mImageSize.width * BytesPerPixel(mFormat);
   }
 
   return 0;
 }
 
 uint32_t imgFrame::GetImageDataLength() const {
-  return GetImageBytesPerRow() * mFrameRect.Height();
+  return GetImageBytesPerRow() * mImageSize.height;
 }
 
 void imgFrame::GetImageData(uint8_t** aData, uint32_t* aLength) const {
@@ -819,6 +731,7 @@ void imgFrame::GetImageData(uint8_t** aData, uint32_t* aLength) const {
 void imgFrame::GetImageDataInternal(uint8_t** aData, uint32_t* aLength) const {
   mMonitor.AssertCurrentThreadOwns();
   MOZ_ASSERT(mLockCount > 0, "Image data should be locked");
+  MOZ_ASSERT(mLockedSurface);
 
   if (mLockedSurface) {
     
@@ -828,15 +741,7 @@ void imgFrame::GetImageDataInternal(uint8_t** aData, uint32_t* aLength) const {
     MOZ_ASSERT(
         *aData,
         "mLockedSurface is non-null, but GetData is null in GetImageData");
-  } else if (mPalettedImageData) {
-    *aData = mPalettedImageData + PaletteDataLength();
-    MOZ_ASSERT(
-        *aData,
-        "mPalettedImageData is non-null, but result is null in GetImageData");
   } else {
-    MOZ_ASSERT(
-        false,
-        "Have neither mLockedSurface nor mPalettedImageData in GetImageData");
     *aData = nullptr;
   }
 
@@ -850,27 +755,6 @@ uint8_t* imgFrame::GetImageData() const {
   return data;
 }
 
-bool imgFrame::GetIsPaletted() const { return mPalettedImageData != nullptr; }
-
-void imgFrame::GetPaletteData(uint32_t** aPalette, uint32_t* length) const {
-  AssertImageDataLocked();
-
-  if (!mPalettedImageData) {
-    *aPalette = nullptr;
-    *length = 0;
-  } else {
-    *aPalette = (uint32_t*)mPalettedImageData;
-    *length = PaletteDataLength();
-  }
-}
-
-uint32_t* imgFrame::GetPaletteData() const {
-  uint32_t* data;
-  uint32_t length;
-  GetPaletteData(&data, &length);
-  return data;
-}
-
 uint8_t* imgFrame::LockImageData(bool aOnlyFinished) {
   MonitorAutoLock lock(mMonitor);
 
@@ -880,9 +764,7 @@ uint8_t* imgFrame::LockImageData(bool aOnlyFinished) {
   }
 
   uint8_t* data;
-  if (mPalettedImageData) {
-    data = mPalettedImageData;
-  } else if (mLockedSurface) {
+  if (mLockedSurface) {
     data = mLockedSurface->GetData();
   } else {
     data = nullptr;
@@ -999,7 +881,7 @@ already_AddRefed<SourceSurface> imgFrame::GetSourceSurfaceInternal(
     return nullptr;
   }
 
-  return CreateLockedSurface(mRawSurface, mFrameRect.Size(), mFormat);
+  return CreateLockedSurface(mRawSurface, mImageSize, mFormat);
 }
 
 void imgFrame::Abort() {
@@ -1037,7 +919,7 @@ void imgFrame::WaitUntilFinished() const {
 
 bool imgFrame::AreAllPixelsWritten() const {
   mMonitor.AssertCurrentThreadOwns();
-  return mDecoded.IsEqualInterior(mFrameRect);
+  return mDecoded.IsEqualInterior(GetRect());
 }
 
 void imgFrame::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
@@ -1045,9 +927,6 @@ void imgFrame::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
   MonitorAutoLock lock(mMonitor);
 
   AddSizeOfCbData metadata;
-  if (mPalettedImageData) {
-    metadata.heap += aMallocSizeOf(mPalettedImageData);
-  }
   if (mLockedSurface) {
     metadata.heap += aMallocSizeOf(mLockedSurface);
   }

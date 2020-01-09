@@ -42,7 +42,7 @@ static void CheckFrameAnimatorBlendResults(const ImageTestCase& aTestCase,
 
 template <typename Func>
 static void WithFrameAnimatorDecode(const ImageTestCase& aTestCase,
-                                    bool aBlendFilter, Func aResultChecker) {
+                                    Func aResultChecker) {
   
   RefPtr<Image> image = ImageFactory::CreateAnonymousImage(
       nsDependentCString(aTestCase.mMimeType));
@@ -80,9 +80,6 @@ static void WithFrameAnimatorDecode(const ImageTestCase& aTestCase,
   
   
   DecoderFlags decoderFlags = DefaultDecoderFlags();
-  if (aBlendFilter) {
-    decoderFlags |= DecoderFlags::BLEND_ANIMATION;
-  }
   SurfaceFlags surfaceFlags = DefaultSurfaceFlags();
   rv = DecoderFactory::CreateAnimationDecoder(
       decoderType, rasterImage, sourceBuffer, aTestCase.mSize, decoderFlags,
@@ -97,9 +94,8 @@ static void WithFrameAnimatorDecode(const ImageTestCase& aTestCase,
   aResultChecker(rasterImage.get());
 }
 
-static void CheckFrameAnimatorBlend(const ImageTestCase& aTestCase,
-                                    bool aBlendFilter) {
-  WithFrameAnimatorDecode(aTestCase, aBlendFilter, [&](RasterImage* aImage) {
+static void CheckFrameAnimatorBlend(const ImageTestCase& aTestCase) {
+  WithFrameAnimatorDecode(aTestCase, [&](RasterImage* aImage) {
     CheckFrameAnimatorBlendResults(aTestCase, aImage);
   });
 }
@@ -109,27 +105,14 @@ class ImageFrameAnimator : public ::testing::Test {
   AutoInitializeImageLib mInit;
 };
 
-TEST_F(ImageFrameAnimator, BlendGIFWithAnimator) {
-  CheckFrameAnimatorBlend(BlendAnimatedGIFTestCase(),  false);
-}
-
 TEST_F(ImageFrameAnimator, BlendGIFWithFilter) {
-  CheckFrameAnimatorBlend(BlendAnimatedGIFTestCase(),  true);
-}
-
-TEST_F(ImageFrameAnimator, BlendPNGWithAnimator) {
-  CheckFrameAnimatorBlend(BlendAnimatedPNGTestCase(),  false);
+  CheckFrameAnimatorBlend(BlendAnimatedGIFTestCase());
 }
 
 TEST_F(ImageFrameAnimator, BlendPNGWithFilter) {
-  CheckFrameAnimatorBlend(BlendAnimatedPNGTestCase(),  true);
-}
-
-TEST_F(ImageFrameAnimator, BlendWebPWithAnimator) {
-  CheckFrameAnimatorBlend(BlendAnimatedWebPTestCase(),
-                           false);
+  CheckFrameAnimatorBlend(BlendAnimatedPNGTestCase());
 }
 
 TEST_F(ImageFrameAnimator, BlendWebPWithFilter) {
-  CheckFrameAnimatorBlend(BlendAnimatedWebPTestCase(),  true);
+  CheckFrameAnimatorBlend(BlendAnimatedWebPTestCase());
 }

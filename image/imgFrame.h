@@ -50,11 +50,10 @@ class imgFrame {
 
 
 
-  nsresult InitForDecoder(const nsIntSize& aImageSize, const nsIntRect& aRect,
-                          SurfaceFormat aFormat, uint8_t aPaletteDepth,
+  nsresult InitForDecoder(const nsIntSize& aImageSize, SurfaceFormat aFormat,
                           bool aNonPremult,
                           const Maybe<AnimationParams>& aAnimParams,
-                          bool aIsFullFrame, bool aShouldRecycle);
+                          bool aShouldRecycle);
 
   
 
@@ -161,14 +160,13 @@ class imgFrame {
 
 
 
-  uint32_t GetBytesPerPixel() const { return GetIsPaletted() ? 1 : 4; }
+  uint32_t GetBytesPerPixel() const { return 4; }
 
-  const IntSize& GetImageSize() const { return mImageSize; }
-  const IntRect& GetRect() const { return mFrameRect; }
-  IntSize GetSize() const { return mFrameRect.Size(); }
+  const IntSize& GetSize() const { return mImageSize; }
+  IntRect GetRect() const { return IntRect(IntPoint(0, 0), mImageSize); }
   const IntRect& GetBlendRect() const { return mBlendRect; }
   IntRect GetBoundedBlendRect() const {
-    return mBlendRect.Intersect(mFrameRect);
+    return mBlendRect.Intersect(GetRect());
   }
   FrameTimeout GetTimeout() const { return mTimeout; }
   BlendMethod GetBlendMethod() const { return mBlendMethod; }
@@ -177,15 +175,8 @@ class imgFrame {
   void GetImageData(uint8_t** aData, uint32_t* length) const;
   uint8_t* GetImageData() const;
 
-  bool GetIsPaletted() const;
-  void GetPaletteData(uint32_t** aPalette, uint32_t* length) const;
-  uint32_t* GetPaletteData() const;
-  uint8_t GetPaletteDepth() const { return mPaletteDepth; }
-
   const IntRect& GetDirtyRect() const { return mDirtyRect; }
   void SetDirtyRect(const IntRect& aDirtyRect) { mDirtyRect = aDirtyRect; }
-
-  bool IsFullFrame() const { return mIsFullFrame; }
 
   void SetOptimizable();
 
@@ -239,10 +230,6 @@ class imgFrame {
 
 
   already_AddRefed<SourceSurface> GetSourceSurfaceInternal(bool aTemporary);
-
-  uint32_t PaletteDataLength() const {
-    return mPaletteDepth ? (size_t(1) << mPaletteDepth) * sizeof(uint32_t) : 0;
-  }
 
   struct SurfaceWithFormat {
     RefPtr<gfxDrawable> mDrawable;
@@ -325,17 +312,6 @@ class imgFrame {
   
   
   
-  
-  
-  
-  
-  IntRect mFrameRect;
-
-  
-  
-  
-  
-  
   IntRect mBlendRect;
 
   
@@ -350,18 +326,7 @@ class imgFrame {
   BlendMethod mBlendMethod;
   SurfaceFormat mFormat;
 
-  
-  
-  
-  
-  uint8_t* mPalettedImageData;
-  uint8_t mPaletteDepth;
-
   bool mNonPremult;
-
-  
-  
-  bool mIsFullFrame;
 };
 
 
@@ -378,7 +343,6 @@ class DrawableFrameRef final {
   explicit DrawableFrameRef(imgFrame* aFrame) : mFrame(aFrame) {
     MOZ_ASSERT(aFrame);
     MonitorAutoLock lock(aFrame->mMonitor);
-    MOZ_ASSERT(!aFrame->GetIsPaletted(), "Paletted must use RawAccessFrameRef");
 
     if (aFrame->mRawSurface) {
       mRef.emplace(aFrame->mRawSurface, DataSourceSurface::READ);
@@ -507,7 +471,6 @@ class RawAccessFrameRef final {
   }
 
   uint8_t* Data() const { return mData; }
-  uint32_t PaletteDataLength() const { return mFrame->PaletteDataLength(); }
 
  private:
   RawAccessFrameRef(const RawAccessFrameRef& aOther) = delete;
