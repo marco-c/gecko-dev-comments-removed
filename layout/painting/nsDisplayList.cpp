@@ -2359,6 +2359,15 @@ void nsDisplayListBuilder::ExitSVGEffectsContents() {
   }
 }
 
+bool nsDisplayListBuilder::ShouldBuildScrollInfoItemsForHoisting() const {
+  
+
+
+
+
+  return !gfxVars::UseWebRender() && mSVGEffectsBuildingDepth > 0;
+}
+
 void nsDisplayListBuilder::AppendNewScrollInfoItemForHoisting(
     nsDisplayScrollInfoLayer* aScrollInfoItem) {
   MOZ_ASSERT(ShouldBuildScrollInfoItemsForHoisting());

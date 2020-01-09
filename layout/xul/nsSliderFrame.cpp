@@ -933,6 +933,11 @@ static bool UsesSVGEffects(nsIFrame* aFrame) {
 }
 
 static bool ScrollFrameWillBuildScrollInfoLayer(nsIFrame* aScrollFrame) {
+  
+
+
+
+
   if (gfx::gfxVars::UseWebRender()) {
     
     

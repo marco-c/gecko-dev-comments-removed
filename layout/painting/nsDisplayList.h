@@ -1655,14 +1655,7 @@ class nsDisplayListBuilder {
   void EnterSVGEffectsContents(nsDisplayList* aHoistedItemsStorage);
   void ExitSVGEffectsContents();
 
-  
-
-
-
-
-  bool ShouldBuildScrollInfoItemsForHoisting() const {
-    return mSVGEffectsBuildingDepth > 0;
-  }
+  bool ShouldBuildScrollInfoItemsForHoisting() const;
 
   void AppendNewScrollInfoItemForHoisting(
       nsDisplayScrollInfoLayer* aScrollInfoItem);
