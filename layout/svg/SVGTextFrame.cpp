@@ -3520,7 +3520,8 @@ void SVGTextFrame::ReflowSVG() {
     
     
     
-    mRect.Inflate(ceil(presContext->AppUnitsPerDevPixel() / mLastContextScale));
+    double contextScale = GetContextScale(GetCanvasTM());
+    mRect.Inflate(ceil(presContext->AppUnitsPerDevPixel() / contextScale));
   }
 
   if (mState & NS_FRAME_FIRST_REFLOW) {
