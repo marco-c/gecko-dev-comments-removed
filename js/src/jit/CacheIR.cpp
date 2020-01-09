@@ -3395,14 +3395,15 @@ bool IRGenerator::maybeGuardInt32Index(const Value& index, ValOperandId indexId,
 
 SetPropIRGenerator::SetPropIRGenerator(
     JSContext* cx, HandleScript script, jsbytecode* pc, CacheKind cacheKind,
-    ICState::Mode mode, bool* isTemporarilyUnoptimizable, HandleValue lhsVal,
-    HandleValue idVal, HandleValue rhsVal, bool needsTypeBarrier,
-    bool maybeHasExtraIndexedProps)
+    ICState::Mode mode, bool* isTemporarilyUnoptimizable, bool* canAddSlot,
+    HandleValue lhsVal, HandleValue idVal, HandleValue rhsVal,
+    bool needsTypeBarrier, bool maybeHasExtraIndexedProps)
     : IRGenerator(cx, script, pc, cacheKind, mode),
       lhsVal_(lhsVal),
       idVal_(idVal),
       rhsVal_(rhsVal),
       isTemporarilyUnoptimizable_(isTemporarilyUnoptimizable),
+      canAddSlot_(canAddSlot),
       typeCheckInfo_(cx, needsTypeBarrier),
       preliminaryObjectAction_(PreliminaryObjectAction::None),
       attachedTypedArrayOOBStub_(false),
@@ -3464,6 +3465,9 @@ bool SetPropIRGenerator::tryAttachStub() {
         if (tryAttachProxy(obj, objId, id, rhsValId)) {
           return true;
         }
+      }
+      if (canAttachAddSlotStub(obj, id)) {
+        *canAddSlot_ = true;
       }
       return false;
     }
@@ -4514,6 +4518,79 @@ bool SetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
   return true;
 }
 
+bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
+  
+  
+  
+  if (obj->is<JSFunction>() && JSID_IS_ATOM(id, cx_->names().prototype)) {
+    MOZ_ASSERT(ClassMayResolveId(cx_->names(), obj->getClass(), id, obj));
+
+    
+    
+    
+    
+    JSFunction* fun = &obj->as<JSFunction>();
+    if (!obj->group()->maybeInterpretedFunction() ||
+        !fun->needsPrototypeProperty()) {
+      return false;
+    }
+
+    
+    if (fun->lookupPure(id)) {
+      return false;
+    }
+  } else {
+    
+    PropertyResult prop;
+    if (!LookupOwnPropertyPure(cx_, obj, id, &prop)) {
+      return false;
+    }
+    if (prop) {
+      return false;
+    }
+  }
+
+  
+  if (!obj->nonProxyIsExtensible()) {
+    return false;
+  }
+
+  
+  
+  DebugOnly<uint32_t> index;
+  MOZ_ASSERT_IF(obj->is<ArrayObject>(), !IdIsIndex(id, &index));
+  if (!obj->is<ArrayObject>() && obj->getClass()->getAddProperty()) {
+    return false;
+  }
+
+  
+  
+  for (JSObject* proto = obj->staticPrototype(); proto;
+       proto = proto->staticPrototype()) {
+    if (!proto->isNative()) {
+      return false;
+    }
+
+    
+    Shape* protoShape = proto->as<NativeObject>().lookup(cx_, id);
+    if (protoShape && !protoShape->isDataDescriptor()) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    if (ClassMayResolveId(cx_->names(), proto->getClass(), id, proto) &&
+        !proto->is<JSFunction>()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup,
                                               HandleShape oldShape) {
   ValOperandId objValId(writer.setInputOperandId(0));
@@ -4541,11 +4618,10 @@ bool SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup,
   RootedObject obj(cx_, &lhsVal_.toObject());
 
   PropertyResult prop;
-  JSObject* holder;
-  if (!LookupPropertyPure(cx_, obj, id, &holder, &prop)) {
+  if (!LookupOwnPropertyPure(cx_, obj, id, &prop)) {
     return false;
   }
-  if (obj != holder) {
+  if (!prop) {
     return false;
   }
 
@@ -4574,13 +4650,12 @@ bool SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup,
   MOZ_ASSERT(propShape);
 
   
-  if (holderOrExpando->lastProperty() != propShape) {
-    return false;
-  }
+  MOZ_RELEASE_ASSERT(holderOrExpando->lastProperty() == propShape);
 
   
   
-  if (!obj->nonProxyIsExtensible() || propShape->previous() != oldShape) {
+  
+  if (propShape->previous() != oldShape) {
     return false;
   }
 
@@ -4590,66 +4665,15 @@ bool SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup,
     return false;
   }
 
-  
-  if (ClassMayResolveId(cx_->names(), obj->getClass(), id, obj)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!obj->is<JSFunction>() || !JSID_IS_ATOM(id, cx_->names().prototype) ||
-        !oldGroup->maybeInterpretedFunction() ||
-        !obj->as<JSFunction>().needsPrototypeProperty()) {
-      return false;
-    }
-    MOZ_ASSERT(!propShape->configurable());
-    MOZ_ASSERT(!propShape->enumerable());
-  }
-
-  
-  
-  DebugOnly<uint32_t> index;
-  MOZ_ASSERT_IF(obj->is<ArrayObject>(), !IdIsIndex(id, &index));
-  if (!obj->is<ArrayObject>() && obj->getClass()->getAddProperty()) {
-    return false;
-  }
-
-  
-  
-  for (JSObject* proto = obj->staticPrototype(); proto;
-       proto = proto->staticPrototype()) {
-    if (!proto->isNative()) {
-      return false;
-    }
-
-    
-    Shape* protoShape = proto->as<NativeObject>().lookup(cx_, id);
-    if (protoShape && !protoShape->hasDefaultSetter()) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    if (ClassMayResolveId(cx_->names(), proto->getClass(), id, proto) &&
-        !proto->is<JSFunction>()) {
-      return false;
-    }
-  }
-
   ObjOperandId objId = writer.guardIsObject(objValId);
   maybeEmitIdGuard(id);
 
   
   
+  
+  
   MOZ_ASSERT(!oldGroup->hasUncacheableClass() || obj->is<ShapedObject>());
-  writer.guardGroupForTypeBarrier(objId, oldGroup);
+  writer.guardGroup(objId, oldGroup);
 
   
   
