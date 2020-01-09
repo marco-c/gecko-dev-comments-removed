@@ -110,9 +110,6 @@ struct DefaultJitOptions {
   bool spectreValueMasking;
   bool spectreJitToCxxCalls;
 
-  
-  bool disableUnboxedObjects;
-
   DefaultJitOptions();
   bool isSmallFunction(JSScript* script) const;
   void setEagerCompilation();
