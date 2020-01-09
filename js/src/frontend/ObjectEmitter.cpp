@@ -412,7 +412,7 @@ bool ObjectEmitter::emitObject(size_t propertyCount) {
   
   
   
-  top_ = bce_->bytecodeSection().offset();
+  top_ = bce_->offset();
   if (!bce_->emitNewInit()) {
     
     return false;

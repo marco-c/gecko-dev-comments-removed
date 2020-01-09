@@ -124,249 +124,29 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   Rooted<LazyScript*> lazyScript;
 
  private:
+  BytecodeVector code_;  
+  SrcNotesVector notes_; 
+
+  
+  ptrdiff_t lastNoteOffset_ = 0;
+
   
   
-  class BytecodeSection {
-   public:
-    BytecodeSection(JSContext* cx, uint32_t lineNum);
-
-    
-
-    BytecodeVector& code() { return code_; }
-    const BytecodeVector& code() const { return code_; }
-
-    jsbytecode* code(ptrdiff_t offset) { return code_.begin() + offset; }
-    ptrdiff_t offset() const { return code_.end() - code_.begin(); }
-
-    
-
-    SrcNotesVector& notes() { return notes_; }
-    const SrcNotesVector& notes() const { return notes_; }
-
-    ptrdiff_t lastNoteOffset() const { return lastNoteOffset_; }
-    void setLastNoteOffset(ptrdiff_t offset) { lastNoteOffset_ = offset; }
-
-    
-
-    ptrdiff_t lastTargetOffset() const { return lastTarget_.offset; }
-    void setLastTargetOffset(ptrdiff_t offset) { lastTarget_.offset = offset; }
-
-    
-    bool lastOpcodeIsJumpTarget() const {
-      return offset() - lastTarget_.offset == ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
-    }
-
-    
-    
-    
-    
-    ptrdiff_t lastNonJumpTargetOffset() const {
-      return lastOpcodeIsJumpTarget() ? lastTarget_.offset : offset();
-    }
-
-    
-
-    int32_t stackDepth() const { return stackDepth_; }
-    void setStackDepth(int32_t depth) { stackDepth_ = depth; }
-
-    uint32_t maxStackDepth() const { return maxStackDepth_; }
-
-    void updateDepth(ptrdiff_t target);
-
-    
-
-    CGTryNoteList& tryNoteList() { return tryNoteList_; };
-    const CGTryNoteList& tryNoteList() const { return tryNoteList_; };
-
-    
-
-    CGScopeNoteList& scopeNoteList() { return scopeNoteList_; };
-    const CGScopeNoteList& scopeNoteList() const { return scopeNoteList_; };
-
-    
-
-    CGResumeOffsetList& resumeOffsetList() { return resumeOffsetList_; }
-    const CGResumeOffsetList& resumeOffsetList() const {
-      return resumeOffsetList_;
-    }
-
-    uint32_t numYields() const { return numYields_; }
-    void addNumYields() { numYields_++; }
-
-    
-
-    uint32_t currentLine() const { return currentLine_; }
-    uint32_t lastColumn() const { return lastColumn_; }
-    void setCurrentLine(uint32_t line) {
-      currentLine_ = line;
-      lastColumn_ = 0;
-    }
-    void setLastColumn(uint32_t column) { lastColumn_ = column; }
-
-    void updateSeparatorPosition() {
-      lastSeparatorOffet_ = code().length();
-      lastSeparatorLine_ = currentLine_;
-      lastSeparatorColumn_ = lastColumn_;
-    }
-
-    void updateSeparatorPositionIfPresent() {
-      if (lastSeparatorOffet_ == code().length()) {
-        lastSeparatorLine_ = currentLine_;
-        lastSeparatorColumn_ = lastColumn_;
-      }
-    }
-
-    bool isDuplicateLocation() const {
-      return lastSeparatorLine_ == currentLine_ &&
-             lastSeparatorColumn_ == lastColumn_;
-    }
-
-    
-
-    size_t numICEntries() const { return numICEntries_; }
-    void addNumICEntries() { numICEntries_++; }
-    void setNumICEntries(size_t entries) { numICEntries_ = entries; }
-
-    uint16_t typesetCount() const { return typesetCount_; }
-    void addTypesetCount() { typesetCount_++; }
-
-   private:
-    
-
-    
-    BytecodeVector code_;
-
-    
-
-    
-    SrcNotesVector notes_;
-
-    
-    ptrdiff_t lastNoteOffset_ = 0;
-
-    
-
-    
-    JumpTarget lastTarget_ = {-1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH)};
-
-    
-
-    
-    uint32_t maxStackDepth_ = 0;
-
-    
-    int32_t stackDepth_ = 0;
-
-    
-
-    
-    CGTryNoteList tryNoteList_;
-
-    
-
-    
-    CGScopeNoteList scopeNoteList_;
-
-    
-
-    
-    
-    
-    
-    
-    CGResumeOffsetList resumeOffsetList_;
-
-    
-    uint32_t numYields_ = 0;
-
-    
-
-    
-    
-    
-    
-    uint32_t currentLine_;
-
-    
-    
-    
-    
-    
-    uint32_t lastColumn_ = 0;
-
-    
-    
-    uint32_t lastSeparatorOffet_ = 0;
-    uint32_t lastSeparatorLine_ = 0;
-    uint32_t lastSeparatorColumn_ = 0;
-
-    
-
-    
-    size_t numICEntries_ = 0;
-
-    
-    uint16_t typesetCount_ = 0;
-  };
-
-  BytecodeSection bytecodeSection_;
-
- public:
-  BytecodeSection& bytecodeSection() { return bytecodeSection_; }
-  const BytecodeSection& bytecodeSection() const { return bytecodeSection_; }
-
- private:
   
   
-  class PerScriptData {
-   public:
-    explicit PerScriptData(JSContext* cx);
+  uint32_t currentLine_ = 0;
 
-    MOZ_MUST_USE bool init(JSContext* cx);
+  
+  
+  
+  
+  
+  uint32_t lastColumn_ = 0;
 
-    
+  uint32_t lastSeparatorOffet_ = 0;
+  uint32_t lastSeparatorLine_ = 0;
+  uint32_t lastSeparatorColumn_ = 0;
 
-    CGScopeList& scopeList() { return scopeList_; }
-    const CGScopeList& scopeList() const { return scopeList_; }
-
-    
-
-    CGNumberList& numberList() { return numberList_; }
-    const CGNumberList& numberList() const { return numberList_; }
-
-    CGObjectList& objectList() { return objectList_; }
-    const CGObjectList& objectList() const { return objectList_; }
-
-    PooledMapPtr<AtomIndexMap>& atomIndices() { return atomIndices_; }
-    const PooledMapPtr<AtomIndexMap>& atomIndices() const {
-      return atomIndices_;
-    }
-
-   private:
-    
-
-    
-    CGScopeList scopeList_;
-
-    
-
-    
-    CGNumberList numberList_;
-
-    
-    CGObjectList objectList_;
-
-    
-    PooledMapPtr<AtomIndexMap> atomIndices_;
-  };
-
-  PerScriptData perScriptData_;
-
- public:
-  PerScriptData& perScriptData() { return perScriptData_; }
-  const PerScriptData& perScriptData() const { return perScriptData_; }
-
- private:
   
   mozilla::Maybe<uint32_t> mainOffset_ = {};
 
@@ -375,13 +155,21 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
  public:
   
+  JumpTarget lastTarget = {-1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH)};
+
+  
   
   mozilla::Maybe<EitherParser> ep_ = {};
   BCEParserHandle* parser = nullptr;
 
+  PooledMapPtr<AtomIndexMap> atomIndices; 
   unsigned firstLine = 0; 
 
   uint32_t maxFixedSlots = 0; 
+  uint32_t maxStackDepth =
+      0; 
+
+  int32_t stackDepth = 0; 
 
   uint32_t bodyScopeIndex =
       UINT32_MAX; 
@@ -406,6 +194,28 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   EmitterScope* innermostEmitterScopeNoCheck() const {
     return innermostEmitterScope_;
   }
+
+  CGNumberList numberList;       
+  CGObjectList objectList;       
+  CGScopeList scopeList;         
+  CGTryNoteList tryNoteList;     
+  CGScopeNoteList scopeNoteList; 
+
+  
+  
+  
+  
+  
+  CGResumeOffsetList resumeOffsetList;
+
+  
+  size_t numICEntries = 0;
+
+  
+  uint32_t numYields = 0;
+
+  
+  uint16_t typesetCount = 0;
 
   
   bool hasSingletons = false;
@@ -550,26 +360,24 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     varEmitterScope = emitterScope;
   }
 
-  Scope* outermostScope() const {
-    return perScriptData().scopeList().vector[0];
-  }
+  Scope* outermostScope() const { return scopeList.vector[0]; }
   Scope* innermostScope() const;
   Scope* bodyScope() const {
-    MOZ_ASSERT(bodyScopeIndex < perScriptData().scopeList().length());
-    return perScriptData().scopeList().vector[bodyScopeIndex];
+    MOZ_ASSERT(bodyScopeIndex < scopeList.length());
+    return scopeList.vector[bodyScopeIndex];
   }
 
   MOZ_ALWAYS_INLINE
   MOZ_MUST_USE bool makeAtomIndex(JSAtom* atom, uint32_t* indexp) {
-    MOZ_ASSERT(perScriptData().atomIndices());
-    AtomIndexMap::AddPtr p = perScriptData().atomIndices()->lookupForAdd(atom);
+    MOZ_ASSERT(atomIndices);
+    AtomIndexMap::AddPtr p = atomIndices->lookupForAdd(atom);
     if (p) {
       *indexp = p->value();
       return true;
     }
 
-    uint32_t index = perScriptData().atomIndices()->count();
-    if (!perScriptData().atomIndices()->add(p, atom, index)) {
+    uint32_t index = atomIndices->count();
+    if (!atomIndices->add(p, atom, index)) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -592,13 +400,45 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   void tellDebuggerAboutCompiledScript(JSContext* cx);
 
+  BytecodeVector& code() { return code_; }
+  const BytecodeVector& code() const { return code_; }
+
+  jsbytecode* code(ptrdiff_t offset) { return code_.begin() + offset; }
+  ptrdiff_t offset() const { return code_.end() - code_.begin(); }
+
   uint32_t mainOffset() const { return *mainOffset_; }
 
   bool inPrologue() const { return mainOffset_.isNothing(); }
 
   void switchToMain() {
     MOZ_ASSERT(inPrologue());
-    mainOffset_.emplace(bytecodeSection().code().length());
+    mainOffset_.emplace(code_.length());
+  }
+
+  SrcNotesVector& notes() {
+    
+    MOZ_ASSERT(!inPrologue());
+    return notes_;
+  }
+  ptrdiff_t lastNoteOffset() const { return lastNoteOffset_; }
+  unsigned currentLine() const { return currentLine_; }
+
+  void setCurrentLine(uint32_t line) {
+    currentLine_ = line;
+    lastColumn_ = 0;
+  }
+
+  
+  bool lastOpcodeIsJumpTarget() const {
+    return offset() - lastTarget.offset == ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
+  }
+
+  
+  
+  
+  
+  ptrdiff_t lastNonJumpTargetOffset() const {
+    return lastOpcodeIsJumpTarget() ? lastTarget.offset : offset();
   }
 
   void setFunctionBodyEndPos(uint32_t pos) {
@@ -669,10 +509,12 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitFunctionScript(FunctionNode* funNode,
                                        TopLevelFunction isTopLevel);
 
+  void updateDepth(ptrdiff_t target);
   MOZ_MUST_USE bool markStepBreakpoint();
   MOZ_MUST_USE bool markSimpleBreakpoint();
   MOZ_MUST_USE bool updateLineNumberNotes(uint32_t offset);
   MOZ_MUST_USE bool updateSourceCoordNotes(uint32_t offset);
+  void updateSeparatorPosition();
 
   JSOp strictifySetNameOp(JSOp op);
 

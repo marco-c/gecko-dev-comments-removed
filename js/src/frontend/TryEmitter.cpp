@@ -53,7 +53,7 @@ bool TryEmitter::emitTry() {
   
   
   
-  depth_ = bce_->bytecodeSection().stackDepth();
+  depth_ = bce_->stackDepth;
 
   
   if (!bce_->newSrcNote(SRC_TRY, &noteIndex_)) {
@@ -62,7 +62,7 @@ bool TryEmitter::emitTry() {
   if (!bce_->emit1(JSOP_TRY)) {
     return false;
   }
-  tryStart_ = bce_->bytecodeSection().offset();
+  tryStart_ = bce_->offset();
 
 #ifdef DEBUG
   state_ = State::Try;
@@ -72,7 +72,7 @@ bool TryEmitter::emitTry() {
 
 bool TryEmitter::emitTryEnd() {
   MOZ_ASSERT(state_ == State::Try);
-  MOZ_ASSERT(depth_ == bce_->bytecodeSection().stackDepth());
+  MOZ_ASSERT(depth_ == bce_->stackDepth);
 
   
   if (hasFinally() && controlInfo_) {
@@ -82,9 +82,8 @@ bool TryEmitter::emitTryEnd() {
   }
 
   
-  if (!bce_->setSrcNoteOffset(
-          noteIndex_, SrcNote::Try::EndOfTryJumpOffset,
-          bce_->bytecodeSection().offset() - tryStart_ + JSOP_TRY_LENGTH)) {
+  if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::Try::EndOfTryJumpOffset,
+                              bce_->offset() - tryStart_ + JSOP_TRY_LENGTH)) {
     return false;
   }
 
@@ -106,7 +105,7 @@ bool TryEmitter::emitCatch() {
     return false;
   }
 
-  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
+  MOZ_ASSERT(bce_->stackDepth == depth_);
 
   if (controlKind_ == ControlKind::Syntactic) {
     
@@ -139,7 +138,7 @@ bool TryEmitter::emitCatchEnd() {
     if (!bce_->emitGoSub(&controlInfo_->gosubs)) {
       return false;
     }
-    MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
+    MOZ_ASSERT(bce_->stackDepth == depth_);
 
     
     if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_)) {
@@ -178,7 +177,7 @@ bool TryEmitter::emitFinally(
     }
   }
 
-  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
+  MOZ_ASSERT(bce_->stackDepth == depth_);
 
   if (!bce_->emitJumpTarget(&finallyStart_)) {
     return false;
@@ -254,7 +253,7 @@ bool TryEmitter::emitEnd() {
     }
   }
 
-  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
+  MOZ_ASSERT(bce_->stackDepth == depth_);
 
   
   

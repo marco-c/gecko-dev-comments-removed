@@ -58,7 +58,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     }
   }
 
-  int32_t iterDepth = bce_->bytecodeSection().stackDepth();
+  int32_t iterDepth = bce_->stackDepth;
 
   
   
@@ -111,7 +111,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
   }
 
 #ifdef DEBUG
-  loopDepth_ = bce_->bytecodeSection().stackDepth();
+  loopDepth_ = bce_->stackDepth;
 #endif
 
   
@@ -195,7 +195,7 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
 bool ForOfEmitter::emitBody() {
   MOZ_ASSERT(state_ == State::Initialize);
 
-  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == loopDepth_,
+  MOZ_ASSERT(bce_->stackDepth == loopDepth_,
              "the stack must be balanced around the initializing "
              "operation");
 
@@ -218,14 +218,14 @@ bool ForOfEmitter::emitBody() {
 bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
   MOZ_ASSERT(state_ == State::Body);
 
-  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == loopDepth_,
+  MOZ_ASSERT(bce_->stackDepth == loopDepth_,
              "the stack must be balanced around the for-of body");
 
   if (!loopInfo_->emitEndCodeNeedingIteratorClose(bce_)) {
     return false;
   }
 
-  loopInfo_->setContinueTarget(bce_->bytecodeSection().offset());
+  loopInfo_->setContinueTarget(bce_->offset());
 
   
   
@@ -244,7 +244,7 @@ bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
     return false;
   }
 
-  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == loopDepth_);
+  MOZ_ASSERT(bce_->stackDepth == loopDepth_);
 
   
   if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::ForOf::BackJumpOffset,
@@ -256,8 +256,7 @@ bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
     return false;
   }
 
-  if (!bce_->addTryNote(JSTRY_FOR_OF, bce_->bytecodeSection().stackDepth(),
-                        loopInfo_->headOffset(),
+  if (!bce_->addTryNote(JSTRY_FOR_OF, bce_->stackDepth, loopInfo_->headOffset(),
                         loopInfo_->breakTargetOffset())) {
     return false;
   }

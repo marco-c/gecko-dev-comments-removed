@@ -151,7 +151,7 @@ bool SwitchEmitter::emitCond() {
 
   
   controlInfo_.emplace(bce_, StatementKind::Switch);
-  top_ = bce_->bytecodeSection().offset();
+  top_ = bce_->offset();
 
   if (!caseOffsets_.resize(caseCount_)) {
     ReportOutOfMemory(bce_->cx);
@@ -164,7 +164,7 @@ bool SwitchEmitter::emitCond() {
     return false;
   }
 
-  MOZ_ASSERT(top_ == bce_->bytecodeSection().offset());
+  MOZ_ASSERT(top_ == bce_->offset());
   if (!bce_->emitN(JSOP_CONDSWITCH, 0)) {
     return false;
   }
@@ -181,7 +181,7 @@ bool SwitchEmitter::emitTable(const TableGenerator& tableGen) {
 
   
   controlInfo_.emplace(bce_, StatementKind::Switch);
-  top_ = bce_->bytecodeSection().offset();
+  top_ = bce_->offset();
 
   
   if (!bce_->newSrcNote2(SRC_TABLESWITCH, 0, &noteIndex_)) {
@@ -193,14 +193,14 @@ bool SwitchEmitter::emitTable(const TableGenerator& tableGen) {
     return false;
   }
 
-  MOZ_ASSERT(top_ == bce_->bytecodeSection().offset());
+  MOZ_ASSERT(top_ == bce_->offset());
   if (!bce_->emitN(JSOP_TABLESWITCH,
                    JSOP_TABLESWITCH_LENGTH - sizeof(jsbytecode))) {
     return false;
   }
 
   
-  jsbytecode* pc = bce_->bytecodeSection().code(top_ + JUMP_OFFSET_LEN);
+  jsbytecode* pc = bce_->code(top_ + JUMP_OFFSET_LEN);
 
   
   SET_JUMP_OFFSET(pc, tableGen.low());
@@ -223,9 +223,9 @@ bool SwitchEmitter::emitCaseOrDefaultJump(uint32_t caseIndex, bool isDefault) {
   if (caseIndex > 0) {
     
     
-    if (!bce_->setSrcNoteOffset(
-            caseNoteIndex_, SrcNote::NextCase::NextCaseOffset,
-            bce_->bytecodeSection().offset() - lastCaseOffset_)) {
+    if (!bce_->setSrcNoteOffset(caseNoteIndex_,
+                                SrcNote::NextCase::NextCaseOffset,
+                                bce_->offset() - lastCaseOffset_)) {
       return false;
     }
   }
@@ -243,12 +243,11 @@ bool SwitchEmitter::emitCaseOrDefaultJump(uint32_t caseIndex, bool isDefault) {
 
   if (caseIndex == 0) {
     
-    unsigned noteCount = bce_->bytecodeSection().notes().length();
+    unsigned noteCount = bce_->notes().length();
     if (!bce_->setSrcNoteOffset(noteIndex_, 1, lastCaseOffset_ - top_)) {
       return false;
     }
-    unsigned noteCountDelta =
-        bce_->bytecodeSection().notes().length() - noteCount;
+    unsigned noteCountDelta = bce_->notes().length() - noteCount;
     if (noteCountDelta != 0) {
       caseNoteIndex_ += noteCountDelta;
     }
@@ -399,7 +398,7 @@ bool SwitchEmitter::emitEnd() {
                              defaultJumpTargetOffset_);
   } else {
     
-    pc = bce_->bytecodeSection().code(top_);
+    pc = bce_->code(top_);
     SET_JUMP_OFFSET(pc, defaultJumpTargetOffset_.offset - top_);
     pc += JUMP_OFFSET_LEN;
   }
@@ -409,9 +408,8 @@ bool SwitchEmitter::emitEnd() {
   static_assert(unsigned(SrcNote::TableSwitch::EndOffset) ==
                     unsigned(SrcNote::CondSwitch::EndOffset),
                 "{TableSwitch,CondSwitch}::EndOffset should be same");
-  if (!bce_->setSrcNoteOffset(
-          noteIndex_, SrcNote::TableSwitch::EndOffset,
-          bce_->bytecodeSection().lastNonJumpTargetOffset() - top_)) {
+  if (!bce_->setSrcNoteOffset(noteIndex_, SrcNote::TableSwitch::EndOffset,
+                              bce_->lastNonJumpTargetOffset() - top_)) {
     return false;
   }
 
