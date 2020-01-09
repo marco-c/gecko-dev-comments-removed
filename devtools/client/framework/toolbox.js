@@ -2908,6 +2908,13 @@ Toolbox.prototype = {
   
 
 
+  isDestroying: function() {
+    return this._destroyer;
+  },
+
+  
+
+
   destroy: function() {
     
     

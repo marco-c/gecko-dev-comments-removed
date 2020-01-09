@@ -108,6 +108,14 @@ async function initToolbox(url, host) {
       target = await client.mainRoot.getTab({ tab });
     } else {
       target = await targetFromURL(url);
+      const toolbox = gDevTools.getToolbox(target);
+      if (toolbox && toolbox.isDestroying()) {
+        
+        
+        
+        await toolbox.destroy();
+        target = await targetFromURL(url);
+      }
     }
     const options = { customIframe: host };
     await gDevTools.showToolbox(target, tool, Toolbox.HostType.PAGE, options);
