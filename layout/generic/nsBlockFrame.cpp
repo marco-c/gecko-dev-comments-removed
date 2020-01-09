@@ -1376,6 +1376,20 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       } else {
         absoluteContainer->MarkSizeDependentFramesDirty();
       }
+      if (haveInterrupt) {
+        
+        
+        
+        
+        
+        
+        
+        
+        for (nsIFrame* kid = absoluteContainer->GetChildList().FirstChild(); kid;
+             kid = kid->GetNextSibling()) {
+          ConsiderChildOverflow(aMetrics.mOverflowAreas, kid);
+        }
+      }
     } else {
       LogicalSize containingBlockSize =
           CalculateContainingBlockSizeForAbsolutes(parentWM, *reflowInput,
