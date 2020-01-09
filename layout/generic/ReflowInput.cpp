@@ -31,6 +31,7 @@
 #include "CounterStyleManager.h"
 #include <algorithm>
 #include "mozilla/dom/HTMLInputElement.h"
+#include "nsGridContainerFrame.h"
 
 #ifdef DEBUG
 #  undef NOISY_VERTICAL_ALIGN
@@ -1663,8 +1664,27 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
       hypotheticalPos.mIStart = nscoord(0);
       hypotheticalPos.mBStart = nscoord(0);
     } else {
+      
       CalculateHypotheticalPosition(aPresContext, placeholderFrame,
                                     aReflowInput, hypotheticalPos, aFrameType);
+      if (aReflowInput->mFrame->IsGridContainerFrame()) {
+        
+        
+        
+        nsRect cb = nsGridContainerFrame::GridItemCB(mFrame);
+        nscoord left(0);
+        nscoord right(0);
+        if (cbwm.IsBidiLTR()) {
+          left = cb.X();
+        } else {
+          right = aReflowInput->ComputedWidth() +
+                  aReflowInput->ComputedPhysicalPadding().LeftRight() -
+                  cb.XMost();
+        }
+        LogicalMargin offsets(cbwm, nsMargin(cb.Y(), right, nscoord(0), left));
+        hypotheticalPos.mIStart -= offsets.IStart(cbwm);
+        hypotheticalPos.mBStart -= offsets.BStart(cbwm);
+      }
     }
   }
 

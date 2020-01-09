@@ -729,22 +729,8 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
                    border.Size(outerWM).GetPhysicalSize(outerWM));
 
   
-  
-  
-  
-  if (aContainingBlock.TopLeft() != nsPoint(0, 0)) {
-    const nsStyleSides& offsets = kidReflowInput.mStylePosition->mOffset;
-    if (!(offsets.GetLeftUnit() == eStyleUnit_Auto &&
-          offsets.GetRightUnit() == eStyleUnit_Auto) ||
-        (rsFlags & ReflowInput::STATIC_POS_IS_CB_ORIGIN)) {
-      r.x += aContainingBlock.x;
-    }
-    if (!(offsets.GetTopUnit() == eStyleUnit_Auto &&
-          offsets.GetBottomUnit() == eStyleUnit_Auto) ||
-        (rsFlags & ReflowInput::STATIC_POS_IS_CB_ORIGIN)) {
-      r.y += aContainingBlock.y;
-    }
-  }
+  r.x += aContainingBlock.x;
+  r.y += aContainingBlock.y;
 
   aKidFrame->SetRect(r);
 
