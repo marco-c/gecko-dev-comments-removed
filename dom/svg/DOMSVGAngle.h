@@ -11,9 +11,10 @@
 #include "SVGElement.h"
 #include "mozilla/Attributes.h"
 
-class SVGAngle;
-
 namespace mozilla {
+
+class SVGOrient;
+
 namespace dom {
 class SVGSVGElement;
 
@@ -27,7 +28,7 @@ class DOMSVGAngle final : public nsWrapperCache {
   
 
 
-  DOMSVGAngle(SVGAngle* aVal, SVGElement* aSVGElement, AngleType aType)
+  DOMSVGAngle(SVGOrient* aVal, SVGElement* aSVGElement, AngleType aType)
       : mVal(aVal), mSVGElement(aSVGElement), mType(aType) {}
 
   
@@ -53,8 +54,8 @@ class DOMSVGAngle final : public nsWrapperCache {
  protected:
   ~DOMSVGAngle();
 
-  SVGAngle* mVal;  
-                   
+  SVGOrient* mVal;  
+                    
   RefPtr<SVGElement> mSVGElement;
   AngleType mType;
 };

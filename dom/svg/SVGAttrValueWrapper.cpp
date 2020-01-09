@@ -7,12 +7,12 @@
 #include "SVGAttrValueWrapper.h"
 
 #include "SVGAnimatedPreserveAspectRatio.h"
-#include "SVGAngle.h"
 #include "SVGIntegerPair.h"
 #include "nsSVGLength2.h"
 #include "SVGLengthList.h"
 #include "SVGNumberPair.h"
 #include "SVGNumberList.h"
+#include "SVGOrient.h"
 #include "SVGPathData.h"
 #include "SVGPointList.h"
 #include "SVGStringList.h"
@@ -21,9 +21,9 @@
 
 namespace mozilla {
 
- void SVGAttrValueWrapper::ToString(const SVGAngle* aAngle,
+ void SVGAttrValueWrapper::ToString(const SVGOrient* aOrient,
                                               nsAString& aResult) {
-  aAngle->GetBaseValueString(aResult);
+  aOrient->GetBaseValueString(aResult);
 }
 
  void SVGAttrValueWrapper::ToString(
