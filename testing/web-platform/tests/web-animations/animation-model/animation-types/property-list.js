@@ -993,6 +993,10 @@ const gCSSProperties = {
     types: [
     ]
   },
+  'offset-distance': {
+    
+    types: [ 'lengthPercentageOrCalc' ]
+  },
   'offset-path': {
     
     types: [
