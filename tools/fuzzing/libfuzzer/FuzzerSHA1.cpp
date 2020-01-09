@@ -15,7 +15,6 @@
 
 
 
-
 #include "FuzzerSHA1.h"
 #include "FuzzerDefs.h"
 
@@ -32,7 +31,8 @@ namespace {
 
 #ifdef __BIG_ENDIAN__
 # define SHA_BIG_ENDIAN
-#elif defined __LITTLE_ENDIAN__
+
+#elif defined __LITTLE_ENDIAN__ || LIBFUZZER_WINDOWS
 
 #elif defined __BYTE_ORDER
 # if __BYTE_ORDER__ ==  __ORDER_BIG_ENDIAN__

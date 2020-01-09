@@ -15,7 +15,6 @@
 
 
 
-
 #ifndef LLVM_FUZZER_INTERFACE_H
 #define LLVM_FUZZER_INTERFACE_H
 
@@ -28,23 +27,30 @@ extern "C" {
 
 
 
+#if defined(_WIN32)
+#define FUZZER_INTERFACE_VISIBILITY __declspec(dllexport)
+#else
+#define FUZZER_INTERFACE_VISIBILITY __attribute__((visibility("default")))
+#endif
 
 
-__attribute__((visibility("default"))) int
+
+
+
+FUZZER_INTERFACE_VISIBILITY int
 LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size);
 
 
 
 
 
-__attribute__((visibility("default"))) int LLVMFuzzerInitialize(int *argc,
-                                                                char ***argv);
+FUZZER_INTERFACE_VISIBILITY int LLVMFuzzerInitialize(int *argc, char ***argv);
 
 
 
 
 
-__attribute__((visibility("default"))) size_t
+FUZZER_INTERFACE_VISIBILITY size_t
 LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size, size_t MaxSize,
                         unsigned int Seed);
 
@@ -52,7 +58,7 @@ LLVMFuzzerCustomMutator(uint8_t *Data, size_t Size, size_t MaxSize,
 
 
 
-__attribute__((visibility("default"))) size_t
+FUZZER_INTERFACE_VISIBILITY size_t
 LLVMFuzzerCustomCrossOver(const uint8_t *Data1, size_t Size1,
                           const uint8_t *Data2, size_t Size2, uint8_t *Out,
                           size_t MaxOutSize, unsigned int Seed);
@@ -61,8 +67,10 @@ LLVMFuzzerCustomCrossOver(const uint8_t *Data1, size_t Size1,
 
 
 
-__attribute__((visibility("default"))) size_t
+FUZZER_INTERFACE_VISIBILITY size_t
 LLVMFuzzerMutate(uint8_t *Data, size_t Size, size_t MaxSize);
+
+#undef FUZZER_INTERFACE_VISIBILITY
 
 #ifdef __cplusplus
 }  

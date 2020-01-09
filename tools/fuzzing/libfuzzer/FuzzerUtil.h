@@ -8,12 +8,13 @@
 
 
 
-
 #ifndef LLVM_FUZZER_UTIL_H
 #define LLVM_FUZZER_UTIL_H
 
-#include "FuzzerDefs.h"
+#include "FuzzerBuiltins.h"
+#include "FuzzerBuiltinsMsvc.h"
 #include "FuzzerCommand.h"
+#include "FuzzerDefs.h"
 
 namespace fuzzer {
 
@@ -40,12 +41,18 @@ void PrintPC(const char *SymbolizedFMT, const char *FallbackFMT, uintptr_t PC);
 
 std::string DescribePC(const char *SymbolizedFMT, uintptr_t PC);
 
+void PrintStackTrace();
+
+void PrintMemoryProfile();
+
 unsigned NumberOfCpuCores();
 
 
 void SetSignalHandler(const FuzzingOptions& Options);
 
 void SleepSeconds(int Seconds);
+
+bool Mprotect(void *Ptr, size_t Size, bool AllowReadWrite);
 
 unsigned long GetPid();
 
@@ -80,7 +87,21 @@ std::string SearchRegexCmd(const std::string &Regex);
 
 size_t SimpleFastHash(const uint8_t *Data, size_t Size);
 
-inline uint32_t Log(uint32_t X) { return 32 - __builtin_clz(X) - 1; }
+inline uint32_t Log(uint32_t X) { return 32 - Clz(X) - 1; }
+
+inline size_t PageSize() { return 4096; }
+inline uint8_t *RoundUpByPage(uint8_t *P) {
+  uintptr_t X = reinterpret_cast<uintptr_t>(P);
+  size_t Mask = PageSize() - 1;
+  X = (X + Mask) & ~Mask;
+  return reinterpret_cast<uint8_t *>(X);
+}
+inline uint8_t *RoundDownByPage(uint8_t *P) {
+  uintptr_t X = reinterpret_cast<uintptr_t>(P);
+  size_t Mask = PageSize() - 1;
+  X = X & ~Mask;
+  return reinterpret_cast<uint8_t *>(X);
+}
 
 }  
 

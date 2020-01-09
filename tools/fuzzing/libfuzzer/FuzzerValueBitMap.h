@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef LLVM_FUZZER_VALUE_BIT_MAP_H
 #define LLVM_FUZZER_VALUE_BIT_MAP_H
 
@@ -35,7 +34,7 @@ struct ValueBitMap {
     uintptr_t WordIdx = Idx / kBitsInWord;
     uintptr_t BitIdx = Idx % kBitsInWord;
     uintptr_t Old = Map[WordIdx];
-    uintptr_t New = Old | (1UL << BitIdx);
+    uintptr_t New = Old | (1ULL << BitIdx);
     Map[WordIdx] = New;
     return New != Old;
   }
@@ -49,7 +48,7 @@ struct ValueBitMap {
     assert(Idx < kMapSizeInBits);
     uintptr_t WordIdx = Idx / kBitsInWord;
     uintptr_t BitIdx = Idx % kBitsInWord;
-    return Map[WordIdx] & (1UL << BitIdx);
+    return Map[WordIdx] & (1ULL << BitIdx);
   }
 
   size_t SizeInBits() const { return kMapSizeInBits; }
@@ -65,7 +64,7 @@ struct ValueBitMap {
   }
 
  private:
-  uintptr_t Map[kMapSizeInWords] __attribute__((aligned(512)));
+  ATTRIBUTE_ALIGNED(512) uintptr_t Map[kMapSizeInWords];
 };
 
 }  

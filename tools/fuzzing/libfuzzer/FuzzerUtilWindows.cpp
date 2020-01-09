@@ -7,7 +7,6 @@
 
 
 
-
 #include "FuzzerDefs.h"
 #if LIBFUZZER_WINDOWS
 #include "FuzzerCommand.h"
@@ -24,7 +23,7 @@
 #include <windows.h>
 
 
-#include <Psapi.h>
+#include <psapi.h>
 
 namespace fuzzer {
 
@@ -86,11 +85,11 @@ void CALLBACK AlarmHandler(PVOID, BOOLEAN) {
 class TimerQ {
   HANDLE TimerQueue;
  public:
-  TimerQ() : TimerQueue(NULL) {};
+  TimerQ() : TimerQueue(NULL) {}
   ~TimerQ() {
     if (TimerQueue)
       DeleteTimerQueueEx(TimerQueue, NULL);
-  };
+  }
   void SetTimer(int Seconds) {
     if (!TimerQueue) {
       TimerQueue = CreateTimerQueue();
@@ -105,12 +104,16 @@ class TimerQ {
       Printf("libFuzzer: CreateTimerQueueTimer failed.\n");
       exit(1);
     }
-  };
+  }
 };
 
 static TimerQ Timer;
 
 static void CrashHandler(int) { Fuzzer::StaticCrashSignalCallback(); }
+
+bool Mprotect(void *Ptr, size_t Size, bool AllowReadWrite) {
+  return false;  
+}
 
 void SetSignalHandler(const FuzzingOptions& Options) {
   HandlerOpt = &Options;
@@ -179,7 +182,9 @@ const void *SearchMemory(const void *Data, size_t DataLen, const void *Patt,
 }
 
 std::string DisassembleCmd(const std::string &FileName) {
-  if (ExecuteCommand("dumpbin /summary > nul") == 0)
+  Vector<std::string> command_vector;
+  command_vector.push_back("dumpbin /summary > nul");
+  if (ExecuteCommand(Command(command_vector)) == 0)
     return "dumpbin /disasm " + FileName;
   Printf("libFuzzer: couldn't find tool to disassemble (dumpbin)\n");
   exit(1);

@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef LLVM_FUZZER_MUTATE_H
 #define LLVM_FUZZER_MUTATE_H
 
@@ -70,6 +69,13 @@ public:
   
   
   size_t Mutate(uint8_t *Data, size_t Size, size_t MaxSize);
+
+  
+  
+  
+  size_t MutateWithMask(uint8_t *Data, size_t Size, size_t MaxSize,
+                        const Vector<uint8_t> &Mask);
+
   
   
   size_t DefaultMutate(uint8_t *Data, size_t Size, size_t MaxSize);
@@ -82,12 +88,11 @@ public:
 
   void PrintRecommendedDictionary();
 
-  void SetCorpus(const InputCorpus *Corpus) { this->Corpus = Corpus; }
+  void SetCrossOverWith(const Unit *U) { CrossOverWith = U; }
 
   Random &GetRand() { return Rand; }
 
-private:
-
+ private:
   struct Mutator {
     size_t (MutationDispatcher::*Fn)(uint8_t *Data, size_t Size, size_t Max);
     const char *Name;
@@ -128,21 +133,22 @@ private:
   
   Dictionary PersistentAutoDictionary;
 
-  Vector<Mutator> CurrentMutatorSequence;
   Vector<DictionaryEntry *> CurrentDictionaryEntrySequence;
 
   static const size_t kCmpDictionaryEntriesDequeSize = 16;
   DictionaryEntry CmpDictionaryEntriesDeque[kCmpDictionaryEntriesDequeSize];
   size_t CmpDictionaryEntriesDequeIdx = 0;
 
-  const InputCorpus *Corpus = nullptr;
+  const Unit *CrossOverWith = nullptr;
   Vector<uint8_t> MutateInPlaceHere;
+  Vector<uint8_t> MutateWithMaskTemp;
   
   
   Vector<uint8_t> CustomCrossOverInPlaceHere;
 
   Vector<Mutator> Mutators;
   Vector<Mutator> DefaultMutators;
+  Vector<Mutator> CurrentMutatorSequence;
 };
 
 }  

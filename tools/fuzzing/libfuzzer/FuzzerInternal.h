@@ -8,10 +8,10 @@
 
 
 
-
 #ifndef LLVM_FUZZER_INTERNAL_H
 #define LLVM_FUZZER_INTERNAL_H
 
+#include "FuzzerDataFlowTrace.h"
 #include "FuzzerDefs.h"
 #include "FuzzerExtFunctions.h"
 #include "FuzzerInterface.h"
@@ -35,8 +35,10 @@ public:
   Fuzzer(UserCallback CB, InputCorpus &Corpus, MutationDispatcher &MD,
          FuzzingOptions Options);
   ~Fuzzer();
-  void Loop(const Vector<std::string> &CorpusDirs);
-  void ReadAndExecuteSeedCorpora(const Vector<std::string> &CorpusDirs);
+  void Loop(const Vector<std::string> &CorpusDirs,
+            const Vector<std::string> &ExtraSeedFiles);
+  void ReadAndExecuteSeedCorpora(const Vector<std::string> &CorpusDirs,
+                                 const Vector<std::string> &ExtraSeedFiles);
   void MinimizeCrashLoop(const Unit &U);
   void RereadOutputCorpus(size_t MaxSize);
 
@@ -71,11 +73,6 @@ public:
 
   
   void Merge(const Vector<std::string> &Corpora);
-  void CrashResistantMerge(const Vector<std::string> &Args,
-                           const Vector<std::string> &Corpora,
-                           const char *CoverageSummaryInputPathOrNull,
-                           const char *CoverageSummaryOutputPathOrNull,
-                           const char *MergeControlFilePathOrNull);
   void CrashResistantMergeInternalStep(const std::string &ControlFilePath);
   MutationDispatcher &GetMD() { return MD; }
   void PrintFinalStats();
@@ -89,20 +86,19 @@ public:
                                bool DuringInitialCorpusExecution);
 
   void HandleMalloc(size_t Size);
-  void AnnounceOutput(const uint8_t *Data, size_t Size);
+  static void MaybeExitGracefully();
+  std::string WriteToOutputCorpus(const Unit &U);
 
 private:
   void AlarmCallback();
   void CrashCallback();
   void ExitCallback();
-  void MaybeExitGracefully();
   void CrashOnOverwrittenData();
   void InterruptCallback();
   void MutateAndTestOne();
   void PurgeAllocator();
   void ReportNewCoverage(InputInfo *II, const Unit &U);
   void PrintPulseAndReportSlowInput(const uint8_t *Data, size_t Size);
-  void WriteToOutputCorpus(const Unit &U);
   void WriteUnitToFileWithPrefix(const Unit &U, const char *Prefix);
   void PrintStats(const char *Where, const char *End = "\n", size_t Units = 0);
   void PrintStatusForNewUnit(const Unit &U, const char *Text);
@@ -116,7 +112,6 @@ private:
   uint8_t *CurrentUnitData = nullptr;
   std::atomic<size_t> CurrentUnitSize;
   uint8_t BaseSha1[kSHA1NumBytes];  
-  bool RunningCB = false;
 
   bool GracefulExitRequested = false;
 
@@ -134,6 +129,7 @@ private:
   InputCorpus &Corpus;
   MutationDispatcher &MD;
   FuzzingOptions Options;
+  DataFlowTrace DFT;
 
   system_clock::time_point ProcessStartTime = system_clock::now();
   system_clock::time_point UnitStartTime, UnitStopTime;
@@ -148,6 +144,28 @@ private:
 
   
   static thread_local bool IsMyThread;
+};
+
+struct ScopedEnableMsanInterceptorChecks {
+  ScopedEnableMsanInterceptorChecks() {
+    if (EF->__msan_scoped_enable_interceptor_checks)
+      EF->__msan_scoped_enable_interceptor_checks();
+  }
+  ~ScopedEnableMsanInterceptorChecks() {
+    if (EF->__msan_scoped_disable_interceptor_checks)
+      EF->__msan_scoped_disable_interceptor_checks();
+  }
+};
+
+struct ScopedDisableMsanInterceptorChecks {
+  ScopedDisableMsanInterceptorChecks() {
+    if (EF->__msan_scoped_disable_interceptor_checks)
+      EF->__msan_scoped_disable_interceptor_checks();
+  }
+  ~ScopedDisableMsanInterceptorChecks() {
+    if (EF->__msan_scoped_enable_interceptor_checks)
+      EF->__msan_scoped_enable_interceptor_checks();
+  }
 };
 
 } 

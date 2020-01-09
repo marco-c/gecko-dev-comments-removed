@@ -7,7 +7,6 @@
 
 
 
-
 #include "FuzzerDefs.h"
 #if LIBFUZZER_APPLE
 #include "FuzzerCommand.h"

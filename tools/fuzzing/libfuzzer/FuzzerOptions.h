@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef LLVM_FUZZER_OPTIONS_H
 #define LLVM_FUZZER_OPTIONS_H
 
@@ -20,8 +19,13 @@ struct FuzzingOptions {
   size_t MaxLen = 0;
   size_t LenControl = 1000;
   int UnitTimeoutSec = 300;
-  int TimeoutExitCode = 77;
+  int TimeoutExitCode = 70;
+  int OOMExitCode = 71;
+  int InterruptExitCode = 72;
   int ErrorExitCode = 77;
+  bool IgnoreTimeouts = true;
+  bool IgnoreOOMs = true;
+  bool IgnoreCrashes = false;
   int MaxTotalTimeSec = 0;
   int RssLimitMb = 0;
   int MallocLimitMb = 0;
@@ -31,7 +35,7 @@ struct FuzzingOptions {
   bool UseCounters = false;
   bool UseMemmem = true;
   bool UseCmp = false;
-  bool UseValueProfile = false;
+  int UseValueProfile = false;
   bool Shrink = false;
   bool ReduceInputs = false;
   int ReloadIntervalSec = 1;
@@ -45,6 +49,8 @@ struct FuzzingOptions {
   std::string ExactArtifactPath;
   std::string ExitOnSrcPos;
   std::string ExitOnItem;
+  std::string FocusFunction;
+  std::string DataFlowTrace;
   bool SaveArtifacts = true;
   bool PrintNEW = true; 
   bool PrintNewCovPcs = false;
@@ -53,10 +59,8 @@ struct FuzzingOptions {
   bool PrintCorpusStats = false;
   bool PrintCoverage = false;
   bool DumpCoverage = false;
-  bool UseClangCoverage = false;
   bool DetectLeaks = true;
   int PurgeAllocatorIntervalSec = 1;
-  int UseFeatureFrequency = false;
   int  TraceMalloc = 0;
   bool HandleAbrt = false;
   bool HandleBus = false;
@@ -68,6 +72,7 @@ struct FuzzingOptions {
   bool HandleXfsz = false;
   bool HandleUsr1 = false;
   bool HandleUsr2 = false;
+  bool LazyCounters = false;
 };
 
 }  

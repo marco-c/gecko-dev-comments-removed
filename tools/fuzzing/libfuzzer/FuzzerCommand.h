@@ -9,7 +9,6 @@
 
 
 
-
 #ifndef LLVM_FUZZER_COMMAND_H
 #define LLVM_FUZZER_COMMAND_H
 
@@ -29,8 +28,7 @@ public:
   
   
   static inline const char *ignoreRemainingArgs() {
-    static const char *kIgnoreRemaining = "-ignore_remaining_args=1";
-    return kIgnoreRemaining;
+    return "-ignore_remaining_args=1";
   }
 
   Command() : CombinedOutAndErr(false) {}
@@ -82,7 +80,7 @@ public:
   }
 
   
-  bool hasFlag(const std::string &Flag) {
+  bool hasFlag(const std::string &Flag) const {
     std::string Arg("-" + Flag + "=");
     auto IsMatch = [&](const std::string &Other) {
       return Arg.compare(0, std::string::npos, Other, 0, Arg.length()) == 0;
@@ -93,7 +91,7 @@ public:
   
   
   
-  std::string getFlagValue(const std::string &Flag) {
+  std::string getFlagValue(const std::string &Flag) const {
     std::string Arg("-" + Flag + "=");
     auto IsMatch = [&](const std::string &Other) {
       return Arg.compare(0, std::string::npos, Other, 0, Arg.length()) == 0;

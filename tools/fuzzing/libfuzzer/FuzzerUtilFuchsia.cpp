@@ -7,7 +7,6 @@
 
 
 
-
 #include "FuzzerDefs.h"
 
 #if LIBFUZZER_FUCHSIA
@@ -18,24 +17,49 @@
 #include <cinttypes>
 #include <cstdint>
 #include <fcntl.h>
-#include <launchpad/launchpad.h>
+#include <lib/fdio/spawn.h>
 #include <string>
+#include <sys/select.h>
 #include <thread>
 #include <unistd.h>
 #include <zircon/errors.h>
 #include <zircon/process.h>
+#include <zircon/sanitizer.h>
 #include <zircon/status.h>
 #include <zircon/syscalls.h>
+#include <zircon/syscalls/debug.h>
+#include <zircon/syscalls/exception.h>
 #include <zircon/syscalls/port.h>
 #include <zircon/types.h>
 
 namespace fuzzer {
+
+
+
+
+
+
+
+
+
+
+
+void CrashTrampolineAsm() __asm__("CrashTrampolineAsm");
 
 namespace {
 
 
 
 const uint64_t kFuzzingCrash = 0x474e495a5a5546;
+
+
+void ExitOnErr(zx_status_t Status, const char *Syscall) {
+  if (Status != ZX_OK) {
+    Printf("libFuzzer: %s failed: %s\n", Syscall,
+           _zx_status_get_string(Status));
+    exit(1);
+  }
+}
 
 void AlarmHandler(int Seconds) {
   while (true) {
@@ -45,37 +69,230 @@ void AlarmHandler(int Seconds) {
 }
 
 void InterruptHandler() {
+  fd_set readfds;
   
-  while (getchar() != 0x03);
+  do {
+    FD_ZERO(&readfds);
+    FD_SET(STDIN_FILENO, &readfds);
+    select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, nullptr);
+  } while(!FD_ISSET(STDIN_FILENO, &readfds) || getchar() != 0x03);
   Fuzzer::StaticInterruptCallback();
 }
 
-void CrashHandler(zx_handle_t *Port) {
-  std::unique_ptr<zx_handle_t> ExceptionPort(Port);
-  zx_port_packet_t Packet;
-  _zx_port_wait(*ExceptionPort, ZX_TIME_INFINITE, &Packet, 1);
-  
-  if (_zx_task_bind_exception_port(ZX_HANDLE_INVALID, ZX_HANDLE_INVALID,
-                                   kFuzzingCrash, 0) != ZX_OK) {
-    
-    Printf("libFuzzer: unable to unbind exception port; aborting!\n");
-    exit(1);
-  }
-  if (Packet.key != kFuzzingCrash) {
-    Printf("libFuzzer: invalid crash key: %" PRIx64 "; aborting!\n",
-           Packet.key);
-    exit(1);
-  }
-  
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__x86_64__)
+#define FOREACH_REGISTER(OP_REG, OP_NUM) \
+  OP_REG(rax)                            \
+  OP_REG(rbx)                            \
+  OP_REG(rcx)                            \
+  OP_REG(rdx)                            \
+  OP_REG(rsi)                            \
+  OP_REG(rdi)                            \
+  OP_REG(rbp)                            \
+  OP_REG(rsp)                            \
+  OP_REG(r8)                             \
+  OP_REG(r9)                             \
+  OP_REG(r10)                            \
+  OP_REG(r11)                            \
+  OP_REG(r12)                            \
+  OP_REG(r13)                            \
+  OP_REG(r14)                            \
+  OP_REG(r15)                            \
+  OP_REG(rip)
+
+#elif defined(__aarch64__)
+#define FOREACH_REGISTER(OP_REG, OP_NUM) \
+  OP_NUM(0)                              \
+  OP_NUM(1)                              \
+  OP_NUM(2)                              \
+  OP_NUM(3)                              \
+  OP_NUM(4)                              \
+  OP_NUM(5)                              \
+  OP_NUM(6)                              \
+  OP_NUM(7)                              \
+  OP_NUM(8)                              \
+  OP_NUM(9)                              \
+  OP_NUM(10)                             \
+  OP_NUM(11)                             \
+  OP_NUM(12)                             \
+  OP_NUM(13)                             \
+  OP_NUM(14)                             \
+  OP_NUM(15)                             \
+  OP_NUM(16)                             \
+  OP_NUM(17)                             \
+  OP_NUM(18)                             \
+  OP_NUM(19)                             \
+  OP_NUM(20)                             \
+  OP_NUM(21)                             \
+  OP_NUM(22)                             \
+  OP_NUM(23)                             \
+  OP_NUM(24)                             \
+  OP_NUM(25)                             \
+  OP_NUM(26)                             \
+  OP_NUM(27)                             \
+  OP_NUM(28)                             \
+  OP_NUM(29)                             \
+  OP_NUM(30)                             \
+  OP_REG(sp)
+
+#else
+#error "Unsupported architecture for fuzzing on Fuchsia"
+#endif
+
+
+#define CFI_OFFSET_REG(reg) ".cfi_offset " #reg ", %c[" #reg "]\n"
+#define CFI_OFFSET_NUM(num) CFI_OFFSET_REG(r##num)
+
+
+#define ASM_OPERAND_REG(reg) \
+  [reg] "i"(offsetof(zx_thread_state_general_regs_t, reg)),
+#define ASM_OPERAND_NUM(num)                                 \
+  [r##num] "i"(offsetof(zx_thread_state_general_regs_t, r[num])),
+
+
+
+__attribute__((noreturn))
+static void StaticCrashHandler() {
   Fuzzer::StaticCrashSignalCallback();
+  for (;;) {
+    _Exit(1);
+  }
+}
+
+
+
+
+
+__attribute__((used))
+void MakeTrampoline() {
+  __asm__(".cfi_endproc\n"
+    ".pushsection .text.CrashTrampolineAsm\n"
+    ".type CrashTrampolineAsm,STT_FUNC\n"
+"CrashTrampolineAsm:\n"
+    ".cfi_startproc simple\n"
+    ".cfi_signal_frame\n"
+#if defined(__x86_64__)
+    ".cfi_return_column rip\n"
+    ".cfi_def_cfa rsp, 0\n"
+    FOREACH_REGISTER(CFI_OFFSET_REG, CFI_OFFSET_NUM)
+    "call %c[StaticCrashHandler]\n"
+    "ud2\n"
+#elif defined(__aarch64__)
+    ".cfi_return_column 33\n"
+    ".cfi_def_cfa sp, 0\n"
+    ".cfi_offset 33, %c[pc]\n"
+    FOREACH_REGISTER(CFI_OFFSET_REG, CFI_OFFSET_NUM)
+    "bl %[StaticCrashHandler]\n"
+#else
+#error "Unsupported architecture for fuzzing on Fuchsia"
+#endif
+    ".cfi_endproc\n"
+    ".size CrashTrampolineAsm, . - CrashTrampolineAsm\n"
+    ".popsection\n"
+    ".cfi_startproc\n"
+    : 
+    : FOREACH_REGISTER(ASM_OPERAND_REG, ASM_OPERAND_NUM)
+#if defined(__aarch64__)
+      ASM_OPERAND_REG(pc)
+#endif
+      [StaticCrashHandler] "i" (StaticCrashHandler));
+}
+
+void CrashHandler(zx_handle_t *Event) {
+  
+  
+  struct ScopedHandle {
+    ~ScopedHandle() { _zx_handle_close(Handle); }
+    zx_handle_t Handle = ZX_HANDLE_INVALID;
+  };
+
+  
+  
+  
+  
+  ScopedHandle Port;
+  ExitOnErr(_zx_port_create(0, &Port.Handle), "_zx_port_create");
+  zx_handle_t Self = _zx_process_self();
+
+  ExitOnErr(_zx_task_bind_exception_port(Self, Port.Handle, kFuzzingCrash,
+                                         ZX_EXCEPTION_PORT_DEBUGGER),
+            "_zx_task_bind_exception_port");
+
+  ExitOnErr(_zx_object_signal(*Event, 0, ZX_USER_SIGNAL_0),
+            "_zx_object_signal");
+
+  zx_port_packet_t Packet;
+  ExitOnErr(_zx_port_wait(Port.Handle, ZX_TIME_INFINITE, &Packet),
+            "_zx_port_wait");
+
+  
+  
+  
+  
+  
+  
+  ScopedHandle Thread;
+  ExitOnErr(_zx_object_get_child(Self, Packet.exception.tid,
+                                 ZX_RIGHT_SAME_RIGHTS, &Thread.Handle),
+            "_zx_object_get_child");
+
+  zx_thread_state_general_regs_t GeneralRegisters;
+  ExitOnErr(_zx_thread_read_state(Thread.Handle, ZX_THREAD_STATE_GENERAL_REGS,
+                                  &GeneralRegisters, sizeof(GeneralRegisters)),
+            "_zx_thread_read_state");
+
+  
+  
+  
+#if defined(__x86_64__)
+  uintptr_t StackPtr =
+      (GeneralRegisters.rsp - (128 + sizeof(GeneralRegisters))) &
+      -(uintptr_t)16;
+  __unsanitized_memcpy(reinterpret_cast<void *>(StackPtr), &GeneralRegisters,
+         sizeof(GeneralRegisters));
+  GeneralRegisters.rsp = StackPtr;
+  GeneralRegisters.rip = reinterpret_cast<zx_vaddr_t>(CrashTrampolineAsm);
+
+#elif defined(__aarch64__)
+  uintptr_t StackPtr =
+      (GeneralRegisters.sp - sizeof(GeneralRegisters)) & -(uintptr_t)16;
+  __unsanitized_memcpy(reinterpret_cast<void *>(StackPtr), &GeneralRegisters,
+                       sizeof(GeneralRegisters));
+  GeneralRegisters.sp = StackPtr;
+  GeneralRegisters.pc = reinterpret_cast<zx_vaddr_t>(CrashTrampolineAsm);
+
+#else
+#error "Unsupported architecture for fuzzing on Fuchsia"
+#endif
+
+  
+  ExitOnErr(_zx_thread_write_state(Thread.Handle, ZX_THREAD_STATE_GENERAL_REGS,
+                                   &GeneralRegisters, sizeof(GeneralRegisters)),
+            "_zx_thread_write_state");
+
+  ExitOnErr(_zx_task_resume_from_exception(Thread.Handle, Port.Handle, 0),
+            "_zx_task_resume_from_exception");
 }
 
 } 
 
+bool Mprotect(void *Ptr, size_t Size, bool AllowReadWrite) {
+  return false;  
+}
+
 
 void SetSignalHandler(const FuzzingOptions &Options) {
-  zx_status_t rc;
-
   
   if (Options.UnitTimeoutSec > 0) {
     std::thread T(AlarmHandler, Options.UnitTimeoutSec / 2 + 1);
@@ -94,22 +311,15 @@ void SetSignalHandler(const FuzzingOptions &Options) {
     return;
 
   
-  zx_handle_t *ExceptionPort = new zx_handle_t;
-  if ((rc = _zx_port_create(0, ExceptionPort)) != ZX_OK) {
-    Printf("libFuzzer: zx_port_create failed: %s\n", _zx_status_get_string(rc));
-    exit(1);
-  }
+  zx_handle_t Event;
+  ExitOnErr(_zx_event_create(0, &Event), "_zx_event_create");
 
-  
-  if ((rc = _zx_task_bind_exception_port(_zx_process_self(), *ExceptionPort,
-                                         kFuzzingCrash, 0)) != ZX_OK) {
-    Printf("libFuzzer: unable to bind exception port: %s\n",
-           zx_status_get_string(rc));
-    exit(1);
-  }
+  std::thread T(CrashHandler, &Event);
+  zx_status_t Status =
+      _zx_object_wait_one(Event, ZX_USER_SIGNAL_0, ZX_TIME_INFINITE, nullptr);
+  _zx_handle_close(Event);
+  ExitOnErr(Status, "_zx_object_wait_one");
 
-  
-  std::thread T(CrashHandler, ExceptionPort);
   T.detach();
 }
 
@@ -120,10 +330,10 @@ void SleepSeconds(int Seconds) {
 unsigned long GetPid() {
   zx_status_t rc;
   zx_info_handle_basic_t Info;
-  if ((rc = zx_object_get_info(_zx_process_self(), ZX_INFO_HANDLE_BASIC, &Info,
-                               sizeof(Info), NULL, NULL)) != ZX_OK) {
+  if ((rc = _zx_object_get_info(_zx_process_self(), ZX_INFO_HANDLE_BASIC, &Info,
+                                sizeof(Info), NULL, NULL)) != ZX_OK) {
     Printf("libFuzzer: unable to get info about self: %s\n",
-           zx_status_get_string(rc));
+           _zx_status_get_string(rc));
     exit(1);
   }
   return Info.koid;
@@ -133,7 +343,7 @@ size_t GetPeakRSSMb() {
   zx_status_t rc;
   zx_info_task_stats_t Info;
   if ((rc = _zx_object_get_info(_zx_process_self(), ZX_INFO_TASK_STATS, &Info,
-                               sizeof(Info), NULL, NULL)) != ZX_OK) {
+                                sizeof(Info), NULL, NULL)) != ZX_OK) {
     Printf("libFuzzer: unable to get info about self: %s\n",
            _zx_status_get_string(rc));
     exit(1);
@@ -163,30 +373,33 @@ int ExecuteCommand(const Command &Cmd) {
   auto Args = Cmd.getArguments();
   size_t Argc = Args.size();
   assert(Argc != 0);
-  std::unique_ptr<const char *[]> Argv(new const char *[Argc]);
+  std::unique_ptr<const char *[]> Argv(new const char *[Argc + 1]);
   for (size_t i = 0; i < Argc; ++i)
     Argv[i] = Args[i].c_str();
+  Argv[Argc] = nullptr;
 
   
-  launchpad_t *lp;
-  launchpad_create(ZX_HANDLE_INVALID, Argv[0], &lp);
-  launchpad_load_from_file(lp, Argv[0]);
-  launchpad_set_args(lp, Argc, Argv.get());
-  launchpad_clone(lp, LP_CLONE_ALL & (~LP_CLONE_FDIO_STDIO));
-
+  
+  
   
   int FdOut = STDOUT_FILENO;
-
   if (Cmd.hasOutputFile()) {
-    auto Filename = Cmd.getOutputFile();
-    FdOut = open(Filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0);
+    std::string Path;
+    if (Cmd.hasFlag("artifact_prefix"))
+      Path = Cmd.getFlagValue("artifact_prefix") + "/" + Cmd.getOutputFile();
+    else
+      Path = Cmd.getOutputFile();
+    FdOut = open(Path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0);
     if (FdOut == -1) {
-      Printf("libFuzzer: failed to open %s: %s\n", Filename.c_str(),
+      Printf("libFuzzer: failed to open %s: %s\n", Path.c_str(),
              strerror(errno));
       return ZX_ERR_IO;
     }
   }
-  auto CloseFdOut = at_scope_exit([&]() { close(FdOut); } );
+  auto CloseFdOut = at_scope_exit([FdOut]() {
+    if (FdOut != STDOUT_FILENO)
+      close(FdOut);
+  });
 
   
   int FdErr = STDERR_FILENO;
@@ -194,17 +407,40 @@ int ExecuteCommand(const Command &Cmd) {
     FdErr = FdOut;
 
   
-  if ((rc = launchpad_clone_fd(lp, STDIN_FILENO, STDIN_FILENO)) != ZX_OK ||
-      (rc = launchpad_clone_fd(lp, FdOut, STDOUT_FILENO)) != ZX_OK ||
-      (rc = launchpad_clone_fd(lp, FdErr, STDERR_FILENO)) != ZX_OK) {
-    Printf("libFuzzer: failed to clone FDIO: %s\n", _zx_status_get_string(rc));
-    return rc;
-  }
+  fdio_spawn_action_t SpawnAction[] = {
+      {
+          .action = FDIO_SPAWN_ACTION_CLONE_FD,
+          .fd =
+              {
+                  .local_fd = STDIN_FILENO,
+                  .target_fd = STDIN_FILENO,
+              },
+      },
+      {
+          .action = FDIO_SPAWN_ACTION_CLONE_FD,
+          .fd =
+              {
+                  .local_fd = FdOut,
+                  .target_fd = STDOUT_FILENO,
+              },
+      },
+      {
+          .action = FDIO_SPAWN_ACTION_CLONE_FD,
+          .fd =
+              {
+                  .local_fd = FdErr,
+                  .target_fd = STDERR_FILENO,
+              },
+      },
+  };
 
   
+  char ErrorMsg[FDIO_SPAWN_ERR_MSG_MAX_LENGTH];
   zx_handle_t ProcessHandle = ZX_HANDLE_INVALID;
-  const char *ErrorMsg = nullptr;
-  if ((rc = launchpad_go(lp, &ProcessHandle, &ErrorMsg)) != ZX_OK) {
+  rc = fdio_spawn_etc(
+      ZX_HANDLE_INVALID, FDIO_SPAWN_CLONE_ALL & (~FDIO_SPAWN_CLONE_STDIO),
+      Argv[0], Argv.get(), nullptr, 3, SpawnAction, &ProcessHandle, ErrorMsg);
+  if (rc != ZX_OK) {
     Printf("libFuzzer: failed to launch '%s': %s, %s\n", Argv[0], ErrorMsg,
            _zx_status_get_string(rc));
     return rc;
@@ -223,7 +459,7 @@ int ExecuteCommand(const Command &Cmd) {
   if ((rc = _zx_object_get_info(ProcessHandle, ZX_INFO_PROCESS, &Info,
                                 sizeof(Info), nullptr, nullptr)) != ZX_OK) {
     Printf("libFuzzer: unable to get return code from '%s': %s\n", Argv[0],
-           zx_status_get_string(rc));
+           _zx_status_get_string(rc));
     return rc;
   }
 
@@ -237,4 +473,4 @@ const void *SearchMemory(const void *Data, size_t DataLen, const void *Patt,
 
 } 
 
-#endif 
+#endif

@@ -8,7 +8,6 @@
 
 
 
-
 #include "FuzzerCommand.h"
 #include "FuzzerMerge.h"
 #include "FuzzerIO.h"
@@ -34,6 +33,8 @@ void Merger::ParseOrExit(std::istream &IS, bool ParseCoverage) {
     exit(1);
   }
 }
+
+
 
 
 
@@ -76,6 +77,7 @@ bool Merger::Parse(std::istream &IS, bool ParseCoverage) {
   const size_t kInvalidStartMarker = -1;
   size_t LastSeenStartMarker = kInvalidStartMarker;
   Vector<uint32_t> TmpFeatures;
+  Set<uint32_t> PCs;
   while (std::getline(IS, Line, '\n')) {
     std::istringstream ISS1(Line);
     std::string Marker;
@@ -90,7 +92,7 @@ bool Merger::Parse(std::istream &IS, bool ParseCoverage) {
       LastSeenStartMarker = ExpectedStartMarker;
       assert(ExpectedStartMarker < Files.size());
       ExpectedStartMarker++;
-    } else if (Marker == "DONE") {
+    } else if (Marker == "FT") {
       
       size_t CurrentFileIdx = N;
       if (CurrentFileIdx != LastSeenStartMarker)
@@ -98,11 +100,17 @@ bool Merger::Parse(std::istream &IS, bool ParseCoverage) {
       LastSeenStartMarker = kInvalidStartMarker;
       if (ParseCoverage) {
         TmpFeatures.clear();  
-        while (ISS1 >> std::hex >> N)
+        while (ISS1 >> N)
           TmpFeatures.push_back(N);
         std::sort(TmpFeatures.begin(), TmpFeatures.end());
         Files[CurrentFileIdx].Features = TmpFeatures;
       }
+    } else if (Marker == "COV") {
+      size_t CurrentFileIdx = N;
+      if (ParseCoverage)
+        while (ISS1 >> N)
+          if (PCs.insert(N).second)
+            Files[CurrentFileIdx].Cov.push_back(N);
     } else {
       return false;
     }
@@ -124,18 +132,18 @@ size_t Merger::ApproximateMemoryConsumption() const  {
 
 
 size_t Merger::Merge(const Set<uint32_t> &InitialFeatures,
+                     Set<uint32_t> *NewFeatures,
+                     const Set<uint32_t> &InitialCov, Set<uint32_t> *NewCov,
                      Vector<std::string> *NewFiles) {
   NewFiles->clear();
   assert(NumFilesInFirstCorpus <= Files.size());
-  Set<uint32_t> AllFeatures(InitialFeatures);
+  Set<uint32_t> AllFeatures = InitialFeatures;
 
   
   for (size_t i = 0; i < NumFilesInFirstCorpus; i++) {
     auto &Cur = Files[i].Features;
     AllFeatures.insert(Cur.begin(), Cur.end());
   }
-  size_t InitialNumFeatures = AllFeatures.size();
-
   
   for (size_t i = NumFilesInFirstCorpus; i < Files.size(); i++) {
     auto &Cur = Files[i].Features;
@@ -161,22 +169,20 @@ size_t Merger::Merge(const Set<uint32_t> &InitialFeatures,
     auto &Cur = Files[i].Features;
     
     
-    size_t OldSize = AllFeatures.size();
-    AllFeatures.insert(Cur.begin(), Cur.end());
-    if (AllFeatures.size() > OldSize)
+    bool FoundNewFeatures = false;
+    for (auto Fe: Cur) {
+      if (AllFeatures.insert(Fe).second) {
+        FoundNewFeatures = true;
+        NewFeatures->insert(Fe);
+      }
+    }
+    if (FoundNewFeatures)
       NewFiles->push_back(Files[i].Name);
+    for (auto Cov : Files[i].Cov)
+      if (InitialCov.find(Cov) == InitialCov.end())
+        NewCov->insert(Cov);
   }
-  return AllFeatures.size() - InitialNumFeatures;
-}
-
-void Merger::PrintSummary(std::ostream &OS) {
-  for (auto &File : Files) {
-    OS << std::hex;
-    OS << File.Name << " size: " << File.Size << " features: ";
-    for (auto Feature : File.Features)
-      OS << " " << Feature;
-    OS << "\n";
-  }
+  return NewFeatures->size();
 }
 
 Set<uint32_t> Merger::AllFeatures() const {
@@ -184,25 +190,6 @@ Set<uint32_t> Merger::AllFeatures() const {
   for (auto &File : Files)
     S.insert(File.Features.begin(), File.Features.end());
   return S;
-}
-
-Set<uint32_t> Merger::ParseSummary(std::istream &IS) {
-  std::string Line, Tmp;
-  Set<uint32_t> Res;
-  while (std::getline(IS, Line, '\n')) {
-    size_t N;
-    std::istringstream ISS1(Line);
-    ISS1 >> Tmp;  
-    ISS1 >> Tmp;  
-    assert(Tmp == "size:" && "Corrupt summary file");
-    ISS1 >> std::hex;
-    ISS1 >> N;    
-    ISS1 >> Tmp;  
-    assert(Tmp == "features:" && "Corrupt summary file");
-    while (ISS1 >> std::hex >> N)
-      Res.insert(N);
-  }
-  return Res;
 }
 
 
@@ -223,8 +210,9 @@ void Fuzzer::CrashResistantMergeInternalStep(const std::string &CFPath) {
 
   std::ofstream OF(CFPath, std::ofstream::out | std::ofstream::app);
   Set<size_t> AllFeatures;
+  Set<const TracePC::PCTableEntry *> AllPCs;
   for (size_t i = M.FirstNotProcessedFile; i < M.Files.size(); i++) {
-    MaybeExitGracefully();
+    Fuzzer::MaybeExitGracefully();
     auto U = FileToVector(M.Files[i].Name);
     if (U.size() > MaxInputLen) {
       U.resize(MaxInputLen);
@@ -232,7 +220,7 @@ void Fuzzer::CrashResistantMergeInternalStep(const std::string &CFPath) {
     }
     std::ostringstream StartedLine;
     
-    OF << "STARTED " << std::dec << i << " " << U.size() << "\n";
+    OF << "STARTED " << i << " " << U.size() << "\n";
     OF.flush();  
     
     TPC.ResetMaps();
@@ -247,26 +235,36 @@ void Fuzzer::CrashResistantMergeInternalStep(const std::string &CFPath) {
       if (AllFeatures.insert(Feature).second)
         UniqFeatures.insert(Feature);
     });
+    TPC.UpdateObservedPCs();
     
     if (!(TotalNumberOfRuns & (TotalNumberOfRuns - 1)))
       PrintStats("pulse ");
     
-    OF << "DONE " << i;
+    OF << "FT " << i;
     for (size_t F : UniqFeatures)
-      OF << " " << std::hex << F;
+      OF << " " << F;
+    OF << "\n";
+    OF << "COV " << i;
+    TPC.ForEachObservedPC([&](const TracePC::PCTableEntry *TE) {
+      if (AllPCs.insert(TE).second)
+        OF << " " << TPC.PCTableEntryIdx(TE);
+    });
     OF << "\n";
     OF.flush();
   }
+  PrintStats("DONE ");
 }
 
 static void WriteNewControlFile(const std::string &CFPath,
-                                const Vector<SizedFile> &AllFiles,
-                                size_t NumFilesInFirstCorpus) {
+                                const Vector<SizedFile> &OldCorpus,
+                                const Vector<SizedFile> &NewCorpus) {
   RemoveFile(CFPath);
   std::ofstream ControlFile(CFPath);
-  ControlFile << AllFiles.size() << "\n";
-  ControlFile << NumFilesInFirstCorpus << "\n";
-  for (auto &SF: AllFiles)
+  ControlFile << (OldCorpus.size() + NewCorpus.size()) << "\n";
+  ControlFile << OldCorpus.size() << "\n";
+  for (auto &SF: OldCorpus)
+    ControlFile << SF.File << "\n";
+  for (auto &SF: NewCorpus)
     ControlFile << SF.File << "\n";
   if (!ControlFile) {
     Printf("MERGE-OUTER: failed to write to the control file: %s\n",
@@ -276,115 +274,88 @@ static void WriteNewControlFile(const std::string &CFPath,
 }
 
 
-void Fuzzer::CrashResistantMerge(const Vector<std::string> &Args,
-                                 const Vector<std::string> &Corpora,
-                                 const char *CoverageSummaryInputPathOrNull,
-                                 const char *CoverageSummaryOutputPathOrNull,
-                                 const char *MergeControlFilePathOrNull) {
-  if (Corpora.size() <= 1) {
-    Printf("Merge requires two or more corpus dirs\n");
-    return;
-  }
-  auto CFPath =
-      MergeControlFilePathOrNull
-          ? MergeControlFilePathOrNull
-          : DirPlusFile(TmpDir(),
-                        "libFuzzerTemp." + std::to_string(GetPid()) + ".txt");
-
+void CrashResistantMerge(const Vector<std::string> &Args,
+                         const Vector<SizedFile> &OldCorpus,
+                         const Vector<SizedFile> &NewCorpus,
+                         Vector<std::string> *NewFiles,
+                         const Set<uint32_t> &InitialFeatures,
+                         Set<uint32_t> *NewFeatures,
+                         const Set<uint32_t> &InitialCov,
+                         Set<uint32_t> *NewCov,
+                         const std::string &CFPath,
+                         bool V ) {
+  if (NewCorpus.empty() && OldCorpus.empty()) return;  
   size_t NumAttempts = 0;
-  if (MergeControlFilePathOrNull && FileSize(MergeControlFilePathOrNull)) {
-    Printf("MERGE-OUTER: non-empty control file provided: '%s'\n",
-           MergeControlFilePathOrNull);
+  if (FileSize(CFPath)) {
+    VPrintf(V, "MERGE-OUTER: non-empty control file provided: '%s'\n",
+           CFPath.c_str());
     Merger M;
-    std::ifstream IF(MergeControlFilePathOrNull);
+    std::ifstream IF(CFPath);
     if (M.Parse(IF, false)) {
-      Printf("MERGE-OUTER: control file ok, %zd files total,"
+      VPrintf(V, "MERGE-OUTER: control file ok, %zd files total,"
              " first not processed file %zd\n",
              M.Files.size(), M.FirstNotProcessedFile);
       if (!M.LastFailure.empty())
-        Printf("MERGE-OUTER: '%s' will be skipped as unlucky "
+        VPrintf(V, "MERGE-OUTER: '%s' will be skipped as unlucky "
                "(merge has stumbled on it the last time)\n",
                M.LastFailure.c_str());
       if (M.FirstNotProcessedFile >= M.Files.size()) {
-        Printf("MERGE-OUTER: nothing to do, merge has been completed before\n");
+        VPrintf(
+            V, "MERGE-OUTER: nothing to do, merge has been completed before\n");
         exit(0);
       }
 
       NumAttempts = M.Files.size() - M.FirstNotProcessedFile;
     } else {
-      Printf("MERGE-OUTER: bad control file, will overwrite it\n");
+      VPrintf(V, "MERGE-OUTER: bad control file, will overwrite it\n");
     }
   }
 
   if (!NumAttempts) {
     
-    Vector<SizedFile> AllFiles;
-    GetSizedFilesFromDir(Corpora[0], &AllFiles);
-    size_t NumFilesInFirstCorpus = AllFiles.size();
-    std::sort(AllFiles.begin(), AllFiles.end());
-    for (size_t i = 1; i < Corpora.size(); i++)
-      GetSizedFilesFromDir(Corpora[i], &AllFiles);
-    std::sort(AllFiles.begin() + NumFilesInFirstCorpus, AllFiles.end());
-    Printf("MERGE-OUTER: %zd files, %zd in the initial corpus\n",
-           AllFiles.size(), NumFilesInFirstCorpus);
-    WriteNewControlFile(CFPath, AllFiles, NumFilesInFirstCorpus);
-    NumAttempts = AllFiles.size();
+    NumAttempts = OldCorpus.size() + NewCorpus.size();
+    VPrintf(V, "MERGE-OUTER: %zd files, %zd in the initial corpus\n",
+            NumAttempts, OldCorpus.size());
+    WriteNewControlFile(CFPath, OldCorpus, NewCorpus);
   }
 
   
   
   Command BaseCmd(Args);
   BaseCmd.removeFlag("merge");
-  bool Success = false;
+  BaseCmd.removeFlag("fork");
   for (size_t Attempt = 1; Attempt <= NumAttempts; Attempt++) {
-    MaybeExitGracefully();
-    Printf("MERGE-OUTER: attempt %zd\n", Attempt);
+    Fuzzer::MaybeExitGracefully();
+    VPrintf(V, "MERGE-OUTER: attempt %zd\n", Attempt);
     Command Cmd(BaseCmd);
     Cmd.addFlag("merge_control_file", CFPath);
     Cmd.addFlag("merge_inner", "1");
+    if (!V) {
+      Cmd.setOutputFile(getDevNull());
+      Cmd.combineOutAndErr();
+    }
     auto ExitCode = ExecuteCommand(Cmd);
     if (!ExitCode) {
-      Printf("MERGE-OUTER: succesfull in %zd attempt(s)\n", Attempt);
-      Success = true;
+      VPrintf(V, "MERGE-OUTER: succesfull in %zd attempt(s)\n", Attempt);
       break;
     }
-  }
-  if (!Success) {
-    Printf("MERGE-OUTER: zero succesfull attempts, exiting\n");
-    exit(1);
   }
   
   Merger M;
   std::ifstream IF(CFPath);
   IF.seekg(0, IF.end);
-  Printf("MERGE-OUTER: the control file has %zd bytes\n", (size_t)IF.tellg());
+  VPrintf(V, "MERGE-OUTER: the control file has %zd bytes\n",
+          (size_t)IF.tellg());
   IF.seekg(0, IF.beg);
   M.ParseOrExit(IF, true);
   IF.close();
-  Printf("MERGE-OUTER: consumed %zdMb (%zdMb rss) to parse the control file\n",
-         M.ApproximateMemoryConsumption() >> 20, GetPeakRSSMb());
-  if (CoverageSummaryOutputPathOrNull) {
-    Printf("MERGE-OUTER: writing coverage summary for %zd files to %s\n",
-           M.Files.size(), CoverageSummaryOutputPathOrNull);
-    std::ofstream SummaryOut(CoverageSummaryOutputPathOrNull);
-    M.PrintSummary(SummaryOut);
-  }
-  Vector<std::string> NewFiles;
-  Set<uint32_t> InitialFeatures;
-  if (CoverageSummaryInputPathOrNull) {
-    std::ifstream SummaryIn(CoverageSummaryInputPathOrNull);
-    InitialFeatures = M.ParseSummary(SummaryIn);
-    Printf("MERGE-OUTER: coverage summary loaded from %s, %zd features found\n",
-           CoverageSummaryInputPathOrNull, InitialFeatures.size());
-  }
-  size_t NumNewFeatures = M.Merge(InitialFeatures, &NewFiles);
-  Printf("MERGE-OUTER: %zd new files with %zd new features added\n",
-         NewFiles.size(), NumNewFeatures);
-  for (auto &F: NewFiles)
-    WriteToOutputCorpus(FileToVector(F, MaxInputLen));
-  
-  if (!MergeControlFilePathOrNull)
-    RemoveFile(CFPath);
+  VPrintf(V,
+          "MERGE-OUTER: consumed %zdMb (%zdMb rss) to parse the control file\n",
+          M.ApproximateMemoryConsumption() >> 20, GetPeakRSSMb());
+  M.Merge(InitialFeatures, NewFeatures, InitialCov, NewCov, NewFiles);
+  VPrintf(V, "MERGE-OUTER: %zd new files with %zd new features added; "
+          "%zd new coverage edges\n",
+         NewFiles->size(), NewFeatures->size(), NewCov->size());
 }
 
 } 

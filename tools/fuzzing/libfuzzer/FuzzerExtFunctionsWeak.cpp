@@ -11,9 +11,9 @@
 
 
 
-
 #include "FuzzerDefs.h"
-#if LIBFUZZER_LINUX || LIBFUZZER_NETBSD || LIBFUZZER_FUCHSIA || LIBFUZZER_FREEBSD
+#if LIBFUZZER_LINUX || LIBFUZZER_NETBSD || LIBFUZZER_FUCHSIA ||                \
+    LIBFUZZER_FREEBSD || LIBFUZZER_OPENBSD
 
 #include "FuzzerExtFunctions.h"
 #include "FuzzerIO.h"
@@ -51,4 +51,4 @@ ExternalFunctions::ExternalFunctions() {
 
 } 
 
-#endif 
+#endif

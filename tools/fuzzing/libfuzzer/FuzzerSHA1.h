@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef LLVM_FUZZER_SHA1_H
 #define LLVM_FUZZER_SHA1_H
 
