@@ -3,11 +3,11 @@
 
 
 
+#ifndef __GMPTestMonitor_h__
+#define __GMPTestMonitor_h__
 
 #include "nsThreadUtils.h"
-
-#ifndef __GMPTestMonitor_h__
-#  define __GMPTestMonitor_h__
+#include "mozilla/SystemGroup.h"
 
 class GMPTestMonitor {
  public:

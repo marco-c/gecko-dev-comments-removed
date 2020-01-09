@@ -253,3 +253,4 @@ TEST(CubebDeviceEnumerator, DeviceInfoFromName)
   
   CubebDeviceEnumerator::Shutdown();
 }
+#undef ENABLE_SET_CUBEB_BACKEND
