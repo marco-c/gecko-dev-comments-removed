@@ -663,6 +663,14 @@ this.TelemetryFeed = class TelemetryFeed {
     this.sendEvent(this.createUndesiredEvent(action));
   }
 
+  handleTrailheadEnrollEvent(action) {
+    
+    
+    if (this.telemetryEnabled) {
+      this.utEvents.sendTrailheadEnrollEvent(action.data);
+    }
+  }
+
   async sendPageTakeoverData() {
     if (this.telemetryEnabled) {
       const value = {};
@@ -763,6 +771,9 @@ this.TelemetryFeed = class TelemetryFeed {
         break;
       case at.TELEMETRY_PERFORMANCE_EVENT:
         this.sendEvent(this.createPerformanceEvent(action));
+        break;
+      case at.TRAILHEAD_ENROLL_EVENT:
+        this.handleTrailheadEnrollEvent(action);
         break;
       case at.UNINIT:
         this.uninit();
