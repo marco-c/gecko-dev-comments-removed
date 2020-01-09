@@ -47,14 +47,6 @@ add_task(async function() {
 
 async function getFilterButtons(hud) {
   const outputNode = hud.ui.outputNode;
-  info("Wait for console toolbar to appear");
-  const toolbar = await waitFor(() => {
-    return outputNode.querySelector(".webconsole-filterbar-primary");
-  });
-  
-  if (!outputNode.querySelector(".webconsole-filterbar-secondary")) {
-    toolbar.querySelector(".devtools-filter-icon").click();
-  }
 
   info("Wait for console filterbar to appear");
   const filterBar = await waitFor(() => {
