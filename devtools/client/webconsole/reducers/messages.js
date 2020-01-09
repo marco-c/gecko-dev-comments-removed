@@ -791,7 +791,7 @@ function getMessageVisibility(message, {
 
   const warningGroupMessage =
   messagesState.messagesById.get(getParentWarningGroupMessageId(message));
-    
+
   
   if (
     checkGroup
