@@ -29,6 +29,8 @@ class SVGEllipseElement final : public SVGEllipseElementBase {
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
 
  public:
+  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+
   
   virtual bool HasValidDimensions() const override;
 
