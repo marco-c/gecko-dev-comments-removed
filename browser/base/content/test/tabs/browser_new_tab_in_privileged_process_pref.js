@@ -66,7 +66,7 @@ add_task(async function activity_stream_in_privileged_content_process() {
     checkBrowserRemoteType(browser1, E10SUtils.PRIVILEGED_REMOTE_TYPE);
 
     
-    let privilegedPid = browser1.frameLoader.tabParent.osPid;
+    let privilegedPid = browser1.frameLoader.remoteTab.osPid;
 
     for (let url of [
       ABOUT_NEWTAB,
@@ -80,7 +80,7 @@ add_task(async function activity_stream_in_privileged_content_process() {
       `${ABOUT_HOME}?q=baz`,
     ]) {
       await BrowserTestUtils.withNewTab(url, async function(browser2) {
-        is(browser2.frameLoader.tabParent.osPid, privilegedPid,
+        is(browser2.frameLoader.remoteTab.osPid, privilegedPid,
           "Check that about:newtab tabs are in the same privileged content process.");
       });
     }
@@ -142,7 +142,7 @@ add_task(async function process_switching_through_navigation_features() {
     checkBrowserRemoteType(browser, E10SUtils.PRIVILEGED_REMOTE_TYPE);
 
     
-    let privilegedPid = browser.frameLoader.tabParent.osPid;
+    let privilegedPid = browser.frameLoader.remoteTab.osPid;
 
     
     let promiseTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, ABOUT_NEWTAB, true);
@@ -154,13 +154,13 @@ add_task(async function process_switching_through_navigation_features() {
       BrowserTestUtils.removeTab(newTab);
     });
     browser = newTab.linkedBrowser;
-    is(browser.frameLoader.tabParent.osPid, privilegedPid,
+    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
       "Check that new tab opened from about:newtab is loaded in privileged content process.");
 
     
     BrowserReload();
     await BrowserTestUtils.browserLoaded(browser, false, ABOUT_NEWTAB);
-    is(browser.frameLoader.tabParent.osPid, privilegedPid,
+    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
       "Check that about:newtab is still in privileged content process after reload.");
 
     
@@ -175,7 +175,7 @@ add_task(async function process_switching_through_navigation_features() {
     
     
     await BrowserTestUtils.waitForEvent(newTab, "SSTabRestored");
-    is(browser.frameLoader.tabParent.osPid, privilegedPid,
+    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
       "Check that about:newtab is still in privileged content process after history goBack.");
 
     
@@ -192,7 +192,7 @@ add_task(async function process_switching_through_navigation_features() {
     promiseLocation = BrowserTestUtils.waitForLocationChange(gBrowser, ABOUT_NEWTAB);
     browser.gotoIndex(0);
     await promiseLocation;
-    is(browser.frameLoader.tabParent.osPid, privilegedPid,
+    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
       "Check that about:newtab is in privileged content process after history gotoIndex.");
 
     BrowserTestUtils.loadURI(browser, TEST_HTTP);
@@ -204,7 +204,7 @@ add_task(async function process_switching_through_navigation_features() {
       content.location = uri;
     });
     await BrowserTestUtils.browserLoaded(browser, false, ABOUT_NEWTAB);
-    is(browser.frameLoader.tabParent.osPid, privilegedPid,
+    is(browser.frameLoader.remoteTab.osPid, privilegedPid,
       "Check that about:newtab is in privileged content process after location change.");
   });
 

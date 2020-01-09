@@ -4367,7 +4367,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry *entry,
   NS_ENSURE_SUCCESS(rv, rv);
 
   bool doValidation = false;
-  bool doBackgroundValidation = false;
   bool canAddImsHeader = true;
 
   bool isForcedValid = false;
@@ -4386,7 +4385,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry *entry,
     doValidation = nsHttp::ValidationRequired(
         isForcedValid, mCachedResponseHead, mLoadFlags, mAllowStaleCacheContent,
         isImmutable, mCustomConditionalRequest, mRequestHead, entry,
-        cacheControlRequest, fromPreviousSession, &doBackgroundValidation);
+        cacheControlRequest, fromPreviousSession);
   }
 
   
@@ -4530,10 +4529,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry *entry,
     *aResult = RECHECK_AFTER_WRITE_FINISHED;
   else {
     *aResult = ENTRY_WANTED;
-
-    if (doBackgroundValidation) {
-      PerformBackgroundCacheRevalidation();
-    }
   }
 
   if (mCachedContentIsValid) {
@@ -4875,21 +4870,13 @@ nsresult DoUpdateExpirationTime(nsHttpChannel *aSelf,
   nsresult rv;
 
   if (!aResponseHead->MustValidate()) {
-    
-    
-    
-    
-    
-    uint32_t now = NowInSeconds();
-    aExpirationTime = now;
-
     uint32_t freshnessLifetime = 0;
 
     rv = aResponseHead->ComputeFreshnessLifetime(&freshnessLifetime);
     if (NS_FAILED(rv)) return rv;
 
     if (freshnessLifetime > 0) {
-      uint32_t currentAge = 0;
+      uint32_t now = NowInSeconds(), currentAge = 0;
 
       rv = aResponseHead->ComputeCurrentAge(now, aSelf->GetRequestTime(),
                                             &currentAge);
@@ -4901,12 +4888,12 @@ nsresult DoUpdateExpirationTime(nsHttpChannel *aSelf,
       if (freshnessLifetime > currentAge) {
         uint32_t timeRemaining = freshnessLifetime - currentAge;
         
-        if (now + timeRemaining < now) {
+        if (now + timeRemaining < now)
           aExpirationTime = uint32_t(-1);
-        } else {
+        else
           aExpirationTime = now + timeRemaining;
-        }
-      }
+      } else
+        aExpirationTime = 0;
     }
   }
 
@@ -7269,9 +7256,9 @@ class DomPromiseListener final : dom::PromiseNativeHandler {
 
   virtual void ResolvedCallback(JSContext *aCx,
                                 JS::Handle<JS::Value> aValue) override {
-    nsCOMPtr<nsITabParent> tabParent;
+    nsCOMPtr<nsIRemoteTab> tabParent;
     JS::Rooted<JSObject *> obj(aCx, &aValue.toObject());
-    nsresult rv = UnwrapArg<nsITabParent>(aCx, obj, getter_AddRefs(tabParent));
+    nsresult rv = UnwrapArg<nsIRemoteTab>(aCx, obj, getter_AddRefs(tabParent));
     if (NS_FAILED(rv)) {
       mPromiseHolder.Reject(rv, __func__);
       return;
@@ -10250,103 +10237,6 @@ void nsHttpChannel::ReEvaluateReferrerAfterTrackingStatusIsKnown() {
       SetReferrer(mOriginalReferrer);
     }
   }
-}
-
-namespace {
-
-class BackgroundRevalidatingListener : public nsIStreamListener {
-  NS_DECL_ISUPPORTS
-
-  NS_DECL_NSISTREAMLISTENER
-  NS_DECL_NSIREQUESTOBSERVER
-
- private:
-  virtual ~BackgroundRevalidatingListener() = default;
-};
-
-NS_IMETHODIMP
-BackgroundRevalidatingListener::OnStartRequest(nsIRequest *request) {
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-BackgroundRevalidatingListener::OnDataAvailable(nsIRequest *request,
-                                                nsIInputStream *input,
-                                                uint64_t offset,
-                                                uint32_t count) {
-  uint32_t bytesRead = 0;
-  return input->ReadSegments(NS_DiscardSegment, nullptr, count, &bytesRead);
-}
-
-NS_IMETHODIMP
-BackgroundRevalidatingListener::OnStopRequest(nsIRequest *request,
-                                              nsresult status) {
-  if (NS_FAILED(status)) {
-    return status;
-  }
-
-  nsCOMPtr<nsIHttpChannel> channel(do_QueryInterface(request));
-  if (gHttpHandler) {
-    gHttpHandler->OnBackgroundRevalidation(channel);
-  }
-  return NS_OK;
-}
-
-NS_IMPL_ISUPPORTS(BackgroundRevalidatingListener, nsIStreamListener,
-                  nsIRequestObserver)
-
-}  
-
-void nsHttpChannel::PerformBackgroundCacheRevalidation() {
-  LOG(("nsHttpChannel::PerformBackgroundCacheRevalidation %p", this));
-
-  Unused << NS_DispatchToMainThreadQueue(
-      NewIdleRunnableMethod(
-          "nsHttpChannel::PerformBackgroundCacheRevalidation", this,
-          &nsHttpChannel::PerformBackgroundCacheRevalidationNow),
-      EventQueuePriority::Idle);
-}
-
-void nsHttpChannel::PerformBackgroundCacheRevalidationNow() {
-  LOG(("nsHttpChannel::PerformBackgroundCacheRevalidationNow %p", this));
-
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsresult rv;
-
-  nsLoadFlags loadFlags = mLoadFlags | LOAD_ONLY_IF_MODIFIED | VALIDATE_ALWAYS |
-                          LOAD_BACKGROUND | LOAD_BYPASS_SERVICE_WORKER;
-
-  nsCOMPtr<nsIChannel> validatingChannel;
-  rv = NS_NewChannelInternal(getter_AddRefs(validatingChannel), mURI, mLoadInfo,
-                             nullptr , mLoadGroup,
-                             mCallbacks, loadFlags);
-  if (NS_FAILED(rv)) {
-    LOG(("  failed to created the channel, rv=0x%08x",
-         static_cast<uint32_t>(rv)));
-    return;
-  }
-
-  nsCOMPtr<nsISupportsPriority> priority(do_QueryInterface(validatingChannel));
-  if (priority) {
-    priority->SetPriority(nsISupportsPriority::PRIORITY_LOWEST);
-  }
-
-  nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(validatingChannel));
-  if (cos) {
-    cos->AddClassFlags(nsIClassOfService::Tail);
-  }
-
-  RefPtr<BackgroundRevalidatingListener> listener =
-      new BackgroundRevalidatingListener();
-  rv = validatingChannel->AsyncOpen(listener);
-  if (NS_FAILED(rv)) {
-    LOG(("  failed to open the channel, rv=0x%08x", static_cast<uint32_t>(rv)));
-    return;
-  }
-
-  LOG(("  %p is re-validating with a new channel %p", this,
-       validatingChannel.get()));
 }
 
 }  

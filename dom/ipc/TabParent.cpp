@@ -153,10 +153,10 @@ namespace dom {
 TabParent::LayerToTabParentTable* TabParent::sLayerToTabParentTable = nullptr;
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TabParent)
-  NS_INTERFACE_MAP_ENTRY(nsITabParent)
+  NS_INTERFACE_MAP_ENTRY(nsIRemoteTab)
   NS_INTERFACE_MAP_ENTRY(nsIAuthPromptProvider)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsITabParent)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIRemoteTab)
 NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION(TabParent, mFrameElement, mBrowserDOMWindow,
                          mLoadContext, mFrameLoader, mBrowsingContext)
@@ -523,7 +523,7 @@ void TabParent::ActorDestroy(ActorDestroyReason why) {
   mFrameLoader = nullptr;
 
   if (os) {
-    os->NotifyObservers(NS_ISUPPORTS_CAST(nsITabParent*, this),
+    os->NotifyObservers(NS_ISUPPORTS_CAST(nsIRemoteTab*, this),
                         "ipc:browser-destroyed", nullptr);
   }
 }
@@ -1826,7 +1826,7 @@ mozilla::ipc::IPCResult TabParent::RecvNotifyIMEFocus(
     return IPC_OK();
   }
 
-  nsCOMPtr<nsIWidget> widget = GetWidget();
+  nsCOMPtr<nsIWidget> widget = GetDocWidget();
   if (!widget) {
     aResolve(IMENotificationRequests());
     return IPC_OK();
@@ -2560,7 +2560,7 @@ TabParent* TabParent::GetFrom(nsFrameLoader* aFrameLoader) {
 }
 
 
-TabParent* TabParent::GetFrom(nsITabParent* aTabParent) {
+TabParent* TabParent::GetFrom(nsIRemoteTab* aTabParent) {
   return static_cast<TabParent*>(aTabParent);
 }
 

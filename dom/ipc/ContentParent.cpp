@@ -163,7 +163,6 @@
 #include "nsIRemoteWindowContext.h"
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
-#include "nsISearchService.h"
 #include "nsIServiceWorkerManager.h"
 #include "nsISiteSecurityService.h"
 #include "nsISound.h"
@@ -273,6 +272,10 @@
 #  if defined(XP_MACOSX)
 #    include "mozilla/Sandbox.h"
 #  endif
+#endif
+
+#ifdef MOZ_TOOLKIT_SEARCH
+#  include "nsISearchService.h"
 #endif
 
 #ifdef XP_WIN
@@ -570,7 +573,7 @@ StaticAutoPtr<LinkedList<ContentParent>> ContentParent::sContentParents;
 UniquePtr<SandboxBrokerPolicyFactory>
     ContentParent::sSandboxBrokerPolicyFactory;
 #endif
-uint64_t ContentParent::sNextTabParentId = 0;
+uint64_t ContentParent::sNextRemoteTabId = 0;
 nsDataHashtable<nsUint64HashKey, TabParent*> ContentParent::sNextTabParents;
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 StaticAutoPtr<std::vector<std::string>> ContentParent::sMacSandboxParams;
@@ -1086,7 +1089,7 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
                                         BrowsingContext* aBrowsingContext,
                                         ContentParent* aOpenerContentParent,
                                         TabParent* aSameTabGroupAs,
-                                        uint64_t aNextTabParentId) {
+                                        uint64_t aNextRemoteTabId) {
   AUTO_PROFILER_LABEL("ContentParent::CreateBrowser", OTHER);
 
   if (!sCanLaunchSubprocesses) {
@@ -1099,9 +1102,9 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
     remoteType.AssignLiteral(DEFAULT_REMOTE_TYPE);
   }
 
-  if (aNextTabParentId) {
+  if (aNextRemoteTabId) {
     if (TabParent* parent =
-            sNextTabParents.GetAndRemove(aNextTabParentId).valueOr(nullptr)) {
+            sNextTabParents.GetAndRemove(aNextRemoteTabId).valueOr(nullptr)) {
       MOZ_ASSERT(!parent->GetOwnerElement(),
                  "Shouldn't have an owner elemnt before");
       parent->SetOwnerElement(aFrameElement);
@@ -4195,6 +4198,7 @@ mozilla::ipc::IPCResult ContentParent::RecvKeywordToURI(
 
 mozilla::ipc::IPCResult ContentParent::RecvNotifyKeywordSearchLoading(
     const nsString& aProvider, const nsString& aKeyword) {
+#ifdef MOZ_TOOLKIT_SEARCH
   nsCOMPtr<nsISearchService> searchSvc =
       do_GetService("@mozilla.org/browser/search-service;1");
   if (searchSvc) {
@@ -4210,6 +4214,7 @@ mozilla::ipc::IPCResult ContentParent::RecvNotifyKeywordSearchLoading(
       }
     }
   }
+#endif
   return IPC_OK();
 }
 
@@ -4653,8 +4658,8 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     PBrowserParent* aThisTab, bool aSetOpener, const uint32_t& aChromeFlags,
     const bool& aCalledFromJS, const bool& aPositionSpecified,
     const bool& aSizeSpecified, nsIURI* aURIToLoad, const nsCString& aFeatures,
-    const float& aFullZoom, uint64_t aNextTabParentId, const nsString& aName,
-    nsresult& aResult, nsCOMPtr<nsITabParent>& aNewTabParent,
+    const float& aFullZoom, uint64_t aNextRemoteTabId, const nsString& aName,
+    nsresult& aResult, nsCOMPtr<nsIRemoteTab>& aNewTabParent,
     bool* aWindowIsNew, int32_t& aOpenLocation,
     nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo* aReferrerInfo,
     bool aLoadURI, nsIContentSecurityPolicy* aCsp)
@@ -4747,17 +4752,17 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     if (aLoadURI) {
       aResult = browserDOMWin->OpenURIInFrame(
           aURIToLoad, params, aOpenLocation, nsIBrowserDOMWindow::OPEN_NEW,
-          aNextTabParentId, aName, getter_AddRefs(el));
+          aNextRemoteTabId, aName, getter_AddRefs(el));
     } else {
       aResult = browserDOMWin->CreateContentWindowInFrame(
           aURIToLoad, params, aOpenLocation, nsIBrowserDOMWindow::OPEN_NEW,
-          aNextTabParentId, aName, getter_AddRefs(el));
+          aNextRemoteTabId, aName, getter_AddRefs(el));
     }
     RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(el);
     if (NS_SUCCEEDED(aResult) && frameLoaderOwner) {
       RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
       if (frameLoader) {
-        aNewTabParent = frameLoader->GetTabParent();
+        aNewTabParent = frameLoader->GetRemoteTab();
         
         
         
@@ -4786,8 +4791,8 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     return IPC_OK();
   }
 
-  aResult = pwwatch->OpenWindowWithTabParent(
-      thisTabParent, aFeatures, aCalledFromJS, aFullZoom, aNextTabParentId,
+  aResult = pwwatch->OpenWindowWithRemoteTab(
+      thisTabParent, aFeatures, aCalledFromJS, aFullZoom, aNextRemoteTabId,
       !aSetOpener, getter_AddRefs(aNewTabParent));
   if (NS_WARN_IF(NS_FAILED(aResult))) {
     return IPC_OK();
@@ -4892,17 +4897,17 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   newTab->SetHasContentOpener(true);
 
   TabParent::AutoUseNewTab aunt(newTab, &cwi.urlToLoad());
-  const uint64_t nextTabParentId = ++sNextTabParentId;
-  sNextTabParents.Put(nextTabParentId, newTab);
+  const uint64_t nextRemoteTabId = ++sNextRemoteTabId;
+  sNextTabParents.Put(nextRemoteTabId, newTab);
 
   const nsCOMPtr<nsIURI> uriToLoad = DeserializeURI(aURIToLoad);
 
-  nsCOMPtr<nsITabParent> newRemoteTab;
+  nsCOMPtr<nsIRemoteTab> newRemoteTab;
   int32_t openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
   mozilla::ipc::IPCResult ipcResult = CommonCreateWindow(
       aThisTab,  true, aChromeFlags, aCalledFromJS,
       aPositionSpecified, aSizeSpecified, uriToLoad, aFeatures, aFullZoom,
-      nextTabParentId, VoidString(), rv, newRemoteTab, &cwi.windowOpened(),
+      nextRemoteTabId, VoidString(), rv, newRemoteTab, &cwi.windowOpened(),
       openLocation, aTriggeringPrincipal, aReferrerInfo,
        false, aCsp);
   if (!ipcResult) {
@@ -4913,7 +4918,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
     return IPC_OK();
   }
 
-  if (sNextTabParents.GetAndRemove(nextTabParentId).valueOr(nullptr)) {
+  if (sNextTabParents.GetAndRemove(nextRemoteTabId).valueOr(nullptr)) {
     cwi.windowOpened() = false;
   }
   MOZ_ASSERT(TabParent::GetFrom(newRemoteTab) == newTab);
@@ -4941,7 +4946,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
     nsIReferrerInfo* aReferrerInfo) {
   MOZ_DIAGNOSTIC_ASSERT(!nsContentUtils::IsSpecialName(aName));
 
-  nsCOMPtr<nsITabParent> newRemoteTab;
+  nsCOMPtr<nsIRemoteTab> newRemoteTab;
   bool windowIsNew;
   nsCOMPtr<nsIURI> uriToLoad = DeserializeURI(aURIToLoad);
   int32_t openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;

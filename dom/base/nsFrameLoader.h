@@ -36,7 +36,7 @@ class nsView;
 class AutoResetInShow;
 class AutoResetInFrameSwap;
 class nsFrameLoaderOwner;
-class nsITabParent;
+class nsIRemoteTab;
 class nsIDocShellTreeItem;
 class nsIDocShellTreeOwner;
 class nsILoadContext;
@@ -132,7 +132,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   nsDocShell* GetDocShell(mozilla::ErrorResult& aRv);
 
-  already_AddRefed<nsITabParent> GetTabParent();
+  already_AddRefed<nsIRemoteTab> GetRemoteTab();
 
   already_AddRefed<nsILoadContext> LoadContext();
 
@@ -333,7 +333,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  void SetRemoteBrowser(nsITabParent* aTabParent);
+  void SetRemoteBrowser(nsIRemoteTab* aTabParent);
 
   
 

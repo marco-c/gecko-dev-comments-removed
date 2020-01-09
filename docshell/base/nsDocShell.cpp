@@ -183,7 +183,6 @@
 #include "nsEscape.h"
 #include "nsFocusManager.h"
 #include "nsGlobalWindow.h"
-#include "nsISearchService.h"
 #include "nsJSEnvironment.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
@@ -221,6 +220,10 @@
 #if NS_PRINT_PREVIEW
 #  include "nsIDocumentViewerPrint.h"
 #  include "nsIWebBrowserPrint.h"
+#endif
+
+#ifdef MOZ_TOOLKIT_SEARCH
+#  include "nsISearchService.h"
 #endif
 
 using namespace mozilla;
@@ -13169,12 +13172,12 @@ bool nsDocShell::IsInvisible() { return mInvisible; }
 
 void nsDocShell::SetInvisible(bool aInvisible) { mInvisible = aInvisible; }
 
-void nsDocShell::SetOpener(nsITabParent* aOpener) {
+void nsDocShell::SetOpener(nsIRemoteTab* aOpener) {
   mOpener = do_GetWeakReference(aOpener);
 }
 
-nsITabParent* nsDocShell::GetOpener() {
-  nsCOMPtr<nsITabParent> opener(do_QueryReferent(mOpener));
+nsIRemoteTab* nsDocShell::GetOpener() {
+  nsCOMPtr<nsIRemoteTab> opener(do_QueryReferent(mOpener));
   return opener;
 }
 
@@ -13226,6 +13229,7 @@ void nsDocShell::MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
     return;
   }
 
+#ifdef MOZ_TOOLKIT_SEARCH
   nsCOMPtr<nsISearchService> searchSvc =
       do_GetService("@mozilla.org/browser/search-service;1");
   if (searchSvc) {
@@ -13240,6 +13244,7 @@ void nsDocShell::MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
       }
     }
   }
+#endif
 }
 
 NS_IMETHODIMP

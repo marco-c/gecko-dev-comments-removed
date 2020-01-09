@@ -29,7 +29,7 @@ add_task(async function test_setup() {
 });
 
 add_task(async function test_recording() {
-  let currentPid = gBrowser.selectedBrowser.frameLoader.tabParent.osPid;
+  let currentPid = gBrowser.selectedBrowser.frameLoader.remoteTab.osPid;
 
   
   
@@ -54,7 +54,7 @@ add_task(async function test_recording() {
       
       
       await processCreated;
-      let newPid = browser.frameLoader.tabParent.osPid;
+      let newPid = browser.frameLoader.remoteTab.osPid;
       ok(currentPid != newPid, "The new tab must spawn its own process");
 
       

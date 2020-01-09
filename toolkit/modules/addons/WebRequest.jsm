@@ -737,7 +737,7 @@ HttpObserverManager = {
         let data = Object.create(commonData);
 
         if (registerFilter && opts.blocking && opts.extension) {
-          data.registerTraceableChannel = (extension, tabParent) => {
+          data.registerTraceableChannel = (extension, remoteTab) => {
             
             
             
@@ -745,7 +745,7 @@ HttpObserverManager = {
             
             
             if (channel.channel) {
-              channel.registerTraceableChannel(extension, tabParent);
+              channel.registerTraceableChannel(extension, remoteTab);
             }
           };
         }
@@ -995,7 +995,7 @@ var WebRequest = {
   onErrorOccurred: onErrorOccurred,
 
   getSecurityInfo: (details) => {
-    let channel = ChannelWrapper.getRegisteredChannel(details.id, details.extension, details.tabParent);
+    let channel = ChannelWrapper.getRegisteredChannel(details.id, details.extension, details.remoteTab);
     if (channel) {
       return SecurityInfo.getSecurityInfo(channel.channel, details.options);
     }

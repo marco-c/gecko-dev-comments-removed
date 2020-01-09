@@ -216,9 +216,9 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
         packet.tabId = filter.tabId;
       } else if ("tab" in filter) {
         const browser = filter.tab.linkedBrowser;
-        if (browser.frameLoader.tabParent) {
+        if (browser.frameLoader.remoteTab) {
           
-          packet.tabId = browser.frameLoader.tabParent.tabId;
+          packet.tabId = browser.frameLoader.remoteTab.tabId;
         } else if (browser.outerWindowID) {
           
           packet.outerWindowID = browser.outerWindowID;

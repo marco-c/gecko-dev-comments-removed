@@ -149,7 +149,7 @@ class AsyncTabSwitcher {
     let initialBrowser = initialTab.linkedBrowser;
 
     let tabIsLoaded = !initialBrowser.isRemoteBrowser ||
-      initialBrowser.frameLoader.tabParent.hasLayers;
+      initialBrowser.frameLoader.remoteTab.hasLayers;
 
     
     
@@ -252,7 +252,7 @@ class AsyncTabSwitcher {
     this.setTabStateNoAction(tab, state);
 
     let browser = tab.linkedBrowser;
-    let { tabParent } = browser.frameLoader;
+    let { remoteTab } = browser.frameLoader;
     if (state == this.STATE_LOADING) {
       this.assert(!this.minimizedOrFullyOccluded);
 
@@ -262,7 +262,7 @@ class AsyncTabSwitcher {
         browser.docShellIsActive = true;
       }
 
-      if (tabParent) {
+      if (remoteTab) {
         browser.renderLayers = true;
       } else {
         this.onLayersReady(browser);
@@ -272,7 +272,7 @@ class AsyncTabSwitcher {
       
       
       browser.docShellIsActive = false;
-      if (!tabParent) {
+      if (!remoteTab) {
         this.onLayersCleared(browser);
       }
     } else if (state == this.STATE_LOADED) {
@@ -356,8 +356,8 @@ class AsyncTabSwitcher {
 
       let fl = requestedBrowser.frameLoader;
       shouldBeBlank = !this.minimizedOrFullyOccluded &&
-        (!fl.tabParent ||
-          (!hasSufficientlyLoaded && !fl.tabParent.hasPresented));
+        (!fl.remoteTab ||
+          (!hasSufficientlyLoaded && !fl.remoteTab.hasPresented));
     }
 
     this.log("Tab should be blank: " + shouldBeBlank);
@@ -497,7 +497,7 @@ class AsyncTabSwitcher {
     let browser = tab.linkedBrowser;
     let state = this.getTabState(tab);
     let canCheckDocShellState = !browser.mDestroyed &&
-      (browser.docShell || browser.frameLoader.tabParent);
+      (browser.docShell || browser.frameLoader.remoteTab);
     if (tab == this.requestedTab &&
         canCheckDocShellState &&
         state == this.STATE_LOADED &&
@@ -893,7 +893,7 @@ class AsyncTabSwitcher {
         !tab.linkedPanel ||
         tab.closing ||
         !tab.linkedBrowser.isRemoteBrowser ||
-        !tab.linkedBrowser.frameLoader.tabParent) {
+        !tab.linkedBrowser.frameLoader.remoteTab) {
       return false;
     }
 

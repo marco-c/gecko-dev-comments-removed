@@ -86,9 +86,9 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
     if (!ourTab.linkedBrowser.isRemoteBrowser || !otherBrowser.isRemoteBrowser) {
       throw new Error("Both browsers should be remote before swapping.");
     }
-    const contentTabId = ourTab.linkedBrowser.frameLoader.tabParent.tabId;
+    const contentTabId = ourTab.linkedBrowser.frameLoader.remoteTab.tabId;
     gBrowser._swapBrowserDocShells(ourTab, otherBrowser);
-    if (otherBrowser.frameLoader.tabParent.tabId != contentTabId) {
+    if (otherBrowser.frameLoader.remoteTab.tabId != contentTabId) {
       
       throw new Error("Swapping tab content between browsers failed.");
     }

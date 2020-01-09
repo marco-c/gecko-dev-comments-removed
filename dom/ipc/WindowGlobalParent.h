@@ -63,7 +63,7 @@ class WindowGlobalParent final : public nsISupports,
 
   
   
-  already_AddRefed<TabParent> GetTabParent();
+  already_AddRefed<TabParent> GetRemoteTab();
 
   void ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
                          ipc::StructuredCloneData&& aData);
