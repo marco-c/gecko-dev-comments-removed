@@ -51,9 +51,8 @@ const { OS } = Services.appinfo;
 
 
 
-const CM_SCRIPTS = [
-  "chrome://devtools/content/shared/sourceeditor/codemirror/codemirror.bundle.js",
-];
+const CM_BUNDLE =
+  "chrome://devtools/content/shared/sourceeditor/codemirror/codemirror.bundle.js";
 
 const CM_IFRAME = "chrome://devtools/content/shared/sourceeditor/codemirror/cmiframe.html";
 
@@ -217,11 +216,6 @@ function Editor(config) {
     cm.replaceSelection(" ".repeat(num), "end", "+input");
   };
 
-  
-  if (!this.config.externalScripts) {
-    this.config.externalScripts = [];
-  }
-
   if (this.config.cssProperties) {
     
     this.config.autocompleteOpts.cssProperties = this.config.cssProperties;
@@ -326,12 +320,7 @@ Editor.prototype = {
     doc = doc || el.ownerDocument;
     const win = el.ownerDocument.defaultView;
 
-    const scriptsToInject = CM_SCRIPTS.concat(this.config.externalScripts);
-    scriptsToInject.forEach(url => {
-      if (url.startsWith("chrome://")) {
-        Services.scriptloader.loadSubScript(url, win);
-      }
-    });
+    Services.scriptloader.loadSubScript(CM_BUNDLE, win);
 
     
     
