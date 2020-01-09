@@ -57,6 +57,9 @@ struct nsFont {
   nsTArray<gfxAlternateValue> alternateValues;
 
   
+  RefPtr<gfxFontFeatureValueSet> featureValueLookup;
+
+  
   nscoord size = 0;
 
   

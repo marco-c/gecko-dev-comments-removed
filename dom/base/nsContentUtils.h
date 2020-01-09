@@ -307,7 +307,7 @@ class nsContentUtils {
   
   static bool ShouldResistFingerprinting();
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell);
-  static bool ShouldResistFingerprinting(const Document* aDoc);
+  static bool ShouldResistFingerprinting(Document* aDoc);
 
   
   static bool UseStandinsForNativeColors();
@@ -2546,7 +2546,7 @@ class nsContentUtils {
 
 
   static bool IsPatternMatching(nsAString& aValue, nsAString& aPattern,
-                                const Document* aDocument);
+                                Document* aDocument);
 
   
 
