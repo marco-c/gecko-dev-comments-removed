@@ -704,6 +704,10 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     AutoRealmUnchecked ar(cx, origobj->nonCCWRealm());
     JSObject::swap(cx, origobj, target);
     newIdentity = origobj;
+
+    
+    
+    JS::ExposeObjectToActiveJS(newIdentity);
   } else if (WrapperMap::Ptr p = destination->lookupWrapper(origv)) {
     
     
