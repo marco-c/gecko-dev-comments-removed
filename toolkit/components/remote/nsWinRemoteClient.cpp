@@ -6,6 +6,11 @@
 
 
 #include "nsWinRemoteClient.h"
+#include "nsWinRemoteUtils.h"
+
+#include <windows.h>
+
+using namespace mozilla;
 
 nsresult nsWinRemoteClient::Init() {
   return NS_OK;
@@ -16,5 +21,37 @@ nsresult nsWinRemoteClient::SendCommandLine(const char *aProgram, const char *aP
                                             const char *aDesktopStartupID,
                                             char **aResponse, bool *aSucceeded) {
   *aSucceeded = false;
+
+  nsString className;
+  BuildClassName(aProgram, aProfile, className);
+
+  HWND handle = ::FindWindowW(className.get(), 0);
+
+  if (!handle) {
+    return NS_OK;
+  }
+
+  WCHAR *cmd = ::GetCommandLineW();
+  WCHAR cwd[MAX_PATH];
+  _wgetcwd(cwd, MAX_PATH);
+
+  
+  NS_ConvertUTF16toUTF8 utf8buffer(cmd);
+  utf8buffer.Append('\0');
+  WCHAR *cwdPtr = cwd;
+  AppendUTF16toUTF8(MakeStringSpan(reinterpret_cast<char16_t *>(cwdPtr)),
+                    utf8buffer);
+  utf8buffer.Append('\0');
+
+  
+  
+  COPYDATASTRUCT cds = {1, utf8buffer.Length(), (void *)utf8buffer.get()};
+  
+  
+  ::SetForegroundWindow(handle);
+  ::SendMessage(handle, WM_COPYDATA, 0, (LPARAM)&cds);
+
+  *aSucceeded = true;
+
   return NS_OK;
 }
