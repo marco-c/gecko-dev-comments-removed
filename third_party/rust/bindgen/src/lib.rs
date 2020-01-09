@@ -23,6 +23,7 @@ extern crate cexpr;
 #[allow(unused_extern_crates)]
 extern crate cfg_if;
 extern crate clang_sys;
+extern crate hashbrown;
 #[macro_use]
 extern crate lazy_static;
 extern crate peeking_take_while;
@@ -30,6 +31,7 @@ extern crate peeking_take_while;
 extern crate quote;
 extern crate proc_macro2;
 extern crate regex;
+extern crate shlex;
 extern crate which;
 
 #[cfg(feature = "logging")]
@@ -88,13 +90,17 @@ use regex_set::RegexSet;
 pub use codegen::EnumVariation;
 
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Write};
 use std::iter;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Arc;
+
+
+type HashMap<K, V> = ::hashbrown::HashMap<K, V>;
+type HashSet<K> = ::hashbrown::HashSet<K>;
+pub(crate) use ::hashbrown::hash_map::Entry;
 
 fn args_are_cpp(clang_args: &[String]) -> bool {
     return clang_args
@@ -233,11 +239,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--bitfield-enum".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -247,11 +249,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--rustified-enum".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -261,11 +259,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--constified-enum-module".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -275,11 +269,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--constified-enum".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -289,11 +279,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--blacklist-type".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -303,11 +289,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--blacklist-function".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -317,11 +299,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--blacklist-item".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -418,6 +396,9 @@ impl Builder {
         if self.options.enable_cxx_namespaces {
             output_vector.push("--enable-cxx-namespaces".into());
         }
+        if self.options.enable_function_attribute_detection {
+            output_vector.push("--enable-function-attribute-detection".into());
+        }
         if self.options.disable_name_namespacing {
             output_vector.push("--disable-name-namespacing".into());
         }
@@ -469,11 +450,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--opaque-type".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -482,11 +459,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--raw-line".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -504,11 +477,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--whitelist-function".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -518,11 +487,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--whitelist-type".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -532,11 +497,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--whitelist-var".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -552,6 +513,10 @@ impl Builder {
                     .iter()
                     .cloned(),
             );
+        }
+
+        if !self.options.record_matches {
+            output_vector.push("--no-record-matches".into());
         }
 
         if !self.options.rustfmt_bindings {
@@ -573,11 +538,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--no-partialeq".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -587,11 +548,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--no-copy".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -601,11 +558,7 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--no-hash".into());
-                output_vector.push(
-                    item.trim_left_matches("^")
-                        .trim_right_matches("$")
-                        .into(),
-                );
+                output_vector.push(item.to_owned());
             })
             .count();
 
@@ -1064,6 +1017,18 @@ impl Builder {
     
     
     
+    pub fn enable_function_attribute_detection(mut self) -> Self {
+        self.options.enable_function_attribute_detection = true;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1171,6 +1136,12 @@ impl Builder {
     }
 
     
+    pub fn detect_include_paths(mut self, doit: bool) -> Self {
+        self.options.detect_include_paths = doit;
+        self
+    }
+
+    
     pub fn prepend_enum_name(mut self, doit: bool) -> Self {
         self.options.prepend_enum_name = doit;
         self
@@ -1179,6 +1150,12 @@ impl Builder {
     
     pub fn rustfmt_bindings(mut self, doit: bool) -> Self {
         self.options.rustfmt_bindings = doit;
+        self
+    }
+
+    
+    pub fn record_matches(mut self, doit: bool) -> Self {
+        self.options.record_matches = doit;
         self
     }
 
@@ -1198,6 +1175,17 @@ impl Builder {
 
     
     pub fn generate(mut self) -> Result<Bindings, ()> {
+        
+        if let Some(extra_clang_args) = std::env::var("BINDGEN_EXTRA_CLANG_ARGS").ok() {
+            
+            if let Some(strings) = shlex::split(&extra_clang_args) {
+                self.options.clang_args.extend(strings);
+            } else {
+                self.options.clang_args.push(extra_clang_args);
+            };
+        }
+
+        
         self.options.input_header = self.input_headers.pop();
         self.options.clang_args.extend(
             self.input_headers
@@ -1392,6 +1380,10 @@ struct BindgenOptions {
     enable_cxx_namespaces: bool,
 
     
+    
+    enable_function_attribute_detection: bool,
+
+    
     disable_name_namespacing: bool,
 
     
@@ -1519,6 +1511,9 @@ struct BindgenOptions {
     enable_mangling: bool,
 
     
+    detect_include_paths: bool,
+
+    
     prepend_enum_name: bool,
 
     
@@ -1526,6 +1521,12 @@ struct BindgenOptions {
 
     
     rust_features: RustFeatures,
+
+    
+    
+    
+    
+    record_matches: bool,
 
     
     rustfmt_bindings: bool,
@@ -1552,20 +1553,26 @@ impl ::std::panic::UnwindSafe for BindgenOptions {}
 
 impl BindgenOptions {
     fn build(&mut self) {
-        self.whitelisted_vars.build();
-        self.whitelisted_types.build();
-        self.whitelisted_functions.build();
-        self.blacklisted_types.build();
-        self.blacklisted_functions.build();
-        self.blacklisted_items.build();
-        self.opaque_types.build();
-        self.bitfield_enums.build();
-        self.constified_enums.build();
-        self.constified_enum_modules.build();
-        self.rustified_enums.build();
-        self.no_partialeq_types.build();
-        self.no_copy_types.build();
-        self.no_hash_types.build();
+        let mut regex_sets = [
+            &mut self.whitelisted_vars,
+            &mut self.whitelisted_types,
+            &mut self.whitelisted_functions,
+            &mut self.blacklisted_types,
+            &mut self.blacklisted_functions,
+            &mut self.blacklisted_items,
+            &mut self.opaque_types,
+            &mut self.bitfield_enums,
+            &mut self.constified_enums,
+            &mut self.constified_enum_modules,
+            &mut self.rustified_enums,
+            &mut self.no_partialeq_types,
+            &mut self.no_copy_types,
+            &mut self.no_hash_types,
+        ];
+        let record_matches = self.record_matches;
+        for regex_set in &mut regex_sets {
+            regex_set.build(record_matches);
+        }
     }
 
     
@@ -1618,6 +1625,7 @@ impl Default for BindgenOptions {
             derive_partialeq: false,
             derive_eq: false,
             enable_cxx_namespaces: false,
+            enable_function_attribute_detection: false,
             disable_name_namespacing: false,
             use_core: false,
             ctypes_prefix: None,
@@ -1639,8 +1647,10 @@ impl Default for BindgenOptions {
             objc_extern_crate: false,
             block_extern_crate: false,
             enable_mangling: true,
+            detect_include_paths: true,
             prepend_enum_name: true,
             time_phases: false,
+            record_matches: true,
             rustfmt_bindings: true,
             rustfmt_configuration_file: None,
             no_partialeq_types: Default::default(),
@@ -1675,7 +1685,7 @@ fn ensure_libclang_is_loaded() {
 #[derive(Debug)]
 pub struct Bindings {
     options: BindgenOptions,
-    module: quote::Tokens,
+    module: proc_macro2::TokenStream,
 }
 
 impl Bindings {
@@ -1685,66 +1695,70 @@ impl Bindings {
     ) -> Result<Bindings, ()> {
         ensure_libclang_is_loaded();
 
+        debug!("Generating bindings, libclang at {}", clang_sys::get_library().unwrap().path().display());
+
         options.build();
 
-        
-        
-        let clang_args_for_clang_sys = {
-            let mut last_was_include_prefix = false;
-            options.clang_args.iter().filter(|arg| {
-                if last_was_include_prefix {
-                    last_was_include_prefix = false;
-                    return false;
-                }
+        fn detect_include_paths(options: &mut BindgenOptions) {
+            if !options.detect_include_paths {
+                return;
+            }
 
-                let arg = &**arg;
-
-                
-                
-                if arg == "-I" || arg == "--include-directory" {
-                    last_was_include_prefix = true;
-                    return false;
-                }
-
-                if arg.starts_with("-I") || arg.starts_with("--include-directory=") {
-                    return false;
-                }
-
-                true
-            }).cloned().collect::<Vec<_>>()
-        };
-
-        
-        if let Some(clang) = clang_sys::support::Clang::find(
-            None,
-            &clang_args_for_clang_sys,
-        ) {
             
             
-            let has_target_arg = options
-                .clang_args
-                .iter()
-                .rposition(|arg| arg.starts_with("--target"))
-                .is_some();
-            if !has_target_arg {
-                
-                let is_cpp = args_are_cpp(&options.clang_args);
-                let search_paths = if is_cpp {
-                  clang.cpp_search_paths
-                } else {
-                  clang.c_search_paths
-                };
+            let clang_args_for_clang_sys = {
+                let mut last_was_include_prefix = false;
+                options.clang_args.iter().filter(|arg| {
+                    if last_was_include_prefix {
+                        last_was_include_prefix = false;
+                        return false;
+                    }
 
-                if let Some(search_paths) = search_paths {
-                    for path in search_paths.into_iter() {
-                        if let Ok(path) = path.into_os_string().into_string() {
-                            options.clang_args.push("-isystem".to_owned());
-                            options.clang_args.push(path);
-                        }
+                    let arg = &**arg;
+
+                    
+                    
+                    if arg == "-I" || arg == "--include-directory" {
+                        last_was_include_prefix = true;
+                        return false;
+                    }
+
+                    if arg.starts_with("-I") || arg.starts_with("--include-directory=") {
+                        return false;
+                    }
+
+                    true
+                }).cloned().collect::<Vec<_>>()
+            };
+
+            debug!("Trying to find clang with flags: {:?}", clang_args_for_clang_sys);
+
+            let clang = match clang_sys::support::Clang::find(None, &clang_args_for_clang_sys) {
+                None => return,
+                Some(clang) => clang,
+            };
+
+            debug!("Found clang: {:?}", clang);
+
+            
+            let is_cpp = args_are_cpp(&options.clang_args);
+            let search_paths = if is_cpp {
+              clang.cpp_search_paths
+            } else {
+              clang.c_search_paths
+            };
+
+            if let Some(search_paths) = search_paths {
+                for path in search_paths.into_iter() {
+                    if let Ok(path) = path.into_os_string().into_string() {
+                        options.clang_args.push("-isystem".to_owned());
+                        options.clang_args.push(path);
                     }
                 }
             }
         }
+
+        detect_include_paths(&mut options);
 
         #[cfg(unix)]
         fn can_read(perms: &std::fs::Permissions) -> bool {
@@ -1777,6 +1791,8 @@ impl Bindings {
         for f in options.input_unsaved_files.iter() {
             options.clang_args.push(f.name.to_str().unwrap().to_owned())
         }
+
+        debug!("Fixed-up options: {:?}", options);
 
         let time_phases = options.time_phases;
         let mut context = BindgenContext::new(options);
@@ -1839,7 +1855,7 @@ impl Bindings {
                 writer.write(rustfmt_bindings.as_bytes())?;
             },
             Err(err) => {
-                eprintln!("{:?}", err);
+                eprintln!("Failed to run rustfmt: {} (non-fatal, continuing)", err);
                 writer.write(bindings.as_bytes())?;
             },
         }
@@ -1863,7 +1879,7 @@ impl Bindings {
             None => {
                 let path = which::which("rustfmt")
                     .map_err(|e| {
-                        io::Error::new(io::ErrorKind::Other, e.to_owned())
+                        io::Error::new(io::ErrorKind::Other, format!("{}", e))
                     })?;
 
                 Cow::Owned(path)

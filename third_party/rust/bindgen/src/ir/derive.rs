@@ -26,15 +26,6 @@ pub trait CanDeriveDebug {
 
 
 
-
-pub trait CanTriviallyDeriveDebug {
-    
-    
-    fn can_trivially_derive_debug(&self, ctx: &BindgenContext) -> bool;
-}
-
-
-
 pub trait CanDeriveCopy {
     
     
@@ -43,28 +34,10 @@ pub trait CanDeriveCopy {
 
 
 
-
-pub trait CanTriviallyDeriveCopy {
-    
-    
-    fn can_trivially_derive_copy(&self, ctx: &BindgenContext) -> bool;
-}
-
-
-
 pub trait CanDeriveDefault {
     
     
     fn can_derive_default(&self, ctx: &BindgenContext) -> bool;
-}
-
-
-
-
-pub trait CanTriviallyDeriveDefault {
-    
-    
-    fn can_trivially_derive_default(&self, ctx: &BindgenContext) -> bool;
 }
 
 
@@ -108,24 +81,6 @@ pub trait CanDeriveOrd {
 
 
 
-pub trait CanTriviallyDeriveHash {
-    
-    
-    fn can_trivially_derive_hash(&self, ctx: &BindgenContext) -> bool;
-}
-
-
-
-
-pub trait CanTriviallyDerivePartialEqOrPartialOrd {
-    
-    
-    fn can_trivially_derive_partialeq_or_partialord(&self, ctx: &BindgenContext) -> CanDerive;
-}
-
-
-
-
 
 
 
@@ -146,7 +101,7 @@ pub enum CanDerive {
     
     
     
-    ArrayTooLarge,
+    Manually,
 
     
     Yes,
@@ -166,8 +121,8 @@ impl cmp::PartialOrd for CanDerive {
             (x, y) if x == y => cmp::Ordering::Equal,
             (No, _) => cmp::Ordering::Greater,
             (_, No) => cmp::Ordering::Less,
-            (ArrayTooLarge, _) => cmp::Ordering::Greater,
-            (_, ArrayTooLarge) => cmp::Ordering::Less,
+            (Manually, _) => cmp::Ordering::Greater,
+            (_, Manually) => cmp::Ordering::Less,
             _ => unreachable!()
         };
         Some(ordering)
