@@ -1069,22 +1069,33 @@ nsRect nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
   if (gfxPrefs::APZAllowZooming() &&
       nsLayoutUtils::IsFixedPosFrameInDisplayPort(aFrame) &&
       aBuilder->IsPaintingToWindow()) {
-    
-    
-    
     dirtyRectRelativeToDirtyFrame =
         nsRect(nsPoint(0, 0), aFrame->GetParent()->GetSize());
 
-    PresShell* presShell = aFrame->PresShell();
-    if (presShell->IsVisualViewportSizeSet() &&
-        dirtyRectRelativeToDirtyFrame.Size() <
-            presShell->GetVisualViewportSize()) {
-      dirtyRectRelativeToDirtyFrame.SizeTo(presShell->GetVisualViewportSize());
-    }
     
-    const nsSize layoutViewportSize = presShell->GetLayoutViewportSize();
-    if (dirtyRectRelativeToDirtyFrame.Size() < layoutViewportSize) {
-      dirtyRectRelativeToDirtyFrame.SizeTo(layoutViewportSize);
+    
+    
+    
+    
+    PresShell* presShell = aFrame->PresShell();
+    if (presShell->IsVisualViewportSizeSet()) {
+      dirtyRectRelativeToDirtyFrame =
+          nsRect(presShell->GetVisualViewportOffset(),
+                 presShell->GetVisualViewportSize());
+      
+      
+      
+      if (nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame()) {
+        nsRect displayport;
+        
+        
+        
+        
+        if (nsLayoutUtils::GetHighResolutionDisplayPort(
+                rootScrollFrame->GetContent(), &displayport)) {
+          dirtyRectRelativeToDirtyFrame = displayport;
+        }
+      }
     }
     visible = dirtyRectRelativeToDirtyFrame;
     if (gfxPrefs::APZTestLoggingEnabled() &&
