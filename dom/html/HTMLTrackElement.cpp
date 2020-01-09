@@ -232,10 +232,31 @@ void HTMLTrackElement::SetSrc(const nsAString& aSrc, ErrorResult& aError) {
     mChannel = nullptr;
   }
 
-  DispatchLoadResource();
+  MaybeDispatchLoadResource();
 }
 
-void HTMLTrackElement::DispatchLoadResource() {
+
+
+
+void HTMLTrackElement::MaybeDispatchLoadResource() {
+  MOZ_ASSERT(mTrack, "Should have already created text track!");
+
+  
+  
+  if (mTrack->Mode() == TextTrackMode::Disabled) {
+    LOG(LogLevel::Info, ("%p Do not load resource for disable track", this));
+    return;
+  }
+
+  
+  
+  if (!mMediaParent) {
+    LOG(LogLevel::Info,
+        ("%p Do not load resource for track without media element", this));
+    return;
+  }
+
+  
   if (!mLoadResourceDispatched) {
     RefPtr<WebVTTListener> listener = new WebVTTListener(this);
     RefPtr<Runnable> r = NewRunnableMethod<RefPtr<WebVTTListener>>(
@@ -361,7 +382,7 @@ nsresult HTMLTrackElement::BindToTree(Document* aDocument, nsIContent* aParent,
     if (!mTrack) {
       CreateTextTrack();
     }
-    DispatchLoadResource();
+    MaybeDispatchLoadResource();
   }
 
   return NS_OK;
