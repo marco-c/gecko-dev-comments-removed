@@ -484,6 +484,7 @@ class nsWindow final : public nsWindowBase {
     return mTransparencyMode;
   }
   void UpdateGlass();
+  bool WithinDraggableRegion(int32_t clientX, int32_t clientY);
 
  protected:
 #endif  
@@ -549,6 +550,7 @@ class nsWindow final : public nsWindowBase {
   bool mIsRTL;
   bool mFullscreenMode;
   bool mMousePresent;
+  bool mMouseInDraggableArea;
   bool mDestroyCalled;
   bool mOpeningAnimationSuppressed;
   bool mAlwaysOnTop;
@@ -662,6 +664,8 @@ class nsWindow final : public nsWindowBase {
   
   bool mIsChildWindow : 1;
 
+  bool mCachedHitTestResult;
+
   
   
   TimeStamp mLastPaintEndTime;
@@ -672,7 +676,6 @@ class nsWindow final : public nsWindowBase {
   
   POINT mCachedHitTestPoint;
   TimeStamp mCachedHitTestTime;
-  int32_t mCachedHitTestResult;
 
   RefPtr<mozilla::widget::WinCompositorWidget> mBasicLayersSurface;
 
