@@ -18,7 +18,13 @@ async_test(function(t) {
 </script>
 
 
+
+
+
+
+
+
 <link rel="preload" as="image"
       onerror="window.preloadErrorEvent()"
       onload="window.preloadLoadEvent()"
-      href="http://{{domains[www1]}}:{{ports[http][0]}}/fetch/corb/resources/png-mislabeled-as-html-nosniff.png">
+      href="http://{{hosts[alt][www1]}}:{{ports[http][0]}}/fetch/corb/resources/png-mislabeled-as-html-nosniff.png">
