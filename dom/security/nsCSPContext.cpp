@@ -1039,26 +1039,15 @@ nsresult nsCSPContext::SendReports(
     }
 
     
-    nsLoadFlags loadFlags =
-        nsIRequest::LOAD_NORMAL | nsIChannel::LOAD_CLASSIFY_URI;
     if (doc) {
       rv = NS_NewChannel(getter_AddRefs(reportChannel), reportURI, doc,
                          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                         nsIContentPolicy::TYPE_CSP_REPORT,
-                         nullptr,  
-                         nullptr,  
-                         nullptr,  
-                         loadFlags);
+                         nsIContentPolicy::TYPE_CSP_REPORT);
     } else {
       rv = NS_NewChannel(getter_AddRefs(reportChannel), reportURI,
                          mLoadingPrincipal,
                          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                         nsIContentPolicy::TYPE_CSP_REPORT,
-                         nullptr,  
-                         nullptr,  
-                         nullptr,  
-                         nullptr,  
-                         loadFlags);
+                         nsIContentPolicy::TYPE_CSP_REPORT);
     }
 
     if (NS_FAILED(rv)) {

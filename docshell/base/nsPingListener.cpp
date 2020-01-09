@@ -111,8 +111,7 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
 
   
   
-  chan->SetLoadFlags(nsIRequest::INHIBIT_CACHING |
-                     nsIChannel::LOAD_CLASSIFY_URI);
+  chan->SetLoadFlags(nsIRequest::INHIBIT_CACHING);
 
   nsCOMPtr<nsIHttpChannel> httpChan = do_QueryInterface(chan);
   if (!httpChan) {

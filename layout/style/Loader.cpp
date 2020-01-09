@@ -1436,9 +1436,7 @@ nsresult Loader::LoadSheet(SheetLoadData* aLoadData,
         getter_AddRefs(channel), aLoadData->mURI, aLoadData->mRequestingNode,
         aLoadData->mLoaderPrincipal, securityFlags, contentPolicyType,
         nullptr,  
-        loadGroup,
-        nullptr,  
-        nsIChannel::LOAD_NORMAL | nsIChannel::LOAD_CLASSIFY_URI);
+        loadGroup);
   } else {
     
     
@@ -1448,9 +1446,7 @@ nsresult Loader::LoadSheet(SheetLoadData* aLoadData,
                        nsContentUtils::GetSystemPrincipal(), securityFlags,
                        contentPolicyType, cookieSettings,
                        nullptr,  
-                       loadGroup,
-                       nullptr,  
-                       nsIChannel::LOAD_NORMAL | nsIChannel::LOAD_CLASSIFY_URI);
+                       loadGroup);
   }
 
   if (NS_FAILED(rv)) {

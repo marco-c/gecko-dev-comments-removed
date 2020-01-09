@@ -3094,15 +3094,15 @@ nsresult nsPluginHost::NewPluginURLStream(
   
   
   
-  rv = NS_NewChannel(getter_AddRefs(channel), url, element,
-                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
-                         nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
-                     nsIContentPolicy::TYPE_OBJECT_SUBREQUEST,
-                     nullptr,  
-                     nullptr,  
-                     listenerPeer,
-                     nsIRequest::LOAD_NORMAL | nsIChannel::LOAD_CLASSIFY_URI |
-                         nsIChannel::LOAD_BYPASS_SERVICE_WORKER);
+  rv = NS_NewChannel(
+      getter_AddRefs(channel), url, element,
+      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
+          nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
+      nsIContentPolicy::TYPE_OBJECT_SUBREQUEST,
+      nullptr,  
+      nullptr,  
+      listenerPeer,
+      nsIRequest::LOAD_NORMAL | nsIChannel::LOAD_BYPASS_SERVICE_WORKER);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (doc) {

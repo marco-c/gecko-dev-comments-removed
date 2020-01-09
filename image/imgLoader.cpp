@@ -789,7 +789,6 @@ static nsresult NewImageChannel(
   
   
   
-  aLoadFlags |= nsIChannel::LOAD_CLASSIFY_URI;
 
   nsCOMPtr<nsINode> requestingNode = do_QueryInterface(aRequestingContext);
 

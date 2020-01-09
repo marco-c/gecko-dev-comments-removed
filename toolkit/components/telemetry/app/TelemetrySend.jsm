@@ -1112,9 +1112,6 @@ var TelemetrySendImpl = {
 
     this._pendingPingRequests.set(id, request);
 
-    
-    request.channel.loadFlags &= ~Ci.nsIChannel.LOAD_CLASSIFY_URI;
-
     const monotonicStartTime = Utils.monotonicNow();
     let deferred = PromiseUtils.defer();
 
