@@ -24,14 +24,22 @@ class NameResolver {
   static const size_t MaxParents = 100;
 
   JSContext* cx;
-  size_t nparents; 
-  MOZ_INIT_OUTSIDE_CTOR
-  ParseNode*
-      parents[MaxParents]; 
-  StringBuffer* buf;       
 
   
-  bool call(ParseNode* pn) { return pn && pn->isKind(ParseNodeKind::CallExpr); }
+  size_t nparents_;
+
+  
+  
+  MOZ_INIT_OUTSIDE_CTOR
+  ParseNode* parents_[MaxParents];
+
+  
+  StringBuffer* buf_;
+
+  
+  bool isCall(ParseNode* pn) {
+    return pn && pn->isKind(ParseNodeKind::CallExpr);
+  }
 
   
 
@@ -45,25 +53,26 @@ class NameResolver {
 
   bool appendPropertyReference(JSAtom* name) {
     if (IsIdentifier(name)) {
-      return buf->append('.') && buf->append(name);
+      return buf_->append('.') && buf_->append(name);
     }
 
     
     UniqueChars source = QuoteString(cx, name, '"');
-    return source && buf->append('[') &&
-           buf->append(source.get(), strlen(source.get())) && buf->append(']');
+    return source && buf_->append('[') &&
+           buf_->append(source.get(), strlen(source.get())) &&
+           buf_->append(']');
   }
 
   
   bool appendNumber(double n) {
     char number[30];
     int digits = SprintfLiteral(number, "%g", n);
-    return buf->append(number, digits);
+    return buf_->append(number, digits);
   }
 
   
   bool appendNumericPropertyReference(double n) {
-    return buf->append("[") && appendNumber(n) && buf->append(']');
+    return buf_->append("[") && appendNumber(n) && buf_->append(']');
   }
 
   
@@ -88,11 +97,11 @@ class NameResolver {
       case ParseNodeKind::Name:
       case ParseNodeKind::PrivateName:
         *foundName = true;
-        return buf->append(n->as<NameNode>().atom());
+        return buf_->append(n->as<NameNode>().atom());
 
       case ParseNodeKind::ThisExpr:
         *foundName = true;
-        return buf->append("this");
+        return buf_->append("this");
 
       case ParseNodeKind::ElemExpr: {
         PropertyByValue* elem = &n->as<PropertyByValue>();
@@ -102,13 +111,13 @@ class NameResolver {
         if (!*foundName) {
           return true;
         }
-        if (!buf->append('[') || !nameExpression(elem->right(), foundName)) {
+        if (!buf_->append('[') || !nameExpression(elem->right(), foundName)) {
           return false;
         }
         if (!*foundName) {
           return true;
         }
-        return buf->append(']');
+        return buf_->append(']');
       }
 
       case ParseNodeKind::NumberExpr:
@@ -138,8 +147,8 @@ class NameResolver {
   ParseNode* gatherNameable(ParseNode** nameable, size_t* size) {
     *size = 0;
 
-    for (int pos = nparents - 1; pos >= 0; pos--) {
-      ParseNode* cur = parents[pos];
+    for (int pos = nparents_ - 1; pos >= 0; pos--) {
+      ParseNode* cur = parents_[pos];
       if (cur->is<AssignmentNode>()) {
         return cur;
       }
@@ -147,44 +156,41 @@ class NameResolver {
       switch (cur->getKind()) {
         case ParseNodeKind::PrivateName:
         case ParseNodeKind::Name:
-          return cur; 
+          return cur;  
         case ParseNodeKind::ThisExpr:
-          return cur; 
+          return cur;  
         case ParseNodeKind::Function:
-          return nullptr; 
+          return nullptr;  
 
         case ParseNodeKind::ReturnStmt:
           
-
-
-
-
-
-
-
-
-
-
-
+          
+          
+          
+          
+          
+          
+          
+          
+          
           for (int tmp = pos - 1; tmp > 0; tmp--) {
             if (isDirectCall(tmp, cur)) {
               pos = tmp;
               break;
-            } else if (call(cur)) {
+            }
+            if (isCall(cur)) {
               
               break;
             }
-            cur = parents[tmp];
+            cur = parents_[tmp];
           }
           break;
 
         case ParseNodeKind::Colon:
         case ParseNodeKind::Shorthand:
           
-
-
-
-
+          
+          
           pos--;
           MOZ_FALLTHROUGH;
 
@@ -210,7 +216,7 @@ class NameResolver {
     RootedFunction fun(cx, funNode->funbox()->function());
 
     StringBuffer buf(cx);
-    this->buf = &buf;
+    this->buf_ = &buf;
 
     retAtom.set(nullptr);
 
@@ -228,8 +234,10 @@ class NameResolver {
     }
 
     
-    if (prefix != nullptr && (!buf.append(prefix) || !buf.append('/'))) {
-      return false;
+    if (prefix != nullptr) {
+      if (!buf.append(prefix) || !buf.append('/')) {
+        return false;
+      }
     }
 
     
@@ -252,10 +260,8 @@ class NameResolver {
     }
 
     
-
-
-
-
+    
+    
     for (int pos = size - 1; pos >= 0; pos--) {
       ParseNode* node = toName[pos];
 
@@ -277,9 +283,7 @@ class NameResolver {
         }
       } else {
         
-
-
-
+        
         if (!buf.empty() && buf.getChar(buf.length() - 1) != '<' &&
             !buf.append('<')) {
           return false;
@@ -288,10 +292,8 @@ class NameResolver {
     }
 
     
-
-
-
-
+    
+    
     if (!buf.empty() && buf.getChar(buf.length() - 1) == '/' &&
         !buf.append('<')) {
       return false;
@@ -320,8 +322,8 @@ class NameResolver {
 
 
   bool isDirectCall(int pos, ParseNode* cur) {
-    return pos >= 0 && call(parents[pos]) &&
-           parents[pos]->as<BinaryNode>().left() == cur;
+    return pos >= 0 && isCall(parents_[pos]) &&
+           parents_[pos]->as<BinaryNode>().left() == cur;
   }
 
   bool resolveTemplateLiteral(ListNode* node, HandleAtom prefix) {
@@ -385,7 +387,7 @@ class NameResolver {
   }
 
  public:
-  explicit NameResolver(JSContext* cx) : cx(cx), nparents(0), buf(nullptr) {}
+  explicit NameResolver(JSContext* cx) : cx(cx), nparents_(0), buf_(nullptr) {}
 
   
 
@@ -408,18 +410,18 @@ class NameResolver {
 
 
 
-      if (!isDirectCall(nparents - 1, cur)) {
+      if (!isDirectCall(nparents_ - 1, cur)) {
         prefix = prefix2;
       }
     }
 
-    if (nparents >= MaxParents) {
+    if (nparents_ >= MaxParents) {
       return true;
     }
 
-    auto initialParents = nparents;
-    parents[initialParents] = cur;
-    nparents++;
+    auto initialParents = nparents_;
+    parents_[initialParents] = cur;
+    nparents_++;
 
     switch (cur->getKind()) {
       
@@ -977,18 +979,12 @@ class NameResolver {
         MOZ_CRASH("invalid node kind");
     }
 
-    nparents--;
-    MOZ_ASSERT(initialParents == nparents, "nparents imbalance detected");
-
-    
-    
-    
-    
-    MOZ_ASSERT(parents[initialParents] == cur,
+    nparents_--;
+    MOZ_ASSERT(initialParents == nparents_, "nparents imbalance detected");
+    MOZ_ASSERT(parents_[initialParents] == cur,
                "pushed child shouldn't change underneath us");
-
-    AlwaysPoison(&parents[initialParents], 0xFF,
-                 sizeof(parents[initialParents]), MemCheckKind::MakeUndefined);
+    AlwaysPoison(&parents_[initialParents], 0xFF,
+                 sizeof(parents_[initialParents]), MemCheckKind::MakeUndefined);
 
     return true;
   }
