@@ -25,7 +25,6 @@ class nsBaseCommandController final : public nsIController,
 
 
 
-  nsBaseCommandController() = delete;
   explicit nsBaseCommandController(
       nsControllerCommandTable* aControllerCommandTable =
           new nsControllerCommandTable());
