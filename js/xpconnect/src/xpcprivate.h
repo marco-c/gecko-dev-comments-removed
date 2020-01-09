@@ -2668,7 +2668,8 @@ class CompartmentPrivate {
   CompartmentPrivate(const CompartmentPrivate&) = delete;
 
  public:
-  CompartmentPrivate(JS::Compartment* c, XPCWrappedNativeScope* scope,
+  CompartmentPrivate(JS::Compartment* c,
+                     mozilla::UniquePtr<XPCWrappedNativeScope> scope,
                      mozilla::BasePrincipal* origin,
                      const mozilla::SiteIdentifier& site);
 
@@ -2700,13 +2701,11 @@ class CompartmentPrivate {
     
     return !wantXrays && !isWebExtensionContentScript &&
            !isContentXBLCompartment && !isUAWidgetCompartment &&
-           !universalXPConnectEnabled && scope->XBLScopeStateMatches(principal);
+           !universalXPConnectEnabled &&
+           mScope->XBLScopeStateMatches(principal);
   }
 
   CompartmentOriginInfo originInfo;
-
-  
-  XPCWrappedNativeScope* scope;
 
   
   
@@ -2771,12 +2770,17 @@ class CompartmentPrivate {
       RemoteProxyMap;
   RemoteProxyMap& GetRemoteProxyMap() { return mRemoteProxies; }
 
+  XPCWrappedNativeScope* GetScope() { return mScope.get(); }
+
  private:
   JSObject2WrappedJSMap* mWrappedJSMap;
 
   
   
   RemoteProxyMap mRemoteProxies;
+
+  
+  mozilla::UniquePtr<XPCWrappedNativeScope> mScope;
 };
 
 bool IsUniversalXPConnectEnabled(JS::Compartment* compartment);
@@ -2896,7 +2900,7 @@ class RealmPrivate {
 };
 
 inline XPCWrappedNativeScope* ObjectScope(JSObject* obj) {
-  return CompartmentPrivate::Get(obj)->scope;
+  return CompartmentPrivate::Get(obj)->GetScope();
 }
 
 JSObject* NewOutObject(JSContext* cx);

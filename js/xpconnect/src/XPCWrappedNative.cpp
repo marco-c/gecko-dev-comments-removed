@@ -183,7 +183,7 @@ nsresult XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
   if (!global) {
     return NS_ERROR_FAILURE;
   }
-  XPCWrappedNativeScope* scope = CompartmentPrivate::Get(global)->scope;
+  XPCWrappedNativeScope* scope = ObjectScope(global);
 
   
   
