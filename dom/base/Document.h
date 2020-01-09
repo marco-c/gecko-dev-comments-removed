@@ -62,6 +62,7 @@
 #include "mozilla/StyleSheet.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/FailedCertSecurityInfoBinding.h"
 #include <bitset>  
 
 
@@ -2241,6 +2242,20 @@ class Document : public nsINode,
 
 
   nsIChannel* GetFailedChannel() const { return mFailedChannel; }
+
+  
+
+
+
+  static bool CallerIsTrustedAboutCertError(JSContext* aCx, JSObject* aObject);
+
+  
+
+
+
+
+  void GetFailedCertSecurityInfo(mozilla::dom::FailedCertSecurityInfo& aInfo,
+                                 ErrorResult& aRv);
 
   
 
