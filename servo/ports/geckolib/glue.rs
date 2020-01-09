@@ -3118,6 +3118,10 @@ pub unsafe extern "C" fn Servo_CounterStyleRule_GetAdditiveSymbols(
     })
 }
 
+
+
+
+/// cbindgen:derive-tagged-enum-destructor=false
 #[repr(C, u8)]
 pub enum CounterSpeakAs {
     None,
