@@ -237,6 +237,8 @@ static const TestFileData testFiles[] = {
     {"test_case_1519617-cenc-init-with-track_id-0.mp4", true, 1, true, 0, 1272,
      530, 0, -1, false, 0, false, false,
      0},  
+    {"test_case_1519617-track2-trafs-removed.mp4", true, 1, true, 10032000, 400,
+     300, 1, 10032000, false, 0, true, true, 2},
     {"test_case_1519617-video-has-track_id-0.mp4", true, 1, true, 10032000, 400,
      300, 1, 10032000, false, 0, true, true, 2},  
 };
@@ -590,6 +592,43 @@ TEST(MoofParser, test_case_track_id_0_reads_crypto_metadata) {
          "failed to parse some expected crypto!";
   EXPECT_TRUE(parser.mSampleDescriptions[0].mIsEncryptedEntry)
       << "Sample description should be marked as encrypted!";
+}
+
+
+
+
+
+
+
+
+TEST(MoofParser, test_case_moofs_missing_trafs) {
+  const char* noTrafsForTrack2MoofsFileName =
+      "test_case_1519617-track2-trafs-removed.mp4";
+  nsTArray<uint8_t> buffer = ReadTestFile(noTrafsForTrack2MoofsFileName);
+
+  ASSERT_FALSE(buffer.IsEmpty());
+  RefPtr<ByteStream> stream =
+      new TestStream(buffer.Elements(), buffer.Length());
+
+  
+  MoofParser parser(stream, 0, false, true);
+
+  
+  
+  
+
+  const MediaByteRangeSet byteRanges(
+      MediaByteRange(0, int64_t(buffer.Length())));
+  EXPECT_TRUE(parser.RebuildFragmentedIndex(byteRanges))
+      << "MoofParser should find a valid moof, there's 2 in the file!";
+
+  
+  const size_t numMoofs = 2;
+  EXPECT_EQ(numMoofs, parser.Moofs().Length())
+      << "File has 2 moofs, we should have read both";
+  for (size_t i = 0; i < parser.Moofs().Length(); i++) {
+    EXPECT_TRUE(parser.Moofs()[i].IsValid()) << "All moofs should be valid";
+  }
 }
 
 
