@@ -1242,6 +1242,12 @@ class Document : public nsINode,
 
 
 
+  void DisableCookieAccess() { mDisableCookieAccess = true; }
+
+  
+
+
+
   void GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const;
   void SetHeaderData(nsAtom* aheaderField, const nsAString& aData);
 
@@ -3241,6 +3247,8 @@ class Document : public nsINode,
                                            ErrorResult& rv);
   void GetInputEncoding(nsAString& aInputEncoding) const;
   already_AddRefed<Location> GetLocation() const;
+  void GetCookie(nsAString& aCookie, mozilla::ErrorResult& rv);
+  void SetCookie(const nsAString& aCookie, mozilla::ErrorResult& rv);
   void GetReferrer(nsAString& aReferrer) const;
   void GetLastModified(nsAString& aLastModified) const;
   void GetReadyState(nsAString& aReadyState) const;
@@ -3920,6 +3928,10 @@ class Document : public nsINode,
 
   void MaybeResolveReadyForIdle();
 
+  
+  already_AddRefed<nsIChannel> CreateDummyChannelForCookies(
+      nsIURI* aCodebaseURI);
+
   nsCString mReferrer;
   nsString mLastModified;
 
@@ -4296,6 +4308,9 @@ class Document : public nsINode,
   
   
   bool mSkipLoadEventAfterClose : 1;
+
+  
+  bool mDisableCookieAccess : 1;
 
   uint8_t mPendingFullscreenRequests;
 

@@ -96,11 +96,6 @@ class nsIHTMLDocument : public nsISupports {
   
 
 
-  virtual void DisableCookieAccess() = 0;
-
-  
-
-
   virtual void TearingDownEditor() = 0;
 
   virtual void SetIsXHTML(bool aXHTML) = 0;
