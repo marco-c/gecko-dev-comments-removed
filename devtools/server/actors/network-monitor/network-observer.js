@@ -558,9 +558,18 @@ NetworkObserver.prototype = {
       cookies = NetworkHelper.parseCookieHeader(cookieHeader);
     }
 
+    
+    
+    if (this.blockedURLs.has(httpActivity.url)) {
+      channel.cancel(Cr.NS_BINDING_ABORTED);
+      event.blockedReason = "DevTools";
+    }
+
     httpActivity.owner = this.owner.onNetworkEvent(event);
 
-    this._setupResponseListener(httpActivity, fromCache);
+    if (!event.blockedReason) {
+      this._setupResponseListener(httpActivity, fromCache);
+    }
 
     httpActivity.owner.addRequestHeaders(headers, extraStringData);
     httpActivity.owner.addRequestCookies(cookies);
@@ -672,11 +681,6 @@ NetworkObserver.prototype = {
   _setupResponseListener: function(httpActivity, fromCache) {
     const channel = httpActivity.channel;
     channel.QueryInterface(Ci.nsITraceableChannel);
-
-    if (this.blockedURLs.has(httpActivity.url)) {
-      channel.cancel(Cr.NS_BINDING_ABORTED);
-      return;
-    }
 
     if (!fromCache) {
       const throttler = this._getThrottler();
