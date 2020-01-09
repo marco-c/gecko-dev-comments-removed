@@ -365,9 +365,12 @@ JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::buildFunction(
   
   MOZ_TRY(checkFunctionClosedVars());
 
-  BINJS_TRY_DECL(bindings, NewFunctionScopeData(cx_, pc_->functionScope(),
-                                                 false,
-                                                alloc_, pc_));
+  BINJS_TRY_DECL(
+      bindings,
+      NewFunctionScopeData(cx_, pc_->functionScope(),
+                            false,
+                           IsFieldInitializer::No,
+                           alloc_, pc_));
 
   funbox->functionScopeBindings().set(*bindings);
 
