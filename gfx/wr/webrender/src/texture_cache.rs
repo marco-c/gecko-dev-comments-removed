@@ -23,7 +23,7 @@ use std::time::{Duration, SystemTime};
 use std::rc::Rc;
 
 
-const TEXTURE_REGION_DIMENSIONS: i32 = 512;
+pub const TEXTURE_REGION_DIMENSIONS: i32 = 512;
 
 
 const BASE_PICTURE_TEXTURE_SLICES: usize = 16;
