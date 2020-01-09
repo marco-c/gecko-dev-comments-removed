@@ -95,9 +95,7 @@ public class Tabs implements BundleEventListener {
     
     public static final int NEW_LAST_INDEX = -1;
 
-    
-    
-    private static final AtomicInteger sTabId = new AtomicInteger(1);
+    private static final AtomicInteger sTabId = new AtomicInteger(0);
     private volatile boolean mInitialTabsAdded;
 
     private Context mAppContext;

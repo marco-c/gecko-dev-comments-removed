@@ -23,10 +23,7 @@ class Tab {
 
 class GeckoViewTab extends GeckoViewModule {
   onInit() {
-    
-    
-    
-    const tab = new Tab(10001, this.browser);
+    const tab = new Tab(0, this.browser);
 
     this.window.gBrowser = this.window.BrowserApp = {
       selectedBrowser: this.browser,
