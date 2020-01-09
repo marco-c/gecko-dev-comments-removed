@@ -35,7 +35,6 @@ add_task(async function test_empty_password() {
     
     passwordTextbox.focus();
     await EventUtils.synthesizeKey("KEY_ArrowRight");
-    await EventUtils.synthesizeKey("KEY_ArrowRight");
     await EventUtils.synthesizeKey("KEY_Backspace");
     await EventUtils.synthesizeKey("KEY_Backspace");
 
