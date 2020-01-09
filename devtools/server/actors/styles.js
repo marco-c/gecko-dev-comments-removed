@@ -132,8 +132,6 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         
         getAppliedCreatesStyleCache: true,
         
-        authoredStyles: true,
-        
         fontStretchLevel4: CSS.supports("font-stretch: 100%"),
         
         fontStyleLevel4: CSS.supports("font-style: oblique 20deg"),
@@ -938,11 +936,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-
-
-
-
-  async addNewRule(node, pseudoClasses, editAuthored = false) {
+  async addNewRule(node, pseudoClasses) {
     const style = this.getStyleElement(node.rawNode.ownerDocument);
     const sheet = style.sheet;
     const cssRules = sheet.cssRules;
@@ -966,12 +960,10 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
     
     
-    if (editAuthored) {
-      const sheetActor = this._sheetRef(sheet);
-      let {str: authoredText} = await sheetActor.getText();
-      authoredText += "\n" + selector + " {\n" + "}";
-      await sheetActor.update(authoredText, false);
-    }
+    const sheetActor = this._sheetRef(sheet);
+    let {str: authoredText} = await sheetActor.getText();
+    authoredText += "\n" + selector + " {\n" + "}";
+    await sheetActor.update(authoredText, false);
 
     return this.getNewAppliedProps(node, sheet.cssRules.item(index));
   },
