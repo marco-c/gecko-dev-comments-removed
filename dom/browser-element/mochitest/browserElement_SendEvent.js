@@ -19,7 +19,6 @@ function runTest() {
   
   
   var tabParent = SpecialPowers.wrap(iframe)
-                  .QueryInterface(SpecialPowers.Ci.nsIFrameLoaderOwner)
                   .frameLoader.tabParent;
   if (tabParent) {
     let offsetX = {};
