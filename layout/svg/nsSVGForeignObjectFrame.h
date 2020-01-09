@@ -85,6 +85,8 @@ class nsSVGForeignObjectFrame final : public nsContainerFrame,
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
+  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
+
  protected:
   
   void DoReflow();
