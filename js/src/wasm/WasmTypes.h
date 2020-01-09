@@ -1143,7 +1143,7 @@ typedef Vector<GlobalDesc, 0, SystemAllocPolicy> GlobalDescVector;
 struct ElemSegment : AtomicRefCounted<ElemSegment> {
   uint32_t tableIndex;
   Maybe<InitExpr> offsetIfActive;
-  Uint32Vector elemFuncIndices;
+  Uint32Vector elemFuncIndices; 
 
   bool active() const { return !!offsetIfActive; }
 
@@ -1153,6 +1153,11 @@ struct ElemSegment : AtomicRefCounted<ElemSegment> {
 
   WASM_DECLARE_SERIALIZABLE(ElemSegment)
 };
+
+
+
+constexpr uint32_t NullFuncIndex = UINT32_MAX;
+static_assert(NullFuncIndex > MaxFuncs, "Invariant");
 
 typedef RefPtr<ElemSegment> MutableElemSegment;
 typedef SerializableRefPtr<const ElemSegment> SharedElemSegment;

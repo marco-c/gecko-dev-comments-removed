@@ -747,31 +747,35 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   uint8_t* codeBaseTier = codeBase(tier);
   for (uint32_t i = 0; i < len; i++) {
     uint32_t funcIndex = elemFuncIndices[srcOffset + i];
-    if (funcIndex < funcImports.length()) {
-      FuncImportTls& import = funcImportTls(funcImports[funcIndex]);
-      JSFunction* fun = import.fun;
-      if (IsExportedWasmFunction(fun)) {
-        
-        
-        
-        
-        
-        
-        WasmInstanceObject* calleeInstanceObj =
+    if (funcIndex == NullFuncIndex) {
+      table.setNull(dstOffset + i);
+    } else {
+      if (funcIndex < funcImports.length()) {
+        FuncImportTls& import = funcImportTls(funcImports[funcIndex]);
+        JSFunction* fun = import.fun;
+        if (IsExportedWasmFunction(fun)) {
+          
+          
+          
+          
+          
+          
+          WasmInstanceObject* calleeInstanceObj =
             ExportedFunctionToInstanceObject(fun);
-        Instance& calleeInstance = calleeInstanceObj->instance();
-        Tier calleeTier = calleeInstance.code().bestTier();
-        const CodeRange& calleeCodeRange =
+          Instance& calleeInstance = calleeInstanceObj->instance();
+          Tier calleeTier = calleeInstance.code().bestTier();
+          const CodeRange& calleeCodeRange =
             calleeInstanceObj->getExportedFunctionCodeRange(fun, calleeTier);
-        void* code = calleeInstance.codeBase(calleeTier) +
-                     calleeCodeRange.funcTableEntry();
-        table.setAnyFunc(dstOffset + i, code, &calleeInstance);
-        continue;
+          void* code = calleeInstance.codeBase(calleeTier) +
+            calleeCodeRange.funcTableEntry();
+          table.setAnyFunc(dstOffset + i, code, &calleeInstance);
+          continue;
+        }
       }
-    }
-    void* code =
+      void* code =
         codeBaseTier + codeRanges[funcToCodeRange[funcIndex]].funcTableEntry();
-    table.setAnyFunc(dstOffset + i, code, this);
+      table.setAnyFunc(dstOffset + i, code, this);
+    }
   }
 }
 
