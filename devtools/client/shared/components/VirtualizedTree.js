@@ -427,14 +427,63 @@ class Tree extends Component {
 
 
 
+
+
+
+
+  _scrollIntoView(item, index, options = {}) {
+    const treeElement = this.refs.tree;
+    if (!treeElement) {
+      return;
+    }
+
+    const element = document.getElementById(this.props.getKey(item));
+    if (element) {
+      scrollIntoView(element, { ...options, container: treeElement });
+      return;
+    }
+
+    if (index == null) {
+      
+      const traversal = this._dfsFromRoots();
+      index = traversal.findIndex(({ item: i }) => i === item);
+    }
+
+    if (index == null || index < 0) {
+      return;
+    }
+
+    const { itemHeight } = this.props;
+    const { clientHeight, scrollTop } = treeElement;
+    const elementTop = index * itemHeight;
+    let scrollTo;
+    if (scrollTop >= elementTop + itemHeight) {
+      scrollTo = elementTop;
+    } else if (scrollTop + clientHeight <= elementTop) {
+      scrollTo = elementTop + itemHeight - clientHeight;
+    }
+
+    if (scrollTo != undefined) {
+      treeElement.scrollTo({
+        left: 0,
+        top: scrollTo,
+      });
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
   _focus(index, item, options = {}) {
     if (item !== undefined && !options.preventAutoScroll) {
-      const treeElement = this.refs.tree;
-      const element = document.getElementById(this.props.getKey(item));
-      scrollIntoView(element, {
-        ...options,
-        container: treeElement,
-      });
+      this._scrollIntoView(item, index, options);
     }
 
     if (this.props.active != null) {
