@@ -818,6 +818,13 @@ gather_time_entropy(void)
 # include <bsd/stdlib.h>
 #endif
 
+
+
+#if defined(HAVE_ARC4RANDOM_BUF) && defined(__ANDROID__)
+__attribute__((visibility("default"))) void arc4random_buf(void*, size_t);
+#endif
+
+
 static unsigned long
 ENTROPY_DEBUG(const char * label, unsigned long entropy) {
 
