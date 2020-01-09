@@ -7,6 +7,7 @@
 #include "ProcessUtils.h"
 
 #include "mozilla/Preferences.h"
+#include "mozilla/ipc/GeckoChildProcessHost.h"
 
 namespace mozilla {
 namespace ipc {
@@ -50,6 +51,46 @@ bool SharedPreferenceSerializer::SerializeToSharedMemory() {
 
   return true;
 }
+
+void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
+    mozilla::ipc::GeckoChildProcessHost& procHost,
+    std::vector<std::string>& aExtraOpts) const {
+  
+  
+  auto formatPtrArg = [](auto arg) {
+    return nsPrintfCString("%zu", uintptr_t(arg));
+  };
+
+#if defined(XP_WIN)
+  
+  
+  HANDLE prefsHandle = GetSharedMemoryHandle();
+  procHost.AddHandleToShare(prefsHandle);
+  procHost.AddHandleToShare(GetPrefMapHandle().get());
+  aExtraOpts.push_back("-prefsHandle");
+  aExtraOpts.push_back(formatPtrArg(prefsHandle).get());
+  aExtraOpts.push_back("-prefMapHandle");
+  aExtraOpts.push_back(
+      formatPtrArg(GetPrefMapHandle().get()).get());
+#else
+  
+  
+  
+  
+  
+  
+  
+  procHost.AddFdToRemap(GetSharedMemoryHandle().fd, kPrefsFileDescriptor);
+  procHost.AddFdToRemap(GetPrefMapHandle().get(), kPrefMapFileDescriptor);
+#endif
+
+  
+  aExtraOpts.push_back("-prefsLen");
+  aExtraOpts.push_back(formatPtrArg(GetPrefLength()).get());
+  aExtraOpts.push_back("-prefMapSize");
+  aExtraOpts.push_back(formatPtrArg(GetPrefMapSize()).get());
+}
+
 
 #ifdef ANDROID
 static int gPrefsFd = -1;

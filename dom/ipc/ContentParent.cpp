@@ -2056,49 +2056,13 @@ void ContentParent::LaunchSubprocessInternal(
     earlyReject();
     return;
   }
+  prefSerializer.AddSharedPrefCmdLineArgs(*mSubprocess, extraArgs);
 
   
   
   
   
   Preferences::AddStrongObserver(this, "");
-
-  
-  
-  auto formatPtrArg = [](auto arg) {
-    return nsPrintfCString("%zu", uintptr_t(arg));
-  };
-
-#if defined(XP_WIN)
-  
-  
-  HANDLE prefsHandle = prefSerializer.GetSharedMemoryHandle();
-  mSubprocess->AddHandleToShare(prefsHandle);
-  mSubprocess->AddHandleToShare(prefSerializer.GetPrefMapHandle().get());
-  extraArgs.push_back("-prefsHandle");
-  extraArgs.push_back(formatPtrArg(prefsHandle).get());
-  extraArgs.push_back("-prefMapHandle");
-  extraArgs.push_back(
-      formatPtrArg(prefSerializer.GetPrefMapHandle().get()).get());
-#else
-  
-  
-  
-  
-  
-  
-  
-  mSubprocess->AddFdToRemap(prefSerializer.GetSharedMemoryHandle().fd,
-                            kPrefsFileDescriptor);
-  mSubprocess->AddFdToRemap(prefSerializer.GetPrefMapHandle().get(),
-                            kPrefMapFileDescriptor);
-#endif
-
-  
-  extraArgs.push_back("-prefsLen");
-  extraArgs.push_back(formatPtrArg(prefSerializer.GetPrefLength()).get());
-  extraArgs.push_back("-prefMapSize");
-  extraArgs.push_back(formatPtrArg(prefSerializer.GetPrefMapSize()).get());
 
   if (gSafeMode) {
     extraArgs.push_back("-safeMode");

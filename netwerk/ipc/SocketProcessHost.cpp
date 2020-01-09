@@ -111,41 +111,7 @@ bool SocketProcessHost::Launch() {
   if (!prefSerializer.SerializeToSharedMemory()) {
     return false;
   }
-
-  
-  
-  auto formatPtrArg = [](auto arg) {
-    return nsPrintfCString("%zu", uintptr_t(arg));
-  };
-
-#if defined(XP_WIN)
-  
-  
-  HANDLE prefsHandle = prefSerializer.GetSharedMemoryHandle();
-  AddHandleToShare(prefsHandle);
-  AddHandleToShare(prefSerializer.GetPrefMapHandle().get());
-  extraArgs.push_back("-prefsHandle");
-  extraArgs.push_back(formatPtrArg(prefsHandle).get());
-  extraArgs.push_back("-prefMapHandle");
-  extraArgs.push_back(
-      formatPtrArg(prefSerializer.GetPrefMapHandle().get()).get());
-#else
-  
-  
-  
-  
-  
-  
-  
-  AddFdToRemap(prefSerializer.GetSharedMemoryHandle().fd, kPrefsFileDescriptor);
-  AddFdToRemap(prefSerializer.GetPrefMapHandle().get(), kPrefMapFileDescriptor);
-#endif
-
-  
-  extraArgs.push_back("-prefsLen");
-  extraArgs.push_back(formatPtrArg(prefSerializer.GetPrefLength()).get());
-  extraArgs.push_back("-prefMapSize");
-  extraArgs.push_back(formatPtrArg(prefSerializer.GetPrefMapSize()).get());
+  prefSerializer.AddSharedPrefCmdLineArgs(*this, extraArgs);
 
   mLaunchPhase = LaunchPhase::Waiting;
   if (!GeckoChildProcessHost::LaunchAndWaitForProcessHandle(extraArgs)) {
