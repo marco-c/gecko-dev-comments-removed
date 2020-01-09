@@ -629,6 +629,13 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       case __NR_getrandom:
         return Allow();
 
+#ifdef DESKTOP
+        
+        
+      case __NR_sysinfo:
+        return Error(EPERM);
+#endif
+
 #ifdef MOZ_ASAN
         
       case __NR_ioctl: {
