@@ -1409,13 +1409,9 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   if (envvar && *envvar && !force) return NS_OK;
 #endif
 
-#if defined(XP_WIN)
-  doReport = ShouldReport();
-#else
   
   
   doReport = ShouldReport();
-#endif
 
   
   crashReporterAPIData = new nsCString();
