@@ -69,8 +69,18 @@ static Maybe<LayerRect> ApplyParentLayerToLayerTransform(
 
 static LayerToParentLayerMatrix4x4 GetTransformToAncestorsParentLayer(
     Layer* aStart, const LayerMetricsWrapper& aAncestor) {
+
+  
+  
+  
+  
+  LayerMetricsWrapper root3dAncestor = aAncestor;
+  while (root3dAncestor.Combines3DTransformWithAncestors()) {
+    root3dAncestor = root3dAncestor.GetParent();
+  }
+
   gfx::Matrix4x4 transform;
-  const LayerMetricsWrapper& ancestorParent = aAncestor.GetParent();
+  const LayerMetricsWrapper& ancestorParent = root3dAncestor.GetParent();
   for (LayerMetricsWrapper iter(aStart, LayerMetricsWrapper::StartAt::BOTTOM);
        ancestorParent ? iter != ancestorParent : iter.IsValid();
        iter = iter.GetParent()) {
