@@ -119,8 +119,7 @@ Service::CollectReports(nsIHandleReportCallback *aHandleReport,
       
       
       MutexAutoLock lockedAsyncScope(conn->sharedAsyncExecutionMutex);
-      nsresult rv = conn->connectionReady(Connection::ASYNCHRONOUS);
-      if (NS_FAILED(rv)) {
+      if (!conn->connectionReady()) {
         continue;
       }
 
@@ -304,17 +303,14 @@ void Service::minimizeMemory() {
     RefPtr<Connection> conn = connections[i];
     
     
-    nsresult rv = conn->connectionReady(Connection::ASYNCHRONOUS);
-    if (NS_FAILED(rv)) {
+    if (!conn->connectionReady()) {
       continue;
     }
 
     NS_NAMED_LITERAL_CSTRING(shrinkPragma, "PRAGMA shrink_memory");
-    nsCOMPtr<mozIStorageConnection> syncConn = do_QueryInterface(
-        NS_ISUPPORTS_CAST(mozIStorageAsyncConnection *, conn));
     bool onOpenedThread = false;
 
-    if (!syncConn) {
+    if (!conn->operationSupported(Connection::SYNCHRONOUS)) {
       
       
       nsCOMPtr<mozIStoragePendingStatement> ps;

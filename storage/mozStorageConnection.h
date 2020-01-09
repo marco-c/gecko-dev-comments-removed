@@ -238,14 +238,16 @@ class Connection final : public mozIStorageConnection,
   
 
 
+  inline bool connectionReady() { return mDBConn != nullptr; }
+
+  
 
 
 
 
 
 
-
-  nsresult connectionReady(ConnectionOperation aOperationType);
+  bool operationSupported(ConnectionOperation aOperationType);
 
   
 
@@ -345,6 +347,12 @@ class Connection final : public mozIStorageConnection,
   
   
   int progressHandler();
+
+  
+
+
+
+  nsresult ensureOperationSupported(ConnectionOperation aOperationType);
 
   sqlite3 *mDBConn;
   nsCOMPtr<nsIFileURL> mFileURL;
