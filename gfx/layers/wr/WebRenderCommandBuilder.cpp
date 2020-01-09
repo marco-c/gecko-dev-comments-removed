@@ -1083,12 +1083,13 @@ class WebRenderGroupData : public WebRenderUserData {
 };
 
 static bool IsItemProbablyActive(nsDisplayItem* aItem,
-                                 nsDisplayListBuilder* aDisplayListBuilder);
+                                 nsDisplayListBuilder* aDisplayListBuilder,
+                                 bool aParentActive = true);
 
 static bool HasActiveChildren(const nsDisplayList& aList,
                               nsDisplayListBuilder* aDisplayListBuilder) {
   for (nsDisplayItem* i = aList.GetBottom(); i; i = i->GetAbove()) {
-    if (IsItemProbablyActive(i, aDisplayListBuilder)) {
+    if (IsItemProbablyActive(i, aDisplayListBuilder, false)) {
       return true;
     }
   }
@@ -1103,7 +1104,8 @@ static bool HasActiveChildren(const nsDisplayList& aList,
 
 
 static bool IsItemProbablyActive(nsDisplayItem* aItem,
-                                 nsDisplayListBuilder* aDisplayListBuilder) {
+                                 nsDisplayListBuilder* aDisplayListBuilder,
+                                 bool aParentActive) {
   switch (aItem->GetType()) {
     case DisplayItemType::TYPE_TRANSFORM: {
       nsDisplayTransform* transformItem =
@@ -1127,6 +1129,13 @@ static bool IsItemProbablyActive(nsDisplayItem* aItem,
     }
     case DisplayItemType::TYPE_FOREIGN_OBJECT: {
       return true;
+    }
+    case DisplayItemType::TYPE_BLEND_MODE: {
+      
+
+
+      return aParentActive || HasActiveChildren(*aItem->GetChildren(),
+                                                aDisplayListBuilder);
     }
     case DisplayItemType::TYPE_WRAP_LIST:
     case DisplayItemType::TYPE_PERSPECTIVE: {
