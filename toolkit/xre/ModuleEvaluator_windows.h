@@ -43,16 +43,20 @@ class ModuleLoadEvent {
  public:
   class ModuleInfo {
    public:
-    ModuleInfo() = default;
+    ModuleInfo() = delete;
     ModuleInfo(const ModuleInfo&) = default;
     ModuleInfo(ModuleInfo&&) = default;
     ModuleInfo& operator=(const ModuleInfo&) = default;
     ModuleInfo& operator=(ModuleInfo&&) = default;
 
+    explicit ModuleInfo(uintptr_t aBase);
+
     
     explicit ModuleInfo(const glue::ModuleLoadEvent::ModuleInfo&);
 
-    
+    bool PopulatePathInfo();
+    bool PrepForTelemetry();
+
     uintptr_t mBase;
     nsString mLdrName;
     nsCOMPtr<nsIFile> mFile;  
@@ -96,16 +100,22 @@ class ModuleLoadEvent {
 
 class ModuleEvaluator {
   Maybe<uint64_t> mExeVersion;  
-  nsString mExeDirectory;
-  nsString mSysDirectory;
-  nsString mWinSxSDirectory;
+  nsCOMPtr<nsIFile> mExeDirectory;
+  nsCOMPtr<nsIFile> mSysDirectory;
+  nsCOMPtr<nsIFile> mWinSxSDirectory;
 #ifdef _M_IX86
-  nsString mSysWOW64Directory;
+  nsCOMPtr<nsIFile> mSysWOW64Directory;
 #endif  
   Vector<nsString, 0, InfallibleAllocPolicy> mKeyboardLayoutDlls;
 
  public:
   ModuleEvaluator();
+
+  explicit operator bool() const {
+    
+    return mExeVersion.isSome() && mExeDirectory && mSysDirectory &&
+           mWinSxSDirectory;
+  }
 
   
 

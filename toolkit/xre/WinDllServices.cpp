@@ -143,6 +143,7 @@ class UntrustedModulesManager {
 
   void ProcessQueuedEvents(bool& aHasProcessedStartupModules) {
     MOZ_ASSERT(!NS_IsMainThread());
+    MOZ_ASSERT(!!mEvaluator);
 
     
     
@@ -165,6 +166,10 @@ class UntrustedModulesManager {
       mQueuedEvents.swap(queuedEvents);
     }
 
+    if (!mEvaluator) {
+      return;
+    }
+
     Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy> processedEvents;
     int errorModules = 0;
 
@@ -178,6 +183,12 @@ class UntrustedModulesManager {
       ModuleLoadEvent eventCopy(
           e, ModuleLoadEvent::CopyOption::CopyWithoutModules);
       for (auto& m : e.mModules) {
+        bool ok = m.PrepForTelemetry();
+        MOZ_ASSERT(ok);
+        if (!ok) {
+          continue;
+        }
+
         Maybe<bool> maybeIsTrusted =
             mEvaluator.IsModuleTrusted(m, eventCopy, dllSvcRef.get());
 
@@ -308,9 +319,7 @@ class UntrustedModulesManager {
 
         
         
-        ModuleLoadEvent::ModuleInfo mi;
-        mi.mBase = base;
-        mi.mLoadDurationMS = Nothing();
+        ModuleLoadEvent::ModuleInfo mi(base);
         ModuleLoadEvent e;
         e.mIsStartup = true;
         e.mProcessUptimeMS = 0;
@@ -331,8 +340,7 @@ class UntrustedModulesManager {
     for (auto& e : startupEvents) {
       MOZ_ASSERT(e.mModules.length() == 1);
       ModuleLoadEvent::ModuleInfo& mi(e.mModules[0]);
-      widget::WinUtils::GetModuleFullPath((HMODULE)mi.mBase, mi.mLdrName);
-      Unused << NS_NewLocalFile(mi.mLdrName, false, getter_AddRefs(mi.mFile));
+      mi.PopulatePathInfo();
     }
 
     
