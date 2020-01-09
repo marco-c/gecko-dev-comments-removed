@@ -292,6 +292,8 @@ class UrlbarInput {
       allowInheritPrincipal: false,
     };
 
+    let url = result.payload.url;
+
     switch (result.type) {
       case UrlbarUtils.MATCH_TYPE.TAB_SWITCH: {
         if (this._overrideDefaultAction(event)) {
@@ -311,9 +313,18 @@ class UrlbarInput {
         }
         return;
       }
-      case UrlbarUtils.MATCH_TYPE.SEARCH:
-        
-        return;
+      case UrlbarUtils.MATCH_TYPE.SEARCH: {
+        const actionDetails = {
+          isSuggestion: !!result.payload.suggestion,
+          alias: result.payload.keyword,
+        };
+        const engine = Services.search.getEngineByName(result.payload.engine);
+
+        [url, openParams.postData] = this._getSearchQueryUrl(
+          engine, result.payload.suggestion || result.payload.query);
+        this._recordSearch(engine, event, actionDetails);
+        break;
+      }
       case UrlbarUtils.MATCH_TYPE.OMNIBOX:
         
         ExtensionSearchHandler.handleInputEntered(result.payload.keyword,
@@ -322,7 +333,7 @@ class UrlbarInput {
         return;
     }
 
-    this._loadURL(result.payload.url, where, openParams);
+    this._loadURL(url, where, openParams);
   }
 
   
@@ -331,16 +342,26 @@ class UrlbarInput {
 
 
   setValueFromResult(result) {
-    
-    
-    
-    let val = result.payload.url;
-    let uri;
-    try {
-      uri = Services.io.newURI(val);
-    } catch (ex) {}
-    if (uri) {
-      val = this.window.losslessDecodeURI(uri);
+    let val;
+
+    switch (result.type) {
+      case UrlbarUtils.MATCH_TYPE.SEARCH:
+        val = result.payload.suggestion || result.payload.query;
+        break;
+      default: {
+        
+        
+        
+        val = result.payload.url;
+        let uri;
+        try {
+          uri = Services.io.newURI(val);
+        } catch (ex) {}
+        if (uri) {
+          val = this.window.losslessDecodeURI(uri);
+        }
+        break;
+      }
     }
     this.value = val;
   }
@@ -516,6 +537,55 @@ class UrlbarInput {
            event.altKey ||
            (AppConstants.platform == "macosx" ?
               event.metaKey : event.ctrlKey);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _getSearchQueryUrl(engine, query) {
+    let submission = engine.getSubmission(query, null, "keyword");
+    return [submission.uri.spec, submission.postData];
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _recordSearch(engine, event, searchActionDetails = {}) {
+    const isOneOff = this.view.oneOffSearchButtons.maybeRecordTelemetry(event);
+    
+    let eventType = "unknown";
+    if (event instanceof KeyboardEvent) {
+      eventType = "key";
+    } else if (event instanceof MouseEvent) {
+      eventType = "mouse";
+    }
+    
+    let details = searchActionDetails;
+    details.isOneOff = isOneOff;
+    details.type = eventType;
+
+    this.window.BrowserSearch.recordSearchInTelemetry(engine, "urlbar", details);
   }
 
   
