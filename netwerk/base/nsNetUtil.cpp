@@ -2530,11 +2530,14 @@ bool NS_IsSrcdocChannel(nsIChannel *aChannel) {
   return false;
 }
 
-nsresult NS_ShouldSecureUpgrade(nsIURI *aURI, nsILoadInfo *aLoadInfo,
-                                nsIPrincipal *aChannelResultPrincipal,
-                                bool aPrivateBrowsing, bool aAllowSTS,
-                                const OriginAttributes &aOriginAttributes,
-                                bool &aShouldUpgrade) {
+nsresult NS_ShouldSecureUpgrade(
+    nsIURI *aURI, nsILoadInfo *aLoadInfo, nsIPrincipal *aChannelResultPrincipal,
+    bool aPrivateBrowsing, bool aAllowSTS,
+    const OriginAttributes &aOriginAttributes, bool &aShouldUpgrade,
+    std::function<void(bool, nsresult)> &&aResultCallback,
+    bool &aWillCallback) {
+  aWillCallback = false;
+
   
   
   
@@ -2611,6 +2614,74 @@ nsresult NS_ShouldSecureUpgrade(nsIURI *aURI, nsILoadInfo *aLoadInfo,
     uint32_t hstsSource = 0;
     uint32_t flags =
         aPrivateBrowsing ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
+
+    auto handleResultFunc = [aAllowSTS](bool aIsStsHost, uint32_t aHstsSource) {
+      if (aIsStsHost) {
+        LOG(("nsHttpChannel::Connect() STS permissions found\n"));
+        if (aAllowSTS) {
+          Telemetry::AccumulateCategorical(
+              Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::STS);
+          switch (aHstsSource) {
+            case nsISiteSecurityService::SOURCE_PRELOAD_LIST:
+              Telemetry::Accumulate(Telemetry::HSTS_UPGRADE_SOURCE, 0);
+              break;
+            case nsISiteSecurityService::SOURCE_ORGANIC_REQUEST:
+              Telemetry::Accumulate(Telemetry::HSTS_UPGRADE_SOURCE, 1);
+              break;
+            case nsISiteSecurityService::SOURCE_UNKNOWN:
+            default:
+              
+              Telemetry::Accumulate(Telemetry::HSTS_UPGRADE_SOURCE, 1);
+              break;
+          }
+          return true;
+        }
+        Telemetry::AccumulateCategorical(
+            Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::PrefBlockedSTS);
+      } else {
+        Telemetry::AccumulateCategorical(
+            Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::NoReasonToUpgrade);
+      }
+      return false;
+    };
+
+    
+    
+    
+    static Atomic<bool, Relaxed> storageReady(false);
+    if (!storageReady && gSocketTransportService && aResultCallback) {
+      nsCOMPtr<nsIURI> uri = aURI;
+      nsCOMPtr<nsISiteSecurityService> service = sss;
+      rv = gSocketTransportService->Dispatch(
+          NS_NewRunnableFunction(
+              "net::NS_ShouldSecureUpgrade",
+              [service{std::move(service)}, uri{std::move(uri)}, flags(flags),
+               originAttributes(aOriginAttributes),
+               handleResultFunc{std::move(handleResultFunc)},
+               resultCallback{std::move(aResultCallback)}]() {
+                uint32_t hstsSource = 0;
+                bool isStsHost = false;
+                nsresult rv = service->IsSecureURI(
+                    nsISiteSecurityService::HEADER_HSTS, uri, flags,
+                    originAttributes, nullptr, &hstsSource, &isStsHost);
+
+                
+                
+                storageReady = NS_SUCCEEDED(rv);
+                bool shouldUpgrade = handleResultFunc(isStsHost, hstsSource);
+
+                NS_DispatchToMainThread(NS_NewRunnableFunction(
+                    "net::NS_ShouldSecureUpgrade::ResultCallback",
+                    [rv, shouldUpgrade,
+                     resultCallback{std::move(resultCallback)}]() {
+                      resultCallback(shouldUpgrade, rv);
+                    }));
+              }),
+          NS_DISPATCH_NORMAL);
+      aWillCallback = NS_SUCCEEDED(rv);
+      return rv;
+    }
+
     rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, flags,
                           aOriginAttributes, nullptr, &hstsSource, &isStsHost);
 
@@ -2619,37 +2690,12 @@ nsresult NS_ShouldSecureUpgrade(nsIURI *aURI, nsILoadInfo *aLoadInfo,
     
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (isStsHost) {
-      LOG(("nsHttpChannel::Connect() STS permissions found\n"));
-      if (aAllowSTS) {
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::STS);
-        aShouldUpgrade = true;
-        switch (hstsSource) {
-          case nsISiteSecurityService::SOURCE_PRELOAD_LIST:
-            Telemetry::Accumulate(Telemetry::HSTS_UPGRADE_SOURCE, 0);
-            break;
-          case nsISiteSecurityService::SOURCE_ORGANIC_REQUEST:
-            Telemetry::Accumulate(Telemetry::HSTS_UPGRADE_SOURCE, 1);
-            break;
-          case nsISiteSecurityService::SOURCE_UNKNOWN:
-          default:
-            
-            Telemetry::Accumulate(Telemetry::HSTS_UPGRADE_SOURCE, 1);
-            break;
-        }
-        return NS_OK;
-      }
-      Telemetry::AccumulateCategorical(
-          Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::PrefBlockedSTS);
-    } else {
-      Telemetry::AccumulateCategorical(
-          Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::NoReasonToUpgrade);
-    }
-  } else {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::AlreadyHTTPS);
+    aShouldUpgrade = handleResultFunc(isStsHost, hstsSource);
+    return NS_OK;
   }
+
+  Telemetry::AccumulateCategorical(
+      Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::AlreadyHTTPS);
   aShouldUpgrade = false;
   return NS_OK;
 }
