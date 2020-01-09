@@ -21,7 +21,7 @@ add_task(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["dom.largeAllocationHeader.enabled", true],
-    ]
+    ],
   });
 
   
@@ -36,7 +36,7 @@ add_task(async function() {
 
     
     await ContentTask.spawn(aBrowser, null, () => {
-      let arrayBuffer = new ArrayBuffer(1024*1024*1024);
+      let arrayBuffer = new ArrayBuffer(1024 * 1024 * 1024);
       ok(arrayBuffer, "Successfully allocated a gigabyte of memory in content process");
     });
   });

@@ -55,7 +55,7 @@ function addOuterBeforeUnloadListeners(browser, howMany = 1, frameDepth = 1) {
   if (frameDepth == 0) {
     throw new Error("When adding a beforeunload listener on an outer " +
                     "window, the frame you're targeting needs to be at " +
-                    "depth > 0.")
+                    "depth > 0.");
   }
 
   return controlFrameAt(browser, frameDepth, {
@@ -115,7 +115,7 @@ function removeOuterBeforeUnloadListeners(browser, howMany = 1, frameDepth = 1) 
   if (frameDepth == 0) {
     throw new Error("When removing a beforeunload listener from an outer " +
                     "window, the frame you're targeting needs to be at " +
-                    "depth > 0.")
+                    "depth > 0.");
   }
 
   return controlFrameAt(browser, frameDepth, {
@@ -445,8 +445,8 @@ add_task(async function test_inner_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
     
     
@@ -488,8 +488,8 @@ add_task(async function test_inner_window_scenarios() {
 
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
 
     
@@ -505,8 +505,8 @@ add_task(async function test_inner_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
     await addBeforeUnloadListeners(browser, 3, MIDDLE);
     await addBeforeUnloadListeners(browser, 1, BOTTOM);
@@ -520,8 +520,8 @@ add_task(async function test_inner_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
     await addBeforeUnloadListeners(browser, 3, MIDDLE);
     await addBeforeUnloadListeners(browser, 1, BOTTOM);
@@ -533,8 +533,8 @@ add_task(async function test_inner_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: "allow-scripts", },
-      { sandboxAttributes: "allow-scripts", },
+      { sandboxAttributes: "allow-scripts" },
+      { sandboxAttributes: "allow-scripts" },
     ]);
 
     await addBeforeUnloadListeners(browser, 3, MIDDLE);
@@ -549,8 +549,8 @@ add_task(async function test_inner_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: "allow-scripts allow-modals", },
-      { sandboxAttributes: "allow-scripts allow-modals", },
+      { sandboxAttributes: "allow-scripts allow-modals" },
+      { sandboxAttributes: "allow-scripts allow-modals" },
     ]);
 
     await addBeforeUnloadListeners(browser, 3, MIDDLE);
@@ -591,8 +591,8 @@ add_task(async function test_outer_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
 
     
@@ -641,8 +641,8 @@ add_task(async function test_outer_window_scenarios() {
     assertHasBeforeUnload(browser, false);
 
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
 
     
@@ -674,8 +674,8 @@ add_task(async function test_outer_window_scenarios() {
 
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
 
     
@@ -691,8 +691,8 @@ add_task(async function test_outer_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
     await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
     await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
@@ -707,8 +707,8 @@ add_task(async function test_outer_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
     await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
     await addOuterBeforeUnloadListeners(browser, 1, BOTTOM);
@@ -723,8 +723,8 @@ add_task(async function test_outer_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: "allow-same-origin allow-scripts", },
-      { sandboxAttributes: "allow-same-origin allow-scripts", },
+      { sandboxAttributes: "allow-same-origin allow-scripts" },
+      { sandboxAttributes: "allow-same-origin allow-scripts" },
     ]);
 
     await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
@@ -741,8 +741,8 @@ add_task(async function test_outer_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: "allow-same-origin allow-scripts allow-modals", },
-      { sandboxAttributes: "allow-same-origin allow-scripts allow-modals", },
+      { sandboxAttributes: "allow-same-origin allow-scripts allow-modals" },
+      { sandboxAttributes: "allow-same-origin allow-scripts allow-modals" },
     ]);
 
     await addOuterBeforeUnloadListeners(browser, 3, MIDDLE);
@@ -781,8 +781,8 @@ add_task(async function test_mixed_inner_and_outer_window_scenarios() {
     
     
     await prepareSubframes(browser, [
-      { sandboxAttributes: null, },
-      { sandboxAttributes: null, },
+      { sandboxAttributes: null },
+      { sandboxAttributes: null },
     ]);
 
     

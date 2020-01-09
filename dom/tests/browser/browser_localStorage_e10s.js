@@ -6,6 +6,74 @@ let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
 Services.scriptloader.loadSubScript(testDir + "/helper_localStorage_e10s.js",
                                     this);
 
+class KnownTab {
+  constructor(name, tab) {
+    this.name = name;
+    this.tab = tab;
+  }
+
+  cleanup() {
+    this.tab = null;
+  }
+}
+
+
+class KnownTabs {
+  constructor() {
+    this.byPid = new Map();
+    this.byName = new Map();
+  }
+
+  cleanup() {
+    this.byPid = null;
+    this.byName = null;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function openTestTabInOwnProcess(name, knownTabs) {
+  let realUrl = HELPER_PAGE_URL + "?" + encodeURIComponent(name);
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser, opening: "about:blank", forceNewProcess: true,
+  });
+  let pid = tab.linkedBrowser.frameLoader.tabParent.osPid;
+  ok(!knownTabs.byName.has(name), "tab needs its own name: " + name);
+  ok(!knownTabs.byPid.has(pid), "tab needs to be in its own process: " + pid);
+
+  let knownTab = new KnownTab(name, tab);
+  knownTabs.byPid.set(pid, knownTab);
+  knownTabs.byName.set(name, knownTab);
+
+  
+  BrowserTestUtils.loadURI(tab.linkedBrowser, realUrl);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  is(tab.linkedBrowser.frameLoader.tabParent.osPid, pid, "still same pid");
+  return knownTab;
+}
+
+
+
+
+async function cleanupTabs(knownTabs) {
+  for (let knownTab of knownTabs.byName.values()) {
+    BrowserTestUtils.removeTab(knownTab.tab);
+    knownTab.cleanup();
+  }
+  knownTabs.cleanup();
+}
+
 
 
 
@@ -20,10 +88,10 @@ function waitForLocalStorageFlush() {
 
   return new Promise(function(resolve) {
     let observer = {
-      observe: function() {
+      observe() {
         SpecialPowers.removeObserver(observer, "domstorage-test-flushed");
         resolve();
-      }
+      },
     };
     SpecialPowers.addObserver(observer, "domstorage-test-flushed");
   });
@@ -50,7 +118,7 @@ function triggerAndWaitForLocalStorageFlush() {
     
     SpecialPowers.notifyObservers(null, "domstorage-test-flush-force");
     return waitForLocalStorageFlush();
-  })
+  });
 }
 
 
@@ -262,7 +330,7 @@ add_task(async function() {
       
       
       ["dom.storage.testing", true],
-    ]
+    ],
   });
 
   
@@ -290,7 +358,7 @@ add_task(async function() {
   await verifyTabPreload(readerTab, false);
 
   
-  const initialSentinel = 'initial';
+  const initialSentinel = "initial";
   const noSentinelCheck = null;
   await recordTabStorageEvents(listenerTab, initialSentinel);
 
@@ -308,12 +376,12 @@ add_task(async function() {
     ["getsDeletedImmediately", null, "5"],
     ["alsoStays", "6", null],
     ["getsDeletedLater", null, "4"],
-    ["clobbered", "post", "pre"]
+    ["clobbered", "post", "pre"],
   ];
   const initialWriteState = {
     stays: "3",
     clobbered: "post",
-    alsoStays: "6"
+    alsoStays: "6",
   };
 
   await mutateTabStorage(writerTab, initialWriteMutations, initialSentinel);
@@ -349,17 +417,17 @@ add_task(async function() {
   
 
   info("late writes");
-  const lateWriteSentinel = 'lateWrite';
+  const lateWriteSentinel = "lateWrite";
   const lateWriteMutations = [
     ["lateStays", "10", null],
     ["lateClobbered", "latePre", null],
     ["lateDeleted", "11", null],
     ["lateClobbered", "lastPost", "latePre"],
-    ["lateDeleted", null, "11"]
+    ["lateDeleted", null, "11"],
   ];
   const lateWriteState = Object.assign({}, initialWriteState, {
     lateStays: "10",
-    lateClobbered: "lastPost"
+    lateClobbered: "lastPost",
   });
 
   await recordTabStorageEvents(listenerTab, lateWriteSentinel);
@@ -379,17 +447,17 @@ add_task(async function() {
 
   
   info("last set of writes");
-  const lastWriteSentinel = 'lastWrite';
+  const lastWriteSentinel = "lastWrite";
   const lastWriteMutations = [
     ["lastStays", "20", null],
     ["lastDeleted", "21", null],
     ["lastClobbered", "lastPre", null],
     ["lastClobbered", "lastPost", "lastPre"],
-    ["lastDeleted", null, "21"]
+    ["lastDeleted", null, "21"],
   ];
   const lastWriteState = Object.assign({}, lateWriteState, {
     lastStays: "20",
-    lastClobbered: "lastPost"
+    lastClobbered: "lastPost",
   });
 
   await recordTabStorageEvents(listenerTab, lastWriteSentinel);

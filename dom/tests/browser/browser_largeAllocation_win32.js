@@ -9,8 +9,8 @@ add_task(async function() {
       ["dom.largeAllocationHeader.enabled", true],
       
       
-      ["dom.ipc.processCount.webLargeAllocation", 20]
-    ]
+      ["dom.ipc.processCount.webLargeAllocation", 20],
+    ],
   });
 
   await largeAllocSuccessTests();

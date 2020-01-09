@@ -13,8 +13,8 @@ add_task(async function() {
       ["dom.largeAllocation.forceEnable", true],
       
       
-      ["dom.ipc.processCount.webLargeAllocation", 20]
-    ]
+      ["dom.ipc.processCount.webLargeAllocation", 20],
+    ],
   });
 
   await largeAllocSuccessTests();
@@ -31,8 +31,8 @@ add_task(async function() {
       ["dom.largeAllocation.forceEnable", false],
       
       
-      ["dom.ipc.processCount.webLargeAllocation", 20]
-    ]
+      ["dom.ipc.processCount.webLargeAllocation", 20],
+    ],
   });
 
   await largeAllocFailTests();
