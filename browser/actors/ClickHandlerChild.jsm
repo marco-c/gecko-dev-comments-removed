@@ -88,6 +88,16 @@ class ClickHandlerChild extends ActorChild {
       json.originPrincipal = ownerDoc.nodePrincipal;
       json.triggeringPrincipal = ownerDoc.nodePrincipal;
 
+      
+      
+      
+      
+      
+      
+      if (event.button === 1) {
+        event.preventMultipleActions();
+      }
+
       this.mm.sendAsyncMessage("Content:Click", json);
       return;
     }
