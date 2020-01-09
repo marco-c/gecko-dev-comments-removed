@@ -111,6 +111,18 @@ declare module "debugger-html" {
 
 
 
+
+  declare type OriginalFrame = {
+    displayName: string,
+    location?: SourceLocation,
+    thread?: string
+  };
+
+  
+
+
+
+
   declare type Why = {
     type: string
   };

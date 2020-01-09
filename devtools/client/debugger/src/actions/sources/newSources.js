@@ -101,8 +101,10 @@ function loadSourceMap(cx: Context, sourceId: SourceId) {
 
     let urls = null;
     try {
-      const urlInfo = { ...source };
-      if (!urlInfo.url) {
+      
+      
+      const urlInfo: Source = { ...(source: any) };
+      if (!urlInfo.url && typeof urlInfo.introductionUrl === "string") {
         
         
         
