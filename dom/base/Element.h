@@ -1310,6 +1310,11 @@ class Element : public FragmentOrElement {
         GetClientAreaRect().Width());
   }
 
+  
+  
+  
+  double FirstLineBoxBSize() const;
+
   already_AddRefed<Flex> GetAsFlexContainer();
   void GetGridFragments(nsTArray<RefPtr<Grid>>& aResult);
 

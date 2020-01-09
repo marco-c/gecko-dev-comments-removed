@@ -555,6 +555,13 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return { top, left, width, height };
     }
 
+    getFirstLineBoxSize() {
+      
+      
+      
+      return this.div.firstLineBoxBSize;
+    }
+
     
 
 
@@ -896,7 +903,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       
       
       
-      let step = parseFloat(styleBox.fontSize.replace("px", ""));
+      let step = styleBox.getFirstLineBoxSize();
       if (step == 0) {
         return;
       }
@@ -996,7 +1003,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           outsideAreaPercentage = 1; 
       let hasFoundBestPosition = false;
       const axis = ["-y", "-x", "+x", "+y"];
-      const toMove = parseFloat(styleBox.fontSize.replace("px", ""));
+      const toMove = styleBox.getFirstLineBoxSize();
       for (let i = 0; i < axis.length && !hasFoundBestPosition; i++) {
         while (box.overlapsOppositeAxis(containerBox, axis[i]) ||
                (!box.within(containerBox) || box.overlapsAny(outputBoxes))) {
