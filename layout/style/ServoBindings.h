@@ -50,6 +50,13 @@ namespace nsStyleTransformMatrix {
 enum class MatrixTransformOperator : uint8_t;
 }
 
+
+
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreturn-type-c-linkage"
+
 extern "C" {
 
 
@@ -993,5 +1000,7 @@ void Servo_Quotes_GetQuote(const RawServoQuotes* quotes, int32_t depth,
                            nsAString* result);
 
 }  
+
+#pragma GCC diagnostic pop
 
 #endif  
