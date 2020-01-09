@@ -121,10 +121,9 @@ mozilla::CSSToScreenScale MobileViewportManager::ComputeIntrinsicScale(
   return ClampZoom(intrinsicScale, aViewportInfo);
 }
 
-void MobileViewportManager::RequestReflow(bool aForceAdjustResolution) {
-  MVM_LOG("%p: got a reflow request with force resolution: %d\n", this,
-          aForceAdjustResolution);
-  RefreshViewportSize(aForceAdjustResolution);
+void MobileViewportManager::RequestReflow() {
+  MVM_LOG("%p: got a reflow request\n", this);
+  RefreshViewportSize(false);
 }
 
 void MobileViewportManager::ResolutionUpdated() {
@@ -316,73 +315,9 @@ void MobileViewportManager::UpdateResolution(
       
       
       if (aDisplayWidthChangeRatio) {
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        CSSSize contentSize = aViewportOrContentSize;
-        nsIScrollableFrame* rootScrollableFrame =
-            mPresShell->GetRootScrollFrameAsScrollable();
-        if (rootScrollableFrame) {
-          nsRect scrollableRect =
-              nsLayoutUtils::CalculateScrollableRectForFrame(
-                  rootScrollableFrame, nullptr);
-          contentSize = CSSSize::FromAppUnits(scrollableRect.Size());
-        }
-
-        
-        ScreenSize minZoomDisplaySize =
-            contentSize * aViewportInfo.GetMinZoom();
-        ScreenSize maxZoomDisplaySize =
-            contentSize * aViewportInfo.GetMaxZoom();
-
-        float ratio = aDisplayWidthChangeRatio.value();
-        ScreenSize newDisplaySize(aDisplaySize);
-        ScreenSize oldDisplaySize = newDisplaySize / ratio;
-
-        
-        
-        float a(minZoomDisplaySize.width);
-        float b(maxZoomDisplaySize.width);
-        float c(oldDisplaySize.width);
-        float d(newDisplaySize.width);
-
-        
-        
-        
-        
-        
-
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        float numerator = clamped(d, a, b);
-        float denominator = clamped(c, a, b);
-
-        float adjustedRatio = numerator / denominator;
-        newZoom = Some(ScaleZoomWithDisplayWidth(
-            zoom, adjustedRatio, viewportSize, mMobileViewportSize));
+        newZoom = Some(
+            ScaleZoomWithDisplayWidth(zoom, aDisplayWidthChangeRatio.value(),
+                                      viewportSize, mMobileViewportSize));
       }
     }
   } else {  
@@ -408,8 +343,6 @@ void MobileViewportManager::UpdateResolution(
   }
 
   
-  
-  
   if (newZoom) {
     LayoutDeviceToLayerScale resolution = ZoomToResolution(*newZoom, cssToDev);
     MVM_LOG("%p: setting resolution %f\n", this, resolution.scale);
@@ -417,12 +350,11 @@ void MobileViewportManager::UpdateResolution(
         resolution.scale, nsIPresShell::ChangeOrigin::eMainThread);
 
     MVM_LOG("%p: New zoom is %f\n", this, newZoom->scale);
-    return;
   }
 
   
   
-  if (aType == UpdateType::ViewportSize) {
+  if (newZoom || aType == UpdateType::ViewportSize) {
     UpdateVisualViewportSize(aDisplaySize, newZoom ? *newZoom : zoom);
   }
 }
@@ -574,8 +506,7 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   MVM_LOG("%p: Updating properties because %d || %d\n", this, mIsFirstPaint,
           mMobileViewportSize != viewport);
 
-  if (aForceAdjustResolution ||
-      nsLayoutUtils::AllowZoomingForDocument(mDocument)) {
+  if (gfxPrefs::APZAllowZooming()) {
     UpdateResolution(viewportInfo, displaySize, viewport,
                      displayWidthChangeRatio, UpdateType::ViewportSize);
   } else {
@@ -614,7 +545,7 @@ void MobileViewportManager::ShrinkToDisplaySizeIfNeeded(
     return;
   }
 
-  if (!nsLayoutUtils::AllowZoomingForDocument(mDocument)) {
+  if (!gfxPrefs::APZAllowZooming()) {
     
     
     

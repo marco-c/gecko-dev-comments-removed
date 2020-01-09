@@ -1840,9 +1840,7 @@ nsresult PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight,
     
     
     
-    
-    
-    mMobileViewportManager->RequestReflow(false);
+    mMobileViewportManager->RequestReflow();
     return NS_OK;
   }
 
@@ -10505,9 +10503,8 @@ nsresult PresShell::SetIsActive(bool aIsActive) {
 
 void PresShell::UpdateViewportOverridden(bool aAfterInitialization) {
   
-  
-  
-  bool needMVM = nsLayoutUtils::ShouldHandleMetaViewport(mDocument);
+  bool needMVM = nsLayoutUtils::ShouldHandleMetaViewport(mDocument) ||
+                 gfxPrefs::APZAllowZooming();
 
   if (needMVM == !!mMobileViewportManager) {
     
@@ -10529,19 +10526,8 @@ void PresShell::UpdateViewportOverridden(bool aAfterInitialization) {
 
   MOZ_ASSERT(mMobileViewportManager,
              "Shouldn't reach this without a MobileViewportManager.");
-  
-  
-  
-  
-  
-  RefPtr<MobileViewportManager> oldMVM;
-  mMobileViewportManager.swap(oldMVM);
-
-  oldMVM->RequestReflow(true);
-  ResetVisualViewportSize();
-
-  oldMVM->Destroy();
-  oldMVM = nullptr;
+  mMobileViewportManager->Destroy();
+  mMobileViewportManager = nullptr;
 
   if (aAfterInitialization) {
     
@@ -10640,22 +10626,6 @@ void nsIPresShell::MarkFixedFramesForReflow(IntrinsicDirty aIntrinsicDirty) {
   }
 }
 
-void nsIPresShell::CompleteChangeToVisualViewportSize() {
-  if (nsIScrollableFrame* rootScrollFrame = GetRootScrollFrameAsScrollable()) {
-    rootScrollFrame->MarkScrollbarsDirtyForReflow();
-  }
-  MarkFixedFramesForReflow(nsIPresShell::eResize);
-
-  if (auto* window = nsGlobalWindowInner::Cast(mDocument->GetInnerWindow())) {
-    window->VisualViewport()->PostResizeEvent();
-  }
-
-  if (nsIScrollableFrame* rootScrollFrame = GetRootScrollFrameAsScrollable()) {
-    ScrollAnchorContainer* container = rootScrollFrame->Anchor();
-    container->UserScrolled();
-  }
-}
-
 void nsIPresShell::SetVisualViewportSize(nscoord aWidth, nscoord aHeight) {
   if (!mVisualViewportSizeSet || mVisualViewportSize.width != aWidth ||
       mVisualViewportSize.height != aHeight) {
@@ -10663,17 +10633,21 @@ void nsIPresShell::SetVisualViewportSize(nscoord aWidth, nscoord aHeight) {
     mVisualViewportSize.width = aWidth;
     mVisualViewportSize.height = aHeight;
 
-    CompleteChangeToVisualViewportSize();
-  }
-}
+    if (nsIScrollableFrame* rootScrollFrame =
+            GetRootScrollFrameAsScrollable()) {
+      rootScrollFrame->MarkScrollbarsDirtyForReflow();
+    }
+    MarkFixedFramesForReflow(nsIPresShell::eResize);
 
-void nsIPresShell::ResetVisualViewportSize() {
-  if (mVisualViewportSizeSet) {
-    mVisualViewportSizeSet = false;
-    mVisualViewportSize.width = 0;
-    mVisualViewportSize.height = 0;
+    if (auto* window = nsGlobalWindowInner::Cast(mDocument->GetInnerWindow())) {
+      window->VisualViewport()->PostResizeEvent();
+    }
 
-    CompleteChangeToVisualViewportSize();
+    if (nsIScrollableFrame* rootScrollFrame =
+            GetRootScrollFrameAsScrollable()) {
+      ScrollAnchorContainer* container = rootScrollFrame->Anchor();
+      container->UserScrolled();
+    }
   }
 }
 

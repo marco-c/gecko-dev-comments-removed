@@ -307,8 +307,7 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
     return;
   }
 
-  if (nsLayoutUtils::AllowZoomingForDocument(shell->GetDocument()) &&
-      aRequest.GetScrollOffsetUpdated()) {
+  if (gfxPrefs::APZAllowZooming() && aRequest.GetScrollOffsetUpdated()) {
     
     
     
@@ -672,8 +671,7 @@ static bool PrepareForSetTargetAPZCNotification(
   nsPoint point = nsLayoutUtils::GetEventCoordinatesRelativeTo(
       aWidget, aRefPoint, aRootFrame);
   EnumSet<FrameForPointOption> options;
-  if (nsLayoutUtils::AllowZoomingForDocument(
-          aRootFrame->PresShell()->GetDocument())) {
+  if (gfxPrefs::APZAllowZooming()) {
     
     
     

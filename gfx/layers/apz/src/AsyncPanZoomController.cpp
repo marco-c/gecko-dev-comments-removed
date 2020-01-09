@@ -1525,8 +1525,6 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(
 
   
   
-  
-  
   if (!gfxPrefs::APZAllowZooming()) {
     if (RefPtr<GeckoContentController> controller =
             GetGeckoContentController()) {
@@ -1571,8 +1569,6 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
     mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.y, aEvent.mTime);
   }
 
-  
-  
   if (!gfxPrefs::APZAllowZooming()) {
     if (RefPtr<GeckoContentController> controller =
             GetGeckoContentController()) {
@@ -1706,8 +1702,6 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
     return nsEventStatus_eIgnore;
   }
 
-  
-  
   if (!gfxPrefs::APZAllowZooming()) {
     if (RefPtr<GeckoContentController> controller =
             GetGeckoContentController()) {
@@ -4077,8 +4071,6 @@ AsyncPanZoomController::GetCurrentAsyncTransformForFixedAdjustment(
     AsyncTransformConsumer aMode) const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
-  
-  
   
   
   

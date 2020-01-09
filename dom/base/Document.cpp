@@ -1340,8 +1340,7 @@ Document::Document(const char* aContentType)
       mSavedResolution(1.0f),
       mPendingInitialTranslation(false),
       mGeneration(0),
-      mCachedTabSizeGeneration(0),
-      mInRDMPane(false) {
+      mCachedTabSizeGeneration(0) {
   MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug, ("DOCUMENT %p created", this));
 
   SetIsInDocument();
@@ -6773,8 +6772,9 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
 
       
       
-      
-      CSSSize displaySize = ScreenSize(aDisplaySize) / defaultScale;
+      CSSToScreenScale defaultPixelScale =
+          layoutDeviceScale * LayoutDeviceToScreenScale(1.0f);
+      CSSSize displaySize = ScreenSize(aDisplaySize) / defaultPixelScale;
 
       
       if (maxWidth == nsViewportInfo::DeviceSize) {
@@ -6851,7 +6851,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       if (height == nsViewportInfo::Auto) {
         if (aDisplaySize.width == 0) {
-          height = displaySize.height;
+          height = aDisplaySize.height;
         } else {
           height = width * aDisplaySize.height / aDisplaySize.width;
         }
@@ -6894,8 +6894,8 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       
       if (mScaleStrEmpty && !mWidthStrEmpty) {
-        CSSToScreenScale bestFitScale(float(aDisplaySize.width) / size.width);
-        scaleFloat = (scaleFloat > bestFitScale) ? scaleFloat : bestFitScale;
+        CSSToScreenScale defaultScale(float(aDisplaySize.width) / size.width);
+        scaleFloat = (scaleFloat > defaultScale) ? scaleFloat : defaultScale;
       }
 
       size.height = clamped(size.height, effectiveMinSize.height,

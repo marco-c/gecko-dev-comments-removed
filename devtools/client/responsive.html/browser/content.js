@@ -56,9 +56,7 @@ var global = this;
 
     
     
-    
     if (docShell.contentViewer) {
-      setDocumentInRDMPane(true);
       makeScrollbarsFloating();
     }
     active = true;
@@ -66,20 +64,9 @@ var global = this;
   }
 
   function onResize() {
-    
-    
-    let { width, height } = content.screen;
-    debug(`EMIT CONTENTRESIZE: ${width} x ${height}`);
+    const { width, height } = content.screen;
+    debug(`EMIT RESIZE: ${width} x ${height}`);
     sendAsyncMessage("ResponsiveMode:OnContentResize", {
-      width,
-      height,
-    });
-
-    const zoom = content.windowUtils.getResolution();
-    width = content.innerWidth * zoom;
-    height = content.innerHeight * zoom;
-    debug(`EMIT RESIZEVIEWPORT: ${width} x ${height}`);
-    sendAsyncMessage("ResponsiveMode:OnResizeViewport", {
       width,
       height,
     });
@@ -122,7 +109,6 @@ var global = this;
     webProgress.removeProgressListener(WebProgressListener);
     docShell.deviceSizeIsPageSize = gDeviceSizeWasPageSize;
     restoreScrollbars();
-    setDocumentInRDMPane(false);
     stopOnResize();
     sendAsyncMessage("ResponsiveMode:Stop:Done");
   }
@@ -165,11 +151,6 @@ var global = this;
     flushStyle();
   }
 
-  function setDocumentInRDMPane(inRDMPane) {
-    
-    docShell.contentViewer.DOMDocument.inRDMPane = inRDMPane;
-  }
-
   function flushStyle() {
     
     const isSticky = docShell.contentViewer.sticky;
@@ -198,7 +179,6 @@ var global = this;
       if (flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
         return;
       }
-      setDocumentInRDMPane(true);
       makeScrollbarsFloating();
     },
     QueryInterface: ChromeUtils.generateQI(["nsIWebProgressListener",
