@@ -5279,17 +5279,6 @@ VARCACHE_PREF(
 
 
 
-VARCACHE_PREF(
-  Live,
-  "medium_high_event_queue.enabled",
-  medium_high_event_queue_enabled,
-  RelaxedAtomicBool, true
-)
-
-
-
-
-
 
 VARCACHE_PREF(
   Live,
@@ -5916,6 +5905,17 @@ VARCACHE_PREF(
   "toolkit.scrollbox.verticalScrollDistance",
   ToolkitVerticalScrollDistance,
   RelaxedAtomicInt32, 3
+)
+
+
+
+
+
+VARCACHE_PREF(
+  Live,
+  "threads.medium_high_event_queue.enabled",
+  threads_medium_high_event_queue_enabled,
+  RelaxedAtomicBool, true
 )
 
 
