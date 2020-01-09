@@ -1439,10 +1439,8 @@ void nsXULPopupManager::FirePopupHidingEvent(
       
       
       
-      
-      
-#ifndef MOZ_WIDGET_GTK
-      if (!aNextPopup && aPopup->IsElement() &&
+      if (StaticPrefs::xul_panel_animations_enabled() &&
+          !aNextPopup && aPopup->IsElement() &&
           aPopup->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::animate)) {
         
         
@@ -1469,7 +1467,6 @@ void nsXULPopupManager::FirePopupHidingEvent(
           }
         }
       }
-#endif
 
       HidePopupCallback(aPopup, popupFrame, aNextPopup, aLastPopup, aPopupType,
                         aDeselectMenu);

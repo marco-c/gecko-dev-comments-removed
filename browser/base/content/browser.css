@@ -1083,7 +1083,9 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > #downloads-
   -moz-image-region: auto;
 }
 
+@supports -moz-bool-pref("xul.panel-animations.enabled") {
 %ifdef MOZ_WIDGET_COCOA
+  
 
 
 
@@ -1091,68 +1093,65 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > #downloads-
 
 
 
+  #BMB_bookmarksPopup:not([animate="false"]) {
+    -moz-window-opacity: 0;
+    -moz-window-transform: translateY(-70px);
+    transition-property: -moz-window-transform, -moz-window-opacity;
+    transition-duration: 0.18s, 0.18s;
+    transition-timing-function:
+      var(--animation-easing-function), ease-out;
+  }
 
+  #BMB_bookmarksPopup[side="bottom"]:not([animate="false"]) {
+    -moz-window-transform: translateY(70px);
+  }
 
-#BMB_bookmarksPopup:not([animate="false"]) {
-  -moz-window-opacity: 0;
-  -moz-window-transform: translateY(-70px);
-  transition-property: -moz-window-transform, -moz-window-opacity;
-  transition-duration: 0.18s, 0.18s;
-  transition-timing-function:
-    var(--animation-easing-function), ease-out;
-}
+  
 
-#BMB_bookmarksPopup[side="bottom"]:not([animate="false"]) {
-  -moz-window-transform: translateY(70px);
-}
+  #BMB_bookmarksPopup[animate][animate="open"] {
+    -moz-window-opacity: 1.0;
+    transition-duration: 0.18s, 0.18s;
+    -moz-window-transform: none;
+    transition-timing-function:
+      var(--animation-easing-function), ease-in-out;
+  }
 
+  #BMB_bookmarksPopup[animate][animate="cancel"] {
+    -moz-window-transform: none;
+  }
+%else
+  #BMB_bookmarksPopup {
+    will-change: transform, opacity; 
+  }
 
+  #BMB_bookmarksPopup:not([animate="false"]) {
+    opacity: 0;
+    transform: translateY(-70px);
+    transition-property: transform, opacity;
+    transition-duration: 0.18s, 0.18s;
+    transition-timing-function:
+      var(--animation-easing-function), ease-out;
+  }
 
-#BMB_bookmarksPopup[animate][animate="open"] {
-  -moz-window-opacity: 1.0;
-  transition-duration: 0.18s, 0.18s;
-  -moz-window-transform: none;
-  transition-timing-function:
-    var(--animation-easing-function), ease-in-out;
-}
+  #BMB_bookmarksPopup[side="bottom"]:not([animate="false"]) {
+    transform: translateY(70px);
+  }
 
-#BMB_bookmarksPopup[animate][animate="cancel"] {
-  -moz-window-transform: none;
-}
+  
 
-%elifndef MOZ_WIDGET_GTK
+  #BMB_bookmarksPopup[animate][animate="open"] {
+    opacity: 1.0;
+    transition-duration: 0.18s, 0.18s;
+    transform: none;
+    transition-timing-function:
+      var(--animation-easing-function), ease-in-out;
+  }
 
-#BMB_bookmarksPopup {
-  will-change: transform, opacity; 
-}
-
-#BMB_bookmarksPopup:not([animate="false"]) {
-  opacity: 0;
-  transform: translateY(-70px);
-  transition-property: transform, opacity;
-  transition-duration: 0.18s, 0.18s;
-  transition-timing-function:
-    var(--animation-easing-function), ease-out;
-}
-
-#BMB_bookmarksPopup[side="bottom"]:not([animate="false"]) {
-  transform: translateY(70px);
-}
-
-
-
-#BMB_bookmarksPopup[animate][animate="open"] {
-  opacity: 1.0;
-  transition-duration: 0.18s, 0.18s;
-  transform: none;
-  transition-timing-function:
-    var(--animation-easing-function), ease-in-out;
-}
-
-#BMB_bookmarksPopup[animate][animate="cancel"] {
-  transform: none;
-}
+  #BMB_bookmarksPopup[animate][animate="cancel"] {
+    transform: none;
+  }
 %endif
+}
 
 
 @media (resolution: 2dppx) {

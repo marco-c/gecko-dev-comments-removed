@@ -578,10 +578,10 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
       EnsureMenuItemIsVisible(mCurrentMenu);
     }
 
-#ifndef MOZ_WIDGET_GTK
     
     
-    if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
+    if (StaticPrefs::xul_panel_animations_enabled() &&
+        mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
                                            nsGkAtoms::animate, nsGkAtoms::open,
                                            eCaseMatters) &&
         AnimationUtils::HasCurrentTransitions(mContent->AsElement(),
@@ -591,7 +591,6 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
                                        mPopupShownDispatcher, false, false);
       return;
     }
-#endif
 
     
     nsCOMPtr<nsIRunnable> event = new nsXULPopupShownEvent(GetContent(), pc);

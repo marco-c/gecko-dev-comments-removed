@@ -1141,6 +1141,21 @@ VARCACHE_PREF(
 
 
 
+#ifdef MOZ_WIDGET_GTK
+#define PREF_VALUE false
+#else
+#define PREF_VALUE true
+#endif
+VARCACHE_PREF(
+  "xul.panel-animations.enabled",
+   xul_panel_animations_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
+
+
 
 
 
