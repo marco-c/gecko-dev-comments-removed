@@ -59,21 +59,34 @@ class ExecutionContext {
       };
     }
     if (rv.throw) {
-      if (this._debuggee.executeInGlobalWithBindings("e instanceof Error", {e: rv.throw}).return) {
-        return {
-          exceptionDetails: {
-            text: this._debuggee.executeInGlobalWithBindings("e.message", {e: rv.throw}).return,
-          },
-        };
-      }
-      return {
-        exceptionDetails: {
-          exception: this._createRemoteObject(rv.throw),
-        },
-      };
+      return this._returnError(rv.throw);
     }
     return {
       result: this._createRemoteObject(rv.return),
+    };
+  }
+
+  
+
+
+
+  _returnError(exception) {
+    if (this._debuggee.executeInGlobalWithBindings("exception instanceof Error",
+      {exception}).return) {
+      const text = this._debuggee.executeInGlobalWithBindings("exception.message",
+        {exception}).return;
+      return {
+        exceptionDetails: {
+          text,
+        },
+      };
+    }
+
+    
+    return {
+      exceptionDetails: {
+        exception: this._toRemoteObject(exception),
+      },
     };
   }
 
