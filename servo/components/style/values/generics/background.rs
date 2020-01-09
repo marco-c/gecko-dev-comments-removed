@@ -5,8 +5,13 @@
 
 
 use crate::values::generics::length::{GenericLengthPercentageOrAuto, LengthPercentageOrAuto};
-use std::fmt::{self, Write};
-use style_traits::{CssWriter, ToCss};
+
+fn width_and_height_are_auto<L>(
+    width: &LengthPercentageOrAuto<L>,
+    height: &LengthPercentageOrAuto<L>,
+) -> bool {
+    width.is_auto() && height.is_auto()
+}
 
 
 #[derive(
@@ -21,6 +26,7 @@ use style_traits::{CssWriter, ToCss};
     ToAnimatedValue,
     ToAnimatedZero,
     ToComputedValue,
+    ToCss,
 )]
 #[repr(C, u8)]
 pub enum GenericBackgroundSize<LengthPercent> {
@@ -29,6 +35,10 @@ pub enum GenericBackgroundSize<LengthPercent> {
         
         width: GenericLengthPercentageOrAuto<LengthPercent>,
         
+        
+        
+        
+        #[css(contextual_skip_if = "width_and_height_are_auto")]
         height: GenericLengthPercentageOrAuto<LengthPercent>,
     },
     
@@ -40,32 +50,6 @@ pub enum GenericBackgroundSize<LengthPercent> {
 }
 
 pub use self::GenericBackgroundSize as BackgroundSize;
-
-impl<LengthPercentage> ToCss for BackgroundSize<LengthPercentage>
-where
-    LengthPercentage: ToCss,
-{
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        match self {
-            BackgroundSize::ExplicitSize { width, height } => {
-                width.to_css(dest)?;
-                
-                
-                
-                if !width.is_auto() || !height.is_auto() {
-                    dest.write_str(" ")?;
-                    height.to_css(dest)?;
-                }
-                Ok(())
-            },
-            BackgroundSize::Cover => dest.write_str("cover"),
-            BackgroundSize::Contain => dest.write_str("contain"),
-        }
-    }
-}
 
 impl<LengthPercentage> BackgroundSize<LengthPercentage> {
     
