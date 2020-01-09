@@ -34,6 +34,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/PerformanceStorage.h"
 #include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/Unused.h"
@@ -693,7 +694,7 @@ nsresult FetchDriver::HttpFetch(
     nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(chan);
     if (cic) {
       cic->PreferAlternativeDataType(aPreferredAlternativeDataType,
-                                     EmptyCString());
+                                     EmptyCString(), true);
       MOZ_ASSERT(!mAltDataListener);
       mAltDataListener = new AlternativeDataStreamListener(
           this, chan, aPreferredAlternativeDataType);
@@ -702,8 +703,19 @@ nsresult FetchDriver::HttpFetch(
       rv = chan->AsyncOpen(this);
     }
   } else {
+    
+    if (mRequest->GetIntegrity().IsEmpty()) {
+      nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(chan);
+      if (cic) {
+        cic->PreferAlternativeDataType(
+            NS_LITERAL_CSTRING(WASM_ALT_DATA_TYPE_V1),
+            NS_LITERAL_CSTRING(WASM_CONTENT_TYPE), false);
+      }
+    }
+
     rv = chan->AsyncOpen(this);
   }
+
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -806,6 +818,9 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext) {
 
   bool foundOpaqueRedirect = false;
 
+  nsAutoCString contentType;
+  channel->GetContentType(contentType);
+
   int64_t contentLength = InternalResponse::UNKNOWN_BODY_SIZE;
   rv = channel->GetContentLength(&contentLength);
   MOZ_ASSERT_IF(NS_FAILED(rv),
@@ -860,16 +875,14 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext) {
   } else {
     response = new InternalResponse(200, NS_LITERAL_CSTRING("OK"));
 
-    ErrorResult result;
-    nsAutoCString contentType;
-    rv = channel->GetContentType(contentType);
-    if (NS_SUCCEEDED(rv) && !contentType.IsEmpty()) {
+    if (!contentType.IsEmpty()) {
       nsAutoCString contentCharset;
       channel->GetContentCharset(contentCharset);
       if (NS_SUCCEEDED(rv) && !contentCharset.IsEmpty()) {
         contentType += NS_LITERAL_CSTRING(";charset=") + contentCharset;
       }
 
+      IgnoredErrorResult result;
       response->Headers()->Append(NS_LITERAL_CSTRING("Content-Type"),
                                   contentType, result);
       MOZ_ASSERT(!result.Failed());
@@ -878,6 +891,8 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext) {
     if (contentLength > 0) {
       nsAutoCString contentLenStr;
       contentLenStr.AppendInt(contentLength);
+
+      IgnoredErrorResult result;
       response->Headers()->Append(NS_LITERAL_CSTRING("Content-Length"),
                                   contentLenStr, result);
       MOZ_ASSERT(!result.Failed());
@@ -885,42 +900,66 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext) {
   }
 
   nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(aRequest);
-  if (cic && mAltDataListener) {
-    
-    
-    
-    if (mAltDataListener->Status() != AlternativeDataStreamListener::FALLBACK) {
+  if (cic) {
+    if (mAltDataListener) {
       
       
       
-      uint64_t cacheEntryId = 0;
-      if (NS_SUCCEEDED(cic->GetCacheEntryId(&cacheEntryId)) &&
-          cacheEntryId != mAltDataListener->GetAlternativeDataCacheEntryId()) {
-        mAltDataListener->Cancel();
-      } else {
+      if (mAltDataListener->Status() !=
+          AlternativeDataStreamListener::FALLBACK) {
         
         
         
-        nsCOMPtr<nsICacheInfoChannel> cacheInfo =
-            mAltDataListener->GetCacheInfoChannel();
-        nsCOMPtr<nsIInputStream> altInputStream =
-            mAltDataListener->GetAlternativeInputStream();
-        MOZ_ASSERT(altInputStream && cacheInfo);
-        response->SetAlternativeBody(altInputStream);
+        uint64_t cacheEntryId = 0;
+        if (NS_SUCCEEDED(cic->GetCacheEntryId(&cacheEntryId)) &&
+            cacheEntryId !=
+                mAltDataListener->GetAlternativeDataCacheEntryId()) {
+          mAltDataListener->Cancel();
+        } else {
+          
+          
+          
+          nsCOMPtr<nsICacheInfoChannel> cacheInfo =
+              mAltDataListener->GetCacheInfoChannel();
+          nsCOMPtr<nsIInputStream> altInputStream =
+              mAltDataListener->GetAlternativeInputStream();
+          MOZ_ASSERT(altInputStream && cacheInfo);
+          response->SetAlternativeBody(altInputStream);
+          nsMainThreadPtrHandle<nsICacheInfoChannel> handle(
+              new nsMainThreadPtrHolder<nsICacheInfoChannel>(
+                  "nsICacheInfoChannel", cacheInfo, false));
+          response->SetCacheInfoChannel(handle);
+        }
+      } else if (!mAltDataListener->GetAlternativeDataType().IsEmpty()) {
+        
+        
+        
+        
         nsMainThreadPtrHandle<nsICacheInfoChannel> handle(
             new nsMainThreadPtrHolder<nsICacheInfoChannel>(
-                "nsICacheInfoChannel", cacheInfo, false));
+                "nsICacheInfoChannel", cic, false));
         response->SetCacheInfoChannel(handle);
       }
-    } else if (!mAltDataListener->GetAlternativeDataType().IsEmpty()) {
-      
-      
-      
-      
-      nsMainThreadPtrHandle<nsICacheInfoChannel> handle(
-          new nsMainThreadPtrHolder<nsICacheInfoChannel>("nsICacheInfoChannel",
-                                                         cic, false));
-      response->SetCacheInfoChannel(handle);
+    } else if (!cic->PreferredAlternativeDataTypes().IsEmpty()) {
+      MOZ_ASSERT(cic->PreferredAlternativeDataTypes().Length() == 1);
+      MOZ_ASSERT(cic->PreferredAlternativeDataTypes()[0].type().EqualsLiteral(
+          WASM_ALT_DATA_TYPE_V1));
+      MOZ_ASSERT(
+          cic->PreferredAlternativeDataTypes()[0].contentType().EqualsLiteral(
+              WASM_CONTENT_TYPE));
+
+      if (contentType.EqualsLiteral(WASM_CONTENT_TYPE)) {
+        
+        
+        
+        
+        
+        
+        nsMainThreadPtrHandle<nsICacheInfoChannel> handle(
+            new nsMainThreadPtrHolder<nsICacheInfoChannel>(
+                "nsICacheInfoChannel", cic, false));
+        response->SetCacheInfoChannel(handle);
+      }
     }
   }
 
