@@ -20,7 +20,7 @@ textarea:-moz-read-write > .anonymous-div:-moz-read-only {
 
 
 img:-moz-read-write, img:-moz-read-write[usemap], area:-moz-read-write,
-object:-moz-read-write, object:-moz-read-write[usemap], 
+object:-moz-read-write, object:-moz-read-write[usemap],
 applet:-moz-read-write, hr:-moz-read-write, button:-moz-read-write,
 select:-moz-read-write,
 a:-moz-read-write:link img, a:-moz-read-write:visited img,
@@ -68,20 +68,6 @@ input[contenteditable="true"][type="file"] {
   -moz-user-select: all;
   -moz-user-input: none !important;
   -moz-user-focus: none !important;
-}
-
-
-
-@supports not -moz-bool-pref("dom.ua_widget.enabled") {
-
-  marquee:-moz-read-write {
-    -moz-binding: url('chrome:
-  }
-
-  marquee[direction="up"]:-moz-read-write, marquee[direction="down"]:-moz-read-write {
-    -moz-binding: url('chrome:
-  }
-
 }
 
 *|*:-moz-read-write > input[type="hidden"],
