@@ -1615,18 +1615,11 @@ class StaticAnalysisSubCommand(SubCommand):
 
 
 class StaticAnalysisMonitor(object):
-    def __init__(self, srcdir, objdir, clang_tidy_config, total):
+    def __init__(self, srcdir, objdir, total):
         self._total = total
         self._processed = 0
         self._current = None
         self._srcdir = srcdir
-
-        self._clang_tidy_config = clang_tidy_config['clang_checkers']
-        
-        for item in self._clang_tidy_config:
-            if item['name'] == '-*':
-                continue
-            item['name'].replace('*', '.*')
 
         from mozbuild.compilation.warnings import (
             WarningsCollector,
@@ -1672,24 +1665,6 @@ class StaticAnalysisMonitor(object):
                 self._current = None
             self._processed = self._processed + 1
             return (warning, False)
-        if warning is not None:
-            def get_reliability(checker_name):
-                
-                reliability = None
-                for item in self._clang_tidy_config:
-                    if item['name'] == checker_name:
-                        reliability = item.get('reliability', 'low')
-                        break
-                    else:
-                        
-                        matcher = re.match(item['name'], checker_name)
-                        if matcher is not None and matcher.group(0) == checker_name:
-                            reliability = item.get('reliability', 'low')
-                            break
-                return reliability
-            reliability = get_reliability(warning['flag'])
-            if reliability is not None:
-                warning['reliability'] = reliability
         return (warning, True)
 
 
@@ -1793,7 +1768,7 @@ class StaticAnalysis(MachCommandBase):
         args = self._get_clang_tidy_command(
             checks=checks, header_filter=header_filter, sources=source, jobs=jobs, fix=fix)
 
-        monitor = StaticAnalysisMonitor(self.topsrcdir, self.topobjdir, self._clang_tidy_config, total)
+        monitor = StaticAnalysisMonitor(self.topsrcdir, self.topobjdir, total)
 
         footer = StaticAnalysisFooter(self.log_manager.terminal, monitor)
         with StaticAnalysisOutputManager(self.log_manager, monitor, footer) as output_manager:
@@ -2537,10 +2512,6 @@ class StaticAnalysis(MachCommandBase):
             test_file_path_json = mozpath.join(self._clang_tidy_base_path, "test", checker) + '.json'
             
             baseline_issues = self._get_autotest_stored_issues(test_file_path_json)
-
-            
-            baseline_issues[:] = [item for item in baseline_issues if 'reliability' not in item]
-
             found = all([element_base in issues for element_base in baseline_issues])
 
             if not found:
@@ -2880,9 +2851,6 @@ class StaticAnalysis(MachCommandBase):
             checker_error['info1'] = clang_output
             checkers_results.append(checker_error)
             return self.TOOLS_CHECKER_RETURNED_NO_ISSUES
-
-        
-        issues.append({'reliability': item['reliability']})
 
         if self._dump_results:
             self._build_autotest_result(test_file_path_json, json.dumps(issues))
