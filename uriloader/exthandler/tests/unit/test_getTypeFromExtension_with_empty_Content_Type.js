@@ -8,180 +8,171 @@
 
 
 
+
+
+
+const FILE_EXTENSION = ".nfo";
+
+
+let gTestUsedOurMock = false;
+
 function run_test() {
   
+  registerMockWindowsRegKeyFactory();
 
   
+  let regKey = Cc["@mozilla.org/windows-registry-key;1"]
+                 .createInstance(Ci.nsIWindowsRegKey);
+  regKey.open(Ci.nsIWindowsRegKey.ROOT_KEY_CLASSES_ROOT, FILE_EXTENSION,
+              Ci.nsIWindowsRegKey.ACCESS_QUERY_VALUE);
+  Assert.equal(regKey.readStringValue("content type"), "",
+               "Check the mock replied as expected.");
+  Assert.ok(gTestUsedOurMock, "The test properly used the mock registry");
   
-  if (mozinfo.os != "win")
-    return;
+  gTestUsedOurMock = false;
+  
+  
+  Assert.throws(() => {
+    Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService)
+                             .getTypeFromExtension(FILE_EXTENSION);
+  }, /NS_ERROR_NOT_AVAILABLE/, "Should throw a NOT_AVAILABLE exception");
+
+  Assert.ok(gTestUsedOurMock, "The test properly used the mock registry");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function MockWindowsRegKey(aWrappedObject) {
+  this._wrappedObject = aWrappedObject;
 
   
+  function makeForwardingFunction(functionName) {
+    return function() {
+      return aWrappedObject[functionName].apply(aWrappedObject, arguments);
+    };
+  }
 
   
-
-
-
-
-
-
-
-
-
-
-
-  function MockWindowsRegKey(aWrappedObject) {
-    this._wrappedObject = aWrappedObject;
-
-    
-    function makeForwardingFunction(functionName) {
-      return function() {
-        return aWrappedObject[functionName].apply(aWrappedObject, arguments);
-      };
-    }
-
-    
-    for (var propertyName in aWrappedObject) {
-      if (!(propertyName in this)) {
-        if (typeof aWrappedObject[propertyName] == "function") {
-          this[propertyName] = makeForwardingFunction(propertyName);
-        } else {
-          this[propertyName] = aWrappedObject[propertyName];
-        }
+  for (var propertyName in aWrappedObject) {
+    if (!(propertyName in this)) {
+      if (typeof aWrappedObject[propertyName] == "function") {
+        this[propertyName] = makeForwardingFunction(propertyName);
+      } else {
+        this[propertyName] = aWrappedObject[propertyName];
       }
     }
   }
+}
 
-  MockWindowsRegKey.prototype = {
-    
+MockWindowsRegKey.prototype = {
+  
 
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIWindowsRegKey]),
-
-    
-
-    open(aRootKey, aRelPath, aMode) {
-      
-      this._rootKey = aRootKey;
-      this._relPath = aRelPath;
-
-      
-      return this._wrappedObject.open(aRootKey, aRelPath, aMode);
-    },
-
-    openChild(aRelPath, aMode) {
-      
-      var innerKey = this._wrappedObject.openChild(aRelPath, aMode);
-      var key = new MockWindowsRegKey(innerKey);
-
-      
-      key._rootKey = this._rootKey;
-      key._relPath = this._relPath + aRelPath;
-      return key;
-    },
-
-    createChild(aRelPath, aMode) {
-      
-      var innerKey = this._wrappedObject.createChild(aRelPath, aMode);
-      var key = new MockWindowsRegKey(innerKey);
-
-      
-      key._rootKey = this._rootKey;
-      key._relPath = this._relPath + aRelPath;
-      return key;
-    },
-
-    get childCount() {
-      return this._wrappedObject.childCount;
-    },
-
-    get valueCount() {
-      return this._wrappedObject.valueCount;
-    },
-
-    readStringValue(aName) {
-      
-      if (this._rootKey == Ci.nsIWindowsRegKey.ROOT_KEY_CLASSES_ROOT &&
-          this._relPath.toLowerCase() == ".txt" &&
-          aName.toLowerCase() == "content type") {
-        return "";
-      }
-
-      
-      return this._wrappedObject.readStringValue(aName);
-    },
-  };
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIWindowsRegKey]),
 
   
 
-  var componentRegistrar = Components.manager.
-                           QueryInterface(Ci.nsIComponentRegistrar);
+  open(aRootKey, aRelPath, aMode) {
+    
+    this._rootKey = aRootKey;
+    this._relPath = aRelPath;
 
-  var originalWindowsRegKeyCID;
-  var mockWindowsRegKeyFactory;
+    
+    return this._wrappedObject.open(aRootKey, aRelPath, aMode);
+  },
 
+  openChild(aRelPath, aMode) {
+    
+    var innerKey = this._wrappedObject.openChild(aRelPath, aMode);
+    var key = new MockWindowsRegKey(innerKey);
+
+    
+    key._rootKey = this._rootKey;
+    key._relPath = this._relPath + aRelPath;
+    return key;
+  },
+
+  createChild(aRelPath, aMode) {
+    
+    var innerKey = this._wrappedObject.createChild(aRelPath, aMode);
+    var key = new MockWindowsRegKey(innerKey);
+
+    
+    key._rootKey = this._rootKey;
+    key._relPath = this._relPath + aRelPath;
+    return key;
+  },
+
+  get childCount() {
+    return this._wrappedObject.childCount;
+  },
+
+  get valueCount() {
+    return this._wrappedObject.valueCount;
+  },
+
+  readStringValue(aName) {
+    
+    if (this._rootKey == Ci.nsIWindowsRegKey.ROOT_KEY_CLASSES_ROOT &&
+        this._relPath.toLowerCase() == FILE_EXTENSION &&
+        aName.toLowerCase() == "content type") {
+      gTestUsedOurMock = true;
+      return "";
+    }
+    
+    return this._wrappedObject.readStringValue(aName);
+  },
+};
+
+function registerMockWindowsRegKeyFactory() {
   const kMockCID = Components.ID("{9b23dfe9-296b-4740-ba1c-d39c9a16e55e}");
   const kWindowsRegKeyContractID = "@mozilla.org/windows-registry-key;1";
+  
+  let originalWindowsRegKeyCID = Cc[kWindowsRegKeyContractID].number;
 
-  function registerMockWindowsRegKeyFactory() {
-    mockWindowsRegKeyFactory = {
-      createInstance(aOuter, aIid) {
-        if (aOuter != null)
-          throw Cr.NS_ERROR_NO_AGGREGATION;
-        
-        
-        var innerKey = originalWindowsRegKeyFactory.createInstance(null, aIid);
-        var key = new MockWindowsRegKey(innerKey);
+  info("Create a mock RegKey factory");
+  let originalRegKey = Cc["@mozilla.org/windows-registry-key;1"]
+                          .createInstance(Ci.nsIWindowsRegKey);
+  let mockWindowsRegKeyFactory = {
+    createInstance(outer, iid) {
+      if (outer != null) {
+        throw Cr.NS_ERROR_NO_AGGREGATION;
+      }
+      info("Create a mock wrapper around RegKey");
+      var key = new MockWindowsRegKey(originalRegKey);
+      return key.QueryInterface(iid);
+    },
+  };
+  info("Register the mock RegKey factory");
+  let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
+  registrar.registerFactory(
+    kMockCID,
+    "Mock Windows Registry Key Implementation",
+    kWindowsRegKeyContractID,
+    mockWindowsRegKeyFactory
+  );
 
-        return key.QueryInterface(aIid);
-      },
-    };
-
+  registerCleanupFunction(() => {
     
-    originalWindowsRegKeyCID = Cc[kWindowsRegKeyContractID].number;
-
-    
-    componentRegistrar.registerFactory(
-      kMockCID,
-      "Mock Windows Registry Key Implementation",
-      kWindowsRegKeyContractID,
-      mockWindowsRegKeyFactory
-    );
-  }
-
-  function unregisterMockWindowsRegKeyFactory() {
-    
-    componentRegistrar.unregisterFactory(
+    registrar.unregisterFactory(
       kMockCID,
       mockWindowsRegKeyFactory
     );
-
     
-    componentRegistrar.registerFactory(
+    registrar.registerFactory(
       Components.ID(originalWindowsRegKeyCID),
       "",
       kWindowsRegKeyContractID,
       null
     );
-  }
-
-  
-
-  
-  registerMockWindowsRegKeyFactory();
-  try {
-    
-    
-    Cc["@mozilla.org/mime;1"].
-      getService(Ci.nsIMIMEService).
-      getTypeFromExtension(".txt");
-  } catch (e) {
-    if (!(e instanceof Ci.nsIException) ||
-        e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-      throw e;
-    }
-    
-  } finally {
-    
-    unregisterMockWindowsRegKeyFactory();
-  }
+  });
 }
