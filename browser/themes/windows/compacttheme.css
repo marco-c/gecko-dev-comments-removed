@@ -52,8 +52,7 @@
     
 
 
-    .tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected=true]):-moz-lwtheme-darktext,
-    .tabbrowser-tab[multiselected] > .tab-stack > .tab-background:not([selected=true]):-moz-lwtheme-darktext {
+    .tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected=true]):not([multiselected]):-moz-lwtheme-darktext {
       background-color: rgba(0,0,0,.1) !important;
     }
     .tabbrowser-tab:hover > .tab-stack > .tab-background > .tab-line:not([selected=true]):not([multiselected]):-moz-lwtheme-darktext {
