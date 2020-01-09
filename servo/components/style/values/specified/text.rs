@@ -828,6 +828,32 @@ impl From<TextEmphasisPosition> for u8 {
     ToCss,
 )]
 #[allow(missing_docs)]
+pub enum WordBreak {
+    Normal,
+    BreakAll,
+    KeepAll,
+    
+    
+    
+    
+    BreakWord,
+}
+
+
+#[repr(u8)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+)]
+#[allow(missing_docs)]
 pub enum OverflowWrap {
     Normal,
     BreakWord,
