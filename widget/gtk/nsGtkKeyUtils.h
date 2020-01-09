@@ -199,6 +199,12 @@ class KeymapWrapper {
   
 
 
+
+  static void ResetKeyboard();
+
+  
+
+
   static void Shutdown();
 
  protected:
