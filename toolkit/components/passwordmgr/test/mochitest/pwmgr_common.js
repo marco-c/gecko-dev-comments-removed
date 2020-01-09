@@ -395,10 +395,3 @@ this.LoginManager = new Proxy({}, {
     };
   },
 });
-
-
-function checkACForm(usernameField, expectedUsername, passwordField, expectedPassword) {
-  let formID = usernameField.parentNode.id;
-  is(usernameField.value, expectedUsername, "Checking " + formID + " username is: " + expectedUsername);
-  is(passwordField.value, expectedPassword, "Checking " + formID + " password is: " + expectedPassword);
-}
