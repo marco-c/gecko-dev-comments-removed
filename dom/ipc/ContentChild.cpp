@@ -54,6 +54,7 @@
 #include "mozilla/dom/URLClassifierChild.h"
 #include "mozilla/dom/WorkerDebugger.h"
 #include "mozilla/dom/WorkerDebuggerManager.h"
+#include "mozilla/dom/ipc/IPCBlobInputStreamChild.h"
 #include "mozilla/dom/ipc/SharedMap.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"
@@ -65,6 +66,7 @@
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/PChildToParentStreamChild.h"
+#include "mozilla/ipc/PParentToChildStreamChild.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/ipc/TestShellChild.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
@@ -226,6 +228,9 @@
 #include "mozilla/dom/PPresentationChild.h"
 #include "mozilla/dom/PresentationIPCService.h"
 #include "mozilla/ipc/InputStreamUtils.h"
+#include "mozilla/ipc/IPCStreamAlloc.h"
+#include "mozilla/ipc/IPCStreamDestination.h"
+#include "mozilla/ipc/IPCStreamSource.h"
 
 #ifdef MOZ_WEBSPEECH
 #  include "mozilla/dom/PSpeechSynthesisChild.h"
@@ -1684,11 +1689,12 @@ static void FirstIdle(void) {
 mozilla::jsipc::PJavaScriptChild* ContentChild::AllocPJavaScriptChild() {
   MOZ_ASSERT(ManagedPJavaScriptChild().IsEmpty());
 
-  return nsIContentChild::AllocPJavaScriptChild();
+  return NewJavaScriptChild();
 }
 
 bool ContentChild::DeallocPJavaScriptChild(PJavaScriptChild* aChild) {
-  return nsIContentChild::DeallocPJavaScriptChild(aChild);
+  ReleaseJavaScriptChild(aChild);
+  return true;
 }
 
 PBrowserChild* ContentChild::AllocPBrowserChild(const TabId& aTabId,
@@ -1697,8 +1703,25 @@ PBrowserChild* ContentChild::AllocPBrowserChild(const TabId& aTabId,
                                                 const uint32_t& aChromeFlags,
                                                 const ContentParentId& aCpID,
                                                 const bool& aIsForBrowser) {
-  return nsIContentChild::AllocPBrowserChild(
-      aTabId, aSameTabGroupAs, aContext, aChromeFlags, aCpID, aIsForBrowser);
+  
+  
+  
+
+  MaybeInvalidTabContext tc(aContext);
+  if (!tc.IsValid()) {
+    NS_ERROR(nsPrintfCString("Received an invalid TabContext from "
+                             "the parent process. (%s)  Crashing...",
+                             tc.GetInvalidReason())
+                 .get());
+    MOZ_CRASH("Invalid TabContext received from the parent process.");
+  }
+
+  RefPtr<TabChild> child =
+      TabChild::Create(static_cast<ContentChild*>(this), aTabId,
+                       aSameTabGroupAs, tc.GetTabContext(), aChromeFlags);
+
+  
+  return child.forget().take();
 }
 
 bool ContentChild::SendPBrowserConstructor(
@@ -1734,9 +1757,20 @@ mozilla::ipc::IPCResult ContentChild::RecvPBrowserConstructor(
     }
   }
 
-  return nsIContentChild::RecvPBrowserConstructor(
-      aActor, aTabId, aSameTabGroupAs, aContext, aChromeFlags, aCpID,
-      aIsForBrowser);
+  auto tabChild = static_cast<TabChild*>(aActor);
+
+  if (NS_WARN_IF(NS_FAILED(tabChild->Init( nullptr)))) {
+    return IPC_FAIL(tabChild, "TabChild::Init failed");
+  }
+
+  nsCOMPtr<nsIObserverService> os = services::GetObserverService();
+  if (os) {
+    os->NotifyObservers(static_cast<nsITabChild*>(tabChild),
+                        "tab-child-created", nullptr);
+  }
+  
+  tabChild->SendRemoteIsReadyToHandleInputEvents();
+  return IPC_OK();
 }
 
 void ContentChild::GetAvailableDictionaries(
@@ -1765,17 +1799,26 @@ bool ContentChild::DeallocPFileDescriptorSetChild(
 }
 
 bool ContentChild::DeallocPBrowserChild(PBrowserChild* aIframe) {
-  return nsIContentChild::DeallocPBrowserChild(aIframe);
+  TabChild* child = static_cast<TabChild*>(aIframe);
+  NS_RELEASE(child);
+  return true;
 }
 
 PIPCBlobInputStreamChild* ContentChild::AllocPIPCBlobInputStreamChild(
     const nsID& aID, const uint64_t& aSize) {
-  return nsIContentChild::AllocPIPCBlobInputStreamChild(aID, aSize);
+  
+  
+
+  RefPtr<IPCBlobInputStreamChild> actor =
+      new IPCBlobInputStreamChild(aID, aSize);
+  return actor.forget().take();
 }
 
 bool ContentChild::DeallocPIPCBlobInputStreamChild(
     PIPCBlobInputStreamChild* aActor) {
-  return nsIContentChild::DeallocPIPCBlobInputStreamChild(aActor);
+  RefPtr<IPCBlobInputStreamChild> actor =
+      dont_AddRef(static_cast<IPCBlobInputStreamChild*>(aActor));
+  return true;
 }
 
 mozilla::PRemoteSpellcheckEngineChild*
@@ -1940,21 +1983,23 @@ PChildToParentStreamChild* ContentChild::SendPChildToParentStreamConstructor(
 }
 
 PChildToParentStreamChild* ContentChild::AllocPChildToParentStreamChild() {
-  return nsIContentChild::AllocPChildToParentStreamChild();
+  MOZ_CRASH("PChildToParentStreamChild actors should be manually constructed!");
 }
 
 bool ContentChild::DeallocPChildToParentStreamChild(
     PChildToParentStreamChild* aActor) {
-  return nsIContentChild::DeallocPChildToParentStreamChild(aActor);
+  delete aActor;
+  return true;
 }
 
 PParentToChildStreamChild* ContentChild::AllocPParentToChildStreamChild() {
-  return nsIContentChild::AllocPParentToChildStreamChild();
+  return mozilla::ipc::AllocPParentToChildStreamChild();
 }
 
 bool ContentChild::DeallocPParentToChildStreamChild(
     PParentToChildStreamChild* aActor) {
-  return nsIContentChild::DeallocPParentToChildStreamChild(aActor);
+  delete aActor;
+  return true;
 }
 
 PPSMContentDownloaderChild* ContentChild::AllocPPSMContentDownloaderChild(
@@ -3283,7 +3328,38 @@ already_AddRefed<nsIEventTarget> ContentChild::GetConstructedEventTarget(
     return nullptr;
   }
 
-  return nsIContentChild::GetConstructedEventTarget(aMsg);
+  ActorHandle handle;
+  TabId tabId, sameTabGroupAs;
+  PickleIterator iter(aMsg);
+  if (!IPC::ReadParam(&aMsg, &iter, &handle)) {
+    return nullptr;
+  }
+  aMsg.IgnoreSentinel(&iter);
+  if (!IPC::ReadParam(&aMsg, &iter, &tabId)) {
+    return nullptr;
+  }
+  aMsg.IgnoreSentinel(&iter);
+  if (!IPC::ReadParam(&aMsg, &iter, &sameTabGroupAs)) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (sameTabGroupAs) {
+    return nullptr;
+  }
+
+  
+  
+  RefPtr<TabGroup> tabGroup = new TabGroup();
+  nsCOMPtr<nsIEventTarget> target =
+      tabGroup->EventTargetFor(TaskCategory::Other);
+  return target.forget();
 }
 
 void ContentChild::FileCreationRequest(nsID& aUUID, FileCreatorHelper* aHelper,
