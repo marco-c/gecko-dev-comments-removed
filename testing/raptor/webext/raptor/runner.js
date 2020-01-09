@@ -245,6 +245,10 @@ function testTabRemoved(tab) {
 async function testTabUpdated(tab) {
   postToControlServer("status", `test tab updated: ${testTabID}`);
   
+  
+  
+  setTimeoutAlarm("raptor-page-timeout", pageTimeout);
+  
   await waitForResult();
   
   nextCycle();
@@ -370,9 +374,6 @@ async function nextCycle() {
       let text = "begin pagecycle " + pageCycle;
       postToControlServer("status", text);
 
-      
-      setTimeoutAlarm("raptor-page-timeout", pageTimeout);
-
       switch (testType) {
         case TEST_BENCHMARK:
           isBenchmarkPending = true;
@@ -411,8 +412,10 @@ async function nextCycle() {
       }
       setTimeout(function() {
         postToControlServer("status", `update tab: ${testTabID}`);
+
         
         ext.tabs.update(testTabID, {url: testURL}, testTabUpdated);
+
         if (testType == TEST_SCENARIO) {
           scenarioTimer();
         }
@@ -639,7 +642,6 @@ function raptorRunner() {
       let text = `* pausing ${postStartupDelay / 1000} seconds to let browser settle... *`;
       postToControlServer("status", text);
 
-      
       
       if (config.browser == "geckoview" || config.browser == "refbrow" ||
           config.browser == "fenix") {
