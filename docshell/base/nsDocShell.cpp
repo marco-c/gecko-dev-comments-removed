@@ -5625,7 +5625,34 @@ nsresult nsDocShell::SetCurScrollPosEx(int32_t aCurHorizontalPos,
     scrollMode = nsIScrollableFrame::SMOOTH_MSD;
   }
 
-  sf->ScrollTo(nsPoint(aCurHorizontalPos, aCurVerticalPos), scrollMode);
+  nsPoint targetPos(aCurHorizontalPos, aCurVerticalPos);
+  sf->ScrollTo(targetPos, scrollMode);
+
+  
+
+  nsCOMPtr<nsIPresShell> shell = GetPresShell();
+  NS_ENSURE_TRUE(shell, NS_ERROR_FAILURE);
+
+  nsPresContext* presContext = shell->GetPresContext();
+  NS_ENSURE_TRUE(presContext, NS_ERROR_FAILURE);
+
+  
+  if (!presContext->IsRootContentDocument()) {
+    return NS_OK;
+  }
+
+  
+  
+  if (!shell->IsVisualViewportSizeSet()) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  shell->SetPendingVisualScrollUpdate(targetPos,
+                                      layers::FrameMetrics::eMainThread);
+
   return NS_OK;
 }
 
