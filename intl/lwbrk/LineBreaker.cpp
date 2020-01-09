@@ -526,7 +526,7 @@ static int8_t GetClass(uint32_t u) {
   static_assert(U_LB_COUNT == mozilla::ArrayLength(sUnicodeLineBreakToClass),
                 "Gecko vs ICU LineBreak class mismatch");
 
-  auto cls = mozilla::unicode::GetLineBreakClass(u);
+  auto cls = GetLineBreakClass(u);
   MOZ_ASSERT(cls < mozilla::ArrayLength(sUnicodeLineBreakToClass));
   return sUnicodeLineBreakToClass[cls];
 }
@@ -890,16 +890,35 @@ void LineBreaker::GetJISx4051Breaks(const char16_t* aChars, uint32_t aLength,
       cl = GetClass(ch);
     }
 
+    
+    
+    
+    
+    
+    
+    if (aWordBreak == LineBreaker::kWordBreak_BreakAll &&
+        (cl == CLASS_CHARACTER || cl == CLASS_CLOSE)) {
+      auto cls = GetLineBreakClass(ch);
+      if (cls == U_LB_ALPHABETIC || cls == U_LB_NUMERIC ||
+          cls == U_LB_AMBIGUOUS || cls == U_LB_COMPLEX_CONTEXT ||
+          
+
+
+          cls == U_LB_CONDITIONAL_JAPANESE_STARTER ||
+          (cls >= U_LB_H2 && cls <= U_LB_JV)) {
+        cl = CLASS_BREAKABLE;
+      }
+    }
+
     bool allowBreak = false;
     if (cur > 0) {
       NS_ASSERTION(CLASS_COMPLEX != lastClass || CLASS_COMPLEX != cl,
                    "Loop should have prevented adjacent complex chars here");
-      if (aWordBreak == LineBreaker::kWordBreak_Normal) {
+      if (aWordBreak == LineBreaker::kWordBreak_Normal ||
+          aWordBreak == LineBreaker::kWordBreak_BreakAll) {
         allowBreak = (state.UseConservativeBreaking())
                          ? GetPairConservative(lastClass, cl)
                          : GetPair(lastClass, cl);
-      } else if (aWordBreak == LineBreaker::kWordBreak_BreakAll) {
-        allowBreak = true;
       }
     }
     aBreakBefore[cur] = allowBreak;
@@ -919,18 +938,20 @@ void LineBreaker::GetJISx4051Breaks(const char16_t* aChars, uint32_t aLength,
         }
       }
 
-      NS_GetComplexLineBreaks(aChars + cur, end - cur, aBreakBefore + cur);
-
-      
-      if (aWordBreak != LineBreaker::kWordBreak_Normal) {
+      if (aWordBreak == LineBreaker::kWordBreak_BreakAll) {
         
-        for (uint32_t i = cur; i < end; i++)
-          aBreakBefore[i] = (aWordBreak == LineBreaker::kWordBreak_BreakAll);
+        
+        ClusterIterator ci(aChars + cur, end - cur);
+        while (!ci.AtEnd()) {
+          ci.Next();
+          aBreakBefore[ci - aChars] = true;
+        }
+      } else {
+        NS_GetComplexLineBreaks(aChars + cur, end - cur, aBreakBefore + cur);
+        
+        
+        aBreakBefore[cur] = allowBreak;
       }
-
-      
-      
-      aBreakBefore[cur] = allowBreak;
 
       cur = end - 1;
     }
@@ -964,15 +985,23 @@ void LineBreaker::GetJISx4051Breaks(const uint8_t* aChars, uint32_t aLength,
       state.NotifyNonHyphenCharacter(ch);
       cl = GetClass(ch);
     }
+    if (aWordBreak == LineBreaker::kWordBreak_BreakAll &&
+        (cl == CLASS_CHARACTER || cl == CLASS_CLOSE)) {
+      auto cls = GetLineBreakClass(ch);
+      
+      if (cls == U_LB_ALPHABETIC || cls == U_LB_NUMERIC ||
+          cls == U_LB_COMPLEX_CONTEXT) {
+        cl = CLASS_BREAKABLE;
+      }
+    }
 
     bool allowBreak = false;
     if (cur > 0) {
-      if (aWordBreak == LineBreaker::kWordBreak_Normal) {
+      if (aWordBreak == LineBreaker::kWordBreak_Normal ||
+          aWordBreak == LineBreaker::kWordBreak_BreakAll) {
         allowBreak = (state.UseConservativeBreaking())
                          ? GetPairConservative(lastClass, cl)
                          : GetPair(lastClass, cl);
-      } else if (aWordBreak == LineBreaker::kWordBreak_BreakAll) {
-        allowBreak = true;
       }
     }
     aBreakBefore[cur] = allowBreak;
