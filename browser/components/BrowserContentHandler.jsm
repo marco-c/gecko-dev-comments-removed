@@ -2,6 +2,8 @@
 
 
 
+var EXPORTED_SYMBOLS = ["nsBrowserContentHandler", "nsDefaultCommandLineHandler"];
+
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
@@ -325,18 +327,12 @@ function doSearch(searchTerm, cmdLine) {
 }
 
 function nsBrowserContentHandler() {
+  if (!gBrowserContentHandler) {
+    gBrowserContentHandler = this;
+  }
+  return gBrowserContentHandler;
 }
 nsBrowserContentHandler.prototype = {
-  classID: Components.ID("{5d0ce354-df01-421a-83fb-7ead0990c24e}"),
-
-  _xpcom_factory: {
-    createInstance: function bch_factory_ci(outer, iid) {
-      if (outer)
-        throw Cr.NS_ERROR_NO_AGGREGATION;
-      return gBrowserContentHandler.QueryInterface(iid);
-    },
-  },
-
   
   QueryInterface: ChromeUtils.generateQI([Ci.nsICommandLineHandler,
                                           Ci.nsIBrowserHandler,
@@ -733,8 +729,6 @@ function nsDefaultCommandLineHandler() {
 }
 
 nsDefaultCommandLineHandler.prototype = {
-  classID: Components.ID("{47cd0651-b1be-4a0f-b5c4-10e5a573ef71}"),
-
   
   QueryInterface: ChromeUtils.generateQI(["nsICommandLineHandler"]),
 
@@ -836,6 +830,3 @@ nsDefaultCommandLineHandler.prototype = {
 
   helpInfo: "",
 };
-
-var components = [nsBrowserContentHandler, nsDefaultCommandLineHandler];
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);

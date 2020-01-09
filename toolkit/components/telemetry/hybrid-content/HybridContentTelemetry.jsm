@@ -47,6 +47,7 @@ let HybridContentTelemetry = {
 
 
 
+
   onTelemetryMessage(aMessage, aData) {
     if (!this._hybridContentEnabled) {
       this._log.trace("onTelemetryMessage - hybrid content telemetry is disabled.");
