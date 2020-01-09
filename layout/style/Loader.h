@@ -344,26 +344,6 @@ class Loader final {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult LoadSheet(nsIURI* aURL, nsIPrincipal* aOriginPrincipal,
-                     nsICSSLoaderObserver* aObserver,
-                     RefPtr<StyleSheet>* aSheet);
-
-  
-
-
-
   nsresult LoadSheet(nsIURI* aURL, bool aIsPreload,
                      nsIPrincipal* aOriginPrincipal,
                      const Encoding* aPreloadEncoding,
