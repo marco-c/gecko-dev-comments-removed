@@ -10,8 +10,9 @@ const {Domains} = ChromeUtils.import("chrome://remote/content/domains/Domains.js
 const {Session} = ChromeUtils.import("chrome://remote/content/sessions/Session.jsm");
 
 class TabSession extends Session {
-  constructor(connection, target, id) {
+  constructor(connection, target, id, parentSession) {
     super(connection, target, id);
+    this.parentSession = parentSession;
 
     this.mm.addMessageListener("remote:event", this);
     this.mm.addMessageListener("remote:result", this);
@@ -61,6 +62,35 @@ class TabSession extends Session {
       browsingContextId: this.browsingContext.id,
       request: {id, domain, method, params},
     });
+  }
+
+  onResult(id, result) {
+    super.onResult(id, result);
+
+    
+    
+    if (this.parentSession) {
+      this.parentSession.onEvent("Target.receivedMessageFromTarget", {
+        sessionId: this.id,
+        message: JSON.stringify({ id, result }),
+      });
+    }
+  }
+
+  onEvent(eventName, params) {
+    super.onEvent(eventName, params);
+
+    
+    
+    if (this.parentSession) {
+      this.parentSession.onEvent("Target.receivedMessageFromTarget", {
+        sessionId: this.id,
+        message: JSON.stringify({
+          method: eventName,
+          params,
+        }),
+      });
+    }
   }
 
   get mm() {
