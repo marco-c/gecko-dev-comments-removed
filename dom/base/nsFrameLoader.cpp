@@ -1789,6 +1789,9 @@ void nsFrameLoader::StartDestroy() {
   mDestroyCalled = true;
 
   
+  RequestTabStateFlush( 0,  true);
+
+  
   
   if (mMessageManager) {
     mMessageManager->Close();
@@ -3172,16 +3175,16 @@ void nsFrameLoader::RequestUpdatePosition(ErrorResult& aRv) {
   }
 }
 
-bool nsFrameLoader::RequestTabStateFlush(uint32_t aFlushId) {
+bool nsFrameLoader::RequestTabStateFlush(uint32_t aFlushId, bool aIsFinal) {
   if (mSessionStoreListener) {
-    mSessionStoreListener->ForceFlushFromParent(aFlushId);
+    mSessionStoreListener->ForceFlushFromParent(aFlushId, aIsFinal);
     
     return false;
   }
 
   
   if (mBrowserParent) {
-    Unused << mBrowserParent->SendFlushTabState(aFlushId);
+    Unused << mBrowserParent->SendFlushTabState(aFlushId, aIsFinal);
     return true;
   }
 
