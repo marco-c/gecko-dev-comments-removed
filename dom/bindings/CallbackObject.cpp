@@ -108,7 +108,10 @@ void CallbackObject::FinishSlowJSInitIfMoreThanOneOwner(JSContext* aCx) {
     }
     mIncumbentGlobal = GetIncumbentGlobal();
     if (mIncumbentGlobal) {
-      mIncumbentJSGlobal = mIncumbentGlobal->GetGlobalJSObject();
+      
+      
+      
+      mIncumbentJSGlobal = mIncumbentGlobal->GetGlobalJSObjectPreserveColor();
     }
   } else {
     

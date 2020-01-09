@@ -206,7 +206,10 @@ class CallbackObject : public nsISupports {
     mCreationStack = aCreationStack;
     if (aIncumbentGlobal) {
       mIncumbentGlobal = aIncumbentGlobal;
-      mIncumbentJSGlobal = aIncumbentGlobal->GetGlobalJSObject();
+      
+      
+      
+      mIncumbentJSGlobal = aIncumbentGlobal->GetGlobalJSObjectPreserveColor();
     }
   }
 
