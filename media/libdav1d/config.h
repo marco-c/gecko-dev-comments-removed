@@ -45,9 +45,9 @@
 #if ARCH_AARCH64 == 1
 
 
-#  define HAVE_AS_FUNC 0
-#  define HAVE_GETAUXVAL 1
-#  define PIC 3
+#define HAVE_AS_FUNC 0
+#define HAVE_GETAUXVAL 1
+#define PIC 3
 #endif
 
 

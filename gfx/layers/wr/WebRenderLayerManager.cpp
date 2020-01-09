@@ -480,13 +480,13 @@ void WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize) {
   
   SurfaceFormat format =
 #ifdef MOZ_WIDGET_ANDROID
-      SurfaceFormat::R8G8B8A8;
+    SurfaceFormat::R8G8B8A8;
 #else
-      SurfaceFormat::B8G8R8A8;
+    SurfaceFormat::B8G8R8A8;
 #endif
   RefPtr<TextureClient> texture = TextureClient::CreateForRawBufferAccess(
-      WrBridge(), format, aSize.ToUnknownSize(), BackendType::SKIA,
-      TextureFlags::SNAPSHOT);
+      WrBridge(), format, aSize.ToUnknownSize(),
+      BackendType::SKIA, TextureFlags::SNAPSHOT);
   if (!texture) {
     return;
   }

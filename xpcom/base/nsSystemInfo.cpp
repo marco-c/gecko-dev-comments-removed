@@ -168,11 +168,10 @@ nsresult GetHDDInfo(const char* aSpecialDirName, nsAutoCString& aModel,
     queryParameters.PropertyId = StorageDeviceSeekPenaltyProperty;
     bytesRead = 0;
     DEVICE_SEEK_PENALTY_DESCRIPTOR seekPenaltyDescriptor = {
-        sizeof(DEVICE_SEEK_PENALTY_DESCRIPTOR)};
-    if (::DeviceIoControl(handle, IOCTL_STORAGE_QUERY_PROPERTY,
-                          &queryParameters, sizeof(queryParameters),
-                          &seekPenaltyDescriptor, sizeof(seekPenaltyDescriptor),
-                          &bytesRead, nullptr)) {
+      sizeof(DEVICE_SEEK_PENALTY_DESCRIPTOR)};
+    if (::DeviceIoControl(handle, IOCTL_STORAGE_QUERY_PROPERTY, &queryParameters,
+          sizeof(queryParameters), &seekPenaltyDescriptor,
+          sizeof(seekPenaltyDescriptor), &bytesRead, nullptr)) {
       
       
       if (seekPenaltyDescriptor.IncursSeekPenalty) {

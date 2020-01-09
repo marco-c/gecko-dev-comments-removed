@@ -124,13 +124,13 @@ struct String {
 struct Face {
   
   struct InitData {
-    nsCString mDescriptor;  
-                            
-    uint16_t mIndex;        
-    bool mFixedPitch;       
-    mozilla::WeightRange mWeight;     
-    mozilla::StretchRange mStretch;   
-    mozilla::SlantStyleRange mStyle;  
+    nsCString mDescriptor; 
+                           
+    uint16_t mIndex;       
+    bool mFixedPitch;      
+    mozilla::WeightRange mWeight;    
+    mozilla::StretchRange mStretch;  
+    mozilla::SlantStyleRange mStyle; 
   };
 
   Face(FontList* aList, const InitData& aData)
@@ -167,15 +167,15 @@ struct Face {
 struct Family {
   
   struct InitData {
-    InitData(const nsACString& aKey,   
-             const nsACString& aName,  
-             uint32_t aIndex = 0,   
-             bool aHidden = false,  
-             bool aBundled = false,       
-                                          
-             bool aBadUnderline = false,  
-             bool aForceClassic = false   
-             )
+    InitData(const nsACString& aKey, 
+             const nsACString& aName, 
+             uint32_t aIndex = 0, 
+             bool aHidden = false, 
+             bool aBundled = false, 
+                                    
+             bool aBadUnderline = false, 
+             bool aForceClassic = false 
+            )
         : mKey(aKey),
           mName(aName),
           mIndex(aIndex),
@@ -261,15 +261,15 @@ struct Family {
   std::atomic<uint32_t> mFaceCount;
   String mKey;
   String mName;
-  Pointer mCharacterMap;  
-                          
-  Pointer mFaces;         
-  uint32_t mIndex;        
+  Pointer mCharacterMap; 
+                         
+  Pointer mFaces; 
+  uint32_t mIndex; 
   bool mIsHidden;
   bool mIsBadUnderlineFamily;
   bool mIsForceClassic;
-  bool mIsSimple;  
-                   
+  bool mIsSimple; 
+                  
 };
 
 
@@ -325,7 +325,7 @@ struct ParamTraits<mozilla::fontlist::Pointer> {
 
 }  
 
-#undef ERROR  // This is defined via Windows.h, but conflicts with some bindings
-              
+#undef ERROR // This is defined via Windows.h, but conflicts with some bindings
+             
 
 #endif 

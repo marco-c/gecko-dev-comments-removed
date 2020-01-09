@@ -29,7 +29,7 @@ class FontSlantStyle;
 namespace dom {
 class Document;
 class Element;
-}  
+}
 }  
 
 

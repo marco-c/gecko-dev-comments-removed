@@ -175,7 +175,6 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
 
-
   void NoteOriginDirectoryCreated(PersistenceType aPersistenceType,
                                   const nsACString& aGroup,
                                   const nsACString& aOrigin, bool aPersisted,

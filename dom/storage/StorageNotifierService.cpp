@@ -75,8 +75,8 @@ void StorageNotifierService::Broadcast(StorageEvent* aEvent,
 
     
     
-    if (!StorageUtils::PrincipalsEqual(
-            aEvent->GetPrincipal(), observer->GetEffectiveStoragePrincipal())) {
+    if (!StorageUtils::PrincipalsEqual(aEvent->GetPrincipal(),
+                                       observer->GetEffectiveStoragePrincipal())) {
       continue;
     }
 

@@ -42,13 +42,13 @@ nsString nsQuoteNode::Text() {
   MOZ_ASSERT(depth >= -1);
 
   Span<const StyleQuotePair> quotes =
-      mPseudoFrame->StyleList()->mQuotes._0.AsSpan();
+    mPseudoFrame->StyleList()->mQuotes._0.AsSpan();
 
   
   
   
   if (depth >= static_cast<int32_t>(quotes.Length())) {
-    depth = static_cast<int32_t>(quotes.Length()) - 1;
+      depth = static_cast<int32_t>(quotes.Length()) - 1;
   }
 
   if (depth == -1) {
@@ -58,7 +58,7 @@ nsString nsQuoteNode::Text() {
 
   const StyleQuotePair& pair = quotes[depth];
   const StyleOwnedStr& quote =
-      mType == StyleContentType::OpenQuote ? pair.opening : pair.closing;
+    mType == StyleContentType::OpenQuote ? pair.opening : pair.closing;
   result.Assign(NS_ConvertUTF8toUTF16(quote.AsString()));
   return result;
 }

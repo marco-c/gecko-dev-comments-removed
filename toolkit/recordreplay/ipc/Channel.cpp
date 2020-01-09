@@ -224,7 +224,9 @@ void Channel::SendMessage(Message&& aMsg) {
 
   PrintMessage("SendMsg", aMsg);
 
-  if (gSimulatedLatency && gSimulatedBandwidth && mSimulateDelays &&
+  if (gSimulatedLatency &&
+      gSimulatedBandwidth &&
+      mSimulateDelays &&
       MessageSubjectToSimulatedDelay(aMsg.mType)) {
     AutoEnsurePassThroughThreadEvents pt;
 
@@ -241,7 +243,7 @@ void Channel::SendMessage(Message&& aMsg) {
     
     
     TimeStamp receiveTime =
-        mAvailableTime + TimeDuration::FromMilliseconds(gSimulatedLatency);
+      mAvailableTime + TimeDuration::FromMilliseconds(gSimulatedLatency);
 
     aMsg.mReceiveTime = (receiveTime - mStartTime).ToMilliseconds();
   }
@@ -316,7 +318,7 @@ Message::UniquePtr Channel::WaitForMessage() {
   
   if (res->mReceiveTime) {
     TimeStamp receiveTime =
-        mStartTime + TimeDuration::FromMilliseconds(res->mReceiveTime);
+      mStartTime + TimeDuration::FromMilliseconds(res->mReceiveTime);
     while (receiveTime > TimeStamp::Now()) {
       MonitorAutoLock lock(mMonitor);
       mMonitor.WaitUntil(receiveTime);

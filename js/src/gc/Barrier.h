@@ -425,8 +425,9 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
 
 
 template <class T>
-class WriteBarriered : public BarrieredBase<T>,
-                       public WrappedPtrOperations<T, WriteBarriered<T>> {
+class WriteBarriered
+    : public BarrieredBase<T>,
+      public WrappedPtrOperations<T, WriteBarriered<T>> {
  protected:
   using BarrieredBase<T>::value;
 

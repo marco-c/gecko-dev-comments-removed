@@ -280,7 +280,7 @@ void ResizeObserverEntry::SetContentRectAndSize(const nsSize& aSize) {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
 
   
-  nsMargin padding = frame ? frame->GetUsedPadding() : nsMargin();
+  nsMargin padding = frame ? frame->GetUsedPadding(): nsMargin();
   
   
   nsRect rect(nsPoint(padding.left, padding.top), aSize);
