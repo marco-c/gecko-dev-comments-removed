@@ -295,17 +295,6 @@ class MutableWrappedPtrOperations<JS::StackGCVector<T, AllocPolicy>, Wrapper>
 namespace JS {
 
 
-
-template <typename T>
-class AutoVector : public Rooted<GCVector<T, 8>> {
-  using Vec = GCVector<T, 8>;
-  using Base = Rooted<Vec>;
-
- public:
-  explicit AutoVector(JSContext* cx) : Base(cx, Vec(cx)) {}
-};
-
-
 template <typename T>
 class RootedVector : public Rooted<StackGCVector<T>> {
   using Vec = StackGCVector<T>;

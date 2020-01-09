@@ -26,9 +26,6 @@ class JSScript;
 
 namespace JS {
 
-template <typename T>
-class AutoVector;
-
 template <typename UnitT>
 class SourceText;
 
@@ -261,22 +258,6 @@ extern JS_PUBLIC_API bool CompileFunction(JSContext* cx,
                                           const char* const* argnames,
                                           SourceText<char16_t>& srcBuf,
                                           MutableHandle<JSFunction*> fun);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool CompileFunction(JSContext* cx,
-                                          HandleObjectVector envChain,
-                                          const ReadOnlyCompileOptions& options,
-                                          const char* name, unsigned nargs,
-                                          const char* const* argnames,
-                                          SourceText<mozilla::Utf8Unit>& srcBuf,
-                                          MutableHandle<JSFunction*> fun);
-
 
 
 
