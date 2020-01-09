@@ -124,6 +124,10 @@ const runtime = {
 
   
   
+  isConnectionNotResponding: PropTypes.bool.isRequired,
+
+  
+  
   isUnknown: PropTypes.bool.isRequired,
 
   
