@@ -333,7 +333,7 @@ DecodePool* DecodePool::Singleton() {
 
 uint32_t DecodePool::NumberOfCores() { return sNumCores; }
 
-DecodePool::DecodePool() : mMutex("image::DecodePool") {
+DecodePool::DecodePool() : mMutex("image::IOThread") {
   
   int32_t prefLimit = gfxPrefs::ImageMTDecodingLimit();
   uint32_t limit;
