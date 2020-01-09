@@ -723,6 +723,22 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+    bool MaybeDiscardOrDelayMouseEvent(nsIFrame* aFrameToHandleEvent,
+                                       WidgetGUIEvent* aGUIEvent);
+
+    
+
+
+
+
+
+
+
+
+
+
+
     MOZ_CAN_RUN_SCRIPT
     nsIFrame* MaybeFlushThrottledStyles(nsIFrame* aFrameForPresShell);
 
