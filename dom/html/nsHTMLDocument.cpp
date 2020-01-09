@@ -176,7 +176,8 @@ nsHTMLDocument::nsHTMLDocument()
       mContentEditableCount(0),
       mEditingState(EditingState::eOff),
       mDisableCookieAccess(false),
-      mPendingMaybeEditingStateChanged(false) {
+      mPendingMaybeEditingStateChanged(false),
+      mHasBeenEditable(false) {
   mType = eHTML;
   mDefaultElementType = kNameSpaceID_XHTML;
   mCompatMode = eCompatibility_NavQuirks;
@@ -2434,7 +2435,43 @@ nsresult nsHTMLDocument::EditingStateChanged() {
   }
   htmlEditor->SyncRealTimeSpell();
 
+  MaybeDispatchCheckKeyPressEventModelEvent();
+
   return NS_OK;
+}
+
+void nsHTMLDocument::MaybeDispatchCheckKeyPressEventModelEvent() {
+  
+  
+  if (mEditingState != eContentEditable) {
+    return;
+  }
+
+  if (mHasBeenEditable) {
+    return;
+  }
+  mHasBeenEditable = true;
+
+  
+  
+  
+  WidgetEvent checkEvent(true, eUnidentifiedEvent);
+  checkEvent.mSpecifiedEventType = nsGkAtoms::onCheckKeyPressEventModel;
+  checkEvent.mFlags.mCancelable = false;
+  checkEvent.mFlags.mBubbles = false;
+  checkEvent.mFlags.mOnlySystemGroupDispatch = true;
+  
+  
+  
+  (new AsyncEventDispatcher(this, checkEvent))->PostDOMEvent();
+}
+
+void nsHTMLDocument::SetKeyPressEventModel(uint16_t aKeyPressEventModel) {
+  nsIPresShell* presShell = GetShell();
+  if (!presShell) {
+    return;
+  }
+  presShell->SetKeyPressEventModel(aKeyPressEventModel);
 }
 
 void nsHTMLDocument::SetDesignMode(const nsAString& aDesignMode,

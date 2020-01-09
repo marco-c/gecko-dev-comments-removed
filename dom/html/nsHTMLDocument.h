@@ -213,6 +213,8 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
 
   void UserInteractionForTesting();
 
+  void SetKeyPressEventModel(uint16_t aKeyPressEventModel);
+
  protected:
   ~nsHTMLDocument();
 
@@ -301,6 +303,15 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
       NotNull<const Encoding*> aEncoding) override;
 
   
+
+
+
+
+
+
+  void MaybeDispatchCheckKeyPressEventModelEvent();
+
+  
   
   
   
@@ -337,6 +348,10 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
 
 
   bool mPendingMaybeEditingStateChanged;
+
+  
+  
+  bool mHasBeenEditable;
 };
 
 namespace mozilla {

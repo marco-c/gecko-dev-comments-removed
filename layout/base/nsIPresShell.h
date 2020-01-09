@@ -1616,6 +1616,12 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   void NativeAnonymousContentRemoved(nsIContent* aAnonContent);
 
+  
+
+
+
+  virtual void SetKeyPressEventModel(uint16_t aKeyPressEventModel) = 0;
+
  protected:
   
 
