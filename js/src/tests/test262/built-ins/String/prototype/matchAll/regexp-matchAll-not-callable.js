@@ -12,6 +12,8 @@
 
 
 
+assert.sameValue(typeof String.prototype.matchAll, "function");
+
 var regexp = /./;
 
 regexp[Symbol.matchAll] = true;

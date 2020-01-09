@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.flatMap, 'function');
+
+var mapperFn = function() {};
+
+assert.throws(TypeError, function() {
+  [].flatMap.call(null, mapperFn);
+}, 'null value');
+
+assert.throws(TypeError, function() {
+  [].flatMap.call(undefined, mapperFn);
+}, 'undefined');
+
+reportCompare(0, 0);

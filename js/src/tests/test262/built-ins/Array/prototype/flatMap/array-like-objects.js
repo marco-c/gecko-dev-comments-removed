@@ -8,30 +8,80 @@
 
 
 
-function getArgumentsObject() {
-  return arguments;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function fn(e) {
+  return [39, e * 2]; 
 }
 
-function double(e) {
-  return [e * 2];
-}
-
-var a = getArgumentsObject(1, 2);
-var actual = [].flatMap.call(a, double);
-assert.compareArray(actual, [2, 4], 'arguments objects');
+var a;
+var actual;
 
 a = {
-  length: 1,
+  length: 3,
   0: 1,
+  
+  2: 21,
+  get 3() { throw 'it should not get this property'; }
 };
-actual = [].flatMap.call(a, double);
-assert.compareArray(actual, [2], 'array-like objects');
+actual = [].flatMap.call(a, fn);
+assert.compareArray(actual, [39, 2, 39, 42], 'array-like flattened object, number length');
+assert.sameValue(Object.getPrototypeOf(actual), Array.prototype, 'returned object is an array #1');
 
 a = {
-  length: void 0,
-  0: 1,
+  length: undefined,
+  get 0() { throw 'it should not get this property'; },
 };
-actual = [].flatMap.call(a, double);
+actual = [].flatMap.call(a, fn);
 assert.compareArray(actual, [], 'array-like objects; undefined length');
+assert.sameValue(Object.getPrototypeOf(actual), Array.prototype, 'returned object is an array #2');
+
+var called = false;
+a = {
+  get length() {
+    if (!called) {
+      called = true;
+      return 2;
+    } else {
+      throw 'is should get the length only once';
+    }
+  },
+  0: 21,
+  1: 19.5,
+  get 2() { throw 'it should not get this property'; },
+};
+actual = [].flatMap.call(a, fn);
+assert.compareArray(actual, [39, 42, 39, 39], 'array-like flattened objects; custom get length');
+assert.sameValue(Object.getPrototypeOf(actual), Array.prototype, 'returned object is an array #3');
+
+a = {
+  length: 10001,
+  [10000]: 7,
+};
+actual = [].flatMap.call(a, fn);
+assert.compareArray(actual, [39, 14], 'array-like flattened object, long length simulating shallow array');
+assert.sameValue(Object.getPrototypeOf(actual), Array.prototype, 'returned object is an array #4');
 
 reportCompare(0, 0);

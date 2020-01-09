@@ -11,11 +11,22 @@
 
 
 
+new RegExp("", "mig"); 
 assert.throws(SyntaxError, () => new RegExp("", "migg"), "duplicate g");
+
+new RegExp("", "i"); 
 assert.throws(SyntaxError, () => new RegExp("", "ii"), "duplicate i");
+
+new RegExp("", "m"); 
 assert.throws(SyntaxError, () => new RegExp("", "mm"), "duplicate m");
+
+new RegExp("", "s"); 
 assert.throws(SyntaxError, () => new RegExp("", "ss"), "duplicate s");
+
+new RegExp("", "u"); 
 assert.throws(SyntaxError, () => new RegExp("", "uu"), "duplicate u");
+
+new RegExp("", "y"); 
 assert.throws(SyntaxError, () => new RegExp("", "yy"), "duplicate y");
 
 reportCompare(0, 0);

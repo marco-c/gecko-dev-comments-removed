@@ -19,6 +19,8 @@
 
 
 
+assert.sameValue(typeof String.prototype.matchAll, "function");
+
 delete RegExp.prototype[Symbol.matchAll];
 var str = '/a/g*/b/g';
 
