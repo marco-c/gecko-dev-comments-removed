@@ -337,6 +337,9 @@ class WorkerDebuggerGlobalScope final : public DOMEventTargetHelper,
 
   void Dump(JSContext* aCx, const Optional<nsAString>& aString) const;
 
+  void Atob(const nsAString& aAtob, nsAString& aOutput, ErrorResult& aRv) const;
+  void Btoa(const nsAString& aBtoa, nsAString& aOutput, ErrorResult& aRv) const;
+
   
   
   nsresult Dispatch(TaskCategory aCategory,
