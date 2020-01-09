@@ -61,10 +61,10 @@ add_task(async function() {
         doCompletion();
       });
       
-      testTab.closeButton.click();
+      document.getAnonymousElementByAttribute(testTab, "anonid", "close-button").click();
     });
     
-    testTab.closeButton.click();
+    document.getAnonymousElementByAttribute(testTab, "anonid", "close-button").click();
   });
   await TestUtils.waitForCondition(() => !testTab.parentNode);
   ok(!testTab.parentNode, "Tab should be closed completely");
