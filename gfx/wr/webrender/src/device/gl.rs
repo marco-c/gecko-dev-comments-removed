@@ -10,6 +10,7 @@ use euclid::Transform3D;
 use gleam::gl;
 use internal_types::{FastHashMap, LayerIndex, RenderTargetInfo};
 use log::Level;
+use profiler;
 use sha2::{Digest, Sha256};
 use smallvec::SmallVec;
 use std::borrow::Cow;
@@ -28,6 +29,7 @@ use std::slice;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
+use std::time::Duration;
 use webrender_build::shader::ProgramSourceDigest;
 use webrender_build::shader::{parse_shader_source, shader_source_from_file};
 
@@ -919,6 +921,11 @@ enum TexStorageUsage {
 
 pub struct Device {
     gl: Rc<gl::Gl>,
+
+    
+    
+    base_gl: Option<Rc<gl::Gl>>,
+
     
     bound_textures: [gl::GLuint; 16],
     bound_program: gl::GLuint,
@@ -1235,6 +1242,7 @@ impl Device {
 
         Device {
             gl,
+            base_gl: None,
             resource_override_path,
             upload_method,
             inside_frame: false,
@@ -1362,6 +1370,22 @@ impl Device {
     pub fn begin_frame(&mut self) -> GpuFrameId {
         debug_assert!(!self.inside_frame);
         self.inside_frame = true;
+
+        
+        
+        let being_profiled = profiler::thread_is_being_profiled();
+        let using_wrapper = self.base_gl.is_some();
+        if being_profiled && !using_wrapper {
+            fn note(name: &str, duration: Duration) {
+                profiler::add_text_marker(cstr!("OpenGL Calls"), name, duration);
+            }
+            let threshold = Duration::from_millis(1);
+            let wrapped = gl::ProfilingGl::wrap(self.gl.clone(), threshold, note);
+            let base = mem::replace(&mut self.gl, wrapped);
+            self.base_gl = Some(base);
+        } else if !being_profiled && using_wrapper {
+            self.gl = self.base_gl.take().unwrap();
+        }
 
         
         let mut default_read_fbo = [0];
