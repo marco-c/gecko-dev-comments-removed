@@ -527,9 +527,15 @@ class Compositor : public TextureSourceProvider {
 
 
 
+  virtual void RequestRecordFrames(bool aWillRecord) {}
 
-  already_AddRefed<RecordedFrame> RecordFrame(
-      const TimeStamp& aTimeStamp);
+  
+
+
+
+
+
+  already_AddRefed<RecordedFrame> RecordFrame(const TimeStamp& aTimeStamp);
 
  protected:
   void DrawDiagnosticsInternal(DiagnosticFlags aFlags,

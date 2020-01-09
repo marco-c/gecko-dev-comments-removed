@@ -145,6 +145,10 @@ class BasicCompositor : public Compositor {
 
   void FinishPendingComposite() override;
 
+  virtual void RequestRecordFrames(bool aWillRecord) override {
+    mRecordFrames = aWillRecord;
+  }
+
  private:
   template <typename Geometry>
   void DrawGeometry(const Geometry& aGeometry, const gfx::Rect& aRect,
@@ -164,6 +168,19 @@ class BasicCompositor : public Compositor {
   bool NeedsToDeferEndRemoteDrawing();
 
   
+
+
+
+
+
+
+
+
+
+
+  bool ShouldRecordFrames() const;
+
+  
   RefPtr<gfx::DrawTarget> mDrawTarget;
   
   RefPtr<BasicCompositingRenderTarget> mRenderTarget;
@@ -173,6 +190,7 @@ class BasicCompositor : public Compositor {
 
   uint32_t mMaxTextureSize;
   bool mIsPendingEndRemoteDrawing;
+  bool mRecordFrames;
 
   
   
