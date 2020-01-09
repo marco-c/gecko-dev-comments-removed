@@ -22,6 +22,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "stdlib.h"
+#include "nsDirectoryService.h"
 #include "nsWildCard.h"
 #include "nsXULAppAPI.h"
 #include "nsZipArchive.h"
@@ -339,7 +340,46 @@ nsresult nsZipArchive::OpenArchive(nsZipHandle *aZipHandle, PRFileDesc *aFd) {
       static char *env = PR_GetEnv("MOZ_JAR_LOG_FILE");
       if (env) {
         zipLog.Init(env);
-        aZipHandle->mFile.GetURIString(mURI);
+        
+        
+        
+        
+        
+        
+        if (aZipHandle->mFile.IsZip()) {
+          
+          aZipHandle->mFile.GetPath(mURI);
+        } else if (nsDirectoryService::gService) {
+          
+          
+          
+          
+          
+          nsCOMPtr<nsIFile> dir = aZipHandle->mFile.GetBaseFile();
+          nsCOMPtr<nsIFile> gre_dir;
+          nsAutoCString path;
+          if (NS_SUCCEEDED(nsDirectoryService::gService->Get(
+                  NS_GRE_DIR, NS_GET_IID(nsIFile), getter_AddRefs(gre_dir)))) {
+            nsAutoCString leaf;
+            nsCOMPtr<nsIFile> parent;
+            while (NS_SUCCEEDED(dir->GetNativeLeafName(leaf)) &&
+                   NS_SUCCEEDED(dir->GetParent(getter_AddRefs(parent)))) {
+              if (!parent) {
+                break;
+              }
+              dir = parent;
+              if (path.Length()) {
+                path.Insert('/', 0);
+              }
+              path.Insert(leaf, 0);
+              bool equals;
+              if (NS_SUCCEEDED(dir->Equals(gre_dir, &equals)) && equals) {
+                mURI.Assign(path);
+                break;
+              }
+            }
+          }
+        }
       }
     }
   }
