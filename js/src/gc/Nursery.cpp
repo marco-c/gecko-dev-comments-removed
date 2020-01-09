@@ -1248,7 +1248,10 @@ bool js::Nursery::maybeResizeExact(JS::GCReason reason) {
     newMaxNurseryChunksChecked = 1;
   }
   unsigned newMaxNurseryChunks = newMaxNurseryChunksChecked.value();
-  MOZ_ASSERT(newMaxNurseryChunks > 0);
+  if (newMaxNurseryChunks == 0) {
+    
+    newMaxNurseryChunks = 1;
+  }
   if (newMaxNurseryChunks != chunkCountLimit_) {
     chunkCountLimit_ = newMaxNurseryChunks;
     
