@@ -3446,6 +3446,11 @@ public class GeckoSession implements Parcelable {
             
 
 
+
+
+
+
+
             public final boolean isRedirect;
         }
 
