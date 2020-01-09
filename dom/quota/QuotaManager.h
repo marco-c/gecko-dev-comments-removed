@@ -99,7 +99,6 @@ class QuotaManager final : public BackgroundThreadObject {
   class CreateRunnable;
 
  private:
-  class ShutdownRunnable;
   class Observer;
 
  public:
@@ -128,6 +127,8 @@ class QuotaManager final : public BackgroundThreadObject {
 
   
   static bool IsShuttingDown();
+
+  static void ShutdownInstance();
 
   static bool IsOSMetadata(const nsAString& aFileName);
 
