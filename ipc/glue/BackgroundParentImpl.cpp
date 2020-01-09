@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BackgroundParentImpl.h"
 
@@ -17,6 +17,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/EndpointForReportParent.h"
+#include "mozilla/dom/FileCreatorParent.h"
 #include "mozilla/dom/FileSystemBase.h"
 #include "mozilla/dom/FileSystemRequestParent.h"
 #include "mozilla/dom/GamepadEventChannelParent.h"
@@ -30,7 +31,6 @@
 #include "mozilla/dom/StorageActivityService.h"
 #include "mozilla/dom/cache/ActorUtils.h"
 #include "mozilla/dom/indexedDB/ActorsParent.h"
-#include "mozilla/dom/ipc/FileCreatorParent.h"
 #include "mozilla/dom/ipc/IPCBlobInputStreamParent.h"
 #include "mozilla/dom/ipc/PendingIPCBlobParent.h"
 #include "mozilla/dom/ipc/TemporaryIPCBlobParent.h"
@@ -109,7 +109,7 @@ class TestParent final : public mozilla::ipc::PBackgroundTestParent {
   void ActorDestroy(ActorDestroyReason aWhy) override;
 };
 
-}  
+}  // namespace
 
 namespace mozilla {
 namespace ipc {
@@ -541,23 +541,22 @@ bool BackgroundParentImpl::DeallocPSharedWorkerParent(
   return true;
 }
 
-PFileCreatorParent* BackgroundParentImpl::AllocPFileCreatorParent(
+dom::PFileCreatorParent* BackgroundParentImpl::AllocPFileCreatorParent(
     const nsString& aFullPath, const nsString& aType, const nsString& aName,
     const Maybe<int64_t>& aLastModified, const bool& aExistenceCheck,
     const bool& aIsFromNsIFile) {
-  RefPtr<mozilla::dom::FileCreatorParent> actor =
-      new mozilla::dom::FileCreatorParent();
+  RefPtr<dom::FileCreatorParent> actor = new dom::FileCreatorParent();
   return actor.forget().take();
 }
 
 mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
-    PFileCreatorParent* aActor, const nsString& aFullPath,
+    dom::PFileCreatorParent* aActor, const nsString& aFullPath,
     const nsString& aType, const nsString& aName,
     const Maybe<int64_t>& aLastModified, const bool& aExistenceCheck,
     const bool& aIsFromNsIFile) {
   bool isFileRemoteType = false;
 
-  
+  // If the ContentParent is null we are dealing with a same-process actor.
   RefPtr<ContentParent> parent = BackgroundParent::GetContentParent(this);
   if (!parent) {
     isFileRemoteType = true;
@@ -566,14 +565,13 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
     NS_ReleaseOnMainThreadSystemGroup("ContentParent release", parent.forget());
   }
 
-  mozilla::dom::FileCreatorParent* actor =
-      static_cast<mozilla::dom::FileCreatorParent*>(aActor);
+  dom::FileCreatorParent* actor = static_cast<dom::FileCreatorParent*>(aActor);
 
-  
-  
+  // We allow the creation of File via this IPC call only for the 'file' process
+  // or for testing.
   if (!isFileRemoteType && !StaticPrefs::dom_file_createInChild()) {
-    Unused << mozilla::dom::FileCreatorParent::Send__delete__(
-        actor, FileCreationErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
+    Unused << dom::FileCreatorParent::Send__delete__(
+        actor, dom::FileCreationErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
     return IPC_OK();
   }
 
@@ -582,9 +580,9 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
 }
 
 bool BackgroundParentImpl::DeallocPFileCreatorParent(
-    PFileCreatorParent* aActor) {
-  RefPtr<mozilla::dom::FileCreatorParent> actor =
-      dont_AddRef(static_cast<mozilla::dom::FileCreatorParent*>(aActor));
+    dom::PFileCreatorParent* aActor) {
+  RefPtr<dom::FileCreatorParent> actor =
+      dont_AddRef(static_cast<dom::FileCreatorParent*>(aActor));
   return true;
 }
 
@@ -684,8 +682,8 @@ BackgroundParentImpl::PVsyncParent* BackgroundParentImpl::AllocPVsyncParent() {
 
   RefPtr<mozilla::layout::VsyncParent> actor =
       mozilla::layout::VsyncParent::Create();
-  
-  
+  // There still has one ref-count after return, and it will be released in
+  // DeallocPVsyncParent().
   return actor.forget().take();
 }
 
@@ -694,7 +692,7 @@ bool BackgroundParentImpl::DeallocPVsyncParent(PVsyncParent* aActor) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aActor);
 
-  
+  // This actor already has one ref-count. Please check AllocPVsyncParent().
   RefPtr<mozilla::layout::VsyncParent> actor =
       dont_AddRef(static_cast<mozilla::layout::VsyncParent*>(aActor));
   return true;
@@ -727,7 +725,7 @@ bool BackgroundParentImpl::DeallocPCamerasParent(
 }
 
 auto BackgroundParentImpl::AllocPUDPSocketParent(
-    const Maybe<PrincipalInfo>& , const nsCString & )
+    const Maybe<PrincipalInfo>& /* unused */, const nsCString & /* unused */)
     -> PUDPSocketParent* {
   RefPtr<UDPSocketParent> p = new UDPSocketParent(this);
 
@@ -741,18 +739,18 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPUDPSocketConstructor(
   AssertIsOnBackgroundThread();
 
   if (aOptionalPrincipal.isSome()) {
-    
-    
+    // Support for checking principals (for non-mtransport use) will be handled
+    // in bug 1167039
     return IPC_FAIL_NO_REASON(this);
   }
-  
-  
-  
-  
-  
+  // No principal - This must be from mtransport (WebRTC/ICE) - We'd want
+  // to DispatchToMainThread() here, but if we do we must block RecvBind()
+  // until Init() gets run.  Since we don't have a principal, and we verify
+  // we have a filter, we can safely skip the Dispatch and just invoke Init()
+  // to install the filter.
 
-  
-  
+  // For mtransport, this will always be "stun", which doesn't allow outbound
+  // packets if they aren't STUN packets until a STUN response is seen.
   if (!aFilter.EqualsASCII(NS_NETWORK_SOCKET_FILTER_HANDLER_STUN_SUFFIX)) {
     return IPC_FAIL_NO_REASON(this);
   }
@@ -780,8 +778,8 @@ BackgroundParentImpl::AllocPBroadcastChannelParent(
 
   nsString originChannelKey;
 
-  
-  
+  // The format of originChannelKey is:
+  //  <channelName>|<origin+OriginAttributes>
 
   originChannelKey.Assign(aChannel);
 
@@ -848,7 +846,7 @@ class CheckPrincipalRunnable final : public Runnable {
   nsCString mOrigin;
 };
 
-}  
+}  // namespace
 
 mozilla::ipc::IPCResult BackgroundParentImpl::RecvPBroadcastChannelConstructor(
     PBroadcastChannelParent* actor, const PrincipalInfo& aPrincipalInfo,
@@ -858,7 +856,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPBroadcastChannelConstructor(
 
   RefPtr<ContentParent> parent = BackgroundParent::GetContentParent(this);
 
-  
+  // If the ContentParent is null we are dealing with a same-process actor.
   if (!parent) {
     return IPC_OK();
   }
@@ -1057,7 +1055,7 @@ bool BackgroundParentImpl::DeallocPFileSystemRequestParent(
   return true;
 }
 
-
+// Gamepad API Background IPC
 dom::PGamepadEventChannelParent*
 BackgroundParentImpl::AllocPGamepadEventChannelParent() {
   RefPtr<dom::GamepadEventChannelParent> parent =
@@ -1111,7 +1109,7 @@ BackgroundParentImpl::AllocPHttpBackgroundChannelParent(
   RefPtr<net::HttpBackgroundChannelParent> actor =
       new net::HttpBackgroundChannelParent();
 
-  
+  // hold extra refcount for IPDL
   return actor.forget().take();
 }
 
@@ -1138,7 +1136,7 @@ bool BackgroundParentImpl::DeallocPHttpBackgroundChannelParent(
   AssertIsInMainOrSocketProcess();
   AssertIsOnBackgroundThread();
 
-  
+  // release extra refcount hold by AllocPHttpBackgroundChannelParent
   RefPtr<net::HttpBackgroundChannelParent> actor =
       dont_AddRef(static_cast<net::HttpBackgroundChannelParent*>(aActor));
 
@@ -1297,8 +1295,8 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvRemoveEndpoint(
   return IPC_OK();
 }
 
-}  
-}  
+}  // namespace ipc
+}  // namespace mozilla
 
 void TestParent::ActorDestroy(ActorDestroyReason aWhy) {
   mozilla::ipc::AssertIsInMainOrSocketProcess();
