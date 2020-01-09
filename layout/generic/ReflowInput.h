@@ -739,7 +739,7 @@ struct ReflowInput : public SizeComputationInput {
   enum {
     
     
-    DUMMY_PARENT_REFLOW_STATE = (1 << 0),
+    DUMMY_PARENT_REFLOW_INPUT = (1 << 0),
 
     
     
