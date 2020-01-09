@@ -242,6 +242,7 @@ RestyleHint ServoStyleSet::MediumFeaturesChanged(
   }
 
   if (rulesChanged) {
+    
     return RestyleHint::RestyleSubtree();
   }
 
@@ -933,31 +934,24 @@ void ServoStyleSet::MarkOriginsDirty(OriginFlags aChangedOrigins) {
 }
 
 void ServoStyleSet::SetStylistStyleSheetsDirty() {
-  
-  
-  
-  
   mStylistState |= StylistState::StyleSheetsDirty;
 
   
   
   
+  
+  
+  
   if (nsPresContext* presContext = GetPresContext()) {
-    
-    
-    
     presContext->RestyleManager()->IncrementUndisplayedRestyleGeneration();
   }
 }
 
 void ServoStyleSet::SetStylistXBLStyleSheetsDirty() {
   mStylistState |= StylistState::XBLStyleSheetsDirty;
-
-  
-  
-  
-  MOZ_ASSERT(GetPresContext());
-  GetPresContext()->RestyleManager()->IncrementUndisplayedRestyleGeneration();
+  if (nsPresContext* presContext = GetPresContext()) {
+    presContext->RestyleManager()->IncrementUndisplayedRestyleGeneration();
+  }
 }
 
 void ServoStyleSet::RuleAdded(StyleSheet& aSheet, css::Rule& aRule) {
@@ -1142,6 +1136,16 @@ void ServoStyleSet::ClearCachedStyleData() {
 void ServoStyleSet::CompatibilityModeChanged() {
   Servo_StyleSet_CompatModeChanged(mRawSet.get());
   SetStylistStyleSheetsDirty();
+  bool anyShadow = false;
+  EnumerateShadowRoots(*mDocument, [&](ShadowRoot& aShadowRoot) {
+    if (auto* authorStyles = aShadowRoot.GetServoStyles()) {
+      anyShadow = true;
+      Servo_AuthorStyles_ForceDirty(authorStyles);
+    }
+  });
+  if (anyShadow) {
+    SetStylistXBLStyleSheetsDirty();
+  }
 }
 
 void ServoStyleSet::ClearNonInheritingComputedStyles() {
