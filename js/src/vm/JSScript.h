@@ -691,22 +691,10 @@ class ScriptSource {
 
   static constexpr size_t MinimumCompressibleLength = 256;
 
- private:
-  class LoadSourceMatcher;
-
- public:
-  
-  
-  
-  
-  static bool loadSource(JSContext* cx, ScriptSource* ss, bool* loaded);
-
-  
   template <typename Unit>
-  MOZ_MUST_USE bool assignSource(JSContext* cx,
-                                 const JS::ReadOnlyCompileOptions& options,
-                                 JS::SourceText<Unit>& srcBuf);
+  MOZ_MUST_USE bool setSourceCopy(JSContext* cx, JS::SourceText<Unit>& srcBuf);
 
+  void setSourceRetrievable() { sourceRetrievable_ = true; }
   bool sourceRetrievable() const { return sourceRetrievable_; }
   bool hasSourceText() const {
     return hasUncompressedSource() || hasCompressedSource();
@@ -958,45 +946,25 @@ class ScriptSource {
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               JS::ScriptSourceInfo* info) const;
 
- private:
-  
-  
-  
-  
   template <typename Unit>
-  MOZ_MUST_USE bool setUncompressedSourceHelper(JSContext* cx,
-                                                EntryUnits<Unit>&& source,
-                                                size_t length);
+  MOZ_MUST_USE bool setSource(JSContext* cx, EntryUnits<Unit>&& source,
+                              size_t length);
 
- public:
-  
   template <typename Unit>
-  MOZ_MUST_USE bool initializeUncompressedSource(JSContext* cx,
-                                                 EntryUnits<Unit>&& source,
-                                                 size_t length);
-
-  
-  
-  template <typename Unit>
-  MOZ_MUST_USE bool setRetrievedSource(JSContext* cx, EntryUnits<Unit>&& source,
-                                       size_t length);
+  void setSource(
+      typename SourceTypeTraits<Unit>::SharedImmutableString uncompressed);
 
   MOZ_MUST_USE bool tryCompressOffThread(JSContext* cx);
 
   
   
-  
   template <typename Unit>
-  void convertToCompressedSource(SharedImmutableString compressed,
-                                 size_t sourceLength);
+  void setCompressedSource(SharedImmutableString compressed,
+                           size_t sourceLength);
 
-  
-  
   template <typename Unit>
-  MOZ_MUST_USE bool initializeWithCompressedSource(JSContext* cx,
-                                                   UniqueChars&& raw,
-                                                   size_t rawLength,
-                                                   size_t sourceLength);
+  MOZ_MUST_USE bool setCompressedSource(JSContext* cx, UniqueChars&& raw,
+                                        size_t rawLength, size_t sourceLength);
 
 #if defined(JS_BUILD_BINAST)
 
@@ -1022,18 +990,18 @@ class ScriptSource {
  private:
   void performTaskWork(SourceCompressionTask* task);
 
-  struct ConvertToCompressedSourceFromTask {
+  struct SetCompressedSourceFromTask {
     ScriptSource* const source_;
     SharedImmutableString& compressed_;
 
-    ConvertToCompressedSourceFromTask(ScriptSource* source,
-                                      SharedImmutableString& compressed)
+    SetCompressedSourceFromTask(ScriptSource* source,
+                                SharedImmutableString& compressed)
         : source_(source), compressed_(compressed) {}
 
     template <typename Unit>
     void operator()(const Uncompressed<Unit>&) {
-      source_->convertToCompressedSource<Unit>(std::move(compressed_),
-                                               source_->length());
+      source_->setCompressedSource<Unit>(std::move(compressed_),
+                                         source_->length());
     }
 
     template <typename Unit>
@@ -1058,7 +1026,7 @@ class ScriptSource {
     }
   };
 
-  void convertToCompressedSourceFromTask(SharedImmutableString compressed);
+  void setCompressedSourceFromTask(SharedImmutableString compressed);
 
  private:
   
@@ -1569,7 +1537,7 @@ class alignas(uintptr_t) SharedScriptData final {
 
  private:
   
-  size_t atomOffset() const { return sizeof(SharedScriptData); };
+  size_t atomOffset() const { return offsetOfAtoms(); }
   size_t codeOffset() const { return codeOffset_; }
   size_t noteOffset() const { return codeOffset_ + codeLength_; }
 
@@ -1652,6 +1620,7 @@ class alignas(uintptr_t) SharedScriptData final {
   static constexpr size_t offsetOfFunLength() {
     return offsetof(SharedScriptData, funLength);
   }
+  static constexpr size_t offsetOfAtoms() { return sizeof(SharedScriptData); }
 
   void traceChildren(JSTracer* trc);
 
@@ -2525,6 +2494,8 @@ class JSScript : public js::gc::TenuredCell {
 
   MOZ_MUST_USE bool appendSourceDataForToString(JSContext* cx,
                                                 js::StringBuffer& buf);
+
+  static bool loadSource(JSContext* cx, js::ScriptSource* ss, bool* worked);
 
   void setSourceObject(js::ScriptSourceObject* object);
   js::ScriptSourceObject* sourceObject() const { return sourceObject_; }

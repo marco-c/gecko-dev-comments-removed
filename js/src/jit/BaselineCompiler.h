@@ -320,7 +320,7 @@ class BaselineCodeGen {
   
   enum class ScriptObjectType { RegExp, Function };
   void pushScriptObjectArg(ScriptObjectType type);
-  void pushScriptNameArg();
+  void pushScriptNameArg(Register scratch1, Register scratch2);
   void pushScriptScopeArg();
 
   
@@ -348,6 +348,9 @@ class BaselineCodeGen {
 
   
   void loadGlobalThisValue(ValueOperand dest);
+
+  
+  void loadScriptAtom(Register index, Register dest);
 
   void prepareVMCall();
 
