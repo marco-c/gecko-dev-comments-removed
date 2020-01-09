@@ -10,6 +10,20 @@
 const TEST_URI = "data:text/html;charset=utf-8,default-test-page";
 
 add_task(async function() {
+  try {
+    await testCDP();
+  } catch (e) {
+    
+    
+    if (e.response) {
+      throw new Error("CDP Exception:\n" + e.response + "\n");
+    } else {
+      throw e;
+    }
+  }
+});
+
+async function testCDP() {
   
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URI);
 
@@ -62,4 +76,4 @@ add_task(async function() {
   BrowserTestUtils.removeTab(tab);
 
   await RemoteAgent.close();
-});
+}
