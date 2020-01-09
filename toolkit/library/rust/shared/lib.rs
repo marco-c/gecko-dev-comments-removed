@@ -157,7 +157,7 @@ pub extern "C" fn intentional_panic(message: *const c_char) {
 extern "C" {
     
     
-    fn GeckoCrashOOL(filename: *const c_char, line: c_int, reason: *const c_char) -> !;
+    fn GeckoCrash(filename: *const c_char, line: c_int, reason: *const c_char) -> !;
 }
 
 
@@ -230,8 +230,8 @@ fn panic_hook(info: &panic::PanicInfo) {
     let message = ArrayCString::<[_; 512]>::from(message);
     let filename = ArrayCString::<[_; 512]>::from(filename);
     unsafe {
-        GeckoCrashOOL(filename.as_ptr() as *const c_char, line as c_int,
-                      message.as_ptr() as *const c_char);
+        GeckoCrash(filename.as_ptr() as *const c_char, line as c_int,
+                   message.as_ptr() as *const c_char);
     }
 }
 
