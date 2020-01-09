@@ -76,6 +76,7 @@ class nsGeolocationService final : public nsIGeolocationUpdate,
   CachedPositionAndAccuracy GetCachedPosition();
 
   
+  MOZ_CAN_RUN_SCRIPT
   nsresult StartDevice(nsIPrincipal* aPrincipal);
 
   
@@ -132,6 +133,7 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
   virtual JSObject* WrapObject(JSContext* aCtx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
+  MOZ_CAN_RUN_SCRIPT
   int32_t WatchPosition(PositionCallback& aCallback,
                         PositionErrorCallback* aErrorCallback,
                         const PositionOptions& aOptions, CallerType aCallerType,
@@ -143,6 +145,7 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
   void ClearWatch(int32_t aWatchId);
 
   
+  MOZ_CAN_RUN_SCRIPT
   int32_t WatchPosition(nsIDOMGeoPositionCallback* aCallback,
                         nsIDOMGeoPositionErrorCallback* aErrorCallback,
                         UniquePtr<PositionOptions>&& aOptions);
@@ -186,6 +189,7 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
                               GeoPositionErrorCallback aErrorCallback,
                               UniquePtr<PositionOptions>&& aOptions,
                               CallerType aCallerType);
+  MOZ_CAN_RUN_SCRIPT
   int32_t WatchPosition(GeoPositionCallback aCallback,
                         GeoPositionErrorCallback aErrorCallback,
                         UniquePtr<PositionOptions>&& aOptions,

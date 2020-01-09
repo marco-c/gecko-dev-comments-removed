@@ -6,6 +6,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
+#include "mozilla/Attributes.h"
 
 
 
@@ -30,6 +31,10 @@ class CoreLocationLocationProvider : public nsIGeolocationProvider {
   NS_DECL_NSIGEOLOCATIONPROVIDER
 
   CoreLocationLocationProvider();
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void NotifyError(uint16_t aErrorCode);
   void Update(nsIDOMGeoPosition* aSomewhere);
   void CreateMLSFallbackProvider();

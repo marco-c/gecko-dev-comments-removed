@@ -221,6 +221,8 @@ class RemotePermissionRequest final
                           nsPIDOMWindowInner* aWindow);
 
   
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvNotifyResult(
       const bool& aAllow, InfallibleTArray<PermissionChoice>&& aChoices);
 
@@ -243,7 +245,9 @@ class RemotePermissionRequest final
  private:
   virtual ~RemotePermissionRequest();
 
+  MOZ_CAN_RUN_SCRIPT
   void DoAllow(JS::HandleValue aChoices);
+  MOZ_CAN_RUN_SCRIPT
   void DoCancel();
 
   nsCOMPtr<nsIContentPermissionRequest> mRequest;

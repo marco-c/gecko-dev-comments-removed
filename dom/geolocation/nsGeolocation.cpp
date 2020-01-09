@@ -83,19 +83,24 @@ class nsGeolocationRequest final
                        int32_t aWatchId = 0);
 
   
-  NS_IMETHOD Cancel(void) override;
-  NS_IMETHOD Allow(JS::HandleValue choices) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD Cancel(void) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD Allow(JS::HandleValue choices) override;
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsGeolocationRequest)
 
   void Shutdown();
 
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void SendLocation(nsIDOMGeoPosition* aLocation);
   bool WantsHighAccuracy() {
     return !mShutdown && mOptions && mOptions->mEnableHighAccuracy;
   }
   void SetTimeoutTimer();
   void StopTimeoutTimer();
+  MOZ_CAN_RUN_SCRIPT
   void NotifyErrorAndShutdown(uint16_t);
   using ContentPermissionRequestBase::GetPrincipal;
   nsIPrincipal* GetPrincipal();
@@ -124,7 +129,8 @@ class nsGeolocationRequest final
     WeakPtr<nsGeolocationRequest> mRequest;
   };
 
-  void Notify();
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Notify();
 
   bool mIsWatchPositionRequest;
 
@@ -332,7 +338,8 @@ nsGeolocationRequest::Allow(JS::HandleValue aChoices) {
   }
 
   
-  nsresult rv = gs->StartDevice(GetPrincipal());
+  nsCOMPtr<nsIPrincipal> principal = GetPrincipal();
+  nsresult rv = gs->StartDevice(principal);
 
   if (NS_FAILED(rv)) {
     
@@ -410,7 +417,7 @@ void nsGeolocationRequest::SendLocation(nsIDOMGeoPosition* aPosition) {
 
   nsAutoMicroTask mt;
   if (mCallback.HasWebIDLCallback()) {
-    PositionCallback* callback = mCallback.GetWebIDLCallback();
+    RefPtr<PositionCallback> callback = mCallback.GetWebIDLCallback();
 
     MOZ_ASSERT(callback);
     callback->Call(*wrapped);
@@ -942,13 +949,15 @@ Geolocation::NotifyError(uint16_t aErrorCode) {
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::GEOLOCATION_ERROR, true);
 
   for (uint32_t i = mPendingCallbacks.Length(); i > 0; i--) {
-    mPendingCallbacks[i - 1]->NotifyErrorAndShutdown(aErrorCode);
+    RefPtr<nsGeolocationRequest> request = mPendingCallbacks[i - 1];
+    request->NotifyErrorAndShutdown(aErrorCode);
     
   }
 
   
   for (uint32_t i = 0; i < mWatchingCallbacks.Length(); i++) {
-    mWatchingCallbacks[i]->NotifyErrorAndShutdown(aErrorCode);
+    RefPtr<nsGeolocationRequest> request = mWatchingCallbacks[i];
+    request->NotifyErrorAndShutdown(aErrorCode);
   }
 
   return NS_OK;
