@@ -4,7 +4,7 @@
 
 async function testExecuteBrowserActionWithOptions(options = {}) {
   
-  EventUtils.synthesizeMouseAtCenter(gURLBar, {type: "mouseover"}, window);
+  EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {type: "mouseover"}, window);
 
   let extensionOptions = {};
 

@@ -9,7 +9,7 @@ add_task(async function testBrowserActionClickCanceled() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/");
 
   
-  EventUtils.synthesizeMouseAtCenter(gURLBar, {type: "mouseover"}, window);
+  EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {type: "mouseover"}, window);
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -87,7 +87,7 @@ add_task(async function testBrowserActionClickCanceled() {
 
 add_task(async function testBrowserActionDisabled() {
   
-  EventUtils.synthesizeMouseAtCenter(gURLBar, {type: "mouseover"}, window);
+  EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {type: "mouseover"}, window);
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -195,7 +195,7 @@ add_task(async function testBrowserActionTabPopulation() {
   await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
 
   
-  EventUtils.synthesizeMouseAtCenter(win.gURLBar, {type: "mouseover"}, win);
+  EventUtils.synthesizeMouseAtCenter(win.gURLBar.textbox, {type: "mouseover"}, win);
 
   await extension.startup();
 
@@ -231,7 +231,7 @@ add_task(async function testClosePopupDuringPreload() {
   });
 
   
-  EventUtils.synthesizeMouseAtCenter(gURLBar, {type: "mouseover"}, window);
+  EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {type: "mouseover"}, window);
 
   await extension.startup();
 

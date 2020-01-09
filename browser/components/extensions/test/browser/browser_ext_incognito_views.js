@@ -4,7 +4,7 @@
 
 add_task(async function testIncognitoViews() {
   
-  EventUtils.synthesizeMouseAtCenter(gURLBar, {type: "mouseover"}, window);
+  EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {type: "mouseover"}, window);
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {

@@ -189,7 +189,7 @@ add_task(async function testBrowserActionTelemetryResults() {
   await extension.startup();
 
   
-  EventUtils.synthesizeMouseAtCenter(gURLBar, {type: "mouseover"}, window);
+  EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {type: "mouseover"}, window);
 
   let widget = getBrowserActionWidget(extension).forWindow(window);
 
