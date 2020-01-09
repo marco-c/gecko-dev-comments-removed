@@ -22,7 +22,6 @@ import { wrapExpression } from "../utils/expressions";
 import { features } from "../utils/prefs";
 import { isOriginal } from "../utils/source";
 
-import * as parser from "../workers/parser";
 import type { Expression, ThreadContext } from "../types";
 import type { ThunkArgs } from "./types";
 
@@ -35,12 +34,12 @@ import type { ThunkArgs } from "./types";
 
 
 export function addExpression(cx: ThreadContext, input: string) {
-  return async ({ dispatch, getState }: ThunkArgs) => {
+  return async ({ dispatch, getState, evaluationsParser }: ThunkArgs) => {
     if (!input) {
       return;
     }
 
-    const expressionError = await parser.hasSyntaxError(input);
+    const expressionError = await evaluationsParser.hasSyntaxError(input);
 
     const expression = getExpression(getState(), input);
     if (expression) {
@@ -80,7 +79,7 @@ export function updateExpression(
   input: string,
   expression: Expression
 ) {
-  return async ({ dispatch, getState }: ThunkArgs) => {
+  return async ({ dispatch, getState, parser }: ThunkArgs) => {
     if (!input) {
       return;
     }
@@ -177,7 +176,13 @@ function evaluateExpression(cx: ThreadContext, expression: Expression) {
 
 
 export function getMappedExpression(expression: string) {
-  return async function({ dispatch, getState, client, sourceMaps }: ThunkArgs) {
+  return async function({
+    dispatch,
+    getState,
+    client,
+    sourceMaps,
+    evaluationsParser
+  }: ThunkArgs) {
     const thread = getCurrentThread(getState());
     const mappings = getSelectedScopeMappings(getState(), thread);
     const bindings = getSelectedFrameBindings(getState(), thread);
@@ -194,7 +199,7 @@ export function getMappedExpression(expression: string) {
       return null;
     }
 
-    return parser.mapExpression(
+    return evaluationsParser.mapExpression(
       expression,
       mappings,
       bindings || [],

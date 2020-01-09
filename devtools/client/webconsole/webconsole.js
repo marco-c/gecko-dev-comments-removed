@@ -301,17 +301,15 @@ class WebConsole {
     return null;
   }
 
-  
-
-
   get parserService() {
     if (this._parserService) {
       return this._parserService;
     }
 
-    this._parserService =
+    const { ParserDispatcher } =
       require("devtools/client/debugger/src/workers/parser/index");
 
+    this._parserService = new ParserDispatcher();
     this._parserService.start(
       "resource://devtools/client/debugger/dist/parser-worker.js",
       this.chromeUtilsWindow);
