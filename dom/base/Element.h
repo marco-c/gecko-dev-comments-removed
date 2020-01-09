@@ -1407,6 +1407,14 @@ class Element : public FragmentOrElement {
     return HasServoData() && Servo_Element_IsDisplayContents(this);
   }
 
+  
+
+
+
+
+
+  bool IsRendered() const { return GetPrimaryFrame() || IsDisplayContents(); }
+
   const nsAttrValue* GetParsedAttr(const nsAtom* aAttr) const {
     return mAttrs.GetAttr(aAttr);
   }

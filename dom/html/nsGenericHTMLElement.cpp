@@ -2653,14 +2653,6 @@ nsresult nsGenericHTMLElement::NewURIFromString(const nsAString& aURISpec,
   return NS_OK;
 }
 
-
-
-
-
-static bool IsRendered(const Element& aElement) {
-  return aElement.GetPrimaryFrame() || aElement.IsDisplayContents();
-}
-
 void nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
                                         mozilla::ErrorResult& aError) {
   
@@ -2715,7 +2707,7 @@ void nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
     doc->FlushPendingNotifications(FlushType::Layout);
   }
 
-  if (!IsRendered(*this)) {
+  if (!IsRendered()) {
     GetTextContentInternal(aValue, aError);
   } else {
     nsRange::GetInnerTextNoFlush(aValue, aError, this);
