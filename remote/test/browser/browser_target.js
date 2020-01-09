@@ -26,9 +26,7 @@ add_task(async function() {
 
 async function testCDP() {
   
-  RemoteAgent.init();
-  RemoteAgent.tabs.start();
-  RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
+  await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
 
   
   const CDP = await getCDP();

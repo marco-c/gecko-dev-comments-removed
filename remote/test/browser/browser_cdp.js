@@ -32,9 +32,7 @@ async function testCDP() {
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URI);
 
   
-  RemoteAgent.init();
-  RemoteAgent.tabs.start();
-  RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
+  await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
 
   
   const CDP = await getCDP();
