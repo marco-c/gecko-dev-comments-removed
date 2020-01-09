@@ -26,6 +26,8 @@ class JSWindowActorChild;
 
 
 class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
+  friend class PWindowGlobalChild;
+
  public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WindowGlobalChild)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(WindowGlobalChild)
@@ -63,6 +65,10 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
   
   already_AddRefed<TabChild> GetTabChild();
 
+  void HandleAsyncMessage(const nsString& aActorName,
+                          const nsString& aMessageName,
+                          ipc::StructuredCloneData& aData);
+
   
   already_AddRefed<JSWindowActorChild> GetActor(const nsAString& aName,
                                                 ErrorResult& aRv);
@@ -76,6 +82,11 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
                        JS::Handle<JSObject*> aGivenProto) override;
 
  protected:
+  
+  mozilla::ipc::IPCResult RecvAsyncMessage(const nsString& aActorName,
+                                           const nsString& aMessage,
+                                           const ClonedMessageData& aData);
+
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:

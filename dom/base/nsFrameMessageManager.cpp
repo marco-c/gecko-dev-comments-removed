@@ -380,9 +380,11 @@ void nsFrameMessageManager::GetDelayedScripts(
   }
 }
 
-static bool GetParamsForMessage(JSContext* aCx, const JS::Value& aValue,
-                                const JS::Value& aTransfer,
-                                StructuredCloneData& aData) {
+
+bool nsFrameMessageManager::GetParamsForMessage(JSContext* aCx,
+                                                const JS::Value& aValue,
+                                                const JS::Value& aTransfer,
+                                                StructuredCloneData& aData) {
   
   JS::RootedValue v(aCx, aValue);
   JS::RootedValue t(aCx, aTransfer);
