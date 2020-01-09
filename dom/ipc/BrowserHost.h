@@ -52,7 +52,12 @@ class BrowserHost : public RemoteBrowser,
   
   
   BrowserParent* GetActor() { return mRoot; }
-  ContentParent* GetContentParent() const { return mRoot->Manager(); }
+  ContentParent* GetContentParent() const {
+    return mRoot ? mRoot->Manager() : nullptr;
+  }
+  TabId GetTabId() const {
+    return mId;
+  }
 
   BrowserHost* AsBrowserHost() override { return this; }
   BrowserBridgeHost* AsBrowserBridgeHost() override { return nullptr; }
@@ -89,6 +94,9 @@ class BrowserHost : public RemoteBrowser,
  private:
   virtual ~BrowserHost() = default;
 
+  
+  
+  TabId mId;
   
   RefPtr<BrowserParent> mRoot;
 };
