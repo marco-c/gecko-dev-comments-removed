@@ -315,8 +315,7 @@ void FontFace::SetDisplay(const nsAString& aValue, ErrorResult& aRv) {
   }
 }
 
-void FontFace::DescriptorUpdated()
-{
+void FontFace::DescriptorUpdated() {
   
   
   if (!mUserFontEntry) {
@@ -326,7 +325,7 @@ void FontFace::DescriptorUpdated()
   
   
   RefPtr<gfxUserFontEntry> newEntry =
-    mFontFaceSet->FindOrCreateUserFontEntryFromFontFace(this);
+      mFontFaceSet->FindOrCreateUserFontEntryFromFontFace(this);
   SetUserFontEntry(newEntry);
 
   if (mInFontFaceSet) {

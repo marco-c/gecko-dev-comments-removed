@@ -312,8 +312,8 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
 
   static const mozilla::DynamicallyLinkedFunctionPtr<decltype(
       &::CryptCATAdminReleaseCatalogContext)>
-    pCryptCATAdminReleaseCatalogContext(L"wintrust.dll",
-                                        "CryptCATAdminReleaseCatalogContext");
+      pCryptCATAdminReleaseCatalogContext(L"wintrust.dll",
+                                          "CryptCATAdminReleaseCatalogContext");
   if (!pCryptCATAdminReleaseCatalogContext) {
     return false;
   }
@@ -326,10 +326,10 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
 
   
   
-  auto cleanCatInfoHdl = mozilla::MakeScopeExit(
-    [rawCatAdmin, catInfoHdl]() -> void {
-    pCryptCATAdminReleaseCatalogContext(rawCatAdmin, catInfoHdl, 0);
-  });
+  auto cleanCatInfoHdl =
+      mozilla::MakeScopeExit([rawCatAdmin, catInfoHdl]() -> void {
+        pCryptCATAdminReleaseCatalogContext(rawCatAdmin, catInfoHdl, 0);
+      });
 
   
 

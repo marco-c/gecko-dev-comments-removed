@@ -492,4 +492,6 @@ TEST_P(UrlClassifierPrefixSetTest, LoadSaveNoDelta) {
 }
 
 
-INSTANTIATE_TEST_CASE_P(UrlClassifierPrefixSetTest, UrlClassifierPrefixSetTest, ::testing::Values(0, UINT32_MAX));
+
+INSTANTIATE_TEST_CASE_P(UrlClassifierPrefixSetTest, UrlClassifierPrefixSetTest,
+                        ::testing::Values(0, UINT32_MAX));

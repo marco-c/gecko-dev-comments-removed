@@ -112,7 +112,7 @@ void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
   
   
   
-  const Face::InitData* slots[4] = { nullptr, nullptr, nullptr, nullptr };
+  const Face::InitData* slots[4] = {nullptr, nullptr, nullptr, nullptr};
   if (count >= 2 && count <= 4) {
     
     isSimple = true;
@@ -308,7 +308,7 @@ void Family::SearchAllFontsForChar(FontList* aList,
     }
   }
   uint32_t numFaces = NumFaces();
-  uint32_t charMapsLoaded = 0; 
+  uint32_t charMapsLoaded = 0;  
   Pointer* facePtrs = Faces(aList);
   for (uint32_t i = 0; i < numFaces; i++) {
     Face* face = static_cast<Face*>(facePtrs[i].ToPtr(aList));
@@ -332,8 +332,9 @@ void Family::SearchAllFontsForChar(FontList* aList,
         
         
         
-        RefPtr<gfxFontEntry> fe = gfxPlatformFontList::PlatformFontList()
-            ->GetOrCreateFontEntry(face, this);
+        RefPtr<gfxFontEntry> fe =
+            gfxPlatformFontList::PlatformFontList()->GetOrCreateFontEntry(face,
+                                                                          this);
         if (!fe) {
           continue;
         }
@@ -358,9 +359,8 @@ void Family::SetFacePtrs(FontList* aList, nsTArray<Pointer>& aFaces) {
     
     
     bool isSimple = true;
-    Pointer slots[4] = {
-      Pointer::Null(), Pointer::Null(), Pointer::Null(), Pointer::Null()
-    };
+    Pointer slots[4] = {Pointer::Null(), Pointer::Null(), Pointer::Null(),
+                        Pointer::Null()};
     for (const Pointer& fp : aFaces) {
       const Face* f = static_cast<const Face*>(fp.ToPtr(aList));
       if (!f->mWeight.IsSingle() || !f->mStyle.IsSingle() ||
@@ -438,7 +438,7 @@ void Family::SetupFamilyCharMap(FontList* aList) {
   }
   if (merged) {
     mCharacterMap =
-      gfxPlatformFontList::PlatformFontList()->GetShmemCharMap(&familyMap);
+        gfxPlatformFontList::PlatformFontList()->GetShmemCharMap(&familyMap);
   } else {
     mCharacterMap = firstMapShmPointer;
   }
