@@ -18,7 +18,9 @@
 
 
 
-$ { INCLUDES }
+
+${INCLUDES}
+
 
 
 using namespace std;
@@ -71,18 +73,22 @@ enum IPDLUnitTestType {
   NoneTest = 0,
 
   
-  
-  ${ENUM_VALUES}
+
+
+${ENUM_VALUES}
 
   LastTest = ${LAST_ENUM}
-  
+
+
 };
 
 IPDLUnitTestType IPDLUnitTestFromString(const char* const aString) {
   if (!aString) return static_cast<IPDLUnitTestType>(0);
-  
-  
-  $ { STRING_TO_ENUMS }
+
+
+
+${STRING_TO_ENUMS}
+
   
   else return static_cast<IPDLUnitTestType>(0);
 }
@@ -126,8 +132,10 @@ void IPDLUnitTestMain(void* aData) {
   
   switch (test) {
     
-    
-    $ { PARENT_ENABLED_CASES_PROC }
+
+
+${PARENT_ENABLED_CASES_PROC}
+
       
 
     default:
@@ -151,8 +159,10 @@ void IPDLUnitTestMain(void* aData) {
 
   switch (test) {
     
-    
-    $ { PARENT_MAIN_CASES_PROC }
+
+
+${PARENT_MAIN_CASES_PROC}
+
       
 
     default:
@@ -174,8 +184,10 @@ void IPDLUnitTestThreadMain(char* testString) {
   
   switch (test) {
     
-    
-    $ { PARENT_ENABLED_CASES_THREAD }
+
+
+${PARENT_ENABLED_CASES_THREAD}
+
       
 
     default:
@@ -196,8 +208,10 @@ void IPDLUnitTestThreadMain(char* testString) {
 
   switch (test) {
     
-    
-    $ { PARENT_MAIN_CASES_THREAD }
+
+
+${PARENT_MAIN_CASES_THREAD}
+
       
 
     default:
@@ -211,8 +225,10 @@ void DeleteParentActor() {
 
   switch (IPDLUnitTest()) {
     
-    
-    $ { PARENT_DELETE_CASES }
+
+
+${PARENT_DELETE_CASES}
+
       
     default:
       ::mozilla::_ipdltest::fail("???");
@@ -300,8 +316,10 @@ void DeleteChildActor() {
 
   switch (IPDLUnitTest()) {
     
-    
-    $ { CHILD_DELETE_CASES }
+
+
+${CHILD_DELETE_CASES}
+
       
     default:
       ::mozilla::_ipdltest::fail("???");
@@ -312,8 +330,10 @@ void IPDLUnitTestChildInit(IPC::Channel* transport, base::ProcessId parentPid,
                            MessageLoop* worker) {
   switch (IPDLUnitTest()) {
     
-    
-    $ { CHILD_INIT_CASES }
+
+
+${CHILD_INIT_CASES}
+
       
 
     default:
