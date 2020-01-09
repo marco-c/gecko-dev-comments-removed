@@ -41,6 +41,7 @@
 #include "nsComponentManagerUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "nsIXULRuntime.h"
 #include "jsapi.h"
 #include "nsContentUtils.h"
@@ -1747,6 +1748,16 @@ void nsRefreshDriver::CancelIdleRunnable(nsIRunnable* aRunnable) {
   }
 }
 
+static bool ReduceAnimations(Document* aDocument, void* aData) {
+  if (aDocument->GetPresContext() &&
+      aDocument->GetPresContext()->EffectCompositor()->NeedsReducing()) {
+    aDocument->GetPresContext()->EffectCompositor()->ReduceAnimations();
+  }
+  aDocument->EnumerateSubDocuments(ReduceAnimations, nullptr);
+
+  return true;
+}
+
 void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   MOZ_ASSERT(!nsContentUtils::GetCurrentJSContext(),
              "Shouldn't have a JSContext on the stack");
@@ -1906,8 +1917,10 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     
     
     
+    
     if (i == 1) {
       nsAutoMicroTask mt;
+      ReduceAnimations(mPresContext->Document(), nullptr);
     }
 
     

@@ -112,12 +112,14 @@ class Animation : public DOMEventTargetHelper,
 
   bool Pending() const { return mPendingState != PendingState::NotPending; }
   virtual bool PendingFromJS() const { return Pending(); }
+  AnimationReplaceState ReplaceState() const { return mReplaceState; }
 
   virtual Promise* GetReady(ErrorResult& aRv);
   Promise* GetFinished(ErrorResult& aRv);
 
   IMPL_EVENT_HANDLER(finish);
   IMPL_EVENT_HANDLER(cancel);
+  IMPL_EVENT_HANDLER(remove);
 
   void Cancel(PostRestyleMode aPostRestyle = PostRestyleMode::IfNeeded);
 
@@ -322,6 +324,25 @@ class Animation : public DOMEventTargetHelper,
   void UpdateRelevance();
 
   
+  bool IsReplaceable() const;
+
+  
+
+
+
+
+
+
+
+  bool IsRemovable() const;
+
+  
+
+
+
+  void Remove();
+
+  
 
 
   bool HasLowerCompositeOrderThan(const Animation& aOther) const;
@@ -358,6 +379,8 @@ class Animation : public DOMEventTargetHelper,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   void NotifyEffectTimingUpdated();
+  void NotifyEffectPropertiesUpdated();
+  void NotifyEffectTargetUpdated();
   void NotifyGeometricAnimationsStartingThisFrame();
 
   
@@ -473,6 +496,9 @@ class Animation : public DOMEventTargetHelper,
     return GetCurrentTimeForHoldTime(Nullable<TimeDuration>());
   }
 
+  void ScheduleReplacementCheck();
+  void MaybeScheduleReplacementCheck();
+
   
   
   
@@ -557,7 +583,12 @@ class Animation : public DOMEventTargetHelper,
   enum class PendingState : uint8_t { NotPending, PlayPending, PausePending };
   PendingState mPendingState = PendingState::NotPending;
 
+  
+  AnimationReplaceState mReplaceState = AnimationReplaceState::Active;
+
   bool mFinishedAtLastComposeStyle = false;
+  bool mWasReplaceableAtLastTick = false;
+
   
   
   bool mIsRelevant = false;

@@ -128,6 +128,13 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "dom.animations-api.autoremove.enabled",
+   dom_animations_api_autoremove_enabled,
+  bool, false
+)
+
+
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false
 #else

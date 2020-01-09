@@ -168,6 +168,8 @@ void Animation::SetEffectNoUpdate(AnimationEffect* aEffect) {
     ReschedulePendingTasks();
   }
 
+  MaybeScheduleReplacementCheck();
+
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
 }
 
@@ -652,6 +654,13 @@ void Animation::Tick() {
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Sync);
 
+  
+  bool isReplaceable = IsReplaceable();
+  if (isReplaceable && !mWasReplaceableAtLastTick) {
+    ScheduleReplacementCheck();
+  }
+  mWasReplaceableAtLastTick = isReplaceable;
+
   if (!mEffect) {
     return;
   }
@@ -847,6 +856,115 @@ void Animation::UpdateRelevance() {
   }
 }
 
+template <class T>
+bool IsMarkupAnimation(T* aAnimation) {
+  return aAnimation && aAnimation->IsTiedToMarkup();
+}
+
+
+bool Animation::IsReplaceable() const {
+  
+  
+  if (IsMarkupAnimation(AsCSSAnimation()) ||
+      IsMarkupAnimation(AsCSSTransition())) {
+    return false;
+  }
+
+  
+  if (PlayState() != AnimationPlayState::Finished) {
+    return false;
+  }
+
+  
+  if (ReplaceState() == AnimationReplaceState::Removed) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!GetTimeline() || !GetTimeline()->TracksWallclockTime()) {
+    return false;
+  }
+
+  
+  
+  if (!GetEffect()) {
+    return false;
+  }
+
+  
+  
+  
+  MOZ_ASSERT(GetEffect()->AsKeyframeEffect(),
+             "Effect should be a keyframe effect");
+
+  
+  if (GetEffect()->GetComputedTiming().mProgress.IsNull()) {
+    return false;
+  }
+
+  
+  
+  
+  if (!GetEffect()->AsKeyframeEffect()->GetTarget()) {
+    return false;
+  }
+
+  return true;
+}
+
+bool Animation::IsRemovable() const {
+  return ReplaceState() == AnimationReplaceState::Active && IsReplaceable();
+}
+
+void Animation::ScheduleReplacementCheck() {
+  MOZ_ASSERT(
+      IsReplaceable(),
+      "Should only schedule a replacement check for a replaceable animation");
+
+  
+  MOZ_ASSERT(GetEffect());
+  MOZ_ASSERT(GetEffect()->AsKeyframeEffect());
+  MOZ_ASSERT(GetEffect()->AsKeyframeEffect()->GetTarget());
+
+  Maybe<NonOwningAnimationTarget> target =
+      GetEffect()->AsKeyframeEffect()->GetTarget();
+
+  nsPresContext* presContext =
+      nsContentUtils::GetContextForContent(target->mElement);
+  if (presContext) {
+    presContext->EffectCompositor()->NoteElementForReducing(*target);
+  }
+}
+
+void Animation::MaybeScheduleReplacementCheck() {
+  if (!IsReplaceable()) {
+    return;
+  }
+
+  ScheduleReplacementCheck();
+}
+
+void Animation::Remove() {
+  MOZ_ASSERT(IsRemovable(),
+             "Should not be trying to remove an effect that is not removable");
+
+  mReplaceState = AnimationReplaceState::Removed;
+
+  QueuePlaybackEvent(NS_LITERAL_STRING("remove"),
+                     GetTimelineCurrentTimeAsTimeStamp());
+}
+
 bool Animation::HasLowerCompositeOrderThan(const Animation& aOther) const {
   
   if (&aOther == this) {
@@ -989,9 +1107,25 @@ void Animation::ComposeStyle(RawServoAnimationValueMap& aComposeResult,
 
 void Animation::NotifyEffectTimingUpdated() {
   MOZ_ASSERT(mEffect,
-             "We should only update timing effect when we have a target "
+             "We should only update effect timing when we have a target "
              "effect");
   UpdateTiming(Animation::SeekFlag::NoSeek, Animation::SyncNotifyFlag::Async);
+}
+
+void Animation::NotifyEffectPropertiesUpdated() {
+  MOZ_ASSERT(mEffect,
+             "We should only update effect properties when we have a target "
+             "effect");
+
+  MaybeScheduleReplacementCheck();
+}
+
+void Animation::NotifyEffectTargetUpdated() {
+  MOZ_ASSERT(mEffect,
+             "We should only update the effect target when we have a target "
+             "effect");
+
+  MaybeScheduleReplacementCheck();
 }
 
 void Animation::NotifyGeometricAnimationsStartingThisFrame() {
@@ -1503,7 +1637,7 @@ void Animation::QueuePlaybackEvent(const nsAString& aName,
 
   AnimationPlaybackEventInit init;
 
-  if (aName.EqualsLiteral("finish")) {
+  if (aName.EqualsLiteral("finish") || aName.EqualsLiteral("remove")) {
     init.mCurrentTime = GetCurrentTimeAsDouble();
   }
   if (mTimeline) {
