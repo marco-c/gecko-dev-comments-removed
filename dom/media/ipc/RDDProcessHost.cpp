@@ -164,7 +164,14 @@ void RDDProcessHost::InitAfterConnect(bool aSucceeded) {
 #endif
 
     if (!mRDDChild->Init(startMacSandbox)) {
-      KillHard("ActorInitFailed");
+      
+      
+      
+      
+      
+      
+      mRDDChild->Close();
+      return;
     }
   }
 
