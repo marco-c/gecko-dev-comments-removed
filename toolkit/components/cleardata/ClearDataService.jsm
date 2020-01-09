@@ -362,10 +362,13 @@ const QuotaCleaner = {
     
     Services.obs.notifyObservers(null, "browser:purge-sessionStorage", aHost);
 
+    let exceptionThrown = false;
+
     
-    return ServiceWorkerCleanUp.removeFromHost(aHost)
-      .then(_ =>  false, _ =>  true)
-      .then(exceptionThrown => {
+    return Promise.all([
+      ServiceWorkerCleanUp.removeFromHost("http://" + aHost).catch(_ => { exceptionThrown = true; }),
+      ServiceWorkerCleanUp.removeFromHost("https://" + aHost).catch(_ => { exceptionThrown = true; }),
+    ]).then(() => {
         
         
 
