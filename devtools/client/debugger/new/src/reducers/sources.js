@@ -320,6 +320,8 @@ function updateLoadedState(
   } else if (action.status === "error") {
     source = { id: sourceId, error: action.error, loadedState: "loaded" };
   } else {
+    
+    
     if (!action.value) {
       return state;
     }
