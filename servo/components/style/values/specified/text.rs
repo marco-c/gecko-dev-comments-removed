@@ -134,16 +134,14 @@ impl ToComputedValue for LineHeight {
 }
 
 
-/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-#[repr(C, u8)]
 pub enum TextOverflowSide {
     
     Clip,
     
     Ellipsis,
     
-    String(crate::OwnedStr),
+    String(Box<str>),
 }
 
 impl Parse for TextOverflowSide {
@@ -163,7 +161,7 @@ impl Parse for TextOverflowSide {
                 }
             },
             Token::QuotedString(ref v) => Ok(TextOverflowSide::String(
-                v.as_ref().to_owned().into(),
+                v.as_ref().to_owned().into_boxed_str(),
             )),
             ref t => Err(location.new_unexpected_token_error(t.clone())),
         }

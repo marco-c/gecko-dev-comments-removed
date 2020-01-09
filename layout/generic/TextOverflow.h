@@ -250,7 +250,7 @@ class TextOverflow final {
 
   class Marker {
    public:
-    void Init(const StyleTextOverflowSide& aStyle) {
+    void Init(const nsStyleTextOverflowSide& aStyle) {
       mInitialized = false;
       mISize = 0;
       mStyle = &aStyle;
@@ -267,7 +267,7 @@ class TextOverflow final {
     void SetupString(nsIFrame* aFrame);
 
     bool IsSuppressed() const {
-      return !mHasBlockEllipsis && mStyle->IsClip();
+      return !mHasBlockEllipsis && mStyle->mType == NS_STYLE_TEXT_OVERFLOW_CLIP;
     }
     bool IsNeeded() const { return mHasOverflow || mHasBlockEllipsis; }
     void Reset() {
@@ -282,7 +282,7 @@ class TextOverflow final {
     nscoord mIntrinsicISize;
     
     
-    const StyleTextOverflowSide* mStyle;
+    const nsStyleTextOverflowSide* mStyle;
     
     bool mHasOverflow;
     
