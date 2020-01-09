@@ -122,6 +122,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult MakeSureElemStartsAndEndsOnCR(nsINode& aNode);
 
   void DidCreateNode(Element& aNewElement);
@@ -262,7 +263,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult InsertBRIfNeeded();
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertBRIfNeeded();
 
   
 
@@ -274,7 +275,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult InsertBRIfNeeded(nsINode& aNode) {
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertBRIfNeeded(nsINode& aNode) {
     return InsertBRIfNeededInternal(aNode, false);
   }
 
@@ -282,7 +283,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult InsertMozBRIfNeeded(nsINode& aNode) {
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertMozBRIfNeeded(nsINode& aNode) {
     return InsertBRIfNeededInternal(aNode, true);
   }
 
@@ -296,6 +297,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult InsertBRIfNeededInternal(nsINode& aNode,
                                                  bool aInsertMozBR);
 
@@ -540,7 +542,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult DidMakeBasicBlock();
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DidMakeBasicBlock();
 
   
 
@@ -783,6 +785,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE SplitRangeOffFromNodeResult SplitRangeOffFromBlock(
       Element& aBlockElement, nsIContent& aStartOfMiddleElement,
       nsIContent& aEndOfMiddleElement);
@@ -990,6 +993,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult BustUpInlinesAtRangeEndpoints(RangeItem& aRangeItem);
 
   
@@ -1084,7 +1088,8 @@ class HTMLEditRules : public TextEditRules {
 
 
   template <typename PT, typename CT>
-  MOZ_MUST_USE SplitNodeResult MaybeSplitAncestorsForInsertWithTransaction(
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE SplitNodeResult
+  MaybeSplitAncestorsForInsertWithTransaction(
       nsAtom& aTag, const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode);
 
   
@@ -1169,7 +1174,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   InsertBRElementToEmptyListItemsAndTableCellsInChangedRange();
 
   
@@ -1187,7 +1192,8 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult AdjustSelection(nsIEditor::EDirection aAction);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  AdjustSelection(nsIEditor::EDirection aAction);
 
   
 
@@ -1278,6 +1284,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult MakeSureElemStartsOrEndsOnCR(nsINode& aNode,
                                                      bool aStarts);
 

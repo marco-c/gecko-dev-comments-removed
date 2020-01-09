@@ -350,7 +350,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
     
     if (pointToInsert.IsInTextNode()) {
       SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
-          *pointToInsert.GetContainerAsContent(), pointToInsert,
+          MOZ_KnownLive(*pointToInsert.GetContainerAsContent()), pointToInsert,
           SplitAtEdges::eAllowToCreateEmptyContainer);
       if (NS_WARN_IF(splitNodeResult.Failed())) {
         return splitNodeResult.Rv();
