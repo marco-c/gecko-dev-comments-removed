@@ -53,6 +53,9 @@ service('URIFixup', 'nsIURIFixup',
 service('Bits', 'nsIBits',
         "@mozilla.org/bits;1")
 
+service('AppInfoService', 'nsIXULRuntime',
+        "@mozilla.org/xre/app-info;1")
+
 
 
 
@@ -85,6 +88,7 @@ CPP_INCLUDES = """
 #include "nsIGfxInfo.h"
 #include "nsIURIFixup.h"
 #include "nsIBits.h"
+#include "nsIXULRuntime.h"
 """
 
 
