@@ -12,3 +12,15 @@ pre {
 html:not([dir]) pre { 
   unicode-bidi: plaintext;
 }
+
+
+
+
+
+
+
+@media (width: 0) or (height: 0) {
+  :root {
+    display: none;
+  }
+}
