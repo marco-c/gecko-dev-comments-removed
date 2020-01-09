@@ -77,7 +77,7 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
             
             Assert.ok(false);
           });
-          threadClient.resume(function() {
+          threadClient.resume().then(function() {
             
             do_timeout(1000, resolve);
           });

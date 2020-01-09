@@ -500,7 +500,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
             break;
           case "attached":
             
-            threadClient.interrupt(() => {
+            threadClient.interrupt().then(() => {
               threadClient.resumeThenPause();
               callback();
             });
@@ -508,7 +508,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
           case "resuming":
             
             threadClient.addOneTimeListener("resumed", () => {
-              threadClient.interrupt(() => {
+              threadClient.interrupt().then(() => {
                 threadClient.resumeThenPause();
                 callback();
               });

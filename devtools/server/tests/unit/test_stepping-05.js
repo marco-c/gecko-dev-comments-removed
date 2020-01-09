@@ -41,23 +41,22 @@ add_task(threadClientTest(async ({ threadClient, debuggee, client }) => {
   equal(debuggee.a, 1);
   equal(debuggee.b, 2);
 
-  await new Promise(resolve => {
-    threadClient.stepIn(() => {
-      threadClient.addOneTimeListener("paused", (event, packet) => {
-        equal(packet.type, "paused");
-        
-        equal(packet.why.type, "debuggerStatement");
-        resolve();
-      });
-      debuggee.eval("debugger;");
+  await new Promise(async resolve => {
+    await threadClient.stepIn();
+    threadClient.addOneTimeListener("paused", (event, packet) => {
+      equal(packet.type, "paused");
+      
+      equal(packet.why.type, "debuggerStatement");
+      resolve();
     });
+    debuggee.eval("debugger;");
   });
 }));
 
 function evaluateTestCode(debuggee) {
   
   Cu.evalInSandbox(
-    `                                   // 1                       
+    `                                   // 1
     debugger;                           // 2
     var a = 1;                          // 3
     var b = 2;`,                        

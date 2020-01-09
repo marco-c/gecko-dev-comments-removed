@@ -42,7 +42,7 @@ function test_pause_frame() {
     gClient.request({ to: objActor, type: "bogusRequest" }, function(response) {
       Assert.equal(response.error, "unrecognizedPacketType");
 
-      gThreadClient.resume(function() {
+      gThreadClient.resume().then(function() {
         
         
         gClient.request({ to: objActor, type: "bogusRequest" }, function(response) {

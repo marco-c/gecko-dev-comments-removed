@@ -36,7 +36,7 @@ add_task(async function() {
       threadClient.addOneTimeListener("paused", (event, packet) => {
         equal(packet.why.type, "debuggerStatement",
               "yay - hit the 'debugger' statement in our script");
-        threadClient.resume(resolve);
+        threadClient.resume().then(resolve);
       });
       threadClient.resume();
     });
@@ -44,7 +44,7 @@ add_task(async function() {
 
   
   
-  threadClient.resume(() => {
+  threadClient.resume().then(() => {
     
     ok(testResumed);
     

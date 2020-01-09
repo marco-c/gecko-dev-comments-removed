@@ -34,7 +34,7 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
         threadClient.addOneTimeListener("paused",
                                         function(event, packet) {
               
-                                          threadClient.resume(function() {
+                                          threadClient.resume().then(function() {
                                             Assert.ok(false);
                                           });
                                         });

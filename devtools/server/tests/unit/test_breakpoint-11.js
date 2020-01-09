@@ -53,7 +53,7 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
           
           threadClient.removeBreakpoint(location2);
 
-          threadClient.resume(resolve);
+          threadClient.resume().then(resolve);
         });
 
         

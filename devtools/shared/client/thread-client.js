@@ -67,8 +67,6 @@ ThreadClient.prototype = {
 
 
 
-
-
   _doResume: DebuggerClient.requester({
     type: "resume",
     resumeLimit: arg(0),
@@ -106,8 +104,6 @@ ThreadClient.prototype = {
 
 
 
-
-
   reconfigure: DebuggerClient.requester({
     type: "reconfigure",
     options: arg(0),
@@ -116,8 +112,79 @@ ThreadClient.prototype = {
   
 
 
-  resume: function(onResponse) {
-    return this._doResume(null, false, onResponse);
+  resume: function() {
+    return this._doResume(null, false);
+  },
+
+  
+
+
+
+  resumeThenPause: function() {
+    return this._doResume({ type: "break" }, false);
+  },
+
+  
+
+
+  rewind: function() {
+    return this._doResume(null, true);
+  },
+
+  
+
+
+  stepOver: function() {
+    return this._doResume({ type: "next" }, false);
+  },
+
+  
+
+
+  stepIn: function() {
+    return this._doResume({ type: "step" }, false);
+  },
+
+  
+
+
+  stepOut: function() {
+    return this._doResume({ type: "finish" }, false);
+  },
+
+  
+
+
+  reverseStepOver: function() {
+    return this._doResume({ type: "next" }, true);
+  },
+
+  
+
+
+  reverseStepIn: function() {
+    return this._doResume({ type: "step" }, true);
+  },
+
+  
+
+
+  reverseStepOut: function() {
+    return this._doResume({ type: "finish" }, true);
+  },
+
+  
+
+
+  interrupt: function() {
+    return this._doInterrupt(null);
+  },
+
+  
+
+
+  breakOnNext: function() {
+    return this._doInterrupt("onNext");
   },
 
   
@@ -126,123 +193,17 @@ ThreadClient.prototype = {
 
 
 
-  resumeThenPause: function(onResponse) {
-    return this._doResume({ type: "break" }, false, onResponse);
-  },
-
-  
-
-
-
-
-
-  rewind: function(onResponse) {
-    this._doResume(null, true, onResponse);
-  },
-
-  
-
-
-
-
-
-  stepOver: function(onResponse) {
-    return this._doResume({ type: "next" }, false, onResponse);
-  },
-
-  
-
-
-
-
-
-  stepIn: function(onResponse) {
-    return this._doResume({ type: "step" }, false, onResponse);
-  },
-
-  
-
-
-
-
-
-  stepOut: function(onResponse) {
-    return this._doResume({ type: "finish" }, false, onResponse);
-  },
-
-  
-
-
-
-
-
-  reverseStepOver: function(onResponse) {
-    return this._doResume({ type: "next" }, true, onResponse);
-  },
-
-  
-
-
-
-
-
-  reverseStepIn: function(onResponse) {
-    return this._doResume({ type: "step" }, true, onResponse);
-  },
-
-  
-
-
-
-
-
-  reverseStepOut: function(onResponse) {
-    return this._doResume({ type: "finish" }, true, onResponse);
-  },
-
-  
-
-
-
-
-
-  interrupt: function(onResponse) {
-    return this._doInterrupt(null, onResponse);
-  },
-
-  
-
-
-
-
-
-  breakOnNext: function(onResponse) {
-    return this._doInterrupt("onNext", onResponse);
-  },
-
-  
-
-
-
-
-
-
-
-  timeWarp: function(target, onResponse) {
+  timeWarp: function(target) {
     const warp = () => {
-      this._doResume({ type: "warp", target }, true, onResponse);
+      this._doResume({ type: "warp", target }, true);
     };
     if (this.paused) {
-      warp();
-    } else {
-      this.interrupt(warp);
+      return warp();
     }
+    return this.interrupt().then(warp);
   },
 
   
-
-
-
 
 
   _doInterrupt: DebuggerClient.requester({
@@ -258,8 +219,6 @@ ThreadClient.prototype = {
 
 
 
-
-
   pauseOnExceptions: DebuggerClient.requester({
     type: "pauseOnExceptions",
     pauseOnExceptions: arg(0),
@@ -267,9 +226,6 @@ ThreadClient.prototype = {
   }),
 
   
-
-
-
 
 
   detach: DebuggerClient.requester({
@@ -295,16 +251,11 @@ ThreadClient.prototype = {
   
 
 
-
-
-
   getSources: DebuggerClient.requester({
     type: "sources",
   }),
 
   
-
-
 
 
 
