@@ -15,6 +15,7 @@
 #include "mozilla/mozalloc.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/AtomList.h"
+#include "mozilla/dom/Promise.h"
 #include "jsapi.h"
 #include "js/Promise.h"
 
@@ -299,6 +300,47 @@ class CycleCollectedJSContext
   std::queue<RefPtr<MicroTaskRunnable>> mDebuggerMicroTaskQueue;
 
   uint32_t mMicroTaskRecursionDepth;
+
+  
+  
+  typedef nsTArray<RefPtr<dom::Promise>> PromiseArray;
+  PromiseArray mAboutToBeNotifiedRejectedPromises;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef nsRefPtrHashtable<nsUint64HashKey, dom::Promise> PromiseHashtable;
+  PromiseHashtable mPendingUnhandledRejections;
+
+  class NotifyUnhandledRejections final : public CancelableRunnable {
+   public:
+    NotifyUnhandledRejections(CycleCollectedJSContext* aCx,
+                              PromiseArray&& aPromises)
+        : CancelableRunnable("NotifyUnhandledRejections"),
+          mCx(aCx),
+          mUnhandledRejections(std::move(aPromises)) {}
+
+    NS_IMETHOD Run() final;
+
+    nsresult Cancel() final;
+
+   private:
+    CycleCollectedJSContext* mCx;
+    PromiseArray mUnhandledRejections;
+  };
 };
 
 class MOZ_STACK_CLASS nsAutoMicroTask {
