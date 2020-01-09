@@ -27,6 +27,7 @@
 #include "jit/BaselineJIT.h"
 #include "js/CharacterEncoding.h"
 #include "js/Date.h"
+#include "js/Promise.h"
 #include "js/PropertyDescriptor.h"
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"
@@ -297,8 +298,13 @@ class MOZ_RAII js::EnterDebuggeeNoExecute {
   bool reported_;
 
  public:
-  explicit EnterDebuggeeNoExecute(JSContext* cx, Debugger& dbg)
+  
+  
+  explicit EnterDebuggeeNoExecute(
+      JSContext* cx, Debugger& dbg,
+      const JS::AutoDebuggerJobQueueInterruption& adjqiProof)
       : dbg_(dbg), unlocked_(nullptr), reported_(false) {
+    MOZ_ASSERT(adjqiProof.initialized());
     stack_ = &cx->noExecuteDebuggerTop.ref();
     prev_ = *stack_;
     *stack_ = this;
@@ -1044,13 +1050,21 @@ class MOZ_RAII AutoSetGeneratorRunning {
   
   
   
+  JS::AutoDebuggerJobQueueInterruption adjqi;
+  if (!adjqi.init(cx)) {
+    return false;
+  }
+
+  
+  
+  
   
   if (!cx->isThrowingOverRecursed() && !cx->isThrowingOutOfMemory()) {
     
     for (size_t i = 0; i < frames.length(); i++) {
       HandleDebuggerFrame frameobj = frames[i];
       Debugger* dbg = Debugger::fromChildJSObject(frameobj);
-      EnterDebuggeeNoExecute nx(cx, *dbg);
+      EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
 
       if (dbg->enabled && frameobj->onPopHandler()) {
         OnPopHandler* handler = frameobj->onPopHandler();
@@ -1073,6 +1087,7 @@ class MOZ_RAII AutoSetGeneratorRunning {
           AutoSetGeneratorRunning asgr(cx, genObj);
           success = handler->onPop(cx, frameobj, nextResumeMode, &nextValue);
         }
+        adjqi.runJobs();
         nextResumeMode = dbg->processParsedHandlerResult(
             ar, frame, pc, success, nextResumeMode, &nextValue);
 
@@ -1656,6 +1671,7 @@ ResumeMode Debugger::handleUncaughtExceptionHelper(
 
   
   
+  
   MOZ_ASSERT(EnterDebuggeeNoExecute::isLockedInStack(cx, *this));
 
   if (cx->isExceptionPending()) {
@@ -2048,11 +2064,20 @@ template <typename HookIsEnabledFun ,
 
   
   
+  
+  JS::AutoDebuggerJobQueueInterruption adjqi;
+  if (!adjqi.init(cx)) {
+    return ResumeMode::Terminate;
+  }
+
+  
+  
   for (Value* p = triggered.begin(); p != triggered.end(); p++) {
     Debugger* dbg = Debugger::fromJSObject(&p->toObject());
-    EnterDebuggeeNoExecute nx(cx, *dbg);
+    EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
     if (dbg->debuggees.has(global) && dbg->enabled && hookIsEnabled(dbg)) {
       ResumeMode resumeMode = fireHook(dbg);
+      adjqi.runJobs();
       if (resumeMode != ResumeMode::Continue) {
         return resumeMode;
       }
@@ -2147,51 +2172,60 @@ void Debugger::slowPathOnNewWasmInstance(
     }
   }
 
-  for (Breakpoint** p = triggered.begin(); p != triggered.end(); p++) {
-    Breakpoint* bp = *p;
-
+  if (triggered.length() > 0) {
     
-    if (!site || !site->hasBreakpoint(bp)) {
-      continue;
+    
+    
+    JS::AutoDebuggerJobQueueInterruption adjqi;
+    if (!adjqi.init(cx)) {
+      return ResumeMode::Terminate;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Debugger* dbg = bp->debugger;
-    bool hasDebuggee = dbg->enabled && dbg->debuggees.has(global);
-    if (hasDebuggee) {
-      Maybe<AutoRealm> ar;
-      ar.emplace(cx, dbg->object);
-      EnterDebuggeeNoExecute nx(cx, *dbg);
-
-      RootedValue scriptFrame(cx);
-      if (!dbg->getFrame(cx, iter, &scriptFrame)) {
-        return dbg->reportUncaughtException(ar);
-      }
-      RootedValue rv(cx);
-      Rooted<JSObject*> handler(cx, bp->handler);
-      bool ok = CallMethodIfPresent(cx, handler, "hit", 1,
-                                    scriptFrame.address(), &rv);
-      ResumeMode resumeMode = dbg->processHandlerResult(
-          ar, ok, rv, iter.abstractFramePtr(), iter.pc(), vp);
-      if (resumeMode != ResumeMode::Continue) {
-        savedExc.drop();
-        return resumeMode;
+    for (Breakpoint* bp : triggered) {
+      
+      if (!site || !site->hasBreakpoint(bp)) {
+        continue;
       }
 
       
-      if (isJS) {
-        site = iter.script()->getBreakpointSite(pc);
-      } else {
-        site = iter.wasmInstance()->debug().getOrCreateBreakpointSite(
-            cx, bytecodeOffset);
+      
+      
+      
+      
+      
+      
+      
+      
+      Debugger* dbg = bp->debugger;
+      bool hasDebuggee = dbg->enabled && dbg->debuggees.has(global);
+      if (hasDebuggee) {
+        Maybe<AutoRealm> ar;
+        ar.emplace(cx, dbg->object);
+        EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
+
+        RootedValue scriptFrame(cx);
+        if (!dbg->getFrame(cx, iter, &scriptFrame)) {
+          return dbg->reportUncaughtException(ar);
+        }
+        RootedValue rv(cx);
+        Rooted<JSObject*> handler(cx, bp->handler);
+        bool ok = CallMethodIfPresent(cx, handler, "hit", 1,
+                                      scriptFrame.address(), &rv);
+        adjqi.runJobs();
+        ResumeMode resumeMode = dbg->processHandlerResult(
+            ar, ok, rv, iter.abstractFramePtr(), iter.pc(), vp);
+        if (resumeMode != ResumeMode::Continue) {
+          savedExc.drop();
+          return resumeMode;
+        }
+
+        
+        if (isJS) {
+          site = iter.script()->getBreakpointSite(pc);
+        } else {
+          site = iter.wasmInstance()->debug().getOrCreateBreakpointSite(
+              cx, bytecodeOffset);
+        }
       }
     }
   }
@@ -2255,27 +2289,38 @@ void Debugger::slowPathOnNewWasmInstance(
   }
 #endif
 
-  
-  for (size_t i = 0; i < frames.length(); i++) {
-    HandleDebuggerFrame frame = frames[i];
-    OnStepHandler* handler = frame->onStepHandler();
-    if (!handler) {
-      continue;
+  if (frames.length() > 0) {
+    
+    
+    
+    JS::AutoDebuggerJobQueueInterruption adjqi;
+    if (!adjqi.init(cx)) {
+      return ResumeMode::Terminate;
     }
 
-    Debugger* dbg = Debugger::fromChildJSObject(frame);
-    EnterDebuggeeNoExecute nx(cx, *dbg);
+    
+    for (size_t i = 0; i < frames.length(); i++) {
+      HandleDebuggerFrame frame = frames[i];
+      OnStepHandler* handler = frame->onStepHandler();
+      if (!handler) {
+        continue;
+      }
 
-    Maybe<AutoRealm> ar;
-    ar.emplace(cx, dbg->object);
+      Debugger* dbg = Debugger::fromChildJSObject(frame);
+      EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
 
-    ResumeMode resumeMode = ResumeMode::Continue;
-    bool success = handler->onStep(cx, frame, resumeMode, vp);
-    resumeMode = dbg->processParsedHandlerResult(
-        ar, iter.abstractFramePtr(), iter.pc(), success, resumeMode, vp);
-    if (resumeMode != ResumeMode::Continue) {
-      savedExc.drop();
-      return resumeMode;
+      Maybe<AutoRealm> ar;
+      ar.emplace(cx, dbg->object);
+
+      ResumeMode resumeMode = ResumeMode::Continue;
+      bool success = handler->onStep(cx, frame, resumeMode, vp);
+      adjqi.runJobs();
+      resumeMode = dbg->processParsedHandlerResult(
+          ar, iter.abstractFramePtr(), iter.pc(), success, resumeMode, vp);
+      if (resumeMode != ResumeMode::Continue) {
+        savedExc.drop();
+        return resumeMode;
+      }
     }
   }
 
@@ -2348,9 +2393,18 @@ void Debugger::slowPathOnNewGlobalObject(JSContext* cx,
   ResumeMode resumeMode = ResumeMode::Continue;
   RootedValue value(cx);
 
+  
+  
+  
+  JS::AutoDebuggerJobQueueInterruption adjqi;
+  if (!adjqi.init(cx)) {
+    cx->clearPendingException();
+    return;
+  }
+
   for (size_t i = 0; i < watchers.length(); i++) {
     Debugger* dbg = fromJSObject(watchers[i]);
-    EnterDebuggeeNoExecute nx(cx, *dbg);
+    EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
 
     
     
@@ -2362,6 +2416,7 @@ void Debugger::slowPathOnNewGlobalObject(JSContext* cx,
     
     if (dbg->observesNewGlobalObject()) {
       resumeMode = dbg->fireNewGlobalObject(cx, global, &value);
+      adjqi.runJobs();
       if (resumeMode != ResumeMode::Continue &&
           resumeMode != ResumeMode::Return) {
         break;

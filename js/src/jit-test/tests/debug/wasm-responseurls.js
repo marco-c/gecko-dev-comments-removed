@@ -6,6 +6,10 @@ ignoreUnhandledRejections();
 
 try {
     WebAssembly.compileStreaming();
+    
+    
+    
+    drainJobQueue();
 } catch (err) {
     assertEq(String(err).indexOf("not supported with --no-threads") !== -1, true);
     quit();
