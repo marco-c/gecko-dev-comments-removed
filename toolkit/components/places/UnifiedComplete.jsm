@@ -2232,7 +2232,8 @@ Search.prototype = {
     let title = bookmarkTitle || historyTitle;
 
     
-    let showTags = !!tags;
+    
+    let showTags = !!tags && !action;
 
     
     
