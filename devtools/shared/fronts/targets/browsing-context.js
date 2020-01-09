@@ -7,14 +7,10 @@ const {browsingContextTargetSpec} = require("devtools/shared/specs/targets/brows
 const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
 const { TargetMixin } = require("./target-mixin");
 
-loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
-
 class BrowsingContextTargetFront extends
   TargetMixin(FrontClassWithSpec(browsingContextTargetSpec)) {
   constructor(client) {
     super(client);
-
-    this.thread = null;
 
     
     
@@ -51,28 +47,6 @@ class BrowsingContextTargetFront extends
   
   setIsSelected(selected) {
     this._selected = selected;
-  }
-
-  
-
-
-
-
-
-  attachThread(options = {}) {
-    if (this.thread) {
-      return Promise.resolve([{}, this.thread]);
-    }
-    const packet = {
-      to: this._threadActor,
-      type: "attach",
-      options,
-    };
-    return this.client.request(packet).then(response => {
-      this.thread = new ThreadClient(this, this._threadActor);
-      this.client.registerClient(this.thread);
-      return [response, this.thread];
-    });
   }
 
   
@@ -153,14 +127,6 @@ class BrowsingContextTargetFront extends
     } catch (e) {
       console.warn(
         `Error while detaching the browsing context target front: ${e.message}`);
-    }
-
-    if (this.thread) {
-      try {
-        await this.thread.detach();
-      } catch (e) {
-        console.warn(`Error while detaching the thread front: ${e.message}`);
-      }
     }
 
     

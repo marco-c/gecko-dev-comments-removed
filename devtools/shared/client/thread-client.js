@@ -29,11 +29,8 @@ const noop = () => {};
 
 
 
-
-
 function ThreadClient(client, actor) {
-  this._parent = client;
-  this.client = client instanceof DebuggerClient ? client : client.client;
+  this.client = client;
   this._actor = actor;
   this._frameCache = [];
   this._scriptCache = {};
@@ -347,7 +344,6 @@ ThreadClient.prototype = {
   }, {
     after: function(response) {
       this.client.unregisterClient(this);
-      this._parent.thread = null;
       return response;
     },
   }),

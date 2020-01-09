@@ -366,6 +366,25 @@ function TargetMixin(parentClass) {
     
 
 
+
+
+
+
+
+    async attachThread(options = {}) {
+      if (!this._threadActor) {
+        throw new Error("TargetMixin sub class should set _threadActor before calling " +
+                        "attachThread");
+      }
+      const [response, threadClient] =
+        await this._client.attachThread(this._threadActor, options);
+      this.threadClient = threadClient;
+      return [response, threadClient];
+    }
+
+    
+
+
     _setupListeners() {
       this.tab.addEventListener("TabClose", this);
       this.tab.ownerDocument.defaultView.addEventListener("unload", this);
@@ -501,6 +520,14 @@ function TargetMixin(parentClass) {
           }
         }
 
+        if (this.threadClient) {
+          try {
+            await this.threadClient.detach();
+          } catch (e) {
+            console.warn(`Error while detaching the thread front: ${e.message}`);
+          }
+        }
+
         
         super.destroy();
 
@@ -515,6 +542,7 @@ function TargetMixin(parentClass) {
 
     _cleanup() {
       this.activeConsole = null;
+      this.threadClient = null;
       this._client = null;
       this._tab = null;
 

@@ -21,11 +21,7 @@ class ContentProcessTargetFront extends
     
     
     this.targetForm = json;
-    this.chromeDebugger = json.chromeDebugger;
-  }
-
-  attachThread() {
-    return this.client.attachThread(this.chromeDebugger);
+    this._threadActor = json.chromeDebugger;
   }
 
   attach() {
