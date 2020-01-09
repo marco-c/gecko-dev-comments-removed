@@ -177,7 +177,22 @@ class nsLineBreaker {
 
 
 
-  void SetWordBreak(uint8_t aMode) { mWordBreak = aMode; }
+  void SetWordBreak(uint8_t aMode) {
+    
+    if (aMode != mWordBreak && !mCurrentWord.IsEmpty()) {
+      nsresult rv = FlushCurrentWord();
+      if (NS_FAILED(rv)) {
+        NS_WARNING("FlushCurrentWord failed, line-breaks may be wrong");
+      }
+      
+      
+      
+      if (mWordBreak == mozilla::intl::LineBreaker::kWordBreak_BreakAll) {
+        mBreakHere = true;
+      }
+    }
+    mWordBreak = aMode;
+  }
 
  private:
   

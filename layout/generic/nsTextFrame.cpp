@@ -2572,22 +2572,6 @@ void BuildTextRunsScanner::SetupBreakSinksForTextRun(gfxTextRun* aTextRun,
                                                      const void* aTextPtr) {
   using mozilla::intl::LineBreaker;
 
-  auto wordBreak =
-    mMappedFlows[0].mStartFrame->StyleText()->EffectiveWordBreak();
-  switch (wordBreak) {
-    case StyleWordBreak::BreakAll:
-      mLineBreaker.SetWordBreak(LineBreaker::kWordBreak_BreakAll);
-      break;
-    case StyleWordBreak::KeepAll:
-      mLineBreaker.SetWordBreak(LineBreaker::kWordBreak_KeepAll);
-      break;
-    case StyleWordBreak::Normal:
-    default:
-      MOZ_ASSERT(wordBreak == StyleWordBreak::Normal);
-      mLineBreaker.SetWordBreak(LineBreaker::kWordBreak_Normal);
-      break;
-  }
-
   
   const nsStyleFont* styleFont = mMappedFlows[0].mStartFrame->StyleFont();
   
@@ -2601,6 +2585,25 @@ void BuildTextRunsScanner::SetupBreakSinksForTextRun(gfxTextRun* aTextRun,
 
   for (uint32_t i = 0; i < mMappedFlows.Length(); ++i) {
     MappedFlow* mappedFlow = &mMappedFlows[i];
+    
+    
+    
+    auto wordBreak =
+      mappedFlow->mStartFrame->StyleText()->EffectiveWordBreak();
+    switch (wordBreak) {
+      case StyleWordBreak::BreakAll:
+        mLineBreaker.SetWordBreak(LineBreaker::kWordBreak_BreakAll);
+        break;
+      case StyleWordBreak::KeepAll:
+        mLineBreaker.SetWordBreak(LineBreaker::kWordBreak_KeepAll);
+        break;
+      case StyleWordBreak::Normal:
+      default:
+        MOZ_ASSERT(wordBreak == StyleWordBreak::Normal);
+        mLineBreaker.SetWordBreak(LineBreaker::kWordBreak_Normal);
+        break;
+    }
+
     uint32_t offset = iter.GetSkippedOffset();
     gfxSkipCharsIterator iterNext = iter;
     iterNext.AdvanceOriginal(mappedFlow->GetContentEnd() -
