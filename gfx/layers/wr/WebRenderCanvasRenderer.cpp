@@ -83,7 +83,7 @@ void WebRenderCanvasRendererAsync::Destroy() {
 
 void WebRenderCanvasRendererAsync::
     UpdateCompositableClientForEmptyTransaction() {
-  UpdateCompositableClient(mManager->GetRenderRoot());
+  UpdateCompositableClient();
   if (mPipelineId.isSome()) {
     
     

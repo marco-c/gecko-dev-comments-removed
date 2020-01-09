@@ -12,7 +12,6 @@
 
 #include "base/platform_thread.h"  
 #include "LayersTypes.h"
-#include "APZTypes.h"
 #include "mozilla/layers/APZTestData.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/StaticMutex.h"
@@ -22,6 +21,10 @@
 #include "Units.h"
 
 namespace mozilla {
+
+namespace wr {
+struct WrWindowId;
+}  
 
 namespace layers {
 
@@ -60,7 +63,7 @@ class APZUpdater {
 
   void ClearTree(LayersId aRootLayersId);
   void UpdateFocusState(LayersId aRootLayerTreeId,
-                        WRRootId aOriginatingWrRootId,
+                        LayersId aOriginatingLayersId,
                         const FocusTarget& aFocusTarget);
   void UpdateHitTestingTree(LayersId aRootLayerTreeId, Layer* aRoot,
                             bool aIsFirstPaint, LayersId aOriginatingLayersId,
@@ -73,8 +76,8 @@ class APZUpdater {
 
 
 
-  void UpdateScrollDataAndTreeState(WRRootId aRootLayerTreeId,
-                                    WRRootId aOriginatingWrRootId,
+  void UpdateScrollDataAndTreeState(LayersId aRootLayerTreeId,
+                                    LayersId aOriginatingLayersId,
                                     const wr::Epoch& aEpoch,
                                     WebRenderScrollData&& aScrollData);
   
@@ -83,26 +86,26 @@ class APZUpdater {
 
 
 
-  void UpdateScrollOffsets(WRRootId aRootLayerTreeId,
-                           WRRootId aOriginatingWrRootId,
+  void UpdateScrollOffsets(LayersId aRootLayerTreeId,
+                           LayersId aOriginatingLayersId,
                            ScrollUpdatesMap&& aUpdates,
                            uint32_t aPaintSequenceNumber);
 
-  void NotifyLayerTreeAdopted(WRRootId aWrRootId,
+  void NotifyLayerTreeAdopted(LayersId aLayersId,
                               const RefPtr<APZUpdater>& aOldUpdater);
-  void NotifyLayerTreeRemoved(WRRootId aWrRootId);
+  void NotifyLayerTreeRemoved(LayersId aLayersId);
 
-  bool GetAPZTestData(WRRootId aWrRootId, APZTestData* aOutData);
+  bool GetAPZTestData(LayersId aLayersId, APZTestData* aOutData);
 
-  void SetTestAsyncScrollOffset(WRRootId aWrRootId,
+  void SetTestAsyncScrollOffset(LayersId aLayersId,
                                 const ScrollableLayerGuid::ViewID& aScrollId,
                                 const CSSPoint& aOffset);
-  void SetTestAsyncZoom(WRRootId aWrRootId,
+  void SetTestAsyncZoom(LayersId aLayersId,
                         const ScrollableLayerGuid::ViewID& aScrollId,
                         const LayerToParentLayerScale& aZoom);
 
   
-  const WebRenderScrollData* GetScrollData(WRRootId aWrRootId) const;
+  const WebRenderScrollData* GetScrollData(LayersId aLayersId) const;
 
   
 
@@ -120,15 +123,7 @@ class APZUpdater {
 
 
 
-
-
-
-
-
-
-
-  void RunOnUpdaterThread(UpdaterQueueSelector aSelector,
-                          already_AddRefed<Runnable> aTask);
+  void RunOnUpdaterThread(LayersId aLayersId, already_AddRefed<Runnable> aTask);
 
   
 
@@ -145,7 +140,8 @@ class APZUpdater {
 
 
 
-  void RunOnControllerThread(UpdaterQueueSelector aSelector,
+
+  void RunOnControllerThread(LayersId aLayersId,
                              already_AddRefed<Runnable> aTask);
 
  protected:
@@ -163,7 +159,7 @@ class APZUpdater {
 
   
   
-  std::unordered_map<WRRootId, WebRenderScrollData, WRRootId::HashFn>
+  std::unordered_map<LayersId, WebRenderScrollData, LayersId::HashFn>
       mScrollData;
 
   
@@ -189,13 +185,12 @@ class APZUpdater {
     
     
     
-    
     bool IsBlocked() const;
   };
 
   
   
-  std::unordered_map<WRRootId, EpochState, WRRootId::HashFn> mEpochData;
+  std::unordered_map<LayersId, EpochState, LayersId::HashFn> mEpochData;
 
   
   
@@ -219,19 +214,13 @@ class APZUpdater {
   
   
   
-  
-  
-  
   struct QueuedTask {
-    UpdaterQueueSelector mSelector;
+    LayersId mLayersId;
     RefPtr<Runnable> mRunnable;
   };
 
   
   Mutex mQueueLock;
-  
-  
-  
   
   
   

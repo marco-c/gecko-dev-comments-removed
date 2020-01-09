@@ -104,7 +104,7 @@ use std::cell::RefCell;
 use texture_cache::TextureCache;
 use thread_profiler::{register_thread_with_profiler, write_profile};
 use tiling::{AlphaRenderTarget, ColorRenderTarget};
-use tiling::{BlitJob, BlitJobSource, RenderPassKind, RenderTargetList};
+use tiling::{BlitJob, BlitJobSource, RenderPass, RenderPassKind, RenderTargetList};
 use tiling::{Frame, RenderTarget, RenderTargetKind, TextureCacheRenderTarget};
 #[cfg(not(feature = "pathfinder"))]
 use tiling::GlyphJob;
@@ -2184,6 +2184,11 @@ impl Renderer {
         }
     }
 
+    
+    pub fn current_epoch(&self, pipeline_id: PipelineId) -> Option<Epoch> {
+        self.pipeline_info.epochs.get(&pipeline_id).cloned()
+    }
+
     pub fn flush_pipeline_info(&mut self) -> PipelineInfo {
         mem::replace(&mut self.pipeline_info, PipelineInfo::default())
     }
@@ -2203,8 +2208,8 @@ impl Renderer {
         while let Ok(msg) = self.result_rx.try_recv() {
             match msg {
                 ResultMsg::PublishPipelineInfo(mut pipeline_info) => {
-                    for ((pipeline_id, document_id), epoch) in pipeline_info.epochs {
-                        self.pipeline_info.epochs.insert((pipeline_id, document_id), epoch);
+                    for (pipeline_id, epoch) in pipeline_info.epochs {
+                        self.pipeline_info.epochs.insert(pipeline_id, epoch);
                     }
                     self.pipeline_info.removed_pipelines.extend(pipeline_info.removed_pipelines.drain(..));
                 }
@@ -2602,6 +2607,32 @@ impl Renderer {
         (cpu_profiles, gpu_profiles)
     }
 
+    
+    
+    
+    fn are_documents_intersecting_depth(&self) -> bool {
+        let document_rects = self.active_documents
+            .iter()
+            .filter_map(|&(_, ref render_doc)| {
+                match render_doc.frame.passes.last() {
+                    Some(&RenderPass { kind: RenderPassKind::MainFramebuffer(ref target), .. })
+                        if target.needs_depth() => Some(render_doc.frame.framebuffer_rect),
+                    _ => None,
+                }
+            })
+            .collect::<SmallVec<[_; 3]>>();
+
+        for (i, rect) in document_rects.iter().enumerate() {
+            for other in &document_rects[i+1 ..] {
+                if rect.intersects(other) {
+                    return true
+                }
+            }
+        }
+
+        false
+    }
+
     pub fn notify_slow_frame(&mut self) {
         self.slow_frame_indicator.changed();
     }
@@ -2692,6 +2723,10 @@ impl Renderer {
 
         profile_timers.cpu_time.profile(|| {
             
+            
+            let clear_depth_per_doc = self.are_documents_intersecting_depth();
+
+            
             let mut active_documents = mem::replace(&mut self.active_documents, Vec::default());
             
             active_documents.sort_by_key(|&(_, ref render_doc)| render_doc.frame.layer);
@@ -2701,7 +2736,6 @@ impl Renderer {
                 self.owned_external_images.iter().map(|(key, value)| (*key, value.clone()))
             );
 
-            let last_document_index = active_documents.len() - 1;
             for (doc_index, (_, RenderedDocument { ref mut frame, .. })) in active_documents.iter_mut().enumerate() {
                 frame.profile_counters.reset_targets();
                 self.prepare_gpu_cache(frame);
@@ -2709,12 +2743,41 @@ impl Renderer {
                     "Received frame depends on a later GPU cache epoch ({:?}) than one we received last via `UpdateGpuCache` ({:?})",
                     frame.gpu_cache_frame_id, self.gpu_cache_frame_id);
 
+                
+                
+                
+                
+                
+                
+
+                
+                let mut fb_clear_color = if doc_index == 0 {
+                    self.clear_color
+                } else {
+                    None
+                };
+
+                
+                
+                if fb_clear_color.is_none() {
+                    fb_clear_color = frame.background_color;
+                }
+
+                
+                
+                let fb_clear_depth = if clear_depth_per_doc || doc_index == 0 {
+                    Some(1.0)
+                } else {
+                    None
+                };
+
                 self.draw_tile_frame(
                     frame,
                     framebuffer_size,
                     cpu_frame_id,
                     &mut results.stats,
-                    doc_index == 0,
+                    fb_clear_color,
+                    fb_clear_depth,
                 );
 
                 if let Some(_) = framebuffer_size {
@@ -2727,14 +2790,6 @@ impl Renderer {
                 let dirty_regions =
                     mem::replace(&mut frame.recorded_dirty_regions, Vec::new());
                 results.recorded_dirty_regions.extend(dirty_regions);
-
-                
-                
-                
-                
-                if doc_index != last_document_index {
-                    self.texture_resolver.end_pass(&mut self.device, None, None);
-                }
             }
 
             self.unlock_external_images();
@@ -4311,7 +4366,8 @@ impl Renderer {
         framebuffer_size: Option<FramebufferIntSize>,
         frame_id: GpuFrameId,
         stats: &mut RendererStats,
-        clear_framebuffer: bool,
+        fb_clear_color: Option<ColorF>,
+        fb_clear_depth: Option<f32>,
     ) {
         let _gm = self.gpu_profile.start_marker("tile frame draw");
 
@@ -4356,24 +4412,15 @@ impl Renderer {
                             ORTHO_FAR_PLANE,
                         );
 
-                        let draw_target = DrawTarget::Default {
-                            rect: frame.framebuffer_rect,
-                            total_size: framebuffer_size,
-                        };
-                        if clear_framebuffer {
-                            self.device.bind_draw_target(draw_target);
-                            self.device.enable_depth_write();
-                            self.device.clear_target(self.clear_color.map(|color| color.to_array()),
-                                                     Some(1.0),
-                                                     None);
-                        }
-
                         self.draw_color_target(
-                            draw_target,
+                            DrawTarget::Default {
+                                rect: frame.framebuffer_rect,
+                                total_size: framebuffer_size,
+                            },
                             target,
                             frame.content_origin,
-                            None,
-                            None,
+                            fb_clear_color.map(|color| color.to_array()),
+                            fb_clear_depth,
                             &frame.render_tasks,
                             &projection,
                             frame_id,
@@ -4880,11 +4927,11 @@ impl Renderer {
         let y0: f32 = 30.0;
         let mut y = y0;
         let mut text_width = 0.0;
-        for ((pipeline, document_id), epoch) in  &self.pipeline_info.epochs {
+        for (pipeline, epoch) in  &self.pipeline_info.epochs {
             y += dy;
             let w = debug_renderer.add_text(
                 x0, y,
-                &format!("({:?}, {:?}): {:?}", pipeline, document_id, epoch),
+                &format!("{:?}: {:?}", pipeline, epoch),
                 ColorU::new(255, 255, 0, 255),
                 None,
             ).size.width;
@@ -5173,11 +5220,11 @@ pub trait SceneBuilderHooks {
     
     
     
-    fn post_scene_swap(&self, document_id: DocumentId, info: PipelineInfo, sceneswap_time: u64);
+    fn post_scene_swap(&self, info: PipelineInfo, sceneswap_time: u64);
     
     
     
-    fn post_resource_update(&self, document_id: DocumentId);
+    fn post_resource_update(&self);
     
     
     
@@ -5203,7 +5250,7 @@ pub trait AsyncPropertySampler {
     
     
     
-    fn sample(&self, document_id: DocumentId) -> Vec<FrameMsg>;
+    fn sample(&self) -> Vec<FrameMsg>;
     
     
     fn deregister(&self);
@@ -5403,8 +5450,8 @@ impl OutputImageHandler for () {
 
 #[derive(Default)]
 pub struct PipelineInfo {
-    pub epochs: FastHashMap<(PipelineId, DocumentId), Epoch>,
-    pub removed_pipelines: Vec<(PipelineId, DocumentId)>,
+    pub epochs: FastHashMap<PipelineId, Epoch>,
+    pub removed_pipelines: Vec<PipelineId>,
 }
 
 impl Renderer {

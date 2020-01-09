@@ -129,7 +129,7 @@ class nsDisplayCanvas final : public nsDisplayItem {
         RefPtr<WebRenderCanvasData> canvasData =
             aManager->CommandBuilder()
                 .CreateOrRecycleWebRenderUserData<WebRenderCanvasData>(
-                    this, aBuilder.GetRenderRoot(), &isRecycled);
+                    this, &isRecycled);
         nsHTMLCanvasFrame* canvasFrame =
             static_cast<nsHTMLCanvasFrame*>(mFrame);
         if (!canvasFrame->UpdateWebRenderCanvasData(aDisplayListBuilder,
@@ -140,7 +140,7 @@ class nsDisplayCanvas final : public nsDisplayItem {
             static_cast<WebRenderCanvasRendererAsync*>(
                 canvasData->GetCanvasRenderer());
         MOZ_ASSERT(data);
-        data->UpdateCompositableClient(aBuilder.GetRenderRoot());
+        data->UpdateCompositableClient();
 
         
         
@@ -187,8 +187,7 @@ class nsDisplayCanvas final : public nsDisplayItem {
         aManager->WrBridge()->AddWebRenderParentCommand(
             OpUpdateAsyncImagePipeline(data->GetPipelineId().value(), scBounds,
                                        scTransform, scaleToSize, filter,
-                                       mixBlendMode),
-            aBuilder.GetRenderRoot());
+                                       mixBlendMode));
         break;
       }
       case CanvasContextType::ImageBitmap: {

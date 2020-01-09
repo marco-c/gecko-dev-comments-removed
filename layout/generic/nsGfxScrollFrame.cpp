@@ -2865,18 +2865,11 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
             
             
             
-            wr::RenderRoot renderRoot = wr::RenderRoot::Default;
-            if (XRE_IsContentProcess()) {
-              renderRoot = gfxUtils::GetContentRenderRoot();
-            } else {
-              renderRoot = gfxUtils::RecursivelyGetRenderRootForFrame(mOuter);
-            }
             success = manager->SetPendingScrollUpdateForNextTransaction(
                 id,
                 {mScrollGeneration, CSSPoint::FromAppUnits(GetScrollPosition()),
                  CSSPoint::FromAppUnits(GetApzScrollPosition()),
-                 mLastScrollOrigin == nsGkAtoms::relative},
-                renderRoot);
+                 mLastScrollOrigin == nsGkAtoms::relative});
             if (success) {
               schedulePaint = false;
               mOuter->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);

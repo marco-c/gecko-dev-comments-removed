@@ -42,7 +42,6 @@
 
 #include "nsBoxFrame.h"
 
-#include "gfxPrefs.h"
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
 #include "nsBoxLayoutState.h"
@@ -70,7 +69,6 @@
 #include "nsITheme.h"
 #include "nsTransform2D.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "nsDisplayList.h"
 #include "mozilla/Preferences.h"
 #include "nsStyleConsts.h"
@@ -1047,13 +1045,6 @@ nsresult nsBoxFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
 void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                   const nsDisplayListSet& aLists) {
   bool forceLayer = false;
-  
-  
-  
-  
-  
-  wr::RenderRoot renderRoot =
-      gfxUtils::GetRenderRootForFrame(this).valueOr(wr::RenderRoot::Default);
 
   if (GetContent()->IsXULElement()) {
     
@@ -1071,14 +1062,12 @@ void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   nsDisplayListCollection tempLists(aBuilder);
-  const nsDisplayListSet& destination =
-      (forceLayer || renderRoot != wr::RenderRoot::Default) ? tempLists
-                                                            : aLists;
+  const nsDisplayListSet& destination = forceLayer ? tempLists : aLists;
 
   DisplayBorderBackgroundOutline(aBuilder, destination);
 
   Maybe<nsDisplayListBuilder::AutoContainerASRTracker> contASRTracker;
-  if (forceLayer || renderRoot != wr::RenderRoot::Default) {
+  if (forceLayer) {
     contASRTracker.emplace(aBuilder);
   }
 
@@ -1087,7 +1076,7 @@ void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   DisplaySelectionOverlay(aBuilder, destination.Content());
 
-  if (forceLayer || renderRoot != wr::RenderRoot::Default) {
+  if (forceLayer) {
     
     
     
@@ -1099,21 +1088,15 @@ void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     masterList.AppendToTop(tempLists.Content());
     masterList.AppendToTop(tempLists.PositionedDescendants());
     masterList.AppendToTop(tempLists.Outlines());
+
     const ActiveScrolledRoot* ownLayerASR = contASRTracker->GetContainerASR();
+
     DisplayListClipState::AutoSaveRestore ownLayerClipState(aBuilder);
 
-    if (forceLayer) {
-      MOZ_ASSERT(renderRoot == wr::RenderRoot::Default);
-      
-      aLists.Content()->AppendToTop(MakeDisplayItem<nsDisplayOwnLayer>(
-          aBuilder, this, &masterList, ownLayerASR,
-          nsDisplayOwnLayerFlags::eNone, mozilla::layers::ScrollbarData{}, true,
-          true));
-    } else {
-      MOZ_ASSERT(!XRE_IsContentProcess());
-      aLists.Content()->AppendToTop(MakeDisplayItem<nsDisplayRenderRoot>(
-          aBuilder, this, &masterList, ownLayerASR, renderRoot));
-    }
+    
+    aLists.Content()->AppendToTop(MakeDisplayItem<nsDisplayOwnLayer>(
+        aBuilder, this, &masterList, ownLayerASR, nsDisplayOwnLayerFlags::eNone,
+        mozilla::layers::ScrollbarData{}, true, true));
   }
 }
 

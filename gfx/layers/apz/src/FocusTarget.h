@@ -11,7 +11,6 @@
 
 #include "mozilla/DefineEnum.h"                  
 #include "mozilla/layers/ScrollableLayerGuid.h"  
-#include "mozilla/webrender/WebRenderTypes.h"    
 #include "mozilla/Variant.h"                     
 
 class nsIPresShell;
@@ -29,21 +28,10 @@ class FocusTarget final {
  public:
   struct ScrollTargets {
     ScrollableLayerGuid::ViewID mHorizontal;
-    wr::RenderRoot mHorizontalRenderRoot;
     ScrollableLayerGuid::ViewID mVertical;
-    wr::RenderRoot mVerticalRenderRoot;
 
     bool operator==(const ScrollTargets& aRhs) const {
-      bool ret =
-          (mHorizontal == aRhs.mHorizontal && mVertical == aRhs.mVertical);
-      if (ret) {
-        
-        
-        
-        MOZ_ASSERT(mHorizontalRenderRoot == aRhs.mHorizontalRenderRoot &&
-                   mVerticalRenderRoot == aRhs.mVerticalRenderRoot);
-      }
-      return ret;
+      return mHorizontal == aRhs.mHorizontal && mVertical == aRhs.mVertical;
     }
   };
 

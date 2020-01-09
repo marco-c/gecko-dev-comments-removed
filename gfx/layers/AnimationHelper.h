@@ -8,10 +8,9 @@
 #define mozilla_layers_AnimationHelper_h
 
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/ComputedTimingFunction.h"    
-#include "mozilla/layers/LayersMessages.h"     
-#include "mozilla/webrender/WebRenderTypes.h"  
-#include "mozilla/TimeStamp.h"                 
+#include "mozilla/ComputedTimingFunction.h"  
+#include "mozilla/layers/LayersMessages.h"   
+#include "mozilla/TimeStamp.h"               
 #include "mozilla/TimingParams.h"
 #include "X11UndefineNone.h"
 
@@ -134,8 +133,6 @@ class CompositorAnimationStorage final {
   typedef nsClassHashtable<nsUint64HashKey, AnimatedValue> AnimatedValueTable;
   typedef nsClassHashtable<nsUint64HashKey, nsTArray<PropertyAnimationGroup>>
       AnimationsTable;
-  typedef nsDataHashtable<nsUint64HashKey, wr::RenderRoot>
-      AnimationsRenderRootsTable;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorAnimationStorage)
  public:
@@ -181,8 +178,7 @@ class CompositorAnimationStorage final {
   
 
 
-  void SetAnimations(uint64_t aId, const AnimationArray& aAnimations,
-                     wr::RenderRoot aRenderRoot);
+  void SetAnimations(uint64_t aId, const AnimationArray& aAnimations);
 
   
 
@@ -198,10 +194,6 @@ class CompositorAnimationStorage final {
 
   uint32_t AnimationsCount() const { return mAnimations.Count(); }
 
-  wr::RenderRoot AnimationRenderRoot(const uint64_t& aId) const {
-    return mAnimationRenderRoots.Get(aId);
-  }
-
   
 
 
@@ -214,7 +206,6 @@ class CompositorAnimationStorage final {
  private:
   AnimatedValueTable mAnimatedValues;
   AnimationsTable mAnimations;
-  AnimationsRenderRootsTable mAnimationRenderRoots;
 };
 
 

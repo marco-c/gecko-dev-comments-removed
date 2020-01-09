@@ -32,7 +32,6 @@ StackingContextHelper::StackingContextHelper(
       mIsPreserve3D(aParams.transform_style == wr::TransformStyle::Preserve3D),
       mRasterizeLocally(aParams.mRasterizeLocally ||
                         aParentSC.mRasterizeLocally) {
-  mOrigin = aParentSC.mOrigin + aBounds.TopLeft();
   
   
   gfx::Matrix transform2d;
