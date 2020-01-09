@@ -484,7 +484,8 @@ WebConsoleOutputWrapper.prototype = {
     
     if (ui.persistLogs || this.hud.isBrowserConsole) {
       
-      packet._type = true;
+      
+      packet.type = "will-navigate";
       this.dispatchMessageAdd(packet);
     } else {
       this.hud.webConsoleClient.clearNetworkRequests();
