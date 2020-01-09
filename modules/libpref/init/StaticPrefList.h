@@ -551,6 +551,27 @@ VARCACHE_PREF(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+VARCACHE_PREF(
+  "dom.script_loader.bytecode_cache.strategy",
+   dom_script_loader_bytecode_cache_strategy,
+  int32_t, 0
+)
+
+
+
+
 #ifdef MOZILLA_OFFICIAL
 # define PREF_VALUE false
 #else

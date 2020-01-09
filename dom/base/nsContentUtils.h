@@ -3190,10 +3190,6 @@ class nsContentUtils {
 
   
   
-  static int32_t BytecodeCacheStrategy() { return sBytecodeCacheStrategy; }
-
-  
-  
   static nsCString& JSBytecodeMimeType() { return *sJSBytecodeMimeType; }
 
   
@@ -3403,7 +3399,6 @@ class nsContentUtils {
 #ifndef RELEASE_OR_BETA
   static bool sBypassCSSOMOriginCheck;
 #endif
-  static int32_t sBytecodeCacheStrategy;
 
   class UserInteractionObserver;
   static UserInteractionObserver* sUserInteractionObserver;
