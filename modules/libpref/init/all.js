@@ -5196,8 +5196,6 @@ pref("extensions.webextensions.performanceCountersMaxAge", 5000);
 
 pref("extensions.htmlaboutaddons.enabled", false);
 
-pref("extensions.htmlaboutaddons.inline-options.enabled", false);
-
 
 
 
@@ -6042,6 +6040,10 @@ pref("dom.sidebar.enabled", true);
 
 
 pref("fission.rebuild_frameloaders_on_remoteness_change", true);
+
+
+
+pref("fission.preserve_browsing_contexts", false);
 
 
 

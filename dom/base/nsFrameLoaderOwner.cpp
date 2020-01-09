@@ -45,8 +45,8 @@ void nsFrameLoaderOwner::ChangeRemoteness(
     
     
     
-    if (!aOptions.mReplaceBrowsingContext &&
-        !isChromeRemoteToLocal) {
+    if (!aOptions.mReplaceBrowsingContext && !isChromeRemoteToLocal &&
+        Preferences::GetBool("fission.preserve_browsing_contexts", false)) {
       bc = mFrameLoader->GetBrowsingContext();
       mFrameLoader->SkipBrowsingContextDetach();
     }
