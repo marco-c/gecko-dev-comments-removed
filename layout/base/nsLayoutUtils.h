@@ -383,6 +383,7 @@ class nsLayoutUtils {
 
 
   static nsIFrame* GetStyleFrame(nsIFrame* aPrimaryFrame);
+  static const nsIFrame* GetStyleFrame(const nsIFrame* aPrimaryFrame);
 
   
 
@@ -391,6 +392,12 @@ class nsLayoutUtils {
 
 
   static nsIFrame* GetStyleFrame(const nsIContent* aContent);
+
+  
+
+
+
+  static nsIFrame* GetPrimaryFrameFromStyleFrame(nsIFrame* aStyleFrame);
 
   
 

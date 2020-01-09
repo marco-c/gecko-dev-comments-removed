@@ -1420,14 +1420,18 @@ nsIFrame* nsLayoutUtils::GetPageFrame(nsIFrame* aFrame) {
 }
 
 
-nsIFrame* nsLayoutUtils::GetStyleFrame(nsIFrame* aFrame) {
-  if (aFrame->IsTableWrapperFrame()) {
-    nsIFrame* inner = aFrame->PrincipalChildList().FirstChild();
+nsIFrame* nsLayoutUtils::GetStyleFrame(nsIFrame* aPrimaryFrame) {
+  if (aPrimaryFrame->IsTableWrapperFrame()) {
+    nsIFrame* inner = aPrimaryFrame->PrincipalChildList().FirstChild();
     
     return inner;
   }
 
-  return aFrame;
+  return aPrimaryFrame;
+}
+
+const nsIFrame* nsLayoutUtils::GetStyleFrame(const nsIFrame* aPrimaryFrame) {
+  return nsLayoutUtils::GetStyleFrame(const_cast<nsIFrame*>(aPrimaryFrame));
 }
 
 nsIFrame* nsLayoutUtils::GetStyleFrame(const nsIContent* aContent) {
@@ -1437,6 +1441,12 @@ nsIFrame* nsLayoutUtils::GetStyleFrame(const nsIContent* aContent) {
   }
 
   return nsLayoutUtils::GetStyleFrame(frame);
+}
+
+
+nsIFrame* nsLayoutUtils::GetPrimaryFrameFromStyleFrame(nsIFrame* aStyleFrame) {
+  nsIFrame* parent = aStyleFrame->GetParent();
+  return parent && parent->IsTableWrapperFrame() ? parent : aStyleFrame;
 }
 
 
