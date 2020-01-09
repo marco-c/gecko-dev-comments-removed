@@ -18,6 +18,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarMuxer: "resource:///modules/UrlbarUtils.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
+  UrlbarProviderExtension: "resource:///modules/UrlbarUtils.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -71,6 +72,51 @@ class ProvidersManager {
       let {[symbol]: muxer} = ChromeUtils.import(module, {});
       this.registerMuxer(muxer);
     }
+
+    
+    this._extensionListeners = new Map([
+      ["queryready", new Map()],
+    ]);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addExtensionListener(providerName, eventName, callback) {
+    
+    
+    if (eventName == "queryready") {
+      let provider = new UrlbarProviderExtension(providerName);
+      this.registerProvider(provider);
+    }
+    this._extensionListeners.get(eventName).set(providerName, callback);
+  }
+
+  
+
+
+
+
+
+
+
+
+  removeExtensionListener(providerName, eventName) {
+    this._extensionListeners.get(eventName).delete(providerName);
+    if (eventName == "queryready") {
+      this.unregisterProvider({name: providerName}, true);
+    }
   }
 
   
@@ -96,10 +142,15 @@ class ProvidersManager {
 
 
 
-  unregisterProvider(provider) {
+
+
+
+  unregisterProvider(provider, isExtensionRequest = false) {
     logger.info(`Unregistering provider ${provider.name}`);
-    let index = this.providers.indexOf(provider);
-    if (index != -1) {
+    let index = this.providers.findIndex(p => p.name == provider.name);
+    if (index != -1 &&
+        (!isExtensionRequest ||
+         this.providers[index].type == UrlbarUtils.PROVIDER_TYPE.EXTENSION)) {
       this.providers.splice(index, 1);
     }
   }
@@ -147,6 +198,37 @@ class ProvidersManager {
     let providers = queryContext.providers ?
                       this.providers.filter(p => queryContext.providers.includes(p.name)) :
                       this.providers;
+
+    
+    UrlbarTokenizer.tokenize(queryContext);
+
+    
+    
+    
+    queryContext.acceptableSources = getAcceptableMatchSources(queryContext);
+    logger.debug(`Acceptable sources ${queryContext.acceptableSources}`);
+
+    
+    for (let [name, listener] of this._extensionListeners.get("queryready")) {
+      let behavior = "inactive";
+      
+      
+      let timeoutPromise = new Promise((resolve, reject) => new SkippableTimer(() => {
+        Cu.reportError("An extension didn't handle the queryready callback");
+        reject();
+      }, 50));
+      try {
+        behavior = await Promise.race([timeoutPromise, listener(queryContext)]);
+      } catch (ex) {}
+      
+      let provider =
+        UrlbarProvidersManager.providers.find(p => p.name == name);
+      if (provider) {
+        provider.behavior = behavior;
+      } else {
+        Cu.reportError("Couldn't find expected urlbar provider " + name);
+      }
+    }
 
     let query = new Query(queryContext, controller, muxer, providers);
     this.queries.set(queryContext, query);
@@ -221,9 +303,7 @@ class Query {
 
     
     
-    
-    
-    this.acceptableSources = [];
+    this.acceptableSources = queryContext.acceptableSources.slice();
   }
 
   
@@ -234,12 +314,6 @@ class Query {
       throw new Error("This Query has been started already");
     }
     this.started = true;
-    UrlbarTokenizer.tokenize(this.context);
-
-    this.acceptableSources = getAcceptableMatchSources(this.context);
-    logger.debug(`Acceptable sources ${this.acceptableSources}`);
-    
-    this.context.acceptableSources = this.acceptableSources.slice();
 
     
     let providers = this.providers.filter(p => p.isActive(this.context));
