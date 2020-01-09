@@ -1904,9 +1904,8 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceBinaryExpression(
   }
 
   ParseNode* result;
-  if (left->isKind(pnk) &&
-      pnk != ParseNodeKind::
-                 PowExpr ) {
+  
+  if (left->isKind(pnk) && pnk != ParseNodeKind::PowExpr) {
     
     left->template as<ListNode>().appendWithoutOrderAssumption(right);
     result = left;
@@ -2077,8 +2076,9 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceCallExpression(
   if (PropertyName* prop = factory_.maybeDottedProperty(callee)) {
     if (prop == cx_->names().apply) {
       op = JSOP_FUNAPPLY;
-      if (parseContext_->isFunctionBox())
+      if (parseContext_->isFunctionBox()) {
         parseContext_->functionBox()->usesApply = true;
+      }
     } else if (prop == cx_->names().call) {
       op = JSOP_FUNCALL;
     }
@@ -2853,8 +2853,8 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceForInStatement(
                  factory_.newForInOrOfHead(ParseNodeKind::ForIn, left, right,
                                            tokenizer_->pos(start)));
   ParseNode* result;
-  BINJS_TRY_VAR(result,
-                factory_.newForStatement(start, forHead, body,  0));
+  BINJS_TRY_VAR(result, factory_.newForStatement(start, forHead, body,
+                                                  0));
 
   if (!scope.isEmpty()) {
     BINJS_TRY_DECL(bindings,
@@ -2901,8 +2901,8 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceForStatement(
   BINJS_TRY_DECL(
       forHead, factory_.newForHead(init, test, update, tokenizer_->pos(start)));
   ParseNode* result;
-  BINJS_TRY_VAR(
-      result, factory_.newForStatement(start, forHead, body,  0));
+  BINJS_TRY_VAR(result, factory_.newForStatement(start, forHead, body,
+                                                  0));
 
   if (!scope.isEmpty()) {
     BINJS_TRY_DECL(bindings,
@@ -3928,8 +3928,8 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceSwitchStatement(
   BINJS_MOZ_TRY_DECL(cases, parseListOfSwitchCase());
 
   BINJS_TRY_DECL(scope, factory_.newLexicalScope(nullptr, cases));
-  BINJS_TRY_DECL(
-      result, factory_.newSwitchStatement(start, discriminant, scope, false));
+  BINJS_TRY_DECL(result, factory_.newSwitchStatement(start, discriminant, scope,
+                                                      false));
   return result;
 }
 
@@ -3965,8 +3965,8 @@ BinASTParser<Tok>::parseInterfaceSwitchStatementWithDefault(
     iter = next;
   }
   BINJS_TRY_DECL(scope, factory_.newLexicalScope(nullptr, cases));
-  BINJS_TRY_DECL(result,
-                 factory_.newSwitchStatement(start, discriminant, scope, true));
+  BINJS_TRY_DECL(result, factory_.newSwitchStatement(start, discriminant, scope,
+                                                      true));
   return result;
 }
 
