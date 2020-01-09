@@ -204,6 +204,13 @@ struct ForOfPIC {
                           bool* optimized);
 
     
+    bool tryOptimizeArrayIteratorNext(JSContext* cx, bool* optimized);
+
+    void trace(JSTracer* trc);
+    void sweep(FreeOp* fop);
+
+   private:
+    
     
     bool isArrayStateStillSane();
 
@@ -215,10 +222,6 @@ struct ForOfPIC {
               canonicalNextFunc_);
     }
 
-    void trace(JSTracer* trc);
-    void sweep(FreeOp* fop);
-
-   private:
     
     bool hasMatchingStub(ArrayObject* obj);
 

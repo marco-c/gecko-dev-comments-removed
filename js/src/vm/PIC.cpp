@@ -159,6 +159,39 @@ bool js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx,
   return true;
 }
 
+bool js::ForOfPIC::Chain::tryOptimizeArrayIteratorNext(JSContext* cx,
+                                                       bool* optimized) {
+  MOZ_ASSERT(optimized);
+
+  *optimized = false;
+
+  if (!initialized_) {
+    
+    if (!initialize(cx)) {
+      return false;
+    }
+  } else if (!disabled_ && !isArrayNextStillSane()) {
+    
+    reset();
+
+    if (!initialize(cx)) {
+      return false;
+    }
+  }
+  MOZ_ASSERT(initialized_);
+
+  
+  if (disabled_) {
+    return true;
+  }
+
+  
+  MOZ_ASSERT(isArrayNextStillSane());
+
+  *optimized = true;
+  return true;
+}
+
 bool js::ForOfPIC::Chain::hasMatchingStub(ArrayObject* obj) {
   
   MOZ_ASSERT(initialized_ && !disabled_);
@@ -291,8 +324,8 @@ const Class ForOfPIC::class_ = {
  NativeObject* js::ForOfPIC::createForOfPICObject(
     JSContext* cx, Handle<GlobalObject*> global) {
   cx->check(global);
-  NativeObject* obj =
-      NewNativeObjectWithGivenProto(cx, &ForOfPIC::class_, nullptr);
+  NativeObject* obj = NewNativeObjectWithGivenProto(cx, &ForOfPIC::class_,
+                                                    nullptr, TenuredObject);
   if (!obj) {
     return nullptr;
   }

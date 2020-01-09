@@ -1507,6 +1507,26 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
             ThrowTypeError(JSMSG_NOT_ITERABLE, DecompileArg(0, source));
 
         
+        
+        if (!mapping && IsTypedArrayConstructor(C)) {
+            
+
+            
+            if (usingIterator === ArrayValues && IsPackedArray(source) &&
+                ArrayIteratorPrototypeOptimizable())
+            {
+                
+                var targetObj = new C(source.length);
+
+                
+                TypedArrayInitFromPackedArray(targetObj, source);
+
+                
+                return targetObj;
+            }
+        }
+
+        
         var values = IterableToList(source, usingIterator);
 
         
