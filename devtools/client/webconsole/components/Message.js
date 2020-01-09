@@ -27,6 +27,7 @@ class Message extends Component {
       open: PropTypes.bool,
       collapsible: PropTypes.bool,
       collapseTitle: PropTypes.string,
+      onToggle: PropTypes.func,
       source: PropTypes.string.isRequired,
       type: PropTypes.string.isRequired,
       level: PropTypes.string.isRequired,
@@ -104,8 +105,13 @@ class Message extends Component {
   }
 
   toggleMessage(e) {
-    const { open, dispatch, messageId } = this.props;
-    if (open) {
+    const { open, dispatch, messageId, onToggle } = this.props;
+
+    
+    
+    if (onToggle) {
+      onToggle(messageId, e);
+    } else if (open) {
       dispatch(actions.messageClose(messageId));
     } else {
       dispatch(actions.messageOpen(messageId));

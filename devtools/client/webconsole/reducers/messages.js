@@ -38,6 +38,9 @@ const MessageState = overrides => Object.freeze(Object.assign({
   
   messagesById: new Map(),
   
+  
+  messagesPayloadById: new Map(),
+  
   replayProgressMessages: new Set(),
   
   visibleMessages: [],
@@ -77,6 +80,7 @@ function cloneState(state) {
     visibleMessages: [...state.visibleMessages],
     filteredMessagesCount: {...state.filteredMessagesCount},
     messagesUiById: [...state.messagesUiById],
+    messagesPayloadById: new Map(state.messagesPayloadById),
     messagesTableDataById: new Map(state.messagesTableDataById),
     groupsById: new Map(state.groupsById),
     currentGroup: state.currentGroup,
@@ -280,6 +284,7 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
 function messages(state = MessageState(), action, filtersState, prefsState, uiState) {
   const {
     messagesById,
+    messagesPayloadById,
     messagesUiById,
     messagesTableDataById,
     networkMessagesUpdateById,
@@ -464,6 +469,12 @@ function messages(state = MessageState(), action, filtersState, prefsState, uiSt
       return {
         ...state,
         messagesTableDataById: (new Map(messagesTableDataById)).set(id, data),
+      };
+
+    case constants.MESSAGE_UPDATE_PAYLOAD:
+      return {
+        ...state,
+        messagesPayloadById: (new Map(messagesPayloadById)).set(action.id, action.data),
       };
 
     case constants.NETWORK_MESSAGE_UPDATE:
