@@ -186,6 +186,15 @@ DevToolsLoader.prototype = {
     this.lazyImporter = globals.loader.lazyImporter;
     this.lazyServiceGetter = globals.loader.lazyServiceGetter;
     this.lazyRequireGetter = globals.loader.lazyRequireGetter;
+
+    
+    
+    
+    if (globals.isReplaying) {
+      const oldHook = this._provider.loader.requireHook;
+      const ReplayInspector = this.require("devtools/server/actors/replay/inspector");
+      this._provider.loader.requireHook = ReplayInspector.wrapRequireHook(oldHook);
+    }
   },
 
   

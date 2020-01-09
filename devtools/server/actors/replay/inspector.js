@@ -43,13 +43,6 @@ const ReplayInspector = {
   },
 
   
-  newDeepTreeWalker() {
-    const data = dbg()._sendRequestAllowDiverge({ type: "newDeepTreeWalker" });
-    const obj = dbg()._getObject(data.id);
-    return wrapObject(obj);
-  },
-
-  
   createInspectorUtils(utils) {
     
     
@@ -61,19 +54,11 @@ const ReplayInspector = {
     };
   },
 
-  
-  
-  
-  els: {
-    getListenerInfoFor(node) {
-      const id = unwrapValue(node)._data.id;
-      const rv = dbg()._sendRequestAllowDiverge({
-        type: "getListenerInfoFor",
-        id,
-      });
-      const obj = dbg()._getObject(rv.id);
-      return wrapValue(obj);
-    },
+  wrapRequireHook(requireHook) {
+    return (id, require) => {
+      const rv = requireHook(id, require);
+      return substituteRequire(id, rv);
+    };
   },
 
   
@@ -93,6 +78,96 @@ const ReplayInspector = {
     return unwrapValue(node);
   },
 };
+
+
+
+
+
+
+
+
+
+function newSubstituteProxy(target, mapping) {
+  return new Proxy({}, {
+    get(_, name) {
+      if (mapping[name]) {
+        return mapping[name];
+      }
+      return target[name];
+    },
+  });
+}
+
+function createSubstituteChrome(chrome) {
+  const { Cc, Cu } = chrome;
+  return {
+    ...chrome,
+    Cc: newSubstituteProxy(Cc, {
+      "@mozilla.org/inspector/deep-tree-walker;1": {
+        createInstance() {
+          
+          const data = dbg()._sendRequestAllowDiverge({ type: "newDeepTreeWalker" });
+          const obj = dbg()._getObject(data.id);
+          return wrapObject(obj);
+        },
+      },
+    }),
+    Cu: newSubstituteProxy(Cu, {
+      isDeadWrapper(node) {
+        let unwrapped = proxyMap.get(node);
+        if (!unwrapped) {
+          return Cu.isDeadWrapper(node);
+        }
+        assert(unwrapped instanceof ReplayDebugger.Object);
+
+        
+        
+        
+        if (!unwrapped._data) {
+          updateFixedProxies();
+          unwrapped = proxyMap.get(node);
+          return !unwrapped._data;
+        }
+        return false;
+      },
+    }),
+  };
+}
+
+function createSubstituteServices(Services) {
+  return newSubstituteProxy(Services, {
+    els: {
+      getListenerInfoFor(node) {
+        const id = unwrapValue(node)._data.id;
+        const rv = dbg()._sendRequestAllowDiverge({
+          type: "getListenerInfoFor",
+          id,
+        });
+        const obj = dbg()._getObject(rv.id);
+        return wrapValue(obj);
+      },
+    },
+  });
+}
+
+function createSubstitute(id, rv) {
+  switch (id) {
+  case "chrome": return createSubstituteChrome(rv);
+  case "Services": return createSubstituteServices(rv);
+  }
+  return null;
+}
+
+const substitutes = new Map();
+
+function substituteRequire(id, rv) {
+  if (substitutes.has(id)) {
+    return substitutes.get(id) || rv;
+  }
+  const newrv = createSubstitute(id, rv);
+  substitutes.set(id, newrv);
+  return newrv || rv;
+}
 
 
 
