@@ -4418,7 +4418,7 @@ float MOZ_MAYBE_UNUSED GetPref<float>(const char* aName, float aDefaultValue) {
   
   
 
-  nsresult rv;
+  nsresult rv = NS_ERROR_FAILURE;
   nsZipFind* findPtr;
   nsAutoPtr<nsZipFind> find;
   nsTArray<nsCString> prefEntries;
@@ -4428,8 +4428,24 @@ float MOZ_MAYBE_UNUSED GetPref<float>(const char* aName, float aDefaultValue) {
   RefPtr<nsZipArchive> jarReader =
       mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
   if (jarReader) {
+#ifdef MOZ_WIDGET_ANDROID
+    
+    
+    const char* abi = getenv("MOZ_ANDROID_CPU_ABI");
+    if (abi) {
+      nsAutoCString path;
+      path.AppendPrintf("%s/greprefs.js", abi);
+      rv = pref_ReadPrefFromJar(jarReader, path.get());
+    }
+
+    if (NS_FAILED(rv)) {
+      
+      rv = pref_ReadPrefFromJar(jarReader, "greprefs.js");
+    }
+#else
     
     rv = pref_ReadPrefFromJar(jarReader, "greprefs.js");
+#endif
     NS_ENSURE_SUCCESS(rv, Err("pref_ReadPrefFromJar() failed"));
 
     
