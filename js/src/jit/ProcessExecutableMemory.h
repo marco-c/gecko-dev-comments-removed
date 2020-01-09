@@ -25,6 +25,39 @@ static const size_t MaxCodeBytesPerProcess = 1 * 1024 * 1024 * 1024;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(JS_CODEGEN_ARM)
+static const size_t MaxCodeBytesPerBuffer = (1 << 25) - 4;
+#elif defined(JS_CODEGEN_ARM64)
+static const size_t MaxCodeBytesPerBuffer = (1 << 27) - 4;
+#else
+static const size_t MaxCodeBytesPerBuffer = MaxCodeBytesPerProcess;
+#endif
+
+
+
+
 static const size_t ExecutableCodePageSize = 64 * 1024;
 
 enum class ProtectionSetting {
