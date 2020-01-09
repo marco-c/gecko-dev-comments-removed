@@ -681,6 +681,17 @@ class PresShell final : public nsIPresShell,
 
 
 
+    bool MaybeDiscardOrDelayKeyboardEvent(WidgetGUIEvent* aGUIEvent);
+
+    
+
+
+
+
+
+
+
+
 
 
     MOZ_CAN_RUN_SCRIPT
