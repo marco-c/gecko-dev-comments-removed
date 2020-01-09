@@ -65,7 +65,11 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   
   
-  auto KnownLiveSmartPtr = anyOf(StackSmartPtr, ConstMemberOfThisSmartPtr);
+  auto KnownLiveSmartPtr = anyOf(
+    StackSmartPtr,
+    ConstMemberOfThisSmartPtr,
+    ignoreTrivials(cxxConstructExpr(hasType(isSmartPtrToRefCounted()))));
+
   auto MozKnownLiveCall =
     ignoreTrivials(callExpr(callee(functionDecl(hasName("MOZ_KnownLive")))));
 
