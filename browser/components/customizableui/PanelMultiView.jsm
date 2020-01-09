@@ -604,6 +604,17 @@ var PanelMultiView = class extends AssociatedToNode {
 
 
   showSubView(viewIdOrNode, anchor) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this._panel.autoPosition = false;
+
     this._showSubView(viewIdOrNode, anchor).catch(Cu.reportError);
   }
   async _showSubView(viewIdOrNode, anchor) {
@@ -807,6 +818,9 @@ var PanelMultiView = class extends AssociatedToNode {
         panelView.focusWhenActive = false;
       }
       panelView.dispatchCustomEvent("ViewShown");
+
+      
+      this._panel.autoPosition = true;
     }
   }
 
@@ -1104,15 +1118,6 @@ var PanelMultiView = class extends AssociatedToNode {
         break;
       }
       case "popuppositioned": {
-        
-        
-        
-        
-        
-        
-        
-        this._panel.autoPosition = false;
-
         if (this._panel.state == "showing") {
           let maxHeight = this._calculateMaxHeight();
           this._viewStack.style.maxHeight = maxHeight + "px";
