@@ -37,7 +37,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
   class AutoTaggedTuple;
 
   using CharSlice = BinaryASTSupport::CharSlice;
-  using Context = BinASTTokenReaderBase::Context;
 
   
   
@@ -84,45 +83,44 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
   
 
 
-  MOZ_MUST_USE JS::Result<bool> readBool(const Context&);
+  MOZ_MUST_USE JS::Result<bool> readBool();
 
   
 
 
-  MOZ_MUST_USE JS::Result<double> readDouble(const Context&);
-
-  
-
-
-
-
-  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeAtom(const Context&);
-  MOZ_MUST_USE JS::Result<JSAtom*> readAtom(const Context&);
-
-  
-
-
-  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeIdentifierName(const Context&);
-  MOZ_MUST_USE JS::Result<JSAtom*> readIdentifierName(const Context&);
-
-  
-
-
-  MOZ_MUST_USE JS::Result<JSAtom*> readPropertyKey(const Context&);
+  MOZ_MUST_USE JS::Result<double> readDouble();
 
   
 
 
 
 
-  MOZ_MUST_USE JS::Result<Ok> readChars(Chars&, const Context&);
+  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeAtom();
+  MOZ_MUST_USE JS::Result<JSAtom*> readAtom();
 
   
 
 
-  MOZ_MUST_USE JS::Result<mozilla::Maybe<BinASTVariant>> readMaybeVariant(
-      const Context&);
-  MOZ_MUST_USE JS::Result<BinASTVariant> readVariant(const Context&);
+  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeIdentifierName();
+  MOZ_MUST_USE JS::Result<JSAtom*> readIdentifierName();
+
+  
+
+
+  MOZ_MUST_USE JS::Result<JSAtom*> readPropertyKey();
+
+  
+
+
+
+
+  MOZ_MUST_USE JS::Result<Ok> readChars(Chars&);
+
+  
+
+
+  MOZ_MUST_USE JS::Result<mozilla::Maybe<BinASTVariant>> readMaybeVariant();
+  MOZ_MUST_USE JS::Result<BinASTVariant> readVariant();
 
   
 
@@ -131,8 +129,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
 
 
 
-  MOZ_MUST_USE JS::Result<SkippableSubTree> readSkippableSubTree(
-      const Context&);
+  MOZ_MUST_USE JS::Result<SkippableSubTree> readSkippableSubTree();
 
   
   
@@ -154,8 +151,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
 
 
 
-  MOZ_MUST_USE JS::Result<Ok> enterList(uint32_t& length, const Context&,
-                                        AutoList& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterList(uint32_t& length, AutoList& guard);
 
   
 
@@ -175,12 +171,12 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
 
   MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
       BinASTKind& tag, BinASTTokenReaderMultipart::BinASTFields& fields,
-      const Context&, AutoTaggedTuple& guard);
+      AutoTaggedTuple& guard);
 
   
 
 
-  MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong(const Context&) {
+  MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong() {
     return readInternalUint32();
   }
 
