@@ -1320,3 +1320,28 @@ function checkConsoleOutputForWarningGroup(hud, expectedMessages) {
       `the expected "${expectedMessage}" content - "${message.textContent.trim()}"`);
   });
 }
+
+
+
+
+
+
+
+
+
+
+async function checkMessageStack(hud, text, frameLines) {
+  const msgNode = await waitFor(() => findMessage(hud, text));
+  ok(!msgNode.classList.contains("open"), `Error logged not expanded`);
+
+  const button = msgNode.querySelector(".collapse-button");
+  button.click();
+
+  const framesNode = await waitFor(() => msgNode.querySelector(".frames"));
+  const frameNodes = framesNode.querySelectorAll(".frame");
+  ok(frameNodes.length == frameLines.length, `Found ${frameLines.length} frames`);
+  for (let i = 0; i < frameLines.length; i++) {
+    ok(frameNodes[i].querySelector(".line").textContent == "" + frameLines[i],
+       `Found line ${frameLines[i]} for frame #${i}`);
+  }
+}
