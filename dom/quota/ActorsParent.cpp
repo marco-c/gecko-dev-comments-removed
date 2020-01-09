@@ -218,7 +218,7 @@ const char kResourceOriginPrefix[] = "resource://";
 #define LS_ARCHIVE_FILE_NAME "ls-archive.sqlite"
 #define LS_ARCHIVE_TMP_FILE_NAME "ls-archive-tmp.sqlite"
 
-const uint32_t kLocalStorageArchiveVersion = 1;
+const uint32_t kLocalStorageArchiveVersion = 2;
 
 const char kProfileDoChangeTopic[] = "profile-do-change";
 
@@ -446,33 +446,31 @@ nsresult LoadLocalStorageArchiveVersion(mozIStorageConnection* aConnection,
   return NS_OK;
 }
 
+nsresult SaveLocalStorageArchiveVersion(mozIStorageConnection* aConnection,
+                                        uint32_t aVersion) {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aConnection);
 
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = aConnection->CreateStatement(
+      NS_LITERAL_CSTRING("UPDATE database SET version = :version;"),
+      getter_AddRefs(stmt));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
+  rv = stmt->BindInt32ByName(NS_LITERAL_CSTRING("version"), aVersion);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
+  rv = stmt->Execute();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return NS_OK;
+}
 
 
 
@@ -5261,17 +5259,15 @@ nsresult QuotaManager::UpgradeLocalStorageArchiveFrom0To1(
   return NS_OK;
 }
 
+nsresult QuotaManager::UpgradeLocalStorageArchiveFrom1To2(
+    nsCOMPtr<mozIStorageConnection>& aConnection) {
+  nsresult rv = SaveLocalStorageArchiveVersion(aConnection, 2);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-
-
-
-
-
-
-
-
-
-
+  return NS_OK;
+}
 
 #ifdef DEBUG
 
@@ -5495,17 +5491,16 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
           return rv;
         }
       } else {
-        static_assert(kLocalStorageArchiveVersion == 1,
+        static_assert(kLocalStorageArchiveVersion == 2,
                       "Upgrade function needed due to LocalStorage archive "
                       "version increase.");
 
         while (version != kLocalStorageArchiveVersion) {
           if (version == 0) {
             rv = UpgradeLocalStorageArchiveFrom0To1(connection);
-          } 
-
-
-          else {
+          } else if (version == 1) {
+            rv = UpgradeLocalStorageArchiveFrom1To2(connection);
+          } else {
             QM_WARNING(
                 "Unable to initialize LocalStorage archive, no upgrade path is "
                 "available!");
