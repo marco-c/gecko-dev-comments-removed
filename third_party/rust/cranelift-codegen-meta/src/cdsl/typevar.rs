@@ -1,7 +1,4 @@
-use std::cell::RefCell;
-use std::collections::{BTreeSet, HashSet};
-use std::fmt;
-use std::hash;
+use std::collections::BTreeSet;
 use std::iter::FromIterator;
 use std::ops;
 use std::rc::Rc;
@@ -30,25 +27,25 @@ pub struct TypeVarContent {
     
     
     
-    type_set: TypeSet,
+    type_set: Rc<TypeSet>,
 
     pub base: Option<TypeVarParent>,
 }
 
 #[derive(Clone, Debug)]
 pub struct TypeVar {
-    content: Rc<RefCell<TypeVarContent>>,
+    content: Rc<TypeVarContent>,
 }
 
 impl TypeVar {
     pub fn new(name: impl Into<String>, doc: impl Into<String>, type_set: TypeSet) -> Self {
         Self {
-            content: Rc::new(RefCell::new(TypeVarContent {
+            content: Rc::new(TypeVarContent {
                 name: name.into(),
                 doc: doc.into(),
-                type_set,
+                type_set: Rc::new(type_set),
                 base: None,
-            })),
+            }),
         }
     }
 
@@ -90,36 +87,19 @@ impl TypeVar {
     }
 
     
-    pub fn copy_from(other: &TypeVar, name: String) -> TypeVar {
-        assert!(
-            other.base.is_none(),
-            "copy_from() can only be called on non-derived type variables"
-        );
-        TypeVar {
-            content: Rc::new(RefCell::new(TypeVarContent {
-                name,
-                doc: "".into(),
-                type_set: other.type_set.clone(),
-                base: None,
-            })),
-        }
-    }
-
-    
-    
-    
-    
-    pub fn get_typeset(&self) -> TypeSet {
-        match &self.base {
-            Some(base) => base.type_var.get_typeset().image(base.derived_func),
-            None => self.type_set.clone(),
+    fn get_typeset(&self) -> Rc<TypeSet> {
+        
+        
+        match &self.content.base {
+            Some(base) => Rc::new(base.type_var.get_typeset().image(base.derived_func)),
+            None => self.content.type_set.clone(),
         }
     }
 
     
     pub fn get_raw_typeset(&self) -> &TypeSet {
-        assert_eq!(self.type_set, self.get_typeset());
-        &self.type_set
+        assert_eq!(self.content.type_set, self.get_typeset());
+        &*self.content.type_set
     }
 
     
@@ -134,7 +114,7 @@ impl TypeVar {
 
     
     pub fn free_typevar(&self) -> Option<TypeVar> {
-        match &self.base {
+        match &self.content.base {
             Some(base) => base.type_var.free_typevar(),
             None => {
                 match self.singleton_type() {
@@ -147,7 +127,7 @@ impl TypeVar {
     }
 
     
-    pub fn derived(&self, derived_func: DerivedFunc) -> TypeVar {
+    fn derived(&self, derived_func: DerivedFunc) -> TypeVar {
         let ts = self.get_typeset();
 
         
@@ -199,7 +179,7 @@ impl TypeVar {
         }
 
         return TypeVar {
-            content: Rc::new(RefCell::new(TypeVarContent {
+            content: Rc::new(TypeVarContent {
                 name: format!("{}({})", derived_func.name(), self.name),
                 doc: "".into(),
                 type_set: ts,
@@ -207,7 +187,7 @@ impl TypeVar {
                     type_var: self.clone(),
                     derived_func,
                 }),
-            })),
+            }),
         };
     }
 
@@ -232,52 +212,6 @@ impl TypeVar {
     pub fn to_bitvec(&self) -> TypeVar {
         return self.derived(DerivedFunc::ToBitVec);
     }
-
-    
-    
-    
-    pub fn constrain_types_by_ts(&self, type_set: TypeSet) {
-        match &self.base {
-            Some(base) => {
-                base.type_var
-                    .constrain_types_by_ts(type_set.preimage(base.derived_func));
-            }
-            None => {
-                self.content
-                    .borrow_mut()
-                    .type_set
-                    .inplace_intersect_with(&type_set);
-            }
-        }
-    }
-
-    
-    
-    
-    pub fn constrain_types(&self, other: TypeVar) {
-        if self == &other {
-            return;
-        }
-        self.constrain_types_by_ts(other.get_typeset());
-    }
-
-    
-    pub fn to_rust_code(&self) -> String {
-        match &self.base {
-            Some(base) => format!(
-                "{}.{}()",
-                base.type_var.to_rust_code(),
-                base.derived_func.name()
-            ),
-            None => {
-                if let Some(singleton) = self.singleton_type() {
-                    singleton.rust_name()
-                } else {
-                    self.name.clone()
-                }
-            }
-        }
-    }
 }
 
 impl Into<TypeVar> for &TypeVar {
@@ -291,46 +225,24 @@ impl Into<TypeVar> for ValueType {
     }
 }
 
-
-
-
-impl hash::Hash for TypeVar {
-    fn hash<H: hash::Hasher>(&self, h: &mut H) {
-        match &self.base {
-            Some(base) => {
-                base.type_var.hash(h);
-                base.derived_func.hash(h);
-            }
-            None => {
-                (&**self as *const TypeVarContent).hash(h);
-            }
-        }
-    }
-}
-
 impl PartialEq for TypeVar {
     fn eq(&self, other: &TypeVar) -> bool {
-        match (&self.base, &other.base) {
-            (Some(base1), Some(base2)) => {
-                base1.type_var.eq(&base2.type_var) && base1.derived_func == base2.derived_func
-            }
+        match (&self.content.base, &other.content.base) {
+            (Some(base1), Some(base2)) => base1.type_var.eq(&base2.type_var),
             (None, None) => Rc::ptr_eq(&self.content, &other.content),
             _ => false,
         }
     }
 }
 
-
-impl Eq for TypeVar {}
-
 impl ops::Deref for TypeVar {
     type Target = TypeVarContent;
     fn deref(&self) -> &Self::Target {
-        unsafe { self.content.as_ptr().as_ref().unwrap() }
+        &*self.content
     }
 }
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 pub enum DerivedFunc {
     LaneOf,
     AsBool,
@@ -353,20 +265,9 @@ impl DerivedFunc {
             DerivedFunc::ToBitVec => "to_bitvec",
         }
     }
-
-    
-    pub fn inverse(&self) -> Option<DerivedFunc> {
-        match self {
-            DerivedFunc::HalfWidth => Some(DerivedFunc::DoubleWidth),
-            DerivedFunc::DoubleWidth => Some(DerivedFunc::HalfWidth),
-            DerivedFunc::HalfVector => Some(DerivedFunc::DoubleVector),
-            DerivedFunc::DoubleVector => Some(DerivedFunc::HalfVector),
-            _ => None,
-        }
-    }
 }
 
-#[derive(Debug, Hash)]
+#[derive(Debug)]
 pub struct TypeVarParent {
     pub type_var: TypeVar,
     pub derived_func: DerivedFunc,
@@ -400,7 +301,7 @@ macro_rules! num_set {
     };
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeSet {
     pub lanes: NumSet,
     pub ints: NumSet,
@@ -430,7 +331,7 @@ impl TypeSet {
     }
 
     
-    pub fn size(&self) -> usize {
+    fn size(&self) -> usize {
         self.lanes.len()
             * (self.ints.len() + self.floats.len() + self.bools.len() + self.bitvecs.len())
             + self.specials.len()
@@ -585,175 +486,6 @@ impl TypeSet {
         assert_eq!(types.len(), 1);
         return types.remove(0);
     }
-
-    
-    fn preimage(&self, func: DerivedFunc) -> TypeSet {
-        if self.size() == 0 {
-            
-            return self.clone();
-        }
-
-        match func {
-            DerivedFunc::LaneOf => {
-                let mut copy = self.clone();
-                copy.bitvecs = NumSet::new();
-                copy.lanes =
-                    NumSet::from_iter((0..MAX_LANES.trailing_zeros() + 1).map(|i| u16::pow(2, i)));
-                copy
-            }
-            DerivedFunc::AsBool => {
-                let mut copy = self.clone();
-                copy.bitvecs = NumSet::new();
-                if self.bools.contains(&1) {
-                    copy.ints = NumSet::from_iter(vec![8, 16, 32, 64]);
-                    copy.floats = NumSet::from_iter(vec![32, 64]);
-                } else {
-                    copy.ints = &self.bools - &NumSet::from_iter(vec![1]);
-                    copy.floats = &self.bools & &NumSet::from_iter(vec![32, 64]);
-                    
-                    
-                    copy.lanes = &self.lanes - &NumSet::from_iter(vec![1]);
-                }
-                copy
-            }
-            DerivedFunc::HalfWidth => self.double_width(),
-            DerivedFunc::DoubleWidth => self.half_width(),
-            DerivedFunc::HalfVector => self.double_vector(),
-            DerivedFunc::DoubleVector => self.half_vector(),
-            DerivedFunc::ToBitVec => {
-                let all_lanes = range_to_set(Some(1..MAX_LANES));
-                let all_ints = range_to_set(Some(8..MAX_BITS));
-                let all_floats = range_to_set(Some(32..64));
-                let all_bools = range_to_set(Some(1..MAX_BITS));
-
-                let mut lanes = range_to_set(Some(1..MAX_LANES));
-                let mut ints = range_to_set(Some(8..MAX_BITS));
-                let mut floats = range_to_set(Some(32..64));
-                let mut bools = range_to_set(Some(1..MAX_BITS));
-
-                for &l in &all_lanes {
-                    for &i in &all_ints {
-                        if self.bitvecs.contains(&(i * l)) {
-                            lanes.insert(l);
-                            ints.insert(i);
-                        }
-                    }
-                    for &f in &all_floats {
-                        if self.bitvecs.contains(&(f * l)) {
-                            lanes.insert(l);
-                            floats.insert(f);
-                        }
-                    }
-                    for &b in &all_bools {
-                        if self.bitvecs.contains(&(b * l)) {
-                            lanes.insert(l);
-                            bools.insert(b);
-                        }
-                    }
-                }
-
-                let bitvecs = NumSet::new();
-                let specials = Vec::new();
-                TypeSet::new(lanes, ints, floats, bools, bitvecs, specials)
-            }
-        }
-    }
-
-    pub fn inplace_intersect_with(&mut self, other: &TypeSet) {
-        self.lanes = &self.lanes & &other.lanes;
-        self.ints = &self.ints & &other.ints;
-        self.floats = &self.floats & &other.floats;
-        self.bools = &self.bools & &other.bools;
-        self.bitvecs = &self.bitvecs & &other.bitvecs;
-
-        let mut new_specials = Vec::new();
-        for spec in &self.specials {
-            if let Some(spec) = other.specials.iter().find(|&other_spec| other_spec == spec) {
-                new_specials.push(*spec);
-            }
-        }
-        self.specials = new_specials;
-    }
-
-    pub fn is_subset(&self, other: &TypeSet) -> bool {
-        self.lanes.is_subset(&other.lanes)
-            && self.ints.is_subset(&other.ints)
-            && self.floats.is_subset(&other.floats)
-            && self.bools.is_subset(&other.bools)
-            && self.bitvecs.is_subset(&other.bitvecs)
-            && {
-                let specials: HashSet<SpecialType> = HashSet::from_iter(self.specials.clone());
-                let other_specials = HashSet::from_iter(other.specials.clone());
-                specials.is_subset(&other_specials)
-            }
-    }
-
-    pub fn is_wider_or_equal(&self, other: &TypeSet) -> bool {
-        set_wider_or_equal(&self.ints, &other.ints)
-            && set_wider_or_equal(&self.floats, &other.floats)
-            && set_wider_or_equal(&self.bools, &other.bools)
-    }
-
-    pub fn is_narrower(&self, other: &TypeSet) -> bool {
-        set_narrower(&self.ints, &other.ints)
-            && set_narrower(&self.floats, &other.floats)
-            && set_narrower(&self.bools, &other.bools)
-    }
-}
-
-fn set_wider_or_equal(s1: &NumSet, s2: &NumSet) -> bool {
-    s1.len() > 0 && s2.len() > 0 && s1.iter().min() >= s2.iter().max()
-}
-
-fn set_narrower(s1: &NumSet, s2: &NumSet) -> bool {
-    s1.len() > 0 && s2.len() > 0 && s1.iter().min() < s2.iter().max()
-}
-
-impl fmt::Debug for TypeSet {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(fmt, "TypeSet(")?;
-
-        let mut subsets = Vec::new();
-        if !self.lanes.is_empty() {
-            subsets.push(format!(
-                "lanes={{{}}}",
-                Vec::from_iter(self.lanes.iter().map(|x| x.to_string())).join(", ")
-            ));
-        }
-        if !self.ints.is_empty() {
-            subsets.push(format!(
-                "ints={{{}}}",
-                Vec::from_iter(self.ints.iter().map(|x| x.to_string())).join(", ")
-            ));
-        }
-        if !self.floats.is_empty() {
-            subsets.push(format!(
-                "floats={{{}}}",
-                Vec::from_iter(self.floats.iter().map(|x| x.to_string())).join(", ")
-            ));
-        }
-        if !self.bools.is_empty() {
-            subsets.push(format!(
-                "bools={{{}}}",
-                Vec::from_iter(self.bools.iter().map(|x| x.to_string())).join(", ")
-            ));
-        }
-        if !self.bitvecs.is_empty() {
-            subsets.push(format!(
-                "bitvecs={{{}}}",
-                Vec::from_iter(self.bitvecs.iter().map(|x| x.to_string())).join(", ")
-            ));
-        }
-        if !self.specials.is_empty() {
-            subsets.push(format!(
-                "specials={{{}}}",
-                Vec::from_iter(self.specials.iter().map(|x| x.to_string())).join(", ")
-            ));
-        }
-
-        write!(fmt, "{})", subsets.join(", "))?;
-        Ok(())
-    }
 }
 
 pub struct TypeSetBuilder {
@@ -830,18 +562,6 @@ impl TypeSetBuilder {
             range_to_set(self.bitvecs.to_range(1..MAX_BITVEC, None)),
             self.specials,
         )
-    }
-
-    pub fn all() -> TypeSet {
-        TypeSetBuilder::new()
-            .ints(Interval::All)
-            .floats(Interval::All)
-            .bools(Interval::All)
-            .simd_lanes(Interval::All)
-            .bitvecs(Interval::All)
-            .specials(ValueType::all_special_types().collect())
-            .includes_scalars(true)
-            .finish()
     }
 }
 
@@ -1082,136 +802,6 @@ fn test_forward_images() {
     assert_eq!(
         TypeSetBuilder::new().bools(32..64).finish().double_width(),
         TypeSetBuilder::new().bools(64..64).finish()
-    );
-}
-
-#[test]
-fn test_backward_images() {
-    let empty_set = TypeSetBuilder::new().finish();
-
-    
-    assert_eq!(
-        TypeSetBuilder::new()
-            .simd_lanes(1..1)
-            .ints(8..8)
-            .floats(32..32)
-            .finish()
-            .preimage(DerivedFunc::LaneOf),
-        TypeSetBuilder::new()
-            .simd_lanes(Interval::All)
-            .ints(8..8)
-            .floats(32..32)
-            .finish()
-    );
-    assert_eq!(empty_set.preimage(DerivedFunc::LaneOf), empty_set);
-
-    
-    assert_eq!(
-        TypeSetBuilder::new()
-            .simd_lanes(1..4)
-            .bools(1..64)
-            .finish()
-            .preimage(DerivedFunc::AsBool),
-        TypeSetBuilder::new()
-            .simd_lanes(1..4)
-            .ints(Interval::All)
-            .bools(Interval::All)
-            .floats(Interval::All)
-            .finish()
-    );
-
-    
-    assert_eq!(
-        TypeSetBuilder::new()
-            .simd_lanes(1..1)
-            .ints(8..8)
-            .finish()
-            .preimage(DerivedFunc::DoubleVector)
-            .size(),
-        0
-    );
-    assert_eq!(
-        TypeSetBuilder::new()
-            .simd_lanes(1..16)
-            .ints(8..16)
-            .floats(32..32)
-            .finish()
-            .preimage(DerivedFunc::DoubleVector),
-        TypeSetBuilder::new()
-            .simd_lanes(1..8)
-            .ints(8..16)
-            .floats(32..32)
-            .finish(),
-    );
-
-    
-    assert_eq!(
-        TypeSetBuilder::new()
-            .simd_lanes(256..256)
-            .ints(8..8)
-            .finish()
-            .preimage(DerivedFunc::HalfVector)
-            .size(),
-        0
-    );
-    assert_eq!(
-        TypeSetBuilder::new()
-            .simd_lanes(64..128)
-            .bools(1..32)
-            .finish()
-            .preimage(DerivedFunc::HalfVector),
-        TypeSetBuilder::new()
-            .simd_lanes(128..256)
-            .bools(1..32)
-            .finish(),
-    );
-
-    
-    assert_eq!(
-        TypeSetBuilder::new()
-            .ints(64..64)
-            .floats(64..64)
-            .bools(64..64)
-            .finish()
-            .preimage(DerivedFunc::HalfWidth)
-            .size(),
-        0
-    );
-    assert_eq!(
-        TypeSetBuilder::new()
-            .simd_lanes(64..256)
-            .bools(1..64)
-            .finish()
-            .preimage(DerivedFunc::HalfWidth),
-        TypeSetBuilder::new()
-            .simd_lanes(64..256)
-            .bools(16..64)
-            .finish(),
-    );
-
-    
-    assert_eq!(
-        TypeSetBuilder::new()
-            .ints(8..8)
-            .floats(32..32)
-            .bools(1..8)
-            .finish()
-            .preimage(DerivedFunc::DoubleWidth)
-            .size(),
-        0
-    );
-    assert_eq!(
-        TypeSetBuilder::new()
-            .simd_lanes(1..16)
-            .ints(8..16)
-            .floats(32..64)
-            .finish()
-            .preimage(DerivedFunc::DoubleWidth),
-        TypeSetBuilder::new()
-            .simd_lanes(1..16)
-            .ints(8..8)
-            .floats(32..32)
-            .finish()
     );
 }
 

@@ -68,13 +68,13 @@ fn uimm64(offset: usize) -> ir::immediates::Uimm64 {
 }
 
 
-fn init_sig_from_wsig(sig: &mut ir::Signature, wsig: bd::FuncTypeWithId) -> WasmResult<()> {
+fn init_sig_from_wsig(sig: &mut ir::Signature, wsig: bd::FuncTypeWithId) {
     sig.clear(CallConv::Baldrdash);
-    for arg in wsig.args()? {
-        sig.params.push(ir::AbiParam::new(arg));
+    for &arg in wsig.args() {
+        sig.params.push(ir::AbiParam::new(arg.into()));
     }
 
-    if let Some(ret_type) = wsig.ret_type()? {
+    if let Some(ret_type) = wsig.ret_type().into() {
         let ret = match ret_type {
             
             
@@ -90,8 +90,6 @@ fn init_sig_from_wsig(sig: &mut ir::Signature, wsig: bd::FuncTypeWithId) -> Wasm
         native_pointer_type(),
         ir::ArgumentPurpose::VMContext,
     ));
-
-    Ok(())
 }
 
 
@@ -99,10 +97,10 @@ pub fn init_sig(
     sig: &mut ir::Signature,
     env: &bd::ModuleEnvironment,
     func_index: FuncIndex,
-) -> WasmResult<bd::FuncTypeWithId> {
+) -> bd::FuncTypeWithId {
     let wsig = env.function_signature(func_index);
-    init_sig_from_wsig(sig, wsig)?;
-    Ok(wsig)
+    init_sig_from_wsig(sig, wsig);
+    wsig
 }
 
 
@@ -390,11 +388,7 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
         native_pointer_type()
     }
 
-    fn make_global(
-        &mut self,
-        func: &mut ir::Function,
-        index: GlobalIndex,
-    ) -> WasmResult<GlobalVariable> {
+    fn make_global(&mut self, func: &mut ir::Function, index: GlobalIndex) -> GlobalVariable {
         let global = self.env.global(index);
         if global.is_constant() {
             
@@ -402,7 +396,7 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
             let mut pos = FuncCursor::new(func);
             pos.next_ebb().expect("empty function");
             pos.next_inst();
-            return Ok(GlobalVariable::Const(global.emit_constant(&mut pos)?));
+            return GlobalVariable::Const(global.emit_constant(&mut pos));
         }
 
         
@@ -423,16 +417,14 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
             (vmctx_gv, offset32(offset))
         };
 
-        let mem_ty = global.value_type()?;
-
-        Ok(GlobalVariable::Memory {
+        GlobalVariable::Memory {
             gv: base_gv,
-            ty: mem_ty,
+            ty: global.value_type().into(),
             offset,
-        })
+        }
     }
 
-    fn make_heap(&mut self, func: &mut ir::Function, index: MemoryIndex) -> WasmResult<ir::Heap> {
+    fn make_heap(&mut self, func: &mut ir::Function, index: MemoryIndex) -> ir::Heap {
         assert_eq!(index.index(), 0, "Only one WebAssembly memory supported");
         
         let base_addr = self.get_vmctx_gv(func);
@@ -463,23 +455,19 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
             ir::HeapStyle::Dynamic { bound_gv }
         };
 
-        Ok(func.create_heap(ir::HeapData {
+        func.create_heap(ir::HeapData {
             base,
             min_size,
             offset_guard_size: guard_size,
             style,
             index_type: ir::types::I32,
-        }))
+        })
     }
 
-    fn make_indirect_sig(
-        &mut self,
-        func: &mut ir::Function,
-        index: SignatureIndex,
-    ) -> WasmResult<ir::SigRef> {
+    fn make_indirect_sig(&mut self, func: &mut ir::Function, index: SignatureIndex) -> ir::SigRef {
         let mut sigdata = ir::Signature::new(CallConv::Baldrdash);
         let wsig = self.env.signature(index);
-        init_sig_from_wsig(&mut sigdata, wsig)?;
+        init_sig_from_wsig(&mut sigdata, wsig);
 
         if wsig.id_kind() != bd::FuncTypeIdDescKind::None {
             
@@ -489,10 +477,10 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
             ));
         }
 
-        Ok(func.import_signature(sigdata))
+        func.import_signature(sigdata)
     }
 
-    fn make_table(&mut self, func: &mut ir::Function, index: TableIndex) -> WasmResult<ir::Table> {
+    fn make_table(&mut self, func: &mut ir::Function, index: TableIndex) -> ir::Table {
         let table_desc = self.get_table(func, index);
 
         
@@ -511,30 +499,26 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
             readonly: false,
         });
 
-        Ok(func.create_table(ir::TableData {
+        func.create_table(ir::TableData {
             base_gv,
             min_size: ir::immediates::Uimm64::new(0),
             bound_gv,
             element_size: ir::immediates::Uimm64::new(u64::from(self.pointer_bytes()) * 2),
             index_type: ir::types::I32,
-        }))
+        })
     }
 
-    fn make_direct_func(
-        &mut self,
-        func: &mut ir::Function,
-        index: FuncIndex,
-    ) -> WasmResult<ir::FuncRef> {
+    fn make_direct_func(&mut self, func: &mut ir::Function, index: FuncIndex) -> ir::FuncRef {
         
         let mut sigdata = ir::Signature::new(CallConv::Baldrdash);
-        init_sig(&mut sigdata, &self.env, index)?;
+        init_sig(&mut sigdata, &self.env, index);
         let signature = func.import_signature(sigdata);
 
-        Ok(func.import_function(ir::ExtFuncData {
+        func.import_function(ir::ExtFuncData {
             name: wasm_function_name(index),
             signature,
             colocated: true,
-        }))
+        })
     }
 
     fn translate_call_indirect(
@@ -768,10 +752,9 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
         Ok(pos.func.dfg.first_result(call))
     }
 
-    fn translate_loop_header(&mut self, mut pos: FuncCursor) -> WasmResult<()> {
+    fn translate_loop_header(&mut self, mut pos: FuncCursor) {
         let interrupt = self.load_interrupt_flag(&mut pos);
         pos.ins().trapnz(interrupt, ir::TrapCode::Interrupt);
-        Ok(())
     }
 
     fn return_mode(&self) -> ReturnMode {

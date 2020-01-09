@@ -21,9 +21,6 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-
-#![allow(dead_code)]
-
 use cranelift_codegen::binemit::CodeOffset;
 use cranelift_codegen::entity::EntityRef;
 use cranelift_codegen::ir::SourceLoc;

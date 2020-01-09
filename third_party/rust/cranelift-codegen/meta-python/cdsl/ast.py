@@ -162,7 +162,7 @@ class Var(Atom):
         Values that are defined only in the destination pattern.
     """
 
-    def __init__(self, name):
+    def __init__(self, name, typevar=None):
         
         self.name = name
         
@@ -170,11 +170,11 @@ class Var(Atom):
         
         self.dst_def = None  
         
-        self.typevar = None  
+        self.typevar = typevar  
         
         
         
-        self.original_typevar = None  
+        self.original_typevar = self.typevar  
 
     def __str__(self):
         

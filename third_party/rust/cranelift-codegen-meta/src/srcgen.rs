@@ -79,10 +79,10 @@ impl Formatter {
 
     
     
-    fn get_outdent(&mut self) -> String {
-        self.indent_pop();
-        let s = self.get_indent();
+    fn _get_outdent(&mut self) -> String {
         self.indent_push();
+        let s = self.get_indent();
+        self.indent_pop();
         s
     }
 
@@ -98,8 +98,8 @@ impl Formatter {
     }
 
     
-    pub fn outdented_line(&mut self, s: &str) {
-        let new_line = format!("{}{}\n", self.get_outdent(), s);
+    pub fn _outdented_line(&mut self, s: &str) {
+        let new_line = format!("{}{}", self._get_outdent(), s);
         self.lines.push(new_line);
     }
 
