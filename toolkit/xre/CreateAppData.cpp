@@ -9,6 +9,13 @@
 #include "nsAutoPtr.h"
 #include "mozilla/XREAppData.h"
 
+
+
+
+#ifdef XP_MACOSX
+#  include <Carbon/Carbon.h>
+#endif
+
 using namespace mozilla;
 
 static void ReadString(nsINIParser& parser, const char* section,
