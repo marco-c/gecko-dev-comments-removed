@@ -130,6 +130,7 @@ class BrowsingContext : public nsWrapperCache,
   
   void SetName(const nsAString& aName) { mName = aName; }
   const nsString& Name() const { return mName; }
+  void GetName(nsAString& aName) { aName = mName; }
   bool NameEquals(const nsAString& aName) { return mName.Equals(aName); }
 
   bool IsContent() const { return mType == Type::Content; }
@@ -145,6 +146,24 @@ class BrowsingContext : public nsWrapperCache,
   void SetOpener(BrowsingContext* aOpener);
 
   BrowsingContextGroup* Group() { return mGroup; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  BrowsingContext* FindWithName(const nsAString& aName);
+
+  
+  
+  
+  
+  BrowsingContext* FindChildWithName(const nsAString& aName);
 
   nsISupports* GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx,
@@ -204,8 +223,6 @@ class BrowsingContext : public nsWrapperCache,
                       const WindowPostMessageOptions& aOptions,
                       nsIPrincipal& aSubjectPrincipal, ErrorResult& aError);
 
-  already_AddRefed<BrowsingContext> FindChildWithName(const nsAString& aName);
-
   JSObject* WrapObject(JSContext* aCx);
 
  protected:
@@ -215,6 +232,22 @@ class BrowsingContext : public nsWrapperCache,
                   Type aType);
 
  private:
+  
+  
+  BrowsingContext* FindWithSpecialName(const nsAString& aName);
+
+  
+  
+  
+  
+  BrowsingContext* FindWithNameInSubtree(const nsAString& aName,
+                                         BrowsingContext* aRequestingContext);
+
+  
+  bool CanAccess(BrowsingContext* aContext);
+
+  bool IsActive() const;
+
   friend class ::nsOuterWindowProxy;
   friend class ::nsGlobalWindowOuter;
   

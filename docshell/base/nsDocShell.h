@@ -402,6 +402,7 @@ class nsDocShell final : public nsDocLoader,
   friend class FramingChecker;
   friend class OnLinkClickEvent;
   friend class nsIDocShell;
+  friend class mozilla::dom::BrowsingContext;
 
   
   

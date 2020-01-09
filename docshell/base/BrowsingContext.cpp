@@ -221,16 +221,16 @@ void BrowsingContext::Detach() {
     MOZ_DIAGNOSTIC_ASSERT(!mGroup || !mGroup->Toplevels().Contains(this));
     sCachedBrowsingContexts->remove(p);
   } else {
-    auto* children = mParent ? &mParent->mChildren : &mGroup->Toplevels();
+    Children& children = mParent ? mParent->mChildren : mGroup->Toplevels();
 
     
     
     
     
     
-    MOZ_DIAGNOSTIC_ASSERT(children->IsEmpty() || children->Contains(this));
+    MOZ_DIAGNOSTIC_ASSERT(children.IsEmpty() || children.Contains(this));
 
-    children->RemoveElement(this);
+    children.RemoveElement(this);
   }
 
   Group()->Unregister(this);
@@ -290,6 +290,160 @@ void BrowsingContext::SetOpener(BrowsingContext* aOpener) {
   auto cc = ContentChild::GetSingleton();
   MOZ_DIAGNOSTIC_ASSERT(cc);
   cc->SendSetOpenerBrowsingContext(this, aOpener);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BrowsingContext* BrowsingContext::FindWithName(const nsAString& aName) {
+  BrowsingContext* found = nullptr;
+  if (aName.IsEmpty()) {
+    
+    found = nullptr;
+  } else if (BrowsingContext* special = FindWithSpecialName(aName)) {
+    found = special;
+  } else if (aName.LowerCaseEqualsLiteral("_blank")) {
+    
+    
+    found = nullptr;
+  } else if (BrowsingContext* child = FindWithNameInSubtree(aName, this)) {
+    found = child;
+  } else {
+    BrowsingContext* current = this;
+
+    do {
+      Children* siblings;
+      BrowsingContext* parent = current->mParent;
+
+      if (!parent) {
+        
+        
+        siblings = &mGroup->Toplevels();
+      } else if (parent->NameEquals(aName) && CanAccess(parent) &&
+                 parent->IsActive()) {
+        found = parent;
+        break;
+      } else {
+        siblings = &parent->mChildren;
+      }
+
+      for (BrowsingContext* sibling : *siblings) {
+        if (sibling == current) {
+          continue;
+        }
+
+        if (BrowsingContext* relative =
+                sibling->FindWithNameInSubtree(aName, this)) {
+          found = relative;
+          
+          parent = nullptr;
+          break;
+        }
+      }
+
+      current = parent;
+    } while (current);
+  }
+
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!found || CanAccess(found));
+
+  return found;
+}
+
+BrowsingContext* BrowsingContext::FindChildWithName(const nsAString& aName) {
+  if (aName.IsEmpty()) {
+    
+    return nullptr;
+  }
+
+  for (BrowsingContext* child : mChildren) {
+    if (child->NameEquals(aName) && CanAccess(child) && child->IsActive()) {
+      return child;
+    }
+  }
+
+  return nullptr;
+}
+
+BrowsingContext* BrowsingContext::FindWithSpecialName(const nsAString& aName) {
+  
+  
+  
+  if (aName.LowerCaseEqualsLiteral("_self")) {
+    return this;
+  }
+
+  if (aName.LowerCaseEqualsLiteral("_parent")) {
+    return mParent && CanAccess(mParent.get()) ? mParent.get() : this;
+  }
+
+  if (aName.LowerCaseEqualsLiteral("_top")) {
+    BrowsingContext* top = TopLevelBrowsingContext();
+
+    return CanAccess(top) ? top : nullptr;
+  }
+
+  return nullptr;
+}
+
+BrowsingContext* BrowsingContext::FindWithNameInSubtree(
+    const nsAString& aName, BrowsingContext* aRequestingContext) {
+  MOZ_DIAGNOSTIC_ASSERT(!aName.IsEmpty());
+
+  if (NameEquals(aName) && aRequestingContext->CanAccess(this) && IsActive()) {
+    return this;
+  }
+
+  for (BrowsingContext* child : mChildren) {
+    if (BrowsingContext* found =
+            child->FindWithNameInSubtree(aName, aRequestingContext)) {
+      return found;
+    }
+  }
+
+  return nullptr;
+}
+
+bool BrowsingContext::CanAccess(BrowsingContext* aContext) {
+  
+  
+  
+  return aContext && nsDocShell::CanAccessItem(aContext->mDocShell, mDocShell);
+}
+
+bool BrowsingContext::IsActive() const {
+  
+  
+  
+  
+
+  if (!mDocShell) {
+    return mClosed;
+  }
+
+  if (nsCOMPtr<nsPIDOMWindowOuter> window = mDocShell->GetWindow()) {
+    auto* win = nsGlobalWindowOuter::Cast(window);
+    if (!win->GetClosedOuter()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 BrowsingContext::~BrowsingContext() {
@@ -494,22 +648,6 @@ void BrowsingContext::PostMessageMoz(JSContext* aCx,
                                      ErrorResult& aError) {
   PostMessageMoz(aCx, aMessage, aOptions.mTargetOrigin, aOptions.mTransfer,
                  aSubjectPrincipal, aError);
-}
-
-already_AddRefed<BrowsingContext> BrowsingContext::FindChildWithName(
-    const nsAString& aName) {
-  
-  
-  MOZ_ASSERT(mDocShell);
-  nsCOMPtr<nsIDocShellTreeItem> child;
-  mDocShell->FindChildWithName(aName, false, true, nullptr, nullptr,
-                               getter_AddRefs(child));
-  nsCOMPtr<nsIDocShell> childDS = do_QueryInterface(child);
-  RefPtr<BrowsingContext> bc;
-  if (childDS) {
-    childDS->GetBrowsingContext(getter_AddRefs(bc));
-  }
-  return bc.forget();
 }
 
 }  
