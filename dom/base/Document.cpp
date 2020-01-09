@@ -6744,8 +6744,7 @@ nsINode* Document::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv) {
   JS::Rooted<JSObject*> newScope(cx, nullptr);
   if (!sameDocument) {
     newScope = GetWrapper();
-    if (!newScope && GetScopeObject() &&
-        GetScopeObject()->GetGlobalJSObject()) {
+    if (!newScope && GetScopeObject() && GetScopeObject()->HasJSGlobal()) {
       
       
       
@@ -7435,7 +7434,7 @@ bool Document::IsScriptEnabled() {
 
   nsCOMPtr<nsIScriptGlobalObject> globalObject =
       do_QueryInterface(GetInnerWindow());
-  if (!globalObject || !globalObject->GetGlobalJSObject()) {
+  if (!globalObject || !globalObject->HasJSGlobal()) {
     return false;
   }
 
@@ -9888,9 +9887,11 @@ void Document::InitializeXULBroadcastManager() {
   mXULBroadcastManager = new XULBroadcastManager(this);
 }
 
-static JSObject* GetScopeObjectOfNode(nsINode* node) {
+static bool NodeHasScopeObject(nsINode* node) {
   MOZ_ASSERT(node, "Must not be called with null.");
 
+  
+  
   
   
   
@@ -9904,7 +9905,7 @@ static JSObject* GetScopeObjectOfNode(nsINode* node) {
   MOZ_ASSERT(doc, "This should never happen.");
 
   nsIGlobalObject* global = doc->GetScopeObject();
-  return global ? global->GetGlobalJSObject() : nullptr;
+  return global ? global->HasJSGlobal() : false;
 }
 
 already_AddRefed<nsPIWindowRoot> Document::GetWindowRoot() {
@@ -9930,7 +9931,7 @@ already_AddRefed<nsINode> Document::GetPopupNode() {
     }
   }
 
-  if (node && GetScopeObjectOfNode(node)) {
+  if (node && NodeHasScopeObject(node)) {
     return node.forget();
   }
 

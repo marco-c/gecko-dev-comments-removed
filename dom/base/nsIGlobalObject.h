@@ -97,6 +97,12 @@ class nsIGlobalObject : public nsISupports,
   virtual JSObject* GetGlobalJSObjectPreserveColor() const = 0;
 
   
+
+
+
+  bool HasJSGlobal() const { return GetGlobalJSObjectPreserveColor(); }
+
+  
   nsIPrincipal* PrincipalOrNull();
 
   void RegisterHostObjectURI(const nsACString& aURI);
