@@ -371,9 +371,9 @@ pref("devtools.aboutdebugging.collapsibilities.temporaryExtension", false);
 
 
 #ifdef MOZILLA_OFFICIAL
-  pref("devtools.aboutdebugging.showSystemAddons", false);
+  pref("devtools.aboutdebugging.showHiddenAddons", false);
 #else
-  pref("devtools.aboutdebugging.showSystemAddons", true);
+  pref("devtools.aboutdebugging.showHiddenAddons", true);
 #endif
 
 

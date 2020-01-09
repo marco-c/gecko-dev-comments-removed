@@ -188,8 +188,11 @@ function requestExtensions() {
       let extensions = addons.filter(a => a.debuggable);
 
       
-      if (!getState().ui.showSystemAddons) {
-        extensions = extensions.filter(e => !e.isSystem);
+      if (!getState().ui.showHiddenAddons) {
+        
+        
+        
+        extensions = extensions.filter(e => !e.isSystem && !e.hidden);
       }
 
       if (runtime.type !== RUNTIMES.THIS_FIREFOX) {

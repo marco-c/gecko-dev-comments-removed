@@ -106,7 +106,7 @@ const PREFERENCES = {
   
   PROCESS_DEBUGGING_ENABLED: "devtools.aboutdebugging.process-debugging",
   
-  SHOW_SYSTEM_ADDONS: "devtools.aboutdebugging.showSystemAddons",
+  SHOW_HIDDEN_ADDONS: "devtools.aboutdebugging.showHiddenAddons",
 };
 
 const RUNTIME_PREFERENCE = {
