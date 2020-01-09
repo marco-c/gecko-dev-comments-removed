@@ -261,11 +261,29 @@ bool PushDispatcher::ShouldNotifyWorkers() {
   if (NS_WARN_IF(!mPrincipal)) {
     return false;
   }
+
   
   
   
-  return !nsContentUtils::IsSystemPrincipal(mPrincipal) &&
-         Preferences::GetBool("dom.push.testing.notifyWorkers", true);
+  if (nsContentUtils::IsSystemPrincipal(mPrincipal) ||
+      !Preferences::GetBool("dom.push.testing.notifyWorkers", true)) {
+    return false;
+  }
+
+  
+  if (!BrowserTabsRemoteAutostart()) {
+    return true;
+  }
+
+  
+  
+  bool isContentProcess = XRE_GetProcessType() == GeckoProcessType_Content;
+  bool parentInterceptEnabled = ServiceWorkerParentInterceptEnabled();
+  if (parentInterceptEnabled) {
+    return !isContentProcess;
+  }
+
+  return isContentProcess;
 }
 
 nsresult PushDispatcher::DoNotifyObservers(nsISupports* aSubject,
@@ -419,7 +437,8 @@ PushErrorDispatcher::~PushErrorDispatcher() {}
 nsresult PushErrorDispatcher::NotifyObservers() { return NS_OK; }
 
 nsresult PushErrorDispatcher::NotifyWorkers() {
-  if (!ShouldNotifyWorkers()) {
+  if (!ShouldNotifyWorkers() &&
+      (!mPrincipal || nsContentUtils::IsSystemPrincipal(mPrincipal))) {
     
     return nsContentUtils::ReportToConsoleNonLocalized(
         mMessage, mFlags, NS_LITERAL_CSTRING("Push"), nullptr, 
@@ -429,6 +448,7 @@ nsresult PushErrorDispatcher::NotifyWorkers() {
         0, 
         nsContentUtils::eOMIT_LOCATION);
   }
+
   
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   if (swm) {
@@ -442,7 +462,10 @@ nsresult PushErrorDispatcher::NotifyWorkers() {
   return NS_OK;
 }
 
-bool PushErrorDispatcher::SendToParent(ContentChild*) { return true; }
+bool PushErrorDispatcher::SendToParent(ContentChild* aContentActor) {
+  return aContentActor->SendPushError(mScope, IPC::Principal(mPrincipal),
+                                      mMessage, mFlags);
+}
 
 bool PushErrorDispatcher::SendToChild(ContentParent* aContentActor) {
   return aContentActor->SendPushError(mScope, IPC::Principal(mPrincipal),
