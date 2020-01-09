@@ -30,7 +30,7 @@ StackingContextHelper::StackingContextHelper(
       mScale(1.0f, 1.0f),
       mDeferredTransformItem(aParams.mDeferredTransformItem),
       mIsPreserve3D(aParams.transform_style == wr::TransformStyle::Preserve3D),
-      mRasterizeLocally(aParams.mAnimated || aParentSC.mRasterizeLocally) {
+      mRasterizeLocally(aParams.mRasterizeLocally || aParentSC.mRasterizeLocally) {
   
   
   gfx::Matrix transform2d;
@@ -63,7 +63,6 @@ StackingContextHelper::StackingContextHelper(
           ? wr::RasterSpace::Local(std::max(mScale.width, mScale.height))
           : wr::RasterSpace::Screen();
 
-  MOZ_ASSERT(!aParams.clip.IsNone());
   mReferenceFrameId = mBuilder->PushStackingContext(
       aParams, wr::ToLayoutRect(aBounds), rasterSpace);
 
