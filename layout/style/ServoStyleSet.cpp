@@ -440,38 +440,55 @@ static inline bool LazyPseudoIsCacheable(PseudoStyleType aType,
 }
 
 already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
-    Element* aOriginatingElement, PseudoStyleType aType,
-    ComputedStyle* aParentStyle, Element* aPseudoElement) {
+    const Element& aOriginatingElement, PseudoStyleType aType,
+    ComputedStyle* aParentStyle, IsProbe aIsProbe) {
   
   
   UpdateStylistIfNeeded();
   MOZ_ASSERT(PseudoStyle::IsPseudoElement(aType));
 
-  RefPtr<ComputedStyle> computedValues;
+  const bool cacheable =
+      LazyPseudoIsCacheable(aType, aOriginatingElement, aParentStyle);
+  RefPtr<ComputedStyle> style =
+      cacheable ? aParentStyle->GetCachedLazyPseudoStyle(aType) : nullptr;
 
-  if (aPseudoElement) {
-    MOZ_ASSERT(aType == aPseudoElement->GetPseudoElementType());
-    computedValues =
-        Servo_ResolveStyle(aPseudoElement, mRawSet.get()).Consume();
-  } else {
-    bool cacheable =
-        LazyPseudoIsCacheable(aType, *aOriginatingElement, aParentStyle);
-    computedValues =
-        cacheable ? aParentStyle->GetCachedLazyPseudoStyle(aType) : nullptr;
+  const bool isProbe = aIsProbe == IsProbe::Yes;
 
-    if (!computedValues) {
-      computedValues = Servo_ResolvePseudoStyle(aOriginatingElement, aType,
-                                                 false,
-                                                aParentStyle, mRawSet.get())
-                           .Consume();
-      if (cacheable) {
-        aParentStyle->SetCachedLazyPseudoStyle(computedValues);
-      }
+  if (!style) {
+    
+    
+    
+    
+    style = Servo_ResolvePseudoStyle(&aOriginatingElement, aType, isProbe,
+                                     isProbe ? nullptr : aParentStyle,
+                                     mRawSet.get())
+                .Consume();
+    if (!style) {
+      MOZ_ASSERT(isProbe);
+      return nullptr;
+    }
+    if (cacheable) {
+      aParentStyle->SetCachedLazyPseudoStyle(style);
     }
   }
 
-  MOZ_ASSERT(computedValues);
-  return computedValues.forget();
+  MOZ_ASSERT(style);
+
+  if (isProbe && !GeneratedContentPseudoExists(*aParentStyle, *style)) {
+    return nullptr;
+  }
+
+  return style.forget();
+}
+
+already_AddRefed<ComputedStyle> ServoStyleSet::ProbeMarkerPseudoStyle(
+    const dom::Element& aOriginatingElement, ComputedStyle& aParentStyle) {
+  RefPtr<ComputedStyle> markerStyle = ResolvePseudoElementStyle(
+      aOriginatingElement, PseudoStyleType::marker, &aParentStyle);
+  if (!GeneratedContentPseudoExists(aParentStyle, *markerStyle)) {
+    return nullptr;
+  }
+  return markerStyle.forget();
 }
 
 already_AddRefed<ComputedStyle>
@@ -657,66 +674,35 @@ void ServoStyleSet::AddDocStyleSheet(StyleSheet* aSheet) {
   }
 }
 
-already_AddRefed<ComputedStyle> ServoStyleSet::ProbePseudoElementStyle(
-    const Element& aOriginatingElement, PseudoStyleType aType,
-    ComputedStyle* aParentStyle) {
-  
-  
-  UpdateStylistIfNeeded();
+bool ServoStyleSet::GeneratedContentPseudoExists(
+    const ComputedStyle& aParentStyle, const ComputedStyle& aPseudoStyle) {
+  auto type = aPseudoStyle.GetPseudoType();
+  MOZ_ASSERT(type != PseudoStyleType::NotPseudo);
 
-  
-  
-  
-  
-  MOZ_ASSERT(PseudoStyle::IsPseudoElement(aType));
-
-  bool cacheable =
-      LazyPseudoIsCacheable(aType, aOriginatingElement, aParentStyle);
-
-  RefPtr<ComputedStyle> computedValues =
-      cacheable ? aParentStyle->GetCachedLazyPseudoStyle(aType) : nullptr;
-  if (!computedValues) {
-    computedValues =
-        Servo_ResolvePseudoStyle(&aOriginatingElement, aType,
-                                  true, nullptr, mRawSet.get())
-            .Consume();
-    if (!computedValues) {
-      return nullptr;
-    }
-
-    if (cacheable) {
-      
-      
-      aParentStyle->SetCachedLazyPseudoStyle(computedValues);
-    }
-  }
-
-  if (aType == PseudoStyleType::marker) {
+  if (type == PseudoStyleType::marker) {
     
-    if (aParentStyle->StyleDisplay()->mDisplay != StyleDisplay::ListItem) {
-      return nullptr;
+    if (aParentStyle.StyleDisplay()->mDisplay != StyleDisplay::ListItem) {
+      return false;
     }
     
-    if (computedValues->StyleDisplay()->mDisplay == StyleDisplay::None) {
-      return nullptr;
+    if (aPseudoStyle.StyleDisplay()->mDisplay == StyleDisplay::None) {
+      return false;
     }
   }
 
   
   
   
-  bool isBeforeOrAfter =
-      aType == PseudoStyleType::before || aType == PseudoStyleType::after;
-  if (isBeforeOrAfter) {
-    const nsStyleDisplay* display = computedValues->StyleDisplay();
-    const nsStyleContent* content = computedValues->StyleContent();
-    if (display->mDisplay == StyleDisplay::None ||
-        content->ContentCount() == 0) {
-      return nullptr;
+  if (type == PseudoStyleType::before || type == PseudoStyleType::after) {
+    if (aPseudoStyle.StyleDisplay()->mDisplay == StyleDisplay::None) {
+      return false;
+    }
+    if (!aPseudoStyle.StyleContent()->ContentCount()) {
+      return false;
     }
   }
 
-  return computedValues.forget();
+  return true;
 }
 
 bool ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags) {

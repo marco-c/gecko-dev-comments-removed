@@ -86,12 +86,6 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
 
     
     #[inline(always)]
-    pub fn is_empty(&self) -> bool {
-        self.simple_selectors.is_empty()
-    }
-
-    
-    #[inline(always)]
     pub fn has_combinators(&self) -> bool {
         !self.combinators.is_empty()
     }

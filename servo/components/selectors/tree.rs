@@ -47,8 +47,12 @@ pub trait Element: Sized + Clone + Debug {
     
     
     fn pseudo_element_originating_element(&self) -> Option<Self> {
+        debug_assert!(self.is_pseudo_element());
         self.parent_element()
     }
+
+    
+    fn is_pseudo_element(&self) -> bool;
 
     
     fn prev_sibling_element(&self) -> Option<Self>;

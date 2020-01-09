@@ -5465,8 +5465,7 @@ void nsBlockFrame::UpdateFirstLetterStyle(ServoRestyleState& aRestyleState) {
   ComputedStyle* parentStyle = styleParent->Style();
   RefPtr<ComputedStyle> firstLetterStyle =
       aRestyleState.StyleSet().ResolvePseudoElementStyle(
-          mContent->AsElement(), PseudoStyleType::firstLetter, parentStyle,
-          nullptr);
+          *mContent->AsElement(), PseudoStyleType::firstLetter, parentStyle);
   
   
   RefPtr<ComputedStyle> continuationStyle =
@@ -7188,8 +7187,7 @@ void nsBlockFrame::UpdatePseudoElementStyles(ServoRestyleState& aRestyleState) {
     ComputedStyle* parentStyle = styleParent->Style();
     RefPtr<ComputedStyle> firstLineStyle =
         aRestyleState.StyleSet().ResolvePseudoElementStyle(
-            mContent->AsElement(), PseudoStyleType::firstLine, parentStyle,
-            nullptr);
+            *mContent->AsElement(), PseudoStyleType::firstLine, parentStyle);
 
     
     
