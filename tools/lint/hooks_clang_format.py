@@ -27,7 +27,23 @@ def run_clang_format(hooktype, changedFiles):
         
         return
 
-    arguments = ["clang-format", "-p"] + changedFiles
+    
+    
+    
+    
+    
+    extensions = (".cpp", ".c", ".cc", ".h", ".m", ".mm")
+    path_list = []
+    for filename in sorted(changedFiles):
+        
+        if filename.endswith(extensions):
+            path_list.append(filename)
+
+    if not path_list:
+        
+        return
+
+    arguments = ["clang-format", "-p"] + path_list
     
     if os.name == "nt":
         clang_format_cmd = ["sh", "mach"] + arguments
@@ -39,7 +55,7 @@ def run_clang_format(hooktype, changedFiles):
 
         
         
-        for f in changedFiles:
+        for f in path_list:
             vcs.add_remove_files(f)
 
         return False
