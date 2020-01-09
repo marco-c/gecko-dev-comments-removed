@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/BrowserBridgeParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -97,6 +98,15 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
   
   Unused << SendSetLayersId(rf->GetLayersId());
   return NS_OK;
+}
+
+CanonicalBrowsingContext* BrowserBridgeParent::GetBrowsingContext() {
+  return mBrowserParent->GetBrowsingContext();
+}
+
+BrowserParent* BrowserBridgeParent::Manager() {
+  MOZ_ASSERT(mIPCOpen);
+  return static_cast<BrowserParent*>(PBrowserBridgeParent::Manager());
 }
 
 void BrowserBridgeParent::Destroy() {
