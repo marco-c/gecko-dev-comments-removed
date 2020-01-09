@@ -3438,6 +3438,7 @@ void nsGridContainerFrame::Grid::SubgridPlaceGridItems(
   }
   auto* childGrid = aGridItem.SubgridFrame();
   const auto* pos = childGrid->StylePosition();
+  childGrid->NormalizeChildLists();
   GridReflowInput state(childGrid, aParentState.mRenderingContext);
   childGrid->InitImplicitNamedAreas(pos);
 
@@ -6264,19 +6265,7 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aState,
   return bSize;
 }
 
-void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
-                                  ReflowOutput& aDesiredSize,
-                                  const ReflowInput& aReflowInput,
-                                  nsReflowStatus& aStatus) {
-  MarkInReflow();
-  DO_GLOBAL_REFLOW_COUNT("nsGridContainerFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
-  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
-
-  if (IsFrameTreeTooDeep(aReflowInput, aDesiredSize, aStatus)) {
-    return;
-  }
-
+void nsGridContainerFrame::NormalizeChildLists() {
   
   
   
@@ -6298,7 +6287,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   auto prevInFlow = static_cast<nsGridContainerFrame*>(GetPrevInFlow());
   
   if (prevInFlow) {
-    AutoFrameListPtr overflow(aPresContext, prevInFlow->StealOverflowFrames());
+    AutoFrameListPtr overflow(PresContext(), prevInFlow->StealOverflowFrames());
     if (overflow) {
       ReparentFrames(*overflow, prevInFlow, this);
       ::MergeSortedFrameLists(mFrames, *overflow, GetContent());
@@ -6467,6 +6456,22 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
         "NS_STATE_GRID_DID_PUSH_ITEMS lied");
     ::MergeSortedFrameLists(mFrames, items, GetContent());
   }
+}
+
+void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
+                                  ReflowOutput& aDesiredSize,
+                                  const ReflowInput& aReflowInput,
+                                  nsReflowStatus& aStatus) {
+  MarkInReflow();
+  DO_GLOBAL_REFLOW_COUNT("nsGridContainerFrame");
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
+
+  if (IsFrameTreeTooDeep(aReflowInput, aDesiredSize, aStatus)) {
+    return;
+  }
+
+  NormalizeChildLists();
 
 #ifdef DEBUG
   mDidPushItemsBitMayLie = false;
@@ -6480,6 +6485,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   }
 
   const nsStylePosition* stylePos = aReflowInput.mStylePosition;
+  auto prevInFlow = static_cast<nsGridContainerFrame*>(GetPrevInFlow());
   if (!prevInFlow) {
     InitImplicitNamedAreas(stylePos);
   }
@@ -6910,6 +6916,7 @@ nscoord nsGridContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
                                              IntrinsicISizeType aType) {
   
   
+  NormalizeChildLists();
   GridReflowInput state(this, *aRenderingContext);
   InitImplicitNamedAreas(state.mGridStyle);  
 
