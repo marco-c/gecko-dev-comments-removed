@@ -105,6 +105,9 @@ enum class EditAction {
   ePaste,
 
   
+  ePasteAsQuotation,
+
+  
   eDrop,
 
   
@@ -492,6 +495,8 @@ inline EditorInputType ToInputType(EditAction aEditAction) {
       return EditorInputType::eInsertFromDrop;
     case EditAction::ePaste:
       return EditorInputType::eInsertFromPaste;
+    case EditAction::ePasteAsQuotation:
+      return EditorInputType::eInsertFromPasteAsQuotation;
     case EditAction::eUpdateComposition:
       return EditorInputType::eInsertCompositionText;
     case EditAction::eCommitComposition:
