@@ -33,15 +33,6 @@ class AudioNodeFront extends FrontClassWithSpec(audionodeSpec) {
     this.source = form.source;
     this.bypassable = form.bypassable;
   }
-
-  constructor(client, form) {
-    super(client, form);
-    
-    
-    if (form) {
-      this.manage(this);
-    }
-  }
 }
 
 exports.AudioNodeFront = AudioNodeFront;

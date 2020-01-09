@@ -19,8 +19,8 @@ const promise = require("promise");
 
 
 class FrameSnapshotFront extends FrontClassWithSpec(frameSnapshotSpec) {
-  constructor(client, form) {
-    super(client, form);
+  constructor(client) {
+    super(client);
     this._animationFrameEndScreenshot = null;
     this._cachedScreenshots = new WeakMap();
   }

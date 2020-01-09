@@ -1271,10 +1271,8 @@ exports.ActorClassWithSpec = ActorClassWithSpec;
 
 
 
-
-
 class Front extends Pool {
-  constructor(conn = null, form = null) {
+  constructor(conn = null) {
     super(conn);
     this.actorID = null;
     this._requests = [];
@@ -1288,14 +1286,6 @@ class Front extends Pool {
     
     
     this._beforeListeners = new Map();
-
-    
-    
-    
-    
-    if (form) {
-      this.actorID = form.actor;
-    }
   }
 
   destroy() {
