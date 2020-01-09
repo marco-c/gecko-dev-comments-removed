@@ -2463,11 +2463,8 @@ window._gBrowser = {
 
       
       
-      
-      
       if (aURI == BROWSER_NEW_TAB_URL &&
           !userContextId &&
-          !PrivateBrowsingUtils.isWindowPrivate(window) &&
           !recordExecution &&
           !replayExecution) {
         b = NewTabPagePreloading.getPreloadedBrowser(window);
