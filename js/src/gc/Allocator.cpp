@@ -370,7 +370,7 @@ bool GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
   
   
   if (isIncrementalGCInProgress() &&
-      cx->zone()->zoneSize.gcBytes() > cx->zone()->threshold.gcTriggerBytes()) {
+      cx->zone()->totalBytes() > cx->zone()->threshold.gcTriggerBytes()) {
     PrepareZoneForGC(cx->zone());
     gc(GC_NORMAL, JS::GCReason::INCREMENTAL_TOO_SLOW);
   }
@@ -600,7 +600,7 @@ Arena* GCRuntime::allocateArena(Chunk* chunk, Zone* zone, AllocKind thingKind,
 
   
   if (checkThresholds != ShouldCheckThresholds::DontCheckThresholds) {
-    maybeAllocTriggerZoneGC(zone, lock);
+    maybeAllocTriggerZoneGC(zone);
   }
 
   return arena;
