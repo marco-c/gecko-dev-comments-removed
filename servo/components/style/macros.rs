@@ -104,3 +104,33 @@ macro_rules! define_keyword_type {
         }
     };
 }
+
+
+
+
+#[cfg(feature = "gecko_profiler")]
+#[macro_export]
+macro_rules! profiler_label {
+    ($label_type:ident) => {
+        let mut _profiler_label: $crate::gecko_bindings::structs::AutoProfilerLabel = unsafe {
+            ::std::mem::uninitialized()
+        };
+        let _profiler_label = if $crate::gecko::profiler::profiler_is_active() {
+            unsafe {
+                Some($crate::gecko::profiler::AutoProfilerLabel::new(
+                    &mut _profiler_label,
+                    $crate::gecko::profiler::ProfilerLabel::$label_type,
+                ))
+            }
+        } else {
+            None
+        };
+    }
+}
+
+
+#[cfg(not(feature = "gecko_profiler"))]
+#[macro_export]
+macro_rules! profiler_label {
+    ($label_type:ident) => {}
+}
