@@ -32,17 +32,20 @@ var gFileContent02 = "hello.world.02('bug651942');";
 var gFileContent03 = "hello.world.03('bug651942');";
 var gFileContent04 = "hello.world.04('bug651942');";
 
-async function startTest() {
+
+function snooze() {
+  return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+async function testAddedToRecent() {
   gScratchpad = gScratchpadWindow.Scratchpad;
 
   gFile01 = await createAndLoadTemporaryFile(gFileName01, gFileContent01);
   gFile02 = await createAndLoadTemporaryFile(gFileName02, gFileContent02);
   gFile03 = await createAndLoadTemporaryFile(gFileName03, gFileContent03);
-}
 
-
-
-async function testAddedToRecent() {
+  
+  
   lists.recentFiles01 = gScratchpad.getRecentFiles();
 
   is(lists.recentFiles01.length, 3,
@@ -50,11 +53,9 @@ async function testAddedToRecent() {
 
   
   gFile04 = await createAndLoadTemporaryFile(gFileName04, gFileContent04);
-}
 
-
-
-function testOverwriteRecent() {
+  
+  
   lists.recentFiles02 = gScratchpad.getRecentFiles();
 
   is(lists.recentFiles02[0], lists.recentFiles01[1],
@@ -65,12 +66,10 @@ function testOverwriteRecent() {
         "File04: was added successfully.");
 
   
-  gScratchpad.openFile(0);
-}
+  await gScratchpad.openFile(0);
 
-
-
-function testOpenOldestRecent() {
+  
+  
   lists.recentFiles03 = gScratchpad.getRecentFiles();
 
   is(lists.recentFiles02[0], lists.recentFiles03[2],
@@ -79,24 +78,34 @@ function testOpenOldestRecent() {
      "File03 was reordered successfully in the 'recent files'-list.");
   is(lists.recentFiles02[2], lists.recentFiles03[1],
      "File02 was reordered successfully in the 'recent files'-list.");
-
-  Services.prefs.setIntPref("devtools.scratchpad.recentFilesMax", 0);
 }
 
+async function testHideMenu() {
+  Services.prefs.setIntPref("devtools.scratchpad.recentFilesMax", 0);
 
+  
+  
+  
+  
+  await snooze();
 
-
-function testHideMenu() {
+  
+  
+  
   const menu = gScratchpadWindow.document.getElementById("sp-open_recent-menu");
   ok(menu.hasAttribute("hidden"), "The menu was hidden successfully.");
-
-  Services.prefs.setIntPref("devtools.scratchpad.recentFilesMax", 2);
 }
 
+async function testEnableMenu() {
+  Services.prefs.setIntPref("devtools.scratchpad.recentFilesMax", 2);
 
+  
+  
+  await snooze();
 
-
-function testChangedMaxRecent() {
+  
+  
+  
   const menu = gScratchpadWindow.document.getElementById("sp-open_recent-menu");
   ok(!menu.hasAttribute("hidden"), "The menu is visible. \\o/");
 
@@ -117,30 +126,24 @@ function testChangedMaxRecent() {
 
   is(correctMenuItem, true,
      "Two recent files were successfully removed from the 'Open Recent'-menu");
+}
 
+async function testOpenDeletedFile() {
   
   
   
   gFile04.remove(false);
 
   
-  
-  waitForFileDeletion();
-}
-
-function waitForFileDeletion() {
-  if (gFile04.exists()) {
-    executeSoon(waitForFileDeletion);
-    return;
+  while (gFile04.exists()) {
+    await snooze();
   }
-
   gFile04 = null;
-  gScratchpad.openFile(0);
-}
 
+  
+  
+  await gScratchpad.openFile(0);
 
-
-function testOpenDeletedFile() {
   const doc = gScratchpadWindow.document;
   const popup = doc.getElementById("sp-menu-open_recentPopup");
 
@@ -155,13 +158,19 @@ function testOpenDeletedFile() {
   is(gScratchpad.notificationBox.currentNotification.messageText.textContent,
      gScratchpad.strings.GetStringFromName("fileNoLongerExists.notification"),
      "The notification label is correct.");
-
-  gScratchpad.clearRecentFiles();
 }
 
+async function testClearAll() {
+  gScratchpad.clearRecentFiles();
 
+  
+  
+  
+  
+  await snooze();
 
-function testClearedAll() {
+  
+  
   const doc = gScratchpadWindow.document;
   const menu = doc.getElementById("sp-open_recent-menu");
   const popup = doc.getElementById("sp-menu-open_recentPopup");
@@ -171,8 +180,6 @@ function testClearedAll() {
   is(popup.children.length, 0, "All menuitems removed successfully.");
   ok(menu.hasAttribute("disabled"),
      "No files in the menu, it was disabled successfully.");
-
-  finishTest();
 }
 
 async function createAndLoadTemporaryFile(aFileName, aFileContent) {
@@ -212,124 +219,33 @@ function checkIfMenuIsPopulated() {
   }
 }
 
-
-
-
-
-var PreferenceObserver = {
-  _initialized: false,
-
-  _timesFired: 0,
-  set timesFired(aNewValue) {
-    this._timesFired = aNewValue;
-  },
-  get timesFired() {
-    return this._timesFired;
-  },
-
-  init: function PO_init() {
-    if (this._initialized) {
-      return;
-    }
-
-    this.branch = Services.prefs.getBranch("devtools.scratchpad.");
-    this.branch.addObserver("", this);
-    this._initialized = true;
-  },
-
-  async observe(message, topic, data) {
-    if (topic != "nsPref:changed") {
-      return;
-    }
-
-    if (this._inProgress) {
-      await this._inProgress;
-    }
-
-    this._inProgress = new Promise(async resolve => {
-      info(`Times fired: ${this.timesFired}`);
-      switch (this.timesFired) {
-        case 0:
-          this.timesFired = 1;
-          break;
-        case 1:
-          this.timesFired = 2;
-          break;
-        case 2:
-          this.timesFired = 3;
-          await testAddedToRecent();
-          break;
-        case 3:
-          this.timesFired = 4;
-          testOverwriteRecent();
-          break;
-        case 4:
-          this.timesFired = 5;
-          testOpenOldestRecent();
-          break;
-        case 5:
-          this.timesFired = 6;
-          testHideMenu();
-          break;
-        case 6:
-          this.timesFired = 7;
-          testChangedMaxRecent();
-          break;
-        case 7:
-          this.timesFired = 8;
-          testOpenDeletedFile();
-          break;
-        case 8:
-          this.timesFired = 9;
-          testClearedAll();
-          break;
-      }
-
-      this._inProgress = null;
-      resolve();
-    });
-  },
-
-  uninit: function PO_uninit() {
-    this.branch.removeObserver("", this);
-  },
-};
-
-function test() {
+async function test() {
   waitForExplicitFinish();
 
   registerCleanupFunction(function() {
     gFile01.remove(false);
-    gFile01 = null;
     gFile02.remove(false);
-    gFile02 = null;
     gFile03.remove(false);
-    gFile03 = null;
     
-    lists.recentFiles01 = null;
-    lists.recentFiles02 = null;
-    lists.recentFiles03 = null;
-    lists.recentFiles04 = null;
-    gScratchpad = null;
-
-    PreferenceObserver.uninit();
+    if (gFile04) {
+      gFile04.remove(false);
+    }
     Services.prefs.clearUserPref("devtools.scratchpad.recentFilesMax");
   });
 
   Services.prefs.setIntPref("devtools.scratchpad.recentFilesMax", 3);
 
-  
-  
-  PreferenceObserver.init();
-
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(function() {
-    openScratchpad(startTest);
-  });
-
+  const loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   BrowserTestUtils.loadURI(gBrowser, "data:text/html,<p>test recent files in Scratchpad");
-}
+  await loaded;
+  await new Promise(openScratchpad);
 
-function finishTest() {
+  await testAddedToRecent();
+  await testHideMenu();
+  await testEnableMenu();
+  await testOpenDeletedFile();
+  await testClearAll();
+
   finish();
 }
