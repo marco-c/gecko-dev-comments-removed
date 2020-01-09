@@ -787,6 +787,16 @@ void nsHTMLDocument::SetCompatibilityMode(nsCompatibility aMode) {
   }
 }
 
+bool nsHTMLDocument::UseWidthDeviceWidthFallbackViewport() const {
+  if (mIsPlainText) {
+    
+    
+    
+    return true;
+  }
+  return Document::UseWidthDeviceWidthFallbackViewport();
+}
+
 Element* nsHTMLDocument::GetUnfocusedKeyEventTarget() {
   if (nsGenericHTMLElement* body = GetBody()) {
     return body;
