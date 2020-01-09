@@ -720,6 +720,7 @@ nsContextMenu.prototype = {
 
     
     
+    
     let disableFill = !loginFillInfo ||
                       !Services.logins ||
                       !Services.logins.isLoggedIn ||
