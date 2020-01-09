@@ -12,6 +12,7 @@
 #include "jit/BaselineCacheIRCompiler.h"
 #include "jit/BaselineIC.h"
 #include "jit/CacheIRSpewer.h"
+#include "jit/InlinableNatives.h"
 #include "vm/SelfHosting.h"
 
 #include "jit/MacroAssembler-inl.h"
@@ -19,6 +20,7 @@
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/JSScript-inl.h"
+#include "vm/StringObject-inl.h"
 #include "vm/TypeInference-inl.h"
 #include "vm/UnboxedObject-inl.h"
 
@@ -5364,6 +5366,94 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
   return true;
 }
 
+bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
+                                                 MutableHandleObject res) {
+  if (!calleeFunc->hasJitInfo() ||
+      calleeFunc->jitInfo()->type() != JSJitInfo::InlinableNative) {
+    return true;
+  }
+
+  
+  
+  switch (calleeFunc->jitInfo()->inlinableNative) {
+    case InlinableNative::Array: {
+      
+      
+      
+      size_t count = 0;
+      if (args_.length() != 1) {
+        count = args_.length();
+      } else if (args_.length() == 1 && args_[0].isInt32() &&
+                 args_[0].toInt32() >= 0) {
+        count = args_[0].toInt32();
+      }
+
+      if (count > ArrayObject::EagerAllocationMaxLength) {
+        return true;
+      }
+
+      
+      
+      res.set(NewFullyAllocatedArrayForCallingAllocationSite(cx_, count,
+                                                             TenuredObject));
+      return !!res;
+    }
+
+    case InlinableNative::ArraySlice: {
+      if (!thisval_.isObject()) {
+        return true;
+      }
+
+      RootedObject obj(cx_, &thisval_.toObject());
+      if (obj->isSingleton()) {
+        return true;
+      }
+
+      res.set(NewFullyAllocatedArrayTryReuseGroup(cx_, obj, 0, TenuredObject));
+      return !!res;
+    }
+
+    case InlinableNative::String: {
+      RootedString emptyString(cx_, cx_->runtime()->emptyString);
+      res.set(StringObject::create(cx_, emptyString,  nullptr,
+                                   TenuredObject));
+      return !!res;
+    }
+
+    case InlinableNative::ObjectCreate: {
+      if (args_.length() != 1 || !args_[0].isObjectOrNull()) {
+        return true;
+      }
+      RootedObject proto(cx_, args_[0].toObjectOrNull());
+      res.set(ObjectCreateImpl(cx_, proto, TenuredObject));
+      return !!res;
+    }
+
+    case InlinableNative::IntrinsicNewArrayIterator: {
+      res.set(NewArrayIteratorObject(cx_, TenuredObject));
+      return !!res;
+    }
+
+    case InlinableNative::IntrinsicNewStringIterator: {
+      res.set(NewStringIteratorObject(cx_, TenuredObject));
+      return !!res;
+    }
+
+    case InlinableNative::IntrinsicNewRegExpStringIterator: {
+      res.set(NewRegExpStringIteratorObject(cx_, TenuredObject));
+      return !!res;
+    }
+
+    case InlinableNative::TypedArrayConstructor: {
+      return TypedArrayObject::GetTemplateObjectForNative(cx_, calleeFunc->native(),
+                                                          args_, res);
+    }
+
+    default:
+      return true;
+  }
+}
+
 bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
   MOZ_ASSERT(calleeFunc->isNative());
@@ -5371,8 +5461,7 @@ bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   bool isSpread = IsSpreadCallPC(pc_);
 
   bool isConstructing = IsConstructorCallPC(pc_);
-  
-  if (isConstructing) {
+  if (isConstructing && !calleeFunc->isConstructor()) {
     return false;
   }
 
@@ -5381,6 +5470,11 @@ bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
     return true;
   }
   if (JitOptions.disableCacheIRCalls) {
+    return false;
+  }
+
+  RootedObject templateObj(cx_);
+  if (isConstructing && !getTemplateObjectForNative(calleeFunc, &templateObj)) {
     return false;
   }
 
@@ -5393,14 +5487,19 @@ bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
 
   
-  writer.guardSpecificObject(calleeObjId, calleeFunc);
+  FieldOffset calleeOffset = writer.guardSpecificObject(calleeObjId, calleeFunc);
 
   
   if (isSpread) {
     writer.guardAndUpdateSpreadArgc(argcId, isConstructing);
   }
-  writer.callNativeFunction(calleeObjId, argcId, op_, calleeFunc, isSpread);
+  writer.callNativeFunction(calleeObjId, argcId, op_, calleeFunc, isSpread,
+                            isConstructing);
   writer.typeMonitorResult();
+
+  if (templateObj) {
+    writer.metaNativeTemplateObject(templateObj, calleeOffset);
+  }
 
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
   trackAttached("Call native func");
