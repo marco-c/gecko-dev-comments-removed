@@ -1794,7 +1794,16 @@ var AddonManagerInternal = {
       topBrowser = docShell.chromeEventHandler;
 
     try {
-      if (!this.isInstallEnabled(aMimetype)) {
+      if (topBrowser.ownerGlobal.fullScreen) {
+        
+        
+        
+        aInstall.cancel();
+
+        this.installNotifyObservers("addon-install-blocked-silent", topBrowser,
+                                    aInstallingPrincipal.URI, aInstall);
+        return;
+      } else if (!this.isInstallEnabled(aMimetype)) {
         aInstall.cancel();
 
         this.installNotifyObservers("addon-install-disabled", topBrowser,
@@ -1804,15 +1813,6 @@ var AddonManagerInternal = {
         aInstall.cancel();
 
         this.installNotifyObservers("addon-install-origin-blocked", topBrowser,
-                                    aInstallingPrincipal.URI, aInstall);
-        return;
-      } else if (topBrowser.ownerGlobal.fullScreen) {
-        
-        
-        
-        aInstall.cancel();
-
-        this.installNotifyObservers("addon-install-blocked-silent", topBrowser,
                                     aInstallingPrincipal.URI, aInstall);
         return;
       }
