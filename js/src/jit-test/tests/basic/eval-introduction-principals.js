@@ -12,5 +12,5 @@ contentGlobal.eval("\n" +
 
 
 assertEq(stack, "@eval line 2 > eval:1:16\n" +
-                "contentTest@eval:2:26\n" +
+                "contentTest@eval:2:33\n" +
                 "@eval:3:1\n");
