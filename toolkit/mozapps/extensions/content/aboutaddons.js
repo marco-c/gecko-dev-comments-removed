@@ -155,6 +155,31 @@ function nl2br(text) {
 
 
 
+
+
+
+
+
+
+
+
+function formatAmoUrl(contentAttribute, url) {
+  let parsedUrl = new URL(url);
+  let domain = `.${parsedUrl.hostname}`;
+  if (!domain.endsWith(".addons.mozilla.org") &&
+      
+      !domain.endsWith(".allizom.org")) {
+    return url;
+  }
+
+  parsedUrl.searchParams.set("utm_source", "firefox-browser");
+  parsedUrl.searchParams.set("utm_medium", "firefox-browser");
+  parsedUrl.searchParams.set("utm_content", contentAttribute);
+  return parsedUrl.href;
+}
+
+
+
 class DiscoAddonWrapper {
   constructor(details) {
     
@@ -1128,7 +1153,8 @@ class RecommendedAddonCard extends HTMLElement {
       });
       
       
-      authorInfo.querySelector("a").href = addon.amoListingUrl;
+      authorInfo.querySelector("a").href =
+        formatAmoUrl("discopane-entry-link", addon.amoListingUrl);
       authorInfo.hidden = false;
     }
   }
@@ -1566,9 +1592,10 @@ class DiscoveryPane extends HTMLElement {
           "personalized-extension-recommendations", "tab");
         break;
       case "open-amo":
-        windowRoot.ownerGlobal.openTrustedLinkIn(
-          Services.urlFormatter.formatURLPref("extensions.getAddons.link.url"),
-          "tab");
+        let amoUrl =
+          Services.urlFormatter.formatURLPref("extensions.getAddons.link.url");
+        amoUrl = formatAmoUrl("find-more-link-bottom", amoUrl);
+        windowRoot.ownerGlobal.openTrustedLinkIn(amoUrl, "tab");
         break;
     }
   }
