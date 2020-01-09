@@ -7,14 +7,12 @@
   --rule-highlight-background-color: var(--theme-highlight-yellow);
   --rule-overridden-item-border-color: var(--theme-content-color3);
   --rule-header-background-color: var(--theme-toolbar-background);
-  --rule-pseudo-class-text-color: var(--yellow-70) ;
 }
 
 :root.theme-dark {
   --rule-highlight-background-color: #521C76;
   --rule-overridden-item-border-color: var(--theme-content-color1);
   --rule-header-background-color: #222225;
-  --rule-pseudo-class-text-color: var(--yellow-50);
 }
 
 
@@ -563,6 +561,7 @@
   vertical-align: middle;
 }
 
+.ruleview-property.ruleview-changed,
 .ruleview-property[dirty] {
   border-left-color: var(--theme-highlight-green);
 }
@@ -605,7 +604,8 @@
 }
 
 .ruleview-selector-matched > .ruleview-selector-pseudo-class-lock {
-  color: var(--rule-pseudo-class-text-color);
+  font-weight: bold;
+  color: var(--theme-highlight-orange);
 }
 
 .ruleview-selectorhighlighter {

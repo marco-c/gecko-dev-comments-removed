@@ -46,8 +46,10 @@ class TextProperty {
     this.priority = priority;
     this.enabled = !!enabled;
     this.invisible = invisible;
-    this.cssProperties = this.rule.elementStyle.ruleView.cssProperties;
-    this.panelDoc = this.rule.elementStyle.ruleView.inspector.panelDoc;
+    this.elementStyle = this.rule.elementStyle;
+    this.cssProperties = this.elementStyle.ruleView.cssProperties;
+    this.panelDoc = this.elementStyle.ruleView.inspector.panelDoc;
+    this.userProperties = this.elementStyle.store.userProperties;
 
     this.updateComputed();
   }
@@ -78,6 +80,16 @@ class TextProperty {
 
 
 
+
+
+  get isPropertyChanged() {
+    return this.userProperties.contains(this.rule.domRule, this.name);
+  }
+
+  
+
+
+
   updateEditor() {
     if (this.editor) {
       this.editor.update();
@@ -95,7 +107,7 @@ class TextProperty {
     
     
     
-    const dummyElement = this.rule.elementStyle.ruleView.dummyElement;
+    const dummyElement = this.elementStyle.ruleView.dummyElement;
     const dummyStyle = dummyElement.style;
     dummyStyle.cssText = "";
     dummyStyle.setProperty(this.name, this.value, this.priority);
@@ -139,10 +151,8 @@ class TextProperty {
   }
 
   setValue(value, priority, force = false) {
-    const store = this.rule.elementStyle.store;
-
     if (value !== this.value || force) {
-      store.userProperties.setProperty(this.rule.domRule, this.name, value);
+      this.userProperties.setProperty(this.rule.domRule, this.name, value);
     }
 
     return this.rule.setPropertyValue(this, value, priority)
@@ -165,8 +175,7 @@ class TextProperty {
 
   async setName(name) {
     if (name !== this.name) {
-      const store = this.rule.elementStyle.store;
-      store.userProperties.setProperty(this.rule.domRule, name, this.value);
+      this.userProperties.setProperty(this.rule.domRule, name, this.value);
     }
 
     await this.rule.setPropertyName(this, name);

@@ -57,6 +57,9 @@ const declaration = exports.declaration = {
   isOverridden: PropTypes.bool,
 
   
+  isPropertyChanged: PropTypes.bool,
+
+  
   name: PropTypes.string,
 
   

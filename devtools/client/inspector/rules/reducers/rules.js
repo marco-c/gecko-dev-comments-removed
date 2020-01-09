@@ -57,6 +57,8 @@ function getDeclarationState(declaration, ruleId) {
     
     isOverridden: !!declaration.overridden,
     
+    isPropertyChanged: declaration.isPropertyChanged,
+    
     name: declaration.name,
     
     priority: declaration.priority,
