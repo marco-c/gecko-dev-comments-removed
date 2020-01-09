@@ -3005,7 +3005,7 @@ nsRect nsLayoutUtils::TransformFrameRectToAncestor(
     
     
     float devPixelPerCSSPixel =
-        1.f * AppUnitsPerCSSPixel() / srcAppUnitsPerDevPixel;
+        float(AppUnitsPerCSSPixel()) / srcAppUnitsPerDevPixel;
     result.Scale(devPixelPerCSSPixel);
 
     result = TransformGfxRectToAncestor(
