@@ -521,6 +521,8 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
     MOZ_CAN_RUN_SCRIPT
     nsresult HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aGUIEvent,
                          bool aDontRetargetEvents, nsEventStatus* aEventStatus);
@@ -1015,8 +1017,8 @@ class PresShell final : public nsIPresShell,
         return NS_OK;
       }
       nsCOMPtr<nsIContent> overrideClickTarget;
-      return HandleEventInternal(aGUIEvent, aEventStatus, true,
-                                 overrideClickTarget);
+      return HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true,
+                                             overrideClickTarget);
     }
 
     
@@ -1046,10 +1048,10 @@ class PresShell final : public nsIPresShell,
 
 
     MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEventInternal(WidgetEvent* aEvent,
-                                 nsEventStatus* aEventStatus,
-                                 bool aIsHandlingNativeEvent,
-                                 nsIContent* aOverrideClickTarget);
+    nsresult HandleEventWithCurrentEventInfo(WidgetEvent* aEvent,
+                                             nsEventStatus* aEventStatus,
+                                             bool aIsHandlingNativeEvent,
+                                             nsIContent* aOverrideClickTarget);
 
     
 

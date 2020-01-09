@@ -6526,8 +6526,10 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     if (!NS_EVENT_NEEDS_FRAME(aGUIEvent)) {
       mPresShell->mCurrentEventFrame = nullptr;
       nsCOMPtr<nsIContent> overrideClickTarget;  
-      return HandleEventInternal(aGUIEvent, aEventStatus, true,
-                                 overrideClickTarget);
+      
+      
+      return HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true,
+                                             overrideClickTarget);
     }
 
     if (aGUIEvent->HasKeyEventMessage()) {
@@ -6707,7 +6709,7 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
   
   EventHandler eventHandler(*eventTargetData.mPresShell);
   AutoCurrentEventInfoSetter eventInfoSetter(eventHandler, eventTargetData);
-  nsresult rv = eventHandler.HandleEventInternal(
+  nsresult rv = eventHandler.HandleEventWithCurrentEventInfo(
       aGUIEvent, aEventStatus, true, eventTargetData.mOverrideClickTarget);
 #ifdef DEBUG
   eventTargetData.mPresShell->ShowEventTargetDebug();
@@ -7447,8 +7449,8 @@ nsresult PresShell::EventHandler::HandleEventAtFocusedContent(
   }
 
   nsCOMPtr<nsIContent> overrideClickTarget;  
-  nsresult rv =
-      HandleEventInternal(aGUIEvent, aEventStatus, true, overrideClickTarget);
+  nsresult rv = HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true,
+                                                overrideClickTarget);
 
 #ifdef DEBUG
   mPresShell->ShowEventTargetDebug();
@@ -7553,8 +7555,8 @@ nsresult PresShell::EventHandler::HandleEventWithFrameForPresShell(
   nsresult rv = NS_OK;
   if (mPresShell->GetCurrentEventFrame()) {
     nsCOMPtr<nsIContent> overrideClickTarget;  
-    rv =
-        HandleEventInternal(aGUIEvent, aEventStatus, true, overrideClickTarget);
+    rv = HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true,
+                                         overrideClickTarget);
   }
 
 #ifdef DEBUG
@@ -7626,12 +7628,12 @@ nsresult PresShell::EventHandler::HandleEventWithTarget(
                                         aTargetContent);
   AutoCurrentEventInfoSetter eventInfoSetter(*this, aNewEventFrame,
                                              aNewEventContent);
-  nsresult rv =
-      HandleEventInternal(aEvent, aEventStatus, false, aOverrideClickTarget);
+  nsresult rv = HandleEventWithCurrentEventInfo(aEvent, aEventStatus, false,
+                                                aOverrideClickTarget);
   return rv;
 }
 
-nsresult PresShell::EventHandler::HandleEventInternal(
+nsresult PresShell::EventHandler::HandleEventWithCurrentEventInfo(
     WidgetEvent* aEvent, nsEventStatus* aEventStatus,
     bool aIsHandlingNativeEvent, nsIContent* aOverrideClickTarget) {
   MOZ_ASSERT(aEvent);
