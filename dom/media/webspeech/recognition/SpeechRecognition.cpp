@@ -103,6 +103,24 @@ already_AddRefed<nsISpeechRecognitionService> GetSpeechRecognitionService(
   return recognitionService.forget();
 }
 
+class SpeechRecognitionShutdownBlocker : public media::ShutdownBlocker {
+ public:
+  explicit SpeechRecognitionShutdownBlocker(SpeechRecognition* aRecognition)
+      : media::ShutdownBlocker(NS_LITERAL_STRING("SpeechRecognition shutdown")),
+        mRecognition(aRecognition) {}
+
+  NS_IMETHOD BlockShutdown(nsIAsyncShutdownClient*) override {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    
+    mRecognition->Abort();
+    return NS_OK;
+  }
+
+ private:
+  const RefPtr<SpeechRecognition> mRecognition;
+};
+
 NS_IMPL_CYCLE_COLLECTION_INHERITED(SpeechRecognition, DOMEventTargetHelper,
                                    mStream, mTrack, mRecognitionService,
                                    mSpeechGrammarList)
@@ -536,6 +554,11 @@ SpeechRecognition::StartRecording(RefPtr<AudioStreamTrack>& aTrack) {
   mSpeechListener = new SpeechTrackListener(this);
   mTrack->AddListener(mSpeechListener);
 
+  mShutdownBlocker = MakeAndAddRef<SpeechRecognitionShutdownBlocker>(this);
+  RefPtr<nsIAsyncShutdownClient> shutdown = media::GetShutdownBarrier();
+  shutdown->AddBlocker(mShutdownBlocker, NS_LITERAL_STRING(__FILE__), __LINE__,
+                       NS_LITERAL_STRING("SpeechRecognition shutdown"));
+
   mEndpointer.StartSession();
 
   return mSpeechDetectionTimer->Init(this, kSPEECH_DETECTION_TIMEOUT_MS,
@@ -544,9 +567,20 @@ SpeechRecognition::StartRecording(RefPtr<AudioStreamTrack>& aTrack) {
 
 NS_IMETHODIMP
 SpeechRecognition::StopRecording() {
-  
-  
-  
+  if (mShutdownBlocker) {
+    
+    
+    
+    mSpeechListener->mRemovedPromise->Then(
+        GetCurrentThreadSerialEventTarget(), __func__,
+        [blocker = std::move(mShutdownBlocker)] {
+          RefPtr<nsIAsyncShutdownClient> shutdown = media::GetShutdownBarrier();
+          nsresult rv = shutdown->RemoveBlocker(blocker);
+          MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+        });
+  }
+  MOZ_ASSERT(!mShutdownBlocker);
+
   mStream->UnregisterTrackListener(this);
   mTrack->RemoveListener(mSpeechListener);
   mStream = nullptr;
