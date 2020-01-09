@@ -430,10 +430,22 @@ function isPacketPrivate(packet) {
   );
 }
 
+
+
+
+
+
+function isWarningGroup(message) {
+  return message.type === MESSAGE_TYPE.TRACKING_PROTECTION_GROUP
+   || message.type === MESSAGE_TYPE.CORS_GROUP
+   || message.type === MESSAGE_TYPE.CSP_GROUP;
+}
+
 module.exports = {
   getInitialMessageCountForViewport,
   isGroupType,
   isPacketPrivate,
+  isWarningGroup,
   l10n,
   prepareMessage,
   
