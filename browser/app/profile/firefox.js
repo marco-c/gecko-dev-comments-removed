@@ -485,6 +485,9 @@ pref("browser.tabs.newanimations", false);
 pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 #endif
 
+
+pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
+
 pref("browser.ctrlTab.recentlyUsedOrder", true);
 
 
