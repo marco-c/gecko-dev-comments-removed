@@ -9,7 +9,6 @@
 #include "js/Stream.h"
 
 #include "gc/Heap.h"
-#include "js/ArrayBuffer.h"  
 #include "js/PropertySpec.h"
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"
@@ -3733,7 +3732,7 @@ static MOZ_MUST_USE JSObject* ReadableByteStreamControllerPullSteps(
 
     
     
-    JSObject* bufferObj = JS::NewArrayBuffer(cx, autoAllocateChunkSize);
+    JSObject* bufferObj = JS_NewArrayBuffer(cx, autoAllocateChunkSize);
 
     
     

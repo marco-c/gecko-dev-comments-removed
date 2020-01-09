@@ -1581,6 +1581,21 @@ extern JS_FRIEND_API JSObject* JS_NewFloat64ArrayWithBuffer(
 
 
 
+extern JS_FRIEND_API JSObject* JS_NewSharedArrayBuffer(JSContext* cx,
+                                                       uint32_t nbytes);
+
+
+
+
+extern JS_FRIEND_API JSObject* JS_NewArrayBuffer(JSContext* cx,
+                                                 uint32_t nbytes);
+
+
+
+
+
+
+
 extern JS_FRIEND_API bool JS_IsTypedArrayObject(JSObject* obj);
 
 
@@ -1633,7 +1648,11 @@ extern JS_FRIEND_API JSObject* UnwrapUint32Array(JSObject* obj);
 extern JS_FRIEND_API JSObject* UnwrapFloat32Array(JSObject* obj);
 extern JS_FRIEND_API JSObject* UnwrapFloat64Array(JSObject* obj);
 
+extern JS_FRIEND_API JSObject* UnwrapArrayBuffer(JSObject* obj);
+
 extern JS_FRIEND_API JSObject* UnwrapArrayBufferView(JSObject* obj);
+
+extern JS_FRIEND_API JSObject* UnwrapSharedArrayBuffer(JSObject* obj);
 
 extern JS_FRIEND_API JSObject* UnwrapReadableStream(JSObject* obj);
 
@@ -1683,7 +1702,28 @@ extern JS_FRIEND_API void GetArrayBufferViewLengthAndData(JSObject* obj,
                                                           bool* isSharedMemory,
                                                           uint8_t** data);
 
+
+
+
+
+
+extern JS_FRIEND_API void GetArrayBufferLengthAndData(JSObject* obj,
+                                                      uint32_t* length,
+                                                      bool* isSharedMemory,
+                                                      uint8_t** data);
+
+
+
+
+
+extern JS_FRIEND_API void GetSharedArrayBufferLengthAndData(
+    JSObject* obj, uint32_t* length, bool* isSharedMemory, uint8_t** data);
+
 }  
+
+JS_FRIEND_API uint8_t* JS_GetSharedArrayBufferData(JSObject* obj,
+                                                   bool* isSharedMemory,
+                                                   const JS::AutoRequireNoGC&);
 
 
 
@@ -1730,6 +1770,13 @@ extern JS_FRIEND_API JSObject* JS_GetObjectAsArrayBufferView(
 
 
 
+extern JS_FRIEND_API JSObject* JS_GetObjectAsArrayBuffer(JSObject* obj,
+                                                         uint32_t* length,
+                                                         uint8_t** data);
+
+
+
+
 
 
 
@@ -1739,6 +1786,62 @@ extern JS_FRIEND_API js::Scalar::Type JS_GetArrayBufferViewType(JSObject* obj);
 
 extern JS_FRIEND_API js::Scalar::Type JS_GetSharedArrayBufferViewType(
     JSObject* obj);
+
+
+
+
+
+
+
+extern JS_FRIEND_API bool JS_IsArrayBufferObject(JSObject* obj);
+
+extern JS_FRIEND_API bool JS_IsSharedArrayBufferObject(JSObject* obj);
+
+
+
+
+
+
+
+
+extern JS_FRIEND_API uint32_t JS_GetArrayBufferByteLength(JSObject* obj);
+
+extern JS_FRIEND_API uint32_t JS_GetSharedArrayBufferByteLength(JSObject* obj);
+
+
+
+
+
+
+
+
+
+extern JS_FRIEND_API bool JS_ArrayBufferHasData(JSObject* obj);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_FRIEND_API uint8_t* JS_GetArrayBufferData(JSObject* obj,
+                                                    bool* isSharedMemory,
+                                                    const JS::AutoRequireNoGC&);
+
+
+
+
+
+
+extern JS_FRIEND_API bool JS_IsMappedArrayBufferObject(JSObject* obj);
 
 
 
@@ -1839,6 +1942,24 @@ extern JS_FRIEND_API void* JS_GetArrayBufferViewData(
 
 extern JS_FRIEND_API JSObject* JS_GetArrayBufferViewBuffer(
     JSContext* cx, JS::HandleObject obj, bool* isSharedMemory);
+
+
+
+
+
+
+
+
+
+extern JS_FRIEND_API bool JS_DetachArrayBuffer(JSContext* cx,
+                                               JS::HandleObject obj);
+
+
+
+
+
+
+extern JS_FRIEND_API bool JS_IsDetachedArrayBufferObject(JSObject* obj);
 
 
 

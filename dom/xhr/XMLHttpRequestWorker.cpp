@@ -10,13 +10,9 @@
 #include "nsIRunnable.h"
 #include "nsIXPConnect.h"
 
-#include "jsapi.h"  
 #include "jsfriendapi.h"
-#include "js/ArrayBuffer.h"  
-#include "js/GCPolicyAPI.h"
-#include "js/RootingAPI.h"  
 #include "js/TracingAPI.h"
-#include "js/Value.h"  
+#include "js/GCPolicyAPI.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/Event.h"
@@ -1038,14 +1034,14 @@ bool EventRunnable::PreDispatch(WorkerPrivate* ) {
         JS::Rooted<JS::Value> transferable(cx);
         JS::Rooted<JSObject*> obj(
             cx, response.isObject() ? &response.toObject() : nullptr);
-        if (obj && JS::IsArrayBufferObject(obj)) {
+        if (obj && JS_IsArrayBufferObject(obj)) {
           
           if (mProxy->mArrayBufferResponseWasTransferred) {
-            MOZ_ASSERT(JS::IsDetachedArrayBufferObject(obj));
+            MOZ_ASSERT(JS_IsDetachedArrayBufferObject(obj));
             mUseCachedArrayBufferResponse = true;
             doClone = false;
           } else {
-            MOZ_ASSERT(!JS::IsDetachedArrayBufferObject(obj));
+            MOZ_ASSERT(!JS_IsDetachedArrayBufferObject(obj));
             JS::AutoValueArray<1> argv(cx);
             argv[0].set(response);
             obj = JS_NewArrayObject(cx, argv);
@@ -1225,6 +1221,7 @@ bool EventRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) {
 
   target->DispatchEvent(*event);
 
+  
   
   if (StringBeginsWith(mResponseType, NS_LITERAL_STRING("moz-chunked-"))) {
     xhr->NullResponseText();
@@ -2211,7 +2208,7 @@ void XMLHttpRequestWorker::UpdateState(const StateData& aStateData,
                                        bool aUseCachedArrayBufferResponse) {
   if (aUseCachedArrayBufferResponse) {
     MOZ_ASSERT(mStateData.mResponse.isObject() &&
-               JS::IsArrayBufferObject(&mStateData.mResponse.toObject()));
+               JS_IsArrayBufferObject(&mStateData.mResponse.toObject()));
 
     JS::Rooted<JS::Value> response(mWorkerPrivate->GetJSContext(),
                                    mStateData.mResponse);
