@@ -25,7 +25,6 @@ const { ActorClassWithSpec } = require("devtools/shared/protocol");
 const { webExtensionTargetSpec } = require("devtools/shared/specs/targets/webextension");
 
 loader.lazyRequireGetter(this, "unwrapDebuggerObjectGlobal", "devtools/server/actors/thread", true);
-loader.lazyRequireGetter(this, "ChromeUtils");
 const FALLBACK_DOC_MESSAGE = "Your addon does not have any document opened yet.";
 
 
@@ -344,11 +343,6 @@ webExtensionTargetPrototype._shouldAddNewGlobalAsDebuggee = function(newGlobal) 
       
       
       
-      return false;
-    }
-
-    
-    if (ChromeUtils.getClassName(global.document) == "XULDocument") {
       return false;
     }
 
