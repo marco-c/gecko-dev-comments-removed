@@ -34,7 +34,7 @@ class StreamNotifyChild : public PStreamNotifyChild {
       const NPReason& reason) override;
 
   mozilla::ipc::IPCResult RecvRedirectNotify(const nsCString& url,
-                                             const int32_t& status) override;
+                                             const int32_t& status);
 
   
 

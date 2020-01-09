@@ -27,15 +27,15 @@ class AltDataOutputStreamParent : public PAltDataOutputStreamParent,
 
   
   
-  virtual mozilla::ipc::IPCResult RecvWriteData(const nsCString& data) override;
+  mozilla::ipc::IPCResult RecvWriteData(const nsCString& data);
   
   
-  virtual mozilla::ipc::IPCResult RecvClose() override;
+  mozilla::ipc::IPCResult RecvClose();
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   
   void SetError(nsresult status) { mStatus = status; }
-  virtual mozilla::ipc::IPCResult RecvDeleteSelf() override;
+  mozilla::ipc::IPCResult RecvDeleteSelf();
 
  private:
   virtual ~AltDataOutputStreamParent();
