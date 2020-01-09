@@ -61,15 +61,6 @@ class ChangesApp extends PureComponent {
   }
 
   renderRule(ruleId, rule, level = 0) {
-    const selector = rule.selector;
-
-    let diffClass = "";
-    if (rule.changeType === "rule-add") {
-      diffClass = "diff-add";
-    } else if (rule.changeType === "rule-remove") {
-      diffClass = "diff-remove";
-    }
-
     return dom.div(
       {
         key: ruleId,
@@ -79,26 +70,53 @@ class ChangesApp extends PureComponent {
           "--diff-level": level,
         },
       },
-      dom.div(
-        {
-          className: `level selector ${diffClass}`,
-          title: selector,
-        },
-        getDiffMarker(diffClass),
-        selector,
-        dom.span({ className: "bracket-open" }, " {")
-      ),
+      this.renderSelectors(rule.selectors),
       
       rule.children.map(childRule => {
         return this.renderRule(childRule.ruleId, childRule, level + 1);
       }),
       
       this.renderDeclarations(rule.remove, rule.add),
-      dom.div({ className: `level bracket-close ${diffClass}` },
-        getDiffMarker(diffClass),
-        "}"
-      )
+      dom.div({ className: `level` }, "}")
     );
+  }
+
+  
+
+
+
+
+
+
+  renderSelectors(selectors) {
+    const selectorDiffClassMap = new Map();
+
+    
+    
+    
+    if (selectors.length === 1) {
+      selectorDiffClassMap.set(selectors[0], "");
+    } else if (selectors.length >= 2) {
+      selectorDiffClassMap.set(selectors[0], "diff-remove");
+      selectorDiffClassMap.set(selectors[selectors.length - 1], "diff-add");
+    }
+
+    const elements = [];
+
+    for (const [selector, diffClass] of selectorDiffClassMap) {
+      elements.push(dom.div(
+        {
+          key: selector,
+          className: `level selector ${diffClass}`,
+          title: selector,
+        },
+        getDiffMarker(diffClass),
+        selector,
+        dom.span({}, " {")
+      ));
+    }
+
+    return elements;
   }
 
   renderDiff(changes = {}) {
