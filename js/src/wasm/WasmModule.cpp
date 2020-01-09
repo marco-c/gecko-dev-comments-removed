@@ -388,6 +388,7 @@ RefPtr<JS::WasmModule> wasm::DeserializeModule(PRFileDesc* bytecodeFile,
                                                unsigned line) {
   
   
+  
   if (!BaselineCanCompile() && !IonCanCompile()) {
     return nullptr;
   }
@@ -424,9 +425,11 @@ RefPtr<JS::WasmModule> wasm::DeserializeModule(PRFileDesc* bytecodeFile,
   
   
   
+  
+  
 
-  args->ionEnabled = true;
-  args->baselineEnabled = true;
+  args->ionEnabled = IonCanCompile();
+  args->baselineEnabled = BaselineCanCompile();
   args->sharedMemoryEnabled = true;
 
   UniqueChars error;
