@@ -173,10 +173,7 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   void SetDesignMode(const nsAString& aDesignMode,
                      const mozilla::Maybe<nsIPrincipal*>& aSubjectPrincipal,
                      mozilla::ErrorResult& rv);
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  MOZ_CAN_RUN_SCRIPT
   bool ExecCommand(const nsAString& aCommandID, bool aDoShowUI,
                    const nsAString& aValue, nsIPrincipal& aSubjectPrincipal,
                    mozilla::ErrorResult& rv);
@@ -329,7 +326,10 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   nsCOMPtr<nsICommandManager> mMidasCommandManager;
 
   nsresult TurnEditingOff();
-  nsresult EditingStateChanged();
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult EditingStateChanged();
   void MaybeEditingStateChanged();
 
   uint32_t mContentEditableCount;
