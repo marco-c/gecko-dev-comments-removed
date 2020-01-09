@@ -109,9 +109,9 @@ class Toolbar extends Component {
 
   componentDidMount() {
     Services.prefs.addObserver(DEVTOOLS_ENABLE_PERSISTENT_LOG_PREF,
-                               this.updatePersistentLogsEnabled);
+      this.updatePersistentLogsEnabled);
     Services.prefs.addObserver(DEVTOOLS_DISABLE_CACHE_PREF,
-                               this.updateBrowserCacheDisabled);
+      this.updateBrowserCacheDisabled);
   }
 
   shouldComponentUpdate(nextProps) {
@@ -128,9 +128,9 @@ class Toolbar extends Component {
 
   componentWillUnmount() {
     Services.prefs.removeObserver(DEVTOOLS_ENABLE_PERSISTENT_LOG_PREF,
-                                  this.updatePersistentLogsEnabled);
+      this.updatePersistentLogsEnabled);
     Services.prefs.removeObserver(DEVTOOLS_DISABLE_CACHE_PREF,
-                                  this.updateBrowserCacheDisabled);
+      this.updateBrowserCacheDisabled);
   }
 
   toggleRequestFilterType(evt) {
@@ -141,8 +141,13 @@ class Toolbar extends Component {
   }
 
   updatePersistentLogsEnabled() {
+    
+    
+    
+    
     this.props.enablePersistentLogs(
-      Services.prefs.getBoolPref(DEVTOOLS_ENABLE_PERSISTENT_LOG_PREF));
+      Services.prefs.getBoolPref(DEVTOOLS_ENABLE_PERSISTENT_LOG_PREF),
+      true);
   }
 
   updateBrowserCacheDisabled() {
@@ -438,7 +443,8 @@ module.exports = connect(
   (dispatch) => ({
     clearRequests: () => dispatch(Actions.clearRequests()),
     disableBrowserCache: (disabled) => dispatch(Actions.disableBrowserCache(disabled)),
-    enablePersistentLogs: (enabled) => dispatch(Actions.enablePersistentLogs(enabled)),
+    enablePersistentLogs: (enabled, skipTelemetry) =>
+      dispatch(Actions.enablePersistentLogs(enabled, skipTelemetry)),
     setRequestFilterText: (text) => dispatch(Actions.setRequestFilterText(text)),
     toggleBrowserCache: () => dispatch(Actions.toggleBrowserCache()),
     toggleRecording: () => dispatch(Actions.toggleRecording()),
