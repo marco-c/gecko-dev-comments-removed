@@ -34,8 +34,8 @@ inline const char* OptimizationLevelString(OptimizationLevel level) {
 }
 #endif
 
+
 class OptimizationInfo {
- public:
   OptimizationLevel level_;
 
   
@@ -113,13 +113,6 @@ class OptimizationInfo {
 
   
   
-  uint32_t compilerWarmUpThreshold_;
-
-  
-  static const uint32_t CompilerWarmupThreshold;
-
-  
-  
   double inliningWarmUpThresholdFactor_;
 
   
@@ -127,6 +120,19 @@ class OptimizationInfo {
   
   uint32_t inliningRecompileThresholdFactor_;
 
+  uint32_t baseCompilerWarmUpThreshold() const {
+    switch (level_) {
+      case OptimizationLevel::Normal:
+        return JitOptions.normalIonWarmUpThreshold;
+      case OptimizationLevel::DontCompile:
+      case OptimizationLevel::Wasm:
+      case OptimizationLevel::Count:
+        break;
+    }
+    MOZ_CRASH("Unexpected optimization level");
+  }
+
+ public:
   constexpr OptimizationInfo()
       : level_(OptimizationLevel::Normal),
         eaa_(false),
@@ -151,7 +157,6 @@ class OptimizationInfo {
         maxInlineDepth_(0),
         scalarReplacement_(false),
         smallFunctionMaxInlineDepth_(0),
-        compilerWarmUpThreshold_(0),
         inliningWarmUpThresholdFactor_(0.0),
         inliningRecompileThresholdFactor_(0) {}
 
@@ -238,10 +243,7 @@ class OptimizationInfo {
   }
 
   uint32_t inliningWarmUpThreshold() const {
-    uint32_t compilerWarmUpThreshold =
-        JitOptions.forcedDefaultIonWarmUpThreshold.valueOr(
-            compilerWarmUpThreshold_);
-    return compilerWarmUpThreshold * inliningWarmUpThresholdFactor_;
+    return baseCompilerWarmUpThreshold() * inliningWarmUpThresholdFactor_;
   }
 
   uint32_t inliningRecompileThreshold() const {

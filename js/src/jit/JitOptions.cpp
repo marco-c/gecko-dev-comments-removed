@@ -158,6 +158,11 @@ DefaultJitOptions::DefaultJitOptions() {
 
   
   
+  
+  SET_DEFAULT(normalIonWarmUpThreshold, 1000);
+
+  
+  
   SET_DEFAULT(exceptionBailoutThreshold, 10);
 
   
@@ -193,20 +198,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(branchPruningBlockSpanFactor, 100);
   SET_DEFAULT(branchPruningEffectfulInstFactor, 3500);
   SET_DEFAULT(branchPruningThreshold, 4000);
-
-  
-  
-  
-  const char* forcedDefaultIonWarmUpThresholdEnv =
-      "JIT_OPTION_forcedDefaultIonWarmUpThreshold";
-  if (const char* env = getenv(forcedDefaultIonWarmUpThresholdEnv)) {
-    Maybe<int> value = ParseInt(env);
-    if (value.isSome()) {
-      forcedDefaultIonWarmUpThreshold.emplace(value.ref());
-    } else {
-      Warn(forcedDefaultIonWarmUpThresholdEnv, env);
-    }
-  }
 
   
   
@@ -276,13 +267,11 @@ void DefaultJitOptions::enableGvn(bool enable) { disableGvn = !enable; }
 void DefaultJitOptions::setEagerCompilation() {
   eagerCompilation = true;
   baselineWarmUpThreshold = 0;
-  forcedDefaultIonWarmUpThreshold.reset();
-  forcedDefaultIonWarmUpThreshold.emplace(0);
+  normalIonWarmUpThreshold = 0;
 }
 
 void DefaultJitOptions::setCompilerWarmUpThreshold(uint32_t warmUpThreshold) {
-  forcedDefaultIonWarmUpThreshold.reset();
-  forcedDefaultIonWarmUpThreshold.emplace(warmUpThreshold);
+  normalIonWarmUpThreshold = warmUpThreshold;
 
   
   if (eagerCompilation && warmUpThreshold != 0) {
@@ -293,11 +282,11 @@ void DefaultJitOptions::setCompilerWarmUpThreshold(uint32_t warmUpThreshold) {
 }
 
 void DefaultJitOptions::resetCompilerWarmUpThreshold() {
-  forcedDefaultIonWarmUpThreshold.reset();
+  jit::DefaultJitOptions defaultValues;
+  normalIonWarmUpThreshold = defaultValues.normalIonWarmUpThreshold;
 
   
   if (eagerCompilation) {
-    jit::DefaultJitOptions defaultValues;
     eagerCompilation = false;
     baselineWarmUpThreshold = defaultValues.baselineWarmUpThreshold;
   }
