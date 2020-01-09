@@ -8967,10 +8967,16 @@ bool nsDisplayText::CreateWebRenderCommands(
   auto* f = static_cast<nsTextFrame*>(mFrame);
   auto appUnitsPerDevPixel = f->PresContext()->AppUnitsPerDevPixel();
 
-  nsRect bounds = f->WebRenderBounds() + ToReferenceFrame();
   
-  bounds.Inflate(appUnitsPerDevPixel);
+  
+  
+  
+  
+  
+  
+  
 
+  nsRect bounds = mBounds;
   if (bounds.IsEmpty()) {
     return true;
   }
