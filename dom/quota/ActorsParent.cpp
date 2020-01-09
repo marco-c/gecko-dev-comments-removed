@@ -1473,6 +1473,15 @@ class MOZ_STACK_CLASS OriginParser final {
     eExpectingPort,
     eExpectingEmptyTokenOrDriveLetterOrPathnameComponent,
     eExpectingEmptyTokenOrPathnameComponent,
+
+    
+    
+    
+    
+    
+    
+    
+    eExpectingIPV6Token,
     eComplete,
     eHandledTrailingSeparator
   };
@@ -1495,6 +1504,9 @@ class MOZ_STACK_CLASS OriginParser final {
   bool mMaybeDriveLetter;
   bool mError;
 
+  
+  uint8_t mIPGroup;
+
  public:
   OriginParser(const nsACString& aOrigin,
                const OriginAttributes& aOriginAttributes)
@@ -1508,7 +1520,8 @@ class MOZ_STACK_CLASS OriginParser final {
         mInIsolatedMozBrowser(false),
         mUniversalFileOrigin(false),
         mMaybeDriveLetter(false),
-        mError(false) {}
+        mError(false),
+        mIPGroup(0) {}
 
   static ResultType ParseOrigin(const nsACString& aOrigin, nsCString& aSpec,
                                 OriginAttributes* aAttrs);
@@ -8058,6 +8071,9 @@ auto OriginParser::Parse(nsACString& aSpec, OriginAttributes* aAttrs)
 
   MOZ_ASSERT(mState == eComplete || mState == eHandledTrailingSeparator);
 
+  
+  MOZ_ASSERT_IF(mIPGroup > 0, mIPGroup >= 3);
+
   if (mAppId == kNoAppId) {
     *aAttrs = mOriginAttributes;
   } else {
@@ -8288,6 +8304,16 @@ void OriginParser::HandleToken(const nsDependentCSubstring& aToken) {
 
       mHost = aToken;
 
+      if (aToken.First() == '[') {
+        MOZ_ASSERT(mIPGroup == 0);
+
+        ++mIPGroup;
+        mState = eExpectingIPV6Token;
+
+        MOZ_ASSERT(mTokenizer.hasMoreTokens());
+        return;
+      }
+
       mState = mTokenizer.hasMoreTokens() ? eExpectingPort : eComplete;
 
       return;
@@ -8375,6 +8401,22 @@ void OriginParser::HandleToken(const nsDependentCSubstring& aToken) {
       }
 
       HandlePathnameComponent(aToken);
+
+      return;
+    }
+
+    case eExpectingIPV6Token: {
+      
+      if (++mIPGroup > 8) {
+        mError = true;
+        return;
+      }
+
+      mHost.AppendLiteral(":");
+      mHost.Append(aToken);
+      if (!aToken.IsEmpty() && aToken.Last() == ']') {
+        mState = mTokenizer.hasMoreTokens() ? eExpectingPort : eComplete;
+      }
 
       return;
     }
