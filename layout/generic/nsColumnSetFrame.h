@@ -198,6 +198,7 @@ class nsColumnSetFrame final : public nsContainerFrame {
 
 
 
+
   void FindBestBalanceBSize(const ReflowInput& aReflowInput,
                             nsPresContext* aPresContext, ReflowConfig& aConfig,
                             ColumnBalanceData& aColData,
