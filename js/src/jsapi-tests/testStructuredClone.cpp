@@ -3,6 +3,7 @@
 
 
 #include "builtin/TestingFunctions.h"
+#include "js/ArrayBuffer.h"  
 #include "js/StructuredClone.h"
 
 #include "jsapi-tests/tests.h"
@@ -93,8 +94,8 @@ BEGIN_TEST(testStructuredClone_externalArrayBuffer) {
     JSAutoRealm ar(cx, g1);
 
     JS::RootedObject obj(
-        cx, JS_NewExternalArrayBuffer(cx, data.len(), data.contents(),
-                                      &ExternalData::freeCallback, &data));
+        cx, JS::NewExternalArrayBuffer(cx, data.len(), data.contents(),
+                                       &ExternalData::freeCallback, &data));
     CHECK(!data.wasFreed());
 
     v1 = JS::ObjectOrNullValue(obj);
@@ -114,7 +115,7 @@ BEGIN_TEST(testStructuredClone_externalArrayBuffer) {
     uint32_t len;
     bool isShared;
     uint8_t* clonedData;
-    js::GetArrayBufferLengthAndData(obj, &len, &isShared, &clonedData);
+    JS::GetArrayBufferLengthAndData(obj, &len, &isShared, &clonedData);
 
     
     
@@ -146,8 +147,8 @@ BEGIN_TEST(testStructuredClone_externalArrayBufferDifferentThreadOrProcess) {
 bool testStructuredCloneCopy(JS::StructuredCloneScope scope) {
   ExternalData data("One two three four");
   JS::RootedObject buffer(
-      cx, JS_NewExternalArrayBuffer(cx, data.len(), data.contents(),
-                                    &ExternalData::freeCallback, &data));
+      cx, JS::NewExternalArrayBuffer(cx, data.len(), data.contents(),
+                                     &ExternalData::freeCallback, &data));
   CHECK(buffer);
   CHECK(!data.wasFreed());
 
@@ -156,12 +157,12 @@ bool testStructuredCloneCopy(JS::StructuredCloneScope scope) {
   CHECK(clone(scope, v1, &v2));
   JS::RootedObject bufferOut(cx, v2.toObjectOrNull());
   CHECK(bufferOut);
-  CHECK(JS_IsArrayBufferObject(bufferOut));
+  CHECK(JS::IsArrayBufferObject(bufferOut));
 
   uint32_t len;
   bool isShared;
   uint8_t* clonedData;
-  js::GetArrayBufferLengthAndData(bufferOut, &len, &isShared, &clonedData);
+  JS::GetArrayBufferLengthAndData(bufferOut, &len, &isShared, &clonedData);
 
   
   
