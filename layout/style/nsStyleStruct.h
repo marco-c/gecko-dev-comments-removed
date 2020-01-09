@@ -1880,12 +1880,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleOrient mOrient;
   uint8_t mIsolation;           
   uint8_t mTopLayer;            
-  uint8_t mWillChangeBitField;  
-                                
-                                
-                                
-                                
-                                
+  
+  
+  
+  mozilla::StyleWillChangeBits mWillChangeBitField;
   nsTArray<RefPtr<nsAtom>> mWillChange;
 
   mozilla::StyleTouchAction mTouchAction;
@@ -2152,7 +2150,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     return mSpecifiedTransform || mSpecifiedRotate || mSpecifiedTranslate ||
            mSpecifiedScale ||
            mTransformStyle == NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D ||
-           (mWillChangeBitField & NS_STYLE_WILL_CHANGE_TRANSFORM) ||
+           (mWillChangeBitField & mozilla::StyleWillChangeBits_TRANSFORM) ||
            (mMotion && mMotion->HasPath());
   }
 

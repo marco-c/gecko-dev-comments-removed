@@ -2923,7 +2923,7 @@ nsStyleDisplay::nsStyleDisplay(const Document& aDocument)
       mOrient(StyleOrient::Inline),
       mIsolation(NS_STYLE_ISOLATION_AUTO),
       mTopLayer(NS_STYLE_TOP_LAYER_NONE),
-      mWillChangeBitField(0),
+      mWillChangeBitField({0}),
       mTouchAction(StyleTouchAction_AUTO),
       mScrollBehavior(NS_STYLE_SCROLL_BEHAVIOR_AUTO),
       mOverscrollBehaviorX(StyleOverscrollBehavior::Auto),
@@ -3284,16 +3284,19 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   
   
   
-  uint8_t willChangeBitsChanged =
-      mWillChangeBitField ^ aNewData.mWillChangeBitField;
+  
+  auto willChangeBitsChanged =
+      StyleWillChangeBits{static_cast<decltype(StyleWillChangeBits::bits)>(
+          mWillChangeBitField.bits ^ aNewData.mWillChangeBitField.bits)};
+
   if (willChangeBitsChanged &
-      (NS_STYLE_WILL_CHANGE_STACKING_CONTEXT | NS_STYLE_WILL_CHANGE_SCROLL |
-       NS_STYLE_WILL_CHANGE_OPACITY)) {
+      (StyleWillChangeBits_STACKING_CONTEXT | StyleWillChangeBits_SCROLL |
+       StyleWillChangeBits_OPACITY)) {
     hint |= nsChangeHint_RepaintFrame;
   }
 
   if (willChangeBitsChanged &
-      (NS_STYLE_WILL_CHANGE_FIXPOS_CB | NS_STYLE_WILL_CHANGE_ABSPOS_CB)) {
+      (StyleWillChangeBits_FIXPOS_CB | StyleWillChangeBits_ABSPOS_CB)) {
     hint |= nsChangeHint_UpdateContainingBlock;
   }
 

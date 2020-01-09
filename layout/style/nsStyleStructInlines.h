@@ -135,7 +135,7 @@ bool nsStyleDisplay::IsFixedPosContainingBlockForNonSVGTextFrames(
   
   NS_ASSERTION(aStyle.StyleDisplay() == this, "unexpected aStyle");
 
-  if (mWillChangeBitField & NS_STYLE_WILL_CHANGE_FIXPOS_CB) {
+  if (mWillChangeBitField & mozilla::StyleWillChangeBits_FIXPOS_CB) {
     return true;
   }
 
@@ -180,7 +180,7 @@ bool nsStyleDisplay::IsAbsPosContainingBlockForNonSVGTextFrames() const {
   
   
   return IsAbsolutelyPositionedStyle() || IsRelativelyPositionedStyle() ||
-         (mWillChangeBitField & NS_STYLE_WILL_CHANGE_ABSPOS_CB);
+         (mWillChangeBitField & mozilla::StyleWillChangeBits_ABSPOS_CB);
 }
 
 bool nsStyleDisplay::IsAbsPosContainingBlock(
