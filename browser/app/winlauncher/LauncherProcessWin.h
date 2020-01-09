@@ -7,14 +7,24 @@
 #ifndef mozilla_LauncherProcessWin_h
 #define mozilla_LauncherProcessWin_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/TypedEnumBits.h"
 
 #include <stdint.h>
 
 namespace mozilla {
 
-bool RunAsLauncherProcess(int& argc, wchar_t* argv[]);
-int LauncherMain(int argc, wchar_t* argv[]);
+
+struct StaticXREAppData;
+
+
+
+
+
+
+
+Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
+                        const StaticXREAppData& aAppData);
 
 enum class LauncherFlags : uint32_t {
   eNone = 0,
