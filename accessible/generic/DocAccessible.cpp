@@ -1218,7 +1218,7 @@ void DocAccessible::UnbindFromDocument(Accessible* aAccessible) {
 
   
   
-  if (FocusMgr()->IsActiveItem(aAccessible)) {
+  if (FocusMgr()->WasLastFocused(aAccessible)) {
     FocusMgr()->ActiveItemChanged(nullptr);
 #ifdef A11Y_LOG
     if (logging::IsEnabled(logging::eFocus))

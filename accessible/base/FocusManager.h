@@ -71,6 +71,18 @@ class FocusManager {
   FocusDisposition IsInOrContainsFocus(const Accessible* aAccessible) const;
 
   
+
+
+
+
+
+
+
+
+
+  bool WasLastFocused(const Accessible* aAccessible) const;
+
+  
   
 
   
@@ -124,6 +136,7 @@ class FocusManager {
 
  private:
   RefPtr<Accessible> mActiveItem;
+  RefPtr<Accessible> mLastFocus;
   RefPtr<Accessible> mActiveARIAMenubar;
 };
 
