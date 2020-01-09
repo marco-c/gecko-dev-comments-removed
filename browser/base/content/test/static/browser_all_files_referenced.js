@@ -643,6 +643,10 @@ add_task(async function checkAllTheFiles() {
   
   await throttledMapPromises(manifestURIs, parseManifest);
 
+  for (let jsm of Components.manager.getComponentJSMs()) {
+    gReferencesFromCode.set(jsm, null);
+  }
+
   
   
   
