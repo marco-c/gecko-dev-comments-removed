@@ -1751,11 +1751,17 @@ public class GeckoSession implements Parcelable {
 
 
 
+
+
     @AnyThread
     public void setActive(final boolean active) {
         final GeckoBundle msg = new GeckoBundle(1);
         msg.putBoolean("active", active);
         mEventDispatcher.dispatch("GeckoView:SetActive", msg);
+
+        if (!active) {
+            mEventDispatcher.dispatch("GeckoView:FlushSessionState", null);
+        }
     }
 
     

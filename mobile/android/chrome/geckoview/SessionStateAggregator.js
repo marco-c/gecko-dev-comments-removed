@@ -513,7 +513,6 @@ class MessageQueue extends Handler {
 
 
 
-
   send(options = {}) {
     
     
@@ -523,8 +522,6 @@ class MessageQueue extends Handler {
     }
 
     this.cleanupTimers();
-
-    const flushID = (options && options.flushID) || 0;
 
     let data = {};
     for (let [key, func] of this._data) {
@@ -541,7 +538,7 @@ class MessageQueue extends Handler {
       
       this.eventDispatcher.sendRequest({
         type: "GeckoView:StateUpdated",
-        data, flushID,
+        data,
         isFinal: options.isFinal || false,
         epoch: this.store.epoch,
       });
@@ -568,11 +565,23 @@ class SessionStateAggregator extends GeckoViewChildModule {
       this.stateChangeNotifier,
       this.messageQueue,
     ];
+
+    this.messageManager.addMessageListener("GeckoView:FlushSessionState", this);
   }
 
-  flush({id}) {
+  receiveMessage(aMsg) {
+    debug `receiveMessage: ${aMsg.name}`;
+
+    switch (aMsg.name) {
+      case "GeckoView:FlushSessionState":
+        this.flush();
+        break;
+    }
+  }
+
+  flush() {
     
-    this.messageQueue.send({flushID: id});
+    this.messageQueue.send();
   }
 
   onUnload() {
