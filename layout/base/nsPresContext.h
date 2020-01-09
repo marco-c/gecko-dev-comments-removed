@@ -1072,6 +1072,18 @@ class nsPresContext : public nsISupports,
 
   void InvalidatePaintedLayers();
 
+  uint32_t GetNextFrameRateMultiplier() const {
+    return mNextFrameRateMultiplier;
+  }
+
+  void DidUseFrameRateMultiplier() {
+    if (!mNextFrameRateMultiplier) {
+      mNextFrameRateMultiplier = 1;
+    } else if (mNextFrameRateMultiplier < 8) {
+      mNextFrameRateMultiplier = mNextFrameRateMultiplier * 2;
+    }
+  }
+
  protected:
   
   void Destroy();
@@ -1175,6 +1187,9 @@ class nsPresContext : public nsISupports,
   uint16_t mImageAnimationModePref;
 
   uint32_t mInterruptChecksToSkip;
+
+  
+  uint32_t mNextFrameRateMultiplier;
 
   
   
