@@ -42,7 +42,7 @@ obs.prototype = {
 
     
     if (!channel.URI.spec.includes(
-          "http://example.org/tests/extensions/cookie/test/")) {
+          "http://example.org/tests/netwerk/test/mochitests/")) {
       info("ignoring this one");
       return;
     }
