@@ -39,10 +39,7 @@ class MacOSFontEntry : public gfxFontEntry {
                  WeightRange aWeight, StretchRange aStretch,
                  SlantStyleRange aStyle, bool aIsDataUserFont, bool aIsLocal);
 
-  virtual ~MacOSFontEntry() {
-    hb_blob_destroy(mTrakTable);
-    ::CGFontRelease(mFontRef);
-  }
+  virtual ~MacOSFontEntry() { ::CGFontRelease(mFontRef); }
 
   gfxFontEntry* Clone() const override;
 
@@ -67,26 +64,12 @@ class MacOSFontEntry : public gfxFontEntry {
 
   bool IsCFF();
 
-  
-  
-  
-  bool HasTrackingTable();
-
   bool SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTag) override;
-
-  
-  
-  float TrackingForCSSPx(float aPointSize) const;
 
  protected:
   gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
   bool HasFontTable(uint32_t aTableTag) override;
-
-  
-  
-  
-  bool ParseTrakTable();
 
   static void DestroyBlobFunc(void* aUserData);
 
@@ -103,7 +86,6 @@ class MacOSFontEntry : public gfxFontEntry {
   bool mHasVariationsInitialized;
   bool mHasAATSmallCaps;
   bool mHasAATSmallCapsInitialized;
-  bool mCheckedForTracking;
 
   
   
@@ -120,14 +102,6 @@ class MacOSFontEntry : public gfxFontEntry {
   nsTHashtable<nsUint32HashKey> mAvailableTables;
 
   mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontMac> mUnscaledFont;
-
-  
-  
-  hb_blob_t* mTrakTable;
-  
-  const mozilla::AutoSwap_PRInt16* mTrakValues;
-  const mozilla::AutoSwap_PRInt32* mTrakSizeTable;
-  uint16_t mNumTrakSizes;
 };
 
 class gfxMacPlatformFontList : public gfxPlatformFontList {

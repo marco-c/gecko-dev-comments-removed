@@ -407,6 +407,15 @@ class gfxFontEntry {
   
   virtual FT_MM_Var* GetMMVar() { return nullptr; }
 
+  
+  
+  
+  bool HasTrackingTable();
+
+  
+  
+  float TrackingForCSSPx(float aSize) const;
+
   nsCString mName;
   nsCString mFamilyName;
 
@@ -528,6 +537,11 @@ class gfxFontEntry {
   }
 
   
+  
+  
+  bool ParseTrakTable();
+
+  
   virtual already_AddRefed<gfxCharacterMap> GetCMAPFromFontInfo(
       FontInfoData* aFontInfoData, uint32_t& aUVSOffset);
 
@@ -567,6 +581,17 @@ class gfxFontEntry {
   nsDataHashtable<nsPtrHashKey<const void>, void*>* mGrTableMap = nullptr;
 
   
+  hb_blob_t* const kTrakTableUninitialized = (hb_blob_t* const)(intptr_t(-1));
+  hb_blob_t* mTrakTable = kTrakTableUninitialized;
+  bool TrakTableInitialized() const {
+    return mTrakTable != kTrakTableUninitialized;
+  }
+
+  
+  const mozilla::AutoSwap_PRInt16* mTrakValues;
+  const mozilla::AutoSwap_PRInt32* mTrakSizeTable;
+
+  
   nsrefcnt mGrFaceRefCnt = 0;
 
   static const void* GrGetTable(const void* aAppFaceHandle, unsigned int aName,
@@ -583,6 +608,8 @@ class gfxFontEntry {
   
   
   uint16_t mUnitsPerEm = 0;
+
+  uint16_t mNumTrakSizes;
 
  private:
   
