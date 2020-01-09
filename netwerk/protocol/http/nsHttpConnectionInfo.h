@@ -91,6 +91,13 @@ class nsHttpConnectionInfo final : public ARefBase {
     return mProxyInfo ? mProxyInfo->Password().get() : nullptr;
   }
 
+  const nsCString& ProxyAuthorizationHeader() const {
+    return mProxyInfo ? mProxyInfo->ProxyAuthorizationHeader() : EmptyCString();
+  }
+  const nsCString& ConnectionIsolationKey() const {
+    return mProxyInfo ? mProxyInfo->ConnectionIsolationKey() : EmptyCString();
+  }
+
   
   
   
