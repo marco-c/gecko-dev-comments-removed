@@ -26,7 +26,7 @@ add_task(async function() {
   info("Check 'This Firefox' route");
   document.location.hash = "#/runtime/this-firefox";
   await waitUntil(() => document.querySelector(".js-runtime-page"));
-  const infoLabel = document.querySelector(".js-runtime-info").textContent;
+  const infoLabel = document.querySelector(".js-runtime-name").textContent;
   
   ok(infoLabel.includes("Firefox"), "Runtime is displayed as Firefox");
   ok(!infoLabel.includes(" on "), "Runtime is not associated to any device");
@@ -57,7 +57,7 @@ add_task(async function() {
   
   document.location.hash = "#/runtime/1337id";
   await waitUntil(() => document.querySelector(".js-runtime-page"));
-  const runtimeLabel = document.querySelector(".js-runtime-info").textContent;
+  const runtimeLabel = document.querySelector(".js-runtime-name").textContent;
   is(
       document.title,
       "Debugging - Runtime / 1337id",
