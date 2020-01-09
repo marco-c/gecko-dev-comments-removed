@@ -790,7 +790,7 @@ VariablesView.prototype = {
       aItem.collapse();
     }
     aItem._target.focus();
-    this._list.ensureElementIsVisible(aItem._arrow);
+    aItem._arrow.scrollIntoView({ block: "nearest" });
     return true;
   },
 
@@ -3969,7 +3969,7 @@ Editable.prototype = {
 
     
     label.parentNode.replaceChild(input, label);
-    this._variable._variablesView._list.ensureElementIsVisible(input);
+    input.scrollIntoView({ block: "nearest" });
     input.select();
 
     

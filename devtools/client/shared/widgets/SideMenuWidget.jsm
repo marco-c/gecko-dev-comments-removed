@@ -226,9 +226,8 @@ SideMenuWidget.prototype = {
     }
 
     
-    const scrollbox = this._list;
-    scrollbox.ensureElementIsVisible(aElement);
-    scrollbox.scrollBy(-this._list.clientWidth, 0);
+    aElement.scrollIntoView({ block: "nearest" });
+    this._list.scrollBy(-this._list.clientWidth, 0);
   },
 
   

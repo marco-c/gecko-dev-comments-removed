@@ -193,9 +193,8 @@ FastListWidget.prototype = {
     }
 
     
-    const scrollbox = this._list;
-    scrollbox.ensureElementIsVisible(element);
-    scrollbox.scrollBy(-this._list.clientWidth, 0);
+    element.scrollIntoView({ block: "nearest" });
+    this._list.scrollBy(-this._list.clientWidth, 0);
   },
 
   
