@@ -431,7 +431,7 @@ class IntervalSet {
     
     
     
-    intersection.SetCapacity(std::min(aOther.Length(), mIntervals.Length()));
+    intersection.SetCapacity(std::max(aOther.Length(), mIntervals.Length()));
 
     const ContainerType& other = aOther.mIntervals;
     IndexType i = 0, j = 0;
