@@ -1208,7 +1208,7 @@ impl ResourceCache {
                 
                 
                 
-                const MAX_TILES_PER_REQUEST: i32 = 64;
+                const MAX_TILES_PER_REQUEST: i32 = 512;
                 
                 
                 
