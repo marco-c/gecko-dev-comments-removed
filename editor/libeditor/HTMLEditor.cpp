@@ -1727,7 +1727,7 @@ HTMLEditor::SelectElement(Element* aElement) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  nsresult rv = SelectContentInternal(MOZ_KnownLive(*aElement));
+  nsresult rv = SelectContentInternal(*aElement);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1742,18 +1742,28 @@ nsresult HTMLEditor::SelectContentInternal(nsIContent& aContentToSelect) {
     return NS_ERROR_FAILURE;
   }
 
-  EditorRawDOMPoint newSelectionStart(&aContentToSelect);
-  if (NS_WARN_IF(!newSelectionStart.IsSet())) {
+  nsINode* parent = aContentToSelect.GetParentNode();
+  if (NS_WARN_IF(!parent)) {
     return NS_ERROR_FAILURE;
   }
-  EditorRawDOMPoint newSelectionEnd(&aContentToSelect);
-  MOZ_ASSERT(newSelectionEnd.IsSet());
-  DebugOnly<bool> advanced = newSelectionEnd.AdvanceOffset();
-  ErrorResult error;
-  MOZ_KnownLive(SelectionRefPtr())
-      ->SetStartAndEndInLimiter(newSelectionStart, newSelectionEnd, error);
-  NS_WARNING_ASSERTION(!error.Failed(), "Failed to select the given content");
-  return error.StealNSResult();
+
+  
+  AutoUpdateViewBatch notifySelectionChangeOnce(*this);
+
+  
+  int32_t offsetInParent = parent->ComputeIndexOf(&aContentToSelect);
+
+  
+  nsresult rv = SelectionRefPtr()->Collapse(parent, offsetInParent);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  
+  rv = SelectionRefPtr()->Extend(parent, offsetInParent + 1);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -3593,31 +3603,23 @@ nsresult HTMLEditor::SelectEntireDocument() {
     return NS_ERROR_NULL_POINTER;
   }
 
-  RefPtr<Element> rootElement = GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
   
   RefPtr<TextEditRules> rules(mRules);
 
   
-  
   if (rules->DocumentIsEmpty()) {
+    
+    Element* rootElement = GetRoot();
+
+    
     nsresult rv = SelectionRefPtr()->Collapse(rootElement, 0);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "Failed to move caret to start of the editor root element");
-    return rv;
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    return NS_OK;
   }
 
-  
-  ErrorResult error;
-  SelectionRefPtr()->SelectAllChildren(*rootElement, error);
-  NS_WARNING_ASSERTION(
-      !error.Failed(),
-      "Failed to select all children of the editor root element");
-  return error.StealNSResult();
+  return EditorBase::SelectEntireDocument();
 }
 
 nsresult HTMLEditor::SelectAllInternal() {

@@ -456,13 +456,9 @@ class TextComposition final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   void HandleSelectionEvent(WidgetSelectionEvent* aSelectionEvent) {
-    RefPtr<nsPresContext> presContext(mPresContext);
-    RefPtr<TabParent> tabParent(mTabParent);
-    HandleSelectionEvent(presContext, tabParent, aSelectionEvent);
+    HandleSelectionEvent(mPresContext, mTabParent, aSelectionEvent);
   }
-  MOZ_CAN_RUN_SCRIPT
   static void HandleSelectionEvent(nsPresContext* aPresContext,
                                    TabParent* aTabParent,
                                    WidgetSelectionEvent* aSelectionEvent);

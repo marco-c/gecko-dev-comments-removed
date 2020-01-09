@@ -1198,25 +1198,18 @@ nsresult TextEditor::SetTextAsSubAction(const nsAString& aString) {
     
     AutoUpdateViewBatch preventSelectionChangeEvent(*this);
 
-    Element* rootElement = GetRoot();
-    if (NS_WARN_IF(!rootElement)) {
-      return NS_ERROR_FAILURE;
-    }
-
     
     
     if (rules->DocumentIsEmpty()) {
+      
+      
+      Element* rootElement = GetRoot();
+      if (NS_WARN_IF(!rootElement)) {
+        return NS_ERROR_FAILURE;
+      }
       rv = SelectionRefPtr()->Collapse(rootElement, 0);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "Failed to move caret to start of the editor root element");
     } else {
-      ErrorResult error;
-      SelectionRefPtr()->SelectAllChildren(*rootElement, error);
-      NS_WARNING_ASSERTION(
-          !error.Failed(),
-          "Failed to select all children of the editor root element");
-      rv = error.StealNSResult();
+      rv = EditorBase::SelectEntireDocument();
     }
     if (NS_SUCCEEDED(rv)) {
       rv = ReplaceSelectionAsSubAction(aString);
@@ -2150,28 +2143,31 @@ nsresult TextEditor::SelectEntireDocument() {
     return NS_ERROR_NULL_POINTER;
   }
 
-  Element* rootElement = GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
   
   RefPtr<TextEditRules> rules(mRules);
 
   
-  
   if (rules->DocumentIsEmpty()) {
-    nsresult rv = SelectionRefPtr()->Collapse(rootElement, 0);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "Failed to move caret to start of the editor root element");
+    
+    Element* rootElement = GetRoot();
+    if (NS_WARN_IF(!rootElement)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    return SelectionRefPtr()->Collapse(rootElement, 0);
+  }
+
+  SelectionBatcher selectionBatcher(SelectionRefPtr());
+  nsresult rv = EditorBase::SelectEntireDocument();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
   nsCOMPtr<nsIContent> childNode;
-  nsresult rv = EditorBase::GetEndChildNode(*SelectionRefPtr(),
-                                            getter_AddRefs(childNode));
+  rv = EditorBase::GetEndChildNode(*SelectionRefPtr(),
+                                   getter_AddRefs(childNode));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -2180,22 +2176,13 @@ nsresult TextEditor::SelectEntireDocument() {
   }
 
   if (childNode && TextEditUtils::IsMozBR(childNode)) {
-    ErrorResult error;
-    MOZ_KnownLive(SelectionRefPtr())
-        ->SetStartAndEndInLimiter(RawRangeBoundary(rootElement, 0),
-                                  EditorRawDOMPoint(childNode), error);
-    NS_WARNING_ASSERTION(!error.Failed(),
-                         "Failed to select all children of the editor root "
-                         "element except the moz-<br> element");
-    return error.StealNSResult();
+    int32_t parentOffset;
+    nsINode* parentNode = GetNodeLocation(childNode, &parentOffset);
+
+    return SelectionRefPtr()->Extend(parentNode, parentOffset);
   }
 
-  ErrorResult error;
-  SelectionRefPtr()->SelectAllChildren(*rootElement, error);
-  NS_WARNING_ASSERTION(
-      !error.Failed(),
-      "Failed to select all children of the editor root element");
-  return error.StealNSResult();
+  return NS_OK;
 }
 
 EventTarget* TextEditor::GetDOMEventTarget() { return mEventTarget; }

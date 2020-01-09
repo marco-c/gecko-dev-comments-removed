@@ -389,7 +389,6 @@ class EditorBase : public nsIEditor,
     return mTransactionManager->RemoveTransactionListener(aListener);
   }
 
-  MOZ_CAN_RUN_SCRIPT
   virtual nsresult HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent);
 
   virtual dom::EventTarget* GetDOMEventTarget() = 0;
@@ -1817,7 +1816,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   virtual nsresult SelectAllInternal();
 
   nsresult DetermineCurrentDirection();
@@ -1862,8 +1860,7 @@ class EditorBase : public nsIEditor,
   
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult SelectEntireDocument() = 0;
+  virtual nsresult SelectEntireDocument();
 
   
 

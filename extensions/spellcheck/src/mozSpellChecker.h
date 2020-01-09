@@ -51,7 +51,6 @@ class mozSpellChecker final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult NextMisspelledWord(nsAString& aWord,
                               nsTArray<nsString>* aSuggestions);
 
@@ -82,7 +81,6 @@ class mozSpellChecker final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult Replace(const nsAString& aOldWord, const nsAString& aNewWord,
                    bool aAllOccurrences);
 
@@ -164,7 +162,6 @@ class mozSpellChecker final {
 
   nsString mCurrentDictionary;
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult SetupDoc(int32_t* outBlockOffset);
 
   nsresult GetCurrentBlockIndex(

@@ -2981,27 +2981,31 @@ nsresult ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  if (aEvent->mReversed) {
-    nsCOMPtr<nsINode> startNodeStrong(startNode);
-    nsCOMPtr<nsINode> endNodeStrong(endNode);
-    ErrorResult error;
-    MOZ_KnownLive(mSelection)
-        ->SetBaseAndExtentInLimiter(*endNodeStrong, endNodeOffset,
-                                    *startNodeStrong, startNodeOffset, error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
+  mSelection->StartBatchChanges();
+
+  
+  rv = mSelection->RemoveAllRangesTemporarily();
+  
+  if (NS_SUCCEEDED(rv)) {
+    if (aEvent->mReversed) {
+      rv = mSelection->Collapse(endNode, endNodeOffset);
+    } else {
+      rv = mSelection->Collapse(startNode, startNodeOffset);
     }
-  } else {
-    nsCOMPtr<nsINode> startNodeStrong(startNode);
-    nsCOMPtr<nsINode> endNodeStrong(endNode);
-    ErrorResult error;
-    MOZ_KnownLive(mSelection)
-        ->SetBaseAndExtentInLimiter(*startNodeStrong, startNodeOffset,
-                                    *endNodeStrong, endNodeOffset, error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
+    if (NS_SUCCEEDED(rv) &&
+        (startNode != endNode || startNodeOffset != endNodeOffset)) {
+      if (aEvent->mReversed) {
+        rv = mSelection->Extend(startNode, startNodeOffset);
+      } else {
+        rv = mSelection->Extend(endNode, endNodeOffset);
+      }
     }
   }
+
+  
+  
+  mSelection->EndBatchChanges(aEvent->mReason);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   mSelection->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
                              nsIPresShell::ScrollAxis(),

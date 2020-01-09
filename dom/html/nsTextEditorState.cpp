@@ -2301,9 +2301,7 @@ bool nsTextEditorState::SetValue(const nsAString& aValue,
             
             
             
-            RefPtr<nsRange> range;  
-            DebugOnly<nsresult> rv =
-                textEditor->ReplaceTextAsAction(newValue, range);
+            DebugOnly<nsresult> rv = textEditor->ReplaceTextAsAction(newValue);
             NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                                  "Failed to set the new value");
           } else if (aFlags & eSetValue_ForXUL) {

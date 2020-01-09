@@ -150,7 +150,6 @@ class TextServicesDocument final : public nsIEditActionListener {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult LastSelectedBlock(BlockSelectionStatus* aSelStatus,
                              int32_t* aSelOffset, int32_t* aSelLength);
 
@@ -190,7 +189,6 @@ class TextServicesDocument final : public nsIEditActionListener {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult SetSelection(int32_t aOffset, int32_t aLength);
 
   
@@ -203,14 +201,12 @@ class TextServicesDocument final : public nsIEditActionListener {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteSelection();
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult InsertText(const nsString* aText);
 
   
@@ -271,13 +267,10 @@ class TextServicesDocument final : public nsIEditActionListener {
   static bool HasSameBlockNodeParent(nsIContent* aContent1,
                                      nsIContent* aContent2);
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult SetSelectionInternal(int32_t aOffset, int32_t aLength,
                                 bool aDoUpdate);
-  MOZ_CAN_RUN_SCRIPT
   nsresult GetSelection(BlockSelectionStatus* aSelStatus, int32_t* aSelOffset,
                         int32_t* aSelLength);
-  MOZ_CAN_RUN_SCRIPT
   nsresult GetCollapsedSelection(BlockSelectionStatus* aSelStatus,
                                  int32_t* aSelOffset, int32_t* aSelLength);
   nsresult GetUncollapsedSelection(BlockSelectionStatus* aSelStatus,
