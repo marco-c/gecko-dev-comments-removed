@@ -1501,7 +1501,7 @@ bool JSObject::setFlags(JSContext* cx, HandleObject obj, BaseShape::Flag flags,
 
   
   
-  obj->as<ShapedObject>().setShape(newShape);
+  obj->as<JSObject>().setShape(newShape);
 
   return true;
 }
@@ -1913,7 +1913,7 @@ void Shape::fixupDictionaryShapeAfterMovingGC() {
     }
   } else {
     
-    JSObject* last = ShapedObject::fromShapeFieldPointer(uintptr_t(listp));
+    JSObject* last = JSObject::fromShapeFieldPointer(uintptr_t(listp));
     if (gc::IsForwarded(last)) {
       listp = gc::Forwarded(last)->as<NativeObject>().shapePtr();
     }

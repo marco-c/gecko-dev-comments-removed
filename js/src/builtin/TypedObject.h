@@ -14,7 +14,6 @@
 #include "js/Conversions.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/JSObject.h"
-#include "vm/ShapedObject.h"
 
 
 
@@ -523,7 +522,7 @@ class TypedObjectModuleObject : public NativeObject {
 };
 
 
-class TypedObject : public ShapedObject {
+class TypedObject : public JSObject {
   static const bool IsTypedObjectClass = true;
 
   static MOZ_MUST_USE bool obj_getArrayElement(JSContext* cx,
