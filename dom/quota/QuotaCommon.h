@@ -73,11 +73,12 @@ BEGIN_QUOTA_NAMESPACE
 
 
 #ifdef NIGHTLY_BUILD
-const nsCString kInternalError = NS_LITERAL_CSTRING("internal");
-const nsCString kExternalError = NS_LITERAL_CSTRING("external");
+extern const nsLiteralCString kInternalError;
+extern const nsLiteralCString kExternalError;
 #else
-const nsCString kInternalError = EmptyCString();
-const nsCString kExternalError = EmptyCString();
+
+#  define kInternalError
+#  define kExternalError
 #endif
 
 class BackgroundThreadObject {

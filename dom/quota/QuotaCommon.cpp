@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#include "QuotaCommon.h"
+
+BEGIN_QUOTA_NAMESPACE
+
+#ifdef NIGHTLY_BUILD
+NS_NAMED_LITERAL_CSTRING(kInternalError, "internal");
+NS_NAMED_LITERAL_CSTRING(kExternalError, "external");
+#endif
+
+END_QUOTA_NAMESPACE
