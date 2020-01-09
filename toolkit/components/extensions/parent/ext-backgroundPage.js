@@ -51,6 +51,7 @@ class BackgroundPage extends HiddenExtensionPage {
       
       Cu.reportError(e);
       ExtensionTelemetry.backgroundPageLoad.stopwatchCancel(extension, this);
+      extension.emit("background-page-aborted");
       return;
     }
 
