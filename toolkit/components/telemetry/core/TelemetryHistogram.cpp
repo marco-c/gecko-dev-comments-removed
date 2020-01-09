@@ -119,8 +119,6 @@ static StaticMutexNotRecorded gTelemetryHistogramMutex;
 
 namespace {
 
-typedef nsDataHashtable<nsCStringHashKey, HistogramID> StringToHistogramIdMap;
-
 
 
 
