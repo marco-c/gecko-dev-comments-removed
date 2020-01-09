@@ -166,6 +166,11 @@ public class WebExtension {
 
 
 
+
+
+
+
+
     @UiThread
     public void setMessageDelegate(final @Nullable MessageDelegate messageDelegate,
                                    final @NonNull String nativeApp) {
