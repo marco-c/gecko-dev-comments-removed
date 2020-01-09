@@ -11,11 +11,17 @@ add_task(async function setup() {
 });
 
 add_task(async function test_about_addons() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:addons", false);
+  let options = {
+    gBrowser,
+    opening: "about:addons",
+    waitForLoad: false,
+    waitForStateStop: true,
+  };
+  let tab = await BrowserTestUtils.openNewForegroundTab(options);
 
   await ContentTask.spawn(tab.linkedBrowser, null, async function() {
     ok(content.document.documentURI.startsWith("about:neterror?e=blockedByPolicy"),
-       content.document.documentURI + "should start with about:neterror?e=blockedByPolicy");
+       content.document.documentURI + " should start with about:neterror?e=blockedByPolicy");
 
     
     
