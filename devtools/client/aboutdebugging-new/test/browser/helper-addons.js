@@ -30,9 +30,9 @@ async function enableExtensionDebugging() {
 
 
 
-async function installTemporaryExtension(path, name, document) {
+async function installTemporaryExtension(pathOrFile, name, document) {
   
-  prepareMockFilePicker(path);
+  prepareMockFilePicker(pathOrFile);
 
   const onAddonInstalled = new Promise(done => {
     Management.on("startup", function listener(event, extension) {
@@ -93,11 +93,14 @@ async function removeExtension(id, name, document) {
 }
 
 
-function prepareMockFilePicker(path) {
+function prepareMockFilePicker(pathOrFile) {
+  const isFile = typeof pathOrFile.isFile === "function" && pathOrFile.isFile();
+  const file = isFile ? pathOrFile : _getSupportsFile(pathOrFile).file;
+
   
   const MockFilePicker = SpecialPowers.MockFilePicker;
   MockFilePicker.init(window);
-  MockFilePicker.setFiles([_getSupportsFile(path).file]);
+  MockFilePicker.setFiles([file]);
 }
 
 
