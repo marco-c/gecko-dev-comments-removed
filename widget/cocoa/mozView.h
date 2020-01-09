@@ -35,9 +35,6 @@ class TextInputHandler;
 - (nsIWidget*)widget;
 
 
-- (NSMenu*)contextMenu;
-
-
 - (void)widgetDestroyed;
 
 - (BOOL)isDragInProgress;
