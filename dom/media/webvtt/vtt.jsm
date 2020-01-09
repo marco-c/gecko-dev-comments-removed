@@ -1084,29 +1084,14 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     return parseContent(window, cuetext, PARSE_CONTENT_MODE.DOCUMENT_FRAGMENT);
   };
 
-  function clearAllCuesDiv(overlay) {
-    while (overlay.firstChild) {
-      overlay.firstChild.remove();
-    }
-  }
-
-  
-  var lastDisplayedCueNums = 0;
-
-  
-  
-  
   
   
   
   
   
   WebVTT.processCues = function(window, cues, overlay, controls) {
-    if (!cues) {
-      LOG(`Abort processing because no cue.`);
-      clearAllCuesDiv(overlay);
-      lastDisplayedCueNums = 0;
-      return;
+    if (!window || !cues || !overlay) {
+      return null;
     }
 
     let controlBar, controlBarShown;
@@ -1124,10 +1109,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     
     
     function shouldCompute(cues) {
-      if (lastDisplayedCueNums != cues.length) {
-        return true;
-      }
-
       if (overlay.lastControlBarShownStatus != controlBarShown) {
         return true;
       }
@@ -1142,12 +1123,14 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
     
     if (!shouldCompute(cues)) {
-      LOG(`Abort processing because no need to compute cues' display state.`);
       return;
     }
     overlay.lastControlBarShownStatus = controlBarShown;
 
-    clearAllCuesDiv(overlay);
+    
+    while (overlay.firstChild) {
+      overlay.firstChild.remove();
+    }
     let rootOfCues = window.document.createElement("div");
     rootOfCues.style.position = "absolute";
     rootOfCues.style.left = "0";
@@ -1171,9 +1154,8 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     let regionNodeBoxes = {};
     let regionNodeBox;
 
-    LOG(`=== processCues, ` +
-        `lastDisplayedCueNums=${lastDisplayedCueNums}, currentCueNums=${cues.length} ===`);
-    lastDisplayedCueNums = cues.length;
+    LOG(`=== processCues ===`);
+
     for (let i = 0; i < cues.length; i++) {
       cue = cues[i];
       if (cue.region != null) {
