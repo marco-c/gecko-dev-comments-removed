@@ -3915,6 +3915,27 @@ static nscoord GetLargestLineMainSize(const FlexLine* aFirstLine) {
 
 
 
+static bool FrameHasRelativeBSizeDependency(nsIFrame* aFrame) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+    return true;
+  }
+  for (nsIFrame::ChildListIterator childLists(aFrame); !childLists.IsDone();
+       childLists.Next()) {
+    for (nsIFrame* childFrame : childLists.CurrentList()) {
+      if (childFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+
+
+
+
+
+
 
 
 
@@ -4836,8 +4857,7 @@ void nsFlexContainerFrame::DoFlexLayout(
           
           
           
-          if (!(item->Frame()->GetStateBits() &
-                NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+          if (!FrameHasRelativeBSizeDependency(item->Frame())) {
             
             
             
