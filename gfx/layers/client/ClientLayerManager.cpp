@@ -716,6 +716,7 @@ void ClientLayerManager::ForwardTransaction(bool aScheduleComposite) {
     
     
     mTransactionIdAllocator->RevokeTransactionId(mLatestTransactionId);
+    mLatestTransactionId = mLatestTransactionId.Prev();
   }
 
   mPhase = PHASE_NONE;

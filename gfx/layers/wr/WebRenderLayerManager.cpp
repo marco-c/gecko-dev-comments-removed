@@ -208,6 +208,7 @@ bool WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags) {
       WrBridge()->SendSetFocusTarget(mFocusTarget);
       
       mTransactionIdAllocator->RevokeTransactionId(mLatestTransactionId);
+      mLatestTransactionId = mLatestTransactionId.Prev();
       return true;
     }
   }
