@@ -10789,19 +10789,18 @@ void nsCSSFrameConstructor::FinishBuildingColumns(
     if (f->IsColumnSpan()) {
       
       
-      finalItems.AddChild(f);
+      finalItems.AppendFrame(aColumnSetWrapper, f);
     } else {
       auto* continuingColumnSet = static_cast<nsContainerFrame*>(
           CreateContinuingFrame(mPresShell->GetPresContext(), prevColumnSet,
                                 aColumnSetWrapper, false));
       f->SetParent(continuingColumnSet);
       SetInitialSingleChild(continuingColumnSet, f);
-      finalItems.AddChild(continuingColumnSet);
+      finalItems.AppendFrame(aColumnSetWrapper, continuingColumnSet);
       prevColumnSet = continuingColumnSet;
     }
   }
 
-  finalItems.ApplySetParent(aColumnSetWrapper);
   aColumnSetWrapper->AppendFrames(kPrincipalList, finalItems);
 }
 
