@@ -854,8 +854,6 @@ class DOMLocalization extends Localization {
   }
 }
 
-DOMLocalization.DOMOverlays = { translateElement };
-
 
 
 
