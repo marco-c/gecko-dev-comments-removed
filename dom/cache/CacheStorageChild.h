@@ -53,10 +53,9 @@ class CacheStorageChild final : public PCacheStorageChild, public ActorChild {
   
   virtual void ActorDestroy(ActorDestroyReason aReason) override;
 
-  virtual PCacheOpChild* AllocPCacheOpChild(
-      const CacheOpArgs& aOpArgs) override;
+  PCacheOpChild* AllocPCacheOpChild(const CacheOpArgs& aOpArgs);
 
-  virtual bool DeallocPCacheOpChild(PCacheOpChild* aActor) override;
+  bool DeallocPCacheOpChild(PCacheOpChild* aActor);
 
   
   void NoteDeletedActor();

@@ -3161,23 +3161,26 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
                     recvDecl.methodspec = MethodSpec.PURE
                     self.cls.addstmt(StmtDecl(recvDecl))
 
-        for md in p.messageDecls:
-            managed = md.decl.type.constructedType()
-            if not ptype.isManagerOf(managed) or md.decl.type.isDtor():
-                continue
+        
+        
+        if (self.protocol.name, self.side) in VIRTUAL_CALL_CLASSES:
+            for md in p.messageDecls:
+                managed = md.decl.type.constructedType()
+                if not ptype.isManagerOf(managed) or md.decl.type.isDtor():
+                    continue
 
-            
-            actortype = md.actorDecl().bareType(self.side)
+                
+                actortype = md.actorDecl().bareType(self.side)
 
-            self.cls.addstmt(StmtDecl(MethodDecl(
-                _allocMethod(managed, self.side),
-                params=md.makeCxxParams(side=self.side, implicit=False),
-                ret=actortype, methodspec=MethodSpec.PURE)))
+                self.cls.addstmt(StmtDecl(MethodDecl(
+                    _allocMethod(managed, self.side),
+                    params=md.makeCxxParams(side=self.side, implicit=False),
+                    ret=actortype, methodspec=MethodSpec.PURE)))
 
-            self.cls.addstmt(StmtDecl(MethodDecl(
-                _deallocMethod(managed, self.side),
-                params=[Decl(actortype, 'aActor')],
-                ret=Type.BOOL, methodspec=MethodSpec.PURE)))
+                self.cls.addstmt(StmtDecl(MethodDecl(
+                    _deallocMethod(managed, self.side),
+                    params=[Decl(actortype, 'aActor')],
+                    ret=Type.BOOL, methodspec=MethodSpec.PURE)))
 
         
         if self.side == 'parent':
