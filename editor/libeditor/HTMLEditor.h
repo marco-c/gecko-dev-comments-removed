@@ -1546,6 +1546,7 @@ class HTMLEditor final : public TextEditor,
 
 
   nsresult SetCSSBackgroundColorWithTransaction(const nsAString& aColor);
+  MOZ_CAN_RUN_SCRIPT
   nsresult SetHTMLBackgroundColorWithTransaction(const nsAString& aColor);
 
   virtual void InitializeSelectionAncestorLimit(

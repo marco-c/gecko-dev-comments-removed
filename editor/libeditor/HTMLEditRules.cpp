@@ -4177,8 +4177,8 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
           return rv;
         }
       } else {
-        rv = HTMLEditorRef().RemoveAttributeWithTransaction(*curElement,
-                                                            *nsGkAtoms::type);
+        rv = MOZ_KnownLive(HTMLEditorRef())
+                 .RemoveAttributeWithTransaction(*curElement, *nsGkAtoms::type);
         if (NS_WARN_IF(!CanHandleEditAction())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
@@ -8089,8 +8089,8 @@ nsresult HTMLEditRules::SplitParagraph(
   }
 
   
-  rv = HTMLEditorRef().RemoveAttributeWithTransaction(aParentDivOrP,
-                                                      *nsGkAtoms::id);
+  rv = MOZ_KnownLive(HTMLEditorRef())
+           .RemoveAttributeWithTransaction(aParentDivOrP, *nsGkAtoms::id);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -10271,8 +10271,10 @@ nsresult HTMLEditRules::RemoveAlignment(nsINode& aNode,
       
       if (HTMLEditUtils::SupportsAlignAttr(*child)) {
         
-        nsresult rv = HTMLEditorRef().RemoveAttributeWithTransaction(
-            *child->AsElement(), *nsGkAtoms::align);
+        nsresult rv =
+            MOZ_KnownLive(HTMLEditorRef())
+                .RemoveAttributeWithTransaction(
+                    MOZ_KnownLive(*child->AsElement()), *nsGkAtoms::align);
         if (NS_WARN_IF(!CanHandleEditAction())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
