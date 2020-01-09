@@ -8,8 +8,6 @@ use super::AllowQuirks;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::nscolor;
 use crate::parser::{Parse, ParserContext};
-#[cfg(feature = "gecko")]
-use crate::properties::longhands::system_colors::SystemColor;
 use crate::values::computed::{Color as ComputedColor, Context, ToComputedValue};
 use crate::values::generics::color::{Color as GenericColor, ColorOrAuto as GenericColorOrAuto};
 use crate::values::specified::calc::CalcNode;
@@ -35,7 +33,6 @@ pub enum Color {
     },
     
     Complex(ComputedColor),
-
     
     #[cfg(feature = "gecko")]
     System(SystemColor),
@@ -46,6 +43,215 @@ pub enum Color {
     #[cfg(feature = "gecko")]
     InheritFromBodyQuirk,
 }
+
+
+#[allow(missing_docs)]
+#[cfg(feature = "gecko")]
+#[derive(Copy, Clone, Debug, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
+#[repr(u8)]
+pub enum SystemColor {
+    #[css(skip)]
+    WindowBackground,
+    #[css(skip)]
+    WindowForeground,
+    #[css(skip)]
+    WidgetBackground,
+    #[css(skip)]
+    WidgetForeground,
+    #[css(skip)]
+    WidgetSelectBackground,
+    #[css(skip)]
+    WidgetSelectForeground,
+    #[css(skip)]
+    Widget3DHighlight,
+    #[css(skip)]
+    Widget3DShadow,
+    #[css(skip)]
+    TextBackground,
+    #[css(skip)]
+    TextForeground,
+    #[css(skip)]
+    TextSelectBackground,
+    #[css(skip)]
+    TextSelectForeground,
+    #[css(skip)]
+    TextSelectForegroundCustom,
+    #[css(skip)]
+    TextSelectBackgroundDisabled,
+    #[css(skip)]
+    TextSelectBackgroundAttention,
+    #[css(skip)]
+    TextHighlightBackground,
+    #[css(skip)]
+    TextHighlightForeground,
+    #[css(skip)]
+    IMERawInputBackground,
+    #[css(skip)]
+    IMERawInputForeground,
+    #[css(skip)]
+    IMERawInputUnderline,
+    #[css(skip)]
+    IMESelectedRawTextBackground,
+    #[css(skip)]
+    IMESelectedRawTextForeground,
+    #[css(skip)]
+    IMESelectedRawTextUnderline,
+    #[css(skip)]
+    IMEConvertedTextBackground,
+    #[css(skip)]
+    IMEConvertedTextForeground,
+    #[css(skip)]
+    IMEConvertedTextUnderline,
+    #[css(skip)]
+    IMESelectedConvertedTextBackground,
+    #[css(skip)]
+    IMESelectedConvertedTextForeground,
+    #[css(skip)]
+    IMESelectedConvertedTextUnderline,
+    #[css(skip)]
+    SpellCheckerUnderline,
+    Activeborder,
+    Activecaption,
+    Appworkspace,
+    Background,
+    Buttonface,
+    Buttonhighlight,
+    Buttonshadow,
+    Buttontext,
+    Captiontext,
+    Graytext,
+    Highlight,
+    Highlighttext,
+    Inactiveborder,
+    Inactivecaption,
+    Inactivecaptiontext,
+    Infobackground,
+    Infotext,
+    Menu,
+    Menutext,
+    Scrollbar,
+    Threeddarkshadow,
+    Threedface,
+    Threedhighlight,
+    Threedlightshadow,
+    Threedshadow,
+    Window,
+    Windowframe,
+    Windowtext,
+    MozButtondefault,
+    MozField,
+    MozFieldtext,
+    MozDialog,
+    MozDialogtext,
+    
+    MozDragtargetzone,
+    
+    MozCellhighlight,
+    
+    MozCellhighlighttext,
+    
+    MozHtmlCellhighlight,
+    
+    MozHtmlCellhighlighttext,
+    
+    MozButtonhoverface,
+    
+    MozButtonhovertext,
+    
+    MozMenuhover,
+    
+    MozMenuhovertext,
+    
+    MozMenubartext,
+    
+    MozMenubarhovertext,
+
+    
+    
+    MozEventreerow,
+    MozOddtreerow,
+
+    
+    MozGtkButtonactivetext,
+
+    
+    MozMacButtonactivetext,
+    
+    MozMacChromeActive,
+    
+    MozMacChromeInactive,
+    
+    MozMacDefaultbuttontext,
+    
+    MozMacFocusring,
+    
+    MozMacMenuselect,
+    
+    MozMacMenushadow,
+    
+    MozMacMenutextdisable,
+    
+    MozMacMenutextselect,
+    
+    MozMacDisabledtoolbartext,
+    
+    MozMacSecondaryhighlight,
+
+    
+    
+    MozMacVibrancyLight,
+    MozMacVibrancyDark,
+    MozMacVibrantTitlebarLight,
+    MozMacVibrantTitlebarDark,
+    MozMacMenupopup,
+    MozMacMenuitem,
+    MozMacActiveMenuitem,
+    MozMacSourceList,
+    MozMacSourceListSelection,
+    MozMacActiveSourceListSelection,
+    MozMacTooltip,
+
+    
+    MozWinAccentcolor,
+    
+    MozWinAccentcolortext,
+    
+    MozWinMediatext,
+    
+    MozWinCommunicationstext,
+
+    
+    
+    
+    
+    
+    
+    MozNativehyperlinktext,
+
+    
+    MozComboboxtext,
+    MozCombobox,
+
+    MozGtkInfoBarText,
+
+    #[css(skip)]
+    End, 
+}
+
+#[cfg(feature = "gecko")]
+impl SystemColor {
+    #[inline]
+    fn compute(&self, cx: &Context) -> ComputedColor {
+        use crate::gecko_bindings::bindings;
+        unsafe {
+            convert_nscolor_to_computedcolor(bindings::Gecko_GetLookAndFeelSystemColor(
+                *self as i32,
+                cx.device().document(),
+            ))
+        }
+    }
+}
+
 
 #[cfg(feature = "gecko")]
 mod gecko {
@@ -340,32 +546,29 @@ impl Color {
     
     
     pub fn to_computed_color(&self, _context: Option<&Context>) -> Option<ComputedColor> {
-        match *self {
-            Color::CurrentColor => Some(ComputedColor::currentcolor()),
-            Color::Numeric { ref parsed, .. } => Some(ComputedColor::rgba(*parsed)),
-            Color::Complex(ref complex) => Some(*complex),
+        Some(match *self {
+            Color::CurrentColor => ComputedColor::currentcolor(),
+            Color::Numeric { ref parsed, .. } => ComputedColor::rgba(*parsed),
+            Color::Complex(ref complex) => *complex,
             #[cfg(feature = "gecko")]
-            Color::System(system) => _context
-                .map(|context| convert_nscolor_to_computedcolor(system.to_computed_value(context))),
+            Color::System(system) => system.compute(_context?),
             #[cfg(feature = "gecko")]
             Color::Special(special) => {
                 use self::gecko::SpecialColorKeyword as Keyword;
-                _context.map(|context| {
-                    let prefs = context.device().pref_sheet_prefs();
-                    convert_nscolor_to_computedcolor(match special {
-                        Keyword::MozDefaultColor => prefs.mDefaultColor,
-                        Keyword::MozDefaultBackgroundColor => prefs.mDefaultBackgroundColor,
-                        Keyword::MozHyperlinktext => prefs.mLinkColor,
-                        Keyword::MozActivehyperlinktext => prefs.mActiveLinkColor,
-                        Keyword::MozVisitedhyperlinktext => prefs.mVisitedLinkColor,
-                    })
+                let prefs = _context?.device().pref_sheet_prefs();
+                convert_nscolor_to_computedcolor(match special {
+                    Keyword::MozDefaultColor => prefs.mDefaultColor,
+                    Keyword::MozDefaultBackgroundColor => prefs.mDefaultBackgroundColor,
+                    Keyword::MozHyperlinktext => prefs.mLinkColor,
+                    Keyword::MozActivehyperlinktext => prefs.mActiveLinkColor,
+                    Keyword::MozVisitedhyperlinktext => prefs.mVisitedLinkColor,
                 })
             },
             #[cfg(feature = "gecko")]
             Color::InheritFromBodyQuirk => {
-                _context.map(|context| ComputedColor::rgba(context.device().body_text_color()))
+                ComputedColor::rgba(_context?.device().body_text_color())
             },
-        }
+        })
     }
 }
 

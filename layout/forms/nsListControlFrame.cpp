@@ -230,8 +230,8 @@ void nsListControlFrame::PaintFocus(DrawTarget* aDrawTarget, nsPoint aPt) {
 
   
   nscolor color = LookAndFeel::GetColor(
-      lastItemIsSelected ? LookAndFeel::eColorID_WidgetSelectForeground
-                         : LookAndFeel::eColorID_WidgetSelectBackground);
+      lastItemIsSelected ? LookAndFeel::ColorID::WidgetSelectForeground
+                         : LookAndFeel::ColorID::WidgetSelectBackground);
 
   nsCSSRendering::PaintFocus(presContext, aDrawTarget, fRect, color);
 }

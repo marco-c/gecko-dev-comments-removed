@@ -124,7 +124,7 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   browser->SetDocShell(docShell);
 
   
-  LookAndFeel::GetColor(LookAndFeel::eColorID_WindowBackground,
+  LookAndFeel::GetColor(LookAndFeel::ColorID::WindowBackground,
                         &browser->mBackgroundColor);
 
   
