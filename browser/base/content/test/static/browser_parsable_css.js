@@ -13,14 +13,8 @@ let whitelist = [
   
   {sourceName: /codemirror\.css$/i,
    isFromDevTools: true},
-  
-  {sourceName: /devtools\/client\/debugger\/dist\/vendors.css/i,
-   isFromDevTools: true},
   {sourceName: /devtools\/client\/debugger\/src\/components\/([A-z\/]+).css/i,
   isFromDevTools: true},
-   
-   {sourceName: /devtools-client-shared\/components\/reps\/reps.css/i,
-   isFromDevTools: true},
   
   {sourceName: /web\/viewer\.css$/i,
    errorMessage: /Unknown property.*(appearance|user-select)/i,
