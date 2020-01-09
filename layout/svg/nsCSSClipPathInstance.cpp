@@ -105,12 +105,13 @@ already_AddRefed<Path> nsCSSClipPathInstance::CreateClipPath(
 
   r = nsRect(int(rr.x), int(rr.y), int(rr.width), int(rr.height));
 
-  if (mClipPathStyle.GetType() != StyleShapeSourceType::Shape) {
-    
-    
+  if (mClipPathStyle.GetType() == StyleShapeSourceType::Box) {
     RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder();
+    AppendRectToPath(builder, NSRectToRect(r, appUnitsPerDevPixel), true);
     return builder->Finish();
   }
+
+  MOZ_ASSERT(mClipPathStyle.GetType() == StyleShapeSourceType::Shape);
 
   r = ToAppUnits(r.ToNearestPixels(appUnitsPerDevPixel), appUnitsPerDevPixel);
 
