@@ -45,7 +45,6 @@
 #include "mozilla/dom/Response.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/net/NeckoChannelParams.h"
 
 #include "js/Conversions.h"
 #include "js/TypeDecls.h"
@@ -320,7 +319,7 @@ class StartResponse final : public Runnable {
         !outerChannel->PreferredAlternativeDataTypes().IsEmpty()) {
       
       preferredAltDataType.Assign(
-          outerChannel->PreferredAlternativeDataTypes()[0].type());
+          mozilla::Get<0>(outerChannel->PreferredAlternativeDataTypes()[0]));
     }
 
     
