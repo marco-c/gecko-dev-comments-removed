@@ -8,6 +8,8 @@ var EXPORTED_SYMBOLS = ["ContentRestore"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
+ChromeUtils.defineModuleGetter(this, "FormData",
+  "resource://gre/modules/FormData.jsm");
 ChromeUtils.defineModuleGetter(this, "SessionHistory",
   "resource://gre/modules/sessionstore/SessionHistory.jsm");
 ChromeUtils.defineModuleGetter(this, "SessionStorage",
@@ -301,7 +303,7 @@ ContentRestoreInternal.prototype = {
       
       
       
-      return SessionStoreUtils.restoreFormData(frame.document, data);
+      return FormData.restore(frame, data);
     });
 
     
