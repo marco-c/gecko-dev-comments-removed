@@ -210,8 +210,6 @@ class LoadInfo final : public nsILoadInfo {
   
   
   bool mIsFromProcessingFrameAttributes;
-
-  nsILoadInfo::CrossOriginOpenerPolicy mOpenerPolicy;
 };
 
 }  
