@@ -144,16 +144,6 @@ void WindowGlobalChild::Destroy() {
   
   RefPtr<BrowserChild> browserChild = GetBrowserChild();
   if (!browserChild || !browserChild->IsDestroyed()) {
-    
-    
-    nsTArray<RefPtr<JSWindowActorChild>> windowActors(mWindowActors.Count());
-    for (auto iter = mWindowActors.Iter(); !iter.Done(); iter.Next()) {
-      windowActors.AppendElement(iter.UserData());
-    }
-
-    for (auto& windowActor : windowActors) {
-      windowActor->StartDestroy();
-    }
     SendDestroy();
   }
 
@@ -306,15 +296,12 @@ void WindowGlobalChild::ActorDestroy(ActorDestroyReason aWhy) {
   mWindowActors.SwapElements(windowActors);
   for (auto iter = windowActors.Iter(); !iter.Done(); iter.Next()) {
     iter.Data()->RejectPendingQueries();
-    iter.Data()->AfterDestroy();
   }
-  windowActors.Clear();
 }
 
 WindowGlobalChild::~WindowGlobalChild() {
   MOZ_ASSERT(!gWindowGlobalChildById ||
              !gWindowGlobalChildById->Contains(mInnerWindowId));
-  MOZ_ASSERT(!mWindowActors.Count());
 }
 
 JSObject* WindowGlobalChild::WrapObject(JSContext* aCx,
