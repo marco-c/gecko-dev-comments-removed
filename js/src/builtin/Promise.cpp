@@ -3844,9 +3844,8 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
 enum class ResumeNextKind { Enqueue, Reject, Resolve };
 
 static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    ResumeNextKind kind, HandleValue valueOrException = UndefinedHandleValue,
-    bool done = false);
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator, ResumeNextKind kind,
+    HandleValue valueOrException = UndefinedHandleValue, bool done = false);
 
 
 MOZ_MUST_USE bool js::AsyncGeneratorResolve(
@@ -3869,8 +3868,7 @@ MOZ_MUST_USE bool js::AsyncGeneratorReject(
 
 
 static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
-    JSContext* cx, Handle<AsyncGeneratorObject*> unwrappedGenerator,
-    ResumeNextKind kind,
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator, ResumeNextKind kind,
     HandleValue valueOrException_ ,
     bool done ) {
   RootedValue valueOrException(cx, valueOrException_);
@@ -3889,12 +3887,12 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         
         
         
-        MOZ_ASSERT(!unwrappedGenerator->isQueueEmpty());
+        MOZ_ASSERT(!generator->isQueueEmpty());
 
         
         
         AsyncGeneratorRequest* request =
-            AsyncGeneratorObject::dequeueRequest(cx, unwrappedGenerator);
+            AsyncGeneratorObject::dequeueRequest(cx, generator);
         if (!request) {
           return false;
         }
@@ -3902,7 +3900,7 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         
         Rooted<PromiseObject*> resultPromise(cx, request->promise());
 
-        unwrappedGenerator->cacheRequest(request);
+        generator->cacheRequest(request);
 
         
         
@@ -3921,12 +3919,12 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         
         
         
-        MOZ_ASSERT(!unwrappedGenerator->isQueueEmpty());
+        MOZ_ASSERT(!generator->isQueueEmpty());
 
         
         
         AsyncGeneratorRequest* request =
-            AsyncGeneratorObject::dequeueRequest(cx, unwrappedGenerator);
+            AsyncGeneratorObject::dequeueRequest(cx, generator);
         if (!request) {
           return false;
         }
@@ -3934,7 +3932,7 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         
         Rooted<PromiseObject*> resultPromise(cx, request->promise());
 
-        unwrappedGenerator->cacheRequest(request);
+        generator->cacheRequest(request);
 
         
         JSObject* resultObj = CreateIterResultObject(cx, value, done);
@@ -3960,24 +3958,23 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
     
     
     
-    MOZ_ASSERT(!unwrappedGenerator->isExecuting());
+    MOZ_ASSERT(!generator->isExecuting());
 
     
-    if (unwrappedGenerator->isAwaitingYieldReturn() ||
-        unwrappedGenerator->isAwaitingReturn()) {
+    if (generator->isAwaitingYieldReturn() || generator->isAwaitingReturn()) {
       return true;
     }
 
     
     
-    if (unwrappedGenerator->isQueueEmpty()) {
+    if (generator->isQueueEmpty()) {
       return true;
     }
 
     
     
     Rooted<AsyncGeneratorRequest*> request(
-        cx, AsyncGeneratorObject::peekRequest(unwrappedGenerator));
+        cx, AsyncGeneratorObject::peekRequest(generator));
     if (!request) {
       return false;
     }
@@ -3988,21 +3985,21 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
     
     if (completionKind != CompletionKind::Normal) {
       
-      if (unwrappedGenerator->isSuspendedStart()) {
+      if (generator->isSuspendedStart()) {
         
         
-        unwrappedGenerator->setCompleted();
+        generator->setCompleted();
       }
 
       
-      if (unwrappedGenerator->isCompleted()) {
+      if (generator->isCompleted()) {
         RootedValue value(cx, request->completionValue());
 
         
         if (completionKind == CompletionKind::Return) {
           
           
-          unwrappedGenerator->setAwaitingReturn();
+          generator->setAwaitingReturn();
 
           
           
@@ -4033,7 +4030,7 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
           
           
           auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
-            reaction->setIsAsyncGenerator(unwrappedGenerator);
+            reaction->setIsAsyncGenerator(generator);
           };
           return InternalAwait(cx, value, nullptr, onFulfilled, onRejected,
                                extra);
@@ -4051,7 +4048,7 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         valueOrException.set(value);
         continue;
       }
-    } else if (unwrappedGenerator->isCompleted()) {
+    } else if (generator->isCompleted()) {
       
       
       kind = ResumeNextKind::Resolve;
@@ -4061,12 +4058,11 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
     }
 
     
-    MOZ_ASSERT(unwrappedGenerator->isSuspendedStart() ||
-               unwrappedGenerator->isSuspendedYield());
+    MOZ_ASSERT(generator->isSuspendedStart() || generator->isSuspendedYield());
 
     
     
-    unwrappedGenerator->setExecuting();
+    generator->setExecuting();
 
     RootedValue argument(cx, request->completionValue());
 
@@ -4075,7 +4071,7 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
       
       
       
-      unwrappedGenerator->setAwaitingYieldReturn();
+      generator->setAwaitingYieldReturn();
 
       static constexpr int32_t YieldReturnAwaitedFulfilled =
           PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled;
@@ -4086,15 +4082,14 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
       RootedValue onRejected(cx, Int32Value(YieldReturnAwaitedRejected));
 
       auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
-        reaction->setIsAsyncGenerator(unwrappedGenerator);
+        reaction->setIsAsyncGenerator(generator);
       };
       return InternalAwait(cx, argument, nullptr, onFulfilled, onRejected,
                            extra);
     }
 
     
-    return AsyncGeneratorResume(cx, unwrappedGenerator, completionKind,
-                                argument);
+    return AsyncGeneratorResume(cx, generator, completionKind, argument);
   }
 }
 
