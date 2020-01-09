@@ -18,6 +18,7 @@
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
@@ -403,7 +404,7 @@ nsEventStatus PuppetWidget::DispatchInputEvent(WidgetInputEvent* aEvent) {
     return nsEventStatus_eIgnore;
   }
 
-  if (nsCOMPtr<nsIPresShell> presShell = mTabChild->GetPresShell()) {
+  if (PresShell* presShell = mTabChild->GetTopLevelPresShell()) {
     
     
     

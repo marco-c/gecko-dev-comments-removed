@@ -5072,9 +5072,7 @@ static bool IsTransparentContainerElement(nsPresContext* aPresContext) {
   if (tab) {
     
     
-    PresShell* presShell = aPresContext->GetPresShell();
-    nsCOMPtr<nsIPresShell> topPresShell = tab->GetPresShell();
-    if (presShell != topPresShell) {
+    if (aPresContext->GetPresShell() != tab->GetTopLevelPresShell()) {
       tab = nullptr;
     }
   }
@@ -10755,7 +10753,7 @@ bool nsIPresShell::DetermineFontSizeInflationState() {
 
   
   if (!FontSizeInflationForceEnabled()) {
-    if (TabChild* tab = TabChild::GetFrom(this)) {
+    if (TabChild* tab = TabChild::GetFrom(static_cast<PresShell*>(this))) {
       
       
       if (!tab->AsyncPanZoomEnabled()) {
