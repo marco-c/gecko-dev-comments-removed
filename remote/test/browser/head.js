@@ -11,17 +11,14 @@ const CRI_URI = "http://example.com/browser/remote/test/browser/chrome-remote-in
 
 function createTestDocument() {
   const browser = Services.appShell.createWindowlessBrowser(true);
-  const webNavigation = browser.docShell
-                               .QueryInterface(Ci.nsIWebNavigation);
+  const webNavigation = browser.docShell.QueryInterface(Ci.nsIWebNavigation);
   
   
   
   const system = Services.scriptSecurityManager.getSystemPrincipal();
   webNavigation.createAboutBlankContentViewer(system);
 
-  registerCleanupFunction(() => {
-    browser.close();
-  });
+  registerCleanupFunction(() => browser.close());
   return webNavigation.document;
 }
 
@@ -47,7 +44,7 @@ async function getCDP() {
   
   
   window.criRequest = (options, callback) => {
-    const { host, port, secure, ustHostName, path } = options;
+    const {host, port, path} = options;
     const url = `http://${host}:${port}${path}`;
     const xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -56,12 +53,8 @@ async function getCDP() {
     xhr.overrideMimeType("text/plain");
 
     xhr.send(null);
-    xhr.onload = () => {
-      callback(null, xhr.responseText);
-    };
-    xhr.onerror = (e) => {
-      callback(e, null);
-    };
+    xhr.onload = () => callback(null, xhr.responseText);
+    xhr.onerror = e => callback(e, null);
   };
 
   return window.CDP;
