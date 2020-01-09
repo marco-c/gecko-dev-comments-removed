@@ -48,7 +48,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     protocol.Actor.prototype.initialize.call(this, null);
     this.walker = walker;
     this.rawNode = node;
-    this._eventCollector = new EventCollector();
+    this._eventCollector = new EventCollector(this.walker.targetActor);
 
     
     

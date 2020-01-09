@@ -708,7 +708,9 @@ class ReactEventCollector extends MainEventCollector {
 
 
 class EventCollector {
-  constructor() {
+  constructor(targetActor) {
+    this.targetActor = targetActor;
+
     
     
     this.eventCollectors = [
@@ -864,6 +866,7 @@ class EventCollector {
       let line = 0;
       let native = false;
       let url = "";
+      let sourceActor = "";
 
       
       if (listenerDO.class === "Object" || /^XUL\w*Element$/.test(listenerDO.class)) {
@@ -900,6 +903,8 @@ class EventCollector {
 
         line = script.startLine;
         url = script.url;
+        const actor = this.targetActor.sources.getOrCreateSourceActor(script.source);
+        sourceActor = actor ? actor.actorID : null;
 
         
         
@@ -957,6 +962,7 @@ class EventCollector {
                           override.capturing : capturing,
         hide: typeof override.hide !== "undefined" ? override.hide : hide,
         native,
+        sourceActor,
       };
 
       
