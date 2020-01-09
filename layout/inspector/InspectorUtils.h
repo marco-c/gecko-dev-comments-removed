@@ -241,12 +241,6 @@ class InspectorUtils {
   
 
 
-
-  static void ScrollElementIntoView(GlobalObject& aGlobal, Element& aElement);
-
-  
-
-
   static bool IsCustomElementName(GlobalObject&, const nsAString& aName,
                                   const nsAString& aNamespaceURI);
 
