@@ -682,7 +682,7 @@ template XDRResult js::XDRInterpretedFunction(XDRState<XDR_DECODE>*,
                                               MutableHandleFunction);
 
 
-bool js::fun_symbolHasInstance(JSContext* cx, unsigned argc, Value* vp) {
+static bool fun_symbolHasInstance(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   if (args.length() < 1) {
@@ -829,26 +829,6 @@ static JSObject* CreateFunctionPrototype(JSContext* cx, JSProtoKey key) {
                               objectProto, gc::AllocKind::FUNCTION,
                               SingletonObject);
 }
-
-static const ClassOps JSFunctionClassOps = {
-    nullptr,                                
-    nullptr,                                
-    fun_enumerate, nullptr,                 
-    fun_resolve,   fun_mayResolve, nullptr, 
-    nullptr,                                
-    nullptr,       nullptr,                 
-    fun_trace,
-};
-
-static const ClassSpec JSFunctionClassSpec = {
-    CreateFunctionConstructor, CreateFunctionPrototype, nullptr, nullptr,
-    function_methods,          function_properties};
-
-const Class JSFunction::class_ = {js_Function_str,
-                                  JSCLASS_HAS_CACHED_PROTO(JSProto_Function),
-                                  &JSFunctionClassOps, &JSFunctionClassSpec};
-
-const Class* const js::FunctionClassPtr = &JSFunction::class_;
 
 JSString* js::FunctionToStringCache::lookup(JSScript* script) const {
   for (size_t i = 0; i < NumEntries; i++) {
@@ -1059,7 +1039,7 @@ bool js::FunctionHasDefaultHasInstance(JSFunction* fun,
       return false;
     }
     const Value hasInstance = fun->as<NativeObject>().getSlot(shape->slot());
-    return IsNativeFunction(hasInstance, js::fun_symbolHasInstance);
+    return IsNativeFunction(hasInstance, fun_symbolHasInstance);
   }
   return true;
 }
@@ -1210,6 +1190,36 @@ bool js::fun_apply(JSContext* cx, unsigned argc, Value* vp) {
   
   return Call(cx, fval, args[0], args2, args.rval());
 }
+
+static const JSFunctionSpec function_methods[] = {
+    JS_FN(js_toSource_str, fun_toSource, 0, 0),
+    JS_FN(js_toString_str, fun_toString, 0, 0),
+    JS_FN(js_apply_str, fun_apply, 2, 0),
+    JS_FN(js_call_str, fun_call, 1, 0),
+    JS_SELF_HOSTED_FN("bind", "FunctionBind", 2, 0),
+    JS_SYM_FN(hasInstance, fun_symbolHasInstance, 1,
+              JSPROP_READONLY | JSPROP_PERMANENT),
+    JS_FS_END};
+
+static const ClassOps JSFunctionClassOps = {
+    nullptr,                                
+    nullptr,                                
+    fun_enumerate, nullptr,                 
+    fun_resolve,   fun_mayResolve, nullptr, 
+    nullptr,                                
+    nullptr,       nullptr,                 
+    fun_trace,
+};
+
+static const ClassSpec JSFunctionClassSpec = {
+    CreateFunctionConstructor, CreateFunctionPrototype, nullptr, nullptr,
+    function_methods,          function_properties};
+
+const Class JSFunction::class_ = {js_Function_str,
+                                  JSCLASS_HAS_CACHED_PROTO(JSProto_Function),
+                                  &JSFunctionClassOps, &JSFunctionClassSpec};
+
+const Class* const js::FunctionClassPtr = &JSFunction::class_;
 
 bool JSFunction::isDerivedClassConstructor() {
   bool derived;
@@ -1755,16 +1765,6 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
 
   realm->scheduleDelazificationForDebugger();
 }
-
-const JSFunctionSpec js::function_methods[] = {
-    JS_FN(js_toSource_str, fun_toSource, 0, 0),
-    JS_FN(js_toString_str, fun_toString, 0, 0),
-    JS_FN(js_apply_str, fun_apply, 2, 0),
-    JS_FN(js_call_str, fun_call, 1, 0),
-    JS_SELF_HOSTED_FN("bind", "FunctionBind", 2, 0),
-    JS_SYM_FN(hasInstance, fun_symbolHasInstance, 1,
-              JSPROP_READONLY | JSPROP_PERMANENT),
-    JS_FS_END};
 
 
 
