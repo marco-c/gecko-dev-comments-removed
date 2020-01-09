@@ -1,3 +1,11 @@
+
+
+
+
+
+
+
+
 "use strict";
 
 const SCALAR_URLBAR = "browser.engagement.navigation.urlbar";
