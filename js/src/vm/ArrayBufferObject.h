@@ -426,7 +426,11 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   bool hasTypedObjectViews() const { return flags() & TYPED_OBJECT_VIEWS; }
 
   void setIsDetached() { setFlags(flags() | DETACHED); }
-  void setIsPreparedForAsmJS() { setFlags(flags() | FOR_ASMJS); }
+  void setIsPreparedForAsmJS() {
+    MOZ_ASSERT(!isWasm());
+    MOZ_ASSERT(isPlain() || isMapped() || isExternal());
+    setFlags(flags() | FOR_ASMJS);
+  }
 
   void initialize(size_t byteLength, BufferContents contents,
                   OwnsState ownsState) {

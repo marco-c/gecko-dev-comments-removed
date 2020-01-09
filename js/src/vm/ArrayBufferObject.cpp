@@ -926,13 +926,17 @@ bool js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
   
   
 
-  if (!buffer->isWasm() && buffer->isPreparedForAsmJS()) {
-    return true;
-  }
-
   
   if (buffer->isWasm()) {
+    MOZ_ASSERT(!buffer->isPreparedForAsmJS());
     return false;
+  }
+
+  MOZ_ASSERT(buffer->isPlain() || buffer->isMapped() || buffer->isExternal());
+
+  
+  if (buffer->isPreparedForAsmJS()) {
+    return true;
   }
 
   if (!buffer->ownsData()) {
