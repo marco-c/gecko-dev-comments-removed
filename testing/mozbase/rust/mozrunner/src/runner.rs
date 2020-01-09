@@ -317,6 +317,7 @@ pub mod platform {
     
     
     
+    
     pub fn firefox_default_path() -> Option<PathBuf> {
         if let Some(path) = find_binary("firefox-bin") {
             return Some(path);
@@ -324,11 +325,10 @@ pub mod platform {
 
         let home = dirs::home_dir();
         for &(prefix_home, trial_path) in [
-            (
-                false,
-                "/Applications/Firefox.app/Contents/MacOS/firefox-bin",
-            ),
+            (false, "/Applications/Firefox.app/Contents/MacOS/firefox-bin"),
             (true, "Applications/Firefox.app/Contents/MacOS/firefox-bin"),
+            (false, "/Applications/Firefox Nightly.app/Contents/MacOS/firefox-bin"),
+            (true, "Applications/Firefox Nightly.app/Contents/MacOS/firefox-bin"),
         ].iter()
         {
             let path = match (home.as_ref(), prefix_home) {
