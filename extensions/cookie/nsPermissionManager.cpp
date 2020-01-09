@@ -2799,25 +2799,6 @@ nsresult nsPermissionManager::RemoveAllFromMemory() {
 }
 
 
-int32_t nsPermissionManager::GetTypeIndex(const char* aType, bool aAdd) {
-  for (uint32_t i = 0; i < mTypeArray.Length(); ++i)
-    if (mTypeArray[i].Equals(aType)) return i;
-
-  if (!aAdd) {
-    
-    return -1;
-  }
-
-  
-  
-  nsCString* elem = mTypeArray.AppendElement();
-  if (!elem) return -1;
-
-  elem->Assign(aType);
-  return mTypeArray.Length() - 1;
-}
-
-
 
 void nsPermissionManager::NotifyObserversWithPermission(
     nsIPrincipal* aPrincipal, const nsCString& aType, uint32_t aPermission,
