@@ -230,7 +230,9 @@ PCompositorBridgeParent* CompositorManagerParent::AllocPCompositorBridgeParent(
       
       
       StaticMutexAutoLock lock(sMutex);
-      MOZ_ASSERT(!mPendingCompositorBridges.IsEmpty());
+      if (mPendingCompositorBridges.IsEmpty()) {
+        break;
+      }
 
       CompositorBridgeParent* bridge = mPendingCompositorBridges[0];
       bridge->AddRef();
