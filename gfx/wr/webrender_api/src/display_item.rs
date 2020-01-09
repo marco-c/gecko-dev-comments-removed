@@ -2,14 +2,14 @@
 
 
 
+#[cfg(any(feature = "serialize", feature = "deserialize"))]
+use GlyphInstance;
 use euclid::{SideOffsets2D, TypedRect};
 use std::ops::Not;
-
-use font;
-use api::{PipelineId, PropertyBinding};
-use color::ColorF;
-use image::{ColorDepth, ImageKey};
-use units::*;
+use {ColorF, FontInstanceKey, GlyphOptions, ImageKey, LayoutPixel, LayoutPoint};
+use {LayoutRect, LayoutSize, LayoutTransform, LayoutVector2D, PipelineId, PropertyBinding};
+use LayoutSideOffsets;
+use image::ColorDepth;
 
 
 
@@ -143,7 +143,7 @@ pub enum CompletelySpecificDisplayItem {
     Rectangle(RectangleDisplayItem),
     ClearRectangle,
     Line(LineDisplayItem),
-    Text(TextDisplayItem, Vec<font::GlyphInstance>),
+    Text(TextDisplayItem, Vec<GlyphInstance>),
     Image(ImageDisplayItem),
     YuvImage(YuvImageDisplayItem),
     Border(BorderDisplayItem),
@@ -264,9 +264,9 @@ pub enum LineStyle {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TextDisplayItem {
-    pub font_key: font::FontInstanceKey,
+    pub font_key: FontInstanceKey,
     pub color: ColorF,
-    pub glyph_options: Option<font::GlyphOptions>,
+    pub glyph_options: Option<GlyphOptions>,
 } 
 
 #[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize)]
