@@ -600,6 +600,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   double GetScrollXOuter();
   double GetScrollYOuter();
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void SizeToContentOuter(mozilla::dom::CallerType aCallerType,
                           mozilla::ErrorResult& aError);
   nsIControllers* GetControllersOuter(mozilla::ErrorResult& aError);
@@ -850,6 +851,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   void SetCSSViewportWidthAndHeight(nscoord width, nscoord height);
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult SetDocShellWidthAndHeight(int32_t width, int32_t height);
 
   static bool CanSetProperty(const char* aPrefName);
