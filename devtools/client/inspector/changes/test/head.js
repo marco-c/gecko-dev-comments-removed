@@ -65,3 +65,26 @@ function getAddedDeclarations(panelDoc, containerNode) {
 function getRemovedDeclarations(panelDoc, containerNode) {
   return getDeclarations(panelDoc, ".diff-remove", containerNode);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+function getSelectors(panelDoc, selector = "") {
+  return panelDoc.querySelectorAll(`.changes__selector${selector}`);
+}
+
+function getAddedSelectors(panelDoc) {
+  return getSelectors(panelDoc, ".diff-add");
+}
+
+function getRemovedSelectors(panelDoc) {
+  return getSelectors(panelDoc, ".diff-remove");
+}

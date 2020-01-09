@@ -93,6 +93,7 @@ class ChangesApp extends PureComponent {
   }
 
   renderRule(ruleId, rule, level = 0) {
+    const diffClass = rule.isNew ? "diff-add" : "";
     return dom.div(
       {
         key: ruleId,
@@ -102,7 +103,7 @@ class ChangesApp extends PureComponent {
           "--diff-level": level,
         },
       },
-      this.renderSelectors(rule.selectors),
+      this.renderSelectors(rule.selectors, rule.isNew),
       this.renderCopyButton(ruleId),
       
       rule.children.map(childRule => {
@@ -110,7 +111,8 @@ class ChangesApp extends PureComponent {
       }),
       
       this.renderDeclarations(rule.remove, rule.add),
-      dom.div({ className: `level` }, "}")
+      
+      dom.div({ className: `level ${diffClass}` }, getDiffMarker(diffClass), "}")
     );
   }
 
@@ -121,14 +123,17 @@ class ChangesApp extends PureComponent {
 
 
 
-  renderSelectors(selectors) {
+
+
+  renderSelectors(selectors, isNewRule) {
     const selectorDiffClassMap = new Map();
 
     
     
     
+    
     if (selectors.length === 1) {
-      selectorDiffClassMap.set(selectors[0], "");
+      selectorDiffClassMap.set(selectors[0], isNewRule ? "diff-add" : "");
     } else if (selectors.length >= 2) {
       selectorDiffClassMap.set(selectors[0], "diff-remove");
       selectorDiffClassMap.set(selectors[selectors.length - 1], "diff-add");

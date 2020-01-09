@@ -93,6 +93,7 @@ function createRule(ruleData, rules) {
       if (!rules[ruleId]) {
         rules[ruleId] = {
           ruleId,
+          isNew: false,
           selectors,
           add: [],
           remove: [],
@@ -168,6 +169,7 @@ function removeRule(ruleId, rules) {
 
 
 
+
 const INITIAL_STATE = {};
 
 const reducers = {
@@ -209,7 +211,7 @@ const reducers = {
     change = { ...defaults, ...change };
     state = cloneState(state);
 
-    const { selector, ancestors, ruleIndex, type: changeType } = change;
+    const { selector, ancestors, ruleIndex } = change;
     
     
     const sourceId = change.source.id || getSourceHash(change.source);
@@ -226,12 +228,19 @@ const reducers = {
       : createRule({id: change.id, selectors: [selector], ancestors, ruleIndex}, rules);
 
     
+    if (change.type === "rule-add") {
+      rule.isNew = true;
+    }
+
     
     
     
     
     
-    if (rule.selectors[0] === selector) {
+    
+    
+    
+    if (rule.selectors[0] === selector || rule.isNew) {
       rule.selectors = [selector];
     } else {
       rule.selectors.push(selector);
@@ -271,7 +280,7 @@ const reducers = {
 
         
         
-        if (changeType === "declaration-remove") {
+        if (change.type === "declaration-remove") {
           rule.add = rule.add.map((addDecl => {
             if (addDecl.index > decl.index) {
               addDecl.index--;
@@ -324,8 +333,9 @@ const reducers = {
     
     
     
+    
     if (!rule.add.length && !rule.remove.length && rule.selectors.length === 1 &&
-        !changeType.startsWith("selector-")) {
+        !change.type.startsWith("selector-") && !rule.isNew) {
       removeRule(ruleId, rules);
       source.rules = { ...rules };
     } else {
