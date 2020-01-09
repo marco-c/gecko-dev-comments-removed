@@ -8,6 +8,12 @@
 #define nsFrameLoaderOwner_h_
 
 class nsFrameLoader;
+namespace mozilla {
+class ErrorResult;
+namespace dom {
+struct RemotenessOptions;
+}
+}  
 
 
 #define NS_FRAMELOADEROWNER_IID                      \
@@ -31,6 +37,15 @@ class nsFrameLoaderOwner : public nsISupports {
   nsFrameLoaderOwner() = default;
   already_AddRefed<nsFrameLoader> GetFrameLoader();
   void SetFrameLoader(nsFrameLoader* aNewFrameLoader);
+
+  
+  
+  
+  
+  
+  
+  void ChangeRemoteness(const mozilla::dom::RemotenessOptions& aOptions,
+                        mozilla::ErrorResult& rv);
 
  protected:
   virtual ~nsFrameLoaderOwner() = default;

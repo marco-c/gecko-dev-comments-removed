@@ -814,10 +814,11 @@ void nsSubDocumentFrame::Reflow(nsPresContext* aPresContext,
 }
 
 bool nsSubDocumentFrame::ReflowFinished() {
-  if (mFrameLoader) {
+  RefPtr<nsFrameLoader> frameloader = FrameLoader();
+  if (frameloader) {
     AutoWeakFrame weakFrame(this);
 
-    mFrameLoader->UpdatePositionAndSize(this);
+    frameloader->UpdatePositionAndSize(this);
 
     if (weakFrame.IsAlive()) {
       

@@ -6,6 +6,7 @@
 
 #include "nsFrameLoaderOwner.h"
 #include "nsFrameLoader.h"
+#include "mozilla/dom/FrameLoaderBinding.h"
 
 already_AddRefed<nsFrameLoader> nsFrameLoaderOwner::GetFrameLoader() {
   return do_AddRef(mFrameLoader);
@@ -13,4 +14,42 @@ already_AddRefed<nsFrameLoader> nsFrameLoaderOwner::GetFrameLoader() {
 
 void nsFrameLoaderOwner::SetFrameLoader(nsFrameLoader* aNewFrameLoader) {
   mFrameLoader = aNewFrameLoader;
+}
+
+void nsFrameLoaderOwner::ChangeRemoteness(
+    const mozilla::dom::RemotenessOptions& aOptions, mozilla::ErrorResult& rv) {
+  
+  if (mFrameLoader) {
+    mFrameLoader->Destroy();
+    mFrameLoader = nullptr;
+  }
+
+  
+  
+  
+  RefPtr<Element> owner = do_QueryObject(this);
+  MOZ_ASSERT(owner);
+  mFrameLoader = nsFrameLoader::Create(owner, aOptions);
+  mFrameLoader->LoadFrame(false);
+
+  
+  
+  
+  
+  nsIFrame* ourFrame = owner->GetPrimaryFrame();
+  if (ourFrame) {
+    nsSubDocumentFrame* ourFrameFrame = do_QueryFrame(ourFrame);
+    if (ourFrameFrame) {
+      ourFrameFrame->UnsetFrameLoader();
+    }
+  }
+
+  
+  
+  
+  
+  (new AsyncEventDispatcher(owner, NS_LITERAL_STRING("XULFrameLoaderCreated"),
+                            CanBubble::eYes, ChromeOnlyDispatch::eYes))
+    ->RunDOMEventWhenSafe();
+
 }
