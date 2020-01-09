@@ -129,6 +129,14 @@ class TraceLoggerCollectorBuffer {
 
 
 
+extern JS_PUBLIC_API bool InitTraceLogger();
+
+
+extern JS_PUBLIC_API bool TraceLoggerSupported();
+
+
+
+
 
 extern JS_PUBLIC_API void StartTraceLogger(JSContext* cx);
 
@@ -144,6 +152,8 @@ extern JS_PUBLIC_API void ResetTraceLogger(void);
 
 
 
+inline bool InitTraceLogger() { return true; }
+inline bool TraceLoggerSupported() { return false; }
 inline void StartTraceLogger(JSContext* cx) {}
 inline void StopTraceLogger(JSContext* cx) {}
 inline void ResetTraceLogger(void) {}
