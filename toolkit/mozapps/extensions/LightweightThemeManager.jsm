@@ -6,7 +6,24 @@
 
 var EXPORTED_SYMBOLS = ["LightweightThemeManager"];
 
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyGetter(this, "hiddenWindow", () => {
+  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+  let browser = Services.appShell.createWindowlessBrowser(true);
+  let principal = Services.scriptSecurityManager.getSystemPrincipal();
+  browser.docShell.createAboutBlankContentViewer(principal);
+
+  Services.obs.addObserver(() => { browser.close(); }, "xpcom-will-shutdown");
+
+  return browser.document.ownerGlobal;
+});
+
+if (AppConstants.DEBUG) {
+  void hiddenWindow;
+}
 
 var _fallbackThemeData = null;
 
@@ -14,6 +31,14 @@ var LightweightThemeManager = {
   set fallbackThemeData(data) {
     if (data && Object.getOwnPropertyNames(data).length) {
       _fallbackThemeData = Object.assign({}, data);
+
+      for (let key of ["theme", "darkTheme"]) {
+        let data = _fallbackThemeData[key] || null;
+        if (data && typeof data.headerURL === "string") {
+          data.headerImage = new hiddenWindow.Image();
+          data.headerImage.src = data.headerURL;
+        }
+      }
     } else {
       _fallbackThemeData = null;
     }
