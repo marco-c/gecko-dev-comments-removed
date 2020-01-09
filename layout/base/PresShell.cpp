@@ -1840,7 +1840,9 @@ nsresult PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight,
     
     
     
-    mMobileViewportManager->RequestReflow();
+    
+    
+    mMobileViewportManager->RequestReflow(false);
     return NS_OK;
   }
 
@@ -10527,8 +10529,19 @@ void PresShell::UpdateViewportOverridden(bool aAfterInitialization) {
 
   MOZ_ASSERT(mMobileViewportManager,
              "Shouldn't reach this without a MobileViewportManager.");
-  mMobileViewportManager->Destroy();
-  mMobileViewportManager = nullptr;
+  
+  
+  
+  
+  
+  RefPtr<MobileViewportManager> oldMVM;
+  mMobileViewportManager.swap(oldMVM);
+
+  oldMVM->RequestReflow(true);
+  ResetVisualViewportSize();
+
+  oldMVM->Destroy();
+  oldMVM = nullptr;
 
   if (aAfterInitialization) {
     
