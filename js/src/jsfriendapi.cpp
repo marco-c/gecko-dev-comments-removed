@@ -157,15 +157,6 @@ JS_FRIEND_API void js::AssertCompartmentHasSingleRealm(JS::Compartment* comp) {
   MOZ_RELEASE_ASSERT(comp->realms().length() == 1);
 }
 
-JS_FRIEND_API JSPrincipals* JS_DeprecatedGetCompartmentPrincipals(
-    JS::Compartment* compartment) {
-  
-  
-  js::AssertCompartmentHasSingleRealm(compartment);
-
-  return compartment->realms()[0]->principals();
-}
-
 JS_FRIEND_API JSPrincipals* JS::GetRealmPrincipals(JS::Realm* realm) {
   return realm->principals();
 }
