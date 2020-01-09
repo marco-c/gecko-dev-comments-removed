@@ -1262,6 +1262,8 @@ add_task(async function removeRetainState() {
 
 
 add_task(async function contextMenu() {
+  Services.telemetry.clearEvents();
+
   
   let action = PageActions.addAction(new PageActions.Action({
     id: "test-contextMenu",
@@ -1444,6 +1446,20 @@ add_task(async function contextMenu() {
 
   
   action.remove();
+
+  
+  let snapshot = Services.telemetry.snapshotEvents(
+    Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
+  ok(snapshot.parent && snapshot.parent.length > 0,
+     "Got parent telemetry events in the snapshot");
+  let relatedEvents = snapshot.parent
+    .filter(([timestamp, category, method]) =>
+      category == "addonsManager" && method == "action")
+    .map(relatedEvent => relatedEvent.slice(3, 6));
+  Assert.deepEqual(relatedEvents, [
+    ["pageAction", null, {action: "manage"}],
+    ["pageAction", null, {action: "manage"}],
+  ]);
 
   
   
