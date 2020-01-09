@@ -261,8 +261,6 @@ function parseLanguageTag(locale) {
 
     
     
-    if (token !== ALPHA || tokenLength < 2 || tokenLength > 8)
-        return null;
 
     var language, script, region, privateuse;
     var variants = [];
@@ -277,17 +275,19 @@ function parseLanguageTag(locale) {
 
     
     
-    
-    if (tokenLength <= 3) {
-        language = tokenStringLower();
-        if (!nextToken())
-            return null;
-    } else {
-        assert(4 <= tokenLength && tokenLength <= 8, "reserved/registered language subtags");
-        language = tokenStringLower();
-        if (!nextToken())
-            return null;
+    if (token !== ALPHA || tokenLength === 1 || tokenLength === 4 || tokenLength > 8) {
+        
+        
+        
+        return null;
     }
+    assert((2 <= tokenLength && tokenLength <= 3) ||
+           (5 <= tokenLength && tokenLength <= 8),
+           "language subtags have 2-3 or 5-8 letters");
+
+    language = tokenStringLower();
+    if (!nextToken())
+        return null;
 
     
     if (tokenLength === 4 && token === ALPHA) {
