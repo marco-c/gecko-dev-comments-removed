@@ -238,25 +238,9 @@ class nsIPresShell : public nsStubDocumentObserver {
   }
 #endif
 
-  inline mozilla::ServoStyleSet* StyleSet() const;
-
   nsCSSFrameConstructor* FrameConstructor() const {
     return mFrameConstructor.get();
   }
-
-  
-
-
-  
-  
-  void SetAuthorStyleDisabled(bool aDisabled);
-  bool GetAuthorStyleDisabled() const;
-
-  
-
-
-
-  void UpdatePreferenceStyles();
 
   
 
@@ -415,41 +399,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   void PostPendingScrollAnchorAdjustment(
       mozilla::layout::ScrollAnchorContainer* aContainer);
 
-  
-
-
-
-
-
-
-
-
-
-
-  void FrameNeedsReflow(nsIFrame* aFrame,
-                        mozilla::IntrinsicDirty aIntrinsicDirty,
-                        nsFrameState aBitToAdd,
-                        mozilla::ReflowRootHandling aRootHandling =
-                            mozilla::ReflowRootHandling::InferFromBitToAdd);
-
-  
-
-
-  void MarkFixedFramesForReflow(mozilla::IntrinsicDirty aIntrinsicDirty);
-
-  
-
-
-
-
-
-
-
-
-
-
-  void FrameNeedsToContinueReflow(nsIFrame* aFrame);
-
   void CancelAllPendingReflows();
 
   void NotifyCounterStylesAreDirty();
@@ -490,75 +439,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   void NotifyFontFaceSetOnRefresh();
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  void FlushPendingNotifications(mozilla::FlushType aType) {
-    if (!NeedFlush(aType)) {
-      return;
-    }
-
-    DoFlushPendingNotifications(aType);
-  }
-
-  MOZ_CAN_RUN_SCRIPT
-  void FlushPendingNotifications(mozilla::ChangesToFlush aType) {
-    if (!NeedFlush(aType.mFlushType)) {
-      return;
-    }
-
-    DoFlushPendingNotifications(aType);
-  }
-
- protected:
-  
-
-
-  MOZ_CAN_RUN_SCRIPT
-  virtual void DoFlushPendingNotifications(mozilla::FlushType aType) = 0;
-  MOZ_CAN_RUN_SCRIPT
-  virtual void DoFlushPendingNotifications(mozilla::ChangesToFlush aType) = 0;
-
- public:
-  
-
-
-
-
-
-
-
-  bool NeedFlush(mozilla::FlushType aType) const {
-    
-    
-    
-    
-    MOZ_ASSERT(aType >= mozilla::FlushType::Style);
-    return mNeedStyleFlush ||
-           (mNeedLayoutFlush &&
-            aType >= mozilla::FlushType::InterruptibleLayout) ||
-           aType >= mozilla::FlushType::Display ||
-           mNeedThrottledAnimationFlush || mInFlush;
-  }
-
-  inline void EnsureStyleFlush();
-  inline void SetNeedStyleFlush();
-  inline void SetNeedLayoutFlush();
-  inline void SetNeedThrottledAnimationFlush();
-
-  
   
   
   
@@ -581,14 +461,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   void ObserveStyleFlushes() {
     if (!ObservingStyleFlushes()) DoObserveStyleFlushes();
   }
-
-  bool NeedStyleFlush() const { return mNeedStyleFlush; }
-  
-
-
-
-
-  bool NeedLayoutFlush() const { return mNeedLayoutFlush; }
 
   
 
@@ -665,13 +537,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
   void SetIgnoreFrameDestruction(bool aIgnore);
-
-  
-
-
-
-
-  void NotifyDestroyingFrame(nsIFrame* aFrame);
 
   
 
@@ -989,10 +854,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   void RemoveAutoWeakFrame(AutoWeakFrame* aWeakFrame);
   void RemoveWeakFrame(WeakFrame* aWeakFrame);
-
-#ifdef DEBUG
-  nsIFrame* GetDrawEventTargetFrame() { return mDrawEventTargetFrame; }
-#endif
 
   
 
@@ -1328,34 +1189,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   bool AddPostRefreshObserver(nsAPostRefreshObserver* aObserver);
   bool RemovePostRefreshObserver(nsAPostRefreshObserver* aObserver);
 
-  void SetVisualViewportSize(nscoord aWidth, nscoord aHeight);
-  void ResetVisualViewportSize();
-  bool IsVisualViewportSizeSet() { return mVisualViewportSizeSet; }
-  nsSize GetVisualViewportSize() {
-    NS_ASSERTION(mVisualViewportSizeSet,
-                 "asking for visual viewport size when its not set?");
-    return mVisualViewportSize;
-  }
-
-  
-  
-  void CompleteChangeToVisualViewportSize();
-
-  
-
-
-  bool SetVisualViewportOffset(const nsPoint& aScrollOffset,
-                               const nsPoint& aPrevLayoutScrollPos);
-
-  nsPoint GetVisualViewportOffset() const {
-    return mVisualViewportOffset.valueOr(nsPoint());
-  }
-  bool IsVisualViewportOffsetSet() const {
-    return mVisualViewportOffset.isSome();
-  }
-
-  nsPoint GetVisualViewportOffsetRelativeToLayoutViewport() const;
-
   
   
   
@@ -1414,12 +1247,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   virtual Document* GetPrimaryContentDocument() = 0;
 
-  
-  void NotifyStyleSheetServiceSheetAdded(mozilla::StyleSheet* aSheet,
-                                         uint32_t aSheetType);
-  void NotifyStyleSheetServiceSheetRemoved(mozilla::StyleSheet* aSheet,
-                                           uint32_t aSheetType);
-
   struct MOZ_RAII AutoAssertNoFlush {
     explicit AutoAssertNoFlush(nsIPresShell& aShell)
         : mShell(aShell), mOldForbidden(mShell.mForbiddenToFlush) {
@@ -1446,31 +1273,9 @@ class nsIPresShell : public nsStubDocumentObserver {
       const nsPoint& aVisualViewportOffset,
       FrameMetrics::ScrollOffsetUpdateType aUpdateType);
 
-#ifdef DEBUG
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool VerifyIncrementalReflow();
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoVerifyReflow();
-  void VerifyHasDirtyRootAncestor(nsIFrame* aFrame);
-  void ShowEventTargetDebug();
-
-  bool mInVerifyReflow = false;
-  
-  
-  nsIFrame* mCurrentReflowRoot = nullptr;
-#endif
-
 #ifdef MOZ_REFLOW_PERF
   mozilla::UniquePtr<ReflowCountMgr> mReflowCountMgr;
 #endif
-
-  
-
-
-
-  void AddUserSheet(mozilla::StyleSheet*);
-  void AddAgentSheet(mozilla::StyleSheet*);
-  void AddAuthorSheet(mozilla::StyleSheet*);
-  void RemoveSheet(mozilla::StyleOrigin, mozilla::StyleSheet*);
-  void RemovePreferenceStyles();
 
   void WillDoReflow();
 
@@ -1497,12 +1302,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   void ScheduleReflow();
-
-  
-  
-  
-  bool DoReflow(nsIFrame* aFrame, bool aInterruptible,
-                mozilla::OverflowChangedTracker* aOverflowTracker);
 
   
   
@@ -1538,10 +1337,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   nsCOMPtr<nsITimer> mReflowContinueTimer;
 
-#ifdef DEBUG
-  nsIFrame* mDrawEventTargetFrame = nullptr;
-#endif
-
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
   
@@ -1550,10 +1345,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   
   uint64_t mPaintCount;
-
-  nsSize mVisualViewportSize;
-
-  mozilla::Maybe<nsPoint> mVisualViewportOffset;
 
   
   
@@ -1673,13 +1464,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   
   bool mWasLastReflowInterrupted : 1;
-  bool mVisualViewportSizeSet : 1;
-
-  
-  bool mNeedLayoutFlush : 1;
-
-  
-  bool mNeedStyleFlush : 1;
 
   
   bool mObservingStyleFlushes : 1;
@@ -1691,10 +1475,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   bool mObservingLayoutFlushes : 1;
 
   bool mResizeEventPending : 1;
-
-  
-  
-  bool mNeedThrottledAnimationFlush : 1;
 
   bool mFontSizeInflationForceEnabled : 1;
   bool mFontSizeInflationDisabledInMasterProcess : 1;

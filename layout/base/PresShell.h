@@ -140,11 +140,6 @@ class PresShell final : public nsIPresShell,
       nscoord aWidth, nscoord aHeight, nscoord aOldWidth, nscoord aOldHeight,
       ResizeReflowOptions aOptions = ResizeReflowOptions::NoOption) override;
 
-  MOZ_CAN_RUN_SCRIPT
-  void DoFlushPendingNotifications(FlushType aType) override;
-  MOZ_CAN_RUN_SCRIPT
-  void DoFlushPendingNotifications(ChangesToFlush aType) override;
-
   RectVisibility GetRectVisibility(nsIFrame* aFrame, const nsRect& aRect,
                                    nscoord aMinTwips) const override;
 
@@ -334,6 +329,149 @@ class PresShell final : public nsIPresShell,
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
 
   NS_DECL_NSIOBSERVER
+
+  
+  inline void EnsureStyleFlush();
+  inline void SetNeedStyleFlush();
+  inline void SetNeedLayoutFlush();
+  inline void SetNeedThrottledAnimationFlush();
+  inline ServoStyleSet* StyleSet() const;
+
+  
+
+
+
+
+
+
+
+  bool NeedFlush(FlushType aType) const {
+    
+    
+    
+    
+    MOZ_ASSERT(aType >= FlushType::Style);
+    return mNeedStyleFlush ||
+           (mNeedLayoutFlush && aType >= FlushType::InterruptibleLayout) ||
+           aType >= FlushType::Display || mNeedThrottledAnimationFlush ||
+           mInFlush;
+  }
+
+  
+
+
+
+
+  bool NeedLayoutFlush() const { return mNeedLayoutFlush; }
+
+  bool NeedStyleFlush() const { return mNeedStyleFlush; }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  void FlushPendingNotifications(FlushType aType) {
+    if (!NeedFlush(aType)) {
+      return;
+    }
+
+    DoFlushPendingNotifications(aType);
+  }
+
+  MOZ_CAN_RUN_SCRIPT
+  void FlushPendingNotifications(ChangesToFlush aType) {
+    if (!NeedFlush(aType.mFlushType)) {
+      return;
+    }
+
+    DoFlushPendingNotifications(aType);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  void FrameNeedsReflow(
+      nsIFrame* aFrame, IntrinsicDirty aIntrinsicDirty, nsFrameState aBitToAdd,
+      ReflowRootHandling aRootHandling = ReflowRootHandling::InferFromBitToAdd);
+
+  
+
+
+  void MarkFixedFramesForReflow(IntrinsicDirty aIntrinsicDirty);
+
+  
+  
+  void CompleteChangeToVisualViewportSize();
+
+  
+
+
+  bool SetVisualViewportOffset(const nsPoint& aScrollOffset,
+                               const nsPoint& aPrevLayoutScrollPos);
+
+  nsPoint GetVisualViewportOffset() const {
+    return mVisualViewportOffset.valueOr(nsPoint());
+  }
+  bool IsVisualViewportOffsetSet() const {
+    return mVisualViewportOffset.isSome();
+  }
+
+  void SetVisualViewportSize(nscoord aWidth, nscoord aHeight);
+  void ResetVisualViewportSize();
+  bool IsVisualViewportSizeSet() { return mVisualViewportSizeSet; }
+  nsSize GetVisualViewportSize() {
+    NS_ASSERTION(mVisualViewportSizeSet,
+                 "asking for visual viewport size when its not set?");
+    return mVisualViewportSize;
+  }
+
+  nsPoint GetVisualViewportOffsetRelativeToLayoutViewport() const;
+
+  
+
+
+  
+  
+  void SetAuthorStyleDisabled(bool aDisabled);
+  bool GetAuthorStyleDisabled() const;
+
+  
+
+
+
+  void UpdatePreferenceStyles();
+
+  
+  void NotifyStyleSheetServiceSheetAdded(StyleSheet* aSheet,
+                                         uint32_t aSheetType);
+  void NotifyStyleSheetServiceSheetRemoved(StyleSheet* aSheet,
+                                           uint32_t aSheetType);
+
+  
+  
+  
+  bool DoReflow(nsIFrame* aFrame, bool aInterruptible,
+                OverflowChangedTracker* aOverflowTracker);
 
 #ifdef MOZ_REFLOW_PERF
   void DumpReflows() override;
@@ -541,6 +679,30 @@ class PresShell final : public nsIPresShell,
   
   void EndPaint();
 
+  
+
+
+
+
+
+
+
+
+
+
+  void FrameNeedsToContinueReflow(nsIFrame* aFrame);
+
+  
+
+
+
+
+  void NotifyDestroyingFrame(nsIFrame* aFrame);
+
+#ifdef DEBUG
+  nsIFrame* GetDrawEventTargetFrame() { return mDrawEventTargetFrame; }
+#endif
+
  private:
   ~PresShell();
 
@@ -568,11 +730,27 @@ class PresShell final : public nsIPresShell,
 
 
 
+  void AddUserSheet(StyleSheet*);
+  void AddAgentSheet(StyleSheet*);
+  void AddAuthorSheet(StyleSheet*);
+  void RemoveSheet(StyleOrigin, StyleSheet*);
+  void RemovePreferenceStyles();
+
+  
+
+
+
 
 
 
 
   void SetupFontInflation();
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT void DoFlushPendingNotifications(FlushType aType);
+  MOZ_CAN_RUN_SCRIPT void DoFlushPendingNotifications(ChangesToFlush aType);
 
   struct RenderingState {
     explicit RenderingState(PresShell* aPresShell)
@@ -1539,6 +1717,20 @@ class PresShell final : public nsIPresShell,
   nsresult SetResolutionImpl(float aResolution, bool aScaleToResolution,
                              nsAtom* aOrigin);
 
+#ifdef DEBUG
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool VerifyIncrementalReflow();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoVerifyReflow();
+  void VerifyHasDirtyRootAncestor(nsIFrame* aFrame);
+  void ShowEventTargetDebug();
+
+  bool mInVerifyReflow = false;
+  
+  
+  nsIFrame* mCurrentReflowRoot = nullptr;
+
+  nsIFrame* mDrawEventTargetFrame = nullptr;
+#endif  
+
   
   
   
@@ -1587,6 +1779,10 @@ class PresShell final : public nsIPresShell,
   
   nsCOMPtr<nsIContent> mContentToScrollTo;
 
+  nsSize mVisualViewportSize;
+
+  mozilla::Maybe<nsPoint> mVisualViewportOffset;
+
   TimeStamp mLastOSWake;
 
   
@@ -1597,6 +1793,18 @@ class PresShell final : public nsIPresShell,
   nscoord mLastAnchorScrollPositionY = 0;
 
   int32_t mActiveSuppressDisplayport;
+
+  
+  bool mNeedLayoutFlush : 1;
+
+  
+  bool mNeedStyleFlush : 1;
+
+  
+  
+  bool mNeedThrottledAnimationFlush : 1;
+
+  bool mVisualViewportSizeSet : 1;
 
   bool mDocumentLoading : 1;
   bool mNoDelayedMouseEvents : 1;
