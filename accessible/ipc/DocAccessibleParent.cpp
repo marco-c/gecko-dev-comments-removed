@@ -536,6 +536,30 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
     ProxyCreated(aChildDoc, Interfaces::DOCUMENT | Interfaces::HYPERTEXT);
   }
 
+#if defined(XP_WIN)
+  auto embeddedBrowser = static_cast<dom::BrowserParent*>(aChildDoc->Manager());
+  dom::BrowserBridgeParent* bridge = embeddedBrowser->GetBrowserBridgeParent();
+  if (bridge) {
+    
+    
+    
+    
+    
+    RefPtr<IDispatch> docAcc;
+    aChildDoc->GetCOMInterface((void**)getter_AddRefs(docAcc));
+    RefPtr<IDispatch> docWrapped(
+        mscom::PassthruProxy::Wrap<IDispatch>(WrapNotNull(docAcc)));
+    IDispatchHolder::COMPtrType docPtr(
+        mscom::ToProxyUniquePtr(std::move(docWrapped)));
+    IDispatchHolder docHolder(std::move(docPtr));
+    if (bridge->SendSetEmbeddedDocAccessibleCOMProxy(docHolder)) {
+#  if defined(MOZ_SANDBOX)
+      mDocProxyStream = docHolder.GetPreservedStream();
+#  endif  
+    }
+  }
+#endif  
+
   return IPC_OK();
 }
 
