@@ -34,6 +34,9 @@ void ClearOrigins();
 
 size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
+
+size_t SizeOfPrioDatasPerMetric();
+
 }  
 
 #endif  

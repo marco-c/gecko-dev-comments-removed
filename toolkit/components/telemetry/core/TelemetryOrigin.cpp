@@ -247,8 +247,9 @@ void TelemetryOrigin::InitializeGlobalState() {
   
   
   gOriginsList = new nsTArray<const char*>({
-      "fb.com",
-      "doubleclick.de",
+#define ORIGIN(domain) #domain,
+#include "TelemetryOriginData.inc"
+#undef ORIGIN
   });
 
   gPrioDatasPerMetric =
@@ -567,4 +568,8 @@ size_t TelemetryOrigin::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
   n += gOriginToIndexMap->ShallowSizeOfIncludingThis(aMallocSizeOf);
 
   return n;
+}
+
+size_t TelemetryOrigin::SizeOfPrioDatasPerMetric() {
+  return gPrioDatasPerMetric;
 }
