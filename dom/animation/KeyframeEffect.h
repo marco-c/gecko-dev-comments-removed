@@ -185,7 +185,13 @@ class KeyframeEffect : public AnimationEffect {
 
   
   
-  bool HasAnimationOfPropertySet(const nsCSSPropertyIDSet& aPropertySet) const;
+  nsCSSPropertyIDSet GetPropertySet() const;
+
+  
+  
+  bool HasAnimationOfPropertySet(const nsCSSPropertyIDSet& aPropertySet) const {
+    return GetPropertySet().Intersects(aPropertySet);
+  }
 
   
   
