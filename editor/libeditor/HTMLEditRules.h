@@ -170,7 +170,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult WillInsert(bool* aCancel = nullptr);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult WillInsert(bool* aCancel = nullptr);
 
   
 
@@ -197,7 +197,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult WillLoadHTML();
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult WillLoadHTML();
 
   
 
@@ -215,6 +215,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult DeleteNodeIfCollapsedText(nsINode& aNode);
 
   
@@ -254,7 +255,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult DidDeleteSelection();
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DidDeleteSelection();
 
   
 
@@ -387,7 +388,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_MUST_USE nsresult
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   DeleteElementsExceptTableRelatedElements(nsINode& aNode);
 
   
@@ -487,6 +488,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillRelativeChangeZIndex(int32_t aChange, bool* aCancel,
                                                  bool* aHandled);
 
@@ -882,6 +884,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult MaybeDeleteTopMostEmptyAncestor(
       nsINode& aStartNode, Element& aEditingHostElement,
       nsIEditor::EDirection aAction, bool* aHandled);
@@ -1221,6 +1224,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult RemoveEmptyNodesInChangedRange();
 
   nsresult SelectionEndpointInNode(nsINode* aNode, bool* aResult);

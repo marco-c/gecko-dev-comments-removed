@@ -217,7 +217,7 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_MUST_USE nsresult WillInsert(bool* aCancel = nullptr);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult WillInsert(bool* aCancel = nullptr);
 
   
 
@@ -253,7 +253,7 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_MUST_USE nsresult DidDeleteSelection();
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DidDeleteSelection();
 
   nsresult WillSetTextProperty(bool* aCancel, bool* aHandled);
 

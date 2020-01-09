@@ -139,7 +139,7 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT
   NS_IMETHOD PasteTransferable(nsITransferable* aTransferable) override;
 
-  NS_IMETHOD DeleteNode(nsINode* aNode) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD DeleteNode(nsINode* aNode) override;
 
   NS_IMETHOD InsertLineBreak() override;
 
@@ -180,7 +180,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  virtual nsresult InsertLineBreakAsAction() override;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InsertLineBreakAsAction() override;
 
   
 
@@ -482,6 +482,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertTextWithQuotations(const nsAString& aStringToInsert);
 
  protected:  
@@ -502,6 +503,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult DeleteSelectionWithTransaction(
       EDirection aAction, EStripWrappers aStripWrappers) override;
 
@@ -512,7 +514,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsresult DeleteNodeWithTransaction(nsINode& aNode);
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteNodeWithTransaction(nsINode& aNode);
 
   
 
@@ -1486,6 +1488,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertBrElementAtSelectionWithTransaction();
 
   
@@ -1496,6 +1499,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertTextWithQuotationsInternal(const nsAString& aStringToInsert);
 
   
@@ -1866,6 +1870,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteAllChildrenWithTransaction(Element& aElement);
 
   
@@ -1881,6 +1886,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteTableElementAndChildrenWithTransaction(Element& aTableElement);
 
   nsresult SetColSpan(Element* aCell, int32_t aColSpan);
@@ -1971,7 +1977,7 @@ class HTMLEditor final : public TextEditor,
   static Element* GetEnclosingTable(nsINode* aNode);
 
   
-  nsresult PasteAsPlaintextQuotation(int32_t aSelectionType);
+  MOZ_CAN_RUN_SCRIPT nsresult PasteAsPlaintextQuotation(int32_t aSelectionType);
 
   
 
@@ -1982,6 +1988,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertAsPlaintextQuotation(const nsAString& aQuotedText,
                                       bool aAddCites, nsINode** aNodeInserted);
 

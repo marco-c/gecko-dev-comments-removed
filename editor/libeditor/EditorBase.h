@@ -923,7 +923,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  nsresult DeleteNodeWithTransaction(nsINode& aNode);
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteNodeWithTransaction(nsINode& aNode);
 
   
 

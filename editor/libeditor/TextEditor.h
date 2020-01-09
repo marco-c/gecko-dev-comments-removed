@@ -55,6 +55,7 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
   
   NS_IMETHOD GetDocumentIsEmpty(bool* aDocumentIsEmpty) override;
 
+  MOZ_CAN_RUN_SCRIPT
   NS_IMETHOD DeleteSelection(EDirection aAction,
                              EStripWrappers aStripWrappers) override;
 
@@ -67,7 +68,7 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
   MOZ_CAN_RUN_SCRIPT
   NS_IMETHOD Redo(uint32_t aCount) final;
 
-  NS_IMETHOD Cut() override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD Cut() override;
   bool CanCut() const;
   NS_IMETHOD Copy() override;
   bool CanCopy() const;
@@ -167,6 +168,7 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteSelectionAsAction(EDirection aDirection,
                                    EStripWrappers aStripWrappers);
 
@@ -202,7 +204,7 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
-  virtual nsresult InsertLineBreakAsAction();
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InsertLineBreakAsAction();
 
   
 
@@ -304,6 +306,7 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteSelectionAsSubAction(EDirection aDirection,
                                       EStripWrappers aStripWrappers);
 
@@ -315,6 +318,7 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult DeleteSelectionWithTransaction(
       EDirection aAction, EStripWrappers aStripWrappers);
 
@@ -324,13 +328,14 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
-  nsresult SetTextAsSubAction(const nsAString& aString);
+  MOZ_CAN_RUN_SCRIPT nsresult SetTextAsSubAction(const nsAString& aString);
 
   
 
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult ReplaceSelectionAsSubAction(const nsAString& aString);
 
   
@@ -493,6 +498,7 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   already_AddRefed<Element> DeleteSelectionAndCreateElement(nsAtom& aTag);
 
   
@@ -502,7 +508,7 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
-  nsresult DeleteSelectionAndPrepareToCreateNode();
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteSelectionAndPrepareToCreateNode();
 
   
 
