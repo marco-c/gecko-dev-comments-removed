@@ -31,7 +31,6 @@ use thread_profiler::register_thread_with_profiler;
 use moz2d_renderer::Moz2dBlobImageHandler;
 use program_cache::{WrProgramCache, remove_disk_cache};
 use rayon;
-use num_cpus;
 use euclid::SideOffsets2D;
 use nsstring::nsAString;
 
@@ -210,7 +209,7 @@ pub struct DocumentHandle {
 }
 
 impl DocumentHandle {
-    pub fn new(api: RenderApi, size: FramebufferIntSize, layer: i8) -> DocumentHandle {
+    pub fn new(api: RenderApi, size: DeviceIntSize, layer: i8) -> DocumentHandle {
         let doc = api.add_document(size, layer);
         DocumentHandle {
             api: api,
@@ -218,7 +217,7 @@ impl DocumentHandle {
         }
     }
 
-    pub fn new_with_id(api: RenderApi, size: FramebufferIntSize, layer: i8, id: u32) -> DocumentHandle {
+    pub fn new_with_id(api: RenderApi, size: DeviceIntSize, layer: i8, id: u32) -> DocumentHandle {
         let doc = api.add_document_with_id(size, layer, id);
         DocumentHandle {
             api: api,
@@ -660,7 +659,7 @@ pub extern "C" fn wr_renderer_render(renderer: &mut Renderer,
     if had_slow_frame {
       renderer.notify_slow_frame();
     }
-    match renderer.render(FramebufferIntSize::new(width, height)) {
+    match renderer.render(DeviceIntSize::new(width, height)) {
         Ok(results) => {
             *out_stats = results.stats;
             true
@@ -1017,14 +1016,8 @@ pub struct WrThreadPool(Arc<rayon::ThreadPool>);
 
 #[no_mangle]
 pub unsafe extern "C" fn wr_thread_pool_new() -> *mut WrThreadPool {
-    
-    
-    
-    let num_threads = num_cpus::get().max(2).min(8);
-
     let worker = rayon::ThreadPoolBuilder::new()
         .thread_name(|idx|{ format!("WRWorker#{}", idx) })
-        .num_threads(num_threads)
         .start_handler(|idx| {
             let name = format!("WRWorker#{}", idx);
             register_thread_with_profiler(name.clone());
@@ -1233,7 +1226,7 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
     
     set_profiler_hooks(Some(&PROFILER_HOOKS));
 
-    let window_size = FramebufferIntSize::new(window_width, window_height);
+    let window_size = DeviceIntSize::new(window_width, window_height);
     let notifier = Box::new(CppNotifier {
         window_id: window_id,
     });
@@ -1265,7 +1258,7 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
 pub extern "C" fn wr_api_create_document(
     root_dh: &mut DocumentHandle,
     out_handle: &mut *mut DocumentHandle,
-    doc_size: FramebufferIntSize,
+    doc_size: DeviceIntSize,
     layer: i8,
     document_id: u32
 ) {
@@ -1452,7 +1445,7 @@ pub extern "C" fn wr_transaction_set_display_list(
 #[no_mangle]
 pub extern "C" fn wr_transaction_set_document_view(
     txn: &mut Transaction,
-    doc_rect: &FramebufferIntRect,
+    doc_rect: &DeviceIntRect,
 ) {
     txn.set_document_view(
         *doc_rect,

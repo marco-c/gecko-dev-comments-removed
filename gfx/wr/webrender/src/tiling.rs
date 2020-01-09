@@ -1172,7 +1172,7 @@ pub struct Frame {
     
     pub content_origin: DeviceIntPoint,
     
-    pub framebuffer_rect: FramebufferIntRect,
+    pub device_rect: DeviceIntRect,
     pub background_color: Option<ColorF>,
     pub layer: DocumentLayer,
     pub passes: Vec<RenderPass>,
