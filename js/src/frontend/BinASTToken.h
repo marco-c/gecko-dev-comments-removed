@@ -291,6 +291,10 @@ const size_t BINASTFIELD_LIMIT = 69;
 
 
 
+const size_t BINAST_TOTAL_NUMBER_OF_FIELDS = 275;
+
+
+
 
 
 
@@ -364,6 +368,10 @@ enum class BinASTVariant : uint16_t {
 
 
 const size_t BINASTVARIANT_LIMIT = 49;
+
+
+
+const size_t BINAST_TOTAL_NUMBER_OF_LISTS = 22;
 
 
 
