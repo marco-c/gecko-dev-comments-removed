@@ -349,6 +349,31 @@ var gXPInstallObserver = {
             .add(Ci.nsISecurityUITelemetry.WARNING_CONFIRM_ADDON_INSTALL);
   },
 
+  
+  NOTIFICATION_IDS: [
+    "addon-install-blocked",
+    "addon-install-blocked-silent",
+    "addon-install-complete",
+    "addon-install-confirmation",
+    "addon-install-disabled",
+    "addon-install-failed",
+    "addon-install-origin-blocked",
+    "addon-install-started",
+    "addon-progress",
+    "addon-webext-permissions",
+    "xpinstall-disabled",
+  ],
+
+  
+  removeAllNotifications(browser) {
+    this.NOTIFICATION_IDS.forEach((id) => {
+      let notification = PopupNotifications.getNotification(id, browser);
+      if (notification) {
+        PopupNotifications.remove(notification);
+      }
+    });
+  },
+
   observe(aSubject, aTopic, aData) {
     var brandBundle = document.getElementById("bundle_brand");
     var installInfo = aSubject.wrappedJSObject;

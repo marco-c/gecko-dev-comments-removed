@@ -1806,6 +1806,15 @@ var AddonManagerInternal = {
         this.installNotifyObservers("addon-install-origin-blocked", topBrowser,
                                     aInstallingPrincipal.URI, aInstall);
         return;
+      } else if (topBrowser.ownerGlobal.fullScreen) {
+        
+        
+        
+        aInstall.cancel();
+
+        this.installNotifyObservers("addon-install-blocked-silent", topBrowser,
+                                    aInstallingPrincipal.URI, aInstall);
+        return;
       }
 
       

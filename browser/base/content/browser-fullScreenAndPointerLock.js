@@ -373,6 +373,12 @@ var FullScreen = {
         } else {
           browser = event.target.ownerGlobal.docShell.chromeEventHandler;
         }
+
+        
+        
+        
+        gXPInstallObserver.removeAllNotifications(browser);
+
         TelemetryStopwatch.start("FULLSCREEN_CHANGE_MS");
         this.enterDomFullscreen(browser);
         break;
