@@ -571,10 +571,30 @@ void VideoSink::MaybeResolveEndPromise() {
 void VideoSink::SetSecondaryVideoContainer(VideoFrameContainer* aSecondary) {
   AssertOwnerThread();
   mSecondaryContainer = aSecondary;
-  if (!IsPlaying()) {
+  if (!IsPlaying() && mSecondaryContainer) {
+    ImageContainer* mainImageContainer = mContainer->GetImageContainer();
+    ImageContainer* secondaryImageContainer =
+        mSecondaryContainer->GetImageContainer();
+    MOZ_DIAGNOSTIC_ASSERT(mainImageContainer);
+    MOZ_DIAGNOSTIC_ASSERT(secondaryImageContainer);
+
     
     
-    RenderVideoFrames(1);
+    
+    nsTArray<ImageContainer::OwningImage> oldImages;
+    mainImageContainer->GetCurrentImages(&oldImages);
+    if (oldImages.Length()) {
+      ImageContainer::OwningImage& old = oldImages.LastElement();
+
+      nsTArray<ImageContainer::NonOwningImage> currentFrame;
+      
+      
+      
+      currentFrame.AppendElement(ImageContainer::NonOwningImage(
+          old.mImage, old.mTimeStamp,  0, old.mProducerID));
+
+      secondaryImageContainer->SetCurrentImages(currentFrame);
+    }
   }
 }
 
