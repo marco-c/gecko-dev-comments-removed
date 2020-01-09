@@ -778,6 +778,9 @@ void nsHostResolver::Shutdown() {
 
     if (mNumIdleTasks) mIdleTaskCV.NotifyAll();
 
+    for (auto iter = mRecordDB.Iter(); !iter.Done(); iter.Next()) {
+      iter.UserData()->Cancel();
+    }
     
     mRecordDB.Clear();
   }
@@ -796,10 +799,6 @@ void nsHostResolver::Shutdown() {
   pendingQMed.clear();
   pendingQLow.clear();
   evictionQ.clear();
-
-  for (auto iter = mRecordDB.Iter(); !iter.Done(); iter.Next()) {
-    iter.UserData()->Cancel();
-  }
 
   
   
