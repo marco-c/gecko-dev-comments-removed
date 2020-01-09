@@ -8,13 +8,10 @@
 
 #include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/Logging.h"
-#include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsContentUtils.h"
-#include "nsQueryObject.h"
-#include "TrackingDummyChannel.h"
 
 namespace mozilla {
 namespace net {
@@ -38,76 +35,6 @@ namespace {
 
 StaticRefPtr<UrlClassifierFeatureTrackingAnnotation> gFeatureTrackingAnnotation;
 
-static void SetClassificationFlagsHelper(nsIChannel* aChannel,
-                                         bool aIsThirdParty) {
-  MOZ_ASSERT(aChannel);
-
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  NS_QueryNotificationCallbacks(aChannel, parentChannel);
-  if (parentChannel) {
-    
-    
-    parentChannel->NotifyClassificationFlags(
-        nsIHttpChannel::ClassificationFlags::CLASSIFIED_TRACKING, aIsThirdParty);
-  }
-
-  RefPtr<HttpBaseChannel> httpChannel = do_QueryObject(aChannel);
-  if (httpChannel) {
-    httpChannel->AddClassificationFlags(nsIHttpChannel::ClassificationFlags::CLASSIFIED_TRACKING,
-                                        aIsThirdParty);
-  }
-
-  RefPtr<TrackingDummyChannel> dummyChannel = do_QueryObject(aChannel);
-  if (dummyChannel) {
-    dummyChannel->AddClassificationFlags(nsIHttpChannel::ClassificationFlags::CLASSIFIED_TRACKING);
-  }
-}
-
-static void LowerPriorityHelper(nsIChannel* aChannel) {
-  MOZ_ASSERT(aChannel);
-
-  bool isBlockingResource = false;
-
-  nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(aChannel));
-  if (cos) {
-    if (nsContentUtils::IsTailingEnabled()) {
-      uint32_t cosFlags = 0;
-      cos->GetClassFlags(&cosFlags);
-      isBlockingResource =
-          cosFlags & (nsIClassOfService::UrgentStart |
-                      nsIClassOfService::Leader | nsIClassOfService::Unblocked);
-
-      
-      
-      
-      if (!(cosFlags & nsIClassOfService::TailForbidden)) {
-        cos->AddClassFlags(nsIClassOfService::Throttleable);
-      }
-    } else {
-      
-      
-
-      cos->AddClassFlags(nsIClassOfService::Throttleable);
-    }
-  }
-
-  if (!isBlockingResource) {
-    nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(aChannel);
-    if (p) {
-      if (UC_LOG_ENABLED()) {
-        nsCOMPtr<nsIURI> uri;
-        aChannel->GetURI(getter_AddRefs(uri));
-        nsAutoCString spec;
-        uri->GetAsciiSpec(spec);
-        spec.Truncate(
-            std::min(spec.Length(), UrlClassifierCommon::sMaxSpecLength));
-        UC_LOG(("Setting PRIORITY_LOWEST for channel[%p] (%s)", aChannel,
-                spec.get()));
-      }
-      p->SetPriority(nsISupportsPriority::PRIORITY_LOWEST);
-    }
-  }
-}
 
 }  
 
@@ -197,42 +124,10 @@ UrlClassifierFeatureTrackingAnnotation::ProcessChannel(nsIChannel* aChannel,
   
   *aShouldContinue = true;
 
-  nsCOMPtr<nsIURI> chanURI;
-  nsresult rv = aChannel->GetURI(getter_AddRefs(chanURI));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    UC_LOG(
-        ("UrlClassifierFeatureTrackingAnnotation::ProcessChannel "
-         "nsIChannel::GetURI(%p) failed",
-         (void*)aChannel));
-    return NS_OK;
-  }
-
-  bool isThirdPartyWithTopLevelWinURI =
-      nsContentUtils::IsThirdPartyWindowOrChannel(nullptr, aChannel, chanURI);
-
-  bool isAllowListed =
-      IsAllowListed(aChannel, AntiTrackingCommon::eTrackingAnnotations);
-
-  UC_LOG(
-      ("UrlClassifierFeatureTrackingAnnotation::ProcessChannel, annotating "
-       "channel[%p]",
-       aChannel));
-
-  SetClassificationFlagsHelper(aChannel, isThirdPartyWithTopLevelWinURI);
-
-  if (isThirdPartyWithTopLevelWinURI || isAllowListed) {
-    
-    
-    
-    
-    UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
-        aChannel, nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT);
-  }
-
-  if (isThirdPartyWithTopLevelWinURI &&
-      StaticPrefs::privacy_trackingprotection_lower_network_priority()) {
-    LowerPriorityHelper(aChannel);
-  }
+  UrlClassifierCommon::AnnotateChannel(
+      aChannel, AntiTrackingCommon::eTrackingAnnotations,
+      nsIHttpChannel::ClassificationFlags::CLASSIFIED_TRACKING,
+      nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT);
 
   return NS_OK;
 }
