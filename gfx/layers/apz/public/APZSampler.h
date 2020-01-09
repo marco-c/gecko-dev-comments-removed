@@ -99,6 +99,8 @@ class APZSampler {
   void MarkAsyncTransformAppliedToContent(const LayerMetricsWrapper& aLayer);
   bool HasUnusedAsyncTransform(const LayerMetricsWrapper& aLayer);
 
+  ScrollableLayerGuid GetGuid(const LayerMetricsWrapper& aLayer);
+
   
 
 

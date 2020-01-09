@@ -873,13 +873,48 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
   
   ClipPartsCache clipPartsCache;
 
+  Layer* zoomContainer = nullptr;
+  Maybe<LayerMetricsWrapper> zoomedMetrics;
+
   ForEachNode<ForwardIterator>(
       aLayer,
-      [&stackDeferredClips](Layer* layer) {
+      [&](Layer* layer) {
         stackDeferredClips.push(Maybe<ParentLayerIntRect>());
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (Maybe<ScrollableLayerGuid::ViewID> zoomedScrollId =
+                layer->IsAsyncZoomContainer()) {
+          zoomContainer = layer;
+          ForEachNode<ForwardIterator>(
+              LayerMetricsWrapper(layer),
+              [zoomedScrollId, &zoomedMetrics](LayerMetricsWrapper aWrapper) {
+                
+                
+                if (aWrapper.AsRefLayer()) {
+                  return TraversalFlag::Skip;
+                }
+
+                if (aWrapper.Metrics().GetScrollId() == *zoomedScrollId) {
+                  zoomedMetrics = Some(aWrapper);
+                  MOZ_ASSERT(zoomedMetrics->GetApzc());
+                  return TraversalFlag::Abort;
+                }
+
+                return TraversalFlag::Continue;
+              });
+        }
       },
-      [this, &aOutFoundRoot, &stackDeferredClips, &appliedTransform,
-       &clipPartsCache](Layer* layer) {
+      [&](Layer* layer) {
         Maybe<ParentLayerIntRect> clipDeferredFromChildren =
             stackDeferredClips.top();
         stackDeferredClips.pop();
@@ -962,8 +997,15 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
 
             hasAsyncTransform = true;
 
+            AsyncTransformComponents asyncTransformComponents =
+                (zoomedMetrics &&
+                 sampler->GetGuid(*zoomedMetrics) == sampler->GetGuid(wrapper))
+                    ? AsyncTransformComponents{AsyncTransformComponent::eScroll}
+                    : ScrollAndZoom;
+
             AsyncTransform asyncTransformWithoutOverscroll =
-                sampler->GetCurrentAsyncTransform(wrapper);
+                sampler->GetCurrentAsyncTransform(wrapper,
+                                                  asyncTransformComponents);
             AsyncTransformComponentMatrix overscrollTransform =
                 sampler->GetOverscrollTransform(wrapper);
             AsyncTransformComponentMatrix asyncTransform =
@@ -1126,6 +1168,21 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
                     layer->GetAncestorMaskLayerAt(maskLayerIndex);
                 ancestorMaskLayers.AppendElement(ancestorMaskLayer);
               }
+            }
+          }
+
+          if (Maybe<ScrollableLayerGuid::ViewID> zoomedScrollId =
+                  layer->IsAsyncZoomContainer()) {
+            if (zoomedMetrics) {
+              AsyncTransform zoomTransform = sampler->GetCurrentAsyncTransform(
+                  *zoomedMetrics, {AsyncTransformComponent::eZoom});
+              hasAsyncTransform = true;
+              combinedAsyncTransform *=
+                  AsyncTransformComponentMatrix(zoomTransform);
+            } else {
+              
+              
+              
             }
           }
         }
