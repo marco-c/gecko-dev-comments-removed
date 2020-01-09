@@ -155,6 +155,9 @@ pref("dom.serviceWorkers.update_delay", 1000);
 pref("dom.serviceWorkers.testUpdateOverOneDay", false);
 
 
+pref("dom.performance.enable_scheduler_timing", true);
+
+
 pref("dom.permissions.revoke.enable", false);
 
 
@@ -881,6 +884,7 @@ pref("gfx.draw-color-bars", false);
 pref("gfx.logging.painted-pixel-count.enabled", false);
 pref("gfx.logging.texture-usage.enabled", false);
 pref("gfx.logging.peak-texture-usage.enabled", false);
+pref("gfx.logging.slow-frames.enabled", false);
 
 pref("gfx.ycbcr.accurate-conversion", false);
 
@@ -2377,11 +2381,6 @@ pref("network.stricttransportsecurity.preloadlist", true);
 
 
 pref("network.mdns.use_js_fallback", false);
-
-
-pref("network.ssl_tokens_cache_enabled", false);
-
-pref("network.ssl_tokens_cache_capacity", 2048);
 
 pref("converter.html2txt.structs",          true); 
 pref("converter.html2txt.header_strategy",  1); 
@@ -4720,7 +4719,6 @@ pref("signon.schemeUpgrades",               false);
 
 pref("signon.masterPasswordReprompt.timeout_ms", 900000); 
 pref("signon.showAutoCompleteFooter", false);
-pref("signon.showAutoCompleteOrigins", false);
 
 
 pref("browser.formfill.debug",            false);
