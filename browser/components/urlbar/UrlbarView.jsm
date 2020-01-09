@@ -497,9 +497,17 @@ class UrlbarView {
 
   _on_popupshowing() {
     this._enableOrDisableOneOffSearches();
+    this.window.addEventListener("resize", this);
   }
 
   _on_popuphiding() {
     this.controller.cancelQuery();
+    this.window.removeEventListener("resize", this);
+  }
+
+  _on_resize() {
+    
+    
+    this.close();
   }
 }
