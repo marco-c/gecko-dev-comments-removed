@@ -64,7 +64,6 @@ class MediaEngineWebRTC : public MediaEngine {
 
   void EnumerateDevices(uint64_t aWindowId, dom::MediaSourceEnum, MediaSinkEnum,
                         nsTArray<RefPtr<MediaDevice>>*) override;
-  void ReleaseResourcesForWindow(uint64_t aWindowId) override;
 
  private:
   ~MediaEngineWebRTC() = default;
@@ -84,15 +83,6 @@ class MediaEngineWebRTC : public MediaEngine {
   
   
   bool mHasTabVideoSource;
-
-  
-  
-  nsClassHashtable<nsUint64HashKey,
-                   nsRefPtrHashtable<nsStringHashKey, MediaEngineSource>>
-      mVideoSources;
-  nsClassHashtable<nsUint64HashKey,
-                   nsRefPtrHashtable<nsStringHashKey, MediaEngineSource>>
-      mAudioSources;
 };
 
 }  

@@ -60,7 +60,6 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
 
 
 
-
   int num;
 #if defined(_ARM64_) && defined(XP_WIN)
   
@@ -130,11 +129,8 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
     NS_ConvertUTF8toUTF16 uuid(uniqueId);
     RefPtr<MediaEngineSource> vSource;
 
-    nsRefPtrHashtable<nsStringHashKey, MediaEngineSource>*
-        devicesForThisWindow = mVideoSources.LookupOrAdd(aWindowId);
     vSource = new MediaEngineRemoteVideoSource(i, aCapEngine,
                                                scaryKind || scarySource);
-    devicesForThisWindow->Put(uuid, vSource);
     aDevices->AppendElement(MakeRefPtr<MediaDevice>(
         vSource, vSource->GetName(), NS_ConvertUTF8toUTF16(vSource->GetUUID()),
         vSource->GetGroupId(), NS_LITERAL_STRING("")));
@@ -278,50 +274,6 @@ void MediaEngineWebRTC::EnumerateDevices(
   }
 }
 
-void MediaEngineWebRTC::ReleaseResourcesForWindow(uint64_t aWindowId) {
-  {
-    nsRefPtrHashtable<nsStringHashKey, MediaEngineSource>*
-        audioDevicesForThisWindow = mAudioSources.Get(aWindowId);
-
-    if (audioDevicesForThisWindow) {
-      for (auto iter = audioDevicesForThisWindow->Iter(); !iter.Done();
-           iter.Next()) {
-        iter.UserData()->Shutdown();
-      }
-
-      
-      mAudioSources.Remove(aWindowId);
-    }
-  }
-
-  {
-    nsRefPtrHashtable<nsStringHashKey, MediaEngineSource>*
-        videoDevicesForThisWindow = mVideoSources.Get(aWindowId);
-    if (videoDevicesForThisWindow) {
-      for (auto iter = videoDevicesForThisWindow->Iter(); !iter.Done();
-           iter.Next()) {
-        iter.UserData()->Shutdown();
-      }
-
-      
-      mVideoSources.Remove(aWindowId);
-    }
-  }
-}
-
-namespace {
-template <typename T>
-void ShutdownSources(T& aHashTable) {
-  for (auto iter = aHashTable.Iter(); !iter.Done(); iter.Next()) {
-    for (auto iterInner = iter.UserData()->Iter(); !iterInner.Done();
-         iterInner.Next()) {
-      MediaEngineSource* source = iterInner.UserData();
-      source->Shutdown();
-    }
-  }
-}
-}  
-
 void MediaEngineWebRTC::Shutdown() {
   
   MutexAutoLock lock(mMutex);
@@ -332,13 +284,7 @@ void MediaEngineWebRTC::Shutdown() {
   }
 
   LOG(("%s", __FUNCTION__));
-  
-  
-  ShutdownSources(mVideoSources);
-  ShutdownSources(mAudioSources);
-
   mEnumerator = nullptr;
-
   mozilla::camera::Shutdown();
 }
 
