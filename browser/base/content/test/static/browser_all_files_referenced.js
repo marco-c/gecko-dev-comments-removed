@@ -179,8 +179,6 @@ var whitelist = [
    platforms: ["linux", "win"]},
   
   {file: "resource://gre/localization/en-US/toolkit/about/aboutCompat.ftl"},
-  
-  {file: "resource://app/localization/en-US/browser/aboutConfig.ftl"},
 ];
 
 whitelist = new Set(whitelist.filter(item =>
