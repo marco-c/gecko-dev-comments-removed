@@ -2,7 +2,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {FormAutoCompleteResult} = ChromeUtils.import("resource://gre/modules/nsFormAutoCompleteResult.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "SearchSuggestionController",
@@ -179,5 +178,4 @@ SearchSuggestAutoComplete.prototype = {
   serviceURL: "",
 };
 
-var component = [SearchSuggestAutoComplete];
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory(component);
+var EXPORTED_SYMBOLS = ["SearchSuggestAutoComplete"];
