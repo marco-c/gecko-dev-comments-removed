@@ -2751,7 +2751,7 @@ SearchService.prototype = {
 
 
 
-  async _loadEngines(cache) {
+  async _loadEngines(cache, isReload) {
     LOG("_loadEngines: start");
     Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "find-jar-engines");
     let chromeURIs = await this._findJAREngines();
@@ -2808,7 +2808,7 @@ SearchService.prototype = {
       let enginesFromDir = await this._loadEnginesFromDir(loadDir);
       enginesFromDir.forEach(this._addEngineToStore, this);
     }
-    let enginesFromURLs = await this._loadFromChromeURLs(chromeURIs);
+    let enginesFromURLs = await this._loadFromChromeURLs(chromeURIs, isReload);
     enginesFromURLs.forEach(this._addEngineToStore, this);
 
     LOG("_loadEngines: loading user-installed engines from the obsolete cache");
@@ -2842,7 +2842,7 @@ SearchService.prototype = {
     let prevCurrentEngine = this._currentEngine;
     this._currentEngine = null;
 
-    await this._loadEngines(await this._readCacheFile());
+    await this._loadEngines(await this._readCacheFile(), true);
     
     await this._buildCache();
 
@@ -3151,7 +3151,8 @@ SearchService.prototype = {
 
 
 
-  async _loadFromChromeURLs(aURLs) {
+
+  async _loadFromChromeURLs(aURLs, isReload = false) {
     let engines = [];
     for (let url of aURLs) {
       try {
@@ -3159,6 +3160,12 @@ SearchService.prototype = {
         let uri = Services.io.newURI(url);
         let engine = new Engine(uri, true);
         await engine._initFromURI(uri);
+        
+        
+        
+        if (isReload && engine.name in this._engines) {
+          engine._engineToUpdate = this._engines[engine.name];
+        }
         engines.push(engine);
       } catch (ex) {
         LOG("_loadFromChromeURLs: failed to load engine: " + ex);
