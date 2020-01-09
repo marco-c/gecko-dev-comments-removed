@@ -3112,7 +3112,11 @@ class nsContentUtils {
 
 
 
-  static nsresult NewXULOrHTMLElement(
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult NewXULOrHTMLElement(
       Element** aResult, mozilla::dom::NodeInfo* aNodeInfo,
       mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
       mozilla::dom::CustomElementDefinition* aDefinition);
