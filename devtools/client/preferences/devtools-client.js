@@ -180,7 +180,7 @@ pref("devtools.netmonitor.saveRequestAndResponseBodies", true);
 
 
 pref("devtools.netmonitor.har.defaultLogDir", "");
-pref("devtools.netmonitor.har.defaultFileName", "Archive %date");
+pref("devtools.netmonitor.har.defaultFileName", "%hostname_Archive [%date]");
 pref("devtools.netmonitor.har.jsonp", false);
 pref("devtools.netmonitor.har.jsonpCallback", "");
 pref("devtools.netmonitor.har.includeResponseBodies", true);
