@@ -3523,7 +3523,8 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
     return;
   }
 
-  if (storageAccess == nsContentUtils::StorageAccess::ePartitionedOrDeny &&
+  if (storageAccess ==
+          nsContentUtils::StorageAccess::ePartitionTrackersOrDeny &&
       !StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
     return;
   }
@@ -3583,7 +3584,8 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& rv) {
     return;
   }
 
-  if (storageAccess == nsContentUtils::StorageAccess::ePartitionedOrDeny &&
+  if (storageAccess ==
+          nsContentUtils::StorageAccess::ePartitionTrackersOrDeny &&
       !StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
     return;
   }
@@ -13267,7 +13269,7 @@ nsIPrincipal* Document::EffectiveStoragePrincipal() const {
   
   
   
-  if (access != nsContentUtils::StorageAccess::ePartitionedOrDeny) {
+  if (access != nsContentUtils::StorageAccess::ePartitionTrackersOrDeny) {
     return NodePrincipal();
   }
 
