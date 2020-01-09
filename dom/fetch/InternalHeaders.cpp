@@ -40,40 +40,151 @@ void InternalHeaders::ToIPC(nsTArray<HeadersEntry>& aIPCHeaders,
   }
 }
 
+bool InternalHeaders::IsValidHeaderValue(const nsCString& aLowerName,
+                                         const nsCString& aNormalizedValue,
+                                         ErrorResult& aRv) {
+  
+
+  
+  if (IsInvalidName(aLowerName, aRv) || IsInvalidValue(aNormalizedValue, aRv)) {
+    return false;
+  }
+
+  
+  if (IsImmutable(aRv)) {
+    return false;
+  }
+
+  
+  if (mGuard == HeadersGuardEnum::Request &&
+      IsForbiddenRequestHeader(aLowerName)) {
+    return false;
+  }
+
+  
+  if (mGuard == HeadersGuardEnum::Request_no_cors) {
+    nsAutoCString tempValue;
+    Get(aLowerName, tempValue, aRv);
+
+    if (tempValue.IsVoid()) {
+      tempValue = aNormalizedValue;
+    } else {
+      tempValue.Append(", ");
+      tempValue.Append(aNormalizedValue);
+    }
+
+    if (!nsContentUtils::IsCORSSafelistedRequestHeader(aLowerName, tempValue)) {
+      return false;
+    }
+  }
+
+  
+  else if (IsForbiddenResponseHeader(aLowerName)) {
+    return false;
+  }
+
+  return true;
+}
+
 void InternalHeaders::Append(const nsACString& aName, const nsACString& aValue,
                              ErrorResult& aRv) {
-  nsAutoCString lowerName;
-  ToLowerCase(aName, lowerName);
+  
   nsAutoCString trimValue;
   NS_TrimHTTPWhitespace(aValue, trimValue);
 
-  if (IsInvalidMutableHeader(lowerName, trimValue, aRv)) {
+  
+  nsAutoCString lowerName;
+  ToLowerCase(aName, lowerName);
+  if (!IsValidHeaderValue(lowerName, trimValue, aRv)) {
     return;
   }
 
+  
   nsAutoCString name(aName);
   ReuseExistingNameIfExists(name);
-
   SetListDirty();
-
   mList.AppendElement(Entry(name, trimValue));
+
+  
+  if (mGuard == HeadersGuardEnum::Request_no_cors) {
+    RemovePrivilegedNoCorsRequestHeaders();
+  }
+}
+
+void InternalHeaders::RemovePrivilegedNoCorsRequestHeaders() {
+  bool dirty = false;
+
+  
+  for (int32_t i = mList.Length() - 1; i >= 0; --i) {
+    if (IsPrivilegedNoCorsRequestHeaderName(mList[i].mName)) {
+      mList.RemoveElementAt(i);
+      dirty = true;
+    }
+  }
+
+  if (dirty) {
+    SetListDirty();
+  }
+}
+
+bool InternalHeaders::DeleteInternal(const nsCString& aLowerName,
+                                     ErrorResult& aRv) {
+  bool dirty = false;
+
+  
+  for (int32_t i = mList.Length() - 1; i >= 0; --i) {
+    if (mList[i].mName.EqualsIgnoreCase(aLowerName.get())) {
+      mList.RemoveElementAt(i);
+      dirty = true;
+    }
+  }
+
+  if (dirty) {
+    SetListDirty();
+  }
+
+  return dirty;
 }
 
 void InternalHeaders::Delete(const nsACString& aName, ErrorResult& aRv) {
   nsAutoCString lowerName;
   ToLowerCase(aName, lowerName);
 
-  if (IsInvalidMutableHeader(lowerName, aRv)) {
+  
+  if (IsInvalidName(lowerName, aRv)) {
     return;
   }
 
-  SetListDirty();
+  
+  if (IsImmutable(aRv)) {
+    return;
+  }
 
   
-  for (int32_t i = mList.Length() - 1; i >= 0; --i) {
-    if (mList[i].mName.EqualsIgnoreCase(lowerName.get())) {
-      mList.RemoveElementAt(i);
-    }
+  if (IsForbiddenRequestHeader(lowerName)) {
+    return;
+  }
+
+  
+  if (mGuard == HeadersGuardEnum::Request_no_cors &&
+      !IsNoCorsSafelistedRequestHeaderName(lowerName) &&
+      !IsPrivilegedNoCorsRequestHeaderName(lowerName)) {
+    return;
+  }
+
+  
+  if (IsForbiddenResponseHeader(lowerName)) {
+    return;
+  }
+
+  
+  if (!DeleteInternal(lowerName, aRv)) {
+    return;
+  }
+
+  
+  if (mGuard == HeadersGuardEnum::Request_no_cors) {
+    RemovePrivilegedNoCorsRequestHeaders();
   }
 }
 
@@ -86,11 +197,16 @@ void InternalHeaders::Get(const nsACString& aName, nsACString& aValue,
     return;
   }
 
+  GetInternal(lowerName, aValue, aRv);
+}
+
+void InternalHeaders::GetInternal(const nsCString& aLowerName,
+                                  nsACString& aValue, ErrorResult& aRv) const {
   const char* delimiter = ", ";
   bool firstValueFound = false;
 
   for (uint32_t i = 0; i < mList.Length(); ++i) {
-    if (mList[i].mName.EqualsIgnoreCase(lowerName.get())) {
+    if (mList[i].mName.EqualsIgnoreCase(aLowerName.get())) {
       if (firstValueFound) {
         aValue += delimiter;
       }
@@ -143,15 +259,18 @@ bool InternalHeaders::Has(const nsACString& aName, ErrorResult& aRv) const {
 
 void InternalHeaders::Set(const nsACString& aName, const nsACString& aValue,
                           ErrorResult& aRv) {
-  nsAutoCString lowerName;
-  ToLowerCase(aName, lowerName);
+  
   nsAutoCString trimValue;
   NS_TrimHTTPWhitespace(aValue, trimValue);
 
-  if (IsInvalidMutableHeader(lowerName, trimValue, aRv)) {
+  
+  nsAutoCString lowerName;
+  ToLowerCase(aName, lowerName);
+  if (!IsValidHeaderValue(lowerName, trimValue, aRv)) {
     return;
   }
 
+  
   SetListDirty();
 
   int32_t firstIndex = INT32_MAX;
@@ -171,6 +290,11 @@ void InternalHeaders::Set(const nsACString& aName, const nsACString& aValue,
   } else {
     mList.AppendElement(Entry(aName, trimValue));
   }
+
+  
+  if (mGuard == HeadersGuardEnum::Request_no_cors) {
+    RemovePrivilegedNoCorsRequestHeaders();
+  }
 }
 
 void InternalHeaders::Clear() {
@@ -185,6 +309,21 @@ void InternalHeaders::SetGuard(HeadersGuardEnum aGuard, ErrorResult& aRv) {
 }
 
 InternalHeaders::~InternalHeaders() {}
+
+
+bool InternalHeaders::IsNoCorsSafelistedRequestHeaderName(
+    const nsCString& aName) {
+  return aName.EqualsIgnoreCase("accept") ||
+         aName.EqualsIgnoreCase("accept-language") ||
+         aName.EqualsIgnoreCase("content-language") ||
+         aName.EqualsIgnoreCase("content-type");
+}
+
+
+bool InternalHeaders::IsPrivilegedNoCorsRequestHeaderName(
+    const nsCString& aName) {
+  return aName.EqualsIgnoreCase("range");
+}
 
 
 bool InternalHeaders::IsSimpleHeader(const nsCString& aName,
@@ -376,8 +515,8 @@ already_AddRefed<InternalHeaders> InternalHeaders::CORSHeaders(
   ErrorResult result;
 
   nsAutoCString acExposedNames;
-  aHeaders->GetFirst(NS_LITERAL_CSTRING("Access-Control-Expose-Headers"),
-                     acExposedNames, result);
+  aHeaders->Get(NS_LITERAL_CSTRING("Access-Control-Expose-Headers"),
+                acExposedNames, result);
   MOZ_ASSERT(!result.Failed());
 
   AutoTArray<nsCString, 5> exposeNamesArray;
