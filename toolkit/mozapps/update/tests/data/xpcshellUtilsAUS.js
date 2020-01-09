@@ -807,7 +807,7 @@ function setupTestCommon(aAppUpdateAutoEnabled = false) {
   gGREBinDirOrig = getGREBinDir();
   gAppDirOrig = getAppBaseDir();
 
-  let applyDir = getApplyDirFile(null, true).parent;
+  let applyDir = getApplyDirFile().parent;
 
   
   
@@ -895,7 +895,7 @@ function cleanupTestCommon() {
   }
 
   if (AppConstants.platform == "win" && MOZ_APP_BASENAME) {
-    let appDir = getApplyDirFile(null, true);
+    let appDir = getApplyDirFile();
     let vendor = MOZ_APP_VENDOR ? MOZ_APP_VENDOR : "Mozilla";
     const REG_PATH = "SOFTWARE\\" + vendor + "\\" + MOZ_APP_BASENAME +
                      "\\TaskBarIDs";
@@ -959,7 +959,7 @@ function cleanupTestCommon() {
     }
   }
 
-  let applyDir = getApplyDirFile(null, true).parent;
+  let applyDir = getApplyDirFile().parent;
 
   
   
@@ -1159,69 +1159,24 @@ function checkUpdateManager(aStatusFileState, aHasActiveUpdate,
 
 
 
+async function waitForUpdateXMLFiles(aActiveUpdateExists = false, aUpdatesExists = true) {
+  let file = getUpdateDirFile(FILE_ACTIVE_UPDATE_XML_TMP);
+  await TestUtils.waitForCondition(() => (!file.exists()),
+    "Waiting for file to be deleted, path: " + file.path);
 
-function waitForUpdateXMLFiles(aActiveUpdateExists = false, aUpdatesExists = true) {
-  
+  file = getUpdateDirFile(FILE_UPDATES_XML_TMP);
+  await TestUtils.waitForCondition(() => (!file.exists()),
+    "Waiting for file to be deleted, path: " + file.path);
 
+  file = getUpdateDirFile(FILE_ACTIVE_UPDATE_XML);
+  await TestUtils.waitForCondition(() => (file.exists() == aActiveUpdateExists),
+    "Waiting for file to be deleted, path: " + file.path);
 
+  file = getUpdateDirFile(FILE_UPDATES_XML);
+  await TestUtils.waitForCondition(() => (file.exists() == aUpdatesExists),
+    "Waiting for file to be deleted, path: " + file.path);
 
-
-
-
-
-
-  function waitForUpdateTmpXMLFiles(aActiveUpdateExists = false, aUpdatesExists = true) {
-    let tmpActiveUpdateXML = getUpdatesRootDir();
-    tmpActiveUpdateXML.append(FILE_ACTIVE_UPDATE_XML + ".tmp");
-    if (tmpActiveUpdateXML.exists()) {
-      
-      
-      do_timeout(10, () => waitForUpdateTmpXMLFiles(aActiveUpdateExists, aUpdatesExists));
-      return;
-    }
-
-    let tmpUpdatesXML = getUpdatesRootDir();
-    tmpUpdatesXML.append(FILE_UPDATES_XML + ".tmp");
-    if (tmpUpdatesXML.exists()) {
-      
-      
-      do_timeout(10, () => waitForUpdateTmpXMLFiles(aActiveUpdateExists, aUpdatesExists));
-      return;
-    }
-
-    do_timeout(10, () => waitForUpdateXMLFilesExist(aActiveUpdateExists, aUpdatesExists));
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  function waitForUpdateXMLFilesExist(aActiveUpdateExists = false, aUpdatesExists = true) {
-    let activeUpdateXML = getUpdatesXMLFile(true);
-    if (activeUpdateXML.exists() != aActiveUpdateExists) {
-      
-      do_timeout(10, () => waitForUpdateXMLFilesExist(aActiveUpdateExists, aUpdatesExists));
-      return;
-    }
-
-    let updatesXML = getUpdatesXMLFile(false);
-    if (updatesXML.exists() != aUpdatesExists) {
-      
-      do_timeout(10, () => waitForUpdateXMLFilesExist(aActiveUpdateExists, aUpdatesExists));
-      return;
-    }
-
-    do_timeout(10, waitForUpdateXMLFilesFinished);
-  }
-
-  do_timeout(10, () => waitForUpdateTmpXMLFiles(aActiveUpdateExists, aUpdatesExists));
+  executeSoon(waitForUpdateXMLFilesFinished);
 }
 
 
@@ -1309,60 +1264,9 @@ function getApplyDirPath() {
 
 
 
-
-
-
-
-
-function getApplyDirFile(aRelPath, aAllowNonexistent) {
+function getApplyDirFile(aRelPath) {
   let relpath = getApplyDirPath() + (aRelPath ? aRelPath : "");
-  return do_get_file(relpath, aAllowNonexistent);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getStageDirFile(aRelPath, aAllowNonexistent) {
-  if (AppConstants.platform == "macosx") {
-    let file = getMockUpdRootD();
-    file.append(DIR_UPDATES);
-    file.append(DIR_PATCH);
-    file.append(DIR_UPDATED);
-    if (aRelPath) {
-      let pathParts = aRelPath.split("/");
-      for (let i = 0; i < pathParts.length; i++) {
-        if (pathParts[i]) {
-          file.append(pathParts[i]);
-        }
-      }
-    }
-    if (!aAllowNonexistent) {
-      Assert.ok(file.exists(),
-                MSG_SHOULD_EXIST + getMsgPath(file.path));
-    }
-    return file;
-  }
-
-  let relpath = getApplyDirPath() + DIR_UPDATED + "/" + (aRelPath ? aRelPath : "");
-  return do_get_file(relpath, aAllowNonexistent);
+  return do_get_file(relpath, true);
 }
 
 
@@ -1478,7 +1382,7 @@ XPCOMUtils.defineLazyGetter(this, "gInstallDirPathHash", function test_gIDPH() {
   }
 
   let vendor = MOZ_APP_VENDOR ? MOZ_APP_VENDOR : "Mozilla";
-  let appDir = getApplyDirFile(null, true);
+  let appDir = getApplyDirFile();
 
   const REG_PATH = "SOFTWARE\\" + vendor + "\\" + MOZ_APP_BASENAME +
                    "\\TaskBarIDs";
@@ -1553,7 +1457,7 @@ function getMockUpdRootD(aGetOldLocation = false) {
     return getMockUpdRootDMac();
   }
 
-  return getApplyDirFile(DIR_MACOS, true);
+  return getApplyDirFile(DIR_MACOS);
 }
 
 
@@ -1732,7 +1636,7 @@ function copyTestUpdaterForRunUsingUpdater() {
   }
 
   let testUpdater = getTestUpdater();
-  let updater = getUpdatesPatchDir();
+  let updater = getUpdateDirFile(DIR_PATCH);
   updater.append(testUpdater.leafName);
   if (!updater.exists()) {
     testUpdater.copyToFollowingLinks(updater.parent, updater.leafName);
@@ -1754,7 +1658,7 @@ function copyTestUpdaterForRunUsingUpdater() {
 
 
 function logUpdateLog(aLogLeafName) {
-  let updateLog = getUpdateLog(aLogLeafName);
+  let updateLog = getUpdateDirFile(aLogLeafName);
   if (updateLog.exists()) {
     
     let updateLogContents = readFileBytes(updateLog).replace(/\r\n/g, "\n");
@@ -1853,12 +1757,14 @@ function runUpdate(aExpectedStatus, aSwitchApp, aExpectedExitValue, aCheckSvcLog
   Assert.ok(updateBin.exists(),
             MSG_SHOULD_EXIST + getMsgPath(updateBin.path));
 
-  let updatesDirPath = aPatchDirPath || getUpdatesPatchDir().path;
-  let installDirPath = aInstallDirPath || getApplyDirFile(null, true).path;
-  let applyToDirPath = aApplyToDirPath || getApplyDirFile(null, true).path;
-  let stageDirPath = aApplyToDirPath || getStageDirFile(null, true).path;
+  let updatesDirPath = aPatchDirPath || getUpdateDirFile(DIR_PATCH).path;
+  let installDirPath = aInstallDirPath || getApplyDirFile().path;
+  let applyToDirPath = aApplyToDirPath || getApplyDirFile().path;
+  let stageDirPath = aApplyToDirPath || getStageDirFile().path;
 
   let callbackApp = getApplyDirFile(DIR_RESOURCES + gCallbackBinFile);
+  Assert.ok(callbackApp.exists(),
+            MSG_SHOULD_EXIST + ", path: " + callbackApp.path);
   callbackApp.permissions = PERMS_DIRECTORY;
 
   setAppBundleModTime();
@@ -1969,7 +1875,10 @@ function createSymlink() {
   let exitValue = runTestHelperSync(args);
   Assert.equal(exitValue, 0,
                "the helper process exit value should be 0");
-  getApplyDirFile(DIR_RESOURCES + "link", false).permissions = 0o666;
+  let file = getApplyDirFile(DIR_RESOURCES + "link");
+  Assert.ok(file.exists(),
+            MSG_SHOULD_EXIST + ", path: " + file.path);
+  file.permissions = 0o666;
   args = ["setup-symlink", "moz-foo2", "moz-bar2", "target2",
           getApplyDirFile().path + "/" + DIR_RESOURCES + "link2", "change-perm"];
   exitValue = runTestHelperSync(args);
@@ -2018,22 +1927,6 @@ function setupActiveUpdate() {
   reloadUpdateManagerData();
   Assert.ok(!!gUpdateManager.activeUpdate,
             "the active update should be defined");
-}
-
-
-
-
-
-
-
-
-function getUpdateLog(aLogLeafName) {
-  let updateLog = getUpdatesDir();
-  if (aLogLeafName == FILE_UPDATE_LOG) {
-    updateLog.append(DIR_PATCH);
-  }
-  updateLog.append(aLogLeafName);
-  return updateLog;
 }
 
 
@@ -2105,7 +1998,7 @@ function checkUpdateStagedState(aUpdateState) {
     if (IS_SERVICE_TEST) {
       waitForServiceStop(false);
     } else {
-      let updater = getApplyDirFile(FILE_UPDATER_BIN, true);
+      let updater = getApplyDirFile(FILE_UPDATER_BIN);
       if (isFileInUse(updater)) {
         do_timeout(FILE_IN_USE_TIMEOUT_MS,
                    checkUpdateStagedState.bind(null, aUpdateState));
@@ -2125,19 +2018,19 @@ function checkUpdateStagedState(aUpdateState) {
                  "the update state" + MSG_SHOULD_EQUAL);
   }
 
-  let log = getUpdateLog(FILE_LAST_UPDATE_LOG);
+  let log = getUpdateDirFile(FILE_LAST_UPDATE_LOG);
   Assert.ok(log.exists(),
             MSG_SHOULD_EXIST + getMsgPath(log.path));
 
-  log = getUpdateLog(FILE_UPDATE_LOG);
+  log = getUpdateDirFile(FILE_UPDATE_LOG);
   Assert.ok(!log.exists(),
             MSG_SHOULD_NOT_EXIST + getMsgPath(log.path));
 
-  log = getUpdateLog(FILE_BACKUP_UPDATE_LOG);
+  log = getUpdateDirFile(FILE_BACKUP_UPDATE_LOG);
   Assert.ok(!log.exists(),
             MSG_SHOULD_NOT_EXIST + getMsgPath(log.path));
 
-  let stageDir = getStageDirFile(null, true);
+  let stageDir = getStageDirFile();
   if (STATE_AFTER_STAGE == STATE_APPLIED ||
       STATE_AFTER_STAGE == STATE_APPLIED_SVC) {
     Assert.ok(stageDir.exists(),
@@ -2280,7 +2173,7 @@ function setupAppFiles() {
   debugDump("start - copying or creating symlinks to application files " +
             "for the test");
 
-  let destDir = getApplyDirFile(null, true);
+  let destDir = getApplyDirFile();
   if (!destDir.exists()) {
     try {
       destDir.create(Ci.nsIFile.DIRECTORY_TYPE, PERMS_DIRECTORY);
@@ -2716,7 +2609,7 @@ function waitForHelperSleep() {
   gTimeoutRuns++;
   
   
-  let output = getApplyDirFile(DIR_RESOURCES + "output", true);
+  let output = getApplyDirFile(DIR_RESOURCES + "output");
   if (readFile(output) != "sleeping\n") {
     if (gTimeoutRuns > MAX_TIMEOUT_RUNS) {
       do_throw("Exceeded MAX_TIMEOUT_RUNS while waiting for the helper to " +
@@ -2749,7 +2642,7 @@ function waitForHelperSleep() {
 function waitForHelperFinished() {
   
   
-  let output = getApplyDirFile(DIR_RESOURCES + "output", true);
+  let output = getApplyDirFile(DIR_RESOURCES + "output");
   if (readFile(output) != "finished\n") {
     
     do_timeout(FILE_IN_USE_TIMEOUT_MS, waitForHelperFinished);
@@ -2766,11 +2659,11 @@ function waitForHelperFinished() {
 
 function waitForHelperFinishFileUnlock() {
   try {
-    let output = getApplyDirFile(DIR_RESOURCES + "output", true);
+    let output = getApplyDirFile(DIR_RESOURCES + "output");
     if (output.exists()) {
       output.remove(false);
     }
-    let input = getApplyDirFile(DIR_RESOURCES + "input", true);
+    let input = getApplyDirFile(DIR_RESOURCES + "input");
     if (input.exists()) {
       input.remove(false);
     }
@@ -2787,7 +2680,7 @@ function waitForHelperFinishFileUnlock() {
 
 
 function waitForHelperExit() {
-  let input = getApplyDirFile(DIR_RESOURCES + "input", true);
+  let input = getApplyDirFile(DIR_RESOURCES + "input");
   writeFile(input, "finish\n");
   waitForHelperFinished();
 }
@@ -2811,7 +2704,7 @@ function setupUpdaterTest(aMarFile, aPostUpdateAsync,
                           aPostUpdateExeRelPathPrefix = "",
                           aSetupActiveUpdate = true) {
   debugDump("start - updater test setup");
-  let updatesPatchDir = getUpdatesPatchDir();
+  let updatesPatchDir = getUpdateDirFile(DIR_PATCH);
   if (!updatesPatchDir.exists()) {
     updatesPatchDir.create(Ci.nsIFile.DIRECTORY_TYPE, PERMS_DIRECTORY);
   }
@@ -2821,14 +2714,14 @@ function setupUpdaterTest(aMarFile, aPostUpdateAsync,
 
   let helperBin = getTestDirFile(FILE_HELPER_BIN);
   helperBin.permissions = PERMS_DIRECTORY;
-  let afterApplyBinDir = getApplyDirFile(DIR_RESOURCES, true);
+  let afterApplyBinDir = getApplyDirFile(DIR_RESOURCES);
   helperBin.copyToFollowingLinks(afterApplyBinDir, gCallbackBinFile);
   helperBin.copyToFollowingLinks(afterApplyBinDir, gPostUpdateBinFile);
 
   gTestFiles.forEach(function SUT_TF_FE(aTestFile) {
     debugDump("start - setup test file: " + aTestFile.fileName);
     if (aTestFile.originalFile || aTestFile.originalContents) {
-      let testDir = getApplyDirFile(aTestFile.relPathDir, true);
+      let testDir = getApplyDirFile(aTestFile.relPathDir);
       if (!testDir.exists()) {
         testDir.create(Ci.nsIFile.DIRECTORY_TYPE, PERMS_DIRECTORY);
       }
@@ -2838,9 +2731,10 @@ function setupUpdaterTest(aMarFile, aPostUpdateAsync,
         testFile = getTestDirFile(aTestFile.originalFile);
         testFile.copyToFollowingLinks(testDir, aTestFile.fileName);
         testFile = getApplyDirFile(aTestFile.relPathDir + aTestFile.fileName);
+        Assert.ok(testFile.exists(),
+                  MSG_SHOULD_EXIST + ", path: " + testFile.path);
       } else {
-        testFile = getApplyDirFile(aTestFile.relPathDir + aTestFile.fileName,
-                                   true);
+        testFile = getApplyDirFile(aTestFile.relPathDir + aTestFile.fileName);
         writeFile(testFile, aTestFile.originalContents);
       }
 
@@ -2862,14 +2756,14 @@ function setupUpdaterTest(aMarFile, aPostUpdateAsync,
   
   gTestDirs.forEach(function SUT_TD_FE(aTestDir) {
     debugDump("start - setup test directory: " + aTestDir.relPathDir);
-    let testDir = getApplyDirFile(aTestDir.relPathDir, true);
+    let testDir = getApplyDirFile(aTestDir.relPathDir);
     if (!testDir.exists()) {
       testDir.create(Ci.nsIFile.DIRECTORY_TYPE, PERMS_DIRECTORY);
     }
 
     if (aTestDir.files) {
       aTestDir.files.forEach(function SUT_TD_F_FE(aTestFile) {
-        let testFile = getApplyDirFile(aTestDir.relPathDir + aTestFile, true);
+        let testFile = getApplyDirFile(aTestDir.relPathDir + aTestFile);
         if (!testFile.exists()) {
           testFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
         }
@@ -2878,14 +2772,14 @@ function setupUpdaterTest(aMarFile, aPostUpdateAsync,
 
     if (aTestDir.subDirs) {
       aTestDir.subDirs.forEach(function SUT_TD_SD_FE(aSubDir) {
-        let testSubDir = getApplyDirFile(aTestDir.relPathDir + aSubDir, true);
+        let testSubDir = getApplyDirFile(aTestDir.relPathDir + aSubDir);
         if (!testSubDir.exists()) {
           testSubDir.create(Ci.nsIFile.DIRECTORY_TYPE, PERMS_DIRECTORY);
         }
 
         if (aTestDir.subDirFiles) {
           aTestDir.subDirFiles.forEach(function SUT_TD_SDF_FE(aTestFile) {
-            let testFile = getApplyDirFile(aTestDir.relPathDir + aSubDir + aTestFile, true);
+            let testFile = getApplyDirFile(aTestDir.relPathDir + aSubDir + aTestFile);
             if (!testFile.exists()) {
               testFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
             }
@@ -2913,7 +2807,7 @@ function setupUpdaterTest(aMarFile, aPostUpdateAsync,
 
 
 function createUpdateSettingsINI() {
-  let ini = getApplyDirFile(DIR_RESOURCES + FILE_UPDATE_SETTINGS_INI, true);
+  let ini = getApplyDirFile(DIR_RESOURCES + FILE_UPDATE_SETTINGS_INI);
   writeFile(ini, UPDATE_SETTINGS_CONTENTS);
 }
 
@@ -2959,7 +2853,7 @@ function createUpdaterINI(aIsExeAsync, aExeRelPathPrefix) {
                            exeRelPathWin +
                            exeArg +
                            exeAsync;
-  let updaterIni = getApplyDirFile(DIR_RESOURCES + FILE_UPDATER_INI, true);
+  let updaterIni = getApplyDirFile(DIR_RESOURCES + FILE_UPDATER_INI);
   writeFile(updaterIni, updaterIniContents);
 }
 
@@ -3032,7 +2926,7 @@ function checkUpdateLogContents(aCompareLogFile, aStaged = false,
     return;
   }
 
-  let updateLog = getUpdateLog(FILE_LAST_UPDATE_LOG);
+  let updateLog = getUpdateDirFile(FILE_LAST_UPDATE_LOG);
   let updateLogContents = readFileBytes(updateLog);
 
   
@@ -3163,7 +3057,7 @@ function checkUpdateLogContents(aCompareLogFile, aStaged = false,
 
 
 function checkUpdateLogContains(aCheckString) {
-  let updateLog = getUpdateLog(FILE_LAST_UPDATE_LOG);
+  let updateLog = getUpdateDirFile(FILE_LAST_UPDATE_LOG);
   let updateLogContents = readFileBytes(updateLog).replace(/\r\n/g, "\n");
   updateLogContents = replaceLogPaths(updateLogContents);
   Assert.notEqual(updateLogContents.indexOf(aCheckString), -1,
@@ -3266,8 +3160,7 @@ function checkFilesAfterUpdateSuccess(aGetFileFunc, aStageDirExists = false,
     }
   });
 
-  checkFilesAfterUpdateCommon(aGetFileFunc, aStageDirExists,
-                              aToBeDeletedDirExists);
+  checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists);
 }
 
 
@@ -3354,8 +3247,7 @@ function checkFilesAfterUpdateFailure(aGetFileFunc, aStageDirExists = false,
     }
   });
 
-  checkFilesAfterUpdateCommon(aGetFileFunc, aStageDirExists,
-                              aToBeDeletedDirExists);
+  checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists);
 }
 
 
@@ -3371,12 +3263,9 @@ function checkFilesAfterUpdateFailure(aGetFileFunc, aStageDirExists = false,
 
 
 
-
-
-function checkFilesAfterUpdateCommon(aGetFileFunc, aStageDirExists,
-                                     aToBeDeletedDirExists) {
+function checkFilesAfterUpdateCommon(aStageDirExists, aToBeDeletedDirExists) {
   debugDump("testing extra directories");
-  let stageDir = getStageDirFile(null, true);
+  let stageDir = getStageDirFile();
   if (aStageDirExists) {
     Assert.ok(stageDir.exists(),
               MSG_SHOULD_EXIST + getMsgPath(stageDir.path));
@@ -3387,7 +3276,7 @@ function checkFilesAfterUpdateCommon(aGetFileFunc, aStageDirExists,
 
   let toBeDeletedDirExists =
     AppConstants.platform == "win" ? aToBeDeletedDirExists : false;
-  let toBeDeletedDir = getApplyDirFile(DIR_TOBEDELETED, true);
+  let toBeDeletedDir = getApplyDirFile(DIR_TOBEDELETED);
   if (toBeDeletedDirExists) {
     Assert.ok(toBeDeletedDir.exists(),
               MSG_SHOULD_EXIST + getMsgPath(toBeDeletedDir.path));
@@ -3396,7 +3285,7 @@ function checkFilesAfterUpdateCommon(aGetFileFunc, aStageDirExists,
               MSG_SHOULD_NOT_EXIST + getMsgPath(toBeDeletedDir.path));
   }
 
-  let updatingDir = getApplyDirFile("updating", true);
+  let updatingDir = getApplyDirFile("updating");
   Assert.ok(!updatingDir.exists(),
             MSG_SHOULD_NOT_EXIST + getMsgPath(updatingDir.path));
 
@@ -3409,13 +3298,12 @@ function checkFilesAfterUpdateCommon(aGetFileFunc, aStageDirExists,
 
   debugDump("testing backup files should not be left behind in the " +
             "application directory");
-  let applyToDir = getApplyDirFile(null, true);
+  let applyToDir = getApplyDirFile();
   checkFilesInDirRecursive(applyToDir, checkForBackupFiles);
 
   if (stageDir.exists()) {
     debugDump("testing backup files should not be left behind in the " +
               "staging directory");
-    applyToDir = getApplyDirFile(null, true);
     checkFilesInDirRecursive(stageDir, checkForBackupFiles);
   }
 }
@@ -3426,7 +3314,7 @@ function checkFilesAfterUpdateCommon(aGetFileFunc, aStageDirExists,
 
 
 function checkCallbackLog() {
-  let appLaunchLog = getApplyDirFile(DIR_RESOURCES + gCallbackArgs[1], true);
+  let appLaunchLog = getApplyDirFile(DIR_RESOURCES + gCallbackArgs[1]);
   if (!appLaunchLog.exists()) {
     
     do_timeout(FILE_IN_USE_TIMEOUT_MS, checkCallbackLog);
@@ -3483,7 +3371,7 @@ function checkCallbackLog() {
 
 
 function getPostUpdateFile(aSuffix) {
-  return getApplyDirFile(DIR_RESOURCES + gPostUpdateBinFile + aSuffix, true);
+  return getApplyDirFile(DIR_RESOURCES + gPostUpdateBinFile + aSuffix);
 }
 
 
@@ -3583,7 +3471,7 @@ function waitForFilesInUse() {
     let fileNames = [FILE_APP_BIN, FILE_UPDATER_BIN,
                      FILE_MAINTENANCE_SERVICE_INSTALLER_BIN];
     for (let i = 0; i < fileNames.length; ++i) {
-      let file = getApplyDirFile(fileNames[i], true);
+      let file = getApplyDirFile(fileNames[i]);
       if (isFileInUse(file)) {
         do_timeout(FILE_IN_USE_TIMEOUT_MS, waitForFilesInUse);
         return;
@@ -3859,7 +3747,10 @@ function getProcessArgs(aExtraArgs) {
     aExtraArgs = [];
   }
 
-  let appBinPath = getApplyDirFile(DIR_MACOS + FILE_APP_BIN, false).path;
+  let appBin = getApplyDirFile(DIR_MACOS + FILE_APP_BIN);
+  Assert.ok(appBin.exists(),
+            MSG_SHOULD_EXIST + ", path: " + appBin.path);
+  let appBinPath = appBin.path;
   if (/ /.test(appBinPath)) {
     appBinPath = '"' + appBinPath + '"';
   }
@@ -3928,11 +3819,11 @@ function adjustGeneralPaths() {
       aPersistent.value = false;
       switch (aProp) {
         case NS_GRE_DIR:
-          return getApplyDirFile(DIR_RESOURCES, true);
+          return getApplyDirFile(DIR_RESOURCES);
         case NS_GRE_BIN_DIR:
-          return getApplyDirFile(DIR_MACOS, true);
+          return getApplyDirFile(DIR_MACOS);
         case XRE_EXECUTABLE_FILE:
-          return getApplyDirFile(DIR_MACOS + FILE_APP_BIN, true);
+          return getApplyDirFile(DIR_MACOS + FILE_APP_BIN);
         case XRE_UPDATE_ROOT_DIR:
           return getMockUpdRootD();
         case XRE_OLD_UPDATE_ROOT_DIR:
@@ -4085,7 +3976,7 @@ function runUpdateUsingApp(aExpectedStatus) {
         aExpectedStatus != STATE_APPLIED &&
         aExpectedStatus != STATE_APPLIED_SVC) {
       
-      let log = getUpdateLog(FILE_UPDATE_LOG);
+      let log = getUpdateDirFile(FILE_UPDATE_LOG);
       if (!log.exists()) {
         if (gTimeoutRuns > MAX_TIMEOUT_RUNS) {
           do_throw("Exceeded MAX_TIMEOUT_RUNS while waiting for the update " +

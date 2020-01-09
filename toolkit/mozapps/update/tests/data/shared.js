@@ -62,6 +62,7 @@ const DIR_UPDATED      = AppConstants.platform == "macosx" ? "Updated.app"
                                                            : "updated";
 
 const FILE_ACTIVE_UPDATE_XML         = "active-update.xml";
+const FILE_ACTIVE_UPDATE_XML_TMP     = "active-update.xml.tmp";
 const FILE_APPLICATION_INI           = "application.ini";
 const FILE_BACKUP_UPDATE_LOG         = "backup-update.log";
 const FILE_BT_RESULT                 = "bt.result";
@@ -78,6 +79,7 @@ const FILE_UPDATE_TEST               = "update.test";
 const FILE_UPDATE_VERSION            = "update.version";
 const FILE_UPDATER_INI               = "updater.ini";
 const FILE_UPDATES_XML               = "updates.xml";
+const FILE_UPDATES_XML_TMP           = "updates.xml.tmp";
 
 const UPDATE_SETTINGS_CONTENTS = "[Settings]\n" +
                                  "ACCEPTED_MAR_CHANNEL_IDS=xpcshell-test\n";
@@ -201,24 +203,13 @@ function setUpdateURL(aURL) {
 
 
 
-function getUpdatesXMLFile(aIsActiveUpdate) {
-  let file = getUpdatesRootDir();
-  file.append(aIsActiveUpdate ? FILE_ACTIVE_UPDATE_XML : FILE_UPDATES_XML);
-  return file;
-}
-
-
-
-
-
-
-
-
 
 
 
 function writeUpdatesToXMLFile(aContent, aIsActiveUpdate) {
-  writeFile(getUpdatesXMLFile(aIsActiveUpdate), aContent);
+  let file = getUpdateDirFile(aIsActiveUpdate ? FILE_ACTIVE_UPDATE_XML
+                                              : FILE_UPDATES_XML);
+  writeFile(file, aContent);
 }
 
 
@@ -230,8 +221,7 @@ function writeUpdatesToXMLFile(aContent, aIsActiveUpdate) {
 
 
 function writeStatusFile(aStatus) {
-  let file = getUpdatesPatchDir();
-  file.append(FILE_UPDATE_STATUS);
+  let file = getUpdateDirFile(FILE_UPDATE_STATUS);
   writeFile(file, aStatus + "\n");
 }
 
@@ -243,74 +233,8 @@ function writeStatusFile(aStatus) {
 
 
 function writeVersionFile(aVersion) {
-  let file = getUpdatesPatchDir();
-  file.append(FILE_UPDATE_VERSION);
+  let file = getUpdateDirFile(FILE_UPDATE_VERSION);
   writeFile(file, aVersion + "\n");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function setAppUpdateAutoSync(aEnabled) {
-  if (AppConstants.platform == "win") {
-    let file = getUpdateConfigFile();
-    if (aEnabled === undefined || aEnabled === null) {
-      if (file.exists()) {
-        file.remove(false);
-      }
-    } else {
-      writeFile(file, "{\"" + CONFIG_APP_UPDATE_AUTO + "\":" +
-                      aEnabled.toString() + "}");
-    }
-  } else if (aEnabled === undefined || aEnabled === null) {
-    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_AUTO)) {
-      Services.prefs.clearUserPref(PREF_APP_UPDATE_AUTO);
-    }
-  } else {
-    Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO, aEnabled);
-  }
-}
-
-
-
-
-
-
-function getUpdatesRootDir() {
-  return Services.dirsvc.get(XRE_UPDATE_ROOT_DIR, Ci.nsIFile);
-}
-
-
-
-
-
-
-function getUpdatesDir() {
-  let dir = getUpdatesRootDir();
-  dir.append(DIR_UPDATES);
-  return dir;
-}
-
-
-
-
-
-
-function getUpdatesPatchDir() {
-  let dir = getUpdatesDir();
-  dir.append(DIR_PATCH);
-  return dir;
 }
 
 
@@ -341,14 +265,11 @@ function writeFile(aFile, aText) {
 
 
 function readStatusFile() {
-  let file = getUpdatesPatchDir();
-  file.append(FILE_UPDATE_STATUS);
-
+  let file = getUpdateDirFile(FILE_UPDATE_STATUS);
   if (!file.exists()) {
     debugDump("update status file does not exists! Path: " + file.path);
     return STATE_NONE;
   }
-
   return readFile(file).split("\n")[0];
 }
 
@@ -379,9 +300,7 @@ function readStatusFailedCode() {
 
 
 function updateHasBinaryTransparencyErrorResult() {
-  let file = getUpdatesPatchDir();
-  file.append(FILE_BT_RESULT);
-
+  let file = getUpdateDirFile(FILE_BT_RESULT);
   return file.exists();
 }
 
@@ -473,35 +392,41 @@ function getFileExtension(aFile) {
 
 
 
-function removeUpdateDirsAndFiles() {
-  let file = getUpdatesXMLFile(true);
-  try {
-    if (file.exists()) {
-      file.remove(false);
-    }
-  } catch (e) {
-    logTestInfo("Unable to remove file. Path: " + file.path +
-                ", Exception: " + e);
+
+function getUpdateDirFile(aLeafName) {
+  let file = Services.dirsvc.get(XRE_UPDATE_ROOT_DIR, Ci.nsIFile);
+  switch (aLeafName) {
+    case undefined:
+      return file;
+    case DIR_UPDATES:
+    case FILE_ACTIVE_UPDATE_XML:
+    case FILE_ACTIVE_UPDATE_XML_TMP:
+    case FILE_UPDATE_CONFIG_JSON:
+    case FILE_UPDATE_TEST:
+    case FILE_UPDATES_XML:
+    case FILE_UPDATES_XML_TMP:
+      file.append(aLeafName);
+      return file;
+    case DIR_PATCH:
+    case FILE_BACKUP_UPDATE_LOG:
+    case FILE_LAST_UPDATE_LOG:
+      file.append(DIR_UPDATES);
+      file.append(aLeafName);
+      return file;
+    case FILE_BT_RESULT:
+    case FILE_UPDATE_LOG:
+    case FILE_UPDATE_MAR:
+    case FILE_UPDATE_STATUS:
+    case FILE_UPDATE_VERSION:
+    case FILE_UPDATER_INI:
+      file.append(DIR_UPDATES);
+      file.append(DIR_PATCH);
+      file.append(aLeafName);
+      return file;
   }
 
-  file = getUpdatesXMLFile(false);
-  try {
-    if (file.exists()) {
-      file.remove(false);
-    }
-  } catch (e) {
-    logTestInfo("Unable to remove file. Path: " + file.path +
-                ", Exception: " + e);
-  }
-
-  
-  let updatesDir = getUpdatesDir();
-  try {
-    cleanUpdatesDir(updatesDir);
-  } catch (e) {
-    logTestInfo("Unable to remove files / directories from directory. Path: " +
-                updatesDir.path + ", Exception: " + e);
-  }
+  throw new Error("The leafName specified is not handled by this function, " +
+                  "leafName: " + aLeafName);
 }
 
 
@@ -511,44 +436,81 @@ function removeUpdateDirsAndFiles() {
 
 
 
-function cleanUpdatesDir(aDir) {
-  if (!aDir.exists()) {
-    return;
+
+
+
+
+
+
+
+
+
+function getStageDirFile(aRelPath) {
+  let file;
+  if (AppConstants.platform == "macosx") {
+    file = getUpdateDirFile(DIR_PATCH);
+  } else {
+    file = getAppBaseDir();
+  }
+  file.append(DIR_UPDATED);
+  if (aRelPath) {
+    let pathParts = aRelPath.split("/");
+    for (let i = 0; i < pathParts.length; i++) {
+      if (pathParts[i]) {
+        file.append(pathParts[i]);
+      }
+    }
+  }
+  return file;
+}
+
+
+
+
+
+
+
+
+
+
+function removeUpdateFiles(aRemoveLogFiles) {
+  let files = [
+    FILE_ACTIVE_UPDATE_XML,
+    FILE_UPDATES_XML,
+    FILE_BT_RESULT,
+    FILE_UPDATE_STATUS,
+    FILE_UPDATE_VERSION,
+    FILE_UPDATE_MAR,
+    FILE_UPDATER_INI,
+  ];
+
+  if (aRemoveLogFiles) {
+    files = files.concat([
+      FILE_BACKUP_UPDATE_LOG,
+      FILE_LAST_UPDATE_LOG,
+      FILE_UPDATE_LOG,
+    ]);
   }
 
-  let dirEntries = aDir.directoryEntries;
-  while (dirEntries.hasMoreElements()) {
-    let entry = dirEntries.nextFile;
+  for (let i = 0; i < files.length; i++) {
+    let file = getUpdateDirFile(files[i]);
+    try {
+      if (file.exists()) {
+        file.remove(false);
+      }
+    } catch (e) {
+      logTestInfo("Unable to remove file. Path: " + file.path +
+                  ", Exception: " + e);
+    }
+  }
 
-    if (entry.isDirectory()) {
-      if (entry.leafName == DIR_PATCH && entry.parent.leafName == DIR_UPDATES) {
-        cleanUpdatesDir(entry);
-        entry.permissions = PERMS_DIRECTORY;
-      } else {
-        try {
-          entry.remove(true);
-          return;
-        } catch (e) {
-        }
-        cleanUpdatesDir(entry);
-        entry.permissions = PERMS_DIRECTORY;
-        try {
-          entry.remove(true);
-        } catch (e) {
-          logTestInfo("cleanUpdatesDir: unable to remove directory. Path: " +
-                      entry.path + ", Exception: " + e);
-          throw (e);
-        }
-      }
-    } else {
-      entry.permissions = PERMS_FILE;
-      try {
-        entry.remove(false);
-      } catch (e) {
-        logTestInfo("cleanUpdatesDir: unable to remove file. Path: " +
-                    entry.path + ", Exception: " + e);
-        throw (e);
-      }
+  let stageDir = getStageDirFile();
+  if (stageDir.exists()) {
+    try {
+      removeDirRecursive(stageDir);
+    } catch (e) {
+      logTestInfo("Unable to remove directory. Path: " + stageDir.path +
+                  ", Exception: " + e);
     }
   }
 }
@@ -564,6 +526,10 @@ function cleanUpdatesDir(aDir) {
 function removeDirRecursive(aDir) {
   if (!aDir.exists()) {
     return;
+  }
+
+  if (!aDir.isDirectory()) {
+    throw new Error("Only a directory can be passed to this funtion!");
   }
 
   try {
@@ -587,7 +553,7 @@ function removeDirRecursive(aDir) {
         entry.remove(false);
       } catch (e) {
         logTestInfo("error removing file. Exception: " + e);
-        throw (e);
+        throw e;
       }
     }
   }
@@ -598,7 +564,7 @@ function removeDirRecursive(aDir) {
     aDir.remove(true);
   } catch (e) {
     logTestInfo("error removing directory. Exception: " + e);
-    throw (e);
+    throw e;
   }
 }
 
@@ -644,15 +610,6 @@ function getGREDir() {
 
 function getGREBinDir() {
   return Services.dirsvc.get(NS_GRE_BIN_DIR, Ci.nsIFile);
-}
-
-
-
-
-function getUpdateConfigFile() {
-  let configFile = getUpdatesRootDir();
-  configFile.append(FILE_UPDATE_CONFIG_JSON);
-  return configFile;
 }
 
 
@@ -737,6 +694,40 @@ function createMutex(aName) {
   }
 
   return handle;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function setAppUpdateAutoSync(aEnabled) {
+  if (AppConstants.platform == "win") {
+    let file = getUpdateDirFile(FILE_UPDATE_CONFIG_JSON);
+    if (aEnabled === undefined || aEnabled === null) {
+      if (file.exists()) {
+        file.remove(false);
+      }
+    } else {
+      writeFile(file, "{\"" + CONFIG_APP_UPDATE_AUTO + "\":" +
+                      aEnabled.toString() + "}");
+    }
+  } else if (aEnabled === undefined || aEnabled === null) {
+    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_AUTO)) {
+      Services.prefs.clearUserPref(PREF_APP_UPDATE_AUTO);
+    }
+  } else {
+    Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO, aEnabled);
+  }
 }
 
 
