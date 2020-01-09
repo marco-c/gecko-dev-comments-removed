@@ -341,14 +341,6 @@ MozElements.Notification = class Notification extends MozXULElement {
 
 
 
-  set label(value) {
-    this.messageText.textContent = value;
-  }
-
-  
-
-
-
 
   dismiss() {
     if (this.eventCallback) {
