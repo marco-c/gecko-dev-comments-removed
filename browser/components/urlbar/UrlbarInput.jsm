@@ -313,28 +313,22 @@ class UrlbarInput {
 
   pickResult(event, resultIndex) {
     let result = this.view.getResult(resultIndex);
-    this.setValueFromResult(result);
-
-    this.view.close();
-
-    this.controller.recordSelectedResult(event, resultIndex);
-
+    let isCanonized = this.setValueFromResult(result, event);
     let where = this._whereToOpen(event);
-    let {url, postData} = UrlbarUtils.getUrlFromResult(result);
     let openParams = {
-      postData,
       allowInheritPrincipal: false,
     };
 
-    if (result.autofill) {
-      
-      
-      let canonizedUrl = this._maybeCanonizeURL(event, this._lastSearchString);
-      if (canonizedUrl) {
-        this._loadURL(canonizedUrl, where, openParams);
-        return;
-      }
+    this.view.close();
+    this.controller.recordSelectedResult(event, resultIndex);
+
+    if (isCanonized) {
+      this._loadURL(this.value, where, openParams);
+      return;
     }
+
+    let {url, postData} = UrlbarUtils.getUrlFromResult(result);
+    openParams.postData = postData;
 
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.TAB_SWITCH: {
@@ -356,12 +350,6 @@ class UrlbarInput {
         return;
       }
       case UrlbarUtils.RESULT_TYPE.SEARCH: {
-        let canonizedUrl = this._maybeCanonizeURL(event,
-                result.payload.suggestion || result.payload.query);
-        if (canonizedUrl) {
-          url = canonizedUrl;
-          break;
-        }
         if (result.payload.isKeywordOffer) {
           
           
@@ -398,11 +386,22 @@ class UrlbarInput {
 
 
 
-  setValueFromResult(result) {
-    if (result.autofill) {
-      this._setValueFromResultAutofill(result);
+
+
+
+  setValueFromResult(result, event = null) {
+    
+    
+    let canonizedUrl = this._maybeCanonizeURL(event, result.autofill ?
+                         this._lastSearchString : this.textValue);
+    if (canonizedUrl) {
+      this.value = canonizedUrl;
     } else {
-      this.value = this._valueFromResultPayload(result);
+      this.value = this._getValueFromResult(result);
+      if (result.autofill) {
+        this.selectionStart = result.autofill.selectionStart;
+        this.selectionEnd = result.autofill.selectionEnd;
+      }
     }
     this._resultForCurrentValue = result;
 
@@ -418,6 +417,8 @@ class UrlbarInput {
         this.setAttribute("actiontype", "extension");
         break;
     }
+
+    return !!canonizedUrl;
   }
 
   
@@ -548,13 +549,11 @@ class UrlbarInput {
 
   
 
-  _setValueFromResultAutofill(result) {
-    this.value = result.autofill.value;
-    this.selectionStart = result.autofill.selectionStart;
-    this.selectionEnd = result.autofill.selectionEnd;
-  }
+  _getValueFromResult(result) {
+    if (result.autofill) {
+      return result.autofill.value;
+    }
 
-  _valueFromResultPayload(result) {
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.KEYWORD:
         return result.payload.input;
@@ -796,9 +795,9 @@ class UrlbarInput {
   _loadURL(url, openUILinkWhere, params) {
     let browser = this.window.gBrowser.selectedBrowser;
 
-    
-    
-    
+    this.value = url;
+    browser.userTypedValue = url;
+
     if (this.window.gInitialPages.includes(url)) {
       browser.initialPageLoadedFromUserAction = url;
     }
