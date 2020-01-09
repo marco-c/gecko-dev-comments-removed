@@ -10,12 +10,11 @@
 #include "nsICookie2.h"
 #include "nsIServiceManager.h"
 #include "nsICookieManager.h"
+#include "nsICookieService.h"
 #include "nsNetUtil.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIProtocolHandler.h"
 #include "nsIURI.h"
-#include "nsIPrefService.h"
-#include "nsIPrefBranch.h"
 #include "nsIChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIDOMWindow.h"
@@ -27,20 +26,13 @@
 #include "nsNetCID.h"
 #include "prtime.h"
 #include "mozilla/StaticPtr.h"
+#include "nsContentUtils.h"
 
 
 
 
-
-
-
-
-
-static const uint32_t ACCEPT_NORMALLY = 0;
-static const uint32_t ACCEPT_SESSION = 2;
 
 static const bool kDefaultPolicy = true;
-static const char kCookiesLifetimePolicy[] = "network.cookie.lifetimePolicy";
 
 static const nsLiteralCString kPermissionType(NS_LITERAL_CSTRING("cookie"));
 
@@ -48,7 +40,7 @@ namespace {
 mozilla::StaticRefPtr<nsCookiePermission> gSingleton;
 }
 
-NS_IMPL_ISUPPORTS(nsCookiePermission, nsICookiePermission, nsIObserver)
+NS_IMPL_ISUPPORTS(nsCookiePermission, nsICookiePermission)
 
 
 already_AddRefed<nsICookiePermission> nsCookiePermission::GetOrCreate() {
@@ -71,29 +63,7 @@ bool nsCookiePermission::Init() {
   mThirdPartyUtil = do_GetService(THIRDPARTYUTIL_CONTRACTID, &rv);
   if (NS_FAILED(rv)) return false;
 
-  
-  nsCOMPtr<nsIPrefBranch> prefBranch = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  if (prefBranch) {
-    prefBranch->AddObserver(kCookiesLifetimePolicy, this, false);
-    PrefChanged(prefBranch, nullptr);
-  }
-
   return true;
-}
-
-void nsCookiePermission::PrefChanged(nsIPrefBranch *aPrefBranch,
-                                     const char *aPref) {
-  int32_t val;
-
-#define PREF_CHANGED(_P) (!aPref || !strcmp(aPref, _P))
-
-  if (PREF_CHANGED(kCookiesLifetimePolicy) &&
-      NS_SUCCEEDED(aPrefBranch->GetIntPref(kCookiesLifetimePolicy, &val))) {
-    if (val != static_cast<int32_t>(ACCEPT_SESSION)) {
-      val = ACCEPT_NORMALLY;
-    }
-    mCookiesLifetimePolicy = val;
-  }
 }
 
 NS_IMETHODIMP
@@ -159,7 +129,8 @@ nsCookiePermission::CanSetCookie(nsIURI *aURI, nsIChannel *aChannel,
 
       
       
-      if (mCookiesLifetimePolicy == ACCEPT_NORMALLY) {
+      if (nsContentUtils::GetCookieLifetimePolicy() ==
+          nsICookieService::ACCEPT_NORMALLY) {
         *aResult = true;
         return NS_OK;
       }
@@ -171,24 +142,13 @@ nsCookiePermission::CanSetCookie(nsIURI *aURI, nsIChannel *aChannel,
       
       
       if (!*aIsSession && delta > 0) {
-        if (mCookiesLifetimePolicy == ACCEPT_SESSION) {
+        if (nsContentUtils::GetCookieLifetimePolicy() ==
+            nsICookieService::ACCEPT_SESSION) {
           
           *aIsSession = true;
         }
       }
   }
 
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsCookiePermission::Observe(nsISupports *aSubject, const char *aTopic,
-                            const char16_t *aData) {
-  nsCOMPtr<nsIPrefBranch> prefBranch = do_QueryInterface(aSubject);
-  NS_ASSERTION(!nsCRT::strcmp(NS_PREFBRANCH_PREFCHANGE_TOPIC_ID, aTopic),
-               "unexpected topic - we only deal with pref changes!");
-
-  if (prefBranch)
-    PrefChanged(prefBranch, NS_LossyConvertUTF16toASCII(aData).get());
   return NS_OK;
 }
