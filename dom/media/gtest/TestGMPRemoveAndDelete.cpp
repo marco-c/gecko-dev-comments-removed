@@ -105,8 +105,7 @@ class GMPRemoveTest : public nsIObserver, public GMPVideoDecoderCallbackProxy {
 
 
 
-TEST(GeckoMediaPlugins, RemoveAndDeleteForcedSimple)
-{
+TEST(GeckoMediaPlugins, RemoveAndDeleteForcedSimple) {
   RefPtr<GMPRemoveTest> test(new GMPRemoveTest());
 
   test->Setup();
@@ -117,8 +116,7 @@ TEST(GeckoMediaPlugins, RemoveAndDeleteForcedSimple)
 
 
 
-TEST(GeckoMediaPlugins, RemoveAndDeleteDeferredSimple)
-{
+TEST(GeckoMediaPlugins, RemoveAndDeleteDeferredSimple) {
   RefPtr<GMPRemoveTest> test(new GMPRemoveTest());
 
   test->Setup();
@@ -130,8 +128,7 @@ TEST(GeckoMediaPlugins, RemoveAndDeleteDeferredSimple)
 
 
 
-TEST(GeckoMediaPlugins, RemoveAndDeleteForcedInUse)
-{
+TEST(GeckoMediaPlugins, RemoveAndDeleteForcedInUse) {
   RefPtr<GMPRemoveTest> test(new GMPRemoveTest());
 
   test->Setup();
@@ -155,8 +152,7 @@ TEST(GeckoMediaPlugins, RemoveAndDeleteForcedInUse)
 
 
 
-TEST(GeckoMediaPlugins, RemoveAndDeleteDeferredInUse)
-{
+TEST(GeckoMediaPlugins, RemoveAndDeleteDeferredInUse) {
   RefPtr<GMPRemoveTest> test(new GMPRemoveTest());
 
   test->Setup();

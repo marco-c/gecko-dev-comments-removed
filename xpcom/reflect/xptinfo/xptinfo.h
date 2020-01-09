@@ -213,9 +213,7 @@ struct nsXPTType {
 
  private:
   
-  uint16_t Data16() const {
-    return static_cast<uint16_t>(mData1 << 8) | mData2;
-  }
+  uint16_t Data16() const { return static_cast<uint16_t>(mData1 << 8) | mData2; }
 
  public:
   

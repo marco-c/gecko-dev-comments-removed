@@ -34,8 +34,7 @@ void testServerTimingHeader(
   }
 }
 
-TEST(TestServerTimingHeader, HeaderParsing)
-{
+TEST(TestServerTimingHeader, HeaderParsing) {
   
   
 

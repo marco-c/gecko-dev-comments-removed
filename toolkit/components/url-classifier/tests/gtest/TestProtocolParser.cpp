@@ -18,8 +18,7 @@ static bool InitUpdateResponse(ListUpdateResponse* aUpdateResponse,
 
 static void DumpBinary(const nsACString& aBinary);
 
-TEST(UrlClassifierProtocolParser, UpdateWait)
-{
+TEST(UrlClassifierProtocolParser, UpdateWait) {
   
   
   FetchThreatListUpdatesResponse response;
@@ -46,8 +45,7 @@ TEST(UrlClassifierProtocolParser, UpdateWait)
   delete p;
 }
 
-TEST(UrlClassifierProtocolParser, SingleValueEncoding)
-{
+TEST(UrlClassifierProtocolParser, SingleValueEncoding) {
   
   
   FetchThreatListUpdatesResponse response;

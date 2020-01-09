@@ -1602,20 +1602,19 @@ Loader::Completed Loader::ParseSheet(const nsACString& aBytes,
   RefPtr<SheetLoadData> loadData = aLoadData;
   nsCOMPtr<nsISerialEventTarget> target = DispatchTarget();
   sheet->ParseSheet(this, aBytes, aLoadData)
-      ->Then(
-          target, __func__,
-          [loadData = std::move(loadData)](bool aDummy) {
-            MOZ_ASSERT(NS_IsMainThread());
-            loadData->mIsBeingParsed = false;
-            loadData->mLoader->UnblockOnload( false);
-            
-            
-            
-            if (loadData->mPendingChildren == 0) {
-              loadData->mLoader->SheetComplete(loadData, NS_OK);
-            }
-          },
-          [] { MOZ_CRASH("rejected parse promise"); });
+      ->Then(target, __func__,
+             [loadData = std::move(loadData)](bool aDummy) {
+               MOZ_ASSERT(NS_IsMainThread());
+               loadData->mIsBeingParsed = false;
+               loadData->mLoader->UnblockOnload( false);
+               
+               
+               
+               if (loadData->mPendingChildren == 0) {
+                 loadData->mLoader->SheetComplete(loadData, NS_OK);
+               }
+             },
+             [] { MOZ_CRASH("rejected parse promise"); });
   return Completed::No;
 }
 

@@ -27,8 +27,7 @@ static void AllocLockRecurseUnlockFree(int i) {
 
 
 
-TEST(DeadlockDetectorScalability, LengthNDepChain)
-{
+TEST(DeadlockDetectorScalability, LengthNDepChain) {
   const int N = 1 << 14;  
   AllocLockRecurseUnlockFree(N);
   ASSERT_TRUE(true);
@@ -40,8 +39,7 @@ TEST(DeadlockDetectorScalability, LengthNDepChain)
 
 
 
-TEST(DeadlockDetectorScalability, DISABLED_OneLockNDeps)
-{
+TEST(DeadlockDetectorScalability, DISABLED_OneLockNDeps) {
   
   const int N = 1 << 17;  
   const int K = 100;
@@ -82,8 +80,7 @@ TEST(DeadlockDetectorScalability, DISABLED_OneLockNDeps)
 
 
 
-TEST(DeadlockDetectorScalability, MaxDepsNsq)
-{
+TEST(DeadlockDetectorScalability, MaxDepsNsq) {
   const int N = 1 << 10;  
   const int K = 10;
 
@@ -117,8 +114,7 @@ TEST(DeadlockDetectorScalability, MaxDepsNsq)
 
 
 
-TEST(DeadlockDetectorScalability, OneLockNDepsUsedSeveralTimes)
-{
+TEST(DeadlockDetectorScalability, OneLockNDepsUsedSeveralTimes) {
   const size_t N = 1 << 17;  
   const size_t K = 3;
 
@@ -154,8 +150,7 @@ MOZ_DEFINE_MALLOC_SIZE_OF(DeadlockDetectorMallocSizeOf)
 
 
 
-TEST(DeadlockDetectorScalability, SizeOf)
-{
+TEST(DeadlockDetectorScalability, SizeOf) {
   size_t memory_used = mozilla::BlockingResourceBase::SizeOfDeadlockDetector(
       DeadlockDetectorMallocSizeOf);
 

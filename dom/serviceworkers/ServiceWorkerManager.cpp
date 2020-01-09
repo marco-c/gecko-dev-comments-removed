@@ -2452,15 +2452,14 @@ void ServiceWorkerManager::UpdateClientControllers(
 
     
     
-    p->Then(
-        SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
-        [](bool) {
-          
-        },
-        [self, clientInfo = handle->Info()](nsresult aRv) {
-          
-          self->StopControllingClient(clientInfo);
-        });
+    p->Then(SystemGroup::EventTargetFor(TaskCategory::Other), __func__,
+            [](bool) {
+              
+            },
+            [self, clientInfo = handle->Info()](nsresult aRv) {
+              
+              self->StopControllingClient(clientInfo);
+            });
   }
 }
 

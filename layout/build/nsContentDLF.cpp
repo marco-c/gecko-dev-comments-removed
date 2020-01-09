@@ -150,41 +150,41 @@ nsContentDLF::CreateInstance(const char* aCommand, nsIChannel* aChannel,
   
   if (IsTypeInList(contentType, gHTMLTypes) ||
       nsContentUtils::IsPlainTextType(contentType)) {
-    return CreateDocument(
-        aCommand, aChannel, aLoadGroup, aContainer,
-        []() -> already_AddRefed<Document> {
-          RefPtr<Document> doc;
-          nsresult rv = NS_NewHTMLDocument(getter_AddRefs(doc));
-          NS_ENSURE_SUCCESS(rv, nullptr);
-          return doc.forget();
-        },
-        aDocListener, aDocViewer);
+    return CreateDocument(aCommand, aChannel, aLoadGroup, aContainer,
+                          []() -> already_AddRefed<Document> {
+                            RefPtr<Document> doc;
+                            nsresult rv =
+                                NS_NewHTMLDocument(getter_AddRefs(doc));
+                            NS_ENSURE_SUCCESS(rv, nullptr);
+                            return doc.forget();
+                          },
+                          aDocListener, aDocViewer);
   }
 
   
   if (IsTypeInList(contentType, gXMLTypes)) {
-    return CreateDocument(
-        aCommand, aChannel, aLoadGroup, aContainer,
-        []() -> already_AddRefed<Document> {
-          RefPtr<Document> doc;
-          nsresult rv = NS_NewXMLDocument(getter_AddRefs(doc));
-          NS_ENSURE_SUCCESS(rv, nullptr);
-          return doc.forget();
-        },
-        aDocListener, aDocViewer);
+    return CreateDocument(aCommand, aChannel, aLoadGroup, aContainer,
+                          []() -> already_AddRefed<Document> {
+                            RefPtr<Document> doc;
+                            nsresult rv =
+                                NS_NewXMLDocument(getter_AddRefs(doc));
+                            NS_ENSURE_SUCCESS(rv, nullptr);
+                            return doc.forget();
+                          },
+                          aDocListener, aDocViewer);
   }
 
   
   if (IsTypeInList(contentType, gSVGTypes)) {
-    return CreateDocument(
-        aCommand, aChannel, aLoadGroup, aContainer,
-        []() -> already_AddRefed<Document> {
-          RefPtr<Document> doc;
-          nsresult rv = NS_NewSVGDocument(getter_AddRefs(doc));
-          NS_ENSURE_SUCCESS(rv, nullptr);
-          return doc.forget();
-        },
-        aDocListener, aDocViewer);
+    return CreateDocument(aCommand, aChannel, aLoadGroup, aContainer,
+                          []() -> already_AddRefed<Document> {
+                            RefPtr<Document> doc;
+                            nsresult rv =
+                                NS_NewSVGDocument(getter_AddRefs(doc));
+                            NS_ENSURE_SUCCESS(rv, nullptr);
+                            return doc.forget();
+                          },
+                          aDocListener, aDocViewer);
   }
 
   
@@ -200,28 +200,28 @@ nsContentDLF::CreateInstance(const char* aCommand, nsIChannel* aChannel,
   if (mozilla::DecoderTraits::ShouldHandleMediaType(
           contentType.get(),
            nullptr)) {
-    return CreateDocument(
-        aCommand, aChannel, aLoadGroup, aContainer,
-        []() -> already_AddRefed<Document> {
-          RefPtr<Document> doc;
-          nsresult rv = NS_NewVideoDocument(getter_AddRefs(doc));
-          NS_ENSURE_SUCCESS(rv, nullptr);
-          return doc.forget();
-        },
-        aDocListener, aDocViewer);
+    return CreateDocument(aCommand, aChannel, aLoadGroup, aContainer,
+                          []() -> already_AddRefed<Document> {
+                            RefPtr<Document> doc;
+                            nsresult rv =
+                                NS_NewVideoDocument(getter_AddRefs(doc));
+                            NS_ENSURE_SUCCESS(rv, nullptr);
+                            return doc.forget();
+                          },
+                          aDocListener, aDocViewer);
   }
 
   
   if (IsImageContentType(contentType.get())) {
-    return CreateDocument(
-        aCommand, aChannel, aLoadGroup, aContainer,
-        []() -> already_AddRefed<Document> {
-          RefPtr<Document> doc;
-          nsresult rv = NS_NewImageDocument(getter_AddRefs(doc));
-          NS_ENSURE_SUCCESS(rv, nullptr);
-          return doc.forget();
-        },
-        aDocListener, aDocViewer);
+    return CreateDocument(aCommand, aChannel, aLoadGroup, aContainer,
+                          []() -> already_AddRefed<Document> {
+                            RefPtr<Document> doc;
+                            nsresult rv =
+                                NS_NewImageDocument(getter_AddRefs(doc));
+                            NS_ENSURE_SUCCESS(rv, nullptr);
+                            return doc.forget();
+                          },
+                          aDocListener, aDocViewer);
   }
 
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
@@ -229,15 +229,15 @@ nsContentDLF::CreateInstance(const char* aCommand, nsIChannel* aChannel,
   
   if (pluginHost &&
       pluginHost->HavePluginForType(contentType, nsPluginHost::eExcludeNone)) {
-    return CreateDocument(
-        aCommand, aChannel, aLoadGroup, aContainer,
-        []() -> already_AddRefed<Document> {
-          RefPtr<Document> doc;
-          nsresult rv = NS_NewPluginDocument(getter_AddRefs(doc));
-          NS_ENSURE_SUCCESS(rv, nullptr);
-          return doc.forget();
-        },
-        aDocListener, aDocViewer);
+    return CreateDocument(aCommand, aChannel, aLoadGroup, aContainer,
+                          []() -> already_AddRefed<Document> {
+                            RefPtr<Document> doc;
+                            nsresult rv =
+                                NS_NewPluginDocument(getter_AddRefs(doc));
+                            NS_ENSURE_SUCCESS(rv, nullptr);
+                            return doc.forget();
+                          },
+                          aDocListener, aDocViewer);
   }
 
   

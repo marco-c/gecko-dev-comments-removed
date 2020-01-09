@@ -90,8 +90,7 @@ RefPtr<MediaDevice> MakeSpeakerDevice(const nsString& aName,
 
 
 
-TEST(TestGroupId, MatchInput_PartOfName)
-{
+TEST(TestGroupId, MatchInput_PartOfName) {
   MediaManager::MediaDeviceSet devices;
 
   devices.AppendElement(
@@ -111,8 +110,7 @@ TEST(TestGroupId, MatchInput_PartOfName)
 
 
 
-TEST(TestGroupId, MatchInput_FullName)
-{
+TEST(TestGroupId, MatchInput_FullName) {
   MediaManager::MediaDeviceSet devices;
 
   devices.AppendElement(
@@ -130,8 +128,7 @@ TEST(TestGroupId, MatchInput_FullName)
 
 
 
-TEST(TestGroupId, NoMatchInput)
-{
+TEST(TestGroupId, NoMatchInput) {
   MediaManager::MediaDeviceSet devices;
 
   nsString Cam_Model_GroupId = NS_LITERAL_STRING("Cam-Model-GroupId");
@@ -152,8 +149,7 @@ TEST(TestGroupId, NoMatchInput)
 
 
 
-TEST(TestGroupId, NoMatch_TwoIdenticalDevices)
-{
+TEST(TestGroupId, NoMatch_TwoIdenticalDevices) {
   MediaManager::MediaDeviceSet devices;
 
   nsString Cam_Model_GroupId = NS_LITERAL_STRING("Cam-Model-GroupId");
@@ -188,8 +184,7 @@ TEST(TestGroupId, NoMatch_TwoIdenticalDevices)
 
 
 
-TEST(TestGroupId, Match_TwoIdenticalInputsMatchOutput)
-{
+TEST(TestGroupId, Match_TwoIdenticalInputsMatchOutput) {
   MediaManager::MediaDeviceSet devices;
 
   nsString Cam_Model_GroupId = NS_LITERAL_STRING("Cam-Model-GroupId");
@@ -216,8 +211,7 @@ TEST(TestGroupId, Match_TwoIdenticalInputsMatchOutput)
 
 
 
-TEST(TestGroupId, NoMatch_ThreeIdenticalDevices)
-{
+TEST(TestGroupId, NoMatch_ThreeIdenticalDevices) {
   MediaManager::MediaDeviceSet devices;
 
   nsString Cam_Model_GroupId = NS_LITERAL_STRING("Cam-Model-GroupId");
@@ -257,8 +251,7 @@ TEST(TestGroupId, NoMatch_ThreeIdenticalDevices)
 
 
 
-TEST(TestGroupId, MatchOutput)
-{
+TEST(TestGroupId, MatchOutput) {
   MediaManager::MediaDeviceSet devices;
 
   devices.AppendElement(
@@ -281,8 +274,7 @@ TEST(TestGroupId, MatchOutput)
 
 
 
-TEST(TestGroupId, InputOutputSameName)
-{
+TEST(TestGroupId, InputOutputSameName) {
   MediaManager::MediaDeviceSet devices;
 
   devices.AppendElement(
@@ -305,8 +297,7 @@ TEST(TestGroupId, InputOutputSameName)
 
 
 
-TEST(TestGroupId, InputEmptyGroupId)
-{
+TEST(TestGroupId, InputEmptyGroupId) {
   MediaManager::MediaDeviceSet devices;
 
   devices.AppendElement(
@@ -325,8 +316,7 @@ TEST(TestGroupId, InputEmptyGroupId)
 
 
 
-TEST(TestGroupId, OutputEmptyGroupId)
-{
+TEST(TestGroupId, OutputEmptyGroupId) {
   MediaManager::MediaDeviceSet devices;
 
   devices.AppendElement(

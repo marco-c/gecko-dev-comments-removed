@@ -387,20 +387,19 @@ void ChannelMediaDecoder::DownloadProgressed() {
                 MediaStatistics stats = GetStatistics(rate, res, pos);
                 return StatsPromise::CreateAndResolve(stats, __func__);
               })
-      ->Then(
-          mAbstractMainThread, __func__,
-          [=,
-           self = RefPtr<ChannelMediaDecoder>(this)](MediaStatistics aStats) {
-            if (IsShutdown()) {
-              return;
-            }
-            mCanPlayThrough = aStats.CanPlayThrough();
-            GetStateMachine()->DispatchCanPlayThrough(mCanPlayThrough);
-            mResource->ThrottleReadahead(ShouldThrottleDownload(aStats));
-            
-            GetOwner()->UpdateReadyState();
-          },
-          []() { MOZ_ASSERT_UNREACHABLE("Promise not resolved"); });
+      ->Then(mAbstractMainThread, __func__,
+             [=, self = RefPtr<ChannelMediaDecoder>(this)](
+                 MediaStatistics aStats) {
+               if (IsShutdown()) {
+                 return;
+               }
+               mCanPlayThrough = aStats.CanPlayThrough();
+               GetStateMachine()->DispatchCanPlayThrough(mCanPlayThrough);
+               mResource->ThrottleReadahead(ShouldThrottleDownload(aStats));
+               
+               GetOwner()->UpdateReadyState();
+             },
+             []() { MOZ_ASSERT_UNREACHABLE("Promise not resolved"); });
 }
 
  ChannelMediaDecoder::PlaybackRateInfo

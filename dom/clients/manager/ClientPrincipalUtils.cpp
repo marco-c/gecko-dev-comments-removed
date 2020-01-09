@@ -35,9 +35,7 @@ bool ClientMatchPrincipalInfo(const PrincipalInfo& aLeft,
       
       return false;
     }
-    default: {
-      break;
-    }
+    default: { break; }
   }
 
   

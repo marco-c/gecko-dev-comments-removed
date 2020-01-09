@@ -60,8 +60,7 @@ void disable_idle_service() {
   idle->SetDisabled(true);
 }
 
-TEST(IHistory, Test)
-{
+TEST(IHistory, Test) {
   RefPtr<WaitForConnectionClosed> spinClose = new WaitForConnectionClosed();
 
   

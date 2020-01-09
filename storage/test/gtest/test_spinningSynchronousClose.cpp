@@ -32,8 +32,7 @@ class CompletionRunnable final : public Runnable {
 
 
 #ifndef DEBUG
-TEST(storage_spinningSynchronousClose, CloseOnAsync)
-{
+TEST(storage_spinningSynchronousClose, CloseOnAsync) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
   
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
@@ -52,8 +51,7 @@ TEST(storage_spinningSynchronousClose, CloseOnAsync)
 }
 #endif
 
-TEST(storage_spinningSynchronousClose, spinningSynchronousCloseOnAsync)
-{
+TEST(storage_spinningSynchronousClose, spinningSynchronousCloseOnAsync) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
   
   nsCOMPtr<mozIStorageAsyncStatement> stmt;

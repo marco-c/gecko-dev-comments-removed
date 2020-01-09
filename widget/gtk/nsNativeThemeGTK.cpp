@@ -1355,9 +1355,7 @@ LayoutDeviceIntMargin nsNativeThemeGTK::GetWidgetBorder(
       
       if (IsRegularMenuItem(aFrame)) break;
       MOZ_FALLTHROUGH;
-    default: {
-      GetCachedWidgetBorder(aFrame, aAppearance, direction, &result);
-    }
+    default: { GetCachedWidgetBorder(aFrame, aAppearance, direction, &result); }
   }
 
   gint scale = GetMonitorScaleFactor(aFrame);

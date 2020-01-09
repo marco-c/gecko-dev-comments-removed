@@ -403,11 +403,11 @@ static void TestNewRunnableFunction(bool aNamed) {
   }
 }
 
-TEST(ThreadUtils, NewRunnableFunction)
-{ TestNewRunnableFunction( false); }
+TEST(ThreadUtils, NewRunnableFunction) {
+  TestNewRunnableFunction( false);
+}
 
-TEST(ThreadUtils, NewNamedRunnableFunction)
-{
+TEST(ThreadUtils, NewNamedRunnableFunction) {
   
   TestNewRunnableFunction( true);
 
@@ -509,11 +509,9 @@ static void TestNewRunnableMethod(bool aNamed) {
   }
 }
 
-TEST(ThreadUtils, RunnableMethod)
-{ TestNewRunnableMethod( false); }
+TEST(ThreadUtils, RunnableMethod) { TestNewRunnableMethod( false); }
 
-TEST(ThreadUtils, NamedRunnableMethod)
-{
+TEST(ThreadUtils, NamedRunnableMethod) {
   
   TestNewRunnableMethod( true);
 
@@ -573,7 +571,7 @@ class IdleObject final {
     uint32_t index;
     for (index = 0; index < aNumExecuted; ++index) {
       ASSERT_TRUE(mRunnableExecuted[index])
-      << aKey << ": Method" << index << " should've executed";
+          << aKey << ": Method" << index << " should've executed";
     }
 
     for (; index < ArrayLength(mRunnableExecuted); ++index) {
@@ -656,8 +654,7 @@ class IdleObject final {
   ~IdleObject() {}
 };
 
-TEST(ThreadUtils, IdleRunnableMethod)
-{
+TEST(ThreadUtils, IdleRunnableMethod) {
   {
     RefPtr<IdleObject> idle = new IdleObject();
     RefPtr<IdleObjectWithoutSetDeadline> idleNoSetDeadline =
@@ -703,8 +700,7 @@ TEST(ThreadUtils, IdleRunnableMethod)
   }
 }
 
-TEST(ThreadUtils, IdleTaskRunner)
-{
+TEST(ThreadUtils, IdleTaskRunner) {
   using namespace mozilla;
 
   
@@ -784,8 +780,7 @@ TEST(ThreadUtils, IdleTaskRunner)
     }                                                \
   }
 
-TEST(ThreadUtils, TypeTraits)
-{
+TEST(ThreadUtils, TypeTraits) {
   static_assert(!mozilla::IsRefcountedSmartPointer<int>::value,
                 "IsRefcountedSmartPointer<int> should be false");
   static_assert(mozilla::IsRefcountedSmartPointer<RefPtr<int>>::value,
@@ -1190,8 +1185,7 @@ class ThreadUtilsNonRefCounted {};
 
 }  
 
-TEST(ThreadUtils, main)
-{
+TEST(ThreadUtils, main) {
   using namespace TestThreadUtils;
 
   static_assert(!IsParameterStorageClass<int>::value,

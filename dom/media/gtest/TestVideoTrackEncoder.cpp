@@ -69,8 +69,7 @@ class TestVP8TrackEncoder : public VP8TrackEncoder {
 };
 
 
-TEST(VP8VideoTrackEncoder, Initialization)
-{
+TEST(VP8VideoTrackEncoder, Initialization) {
   InitParam params[] = {
       
       {false, 0, 0},  
@@ -91,8 +90,7 @@ TEST(VP8VideoTrackEncoder, Initialization)
 }
 
 
-TEST(VP8VideoTrackEncoder, FetchMetaData)
-{
+TEST(VP8VideoTrackEncoder, FetchMetaData) {
   InitParam params[] = {
       
       {true, 640, 480},  
@@ -115,8 +113,7 @@ TEST(VP8VideoTrackEncoder, FetchMetaData)
 }
 
 
-TEST(VP8VideoTrackEncoder, FrameEncode)
-{
+TEST(VP8VideoTrackEncoder, FrameEncode) {
   TestVP8TrackEncoder encoder;
   TimeStamp now = TimeStamp::Now();
 
@@ -148,8 +145,7 @@ TEST(VP8VideoTrackEncoder, FrameEncode)
 }
 
 
-TEST(VP8VideoTrackEncoder, SingleFrameEncode)
-{
+TEST(VP8VideoTrackEncoder, SingleFrameEncode) {
   TestVP8TrackEncoder encoder;
   TimeStamp now = TimeStamp::Now();
   YUVBufferGenerator generator;
@@ -183,8 +179,7 @@ TEST(VP8VideoTrackEncoder, SingleFrameEncode)
 }
 
 
-TEST(VP8VideoTrackEncoder, SameFrameEncode)
-{
+TEST(VP8VideoTrackEncoder, SameFrameEncode) {
   TestVP8TrackEncoder encoder;
   TimeStamp now = TimeStamp::Now();
   YUVBufferGenerator generator;
@@ -219,8 +214,7 @@ TEST(VP8VideoTrackEncoder, SameFrameEncode)
 }
 
 
-TEST(VP8VideoTrackEncoder, SkippedFrames)
-{
+TEST(VP8VideoTrackEncoder, SkippedFrames) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -255,8 +249,7 @@ TEST(VP8VideoTrackEncoder, SkippedFrames)
 }
 
 
-TEST(VP8VideoTrackEncoder, RoundingErrorFramesEncode)
-{
+TEST(VP8VideoTrackEncoder, RoundingErrorFramesEncode) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -297,8 +290,7 @@ TEST(VP8VideoTrackEncoder, RoundingErrorFramesEncode)
 }
 
 
-TEST(VP8VideoTrackEncoder, TimestampFrameEncode)
-{
+TEST(VP8VideoTrackEncoder, TimestampFrameEncode) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -340,8 +332,7 @@ TEST(VP8VideoTrackEncoder, TimestampFrameEncode)
 }
 
 
-TEST(VP8VideoTrackEncoder, DriftingFrameEncode)
-{
+TEST(VP8VideoTrackEncoder, DriftingFrameEncode) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -389,8 +380,7 @@ TEST(VP8VideoTrackEncoder, DriftingFrameEncode)
 }
 
 
-TEST(VP8VideoTrackEncoder, Suspended)
-{
+TEST(VP8VideoTrackEncoder, Suspended) {
   TestVP8TrackEncoder encoder;
   TimeStamp now = TimeStamp::Now();
   YUVBufferGenerator generator;
@@ -451,8 +441,7 @@ TEST(VP8VideoTrackEncoder, Suspended)
 }
 
 
-TEST(VP8VideoTrackEncoder, SuspendedUntilEnd)
-{
+TEST(VP8VideoTrackEncoder, SuspendedUntilEnd) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -501,8 +490,7 @@ TEST(VP8VideoTrackEncoder, SuspendedUntilEnd)
 }
 
 
-TEST(VP8VideoTrackEncoder, AlwaysSuspended)
-{
+TEST(VP8VideoTrackEncoder, AlwaysSuspended) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -533,8 +521,7 @@ TEST(VP8VideoTrackEncoder, AlwaysSuspended)
 }
 
 
-TEST(VP8VideoTrackEncoder, SuspendedBeginning)
-{
+TEST(VP8VideoTrackEncoder, SuspendedBeginning) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -585,8 +572,7 @@ TEST(VP8VideoTrackEncoder, SuspendedBeginning)
 
 
 
-TEST(VP8VideoTrackEncoder, SuspendedOverlap)
-{
+TEST(VP8VideoTrackEncoder, SuspendedOverlap) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -634,8 +620,7 @@ TEST(VP8VideoTrackEncoder, SuspendedOverlap)
 }
 
 
-TEST(VP8VideoTrackEncoder, PrematureEnding)
-{
+TEST(VP8VideoTrackEncoder, PrematureEnding) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -665,8 +650,7 @@ TEST(VP8VideoTrackEncoder, PrematureEnding)
 }
 
 
-TEST(VP8VideoTrackEncoder, DelayedStart)
-{
+TEST(VP8VideoTrackEncoder, DelayedStart) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -698,8 +682,7 @@ TEST(VP8VideoTrackEncoder, DelayedStart)
 
 
 
-TEST(VP8VideoTrackEncoder, DelayedStartOtherEventOrder)
-{
+TEST(VP8VideoTrackEncoder, DelayedStartOtherEventOrder) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -730,8 +713,7 @@ TEST(VP8VideoTrackEncoder, DelayedStartOtherEventOrder)
 }
 
 
-TEST(VP8VideoTrackEncoder, VeryDelayedStart)
-{
+TEST(VP8VideoTrackEncoder, VeryDelayedStart) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -763,8 +745,7 @@ TEST(VP8VideoTrackEncoder, VeryDelayedStart)
 
 
 
-TEST(VP8VideoTrackEncoder, LongFramesReEncoded)
-{
+TEST(VP8VideoTrackEncoder, LongFramesReEncoded) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -818,8 +799,7 @@ TEST(VP8VideoTrackEncoder, LongFramesReEncoded)
 
 
 
-TEST(VP8VideoTrackEncoder, ShortKeyFrameInterval)
-{
+TEST(VP8VideoTrackEncoder, ShortKeyFrameInterval) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -888,8 +868,7 @@ TEST(VP8VideoTrackEncoder, ShortKeyFrameInterval)
 
 
 
-TEST(VP8VideoTrackEncoder, LongKeyFrameInterval)
-{
+TEST(VP8VideoTrackEncoder, LongKeyFrameInterval) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -958,8 +937,7 @@ TEST(VP8VideoTrackEncoder, LongKeyFrameInterval)
 
 
 
-TEST(VP8VideoTrackEncoder, DefaultKeyFrameInterval)
-{
+TEST(VP8VideoTrackEncoder, DefaultKeyFrameInterval) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -1026,8 +1004,7 @@ TEST(VP8VideoTrackEncoder, DefaultKeyFrameInterval)
 
 
 
-TEST(VP8VideoTrackEncoder, DynamicKeyFrameIntervalChanges)
-{
+TEST(VP8VideoTrackEncoder, DynamicKeyFrameIntervalChanges) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -1196,8 +1173,7 @@ TEST(VP8VideoTrackEncoder, DynamicKeyFrameIntervalChanges)
 
 
 
-TEST(VP8VideoTrackEncoder, DisableOnFrameTime)
-{
+TEST(VP8VideoTrackEncoder, DisableOnFrameTime) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -1241,8 +1217,7 @@ TEST(VP8VideoTrackEncoder, DisableOnFrameTime)
 
 
 
-TEST(VP8VideoTrackEncoder, DisableBetweenFrames)
-{
+TEST(VP8VideoTrackEncoder, DisableBetweenFrames) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -1286,8 +1261,7 @@ TEST(VP8VideoTrackEncoder, DisableBetweenFrames)
 
 
 
-TEST(VP8VideoTrackEncoder, EnableOnFrameTime)
-{
+TEST(VP8VideoTrackEncoder, EnableOnFrameTime) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -1333,8 +1307,7 @@ TEST(VP8VideoTrackEncoder, EnableOnFrameTime)
 
 
 
-TEST(VP8VideoTrackEncoder, EnableBetweenFrames)
-{
+TEST(VP8VideoTrackEncoder, EnableBetweenFrames) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -1379,8 +1352,7 @@ TEST(VP8VideoTrackEncoder, EnableBetweenFrames)
 }
 
 
-TEST(VP8VideoTrackEncoder, BackwardsTimeResets)
-{
+TEST(VP8VideoTrackEncoder, BackwardsTimeResets) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -1452,8 +1424,7 @@ TEST(VP8VideoTrackEncoder, BackwardsTimeResets)
 
 
 
-TEST(VP8VideoTrackEncoder, NullImageResets)
-{
+TEST(VP8VideoTrackEncoder, NullImageResets) {
   TestVP8TrackEncoder encoder;
   YUVBufferGenerator generator;
   generator.Init(mozilla::gfx::IntSize(640, 480));
@@ -1521,8 +1492,7 @@ TEST(VP8VideoTrackEncoder, NullImageResets)
 }
 
 
-TEST(VP8VideoTrackEncoder, EncodeComplete)
-{
+TEST(VP8VideoTrackEncoder, EncodeComplete) {
   TestVP8TrackEncoder encoder;
 
   

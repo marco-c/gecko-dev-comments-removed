@@ -6450,25 +6450,24 @@ bool HTMLMediaElement::TryRemoveMediaKeysAssociation() {
   if (mDecoder) {
     RefPtr<HTMLMediaElement> self = this;
     mDecoder->SetCDMProxy(nullptr)
-        ->Then(
-            mAbstractMainThread, __func__,
-            [self]() {
-              self->mSetCDMRequest.Complete();
+        ->Then(mAbstractMainThread, __func__,
+               [self]() {
+                 self->mSetCDMRequest.Complete();
 
-              self->RemoveMediaKeys();
-              if (self->AttachNewMediaKeys()) {
-                
-                
-                self->MakeAssociationWithCDMResolved();
-              }
-            },
-            [self](const MediaResult& aResult) {
-              self->mSetCDMRequest.Complete();
-              
-              
-              
-              self->SetCDMProxyFailure(aResult);
-            })
+                 self->RemoveMediaKeys();
+                 if (self->AttachNewMediaKeys()) {
+                   
+                   
+                   self->MakeAssociationWithCDMResolved();
+                 }
+               },
+               [self](const MediaResult& aResult) {
+                 self->mSetCDMRequest.Complete();
+                 
+                 
+                 
+                 self->SetCDMProxyFailure(aResult);
+               })
         ->Track(mSetCDMRequest);
     return false;
   }
@@ -6524,16 +6523,15 @@ bool HTMLMediaElement::TryMakeAssociationWithCDM(CDMProxy* aProxy) {
     
     RefPtr<HTMLMediaElement> self = this;
     mDecoder->SetCDMProxy(aProxy)
-        ->Then(
-            mAbstractMainThread, __func__,
-            [self]() {
-              self->mSetCDMRequest.Complete();
-              self->MakeAssociationWithCDMResolved();
-            },
-            [self](const MediaResult& aResult) {
-              self->mSetCDMRequest.Complete();
-              self->SetCDMProxyFailure(aResult);
-            })
+        ->Then(mAbstractMainThread, __func__,
+               [self]() {
+                 self->mSetCDMRequest.Complete();
+                 self->MakeAssociationWithCDMResolved();
+               },
+               [self](const MediaResult& aResult) {
+                 self->mSetCDMRequest.Complete();
+                 self->SetCDMProxyFailure(aResult);
+               })
         ->Track(mSetCDMRequest);
     return false;
   }

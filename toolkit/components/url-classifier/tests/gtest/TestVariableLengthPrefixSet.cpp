@@ -171,8 +171,7 @@ static already_AddRefed<LookupCacheV4> SetupLookupCache(
 }
 
 
-TEST(UrlClassifierVLPrefixSet, FixedLengthSet)
-{
+TEST(UrlClassifierVLPrefixSet, FixedLengthSet) {
   srand(time(nullptr));
 
   RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
@@ -205,8 +204,7 @@ TEST(UrlClassifierVLPrefixSet, FixedLengthSet)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, VariableLengthSet)
-{
+TEST(UrlClassifierVLPrefixSet, VariableLengthSet) {
   RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
 
   PrefixStringMap map;
@@ -242,8 +240,7 @@ TEST(UrlClassifierVLPrefixSet, VariableLengthSet)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, MixedPrefixSet)
-{
+TEST(UrlClassifierVLPrefixSet, MixedPrefixSet) {
   RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
 
   PrefixStringMap map;
@@ -288,8 +285,7 @@ TEST(UrlClassifierVLPrefixSet, MixedPrefixSet)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, ResetPrefix)
-{
+TEST(UrlClassifierVLPrefixSet, ResetPrefix) {
   RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
 
   
@@ -339,8 +335,7 @@ TEST(UrlClassifierVLPrefixSet, ResetPrefix)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, TinyPrefixSet)
-{
+TEST(UrlClassifierVLPrefixSet, TinyPrefixSet) {
   RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
 
   PrefixStringMap map;
@@ -358,8 +353,7 @@ TEST(UrlClassifierVLPrefixSet, TinyPrefixSet)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, EmptyPrefixSet)
-{
+TEST(UrlClassifierVLPrefixSet, EmptyPrefixSet) {
   RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
 
   bool empty = cache->IsEmpty();
@@ -390,8 +384,7 @@ TEST(UrlClassifierVLPrefixSet, EmptyPrefixSet)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, MinMaxPrefixSet)
-{
+TEST(UrlClassifierVLPrefixSet, MinMaxPrefixSet) {
   RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
 
   PrefixStringMap map;
@@ -424,8 +417,7 @@ TEST(UrlClassifierVLPrefixSet, MinMaxPrefixSet)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, LoadSaveFixedLengthPrefixSet)
-{
+TEST(UrlClassifierVLPrefixSet, LoadSaveFixedLengthPrefixSet) {
   nsCOMPtr<nsIFile> file;
   _PrefixArray array;
   PrefixStringMap map;
@@ -464,8 +456,7 @@ TEST(UrlClassifierVLPrefixSet, LoadSaveFixedLengthPrefixSet)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, LoadSaveVariableLengthPrefixSet)
-{
+TEST(UrlClassifierVLPrefixSet, LoadSaveVariableLengthPrefixSet) {
   nsCOMPtr<nsIFile> file;
   _PrefixArray array;
   PrefixStringMap map;
@@ -504,8 +495,7 @@ TEST(UrlClassifierVLPrefixSet, LoadSaveVariableLengthPrefixSet)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, LoadSavePrefixSet)
-{
+TEST(UrlClassifierVLPrefixSet, LoadSavePrefixSet) {
   nsCOMPtr<nsIFile> file;
   _PrefixArray array;
   PrefixStringMap map;
@@ -546,8 +536,7 @@ TEST(UrlClassifierVLPrefixSet, LoadSavePrefixSet)
 }
 
 
-TEST(UrlClassifierVLPrefixSet, LoadSaveNoDelta)
-{
+TEST(UrlClassifierVLPrefixSet, LoadSaveNoDelta) {
   nsCOMPtr<nsIFile> file;
   _PrefixArray array;
   PrefixStringMap map;

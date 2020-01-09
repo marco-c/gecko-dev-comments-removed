@@ -16,8 +16,7 @@ using namespace mozilla;
 
 
 
-TEST(MediaEventSource, SingleListener)
-{
+TEST(MediaEventSource, SingleListener) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -40,8 +39,7 @@ TEST(MediaEventSource, SingleListener)
   listener.Disconnect();
 }
 
-TEST(MediaEventSource, MultiListener)
-{
+TEST(MediaEventSource, MultiListener) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -71,8 +69,7 @@ TEST(MediaEventSource, MultiListener)
 
 
 
-TEST(MediaEventSource, DisconnectAfterNotification)
-{
+TEST(MediaEventSource, DisconnectAfterNotification) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -98,8 +95,7 @@ TEST(MediaEventSource, DisconnectAfterNotification)
   EXPECT_EQ(i, 11);
 }
 
-TEST(MediaEventSource, DisconnectBeforeNotification)
-{
+TEST(MediaEventSource, DisconnectBeforeNotification) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -130,8 +126,7 @@ TEST(MediaEventSource, DisconnectBeforeNotification)
 
 
 
-TEST(MediaEventSource, DisconnectAndConnect)
-{
+TEST(MediaEventSource, DisconnectAndConnect) {
   RefPtr<TaskQueue> queue;
   MediaEventProducerExc<int> source;
   MediaEventListener listener = source.Connect(queue, []() {});
@@ -143,8 +138,7 @@ TEST(MediaEventSource, DisconnectAndConnect)
 
 
 
-TEST(MediaEventSource, VoidEventType)
-{
+TEST(MediaEventSource, VoidEventType) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -180,8 +174,7 @@ TEST(MediaEventSource, VoidEventType)
 
 
 
-TEST(MediaEventSource, ListenerType1)
-{
+TEST(MediaEventSource, ListenerType1) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -208,8 +201,7 @@ TEST(MediaEventSource, ListenerType1)
   listener3.Disconnect();
 }
 
-TEST(MediaEventSource, ListenerType2)
-{
+TEST(MediaEventSource, ListenerType2) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -258,8 +250,7 @@ struct SomeEvent {
 
 
 
-TEST(MediaEventSource, CopyEvent1)
-{
+TEST(MediaEventSource, CopyEvent1) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -285,8 +276,7 @@ TEST(MediaEventSource, CopyEvent1)
   listener2.Disconnect();
 }
 
-TEST(MediaEventSource, CopyEvent2)
-{
+TEST(MediaEventSource, CopyEvent2) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -314,8 +304,7 @@ TEST(MediaEventSource, CopyEvent2)
 
 
 
-TEST(MediaEventSource, MoveOnly)
-{
+TEST(MediaEventSource, MoveOnly) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -348,8 +337,7 @@ struct RefCounter {
 
 
 
-TEST(MediaEventSource, NoMove)
-{
+TEST(MediaEventSource, NoMove) {
   RefPtr<TaskQueue> queue =
       new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK));
 
@@ -373,8 +361,7 @@ TEST(MediaEventSource, NoMove)
 
 
 
-TEST(MediaEventSource, MoveLambda)
-{
+TEST(MediaEventSource, MoveLambda) {
   RefPtr<TaskQueue> queue;
   MediaEventProducer<void> source;
 
