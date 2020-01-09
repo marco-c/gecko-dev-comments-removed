@@ -7992,6 +7992,11 @@ bool BytecodeEmitter::emitCreateFieldKeys(ListNode* obj) {
           return false;
         }
 
+        if (!emit1(JSOP_TOID)) {
+          
+          return false;
+        }
+
         if (!emitUint32Operand(JSOP_INITELEM_ARRAY, curFieldKeyIndex)) {
           
           return false;
