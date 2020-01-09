@@ -16,5 +16,9 @@ module.exports = {
     "btoa": false,
     "debug": false,
     "dump": false,
+    
+    
+    
+    "WebAssembly": false,
   },
 };
