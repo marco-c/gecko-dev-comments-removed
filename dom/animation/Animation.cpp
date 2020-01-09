@@ -650,7 +650,7 @@ void Animation::Tick() {
     FinishPendingAt(mTimeline->GetCurrentTimeAsDuration().Value());
   }
 
-  UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
+  UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Sync);
 
   if (!mEffect) {
     return;
@@ -1179,7 +1179,7 @@ void Animation::ResumeAt(const TimeDuration& aReadyTime) {
 
   mPendingState = PendingState::NotPending;
 
-  UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
+  UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Sync);
 
   
   
