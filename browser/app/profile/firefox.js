@@ -969,6 +969,7 @@ pref("browser.security.newcerterrorpage.mitm.enabled", false);
 #endif
 
 pref("security.certerrors.recordEventTelemetry", true);
+pref("security.certerrors.permanentOverride", true);
 
 
 pref("browser.privatebrowsing.autostart", false);
