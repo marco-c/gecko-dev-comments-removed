@@ -2913,7 +2913,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
                            BuilderHasScrolledClip(aBuilder));
 
   nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
-      aBuilder, this, visibleRect, dirtyRect);
+      aBuilder, this, visibleRect, dirtyRect, isTransformed);
 
   
   
@@ -3452,8 +3452,9 @@ void nsIFrame::BuildDisplayListForSimpleChild(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  
   nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-      aBuilder, aChild, visible, dirty);
+      aBuilder, aChild, visible, dirty, false);
 
   CheckForApzAwareEventHandlers(aBuilder, aChild);
 
