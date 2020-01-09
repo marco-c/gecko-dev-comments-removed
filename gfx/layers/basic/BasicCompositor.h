@@ -87,6 +87,11 @@ class BasicCompositor : public Compositor {
     mRenderTarget = static_cast<BasicCompositingRenderTarget*>(aSource);
     mRenderTarget->BindRenderTarget();
   }
+
+  virtual CompositingRenderTarget* GetWindowRenderTarget() const override {
+    return mFullWindowRenderTarget;
+  }
+
   virtual CompositingRenderTarget* GetCurrentRenderTarget() const override {
     return mRenderTarget;
   }
@@ -161,6 +166,11 @@ class BasicCompositor : public Compositor {
 
   uint32_t mMaxTextureSize;
   bool mIsPendingEndRemoteDrawing;
+
+  
+  
+  
+  RefPtr<BasicCompositingRenderTarget> mFullWindowRenderTarget;
 };
 
 BasicCompositor* AssertBasicCompositor(Compositor* aCompositor);

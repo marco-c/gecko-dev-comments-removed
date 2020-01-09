@@ -6,6 +6,7 @@
 
 #include "BasicCompositor.h"
 #include "BasicLayersImpl.h"  
+#include "GeckoProfiler.h"
 #include "TextureHostBasic.h"
 #include "mozilla/layers/Effects.h"
 #include "nsIWidget.h"
@@ -17,6 +18,7 @@
 #include "mozilla/gfx/ssse3-scaler.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/SSE.h"
+#include "gfxPlatform.h"
 #include "gfxUtils.h"
 #include "YCbCrUtils.h"
 #include <algorithm>
@@ -179,7 +181,9 @@ class WrappingTextureSourceYCbCrBasic : public DataTextureSource,
 
 BasicCompositor::BasicCompositor(CompositorBridgeParent* aParent,
                                  widget::CompositorWidget* aWidget)
-    : Compositor(aWidget, aParent), mIsPendingEndRemoteDrawing(false) {
+    : Compositor(aWidget, aParent),
+      mIsPendingEndRemoteDrawing(false),
+      mFullWindowRenderTarget(nullptr) {
   MOZ_COUNT_CTOR(BasicCompositor);
 
   mMaxTextureSize = Factory::GetMaxSurfaceSize(gfxVars::ContentBackend());
@@ -281,6 +285,10 @@ BasicCompositor::CreateRenderTargetForWindow(
     if (!aClearRect.IsEmpty()) {
       IntRect clearRect = aClearRect.ToUnknownRect();
       mDrawTarget->ClearRect(Rect(clearRect - rt->GetOrigin()));
+
+      if (mFullWindowRenderTarget) {
+        mFullWindowRenderTarget->mDrawTarget->ClearRect(Rect(clearRect));
+      }
     }
   }
 
@@ -807,6 +815,10 @@ void BasicCompositor::DrawGeometry(
 
 void BasicCompositor::ClearRect(const gfx::Rect& aRect) {
   mRenderTarget->mDrawTarget->ClearRect(aRect);
+
+  if (mFullWindowRenderTarget) {
+    mFullWindowRenderTarget->mDrawTarget->ClearRect(aRect);
+  }
 }
 
 void BasicCompositor::BeginFrame(
@@ -823,12 +835,27 @@ void BasicCompositor::BeginFrame(
   LayoutDeviceIntRect intRect(LayoutDeviceIntPoint(), mWidget->GetClientSize());
   IntRect rect = IntRect(0, 0, intRect.Width(), intRect.Height());
 
-  LayoutDeviceIntRegion invalidRegionSafe;
-  
-  invalidRegionSafe.And(
-      LayoutDeviceIntRegion::FromUnknownRegion(aInvalidRegion), intRect);
+#ifdef MOZ_GECKO_PROFILER
+  const bool shouldInvalidateWindow =
+      (profiler_feature_active(ProfilerFeature::Screenshots) &&
+       (!mFullWindowRenderTarget ||
+        mFullWindowRenderTarget->mDrawTarget->GetSize() !=
+            rect.ToUnknownRect().Size()));
+#else
+  const bool shouldInvalidateWindow = false;
+#endif  
 
-  mInvalidRegion = invalidRegionSafe;
+  if (shouldInvalidateWindow) {
+    mInvalidRegion = intRect;
+  } else {
+    LayoutDeviceIntRegion invalidRegionSafe;
+    
+    invalidRegionSafe.And(
+        LayoutDeviceIntRegion::FromUnknownRegion(aInvalidRegion), intRect);
+
+    mInvalidRegion = invalidRegionSafe;
+  }
+
   mInvalidRect = mInvalidRegion.GetBounds();
 
   if (aRenderBoundsOut) {
@@ -878,6 +905,27 @@ void BasicCompositor::BeginFrame(
   
   RefPtr<CompositingRenderTarget> target =
       CreateRenderTargetForWindow(mInvalidRect, clearRect, bufferMode);
+
+#ifdef MOZ_GECKO_PROFILER
+  if (profiler_feature_active(ProfilerFeature::Screenshots)) {
+    IntSize windowSize = rect.ToUnknownRect().Size();
+
+    
+    
+    
+    if (!mFullWindowRenderTarget ||
+        mFullWindowRenderTarget->mDrawTarget->GetSize() != windowSize) {
+      
+      
+      
+      RefPtr<gfx::DrawTarget> drawTarget = mDrawTarget->CreateSimilarDrawTarget(
+          windowSize, mDrawTarget->GetFormat());
+
+      mFullWindowRenderTarget =
+          new BasicCompositingRenderTarget(drawTarget, rect);
+    }
+  }
+#endif  
 
   mDrawTarget->PopClip();
 
@@ -931,6 +979,15 @@ void BasicCompositor::EndFrame() {
   mRenderTarget->mDrawTarget->PopClip();
 
   TryToEndRemoteDrawing();
+
+#ifdef MOZ_GECKO_PROFILER
+  
+  
+  if (mFullWindowRenderTarget &&
+      !profiler_feature_active(ProfilerFeature::Screenshots)) {
+    mFullWindowRenderTarget = nullptr;
+  }
+#endif  
 }
 
 void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
@@ -951,21 +1008,37 @@ void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
     return;
   }
 
-  if (mRenderTarget->mDrawTarget != mDrawTarget) {
-    
-    
-    RefPtr<SourceSurface> source = mWidget->EndBackBufferDrawing();
+  if (mRenderTarget->mDrawTarget != mDrawTarget || mFullWindowRenderTarget) {
+    RefPtr<SourceSurface> source;
 
-    nsIntPoint offset = mTarget ? mTargetBounds.TopLeft() : nsIntPoint();
+    if (mRenderTarget->mDrawTarget != mDrawTarget) {
+      source = mWidget->EndBackBufferDrawing();
 
-    
-    
-    
-    for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
-      const LayoutDeviceIntRect& r = iter.Get();
-      mDrawTarget->CopySurface(source,
-                               r.ToUnknownRect() - mRenderTarget->GetOrigin(),
-                               r.TopLeft().ToUnknownPoint() - offset);
+      
+      
+      nsIntPoint offset = mTarget ? mTargetBounds.TopLeft() : nsIntPoint();
+
+      
+      
+      
+      for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
+        const LayoutDeviceIntRect& r = iter.Get();
+        mDrawTarget->CopySurface(source,
+                                 r.ToUnknownRect() - mRenderTarget->GetOrigin(),
+                                 r.TopLeft().ToUnknownPoint() - offset);
+      }
+    } else {
+      source = mRenderTarget->mDrawTarget->Snapshot();
+    }
+
+    if (mFullWindowRenderTarget) {
+      for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
+        const LayoutDeviceIntRect& r = iter.Get();
+        mFullWindowRenderTarget->mDrawTarget->CopySurface(
+            source, r.ToUnknownRect(), r.TopLeft().ToUnknownPoint());
+      }
+
+      mFullWindowRenderTarget->mDrawTarget->Flush();
     }
   }
 
