@@ -27,6 +27,12 @@ class Runtime extends ContentProcessDomain {
       this.chromeEventHandler.addEventListener("DOMWindowCreated", this,
         {mozSystemGroup: true});
 
+      
+      this.chromeEventHandler.addEventListener("pageshow", this,
+        {mozSystemGroup: true});
+      this.chromeEventHandler.addEventListener("pagehide", this,
+        {mozSystemGroup: true});
+
       Services.obs.addObserver(this, "inner-window-destroyed");
 
       
@@ -52,11 +58,15 @@ class Runtime extends ContentProcessDomain {
       this.enabled = false;
       this.chromeEventHandler.removeEventListener("DOMWindowCreated", this,
         {mozSystemGroup: true});
+      this.chromeEventHandler.removeEventListener("pageshow", this,
+        {mozSystemGroup: true});
+      this.chromeEventHandler.removeEventListener("pagehide", this,
+        {mozSystemGroup: true});
       Services.obs.removeObserver(this, "inner-window-destroyed");
     }
   }
 
-  handleEvent({type, target}) {
+  handleEvent({type, target, persisted}) {
     const frameId = target.defaultView.windowUtils.outerWindowID;
     const id = target.defaultView.windowUtils.currentInnerWindowID;
     switch (type) {
@@ -69,6 +79,32 @@ class Runtime extends ContentProcessDomain {
             frameId,
           },
         },
+      });
+      break;
+
+    case "pageshow":
+      
+      if (!persisted) {
+        return;
+      }
+      this.emit("Runtime.executionContextCreated", {
+        context: {
+          id,
+          auxData: {
+            isDefault: target == this.content.document,
+            frameId,
+          },
+        },
+      });
+      break;
+
+    case "pagehide":
+      
+      if (!persisted) {
+        return;
+      }
+      this.emit("Runtime.executionContextDestroyed", {
+        executionContextId: id,
       });
       break;
     }
