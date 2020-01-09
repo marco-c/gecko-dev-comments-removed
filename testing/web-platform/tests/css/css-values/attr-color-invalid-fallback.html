@@ -4,10 +4,10 @@
 	<meta charset="utf-8">
 	<title>
 		CSS Values and Units Test:
-		Attribute references (types)
+		Attribute references (colors)
 	</title>
 	<meta name="assert" content="
-		When the type of an attr() function is known and unexpected, the declaration is ignored
+		When the fallback value of an attr() function is invalid, the delcaration is ignored.
 	" />
 	<meta name="flags" content="invalid">
 	<link
@@ -28,16 +28,16 @@
 			html, body { margin: 0px; padding: 0px; }
 
 			html { background: white; overflow: hidden; }
-			#outer { position: relative; background: green; }
+			#outer { position: relative; background: green; width: 200px; height: 200px; }
 
-			#outer { width: 200px; width: attr(data-test color); height: 200px; }
+			#outer { background: attr(data-test color, qqffuutt); }
 
 	</style>
 
 </head>
 <body>
 
-	<div id="outer" data-test="green"></div>
+	<div id="outer" data-test="red"></div>
 
 </body>
 </html>

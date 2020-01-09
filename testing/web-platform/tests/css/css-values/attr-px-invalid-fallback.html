@@ -4,10 +4,10 @@
 	<meta charset="utf-8">
 	<title>
 		CSS Values and Units Test:
-		Attribute references (types)
+		Attribute references (pixels)
 	</title>
 	<meta name="assert" content="
-		When the type of an attr() function is known and unexpected, the declaration is ignored
+		When the fallback of a pixel attribute reference is invalid, the declaration is ignored.
 	" />
 	<meta name="flags" content="invalid">
 	<link
@@ -30,14 +30,14 @@
 			html { background: white; overflow: hidden; }
 			#outer { position: relative; background: green; }
 
-			#outer { width: 200px; width: attr(data-test color); height: 200px; }
+			#outer { width: 200px; width: attr(data-test px, 300px); height: 200px; }
 
 	</style>
 
 </head>
 <body>
 
-	<div id="outer" data-test="green"></div>
+	<div id="outer" data-test="300"></div>
 
 </body>
 </html>
