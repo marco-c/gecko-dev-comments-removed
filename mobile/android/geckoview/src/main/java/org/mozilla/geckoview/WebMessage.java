@@ -36,21 +36,9 @@ public abstract class WebMessage {
 
     public final @NonNull Map<String, String> headers;
 
-    
-
-
-
-    public final @Nullable ByteBuffer body;
-
     protected WebMessage(final @NonNull Builder builder) {
         uri = builder.mUri;
         headers = Collections.unmodifiableMap(builder.mHeaders);
-
-        if (builder.mBody != null) {
-            body = builder.mBody.asReadOnlyBuffer();
-        } else {
-            body = null;
-        }
     }
 
     
@@ -128,21 +116,6 @@ public abstract class WebMessage {
                 mHeaders.put(key, value);
             }
 
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder body(final @Nullable ByteBuffer buffer) {
-            if (buffer != null && !buffer.isDirect()) {
-                throw new IllegalArgumentException("body must be directly allocated");
-            }
-            mBody = buffer;
             return this;
         }
     }
