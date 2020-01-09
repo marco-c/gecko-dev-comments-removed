@@ -80,6 +80,8 @@ RenderCompositorEGL::~RenderCompositorEGL() { DestroyEGLSurface(); }
 bool RenderCompositorEGL::BeginFrame() {
   if (mWidget->AsX11() &&
       mWidget->AsX11()->WaylandRequestsUpdatingEGLSurface()) {
+    
+    DestroyEGLSurface();
     mEGLSurface = CreateEGLSurface(mWidget);
     gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
   }
