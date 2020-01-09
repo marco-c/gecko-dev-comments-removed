@@ -144,7 +144,9 @@ class Nursery {
   
 
 
+  static const size_t SubChunkStep = gc::ArenaSize;
 
+  
 
 
 #ifndef JS_GC_SMALL_CHUNK_SIZE
@@ -153,14 +155,12 @@ class Nursery {
 
 
   static const size_t SubChunkLimit = 192 * 1024;
-  static const size_t SubChunkStep = 64 * 1024;
 #else
   
 
 
 
   static const size_t SubChunkLimit = 64 * 1024;
-  static const size_t SubChunkStep = 16 * 1024;
 #endif
 
   struct alignas(gc::CellAlignBytes) CellAlignedByte {
