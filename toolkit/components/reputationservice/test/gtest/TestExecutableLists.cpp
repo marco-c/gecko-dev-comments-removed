@@ -122,6 +122,7 @@ static const char* const kTestFileExtensions[] = {
     ".mhtml",              
     ".mim",                
     ".mmc",                
+    ".mobileconfig",       
     ".mof",                
     ".mpkg",               
     ".msc",                
