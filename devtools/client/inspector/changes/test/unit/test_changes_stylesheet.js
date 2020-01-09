@@ -22,7 +22,7 @@ const STYLESHEET_FOR_ANCESTOR = `
     }
   }
 }
-`.trim();
+`;
 
 
 const STYLESHEET_FOR_DESCENDANT = `
@@ -32,7 +32,7 @@ body {
   /* background-color: royalblue; */
   background-color: red;
 }
-`.trim();
+`;
 
 add_test(() => {
   info("Check stylesheet generated for the first ancestor in the CSS rule tree.");
