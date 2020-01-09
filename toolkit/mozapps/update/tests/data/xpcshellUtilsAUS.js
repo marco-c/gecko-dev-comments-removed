@@ -2882,10 +2882,10 @@ function checkUpdateLogContents(aCompareLogFile, aStaged = false,
     
     
     
-    let re = new RegExp("\n" + ERR_RENAME_FILE + "[^\n]*\n" +
+    let re = new RegExp(ERR_RENAME_FILE + "[^\n]*\n" +
                         "PerformReplaceRequest: destDir rename[^\n]*\n" +
                         "rename_file: proceeding to rename the directory\n", "g");
-    updateLogContents = updateLogContents.replace(re, "\n");
+    updateLogContents = updateLogContents.replace(re, "");
   }
 
   
