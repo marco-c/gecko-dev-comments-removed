@@ -293,6 +293,7 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
       break;
     case eMouseEventClass:
       if (aEvent->IsTrusted()) {
+        
         if (aEvent->AsMouseEvent()->button == WidgetMouseEvent::eLeftButton) {
           abuse = PopupBlocker::openBlocked;
           switch (aEvent->mMessage) {
@@ -322,6 +323,16 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
               break;
             default:
               break;
+          }
+        } else if (aEvent->mMessage == eMouseAuxClick) {
+          
+          
+          
+          
+          if (PopupAllowedForEvent("auxclick")) {
+            abuse = PopupBlocker::openControlled;
+          } else {
+            abuse = PopupBlocker::openBlocked;
           }
         }
 
