@@ -80,8 +80,6 @@ fn compute_offset_from(
         match ancestor.node_type {
             SpatialNodeType::ReferenceFrame(..) => {
                 
-                
-                
                 break;
             },
             SpatialNodeType::ScrollFrame(ref info) => {
