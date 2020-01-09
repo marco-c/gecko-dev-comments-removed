@@ -3,15 +3,25 @@
 (function() {
 
 function assert_initial(property, initial) {
+  let initialDesc = initial;
+  if (Array.isArray(initial))
+    initialDesc = '[' + initial.map(e => "'" + e + "'").join(' or ') + ']';
+
   test(() => {
     const target = document.getElementById('target');
     if (!getComputedStyle(target)[property])
       return;
     target.style[property] = 'initial';
-    assert_equals(getComputedStyle(target)[property], initial);
+    if (Array.isArray(initial)) {
+      assert_in_array(getComputedStyle(target)[property], initial);
+    } else {
+      assert_equals(getComputedStyle(target)[property], initial);
+    }
     target.style[property] = '';
-  }, 'Property ' + property + ' has initial value ' + initial);
+  }, 'Property ' + property + ' has initial value ' + initialDesc);
 }
+
+
 
 
 
@@ -47,6 +57,8 @@ function assert_inherited(property, initial, other) {
     target.style[property] = '';
   }, 'Property ' + property + ' inherits');
 }
+
+
 
 
 

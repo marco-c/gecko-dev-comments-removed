@@ -9951,7 +9951,7 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
     return Nothing();
   }
 
-  gfx::Float angle = 0.0;
+  double directionAngle = 0.0;
   Point point;
   if (display->mOffsetPath.IsPath()) {
     const Span<const StylePathCommand>& path =
@@ -9999,15 +9999,21 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
     }
     Point tangent;
     point = gfxPath->ComputePointAtLength(usedDistance, &tangent);
-    
-    
-    
-    
-    angle = atan2(tangent.y, tangent.x);
+    directionAngle = (double)atan2(tangent.y, tangent.x);  
   } else {
     
     NS_WARNING("Unsupported offset-path value");
   }
+
+  const StyleOffsetRotate& rotate = display->mOffsetRotate;
+  
+  
+  
+  
+  
+  
+  gfx::Float angle = static_cast<gfx::Float>(
+      (rotate.auto_ ? directionAngle : 0.0) + rotate.angle.ToRadians());
 
   
   

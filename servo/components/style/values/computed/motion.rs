@@ -4,7 +4,41 @@
 
 
 
+use crate::values::computed::Angle;
+use crate::Zero;
+
 
 
 
 pub use crate::values::specified::motion::OffsetPath;
+
+#[inline]
+fn is_auto_zero_angle(auto: &bool, angle: &Angle) -> bool {
+    *auto && angle.is_zero()
+}
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
+#[repr(C)]
+pub struct OffsetRotate {
+    
+    
+    
+    
+    #[css(represents_keyword)]
+    pub auto: bool,
+    
+    #[css(contextual_skip_if = "is_auto_zero_angle")]
+    pub angle: Angle,
+}
+
+impl OffsetRotate {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        OffsetRotate {
+            auto: true,
+            angle: Zero::zero(),
+        }
+    }
+}

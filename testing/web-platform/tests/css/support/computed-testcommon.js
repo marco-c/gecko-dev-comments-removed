@@ -9,20 +9,34 @@
 
 
 
+
 function test_computed_value(property, specified, computed) {
   if (!computed)
     computed = specified;
+
+  let computedDesc = "'" + computed + "'";
+  if (Array.isArray(computed))
+    computedDesc = '[' + computed.map(e => "'" + e + "'").join(' or ') + ']';
+
   test(() => {
     const target = document.getElementById('target');
     if (!getComputedStyle(target)[property])
       return;
     target.style[property] = '';
     target.style[property] = specified;
-    assert_equals(getComputedStyle(target)[property], computed);
-    if (computed !== specified) {
-      target.style[property] = '';
-      target.style[property] = computed;
-      assert_equals(getComputedStyle(target)[property], computed, 'computed value should round-trip');
+
+    let readValue = getComputedStyle(target)[property];
+    if (Array.isArray(computed)) {
+      assert_in_array(readValue, computed);
+    } else {
+      assert_equals(readValue, computed);
     }
-  }, "Property " + property + " value '" + specified + "' computes to '" + computed + "'");
+    if (readValue !== specified) {
+      target.style[property] = '';
+      target.style[property] = readValue;
+      assert_equals(getComputedStyle(target)[property], readValue,
+                    'computed value should round-trip');
+    }
+  }, "Property " + property + " value '" + specified + "' computes to " +
+     computedDesc);
 }
