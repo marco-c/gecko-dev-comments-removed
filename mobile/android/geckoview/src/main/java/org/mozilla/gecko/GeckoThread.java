@@ -69,10 +69,10 @@ public class GeckoThread extends Thread {
 
 
 
-        private final int rank;
+        private final int mRank;
 
         private State(final int rank) {
-            this.rank = rank;
+            mRank = rank;
         }
 
         @Override
@@ -83,7 +83,7 @@ public class GeckoThread extends Thread {
         @Override
         public boolean isAtLeast(final NativeQueue.State other) {
             if (other instanceof State) {
-                return this.rank >= ((State) other).rank;
+                return mRank >= ((State) other).mRank;
             }
             return false;
         }
