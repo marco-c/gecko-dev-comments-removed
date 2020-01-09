@@ -29,10 +29,12 @@ using namespace mozilla::ipc;
 namespace mozilla {
 namespace gfx {
 
-VRProcessParent::VRProcessParent()
+VRProcessParent::VRProcessParent(Listener* aListener)
     : GeckoChildProcessHost(GeckoProcessType_VR),
       mTaskFactory(this),
-      mChannelClosed(false) {
+      mListener(aListener),
+      mChannelClosed(false),
+      mShutdownRequested(false) {
   MOZ_COUNT_CTOR(VRProcessParent);
 }
 
@@ -61,11 +63,17 @@ bool VRProcessParent::Launch() {
 }
 
 void VRProcessParent::Shutdown() {
+  MOZ_ASSERT(!mShutdownRequested);
+  mListener = nullptr;
+
   if (mVRChild) {
     
     if (!mChannelClosed) {
       mVRChild->Close();
     }
+    
+    
+    mShutdownRequested = true;
 
 #ifndef NS_FREE_PERMANENT_DATA
     
@@ -106,6 +114,10 @@ void VRProcessParent::InitAfterConnect(bool aSucceeded) {
     MOZ_ASSERT(rv);
 
     mVRChild->Init();
+
+    if (mListener) {
+      mListener->OnProcessLaunchComplete(this);
+    }
 
     
     GPUChild* gpuChild = GPUProcessManager::Get()->GetGPUChild();
@@ -158,7 +170,12 @@ void VRProcessParent::OnChannelErrorTask() {
 
 void VRProcessParent::OnChannelClosed() {
   mChannelClosed = true;
-  DestroyProcess();
+  if (!mShutdownRequested && mListener) {
+    
+    mListener->OnProcessUnexpectedShutdown(this);
+  } else {
+    DestroyProcess();
+  }
 
   
   VRChild::Destroy(std::move(mVRChild));
@@ -166,6 +183,8 @@ void VRProcessParent::OnChannelClosed() {
 }
 
 base::ProcessId VRProcessParent::OtherPid() { return mVRChild->OtherPid(); }
+
+bool VRProcessParent::IsConnected() const { return !!mVRChild; }
 
 }  
 }  

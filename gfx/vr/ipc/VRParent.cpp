@@ -11,6 +11,7 @@
 #include "nsDebugImpl.h"
 
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/ProcessChild.h"
 
 #if defined(XP_WIN)
@@ -108,6 +109,7 @@ void VRParent::ActorDestroy(ActorDestroyReason aWhy) {
   gfxVars::Shutdown();
   gfxConfig::Shutdown();
   gfxPrefs::DestroySingleton();
+  CrashReporterClient::DestroySingleton();
   
   
   
@@ -138,6 +140,9 @@ bool VRParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
     
     ProcessChild::QuickExit();
   }
+
+  
+  CrashReporterClient::InitSingleton(this);
 
   
   gfxPrefs::GetSingleton();

@@ -6,17 +6,18 @@
 #ifndef GFX_VR_PROCESS_MANAGER_H
 #define GFX_VR_PROCESS_MANAGER_H
 
+#include "VRProcessParent.h"
+
 namespace mozilla {
 namespace gfx {
 
-class VRProcessParent;
 class VRManagerChild;
 class PVRGPUChild;
 class VRChild;
 
 
 
-class VRProcessManager final {
+class VRProcessManager final : public VRProcessParent::Listener {
  public:
   static VRProcessManager* Get();
   static void Initialize();
@@ -26,11 +27,13 @@ class VRProcessManager final {
 
   
   void LaunchVRProcess();
-
   bool CreateGPUBridges(base::ProcessId aOtherProcess,
                         mozilla::ipc::Endpoint<PVRGPUChild>* aOutVRBridge);
 
   VRChild* GetVRChild();
+
+  virtual void OnProcessLaunchComplete(VRProcessParent* aParent) override;
+  virtual void OnProcessUnexpectedShutdown(VRProcessParent* aParent) override;
 
  private:
   VRProcessManager();
