@@ -1041,12 +1041,11 @@ impl ClipItem {
     fn supports_fast_path_rendering(&self) -> bool {
         match *self {
             ClipItem::Rectangle(..) |
-            ClipItem::RoundedRectangle(_, _, ClipMode::ClipOut) |
             ClipItem::Image { .. } |
             ClipItem::BoxShadow(..) => {
                 false
             }
-            ClipItem::RoundedRectangle(_, ref radius, ClipMode::Clip) => {
+            ClipItem::RoundedRectangle(_, ref radius, _) => {
                 
                 
                 radius.is_uniform().is_some()
