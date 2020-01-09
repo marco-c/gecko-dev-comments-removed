@@ -60,18 +60,6 @@ void ViewportFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     BuildDisplayListForChild(aBuilder, kid, aLists);
   }
-
-  nsDisplayList topLayerList;
-  BuildDisplayListForTopLayer(aBuilder, &topLayerList);
-  if (!topLayerList.IsEmpty()) {
-    
-    
-    nsDisplayWrapList* wrapList =
-        MakeDisplayItem<nsDisplayWrapList>(aBuilder, this, &topLayerList);
-    wrapList->SetOverrideZIndex(
-        std::numeric_limits<decltype(wrapList->ZIndex())>::max());
-    aLists.PositionedDescendants()->AppendToTop(wrapList);
-  }
 }
 
 #ifdef DEBUG

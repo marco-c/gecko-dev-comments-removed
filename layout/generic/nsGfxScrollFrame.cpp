@@ -68,6 +68,7 @@
 #include "UnitTransforms.h"
 #include "nsPluginFrame.h"
 #include "nsSliderFrame.h"
+#include "ViewportFrame.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/AxisPhysicsModel.h"
 #include "mozilla/layers/AxisPhysicsMSDModel.h"
@@ -3378,6 +3379,8 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       mOuter->BuildDisplayListForChild(aBuilder, mScrolledFrame, aLists);
     }
 
+    MaybeAddTopLayerItems(aBuilder, aLists);
+
     if (addScrollBars) {
       
       AppendScrollPartsTo(aBuilder, aLists, createLayersForScrollbars, true);
@@ -3662,6 +3665,8 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
+  MaybeAddTopLayerItems(aBuilder, set);
+
   if (willBuildAsyncZoomContainer) {
     MOZ_ASSERT(mClipAllDescendants);
 
@@ -3733,6 +3738,25 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                       true);
 
   scrolledContent.MoveTo(aLists);
+}
+
+void ScrollFrameHelper::MaybeAddTopLayerItems(nsDisplayListBuilder* aBuilder,
+                                              const nsDisplayListSet& aLists) {
+  if (mIsRoot) {
+    if (ViewportFrame* viewportFrame = do_QueryFrame(mOuter->GetParent())) {
+      nsDisplayList topLayerList;
+      viewportFrame->BuildDisplayListForTopLayer(aBuilder, &topLayerList);
+      if (!topLayerList.IsEmpty()) {
+        
+        
+        nsDisplayWrapList* wrapList = MakeDisplayItem<nsDisplayWrapList>(
+            aBuilder, viewportFrame, &topLayerList);
+        wrapList->SetOverrideZIndex(
+            std::numeric_limits<decltype(wrapList->ZIndex())>::max());
+        aLists.PositionedDescendants()->AppendToTop(wrapList);
+      }
+    }
+  }
 }
 
 bool ScrollFrameHelper::DecideScrollableLayer(
