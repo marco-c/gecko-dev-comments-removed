@@ -566,7 +566,7 @@ static void ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *appDir,
       argc += 1;
     }
   }
-  char **argv = new char *[argc + 1];
+  char** argv = static_cast<char**>(malloc((argc + 1) * sizeof(char*)));
   if (!argv) {
     return;
   }
@@ -602,38 +602,42 @@ static void ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *appDir,
   
   
   if (restart) {
-    exit(execv(updaterPath.get(), argv));
+    int execResult = execv(updaterPath.get(), argv);
+    free(argv);
+    exit(execResult);
   }
   *outpid = fork();
   if (*outpid == -1) {
-    delete[] argv;
+    free(argv);
     return;
   } else if (*outpid == 0) {
-    exit(execv(updaterPath.get(), argv));
+    int execResult = execv(updaterPath.get(), argv);
+    free(argv);
+    exit(execResult);
   }
-  delete[] argv;
 #elif defined(XP_WIN)
   if (isStaged) {
     
     if (!WinLaunchChild(updaterPathW.get(), argc, argv)) {
-      delete[] argv;
+      free(argv);
       return;
     }
   } else {
     
     if (!WinLaunchChild(updaterPathW.get(), argc, argv, nullptr, outpid)) {
-      delete[] argv;
+      free(argv);
       return;
     }
   }
-  delete[] argv;
 #elif defined(XP_MACOSX)
 UpdateDriverSetupMacCommandLine(argc, argv, restart);
 
 
 
 if (restart && !IsRecursivelyWritable(installDirPath.get())) {
-  if (!LaunchElevatedUpdate(argc, argv, outpid)) {
+  bool hasLaunched = LaunchElevatedUpdate(argc, argv, outpid);
+  free(argv);
+  if (!hasLaunched) {
     LOG(("Failed to launch elevated update!"));
     exit(1);
   }
@@ -656,6 +660,7 @@ if (isStaged) {
   *outpid = PR_CreateProcess(updaterPath.get(), argv, nullptr, nullptr);
 }
 #endif
+  free(argv);
   if (restart) {
     exit(0);
   }
