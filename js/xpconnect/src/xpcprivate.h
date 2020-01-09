@@ -421,8 +421,6 @@ class XPCJSContext final : public mozilla::CycleCollectedJSContext,
   inline JS::HandleId GetStringID(unsigned index) const;
   inline const char* GetStringName(unsigned index) const;
 
-  static void SetTabIdToCancelContentJS(uint64_t aTabId);
-
  private:
   XPCJSContext();
 
@@ -439,8 +437,6 @@ class XPCJSContext final : public mozilla::CycleCollectedJSContext,
   static uint32_t sInstanceCount;
   static mozilla::StaticAutoPtr<WatchdogManager> sWatchdogInstance;
   static WatchdogManager* GetWatchdogManager();
-
-  static mozilla::Atomic<uint64_t> sTabIdToCancelContentJS;
 
   
   
@@ -1440,6 +1436,9 @@ class XPCWrappedNative final : public nsIXPConnectWrappedNative {
   }
 
  private:
+  void SetFlatJSObject(JSObject* object);
+  void UnsetFlatJSObject();
+
   inline void ExpireWrapper() {
     mMaybeScope = (XPCWrappedNativeScope*)(XPC_SCOPE_WORD(mMaybeScope) |
                                            XPC_WRAPPER_EXPIRED);

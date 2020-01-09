@@ -2903,11 +2903,6 @@ static nsresult ReadSourceFromFilename(JSContext* cx, const char* filename,
     bytesAllocated = *len * sizeof(char16_t);
   }
 
-  
-  
-  
-  JS_updateMallocCounter(cx, bytesAllocated);
-
   return NS_OK;
 }
 

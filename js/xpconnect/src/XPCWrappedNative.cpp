@@ -222,8 +222,7 @@ nsresult XPCWrappedNative::WrapNewGlobal(JSContext* cx,
   wrapper->mScriptable = scrWrapper;
 
   
-  wrapper->mFlatJSObject = global;
-  wrapper->mFlatJSObject.setFlags(FLAT_JS_OBJECT_VALID);
+  wrapper->SetFlatJSObject(global);
 
   
   JS_SetPrivate(global, wrapper);
@@ -545,6 +544,32 @@ void XPCWrappedNative::Destroy() {
 
 
 
+static const size_t GCMemoryFactor = 2;
+
+inline void XPCWrappedNative::SetFlatJSObject(JSObject* object) {
+  MOZ_ASSERT(!mFlatJSObject);
+  MOZ_ASSERT(object);
+
+  JS::AddAssociatedMemory(object, sizeof(*this) * GCMemoryFactor,
+                          JS::MemoryUse::XPCWrappedNative);
+
+  mFlatJSObject = object;
+  mFlatJSObject.setFlags(FLAT_JS_OBJECT_VALID);
+}
+
+inline void XPCWrappedNative::UnsetFlatJSObject() {
+  MOZ_ASSERT(mFlatJSObject);
+
+  JS::RemoveAssociatedMemory(mFlatJSObject.unbarrieredGetPtr(),
+                             sizeof(*this) * GCMemoryFactor,
+                             JS::MemoryUse::XPCWrappedNative);
+
+  mFlatJSObject = nullptr;
+  mFlatJSObject.unsetFlags(FLAT_JS_OBJECT_VALID);
+}
+
+
+
 nsIXPCScriptable* XPCWrappedNative::GatherProtoScriptable(
     nsIClassInfo* classInfo) {
   MOZ_ASSERT(classInfo, "bad param");
@@ -626,13 +651,13 @@ bool XPCWrappedNative::Init(JSContext* cx, nsIXPCScriptable* aScriptable) {
     return false;
   }
 
-  mFlatJSObject = JS_NewObjectWithGivenProto(cx, jsclazz, protoJSObject);
-  if (!mFlatJSObject) {
-    mFlatJSObject.unsetFlags(FLAT_JS_OBJECT_VALID);
+  JSObject* object = JS_NewObjectWithGivenProto(cx, jsclazz, protoJSObject);
+  if (!object) {
     return false;
   }
 
-  mFlatJSObject.setFlags(FLAT_JS_OBJECT_VALID);
+  SetFlatJSObject(object);
+
   JS_SetPrivate(mFlatJSObject, this);
 
   return FinishInit(cx);
@@ -644,9 +669,6 @@ bool XPCWrappedNative::FinishInit(JSContext* cx) {
   
   MOZ_ASSERT(1 == mRefCnt, "unexpected refcount value");
   NS_ADDREF(this);
-
-  
-  JS_updateMallocCounter(cx, 2 * sizeof(XPCWrappedNative));
 
   return true;
 }
@@ -756,8 +778,7 @@ void XPCWrappedNative::FlatJSObjectFinalized() {
     cache->ClearWrapper(mFlatJSObject.unbarrieredGetPtr());
   }
 
-  mFlatJSObject = nullptr;
-  mFlatJSObject.unsetFlags(FLAT_JS_OBJECT_VALID);
+  UnsetFlatJSObject();
 
   MOZ_ASSERT(mIdentity, "bad pointer!");
 #ifdef XP_WIN
@@ -802,8 +823,7 @@ void XPCWrappedNative::SystemIsBeingShutDown() {
 
   
   JS_SetPrivate(mFlatJSObject, nullptr);
-  mFlatJSObject = nullptr;
-  mFlatJSObject.unsetFlags(FLAT_JS_OBJECT_VALID);
+  UnsetFlatJSObject();
 
   XPCWrappedNativeProto* proto = GetProto();
 
