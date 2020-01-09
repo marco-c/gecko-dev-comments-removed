@@ -41,12 +41,6 @@ class ChildMessagePort extends MessagePort {
     Cu.exportFunction(this.isWindowPrivate.bind(this), window, {
       defineAs: "RPMIsWindowPrivate",
     });
-    Cu.exportFunction(this.getUpdateChannel.bind(this), window, {
-      defineAs: "RPMGetUpdateChannel",
-    });
-    Cu.exportFunction(this.getFxAccountsEndpoint.bind(this), window, {
-      defineAs: "RPMGetFxAccountsEndpoint",
-    });
 
     
     let loadListener = () => {
@@ -74,12 +68,12 @@ class ChildMessagePort extends MessagePort {
   }
 
   
-  async handleRequest(name, data) {
-    throw new Error(`Unknown request ${name}.`);
-  }
-
   
-  handleMessage(messagedata) {
+  message({ data: messagedata }) {
+    if (this.destroyed || (messagedata.portID != this.portID)) {
+      return;
+    }
+
     let message = {
       name: messagedata.name,
       data: messagedata.data,
