@@ -70,19 +70,19 @@ const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
     const policy = ExtensionParent.WebExtensionPolicy.getByID(this.addonId);
     return {
       actor: this.actorID,
-      id: this.addonId,
-      name: this.addon.name,
-      url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
+      debuggable: this.addon.isDebuggable,
       
       iconDataURL: this._iconDataURL,
       iconURL: this.addon.iconURL,
+      id: this.addonId,
+      isAPIExtension: this.addon.isAPIExtension,
       isSystem: this.addon.isSystem,
-      debuggable: this.addon.isDebuggable,
+      isWebExtension: this.addon.isWebExtension,
+      manifestURL: policy && policy.getURL("manifest.json"),
+      name: this.addon.name,
       temporarilyInstalled: this.addon.temporarilyInstalled,
       type: this.addon.type,
-      isWebExtension: this.addon.isWebExtension,
-      isAPIExtension: this.addon.isAPIExtension,
-      manifestURL: policy && policy.getURL("manifest.json"),
+      url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
       warnings: ExtensionParent.DebugUtils.getExtensionManifestWarnings(this.addonId),
     };
   },
@@ -97,11 +97,11 @@ const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
       
       
       return Object.assign(form, {
-        id: this.addon.id,
-        name: this.addon.name,
         iconURL: this.addon.iconURL,
+        id: this.addon.id,
         
         isOOP: proxy.isOOP,
+        name: this.addon.name,
       });
     });
     this._destroyProxy = () => proxy.destroy();
