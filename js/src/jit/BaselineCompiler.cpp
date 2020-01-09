@@ -1401,7 +1401,59 @@ bool BaselineCompilerCodeGen::emitArgumentTypeChecks() {
 
 template <>
 bool BaselineInterpreterCodeGen::emitArgumentTypeChecks() {
-  MOZ_CRASH("NYI: interpreter emitArgumentTypeChecks");
+  Register scratch1 = R1.scratchReg();
+
+  
+  Label done;
+  masm.loadPtr(frame.addressOfCalleeToken(), scratch1);
+  masm.branchTestPtr(Assembler::NonZero, scratch1, Imm32(CalleeTokenScriptBit),
+                     &done);
+
+  
+  masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), scratch1);
+
+  
+  masm.load16ZeroExtend(Address(scratch1, JSFunction::offsetOfNargs()),
+                        scratch1);
+  masm.store32(scratch1, frame.addressOfScratchValue());
+
+  
+  masm.loadValue(frame.addressOfThis(), R0);
+  if (!emitNextIC()) {
+    return false;
+  }
+  frame.bumpInterpreterICEntry();
+
+  
+  masm.move32(Imm32(0), scratch1);
+
+  
+  Label top;
+  masm.bind(&top);
+  masm.branch32(Assembler::Equal, frame.addressOfScratchValue(), scratch1,
+                &done);
+  {
+    
+    
+    BaseValueIndex addr(BaselineFrameReg, scratch1,
+                        BaselineFrame::offsetOfArg(0));
+    masm.loadValue(addr, R0);
+    masm.add32(Imm32(1), scratch1);
+    masm.store32(scratch1, frame.addressOfReturnValue());
+
+    
+    if (!emitNextIC()) {
+      return false;
+    }
+    frame.bumpInterpreterICEntry();
+
+    
+    masm.load32(frame.addressOfReturnValue(), scratch1);
+    masm.jump(&top);
+  }
+
+  masm.bind(&done);
+  return true;
 }
 
 bool BaselineCompiler::emitDebugTrap() {
@@ -6739,7 +6791,7 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
 
     
     if (BytecodeOpHasIC(op)) {
-      masm.addPtr(Imm32(sizeof(ICEntry)), frame.addressOfInterpreterICEntry());
+      frame.bumpInterpreterICEntry();
     }
 
     
