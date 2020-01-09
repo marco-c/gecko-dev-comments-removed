@@ -1897,7 +1897,7 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
 
 
 
-  RootedAtom anonymousAtom(cx, cx->names().anonymous);
+  HandlePropertyName anonymousAtom = cx->names().anonymous;
 
   
   
