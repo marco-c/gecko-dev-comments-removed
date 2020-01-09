@@ -29,7 +29,7 @@ unsafe fn ptr<T>(attr: &structs::nsAttrValue) -> *const T {
 }
 
 #[inline(always)]
-unsafe fn get_class_from_attr(attr: &structs::nsAttrValue) -> Class {
+unsafe fn get_class_or_part_from_attr(attr: &structs::nsAttrValue) -> Class {
     debug_assert!(bindings::Gecko_AssertClassAttrValueIsSane(attr));
     let base_type = base_type(attr);
     if base_type == structs::nsAttrValue_ValueBaseType_eStringBase {
@@ -85,12 +85,12 @@ pub fn get_id(attrs: &[structs::AttrArray_InternalAttr]) -> Option<&WeakAtom> {
 
 
 #[inline(always)]
-pub fn has_class(
+pub fn has_class_or_part(
     name: &Atom,
     case_sensitivity: CaseSensitivity,
     attr: &structs::nsAttrValue,
 ) -> bool {
-    match unsafe { get_class_from_attr(attr) } {
+    match unsafe { get_class_or_part_from_attr(attr) } {
         Class::None => false,
         Class::One(atom) => unsafe { case_sensitivity.eq_atom(name, WeakAtom::new(atom)) },
         Class::More(atoms) => match case_sensitivity {
@@ -114,7 +114,7 @@ where
     F: FnMut(&Atom),
 {
     unsafe {
-        match get_class_from_attr(attr) {
+        match get_class_or_part_from_attr(attr) {
             Class::None => {},
             Class::One(atom) => Atom::with(atom, callback),
             Class::More(atoms) => {

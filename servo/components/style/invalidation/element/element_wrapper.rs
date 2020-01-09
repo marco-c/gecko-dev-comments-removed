@@ -60,6 +60,10 @@ pub trait ElementSnapshot: Sized {
 
     
     
+    fn is_part(&self, name: &Atom) -> bool;
+
+    
+    
     fn each_class<F>(&self, _: F)
     where
         F: FnMut(&Atom);
@@ -340,8 +344,11 @@ where
         }
     }
 
-    fn is_part(&self, _name: &Atom) -> bool {
-        unimplemented!();
+    fn is_part(&self, name: &Atom) -> bool {
+        match self.snapshot() {
+            Some(snapshot) if snapshot.has_attrs() => snapshot.is_part(name),
+            _ => self.element.is_part(name),
+        }
     }
 
     fn has_class(&self, name: &Atom, case_sensitivity: CaseSensitivity) -> bool {
