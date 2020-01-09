@@ -14,6 +14,11 @@ async function testSteps()
     "storage/default/chrome+++content+browser.xul/",
     "storage/default/moz-safe-about+++home/",
     
+    
+    
+    
+    
+    
     "storage/default/https+++example.com/asmjs/"
   ];
   const obsoleteFilePath =
