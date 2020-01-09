@@ -81,6 +81,18 @@ this.EventManager.prototype = {
     }
 
     switch (aEvent.eventType) {
+      case Events.TEXT_CARET_MOVED:
+      {
+        if (aEvent.accessible != aEvent.accessibleDocument &&
+            !aEvent.isFromUserInput) {
+          
+          
+          let acc = Utils.getTextLeafForOffset(aEvent.accessible,
+            aEvent.QueryInterface(Ci.nsIAccessibleCaretMoveEvent).caretOffset);
+          this.contentControl.autoMove(acc);
+        }
+        break;
+      }
       case Events.NAME_CHANGE:
       {
         
