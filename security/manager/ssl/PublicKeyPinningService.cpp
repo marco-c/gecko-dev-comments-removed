@@ -157,6 +157,22 @@ nsresult PublicKeyPinningService::ChainMatchesPinset(
   return EvalChain(certList, nullptr, &aSHA256keys, chainMatchesPinset);
 }
 
+#ifdef DEBUG
+static Atomic<bool> sValidatedPinningPreloadList(false);
+
+static void ValidatePinningPreloadList() {
+  if (sValidatedPinningPreloadList) {
+    return;
+  }
+  for (const auto& entry : kPublicKeyPinningPreloadList) {
+    
+    MOZ_ASSERT((entry.mIsMoz && entry.mId != kUnknownId) ||
+               (!entry.mIsMoz && entry.mId == kUnknownId));
+  }
+  sValidatedPinningPreloadList = true;
+}
+#endif  
+
 
 
 
@@ -165,6 +181,9 @@ static nsresult FindPinningInformation(
     const OriginAttributes& originAttributes,
      nsTArray<nsCString>& dynamicFingerprints,
      const TransportSecurityPreload*& staticFingerprints) {
+#ifdef DEBUG
+  ValidatePinningPreloadList();
+#endif
   if (!hostname || hostname[0] == 0) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -273,51 +292,56 @@ static nsresult CheckPinsForHostname(
       return rv;
     }
     chainHasValidPins = enforceTestModeResult;
-    Telemetry::HistogramID histogram = staticFingerprints->mIsMoz
-                                           ? Telemetry::CERT_PINNING_MOZ_RESULTS
-                                           : Telemetry::CERT_PINNING_RESULTS;
-    if (staticFingerprints->mTestMode) {
-      histogram = staticFingerprints->mIsMoz
-                      ? Telemetry::CERT_PINNING_MOZ_TEST_RESULTS
-                      : Telemetry::CERT_PINNING_TEST_RESULTS;
-      if (!enforceTestMode) {
-        chainHasValidPins = true;
-      }
+    if (staticFingerprints->mTestMode && !enforceTestMode) {
+      chainHasValidPins = true;
     }
-    
-    
+
     if (pinningTelemetryInfo) {
-      if (staticFingerprints->mId != kUnknownId) {
-        int32_t bucket =
-            staticFingerprints->mId * 2 + (enforceTestModeResult ? 1 : 0);
+      
+      
+      if ((staticFingerprints->mIsMoz &&
+           staticFingerprints->mId == kUnknownId) ||
+          (!staticFingerprints->mIsMoz &&
+           staticFingerprints->mId != kUnknownId)) {
+        return NS_ERROR_FAILURE;
+      }
+
+      Telemetry::HistogramID histogram;
+      int32_t bucket;
+      
+      
+      if (staticFingerprints->mIsMoz) {
         histogram = staticFingerprints->mTestMode
                         ? Telemetry::CERT_PINNING_MOZ_TEST_RESULTS_BY_HOST
                         : Telemetry::CERT_PINNING_MOZ_RESULTS_BY_HOST;
-        pinningTelemetryInfo->certPinningResultBucket = bucket;
+        bucket = staticFingerprints->mId * 2 + (enforceTestModeResult ? 1 : 0);
       } else {
-        pinningTelemetryInfo->certPinningResultBucket =
-            enforceTestModeResult ? 1 : 0;
+        histogram = staticFingerprints->mTestMode
+                        ? Telemetry::CERT_PINNING_TEST_RESULTS
+                        : Telemetry::CERT_PINNING_RESULTS;
+        bucket = enforceTestModeResult ? 1 : 0;
       }
       pinningTelemetryInfo->accumulateResult = true;
       pinningTelemetryInfo->certPinningResultHistogram = Some(histogram);
-    }
+      pinningTelemetryInfo->certPinningResultBucket = bucket;
 
-    
-    nsCOMPtr<nsIX509Cert> rootCert;
-    rv = certList->GetRootCertificate(rootCert);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-    if (rootCert && !enforceTestModeResult && pinningTelemetryInfo) {
-      UniqueCERTCertificate rootCertObj =
-          UniqueCERTCertificate(rootCert.get()->GetCert());
-      if (rootCertObj) {
-        int32_t binNumber = RootCABinNumber(&rootCertObj->derCert);
-        if (binNumber != ROOT_CERTIFICATE_UNKNOWN) {
-          pinningTelemetryInfo->accumulateForRoot = true;
-          pinningTelemetryInfo->rootBucket = binNumber;
+      
+      if (!enforceTestModeResult) {
+        nsCOMPtr<nsIX509Cert> rootCert;
+        rv = certList->GetRootCertificate(rootCert);
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+        if (rootCert) {
+          UniqueCERTCertificate rootCertObj(rootCert->GetCert());
+          if (!rootCertObj) {
+            return NS_ERROR_FAILURE;
+          }
+          int32_t binNumber = RootCABinNumber(&rootCertObj->derCert);
+          if (binNumber != ROOT_CERTIFICATE_UNKNOWN) {
+            pinningTelemetryInfo->accumulateForRoot = true;
+            pinningTelemetryInfo->rootBucket = binNumber;
+          }
         }
       }
     }
