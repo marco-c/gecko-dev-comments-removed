@@ -68,6 +68,7 @@ impl AsInstanceKind<TextRunDataHandle> for TextRunKey {
             reference_frame_relative_offset,
             shadow: self.shadow,
             raster_space: RasterizationSpace::Screen,
+            inverse_raster_scale: 1.0,
         });
 
         PrimitiveInstanceKind::TextRun{ data_handle, run_index }
@@ -214,6 +215,7 @@ pub struct TextRunPrimitive {
     pub reference_frame_relative_offset: LayoutVector2D,
     pub shadow: bool,
     pub raster_space: RasterizationSpace,
+    pub inverse_raster_scale: f32,
 }
 
 impl TextRunPrimitive {
@@ -226,7 +228,19 @@ impl TextRunPrimitive {
         raster_space: RasterSpace,
     ) -> bool {
         
-        let device_font_size = specified_font.size.scale_by(device_pixel_scale.0);
+        
+        
+        
+        
+        
+        let raster_scale = match raster_space {
+            RasterSpace::Screen => 1.0,
+            RasterSpace::Local(scale) => scale.max(0.001),
+        };
+        self.inverse_raster_scale = 1.0 / raster_scale;
+
+        
+        let device_font_size = specified_font.size.scale_by(device_pixel_scale.0 * raster_scale);
 
         
         
@@ -337,5 +351,5 @@ fn test_struct_sizes() {
     assert_eq!(mem::size_of::<TextRun>(), 88, "TextRun size changed");
     assert_eq!(mem::size_of::<TextRunTemplate>(), 104, "TextRunTemplate size changed");
     assert_eq!(mem::size_of::<TextRunKey>(), 96, "TextRunKey size changed");
-    assert_eq!(mem::size_of::<TextRunPrimitive>(), 96, "TextRunPrimitive size changed");
+    assert_eq!(mem::size_of::<TextRunPrimitive>(), 104, "TextRunPrimitive size changed");
 }
