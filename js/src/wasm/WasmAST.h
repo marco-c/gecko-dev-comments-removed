@@ -429,7 +429,7 @@ enum class AstExprKind {
   StructSet,
   StructNarrow,
 #endif
-#ifdef ENABLE_WASM_GENERALIZED_TABLES
+#ifdef ENABLE_WASM_REFTYPES
   TableGet,
   TableGrow,
   TableSet,
@@ -918,7 +918,7 @@ class AstMemOrTableInit : public AstExpr {
 };
 #endif
 
-#ifdef ENABLE_WASM_GENERALIZED_TABLES
+#ifdef ENABLE_WASM_REFTYPES
 class AstTableGet : public AstExpr {
   AstRef targetTable_;
   AstExpr* index_;

@@ -10942,7 +10942,7 @@ bool BaseCompiler::emitBody() {
         CHECK_NEXT(emitGetGlobal());
       case uint16_t(Op::SetGlobal):
         CHECK_NEXT(emitSetGlobal());
-#ifdef ENABLE_WASM_GENERALIZED_TABLES
+#ifdef ENABLE_WASM_REFTYPES
       case uint16_t(Op::TableGet):
         CHECK_NEXT(emitTableGet());
       case uint16_t(Op::TableSet):
@@ -11544,7 +11544,7 @@ bool BaseCompiler::emitBody() {
           case uint16_t(MiscOp::TableInit):
             CHECK_NEXT(emitMemOrTableInit(false));
 #endif  
-#ifdef ENABLE_WASM_GENERALIZED_TABLES
+#ifdef ENABLE_WASM_REFTYPES
           case uint16_t(MiscOp::TableGrow):
             CHECK_NEXT(emitTableGrow());
           case uint16_t(MiscOp::TableSize):
