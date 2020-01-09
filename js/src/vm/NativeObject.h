@@ -1215,26 +1215,7 @@ class NativeObject : public JSObject {
   inline void elementsRangeWriteBarrierPost(uint32_t start, uint32_t count);
 
  public:
-  
-  
-  
-  
-  
-  
-  
-  void shrinkCapacityToInitializedLength(JSContext* cx) {
-    if (getElementsHeader()->numShiftedElements() > 0) {
-      moveShiftedElements();
-    }
-
-    ObjectElements* header = getElementsHeader();
-    uint32_t len = header->initializedLength;
-    if (header->capacity > len) {
-      shrinkElements(cx, len);
-      header = getElementsHeader();
-      header->capacity = len;
-    }
-  }
+  void shrinkCapacityToInitializedLength(JSContext* cx);
 
  private:
   void setDenseInitializedLengthInternal(uint32_t length) {
