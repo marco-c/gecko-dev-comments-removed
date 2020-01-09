@@ -309,6 +309,8 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("revish", default=None, help="Commits to consider. Defaults to the "
                         "commits on the current branch", nargs="?")
+    
+    
     parser.add_argument("--ignore-rules", nargs="*", type=set,
                         default=set(["resources/testharness*"]),
                         help="Rules for paths to exclude from lists of changes. Rules are paths "
