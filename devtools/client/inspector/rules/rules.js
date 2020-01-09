@@ -108,9 +108,6 @@ function CssRuleView(inspector, document, store) {
   this.styleDocument = document;
   this.styleWindow = this.styleDocument.defaultView;
   this.store = store || {};
-  
-  
-  this.selectedRules = new Map();
   this.pageStyle = inspector.pageStyle;
 
   
@@ -727,8 +724,6 @@ CssRuleView.prototype = {
 
     this.tooltips.destroy();
 
-    this.unselectAllRules();
-
     
     this.shortcuts.destroy();
     this.element.removeEventListener("copy", this._onCopy);
@@ -811,7 +806,6 @@ CssRuleView.prototype = {
 
     this.clearPseudoClassPanel();
     this.refreshAddRuleButtonState();
-    this.unselectAllRules();
 
     if (!this._viewedElement) {
       this._stopSelectingElement();
@@ -1212,99 +1206,6 @@ CssRuleView.prototype = {
     }
 
     return isHighlighted;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  selectRule(rule, editorId, unselectOthers = true) {
-    const rules = this.getSelectedRules(editorId);
-    if (!rules.includes(rule)) {
-      this.selectedRules.set(editorId, [...rules, rule]);
-    }
-
-    
-    if (unselectOthers) {
-      rules
-        .filter(item => item !== rule)
-        .map(item => this.unselectRule(item, editorId));
-    }
-
-    this.emit("ruleview-rule-selected", {editorId, rule});
-  },
-
-  
-
-
-
-
-
-
-
-  unselectRule(rule, editorId) {
-    const rules = this.selectedRules.get(editorId);
-    if (!Array.isArray(rules)) {
-      return;
-    }
-
-    const index = rules.findIndex(item => item === rule);
-    if (index === -1) {
-      return;
-    }
-
-    rules.splice(index, 1);
-    this.selectedRules.set(editorId, rules);
-    this.emit("ruleview-rule-unselected", {editorId, rule});
-  },
-
-  
-
-
-
-
-
-
-  unselectAllRules(editorId) {
-    for (const [id, rules] of this.selectedRules) {
-      
-      
-      if (editorId && id !== editorId) {
-        continue;
-      }
-      rules.map(rule => this.unselectRule(rule, id));
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  getSelectedRules(editorId) {
-    const rules = this.selectedRules.get(editorId);
-    return Array.isArray(rules) ? rules : [];
   },
 
   
