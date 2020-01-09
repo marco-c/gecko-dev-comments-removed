@@ -220,14 +220,14 @@ pref("dom.keyboardevent.keypress.dispatch_non_printable_keys_only_system_group_i
 
 
 
-pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys", "");
+pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys", "www.icloud.com");
 
 
 
 
 
 
-pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode", "powerpoint.officeapps.live.com");
+pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode", "*.gov.online.office365.us,*.officeapps-df.live.com.,*.officeapps.live.com,*.online.office.de,*.partner.officewebapps.cn,mail.notes.na.collabserv.com");
 
 
 pref("dom.inputevent.data.enabled", true);
