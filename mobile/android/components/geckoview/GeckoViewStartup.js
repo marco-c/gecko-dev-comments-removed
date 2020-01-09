@@ -26,22 +26,6 @@ GeckoViewStartup.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
 
   
-
-
-
-
-  setResourceSubstitutions: function() {
-    let registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
-    
-    let url = registry.convertChromeURL(Services.io.newURI("chrome://geckoview/content/geckoview.js")).spec;
-    
-    url = url.substring(4, url.indexOf("!/") + 2);
-
-    let protocolHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
-    protocolHandler.setSubstitution("android", Services.io.newURI(url));
-  },
-
-  
   observe: function(aSubject, aTopic, aData) {
     debug `observe: ${aTopic}`;
     switch (aTopic) {
@@ -83,9 +67,6 @@ GeckoViewStartup.prototype = {
 
         if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {
           ActorManagerParent.flush();
-
-          
-          this.setResourceSubstitutions();
 
           Services.mm.loadFrameScript(
               "chrome://geckoview/content/GeckoViewPromptChild.js", true);

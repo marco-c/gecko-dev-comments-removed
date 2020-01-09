@@ -23,6 +23,7 @@ using mozilla::dom::ContentParent;
 
 #define kAPP "app"
 #define kGRE "gre"
+#define kAndroid "android"
 
 nsresult nsResProtocolHandler::Init() {
   nsresult rv;
@@ -40,6 +41,10 @@ nsresult nsResProtocolHandler::Init() {
     mAppURI = mGREURI;
   }
 
+#ifdef ANDROID
+  rv = GetApkURI(mApkURI);
+#endif
+
   
   
   
@@ -49,6 +54,35 @@ nsresult nsResProtocolHandler::Init() {
 
   return rv;
 }
+
+#ifdef ANDROID
+nsresult nsResProtocolHandler::GetApkURI(nsACString& aResult) {
+  nsCString::const_iterator start, iter;
+  mGREURI.BeginReading(start);
+  mGREURI.EndReading(iter);
+  nsCString::const_iterator start_iter = start;
+
+  
+  bool found = FindInReadable(NS_LITERAL_CSTRING("!/"), start_iter, iter);
+  NS_ENSURE_TRUE(found, NS_ERROR_UNEXPECTED);
+
+  
+  const nsDependentCSubstring& withoutPath = Substring(start, iter);
+  NS_ENSURE_TRUE(withoutPath.Length() >= 4, NS_ERROR_UNEXPECTED);
+
+  
+  NS_ENSURE_TRUE(Substring(withoutPath, 0, 4).EqualsLiteral("jar:"),
+                 NS_ERROR_UNEXPECTED);
+
+  
+  aResult = ToNewCString(Substring(withoutPath, 4));
+
+  
+  NS_ENSURE_TRUE(aResult.Length() >= 1, NS_ERROR_UNEXPECTED);
+  aResult.Truncate(aResult.Length() - 1);
+  return NS_OK;
+}
+#endif
 
 
 
@@ -98,6 +132,10 @@ bool nsResProtocolHandler::ResolveSpecialCases(const nsACString& aHost,
     aResult.Assign(mAppURI);
   } else if (aHost.Equals(kGRE)) {
     aResult.Assign(mGREURI);
+#ifdef ANDROID
+  } else if (aHost.Equals(kAndroid)) {
+    aResult.Assign(mApkURI);
+#endif
   } else {
     return false;
   }
@@ -110,6 +148,7 @@ nsresult nsResProtocolHandler::SetSubstitution(const nsACString& aRoot,
   MOZ_ASSERT(!aRoot.EqualsLiteral(""));
   MOZ_ASSERT(!aRoot.EqualsLiteral(kAPP));
   MOZ_ASSERT(!aRoot.EqualsLiteral(kGRE));
+  MOZ_ASSERT(!aRoot.EqualsLiteral(kAndroid));
   return SubstitutingProtocolHandler::SetSubstitution(aRoot, aBaseURI);
 }
 
@@ -119,13 +158,18 @@ nsresult nsResProtocolHandler::SetSubstitutionWithFlags(const nsACString& aRoot,
   MOZ_ASSERT(!aRoot.EqualsLiteral(""));
   MOZ_ASSERT(!aRoot.EqualsLiteral(kAPP));
   MOZ_ASSERT(!aRoot.EqualsLiteral(kGRE));
+  MOZ_ASSERT(!aRoot.EqualsLiteral(kAndroid));
   return SubstitutingProtocolHandler::SetSubstitutionWithFlags(aRoot, aBaseURI,
                                                                aFlags);
 }
 
 nsresult nsResProtocolHandler::HasSubstitution(const nsACString& aRoot,
                                                bool* aResult) {
-  if (aRoot.EqualsLiteral(kAPP) || aRoot.EqualsLiteral(kGRE)) {
+  if (aRoot.EqualsLiteral(kAPP) || aRoot.EqualsLiteral(kGRE)
+#ifdef ANDROID
+      || aRoot.EqualsLiteral(kAndroid)
+#endif
+  ) {
     *aResult = true;
     return NS_OK;
   }

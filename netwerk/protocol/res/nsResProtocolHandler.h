@@ -73,6 +73,11 @@ class nsResProtocolHandler final
  private:
   nsCString mAppURI;
   nsCString mGREURI;
+#ifdef ANDROID
+  
+  nsCString mApkURI;
+  nsresult GetApkURI(nsACString& aResult);
+#endif
 };
 
 #endif 
