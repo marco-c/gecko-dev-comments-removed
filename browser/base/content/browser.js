@@ -190,11 +190,6 @@ XPCOMUtils.defineLazyGetter(this, "gURLBar", () => {
     return element;
   }
 
-  
-  if (element.hasAttribute("focused")) {
-    element.inputField.focus();
-  }
-
   return new UrlbarInput({
     textbox: element,
     panel: document.getElementById("urlbar-results"),
