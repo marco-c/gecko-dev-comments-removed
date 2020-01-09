@@ -24,7 +24,7 @@ pub type Filter =
     GenericFilter<Angle, NonNegativeNumber, NonNegativeLength, SimpleShadow, ComputedUrl>;
 
 
-#[cfg(not(feature = "gecko"))]
+#[cfg(feature = "servo")]
 pub type Filter =
     GenericFilter<Angle, NonNegativeNumber, NonNegativeLength, Impossible, Impossible>;
 

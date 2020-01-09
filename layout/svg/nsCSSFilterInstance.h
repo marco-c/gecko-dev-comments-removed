@@ -13,9 +13,7 @@
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Types.h"
 #include "nsColor.h"
-#include "nsTArrayForwardDeclare.h"
-
-struct nsStyleFilter;
+#include "mozilla/ServoStyleConsts.h"
 
 
 
@@ -23,6 +21,7 @@ struct nsStyleFilter;
 
 
 class nsCSSFilterInstance {
+  using StyleFilter = mozilla::StyleFilter;
   typedef mozilla::gfx::Color Color;
   typedef mozilla::gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
   typedef mozilla::gfx::IntPoint IntPoint;
@@ -41,7 +40,7 @@ class nsCSSFilterInstance {
 
 
   nsCSSFilterInstance(
-      const nsStyleFilter& aFilter, nscolor aShadowFallbackColor,
+      const StyleFilter& aFilter, nscolor aShadowFallbackColor,
       const nsIntRect& aTargetBoundsInFilterSpace,
       const gfxMatrix& aFrameSpaceInCSSPxToFilterSpaceTransform);
 
@@ -121,7 +120,7 @@ class nsCSSFilterInstance {
   
 
 
-  const nsStyleFilter& mFilter;
+  const StyleFilter& mFilter;
 
   
 
