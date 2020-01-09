@@ -163,14 +163,6 @@ void WebRenderImageHost::SetCurrentTextureHost(TextureHost* aTexture) {
   if (aTexture == mCurrentTextureHost.get()) {
     return;
   }
-
-  if (aTexture && aTexture->AsWebRenderTextureHost()) {
-    
-    
-    
-    aTexture->AsWebRenderTextureHost()->PrepareForUse();
-  }
-
   mCurrentTextureHost = aTexture;
 }
 
