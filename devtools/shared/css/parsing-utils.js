@@ -20,6 +20,7 @@ loader.lazyRequireGetter(this, "CSS_ANGLEUNIT", "devtools/shared/css/constants",
 const SELECTOR_ATTRIBUTE = exports.SELECTOR_ATTRIBUTE = 1;
 const SELECTOR_ELEMENT = exports.SELECTOR_ELEMENT = 2;
 const SELECTOR_PSEUDO_CLASS = exports.SELECTOR_PSEUDO_CLASS = 3;
+const CSS_BLOCKS = { "(": ")", "[": "]", "{": "}" };
 
 
 
@@ -282,6 +283,12 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
   
   
   
+  let currentBlocks = [];
+
+  
+  
+  
+  
   
   let importantState = 0;
   
@@ -309,7 +316,20 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
       importantWS = true;
     }
 
-    if (token.tokenType === "symbol" && token.text === ":") {
+    if (token.tokenType === "symbol" &&
+        currentBlocks[currentBlocks.length - 1] === token.text) {
+      
+      currentBlocks.pop();
+      current += token.text;
+    } else if (token.tokenType === "symbol" && CSS_BLOCKS[token.text]) {
+      
+      currentBlocks.push(CSS_BLOCKS[token.text]);
+      current += token.text;
+    } else if (token.tokenType === "function") {
+      
+      currentBlocks.push(CSS_BLOCKS["("]);
+      current += token.text + "(";
+    } else if (token.tokenType === "symbol" && token.text === ":") {
       
       importantState = 0;
       importantWS = false;
@@ -318,6 +338,7 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
         lastProp.name = cssTrim(current);
         lastProp.colonOffsets = [token.startOffset, token.endOffset];
         current = "";
+        currentBlocks = [];
 
         
         
@@ -331,13 +352,15 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
         
         current += ":";
       }
-    } else if (token.tokenType === "symbol" && token.text === ";") {
+    } else if (token.tokenType === "symbol" && token.text === ";" &&
+               !currentBlocks.length) {
       lastProp.terminator = "";
       
       
       
       if (inComment && !lastProp.name) {
         current = "";
+        currentBlocks = [];
         break;
       }
       if (importantState === 2) {
@@ -350,6 +373,7 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
       }
       lastProp.value = cssTrim(current);
       current = "";
+      currentBlocks = [];
       importantState = 0;
       importantWS = false;
       declarations.push(getEmptyDeclaration());
