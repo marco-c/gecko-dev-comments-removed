@@ -45,54 +45,27 @@ const Actions = require("./index");
 function inspectDebugTarget(type, id) {
   return async (dispatch, getState) => {
     const runtime = getCurrentRuntime(getState().runtimes);
-    const { type: runtimeType } = runtime;
+    const remoteId = remoteClientManager.getRemoteId(runtime.id, runtime.type);
 
-    switch (type) {
-      case DEBUG_TARGETS.TAB: {
-        
-        if (runtimeType === RUNTIMES.NETWORK || runtimeType === RUNTIMES.USB) {
-          
-          
-          const remoteId = remoteClientManager.getRemoteId(runtime.id, runtime.type);
-          window.open(`about:devtools-toolbox?type=tab&id=${id}&remoteId=${remoteId}`);
-        } else if (runtimeType === RUNTIMES.THIS_FIREFOX) {
-          window.open(`about:devtools-toolbox?type=tab&id=${id}`);
-        }
-        break;
-      }
-      case DEBUG_TARGETS.EXTENSION: {
-        if (runtimeType === RUNTIMES.NETWORK || runtimeType === RUNTIMES.USB) {
-          const remoteId = remoteClientManager.getRemoteId(runtime.id, runtime.type);
-          window.open(
-            `about:devtools-toolbox?type=extension&id=${id}&remoteId=${remoteId}`);
-        } else if (runtimeType === RUNTIMES.THIS_FIREFOX) {
-          window.open(`about:devtools-toolbox?type=extension&id=${id}`);
-        }
-        break;
-      }
-      case DEBUG_TARGETS.PROCESS: {
-        const remoteId = remoteClientManager.getRemoteId(runtime.id, runtime.type);
-        window.open(
-          `about:devtools-toolbox?type=process&id=${id}&remoteId=${remoteId}`);
-        break;
-      }
-      case DEBUG_TARGETS.WORKER: {
-        
-        
-        const remoteId = remoteClientManager.getRemoteId(runtime.id, runtime.type);
-        window.open(
-          `about:devtools-toolbox?type=worker&id=${id}&remoteId=${remoteId}`);
-        break;
-      }
-      default: {
-        console.error("Failed to inspect the debug target of " +
-                      `type: ${ type } id: ${ id }`);
-      }
+    if (runtime.id === RUNTIMES.THIS_FIREFOX && type !== DEBUG_TARGETS.WORKER) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      window.open(`about:devtools-toolbox?type=${type.toLowerCase()}&id=${id}`);
+    } else {
+      window.open(`about:devtools-toolbox?type=${type.toLowerCase()}&id=${id}` +
+                  `&remoteId=${remoteId}`);
     }
 
     dispatch(Actions.recordTelemetryEvent("inspect", {
       "target_type": type,
-      "runtime_type": runtimeType,
+      "runtime_type": runtime.type,
     }));
   };
 }
