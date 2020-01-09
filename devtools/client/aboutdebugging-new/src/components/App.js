@@ -130,7 +130,17 @@ class App extends PureComponent {
       
       
       Route({
-        render: () => Redirect({ to: "/setup"}),
+        render: routeProps => {
+          const { pathname } = routeProps.location;
+          
+          
+          
+          
+          if (pathname === "/workers" || pathname === "/addons" || pathname === "/tabs") {
+            return Redirect({ to: `/runtime/${RUNTIMES.THIS_FIREFOX}`});
+          }
+          return Redirect({ to: "/setup"});
+        },
       })
     );
   }
