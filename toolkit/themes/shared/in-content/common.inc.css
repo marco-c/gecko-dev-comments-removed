@@ -385,14 +385,6 @@ xul|textbox {
   padding-left: 8px;
 }
 
-
-
-xul|textbox.tree-input {
-  min-height: unset;
-  padding-right: unset;
-  padding-left: unset;
-}
-
 html|input[type="email"],
 html|input[type="tel"],
 html|input[type="text"],
