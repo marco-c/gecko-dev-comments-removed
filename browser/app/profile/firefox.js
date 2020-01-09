@@ -1473,16 +1473,16 @@ pref("media.gmp-widevinecdm.visible", true);
 pref("media.gmp-widevinecdm.enabled", true);
 #endif
 
-#ifdef NIGHTLY_BUILD
+
 
 pref("media.autoplay.enabled.user-gestures-needed", true);
 
 pref("media.autoplay.default", 1); 
 
+#ifdef NIGHTLY_BUILD
+
 pref("media.autoplay.block-webaudio", true);
 #else
-pref("media.autoplay.default", 0); 
-pref("media.autoplay.enabled.user-gestures-needed", false);
 pref("media.autoplay.block-webaudio", false);
 #endif
 
