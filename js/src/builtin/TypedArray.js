@@ -1508,7 +1508,7 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
 
         
         
-        if (!mapping && IsTypedArrayConstructor(C)) {
+        if (!mapping && IsTypedArrayConstructor(C) && IsObject(source)) {
             
 
             
