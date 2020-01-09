@@ -1582,7 +1582,8 @@ void KeyframeEffect::CalculateCumulativeChangeHint(
       
       
       if (!segment.HasReplaceableValues()) {
-        if (property.mProperty != eCSSProperty_transform) {
+        if (!nsCSSPropertyIDSet::TransformLikeProperties().HasProperty(
+                property.mProperty)) {
           mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
           return;
         }
