@@ -933,19 +933,6 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
   }
 
   
-  
-  if (aFromPrivateWindow) {
-    rv = DenyAccessIfURIHasFlags(
-        aTargetURI, nsIProtocolHandler::URI_DISALLOW_IN_PRIVATE_CONTEXT);
-    if (NS_FAILED(rv)) {
-      if (reportErrors) {
-        ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
-      }
-      return rv;
-    }
-  }
-
-  
   bool hasFlags = false;
   rv = NS_URIChainHasFlags(aTargetURI, nsIProtocolHandler::URI_IS_UI_RESOURCE,
                            &hasFlags);

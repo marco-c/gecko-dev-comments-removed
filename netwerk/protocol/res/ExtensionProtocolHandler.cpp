@@ -341,27 +341,20 @@ static inline ExtensionPolicyService& EPS() {
 
 nsresult ExtensionProtocolHandler::GetFlagsForURI(nsIURI* aURI,
                                                   uint32_t* aFlags) {
-  uint32_t flags =
-      URI_STD | URI_IS_LOCAL_RESOURCE | URI_IS_POTENTIALLY_TRUSTWORTHY;
+  
+  
+  
+  bool loadableByAnyone = false;
 
   URLInfo url(aURI);
   if (auto* policy = EPS().GetByURL(url)) {
-    
-    
-    
-    if (policy->IsPathWebAccessible(url.FilePath())) {
-      flags |= URI_LOADABLE_BY_ANYONE | URI_FETCHABLE_BY_ANYONE;
-    } else {
-      flags |= URI_DANGEROUS_TO_LOAD;
-    }
-
-    
-    if (!policy->PrivateBrowsingAllowed()) {
-      flags |= URI_DISALLOW_IN_PRIVATE_CONTEXT;
-    }
+    loadableByAnyone = policy->IsPathWebAccessible(url.FilePath());
   }
 
-  *aFlags = flags;
+  *aFlags =
+      URI_STD | URI_IS_LOCAL_RESOURCE | URI_IS_POTENTIALLY_TRUSTWORTHY |
+      (loadableByAnyone ? (URI_LOADABLE_BY_ANYONE | URI_FETCHABLE_BY_ANYONE)
+                        : URI_DANGEROUS_TO_LOAD);
   return NS_OK;
 }
 
