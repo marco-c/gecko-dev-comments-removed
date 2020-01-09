@@ -91,25 +91,16 @@ PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #ifdef OS_WIN
 
   if (WinWebAuthnManager::IsUserVerifyingPlatformAuthenticatorAvailable()) {
     promise->MaybeResolve(true);
+    return promise.forget();
   }
 
 #endif
 
+  promise->MaybeResolve(false);
   return promise.forget();
 }
 
