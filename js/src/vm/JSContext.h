@@ -718,10 +718,6 @@ struct JSContext : public JS::RootingContext,
 
   bool runtimeMatches(JSRuntime* rt) const { return runtime_ == rt; }
 
-  js::ThreadData<bool> jitIsBroken;
-
-  void updateJITEnabled();
-
  private:
   
 
