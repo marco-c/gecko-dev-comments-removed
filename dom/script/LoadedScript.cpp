@@ -54,23 +54,34 @@ void LoadedScript::AssociateWithScript(JSScript* aScript) {
 
   MOZ_ASSERT(JS::GetScriptPrivate(aScript).isUndefined());
   JS::SetScriptPrivate(aScript, JS::PrivateValue(this));
-  AddRef();
 }
 
-void HostFinalizeTopLevelScript(JSFreeOp* aFop, const JS::Value& aPrivate) {
-  
-  
-  
-
-  auto script = static_cast<LoadedScript*>(aPrivate.toPrivate());
-
+inline void CheckModuleScriptPrivate(LoadedScript* script, const JS::Value& aPrivate) {
 #ifdef DEBUG
   if (script->IsModuleScript()) {
     JSObject* module = script->AsModuleScript()->mModuleRecord.unbarrieredGet();
     MOZ_ASSERT_IF(module, JS::GetModulePrivate(module) == aPrivate);
   }
 #endif
+}
 
+void HostAddRefTopLevelScript(const JS::Value& aPrivate) {
+  
+  
+  
+
+  auto script = static_cast<LoadedScript*>(aPrivate.toPrivate());
+  CheckModuleScriptPrivate(script, aPrivate);
+  script->AddRef();
+}
+
+void HostReleaseTopLevelScript(const JS::Value& aPrivate) {
+  
+  
+  
+
+  auto script = static_cast<LoadedScript*>(aPrivate.toPrivate());
+  CheckModuleScriptPrivate(script, aPrivate);
   script->Release();
 }
 
@@ -125,7 +136,6 @@ void ModuleScript::UnlinkModuleRecord() {
     MOZ_ASSERT(JS::GetModulePrivate(mModuleRecord).toPrivate() == this);
     JS::SetModulePrivate(mModuleRecord, JS::UndefinedValue());
     mModuleRecord = nullptr;
-    Release();
   }
 }
 
@@ -144,11 +154,11 @@ void ModuleScript::SetModuleRecord(JS::Handle<JSObject*> aModuleRecord) {
   
   
   
+  
   MOZ_ASSERT(JS::GetModulePrivate(mModuleRecord).isUndefined());
   JS::SetModulePrivate(mModuleRecord, JS::PrivateValue(this));
 
   HoldJSObjects(this);
-  AddRef();
 }
 
 void ModuleScript::SetParseError(const JS::Value& aError) {

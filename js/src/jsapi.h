@@ -2579,20 +2579,15 @@ extern JS_PUBLIC_API JS::Value GetScriptedCallerPrivate(JSContext* cx);
 
 
 
-
-using ScriptPrivateFinalizeHook = void (*)(JSFreeOp*, const JS::Value&);
-
-
-
-
-extern JS_PUBLIC_API ScriptPrivateFinalizeHook
-GetScriptPrivateFinalizeHook(JSRuntime* rt);
+using ScriptPrivateReferenceHook = void (*)(const JS::Value&);
 
 
 
 
-extern JS_PUBLIC_API void SetScriptPrivateFinalizeHook(
-    JSRuntime* rt, ScriptPrivateFinalizeHook func);
+extern JS_PUBLIC_API void SetScriptPrivateReferenceHooks(
+  JSRuntime* rt,
+  ScriptPrivateReferenceHook addRefHook,
+  ScriptPrivateReferenceHook releaseHook);
 
 
 

@@ -1318,15 +1318,8 @@ void ScriptSourceObject::finalize(FreeOp* fop, JSObject* obj) {
   ScriptSourceObject* sso = &obj->as<ScriptSourceObject>();
   sso->source()->decref();
 
-  Value value = sso->canonicalPrivate();
-  if (!value.isUndefined()) {
-    
-    JS::AutoSuppressGCAnalysis suppressGC;
-    if (JS::ScriptPrivateFinalizeHook hook =
-            fop->runtime()->scriptPrivateFinalizeHook) {
-      hook(fop, value);
-    }
-  }
+  
+  sso->setPrivate(fop->runtime(), UndefinedValue());
 }
 
 void ScriptSourceObject::trace(JSTracer* trc, JSObject* obj) {
@@ -1382,8 +1375,6 @@ ScriptSourceObject* ScriptSourceObject::createInternal(JSContext* cx,
   obj->initReservedSlot(ELEMENT_SLOT, MagicValue(JS_GENERIC_MAGIC));
   obj->initReservedSlot(ELEMENT_PROPERTY_SLOT, MagicValue(JS_GENERIC_MAGIC));
   obj->initReservedSlot(INTRODUCTION_SCRIPT_SLOT, MagicValue(JS_GENERIC_MAGIC));
-  obj->initReservedSlot(INTRODUCTION_SOURCE_OBJECT_SLOT,
-                        MagicValue(JS_GENERIC_MAGIC));
 
   return obj;
 }
@@ -1422,8 +1413,6 @@ ScriptSourceObject* ScriptSourceObject::unwrappedCanonical() const {
       source->getReservedSlot(ELEMENT_PROPERTY_SLOT).isMagic(JS_GENERIC_MAGIC));
   MOZ_ASSERT(source->getReservedSlot(INTRODUCTION_SCRIPT_SLOT)
                  .isMagic(JS_GENERIC_MAGIC));
-  MOZ_ASSERT(source->getReservedSlot(INTRODUCTION_SOURCE_OBJECT_SLOT)
-                 .isMagic(JS_GENERIC_MAGIC));
 
   RootedObject element(cx, options.element());
   RootedString elementAttributeName(cx, options.elementAttributeName());
@@ -1435,19 +1424,24 @@ ScriptSourceObject* ScriptSourceObject::unwrappedCanonical() const {
   
   
   
-  RootedValue introdutionScript(cx);
-  RootedValue introdutionSource(cx);
-  if (options.introductionScript()) {
-    if (options.introductionScript()->compartment() == cx->compartment()) {
-      introdutionScript.setPrivateGCThing(options.introductionScript());
+  RootedValue introductionScript(cx);
+  if (JSScript* script = options.introductionScript()) {
+    if (script->compartment() == cx->compartment()) {
+      introductionScript.setPrivateGCThing(options.introductionScript());
     }
-    introdutionSource.setObject(*options.introductionScript()->sourceObject());
-    if (!cx->compartment()->wrap(cx, &introdutionSource)) {
+  }
+  source->setReservedSlot(INTRODUCTION_SCRIPT_SLOT, introductionScript);
+
+  
+  
+  RootedValue privateValue(cx);
+  if (JSScript* script = options.scriptOrModule()) {
+    privateValue = script->sourceObject()->canonicalPrivate();
+    if (!JS_WrapValue(cx, &privateValue)) {
       return false;
     }
   }
-  source->setReservedSlot(INTRODUCTION_SCRIPT_SLOT, introdutionScript);
-  source->setReservedSlot(INTRODUCTION_SOURCE_OBJECT_SLOT, introdutionSource);
+  source->setPrivate(cx->runtime(), privateValue);
 
   return true;
 }
@@ -1474,6 +1468,25 @@ ScriptSourceObject* ScriptSourceObject::unwrappedCanonical() const {
   source->setReservedSlot(ELEMENT_PROPERTY_SLOT, nameValue);
 
   return true;
+}
+
+void ScriptSourceObject::setPrivate(JSRuntime* rt, const Value& value) {
+  
+  
+  
+  JS::AutoSuppressGCAnalysis nogc;
+  Value prevValue = getReservedSlot(PRIVATE_SLOT);
+  if (!prevValue.isUndefined()) {
+    if (auto releaseHook = rt->scriptPrivateReleaseHook) {
+      releaseHook(prevValue);
+    }
+  }
+  setReservedSlot(PRIVATE_SLOT, value);
+  if (!value.isUndefined()) {
+    if (auto addRefHook = rt->scriptPrivateAddRefHook) {
+      addRefHook(value);
+    }
+  }
 }
 
  bool JSScript::loadSource(JSContext* cx, ScriptSource* ss,
@@ -3379,6 +3392,12 @@ static void InitAtomMap(frontend::AtomIndexMap& indices, GCPtrAtom* atoms) {
     return false;
   }
 
+  uint32_t mainLength = bce->offset();
+  uint32_t prologueLength = bce->prologueOffset();
+  uint32_t nsrcnotes;
+  if (!bce->finishTakingSrcNotes(&nsrcnotes)) {
+    return false;
+  }
   uint32_t natoms = bce->atomIndices->count();
   if (!createPrivateScriptData(
           cx, script, bce->scopeList.length(), bce->numberList.length(),
@@ -3388,15 +3407,12 @@ static void InitAtomMap(frontend::AtomIndexMap& indices, GCPtrAtom* atoms) {
   }
 
   MOZ_ASSERT(script->mainOffset() == 0);
-  script->mainOffset_ = bce->mainOffset();
+  script->mainOffset_ = prologueLength;
   script->nTypeSets_ = bce->typesetCount;
   script->lineno_ = bce->firstLine;
 
-  
-  
-  uint32_t nsrcnotes = bce->notes().length() + 1;
-  uint32_t codeLength = bce->code().length();
-  if (!script->createSharedScriptData(cx, codeLength, nsrcnotes, natoms)) {
+  if (!script->createSharedScriptData(cx, prologueLength + mainLength,
+                                      nsrcnotes, natoms)) {
     return false;
   }
 
@@ -3406,7 +3422,9 @@ static void InitAtomMap(frontend::AtomIndexMap& indices, GCPtrAtom* atoms) {
   
 
   jsbytecode* code = script->code();
-  PodCopy<jsbytecode>(code, bce->code().begin(), codeLength);
+  PodCopy<jsbytecode>(code, bce->prologue.code.begin(), prologueLength);
+  PodCopy<jsbytecode>(code + prologueLength, bce->main.code.begin(),
+                      mainLength);
   bce->copySrcNotes((jssrcnote*)(code + script->length()), nsrcnotes);
   InitAtomMap(*bce->atomIndices, script->atoms());
 
@@ -3425,13 +3443,13 @@ static void InitAtomMap(frontend::AtomIndexMap& indices, GCPtrAtom* atoms) {
     bce->scopeList.finish(data->scopes());
   }
   if (bce->tryNoteList.length() != 0) {
-    bce->tryNoteList.finish(data->tryNotes());
+    bce->tryNoteList.finish(data->tryNotes(), prologueLength);
   }
   if (bce->scopeNoteList.length() != 0) {
-    bce->scopeNoteList.finish(data->scopeNotes());
+    bce->scopeNoteList.finish(data->scopeNotes(), prologueLength);
   }
   if (bce->resumeOffsetList.length() != 0) {
-    bce->resumeOffsetList.finish(data->resumeOffsets());
+    bce->resumeOffsetList.finish(data->resumeOffsets(), prologueLength);
   }
 
   script->setFlag(ImmutableFlags::Strict, bce->sc->strict());
