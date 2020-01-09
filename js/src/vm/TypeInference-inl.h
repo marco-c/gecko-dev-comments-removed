@@ -994,9 +994,20 @@ struct TypeHashSet {
     }
 
     
+    auto markBit = [](U* elem) -> bool {
+      return bool(reinterpret_cast<uintptr_t>(elem) & U::TypeHashSetMarkBit);
+    };
+    auto toggleMarkBit = [](U* elem) -> U* {
+      return reinterpret_cast<U*>(
+          reinterpret_cast<uintptr_t>(elem) ^ U::TypeHashSetMarkBit);
+    };
+
+    
     
     if (count == 1) {
-      values = reinterpret_cast<U**>(f(reinterpret_cast<U*>(values)));
+      U* elem = f(reinterpret_cast<U*>(values));
+      MOZ_ASSERT(!markBit(elem));
+      values = reinterpret_cast<U**>(elem);
       return;
     }
 
@@ -1004,18 +1015,12 @@ struct TypeHashSet {
     
     if (count <= SET_ARRAY_SIZE) {
       for (unsigned i = 0; i < count; i++) {
-        values[i] = f(values[i]);
+        U* elem = f(values[i]);
+        MOZ_ASSERT(!markBit(elem));
+        values[i] = elem;
       }
       return;
     }
-
-    
-    auto lowBit = [](U* elem) -> bool {
-      return bool(reinterpret_cast<uintptr_t>(elem) & 1);
-    };
-    auto toggleLowBit = [](U* elem) -> U* {
-      return reinterpret_cast<U*>(reinterpret_cast<uintptr_t>(elem) ^ 1);
-    };
 
     
     
@@ -1033,8 +1038,8 @@ struct TypeHashSet {
       MOZ_ASSERT(found <= count);
       U* elem = f(values[i]);
       values[i] = nullptr;
-      MOZ_ASSERT(!lowBit(elem));
-      values[found++] = toggleLowBit(elem);
+      MOZ_ASSERT(!markBit(elem));
+      values[found++] = toggleMarkBit(elem);
     }
     MOZ_ASSERT(found == count);
 
@@ -1047,17 +1052,17 @@ struct TypeHashSet {
     unsigned mask = capacity - 1;
     for (unsigned i = 0; i < count; i++) {
       U* elem = values[i];
-      if (!lowBit(elem)) {
+      if (!markBit(elem)) {
         
         
         continue;
       }
       values[i] = nullptr;
       while (elem) {
-        MOZ_ASSERT(lowBit(elem));
-        elem = toggleLowBit(elem);
+        MOZ_ASSERT(markBit(elem));
+        elem = toggleMarkBit(elem);
         unsigned pos = HashKey<T, Key>(Key::getKey(elem)) & mask;
-        while (values[pos] != nullptr && !lowBit(values[pos])) {
+        while (values[pos] != nullptr && !markBit(values[pos])) {
           pos = (pos + 1) & mask;
         }
         
