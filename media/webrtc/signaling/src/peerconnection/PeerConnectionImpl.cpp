@@ -1555,7 +1555,8 @@ PeerConnectionImpl::AddIceCandidate(
     
     
     
-    if (mSignalingState == PCImplSignalingState::SignalingStable) {
+    if (mSignalingState == PCImplSignalingState::SignalingStable &&
+        !transportId.empty()) {
       mMedia->AddIceCandidate(aCandidate, transportId, aUfrag);
       mRawTrickledCandidates.push_back(aCandidate);
     }
