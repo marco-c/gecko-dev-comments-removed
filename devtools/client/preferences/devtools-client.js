@@ -342,8 +342,6 @@ pref("devtools.responsive.showUserAgentInput", false);
 
 pref("devtools.aboutdebugging.new-enabled", false);
 
-pref("devtools.aboutdebugging.wifi", false);
-
 pref("devtools.aboutdebugging.process-debugging", false);
 
 pref("devtools.aboutdebugging.network-locations", "[]");

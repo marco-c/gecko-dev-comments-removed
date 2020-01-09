@@ -99,8 +99,6 @@ const PREFERENCES = {
   PROCESS_DEBUGGING_ENABLED: "devtools.aboutdebugging.process-debugging",
   
   SHOW_SYSTEM_ADDONS: "devtools.aboutdebugging.showSystemAddons",
-  
-  WIFI_ENABLED: "devtools.aboutdebugging.wifi",
 };
 
 const RUNTIME_PREFERENCE = {
