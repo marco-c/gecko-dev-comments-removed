@@ -866,7 +866,8 @@ nsThread::Shutdown() {
   }
 
   nsThreadShutdownContext* maybeContext = ShutdownInternal( true);
-  NS_ENSURE_TRUE(maybeContext, NS_ERROR_UNEXPECTED);
+  if (!maybeContext) return NS_ERROR_UNEXPECTED;
+
   NotNull<nsThreadShutdownContext*> context = WrapNotNull(maybeContext);
 
   
