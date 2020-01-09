@@ -16,9 +16,11 @@ ChromeUtils.defineModuleGetter(this, "Deprecated",
 
 const kAutoDetectors = [
   ["off", ""],
+  ["ja", "ja_parallel_state_machine"],
   ["ru", "ruprob"],
   ["uk", "ukprob"],
 ];
+
 
 
 
@@ -59,7 +61,9 @@ const kEncodings = new Set([
   "windows-1255",
   "ISO-8859-8",
   
-  "Japanese",
+  "Shift_JIS",
+  "EUC-JP",
+  "ISO-2022-JP",
   
   "EUC-KR",
   
@@ -91,6 +95,7 @@ function CharsetComparator(a, b) {
   
   let titleA = a.label.replace(/\(.*/, "") + b.value;
   let titleB = b.label.replace(/\(.*/, "") + a.value;
+  
   
   return titleA.localeCompare(titleB) || b.value.localeCompare(a.value);
 }
@@ -234,17 +239,7 @@ var CharsetMenu = {
 
 
 
-  foldCharset(charset, isAutodetected) {
-    if (isAutodetected) {
-      switch (charset) {
-        case "Shift_JIS":
-        case "EUC-JP":
-        case "ISO-2022-JP":
-          return "Japanese";
-        default:
-          
-      }
-    }
+  foldCharset(charset) {
     switch (charset) {
       case "ISO-8859-8-I":
         return "windows-1255";
@@ -257,11 +252,8 @@ var CharsetMenu = {
     }
   },
 
-  
-
-
   update(parent, charset) {
-    let menuitem = parent.getElementsByAttribute("charset", this.foldCharset(charset, false)).item(0);
+    let menuitem = parent.getElementsByAttribute("charset", this.foldCharset(charset)).item(0);
     if (menuitem) {
       menuitem.setAttribute("checked", "true");
     }

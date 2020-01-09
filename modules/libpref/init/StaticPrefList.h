@@ -3118,15 +3118,6 @@ VARCACHE_PREF(
 
 
 
-VARCACHE_PREF(
-  Live,
-  "intl.charset.detector.iso2022jp.allowed",
-   intl_charset_detector_iso2022jp_allowed,
-  bool, true
-)
-
-
-
 
 
 VARCACHE_PREF(

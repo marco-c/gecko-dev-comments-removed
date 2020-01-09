@@ -1275,6 +1275,7 @@ nsDocShell::GatherCharsetMenuTelemetry() {
     case kCharsetFromDocTypeDefault:
     case kCharsetFromCache:
     case kCharsetFromParentFrame:
+    case kCharsetFromHintPrevDoc:
       
       if (isFileURL) {
         Telemetry::AccumulateCategorical(
@@ -1887,26 +1888,6 @@ nsDocShell::GetMayEnableCharacterEncodingMenu(
   }
 
   *aMayEnableCharacterEncodingMenu = true;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetCharsetAutodetected(bool* aCharsetAutodetected) {
-  *aCharsetAutodetected = false;
-  if (!mContentViewer) {
-    return NS_OK;
-  }
-  Document* doc = mContentViewer->GetDocument();
-  if (!doc) {
-    return NS_OK;
-  }
-  int32_t source = doc->GetDocumentCharacterSetSource();
-
-  if (source == kCharsetFromAutoDetection ||
-      source == kCharsetFromUserForcedAutoDetection) {
-    *aCharsetAutodetected = true;
-  }
-
   return NS_OK;
 }
 
@@ -8384,11 +8365,11 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer) {
 
   const Encoding* forceCharset = nullptr;
   const Encoding* hintCharset = nullptr;
-  int32_t hintCharsetSource = kCharsetUninitialized;
-  float textZoom = 1.0;
-  float pageZoom = 1.0;
-  float overrideDPPX = 1.0;
-  bool styleDisabled = false;
+  int32_t hintCharsetSource;
+  float textZoom;
+  float pageZoom;
+  float overrideDPPX;
+  bool styleDisabled;
   
   nsCOMPtr<nsIContentViewer> newCv;
 
@@ -10199,8 +10180,6 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
         nsIHttpChannelInternal::REDIRECT_MODE_MANUAL);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
-
-  Unused << rv;  
 
   nsCOMPtr<nsIWritablePropertyBag2> props(do_QueryInterface(channel));
   if (props) {
