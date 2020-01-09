@@ -454,7 +454,7 @@ TimeoutManager::TimeoutManager(nsGlobalWindowInner& aWindow,
       mTimeouts(*this),
       mTimeoutIdCounter(1),
       mNextFiringId(InvalidFiringId + 1),
-#ifdef DEBUG
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
       mFiringIndex(0),
       mLastFiringIndex(-1),
 #endif
@@ -563,7 +563,7 @@ nsresult TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   }
 
   RefPtr<Timeout> timeout = new Timeout();
-#ifdef DEBUG
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   timeout->mFiringIndex = -1;
 #endif
   timeout->mWindow = &mWindow;
@@ -862,12 +862,27 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
         
         
         
+        
         if (IsValidFiringId(timeout->mFiringId)) {
           MOZ_LOG(gTimeoutLog, LogLevel::Debug,
                   ("Skipping Run%s(TimeoutManager=%p, timeout=%p) since "
-                   "firingId %d is valid (processing firingId %d)",
+                   "firingId %d is valid (processing firingId %d) - FiringIndex %ld (mLastFiringIndex %ld)",
                    timeout->mIsInterval ? "Interval" : "Timeout", this,
-                   timeout.get(), timeout->mFiringId, firingId));
+                   timeout.get(), timeout->mFiringId, firingId,
+                   timeout->mFiringIndex, mFiringIndex));
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+          
+          
+          
+          
+          
+
+          
+          
+          
+          
+          timeout->mFiringIndex = -1;
+#endif
           continue;
         }
 
@@ -899,7 +914,7 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
       
       
       
-#ifdef DEBUG
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
       if (timeout->mFiringIndex == -1) {
         timeout->mFiringIndex = mFiringIndex++;
       }
@@ -939,8 +954,16 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
           continue;
         }
 
-#ifdef DEBUG
-        MOZ_ASSERT(timeout->mFiringIndex > mLastFiringIndex);
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+        if (timeout->mFiringIndex <= mLastFiringIndex) {
+          MOZ_LOG(gTimeoutLog, LogLevel::Debug,
+                  ("Incorrect firing index for Run%s(TimeoutManager=%p, timeout=%p) with "
+                   "firingId %d - FiringIndex %ld (mLastFiringIndex %ld)",
+                   timeout->mIsInterval ? "Interval" : "Timeout", this,
+                   timeout.get(), timeout->mFiringId,
+                   timeout->mFiringIndex, mFiringIndex));
+        }
+        MOZ_DIAGNOSTIC_ASSERT(timeout->mFiringIndex > mLastFiringIndex);
         mLastFiringIndex = timeout->mFiringIndex;
 #endif
         
@@ -1068,7 +1091,7 @@ bool TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
   TimeStamp firingTime = aLastCallbackTime + nextInterval;
   TimeDuration delay = firingTime - aCurrentNow;
 
-#ifdef DEBUG
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   aTimeout->mFiringIndex = -1;
 #endif
   
