@@ -184,9 +184,6 @@ void JsepTrack::AddToMsection(
     } else {
       for (const std::string& streamId : mStreamIds) {
         msection->AddMsid(streamId, encodeTrackId ? mTrackId : "");
-        
-        
-        break;
       }
     }
   }
