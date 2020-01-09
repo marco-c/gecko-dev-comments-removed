@@ -81,6 +81,13 @@ void MacroAssembler::move32To64SignExtend(Register src, Register64 dest) {
 
 
 
+void MacroAssembler::load32SignExtendToPtr(const Address& src, Register dest) {
+  load32(src, dest);
+}
+
+
+
+
 void MacroAssembler::not32(Register reg) { ma_mvn(reg, reg); }
 
 void MacroAssembler::and32(Register src, Register dest) {

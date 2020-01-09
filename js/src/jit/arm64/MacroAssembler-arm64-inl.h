@@ -69,6 +69,14 @@ void MacroAssembler::move32To64SignExtend(Register src, Register64 dest) {
 
 
 
+void MacroAssembler::load32SignExtendToPtr(const Address& src, Register dest) {
+  load32(src, dest);
+  move32To64SignExtend(dest, Register64(dest));
+}
+
+
+
+
 void MacroAssembler::not32(Register reg) {
   Orn(ARMRegister(reg, 32), vixl::wzr, ARMRegister(reg, 32));
 }
