@@ -45,7 +45,7 @@ public class WebExtension {
     
 
 
-     final @NonNull Map<String, MessageDelegateInfo> messageDelegates;
+     final @NonNull Map<String, MessageDelegate> messageDelegates;
 
     private final static String LOGTAG = "WebExtension";
 
@@ -173,25 +173,7 @@ public class WebExtension {
             messageDelegates.remove(nativeApp);
             return;
         }
-        final MessageDelegateInfo info = new MessageDelegateInfo(messageDelegate, nativeApp);
-        messageDelegates.put(info.nativeApp, info);
-    }
-
-     static class MessageDelegateInfo {
-        public final @NonNull MessageDelegate delegate;
-        public final @NonNull String nativeApp;
-
-        public MessageDelegateInfo(final @NonNull MessageDelegate delegate,
-                                   final @NonNull String nativeApp) {
-            this.delegate = delegate;
-            this.nativeApp = nativeApp;
-        }
-
-        
-        protected MessageDelegateInfo() {
-            this.delegate = null;
-            this.nativeApp = null;
-        }
+        messageDelegates.put(nativeApp, messageDelegate);
     }
 
     
