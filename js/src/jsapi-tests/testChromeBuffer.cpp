@@ -159,11 +159,17 @@ BEGIN_TEST(testChromeBuffer) {
 
     JS::RootedValue rval(cx);
     CHECK(JS_CallFunction(cx, nullptr, fun, JS::HandleValueArray(v), &rval));
+#ifndef JS_SIMULATOR_ARM64
+    
+    
+    
+    
     bool match;
     CHECK(JS_StringEqualsAscii(
         cx, rval.toString(), "From trusted: InternalError: too much recursion",
         &match));
     CHECK(match);
+#endif
   }
 
   {
