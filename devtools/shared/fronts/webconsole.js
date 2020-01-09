@@ -22,14 +22,15 @@ const { webconsoleSpec } = require("devtools/shared/specs/webconsole");
 
 
 class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
-  constructor(client, form) {
+  constructor(client) {
     super(client);
-    this.actorID = form.from;
     this._client = client;
-    this.traits = form.traits || {};
+    this.traits = {};
     this._longStrings = {};
     this.events = [];
 
+    
+    this.formAttributeName = "consoleActor";
     
 
 
@@ -46,7 +47,6 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
     this.on("evaluationResult", this.onEvaluationResult);
     this.on("serverNetworkEvent", this.onNetworkEvent);
     this._client.addListener("networkEventUpdate", this.onNetworkEventUpdate);
-    this.manage(this);
   }
 
   getNetworkRequest(actorId) {
