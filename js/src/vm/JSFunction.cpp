@@ -2474,11 +2474,11 @@ JSAtom* js::IdToFunctionName(
   return NameToFunctionName(cx, idv, prefixKind);
 }
 
-bool js::SetFunctionNameIfNoOwnName(JSContext* cx, HandleFunction fun,
-                                    HandleValue name,
-                                    FunctionPrefixKind prefixKind) {
+bool js::SetFunctionName(JSContext* cx, HandleFunction fun, HandleValue name,
+                         FunctionPrefixKind prefixKind) {
   MOZ_ASSERT(name.isString() || name.isSymbol() || name.isNumber());
 
+  
   
   
   
@@ -2487,15 +2487,10 @@ bool js::SetFunctionNameIfNoOwnName(JSContext* cx, HandleFunction fun,
     fun->clearInferredName();
   }
 
-  if (fun->isClassConstructor()) {
-    
-    if (fun->contains(cx, cx->names().name)) {
-      return true;
-    }
-  } else {
-    
-    MOZ_ASSERT(!fun->containsPure(cx->names().name));
-  }
+  
+  
+  MOZ_ASSERT(!fun->containsPure(cx->names().name));
+  MOZ_ASSERT(!fun->hasResolvedName());
 
   JSAtom* funName = name.isSymbol()
                         ? SymbolToFunctionName(cx, name.toSymbol(), prefixKind)
@@ -2503,13 +2498,6 @@ bool js::SetFunctionNameIfNoOwnName(JSContext* cx, HandleFunction fun,
   if (!funName) {
     return false;
   }
-
-  
-  
-  
-  
-  
-  MOZ_ASSERT(!fun->hasResolvedName());
 
   fun->setInferredName(funName);
 
