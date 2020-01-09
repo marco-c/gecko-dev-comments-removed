@@ -119,8 +119,7 @@ async function closeAboutDevtoolsToolbox(aboutDebuggingDocument, devtoolsTab, wi
 
   
   info("Wait until about:devtools-toolbox is removed from debug targets");
-  await waitUntil(() =>
-    !findDebugTargetByText("about:devtools-toolbox?", aboutDebuggingDocument));
+  await waitUntil(() => !findDebugTargetByText("Toolbox - ", aboutDebuggingDocument));
 
   await waitForRequestsToSettle(win.AboutDebugging.store);
 }
