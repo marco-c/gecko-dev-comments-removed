@@ -47,7 +47,7 @@ add_task(async function test_activeStatus_observe() {
 
   
   formAutofillParent._computeStatus.returns(false);
-  formAutofillParent._onStatusChanged.resetHistory();
+  formAutofillParent._onStatusChanged.reset();
   formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.addresses.enabled");
   formAutofillParent.observe(null, "nsPref:changed", "extensions.formautofill.creditCards.enabled");
   Assert.equal(formAutofillParent._onStatusChanged.called, true);
@@ -55,14 +55,14 @@ add_task(async function test_activeStatus_observe() {
   
   await Promise.all(["add", "update", "remove", "reconcile"].map(async event => {
     formAutofillParent._computeStatus.returns(!formAutofillParent._active);
-    formAutofillParent._onStatusChanged.resetHistory();
+    formAutofillParent._onStatusChanged.reset();
     await formAutofillParent.observe(null, "formautofill-storage-changed", event);
     Assert.equal(formAutofillParent._onStatusChanged.called, true);
   }));
 
   
   formAutofillParent._computeStatus.returns(!formAutofillParent._active);
-  formAutofillParent._onStatusChanged.resetHistory();
+  formAutofillParent._onStatusChanged.reset();
   await formAutofillParent.observe(null, "formautofill-storage-changed", "notifyUsed");
   Assert.equal(formAutofillParent._onStatusChanged.called, false);
 });

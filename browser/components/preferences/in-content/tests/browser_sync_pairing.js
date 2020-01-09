@@ -1,13 +1,17 @@
 
 
 
+
 "use strict";
 
 const {UIState} = ChromeUtils.import("resource://services-sync/UIState.jsm", {});
 const {FxAccountsPairingFlow} = ChromeUtils.import("resource://gre/modules/FxAccountsPairing.jsm", {});
 
 
-const {sinon} = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
+registerCleanupFunction(() => {
+  delete window.sinon; 
+});
 
 let flowCounter = 0;
 
@@ -33,7 +37,7 @@ add_task(async function setup() {
 });
 
 add_task(async function testShowsQRCode() {
-  await runWithPairingDialog(async (win) => {
+  await runWithPairingDialog(async (win, sinon) => {
     let doc = win.document;
     let qrContainer = doc.getElementById("qrContainer");
     let qrWrapper = doc.getElementById("qrWrapper");
@@ -55,7 +59,7 @@ add_task(async function testShowsQRCode() {
 add_task(async function testCantShowQrCode() {
   const origStart = FxAccountsPairingFlow.start;
   FxAccountsPairingFlow.start = async () => { throw new Error("boom"); };
-  await runWithPairingDialog(async (win) => {
+  await runWithPairingDialog(async (win, sinon) => {
     let doc = win.document;
     let qrWrapper = doc.getElementById("qrWrapper");
 
@@ -72,7 +76,7 @@ add_task(async function testCantShowQrCode() {
 });
 
 add_task(async function testSwitchToWebContent() {
-  await runWithPairingDialog(async (win) => {
+  await runWithPairingDialog(async (win, sinon) => {
     let doc = win.document;
     let qrWrapper = doc.getElementById("qrWrapper");
 
@@ -87,7 +91,7 @@ add_task(async function testSwitchToWebContent() {
 });
 
 add_task(async function testError() {
-  await runWithPairingDialog(async (win) => {
+  await runWithPairingDialog(async (win, sinon) => {
     let doc = win.document;
     let qrWrapper = doc.getElementById("qrWrapper");
 
@@ -116,9 +120,11 @@ async function runWithPairingDialog(test) {
 
   let win = await promiseSubDialogLoaded;
 
-  await test(win);
+  let ss = sinon.sandbox.create();
 
-  sinon.restore();
+  await test(win, ss);
+
+  ss.restore();
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 }

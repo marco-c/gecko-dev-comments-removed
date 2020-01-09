@@ -3,5 +3,14 @@
 
 
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var {sinon} = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+
+
+
+
+
+var {clearInterval, clearTimeout, setInterval, setIntervalWithTarget, setTimeout, setTimeoutWithTarget} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", this);
+
+
+
 var gProfD = do_get_profile().QueryInterface(Ci.nsIFile);

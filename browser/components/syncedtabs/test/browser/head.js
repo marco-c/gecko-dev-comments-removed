@@ -1,3 +1,13 @@
 var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var {sinon} = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+
+
+
+
+
+Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
+
+registerCleanupFunction(async function() {
+  
+  delete window.sinon;
+});

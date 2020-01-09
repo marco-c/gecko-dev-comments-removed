@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 ChromeUtils.defineModuleGetter(this, "ExtensionSettingsStore",
