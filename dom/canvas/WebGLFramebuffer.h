@@ -166,6 +166,7 @@ class WebGLFramebuffer final : public nsWrapperCache,
 
     uint32_t width = 0;
     uint32_t height = 0;
+    bool hasFloat32 = false;
 
     
     std::vector<const WebGLFBAttachPoint*> texAttachments;  
