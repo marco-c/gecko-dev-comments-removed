@@ -1,0 +1,7 @@
+
+const headersAsJson = `%HEADERS%`;
+const headers = JSON.parse(headersAsJson);
+
+self.addEventListener('message', async (e) => {
+  e.source.postMessage(headers);
+});
