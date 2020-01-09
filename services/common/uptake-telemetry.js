@@ -161,8 +161,13 @@ class UptakeTelemetry {
     const channel = Policy.getChannel();
     const shouldSendEvent = !["release", "esr"].includes(channel) || hash < gSampleRate;
     if (shouldSendEvent) {
+      
+      const extraStr = Object.keys(extra).reduce(( acc, k ) => {
+        acc[k] = extra[k].toString();
+        return acc;
+      }, {});
       Services.telemetry
-        .recordEvent(TELEMETRY_EVENTS_ID, "uptake", component, status, extra);
+        .recordEvent(TELEMETRY_EVENTS_ID, "uptake", component, status, extraStr);
     }
 
     

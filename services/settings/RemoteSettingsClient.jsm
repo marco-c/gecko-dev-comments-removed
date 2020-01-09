@@ -282,8 +282,8 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-  async maybeSync(expectedTimestamp, options = { loadDump: true, trigger: "manual" }) {
-    const { loadDump, trigger } = options;
+  async maybeSync(expectedTimestamp, options = {}) {
+    const { loadDump = true, trigger = "manual" } = options;
 
     let reportStatus = null;
     try {
