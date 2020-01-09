@@ -348,6 +348,7 @@ class BrowsingContext : public nsWrapperCache,
 
   
   IPCInitializer GetIPCInitializer() {
+    MOZ_ASSERT(IsContent());
     IPCInitializer init;
     init.mId = Id();
     init.mParentId = mParent ? mParent->Id() : 0;
