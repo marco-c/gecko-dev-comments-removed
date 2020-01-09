@@ -4,13 +4,13 @@
 
 
 #include "VideoDecoderChild.h"
-#include "VideoDecoderManagerChild.h"
-#include "mozilla/layers/TextureClient.h"
-#include "mozilla/Telemetry.h"
-#include "base/thread.h"
-#include "MediaInfo.h"
-#include "ImageContainer.h"
 #include "GPUVideoImage.h"
+#include "ImageContainer.h"
+#include "MediaInfo.h"
+#include "VideoDecoderManagerChild.h"
+#include "base/thread.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/layers/TextureClient.h"
 
 namespace mozilla {
 
@@ -245,8 +245,7 @@ RefPtr<MediaDataDecoder::DecodePromise> VideoDecoderChild::Decode(
   MediaRawDataIPDL sample(
       MediaDataIPDL(aSample->mOffset, aSample->mTime.ToMicroseconds(),
                     aSample->mTimecode.ToMicroseconds(),
-                    aSample->mDuration.ToMicroseconds(), aSample->mFrames,
-                    aSample->mKeyframe),
+                    aSample->mDuration.ToMicroseconds(), aSample->mKeyframe),
       buffer);
   SendInput(sample);
   return mDecodePromise.Ensure(__func__);
