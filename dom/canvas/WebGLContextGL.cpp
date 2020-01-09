@@ -1350,11 +1350,6 @@ static bool ArePossiblePackEnums(const WebGLContext* webgl,
 
   
   
-  if (!webgl->mFormatUsage->AreUnpackEnumsValid(pi.format, pi.type))
-    return false;
-
-  
-  
   
   
   
@@ -1367,6 +1362,9 @@ static bool ArePossiblePackEnums(const WebGLContext* webgl,
   }
 
   if (pi.type == LOCAL_GL_UNSIGNED_INT_24_8) return false;
+
+  uint8_t bytes;
+  if (!GetBytesPerPixel(pi, &bytes)) return false;
 
   return true;
 }
