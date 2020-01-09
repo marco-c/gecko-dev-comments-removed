@@ -630,6 +630,8 @@ class PaintedLayerData {
                              const DisplayItemClip& aClip,
                              TransformClipNode* aTransform);
 
+  void HitRegionsUpdated();
+
   
 
 
@@ -650,6 +652,11 @@ class PaintedLayerData {
   bool VisibleRegionIntersects(const nsIntRegion& aRegion) const {
     return !mVisibleRegion.Intersect(aRegion).IsEmpty();
   }
+
+  
+
+
+  ContainerState* mState;
 
   
 
@@ -3617,6 +3624,7 @@ void ContainerState::FinishPaintedLayerData(
       containingPaintedLayerData->mDispatchToContentHitRegion.OrWith(
           containingPaintedLayerData->CombinedTouchActionRegion());
     }
+    containingPaintedLayerData->HitRegionsUpdated();
   } else {
     EventRegions regions(
         ScaleRegionToOutsidePixels(data->mHitRegion),
@@ -4047,11 +4055,15 @@ void PaintedLayerData::AccumulateHitTestItem(ContainerState* aState,
   mMaybeHitRegion.SimplifyOutward(8);
   mDispatchToContentHitRegion.SimplifyOutward(8);
 
+  HitRegionsUpdated();
+}
+
+void PaintedLayerData::HitRegionsUpdated() {
   
   
-  mScaledHitRegionBounds = aState->ScaleToOutsidePixels(mHitRegion.GetBounds());
+  mScaledHitRegionBounds = mState->ScaleToOutsidePixels(mHitRegion.GetBounds());
   mScaledMaybeHitRegionBounds =
-      aState->ScaleToOutsidePixels(mMaybeHitRegion.GetBounds());
+      mState->ScaleToOutsidePixels(mMaybeHitRegion.GetBounds());
 }
 
 void ContainerState::NewPaintedLayerData(
@@ -4059,6 +4071,7 @@ void ContainerState::NewPaintedLayerData(
     const ActiveScrolledRoot* aASR, const DisplayItemClipChain* aClipChain,
     const ActiveScrolledRoot* aScrollMetadataASR, const nsPoint& aTopLeft,
     const nsIFrame* aReferenceFrame, const bool aBackfaceHidden) {
+  aData->mState = this;
   aData->mAnimatedGeometryRoot = aAnimatedGeometryRoot;
   aData->mASR = aASR;
   aData->mClipChain = aClipChain;
