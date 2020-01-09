@@ -15,6 +15,7 @@
 #include "mozilla/gfx/UserData.h"              
 #include "mozilla/webrender/WebRenderTypes.h"  
 #include "nsTArray.h"                          
+#include "ImageTypes.h"                        
 
 namespace mozilla {
 namespace layers {
@@ -91,7 +92,7 @@ class SharedSurfacesChild final {
   static nsresult Share(ImageContainer* aContainer,
                         RenderRootStateManager* aManager,
                         wr::IpcResourceUpdateQueue& aResources,
-                        wr::ImageKey& aKey);
+                        wr::ImageKey& aKey, ContainerProducerID aProducerId);
 
   
 

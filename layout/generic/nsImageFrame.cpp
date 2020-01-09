@@ -740,7 +740,9 @@ void nsImageFrame::InvalidateSelf(const nsIntRect* aLayerInvalidRect,
   
   
   const auto type = DisplayItemType::TYPE_IMAGE;
-  if (WebRenderUserData::ProcessInvalidateForImage(this, type)) {
+  const auto producerId =
+      mImage ? mImage->GetProducerId() : kContainerProducerID_Invalid;
+  if (WebRenderUserData::ProcessInvalidateForImage(this, type, producerId)) {
     return;
   }
 

@@ -824,7 +824,8 @@ nsresult nsImageBoxFrame::OnFrameUpdate(imgIRequest* aRequest) {
   
   
   const auto type = DisplayItemType::TYPE_XUL_IMAGE;
-  if (WebRenderUserData::ProcessInvalidateForImage(this, type)) {
+  const auto producerId = aRequest->GetProducerId();
+  if (WebRenderUserData::ProcessInvalidateForImage(this, type, producerId)) {
     return NS_OK;
   }
 

@@ -7,6 +7,8 @@
 #ifndef GFX_IMAGETYPES_H
 #define GFX_IMAGETYPES_H
 
+#include <stdint.h>     
+
 namespace mozilla {
 
 enum class ImageFormat {
@@ -105,6 +107,16 @@ enum class YUVColorSpace {
   
   UNKNOWN,
 };
+
+namespace layers {
+
+typedef uint32_t ContainerFrameID;
+constexpr ContainerFrameID kContainerFrameID_Invalid = 0;
+
+typedef uint32_t ContainerProducerID;
+constexpr ContainerProducerID kContainerProducerID_Invalid = 0;
+
+}  
 
 }  
 

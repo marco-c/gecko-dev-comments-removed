@@ -39,7 +39,7 @@ void WebRenderBackgroundData::AddWebRenderCommands(
 }
 
  bool WebRenderUserData::ProcessInvalidateForImage(
-    nsIFrame* aFrame, DisplayItemType aType) {
+    nsIFrame* aFrame, DisplayItemType aType, ContainerProducerID aProducerId) {
   MOZ_ASSERT(aFrame);
 
   if (!aFrame->HasProperty(WebRenderUserDataProperty::Key())) {
@@ -57,7 +57,7 @@ void WebRenderBackgroundData::AddWebRenderCommands(
 
   RefPtr<WebRenderImageData> image =
       GetWebRenderUserData<WebRenderImageData>(aFrame, type);
-  if (image && image->UsingSharedSurface()) {
+  if (image && image->UsingSharedSurface(aProducerId)) {
     return true;
   }
 
@@ -107,7 +107,8 @@ WebRenderImageData::~WebRenderImageData() {
   }
 }
 
-bool WebRenderImageData::UsingSharedSurface() const {
+bool WebRenderImageData::UsingSharedSurface(
+    ContainerProducerID aProducerId) const {
   if (!mContainer || !mKey || mOwnsKey) {
     return false;
   }
@@ -117,7 +118,7 @@ bool WebRenderImageData::UsingSharedSurface() const {
   
   wr::ImageKey key;
   nsresult rv = SharedSurfacesChild::Share(
-      mContainer, mManager, mManager->AsyncResourceUpdates(), key);
+      mContainer, mManager, mManager->AsyncResourceUpdates(), key, aProducerId);
   return NS_SUCCEEDED(rv) && mKey.ref() == key;
 }
 
@@ -149,8 +150,8 @@ Maybe<wr::ImageKey> WebRenderImageData::UpdateImageKey(
 
   wr::WrImageKey key;
   if (!aFallback) {
-    nsresult rv =
-        SharedSurfacesChild::Share(aContainer, mManager, aResources, key);
+    nsresult rv = SharedSurfacesChild::Share(aContainer, mManager, aResources,
+                                             key, kContainerProducerID_Invalid);
     if (NS_SUCCEEDED(rv)) {
       
       
