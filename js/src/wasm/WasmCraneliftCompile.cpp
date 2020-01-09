@@ -88,6 +88,13 @@ static bool GenerateCraneliftCode(WasmMacroAssembler& masm,
     return false;
   }
 
+  
+  
+  
+  
+  masm.loadWasmTlsRegFromFrame();
+  masm.loadWasmPinnedRegsFromTls();
+
   wasm::GenerateFunctionEpilogue(masm, func.framePushed, offsets);
 
   masm.flush();
