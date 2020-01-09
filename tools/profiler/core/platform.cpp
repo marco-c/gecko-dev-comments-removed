@@ -445,6 +445,7 @@ class ActivePS {
       mFilters[i] = aFilters[i];
     }
 
+#if !defined(RELEASE_OR_BETA)
     if (mInterposeObserver) {
       
       
@@ -462,9 +463,11 @@ class ActivePS {
             }));
       }
     }
+#endif
   }
 
   ~ActivePS() {
+#if !defined(RELEASE_OR_BETA)
     if (mInterposeObserver) {
       
       
@@ -479,6 +482,7 @@ class ActivePS {
             }));
       }
     }
+#endif
   }
 
   bool ThreadSelected(const char* aThreadName) {
