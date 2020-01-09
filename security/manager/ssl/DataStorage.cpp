@@ -13,6 +13,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -54,24 +55,23 @@ namespace {
 
 
 
-
-
 class DataStorageSharedThread final {
  public:
   static nsresult Initialize();
   static nsresult Shutdown();
   static nsresult Dispatch(nsIRunnable* event);
 
+  virtual ~DataStorageSharedThread() {}
+
  private:
   DataStorageSharedThread() : mThread(nullptr) {}
 
-  virtual ~DataStorageSharedThread() {}
 
   nsCOMPtr<nsIThread> mThread;
 };
 
 StaticMutex sDataStorageSharedThreadMutex;
-static DataStorageSharedThread* gDataStorageSharedThread;
+static StaticAutoPtr<DataStorageSharedThread> gDataStorageSharedThread;
 static bool gDataStorageSharedThreadShutDown = false;
 
 nsresult DataStorageSharedThread::Initialize() {
@@ -124,7 +124,6 @@ nsresult DataStorageSharedThread::Shutdown() {
     rv = threadHandle->Shutdown();
   }
   gDataStorageSharedThread->mThread = nullptr;
-  delete gDataStorageSharedThread;
   gDataStorageSharedThread = nullptr;
 
   return rv;
@@ -215,31 +214,6 @@ already_AddRefed<DataStorage> DataStorage::GetFromRawFileName(
   if (!sDataStorages->Get(aFilename, getter_AddRefs(storage))) {
     storage = new DataStorage(aFilename);
     sDataStorages->Put(aFilename, storage);
-  }
-  return storage.forget();
-}
-
-
-already_AddRefed<DataStorage> DataStorage::GetIfExists(
-    DataStorageClass aFilename) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!sDataStorages) {
-    sDataStorages = new DataStorages();
-  }
-  nsString name;
-  switch (aFilename) {
-#define DATA_STORAGE(_)            \
-  case DataStorageClass::_:        \
-    name.AssignLiteral(#_ ".txt"); \
-    break;
-#include "mozilla/DataStorageList.h"
-#undef DATA_STORAGE
-    default:
-      MOZ_ASSERT_UNREACHABLE("Invalid DataStorages type passed?");
-  }
-  RefPtr<DataStorage> storage;
-  if (!name.IsEmpty()) {
-    sDataStorages->Get(name, getter_AddRefs(storage));
   }
   return storage.forget();
 }
@@ -396,18 +370,11 @@ nsresult DataStorage::Init(
   
   
   
-  
-  
-  
-  
-  
   if (XRE_IsParentProcess()) {
-    os->AddObserver(this, "profile-change-teardown", false);
     os->AddObserver(this, "profile-before-change", false);
   }
   
   
-  os->AddObserver(this, "xpcom-shutdown", false);
   os->AddObserver(this, "xpcom-shutdown-threads", false);
 
   
@@ -1079,7 +1046,7 @@ DataStorage::Observe(nsISupports* , const char* aTopic,
   }
 
   if (!XRE_IsParentProcess()) {
-    if (strcmp(aTopic, "xpcom-shutdown") == 0) {
+    if (strcmp(aTopic, "xpcom-shutdown-threads") == 0) {
       sDataStorages->Clear();
     }
     return NS_OK;
@@ -1089,20 +1056,22 @@ DataStorage::Observe(nsISupports* , const char* aTopic,
   
   
   
-  if (strcmp(aTopic, "profile-change-teardown") == 0 ||
-      strcmp(aTopic, "xpcom-shutdown") == 0) {
-    MutexAutoLock lock(mMutex);
-    if (!mShuttingDown) {
-      nsresult rv = AsyncWriteData(lock);
-      mShuttingDown = true;
-      Unused << NS_WARN_IF(NS_FAILED(rv));
-      if (mTimer) {
-        Unused << DispatchShutdownTimer(lock);
+  
+  if (strcmp(aTopic, "profile-before-change") == 0 ||
+      strcmp(aTopic, "xpcom-shutdown-threads") == 0) {
+    for (auto iter = sDataStorages->Iter(); !iter.Done(); iter.Next()) {
+      RefPtr<DataStorage> storage = iter.UserData();
+      MutexAutoLock lock(storage->mMutex);
+      if (!storage->mShuttingDown) {
+        nsresult rv = storage->AsyncWriteData(lock);
+        storage->mShuttingDown = true;
+        Unused << NS_WARN_IF(NS_FAILED(rv));
+        if (storage->mTimer) {
+          Unused << storage->DispatchShutdownTimer(lock);
+        }
       }
     }
     sDataStorages->Clear();
-  } else if (strcmp(aTopic, "profile-before-change") == 0 ||
-             strcmp(aTopic, "xpcom-shutdown-threads") == 0) {
     DataStorageSharedThread::Shutdown();
   }
 

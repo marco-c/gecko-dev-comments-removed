@@ -86,6 +86,8 @@ class DataStorageItem;
 
 
 
+
+
 enum DataStorageType {
   DataStorage_Persistent,
   DataStorage_Temporary,
@@ -108,7 +110,6 @@ class DataStorage : public nsIObserver {
   
   
   static already_AddRefed<DataStorage> Get(DataStorageClass aFilename);
-  static already_AddRefed<DataStorage> GetIfExists(DataStorageClass aFilename);
 
   
   
