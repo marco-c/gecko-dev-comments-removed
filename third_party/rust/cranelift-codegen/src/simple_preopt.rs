@@ -4,8 +4,6 @@
 
 
 
-#![allow(non_snake_case)]
-
 use crate::cursor::{Cursor, FuncCursor};
 use crate::divconst_magic_numbers::{magic_s32, magic_s64, magic_u32, magic_u64};
 use crate::divconst_magic_numbers::{MS32, MS64, MU32, MU64};
@@ -27,7 +25,7 @@ use crate::timing;
 
 
 #[inline]
-fn isPowerOf2_S32(x: i32) -> Option<(bool, u32)> {
+fn i32_is_power_of_two(x: i32) -> Option<(bool, u32)> {
     
     if x == -0x8000_0000 {
         return Some((true, 31));
@@ -41,7 +39,7 @@ fn isPowerOf2_S32(x: i32) -> Option<(bool, u32)> {
 
 
 #[inline]
-fn isPowerOf2_S64(x: i64) -> Option<(bool, u32)> {
+fn i64_is_power_of_two(x: i64) -> Option<(bool, u32)> {
     
     if x == -0x8000_0000_0000_0000 {
         return Some((true, 63));
@@ -53,10 +51,12 @@ fn isPowerOf2_S64(x: i64) -> Option<(bool, u32)> {
     None
 }
 
+
+
 #[derive(Debug)]
 enum DivRemByConstInfo {
-    DivU32(Value, u32), 
-    DivU64(Value, u64), 
+    DivU32(Value, u32),
+    DivU64(Value, u64),
     DivS32(Value, i32),
     DivS64(Value, i64),
     RemU32(Value, u32),
@@ -67,74 +67,78 @@ enum DivRemByConstInfo {
 
 
 
-
 fn package_up_divrem_info(
-    argL: Value,
-    argL_ty: Type,
-    argRs: i64,
-    isSigned: bool,
-    isRem: bool,
+    value: Value,
+    value_type: Type,
+    imm_i64: i64,
+    is_signed: bool,
+    is_rem: bool,
 ) -> Option<DivRemByConstInfo> {
-    let argRu: u64 = argRs as u64;
-    if !isSigned && argL_ty == I32 && argRu < 0x1_0000_0000 {
-        let con = if isRem {
-            DivRemByConstInfo::RemU32
-        } else {
-            DivRemByConstInfo::DivU32
-        };
-        return Some(con(argL, argRu as u32));
-    }
-    if !isSigned && argL_ty == I64 {
-        
-        let con = if isRem {
-            DivRemByConstInfo::RemU64
-        } else {
-            DivRemByConstInfo::DivU64
-        };
-        return Some(con(argL, argRu));
-    }
-    if isSigned && argL_ty == I32 && (argRu <= 0x7fff_ffff || argRu >= 0xffff_ffff_8000_0000) {
-        let con = if isRem {
-            DivRemByConstInfo::RemS32
-        } else {
-            DivRemByConstInfo::DivS32
-        };
-        return Some(con(argL, argRu as i32));
-    }
-    if isSigned && argL_ty == I64 {
-        
-        let con = if isRem {
-            DivRemByConstInfo::RemS64
-        } else {
-            DivRemByConstInfo::DivS64
-        };
-        return Some(con(argL, argRu as i64));
-    }
-    None
-}
+    let imm_u64 = imm_i64 as u64;
 
+    match (is_signed, value_type) {
+        (false, I32) => {
+            if imm_u64 < 0x1_0000_0000 {
+                if is_rem {
+                    Some(DivRemByConstInfo::RemU32(value, imm_u64 as u32))
+                } else {
+                    Some(DivRemByConstInfo::DivU32(value, imm_u64 as u32))
+                }
+            } else {
+                None
+            }
+        }
+
+        (false, I64) => {
+            
+            if is_rem {
+                Some(DivRemByConstInfo::RemU64(value, imm_u64))
+            } else {
+                Some(DivRemByConstInfo::DivU64(value, imm_u64))
+            }
+        }
+
+        (true, I32) => {
+            if imm_u64 <= 0x7fff_ffff || imm_u64 >= 0xffff_ffff_8000_0000 {
+                if is_rem {
+                    Some(DivRemByConstInfo::RemS32(value, imm_u64 as i32))
+                } else {
+                    Some(DivRemByConstInfo::DivS32(value, imm_u64 as i32))
+                }
+            } else {
+                None
+            }
+        }
+
+        (true, I64) => {
+            
+            if is_rem {
+                Some(DivRemByConstInfo::RemS64(value, imm_u64 as i64))
+            } else {
+                Some(DivRemByConstInfo::DivS64(value, imm_u64 as i64))
+            }
+        }
+
+        _ => None,
+    }
+}
 
 
 
 fn get_div_info(inst: Inst, dfg: &DataFlowGraph) -> Option<DivRemByConstInfo> {
-    let idata: &InstructionData = &dfg[inst];
-
-    if let InstructionData::BinaryImm { opcode, arg, imm } = *idata {
-        let (isSigned, isRem) = match opcode {
+    if let InstructionData::BinaryImm { opcode, arg, imm } = dfg[inst] {
+        let (is_signed, is_rem) = match opcode {
             Opcode::UdivImm => (false, false),
             Opcode::UremImm => (false, true),
             Opcode::SdivImm => (true, false),
             Opcode::SremImm => (true, true),
-            _other => return None,
+            _ => return None,
         };
-        
-        let argL_ty = dfg.value_type(arg);
-        return package_up_divrem_info(arg, argL_ty, imm.into(), isSigned, isRem);
+        return package_up_divrem_info(arg, dfg.value_type(arg), imm.into(), is_signed, is_rem);
     }
 
     None
 }
-
 
 
 
@@ -142,7 +146,7 @@ fn get_div_info(inst: Inst, dfg: &DataFlowGraph) -> Option<DivRemByConstInfo> {
 
 
 fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCursor, inst: Inst) {
-    let isRem = match *divrem_info {
+    let is_rem = match *divrem_info {
         DivRemByConstInfo::DivU32(_, _)
         | DivRemByConstInfo::DivU64(_, _)
         | DivRemByConstInfo::DivS32(_, _)
@@ -162,7 +166,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
         
         
         DivRemByConstInfo::DivU32(n1, 1) | DivRemByConstInfo::RemU32(n1, 1) => {
-            if isRem {
+            if is_rem {
                 pos.func.dfg.replace(inst).iconst(I32, 0);
             } else {
                 pos.func.dfg.replace(inst).copy(n1);
@@ -177,7 +181,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
             
             let k = d.trailing_zeros();
             debug_assert!(k >= 1 && k <= 31);
-            if isRem {
+            if is_rem {
                 let mask = (1u64 << k) - 1;
                 pos.func.dfg.replace(inst).band_imm(n1, mask as i64);
             } else {
@@ -216,7 +220,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
             }
             
             
-            if isRem {
+            if is_rem {
                 let tt = pos.ins().imul_imm(qf, d as i64);
                 pos.func.dfg.replace(inst).isub(n1, tt);
             } else {
@@ -232,7 +236,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
         
         
         DivRemByConstInfo::DivU64(n1, 1) | DivRemByConstInfo::RemU64(n1, 1) => {
-            if isRem {
+            if is_rem {
                 pos.func.dfg.replace(inst).iconst(I64, 0);
             } else {
                 pos.func.dfg.replace(inst).copy(n1);
@@ -247,7 +251,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
             
             let k = d.trailing_zeros();
             debug_assert!(k >= 1 && k <= 63);
-            if isRem {
+            if is_rem {
                 let mask = (1u64 << k) - 1;
                 pos.func.dfg.replace(inst).band_imm(n1, mask as i64);
             } else {
@@ -286,7 +290,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
             }
             
             
-            if isRem {
+            if is_rem {
                 let tt = pos.ins().imul_imm(qf, d as i64);
                 pos.func.dfg.replace(inst).isub(n1, tt);
             } else {
@@ -305,7 +309,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
         
         
         DivRemByConstInfo::DivS32(n1, 1) | DivRemByConstInfo::RemS32(n1, 1) => {
-            if isRem {
+            if is_rem {
                 pos.func.dfg.replace(inst).iconst(I32, 0);
             } else {
                 pos.func.dfg.replace(inst).copy(n1);
@@ -313,7 +317,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
         }
 
         DivRemByConstInfo::DivS32(n1, d) | DivRemByConstInfo::RemS32(n1, d) => {
-            if let Some((isNeg, k)) = isPowerOf2_S32(d) {
+            if let Some((is_negative, k)) = i32_is_power_of_two(d) {
                 
                 debug_assert!(k >= 1 && k <= 31);
                 let t1 = if k - 1 == 0 {
@@ -323,7 +327,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
                 };
                 let t2 = pos.ins().ushr_imm(t1, (32 - k) as i64);
                 let t3 = pos.ins().iadd(n1, t2);
-                if isRem {
+                if is_rem {
                     
                     let t4 = pos.ins().band_imm(t3, i32::wrapping_neg(1 << k) as i64);
                     
@@ -331,7 +335,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
                 } else {
                     
                     let t4 = pos.ins().sshr_imm(t3, k as i64);
-                    if isNeg {
+                    if is_negative {
                         pos.func.dfg.replace(inst).irsub_imm(t4, 0);
                     } else {
                         pos.func.dfg.replace(inst).copy(t4);
@@ -360,7 +364,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
                 let qf = pos.ins().iadd(q3, t1);
                 
                 
-                if isRem {
+                if is_rem {
                     let tt = pos.ins().imul_imm(qf, d as i64);
                     pos.func.dfg.replace(inst).isub(n1, tt);
                 } else {
@@ -380,7 +384,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
         
         
         DivRemByConstInfo::DivS64(n1, 1) | DivRemByConstInfo::RemS64(n1, 1) => {
-            if isRem {
+            if is_rem {
                 pos.func.dfg.replace(inst).iconst(I64, 0);
             } else {
                 pos.func.dfg.replace(inst).copy(n1);
@@ -388,7 +392,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
         }
 
         DivRemByConstInfo::DivS64(n1, d) | DivRemByConstInfo::RemS64(n1, d) => {
-            if let Some((isNeg, k)) = isPowerOf2_S64(d) {
+            if let Some((is_negative, k)) = i64_is_power_of_two(d) {
                 
                 debug_assert!(k >= 1 && k <= 63);
                 let t1 = if k - 1 == 0 {
@@ -398,7 +402,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
                 };
                 let t2 = pos.ins().ushr_imm(t1, (64 - k) as i64);
                 let t3 = pos.ins().iadd(n1, t2);
-                if isRem {
+                if is_rem {
                     
                     let t4 = pos.ins().band_imm(t3, i64::wrapping_neg(1 << k));
                     
@@ -406,7 +410,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
                 } else {
                     
                     let t4 = pos.ins().sshr_imm(t3, k as i64);
-                    if isNeg {
+                    if is_negative {
                         pos.func.dfg.replace(inst).irsub_imm(t4, 0);
                     } else {
                         pos.func.dfg.replace(inst).copy(t4);
@@ -435,7 +439,7 @@ fn do_divrem_transformation(divrem_info: &DivRemByConstInfo, pos: &mut FuncCurso
                 let qf = pos.ins().iadd(q3, t1);
                 
                 
-                if isRem {
+                if is_rem {
                     let tt = pos.ins().imul_imm(qf, d);
                     pos.func.dfg.replace(inst).isub(n1, tt);
                 } else {
@@ -771,14 +775,10 @@ pub fn do_preopt(func: &mut Function, cfg: &mut ControlFlowGraph) {
             simplify(&mut pos, inst);
 
             
-
-            let mb_dri = get_div_info(inst, &pos.func.dfg);
-            if let Some(divrem_info) = mb_dri {
+            if let Some(divrem_info) = get_div_info(inst, &pos.func.dfg) {
                 do_divrem_transformation(&divrem_info, &mut pos, inst);
                 continue;
             }
-
-            
 
             branch_opt(&mut pos, inst);
             branch_order(&mut pos, cfg, ebb, inst);

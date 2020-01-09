@@ -3,6 +3,9 @@
 
 
 
+#[macro_use]
+pub mod ast;
+pub mod cpu_modes;
 pub mod formats;
 pub mod inst;
 pub mod isa;
@@ -12,6 +15,7 @@ pub mod settings;
 pub mod type_inference;
 pub mod types;
 pub mod typevar;
+pub mod xform;
 
 
 #[macro_export]

@@ -10,10 +10,6 @@ use cranelift_entity::{entity_impl, PrimaryMap};
 
 
 
-
-
-
-
 #[derive(Debug)]
 pub struct FormatField {
     
@@ -37,24 +33,21 @@ pub struct FormatField {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Debug)]
 pub struct InstructionFormat {
+    
+    
     pub name: &'static str,
+
     pub num_value_operands: usize,
+
     pub has_value_list: bool,
+
     pub imm_fields: Vec<FormatField>,
+
+    
+    
+    
     pub typevar_operand: Option<usize>,
 }
 
@@ -162,7 +155,7 @@ impl InstructionFormatBuilder {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct InstructionFormatIndex(u32);
 entity_impl!(InstructionFormatIndex);
 

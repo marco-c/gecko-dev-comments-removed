@@ -92,6 +92,25 @@ fn size_plus_maybe_sib_or_offset_for_in_reg_1(
 }
 
 
+
+fn maybe_iconst_imm(pos: &FuncCursor, value: ir::Value) -> Option<i64> {
+    if let ir::ValueDef::Result(inst, _) = &pos.func.dfg.value_def(value) {
+        if let ir::InstructionData::UnaryImm {
+            opcode: ir::Opcode::Iconst,
+            imm,
+        } = &pos.func.dfg[*inst]
+        {
+            let value: i64 = (*imm).into();
+            Some(value)
+        } else {
+            None
+        }
+    } else {
+        None
+    }
+}
+
+
 fn expand_sdivrem(
     inst: ir::Inst,
     func: &mut ir::Function,
@@ -109,7 +128,7 @@ fn expand_sdivrem(
         } => (args[0], args[1], true),
         _ => panic!("Need sdiv/srem: {}", func.dfg.display_inst(inst, None)),
     };
-    let avoid_div_traps = isa.flags().avoid_div_traps();
+
     let old_ebb = func.layout.pp_ebb(inst);
     let result = func.dfg.first_result(inst);
     let ty = func.dfg.value_type(result);
@@ -118,10 +137,38 @@ fn expand_sdivrem(
     pos.use_srcloc(inst);
     pos.func.dfg.clear_results(inst);
 
+    let avoid_div_traps = isa.flags().avoid_div_traps();
+
     
     if !avoid_div_traps && !is_srem {
         let xhi = pos.ins().sshr_imm(x, i64::from(ty.lane_bits()) - 1);
         pos.ins().with_result(result).x86_sdivmodx(x, xhi, y);
+        pos.remove_inst();
+        return;
+    }
+
+    
+    
+    
+    let (could_be_zero, could_be_minus_one) = if let Some(imm) = maybe_iconst_imm(&pos, y) {
+        (imm == 0, imm == -1)
+    } else {
+        (true, true)
+    };
+
+    
+    if avoid_div_traps && could_be_zero {
+        pos.ins().trapz(y, ir::TrapCode::IntegerDivisionByZero);
+    }
+
+    if !could_be_minus_one {
+        let xhi = pos.ins().sshr_imm(x, i64::from(ty.lane_bits()) - 1);
+        let reuse = if is_srem {
+            [None, Some(result)]
+        } else {
+            [Some(result), None]
+        };
+        pos.ins().with_results(reuse).x86_sdivmodx(x, xhi, y);
         pos.remove_inst();
         return;
     }
@@ -138,11 +185,6 @@ fn expand_sdivrem(
     
     let is_m1 = pos.ins().ifcmp_imm(y, -1);
     pos.ins().brif(IntCC::Equal, is_m1, minus_one, &[]);
-
-    
-    if avoid_div_traps {
-        pos.ins().trapz(y, ir::TrapCode::IntegerDivisionByZero);
-    }
 
     
     
@@ -206,7 +248,17 @@ fn expand_udivrem(
 
     
     if avoid_div_traps {
-        pos.ins().trapz(y, ir::TrapCode::IntegerDivisionByZero);
+        let zero_check = if let Some(imm) = maybe_iconst_imm(&pos, y) {
+            
+            
+            
+            imm == 0
+        } else {
+            true
+        };
+        if zero_check {
+            pos.ins().trapz(y, ir::TrapCode::IntegerDivisionByZero);
+        }
     }
 
     

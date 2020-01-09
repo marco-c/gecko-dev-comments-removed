@@ -134,7 +134,7 @@ pub struct OperandKind {
     
     pub rust_type: String,
 
-    fields: OperandKindFields,
+    pub fields: OperandKindFields,
 }
 
 impl OperandKind {
