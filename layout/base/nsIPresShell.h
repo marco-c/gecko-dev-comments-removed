@@ -349,7 +349,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual nsresult ResizeReflowIgnoreOverride(
+  MOZ_CAN_RUN_SCRIPT virtual nsresult ResizeReflowIgnoreOverride(
       nscoord aWidth, nscoord aHeight, nscoord aOldWidth, nscoord aOldHeight,
       ResizeReflowOptions aOptions = ResizeReflowOptions::eBSizeExact) = 0;
 
