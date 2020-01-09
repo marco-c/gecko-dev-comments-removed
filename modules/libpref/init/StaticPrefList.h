@@ -211,6 +211,15 @@ VARCACHE_PREF(
 
 
 
+
+VARCACHE_PREF(
+  "dom.event.clipboardevents.enabled",
+   dom_event_clipboardevents_enabled,
+  bool, true
+)
+
+
+
 VARCACHE_PREF(
   "dom.keyboardevent.keypress.set_keycode_and_charcode_to_same_value",
    dom_keyboardevent_keypress_set_keycode_and_charcode_to_same_value,

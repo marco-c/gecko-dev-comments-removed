@@ -130,6 +130,16 @@ enum class EditorInputType : EditorInputTypeType {
 
 #undef NS_DEFINE_INPUTTYPE
 
+inline bool ExposesClipboardDataOrDataTransfer(EditorInputType aInputType) {
+  switch (aInputType) {
+    case EditorInputType::eInsertFromPaste:
+    case EditorInputType::eInsertFromPasteAsQuotation:
+      return true;
+    default:
+      return false;
+  }
+}
+
 
 
 
