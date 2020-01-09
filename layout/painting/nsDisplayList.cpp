@@ -2469,8 +2469,7 @@ FrameLayerBuilder* nsDisplayList::BuildLayers(nsDisplayListBuilder* aBuilder,
   {
 #ifdef MOZ_GECKO_PROFILER
     nsCOMPtr<nsIDocShell> docShell = presContext->GetDocShell();
-    AUTO_PROFILER_TRACING_DOCSHELL("Paint", "LayerBuilding", GRAPHICS,
-                                   docShell);
+    AUTO_PROFILER_TRACING_DOCSHELL("Paint", "LayerBuilding", docShell);
 #endif
 
     if (XRE_IsContentProcess() && gfxPrefs::AlwaysPaint()) {
@@ -9379,8 +9378,7 @@ bool nsDisplayFilters::CreateWebRenderCommands(
       aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder, wrFilters,
       LayoutDeviceRect(), nullptr, nullptr,
       opacity != 1.0f && mHandleOpacity ? &opacity : nullptr, nullptr,
-      wr::ReferenceFrameKind::Transform, gfx::CompositionOp::OP_OVER, true,
-      false, Nothing(), clip);
+      gfx::CompositionOp::OP_OVER, true, false, Nothing(), clip);
 
   nsDisplayEffectsBase::CreateWebRenderCommands(aBuilder, aResources, sc,
                                                 aManager, aDisplayListBuilder);
