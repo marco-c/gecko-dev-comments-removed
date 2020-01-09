@@ -41,6 +41,9 @@ function getDeclarationState(declaration, ruleId) {
     
     isEnabled: declaration.enabled,
     
+    
+    isInvisible: declaration.invisible,
+    
     isKnownProperty: declaration.isKnownProperty,
     
     isNameValid: declaration.isNameValid(),

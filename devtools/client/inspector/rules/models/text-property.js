@@ -35,6 +35,7 @@ loader.lazyRequireGetter(this, "escapeCSSComment", "devtools/shared/css/parsing-
 
 
 
+
 function TextProperty(rule, name, value, priority, enabled = true,
                       invisible = false) {
   this.id = name + "_" + generateUUID().toString();
