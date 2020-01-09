@@ -480,9 +480,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitCreateFieldKeys(ListNode* obj);
   MOZ_MUST_USE bool emitCreateFieldInitializers(ListNode* obj);
   const FieldInitializers& findFieldInitializersForCall();
-  MOZ_MUST_USE bool emitCopyInitializersToLocalInitializers();
-  enum class IsSuperCall : bool { No, Yes };
-  MOZ_MUST_USE bool emitInitializeInstanceFields(IsSuperCall isSuperCall);
+  MOZ_MUST_USE bool emitInitializeInstanceFields();
 
   
   

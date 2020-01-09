@@ -1939,13 +1939,6 @@ GeneralParser<ParseHandler, Unit>::functionBody(InHandling inHandling,
     }
   }
 
-  if (kind == FunctionSyntaxKind::DerivedClassConstructor) {
-    if (!noteDeclaredName(cx_->names().dotLocalInitializers,
-                          DeclarationKind::Var, pos())) {
-      return null();
-    }
-  }
-
   return finishLexicalScope(pc_->varScope(), body);
 }
 
@@ -2929,6 +2922,13 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
 
   FunctionBox* funbox = pc_->functionBox();
   RootedFunction fun(cx_, funbox->function());
+
+  if (kind == FunctionSyntaxKind::ClassConstructor ||
+      kind == FunctionSyntaxKind::DerivedClassConstructor) {
+    if (!noteUsedName(cx_->names().dotInitializers)) {
+      return null();
+    }
+  }
 
   
   
@@ -6823,8 +6823,13 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
       return false;
     }
 
-    return handler_.addClassFieldDefinition(classMembers, propName,
-                                            initializer);
+    ClassFieldType field =
+        handler_.newClassFieldDefinition(propName, initializer);
+    if (!field) {
+      return false;
+    }
+
+    return handler_.addClassMemberDefinition(classMembers, field);
   }
 
   if (propType != PropertyType::Getter && propType != PropertyType::Setter &&
@@ -6877,6 +6882,21 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
 
   
   
+  Maybe<ParseContext::Scope> dotInitializersScope;
+  if (isConstructor && !options().selfHostingMode) {
+    dotInitializersScope.emplace(this);
+    if (!dotInitializersScope->init(pc_)) {
+      return null();
+    }
+
+    if (!noteDeclaredName(cx_->names().dotInitializers, DeclarationKind::Let,
+                          pos())) {
+      return null();
+    }
+  }
+
+  
+  
   
   FunctionNodeType funNode = methodDefinition(
       isConstructor ? classStartOffset : propNameOffset, propType, funName);
@@ -6885,8 +6905,22 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
   }
 
   AccessorType atype = ToAccessorType(propType);
-  return handler_.addClassMethodDefinition(classMembers, propName, funNode,
-                                           atype, isStatic);
+
+  Node method =
+      handler_.newClassMethodDefinition(propName, funNode, atype, isStatic);
+  if (!method) {
+    return false;
+  }
+
+  if (dotInitializersScope.isSome()) {
+    method = finishLexicalScope(*dotInitializersScope, method);
+    if (!method) {
+      return null();
+    }
+    dotInitializersScope.reset();
+  }
+
+  return handler_.addClassMemberDefinition(classMembers, method);
 }
 
 template <class ParseHandler, typename Unit>
@@ -6898,6 +6932,19 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
   
   
   if (classStmt.constructorBox == nullptr && numFields > 0) {
+    MOZ_ASSERT(!options().selfHostingMode);
+    
+    
+    ParseContext::Scope dotInitializersScope(this);
+    if (!dotInitializersScope.init(pc_)) {
+      return null();
+    }
+
+    if (!noteDeclaredName(cx_->names().dotInitializers, DeclarationKind::Let,
+                          pos())) {
+      return null();
+    }
+
     
     FunctionNodeType synthesizedCtor =
         synthesizeConstructor(className, classStartOffset, hasHeritage);
@@ -6914,10 +6961,15 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
     if (!constructorNameNode) {
       return false;
     }
-
-    if (!handler_.addClassMethodDefinition(classMembers, constructorNameNode,
-                                           synthesizedCtor, AccessorType::None,
-                                            false)) {
+    ClassMethodType method = handler_.newClassMethodDefinition(
+        constructorNameNode, synthesizedCtor, AccessorType::None,
+         false);
+    if (!method) {
+      return false;
+    }
+    LexicalScopeNodeType scope =
+        finishLexicalScope(dotInitializersScope, method);
+    if (!handler_.addClassMemberDefinition(classMembers, scope)) {
       return false;
     }
   }
@@ -7039,37 +7091,6 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
       }
       if (done) {
         break;
-      }
-    }
-
-    if (numFields > 0) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!usedNames_.markAsAlwaysClosedOver(cx_, cx_->names().dotInitializers,
-                                             pc_->scriptId(),
-                                             pc_->innermostScope()->id())) {
-        return null();
-      }
-      if (!noteDeclaredName(cx_->names().dotInitializers, DeclarationKind::Let,
-                            namePos)) {
-        return null();
       }
     }
 
@@ -7209,14 +7230,8 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
     return null();
   }
 
-  
-  
-
-  if (hasHeritage == HasHeritage::Yes) {
-    if (!noteDeclaredName(cx_->names().dotLocalInitializers,
-                          DeclarationKind::Var, synthesizedBodyPos)) {
-      return null();
-    }
+  if (!noteUsedName(cx_->names().dotInitializers)) {
+    return null();
   }
 
   bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
@@ -7264,10 +7279,6 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
 
     BinaryNodeType setThis = handler_.newSetThis(thisName, superCall);
     if (!setThis) {
-      return null();
-    }
-
-    if (!noteUsedName(cx_->names().dotLocalInitializers)) {
       return null();
     }
 
@@ -9028,7 +9039,7 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::memberExpr(
           return null();
         }
 
-        if (!noteUsedName(cx_->names().dotLocalInitializers)) {
+        if (!noteUsedName(cx_->names().dotInitializers)) {
           return null();
         }
       } else {
