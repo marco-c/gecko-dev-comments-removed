@@ -712,13 +712,6 @@ class SourceMediaStream : public MediaStream {
 
 
 
-
-  StreamTime GetEndOfAppendedData(TrackID aID);
-  
-
-
-
-
   void EndTrack(TrackID aID);
   
 
