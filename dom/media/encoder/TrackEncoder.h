@@ -61,10 +61,6 @@ class TrackEncoder {
  public:
   explicit TrackEncoder(TrackRate aTrackRate);
 
-  virtual void Suspend(TimeStamp aTime) = 0;
-
-  virtual void Resume(TimeStamp aTime) = 0;
-
   
 
 
@@ -200,13 +196,13 @@ class AudioTrackEncoder : public TrackEncoder {
 
 
 
-  void Suspend(TimeStamp aTime) override;
+  void Suspend();
 
   
 
 
 
-  void Resume(TimeStamp aTime) override;
+  void Resume();
 
   
 
@@ -340,12 +336,12 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
 
-  void Suspend(TimeStamp aTime) override;
+  void Suspend(TimeStamp aTime);
 
   
 
 
-  void Resume(TimeStamp aTime) override;
+  void Resume(TimeStamp aTime);
 
   
 

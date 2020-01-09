@@ -19,6 +19,7 @@
 namespace mozilla {
 
 class DriftCompensator;
+class Runnable;
 class TaskQueue;
 
 namespace dom {
@@ -116,12 +117,14 @@ class MediaEncoder {
                const nsAString& aMIMEType);
 
   
-  void Suspend(TimeStamp aTime);
+
+
+  void Suspend();
 
   
 
 
-  void Resume(TimeStamp aTime);
+  void Resume();
 
   
 
@@ -231,6 +234,12 @@ class MediaEncoder {
   ~MediaEncoder();
 
  private:
+  
+
+
+
+  void RunOnGraph(already_AddRefed<Runnable> aRunnable);
+
   
 
 
