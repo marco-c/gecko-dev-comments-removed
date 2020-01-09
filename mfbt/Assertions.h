@@ -304,7 +304,7 @@ MOZ_NoReturn(int aLine) {
 
 
 
-static MOZ_ALWAYS_INLINE MOZ_COLD MOZ_NORETURN void MOZ_Crash(
+static MOZ_ALWAYS_INLINE_EVEN_DEBUG MOZ_COLD MOZ_NORETURN void MOZ_Crash(
     const char* aFilename, int aLine, const char* aReason) {
 #ifdef DEBUG
   MOZ_ReportCrash(aReason, aFilename, aLine);
@@ -688,31 +688,6 @@ struct AssertionConditionType {
       if ((expr).isErr()) {         \
         /* Silence MOZ_MUST_USE. */ \
       }                             \
-    } while (false)
-#endif
-
-
-
-
-
-
-
-
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-#  define MOZ_DIAGNOSTIC_ALWAYS_TRUE(expr)   \
-    do {                                     \
-      if ((expr)) {                          \
-        /* Do nothing. */                    \
-      } else {                               \
-        MOZ_DIAGNOSTIC_ASSERT(false, #expr); \
-      }                                      \
-    } while (false)
-#else
-#  define MOZ_DIAGNOSTIC_ALWAYS_TRUE(expr) \
-    do {                                   \
-      if ((expr)) {                        \
-        /* Silence MOZ_MUST_USE. */        \
-      }                                    \
     } while (false)
 #endif
 
