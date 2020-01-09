@@ -3263,6 +3263,13 @@ Toolbox.prototype = {
   
 
 
+  getTextBoxContextMenu: function() {
+    return this.topDoc.getElementById("toolbox-menu");
+  },
+
+  
+
+
 
   async initPerformance() {
     
