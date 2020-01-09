@@ -141,12 +141,14 @@ TEST_F(TelemetryTestFixture, EncodedSnapshot) {
 
   nsAutoJSString aStr;
   nsAutoJSString bStr;
-  GetEncodedOriginStrings(aCx, telemetryTest1, aStr, bStr);
+  GetEncodedOriginStrings(aCx, telemetryTest1 + NS_LITERAL_CSTRING("-0"), aStr,
+                          bStr);
 
   
   nsAutoJSString secondAStr;
   nsAutoJSString secondBStr;
-  GetEncodedOriginStrings(aCx, telemetryTest1, secondAStr, secondBStr);
+  GetEncodedOriginStrings(aCx, telemetryTest1 + NS_LITERAL_CSTRING("-0"),
+                          secondAStr, secondBStr);
 
   ASSERT_TRUE(aStr != secondAStr)
       << "aStr (" << NS_ConvertUTF16toUTF8(aStr).get()
