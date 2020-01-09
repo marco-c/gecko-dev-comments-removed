@@ -43,6 +43,19 @@ var gHomePane = {
     return Preferences.getAll().filter(pref => pref.id.includes(this.ACTIVITY_STREAM_PREF_BRANCH));
   },
 
+  get isPocketNewtabEnabled() {
+    const value = Services.prefs.getStringPref("browser.newtabpage.activity-stream.discoverystream.config", "");
+    if (value) {
+      try {
+        return JSON.parse(value).enabled;
+      } catch (e) {
+        console.error("Failed to parse Discovery Stream pref.");
+      }
+    }
+
+    return false;
+  },
+
   
 
 
@@ -381,7 +394,8 @@ var gHomePane = {
 
 
   _changedHomeTabDefaultPrefs() {
-    const homeContentChanged = this.homePanePrefs.some(pref => pref.hasUserValue);
+    
+    const homeContentChanged = !this.isPocketNewtabEnabled && this.homePanePrefs.some(pref => pref.hasUserValue);
     const homePref = Preferences.get("browser.startup.homepage");
     const newtabPref = Preferences.get(this.NEWTAB_ENABLED_PREF);
 
@@ -403,7 +417,10 @@ var gHomePane = {
 
   restoreDefaultPrefsForHome() {
     this.restoreDefaultHomePage();
-    this.homePanePrefs.forEach(pref => Services.prefs.clearUserPref(pref.id));
+    
+    if (!this.isPocketNewtabEnabled) {
+      this.homePanePrefs.forEach(pref => Services.prefs.clearUserPref(pref.id));
+    }
   },
 
   init() {
