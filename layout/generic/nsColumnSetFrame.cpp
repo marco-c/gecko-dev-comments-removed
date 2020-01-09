@@ -9,6 +9,7 @@
 #include "nsColumnSetFrame.h"
 
 #include "mozilla/Logging.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/ToString.h"
 #include "nsCSSRendering.h"
 
@@ -99,7 +100,7 @@ bool nsDisplayColumnRule::CreateWebRenderCommands(
 
 
 
-nsContainerFrame* NS_NewColumnSetFrame(nsIPresShell* aPresShell,
+nsContainerFrame* NS_NewColumnSetFrame(PresShell* aPresShell,
                                        ComputedStyle* aStyle,
                                        nsFrameState aStateFlags) {
   nsColumnSetFrame* it =

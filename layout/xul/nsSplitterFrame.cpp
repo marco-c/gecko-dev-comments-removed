@@ -195,7 +195,7 @@ nsSplitterFrameInner::State nsSplitterFrameInner::GetState() {
 
 
 
-nsIFrame* NS_NewSplitterFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
+nsIFrame* NS_NewSplitterFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsSplitterFrame(aStyle, aPresShell->GetPresContext());
 }
 

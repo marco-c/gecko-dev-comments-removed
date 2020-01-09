@@ -31,8 +31,7 @@ using namespace mozilla;
 
 
 
-nsIFrame* NS_NewScrollbarFrame(nsIPresShell* aPresShell,
-                               ComputedStyle* aStyle) {
+nsIFrame* NS_NewScrollbarFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell)
       nsScrollbarFrame(aStyle, aPresShell->GetPresContext());
 }

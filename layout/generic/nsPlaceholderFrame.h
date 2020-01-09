@@ -39,8 +39,12 @@
 #include "nsFrame.h"
 #include "nsGkAtoms.h"
 
+namespace mozilla {
+class PresShell;
+}  
+
 class nsPlaceholderFrame;
-nsPlaceholderFrame* NS_NewPlaceholderFrame(nsIPresShell* aPresShell,
+nsPlaceholderFrame* NS_NewPlaceholderFrame(mozilla::PresShell* aPresShell,
                                            mozilla::ComputedStyle* aStyle,
                                            nsFrameState aTypeBits);
 
@@ -63,9 +67,9 @@ class nsPlaceholderFrame final : public nsFrame {
 
 
 
-  friend nsPlaceholderFrame* NS_NewPlaceholderFrame(nsIPresShell* aPresShell,
-                                                    ComputedStyle* aStyle,
-                                                    nsFrameState aTypeBits);
+  friend nsPlaceholderFrame* NS_NewPlaceholderFrame(
+      mozilla::PresShell* aPresShell, ComputedStyle* aStyle,
+      nsFrameState aTypeBits);
 
   nsPlaceholderFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                      nsFrameState aTypeBits)

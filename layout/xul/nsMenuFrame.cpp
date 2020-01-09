@@ -141,14 +141,14 @@ class nsMenuAttributeChangedEvent : public Runnable {
 
 
 
-nsIFrame* NS_NewMenuFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
+nsIFrame* NS_NewMenuFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   nsMenuFrame* it =
       new (aPresShell) nsMenuFrame(aStyle, aPresShell->GetPresContext());
   it->SetIsMenu(true);
   return it;
 }
 
-nsIFrame* NS_NewMenuItemFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
+nsIFrame* NS_NewMenuItemFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   nsMenuFrame* it =
       new (aPresShell) nsMenuFrame(aStyle, aPresShell->GetPresContext());
   it->SetIsMenu(false);

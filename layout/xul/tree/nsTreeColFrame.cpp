@@ -4,18 +4,20 @@
 
 
 
-#include "nsCOMPtr.h"
 #include "nsTreeColFrame.h"
+
+#include "mozilla/ComputedStyle.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/dom/XULTreeElement.h"
+#include "nsCOMPtr.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
-#include "mozilla/ComputedStyle.h"
 #include "nsNameSpaceManager.h"
-#include "mozilla/ErrorResult.h"
 #include "nsTreeColumns.h"
 #include "nsDisplayList.h"
 #include "nsTreeBodyFrame.h"
 #include "nsXULElement.h"
-#include "mozilla/dom/XULTreeElement.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -25,7 +27,7 @@ using namespace mozilla::dom;
 
 
 
-nsIFrame* NS_NewTreeColFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
+nsIFrame* NS_NewTreeColFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsTreeColFrame(aStyle, aPresShell->GetPresContext());
 }
 

@@ -120,7 +120,7 @@ static void FireImageDOMEvent(nsIContent* aContent, EventMessage aMessage) {
 
 
 
-nsIFrame* NS_NewImageBoxFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
+nsIFrame* NS_NewImageBoxFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsImageBoxFrame(aStyle, aPresShell->GetPresContext());
 }
 

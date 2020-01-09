@@ -5,6 +5,8 @@
 
 
 #include "nsMathMLmmultiscriptsFrame.h"
+
+#include "mozilla/PresShell.h"
 #include "nsPresContext.h"
 #include <algorithm>
 #include "gfxContext.h"
@@ -19,7 +21,7 @@ using namespace mozilla;
 
 
 
-nsIFrame* NS_NewMathMLmmultiscriptsFrame(nsIPresShell* aPresShell,
+nsIFrame* NS_NewMathMLmmultiscriptsFrame(PresShell* aPresShell,
                                          ComputedStyle* aStyle) {
   return new (aPresShell)
       nsMathMLmmultiscriptsFrame(aStyle, aPresShell->GetPresContext());

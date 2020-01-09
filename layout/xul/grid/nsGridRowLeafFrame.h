@@ -18,6 +18,10 @@
 #include "mozilla/Attributes.h"
 #include "nsBoxFrame.h"
 
+namespace mozilla {
+class PresShell;
+}  
+
 
 
 
@@ -29,7 +33,7 @@ class nsGridRowLeafFrame : public nsBoxFrame {
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsGridRowLeafFrame)
 
-  friend nsIFrame* NS_NewGridRowLeafFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewGridRowLeafFrame(mozilla::PresShell* aPresShell,
                                           ComputedStyle* aStyle);
 
 #ifdef DEBUG_FRAME_DUMP

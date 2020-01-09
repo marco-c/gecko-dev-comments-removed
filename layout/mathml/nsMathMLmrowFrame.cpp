@@ -5,6 +5,8 @@
 
 
 #include "nsMathMLmrowFrame.h"
+
+#include "mozilla/PresShell.h"
 #include "mozilla/gfx/2D.h"
 
 using namespace mozilla;
@@ -13,8 +15,7 @@ using namespace mozilla;
 
 
 
-nsIFrame* NS_NewMathMLmrowFrame(nsIPresShell* aPresShell,
-                                ComputedStyle* aStyle) {
+nsIFrame* NS_NewMathMLmrowFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell)
       nsMathMLmrowFrame(aStyle, aPresShell->GetPresContext());
 }

@@ -13,6 +13,10 @@
 
 class nsTableColFrame;
 
+namespace mozilla {
+class PresShell;
+}  
+
 
 
 
@@ -29,7 +33,7 @@ class nsTableColGroupFrame final : public nsContainerFrame {
 
 
   friend nsTableColGroupFrame* NS_NewTableColGroupFrame(
-      nsIPresShell* aPresShell, ComputedStyle* aStyle);
+      mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
 
   
   virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,

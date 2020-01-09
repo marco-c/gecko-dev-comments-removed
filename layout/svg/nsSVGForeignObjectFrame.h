@@ -10,17 +10,21 @@
 #include "mozilla/Attributes.h"
 #include "nsAutoPtr.h"
 #include "nsContainerFrame.h"
-#include "nsIPresShell.h"
+#include "nsIPresShell.h"  
 #include "nsSVGDisplayableFrame.h"
 #include "nsRegion.h"
 #include "nsSVGUtils.h"
 
 class gfxContext;
 
+namespace mozilla {
+class PresShell;
+}  
+
 class nsSVGForeignObjectFrame final : public nsContainerFrame,
                                       public nsSVGDisplayableFrame {
-  friend nsContainerFrame* NS_NewSVGForeignObjectFrame(nsIPresShell* aPresShell,
-                                                       ComputedStyle* aStyle);
+  friend nsContainerFrame* NS_NewSVGForeignObjectFrame(
+      mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
 
  protected:
   explicit nsSVGForeignObjectFrame(ComputedStyle* aStyle,

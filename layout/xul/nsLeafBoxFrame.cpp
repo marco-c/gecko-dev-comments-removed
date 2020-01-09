@@ -11,12 +11,13 @@
 
 
 
+#include "mozilla/ComputedStyle.h"
+#include "mozilla/PresShell.h"
 #include "nsLeafBoxFrame.h"
 #include "nsBoxFrame.h"
 #include "nsCOMPtr.h"
 #include "nsGkAtoms.h"
 #include "nsPresContext.h"
-#include "mozilla/ComputedStyle.h"
 #include "nsIContent.h"
 #include "nsNameSpaceManager.h"
 #include "nsBoxLayoutState.h"
@@ -33,7 +34,7 @@ using namespace mozilla;
 
 
 
-nsIFrame* NS_NewLeafBoxFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
+nsIFrame* NS_NewLeafBoxFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsLeafBoxFrame(aStyle, aPresShell->GetPresContext());
 }
 

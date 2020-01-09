@@ -18,12 +18,16 @@
 #include "mozilla/Attributes.h"
 #include "nsBoxFrame.h"
 
+namespace mozilla {
+class PresShell;
+}  
+
 class nsDeckFrame final : public nsBoxFrame {
  public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsDeckFrame)
 
-  friend nsIFrame* NS_NewDeckFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewDeckFrame(mozilla::PresShell* aPresShell,
                                    ComputedStyle* aStyle);
 
   virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,

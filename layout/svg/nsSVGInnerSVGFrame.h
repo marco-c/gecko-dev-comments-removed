@@ -9,8 +9,12 @@
 
 #include "nsSVGViewportFrame.h"
 
+namespace mozilla {
+class PresShell;
+}  
+
 class nsSVGInnerSVGFrame final : public nsSVGViewportFrame {
-  friend nsIFrame* NS_NewSVGInnerSVGFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewSVGInnerSVGFrame(mozilla::PresShell* aPresShell,
                                           ComputedStyle* aStyle);
 
  protected:

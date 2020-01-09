@@ -17,7 +17,11 @@
 
 class nsIScrollbarMediator;
 
-nsIFrame* NS_NewScrollbarFrame(nsIPresShell* aPresShell,
+namespace mozilla {
+class PresShell;
+}  
+
+nsIFrame* NS_NewScrollbarFrame(mozilla::PresShell* aPresShell,
                                mozilla::ComputedStyle* aStyle);
 
 class nsScrollbarFrame final : public nsBoxFrame,

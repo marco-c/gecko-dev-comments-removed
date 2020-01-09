@@ -13,6 +13,7 @@
 
 class nsTableCellFrame;
 namespace mozilla {
+class PresShell;
 struct TableCellReflowInput;
 }  
 
@@ -55,7 +56,7 @@ class nsTableRowFrame : public nsContainerFrame {
 
 
 
-  friend nsTableRowFrame* NS_NewTableRowFrame(nsIPresShell* aPresShell,
+  friend nsTableRowFrame* NS_NewTableRowFrame(mozilla::PresShell* aPresShell,
                                               ComputedStyle* aStyle);
 
   nsTableRowGroupFrame* GetTableRowGroupFrame() const {

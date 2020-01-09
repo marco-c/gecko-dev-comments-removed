@@ -3868,8 +3868,7 @@ bool nsTableFrame::GetNaturalBaselineBOffset(
 
 
 
-nsTableFrame* NS_NewTableFrame(nsIPresShell* aPresShell,
-                               ComputedStyle* aStyle) {
+nsTableFrame* NS_NewTableFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsTableFrame(aStyle, aPresShell->GetPresContext());
 }
 

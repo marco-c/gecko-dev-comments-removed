@@ -5,11 +5,12 @@
 
 
 
+#include "mozilla/PresShell.h"
+#include "mozilla/dom/SVGSVGElement.h"
+#include "mozilla/dom/SVGViewElement.h"
 #include "nsFrame.h"
 #include "nsGkAtoms.h"
 #include "nsSVGOuterSVGFrame.h"
-#include "mozilla/dom/SVGSVGElement.h"
-#include "mozilla/dom/SVGViewElement.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -21,7 +22,7 @@ using namespace mozilla::dom;
 
 
 class SVGViewFrame final : public nsFrame {
-  friend nsIFrame* NS_NewSVGViewFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewSVGViewFrame(mozilla::PresShell* aPresShell,
                                       ComputedStyle* aStyle);
 
  protected:
@@ -61,7 +62,7 @@ class SVGViewFrame final : public nsFrame {
   }
 };
 
-nsIFrame* NS_NewSVGViewFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
+nsIFrame* NS_NewSVGViewFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) SVGViewFrame(aStyle, aPresShell->GetPresContext());
 }
 

@@ -12,11 +12,15 @@
 #include "mozilla/Attributes.h"
 #include "nsBlockFrame.h"
 
+namespace mozilla {
+class PresShell;
+}  
+
 class nsXULLabelFrame final : public nsBlockFrame {
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsXULLabelFrame)
 
-  friend nsIFrame* NS_NewXULLabelFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewXULLabelFrame(mozilla::PresShell* aPresShell,
                                        ComputedStyle* aStyle);
 
   
@@ -40,7 +44,7 @@ class nsXULLabelFrame final : public nsBlockFrame {
   nsresult RegUnregAccessKey(bool aDoReg);
 };
 
-nsIFrame* NS_NewXULLabelFrame(nsIPresShell* aPresShell,
+nsIFrame* NS_NewXULLabelFrame(mozilla::PresShell* aPresShell,
                               mozilla::ComputedStyle* aStyle);
 
 #endif 

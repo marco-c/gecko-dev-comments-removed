@@ -14,6 +14,8 @@
 
 namespace mozilla {
 
+class PresShell;
+
 
 
 
@@ -28,9 +30,9 @@ class ColumnSetWrapperFrame final : public nsBlockFrame {
   NS_DECL_FRAMEARENA_HELPERS(ColumnSetWrapperFrame)
   NS_DECL_QUERYFRAME
 
-  friend nsBlockFrame* ::NS_NewColumnSetWrapperFrame(nsIPresShell* aPresShell,
-                                                     ComputedStyle* aStyle,
-                                                     nsFrameState aStateFlags);
+  friend nsBlockFrame* ::NS_NewColumnSetWrapperFrame(
+      mozilla::PresShell* aPresShell, ComputedStyle* aStyle,
+      nsFrameState aStateFlags);
 
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
             nsIFrame* aPrevInFlow) override;

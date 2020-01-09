@@ -5,6 +5,7 @@
 
 
 #include "gfxContext.h"
+#include "mozilla/PresShell.h"
 #include "nsMathMLmfencedFrame.h"
 #include "nsMathMLChar.h"
 #include <algorithm>
@@ -17,7 +18,7 @@ using mozilla::gfx::DrawTarget;
 
 
 
-nsIFrame* NS_NewMathMLmfencedFrame(nsIPresShell* aPresShell,
+nsIFrame* NS_NewMathMLmfencedFrame(PresShell* aPresShell,
                                    ComputedStyle* aStyle) {
   return new (aPresShell)
       nsMathMLmfencedFrame(aStyle, aPresShell->GetPresContext());

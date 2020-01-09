@@ -1370,7 +1370,7 @@ void nsTableRowFrame::InvalidateFrameWithRect(const nsRect& aRect,
 
 
 
-nsTableRowFrame* NS_NewTableRowFrame(nsIPresShell* aPresShell,
+nsTableRowFrame* NS_NewTableRowFrame(PresShell* aPresShell,
                                      ComputedStyle* aStyle) {
   return new (aPresShell) nsTableRowFrame(aStyle, aPresShell->GetPresContext());
 }

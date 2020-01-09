@@ -23,7 +23,7 @@ using namespace mozilla;
 
 
 
-nsIFrame* NS_NewMathMLmunderoverFrame(nsIPresShell* aPresShell,
+nsIFrame* NS_NewMathMLmunderoverFrame(PresShell* aPresShell,
                                       ComputedStyle* aStyle) {
   return new (aPresShell)
       nsMathMLmunderoverFrame(aStyle, aPresShell->GetPresContext());

@@ -16,6 +16,7 @@
 
 class nsTableRowFrame;
 namespace mozilla {
+class PresShell;
 struct TableRowGroupReflowInput;
 }  
 
@@ -44,7 +45,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
   friend nsTableRowGroupFrame* NS_NewTableRowGroupFrame(
-      nsIPresShell* aPresShell, ComputedStyle* aStyle);
+      mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
   virtual ~nsTableRowGroupFrame();
 
   

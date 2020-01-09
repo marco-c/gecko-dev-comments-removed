@@ -11,6 +11,10 @@
 #include "nsMathMLContainerFrame.h"
 #include "nsMathMLChar.h"
 
+namespace mozilla {
+class PresShell;
+}  
+
 
 
 
@@ -19,7 +23,7 @@ class nsMathMLmrootFrame final : public nsMathMLContainerFrame {
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmrootFrame)
 
-  friend nsIFrame* NS_NewMathMLmrootFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewMathMLmrootFrame(mozilla::PresShell* aPresShell,
                                           ComputedStyle* aStyle);
 
   virtual void SetAdditionalComputedStyle(

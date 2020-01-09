@@ -6,6 +6,7 @@
 
 
 #include "ComputedStyle.h"
+#include "mozilla/PresShell.h"
 #include "nsContainerFrame.h"
 #include "nsFrame.h"
 #include "nsGkAtoms.h"
@@ -19,7 +20,7 @@ using namespace mozilla;
 
 
 class SVGFELeafFrame final : public nsFrame {
-  friend nsIFrame* NS_NewSVGFELeafFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewSVGFELeafFrame(mozilla::PresShell* aPresShell,
                                         ComputedStyle* aStyle);
 
  protected:
@@ -59,8 +60,7 @@ class SVGFELeafFrame final : public nsFrame {
   }
 };
 
-nsIFrame* NS_NewSVGFELeafFrame(nsIPresShell* aPresShell,
-                               ComputedStyle* aStyle) {
+nsIFrame* NS_NewSVGFELeafFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) SVGFELeafFrame(aStyle, aPresShell->GetPresContext());
 }
 

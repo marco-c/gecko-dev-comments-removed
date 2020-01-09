@@ -10,6 +10,10 @@
 #include "mozilla/Attributes.h"
 #include "nsMathMLContainerFrame.h"
 
+namespace mozilla {
+class PresShell;
+}  
+
 
 
 
@@ -20,7 +24,7 @@ class nsMathMLmrowFrame final : public nsMathMLContainerFrame {
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmrowFrame)
 
-  friend nsIFrame* NS_NewMathMLmrowFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewMathMLmrowFrame(mozilla::PresShell* aPresShell,
                                          ComputedStyle* aStyle);
 
   virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,

@@ -19,9 +19,12 @@
 class gfxContext;
 class nsFrameList;
 class nsIContent;
-class nsIPresShell;
 
 struct nsRect;
+
+namespace mozilla {
+class PresShell;
+}  
 
 
 
@@ -36,7 +39,7 @@ struct nsRect;
 
 
 class nsSVGContainerFrame : public nsContainerFrame {
-  friend nsIFrame* NS_NewSVGContainerFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewSVGContainerFrame(mozilla::PresShell* aPresShell,
                                            ComputedStyle* aStyle);
 
  protected:

@@ -12,6 +12,10 @@
 #include "nsCellMap.h"
 #include "nsTableFrame.h"
 
+namespace mozilla {
+class PresShell;
+}  
+
 
 
 
@@ -27,8 +31,8 @@ class nsTableWrapperFrame : public nsContainerFrame {
 
 
 
-  friend nsTableWrapperFrame* NS_NewTableWrapperFrame(nsIPresShell* aPresShell,
-                                                      ComputedStyle* aStyle);
+  friend nsTableWrapperFrame* NS_NewTableWrapperFrame(
+      mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
 
   
 

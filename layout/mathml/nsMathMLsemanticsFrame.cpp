@@ -5,7 +5,9 @@
 
 
 #include "nsMathMLsemanticsFrame.h"
+
 #include "nsMimeTypes.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/gfx/2D.h"
 
 using namespace mozilla;
@@ -14,7 +16,7 @@ using namespace mozilla;
 
 
 
-nsIFrame* NS_NewMathMLsemanticsFrame(nsIPresShell* aPresShell,
+nsIFrame* NS_NewMathMLsemanticsFrame(PresShell* aPresShell,
                                      ComputedStyle* aStyle) {
   return new (aPresShell)
       nsMathMLsemanticsFrame(aStyle, aPresShell->GetPresContext());

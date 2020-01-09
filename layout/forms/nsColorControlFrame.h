@@ -13,6 +13,7 @@
 
 namespace mozilla {
 enum class PseudoStyleType : uint8_t;
+class PresShell;
 }  
 
 
@@ -23,7 +24,7 @@ class nsColorControlFrame final : public nsHTMLButtonControlFrame,
   typedef mozilla::dom::Element Element;
 
  public:
-  friend nsIFrame* NS_NewColorControlFrame(nsIPresShell* aPresShell,
+  friend nsIFrame* NS_NewColorControlFrame(mozilla::PresShell* aPresShell,
                                            ComputedStyle* aStyle);
 
   virtual void DestroyFrom(nsIFrame* aDestructRoot,
