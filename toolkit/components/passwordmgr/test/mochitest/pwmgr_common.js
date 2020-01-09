@@ -134,7 +134,11 @@ function checkUnmodifiedForm(formNum) {
 
 function registerRunTests() {
   return new Promise(resolve => {
-    function onDOMContentLoaded() {
+    
+    
+    
+    
+    window.addEventListener("DOMContentLoaded", (event) => {
       var form = document.createElement("form");
       form.id = "observerforcer";
       var username = document.createElement("input");
@@ -161,18 +165,7 @@ function registerRunTests() {
       SpecialPowers.addObserver(observer, "passwordmgr-processed-form");
 
       document.body.appendChild(form);
-    }
-    
-    
-    
-    
-    if (document.readyState == "complete" ||
-        document.readyState == "loaded" ||
-        document.readyState == "interactive") {
-      onDOMContentLoaded();
-    } else {
-      window.addEventListener("DOMContentLoaded", onDOMContentLoaded);
-    }
+    });
   });
 }
 
@@ -283,38 +276,13 @@ function runInParent(aFunctionOrURL) {
 
 
 
-var gTestDependsOnDeprecatedLogin = false;
-
-
-
-
-
-
-
-
-
-function setFormAndWaitForFieldFilled(form, {fieldSelector, fieldValue, formId}) {
-  
-  document.querySelector("#content").innerHTML = form;
-  return SimpleTest.promiseWaitForCondition(() => {
-    let ancestor = formId ? document.querySelector("#" + formId) :
-                            document.documentElement;
-    return ancestor.querySelector(fieldSelector).value == fieldValue;
-  }, "Wait for password manager to fill form");
-}
-
-
-
-
-
-
 function runChecksAfterCommonInit(aFunction = null) {
   SimpleTest.waitForExplicitFinish();
   if (aFunction) {
     window.addEventListener("runTests", aFunction);
     PWMGR_COMMON_PARENT.addMessageListener("registerRunTests", () => registerRunTests());
   }
-  PWMGR_COMMON_PARENT.sendSyncMessage("setupParent", {testDependsOnDeprecatedLogin: gTestDependsOnDeprecatedLogin});
+  PWMGR_COMMON_PARENT.sendSyncMessage("setupParent");
   return PWMGR_COMMON_PARENT;
 }
 

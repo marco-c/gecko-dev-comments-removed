@@ -21,7 +21,7 @@ var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-function commonInit(selfFilling, testDependsOnDeprecatedLogin) {
+function commonInit(selfFilling) {
   var pwmgr = Services.logins;
   assert.ok(pwmgr != null, "Access LoginManager");
 
@@ -36,18 +36,16 @@ function commonInit(selfFilling, testDependsOnDeprecatedLogin) {
     }
   }
 
-  if (testDependsOnDeprecatedLogin) {
-    
-    var login = Cc["@mozilla.org/login-manager/loginInfo;1"].
-                createInstance(Ci.nsILoginInfo);
-    login.init("http://mochi.test:8888", "http://mochi.test:8888", null,
-               "testuser", "testpass", "uname", "pword");
-    pwmgr.addLogin(login);
-  }
+  
+  var login = Cc["@mozilla.org/login-manager/loginInfo;1"].
+              createInstance(Ci.nsILoginInfo);
+  login.init("http://mochi.test:8888", "http://mochi.test:8888", null,
+             "testuser", "testpass", "uname", "pword");
+  pwmgr.addLogin(login);
 
   
   logins = pwmgr.getAllLogins();
-  assert.equal(logins.length, testDependsOnDeprecatedLogin ? 1 : 0, "Checking for successful init login");
+  assert.equal(logins.length, 1, "Checking for successful init login");
   disabledHosts = pwmgr.getAllDisabledHosts();
   assert.equal(disabledHosts.length, 0, "Checking for no disabled hosts");
 
@@ -106,8 +104,8 @@ Services.obs.addObserver(onPrompt, "passwordmgr-prompt-save");
 
 
 
-addMessageListener("setupParent", ({selfFilling = false, testDependsOnDeprecatedLogin = false} = {}) => {
-  commonInit(selfFilling, testDependsOnDeprecatedLogin);
+addMessageListener("setupParent", ({selfFilling = false} = {selfFilling: false}) => {
+  commonInit(selfFilling);
   sendAsyncMessage("doneSetup");
 });
 
