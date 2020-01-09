@@ -2820,6 +2820,10 @@ JSObject* JSStructuredCloneReader::readSavedFrame(uint32_t principalsTag) {
   }
   savedFrame->initColumn(column);
 
+  
+  
+  savedFrame->initSourceId(0);
+
   RootedValue name(context());
   if (!startRead(&name) || !(name.isString() || name.isNull())) {
     return nullptr;

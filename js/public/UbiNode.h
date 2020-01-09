@@ -248,6 +248,9 @@ class BaseStackFrame {
   virtual AtomOrTwoByteChars source() const = 0;
 
   
+  virtual uint32_t sourceId() const = 0;
+
+  
   
   virtual AtomOrTwoByteChars functionDisplayName() const = 0;
 
@@ -414,6 +417,7 @@ class StackFrame {
   uint32_t line() const { return base()->line(); }
   uint32_t column() const { return base()->column(); }
   AtomOrTwoByteChars source() const { return base()->source(); }
+  uint32_t sourceId() const { return base()->sourceId(); }
   AtomOrTwoByteChars functionDisplayName() const {
     return base()->functionDisplayName();
   }
@@ -464,6 +468,7 @@ class ConcreteStackFrame<void> : public BaseStackFrame {
   AtomOrTwoByteChars source() const override {
     MOZ_CRASH("null JS::ubi::StackFrame");
   }
+  uint32_t sourceId() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
   AtomOrTwoByteChars functionDisplayName() const override {
     MOZ_CRASH("null JS::ubi::StackFrame");
   }
