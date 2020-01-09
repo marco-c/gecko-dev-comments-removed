@@ -83,6 +83,19 @@ class WebRenderCompositionRecorder final : public CompositionRecorder {
   bool MaybeRecordFrame(wr::Renderer* aRenderer,
                         wr::WebRenderPipelineInfo* aFrameEpochs);
 
+  
+
+
+
+
+
+
+
+
+
+
+  bool ForceFinishRecording();
+
  protected:
   ~WebRenderCompositionRecorder() = default;
 
