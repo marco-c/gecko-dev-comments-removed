@@ -51,7 +51,8 @@ nsThreadPool::nsThreadPool()
       mIdleThreadTimeout(DEFAULT_IDLE_THREAD_TIMEOUT),
       mIdleCount(0),
       mStackSize(nsIThreadManager::DEFAULT_STACK_SIZE),
-      mShutdown(false) {
+      mShutdown(false),
+      mRegressiveMaxIdleTime(false) {
   LOG(("THRD-P(%p) constructor!!!\n", this));
 }
 
@@ -182,8 +183,10 @@ nsThreadPool::Run() {
       event = mEvents.GetEvent(nullptr, lock);
       if (!event) {
         TimeStamp now = TimeStamp::Now();
-        TimeDuration timeout =
-            TimeDuration::FromMilliseconds(mIdleThreadTimeout);
+        uint32_t idleTimeoutDivider =
+            (mIdleCount && mRegressiveMaxIdleTime) ? mIdleCount : 1;
+        TimeDuration timeout = TimeDuration::FromMilliseconds(
+            static_cast<double>(mIdleThreadTimeout) / idleTimeoutDivider);
 
         
         if (mShutdown) {
@@ -505,6 +508,26 @@ nsThreadPool::SetIdleThreadTimeout(uint32_t aValue) {
 
   
   if (mIdleThreadTimeout < oldTimeout && mIdleCount > 0) {
+    mEventsAvailable
+        .NotifyAll();  
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsThreadPool::GetIdleThreadTimeoutRegressive(bool* aValue) {
+  *aValue = mRegressiveMaxIdleTime;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsThreadPool::SetIdleThreadTimeoutRegressive(bool aValue) {
+  MutexAutoLock lock(mMutex);
+  bool oldRegressive = mRegressiveMaxIdleTime;
+  mRegressiveMaxIdleTime = aValue;
+
+  
+  if (mRegressiveMaxIdleTime > oldRegressive && mIdleCount > 1) {
     mEventsAvailable
         .NotifyAll();  
   }
