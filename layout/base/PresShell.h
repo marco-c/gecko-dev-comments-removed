@@ -638,7 +638,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  MOZ_CAN_RUN_SCRIPT
   nsresult HandleEventWithTarget(WidgetEvent* aEvent, nsIFrame* aFrame,
                                  nsIContent* aContent,
                                  nsEventStatus* aEventStatus,

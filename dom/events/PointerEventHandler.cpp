@@ -288,17 +288,18 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
   }
   
   
-  nsIContent* pendingContent = captureInfo->mPendingContent.get();
+  nsCOMPtr<nsIContent> pendingContent = captureInfo->mPendingContent.get();
   if (captureInfo->mOverrideContent) {
+    nsCOMPtr<nsIContent> overrideContent = captureInfo->mOverrideContent;
     DispatchGotOrLostPointerCaptureEvent( false, aEvent,
-                                         captureInfo->mOverrideContent);
+                                         overrideContent);
   }
   if (pendingContent) {
     DispatchGotOrLostPointerCaptureEvent( true, aEvent,
                                          pendingContent);
   }
 
-  captureInfo->mOverrideContent = pendingContent;
+  captureInfo->mOverrideContent = std::move(pendingContent);
   if (captureInfo->Empty()) {
     sPointerCaptureList->Remove(aEvent->pointerId);
   }

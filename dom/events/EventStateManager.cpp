@@ -4891,8 +4891,8 @@ nsresult EventStateManager::InitAndDispatchClickEvent(
   
   
   nsEventStatus status = nsEventStatus_eIgnore;
-  nsresult rv =
-      aPresShell->HandleEventWithTarget(&event, targetFrame, target, &status);
+  nsresult rv = aPresShell->HandleEventWithTarget(
+      &event, targetFrame, MOZ_KnownLive(target), &status);
   
   
   

@@ -47,6 +47,7 @@ class TextInputListener final : public nsIDOMEventListener,
   
 
 
+  MOZ_CAN_RUN_SCRIPT
   void OnSelectionChange(dom::Selection& aSelection, int16_t aReason);
 
   
