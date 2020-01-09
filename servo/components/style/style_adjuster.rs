@@ -727,44 +727,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
-    #[cfg(feature = "gecko")]
-    fn adjust_for_list_item(&mut self) {
-        use crate::properties::longhands::counter_increment::computed_value::T as ComputedIncrement;
-        use crate::values::generics::counters::CounterPair;
-        use crate::values::specified::list::MozListReversed;
-        use crate::values::CustomIdent;
-
-        if self.style.get_box().clone_display() != Display::ListItem {
-            return;
-        }
-        if self.style.pseudo.is_some() {
-            return;
-        }
-
-        let increments = self.style.get_counters().clone_counter_increment();
-        if increments.iter().any(|i| i.name.0 == atom!("list-item")) {
-            return;
-        }
-
-        let reversed = self.style.get_list().clone__moz_list_reversed() == MozListReversed::True;
-        let increment = if reversed { -1 } else { 1 };
-        let list_increment = CounterPair {
-            name: CustomIdent(atom!("list-item")),
-            value: increment,
-        };
-        let increments = increments
-            .iter()
-            .cloned()
-            .chain(std::iter::once(list_increment));
-        self.style
-            .mutate_counters()
-            .set_counter_increment(ComputedIncrement::new(increments.collect()));
-    }
-
-    
-    
-    
-    
     
     
     pub fn adjust<E>(&mut self, layout_parent_style: &ComputedValues, element: Option<E>)
@@ -825,7 +787,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         #[cfg(feature = "gecko")]
         {
             self.adjust_for_appearance(element);
-            self.adjust_for_list_item();
         }
         self.set_bits();
     }
