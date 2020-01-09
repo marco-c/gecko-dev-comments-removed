@@ -3098,13 +3098,6 @@ pref("layout.css.DOMMatrix.enabled", true);
 
 
 #ifdef RELEASE_OR_BETA
-pref("layout.css.getBoxQuads.enabled", false);
-#else
-pref("layout.css.getBoxQuads.enabled", true);
-#endif
-
-
-#ifdef RELEASE_OR_BETA
 pref("layout.css.convertFromNode.enabled", false);
 #else
 pref("layout.css.convertFromNode.enabled", true);

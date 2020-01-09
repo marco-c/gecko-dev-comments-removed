@@ -2353,11 +2353,6 @@ class nsContentUtils {
   
 
 
-  static bool GetBoxQuadsEnabled() { return sGetBoxQuadsEnabled; }
-
-  
-
-
   static bool RequestIdleCallbackEnabled() {
     return sRequestIdleCallbackEnabled;
   }
@@ -3438,7 +3433,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sGetBoxQuadsEnabled;
   static bool sSkipCursorMoveForSameValueSet;
   static bool sRequestIdleCallbackEnabled;
   static bool sTailingEnabled;
