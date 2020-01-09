@@ -34,6 +34,7 @@
 #include "js/experimental/SourceHook.h"  
 #include "js/GCVector.h"
 #include "js/HashTable.h"
+#include "js/Modules.h"  
 #ifdef DEBUG
 #  include "js/Proxy.h"  
 #endif

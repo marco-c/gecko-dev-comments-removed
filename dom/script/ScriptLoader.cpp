@@ -16,6 +16,7 @@
 #include "jsfriendapi.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/MemoryFunctions.h"
+#include "js/Modules.h"  
 #include "js/OffThreadScriptCompilation.h"
 #include "js/Realm.h"
 #include "js/SourceText.h"

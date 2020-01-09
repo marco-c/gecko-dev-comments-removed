@@ -9,6 +9,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 
 #include "jsfriendapi.h"
+#include "js/Modules.h"  
 #include "ScriptLoader.h"
 
 namespace mozilla {

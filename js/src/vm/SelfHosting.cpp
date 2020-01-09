@@ -44,6 +44,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/Date.h"
+#include "js/Modules.h"  
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  
 #include "js/StableStringChars.h"

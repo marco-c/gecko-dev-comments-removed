@@ -15,6 +15,7 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "js/CompilationAndEvaluation.h"
+#include "js/Modules.h"  
 #include "js/OffThreadScriptCompilation.h"
 #include "js/SourceText.h"
 #include "nsIScriptContext.h"
