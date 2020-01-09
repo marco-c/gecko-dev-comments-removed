@@ -247,7 +247,7 @@ def check_nsmodules(target, binary):
     
     
     
-    test_msvc = (buildconfig.substs.get('CC_TYPE') in ('msvc', 'clang-cl') and \
+    test_msvc = (buildconfig.substs.get('CC_TYPE') == 'clang-cl' and \
         buildconfig.substs.get('DEVELOPER_OPTIONS'))
     test_clang = (buildconfig.substs.get('CC_TYPE') == 'clang' and \
         buildconfig.substs.get('OS_ARCH') == 'WINNT')

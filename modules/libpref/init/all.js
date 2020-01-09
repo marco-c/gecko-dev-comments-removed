@@ -5998,9 +5998,7 @@ pref("dom.datatransfer.mozAtAPIs", true);
 #endif
 
 
-#ifdef MOZ_LIBPRIO
 pref("prio.enabled", false);
-#endif
 
 
 
