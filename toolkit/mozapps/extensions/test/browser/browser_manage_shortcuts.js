@@ -30,14 +30,14 @@ add_task(async function testUpdatingCommands() {
   let commands = {
     commandZero: {},
     commandOne: {
-      suggested_key: {default: "Shift+Alt+4"},
+      suggested_key: {default: "Shift+Alt+7"},
     },
     commandTwo: {
       description: "Command Two!",
       suggested_key: {default: "Alt+4"},
     },
     _execute_browser_action: {
-      suggested_key: {default: "Shift+Alt+5"},
+      suggested_key: {default: "Shift+Alt+9"},
     },
   };
   let extension = ExtensionTestUtils.loadExtension({
@@ -82,7 +82,7 @@ add_task(async function testUpdatingCommands() {
   }
 
   
-  await checkShortcut("commandOne", "4", {shiftKey: true, altKey: true});
+  await checkShortcut("commandOne", "7", {shiftKey: true, altKey: true});
   await checkShortcut("commandTwo", "4", {altKey: true});
 
   let doc = await loadShortcutsView();
@@ -99,25 +99,27 @@ add_task(async function testUpdatingCommands() {
     ["commandOne", "commandTwo", "_execute_browser_action", "commandZero"],
     "commandZero should be last since it is unset");
 
+  let count = 1;
   for (let input of inputs) {
     
     input.focus();
-    EventUtils.synthesizeKey("7", {shiftKey: true, altKey: true});
+    EventUtils.synthesizeKey("8", {shiftKey: true, altKey: true});
+    count++;
 
     
     await BrowserTestUtils.waitForCondition(
-      () => input.getAttribute("shortcut") == "Alt+Shift+7");
+      () => input.getAttribute("shortcut") == "Alt+Shift+8");
 
     
     if (input.getAttribute("name") != "_execute_browser_action") {
-      await checkShortcut(input.getAttribute("name"), "7", {shiftKey: true, altKey: true});
+      await checkShortcut(input.getAttribute("name"), "8", {shiftKey: true, altKey: true});
     }
 
     
     input.focus();
-    EventUtils.synthesizeKey("9", {shiftKey: true, altKey: true});
+    EventUtils.synthesizeKey(count.toString(), {shiftKey: true, altKey: true});
     await BrowserTestUtils.waitForCondition(
-      () => input.getAttribute("shortcut") == "Alt+Shift+9");
+      () => input.getAttribute("shortcut") == `Alt+Shift+${count}`);
   }
 
   
@@ -138,6 +140,12 @@ add_task(async function testUpdatingCommands() {
   EventUtils.synthesizeKey("Escape", {});
   ok(doc.activeElement != input, "The input is no longer focused");
   is(error.style.visibility, "hidden", "The error is hidden");
+
+  
+  input.focus();
+  EventUtils.synthesizeKey("2", {shiftKey: true, altKey: true});
+  is(label.dataset.l10nId, "shortcuts-exists", `The message is set`);
+  is(error.style.visibility, "visible", "The error is shown");
 
   
   function checkLabel(name, value) {
