@@ -12,17 +12,30 @@
 
 
 
-function do_test(insn1, insn2, errKind, errText, isMem, haveMemOrTable)
+
+
+
+
+
+
+
+
+
+function do_test(insn1, insn2, errKind, errText,
+                 isMem, haveStorage, haveInitA, haveInitP)
 {
     let preamble;
     if (isMem) {
-        let mem_def  = haveMemOrTable ? "(memory 1 1)" : "";
-        let mem_init = haveMemOrTable
-                       ? `(data (i32.const 2) "\\03\\01\\04\\01")
-                          (data passive "\\02\\07\\01\\08")
-                          (data (i32.const 12) "\\07\\05\\02\\03\\06")
-                          (data passive "\\05\\09\\02\\07\\06")`
-                       : "";
+        let mem_def  = haveStorage ? "(memory 1 1)" : "";
+        let mem_ia1  = `(data (i32.const 2) "\\03\\01\\04\\01")`;
+        let mem_ia2  = `(data (i32.const 12) "\\07\\05\\02\\03\\06")`;
+        let mem_ip1  = `(data passive "\\02\\07\\01\\08")`;
+        let mem_ip2  = `(data passive "\\05\\09\\02\\07\\06")`;
+        let mem_init = ``;
+        if (haveInitA && haveInitP)
+            mem_init = `${mem_ia1} ${mem_ip1} ${mem_ia2} ${mem_ip2}`;
+        else if (haveInitA && !haveInitP) mem_init = `${mem_ia1} ${mem_ia2}`;
+        else if (!haveInitA && haveInitP) mem_init = `${mem_ip1} ${mem_ip2}`;
         preamble
             = `;; -------- Memories --------
                ${mem_def}
@@ -30,13 +43,16 @@ function do_test(insn1, insn2, errKind, errText, isMem, haveMemOrTable)
                ${mem_init}
               `;
     } else {
-        let tab_def  = haveMemOrTable ? "(table 30 30 funcref)" : "";
-        let tab_init = haveMemOrTable
-                       ? `(elem (i32.const 2) 3 1 4 1)
-                          (elem passive 2 7 1 8)
-                          (elem (i32.const 12) 7 5 2 3 6)
-                          (elem passive 5 9 2 7 6)`
-                       : "";
+        let tab_def  = haveStorage ? "(table 30 30 funcref)" : "";
+        let tab_ia1  = `(elem (i32.const 2) 3 1 4 1)`;
+        let tab_ia2  = `(elem (i32.const 12) 7 5 2 3 6)`;
+        let tab_ip1  = `(elem passive 2 7 1 8)`;
+        let tab_ip2  = `(elem passive 5 9 2 7 6)`;
+        let tab_init = ``;
+        if (haveInitA && haveInitP)
+            tab_init = `${tab_ia1} ${tab_ip1} ${tab_ia2} ${tab_ip2}`;
+        else if (haveInitA && !haveInitP) tab_init = `${tab_ia1} ${tab_ia2}`;
+        else if (!haveInitA && haveInitP) tab_init = `${tab_ip1} ${tab_ip2}`;
         preamble
             = `;; -------- Tables --------
                ${tab_def}
@@ -79,38 +95,79 @@ function do_test(insn1, insn2, errKind, errText, isMem, haveMemOrTable)
     }
 }
 
-function mem_test(insn1, insn2, errKind, errText, haveMem=true) {
+
+
+
+function mem_test(insn1, insn2, errKind, errText,
+                  haveStorage=true, haveInitA=true, haveInitP=true) {
     do_test(insn1, insn2, errKind, errText,
-            true, haveMem);
+            true, haveStorage, haveInitA, haveInitP);
 }
 
-function mem_test_nofail(insn1, insn2) {
+function mem_test_nofail(insn1, insn2,
+                         haveStorage=true, haveInitA=true, haveInitP=true) {
     do_test(insn1, insn2, undefined, undefined,
-            true, true);
+            true, haveStorage, haveInitA, haveInitP);
 }
 
-function tab_test(insn1, insn2, errKind, errText, haveTab=true) {
+function tab_test(insn1, insn2, errKind, errText,
+                  haveStorage=true, haveInitA=true, haveInitP=true) {
     do_test(insn1, insn2, errKind, errText,
-            false, haveTab);
+            false, haveStorage, haveInitA, haveInitP);
 }
 
-function tab_test_nofail(insn1, insn2) {
+function tab_test_nofail(insn1, insn2,
+                         haveStorage=true, haveInitA=true, haveInitP=true) {
     do_test(insn1, insn2, undefined, undefined,
-            false, true);
+            false, haveStorage, haveInitA, haveInitP);
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mem_test("data.drop 0", "",
+         WebAssembly.CompileError, /data.drop segment index out of range/,
+         false, false, false);
 
 
 
 mem_test("data.drop 3", "",
-         WebAssembly.CompileError, /can't touch memory without memory/,
-         false);
+         WebAssembly.CompileError,
+         /active data segment requires a memory section/,
+         false, true, true);
+
+
+mem_test("data.drop 2", "",
+         WebAssembly.CompileError, /data.drop segment index out of range/,
+         false, false, true);
+
+
+mem_test_nofail("data.drop 1", "",
+                false, false, true);
+
 
 
 mem_test("(memory.init 1 (i32.const 1234) (i32.const 1) (i32.const 1))", "",
          WebAssembly.CompileError, /can't touch memory without memory/,
-         false);
+         false, false, false);
 
 
 mem_test("data.drop 4", "",
@@ -211,14 +268,33 @@ mem_test("(memory.init 1 (i32.const 1) (i32.const 1))", "",
 
 
 
+tab_test("elem.drop 0", "",
+         WebAssembly.CompileError,
+         /element segment index out of range for elem.drop/,
+         false, false, false);
+
+
+
 tab_test("elem.drop 3", "",
-         WebAssembly.CompileError, /can't elem.drop without a table/,
-         false);
+         WebAssembly.CompileError,
+         /active elem segment requires a table section/,
+         false, true, true);
+
+
+tab_test("elem.drop 2", "",
+         WebAssembly.CompileError,
+         /element segment index out of range for elem.drop/,
+         false, false, true);
+
+
+tab_test_nofail("elem.drop 1", "",
+                false, false, true);
+
 
 
 tab_test("(table.init 1 (i32.const 12) (i32.const 1) (i32.const 1))", "",
          WebAssembly.CompileError, /table index out of range/,
-         false);
+         false, false, false);
 
 
 tab_test("elem.drop 4", "",
