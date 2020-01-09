@@ -55,6 +55,7 @@
 #include "mozilla/WrappingOperations.h"
 
 #include <stdint.h>
+#include <type_traits>
 
 namespace mozilla {
 
@@ -226,27 +227,39 @@ MOZ_MUST_USE inline HashNumber HashGeneric(Args... aArgs) {
   return AddToHash(0, aArgs...);
 }
 
-namespace detail {
 
-template <typename T>
-constexpr HashNumber HashUntilZero(const T* aStr) {
+
+
+
+
+
+
+
+
+
+
+
+template <typename Iterator>
+MOZ_MUST_USE constexpr HashNumber HashStringUntilZero(Iterator aIter) {
   HashNumber hash = 0;
-  for (; T c = *aStr; aStr++) {
+  for (; auto c = *aIter; ++aIter) {
     hash = AddToHash(hash, c);
   }
   return hash;
 }
 
-template <typename T>
-HashNumber HashKnownLength(const T* aStr, size_t aLength) {
+
+
+
+template <typename Iterator>
+MOZ_MUST_USE constexpr HashNumber HashStringKnownLength(Iterator aIter,
+                                                        size_t aLength) {
   HashNumber hash = 0;
   for (size_t i = 0; i < aLength; i++) {
-    hash = AddToHash(hash, aStr[i]);
+    hash = AddToHash(hash, aIter[i]);
   }
   return hash;
 }
-
-} 
 
 
 
@@ -255,44 +268,51 @@ HashNumber HashKnownLength(const T* aStr, size_t aLength) {
 
 
 MOZ_MUST_USE inline HashNumber HashString(const char* aStr) {
-  return detail::HashUntilZero(reinterpret_cast<const unsigned char*>(aStr));
+  
+  
+  return HashStringUntilZero(reinterpret_cast<const unsigned char*>(aStr));
 }
 
 MOZ_MUST_USE inline HashNumber HashString(const char* aStr, size_t aLength) {
-  return detail::HashKnownLength(reinterpret_cast<const unsigned char*>(aStr),
-                                 aLength);
+  
+  
+  return HashStringKnownLength(reinterpret_cast<const unsigned char*>(aStr),
+                               aLength);
 }
 
 MOZ_MUST_USE
 inline HashNumber HashString(const unsigned char* aStr, size_t aLength) {
-  return detail::HashKnownLength(aStr, aLength);
+  return HashStringKnownLength(aStr, aLength);
 }
 
 
 
 
 MOZ_MUST_USE constexpr HashNumber HashString(const char16_t* aStr) {
-  return detail::HashUntilZero(aStr);
+  return HashStringUntilZero(aStr);
 }
 
 MOZ_MUST_USE inline HashNumber HashString(const char16_t* aStr,
                                           size_t aLength) {
-  return detail::HashKnownLength(aStr, aLength);
+  return HashStringKnownLength(aStr, aLength);
 }
 
 
 
 
-
-#ifdef WIN32
-MOZ_MUST_USE inline HashNumber HashString(const wchar_t* aStr) {
-  return detail::HashUntilZero(aStr);
+template <typename WCharT, typename = typename std::enable_if<
+                               std::is_same<WCharT, wchar_t>::value &&
+                               !std::is_same<wchar_t, char16_t>::value>::type>
+MOZ_MUST_USE inline HashNumber HashString(const WCharT* aStr) {
+  return HashStringUntilZero(aStr);
 }
 
-MOZ_MUST_USE inline HashNumber HashString(const wchar_t* aStr, size_t aLength) {
-  return detail::HashKnownLength(aStr, aLength);
+template <typename WCharT, typename = typename std::enable_if<
+                               std::is_same<WCharT, wchar_t>::value &&
+                               !std::is_same<wchar_t, char16_t>::value>::type>
+MOZ_MUST_USE inline HashNumber HashString(const WCharT* aStr, size_t aLength) {
+  return HashStringKnownLength(aStr, aLength);
 }
-#endif
 
 
 
