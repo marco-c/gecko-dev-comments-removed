@@ -409,40 +409,11 @@ function promiseAttributeMutation(aNode, aAttribute, aFilterFn) {
 }
 
 function popupShown(aPopup) {
-  return promisePopupEvent(aPopup, "shown");
+  return BrowserTestUtils.waitForPopupEvent(aPopup, "shown");
 }
 
 function popupHidden(aPopup) {
-  return promisePopupEvent(aPopup, "hidden");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function promisePopupEvent(aPopup, aEventSuffix) {
-  return new Promise(resolve => {
-    let eventType = "popup" + aEventSuffix;
-
-    function onPopupEvent(e) {
-      aPopup.removeEventListener(eventType, onPopupEvent);
-      resolve();
-    }
-
-    aPopup.addEventListener(eventType, onPopupEvent);
-  });
+  return BrowserTestUtils.waitForPopupEvent(aPopup, "hidden");
 }
 
 

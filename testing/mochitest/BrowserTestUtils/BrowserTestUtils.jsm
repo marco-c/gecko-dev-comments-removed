@@ -966,6 +966,25 @@ var BrowserTestUtils = {
 
 
 
+  waitForPopupEvent(popup, eventSuffix) {
+    let endState = {shown: "open", hidden: "closed"}[eventSuffix];
+
+    if (popup.state == endState) {
+      return Promise.resolve();
+    }
+    return this.waitForEvent(popup, "popup" + eventSuffix);
+  },
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
