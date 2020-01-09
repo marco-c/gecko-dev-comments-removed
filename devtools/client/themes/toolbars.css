@@ -46,6 +46,19 @@
 
 
 
+.devtools-input-toolbar {
+  display: flex;
+  
+  background-color: var(--theme-body-background) !important;
+  color: inherit;
+}
+
+.devtools-input-toolbar > .devtools-searchbox:first-child {
+  margin-inline-start: -3px; 
+}
+
+
+
 
 
 
