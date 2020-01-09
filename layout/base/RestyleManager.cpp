@@ -2815,6 +2815,13 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     
     
     
+    upToDateContext->StartImageLoads(*mPresContext->Document(),
+                                     oldOrDisplayContentsStyle);
+
+    
+    
+    
+    
     
     
     

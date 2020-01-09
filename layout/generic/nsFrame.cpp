@@ -588,6 +588,7 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                   NS_FRAME_MAY_BE_TRANSFORMED |
                   NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN));
   } else {
+    mComputedStyle->StartImageLoads(*PresContext()->Document());
     PresContext()->ConstructedFrame();
   }
   if (GetParent()) {
@@ -846,9 +847,11 @@ static void CompareLayers(
 }
 
 static void AddAndRemoveImageAssociations(
-    ImageLoader& aImageLoader,
     nsFrame* aFrame, const nsStyleImageLayers* aOldLayers,
     const nsStyleImageLayers* aNewLayers) {
+  ImageLoader* imageLoader =
+      aFrame->PresContext()->Document()->StyleImageLoader();
+
   
   
   
@@ -859,14 +862,14 @@ static void AddAndRemoveImageAssociations(
   
   if (aOldLayers && aFrame->HasImageRequest()) {
     CompareLayers(aOldLayers, aNewLayers,
-                  [&](imgRequestProxy* aReq) {
-                    aImageLoader.DisassociateRequestFromFrame(aReq, aFrame);
+                  [&imageLoader, aFrame](imgRequestProxy* aReq) {
+                    imageLoader->DisassociateRequestFromFrame(aReq, aFrame);
                   });
   }
 
   CompareLayers(aNewLayers, aOldLayers,
-                [&](imgRequestProxy* aReq) {
-                  aImageLoader.AssociateRequestToFrame(aReq, aFrame, 0);
+                [&imageLoader, aFrame](imgRequestProxy* aReq) {
+                  imageLoader->AssociateRequestToFrame(aReq, aFrame, 0);
                 });
 }
 
@@ -1039,32 +1042,16 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
     }
   }
 
-  Document* doc = PresContext()->Document();
-  ImageLoader* imageLoader = doc->StyleImageLoader();
-  
-  
-  
-  
-  
-  const bool isNonTextFirstContinuation =
-    !IsTextFrame() && !GetPrevContinuation();
-  if (isNonTextFirstContinuation) {
-    mComputedStyle->StartImageLoads(*doc);
-  }
-
-  
-  
-  
   const nsStyleImageLayers* oldLayers =
       aOldComputedStyle ? &aOldComputedStyle->StyleBackground()->mImage
                         : nullptr;
   const nsStyleImageLayers* newLayers = &StyleBackground()->mImage;
-  AddAndRemoveImageAssociations(*imageLoader, this, oldLayers, newLayers);
+  AddAndRemoveImageAssociations(this, oldLayers, newLayers);
 
   oldLayers =
       aOldComputedStyle ? &aOldComputedStyle->StyleSVGReset()->mMask : nullptr;
   newLayers = &StyleSVGReset()->mMask;
-  AddAndRemoveImageAssociations(*imageLoader, this, oldLayers, newLayers);
+  AddAndRemoveImageAssociations(this, oldLayers, newLayers);
 
   if (aOldComputedStyle) {
     
@@ -1139,6 +1126,7 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
     }
   }
 
+  ImageLoader* imageLoader = PresContext()->Document()->StyleImageLoader();
   imgIRequest* oldBorderImage =
       aOldComputedStyle
           ? aOldComputedStyle->StyleBorder()->GetBorderImageRequest()
@@ -1187,7 +1175,10 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
 
   
   
-  if (isNonTextFirstContinuation) {
+  
+  
+  
+  if (!IsTextFrame() && !GetPrevContinuation()) {
     
     
     SVGObserverUtils::InitiateResourceDocLoads(this);
