@@ -316,9 +316,73 @@ void MobileViewportManager::UpdateResolution(
       
       
       if (aDisplayWidthChangeRatio) {
-        newZoom = Some(
-            ScaleZoomWithDisplayWidth(zoom, aDisplayWidthChangeRatio.value(),
-                                      viewportSize, mMobileViewportSize));
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        
+        CSSSize contentSize = aViewportOrContentSize;
+        nsIScrollableFrame* rootScrollableFrame =
+            mPresShell->GetRootScrollFrameAsScrollable();
+        if (rootScrollableFrame) {
+          nsRect scrollableRect =
+              nsLayoutUtils::CalculateScrollableRectForFrame(
+                  rootScrollableFrame, nullptr);
+          contentSize = CSSSize::FromAppUnits(scrollableRect.Size());
+        }
+
+        
+        ScreenSize minZoomDisplaySize =
+            contentSize * aViewportInfo.GetMinZoom();
+        ScreenSize maxZoomDisplaySize =
+            contentSize * aViewportInfo.GetMaxZoom();
+
+        float ratio = aDisplayWidthChangeRatio.value();
+        ScreenSize newDisplaySize(aDisplaySize);
+        ScreenSize oldDisplaySize = newDisplaySize / ratio;
+
+        
+        
+        float a(minZoomDisplaySize.width);
+        float b(maxZoomDisplaySize.width);
+        float c(oldDisplaySize.width);
+        float d(newDisplaySize.width);
+
+        
+        
+        
+        
+        
+
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        float numerator = clamped(d, a, b);
+        float denominator = clamped(c, a, b);
+
+        float adjustedRatio = numerator / denominator;
+        newZoom = Some(ScaleZoomWithDisplayWidth(
+            zoom, adjustedRatio, viewportSize, mMobileViewportSize));
       }
     }
   } else {  
