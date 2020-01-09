@@ -1637,6 +1637,12 @@ bool nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
       remote->Deactivate();
       LOGFOCUS(("Remote browser deactivated"));
     }
+
+    
+    if (BrowserBridgeChild* bbc = BrowserBridgeChild::GetFrom(element)) {
+      bbc->Deactivate();
+      LOGFOCUS(("Out-of-process iframe deactivated"));
+    }
   }
 
   bool result = true;

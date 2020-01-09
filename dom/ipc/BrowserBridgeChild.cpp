@@ -84,6 +84,8 @@ void BrowserBridgeChild::NavigateByKey(bool aForward,
 
 void BrowserBridgeChild::Activate() { Unused << SendActivate(); }
 
+void BrowserBridgeChild::Deactivate() { Unused << SendDeactivate(); }
+
 
 BrowserBridgeChild* BrowserBridgeChild::GetFrom(nsFrameLoader* aFrameLoader) {
   if (!aFrameLoader) {
