@@ -100,7 +100,7 @@ struct MapTypeToTraceKind {
 
 
 #define JS_FOR_EACH_TRACEKIND(D)
- \
+                          \
   D(BaseShape, js::BaseShape, true)                       \
   D(JitCode, js::jit::JitCode, true)                      \
   D(LazyScript, js::LazyScript, true)                     \
