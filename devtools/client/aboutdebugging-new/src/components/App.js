@@ -76,18 +76,6 @@ class App extends PureComponent {
   
   
   renderRuntime({ match }) {
-    
-    
-    
-    
-    
-    const isDeviceFirstPage =
-      !this.props.selectedPage &&
-      match.params.runtimeId !== RUNTIMES.THIS_FIREFOX;
-    if (!match.params.runtimeId || isDeviceFirstPage) {
-      return Redirect({ to: `/runtime/${RUNTIMES.THIS_FIREFOX}` });
-    }
-
     const isRuntimeAvailable = id => {
       const runtimes = [
         ...this.props.networkRuntimes,

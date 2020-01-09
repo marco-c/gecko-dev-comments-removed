@@ -97,12 +97,21 @@ class Adb extends EventEmitter {
     return adbAddon.status === "installed" && this._listeners.size > 0;
   }
 
-  _updateAdbProcess() {
+  
+
+
+
+  async _updateAdbProcess() {
     if (!this._isTrackingDevices && this._shouldTrack()) {
+      const onRuntimesUpdated = this.once("runtime-list-updated");
       this._startTracking();
+      
+      
+      await onRuntimesUpdated;
     } else if (this._isTrackingDevices && !this._shouldTrack()) {
       this._stopTracking();
     }
+    this.emit("runtime-list-ready");
   }
 
   async _onDeviceConnected(deviceId) {
