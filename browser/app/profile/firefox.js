@@ -509,9 +509,6 @@ pref("browser.bookmarks.openInTabClosesMenu", true);
 
 pref("dom.disable_open_during_load",              true);
 pref("javascript.options.showInConsole",          true);
-#ifdef DEBUG
-pref("general.warnOnAboutConfig",                 false);
-#endif
 
 
 
@@ -1814,10 +1811,7 @@ pref("browser.discovery.sites", "addons.mozilla.org");
 
 pref("browser.engagement.recent_visited_origins.expiry", 86400); 
 
-
-#ifdef NIGHTLY_BUILD
 pref("browser.aboutConfig.showWarning", true);
-#endif
 
 #if defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
 
