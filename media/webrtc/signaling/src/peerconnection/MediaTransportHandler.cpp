@@ -919,6 +919,9 @@ void MediaTransportHandlerSTS::ClearIceLog() {
 }
 
 void MediaTransportHandlerSTS::EnterPrivateMode() {
+  
+  RLogConnector::CreateInstance();
+
   if (!mStsThread->IsOnCurrentThread()) {
     mStsThread->Dispatch(
         WrapRunnable(RefPtr<MediaTransportHandlerSTS>(this),
@@ -927,10 +930,13 @@ void MediaTransportHandlerSTS::EnterPrivateMode() {
     return;
   }
 
-  RLogConnector::CreateInstance()->EnterPrivateMode();
+  RLogConnector::GetInstance()->EnterPrivateMode();
 }
 
 void MediaTransportHandlerSTS::ExitPrivateMode() {
+  
+  RLogConnector::CreateInstance();
+
   if (!mStsThread->IsOnCurrentThread()) {
     mStsThread->Dispatch(
         WrapRunnable(RefPtr<MediaTransportHandlerSTS>(this),
