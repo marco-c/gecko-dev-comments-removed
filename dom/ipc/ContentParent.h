@@ -103,7 +103,6 @@ class TabParent;
 class ClonedMessageData;
 class MemoryReport;
 class TabContext;
-class ContentBridgeParent;
 class GetFilesHelper;
 class MemoryReportRequestHost;
 
@@ -279,14 +278,6 @@ class ContentParent final : public PContentParent,
 
   
   bool IsDestroyed() const { return !mIPCOpen; }
-
-  mozilla::ipc::IPCResult RecvCreateChildProcess(
-      const IPCTabContext& aContext, const hal::ProcessPriority& aPriority,
-      const TabId& aOpenerTabId, const TabId& aTabId, ContentParentId* aCpId,
-      bool* aIsForBrowser);
-
-  mozilla::ipc::IPCResult RecvBridgeToChildProcess(
-      const ContentParentId& aCpId, Endpoint<PContentBridgeParent>* aEndpoint);
 
   mozilla::ipc::IPCResult RecvOpenRecordReplayChannel(
       const uint32_t& channelId, FileDescriptor* connection);
@@ -667,10 +658,6 @@ class ContentParent final : public PContentParent,
   static nsDataHashtable<nsUint32HashKey, ContentParent*>*
       sJSPluginContentParents;
   static StaticAutoPtr<LinkedList<ContentParent>> sContentParents;
-
-  static ContentBridgeParent* CreateContentBridgeParent(
-      const TabContext& aContext, const hal::ProcessPriority& aPriority,
-      const TabId& aOpenerTabId, const TabId& aTabId);
 
 #if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
   
@@ -1188,8 +1175,6 @@ class ContentParent final : public PContentParent,
                                const bool& aAnonymize,
                                const bool& aMinimizeMemoryUsage,
                                const MaybeFileDesc& aDMDFile) override;
-
-  bool CanCommunicateWith(ContentParentId aOtherProcess);
 
   nsresult SaveRecording(nsIFile* aFile, bool* aRetval);
 
