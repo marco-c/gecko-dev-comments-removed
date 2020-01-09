@@ -805,8 +805,6 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
     numBytecodeTypeSets = script->numBytecodeTypeSets();
     funLength = script->funLength();
 
-    MOZ_ASSERT_IF(sourceObjectArg,
-                  sourceObjectArg->source() == script->scriptSource());
     if (!sourceObjectArg) {
       scriptBits |= (1 << OwnSource);
     }
@@ -826,7 +824,6 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
   MOZ_TRY(xdr->codeUint32(&toStringStart));
   MOZ_TRY(xdr->codeUint32(&toStringEnd));
 
-  MOZ_ASSERT(!!(scriptBits & (1 << OwnSource)) == !sourceObjectArg);
   RootedScriptSourceObject sourceObject(cx, sourceObjectArg);
   Maybe<CompileOptions> options;
 
@@ -848,25 +845,24 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
       options.emplace(xdr->cx());
       (*options).setNoScriptRval(noScriptRval).setSelfHostingMode(selfHosted);
     }
+  }
 
-    if (scriptBits & (1 << OwnSource)) {
-      ScriptSource* ss = cx->new_<ScriptSource>();
-      if (!ss) {
-        return xdr->fail(JS::TranscodeResult_Throw);
-      }
-      ScriptSourceHolder ssHolder(ss);
+  if (scriptBits & (1 << OwnSource)) {
+    Rooted<ScriptSourceHolder> ssHolder(cx);
 
-      
+    
+    
+    MOZ_ASSERT(sourceObjectArg == nullptr);
 
+    if (mode == XDR_ENCODE) {
+      sourceObject = script->sourceObject();
+      ssHolder.get().reset(sourceObject->source());
+    }
 
+    MOZ_TRY(ScriptSource::XDR(xdr, options, &ssHolder));
 
-
-
-      if (!ss->initFromOptions(cx, *options)) {
-        return xdr->fail(JS::TranscodeResult_Throw);
-      }
-
-      sourceObject = ScriptSourceObject::create(cx, ss);
+    if (mode == XDR_DECODE) {
+      sourceObject = ScriptSourceObject::create(cx, ssHolder.get().get());
       if (!sourceObject) {
         return xdr->fail(JS::TranscodeResult_Throw);
       }
@@ -881,11 +877,10 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
       }
     }
   } else {
-    sourceObject = script->sourceObject();
-  }
-
-  if (scriptBits & (1 << OwnSource)) {
-    MOZ_TRY(ScriptSource::performXDR<mode>(xdr, sourceObject->source()));
+    
+    
+    MOZ_ASSERT_IF(mode == XDR_ENCODE,
+                  sourceObjectArg->source() == script->scriptSource());
   }
 
   if (mode == XDR_DECODE) {
@@ -2449,8 +2444,31 @@ XDRResult ScriptSource::xdrUncompressedSource<XDR_ENCODE>(
 }  
 
 template <XDRMode mode>
- XDRResult ScriptSource::performXDR(XDRState<mode>* xdr,
-                                                ScriptSource* ss) {
+ XDRResult ScriptSource::XDR(
+    XDRState<mode>* xdr, const mozilla::Maybe<JS::CompileOptions>& options,
+    MutableHandle<ScriptSourceHolder> holder) {
+  JSContext* cx = xdr->cx();
+  ScriptSource* ss = nullptr;
+
+  if (mode == XDR_ENCODE) {
+    ss = holder.get().get();
+  } else {
+    
+    ss = cx->new_<ScriptSource>();
+    if (!ss) {
+      return xdr->fail(JS::TranscodeResult_Throw);
+    }
+    holder.get().reset(ss);
+
+    
+    
+    
+    
+    if (!ss->initFromOptions(cx, *options)) {
+      return xdr->fail(JS::TranscodeResult_Throw);
+    }
+  }
+
   uint8_t hasSource = ss->hasSourceText();
   MOZ_TRY(xdr->codeUint8(&hasSource));
 
