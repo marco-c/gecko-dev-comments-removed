@@ -283,7 +283,7 @@ function ObjectDefineProperty(obj, propertyKey, attributes) {
     
     if (!ObjectOrReflectDefineProperty(obj, propertyKey, attributes, true)) {
         
-        return false;
+        return null;
     }
 
     

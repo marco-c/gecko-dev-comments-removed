@@ -1061,7 +1061,8 @@ PlainObject* js::ObjectCreateWithTemplate(JSContext* cx,
 
 
 static bool ObjectDefineProperties(JSContext* cx, HandleObject obj,
-                                   HandleValue properties) {
+                                   HandleValue properties,
+                                   bool* failedOnWindowProxy) {
   
   
   RootedObject props(cx, ToObject(cx, properties));
@@ -1105,9 +1106,19 @@ static bool ObjectDefineProperties(JSContext* cx, HandleObject obj,
   }
 
   
+  *failedOnWindowProxy = false;
   for (size_t i = 0, len = descriptors.length(); i < len; i++) {
-    if (!DefineProperty(cx, obj, descriptorKeys[i], descriptors[i])) {
+    ObjectOpResult result;
+    if (!DefineProperty(cx, obj, descriptorKeys[i], descriptors[i], result)) {
       return false;
+    }
+
+    if (!result.ok()) {
+      if (result.failureCode() == JSMSG_CANT_DEFINE_WINDOW_NC) {
+        *failedOnWindowProxy = true;
+      } else if (!result.checkStrict(cx, obj, descriptorKeys[i])) {
+        return false;
+      }
     }
   }
 
@@ -1145,9 +1156,13 @@ bool js::obj_create(JSContext* cx, unsigned argc, Value* vp) {
 
   
   if (args.hasDefined(1)) {
-    if (!ObjectDefineProperties(cx, obj, args[1])) {
+    
+    
+    bool failedOnWindowProxy = false;
+    if (!ObjectDefineProperties(cx, obj, args[1], &failedOnWindowProxy)) {
       return false;
     }
+    MOZ_ASSERT(!failedOnWindowProxy, "How did we get a WindowProxy here?");
   }
 
   
@@ -1895,7 +1910,6 @@ static bool obj_defineProperties(JSContext* cx, unsigned argc, Value* vp) {
   if (!GetFirstArgumentAsObject(cx, args, "Object.defineProperties", &obj)) {
     return false;
   }
-  args.rval().setObject(*obj);
 
   
   if (!args.requireAtLeast(cx, "Object.defineProperties", 2)) {
@@ -1903,7 +1917,18 @@ static bool obj_defineProperties(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  return ObjectDefineProperties(cx, obj, args[1]);
+  bool failedOnWindowProxy = false;
+  if (!ObjectDefineProperties(cx, obj, args[1], &failedOnWindowProxy)) {
+    return false;
+  }
+
+  
+  if (failedOnWindowProxy) {
+    args.rval().setNull();
+  } else {
+    args.rval().setObject(*obj);
+  }
+  return true;
 }
 
 
