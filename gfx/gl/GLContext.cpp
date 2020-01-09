@@ -834,28 +834,27 @@ bool GLContext::InitImpl() {
   raw_fGetIntegerv(LOCAL_GL_MAX_RENDERBUFFER_SIZE, &mMaxRenderbufferSize);
   raw_fGetIntegerv(LOCAL_GL_MAX_VIEWPORT_DIMS, mMaxViewportDims);
 
+  if (mWorkAroundDriverBugs) {
 #ifdef XP_MACOSX
-  if (mWorkAroundDriverBugs && nsCocoaFeatures::OSXVersionMajor() == 10 &&
-      nsCocoaFeatures::OSXVersionMinor() < 12) {
-    if (mVendor == GLVendor::Intel) {
-      
-      mMaxTextureSize = std::min(mMaxTextureSize, 4096);
-      mMaxCubeMapTextureSize = std::min(mMaxCubeMapTextureSize, 512);
-      
-      mMaxRenderbufferSize = std::min(mMaxRenderbufferSize, 4096);
-      mNeedsTextureSizeChecks = true;
-    } else if (mVendor == GLVendor::NVIDIA) {
-      
-      mMaxTextureSize = std::min(mMaxTextureSize, 8191);
-      mMaxRenderbufferSize = std::min(mMaxRenderbufferSize, 8191);
+    if (!nsCocoaFeatures::IsAtLeastVersion(10, 12)) {
+      if (mVendor == GLVendor::Intel) {
+        
+        mMaxTextureSize = std::min(mMaxTextureSize, 4096);
+        mMaxCubeMapTextureSize = std::min(mMaxCubeMapTextureSize, 512);
+        
+        mMaxRenderbufferSize = std::min(mMaxRenderbufferSize, 4096);
+        mNeedsTextureSizeChecks = true;
+      } else if (mVendor == GLVendor::NVIDIA) {
+        
+        mMaxTextureSize = std::min(mMaxTextureSize, 8191);
+        mMaxRenderbufferSize = std::min(mMaxRenderbufferSize, 8191);
 
-      
-      mNeedsTextureSizeChecks = true;
+        
+        mNeedsTextureSizeChecks = true;
+      }
     }
-  }
 #endif
 #ifdef MOZ_X11
-  if (mWorkAroundDriverBugs) {
     if (mVendor == GLVendor::Nouveau) {
       
       mMaxCubeMapTextureSize = std::min(mMaxCubeMapTextureSize, 2048);
@@ -874,34 +873,33 @@ bool GLContext::InitImpl() {
         mSymbols.fVertexAttrib4f(i, 0, 0, 0, 1);
       }
     }
-  }
 #endif
-  if (mWorkAroundDriverBugs && Renderer() == GLRenderer::AdrenoTM420) {
-    
-    
-    mNeedsFlushBeforeDeleteFB = true;
-  }
+    if (Renderer() == GLRenderer::AdrenoTM420) {
+      
+      
+      mNeedsFlushBeforeDeleteFB = true;
+    }
 #ifdef MOZ_WIDGET_ANDROID
-  if (mWorkAroundDriverBugs &&
-      (Renderer() == GLRenderer::AdrenoTM305 ||
-       Renderer() == GLRenderer::AdrenoTM320 ||
-       Renderer() == GLRenderer::AdrenoTM330) &&
-      jni::GetAPIVersion() < 21) {
-    
-    
-    mTextureAllocCrashesOnMapFailure = true;
-  }
+    if ((Renderer() == GLRenderer::AdrenoTM305 ||
+         Renderer() == GLRenderer::AdrenoTM320 ||
+         Renderer() == GLRenderer::AdrenoTM330) &&
+        jni::GetAPIVersion() < 21) {
+      
+      
+      mTextureAllocCrashesOnMapFailure = true;
+    }
 #endif
 #if MOZ_WIDGET_ANDROID
-  if (mWorkAroundDriverBugs && Renderer() == GLRenderer::SGX540 &&
-      jni::GetAPIVersion() <= 15) {
-    
-    
-    
-    
-    mNeedsCheckAfterAttachTextureToFb = true;
-  }
+    if (Renderer() == GLRenderer::SGX540 &&
+        jni::GetAPIVersion() <= 15) {
+      
+      
+      
+      
+      mNeedsCheckAfterAttachTextureToFb = true;
+    }
 #endif
+  }
 
   if (IsSupported(GLFeature::framebuffer_multisample)) {
     fGetIntegerv(LOCAL_GL_MAX_SAMPLES, (GLint*)&mMaxSamples);
@@ -1637,9 +1635,7 @@ void GLContext::InitExtensions() {
     
     
     
-    if (nsCocoaFeatures::OSXVersionMajor() == 10 &&
-        nsCocoaFeatures::OSXVersionMinor() >= 9 &&
-        Renderer() == GLRenderer::IntelHD3000) {
+    if (Renderer() == GLRenderer::IntelHD3000) {
       MarkExtensionUnsupported(EXT_texture_compression_s3tc);
     }
 
