@@ -449,6 +449,14 @@ var ExtensionsUI = {
         if (checkbox.checked) {
           let perms = {permissions: ["internal:privateBrowsingAllowed"], origins: []};
           await ExtensionPermissions.add(addon.id, perms);
+          AMTelemetry.recordActionEvent({
+            addon,
+            object: "doorhanger",
+            action: "privateBrowsingAllowed",
+            view: "postInstall",
+            value: "on",
+          });
+
           
           
           if (addon.isActive) {
