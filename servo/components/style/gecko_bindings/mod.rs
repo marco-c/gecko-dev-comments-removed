@@ -4,11 +4,6 @@
 
 
 
-#[allow(dead_code, improper_ctypes, non_camel_case_types, missing_docs)]
-pub mod bindings {
-    include!(concat!(env!("OUT_DIR"), "/gecko/bindings.rs"));
-}
-
 
 
 
@@ -24,5 +19,7 @@ pub mod bindings {
 pub mod structs {
     include!(concat!(env!("OUT_DIR"), "/gecko/structs.rs"));
 }
+
+pub use self::structs as bindings;
 
 pub mod sugar;
