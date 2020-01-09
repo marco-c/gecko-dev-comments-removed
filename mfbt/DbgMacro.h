@@ -97,7 +97,6 @@ template <typename T, size_t N,
           typename = std::enable_if_t<!std::is_same<T, char>::value>>
 std::ostream& operator<<(std::ostream& aOut, const T (&aArray)[N]) {
   return aOut << mozilla::MakeSpan(aArray);
-  
 }
 
 
@@ -168,10 +167,10 @@ std::ostream& operator<<(std::ostream& aOut, const T (&aArray)[N]) {
 #define MOZ_DEFINE_DBG(type_, members_...)                                   \
   friend std::ostream& operator<<(std::ostream& aOut, const type_& aValue) { \
     return aOut << #type_                                                    \
-                << (MOZ_ARG_COUNT(members_) == 0 ? "{ " : "")                \
+                << (MOZ_ARG_COUNT(members_) == 0 ? "" : " { ")               \
                        MOZ_FOR_EACH_SEPARATED(MOZ_DBG_FIELD, (<< ", "), (),  \
                                               (members_))                    \
-                << (MOZ_ARG_COUNT(members_) == 0 ? " }" : "");               \
+                << (MOZ_ARG_COUNT(members_) == 0 ? "" : " }");               \
   }
 
 #endif  
