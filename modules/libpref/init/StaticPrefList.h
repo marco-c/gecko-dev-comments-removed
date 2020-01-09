@@ -2098,6 +2098,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "privacy.spoof_english",
+   privacy_spoof_english,
+  RelaxedAtomicUint32, 0
+)
+
+
 
 
 

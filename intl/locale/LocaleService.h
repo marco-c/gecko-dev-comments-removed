@@ -135,6 +135,11 @@ class LocaleService final : public mozILocaleService,
   
 
 
+  void WebExposedLocalesChanged();
+
+  
+
+
   bool IsAppLocaleRTL();
 
   static bool LanguagesMatch(const nsACString& aRequested,
@@ -158,6 +163,7 @@ class LocaleService final : public mozILocaleService,
   nsTArray<nsCString> mRequestedLocales;
   nsTArray<nsCString> mAvailableLocales;
   nsTArray<nsCString> mPackagedLocales;
+  nsTArray<nsCString> mWebExposedLocales;
   const bool mIsServer;
 
   static StaticRefPtr<LocaleService> sInstance;
