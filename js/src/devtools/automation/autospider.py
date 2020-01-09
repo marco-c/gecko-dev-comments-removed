@@ -343,14 +343,17 @@ def run_command(command, check=False, **kwargs):
 
 
 
+REPLACEMENTS = {
+    'DIR': DIR.scripts,
+    'TOOLTOOL_CHECKOUT': DIR.tooltool,
+    'MOZ_UPLOAD_DIR': env['MOZ_UPLOAD_DIR'],
+    'OUTDIR': OUTDIR,
+}
+
+
 
 for k, v in variant.get('env', {}).items():
-    env[k.encode('ascii')] = v.encode('ascii').format(
-        DIR=DIR.scripts,
-        TOOLTOOL_CHECKOUT=DIR.tooltool,
-        MOZ_UPLOAD_DIR=env['MOZ_UPLOAD_DIR'],
-        OUTDIR=OUTDIR,
-    )
+    env[k.encode('ascii')] = v.encode('ascii').format(**REPLACEMENTS)
 
 if AUTOMATION:
     
@@ -459,6 +462,10 @@ elif platform.system() == 'Darwin':
     variant_platform = 'macosx64'
 else:
     variant_platform = 'other'
+
+
+for k, v in variant.get('conditional-env', {}).get(variant_platform, {}).items():
+    env[k.encode('ascii')] = v.encode('ascii').format(**REPLACEMENTS)
 
 
 test_suites -= set(normalize_tests(variant.get('skip-tests', {}).get(variant_platform, [])))
