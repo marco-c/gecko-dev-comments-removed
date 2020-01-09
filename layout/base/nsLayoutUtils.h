@@ -2736,6 +2736,21 @@ class nsLayoutUtils {
 
 
 
+
+
+
+  static void LogAdditionalTestData(nsDisplayListBuilder* aBuilder,
+                                    const std::string& aKey,
+                                    const std::string& aValue);
+
+  
+
+
+
+
+
+
+
   static void LogTestDataForPaint(mozilla::layers::LayerManager* aManager,
                                   ViewID aScrollId, const std::string& aKey,
                                   const std::string& aValue) {

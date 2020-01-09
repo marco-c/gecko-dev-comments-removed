@@ -78,6 +78,10 @@ class APZTestData {
                        const ViewID& aScrollId) {
     mHitResults.AppendElement(HitResult{aPoint, aResult, aScrollId});
   }
+  void RecordAdditionalData(const std::string& aKey,
+                            const std::string& aValue) {
+    mAdditionalData[aKey] = aValue;
+  }
 
   
   bool ToJS(JS::MutableHandleValue aOutValue, JSContext* aContext) const;
@@ -100,6 +104,8 @@ class APZTestData {
   DataStore mPaints;
   DataStore mRepaintRequests;
   nsTArray<HitResult> mHitResults;
+  
+  std::map<std::string, std::string> mAdditionalData;
 
   void LogTestDataImpl(DataStore& aDataStore, SequenceNumber aSequenceNumber,
                        ViewID aScrollId, const std::string& aKey,
