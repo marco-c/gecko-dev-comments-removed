@@ -542,6 +542,8 @@ class MOZ_RAII AutoSaveLocalStrictMode {
 
 
 
+
+
 class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
  public:
   enum class Kind {
@@ -601,7 +603,7 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   bool isDerived_ = false;
 
   mozilla::Maybe<TDZCheckCache> tdzCacheForInnerName_;
-  mozilla::Maybe<EmitterScope> innerNameScope_;
+  mozilla::Maybe<EmitterScope> innerScope_;
   AutoSaveLocalStrictMode strictMode_;
 
 #ifdef DEBUG
@@ -663,8 +665,9 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
  public:
   explicit ClassEmitter(BytecodeEmitter* bce);
 
-  MOZ_MUST_USE bool emitScopeForNamedClass(
-      JS::Handle<LexicalScope::Data*> scopeBindings);
+  enum class HasName : bool { No, Yes };
+  bool emitScope(JS::Handle<LexicalScope::Data*> scopeBindings,
+                 HasName hasName);
 
   
   

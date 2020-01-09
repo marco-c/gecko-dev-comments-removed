@@ -8683,8 +8683,12 @@ bool BytecodeEmitter::emitClass(
       MOZ_ASSERT(names->outerBinding()->name() == innerName);
       kind = ClassEmitter::Kind::Declaration;
     }
+  }
 
-    if (!ce.emitScopeForNamedClass(classNode->scopeBindings())) {
+  if (!classNode->isEmptyScope()) {
+    if (!ce.emitScope(classNode->scopeBindings(),
+                      classNode->names() ? ClassEmitter::HasName::Yes
+                                         : ClassEmitter::HasName::No)) {
       
       return false;
     }
