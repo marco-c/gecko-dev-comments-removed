@@ -84,12 +84,17 @@ CompileArgs::build(JSContext* cx, ScriptedCaller&& scriptedCaller)
   bool cranelift = false;
 #endif
 
+#ifdef ENABLE_WASM_REFTYPES
+  bool gc = cx->options().wasmGc();
+#else
+  bool gc = false;
+#endif
+
   
   
   
   
   bool debug = cx->realm()->debuggerObservesAsmJS();
-  bool gc = cx->options().wasmGc();
 
   bool sharedMemory = cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
   bool forceTiering = cx->options().testWasmAwaitTier2() || JitOptions.wasmDelayTier2;
