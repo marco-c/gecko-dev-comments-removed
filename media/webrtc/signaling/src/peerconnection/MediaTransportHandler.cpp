@@ -1152,13 +1152,6 @@ static mozilla::dom::PCImplIceGatheringState toDomIceGatheringState(
 
 void MediaTransportHandlerSTS::OnGatheringStateChange(
     NrIceCtx* aIceCtx, NrIceCtx::GatheringState aState) {
-  if (aState == NrIceCtx::ICE_CTX_GATHER_COMPLETE) {
-    for (const auto& stream : mIceCtx->GetStreams()) {
-      
-      
-      OnCandidateFound(stream, "", "");
-    }
-  }
   OnGatheringStateChange(toDomIceGatheringState(aState));
 }
 
@@ -1194,6 +1187,7 @@ void MediaTransportHandlerSTS::OnCandidateFound(NrIceMediaStream* aStream,
                                                 const std::string& aUfrag) {
   CandidateInfo info;
   info.mCandidate = aCandidate;
+  MOZ_ASSERT(!aUfrag.empty());
   info.mUfrag = aUfrag;
   NrIceCandidate defaultRtpCandidate;
   NrIceCandidate defaultRtcpCandidate;
