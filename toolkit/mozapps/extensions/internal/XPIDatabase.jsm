@@ -131,6 +131,11 @@ const SIGNED_TYPES = new Set([
 
 const ASYNC_SAVE_DELAY_MS = 20;
 
+const LOCALE_BUNDLES = [
+  "chrome://global/locale/global-extension-fields.properties",
+  "chrome://global/locale/app-extension-fields.properties",
+].map(url => Services.strings.createBundle(url));
+
 
 
 
@@ -1079,6 +1084,15 @@ function chooseValue(aAddon, aObj, aProp) {
   if (repositoryAddon && aProp in repositoryAddon &&
       (aProp === "creator" || objValue == null)) {
     return [repositoryAddon[aProp], true];
+  }
+
+  let id = `extension.${aAddon.id}.${aProp}`;
+  for (let bundle of LOCALE_BUNDLES) {
+    try {
+      return [bundle.GetStringFromName(id), false];
+    } catch (e) {
+      
+    }
   }
 
   return [objValue, false];
