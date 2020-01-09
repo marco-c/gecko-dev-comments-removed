@@ -131,7 +131,22 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
               
               
               
-              ignoreTrivials(KnownLiveBase))));
+              ignoreTrivials(KnownLiveBase))),
+      
+      
+      
+      
+      
+      
+      
+      unaryOperator(
+          hasOperatorName("&"),
+          hasUnaryOperand(allOf(
+              anyOf(
+                  hasType(references(Refcounted)),
+                  hasType(Refcounted)),
+              ignoreTrivials(KnownLiveBase))))
+      );
 
   auto KnownLive = anyOf(
       
