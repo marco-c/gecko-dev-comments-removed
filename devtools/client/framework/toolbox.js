@@ -455,7 +455,8 @@ Toolbox.prototype = {
         
         
         
-        this._debugTargetData = await this._getDebugTargetData();
+        this._showDebugTargetInfo = true;
+        this._deviceDescription = await this._getDeviceDescription();
       }
 
       const domHelper = new DOMHelpers(this.win);
@@ -606,22 +607,12 @@ Toolbox.prototype = {
     });
   },
 
-  _getDebugTargetData: async function() {
-    const url = new URL(this.win.location);
-    const searchParams = new this.win.URLSearchParams(url.search);
-
-    const targetType = searchParams.get("type");
-
+  _getDeviceDescription: async function() {
     const deviceFront = await this.target.client.mainRoot.getFront("device");
-    const deviceDescription = await deviceFront.getDescription();
-    const remoteId = searchParams.get("remoteId");
+    const description = await deviceFront.getDescription();
+    const remoteId = new this.win.URLSearchParams(this.win.location.href).get("remoteId");
     const connectionType = remoteClientManager.getConnectionTypeByRemoteId(remoteId);
-
-    return {
-      connectionType,
-      deviceDescription,
-      targetType,
-    };
+    return Object.assign({}, description, { connectionType });
   },
 
   _onTargetClosed: async function() {
@@ -1215,7 +1206,8 @@ Toolbox.prototype = {
       closeToolbox: this.closeToolbox,
       focusButton: this._onToolbarFocus,
       toolbox: this,
-      debugTargetData: this._debugTargetData,
+      showDebugTargetInfo: this._showDebugTargetInfo,
+      deviceDescription: this._deviceDescription,
       onTabsOrderUpdated: this._onTabsOrderUpdated,
     });
 

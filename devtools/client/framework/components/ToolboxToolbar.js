@@ -97,10 +97,9 @@ class ToolboxToolbar extends Component {
       
       visibleToolboxButtonCount: PropTypes.number,
       
-      debugTargetData: PropTypes.shape({
-        deviceDescription: PropTypes.object.isRequired,
-        targetType: PropTypes.string.isRequired,
-      }),
+      showDebugTargetInfo: PropTypes.bool,
+      
+      deviceDescription: PropTypes.object,
     };
   }
 
@@ -423,7 +422,7 @@ class ToolboxToolbar extends Component {
 
 
   render() {
-    const { L10N, debugTargetData, toolbox} = this.props;
+    const {deviceDescription, L10N, showDebugTargetInfo, toolbox} = this.props;
     const classnames = ["devtools-tabbar"];
     const startButtons = this.renderToolboxButtonsStart();
     const endButtons = this.renderToolboxButtonsEnd();
@@ -449,9 +448,8 @@ class ToolboxToolbar extends Component {
       )
       : div({ className: classnames.join(" ") });
 
-    const debugTargetInfo = debugTargetData
-      ? DebugTargetInfo({ debugTargetData, L10N, toolbox })
-      : null;
+    const debugTargetInfo =
+      showDebugTargetInfo ? DebugTargetInfo({ deviceDescription, L10N, toolbox }) : null;
 
     if (toolbox.target.canRewind) {
       return div(
