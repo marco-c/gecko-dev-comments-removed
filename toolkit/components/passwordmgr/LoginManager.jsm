@@ -585,4 +585,4 @@ LoginManager.prototype = {
   },
 }; 
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([LoginManager]);
+var EXPORTED_SYMBOLS = ["LoginManager"];
