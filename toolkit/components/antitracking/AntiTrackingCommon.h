@@ -109,6 +109,14 @@ class AntiTrackingCommon final {
   static bool HasUserInteraction(nsIPrincipal* aPrincipal);
 
   
+  
+  
+  
+  typedef std::function<void()> AntiTrackingSettingsChangedCallback;
+  static void OnAntiTrackingSettingsChanged(
+      const AntiTrackingSettingsChangedCallback& aCallback);
+
+  
   typedef MozPromise<nsresult, bool, true> FirstPartyStorageAccessGrantPromise;
   static RefPtr<FirstPartyStorageAccessGrantPromise>
   SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(
