@@ -159,7 +159,7 @@ function* run_test_1(generator)
   
   Services.cookiemgr.add(cookie.host, cookie.path, cookie.name, "hallo",
     cookie.isSecure, cookie.isHttpOnly, cookie.isSession, cookie.expiry, {},
-    Ci.nsICookie2.SAMESITE_NONE);
+    Ci.nsICookie2.SAMESITE_UNSET);
 
   
   Assert.equal(Services.cookiemgr.countCookiesFromHost(cookie.host), 1);

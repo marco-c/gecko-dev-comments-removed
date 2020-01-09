@@ -137,18 +137,18 @@ add_task(async function() {
   let uri2 = Services.io.newURI("https://example.org");
   Services.cookies.add(uri.host, uri.pathQueryRef, "test1", "1",
     false, false, false, Date.now() + 1000 * 60 * 60, {},
-    Ci.nsICookie2.SAMESITE_NONE);
+    Ci.nsICookie2.SAMESITE_UNSET);
   Services.cookies.add(uri.host, uri.pathQueryRef, "test2", "2",
     false, false, false, Date.now() + 1000 * 60 * 60, {},
-    Ci.nsICookie2.SAMESITE_NONE);
+    Ci.nsICookie2.SAMESITE_UNSET);
   Services.cookies.add(uri2.host, uri2.pathQueryRef, "test1", "1",
     false, false, false, Date.now() + 1000 * 60 * 60, {},
-    Ci.nsICookie2.SAMESITE_NONE);
+    Ci.nsICookie2.SAMESITE_UNSET);
 
   
   Services.cookies.add(uri.host, uri.pathQueryRef, "test3", "3",
     false, false, false, Date.now() + 1000 * 60 * 60, { privateBrowsingId: 1 },
-    Ci.nsICookie2.SAMESITE_NONE);
+    Ci.nsICookie2.SAMESITE_UNSET);
 
   
   
