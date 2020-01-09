@@ -12,12 +12,14 @@ import type {
   ActorId,
   BreakpointLocation,
   BreakpointOptions,
+  PendingLocation,
   EventListenerBreakpoints,
   Frame,
   FrameId,
   Script,
   SourceId,
   SourceActor,
+  Source,
   Worker,
   Range
 } from "../../types";
@@ -175,38 +177,20 @@ function removeXHRBreakpoint(path: string, method: string) {
 
 
 
-function locationKey(location) {
-  const { sourceUrl, sourceId, line, column } = location;
-  return `${(sourceUrl: any)}:${(sourceId: any)}:${line}:${(column: any)}`;
+function locationKey(location: BreakpointLocation) {
+  const { sourceUrl, line, column } = location;
+  const sourceId = location.sourceId || "";
+  return `${(sourceUrl: any)}:${sourceId}:${line}:${(column: any)}`;
 }
 
 function waitForWorkers(shouldWait: boolean) {
   shouldWaitForWorkers = shouldWait;
 }
 
-function maybeGenerateLogGroupId(options) {
-  if (options.logValue && tabTarget.traits && tabTarget.traits.canRewind) {
-    return { ...options, logGroupId: `logGroup-${Math.random()}` };
-  }
-  return options;
-}
-
-function maybeClearLogpoint(location) {
-  const bp = breakpoints[locationKey(location)];
-  if (bp && bp.options.logGroupId && tabTarget.activeConsole) {
-    tabTarget.activeConsole.emit(
-      "clearLogpointMessages",
-      bp.options.logGroupId
-    );
-  }
-}
-
 async function setBreakpoint(
   location: BreakpointLocation,
   options: BreakpointOptions
 ) {
-  maybeClearLogpoint(location);
-  options = maybeGenerateLogGroupId(options);
   breakpoints[locationKey(location)] = { location, options };
   await threadClient.setBreakpoint(location, options);
 
@@ -219,9 +203,8 @@ async function setBreakpoint(
   await forEachWorkerThread(thread => thread.setBreakpoint(location, options));
 }
 
-async function removeBreakpoint(location: BreakpointLocation) {
-  maybeClearLogpoint(location);
-  delete breakpoints[locationKey(location)];
+async function removeBreakpoint(location: PendingLocation) {
+  delete breakpoints[locationKey((location: any))];
   await threadClient.removeBreakpoint(location);
 
   
@@ -425,9 +408,10 @@ function getMainThread() {
 }
 
 async function getBreakpointPositions(
-  sourceActor: SourceActor,
+  source: Source,
   range: ?Range
 ): Promise<{ [string]: number[] }> {
+  const sourceActor = source.actors[0];
   const { thread, actor } = sourceActor;
   const sourceThreadClient = lookupThreadClient(thread);
   const sourceClient = sourceThreadClient.source({ actor });

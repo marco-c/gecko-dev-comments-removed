@@ -6,19 +6,19 @@
 
 import { setBreakpointPositions } from "./breakpointPositions";
 import {
-  locationMoved,
   createBreakpoint,
   assertBreakpoint,
   assertPendingBreakpoint,
-  findScopeByName,
+  findFunctionByName,
+  findPosition,
   makeBreakpointLocation
 } from "../../utils/breakpoint";
 
-import { getGeneratedLocation } from "../../utils/source-maps";
 import { getTextAtPosition } from "../../utils/source";
+import { comparePosition } from "../../utils/location";
+
 import { originalToGeneratedId, isOriginalId } from "devtools-source-map";
-import { getSource, getBreakpointPositionsForSource } from "../../selectors";
-import { features } from "../../utils/prefs";
+import { getSource } from "../../selectors";
 
 import type { ThunkArgs, Action } from "../types";
 
@@ -35,29 +35,28 @@ type BreakpointSyncData = {
   breakpoint: ?Breakpoint
 };
 
-async function isPossiblePosition(state, location, dispatch) {
-  if (!features.columnBreakpoints || location.column != undefined) {
-    return true;
-  }
-
-  await dispatch(setBreakpointPositions(location.sourceId));
-  const positions = getBreakpointPositionsForSource(state, location.sourceId);
-  return (
-    positions &&
-    positions.some(({ generatedLocation }) => generatedLocation.column)
-  );
+async function findBreakpointPosition(
+  { getState, dispatch },
+  location: SourceLocation
+) {
+  const positions = await dispatch(setBreakpointPositions(location.sourceId));
+  const position = findPosition(positions, location);
+  return position && position.generatedLocation;
 }
 
-async function makeScopedLocation(
+async function findNewLocation(
   { name, offset, index }: ASTLocation,
   location: SourceLocation,
   source
 ) {
-  const scope = await findScopeByName(source, name, index);
+  const func = await findFunctionByName(source, name, index);
+
   
-  
-  
-  const line = scope ? scope.location.start.line + offset.line : location.line;
+  let line = location.line;
+  if (func) {
+    line = func.location.start.line + offset.line;
+  }
+
   return {
     line,
     column: location.column,
@@ -76,11 +75,13 @@ function createSyncData(
 ): BreakpointSyncData {
   const overrides = {
     ...pendingBreakpoint,
-    generatedLocation,
     text,
     originalText
   };
-  const breakpoint = createBreakpoint(location, overrides);
+  const breakpoint = createBreakpoint(
+    { generatedLocation, location },
+    overrides
+  );
 
   assertBreakpoint(breakpoint);
   return { breakpoint, previousLocation };
@@ -89,13 +90,11 @@ function createSyncData(
 
 
 export async function syncBreakpointPromise(
-  getState: Function,
-  client: Object,
-  sourceMaps: Object,
-  dispatch: Function,
+  thunkArgs: ThunkArgs,
   sourceId: SourceId,
   pendingBreakpoint: PendingBreakpoint
-): Promise<BreakpointSyncData | null> {
+): Promise<?BreakpointSyncData> {
+  const { getState, client } = thunkArgs;
   assertPendingBreakpoint(pendingBreakpoint);
 
   const source = getSource(getState(), sourceId);
@@ -106,70 +105,47 @@ export async function syncBreakpointPromise(
 
   const generatedSource = getSource(getState(), generatedSourceId);
 
-  if (!source) {
-    return null;
+  if (!source || !generatedSource) {
+    return;
   }
 
-  const { location, astLocation } = pendingBreakpoint;
+  const { location, generatedLocation, astLocation } = pendingBreakpoint;
   const previousLocation = { ...location, sourceId };
 
-  const scopedLocation = await makeScopedLocation(
+  const newLocation = await findNewLocation(
     astLocation,
     previousLocation,
     source
   );
 
-  const scopedGeneratedLocation = await getGeneratedLocation(
-    getState(),
-    source,
-    scopedLocation,
-    sourceMaps
+  const newGeneratedLocation = await findBreakpointPosition(
+    thunkArgs,
+    newLocation
   );
 
-  
-  
-  const generatedLocation = {
-    ...pendingBreakpoint.generatedLocation,
-    sourceId: generatedSourceId
-  };
-
-  const isSameLocation = !locationMoved(
+  const isSameLocation = comparePosition(
     generatedLocation,
-    scopedGeneratedLocation
+    newGeneratedLocation
   );
 
   
   
-  if (!getSource(getState(), generatedSourceId)) {
-    return null;
-  }
-
-  const breakpointLocation = makeBreakpointLocation(
-    getState(),
-    generatedLocation
-  );
-
-  const possiblePosition = await isPossiblePosition(
-    getState(),
-    generatedLocation,
-    dispatch
-  );
-
-  
-  
-  if (possiblePosition && (pendingBreakpoint.disabled || isSameLocation)) {
+  if (newGeneratedLocation && (pendingBreakpoint.disabled || isSameLocation)) {
     
     if (!pendingBreakpoint.disabled) {
-      await client.setBreakpoint(breakpointLocation, pendingBreakpoint.options);
+      await client.setBreakpoint(
+        makeBreakpointLocation(getState(), newGeneratedLocation),
+        pendingBreakpoint.options
+      );
     }
 
     const originalText = getTextAtPosition(source, previousLocation);
-    const text = getTextAtPosition(generatedSource, generatedLocation);
+    const text = getTextAtPosition(generatedSource, newGeneratedLocation);
 
     return createSyncData(
       pendingBreakpoint,
-      scopedLocation,
-      scopedGeneratedLocation,
+      newLocation,
+      newGeneratedLocation,
       previousLocation,
       text,
       originalText
@@ -177,9 +153,9 @@ export async function syncBreakpointPromise(
   }
 
   
-  await client.removeBreakpoint(breakpointLocation);
+  await client.removeBreakpoint(generatedLocation);
 
-  if (!possiblePosition || !scopedGeneratedLocation.line) {
+  if (!newGeneratedLocation) {
     return { previousLocation, breakpoint: null };
   }
 
@@ -187,17 +163,17 @@ export async function syncBreakpointPromise(
   
   
   await client.setBreakpoint(
-    scopedGeneratedLocation,
+    makeBreakpointLocation(getState(), newGeneratedLocation),
     pendingBreakpoint.options
   );
 
-  const originalText = getTextAtPosition(source, scopedLocation);
-  const text = getTextAtPosition(generatedSource, scopedGeneratedLocation);
+  const originalText = getTextAtPosition(source, newLocation);
+  const text = getTextAtPosition(generatedSource, newGeneratedLocation);
 
   return createSyncData(
     pendingBreakpoint,
-    scopedLocation,
-    scopedGeneratedLocation,
+    newLocation,
+    newGeneratedLocation,
     previousLocation,
     text,
     originalText
@@ -208,21 +184,15 @@ export async function syncBreakpointPromise(
 
 
 
-
-
-
-
-
 export function syncBreakpoint(
   sourceId: SourceId,
   pendingBreakpoint: PendingBreakpoint
 ) {
-  return async ({ dispatch, getState, client, sourceMaps }: ThunkArgs) => {
+  return async (thunkArgs: ThunkArgs) => {
+    const { dispatch } = thunkArgs;
+
     const response = await syncBreakpointPromise(
-      getState,
-      client,
-      sourceMaps,
-      dispatch,
+      thunkArgs,
       sourceId,
       pendingBreakpoint
     );
@@ -232,7 +202,6 @@ export function syncBreakpoint(
     }
 
     const { breakpoint, previousLocation } = response;
-
     return dispatch(
       ({
         type: "SYNC_BREAKPOINT",

@@ -18,6 +18,7 @@ import type {
   Script,
   Source,
   Pause,
+  PendingLocation,
   Frame,
   SourceId,
   Worker,
@@ -222,8 +223,7 @@ export type TabTarget = {
       cursor: number,
       func: Function,
       frameId: ?string
-    ) => void,
-    emit: (string, any) => void
+    ) => void
   },
   form: { consoleActor: any },
   root: any,
@@ -232,8 +232,7 @@ export type TabTarget = {
   reload: () => Promise<*>,
   destroy: () => void,
   isBrowsingContext: boolean,
-  isContentProcess: boolean,
-  traits: Object
+  isContentProcess: boolean
 };
 
 
@@ -345,7 +344,7 @@ export type ThreadClient = {
   pauseGrip: (Grip | Function) => ObjectClient,
   pauseOnExceptions: (boolean, boolean) => Promise<*>,
   setBreakpoint: (BreakpointLocation, BreakpointOptions) => Promise<*>,
-  removeBreakpoint: BreakpointLocation => Promise<*>,
+  removeBreakpoint: PendingLocation => Promise<*>,
   setXHRBreakpoint: (path: string, method: string) => Promise<boolean>,
   removeXHRBreakpoint: (path: string, method: string) => Promise<boolean>,
   interrupt: () => Promise<*>,

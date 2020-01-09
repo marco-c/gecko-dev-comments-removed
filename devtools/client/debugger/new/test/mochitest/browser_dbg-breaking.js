@@ -10,9 +10,12 @@ add_task(async function() {
     getState
   } = dbg;
 
+  await selectSource(dbg, "scripts.html");
+
   
   
   await addBreakpoint(dbg, "scripts.html", 21);
+
   reload(dbg);
 
   await waitForDispatch(dbg, "NAVIGATE");
@@ -22,7 +25,7 @@ add_task(async function() {
   assertPausedLocation(dbg);
   await resume(dbg);
 
-  
+  info('Create an eval script that pauses itself.')
   invokeInTab("doEval");
   await waitForPaused(dbg);
 
