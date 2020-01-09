@@ -7,6 +7,7 @@
 #define nsIContent_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/FlushType.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
 #include "nsCaseTreatment.h"  
 #include "nsINode.h"
@@ -636,6 +637,15 @@ class nsIContent : public nsINode {
   nsIFrame* GetPrimaryFrame() const {
     return (IsInUncomposedDoc() || IsInShadowTree()) ? mPrimaryFrame : nullptr;
   }
+
+  
+
+
+
+
+
+
+  nsIFrame* GetPrimaryFrame(mozilla::FlushType aType);
 
   
   inline void SetPrimaryFrame(nsIFrame* aFrame);

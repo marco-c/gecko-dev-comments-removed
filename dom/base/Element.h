@@ -1385,17 +1385,6 @@ class Element : public FragmentOrElement {
                                 WidgetEvent* aEvent, nsIContent* aTarget,
                                 bool aFullDispatch, nsEventStatus* aStatus);
 
-  
-
-
-
-
-
-
-  nsIFrame* GetPrimaryFrame(FlushType aType);
-  
-  nsIFrame* GetPrimaryFrame() const { return nsIContent::GetPrimaryFrame(); }
-
   bool IsDisplayContents() const {
     return HasServoData() && Servo_Element_IsDisplayContents(this);
   }
