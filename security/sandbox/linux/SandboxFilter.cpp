@@ -92,8 +92,15 @@ namespace mozilla {
 
 
 
+
+
 class SandboxPolicyCommon : public SandboxPolicyBase {
  protected:
+  SandboxBrokerClient* mBroker;
+
+  explicit SandboxPolicyCommon(SandboxBrokerClient* aBroker = nullptr)
+      : mBroker(aBroker) {}
+
   typedef const sandbox::arch_seccomp_data& ArgsRef;
 
   static intptr_t BlockedSyscallTrap(ArgsRef aArgs, void* aux) {
@@ -130,6 +137,159 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     }
     
     return -ETXTBSY;
+  }
+
+  
+  
+#ifdef __NR_open
+  static intptr_t OpenTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto flags = static_cast<int>(aArgs.args[1]);
+    return broker->Open(path, flags);
+  }
+#endif
+
+  static intptr_t OpenAtTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto fd = static_cast<int>(aArgs.args[0]);
+    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
+    auto flags = static_cast<int>(aArgs.args[2]);
+    if (fd != AT_FDCWD && path[0] != '/') {
+      SANDBOX_LOG_ERROR("unsupported fd-relative openat(%d, \"%s\", 0%o)", fd,
+                        path, flags);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    return broker->Open(path, flags);
+  }
+
+#ifdef __NR_access
+  static intptr_t AccessTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto mode = static_cast<int>(aArgs.args[1]);
+    return broker->Access(path, mode);
+  }
+#endif
+
+  static intptr_t AccessAtTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto fd = static_cast<int>(aArgs.args[0]);
+    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
+    auto mode = static_cast<int>(aArgs.args[2]);
+    
+    
+    
+    
+    if (fd != AT_FDCWD && path[0] != '/') {
+      SANDBOX_LOG_ERROR("unsupported fd-relative faccessat(%d, \"%s\", %d)", fd,
+                        path, mode);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    return broker->Access(path, mode);
+  }
+
+  static intptr_t StatTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto buf = reinterpret_cast<statstruct*>(aArgs.args[1]);
+    return broker->Stat(path, buf);
+  }
+
+  static intptr_t LStatTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto buf = reinterpret_cast<statstruct*>(aArgs.args[1]);
+    return broker->LStat(path, buf);
+  }
+
+  static intptr_t StatAtTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto fd = static_cast<int>(aArgs.args[0]);
+    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
+    auto buf = reinterpret_cast<statstruct*>(aArgs.args[2]);
+    auto flags = static_cast<int>(aArgs.args[3]);
+    if (fd != AT_FDCWD && path[0] != '/') {
+      SANDBOX_LOG_ERROR("unsupported fd-relative fstatat(%d, \"%s\", %p, %d)",
+                        fd, path, buf, flags);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    if ((flags & ~AT_SYMLINK_NOFOLLOW) != 0) {
+      SANDBOX_LOG_ERROR("unsupported flags %d in fstatat(%d, \"%s\", %p, %d)",
+                        (flags & ~AT_SYMLINK_NOFOLLOW), fd, path, buf, flags);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    return (flags & AT_SYMLINK_NOFOLLOW) == 0 ? broker->Stat(path, buf)
+                                              : broker->LStat(path, buf);
+  }
+
+  static intptr_t ChmodTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto mode = static_cast<mode_t>(aArgs.args[1]);
+    return broker->Chmod(path, mode);
+  }
+
+  static intptr_t LinkTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto path2 = reinterpret_cast<const char*>(aArgs.args[1]);
+    return broker->Link(path, path2);
+  }
+
+  static intptr_t SymlinkTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto path2 = reinterpret_cast<const char*>(aArgs.args[1]);
+    return broker->Symlink(path, path2);
+  }
+
+  static intptr_t RenameTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto path2 = reinterpret_cast<const char*>(aArgs.args[1]);
+    return broker->Rename(path, path2);
+  }
+
+  static intptr_t MkdirTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto mode = static_cast<mode_t>(aArgs.args[1]);
+    return broker->Mkdir(path, mode);
+  }
+
+  static intptr_t RmdirTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    return broker->Rmdir(path);
+  }
+
+  static intptr_t UnlinkTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    return broker->Unlink(path);
+  }
+
+  static intptr_t ReadlinkTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto buf = reinterpret_cast<char*>(aArgs.args[1]);
+    auto size = static_cast<size_t>(aArgs.args[2]);
+    return broker->Readlink(path, buf, size);
+  }
+
+  static intptr_t ReadlinkAtTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto fd = static_cast<int>(aArgs.args[0]);
+    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
+    auto buf = reinterpret_cast<char*>(aArgs.args[2]);
+    auto size = static_cast<size_t>(aArgs.args[3]);
+    if (fd != AT_FDCWD && path[0] != '/') {
+      SANDBOX_LOG_ERROR("unsupported fd-relative readlinkat(%d, %s, %p, %u)",
+                        fd, path, buf, size);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    return broker->Readlink(path, buf, size);
   }
 
  public:
@@ -187,6 +347,46 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
   }
 
   ResultExpr EvaluateSyscall(int sysno) const override {
+    
+    
+    
+    if (mBroker != nullptr) {
+      switch (sysno) {
+        case __NR_open:
+          return Trap(OpenTrap, mBroker);
+        case __NR_openat:
+          return Trap(OpenAtTrap, mBroker);
+        case __NR_access:
+          return Trap(AccessTrap, mBroker);
+        case __NR_faccessat:
+          return Trap(AccessAtTrap, mBroker);
+        CASES_FOR_stat:
+          return Trap(StatTrap, mBroker);
+        CASES_FOR_lstat:
+          return Trap(LStatTrap, mBroker);
+        CASES_FOR_fstatat:
+          return Trap(StatAtTrap, mBroker);
+        case __NR_chmod:
+          return Trap(ChmodTrap, mBroker);
+        case __NR_link:
+          return Trap(LinkTrap, mBroker);
+        case __NR_mkdir:
+          return Trap(MkdirTrap, mBroker);
+        case __NR_symlink:
+          return Trap(SymlinkTrap, mBroker);
+        case __NR_rename:
+          return Trap(RenameTrap, mBroker);
+        case __NR_rmdir:
+          return Trap(RmdirTrap, mBroker);
+        case __NR_unlink:
+          return Trap(UnlinkTrap, mBroker);
+        case __NR_readlink:
+          return Trap(ReadlinkTrap, mBroker);
+        case __NR_readlinkat:
+          return Trap(ReadlinkAtTrap, mBroker);
+      }
+    }
+
     switch (sysno) {
         
       case __NR_clock_gettime: {
@@ -372,7 +572,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 
 class ContentSandboxPolicy : public SandboxPolicyCommon {
  private:
-  SandboxBrokerClient* mBroker;
   ContentProcessSandboxParams mParams;
   bool mAllowSysV;
   bool mUsingRenderDoc;
@@ -402,159 +601,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 #  else   
     return false;
 #  endif  
-  }
-
-  
-  
-#  ifdef __NR_open
-  static intptr_t OpenTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto flags = static_cast<int>(aArgs.args[1]);
-    return broker->Open(path, flags);
-  }
-#  endif
-
-  static intptr_t OpenAtTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto fd = static_cast<int>(aArgs.args[0]);
-    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
-    auto flags = static_cast<int>(aArgs.args[2]);
-    if (fd != AT_FDCWD && path[0] != '/') {
-      SANDBOX_LOG_ERROR("unsupported fd-relative openat(%d, \"%s\", 0%o)", fd,
-                        path, flags);
-      return BlockedSyscallTrap(aArgs, nullptr);
-    }
-    return broker->Open(path, flags);
-  }
-
-#  ifdef __NR_access
-  static intptr_t AccessTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto mode = static_cast<int>(aArgs.args[1]);
-    return broker->Access(path, mode);
-  }
-#  endif
-
-  static intptr_t AccessAtTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto fd = static_cast<int>(aArgs.args[0]);
-    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
-    auto mode = static_cast<int>(aArgs.args[2]);
-    
-    
-    
-    
-    if (fd != AT_FDCWD && path[0] != '/') {
-      SANDBOX_LOG_ERROR("unsupported fd-relative faccessat(%d, \"%s\", %d)", fd,
-                        path, mode);
-      return BlockedSyscallTrap(aArgs, nullptr);
-    }
-    return broker->Access(path, mode);
-  }
-
-  static intptr_t StatTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto buf = reinterpret_cast<statstruct*>(aArgs.args[1]);
-    return broker->Stat(path, buf);
-  }
-
-  static intptr_t LStatTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto buf = reinterpret_cast<statstruct*>(aArgs.args[1]);
-    return broker->LStat(path, buf);
-  }
-
-  static intptr_t StatAtTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto fd = static_cast<int>(aArgs.args[0]);
-    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
-    auto buf = reinterpret_cast<statstruct*>(aArgs.args[2]);
-    auto flags = static_cast<int>(aArgs.args[3]);
-    if (fd != AT_FDCWD && path[0] != '/') {
-      SANDBOX_LOG_ERROR("unsupported fd-relative fstatat(%d, \"%s\", %p, %d)",
-                        fd, path, buf, flags);
-      return BlockedSyscallTrap(aArgs, nullptr);
-    }
-    if ((flags & ~AT_SYMLINK_NOFOLLOW) != 0) {
-      SANDBOX_LOG_ERROR("unsupported flags %d in fstatat(%d, \"%s\", %p, %d)",
-                        (flags & ~AT_SYMLINK_NOFOLLOW), fd, path, buf, flags);
-      return BlockedSyscallTrap(aArgs, nullptr);
-    }
-    return (flags & AT_SYMLINK_NOFOLLOW) == 0 ? broker->Stat(path, buf)
-                                              : broker->LStat(path, buf);
-  }
-
-  static intptr_t ChmodTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto mode = static_cast<mode_t>(aArgs.args[1]);
-    return broker->Chmod(path, mode);
-  }
-
-  static intptr_t LinkTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto path2 = reinterpret_cast<const char*>(aArgs.args[1]);
-    return broker->Link(path, path2);
-  }
-
-  static intptr_t SymlinkTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto path2 = reinterpret_cast<const char*>(aArgs.args[1]);
-    return broker->Symlink(path, path2);
-  }
-
-  static intptr_t RenameTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto path2 = reinterpret_cast<const char*>(aArgs.args[1]);
-    return broker->Rename(path, path2);
-  }
-
-  static intptr_t MkdirTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto mode = static_cast<mode_t>(aArgs.args[1]);
-    return broker->Mkdir(path, mode);
-  }
-
-  static intptr_t RmdirTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    return broker->Rmdir(path);
-  }
-
-  static intptr_t UnlinkTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    return broker->Unlink(path);
-  }
-
-  static intptr_t ReadlinkTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    auto buf = reinterpret_cast<char*>(aArgs.args[1]);
-    auto size = static_cast<size_t>(aArgs.args[2]);
-    return broker->Readlink(path, buf, size);
-  }
-
-  static intptr_t ReadlinkAtTrap(ArgsRef aArgs, void* aux) {
-    auto broker = static_cast<SandboxBrokerClient*>(aux);
-    auto fd = static_cast<int>(aArgs.args[0]);
-    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
-    auto buf = reinterpret_cast<char*>(aArgs.args[2]);
-    auto size = static_cast<size_t>(aArgs.args[3]);
-    if (fd != AT_FDCWD && path[0] != '/') {
-      SANDBOX_LOG_ERROR("unsupported fd-relative readlinkat(%d, %s, %p, %u)",
-                        fd, path, buf, size);
-      return BlockedSyscallTrap(aArgs, nullptr);
-    }
-    return broker->Readlink(path, buf, size);
   }
 
   static intptr_t GetPPidTrap(ArgsRef aArgs, void* aux) {
@@ -733,7 +779,7 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
  public:
   ContentSandboxPolicy(SandboxBrokerClient* aBroker,
                        ContentProcessSandboxParams&& aParams)
-      : mBroker(aBroker),
+      : SandboxPolicyCommon(aBroker),
         mParams(std::move(aParams)),
         mAllowSysV(PR_GetEnv("MOZ_SANDBOX_ALLOW_SYSV") != nullptr),
         mUsingRenderDoc(PR_GetEnv("RENDERDOC_CAPTUREOPTS") != nullptr) {}
@@ -856,46 +902,9 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 
     
     
-    if (!BelowLevel(2)) {
-      
-      MOZ_RELEASE_ASSERT(mBroker != nullptr);
-      switch (sysno) {
-        case __NR_open:
-          return Trap(OpenTrap, mBroker);
-        case __NR_openat:
-          return Trap(OpenAtTrap, mBroker);
-        case __NR_access:
-          return Trap(AccessTrap, mBroker);
-        case __NR_faccessat:
-          return Trap(AccessAtTrap, mBroker);
-        CASES_FOR_stat:
-          return Trap(StatTrap, mBroker);
-        CASES_FOR_lstat:
-          return Trap(LStatTrap, mBroker);
-        CASES_FOR_fstatat:
-          return Trap(StatAtTrap, mBroker);
-        case __NR_chmod:
-          return Trap(ChmodTrap, mBroker);
-        case __NR_link:
-          return Trap(LinkTrap, mBroker);
-        case __NR_mkdir:
-          return Trap(MkdirTrap, mBroker);
-        case __NR_symlink:
-          return Trap(SymlinkTrap, mBroker);
-        case __NR_rename:
-          return Trap(RenameTrap, mBroker);
-        case __NR_rmdir:
-          return Trap(RmdirTrap, mBroker);
-        case __NR_unlink:
-          return Trap(UnlinkTrap, mBroker);
-        case __NR_readlink:
-          return Trap(ReadlinkTrap, mBroker);
-        case __NR_readlinkat:
-          return Trap(ReadlinkAtTrap, mBroker);
-      }
-    } else {
-      
-      MOZ_ASSERT(!mBroker);
+    
+    if (BelowLevel(2)) {
+      MOZ_ASSERT(mBroker == nullptr);
       switch (sysno) {
         case __NR_open:
         case __NR_openat:
