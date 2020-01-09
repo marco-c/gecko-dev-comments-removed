@@ -1270,10 +1270,17 @@ class UrlbarInput {
     
     this._clearActionOverride();
     this.formatValue();
+
+    
+    
+    if (ExtensionSearchHandler.hasActiveInputSession()) {
+      ExtensionSearchHandler.handleInputCancelled();
+    }
+
     
     
     if (!UrlbarPrefs.get("ui.popup.disable_autohide")) {
-      this.view.close(UrlbarUtils.CANCEL_REASON.BLUR);
+      this.view.close();
     }
     
     if (this.getAttribute("pageproxystate") != "valid") {

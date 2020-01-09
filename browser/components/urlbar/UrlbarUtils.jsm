@@ -122,12 +122,6 @@ var UrlbarUtils = {
   },
 
   
-  CANCEL_REASON: {
-    
-    BLUR: 2,
-  },
-
-  
   
   MAX_TEXT_LENGTH: 255,
 

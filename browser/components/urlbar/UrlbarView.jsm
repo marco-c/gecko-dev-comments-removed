@@ -181,27 +181,28 @@ class UrlbarView {
   
 
 
-
-
-
-
-  close(cancelReason) {
-    this.controller.cancelQuery(cancelReason);
+  close() {
+    this.controller.cancelQuery();
     this.panel.hidePopup();
   }
 
   
   onQueryStarted(queryContext) {
+    this._queryWasCancelled = false;
     this._startRemoveStaleRowsTimer();
   }
 
   onQueryCancelled(queryContext) {
+    this._queryWasCancelled = true;
     this._cancelRemoveStaleRowsTimer();
   }
 
   onQueryFinished(queryContext) {
     this._cancelRemoveStaleRowsTimer();
-    this._removeStaleRows();
+    
+    if (!this._queryWasCancelled) {
+      this._removeStaleRows();
+    }
   }
 
   onQueryResults(queryContext) {
@@ -753,6 +754,7 @@ class UrlbarView {
     this.window.removeEventListener("resize", this);
     this.removeAccessibleFocus();
     this.input.inputField.setAttribute("aria-expanded", "false");
+    this._rows.textContent = "";
   }
 
   _on_resize() {
