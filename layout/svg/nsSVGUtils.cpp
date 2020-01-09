@@ -1248,13 +1248,12 @@ bool nsSVGUtils::GetNonScalingStrokeTransform(nsIFrame* aFrame,
     return false;
   }
 
-  nsIContent* content = aFrame->GetContent();
-  MOZ_ASSERT(content->IsSVGElement(), "bad cast");
+  MOZ_ASSERT(aFrame->GetContent()->IsSVGElement(), "should be an SVG element");
 
-  *aUserToOuterSVG = ThebesMatrix(
-      SVGContentUtils::GetCTM(static_cast<SVGElement*>(content), true));
+  nsSVGOuterSVGFrame* outer = nsSVGUtils::GetOuterSVGFrame(aFrame);
+  *aUserToOuterSVG = nsSVGUtils::GetTransformMatrixInUserSpace(aFrame, outer);
 
-  return !aUserToOuterSVG->IsIdentity();
+  return aUserToOuterSVG->HasNonTranslation();
 }
 
 
@@ -1705,19 +1704,21 @@ gfxMatrix nsSVGUtils::GetTransformMatrixInUserSpace(const nsIFrame* aFrame,
              "Only use this wrapper for SVG elements");
 
   Matrix mm;
-  auto trans = nsLayoutUtils::GetTransformToAncestor(aFrame, aAncestor);
+  auto trans = nsLayoutUtils::GetTransformToAncestor(aFrame, aAncestor,
+                                                     nsIFrame::IN_CSS_UNITS);
+
   trans.ProjectTo2D();
   trans.CanDraw2D(&mm);
   gfxMatrix ret = ThebesMatrix(mm);
 
-  float devPixelPerCSSPixel = float(AppUnitsPerCSSPixel()) /
-                              aFrame->PresContext()->AppUnitsPerDevPixel();
+  float initPositionX = NSAppUnitsToFloatPixels(aFrame->GetPosition().x,
+                                                AppUnitsPerCSSPixel()),
+        initPositionY = NSAppUnitsToFloatPixels(aFrame->GetPosition().y,
+                                                AppUnitsPerCSSPixel());
 
   
   
-  
-  ret.PreScale(devPixelPerCSSPixel, devPixelPerCSSPixel);
-  ret.PostScale(1.f / devPixelPerCSSPixel, 1.f / devPixelPerCSSPixel);
+  ret = ret.PreTranslate(-initPositionX, -initPositionY);
 
   return ret;
 }
