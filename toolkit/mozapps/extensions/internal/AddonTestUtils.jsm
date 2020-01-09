@@ -415,6 +415,10 @@ var AddonTestUtils = {
     this.tempDir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 
     testScope.registerCleanupFunction(() => {
+      
+      testScope.registerCleanupFunction(() => {
+        this.testScope = null;
+      });
       this.cleanupTempXPIs();
       try {
         this.tempDir.remove(true);
