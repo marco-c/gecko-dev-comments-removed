@@ -3427,10 +3427,12 @@ public class BrowserApp extends GeckoApp
 
         charEncoding.setVisible(GeckoPreferences.getCharEncodingState());
 
+        
+        
         if (getProfile().inGuestMode()) {
             exitGuestMode.setVisible(true);
         } else {
-            enterGuestMode.setVisible(true);
+            enterGuestMode.setVisible(false);
         }
 
         if (!Restrictions.isAllowed(this, Restrictable.GUEST_BROWSING)) {
