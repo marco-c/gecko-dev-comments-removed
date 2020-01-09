@@ -40,9 +40,6 @@ class VideoFrameContainer {
   VideoFrameContainer(MediaDecoderOwner* aOwner,
                       already_AddRefed<ImageContainer> aContainer);
 
-  
-  virtual void SetCurrentFrames(const VideoSegment& aSegment);
-  virtual void ClearFrames();
   void SetCurrentFrame(const gfx::IntSize& aIntrinsicSize, Image* aImage,
                        const TimeStamp& aTargetTime);
   
@@ -123,9 +120,6 @@ class VideoFrameContainer {
   Mutex mMutex;
   
   
-  RefPtr<Image> mBlackImage;
-  
-  
   
   
   
@@ -133,9 +127,6 @@ class VideoFrameContainer {
   
   
   ImageContainer::FrameID mFrameID;
-  
-  
-  VideoFrame mLastPlayedVideoFrame;
   
   PrincipalHandle mLastPrincipalHandle;
   
