@@ -2703,6 +2703,27 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
     return;
   }
 
+  
+  
+  if (IsRootScrollFrameOfDocument() && presContext->IsRootContentDocument()) {
+    PresShell* ps = presContext->GetPresShell();
+    if (const auto& visualScrollUpdate = ps->GetPendingVisualScrollUpdate()) {
+      if (visualScrollUpdate->mVisualScrollOffset != aPt) {
+        
+        
+        
+        bool shouldClobber =
+            aOrigin == nsGkAtoms::other ||
+            (aOrigin == nsGkAtoms::restore &&
+             visualScrollUpdate->mUpdateType == FrameMetrics::eRestore);
+        if (shouldClobber) {
+          ps->AcknowledgePendingVisualScrollUpdate();
+          ps->ClearPendingVisualScrollUpdate();
+        }
+      }
+    }
+  }
+
   bool needFrameVisibilityUpdate = mLastUpdateFramesPos == nsPoint(-1, -1);
 
   nsPoint dist(std::abs(pt.x - mLastUpdateFramesPos.x),
