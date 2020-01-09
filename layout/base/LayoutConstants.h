@@ -25,8 +25,6 @@
 
 #define NS_AUTOMARGIN (NS_UNCONSTRAINEDSIZE + 1)
 
-
-
-#define NS_INTRINSIC_WIDTH_UNKNOWN nscoord_MIN
+#define NS_INTRINSIC_ISIZE_UNKNOWN nscoord_MIN
 
 #endif  

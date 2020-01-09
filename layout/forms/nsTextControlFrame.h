@@ -72,7 +72,7 @@ class nsTextControlFrame final : public nsContainerFrame,
     if (!IsSingleLineTextControl()) {
       return false;
     }
-    NS_ASSERTION(mFirstBaseline != NS_INTRINSIC_WIDTH_UNKNOWN,
+    NS_ASSERTION(mFirstBaseline != NS_INTRINSIC_ISIZE_UNKNOWN,
                  "please call Reflow before asking for the baseline");
     if (aBaselineGroup == BaselineSharingGroup::First) {
       *aBaseline = mFirstBaseline;
@@ -106,7 +106,7 @@ class nsTextControlFrame final : public nsContainerFrame,
 #ifdef DEBUG
   void MarkIntrinsicISizesDirty() override {
     
-    mFirstBaseline = NS_INTRINSIC_WIDTH_UNKNOWN;
+    mFirstBaseline = NS_INTRINSIC_ISIZE_UNKNOWN;
   }
 #endif
 
