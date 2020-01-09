@@ -1874,45 +1874,8 @@ template <typename Base, typename Traits>
 bool XrayWrapper<Base, Traits>::getPropertyDescriptor(
     JSContext* cx, HandleObject wrapper, HandleId id,
     JS::MutableHandle<PropertyDescriptor> desc) const {
-  
-  assertEnteredPolicy(cx, wrapper, id,
-                      BaseProxyHandler::GET | BaseProxyHandler::SET |
-                          BaseProxyHandler::GET_PROPERTY_DESCRIPTOR);
-  RootedObject target(cx, Traits::getTargetObject(wrapper));
-  RootedObject holder(cx, Traits::singleton.ensureHolder(cx, wrapper));
-
-  if (!holder) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  if (!Traits::singleton.resolveOwnProperty(cx, wrapper, target, holder, id,
-                                            desc)) {
-    return false;
-  }
-
-  
-  if (!desc.object() &&
-      !JS_GetOwnPropertyDescriptorById(cx, holder, id, desc)) {
-    return false;
-  }
-  if (desc.object()) {
-    desc.object().set(wrapper);
-  }
-  return true;
+  MOZ_CRASH("Shouldn't be called: we return true for hasPrototype()");
+  return false;
 }
 
 template <typename Base, typename Traits>
@@ -2108,19 +2071,18 @@ bool XrayWrapper<Base, Traits>::get(JSContext* cx, HandleObject wrapper,
                                     HandleValue receiver, HandleId id,
                                     MutableHandleValue vp) const {
   
-
+  
   
   
   Rooted<PropertyDescriptor> desc(cx);
-  if (!getPropertyDescriptor(cx, wrapper, id, &desc)) {
+  if (!getOwnPropertyDescriptor(cx, wrapper, id, &desc)) {
     return false;
   }
   desc.assertCompleteIfFound();
 
-  if (!desc.object()) {
-    vp.setUndefined();
-    return true;
-  }
+  MOZ_ASSERT(desc.object(),
+             "hasOwn() claimed we have this property, so why would we not get "
+             "a descriptor here?");
 
   
   if (desc.isDataDescriptor()) {
@@ -2144,22 +2106,15 @@ bool XrayWrapper<Base, Traits>::set(JSContext* cx, HandleObject wrapper,
                                     HandleId id, HandleValue v,
                                     HandleValue receiver,
                                     ObjectOpResult& result) const {
-  MOZ_CRASH("Shouldn't be called");
+  MOZ_CRASH("Shouldn't be called: we return true for hasPrototype()");
   return false;
 }
 
 template <typename Base, typename Traits>
 bool XrayWrapper<Base, Traits>::has(JSContext* cx, HandleObject wrapper,
                                     HandleId id, bool* bp) const {
-  
-  
-  Rooted<PropertyDescriptor> desc(cx);
-  if (!getPropertyDescriptor(cx, wrapper, id, &desc)) {
-    return false;
-  }
-
-  *bp = !!desc.object();
-  return true;
+  MOZ_CRASH("Shouldn't be called: we return true for hasPrototype()");
+  return false;
 }
 
 template <typename Base, typename Traits>
@@ -2179,7 +2134,7 @@ bool XrayWrapper<Base, Traits>::getOwnEnumerablePropertyKeys(
 template <typename Base, typename Traits>
 JSObject* XrayWrapper<Base, Traits>::enumerate(JSContext* cx,
                                                HandleObject wrapper) const {
-  MOZ_CRASH("Shouldn't be called");
+  MOZ_CRASH("Shouldn't be called: we return true for hasPrototype()");
   return nullptr;
 }
 
