@@ -4039,6 +4039,10 @@ void Document::DeletePresShell() {
   
   MarkUserFontSetDirty();
 
+  if (mResizeObserverController) {
+    mResizeObserverController->ShellDetachedFromDocument();
+  }
+
   PresShell* oldPresShell = mPresShell;
   mPresShell = nullptr;
   UpdateFrameRequestCallbackSchedulingState(oldPresShell);
@@ -6741,9 +6745,7 @@ nsINode* Document::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv) {
       
       
       
-      JSObject* globalObject = GetScopeObject()->GetGlobalJSObject();
-      JS::ExposeObjectToActiveJS(globalObject);
-      JSAutoRealm ar(cx, globalObject);
+      JSAutoRealm ar(cx, GetScopeObject()->GetGlobalJSObject());
       JS::Rooted<JS::Value> v(cx);
       rv = nsContentUtils::WrapNative(cx, ToSupports(this), this, &v,
                                        false);
