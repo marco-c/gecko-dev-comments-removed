@@ -144,6 +144,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_marker(&self) -> bool {
+        false
+    }
+
+    
+    #[inline]
     pub fn is_before(&self) -> bool {
         *self == PseudoElement::Before
     }

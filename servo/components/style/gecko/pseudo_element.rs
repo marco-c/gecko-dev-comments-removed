@@ -33,7 +33,10 @@ impl ::selectors::parser::PseudoElement for PseudoElement {
     fn valid_after_slotted(&self) -> bool {
         matches!(
             *self,
-            PseudoElement::Before | PseudoElement::After | PseudoElement::Marker | PseudoElement::Placeholder
+            PseudoElement::Before |
+                PseudoElement::After |
+                PseudoElement::Marker |
+                PseudoElement::Placeholder
         )
     }
 
@@ -107,6 +110,12 @@ impl PseudoElement {
     #[inline]
     pub fn is_after(&self) -> bool {
         *self == PseudoElement::After
+    }
+
+    
+    #[inline]
+    pub fn is_marker(&self) -> bool {
+        *self == PseudoElement::Marker
     }
 
     

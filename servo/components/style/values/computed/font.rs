@@ -190,9 +190,7 @@ impl FontFamily {
     
     pub fn serif() -> Self {
         FontFamily {
-            families: FontFamilyList::new(Box::new([SingleFontFamily::Generic(
-                atom!("serif"),
-            )])),
+            families: FontFamilyList::new(Box::new([SingleFontFamily::Generic(atom!("serif"))])),
             is_system_font: false,
         }
     }
@@ -204,7 +202,9 @@ impl MallocSizeOf for FontFamily {
         
         
         
-        unsafe { bindings::Gecko_SharedFontList_SizeOfIncludingThisIfUnshared(self.families.0.get()) }
+        unsafe {
+            bindings::Gecko_SharedFontList_SizeOfIncludingThisIfUnshared(self.families.0.get())
+        }
     }
 }
 
