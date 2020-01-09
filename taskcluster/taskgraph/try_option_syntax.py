@@ -602,6 +602,8 @@ class TryOptionSyntax(object):
                 return False
             tier = task.task['extra']['treeherder']['tier']
             if 'platforms' in test:
+                if 'all' in test['platforms']:
+                    return True
                 platform = attr('test_platform', '').split('/')[0]
                 
                 return platform in test['platforms']
