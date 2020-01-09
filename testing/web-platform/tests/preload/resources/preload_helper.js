@@ -10,32 +10,19 @@ function getAbsoluteURL(url)
     return new URL(url, location.href).href;
 }
 
-function verifyNumberOfResourceTimingEntries(url, number)
+function verifyNumberOfDownloads(url, number)
 {
-    var numEntries = performance.getEntriesByName(getAbsoluteURL(url)).length;
-    assert_equals(numEntries, number, url);
-}
-
-
-
-
-function verifyLoadedAndNoDoubleDownload(url) {
-    var entries = performance.getEntriesByName(getAbsoluteURL(url));
-    
-    
-    assert_greater_than(entries.length, 0, url + ' should be loaded');
-
     var numDownloads = 0;
-    entries.forEach(entry => {
-        
+    performance.getEntriesByName(getAbsoluteURL(url)).forEach(entry => {
         if (entry.transferSize > 0) {
             numDownloads++;
         }
     });
-    
-    
-    
-    assert_less_than_equal(
-        numDownloads, 1,
-        url + ' should be downloaded from network at most once');
+    assert_equals(numDownloads, number, url);
+}
+
+function verifyNumberOfResourceTimingEntries(url, number)
+{
+    var numEntries = performance.getEntriesByName(getAbsoluteURL(url)).length;
+    assert_equals(numEntries, number, url);
 }
