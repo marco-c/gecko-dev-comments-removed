@@ -167,6 +167,11 @@ already_AddRefed<Response> Response::Constructor(
     const ResponseInit& aInit, ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
 
+  if (NS_WARN_IF(!global)) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
+  }
+
   if (aInit.mStatus < 200 || aInit.mStatus > 599) {
     aRv.ThrowRangeError<MSG_INVALID_RESPONSE_STATUSCODE_ERROR>();
     return nullptr;
@@ -209,10 +214,22 @@ already_AddRefed<Response> Response::Constructor(
         aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
         return nullptr;
       }
-    } else {
+
+      internalResponse->InitChannelInfo(info);
+    } else if (nsContentUtils::IsSystemPrincipal(global->PrincipalOrNull())) {
       info.InitFromChromeGlobal(global);
+
+      internalResponse->InitChannelInfo(info);
     }
-    internalResponse->InitChannelInfo(info);
+
+    
+
+
+
+
+
+
+
   } else {
     WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
     MOZ_ASSERT(worker);
