@@ -16,7 +16,7 @@
 #include "nsIContentSecurityPolicy.h"
 #include "nsINetworkInterceptController.h"
 #include "nsIProtocolHandler.h"
-#include "nsITabChild.h"
+#include "nsIBrowserChild.h"
 #include "nsScriptSecurityManager.h"
 #include "nsNetUtil.h"
 
@@ -398,8 +398,9 @@ void WorkerLoadInfo::InterfaceRequestor::MaybeAddTabChild(
     return;
   }
 
-  nsCOMPtr<nsITabChild> tabChild;
-  callbacks->GetInterface(NS_GET_IID(nsITabChild), getter_AddRefs(tabChild));
+  nsCOMPtr<nsIBrowserChild> tabChild;
+  callbacks->GetInterface(NS_GET_IID(nsIBrowserChild),
+                          getter_AddRefs(tabChild));
   if (!tabChild) {
     return;
   }
@@ -425,8 +426,8 @@ WorkerLoadInfo::InterfaceRequestor::GetInterface(const nsIID& aIID,
   
   
   
-  if (aIID.Equals(NS_GET_IID(nsITabChild))) {
-    nsCOMPtr<nsITabChild> tabChild = GetAnyLiveTabChild();
+  if (aIID.Equals(NS_GET_IID(nsIBrowserChild))) {
+    nsCOMPtr<nsIBrowserChild> tabChild = GetAnyLiveTabChild();
     if (!tabChild) {
       return NS_NOINTERFACE;
     }
@@ -444,13 +445,13 @@ WorkerLoadInfo::InterfaceRequestor::GetInterface(const nsIID& aIID,
   return NS_NOINTERFACE;
 }
 
-already_AddRefed<nsITabChild>
+already_AddRefed<nsIBrowserChild>
 WorkerLoadInfo::InterfaceRequestor::GetAnyLiveTabChild() {
   MOZ_ASSERT(NS_IsMainThread());
 
   
   while (!mTabChildList.IsEmpty()) {
-    nsCOMPtr<nsITabChild> tabChild =
+    nsCOMPtr<nsIBrowserChild> tabChild =
         do_QueryReferent(mTabChildList.LastElement());
 
     

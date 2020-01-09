@@ -171,7 +171,7 @@ function getContentChromeFlags(win) {
     docShell.QueryInterface(Ci.nsIInterfaceRequestor);
     try {
       
-      return docShell.getInterface(Ci.nsITabChild)
+      return docShell.getInterface(Ci.nsIBrowserChild)
                       .QueryInterface(Ci.nsIWebBrowserChrome)
                       .chromeFlags;
     } catch (e) {
