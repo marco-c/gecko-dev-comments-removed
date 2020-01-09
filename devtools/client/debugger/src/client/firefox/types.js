@@ -347,9 +347,7 @@ export type ThreadClient = {
   stepOver: Function => Promise<*>,
   stepOut: Function => Promise<*>,
   rewind: Function => Promise<*>,
-  reverseStepIn: Function => Promise<*>,
   reverseStepOver: Function => Promise<*>,
-  reverseStepOut: Function => Promise<*>,
   breakOnNext: () => Promise<*>,
   
   source: ({ actor: SourceId }) => SourceClient,

@@ -162,20 +162,6 @@ ThreadClient.prototype = {
   
 
 
-  reverseStepIn: function() {
-    return this._doResume({ type: "step" }, true);
-  },
-
-  
-
-
-  reverseStepOut: function() {
-    return this._doResume({ type: "finish" }, true);
-  },
-
-  
-
-
   interrupt: function() {
     return this._doInterrupt(null);
   },

@@ -147,38 +147,10 @@ export function rewind(cx: ThreadContext) {
 
 
 
-export function reverseStepIn(cx: ThreadContext) {
-  return ({ dispatch, getState }: ThunkArgs) => {
-    if (cx.isPaused) {
-      return dispatch(command(cx, "reverseStepIn"));
-    }
-  };
-}
-
-
-
-
-
-
-
 export function reverseStepOver(cx: ThreadContext) {
   return ({ dispatch, getState }: ThunkArgs) => {
     if (cx.isPaused) {
       return dispatch(astCommand(cx, "reverseStepOver"));
-    }
-  };
-}
-
-
-
-
-
-
-
-export function reverseStepOut(cx: ThreadContext) {
-  return ({ dispatch, getState }: ThunkArgs) => {
-    if (cx.isPaused) {
-      return dispatch(command(cx, "reverseStepOut"));
     }
   };
 }

@@ -37,9 +37,7 @@ export type Command =
   | "stepOut"
   | "resume"
   | "rewind"
-  | "reverseStepOver"
-  | "reverseStepIn"
-  | "reverseStepOut";
+  | "reverseStepOver";
 
 
 type ThreadPauseState = {

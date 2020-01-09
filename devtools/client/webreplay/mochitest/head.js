@@ -71,9 +71,7 @@ var rewindToLine = resumeThenPauseAtLineFunctionFactory("rewind");
 var resumeToLine = resumeThenPauseAtLineFunctionFactory("resume");
 var reverseStepOverToLine = resumeThenPauseAtLineFunctionFactory("reverseStepOver");
 var stepOverToLine = resumeThenPauseAtLineFunctionFactory("stepOver");
-var reverseStepInToLine = resumeThenPauseAtLineFunctionFactory("reverseStepIn");
 var stepInToLine = resumeThenPauseAtLineFunctionFactory("stepIn");
-var reverseStepOutToLine = resumeThenPauseAtLineFunctionFactory("reverseStepOut");
 var stepOutToLine = resumeThenPauseAtLineFunctionFactory("stepOut");
 
 
