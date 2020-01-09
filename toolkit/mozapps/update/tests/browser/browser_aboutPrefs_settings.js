@@ -22,17 +22,19 @@ async function changeAndVerifyPref(tab, newConfigValue) {
   
   
   
-
   let configValueRead = await UpdateUtils.getAppUpdateAutoEnabled();
   is(configValueRead, newConfigValue,
      "Value returned should have matched the expected value");
 
-  let configFile = getUpdateDirFile(FILE_UPDATE_CONFIG_JSON);
-  let decoder = new TextDecoder();
-  let fileContents = await OS.File.read(configFile.path);
-  let saveObject = JSON.parse(decoder.decode(fileContents));
-  is(saveObject["app.update.auto"], newConfigValue,
-     "Value in file should match expected");
+  
+  if (AppConstants.platform == "win") {
+    let configFile = getUpdateDirFile(FILE_UPDATE_CONFIG_JSON);
+    let decoder = new TextDecoder();
+    let fileContents = await OS.File.read(configFile.path);
+    let saveObject = JSON.parse(decoder.decode(fileContents));
+    is(saveObject["app.update.auto"], newConfigValue,
+       "Value in file should match expected");
+  }
 
   await ContentTask.spawn(tab.linkedBrowser, {newConfigValue}, async function({newConfigValue}) {
     let updateRadioGroup = content.document.getElementById("updateRadioGroup");
@@ -45,9 +47,57 @@ add_task(async function testUpdateAutoPrefUI() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:preferences");
 
   await changeAndVerifyPref(tab, true);
+  ok(!gUpdateManager.activeUpdate, "There should not be an active update");
+
   await changeAndVerifyPref(tab, false);
+  ok(!gUpdateManager.activeUpdate, "There should not be an active update");
+
+  let patchProps = {state: STATE_PENDING};
+  let patches = getLocalPatchString(patchProps);
+  let updateProps = {checkInterval: "1"};
+  let updates = getLocalUpdateString(updateProps, patches);
+  writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
+  writeStatusFile(STATE_PENDING);
+  reloadUpdateManagerData();
+  ok(!!gUpdateManager.activeUpdate, "There should be an active update");
+
+  
+  
+  
+  let discardUpdate = 0;
+  let {prompt} = Services;
+  let promptService = {
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIPromptService]),
+    confirmEx(...args) {
+      promptService._confirmExArgs = args;
+      return discardUpdate;
+    },
+  };
+  Services.prompt = promptService;
+  registerCleanupFunction(() => {
+    Services.prompt = prompt;
+  });
+
+  
+  
+  
+  discardUpdate = 1;
   await changeAndVerifyPref(tab, false);
+  ok(!!gUpdateManager.activeUpdate, "There should be an active update");
+
+  
+  
+  
+  discardUpdate = 0;
   await changeAndVerifyPref(tab, true);
+  ok(!!gUpdateManager.activeUpdate, "There should be an active update");
+
+  
+  
+  
+  discardUpdate = 0;
+  await changeAndVerifyPref(tab, false);
+  ok(!gUpdateManager.activeUpdate, "There should not be an active update");
 
   await BrowserTestUtils.removeTab(tab);
 });
