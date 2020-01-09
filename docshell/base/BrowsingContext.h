@@ -7,8 +7,9 @@
 #ifndef mozilla_dom_BrowsingContext_h
 #define mozilla_dom_BrowsingContext_h
 
-#include "mozilla/LinkedList.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Tuple.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "nsCOMPtr.h"
@@ -40,7 +41,6 @@ struct IPDLParamTraits;
 }  
 
 namespace dom {
-
 class BrowsingContextGroup;
 class CanonicalBrowsingContext;
 class ContentParent;
@@ -66,10 +66,76 @@ class WindowProxyHolder;
 
 
 
+#define MOZ_FOR_EACH_SYNCED_BC_FIELD(declare, ...)        \
+  declare(Name, nsString, nsAString)                   \
+  declare(Closed, bool, bool)                          \
+  __VA_ARGS__
+
+
+#define MOZ_SYNCED_BC_FIELD_NAME(name, ...) m##name
+#define MOZ_SYNCED_BC_FIELD_ARGUMENT(name, type, atype) \
+  transaction->MOZ_SYNCED_BC_FIELD_NAME(name),
+#define MOZ_SYNCED_BC_FIELD_GETTER(name, type, atype) \
+  const type& Get##name() const { return MOZ_SYNCED_BC_FIELD_NAME(name); }
+#define MOZ_SYNCED_BC_FIELD_SETTER(name, type, atype) \
+  void Set##name(const atype& aValue) {               \
+    Transaction t;                                    \
+    t.MOZ_SYNCED_BC_FIELD_NAME(name).emplace(aValue); \
+    t.Commit(this);                                   \
+  }
+#define MOZ_SYNCED_BC_FIELD_MEMBER(name, type, atype) \
+  type MOZ_SYNCED_BC_FIELD_NAME(name);
+#define MOZ_SYNCED_BC_FIELD_MAYBE_MEMBER(name, type, atype) \
+  mozilla::Maybe<type> MOZ_SYNCED_BC_FIELD_NAME(name);
+#define MOZ_SYNCED_BC_FIELD_APPLIER(name, type, atype) \
+  if (MOZ_SYNCED_BC_FIELD_NAME(name)) {                \
+    aOwner->MOZ_SYNCED_BC_FIELD_NAME(name) =           \
+        std::move(*MOZ_SYNCED_BC_FIELD_NAME(name));    \
+    MOZ_SYNCED_BC_FIELD_NAME(name).reset();            \
+  }
+
+#define MOZ_SYNCED_BC_FIELDS                                              \
+ public:                                                                  \
+  MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_GETTER)                \
+  MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_SETTER)                \
+  class Transaction {                                                     \
+   public:                                                                \
+    void Commit(BrowsingContext* aOwner);                                 \
+    void Apply(BrowsingContext* aOwner) {                                 \
+      MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_APPLIER)           \
+      return; /* without this return clang-format messes up formatting */ \
+    }                                                                     \
+                                                                          \
+    MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_MAYBE_MEMBER)        \
+   private:                                                               \
+    friend struct mozilla::ipc::IPDLParamTraits<Transaction>;             \
+  };                                                                      \
+                                                                          \
+ private:                                                                 \
+  MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_MEMBER)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class BrowsingContext : public nsWrapperCache,
                         public SupportsWeakPtr<BrowsingContext>,
                         public LinkedListElement<RefPtr<BrowsingContext>> {
+  
+  MOZ_SYNCED_BC_FIELDS
+
  public:
   enum class Type { Chrome, Content };
 
@@ -126,9 +192,6 @@ class BrowsingContext : public nsWrapperCache,
   
   bool IsCached();
 
-  
-  
-  void SetName(const nsAString& aName) { mName = aName; }
   const nsString& Name() const { return mName; }
   void GetName(nsAString& aName) { aName = mName; }
   bool NameEquals(const nsAString& aName) { return mName.Equals(aName); }
@@ -277,13 +340,11 @@ class BrowsingContext : public nsWrapperCache,
   Children mChildren;
   WeakPtr<BrowsingContext> mOpener;
   nsCOMPtr<nsIDocShell> mDocShell;
-  nsString mName;
   
   
   
   
   JS::Heap<JSObject*> mWindowProxy;
-  bool mClosed;
 
   
   
@@ -302,6 +363,8 @@ class BrowsingContext : public nsWrapperCache,
 extern bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
                                       JS::MutableHandle<JSObject*> aRetVal);
 
+typedef BrowsingContext::Transaction BrowsingContextTransaction;
+
 }  
 
 
@@ -313,6 +376,17 @@ struct IPDLParamTraits<dom::BrowsingContext> {
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, RefPtr<dom::BrowsingContext>* aResult);
 };
+
+template <>
+struct IPDLParamTraits<dom::BrowsingContext::Transaction> {
+  static void Write(IPC::Message* aMessage, IProtocol* aActor,
+                    const dom::BrowsingContext::Transaction& aTransaction);
+
+  static bool Read(const IPC::Message* aMessage, PickleIterator* aIterator,
+                   IProtocol* aActor,
+                   dom::BrowsingContext::Transaction* aTransaction);
+};
+
 }  
 }  
 
