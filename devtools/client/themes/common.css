@@ -71,6 +71,15 @@
 
 
 
+.devtools-ellipsis-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+
+
 
 html|button, html|select, html|input {
   font: message-box;

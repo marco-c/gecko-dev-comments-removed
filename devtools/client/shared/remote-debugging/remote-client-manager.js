@@ -5,6 +5,14 @@
 "use strict";
 
 
+const CONNECTION_TYPES = {
+  NETWORK: "network",
+  THIS_FIREFOX: "this-firefox",
+  UNKNOWN: "unknown",
+  USB: "usb",
+};
+
+
 
 
 
@@ -68,8 +76,29 @@ class RemoteClientManager {
     return this._clients.get(key);
   }
 
+  
+
+
+
+  getConnectionTypeByRemoteId(remoteId) {
+    if (!remoteId) {
+      return CONNECTION_TYPES.THIS_FIREFOX;
+    }
+
+    const key = decodeURIComponent(remoteId);
+    const type = this._getType(key);
+    return Object.values(CONNECTION_TYPES).includes(type)
+      ? type
+      : CONNECTION_TYPES.UNKNOWN;
+  }
+
   _getKey(id, type) {
     return id + "-" + type;
+  }
+
+  _getType(key) {
+    const chunks = key.split("-");
+    return chunks[chunks.length - 1];
   }
 
   _removeClientByKey(key) {
@@ -95,4 +124,7 @@ class RemoteClientManager {
 }
 
 
-exports.remoteClientManager = new RemoteClientManager();
+module.exports = {
+  remoteClientManager: new RemoteClientManager(),
+  CONNECTION_TYPES,
+};
