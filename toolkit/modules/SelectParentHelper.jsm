@@ -54,9 +54,12 @@ var SelectParentHelper = {
 
 
 
-  populate(menulist, items, selectedIndex, zoom,
-           uaSelectBackgroundColor, uaSelectColor, selectBackgroundColor,
-           selectColor, selectTextShadow) {
+
+
+
+
+  populate(menulist, items, uniqueItemStyles, selectedIndex, zoom,
+           uaStyle, selectStyle) {
     
     menulist.menupopup.textContent = "";
     let stylesheet = menulist.querySelector("#ContentSelectDropdownStylesheet");
@@ -72,49 +75,52 @@ var SelectParentHelper = {
       stylesheet.hidden = true;
       stylesheet = menulist.appendChild(stylesheet);
       sheet = stylesheet.sheet;
+    } else {
+      selectStyle = uaStyle;
     }
 
-    let ruleBody = "";
-    let usedSelectBackgroundColor;
-    let usedSelectColor;
     let selectBackgroundSet = false;
 
+    if (selectStyle["background-color"] == "rgba(0, 0, 0, 0)") {
+      selectStyle["background-color"] = uaStyle["background-color"];
+    }
+
     
     
     if (customStylingEnabled &&
-        selectBackgroundColor != uaSelectBackgroundColor &&
-        selectBackgroundColor != "rgba(0, 0, 0, 0)") {
-      ruleBody = `background-image: linear-gradient(${selectBackgroundColor}, ${selectBackgroundColor});`;
-      usedSelectBackgroundColor = selectBackgroundColor;
+        selectStyle["background-color"] != uaStyle["background-color"]) {
+      let color = selectStyle["background-color"];
+      selectStyle["background-image"] = `linear-gradient(${color}, ${color});`;
       selectBackgroundSet = true;
-    } else {
-      usedSelectBackgroundColor = uaSelectBackgroundColor;
     }
 
-    if (customStylingEnabled &&
-        selectColor != uaSelectColor &&
-        selectColor != usedSelectBackgroundColor) {
-      ruleBody += `color: ${selectColor};`;
-      usedSelectColor = selectColor;
-    } else {
-      usedSelectColor = uaSelectColor;
+    if (selectStyle.color == selectStyle["background-color"]) {
+      selectStyle.color = uaStyle.color;
     }
 
-    if (customStylingEnabled &&
-        selectTextShadow != "none") {
-      ruleBody += `text-shadow: ${selectTextShadow};`;
-      sheet.insertRule(`#ContentSelectDropdown > menupopup > [_moz-menuactive="true"] {
-        text-shadow: none;
-      }`, 0);
-    }
+    if (customStylingEnabled) {
+      if (selectStyle["text-shadow"] != "none") {
+        sheet.insertRule(`#ContentSelectDropdown > menupopup > [_moz-menuactive="true"] {
+          text-shadow: none;
+        }`, 0);
+      }
 
-    if (ruleBody) {
-      sheet.insertRule(`#ContentSelectDropdown > menupopup {
-        ${ruleBody}
-      }`, 0);
-      sheet.insertRule(`#ContentSelectDropdown > menupopup > :not([_moz-menuactive="true"]) {
-         color: inherit;
-      }`, 0);
+      let ruleBody = "";
+      for (let property in selectStyle) {
+        if (property == "background-color" || property == "direction")
+          continue; 
+        if (selectStyle[property] != uaStyle[property]) {
+          ruleBody += `${property}: ${selectStyle[property]};`;
+        }
+      }
+      if (ruleBody) {
+        sheet.insertRule(`#ContentSelectDropdown > menupopup {
+          ${ruleBody}
+        }`, 0);
+        sheet.insertRule(`#ContentSelectDropdown > menupopup > :not([_moz-menuactive="true"]) {
+           color: inherit;
+        }`, 0);
+      }
     }
 
     
@@ -128,8 +134,8 @@ var SelectParentHelper = {
 
     currentZoom = zoom;
     currentMenulist = menulist;
-    populateChildren(menulist, items, selectedIndex, zoom,
-                     usedSelectBackgroundColor, usedSelectColor, selectTextShadow, selectBackgroundSet, sheet);
+    populateChildren(menulist, items, uniqueItemStyles, selectedIndex, zoom,
+                     selectStyle, selectBackgroundSet, sheet);
   },
 
   open(browser, menulist, rect, isOpenedViaTouch) {
@@ -250,14 +256,9 @@ var SelectParentHelper = {
 
       let options = msg.data.options;
       let selectedIndex = msg.data.selectedIndex;
-      let uaSelectBackgroundColor = msg.data.uaSelectBackgroundColor;
-      let uaSelectColor = msg.data.uaSelectColor;
-      let selectBackgroundColor = msg.data.selectBackgroundColor;
-      let selectColor = msg.data.selectColor;
-      let selectTextShadow = msg.data.selectTextShadow;
-      this.populate(currentMenulist, options, selectedIndex,
-                    currentZoom, uaSelectBackgroundColor, uaSelectColor,
-                    selectBackgroundColor, selectColor, selectTextShadow);
+      this.populate(currentMenulist, options.options, options.uniqueStyles,
+                    selectedIndex, currentZoom, msg.data.defaultStyle,
+                    msg.data.style);
 
       
       scrollBox.scrollTop = scrollTop;
@@ -316,83 +317,64 @@ var SelectParentHelper = {
 
 
 
-function populateChildren(menulist, options, selectedIndex, zoom,
-                          usedSelectBackgroundColor, usedSelectColor,
-                          selectTextShadow, selectBackgroundSet, sheet,
+function populateChildren(menulist, options, uniqueOptionStyles, selectedIndex,
+                          zoom, selectStyle, selectBackgroundSet, sheet,
                           parentElement = null, isGroupDisabled = false,
-                          adjustedTextSize = -1, addSearch = true,
-                          nthChildIndex = 1) {
+                          addSearch = true, nthChildIndex = 1) {
   let element = menulist.menupopup;
-  let win = element.ownerGlobal;
-
-  
-  
-  if (adjustedTextSize == -1) {
-    
-    
-    
-    let textSize = win.getComputedStyle(element).getPropertyValue("font-size");
-    adjustedTextSize = (zoom * parseFloat(textSize, 10)) + "px";
-  }
 
   for (let option of options) {
     let isOptGroup = (option.tagName == "OPTGROUP");
     let item = element.ownerDocument.createXULElement(isOptGroup ? "menucaption" : "menuitem");
+    let style = uniqueOptionStyles[option.styleIndex];
 
     item.setAttribute("label", option.textContent);
-    item.style.direction = option.textDirection;
-    item.style.fontSize = adjustedTextSize;
+    item.style.direction = style.direction;
+    item.style.fontSize = (zoom * parseFloat(style["font-size"], 10)) + "px";
     item.hidden = option.display == "none" || (parentElement && parentElement.hidden);
     
     
     item.hiddenByContent = item.hidden;
     item.setAttribute("tooltiptext", option.tooltip);
 
-    let ruleBody = "";
-    let usedBackgroundColor;
-    let optionBackgroundSet = false;
-
-    if (customStylingEnabled &&
-        option.backgroundColor &&
-        option.backgroundColor != "rgba(0, 0, 0, 0)" &&
-        option.backgroundColor != usedSelectBackgroundColor) {
-      ruleBody = `background-color: ${option.backgroundColor};`;
-      usedBackgroundColor = option.backgroundColor;
-      optionBackgroundSet = true;
-    } else {
-      usedBackgroundColor = usedSelectBackgroundColor;
+    if (style["background-color"] == "rgba(0, 0, 0, 0)") {
+      style["background-color"] = selectStyle["background-color"];
     }
 
-    if (customStylingEnabled &&
-        option.color &&
-        option.color != usedBackgroundColor &&
-        option.color != usedSelectColor) {
-      ruleBody += `color: ${option.color};`;
+    let optionBackgroundSet = style["background-color"] != selectStyle["background-color"];
+
+    if (style.color == style["background-color"]) {
+      style.color = selectStyle.color;
     }
 
-    if (customStylingEnabled &&
-        option.textShadow &&
-        option.textShadow != selectTextShadow) {
-      ruleBody += `text-shadow: ${option.textShadow};`;
-    }
+    if (customStylingEnabled) {
+      let ruleBody = "";
+      for (let property in style) {
+        if (property == "direction" || property == "font-size")
+          continue; 
+        if (style[property] != selectStyle[property]) {
+          ruleBody += `${property}: ${style[property]};`;
+        }
+      }
 
-    if (ruleBody) {
-      sheet.insertRule(`#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex}):not([_moz-menuactive="true"]) {
-        ${ruleBody}
-      }`, 0);
-
-      if (option.textShadow && option.textShadow != selectTextShadow) {
-        
-        
-        
-        sheet.insertRule(`#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex})[_moz-menuactive="true"] {
-          text-shadow: none;
+      if (ruleBody) {
+        sheet.insertRule(`#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex}):not([_moz-menuactive="true"]) {
+          ${ruleBody}
         }`, 0);
+
+        if (style["text-shadow"] != "none" &&
+            style["text-shadow"] != selectStyle["text-shadow"]) {
+          
+          
+          
+          sheet.insertRule(`#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex})[_moz-menuactive="true"] {
+            text-shadow: none;
+          }`, 0);
+        }
       }
     }
 
-    if (customStylingEnabled &&
-        (optionBackgroundSet || selectBackgroundSet)) {
+    if (customStylingEnabled && (optionBackgroundSet || selectBackgroundSet)) {
       item.setAttribute("customoptionstyling", "true");
     } else {
       item.removeAttribute("customoptionstyling");
@@ -409,10 +391,10 @@ function populateChildren(menulist, options, selectedIndex, zoom,
 
     if (isOptGroup) {
       nthChildIndex =
-        populateChildren(menulist, option.children, selectedIndex, zoom,
-                         usedSelectBackgroundColor, usedSelectColor,
-                         selectTextShadow, selectBackgroundSet, sheet,
-                         item, isDisabled, adjustedTextSize, false, nthChildIndex);
+        populateChildren(menulist, option.children, uniqueOptionStyles,
+                         selectedIndex, zoom, selectStyle,
+                         selectBackgroundSet, sheet, item, isDisabled, false,
+                         nthChildIndex);
     } else {
       if (option.index == selectedIndex) {
         
