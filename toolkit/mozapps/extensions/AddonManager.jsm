@@ -2615,45 +2615,6 @@ var AddonManagerInternal = {
       obj.maxProgress = install.maxProgress;
     },
 
-    makeListener(id, mm) {
-      const events = [
-        "onDownloadStarted",
-        "onDownloadProgress",
-        "onDownloadEnded",
-        "onDownloadCancelled",
-        "onDownloadFailed",
-        "onInstallStarted",
-        "onInstallEnded",
-        "onInstallCancelled",
-        "onInstallFailed",
-      ];
-
-      let listener = {};
-      let installPromise = new Promise((resolve, reject) => {
-        events.forEach(event => {
-          listener[event] = (install, addon) => {
-            let data = {event, id};
-            AddonManager.webAPI.copyProps(install, data);
-            this.sendEvent(mm, data);
-            if (event == "onInstallEnded") {
-              resolve(addon);
-            } else if (event == "onDownloadFailed" || event == "onInstallFailed") {
-              reject({message: "install failed"});
-            } else if (event == "onDownloadCancelled" || event == "onInstallCancelled") {
-              reject({message: "install cancelled"});
-            }
-          };
-        });
-      });
-
-      
-      
-      
-      installPromise.catch(() => {});
-
-      return {listener, installPromise};
-    },
-
     forgetInstall(id) {
       let info = this.installs.get(id);
       if (!info) {
@@ -2679,6 +2640,51 @@ var AddonManagerInternal = {
         throw new Error(`Install from ${host} not permitted`);
       }
 
+      const makeListener = (id, mm) => {
+        const events = [
+          "onDownloadStarted",
+          "onDownloadProgress",
+          "onDownloadEnded",
+          "onDownloadCancelled",
+          "onDownloadFailed",
+          "onInstallStarted",
+          "onInstallEnded",
+          "onInstallCancelled",
+          "onInstallFailed",
+         ];
+
+        let listener = {};
+        let installPromise = new Promise((resolve, reject) => {
+          events.forEach(event => {
+            listener[event] = (install, addon) => {
+              let data = {event, id};
+              AddonManager.webAPI.copyProps(install, data);
+              this.sendEvent(mm, data);
+              if (event == "onInstallEnded") {
+                resolve(addon);
+              } else if (event == "onDownloadFailed" || event == "onInstallFailed") {
+                reject({message: "install failed"});
+              } else if (event == "onDownloadCancelled" || event == "onInstallCancelled") {
+                reject({message: "install cancelled"});
+              } else if (event == "onDownloadEnded") {
+                if (install.addon.appDisabled) {
+                  
+                  install.cancel();
+                  AddonManagerInternal.installNotifyObservers("addon-install-failed", target, Services.io.newURI(options.url), install);
+                }
+              }
+            };
+          });
+        });
+
+        
+        
+        
+        installPromise.catch(() => {});
+
+        return {listener, installPromise};
+     };
+
       try {
         checkInstallUrl(options.url);
       } catch (err) {
@@ -2695,7 +2701,7 @@ var AddonManagerInternal = {
         AddonManagerInternal.setupPromptHandler(target, null, install, false, "AMO");
 
         let id = this.nextInstall++;
-        let {listener, installPromise} = this.makeListener(id, target.messageManager);
+        let {listener, installPromise} = makeListener(id, target.messageManager);
         install.addListener(listener);
 
         this.installs.set(id, {install, target, listener, installPromise});
