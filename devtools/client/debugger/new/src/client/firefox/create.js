@@ -5,6 +5,8 @@
 
 
 
+import { isUrlExtension } from "../../utils/source";
+
 import type { Frame, Source, ThreadId } from "../../types";
 import type {
   PausedPacket,
@@ -63,6 +65,7 @@ export function createSource(
     isBlackBoxed: false,
     loadedState: "unloaded",
     isWasm: supportsWasm && source.introductionType === "wasm",
+    isExtension: (source.url && isUrlExtension(source.url)) || false,
     actors: [sourceActor]
   };
   clientCommands.registerSourceActor(sourceActor);
