@@ -2545,8 +2545,15 @@ bool BytecodeEmitter::emitFunctionScript(FunctionNode* funNode,
   if (!updateSourceCoordNotes(body->pn_pos.end)) {
     return false;
   }
-  if (!markSimpleBreakpoint()) {
-    return false;
+
+  
+  
+  
+  
+  if (!funbox->hasExprBody()) {
+    if (!markSimpleBreakpoint()) {
+      return false;
+    }
   }
 
   
