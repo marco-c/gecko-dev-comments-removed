@@ -653,8 +653,6 @@ pref("media.cubeb.sandbox", false);
 #ifdef MOZ_AV1
 #if defined(XP_WIN) && !defined(_ARM64_)
 pref("media.av1.enabled", true);
-#elif defined(XP_MACOSX)
-pref("media.av1.enabled", true);
 #else
 pref("media.av1.enabled", false);
 #endif
@@ -3762,7 +3760,11 @@ pref("font.name-list.cursive.zh-CN", "KaiTi, KaiTi_GB2312");
 
 
 pref("font.name-list.serif.zh-TW", "Times New Roman, PMingLiu, MingLiU, MingLiU-ExtB");
+#ifdef EARLY_BETA_OR_EARLIER
 pref("font.name-list.sans-serif.zh-TW", "Arial, Microsoft JhengHei, PMingLiU, MingLiU, MingLiU-ExtB");
+#else
+pref("font.name-list.sans-serif.zh-TW", "Arial, PMingLiU, MingLiU, MingLiU-ExtB, Microsoft JhengHei");
+#endif
 pref("font.name-list.monospace.zh-TW", "MingLiU, MingLiU-ExtB");
 pref("font.name-list.cursive.zh-TW", "DFKai-SB");
 
@@ -5126,7 +5128,11 @@ pref("extensions.webextensions.userScripts.enabled", false);
 pref("extensions.webextensions.background-delayed-startup", false);
 
 
+#ifdef NIGHTLY_BUILD
 pref("extensions.webextensions.ExtensionStorageIDB.enabled", true);
+#else
+pref("extensions.webextensions.ExtensionStorageIDB.enabled", false);
+#endif
 
 
 pref("extensions.webextensions.enablePerformanceCounters", true);
