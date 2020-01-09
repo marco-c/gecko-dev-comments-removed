@@ -431,8 +431,25 @@ function getFormattedProtocol(item) {
   const protocol = [httpVersion];
   responseHeaders.headers.some(h => {
     if (h.hasOwnProperty("name") && h.name.toLowerCase() === "x-firefox-spdy") {
-      protocol.push(h.value);
-      return true;
+      
+
+
+
+
+
+
+
+
+      if (h.value !== undefined && h.value.length > 0) {
+        if (h.value.toLowerCase() !== "http/1.1" ||
+            protocol[0].toLowerCase() !== "http/1.1") {
+          if (parseFloat(h.value.toLowerCase().split("")[1]) !==
+            parseFloat(protocol[0].toLowerCase().split("/")[1])) {
+            protocol.push(h.value);
+            return true;
+          }
+        }
+      }
     }
     return false;
   });
