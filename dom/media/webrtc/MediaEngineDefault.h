@@ -87,14 +87,11 @@ class MediaEngineDefaultVideoSource : public MediaEngineSource {
   RefPtr<layers::ImageContainer> mImageContainer;
 
   
-  Mutex mMutex;
-
-  
-  
   MediaEngineSourceState mState = kReleased;
   RefPtr<layers::Image> mImage;
   RefPtr<SourceMediaStream> mStream;
   TrackID mTrackID = TRACK_NONE;
+  PrincipalHandle mPrincipalHandle = PRINCIPAL_HANDLE_NONE;
 
   MediaEnginePrefs mOpts;
   int mCb = 16;
