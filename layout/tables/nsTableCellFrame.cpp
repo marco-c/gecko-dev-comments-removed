@@ -523,8 +523,6 @@ void nsTableCellFrame::BlockDirAlignChild(WritingMode aWM, nscoord aMaxAscent) {
   nscoord bStartInset = borderPadding.BStart(aWM);
   nscoord bEndInset = borderPadding.BEnd(aWM);
 
-  uint8_t verticalAlignFlags = GetVerticalAlign();
-
   nscoord bSize = BSize(aWM);
   nsIFrame* firstKid = mFrames.FirstChild();
   nsSize containerSize = mRect.Size();
@@ -536,26 +534,26 @@ void nsTableCellFrame::BlockDirAlignChild(WritingMode aWM, nscoord aMaxAscent) {
 
   
   nscoord kidBStart = 0;
-  switch (verticalAlignFlags) {
-    case NS_STYLE_VERTICAL_ALIGN_BASELINE:
+  switch (GetVerticalAlign()) {
+    case StyleVerticalAlignKeyword::Baseline:
       
       
       kidBStart = bStartInset + aMaxAscent - GetCellBaseline();
       break;
 
-    case NS_STYLE_VERTICAL_ALIGN_TOP:
+    case StyleVerticalAlignKeyword::Top:
       
       kidBStart = bStartInset;
       break;
 
-    case NS_STYLE_VERTICAL_ALIGN_BOTTOM:
+    case StyleVerticalAlignKeyword::Bottom:
       
       
       kidBStart = bSize - childBSize - bEndInset;
       break;
 
     default:
-    case NS_STYLE_VERTICAL_ALIGN_MIDDLE:
+    case StyleVerticalAlignKeyword::Middle:
       
       
       kidBStart = (bSize - childBSize - bEndInset + bStartInset) / 2;
@@ -603,17 +601,17 @@ bool nsTableCellFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) {
 
 
 
-uint8_t nsTableCellFrame::GetVerticalAlign() const {
-  const nsStyleCoord& verticalAlign = StyleDisplay()->mVerticalAlign;
-  if (verticalAlign.GetUnit() == eStyleUnit_Enumerated) {
-    uint8_t value = verticalAlign.GetIntValue();
-    if (value == NS_STYLE_VERTICAL_ALIGN_TOP ||
-        value == NS_STYLE_VERTICAL_ALIGN_MIDDLE ||
-        value == NS_STYLE_VERTICAL_ALIGN_BOTTOM) {
+StyleVerticalAlignKeyword nsTableCellFrame::GetVerticalAlign() const {
+  const StyleVerticalAlign& verticalAlign = StyleDisplay()->mVerticalAlign;
+  if (verticalAlign.IsKeyword()) {
+    auto value = verticalAlign.AsKeyword();
+    if (value == StyleVerticalAlignKeyword::Top ||
+        value == StyleVerticalAlignKeyword::Middle ||
+        value == StyleVerticalAlignKeyword::Bottom) {
       return value;
     }
   }
-  return NS_STYLE_VERTICAL_ALIGN_BASELINE;
+  return StyleVerticalAlignKeyword::Baseline;
 }
 
 bool nsTableCellFrame::CellHasVisibleContent(nscoord height,

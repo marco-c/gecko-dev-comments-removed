@@ -1922,8 +1922,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StylePerspective mChildPerspective;
   mozilla::Position mPerspectiveOrigin;
 
-  nsStyleCoord mVerticalAlign;  
-                                
+  mozilla::StyleVerticalAlign mVerticalAlign;
 
   nsStyleAutoArray<mozilla::StyleTransition> mTransitions;
 

@@ -1848,9 +1848,12 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
             }
 
             
-            const nsStyleCoord& coord = ctx->StyleDisplay()->mVerticalAlign;
-            if (coord.GetUnit() != eStyleUnit_Enumerated ||
-                coord.GetIntValue() != NS_STYLE_VERTICAL_ALIGN_BASELINE) {
+            
+            
+            const auto& verticalAlign = ctx->StyleDisplay()->mVerticalAlign;
+            if (!verticalAlign.IsKeyword() ||
+                verticalAlign.AsKeyword() !=
+                    StyleVerticalAlignKeyword::Baseline) {
               return true;
             }
 
@@ -5022,7 +5025,9 @@ void nsTextFrame::GetTextDecorations(
     
     if (firstBlock) {
       
-      if (fChild->VerticalAlignEnum() != NS_STYLE_VERTICAL_ALIGN_BASELINE) {
+      Maybe<StyleVerticalAlignKeyword> verticalAlign =
+          fChild->VerticalAlignEnum();
+      if (verticalAlign != Some(StyleVerticalAlignKeyword::Baseline)) {
         
         
         

@@ -3941,8 +3941,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  uint8_t VerticalAlignEnum() const;
-  enum { eInvalidVerticalAlign = 0xFF };
+  Maybe<mozilla::StyleVerticalAlignKeyword> VerticalAlignEnum() const;
 
   void CreateOwnLayerIfNeeded(nsDisplayListBuilder* aBuilder,
                               nsDisplayList* aList,

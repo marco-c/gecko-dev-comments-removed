@@ -6,6 +6,37 @@
 
 use crate::values::animated::ToAnimatedZero;
 
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    FromPrimitive,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+#[allow(missing_docs)]
+pub enum VerticalAlignKeyword {
+    Baseline,
+    Sub,
+    Super,
+    Top,
+    TextTop,
+    Middle,
+    Bottom,
+    TextBottom,
+    #[cfg(feature = "gecko")]
+    MozMiddleWithBaseline,
+}
+
 
 #[derive(
     Animate,
@@ -21,35 +52,21 @@ use crate::values::animated::ToAnimatedZero;
     ToResolvedValue,
     ToShmem,
 )]
-pub enum VerticalAlign<LengthPercentage> {
+#[repr(C, u8)]
+pub enum GenericVerticalAlign<LengthPercentage> {
     
-    Baseline,
-    
-    Sub,
-    
-    Super,
-    
-    Top,
-    
-    TextTop,
-    
-    Middle,
-    
-    Bottom,
-    
-    TextBottom,
-    
-    #[cfg(feature = "gecko")]
-    MozMiddleWithBaseline,
+    Keyword(VerticalAlignKeyword),
     
     Length(LengthPercentage),
 }
+
+pub use self::GenericVerticalAlign as VerticalAlign;
 
 impl<L> VerticalAlign<L> {
     
     #[inline]
     pub fn baseline() -> Self {
-        VerticalAlign::Baseline
+        VerticalAlign::Keyword(VerticalAlignKeyword::Baseline)
     }
 }
 
