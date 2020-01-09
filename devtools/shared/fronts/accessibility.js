@@ -162,14 +162,16 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
 }
 
 class AccessibilityFront extends FrontClassWithSpec(accessibilitySpec) {
-  constructor(client, form) {
-    super(client, { actor: form.accessibilityActor });
-    this.manage(this);
+  constructor(client) {
+    super(client);
 
     this.before("init", this.init.bind(this));
     this.before("shutdown", this.shutdown.bind(this));
     this.before("can-be-enabled-change", this.canBeEnabled.bind(this));
     this.before("can-be-disabled-change", this.canBeDisabled.bind(this));
+
+    
+    this.formAttributeName = "accessibilityActor";
   }
 
   bootstrap() {

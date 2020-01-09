@@ -1639,6 +1639,19 @@ exports.dumpProtocolSpec = function() {
   return ret;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getFront(client, typeName, form) {
   const type = types.getType(typeName);
   if (!type) {
@@ -1650,9 +1663,25 @@ function getFront(client, typeName, form) {
   
   
   const Class = type.frontClass;
-  const instance = new Class(client, form);
+  const instance = new Class(client);
+  const { formAttributeName } = instance;
+  if (!formAttributeName) {
+    throw new Error(`Can't find the form attribute name for ${typeName}`);
+  }
+  
+  instance.actorID = form[formAttributeName];
+  if (!instance.actorID) {
+    throw new Error(`Can't find the actor ID for ${typeName} from root or target` +
+      ` actor's form.`);
+  }
+  
+  
+  
+  
+  instance.manage(instance);
+
   if (typeof (instance.initialize) == "function") {
-    return instance.initialize(client, form).then(() => instance);
+    return instance.initialize().then(() => instance);
   }
   return instance;
 }

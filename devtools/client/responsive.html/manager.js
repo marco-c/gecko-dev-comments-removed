@@ -474,6 +474,12 @@ ResponsiveUI.prototype = {
     await this.client.connect();
     const targetFront = await this.client.mainRoot.getTab();
     this.emulationFront = new EmulationFront(this.client, targetFront.targetForm);
+    
+    
+    
+    
+    this.emulationFront.actorID =
+      targetFront.targetForm[this.emulationFront.formAttributeName];
   },
 
   

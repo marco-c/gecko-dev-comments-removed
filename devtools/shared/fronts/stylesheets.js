@@ -140,9 +140,11 @@ registerFront(StyleSheetFront);
 
 
 class StyleSheetsFront extends FrontClassWithSpec(styleSheetsSpec) {
-  constructor(client, tabForm) {
-    super(client, { actor: tabForm.styleSheetsActor });
-    this.manage(this);
+  constructor(client) {
+    super(client);
+
+    
+    this.formAttributeName = "styleSheetsActor";
   }
 }
 

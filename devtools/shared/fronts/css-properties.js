@@ -43,9 +43,11 @@ var cachedCssProperties = new WeakMap();
 
 
 class CssPropertiesFront extends FrontClassWithSpec(cssPropertiesSpec) {
-  constructor(client, { cssPropertiesActor }) {
-    super(client, {actor: cssPropertiesActor});
-    this.manage(this);
+  constructor(client) {
+    super(client);
+
+    
+    this.formAttributeName = "cssPropertiesActor";
   }
 }
 

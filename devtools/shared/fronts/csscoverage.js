@@ -32,10 +32,12 @@ var chromeWindow;
 
 
 class CSSUsageFront extends FrontClassWithSpec(cssUsageSpec) {
-  constructor(client, form) {
-    super(client, { actor: form.cssUsageActor });
-    this.manage(this);
+  constructor(client) {
+    super(client);
     this.before("state-change", this._onStateChange.bind(this));
+
+    
+    this.formAttributeName = "cssUsageActor";
   }
 
   _onStateChange(ev) {

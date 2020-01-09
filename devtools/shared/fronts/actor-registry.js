@@ -44,10 +44,11 @@ function request(uri) {
 }
 
 class ActorRegistryFront extends FrontClassWithSpec(actorRegistrySpec) {
-  constructor(client, form) {
-    super(client, { actor: form.actorRegistryActor });
+  constructor(client) {
+    super(client);
 
-    this.manage(this);
+    
+    this.formAttributeName = "actorRegistryActor";
   }
 
   registerActor(uri, options) {

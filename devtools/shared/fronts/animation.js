@@ -194,9 +194,11 @@ exports.AnimationPlayerFront = AnimationPlayerFront;
 registerFront(AnimationPlayerFront);
 
 class AnimationsFront extends FrontClassWithSpec(animationsSpec) {
-  constructor(client, {animationsActor}) {
-    super(client, {actor: animationsActor});
-    this.manage(this);
+  constructor(client) {
+    super(client);
+
+    
+    this.formAttributeName = "animationsActor";
   }
 }
 

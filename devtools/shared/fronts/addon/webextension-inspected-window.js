@@ -14,11 +14,11 @@ const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol"
 
 class WebExtensionInspectedWindowFront extends
   FrontClassWithSpec(webExtensionInspectedWindowSpec) {
-  constructor(client, { webExtensionInspectedWindowActor }) {
-    super(client, {
-      actor: webExtensionInspectedWindowActor,
-    });
-    this.manage(this);
+  constructor(client) {
+    super(client);
+
+    
+    this.formAttributeName = "webExtensionInspectedWindowActor";
   }
 }
 

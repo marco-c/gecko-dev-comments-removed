@@ -434,15 +434,14 @@ registerFront(WalkerFront);
 
 
 class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
-  constructor(client, tabForm) {
-    super(client, { actor: tabForm.inspectorActor });
+  constructor(client) {
+    super(client);
 
     this._client = client;
     this._highlighters = new Map();
 
     
-    
-    this.manage(this);
+    this.formAttributeName = "inspectorActor";
   }
 
   

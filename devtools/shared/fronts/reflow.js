@@ -16,9 +16,11 @@ const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol"
 
 
 class ReflowFront extends FrontClassWithSpec(reflowSpec) {
-  constructor(client, {reflowActor}) {
-    super(client, {actor: reflowActor});
-    this.manage(this);
+  constructor(client) {
+    super(client);
+
+    
+    this.formAttributeName = "reflowActor";
   }
 }
 

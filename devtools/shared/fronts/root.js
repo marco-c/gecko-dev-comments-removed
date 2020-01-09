@@ -13,7 +13,12 @@ loader.lazyRequireGetter(this, "ContentProcessTargetFront", "devtools/shared/fro
 
 class RootFront extends FrontClassWithSpec(rootSpec) {
   constructor(client, form) {
-    super(client, { actor: form.from });
+    super(client);
+
+    
+    
+    
+    this.actorID = form.from;
 
     this.applicationType = form.applicationType;
     this.traits = form.traits;
@@ -161,12 +166,15 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     
     
     if (form.actor.includes("contentProcessTarget")) {
-      front = new ContentProcessTargetFront(this._client, { actor: form.actor });
+      front = new ContentProcessTargetFront(this._client);
     } else {
       
       
-      front = new BrowsingContextTargetFront(this._client, { actor: form.actor });
+      front = new BrowsingContextTargetFront(this._client);
     }
+    
+    
+    front.actorID = form.actor;
     front.form(form);
     this.manage(front);
 

@@ -11,9 +11,11 @@ const {changesSpec} = require("devtools/shared/specs/changes");
 
 
 class ChangesFront extends FrontClassWithSpec(changesSpec) {
-  constructor(client, {changesActor}) {
-    super(client, {actor: changesActor});
-    this.manage(this);
+  constructor(client) {
+    super(client);
+
+    
+    this.formAttributeName = "changesActor";
   }
 }
 

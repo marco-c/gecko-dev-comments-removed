@@ -51,11 +51,13 @@ registerFront(AudioNodeFront);
 
 
 class WebAudioFront extends FrontClassWithSpec(webAudioSpec) {
-  constructor(client, { webaudioActor }) {
-    super(client, { actor: webaudioActor });
-    this.manage(this);
+  constructor(client) {
+    super(client);
 
     this.before("create-node", this._onCreateNode.bind(this));
+
+    
+    this.formAttributeName = "webaudioActor";
   }
 
   
