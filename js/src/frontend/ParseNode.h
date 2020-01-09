@@ -1514,15 +1514,8 @@ class CodeNode : public ParseNode {
 
   bool functionIsHoisted() const {
     MOZ_ASSERT(isKind(ParseNodeKind::Function));
-    MOZ_ASSERT(
-        isOp(JSOP_LAMBDA) ||        
-        isOp(JSOP_LAMBDA_ARROW) ||  
-        isOp(JSOP_DEFFUN) ||        
-        isOp(JSOP_NOP) ||           
-        isOp(JSOP_GETLOCAL) ||      
-        isOp(JSOP_GETARG) ||        
-        isOp(JSOP_INITLEXICAL));    
-    return !isOp(JSOP_LAMBDA) && !isOp(JSOP_LAMBDA_ARROW) && !isOp(JSOP_DEFFUN);
+    MOZ_ASSERT(isOp(JSOP_LAMBDA) || isOp(JSOP_LAMBDA_ARROW) || isOp(JSOP_NOP));
+    return isOp(JSOP_NOP);
   }
 };
 
