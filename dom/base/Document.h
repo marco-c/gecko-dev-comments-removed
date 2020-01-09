@@ -2406,7 +2406,6 @@ class Document : public nsINode,
                                           nsAtom* aAttrName,
                                           const nsAString& aAttrValue) const;
 
-
   
 
 
@@ -3497,7 +3496,30 @@ class Document : public nsINode,
   void ReportHasScrollLinkedEffect();
   bool HasScrollLinkedEffect() const { return mHasScrollLinkedEffect; }
 
-  DocGroup* GetDocGroup() const;
+#ifdef DEBUG
+  void AssertDocGroupMatchesKey() const;
+#endif
+
+  DocGroup* GetDocGroup() const {
+#ifdef DEBUG
+    AssertDocGroupMatchesKey();
+#endif
+    return mDocGroup;
+  }
+
+  
+
+
+
+
+
+
+
+
+  bool StyleOrLayoutObservablyDependsOnParentDocumentLayout() const {
+    return GetParentDocument() &&
+           GetDocGroup() == GetParentDocument()->GetDocGroup();
+  }
 
   void AddIntersectionObserver(DOMIntersectionObserver* aObserver) {
     MOZ_ASSERT(!mIntersectionObservers.Contains(aObserver),
