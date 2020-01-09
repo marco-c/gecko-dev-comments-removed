@@ -50,6 +50,7 @@ struct WorkerLoadInfoData {
   
   nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
   nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsCOMPtr<nsIPrincipal> mStoragePrincipal;
 
   
   nsCOMPtr<nsICookieSettings> mCookieSettings;
@@ -91,6 +92,7 @@ struct WorkerLoadInfoData {
   RefPtr<InterfaceRequestor> mInterfaceRequestor;
 
   nsAutoPtr<mozilla::ipc::PrincipalInfo> mPrincipalInfo;
+  nsAutoPtr<mozilla::ipc::PrincipalInfo> mStoragePrincipalInfo;
   nsCString mDomain;
   nsString mOrigin;  
 
@@ -136,14 +138,15 @@ struct WorkerLoadInfo : WorkerLoadInfoData {
 
   WorkerLoadInfo& operator=(WorkerLoadInfo&& aOther) = default;
 
-  nsresult SetPrincipalOnMainThread(nsIPrincipal* aPrincipal,
-                                    nsILoadGroup* aLoadGroup);
+  nsresult SetPrincipalsOnMainThread(nsIPrincipal* aPrincipal,
+                                     nsIPrincipal* aStoragePrincipal,
+                                     nsILoadGroup* aLoadGroup);
 
-  nsresult GetPrincipalAndLoadGroupFromChannel(nsIChannel* aChannel,
-                                               nsIPrincipal** aPrincipalOut,
-                                               nsILoadGroup** aLoadGroupOut);
+  nsresult GetPrincipalsAndLoadGroupFromChannel(
+      nsIChannel* aChannel, nsIPrincipal** aPrincipalOut,
+      nsIPrincipal** aStoragePrincipalOut, nsILoadGroup** aLoadGroupOut);
 
-  nsresult SetPrincipalFromChannel(nsIChannel* aChannel);
+  nsresult SetPrincipalsFromChannel(nsIChannel* aChannel);
 
   bool FinalChannelPrincipalIsValid(nsIChannel* aChannel);
 
