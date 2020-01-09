@@ -42,7 +42,7 @@ function loadContentWindow(webNavigation, url, principal) {
           return;
         }
         
-        if (uri.spec != location.spec) {
+        if (location.spec == "about:blank" && uri.spec != "about:blank") {
           return;
         }
         let contentWindow = docShell.domWindow;
