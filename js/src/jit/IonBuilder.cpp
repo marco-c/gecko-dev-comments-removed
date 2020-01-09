@@ -410,6 +410,12 @@ IonBuilder::InliningDecision IonBuilder::canInlineTarget(JSFunction* target,
     return DontInline(nullptr, "Non-interpreted target");
   }
 
+  
+  if (target->realm() != script()->realm()) {
+    trackOptimizationOutcome(TrackedOutcome::CantInlineCrossRealm);
+    return DontInline(nullptr, "Cross-realm call");
+  }
+
   if (info().analysisMode() != Analysis_DefiniteProperties) {
     
     
@@ -4262,12 +4268,6 @@ IonBuilder::InliningDecision IonBuilder::makeInliningDecision(
   
   if (targetArg == nullptr) {
     trackOptimizationOutcome(TrackedOutcome::CantInlineNoTarget);
-    return InliningDecision_DontInline;
-  }
-
-  
-  Realm* targetRealm = JS::GetObjectRealmOrNull(targetArg);
-  if (!targetRealm || targetRealm != script()->realm()) {
     return InliningDecision_DontInline;
   }
 
