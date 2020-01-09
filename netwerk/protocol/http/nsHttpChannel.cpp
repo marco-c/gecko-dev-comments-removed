@@ -48,7 +48,6 @@
 #include "nsChannelClassifier.h"
 #include "nsIRedirectResultListener.h"
 #include "mozIThirdPartyUtil.h"
-#include "mozilla/dom/ContentVerifier.h"
 #include "mozilla/TimeStamp.h"
 #include "nsError.h"
 #include "nsPrintfCString.h"
@@ -1920,24 +1919,6 @@ nsresult nsHttpChannel::CallOnStartRequest() {
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mCanceled) {
-    rv = ProcessContentSignatureHeader(mResponseHead);
-    if (NS_FAILED(rv)) {
-      LOG(("Content-signature verification failed.\n"));
-      return rv;
-    }
-  }
-
   return NS_OK;
 }
 
@@ -2219,51 +2200,6 @@ nsresult nsHttpChannel::ProcessSecurityHeaders() {
   rv = ProcessSingleSecurityHeader(nsISiteSecurityService::HEADER_HPKP,
                                    transSecInfo, flags);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
-}
-
-nsresult nsHttpChannel::ProcessContentSignatureHeader(
-    nsHttpResponseHead *aResponseHead) {
-  nsresult rv = NS_OK;
-
-  
-  if (!mLoadInfo || !mLoadInfo->GetVerifySignedContent()) {
-    return NS_OK;
-  }
-
-  NS_ENSURE_TRUE(aResponseHead, NS_ERROR_ABORT);
-  nsAutoCString contentSignatureHeader;
-  nsHttpAtom atom = nsHttp::ResolveAtom("Content-Signature");
-  rv = aResponseHead->GetHeader(atom, contentSignatureHeader);
-  if (NS_FAILED(rv)) {
-    LOG(("Content-Signature header is missing but expected."));
-    DoInvalidateCacheEntry(mURI);
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  
-  if (contentSignatureHeader.IsEmpty()) {
-    DoInvalidateCacheEntry(mURI);
-    LOG(("An expected content-signature header is missing.\n"));
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-
-  
-  
-  
-  if (!aResponseHead->HasContentType()) {
-    NS_WARNING(
-        "Empty content type can get us in trouble when verifying "
-        "content signatures");
-    return NS_ERROR_INVALID_SIGNATURE;
-  }
-  
-  RefPtr<ContentVerifier> contentVerifyingMediator =
-      new ContentVerifier(mListener, nullptr);
-  rv = contentVerifyingMediator->Init(contentSignatureHeader, this, nullptr);
-  NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_SIGNATURE);
-  mListener = contentVerifyingMediator;
 
   return NS_OK;
 }
@@ -4420,12 +4356,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry *entry,
         isForcedValid, mCachedResponseHead, mLoadFlags, mAllowStaleCacheContent,
         isImmutable, mCustomConditionalRequest, mRequestHead, entry,
         cacheControlRequest, fromPreviousSession, &doBackgroundValidation);
-  }
-
-  
-  
-  if (!doValidation && mLoadInfo && mLoadInfo->GetVerifySignedContent()) {
-    doValidation = true;
   }
 
   nsAutoCString requestedETag;

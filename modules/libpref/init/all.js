@@ -2725,9 +2725,6 @@ pref("security.disallow_non_local_systemprincipal_in_tests", false);
 #endif
 
 
-pref("security.signed_content.CSP.default", "script-src 'self'; style-src 'self'");
-
-
 pref("security.mixed_content.block_active_content", false);
 pref("security.mixed_content.block_display_content", false);
 

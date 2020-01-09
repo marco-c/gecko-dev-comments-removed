@@ -2836,15 +2836,7 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  bool applySignedContentCSP = false;
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  if (loadInfo->GetVerifySignedContent()) {
-    applySignedContentCSP = true;
-  }
-
-  
-  if (!addonPolicy && !applySignedContentCSP && cspHeaderValue.IsEmpty() &&
-      cspROHeaderValue.IsEmpty()) {
+  if (!addonPolicy && cspHeaderValue.IsEmpty() && cspROHeaderValue.IsEmpty()) {
     if (MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
       nsCOMPtr<nsIURI> chanURI;
       aChannel->GetURI(getter_AddRefs(chanURI));
@@ -2870,16 +2862,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     csp->AppendPolicy(addonCSP, false, false);
 
     csp->AppendPolicy(addonPolicy->ContentSecurityPolicy(), false, false);
-  }
-
-  
-  
-  
-  if (applySignedContentCSP) {
-    nsAutoString signedContentCSP;
-    Preferences::GetString("security.signed_content.CSP.default",
-                           signedContentCSP);
-    csp->AppendPolicy(signedContentCSP, false, false);
   }
 
   

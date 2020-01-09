@@ -1144,29 +1144,6 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
       aLoadInfo.mURL.Assign(NS_ConvertUTF8toUTF16(filename));
     }
 
-    nsCOMPtr<nsILoadInfo> chanLoadInfo = channel->LoadInfo();
-    if (chanLoadInfo->GetEnforceSRI()) {
-      
-      
-      
-      
-      
-      MOZ_LOG(
-          SRILogHelper::GetSriLog(), mozilla::LogLevel::Debug,
-          ("Scriptloader::Load, SRI required but not supported in workers"));
-      nsCOMPtr<nsIContentSecurityPolicy> wcsp;
-      chanLoadInfo->LoadingPrincipal()->GetCsp(getter_AddRefs(wcsp));
-      MOZ_ASSERT(wcsp, "We should have a CSP for the worker here");
-      if (wcsp) {
-        wcsp->LogViolationDetails(
-            nsIContentSecurityPolicy::VIOLATION_TYPE_REQUIRE_SRI_FOR_SCRIPT,
-            nullptr,  
-            mWorkerPrivate->CSPEventListener(), aLoadInfo.mURL, EmptyString(),
-            0, 0, EmptyString(), EmptyString());
-      }
-      return NS_ERROR_SRI_CORRUPT;
-    }
-
     
     
     if (IsMainWorkerScript()) {
@@ -1212,6 +1189,7 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
         mWorkerPrivate->SetXHRParamsAllowed(parent->XHRParamsAllowed());
       }
 
+      nsCOMPtr<nsILoadInfo> chanLoadInfo = channel->LoadInfo();
       if (chanLoadInfo) {
         mController = chanLoadInfo->GetController();
       }
