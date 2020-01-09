@@ -5,7 +5,6 @@
 "use strict";
 
 loader.lazyRequireGetter(this, "PropTypes", "devtools/client/shared/vendor/react-prop-types");
-loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
 loader.lazyRequireGetter(this, "HTMLTooltip", "devtools/client/shared/widgets/tooltip/HTMLTooltip", true);
 loader.lazyRequireGetter(this, "createPortal", "devtools/client/shared/vendor/react-dom", true);
 
@@ -53,7 +52,7 @@ class ConfirmDialog extends Component {
 
   componentDidMount() {
     const doc = this.props.webConsoleUI.document;
-    const toolbox = gDevTools.getToolbox(this.props.webConsoleUI.owner.target);
+    const toolbox = this.props.webConsoleUI.wrapper.toolbox;
     const tooltipDoc = toolbox ? toolbox.doc : doc;
     
     
