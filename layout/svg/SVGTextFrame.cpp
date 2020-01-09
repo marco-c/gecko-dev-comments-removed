@@ -3487,7 +3487,7 @@ void SVGTextFrame::ReflowSVG() {
     }
     if (nsSVGUtils::HasStroke(run.mFrame)) {
       runFlags |=
-          TextRenderedRun::eIncludeFill | TextRenderedRun::eIncludeTextShadow;
+          TextRenderedRun::eIncludeStroke | TextRenderedRun::eIncludeTextShadow;
     }
     
     
