@@ -2,10 +2,7 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {WebVTT} = ChromeUtils.import("resource://gre/modules/vtt.jsm");
-
-var WEBVTTPARSERWRAPPER_CID = "{acf6e493-0092-4b26-b172-241e375c57ab}";
 
 function WebVTTParserWrapper()
 {
@@ -57,8 +54,7 @@ WebVTTParserWrapper.prototype =
   },
 
   classDescription: "Wrapper for the JS WebVTT implementation (vtt.js)",
-  classID: Components.ID(WEBVTTPARSERWRAPPER_CID),
   QueryInterface: ChromeUtils.generateQI([Ci.nsIWebVTTParserWrapper]),
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([WebVTTParserWrapper]);
+var EXPORTED_SYMBOLS = ["WebVTTParserWrapper"];
