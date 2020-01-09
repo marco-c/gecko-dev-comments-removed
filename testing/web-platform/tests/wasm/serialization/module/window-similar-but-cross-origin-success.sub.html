@@ -18,7 +18,7 @@ promise_test(t => {
     iframe.onload = t.step_func(() => {
       resolve(testSharingViaIncrementerScript(t, window, "window", iframe.contentWindow, "iframe", "*"));
     });
-    iframe.src = "//{{domains[www1]}}:{{location[port]}}/wasm/serialization/resources/incrementer-iframe.html";
+    iframe.src = "//{{domains[www1]}}:{{location[port]}}/wasm/serialization/module/resources/incrementer-iframe.html";
     document.body.appendChild(iframe);
   });
 }, "postMessaging to a not same-origin-domain, but similar origin, iframe allows them to instantiate");
