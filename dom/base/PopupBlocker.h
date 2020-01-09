@@ -83,7 +83,7 @@ class PopupBlocker final {
 
 
 
-class NS_AUTO_POPUP_STATE_PUSHER {
+class MOZ_RAII NS_AUTO_POPUP_STATE_PUSHER final {
  public:
 #ifdef MOZILLA_INTERNAL_API
   explicit NS_AUTO_POPUP_STATE_PUSHER(
@@ -112,11 +112,6 @@ class NS_AUTO_POPUP_STATE_PUSHER {
   nsCOMPtr<nsPIDOMWindowOuter> mWindow;
 #endif
   mozilla::dom::PopupBlocker::PopupControlState mOldState;
-
- private:
-  
-  static void* operator new(size_t ) CPP_THROW_NEW { return nullptr; }
-  static void operator delete(void* ) {}
 };
 
 #define nsAutoPopupStatePusher NS_AUTO_POPUP_STATE_PUSHER
