@@ -175,6 +175,9 @@ class UrlbarInput {
     
     this._compositionState = UrlbarUtils.COMPOSITION.NONE;
     this._compositionClosedPopup = false;
+
+    this.editor.QueryInterface(Ci.nsIPlaintextEditor).newlineHandling =
+      Ci.nsIPlaintextEditor.eNewlinesStripSurroundingWhitespace;
   }
 
   
