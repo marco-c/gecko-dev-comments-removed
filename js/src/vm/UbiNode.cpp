@@ -191,7 +191,7 @@ Value Node::exposeToJS() const {
 
 
 
-class EdgeVectorTracer : public JS::CallbackTracer {
+class EdgeVectorTracer final : public JS::CallbackTracer {
   
   EdgeVector* vec;
 
