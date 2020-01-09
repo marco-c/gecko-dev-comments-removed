@@ -47,6 +47,7 @@
 #ifndef NS_UNICODE_SCRIPT_CODES
 #define NS_UNICODE_SCRIPT_CODES
 
+
 struct nsCharProps2 {
   
   
@@ -243,8 +244,12 @@ enum class Script : int16_t {
   HANIFI_ROHINGYA = 182,
   SOGDIAN = 183,
   OLD_SOGDIAN = 184,
+  ELYMAIC = 185,
+  NYIAKENG_PUACHUE_HMONG = 186,
+  NANDINAGARI = 187,
+  WANCHO = 188,
 
-  NUM_SCRIPT_CODES = 185,
+  NUM_SCRIPT_CODES = 189,
 
   INVALID = -1
 };

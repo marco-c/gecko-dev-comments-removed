@@ -6,8 +6,8 @@
 
 
 #include "nsSpecialCasingData.h"
-#include "mozilla/ArrayUtils.h"  
-#include <stdlib.h>              
+#include "mozilla/ArrayUtils.h" 
+#include <stdlib.h>       
 
 
 
@@ -15,13 +15,10 @@
 using mozilla::unicode::MultiCharMapping;
 
 static const MultiCharMapping CaseSpecials_Lower[] = {
-    
   { 0x0130, {0x0069, 0x0307, 0x0000} }, 
-    
 };
 
 static const MultiCharMapping CaseSpecials_Upper[] = {
-    
   { 0x00df, {0x0053, 0x0053, 0x0000} }, 
   { 0x0149, {0x02bc, 0x004e, 0x0000} }, 
   { 0x01f0, {0x004a, 0x030c, 0x0000} }, 
@@ -124,11 +121,9 @@ static const MultiCharMapping CaseSpecials_Upper[] = {
   { 0xfb15, {0x0544, 0x053b, 0x0000} }, 
   { 0xfb16, {0x054e, 0x0546, 0x0000} }, 
   { 0xfb17, {0x0544, 0x053d, 0x0000} }, 
-    
 };
 
 static const MultiCharMapping CaseSpecials_Title[] = {
-    
   { 0x00df, {0x0053, 0x0073, 0x0000} }, 
   { 0x0149, {0x02bc, 0x004e, 0x0000} }, 
   { 0x01f0, {0x004a, 0x030c, 0x0000} }, 
@@ -177,21 +172,23 @@ static const MultiCharMapping CaseSpecials_Title[] = {
   { 0xfb15, {0x0544, 0x056b, 0x0000} }, 
   { 0xfb16, {0x054e, 0x0576, 0x0000} }, 
   { 0xfb17, {0x0544, 0x056d, 0x0000} }, 
-    
 };
 
-static int CompareMCM(const void* aKey, const void* aElement) {
+static int CompareMCM(const void* aKey, const void* aElement)
+{
   const uint32_t ch = *static_cast<const uint32_t*>(aKey);
   const MultiCharMapping* mcm = static_cast<const MultiCharMapping*>(aElement);
   return int(ch) - int(mcm->mOriginalChar);
 }
 
-#define MAKE_SPECIAL_CASE_ACCESSOR(which)                               \
-  const MultiCharMapping* Special##which(uint32_t aChar) {              \
-    const void* p = bsearch(&aChar, CaseSpecials_##which,               \
+#define MAKE_SPECIAL_CASE_ACCESSOR(which) \
+  const MultiCharMapping* \
+  Special##which(uint32_t aChar) \
+  { \
+    const void* p = bsearch(&aChar, CaseSpecials_##which, \
                             mozilla::ArrayLength(CaseSpecials_##which), \
-                            sizeof(MultiCharMapping), CompareMCM);      \
-    return static_cast<const MultiCharMapping*>(p);                     \
+                            sizeof(MultiCharMapping), CompareMCM); \
+    return static_cast<const MultiCharMapping*>(p); \
   }
 
 namespace mozilla {
@@ -201,5 +198,5 @@ MAKE_SPECIAL_CASE_ACCESSOR(Lower)
 MAKE_SPECIAL_CASE_ACCESSOR(Upper)
 MAKE_SPECIAL_CASE_ACCESSOR(Title)
 
-}  
-}  
+} 
+} 
