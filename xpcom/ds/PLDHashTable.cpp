@@ -136,6 +136,9 @@ static inline uint32_t MinLoad(uint32_t aCapacity) {
 static inline void BestCapacity(uint32_t aLength, uint32_t* aCapacityOut,
                                 uint32_t* aLog2CapacityOut) {
   
+  MOZ_ASSERT(aLength <= PLDHashTable::kMaxInitialLength);
+
+  
   
   uint32_t capacity = (aLength * 4 + (3 - 1)) / 3;  
   if (capacity < PLDHashTable::kMinCapacity) {

@@ -1570,6 +1570,9 @@ class HashTable : private AllocPolicy {
         "numerator calculation below could potentially overflow");
 
     
+    MOZ_ASSERT(aLen <= sMaxInit);
+
+    
     
     
     uint32_t capacity = (aLen * sAlphaDenominator + sMaxAlphaNumerator - 1) /
@@ -1986,6 +1989,10 @@ class HashTable : private AllocPolicy {
   MOZ_MUST_USE bool reserve(uint32_t aLen) {
     if (aLen == 0) {
       return true;
+    }
+
+    if (MOZ_UNLIKELY(aLen > sMaxInit)) {
+      return false;
     }
 
     uint32_t bestCapacity = this->bestCapacity(aLen);
