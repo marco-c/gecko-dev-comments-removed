@@ -19,6 +19,7 @@ namespace dom {
 
 class BrowsingContext;
 class WindowGlobalParent;
+class JSWindowActorChild;
 
 
 
@@ -63,6 +64,10 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
   already_AddRefed<TabChild> GetTabChild();
 
   
+  already_AddRefed<JSWindowActorChild> GetActor(const nsAString& aName,
+                                                ErrorResult& aRv);
+
+  
   static already_AddRefed<WindowGlobalChild> Create(
       nsGlobalWindowInner* aWindow);
 
@@ -79,6 +84,7 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
 
   RefPtr<nsGlobalWindowInner> mWindowGlobal;
   RefPtr<dom::BrowsingContext> mBrowsingContext;
+  nsRefPtrHashtable<nsStringHashKey, JSWindowActorChild> mWindowActors;
   uint64_t mInnerWindowId;
   uint64_t mOuterWindowId;
   bool mIPCClosed;
