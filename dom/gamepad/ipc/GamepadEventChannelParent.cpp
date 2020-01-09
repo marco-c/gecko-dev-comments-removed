@@ -76,17 +76,35 @@ mozilla::ipc::IPCResult GamepadEventChannelParent::RecvVibrateHaptic(
     const uint32_t& aPromiseID) {
   
 
-  if (SendReplyGamepadVibrateHaptic(aPromiseID)) {
+  if (SendReplyGamepadPromise(aPromiseID)) {
     return IPC_OK();
   }
 
-  return IPC_FAIL(this, "SendReplyGamepadVibrateHaptic fail.");
+  return IPC_FAIL(this, "SendReplyGamepadPromise fail.");
 }
 
 mozilla::ipc::IPCResult GamepadEventChannelParent::RecvStopVibrateHaptic(
-    const uint32_t& aGamepadIndex) {
+    const uint32_t& aControllerIdx) {
   
   return IPC_OK();
+}
+
+mozilla::ipc::IPCResult GamepadEventChannelParent::RecvLightIndicatorColor(
+    const uint32_t& aControllerIdx, const uint32_t& aLightColorIndex,
+    const uint8_t& aRed, const uint8_t& aGreen, const uint8_t& aBlue,
+    const uint32_t& aPromiseID) {
+  
+  
+  if (mHasGamepadListener) {
+    SetGamepadLightIndicatorColor(aControllerIdx, aLightColorIndex, aRed,
+                                  aGreen, aBlue);
+  }
+
+  if (SendReplyGamepadPromise(aPromiseID)) {
+    return IPC_OK();
+  }
+
+  return IPC_FAIL(this, "SendReplyGamepadPromise fail.");
 }
 
 void GamepadEventChannelParent::ActorDestroy(ActorDestroyReason aWhy) {
