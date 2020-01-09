@@ -57,7 +57,7 @@ void WebRenderBackgroundData::AddWebRenderCommands(
 
   RefPtr<WebRenderImageData> image =
       GetWebRenderUserData<WebRenderImageData>(aFrame, type);
-  if (image && image->IsAsyncAnimatedImage()) {
+  if (image && image->UsingSharedSurface()) {
     return true;
   }
 
@@ -93,8 +93,18 @@ WebRenderImageData::~WebRenderImageData() {
   }
 }
 
-bool WebRenderImageData::IsAsyncAnimatedImage() const {
-  return mContainer && mContainer->GetSharedSurfacesAnimation();
+bool WebRenderImageData::UsingSharedSurface() const {
+  if (!mContainer || !mKey || mOwnsKey) {
+    return false;
+  }
+
+  
+  
+  
+  wr::ImageKey key;
+  nsresult rv = SharedSurfacesChild::Share(mContainer, mManager,
+      mManager->AsyncResourceUpdates(), key);
+  return NS_SUCCEEDED(rv) && mKey.ref() == key;
 }
 
 void WebRenderImageData::ClearImageKey() {
