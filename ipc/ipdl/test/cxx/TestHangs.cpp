@@ -76,8 +76,6 @@ bool TestHangsParent::ShouldContinueFromReplyTimeout() {
 mozilla::ipc::IPCResult TestHangsParent::AnswerStackFrame() {
   ++mNumAnswerStackFrame;
 
-  
-
   if (mNumAnswerStackFrame == 1) {
     if (CallStackFrame()) {
       fail("should have timed out!");

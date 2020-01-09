@@ -75,8 +75,6 @@ mozilla::ipc::IPCResult TestLatencyParent::RecvPong() {
 mozilla::ipc::IPCResult TestLatencyParent::RecvPong5() {
   ++mWhichPong5;
 
-  
-
   if (mWhichPong5 < 5) {
     return IPC_OK();
   }
@@ -168,8 +166,6 @@ mozilla::ipc::IPCResult TestLatencyChild::RecvPing() {
 
 mozilla::ipc::IPCResult TestLatencyChild::RecvPing5() {
   ++mWhichPing5;
-
-  
 
   if (mWhichPing5 < 5) {
     return IPC_OK();

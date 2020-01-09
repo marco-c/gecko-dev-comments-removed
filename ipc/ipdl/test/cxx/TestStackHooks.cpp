@@ -77,10 +77,8 @@ mozilla::ipc::IPCResult TestStackHooksChild::AnswerStackFrame() {
   if (1 != mIncallDepth) fail("missed EnteredCall or ExitedCall hook");
 
   if (mNumAnswerStackFrame == 1) {
-    
     if (!SendAsync()) fail("sending Async()");
   } else if (mNumAnswerStackFrame == 2) {
-    
     if (!SendSync()) fail("sending Sync()");
   } else {
     fail("unexpected state");
