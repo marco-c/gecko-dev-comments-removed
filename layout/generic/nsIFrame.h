@@ -451,7 +451,7 @@ enum nsBidiDirection {
 namespace mozilla {
 
 
-enum BaselineSharingGroup {
+enum class BaselineSharingGroup {
   
   eFirst = 0,
   eLast = 1,

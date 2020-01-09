@@ -189,7 +189,7 @@ struct nsGridContainerFrame::TrackSize {
   nscoord mPosition;  
   
   
-  nscoord mBaselineSubtreeSize[2];
+  PerBaseline<nscoord> mBaselineSubtreeSize;
   StateBits mState;
 };
 
@@ -1678,7 +1678,7 @@ struct nsGridContainerFrame::Tracks {
   nscoord mContentBoxSize;
   nscoord mGridGap;
   
-  nscoord mBaseline[2];  
+  PerBaseline<nscoord> mBaseline;
   
   TrackSize::StateBits mStateUnion;
   LogicalAxis mAxis;
@@ -1686,7 +1686,7 @@ struct nsGridContainerFrame::Tracks {
   
   
   
-  uint8_t mBaselineSubtreeAlign[2];
+  PerBaseline<uint8_t> mBaselineSubtreeAlign;
   
   bool mCanResolveLineRangeSize;
 };
@@ -5725,10 +5725,11 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   SanityCheckGridItemsBeforeReflow();
 #endif  
 
-  mBaseline[0][0] = NS_INTRINSIC_WIDTH_UNKNOWN;
-  mBaseline[0][1] = NS_INTRINSIC_WIDTH_UNKNOWN;
-  mBaseline[1][0] = NS_INTRINSIC_WIDTH_UNKNOWN;
-  mBaseline[1][1] = NS_INTRINSIC_WIDTH_UNKNOWN;
+  for (auto& perAxisBaseline : mBaseline) {
+    for (auto& baseline : perAxisBaseline) {
+      baseline = NS_INTRINSIC_WIDTH_UNKNOWN;
+    }
+  }
 
   const nsStylePosition* stylePos = aReflowInput.mStylePosition;
   if (!prevInFlow) {
@@ -6083,10 +6084,8 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       sharedGridData->mCols.mSizes.SwapElements(gridReflowInput.mCols.mSizes);
       sharedGridData->mCols.mContentBoxSize =
           gridReflowInput.mCols.mContentBoxSize;
-      sharedGridData->mCols.mBaselineSubtreeAlign[0] =
-          gridReflowInput.mCols.mBaselineSubtreeAlign[0];
-      sharedGridData->mCols.mBaselineSubtreeAlign[1] =
-          gridReflowInput.mCols.mBaselineSubtreeAlign[1];
+      sharedGridData->mCols.mBaselineSubtreeAlign =
+          gridReflowInput.mCols.mBaselineSubtreeAlign;
       sharedGridData->mRows.mSizes.Clear();
       sharedGridData->mRows.mSizes.SwapElements(gridReflowInput.mRows.mSizes);
       
@@ -6102,10 +6101,8 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
       }
       sharedGridData->mRows.mContentBoxSize =
           gridReflowInput.mRows.mContentBoxSize;
-      sharedGridData->mRows.mBaselineSubtreeAlign[0] =
-          gridReflowInput.mRows.mBaselineSubtreeAlign[0];
-      sharedGridData->mRows.mBaselineSubtreeAlign[1] =
-          gridReflowInput.mRows.mBaselineSubtreeAlign[1];
+      sharedGridData->mRows.mBaselineSubtreeAlign =
+          gridReflowInput.mRows.mBaselineSubtreeAlign;
       sharedGridData->mGridItems.Clear();
       sharedGridData->mGridItems.SwapElements(gridReflowInput.mGridItems);
       sharedGridData->mAbsPosItems.Clear();
@@ -6239,10 +6236,11 @@ nscoord nsGridContainerFrame::GetPrefISize(gfxContext* aRC) {
 void nsGridContainerFrame::MarkIntrinsicISizesDirty() {
   mCachedMinISize = NS_INTRINSIC_WIDTH_UNKNOWN;
   mCachedPrefISize = NS_INTRINSIC_WIDTH_UNKNOWN;
-  mBaseline[0][0] = NS_INTRINSIC_WIDTH_UNKNOWN;
-  mBaseline[0][1] = NS_INTRINSIC_WIDTH_UNKNOWN;
-  mBaseline[1][0] = NS_INTRINSIC_WIDTH_UNKNOWN;
-  mBaseline[1][1] = NS_INTRINSIC_WIDTH_UNKNOWN;
+  for (auto& perAxisBaseline : mBaseline) {
+    for (auto& baseline : perAxisBaseline) {
+      baseline = NS_INTRINSIC_WIDTH_UNKNOWN;
+    }
+  }
   nsContainerFrame::MarkIntrinsicISizesDirty();
 }
 
