@@ -2048,7 +2048,8 @@ static bool Evaluate(JSContext* cx, unsigned argc, Value* vp) {
     }
     if (!v.isUndefined()) {
       if (v.isObject()) {
-        global = js::UncheckedUnwrap(&v.toObject());
+        global = js::CheckedUnwrapDynamic(&v.toObject(), cx,
+                                           false);
         if (!global) {
           return false;
         }
@@ -8121,7 +8122,9 @@ static bool TransplantObject(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  RootedObject newGlobal(cx, CheckedUnwrapDynamic(&args[0].toObject(), cx));
+  RootedObject newGlobal(
+      cx, js::CheckedUnwrapDynamic(&args[0].toObject(), cx,
+                                    false));
   if (!newGlobal) {
     ReportAccessDenied(cx);
     return false;
