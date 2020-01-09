@@ -475,7 +475,10 @@ function showFxaToolbarMenu(enable) {
   
   const syncEnabled = Services.prefs.getBoolPref("identity.fxaccounts.enabled", false);
   const mainWindowEl = document.documentElement;
+  const fxaPanelEl = document.getElementById("PanelUI-fxa");
   if (enable && syncEnabled) {
+    fxaPanelEl.addEventListener("ViewShowing", gSync.updateSendToDeviceTitle);
+
     mainWindowEl.setAttribute("fxastatus", "not_configured");
     
     
@@ -491,6 +494,7 @@ function showFxaToolbarMenu(enable) {
     }
   } else {
     mainWindowEl.removeAttribute("fxastatus");
+    fxaPanelEl.removeEventListener("ViewShowing", gSync.updateSendToDeviceTitle);
   }
 }
 
