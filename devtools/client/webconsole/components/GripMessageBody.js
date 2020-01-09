@@ -63,10 +63,6 @@ function GripMessageBody(props) {
     autoExpandDepth: shouldAutoExpandObjectInspector(props) ? 1 : 0,
     mode,
     maybeScrollToBottom,
-    
-    
-    
-    focusable: false,
     onCmdCtrlClick: (node, { depth, event, focused, expanded }) => {
       const value = utils.node.getValue(node);
       if (value) {
