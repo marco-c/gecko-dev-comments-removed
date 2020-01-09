@@ -1,0 +1,96 @@
+
+
+
+"use strict";
+
+
+
+requestLongerTimeout(2);
+
+
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-serviceworker.js", this);
+
+const SW_TAB_URL = URL_ROOT + "resources/service-workers/empty-sw.html";
+const SW_URL = URL_ROOT + "resources/service-workers/empty-sw.js";
+const SW_TIMEOUT = 1000;
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await enableServiceWorkerDebugging();
+
+  
+  
+  
+  info("Set a low service worker idle timeout");
+  await pushPref("dom.serviceWorkers.idle_timeout", SW_TIMEOUT);
+  await pushPref("dom.serviceWorkers.idle_extended_timeout", SW_TIMEOUT);
+
+  const { document, tab } = await openAboutDebugging();
+
+  
+  const swTab = await addTab(SW_TAB_URL);
+
+  
+  
+  await waitForRegistration(swTab);
+
+  info("Wait until the service worker stops");
+  await waitForServiceWorkerStopped(SW_URL, document);
+
+  info("Click on the start button and wait for the service worker to be running");
+  const onServiceWorkerRunning = waitForServiceWorkerRunning(SW_URL, document);
+  const startButton = getStartButton(SW_URL, document);
+  startButton.click();
+  await onServiceWorkerRunning;
+
+  const inspectButton = getInspectButton(SW_URL, document);
+  ok(!!inspectButton, "Service worker target has an inspect button");
+
+  info("Click on inspect and wait for the toolbox to open");
+  const onToolboxReady = gDevTools.once("toolbox-ready");
+  inspectButton.click();
+  const toolbox = await onToolboxReady;
+
+  
+  
+  await wait(SW_TIMEOUT * 10);
+
+  
+  
+  const hasInspectButton = !!getInspectButton(SW_URL, document);
+  ok(hasInspectButton, "Service worker target still has an inspect button");
+
+  info("Destroy the toolbox");
+  await toolbox.destroy();
+
+  
+  
+  info("Wait until the service worker stops after closing the toolbox");
+  await waitForServiceWorkerStopped(SW_URL, document);
+
+  info("Unregister service worker");
+  await unregisterServiceWorker(swTab);
+
+  info("Wait until the service worker disappears from about:debugging");
+  await waitUntil(() => !findDebugTargetByText(SW_URL, document));
+
+  info("Remove tabs");
+  await removeTab(swTab);
+  await removeTab(tab);
+});
+
+function getStartButton(workerText, doc) {
+  const target = findDebugTargetByText(workerText, doc);
+  return target ? target.querySelector(".js-start-button") : null;
+}
+
+function getInspectButton(workerText, doc) {
+  const target = findDebugTargetByText(workerText, doc);
+  return target ? target.querySelector(".js-debug-target-inspect-button") : null;
+}
