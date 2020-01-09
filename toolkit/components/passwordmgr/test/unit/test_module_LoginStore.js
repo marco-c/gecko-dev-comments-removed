@@ -45,8 +45,6 @@ add_task(async function test_save_reload() {
   };
   storeForSave.data.logins.push(rawLoginData);
 
-  storeForSave.data.disabledHosts.push("http://www.example.org");
-
   await storeForSave._save();
 
   
@@ -55,8 +53,6 @@ add_task(async function test_save_reload() {
 
   Assert.equal(storeForLoad.data.logins.length, 1);
   Assert.deepEqual(storeForLoad.data.logins[0], rawLoginData);
-  Assert.equal(storeForLoad.data.disabledHosts.length, 1);
-  Assert.equal(storeForLoad.data.disabledHosts[0], "http://www.example.org");
 
   
   storeForLoad = new LoginStore(storeForSave.path);
@@ -64,8 +60,6 @@ add_task(async function test_save_reload() {
 
   Assert.equal(storeForLoad.data.logins.length, 1);
   Assert.deepEqual(storeForLoad.data.logins[0], rawLoginData);
-  Assert.equal(storeForLoad.data.disabledHosts.length, 1);
-  Assert.equal(storeForLoad.data.disabledHosts[0], "http://www.example.org");
 });
 
 
@@ -81,7 +75,6 @@ add_task(async function test_load_empty() {
   Assert.equal(false, await OS.File.exists(store.path));
 
   Assert.equal(store.data.logins.length, 0);
-  Assert.equal(store.data.disabledHosts.length, 0);
 });
 
 
@@ -147,9 +140,6 @@ add_task(async function test_load_string_predefined() {
     timePasswordChanged: 1262476800000,
     timesUsed:           1,
   });
-
-  Assert.equal(store.data.disabledHosts.length, 1);
-  Assert.equal(store.data.disabledHosts[0], "http://www.example.org");
 });
 
 
@@ -172,7 +162,6 @@ add_task(async function test_load_string_malformed() {
 
   
   Assert.equal(store.data.logins.length, 0);
-  Assert.equal(store.data.disabledHosts.length, 0);
 });
 
 
@@ -196,5 +185,4 @@ add_task(async function test_load_string_malformed_sync() {
 
   
   Assert.equal(store.data.logins.length, 0);
-  Assert.equal(store.data.disabledHosts.length, 0);
 });

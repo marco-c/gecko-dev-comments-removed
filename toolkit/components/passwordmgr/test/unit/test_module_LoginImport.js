@@ -158,11 +158,6 @@ add_task(async function test_import() {
              loginDataItem.timesUsed == loginInfo.timesUsed;
     });
   }));
-
-  
-  Assert.equal(store.data.disabledHosts.length, 2);
-  Assert.ok(store.data.disabledHosts.includes("http://www.example.com"));
-  Assert.ok(store.data.disabledHosts.includes("https://www.example.org"));
 });
 
 
@@ -229,5 +224,4 @@ add_task(async function test_import_v3() {
 
   
   Assert.equal(store.data.logins[0].usernameField, "u1");
-  Assert.equal(store.data.disabledHosts.length, 0);
 });
