@@ -17,6 +17,7 @@
 #include "mozilla/StyleSheet.h"          
 #include "mozilla/TransactionManager.h"  
 #include "mozilla/WeakPtr.h"             
+#include "mozilla/dom/DataTransfer.h"    
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"  
@@ -46,6 +47,7 @@ class nsIEditorObserver;
 class nsINode;
 class nsIPresShell;
 class nsISupports;
+class nsITransferable;
 class nsITransaction;
 class nsITransactionListener;
 class nsIWidget;
@@ -636,6 +638,17 @@ class EditorBase : public nsIEditor,
 
 
 
+  enum class SettingDataTransfer {
+    eWithFormat,
+    eWithoutFormat,
+  };
+
+  
+
+
+
+
+
   class MOZ_STACK_CLASS AutoEditActionDataSetter final {
    public:
     AutoEditActionDataSetter(const EditorBase& aEditorBase,
@@ -653,6 +666,32 @@ class EditorBase : public nsIEditor,
     const nsString& GetData() const { return mData; }
 
     void SetColorData(const nsAString& aData);
+
+    
+
+
+
+
+
+    void InitializeDataTransfer(dom::DataTransfer* aDataTransfer);
+    
+
+
+
+
+    void InitializeDataTransfer(nsITransferable* aTransferable);
+    
+
+
+
+    void InitializeDataTransfer(const nsAString& aString);
+    
+
+
+
+    void InitializeDataTransferWithClipboard(
+        SettingDataTransfer aSettingDataTransfer, int32_t aClipboardType);
+    dom::DataTransfer* GetDataTransfer() const { return mDataTransfer; }
 
     void SetTopLevelEditSubAction(EditSubAction aEditSubAction,
                                   EDirection aDirection = eNone) {
@@ -764,6 +803,9 @@ class EditorBase : public nsIEditor,
     
     nsString mData;
 
+    
+    RefPtr<dom::DataTransfer> mDataTransfer;
+
     EditAction mEditAction;
     EditSubAction mTopLevelEditSubAction;
     EDirection mDirectionOfTopLevelEditSubAction;
@@ -818,6 +860,15 @@ class EditorBase : public nsIEditor,
 
   const nsString& GetInputEventData() const {
     return mEditActionData ? mEditActionData->GetData() : VoidString();
+  }
+
+  
+
+
+
+
+  dom::DataTransfer* GetInputEventDataTransfer() const {
+    return mEditActionData ? mEditActionData->GetDataTransfer() : nullptr;
   }
 
   
@@ -1806,11 +1857,10 @@ class EditorBase : public nsIEditor,
 
 
   MOZ_CAN_RUN_SCRIPT
-  void FireInputEvent() {
-    FireInputEvent(GetEditAction(), GetInputEventData());
-  }
+  void FireInputEvent();
   MOZ_CAN_RUN_SCRIPT
-  void FireInputEvent(EditAction aEditAction, const nsAString& aData);
+  void FireInputEvent(EditAction aEditAction, const nsAString& aData,
+                      dom::DataTransfer* aDataTransfer);
 
   
 

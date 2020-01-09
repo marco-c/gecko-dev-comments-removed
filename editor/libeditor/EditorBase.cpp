@@ -51,6 +51,7 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/TransactionManager.h"  
 #include "mozilla/dom/CharacterData.h"   
+#include "mozilla/dom/DataTransfer.h"    
 #include "mozilla/dom/Element.h"         
 #include "mozilla/dom/EventTarget.h"     
 #include "mozilla/dom/HTMLBodyElement.h"
@@ -91,6 +92,7 @@
 #include "nsISelectionDisplay.h"       
 #include "nsISupportsBase.h"           
 #include "nsISupportsUtils.h"          
+#include "nsITransferable.h"           
 #include "nsITransaction.h"            
 #include "nsITransactionManager.h"
 #include "nsIWeakReference.h"  
@@ -2032,8 +2034,13 @@ void EditorBase::NotifyEditorObservers(
   }
 }
 
-void EditorBase::FireInputEvent(EditAction aEditAction,
-                                const nsAString& aData) {
+void EditorBase::FireInputEvent() {
+  RefPtr<DataTransfer> dataTransfer = GetInputEventDataTransfer();
+  FireInputEvent(GetEditAction(), GetInputEventData(), dataTransfer);
+}
+
+void EditorBase::FireInputEvent(EditAction aEditAction, const nsAString& aData,
+                                DataTransfer* aDataTransfer) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   
@@ -2051,7 +2058,8 @@ void EditorBase::FireInputEvent(EditAction aEditAction,
   RefPtr<TextEditor> textEditor = AsTextEditor();
   DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
       targetElement, ToInputType(aEditAction), textEditor,
-      nsContentUtils::InputEventOptions(aData));
+      aDataTransfer ? nsContentUtils::InputEventOptions(aDataTransfer)
+                    : nsContentUtils::InputEventOptions(aData));
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "Failed to dispatch input event");
 }
@@ -4901,6 +4909,48 @@ void EditorBase::AutoEditActionDataSetter::SetColorData(
   
   nsStyleUtil::GetSerializedColorValue(color, mData);
   MOZ_ASSERT(!mData.IsVoid());
+}
+
+void EditorBase::AutoEditActionDataSetter::InitializeDataTransfer(
+    DataTransfer* aDataTransfer) {
+  MOZ_ASSERT(aDataTransfer);
+  MOZ_ASSERT(aDataTransfer->IsReadOnly());
+  mDataTransfer = aDataTransfer;
+}
+
+void EditorBase::AutoEditActionDataSetter::InitializeDataTransfer(
+    nsITransferable* aTransferable) {
+  MOZ_ASSERT(aTransferable);
+
+  Document* document = mEditorBase.GetDocument();
+  nsIGlobalObject* scopeObject =
+      document ? document->GetScopeObject() : nullptr;
+  
+  mDataTransfer =
+      new DataTransfer(scopeObject, ePaste, true , 1);
+}
+
+void EditorBase::AutoEditActionDataSetter::InitializeDataTransfer(
+    const nsAString& aString) {
+  Document* document = mEditorBase.GetDocument();
+  nsIGlobalObject* scopeObject =
+      document ? document->GetScopeObject() : nullptr;
+  
+  mDataTransfer =
+      new DataTransfer(scopeObject, ePaste, true , 1);
+}
+
+void EditorBase::AutoEditActionDataSetter::InitializeDataTransferWithClipboard(
+    SettingDataTransfer aSettingDataTransfer, int32_t aClipboardType) {
+  Document* document = mEditorBase.GetDocument();
+  nsIGlobalObject* scopeObject =
+      document ? document->GetScopeObject() : nullptr;
+  mDataTransfer =
+      new DataTransfer(scopeObject,
+                       aSettingDataTransfer == SettingDataTransfer::eWithFormat
+                           ? ePaste
+                           : ePasteNoFormatting,
+                       true , aClipboardType);
 }
 
 }  

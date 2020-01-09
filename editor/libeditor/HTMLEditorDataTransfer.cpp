@@ -1543,6 +1543,7 @@ nsresult HTMLEditor::PasteTransferable(nsITransferable* aTransferable) {
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
+  editActionData.InitializeDataTransfer(aTransferable);
 
   
   
@@ -1569,6 +1570,8 @@ HTMLEditor::PasteNoFormatting(int32_t aSelectionType) {
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
+  editActionData.InitializeDataTransferWithClipboard(
+      SettingDataTransfer::eWithoutFormat, aSelectionType);
 
   if (!FireClipboardEvent(ePasteNoFormatting, aSelectionType)) {
     return NS_OK;
@@ -1709,6 +1712,8 @@ nsresult HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
+  editActionData.InitializeDataTransferWithClipboard(
+      SettingDataTransfer::eWithFormat, aClipboardType);
 
   if (IsPlaintextEditor()) {
     
