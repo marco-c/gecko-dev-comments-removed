@@ -20,6 +20,31 @@
 #  define Elf_Addr Elf32_Addr
 #endif
 
+
+
+
+
+
+
+
+
+#ifdef __arm__
+__attribute__((section(".text._init_trampoline"), naked)) int init_trampoline(
+    int argc, char **argv, char **env) {
+  __asm__ __volatile__(
+      
+      
+      
+      ".arm\n"
+      "  ldr ip, .LADDR\n"
+      ".LAFTER:\n"
+      "  add ip, pc, ip\n"
+      "  bx ip\n"
+      ".LADDR:\n"
+      "  .word real_original_init-(.LAFTER+8)\n");
+}
+#endif
+
 extern __attribute__((visibility("hidden"))) void original_init(int argc,
                                                                 char **argv,
                                                                 char **env);
