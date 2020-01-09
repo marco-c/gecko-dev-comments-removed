@@ -138,11 +138,9 @@ already_AddRefed<MediaRawData> SampleIterator::GetNext() {
     if (moofParser->mSinf.mDefaultEncryptionType == AtomType("cenc")) {
       cryptoScheme = CryptoScheme::Cenc;
       writer->mCrypto.mCryptoScheme = CryptoScheme::Cenc;
-      writer->mCrypto.mInitDataType = NS_LITERAL_STRING("cenc");
     } else if (moofParser->mSinf.mDefaultEncryptionType == AtomType("cbcs")) {
       cryptoScheme = CryptoScheme::Cbcs;
       writer->mCrypto.mCryptoScheme = CryptoScheme::Cbcs;
-      writer->mCrypto.mInitDataType = NS_LITERAL_STRING("cenc");
     } else {
       MOZ_ASSERT_UNREACHABLE(
           "Sample description entry reports sample is encrypted, but no "
@@ -151,17 +149,18 @@ already_AddRefed<MediaRawData> SampleIterator::GetNext() {
     }
   }
 
+  
+  
+  
   if (mCurrentSample == 0) {
     const nsTArray<Moof>& moofs = moofParser->Moofs();
     const Moof* currentMoof = &moofs[mCurrentMoof];
     if (!currentMoof->mPsshes.IsEmpty()) {
-      MOZ_ASSERT(sampleDescriptionEntry->mIsEncryptedEntry,
-                 "Unencrypted fragments should not contain pssh boxes");
-      MOZ_ASSERT(cryptoScheme != CryptoScheme::None);
       
       
       
       writer->mCrypto.mInitDatas.AppendElements(currentMoof->mPsshes);
+      writer->mCrypto.mInitDataType = NS_LITERAL_STRING("cenc");
     }
   }
 
