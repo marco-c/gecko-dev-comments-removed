@@ -7,8 +7,7 @@
 const { Ci } = require("chrome");
 const protocol = require("devtools/shared/protocol");
 const { emulationSpec } = require("devtools/shared/specs/emulation");
-
-loader.lazyRequireGetter(this, "TouchSimulator", "devtools/server/actors/emulation/touch-simulator", true);
+const { TouchSimulator } = require("devtools/server/actors/emulation/touch-simulator");
 
 
 
@@ -29,29 +28,18 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.targetActor = targetActor;
     this.docShell = targetActor.docShell;
-
-    this.onWillNavigate = this.onWillNavigate.bind(this);
-    this.onWindowReady = this.onWindowReady.bind(this);
-
-    this.targetActor.on("will-navigate", this.onWillNavigate);
-    this.targetActor.on("window-ready", this.onWindowReady);
+    this.touchSimulator = new TouchSimulator(targetActor.chromeEventHandler);
   },
 
   destroy() {
-    this.stopPrintMediaSimulation();
     this.clearDPPXOverride();
     this.clearNetworkThrottling();
     this.clearTouchEventsOverride();
     this.clearMetaViewportOverride();
     this.clearUserAgentOverride();
-
-    this.targetActor.off("will-navigate", this.onWillNavigate);
-    this.targetActor.off("window-ready", this.onWindowReady);
-
     this.targetActor = null;
     this.docShell = null;
-    this._touchSimulator = null;
-
+    this.touchSimulator = null;
     protocol.Actor.prototype.destroy.call(this);
   },
 
@@ -66,33 +54,6 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
     }
     const form = this.targetActor.form();
     return this.conn._getOrCreateActor(form.consoleActor);
-  },
-
-  get touchSimulator() {
-    if (!this._touchSimulator) {
-      this._touchSimulator = new TouchSimulator(this.targetActor.chromeEventHandler);
-    }
-
-    return this._touchSimulator;
-  },
-
-  onWillNavigate({ window, isTopLevel }) {
-    
-    
-    
-    if (this._printSimulationEnabled && isTopLevel) {
-      this.stopPrintMediaSimulation(true);
-    }
-  },
-
-  onWindowReady({ window, isTopLevel }) {
-    
-    
-    
-    
-    if (this._printSimulationEnabled && isTopLevel) {
-      this.startPrintMediaSimulation();
-    }
   },
 
   
@@ -323,35 +284,6 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
     return false;
   },
 
-  
-
-  _printSimulationEnabled: false,
-
-  getIsPrintSimulationEnabled() {
-    return this._printSimulationEnabled;
-  },
-
-  startPrintMediaSimulation() {
-    this._printSimulationEnabled = true;
-    this.targetActor.docShell.contentViewer.emulateMedium("print");
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  stopPrintMediaSimulation(state = false) {
-    this._printSimulationEnabled = state;
-    this.targetActor.docShell.contentViewer.stopEmulatingMedium();
-  },
 });
 
 exports.EmulationActor = EmulationActor;
