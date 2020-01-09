@@ -5529,6 +5529,26 @@ TEST_F(JsepSessionTest, AudioCallAnswererUsesActpass) {
 }
 
 
+
+TEST_F(JsepSessionTest, AudioCallPreviousAnswererUsesActpassInReoffer) {
+  types.push_back(SdpMediaSection::kAudio);
+  AddTracks(*mSessionOff, "audio");
+  AddTracks(*mSessionAns, "audio");
+
+  OfferAnswer();
+
+  ValidateSetupAttribute(*mSessionOff, SdpSetupAttribute::kActpass);
+  ValidateSetupAttribute(*mSessionAns, SdpSetupAttribute::kActive);
+
+  SwapOfferAnswerRoles();
+
+  OfferAnswer();
+
+  ValidateSetupAttribute(*mSessionOff, SdpSetupAttribute::kActpass);
+  ValidateSetupAttribute(*mSessionAns, SdpSetupAttribute::kPassive);
+}
+
+
 TEST_F(JsepSessionTest, DISABLED_AudioCallOffererAttemptsSetupRoleSwitch) {
   types.push_back(SdpMediaSection::kAudio);
   AddTracks(*mSessionOff, "audio");
