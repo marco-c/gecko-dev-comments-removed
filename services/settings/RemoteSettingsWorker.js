@@ -65,9 +65,7 @@ const Agent = {
 
   async importJSONDump(bucket, collection) {
     const { data: records } = await loadJSONDump(bucket, collection);
-    if (records.length > 0) {
-      await importDumpIDB(bucket, collection, records);
-    }
+    await importDumpIDB(bucket, collection, records);
     return records.length;
   },
 };
@@ -141,7 +139,7 @@ async function importDumpIDB(bucket, collection, records) {
   });
 
   
-  const timestamp = Math.max(...records.map(record => record.last_modified));
+  const timestamp = records.length === 0 ? 0 : Math.max(...records.map(record => record.last_modified));
   await executeIDB(db, IDB_TIMESTAMPS_STORE, store => store.put({ cid, value: timestamp }));
 }
 

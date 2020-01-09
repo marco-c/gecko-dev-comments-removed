@@ -8,6 +8,7 @@ const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.j
 const IS_ANDROID = AppConstants.platform == "android";
 
 const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js");
+const { Utils } = ChromeUtils.import("resource://services-settings/Utils.jsm");
 const { UptakeTelemetry } = ChromeUtils.import("resource://services-common/uptake-telemetry.js");
 
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
@@ -132,6 +133,21 @@ add_task(async function test_get_loads_default_records_from_a_local_dump_when_da
   
 });
 add_task(clear_state);
+
+add_task(async function test_get_does_not_sync_if_empty_dump_is_provided() {
+  if (IS_ANDROID) {
+    
+    return;
+  }
+
+  const clientWithEmptyDump = RemoteSettings("example");
+  Assert.ok(!(await Utils.hasLocalData(clientWithEmptyDump)));
+
+  const data = await clientWithEmptyDump.get();
+
+  equal(data.length, 0);
+  Assert.ok(await Utils.hasLocalData(clientWithEmptyDump));
+});
 
 add_task(async function test_get_triggers_synchronization_when_database_is_empty() {
   
