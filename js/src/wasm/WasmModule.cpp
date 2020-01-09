@@ -26,8 +26,10 @@
 #include "js/BuildId.h"  
 #include "threading/LockGuard.h"
 #include "util/NSPR.h"
+#include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmInstance.h"
+#include "wasm/WasmIonCompile.h"
 #include "wasm/WasmJS.h"
 #include "wasm/WasmSerialize.h"
 
@@ -386,6 +388,12 @@ static UniqueMapping MapFile(PRFileDesc* file, PRFileInfo* info) {
 RefPtr<JS::WasmModule> wasm::DeserializeModule(PRFileDesc* bytecodeFile,
                                                UniqueChars filename,
                                                unsigned line) {
+  
+  
+  if (!BaselineCanCompile() && !IonCanCompile()) {
+    return nullptr;
+  }
+
   PRFileInfo bytecodeInfo;
   UniqueMapping bytecodeMapping = MapFile(bytecodeFile, &bytecodeInfo);
   if (!bytecodeMapping) {
@@ -418,8 +426,9 @@ RefPtr<JS::WasmModule> wasm::DeserializeModule(PRFileDesc* bytecodeFile,
   
   
   
-  
 
+  args->ionEnabled = true;
+  args->baselineEnabled = true;
   args->sharedMemoryEnabled = true;
 
   UniqueChars error;
