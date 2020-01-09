@@ -42,10 +42,6 @@ const whitelist = {
     "resource://gre/modules/sessionstore/SessionHistory.jsm",
 
     
-    "resource://formautofill/FormAutofill.jsm",
-    "resource://formautofill/FormAutofillContent.jsm",
-
-    
     "resource:///actors/AboutReaderChild.jsm",
     "resource:///actors/BrowserTabChild.jsm",
     "resource:///modules/ContentMetaHandler.jsm",
@@ -90,7 +86,6 @@ const whitelist = {
     "data:,ChromeUtils.import('resource://gre/modules/ExtensionProcessScript.jsm')",
     "resource://devtools/client/jsonview/converter-observer.js",
     "resource://gre/modules/WebRequestContent.js",
-    "data:,new function() {\n      ChromeUtils.import(\"resource://formautofill/FormAutofillContent.jsm\");\n    }",
   ]),
 };
 
