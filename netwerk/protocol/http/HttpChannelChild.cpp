@@ -1772,9 +1772,8 @@ void HttpChannelChild::BeginNonIPCRedirect(
     
     
     
-    if (mLoadInfo && mLoadInfo->GetServiceWorkerTaintingSynthesized()) {
-      nsCOMPtr<nsILoadInfo> newChannelLoadInfo;
-      Unused << newChannel->GetLoadInfo(getter_AddRefs(newChannelLoadInfo));
+    if (mLoadInfo->GetServiceWorkerTaintingSynthesized()) {
+      nsCOMPtr<nsILoadInfo> newChannelLoadInfo = newChannel->LoadInfo();
       if (newChannelLoadInfo) {
         newChannelLoadInfo->SynthesizeServiceWorkerTainting(
             mLoadInfo->GetTainting());
@@ -2276,10 +2275,10 @@ HttpChannelChild::OnRedirectVerifyCallback(nsresult result) {
     appCacheChannel->GetChooseApplicationCache(&chooseAppcache);
   }
 
-  nsCOMPtr<nsILoadInfo> newChannelLoadInfo;
+  nsCOMPtr<nsILoadInfo> newChannelLoadInfo = nullptr;
   nsCOMPtr<nsIChannel> newChannel = do_QueryInterface(mRedirectChannelChild);
   if (newChannel) {
-    Unused << newChannel->GetLoadInfo(getter_AddRefs(newChannelLoadInfo));
+    newChannelLoadInfo = newChannel->LoadInfo();
   }
 
   ChildLoadInfoForwarderArgs loadInfoForwarder;
@@ -2569,8 +2568,7 @@ HttpChannelChild::AsyncOpen(nsIStreamListener* aListener) {
 
 
 void HttpChannelChild::SetEventTarget() {
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  GetLoadInfo(getter_AddRefs(loadInfo));
+  nsCOMPtr<nsILoadInfo> loadInfo = LoadInfo();
 
   nsCOMPtr<nsIEventTarget> target =
       nsContentUtils::GetEventTargetByLoadInfo(loadInfo, TaskCategory::Network);

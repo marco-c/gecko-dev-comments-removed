@@ -1420,11 +1420,11 @@ NS_IMETHODIMP nsDocLoader::AsyncOnChannelRedirect(
     }
 
     nsCOMPtr<nsIURI> newURI;
-    nsCOMPtr<nsILoadInfo> info;
+    nsCOMPtr<nsILoadInfo> info = nullptr;
     if (delegate) {
       
       aNewChannel->GetURI(getter_AddRefs(newURI));
-      aNewChannel->GetLoadInfo(getter_AddRefs(info));
+      info = aNewChannel->LoadInfo();
     }
 
     RefPtr<Document> loadingDoc;
