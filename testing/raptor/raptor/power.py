@@ -1,6 +1,7 @@
 
 
 
+
 from __future__ import absolute_import
 
 import os
@@ -8,22 +9,26 @@ import re
 
 
 def init_android_power_test(raptor):
-    upload_dir = os.getenv('MOZ_UPLOAD_DIR')
+    upload_dir = os.getenv("MOZ_UPLOAD_DIR")
     if not upload_dir:
-        raptor.log.critical("% power test ignored; MOZ_UPLOAD_DIR unset" % raptor.config['app'])
+        raptor.log.critical(
+            "% power test ignored; MOZ_UPLOAD_DIR unset" % raptor.config["app"]
+        )
         return
     
     
     
     
     raptor.screen_off_timeout = raptor.device.shell_output(
-        "settings get system screen_off_timeout").strip()
+        "settings get system screen_off_timeout"
+    ).strip()
     raptor.device.shell_output("settings put system screen_off_timeout 7200000")
     raptor.device.shell_output("dumpsys batterystats --reset")
     raptor.device.shell_output("dumpsys batterystats --enable full-wake-history")
-    filepath = os.path.join(upload_dir, 'battery-before.txt')
-    with open(filepath, 'w') as output:
+    filepath = os.path.join(upload_dir, "battery-before.txt")
+    with open(filepath, "w") as output:
         output.write(raptor.device.shell_output("dumpsys battery"))
+
 
 
 
@@ -68,23 +73,26 @@ def init_android_power_test(raptor):
 
 
 def finish_android_power_test(raptor, test_name):
-    upload_dir = os.getenv('MOZ_UPLOAD_DIR')
+    upload_dir = os.getenv("MOZ_UPLOAD_DIR")
     if not upload_dir:
-        raptor.log.critical("% power test ignored because MOZ_UPLOAD_DIR was not set" % test_name)
+        raptor.log.critical(
+            "% power test ignored because MOZ_UPLOAD_DIR was not set" % test_name
+        )
         return
     
     raptor.device.shell_output(
-        "settings put system screen_off_timeout %s" % raptor.screen_off_timeout)
-    filepath = os.path.join(upload_dir, 'battery-after.txt')
-    with open(filepath, 'w') as output:
+        "settings put system screen_off_timeout %s" % raptor.screen_off_timeout
+    )
+    filepath = os.path.join(upload_dir, "battery-after.txt")
+    with open(filepath, "w") as output:
         output.write(raptor.device.shell_output("dumpsys battery"))
     verbose = raptor.device._verbose
     raptor.device._verbose = False
-    filepath = os.path.join(upload_dir, 'batterystats.csv')
-    with open(filepath, 'w') as output:
+    filepath = os.path.join(upload_dir, "batterystats.csv")
+    with open(filepath, "w") as output:
         output.write(raptor.device.shell_output("dumpsys batterystats --checkin"))
-    filepath = os.path.join(upload_dir, 'batterystats.txt')
-    with open(filepath, 'w') as output:
+    filepath = os.path.join(upload_dir, "batterystats.txt")
+    with open(filepath, "w") as output:
         batterystats = raptor.device.shell_output("dumpsys batterystats")
         output.write(batterystats)
     raptor.device._verbose = verbose
@@ -93,14 +101,14 @@ def finish_android_power_test(raptor, test_name):
     total = cpu = wifi = smearing = screen = proportional = 0
     full_screen = 0
     full_wifi = 0
-    re_uid = re.compile(r'proc=([^:]+):"%s"' % raptor.config['binary'])
-    re_estimated_power = re.compile(r'\s+Estimated power use [(]mAh[)]')
-    re_proportional = re.compile(r'proportional=([\d.]+)')
-    re_screen = re.compile(r'screen=([\d.]+)')
-    re_full_screen = re.compile(r'\s+Screen:\s+([\d.]+)')
-    re_full_wifi = re.compile(r'\s+Wifi:\s+([\d.]+)')
+    re_uid = re.compile(r'proc=([^:]+):"%s"' % raptor.config["binary"])
+    re_estimated_power = re.compile(r"\s+Estimated power use [(]mAh[)]")
+    re_proportional = re.compile(r"proportional=([\d.]+)")
+    re_screen = re.compile(r"screen=([\d.]+)")
+    re_full_screen = re.compile(r"\s+Screen:\s+([\d.]+)")
+    re_full_wifi = re.compile(r"\s+Wifi:\s+([\d.]+)")
     re_power = None
-    batterystats = batterystats.split('\n')
+    batterystats = batterystats.split("\n")
     for line in batterystats:
         if uid is None:
             
@@ -109,8 +117,9 @@ def finish_android_power_test(raptor, test_name):
             if match:
                 uid = match.group(1)
                 re_power = re.compile(
-                    r'\s+Uid %s:\s+([\d.]+) ([(] cpu=([\d.]+) wifi=([\d.]+) [)] '
-                    r'Including smearing: ([\d.]+))?' % uid)
+                    r"\s+Uid %s:\s+([\d.]+) ([(] cpu=([\d.]+) wifi=([\d.]+) [)] "
+                    r"Including smearing: ([\d.]+))?" % uid
+                )
                 continue
         if not estimated_power:
             
@@ -151,20 +160,25 @@ def finish_android_power_test(raptor, test_name):
     screen = full_screen if screen == 0 else screen
     wifi = full_wifi if wifi is None else wifi
 
-    raptor.log.info('power data for uid: %s, cpu: %s, wifi: %s, screen: %s, proportional: %s' %
-                    (uid, cpu, wifi, screen, proportional))
+    raptor.log.info(
+        "power data for uid: %s, cpu: %s, wifi: %s, screen: %s, proportional: %s"
+        % (uid, cpu, wifi, screen, proportional)
+    )
 
     
     
 
-    power_data = {'type': 'power',
-                  'test': test_name,
-                  'unit': 'mAh',
-                  'values': {
-                      'cpu': float(cpu),
-                      'wifi': float(wifi),
-                      'screen': float(screen),
-                      'proportional': float(proportional)}}
+    power_data = {
+        "type": "power",
+        "test": test_name,
+        "unit": "mAh",
+        "values": {
+            "cpu": float(cpu),
+            "wifi": float(wifi),
+            "screen": float(screen),
+            "proportional": float(proportional),
+        },
+    }
 
     raptor.log.info("submitting power data via control server directly")
     raptor.control_server.submit_supporting_data(power_data)
