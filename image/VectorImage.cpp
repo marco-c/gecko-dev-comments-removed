@@ -1236,6 +1236,11 @@ bool VectorImage::StartDecodingWithResult(uint32_t aFlags) {
   return mIsFullyLoaded;
 }
 
+bool VectorImage::RequestDecodeWithResult(uint32_t aFlags) {
+  
+  return mIsFullyLoaded;
+}
+
 NS_IMETHODIMP
 VectorImage::RequestDecodeForSize(const nsIntSize& aSize, uint32_t aFlags) {
   

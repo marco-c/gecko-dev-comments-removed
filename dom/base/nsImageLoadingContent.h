@@ -23,6 +23,7 @@
 #include "mozilla/ErrorResult.h"
 #include "nsIContentPolicy.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/net/ReferrerPolicy.h"
 #include "nsAttrValue.h"
 
@@ -81,6 +82,12 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
   void SetSyncDecodingHint(bool aHint);
+
+  
+
+
+
+  void NotifyOwnerDocumentActivityChanged();
 
  protected:
   enum ImageLoadType {
@@ -230,6 +237,18 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   uint32_t NaturalWidth();
   uint32_t NaturalHeight();
 
+  
+
+
+
+
+
+
+
+
+  already_AddRefed<mozilla::dom::Promise> QueueDecodeAsync(
+      mozilla::ErrorResult& aRv);
+
   enum class ImageDecodingType : uint8_t {
     Auto,
     Async,
@@ -240,6 +259,38 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   static const nsAttrValue::EnumTable* kDecodingTableDefault;
 
  private:
+  
+
+
+  void DecodeAsync(RefPtr<mozilla::dom::Promise>&& aPromise,
+                   uint32_t aRequestGeneration);
+
+  
+
+
+
+
+
+  void MaybeResolveDecodePromises();
+
+  
+
+
+  void RejectDecodePromises(nsresult aStatus);
+
+  
+
+
+
+
+  void MaybeAgeRequestGeneration(nsIURI* aNewURI);
+
+  
+
+
+
+  void MaybeDeregisterActivityObserver();
+
   
 
 
@@ -487,9 +538,32 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
+  nsTArray<RefPtr<mozilla::dom::Promise>> mDecodePromises;
+
+  
+
+
+
   mozilla::EventStates mForcedImageState;
 
   mozilla::TimeStamp mMostRecentRequestChange;
+
+  
+
+
+
+
+
+  size_t mOutstandingDecodePromises;
+
+  
+
+
+
+
+
+
+  uint32_t mRequestGeneration;
 
   int16_t mImageBlockingStatus;
   bool mLoadingEnabled : 1;

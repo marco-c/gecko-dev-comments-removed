@@ -95,6 +95,8 @@ nsImageLoadingContent::nsImageLoadingContent()
     : mCurrentRequestFlags(0),
       mPendingRequestFlags(0),
       mObserverList(nullptr),
+      mOutstandingDecodePromises(0),
+      mRequestGeneration(0),
       mImageBlockingStatus(nsIContentPolicy::ACCEPT),
       mLoadingEnabled(true),
       mIsImageStateForced(false),
@@ -120,17 +122,21 @@ nsImageLoadingContent::nsImageLoadingContent()
 void nsImageLoadingContent::DestroyImageLoadingContent() {
   
   
+  RejectDecodePromises(NS_ERROR_DOM_IMAGE_INVALID_REQUEST);
   ClearCurrentRequest(NS_BINDING_ABORTED);
   ClearPendingRequest(NS_BINDING_ABORTED);
 }
 
 nsImageLoadingContent::~nsImageLoadingContent() {
-  NS_ASSERTION(!mCurrentRequest && !mPendingRequest,
-               "DestroyImageLoadingContent not called");
-  NS_ASSERTION(!mObserverList.mObserver && !mObserverList.mNext,
-               "Observers still registered?");
-  NS_ASSERTION(mScriptedObservers.IsEmpty(),
-               "Scripted observers still registered?");
+  MOZ_ASSERT(!mCurrentRequest && !mPendingRequest,
+             "DestroyImageLoadingContent not called");
+  MOZ_ASSERT(!mObserverList.mObserver && !mObserverList.mNext,
+             "Observers still registered?");
+  MOZ_ASSERT(mScriptedObservers.IsEmpty(),
+             "Scripted observers still registered?");
+  MOZ_ASSERT(mOutstandingDecodePromises == 0,
+             "Decode promises still unfulfilled?");
+  MOZ_ASSERT(mDecodePromises.IsEmpty(), "Decode promises still unfulfilled?");
 }
 
 
@@ -204,6 +210,11 @@ nsImageLoadingContent::Notify(imgIRequest* aRequest, int32_t aType,
     return OnLoadComplete(aRequest, status);
   }
 
+  if (aType == imgINotificationObserver::FRAME_COMPLETE &&
+      mCurrentRequest == aRequest) {
+    MaybeResolveDecodePromises();
+  }
+
   if (aType == imgINotificationObserver::DECODE_COMPLETE) {
     nsCOMPtr<imgIContainer> container;
     aRequest->GetImage(getter_AddRefs(container));
@@ -260,6 +271,7 @@ nsresult nsImageLoadingContent::OnLoadComplete(imgIRequest* aRequest,
   nsCOMPtr<nsINode> thisNode =
       do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
   SVGObserverUtils::InvalidateDirectRenderingObservers(thisNode->AsElement());
+  MaybeResolveDecodePromises();
 
   return NS_OK;
 }
@@ -331,6 +343,166 @@ nsresult nsImageLoadingContent::OnImageIsAnimated(imgIRequest* aRequest) {
 void nsImageLoadingContent::SetLoadingEnabled(bool aLoadingEnabled) {
   if (nsContentUtils::GetImgLoaderForChannel(nullptr, nullptr)) {
     mLoadingEnabled = aLoadingEnabled;
+  }
+}
+
+already_AddRefed<Promise> nsImageLoadingContent::QueueDecodeAsync(
+    ErrorResult& aRv) {
+  Document* doc = GetOurOwnerDoc();
+  RefPtr<Promise> promise = Promise::Create(doc->GetScopeObject(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  class QueueDecodeTask final : public Runnable {
+   public:
+    QueueDecodeTask(nsImageLoadingContent* aOwner, Promise* aPromise,
+                    uint32_t aRequestGeneration)
+        : Runnable("nsImageLoadingContent::QueueDecodeTask"),
+          mOwner(aOwner),
+          mPromise(aPromise),
+          mRequestGeneration(aRequestGeneration) {}
+
+    NS_IMETHOD Run() override {
+      mOwner->DecodeAsync(std::move(mPromise), mRequestGeneration);
+      return NS_OK;
+    }
+
+   private:
+    RefPtr<nsImageLoadingContent> mOwner;
+    RefPtr<Promise> mPromise;
+    uint32_t mRequestGeneration;
+  };
+
+  if (++mOutstandingDecodePromises == 1) {
+    MOZ_ASSERT(mDecodePromises.IsEmpty());
+    doc->RegisterActivityObserver(this);
+  }
+
+  auto task = MakeRefPtr<QueueDecodeTask>(this, promise, mRequestGeneration);
+  nsContentUtils::RunInStableState(task.forget());
+  return promise.forget();
+}
+
+void nsImageLoadingContent::DecodeAsync(RefPtr<Promise>&& aPromise,
+                                        uint32_t aRequestGeneration) {
+  MOZ_ASSERT(nsContentUtils::IsInStableOrMetaStableState());
+  MOZ_ASSERT(aPromise);
+  MOZ_ASSERT(mOutstandingDecodePromises > mDecodePromises.Length());
+
+  
+  if (aRequestGeneration != mRequestGeneration) {
+    aPromise->MaybeReject(NS_ERROR_DOM_IMAGE_INVALID_REQUEST);
+    
+    
+    --mOutstandingDecodePromises;
+    MaybeDeregisterActivityObserver();
+    return;
+  }
+
+  bool wasEmpty = mDecodePromises.IsEmpty();
+  mDecodePromises.AppendElement(std::move(aPromise));
+  if (wasEmpty) {
+    MaybeResolveDecodePromises();
+  }
+}
+
+void nsImageLoadingContent::MaybeResolveDecodePromises() {
+  if (mDecodePromises.IsEmpty()) {
+    return;
+  }
+
+  if (!mCurrentRequest) {
+    RejectDecodePromises(NS_ERROR_DOM_IMAGE_INVALID_REQUEST);
+    return;
+  }
+
+  
+  
+  if (!GetOurOwnerDoc()->IsCurrentActiveDocument()) {
+    RejectDecodePromises(NS_ERROR_DOM_IMAGE_INACTIVE_DOCUMENT);
+    return;
+  }
+
+  
+  uint32_t status = imgIRequest::STATUS_NONE;
+  mCurrentRequest->GetImageStatus(&status);
+  if (status & imgIRequest::STATUS_ERROR) {
+    RejectDecodePromises(NS_ERROR_DOM_IMAGE_BROKEN);
+    return;
+  }
+
+  
+  
+  if (!(status & imgIRequest::STATUS_SIZE_AVAILABLE)) {
+    return;
+  }
+
+  
+  
+  uint32_t flags = imgIContainer::FLAG_HIGH_QUALITY_SCALING |
+                   imgIContainer::FLAG_AVOID_REDECODE_FOR_SIZE;
+  if (!mCurrentRequest->RequestDecodeWithResult(flags)) {
+    return;
+  }
+
+  
+  if (!(status & imgIRequest::STATUS_LOAD_COMPLETE)) {
+    return;
+  }
+
+  for (auto& promise : mDecodePromises) {
+    promise->MaybeResolveWithUndefined();
+  }
+
+  MOZ_ASSERT(mOutstandingDecodePromises >= mDecodePromises.Length());
+  mOutstandingDecodePromises -= mDecodePromises.Length();
+  mDecodePromises.Clear();
+  MaybeDeregisterActivityObserver();
+}
+
+void nsImageLoadingContent::RejectDecodePromises(nsresult aStatus) {
+  if (mDecodePromises.IsEmpty()) {
+    return;
+  }
+
+  for (auto& promise : mDecodePromises) {
+    promise->MaybeReject(aStatus);
+  }
+
+  MOZ_ASSERT(mOutstandingDecodePromises >= mDecodePromises.Length());
+  mOutstandingDecodePromises -= mDecodePromises.Length();
+  mDecodePromises.Clear();
+  MaybeDeregisterActivityObserver();
+}
+
+void nsImageLoadingContent::MaybeAgeRequestGeneration(nsIURI* aNewURI) {
+  MOZ_ASSERT(mCurrentRequest);
+
+  
+  
+  
+  
+  
+  
+  if (aNewURI) {
+    nsCOMPtr<nsIURI> currentURI;
+    mCurrentRequest->GetURI(getter_AddRefs(currentURI));
+
+    bool equal = false;
+    if (NS_SUCCEEDED(aNewURI->Equals(currentURI, &equal)) && equal) {
+      return;
+    }
+  }
+
+  ++mRequestGeneration;
+  RejectDecodePromises(NS_ERROR_DOM_IMAGE_INVALID_REQUEST);
+}
+
+void nsImageLoadingContent::MaybeDeregisterActivityObserver() {
+  if (mOutstandingDecodePromises == 0) {
+    MOZ_ASSERT(mDecodePromises.IsEmpty());
+    GetOurOwnerDoc()->UnregisterActivityObserver(this);
   }
 }
 
@@ -787,6 +959,15 @@ nsImageLoadingContent::LoadImageWithChannel(nsIChannel* aChannel,
   
 
   
+  
+  
+  if (mCurrentRequest && !HaveSize(mCurrentRequest)) {
+    nsCOMPtr<nsIURI> uri;
+    aChannel->GetOriginalURI(getter_AddRefs(uri));
+    MaybeAgeRequestGeneration(uri);
+  }
+
+  
   AutoStateChanger changer(this, true);
 
   
@@ -942,6 +1123,13 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
       
       return NS_OK;
     }
+  }
+
+  
+  
+  
+  if (mCurrentRequest && !HaveSize(mCurrentRequest)) {
+    MaybeAgeRequestGeneration(aNewURI);
   }
 
   
@@ -1120,11 +1308,13 @@ void nsImageLoadingContent::UpdateImageState(bool aNotify) {
   } else if (!mCurrentRequest) {
     
     mBroken = true;
+    RejectDecodePromises(NS_ERROR_DOM_IMAGE_BROKEN);
   } else {
     uint32_t currentLoadStatus;
     nsresult rv = mCurrentRequest->GetImageStatus(&currentLoadStatus);
     if (NS_FAILED(rv) || (currentLoadStatus & imgIRequest::STATUS_ERROR)) {
       mBroken = true;
+      RejectDecodePromises(NS_ERROR_DOM_IMAGE_BROKEN);
     } else if (!(currentLoadStatus & imgIRequest::STATUS_SIZE_AVAILABLE)) {
       mLoading = true;
     }
@@ -1135,6 +1325,7 @@ void nsImageLoadingContent::UpdateImageState(bool aNotify) {
 }
 
 void nsImageLoadingContent::CancelImageRequests(bool aNotify) {
+  RejectDecodePromises(NS_ERROR_DOM_IMAGE_INVALID_REQUEST);
   AutoStateChanger changer(this, aNotify);
   ClearPendingRequest(NS_BINDING_ABORTED, Some(OnNonvisible::DISCARD_IMAGES));
   ClearCurrentRequest(NS_BINDING_ABORTED, Some(OnNonvisible::DISCARD_IMAGES));
@@ -1183,6 +1374,7 @@ nsresult nsImageLoadingContent::FireEvent(const nsAString& aEventType,
                                           bool aIsCancelable) {
   if (nsContentUtils::DocumentInactiveForImageLoads(GetOurOwnerDoc())) {
     
+    RejectDecodePromises(NS_ERROR_DOM_IMAGE_INACTIVE_DOCUMENT);
     return NS_OK;
   }
 
@@ -1318,6 +1510,13 @@ void nsImageLoadingContent::MakePendingRequestCurrent() {
   
   
   
+  nsCOMPtr<nsIURI> uri;
+  mPendingRequest->GetURI(getter_AddRefs(uri));
+  MaybeAgeRequestGeneration(uri);
+
+  
+  
+  
   
   
   ImageRequestAutoLock autoLock(mCurrentRequest);
@@ -1406,6 +1605,12 @@ bool nsImageLoadingContent::HaveSize(imgIRequest* aImage) {
   uint32_t status;
   nsresult rv = aImage->GetImageStatus(&status);
   return (NS_SUCCEEDED(rv) && (status & imgIRequest::STATUS_SIZE_AVAILABLE));
+}
+
+void nsImageLoadingContent::NotifyOwnerDocumentActivityChanged() {
+  if (!GetOurOwnerDoc()->IsCurrentActiveDocument()) {
+    RejectDecodePromises(NS_ERROR_DOM_IMAGE_INACTIVE_DOCUMENT);
+  }
 }
 
 void nsImageLoadingContent::BindToTree(Document* aDocument, nsIContent* aParent,

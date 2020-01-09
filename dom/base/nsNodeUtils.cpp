@@ -499,6 +499,16 @@ already_AddRefed<nsINode> nsNodeUtils::CloneAndAdopt(
         nsObjectLoadingContent* olc =
             static_cast<nsObjectLoadingContent*>(objectLoadingContent.get());
         olc->NotifyOwnerDocumentActivityChanged();
+      } else {
+        
+        
+        nsCOMPtr<nsIImageLoadingContent> imageLoadingContent(
+            do_QueryInterface(aNode));
+        if (imageLoadingContent) {
+          auto ilc =
+              static_cast<nsImageLoadingContent*>(imageLoadingContent.get());
+          ilc->NotifyOwnerDocumentActivityChanged();
+        }
       }
     }
 
