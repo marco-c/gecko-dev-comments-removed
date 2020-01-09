@@ -496,7 +496,7 @@ nsresult Http2Stream::ParseHttpRequestHeaders(const char *buf, uint32_t avail,
 
       
       RefPtr<nsHttpConnectionInfo> ci(Transaction()->ConnectionInfo());
-      if (ci && ci->GetTrrUsed()) {
+      if (ci && ci->GetIsTrrServiceChannel()) {
         mSession->IncrementTrrCounter();
       }
 
