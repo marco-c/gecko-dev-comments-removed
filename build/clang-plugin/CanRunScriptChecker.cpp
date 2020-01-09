@@ -67,7 +67,14 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   auto KnownLiveSmartPtr = anyOf(StackSmartPtr, ConstMemberOfThisSmartPtr);
   auto MozKnownLiveCall =
-    callExpr(callee(functionDecl(hasName("MOZ_KnownLive"))));
+    ignoreTrivials(callExpr(callee(functionDecl(hasName("MOZ_KnownLive")))));
+
+  
+  
+  
+  
+  
+  auto LocalKnownLive = anyOf(KnownLiveSmartPtr, MozKnownLiveCall);
 
   auto InvalidArg =
       
@@ -86,13 +93,13 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
           
           unless(cxxMemberCallExpr(on(KnownLiveSmartPtr))),
           
+          
           unless(
-            allOf(
-              cxxOperatorCallExpr(hasOverloadedOperatorName("*")),
-              callExpr(allOf(
-                hasAnyArgument(KnownLiveSmartPtr),
-                argumentCountIs(1)
-              ))
+            cxxOperatorCallExpr(
+              anyOf(hasOverloadedOperatorName("*"),
+                    hasOverloadedOperatorName("->")),
+              hasAnyArgument(LocalKnownLive),
+              argumentCountIs(1)
             )
           ),
           
@@ -141,6 +148,9 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
           ),
           expr().bind("invalidArg")));
 
+  
+  
+  
   auto OptionalInvalidExplicitArg = anyOf(
       
       hasAnyArgument(InvalidArg),
@@ -161,13 +171,9 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
                   OptionalInvalidExplicitArg,
                   
                   anyOf(
-                      
-                      on(cxxOperatorCallExpr(
-                          anyOf(hasAnyArgument(InvalidArg), anything()))),
-                      
-                      on(InvalidArg),
-
-                      anything()),
+                    on(InvalidArg),
+                    anything()
+                  ),
                   expr().bind("callExpr")),
               
               callExpr(

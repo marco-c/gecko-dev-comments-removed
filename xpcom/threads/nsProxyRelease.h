@@ -216,7 +216,7 @@ inline NS_HIDDEN_(void)
 
 
 template <class T>
-class nsMainThreadPtrHolder final {
+class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHolder final {
  public:
   
   
@@ -310,7 +310,7 @@ class nsMainThreadPtrHolder final {
 };
 
 template <class T>
-class nsMainThreadPtrHandle {
+class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHandle {
   RefPtr<nsMainThreadPtrHolder<T>> mPtr;
 
  public:

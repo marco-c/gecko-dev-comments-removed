@@ -624,8 +624,12 @@ nsGeolocationService::Update(nsIDOMGeoPosition* aSomewhere) {
 
 NS_IMETHODIMP
 nsGeolocationService::NotifyError(uint16_t aErrorCode) {
-  for (uint32_t i = 0; i < mGeolocators.Length(); i++) {
-    mGeolocators[i]->NotifyError(aErrorCode);
+  
+  nsTArray<RefPtr<Geolocation>> geolocators;
+  geolocators.AppendElements(mGeolocators);
+  for (uint32_t i = 0; i < geolocators.Length(); i++) {
+    
+    MOZ_KnownLive(geolocators[i])->NotifyError(aErrorCode);
   }
   return NS_OK;
 }
