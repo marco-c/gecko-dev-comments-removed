@@ -2336,55 +2336,133 @@ static ReturnAbortOnError CheckDowngrade(nsIFile* aProfileDir,
 
 
 
+static void ExtractCompatVersionInfo(const nsACString& aCompatVersion,
+                                     nsACString& aAppVersion,
+                                     nsACString& aAppBuildID,
+                                     nsACString& aPlatformBuildID) {
+  int32_t underscorePos = aCompatVersion.FindChar('_');
+  int32_t slashPos = aCompatVersion.FindChar('/');
 
-
-
-
-
-
-
-
-#define BUILDID_DATE_LENGTH 8
-#define BUILDID_TIME_LENGTH 6
-#define BUILDID_LENGTH BUILDID_DATE_LENGTH + BUILDID_TIME_LENGTH
-
-static void GetBuildIDVersions(const nsACString& aFullVersion, int32_t aPos,
-                               nsACString& aBuildVersions) {
-  
-  aBuildVersions.Assign(
-      Substring(aFullVersion, aPos, BUILDID_DATE_LENGTH) +
-      NS_LITERAL_CSTRING(".") +
-      Substring(aFullVersion, aPos + BUILDID_DATE_LENGTH, BUILDID_TIME_LENGTH));
-}
-
-static Version GetComparableVersion(const nsCString& aVersionStr) {
-  
-  
-  
-  
-  const uint32_t kExpectedLength = BUILDID_LENGTH + 1;
-
-  int32_t underscorePos = aVersionStr.FindChar('_');
-  int32_t slashPos = aVersionStr.FindChar('/');
   if (underscorePos == kNotFound || slashPos == kNotFound ||
-      (slashPos - underscorePos) != kExpectedLength ||
-      (aVersionStr.Length() - slashPos) != kExpectedLength) {
+      slashPos < underscorePos) {
     NS_WARNING(
         "compatibility.ini Version string does not match the expected format.");
-    return Version(aVersionStr.get());
+
+    
+    aAppVersion = aCompatVersion;
+    aAppBuildID.Truncate(0);
+    aPlatformBuildID.Truncate(0);
+    return;
   }
 
-  nsCString appBuild, platBuild;
-  NS_NAMED_LITERAL_CSTRING(dot, ".");
+  aAppVersion = Substring(aCompatVersion, 0, underscorePos);
+  aAppBuildID = Substring(aCompatVersion, underscorePos + 1, slashPos - (underscorePos + 1));
+  aPlatformBuildID = Substring(aCompatVersion, slashPos + 1);
+}
 
-  const nsACString& version = Substring(aVersionStr, 0, underscorePos);
+static bool IsNewIDLower(nsACString& oldID, nsACString& newID) {
+  
+  
+  
 
-  GetBuildIDVersions(aVersionStr, underscorePos + 1,  appBuild);
-  GetBuildIDVersions(aVersionStr, slashPos + 1,  platBuild);
+  
+  
+  bool isNumeric = true;
+  const char* pos = oldID.BeginReading();
+  const char* end = oldID.EndReading();
+  while (pos != end) {
+    if (!IsAsciiDigit(*pos)) {
+      isNumeric = false;
+      break;
+    }
+    pos++;
+  }
 
-  const nsACString& fullVersion = version + dot + appBuild + dot + platBuild;
+  if (isNumeric) {
+    pos = newID.BeginReading();
+    end = newID.EndReading();
+    while (pos != end) {
+      if (!IsAsciiDigit(*pos)) {
+        isNumeric = false;
+        break;
+      }
+      pos++;
+    }
+  }
 
-  return Version(PromiseFlatCString(fullVersion).get());
+  if (isNumeric) {
+    nsresult rv;
+    uint64_t oldVal;
+    uint64_t newVal;
+    oldVal = oldID.ToInteger64(&rv);
+
+    if (NS_SUCCEEDED(rv)) {
+      newVal = newID.ToInteger64(&rv);
+
+      if (NS_SUCCEEDED(rv)) {
+        
+        return newVal < oldVal;
+      }
+    }
+  }
+
+  
+  
+  
+  
+  return Version(PromiseFlatCString(newID).get()) <
+         Version(PromiseFlatCString(oldID).get());
+}
+
+
+
+
+
+
+
+bool CheckCompatVersions(const nsACString& aOldCompatVersion,
+                         const nsACString& aNewCompatVersion,
+                         bool* aIsDowngrade) {
+  
+  if (aOldCompatVersion.Equals(aNewCompatVersion)) {
+    *aIsDowngrade = false;
+    return true;
+  }
+
+  
+  
+
+  nsCString oldVersion;
+  nsCString oldAppBuildID;
+  nsCString oldPlatformBuildID;
+  ExtractCompatVersionInfo(aOldCompatVersion, oldVersion, oldAppBuildID,
+                           oldPlatformBuildID);
+
+  nsCString newVersion;
+  nsCString newAppBuildID;
+  nsCString newPlatformBuildID;
+  ExtractCompatVersionInfo(aNewCompatVersion, newVersion, newAppBuildID,
+                           newPlatformBuildID);
+
+  
+  if (Version(newVersion.get()) < Version(oldVersion.get())) {
+    *aIsDowngrade = true;
+    return false;
+  }
+
+  
+  if (IsNewIDLower(oldAppBuildID, newAppBuildID)) {
+    *aIsDowngrade = true;
+    return false;
+  }
+
+  if (IsNewIDLower(oldPlatformBuildID, newPlatformBuildID)) {
+    *aIsDowngrade = true;
+    return false;
+  }
+
+  *aIsDowngrade = false;
+  return false;
 }
 
 
@@ -2418,10 +2496,7 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
     return false;
   }
 
-  if (!aVersion.Equals(aLastVersion)) {
-    Version current = GetComparableVersion(aVersion);
-    Version last = GetComparableVersion(aLastVersion);
-    *aIsDowngrade = last > current;
+  if (!CheckCompatVersions(aLastVersion, aVersion, aIsDowngrade)) {
     return false;
   }
 
@@ -2470,12 +2545,18 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
   return true;
 }
 
-static void BuildVersion(nsCString& aBuf) {
-  aBuf.Assign(gAppData->version);
+void BuildCompatVersion(const char* aAppVersion, const char* aAppBuildID,
+                        const char* aToolkitBuildID, nsACString& aBuf) {
+  aBuf.Assign(aAppVersion);
   aBuf.Append('_');
-  aBuf.Append(gAppData->buildID);
+  aBuf.Append(aAppBuildID);
   aBuf.Append('/');
-  aBuf.Append(gToolkitBuildID);
+  aBuf.Append(aToolkitBuildID);
+}
+
+static void BuildVersion(nsCString& aBuf) {
+  BuildCompatVersion(gAppData->version, gAppData->buildID, gToolkitBuildID,
+                     aBuf);
 }
 
 static void WriteVersion(nsIFile* aProfileDir, const nsCString& aVersion,
