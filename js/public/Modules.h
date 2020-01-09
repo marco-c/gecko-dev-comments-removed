@@ -87,10 +87,9 @@ extern JS_PUBLIC_API bool FinishDynamicModuleImport(
 
 
 
-extern JS_PUBLIC_API bool CompileModule(JSContext* cx,
-                                        const ReadOnlyCompileOptions& options,
-                                        SourceText<char16_t>& srcBuf,
-                                        MutableHandle<JSObject*> moduleRecord);
+extern JS_PUBLIC_API JSObject* CompileModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<char16_t>& srcBuf);
 
 
 
