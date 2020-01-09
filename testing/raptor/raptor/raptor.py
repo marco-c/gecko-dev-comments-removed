@@ -1018,6 +1018,9 @@ class RaptorAndroid(Raptor):
 
             self.run_test_setup(test)
 
+            
+            self.clear_app_data()
+
             if test['browser_cycle'] == 1:
                 if test.get('playback') is not None:
                     self.start_playback(test)
@@ -1034,9 +1037,6 @@ class RaptorAndroid(Raptor):
             else:
                 
                 self.device.stop_application(self.config['binary'])
-
-                
-                self.clear_app_data()
 
                 
                 
