@@ -10498,7 +10498,8 @@ void PresShell::UpdateViewportOverridden(bool aAfterInitialization) {
   
   
   
-  bool needMVM = nsLayoutUtils::ShouldHandleMetaViewport(mDocument);
+  bool needMVM = nsLayoutUtils::ShouldHandleMetaViewport(mDocument) ||
+                 nsLayoutUtils::AllowZoomingForDocument(mDocument);
 
   if (needMVM == !!mMobileViewportManager) {
     
