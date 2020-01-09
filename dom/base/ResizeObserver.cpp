@@ -145,13 +145,17 @@ void ResizeObserver::Observe(Element& aTarget,
   RefPtr<ResizeObservation> observation;
 
   if (mObservationMap.Get(&aTarget, getter_AddRefs(observation))) {
-    
-    
-    
-    
-    
-    
-    return;
+    if (observation->BoxOptions() == aOptions.mBox) {
+      
+      
+      
+      
+      
+      
+      
+      return;
+    }
+    Unobserve(aTarget, aRv);
   }
 
   nsIFrame* frame = aTarget.GetPrimaryFrame();
