@@ -288,4 +288,14 @@ module.exports = {
     
     "no-label-var": "error",
   },
+
+  "overrides": [{
+    "files": "test/xpcshell/head*.js",
+    "rules": {
+      "no-unused-vars": ["error", {
+        "args": "none",
+        "vars": "local",
+      }],
+    },
+  }],
 };
