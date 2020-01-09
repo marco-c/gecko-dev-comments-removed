@@ -552,17 +552,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return { top, left, width, height };
     }
 
-    move(box) {
-      this.applyStyles({
-        top: this.formatStyle(box.top, "px"),
-        bottom: this.formatStyle(box.bottom, "px"),
-        left: this.formatStyle(box.left, "px"),
-        right: this.formatStyle(box.right, "px"),
-        height: this.formatStyle(box.height, "px"),
-        width: this.formatStyle(box.width, "px")
-      });
-    }
-
     
 
 
@@ -881,21 +870,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           intersectArea = x * y;
       return intersectArea / (this.height * this.width);
     }
-
-    
-    
-    
-    
-    toCSSCompatValues(reference) {
-      return {
-        top: this.top - reference.top,
-        bottom: reference.bottom - this.bottom,
-        left: this.left - reference.left,
-        right: reference.right - this.right,
-        height: this.height,
-        width: this.width
-      };
-    }
   }
 
   BoxPosition.prototype.clone = function(){
@@ -1056,140 +1030,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     }
 
     return box;
-  }
-
-  
-  
-  
-  function moveBoxToLinePosition(window, styleBox, containerBox, boxPositions) {
-
-    
-    
-    
-    
-    
-    function findBestPosition(b, axis) {
-      var bestPosition,
-          specifiedPosition = new BoxPosition(b),
-          percentage = 1; 
-
-      for (var i = 0; i < axis.length; i++) {
-        while (b.overlapsOppositeAxis(containerBox, axis[i]) ||
-               (b.within(containerBox) && b.overlapsAny(boxPositions))) {
-          b.move(axis[i]);
-        }
-        
-        
-        if (b.within(containerBox)) {
-          return b;
-        }
-        var p = b.intersectPercentage(containerBox);
-        
-        
-        if (percentage > p) {
-          bestPosition = new BoxPosition(b);
-          percentage = p;
-        }
-        
-        b = new BoxPosition(specifiedPosition);
-      }
-      return bestPosition || specifiedPosition;
-    }
-
-    var boxPosition = new BoxPosition(styleBox),
-        cue = styleBox.cue,
-        linePos = cue.computedLine,
-        axis = [];
-
-    
-    if (cue.snapToLines) {
-      var size;
-      switch (cue.vertical) {
-      case "":
-        axis = [ "+y", "-y" ];
-        size = "height";
-        break;
-      case "rl":
-        axis = [ "+x", "-x" ];
-        size = "width";
-        break;
-      case "lr":
-        axis = [ "-x", "+x" ];
-        size = "width";
-        break;
-      }
-
-      var step = boxPosition.lineHeight,
-          position = step * Math.round(linePos),
-          maxPosition = containerBox[size] + step,
-          initialAxis = axis[0];
-
-      if (step == 0) {
-        return;
-      }
-
-      
-      
-      
-      if (Math.abs(position) > maxPosition) {
-        position = position < 0 ? -1 : 1;
-        position *= Math.ceil(maxPosition / step) * step;
-      }
-
-      
-      
-      
-      
-      if (linePos < 0) {
-        position += cue.vertical === "" ? containerBox.height : containerBox.width;
-        axis = axis.reverse();
-      }
-
-      
-      
-      boxPosition.move(initialAxis, position);
-
-    } else {
-      
-      var calculatedPercentage = (boxPosition.lineHeight / containerBox.height) * 100;
-
-      switch (cue.lineAlign) {
-      case "center":
-        linePos -= (calculatedPercentage / 2);
-        break;
-      case "end":
-        linePos -= calculatedPercentage;
-        break;
-      }
-
-      
-      switch (cue.vertical) {
-      case "":
-        styleBox.applyStyles({
-          top: styleBox.formatStyle(linePos, "%")
-        });
-        break;
-      case "rl":
-        styleBox.applyStyles({
-          left: styleBox.formatStyle(linePos, "%")
-        });
-        break;
-      case "lr":
-        styleBox.applyStyles({
-          right: styleBox.formatStyle(linePos, "%")
-        });
-        break;
-      }
-
-      axis = [ "+y", "-x", "+x", "-y" ];
-
-      
-      
-      boxPosition = new BoxPosition(styleBox);
-    }
-
-    var bestPosition = findBestPosition(boxPosition, axis);
-    styleBox.move(bestPosition.toCSSCompatValues(containerBox));
   }
 
   function WebVTT() {
