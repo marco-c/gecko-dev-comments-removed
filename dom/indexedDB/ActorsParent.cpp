@@ -15694,8 +15694,18 @@ QuotaClient::~QuotaClient() {
 nsresult QuotaClient::AsyncDeleteFile(FileManager* aFileManager,
                                       int64_t aFileId) {
   AssertIsOnBackgroundThread();
-  MOZ_ASSERT(mDeleteTimer);
 
+  if (mShutdownRequested) {
+    
+    
+    
+    
+    
+
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(mDeleteTimer);
   MOZ_ALWAYS_SUCCEEDS(mDeleteTimer->Cancel());
 
   nsresult rv = mDeleteTimer->InitWithNamedFuncCallback(
@@ -24000,10 +24010,7 @@ nsresult ObjectStoreAddOrPutRequestOp::DoDatabaseWork(
     nsCString flatCloneData;
     flatCloneData.SetLength(cloneDataSize);
     auto iter = cloneData.Start();
-    if (NS_WARN_IF(!cloneData.ReadBytes(iter, flatCloneData.BeginWriting(),
-                                        cloneDataSize))) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
+    cloneData.ReadBytes(iter, flatCloneData.BeginWriting(), cloneDataSize);
 
     
     const char* uncompressed = flatCloneData.BeginReading();
@@ -24242,10 +24249,7 @@ ObjectStoreAddOrPutRequestOp::SCInputStream::ReadSegments(
     *_retval += count;
     aCount -= count;
 
-    if (NS_WARN_IF(!mData.Advance(mIter, count))) {
-      
-      return NS_OK;
-    }
+    mData.Advance(mIter, count);
   }
 
   return NS_OK;
