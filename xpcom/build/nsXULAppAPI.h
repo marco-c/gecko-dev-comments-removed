@@ -402,10 +402,6 @@ XRE_API(void, XRE_SetAndroidChildFds,
 XRE_API(void, XRE_SetProcessType, (const char* aProcessTypeString))
 
 
-XRE_API(bool, XRE_TakeMinidumpForChild,
-        (uint32_t aChildPid, nsIFile** aDump, uint32_t* aSequence))
-
-
 #if defined(XP_WIN)
 
 

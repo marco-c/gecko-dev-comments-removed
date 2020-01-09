@@ -262,14 +262,6 @@ void XRE_SetProcessType(const char* aProcessTypeString) {
   }
 }
 
-
-
-
-bool XRE_TakeMinidumpForChild(uint32_t aChildPid, nsIFile** aDump,
-                              uint32_t* aSequence) {
-  return CrashReporter::TakeMinidumpForChild(aChildPid, aDump, aSequence);
-}
-
 bool
 #if defined(XP_WIN)
 XRE_SetRemoteExceptionHandler(const char* aPipe ,
