@@ -133,18 +133,40 @@ class UrlbarView {
 
 
 
-  selectNextItem({reverse = false} = {}) {
+
+  selectBy(amount, {reverse = false} = {}) {
     if (!this.isOpen) {
       throw new Error("UrlbarView: Cannot select an item if the view isn't open.");
     }
 
-    let row;
-    if (reverse) {
-      row = (this._selected && this._selected.previousElementSibling) ||
-            ((this._selected && this.allowEmptySelection) ? null : this._rows.lastElementChild);
-    } else {
-      row = (this._selected && this._selected.nextElementSibling) ||
-            ((this._selected && this.allowEmptySelection) ? null : this._rows.firstElementChild);
+    let row = this._selected;
+
+    if (!row) {
+      this._selectItem(reverse ? this._rows.lastElementChild :
+                                 this._rows.firstElementChild);
+      return;
+    }
+
+    let endReached = reverse ?
+      (row == this._rows.firstElementChild) :
+      (row == this._rows.lastElementChild);
+    if (endReached) {
+      if (this.allowEmptySelection) {
+        row = null;
+      } else {
+        row = reverse ? this._rows.lastElementChild :
+                        this._rows.firstElementChild;
+      }
+      this._selectItem(row);
+      return;
+    }
+
+    while (amount-- > 0) {
+      let next = reverse ? row.previousElementSibling : row.nextElementSibling;
+      if (!next) {
+        break;
+      }
+      row = next;
     }
     this._selectItem(row);
   }
