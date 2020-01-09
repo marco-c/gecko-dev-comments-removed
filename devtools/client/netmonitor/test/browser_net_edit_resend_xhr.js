@@ -32,7 +32,11 @@ add_task(async function() {
   getContextMenuItem(monitor, "request-list-context-resend").click();
 
   
+  
+  
+  await waitUntil(() => document.querySelector(".custom-request-panel"));
   document.querySelector("#custom-request-send-button").click();
+  await waitForNetworkEvents(monitor, 1);
 
   
   const clonedRequest = document.querySelectorAll(".request-list-item")[1];
