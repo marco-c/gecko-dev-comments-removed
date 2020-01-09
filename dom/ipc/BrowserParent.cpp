@@ -1391,42 +1391,36 @@ bool BrowserParent::QueryDropLinksForVerification() {
   
   mVerifyDropLinks.Clear();
 
-  uint32_t linksCount = 0;
-  nsIDroppedLinkItem** droppedLinkedItems = nullptr;
-  dropHandler->QueryLinks(initialDataTransfer, &linksCount,
-                          &droppedLinkedItems);
+  nsTArray<RefPtr<nsIDroppedLinkItem>> droppedLinkItems;
+  dropHandler->QueryLinks(initialDataTransfer, droppedLinkItems);
 
   
   
   
   nsresult rv = NS_OK;
-  for (uint32_t i = 0; i < linksCount; i++) {
+  for (nsIDroppedLinkItem* item : droppedLinkItems) {
     nsString tmp;
-    rv = droppedLinkedItems[i]->GetUrl(tmp);
+    rv = item->GetUrl(tmp);
     if (NS_FAILED(rv)) {
       NS_WARNING("Failed to query url for verification");
       break;
     }
     mVerifyDropLinks.AppendElement(tmp);
 
-    rv = droppedLinkedItems[i]->GetName(tmp);
+    rv = item->GetName(tmp);
     if (NS_FAILED(rv)) {
       NS_WARNING("Failed to query name for verification");
       break;
     }
     mVerifyDropLinks.AppendElement(tmp);
 
-    rv = droppedLinkedItems[i]->GetType(tmp);
+    rv = item->GetType(tmp);
     if (NS_FAILED(rv)) {
       NS_WARNING("Failed to query type for verification");
       break;
     }
     mVerifyDropLinks.AppendElement(tmp);
   }
-  for (uint32_t i = 0; i < linksCount; i++) {
-    NS_IF_RELEASE(droppedLinkedItems[i]);
-  }
-  free(droppedLinkedItems);
   if (NS_FAILED(rv)) {
     mVerifyDropLinks.Clear();
     return false;
