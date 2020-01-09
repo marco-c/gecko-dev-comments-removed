@@ -1343,7 +1343,7 @@ static bool AreAllEarlierInFlowFramesEmpty(nsIFrame* aFrame,
 
 void ReflowInput::CalculateHypotheticalPosition(
     nsPresContext* aPresContext, nsPlaceholderFrame* aPlaceholderFrame,
-    const ReflowInput* aReflowInput, nsHypotheticalPosition& aHypotheticalPos,
+    const ReflowInput* aCBReflowInput, nsHypotheticalPosition& aHypotheticalPos,
     LayoutFrameType aFrameType) const {
   NS_ASSERTION(mStyleDisplay->mOriginalDisplay != StyleDisplay::None,
                "mOriginalDisplay has not been properly initialized");
@@ -1353,7 +1353,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   nscoord blockIStartContentEdge;
   
   
-  WritingMode cbwm = aReflowInput->GetWritingMode();
+  WritingMode cbwm = aCBReflowInput->GetWritingMode();
   LogicalSize blockContentSize(cbwm);
   nsIFrame* containingBlock = GetHypotheticalBoxContainer(
       aPlaceholderFrame, blockIStartContentEdge, blockContentSize);
@@ -1425,7 +1425,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   nsSize containerSize =
       containingBlock->GetStateBits() & NS_FRAME_IN_REFLOW
-          ? aReflowInput->ComputedSizeAsContainerIfConstrained()
+          ? aCBReflowInput->ComputedSizeAsContainerIfConstrained()
           : containingBlock->GetSize();
   LogicalPoint placeholderOffset(
       wm, aPlaceholderFrame->GetOffsetToIgnoringScrolling(containingBlock),
@@ -1540,9 +1540,9 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   nsPoint cbOffset =
-      containingBlock->GetOffsetToIgnoringScrolling(aReflowInput->mFrame);
+      containingBlock->GetOffsetToIgnoringScrolling(aCBReflowInput->mFrame);
 
-  nsSize reflowSize = aReflowInput->ComputedSizeAsContainerIfConstrained();
+  nsSize reflowSize = aCBReflowInput->ComputedSizeAsContainerIfConstrained();
   LogicalPoint logCBOffs(wm, cbOffset, reflowSize - containerSize);
   aHypotheticalPos.mIStart += logCBOffs.I(wm);
   aHypotheticalPos.mBStart += logCBOffs.B(wm);
@@ -1550,9 +1550,9 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   
-  LogicalMargin border = aReflowInput->ComputedLogicalBorderPadding() -
-                         aReflowInput->ComputedLogicalPadding();
-  border = border.ConvertTo(wm, aReflowInput->GetWritingMode());
+  LogicalMargin border = aCBReflowInput->ComputedLogicalBorderPadding() -
+                         aCBReflowInput->ComputedLogicalPadding();
+  border = border.ConvertTo(wm, aCBReflowInput->GetWritingMode());
   aHypotheticalPos.mIStart -= border.IStart(wm);
   aHypotheticalPos.mBStart -= border.BStart(wm);
 
@@ -1618,11 +1618,11 @@ void ReflowInput::CalculateHypotheticalPosition(
 }
 
 void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
-                                          const ReflowInput* aReflowInput,
+                                          const ReflowInput* aCBReflowInput,
                                           const LogicalSize& aCBSize,
                                           LayoutFrameType aFrameType) {
   WritingMode wm = GetWritingMode();
-  WritingMode cbwm = aReflowInput->GetWritingMode();
+  WritingMode cbwm = aCBReflowInput->GetWritingMode();
   NS_WARNING_ASSERTION(aCBSize.BSize(cbwm) != NS_AUTOHEIGHT,
                        "containing block bsize must be constrained");
 
@@ -1666,8 +1666,9 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     } else {
       
       CalculateHypotheticalPosition(aPresContext, placeholderFrame,
-                                    aReflowInput, hypotheticalPos, aFrameType);
-      if (aReflowInput->mFrame->IsGridContainerFrame()) {
+                                    aCBReflowInput, hypotheticalPos,
+                                    aFrameType);
+      if (aCBReflowInput->mFrame->IsGridContainerFrame()) {
         
         
         
@@ -1677,8 +1678,8 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
         if (cbwm.IsBidiLTR()) {
           left = cb.X();
         } else {
-          right = aReflowInput->ComputedWidth() +
-                  aReflowInput->ComputedPhysicalPadding().LeftRight() -
+          right = aCBReflowInput->ComputedWidth() +
+                  aCBReflowInput->ComputedPhysicalPadding().LeftRight() -
                   cb.XMost();
         }
         LogicalMargin offsets(cbwm, nsMargin(cb.Y(), right, nscoord(0), left));
