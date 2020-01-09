@@ -25,6 +25,8 @@ class JSWindowActorService final {
                            const WindowActorOptions& aOptions,
                            ErrorResult& aRv);
 
+  void UnregisterWindowActor(const nsAString& aName);
+
   
   void LoadJSWindowActorInfos(nsTArray<JSWindowActorInfo>& aInfos);
 

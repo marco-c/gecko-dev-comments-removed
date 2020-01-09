@@ -841,6 +841,14 @@ constexpr auto kSkipSelfHosted = JS::SavedFrameSelfHosted::Exclude;
   service->RegisterWindowActor(aName, aOptions, aRv);
 }
 
+ void ChromeUtils::UnregisterWindowActor(
+    const GlobalObject& aGlobal, const nsAString& aName) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  RefPtr<JSWindowActorService> service = JSWindowActorService::GetSingleton();
+  service->UnregisterWindowActor(aName);
+}
+
  bool ChromeUtils::IsClassifierBlockingErrorCode(
     GlobalObject& aGlobal, uint32_t aError) {
   return net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
