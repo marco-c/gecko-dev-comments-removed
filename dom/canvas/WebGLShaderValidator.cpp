@@ -33,7 +33,9 @@ static ShCompileOptions ChooseValidatorCompileOptions(
                              SH_INITIALIZE_UNINITIALIZED_LOCALS |
                              SH_INIT_OUTPUT_VARIABLES;
 
-#ifndef XP_MACOSX
+#ifdef XP_MACOSX
+  options |= SH_REMOVE_INVARIANT_AND_CENTROID_FOR_ESSL3;
+#else
   
   
   
