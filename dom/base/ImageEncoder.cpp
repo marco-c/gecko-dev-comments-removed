@@ -91,19 +91,22 @@ class EncodingCompleteEvent : public CancelableRunnable {
     }
   }
 
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD Run() override {
     nsresult rv = NS_OK;
 
+    
+    RefPtr<EncodeCompleteCallback> callback(mEncodeCompleteCallback.forget());
     if (!mFailed) {
       
       RefPtr<Blob> blob =
           Blob::CreateMemoryBlob(nullptr, mImgData, mImgSize, mType);
       MOZ_ASSERT(blob);
 
-      rv = mEncodeCompleteCallback->ReceiveBlob(blob.forget());
+      rv = callback->ReceiveBlob(blob.forget());
     }
-
-    mEncodeCompleteCallback = nullptr;
 
     return rv;
   }
