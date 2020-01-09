@@ -1291,13 +1291,20 @@ class MediaDecoderStateMachine::AccurateSeekingState
   nsresult DropAudioUpToSeekTarget(AudioData* aAudio) {
     MOZ_ASSERT(aAudio && mSeekJob.mTarget->IsAccurate());
 
-    if (mSeekJob.mTarget->GetTime() >= aAudio->GetEndTime()) {
+    auto sampleDuration =
+        FramesToTimeUnit(aAudio->Frames(), Info().mAudio.mRate);
+    if (!sampleDuration.IsValid()) {
+      return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
+    }
+
+    auto audioTime = aAudio->mTime;
+    if (audioTime + sampleDuration <= mSeekJob.mTarget->GetTime()) {
       
       
       return NS_OK;
     }
 
-    if (aAudio->mTime > mSeekJob.mTarget->GetTime()) {
+    if (audioTime > mSeekJob.mTarget->GetTime()) {
       
       
       
@@ -1310,6 +1317,14 @@ class MediaDecoderStateMachine::AccurateSeekingState
       mDoneAudioSeeking = true;
       return NS_OK;
     }
+
+    
+    
+    
+    NS_ASSERTION(mSeekJob.mTarget->GetTime() >= audioTime,
+                 "Target must at or be after data start.");
+    NS_ASSERTION(mSeekJob.mTarget->GetTime() < audioTime + sampleDuration,
+                 "Data must end after target.");
 
     bool ok = aAudio->SetTrimWindow(
         {mSeekJob.mTarget->GetTime(), aAudio->GetEndTime()});
