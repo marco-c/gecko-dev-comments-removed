@@ -46,6 +46,10 @@ void GetCurrentBackend(nsAString& aBackend);
 cubeb_stream_prefs GetDefaultStreamPrefs();
 char* GetForcedOutputDevice();
 
+
+
+void SetInCommunication(bool aInCommunication);
+
 #  ifdef MOZ_WIDGET_ANDROID
 uint32_t AndroidGetAudioOutputSampleRate();
 uint32_t AndroidGetAudioOutputFramesPerBuffer();
