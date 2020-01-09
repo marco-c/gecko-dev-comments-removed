@@ -11,7 +11,6 @@
 #include "mozilla/dom/PWindowGlobalChild.h"
 #include "nsRefPtrHashtable.h"
 #include "nsWrapperCache.h"
-#include "mozilla/dom/WindowGlobalActor.h"
 
 class nsGlobalWindowInner;
 class nsDocShell;
@@ -29,14 +28,12 @@ class BrowserChild;
 
 
 
-class WindowGlobalChild final : public WindowGlobalActor,
-                                public PWindowGlobalChild {
+class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
   friend class PWindowGlobalChild;
 
  public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(WindowGlobalChild,
-                                                         WindowGlobalActor)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WindowGlobalChild)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(WindowGlobalChild)
 
   static already_AddRefed<WindowGlobalChild> GetByInnerWindowId(
       uint64_t aInnerWindowId);
@@ -46,7 +43,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
     return GetByInnerWindowId(aInnerWindowId);
   }
 
-  dom::BrowsingContext* BrowsingContext() override { return mBrowsingContext; }
+  dom::BrowsingContext* BrowsingContext() { return mBrowsingContext; }
   nsGlobalWindowInner* WindowGlobal() { return mWindowGlobal; }
 
   
@@ -85,14 +82,8 @@ class WindowGlobalChild final : public WindowGlobalActor,
   nsISupports* GetParentObject();
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
-  nsIURI* GetDocumentURI() override;
 
  protected:
-  const nsAString& GetRemoteType() override;
-  JSWindowActor::Type GetSide() override {
-      return JSWindowActor::Type::Child;
-  }
-
   
   mozilla::ipc::IPCResult RecvRawMessage(const JSWindowActorMessageMeta& aMeta,
                                          const ClonedMessageData& aData);
