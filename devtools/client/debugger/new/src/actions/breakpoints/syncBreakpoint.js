@@ -173,7 +173,15 @@ export async function syncBreakpointPromise(
   }
 
   if (!newGeneratedLocation) {
-    return { previousLocation, breakpoint: null };
+    return {
+      previousLocation,
+      
+      
+      
+      
+      breakpoint:
+        generatedSource.introductionType === "scriptElement" ? bp : null
+    };
   }
 
   
