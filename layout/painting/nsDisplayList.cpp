@@ -736,28 +736,21 @@ static void AddAnimationsForDisplayItem(nsIFrame* aFrame,
     aAnimationInfo.ClearAnimations();
   }
 
-  nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aFrame);
-  if (!styleFrame) {
-    return;
-  }
-
   
   
   
   
   
-  
-  
-  EffectSet* effects = EffectSet::GetEffectSet(styleFrame);
+  EffectSet* effects = EffectSet::GetEffectSetForFrame(aFrame, aType);
   uint64_t animationGeneration =
       effects ? effects->GetAnimationGeneration() : 0;
   aAnimationInfo.SetAnimationGeneration(animationGeneration);
 
-  EffectCompositor::ClearIsRunningOnCompositor(styleFrame, aType);
+  EffectCompositor::ClearIsRunningOnCompositor(aFrame, aType);
   const nsCSSPropertyIDSet& propertySet =
       LayerAnimationInfo::GetCSSPropertiesFor(aType);
   const nsTArray<RefPtr<dom::Animation>> matchedAnimations =
-      EffectCompositor::GetAnimationsForCompositor(styleFrame, propertySet);
+      EffectCompositor::GetAnimationsForCompositor(aFrame, propertySet);
   if (matchedAnimations.IsEmpty()) {
     return;
   }

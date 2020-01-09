@@ -172,6 +172,13 @@ class EffectCompositor {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   static Maybe<NonOwningAnimationTarget> GetAnimationElementAndPseudoForFrame(
       const nsIFrame* aFrame);
 
