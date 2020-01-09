@@ -192,7 +192,7 @@ function checkPendingBreakpoints(sourceId: string) {
     }
 
     
-    await dispatch(loadSourceText(source));
+    await dispatch(loadSourceText({ source }));
 
     await Promise.all(
       pendingBreakpoints.map(bp => {
@@ -248,7 +248,7 @@ export function newSources(sources: Source[]) {
     
     for (const source of sourcesNeedingPositions) {
       if (!hasBreakpointPositions(getState(), source.id)) {
-        dispatch(setBreakpointPositions(source.id));
+        dispatch(setBreakpointPositions({ sourceId: source.id }));
       }
     }
 
