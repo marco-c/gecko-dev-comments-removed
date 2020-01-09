@@ -214,6 +214,14 @@ DefaultJitOptions::DefaultJitOptions() {
 
   
   
+  
+  SET_DEFAULT(ionMaxScriptSize, 100 * 1000);
+  SET_DEFAULT(ionMaxScriptSizeMainThread, 2 * 1000);
+  SET_DEFAULT(ionMaxLocalsAndArgs, 10 * 1000);
+  SET_DEFAULT(ionMaxLocalsAndArgsMainThread, 256);
+
+  
+  
   const char* forcedRegisterAllocatorEnv = "JIT_OPTION_forcedRegisterAllocator";
   if (const char* env = getenv(forcedRegisterAllocatorEnv)) {
     forcedRegisterAllocator = LookupRegisterAllocator(env);
