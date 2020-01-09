@@ -56,7 +56,9 @@ var global = this;
 
     
     
+    
     if (docShell.contentViewer) {
+      setDocumentInRDMPane(true);
       makeScrollbarsFloating();
     }
     active = true;
@@ -109,6 +111,7 @@ var global = this;
     webProgress.removeProgressListener(WebProgressListener);
     docShell.deviceSizeIsPageSize = gDeviceSizeWasPageSize;
     restoreScrollbars();
+    setDocumentInRDMPane(false);
     stopOnResize();
     sendAsyncMessage("ResponsiveMode:Stop:Done");
   }
@@ -151,6 +154,11 @@ var global = this;
     flushStyle();
   }
 
+  function setDocumentInRDMPane(inRDMPane) {
+    
+    docShell.contentViewer.DOMDocument.inRDMPane = inRDMPane;
+  }
+
   function flushStyle() {
     
     const isSticky = docShell.contentViewer.sticky;
@@ -179,6 +187,7 @@ var global = this;
       if (flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
         return;
       }
+      setDocumentInRDMPane(true);
       makeScrollbarsFloating();
     },
     QueryInterface: ChromeUtils.generateQI(["nsIWebProgressListener",
