@@ -493,6 +493,21 @@ struct nsGridContainerFrame::LineRange {
   void ToPositionAndLengthForAbsPos(const Tracks& aTracks, nscoord aGridOrigin,
                                     nscoord* aPos, nscoord* aLength) const;
 
+  void Translate(int32_t aOffset) {
+    MOZ_ASSERT(IsDefinite());
+    mStart += aOffset;
+    mEnd += aOffset;
+  }
+
+  
+  void ReverseDirection(uint32_t aGridEnd) {
+    MOZ_ASSERT(IsDefinite());
+    MOZ_ASSERT(aGridEnd >= mEnd);
+    uint32_t newStart = aGridEnd - mEnd;
+    mEnd = aGridEnd - mStart;
+    mStart = newStart;
+  }
+
   
 
 
@@ -535,6 +550,12 @@ struct nsGridContainerFrame::GridArea {
   GridArea(const LineRange& aCols, const LineRange& aRows)
       : mCols(aCols), mRows(aRows) {}
   bool IsDefinite() const { return mCols.IsDefinite() && mRows.IsDefinite(); }
+  LineRange& LineRangeForAxis(LogicalAxis aAxis) {
+    return aAxis == eLogicalAxisInline ? mCols : mRows;
+  }
+  const LineRange& LineRangeForAxis(LogicalAxis aAxis) const {
+    return aAxis == eLogicalAxisInline ? mCols : mRows;
+  }
   LineRange mCols;
   LineRange mRows;
 };
@@ -589,6 +610,21 @@ struct nsGridContainerFrame::GridItemInfo {
     mBaselineOffset[eLogicalAxisBlock] = nscoord(0);
     mBaselineOffset[eLogicalAxisInline] = nscoord(0);
   }
+
+  
+
+
+  GridItemInfo Transpose() const {
+    GridItemInfo info(mFrame, GridArea(mArea.mRows, mArea.mCols));
+    info.mState[0] = mState[1];
+    info.mState[1] = mState[0];
+    info.mBaselineOffset[0] = mBaselineOffset[1];
+    info.mBaselineOffset[1] = mBaselineOffset[0];
+    return info;
+  }
+
+  
+  inline void ReverseDirection(LogicalAxis aAxis, uint32_t aGridEnd);
 
   
   bool IsSubgrid(LogicalAxis aAxis) const {
@@ -689,6 +725,19 @@ struct nsGridContainerFrame::GridItemInfo {
 using GridItemInfo = nsGridContainerFrame::GridItemInfo;
 using ItemState = GridItemInfo::StateBits;
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ItemState)
+
+void GridItemInfo::ReverseDirection(LogicalAxis aAxis, uint32_t aGridEnd) {
+  mArea.LineRangeForAxis(aAxis).ReverseDirection(aGridEnd);
+  ItemState& state = mState[aAxis];
+  ItemState newState = state & ~ItemState::eEdgeBits;
+  if (state & ItemState::eStartEdge) {
+    newState |= ItemState::eEndEdge;
+  }
+  if (state & ItemState::eEndEdge) {
+    newState |= ItemState::eStartEdge;
+  }
+  state = newState;
+}
 
 
 struct nsGridContainerFrame::Subgrid {
@@ -2167,6 +2216,70 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
   LogicalRect ContainingBlockForAbsPos(const GridArea& aArea,
                                        const LogicalPoint& aGridOrigin,
                                        const LogicalRect& aGridCB) const;
+
+  
+  static void CollectSubgridForAxis(LogicalAxis aAxis, WritingMode aContainerWM,
+                                    const LineRange& aRangeInAxis,
+                                    const LineRange& aRangeInOppositeAxis,
+                                    const GridItemInfo& aItem,
+                                    const nsTArray<GridItemInfo>& aItems,
+                                    nsTArray<GridItemInfo>& aResult) {
+    const auto oppositeAxis = GetOrthogonalAxis(aAxis);
+    bool itemIsSubgridInOppositeAxis = aItem.IsSubgrid(oppositeAxis);
+    auto subgridWM = aItem.mFrame->GetWritingMode();
+    bool isOrthogonal = subgridWM.IsOrthogonalTo(aContainerWM);
+    bool isSameDirInAxis =
+        subgridWM.ParallelAxisStartsOnSameSide(aAxis, aContainerWM);
+    bool isSameDirInOppositeAxis =
+        subgridWM.ParallelAxisStartsOnSameSide(oppositeAxis, aContainerWM);
+    if (isOrthogonal) {
+      
+      Swap(isSameDirInAxis, isSameDirInOppositeAxis);
+    }
+    uint32_t offsetInAxis = aRangeInAxis.mStart;
+    uint32_t gridEndInAxis = aRangeInAxis.Extent();
+    uint32_t offsetInOppositeAxis = aRangeInOppositeAxis.mStart;
+    uint32_t gridEndInOppositeAxis = aRangeInOppositeAxis.Extent();
+    for (const auto& subgridItem : aItems) {
+      auto* newItem = aResult.AppendElement(
+          isOrthogonal ? subgridItem.Transpose() : subgridItem);
+      if (MOZ_UNLIKELY(!isSameDirInAxis)) {
+        newItem->ReverseDirection(aAxis, gridEndInAxis);
+      }
+      newItem->mArea.LineRangeForAxis(aAxis).Translate(offsetInAxis);
+      if (itemIsSubgridInOppositeAxis) {
+        if (MOZ_UNLIKELY(!isSameDirInOppositeAxis)) {
+          newItem->ReverseDirection(oppositeAxis, gridEndInOppositeAxis);
+        }
+        LineRange& range = newItem->mArea.LineRangeForAxis(oppositeAxis);
+        range.Translate(offsetInOppositeAxis);
+      }
+      if (newItem->IsSubgrid(aAxis)) {
+        auto* subgrid =
+            subgridItem.SubgridFrame()->GetProperty(Subgrid::Prop());
+        CollectSubgridForAxis(aAxis, aContainerWM,
+                              newItem->mArea.LineRangeForAxis(aAxis),
+                              newItem->mArea.LineRangeForAxis(oppositeAxis),
+                              *newItem, subgrid->mGridItems, aResult);
+      }
+    }
+  }
+
+  
+  
+  
+  void CollectSubgridItemsForAxis(LogicalAxis aAxis,
+                                  nsTArray<GridItemInfo>& aResult) const {
+    for (const auto& item : mGridItems) {
+      if (item.IsSubgrid(aAxis)) {
+        const auto oppositeAxis = GetOrthogonalAxis(aAxis);
+        auto* subgrid = item.SubgridFrame()->GetProperty(Subgrid::Prop());
+        CollectSubgridForAxis(aAxis, mWM, item.mArea.LineRangeForAxis(aAxis),
+                              item.mArea.LineRangeForAxis(oppositeAxis), item,
+                              subgrid->mGridItems, aResult);
+      }
+    }
+  }
 
   CSSOrderAwareFrameIterator mIter;
   const nsStylePosition* const mGridStyle;
