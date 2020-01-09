@@ -93,9 +93,10 @@ void nsFilterInstance::PaintFilteredFrame(
   }
 }
 
-bool nsFilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
-                                             nsTArray<wr::FilterOp>& aWrFilters,
-                                             Maybe<nsRect>& aPostFilterClip) {
+bool nsFilterInstance::BuildWebRenderFilters(
+    nsIFrame* aFilteredFrame, const LayoutDeviceIntRect& aPreFilterBounds,
+    nsTArray<wr::FilterOp>& aWrFilters,
+    LayoutDeviceIntRect& aPostFilterBounds) {
   aWrFilters.Clear();
 
   auto& filterChain = aFilteredFrame->StyleEffects()->mFilters;
@@ -120,7 +121,7 @@ bool nsFilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
     return false;
   }
 
-  Maybe<IntRect> finalClip;
+  Maybe<LayoutDeviceIntRect> finalClip;
   bool srgb = true;
   
   
@@ -131,7 +132,17 @@ bool nsFilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
   
   
 
+  
+  
+  bool chainIsAffectedByPrimSubregion = false;
+  
+  
+  bool filterIsAffectedByPrimSubregion = false;
+
   for (const auto& primitive : instance.mFilterDescription.mPrimitives) {
+    chainIsAffectedByPrimSubregion |= filterIsAffectedByPrimSubregion;
+    filterIsAffectedByPrimSubregion = false;
+
     bool primIsSrgb = primitive.OutputColorSpace() == gfx::ColorSpace::SRGB;
     if (srgb && !primIsSrgb) {
       aWrFilters.AppendElement(wr::FilterOp::SrgbToLinear());
@@ -142,6 +153,26 @@ bool nsFilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
     }
 
     const PrimitiveAttributes& attr = primitive.Attributes();
+    auto subregion = LayoutDeviceIntRect::FromUnknownRect(
+        primitive.PrimitiveSubregion() +
+        aPreFilterBounds.TopLeft().ToUnknownPoint());
+
+    if (!subregion.Contains(aPreFilterBounds)) {
+      if (!aPostFilterBounds.Contains(subregion)) {
+        filterIsAffectedByPrimSubregion = true;
+      }
+
+      subregion = subregion.Intersect(aPostFilterBounds);
+
+      if (finalClip.isNothing()) {
+        finalClip = Some(subregion);
+      } else if (!subregion.IsEqualEdges(finalClip.value())) {
+        
+        
+        
+        return false;
+      }
+    }
 
     bool filterIsNoop = false;
 
@@ -182,7 +213,7 @@ bool nsFilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
 
       aWrFilters.AppendElement(wr::FilterOp::ColorMatrix(matrix));
     } else if (attr.is<GaussianBlurAttributes>()) {
-      if (finalClip) {
+      if (chainIsAffectedByPrimSubregion) {
         
         
         
@@ -204,7 +235,7 @@ bool nsFilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
         filterIsNoop = true;
       }
     } else if (attr.is<DropShadowAttributes>()) {
-      if (finalClip) {
+      if (chainIsAffectedByPrimSubregion) {
         
         return false;
       }
@@ -240,24 +271,18 @@ bool nsFilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
       Unused << aWrFilters.PopLastElement();
       srgb = !srgb;
     }
-
-    if (!filterIsNoop) {
-      if (finalClip.isNothing()) {
-        finalClip = Some(primitive.PrimitiveSubregion());
-      } else {
-        finalClip =
-            Some(primitive.PrimitiveSubregion().Intersect(finalClip.value()));
-      }
-    }
   }
 
   if (!srgb) {
     aWrFilters.AppendElement(wr::FilterOp::LinearToSrgb());
   }
 
-  if (finalClip) {
-    aPostFilterClip = Some(instance.FilterSpaceToFrameSpace(finalClip.value()));
+  
+  
+  if (finalClip.isSome()) {
+    aPostFilterBounds = finalClip.value();
   }
+
   return true;
 }
 
