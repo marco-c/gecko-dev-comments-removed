@@ -568,7 +568,13 @@ impl MallocSizeOf for FontFamily {
             FontFamily::Values(ref v) => {
                 
                 
-                unsafe { bindings::Gecko_SharedFontList_SizeOfIncludingThis(v.0.get()) }
+                
+                if matches!(v, FontFamilyList::SharedFontList(_)) {
+                    let ptr = v.shared_font_list().get();
+                    unsafe { bindings::Gecko_SharedFontList_SizeOfIncludingThis(ptr) }
+                } else {
+                    0
+                }
             },
             FontFamily::System(_) => 0,
         }

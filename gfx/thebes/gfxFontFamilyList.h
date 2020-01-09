@@ -46,7 +46,11 @@ enum FontFamilyType : uint8_t {
 
   eFamily_generic_first = eFamily_serif,
   eFamily_generic_last = eFamily_fantasy,
-  eFamily_generic_count = (eFamily_fantasy - eFamily_serif + 1)
+  eFamily_generic_last_including_special = eFamily_moz_emoji,
+
+  eFamily_generic_count = eFamily_generic_last - eFamily_generic_first + 1,
+  eFamily_generic_count_including_special =
+      eFamily_generic_last_including_special - eFamily_generic_first + 1,
 };
 
 enum QuotedName { eQuotedName, eUnquotedName };
@@ -170,6 +174,8 @@ inline bool operator==(const FontFamilyName& a, const FontFamilyName& b) {
 
 
 
+
+
 class SharedFontList {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedFontList);
@@ -221,6 +227,8 @@ class SharedFontList {
   static void Initialize();
   static void Shutdown();
   static StaticRefPtr<SharedFontList> sEmpty;
+  static StaticRefPtr<SharedFontList>
+      sSingleGenerics[eFamily_generic_count_including_special];
 
  private:
   ~SharedFontList() = default;
