@@ -6,6 +6,7 @@
 
 #include "builtin/RegExp.h"
 
+#include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/TypeTraits.h"
 
@@ -13,6 +14,7 @@
 #include "irregexp/RegExpParser.h"
 #include "jit/InlinableNatives.h"
 #include "js/PropertySpec.h"
+#include "js/RegExpFlags.h"  
 #include "util/StringBuffer.h"
 #include "util/Unicode.h"
 #include "vm/JSContext.h"
@@ -26,10 +28,13 @@
 
 using namespace js;
 
+using mozilla::AssertedCast;
 using mozilla::CheckedInt;
 using mozilla::IsAsciiDigit;
 
 using JS::CompileOptions;
+using JS::RegExpFlag;
+using JS::RegExpFlags;
 
 
 
@@ -187,16 +192,16 @@ bool js::ExecuteRegExpLegacy(JSContext* cx, RegExpStatics* res,
 }
 
 static bool CheckPatternSyntaxSlow(JSContext* cx, HandleAtom pattern,
-                                   RegExpFlag flags) {
+                                   RegExpFlags flags) {
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
   CompileOptions options(cx);
   frontend::TokenStream dummyTokenStream(cx, options, nullptr, 0, nullptr);
   return irregexp::ParsePatternSyntax(dummyTokenStream, allocScope.alloc(),
-                                      pattern, flags & UnicodeFlag);
+                                      pattern, flags.unicode());
 }
 
 static RegExpShared* CheckPatternSyntax(JSContext* cx, HandleAtom pattern,
-                                        RegExpFlag flags) {
+                                        RegExpFlags flags) {
   
   
 
@@ -252,7 +257,7 @@ static bool RegExpInitializeIgnoringLastIndex(JSContext* cx,
   }
 
   
-  RegExpFlag flags = RegExpFlag(0);
+  RegExpFlags flags = RegExpFlag::NoFlags;
   if (!flagsValue.isUndefined()) {
     
     RootedString flagStr(cx, ToString<CanGC>(cx, flagsValue));
@@ -363,7 +368,7 @@ MOZ_ALWAYS_INLINE bool regexp_compile_impl(JSContext* cx,
     RootedObject patternObj(cx, &patternValue.toObject());
 
     RootedAtom sourceAtom(cx);
-    RegExpFlag flags;
+    RegExpFlags flags = RegExpFlag::NoFlags;
     {
       
       RegExpShared* shared = RegExpToShared(cx, patternObj);
@@ -461,7 +466,7 @@ bool js::regexp_construct(JSContext* cx, unsigned argc, Value* vp) {
     RootedObject patternObj(cx, &patternValue.toObject());
 
     RootedAtom sourceAtom(cx);
-    RegExpFlag flags;
+    RegExpFlags flags;
     RootedRegExpShared shared(cx);
     {
       
@@ -495,7 +500,7 @@ bool js::regexp_construct(JSContext* cx, unsigned argc, Value* vp) {
     
     if (args.hasDefined(1)) {
       
-      RegExpFlag flagsArg = RegExpFlag(0);
+      RegExpFlags flagsArg = RegExpFlag::NoFlags;
       RootedString flagStr(cx, ToString<CanGC>(cx, args[1]));
       if (!flagStr) {
         return false;
@@ -509,7 +514,7 @@ bool js::regexp_construct(JSContext* cx, unsigned argc, Value* vp) {
         shared = nullptr;
       }
 
-      if (!(flags & UnicodeFlag) && flagsArg & UnicodeFlag) {
+      if (!flags.unicode() && flagsArg.unicode()) {
         
 
         
@@ -594,7 +599,7 @@ bool js::regexp_construct_raw_flags(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  int32_t flags = int32_t(args[1].toNumber());
+  RegExpFlags flags = AssertedCast<uint8_t>(int32_t(args[1].toNumber()));
 
   
   RegExpObject* regexp = RegExpAlloc(cx, GenericObject);
@@ -603,7 +608,7 @@ bool js::regexp_construct_raw_flags(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  regexp->initAndZeroLastIndex(sourceAtom, RegExpFlag(flags), cx);
+  regexp->initAndZeroLastIndex(sourceAtom, flags, cx);
   args.rval().setObject(*regexp);
   return true;
 }
