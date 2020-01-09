@@ -423,7 +423,8 @@ const ExpectComparisonTo = {
                                    pseudo) {
     
     
-    const omtaProperties = [ "transform", "opacity", "background-color" ];
+    const omtaProperties = [ "transform", "translate", "rotate", "scale",
+                             "opacity", "background-color" ];
     if (!omtaProperties.includes(property)) {
       ok(false, property + " is not an OMTA property");
       return;
@@ -433,6 +434,9 @@ const ExpectComparisonTo = {
     var normalizedToString = JSON.stringify;
     switch (property) {
       case "transform":
+      case "translate":
+      case "rotate":
+      case "scale":
         normalize = convertTo3dMatrix;
         compare = matricesRoughlyEqual;
         normalizedToString = convert3dMatrixToString;
@@ -442,9 +446,17 @@ const ExpectComparisonTo = {
         compare = function(a, b, error) { return Math.abs(a - b) <= error; };
         break;
       default:
-        normalize = function(value) { return value; };
+        normalize = value => value;
         compare = function(a, b, error) { return a == b; };
         break;
+    }
+
+    if (!!expected.compositorValue) {
+      const originalNormalize = normalize;
+      normalize = value =>
+        !!value.compositorValue
+          ? originalNormalize(value.compositorValue)
+          : originalNormalize(value);
     }
 
     
@@ -509,7 +521,38 @@ const ExpectComparisonTo = {
 
     
     
-    if (actualStr === compositorStr) {
+    
+    
+    
+    
+    
+    
+    
+    if (expected.usesMultipleProperties) {
+      return;
+    }
+
+    if (typeof expected.computed !== 'undefined') {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      okOrTodo(computedStr == expected.computed,
+               desc + ": Computed style should be equal to " +
+               expected.computed);
+    } else if (actualStr === compositorStr) {
+      
+      
       var computedValue = normalize(computedStr);
       if (computedValue === null) {
         ok(false, desc + ": test framework should parse computed style" +
