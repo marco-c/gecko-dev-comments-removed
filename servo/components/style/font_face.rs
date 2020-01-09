@@ -545,7 +545,6 @@ macro_rules! font_face_descriptors {
     }
 }
 
-
 #[cfg(feature = "gecko")]
 font_face_descriptors! {
     mandatory descriptors = [
