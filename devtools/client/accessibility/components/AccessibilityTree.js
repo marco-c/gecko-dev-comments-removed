@@ -34,6 +34,7 @@ class AccessibilityTree extends Component {
       expanded: PropTypes.object,
       selected: PropTypes.string,
       highlighted: PropTypes.object,
+      supports: PropTypes.object,
     };
   }
 
@@ -137,8 +138,13 @@ class AccessibilityTree extends Component {
       expanded,
       selected,
       highlighted: highlightedItem,
+      supports,
       walker,
     } = this.props;
+
+    
+    
+    const hasContextMenu = supports.snapshot;
 
     const renderValue = props => {
       return Rep(Object.assign({}, props, {
@@ -152,6 +158,7 @@ class AccessibilityTree extends Component {
       const highlighted = object === highlightedItem;
       return AccessibilityRow(Object.assign({}, rowProps, {
         walker,
+        hasContextMenu,
         highlighted,
         decorator: {
           getRowClass: function() {
@@ -180,6 +187,17 @@ class AccessibilityTree extends Component {
           }
           this.selectRow(event.currentTarget);
         },
+        onContextMenuTree: hasContextMenu && function(e) {
+          
+          
+          let row = this.getSelectedRow();
+          if (!row) {
+            return;
+          }
+
+          row = row.getWrappedInstance();
+          row.onContextMenu(e);
+        },
       })
     );
   }
@@ -189,6 +207,7 @@ const mapStateToProps = ({ accessibles, ui }) => ({
   accessibles,
   expanded: ui.expanded,
   selected: ui.selected,
+  supports: ui.supports,
   highlighted: ui.highlighted,
 });
 
