@@ -413,7 +413,7 @@ var PermissionPromptPrototype = {
     }
     
     options.persistent = true;
-    options.hideClose = !Services.prefs.getBoolPref("privacy.permissionPrompts.showCloseButton");
+    options.hideClose = true;
     options.eventCallback = (topic) => {
       
       
