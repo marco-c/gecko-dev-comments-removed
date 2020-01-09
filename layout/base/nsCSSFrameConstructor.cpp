@@ -991,18 +991,6 @@ nsFrameConstructorState::~nsFrameConstructorState() {
   }
 }
 
-static nsContainerFrame* AdjustAbsoluteContainingBlock(
-    nsContainerFrame* aContainingBlockIn) {
-  if (!aContainingBlockIn) {
-    return nullptr;
-  }
-
-  
-  
-  return static_cast<nsContainerFrame*>(
-      aContainingBlockIn->FirstContinuation());
-}
-
 void nsFrameConstructorState::PushAbsoluteContainingBlock(
     nsContainerFrame* aNewAbsoluteContainingBlock, nsIFrame* aPositionedFrame,
     nsFrameConstructorSaveState& aSaveState) {
@@ -1019,8 +1007,7 @@ void nsFrameConstructorState::PushAbsoluteContainingBlock(
     mFixedItems = mAbsoluteItems;
   }
 
-  mAbsoluteItems = nsAbsoluteItems(
-      AdjustAbsoluteContainingBlock(aNewAbsoluteContainingBlock));
+  mAbsoluteItems = nsAbsoluteItems(aNewAbsoluteContainingBlock);
 
   
 
@@ -5961,7 +5948,10 @@ void nsCSSFrameConstructor::AppendFramesToParent(
 
     nsFrameList columnSpanSiblings = CreateColumnSpanSiblings(
         aState, aParentFrame, aFrameList,
-        aParentFrame->IsAbsPosContainingBlock() ? aParentFrame : nullptr);
+        
+        
+        nullptr);
+
     FinishBuildingColumns(aState,
                           GetMultiColumnContainingBlockFor(aParentFrame),
                           aParentFrame, columnSpanSiblings);
@@ -10631,7 +10621,11 @@ void nsCSSFrameConstructor::ConstructBlock(
   }
 
   nsFrameList columnSpanSiblings = CreateColumnSpanSiblings(
-      aState, blockFrame, childItems, aPositionedFrameForAbsPosContainer);
+      aState, blockFrame, childItems,
+      
+      
+      
+      needsColumn ? nullptr : aPositionedFrameForAbsPosContainer);
 
   if (needsColumn) {
     
