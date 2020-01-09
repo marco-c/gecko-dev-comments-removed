@@ -610,7 +610,25 @@ nsresult nsZipArchive::BuildFileList(PRFileDesc *aFd) {
 #elif defined(XP_UNIX)
       madvise(const_cast<uint8_t *>(startp), readaheadLength, MADV_WILLNEED);
 #elif defined(XP_WIN)
-      if (aFd) {
+      static auto prefetchVirtualMemory =
+          reinterpret_cast<BOOL (*)(HANDLE, ULONG_PTR, PVOID, ULONG)>(
+              GetProcAddress(GetModuleHandle(L"kernel32.dll"),
+                               "PrefetchVirtualMemory"));
+      if (prefetchVirtualMemory) {
+        
+        
+        
+        
+        struct {
+          PVOID VirtualAddress;
+          SIZE_T NumberOfBytes;
+        } entry;
+        entry.VirtualAddress = const_cast<uint8_t *>(startp);
+        entry.NumberOfBytes = readaheadLength;
+        prefetchVirtualMemory(GetCurrentProcess(), 1, &entry, 0);
+        readaheadLength = 0;
+      }
+      if (readaheadLength && aFd) {
         HANDLE hFile = (HANDLE)PR_FileDesc2NativeHandle(aFd);
         mozilla::ReadAhead(hFile, 0, readaheadLength);
       }
