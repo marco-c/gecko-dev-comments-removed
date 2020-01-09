@@ -18,6 +18,8 @@ ChromeUtils.defineModuleGetter(this, "RemoteSettings",
 ChromeUtils.defineModuleGetter(this, "SelectionChangedMenulist",
                                "resource:///modules/SelectionChangedMenulist.jsm");
 
+document.documentElement.addEventListener("dialoghelp", window.top.openPrefsHelp);
+
 
 
 

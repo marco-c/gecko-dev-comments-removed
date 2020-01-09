@@ -7,6 +7,8 @@
 
 
 
+document.documentElement.addEventListener("dialoghelp", window.top.openPrefsHelp);
+
 Preferences.addAll([
   
   
