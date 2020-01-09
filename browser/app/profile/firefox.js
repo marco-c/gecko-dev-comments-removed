@@ -245,6 +245,10 @@ pref("browser.startup.blankWindow", true);
 pref("browser.startup.blankWindow", false);
 #endif
 
+
+
+pref("toolkit.lazyHiddenWindow", true);
+
 pref("browser.slowStartup.notificationDisabled", false);
 pref("browser.slowStartup.timeThreshold", 20000);
 pref("browser.slowStartup.maxSamples", 5);
