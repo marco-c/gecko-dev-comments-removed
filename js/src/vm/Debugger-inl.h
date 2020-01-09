@@ -56,7 +56,7 @@
   return slowPathCheckNoExecute(cx, script);
 }
 
- js::ResumeMode js::Debugger::onEnterFrame(JSContext* cx,
+ inline js::ResumeMode js::Debugger::onEnterFrame(JSContext* cx,
                                                        AbstractFramePtr frame) {
   MOZ_ASSERT_IF(frame.hasScript() && frame.script()->isDebuggee(),
                 frame.isDebuggee());
@@ -66,7 +66,7 @@
   return slowPathOnEnterFrame(cx, frame);
 }
 
- js::ResumeMode js::Debugger::onResumeFrame(
+ inline js::ResumeMode js::Debugger::onResumeFrame(
     JSContext* cx, AbstractFramePtr frame) {
   MOZ_ASSERT_IF(frame.hasScript() && frame.script()->isDebuggee(),
                 frame.isDebuggee());
@@ -76,7 +76,7 @@
   return slowPathOnResumeFrame(cx, frame);
 }
 
- js::ResumeMode js::Debugger::onDebuggerStatement(
+ inline js::ResumeMode js::Debugger::onDebuggerStatement(
     JSContext* cx, AbstractFramePtr frame) {
   if (!cx->realm()->isDebuggee()) {
     return ResumeMode::Continue;
@@ -84,7 +84,7 @@
   return slowPathOnDebuggerStatement(cx, frame);
 }
 
- js::ResumeMode js::Debugger::onExceptionUnwind(
+ inline js::ResumeMode js::Debugger::onExceptionUnwind(
     JSContext* cx, AbstractFramePtr frame) {
   if (!cx->realm()->isDebuggee()) {
     return ResumeMode::Continue;
@@ -92,21 +92,21 @@
   return slowPathOnExceptionUnwind(cx, frame);
 }
 
- void js::Debugger::onNewWasmInstance(
+ inline void js::Debugger::onNewWasmInstance(
     JSContext* cx, Handle<WasmInstanceObject*> wasmInstance) {
   if (cx->realm()->isDebuggee()) {
     slowPathOnNewWasmInstance(cx, wasmInstance);
   }
 }
 
- void js::Debugger::onNewPromise(JSContext* cx,
+ inline void js::Debugger::onNewPromise(JSContext* cx,
                                              Handle<PromiseObject*> promise) {
   if (MOZ_UNLIKELY(cx->realm()->isDebuggee())) {
     slowPathPromiseHook(cx, Debugger::OnNewPromise, promise);
   }
 }
 
- void js::Debugger::onPromiseSettled(
+ inline void js::Debugger::onPromiseSettled(
     JSContext* cx, Handle<PromiseObject*> promise) {
   if (MOZ_UNLIKELY(promise->realm()->isDebuggee())) {
     slowPathPromiseHook(cx, Debugger::OnPromiseSettled, promise);
