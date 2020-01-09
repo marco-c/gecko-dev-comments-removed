@@ -664,6 +664,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.requestIdleCallback.enabled",
+   dom_requestIdleCallback_enabled,
+  bool, true
+)
+
+
 
 
 
