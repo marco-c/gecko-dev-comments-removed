@@ -14,6 +14,7 @@
 #include "gfxPoint.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/EnumeratedArray.h"
+#include "nsCSSValue.h"
 #include "nsSize.h"
 
 #include <limits>
@@ -143,16 +144,24 @@ class MOZ_STACK_CLASS TransformReferenceBox final {
   bool mIsCached;
 };
 
+
+
+
+
+nsCSSKeyword TransformFunctionOf(const nsCSSValue::Array* aData);
+
+void SetIdentityMatrix(nsCSSValue::Array* aMatrix);
+
 float ProcessTranslatePart(
-    const mozilla::LengthPercentage& aValue, TransformReferenceBox* aRefBox,
+    const nsCSSValue& aValue, TransformReferenceBox* aRefBox,
     TransformReferenceBox::DimensionGetter aDimensionGetter = nullptr);
 
 void ProcessInterpolateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
-                              const mozilla::StyleTransformOperation& aOp,
+                              const nsCSSValue::Array* aData,
                               TransformReferenceBox& aBounds);
 
 void ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
-                             const mozilla::StyleTransformOperation& aOp,
+                             const nsCSSValue::Array* aData,
                              TransformReferenceBox& aBounds);
 
 
@@ -163,17 +172,18 @@ void ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
 
 
 
-mozilla::gfx::Matrix4x4 ReadTransforms(const mozilla::StyleTransform& aList,
+
+
+mozilla::gfx::Matrix4x4 ReadTransforms(const nsCSSValueList* aList,
                                        TransformReferenceBox& aBounds,
                                        float aAppUnitsPerMatrixUnit);
 
 
 
 mozilla::gfx::Matrix4x4 ReadTransforms(
-    const mozilla::StyleTranslate&, const mozilla::StyleRotate&,
-    const mozilla::StyleScale&,
+    const nsCSSValueList* aIndividualTransforms,
     const mozilla::Maybe<mozilla::MotionPathData>& aMotion,
-    const mozilla::StyleTransform&, TransformReferenceBox& aRefBox,
+    const nsCSSValueList* aTransform, TransformReferenceBox& aRefBox,
     float aAppUnitsPerMatrixUnit);
 
 
@@ -213,6 +223,11 @@ bool Decompose3DMatrix(const mozilla::gfx::Matrix4x4& aMatrix,
                        mozilla::gfx::Point3D& aTranslate,
                        mozilla::gfx::Point4D& aPerspective);
 
+mozilla::gfx::Matrix CSSValueArrayTo2DMatrix(nsCSSValue::Array* aArray);
+mozilla::gfx::Matrix4x4 CSSValueArrayTo3DMatrix(nsCSSValue::Array* aArray);
+
+mozilla::gfx::Size GetScaleValue(const nsCSSValueSharedList* aList,
+                                 const nsIFrame* aForFrame);
 }  
 
 #endif

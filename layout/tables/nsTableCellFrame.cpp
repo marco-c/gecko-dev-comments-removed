@@ -444,7 +444,7 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   DO_GLOBAL_REFLOW_COUNT_DSP("nsTableCellFrame");
   if (ShouldPaintBordersAndBackgrounds()) {
     
-    bool hasBoxShadow = !StyleEffects()->mBoxShadow.IsEmpty();
+    bool hasBoxShadow = !!StyleEffects()->mBoxShadow;
     if (hasBoxShadow) {
       aLists.BorderBackground()->AppendNewToTop<nsDisplayBoxShadowOuter>(
           aBuilder, this);

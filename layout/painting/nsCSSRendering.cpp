@@ -1354,10 +1354,10 @@ bool nsCSSRendering::HasBoxShadowNativeTheme(nsIFrame* aFrame,
   return false;
 }
 
-gfx::Color nsCSSRendering::GetShadowColor(const StyleSimpleShadow& aShadow,
+gfx::Color nsCSSRendering::GetShadowColor(nsCSSShadowItem* aShadow,
                                           nsIFrame* aFrame, float aOpacity) {
   
-  nscolor shadowColor = aShadow.color.CalcColor(aFrame);
+  nscolor shadowColor = aShadow->mColor.CalcColor(aFrame);
   Color color = Color::FromABGR(shadowColor);
   color.a *= aOpacity;
   return color;
@@ -1401,10 +1401,8 @@ void nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
                                          const nsRect& aDirtyRect,
                                          float aOpacity) {
   DrawTarget& aDrawTarget = *aRenderingContext.GetDrawTarget();
-  auto shadows = aForFrame->StyleEffects()->mBoxShadow.AsSpan();
-  if (shadows.IsEmpty()) {
-    return;
-  }
+  nsCSSShadowArray* shadows = aForFrame->StyleEffects()->mBoxShadow;
+  if (!shadows) return;
 
   bool hasBorderRadius;
   
@@ -1451,24 +1449,20 @@ void nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
         std::max(borderRadii[C_BL].height, borderRadii[C_BR].height), 0));
   }
 
-  for (const StyleBoxShadow& shadow : Reversed(shadows)) {
-    if (shadow.inset) {
-      continue;
-    }
+  for (uint32_t i = shadows->Length(); i > 0; --i) {
+    nsCSSShadowItem* shadowItem = shadows->ShadowAt(i - 1);
+    if (shadowItem->mInset) continue;
 
     nsRect shadowRect = frameRect;
-    nsPoint shadowOffset(shadow.base.horizontal.ToAppUnits(),
-                         shadow.base.vertical.ToAppUnits());
-    shadowRect.MoveBy(shadowOffset);
-    nscoord shadowSpread = shadow.spread.ToAppUnits();
+    shadowRect.MoveBy(shadowItem->mXOffset, shadowItem->mYOffset);
     if (!nativeTheme) {
-      shadowRect.Inflate(shadowSpread);
+      shadowRect.Inflate(shadowItem->mSpread);
     }
 
     
     
     nsRect shadowRectPlusBlur = shadowRect;
-    nscoord blurRadius = shadow.base.blur.ToAppUnits();
+    nscoord blurRadius = shadowItem->mRadius;
     shadowRectPlusBlur.Inflate(
         nsContextBoxBlur::GetBlurRadiusMargin(blurRadius, oneDevPixel));
 
@@ -1476,7 +1470,7 @@ void nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
     shadowGfxRectPlusBlur.RoundOut();
     MaybeSnapToDevicePixels(shadowGfxRectPlusBlur, aDrawTarget, true);
 
-    Color gfxShadowColor = GetShadowColor(shadow.base, aForFrame, aOpacity);
+    Color gfxShadowColor = GetShadowColor(shadowItem, aForFrame, aOpacity);
 
     if (nativeTheme) {
       nsContextBoxBlur blurringArea;
@@ -1485,10 +1479,11 @@ void nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
       
       
       
-      gfxContext* shadowContext = blurringArea.Init(
-          shadowRect, shadowSpread, blurRadius, oneDevPixel, &aRenderingContext,
-          aDirtyRect, useSkipGfxRect ? &skipGfxRect : nullptr,
-          nsContextBoxBlur::FORCE_MASK);
+      gfxContext* shadowContext =
+          blurringArea.Init(shadowRect, shadowItem->mSpread, blurRadius,
+                            oneDevPixel, &aRenderingContext, aDirtyRect,
+                            useSkipGfxRect ? &skipGfxRect : nullptr,
+                            nsContextBoxBlur::FORCE_MASK);
       if (!shadowContext) continue;
 
       MOZ_ASSERT(shadowContext == blurringArea.GetContext());
@@ -1509,12 +1504,13 @@ void nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
       
       gfxContextMatrixAutoSaveRestore save(shadowContext);
       gfxPoint devPixelOffset = nsLayoutUtils::PointToGfxPoint(
-          shadowOffset, aPresContext->AppUnitsPerDevPixel());
+          nsPoint(shadowItem->mXOffset, shadowItem->mYOffset),
+          aPresContext->AppUnitsPerDevPixel());
       shadowContext->SetMatrixDouble(
           shadowContext->CurrentMatrixDouble().PreTranslate(devPixelOffset));
 
       nsRect nativeRect = aDirtyRect;
-      nativeRect.MoveBy(-shadowOffset);
+      nativeRect.MoveBy(-nsPoint(shadowItem->mXOffset, shadowItem->mYOffset));
       nativeRect.IntersectRect(frameRect, nativeRect);
       aPresContext->GetTheme()->DrawWidgetBackground(shadowContext, aForFrame,
                                                      styleDisplay->mAppearance,
@@ -1581,7 +1577,7 @@ void nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
 
       RectCornerRadii clipRectRadii;
       if (hasBorderRadius) {
-        Float spreadDistance = Float(shadowSpread / oneDevPixel);
+        Float spreadDistance = Float(shadowItem->mSpread) / oneDevPixel;
 
         Float borderSizes[4];
 
@@ -1614,11 +1610,8 @@ nsRect nsCSSRendering::GetBoxShadowInnerPaddingRect(nsIFrame* aFrame,
 }
 
 bool nsCSSRendering::ShouldPaintBoxShadowInner(nsIFrame* aFrame) {
-  const Span<const StyleBoxShadow> shadows =
-      aFrame->StyleEffects()->mBoxShadow.AsSpan();
-  if (shadows.IsEmpty()) {
-    return false;
-  }
+  nsCSSShadowArray* shadows = aFrame->StyleEffects()->mBoxShadow;
+  if (!shadows) return false;
 
   if (aFrame->IsThemed() && aFrame->GetContent() &&
       !nsContentUtils::IsChromeDoc(aFrame->GetContent()->GetComposedDoc())) {
@@ -1671,8 +1664,7 @@ void nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     return;
   }
 
-  const Span<const StyleBoxShadow> shadows =
-      aForFrame->StyleEffects()->mBoxShadow.AsSpan();
+  nsCSSShadowArray* shadows = aForFrame->StyleEffects()->mBoxShadow;
   NS_ASSERTION(
       aForFrame->IsFieldSetFrame() || aFrameArea.Size() == aForFrame->GetSize(),
       "unexpected size");
@@ -1684,15 +1676,14 @@ void nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
 
   const nscoord oneDevPixel = aPresContext->DevPixelsToAppUnits(1);
 
-  for (const StyleBoxShadow& shadow : Reversed(shadows)) {
-    if (!shadow.inset) {
-      continue;
-    }
+  for (uint32_t i = shadows->Length(); i > 0; --i) {
+    nsCSSShadowItem* shadowItem = shadows->ShadowAt(i - 1);
+    if (!shadowItem->mInset) continue;
 
     
     
     
-    nscoord blurRadius = shadow.base.blur.ToAppUnits();
+    nscoord blurRadius = shadowItem->mRadius;
     nsMargin blurMargin =
         nsContextBoxBlur::GetBlurRadiusMargin(blurRadius, oneDevPixel);
     nsRect shadowPaintRect = paddingRect;
@@ -1703,13 +1694,12 @@ void nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     
     
     
-    int32_t spreadDistance = shadow.spread.ToAppUnits() / oneDevPixel;
+    int32_t spreadDistance = shadowItem->mSpread / oneDevPixel;
     nscoord spreadDistanceAppUnits =
         aPresContext->DevPixelsToAppUnits(spreadDistance);
 
     nsRect shadowClipRect = paddingRect;
-    shadowClipRect.MoveBy(shadow.base.horizontal.ToAppUnits(),
-                          shadow.base.vertical.ToAppUnits());
+    shadowClipRect.MoveBy(shadowItem->mXOffset, shadowItem->mYOffset);
     shadowClipRect.Deflate(spreadDistanceAppUnits, spreadDistanceAppUnits);
 
     Rect shadowClipGfxRect = NSRectToRect(shadowClipRect, oneDevPixel);
@@ -1764,7 +1754,7 @@ void nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     Rect shadowGfxRect = NSRectToRect(paddingRect, oneDevPixel);
     shadowGfxRect.Round();
 
-    Color shadowColor = GetShadowColor(shadow.base, aForFrame, 1.0);
+    Color shadowColor = GetShadowColor(shadowItem, aForFrame, 1.0);
     aRenderingContext.Save();
 
     
@@ -1780,8 +1770,8 @@ void nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     nsContextBoxBlur insetBoxBlur;
     gfxRect destRect =
         nsLayoutUtils::RectToGfxRect(shadowPaintRect, oneDevPixel);
-    Point shadowOffset(shadow.base.horizontal.ToAppUnits() / oneDevPixel,
-                       shadow.base.vertical.ToAppUnits() / oneDevPixel);
+    Point shadowOffset(shadowItem->mXOffset / oneDevPixel,
+                       shadowItem->mYOffset / oneDevPixel);
 
     insetBoxBlur.InsetBoxBlur(
         &aRenderingContext, ToRect(destRect), shadowClipGfxRect, shadowColor,
