@@ -68,8 +68,8 @@ class ClientThing {
 
   
   template <typename Callable>
-  void MaybeExecute(const Callable& aSuccess,
-                    const std::function<void()>& aFailure = [] {}) {
+  void MaybeExecute(
+      const Callable& aSuccess, const std::function<void()>& aFailure = [] {}) {
     AssertIsValid();
     if (mShutdown) {
       aFailure();

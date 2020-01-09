@@ -793,7 +793,9 @@ static bool CheckRequirement(const MediaKeysRequirement aRequirement,
       }
       break;
     }
-    default: { return false; }
+    default: {
+      return false;
+    }
   }
 
   

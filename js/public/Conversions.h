@@ -348,7 +348,8 @@ inline UnsignedInteger ToUnsignedInteger(double d) {
   
   
   if (exponent < ResultWidth) {
-    const auto implicitOne = static_cast<UnsignedInteger>(UnsignedInteger{1} << exponent);
+    const auto implicitOne =
+        static_cast<UnsignedInteger>(UnsignedInteger{1} << exponent);
     result &= implicitOne - 1;  
     result += implicitOne;      
   }

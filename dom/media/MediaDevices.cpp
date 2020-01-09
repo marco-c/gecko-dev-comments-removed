@@ -65,20 +65,21 @@ already_AddRefed<Promise> MediaDevices::GetUserMedia(
   RefPtr<MediaDevices> self(this);
   MediaManager::Get()
       ->GetUserMedia(GetOwner(), aConstraints, aCallerType)
-      ->Then(GetCurrentThreadSerialEventTarget(), __func__,
-             [this, self, p](RefPtr<DOMMediaStream>&& aStream) {
-               if (!GetWindowIfCurrent()) {
-                 return;  
-               }
-               p->MaybeResolve(std::move(aStream));
-             },
-             [this, self, p](const RefPtr<MediaMgrError>& error) {
-               nsPIDOMWindowInner* window = GetWindowIfCurrent();
-               if (!window) {
-                 return;  
-               }
-               p->MaybeReject(MakeRefPtr<MediaStreamError>(window, *error));
-             });
+      ->Then(
+          GetCurrentThreadSerialEventTarget(), __func__,
+          [this, self, p](RefPtr<DOMMediaStream>&& aStream) {
+            if (!GetWindowIfCurrent()) {
+              return;  
+            }
+            p->MaybeResolve(std::move(aStream));
+          },
+          [this, self, p](const RefPtr<MediaMgrError>& error) {
+            nsPIDOMWindowInner* window = GetWindowIfCurrent();
+            if (!window) {
+              return;  
+            }
+            p->MaybeReject(MakeRefPtr<MediaStreamError>(window, *error));
+          });
   return p.forget();
 }
 
@@ -92,40 +93,41 @@ already_AddRefed<Promise> MediaDevices::EnumerateDevices(CallerType aCallerType,
   RefPtr<MediaDevices> self(this);
   MediaManager::Get()
       ->EnumerateDevices(GetOwner(), aCallerType)
-      ->Then(GetCurrentThreadSerialEventTarget(), __func__,
-             [this, self,
-              p](RefPtr<MediaManager::MediaDeviceSetRefCnt>&& aDevices) {
-               nsPIDOMWindowInner* window = GetWindowIfCurrent();
-               if (!window) {
-                 return;  
-               }
-               auto windowId = window->WindowID();
-               nsTArray<RefPtr<MediaDeviceInfo>> infos;
-               for (auto& device : *aDevices) {
-                 MOZ_ASSERT(device->mKind == dom::MediaDeviceKind::Audioinput ||
-                            device->mKind == dom::MediaDeviceKind::Videoinput ||
-                            device->mKind == dom::MediaDeviceKind::Audiooutput);
-                 
-                 
-                 nsString label;
-                 if (MediaManager::Get()->IsActivelyCapturingOrHasAPermission(
-                         windowId) ||
-                     Preferences::GetBool("media.navigator.permission.disabled",
-                                          false)) {
-                   label = device->mName;
-                 }
-                 infos.AppendElement(MakeRefPtr<MediaDeviceInfo>(
-                     device->mID, device->mKind, label, device->mGroupID));
-               }
-               p->MaybeResolve(std::move(infos));
-             },
-             [this, self, p](const RefPtr<MediaMgrError>& error) {
-               nsPIDOMWindowInner* window = GetWindowIfCurrent();
-               if (!window) {
-                 return;  
-               }
-               p->MaybeReject(MakeRefPtr<MediaStreamError>(window, *error));
-             });
+      ->Then(
+          GetCurrentThreadSerialEventTarget(), __func__,
+          [this, self,
+           p](RefPtr<MediaManager::MediaDeviceSetRefCnt>&& aDevices) {
+            nsPIDOMWindowInner* window = GetWindowIfCurrent();
+            if (!window) {
+              return;  
+            }
+            auto windowId = window->WindowID();
+            nsTArray<RefPtr<MediaDeviceInfo>> infos;
+            for (auto& device : *aDevices) {
+              MOZ_ASSERT(device->mKind == dom::MediaDeviceKind::Audioinput ||
+                         device->mKind == dom::MediaDeviceKind::Videoinput ||
+                         device->mKind == dom::MediaDeviceKind::Audiooutput);
+              
+              
+              nsString label;
+              if (MediaManager::Get()->IsActivelyCapturingOrHasAPermission(
+                      windowId) ||
+                  Preferences::GetBool("media.navigator.permission.disabled",
+                                       false)) {
+                label = device->mName;
+              }
+              infos.AppendElement(MakeRefPtr<MediaDeviceInfo>(
+                  device->mID, device->mKind, label, device->mGroupID));
+            }
+            p->MaybeResolve(std::move(infos));
+          },
+          [this, self, p](const RefPtr<MediaMgrError>& error) {
+            nsPIDOMWindowInner* window = GetWindowIfCurrent();
+            if (!window) {
+              return;  
+            }
+            p->MaybeReject(MakeRefPtr<MediaStreamError>(window, *error));
+          });
   return p.forget();
 }
 
@@ -139,20 +141,21 @@ already_AddRefed<Promise> MediaDevices::GetDisplayMedia(
   RefPtr<MediaDevices> self(this);
   MediaManager::Get()
       ->GetDisplayMedia(GetOwner(), aConstraints, aCallerType)
-      ->Then(GetCurrentThreadSerialEventTarget(), __func__,
-             [this, self, p](RefPtr<DOMMediaStream>&& aStream) {
-               if (!GetWindowIfCurrent()) {
-                 return;  
-               }
-               p->MaybeResolve(std::move(aStream));
-             },
-             [this, self, p](RefPtr<MediaMgrError>&& error) {
-               nsPIDOMWindowInner* window = GetWindowIfCurrent();
-               if (!window) {
-                 return;  
-               }
-               p->MaybeReject(MakeRefPtr<MediaStreamError>(window, *error));
-             });
+      ->Then(
+          GetCurrentThreadSerialEventTarget(), __func__,
+          [this, self, p](RefPtr<DOMMediaStream>&& aStream) {
+            if (!GetWindowIfCurrent()) {
+              return;  
+            }
+            p->MaybeResolve(std::move(aStream));
+          },
+          [this, self, p](RefPtr<MediaMgrError>&& error) {
+            nsPIDOMWindowInner* window = GetWindowIfCurrent();
+            if (!window) {
+              return;  
+            }
+            p->MaybeReject(MakeRefPtr<MediaStreamError>(window, *error));
+          });
   return p.forget();
 }
 

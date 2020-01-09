@@ -555,12 +555,12 @@ PLDHashEntryHdr* PLDHashTable::Add(const void* aKey,
   
   
   PLDHashNumber keyHash = ComputeKeyHash(aKey);
-  Slot slot = SearchTable<ForAdd>(aKey, keyHash,
-                                  [&](Slot& found) -> Slot { return found; },
-                                  [&]() -> Slot {
-                                    MOZ_CRASH("Nope");
-                                    return Slot(nullptr, nullptr);
-                                  });
+  Slot slot = SearchTable<ForAdd>(
+      aKey, keyHash, [&](Slot& found) -> Slot { return found; },
+      [&]() -> Slot {
+        MOZ_CRASH("Nope");
+        return Slot(nullptr, nullptr);
+      });
   if (!slot.IsLive()) {
     
     if (slot.IsRemoved()) {
@@ -606,14 +606,15 @@ void PLDHashTable::Remove(const void* aKey) {
   }
 
   PLDHashNumber keyHash = ComputeKeyHash(aKey);
-  SearchTable<ForSearchOrRemove>(aKey, keyHash,
-                                 [&](Slot& slot) {
-                                   RawRemove(slot);
-                                   ShrinkIfAppropriate();
-                                 },
-                                 [&]() {
-                                   
-                                 });
+  SearchTable<ForSearchOrRemove>(
+      aKey, keyHash,
+      [&](Slot& slot) {
+        RawRemove(slot);
+        ShrinkIfAppropriate();
+      },
+      [&]() {
+        
+      });
 }
 
 void PLDHashTable::RemoveEntry(PLDHashEntryHdr* aEntry) {
