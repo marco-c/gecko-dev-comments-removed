@@ -4,7 +4,7 @@
 
 use api::{
     AlphaType, ColorDepth, ColorF, ColorU,
-    ImageKey as ApiImageKey, ImageRendering, LayoutPrimitiveInfo,
+    ImageKey as ApiImageKey, ImageRendering,
     PremultipliedColorF, Shadow, YuvColorSpace, YuvFormat,
 };
 use api::units::*;
@@ -12,6 +12,7 @@ use display_list_flattener::{CreateShadow, IsVisible};
 use frame_builder::FrameBuildingState;
 use gpu_cache::{GpuDataRequest};
 use intern::{Internable, InternDebug, Handle as InternHandle};
+use internal_types::LayoutPrimitiveInfo;
 use prim_store::{
     EdgeAaSegmentMask, OpacityBindingIndex, PrimitiveInstanceKind,
     PrimitiveOpacity, PrimitiveSceneData, PrimKey, PrimKeyCommonData,
@@ -533,10 +534,10 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<Image>(), 56, "Image size changed");
-    assert_eq!(mem::size_of::<ImageTemplate>(), 108, "ImageTemplate size changed");
-    assert_eq!(mem::size_of::<ImageKey>(), 68, "ImageKey size changed");
-    assert_eq!(mem::size_of::<YuvImage>(), 36, "YuvImage size changed");
-    assert_eq!(mem::size_of::<YuvImageTemplate>(), 56, "YuvImageTemplate size changed");
-    assert_eq!(mem::size_of::<YuvImageKey>(), 48, "YuvImageKey size changed");
+    assert_eq!(mem::size_of::<Image>(), 52, "Image size changed");
+    assert_eq!(mem::size_of::<ImageTemplate>(), 104, "ImageTemplate size changed");
+    assert_eq!(mem::size_of::<ImageKey>(), 64, "ImageKey size changed");
+    assert_eq!(mem::size_of::<YuvImage>(), 28, "YuvImage size changed");
+    assert_eq!(mem::size_of::<YuvImageTemplate>(), 48, "YuvImageTemplate size changed");
+    assert_eq!(mem::size_of::<YuvImageKey>(), 40, "YuvImageKey size changed");
 }
