@@ -5,7 +5,7 @@
 "use strict";
 
 importScripts("resource://gre/modules/osfile.jsm",
-              "resource://app/modules/profiler_get_symbols.js");
+              "resource://gre/modules/profiler_get_symbols.js");
 
 
 
