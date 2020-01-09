@@ -42,10 +42,6 @@ template <typename T>
 struct ParamTraits;
 }  
 
-namespace android {
-class MOZ_EXPORT GraphicBuffer;
-}  
-
 namespace mozilla {
 namespace layers {
 

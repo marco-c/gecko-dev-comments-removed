@@ -3,15 +3,18 @@
 
 
 
+
 #include "mozilla/layers/TextureClientX11.h"
+
 #include "mozilla/layers/CompositableClient.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/ShadowLayerUtilsX11.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
-#include "gfxXlibSurface.h"
 #include "gfx2DGlue.h"
+#include "gfxPlatform.h"
+#include "gfxXlibSurface.h"
 
 #include "mozilla/X11Util.h"
 #include <X11/Xlib.h>
