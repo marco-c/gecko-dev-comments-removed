@@ -5100,8 +5100,8 @@ class TabProgressListener {
     
     let topLevel = aWebProgress.isTopLevel;
 
+    let isSameDocument = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
     if (topLevel) {
-      let isSameDocument = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
       let isReload = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD);
       let isErrorPage = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE);
 
@@ -5199,10 +5199,12 @@ class TabProgressListener {
     if (!this.mBlank) {
       this._callProgressListeners("onLocationChange",
                                   [aWebProgress, aRequest, aLocation, aFlags]);
-      
-      
-      this._callProgressListeners("onContentBlockingEvent",
-                                  [aWebProgress, null, 0, true]);
+      if (topLevel && !isSameDocument) {
+        
+        
+        this._callProgressListeners("onContentBlockingEvent",
+                                    [aWebProgress, null, 0, true]);
+      }
     }
 
     if (topLevel) {
