@@ -82,8 +82,14 @@ class CompositableForwarder : public KnowsCompositor {
 
 
 
-  virtual void RemoveTextureFromCompositable(CompositableClient* aCompositable,
-                                             TextureClient* aTexture) = 0;
+
+
+
+
+
+  virtual void RemoveTextureFromCompositable(
+      CompositableClient* aCompositable, TextureClient* aTexture,
+      const Maybe<wr::RenderRoot>& aRenderRoot) = 0;
 
   struct TimedTextureClient {
     TimedTextureClient()
@@ -99,8 +105,14 @@ class CompositableForwarder : public KnowsCompositor {
 
 
 
+
+
+
+
+
   virtual void UseTextures(CompositableClient* aCompositable,
-                           const nsTArray<TimedTextureClient>& aTextures) = 0;
+                           const nsTArray<TimedTextureClient>& aTextures,
+                           const Maybe<wr::RenderRoot>& aRenderRoot) = 0;
   virtual void UseComponentAlphaTextures(CompositableClient* aCompositable,
                                          TextureClient* aClientOnBlack,
                                          TextureClient* aClientOnWhite) = 0;

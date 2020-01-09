@@ -164,7 +164,12 @@ class WRUserData : public layers::LayerUserData,
   static UserDataKey sWRUserDataKey;
 };
 
-static RefPtr<SourceSurface> gWRGlyphAtlas[8];
+
+
+
+static const int CONTENT_RECT_GLYPH_ATLAS = 8;
+
+static RefPtr<SourceSurface> gWRGlyphAtlas[16];
 static LinkedList<WRUserData> gWRUsers;
 UserDataKey WRUserData::sWRUserDataKey;
 
@@ -218,13 +223,17 @@ static void PurgeWRGlyphAtlas() {
   
   for (WRUserData* user : gWRUsers) {
     auto* manager = user->mManager;
-    for (size_t i = 0; i < 8; i++) {
+    for (size_t i = 0; i < 16; i++) {
       if (gWRGlyphAtlas[i]) {
         uint32_t handle = (uint32_t)(uintptr_t)gWRGlyphAtlas[i]->GetUserData(
             reinterpret_cast<UserDataKey*>(manager));
         if (handle) {
-          manager->GetRenderRootStateManager()->AddImageKeyForDiscard(
-              wr::ImageKey{manager->WrBridge()->GetNamespace(), handle});
+          wr::RenderRoot renderRoot = (i & CONTENT_RECT_GLYPH_ATLAS)
+                                          ? wr::RenderRoot::Content
+                                          : wr::RenderRoot::Default;
+          manager->GetRenderRootStateManager(renderRoot)
+              ->AddImageKeyForDiscard(
+                  wr::ImageKey{manager->WrBridge()->GetNamespace(), handle});
         }
       }
     }
@@ -235,7 +244,7 @@ static void PurgeWRGlyphAtlas() {
     gWRUsers.popFirst()->Remove();
   }
   
-  for (size_t i = 0; i < 8; i++) {
+  for (size_t i = 0; i < 16; i++) {
     gWRGlyphAtlas[i] = nullptr;
   }
 }
@@ -249,7 +258,7 @@ WRUserData::~WRUserData() {
   
   
   if (isInList()) {
-    for (size_t i = 0; i < 8; i++) {
+    for (size_t i = 0; i < 16; i++) {
       if (gWRGlyphAtlas[i]) {
         gWRGlyphAtlas[i]->RemoveUserData(
             reinterpret_cast<UserDataKey*>(mManager));
@@ -270,14 +279,19 @@ static already_AddRefed<SourceSurface> GetWRGlyphAtlas(DrawTarget& aDrawTarget,
     }
   }
   
+  
+  auto* tdt = static_cast<layout::TextDrawTarget*>(&aDrawTarget);
+  if (tdt->GetRenderRoot() == wr::RenderRoot::Content) {
+    key |= CONTENT_RECT_GLYPH_ATLAS;
+  }
+
+  
   RefPtr<SourceSurface> atlas = gWRGlyphAtlas[key];
   if (!atlas) {
     atlas = MakeWRGlyphAtlas(aMat);
     gWRGlyphAtlas[key] = atlas;
   }
-  
-  
-  auto* tdt = static_cast<layout::TextDrawTarget*>(&aDrawTarget);
+
   auto* manager = tdt->WrLayerManager();
   if (!atlas->GetUserData(reinterpret_cast<UserDataKey*>(manager))) {
     

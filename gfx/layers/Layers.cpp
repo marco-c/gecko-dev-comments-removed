@@ -2234,28 +2234,40 @@ bool LayerManager::IsLogEnabled() {
 
 bool LayerManager::SetPendingScrollUpdateForNextTransaction(
     ScrollableLayerGuid::ViewID aScrollId,
-    const ScrollUpdateInfo& aUpdateInfo) {
+    const ScrollUpdateInfo& aUpdateInfo,
+    wr::RenderRoot aRenderRoot) {
   Layer* withPendingTransform = DepthFirstSearch<ForwardIterator>(
       GetRoot(), [](Layer* aLayer) { return aLayer->HasPendingTransform(); });
   if (withPendingTransform) {
     return false;
   }
 
-  mPendingScrollUpdates[aScrollId] = aUpdateInfo;
+  
+  
+  
+  
+  wr::RenderRoot renderRoot = (GetBackendType() == LayersBackend::LAYERS_WR)
+    ? aRenderRoot : wr::RenderRoot::Default;
+  mPendingScrollUpdates[renderRoot][aScrollId] = aUpdateInfo;
   return true;
 }
 
 Maybe<ScrollUpdateInfo> LayerManager::GetPendingScrollInfoUpdate(
     ScrollableLayerGuid::ViewID aScrollId) {
-  auto it = mPendingScrollUpdates.find(aScrollId);
-  if (it != mPendingScrollUpdates.end()) {
+  
+  
+  MOZ_ASSERT(GetBackendType() != LayersBackend::LAYERS_WR);
+  auto it = mPendingScrollUpdates[wr::RenderRoot::Default].find(aScrollId);
+  if (it != mPendingScrollUpdates[wr::RenderRoot::Default].end()) {
     return Some(it->second);
   }
   return Nothing();
 }
 
 void LayerManager::ClearPendingScrollInfoUpdate() {
-  mPendingScrollUpdates.clear();
+  for (auto renderRoot : wr::kRenderRoots) {
+    mPendingScrollUpdates[renderRoot].clear();
+  }
 }
 
 void PrintInfo(std::stringstream& aStream, HostLayer* aLayerComposite) {

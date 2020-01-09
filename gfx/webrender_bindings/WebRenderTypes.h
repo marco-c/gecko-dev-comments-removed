@@ -9,6 +9,7 @@
 
 #include "ImageTypes.h"
 #include "mozilla/webrender/webrender_ffi.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Types.h"
@@ -36,6 +37,8 @@ typedef uintptr_t usize;
 
 typedef wr::WrWindowId WindowId;
 typedef wr::WrPipelineId PipelineId;
+typedef wr::WrDocumentId DocumentId;
+typedef wr::WrRemovedPipeline RemovedPipeline;
 typedef wr::WrImageKey ImageKey;
 typedef wr::WrFontKey FontKey;
 typedef wr::WrFontInstanceKey FontInstanceKey;
@@ -56,6 +59,75 @@ struct ExternalImageKeyPair {
 
 
 WindowId NewWindowId();
+
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(RenderRoot, uint8_t, (
+  
+  
+  
+  
+  
+  
+  Default,
+
+  
+  
+  
+  
+  
+  Content
+));
+
+typedef EnumSet<RenderRoot, uint8_t> RenderRootSet;
+
+
+const Array<RenderRoot, kRenderRootCount> kRenderRoots(
+    RenderRoot::Default,
+    RenderRoot::Content);
+
+const Array<RenderRoot, kRenderRootCount - 1> kNonDefaultRenderRoots(
+    RenderRoot::Content);
+
+template <typename T>
+class RenderRootArray : public Array<T, kRenderRootCount> {
+  typedef Array<T, kRenderRootCount> Super;
+ public:
+  RenderRootArray() {}
+
+  explicit RenderRootArray(T aDefault) {
+    for (auto renderRoot : kRenderRoots) {
+      (*this)[renderRoot] = aDefault;
+    }
+  }
+
+  T& operator[](wr::RenderRoot aIndex) {
+    return (*(Super*)this)[(size_t)aIndex];
+  }
+
+  const T& operator[](wr::RenderRoot aIndex) const {
+    return (*(Super*)this)[(size_t)aIndex];
+  }
+
+  T& operator[](size_t aIndex) = delete;
+  const T& operator[](size_t aIndex) const = delete;
+};
+
+template <typename T>
+class NonDefaultRenderRootArray : public Array<T, kRenderRootCount - 1> {
+  typedef Array<T, kRenderRootCount - 1> Super;
+ public:
+  T& operator[](wr::RenderRoot aIndex) {
+    return (*(Super*)this)[(size_t)aIndex - 1];
+  }
+
+  const T& operator[](wr::RenderRoot aIndex) const {
+    return (*(Super*)this)[(size_t)aIndex - 1];
+  }
+
+  T& operator[](size_t aIndex) = delete;
+  const T& operator[](size_t aIndex) const = delete;
+};
+
+RenderRoot RenderRootFromId(DocumentId id);
 
 inline DebugFlags NewDebugFlags(uint32_t aFlags) { return {aFlags}; }
 
