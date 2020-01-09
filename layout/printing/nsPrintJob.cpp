@@ -153,9 +153,8 @@ static const char* gPrintFrameTypeStr[] = {"kNoFrames", "kFramesAsIs",
                                            "kSelectedFrame", "kEachFrameSep"};
 static const char* gFrameHowToEnableStr[] = {
     "kFrameEnableNone", "kFrameEnableAll", "kFrameEnableAsIsAndEach"};
-static const char* gPrintRangeStr[] = {"kRangeAllPages",
-                                       "kRangeSpecifiedPageRange",
-                                       "kRangeSelection", "kRangeFocusFrame"};
+static const char* gPrintRangeStr[] = {
+    "kRangeAllPages", "kRangeSpecifiedPageRange", "kRangeSelection"};
 
 
 
