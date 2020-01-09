@@ -271,6 +271,21 @@ class BaselineCodeGen {
   NonAssertingLabel return_;
   NonAssertingLabel postBarrierSlot_;
 
+  CodeOffset profilerEnterFrameToggleOffset_;
+  CodeOffset profilerExitFrameToggleOffset_;
+
+  
+  
+  CodeOffset bailoutPrologueOffset_;
+
+  
+  
+  CodeOffset debugOsrPrologueOffset_;
+
+  
+  
+  CodeOffset debugOsrEpilogueOffset_;
+
   uint32_t pushedBeforeCall_;
 #ifdef DEBUG
   bool inCall_;
@@ -308,6 +323,9 @@ class BaselineCodeGen {
 
   
   void loadScript(Register dest);
+
+  
+  void subtractScriptSlotsSize(Register reg, Register scratch);
 
   
   void jumpToResumeEntry(Register resumeIndex, Register scratch1,
@@ -434,6 +452,24 @@ class BaselineCodeGen {
   Address getEnvironmentCoordinateAddressFromObject(Register objReg,
                                                     Register reg);
   Address getEnvironmentCoordinateAddress(Register reg);
+
+  MOZ_MUST_USE bool emitPrologue();
+  MOZ_MUST_USE bool emitEpilogue();
+  MOZ_MUST_USE bool emitOutOfLinePostBarrierSlot();
+  MOZ_MUST_USE bool emitStackCheck();
+  MOZ_MUST_USE bool emitArgumentTypeChecks();
+  MOZ_MUST_USE bool emitDebugPrologue();
+  MOZ_MUST_USE bool initEnvironmentChain();
+
+  MOZ_MUST_USE bool emitTraceLoggerEnter();
+  MOZ_MUST_USE bool emitTraceLoggerExit();
+
+  void emitIsDebuggeeCheck();
+  void emitInitializeLocals();
+  void emitPreInitEnvironmentChain(Register nonFunctionEnv);
+
+  void emitProfilerEnterFrame();
+  void emitProfilerExitFrame();
 };
 
 using RetAddrEntryVector = js::Vector<RetAddrEntry, 16, SystemAllocPolicy>;
@@ -510,6 +546,13 @@ class BaselineCompilerHandler {
   void markLastRetAddrEntryKind(RetAddrEntry::Kind kind) {
     retAddrEntries_.back().setKind(kind);
   }
+
+  
+  
+  bool needsEarlyStackCheck() const {
+    static const unsigned EARLY_STACK_CHECK_SLOT_COUNT = 128;
+    return script()->nslots() > EARLY_STACK_CHECK_SLOT_COUNT;
+  }
 };
 
 using BaselineCompilerCodeGen = BaselineCodeGen<BaselineCompilerHandler>;
@@ -529,29 +572,8 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
   js::Vector<PCMappingEntry, 16, SystemAllocPolicy> pcMappingEntries_;
 
   CodeOffset profilerPushToggleOffset_;
-  CodeOffset profilerEnterFrameToggleOffset_;
-  CodeOffset profilerExitFrameToggleOffset_;
 
   CodeOffset traceLoggerScriptTextIdOffset_;
-
-  
-  
-  CodeOffset bailoutPrologueOffset_;
-
-  
-  
-  CodeOffset debugOsrPrologueOffset_;
-
-  
-  
-  CodeOffset debugOsrEpilogueOffset_;
-
-  
-  
-  static const unsigned EARLY_STACK_CHECK_SLOT_COUNT = 128;
-  bool needsEarlyStackCheck() const {
-    return handler.script()->nslots() > EARLY_STACK_CHECK_SLOT_COUNT;
-  }
 
  public:
   BaselineCompiler(JSContext* cx, TempAllocator& alloc, JSScript* script);
@@ -587,22 +609,7 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
 
   MethodStatus emitBody();
 
-  void emitInitializeLocals();
-  MOZ_MUST_USE bool emitPrologue();
-  MOZ_MUST_USE bool emitEpilogue();
-  MOZ_MUST_USE bool emitOutOfLinePostBarrierSlot();
-  MOZ_MUST_USE bool emitStackCheck();
-  MOZ_MUST_USE bool emitArgumentTypeChecks();
-  void emitIsDebuggeeCheck();
-  MOZ_MUST_USE bool emitDebugPrologue();
   MOZ_MUST_USE bool emitDebugTrap();
-  MOZ_MUST_USE bool emitTraceLoggerEnter();
-  MOZ_MUST_USE bool emitTraceLoggerExit();
-
-  void emitProfilerEnterFrame();
-  void emitProfilerExitFrame();
-
-  MOZ_MUST_USE bool initEnvironmentChain();
 
   MOZ_MUST_USE bool addPCMappingEntry(bool addIndexEntry);
 };
@@ -633,6 +640,10 @@ class BaselineInterpreterHandler {
   void markLastRetAddrEntryKind(RetAddrEntry::Kind) {}
 
   bool maybeIonCompileable() const { return true; }
+
+  
+  
+  bool needsEarlyStackCheck() const { return true; }
 };
 
 using BaselineInterpreterCodeGen = BaselineCodeGen<BaselineInterpreterHandler>;
