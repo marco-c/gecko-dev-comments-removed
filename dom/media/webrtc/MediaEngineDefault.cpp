@@ -32,17 +32,39 @@ namespace mozilla {
 
 using namespace mozilla::gfx;
 
+static nsString DefaultVideoName() {
+  
+  
+  nsAutoString cameraNameFromPref;
+  nsresult rv;
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction(__func__,
+                             [&]() {
+                               rv = Preferences::GetString(
+                                   "media.getusermedia.fake-camera-name",
+                                   cameraNameFromPref);
+                             }),
+      NS_DISPATCH_SYNC);
+
+  if (NS_SUCCEEDED(rv)) {
+    return cameraNameFromPref;
+  }
+  return NS_LITERAL_STRING(u"Default Video Device");
+}
+
 
 
 
 
 MediaEngineDefaultVideoSource::MediaEngineDefaultVideoSource()
-    : mTimer(nullptr), mMutex("MediaEngineDefaultVideoSource::mMutex") {}
+    : mTimer(nullptr),
+      mMutex("MediaEngineDefaultVideoSource::mMutex"),
+      mName(DefaultVideoName()) {}
 
 MediaEngineDefaultVideoSource::~MediaEngineDefaultVideoSource() {}
 
 nsString MediaEngineDefaultVideoSource::GetName() const {
-  return NS_LITERAL_STRING(u"Default Video Device");
+  return mName;
 }
 
 nsCString MediaEngineDefaultVideoSource::GetUUID() const {
