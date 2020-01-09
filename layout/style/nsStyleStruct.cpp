@@ -3017,7 +3017,7 @@ nsStyleDisplay::nsStyleDisplay(const Document& aDocument)
       mAnimationFillModeCount(1),
       mAnimationPlayStateCount(1),
       mAnimationIterationCountCount(1),
-      mShapeMargin(0, nsStyleCoord::CoordConstructor) {
+      mShapeMargin(LengthPercentage::Zero()) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 
   

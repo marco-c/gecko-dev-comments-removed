@@ -174,6 +174,7 @@ impl SpecifiedValueInfo for CounterStyleOrNone {
     ToComputedValue,
     ToCss,
 )]
+#[repr(transparent)]
 pub struct NonNegative<T>(pub T);
 
 
