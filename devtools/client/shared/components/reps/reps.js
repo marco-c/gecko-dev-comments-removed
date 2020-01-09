@@ -2877,9 +2877,7 @@ function parseStackString(stack) {
     
     
     
-    const locationParts = location
-      ? location.match(/^(.*):(\d+):(\d+)$/)
-      : null;
+    const locationParts = location ? location.match(/^(.*):(\d+):(\d+)$/) : null;
 
     if (location && locationParts) {
       const [, filename, line, column] = locationParts;
@@ -3742,7 +3740,63 @@ module.exports = {
 
 
 const validProtocols = /(http|https|ftp|data|resource|chrome):/i;
-const tokenSplitRegex = /(\s|\'|\"|\\)+/;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const urlRegex = /(^|[\s(,;'"`])((?:https?:\/\/|www\d{0,3}[.][a-z0-9.\-]{2,249}|[a-z0-9.\-]{2,250}[.][a-z]{2,4}\/)[-\w.!~*'();,/?:@&=+$#%]*)/im;
+
+
+
+
+
+const uneatLastUrlCharsRegex = /(?:[),;.!?`'"]|[.!?]\)|\)[.!?])$/;
+
 const ELLIPSIS = "\u2026";
 const dom = __webpack_require__(1);
 const { span } = dom;
@@ -4156,9 +4210,10 @@ module.exports = {
   maybeEscapePropertyName,
   getGripPreviewItems,
   getGripType,
-  tokenSplitRegex,
   ellipsisElement,
-  ELLIPSIS
+  ELLIPSIS,
+  uneatLastUrlCharsRegex,
+  urlRegex
 };
 
  }),
@@ -4320,15 +4375,15 @@ const PropTypes = __webpack_require__(0);
 
 const {
   containsURL,
-  isURL,
   escapeString,
   getGripType,
   rawCropString,
   sanitizeString,
   wrapRender,
   isGrip,
-  tokenSplitRegex,
-  ELLIPSIS
+  ELLIPSIS,
+  uneatLastUrlCharsRegex,
+  urlRegex
 } = __webpack_require__(2);
 
 const dom = __webpack_require__(1);
@@ -4346,7 +4401,8 @@ StringRep.propTypes = {
   object: PropTypes.object.isRequired,
   openLink: PropTypes.func,
   className: PropTypes.string,
-  title: PropTypes.string
+  title: PropTypes.string,
+  isInContentPage: PropTypes.bool
 };
 
 function StringRep(props) {
@@ -4359,7 +4415,8 @@ function StringRep(props) {
     escapeWhitespace = true,
     member,
     openLink,
-    title
+    title,
+    isInContentPage
   } = props;
 
   let text = object;
@@ -4394,7 +4451,7 @@ function StringRep(props) {
 
   if (!isLong) {
     if (containsURL(text)) {
-      return span(config, ...getLinkifiedElements(text, shouldCrop && cropLimit, openLink));
+      return span(config, ...getLinkifiedElements(text, shouldCrop && cropLimit, openLink, isInContentPage));
     }
 
     
@@ -4469,53 +4526,68 @@ function maybeCropString(opts, text) {
 
 
 
-function getLinkifiedElements(text, cropLimit, openLink) {
+
+
+function getLinkifiedElements(text, cropLimit, openLink, isInContentPage) {
   const halfLimit = Math.ceil((cropLimit - ELLIPSIS.length) / 2);
   const startCropIndex = cropLimit ? halfLimit : null;
   const endCropIndex = cropLimit ? text.length - halfLimit : null;
 
-  
-  
-  let currentIndex = 0;
   const items = [];
-  for (const token of text.split(tokenSplitRegex)) {
-    if (isURL(token)) {
-      
-      const tokenStart = text.indexOf(token, currentIndex);
-      let nonUrlText = text.slice(currentIndex, tokenStart);
-      nonUrlText = getCroppedString(nonUrlText, currentIndex, startCropIndex, endCropIndex);
-      if (nonUrlText) {
-        items.push(nonUrlText);
-      }
-
-      
-      currentIndex = tokenStart;
-
-      const linkText = getCroppedString(token, currentIndex, startCropIndex, endCropIndex);
-      if (linkText) {
-        items.push(a({
-          className: "url",
-          title: token,
-          draggable: false,
-          onClick: openLink ? e => {
-            e.preventDefault();
-            openLink(token, e);
-          } : null
-        }, linkText));
-      }
-
-      currentIndex = tokenStart + token.length;
+  let currentIndex = 0;
+  let contentStart;
+  while (true) {
+    const url = urlRegex.exec(text);
+    
+    if (!url) {
+      break;
     }
+    contentStart = url.index + url[1].length;
+    if (contentStart > 0) {
+      const nonUrlText = text.substring(0, contentStart);
+      items.push(getCroppedString(nonUrlText, currentIndex, startCropIndex, endCropIndex));
+    }
+
+    
+    
+    
+    let useUrl = url[2];
+    const uneat = uneatLastUrlCharsRegex.exec(useUrl);
+    if (uneat) {
+      useUrl = useUrl.substring(0, uneat.index);
+    }
+
+    currentIndex = currentIndex + contentStart;
+    const linkText = getCroppedString(useUrl, currentIndex, startCropIndex, endCropIndex);
+
+    if (linkText) {
+      items.push(a({
+        className: "url",
+        title: useUrl,
+        draggable: false,
+        
+        
+        
+        
+        href: openLink || isInContentPage ? useUrl : null,
+        onClick: openLink ? e => {
+          e.preventDefault();
+          openLink(useUrl, e);
+        } : null
+      }, linkText));
+    }
+
+    currentIndex = currentIndex + useUrl.length;
+    text = text.substring(url.index + url[1].length + useUrl.length);
   }
 
   
   
-  if (currentIndex !== text.length) {
-    let nonUrlText = text.slice(currentIndex, text.length);
+  if (text.length > 0) {
     if (currentIndex < endCropIndex) {
-      nonUrlText = getCroppedString(nonUrlText, currentIndex, startCropIndex, endCropIndex);
+      text = getCroppedString(text, currentIndex, startCropIndex, endCropIndex);
     }
-    items.push(nonUrlText);
+    items.push(text);
   }
 
   return items;
@@ -5624,10 +5696,15 @@ function DateTime(props) {
   const grip = props.object;
   let date;
   try {
+    const dateObject = new Date(grip.preview.timestamp);
+    
+    
+    dateObject.toISOString();
+
     date = span({
       "data-link-actor-id": grip.actor,
       className: "objectBox"
-    }, getTitle(grip), span({ className: "Date" }, new Date(grip.preview.timestamp).toISOString()));
+    }, getTitle(grip), span({ className: "Date" }, dateObject.toString()));
   } catch (e) {
     date = span({ className: "objectBox" }, "Invalid Date");
   }
