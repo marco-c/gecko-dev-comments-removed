@@ -127,6 +127,9 @@ const runtime = {
   isConnectionNotResponding: PropTypes.bool.isRequired,
 
   
+  isConnectionTimeout: PropTypes.bool.isRequired,
+
+  
   
   
   isUnavailable: PropTypes.bool.isRequired,
