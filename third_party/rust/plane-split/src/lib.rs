@@ -163,12 +163,8 @@ impl<
     }
 
     
+    
     pub fn intersect(&self, other: &Self) -> Option<Line<T, U>> {
-        let cross_dir = self.normal.cross(other.normal);
-        if cross_dir.dot(cross_dir) < T::approx_epsilon() {
-            return None
-        }
-
         
         
         
@@ -183,6 +179,10 @@ impl<
         let origin = TypedPoint3D::origin() +
             self.normal * ((other.offset * w - self.offset) * factor) -
             other.normal* ((other.offset - self.offset * w) * factor);
+
+        let cross_dir = self.normal.cross(other.normal);
+        
+        
 
         Some(Line {
             origin,

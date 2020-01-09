@@ -95,6 +95,7 @@ impl<
 
     
     pub fn clip(&mut self, polygon: Polygon<T, U>) -> &[Polygon<T, U>] {
+        debug!("\tClipping {:?}", polygon);
         self.results.clear();
         self.results.push(polygon);
 
