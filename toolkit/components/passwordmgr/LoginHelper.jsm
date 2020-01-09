@@ -727,7 +727,7 @@ var LoginHelper = {
 
       
       
-      let existingLogins = Services.logins.findLogins({}, login.hostname,
+      let existingLogins = Services.logins.findLogins(login.hostname,
                                                       login.formSubmitURL,
                                                       login.httpRealm);
       

@@ -379,8 +379,7 @@ LoginManagerPrompter.prototype = {
       }
 
       
-      var foundLogins = Services.logins.findLogins({}, hostname, null,
-                                                   realm);
+      var foundLogins = Services.logins.findLogins(hostname, null, realm);
 
       
       
@@ -483,8 +482,7 @@ LoginManagerPrompter.prototype = {
 
       if (!aPassword.value) {
         
-        var foundLogins = Services.logins.findLogins({}, hostname, null,
-                                                     realm);
+        var foundLogins = Services.logins.findLogins(hostname, null, realm);
 
         
         

@@ -167,7 +167,7 @@ var PermissionsHelper = {
     
     if (aType == "password") {
       
-      let logins = Services.logins.findLogins({}, aURI.displayPrePath, "", "");
+      let logins = Services.logins.findLogins(aURI.displayPrePath, "", "");
       for (let i = 0; i < logins.length; i++) {
         Services.logins.removeLogin(logins[i]);
       }
