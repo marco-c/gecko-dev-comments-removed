@@ -60,6 +60,117 @@ const MozElementMixin = Base => class MozElement extends Base {
 
 
 
+
+
+  static get inheritedAttributes() {
+    return null;
+  }
+
+  
+
+
+
+  static get observedAttributes() {
+    let {inheritedAttributes} = this;
+    if (!inheritedAttributes) {
+      return [];
+    }
+
+    let allAttributes = new Set();
+    for (let sel in inheritedAttributes) {
+      for (let attrName of inheritedAttributes[sel].split(",")) {
+        allAttributes.add(attrName.split("=").pop());
+      }
+    }
+    return [...allAttributes];
+  }
+
+  
+
+
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (!this.isConnectedAndReady || oldValue === newValue || !this.inheritedAttributesCache) {
+      return;
+    }
+
+    this.inheritAttributes();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  initializeAttributeInheritance() {
+    let {inheritedAttributes} = this.constructor;
+    if (!inheritedAttributes) {
+      return;
+    }
+    this._inheritedAttributesValuesCache = null;
+    this.inheritedAttributesCache = new Map();
+    for (let selector in inheritedAttributes) {
+      let el = this.querySelector(selector);
+      
+      if (!el) {
+        continue;
+      }
+      if (this.inheritedAttributesCache.has(el)) {
+        console.error(`Error: duplicate element encountered with ${selector}`);
+      }
+
+      this.inheritedAttributesCache.set(el, inheritedAttributes[selector]);
+    }
+    this.inheritAttributes();
+  }
+
+  
+
+
+
+
+
+  inheritAttributes() {
+    let {inheritedAttributes} = this.constructor;
+    if (!inheritedAttributes) {
+      return;
+    }
+
+    if (!this.inheritedAttributesCache) {
+     console.error(`You must call this.initializeAttributeInheritance() for ${this.tagName}`);
+     return;
+    }
+
+    for (let [ el, attrs ] of this.inheritedAttributesCache.entries()) {
+      for (let attr of attrs.split(",")) {
+        this.inheritAttribute(el, attr);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   inheritAttribute(child, attr) {
     let attrName = attr;
     let attrNewName = attr;
@@ -74,13 +185,13 @@ const MozElementMixin = Base => class MozElement extends Base {
     
     
     
-    if (!this._inheritedAttributesMap) {
-      this._inheritedAttributesMap = new WeakMap();
+    if (!this._inheritedAttributesValuesCache) {
+      this._inheritedAttributesValuesCache = new WeakMap();
     }
-    if (!this._inheritedAttributesMap.has(child)) {
-      this._inheritedAttributesMap.set(child, {});
+    if (!this._inheritedAttributesValuesCache.has(child)) {
+      this._inheritedAttributesValuesCache.set(child, {});
     }
-    let lastInheritedAttributes = this._inheritedAttributesMap.get(child);
+    let lastInheritedAttributes = this._inheritedAttributesValuesCache.get(child);
 
     if ((hasAttr && attrValue === lastInheritedAttributes[attrName]) ||
         (!hasAttr && !lastInheritedAttributes.hasOwnProperty(attrName))) {
