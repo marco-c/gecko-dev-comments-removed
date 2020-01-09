@@ -545,10 +545,6 @@ inline void AppendStringIfNotEmpty(nsACString& aDest, nsACString&& aSrc) {
   }
 }
 
-
-
-bool OnCellularConnection();
-
 }  
 
 #endif

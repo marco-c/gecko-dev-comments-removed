@@ -68,7 +68,7 @@ class FileBlockCache : public MediaBlockCacheBase {
 
   
   
-  size_t GetMaxBlocks(size_t aCacheSizeInKB) const override;
+  int32_t GetMaxBlocks() const override;
 
   
   nsresult WriteBlock(uint32_t aBlockIndex, Span<const uint8_t> aData1,
