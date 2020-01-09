@@ -1,14 +1,18 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "base/platform_thread.h"
 #include "WinCompositorWindowThread.h"
 #include "mozilla/layers/SynchronousTask.h"
 #include "mozilla/StaticPtr.h"
 #include "mtransport/runnable_utils.h"
+
+#if WINVER < 0x0602
+#define WS_EX_NOREDIRECTIONBITMAP 0x00200000L
+#endif
 
 namespace mozilla {
 namespace widget {
@@ -20,18 +24,18 @@ WinCompositorWindowThread::WinCompositorWindowThread(base::Thread* aThread)
 
 WinCompositorWindowThread::~WinCompositorWindowThread() { delete mThread; }
 
-/* static */ WinCompositorWindowThread* WinCompositorWindowThread::Get() {
+ WinCompositorWindowThread* WinCompositorWindowThread::Get() {
   return sWinCompositorWindowThread;
 }
 
-/* static */ void WinCompositorWindowThread::Start() {
+ void WinCompositorWindowThread::Start() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sWinCompositorWindowThread);
 
   base::Thread* thread = new base::Thread("WinCompositor");
 
   base::Thread::Options options;
-  // HWND requests ui thread.
+  
   options.message_loop_type = MessageLoop::TYPE_UI;
 
   if (!thread->StartWithOptions(options)) {
@@ -42,7 +46,7 @@ WinCompositorWindowThread::~WinCompositorWindowThread() { delete mThread; }
   sWinCompositorWindowThread = new WinCompositorWindowThread(thread);
 }
 
-/* static */ void WinCompositorWindowThread::ShutDown() {
+ void WinCompositorWindowThread::ShutDown() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sWinCompositorWindowThread);
 
@@ -61,13 +65,13 @@ void WinCompositorWindowThread::ShutDownTask(layers::SynchronousTask* aTask) {
   MOZ_ASSERT(IsInCompositorWindowThread());
 }
 
-/* static */ MessageLoop* WinCompositorWindowThread::Loop() {
+ MessageLoop* WinCompositorWindowThread::Loop() {
   return sWinCompositorWindowThread
              ? sWinCompositorWindowThread->mThread->message_loop()
              : nullptr;
 }
 
-/* static */ bool WinCompositorWindowThread::IsInCompositorWindowThread() {
+ bool WinCompositorWindowThread::IsInCompositorWindowThread() {
   return sWinCompositorWindowThread &&
          sWinCompositorWindowThread->mThread->thread_id() ==
              PlatformThread::CurrentId();
@@ -79,7 +83,7 @@ const wchar_t kClassNameCompositor[] = L"MozillaCompositorWindowClass";
 ATOM g_compositor_inital_parent_window_class;
 ATOM g_compositor_window_class;
 
-// This runs on the window owner thread.
+
 void InitializeInitialParentWindowClass() {
   if (g_compositor_inital_parent_window_class) {
     return;
@@ -99,7 +103,7 @@ void InitializeInitialParentWindowClass() {
   g_compositor_inital_parent_window_class = ::RegisterClassW(&wc);
 }
 
-// This runs on the window owner thread.
+
 void InitializeWindowClass() {
   if (g_compositor_window_class) {
     return;
@@ -119,7 +123,7 @@ void InitializeWindowClass() {
   g_compositor_window_class = ::RegisterClassW(&wc);
 }
 
-/* static */ WinCompositorWnds WinCompositorWindowThread::CreateCompositorWindow() {
+ WinCompositorWnds WinCompositorWindowThread::CreateCompositorWindow() {
   MOZ_ASSERT(Loop());
 
   if (!Loop()) {
@@ -138,17 +142,18 @@ void InitializeWindowClass() {
         InitializeInitialParentWindowClass();
         InitializeWindowClass();
 
-        // Create initial parent window.
-        // We could not directly create a compositor window with a main window as
-        // parent window, so instead create it with a temporary placeholder parent.
-        // Its parent is set as main window in UI process.
+        
+        
+        
+        
         initialParentWnd = ::CreateWindowEx(
             WS_EX_TOOLWINDOW, kClassNameCompositorInitalParent, nullptr,
             WS_POPUP | WS_DISABLED, 0, 0, 1, 1, nullptr,
             0, GetModuleHandle(nullptr), 0);
 
         compositorWnd = ::CreateWindowEx(
-            WS_EX_NOPARENTNOTIFY, kClassNameCompositor, nullptr,
+            WS_EX_NOPARENTNOTIFY | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOREDIRECTIONBITMAP,
+            kClassNameCompositor, nullptr,
             WS_CHILDWINDOW | WS_DISABLED | WS_VISIBLE, 0, 0, 1, 1, initialParentWnd,
             0, GetModuleHandle(nullptr), 0);
       });
@@ -160,7 +165,7 @@ void InitializeWindowClass() {
   return WinCompositorWnds(compositorWnd, initialParentWnd);
 }
 
-/* static */ void WinCompositorWindowThread::DestroyCompositorWindow(
+ void WinCompositorWindowThread::DestroyCompositorWindow(
     WinCompositorWnds aWnds) {
   MOZ_ASSERT(aWnds.mCompositorWnd);
   MOZ_ASSERT(aWnds.mInitialParentWnd);
@@ -180,5 +185,5 @@ void InitializeWindowClass() {
   Loop()->PostTask(runnable.forget());
 }
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  
