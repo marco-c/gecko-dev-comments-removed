@@ -40,8 +40,6 @@ const char* DeclarationKindString(DeclarationKind kind) {
       return "function";
     case DeclarationKind::VarForAnnexBLexicalFunction:
       return "annex b var";
-    case DeclarationKind::ForOfVar:
-      return "var in for-of";
     case DeclarationKind::SimpleCatchParameter:
     case DeclarationKind::CatchParameter:
       return "catch parameter";
@@ -53,8 +51,7 @@ const char* DeclarationKindString(DeclarationKind kind) {
 bool DeclarationKindIsVar(DeclarationKind kind) {
   return kind == DeclarationKind::Var ||
          kind == DeclarationKind::BodyLevelFunction ||
-         kind == DeclarationKind::VarForAnnexBLexicalFunction ||
-         kind == DeclarationKind::ForOfVar;
+         kind == DeclarationKind::VarForAnnexBLexicalFunction;
 }
 
 bool DeclarationKindIsParameter(DeclarationKind kind) {
@@ -360,9 +357,7 @@ Maybe<DeclarationKind> ParseContext::isVarRedeclaredInEval(
         case BindingKind::Let: {
           
           
-          
-          bool annexB35Allowance = si.kind() == ScopeKind::SimpleCatch &&
-                                   kind != DeclarationKind::ForOfVar;
+          bool annexB35Allowance = si.kind() == ScopeKind::SimpleCatch;
           if (!annexB35Allowance) {
             return Some(ScopeKindIsCatch(si.kind())
                             ? DeclarationKind::CatchParameter
@@ -443,14 +438,6 @@ bool ParseContext::tryDeclareVarHelper(HandlePropertyName name,
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
         if (dryRunOption == NotDryRun &&
             kind == DeclarationKind::BodyLevelFunction) {
           MOZ_ASSERT(declaredKind !=
@@ -460,10 +447,8 @@ bool ParseContext::tryDeclareVarHelper(HandlePropertyName name,
       } else if (!DeclarationKindIsParameter(declaredKind)) {
         
         
-        
         bool annexB35Allowance =
-            declaredKind == DeclarationKind::SimpleCatchParameter &&
-            kind != DeclarationKind::ForOfVar;
+            declaredKind == DeclarationKind::SimpleCatchParameter;
 
         
         bool annexB33Allowance =

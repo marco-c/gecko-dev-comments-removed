@@ -83,6 +83,14 @@ function h1() {
 h1();
 
 
+function h2() {
+  try {} catch (e) {
+    for (var e of {});
+  }
+}
+h2();
+
+
 function h3() {
   var e;
   try {} catch (e) {
@@ -90,16 +98,6 @@ function h3() {
   }
 }
 h3();
-
-
-assertThrowsInstanceOf(function () {
-  eval(`
-       function h2() {
-         try {} catch (e) { for (var e of {}); }
-       }
-       log += 'unreached';
-       `);
-}, SyntaxError);
 
 if (typeof evaluate === "function") {
   assertThrowsInstanceOf(function () {
