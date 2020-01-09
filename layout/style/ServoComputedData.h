@@ -26,15 +26,6 @@ struct ServoRawOffsetArc {
   T* mPtr;
 };
 
-
-
-
-
-template <typename T>
-struct ServoManuallyDrop {
-  T mInner;
-};
-
 struct ServoWritingMode {
   uint8_t mBits;
 };
