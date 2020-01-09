@@ -7,6 +7,9 @@ const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 
 
 
+
+
+
 add_task(async () => {
   if (!AppConstants.MOZ_GECKO_PROFILER) {
     return;
