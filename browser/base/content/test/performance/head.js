@@ -693,6 +693,24 @@ async function runUrlbarTest(useAwesomebar,
           fn();
         }, ms);
       };
+    } else {
+      let popup = URLBar.view;
+      let oldOnQueryResults = popup.onQueryResults.bind(popup);
+      let oldOnQueryFinished = popup.onQueryFinished.bind(popup);
+
+      
+      
+      
+      
+      popup.onQueryResults = (context) => {
+        dirtyFrame(win);
+        oldOnQueryResults(context);
+      };
+
+      popup.onQueryFinished = (context) => {
+        dirtyFrame(win);
+        oldOnQueryFinished(context);
+      };
     }
 
     let waitExtra = async () => {

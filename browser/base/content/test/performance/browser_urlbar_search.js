@@ -16,17 +16,6 @@
 const EXPECTED_REFLOWS_FIRST_OPEN = [
   {
     stack: [
-      "_openPanel@resource:///modules/UrlbarView.jsm",
-      "onQueryResults@resource:///modules/UrlbarView.jsm",
-      "_notify@resource:///modules/UrlbarController.jsm",
-      "receiveResults@resource:///modules/UrlbarController.jsm",
-      "notifyResults@resource:///modules/UrlbarProvidersManager.jsm",
-      "add@resource:///modules/UrlbarProvidersManager.jsm",
-      "onSearchResult@resource:///modules/UrlbarProviderUnifiedComplete.jsm",
-    ],
-  },
-  {
-    stack: [
       "__rebuild@chrome://browser/content/search/search-one-offs.js",
       
 
@@ -43,6 +32,15 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
 
     ],
   },
+  
+  
+  
+  {
+    stack: [
+      "_openPanel@resource:///modules/UrlbarView.jsm",
+      "onQueryResults@resource:///modules/UrlbarView.jsm",
+    ],
+  },
 ];
 
 
@@ -54,11 +52,6 @@ const EXPECTED_REFLOWS_SECOND_OPEN = [
     stack: [
       "_openPanel@resource:///modules/UrlbarView.jsm",
       "onQueryResults@resource:///modules/UrlbarView.jsm",
-      "_notify@resource:///modules/UrlbarController.jsm",
-      "receiveResults@resource:///modules/UrlbarController.jsm",
-      "notifyResults@resource:///modules/UrlbarProvidersManager.jsm",
-      "add@resource:///modules/UrlbarProvidersManager.jsm",
-      "onSearchResult@resource:///modules/UrlbarProviderUnifiedComplete.jsm",
     ],
   },
 ];
