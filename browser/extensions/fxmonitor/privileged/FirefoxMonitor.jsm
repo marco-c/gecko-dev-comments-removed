@@ -32,6 +32,10 @@ this.FirefoxMonitor = {
 
   kEnabledPref: "extensions.fxmonitor.enabled",
 
+  
+  
+  kTelemetryDisabledPref: "extensions.fxmonitor.telemetryDisabled",
+
   kNotificationID: "fxmonitor",
 
   
@@ -104,6 +108,12 @@ this.FirefoxMonitor = {
     Services.scriptloader.loadSubScript(
       this.getURL("privileged/subscripts/PanelUI.jsm"));
 
+    
+    
+    let telemetryExpiryDate = new Date(2019, 10, 1); 
+    let today = new Date();
+    let expired = today.getTime() > telemetryExpiryDate.getTime();
+
     Services.telemetry.registerEvents("fxmonitor", {
       "interaction": {
         methods: ["interaction"],
@@ -114,13 +124,13 @@ this.FirefoxMonitor = {
           "dismiss_btn",
           "never_show_btn",
         ],
-        
-        record_on_release: false,
+        record_on_release: true,
+        expired,
       },
     });
 
-    
-    Services.telemetry.setEventRecordingEnabled("fxmonitor", false);
+    let telemetryEnabled = !Preferences.get(this.kTelemetryDisabledPref);
+    Services.telemetry.setEventRecordingEnabled("fxmonitor", telemetryEnabled);
 
     let warnedHostsJSON = Preferences.get(this.kWarnedHostsPref, "");
     if (warnedHostsJSON) {
