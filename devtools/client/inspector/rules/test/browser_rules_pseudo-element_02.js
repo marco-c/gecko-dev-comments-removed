@@ -7,11 +7,9 @@
 
 
 const TEST_URI = URL_ROOT + "doc_pseudoelement.html";
-const SHOWANON_PREF = "devtools.inspector.showAllAnonymousContent";
 
 add_task(async function() {
   await addTab(TEST_URI);
-  await pushPref(SHOWANON_PREF, true);
   const {inspector} = await openRuleView();
 
   const node = await getNodeFront("#topleft", inspector);
