@@ -544,6 +544,11 @@ JSObject* Element::WrapObject(JSContext* aCx,
     return nullptr;
   }
 
+  if (XRE_IsContentProcess() && !NodePrincipal()->IsSystemPrincipal()) {
+    
+    return obj;
+  }
+
   Document* doc = GetComposedDoc();
   if (!doc) {
     
