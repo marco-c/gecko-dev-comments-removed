@@ -4537,9 +4537,9 @@ void nsGlobalWindowInner::FireOfflineStatusEventIfChanged() {
 }
 
 nsGlobalWindowInner::SlowScriptResponse
-nsGlobalWindowInner::ShowSlowScriptDialog(const nsString& aAddonId) {
+nsGlobalWindowInner::ShowSlowScriptDialog(JSContext* aCx,
+                                          const nsString& aAddonId) {
   nsresult rv;
-  AutoJSContext cx;
 
   if (Preferences::GetBool("dom.always_stop_slow_scripts")) {
     return KillSlowScript;
@@ -4549,7 +4549,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(const nsString& aAddonId) {
   
   
   if (!nsContentUtils::IsSafeToRunScript()) {
-    JS_ReportWarningASCII(cx, "A long running script was terminated");
+    JS_ReportWarningASCII(aCx, "A long running script was terminated");
     return KillSlowScript;
   }
 
@@ -4568,7 +4568,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(const nsString& aAddonId) {
   
   
   unsigned* linenop = XRE_IsParentProcess() ? &lineno : nullptr;
-  bool hasFrame = JS::DescribeScriptedCaller(cx, &filename, linenop);
+  bool hasFrame = JS::DescribeScriptedCaller(aCx, &filename, linenop);
 
   
   
@@ -4737,7 +4737,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(const nsString& aAddonId) {
   int32_t buttonPressed = 0;  
   {
     
-    AutoDisableJSInterruptCallback disabler(cx);
+    AutoDisableJSInterruptCallback disabler(aCx);
 
     
     rv = prompt->ConfirmEx(
@@ -4758,7 +4758,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(const nsString& aAddonId) {
     return NS_SUCCEEDED(rv) ? ContinueSlowScript : KillSlowScript;
   }
 
-  JS_ClearPendingException(cx);
+  JS_ClearPendingException(aCx);
 
   if (checkboxValue && isAddonScript) return KillScriptGlobal;
   return KillSlowScript;

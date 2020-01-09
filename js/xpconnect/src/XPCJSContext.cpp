@@ -700,7 +700,7 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
 
   
   nsGlobalWindowInner::SlowScriptResponse response =
-      win->ShowSlowScriptDialog(addonId);
+      win->ShowSlowScriptDialog(cx, addonId);
   if (response == nsGlobalWindowInner::KillSlowScript) {
     if (Preferences::GetBool("dom.global_stop_script", true)) {
       xpc::Scriptability::Get(global).Block();
