@@ -68,12 +68,12 @@ class ChildMessagePort extends MessagePort {
   }
 
   
-  
-  message({ data: messagedata }) {
-    if (this.destroyed || (messagedata.portID != this.portID)) {
-      return;
-    }
+  async handleRequest(name, data) {
+    throw new Error(`Unknown request ${name}.`);
+  }
 
+  
+  handleMessage(messagedata) {
     let message = {
       name: messagedata.name,
       data: messagedata.data,
