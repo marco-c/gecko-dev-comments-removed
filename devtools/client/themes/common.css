@@ -92,6 +92,11 @@ html|button > * {
 }
 
 
+button::selection {
+  all: unset;
+}
+
+
 .devtools-autocomplete-popup {
   overflow: hidden;
 
