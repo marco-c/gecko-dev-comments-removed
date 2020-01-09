@@ -6,7 +6,7 @@ use api::{
     DeviceHomogeneousVector, DevicePoint, DeviceSize, DeviceRect,
     LayoutRect, LayoutToWorldTransform, LayoutTransform,
     PremultipliedColorF, LayoutToPictureTransform, PictureToLayoutTransform, PicturePixel,
-    WorldPixel, WorldToLayoutTransform, LayoutPoint, DeviceVector2D
+    WorldPixel, WorldToLayoutTransform, LayoutPoint,
 };
 use clip_scroll_tree::{ClipScrollTree, ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex};
 use gpu_cache::{GpuCacheAddress, GpuDataRequest};
@@ -143,7 +143,6 @@ pub struct ClipMaskInstance {
     pub local_pos: LayoutPoint,
     pub tile_rect: LayoutRect,
     pub sub_rect: DeviceRect,
-    pub snap_offsets: SnapOffsets,
 }
 
 
@@ -572,28 +571,6 @@ pub enum UvRectKind {
         bottom_left: DeviceHomogeneousVector,
         bottom_right: DeviceHomogeneousVector,
     },
-}
-
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Copy, Clone, Debug)]
-#[repr(C)]
-pub struct SnapOffsets {
-    
-    pub top_left: DeviceVector2D,
-    
-    pub bottom_right: DeviceVector2D,
-}
-
-impl SnapOffsets {
-    pub fn empty() -> Self {
-        SnapOffsets {
-            top_left: DeviceVector2D::zero(),
-            bottom_right: DeviceVector2D::zero(),
-        }
-    }
 }
 
 #[derive(Debug, Copy, Clone)]
