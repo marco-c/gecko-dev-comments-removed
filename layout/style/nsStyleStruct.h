@@ -837,7 +837,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
  public:
   mozilla::StyleBorderRadius mBorderRadius;  
   nsStyleImage mBorderImageSource;
-  nsStyleSides mBorderImageWidth;  
+  mozilla::StyleBorderImageWidth mBorderImageWidth;
   mozilla::StyleNonNegativeLengthOrNumberRect mBorderImageOutset;
   mozilla::StyleBorderImageSlice mBorderImageSlice;  
   mozilla::StyleBorderImageRepeat mBorderImageRepeatH;
