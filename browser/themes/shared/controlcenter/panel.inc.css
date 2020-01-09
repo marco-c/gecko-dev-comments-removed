@@ -612,9 +612,9 @@ description#identity-popup-content-verifier,
 
 
 
-#main-window:not([privatebrowsingmode]) #identity-popup-content-blocking-content[blocking]:not([hasException]) > #tracking-action-unblock,
+:root:not([privatebrowsingmode]) #identity-popup-content-blocking-content[blocking]:not([hasException]) > #tracking-action-unblock,
 
-#main-window[privatebrowsingmode] #identity-popup-content-blocking-content[blocking]:not([hasException]) > #tracking-action-unblock-private,
+:root[privatebrowsingmode] #identity-popup-content-blocking-content[blocking]:not([hasException]) > #tracking-action-unblock-private,
 
 #identity-popup-content-blocking-content[hasException] > #tracking-action-block {
   display: -moz-box;
