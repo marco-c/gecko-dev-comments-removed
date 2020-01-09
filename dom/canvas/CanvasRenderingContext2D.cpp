@@ -901,7 +901,7 @@ DrawTarget* CanvasRenderingContext2D::sErrorTarget = nullptr;
 
 CanvasRenderingContext2D::CanvasRenderingContext2D(
     layers::LayersBackend aCompositorBackend)
-    : 
+    :  
       mWidth(0),
       mHeight(0),
       mZero(false),
@@ -917,7 +917,6 @@ CanvasRenderingContext2D::CanvasRenderingContext2D(
       mPathTransformWillUpdate(false),
       mInvalidateCount(0),
       mWriteOnly(false) {
-
   sNumLivingContexts++;
 
   mShutdownObserver = new CanvasShutdownObserver(this);
@@ -1105,8 +1104,7 @@ void CanvasRenderingContext2D::Redraw(const gfx::Rect& aR) {
   mCanvasElement->InvalidateCanvasContent(&aR);
 }
 
-void CanvasRenderingContext2D::DidRefresh() {
-}
+void CanvasRenderingContext2D::DidRefresh() {}
 
 void CanvasRenderingContext2D::RedrawUser(const gfxRect& aR) {
   mIsCapturedFrameInvalid = true;
@@ -1134,8 +1132,7 @@ bool CanvasRenderingContext2D::CopyBufferProvider(
   return true;
 }
 
-void CanvasRenderingContext2D::Demote() {
-}
+void CanvasRenderingContext2D::Demote() {}
 
 void CanvasRenderingContext2D::ScheduleStableStateCallback() {
   if (mHasPendingStableStateCallback) {
@@ -1183,8 +1180,8 @@ void CanvasRenderingContext2D::RestoreClipsAndTransformToTarget() {
   }
 }
 
-bool CanvasRenderingContext2D::EnsureTarget(
-    const gfx::Rect* aCoveredRect, bool aWillClear) {
+bool CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
+                                            bool aWillClear) {
   if (AlreadyShutDown()) {
     gfxCriticalError() << "Attempt to render into a Canvas2d after shutdown.";
     SetErrorState();
@@ -1258,7 +1255,8 @@ bool CanvasRenderingContext2D::EnsureTarget(
   MOZ_ASSERT(newProvider);
 
   bool needsClear = !canDiscardContent;
-  if (newTarget->GetBackendType() == gfx::BackendType::SKIA && (needsClear || !aWillClear)) {
+  if (newTarget->GetBackendType() == gfx::BackendType::SKIA &&
+      (needsClear || !aWillClear)) {
     
     
     
@@ -1373,7 +1371,9 @@ bool CanvasRenderingContext2D::TrySharedTarget(
 
 #ifdef XP_WIN
   
-  if (gfxPlatform::GetPlatform()->GetPreferredCanvasBackend() == BackendType::DIRECT2D1_1) {
+  
+  if (gfxPlatform::GetPlatform()->GetPreferredCanvasBackend() ==
+      BackendType::DIRECT2D1_1) {
     return false;
   }
 #endif
@@ -1406,6 +1406,14 @@ bool CanvasRenderingContext2D::TryBasicTarget(
   aOutDT = gfxPlatform::GetPlatform()->CreateOffscreenCanvasDrawTarget(
       GetSize(), GetSurfaceFormat());
   if (!aOutDT) {
+    return false;
+  }
+
+  
+  aOutDT->ClearRect(gfx::Rect());
+
+  if (!aOutDT->IsValid()) {
+    aOutDT = nullptr;
     return false;
   }
 
@@ -4318,8 +4326,8 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
 
     if (res.mSourceSurface) {
       if (res.mImageRequest) {
-        CanvasImageCache::NotifyDrawImage(
-            element, mCanvasElement, res.mSourceSurface, imgSize);
+        CanvasImageCache::NotifyDrawImage(element, mCanvasElement,
+                                          res.mSourceSurface, imgSize);
       }
       srcSurf = res.mSourceSurface;
     } else {
