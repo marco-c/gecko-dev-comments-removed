@@ -84,7 +84,7 @@ function waitScrollFinish(aTarget) {
       recent = true;
     }
     aTarget.addEventListener("scroll", listener, true);
-    setInterval(function () {
+    setInterval(function() {
       
       if (!recent) {
         aTarget.removeEventListener("scroll", listener, true);
