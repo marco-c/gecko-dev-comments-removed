@@ -218,25 +218,14 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     DETACHED = 0b1000,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    OWNS_DATA = 0b1'0000,
-
-    
-    TYPED_OBJECT_VIEWS = 0b10'0000,
+    TYPED_OBJECT_VIEWS = 0b1'0000,
 
     
     
     
     
     
-    FOR_ASMJS = 0b100'0000,
+    FOR_ASMJS = 0b10'0000,
   };
 
   static_assert(JS_ARRAYBUFFER_DETACHED_FLAG == DETACHED,
@@ -452,10 +441,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   uint32_t flags() const;
   void setFlags(uint32_t flags);
-
-  void setOwnsData(OwnsState owns) {
-    setFlags(owns ? (flags() | OWNS_DATA) : (flags() & ~OWNS_DATA));
-  }
 
   bool hasTypedObjectViews() const { return flags() & TYPED_OBJECT_VIEWS; }
 
