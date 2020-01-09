@@ -12,6 +12,7 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const COMPATIBILITY_STATUS = {
   COMPATIBLE: "compatible",
   TOO_OLD: "too-old",
+  TOO_OLD_67_DEBUGGER: "too-old-67-debugger",
   TOO_RECENT: "too-recent",
 };
 exports.COMPATIBILITY_STATUS = COMPATIBILITY_STATUS;
@@ -131,6 +132,8 @@ function _compareVersionCompatibility(localDescription, deviceDescription) {
     
     
     status = COMPATIBILITY_STATUS.TOO_RECENT;
+  } else if (localMajorVersion >= 67 && runtimeMajorVersion < 67) {
+    status = COMPATIBILITY_STATUS.TOO_OLD_67_DEBUGGER;
   } else {
     status = COMPATIBILITY_STATUS.COMPATIBLE;
   }

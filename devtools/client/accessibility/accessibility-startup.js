@@ -46,7 +46,6 @@ class AccessibilityStartup {
     
     try {
       this._walker = await this._accessibility.getWalker();
-
       this._supports = {};
       
       this._supports.enableDisable =
