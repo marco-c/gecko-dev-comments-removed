@@ -25,7 +25,7 @@
 #include "gfxFontConstants.h"
 #include "nsAtom.h"
 #include "nsCRT.h"
-#include "nsIWidgetListener.h" 
+#include "nsIWidgetListener.h"  
 #include "nsGkAtoms.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsChangeHint.h"

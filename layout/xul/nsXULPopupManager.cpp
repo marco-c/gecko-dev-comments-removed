@@ -1439,8 +1439,8 @@ void nsXULPopupManager::FirePopupHidingEvent(
       
       
       
-      if (StaticPrefs::xul_panel_animations_enabled() &&
-          !aNextPopup && aPopup->IsElement() &&
+      if (StaticPrefs::xul_panel_animations_enabled() && !aNextPopup &&
+          aPopup->IsElement() &&
           aPopup->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::animate)) {
         
         

@@ -819,7 +819,8 @@ UniquePtr<FormatUsageAuthority> FormatUsageAuthority::CreateForWebGL1(
   fnSet(EffectiveFormat::Alpha8, false, true);
 
   fnSet(EffectiveFormat::DEPTH_COMPONENT16, true, true);
-  fnSet(EffectiveFormat::DEPTH_COMPONENT24, true, true); 
+  fnSet(EffectiveFormat::DEPTH_COMPONENT24, true,
+        true);  
   fnSet(EffectiveFormat::STENCIL_INDEX8, true, false);
 
   

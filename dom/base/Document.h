@@ -2406,7 +2406,6 @@ class Document : public nsINode,
                                           nsAtom* aAttrName,
                                           const nsAString& aAttrValue) const;
 
-
   
 
 

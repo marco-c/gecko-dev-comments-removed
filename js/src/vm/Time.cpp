@@ -250,28 +250,28 @@ static int64_t PRMJ_NowImpl() {
 #endif
 
 #if !ENABLE_INTL_API || MOZ_SYSTEM_ICU
-#ifdef XP_WIN
+#  ifdef XP_WIN
 static void PRMJ_InvalidParameterHandler(const wchar_t* expression,
                                          const wchar_t* function,
                                          const wchar_t* file, unsigned int line,
                                          uintptr_t pReserved) {
   
 }
-#endif
+#  endif
 
 
 size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
                        const PRMJTime* prtm, int timeZoneYear,
                        int offsetInSeconds) {
   size_t result = 0;
-#if defined(XP_UNIX) || defined(XP_WIN)
+#  if defined(XP_UNIX) || defined(XP_WIN)
   struct tm a;
-#  ifdef XP_WIN
+#    ifdef XP_WIN
   _invalid_parameter_handler oldHandler;
-#    ifndef __MINGW32__
+#      ifndef __MINGW32__
   int oldReportMode;
-#    endif  
-#  endif    
+#      endif  
+#    endif    
 
   memset(&a, 0, sizeof(struct tm));
 
@@ -287,7 +287,7 @@ size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
 
 
 
-#  if defined(HAVE_LOCALTIME_R) && defined(HAVE_TM_ZONE_TM_GMTOFF)
+#    if defined(HAVE_LOCALTIME_R) && defined(HAVE_TM_ZONE_TM_GMTOFF)
   char emptyTimeZoneId[] = "";
   {
     
@@ -322,7 +322,7 @@ size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
       a.tm_zone = emptyTimeZoneId;
     }
   }
-#  endif
+#    endif
 
   
 
@@ -350,25 +350,25 @@ size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
 
 
 
-#  ifdef XP_WIN
+#    ifdef XP_WIN
   oldHandler = _set_invalid_parameter_handler(PRMJ_InvalidParameterHandler);
-#    ifndef __MINGW32__
+#      ifndef __MINGW32__
   
 
 
 
   oldReportMode = _CrtSetReportMode(_CRT_ASSERT, 0);
-#    endif  
-#  endif    
+#      endif  
+#    endif    
 
   result = strftime(buf, buflen, fmt, &a);
 
-#  ifdef XP_WIN
+#    ifdef XP_WIN
   _set_invalid_parameter_handler(oldHandler);
-#    ifndef __MINGW32__
+#      ifndef __MINGW32__
   _CrtSetReportMode(_CRT_ASSERT, oldReportMode);
-#    endif  
-#  endif    
+#      endif  
+#    endif    
 
   if (fake_tm_year && result) {
     char real_year[16];
@@ -394,7 +394,7 @@ size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
       *(buf + result) = '\0';
     }
   }
-#endif
+#  endif
   return result;
 }
 #endif 

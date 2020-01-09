@@ -440,7 +440,7 @@ class QuotaManager final : public BackgroundThreadObject {
   nsresult UpgradeLocalStorageArchiveFrom0To1(
       nsCOMPtr<mozIStorageConnection>& aConnection);
 
-
+  
 
 
 

@@ -1509,10 +1509,9 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   
   
   
-  if (!inWayland &&
-      (mInContentShell ||
-       (mFlip != FlipType_None &&
-        (!aIsMove || mIsOffset || mPopupType != ePopupTypePanel)))) {
+  if (!inWayland && (mInContentShell || (mFlip != FlipType_None &&
+                                         (!aIsMove || mIsOffset ||
+                                          mPopupType != ePopupTypePanel)))) {
     int32_t appPerDev = presContext->AppUnitsPerDevPixel();
     LayoutDeviceIntRect anchorRectDevPix =
         LayoutDeviceIntRect::FromAppUnitsToNearest(anchorRect, appPerDev);

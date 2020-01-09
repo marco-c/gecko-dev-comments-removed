@@ -16,4 +16,3 @@ MFBT_API bool IsWin32kLockedDown();
 }  
 
 #endif  
-

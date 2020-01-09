@@ -26,7 +26,7 @@
 #include "Units.h"
 #include "mozilla/ToString.h"
 #include "mozilla/ReflowOutput.h"
-#include "ImageContainer.h" 
+#include "ImageContainer.h"  
 #include "gfx2DGlue.h"
 #include "SVGImageContext.h"
 #include <limits>
