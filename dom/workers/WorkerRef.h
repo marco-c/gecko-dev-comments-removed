@@ -129,11 +129,30 @@ class StrongWorkerRef final : public WorkerRef {
       WorkerPrivate* aWorkerPrivate, const char* aName,
       std::function<void()>&& aCallback = nullptr);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<StrongWorkerRef> CreateForcibly(
+      WorkerPrivate* aWorkerPrivate, const char* aName);
+
   WorkerPrivate* Private() const;
 
  private:
   friend class WeakWorkerRef;
   friend class ThreadSafeWorkerRef;
+
+  static already_AddRefed<StrongWorkerRef> CreateImpl(
+      WorkerPrivate* aWorkerPrivate, const char* aName,
+      WorkerStatus aFailStatus);
 
   explicit StrongWorkerRef(WorkerPrivate* aWorkerPrivate);
   ~StrongWorkerRef();

@@ -145,8 +145,26 @@ WorkerPrivate* WeakWorkerRef::GetUnsafePrivate() const {
 
 
 already_AddRefed<StrongWorkerRef> StrongWorkerRef::Create(
-    WorkerPrivate* aWorkerPrivate, const char* aName,
+    WorkerPrivate* const aWorkerPrivate, const char* const aName,
     std::function<void()>&& aCallback) {
+  if (RefPtr<StrongWorkerRef> ref =
+          CreateImpl(aWorkerPrivate, aName, Canceling)) {
+    ref->mCallback = std::move(aCallback);
+    return ref.forget();
+  }
+  return nullptr;
+}
+
+
+already_AddRefed<StrongWorkerRef> StrongWorkerRef::CreateForcibly(
+    WorkerPrivate* const aWorkerPrivate, const char* const aName) {
+  return CreateImpl(aWorkerPrivate, aName, Killing);
+}
+
+
+already_AddRefed<StrongWorkerRef> StrongWorkerRef::CreateImpl(
+    WorkerPrivate* const aWorkerPrivate, const char* const aName,
+    WorkerStatus const aFailStatus) {
   MOZ_ASSERT(aWorkerPrivate);
   MOZ_ASSERT(aName);
 
@@ -155,12 +173,11 @@ already_AddRefed<StrongWorkerRef> StrongWorkerRef::Create(
   
   UniquePtr<Holder> holder(
       new Holder(aName, ref, WorkerHolder::PreventIdleShutdownStart));
-  if (NS_WARN_IF(!holder->HoldWorker(aWorkerPrivate, Canceling))) {
+  if (NS_WARN_IF(!holder->HoldWorker(aWorkerPrivate, aFailStatus))) {
     return nullptr;
   }
 
   ref->mHolder = std::move(holder);
-  ref->mCallback = std::move(aCallback);
 
   return ref.forget();
 }
