@@ -1,0 +1,12 @@
+
+
+
+
+
+
+"use strict";
+
+document.addEventListener("DOMContentLoaded", (e) => {
+  RPMSendAsyncMessage("getCertificate");
+});
+
