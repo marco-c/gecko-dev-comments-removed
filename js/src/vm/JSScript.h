@@ -1523,6 +1523,9 @@ class SharedScriptData {
   static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
                                     js::HandleScript script);
 
+  static bool InitFromEmitter(JSContext* cx, js::HandleScript script,
+                              js::frontend::BytecodeEmitter* bce);
+
   
   void markForCrossZone(JSContext* cx);
 
@@ -1856,6 +1859,10 @@ class JSScript : public js::gc::TenuredCell {
   template <js::XDRMode mode>
   friend js::XDRResult js::SharedScriptData::XDR(js::XDRState<mode>* xdr,
                                                  js::HandleScript script);
+
+  friend bool js::SharedScriptData::InitFromEmitter(
+      JSContext* cx, js::HandleScript script,
+      js::frontend::BytecodeEmitter* bce);
 
   template <js::XDRMode mode>
   friend js::XDRResult js::PrivateScriptData::XDR(
