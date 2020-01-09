@@ -387,6 +387,9 @@ class AudioContext final : public DOMEventTargetHelper,
   bool mWasAllowedToStart;
 
   
+  bool mSuspendedByContent;
+
+  
   
   
   

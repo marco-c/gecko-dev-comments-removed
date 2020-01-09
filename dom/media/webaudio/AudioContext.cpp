@@ -153,6 +153,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
       mSuspendCalled(false),
       mIsDisconnecting(false),
       mWasAllowedToStart(true),
+      mSuspendedByContent(false),
       mWasEverAllowedToStart(false),
       mWasEverBlockedToStart(false),
       mWouldBeAllowedToStart(true) {
@@ -193,7 +194,11 @@ void AudioContext::StartBlockedAudioContextIfAllowed() {
   const bool isAllowedToPlay = AutoplayPolicy::IsAllowedToPlay(*this);
   AUTOPLAY_LOG("Trying to start AudioContext %p, IsAllowedToPlay=%d", this,
                isAllowedToPlay);
-  if (isAllowedToPlay) {
+
+  
+  
+  
+  if (isAllowedToPlay && !mSuspendedByContent) {
     ResumeInternal();
   } else {
     ReportBlocked();
@@ -902,6 +907,7 @@ already_AddRefed<Promise> AudioContext::Suspend(ErrorResult& aRv) {
     return promise.forget();
   }
 
+  mSuspendedByContent = true;
   mPromiseGripArray.AppendElement(promise);
   SuspendInternal(promise);
   return promise.forget();
@@ -960,6 +966,7 @@ already_AddRefed<Promise> AudioContext::Resume(ErrorResult& aRv) {
     return promise.forget();
   }
 
+  mSuspendedByContent = false;
   mPendingResumePromises.AppendElement(promise);
 
   const bool isAllowedToPlay = AutoplayPolicy::IsAllowedToPlay(*this);
