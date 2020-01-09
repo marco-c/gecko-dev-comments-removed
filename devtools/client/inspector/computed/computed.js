@@ -975,7 +975,7 @@ PropertyView.prototype = {
 
     
     this.nameNode = doc.createElementNS(HTML_NS, "span");
-    this.nameNode.classList.add("computed-property-name", "theme-fg-color5");
+    this.nameNode.classList.add("computed-property-name", "theme-fg-color3");
     
     
     this.nameNode.setAttribute("tabindex", "");
