@@ -1990,7 +1990,7 @@ struct Stk {
   }
 };
 
-typedef Vector<Stk, 8, SystemAllocPolicy> StkVector;
+typedef Vector<Stk, 0, SystemAllocPolicy> StkVector;
 
 
 
@@ -2565,8 +2565,9 @@ class BaseCompiler final : public BaseCompilerInterface {
   BaseCompiler(const ModuleEnvironment& env, const FuncCompileInput& input,
                const ValTypeVector& locals, const MachineState& trapExitLayout,
                size_t trapExitLayoutNumWords, Decoder& decoder,
-               TempAllocator* alloc, MacroAssembler* masm,
+               StkVector& stkSource, TempAllocator* alloc, MacroAssembler* masm,
                StackMaps* stackMaps);
+  ~BaseCompiler();
 
   MOZ_MUST_USE bool init();
 
@@ -2865,7 +2866,21 @@ class BaseCompiler final : public BaseCompilerInterface {
   
   
 
+  
+  
+  
+  
   StkVector stk_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  StkVector& stkSource_;
 
 #ifdef DEBUG
   size_t countMemRefsOnStk() {
@@ -11776,8 +11791,8 @@ BaseCompiler::BaseCompiler(const ModuleEnvironment& env,
                            const ValTypeVector& locals,
                            const MachineState& trapExitLayout,
                            size_t trapExitLayoutNumWords, Decoder& decoder,
-                           TempAllocator* alloc, MacroAssembler* masm,
-                           StackMaps* stackMaps)
+                           StkVector& stkSource, TempAllocator* alloc,
+                           MacroAssembler* masm, StackMaps* stackMaps)
     : env_(env),
       iter_(env, decoder),
       func_(func),
@@ -11799,7 +11814,28 @@ BaseCompiler::BaseCompiler(const ModuleEnvironment& env,
       joinRegI64_(RegI64(ReturnReg64)),
       joinRegPtr_(RegPtr(ReturnReg)),
       joinRegF32_(RegF32(ReturnFloat32Reg)),
-      joinRegF64_(RegF64(ReturnDoubleReg)) {}
+      joinRegF64_(RegF64(ReturnDoubleReg)),
+      stkSource_(stkSource) {
+  
+  
+  
+  MOZ_ASSERT(stk_.empty());
+  stk_.swap(stkSource_);
+
+  
+  
+  
+  stk_.clear();
+}
+
+BaseCompiler::~BaseCompiler() {
+  stk_.swap(stkSource_);
+  
+  
+  
+  
+  MOZ_ASSERT(stk_.empty());
+}
 
 bool BaseCompiler::init() {
   if (!SigD_.append(ValType::F64)) {
@@ -11880,6 +11916,14 @@ bool js::wasm::BaselineCompileFunctions(const ModuleEnvironment& env,
   size_t trapExitLayoutNumWords;
   GenerateTrapExitMachineState(&trapExitLayout, &trapExitLayoutNumWords);
 
+  
+  
+  
+  StkVector stk;
+  if (!stk.reserve(128)) {
+    return false;
+  }
+
   for (const FuncCompileInput& func : inputs) {
     Decoder d(func.begin, func.end, func.lineOrBytecode, error);
 
@@ -11896,7 +11940,7 @@ bool js::wasm::BaselineCompileFunctions(const ModuleEnvironment& env,
     
 
     BaseCompiler f(env, func, locals, trapExitLayout, trapExitLayoutNumWords, d,
-                   &alloc, &masm, &code->stackMaps);
+                   stk, &alloc, &masm, &code->stackMaps);
     if (!f.init()) {
       return false;
     }
