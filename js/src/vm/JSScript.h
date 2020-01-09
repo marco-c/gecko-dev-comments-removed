@@ -131,11 +131,14 @@ enum JSTryNoteKind {
 
 
 struct JSTryNote {
-  uint8_t kind;        
+  uint32_t kind;       
   uint32_t stackDepth; 
   uint32_t start;      
 
   uint32_t length;     
+
+  template <js::XDRMode mode>
+  js::XDRResult XDR(js::XDRState<mode>* xdr);
 };
 
 namespace js {
@@ -167,6 +170,9 @@ struct ScopeNote {
                     
   uint32_t length;  
   uint32_t parent;  
+
+  template <js::XDRMode mode>
+  js::XDRResult XDR(js::XDRState<mode>* xdr);
 };
 
 class ScriptCounts {
