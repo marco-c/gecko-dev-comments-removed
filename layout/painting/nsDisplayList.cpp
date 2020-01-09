@@ -3400,10 +3400,10 @@ LayerState nsDisplaySolidColor::GetLayerState(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
     const ContainerLayerParameters& aParameters) {
   if (ForceActiveLayers()) {
-    return LAYER_ACTIVE;
+    return LayerState::LAYER_ACTIVE;
   }
 
-  return LAYER_NONE;
+  return LayerState::LAYER_NONE;
 }
 
 already_AddRefed<Layer> nsDisplaySolidColor::BuildLayer(
@@ -4082,12 +4082,12 @@ LayerState nsDisplayBackgroundImage::GetLayerState(
   if (shouldLayerize == NO_LAYER_NEEDED) {
     
     
-    return LAYER_NONE;
+    return LayerState::LAYER_NONE;
   }
 
   if (CanOptimizeToImageLayer(aManager, aBuilder)) {
     if (shouldLayerize == WHENEVER_POSSIBLE) {
-      return LAYER_ACTIVE;
+      return LayerState::LAYER_ACTIVE;
     }
 
     MOZ_ASSERT(shouldLayerize == ONLY_FOR_SCALING,
@@ -4115,11 +4115,11 @@ LayerState nsDisplayBackgroundImage::GetLayerState(
       
       
       
-      return LAYER_ACTIVE;
+      return LayerState::LAYER_ACTIVE;
     }
   }
 
-  return LAYER_NONE;
+  return LayerState::LAYER_NONE;
 }
 
 already_AddRefed<Layer> nsDisplayBackgroundImage::BuildLayer(
@@ -4702,15 +4702,15 @@ LayerState nsDisplayBackgroundColor::GetLayerState(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
     const ContainerLayerParameters& aParameters) {
   if (ForceActiveLayers() && !HasBackgroundClipText()) {
-    return LAYER_ACTIVE;
+    return LayerState::LAYER_ACTIVE;
   }
 
   if (EffectCompositor::HasAnimationsForCompositor(
           mFrame, DisplayItemType::TYPE_BACKGROUND_COLOR)) {
-    return LAYER_ACTIVE_FORCE;
+    return LayerState::LAYER_ACTIVE_FORCE;
   }
 
-  return LAYER_NONE;
+  return LayerState::LAYER_NONE;
 }
 
 already_AddRefed<Layer> nsDisplayBackgroundColor::BuildLayer(
@@ -5250,7 +5250,7 @@ void nsDisplayBorder::ComputeInvalidationRegion(
 LayerState nsDisplayBorder::GetLayerState(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
     const ContainerLayerParameters& aParameters) {
-  return LAYER_NONE;
+  return LayerState::LAYER_NONE;
 }
 
 bool nsDisplayBorder::CreateWebRenderCommands(
@@ -5821,20 +5821,21 @@ void nsDisplayWrapList::Paint(nsDisplayListBuilder* aBuilder,
 
 
 
+
 static LayerState RequiredLayerStateForChildren(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
     const ContainerLayerParameters& aParameters, const nsDisplayList& aList,
     AnimatedGeometryRoot* aExpectedAnimatedGeometryRootForChildren) {
-  LayerState result = LAYER_INACTIVE;
+  LayerState result = LayerState::LAYER_INACTIVE;
   for (nsDisplayItem* i : aList) {
-    if (result == LAYER_INACTIVE &&
+    if (result == LayerState::LAYER_INACTIVE &&
         i->GetAnimatedGeometryRoot() !=
             aExpectedAnimatedGeometryRootForChildren) {
-      result = LAYER_ACTIVE;
+      result = LayerState::LAYER_ACTIVE;
     }
 
     LayerState state = i->GetLayerState(aBuilder, aManager, aParameters);
-    if (state == LAYER_ACTIVE &&
+    if (state == LayerState::LAYER_ACTIVE &&
         (i->GetType() == DisplayItemType::TYPE_BLEND_MODE ||
          i->GetType() == DisplayItemType::TYPE_TABLE_BLEND_MODE)) {
       
@@ -5846,14 +5847,15 @@ static LayerState RequiredLayerStateForChildren(
           aBuilder, aManager, aParameters,
           *i->GetSameCoordinateSystemChildren(), i->GetAnimatedGeometryRoot());
     }
-    if ((state == LAYER_ACTIVE || state == LAYER_ACTIVE_FORCE) &&
+    if ((state == LayerState::LAYER_ACTIVE ||
+         state == LayerState::LAYER_ACTIVE_FORCE) &&
         state > result) {
       result = state;
     }
-    if (state == LAYER_ACTIVE_EMPTY && state > result) {
-      result = LAYER_ACTIVE_FORCE;
+    if (state == LayerState::LAYER_ACTIVE_EMPTY && state > result) {
+      result = LayerState::LAYER_ACTIVE_FORCE;
     }
-    if (state == LAYER_NONE) {
+    if (state == LayerState::LAYER_NONE) {
       nsDisplayList* list = i->GetSameCoordinateSystemChildren();
       if (list) {
         LayerState childState = RequiredLayerStateForChildren(
@@ -6204,13 +6206,13 @@ nsDisplayItem::LayerState nsDisplayOpacity::GetLayerState(
   
   if (mForEventsAndPluginsOnly) {
     MOZ_ASSERT(mOpacity == 0);
-    return LAYER_INACTIVE;
+    return LayerState::LAYER_INACTIVE;
   }
 
   if (mNeedsActiveLayer) {
     
     
-    return LAYER_ACTIVE_FORCE;
+    return LayerState::LAYER_ACTIVE_FORCE;
   }
 
   return RequiredLayerStateForChildren(aBuilder, aManager, aParameters, mList,
@@ -6293,7 +6295,7 @@ nsRegion nsDisplayBlendMode::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
 LayerState nsDisplayBlendMode::GetLayerState(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
     const ContainerLayerParameters& aParameters) {
-  return LAYER_ACTIVE;
+  return LayerState::LAYER_ACTIVE;
 }
 
 bool nsDisplayBlendMode::CreateWebRenderCommands(
@@ -6471,7 +6473,7 @@ LayerState nsDisplayOwnLayer::GetLayerState(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
     const ContainerLayerParameters& aParameters) {
   if (mForceActive) {
-    return mozilla::LAYER_ACTIVE_FORCE;
+    return mozilla::LayerState::LAYER_ACTIVE_FORCE;
   }
 
   return RequiredLayerStateForChildren(aBuilder, aManager, aParameters, mList,
@@ -7373,7 +7375,7 @@ already_AddRefed<Layer> nsDisplayScrollInfoLayer::BuildLayer(
 LayerState nsDisplayScrollInfoLayer::GetLayerState(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
     const ContainerLayerParameters& aParameters) {
-  return LAYER_ACTIVE_EMPTY;
+  return LayerState::LAYER_ACTIVE_EMPTY;
 }
 
 UniquePtr<ScrollMetadata> nsDisplayScrollInfoLayer::ComputeScrollMetadata(
@@ -8341,13 +8343,13 @@ nsDisplayItem::LayerState nsDisplayTransform::GetLayerState(
   
   if (!GetTransform().Is2D() || Combines3DTransformWithAncestors() ||
       mIsTransformSeparator || mFrame->HasPerspective()) {
-    return LAYER_ACTIVE_FORCE;
+    return LayerState::LAYER_ACTIVE_FORCE;
   }
 
   if (MayBeAnimated(aBuilder)) {
     
     
-    return LAYER_ACTIVE_FORCE;
+    return LayerState::LAYER_ACTIVE_FORCE;
   }
 
   
@@ -8843,7 +8845,7 @@ already_AddRefed<Layer> nsDisplayPerspective::BuildLayer(
 LayerState nsDisplayPerspective::GetLayerState(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
     const ContainerLayerParameters& aParameters) {
-  return LAYER_ACTIVE_FORCE;
+  return LayerState::LAYER_ACTIVE_FORCE;
 }
 
 nsRegion nsDisplayPerspective::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
@@ -9448,10 +9450,12 @@ LayerState nsDisplayMasksAndClipPaths::GetLayerState(
     
     
     
-    return result == LAYER_INACTIVE ? LAYER_SVG_EFFECTS : result;
+    
+    return result == LayerState::LAYER_INACTIVE ? LayerState::LAYER_SVG_EFFECTS
+                                                : result;
   }
 
-  return LAYER_SVG_EFFECTS;
+  return LayerState::LAYER_SVG_EFFECTS;
 }
 
 bool nsDisplayMasksAndClipPaths::CanPaintOnMaskLayer(LayerManager* aManager) {
@@ -9828,7 +9832,7 @@ already_AddRefed<Layer> nsDisplayFilters::BuildLayer(
 LayerState nsDisplayFilters::GetLayerState(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
     const ContainerLayerParameters& aParameters) {
-  return LAYER_SVG_EFFECTS;
+  return LayerState::LAYER_SVG_EFFECTS;
 }
 
 bool nsDisplayFilters::ComputeVisibility(nsDisplayListBuilder* aBuilder,
@@ -10057,9 +10061,9 @@ LayerState nsDisplaySVGWrapper::GetLayerState(
   RefPtr<LayerManager> layerManager = aBuilder->GetWidgetLayerManager();
   if (layerManager &&
       layerManager->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
-    return LAYER_ACTIVE_FORCE;
+    return LayerState::LAYER_ACTIVE_FORCE;
   }
-  return LAYER_NONE;
+  return LayerState::LAYER_NONE;
 }
 
 bool nsDisplaySVGWrapper::ShouldFlattenAway(nsDisplayListBuilder* aBuilder) {
@@ -10118,9 +10122,9 @@ LayerState nsDisplayForeignObject::GetLayerState(
   RefPtr<LayerManager> layerManager = aBuilder->GetWidgetLayerManager();
   if (layerManager &&
       layerManager->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
-    return LAYER_ACTIVE_FORCE;
+    return LayerState::LAYER_ACTIVE_FORCE;
   }
-  return LAYER_NONE;
+  return LayerState::LAYER_NONE;
 }
 
 bool nsDisplayForeignObject::ShouldFlattenAway(nsDisplayListBuilder* aBuilder) {

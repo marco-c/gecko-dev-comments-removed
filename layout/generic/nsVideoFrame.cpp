@@ -502,11 +502,12 @@ class nsDisplayVideo : public nsDisplayItem {
       
       
       
-      return LAYER_ACTIVE;
+      return LayerState::LAYER_ACTIVE;
     }
     HTMLMediaElement* elem =
         static_cast<HTMLMediaElement*>(mFrame->GetContent());
-    return elem->IsPotentiallyPlaying() ? LAYER_ACTIVE_FORCE : LAYER_INACTIVE;
+    return elem->IsPotentiallyPlaying() ? LayerState::LAYER_ACTIVE_FORCE
+                                        : LayerState::LAYER_INACTIVE;
   }
 };
 

@@ -1815,7 +1815,7 @@ LayerState nsDisplayImage::GetLayerState(
         NS_FAILED(mImage->GetAnimated(&animated)) || !animated) {
       if (!aManager->IsCompositingCheap() ||
           !nsLayoutUtils::GPUImageScalingEnabled()) {
-        return LAYER_NONE;
+        return LayerState::LAYER_NONE;
       }
     }
 
@@ -1838,27 +1838,27 @@ LayerState nsDisplayImage::GetLayerState(
 
       
       if (scale.width == 1.0f && scale.height == 1.0f) {
-        return LAYER_NONE;
+        return LayerState::LAYER_NONE;
       }
 
       
       if (destLayerRect.width * destLayerRect.height < 64 * 64) {
-        return LAYER_NONE;
+        return LayerState::LAYER_NONE;
       }
     }
   }
 
   if (!CanOptimizeToImageLayer(aManager, aBuilder)) {
-    return LAYER_NONE;
+    return LayerState::LAYER_NONE;
   }
 
   
   nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
   if (f->HasImageMap()) {
-    return LAYER_NONE;
+    return LayerState::LAYER_NONE;
   }
 
-  return LAYER_ACTIVE;
+  return LayerState::LAYER_ACTIVE;
 }
 
 
