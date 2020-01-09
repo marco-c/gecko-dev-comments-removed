@@ -2509,6 +2509,11 @@ bool nsFrameLoader::TryRemoteBrowser() {
   if (!mRemoteBrowser) {
     return false;
   }
+
+  
+  
+  ownerElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::RemoteType, false);
+
   
   mRemoteBrowser->InitRendering();
 
