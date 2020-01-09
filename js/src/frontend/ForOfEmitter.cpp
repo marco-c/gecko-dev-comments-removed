@@ -225,7 +225,7 @@ bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
     return false;
   }
 
-  loopInfo_->setContinueTarget(bce_->offset());
+  loopInfo_->setContinueTarget(bce_->bytecodeSection().offset());
 
   
   
