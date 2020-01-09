@@ -95,6 +95,18 @@ module.exports = {
 
 
   rotateViewport(id) {
+    
+
+    
+    
+    try {
+      post(window, {
+        type: "viewport-orientation-change",
+      });
+    } catch (e) {
+      console.log("Unable to post message to window");
+    }
+
     return {
       type: ROTATE_VIEWPORT,
       id,
