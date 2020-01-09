@@ -58,7 +58,7 @@ bool RenderFrame::Initialize(TabParent* aTabParent) {
   RefPtr<LayerManager> lm = GetLayerManager(mTabParent);
   PCompositorBridgeChild* compositor =
       lm ? lm->GetCompositorBridgeChild() : nullptr;
-  mTabProcessId = mTabParent->Manager()->AsContentParent()->OtherPid();
+  mTabProcessId = mTabParent->Manager()->OtherPid();
 
   
   
