@@ -388,15 +388,16 @@ Rule.prototype = {
 
 
 
+
   setPropertyName: function(property, name) {
     if (name === property.name) {
-      return;
+      return Promise.resolve();
     }
 
     const oldName = property.name;
     property.name = name;
     const index = this.textProps.indexOf(property);
-    this.applyProperties((modifications) => {
+    return this.applyProperties(modifications => {
       modifications.renameProperty(index, oldName, name);
     });
   },
@@ -421,7 +422,7 @@ Rule.prototype = {
     property.priority = priority;
 
     const index = this.textProps.indexOf(property);
-    return this.applyProperties((modifications) => {
+    return this.applyProperties(modifications => {
       modifications.setProperty(index, property.name, value, priority);
     });
   },

@@ -10,6 +10,7 @@ const UserProperties = require("devtools/client/inspector/rules/models/user-prop
 const { ELEMENT_STYLE } = require("devtools/shared/specs/styles");
 
 loader.lazyRequireGetter(this, "promiseWarn", "devtools/client/inspector/shared/utils", true);
+loader.lazyRequireGetter(this, "parseDeclarations", "devtools/shared/css/parsing-utils", true);
 loader.lazyRequireGetter(this, "isCssVariable", "devtools/shared/fronts/css-properties", true);
 
 
@@ -329,6 +330,42 @@ ElementStyle.prototype = {
       if (this._updatePropertyOverridden(textProp)) {
         textProp.updateEditor();
       }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  modifyDeclarationName: async function(ruleID, declarationId, name) {
+    const rule = this.getRule(ruleID);
+    if (!rule) {
+      return;
+    }
+
+    const declaration = rule.getDeclaration(declarationId);
+    if (!declaration || declaration.name === name) {
+      return;
+    }
+
+    
+    
+    const declarations = parseDeclarations(this.cssProperties.isKnown, name);
+    if (!declarations.length) {
+      return;
+    }
+
+    await declaration.setName(declarations[0].name);
+
+    if (!declaration.enabled) {
+      await declaration.setEnabled(true);
     }
   },
 
