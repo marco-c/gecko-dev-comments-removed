@@ -115,6 +115,12 @@ var UrlbarUtils = {
   },
 
   
+  CANCEL_REASON: {
+    
+    BLUR: 2,
+  },
+
+  
 
 
 

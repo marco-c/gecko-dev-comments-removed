@@ -174,7 +174,12 @@ class UrlbarView {
   
 
 
-  close() {
+
+
+
+
+  close(cancelReason) {
+    this.controller.cancelQuery(cancelReason);
     this.panel.hidePopup();
   }
 
