@@ -338,7 +338,9 @@ async function testAddonUninstall(card) {
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      
       ["extensions.htmlaboutaddons.enabled", true],
+      ["extensions.htmlaboutaddons.discover.enabled", true],
       
       
       ["browser.discovery.enabled", false],
