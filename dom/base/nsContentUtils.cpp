@@ -8507,6 +8507,12 @@ nsContentUtils::StorageAccess nsContentUtils::InternalStorageAllowedCheck(
     return StorageAccess::ePartitionTrackersOrDeny;
   }
 
+  
+  if (aRejectedReason ==
+      nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN) {
+    return StorageAccess::ePartitionForeignOrDeny;
+  }
+
   return StorageAccess::eDeny;
 }
 
