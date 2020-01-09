@@ -816,7 +816,7 @@ nsPlacesExpiration.prototype = {
 
 
       
-      this._db.executeAsync(boundStatements, boundStatements.length, this);
+      this._db.executeAsync(boundStatements, this);
     })().catch(Cu.reportError);
   },
 
