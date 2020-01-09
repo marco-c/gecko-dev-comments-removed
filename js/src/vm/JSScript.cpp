@@ -3626,6 +3626,11 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
     initFromFunctionBox(script, bce->sc->asFunctionBox());
   }
 
+  
+  
+  
+  bce->objectList.finishInnerFunctions();
+
 #ifdef JS_STRUCTURED_SPEW
   
   
