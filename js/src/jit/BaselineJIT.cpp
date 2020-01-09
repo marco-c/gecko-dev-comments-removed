@@ -231,12 +231,37 @@ MethodStatus jit::BaselineCompile(JSContext* cx, JSScript* script,
 }
 
 static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
-                                        InterpreterFrame* osrFrame) {
+                                        InterpreterFrame* osrSourceFrame) {
   MOZ_ASSERT(jit::IsBaselineEnabled(cx));
 
   
   if (!script->canBaselineCompile()) {
     return Method_Skipped;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (osrSourceFrame && osrSourceFrame->isDebuggee() &&
+      !Debugger::ensureExecutionObservabilityOfOsrFrame(cx, osrSourceFrame)) {
+    return Method_Error;
   }
 
   if (script->length() > BaselineMaxScriptLength) {
@@ -269,38 +294,15 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
   
   
   
-  return BaselineCompile(cx, script, osrFrame && osrFrame->isDebuggee());
+  bool forceDebugInstrumentation =
+      osrSourceFrame && osrSourceFrame->isDebuggee();
+  return BaselineCompile(cx, script, forceDebugInstrumentation);
 }
 
 MethodStatus jit::CanEnterBaselineAtBranch(JSContext* cx,
                                            InterpreterFrame* fp) {
   if (!CheckFrame(fp)) {
     return Method_CantCompile;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (fp->isDebuggee() &&
-      !Debugger::ensureExecutionObservabilityOfOsrFrame(cx, fp)) {
-    return Method_Error;
   }
 
   RootedScript script(cx, fp->script());
