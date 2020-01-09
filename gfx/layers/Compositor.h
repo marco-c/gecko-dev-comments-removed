@@ -136,6 +136,7 @@ class BasicCompositor;
 class TextureReadLock;
 struct GPUStats;
 class AsyncReadbackBuffer;
+class RecordedFrame;
 
 enum SurfaceInitMode { INIT_MODE_NONE, INIT_MODE_CLEAR };
 
@@ -520,6 +521,15 @@ class Compositor : public TextureSourceProvider {
   void SetInvalid();
   bool IsValid() const override;
   CompositorBridgeParent* GetCompositorBridgeParent() const { return mParent; }
+
+  
+
+
+
+
+
+  already_AddRefed<RecordedFrame> RecordFrame(
+      const TimeStamp& aTimeStamp);
 
  protected:
   void DrawDiagnosticsInternal(DiagnosticFlags aFlags,
