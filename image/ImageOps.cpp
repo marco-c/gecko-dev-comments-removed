@@ -26,26 +26,29 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace image {
 
- already_AddRefed<Image> ImageOps::Freeze(Image* aImage) {
+
+already_AddRefed<Image> ImageOps::Freeze(Image* aImage) {
   RefPtr<Image> frozenImage = new FrozenImage(aImage);
   return frozenImage.forget();
 }
 
- already_AddRefed<imgIContainer> ImageOps::Freeze(
-    imgIContainer* aImage) {
+
+already_AddRefed<imgIContainer> ImageOps::Freeze(imgIContainer* aImage) {
   nsCOMPtr<imgIContainer> frozenImage =
       new FrozenImage(static_cast<Image*>(aImage));
   return frozenImage.forget();
 }
 
- already_AddRefed<Image> ImageOps::Clip(
-    Image* aImage, nsIntRect aClip, const Maybe<nsSize>& aSVGViewportSize) {
+
+already_AddRefed<Image> ImageOps::Clip(Image* aImage, nsIntRect aClip,
+                                       const Maybe<nsSize>& aSVGViewportSize) {
   RefPtr<Image> clippedImage =
       new ClippedImage(aImage, aClip, aSVGViewportSize);
   return clippedImage.forget();
 }
 
- already_AddRefed<imgIContainer> ImageOps::Clip(
+
+already_AddRefed<imgIContainer> ImageOps::Clip(
     imgIContainer* aImage, nsIntRect aClip,
     const Maybe<nsSize>& aSVGViewportSize) {
   nsCOMPtr<imgIContainer> clippedImage =
@@ -53,20 +56,23 @@ namespace image {
   return clippedImage.forget();
 }
 
- already_AddRefed<Image> ImageOps::Orient(
-    Image* aImage, Orientation aOrientation) {
+
+already_AddRefed<Image> ImageOps::Orient(Image* aImage,
+                                         Orientation aOrientation) {
   RefPtr<Image> orientedImage = new OrientedImage(aImage, aOrientation);
   return orientedImage.forget();
 }
 
- already_AddRefed<imgIContainer> ImageOps::Orient(
-    imgIContainer* aImage, Orientation aOrientation) {
+
+already_AddRefed<imgIContainer> ImageOps::Orient(imgIContainer* aImage,
+                                                 Orientation aOrientation) {
   nsCOMPtr<imgIContainer> orientedImage =
       new OrientedImage(static_cast<Image*>(aImage), aOrientation);
   return orientedImage.forget();
 }
 
- already_AddRefed<imgIContainer> ImageOps::CreateFromDrawable(
+
+already_AddRefed<imgIContainer> ImageOps::CreateFromDrawable(
     gfxDrawable* aDrawable) {
   nsCOMPtr<imgIContainer> drawableImage = new DynamicImage(aDrawable);
   return drawableImage.forget();
@@ -134,17 +140,19 @@ ImageOps::CreateImageBuffer(already_AddRefed<nsIInputStream> aInputStream) {
   return imageBuffer.forget();
 }
 
- nsresult ImageOps::DecodeMetadata(
-    already_AddRefed<nsIInputStream> aInputStream, const nsACString& aMimeType,
-    ImageMetadata& aMetadata) {
+
+nsresult ImageOps::DecodeMetadata(already_AddRefed<nsIInputStream> aInputStream,
+                                  const nsACString& aMimeType,
+                                  ImageMetadata& aMetadata) {
   nsCOMPtr<nsIInputStream> inputStream = std::move(aInputStream);
   RefPtr<ImageBuffer> buffer = CreateImageBuffer(inputStream.forget());
   return DecodeMetadata(buffer, aMimeType, aMetadata);
 }
 
- nsresult ImageOps::DecodeMetadata(ImageBuffer* aBuffer,
-                                               const nsACString& aMimeType,
-                                               ImageMetadata& aMetadata) {
+
+nsresult ImageOps::DecodeMetadata(ImageBuffer* aBuffer,
+                                  const nsACString& aMimeType,
+                                  ImageMetadata& aMetadata) {
   if (!aBuffer) {
     return NS_ERROR_FAILURE;
   }

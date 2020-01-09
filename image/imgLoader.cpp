@@ -914,7 +914,8 @@ static nsresult NewImageChannel(
   return NS_OK;
 }
 
- uint32_t imgCacheEntry::SecondsFromPRTime(PRTime prTime) {
+
+uint32_t imgCacheEntry::SecondsFromPRTime(PRTime prTime) {
   return uint32_t(int64_t(prTime) / int64_t(PR_USEC_PER_SEC));
 }
 
@@ -1158,7 +1159,8 @@ NS_IMPL_ISUPPORTS(imgLoader, imgILoader, nsIContentSniffer, imgICache,
 static imgLoader* gNormalLoader = nullptr;
 static imgLoader* gPrivateBrowsingLoader = nullptr;
 
- already_AddRefed<imgLoader> imgLoader::CreateImageLoader() {
+
+already_AddRefed<imgLoader> imgLoader::CreateImageLoader() {
   
   
   

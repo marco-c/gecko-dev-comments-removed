@@ -28,7 +28,8 @@ using namespace gfx;
 
 namespace image {
 
- DecoderType DecoderFactory::GetDecoderType(const char* aMimeType) {
+
+DecoderType DecoderFactory::GetDecoderType(const char* aMimeType) {
   
   DecoderType type = DecoderType::UNKNOWN;
 
@@ -80,8 +81,10 @@ namespace image {
   return type;
 }
 
- already_AddRefed<Decoder> DecoderFactory::GetDecoder(
-    DecoderType aType, RasterImage* aImage, bool aIsRedecode) {
+
+already_AddRefed<Decoder> DecoderFactory::GetDecoder(DecoderType aType,
+                                                     RasterImage* aImage,
+                                                     bool aIsRedecode) {
   RefPtr<Decoder> decoder;
 
   switch (aType) {
@@ -119,7 +122,8 @@ namespace image {
   return decoder.forget();
 }
 
- nsresult DecoderFactory::CreateDecoder(
+
+nsresult DecoderFactory::CreateDecoder(
     DecoderType aType, NotNull<RasterImage*> aImage,
     NotNull<SourceBuffer*> aSourceBuffer, const IntSize& aIntrinsicSize,
     const IntSize& aOutputSize, DecoderFlags aDecoderFlags,
@@ -173,7 +177,8 @@ namespace image {
   return NS_OK;
 }
 
- nsresult DecoderFactory::CreateAnimationDecoder(
+
+nsresult DecoderFactory::CreateAnimationDecoder(
     DecoderType aType, NotNull<RasterImage*> aImage,
     NotNull<SourceBuffer*> aSourceBuffer, const IntSize& aIntrinsicSize,
     DecoderFlags aDecoderFlags, SurfaceFlags aSurfaceFlags,
@@ -227,7 +232,8 @@ namespace image {
   return NS_OK;
 }
 
- already_AddRefed<Decoder> DecoderFactory::CloneAnimationDecoder(
+
+already_AddRefed<Decoder> DecoderFactory::CloneAnimationDecoder(
     Decoder* aDecoder) {
   MOZ_ASSERT(aDecoder);
 
@@ -257,10 +263,10 @@ namespace image {
   return decoder.forget();
 }
 
- already_AddRefed<IDecodingTask>
-DecoderFactory::CreateMetadataDecoder(DecoderType aType,
-                                      NotNull<RasterImage*> aImage,
-                                      NotNull<SourceBuffer*> aSourceBuffer) {
+
+already_AddRefed<IDecodingTask> DecoderFactory::CreateMetadataDecoder(
+    DecoderType aType, NotNull<RasterImage*> aImage,
+    NotNull<SourceBuffer*> aSourceBuffer) {
   if (aType == DecoderType::UNKNOWN) {
     return nullptr;
   }
@@ -281,14 +287,12 @@ DecoderFactory::CreateMetadataDecoder(DecoderType aType,
   return task.forget();
 }
 
- already_AddRefed<Decoder>
-DecoderFactory::CreateDecoderForICOResource(DecoderType aType,
-                                            SourceBufferIterator&& aIterator,
-                                            NotNull<nsICODecoder*> aICODecoder,
-                                            bool aIsMetadataDecode,
-                                            const Maybe<IntSize>& aExpectedSize,
-                                            const Maybe<uint32_t>& aDataOffset
-                                            ) {
+
+already_AddRefed<Decoder> DecoderFactory::CreateDecoderForICOResource(
+    DecoderType aType, SourceBufferIterator&& aIterator,
+    NotNull<nsICODecoder*> aICODecoder, bool aIsMetadataDecode,
+    const Maybe<IntSize>& aExpectedSize, const Maybe<uint32_t>& aDataOffset
+    ) {
   
   RefPtr<Decoder> decoder;
   switch (aType) {
@@ -330,7 +334,8 @@ DecoderFactory::CreateDecoderForICOResource(DecoderType aType,
   return decoder.forget();
 }
 
- already_AddRefed<Decoder> DecoderFactory::CreateAnonymousDecoder(
+
+already_AddRefed<Decoder> DecoderFactory::CreateAnonymousDecoder(
     DecoderType aType, NotNull<SourceBuffer*> aSourceBuffer,
     const Maybe<IntSize>& aOutputSize, DecoderFlags aDecoderFlags,
     SurfaceFlags aSurfaceFlags) {
@@ -365,8 +370,8 @@ DecoderFactory::CreateDecoderForICOResource(DecoderType aType,
   return decoder.forget();
 }
 
- already_AddRefed<Decoder>
-DecoderFactory::CreateAnonymousMetadataDecoder(
+
+already_AddRefed<Decoder> DecoderFactory::CreateAnonymousMetadataDecoder(
     DecoderType aType, NotNull<SourceBuffer*> aSourceBuffer) {
   if (aType == DecoderType::UNKNOWN) {
     return nullptr;

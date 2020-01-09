@@ -136,8 +136,9 @@ bool ImageCacheKey::SchemeIs(const char* aScheme) {
   return NS_SUCCEEDED(mURI->SchemeIs(aScheme, &matches)) && matches;
 }
 
- void* ImageCacheKey::GetSpecialCaseDocumentToken(
-    Document* aDocument, nsIURI* aURI) {
+
+void* ImageCacheKey::GetSpecialCaseDocumentToken(Document* aDocument,
+                                                 nsIURI* aURI) {
   
   
   

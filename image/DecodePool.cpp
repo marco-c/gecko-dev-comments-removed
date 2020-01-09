@@ -36,8 +36,10 @@ namespace image {
 
 
 
- StaticRefPtr<DecodePool> DecodePool::sSingleton;
- uint32_t DecodePool::sNumCores = 0;
+
+StaticRefPtr<DecodePool> DecodePool::sSingleton;
+
+uint32_t DecodePool::sNumCores = 0;
 
 NS_IMPL_ISUPPORTS(DecodePool, nsIObserver)
 
@@ -309,13 +311,15 @@ bool DecodePoolImpl::CreateThread() {
   return true;
 }
 
- void DecodePool::Initialize() {
+
+void DecodePool::Initialize() {
   MOZ_ASSERT(NS_IsMainThread());
   sNumCores = max<int32_t>(PR_GetNumberOfProcessors(), 1);
   DecodePool::Singleton();
 }
 
- DecodePool* DecodePool::Singleton() {
+
+DecodePool* DecodePool::Singleton() {
   if (!sSingleton) {
     MOZ_ASSERT(NS_IsMainThread());
     sSingleton = new DecodePool();
@@ -325,7 +329,8 @@ bool DecodePoolImpl::CreateThread() {
   return sSingleton;
 }
 
- uint32_t DecodePool::NumberOfCores() { return sNumCores; }
+
+uint32_t DecodePool::NumberOfCores() { return sNumCores; }
 
 DecodePool::DecodePool() : mMutex("image::DecodePool") {
   

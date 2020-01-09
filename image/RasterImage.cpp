@@ -1546,8 +1546,8 @@ void RasterImage::DoError() {
           ("RasterImage: [this=%p] Error detected for image\n", this));
 }
 
- void RasterImage::HandleErrorWorker::DispatchIfNeeded(
-    RasterImage* aImage) {
+
+void RasterImage::HandleErrorWorker::DispatchIfNeeded(RasterImage* aImage) {
   RefPtr<HandleErrorWorker> worker = new HandleErrorWorker(aImage);
   NS_DispatchToMainThread(worker);
 }

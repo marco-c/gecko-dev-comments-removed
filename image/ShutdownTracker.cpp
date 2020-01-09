@@ -53,16 +53,16 @@ NS_IMPL_ISUPPORTS(ShutdownObserver, nsIObserver)
 
 
 
- void ShutdownTracker::Initialize() {
+
+void ShutdownTracker::Initialize() {
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (os) {
     os->AddObserver(new ShutdownObserver, "xpcom-will-shutdown", false);
   }
 }
 
- bool ShutdownTracker::ShutdownHasStarted() {
-  return sShutdownHasStarted;
-}
+
+bool ShutdownTracker::ShutdownHasStarted() { return sShutdownHasStarted; }
 
 }  
 }  

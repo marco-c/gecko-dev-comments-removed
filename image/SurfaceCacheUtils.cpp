@@ -10,9 +10,8 @@
 namespace mozilla {
 namespace image {
 
- void SurfaceCacheUtils::DiscardAll() {
-  SurfaceCache::DiscardAll();
-}
+
+void SurfaceCacheUtils::DiscardAll() { SurfaceCache::DiscardAll(); }
 
 }  
 }  

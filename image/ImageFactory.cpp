@@ -29,7 +29,8 @@
 namespace mozilla {
 namespace image {
 
- void ImageFactory::Initialize() {}
+
+void ImageFactory::Initialize() {}
 
 static uint32_t ComputeImageFlags(nsIURI* uri, const nsCString& aMimeType,
                                   bool isMultiPart) {
@@ -104,7 +105,8 @@ static void NotifyImageLoading(nsIURI* aURI) {
 }
 #endif
 
- already_AddRefed<Image> ImageFactory::CreateImage(
+
+already_AddRefed<Image> ImageFactory::CreateImage(
     nsIRequest* aRequest, ProgressTracker* aProgressTracker,
     const nsCString& aMimeType, nsIURI* aURI, bool aIsMultiPart,
     uint32_t aInnerWindowId) {
@@ -141,7 +143,8 @@ static already_AddRefed<Image> BadImage(const char* aMessage,
   return aImage.forget();
 }
 
- already_AddRefed<Image> ImageFactory::CreateAnonymousImage(
+
+already_AddRefed<Image> ImageFactory::CreateAnonymousImage(
     const nsCString& aMimeType, uint32_t aSizeHint ) {
   nsresult rv;
 
@@ -164,9 +167,9 @@ static already_AddRefed<Image> BadImage(const char* aMessage,
   return newImage.forget();
 }
 
- already_AddRefed<MultipartImage>
-ImageFactory::CreateMultipartImage(Image* aFirstPart,
-                                   ProgressTracker* aProgressTracker) {
+
+already_AddRefed<MultipartImage> ImageFactory::CreateMultipartImage(
+    Image* aFirstPart, ProgressTracker* aProgressTracker) {
   MOZ_ASSERT(aFirstPart);
   MOZ_ASSERT(aProgressTracker);
 
@@ -218,7 +221,8 @@ uint32_t GetContentSize(nsIRequest* aRequest) {
   return 0;
 }
 
- already_AddRefed<Image> ImageFactory::CreateRasterImage(
+
+already_AddRefed<Image> ImageFactory::CreateRasterImage(
     nsIRequest* aRequest, ProgressTracker* aProgressTracker,
     const nsCString& aMimeType, nsIURI* aURI, uint32_t aImageFlags,
     uint32_t aInnerWindowId) {
@@ -245,7 +249,8 @@ uint32_t GetContentSize(nsIRequest* aRequest) {
   return newImage.forget();
 }
 
- already_AddRefed<Image> ImageFactory::CreateVectorImage(
+
+already_AddRefed<Image> ImageFactory::CreateVectorImage(
     nsIRequest* aRequest, ProgressTracker* aProgressTracker,
     const nsCString& aMimeType, nsIURI* aURI, uint32_t aImageFlags,
     uint32_t aInnerWindowId) {
