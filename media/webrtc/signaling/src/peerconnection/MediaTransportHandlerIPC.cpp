@@ -147,6 +147,8 @@ void MediaTransportHandlerIPC::Destroy() {
 
 void MediaTransportHandlerIPC::SetProxyServer(
     NrSocketProxyConfig&& aProxyConfig) {
+  
+#if 0
   mInitPromise->Then(
       GetMainThreadSerialEventTarget(), __func__,
       [aProxyConfig = std::move(aProxyConfig), this,
@@ -157,6 +159,7 @@ void MediaTransportHandlerIPC::SetProxyServer(
         }
       },
       [](const nsCString& aError) {});
+#endif
 }
 
 void MediaTransportHandlerIPC::EnsureProvisionalTransport(
