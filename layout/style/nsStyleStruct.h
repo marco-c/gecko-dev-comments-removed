@@ -215,7 +215,7 @@ class nsStyleImageRequest {
 
   
   
-  nsStyleImageRequest(Mode aModeFlags, mozilla::css::URLValue* aImageValue);
+  nsStyleImageRequest(Mode aModeFlags, const mozilla::StyleComputedImageUrl&);
 
   bool Resolve(mozilla::dom::Document&,
                const nsStyleImageRequest* aOldImageRequest);
@@ -234,7 +234,9 @@ class nsStyleImageRequest {
   
   bool DefinitelyEquals(const nsStyleImageRequest& aOther) const;
 
-  mozilla::css::URLValue* GetImageValue() const { return mImageValue; }
+  const mozilla::StyleComputedImageUrl& GetImageValue() const {
+    return mImageURL;
+  }
 
   already_AddRefed<nsIURI> GetImageURI() const;
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsStyleImageRequest);
@@ -246,7 +248,7 @@ class nsStyleImageRequest {
   void MaybeTrackAndLock();
 
   RefPtr<imgRequestProxy> mRequestProxy;
-  RefPtr<mozilla::css::URLValue> mImageValue;
+  mozilla::StyleComputedImageUrl mImageURL;
   RefPtr<mozilla::dom::ImageTracker> mImageTracker;
 
   
@@ -295,8 +297,6 @@ struct CachedBorderImageData {
 
 
 struct nsStyleImage {
-  typedef mozilla::css::URLValue URLValue;
-
   nsStyleImage();
   ~nsStyleImage();
   nsStyleImage(const nsStyleImage& aOther);
@@ -346,7 +346,7 @@ struct nsStyleImage {
 
   already_AddRefed<nsIURI> GetImageURI() const;
 
-  const URLValue* GetURLValue() const;
+  const mozilla::StyleComputedImageUrl* GetURLValue() const;
 
   
 
@@ -1603,10 +1603,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
   nsChangeHint CalcDifference(const nsStyleDisplay& aNewData) const;
 
-  
-  
-  RefPtr<mozilla::css::URLValue> mBinding;
-
+  mozilla::StyleUrlOrNone mBinding;
   nsStyleAutoArray<mozilla::StyleTransition> mTransitions;
   
   
@@ -2393,10 +2390,10 @@ class nsStyleSVGPaint {
 
   void SetNone();
   void SetColor(mozilla::StyleColor aColor);
-  void SetPaintServer(mozilla::css::URLValue* aPaintServer,
+  void SetPaintServer(const mozilla::StyleComputedUrl& aPaintServer,
                       nsStyleSVGFallbackType aFallbackType,
                       mozilla::StyleColor aFallbackColor);
-  void SetPaintServer(mozilla::css::URLValue* aPaintServer) {
+  void SetPaintServer(const mozilla::StyleComputedUrl& aPaintServer) {
     SetPaintServer(aPaintServer, eStyleSVGFallbackType_NotSet,
                    mozilla::StyleColor::Black());
   }
@@ -2413,7 +2410,7 @@ class nsStyleSVGPaint {
     return mPaint.mColor.CalcColor(*aComputedStyle);
   }
 
-  mozilla::css::URLValue* GetPaintServer() const {
+  const mozilla::StyleComputedUrl& GetPaintServer() const {
     MOZ_ASSERT(mType == eStyleSVGPaintType_Server);
     return mPaint.mPaintServer;
   }
@@ -2438,7 +2435,7 @@ class nsStyleSVGPaint {
 
   union ColorOrPaintServer {
     mozilla::StyleColor mColor;
-    mozilla::css::URLValue* mPaintServer;
+    mozilla::StyleComputedUrl mPaintServer;
     explicit ColorOrPaintServer(mozilla::StyleColor c) : mColor(c) {}
     ~ColorOrPaintServer() {}  
   };
@@ -2459,9 +2456,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG {
 
   nsStyleSVGPaint mFill;
   nsStyleSVGPaint mStroke;
-  RefPtr<mozilla::css::URLValue> mMarkerEnd;
-  RefPtr<mozilla::css::URLValue> mMarkerMid;
-  RefPtr<mozilla::css::URLValue> mMarkerStart;
+  mozilla::StyleUrlOrNone mMarkerEnd;
+  mozilla::StyleUrlOrNone mMarkerMid;
+  mozilla::StyleUrlOrNone mMarkerStart;
   nsTArray<mozilla::NonNegativeLengthPercentage> mStrokeDasharray;
   mozilla::StyleMozContextProperties mMozContextProperties;
 
@@ -2508,7 +2505,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG {
     return mContextFlags & STROKE_WIDTH_CONTEXT;
   }
 
-  bool HasMarker() const { return mMarkerStart || mMarkerMid || mMarkerEnd; }
+  bool HasMarker() const {
+    return mMarkerStart.IsUrl() || mMarkerMid.IsUrl() || mMarkerEnd.IsUrl();
+  }
 
   
 
@@ -2572,12 +2571,12 @@ struct nsStyleFilter {
   }
   void SetFilterParameter(const nsStyleCoord& aFilterParameter, int32_t aType);
 
-  mozilla::css::URLValue* GetURL() const {
+  const mozilla::StyleComputedUrl& GetURL() const {
     MOZ_ASSERT(mType == NS_STYLE_FILTER_URL, "wrong filter type");
     return mURL;
   }
 
-  bool SetURL(mozilla::css::URLValue* aValue);
+  bool SetURL(const mozilla::StyleComputedUrl& aUrl);
 
   const mozilla::StyleSimpleShadow& GetDropShadow() const {
     NS_ASSERTION(mType == NS_STYLE_FILTER_DROP_SHADOW, "wrong filter type");
@@ -2591,7 +2590,7 @@ struct nsStyleFilter {
   uint32_t mType;                 
   nsStyleCoord mFilterParameter;  
   union {
-    mozilla::css::URLValue* mURL;
+    mozilla::StyleComputedUrl mURL;
     mozilla::StyleSimpleShadow mDropShadow;
   };
 };

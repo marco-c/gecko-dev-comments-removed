@@ -4,7 +4,7 @@
 
 
 
-use crate::values::generics::url::UrlOrNone as GenericUrlOrNone;
+use crate::values::generics::url::GenericUrlOrNone;
 
 #[cfg(feature = "gecko")]
 pub use crate::gecko::url::{SpecifiedImageUrl, SpecifiedUrl};

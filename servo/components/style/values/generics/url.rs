@@ -5,6 +5,8 @@
 
 
 
+
+/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Animate,
     Clone,
@@ -21,16 +23,27 @@
     ToResolvedValue,
     ToShmem,
 )]
-pub enum UrlOrNone<Url> {
+#[repr(C, u8)]
+pub enum GenericUrlOrNone<U> {
     
     None,
     
-    Url(Url),
+    Url(U),
 }
+
+pub use self::GenericUrlOrNone as UrlOrNone;
 
 impl<Url> UrlOrNone<Url> {
     
     pub fn none() -> Self {
         UrlOrNone::None
+    }
+
+    
+    pub fn is_none(&self) -> bool {
+        match *self {
+            UrlOrNone::None => true,
+            UrlOrNone::Url(..) => false,
+        }
     }
 }
