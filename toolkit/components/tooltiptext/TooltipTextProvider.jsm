@@ -2,7 +2,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function TooltipTextProvider() {}
@@ -146,5 +145,4 @@ TooltipTextProvider.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsITooltipTextProvider]),
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([TooltipTextProvider]);
-
+var EXPORTED_SYMBOLS = ["TooltipTextProvider"];
