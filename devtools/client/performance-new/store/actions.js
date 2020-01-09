@@ -10,6 +10,8 @@ const { recordingState: {
   REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER,
   REQUEST_TO_STOP_PROFILER,
 }} = require("devtools/client/performance-new/utils");
+const { OS } = require("resource://gre/modules/osfile.jsm");
+const { ProfilerGetSymbols } = require("resource://app/modules/ProfilerGetSymbols.jsm");
 
 
 
@@ -137,13 +139,16 @@ exports.startRecording = () => {
 
 
 
-function createDebugPathMapForLibsInProfile(profile) {
+
+
+
+function createLibraryMap(profile) {
   const map = new Map();
   function fillMapForProcessRecursive(processProfile) {
     for (const lib of processProfile.libs) {
-      const { debugName, debugPath, breakpadId } = lib;
+      const { debugName, breakpadId } = lib;
       const key = [debugName, breakpadId].join(":");
-      map.set(key, debugPath);
+      map.set(key, lib);
     }
     for (const subprocess of processProfile.processes) {
       fillMapForProcessRecursive(subprocess);
@@ -151,10 +156,34 @@ function createDebugPathMapForLibsInProfile(profile) {
   }
 
   fillMapForProcessRecursive(profile);
-  return function getDebugPathFor(debugName, breakpadId) {
+  return function getLibraryFor(debugName, breakpadId) {
     const key = [debugName, breakpadId].join(":");
     return map.get(key);
   };
+}
+
+async function getSymbolTableFromDebuggee(perfFront, path, breakpadId) {
+  const [addresses, index, buffer] =
+    await perfFront.getSymbolTable(path, breakpadId);
+  
+  
+  return [
+    new Uint32Array(addresses),
+    new Uint32Array(index),
+    new Uint8Array(buffer),
+  ];
+}
+
+async function doesFileExistAtPath(path) {
+  try {
+    const result = await OS.File.stat(path);
+    return !result.isDir;
+  } catch (e) {
+    if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
+      return false;
+    }
+    throw e;
+  }
 }
 
 
@@ -166,18 +195,23 @@ exports.getProfileAndStopProfiler = () => {
     dispatch(changeRecordingState(REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER));
     const profile = await perfFront.getProfileAndStopProfiler();
 
-    const debugPathGetter = createDebugPathMapForLibsInProfile(profile);
+    const libraryGetter = createLibraryMap(profile);
     async function getSymbolTable(debugName, breakpadId) {
-      const debugPath = debugPathGetter(debugName, breakpadId);
-      const [addresses, index, buffer] =
-        await perfFront.getSymbolTable(debugPath, breakpadId);
+      const {path, debugPath} = libraryGetter(debugName, breakpadId);
+      if (await doesFileExistAtPath(path)) {
+        
+        
+        
+        return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
+      }
       
       
-      return [
-        new Uint32Array(addresses),
-        new Uint32Array(index),
-        new Uint8Array(buffer),
-      ];
+      
+      
+      
+      
+      
+      return getSymbolTableFromDebuggee(perfFront, path, breakpadId);
     }
 
     selectors.getReceiveProfileFn(getState())(profile, getSymbolTable);
