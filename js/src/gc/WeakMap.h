@@ -160,6 +160,7 @@ class WeakMap
   using Base::clear;
   using Base::has;
   using Base::shallowSizeOfExcludingThis;
+  using Base::shallowSizeOfIncludingThis;
 
   
   using Base::remove;
