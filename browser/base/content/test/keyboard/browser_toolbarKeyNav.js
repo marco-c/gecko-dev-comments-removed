@@ -52,6 +52,19 @@ async function waitUntilReloadEnabled() {
   await TestUtils.waitForCondition(() => !button.disabled);
 }
 
+
+function withNewBlankTab(taskFn) {
+  return BrowserTestUtils.withNewTab("about:blank", async function() {
+    
+    
+    
+    
+    
+    document.getElementById("Browser:Reload").setAttribute("disabled", "true");
+    await taskFn();
+  });
+}
+
 add_task(async function setPref() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -63,7 +76,7 @@ add_task(async function setPref() {
 
 
 add_task(async function testTabStopsNoPage() {
-  await BrowserTestUtils.withNewTab("about:blank", async function() {
+  await withNewBlankTab(async function() {
     startFromUrlBar();
     await expectFocusAfterKey("Shift+Tab", "home-button");
     await expectFocusAfterKey("Shift+Tab", "tabbrowser-tabs", true);
@@ -125,7 +138,7 @@ add_task(async function testTabStopsWithBookmarksToolbar() {
 
 
 add_task(async function testTabStopNoButtons() {
-  await BrowserTestUtils.withNewTab("about:blank", async function() {
+  await withNewBlankTab(async function() {
     
     
     CustomizableUI.removeWidgetFromArea("home-button");
