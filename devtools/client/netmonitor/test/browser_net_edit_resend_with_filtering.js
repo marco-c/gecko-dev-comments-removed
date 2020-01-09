@@ -12,7 +12,8 @@
 add_task(async function() {
   const { tab, monitor } = await initNetMonitor(POST_RAW_URL);
 
-  const { document, store, windowRequire } = monitor.panelWin;
+  const { document, store, windowRequire, parent } = monitor.panelWin;
+  const parentDocument = parent.document;
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   store.dispatch(Actions.batchEnable(false));
 
@@ -31,7 +32,7 @@ add_task(async function() {
 
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, xhrRequestItem);
-  getContextMenuItem(monitor, "request-list-context-resend").click();
+  parentDocument.querySelector("#request-list-context-resend").click();
 
   
   await waitUntil(() => document.querySelector("#custom-request-send-button"));

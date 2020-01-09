@@ -390,10 +390,6 @@ Toolbox.prototype = {
     return DevToolsUtils.getTopWindow(this.win);
   },
 
-  get topDoc() {
-    return this.topWindow.document;
-  },
-
   
 
 
@@ -3248,20 +3244,13 @@ Toolbox.prototype = {
 
 
   openTextBoxContextMenu: function(x, y) {
-    const menu = createEditContextMenu(this.topWindow, "toolbox-menu");
+    const menu = createEditContextMenu(this.win, "toolbox-menu");
 
     
     menu.once("open", () => this.emit("menu-open"));
     menu.once("close", () => this.emit("menu-close"));
 
-    menu.popup(x, y, this.doc);
-  },
-
-  
-
-
-  getTextBoxContextMenu: function() {
-    return this.topDoc.getElementById("toolbox-menu");
+    menu.popup(x, y, { doc: this.doc });
   },
 
   
