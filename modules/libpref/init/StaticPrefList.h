@@ -457,6 +457,19 @@ VARCACHE_PREF(
 )
 
 
+#ifdef NIGHTLY_BUILD
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  "dom.block_external_protocol_in_iframes",
+   dom_block_external_protocol_in_iframes,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
 VARCACHE_PREF(
   "dom.block_multiple_popups",
    dom_block_multiple_popups,
