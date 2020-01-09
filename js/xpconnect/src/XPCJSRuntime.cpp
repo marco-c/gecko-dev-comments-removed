@@ -44,6 +44,7 @@
 #include "nsCycleCollector.h"
 #include "jsapi.h"
 #include "js/BuildId.h"  
+#include "js/experimental/SourceHook.h"  
 #include "js/MemoryFunctions.h"
 #include "js/MemoryMetrics.h"
 #include "js/UbiNode.h"

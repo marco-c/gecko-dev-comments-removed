@@ -93,6 +93,7 @@
 #include "js/ContextOptions.h"  
 #include "js/Debug.h"
 #include "js/Equality.h"  
+#include "js/experimental/SourceHook.h"  
 #include "js/GCVector.h"
 #include "js/Initialization.h"
 #include "js/JSON.h"
