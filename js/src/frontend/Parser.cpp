@@ -1829,6 +1829,14 @@ GeneralParser<ParseHandler, Unit>::functionBody(InHandling inHandling,
   uint32_t startYieldOffset = pc_->lastYieldOffset;
 #endif
 
+  if (kind == FunctionSyntaxKind::ClassConstructor) {
+    
+    
+    if (!noteUsedName(cx_->names().dotInitializers)) {
+      return null();
+    }
+  }
+
   Node body;
   if (type == StatementListBody) {
     bool inheritedStrict = pc_->sc()->strict();
@@ -6764,12 +6772,10 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
   
   Maybe<ParseContext::Statement> innerScopeStmt;
   Maybe<ParseContext::Scope> innerScope;
-  if (className) {
-    innerScopeStmt.emplace(pc_, StatementKind::Block);
-    innerScope.emplace(this);
-    if (!innerScope->init(pc_)) {
-      return null();
-    }
+  innerScopeStmt.emplace(pc_, StatementKind::Block);
+  innerScope.emplace(this);
+  if (!innerScope->init(pc_)) {
+    return null();
   }
 
   
@@ -7008,30 +7014,35 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
     }
   }
 
+  NameNodeType innerName;
   Node nameNode = null();
-  Node membersOrBlock = classMembers;
   if (className) {
     
     if (!noteDeclaredName(className, DeclarationKind::Const, namePos)) {
       return null();
     }
 
-    NameNodeType innerName = newName(className, namePos);
+    innerName = newName(className, namePos);
     if (!innerName) {
       return null();
     }
+  }
 
-    Node classBlock = finishLexicalScope(*innerScope, classMembers);
-    if (!classBlock) {
-      return null();
-    }
+  if (!noteDeclaredName(cx_->names().dotInitializers, DeclarationKind::Const,
+                        namePos)) {
+    return null();
+  }
 
-    membersOrBlock = classBlock;
+  Node classBlock = finishLexicalScope(*innerScope, classMembers);
+  if (!classBlock) {
+    return null();
+  }
 
-    
-    innerScope.reset();
-    innerScopeStmt.reset();
+  
+  innerScope.reset();
+  innerScopeStmt.reset();
 
+  if (className) {
     NameNodeType outerName = null();
     if (classContext == ClassStatement) {
       
@@ -7053,7 +7064,7 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
 
   MOZ_ALWAYS_TRUE(setLocalStrictMode(savedStrictness));
 
-  return handler_.newClass(nameNode, classHeritage, membersOrBlock,
+  return handler_.newClass(nameNode, classHeritage, classBlock,
                            TokenPos(classStartOffset, classEndOffset));
 }
 
@@ -7114,6 +7125,10 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
 
   auto stmtList = handler_.newStatementList(synthesizedBodyPos);
   if (!stmtList) {
+    return null();
+  }
+
+  if (!noteUsedName(cx_->names().dotInitializers)) {
     return null();
   }
 
