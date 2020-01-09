@@ -474,6 +474,41 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       aLists.BorderBackground()->AppendNewToTop<nsDisplayTableCellSelection>(
           aBuilder, this);
     }
+
+    
+    
+    
+    nsDisplayTableBackgroundSet* backgrounds =
+        aBuilder->GetTableBackgroundSet();
+    if (backgrounds) {
+      
+      
+      
+      bgRect = GetRectRelativeToSelf() + GetNormalPosition();
+
+      nsTableRowFrame* row = GetTableRowFrame();
+      bgRect += row->GetNormalPosition();
+
+      nsTableRowGroupFrame* rowGroup = row->GetTableRowGroupFrame();
+      bgRect += rowGroup->GetNormalPosition();
+
+      bgRect += backgrounds->TableToReferenceFrame();
+
+      
+      
+      nsTableColFrame* col = backgrounds->GetColForIndex(ColIndex());
+      nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
+          aBuilder, col, bgRect, backgrounds->ColBackgrounds(), false, nullptr,
+          col->GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(col), this);
+
+      nsIFrame* colGroup = col->GetParent();
+      nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
+          aBuilder, colGroup, bgRect, backgrounds->ColGroupBackgrounds(), false,
+          nullptr,
+          colGroup->GetRectRelativeToSelf() +
+              aBuilder->ToReferenceFrame(colGroup),
+          this);
+    }
   }
 
   
