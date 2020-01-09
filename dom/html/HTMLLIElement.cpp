@@ -68,14 +68,10 @@ void HTMLLIElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
   }
 
   
-  
   const nsAttrValue* attrVal = aAttributes->GetAttr(nsGkAtoms::value);
   if (attrVal && attrVal->Type() == nsAttrValue::eInteger) {
     if (!aDecls.PropertyIsSet(eCSSProperty_counter_set)) {
       aDecls.SetCounterSetListItem(attrVal->GetIntegerValue());
-    }
-    if (!aDecls.PropertyIsSet(eCSSProperty_counter_increment)) {
-      aDecls.SetCounterIncrementListItem(0);
     }
   }
 
