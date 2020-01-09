@@ -7,7 +7,6 @@
 const { Component } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
-const Immutable = require("devtools/client/shared/vendor/immutable");
 const { LocalizationHelper } = require("devtools/shared/l10n");
 
 const l10n = new LocalizationHelper("devtools/client/locales/components.properties");
@@ -43,11 +42,6 @@ class NotificationBox extends Component {
     return {
       
       id: PropTypes.string,
-
-      
-      
-      
-      notifications: PropTypes.object,
       
 
 
@@ -75,17 +69,7 @@ class NotificationBox extends Component {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+      notifications: PropTypes.instanceOf(Map),
       
       closeButtonTooltip: PropTypes.string,
     };
@@ -101,7 +85,7 @@ class NotificationBox extends Component {
     super(props);
 
     this.state = {
-      notifications: new Immutable.OrderedMap(),
+      notifications: new Map(),
     };
 
     this.appendNotification = this.appendNotification.bind(this);
@@ -160,7 +144,7 @@ class NotificationBox extends Component {
   }
 
   getCurrentNotification() {
-    return this.state.notifications.first();
+    return getHighestPriorityNotification(this.state.notifications);
   }
 
   
@@ -179,8 +163,10 @@ class NotificationBox extends Component {
       return;
     }
 
+    const newNotifications = new Map(this.state.notifications);
+    newNotifications.delete(notification.value);
     this.setState({
-      notifications: this.state.notifications.remove(notification.value),
+      notifications: newNotifications,
     });
   }
 
@@ -251,16 +237,15 @@ class NotificationBox extends Component {
 
   render() {
     const notifications = this.props.notifications || this.state.notifications;
-    const notification = notifications ? notifications.first() : null;
-    const content = notification ?
-      this.renderNotification(notification) :
-      null;
+    const notification = getHighestPriorityNotification(notifications);
+    const content = notification
+      ? this.renderNotification(notification)
+      : null;
 
     return div({
       className: "notificationbox",
-      id: this.props.id},
-      content
-    );
+      id: this.props.id,
+    }, content);
   }
 }
 
@@ -301,26 +286,22 @@ function appendNotification(state, props) {
   }
 
   if (!state.notifications) {
-    state.notifications = new Immutable.OrderedMap();
+    state.notifications = new Map();
   }
 
-  let notifications = state.notifications.set(value, {
-    label: label,
-    value: value,
-    image: image,
-    priority: priority,
-    type: type,
+  const notifications = new Map(state.notifications);
+  notifications.set(value, {
+    label,
+    value,
+    image,
+    priority,
+    type,
     buttons: Array.isArray(buttons) ? buttons : [],
-    eventCallback: eventCallback,
-  });
-
-  
-  notifications = notifications.sortBy((val, key) => {
-    return -val.priority;
+    eventCallback,
   });
 
   return {
-    notifications: notifications,
+    notifications,
   };
 }
 
@@ -329,9 +310,28 @@ function getNotificationWithValue(notifications, value) {
 }
 
 function removeNotificationWithValue(notifications, value) {
+  const newNotifications = new Map(notifications);
+  newNotifications.delete(value);
+
   return {
-    notifications: notifications.remove(value),
+    notifications: newNotifications,
   };
+}
+
+function getHighestPriorityNotification(notifications) {
+  if (!notifications) {
+    return null;
+  }
+
+  let currentNotification = null;
+  
+  for (const [, notification] of notifications) {
+    if (!currentNotification || notification.priority > currentNotification.priority) {
+      currentNotification = notification;
+    }
+  }
+
+  return currentNotification;
 }
 
 module.exports.NotificationBox = NotificationBox;
