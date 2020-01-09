@@ -22,6 +22,7 @@ struct nsCounterChangeNode;
 struct nsCounterNode : public nsGenConNode {
   enum Type {
     RESET,      
+    SET,        
     INCREMENT,  
     USE         
   };
@@ -115,11 +116,14 @@ struct nsCounterChangeNode : public nsCounterNode {
       : nsCounterNode(  
                         
                         
-            aPropIndex + (aChangeType == RESET ? (INT32_MIN) : (INT32_MIN / 2)),
+                        
+            aPropIndex + (aChangeType == RESET ? (INT32_MIN) :
+                          (aChangeType == SET ?  ((INT32_MIN / 3) * 2) : INT32_MIN / 3)),
             aChangeType),
         mChangeValue(aChangeValue) {
     NS_ASSERTION(aPropIndex >= 0, "out of range");
-    NS_ASSERTION(aChangeType == INCREMENT || aChangeType == RESET, "bad type");
+    NS_ASSERTION(aChangeType == INCREMENT || aChangeType == SET
+                 || aChangeType == RESET, "bad type");
     mPseudoFrame = aPseudoFrame;
     CheckFrameAssertions();
   }
@@ -135,7 +139,7 @@ inline nsCounterUseNode* nsCounterNode::UseNode() {
 }
 
 inline nsCounterChangeNode* nsCounterNode::ChangeNode() {
-  NS_ASSERTION(mType == INCREMENT || mType == RESET, "wrong type");
+  MOZ_ASSERT(mType == INCREMENT || mType == SET || mType == RESET);
   return static_cast<nsCounterChangeNode*>(this);
 }
 
@@ -195,7 +199,7 @@ class nsCounterList : public nsGenConList {
 class nsCounterManager {
  public:
   
-  bool AddCounterResetsAndIncrements(nsIFrame* aFrame);
+  bool AddCounterChanges(nsIFrame* aFrame);
 
   
   
@@ -243,9 +247,9 @@ class nsCounterManager {
 
  private:
   
-  bool AddResetOrIncrement(nsIFrame* aFrame, int32_t aIndex,
-                           const nsStyleCounterData& aCounterData,
-                           nsCounterNode::Type aType);
+  bool AddCounterChangeNode(nsIFrame* aFrame, int32_t aIndex,
+                            const nsStyleCounterData& aCounterData,
+                            nsCounterNode::Type aType);
 
   nsClassHashtable<nsStringHashKey, nsCounterList> mNames;
 };

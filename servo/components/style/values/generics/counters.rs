@@ -49,17 +49,17 @@ impl<I> Deref for CounterIncrement<I> {
 #[derive(
     Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
 )]
-pub struct CounterReset<I>(Counters<I>);
+pub struct CounterSetOrReset<I>(Counters<I>);
 
-impl<I> CounterReset<I> {
+impl<I> CounterSetOrReset<I> {
     
     #[inline]
     pub fn new(counters: Vec<CounterPair<I>>) -> Self {
-        CounterReset(Counters(counters.into_boxed_slice()))
+        CounterSetOrReset(Counters(counters.into_boxed_slice()))
     }
 }
 
-impl<I> Deref for CounterReset<I> {
+impl<I> Deref for CounterSetOrReset<I> {
     type Target = [CounterPair<I>];
 
     #[inline]
