@@ -3408,6 +3408,10 @@ pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
 pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
 
 
+
+pref("browser.tabs.remote.useCrossOriginOpenerPolicy", false);
+
+
 pref("svg.display-lists.hit-testing.enabled", true);
 pref("svg.display-lists.painting.enabled", true);
 
