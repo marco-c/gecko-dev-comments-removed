@@ -21,4 +21,13 @@ config = {
 
     "tooltool_url": 'https://tooltool.mozilla-releng.net/',
     'tooltool_manifest_src': "browser/config/tooltool-manifests/win32/releng.manifest",
+
+    
+    "local_mar_tool_dir": "dist\\host\\bin",
+    "mar": "mar.exe",
+    "mbsdiff": "mbsdiff.exe",
+
+    
+    "enable_mozmake": True,
+    'exes': {}
 }
