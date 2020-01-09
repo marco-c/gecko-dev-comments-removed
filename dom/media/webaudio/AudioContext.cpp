@@ -714,6 +714,12 @@ void AudioContext::Shutdown() {
   mActiveNodes.Clear();
 
   
+  
+  
+  
+  ShutdownWorklet();
+
+  
   if (mIsOffline && mDestination) {
     mDestination->OfflineShutdown();
   }
