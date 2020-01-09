@@ -22,22 +22,6 @@
 struct gfxFontStyle;
 
 
-
-
-const uint8_t kGenericFont_NONE = 0x00;
-
-const uint8_t kGenericFont_moz_variable =
-    0x00;  
-const uint8_t kGenericFont_moz_fixed =
-    0x01;  
-
-const uint8_t kGenericFont_serif = 0x02;
-const uint8_t kGenericFont_sans_serif = 0x04;
-const uint8_t kGenericFont_monospace = 0x08;
-const uint8_t kGenericFont_cursive = 0x10;
-const uint8_t kGenericFont_fantasy = 0x20;
-
-
 struct nsFont {
   typedef mozilla::FontStretch FontStretch;
   typedef mozilla::FontSlantStyle FontSlantStyle;
@@ -117,7 +101,7 @@ struct nsFont {
   nsFont(const mozilla::FontFamilyList& aFontlist, nscoord aSize);
 
   
-  nsFont(mozilla::FontFamilyType aGenericType, nscoord aSize);
+  nsFont(mozilla::StyleGenericFontFamily, nscoord aSize);
 
   
   nsFont(const nsFont& aFont);

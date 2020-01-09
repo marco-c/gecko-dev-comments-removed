@@ -22,13 +22,14 @@ struct LangGroupFontPrefs {
       : mLangGroup(nullptr),
         mMinimumFontSize(0),
         mDefaultVariableFont(),
-        mDefaultFixedFont(mozilla::eFamily_monospace, 0),
-        mDefaultSerifFont(mozilla::eFamily_serif, 0),
-        mDefaultSansSerifFont(mozilla::eFamily_sans_serif, 0),
-        mDefaultMonospaceFont(mozilla::eFamily_monospace, 0),
-        mDefaultCursiveFont(mozilla::eFamily_cursive, 0),
-        mDefaultFantasyFont(mozilla::eFamily_fantasy, 0) {
-    mDefaultVariableFont.fontlist.SetDefaultFontType(mozilla::eFamily_serif);
+        mDefaultFixedFont(StyleGenericFontFamily::MozFixed, 0),
+        mDefaultSerifFont(StyleGenericFontFamily::Serif, 0),
+        mDefaultSansSerifFont(StyleGenericFontFamily::SansSerif, 0),
+        mDefaultMonospaceFont(StyleGenericFontFamily::Monospace, 0),
+        mDefaultCursiveFont(StyleGenericFontFamily::Cursive, 0),
+        mDefaultFantasyFont(StyleGenericFontFamily::Fantasy, 0) {
+    mDefaultVariableFont.fontlist.SetDefaultFontType(
+        StyleGenericFontFamily::Serif);
     
     
     
@@ -80,23 +81,23 @@ struct LangGroupFontPrefs {
 
 
 
-  const nsFont* GetDefaultFont(uint8_t aFontID) const {
-    switch (aFontID) {
+  const nsFont* GetDefaultFont(StyleGenericFontFamily aFamily) const {
+    switch (aFamily) {
       
-      case kGenericFont_moz_variable:
+      case StyleGenericFontFamily::None:
         return &mDefaultVariableFont;
-      case kGenericFont_moz_fixed:
+      case StyleGenericFontFamily::MozFixed:
         return &mDefaultFixedFont;
       
-      case kGenericFont_serif:
+      case StyleGenericFontFamily::Serif:
         return &mDefaultSerifFont;
-      case kGenericFont_sans_serif:
+      case StyleGenericFontFamily::SansSerif:
         return &mDefaultSansSerifFont;
-      case kGenericFont_monospace:
+      case StyleGenericFontFamily::Monospace:
         return &mDefaultMonospaceFont;
-      case kGenericFont_cursive:
+      case StyleGenericFontFamily::Cursive:
         return &mDefaultCursiveFont;
-      case kGenericFont_fantasy:
+      case StyleGenericFontFamily::Fantasy:
         return &mDefaultFantasyFont;
         break;
       default:
