@@ -44,7 +44,19 @@ public class GlobalConstants {
   static {
     
     
-    if (Versions.feature26Plus) {
+    
+    if (Versions.feature29Plus) {
+      DEFAULT_CIPHER_SUITES = new String[]
+          {
+          "TLS_CHACHA20_POLY1305_SHA256",               
+          "TLS_AES_128_GCM_SHA256",                     
+          "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",      
+          "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",         
+          "TLS_AES_256_GCM_SHA384",                     
+          "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",      
+          "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",         
+          };
+    } else if (Versions.feature26Plus) {
       DEFAULT_CIPHER_SUITES = new String[]
           {
            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",   
@@ -86,18 +98,18 @@ public class GlobalConstants {
           };
     }
 
-    if (Versions.feature16Plus) {
+    if (Versions.feature29Plus) {
+      DEFAULT_PROTOCOLS = new String[]
+          {
+          "TLSv1.3",
+          "TLSv1.2",
+          };
+    } else {
       DEFAULT_PROTOCOLS = new String[]
           {
            "TLSv1.2",
            "TLSv1.1",
            "TLSv1",             
-          };
-    } else {
-      
-      DEFAULT_PROTOCOLS = new String[]
-          {
-           "TLSv1",
           };
     }
   }
