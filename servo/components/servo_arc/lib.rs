@@ -612,16 +612,15 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
         use std::mem::{align_of, size_of};
         assert_ne!(size_of::<T>(), 0, "Need to think about ZST");
 
+        let inner_align = align_of::<ArcInner<HeaderSlice<H, [T; 0]>>>();
+        debug_assert!(inner_align >= align_of::<T>());
+
         
         let num_items = items.len();
         let size = {
             
             
-            let fake_slice_ptr_align: usize = mem::align_of::<ArcInner<HeaderSlice<H, [T; 0]>>>();
-
-            
-            
-            let fake_slice_ptr = fake_slice_ptr_align as *const T;
+            let fake_slice_ptr = inner_align as *const T;
 
             
             
@@ -641,13 +640,13 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
         let ptr: *mut ArcInner<HeaderSlice<H, [T]>>;
         unsafe {
             
-            let layout = if mem::align_of::<T>() <= mem::align_of::<usize>() {
-                Layout::from_size_align_unchecked(size, mem::align_of::<usize>())
-            } else if mem::align_of::<T>() <= mem::align_of::<u64>() {
+            let layout = if inner_align <= align_of::<usize>() {
+                Layout::from_size_align_unchecked(size, align_of::<usize>())
+            } else if inner_align <= align_of::<u64>() {
                 
                 
                 
-                Layout::from_size_align_unchecked(size, mem::align_of::<u64>())
+                Layout::from_size_align_unchecked(size, align_of::<u64>())
             } else {
                 panic!("Over-aligned type not handled");
             };
@@ -689,7 +688,7 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
                 
                 debug_assert!(
                     (buffer.offset(size as isize) as usize - current as *mut u8 as usize) <
-                        align_of::<Self>()
+                        inner_align
                 );
             }
             assert!(

@@ -5,7 +5,7 @@
 
 
 use servo_arc::ThinArc;
-use std::mem;
+use std::{iter, mem};
 use std::ops::Deref;
 use std::ptr::NonNull;
 
@@ -14,7 +14,10 @@ use std::ptr::NonNull;
 
 
 
-const ARC_SLICE_CANARY: u32 = 0xf3f3f3f3;
+
+
+
+const ARC_SLICE_CANARY: u64 = 0xf3f3f3f3f3f3f3f3;
 
 
 
@@ -22,7 +25,7 @@ const ARC_SLICE_CANARY: u32 = 0xf3f3f3f3;
 /// cbindgen:derive-neq=false
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, ToShmem)]
-pub struct ArcSlice<T>(#[shmem(field_bound)] ThinArc<u32, T>);
+pub struct ArcSlice<T>(#[shmem(field_bound)] ThinArc<u64, T>);
 
 impl<T> Deref for ArcSlice<T> {
     type Target = [T];
@@ -34,12 +37,28 @@ impl<T> Deref for ArcSlice<T> {
     }
 }
 
+lazy_static! {
+    // ThinArc doesn't support alignments greater than align_of::<u64>.
+    static ref EMPTY_ARC_SLICE: ArcSlice<u64> = {
+        ArcSlice(ThinArc::from_header_and_iter(ARC_SLICE_CANARY, iter::empty()))
+    };
+}
 
-
-
-
-#[repr(C)]
-pub struct ForgottenArcSlicePtr<T>(NonNull<T>);
+impl<T> Default for ArcSlice<T> {
+    #[allow(unsafe_code)]
+    fn default() -> Self {
+        debug_assert!(
+            mem::align_of::<T>() <= mem::align_of::<u64>(),
+            "Need to increase the alignment of EMPTY_ARC_SLICE"
+        );
+        unsafe {
+            let empty: ArcSlice<_> = EMPTY_ARC_SLICE.clone();
+            let empty: Self = mem::transmute(empty);
+            debug_assert_eq!(empty.len(), 0);
+            empty
+        }
+    }
+}
 
 impl<T> ArcSlice<T> {
     
@@ -49,6 +68,9 @@ impl<T> ArcSlice<T> {
     where
         I: Iterator<Item = T> + ExactSizeIterator,
     {
+        if items.len() == 0 {
+            return Self::default();
+        }
         ArcSlice(ThinArc::from_header_and_iter(ARC_SLICE_CANARY, items))
     }
 
@@ -64,3 +86,10 @@ impl<T> ArcSlice<T> {
         ret
     }
 }
+
+
+
+
+
+#[repr(C)]
+pub struct ForgottenArcSlicePtr<T>(NonNull<T>);
