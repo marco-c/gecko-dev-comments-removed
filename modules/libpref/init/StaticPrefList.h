@@ -1217,34 +1217,6 @@ VARCACHE_PREF(
 )
 
 
-VARCACHE_PREF(
-  "dom.gamepad.extensions.enabled",
-   dom_gamepad_extensions_enabled,
-   bool, true
-)
-
-
-VARCACHE_PREF(
-  "dom.gamepad.extensions.lightindicator",
-   dom_gamepad_extensions_lightindicator,
-   bool, false
-)
-
-
-VARCACHE_PREF(
-  "dom.gamepad.extensions.multitouch",
-   dom_gamepad_extensions_multitouch,
-   bool, false
-)
-
-
-VARCACHE_PREF(
-  "dom.gamepad.haptic_feedback.enabled",
-   dom_gamepad_haptic_feedback_enabled,
-   bool, true
-)
-
-
 
 
 #if !defined(DEBUG) && !defined(MOZ_ASAN) && !defined(MOZ_VALGRIND) && \

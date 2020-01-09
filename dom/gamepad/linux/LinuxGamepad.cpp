@@ -138,9 +138,8 @@ void LinuxGamepadService::AddDevice(struct udev_device* dev) {
 
   gamepad.index = service->AddGamepad(
       gamepad.idstring, mozilla::dom::GamepadMappingType::_empty,
-      mozilla::dom::GamepadHand::_empty, gamepad.numButtons, gamepad.numAxes, 0,
-      0, 0);  
-  
+      mozilla::dom::GamepadHand::_empty, gamepad.numButtons, gamepad.numAxes,
+      0);  
 
   gamepad.source_id =
       g_io_add_watch(channel, GIOCondition(G_IO_IN | G_IO_ERR | G_IO_HUP),
@@ -341,12 +340,6 @@ void StopGamepadMonitoring() {
   gService->Shutdown();
   delete gService;
   gService = nullptr;
-}
-
-void SetGamepadLightIndicatorColor(uint32_t aControllerIdx, uint32_t aLightColorIndex,
-    uint8_t aRed, uint8_t aGreen, uint8_t aBlue) {
-  
-  NS_WARNING("Linux doesn't support gamepad light indicator.");
 }
 
 }  

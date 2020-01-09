@@ -304,9 +304,8 @@ void DarwinGamepadService::DeviceAdded(IOHIDDeviceRef device) {
   uint32_t index = service->AddGamepad(
       buffer, mozilla::dom::GamepadMappingType::_empty,
       mozilla::dom::GamepadHand::_empty, (int)mGamepads[slot].numButtons(),
-      (int)mGamepads[slot].numAxes(), 0, 0,
+      (int)mGamepads[slot].numAxes(),
       0);  
-  
   mGamepads[slot].mSuperIndex = index;
 }
 
@@ -597,12 +596,6 @@ void StopGamepadMonitoring() {
 
   
   gService->Shutdown();
-}
-
-void SetGamepadLightIndicatorColor(uint32_t aControllerIdx, uint32_t aLightColorIndex,
-    uint8_t aRed, uint8_t aGreen, uint8_t aBlue) {
-  
-  NS_WARNING("Mac OS doesn't support gamepad light indicator.");
 }
 
 }  
