@@ -4,13 +4,13 @@
 
 use api::{BorderRadius, ClipMode, HitTestFlags, HitTestItem, HitTestResult, ItemTag, LayoutPoint};
 use api::{LayoutPrimitiveInfo, LayoutRect, PipelineId, WorldPoint};
-use clip::{ClipDataStore, ClipNode, ClipItem, ClipStore};
+use clip::{ClipChainId, ClipDataStore, ClipNode, ClipItem, ClipStore};
 use clip::{rounded_rectangle_contains_point};
 use clip_scroll_tree::{SpatialNodeIndex, ClipScrollTree};
 use internal_types::FastHashMap;
-use prim_store::ScrollNodeAndClipChain;
-use std::u32;
-use util::LayoutToWorldFastTransform;
+use std::{ops, u32};
+use std::sync::Arc;
+use util::{LayoutToWorldFastTransform, WorldToLayoutFastTransform};
 
 
 
@@ -25,6 +25,12 @@ pub struct HitTestSpatialNode {
 
     
     world_viewport_transform: LayoutToWorldFastTransform,
+
+    
+    inv_world_content_transform: Option<WorldToLayoutFastTransform>,
+
+    
+    inv_world_viewport_transform: Option<WorldToLayoutFastTransform>,
 }
 
 #[derive(MallocSizeOf)]
@@ -58,19 +64,18 @@ impl HitTestClipNode {
     }
 }
 
-
-
-
-
-
-
-
 #[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq, Eq, Hash)]
 pub struct HitTestClipChainId(u32);
 
 impl HitTestClipChainId {
     pub const NONE: Self = HitTestClipChainId(u32::MAX);
 }
+
+
+
+
+
+
 
 #[derive(MallocSizeOf)]
 pub struct HitTestClipChainNode {
@@ -79,27 +84,109 @@ pub struct HitTestClipChainNode {
     pub parent_clip_chain_id: HitTestClipChainId,
 }
 
+#[derive(Copy, Clone, Debug, MallocSizeOf)]
+pub struct HitTestingClipChainIndex(u32);
+
 #[derive(Clone, MallocSizeOf)]
 pub struct HitTestingItem {
     rect: LayoutRect,
     clip_rect: LayoutRect,
     tag: ItemTag,
     is_backface_visible: bool,
+    #[ignore_malloc_size_of = "simple"]
+    clip_chain_range: ops::Range<HitTestingClipChainIndex>,
+    spatial_node_index: SpatialNodeIndex,
 }
 
 impl HitTestingItem {
-    pub fn new(tag: ItemTag, info: &LayoutPrimitiveInfo) -> HitTestingItem {
+    pub fn new(
+        tag: ItemTag,
+        info: &LayoutPrimitiveInfo,
+        spatial_node_index: SpatialNodeIndex,
+        clip_chain_range: ops::Range<HitTestingClipChainIndex>,
+    ) -> HitTestingItem {
         HitTestingItem {
             rect: info.rect,
             clip_rect: info.clip_rect,
             tag,
             is_backface_visible: info.is_backface_visible,
+            spatial_node_index,
+            clip_chain_range,
         }
     }
 }
 
-#[derive(Clone, MallocSizeOf)]
-pub struct HitTestingRun(pub Vec<HitTestingItem>, pub ScrollNodeAndClipChain);
+
+
+pub struct HitTestingSceneStats {
+    pub clip_chain_roots_count: usize,
+    pub items_count: usize,
+}
+
+impl HitTestingSceneStats {
+    pub fn empty() -> Self {
+        HitTestingSceneStats {
+            clip_chain_roots_count: 0,
+            items_count: 0,
+        }
+    }
+}
+
+
+
+
+
+
+
+#[derive(MallocSizeOf)]
+pub struct HitTestingScene {
+    
+    pub clip_chain_roots: Vec<HitTestClipChainId>,
+
+    
+    pub items: Vec<HitTestingItem>,
+}
+
+impl HitTestingScene {
+    
+    
+    pub fn new(stats: &HitTestingSceneStats) -> Self {
+        HitTestingScene {
+            clip_chain_roots: Vec::with_capacity(stats.clip_chain_roots_count),
+            items: Vec::with_capacity(stats.items_count),
+        }
+    }
+
+    
+    pub fn get_stats(&self) -> HitTestingSceneStats {
+        HitTestingSceneStats {
+            clip_chain_roots_count: self.clip_chain_roots.len(),
+            items_count: self.items.len(),
+        }
+    }
+
+    
+    pub fn add_item(&mut self, item: HitTestingItem) {
+        self.items.push(item);
+    }
+
+    
+    pub fn add_clip_chain(&mut self, clip_chain_id: ClipChainId) {
+        if clip_chain_id != ClipChainId::INVALID {
+            self.clip_chain_roots.push(HitTestClipChainId(clip_chain_id.0));
+        }
+    }
+
+    
+    fn get_clip_chains_for_item(&self, item: &HitTestingItem) -> &[HitTestClipChainId] {
+        &self.clip_chain_roots[item.clip_chain_range.start.0 as usize .. item.clip_chain_range.end.0 as usize]
+    }
+
+    
+    pub fn next_clip_chain_index(&self) -> HitTestingClipChainIndex {
+        HitTestingClipChainIndex(self.clip_chain_roots.len() as u32)
+    }
+}
 
 #[derive(MallocSizeOf)]
 enum HitTestRegion {
@@ -126,7 +213,8 @@ impl HitTestRegion {
 
 #[derive(MallocSizeOf)]
 pub struct HitTester {
-    runs: Vec<HitTestingRun>,
+    #[ignore_malloc_size_of = "Arc"]
+    scene: Arc<HitTestingScene>,
     spatial_nodes: Vec<HitTestSpatialNode>,
     clip_chains: Vec<HitTestClipChainNode>,
     pipeline_root_nodes: FastHashMap<PipelineId, SpatialNodeIndex>,
@@ -134,13 +222,13 @@ pub struct HitTester {
 
 impl HitTester {
     pub fn new(
-        runs: &Vec<HitTestingRun>,
+        scene: Arc<HitTestingScene>,
         clip_scroll_tree: &ClipScrollTree,
         clip_store: &ClipStore,
         clip_data_store: &ClipDataStore,
     ) -> HitTester {
         let mut hit_tester = HitTester {
-            runs: runs.clone(),
+            scene,
             spatial_nodes: Vec::new(),
             clip_chains: Vec::new(),
             pipeline_root_nodes: FastHashMap::default(),
@@ -173,6 +261,8 @@ impl HitTester {
             self.spatial_nodes.push(HitTestSpatialNode {
                 pipeline_id: node.pipeline_id,
                 world_content_transform: node.world_content_transform,
+                inv_world_content_transform: node.world_content_transform.inverse(),
+                inv_world_viewport_transform: node.world_viewport_transform.inverse(),
                 world_viewport_transform: node.world_viewport_transform,
             });
         }
@@ -267,34 +357,49 @@ impl HitTester {
 
     pub fn find_node_under_point(&self, mut test: HitTest) -> Option<SpatialNodeIndex> {
         let point = test.get_absolute_point(self);
+        let mut current_spatial_node_index = SpatialNodeIndex::INVALID;
+        let mut point_in_layer = None;
 
-        for &HitTestingRun(ref items, ref clip_and_scroll) in self.runs.iter().rev() {
-            let spatial_node_index = clip_and_scroll.spatial_node_index;
-            let scroll_node = &self.spatial_nodes[spatial_node_index.0 as usize];
-            let transform = scroll_node.world_content_transform;
-            let point_in_layer = match transform
-                .inverse()
-                .and_then(|inverted| inverted.transform_point2d(&point))
-            {
-                Some(point) => point,
-                None => continue,
-            };
+        
+        for item in self.scene.items.iter().rev() {
+            let scroll_node = &self.spatial_nodes[item.spatial_node_index.0 as usize];
 
-            let mut clipped_in = false;
-            for item in items.iter().rev() {
-                if !item.rect.contains(&point_in_layer) ||
-                    !item.clip_rect.contains(&point_in_layer) {
+            
+            
+            if item.spatial_node_index != current_spatial_node_index {
+                point_in_layer = scroll_node
+                    .inv_world_content_transform
+                    .and_then(|inverted| inverted.transform_point2d(&point));
+
+                current_spatial_node_index = item.spatial_node_index;
+            }
+
+            
+            if let Some(point_in_layer) = point_in_layer {
+                
+                
+                if !item.rect.contains(&point_in_layer) {
+                    continue;
+                }
+                if !item.clip_rect.contains(&point_in_layer) {
                     continue;
                 }
 
-                let clip_chain_id = HitTestClipChainId(clip_and_scroll.clip_chain_id.0);
-                clipped_in |=
-                    self.is_point_clipped_in_for_clip_chain(point, clip_chain_id, &mut test);
-                if !clipped_in {
-                    break;
+                
+                
+                let clip_chains = self.scene.get_clip_chains_for_item(item);
+                let mut is_valid = true;
+                for clip_chain_id in clip_chains {
+                    if !self.is_point_clipped_in_for_clip_chain(point, *clip_chain_id, &mut test) {
+                        is_valid = false;
+                        break;
+                    }
                 }
 
-                return Some(spatial_node_index);
+                
+                if is_valid {
+                    return Some(item.spatial_node_index);
+                }
             }
         }
 
@@ -305,67 +410,83 @@ impl HitTester {
         let point = test.get_absolute_point(self);
 
         let mut result = HitTestResult::default();
-        for &HitTestingRun(ref items, ref clip_and_scroll) in self.runs.iter().rev() {
-            let spatial_node_index = clip_and_scroll.spatial_node_index;
-            let scroll_node = &self.spatial_nodes[spatial_node_index.0 as usize];
+        let mut current_spatial_node_index = SpatialNodeIndex::INVALID;
+        let mut point_in_layer = None;
+        let mut current_root_spatial_node_index = SpatialNodeIndex::INVALID;
+        let mut point_in_viewport = None;
+
+        
+        for item in self.scene.items.iter().rev() {
+            let scroll_node = &self.spatial_nodes[item.spatial_node_index.0 as usize];
             let pipeline_id = scroll_node.pipeline_id;
             match (test.pipeline_id, pipeline_id) {
                 (Some(id), node_id) if node_id != id => continue,
                 _ => {},
             }
 
-            let transform = scroll_node.world_content_transform;
-            let mut facing_backwards: Option<bool> = None;  
-            let point_in_layer = match transform
-                .inverse()
-                .and_then(|inverted| inverted.transform_point2d(&point))
-            {
-                Some(point) => point,
-                None => continue,
-            };
+            
+            
+            if item.spatial_node_index != current_spatial_node_index {
+                point_in_layer = scroll_node
+                    .inv_world_content_transform
+                    .and_then(|inverted| inverted.transform_point2d(&point));
+                current_spatial_node_index = item.spatial_node_index;
+            }
 
-            let mut clipped_in = false;
-            for item in items.iter().rev() {
-                if !item.rect.contains(&point_in_layer) ||
-                    !item.clip_rect.contains(&point_in_layer) {
+            
+            if let Some(point_in_layer) = point_in_layer {
+                
+                
+                if !item.rect.contains(&point_in_layer) {
+                    continue;
+                }
+                if !item.clip_rect.contains(&point_in_layer) {
                     continue;
                 }
 
-                let clip_chain_id = HitTestClipChainId(clip_and_scroll.clip_chain_id.0);
-                clipped_in = clipped_in ||
-                    self.is_point_clipped_in_for_clip_chain(point, clip_chain_id, &mut test);
-                if !clipped_in {
-                    break;
-                }
-
                 
-                if !item.is_backface_visible {
-                    if *facing_backwards.get_or_insert_with(|| transform.is_backface_visible()) {
-                        continue;
+                
+                let clip_chains = self.scene.get_clip_chains_for_item(item);
+                let mut is_valid = true;
+                for clip_chain_id in clip_chains {
+                    if !self.is_point_clipped_in_for_clip_chain(point, *clip_chain_id, &mut test) {
+                        is_valid = false;
+                        break;
                     }
                 }
+                if !is_valid {
+                    continue;
+                }
+
+                
+                if !item.is_backface_visible && scroll_node.world_content_transform.is_backface_visible() {
+                    continue;
+                }
 
                 
                 
                 
                 
-                let root_node = &self.spatial_nodes[self.pipeline_root_nodes[&pipeline_id].0 as usize];
-                let point_in_viewport = match root_node.world_viewport_transform
-                    .inverse()
-                    .and_then(|inverted| inverted.transform_point2d(&point))
-                {
-                    Some(point) => point,
-                    None => continue,
-                };
+                let root_spatial_node_index = self.pipeline_root_nodes[&pipeline_id];
+                if root_spatial_node_index != current_root_spatial_node_index {
+                    let root_node = &self.spatial_nodes[root_spatial_node_index.0 as usize];
+                    point_in_viewport = root_node
+                        .inv_world_viewport_transform
+                        .and_then(|inverted| inverted.transform_point2d(&point));
+                    current_root_spatial_node_index = root_spatial_node_index;
+                }
 
-                result.items.push(HitTestItem {
-                    pipeline: pipeline_id,
-                    tag: item.tag,
-                    point_in_viewport,
-                    point_relative_to_item: point_in_layer - item.rect.origin.to_vector(),
-                });
-                if !test.flags.contains(HitTestFlags::FIND_ALL) {
-                    return result;
+                if let Some(point_in_viewport) = point_in_viewport {
+                    result.items.push(HitTestItem {
+                        pipeline: pipeline_id,
+                        tag: item.tag,
+                        point_in_viewport,
+                        point_relative_to_item: point_in_layer - item.rect.origin.to_vector(),
+                    });
+
+                    if !test.flags.contains(HitTestFlags::FIND_ALL) {
+                        return result;
+                    }
                 }
             }
         }
