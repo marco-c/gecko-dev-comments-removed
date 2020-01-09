@@ -657,7 +657,7 @@ nsresult WSRunObject::GetWSNodes() {
 
   
   if (Text* textNode = mScanStartPoint.GetContainerAsText()) {
-    const nsTextFragment* textFrag = &textNode->TextFragment();
+    const nsTextFragment* textFrag = textNode->GetText();
     mNodeArray.InsertElementAt(0, textNode);
     if (!mScanStartPoint.IsStartOfContainer()) {
       for (uint32_t i = mScanStartPoint.Offset(); i; i--) {
@@ -701,10 +701,10 @@ nsresult WSRunObject::GetWSNodes() {
       } else if (priorNode->IsText() && priorNode->IsEditable()) {
         RefPtr<Text> textNode = priorNode->GetAsText();
         mNodeArray.InsertElementAt(0, textNode);
-        if (!textNode) {
+        const nsTextFragment* textFrag;
+        if (!textNode || !(textFrag = textNode->GetText())) {
           return NS_ERROR_NULL_POINTER;
         }
-        const nsTextFragment* textFrag = &textNode->TextFragment();
         uint32_t len = textNode->TextLength();
 
         if (len < 1) {
@@ -763,7 +763,7 @@ nsresult WSRunObject::GetWSNodes() {
   
   if (Text* textNode = mScanEndPoint.GetContainerAsText()) {
     
-    const nsTextFragment* textFrag = &textNode->TextFragment();
+    const nsTextFragment* textFrag = textNode->GetText();
     if (!mScanEndPoint.IsEndOfContainer()) {
       for (uint32_t i = mScanEndPoint.Offset(); i < textNode->TextLength();
            i++) {
@@ -808,10 +808,10 @@ nsresult WSRunObject::GetWSNodes() {
       } else if (nextNode->IsText() && nextNode->IsEditable()) {
         RefPtr<Text> textNode = nextNode->GetAsText();
         mNodeArray.AppendElement(textNode);
-        if (!textNode) {
+        const nsTextFragment* textFrag;
+        if (!textNode || !(textFrag = textNode->GetText())) {
           return NS_ERROR_NULL_POINTER;
         }
-        const nsTextFragment* textFrag = &textNode->TextFragment();
         uint32_t len = textNode->TextLength();
 
         if (len < 1) {
@@ -1510,7 +1510,7 @@ nsresult WSRunObject::InsertNBSPAndRemoveFollowingASCIIWhitespaces(
   
   
   if (aPoint.mTextNode->TextDataLength() <= aPoint.mOffset ||
-      aPoint.mTextNode->TextFragment().CharAt(aPoint.mOffset) != kNBSP) {
+      aPoint.mTextNode->GetText()->CharAt(aPoint.mOffset) != kNBSP) {
     
     
     
@@ -1640,11 +1640,11 @@ char16_t WSRunObject::GetCharAt(Text* aTextNode, int32_t aOffset) const {
   
   NS_ENSURE_TRUE(aTextNode, 0);
 
-  int32_t len = int32_t(aTextNode->TextDataLength());
+  int32_t len = int32_t(aTextNode->TextLength());
   if (aOffset < 0 || aOffset >= len) {
     return 0;
   }
-  return aTextNode->TextFragment().CharAt(aOffset);
+  return aTextNode->GetText()->CharAt(aOffset);
 }
 
 template <typename PT, typename CT>

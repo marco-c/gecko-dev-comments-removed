@@ -117,10 +117,10 @@ class CharacterData : public nsIContent {
   }
 
   const nsTextFragment* GetText() override { return &mText; }
-  uint32_t TextLength() const final { return TextDataLength(); }
 
   const nsTextFragment& TextFragment() const { return mText; }
-  uint32_t TextDataLength() const { return mText.GetLength(); }
+
+  uint32_t TextLength() const final { return TextDataLength(); }
 
   
 
@@ -196,6 +196,8 @@ class CharacterData : public nsIContent {
   void DeleteData(uint32_t aOffset, uint32_t aCount, ErrorResult& rv);
   void ReplaceData(uint32_t aOffset, uint32_t aCount, const nsAString& aData,
                    ErrorResult& rv);
+
+  uint32_t TextDataLength() const { return mText.GetLength(); }
 
   
 

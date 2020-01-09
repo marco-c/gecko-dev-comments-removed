@@ -96,7 +96,7 @@ void WalkDescendantsClearAncestorDirAuto(nsIContent* aContent);
 
 
 
-bool TextNodeWillChangeDirection(nsTextNode* aTextNode, Directionality* aOldDir,
+bool TextNodeWillChangeDirection(nsIContent* aTextNode, Directionality* aOldDir,
                                  uint32_t aOffset);
 
 

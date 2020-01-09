@@ -1474,8 +1474,8 @@ void Selection::SelectFramesForContent(nsIContent* aContent, bool aSelected) {
   
   if (frame->IsTextFrame()) {
     nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
-    textFrame->SetSelectedRange(0, textFrame->TextFragment()->GetLength(),
-                                aSelected, mSelectionType);
+    textFrame->SetSelectedRange(0, aContent->GetText()->GetLength(), aSelected,
+                                mSelectionType);
   } else {
     frame->InvalidateFrameSubtree();  
   }
