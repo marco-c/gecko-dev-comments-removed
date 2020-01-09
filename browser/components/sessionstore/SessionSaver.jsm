@@ -176,8 +176,6 @@ var SessionSaverInternal = {
     
     this._wasIdle = this._isIdle;
     this._timeoutID = setTimeout(() => {
-      let hiddenDOMWindow = Services.appShell.hiddenDOMWindow;
-
       
       
       let saveStateAsyncWhenIdle = (deadline) => {
@@ -185,13 +183,13 @@ var SessionSaverInternal = {
         
         
         if (deadline.timeRemaining() < 5) {
-          this._idleCallbackID = hiddenDOMWindow.requestIdleCallback(saveStateAsyncWhenIdle);
+          this._idleCallbackID = requestIdleCallback(saveStateAsyncWhenIdle);
           return;
         }
         this._saveStateAsync();
       };
 
-      this._idleCallbackID = hiddenDOMWindow.requestIdleCallback(saveStateAsyncWhenIdle);
+      this._idleCallbackID = requestIdleCallback(saveStateAsyncWhenIdle);
     }, delay);
   },
 
@@ -209,7 +207,7 @@ var SessionSaverInternal = {
   cancel() {
     clearTimeout(this._timeoutID);
     this._timeoutID = null;
-    Services.appShell.hiddenDOMWindow.cancelIdleCallback(this._idleCallbackID);
+    cancelIdleCallback(this._idleCallbackID);
     this._idleCallbackID = null;
   },
 
