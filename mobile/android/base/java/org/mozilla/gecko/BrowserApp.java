@@ -573,7 +573,7 @@ public class BrowserApp extends GeckoApp
     {
         
         
-        if (!Versions.preN) {
+        if (Versions.N) {
             mCheckLongPress = new Runnable() {
                 public void run() {
                     handleBackLongPress();
@@ -589,7 +589,7 @@ public class BrowserApp extends GeckoApp
         
         
         
-        if (!Versions.preN &&
+        if (Versions.N &&
                 keyCode == KeyEvent.KEYCODE_BACK) {
             ThreadUtils.getUiHandler().removeCallbacks(mCheckLongPress);
             ThreadUtils.getUiHandler().postDelayed(mCheckLongPress, ViewConfiguration.getLongPressTimeout());
@@ -603,7 +603,7 @@ public class BrowserApp extends GeckoApp
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if (!Versions.preN &&
+        if (Versions.N &&
                 keyCode == KeyEvent.KEYCODE_BACK) {
             ThreadUtils.getUiHandler().removeCallbacks(mCheckLongPress);
         }
@@ -3802,12 +3802,11 @@ public class BrowserApp extends GeckoApp
         
         
         
-        if (Versions.preN &&
+        if (!Versions.N &&
                 keyCode == KeyEvent.KEYCODE_BACK) {
             if (handleBackLongPress()) {
                 return true;
             }
-
         }
         return super.onKeyLongPress(keyCode, event);
     }
