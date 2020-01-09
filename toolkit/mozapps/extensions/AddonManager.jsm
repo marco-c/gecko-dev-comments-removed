@@ -3867,6 +3867,10 @@ AMTelemetry = {
 
 
 
+
+
+
+
   recordActionEvent({object, action, value, addon, view, extra}) {
     extra = {...extra, action, addon, view};
     this.recordEvent({
