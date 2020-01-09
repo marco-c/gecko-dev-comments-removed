@@ -28,14 +28,6 @@ add_task(async function test_duping_local_newer() {
   }], { needsMerge: false });
   await PlacesTestUtils.markBookmarksAsSynced();
 
-  
-  
-  deepEqual(await buf.fetchSyncStatusMismatches(), {
-    missingLocal: ["bookmarkAAA5"],
-    missingRemote: [],
-    wrongSyncStatus: [],
-  }, "Mirror should be out of sync with Places before deduping");
-
   info("Add newer local dupes");
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.menuGuid,
