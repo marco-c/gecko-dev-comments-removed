@@ -1169,9 +1169,6 @@ nsEventStatus AsyncPanZoomController::HandleInputEvent(
       break;
     }
     case PINCHGESTURE_INPUT: {
-      
-      
-      MOZ_ASSERT(IsRootContent());
       PinchGestureInput pinchInput = aEvent.AsPinchGestureInput();
       if (!pinchInput.TransformToLocal(aTransformToApzc)) {
         return rv;
@@ -1207,18 +1204,6 @@ nsEventStatus AsyncPanZoomController::HandleGestureEvent(
 
   switch (aEvent.mInputType) {
     case PINCHGESTURE_INPUT: {
-      
-      
-      
-      if (!IsRootContent()) {
-        if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
-          if (RefPtr<AsyncPanZoomController> root =
-                  treeManagerLocal->FindZoomableApzc(this)) {
-            rv = root->HandleGestureEvent(aEvent);
-          }
-        }
-        break;
-      }
       PinchGestureInput pinchGestureInput = aEvent.AsPinchGestureInput();
       pinchGestureInput.TransformToLocal(GetTransformToThis());
       switch (pinchGestureInput.mType) {
