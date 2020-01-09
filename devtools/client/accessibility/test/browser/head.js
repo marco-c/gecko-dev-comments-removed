@@ -210,6 +210,52 @@ function relationsMatch(relations, expected) {
 
 
 
+
+
+
+
+function parseNumReplacer(_, value) {
+  if (typeof value === "number") {
+    return value.toFixed(2);
+  }
+
+  return value;
+}
+
+
+
+
+
+
+
+async function checkAuditState(store, expectedState) {
+  info("Checking audit state.");
+  await waitUntilState(store, ({ details }) => {
+    const { audit } = details;
+
+    for (const key in expectedState) {
+      const expected = expectedState[key];
+      if (expected && typeof expected === "object") {
+        if (JSON.stringify(audit[key], parseNumReplacer) !==
+            JSON.stringify(expected, parseNumReplacer)) {
+          return false;
+        }
+      } else if (audit && audit[key] !== expected) {
+        return false;
+      }
+    }
+
+    ok(true, "Audit state is correct.");
+    return true;
+  });
+}
+
+
+
+
+
+
+
 async function checkSidebarState(store, expectedState) {
   info("Checking sidebar state.");
   await waitUntilState(store, ({ details }) => {
@@ -303,7 +349,8 @@ function selectRow(doc, rowNumber) {
 
 async function toggleRow(doc, rowNumber) {
   const win = doc.defaultView;
-  const twisty = doc.querySelectorAll(".theme-twisty")[rowNumber];
+  const row = doc.querySelectorAll(".treeRow")[rowNumber];
+  const twisty = row.querySelector(".theme-twisty");
   const expected = !twisty.classList.contains("open");
 
   info(`${expected ? "Expanding" : "Collapsing"} row ${rowNumber}.`);
@@ -330,20 +377,24 @@ async function toggleRow(doc, rowNumber) {
 
 
 async function runA11yPanelTests(tests, env) {
-  for (const { desc, action, expected } of tests) {
+  for (const { desc, setup, expected } of tests) {
     info(desc);
 
-    if (action) {
-      await action(env);
+    if (setup) {
+      await setup(env);
     }
 
-    const { tree, sidebar } = expected;
+    const { tree, sidebar, audit } = expected;
     if (tree) {
       await checkTreeState(env.doc, tree);
     }
 
     if (sidebar) {
       await checkSidebarState(env.store, sidebar);
+    }
+
+    if (typeof audit !== "undefined") {
+      await checkAuditState(env.store, audit);
     }
   }
 }
