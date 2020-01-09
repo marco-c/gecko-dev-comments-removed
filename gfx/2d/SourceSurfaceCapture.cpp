@@ -123,13 +123,13 @@ RefPtr<SourceSurface> SourceSurfaceCapture::ResolveImpl(
                            ? aBackendType
                            : BackendType::SKIA;
     dt = Factory::CreateDrawTargetForData(type, data, mSize, mStride, mFormat);
-    if (!dt) {
+    if (!dt || !dt->IsValid()) {
       free(data);
       return nullptr;
     }
   }
 
-  if (!dt) {
+  if (!dt || !dt->IsValid()) {
     
     
     MOZ_ASSERT(!data);
