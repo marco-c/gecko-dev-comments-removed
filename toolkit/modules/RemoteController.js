@@ -67,18 +67,16 @@ RemoteController.prototype = {
 
   
   
-  enableDisableCommands(aAction,
-                                  aEnabledLength, aEnabledCommands,
-                                  aDisabledLength, aDisabledCommands) {
+  enableDisableCommands(aAction, aEnabledCommands, aDisabledCommands) {
     
     this._supportedCommands = { };
 
-    for (let c = 0; c < aEnabledLength; c++) {
-      this._supportedCommands[aEnabledCommands[c]] = true;
+    for (let command of aEnabledCommands) {
+      this._supportedCommands[command] = true;
     }
 
-    for (let c = 0; c < aDisabledLength; c++) {
-      this._supportedCommands[aDisabledCommands[c]] = false;
+    for (let command of aDisabledCommands) {
+      this._supportedCommands[command] = false;
     }
 
     
