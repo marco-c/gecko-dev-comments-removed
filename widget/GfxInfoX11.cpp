@@ -44,6 +44,15 @@ nsresult GfxInfo::Init() {
   return GfxInfoBase::Init();
 }
 
+void GfxInfo::AddCrashReportAnnotations() {
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::AdapterVendorID,
+                                     mVendor);
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::AdapterDeviceID,
+                                     mRenderer);
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::AdapterDriverVersion, mVersion);
+}
+
 void GfxInfo::GetData() {
   
   
@@ -168,15 +177,7 @@ void GfxInfo::GetData() {
   mAdapterDescription.AppendLiteral(" -- ");
   mAdapterDescription.Append(mRenderer);
 
-  nsAutoCString note;
-  note.AppendLiteral("OpenGL: ");
-  note.Append(mAdapterDescription);
-  note.AppendLiteral(" -- ");
-  note.Append(mVersion);
-  if (mHasTextureFromPixmap) note.AppendLiteral(" -- texture_from_pixmap");
-  note.Append('\n');
-
-  CrashReporter::AppendAppNotesToCrashReport(note);
+  AddCrashReportAnnotations();
 
   
   
