@@ -9843,14 +9843,25 @@ static MOZ_MUST_USE bool ProcessArgs(JSContext* cx, OptionParser* op) {
 
 static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   enableBaseline = !op.getBoolOption("no-baseline");
+#ifdef JS_CODEGEN_ARM64
+  
+  enableIon = false;
+  enableAsmJS = false;
+#else
   enableIon = !op.getBoolOption("no-ion");
   enableAsmJS = !op.getBoolOption("no-asmjs");
+#endif
   enableNativeRegExp = !op.getBoolOption("no-native-regexp");
 
   
   enableWasm = true;
   enableWasmBaseline = true;
+#ifdef JS_CODEGEN_ARM64
+  
+  enableWasmIon = false;
+#else
   enableWasmIon = true;
+#endif
   if (const char* str = op.getStringOption("wasm-compiler")) {
     if (strcmp(str, "none") == 0) {
       enableWasm = false;
@@ -10814,19 +10825,19 @@ int main(int argc, char** argv, char** envp) {
   if (op.getBoolOption("no-sse3")) {
     js::jit::CPUInfo::SetSSE3Disabled();
     if (!sCompilerProcessFlags.append("--no-sse3")) {
-      return EXIT_FAILURE;
+      return EXIT_SUCCESS;
     }
   }
   if (op.getBoolOption("no-sse4")) {
     js::jit::CPUInfo::SetSSE4Disabled();
     if (!sCompilerProcessFlags.append("--no-sse4")) {
-      return EXIT_FAILURE;
+      return EXIT_SUCCESS;
     }
   }
   if (op.getBoolOption("enable-avx")) {
     js::jit::CPUInfo::SetAVXEnabled();
     if (!sCompilerProcessFlags.append("--enable-avx")) {
-      return EXIT_FAILURE;
+      return EXIT_SUCCESS;
     }
   }
 #endif
