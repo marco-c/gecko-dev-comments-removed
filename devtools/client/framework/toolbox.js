@@ -533,9 +533,7 @@ Toolbox.prototype = {
       this._buildTabs();
       this._applyCacheSettings();
       this._applyServiceWorkersTestingSettings();
-      this._addShortcuts();
-      this._addKeysToWindow();
-      this._addHostListeners();
+      this._addWindowListeners();
       this._addChromeEventHandlerEvents();
       this._registerOverlays();
 
@@ -611,34 +609,83 @@ Toolbox.prototype = {
     });
   },
 
-  _addShortcuts: function() {
-    
-    this.shortcuts = new KeyShortcuts({
-      window: this.doc.defaultView,
-    });
+  
 
-    
-    this._addFrameButtonShortcut();
-    this._addNavigationShortcuts();
-    this._addOptionsShortcut();
-    this._addReloadShortcuts();
 
-    
-    if (!this._hostOptions || this._hostOptions.zoom === true) {
-      ZoomKeys.register(this.win);
+
+
+
+  getChromeEventHandler() {
+    if (!this.win || !this.win.docShell) {
+      return null;
     }
+    return this.win.docShell.chromeEventHandler;
   },
 
-  _addFrameButtonShortcut: function() {
+  
+
+
+
+
+
+
+
+
+
+  _addChromeEventHandlerEvents: function() {
+    
+    
+    
+    
+    this._chromeEventHandler = this.getChromeEventHandler();
+    if (!this._chromeEventHandler) {
+      return;
+    }
+
+    
+    this._addShortcuts();
+    this._addWindowHostShortcuts();
+
+    this._chromeEventHandler.addEventListener("keypress", this._splitConsoleOnKeypress);
+    this._chromeEventHandler.addEventListener("focus", this._onFocus, true);
+  },
+
+  _removeChromeEventHandlerEvents: function() {
+    if (!this._chromeEventHandler) {
+      return;
+    }
+
+    
+    
+    this._removeShortcuts();
+    this._removeWindowHostShortcuts();
+
+    this._chromeEventHandler.removeEventListener("keypress",
+      this._splitConsoleOnKeypress);
+    this._chromeEventHandler.removeEventListener("focus", this._onFocus, true);
+
+    this._chromeEventHandler = null;
+  },
+
+  _addShortcuts: function() {
+    
+    if (!this.shortcuts) {
+      this.shortcuts = new KeyShortcuts({
+        window: this.doc.defaultView,
+        
+        
+        target: this.getChromeEventHandler(),
+      });
+    }
+
     
     this.shortcuts.on(L10N.getStr("toolbox.showFrames.key"), event => {
       if (event.target.id === "command-button-frames") {
         event.target.click();
       }
     });
-  },
 
-  _addNavigationShortcuts: function() {
+    
     this.shortcuts.on(L10N.getStr("toolbox.nextTool.key"),
                  event => {
                    this.selectNextTool();
@@ -654,13 +701,11 @@ Toolbox.prototype = {
                    this.switchToPreviousHost();
                    event.preventDefault();
                  });
-  },
 
-  _addOptionsShortcut: function() {
+    
     this.shortcuts.on(L10N.getStr("toolbox.help.key"), this.toggleOptions);
-  },
 
-  _addReloadShortcuts: function() {
+    
     [
       ["reload", false],
       ["reload2", false],
@@ -675,6 +720,78 @@ Toolbox.prototype = {
         event.preventDefault();
       });
     });
+
+    
+    if (!this._hostOptions || this._hostOptions.zoom === true) {
+      ZoomKeys.register(this.win, this.shortcuts);
+    }
+  },
+
+  _removeShortcuts: function() {
+    if (this.shortcuts) {
+      this.shortcuts.destroy();
+      this.shortcuts = null;
+    }
+  },
+
+  
+
+
+  _addWindowHostShortcuts: function() {
+    if (this.hostType != Toolbox.HostType.WINDOW) {
+      
+      return;
+    }
+
+    if (!this._windowHostShortcuts) {
+      this._windowHostShortcuts = new KeyShortcuts({
+        window: this.win,
+        
+        
+        target: this.getChromeEventHandler(),
+      });
+    }
+
+    const shortcuts = this._windowHostShortcuts;
+
+    for (const item of Startup.KeyShortcuts) {
+      const { id, toolId, shortcut, modifiers } = item;
+      const electronKey = KeyShortcuts.parseXulKey(modifiers, shortcut);
+
+      if (id == "browserConsole") {
+        
+        shortcuts.on(electronKey, () => {
+          HUDService.toggleBrowserConsole();
+        });
+      } else if (toolId) {
+        
+        
+        shortcuts.on(electronKey, () => {
+          this.selectTool(toolId, "key_shortcut").then(() => this.fireCustomKey(toolId));
+        });
+      }
+    }
+
+    
+    
+    
+    shortcuts.on(L10N.getStr("toolbox.closeToolbox.key"), this.closeToolbox);
+
+    
+    
+    shortcuts.on(L10N.getStr("toolbox.toggleToolboxF12.key"), this.closeToolbox);
+    if (AppConstants.platform == "macosx") {
+      shortcuts.on(L10N.getStr("toolbox.toggleToolboxOSX.key"), this.closeToolbox);
+    } else {
+      shortcuts.on(L10N.getStr("toolbox.toggleToolbox.key"), this.closeToolbox);
+    }
+  },
+
+  _removeWindowHostShortcuts: function() {
+    if (this._windowHostShortcuts) {
+      this._windowHostShortcuts.destroy();
+      this._windowHostShortcuts = null;
+    }
   },
 
   _getDebugTargetData: async function() {
@@ -1013,14 +1130,14 @@ Toolbox.prototype = {
     });
   },
 
-  _addHostListeners: function() {
+  _addWindowListeners: function() {
     this.win.addEventListener("unload", this.destroy);
     this.win.addEventListener("message", this._onBrowserMessage, true);
   },
 
-  _removeHostListeners: function() {
+  _removeWindowListeners: function() {
     
-    if (this.doc) {
+    if (this.win) {
       this.win.removeEventListener("unload", this.destroy);
       this.win.removeEventListener("message", this._onBrowserMessage, true);
     }
@@ -1073,59 +1190,6 @@ Toolbox.prototype = {
         webconsolePanel.setAttribute("collapsed", "true");
         splitter.setAttribute("hidden", "true");
       }
-    }
-  },
-
-  
-
-
-  _addKeysToWindow: function() {
-    if (this.hostType != Toolbox.HostType.WINDOW) {
-      
-      
-      if (this._windowHostShortcuts) {
-        this._windowHostShortcuts.destroy();
-        this._windowHostShortcuts = null;
-      }
-      return;
-    }
-    if (!this._windowHostShortcuts) {
-      this._windowHostShortcuts = new KeyShortcuts({
-        window: this.doc.defaultView,
-      });
-    }
-    const shortcuts = this._windowHostShortcuts;
-
-    for (const item of Startup.KeyShortcuts) {
-      const { id, toolId, shortcut, modifiers } = item;
-      const electronKey = KeyShortcuts.parseXulKey(modifiers, shortcut);
-
-      if (id == "browserConsole") {
-        
-        shortcuts.on(electronKey, () => {
-          HUDService.toggleBrowserConsole();
-        });
-      } else if (toolId) {
-        
-        
-        shortcuts.on(electronKey, () => {
-          this.selectTool(toolId, "key_shortcut").then(() => this.fireCustomKey(toolId));
-        });
-      }
-    }
-
-    
-    
-    
-    shortcuts.on(L10N.getStr("toolbox.closeToolbox.key"), this.closeToolbox);
-
-    
-    
-    shortcuts.on(L10N.getStr("toolbox.toggleToolboxF12.key"), this.closeToolbox);
-    if (AppConstants.platform == "macosx") {
-      shortcuts.on(L10N.getStr("toolbox.toggleToolboxOSX.key"), this.closeToolbox);
-    } else {
-      shortcuts.on(L10N.getStr("toolbox.toggleToolbox.key"), this.closeToolbox);
     }
   },
 
@@ -2670,7 +2734,6 @@ Toolbox.prototype = {
     this._hostType = hostType;
 
     this._buildDockOptions();
-    this._addKeysToWindow();
 
     
     this._addChromeEventHandlerEvents();
@@ -2683,43 +2746,6 @@ Toolbox.prototype = {
     this.telemetry.getHistogramById(HOST_HISTOGRAM).add(this._getTelemetryHostId());
 
     this.component.setCurrentHostType(hostType);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _addChromeEventHandlerEvents: function() {
-    if (!this.win || !this.win.docShell) {
-      return;
-    }
-
-    
-    
-    
-    
-    this._chromeEventHandler = this.win.docShell.chromeEventHandler;
-
-    this._chromeEventHandler.addEventListener("keypress", this._splitConsoleOnKeypress);
-    this._chromeEventHandler.addEventListener("focus", this._onFocus, true);
-  },
-
-  _removeChromeEventHandlerEvents: function() {
-    if (!this._chromeEventHandler) {
-      return;
-    }
-
-    this._chromeEventHandler.removeEventListener("keypress",
-      this._splitConsoleOnKeypress);
-    this._chromeEventHandler.removeEventListener("focus", this._onFocus, true);
-
-    this._chromeEventHandler = null;
   },
 
   
@@ -3129,7 +3155,7 @@ Toolbox.prototype = {
           return api ? api.destroy() : null;
         }, console.error)
         .then(() => {
-          this._removeHostListeners();
+          this._removeWindowListeners();
           this._removeChromeEventHandlerEvents();
 
           

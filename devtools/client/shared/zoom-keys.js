@@ -5,7 +5,6 @@
 "use strict";
 
 const Services = require("Services");
-const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
 
 const ZOOM_PREF = "devtools.toolbox.zoomValue";
 const MIN_ZOOM = 0.5;
@@ -21,10 +20,9 @@ const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties"
 
 
 
-exports.register = function(window) {
-  const shortcuts = new KeyShortcuts({
-    window,
-  });
+
+
+exports.register = function(window, shortcuts) {
   const docShell = window.docShell;
   const contViewer = docShell.contentViewer;
   let zoomValue = parseFloat(Services.prefs.getCharPref(ZOOM_PREF));
