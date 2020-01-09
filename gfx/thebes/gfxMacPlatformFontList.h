@@ -186,6 +186,7 @@ class gfxMacPlatformFontList : public gfxPlatformFontList {
 
   
   nsresult InitFontListForPlatform() override;
+  void InitSharedFontListForPlatform() override;
 
   
   void InitSingleFaceList();
@@ -221,6 +222,17 @@ class gfxMacPlatformFontList : public gfxPlatformFontList {
   void AddFamily(const nsACString& aFamilyName, bool aSystemFont);
 
   void ActivateFontsFromDir(nsIFile* aDir);
+
+  gfxFontEntry* CreateFontEntry(
+      mozilla::fontlist::Face* aFace,
+      const mozilla::fontlist::Family* aFamily) override;
+
+  void GetFacesInitDataForFamily(
+      const mozilla::fontlist::Family* aFamily,
+      nsTArray<mozilla::fontlist::Face::InitData>& aFaces) const override;
+
+  void ReadFaceNamesForFamily(mozilla::fontlist::Family* aFamily,
+                              bool aNeedFullnamePostscriptNames) override;
 
 #ifdef MOZ_BUNDLED_FONTS
   void ActivateBundledFonts();
