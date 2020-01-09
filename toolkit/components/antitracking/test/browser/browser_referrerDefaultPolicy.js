@@ -1,8 +1,10 @@
+requestLongerTimeout(4);
+
 const CHROME_BASE = "chrome://mochitests/content/browser/browser/base/content/test/general/";
 Services.scriptloader.loadSubScript(CHROME_BASE + "head.js", this);
 
 
-async function testOnWindow(private, expectedReferrer) {
+async function testOnWindow(private, expectedReferrer, rp) {
   info("Creating a new " + (private ? "private" : "normal") + " window");
   let win = await BrowserTestUtils.openNewBrowserWindow({private});
   let browser = win.gBrowser;
@@ -11,11 +13,14 @@ async function testOnWindow(private, expectedReferrer) {
   await promiseTabLoadEvent(tab, TEST_TOP_PAGE);
 
   info("Loading tracking scripts and tracking images");
-  await ContentTask.spawn(b, null, async function() {
+  await ContentTask.spawn(b, {rp}, async function({rp}) {
     {
       let img = content.document.createElement("img");
       let p = new content.Promise(resolve => { img.onload = resolve; });
       content.document.body.appendChild(img);
+      if (rp) {
+        img.referrerPolicy = rp;
+      }
       img.src = "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/referrer.sjs?what=image";
       await p;
     }
@@ -28,6 +33,186 @@ async function testOnWindow(private, expectedReferrer) {
     });
 
   await BrowserTestUtils.closeWindow(win);
+}
+
+function pn(name, private) {
+  return private ? (name + ".pbmode") : name;
+}
+
+async function testOnNoReferrer(private) {
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 3]]});
+  await testOnWindow(private, "", "no-referrer");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 2]]});
+  await testOnWindow(private, "", "no-referrer");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 1]]});
+  await testOnWindow(private, "", "no-referrer");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 0]]});
+  await testOnWindow(private, "", "no-referrer");
+}
+
+async function testOnSameOrigin(private) {
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 3]]});
+  await testOnWindow(private, "", "same-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 2]]});
+  await testOnWindow(private, "", "same-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 1]]});
+  await testOnWindow(private, "", "same-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 0]]});
+  await testOnWindow(private, "", "same-origin");
+}
+
+async function testOnNoReferrerWhenDowngrade(private) {
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 3]]});
+  await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 2]]});
+  await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 1]]});
+  await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 0]]});
+  await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+}
+
+async function testOnOrigin(private) {
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 3]]});
+  await testOnWindow(private, TEST_DOMAIN, "origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 2]]});
+  await testOnWindow(private, TEST_DOMAIN, "origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 1]]});
+  await testOnWindow(private, TEST_DOMAIN, "origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 0]]});
+  await testOnWindow(private, TEST_DOMAIN, "origin");
+}
+
+async function testOnStrictOrigin(private) {
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 3]]});
+  await testOnWindow(private, TEST_DOMAIN, "strict-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 2]]});
+  await testOnWindow(private, TEST_DOMAIN, "strict-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 1]]});
+  await testOnWindow(private, TEST_DOMAIN, "strict-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 0]]});
+  await testOnWindow(private, TEST_DOMAIN, "strict-origin");
+}
+
+async function testOnOriginWhenCrossOrigin(private) {
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 3]]});
+  await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 2]]});
+  await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 1]]});
+  await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 0]]});
+  await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+}
+
+async function testOnStrictOriginWhenCrossOrigin(private) {
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 3]]});
+  await testOnWindow(private, TEST_DOMAIN, "strict-origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 2]]});
+  await testOnWindow(private, TEST_DOMAIN, "strict-origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 1]]});
+  await testOnWindow(private, TEST_DOMAIN, "strict-origin-when-cross-origin");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 0]]});
+  await testOnWindow(private, TEST_DOMAIN, "strict-origin-when-cross-origin");
+}
+
+async function testOnUnsafeUrl(private) {
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 3]]});
+  await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 2]]});
+  await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 1]]});
+  await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+
+  
+  await SpecialPowers.pushPrefEnv({"set":
+    [[pn("network.http.referer.defaultPolicy.trackers", private), 0]]});
+  await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
 }
 
 add_task(async function() {
@@ -48,22 +233,46 @@ add_task(async function() {
   
   await SpecialPowers.pushPrefEnv({"set":
     [["network.http.referer.defaultPolicy.trackers", 3]]});
-  await testOnWindow(false, TEST_TOP_PAGE);
+  await testOnWindow(false, TEST_TOP_PAGE, null);
 
   
   await SpecialPowers.pushPrefEnv({"set":
     [["network.http.referer.defaultPolicy.trackers", 2]]});
-  await testOnWindow(false, TEST_DOMAIN);
+  await testOnWindow(false, TEST_DOMAIN, null);
 
   
   await SpecialPowers.pushPrefEnv({"set":
     [["network.http.referer.defaultPolicy.trackers", 1]]});
-  await testOnWindow(false, "");
+  await testOnWindow(false, "", null);
 
   
   await SpecialPowers.pushPrefEnv({"set":
     [["network.http.referer.defaultPolicy.trackers", 0]]});
-  await testOnWindow(false, "");
+  await testOnWindow(false, "", null);
+
+  
+  await testOnNoReferrer(false);
+
+  
+  await testOnSameOrigin(false);
+
+  
+  await testOnNoReferrerWhenDowngrade(false);
+
+  
+  await testOnOrigin(false);
+
+  
+  await testOnStrictOrigin(false);
+
+  
+  await testOnOriginWhenCrossOrigin(false);
+
+  
+  await testOnStrictOriginWhenCrossOrigin(false);
+
+  
+  await testOnUnsafeUrl(false);
 
   
   Services.prefs.clearUserPref("network.http.referer.defaultPolicy.trackers");
@@ -75,22 +284,46 @@ add_task(async function() {
     ["network.http.referer.defaultPolicy.pbmode", 3],
     ["network.http.referer.defaultPolicy.trackers.pbmode", 3],
   ]});
-  await testOnWindow(true, TEST_TOP_PAGE);
+  await testOnWindow(true, TEST_TOP_PAGE, null);
 
   
   await SpecialPowers.pushPrefEnv({"set":
     [["network.http.referer.defaultPolicy.trackers.pbmode", 2]]});
-  await testOnWindow(true, TEST_DOMAIN);
+  await testOnWindow(true, TEST_DOMAIN, null);
 
   
   await SpecialPowers.pushPrefEnv({"set":
     [["network.http.referer.defaultPolicy.trackers.pbmode", 1]]});
-  await testOnWindow(true, "");
+  await testOnWindow(true, "", null);
 
   
   await SpecialPowers.pushPrefEnv({"set":
     [["network.http.referer.defaultPolicy.trackers.pbmode", 0]]});
-  await testOnWindow(true, "");
+  await testOnWindow(true, "", null);
+
+  
+  await testOnNoReferrer(true);
+
+  
+  await testOnSameOrigin(true);
+
+  
+  await testOnNoReferrerWhenDowngrade(true);
+
+  
+  await testOnOrigin(true);
+
+  
+  await testOnStrictOrigin(true);
+
+  
+  await testOnOriginWhenCrossOrigin(true);
+
+  
+  await testOnStrictOriginWhenCrossOrigin(true);
+
+  
+  await testOnUnsafeUrl(true);
 
   
   Services.prefs.clearUserPref("network.http.referer.defaultPolicy.trackers.pbmode");
