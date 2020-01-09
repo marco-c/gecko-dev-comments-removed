@@ -572,12 +572,12 @@ HistoryMenu.prototype = {
   },
 
   _getClosedTabCount() {
-    
-    if (window == Services.appShell.hiddenDOMWindow) {
+    try {
+      return SessionStore.getClosedTabCount(window);
+    } catch (ex) {
+      
       return 0;
     }
-
-    return SessionStore.getClosedTabCount(window);
   },
 
   toggleHiddenTabs() {
