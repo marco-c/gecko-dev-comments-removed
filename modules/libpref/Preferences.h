@@ -34,6 +34,8 @@ class nsPrefBranch;
 
 namespace mozilla {
 
+struct RegisterCallbacksInternal;
+
 void UnloadPrefsModule();
 
 
@@ -174,6 +176,8 @@ class Preferences final : public nsIPrefService,
 
   
   static void InitializeUserPrefs();
+
+  static void RefreshStaticPrefsValues();
 
   
   static already_AddRefed<Preferences> GetInstanceForService();
@@ -640,6 +644,7 @@ class Preferences final : public nsIPrefService,
   static mozilla::Result<mozilla::Ok, const char*> InitInitialObjects(
       bool aIsStartup);
 
+  friend struct RegisterCallbacksInternal;
   static nsresult RegisterCallback(PrefChangedFunc aCallback,
                                    const nsACString& aPref, void* aClosure,
                                    MatchKind aMatchKind,

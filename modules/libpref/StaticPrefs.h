@@ -66,41 +66,51 @@ template <typename T>
 struct IsAtomic<std::atomic<T>> : TrueType {};
 
 class StaticPrefs {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ public:
+  
+  enum class UpdatePolicy {
+    Skip,  
+    Once,  
+    Live   
+  };
 
 #define PREF(str, cpp_type, default_value)
-#define VARCACHE_PREF(str, id, cpp_type, default_value)            \
+#define VARCACHE_PREF(policy, str, id, cpp_type, default_value)    \
  private:                                                          \
   static cpp_type sVarCache_##id;                                  \
                                                                    \
  public:                                                           \
   static StripAtomic<cpp_type> id() {                              \
-    MOZ_ASSERT(IsAtomic<cpp_type>::value || NS_IsMainThread(),     \
+    MOZ_ASSERT(UpdatePolicy::policy != UpdatePolicy::Live ||       \
+                   IsAtomic<cpp_type>::value || NS_IsMainThread(), \
                "Non-atomic static pref '" str                      \
                "' being accessed on background thread by getter"); \
     return sVarCache_##id;                                         \
   }                                                                \
   static void Set##id(StripAtomic<cpp_type> aValue) {              \
     MOZ_ASSERT(IsAtomic<cpp_type>::value || NS_IsMainThread(),     \
-               "Non-atomic static set pref '" str                  \
+               "Non-atomic static pref '" str                      \
                "' being accessed on background thread by setter"); \
     sVarCache_##id = aValue;                                       \
   }
@@ -110,6 +120,7 @@ class StaticPrefs {
 
  public:
   static void InitAll(bool aIsStartup);
+  static void InitOncePrefs();
 };
 
 }  
