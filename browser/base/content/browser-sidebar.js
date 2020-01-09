@@ -390,7 +390,13 @@ var SidebarUI = {
 
 
 
-  show(commandID, triggerNode) {
+
+  async show(commandID, triggerNode) {
+    
+    
+    if (!this.sidebars.has(commandID)) {
+      return false;
+    }
     return this._show(commandID).then(() => {
       this._loadSidebarExtension(commandID);
 
@@ -399,6 +405,7 @@ var SidebarUI = {
       }
 
       this._fireFocusedEvent();
+      return true;
     });
   },
 
@@ -409,13 +416,21 @@ var SidebarUI = {
 
 
 
-  showInitially(commandID) {
+
+  async showInitially(commandID) {
+    
+    
+    if (!this.sidebars.has(commandID)) {
+      return false;
+    }
     return this._show(commandID).then(() => {
       this._loadSidebarExtension(commandID);
+      return true;
     });
   },
 
   
+
 
 
 
