@@ -788,7 +788,7 @@ class BrowserParent final : public PBrowserParent,
   
   RefPtr<CanonicalBrowsingContext> mBrowsingContext;
   nsCOMPtr<nsILoadContext> mLoadContext;
-  nsCOMPtr<Element> mFrameElement;
+  RefPtr<Element> mFrameElement;
   nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
   
   
