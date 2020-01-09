@@ -20,6 +20,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
   this, "SUPPORT_URL", "app.support.baseURL",
   "", null, val => Services.urlFormatter.formatURL(val));
 
+const UPDATES_RECENT_TIMESPAN = 2 * 24 * 3600000; 
+
 const PLUGIN_ICON_URL = "chrome://global/skin/plugins/pluginGeneric.svg";
 const PERMISSION_MASKS = {
   "ask-to-activate": AddonManager.PERM_CAN_ASK_TO_ACTIVATE,
@@ -114,6 +116,7 @@ function hasPermission(addon, permission) {
 
 
 let loadViewFn;
+let setCategoryFn;
 
 let _templates = {};
 
@@ -1042,10 +1045,8 @@ class AddonList extends HTMLElement {
     }
 
     
-    let addons = await AddonManager.getAddonsByTypes([this.type]);
-
-    
-    addons.sort(this.sortByFn);
+    let type = this.type == "all" ? null : [this.type];
+    let addons = await AddonManager.getAddonsByTypes(type);
 
     
     
@@ -1055,6 +1056,11 @@ class AddonList extends HTMLElement {
       if (index != -1) {
         sectionedAddons[index].push(addon);
       }
+    }
+
+    
+    for (let section of sectionedAddons) {
+      section.sort(this.sortByFn);
     }
 
     return sectionedAddons;
@@ -1094,7 +1100,7 @@ class AddonList extends HTMLElement {
 
   addAddon(addon) {
     
-    if (addon.type != this.type) {
+    if (addon.type != this.type && this.type != "all") {
       this.sendEvent("skip-add", "type-mismatch");
       return;
     }
@@ -1251,6 +1257,9 @@ class DetailView {
     let card = document.createElement("addon-card");
 
     
+    setCategoryFn(addon.type);
+
+    
     card.addEventListener("remove", () => loadViewFn("list", addon.type));
 
     card.setAddon(addon);
@@ -1259,6 +1268,46 @@ class DetailView {
 
     this.root.textContent = "";
     this.root.appendChild(card);
+  }
+}
+
+class UpdatesView {
+  constructor({param, root}) {
+    this.root = root;
+    this.param = param;
+  }
+
+  async render() {
+    let list = document.createElement("addon-list");
+    list.type = "all";
+    if (this.param == "available") {
+      list.setSections([{
+        headingId: "available-updates-heading",
+        filterFn: addon => addon.updateInstall,
+      }]);
+    } else if (this.param == "recent") {
+      list.sortByFn = (a, b) => {
+        if (a.updateDate > b.updateDate) {
+          return -1;
+        }
+        if (a.updateDate < b.updateDate) {
+          return 1;
+        }
+        return 0;
+      };
+      let updateLimit = new Date() - UPDATES_RECENT_TIMESPAN;
+      list.setSections([{
+        headingId: "recent-updates-heading",
+        filterFn: addon =>
+          !addon.hidden && addon.updateDate && addon.updateDate > updateLimit,
+      }]);
+    } else {
+      throw new Error(`Unknown updates view ${this.param}`);
+    }
+
+    await list.render();
+    this.root.textContent = "";
+    this.root.appendChild(list);
   }
 }
 
@@ -1271,6 +1320,7 @@ let root = null;
 function initialize(opts) {
   root = document.getElementById("main");
   loadViewFn = opts.loadViewFn;
+  setCategoryFn = opts.setCategoryFn;
   AddonCardListenerHandler.startup();
   window.addEventListener("unload", () => {
     
@@ -1290,6 +1340,8 @@ async function show(type, param) {
     await new ListView({param, root}).render();
   } else if (type == "detail") {
     await new DetailView({param, root}).render();
+  } else if (type == "updates") {
+    await new UpdatesView({param, root}).render();
   }
 }
 
