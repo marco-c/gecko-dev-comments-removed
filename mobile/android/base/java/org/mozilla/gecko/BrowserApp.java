@@ -1087,7 +1087,10 @@ public class BrowserApp extends GeckoApp
                 
                 
                 
-                if (userReturnedToFullApp) {
+                
+                final boolean shouldKeepVideoInFullscreen =
+                        mPipController.isMediaPlaying() || mPipController.isMediaPaused();
+                if (userReturnedToFullApp && shouldKeepVideoInFullscreen) {
                     ActivityUtils.setFullScreen(this, true);
                 } else {
                     
