@@ -276,7 +276,8 @@ class MediaManager final : public nsIMediaManagerService,
 
  public:  
   static void AnonymizeDevices(MediaDeviceSet& aDevices,
-                               const nsACString& aOriginKey);
+                               const nsACString& aOriginKey,
+                               const uint64_t aWindowId);
   static already_AddRefed<nsIWritableVariant> ToJSArray(
       MediaDeviceSet& aDevices);
 
