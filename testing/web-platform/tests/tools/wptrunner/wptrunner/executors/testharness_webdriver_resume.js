@@ -1,5 +1,21 @@
+var callback = arguments[arguments.length - 1];
+window.opener.testdriver_callback = function(results) {
+  
 
 
-window.__wptrunner_url = "%(url)s";
-window.__wptrunner_testdriver_callback = arguments[arguments.length - 1];
-window.__wptrunner_process_next_event();
+
+
+
+
+
+
+
+
+
+  try {
+    results = JSON.parse(JSON.stringify(results));
+  } catch (error) {}
+
+  callback(results);
+};
+window.opener.process_next_event();

@@ -11,8 +11,8 @@ from tools.serve.serve import make_hosts_file
 from .base import (get_free_port,
                    cmd_arg,
                    browser_command)
-from ..executors.executormarionette import (MarionetteTestharnessExecutor,  
-                                            MarionetteRefTestExecutor)  
+from ..executors.executormarionette import (MarionetteTestharnessExecutor,  # noqa: F401
+                                            MarionetteRefTestExecutor)  # noqa: F401
 from .firefox import (get_timeout_multiplier,
                       update_properties,
                       executor_kwargs,
@@ -29,7 +29,9 @@ __wptrunner__ = {"product": "fennec",
                  "env_extras": "env_extras",
                  "env_options": "env_options",
                  "run_info_extras": "run_info_extras",
-                 "update_properties": "update_properties"}
+                 "update_properties": "update_properties",
+                 "timeout_multiplier": "get_timeout_multiplier"}
+
 
 
 def check_args(**kwargs):
@@ -71,8 +73,8 @@ def run_info_extras(**kwargs):
 
 
 def env_options():
-    
-    
+    # The server host is set to public localhost IP so that resources can be accessed
+    # from Android emulator
     return {"server_host": moznetwork.get_ip(),
             "bind_address": False,
             "supports_debugger": True}
@@ -142,14 +144,14 @@ class FennecBrowser(FirefoxBrowser):
         if self.test_type == "reftest":
             self.logger.info("Setting android reftest preferences")
             self.profile.set_preferences({"browser.viewport.desktopWidth": 600,
-                                          
+                                          # Disable high DPI
                                           "layout.css.devPixelsPerPx": "1.0",
-                                          
-                                          
+                                          # Ensure that the full browser element
+                                          # appears in the screenshot
                                           "apz.allow_zooming": False,
                                           "android.widget_paints_background": False,
-                                          
-                                          "layout.testing.overlay-scrollbars.always-visible": True})
+                                          # Ensure that scrollbars are always painted
+                                          "ui.scrollbarFadeBeginDelay": 100000})
 
         if self.install_fonts:
             self.logger.debug("Copying Ahem font to profile")
@@ -182,13 +184,13 @@ class FennecBrowser(FirefoxBrowser):
                                            env=env,
                                            symbols_path=self.symbols_path,
                                            serial=self.device_serial,
-                                           
+                                           # TODO - choose appropriate log dir
                                            logdir=os.getcwd(),
                                            process_class=ProcessHandler,
                                            process_args={"processOutputLine": [self.on_output]})
 
         self.logger.debug("Starting %s" % self.package_name)
-        
+        # connect to a running emulator
         self.runner.device.connect()
 
         write_hosts_file(self.config, self.runner.device.device)
@@ -211,7 +213,7 @@ class FennecBrowser(FirefoxBrowser):
                         "tcp:{}".format(self.marionette_port))
                 except Exception:
                     self.logger.warning("Failed to remove port forwarding")
-            
-            
+            # We assume that stopping the runner prompts the
+            # browser to shut down. This allows the leak log to be written
             self.runner.stop()
         self.logger.debug("stopped")
