@@ -1035,13 +1035,9 @@ function openHelpLink(aHelpTopic, aCalledFromModal, aWhere) {
   openTrustedLinkIn(url, where);
 }
 
-function openPrefsHelp() {
-  
-  
-  var instantApply = Services.prefs.getBoolPref("browser.preferences.instantApply");
-
-  var helpTopic = document.documentElement.getAttribute("helpTopic");
-  openHelpLink(helpTopic, !instantApply);
+function openPrefsHelp(aEvent) {
+  let helpTopic = aEvent.target.getAttribute("helpTopic");
+  openHelpLink(helpTopic);
 }
 
 function trimURL(aURL) {
