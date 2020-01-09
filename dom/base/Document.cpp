@@ -1923,7 +1923,6 @@ bool Document::IsVisibleConsideringAncestors() const {
 void Document::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) {
   nsCOMPtr<nsIURI> uri;
   nsCOMPtr<nsIPrincipal> principal;
-  nsCOMPtr<nsIPrincipal> storagePrincipal;
   if (aChannel) {
     
     
@@ -1933,22 +1932,14 @@ void Document::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) {
     nsIScriptSecurityManager* securityManager =
         nsContentUtils::GetSecurityManager();
     if (securityManager) {
-      securityManager->GetChannelResultPrincipals(
-          aChannel, getter_AddRefs(principal),
-          getter_AddRefs(storagePrincipal));
+      securityManager->GetChannelResultPrincipal(aChannel,
+                                                 getter_AddRefs(principal));
     }
   }
 
-  bool equal = principal->Equals(storagePrincipal);
-
   principal = MaybeDowngradePrincipal(principal);
-  if (equal) {
-    storagePrincipal = principal;
-  } else {
-    storagePrincipal = MaybeDowngradePrincipal(storagePrincipal);
-  }
 
-  ResetToURI(uri, aLoadGroup, principal, storagePrincipal);
+  ResetToURI(uri, aLoadGroup, principal);
 
   
   
@@ -2040,10 +2031,8 @@ void Document::DisconnectNodeTree() {
 }
 
 void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
-                          nsIPrincipal* aPrincipal,
-                          nsIPrincipal* aStoragePrincipal) {
+                          nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(aURI, "Null URI passed to ResetToURI");
-  MOZ_ASSERT(!!aPrincipal == !!aStoragePrincipal);
 
   MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug,
           ("DOCUMENT %p ResetToURI %s", this, aURI->GetSpecOrDefault().get()));
@@ -2073,7 +2062,7 @@ void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
   
   
   
-  SetPrincipals(nullptr, nullptr);
+  SetPrincipal(nullptr);
 
   
   mOriginalURI = nullptr;
@@ -2121,7 +2110,7 @@ void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
 
   
   if (aPrincipal) {
-    SetPrincipals(aPrincipal, aStoragePrincipal);
+    SetPrincipal(aPrincipal);
   } else {
     nsIScriptSecurityManager* securityManager =
         nsContentUtils::GetSecurityManager();
@@ -2141,7 +2130,7 @@ void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
       nsresult rv = securityManager->GetLoadContextCodebasePrincipal(
           mDocumentURI, loadContext, getter_AddRefs(principal));
       if (NS_SUCCEEDED(rv)) {
-        SetPrincipals(principal, principal);
+        SetPrincipal(principal);
       }
     }
   }
@@ -2804,7 +2793,7 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   if (needNewNullPrincipal) {
     principal = NullPrincipal::CreateWithInheritedAttributes(principal);
     principal->SetCsp(csp);
-    SetPrincipals(principal, principal);
+    SetPrincipal(principal);
   }
 
   
@@ -3028,9 +3017,7 @@ void Document::RemoveFromIdTable(Element* aElement, nsAtom* aId) {
   }
 }
 
-void Document::SetPrincipals(nsIPrincipal* aNewPrincipal,
-                             nsIPrincipal* aNewStoragePrincipal) {
-  MOZ_ASSERT(!!aNewPrincipal == !!aNewStoragePrincipal);
+void Document::SetPrincipal(nsIPrincipal* aNewPrincipal) {
   if (aNewPrincipal && mAllowDNSPrefetch && sDisablePrefetchHTTPSPref) {
     nsCOMPtr<nsIURI> uri;
     aNewPrincipal->GetURI(getter_AddRefs(uri));
@@ -3040,7 +3027,6 @@ void Document::SetPrincipals(nsIPrincipal* aNewPrincipal,
     }
   }
   mNodeInfoManager->SetDocumentPrincipal(aNewPrincipal);
-  mIntrinsicStoragePrincipal = aNewStoragePrincipal;
 
 #ifdef DEBUG
   
@@ -8207,8 +8193,7 @@ nsresult Document::CloneDocHelper(Document* clone) const {
     }
     clone->mChannel = channel;
     if (uri) {
-      clone->ResetToURI(uri, loadGroup, NodePrincipal(),
-                        EffectiveStoragePrincipal());
+      clone->ResetToURI(uri, loadGroup, NodePrincipal());
     }
 
     clone->SetContainer(mDocumentContainer);
@@ -8222,7 +8207,7 @@ nsresult Document::CloneDocHelper(Document* clone) const {
   
   clone->SetDocumentURI(Document::GetDocumentURI());
   clone->SetChromeXHRDocURI(mChromeXHRDocURI);
-  clone->SetPrincipals(NodePrincipal(), EffectiveStoragePrincipal());
+  clone->SetPrincipal(NodePrincipal());
   clone->mDocumentBaseURI = mDocumentBaseURI;
   clone->SetChromeXHRDocBaseURI(mChromeXHRDocBaseURI);
 
@@ -12842,24 +12827,6 @@ nsICookieSettings* Document::CookieSettings() {
   }
 
   return mCookieSettings;
-}
-
-nsIPrincipal* Document::EffectiveStoragePrincipal() const {
-  if (!StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
-    return NodePrincipal();
-  }
-
-  nsContentUtils::StorageAccess access =
-      nsContentUtils::StorageAllowedForDocument(this);
-
-  
-  
-  
-  if (access != nsContentUtils::StorageAccess::ePartitionedOrDeny) {
-    return NodePrincipal();
-  }
-
-  return mIntrinsicStoragePrincipal;
 }
 
 }  

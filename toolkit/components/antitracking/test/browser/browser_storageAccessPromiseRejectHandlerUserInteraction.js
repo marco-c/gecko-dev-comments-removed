@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest("Storage Access API returns promises that maintain user activation for calling its reject handler",
   
   async _ => {

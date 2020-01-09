@@ -1,5 +1,3 @@
-
-
 gFeatures = "noopener";
 
 AntiTracking.runTest("Blocking in the case of noopener windows",

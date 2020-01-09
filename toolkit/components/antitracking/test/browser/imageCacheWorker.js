@@ -1,7 +1,5 @@
 
 
-
-
 AntiTracking.runTest("Image cache - should load the image three times.",
   
   async _ => {

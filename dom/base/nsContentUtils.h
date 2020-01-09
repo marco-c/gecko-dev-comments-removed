@@ -2995,7 +2995,7 @@ class nsContentUtils {
 
 
 
-  static StorageAccess StorageAllowedForDocument(const Document* aDoc);
+  static StorageAccess StorageAllowedForDocument(Document* aDoc);
 
   
 

@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest("localStorage with a tracker that is whitelisted via a pref",
   async _ => {
     let shouldThrow = SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior") == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;

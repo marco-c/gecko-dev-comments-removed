@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest("Set/Get Cookies",
   
   async _ => {

@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest("IndexedDB",
   
   async _ => {

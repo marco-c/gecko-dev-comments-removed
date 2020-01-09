@@ -1,5 +1,3 @@
-
-
 requestLongerTimeout(2);
 
 AntiTracking.runTest("SharedWorkers",

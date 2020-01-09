@@ -102,14 +102,14 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
       do_QueryInterface(aGlobal.GetAsSupports());
   MOZ_ASSERT(window);
 
+  
+  
+  
+  
+  
   auto storageAllowed = nsContentUtils::StorageAllowedForWindow(window);
-  if (storageAllowed == nsContentUtils::StorageAccess::eDeny) {
-    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
-    return nullptr;
-  }
-
-  if (storageAllowed == nsContentUtils::StorageAccess::ePartitionedOrDeny &&
-      !StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
+  if (storageAllowed != nsContentUtils::StorageAccess::eAllow &&
+      storageAllowed != nsContentUtils::StorageAccess::ePrivateBrowsing) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
@@ -178,57 +178,6 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
 
   
   
-  
-  if (storageAllowed == nsContentUtils::StorageAccess::ePartitionedOrDeny) {
-    nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(window);
-    if (!sop) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
-
-    nsIPrincipal* windowPrincipal = sop->GetPrincipal();
-    if (!windowPrincipal) {
-      aRv.Throw(NS_ERROR_UNEXPECTED);
-      return nullptr;
-    }
-
-    nsIPrincipal* windowStoragePrincipal = sop->GetEffectiveStoragePrincipal();
-    if (!windowStoragePrincipal) {
-      aRv.Throw(NS_ERROR_UNEXPECTED);
-      return nullptr;
-    }
-
-    if (!windowPrincipal->Equals(windowStoragePrincipal)) {
-      loadInfo.mStoragePrincipal =
-          BasePrincipal::Cast(loadInfo.mPrincipal)
-              ->CloneForcingOriginAttributes(
-                  BasePrincipal::Cast(windowStoragePrincipal)
-                      ->OriginAttributesRef());
-    }
-  }
-
-  PrincipalInfo storagePrincipalInfo;
-  if (loadInfo.mPrincipal->Equals(loadInfo.mStoragePrincipal)) {
-    storagePrincipalInfo = principalInfo;
-  } else {
-    aRv = PrincipalToPrincipalInfo(loadInfo.mStoragePrincipal,
-                                   &storagePrincipalInfo);
-    if (NS_WARN_IF(aRv.Failed())) {
-      return nullptr;
-    }
-  }
-
-  nsTArray<ContentSecurityPolicy> storagePrincipalCSP;
-  nsTArray<ContentSecurityPolicy> storagePrincipalPreloadCSP;
-  aRv = PopulateContentSecurityPolicyArray(loadInfo.mStoragePrincipal,
-                                           storagePrincipalCSP,
-                                           storagePrincipalPreloadCSP);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-
-  
-  
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(window);
   RefPtr<MessageChannel> channel = MessageChannel::Constructor(global, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
@@ -255,12 +204,15 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
     ipcClientInfo.emplace(clientInfo.value().ToIPC());
   }
 
+  bool storageAccessAllowed =
+      storageAllowed > nsContentUtils::StorageAccess::eDeny;
+
   RemoteWorkerData remoteWorkerData(
       nsString(aScriptURL), baseURL, resolvedScriptURL, name,
       loadingPrincipalInfo, loadingPrincipalCSP, loadingPrincipalPreloadCSP,
-      principalInfo, principalCSP, principalPreloadCSP, storagePrincipalInfo,
-      storagePrincipalCSP, storagePrincipalPreloadCSP, loadInfo.mDomain,
-      isSecureContext, ipcClientInfo, storageAllowed, true );
+      principalInfo, principalCSP, principalPreloadCSP, loadInfo.mDomain,
+      isSecureContext, ipcClientInfo, storageAccessAllowed,
+      true );
 
   PSharedWorkerChild* pActor = actorChild->SendPSharedWorkerConstructor(
       remoteWorkerData, loadInfo.mWindowID, portIdentifier);

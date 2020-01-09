@@ -84,8 +84,7 @@ PrototypeDocumentParser::Parse(nsIURI* aURL, nsIRequestObserver* aListener,
     mCurrentPrototype = proto;
 
     
-    mDocument->SetPrincipals(proto->DocumentPrincipal(),
-                             proto->DocumentPrincipal());
+    mDocument->SetPrincipal(proto->DocumentPrincipal());
   } else {
     
     
@@ -186,7 +185,7 @@ nsresult PrototypeDocumentParser::PrepareToLoadPrototype(
     nsXULPrototypeCache::GetInstance()->PutPrototype(mCurrentPrototype);
   }
 
-  mDocument->SetPrincipals(aDocumentPrincipal, aDocumentPrincipal);
+  mDocument->SetPrincipal(aDocumentPrincipal);
 
   
   

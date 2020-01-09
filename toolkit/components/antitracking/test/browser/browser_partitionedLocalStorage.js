@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest("localStorage and Storage Access API",
   async _ => {
     

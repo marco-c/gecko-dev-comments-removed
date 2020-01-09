@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest("Test whether we receive any persistent permissions in normal windows",
   
   async _ => {

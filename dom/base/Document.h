@@ -523,14 +523,8 @@ class Document : public nsINode,
     return DocumentOrShadowRoot::SetValueMissingState(aName, aValue);
   }
 
-  nsIPrincipal* EffectiveStoragePrincipal() const;
-
   
   nsIPrincipal* GetPrincipal() final { return NodePrincipal(); }
-
-  nsIPrincipal* GetEffectiveStoragePrincipal() final {
-    return EffectiveStoragePrincipal();
-  }
 
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
@@ -734,7 +728,7 @@ class Document : public nsINode,
 
 
 
-  void SetPrincipals(nsIPrincipal* aPrincipal, nsIPrincipal* aStoragePrincipal);
+  void SetPrincipal(nsIPrincipal* aPrincipal);
 
   
 
@@ -2097,8 +2091,7 @@ class Document : public nsINode,
 
 
   virtual void ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
-                          nsIPrincipal* aPrincipal,
-                          nsIPrincipal* aStoragePrincipal);
+                          nsIPrincipal* aPrincipal);
 
   
 
@@ -4740,9 +4733,6 @@ class Document : public nsINode,
   nsTabSizes mCachedTabSizes;
 
   bool mInRDMPane;
-
-  
-  nsCOMPtr<nsIPrincipal> mIntrinsicStoragePrincipal;
 
  public:
   

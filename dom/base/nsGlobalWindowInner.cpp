@@ -1128,7 +1128,6 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   if (mDoc) {
     
     mDocumentPrincipal = mDoc->NodePrincipal();
-    mDocumentStoragePrincipal = mDoc->EffectiveStoragePrincipal();
     mDocumentURI = mDoc->GetDocumentURI();
     mDocBaseURI = mDoc->GetDocBaseURI();
 
@@ -1358,7 +1357,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowInner)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mApplicationCache)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIndexedDB)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentPrincipal)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentStoragePrincipal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTabChild)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDoc)
 
@@ -1462,7 +1460,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowInner)
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mIndexedDB)
   }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentPrincipal)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentStoragePrincipal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTabChild)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDoc)
 
@@ -2046,29 +2043,6 @@ nsIPrincipal* nsGlobalWindowInner::GetPrincipal() {
 
   if (objPrincipal) {
     return objPrincipal->GetPrincipal();
-  }
-
-  return nullptr;
-}
-
-nsIPrincipal* nsGlobalWindowInner::GetEffectiveStoragePrincipal() {
-  if (mDoc) {
-    
-    return mDoc->EffectiveStoragePrincipal();
-  }
-
-  if (mDocumentStoragePrincipal) {
-    return mDocumentStoragePrincipal;
-  }
-
-  
-  
-
-  nsCOMPtr<nsIScriptObjectPrincipal> objPrincipal =
-      do_QueryInterface(GetParentInternal());
-
-  if (objPrincipal) {
-    return objPrincipal->GetEffectiveStoragePrincipal();
   }
 
   return nullptr;
@@ -2821,9 +2795,10 @@ bool nsGlobalWindowInner::MayResolve(jsid aId) {
   return WebIDLGlobalNameHash::MayResolve(aId);
 }
 
-void nsGlobalWindowInner::GetOwnPropertyNames(
-    JSContext* aCx, JS::MutableHandleVector<jsid> aNames, bool aEnumerableOnly,
-    ErrorResult& aRv) {
+void nsGlobalWindowInner::GetOwnPropertyNames(JSContext* aCx,
+                                              JS::MutableHandleVector<jsid> aNames,
+                                              bool aEnumerableOnly,
+                                              ErrorResult& aRv) {
   if (aEnumerableOnly) {
     
     
@@ -6897,9 +6872,6 @@ void nsGlobalWindowInner::StorageAccessGranted() {
       object->EnsureObserver();
     }
   }
-
-  
-  mIndexedDB = nullptr;
 }
 
 mozilla::dom::TabGroup* nsPIDOMWindowInner::TabGroup() {

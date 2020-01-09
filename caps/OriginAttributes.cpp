@@ -38,11 +38,11 @@ void OriginAttributes::InitPrefs() {
 }
 
 void OriginAttributes::SetFirstPartyDomain(const bool aIsTopLevelDocument,
-                                           nsIURI* aURI, bool aForced) {
+                                           nsIURI* aURI) {
   bool isFirstPartyEnabled = IsFirstPartyEnabled();
 
   
-  if ((!isFirstPartyEnabled || !aIsTopLevelDocument) && !aForced) {
+  if (!isFirstPartyEnabled || !aIsTopLevelDocument) {
     return;
   }
 

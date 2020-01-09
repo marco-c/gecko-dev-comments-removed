@@ -1188,7 +1188,7 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
       
       
       
-      rv = mWorkerPrivate->SetPrincipalsFromChannel(channel);
+      rv = mWorkerPrivate->SetPrincipalFromChannel(channel);
       NS_ENSURE_SUCCESS(rv, rv);
 
       nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerPrivate->GetCSP();
@@ -1296,11 +1296,8 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
       
       
       
-      
-      
-      
-      rv = mWorkerPrivate->SetPrincipalsOnMainThread(
-          responsePrincipal, responsePrincipal, loadGroup);
+      rv = mWorkerPrivate->SetPrincipalOnMainThread(responsePrincipal,
+                                                    loadGroup);
       MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
 
       rv = mWorkerPrivate->SetCSPFromHeaderValues(aCSPHeaderValue,
@@ -1844,7 +1841,7 @@ class ChannelGetterRunnable final : public WorkerMainThreadRunnable {
         getter_AddRefs(channel));
     NS_ENSURE_SUCCESS(mResult, true);
 
-    mResult = mLoadInfo.SetPrincipalsFromChannel(channel);
+    mResult = mLoadInfo.SetPrincipalFromChannel(channel);
     NS_ENSURE_SUCCESS(mResult, true);
 
     mLoadInfo.mChannel = channel.forget();

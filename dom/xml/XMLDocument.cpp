@@ -129,7 +129,7 @@ nsresult NS_NewDOMDocument(Document** aInstancePtrResult,
   d->SetLoadedAsData(aLoadedAsData);
   d->SetDocumentURI(aDocumentURI);
   
-  d->SetPrincipals(aPrincipal, aPrincipal);
+  d->SetPrincipal(aPrincipal);
   d->SetBaseURI(aBaseURI);
 
   
@@ -252,15 +252,14 @@ void XMLDocument::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) {
 }
 
 void XMLDocument::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
-                             nsIPrincipal* aPrincipal,
-                             nsIPrincipal* aStoragePrincipal) {
+                             nsIPrincipal* aPrincipal) {
   if (mChannelIsPending) {
     StopDocumentLoad();
     mChannel->Cancel(NS_BINDING_ABORTED);
     mChannelIsPending = false;
   }
 
-  Document::ResetToURI(aURI, aLoadGroup, aPrincipal, aStoragePrincipal);
+  Document::ResetToURI(aURI, aLoadGroup, aPrincipal);
 }
 
 bool XMLDocument::Load(const nsAString& aUrl, CallerType aCallerType,
@@ -275,7 +274,6 @@ bool XMLDocument::Load(const nsAString& aUrl, CallerType aCallerType,
 
   nsCOMPtr<Document> callingDoc = GetEntryDocument();
   nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
-  nsCOMPtr<nsIPrincipal> storagePrincipal = EffectiveStoragePrincipal();
 
   
   if (callingDoc && (callingDoc->NodePrincipal() != principal)) {
@@ -372,7 +370,7 @@ bool XMLDocument::Load(const nsAString& aUrl, CallerType aCallerType,
     loadGroup = callingDoc->GetDocumentLoadGroup();
   }
 
-  ResetToURI(uri, loadGroup, principal, storagePrincipal);
+  ResetToURI(uri, loadGroup, principal);
 
   mListenerManager = elm;
 

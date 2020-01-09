@@ -1,5 +1,3 @@
-
-
 AntiTracking.runTest("Storage Access API called in a private window",
   
   async _ => {
