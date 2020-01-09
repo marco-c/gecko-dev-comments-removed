@@ -73,11 +73,7 @@ class SETA(object):
 
             if type(task_list) == dict and len(task_list) > 0:
                 if type(task_list.values()[0]) == list and len(task_list.values()[0]) > 0:
-                    low_value_tasks = task_list.values()[0]
-                    
-                    
-                    if type(low_value_tasks[0]) == list:
-                        low_value_tasks = [self._get_task_string(x) for x in low_value_tasks]
+                    low_value_tasks = set(task_list.values()[0])
 
             
             logger.debug("Retrieving high-value jobs list from SETA")
@@ -88,14 +84,14 @@ class SETA(object):
 
             if type(task_list) == dict and len(task_list) > 0:
                 if type(task_list.values()[0]) == list and len(task_list.values()[0]) > 0:
-                    high_value_tasks = task_list.values()[0]
+                    high_value_tasks = set(task_list.values()[0])
 
             
             def only_android_raptor(task):
                 return task.startswith('test-android') and 'raptor' in task
 
             high_value_android_tasks = list(filter(only_android_raptor, high_value_tasks))
-            low_value_tasks.extend(high_value_android_tasks)
+            low_value_tasks.update(high_value_android_tasks)
 
             seta_conversions = {
                 
@@ -106,17 +102,17 @@ class SETA(object):
                 'test-windows10-64/opt': 'test-windows10-64-pgo/opt',
                 'test-windows10-64-qr/opt': 'test-windows10-64-pgo-qr/opt',
                 }
-
             
             for old, new in seta_conversions.iteritems():
                 if any(t.startswith(old) for t in low_value_tasks):
-                    low_value_tasks.extend(
+                    low_value_tasks.update(
                         [t.replace(old, new) for t in low_value_tasks]
                     )
+
             
             for old, new in seta_conversions.iteritems():
                 if any(t.startswith(old) for t in high_value_tasks):
-                    high_value_tasks.extend(
+                    high_value_tasks.update(
                         [t.replace(old, new) for t in high_value_tasks]
                     )
 
@@ -131,10 +127,10 @@ class SETA(object):
                 return False
 
             
-            low_value_tasks = [x for x in low_value_tasks if not new_as_old_is_high_value(x)]
+            low_value_tasks = set([x for x in low_value_tasks if not new_as_old_is_high_value(x)])
 
             
-            low_value_tasks = [x for x in low_value_tasks if 'build' not in x]
+            low_value_tasks = set([x for x in low_value_tasks if 'build' not in x])
 
         
         except exceptions.Timeout:
