@@ -24,6 +24,7 @@
 
 
 
+ChromeUtils.import("resource:///modules/sessionstore/SessionStartup.jsm", this);
 
 
 
@@ -112,6 +113,9 @@ add_task(async function setup() {
 let setupTest = async function(options, testFunction) {
   await pushPrefs(["browser.startup.page", 3],
                   ["browser.tabs.warnOnClose", false]);
+  
+  
+  SessionStartup.resetForTest();
 
   
   let observing = {
@@ -153,6 +157,8 @@ let setupTest = async function(options, testFunction) {
   }
 
   await popPrefs();
+  
+  SessionStartup.resetForTest();
 };
 
 

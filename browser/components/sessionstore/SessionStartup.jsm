@@ -54,9 +54,10 @@ const TYPE_DEFER_SESSION = 3;
 
 const BROWSER_STARTUP_RESUME_SESSION = 3;
 
-function warning(aMsg, aException) {
+function warning(msg, exception) {
   let consoleMsg = Cc["@mozilla.org/scripterror;1"].createInstance(Ci.nsIScriptError);
-consoleMsg.init(aMsg, aException.fileName, null, aException.lineNumber, 0, Ci.nsIScriptError.warningFlag, "component javascript");
+  consoleMsg.init(msg, exception.fileName, null, exception.lineNumber, 0, Ci.nsIScriptError.warningFlag,
+    "component javascript");
   Services.console.logMessage(consoleMsg);
 }
 
@@ -81,7 +82,7 @@ var SessionStartup = {
 
   
   _initialState: null,
-  _sessionType: TYPE_NO_SESSION,
+  _sessionType: null,
   _initialized: false,
 
   
@@ -94,7 +95,7 @@ var SessionStartup = {
   
 
 
-  init: function sss_init() {
+  init() {
     Services.obs.notifyObservers(null, "sessionstore-init-started");
     StartupPerformance.init();
 
@@ -116,10 +117,6 @@ var SessionStartup = {
       Services.prefs.setBoolPref("browser.sessionstore.resuming_after_os_restart", false);
     }
 
-    this._resumeSessionEnabled =
-      Services.prefs.getBoolPref("browser.sessionstore.resume_session_once") ||
-      Services.prefs.getIntPref("browser.startup.page") == BROWSER_STARTUP_RESUME_SESSION;
-
     SessionFile.read().then(
       this._onSessionFileRead.bind(this),
       console.error
@@ -127,10 +124,10 @@ var SessionStartup = {
   },
 
   
-  _createSupportsString: function ssfi_createSupportsString(aData) {
+  _createSupportsString(data) {
     let string = Cc["@mozilla.org/supports-string;1"]
                    .createInstance(Ci.nsISupportsString);
-    string.data = aData;
+    string.data = data;
     return string;
   },
 
@@ -181,11 +178,9 @@ var SessionStartup = {
     }, 60000);
 
     
-    if (!this._resumeSessionEnabled && this._initialState) {
+    if (!this.isAutomaticRestoreEnabled() && this._initialState) {
       delete this._initialState.lastSessionState;
     }
-
-    let resumeFromCrash = Services.prefs.getBoolPref("browser.sessionstore.resume_from_crash");
 
     CrashMonitor.previousCheckpoints.then(checkpoints => {
       if (checkpoints) {
@@ -223,19 +218,13 @@ var SessionStartup = {
       
       Services.telemetry.getHistogramById("SHUTDOWN_OK").add(!this._previousSessionCrashed);
 
-      
-      if (this._previousSessionCrashed && resumeFromCrash)
-        this._sessionType = this.RECOVER_SESSION;
-      else if (!this._previousSessionCrashed && this._resumeSessionEnabled)
-        this._sessionType = this.RESUME_SESSION;
-      else if (this._initialState)
-        this._sessionType = this.DEFER_SESSION;
-      else
-        this._initialState = null; 
       Services.obs.addObserver(this, "sessionstore-windows-restored", true);
 
-      if (this._sessionType != this.NO_SESSION)
+      if (this.sessionType == this.NO_SESSION) {
+        this._initialState = null; 
+      } else {
         Services.obs.addObserver(this, "browser:purge-session-history", true);
+      }
 
       
       Services.obs.notifyObservers(null, "sessionstore-state-finalized");
@@ -247,19 +236,19 @@ var SessionStartup = {
   
 
 
-  observe: function sss_observe(aSubject, aTopic, aData) {
-    switch (aTopic) {
-    case "sessionstore-windows-restored":
-      Services.obs.removeObserver(this, "sessionstore-windows-restored");
-      
-      this._initialState = null;
-      this._didRestore = true;
-      break;
-    case "browser:purge-session-history":
-      Services.obs.removeObserver(this, "browser:purge-session-history");
-      
-      this._sessionType = this.NO_SESSION;
-      break;
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "sessionstore-windows-restored":
+        Services.obs.removeObserver(this, "sessionstore-windows-restored");
+        
+        this._initialState = null;
+        this._didRestore = true;
+        break;
+      case "browser:purge-session-history":
+        Services.obs.removeObserver(this, "browser:purge-session-history");
+        
+        this._sessionType = this.NO_SESSION;
+        break;
     }
   },
 
@@ -281,33 +270,34 @@ var SessionStartup = {
 
 
 
-  doRestore: function sss_doRestore() {
-    return this._willRestore();
-  },
-
-  
-
-
-
-
 
 
   isAutomaticRestoreEnabled() {
-    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-      return false;
+    if (this._resumeSessionEnabled === null) {
+      this._resumeSessionEnabled = !PrivateBrowsingUtils.permanentPrivateBrowsing &&
+        (Services.prefs.getBoolPref("browser.sessionstore.resume_session_once") ||
+         Services.prefs.getIntPref("browser.startup.page") == BROWSER_STARTUP_RESUME_SESSION);
     }
 
-    return Services.prefs.getBoolPref("browser.sessionstore.resume_session_once") ||
-           Services.prefs.getIntPref("browser.startup.page") == BROWSER_STARTUP_RESUME_SESSION;
+    return this._resumeSessionEnabled;
   },
 
   
 
 
 
-  _willRestore() {
-    return this._sessionType == this.RECOVER_SESSION ||
-           this._sessionType == this.RESUME_SESSION;
+  willRestore() {
+    return this.sessionType == this.RECOVER_SESSION ||
+           this.sessionType == this.RESUME_SESSION;
+  },
+
+  
+
+
+
+
+  willRestoreAsCrashed() {
+    return this.sessionType == this.RECOVER_SESSION;
   },
 
   
@@ -324,7 +314,7 @@ var SessionStartup = {
     
     
     
-    if (!this._initialState && !this._resumeSessionEnabled) {
+    if (!this._initialState && !this.isAutomaticRestoreEnabled()) {
       return false;
     }
     
@@ -336,7 +326,7 @@ var SessionStartup = {
       this.onceInitialized.then(() => {
         
         
-        resolve(this._willRestore() &&
+        resolve(this.willRestore() &&
                 this._initialState &&
                 this._initialState.windows &&
                 this._initialState.windows.some(w => w.tabs.some(t => !t.pinned)));
@@ -348,6 +338,20 @@ var SessionStartup = {
 
 
   get sessionType() {
+    if (this._sessionType === null) {
+     let resumeFromCrash = Services.prefs.getBoolPref("browser.sessionstore.resume_from_crash");
+     
+     if (this.isAutomaticRestoreEnabled()) {
+       this._sessionType = this.RESUME_SESSION;
+     } else if (this._previousSessionCrashed && resumeFromCrash) {
+       this._sessionType = this.RECOVER_SESSION;
+     } else if (this._initialState) {
+       this._sessionType = this.DEFER_SESSION;
+     } else {
+       this._sessionType = this.NO_SESSION;
+     }
+   }
+
     return this._sessionType;
   },
 
@@ -356,6 +360,11 @@ var SessionStartup = {
 
   get previousSessionCrashed() {
     return this._previousSessionCrashed;
+  },
+
+  resetForTest() {
+    this._resumeSessionEnabled = null;
+    this._sessionType = null;
   },
 
   QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
