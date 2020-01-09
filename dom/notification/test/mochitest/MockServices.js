@@ -1,3 +1,4 @@
+
 var MockServices = (function() {
   "use strict";
 
@@ -76,7 +77,13 @@ var MockServices = (function() {
       }
     },
 
-    QueryInterface: ChromeUtils.generateQI(["nsIAlertsService"]),
+    QueryInterface(aIID) {
+      if (SpecialPowers.wrap(aIID).equals(SpecialPowers.Ci.nsISupports) ||
+          SpecialPowers.wrap(aIID).equals(SpecialPowers.Ci.nsIAlertsService)) {
+        return this;
+      }
+      throw SpecialPowers.Components.results.NS_ERROR_NO_INTERFACE;
+    },
 
     createInstance(aOuter, aIID) {
       if (aOuter != null) {
