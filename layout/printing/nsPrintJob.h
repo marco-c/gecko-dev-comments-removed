@@ -109,7 +109,13 @@ class nsPrintJob final : public nsIObserver,
 
   void TurnScriptingOn(bool aDoTurnOn);
   bool CheckDocumentForPPCaching();
-  void InstallPrintPreviewListener();
+
+  
+
+
+
+
+  void SuppressPrintPreviewUserEvents();
 
   
   bool HasPrintCallbackCanvas();

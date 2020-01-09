@@ -38,8 +38,6 @@
 static const char sPrintSettingsServiceContractID[] =
     "@mozilla.org/gfx/printsettings-service;1";
 
-
-#include "nsPrintPreviewListener.h"
 #include "nsThreadUtils.h"
 
 
@@ -116,6 +114,7 @@ static const char kPrintingPromptService[] =
 #include "mozilla/dom/HTMLFrameElement.h"
 #include "nsContentList.h"
 #include "nsIChannel.h"
+#include "PrintPreviewUserEventSuppressor.h"
 #include "xpcpublic.h"
 #include "nsVariant.h"
 #include "mozilla/ServoStyleSet.h"
@@ -571,8 +570,8 @@ nsresult nsPrintJob::Cancelled() {
 
 
 
-void nsPrintJob::InstallPrintPreviewListener() {
-  if (!mPrt->mPPEventListeners) {
+void nsPrintJob::SuppressPrintPreviewUserEvents() {
+  if (!mPrt->mPPEventSuppressor) {
     nsCOMPtr<nsIDocShell> docShell = do_QueryReferent(mContainer);
     if (!docShell) {
       return;
@@ -580,8 +579,7 @@ void nsPrintJob::InstallPrintPreviewListener() {
 
     if (nsPIDOMWindowOuter* win = docShell->GetWindow()) {
       nsCOMPtr<EventTarget> target = win->GetFrameElementInternal();
-      mPrt->mPPEventListeners = new nsPrintPreviewListener(target);
-      mPrt->mPPEventListeners->AddListeners();
+      mPrt->mPPEventSuppressor = new PrintPreviewUserEventSuppressor(target);
     }
   }
 }
@@ -1007,7 +1005,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     TurnScriptingOn(false);
 
     if (!notifyOnInit) {
-      InstallPrintPreviewListener();
+      SuppressPrintPreviewUserEvents();
       rv = InitPrintDocConstruction(false);
     } else {
       rv = NS_OK;
