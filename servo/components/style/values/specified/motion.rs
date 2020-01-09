@@ -12,6 +12,7 @@ use style_traits::{ParseError, StyleParseErrorKind};
 
 
 
+/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Animate,
     Clone,
@@ -26,6 +27,7 @@ use style_traits::{ParseError, StyleParseErrorKind};
     ToResolvedValue,
     ToShmem,
 )]
+#[repr(C, u8)]
 pub enum OffsetPath {
     
     
