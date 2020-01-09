@@ -6,85 +6,29 @@
 
 "use strict";
 
-const { GeneratedLocation } = require("devtools/server/actors/common");
+const { BreakpointActor } = require("devtools/server/actors/breakpoint");
 
 
 
 
-function BreakpointActorMap() {
-  this._size = 0;
+function BreakpointActorMap(threadActor) {
+  this._threadActor = threadActor;
   this._actors = {};
 }
 
 BreakpointActorMap.prototype = {
   
-
-
-
-
-
-  get size() {
-    return this._size;
+  
+  _locationKey(location) {
+    const { sourceUrl, sourceId, line, column } = location;
+    return `${sourceUrl}:${sourceId}:${line}:${column}`;
   },
 
   
 
 
-
-
-
-
-  findActors: function* (location = new GeneratedLocation()) {
-    
-    
-    
-    if (this.size === 0) {
-      return;
-    }
-
-    function* findKeys(obj, key) {
-      if (key !== undefined) {
-        if (key in obj) {
-          yield key;
-        }
-      } else {
-        for (key of Object.keys(obj)) {
-          yield key;
-        }
-      }
-    }
-
-    const query = {
-      sourceActorID: location.generatedSourceActor
-                     ? location.generatedSourceActor.actorID
-                     : undefined,
-      line: location.generatedLine,
-    };
-
-    
-    
-    
-    if (location.generatedLine) {
-      query.beginColumn = location.generatedColumn ? location.generatedColumn : 0;
-      query.endColumn = location.generatedColumn
-        ? location.generatedColumn + 1
-        : Infinity;
-    } else {
-      query.beginColumn = location.generatedColumn ? query.generatedColumn : undefined;
-      query.endColumn = location.generatedColumn ? query.generatedColumn + 1 : undefined;
-    }
-
-    for (const sourceActorID of findKeys(this._actors, query.sourceActorID)) {
-      const actor = this._actors[sourceActorID];
-      for (const line of findKeys(actor, query.line)) {
-        for (const beginColumn of findKeys(actor[line], query.beginColumn)) {
-          for (const endColumn of findKeys(actor[line][beginColumn],
-               query.endColumn)) {
-            yield actor[line][beginColumn][endColumn];
-          }
-        }
-      }
-    }
+  findActors() {
+    return Object.values(this._actors);
   },
 
   
@@ -97,12 +41,12 @@ BreakpointActorMap.prototype = {
 
 
 
-  getActor: function(generatedLocation) {
-    for (const actor of this.findActors(generatedLocation)) {
-      return actor;
+  getOrCreateBreakpointActor(location) {
+    const key = this._locationKey(location);
+    if (!this._actors[key]) {
+      this._actors[key] = new BreakpointActor(this._threadActor, location);
     }
-
-    return null;
+    return this._actors[key];
   },
 
   
@@ -112,63 +56,9 @@ BreakpointActorMap.prototype = {
 
 
 
-
-
-
-  setActor: function(location, actor) {
-    const { generatedSourceActor, generatedLine, generatedColumn } = location;
-
-    const sourceActorID = generatedSourceActor.actorID;
-    const line = generatedLine;
-    const beginColumn = generatedColumn ? generatedColumn : 0;
-    const endColumn = generatedColumn ? generatedColumn + 1 : Infinity;
-
-    if (!this._actors[sourceActorID]) {
-      this._actors[sourceActorID] = [];
-    }
-    if (!this._actors[sourceActorID][line]) {
-      this._actors[sourceActorID][line] = [];
-    }
-    if (!this._actors[sourceActorID][line][beginColumn]) {
-      this._actors[sourceActorID][line][beginColumn] = [];
-    }
-    if (!this._actors[sourceActorID][line][beginColumn][endColumn]) {
-      ++this._size;
-    }
-    this._actors[sourceActorID][line][beginColumn][endColumn] = actor;
-  },
-
-  
-
-
-
-
-
-
-  deleteActor: function(location) {
-    const { generatedSourceActor, generatedLine, generatedColumn } = location;
-
-    const sourceActorID = generatedSourceActor.actorID;
-    const line = generatedLine;
-    const beginColumn = generatedColumn ? generatedColumn : 0;
-    const endColumn = generatedColumn ? generatedColumn + 1 : Infinity;
-
-    if (this._actors[sourceActorID]) {
-      if (this._actors[sourceActorID][line]) {
-        if (this._actors[sourceActorID][line][beginColumn]) {
-          if (this._actors[sourceActorID][line][beginColumn][endColumn]) {
-            --this._size;
-          }
-          delete this._actors[sourceActorID][line][beginColumn][endColumn];
-          if (Object.keys(this._actors[sourceActorID][line][beginColumn]).length === 0) {
-            delete this._actors[sourceActorID][line][beginColumn];
-          }
-        }
-        if (Object.keys(this._actors[sourceActorID][line]).length === 0) {
-          delete this._actors[sourceActorID][line];
-        }
-      }
-    }
+  deleteActor(location) {
+    const key = this._locationKey(location);
+    delete this._actors[key];
   },
 };
 

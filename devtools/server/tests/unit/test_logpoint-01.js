@@ -34,10 +34,10 @@ function test_simple_breakpoint() {
     );
 
     
-    await source.setBreakpoint({
+    gThreadClient.setBreakpoint({
+      sourceUrl: source.url,
       line: 4,
-      options: { logValue: "a" },
-    });
+    }, { logValue: "a" });
 
     
     gThreadClient.resume();

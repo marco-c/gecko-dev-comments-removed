@@ -7,8 +7,7 @@
 "use strict";
 
 const { Ci } = require("chrome");
-const { BreakpointActor, setBreakpointAtEntryPoints } = require("devtools/server/actors/breakpoint");
-const { GeneratedLocation } = require("devtools/server/actors/common");
+const { setBreakpointAtEntryPoints } = require("devtools/server/actors/breakpoint");
 const { createValueGrip } = require("devtools/server/actors/object/utils");
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
@@ -470,86 +469,21 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-
-
-
-
-
-  setBreakpoint: function(line, column, options) {
-    const location = new GeneratedLocation(this, line, column);
-    const actor = this._getOrCreateBreakpointActor(
-      location,
-      options
-    );
-
-    return {
-      actor: actor.actorID,
-      isPending: actor.isPending,
-    };
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _getOrCreateBreakpointActor: function(generatedLocation, options) {
-    let actor = this.breakpointActorMap.getActor(generatedLocation);
-    if (!actor) {
-      actor = new BreakpointActor(this.threadActor, generatedLocation);
-      this.threadActor.threadLifetimePool.addActor(actor);
-      this.breakpointActorMap.setActor(generatedLocation, actor);
-    }
-
-    actor.setOptions(options);
-
-    this._setBreakpoint(actor);
-    return actor;
-  },
-
-  
-
-
-
-
-
-
-
-
-  _setBreakpoint: function(actor) {
-    const { generatedLocation } = actor;
-
-    const {
-      generatedSourceActor,
-      generatedLine,
-      generatedColumn,
-      generatedLastColumn,
-    } = generatedLocation;
+  applyBreakpoint: function(actor) {
+    const { line, column } = actor.location;
 
     
     
-    let scripts = generatedSourceActor._findDebuggeeScripts(
-      { line: generatedLine }
-    );
-
+    let scripts = this._findDebuggeeScripts({ line });
     scripts = scripts.filter((script) => !actor.hasScript(script));
 
     
     const entryPoints = [];
-    if (generatedColumn === undefined) {
+    if (column === undefined) {
       
       
       for (const script of scripts) {
-        const offsets = script.getLineOffsets(generatedLine);
+        const offsets = script.getLineOffsets(line);
         if (offsets.length > 0) {
           entryPoints.push({ script, offsets });
         }
@@ -561,15 +495,15 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
         [
           script,
           script.getAllColumnOffsets()
-            .filter(({ lineNumber }) => lineNumber === generatedLine),
+            .filter(({ lineNumber }) => lineNumber === line),
         ]
       );
 
       
       
       for (const [script, columnToOffsetMap] of columnToOffsetMaps) {
-        for (const { columnNumber: column, offset } of columnToOffsetMap) {
-          if (column >= generatedColumn && column <= generatedLastColumn) {
+        for (const { columnNumber, offset } of columnToOffsetMap) {
+          if (columnNumber >= column && columnNumber <= column + 1) {
             entryPoints.push({ script, offsets: [offset] });
           }
         }
@@ -584,8 +518,8 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
         
         const closestScripts = findClosestScriptBySource(
           columnToOffsetMaps.map(pair => pair[0]),
-          generatedLine,
-          generatedColumn,
+          line,
+          column,
         );
 
         const columnToOffsetLookup = new Map(columnToOffsetMaps);
@@ -596,11 +530,11 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
             const firstColumnOffset = columnToOffsetMap[0];
             const lastColumnOffset = columnToOffsetMap[columnToOffsetMap.length - 1];
 
-            if (generatedColumn < firstColumnOffset.columnNumber) {
+            if (column < firstColumnOffset.columnNumber) {
               entryPoints.push({ script, offsets: [firstColumnOffset.offset] });
             }
 
-            if (generatedColumn > lastColumnOffset.columnNumber) {
+            if (column > lastColumnOffset.columnNumber) {
               entryPoints.push({ script, offsets: [lastColumnOffset.offset] });
             }
           }

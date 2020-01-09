@@ -5,6 +5,13 @@
 
 
 
+
+const { PromiseTestUtils } = scopedCuImport(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
+PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_NOT_INITIALIZED/);
+
+
 function clickGutter(dbg, line) {
   clickElement(dbg, "gutter", line);
 }

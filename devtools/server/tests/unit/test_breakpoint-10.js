@@ -16,40 +16,36 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
         threadClient,
         packet.frame.where.actor
       );
-      const location = { line: debuggee.line0 + 3 };
+      const location = { sourceUrl: source.url, line: debuggee.line0 + 3 };
 
-      source.setBreakpoint(location).then(function([response, bpClient]) {
+      threadClient.setBreakpoint(location, {});
+
+      threadClient.addOneTimeListener("paused", function(event, packet) {
         
-        Assert.equal(response.actualLocation, undefined);
+        Assert.equal(packet.type, "paused");
+        Assert.equal(packet.why.type, "breakpoint");
+        
+        Assert.equal(debuggee.i, 0);
 
         threadClient.addOneTimeListener("paused", function(event, packet) {
           
           Assert.equal(packet.type, "paused");
           Assert.equal(packet.why.type, "breakpoint");
-          Assert.equal(packet.why.actors[0], bpClient.actor);
           
-          Assert.equal(debuggee.i, 0);
-
-          threadClient.addOneTimeListener("paused", function(event, packet) {
-            
-            Assert.equal(packet.type, "paused");
-            Assert.equal(packet.why.type, "breakpoint");
-            Assert.equal(packet.why.actors[0], bpClient.actor);
-            
-            Assert.equal(debuggee.i, 1);
-
-            
-            bpClient.remove(function(response) {
-              threadClient.resume(resolve);
-            });
-          });
+          Assert.equal(debuggee.i, 1);
 
           
-          threadClient.resume();
+          threadClient.removeBreakpoint(location);
+
+          threadClient.resume(resolve);
         });
+
         
         threadClient.resume();
       });
+
+      
+      threadClient.resume();
     });
 
     

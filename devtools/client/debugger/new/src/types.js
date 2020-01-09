@@ -90,6 +90,17 @@ export type PendingLocation = {
   +sourceUrl?: string
 };
 
+
+
+
+
+export type BreakpointLocation = {
+  +line: number,
+  +column?: number,
+  +sourceUrl?: string,
+  +sourceId?: SourceId
+};
+
 export type ASTLocation = {|
   +name: ?string,
   +offset: PartialPosition,

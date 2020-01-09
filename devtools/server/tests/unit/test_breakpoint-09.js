@@ -16,35 +16,33 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
         threadClient,
         packet.frame.where.actor
       );
-      const location = { line: debuggee.line0 + 2 };
+      const location = { sourceUrl: source.url, line: debuggee.line0 + 2 };
 
-      source.setBreakpoint(location).then(function([response, bpClient]) {
-        threadClient.addOneTimeListener("paused", function(event, packet) {
-          
-          Assert.equal(packet.type, "paused");
-          Assert.equal(packet.frame.where.actor, source.actor);
-          Assert.equal(packet.frame.where.line, location.line);
-          Assert.equal(packet.why.type, "breakpoint");
-          Assert.equal(packet.why.actors[0], bpClient.actor);
-          
-          Assert.equal(debuggee.a, undefined);
-
-          
-          bpClient.remove(function(response) {
-            done = true;
-            threadClient.addOneTimeListener("paused",
-                                             function(event, packet) {
-              
-                                               threadClient.resume(function() {
-                                                 Assert.ok(false);
-                                               });
-                                             });
-            threadClient.resume();
-          });
-        });
+      threadClient.setBreakpoint(location, {});
+      threadClient.addOneTimeListener("paused", function(event, packet) {
         
+        Assert.equal(packet.type, "paused");
+        Assert.equal(packet.frame.where.actor, source.actor);
+        Assert.equal(packet.frame.where.line, location.line);
+        Assert.equal(packet.why.type, "breakpoint");
+        
+        Assert.equal(debuggee.a, undefined);
+
+        
+        threadClient.removeBreakpoint(location);
+        done = true;
+        threadClient.addOneTimeListener("paused",
+                                        function(event, packet) {
+              
+                                          threadClient.resume(function() {
+                                            Assert.ok(false);
+                                          });
+                                        });
         threadClient.resume();
       });
+
+      
+      threadClient.resume();
     });
 
     

@@ -35,7 +35,12 @@ add_task(async function() {
 
   openFirstBreakpointContextMenu(dbg);
   
-  let dispatched = waitForDispatch(dbg, "DISABLE_BREAKPOINT", 3);
+  
+  
+  
+  
+  
+  let dispatched = waitForDispatch(dbg, "DISABLE_BREAKPOINT",  1);
   selectContextMenuItem(dbg, selectors.breakpointContextMenu.disableOthers);
   await waitForState(dbg, state =>
     dbg.selectors.getBreakpointsList(state)

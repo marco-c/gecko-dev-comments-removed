@@ -32,25 +32,23 @@ function test_simple_breakpoint() {
       gThreadClient,
       packet.frame.where.actor
     );
-    source.setBreakpoint({
-      line: 3,
-      options: { condition: "throw new Error()" },
-    }).then(function([response, bpClient]) {
-      gThreadClient.addOneTimeListener("paused", function(event, packet) {
-        
-        Assert.equal(packet.why.type, "breakpointConditionThrown");
-        Assert.equal(packet.frame.where.line, 3);
-
-        
-        bpClient.remove(function(response) {
-          gThreadClient.resume(function() {
-            finishClient(gClient);
-          });
-        });
-      });
+    const location = { sourceUrl: source.url, line: 3 };
+    gThreadClient.setBreakpoint(location, { condition: "throw new Error()" });
+    gThreadClient.addOneTimeListener("paused", function(event, packet) {
       
-      gThreadClient.resume();
+      Assert.equal(packet.why.type, "breakpointConditionThrown");
+      Assert.equal(packet.frame.where.line, 3);
+
+      
+      gThreadClient.removeBreakpoint(location);
+
+      gThreadClient.resume(function() {
+        finishClient(gClient);
+      });
     });
+
+    
+    gThreadClient.resume();
   });
 
   

@@ -8,9 +8,6 @@
 
 "use strict";
 
-const { ActorClassWithSpec } = require("devtools/shared/protocol");
-const { breakpointSpec } = require("devtools/shared/specs/breakpoint");
-
 
 
 
@@ -33,27 +30,18 @@ exports.setBreakpointAtEntryPoints = setBreakpointAtEntryPoints;
 
 
 
-const BreakpointActor = ActorClassWithSpec(breakpointSpec, {
+
+function BreakpointActor(threadActor, location) {
   
-
-
-
-
-
-
-
-  initialize: function(threadActor, generatedLocation) {
-    
-    
-    this.scripts = new Map();
-
-    this.threadActor = threadActor;
-    this.generatedLocation = generatedLocation;
-    this.options = null;
-    this.isPending = true;
-  },
-
   
+  this.scripts = new Map();
+
+  this.threadActor = threadActor;
+  this.location = location;
+  this.options = null;
+}
+
+BreakpointActor.prototype = {
   setOptions(options) {
     for (const [script, offsets] of this.scripts) {
       this._updateOptionsForScript(script, offsets, this.options, options);
@@ -85,7 +73,6 @@ const BreakpointActor = ActorClassWithSpec(breakpointSpec, {
       script.setBreakpoint(offset, this);
     }
 
-    this.isPending = false;
     this._updateOptionsForScript(script, offsets, null, this.options);
   },
 
@@ -241,18 +228,13 @@ const BreakpointActor = ActorClassWithSpec(breakpointSpec, {
     return this.threadActor._pauseAndRespond(frame, reason);
   },
 
-  
-
-
   delete: function() {
     
-    if (this.generatedLocation) {
-      this.threadActor.breakpointActorMap.deleteActor(this.generatedLocation);
-    }
+    this.threadActor.breakpointActorMap.deleteActor(this.location);
     this.threadActor.threadLifetimePool.removeActor(this);
     
     this.removeScripts();
   },
-});
+};
 
 exports.BreakpointActor = BreakpointActor;
