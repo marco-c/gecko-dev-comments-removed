@@ -155,8 +155,7 @@ nsXBLBinding* nsXBLBinding::GetBindingWithContent() {
 }
 
 void nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
-                                        nsIContent* aElement,
-                                        bool aChromeOnlyContent) {
+                                        nsIContent* aElement) {
   
   
   
@@ -172,10 +171,6 @@ void nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
   for (nsIContent* child = aAnonParent->GetFirstChild(); child;
        child = child->GetNextSibling()) {
     child->UnbindFromTree();
-    if (aChromeOnlyContent) {
-      child->SetFlags(NODE_CHROME_ONLY_ACCESS |
-                      NODE_IS_ROOT_OF_CHROME_ONLY_ACCESS);
-    }
     child->SetFlags(NODE_IS_ANONYMOUS_ROOT);
     nsresult rv = child->BindToTree(doc, aElement, mBoundElement);
     if (NS_FAILED(rv)) {
@@ -277,8 +272,7 @@ void nsXBLBinding::GenerateAnonymousContent() {
 
     
     
-    BindAnonymousContent(mContent, mBoundElement,
-                         mPrototypeBinding->ChromeOnlyContent());
+    BindAnonymousContent(mContent, mBoundElement);
 
     
     if (mDefaultInsertionPoint && mInsertionPoints.IsEmpty()) {

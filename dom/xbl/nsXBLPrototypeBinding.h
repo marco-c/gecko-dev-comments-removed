@@ -184,8 +184,6 @@ class nsXBLPrototypeBinding final
 
 
 
-
-
  public:
   static nsresult ReadNewBinding(nsIObjectInputStream* aStream,
                                  nsXBLDocumentInfo* aDocInfo,
@@ -274,7 +272,6 @@ class nsXBLPrototypeBinding final
                                         nsIContent* aCopyRoot,
                                         mozilla::dom::Element* aTemplChild);
 
-  bool ChromeOnlyContent() const { return mChromeOnlyContent; }
   bool SimpleScopeChain() const { return mSimpleScopeChain; }
   bool BindToUntrustedContent() const { return mBindToUntrustedContent; }
 
@@ -314,11 +311,13 @@ class nsXBLPrototypeBinding final
 
   
   mozilla::WeakPtr<nsXBLPrototypeBinding> mBaseBinding;
+  
   bool mInheritStyle;
   bool mCheckedBaseProto;
   bool mKeyHandlersRegistered;
-  bool mChromeOnlyContent;
+  
   bool mBindToUntrustedContent;
+  
   
   
   bool mSimpleScopeChain;
