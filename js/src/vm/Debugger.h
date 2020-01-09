@@ -1152,11 +1152,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-
   static void resultToCompletion(JSContext* cx, bool ok, const Value& rv,
                                  ResumeMode* resumeMode,
-                                 MutableHandleValue value,
-                                 MutableHandleSavedFrame exnStack);
+                                 MutableHandleValue value);
 
   
 
@@ -1164,9 +1162,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-
   MOZ_MUST_USE bool newCompletionValue(JSContext* cx, ResumeMode resumeMode,
-                                       const Value& value, SavedFrame* exnStack,
+                                       const Value& value,
                                        MutableHandleValue result);
 
   
@@ -1414,8 +1411,7 @@ struct OnPopHandler : Handler {
 
 
   virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame,
-                     ResumeMode& resumeMode, MutableHandleValue vp,
-                     HandleSavedFrame exnStack) = 0;
+                     ResumeMode& resumeMode, MutableHandleValue vp) = 0;
 };
 
 class ScriptedOnPopHandler final : public OnPopHandler {
@@ -1425,8 +1421,7 @@ class ScriptedOnPopHandler final : public OnPopHandler {
   virtual void drop() override;
   virtual void trace(JSTracer* tracer) override;
   virtual bool onPop(JSContext* cx, HandleDebuggerFrame frame,
-                     ResumeMode& resumeMode, MutableHandleValue vp,
-                     HandleSavedFrame exnStack) override;
+                     ResumeMode& resumeMode, MutableHandleValue vp) override;
 
  private:
   HeapPtr<JSObject*> object_;
@@ -1439,6 +1434,14 @@ class DebuggerFrame : public NativeObject {
 
  public:
   static const Class class_;
+
+  enum {
+    OWNER_SLOT = 0,
+    ARGUMENTS_SLOT,
+    ONSTEP_HANDLER_SLOT,
+    ONPOP_HANDLER_SLOT,
+    RESERVED_SLOTS,
+  };
 
   static NativeObject* initClass(JSContext* cx, HandleObject dbgCtor,
                                  Handle<GlobalObject*> global);
@@ -1477,8 +1480,7 @@ class DebuggerFrame : public NativeObject {
                                 HandleObject bindings,
                                 const EvalOptions& options,
                                 ResumeMode& resumeMode,
-                                MutableHandleValue value,
-                                MutableHandleSavedFrame exnStack);
+                                MutableHandleValue value);
 
   bool isLive() const;
   OnStepHandler* onStepHandler() const;
@@ -1649,8 +1651,7 @@ class DebuggerObject : public NativeObject {
                                            HandleObject bindings,
                                            const EvalOptions& options,
                                            ResumeMode& resumeMode,
-                                           MutableHandleValue value,
-                                           MutableHandleSavedFrame exnStack);
+                                           MutableHandleValue value);
   static MOZ_MUST_USE bool makeDebuggeeValue(JSContext* cx,
                                              HandleDebuggerObject object,
                                              HandleValue value,
