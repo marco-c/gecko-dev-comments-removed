@@ -244,6 +244,7 @@ pub struct ClipNodeRange {
 
 
 
+
 #[derive(Debug, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 enum ClipSpaceConversion {
@@ -1342,6 +1343,9 @@ fn add_clip_node_to_current_chain(
 
     
     
+    
+    
+    
     let conversion = if spatial_node_index == node.spatial_node_index {
         ClipSpaceConversion::Local
     } else if ref_spatial_node.coordinate_system_id == clip_spatial_node.coordinate_system_id {
@@ -1353,7 +1357,7 @@ fn add_clip_node_to_current_chain(
         ClipSpaceConversion::Transform(
             clip_scroll_tree
                 .get_world_transform(node.spatial_node_index)
-                .flattened
+                .into_transform()
         )
     };
 
