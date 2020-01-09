@@ -4,6 +4,11 @@
 "use strict";
 
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/helpers/context.js",
+  this);
+
+
 
 function debuggerIsPaused(dbg) {
   return !!dbg.selectors.getIsPaused(dbg.selectors.getCurrentThread());
