@@ -212,36 +212,15 @@ class SearchConfigTest {
 
 
 
-
-  _enginesMatch(engines, identifier) {
-    if (identifier == "amazon") {
-      return !!engines.find(engine => engine.startsWith(identifier));
-    }
-    return engines.includes(identifier);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
   _assertEngineRules(engines, region, locale, section) {
     const infoString = `region: "${region}" locale: "${locale}"`;
     const config = this._config[section];
     const hasIncluded = "included" in config;
     const hasExcluded = "excluded" in config;
-    const identifierIncluded = this._enginesMatch(engines, this._config.identifier);
 
     
     if (section == "default" && !hasIncluded && !hasExcluded) {
-      Assert.ok(!identifierIncluded,
+      Assert.ok(!engines.includes(this._config.identifier),
         `Should not be ${section} for any locale/region,
          currently set for ${infoString}`);
       return;
@@ -256,10 +235,12 @@ class SearchConfigTest {
      !this._localeRegionInSection(config.excluded, region, locale));
 
     if (included || notExcluded) {
-      Assert.ok(identifierIncluded, `Should be ${section} for ${infoString}`);
+      Assert.ok(engines.includes(this._config.identifier),
+        `Should be ${section} for ${infoString}`);
       return;
     }
-    Assert.ok(!identifierIncluded, `Should not be ${section} for ${infoString}`);
+    Assert.ok(!engines.includes(this._config.identifier),
+      `Should not be ${section} for ${infoString}`);
   }
 
   
