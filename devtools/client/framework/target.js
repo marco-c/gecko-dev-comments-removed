@@ -531,9 +531,6 @@ class Target extends EventEmitter {
 
 
 
-
-
-
   attach() {
     if (this._attach) {
       return this._attach;
@@ -571,18 +568,6 @@ class Target extends EventEmitter {
     };
 
     this._attach = (async () => {
-      if (this.form.isWebExtension &&
-          this.client.mainRoot.traits.webExtensionAddonConnect) {
-        
-        
-        
-        
-        
-        
-        
-        this.activeTab = await this.activeTab.connect();
-      }
-
       
       
       

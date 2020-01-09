@@ -56,10 +56,21 @@ class AddonTargetFront extends FrontClassWithSpec(addonTargetSpec) {
 
 
   async connect() {
-    const { form } = await super.connect();
-    const front = new BrowsingContextTargetFront(this.client, form);
-    this.manage(front);
-    return front;
+    if (this.isWebExtension &&
+        this.client.mainRoot.traits.webExtensionAddonConnect) {
+      
+      
+      
+      
+      
+      
+      
+      const { form } = await super.connect();
+      const front = new BrowsingContextTargetFront(this.client, form);
+      this.manage(front);
+      return front;
+    }
+    return this;
   }
 
   async attach() {
