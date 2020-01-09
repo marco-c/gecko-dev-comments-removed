@@ -497,6 +497,15 @@ var gMainPane = {
                          gMainPane.updateWritePrefs);
       }
 
+      if (AppConstants.platform == "win") {
+        
+        
+        
+        let updateContainer = document.getElementById("updateSettingsContainer");
+        updateContainer.classList.add("updateSettingCrossUserWarningContainer");
+        document.getElementById("updateSettingCrossUserWarning").hidden = false;
+      }
+
       if (AppConstants.MOZ_MAINTENANCE_SERVICE) {
         
         
