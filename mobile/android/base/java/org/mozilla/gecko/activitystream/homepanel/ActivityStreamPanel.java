@@ -192,12 +192,15 @@ public class ActivityStreamPanel extends FrameLayout {
         @Override
         public Loader<Cursor> onCreateLoader(int id, Bundle args) {
             final int topSitesPerPage = TopSitesPage.NUM_COLUMNS * TopSitesPage.NUM_ROWS;
+            
+            
+            final int limitMultiplier = 3;
 
             final Context context = getContext();
             return BrowserDB.from(context).getActivityStreamTopSites(
                     context,
-                    topSitesPerPage * TopSitesPagerAdapter.SUGGESTED_SITES_MAX_PAGES,
-                    topSitesPerPage * TopSitesPagerAdapter.PAGES);
+                    topSitesPerPage * TopSitesPagerAdapter.SUGGESTED_SITES_MAX_PAGES * limitMultiplier,
+                    topSitesPerPage * TopSitesPagerAdapter.PAGES * limitMultiplier);
         }
 
         @Override
