@@ -8,11 +8,6 @@ import { correctIndentation } from "./indentation";
 import type { Expression } from "../types";
 
 
-export function sanitizeInput(input: string) {
-  return input.replace(/"/g, '"');
-}
-
-
 
 
 
@@ -21,7 +16,7 @@ export function sanitizeInput(input: string) {
 export function wrapExpression(input: string) {
   return correctIndentation(`
     try {
-      ${sanitizeInput(input)}
+      ${input}
     } catch (e) {
       e
     }
