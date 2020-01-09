@@ -406,8 +406,6 @@ class nsTextFrame : public nsFrame {
     DrawPathCallbacks* callbacks = nullptr;
     enum {
       PaintText,         
-      PaintTextBGColor,  
-                         
       GenerateTextMask   
                          
                          
@@ -418,7 +416,6 @@ class nsTextFrame : public nsFrame {
 
     bool IsPaintText() const { return state == PaintText; }
     bool IsGenerateTextMask() const { return state == GenerateTextMask; }
-    bool IsPaintBGColor() const { return state == PaintTextBGColor; }
   };
 
   struct PaintTextSelectionParams : PaintTextParams {

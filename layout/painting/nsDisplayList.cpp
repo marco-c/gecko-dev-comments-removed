@@ -742,16 +742,10 @@ static uint64_t AddAnimationsForWebRender(
 static bool GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
                                     const nsRect& aFillRect,
                                     nsDisplayListBuilder* aBuilder) {
-  if (aBuilder->IsForGenerateGlyphMask() ||
-      aBuilder->IsForPaintingSelectionBG()) {
+  if (aBuilder->IsForGenerateGlyphMask()) {
     return false;
   }
 
-  
-  
-  
-  
-  
   
   
   
@@ -761,18 +755,6 @@ static bool GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
   gfxContext* sourceCtx = aContext;
   LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(
       aFillRect, aFrame->PresContext()->AppUnitsPerDevPixel());
-
-  {
-    
-    gfxContextMatrixAutoSaveRestore save(sourceCtx);
-    sourceCtx->SetMatrix(sourceCtx->CurrentMatrix().PreTranslate(
-        bounds.TopLeft().ToUnknownPoint()));
-
-    nsLayoutUtils::PaintFrame(
-        aContext, aFrame, nsRect(nsPoint(0, 0), aFrame->GetSize()),
-        NS_RGB(255, 255, 255),
-        nsDisplayListBuilderMode::PAINTING_SELECTION_BACKGROUND);
-  }
 
   
   IntRect drawRect =
@@ -7933,8 +7915,7 @@ bool nsDisplayTransform::UpdateScrollData(
 bool nsDisplayTransform::ShouldSkipTransform(
     nsDisplayListBuilder* aBuilder) const {
   return (aBuilder->RootReferenceFrame() == mFrame) &&
-         (aBuilder->IsForGenerateGlyphMask() ||
-          aBuilder->IsForPaintingSelectionBG());
+         aBuilder->IsForGenerateGlyphMask();
 }
 
 already_AddRefed<Layer> nsDisplayTransform::BuildLayer(
