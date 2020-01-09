@@ -200,18 +200,17 @@ void HeadlessWidget::Show(bool aState) {
 
 bool HeadlessWidget::IsVisible() const { return mVisible; }
 
-nsresult HeadlessWidget::SetFocus(bool aRaise) {
-  LOGFOCUS(("  SetFocus %d [%p]\n", aRaise, (void*)this));
+void HeadlessWidget::SetFocus(Raise aRaise) {
+  LOGFOCUS(("  SetFocus %d [%p]\n", aRaise == Raise::Yes, (void*)this));
 
   
-  if (aRaise) {
+  if (aRaise == Raise::Yes) {
     HeadlessWidget* topLevel = (HeadlessWidget*)GetTopLevelWidget();
 
     
     
     if (topLevel->IsVisible()) topLevel->RaiseWindow();
   }
-  return NS_OK;
 }
 
 void HeadlessWidget::Enable(bool aState) { mEnabled = aState; }
