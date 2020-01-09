@@ -33,6 +33,9 @@ pref("dom.push.enabled", false);
 pref("dom.storageManager.enabled", true);
 
 
+pref("dom.visualviewport.enabled", true);
+
+
 pref("layout.scroll.root-frame-containers", 0);
 
 
