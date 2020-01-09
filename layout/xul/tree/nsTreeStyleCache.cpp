@@ -76,11 +76,6 @@ ComputedStyle* nsTreeStyleCache::GetComputedStyle(
 
     
     
-    
-    newResult->StartImageLoads(*aPresContext->Document());
-
-    
-    
     if (!mCache) {
       mCache = new ComputedStyleCache();
     }
