@@ -4097,7 +4097,19 @@ nsresult HTMLMediaElement::BindToTree(Document* aDocument, nsIContent* aParent,
   if (IsInComposedDoc()) {
     
     AttachAndSetUAShadowRoot();
+#ifdef ANDROID
     NotifyUAWidgetSetupOrChange();
+#else
+    
+    
+    
+    
+    
+    
+    if (Controls()) {
+      NotifyUAWidgetSetupOrChange();
+    }
+#endif
   }
 
   mUnboundFromTree = false;

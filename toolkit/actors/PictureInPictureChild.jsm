@@ -7,17 +7,25 @@
 var EXPORTED_SYMBOLS = ["PictureInPictureChild", "PictureInPictureToggleChild"];
 
 const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "DeferredTask",
   "resource://gre/modules/DeferredTask.jsm");
+ChromeUtils.defineModuleGetter(this, "DOMLocalization",
+  "resource://gre/modules/DOMLocalization.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["InspectorUtils"]);
-
+const TOGGLE_STYLESHEET = "chrome://global/skin/pictureinpicture/toggle.css";
+const TOGGLE_ID = "picture-in-picture-toggle";
+const FLYOUT_TOGGLE_ID = "picture-in-picture-flyout-toggle";
+const FLYOUT_TOGGLE_CONTAINER = "picture-in-picture-flyout-container";
 const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
+const FLYOUT_ENABLED_PREF =
+  "media.videocontrols.picture-in-picture.video-toggle.flyout-enabled";
+const FLYOUT_WAIT_MS_PREF =
+  "media.videocontrols.picture-in-picture.video-toggle.flyout-wait-ms";
+const FLYOUT_ANIMATION_RUNTIME_MS = 400;
 const MOUSEMOVE_PROCESSING_DELAY_MS = 50;
 
 
@@ -26,6 +34,15 @@ var gWeakVideo = null;
 
 
 var gWeakPlayerContent = null;
+
+
+var gFlyoutLabelPromise = null;
+
+
+var gToggleWidth = 0;
+
+
+
 
 
 
@@ -42,6 +59,12 @@ class PictureInPictureToggleChild extends ActorChild {
     
     this.weakDocStates = new WeakMap();
     this.toggleEnabled = Services.prefs.getBoolPref(TOGGLE_ENABLED_PREF);
+    this.flyoutEnabled = Services.prefs.getBoolPref(FLYOUT_ENABLED_PREF);
+    this.flyoutWaitMs = Services.prefs.getIntPref(FLYOUT_WAIT_MS_PREF);
+
+    this.l10n = new DOMLocalization([
+      "toolkit/global/videocontrols.ftl",
+    ]);
   }
 
   
@@ -61,12 +84,18 @@ class PictureInPictureToggleChild extends ActorChild {
         weakVisibleVideos: new WeakSet(),
         
         
-        visibleVideosCount: 0,
+        visibleVideos: 0,
         
         
         mousemoveDeferredTask: null,
         
         weakOverVideo: null,
+        
+        
+        pipToggle: null,
+        
+        
+        flyoutToggle: null,
       };
       this.weakDocStates.set(this.content.document, state);
     }
@@ -79,14 +108,30 @@ class PictureInPictureToggleChild extends ActorChild {
       case "canplay": {
         if (this.toggleEnabled &&
             event.target instanceof this.content.HTMLVideoElement &&
-            !event.target.controls &&
             event.target.ownerDocument == this.content.document) {
           this.registerVideo(event.target);
         }
         break;
       }
-      case "mousedown": {
-        this.onMouseDown(event);
+      case "click": {
+        let state = this.docState;
+        let clickedFlyout = state.flyoutToggle &&
+          state.flyoutToggle.getTargetIdForEvent(event) == FLYOUT_TOGGLE_ID;
+        let clickedToggle = state.pipToggle &&
+          state.pipToggle.getTargetIdForEvent(event) == TOGGLE_ID;
+
+        if (clickedFlyout || clickedToggle) {
+          let video = state.weakOverVideo && state.weakOverVideo.get();
+          if (video) {
+            let pipEvent =
+              new this.content.CustomEvent("MozTogglePictureInPicture", {
+                bubbles: true,
+              });
+            video.dispatchEvent(pipEvent);
+            this.hideFlyout();
+            this.onMouseLeaveVideo(video);
+          }
+        }
         break;
       }
       case "mousemove": {
@@ -107,7 +152,7 @@ class PictureInPictureToggleChild extends ActorChild {
     if (!state.intersectionObserver) {
       let fn = this.onIntersection.bind(this);
       state.intersectionObserver = new this.content.IntersectionObserver(fn, {
-        threshold: [0.0, 0.5],
+        threshold: [0.0, 1.0],
       });
     }
 
@@ -126,7 +171,13 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
   worthTracking(intersectionEntry) {
-    return intersectionEntry.isIntersecting;
+    let video = intersectionEntry.target;
+    let rect = video.ownerGlobal.windowUtils.getBoundsWithoutFlushing(video);
+    let intRect = intersectionEntry.intersectionRect;
+
+    return intersectionEntry.isIntersecting &&
+           rect.width == intRect.width &&
+           rect.height == intRect.height;
   }
 
   
@@ -143,25 +194,33 @@ class PictureInPictureToggleChild extends ActorChild {
     
     
     let state = this.docState;
-    let oldVisibleVideosCount = state.visibleVideosCount;
+    let oldVisibleVideos = state.visibleVideos;
     for (let entry of entries) {
       let video = entry.target;
       if (this.worthTracking(entry)) {
         if (!state.weakVisibleVideos.has(video)) {
           state.weakVisibleVideos.add(video);
-          state.visibleVideosCount++;
+          state.visibleVideos++;
+
+          
+          
+          if (this.flyoutEnabled) {
+            this.content.requestIdleCallback(() => {
+              this.maybeShowFlyout(video);
+            });
+          }
         }
       } else if (state.weakVisibleVideos.has(video)) {
         state.weakVisibleVideos.delete(video);
-        state.visibleVideosCount--;
+        state.visibleVideos--;
       }
     }
 
-    if (!oldVisibleVideosCount && state.visibleVideosCount) {
+    if (!oldVisibleVideos && state.visibleVideos) {
       this.content.requestIdleCallback(() => {
         this.beginTrackingMouseOverVideos();
       });
-    } else if (oldVisibleVideosCount && !state.visibleVideosCount) {
+    } else if (oldVisibleVideos && !state.visibleVideos) {
       this.content.requestIdleCallback(() => {
         this.stopTrackingMouseOverVideos();
       });
@@ -189,12 +248,9 @@ class PictureInPictureToggleChild extends ActorChild {
       }, MOUSEMOVE_PROCESSING_DELAY_MS);
     }
     this.content.document.addEventListener("mousemove", this,
-                                           { mozSystemGroup: true, capture: true });
-    
-    
-    
-    this.content.document.addEventListener("mousedown", this,
-                                           { capture: true });
+                                           { mozSystemGroup: true });
+    this.content.document.addEventListener("click", this,
+                                           { mozSystemGroup: true });
   }
 
   
@@ -206,62 +262,12 @@ class PictureInPictureToggleChild extends ActorChild {
     let state = this.docState;
     state.mousemoveDeferredTask.disarm();
     this.content.document.removeEventListener("mousemove", this,
-                                              { mozSystemGroup: true, capture: true });
-    this.content.document.removeEventListener("mousedown", this,
-                                              { capture: true });
+                                              { mozSystemGroup: true });
+    this.content.document.removeEventListener("click", this,
+                                              { mozSystemGroup: true });
     let oldOverVideo = state.weakOverVideo && state.weakOverVideo.get();
     if (oldOverVideo) {
       this.onMouseLeaveVideo(oldOverVideo);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  onMouseDown(event) {
-    let state = this.docState;
-    let video = state.weakOverVideo && state.weakOverVideo.get();
-    if (!video) {
-      return;
-    }
-
-    let shadowRoot = video.openOrClosedShadowRoot;
-    if (!shadowRoot) {
-      return;
-    }
-
-    let { clientX, clientY } = event;
-    let winUtils = this.content.windowUtils;
-    
-    
-    
-    
-    
-    
-    
-    let elements = winUtils.nodesFromRect(clientX, clientY, 1, 1, 1, 1, true,
-                                          false, true );
-    if (!Array.from(elements).includes(video)) {
-      return;
-    }
-
-    let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
-    if (this.isMouseOverToggle(toggle, event)) {
-      event.preventDefault();
-      event.stopPropagation();
-      let pipEvent =
-        new this.content.CustomEvent("MozTogglePictureInPicture", {
-          bubbles: true,
-        });
-      video.dispatchEvent(pipEvent);
     }
   }
 
@@ -292,12 +298,12 @@ class PictureInPictureToggleChild extends ActorChild {
     
     
     let elements = winUtils.nodesFromRect(clientX, clientY, 1, 1, 1, 1, true,
-                                          false, false);
+                                          false);
 
     for (let element of elements) {
       if (state.weakVisibleVideos.has(element) &&
           !element.isCloningElementVisually) {
-        this.onMouseOverVideo(element, event);
+        this.onMouseOverVideo(element);
         return;
       }
     }
@@ -314,62 +320,15 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
 
-  onMouseOverVideo(video, event) {
+  onMouseOverVideo(video) {
     let state = this.docState;
     let oldOverVideo = state.weakOverVideo && state.weakOverVideo.get();
-    let shadowRoot = video.openOrClosedShadowRoot;
-
-    
-    
-    
-    if (!shadowRoot) {
-      if (oldOverVideo) {
-        
-        
-        this.onMouseLeaveVideo(oldOverVideo);
-      }
-
+    if (oldOverVideo && oldOverVideo == video) {
       return;
     }
 
-    let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
-
-    if (oldOverVideo) {
-      if (oldOverVideo == video) {
-        
-        
-        this.checkHoverToggle(toggle, event);
-        return;
-      }
-
-      
-      
-      this.onMouseLeaveVideo(oldOverVideo);
-    }
-
     state.weakOverVideo = Cu.getWeakReference(video);
-    let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
-    InspectorUtils.addPseudoClassLock(controlsOverlay, ":hover");
-
-    
-    
-    this.checkHoverToggle(toggle, event);
-  }
-
-  
-
-
-
-
-
-
-
-  checkHoverToggle(toggle, event) {
-    if (this.isMouseOverToggle(toggle, event)) {
-      InspectorUtils.addPseudoClassLock(toggle, ":hover");
-    } else {
-      InspectorUtils.removePseudoClassLock(toggle, ":hover");
-    }
+    this.moveToggleToVideo(video);
   }
 
   
@@ -380,16 +339,8 @@ class PictureInPictureToggleChild extends ActorChild {
 
   onMouseLeaveVideo(video) {
     let state = this.docState;
-    let shadowRoot = video.openOrClosedShadowRoot;
-
-    if (shadowRoot) {
-      let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
-      let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
-      InspectorUtils.removePseudoClassLock(controlsOverlay, ":hover");
-      InspectorUtils.removePseudoClassLock(toggle, ":hover");
-    }
-
     state.weakOverVideo = null;
+    state.pipToggle.setAttributeForElement(TOGGLE_ID, "hidden", "true");
   }
 
   
@@ -401,14 +352,190 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
 
-  isMouseOverToggle(toggle, event) {
-    let toggleRect =
-      toggle.ownerGlobal.windowUtils.getBoundsWithoutFlushing(toggle);
-    let { clientX, clientY } = event;
-    return clientX >= toggleRect.left &&
-           clientX <= toggleRect.right &&
-           clientY >= toggleRect.top &&
-           clientY <= toggleRect.bottom;
+
+
+
+
+
+
+
+
+  calculateTogglePosition(video, anonymousContent, toggleID) {
+    let winUtils = this.content.windowUtils;
+
+    let scrollX = {}, scrollY = {};
+    winUtils.getScrollXY(false, scrollX, scrollY);
+
+    let rect = winUtils.getBoundsWithoutFlushing(video);
+
+    
+    
+    
+    if (!gToggleWidth) {
+      let widthStr = anonymousContent.getComputedStylePropertyValue(toggleID,
+        "--pip-toggle-icon-width-height");
+      let paddingStr = anonymousContent.getComputedStylePropertyValue(toggleID,
+        "--pip-toggle-padding");
+      let iconWidth = parseInt(widthStr, 0);
+      let iconPadding = parseInt(paddingStr, 0);
+      gToggleWidth = iconWidth + (2 * iconPadding);
+    }
+
+    let originY = rect.top + scrollY.value;
+    let originX = rect.left + scrollX.value;
+
+    let top = originY + (rect.height / 2 - Math.round(gToggleWidth / 2));
+    let left = originX + (rect.width - gToggleWidth);
+
+    return { top, left, width: gToggleWidth };
+  }
+
+  
+
+
+
+
+  moveToggleToVideo(video) {
+    let state = this.docState;
+    let winUtils = this.content.windowUtils;
+
+    if (!state.pipToggle) {
+      try {
+        winUtils.loadSheetUsingURIString(TOGGLE_STYLESHEET,
+                                         winUtils.AGENT_SHEET);
+      } catch (e) {
+        
+        
+        if (e.result != Cr.NS_ERROR_INVALID_ARG) {
+          throw e;
+        }
+      }
+      let toggle = this.content.document.createElement("button");
+      toggle.classList.add("picture-in-picture-toggle-button");
+      toggle.id = TOGGLE_ID;
+      let icon = this.content.document.createElement("div");
+      icon.classList.add("icon");
+      toggle.appendChild(icon);
+
+      state.pipToggle = this.content.document.insertAnonymousContent(toggle);
+    }
+
+    let { top, left } = this.calculateTogglePosition(video, state.pipToggle,
+                                                     TOGGLE_ID);
+
+    let styles = `
+      top: ${top}px;
+      left: ${left}px;
+    `;
+
+    let toggle = state.pipToggle;
+    toggle.setAttributeForElement(TOGGLE_ID, "style", styles);
+    
+    toggle.removeAttributeForElement(TOGGLE_ID, "hidden");
+  }
+
+  
+
+
+
+
+
+  get flyoutLabel() {
+    if (gFlyoutLabelPromise) {
+      return gFlyoutLabelPromise;
+    }
+
+    gFlyoutLabelPromise =
+      this.l10n.formatValue("picture-in-picture-flyout-toggle");
+    return gFlyoutLabelPromise;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async maybeShowFlyout(video) {
+    let state = this.docState;
+
+    if (state.flyoutToggle) {
+      return;
+    }
+
+    let winUtils = this.content.windowUtils;
+
+    try {
+      winUtils.loadSheetUsingURIString(TOGGLE_STYLESHEET, winUtils.AGENT_SHEET);
+    } catch (e) {
+      
+      
+      if (e.result != Cr.NS_ERROR_INVALID_ARG) {
+        throw e;
+      }
+    }
+
+    let container = this.content.document.createElement("div");
+    container.id = FLYOUT_TOGGLE_CONTAINER;
+
+    let toggle = this.content.document.createElement("button");
+    toggle.classList.add("picture-in-picture-toggle-button");
+    toggle.id = FLYOUT_TOGGLE_ID;
+
+    let icon = this.content.document.createElement("div");
+    icon.classList.add("icon");
+    toggle.appendChild(icon);
+
+    let label = this.content.document.createElement("span");
+    label.classList.add("label");
+    label.textContent = await this.flyoutLabel;
+    toggle.appendChild(label);
+    container.appendChild(toggle);
+    state.flyoutToggle =
+      this.content.document.insertAnonymousContent(container);
+
+    let { top, left, width } =
+      this.calculateTogglePosition(video, state.flyoutToggle, FLYOUT_TOGGLE_ID);
+
+    let styles = `
+      top: ${top}px;
+      left: ${left}px;
+    `;
+
+    let flyout = state.flyoutToggle;
+    flyout.setAttributeForElement(FLYOUT_TOGGLE_CONTAINER, "style", styles);
+    let flyoutAnim = flyout.setAnimationForElement(FLYOUT_TOGGLE_ID, [
+      { transform: `translateX(calc(100% - ${width}px))`, opacity: "0.2" },
+      { transform: `translateX(calc(100% - ${width}px))`, opacity: "0.8" },
+      { transform: "translateX(0)", opacity: "1" },
+    ], FLYOUT_ANIMATION_RUNTIME_MS);
+
+    await flyoutAnim.finished;
+
+    await new Promise(resolve => this.content.setTimeout(resolve,
+                                                         this.flyoutWaitMs));
+
+    flyoutAnim.reverse();
+    await flyoutAnim.finished;
+
+    this.hideFlyout();
+  }
+
+  
+
+
+
+  hideFlyout() {
+    let state = this.docState;
+    let flyout = state.flyoutToggle;
+    if (flyout) {
+      flyout.setAttributeForElement(FLYOUT_TOGGLE_CONTAINER, "hidden", "true");
+    }
   }
 }
 
