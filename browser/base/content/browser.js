@@ -191,9 +191,6 @@ XPCOMUtils.defineLazyGetter(this, "gURLBar", () => {
   }
 
   
-  element.setAttribute("quantumbar", "true");
-
-  
   if (element.hasAttribute("focused")) {
     element.inputField.focus();
   }
