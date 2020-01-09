@@ -157,7 +157,8 @@ PDMFactory::PDMFactory() {
 
 PDMFactory::~PDMFactory() {}
 
-void PDMFactory::EnsureInit() const {
+
+void PDMFactory::EnsureInit() {
   {
     StaticMutexAutoLock mon(sMonitor);
     if (sInstance) {

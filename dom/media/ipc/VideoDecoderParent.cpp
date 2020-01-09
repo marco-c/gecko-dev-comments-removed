@@ -11,6 +11,7 @@
 #include "mozilla/layers/VideoBridgeChild.h"
 #include "mozilla/layers/ImageClient.h"
 #include "MediaInfo.h"
+#include "PDMFactory.h"
 #include "VideoDecoderManagerParent.h"
 #ifdef XP_WIN
 #  include "WMFDecoderModule.h"
@@ -65,8 +66,10 @@ VideoDecoderParent::VideoDecoderParent(
   using OptionSet = CreateDecoderParams::OptionSet;
 
   
+  PDMFactory::EnsureInit();
+
   
-  WMFDecoderModule::Init();
+  
   RefPtr<WMFDecoderModule> pdm(new WMFDecoderModule());
   pdm->Startup();
 
