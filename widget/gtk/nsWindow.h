@@ -433,6 +433,9 @@ class nsWindow final : public nsBaseWidget {
   bool mIsDragPopup;
   
   bool mIsX11Display;
+#ifdef MOZ_WAYLAND
+  bool mNeedsUpdatingEGLSurface;
+#endif
 
  private:
   void DestroyChildWindows();
