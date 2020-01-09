@@ -417,6 +417,8 @@ void TabParent::Destroy() {
   
   mBrowserDOMWindow = nullptr;
 
+  mBrowserBridgeParent = nullptr;
+
   if (mIsDestroyed) {
     return;
   }
