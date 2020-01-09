@@ -72,7 +72,10 @@ function closeGlobalTab() {
 
 var gTabsProgressListener = {
   onLocationChange(aBrowser, aWebProgress, aRequest, aLocation, aFlags) {
-    if (!gTab || gTab.linkedBrowser != aBrowser) {
+    
+    
+    
+    if (!gTab || gTab.linkedBrowser != aBrowser || aLocation.spec == "about:blank") {
       return;
     }
 
