@@ -38,14 +38,15 @@ var gMockPrompter = {
   
   promptPassword(dialogTitle, text, password, checkMsg, checkValue) {
     this.numPrompts++;
-    if (this.numPrompts > 1) { 
-      return false;
-    }
     equal(text,
           "Please enter your master password.",
           "password prompt text should be as expected");
     equal(checkMsg, null, "checkMsg should be null");
     ok(this.passwordToTry, "passwordToTry should be non-null");
+    if (this.passwordToTry == "DontTryThisPassword") {
+      
+      return false;
+    }
     password.value = this.passwordToTry;
     return true;
   },
@@ -134,6 +135,31 @@ add_task(async function() {
     gMockPrompter.passwordToTry = "hunter2";
     await encrypt_decrypt_test();
     ok(gMockPrompter.numPrompts == 1, "There should've been one password prompt.");
+    await delete_all_secrets();
+  }
+
+  
+  
+  
+  if (keystore.isNSSKeyStore) {
+    await delete_all_secrets();
+    await encrypt_decrypt_test();
+    await keystore.asyncLock();
+    info("Keystore should be locked. Cancel the login request.");
+    try {
+      if (keystore.isNSSKeyStore) {
+        gMockPrompter.passwordToTry = "DontTryThisPassword";
+      }
+      await keystore.asyncUnlock();
+      ok(false, "Unlock should've rejected.");
+    } catch (e) {
+      ok(e.result == Cr.NS_ERROR_FAILURE || e.result == Cr.NS_ERROR_ABORT,
+         "Rejected login prompt.");
+    }
+    
+    if (keystore.isNSSKeyStore) {
+      gMockPrompter.passwordToTry = "hunter2";
+    }
     await delete_all_secrets();
   }
 });

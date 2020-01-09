@@ -140,18 +140,6 @@ var OSKeyStore = {
       }
     });
 
-    if (nativeOSKeyStore.isNSSKeyStore) {
-      
-      unlockPromise = unlockPromise.then(() => {
-        log.debug("ensureLoggedIn: isNSSKeyStore: ", reauth, Services.logins.isLoggedIn);
-        
-        
-        if (!Services.logins.isLoggedIn) {
-          throw Components.Exception("User canceled OS unlock entry (Workaround)", Cr.NS_ERROR_FAILURE);
-        }
-      });
-    }
-
     unlockPromise = unlockPromise.then(() => {
       log.debug("ensureLoggedIn: Logged in");
       this._pendingUnlockPromise = null;
