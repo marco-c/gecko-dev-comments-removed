@@ -3,9 +3,6 @@
 
 
 
-
-
-
 add_task(async () => {
   gIsDefaultApp = true;
   let defaultProfile = makeRandomProfileDir("default");

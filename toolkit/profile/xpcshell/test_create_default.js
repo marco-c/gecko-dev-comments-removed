@@ -2,9 +2,6 @@
 
 
 
-
-
-
 add_task(async () => {
   let service = getProfileService();
   let { profile, didCreate } = selectStartupProfile();
