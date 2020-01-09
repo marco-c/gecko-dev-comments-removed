@@ -134,8 +134,8 @@ class nsColumnSetFrame final : public nsContainerFrame {
   };
 
   
-
-
+  
+  
   struct ColumnBalanceData {
     
     nscoord mMaxBSize = 0;
@@ -155,16 +155,22 @@ class nsColumnSetFrame final : public nsContainerFrame {
     
     bool mHasExcessBSize = false;
 
-    void Reset() {
-      mMaxBSize = mSumBSize = mLastBSize = mMaxOverflowingBSize = 0;
-      mHasExcessBSize = false;
-    }
+    
+    
+    bool mFeasible = false;
   };
 
-  bool ReflowColumns(ReflowOutput& aDesiredSize,
-                     const ReflowInput& aReflowInput,
-                     nsReflowStatus& aReflowStatus, ReflowConfig& aConfig,
-                     bool aLastColumnUnbounded, ColumnBalanceData& aColData);
+  ColumnBalanceData ReflowColumns(ReflowOutput& aDesiredSize,
+                                  const ReflowInput& aReflowInput,
+                                  nsReflowStatus& aReflowStatus,
+                                  ReflowConfig& aConfig,
+                                  bool aUnboundedLastColumn);
+
+  ColumnBalanceData ReflowChildren(ReflowOutput& aDesiredSize,
+                                   const ReflowInput& aReflowInput,
+                                   nsReflowStatus& aStatus,
+                                   const ReflowConfig& aConfig,
+                                   bool aUnboundedLastColumn);
 
   
 
@@ -196,23 +202,11 @@ class nsColumnSetFrame final : public nsContainerFrame {
 
 
 
-
-
-
   void FindBestBalanceBSize(const ReflowInput& aReflowInput,
                             nsPresContext* aPresContext, ReflowConfig& aConfig,
-                            ColumnBalanceData& aColData,
+                            ColumnBalanceData aColData,
                             ReflowOutput& aDesiredSize,
-                            bool aUnboundedLastColumn, bool aRunWasFeasible,
-                            nsReflowStatus& aStatus);
-  
-
-
-
-  bool ReflowChildren(ReflowOutput& aDesiredSize,
-                      const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
-                      const ReflowConfig& aConfig, bool aLastColumnUnbounded,
-                      ColumnBalanceData& aColData);
+                            bool aUnboundedLastColumn, nsReflowStatus& aStatus);
 
   void ForEachColumnRule(
       const std::function<void(const nsRect& lineRect)>& aSetLineRect,
