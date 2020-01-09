@@ -36,7 +36,6 @@ class nsIFrame;
 class nsPresContext;
 class nsStyleSVGPaint;
 class nsSVGDisplayContainerFrame;
-class nsSVGLength2;
 class nsSVGOuterSVGFrame;
 class nsTextFrame;
 
@@ -45,6 +44,7 @@ struct nsRect;
 
 namespace mozilla {
 class SVGAnimatedEnumeration;
+class SVGAnimatedLength;
 class SVGContextPaint;
 struct SVGContextPaintImpl;
 class SVGGeometryFrame;
@@ -160,6 +160,7 @@ class nsSVGUtils {
   typedef mozilla::gfx::FillRule FillRule;
   typedef mozilla::gfx::GeneralPattern GeneralPattern;
   typedef mozilla::gfx::Size Size;
+  typedef mozilla::SVGAnimatedLength SVGAnimatedLength;
   typedef mozilla::SVGContextPaint SVGContextPaint;
   typedef mozilla::SVGContextPaintImpl SVGContextPaintImpl;
   typedef mozilla::SVGGeometryFrame SVGGeometryFrame;
@@ -225,16 +226,18 @@ class nsSVGUtils {
 
 
 
-  static float ObjectSpace(const gfxRect& aRect, const nsSVGLength2* aLength);
+  static float ObjectSpace(const gfxRect& aRect,
+                           const SVGAnimatedLength* aLength);
 
   
 
 
 
-  static float UserSpace(SVGElement* aSVGElement, const nsSVGLength2* aLength);
-  static float UserSpace(nsIFrame* aFrame, const nsSVGLength2* aLength);
+  static float UserSpace(SVGElement* aSVGElement,
+                         const SVGAnimatedLength* aLength);
+  static float UserSpace(nsIFrame* aFrame, const SVGAnimatedLength* aLength);
   static float UserSpace(const mozilla::dom::UserSpaceMetrics& aMetrics,
-                         const nsSVGLength2* aLength);
+                         const SVGAnimatedLength* aLength);
 
   
   static nsSVGOuterSVGFrame* GetOuterSVGFrame(nsIFrame* aFrame);
@@ -272,6 +275,17 @@ class nsSVGUtils {
 
 
   static gfxMatrix GetCanvasTM(nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+
+
+  static gfxMatrix GetUserToCanvasTM(nsIFrame* aFrame);
 
   
 
@@ -410,11 +424,13 @@ class nsSVGUtils {
 
 
 
-  static gfxRect GetRelativeRect(uint16_t aUnits, const nsSVGLength2* aXYWH,
+
+  static gfxRect GetRelativeRect(uint16_t aUnits,
+                                 const SVGAnimatedLength* aXYWH,
                                  const gfxRect& aBBox, nsIFrame* aFrame);
 
   static gfxRect GetRelativeRect(
-      uint16_t aUnits, const nsSVGLength2* aXYWH, const gfxRect& aBBox,
+      uint16_t aUnits, const SVGAnimatedLength* aXYWH, const gfxRect& aBBox,
       const mozilla::dom::UserSpaceMetrics& aMetrics);
 
   
