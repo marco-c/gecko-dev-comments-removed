@@ -47,6 +47,11 @@ diff_description_schema = Schema({
 
     
     Optional('fail-on-diff'): bool,
+
+    
+    
+    
+    Optional('unpack'): bool,
 })
 
 transforms = TransformSequence()
@@ -139,8 +144,9 @@ def fill_template(config, tasks):
             },
             'run': {
                 'using': 'run-task',
-                'checkout': False,
-                'command': '/builds/worker/bin/get_and_diffoscope{}'.format(
+                'checkout': task.get('unpack', False),
+                'command': '/builds/worker/bin/get_and_diffoscope{}{}'.format(
+                    ' --unpack' if task.get('unpack') else '',
                     ' --fail' if task.get('fail-on-diff') else '',
                 ),
             },
