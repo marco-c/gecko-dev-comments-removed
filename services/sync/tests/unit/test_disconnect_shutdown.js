@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const {SyncDisconnect, SyncDisconnectInternal} = ChromeUtils.import("resource://services-sync/SyncDisconnect.jsm", null);

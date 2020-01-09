@@ -14,20 +14,12 @@ const CryptoHash = Components.Constructor("@mozilla.org/security/hash;1",
 const FileInputStream = Components.Constructor("@mozilla.org/network/file-input-stream;1",
                                                "nsIFileInputStream", "init");
 
-
-
-
-Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
+const {sinon} = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 
 sinon.assert.fail = function(message) {
   ok(false, message);
 };
-
-registerCleanupFunction(async function() {
-  
-  delete window.sinon;
-});
 
 
 TelemetryEvents.init();
