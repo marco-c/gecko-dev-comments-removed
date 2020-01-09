@@ -137,6 +137,10 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableSink, true);
 
   
+  
+  SET_DEFAULT(disableOptimizationLevels, false);
+
+  
   SET_DEFAULT(forceInlineCaches, false);
 
   

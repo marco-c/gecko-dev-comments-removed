@@ -7656,10 +7656,13 @@ void IonBuilder::insertRecompileCheck() {
   MOZ_ASSERT(pc == script()->code() || *pc == JSOP_LOOPENTRY);
 
   
+  
   OptimizationLevel curLevel = optimizationLevel();
-  if (IonOptimizations.isLastLevel(curLevel)) {
+  if (IonOptimizations.isLastLevel(curLevel) || info().isAnalysis()) {
     return;
   }
+
+  MOZ_ASSERT(!JitOptions.disableOptimizationLevels);
 
   
   
