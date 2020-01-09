@@ -21,8 +21,8 @@ class DataTransferItemList final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DataTransferItemList);
 
-  DataTransferItemList(DataTransfer* aDataTransfer, bool aIsExternal)
-      : mDataTransfer(aDataTransfer), mIsExternal(aIsExternal) {
+  explicit DataTransferItemList(DataTransfer* aDataTransfer)
+      : mDataTransfer(aDataTransfer) {
     MOZ_ASSERT(aDataTransfer);
     
     
@@ -93,7 +93,6 @@ class DataTransferItemList final : public nsISupports, public nsWrapperCache {
   ~DataTransferItemList() {}
 
   RefPtr<DataTransfer> mDataTransfer;
-  bool mIsExternal;
   RefPtr<FileList> mFiles;
   
   nsCOMPtr<nsIPrincipal> mFilesPrincipal;

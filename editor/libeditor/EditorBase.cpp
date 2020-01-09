@@ -4925,9 +4925,7 @@ void EditorBase::AutoEditActionDataSetter::InitializeDataTransfer(
   Document* document = mEditorBase.GetDocument();
   nsIGlobalObject* scopeObject =
       document ? document->GetScopeObject() : nullptr;
-  
-  mDataTransfer =
-      new DataTransfer(scopeObject, ePaste, true , 1);
+  mDataTransfer = new DataTransfer(scopeObject, eEditorInput, aTransferable);
 }
 
 void EditorBase::AutoEditActionDataSetter::InitializeDataTransfer(
@@ -4935,9 +4933,7 @@ void EditorBase::AutoEditActionDataSetter::InitializeDataTransfer(
   Document* document = mEditorBase.GetDocument();
   nsIGlobalObject* scopeObject =
       document ? document->GetScopeObject() : nullptr;
-  
-  mDataTransfer =
-      new DataTransfer(scopeObject, ePaste, true , 1);
+  mDataTransfer = new DataTransfer(scopeObject, eEditorInput, aString);
 }
 
 void EditorBase::AutoEditActionDataSetter::InitializeDataTransferWithClipboard(
@@ -4945,6 +4941,9 @@ void EditorBase::AutoEditActionDataSetter::InitializeDataTransferWithClipboard(
   Document* document = mEditorBase.GetDocument();
   nsIGlobalObject* scopeObject =
       document ? document->GetScopeObject() : nullptr;
+  
+  
+  
   mDataTransfer =
       new DataTransfer(scopeObject,
                        aSettingDataTransfer == SettingDataTransfer::eWithFormat

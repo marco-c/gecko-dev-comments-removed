@@ -12,6 +12,7 @@
 #include "nsIVariant.h"
 #include "nsIPrincipal.h"
 #include "nsIDragService.h"
+#include "nsITransferable.h"
 #include "nsCycleCollectionParticipant.h"
 
 #include "mozilla/ArrayUtils.h"
@@ -93,8 +94,13 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   
   
   
+  
   DataTransfer(nsISupports* aParent, EventMessage aEventMessage,
                bool aIsExternal, int32_t aClipboardType);
+  DataTransfer(nsISupports* aParent, EventMessage aEventMessage,
+               nsITransferable* aTransferable);
+  DataTransfer(nsISupports* aParent, EventMessage aEventMessage,
+               const nsAString& aString);
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
@@ -288,6 +294,7 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   
   bool IsProtected() const { return mMode == Mode::Protected; }
 
+  nsITransferable* GetTransferable() const { return mTransferable; }
   int32_t ClipboardType() const { return mClipboardType; }
   EventMessage GetEventMessage() const { return mEventMessage; }
   bool IsCrossDomainSubFrameDrop() const { return mIsCrossDomainSubFrameDrop; }
@@ -377,6 +384,14 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   
   
   
+  static void GetExternalTransferableFormats(nsITransferable* aTransferable,
+                                             bool aPlainTextOnly,
+                                             nsTArray<nsCString>* aResult);
+
+  
+  
+  
+  
   static bool MozAtAPIsEnabled(JSContext* cx, JSObject* obj);
 
  protected:
@@ -391,6 +406,13 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
 
   
   void CacheExternalClipboardFormats(bool aPlainTextOnly);
+
+  
+  void CacheTransferableFormats();
+
+  
+  void CacheExternalData(const nsTArray<nsCString>& aTypes,
+                         nsIPrincipal* aPrincipal);
 
   FileList* GetFilesInternal(ErrorResult& aRv, nsIPrincipal* aSubjectPrincipal);
   nsresult GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
@@ -415,6 +437,11 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
                             mozilla::ErrorResult& aRv);
 
   nsCOMPtr<nsISupports> mParent;
+
+  
+  
+  
+  nsCOMPtr<nsITransferable> mTransferable;
 
   
   uint32_t mDropEffect;
