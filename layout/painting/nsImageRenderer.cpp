@@ -101,7 +101,10 @@ static bool ShouldTreatAsCompleteDueToSyncDecode(const nsStyleImage* aImage,
 }
 
 bool nsImageRenderer::PrepareImage() {
-  if (mImage->IsEmpty()) {
+  if (mImage->IsEmpty() ||
+      (mType == eStyleImageType_Image && !mImage->GetImageData())) {
+    
+    
     mPrepareResult = ImgDrawResult::BAD_IMAGE;
     return false;
   }
@@ -109,6 +112,14 @@ bool nsImageRenderer::PrepareImage() {
   if (!mImage->IsComplete()) {
     
     bool frameComplete = mImage->StartDecoding();
+
+    
+    if ((mFlags & nsImageRenderer::FLAG_PAINTING_TO_WINDOW) &&
+        mType == eStyleImageType_Image) {
+      MOZ_ASSERT(mImage->GetImageData(),
+                 "must have image data, since we checked above");
+      mImage->GetImageData()->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
+    }
 
     
     
@@ -124,7 +135,7 @@ bool nsImageRenderer::PrepareImage() {
   switch (mType) {
     case eStyleImageType_Image: {
       MOZ_ASSERT(mImage->GetImageData(),
-                 "must have image data, since we checked IsEmpty above");
+                 "must have image data, since we checked above");
       nsCOMPtr<imgIContainer> srcImage;
       DebugOnly<nsresult> rv =
           mImage->GetImageData()->GetImage(getter_AddRefs(srcImage));

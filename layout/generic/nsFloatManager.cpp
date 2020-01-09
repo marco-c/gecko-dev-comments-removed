@@ -2685,6 +2685,12 @@ nsFloatManager::ShapeInfo::CreateImageShape(const nsStyleImage& aShapeImage,
 
   if (!imageRenderer.PrepareImage()) {
     
+    
+    if (aShapeImage.GetType() == eStyleImageType_Image) {
+      if (imgRequestProxy* req = aShapeImage.GetImageData()) {
+        req->BoostPriority(imgIRequest::CATEGORY_SIZE_QUERY);
+      }
+    }
     return nullptr;
   }
 

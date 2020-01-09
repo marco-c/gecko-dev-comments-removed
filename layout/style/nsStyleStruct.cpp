@@ -1898,6 +1898,10 @@ bool nsStyleImageRequest::Resolve(Document& aDocument,
     return false;
   }
 
+  
+  
+  mRequestProxy->BoostPriority(imgIRequest::CATEGORY_FRAME_STYLE);
+
   if (mModeFlags & Mode::Track) {
     mImageTracker = aDocument.ImageTracker();
   }

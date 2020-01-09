@@ -6387,6 +6387,10 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 #endif
 
+  
+  
+  
+
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
   if (GetPrevInFlow()) {

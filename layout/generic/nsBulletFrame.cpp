@@ -142,6 +142,10 @@ void nsBulletFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
       
       mImageRequest = std::move(newRequestClone);
       RegisterImageRequest( false);
+
+      
+      
+      mImageRequest->BoostPriority(imgIRequest::CATEGORY_SIZE_QUERY);
     }
   } else {
     
@@ -665,16 +669,21 @@ Maybe<BulletRenderer> nsBulletFrame::CreateBulletRenderer(
   if (myList->GetListStyleImage() && mImageRequest) {
     uint32_t status;
     mImageRequest->GetImageStatus(&status);
-    if (status & imgIRequest::STATUS_LOAD_COMPLETE &&
-        !(status & imgIRequest::STATUS_ERROR)) {
-      nsCOMPtr<imgIContainer> imageCon;
-      mImageRequest->GetImage(getter_AddRefs(imageCon));
-      if (imageCon) {
-        nsRect dest(padding.left, padding.top,
-                    mRect.width - (padding.left + padding.right),
-                    mRect.height - (padding.top + padding.bottom));
-        BulletRenderer br(imageCon, dest + aPt);
-        return Some(br);
+    if (!(status & imgIRequest::STATUS_ERROR)) {
+      if (status & imgIRequest::STATUS_LOAD_COMPLETE) {
+        nsCOMPtr<imgIContainer> imageCon;
+        mImageRequest->GetImage(getter_AddRefs(imageCon));
+        if (imageCon) {
+          nsRect dest(padding.left, padding.top,
+                      mRect.width - (padding.left + padding.right),
+                      mRect.height - (padding.top + padding.bottom));
+          BulletRenderer br(imageCon, dest + aPt);
+          return Some(br);
+        }
+      } else {
+        
+        
+        mImageRequest->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
       }
     }
   }
