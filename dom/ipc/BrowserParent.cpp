@@ -1047,9 +1047,11 @@ void BrowserParent::Activate() {
   }
 }
 
-void BrowserParent::Deactivate() {
+void BrowserParent::Deactivate(bool aWindowLowering) {
   LOGBROWSERFOCUS(("Deactivate %p", this));
-  PopFocus(this);  
+  if (!aWindowLowering) {
+    PopFocus(this);  
+  }
   if (!mIsDestroyed) {
     Unused << Manager()->SendDeactivate(this);
   }
