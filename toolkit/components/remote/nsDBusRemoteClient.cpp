@@ -77,79 +77,38 @@ nsresult nsDBusRemoteClient::SendCommandLine(
 bool nsDBusRemoteClient::GetRemoteDestinationName(const char *aProgram,
                                                   const char *aProfile,
                                                   nsCString &aDestinationName) {
-  if (!aProfile || aProfile[0] == '\0') {
+  
+  
+  
+  nsAutoCString profileName;
+  nsresult rv = mozilla::Base64Encode(nsAutoCString(aProfile), profileName);
+  NS_ENSURE_SUCCESS(rv, false);
+  profileName.ReplaceChar("+/=", '_');
+
+  aDestinationName =
+      nsPrintfCString("org.mozilla.%s.%s", aProgram, profileName.get());
+  if (aDestinationName.Length() > DBUS_MAXIMUM_NAME_LENGTH)
+    aDestinationName.Truncate(DBUS_MAXIMUM_NAME_LENGTH);
+
+  static auto sDBusValidateBusName =
+      (bool (*)(const char *, DBusError *))dlsym(RTLD_DEFAULT,
+                                                  "dbus_validate_bus_name");
+  if (!sDBusValidateBusName) {
+    return false;
+  }
+
+  if (!sDBusValidateBusName(aDestinationName.get(), nullptr)) {
     
-    RefPtr<DBusMessage> msg =
-        already_AddRefed<DBusMessage>(dbus_message_new_method_call(
-            "org.freedesktop.DBus", "/org/freedesktop/DBus",
-            "org.freedesktop.DBus", "ListNames"));
-    if (!msg) {
-      return false;
-    }
-
-    
-    RefPtr<DBusMessage> reply =
-        already_AddRefed<DBusMessage>(dbus_connection_send_with_reply_and_block(
-            mConnection, msg, -1, nullptr));
-    if (!reply) {
-      return false;
-    }
-
-    char **interfaces;
-    dbus_int32_t interfaceNums;
-    if (!dbus_message_get_args(reply, nullptr, DBUS_TYPE_ARRAY,
-                               DBUS_TYPE_STRING, &interfaces, &interfaceNums,
-                               DBUS_TYPE_INVALID)) {
-      return false;
-    }
-
-    nsAutoCString destinationTemplate;
-    destinationTemplate = nsPrintfCString("org.mozilla.%s", aProgram);
-
-    aDestinationName.SetLength(0);
-    for (int i = 0; i < interfaceNums; i++) {
-      if (strstr(interfaces[i], destinationTemplate.get())) {
-        aDestinationName = interfaces[i];
-        break;
-      }
-    }
-    dbus_free_string_array(interfaces);
-
-    return (!aDestinationName.IsEmpty());
-  } else {
-    
-    
-    
-    nsAutoCString profileName;
-    nsresult rv = mozilla::Base64Encode(nsAutoCString(aProfile), profileName);
-    NS_ENSURE_SUCCESS(rv, false);
-    profileName.ReplaceChar("+/=", '_');
-
     aDestinationName =
-        nsPrintfCString("org.mozilla.%s.%s", aProgram, profileName.get());
-    if (aDestinationName.Length() > DBUS_MAXIMUM_NAME_LENGTH)
-      aDestinationName.Truncate(DBUS_MAXIMUM_NAME_LENGTH);
-
-    static auto sDBusValidateBusName =
-        (bool (*)(const char *, DBusError *))dlsym(RTLD_DEFAULT,
-                                                   "dbus_validate_bus_name");
-    if (!sDBusValidateBusName) {
-      return false;
-    }
-
+        nsPrintfCString("org.mozilla.%s.%s", aProgram, "default");
     if (!sDBusValidateBusName(aDestinationName.get(), nullptr)) {
       
-      aDestinationName =
-          nsPrintfCString("org.mozilla.%s.%s", aProgram, "default");
-      if (!sDBusValidateBusName(aDestinationName.get(), nullptr)) {
-        
-        
-        return false;
-      }
+      
+      return false;
     }
-
-    return true;
   }
+
+  return true;
 }
 
 nsresult nsDBusRemoteClient::DoSendDBusCommandLine(const char *aProgram,

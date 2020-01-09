@@ -3903,20 +3903,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     mRemoteService = new nsRemoteService(gAppData->remotingName);
     if (mRemoteService) {
       mRemoteService->LockStartup();
-
-      
-      
-      const char* desktopStartupIDPtr =
-          mDesktopStartupID.IsEmpty() ? nullptr : mDesktopStartupID.get();
-
-      RemoteResult rr = mRemoteService->StartClient(desktopStartupIDPtr);
-      if (rr == REMOTE_FOUND) {
-        *aExitFlag = true;
-        return 0;
-      }
-      if (rr == REMOTE_ARG_BAD) {
-        return 1;
-      }
     }
   }
 #endif
@@ -4039,6 +4025,40 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     ProfileMissingDialog(mNativeApp);
     return 1;
   }
+
+#if defined(MOZ_WIDGET_GTK)
+  if (mRemoteService) {
+    
+    nsCString profileName;
+    if (profile) {
+      rv = profile->GetName(profileName);
+    }
+    if (!profile || NS_FAILED(rv) || profileName.IsEmpty()) {
+      
+      nsString leafName;
+      rv = mProfD->GetLeafName(leafName);
+      if (NS_SUCCEEDED(rv)) {
+        profileName = NS_ConvertUTF16toUTF8(leafName);
+      }
+    }
+
+    mRemoteService->SetProfile(profileName);
+
+    
+    
+    const char* desktopStartupIDPtr =
+        mDesktopStartupID.IsEmpty() ? nullptr : mDesktopStartupID.get();
+
+    RemoteResult rr = mRemoteService->StartClient(desktopStartupIDPtr);
+    if (rr == REMOTE_FOUND) {
+      *aExitFlag = true;
+      return 0;
+    }
+    if (rr == REMOTE_ARG_BAD) {
+      return 1;
+    }
+  }
+#endif
 
   
   
@@ -4545,7 +4565,7 @@ nsresult XREMain::XRE_mainRun() {
     
     
     if (mRemoteService) {
-      mRemoteService->StartupServer(mProfileName.get());
+      mRemoteService->StartupServer();
       mRemoteService->UnlockStartup();
     }
 #endif 

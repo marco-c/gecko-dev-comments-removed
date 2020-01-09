@@ -466,21 +466,22 @@ Window nsXRemoteClient::FindBestWindow(const char *aProgram,
     
     
     
-    if (aProfile) {
-      Unused << XGetWindowProperty(
-          mDisplay, w, mMozProfileAtom, 0, (65536 / sizeof(long)), False,
-          XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
+    Unused << XGetWindowProperty(
+        mDisplay, w, mMozProfileAtom, 0, (65536 / sizeof(long)), False,
+        XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
 
+    
+    if (data_return) {
       
-      if (data_return) {
-        
-        if (strcmp(aProfile, (const char *)data_return)) {
-          XFree(data_return);
-          continue;
-        }
-
+      if (strcmp(aProfile, (const char *)data_return)) {
         XFree(data_return);
+        continue;
       }
+
+      XFree(data_return);
+    } else {
+      
+      continue;
     }
 
     
