@@ -13,85 +13,12 @@
 #include "MiddlemanCall.h"
 #include "Monitor.h"
 
+
+
+
 namespace mozilla {
 namespace recordreplay {
-
-
-
-
-
-
-
-
-
-
-namespace navigation {
-
-
-bool IsInitialized();
-
-
-
-js::ExecutionPoint GetRecordingEndpoint();
-
-
-
-
-void SetRecordingEndpoint(size_t aIndex, const js::ExecutionPoint& aEndpoint);
-
-
-void AlwaysSaveTemporaryCheckpoints();
-
-
-void DebuggerRequest(js::CharBuffer* aBuffer);
-void AddBreakpoint(const js::BreakpointPosition& aPosition);
-void ClearBreakpoints();
-void Resume(bool aForward);
-void RestoreCheckpoint(size_t aId);
-void RunToPoint(const js::ExecutionPoint& aPoint);
-
-
-
-
-bool MaybeDivergeFromRecording();
-
-
-void PositionHit(const js::BreakpointPosition& aPosition);
-
-
-js::ExecutionPoint CurrentExecutionPoint(
-    const Maybe<js::BreakpointPosition>& aPosition);
-
-
-
-js::ExecutionPoint TimeWarpTargetExecutionPoint(ProgressCounter aTarget);
-
-
-
-void Repaint(size_t* aWidth, size_t* aHeight);
-
-
-
-void BeforeCheckpoint();
-
-
-
-void AfterCheckpoint(const CheckpointId& aCheckpoint);
-
-
-size_t LastNormalCheckpoint();
-
-
-bool ShouldSendPaintMessage();
-
-}  
-
 namespace child {
-
-
-void RespondToRequest(const js::CharBuffer& aBuffer);
-void HitExecutionPoint(const js::ExecutionPoint& aPoint,
-                       bool aRecordingEndpoint);
 
 
 
@@ -116,17 +43,10 @@ void ReportFatalError(const Maybe<MinidumpInfo>& aMinidumpInfo,
 extern Monitor* gMonitor;
 
 
-void NotifyFlushedRecording();
-
-
-void NotifyAlwaysMarkMajorCheckpoints();
-
-
-void BeginIdleTime();
-void EndIdleTime();
-
-
 bool DebuggerRunsInMiddleman();
+
+
+void ManifestFinished(const js::CharBuffer& aResponse);
 
 
 void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
@@ -138,7 +58,6 @@ void SendResetMiddlemanCalls();
 bool CurrentRepaintCannotFail();
 
 }  
-
 }  
 }  
 

@@ -108,23 +108,12 @@ void FlushRecording();
 void HitEndOfRecording();
 
 
+size_t RecordingEndpoint();
 
-bool HitRecordingEndpoint();
 
 
-enum class Directive {
-  
-  CrashSoon = 1,
-
-  
-  MaybeCrash = 2,
-
-  
-  AlwaysSaveTemporaryCheckpoints = 3,
-
-  
-  AlwaysMarkMajorCheckpoints = 4
-};
+bool IsMainChild();
+void SetMainChild();
 
 
 
@@ -284,7 +273,7 @@ enum class MemoryKind {
   PageCopy,
 
   
-  Navigation,
+  ScriptHits,
 
   Count
 };

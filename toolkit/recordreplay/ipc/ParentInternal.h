@@ -78,11 +78,6 @@ void UpdateGraphicsInUIProcess(const PaintMessage* aMsg);
 
 
 
-void MaybeUpdateGraphicsAtPaint(const PaintMessage& aMsg);
-void MaybeUpdateGraphicsAtCheckpoint(size_t aCheckpointId);
-
-
-
 static const int32_t GraphicsHandshakeMessageId = 42;
 
 
@@ -141,7 +136,7 @@ class ChildProcessInfo {
   bool mHasBegunFatalError;
   bool mHasFatalError;
 
-  void OnIncomingMessage(const Message& aMsg, bool aForwardToControl);
+  void OnIncomingMessage(const Message& aMsg);
 
   static void MaybeProcessPendingMessageRunnable();
   void ReceiveChildMessageOnMainThread(Message::UniquePtr aMsg);
@@ -165,8 +160,7 @@ class ChildProcessInfo {
   
   
   
-  
-  Message::UniquePtr WaitUntilPaused();
+  void WaitUntilPaused();
 
   static void SetIntroductionMessage(IntroductionMessage* aMessage);
 };

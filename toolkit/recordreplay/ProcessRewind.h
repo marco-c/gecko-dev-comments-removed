@@ -80,38 +80,8 @@ namespace recordreplay {
 
 
 
-
-
-
-struct CheckpointId {
-  
-  
-  size_t mNormal;
-
-  
-  static const size_t Invalid = 0;
-  static const size_t First = 1;
-
-  
-  
-  size_t mTemporary;
-
-  explicit CheckpointId(size_t aNormal = Invalid, size_t aTemporary = 0)
-      : mNormal(aNormal), mTemporary(aTemporary) {}
-
-  inline bool operator==(const CheckpointId& o) const {
-    return mNormal == o.mNormal && mTemporary == o.mTemporary;
-  }
-
-  inline bool operator!=(const CheckpointId& o) const {
-    return mNormal != o.mNormal || mTemporary != o.mTemporary;
-  }
-
-  CheckpointId NextCheckpoint(bool aTemporary) const {
-    return CheckpointId(aTemporary ? mNormal : mNormal + 1,
-                        aTemporary ? mTemporary + 1 : 0);
-  }
-};
+static const size_t InvalidCheckpointId = 0;
+static const size_t FirstCheckpointId = 1;
 
 
 void InitializeRewindState();
@@ -134,17 +104,20 @@ bool MainThreadShouldPause();
 void PauseMainThreadAndServiceCallbacks();
 
 
-bool HasSavedCheckpoint();
+bool HasSavedAnyCheckpoint();
 
 
-CheckpointId GetLastSavedCheckpoint();
+bool HasSavedCheckpoint(size_t aCheckpoint);
 
 
-CheckpointId GetLastSavedCheckpointPriorTo(const CheckpointId& aCheckpoint);
+size_t GetLastCheckpoint();
+
+
+size_t GetLastSavedCheckpoint();
 
 
 
-void RestoreCheckpointAndResume(const CheckpointId& aCheckpoint);
+void RestoreCheckpointAndResume(size_t aCheckpoint);
 
 
 
@@ -170,14 +143,9 @@ void DisallowUnhandledDivergeFromRecording();
 void EnsureNotDivergedFromRecording();
 
 
-void SetIsActiveChild(bool aActive);
-bool IsActiveChild();
 
 
-
-
-
-bool NewCheckpoint(bool aTemporary);
+bool NewCheckpoint();
 
 }  
 }  

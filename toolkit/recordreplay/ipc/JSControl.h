@@ -19,7 +19,10 @@ namespace mozilla {
 namespace recordreplay {
 
 struct Message;
-struct HitExecutionPointMessage;
+
+namespace parent {
+  class ChildProcessInfo;
+}
 
 namespace js {
 
@@ -36,167 +39,17 @@ namespace js {
 
 
 
-
-
-
-
-struct BreakpointPosition {
-  
-  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(Kind, (
-    Invalid,
-
-    
-    Break,
-
-    
-    
-    OnStep,
-
-    
-    
-    OnPop,
-
-    
-    EnterFrame,
-
-    
-    NewScript,
-
-    
-    ConsoleMessage,
-
-    
-    WarpTarget
-  ));
-  
-
-  Kind mKind;
-
-  
-  uint32_t mScript;
-  uint32_t mOffset;
-  uint32_t mFrameIndex;
-
-  static const uint32_t EMPTY_SCRIPT = (uint32_t)-1;
-  static const uint32_t EMPTY_OFFSET = (uint32_t)-1;
-  static const uint32_t EMPTY_FRAME_INDEX = (uint32_t)-1;
-
-  BreakpointPosition()
-      : mKind(Invalid),
-        mScript(EMPTY_SCRIPT),
-        mOffset(EMPTY_OFFSET),
-        mFrameIndex(EMPTY_FRAME_INDEX) {}
-
-  explicit BreakpointPosition(Kind aKind, uint32_t aScript = EMPTY_SCRIPT,
-                              uint32_t aOffset = EMPTY_OFFSET,
-                              uint32_t aFrameIndex = EMPTY_FRAME_INDEX)
-      : mKind(aKind),
-        mScript(aScript),
-        mOffset(aOffset),
-        mFrameIndex(aFrameIndex) {}
-
-  bool IsValid() const { return mKind != Invalid; }
-
-  inline bool operator==(const BreakpointPosition& o) const {
-    return mKind == o.mKind && mScript == o.mScript && mOffset == o.mOffset &&
-           mFrameIndex == o.mFrameIndex;
-  }
-
-  inline bool operator!=(const BreakpointPosition& o) const {
-    return !(*this == o);
-  }
-
-  
-  inline bool Subsumes(const BreakpointPosition& o) const {
-    return (*this == o) ||
-           (mKind == OnPop && o.mKind == OnPop && mScript == EMPTY_SCRIPT) ||
-           (mKind == Break && o.mKind == OnStep && mScript == o.mScript &&
-            mOffset == o.mOffset);
-  }
-
-  static const char* StaticKindString(Kind aKind) {
-    switch (aKind) {
-      case Invalid:
-        return "Invalid";
-      case Break:
-        return "Break";
-      case OnStep:
-        return "OnStep";
-      case OnPop:
-        return "OnPop";
-      case EnterFrame:
-        return "EnterFrame";
-      case NewScript:
-        return "NewScript";
-      case ConsoleMessage:
-        return "ConsoleMessage";
-      case WarpTarget:
-        return "WarpTarget";
-    }
-    MOZ_CRASH("Bad BreakpointPosition kind");
-  }
-
-  const char* KindString() const { return StaticKindString(mKind); }
-
-  JSObject* Encode(JSContext* aCx) const;
-  bool Decode(JSContext* aCx, JS::HandleObject aObject);
-  void ToString(nsCString& aStr) const;
-};
-
-
-
-
-struct ExecutionPoint {
-  
-  size_t mCheckpoint;
-
-  
-  
-  
-  ProgressCounter mProgress;
-
-  
-  
-  BreakpointPosition mPosition;
-
-  ExecutionPoint() : mCheckpoint(CheckpointId::Invalid), mProgress(0) {}
-
-  ExecutionPoint(size_t aCheckpoint, ProgressCounter aProgress)
-      : mCheckpoint(aCheckpoint), mProgress(aProgress) {}
-
-  ExecutionPoint(size_t aCheckpoint, ProgressCounter aProgress,
-                 const BreakpointPosition& aPosition)
-      : mCheckpoint(aCheckpoint), mProgress(aProgress), mPosition(aPosition) {
-    
-    
-    MOZ_RELEASE_ASSERT(aPosition.IsValid());
-    MOZ_RELEASE_ASSERT(aPosition.mKind != BreakpointPosition::OnPop ||
-                       aPosition.mScript != BreakpointPosition::EMPTY_SCRIPT);
-    MOZ_RELEASE_ASSERT(aPosition.mKind != BreakpointPosition::Break);
-  }
-
-  bool HasPosition() const { return mPosition.IsValid(); }
-
-  inline bool operator==(const ExecutionPoint& o) const {
-    return mCheckpoint == o.mCheckpoint && mProgress == o.mProgress &&
-           mPosition == o.mPosition;
-  }
-
-  inline bool operator!=(const ExecutionPoint& o) const {
-    return !(*this == o);
-  }
-
-  JSObject* Encode(JSContext* aCx) const;
-  bool Decode(JSContext* aCx, JS::HandleObject aObject);
-  void ToString(nsCString& aStr) const;
-};
-
-
 typedef InfallibleVector<char16_t> CharBuffer;
 
 
 
 void SetupDevtoolsSandbox();
+
+
+bool IsInitialized();
+
+
+void ManifestStart(const CharBuffer& aContents);
 
 
 
@@ -205,8 +58,8 @@ void SetupDevtoolsSandbox();
 void SetupMiddlemanControl(const Maybe<size_t>& aRecordingChildId);
 
 
-void ForwardHitExecutionPointMessage(size_t aId,
-                                     const HitExecutionPointMessage& aMsg);
+void ForwardManifestFinished(parent::ChildProcessInfo* aChild,
+                             const Message& aMsg);
 
 
 void BeforeSaveRecording();
@@ -216,26 +69,19 @@ void AfterSaveRecording();
 
 
 
-void ProcessRequest(const char16_t* aRequest, size_t aRequestLength,
-                    CharBuffer* aResponse);
+
+void BeforeCheckpoint();
 
 
 
 
-void EnsurePositionHandler(const BreakpointPosition& aPosition);
-
-
-void ClearPositionHandlers();
-
-
-void ClearPausedState();
+void AfterCheckpoint(size_t aCheckpoint, bool aRestoredCheckpoint);
 
 
 
-Maybe<BreakpointPosition> GetEntryPosition(const BreakpointPosition& aPosition);
 
-
-void OnDebuggerResponse(const Message& aMsg);
+void BeginIdleTime();
+void EndIdleTime();
 
 }  
 }  

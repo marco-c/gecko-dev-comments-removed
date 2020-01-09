@@ -56,6 +56,9 @@ static int gRecordingPid;
 
 static bool gSpewEnabled;
 
+
+static bool gMainChild;
+
 extern "C" {
 
 MOZ_EXPORT void RecordReplayInterface_Initialize(int aArgc, char* aArgv[]) {
@@ -95,16 +98,20 @@ MOZ_EXPORT void RecordReplayInterface_Initialize(int aArgc, char* aArgv[]) {
       MOZ_CRASH("Bad ProcessKind");
   }
 
-  if (IsRecordingOrReplaying() && TestEnv("WAIT_AT_START")) {
+  if (IsRecording() && TestEnv("MOZ_RECORDING_WAIT_AT_START")) {
     BusyWait();
   }
 
-  if (IsMiddleman() && TestEnv("MIDDLEMAN_WAIT_AT_START")) {
+  if (IsReplaying() && TestEnv("MOZ_REPLAYING_WAIT_AT_START")) {
+    BusyWait();
+  }
+
+  if (IsMiddleman() && TestEnv("MOZ_MIDDLEMAN_WAIT_AT_START")) {
     BusyWait();
   }
 
   gPid = getpid();
-  if (TestEnv("RECORD_REPLAY_SPEW")) {
+  if (TestEnv("MOZ_RECORD_REPLAY_SPEW")) {
     gSpewEnabled = true;
   }
 
@@ -159,6 +166,8 @@ MOZ_EXPORT void RecordReplayInterface_Initialize(int aArgc, char* aArgv[]) {
   InitializeRewindState();
   gRecordingPid = RecordReplayValue(gPid);
 
+  gMainChild = IsRecording();
+
   gInitialized = true;
 }
 
@@ -201,25 +210,18 @@ MOZ_EXPORT void RecordReplayInterface_InternalInvalidateRecording(
 
 }  
 
-
-static size_t gNumEndpoints;
-
 void FlushRecording() {
   MOZ_RELEASE_ASSERT(IsRecording());
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
 
   
-  js::ExecutionPoint endpoint = navigation::GetRecordingEndpoint();
+  
+  size_t endpoint = GetLastCheckpoint();
   Stream* endpointStream = gRecordingFile->OpenStream(StreamName::Main, 0);
-  endpointStream->WriteScalar(++gNumEndpoints);
-  endpointStream->WriteBytes(&endpoint, sizeof(endpoint));
+  endpointStream->WriteScalar(endpoint);
 
   gRecordingFile->PreventStreamWrites();
-
   gRecordingFile->Flush();
-
-  child::NotifyFlushedRecording();
-
   gRecordingFile->AllowStreamWrites();
 }
 
@@ -246,34 +248,6 @@ static bool LoadNextRecordingIndex() {
   return found;
 }
 
-bool HitRecordingEndpoint() {
-  MOZ_RELEASE_ASSERT(IsReplaying());
-  MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
-
-  
-  
-  
-  
-
-  
-  Stream* endpointStream = gRecordingFile->OpenStream(StreamName::Main, 0);
-  if (!endpointStream->AtEnd()) {
-    js::ExecutionPoint endpoint;
-    size_t index = endpointStream->ReadScalar();
-    endpointStream->ReadBytes(&endpoint, sizeof(endpoint));
-    navigation::SetRecordingEndpoint(index, endpoint);
-    return true;
-  }
-
-  
-  if (LoadNextRecordingIndex()) {
-    return true;
-  }
-
-  
-  return false;
-}
-
 void HitEndOfRecording() {
   MOZ_RELEASE_ASSERT(IsReplaying());
   MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough());
@@ -288,6 +262,21 @@ void HitEndOfRecording() {
     
     Thread::Wait();
   }
+}
+
+
+static size_t gRecordingEndpoint;
+
+size_t RecordingEndpoint() {
+  MOZ_RELEASE_ASSERT(IsReplaying());
+  MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough());
+
+  Stream* endpointStream = gRecordingFile->OpenStream(StreamName::Main, 0);
+  while (!endpointStream->AtEnd()) {
+    gRecordingEndpoint = endpointStream->ReadScalar();
+  }
+
+  return gRecordingEndpoint;
 }
 
 bool SpewEnabled() { return gSpewEnabled; }
@@ -314,6 +303,9 @@ const char* ThreadEventName(ThreadEvent aEvent) {
 }
 
 int GetRecordingPid() { return gRecordingPid; }
+
+bool IsMainChild() { return gMainChild; }
+void SetMainChild() { gMainChild = true; }
 
 
 

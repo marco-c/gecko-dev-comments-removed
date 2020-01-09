@@ -77,9 +77,11 @@ static void ChannelMessageHandler(Message::UniquePtr aMsg) {
 
   switch (aMsg->mType) {
     case MessageType::Introduction: {
+      MonitorAutoLock lock(*gMonitor);
       MOZ_RELEASE_ASSERT(!gIntroductionMessage);
       gIntroductionMessage.reset(
           static_cast<IntroductionMessage*>(aMsg.release()));
+      gMonitor->NotifyAll();
       break;
     }
     case MessageType::CreateCheckpoint: {
@@ -87,7 +89,7 @@ static void ChannelMessageHandler(Message::UniquePtr aMsg) {
 
       
       
-      if (navigation::IsInitialized()) {
+      if (js::IsInitialized()) {
         uint8_t data = 0;
         DirectWrite(gCheckpointWriteFd, &data, 1);
       }
@@ -113,66 +115,14 @@ static void ChannelMessageHandler(Message::UniquePtr aMsg) {
       }
       break;
     }
-    case MessageType::SetIsActive: {
-      const SetIsActiveMessage& nmsg = (const SetIsActiveMessage&)*aMsg;
-      PauseMainThreadAndInvokeCallback(
-          [=]() { SetIsActiveChild(nmsg.mActive); });
-      break;
-    }
-    case MessageType::SetAllowIntentionalCrashes: {
-      const SetAllowIntentionalCrashesMessage& nmsg =
-          (const SetAllowIntentionalCrashesMessage&)*aMsg;
-      PauseMainThreadAndInvokeCallback(
-          [=]() { SetAllowIntentionalCrashes(nmsg.mAllowed); });
-      break;
-    }
-    case MessageType::SetSaveCheckpoint: {
-      const SetSaveCheckpointMessage& nmsg =
-          (const SetSaveCheckpointMessage&)*aMsg;
-      PauseMainThreadAndInvokeCallback(
-          [=]() { SetSaveCheckpoint(nmsg.mCheckpoint, nmsg.mSave); });
-      break;
-    }
-    case MessageType::FlushRecording: {
-      PauseMainThreadAndInvokeCallback(FlushRecording);
-      break;
-    }
-    case MessageType::DebuggerRequest: {
-      const DebuggerRequestMessage& nmsg = (const DebuggerRequestMessage&)*aMsg;
+    case MessageType::ManifestStart: {
+      const ManifestStartMessage& nmsg = (const ManifestStartMessage&)*aMsg;
       js::CharBuffer* buf = new js::CharBuffer();
       buf->append(nmsg.Buffer(), nmsg.BufferSize());
-      PauseMainThreadAndInvokeCallback(
-          [=]() { navigation::DebuggerRequest(buf); });
-      break;
-    }
-    case MessageType::AddBreakpoint: {
-      const AddBreakpointMessage& nmsg = (const AddBreakpointMessage&)*aMsg;
-      PauseMainThreadAndInvokeCallback(
-          [=]() { navigation::AddBreakpoint(nmsg.mPosition); });
-      break;
-    }
-    case MessageType::ClearBreakpoints: {
-      PauseMainThreadAndInvokeCallback(
-          [=]() { navigation::ClearBreakpoints(); });
-      break;
-    }
-    case MessageType::Resume: {
-      const ResumeMessage& nmsg = (const ResumeMessage&)*aMsg;
-      PauseMainThreadAndInvokeCallback(
-          [=]() { navigation::Resume(nmsg.mForward); });
-      break;
-    }
-    case MessageType::RestoreCheckpoint: {
-      const RestoreCheckpointMessage& nmsg =
-          (const RestoreCheckpointMessage&)*aMsg;
-      PauseMainThreadAndInvokeCallback(
-          [=]() { navigation::RestoreCheckpoint(nmsg.mCheckpoint); });
-      break;
-    }
-    case MessageType::RunToPoint: {
-      const RunToPointMessage& nmsg = (const RunToPointMessage&)*aMsg;
-      PauseMainThreadAndInvokeCallback(
-          [=]() { navigation::RunToPoint(nmsg.mTarget); });
+      PauseMainThreadAndInvokeCallback([=]() {
+          js::ManifestStart(*buf);
+          delete buf;
+        });
       break;
     }
     case MessageType::MiddlemanCallResponse: {
@@ -201,8 +151,7 @@ static void ListenForCheckpointThreadMain(void*) {
     ssize_t rv = HANDLE_EINTR(read(gCheckpointReadFd, &data, 1));
     if (rv > 0) {
       NS_DispatchToMainThread(NewRunnableFunction("NewCheckpoint",
-                                                  NewCheckpoint,
-                                                   false));
+                                                  NewCheckpoint));
     } else {
       MOZ_RELEASE_ASSERT(errno == EIO);
       MOZ_RELEASE_ASSERT(HasDivergedFromRecording());
@@ -293,13 +242,17 @@ void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv) {
   pt.reset();
 
   
-  
-  HitExecutionPoint(js::ExecutionPoint(),  false);
-
-  
   if (gInitializationFailureMessage) {
     ReportFatalError(Nothing(), "%s", gInitializationFailureMessage);
     Unreachable();
+  }
+
+  
+  {
+    MonitorAutoLock lock(*gMonitor);
+    while (!gIntroductionMessage) {
+      gMonitor->Wait();
+    }
   }
 
   
@@ -344,7 +297,7 @@ bool DebuggerRunsInMiddleman() {
 
 void CreateCheckpoint() {
   if (!HasDivergedFromRecording()) {
-    NewCheckpoint( false);
+    NewCheckpoint();
   }
 }
 
@@ -390,16 +343,6 @@ void ReportFatalError(const Maybe<MinidumpInfo>& aMinidump, const char* aFormat,
 
   
   Thread::WaitForeverNoIdle();
-}
-
-void NotifyFlushedRecording() {
-  gChannel->SendMessage(RecordingFlushedMessage());
-}
-
-void NotifyAlwaysMarkMajorCheckpoints() {
-  if (IsActiveChild()) {
-    gChannel->SendMessage(AlwaysMarkMajorCheckpointsMessage());
-  }
 }
 
 
@@ -543,10 +486,9 @@ static void PaintFromMainThread() {
   
   MOZ_RELEASE_ASSERT(!gNumPendingPaints);
 
-  if (IsActiveChild() && navigation::ShouldSendPaintMessage() &&
-      gDrawTargetBuffer) {
+  if (IsMainChild() && gDrawTargetBuffer) {
     memcpy(gGraphicsShmem, gDrawTargetBuffer, gDrawTargetBufferSize);
-    gChannel->SendMessage(PaintMessage(navigation::LastNormalCheckpoint(),
+    gChannel->SendMessage(PaintMessage(GetLastCheckpoint(),
                                        gPaintWidth, gPaintHeight));
   }
 }
@@ -634,51 +576,14 @@ bool CurrentRepaintCannotFail() {
 
 
 
-
-static double gLastPauseTime;
-
-
-static double gIdleTimeStart;
-
-void BeginIdleTime() {
-  MOZ_RELEASE_ASSERT(IsRecording() && NS_IsMainThread() && !gIdleTimeStart);
-  gIdleTimeStart = CurrentTime();
-}
-
-void EndIdleTime() {
-  MOZ_RELEASE_ASSERT(IsRecording() && NS_IsMainThread() && gIdleTimeStart);
-
-  
-  
-  gLastPauseTime += CurrentTime() - gIdleTimeStart;
-  gIdleTimeStart = 0;
-}
-
-void HitExecutionPoint(const js::ExecutionPoint& aPoint,
-                       bool aRecordingEndpoint) {
+void ManifestFinished(const js::CharBuffer& aBuffer) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  double time = CurrentTime();
+  ManifestFinishedMessage* msg =
+    ManifestFinishedMessage::New(aBuffer.begin(), aBuffer.length());
   PauseMainThreadAndInvokeCallback([=]() {
-    double duration = 0;
-    if (gLastPauseTime) {
-      duration = time - gLastPauseTime;
-      MOZ_RELEASE_ASSERT(duration > 0);
-    }
-    gChannel->SendMessage(
-        HitExecutionPointMessage(aPoint, aRecordingEndpoint, duration));
+    gChannel->SendMessage(std::move(*msg));
+    free(msg);
   });
-  gLastPauseTime = time;
-}
-
-
-
-
-
-void RespondToRequest(const js::CharBuffer& aBuffer) {
-  DebuggerResponseMessage* msg =
-      DebuggerResponseMessage::New(aBuffer.begin(), aBuffer.length());
-  gChannel->SendMessage(std::move(*msg));
-  free(msg);
 }
 
 void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
