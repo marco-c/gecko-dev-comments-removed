@@ -2023,7 +2023,6 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   
   
   TimeUnit intervalsEnd = aIntervals.GetEnd();
-  bool mayBreakLoop = false;
   for (uint32_t i = aStartIndex; i < data.Length(); i++) {
     const RefPtr<MediaRawData> sample = data[i];
     if (aIntervals.ContainsWithStrictEnd(sample->mTime)) {
@@ -2031,14 +2030,12 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
         firstRemovedIndex = Some(i);
       }
       lastRemovedIndex = i;
-      mayBreakLoop = false;
       continue;
     }
-    if (sample->mKeyframe && mayBreakLoop) {
+    if (sample->mTime >= intervalsEnd) {
+      
+      
       break;
-    }
-    if (sample->mTime > intervalsEnd) {
-      mayBreakLoop = true;
     }
   }
 
