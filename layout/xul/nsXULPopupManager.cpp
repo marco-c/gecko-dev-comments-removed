@@ -1284,8 +1284,11 @@ void nsXULPopupManager::FirePopupShowingEvent(nsIContent* aPopup,
   nsPopupType popupType = popupFrame->PopupType();
 
   
-  if (!popupFrame->HasGeneratedChildren()) {
-    popupFrame->SetGeneratedChildren();
+  const bool generateFrames = popupFrame->IsLeaf();
+  MOZ_ASSERT_IF(generateFrames, !popupFrame->HasGeneratedChildren());
+  popupFrame->SetGeneratedChildren();
+  if (generateFrames) {
+    MOZ_ASSERT(popupFrame->PrincipalChildList().IsEmpty());
     presShell->FrameConstructor()->GenerateChildFrames(popupFrame);
   }
 
