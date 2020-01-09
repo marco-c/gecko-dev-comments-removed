@@ -13,6 +13,8 @@ var {
   getWinUtils,
 } = ExtensionUtils;
 
+const ICONS = Services.prefs.getStringPref("extensions.webextensions.themes.icons.buttons", "").split(",");
+
 const onUpdatedEmitter = new EventEmitter();
 
 
@@ -45,12 +47,10 @@ class Theme {
     if (startupData && startupData.lwtData) {
       Object.assign(this, startupData);
     } else {
-      
-      this.lwtStyles = {};
+      this.lwtStyles = {
+        icons: {},
+      };
       this.lwtDarkStyles = null;
-      if (darkDetails) {
-        this.lwtDarkStyles = {};
-      }
 
       if (experiment) {
         if (extension.experimentsAllowed) {
@@ -85,6 +85,9 @@ class Theme {
     if (!this.lwtData) {
       this.loadDetails(this.details, this.lwtStyles);
       if (this.darkDetails) {
+        this.lwtDarkStyles = {
+          icons: {},
+        };
         this.loadDetails(this.darkDetails, this.lwtDarkStyles);
       }
 
@@ -132,6 +135,10 @@ class Theme {
 
     if (details.images) {
       this.loadImages(details.images, styles);
+    }
+
+    if (details.icons) {
+      this.loadIcons(details.icons, styles);
     }
 
     if (details.properties) {
@@ -267,6 +274,34 @@ class Theme {
           break;
         }
       }
+    }
+  }
+
+  
+
+
+
+
+
+  loadIcons(icons, styles) {
+    const {baseURI} = this.extension;
+
+    if (!Services.prefs.getBoolPref("extensions.webextensions.themes.icons.enabled")) {
+      
+      return;
+    }
+
+    for (let icon of Object.getOwnPropertyNames(icons)) {
+      let val = icons[icon];
+      
+      
+      
+      if (!val || val == baseURI.spec || !ICONS.includes(icon)) {
+        continue;
+      }
+      let variableName = `--${icon}-icon`;
+      let resolvedURL = baseURI.resolve(val);
+      styles.icons[variableName] = resolvedURL;
     }
   }
 
