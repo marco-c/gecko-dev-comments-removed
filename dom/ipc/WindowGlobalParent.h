@@ -13,6 +13,8 @@
 #include "nsRefPtrHashtable.h"
 #include "nsWrapperCache.h"
 #include "nsISupports.h"
+#include "mozilla/dom/WindowGlobalActor.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 
 class nsIPrincipal;
 class nsIURI;
@@ -21,7 +23,6 @@ class nsFrameLoader;
 namespace mozilla {
 namespace dom {
 
-class CanonicalBrowsingContext;
 class WindowGlobalChild;
 class JSWindowActorParent;
 class JSWindowActorMessageMeta;
@@ -29,14 +30,14 @@ class JSWindowActorMessageMeta;
 
 
 
-class WindowGlobalParent final : public nsISupports,
-                                 public nsWrapperCache,
+class WindowGlobalParent final : public WindowGlobalActor,
                                  public PWindowGlobalParent {
   friend class PWindowGlobalParent;
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(WindowGlobalParent)
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(WindowGlobalParent,
+                                                         WindowGlobalActor)
 
   static already_AddRefed<WindowGlobalParent> GetByInnerWindowId(
       uint64_t aInnerWindowId);
@@ -74,7 +75,9 @@ class WindowGlobalParent final : public nsISupports,
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 
   
-  CanonicalBrowsingContext* BrowsingContext() { return mBrowsingContext; }
+  CanonicalBrowsingContext* BrowsingContext() override {
+    return mBrowsingContext;
+  }
 
   
   
@@ -83,7 +86,7 @@ class WindowGlobalParent final : public nsISupports,
   nsFrameLoader* GetRootFrameLoader() { return mFrameLoader; }
 
   
-  nsIURI* GetDocumentURI() { return mDocumentURI; }
+  nsIURI* GetDocumentURI() override { return mDocumentURI; }
 
   
   uint64_t OuterWindowId() { return mOuterWindowId; }
@@ -109,6 +112,9 @@ class WindowGlobalParent final : public nsISupports,
                        JS::Handle<JSObject*> aGivenProto) override;
 
  protected:
+  const nsAString& GetRemoteType() override;
+  JSWindowActor::Type GetSide() override { return JSWindowActor::Type::Parent; }
+
   
   mozilla::ipc::IPCResult RecvUpdateDocumentURI(nsIURI* aURI);
   mozilla::ipc::IPCResult RecvBecomeCurrentWindowGlobal();
