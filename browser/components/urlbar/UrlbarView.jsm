@@ -10,6 +10,7 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
@@ -180,6 +181,15 @@ class UrlbarView {
         
         this._selectItem(null);
       }
+      
+      
+      let trimmedValue = this.input.textValue.trim();
+      this._enableOrDisableOneOffSearches(
+        !trimmedValue ||
+        (trimmedValue[0] != "@" &&
+         (trimmedValue[0] != UrlbarTokenizer.RESTRICT.SEARCH ||
+          trimmedValue.length != 1))
+      );
     } else if (this._selected) {
       
       
@@ -487,8 +497,8 @@ class UrlbarView {
     }
   }
 
-  _enableOrDisableOneOffSearches() {
-    if (UrlbarPrefs.get("oneOffSearches")) {
+  _enableOrDisableOneOffSearches(enable = true) {
+    if (enable && UrlbarPrefs.get("oneOffSearches")) {
       this.oneOffSearchButtons.telemetryOrigin = "urlbar";
       this.oneOffSearchButtons.style.display = "";
       
@@ -543,7 +553,6 @@ class UrlbarView {
   }
 
   _on_popupshowing() {
-    this._enableOrDisableOneOffSearches();
     this.window.addEventListener("resize", this);
   }
 

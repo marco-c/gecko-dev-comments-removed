@@ -264,10 +264,6 @@ add_task(async function collapsedOneOffs() {
 
 
 add_task(async function hiddenWhenUsingSearchAlias() {
-  
-  if (UrlbarPrefs.get("quantumbar")) {
-    return;
-  }
   let typedValue = "@example";
   await promiseAutocompleteResultPopup(typedValue, window, true);
   await waitForAutocompleteResultAt(0);

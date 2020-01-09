@@ -121,10 +121,6 @@ function assertSearchSuggestionsNotificationVisible(visible) {
 
 
 function assertOneOffButtonsVisible(visible) {
-  
-  if (UrlbarPrefs.get("quantumbar")) {
-    return;
-  }
   Assert.equal(UrlbarTestUtils.getOneOffSearchButtonsVisible(window), visible,
     "Should show or not the one-off search buttons");
 }
