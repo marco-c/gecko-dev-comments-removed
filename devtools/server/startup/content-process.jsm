@@ -45,8 +45,6 @@ function setupServer(mm) {
   mm.addMessageListener("debug:content-process-destroy", function onDestroy() {
     mm.removeMessageListener("debug:content-process-destroy", onDestroy);
 
-    Cu.unblockThreadedExecution();
-
     DebuggerServer.destroy();
     gLoader.destroy();
     gLoader = null;
@@ -60,31 +58,22 @@ function init(msg) {
   const prefix = msg.data.prefix;
 
   
-  
-  
-  
-  
-  
-  
-  Cu.blockThreadedExecution(() => {
-    
-    const loader = setupServer(mm);
+  const loader = setupServer(mm);
 
-    
-    
-    const { DebuggerServer } = loader.require("devtools/server/main");
-    const conn = DebuggerServer.connectToParent(prefix, mm);
-    conn.parentMessageManager = mm;
+  
+  
+  const { DebuggerServer } = loader.require("devtools/server/main");
+  const conn = DebuggerServer.connectToParent(prefix, mm);
+  conn.parentMessageManager = mm;
 
-    const { ContentProcessTargetActor } =
-        loader.require("devtools/server/actors/targets/content-process");
-    const { ActorPool } = loader.require("devtools/server/actors/common");
-    const actor = new ContentProcessTargetActor(conn);
-    const actorPool = new ActorPool(conn);
-    actorPool.addActor(actor);
-    conn.addActorPool(actorPool);
+  const { ContentProcessTargetActor } =
+      loader.require("devtools/server/actors/targets/content-process");
+  const { ActorPool } = loader.require("devtools/server/actors/common");
+  const actor = new ContentProcessTargetActor(conn);
+  const actorPool = new ActorPool(conn);
+  actorPool.addActor(actor);
+  conn.addActorPool(actorPool);
 
-    const response = { actor: actor.form() };
-    mm.sendAsyncMessage("debug:content-process-actor", response);
-  });
+  const response = { actor: actor.form() };
+  mm.sendAsyncMessage("debug:content-process-actor", response);
 }

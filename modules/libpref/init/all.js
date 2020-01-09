@@ -3374,12 +3374,6 @@ pref("dom.ipc.useNativeEventProcessing.content", true);
 #endif
 
 
-pref("dom.ipc.scheduler.useMultipleQueues", true);
-pref("dom.ipc.scheduler.preemption", false);
-pref("dom.ipc.scheduler.threadCount", 2);
-pref("dom.ipc.scheduler.chaoticScheduling", false);
-
-
 pref("svg.disabled", false);
 
 
