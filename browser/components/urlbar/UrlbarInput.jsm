@@ -818,6 +818,14 @@ class UrlbarInput {
       Cu.reportError(ex);
     }
 
+    
+    
+    
+    if (!params.triggeringPrincipal ||
+        params.triggeringPrincipal.isSystemPrincipal) {
+      delete browser.canceledAuthenticationPromptCounter;
+    }
+
     params.allowThirdPartyFixup = true;
 
     if (openUILinkWhere == "current") {
