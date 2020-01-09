@@ -196,8 +196,9 @@ var DownloadsCommon = {
 
 
 
+
   getData(window, history = false, privateAll = false, limited = false) {
-    let isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(window);
+    let isPrivate = window && PrivateBrowsingUtils.isContentWindowPrivate(window);
     if (isPrivate && !privateAll) {
       return PrivateDownloadsData;
     }
