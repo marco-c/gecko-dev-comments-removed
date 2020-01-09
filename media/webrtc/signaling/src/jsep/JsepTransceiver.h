@@ -69,9 +69,8 @@ class JsepTransceiver {
     mRecvTrack = oldTransceiver.mRecvTrack;
 
     
-    
-    if (!IsStopped()) {
-      mMid = oldTransceiver.mMid;
+    if (!oldTransceiver.IsAssociated()) {
+      Disassociate();
     }
   }
 
@@ -99,7 +98,10 @@ class JsepTransceiver {
     mLevel = level;
   }
 
-  void ClearLevel() { mLevel = SIZE_MAX; }
+  void ClearLevel() {
+    MOZ_ASSERT(!IsAssociated());
+    mLevel = SIZE_MAX;
+  }
 
   size_t GetLevel() const {
     MOZ_ASSERT(HasLevel());
