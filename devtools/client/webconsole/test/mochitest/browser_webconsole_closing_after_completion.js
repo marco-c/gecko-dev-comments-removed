@@ -17,7 +17,7 @@ add_task(async function() {
   const hud = await openConsole();
 
   
-  await setInputValueForAutocompletion(hud.jsterm, "doc");
+  await setInputValueForAutocompletion(hud, "doc");
 
   let errorWhileClosing = false;
   function errorListener() {

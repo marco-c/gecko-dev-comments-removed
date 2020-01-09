@@ -404,10 +404,11 @@ function hasFocus(node) {
 
 
 async function setInputValueForAutocompletion(
-  jsterm,
+  hud,
   value,
   caretPosition = value.length,
 ) {
+  const {jsterm} = hud;
   jsterm.setInputValue("");
   jsterm.focus();
 
@@ -441,8 +442,8 @@ async function setInputValueForAutocompletion(
 
 
 
-async function setInputValueForGetterConfirmDialog(toolbox, jsterm, value) {
-  await setInputValueForAutocompletion(jsterm, value);
+async function setInputValueForGetterConfirmDialog(toolbox, hud, value) {
+  await setInputValueForAutocompletion(hud, value);
   await waitFor(() => isConfirmDialogOpened(toolbox));
   ok(true, "The confirm dialog is displayed");
   return getConfirmDialog(toolbox);
@@ -455,15 +456,15 @@ async function setInputValueForGetterConfirmDialog(toolbox, jsterm, value) {
 
 
 
-function checkJsTermCompletionValue(jsterm, expectedValue, assertionInfo) {
-  const completionValue = getJsTermCompletionValue(jsterm);
+function checkInputCompletionValue(hud, expectedValue, assertionInfo) {
+  const completionValue = getInputCompletionValue(hud);
   if (completionValue === null) {
     ok(false, "Couldn't retrieve the completion value");
   }
 
   info(`Expects "${expectedValue}", is "${completionValue}"`);
 
-  if (jsterm.completeNode) {
+  if (hud.jsterm.completeNode) {
     is(completionValue, expectedValue, assertionInfo);
   } else {
     
@@ -478,7 +479,8 @@ function checkJsTermCompletionValue(jsterm, expectedValue, assertionInfo) {
 
 
 
-function checkJsTermCursor(jsterm, expectedCursorIndex, assertionInfo) {
+function checkInputCursorPosition(hud, expectedCursorIndex, assertionInfo) {
+  const {jsterm} = hud;
   if (jsterm.inputNode) {
     const {selectionStart, selectionEnd} = jsterm.inputNode;
     is(selectionStart, expectedCursorIndex, assertionInfo);
@@ -500,7 +502,7 @@ function checkJsTermCursor(jsterm, expectedCursorIndex, assertionInfo) {
 
 
 
-function checkJsTermValueAndCursor(jsterm, expectedStringWithCursor, assertionInfo) {
+function checkInputValueAndCursorPosition(hud, expectedStringWithCursor, assertionInfo) {
   info(`Checking jsterm state: \n${expectedStringWithCursor}`);
   if (!expectedStringWithCursor.includes("|")) {
     ok(false,
@@ -508,6 +510,7 @@ function checkJsTermValueAndCursor(jsterm, expectedStringWithCursor, assertionIn
   }
 
   const inputValue = expectedStringWithCursor.replace("|", "");
+  const {jsterm} = hud;
   is(jsterm.getInputValue(), inputValue, "jsterm has expected value");
   if (jsterm.inputNode) {
     is(jsterm.inputNode.selectionStart, jsterm.inputNode.selectionEnd);
@@ -528,7 +531,8 @@ function checkJsTermValueAndCursor(jsterm, expectedStringWithCursor, assertionIn
 
 
 
-function getJsTermCompletionValue(jsterm) {
+function getInputCompletionValue(hud) {
+  const {jsterm} = hud;
   if (jsterm.completeNode) {
     return jsterm.completeNode.value;
   }
@@ -546,8 +550,8 @@ function getJsTermCompletionValue(jsterm) {
 
 
 
-
-function isJstermFocused(jsterm) {
+function isInputFocused(hud) {
+  const {jsterm} = hud;
   const document = jsterm.outputNode.ownerDocument;
   const documentIsFocused = document.hasFocus();
 
