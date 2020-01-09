@@ -6,14 +6,21 @@
 
 
 
+
 add_task(async function() {
-  const { monitor } = await initNetMonitor(SIMPLE_URL);
+  const { monitor, tab } = await initNetMonitor(SIMPLE_URL);
   info("Starting test... ");
 
-  const { document, parent, windowRequire } = monitor.panelWin;
+  const { document, store, parent, windowRequire } = monitor.panelWin;
   const { Prefs } = windowRequire("devtools/client/netmonitor/src/utils/prefs");
 
   const prefBefore = Prefs.visibleColumns;
+  const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+  store.dispatch(Actions.batchEnable(false));
+
+  const wait = waitForNetworkEvents(monitor, 1);
+  tab.linkedBrowser.reload();
+  await wait;
 
   await hideColumn(monitor, "status");
   await hideColumn(monitor, "waterfall");

@@ -15,6 +15,7 @@ const {
   SELECT_DETAILS_PANEL_TAB,
   TOGGLE_COLUMN,
   WATERFALL_RESIZE,
+  SET_COLUMNS_WIDTH,
 } = require("../constants");
 
 const { getDisplayedRequests } = require("../selectors/index");
@@ -140,6 +141,18 @@ function toggleColumn(column) {
 
 
 
+
+
+function setColumnsWidth(widths) {
+  return {
+    type: SET_COLUMNS_WIDTH,
+    widths,
+  };
+}
+
+
+
+
 function toggleNetworkDetails() {
   return (dispatch, getState) =>
     dispatch(openNetworkDetails(!getState().ui.networkDetailsOpen));
@@ -179,6 +192,7 @@ module.exports = {
   resizeWaterfall,
   selectDetailsPanelTab,
   toggleColumn,
+  setColumnsWidth,
   toggleNetworkDetails,
   togglePersistentLogs,
   toggleBrowserCache,

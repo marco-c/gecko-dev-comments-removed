@@ -7,7 +7,7 @@
 .request-list-empty-notice {
   margin: 0;
   flex: 1;
-  overflow: auto;
+  overflow-x: hidden;
 }
 
 .empty-notice-element {
@@ -59,16 +59,18 @@
 .requests-list-table {
   
   border-spacing: 0;
+  width: 100%;
+  
+
+
+  table-layout: fixed;
 }
 
 .requests-list-column {
-  cursor: default;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
-  max-width: 50px;
-  min-width: 50px;
 
   
   padding: 0;
@@ -108,11 +110,11 @@
                                 transparent 85%) 1 1;
   border-width: 0;
   border-inline-start-width: 1px;
-  padding-inline-start: 16px;
   width: 100%;
   min-height: 23px;
   text-align: center;
   color: inherit;
+  padding: 1px 4px;
 }
 
 .requests-list-header-button::-moz-focus-inner {
@@ -129,7 +131,7 @@
   text-align: center;
   vertical-align: middle;
   
-  width: calc(100% - 8px);
+  width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -164,11 +166,30 @@
 
 
 
+.requests-list-headers .column-resizer {
+  z-index: 1000;
+  cursor: ew-resize;
+  margin-left: -3px;
+  width: 7px;
+  min-height: 23px;
+  position: absolute;
+  background-color: transparent;
+}
+
+
+
+
+
+.requests-list-headers.dragging {
+  pointer-events: none;
+}
+
+
+
 
 
 .requests-list-status {
-  min-width: 70px;
-   
+  
   text-overflow: initial;
 }
 
@@ -226,91 +247,12 @@
   transform: rotate(45deg);
 }
 
-
-
-.requests-list-method {
-  min-width: 85px;
-}
-
-
-
-.requests-list-file {
-  width: 40%;
-}
-
 .requests-list-file.requests-list-column {
   text-align: start;
 }
 
 .request-list-item.selected {
   filter: brightness(1.3);
-}
-
-
-
-.requests-list-protocol {
-  width: 8%;
-}
-
-
-
-.requests-list-cookies {
-  width: 6%;
-}
-
-
-
-.requests-list-set-cookies {
-  width: 8%;
-}
-
-
-
-.requests-list-scheme {
-  width: 8%;
-}
-
-
-
-.requests-list-start-time {
-  width: 8%;
-}
-
-
-
-.requests-list-end-time {
-  width: 8%;
-}
-
-
-
-.requests-list-response-time {
-  width: 10%;
-}
-
-
-
-.requests-list-duration-time {
-  width: 8%;
-}
-
-
-
-.requests-list-latency-time {
-  width: 8%;
-}
-
-
-
-.requests-list-response-header {
-  width: 10%;
-}
-
-
-
-.requests-list-domain {
-  min-width: 100px;
-  width: 30%;
 }
 
 .requests-list-domain.requests-list-column {
@@ -367,18 +309,6 @@
   filter: brightness(500%);
 }
 
-
-
-.requests-list-remoteip {
-  width: 9%;
-}
-
-
-
-.requests-list-cause {
-  min-width: 75px;
-}
-
 .request-list-item .requests-list-cause.requests-list-column {
   padding-left: 5px;
 }
@@ -398,28 +328,7 @@
 
 
 
-.requests-list-type {
-  min-width: 65px;
-}
-
-
-
-.requests-list-transferred {
-  min-width: 110px;
-}
-
-
-
-.requests-list-size {
-  min-width: 80px;
-}
-
-
-
 .requests-list-waterfall {
-  width: 25vw;
-  max-width: 25vw;
-  min-width: 25vw;
   background-repeat: repeat-y;
   background-position: left center;
   
@@ -572,10 +481,6 @@
 
 
 @media (max-width: 700px) {
-  .requests-list-header-button {
-    padding-inline-start: 8px;
-  }
-
   .requests-list-status-code {
     width: auto;
   }

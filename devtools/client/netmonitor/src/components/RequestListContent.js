@@ -123,6 +123,10 @@ class RequestListContent extends Component {
     window.removeEventListener("resize", this.onResize);
   }
 
+  
+
+
+
   onResize() {
     const parent = this.refs.scrollEl.parentNode;
     this.refs.scrollEl.style.width = parent.offsetWidth + "px";

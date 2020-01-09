@@ -6,6 +6,7 @@
 
 
 
+
 add_task(async function() {
   const { tab, monitor } = await initNetMonitor(SIMPLE_URL);
   info("Starting test... ");
@@ -15,6 +16,10 @@ add_task(async function() {
   store.dispatch(Actions.batchEnable(false));
 
   const visibleColumns = store.getState().ui.columns;
+
+  const wait = waitForNetworkEvents(monitor, 1);
+  tab.linkedBrowser.reload();
+  await wait;
 
   
   

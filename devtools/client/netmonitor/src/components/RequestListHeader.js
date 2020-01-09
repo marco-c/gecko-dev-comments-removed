@@ -4,21 +4,35 @@
 
 "use strict";
 
-const { Component } = require("devtools/client/shared/vendor/react");
+const Services = require("Services");
+const { createRef, Component, createFactory } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { connect } = require("devtools/client/shared/redux/visibility-handler-connect");
-const { getTheme, addThemeObserver, removeThemeObserver } =
-  require("devtools/client/shared/theme");
+const {
+  getTheme,
+  addThemeObserver,
+  removeThemeObserver,
+} = require("devtools/client/shared/theme");
 const Actions = require("../actions/index");
-const { HEADERS, REQUESTS_WATERFALL } = require("../constants");
+const {
+  HEADERS,
+  REQUESTS_WATERFALL,
+  MIN_COLUMN_WIDTH,
+  DEFAULT_COLUMN_WIDTH,
+} = require("../constants");
 const { getWaterfallScale } = require("../selectors/index");
 const { getFormattedTime } = require("../utils/format-utils");
 const { L10N } = require("../utils/l10n");
 const RequestListHeaderContextMenu = require("../widgets/RequestListHeaderContextMenu");
 const WaterfallBackground = require("../widgets/WaterfallBackground");
+const Draggable = createFactory(require("devtools/client/shared/components/splitter/Draggable"));
 
 const { div, button } = dom;
+
+
+const RESIZE_COLUMNS =
+  Services.prefs.getBoolPref("devtools.netmonitor.features.resizeColumns");
 
 
 
@@ -36,11 +50,15 @@ class RequestListHeader extends Component {
       sortBy: PropTypes.func.isRequired,
       toggleColumn: PropTypes.func.isRequired,
       waterfallWidth: PropTypes.number,
+      columnsData: PropTypes.object.isRequired,
+      setColumnsWidth: PropTypes.func.isRequired,
     };
   }
 
   constructor(props) {
     super(props);
+    this.requestListHeader = createRef();
+
     this.onContextMenu = this.onContextMenu.bind(this);
     this.drawBackground = this.drawBackground.bind(this);
     this.resizeWaterfall = this.resizeWaterfall.bind(this);
@@ -60,6 +78,10 @@ class RequestListHeader extends Component {
     
     this.background = new WaterfallBackground(document);
     this.drawBackground();
+    
+    if (this.shouldUpdateWidths()) {
+      this.updateColumnsWidth();
+    }
     this.resizeWaterfall();
     window.addEventListener("resize", this.resizeWaterfall);
     addThemeObserver(this.drawBackground);
@@ -67,6 +89,12 @@ class RequestListHeader extends Component {
 
   componentDidUpdate() {
     this.drawBackground();
+    
+    
+    if (this.shouldUpdateWidths()) {
+      this.updateColumnsWidth();
+      this.resizeWaterfall();
+    }
   }
 
   componentWillUnmount() {
@@ -163,54 +191,376 @@ class RequestListHeader extends Component {
     return div({ className }, label);
   }
 
-  render() {
-    const { columns, scale, sort, sortBy, waterfallWidth } = this.props;
+  
 
+  
+
+
+
+
+  onStartMove() {
+    
+    const container = document.querySelector(".request-list-container");
+    container.style.cursor = "ew-resize";
+    
+    this.requestListHeader.classList.add("dragging");
+  }
+
+  
+
+
+
+  onMove(name, x) {
+    const parentEl = document.querySelector(".requests-list-headers");
+    const parentWidth = parentEl.getBoundingClientRect().width;
+
+    
+    
+    const headerRef = this.refs[`${name}Header`];
+    const headerRefRect = headerRef.getBoundingClientRect();
+    const oldWidth = headerRefRect.width;
+
+    
+    const compensateHeaderName = this.getCompensateHeader();
+
+    if (name === compensateHeaderName) {
+      
+      this.moveWaterfall(x, parentWidth);
+      return;
+    }
+
+    const compensateHeaderRef = this.refs[`${compensateHeaderName}Header`];
+    const compensateHeaderRefRect = compensateHeaderRef.getBoundingClientRect();
+    const oldCompensateWidth = compensateHeaderRefRect.width;
+    const sumOfBothColumns = oldWidth + oldCompensateWidth;
+
+    
+    const minWidth = this.getMinWidth(name);
+    const minCompensateWidth = this.getMinWidth(compensateHeaderName);
+
+    
+    
+    const newWidth = Math.max(x - headerRefRect.left, minWidth);
+    headerRef.style.width = `${this.px2percent(newWidth, parentWidth)}%`;
+    const adjustment = oldWidth - newWidth;
+
+    
+    
+    const newCompensateWidth =
+      Math.max(adjustment + oldCompensateWidth, minCompensateWidth);
+    compensateHeaderRef.style.width =
+      `${this.px2percent(newCompensateWidth, parentWidth)}%`;
+
+    
+    if (newCompensateWidth === minCompensateWidth) {
+      headerRef.style.width =
+        `${this.px2percent((sumOfBothColumns - newCompensateWidth), parentWidth)}%`;
+    }
+  }
+
+  
+
+
+
+
+  onStopMove() {
+    this.updateColumnsWidth();
+    
+    const waterfallRef = this.refs.waterfallHeader;
+    if (waterfallRef) {
+      const { waterfallWidth } = this.props;
+      const realWaterfallWidth = waterfallRef.getBoundingClientRect().width;
+      if (Math.round(waterfallWidth) !== Math.round(realWaterfallWidth)) {
+        this.resizeWaterfall();
+      }
+    }
+
+    
+    const container = document.querySelector(".request-list-container");
+    container.style.cursor = "initial";
+    this.requestListHeader.classList.remove("dragging");
+  }
+
+  
+
+
+
+
+  getCompensateHeader() {
+    const visibleColumns = this.getVisibleColumns();
+    const lastColumn = visibleColumns[visibleColumns.length - 1].name;
+    const delta = (lastColumn === "waterfall") ? 2 : 1;
+    return visibleColumns[visibleColumns.length - delta].name;
+  }
+
+  
+
+
+
+
+  moveWaterfall(x, parentWidth) {
+    const visibleColumns = this.getVisibleColumns();
+    const minWaterfall = this.getMinWidth("waterfall");
+    const waterfallRef = this.refs.waterfallHeader;
+
+    
+    const waterfallRefRect = waterfallRef.getBoundingClientRect();
+    const oldWidth = waterfallRefRect.width;
+    const adjustment = waterfallRefRect.left - x;
+    if (this.allColumnsAtMinWidth() && adjustment > 0) {
+      
+      
+      return;
+    }
+
+    const newWidth = Math.max(oldWidth + adjustment, minWaterfall);
+
+    
+    const changeInWidth = oldWidth - newWidth;
+    const widths = this.autoSizeWidths(changeInWidth, visibleColumns);
+
+    
+    widths[widths.length - 1] = newWidth;
+
+    
+    let i = 0;
+    visibleColumns.forEach(col => {
+      const name = col.name;
+      const headerRef = this.refs[`${name}Header`];
+      headerRef.style.width = `${this.px2percent(widths[i], parentWidth)}%`;
+      i++;
+    });
+  }
+
+  
+
+
+
+  allColumnsAtMinWidth() {
+    const visibleColumns = this.getVisibleColumns();
+    
+    
+    for (let i = 0; i < visibleColumns.length - 1; i++) {
+      const name = visibleColumns[i].name;
+      const headerRef = this.refs[`${name}Header`];
+      const minColWidth = this.getMinWidth(name);
+      if (headerRef.getBoundingClientRect().width > minColWidth) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  
+
+
+
+
+  autoSizeWidths(changeInWidth, visibleColumns) {
+    const widths = visibleColumns.map(col => {
+      const headerRef = this.refs[`${col.name}Header`];
+      const colWidth = headerRef.getBoundingClientRect().width;
+      return colWidth;
+    });
+
+    
+    const changeInWidthPerColumn = changeInWidth / (widths.length - 1);
+
+    while (changeInWidth) {
+      const lastChangeInWidth = changeInWidth;
+      
+      for (let i = 0; i < widths.length - 1; i++) {
+        const name = visibleColumns[i].name;
+        const minColWidth = this.getMinWidth(name);
+        const newColWidth = Math.max(widths[i] + changeInWidthPerColumn, minColWidth);
+
+        widths[i] = newColWidth;
+        if (changeInWidth > 0) {
+          changeInWidth -= (newColWidth - widths[i]);
+        } else {
+          changeInWidth += (newColWidth - widths[i]);
+        }
+        if (!changeInWidth) {
+          break;
+        }
+      }
+      if (lastChangeInWidth == changeInWidth) {
+        break;
+      }
+    }
+    return widths;
+  }
+
+  
+
+
+
+
+  shouldUpdateWidths() {
+    const visibleColumns = this.getVisibleColumns();
+    let totalPercent = 0;
+
+    visibleColumns.forEach(col => {
+      const name = col.name;
+      const headerRef = this.refs[`${name}Header`];
+      
+      let widthFromStyle = 0;
+      
+      
+      if (headerRef.getBoundingClientRect().width > 0) {
+        widthFromStyle = headerRef.style.width.slice(0, -1);
+      }
+      totalPercent += +widthFromStyle; 
+    });
+
+    
+    
+    return Math.round(totalPercent) !== 100 && totalPercent !== 0;
+  }
+
+  
+
+
+
+
+  updateColumnsWidth() {
+    const visibleColumns = this.getVisibleColumns();
+    const parentEl = document.querySelector(".requests-list-headers");
+    const parentElRect = parentEl.getBoundingClientRect();
+    const parentWidth = parentElRect.width;
+    const newWidths = [];
+    visibleColumns.forEach(col => {
+      const name = col.name;
+      const headerRef = this.refs[`${name}Header`];
+      const headerWidth = headerRef.getBoundingClientRect().width;
+
+      
+      const width = this.px2percent(headerWidth, parentWidth);
+
+      if (width > 0) {
+        
+        
+        newWidths.push({name, width});
+      }
+    });
+    this.props.setColumnsWidth(newWidths);
+  }
+
+  
+
+
+  px2percent(pxWidth, parentWidth) {
+    const percent = Math.round((100 * pxWidth / parentWidth) * 100) / 100;
+    return percent;
+  }
+
+  
+
+
+  getVisibleColumns() {
+    const { columns } = this.props;
+    return HEADERS.filter((header) => columns[header.name]);
+  }
+
+  
+
+
+  getMinWidth(colName) {
+    const columnsData = this.props.columnsData;
+    if (columnsData.has(colName)) {
+      return columnsData.get(colName).minWidth;
+    }
+    return MIN_COLUMN_WIDTH;
+  }
+
+  
+
+
+  renderColumn(header) {
+    const columnsData = this.props.columnsData;
+    const visibleColumns = this.getVisibleColumns();
+    const lastVisibleColumn = visibleColumns[visibleColumns.length - 1].name;
+    const name = header.name;
+    const boxName = header.boxName || name;
+    const label = header.noLocalization
+      ? name : L10N.getStr(`netmonitor.toolbar.${header.label || name}`);
+
+    const { scale, sort, sortBy, waterfallWidth } = this.props;
+    let sorted, sortedTitle;
+    const active = sort.type == name ? true : undefined;
+
+    if (active) {
+      sorted = sort.ascending ? "ascending" : "descending";
+      sortedTitle = L10N.getStr(sort.ascending
+        ? "networkMenu.sortedAsc"
+        : "networkMenu.sortedDesc");
+    }
+
+    
+    
+    let colWidth = DEFAULT_COLUMN_WIDTH;
+    if (columnsData.has(name)) {
+      const oneColumnEl = columnsData.get(name);
+      colWidth = oneColumnEl.width;
+    }
+    const columnStyle = {
+      width: colWidth + "%",
+    };
+
+    
+    const draggable = RESIZE_COLUMNS ? Draggable({
+      className: "column-resizer ",
+      onStart: () => this.onStartMove(),
+      onStop: () => this.onStopMove(),
+      onMove: (x) => this.onMove(name, x),
+    }) : undefined;
+
+    return (
+      dom.td({
+        id: `requests-list-${boxName}-header-box`,
+        className: `requests-list-column requests-list-${boxName}`,
+        style: columnStyle,
+        key: name,
+        ref: `${name}Header`,
+        
+        "data-active": active,
+      },
+        button({
+          id: `requests-list-${name}-button`,
+          className: `requests-list-header-button`,
+          "data-sorted": sorted,
+          title: sortedTitle ? `${label} (${sortedTitle})` : label,
+          onClick: () => sortBy(name),
+        },
+          name === "waterfall"
+            ? this.waterfallLabel(waterfallWidth, scale, label)
+            : div({ className: "button-text" }, label),
+          div({ className: "button-icon" })
+        ),
+        (name !== lastVisibleColumn) && draggable
+      )
+    );
+  }
+
+  
+
+
+  renderColumns() {
+    const visibleColumns = this.getVisibleColumns();
+    return visibleColumns.map(header => this.renderColumn(header));
+  }
+
+  render() {
     return (
       dom.thead({ className: "devtools-toolbar requests-list-headers-group" },
         dom.tr({
           className: "requests-list-headers",
           onContextMenu: this.onContextMenu,
+          ref: node => {
+            this.requestListHeader = node;
+          },
         },
-          HEADERS.filter((header) => columns[header.name]).map((header) => {
-            const name = header.name;
-            const boxName = header.boxName || name;
-            const label = header.noLocalization
-              ? name : L10N.getStr(`netmonitor.toolbar.${header.label || name}`);
-            let sorted, sortedTitle;
-            const active = sort.type == name ? true : undefined;
-
-            if (active) {
-              sorted = sort.ascending ? "ascending" : "descending";
-              sortedTitle = L10N.getStr(sort.ascending
-                ? "networkMenu.sortedAsc"
-                : "networkMenu.sortedDesc");
-            }
-
-            return (
-              dom.td({
-                id: `requests-list-${boxName}-header-box`,
-                className: `requests-list-column requests-list-${boxName}`,
-                key: name,
-                ref: `${name}Header`,
-                
-                "data-active": active,
-              },
-                button({
-                  id: `requests-list-${name}-button`,
-                  className: `requests-list-header-button`,
-                  "data-sorted": sorted,
-                  title: sortedTitle ? `${label} (${sortedTitle})` : label,
-                  onClick: () => sortBy(name),
-                },
-                  name === "waterfall"
-                    ? this.waterfallLabel(waterfallWidth, scale, label)
-                    : div({ className: "button-text" }, label),
-                  div({ className: "button-icon" })
-                )
-              )
-            );
-          })
+          this.renderColumns(),
         )
       )
     );
@@ -220,6 +570,7 @@ class RequestListHeader extends Component {
 module.exports = connect(
   (state) => ({
     columns: state.ui.columns,
+    columnsData: state.ui.columnsData,
     firstRequestStartedMillis: state.requests.firstStartedMillis,
     scale: getWaterfallScale(state),
     sort: state.sort,
@@ -231,5 +582,6 @@ module.exports = connect(
     resizeWaterfall: (width) => dispatch(Actions.resizeWaterfall(width)),
     sortBy: (type) => dispatch(Actions.sortBy(type)),
     toggleColumn: (column) => dispatch(Actions.toggleColumn(column)),
+    setColumnsWidth: (widths) => dispatch(Actions.setColumnsWidth(widths)),
   })
 )(RequestListHeader);
