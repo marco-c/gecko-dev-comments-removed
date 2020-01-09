@@ -39,15 +39,13 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
     id: ADDON_ID,
     name: ADDON_NAME,
   }, document);
-  const target = findDebugTargetByText(ADDON_NAME, document);
 
-  info("Open a toolbox to debug the addon");
-  const onToolboxReady = gDevTools.once("toolbox-ready");
+  const { devtoolsTab, devtoolsWindow } =
+    await openAboutDevtoolsToolbox(document, tab, window, ADDON_NAME);
+  const toolbox = getToolbox(devtoolsWindow);
+
   const onToolboxClose = gDevTools.once("toolbox-destroyed");
-  const inspectButton = target.querySelector(".js-debug-target-inspect-button");
-  inspectButton.click();
-  const toolbox = await onToolboxReady;
-  toolboxTestScript(toolbox);
+  toolboxTestScript(toolbox, devtoolsTab);
 
   
   
@@ -59,7 +57,7 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
   await removeTab(tab);
 });
 
-function toolboxTestScript(toolbox) {
+function toolboxTestScript(toolbox, devtoolsTab) {
   function findMessages(hud, text, selector = ".message") {
     const messages = hud.ui.outputNode.querySelectorAll(selector);
     const elements = Array.prototype.filter.call(
@@ -84,7 +82,7 @@ function toolboxTestScript(toolbox) {
       });
       await jsterm.execute("myWebExtensionAddonFunction()");
       await onMessage;
-      await toolbox.closeToolbox();
+      await removeTab(devtoolsTab);
     })
     .catch(e => dump("Exception from browser toolbox process: " + e + "\n"));
 }
