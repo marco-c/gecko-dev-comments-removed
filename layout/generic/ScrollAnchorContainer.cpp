@@ -21,7 +21,7 @@ namespace layout {
 ScrollAnchorContainer::ScrollAnchorContainer(ScrollFrameHelper* aScrollFrame)
     : mScrollFrame(aScrollFrame),
       mAnchorNode(nullptr),
-      mLastAnchorPos(0, 0),
+      mLastAnchorOffset(0),
       mAnchorNodeIsDirty(true),
       mApplyingAnchorAdjustment(false),
       mSuppressAnchorAdjustment(false) {}
@@ -86,6 +86,13 @@ static void SetAnchorFlags(const nsIFrame* aScrolledFrame,
 
 
 
+
+
+
+
+
+
+
 static nsRect FindScrollAnchoringBoundingRect(const nsIFrame* aScrollFrame,
                                               nsIFrame* aCandidate) {
   MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrame(aScrollFrame, aCandidate));
@@ -93,27 +100,58 @@ static nsRect FindScrollAnchoringBoundingRect(const nsIFrame* aScrollFrame,
     nsRect bounding;
     for (nsIFrame* continuation = aCandidate->FirstContinuation(); continuation;
          continuation = continuation->GetNextContinuation()) {
-      nsRect localRect =
+      nsRect overflowRect =
           continuation->GetScrollableOverflowRectRelativeToSelf();
       nsRect transformed = nsLayoutUtils::TransformFrameRectToAncestor(
-          continuation, localRect, aScrollFrame);
+          continuation, overflowRect, aScrollFrame);
       bounding = bounding.Union(transformed);
     }
     return bounding;
   }
 
-  nsRect localRect = aCandidate->GetScrollableOverflowRectRelativeToSelf();
+  nsRect borderRect = aCandidate->GetRectRelativeToSelf();
+  nsRect overflowRect = aCandidate->GetScrollableOverflowRectRelativeToSelf();
+
+  NS_ASSERTION(overflowRect.Contains(borderRect),
+               "overflow rect must include border rect, and the clamping logic "
+               "here depends on that");
 
   
-  if (localRect.X() < 0) {
-    localRect.SetBoxX(0, localRect.XMost());
+  
+  WritingMode writingMode = aScrollFrame->GetWritingMode();
+  switch (writingMode.GetBlockDir()) {
+    case WritingMode::eBlockTB: {
+      overflowRect.SetBoxY(borderRect.Y(), overflowRect.YMost());
+      break;
+    }
+    case WritingMode::eBlockLR: {
+      overflowRect.SetBoxX(borderRect.X(), overflowRect.XMost());
+      break;
+    }
+    case WritingMode::eBlockRL: {
+      overflowRect.SetBoxX(overflowRect.X(), borderRect.XMost());
+      break;
+    }
   }
-  if (localRect.Y() < 0) {
-    localRect.SetBoxY(0, localRect.YMost());
-  }
+
   nsRect transformed = nsLayoutUtils::TransformFrameRectToAncestor(
-      aCandidate, localRect, aScrollFrame);
+      aCandidate, overflowRect, aScrollFrame);
   return transformed;
+}
+
+
+
+
+
+
+static nscoord FindScrollAnchoringBoundingOffset(
+    const ScrollFrameHelper* aScrollFrame, nsIFrame* aCandidate) {
+  WritingMode writingMode = aScrollFrame->mOuter->GetWritingMode();
+  nsRect physicalBounding =
+      FindScrollAnchoringBoundingRect(aScrollFrame->mOuter, aCandidate);
+  LogicalRect logicalBounding(writingMode, physicalBounding,
+                              aScrollFrame->mScrolledFrame->GetSize());
+  return logicalBounding.BStart(writingMode);
 }
 
 void ScrollAnchorContainer::SelectAnchor() {
@@ -191,12 +229,11 @@ void ScrollAnchorContainer::SelectAnchor() {
 
   
   if (mAnchorNode) {
-    mLastAnchorPos =
-        FindScrollAnchoringBoundingRect(Frame(), mAnchorNode).TopLeft();
-    ANCHOR_LOG("Using last anchor position = [%d, %d].\n", mLastAnchorPos.x,
-               mLastAnchorPos.y);
+    mLastAnchorOffset =
+        FindScrollAnchoringBoundingOffset(mScrollFrame, mAnchorNode);
+    ANCHOR_LOG("Using last anchor offset = %d.\n", mLastAnchorOffset);
   } else {
-    mLastAnchorPos = nsPoint();
+    mLastAnchorOffset = 0;
   }
 
   mAnchorNodeIsDirty = false;
@@ -226,7 +263,7 @@ void ScrollAnchorContainer::InvalidateAnchor() {
   }
   mAnchorNode = nullptr;
   mAnchorNodeIsDirty = true;
-  mLastAnchorPos = nsPoint();
+  mLastAnchorOffset = 0;
   Frame()->PresShell()->PostPendingScrollAnchorSelection(this);
 }
 
@@ -236,7 +273,7 @@ void ScrollAnchorContainer::Destroy() {
   }
   mAnchorNode = nullptr;
   mAnchorNodeIsDirty = false;
-  mLastAnchorPos = nsPoint();
+  mLastAnchorOffset = 0;
 }
 
 void ScrollAnchorContainer::ApplyAdjustments() {
@@ -247,26 +284,14 @@ void ScrollAnchorContainer::ApplyAdjustments() {
     return;
   }
 
-  nsPoint current =
-      FindScrollAnchoringBoundingRect(Frame(), mAnchorNode).TopLeft();
-  nsPoint adjustment = current - mLastAnchorPos;
-  nsIntPoint adjustmentDevicePixels =
-      adjustment.ToNearestPixels(Frame()->PresContext()->AppUnitsPerDevPixel());
-
-  ANCHOR_LOG("Anchor has moved from [%d, %d] to [%d, %d].\n", mLastAnchorPos.x,
-             mLastAnchorPos.y, current.x, current.y);
-
+  nscoord current =
+      FindScrollAnchoringBoundingOffset(mScrollFrame, mAnchorNode);
+  nscoord logicalAdjustment = current - mLastAnchorOffset;
   WritingMode writingMode = Frame()->GetWritingMode();
 
-  
-  
-  if (writingMode.IsVertical()) {
-    adjustmentDevicePixels.y = 0;
-  } else {
-    adjustmentDevicePixels.x = 0;
-  }
+  ANCHOR_LOG("Anchor has moved from %d to %d.\n", mLastAnchorOffset, current);
 
-  if (adjustmentDevicePixels == nsIntPoint()) {
+  if (logicalAdjustment == 0) {
     ANCHOR_LOG("Ignoring zero delta anchor adjustment for %p.\n", this);
     mSuppressAnchorAdjustment = false;
     return;
@@ -279,29 +304,43 @@ void ScrollAnchorContainer::ApplyAdjustments() {
     return;
   }
 
-  ANCHOR_LOG("Applying anchor adjustment of (%d %d) for %p and anchor %p.\n",
-             adjustment.x, adjustment.y, this, mAnchorNode);
+  ANCHOR_LOG("Applying anchor adjustment of %d in %s for %p and anchor %p.\n",
+             logicalAdjustment, writingMode.DebugString(), this, mAnchorNode);
+
+  nsPoint physicalAdjustment;
+  switch (writingMode.GetBlockDir()) {
+    case WritingMode::eBlockTB: {
+      physicalAdjustment.y = logicalAdjustment;
+      break;
+    }
+    case WritingMode::eBlockLR: {
+      physicalAdjustment.x = logicalAdjustment;
+      break;
+    }
+    case WritingMode::eBlockRL: {
+      physicalAdjustment.x = -logicalAdjustment;
+      break;
+    }
+  }
+  nsIntPoint physicalDevicePixels = physicalAdjustment.ToNearestPixels(
+      Frame()->PresContext()->AppUnitsPerDevPixel());
 
   MOZ_ASSERT(!mApplyingAnchorAdjustment);
   
   mApplyingAnchorAdjustment = true;
   mScrollFrame->ScrollBy(
-      adjustmentDevicePixels, nsIScrollableFrame::DEVICE_PIXELS,
+      physicalDevicePixels, nsIScrollableFrame::DEVICE_PIXELS,
       nsIScrollableFrame::INSTANT, nullptr, nsGkAtoms::relative);
   mApplyingAnchorAdjustment = false;
 
   nsPresContext* pc = Frame()->PresContext();
   Document* doc = pc->Document();
-  if (writingMode.IsVertical()) {
-    doc->UpdateForScrollAnchorAdjustment(adjustment.x);
-  } else {
-    doc->UpdateForScrollAnchorAdjustment(adjustment.y);
-  }
+  doc->UpdateForScrollAnchorAdjustment(logicalAdjustment);
 
   
   
-  mLastAnchorPos =
-      FindScrollAnchoringBoundingRect(Frame(), mAnchorNode).TopLeft();
+  mLastAnchorOffset =
+      FindScrollAnchoringBoundingOffset(mScrollFrame, mAnchorNode);
 }
 
 ScrollAnchorContainer::ExamineResult

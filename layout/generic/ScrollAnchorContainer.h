@@ -135,7 +135,8 @@ class ScrollAnchorContainer final {
   
   
   
-  nsPoint mLastAnchorPos;
+  
+  nscoord mLastAnchorOffset;
 
   
   bool mAnchorNodeIsDirty : 1;
