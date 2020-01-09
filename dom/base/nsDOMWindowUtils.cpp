@@ -261,6 +261,17 @@ WebRenderBridgeChild* nsDOMWindowUtils::GetWebRenderBridge() {
   return nullptr;
 }
 
+CompositorBridgeChild* nsDOMWindowUtils::GetCompositorBridge() {
+  if (nsIWidget* widget = GetWidget()) {
+    if (LayerManager* lm = widget->GetLayerManager()) {
+      if (CompositorBridgeChild* cbc = lm->GetCompositorBridgeChild()) {
+        return cbc;
+      }
+    }
+  }
+  return nullptr;
+}
+
 NS_IMETHODIMP
 nsDOMWindowUtils::SyncFlushCompositor() {
   if (nsIWidget* widget = GetWidget()) {
@@ -1422,13 +1433,13 @@ nsDOMWindowUtils::ScrollToVisual(float aOffsetX, float aOffsetY,
       return NS_ERROR_INVALID_ARG;
   }
 
-  ScrollMode scrollMode;
+  nsIPresShell::ScrollMode scrollMode;
   switch (aScrollMode) {
     case SCROLL_MODE_INSTANT:
-      scrollMode = ScrollMode::eInstant;
+      scrollMode = nsIPresShell::ScrollMode::eInstant;
       break;
     case SCROLL_MODE_SMOOTH:
-      scrollMode = ScrollMode::eSmoothMsd;
+      scrollMode = nsIPresShell::ScrollMode::eSmooth;
       break;
     default:
       return NS_ERROR_INVALID_ARG;
@@ -3500,14 +3511,14 @@ nsDOMWindowUtils::GetOMTCTransform(Element* aElement,
     return NS_OK;
   }
 
-  Maybe<Matrix4x4> transform;
+  MaybeTransform transform;
   forwarder->GetShadowManager()->SendGetTransform(
       layer->AsShadowableLayer()->GetShadow(), &transform);
-  if (transform.isNothing()) {
+  if (transform.type() != MaybeTransform::TMatrix4x4) {
     return NS_OK;
   }
 
-  Matrix4x4 matrix = transform.value();
+  Matrix4x4 matrix = transform.get_Matrix4x4();
   RefPtr<nsROCSSPrimitiveValue> cssValue =
       nsComputedDOMStyle::MatrixToCSSValue(matrix);
   if (!cssValue) {
@@ -4095,6 +4106,18 @@ NS_IMETHODIMP
 nsDOMWindowUtils::WrCapture() {
   if (WebRenderBridgeChild* wrbc = GetWebRenderBridge()) {
     wrbc->Capture();
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDOMWindowUtils::SetCompositionRecording(bool aValue) {
+  if (CompositorBridgeChild* cbc = GetCompositorBridge()) {
+    if (aValue) {
+      cbc->SendBeginRecording(TimeStamp::Now());
+    } else {
+      cbc->SendEndRecording();
+    }
   }
   return NS_OK;
 }
