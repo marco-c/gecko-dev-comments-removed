@@ -92,7 +92,7 @@ add_task(async function test_grouping() {
 
   let [value, unit] = DownloadUtils.convertByteUnits(quotaUsage * 4);
   let l10nAttributes = frameDoc.l10n.getAttributes(columns[2]);
-  is(l10nAttributes.id, "site-usage-persistent",
+  is(l10nAttributes.id, "site-storage-persistent",
     "Should show the site as persistent if one origin is persistent.");
   
   
