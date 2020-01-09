@@ -24,6 +24,7 @@
 #include "nsRefPtrHashtable.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/Vector.h"
 
 namespace mozilla {
 class OriginAttributesPattern;
@@ -270,7 +271,7 @@ class nsPermissionManager final : public nsIPermissionManager,
 
   
   int32_t GetTypeIndex(const char* aType, bool aAdd) {
-    for (uint32_t i = 0; i < mTypeArray.Length(); ++i) {
+    for (uint32_t i = 0; i < mTypeArray.length(); ++i) {
       if (mTypeArray[i].Equals(aType)) {
         return i;
       }
@@ -283,13 +284,11 @@ class nsPermissionManager final : public nsIPermissionManager,
 
     
     
-    nsCString* elem = mTypeArray.AppendElement();
-    if (!elem) {
+    if (!mTypeArray.emplaceBack(aType)) {
       return -1;
     }
 
-    elem->Assign(aType);
-    return mTypeArray.Length() - 1;
+    return mTypeArray.length() - 1;
   }
 
   PermissionHashKey* GetPermissionHashKey(nsIPrincipal* aPrincipal,
@@ -438,13 +437,14 @@ class nsPermissionManager final : public nsIPermissionManager,
   int64_t mLargestID;
 
   
-  nsTArray<nsCString> mTypeArray;
-
-  
   
   bool mIsShuttingDown;
 
   nsCOMPtr<nsIPrefBranch> mDefaultPrefBranch;
+
+  
+  
+  mozilla::Vector<nsCString, 512> mTypeArray;
 
   friend class DeleteFromMozHostListener;
   friend class CloseDatabaseListener;
