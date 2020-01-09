@@ -16,7 +16,7 @@ add_task(async function() {
   );
   const {threadClient, tab, toolbox} = dbg;
 
-  await setBreakpoint(threadClient, "doc_rr_basic.html", 21);
+  const bp = await setBreakpoint(threadClient, "doc_rr_basic.html", 21);
 
   
   
@@ -39,6 +39,7 @@ add_task(async function() {
   await resumeToLine(threadClient, 21);
   await checkEvaluateInTopFrame(threadClient, "number", 10);
 
+  await threadClient.removeBreakpoint(bp);
   await toolbox.closeToolbox();
   await gBrowser.removeTab(tab);
 });
