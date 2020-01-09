@@ -2295,6 +2295,15 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "network.http.tailing.enabled",
+   network_http_tailing_enabled,
+   bool, true
+)
+
+
+
+
 
 VARCACHE_PREF(
   "browser.sessionstore.dom_storage_limit",

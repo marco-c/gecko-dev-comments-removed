@@ -3189,9 +3189,6 @@ class nsContentUtils {
   static bool GetUserIsInteracting();
 
   
-  static bool IsTailingEnabled() { return sTailingEnabled; }
-
-  
   
   
   static bool ShowInputPlaceholderOnFocus() {
@@ -3418,7 +3415,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sTailingEnabled;
   static bool sShowInputPlaceholderOnFocus;
   static bool sAutoFocusEnabled;
 #ifndef RELEASE_OR_BETA

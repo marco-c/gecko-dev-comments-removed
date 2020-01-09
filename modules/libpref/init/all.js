@@ -2346,10 +2346,6 @@ pref("network.http.on_click_priority", true);
 
 
 
-
-pref("network.http.tailing.enabled", true);
-
-
 pref("network.http.tailing.delay-quantum", 600);
 
 pref("network.http.tailing.delay-quantum-after-domcontentloaded", 100);

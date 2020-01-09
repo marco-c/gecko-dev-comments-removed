@@ -29,6 +29,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "mozilla/StaticPrefs.h"
 #include "nsGkAtoms.h"
 #include "nsNetUtil.h"
 #include "nsGlobalWindowInner.h"
@@ -1316,7 +1317,7 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
       
       cos->AddClassFlags(nsIClassOfService::Leader);
     } else if (aRequest->IsDeferredScript() &&
-               !nsContentUtils::IsTailingEnabled()) {
+               !StaticPrefs::network_http_tailing_enabled()) {
       
       
       
