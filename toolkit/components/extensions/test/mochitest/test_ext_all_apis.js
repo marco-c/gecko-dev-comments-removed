@@ -9,7 +9,6 @@
 
 
 
-
 function generateExpectations(list) {
   return list.reduce((allApis, path) => {
     return allApis.concat(`browser.${path}`, `chrome.${path}`);
