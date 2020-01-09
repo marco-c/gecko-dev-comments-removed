@@ -108,6 +108,9 @@ function getBoundingClientRectRelativeToVisualViewport(aElement) {
   let utils = SpecialPowers.getDOMWindowUtils(window);
   var rect = aElement.getBoundingClientRect();
   var offsetX = {}, offsetY = {};
+  
+  
+  
   utils.getVisualViewportOffsetRelativeToLayoutViewport(offsetX, offsetY);
   rect.x -= offsetX.value;
   rect.y -= offsetY.value;

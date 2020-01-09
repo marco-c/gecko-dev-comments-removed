@@ -5485,13 +5485,6 @@ void ScrollFrameHelper::UpdateMinimumScaleSize(
   MOZ_ASSERT(pc->IsRootContentDocument(),
              "The pres context should be for the root content document");
 
-  const ScrollStyles& styles = pc->GetViewportScrollStylesOverride();
-  
-  
-  if (styles.mHorizontal != StyleOverflow::Hidden) {
-    return;
-  }
-
   RefPtr<MobileViewportManager> manager =
       mOuter->PresShell()->GetMobileViewportManager();
   MOZ_ASSERT(manager);
