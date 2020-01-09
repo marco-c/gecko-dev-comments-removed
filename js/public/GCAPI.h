@@ -49,10 +49,10 @@ typedef enum JSGCMode {
   JSGC_MODE_ZONE = 1,
 
   
+  JSGC_MODE_INCREMENTAL = 2,
 
-
-
-  JSGC_MODE_ZONE_INCREMENTAL = 2
+  
+  JSGC_MODE_ZONE_INCREMENTAL = 3,
 } JSGCMode;
 
 
