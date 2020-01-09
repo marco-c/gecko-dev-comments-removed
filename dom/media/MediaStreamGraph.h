@@ -674,7 +674,7 @@ class SourceMediaStream : public MediaStream {
   
 
 
-  void ExtractPendingInput(GraphTime aCurrentTime);
+  void ExtractPendingInput(GraphTime aCurrentTime, GraphTime aDesiredUpToTime);
 
   enum {
     ADDTRACK_QUEUED = 0x01  
