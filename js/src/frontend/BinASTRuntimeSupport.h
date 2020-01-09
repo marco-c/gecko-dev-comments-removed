@@ -4,8 +4,8 @@
 
 
 
-#ifndef frontend_BinSourceSupport_h
-#define frontend_BinSourceSupport_h
+#ifndef frontend_BinASTSupport_h
+#define frontend_BinASTSupport_h
 
 #include "mozilla/HashFunctions.h"
 

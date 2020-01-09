@@ -18,7 +18,7 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/Vector.h"
 
-#include "frontend/BinSource-macros.h"
+#include "frontend/BinAST-macros.h"
 #include "frontend/BinTokenReaderMultipart.h"
 #include "frontend/FullParseHandler.h"
 #include "frontend/ParseNode.h"
@@ -2497,7 +2497,7 @@ BinASTParser<Tok>::parseInterfaceEagerFunctionDeclaration(
 
   
   
-  BinParseContext funpc(cx_, this, funbox,  nullptr);
+  BinASTParseContext funpc(cx_, this, funbox,  nullptr);
   BINJS_TRY(funpc.init());
   pc_->functionScope().useAsVarScope(pc_);
   MOZ_ASSERT(pc_->isFunctionBox());
@@ -2560,7 +2560,7 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceEagerFunctionExpression(
 
   
   
-  BinParseContext funpc(cx_, this, funbox,  nullptr);
+  BinASTParseContext funpc(cx_, this, funbox,  nullptr);
   BINJS_TRY(funpc.init());
   pc_->functionScope().useAsVarScope(pc_);
   MOZ_ASSERT(pc_->isFunctionBox());
@@ -2615,7 +2615,7 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceEagerGetter(
 
   
   
-  BinParseContext funpc(cx_, this, funbox,  nullptr);
+  BinASTParseContext funpc(cx_, this, funbox,  nullptr);
   BINJS_TRY(funpc.init());
   pc_->functionScope().useAsVarScope(pc_);
   MOZ_ASSERT(pc_->isFunctionBox());
@@ -2681,7 +2681,7 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceEagerMethod(
 
   
   
-  BinParseContext funpc(cx_, this, funbox,  nullptr);
+  BinASTParseContext funpc(cx_, this, funbox,  nullptr);
   BINJS_TRY(funpc.init());
   pc_->functionScope().useAsVarScope(pc_);
   MOZ_ASSERT(pc_->isFunctionBox());
@@ -2740,7 +2740,7 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceEagerSetter(
 
   
   
-  BinParseContext funpc(cx_, this, funbox,  nullptr);
+  BinASTParseContext funpc(cx_, this, funbox,  nullptr);
   BINJS_TRY(funpc.init());
   pc_->functionScope().useAsVarScope(pc_);
   MOZ_ASSERT(pc_->isFunctionBox());

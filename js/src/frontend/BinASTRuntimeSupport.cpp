@@ -4,7 +4,7 @@
 
 
 
-#include "frontend/BinSourceRuntimeSupport.h"
+#include "frontend/BinASTRuntimeSupport.h"
 
 #include "gc/Tracer.h"
 #include "js/Vector.h"
