@@ -18,6 +18,8 @@ use util::{TransformedRectKind, MatrixHelpers};
 
 
 
+pub const VECS_PER_TRANSFORM: usize = 8;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(C)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -445,6 +447,7 @@ pub struct TransformPalette {
 
 impl TransformPalette {
     pub fn new() -> Self {
+        let _ = VECS_PER_TRANSFORM;
         TransformPalette {
             transforms: Vec::new(),
             metadata: Vec::new(),
