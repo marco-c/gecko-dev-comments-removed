@@ -158,6 +158,21 @@ BEGIN_TEST(testNewObject_Subclassing) {
     return false;
   }
 
+  
+  JS::RootedValue expectedError(cx);
+  EVAL("TypeError", &expectedError);
+  JS::RootedValue actualError(cx);
+  EVAL(
+      "try {\n"
+      "  Base();\n"
+      "} catch (e) {\n"
+      "  e.constructor;\n"
+      "}\n",
+      &actualError);
+  CHECK_SAME(actualError, expectedError);
+
+  
+  
   EXEC(
       "class MyClass extends Base {\n"
       "  ok() { return true; }\n"
@@ -169,6 +184,7 @@ BEGIN_TEST(testNewObject_Subclassing) {
   CHECK_SAME(result, JS::TrueValue());
 
   EVAL("myObj.__proto__ === MyClass.prototype", &result);
+  CHECK_SAME(result, JS::TrueValue());
   EVAL("myObj.__proto__.__proto__ === Base.prototype", &result);
   CHECK_SAME(result, JS::TrueValue());
 
