@@ -1097,16 +1097,6 @@ class AsyncPanZoomController {
 
 
 
-  AsyncTransform GetCurrentAsyncViewportTransform(
-      AsyncTransformConsumer aMode) const;
-
-  
-
-
-
-
-
-
 
   AsyncTransform GetCurrentAsyncTransform(
       AsyncTransformConsumer aMode,
@@ -1148,6 +1138,16 @@ class AsyncPanZoomController {
 
 
   bool SampleCompositedAsyncTransform();
+
+  
+
+
+
+
+
+
+  AsyncTransform GetCurrentAsyncViewportTransform(
+      AsyncTransformConsumer aMode) const;
 
   
 
