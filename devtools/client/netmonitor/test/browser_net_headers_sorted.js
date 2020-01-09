@@ -90,19 +90,24 @@ async function verifyRawHeaders(monitor) {
                                   "Cache-Control"];
 
   
-  const rawHeadersBtn = document.querySelector(".raw-headers-button");
-  rawHeadersBtn.click();
+  for (const rawToggleInput of document.querySelectorAll(".devtools-checkbox-toggle")) {
+    rawToggleInput.click();
+  }
 
   
+  let rawArr;
   await waitUntil(() => {
-    return document.querySelector(".raw-request-headers-textarea") &&
-      document.querySelector(".raw-response-headers-textarea");
+    rawArr = document.querySelectorAll("textarea.raw-headers");
+    
+    return (rawArr.length > 1);
   });
 
+  
   const requestHeadersText =
-    document.querySelector(".raw-request-headers-textarea").textContent;
+    rawArr[1].textContent;
+  
   const responseHeadersText =
-    document.querySelector(".raw-response-headers-textarea").textContent;
+    rawArr[0].textContent;
 
   const rawRequestHeadersArray = requestHeadersText.split("\n");
   for (let i = 0; i < rawRequestHeadersArray.length; i++) {
