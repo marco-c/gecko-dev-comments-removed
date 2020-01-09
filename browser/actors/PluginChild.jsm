@@ -246,7 +246,12 @@ class PluginChild extends ActorChild {
 
 
 
-  computeAndAdjustOverlayDisplay(plugin, overlay) {
+
+
+
+
+
+  computeAndAdjustOverlayDisplay(plugin, overlay, flushLayout) {
     let fallbackType = plugin.pluginFallbackType;
     if (plugin.pluginFallbackTypeOverride !== undefined) {
       fallbackType = plugin.pluginFallbackTypeOverride;
@@ -257,24 +262,38 @@ class PluginChild extends ActorChild {
 
     
     
-    if (overlay.scrollWidth == 0) {
+    if (flushLayout && overlay.scrollWidth == 0) {
       return OVERLAY_DISPLAY.FULL;
     }
 
     let overlayDisplay = OVERLAY_DISPLAY.FULL;
+    let contentWindow = plugin.ownerGlobal;
+    let cwu = contentWindow.windowUtils;
 
     
-    let pluginRect = plugin.getBoundingClientRect();
+    let pluginRect = flushLayout ? plugin.getBoundingClientRect() :
+                                   cwu.getBoundsWithoutFlushing(plugin);
     let pluginWidth = Math.ceil(pluginRect.width);
     let pluginHeight = Math.ceil(pluginRect.height);
 
+    let layoutNeedsFlush = !flushLayout &&
+      cwu.needsFlush(cwu.FLUSH_STYLE) &&
+      cwu.needsFlush(cwu.FLUSH_LAYOUT);
+
     
     
     
     
     
 
-    if (pluginWidth <= 32 || pluginHeight <= 32) {
+    if (layoutNeedsFlush) {
+      
+      
+      
+      overlayDisplay = OVERLAY_DISPLAY.FULL;
+      overlay.setAttribute("sizing", "oversized");
+      overlay.removeAttribute("notext");
+    } else if (pluginWidth <= 32 || pluginHeight <= 32) {
       overlay.setAttribute("sizing", "blank");
       overlayDisplay = OVERLAY_DISPLAY.BLANK;
     } else if (pluginWidth <= 80 || pluginHeight <= 60) {
@@ -295,6 +314,13 @@ class PluginChild extends ActorChild {
       overlay.removeAttribute("notext");
     }
 
+    
+    
+    
+    
+    if (layoutNeedsFlush) {
+      return overlayDisplay;
+    }
 
     
     
@@ -318,9 +344,6 @@ class PluginChild extends ActorChild {
                    [right, top],
                    [right, bottom],
                    [centerX, centerY]];
-
-    let contentWindow = plugin.ownerGlobal;
-    let cwu = contentWindow.windowUtils;
 
     for (let [x, y] of points) {
       if (x < 0 || y < 0) {
@@ -505,10 +528,11 @@ class PluginChild extends ActorChild {
     if (eventType != "PluginCrashed") {
       if (overlay != null) {
         this.setVisibility(plugin, overlay,
-                           this.computeAndAdjustOverlayDisplay(plugin, overlay));
+                           this.computeAndAdjustOverlayDisplay(plugin, overlay, false));
+
         let resizeListener = () => {
           this.setVisibility(plugin, overlay,
-            this.computeAndAdjustOverlayDisplay(plugin, overlay));
+            this.computeAndAdjustOverlayDisplay(plugin, overlay, true));
         };
         plugin.addEventListener("overflow", resizeListener);
         plugin.addEventListener("underflow", resizeListener);
@@ -926,14 +950,15 @@ class PluginChild extends ActorChild {
     let link = this.getPluginUI(plugin, "reloadLink");
     this.addLinkClickCallback(link, "reloadPage");
 
-    let overlayDisplayState = this.computeAndAdjustOverlayDisplay(plugin, overlay);
+    
+    let overlayDisplayState = this.computeAndAdjustOverlayDisplay(plugin, overlay, true);
 
     
     if (overlayDisplayState != OVERLAY_DISPLAY.FULL) {
       
       statusDiv.removeAttribute("status");
 
-      overlayDisplayState = this.computeAndAdjustOverlayDisplay(plugin, overlay);
+      overlayDisplayState = this.computeAndAdjustOverlayDisplay(plugin, overlay, true);
     }
     this.setVisibility(plugin, overlay, overlayDisplayState);
 
