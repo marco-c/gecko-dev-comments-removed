@@ -1454,7 +1454,7 @@ nsresult HTMLEditor::PasteInternal(int32_t aClipboardType,
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (aDispatchPasteEvent && !FireClipboardEvent(ePaste, aClipboardType)) {
-    return NS_OK;
+    return NS_ERROR_EDITOR_ACTION_CANCELED;
   }
 
   
@@ -1546,7 +1546,7 @@ nsresult HTMLEditor::PasteTransferable(nsITransferable* aTransferable) {
   
   
   if (!FireClipboardEvent(ePaste, nsIClipboard::kGlobalClipboard)) {
-    return NS_OK;
+    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
   }
 
   nsAutoString contextStr, infoStr;
@@ -1571,7 +1571,7 @@ HTMLEditor::PasteNoFormatting(int32_t aSelectionType) {
       SettingDataTransfer::eWithoutFormat, aSelectionType);
 
   if (!FireClipboardEvent(ePasteNoFormatting, aSelectionType)) {
-    return NS_OK;
+    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
   }
 
   CommitComposition();

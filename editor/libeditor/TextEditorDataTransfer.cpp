@@ -378,7 +378,7 @@ nsresult TextEditor::PasteAsAction(int32_t aClipboardType,
   }
 
   if (aDispatchPasteEvent && !FireClipboardEvent(ePaste, aClipboardType)) {
-    return NS_OK;
+    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
   }
 
   
@@ -425,7 +425,7 @@ TextEditor::PasteTransferable(nsITransferable* aTransferable) {
   
   
   if (!FireClipboardEvent(ePaste, -1)) {
-    return NS_OK;
+    return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
   }
 
   if (!IsModifiable()) {

@@ -1820,6 +1820,13 @@ class EditorBase : public nsIEditor,
       
       case NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE:
         return NS_OK;
+      
+      
+      
+      
+      
+      case NS_ERROR_EDITOR_ACTION_CANCELED:
+        return NS_SUCCESS_DOM_NO_OPERATION;
       default:
         return aRv;
     }
