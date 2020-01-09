@@ -51,6 +51,7 @@ class nsMixedContentBlocker : public nsIContentPolicy,
   
   static bool IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL);
   static bool IsPotentiallyTrustworthyOnion(nsIURI* aURL);
+  static bool IsPotentiallyTrustworthyOrigin(nsIURI* aURI);
 
   
 
