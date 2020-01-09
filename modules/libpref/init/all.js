@@ -1307,7 +1307,8 @@ pref("dom.serviceWorkers.disable_open_click_delay", 1000);
 pref("dom.storage.enabled", true);
 
 
-#ifdef NIGHTLY_BUILD
+
+#ifdef EARLY_BETA_OR_EARLIER
 pref("dom.storage.next_gen", true);
 #else
 pref("dom.storage.next_gen", false);
