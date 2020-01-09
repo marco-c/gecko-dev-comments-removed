@@ -932,9 +932,6 @@ ResumeMode Debugger::slowPathOnResumeFrame(JSContext* cx,
   return slowPathOnEnterFrame(cx, frame);
 }
 
-static void DebuggerFrame_maybeDecrementFrameScriptStepModeCount(
-    FreeOp* fop, AbstractFramePtr frame, NativeObject* frameobj);
-
 
 
 
@@ -4497,8 +4494,7 @@ void Debugger::removeDebuggeeGlobal(FreeOp* fop, GlobalObject* global,
     DebuggerFrame* frameobj = e.front().value();
     if (frame.hasGlobal(global)) {
       frameobj->freeFrameIterData(fop);
-      DebuggerFrame_maybeDecrementFrameScriptStepModeCount(fop, frame,
-                                                           frameobj);
+      frameobj->maybeDecrementFrameScriptStepModeCount(fop, frame);
       e.removeFront();
     }
   }
@@ -7783,7 +7779,7 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
       
       FreeOp* fop = cx->runtime()->defaultFreeOp();
       frameobj->freeFrameIterData(fop);
-      DebuggerFrame_maybeDecrementFrameScriptStepModeCount(fop, to, frameobj);
+      frameobj->maybeDecrementFrameScriptStepModeCount(fop, to);
 
       ReportOutOfMemory(cx);
       return false;
@@ -7812,8 +7808,7 @@ void Debugger::removeFromFrameMapsAndClearBreakpointsIn(JSContext* cx,
     FreeOp* fop = cx->runtime()->defaultFreeOp();
     frameobj->freeFrameIterData(fop);
     if (!suspending) {
-      DebuggerFrame_maybeDecrementFrameScriptStepModeCount(fop, frame,
-                                                           frameobj);
+      frameobj->maybeDecrementFrameScriptStepModeCount(fop, frame);
     }
 
     Debugger* dbg = Debugger::fromChildJSObject(frameobj);
@@ -9586,11 +9581,10 @@ void DebuggerFrame::freeFrameIterData(FreeOp* fop) {
   }
 }
 
-static void DebuggerFrame_maybeDecrementFrameScriptStepModeCount(
-    FreeOp* fop, AbstractFramePtr frame, NativeObject* frameobj) {
+void DebuggerFrame::maybeDecrementFrameScriptStepModeCount(
+    FreeOp* fop, AbstractFramePtr frame) {
   
-  if (frameobj->getReservedSlot(DebuggerFrame::ONSTEP_HANDLER_SLOT)
-          .isUndefined()) {
+  if (getReservedSlot(ONSTEP_HANDLER_SLOT).isUndefined()) {
     return;
   }
   if (frame.isWasmDebugFrame()) {
