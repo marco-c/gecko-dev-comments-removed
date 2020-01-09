@@ -392,7 +392,7 @@ function promiseTabLoadEvent(tab, url) {
 
 
 function waitForNewTabEvent(aTabBrowser) {
-  return promiseWaitForEvent(aTabBrowser.tabContainer, "TabOpen");
+  return BrowserTestUtils.waitForEvent(aTabBrowser.tabContainer, "TabOpen");
 }
 
 function is_hidden(element) {
