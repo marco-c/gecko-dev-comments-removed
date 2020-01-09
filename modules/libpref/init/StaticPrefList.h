@@ -1040,6 +1040,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "dom.audioworklet.enabled",
+  dom_audioworklet_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
   "dom.block_external_protocol_in_iframes",
   dom_block_external_protocol_in_iframes,
   bool, true
@@ -4922,6 +4930,22 @@ VARCACHE_PREF(
   RelaxedAtomicInt32, 5000
 )
 
+
+VARCACHE_PREF(
+  Live,
+  "media.track.enabled",
+  media_track_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "media.webvtt.regions.enabled",
+  media_webvtt_regions_enabled,
+  bool, true
+)
+
 VARCACHE_PREF(
   Live,
   "media.webspeech.synth.force_global_queue",
@@ -4954,7 +4978,7 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   Live,
   "media.webspeech.recognition.enable",
-  MediaWebspeechRecognitionEnable,
+  media_webspeech_recognition_enable,
   bool, false
 )
 #endif
@@ -4965,6 +4989,15 @@ VARCACHE_PREF(
   MediaWebspeechRecognitionForceEnable,
   bool, false
 )
+
+#ifdef MOZ_WEBSPEECH
+VARCACHE_PREF(
+  Live,
+  "media.webspeech.synth.enabled",
+  media_webspeech_synth_enabled,
+  bool, false
+)
+#endif 
 
 #if defined(MOZ_WEBM_ENCODER)
 # define PREF_VALUE true

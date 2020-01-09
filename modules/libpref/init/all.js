@@ -519,13 +519,7 @@ pref("media.getusermedia.screensharing.enabled", true);
 pref("media.getusermedia.audiocapture.enabled", false);
 
 
-pref("media.webvtt.regions.enabled", true);
-
-
 pref("media.webvtt.pseudo.enabled", true);
-
-
-pref("media.track.enabled", false);
 
 
 pref("media.mediasource.enabled", true);
@@ -549,9 +543,6 @@ pref("media.benchmark.timeout", 1000);
 pref("media.media-capabilities.enabled", true);
 pref("media.media-capabilities.screen.enabled", false);
 
-#ifdef MOZ_WEBSPEECH
-pref("media.webspeech.synth.enabled", false);
-#endif
 #ifdef MOZ_WEBM_ENCODER
 pref("media.encoder.webm.enabled", true);
 #endif
