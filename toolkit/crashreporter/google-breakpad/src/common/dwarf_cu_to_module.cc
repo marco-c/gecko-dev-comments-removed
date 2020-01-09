@@ -1237,6 +1237,47 @@ vector<Module::Line> MergeLines(const vector<Module::Line>& inlines,
 
   return merged_lines;
 }
+
+
+
+
+
+void CollapseAdjacentLines(vector<Module::Line>& lines) {
+  if (lines.empty()) {
+    return;
+  }
+
+  auto merging_into = lines.begin();
+  auto next = merging_into + 1;
+  const auto end = lines.end();
+
+  while (next != end) {
+    
+    if ((merging_into->address + merging_into->size) == next->address &&
+        merging_into->file == next->file &&
+        merging_into->number == next->number) {
+      merging_into->size = next->address + next->size - merging_into->address;
+      ++next;
+      continue;
+    }
+
+    
+    ++merging_into;
+
+    
+    
+    
+    
+    if (next != end) {
+      if (next != merging_into) {
+        *merging_into = std::move(*next);
+      }
+      ++next;
+    }
+  }
+
+  lines.erase(merging_into + 1, end);
+}
 }
 
 void DwarfCUToModule::AssignLinesToFunctions(const LineToModuleHandler::FileMap &files) {
@@ -1280,6 +1321,9 @@ void DwarfCUToModule::AssignLinesToFunctions(const LineToModuleHandler::FileMap 
 
   if (!inlines.empty()) {
     vector<Module::Line> merged_lines = MergeLines(inlines, lines_);
+
+    CollapseAdjacentLines(merged_lines);
+
     lines_ = std::move(merged_lines);
   }
 
