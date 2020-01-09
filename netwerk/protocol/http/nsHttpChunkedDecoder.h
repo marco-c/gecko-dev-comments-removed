@@ -34,7 +34,6 @@ class nsHttpChunkedDecoder {
 
   nsHttpHeaderArray* TakeTrailers() { return mTrailers.forget(); }
 
-  
   uint32_t GetChunkRemaining() { return mChunkRemaining; }
 
  private:
