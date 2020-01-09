@@ -1714,14 +1714,7 @@ class Document : public nsINode,
 
 
 
-
-
-
-
-
-  template <typename T>
-  size_t FindDocStyleSheetInsertionPoint(const nsTArray<T>& aDocSheets,
-                                         const StyleSheet& aSheet);
+  size_t FindDocStyleSheetInsertionPoint(const StyleSheet& aSheet);
 
   
 
@@ -3829,7 +3822,7 @@ class Document : public nsINode,
 
   void RemoveDocStyleSheetsFromStyleSets();
   void RemoveStyleSheetsFromStyleSets(
-      const nsTArray<RefPtr<StyleSheet>>& aSheets, SheetType aType);
+      const nsTArray<RefPtr<StyleSheet>>& aSheets, StyleOrigin);
   void ResetStylesheetsToURI(nsIURI* aURI);
   void FillStyleSet();
   void FillStyleSetUserAndUASheets();

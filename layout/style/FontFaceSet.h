@@ -249,7 +249,7 @@ class FontFaceSet final : public DOMEventTargetHelper,
   
   struct FontFaceRecord {
     RefPtr<FontFace> mFontFace;
-    SheetType mSheetType;  
+    Maybe<StyleOrigin> mOrigin;  
 
     
     
@@ -259,8 +259,7 @@ class FontFaceSet final : public DOMEventTargetHelper,
 
   static already_AddRefed<gfxUserFontEntry>
   FindOrCreateUserFontEntryFromFontFace(const nsACString& aFamilyName,
-                                        FontFace* aFontFace,
-                                        SheetType aSheetType);
+                                        FontFace* aFontFace, StyleOrigin);
 
   
   RawServoFontFaceRule* FindRuleForUserFontEntry(
@@ -281,7 +280,7 @@ class FontFaceSet final : public DOMEventTargetHelper,
                       uint32_t aFlags, nsresult aStatus);
   void MarkUserFontSetDirty();
 
-  void InsertRuleFontFace(FontFace* aFontFace, SheetType aSheetType,
+  void InsertRuleFontFace(FontFace* aFontFace, StyleOrigin aOrigin,
                           nsTArray<FontFaceRecord>& aOldRecords,
                           bool& aFontSetModified);
   void InsertNonRuleFontFace(FontFace* aFontFace, bool& aFontSetModified);

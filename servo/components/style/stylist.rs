@@ -592,6 +592,18 @@ impl Stylist {
     }
 
     
+    #[inline]
+    pub fn sheet_count(&self, origin: Origin) -> usize {
+        self.stylesheets.sheet_count(origin)
+    }
+
+    
+    #[inline]
+    pub fn sheet_at(&self, origin: Origin, index: usize) -> Option<&StylistSheet> {
+        self.stylesheets.get(origin, index)
+    }
+
+    
     
     pub fn any_applicable_rule_data<E, F>(&self, element: E, mut f: F) -> bool
     where

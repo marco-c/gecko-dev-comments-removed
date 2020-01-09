@@ -14,7 +14,6 @@
 #include "mozilla/PostTraversalTask.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoUtils.h"
-#include "mozilla/SheetType.h"
 #include "mozilla/UniquePtr.h"
 #include "MainThreadUtils.h"
 #include "nsCSSPseudoElements.h"
@@ -82,6 +81,8 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(OriginFlags)
 class ServoStyleSet {
   friend class RestyleManager;
   typedef ServoElementSnapshotTable SnapshotTable;
+
+  using Origin = StyleOrigin;
 
  public:
   static bool IsInServoTraversal() { return mozilla::IsInServoTraversal(); }
@@ -200,27 +201,21 @@ class ServoStyleSet {
 #endif
 
   
-  nsresult AppendStyleSheet(SheetType aType, StyleSheet* aSheet);
-  nsresult RemoveStyleSheet(SheetType aType, StyleSheet* aSheet);
-  nsresult ReplaceSheets(SheetType aType,
-                         const nsTArray<RefPtr<StyleSheet>>& aNewSheets);
-  nsresult InsertStyleSheetBefore(SheetType aType, StyleSheet* aNewSheet,
-                                  StyleSheet* aReferenceSheet);
+  void AppendStyleSheet(Origin, StyleSheet*);
+  void RemoveStyleSheet(Origin, StyleSheet*);
+  void ReplaceSheets(Origin, const nsTArray<RefPtr<StyleSheet>>& aNewSheets);
+  void InsertStyleSheetBefore(Origin, StyleSheet*, StyleSheet* aReferenceSheet);
 
-  int32_t SheetCount(SheetType aType) const;
-  StyleSheet* StyleSheetAt(SheetType aType, int32_t aIndex) const;
+  size_t SheetCount(Origin) const;
+  StyleSheet* SheetAt(Origin, size_t aIndex) const;
 
   void AppendAllNonDocumentAuthorSheets(nsTArray<StyleSheet*>& aArray) const;
 
-  template <typename Func>
-  void EnumerateStyleSheetArrays(Func aCallback) const {
-    for (const auto& sheetArray : mSheets) {
-      aCallback(sheetArray);
-    }
+  void RemoveDocStyleSheet(StyleSheet* aSheet) {
+    RemoveStyleSheet(StyleOrigin::Author, aSheet);
   }
 
-  nsresult RemoveDocStyleSheet(StyleSheet* aSheet);
-  nsresult AddDocStyleSheet(StyleSheet* aSheet, dom::Document* aDocument);
+  void AddDocStyleSheet(StyleSheet* aSheet);
 
   
   already_AddRefed<ComputedStyle> ProbePseudoElementStyle(
@@ -296,6 +291,17 @@ class ServoStyleSet {
 
 
   void CompatibilityModeChanged();
+
+  template <typename T>
+  void EnumerateStyleSheets(T aCb) {
+    const StyleOrigin kOrigins[] = {StyleOrigin::UserAgent, StyleOrigin::User,
+                                    StyleOrigin::Author};
+    for (auto origin : kOrigins) {
+      for (size_t i = 0, count = SheetCount(origin); i < count; ++i) {
+        aCb(*SheetAt(origin, i));
+      }
+    }
+  }
 
   
 
@@ -488,18 +494,10 @@ class ServoStyleSet {
 
   void RunPostTraversalTasks();
 
-  void PrependSheetOfType(SheetType aType, StyleSheet* aSheet);
-
-  void AppendSheetOfType(SheetType aType, StyleSheet* aSheet);
-
-  void InsertSheetOfType(SheetType aType, StyleSheet* aSheet,
-                         StyleSheet* aBeforeSheet);
-
-  void RemoveSheetOfType(SheetType aType, StyleSheet* aSheet);
-
-  
-  
-  dom::Document* mDocument;
+  void PrependSheetOfType(Origin, StyleSheet*);
+  void AppendSheetOfType(Origin, StyleSheet*);
+  void InsertSheetOfType(Origin, StyleSheet*, StyleSheet* aBeforeSheet);
+  void RemoveSheetOfType(Origin, StyleSheet*);
 
   const nsPresContext* GetPresContext() const {
     return const_cast<ServoStyleSet*>(this)->GetPresContext();
@@ -511,20 +509,15 @@ class ServoStyleSet {
 
   nsPresContext* GetPresContext();
 
+  
+  
+  dom::Document* mDocument;
   UniquePtr<RawServoStyleSet> mRawSet;
-  EnumeratedArray<SheetType, SheetType::Count, nsTArray<RefPtr<StyleSheet>>>
-      mSheets;
-  bool mAuthorStyleDisabled;
-  StylistState mStylistState;
-  uint64_t mUserFontSetUpdateGeneration;
-
-  bool mNeedsRestyleAfterEnsureUniqueInner;
 
   
   
-  EnumeratedArray<nsCSSAnonBoxes::NonInheriting,
-                  nsCSSAnonBoxes::NonInheriting::_Count, RefPtr<ComputedStyle>>
-      mNonInheritingComputedStyles;
+  UniquePtr<ServoStyleRuleMap> mStyleRuleMap;
+  uint64_t mUserFontSetUpdateGeneration = 0;
 
   
   
@@ -534,7 +527,13 @@ class ServoStyleSet {
 
   
   
-  UniquePtr<ServoStyleRuleMap> mStyleRuleMap;
+  EnumeratedArray<nsCSSAnonBoxes::NonInheriting,
+                  nsCSSAnonBoxes::NonInheriting::_Count, RefPtr<ComputedStyle>>
+      mNonInheritingComputedStyles;
+
+  StylistState mStylistState = StylistState::NotDirty;
+  bool mAuthorStyleDisabled = false;
+  bool mNeedsRestyleAfterEnsureUniqueInner = false;
 };
 
 class UACacheReporter final : public nsIMemoryReporter {

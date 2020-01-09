@@ -141,7 +141,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   ServoCSSRuleList* GetCssRulesInternal();
 
   
-  mozilla::OriginFlags GetOrigin();
+  mozilla::StyleOrigin GetOrigin() const;
 
   
 

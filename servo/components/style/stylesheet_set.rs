@@ -469,6 +469,13 @@ where
     }
 
     
+    #[inline]
+    pub fn sheet_count(&self, origin: Origin) -> usize {
+        self.collections.borrow_for_origin(&origin).len()
+    }
+
+    
+    #[inline]
     pub fn get(&self, origin: Origin, index: usize) -> Option<&S> {
         self.collections.borrow_for_origin(&origin).get(index)
     }
