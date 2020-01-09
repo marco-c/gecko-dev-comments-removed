@@ -80,7 +80,6 @@ var RemotePrompt = {
       
       
     } catch (ex) {
-      Cu.reportError(ex);
       onPromptClose(true);
     }
   },

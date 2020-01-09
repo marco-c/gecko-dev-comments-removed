@@ -162,15 +162,13 @@ CommonDialog.prototype = {
         else
             button.setAttribute("default", "true");
 
-        if (!this.ui.promptContainer.hidden) {
-            
-            if (!xulDialog) {
-                this.ui.prompt.ensureXBLBindingAttached();
-            }
-
-            
-            this.setDefaultFocus(true);
+        
+        if (!xulDialog) {
+            this.ui.prompt.ensureXBLBindingAttached();
         }
+
+        
+        this.setDefaultFocus(true);
 
         if (this.args.enableDelay) {
             this.delayHelper = new EnableDelayHelper({
@@ -261,9 +259,9 @@ CommonDialog.prototype = {
             else
                 this.ui.password1Textbox.focus();
         } else if (isInitialLoad) {
-            this.ui.loginTextbox.select();
+                this.ui.loginTextbox.select();
         } else {
-            this.ui.loginTextbox.focus();
+                this.ui.loginTextbox.focus();
         }
     },
 

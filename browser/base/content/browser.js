@@ -8369,8 +8369,6 @@ TabModalPromptBox.prototype = {
     if (prompts.length) {
       let prompt = prompts[prompts.length - 1];
       prompt.element.hidden = false;
-      
-      prompt.ensureXBLBindingAttached();
       prompt.Dialog.setDefaultFocus();
     } else {
       browser.removeAttribute("tabmodalPromptShowing");
