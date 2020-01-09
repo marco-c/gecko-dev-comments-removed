@@ -15,7 +15,7 @@ class nsIRunnable;
 
 namespace mozilla {
 
-enum class EventPriority {
+enum class EventQueuePriority {
   High,
   Input,
   Normal,
@@ -46,7 +46,7 @@ class AbstractEventQueue {
   
   
   virtual void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
-                        EventPriority aPriority,
+                        EventQueuePriority aPriority,
                         const MutexAutoLock& aProofOfLock) = 0;
 
   
@@ -54,7 +54,7 @@ class AbstractEventQueue {
   
   
   virtual already_AddRefed<nsIRunnable> GetEvent(
-      EventPriority* aPriority, const MutexAutoLock& aProofOfLock) = 0;
+      EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock) = 0;
 
   
   virtual bool IsEmpty(const MutexAutoLock& aProofOfLock) = 0;

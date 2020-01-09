@@ -314,7 +314,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
 
     
     
-    mEventQueue.PutEvent(std::move(aEvent), EventPriority::Normal, lock);
+    mEventQueue.PutEvent(std::move(aEvent), EventQueuePriority::Normal, lock);
     return NS_OK;
   }
 

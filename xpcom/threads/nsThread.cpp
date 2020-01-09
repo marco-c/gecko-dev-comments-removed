@@ -664,7 +664,7 @@ nsresult nsThread::Init(const nsACString& aName) {
   
   {
     mEvents->PutEvent(do_AddRef(startup),
-                      EventPriority::Normal);  
+                      EventQueuePriority::Normal);  
   }
 
   
@@ -808,7 +808,7 @@ nsThreadShutdownContext* nsThread::ShutdownInternal(bool aSync) {
   nsCOMPtr<nsIRunnable> event =
       new nsThreadShutdownEvent(WrapNotNull(this), WrapNotNull(context.get()));
   
-  mEvents->PutEvent(event.forget(), EventPriority::Normal);
+  mEvents->PutEvent(event.forget(), EventQueuePriority::Normal);
 
   
   
@@ -907,7 +907,7 @@ nsThread::IdleDispatch(already_AddRefed<nsIRunnable> aEvent) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (!mEvents->PutEvent(event.forget(), EventPriority::Idle)) {
+  if (!mEvents->PutEvent(event.forget(), EventQueuePriority::Idle)) {
     NS_WARNING(
         "An idle event was posted to a thread that will never run it "
         "(rejected)");
@@ -966,7 +966,7 @@ void canary_alarm_handler(int signum) {
 
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
 static bool GetLabeledRunnableName(nsIRunnable* aEvent, nsACString& aName,
-                                   EventPriority aPriority) {
+                                   EventQueuePriority aPriority) {
   bool labeled = false;
   if (RefPtr<SchedulerGroup::Runnable> groupRunnable = do_QueryObject(aEvent)) {
     labeled = true;
@@ -980,7 +980,7 @@ static bool GetLabeledRunnableName(nsIRunnable* aEvent, nsACString& aName,
     aName.AssignLiteral("anonymous runnable");
   }
 
-  if (!labeled && aPriority > EventPriority::Input) {
+  if (!labeled && aPriority > EventQueuePriority::Input) {
     aName.AppendLiteral("(unlabeled)");
   }
 
@@ -1084,7 +1084,7 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     
     
     
-    EventPriority priority;
+    EventQueuePriority priority;
     nsCOMPtr<nsIRunnable> event = mEvents->GetEvent(reallyWait, &priority);
 
     *aResult = (event.get() != nullptr);
@@ -1139,7 +1139,7 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
       }
 #endif
       Maybe<AutoTimeDurationHelper> timeDurationHelper;
-      if (priority == EventPriority::Input) {
+      if (priority == EventQueuePriority::Input) {
         timeDurationHelper.emplace();
       }
 
@@ -1166,14 +1166,15 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
         duration = now - mCurrentEventStart;
         if (duration.ToMilliseconds() > LONGTASK_BUSY_WINDOW_MS) {
           
-          if (priority != EventPriority::Idle) {
+          if (priority != EventQueuePriority::Idle) {
             mLastLongNonIdleTaskEnd = now;
           }
           mLastLongTaskEnd = now;
 #ifdef MOZ_GECKO_PROFILER
           if (profiler_thread_is_being_profiled()) {
             profiler_add_marker(
-                (priority != EventPriority::Idle) ? "LongTask" : "LongIdleTask",
+                (priority != EventQueuePriority::Idle) ? "LongTask"
+                                                       : "LongIdleTask",
                 js::ProfilingStackFrame::Category::OTHER,
                 MakeUnique<LongTaskMarkerPayload>(mCurrentEventStart, now));
           }

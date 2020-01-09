@@ -46,10 +46,11 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
                         UniquePtr<InnerQueueT> aIdleQueue,
                         already_AddRefed<nsIIdlePeriod> aIdlePeriod);
 
-  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent, EventPriority aPriority,
+  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
+                EventQueuePriority aPriority,
                 const MutexAutoLock& aProofOfLock) final;
   already_AddRefed<nsIRunnable> GetEvent(
-      EventPriority* aPriority, const MutexAutoLock& aProofOfLock) final;
+      EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock) final;
 
   bool IsEmpty(const MutexAutoLock& aProofOfLock) final;
   size_t Count(const MutexAutoLock& aProofOfLock) const final;
@@ -93,8 +94,8 @@ class PrioritizedEventQueue final : public AbstractEventQueue {
   }
 
  private:
-  EventPriority SelectQueue(bool aUpdateState,
-                            const MutexAutoLock& aProofOfLock);
+  EventQueuePriority SelectQueue(bool aUpdateState,
+                                 const MutexAutoLock& aProofOfLock);
 
   
   mozilla::TimeStamp GetIdleDeadline();

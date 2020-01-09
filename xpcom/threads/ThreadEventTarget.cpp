@@ -138,7 +138,7 @@ ThreadEventTarget::Dispatch(already_AddRefed<nsIRunnable> aEvent,
     RefPtr<nsThreadSyncDispatch> wrapper =
         new nsThreadSyncDispatch(current.forget(), event.take());
     bool success = mSink->PutEvent(do_AddRef(wrapper),
-                                   EventPriority::Normal);  
+                                   EventQueuePriority::Normal);  
     if (!success) {
       
       
@@ -156,7 +156,7 @@ ThreadEventTarget::Dispatch(already_AddRefed<nsIRunnable> aEvent,
 
   NS_ASSERTION(aFlags == NS_DISPATCH_NORMAL || aFlags == NS_DISPATCH_AT_END,
                "unexpected dispatch flags");
-  if (!mSink->PutEvent(event.take(), EventPriority::Normal)) {
+  if (!mSink->PutEvent(event.take(), EventQueuePriority::Normal)) {
     return NS_ERROR_UNEXPECTED;
   }
   
