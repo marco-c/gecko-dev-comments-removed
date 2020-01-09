@@ -6082,6 +6082,8 @@ pref("dom.datatransfer.mozAtAPIs", true);
 
 pref("prio.enabled", false);
 
+pref("toolkit.telemetry.prioping.enabled", false);
+
 
 
 pref("dom.sidebar.enabled", true);
