@@ -1669,8 +1669,11 @@ static void RegisterApplicationRestartChanged(const char* aPref, void* aData) {
 
 #  if defined(MOZ_LAUNCHER_PROCESS)
 
+static const char kShieldPrefName[] = "app.shield.optoutstudies.enabled";
+
 static void OnLauncherPrefChanged(const char* aPref, void* aData) {
-  bool prefVal = Preferences::GetBool(aPref, false);
+  bool prefVal = Preferences::GetBool(kShieldPrefName, false) &&
+                 Preferences::GetBool(PREF_WIN_LAUNCHER_PROCESS_ENABLED, false);
 
   mozilla::LauncherRegistryInfo launcherRegInfo;
   mozilla::LauncherVoidResult reflectResult =
@@ -1679,15 +1682,14 @@ static void OnLauncherPrefChanged(const char* aPref, void* aData) {
 }
 
 static void SetupLauncherProcessPref() {
+  
+  
+
 #    if defined(NIGHTLY_BUILD)
   
   
   
-  Preferences::RegisterCallbackAndCall(&OnLauncherPrefChanged,
-                                       "app.shield.optoutstudies.enabled");
-
-  
-  
+  Preferences::RegisterCallbackAndCall(&OnLauncherPrefChanged, kShieldPrefName);
 #    endif  
 
   mozilla::LauncherRegistryInfo launcherRegInfo;
@@ -1706,10 +1708,12 @@ static void SetupLauncherProcessPref() {
         static_cast<uint32_t>(enabledState.unwrap()));
   }
 
-#    if !defined(NIGHTLY_BUILD)
-  
   Preferences::RegisterCallback(&OnLauncherPrefChanged,
                                 PREF_WIN_LAUNCHER_PROCESS_ENABLED);
+#    if !defined(NIGHTLY_BUILD)
+  
+  
+  Preferences::RegisterCallback(&OnLauncherPrefChanged, kShieldPrefName);
 #    endif  
 }
 
