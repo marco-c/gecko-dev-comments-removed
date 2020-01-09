@@ -54,6 +54,7 @@ function ChildProcess(id, recording, role) {
 
   this._willSaveCheckpoints = [];
   this._majorCheckpoints = [];
+  this._minorCheckpoints = new Set();
 
   
   if (!recording) {
@@ -83,6 +84,10 @@ ChildProcess.prototype = {
 
   addMajorCheckpoint(checkpointId) {
     this._majorCheckpoints.push(checkpointId);
+  },
+
+  addMinorCheckpoint(checkpointId) {
+    this._minorCheckpoints.add(checkpointId);
   },
 
   _unpause() {
@@ -149,6 +154,10 @@ ChildProcess.prototype = {
     return this._majorCheckpoints.some(major => major == id);
   },
 
+  isMinorCheckpoint(id) {
+    return this._minorCheckpoints.has(id);
+  },
+
   ensureCheckpointSaved(id, shouldSave) {
     const willSaveIndex = this._willSaveCheckpoints.indexOf(id);
     if (shouldSave != (willSaveIndex != -1)) {
@@ -175,9 +184,13 @@ ChildProcess.prototype = {
            this._willSaveCheckpoints.includes(id);
   },
 
-  hasSavedCheckpointsInRange(startId, endId) {
-    for (let i = startId; i <= endId; i++) {
-      if (!this.hasSavedCheckpoint(i)) {
+  
+  
+  
+  canRewindFrom(id) {
+    const lastMajorCheckpoint = this.lastMajorCheckpointPreceding(id);
+    for (let i = lastMajorCheckpoint + 1; i <= id; i++) {
+      if (this.isMinorCheckpoint(i) && !this.hasSavedCheckpoint(i)) {
         return false;
       }
     }
@@ -212,6 +225,8 @@ ChildProcess.prototype = {
 
 const FlushMs = .5 * 1000;
 const MajorCheckpointMs = 2 * 1000;
+const MinorCheckpointMs = .25 * 1000;
+
 
 
 
@@ -472,8 +487,8 @@ ChildRoleStandby.prototype = {
 
     
     let missingCheckpoint;
-    for (let i = lastMajorCheckpoint; i <= targetCheckpoint; i++) {
-      if (!this.child.hasSavedCheckpoint(i)) {
+    for (let i = lastMajorCheckpoint + 1; i <= targetCheckpoint; i++) {
+      if (this.child.isMinorCheckpoint(i) && !this.child.hasSavedCheckpoint(i)) {
         missingCheckpoint = i;
         break;
       }
@@ -484,21 +499,26 @@ ChildRoleStandby.prototype = {
       return;
     }
 
-    
-    
-    
-    
-    const restoreTarget = missingCheckpoint - 1;
-    assert(this.child.hasSavedCheckpoint(restoreTarget));
+    if (this.child.lastCheckpoint() < missingCheckpoint) {
+      
+    } else {
+      
+      
+      
+      let restoreTarget = missingCheckpoint - 1;
+      while (!this.child.hasSavedCheckpoint(restoreTarget)) {
+        restoreTarget--;
+      }
+      assert(restoreTarget >= lastMajorCheckpoint);
 
-    
-    if (currentCheckpoint != restoreTarget) {
       this.child.sendRestoreCheckpoint(restoreTarget);
       return;
     }
 
     
-    this.child.ensureCheckpointSaved(missingCheckpoint, true);
+    if (missingCheckpoint == this.child.lastCheckpoint() + 1) {
+      this.child.ensureCheckpointSaved(missingCheckpoint, true);
+    }
 
     
     this.child.sendResume({ forward: true });
@@ -613,7 +633,8 @@ const gCheckpointTimes = [];
 
 
 let gTimeSinceLastFlush;
-let gTimeSinceLastMajorCheckpoint;
+let gTimeSinceLastMajorCheckpoint = 0;
+let gTimeSinceLastMinorCheckpoint = 0;
 
 
 let gLastAssignedMajorCheckpoint;
@@ -622,6 +643,11 @@ function assignMajorCheckpoint(child, checkpointId) {
   dumpv(`AssignMajorCheckpoint: #${child.id} Checkpoint ${checkpointId}`);
   child.addMajorCheckpoint(checkpointId);
   gLastAssignedMajorCheckpoint = child;
+}
+
+function assignMinorCheckpoint(child, checkpointId) {
+  dumpv(`AssignMinorCheckpoint: #${child.id} Checkpoint ${checkpointId}`);
+  child.addMinorCheckpoint(checkpointId);
 }
 
 function updateCheckpointTimes(msg) {
@@ -645,6 +671,7 @@ function updateCheckpointTimes(msg) {
   }
 
   gTimeSinceLastMajorCheckpoint += msg.duration;
+  gTimeSinceLastMinorCheckpoint += msg.duration;
 
   if (gTimeSinceLastMajorCheckpoint >= MajorCheckpointMs) {
     
@@ -652,6 +679,10 @@ function updateCheckpointTimes(msg) {
     const child = otherReplayingChild(gLastAssignedMajorCheckpoint);
     assignMajorCheckpoint(child, msg.point.checkpoint + 1);
     gTimeSinceLastMajorCheckpoint = 0;
+  } else if (gTimeSinceLastMinorCheckpoint >= MinorCheckpointMs) {
+    
+    assignMinorCheckpoint(gLastAssignedMajorCheckpoint, msg.point.checkpoint + 1);
+    gTimeSinceLastMinorCheckpoint = 0;
   }
 }
 
@@ -790,18 +821,11 @@ function HitExecutionPoint(id, msg) {
 let gLastExplicitPause = FirstCheckpointId;
 
 
-let gTimeWarpTarget;
-
-
-
 
 
 
 
 function getActiveChildTargetCheckpoint() {
-  if (gTimeWarpTarget != undefined) {
-    return gTimeWarpTarget;
-  }
   if (gActiveChild.rewindTargetCheckpoint() <= gLastExplicitPause) {
     return gActiveChild.rewindTargetCheckpoint();
   }
@@ -823,10 +847,7 @@ function markExplicitPause() {
     
     if (gActiveChild ==
         replayingChildResponsibleForSavingCheckpoint(targetCheckpoint)) {
-      const lastMajorCheckpoint =
-        gActiveChild.lastMajorCheckpointPreceding(targetCheckpoint);
-      if (!gActiveChild.hasSavedCheckpointsInRange(lastMajorCheckpoint,
-                                                   targetCheckpoint)) {
+      if (!gActiveChild.canRewindFrom(targetCheckpoint)) {
         switchActiveChild(otherReplayingChild(gActiveChild));
       }
     }
@@ -874,10 +895,7 @@ function resume(forward) {
 
   maybeSendRepaintMessage();
 
-  
-  
-  if (!forward &&
-      !gActiveChild.hasSavedCheckpoint(gActiveChild.rewindTargetCheckpoint())) {
+  if (!forward) {
     const targetCheckpoint = gActiveChild.rewindTargetCheckpoint();
 
     
@@ -889,13 +907,21 @@ function resume(forward) {
 
     
     
-    
     const targetChild =
       replayingChildResponsibleForSavingCheckpoint(targetCheckpoint);
-    assert(targetChild != gActiveChild);
-
-    waitUntilChildHasSavedCheckpoint(targetChild, targetCheckpoint);
-    switchActiveChild(targetChild);
+    if (targetChild == gActiveChild) {
+      
+      
+      assert(gActiveChild.canRewindFrom(targetCheckpoint));
+    } else {
+      let saveTarget = targetCheckpoint;
+      while (!targetChild.isMajorCheckpoint(saveTarget) &&
+             !targetChild.isMinorCheckpoint(saveTarget)) {
+        saveTarget--;
+      }
+      waitUntilChildHasSavedCheckpoint(targetChild, saveTarget);
+      switchActiveChild(targetChild);
+    }
   }
 
   if (forward) {
@@ -932,35 +958,31 @@ function timeWarp(targetPoint) {
   const targetCheckpoint = targetPoint.checkpoint;
 
   
-  
-  assert(gTimeWarpTarget == undefined);
-  gTimeWarpTarget = targetCheckpoint;
-
-  pokeChildren();
-
-  if (!gActiveChild.hasSavedCheckpoint(targetCheckpoint)) {
-    
-    const targetChild =
-      replayingChildResponsibleForSavingCheckpoint(targetCheckpoint);
-
-    if (targetChild == gActiveChild) {
-      
-      
-      switchActiveChild(otherReplayingChild(gActiveChild));
-    }
-
-    waitUntilChildHasSavedCheckpoint(targetChild, targetCheckpoint);
-    switchActiveChild(targetChild,  false);
+  const targetChild =
+    replayingChildResponsibleForSavingCheckpoint(targetCheckpoint);
+  if (targetChild != gActiveChild) {
+    switchActiveChild(otherReplayingChild(gActiveChild));
   }
 
-  gTimeWarpTarget = undefined;
+  
+  
+  
+  let restoreTarget;
+  if (gActiveChild.lastCheckpoint() >= targetCheckpoint) {
+    restoreTarget = targetCheckpoint;
+  } else if (gActiveChild.lastPausePoint.position) {
+    restoreTarget = gActiveChild.lastPausePoint.checkpoint;
+  }
 
-  if (gActiveChild.lastPausePoint.position ||
-      gActiveChild.lastCheckpoint() != targetCheckpoint) {
+  if (restoreTarget) {
+    while (!gActiveChild.hasSavedCheckpoint(restoreTarget)) {
+      restoreTarget--;
+    }
+
     assert(!gTimeWarpInProgress);
     gTimeWarpInProgress = true;
 
-    gActiveChild.sendRestoreCheckpoint(targetCheckpoint);
+    gActiveChild.sendRestoreCheckpoint(restoreTarget);
     gActiveChild.waitUntilPaused();
 
     gTimeWarpInProgress = false;
