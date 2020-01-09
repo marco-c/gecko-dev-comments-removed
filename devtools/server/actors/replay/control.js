@@ -274,6 +274,13 @@ ChildProcess.prototype = {
       },
     });
     this.asyncManifests.shift();
+
+    
+    
+    if (this == gActiveChild) {
+      this.waitUntilPaused();
+    }
+
     return true;
   },
 };
@@ -1214,7 +1221,9 @@ const gControl = {
       pauseReplayingChild(gPausePoint);
       gActiveChild.sendManifest({
         contents: { kind: "batchDebuggerRequest", requests: gDebuggerRequests },
-        onFinished(finishData) { assert(!finishData.restoredCheckpoint); },
+        onFinished(finishData) {
+          assert(!finishData || !finishData.restoredCheckpoint);
+        },
       });
       gActiveChild.waitUntilPaused();
       return { unhandledDivergence: true };
