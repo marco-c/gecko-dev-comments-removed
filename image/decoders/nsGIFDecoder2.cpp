@@ -392,9 +392,10 @@ Tuple<int32_t, Maybe<WriteState>> nsGIFDecoder2::YieldPixels(
 
 
 
-static void ConvertColormap(uint32_t* aColormap, uint32_t aColors) {
+void nsGIFDecoder2::ConvertColormap(uint32_t* aColormap, uint32_t aColors) {
   
-  if (gfxPlatform::GetCMSMode() == eCMSMode_All) {
+  if (!(GetSurfaceFlags() & SurfaceFlags::NO_COLORSPACE_CONVERSION) &&
+      gfxPlatform::GetCMSMode() == eCMSMode_All) {
     qcms_transform* transform = gfxPlatform::GetCMSRGBTransform();
     if (transform) {
       qcms_transform_data(transform, aColormap, aColormap, aColors);

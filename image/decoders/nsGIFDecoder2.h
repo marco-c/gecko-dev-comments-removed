@@ -59,6 +59,9 @@ class nsGIFDecoder2 : public Decoder {
   void FlushImageData();
 
   
+  void ConvertColormap(uint32_t* aColormap, uint32_t aColors);
+
+  
   template <typename PixelSize>
   PixelSize ColormapIndexToPixel(uint8_t aIndex);
 
