@@ -1124,7 +1124,8 @@ class AsyncPanZoomController {
 
 
   AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(
-      AsyncTransformConsumer aMode) const;
+      AsyncTransformConsumer aMode,
+      AsyncTransformComponents aComponents = ScrollAndZoom) const;
 
   
 
