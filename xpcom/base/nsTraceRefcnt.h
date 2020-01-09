@@ -25,12 +25,6 @@ class nsTraceRefcnt {
 
 
   static void SetActivityIsLegal(bool aLegal);
-
-  
-
-
-
-  static void DisableDumpStatistics();
 };
 
 #endif  
