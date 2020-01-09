@@ -3,55 +3,24 @@
 
 
 
-function run_test() {
+async function run_test() {
   
   
   
   do_get_profile();
-
   setupTestCommon();
-
-  debugDump("testing invalid size mar download");
-
+  debugDump("testing mar download with the mar not found");
   Services.prefs.setBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false);
   start_httpserver();
   setUpdateURL(gURLData + gHTTPHandlerPath);
-  standardInit();
-  executeSoon(run_test_pt1);
-}
-
-
-function run_test_pt1() {
   let patchProps = {url: gURLData + "missing.mar"};
   let patches = getRemotePatchString(patchProps);
   let updates = getRemoteUpdateString({}, patches);
   gResponseBody = getRemoteUpdatesXMLString(updates);
-  gUpdates = null;
-  gUpdateCount = null;
-  gStatusResult = null;
-  gCheckFunc = check_test_helper_pt1_1;
-  debugDump("mar download with the mar not found");
-  gUpdateChecker.checkForUpdates(updateCheckListener, true);
-}
-
-function check_test_helper_pt1_1() {
-  Assert.equal(gUpdateCount, 1,
-               "the update count" + MSG_SHOULD_EQUAL);
-  let bestUpdate = gAUS.selectUpdate(gUpdates, gUpdateCount);
-  let state = gAUS.downloadUpdate(bestUpdate, false);
-  if (state == STATE_NONE || state == STATE_FAILED) {
-    do_throw("nsIApplicationUpdateService:downloadUpdate returned " + state);
-  }
-  gAUS.addDownloadListener(downloadListener);
-}
-
-
-
-
-async function downloadListenerStop() {
-  Assert.equal(gStatusResult, Cr.NS_ERROR_UNEXPECTED,
-               "the download status result" + MSG_SHOULD_EQUAL);
-  gAUS.removeDownloadListener(downloadListener);
+  await waitForUpdateCheck(true, {updateCount: 1}).then(async (aArgs) => {
+    await waitForUpdateDownload(aArgs.updates, aArgs.updateCount,
+                                Cr.NS_ERROR_UNEXPECTED);
+  });
   
   await waitForUpdateXMLFiles();
   stop_httpserver(doTestFinish);

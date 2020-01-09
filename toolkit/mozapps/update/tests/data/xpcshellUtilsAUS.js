@@ -99,23 +99,10 @@ const MSG_SHOULD_NOT_EXIST = "the file or directory should not exist";
 
 
 
-
-const MAC_MAX_TIME_DIFFERENCE = 60000;
-
-
-const MAX_TIMEOUT_RUNS = 20000;
-
-
-
 const HELPER_SLEEP_TIMEOUT = 180;
 
 
 
-const APP_TIMER_TIMEOUT = 120000;
-
-
-
-const FILE_IN_USE_MAX_TIMEOUT_RUNS = 60;
 const FILE_IN_USE_TIMEOUT_MS = 1000;
 
 const PIPE_TO_NULL = AppConstants.platform == "win" ? ">nul" : "> /dev/null 2>&1";
@@ -133,15 +120,7 @@ var gTestserver;
 
 var gIncrementalDownloadErrorType;
 
-var gCheckFunc;
 var gResponseBody;
-var gResponseStatusCode = 200;
-var gRequestURL;
-var gUpdateCount;
-var gUpdates;
-var gStatusCode;
-var gStatusText;
-var gStatusResult;
 
 var gProcess;
 var gAppTimer;
@@ -159,7 +138,6 @@ var gCallbackArgs = ["./", "callback.log", "Test Arg 2", "Test Arg 3"];
 var gPostUpdateBinFile = "postup_app" + mozinfo.bin_suffix;
 
 var gTimeoutRuns = 0;
-var gFileInUseTimeoutRuns = 0;
 
 
 var gShouldResetEnv = undefined;
@@ -1086,6 +1064,10 @@ function checkAppBundleModTime() {
   if (AppConstants.platform != "macosx") {
     return;
   }
+  
+  
+  
+  const MAC_MAX_TIME_DIFFERENCE = 60000;
   let now = Date.now();
   let applyToDir = getApplyDirFile();
   let timeDiff = Math.abs(applyToDir.lastModifiedTime - now);
@@ -3250,6 +3232,7 @@ function checkCallbackLog() {
   
   
   
+  const MAX_TIMEOUT_RUNS = 20000;
   if (logContents != expectedLogContents) {
     gTimeoutRuns++;
     if (gTimeoutRuns > MAX_TIMEOUT_RUNS) {
@@ -3467,58 +3450,77 @@ UpdatePrompt.prototype = {
 };
 
 
-const updateCheckListener = {
-  onProgress: function UCL_onProgress(aRequest, aPosition, aTotalSize) {
-  },
-
-  onCheckComplete: function UCL_onCheckComplete(aRequest, aUpdates, aUpdateCount) {
-    gRequestURL = aRequest.channel.originalURI.spec;
-    gUpdateCount = aUpdateCount;
-    gUpdates = aUpdates;
-    debugDump("url = " + gRequestURL + ", " +
-              "request.status = " + aRequest.status + ", " +
-              "updateCount = " + aUpdateCount);
-    
-    executeSoon(gCheckFunc);
-  },
-
-  onError: function UCL_onError(aRequest, aUpdate) {
-    gRequestURL = aRequest.channel.originalURI.spec;
-    gStatusCode = aRequest.status;
-    if (gStatusCode == 0) {
-      gStatusCode = aRequest.channel.QueryInterface(Ci.nsIRequest).status;
-    }
-    gStatusText = aUpdate.statusText ? aUpdate.statusText : null;
-    debugDump("url = " + gRequestURL + ", " +
-              "request.status = " + gStatusCode + ", " +
-              "update.statusText = " + gStatusText);
-    
-    executeSoon(gCheckFunc.bind(null, aRequest, aUpdate));
-  },
-
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIUpdateCheckListener]),
-};
 
 
-const downloadListener = {
-  onStartRequest: function DL_onStartRequest(aRequest, aContext) {
-  },
 
-  onProgress: function DL_onProgress(aRequest, aContext, aProgress, aMaxProgress) {
-  },
 
-  onStatus: function DL_onStatus(aRequest, aContext, aStatus, aStatusText) {
-  },
 
-  onStopRequest: function DL_onStopRequest(aRequest, aContext, aStatus) {
-    gStatusResult = aStatus;
-    
-    executeSoon(downloadListenerStop);
-  },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIRequestObserver,
-                                          Ci.nsIProgressEventSink]),
-};
+
+
+
+
+
+
+function waitForUpdateCheck(aSuccess, aExpectedValues = {}) {
+  return new Promise(resolve => gUpdateChecker.checkForUpdates({
+    onProgress: (aRequest, aPosition, aTotalSize) => {
+    },
+    onCheckComplete: (request, updates, updateCount) => {
+      Assert.ok(aSuccess, "the update check should succeed");
+      if (aExpectedValues.updateCount) {
+        Assert.equal(aExpectedValues.updateCount, updateCount,
+                     "the update count" + MSG_SHOULD_EQUAL);
+      }
+      resolve({request, updates, updateCount});
+    },
+    onError: (request, update) => {
+      Assert.ok(!aSuccess, "the update check should error");
+      if (aExpectedValues.url) {
+        Assert.equal(aExpectedValues.url, request.channel.originalURI.spec,
+                     "the url" + MSG_SHOULD_EQUAL);
+      }
+      resolve({request, update});
+    },
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIUpdateCheckListener]),
+  }, true));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForUpdateDownload(aUpdates, aUpdateCount, aExpectedStatus) {
+  let bestUpdate = gAUS.selectUpdate(aUpdates, aUpdateCount);
+  let state = gAUS.downloadUpdate(bestUpdate, false);
+  if (state == STATE_NONE || state == STATE_FAILED) {
+    do_throw("nsIApplicationUpdateService:downloadUpdate returned " + state);
+  }
+  return new Promise(resolve => gAUS.addDownloadListener({
+    onStartRequest: (aRequest, aContext) => {
+    },
+    onProgress: (aRequest, aContext, aProgress, aMaxProgress) => {
+    },
+    onStatus: (aRequest, aContext, aStatus, aStatusText) => {
+    },
+    onStopRequest: (request, context, status) => {
+      gAUS.removeDownloadListener(this);
+      Assert.equal(aExpectedStatus, status,
+                   "the download status" + MSG_SHOULD_EQUAL);
+      resolve(request, context, status);
+    },
+    QueryInterface: ChromeUtils.generateQI([Ci.nsIRequestObserver,
+                                            Ci.nsIProgressEventSink]),
+  }));
+}
 
 
 
@@ -3552,7 +3554,7 @@ function start_httpserver() {
 
 function pathHandler(aMetadata, aResponse) {
   aResponse.setHeader("Content-Type", "text/xml", false);
-  aResponse.setStatusLine(aMetadata.httpVersion, gResponseStatusCode, "OK");
+  aResponse.setStatusLine(aMetadata.httpVersion, 200, "OK");
   aResponse.bodyOutputStream.write(gResponseBody, gResponseBody.length);
 }
 
@@ -3812,6 +3814,9 @@ const gAppTimerCallback = {
 async function runUpdateUsingApp(aExpectedStatus) {
   debugDump("start - launching application to apply update");
 
+  
+  
+  const APP_TIMER_TIMEOUT = 120000;
   let launchBin = getLaunchBin();
   let args = getProcessArgs();
   debugDump("launching " + launchBin.path + " " + args.join(" "));
