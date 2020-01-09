@@ -73,5 +73,6 @@ void logging_sink_for_LUL(const char* str) {
   
   
   
-  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Verbose, ("[%d] %s", getpid(), str));
+  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Verbose,
+          ("[%d] %s", profiler_current_process_id(), str));
 }

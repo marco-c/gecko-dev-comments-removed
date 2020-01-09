@@ -69,8 +69,16 @@
 
 using namespace mozilla;
 
+int profiler_current_process_id() { return getpid(); }
 
-int Thread::GetCurrentId() { return gettid(); }
+int profiler_current_thread_id() {
+  
+#if defined(__GLIBC__)
+  return static_cast<int>(static_cast<pid_t>(syscall(SYS_gettid)));
+#else
+  return static_cast<int>(gettid());
+#endif
+}
 
 void* GetStackTop(void* aGuess) { return aGuess; }
 
@@ -237,7 +245,7 @@ static void SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext) {
 }
 
 Sampler::Sampler(PSLockRef aLock)
-    : mMyPid(getpid())
+    : mMyPid(profiler_current_process_id())
       
       
       
@@ -277,7 +285,7 @@ void Sampler::SuspendAndSampleAndResumeThread(
   MOZ_ASSERT(!sSigHandlerCoordinator);
 
   if (mSamplerTid == -1) {
-    mSamplerTid = gettid();
+    mSamplerTid = profiler_current_thread_id();
   }
   int sampleeTid = aRegisteredThread.Info()->ThreadId();
   MOZ_RELEASE_ASSERT(sampleeTid != mSamplerTid);

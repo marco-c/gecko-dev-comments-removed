@@ -451,6 +451,9 @@ void profiler_get_start_params(
 double profiler_time();
 
 
+int profiler_current_process_id();
+
+
 int profiler_current_thread_id();
 
 
