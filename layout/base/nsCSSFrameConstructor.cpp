@@ -2336,9 +2336,6 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
     return nullptr;
   }
 
-  
-  computedStyle->StartBackgroundImageLoads();
-
   nsFrameConstructorSaveState docElementContainingBlockAbsoluteSaveState;
   if (mHasRootAbsPosContainingBlock) {
     
@@ -5649,10 +5646,6 @@ void nsCSSFrameConstructor::ConstructFramesFromItem(
                        computedStyle, aFrameItems);
     return;
   }
-
-  
-  
-  computedStyle->StartBackgroundImageLoads();
 
   AutoRestore<nsFrameState> savedStateBits(aState.mAdditionalStateBits);
   if (item.mIsGeneratedContent) {
