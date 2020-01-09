@@ -1816,5 +1816,3 @@ pref("browser.aboutConfig.showWarning", true);
 
 pref("browser.launcherProcess.enabled", false);
 #endif // defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
-
-pref("browser.toolbars.keyboard_navigation", false);
