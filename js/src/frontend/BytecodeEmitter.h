@@ -178,6 +178,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     CGTryNoteList& tryNoteList() { return tryNoteList_; };
     const CGTryNoteList& tryNoteList() const { return tryNoteList_; };
 
+    
+
+    CGScopeNoteList& scopeNoteList() { return scopeNoteList_; };
+    const CGScopeNoteList& scopeNoteList() const { return scopeNoteList_; };
+
    private:
     
 
@@ -209,6 +214,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     
     CGTryNoteList tryNoteList_;
+
+    
+
+    
+    CGScopeNoteList scopeNoteList_;
   };
 
   BytecodeSection bytecodeSection_;
@@ -216,6 +226,31 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
  public:
   BytecodeSection& bytecodeSection() { return bytecodeSection_; }
   const BytecodeSection& bytecodeSection() const { return bytecodeSection_; }
+
+ private:
+  
+  
+  class PerScriptData {
+   public:
+    explicit PerScriptData(JSContext* cx);
+
+    
+
+    CGScopeList& scopeList() { return scopeList_; }
+    const CGScopeList& scopeList() const { return scopeList_; }
+
+   private:
+    
+
+    
+    CGScopeList scopeList_;
+  };
+
+  PerScriptData perScriptData_;
+
+ public:
+  PerScriptData& perScriptData() { return perScriptData_; }
+  const PerScriptData& perScriptData() const { return perScriptData_; }
 
  private:
   
@@ -276,10 +311,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     return innermostEmitterScope_;
   }
 
-  CGNumberList numberList;       
-  CGObjectList objectList;       
-  CGScopeList scopeList;         
-  CGScopeNoteList scopeNoteList; 
+  CGNumberList numberList; 
+  CGObjectList objectList; 
 
   
   
@@ -440,11 +473,13 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     varEmitterScope = emitterScope;
   }
 
-  Scope* outermostScope() const { return scopeList.vector[0]; }
+  Scope* outermostScope() const {
+    return perScriptData().scopeList().vector[0];
+  }
   Scope* innermostScope() const;
   Scope* bodyScope() const {
-    MOZ_ASSERT(bodyScopeIndex < scopeList.length());
-    return scopeList.vector[bodyScopeIndex];
+    MOZ_ASSERT(bodyScopeIndex < perScriptData().scopeList().length());
+    return perScriptData().scopeList().vector[bodyScopeIndex];
   }
 
   MOZ_ALWAYS_INLINE
