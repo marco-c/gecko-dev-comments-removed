@@ -24,6 +24,23 @@ function startup() {
 
     gProfileService = C[ToolkitProfileService].getService(I.nsIToolkitProfileService);
 
+    
+    
+    
+    try {
+      for (let profile of [...gProfileService.profiles]) {
+        if (!profile.rootDir.exists() || !profile.rootDir.isDirectory()) {
+          profile.remove(false);
+        }
+      }
+
+      
+    } catch (e) {
+      
+      
+      Cu.reportError(e);
+    }
+
     gProfileManagerBundle = document.getElementById("bundle_profileManager");
     gBrandBundle = document.getElementById("bundle_brand");
 
