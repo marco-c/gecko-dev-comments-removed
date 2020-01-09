@@ -624,12 +624,23 @@ function check_schemeIsNull()
 }
 
 
+function check_mozextension_query() {
+  let uri = gIoService.newURI("moz-extension://a7d1572e-3beb-4d93-a920-c408fa09e8ea/_source/holding.html");
+  uri = uri.mutate().setQuery("u=https%3A%2F%2Fnews.ycombinator.com%2F").finalize();
+  Assert.equal(uri.query, "u=https%3A%2F%2Fnews.ycombinator.com%2F");
+  uri = gIoService.newURI("moz-extension://a7d1572e-3beb-4d93-a920-c408fa09e8ea/_source/holding.html?u=https%3A%2F%2Fnews.ycombinator.com%2F");
+  Assert.equal(uri.spec, "moz-extension://a7d1572e-3beb-4d93-a920-c408fa09e8ea/_source/holding.html?u=https%3A%2F%2Fnews.ycombinator.com%2F");
+  Assert.equal(uri.query, "u=https%3A%2F%2Fnews.ycombinator.com%2F");
+}
+
+
 
 function run_test()
 {
   check_nested_mutations();
   check_space_escaping();
   check_schemeIsNull();
+  check_mozextension_query();
 
   
   
