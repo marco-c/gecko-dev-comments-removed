@@ -24,7 +24,7 @@ ChromeUtils.defineModuleGetter(this, "AMTelemetry",
 ChromeUtils.defineModuleGetter(this, "formAutofillParent",
                                "resource://formautofill/FormAutofillParent.jsm");
 
-var gLastCategory = {category: undefined, subcategory: undefined};
+var gLastHash = "";
 const gXULDOMParser = new DOMParser();
 
 var gCategoryInits = new Map();
@@ -34,27 +34,48 @@ function init_category_if_required(category) {
     throw "Unknown in-content prefs category! Can't init " + category;
   }
   if (categoryInfo.inited) {
-    return null;
+    return;
   }
-  return categoryInfo.init();
+  categoryInfo.init();
 }
 
 function register_module(categoryName, categoryObject) {
   gCategoryInits.set(categoryName, {
     inited: false,
-    async init() {
+    init() {
       let template = document.getElementById("template-" + categoryName);
       if (template) {
         
         
         let frag = MozXULElement.parseXULToFragment(template.firstChild.data);
 
-        await document.l10n.translateFragment(frag);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let firstLevelElements = Array.from(frag.children);
 
         
-        document.l10n.pauseObserving();
         template.replaceWith(frag);
-        document.l10n.resumeObserving();
+
+        let l10nUpdatedElements = [];
+        
+        for (let el of firstLevelElements) {
+          l10nUpdatedElements = l10nUpdatedElements.concat(
+            Array.from(el.querySelectorAll("[data-l10n-id]")));
+        }
+
+        
+        this.translated = document.l10n.translateElements(l10nUpdatedElements)
+          .then(() => this.translated = undefined);
 
         
         
@@ -69,7 +90,7 @@ function register_module(categoryName, categoryObject) {
 
 document.addEventListener("DOMContentLoaded", init_all, {once: true});
 
-async function init_all() {
+function init_all() {
   Preferences.forceEnableInstantApply();
 
   gSubDialog.init();
@@ -101,7 +122,7 @@ async function init_all() {
   maybeDisplayPoliciesNotice();
 
   window.addEventListener("hashchange", onHashChange);
-  await gotoPref();
+  gotoPref();
 
   let helpButton = document.getElementById("helpButton");
   let helpUrl = Services.urlFormatter.formatURLPref("app.support.baseURL") + "preferences";
@@ -143,7 +164,7 @@ function onHashChange() {
   gotoPref();
 }
 
-async function gotoPref(aCategory) {
+function gotoPref(aCategory) {
   let categories = document.getElementById("categories");
   const kDefaultCategoryInternalName = "paneGeneral";
   const kDefaultCategory = "general";
@@ -174,7 +195,7 @@ async function gotoPref(aCategory) {
 
   
   
-  if (gLastCategory.category == category && !subcategory)
+  if (gLastHash == category && !subcategory)
     return;
 
   let item;
@@ -186,35 +207,26 @@ async function gotoPref(aCategory) {
     }
   }
 
-  if (gLastCategory.category || category != kDefaultCategoryInternalName || subcategory) {
-    let friendlyName = internalPrefCategoryNameToFriendlyName(category);
+  try {
+    init_category_if_required(category);
+  } catch (ex) {
+    Cu.reportError("Error initializing preference category " + category + ": " + ex);
+    throw ex;
+  }
+
+  let friendlyName = internalPrefCategoryNameToFriendlyName(category);
+  if (gLastHash || category != kDefaultCategoryInternalName || subcategory) {
     document.location.hash = friendlyName;
   }
   
   
-  gLastCategory.category = category;
-  gLastCategory.subcategory = subcategory;
+  gLastHash = category;
   if (item) {
     categories.selectedItem = item;
   } else {
     categories.clearSelection();
   }
   window.history.replaceState(category, document.title);
-
-  try {
-    await init_category_if_required(category);
-  } catch (ex) {
-    Cu.reportError(new Error("Error initializing preference category " + category + ": " + ex));
-    throw ex;
-  }
-
-  
-  
-  if (gLastCategory.category !== category ||
-      gLastCategory.subcategory !== subcategory) {
-    return;
-  }
-
   search(category, "data-category");
 
   let mainContent = document.querySelector(".main-content");
@@ -272,6 +284,7 @@ async function scrollAndHighlight(subcategory, category) {
     return;
   }
   let header = getClosestDisplayedHeader(element);
+  await gCategoryInits.get(category).translated;
 
   scrollContentTo(header);
   element.classList.add("spotlight");
