@@ -869,9 +869,26 @@ PresShell::PresShell()
   mHasReceivedPaintMessage = false;
 }
 
-NS_IMPL_ISUPPORTS(PresShell, nsIPresShell, nsIDocumentObserver,
-                  nsISelectionController, nsISelectionDisplay, nsIObserver,
-                  nsISupportsWeakReference, nsIMutationObserver)
+NS_INTERFACE_TABLE_HEAD(PresShell)
+  NS_INTERFACE_TABLE_BEGIN
+    
+    
+    
+    NS_INTERFACE_TABLE_ENTRY(PresShell, PresShell)
+    NS_INTERFACE_TABLE_ENTRY(PresShell, nsIPresShell)
+    NS_INTERFACE_TABLE_ENTRY(PresShell, nsIDocumentObserver)
+    NS_INTERFACE_TABLE_ENTRY(PresShell, nsISelectionController)
+    NS_INTERFACE_TABLE_ENTRY(PresShell, nsISelectionDisplay)
+    NS_INTERFACE_TABLE_ENTRY(PresShell, nsIObserver)
+    NS_INTERFACE_TABLE_ENTRY(PresShell, nsISupportsWeakReference)
+    NS_INTERFACE_TABLE_ENTRY(PresShell, nsIMutationObserver)
+    NS_INTERFACE_TABLE_ENTRY_AMBIGUOUS(PresShell, nsISupports, nsIObserver)
+  NS_INTERFACE_TABLE_END
+  NS_INTERFACE_TABLE_TO_MAP_SEGUE
+NS_INTERFACE_MAP_END
+
+NS_IMPL_ADDREF(PresShell)
+NS_IMPL_RELEASE(PresShell)
 
 PresShell::~PresShell() {
   MOZ_RELEASE_ASSERT(!mForbiddenToFlush,
@@ -3312,11 +3329,10 @@ static nscoord ComputeWhereToScroll(WhereToScroll aWhereToScroll,
 
 
 
-static void ScrollToShowRect(nsIScrollableFrame* aFrameAsScrollable,
-                             const nsRect& aRect,
-                             nsIPresShell::ScrollAxis aVertical,
-                             nsIPresShell::ScrollAxis aHorizontal,
-                             ScrollFlags aScrollFlags) {
+static void ScrollToShowRect(nsIPresShell* aPresShell,
+                             nsIScrollableFrame* aFrameAsScrollable,
+                             const nsRect& aRect, ScrollAxis aVertical,
+                             ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
   nsPoint scrollPt = aFrameAsScrollable->GetVisualViewportOffset();
   nsRect visibleRect(scrollPt, aFrameAsScrollable->GetVisualViewportSize());
 
@@ -3384,6 +3400,15 @@ static void ScrollToShowRect(nsIScrollableFrame* aFrameAsScrollable,
                                  aScrollFlags & ScrollFlags::ScrollSnap
                                      ? nsIScrollbarMediator::ENABLE_SNAP
                                      : nsIScrollbarMediator::DISABLE_SNAP);
+    
+    
+    
+    
+    if (aFrameAsScrollable->IsRootScrollFrameOfDocument() &&
+        aPresShell->GetPresContext()->IsRootContentDocument()) {
+      aPresShell->ScrollToVisual(scrollPt, FrameMetrics::eMainThread,
+                                 scrollMode);
+    }
   }
 }
 
@@ -3549,7 +3574,8 @@ bool nsIPresShell::ScrollFrameRectIntoView(nsIFrame* aFrame,
         targetRect = targetRect.Intersect(sf->GetScrolledRect());
       }
 
-      ScrollToShowRect(sf, targetRect, aVertical, aHorizontal, aScrollFlags);
+      ScrollToShowRect(this, sf, targetRect, aVertical, aHorizontal,
+                       aScrollFlags);
 
       nsPoint newPosition = sf->LastScrollDestination();
       

@@ -54,6 +54,14 @@ class EventDispatchingCallback;
 class GeckoMVMContext;
 class OverflowChangedTracker;
 
+
+#define NS_PRESSHELL_IID                             \
+  {                                                  \
+    0x039d8ffc, 0xfa55, 0x42d7, {                    \
+      0xa5, 0x3a, 0x38, 0x8c, 0xb1, 0x29, 0xb0, 0x52 \
+    }                                                \
+  }
+
 class PresShell final : public nsIPresShell,
                         public nsISelectionController,
                         public nsIObserver,
@@ -70,6 +78,8 @@ class PresShell final : public nsIPresShell,
 
   
   NS_DECL_ISUPPORTS
+
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_PRESSHELL_IID)
 
   static bool AccessibleCaretEnabled(nsIDocShell* aDocShell);
 
@@ -1646,6 +1656,8 @@ class PresShell final : public nsIPresShell,
 
   static bool sProcessInteractable;
 };
+
+NS_DEFINE_STATIC_IID_ACCESSOR(PresShell, NS_PRESSHELL_IID)
 
 }  
 
