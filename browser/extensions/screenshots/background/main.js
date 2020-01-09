@@ -189,7 +189,7 @@ this.main = (function() {
     
     
     
-    const badDomains = ["addons.mozilla.org", "testpilot.firefox.com"];
+    const badDomains = ["testpilot.firefox.com"];
     let domain = url.replace(/^https?:\/\//i, "");
     domain = domain.replace(/\/.*/, "").replace(/:.*/, "");
     domain = domain.toLowerCase();
