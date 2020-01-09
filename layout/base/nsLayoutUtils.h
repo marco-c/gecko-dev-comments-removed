@@ -21,7 +21,7 @@
 #include "nsThreadUtils.h"
 #include "nsIPrincipal.h"
 #include "nsIWidget.h"
-#include "nsCSSPropertyID.h"
+#include "nsCSSPropertyIDSet.h"
 #include "nsStyleCoord.h"
 #include "nsStyleConsts.h"
 #include "nsGkAtoms.h"
@@ -2292,13 +2292,19 @@ class nsLayoutUtils {
 
   static bool HasAnimationOfPropertySet(mozilla::EffectSet* aEffectSet,
                                         const nsCSSPropertyIDSet& aPropertySet);
-
   
 
 
 
   static bool HasEffectiveAnimation(const nsIFrame* aFrame,
                                     nsCSSPropertyID aProperty);
+
+  
+
+
+
+  static bool HasEffectiveAnimation(const nsIFrame* aFrame,
+                                    const nsCSSPropertyIDSet& aPropertySet);
 
   
 

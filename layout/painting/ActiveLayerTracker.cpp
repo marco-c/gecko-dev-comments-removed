@@ -71,6 +71,12 @@ class LayerActivity {
       case eCSSProperty_opacity:
         return ACTIVITY_OPACITY;
       case eCSSProperty_transform:
+      case eCSSProperty_translate:
+      case eCSSProperty_rotate:
+      case eCSSProperty_scale:
+        
+        
+        
         return ACTIVITY_TRANSFORM;
       case eCSSProperty_left:
         return ACTIVITY_LEFT;
@@ -90,6 +96,17 @@ class LayerActivity {
         MOZ_ASSERT(false);
         return ACTIVITY_OPACITY;
     }
+  }
+
+  static ActivityIndex GetActivityIndexForPropertySet(
+      const nsCSSPropertyIDSet& aPropertySet) {
+    if (aPropertySet.Intersect(nsCSSPropertyIDSet::TransformLikeProperties())
+            .Equals(aPropertySet)) {
+      return ACTIVITY_TRANSFORM;
+    }
+    MOZ_ASSERT(aPropertySet.Intersect(nsCSSPropertyIDSet::OpacityProperties())
+                   .Equals(aPropertySet));
+    return ACTIVITY_OPACITY;
   }
 
   
@@ -288,7 +305,7 @@ static void IncrementScaleRestyleCountIfNeeded(nsIFrame* aFrame,
   uint8_t& mutationCount = layerActivity->RestyleCountForProperty(aProperty);
   IncrementMutationCount(&mutationCount);
 
-  if (aProperty == eCSSProperty_transform) {
+  if (nsCSSPropertyIDSet::TransformLikeProperties().HasProperty(aProperty)) {
     IncrementScaleRestyleCountIfNeeded(aFrame, layerActivity);
   }
 }
@@ -379,18 +396,6 @@ static bool IsPresContextInScriptAnimationCallback(
   }
 }
 
- bool ActiveLayerTracker::IsStyleMaybeAnimated(
-    nsIFrame* aFrame, nsCSSPropertyID aProperty) {
-  return IsStyleAnimated(nullptr, aFrame, aProperty);
-}
-
- bool ActiveLayerTracker::IsBackgroundPositionAnimated(
-    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame) {
-  return IsStyleAnimated(aBuilder, aFrame,
-                         eCSSProperty_background_position_x) ||
-         IsStyleAnimated(aBuilder, aFrame, eCSSProperty_background_position_y);
-}
-
 static bool CheckScrollInducedActivity(
     LayerActivity* aLayerActivity, LayerActivity::ActivityIndex aActivityIndex,
     nsDisplayListBuilder* aBuilder) {
@@ -412,20 +417,67 @@ static bool CheckScrollInducedActivity(
   return false;
 }
 
+ bool ActiveLayerTracker::IsBackgroundPositionAnimated(
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame) {
+  LayerActivity* layerActivity = GetLayerActivity(aFrame);
+  if (layerActivity) {
+    LayerActivity::ActivityIndex activityIndex =
+        LayerActivity::ActivityIndex::ACTIVITY_BACKGROUND_POSITION;
+    if (layerActivity->mRestyleCounts[activityIndex] >= 2) {
+      
+      
+      
+      
+      
+      if (layerActivity
+              ->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] < 2) {
+        return true;
+      }
+    }
+    if (CheckScrollInducedActivity(layerActivity, activityIndex, aBuilder)) {
+      return true;
+    }
+  }
+  return nsLayoutUtils::HasEffectiveAnimation(
+             aFrame, eCSSProperty_background_position_x) ||
+         nsLayoutUtils::HasEffectiveAnimation(
+             aFrame, eCSSProperty_background_position_y);
+}
+
+ bool ActiveLayerTracker::IsTransformAnimated(
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame) {
+  return IsStyleAnimated(aBuilder, aFrame,
+                         nsCSSPropertyIDSet::TransformLikeProperties());
+}
+
+ bool ActiveLayerTracker::IsTransformMaybeAnimated(
+    nsIFrame* aFrame) {
+  return IsStyleAnimated(nullptr, aFrame,
+                         nsCSSPropertyIDSet::TransformLikeProperties());
+}
+
  bool ActiveLayerTracker::IsStyleAnimated(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-    nsCSSPropertyID aProperty) {
-  
+    const nsCSSPropertyIDSet& aPropertySet) {
+  MOZ_ASSERT(
+      aPropertySet.Intersect(nsCSSPropertyIDSet::TransformLikeProperties())
+              .Equals(aPropertySet) ||
+          aPropertySet.Intersect(nsCSSPropertyIDSet::OpacityProperties())
+              .Equals(aPropertySet),
+      "Only subset of opacity or transform-like properties set calls this");
+
+  const nsCSSPropertyIDSet transformSet =
+      nsCSSPropertyIDSet::TransformLikeProperties();
   if ((aFrame->StyleDisplay()->mWillChangeBitField &
        NS_STYLE_WILL_CHANGE_TRANSFORM) &&
-      aProperty == eCSSProperty_transform &&
+      aPropertySet.Intersects(transformSet) &&
       (!aBuilder ||
        aBuilder->IsInWillChangeBudget(aFrame, aFrame->GetSize()))) {
     return true;
   }
   if ((aFrame->StyleDisplay()->mWillChangeBitField &
        NS_STYLE_WILL_CHANGE_OPACITY) &&
-      aProperty == eCSSProperty_opacity &&
+      aPropertySet.Intersects(nsCSSPropertyIDSet::OpacityProperties()) &&
       (!aBuilder ||
        aBuilder->IsInWillChangeBudget(aFrame, aFrame->GetSize()))) {
     return true;
@@ -434,7 +486,7 @@ static bool CheckScrollInducedActivity(
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   if (layerActivity) {
     LayerActivity::ActivityIndex activityIndex =
-        LayerActivity::GetActivityIndexForProperty(aProperty);
+        LayerActivity::GetActivityIndexForPropertySet(aPropertySet);
     if (layerActivity->mRestyleCounts[activityIndex] >= 2) {
       
       
@@ -444,7 +496,7 @@ static bool CheckScrollInducedActivity(
       if (layerActivity
                   ->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] <
               2 ||
-          (aProperty == eCSSProperty_transform &&
+          (aPropertySet.Intersects(transformSet) &&
            IsScaleSubjectToAnimation(aFrame))) {
         return true;
       }
@@ -453,11 +505,11 @@ static bool CheckScrollInducedActivity(
       return true;
     }
   }
-  if (aProperty == eCSSProperty_transform &&
+  if (aPropertySet.Intersects(transformSet) &&
       aFrame->Combines3DTransformWithAncestors()) {
-    return IsStyleAnimated(aBuilder, aFrame->GetParent(), aProperty);
+    return IsStyleAnimated(aBuilder, aFrame->GetParent(), aPropertySet);
   }
-  return nsLayoutUtils::HasEffectiveAnimation(aFrame, aProperty);
+  return nsLayoutUtils::HasEffectiveAnimation(aFrame, aPropertySet);
 }
 
  bool ActiveLayerTracker::IsOffsetStyleAnimated(nsIFrame* aFrame) {

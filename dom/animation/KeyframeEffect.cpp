@@ -258,6 +258,26 @@ const AnimationProperty* KeyframeEffect::GetEffectiveAnimationOfProperty(
   return nullptr;
 }
 
+bool KeyframeEffect::HasEffectiveAnimationOfPropertySet(
+    const nsCSSPropertyIDSet& aPropertySet, const EffectSet& aEffect) const {
+  bool ret = false;
+  for (const AnimationProperty& property : mProperties) {
+    if (!aPropertySet.HasProperty(property.mProperty)) {
+      continue;
+    }
+
+    
+    
+    
+    
+    if (!IsEffectiveProperty(aEffect, property.mProperty)) {
+      return false;
+    }
+    ret = true;
+  }
+  return ret;
+}
+
 nsCSSPropertyIDSet KeyframeEffect::GetPropertiesForCompositor(
     EffectSet& aEffects, const nsIFrame* aFrame) const {
   MOZ_ASSERT(&aEffects ==

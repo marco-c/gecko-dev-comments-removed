@@ -11,6 +11,7 @@
 
 class nsIFrame;
 class nsIContent;
+class nsCSSPropertyIDSet;
 class nsDisplayListBuilder;
 class nsDOMCSSDeclaration;
 
@@ -27,6 +28,7 @@ class ActiveLayerTracker {
   static void Shutdown();
 
   
+
 
 
 
@@ -87,13 +89,8 @@ class ActiveLayerTracker {
 
 
 
-  static bool IsStyleMaybeAnimated(nsIFrame* aFrame, nsCSSPropertyID aProperty);
-  
-
-
-
   static bool IsStyleAnimated(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                              nsCSSPropertyID aProperty);
+                              const nsCSSPropertyIDSet& aPropertySet);
   
 
 
@@ -105,6 +102,17 @@ class ActiveLayerTracker {
 
   static bool IsBackgroundPositionAnimated(nsDisplayListBuilder* aBuilder,
                                            nsIFrame* aFrame);
+  
+
+
+
+  static bool IsTransformAnimated(nsDisplayListBuilder* aBuilder,
+                                  nsIFrame* aFrame);
+  
+
+
+
+  static bool IsTransformMaybeAnimated(nsIFrame* aFrame);
   
 
 

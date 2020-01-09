@@ -205,6 +205,13 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
+  bool HasEffectiveAnimationOfPropertySet(
+      const nsCSSPropertyIDSet& aPropertySet, const EffectSet& aEffect) const;
+
+  
+  
+  
+  
   
   
   
