@@ -342,7 +342,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  void SetRemoteBrowser(nsIRemoteTab* aBrowserParent);
+  void InitializeFromBrowserParent(BrowserParent* aBrowserParent);
 
   
 
