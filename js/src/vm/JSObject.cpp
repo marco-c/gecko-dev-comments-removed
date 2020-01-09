@@ -1998,155 +1998,56 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b) {
   NotifyGCPostSwap(a, b, r);
 }
 
-static void SetClassObject(JSObject* obj, JSProtoKey key, JSObject* cobj,
-                           JSObject* proto) {
-  if (!obj->is<GlobalObject>()) {
-    return;
-  }
-
-  obj->as<GlobalObject>().setConstructor(key, ObjectOrNullValue(cobj));
-  obj->as<GlobalObject>().setPrototype(key, ObjectOrNullValue(proto));
-}
-
-static void ClearClassObject(JSObject* obj, JSProtoKey key) {
-  if (!obj->is<GlobalObject>()) {
-    return;
-  }
-
-  obj->as<GlobalObject>().setConstructor(key, UndefinedValue());
-  obj->as<GlobalObject>().setPrototype(key, UndefinedValue());
-}
-
 static NativeObject* DefineConstructorAndPrototype(
-    JSContext* cx, HandleObject obj, JSProtoKey key, HandleAtom atom,
-    HandleObject protoProto, const Class* clasp, Native constructor,
-    unsigned nargs, const JSPropertySpec* ps, const JSFunctionSpec* fs,
+    JSContext* cx, HandleObject obj, HandleAtom atom, HandleObject protoProto,
+    const Class* clasp, Native constructor, unsigned nargs,
+    const JSPropertySpec* ps, const JSFunctionSpec* fs,
     const JSPropertySpec* static_ps, const JSFunctionSpec* static_fs,
     NativeObject** ctorp) {
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-  RootedNativeObject proto(cx, NewNativeObjectWithClassProto(
-                                   cx, clasp, protoProto, SingletonObject));
+  RootedNativeObject proto(
+      cx, GlobalObject::createBlankPrototypeInheriting(cx, clasp, protoProto));
   if (!proto) {
     return nullptr;
   }
 
   
-
-
-
-  bool defineConstructorProperty = false;
   uint32_t propertyAttrs = 0;
 
-  
   RootedNativeObject ctor(cx);
-  bool cached = false;
   if (!constructor) {
-    
-
-
-
-
-
-    if (!(clasp->flags & JSCLASS_IS_ANONYMOUS) || !obj->is<GlobalObject>() ||
-        key == JSProto_Null) {
-      defineConstructorProperty = true;
-      propertyAttrs = (clasp->flags & JSCLASS_IS_ANONYMOUS)
-                          ? JSPROP_READONLY | JSPROP_PERMANENT
-                          : 0;
+    if (clasp->flags & JSCLASS_IS_ANONYMOUS) {
+      propertyAttrs = JSPROP_READONLY | JSPROP_PERMANENT;
     }
 
     ctor = proto;
   } else {
-    RootedFunction fun(cx, NewNativeConstructor(cx, constructor, nargs, atom));
-    if (!fun) {
-      goto bad;
+    ctor = NewNativeConstructor(cx, constructor, nargs, atom);
+    if (!ctor) {
+      return nullptr;
     }
 
-    
-
-
-
-
-    if (key != JSProto_Null) {
-      SetClassObject(obj, key, fun, proto);
-      cached = true;
-    }
-
-    defineConstructorProperty = true;
-    propertyAttrs = 0;
-
-    
-
-
-
-
-    ctor = fun;
     if (!LinkConstructorAndPrototype(cx, ctor, proto)) {
-      goto bad;
-    }
-
-    
-    Rooted<TaggedProto> tagged(cx, TaggedProto(proto));
-    if (ctor->getClass() == clasp &&
-        !JSObject::splicePrototype(cx, ctor, tagged)) {
-      goto bad;
+      return nullptr;
     }
   }
 
   if (!DefinePropertiesAndFunctions(cx, proto, ps, fs) ||
       (ctor != proto &&
        !DefinePropertiesAndFunctions(cx, ctor, static_ps, static_fs))) {
-    goto bad;
+    return nullptr;
   }
 
-  if (defineConstructorProperty) {
-    RootedId id(cx, AtomToId(atom));
-    RootedValue value(cx, ObjectValue(*ctor));
-    if (!DefineDataProperty(cx, obj, id, value, propertyAttrs)) {
-      goto bad;
-    }
-  }
-
-  
-  if (!cached && key != JSProto_Null) {
-    SetClassObject(obj, key, ctor, proto);
+  RootedId id(cx, AtomToId(atom));
+  RootedValue value(cx, ObjectValue(*ctor));
+  if (!DefineDataProperty(cx, obj, id, value, propertyAttrs)) {
+    return nullptr;
   }
 
   if (ctorp) {
     *ctorp = ctor;
   }
   return proto;
-
-bad:
-  if (cached) {
-    ClearClassObject(obj, key);
-  }
-  return nullptr;
 }
 
 NativeObject* js::InitClass(JSContext* cx, HandleObject obj,
@@ -2156,8 +2057,6 @@ NativeObject* js::InitClass(JSContext* cx, HandleObject obj,
                             const JSPropertySpec* static_ps,
                             const JSFunctionSpec* static_fs,
                             NativeObject** ctorp) {
-  RootedObject protoProto(cx, protoProto_);
-
   RootedAtom atom(cx, Atomize(cx, clasp->name, strlen(clasp->name)));
   if (!atom) {
     return nullptr;
@@ -2170,17 +2069,15 @@ NativeObject* js::InitClass(JSContext* cx, HandleObject obj,
 
 
 
-
-
-  JSProtoKey key = JSCLASS_CACHED_PROTO_KEY(clasp);
-  if (key != JSProto_Null && !protoProto) {
-    protoProto = GlobalObject::getOrCreatePrototype(cx, JSProto_Object);
+  RootedObject protoProto(cx, protoProto_);
+  if (!protoProto) {
+    protoProto = GlobalObject::getOrCreateObjectPrototype(cx, cx->global());
     if (!protoProto) {
       return nullptr;
     }
   }
 
-  return DefineConstructorAndPrototype(cx, obj, key, atom, protoProto, clasp,
+  return DefineConstructorAndPrototype(cx, obj, atom, protoProto, clasp,
                                        constructor, nargs, ps, fs, static_ps,
                                        static_fs, ctorp);
 }
