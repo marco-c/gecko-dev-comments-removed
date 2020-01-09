@@ -4,7 +4,7 @@
 
 
 
-#include "frontend/BinToken.h"
+#include "frontend/BinASTToken.h"
 
 #include "mozilla/Maybe.h"
 

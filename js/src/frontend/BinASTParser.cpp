@@ -19,7 +19,7 @@
 #include "mozilla/Vector.h"
 
 #include "frontend/BinAST-macros.h"
-#include "frontend/BinTokenReaderMultipart.h"
+#include "frontend/BinASTTokenReaderMultipart.h"
 #include "frontend/FullParseHandler.h"
 #include "frontend/ParseNode.h"
 #include "frontend/Parser.h"
@@ -4964,7 +4964,7 @@ BinASTParser<Tok>::parseOptionalVariableDeclarationOrExpression() {
 
 
 
-template class BinASTParser<BinTokenReaderMultipart>;
+template class BinASTParser<BinASTTokenReaderMultipart>;
 
 }  
 }  

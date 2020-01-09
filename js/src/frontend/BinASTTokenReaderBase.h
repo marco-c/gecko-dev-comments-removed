@@ -4,10 +4,10 @@
 
 
 
-#ifndef frontend_BinTokenReaderBase_h
-#define frontend_BinTokenReaderBase_h
+#ifndef frontend_BinASTTokenReaderBase_h
+#define frontend_BinASTTokenReaderBase_h
 
-#include "frontend/BinToken.h"
+#include "frontend/BinASTToken.h"
 #include "frontend/ErrorReporter.h"
 #include "frontend/TokenStream.h"
 
@@ -20,7 +20,7 @@ namespace frontend {
 
 extern const uint64_t NULL_FLOAT_REPRESENTATION;
 
-class MOZ_STACK_CLASS BinTokenReaderBase {
+class MOZ_STACK_CLASS BinASTTokenReaderBase {
  public:
   template <typename T>
   using ErrorResult = mozilla::GenericErrorResult<T>;
@@ -72,8 +72,8 @@ class MOZ_STACK_CLASS BinTokenReaderBase {
                                                          const BinField field);
 
  protected:
-  BinTokenReaderBase(JSContext* cx, ErrorReporter* er, const uint8_t* start,
-                     const size_t length)
+  BinASTTokenReaderBase(JSContext* cx, ErrorReporter* er, const uint8_t* start,
+                        const size_t length)
       : cx_(cx),
         errorReporter_(er),
         poisoned_(false),
@@ -172,9 +172,9 @@ class MOZ_STACK_CLASS BinTokenReaderBase {
   size_t latestKnownGoodPos_;
 
  private:
-  BinTokenReaderBase(const BinTokenReaderBase&) = delete;
-  BinTokenReaderBase(BinTokenReaderBase&&) = delete;
-  BinTokenReaderBase& operator=(BinTokenReaderBase&) = delete;
+  BinASTTokenReaderBase(const BinASTTokenReaderBase&) = delete;
+  BinASTTokenReaderBase(BinASTTokenReaderBase&&) = delete;
+  BinASTTokenReaderBase& operator=(BinASTTokenReaderBase&) = delete;
 };
 
 }  
