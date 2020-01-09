@@ -81,12 +81,8 @@ add_task(async function test_options_on_addon_reload() {
 
   for (let i = 0; i < 5; i++) {
     const onceOptionsReloaded = Promise.all([
-      
-      
-      
       AddonTestUtils.promiseWebExtensionStartup(),
-      TestUtils.topicObserved(AddonManager.OPTIONS_NOTIFICATION_DISPLAYED,
-                              (subject, data) => data == extension.id),
+      waitOptionsBrowserInserted(),
     ]);
 
     await addon.reload();
