@@ -72,6 +72,7 @@ class ClonedMessageData;
 class ContentParent;
 class Element;
 class DataTransfer;
+class BrowserBridgeParent;
 
 namespace ipc {
 class StructuredCloneData;
@@ -88,6 +89,7 @@ class TabParent final : public PBrowserParent,
   typedef mozilla::dom::ClonedMessageData ClonedMessageData;
 
   friend class PBrowserParent;
+  friend class BrowserBridgeParent;  
 
   virtual ~TabParent();
 
@@ -101,7 +103,8 @@ class TabParent final : public PBrowserParent,
   NS_DECL_NSIDOMEVENTLISTENER
 
   TabParent(ContentParent* aManager, const TabId& aTabId,
-            const TabContext& aContext, uint32_t aChromeFlags);
+            const TabContext& aContext, uint32_t aChromeFlags,
+            BrowserBridgeParent* aBrowserBridgeParent = nullptr);
 
   Element* GetOwnerElement() const { return mFrameElement; }
   already_AddRefed<nsPIDOMWindowOuter> GetParentWindowOuter();
@@ -570,6 +573,10 @@ class TabParent final : public PBrowserParent,
 
   layout::RenderFrame* GetRenderFrame();
 
+  
+  
+  BrowserBridgeParent* GetBrowserBridgeParent() const;
+
   mozilla::ipc::IPCResult RecvEnsureLayersConnected(
       CompositorOptions* aCompositorOptions);
 
@@ -703,6 +710,12 @@ class TabParent final : public PBrowserParent,
 
   
   RefPtr<CanonicalBrowsingContext> mBrowsingContext;
+
+  
+  
+  
+  
+  BrowserBridgeParent* mBrowserBridgeParent;
 
   TabId mTabId;
 
