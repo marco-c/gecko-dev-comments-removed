@@ -50,10 +50,13 @@ function inPopup(e) {
 
 function getElementFromPos(pos: DOMRect) {
   
-  return document.elementFromPoint(
-    pos.x + pos.width / 2,
-    pos.y + pos.height / 2
-  );
+  
+  const elementsAtPoint = [
+    
+    ...document.elementsFromPoint(pos.x + pos.width / 2, pos.y + pos.height / 2)
+  ];
+
+  return elementsAtPoint.find(el => el.className.startsWith("cm-"));
 }
 
 class Preview extends PureComponent<Props, State> {
