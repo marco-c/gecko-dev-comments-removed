@@ -1384,8 +1384,6 @@ inline mozilla::dom::ReflectionScope GetReflectionScope(
 
 template <class T>
 inline void ClearWrapper(T* p, nsWrapperCache* cache, JSObject* obj) {
-  JS::AutoAssertGCCallback inCallback;
-
   
   
   
@@ -1394,13 +1392,15 @@ inline void ClearWrapper(T* p, nsWrapperCache* cache, JSObject* obj) {
   
   
   if (!recordreplay::IsReplaying()) {
+    MOZ_ASSERT(cache->GetWrapperMaybeDead() == obj);
     cache->ClearWrapper(obj);
   }
 }
 
 template <class T>
 inline void ClearWrapper(T* p, void*, JSObject* obj) {
-  JS::AutoAssertGCCallback inCallback;
+  
+  JS::AutoSuppressGCAnalysis nogc;
 
   
   
