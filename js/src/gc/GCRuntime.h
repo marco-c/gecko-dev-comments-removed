@@ -84,11 +84,19 @@ class ChunkPool {
   void push(Chunk* chunk);
   Chunk* remove(Chunk* chunk);
 
+  void sort();
+
+ private:
+  Chunk* mergeSort(Chunk* list, size_t count);
+  bool isSorted() const;
+
 #ifdef DEBUG
+ public:
   bool contains(Chunk* chunk) const;
   bool verify() const;
 #endif
 
+ public:
   
   
   class Iter {
