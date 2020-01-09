@@ -165,6 +165,13 @@ class nsIWidgetListener {
   
 
 
+
+
+  virtual bool ShouldNotBeVisible();
+
+  
+
+
   virtual nsEventStatus HandleEvent(mozilla::WidgetGUIEvent* aEvent,
                                     bool aUseAttachedEvents);
 };

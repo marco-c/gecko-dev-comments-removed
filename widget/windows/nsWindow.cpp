@@ -6538,6 +6538,16 @@ void nsWindow::OnWindowPosChanging(LPWINDOWPOS& info) {
   }
   
   if (mWindowType == eWindowType_invisible) info->flags &= ~SWP_SHOWWINDOW;
+
+  
+  
+  
+  static bool sDWMUnhidesPopups = IsWin10Sep2018UpdateOrLater();
+  if (sDWMUnhidesPopups && (info->flags & SWP_SHOWWINDOW) &&
+      mWindowType == eWindowType_popup && mWidgetListener &&
+      mWidgetListener->ShouldNotBeVisible()) {
+    info->flags &= ~SWP_SHOWWINDOW;
+  }
 }
 
 void nsWindow::UserActivity() {
