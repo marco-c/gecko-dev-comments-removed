@@ -21,13 +21,13 @@ add_task(async function() {
 
   const usbStatusElement = document.querySelector(".js-sidebar-usb-status");
   ok(usbStatusElement, "Sidebar shows the USB status element");
-  ok(usbStatusElement.textContent.includes("USB devices disabled"),
+  ok(usbStatusElement.textContent.includes("USB disabled"),
     "USB status element has the expected content");
 
   info("Install the adb extension and wait for the message to udpate");
   
   adbAddon.install("internal");
-  await waitUntil(() => usbStatusElement.textContent.includes("USB devices enabled"));
+  await waitUntil(() => usbStatusElement.textContent.includes("USB enabled"));
   
   
   
@@ -36,7 +36,7 @@ add_task(async function() {
 
   info("Uninstall the adb extension and wait for the message to udpate");
   adbAddon.uninstall();
-  await waitUntil(() => usbStatusElement.textContent.includes("USB devices disabled"));
+  await waitUntil(() => usbStatusElement.textContent.includes("USB disabled"));
   await waitForAdbStop();
 
   await removeTab(tab);

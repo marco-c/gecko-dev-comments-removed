@@ -2,12 +2,12 @@
 
 
 
-.sidebar__devices__message {
+.sidebar__label {
   color: var(--grey-40);
-  display: inline-block;
+  display: block;
   padding: 12px 0;
   text-align: center;
-  width: 100%;
+  font-size: var(--message-font-size);
 }
 
 .sidebar__refresh-usb {
