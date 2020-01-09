@@ -88,9 +88,7 @@ class BrowsingContextBase {
 
 
 
-class BrowsingContext : public nsWrapperCache,
-                        public SupportsWeakPtr<BrowsingContext>,
-                        public BrowsingContextBase {
+class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
  public:
   enum class Type { Chrome, Content };
 
