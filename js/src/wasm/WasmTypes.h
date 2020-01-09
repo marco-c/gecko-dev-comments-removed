@@ -396,6 +396,16 @@ class ValType {
 
   explicit ValType(PackedTypeCode ptc) : tc_(ptc) { MOZ_ASSERT(isValidCode()); }
 
+  explicit ValType(jit::MIRType mty) {
+    switch (mty) {
+      case jit::MIRType::Int32: tc_ = PackTypeCode(TypeCode::I32); break;
+      case jit::MIRType::Int64: tc_ = PackTypeCode(TypeCode::I64); break;
+      case jit::MIRType::Float32: tc_ = PackTypeCode(TypeCode::F32); break;
+      case jit::MIRType::Double: tc_ = PackTypeCode(TypeCode::F64); break;
+      default: MOZ_CRASH("ValType(MIRType): unexpected type");
+    }
+  }
+
   static ValType fromBitsUnsafe(uint32_t bits) {
     return ValType(PackedTypeCodeFromBits(bits));
   }
@@ -2090,6 +2100,40 @@ enum class SymbolicAddress {
 #endif
   Limit
 };
+
+
+
+
+
+
+
+
+
+static constexpr size_t SymbolicAddressSignatureMaxArgs = 6;
+
+struct SymbolicAddressSignature {
+  
+  const SymbolicAddress identity;
+  
+  const jit::MIRType retType;
+  
+  const uint8_t numArgs;
+  
+  
+  const jit::MIRType argTypes[SymbolicAddressSignatureMaxArgs + 1];
+};
+
+
+
+
+
+
+
+
+
+
+static_assert(sizeof(SymbolicAddressSignature) <= 16,
+              "SymbolicAddressSignature unexpectedly large");
 
 bool IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode);
 
