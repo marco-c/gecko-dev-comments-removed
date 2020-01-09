@@ -217,7 +217,8 @@ void DMDFuncs::StatusMsg(const char* aFmt, va_list aAp) {
 #endif
 }
 
- void InfallibleAllocPolicy::ExitOnFailure(const void* aP) {
+
+void InfallibleAllocPolicy::ExitOnFailure(const void* aP) {
   if (!aP) {
     MOZ_CRASH("DMD out of memory; aborting");
   }
@@ -490,7 +491,8 @@ class Thread {
   bool InterceptsAreBlocked() const { return mBlockIntercepts; }
 };
 
- Thread* Thread::Fetch() {
+
+Thread* Thread::Fetch() {
   Thread* t = static_cast<Thread*>(DMD_GET_TLS_DATA(gTlsIndex));
 
   if (MOZ_UNLIKELY(!t)) {
