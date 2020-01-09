@@ -138,6 +138,7 @@
 #  include "jit/mips64/Assembler-mips64.h"
 #endif
 
+#include "wasm/WasmGC.h"
 #include "wasm/WasmGenerator.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmOpIter.h"
@@ -946,8 +947,6 @@ using ScratchEBX = ScratchI32;
 
 using ScratchI8 = ScratchI32;
 #endif
-
-
 
 
 
@@ -2117,7 +2116,13 @@ struct StackMapGenerator {
   
   
   
-  Maybe<uint32_t> framePushedBeforePushingCallArgs_;
+  
+  
+  
+  
+  
+  
+  Maybe<uint32_t> framePushedExcludingOutboundCallArgs_;
 
   
   
@@ -2231,22 +2236,29 @@ struct StackMapGenerator {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     Maybe<uint32_t> framePushedExcludingArgs;
     if (framePushedAtEntryToBody_.isNothing()) {
       
-      MOZ_ASSERT(framePushedBeforePushingCallArgs_.isNothing());
+      MOZ_ASSERT(framePushedExcludingOutboundCallArgs_.isNothing());
     } else {
       
       MOZ_ASSERT(masm_.framePushed() >= framePushedAtEntryToBody_.value());
-      if (framePushedBeforePushingCallArgs_.isSome()) {
+      if (framePushedExcludingOutboundCallArgs_.isSome()) {
         
         
         MOZ_ASSERT(masm_.framePushed() >=
-                   framePushedBeforePushingCallArgs_.value());
-        MOZ_ASSERT(framePushedBeforePushingCallArgs_.value() >=
+                   framePushedExcludingOutboundCallArgs_.value());
+        MOZ_ASSERT(framePushedExcludingOutboundCallArgs_.value() >=
                    framePushedAtEntryToBody_.value());
         framePushedExcludingArgs =
-            Some(framePushedBeforePushingCallArgs_.value());
+            Some(framePushedExcludingOutboundCallArgs_.value());
       } else {
         
         
@@ -4055,9 +4067,9 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     const ValTypeVector& argTys = env_.funcTypes[func_.index]->args();
 
-    size_t nStackArgBytes = stackArgAreaSize(argTys);
-    MOZ_ASSERT(nStackArgBytes % sizeof(void*) == 0);
-    smgen_.numStackArgWords_ = nStackArgBytes / sizeof(void*);
+    size_t nInboundStackArgBytes = StackArgAreaSizeUnaligned(argTys);
+    MOZ_ASSERT(nInboundStackArgBytes % sizeof(void*) == 0);
+    smgen_.numStackArgWords_ = nInboundStackArgBytes / sizeof(void*);
 
     MOZ_ASSERT(smgen_.mst_.length() == 0);
     if (!smgen_.mst_.pushNonGCPointers(smgen_.numStackArgWords_)) {
@@ -4072,7 +4084,7 @@ class BaseCompiler final : public BaseCompilerInterface {
         continue;
       }
       uint32_t offset = argLoc.offsetFromArgBase();
-      MOZ_ASSERT(offset < nStackArgBytes);
+      MOZ_ASSERT(offset < nInboundStackArgBytes);
       MOZ_ASSERT(offset % sizeof(void*) == 0);
       smgen_.mst_.setGCPointer(offset / sizeof(void*));
     }
@@ -4383,8 +4395,8 @@ class BaseCompiler final : public BaseCompilerInterface {
     size_t adjustment = call.stackArgAreaSize + call.frameAlignAdjustment;
     fr.freeArgAreaAndPopBytes(adjustment, stackSpace);
 
-    MOZ_ASSERT(smgen_.framePushedBeforePushingCallArgs_.isSome());
-    smgen_.framePushedBeforePushingCallArgs_.reset();
+    MOZ_ASSERT(smgen_.framePushedExcludingOutboundCallArgs_.isSome());
+    smgen_.framePushedExcludingOutboundCallArgs_.reset();
 
     if (call.isInterModule) {
       masm.loadWasmTlsRegFromFrame();
@@ -4400,32 +4412,25 @@ class BaseCompiler final : public BaseCompilerInterface {
     }
   }
 
-  
-  
+  void startCallArgs(size_t stackArgAreaSizeUnaligned, FunctionCall* call) {
+    size_t stackArgAreaSizeAligned
+        = AlignStackArgAreaSize(stackArgAreaSizeUnaligned);
+    MOZ_ASSERT(stackArgAreaSizeUnaligned <= stackArgAreaSizeAligned);
 
-  
-  
-  
-
-  template <class T>
-  size_t stackArgAreaSize(const T& args) {
-    ABIArgIter<const T> i(args);
-    while (!i.done()) {
-      i++;
-    }
-    return AlignBytes(i.stackBytesConsumedSoFar(), 16u);
-  }
-
-  void startCallArgs(size_t stackArgAreaSize, FunctionCall* call) {
     
     
     
     
-    MOZ_ASSERT(smgen_.framePushedBeforePushingCallArgs_.isNothing());
-    smgen_.framePushedBeforePushingCallArgs_.emplace(
-        masm.framePushed() + call->frameAlignAdjustment);
+    MOZ_ASSERT(smgen_.framePushedExcludingOutboundCallArgs_.isNothing());
+    smgen_.framePushedExcludingOutboundCallArgs_.emplace(
+        
+        masm.framePushed() +
+        
+        call->frameAlignAdjustment +
+        
+        (stackArgAreaSizeAligned - stackArgAreaSizeUnaligned));
 
-    call->stackArgAreaSize = stackArgAreaSize;
+    call->stackArgAreaSize = stackArgAreaSizeAligned;
 
     size_t adjustment = call->stackArgAreaSize + call->frameAlignAdjustment;
     fr.allocArgArea(adjustment);
@@ -8601,7 +8606,7 @@ bool BaseCompiler::emitCallArgs(const ValTypeVector& argTypes,
                                 FunctionCall* baselineCall) {
   MOZ_ASSERT(!deadCode_);
 
-  startCallArgs(stackArgAreaSize(argTypes), baselineCall);
+  startCallArgs(StackArgAreaSizeUnaligned(argTypes), baselineCall);
 
   uint32_t numArgs = argTypes.length();
   for (size_t i = 0; i < numArgs; ++i) {
@@ -9766,7 +9771,7 @@ bool BaseCompiler::emitInstanceCall(uint32_t lineOrBytecode,
 
   ABIArg instanceArg = reservePointerArgument(&baselineCall);
 
-  startCallArgs(stackArgAreaSize(sig), &baselineCall);
+  startCallArgs(StackArgAreaSizeUnaligned(sig), &baselineCall);
   for (uint32_t i = 1; i < sig.length(); i++) {
     ValType t;
     switch (sig[i]) {
@@ -10902,7 +10907,7 @@ bool BaseCompiler::emitBody() {
     MOZ_ASSERT(masm.framePushed() >= smgen_.framePushedAtEntryToBody_.value());
 
     
-    MOZ_ASSERT(smgen_.framePushedBeforePushingCallArgs_.isNothing());
+    MOZ_ASSERT(smgen_.framePushedExcludingOutboundCallArgs_.isNothing());
 
     switch (op.b0) {
       case uint16_t(Op::End):
