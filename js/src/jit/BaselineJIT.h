@@ -217,7 +217,7 @@ struct BaselineScript final {
 
   
   
-  Vector<DependentWasmImport>* dependentWasmImports_ = nullptr;
+  js::UniquePtr<Vector<DependentWasmImport>> dependentWasmImports_;
 
   
   
