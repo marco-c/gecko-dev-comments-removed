@@ -1486,6 +1486,9 @@ pref("media.autoplay.block-webaudio", true);
 pref("media.autoplay.block-webaudio", false);
 #endif
 
+#ifdef NIGHTLY_BUILD
+pref("media.videocontrols.picture-in-picture.enabled", false);
+#endif
 
 
 
