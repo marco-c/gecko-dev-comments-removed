@@ -254,35 +254,6 @@ void MacroAssembler::flush() {}
 
 void MacroAssembler::comment(const char* msg) { masm.comment(msg); }
 
-class MOZ_RAII ScopedMoveResolution {
-  MacroAssembler& masm_;
-  MoveResolver& resolver_;
-
- public:
-  explicit ScopedMoveResolution(MacroAssembler& masm)
-      : masm_(masm), resolver_(masm.moveResolver()) {}
-
-  void addMove(Register src, Register dest) {
-    if (src != dest) {
-      masm_.propagateOOM(resolver_.addMove(MoveOperand(src), MoveOperand(dest),
-                                           MoveOp::GENERAL));
-    }
-  }
-
-  ~ScopedMoveResolution() {
-    masm_.propagateOOM(resolver_.resolve());
-    if (masm_.oom()) {
-      return;
-    }
-
-    resolver_.sortMemoryToMemoryMoves();
-
-    MoveEmitter emitter(masm_);
-    emitter.emit(resolver_);
-    emitter.finish();
-  }
-};
-
 
 
 
@@ -325,11 +296,7 @@ void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
   PushRegsInMask(preserve);
 
   
-  {
-    ScopedMoveResolution resolution(*this);
-    resolution.addMove(rhs, regForRhs);
-    resolution.addMove(lhsOutput, eax);
-  }
+  moveRegPair(lhsOutput, rhs, eax, regForRhs);
   if (oom()) {
     return;
   }
@@ -343,11 +310,7 @@ void MacroAssembler::flexibleDivMod32(Register rhs, Register lhsOutput,
     idiv(regForRhs);
   }
 
-  {
-    ScopedMoveResolution resolution(*this);
-    resolution.addMove(eax, lhsOutput);
-    resolution.addMove(edx, remOutput);
-  }
+  moveRegPair(eax, edx, lhsOutput, remOutput);
   if (oom()) {
     return;
   }

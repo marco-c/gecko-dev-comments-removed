@@ -457,6 +457,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void pushReturnAddress() DEFINED_ON(mips_shared, arm, arm64);
   void popReturnAddress() DEFINED_ON(mips_shared, arm, arm64);
 
+  
+  void moveRegPair(Register src0, Register src1, Register dst0, Register dst1,
+                   MoveOp::Type type = MoveOp::GENERAL);
+
  public:
   
   
@@ -589,7 +593,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   CodeOffset callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
                          MoveOp::Type result = MoveOp::GENERAL);
-  void callDebugWithABI(wasm::SymbolicAddress fun, MoveOp::Type result = MoveOp::GENERAL);
 
  private:
   
