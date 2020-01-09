@@ -163,6 +163,16 @@ static MOZ_ALWAYS_INLINE void SET_UINT32(jsbytecode* pc, uint32_t u) {
   mozilla::NativeEndian::copyAndSwapToLittleEndian(pc + 1, &u, 1);
 }
 
+static MOZ_ALWAYS_INLINE double GET_DOUBLE(const jsbytecode* pc) {
+  double result;
+  mozilla::NativeEndian::copyAndSwapFromLittleEndian(&result, pc + 1, 1);
+  return result;
+}
+
+static MOZ_ALWAYS_INLINE void SET_DOUBLE(jsbytecode* pc, double d) {
+  mozilla::NativeEndian::copyAndSwapToLittleEndian(pc + 1, &d, 1);
+}
+
 static MOZ_ALWAYS_INLINE int32_t GET_INT32(const jsbytecode* pc) {
   return static_cast<int32_t>(GET_UINT32(pc));
 }
