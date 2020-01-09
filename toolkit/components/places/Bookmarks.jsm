@@ -496,6 +496,12 @@ var Bookmarks = Object.freeze({
     
     let lastAddedForParent = appendInsertionInfoForInfoArray(tree.children, null, tree.guid);
 
+    
+    
+    if (!insertInfos.length) {
+      return [];
+    }
+
     return (async function() {
       let treeParent = await fetchBookmark({ guid: tree.guid });
       if (!treeParent) {

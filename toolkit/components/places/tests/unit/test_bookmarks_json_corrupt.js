@@ -2,6 +2,23 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const {BookmarkJSONUtils} = ChromeUtils.import("resource://gre/modules/BookmarkJSONUtils.jsm");
 
 
@@ -15,10 +32,14 @@ add_task(async function test_import_bookmarks() {
 
   let bookmarks = await PlacesUtils.promiseBookmarksTree(PlacesUtils.bookmarks.menuGuid);
 
-  Assert.equal(bookmarks.children.length, 1, "should only be one bookmark");
+  Assert.equal(bookmarks.children.length, 1, "should only be one bookmark in the menu");
   let bookmark = bookmarks.children[0];
   Assert.equal(bookmark.guid, "OCyeUO5uu9FH", "should have correct guid");
   Assert.equal(bookmark.title, "Customize Firefox", "should have correct title");
   Assert.equal(bookmark.uri, "http://en-us.www.mozilla.com/en-US/firefox/customize/",
     "should have correct uri");
+
+  bookmarks = await PlacesUtils.promiseBookmarksTree(PlacesUtils.bookmarks.toolbarGuid);
+
+  Assert.ok(!bookmarks.children, "should not have any bookmarks in the toolbar");
 });
