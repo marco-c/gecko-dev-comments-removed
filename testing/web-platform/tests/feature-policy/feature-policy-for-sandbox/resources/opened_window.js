@@ -1,0 +1,7 @@
+var feature = window.location.search.substr(1);
+var state = document.featurePolicy.allowsFeature(feature);
+
+
+
+window.opener.parent.postMessage(
+    {type: "feature", feature: feature, state: state}, "*");
