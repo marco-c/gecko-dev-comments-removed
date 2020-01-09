@@ -247,6 +247,14 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
     return NS_OK;
   }
 
+  
+
+
+
+
+
+  void SetWrapColumn(int32_t aWrapColumn) { mWrapColumn = aWrapColumn; }
+
  protected:  
   
 
