@@ -3,6 +3,9 @@
 
 
 
+import platform
+from unittest import skipIf
+
 from marionette_driver.by import By
 from marionette_harness.marionette_test import MarionetteTestCase
 
@@ -59,7 +62,7 @@ class WrPrefRolloutWorkAroundTestCase(MarionetteTestCase):
         self.assertEqual(status, 'opt-in', 'WR rollback of rollout should revert to opt-in on non-qualifying hardware.')
         self.assertTrue(compositor != 'webrender', 'After roll back on non-qualifying HW, WR should not be used.')
 
-
+    @skipIf(platform.machine() == "ARM64" and platform.system() == "Windows", "Bug 1536369 - Crashes on Windows 10 aarch64")
     def test_wr_rollout_workaround_on_qualifying_hw(self):
         
         self.marionette.set_pref(pref=gfx_rollout_override, value=False)
