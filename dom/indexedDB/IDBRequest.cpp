@@ -278,7 +278,7 @@ void IDBRequest::SetResultCallback(ResultCallback* aCallback) {
   }
 
   
-  if (NS_WARN_IF(NS_FAILED(CheckInnerWindowCorrectness()))) {
+  if (NS_WARN_IF(NS_FAILED(CheckCurrentGlobalCorrectness()))) {
     SetError(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
     return;
   }

@@ -43,9 +43,7 @@ mozilla::ipc::IPCResult BroadcastChannelChild::RecvNotify(
     return IPC_OK();
   }
 
-  
-  
-  if (NS_FAILED(mBC->CheckInnerWindowCorrectness())) {
+  if (NS_FAILED(mBC->CheckCurrentGlobalCorrectness())) {
     return IPC_OK();
   }
 

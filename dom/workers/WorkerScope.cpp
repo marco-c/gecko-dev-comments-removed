@@ -80,6 +80,10 @@ WorkerGlobalScope::WorkerGlobalScope(WorkerPrivate* aWorkerPrivate)
 
   
   MOZ_DIAGNOSTIC_ASSERT(mSerialEventTarget);
+
+  
+  
+  BindToOwner(static_cast<nsIGlobalObject*>(this));
 }
 
 WorkerGlobalScope::~WorkerGlobalScope() {
@@ -781,6 +785,10 @@ WorkerDebuggerGlobalScope::WorkerDebuggerGlobalScope(
 
   
   MOZ_DIAGNOSTIC_ASSERT(mSerialEventTarget);
+
+  
+  
+  BindToOwner(static_cast<nsIGlobalObject*>(this));
 }
 
 WorkerDebuggerGlobalScope::~WorkerDebuggerGlobalScope() {
