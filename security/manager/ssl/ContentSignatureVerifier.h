@@ -7,14 +7,8 @@
 #ifndef ContentSignatureVerifier_h
 #define ContentSignatureVerifier_h
 
-#include "cert.h"
-#include "CSTrustDomain.h"
-#include "nsDirectoryServiceUtils.h"
 #include "nsIContentSignatureVerifier.h"
-#include "nsIStreamListener.h"
-#include "nsNetUtil.h"
 #include "nsString.h"
-#include "ScopedNSSTypes.h"
 
 
 #define NS_CONTENTSIGNATUREVERIFIER_CID              \
@@ -26,55 +20,24 @@
 #define NS_CONTENTSIGNATUREVERIFIER_CONTRACTID \
   "@mozilla.org/security/contentsignatureverifier;1"
 
-class ContentSignatureVerifier final : public nsIContentSignatureVerifier,
-                                       public nsIStreamListener,
-                                       public nsIInterfaceRequestor {
+class ContentSignatureVerifier final : public nsIContentSignatureVerifier {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSICONTENTSIGNATUREVERIFIER
-  NS_DECL_NSIINTERFACEREQUESTOR
-  NS_DECL_NSISTREAMLISTENER
-  NS_DECL_NSIREQUESTOBSERVER
-
-  ContentSignatureVerifier()
-      : mCx(nullptr), mInitialised(false), mHasCertChain(false) {}
 
  private:
-  ~ContentSignatureVerifier() {}
+  ~ContentSignatureVerifier() = default;
 
-  nsresult UpdateInternal(const nsACString& aData);
-  nsresult DownloadCertChain();
-  nsresult CreateContextInternal(const nsACString& aData,
-                                 const nsACString& aCertChain,
-                                 const nsACString& aName);
-
+  nsresult VerifyContentSignatureInternal(
+      const nsACString& aData, const nsACString& aCSHeader,
+      const nsACString& aCertChain, const nsACString& aHostname,
+      
+      mozilla::Telemetry::LABELS_CONTENT_SIGNATURE_VERIFICATION_ERRORS&
+          aErrorLabel,
+       nsACString& aCertFingerprint,  uint32_t& aErrorValue);
   nsresult ParseContentSignatureHeader(
-      const nsACString& aContentSignatureHeader);
-
-  
-  mozilla::UniqueVFYContext mCx;
-  bool mInitialised;
-  
-  
-  
-  
-  bool mHasCertChain;
-  
-  nsCString mSignature;
-  
-  nsCString mCertChainURL;
-  
-  FallibleTArray<nsCString> mCertChain;
-  
-  mozilla::UniqueSECKEYPublicKey mKey;
-  
-  nsCString mName;
-  
-  nsCOMPtr<nsIContentSignatureReceiverCallback> mCallback;
-  
-  nsCOMPtr<nsIChannel> mChannel;
-  
-  nsCString mFingerprint;
+      const nsACString& aContentSignatureHeader,
+       nsCString& aSignature);
 };
 
 #endif  
