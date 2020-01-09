@@ -555,7 +555,8 @@ pref("media.preload.default", 1);
 pref("media.preload.auto", 2);    
 
 
-pref("media.throttle-regardless-of-download-rate", true);
+
+pref("media.throttle-cellular-regardless-of-download-rate", true);
 
 
 

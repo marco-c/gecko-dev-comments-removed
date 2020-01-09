@@ -12,6 +12,7 @@
 #include "BaseMediaResource.h"
 #include "MediaShutdownManager.h"
 #include "mozilla/StaticPrefs.h"
+#include "VideoUtils.h"
 
 namespace mozilla {
 
@@ -461,6 +462,7 @@ bool ChannelMediaDecoder::ShouldThrottleDownload(
   
   
   
+  
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_TRUE(GetStateMachine(), false);
 
@@ -473,8 +475,9 @@ bool ChannelMediaDecoder::ShouldThrottleDownload(
     return false;
   }
 
-  if (Preferences::GetBool("media.throttle-regardless-of-download-rate",
-                           false)) {
+  if (OnCellularConnection() &&
+      Preferences::GetBool(
+          "media.throttle-cellular-regardless-of-download-rate", false)) {
     return true;
   }
 
