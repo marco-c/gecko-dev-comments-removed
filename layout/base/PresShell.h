@@ -694,6 +694,21 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+    MOZ_CAN_RUN_SCRIPT
+    nsIFrame* MaybeFlushThrottledStyles(nsIFrame* aFrameForPresShell);
+
+    
+
+
+
+
+
+
+
+
+
+
     MOZ_CAN_RUN_SCRIPT
     nsresult HandleEventInternal(WidgetEvent* aEvent,
                                  nsEventStatus* aEventStatus,
