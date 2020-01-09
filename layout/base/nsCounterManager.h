@@ -120,10 +120,10 @@ struct nsCounterChangeNode : public nsCounterNode {
                         
                         
                         
-            aPropIndex + (aChangeType == RESET
-                              ? (INT32_MIN)
-                              : (aChangeType == INCREMENT ? ((INT32_MIN / 3) * 2)
-                                                          : INT32_MIN / 3)),
+            aPropIndex + (aChangeType == RESET ? (INT32_MIN)
+                                               : (aChangeType == INCREMENT
+                                                      ? ((INT32_MIN / 3) * 2)
+                                                      : INT32_MIN / 3)),
             aChangeType),
         mChangeValue(aChangeValue) {
     NS_ASSERTION(aPropIndex >= 0, "out of range");

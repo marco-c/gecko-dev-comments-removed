@@ -1622,8 +1622,7 @@ bool HTMLFormElement::IsLastActiveElement(
 
   for (auto* element : Reversed(mControls->mElements)) {
     
-    if (element->IsTextOrNumberControl(false) &&
-        !element->IsDisabled()) {
+    if (element->IsTextOrNumberControl(false) && !element->IsDisabled()) {
       return element == aControl;
     }
   }

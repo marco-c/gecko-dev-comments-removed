@@ -135,10 +135,7 @@ class Gamepad {
   bool present;
 
   Gamepad(uint32_t aNumAxes, uint32_t aNumButtons, GamepadType aType)
-      : type(aType),
-        numAxes(aNumAxes),
-        numButtons(aNumButtons),
-        present(true) {
+      : type(aType), numAxes(aNumAxes), numButtons(aNumButtons), present(true) {
     buttons.SetLength(numButtons);
     axes.SetLength(numAxes);
   }
@@ -431,7 +428,8 @@ bool WindowsGamepadService::ScanForXInputDevices() {
     }
 
     
-    Gamepad gamepad(kStandardGamepadAxes, kStandardGamepadButtons, kXInputGamepad);
+    Gamepad gamepad(kStandardGamepadAxes, kStandardGamepadButtons,
+                    kXInputGamepad);
     gamepad.userIndex = i;
     gamepad.state = state;
     gamepad.id = service->AddGamepad(
@@ -689,6 +687,7 @@ bool WindowsGamepadService::GetRawGamepad(HANDLE handle) {
   size_t numAxes = 0;
   nsTArray<Gamepad::axisValue> axes(kAxesLengthCap);
   
+  
   axes.SetLength(kAxesLengthCap);
 
   
@@ -697,7 +696,8 @@ bool WindowsGamepadService::GetRawGamepad(HANDLE handle) {
   MOZ_ASSERT(remapper);
 
   for (size_t i = 0; i < count; i++) {
-    const size_t axisIndex = axisCaps[i].Range.UsageMin - kAxisMinimumUsageNumber;
+    const size_t axisIndex =
+        axisCaps[i].Range.UsageMin - kAxisMinimumUsageNumber;
     if (axisIndex < kAxesLengthCap && !axes[axisIndex].active) {
       axes[axisIndex].caps = axisCaps[i];
       axes[axisIndex].active = true;
@@ -717,10 +717,9 @@ bool WindowsGamepadService::GetRawGamepad(HANDLE handle) {
   }
 
   gamepad.remapper = remapper.forget();
-  gamepad.id =
-      service->AddGamepad(gamepad_id, gamepad.remapper->GetMappingType(),
-                          GamepadHand::_empty, gamepad.remapper->GetButtonCount(),
-                          gamepad.remapper->GetAxisCount(), 0);
+  gamepad.id = service->AddGamepad(
+      gamepad_id, gamepad.remapper->GetMappingType(), GamepadHand::_empty,
+      gamepad.remapper->GetButtonCount(), gamepad.remapper->GetAxisCount(), 0);
   mGamepads.AppendElement(gamepad);
   return true;
 }

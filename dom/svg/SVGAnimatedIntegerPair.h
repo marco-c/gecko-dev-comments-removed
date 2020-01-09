@@ -79,7 +79,7 @@ class SVGAnimatedIntegerPair {
     virtual ~DOMAnimatedInteger();
 
     SVGAnimatedIntegerPair* mVal;  
-    PairIndex mIndex;      
+    PairIndex mIndex;              
 
     virtual int32_t BaseVal() override { return mVal->GetBaseValue(mIndex); }
     virtual void SetBaseVal(int32_t aValue) override {

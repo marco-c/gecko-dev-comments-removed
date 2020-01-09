@@ -1134,8 +1134,8 @@ static bool IsItemProbablyActive(nsDisplayItem* aItem,
       
 
 
-      return aParentActive || HasActiveChildren(*aItem->GetChildren(),
-                                                aDisplayListBuilder);
+      return aParentActive ||
+             HasActiveChildren(*aItem->GetChildren(), aDisplayListBuilder);
     }
     case DisplayItemType::TYPE_WRAP_LIST:
     case DisplayItemType::TYPE_PERSPECTIVE: {

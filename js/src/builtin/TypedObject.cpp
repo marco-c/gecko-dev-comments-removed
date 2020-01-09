@@ -838,8 +838,8 @@ JSObject* StructMetaTypeDescr::create(JSContext* cx, HandleObject metaTypeDescr,
 
 StructTypeDescr* StructMetaTypeDescr::createFromArrays(
     JSContext* cx, HandleObject structTypePrototype, bool opaque,
-    bool allowConstruct, HandleIdVector ids, JS::HandleValueVector fieldTypeObjs,
-    Vector<StructFieldProps>& fieldProps) {
+    bool allowConstruct, HandleIdVector ids,
+    JS::HandleValueVector fieldTypeObjs, Vector<StructFieldProps>& fieldProps) {
   StringBuffer stringBuffer(cx);       
   RootedValueVector fieldNames(cx);    
   RootedValueVector fieldOffsets(cx);  

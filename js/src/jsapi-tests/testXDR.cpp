@@ -12,7 +12,7 @@
 #include "builtin/String.h"
 #include "js/BuildId.h"  
 #include "js/CompilationAndEvaluation.h"  
-#include "js/SourceText.h"  
+#include "js/SourceText.h"                
 #include "js/Transcoding.h"
 #include "jsapi-tests/tests.h"
 #include "vm/JSScript.h"

@@ -33,9 +33,9 @@ bool RemoteObjectProxyBase::defineProperty(
   return ReportCrossOriginDenial(aCx, aId, NS_LITERAL_CSTRING("define"));
 }
 
-bool RemoteObjectProxyBase::ownPropertyKeys(JSContext* aCx,
-                                            JS::Handle<JSObject*> aProxy,
-                                            JS::MutableHandleVector<jsid> aProps) const {
+bool RemoteObjectProxyBase::ownPropertyKeys(
+    JSContext* aCx, JS::Handle<JSObject*> aProxy,
+    JS::MutableHandleVector<jsid> aProps) const {
   
   
   

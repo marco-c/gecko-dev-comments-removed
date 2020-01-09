@@ -69,7 +69,6 @@ static Maybe<LayerRect> ApplyParentLayerToLayerTransform(
 
 static LayerToParentLayerMatrix4x4 GetTransformToAncestorsParentLayer(
     Layer* aStart, const LayerMetricsWrapper& aAncestor) {
-
   
   
   

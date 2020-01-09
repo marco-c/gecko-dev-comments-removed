@@ -37,7 +37,8 @@ static LPWSTR GetModuleFileDir(HMODULE module, LPWSTR path, DWORD size) {
 
 
 
-TEST(TestUCRTDepends, AppDir) {
+TEST(TestUCRTDepends, AppDir)
+{
   WCHAR appdir[MAX_PATH];
   ASSERT_TRUE(GetModuleFileDir(nullptr, appdir, MAX_PATH));
 
@@ -95,7 +96,8 @@ TEST(TestUCRTDepends, AppDir) {
 
 
 
-TEST(TestUCRTDepends, SystemDir) {
+TEST(TestUCRTDepends, SystemDir)
+{
   WCHAR appdir[MAX_PATH];
   ASSERT_TRUE(GetModuleFileDir(nullptr, appdir, MAX_PATH));
 

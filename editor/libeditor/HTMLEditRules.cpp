@@ -341,7 +341,8 @@ nsresult HTMLEditRules::BeforeEdit(EditSubAction aEditSubAction,
     if (HTMLEditorRef().GetCompositionStartPoint().IsSet()) {
       
       
-      mRangeItem->StoreRange(HTMLEditorRef().GetCompositionStartPoint(), HTMLEditorRef().GetCompositionEndPoint());
+      mRangeItem->StoreRange(HTMLEditorRef().GetCompositionStartPoint(),
+                             HTMLEditorRef().GetCompositionEndPoint());
     } else {
       
       if (!SelectionRefPtr()->RangeCount()) {

@@ -3508,10 +3508,9 @@ bool nsObjectLoadingContent::MayResolve(jsid aId) {
   return true;
 }
 
-void nsObjectLoadingContent::GetOwnPropertyNames(JSContext* aCx,
-                                                 JS::MutableHandleVector<jsid> ,
-                                                 bool ,
-                                                 ErrorResult& aRv) {
+void nsObjectLoadingContent::GetOwnPropertyNames(
+    JSContext* aCx, JS::MutableHandleVector<jsid> ,
+    bool , ErrorResult& aRv) {
   
   
   

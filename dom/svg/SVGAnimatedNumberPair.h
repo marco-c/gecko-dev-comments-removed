@@ -82,7 +82,7 @@ class SVGAnimatedNumberPair {
     virtual ~DOMAnimatedNumber();
 
     SVGAnimatedNumberPair* mVal;  
-    PairIndex mIndex;     
+    PairIndex mIndex;             
 
     virtual float BaseVal() override { return mVal->GetBaseValue(mIndex); }
     virtual void SetBaseVal(float aValue) override {

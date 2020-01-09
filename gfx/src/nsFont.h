@@ -14,10 +14,10 @@
 #include "gfxFontFeatures.h"
 #include "gfxFontVariations.h"
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/RefPtr.h"  
-#include "mozilla/StyleColorInlines.h" 
-#include "nsCoord.h"         
-#include "nsTArray.h"        
+#include "mozilla/RefPtr.h"             
+#include "mozilla/StyleColorInlines.h"  
+#include "nsCoord.h"                    
+#include "nsTArray.h"                   
 
 struct gfxFontStyle;
 

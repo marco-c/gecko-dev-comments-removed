@@ -183,8 +183,8 @@ void GeckoChildProcessHost::Destroy() {
 }
 
 
-mozilla::BinPathType GeckoChildProcessHost::GetPathToBinary(FilePath& exePath,
-                                            GeckoProcessType processType) {
+mozilla::BinPathType GeckoChildProcessHost::GetPathToBinary(
+    FilePath& exePath, GeckoProcessType processType) {
   BinPathType pathType = XRE_GetChildProcBinPathType(processType);
 
   if (pathType == BinPathType::Self) {

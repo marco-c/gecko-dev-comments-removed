@@ -6,7 +6,7 @@
 
 
 #include "mozilla/ArrayUtils.h"  
-#include "mozilla/Utf8.h"  
+#include "mozilla/Utf8.h"        
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/SourceText.h"                

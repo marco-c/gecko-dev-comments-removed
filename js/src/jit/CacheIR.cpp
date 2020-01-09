@@ -4723,11 +4723,13 @@ AttachDecision CallIRGenerator::tryAttachStringSplit() {
                                      js::intrinsic_StringSplitString);
 
   
-  ValOperandId arg0ValId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ValOperandId arg0ValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
   StringOperandId arg0StrId = writer.guardIsString(arg0ValId);
 
   
-  ValOperandId arg1ValId = writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
+  ValOperandId arg1ValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
   StringOperandId arg1StrId = writer.guardIsString(arg1ValId);
 
   
@@ -4794,7 +4796,8 @@ AttachDecision CallIRGenerator::tryAttachArrayPush() {
   writer.guardSpecificNativeFunction(calleeObjId, js::array_push);
 
   
-  ValOperandId thisValId = writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
   ObjOperandId thisObjId = writer.guardIsObject(thisValId);
 
   

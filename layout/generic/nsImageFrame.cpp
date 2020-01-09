@@ -2306,7 +2306,7 @@ Maybe<nsIFrame::Cursor> nsImageFrame::GetCursor(const nsPoint& aPoint) {
 
   
   RefPtr<ComputedStyle> areaStyle =
-    PresShell()->StyleSet()->ResolveStyleLazily(*area);
+      PresShell()->StyleSet()->ResolveStyleLazily(*area);
   StyleCursorKind kind = areaStyle->StyleUI()->mCursor;
   if (kind == StyleCursorKind::Auto) {
     kind = StyleCursorKind::Default;

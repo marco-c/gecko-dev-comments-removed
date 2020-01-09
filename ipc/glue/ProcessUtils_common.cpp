@@ -70,8 +70,7 @@ void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
   aExtraOpts.push_back("-prefsHandle");
   aExtraOpts.push_back(formatPtrArg(prefsHandle).get());
   aExtraOpts.push_back("-prefMapHandle");
-  aExtraOpts.push_back(
-      formatPtrArg(GetPrefMapHandle().get()).get());
+  aExtraOpts.push_back(formatPtrArg(GetPrefMapHandle().get()).get());
 #else
   
   
@@ -90,7 +89,6 @@ void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
   aExtraOpts.push_back("-prefMapSize");
   aExtraOpts.push_back(formatPtrArg(GetPrefMapSize()).get());
 }
-
 
 #ifdef ANDROID
 static int gPrefsFd = -1;

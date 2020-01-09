@@ -642,7 +642,8 @@ class TabChild final : public TabChildBase,
 
   
   
-  mozilla::LayoutDeviceToLayoutDeviceMatrix4x4 GetChildToParentConversionMatrix() const;
+  mozilla::LayoutDeviceToLayoutDeviceMatrix4x4
+  GetChildToParentConversionMatrix() const;
 
   
   
