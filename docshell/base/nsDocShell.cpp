@@ -9695,6 +9695,35 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   
   
+  nsCOMPtr<nsIChildChannel> pendingChannel =
+      aLoadState->GetPendingRedirectedChannel();
+  if (pendingChannel) {
+    MOZ_ASSERT(!isSrcdoc, "pending channel for srcdoc load?");
+
+    channel = do_QueryInterface(pendingChannel);
+    MOZ_ASSERT(channel, "nsIChildChannel isn't a nsIChannel?");
+
+    
+    if (aRequest) {
+      nsCOMPtr<nsIRequest> outRequest = channel;
+      outRequest.forget(aRequest);
+    }
+
+    rv = OpenInitializedChannel(channel, uriLoader,
+                                nsIURILoader::REDIRECTED_CHANNEL);
+
+    
+    
+    if (NS_SUCCEEDED(rv) && aDocShell) {
+      nsCOMPtr<nsIDocShell> self = this;
+      self.forget(aDocShell);
+    }
+    return rv;
+  }
+
+  
+  
+  
   
   
   
@@ -10256,7 +10285,6 @@ nsresult nsDocShell::AddHeadersToChannel(nsIInputStream* aHeadersData,
 nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
                                    nsIURILoader* aURILoader,
                                    bool aBypassClassifier) {
-  nsresult rv;
   
   nsLoadFlags loadFlags = 0;
   (void)aChannel->GetLoadFlags(&loadFlags);
@@ -10355,6 +10383,14 @@ nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
     openFlags |= nsIURILoader::DONT_RETARGET;
   }
 
+  return OpenInitializedChannel(aChannel, aURILoader, openFlags);
+}
+
+nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
+                                            nsIURILoader* aURILoader,
+                                            uint32_t aOpenFlags) {
+  nsresult rv;
+
   
   auto cleanupInitialClient =
       MakeScopeExit([&] { mInitialClientSource.reset(); });
@@ -10375,7 +10411,7 @@ nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
                               win->EventTargetFor(TaskCategory::Other));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = aURILoader->OpenURI(aChannel, openFlags, this);
+  rv = aURILoader->OpenURI(aChannel, aOpenFlags, this);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -12980,6 +13016,25 @@ nsDocShell::SetOriginAttributesBeforeLoading(
   }
 
   return SetOriginAttributes(attrs);
+}
+
+NS_IMETHODIMP
+nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier) {
+  RefPtr<nsDocShell> self = this;
+  RefPtr<ChildProcessChannelListener> cpcl =
+      ChildProcessChannelListener::GetSingleton();
+
+  
+  cpcl->RegisterCallback(aIdentifier, [self](nsIChildChannel* aChannel) {
+    RefPtr<nsDocShellLoadState> loadState;
+    nsresult rv = nsDocShellLoadState::CreateFromPendingChannel(
+        aChannel, getter_AddRefs(loadState));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+    self->InternalLoad(loadState, nullptr, nullptr);
+  });
+  return NS_OK;
 }
 
 NS_IMETHODIMP

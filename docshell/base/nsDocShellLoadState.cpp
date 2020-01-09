@@ -9,6 +9,7 @@
 #include "nsIDocShellTreeItem.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIWebNavigation.h"
+#include "nsIChildChannel.h"
 
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/NullPrincipal.h"
@@ -65,6 +66,44 @@ nsDocShellLoadState::nsDocShellLoadState(DocShellLoadStateInit& aLoadState) {
 }
 
 nsDocShellLoadState::~nsDocShellLoadState() {}
+
+nsresult nsDocShellLoadState::CreateFromPendingChannel(
+    nsIChildChannel* aPendingChannel, nsDocShellLoadState** aResult) {
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aPendingChannel);
+  if (NS_WARN_IF(!channel)) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  
+  
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = channel->GetURI(getter_AddRefs(uri));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(uri);
+  loadState->mPendingRedirectedChannel = aPendingChannel;
+
+  
+  
+  nsCOMPtr<nsIURI> originalUri;
+  rv = channel->GetOriginalURI(getter_AddRefs(originalUri));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  loadState->SetOriginalURI(originalUri);
+
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
+  if (NS_WARN_IF(!loadInfo)) {
+    return NS_ERROR_FAILURE;
+  }
+  loadState->SetTriggeringPrincipal(loadInfo->TriggeringPrincipal());
+
+  
+  loadState.forget(aResult);
+  return NS_OK;
+}
 
 nsIURI* nsDocShellLoadState::Referrer() const { return mReferrer; }
 
