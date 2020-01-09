@@ -1848,20 +1848,6 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   return BrowsingContext::Create(aParentContext, aOpenerContext, aName, type);
 }
 
-static void GetFrameName(Element* aOwnerContent, nsAString& aFrameName) {
-  int32_t namespaceID = aOwnerContent->GetNameSpaceID();
-  if (namespaceID == kNameSpaceID_XHTML && !aOwnerContent->IsInHTMLDocument()) {
-    aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, aFrameName);
-  } else {
-    aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, aFrameName);
-    
-    
-    if (aFrameName.IsEmpty() && namespaceID == kNameSpaceID_XUL) {
-      aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, aFrameName);
-    }
-  }
-}
-
 nsresult nsFrameLoader::MaybeCreateDocShell() {
   if (mDocShell) {
     return NS_OK;
@@ -1903,7 +1889,18 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
 
   
   nsAutoString frameName;
-  GetFrameName(mOwnerContent, frameName);
+
+  int32_t namespaceID = mOwnerContent->GetNameSpaceID();
+  if (namespaceID == kNameSpaceID_XHTML && !mOwnerContent->IsInHTMLDocument()) {
+    mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, frameName);
+  } else {
+    mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, frameName);
+    
+    
+    if (frameName.IsEmpty() && namespaceID == kNameSpaceID_XUL) {
+      mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, frameName);
+    }
+  }
 
   
   bool isContent = parentBC->IsContent() ||
@@ -2536,17 +2533,8 @@ bool nsFrameLoader::TryRemoteBrowser() {
 
   
   if (XRE_IsContentProcess()) {
-    
-    nsAutoString frameName;
-    GetFrameName(mOwnerContent, frameName);
-
-    
-    
-    RefPtr<BrowsingContext> browsingContext =
-        CreateBrowsingContext(nullptr, nullptr, frameName, true);
-
     mRemoteFrameChild = RemoteFrameChild::Create(
-        this, context, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE), browsingContext);
+        this, context, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
     return !!mRemoteFrameChild;
   }
 
@@ -3077,13 +3065,8 @@ already_AddRefed<nsITabParent> nsFrameLoader::GetTabParent() {
 
 already_AddRefed<nsILoadContext> nsFrameLoader::LoadContext() {
   nsCOMPtr<nsILoadContext> loadContext;
-  if (IsRemoteFrame() &&
-      (mRemoteBrowser || mRemoteFrameChild || TryRemoteBrowser())) {
-    if (mRemoteBrowser) {
-      loadContext = mRemoteBrowser->GetLoadContext();
-    } else {
-      loadContext = mRemoteFrameChild->GetLoadContext();
-    }
+  if (IsRemoteFrame() && (mRemoteBrowser || TryRemoteBrowser())) {
+    loadContext = mRemoteBrowser->GetLoadContext();
   } else {
     loadContext = do_GetInterface(ToSupports(GetDocShell(IgnoreErrors())));
   }
@@ -3092,13 +3075,8 @@ already_AddRefed<nsILoadContext> nsFrameLoader::LoadContext() {
 
 already_AddRefed<BrowsingContext> nsFrameLoader::GetBrowsingContext() {
   RefPtr<BrowsingContext> browsingContext;
-  if (IsRemoteFrame() &&
-      (mRemoteBrowser || mRemoteFrameChild || TryRemoteBrowser())) {
-    if (mRemoteBrowser) {
-      browsingContext = mRemoteBrowser->GetBrowsingContext();
-    } else {
-      browsingContext = mRemoteFrameChild->GetBrowsingContext();
-    }
+  if (IsRemoteFrame() && (mRemoteBrowser || TryRemoteBrowser())) {
+    browsingContext = mRemoteBrowser->GetBrowsingContext();
   } else if (GetDocShell(IgnoreErrors())) {
     browsingContext = nsDocShell::Cast(mDocShell)->GetBrowsingContext();
   }

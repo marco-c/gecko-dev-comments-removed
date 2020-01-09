@@ -1125,8 +1125,7 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
   }
 
   RefPtr<ContentParent> constructorSender;
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess(),
-                     "Cannot allocate TabParent in content process");
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess(), "Cannot allocate TabParent in content process");
   if (aOpenerContentParent) {
     constructorSender = aOpenerContentParent;
   } else {
@@ -1134,30 +1133,18 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
       constructorSender =
           GetNewOrUsedJSPluginProcess(aContext.JSPluginId(), initialPriority);
     } else {
-      constructorSender =
-          GetNewOrUsedBrowserProcess(aFrameElement, remoteType, initialPriority,
-                                     nullptr, isPreloadBrowser);
+      constructorSender = GetNewOrUsedBrowserProcess(
+          aFrameElement, remoteType, initialPriority, nullptr,
+          isPreloadBrowser);
     }
     if (!constructorSender) {
       return nullptr;
     }
   }
-
-  
-  
-  RefPtr<CanonicalBrowsingContext> browsingContext =
-      BrowsingContext::Create(nullptr, nullptr, EmptyString(),
-                              BrowsingContext::Type::Content)
-          .downcast<CanonicalBrowsingContext>();
-
-  
-  
-  browsingContext->Group()->EnsureSubscribed(constructorSender);
-
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   cpm->RegisterRemoteFrame(tabId, ContentParentId(0), openerTabId,
-                           aContext.AsIPCTabContext(),
-                           constructorSender->ChildID());
+                            aContext.AsIPCTabContext(),
+                            constructorSender->ChildID());
 
   if (constructorSender) {
     nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
@@ -1184,17 +1171,15 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
     if (tabId == 0) {
       return nullptr;
     }
-    RefPtr<TabParent> tp = new TabParent(constructorSender, tabId, aContext,
-                                         browsingContext, chromeFlags);
-
-    browsingContext->SetOwnerProcessId(constructorSender->ChildID());
+    RefPtr<TabParent> tp(
+        new TabParent(constructorSender, tabId, aContext, chromeFlags));
 
     PBrowserParent* browser = constructorSender->SendPBrowserConstructor(
         
         tp.forget().take(), tabId,
         aSameTabGroupAs ? aSameTabGroupAs->GetTabId() : TabId(0),
         aContext.AsIPCTabContext(), chromeFlags, constructorSender->ChildID(),
-        browsingContext, constructorSender->IsForBrowser());
+        constructorSender->IsForBrowser());
 
     if (remoteType.EqualsLiteral(LARGE_ALLOCATION_REMOTE_TYPE)) {
       
@@ -3237,8 +3222,7 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
 PBrowserParent* ContentParent::AllocPBrowserParent(
     const TabId& aTabId, const TabId& aSameTabGroupAs,
     const IPCTabContext& aContext, const uint32_t& aChromeFlags,
-    const ContentParentId& aCpId, BrowsingContext* aBrowsingContext,
-    const bool& aIsForBrowser) {
+    const ContentParentId& aCpId, const bool& aIsForBrowser) {
   MOZ_ASSERT(!aSameTabGroupAs);
 
   Unused << aCpId;
@@ -3296,17 +3280,10 @@ PBrowserParent* ContentParent::AllocPBrowserParent(
   
   chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
 
-  CanonicalBrowsingContext* browsingContext =
-      CanonicalBrowsingContext::Cast(aBrowsingContext);
-  if (NS_WARN_IF(!browsingContext->IsOwnedByProcess(ChildID()))) {
-    MOZ_ASSERT(false, "BrowsingContext not owned by the correct process!");
-    return nullptr;
-  }
-
   MaybeInvalidTabContext tc(aContext);
   MOZ_ASSERT(tc.IsValid());
-  TabParent* parent = new TabParent(this, aTabId, tc.GetTabContext(),
-                                    browsingContext, chromeFlags);
+  TabParent* parent = new TabParent(static_cast<ContentParent*>(this), aTabId,
+                                    tc.GetTabContext(), chromeFlags);
 
   
   NS_ADDREF(parent);
@@ -3322,8 +3299,7 @@ bool ContentParent::DeallocPBrowserParent(PBrowserParent* frame) {
 mozilla::ipc::IPCResult ContentParent::RecvPBrowserConstructor(
     PBrowserParent* actor, const TabId& tabId, const TabId& sameTabGroupAs,
     const IPCTabContext& context, const uint32_t& chromeFlags,
-    const ContentParentId& cpId, BrowsingContext* aBrowsingContext,
-    const bool& isForBrowser) {
+    const ContentParentId& cpId, const bool& isForBrowser) {
   TabParent* parent = TabParent::GetFrom(actor);
   
   
@@ -3631,8 +3607,7 @@ bool ContentParent::DeallocPChildToParentStreamParent(
 }
 
 PParentToChildStreamParent* ContentParent::AllocPParentToChildStreamParent() {
-  MOZ_CRASH(
-      "PParentToChildStreamParent actors should be manually constructed!");
+  MOZ_CRASH("PParentToChildStreamParent actors should be manually constructed!");
 }
 
 bool ContentParent::DeallocPParentToChildStreamParent(
@@ -5733,8 +5708,6 @@ mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
                                            (uint64_t)aChildId, this);
   }
 
-  child->Attach( true);
-
   return IPC_OK();
 }
 
@@ -5761,11 +5734,51 @@ mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
   }
 
   if (aMoveToBFCache) {
-    aContext->CacheChildren( true);
+    aContext->CacheChildren();
   } else {
-    aContext->Detach( true);
+    aContext->Detach();
   }
 
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentParent::RecvSetOpenerBrowsingContext(
+    BrowsingContext* aContext, BrowsingContext* aOpener) {
+  if (!aContext) {
+    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
+            ("ParentIPC: Trying to set opener already detached"));
+    return IPC_OK();
+  }
+
+  if (!aContext->Canonical()->IsOwnedByProcess(ChildID())) {
+    
+    
+    
+    
+
+    
+    
+    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Warning,
+            ("ParentIPC: Trying to set opener on out of process context "
+             "0x%08" PRIx64,
+             aContext->Id()));
+    return IPC_OK();
+  }
+
+  aContext->SetOpener(aOpener);
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentParent::RecvSetUserGestureActivation(
+    BrowsingContext* aContext, bool aNewValue) {
+  if (!aContext) {
+    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
+            ("ParentIPC: Trying to activate wrong context"));
+    return IPC_OK();
+  }
+
+  aContext->Canonical()->NotifySetUserGestureActivationFromIPC(aNewValue);
   return IPC_OK();
 }
 

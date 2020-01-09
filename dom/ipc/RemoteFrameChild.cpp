@@ -5,25 +5,20 @@
 
 
 #include "mozilla/dom/RemoteFrameChild.h"
-#include "mozilla/dom/BrowsingContext.h"
 
 using namespace mozilla::ipc;
 
 namespace mozilla {
 namespace dom {
 
-RemoteFrameChild::RemoteFrameChild(nsFrameLoader* aFrameLoader,
-                                   BrowsingContext* aBrowsingContext)
-    : mLayersId{0},
-      mIPCOpen(true),
-      mFrameLoader(aFrameLoader),
-      mBrowsingContext(aBrowsingContext) {}
+RemoteFrameChild::RemoteFrameChild(nsFrameLoader* aFrameLoader)
+    : mLayersId{0}, mIPCOpen(true), mFrameLoader(aFrameLoader) {}
 
 RemoteFrameChild::~RemoteFrameChild() {}
 
 already_AddRefed<RemoteFrameChild> RemoteFrameChild::Create(
     nsFrameLoader* aFrameLoader, const TabContext& aContext,
-    const nsString& aRemoteType, BrowsingContext* aBrowsingContext) {
+    const nsString& aRemoteType) {
   MOZ_ASSERT(XRE_IsContentProcess());
 
   
@@ -36,14 +31,11 @@ already_AddRefed<RemoteFrameChild> RemoteFrameChild::Create(
   RefPtr<TabChild> tabChild = TabChild::GetFrom(docShell);
   MOZ_DIAGNOSTIC_ASSERT(tabChild);
 
-  RefPtr<RemoteFrameChild> remoteFrame =
-      new RemoteFrameChild(aFrameLoader, aBrowsingContext);
-
+  RefPtr<RemoteFrameChild> remoteFrame = new RemoteFrameChild(aFrameLoader);
   
   tabChild->SendPRemoteFrameConstructor(
       do_AddRef(remoteFrame).take(),
-      PromiseFlatString(aContext.PresentationURL()), aRemoteType,
-      aBrowsingContext);
+      PromiseFlatString(aContext.PresentationURL()), aRemoteType);
   remoteFrame->mIPCOpen = true;
 
   return remoteFrame.forget();

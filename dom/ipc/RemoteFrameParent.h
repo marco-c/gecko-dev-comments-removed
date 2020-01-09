@@ -20,14 +20,9 @@ class RemoteFrameParent : public PRemoteFrameParent {
   RemoteFrameParent();
 
   
-  nsresult Init(const nsString& aPresentationURL, const nsString& aRemoteType,
-                CanonicalBrowsingContext* aBrowsingContext);
+  nsresult Init(const nsString& aPresentationURL, const nsString& aRemoteType);
 
   TabParent* GetTabParent() { return mTabParent; }
-
-  CanonicalBrowsingContext* GetBrowsingContext() {
-    return mTabParent->GetBrowsingContext();
-  }
 
   
   TabParent* Manager() {

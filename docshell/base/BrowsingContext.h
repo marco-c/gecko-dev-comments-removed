@@ -66,11 +66,9 @@ class WindowProxyHolder;
 
 
 
-#define MOZ_FOR_EACH_SYNCED_BC_FIELD(declare, ...)           \
-  declare(Name, nsString, nsAString)                         \
-  declare(Closed, bool, bool)                                \
-  declare(Opener, RefPtr<BrowsingContext>, BrowsingContext*) \
-  declare(IsActivatedByUserGesture, bool, bool)              \
+#define MOZ_FOR_EACH_SYNCED_BC_FIELD(declare, ...)        \
+  declare(Name, nsString, nsAString)                   \
+  declare(Closed, bool, bool)                          \
   __VA_ARGS__
 
 
@@ -78,9 +76,9 @@ class WindowProxyHolder;
 #define MOZ_SYNCED_BC_FIELD_ARGUMENT(name, type, atype) \
   transaction->MOZ_SYNCED_BC_FIELD_NAME(name),
 #define MOZ_SYNCED_BC_FIELD_GETTER(name, type, atype) \
-  type const& Get##name() const { return MOZ_SYNCED_BC_FIELD_NAME(name); }
+  const type& Get##name() const { return MOZ_SYNCED_BC_FIELD_NAME(name); }
 #define MOZ_SYNCED_BC_FIELD_SETTER(name, type, atype) \
-  void Set##name(atype const& aValue) {               \
+  void Set##name(const atype& aValue) {               \
     Transaction t;                                    \
     t.MOZ_SYNCED_BC_FIELD_NAME(name).emplace(aValue); \
     t.Commit(this);                                   \
@@ -180,15 +178,15 @@ class BrowsingContext : public nsWrapperCache,
   
   
   
-  void Attach(bool aFromIPC = false);
+  void Attach();
 
   
   
-  void Detach(bool aFromIPC = false);
+  void Detach();
 
   
   
-  void CacheChildren(bool aFromIPC = false);
+  void CacheChildren();
 
   
   
@@ -205,6 +203,10 @@ class BrowsingContext : public nsWrapperCache,
   BrowsingContext* GetParent() { return mParent; }
 
   void GetChildren(nsTArray<RefPtr<BrowsingContext>>& aChildren);
+
+  BrowsingContext* GetOpener() const { return mOpener; }
+
+  void SetOpener(BrowsingContext* aOpener);
 
   BrowsingContextGroup* Group() { return mGroup; }
 
@@ -238,6 +240,11 @@ class BrowsingContext : public nsWrapperCache,
   
   
   void NotifyResetUserGestureActivation();
+
+  
+  
+  void SetUserGestureActivation();
+  void ResetUserGestureActivation();
 
   
   bool GetUserGestureActivation();
@@ -359,6 +366,7 @@ class BrowsingContext : public nsWrapperCache,
   RefPtr<BrowsingContextGroup> mGroup;
   RefPtr<BrowsingContext> mParent;
   Children mChildren;
+  WeakPtr<BrowsingContext> mOpener;
   nsCOMPtr<nsIDocShell> mDocShell;
   
   
@@ -366,6 +374,10 @@ class BrowsingContext : public nsWrapperCache,
   
   JS::Heap<JSObject*> mWindowProxy;
   LocationProxy mLocation;
+
+  
+  
+  bool mIsActivatedByUserGesture;
 };
 
 
