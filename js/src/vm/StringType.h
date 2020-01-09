@@ -970,7 +970,8 @@ class JSFlatString : public JSLinearString {
 
  public:
   template <js::AllowGC allowGC, typename CharT>
-  static inline JSFlatString* new_(JSContext* cx, const CharT* chars,
+  static inline JSFlatString* new_(JSContext* cx,
+                                   js::UniquePtr<CharT[], JS::FreePolicy> chars,
                                    size_t length);
 
   inline bool isIndexSlow(uint32_t* indexp) const {
@@ -1534,13 +1535,20 @@ static inline UniqueChars StringToNewUTF8CharsZ(JSContext* maybecx,
 }
 
 
-template <typename CharT>
-extern JSFlatString* NewString(JSContext* cx, CharT* chars, size_t length);
 
 
 template <typename CharT>
-extern JSFlatString* NewStringDontDeflate(JSContext* cx, CharT* chars,
-                                          size_t length);
+extern JSFlatString* NewString(JSContext* cx,
+                               UniquePtr<CharT[], JS::FreePolicy> chars,
+                               size_t length);
+
+
+template <typename CharT>
+extern JSFlatString* NewStringDontDeflate(
+    JSContext* cx, UniquePtr<CharT[], JS::FreePolicy> chars, size_t length);
+
+
+
 
 
 template <js::AllowGC allowGC, typename CharT>
