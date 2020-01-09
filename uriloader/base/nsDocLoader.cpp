@@ -759,12 +759,12 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
 
               
               
-              nsCOMPtr<nsIPresShell> shell = doc->GetShell();
-              if (shell && !shell->IsDestroying()) {
-                shell->UnsuppressPainting();
+              RefPtr<PresShell> presShell = doc->GetPresShell();
+              if (presShell && !presShell->IsDestroying()) {
+                presShell->UnsuppressPainting();
 
-                if (!shell->IsDestroying()) {
-                  shell->LoadComplete();
+                if (!presShell->IsDestroying()) {
+                  presShell->LoadComplete();
                 }
               }
             }

@@ -11,8 +11,8 @@
 #include "mozilla/dom/TabParent.h"           
 #include "mozilla/EventDispatcher.h"         
 #include "mozilla/layout/RenderFrame.h"      
+#include "mozilla/PresShell.h"               
 #include "nsIContentInlines.h"               
-#include "nsIPresShell.h"                    
 #include "nsLayoutUtils.h"                   
 
 #define ENABLE_FT_LOGGING 0
@@ -49,7 +49,7 @@ static already_AddRefed<nsIPresShell> GetRetargetEventPresShell(
     return nullptr;
   }
 
-  nsCOMPtr<nsIPresShell> presShell = retargetEventDoc->GetShell();
+  nsCOMPtr<nsIPresShell> presShell = retargetEventDoc->GetPresShell();
   return presShell.forget();
 }
 

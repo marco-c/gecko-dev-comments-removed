@@ -172,6 +172,14 @@ class PresShell final : public nsIPresShell,
                             LayoutDeviceIntSize aDisplaySize) override;
 
   
+  void WindowSizeMoveDone() override;
+  void SysColorChanged() override { mPresContext->SysColorChanged(); }
+  void ThemeChanged() override { mPresContext->ThemeChanged(); }
+  void BackingScaleFactorChanged() override {
+    mPresContext->UIResolutionChangedSync();
+  }
+
+  
 
   void Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
              uint32_t aFlags) override;
@@ -1284,13 +1292,6 @@ class PresShell final : public nsIPresShell,
   
   static void sPaintSuppressionCallback(nsITimer* aTimer, void* aPresShell);
 
-  
-  void WindowSizeMoveDone() override;
-  void SysColorChanged() override { mPresContext->SysColorChanged(); }
-  void ThemeChanged() override { mPresContext->ThemeChanged(); }
-  void BackingScaleFactorChanged() override {
-    mPresContext->UIResolutionChangedSync();
-  }
   Document* GetPrimaryContentDocument() override;
 
   void PausePainting() override;

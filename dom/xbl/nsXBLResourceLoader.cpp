@@ -8,7 +8,6 @@
 #include "nsString.h"
 #include "mozilla/dom/Document.h"
 #include "nsIContent.h"
-#include "nsIPresShell.h"
 #include "nsXBLService.h"
 #include "nsIServiceManager.h"
 #include "nsXBLResourceLoader.h"
@@ -17,6 +16,7 @@
 #include "imgILoader.h"
 #include "imgRequestProxy.h"
 #include "mozilla/ComputedStyle.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/css/Loader.h"
@@ -162,8 +162,8 @@ nsXBLResourceLoader::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
 
     
     
-    if (nsIPresShell* shell = mBoundDocument->GetShell()) {
-      mResources->ComputeServoStyles(*shell->StyleSet());
+    if (PresShell* presShell = mBoundDocument->GetPresShell()) {
+      mResources->ComputeServoStyles(*presShell->StyleSet());
     }
 
     
@@ -214,12 +214,12 @@ void nsXBLResourceLoader::NotifyBoundElements() {
       continue;
     }
 
-    nsIPresShell* shell = doc->GetShell();
-    if (!shell) {
+    PresShell* presShell = doc->GetPresShell();
+    if (!presShell) {
       continue;
     }
 
-    shell->PostRecreateFramesFor(content->AsElement());
+    presShell->PostRecreateFramesFor(content->AsElement());
   }
 
   
