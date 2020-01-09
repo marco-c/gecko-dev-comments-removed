@@ -248,6 +248,20 @@ OptionsPanel.prototype = {
 
       checkboxLabel.appendChild(checkboxInput);
       checkboxLabel.appendChild(checkboxSpanLabel);
+
+      
+      if (tool.deprecated) {
+        const deprecationURL = this.panelDoc.createElement("a");
+        deprecationURL.title = deprecationURL.href = tool.deprecationURL;
+        deprecationURL.textContent = L10N.getFormatStr("options.deprecationNotice");
+        deprecationURL.target = "_blank";
+
+        const checkboxSpanDeprecated = this.panelDoc.createElement("span");
+        checkboxSpanDeprecated.className = "deprecation-notice";
+        checkboxLabel.appendChild(checkboxSpanDeprecated);
+        checkboxSpanDeprecated.appendChild(deprecationURL);
+      }
+
       return checkboxLabel;
     };
 
