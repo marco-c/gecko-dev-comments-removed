@@ -189,7 +189,7 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper {
       if (!layerIndex) {
         
         
-        return WebRenderScrollDataWrapper(*mUpdater, mWrRootId);
+        return WebRenderScrollDataWrapper(*mUpdater, newWrRootId);
       }
       return WebRenderScrollDataWrapper(mUpdater, newWrRootId, childData,
                                         *layerIndex,
