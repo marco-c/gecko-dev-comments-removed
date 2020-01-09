@@ -17422,11 +17422,9 @@ var CDP =
 	                                this.webSocketUrl = url;
 	                                
 	                                urlObject = parseUrl(url);
- 
-                                  
-	                                
-	                                
 
+	                                options.host = urlObject.hostname;
+	                                options.port = urlObject.port || options.port;
 	                                
 	                                _context.next = 11;
 	                                return this._fetchProtocol(options);
