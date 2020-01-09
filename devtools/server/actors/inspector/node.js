@@ -262,9 +262,15 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     }
 
     
-    const walker = new DocumentWalker(this.rawNode, this.rawNode.ownerGlobal,
-                                      { filter: scrollbarTreeWalkerFilter });
-    return !!walker.firstChild();
+    try {
+      const walker = new DocumentWalker(this.rawNode, this.rawNode.ownerGlobal,
+                                        { filter: scrollbarTreeWalkerFilter });
+      return !!walker.firstChild();
+    } catch (e) {
+      
+      
+      return false;
+    }
   },
 
   
@@ -339,6 +345,10 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   getCustomElementLocation: function() {
     
     const name = this.rawNode.localName;
+
+    if (!this.rawNode.ownerGlobal) {
+      return undefined;
+    }
 
     const customElementsRegistry = this.rawNode.ownerGlobal.customElements;
     const customElement = customElementsRegistry && customElementsRegistry.get(name);

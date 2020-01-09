@@ -265,7 +265,15 @@ class MainEventCollector {
   }
 
   getJQuery(node) {
+    if (Cu.isDeadWrapper(node)) {
+      return null;
+    }
+
     const global = this.unwrap(node.ownerGlobal);
+    if (!global) {
+      return null;
+    }
+
     const hasJQuery = global.jQuery && global.jQuery.fn && global.jQuery.fn.jquery;
 
     if (hasJQuery) {
@@ -390,14 +398,25 @@ class JQueryEventCollector extends MainEventCollector {
     }
 
     let eventsObj = null;
-
     const data = jQuery._data || jQuery.data;
+
     if (data) {
       
-      eventsObj = data(node, "events");
+      try {
+        eventsObj = data(node, "events");
+      } catch (e) {
+        
+        
+      }
     } else {
       
-      const entry = jQuery(node)[0];
+      let entry;
+      try {
+        entry = entry = jQuery(node)[0];
+      } catch (e) {
+        
+        
+      }
 
       if (!entry || !entry.events) {
         if (checkOnly) {
@@ -474,7 +493,14 @@ class JQueryLiveEventCollector extends MainEventCollector {
       
       
       const win = this.unwrap(node.ownerGlobal);
-      const events = data(win.document, "events");
+      let events = null;
+
+      try {
+        events = data(win.document, "events");
+      } catch (e) {
+        
+        
+      }
 
       if (events) {
         for (const [, eventHolder] of Object.entries(events)) {
