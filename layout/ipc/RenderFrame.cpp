@@ -211,9 +211,7 @@ already_AddRefed<Layer> nsDisplayRemote::BuildLayer(
     
     
     
-    if (!aContainerParameters.mForEventsAndPluginsOnly) {
-      NS_WARNING("Remote iframe not rendered");
-    }
+    NS_WARNING("Remote iframe not rendered");
     return nullptr;
   }
 

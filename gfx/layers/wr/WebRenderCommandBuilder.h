@@ -90,7 +90,6 @@ class WebRenderCommandBuilder {
         mBuilderDumpIndex(0),
         mDumpIndent(0),
         mDoGrouping(false),
-        mForEventsAndPluginsOnly(false),
         mContainsSVGGroup(false) {}
 
   void Destroy();
@@ -261,10 +260,6 @@ class WebRenderCommandBuilder {
   
   bool mDoGrouping;
   Maybe<nsRect> mClippedGroupBounds;
-
-  
-  
-  bool mForEventsAndPluginsOnly;
 
   
   

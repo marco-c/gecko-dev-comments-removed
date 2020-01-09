@@ -95,8 +95,7 @@ RetainedDisplayListData* GetOrSetRetainedDisplayListData(nsIFrame* aRootFrame);
 struct RetainedDisplayListBuilder {
   RetainedDisplayListBuilder(nsIFrame* aReferenceFrame,
                              nsDisplayListBuilderMode aMode, bool aBuildCaret)
-      : mBuilder(aReferenceFrame, aMode, aBuildCaret, true),
-        mCurrentSubtreeIsForEventsAndPluginsOnly(false) {}
+      : mBuilder(aReferenceFrame, aMode, aBuildCaret, true) {}
   ~RetainedDisplayListBuilder() { mList.DeleteAll(&mBuilder); }
 
   nsDisplayListBuilder* Builder() { return &mBuilder; }
@@ -155,10 +154,6 @@ struct RetainedDisplayListBuilder {
   nsDisplayListBuilder mBuilder;
   RetainedDisplayList mList;
   WeakFrame mPreviousCaret;
-
-  
-  
-  bool mCurrentSubtreeIsForEventsAndPluginsOnly;
 };
 
 #endif  
