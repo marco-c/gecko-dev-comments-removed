@@ -2411,13 +2411,6 @@ pref("network.cookie.same-site.enabled",    true);
 
 
 
-
-
-
-pref("network.cookie.lifetimePolicy",       0);
-
-
-
 pref("network.cookie.move.interval_sec",    10);
 
 pref("network.cookie.maxNumber", 3000);

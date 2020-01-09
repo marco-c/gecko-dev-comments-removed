@@ -1965,6 +1965,17 @@ VARCACHE_PREF(
 )
 
 
+
+
+
+
+VARCACHE_PREF(
+  "network.cookie.lifetimePolicy",
+  network_cookie_lifetimePolicy,
+  RelaxedAtomicInt32, 0
+)
+
+
 VARCACHE_PREF(
   "network.predictor.enabled",
    network_predictor_enabled,

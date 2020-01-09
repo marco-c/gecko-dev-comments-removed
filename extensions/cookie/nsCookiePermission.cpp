@@ -31,6 +31,8 @@
 
 
 
+using namespace mozilla;
+
 static const bool kDefaultPolicy = true;
 
 static const nsLiteralCString kPermissionType(NS_LITERAL_CSTRING("cookie"));
@@ -108,7 +110,7 @@ nsCookiePermission::CanSetCookie(nsIURI *aURI, nsIChannel *aChannel,
 
       
       
-      if (nsContentUtils::GetCookieLifetimePolicy() ==
+      if (StaticPrefs::network_cookie_lifetimePolicy() ==
           nsICookieService::ACCEPT_NORMALLY) {
         *aResult = true;
         return NS_OK;
@@ -121,7 +123,7 @@ nsCookiePermission::CanSetCookie(nsIURI *aURI, nsIChannel *aChannel,
       
       
       if (!*aIsSession && delta > 0) {
-        if (nsContentUtils::GetCookieLifetimePolicy() ==
+        if (StaticPrefs::network_cookie_lifetimePolicy() ==
             nsICookieService::ACCEPT_SESSION) {
           
           *aIsSession = true;
