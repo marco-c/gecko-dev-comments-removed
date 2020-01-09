@@ -19,7 +19,11 @@ namespace jit {
 #if JS_BITS_PER_WORD == 32
 static const size_t MaxCodeBytesPerProcess = 140 * 1024 * 1024;
 #else
-static const size_t MaxCodeBytesPerProcess = 1 * 1024 * 1024 * 1024;
+
+
+
+
+static const size_t MaxCodeBytesPerProcess = 2044 * 1024 * 1024;
 #endif
 
 
