@@ -112,18 +112,21 @@ const observer = {
         if (selectedIndex < 0) {
           break;
         }
-        let style = input.controller.getStyleAt(selectedIndex);
-        if (style != "login" && style != "loginWithOrigin") {
-          break;
-        }
+
         let {focusedInput} = LoginManagerContent._formFillService;
         if (focusedInput.nodePrincipal.isNullPrincipal) {
           
           
           return;
         }
-        let details = JSON.parse(input.controller.getCommentAt(selectedIndex));
-        LoginManagerContent.onFieldAutoComplete(focusedInput, details.guid);
+
+        let style = input.controller.getStyleAt(selectedIndex);
+        if (style == "login" || style == "loginWithOrigin") {
+          let details = JSON.parse(input.controller.getCommentAt(selectedIndex));
+          LoginManagerContent.onFieldAutoComplete(focusedInput, details.guid);
+        } else if (style == "generatedPassword") {
+          LoginManagerContent._generatedPasswordFilled(focusedInput);
+        }
         break;
       }
     }
@@ -789,6 +792,7 @@ this.LoginManagerContent = {
   
 
 
+
   onUsernameAutocompleted(acInputField, loginGUID = null) {
     log("onUsernameAutocompleted:", acInputField);
 
@@ -1210,6 +1214,33 @@ this.LoginManagerContent = {
                                       openerTopWindowID,
                                       dismissedPrompt,
                                     });
+  },
+
+  
+
+
+
+
+  _generatedPasswordFilled(input) {
+    log("_generatedPasswordFilled", input);
+    let loginForm = LoginFormFactory.createFromField(input);
+    let win = input.ownerGlobal;
+
+    if (PrivateBrowsingUtils.isContentWindowPrivate(win)) {
+      log("_generatedPasswordFilled: not automatically saving the password in private browsing mode");
+      return;
+    }
+
+    if (!LoginHelper.enabled) {
+      throw new Error("A generated password was filled while the password manager was disabled.");
+    }
+
+    let formActionOrigin = LoginHelper.getFormActionOrigin(loginForm);
+    let messageManager = win.docShell.messageManager;
+    messageManager.sendAsyncMessage("PasswordManager:onGeneratedPasswordFilled", {
+      browsingContextId: win.docShell.browsingContext.id,
+      formActionOrigin,
+    });
   },
 
   

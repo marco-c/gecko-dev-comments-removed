@@ -97,7 +97,8 @@
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="login"] + richlistitem[originaltype="generatedPassword"],
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] + richlistitem[originaltype="generatedPassword"] {
   
-  border-top: 1px solid var(--panel-separator-color);
+
+  border-top: 1px solid hsla(210,4%,10%,.14);
 }
 
 

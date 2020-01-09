@@ -61,12 +61,13 @@ this.LoginManagerParent = {
 
 
 
-  _searchAndDedupeLogins(formOrigin,
-                         actionOrigin,
-                         {
-                           acceptDifferentSubdomains,
-                           ignoreActionAndRealm,
-                         } = {}) {
+
+  _searchAndDedupeLogins(formOrigin, {
+    acceptDifferentSubdomains,
+    formActionOrigin,
+    httpRealm,
+    ignoreActionAndRealm,
+  } = {}) {
     let logins;
     let matchData = {
       hostname: formOrigin,
@@ -74,7 +75,11 @@ this.LoginManagerParent = {
       acceptDifferentSubdomains,
     };
     if (!ignoreActionAndRealm) {
-      matchData.formSubmitURL = actionOrigin;
+      if (typeof(formActionOrigin) != "undefined") {
+        matchData.formSubmitURL = formActionOrigin;
+      } else if (typeof(httpRealm) != "undefined") {
+        matchData.httpRealm = httpRealm;
+      }
     }
     try {
       logins = LoginHelper.searchLoginsWithObject(matchData);
@@ -97,7 +102,7 @@ this.LoginManagerParent = {
       "subdomain",
       "timePasswordChanged",
     ];
-    return LoginHelper.dedupeLogins(logins, ["username", "password"], resolveBy, formOrigin, actionOrigin);
+    return LoginHelper.dedupeLogins(logins, ["username", "password"], resolveBy, formOrigin, formActionOrigin);
   },
 
   
@@ -131,6 +136,11 @@ this.LoginManagerParent = {
                            openerTopWindowID: data.openerTopWindowID,
                            dismissedPrompt: data.dismissedPrompt,
                            target: msg.target});
+        break;
+      }
+
+      case "PasswordManager:onGeneratedPasswordFilled": {
+        this._onGeneratedPasswordFilled(data);
         break;
       }
 
@@ -270,8 +280,8 @@ this.LoginManagerParent = {
       });
     } else {
       logins = this._searchAndDedupeLogins(formOrigin,
-                                           actionOrigin,
                                            {
+                                             formActionOrigin: actionOrigin,
                                              ignoreActionAndRealm: true,
                                              acceptDifferentSubdomains: INCLUDE_OTHER_SUBDOMAINS_IN_LOOKUP, 
                                            });
@@ -332,8 +342,8 @@ this.LoginManagerParent = {
 
       
       logins = this._searchAndDedupeLogins(formOrigin,
-                                           actionOrigin,
                                            {
+                                             formActionOrigin: actionOrigin,
                                              ignoreActionAndRealm: true,
                                              acceptDifferentSubdomains: INCLUDE_OTHER_SUBDOMAINS_IN_LOOKUP,
                                            });
@@ -462,7 +472,9 @@ this.LoginManagerParent = {
 
     
     
-    let logins = this._searchAndDedupeLogins(hostname, formSubmitURL);
+    let logins = this._searchAndDedupeLogins(hostname, {
+      formActionOrigin: formSubmitURL,
+    });
 
     
     
@@ -555,6 +567,44 @@ this.LoginManagerParent = {
     
     let prompter = getPrompter();
     prompter.promptToSavePassword(formLogin, dismissedPrompt);
+  },
+
+  _onGeneratedPasswordFilled({
+    browsingContextId,
+    formActionOrigin,
+  }) {
+    let browsingContext = BrowsingContext.get(browsingContextId);
+    let {originNoSuffix} = browsingContext.currentWindowGlobal.documentPrincipal;
+    let formOrigin = LoginHelper.getLoginOrigin(originNoSuffix);
+    if (!formOrigin) {
+      log("_onGeneratedPasswordFilled: Invalid form origin:",
+          browsingContext.currentWindowGlobal.documentPrincipal);
+      return;
+    }
+
+    if (!Services.logins.getLoginSavingEnabled(formOrigin)) {
+      log("_onGeneratedPasswordFilled: saving is disabled for:", formOrigin);
+      return;
+    }
+
+    
+    
+    
+    let logins = this._searchAndDedupeLogins(formOrigin, {
+      acceptDifferentSubdomains: false,
+      httpRealm: null,
+      ignoreActionAndRealm: false,
+    });
+
+    if (logins.length > 0) {
+      log("_onGeneratedPasswordFilled: Login already saved for this site");
+      return;
+    }
+
+    let password = this.getGeneratedPassword(browsingContextId);
+    let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
+    formLogin.init(formOrigin, formActionOrigin, null, "", password);
+    Services.logins.addLogin(formLogin);
   },
 
   
