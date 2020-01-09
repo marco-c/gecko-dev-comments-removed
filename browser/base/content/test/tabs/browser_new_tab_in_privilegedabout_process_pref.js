@@ -17,31 +17,6 @@ const ABOUT_NEWTAB = "about:newtab";
 const ABOUT_WELCOME = "about:welcome";
 const TEST_HTTP = "http://example.org/";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function checkBrowserRemoteType(
-  browser,
-  expectedRemoteType,
-  message = `Ensures that tab runs in the ${expectedRemoteType} content process.`
-) {
-  
-  is(browser.remoteType, expectedRemoteType, message);
-  is(browser.messageManager.remoteType, expectedRemoteType,
-    "Parent and child process should agree on the remote type.");
-}
-
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [

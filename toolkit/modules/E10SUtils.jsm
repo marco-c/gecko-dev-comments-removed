@@ -15,6 +15,11 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "allowLinkedWebInFileUriProcess",
                                       "browser.tabs.remote.allowLinkedWebInFileUriProcess", false);
 XPCOMUtils.defineLazyPreferenceGetter(this, "useSeparatePrivilegedAboutContentProcess",
                                       "browser.tabs.remote.separatePrivilegedContentProcess", false);
+XPCOMUtils.defineLazyPreferenceGetter(this, "separatePrivilegedMozillaWebContentProcess",
+                                      "browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
+XPCOMUtils.defineLazyPreferenceGetter(this, "separatedMozillaDomains",
+                                      "browser.tabs.remote.separatedMozillaDomains", false,
+                                      false, val => val.split(","));
 XPCOMUtils.defineLazyPreferenceGetter(this, "useHttpResponseProcessSelection",
                                       "browser.tabs.remote.useHTTPResponseProcessSelection", false);
 XPCOMUtils.defineLazyPreferenceGetter(this, "useCrossOriginOpenerPolicy",
@@ -47,12 +52,23 @@ const WEB_REMOTE_TYPE = "web";
 const FILE_REMOTE_TYPE = "file";
 const EXTENSION_REMOTE_TYPE = "extension";
 const PRIVILEGEDABOUT_REMOTE_TYPE = "privilegedabout";
+const PRIVILEGEDMOZILLA_REMOTE_TYPE = "privilegedmozilla";
 
 
 const LARGE_ALLOCATION_REMOTE_TYPE = "webLargeAllocation";
 const DEFAULT_REMOTE_TYPE = WEB_REMOTE_TYPE;
 
 function validatedWebRemoteType(aPreferredRemoteType, aTargetUri, aCurrentUri, aRemoteSubframes) {
+  
+  
+  if (separatePrivilegedMozillaWebContentProcess &&
+      aTargetUri.asciiHost && aTargetUri.scheme == "https" &&
+      separatedMozillaDomains.some(function(val) {
+        return aTargetUri.asciiHost == val || aTargetUri.asciiHost.endsWith("." + val);
+      })) {
+    return PRIVILEGEDMOZILLA_REMOTE_TYPE;
+  }
+
   
   
   const sm = Services.scriptSecurityManager;
@@ -104,6 +120,7 @@ var E10SUtils = {
   FILE_REMOTE_TYPE,
   EXTENSION_REMOTE_TYPE,
   PRIVILEGEDABOUT_REMOTE_TYPE,
+  PRIVILEGEDMOZILLA_REMOTE_TYPE,
   LARGE_ALLOCATION_REMOTE_TYPE,
 
   useHttpResponseProcessSelection() {
