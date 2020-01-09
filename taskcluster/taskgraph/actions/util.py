@@ -6,6 +6,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import concurrent.futures as futures
 import copy
 import logging
 import os
@@ -25,6 +26,7 @@ from taskgraph.util.taskcluster import (
     get_artifact,
     list_tasks,
     parse_time,
+    CONCURRENCY,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,32 +66,50 @@ def fetch_graph_and_labels(parameters, graph_config):
 
     
     
-    namespace = '{}.v2.{}.pushlog-id.{}.actions'.format(
-        graph_config['trust-domain'],
-        parameters['project'],
-        parameters['pushlog_id'])
-    for task_id in list_tasks(namespace):
-        logger.info('fetching label-to-taskid.json for action task {}'.format(task_id))
-        try:
-            run_label_to_id = get_artifact(task_id, "public/label-to-taskid.json")
-            label_to_taskid.update(run_label_to_id)
-        except HTTPError as e:
-            logger.debug('No label-to-taskid.json found for {}: {}'.format(task_id, e))
-            continue
+    with futures.ThreadPoolExecutor(CONCURRENCY) as e:
+        fetches = []
 
-    
-    namespace = '{}.v2.{}.revision.{}.cron'.format(
-        graph_config['trust-domain'],
-        parameters['project'],
-        parameters['head_rev'])
-    for task_id in list_tasks(namespace):
-        logger.info('fetching label-to-taskid.json for cron task {}'.format(task_id))
-        try:
-            run_label_to_id = get_artifact(task_id, "public/label-to-taskid.json")
-            label_to_taskid.update(run_label_to_id)
-        except HTTPError as e:
-            logger.debug('No label-to-taskid.json found for {}: {}'.format(task_id, e))
-            continue
+        
+        
+        def fetch_action(task_id):
+            logger.info('fetching label-to-taskid.json for action task {}'.format(task_id))
+            try:
+                run_label_to_id = get_artifact(task_id, "public/label-to-taskid.json")
+                label_to_taskid.update(run_label_to_id)
+            except HTTPError as e:
+                if e.response.status_code != 404:
+                    raise
+                logger.debug('No label-to-taskid.json found for {}: {}'.format(task_id, e))
+
+        namespace = '{}.v2.{}.pushlog-id.{}.actions'.format(
+            graph_config['trust-domain'],
+            parameters['project'],
+            parameters['pushlog_id'])
+        for task_id in list_tasks(namespace):
+            fetches.append(e.submit(fetch_action, task_id))
+
+        
+        def fetch_cron(task_id):
+            logger.info('fetching label-to-taskid.json for cron task {}'.format(task_id))
+            try:
+                run_label_to_id = get_artifact(task_id, "public/label-to-taskid.json")
+                label_to_taskid.update(run_label_to_id)
+            except HTTPError as e:
+                if e.response.status_code != 404:
+                    raise
+                logger.debug('No label-to-taskid.json found for {}: {}'.format(task_id, e))
+
+        namespace = '{}.v2.{}.revision.{}.cron'.format(
+            graph_config['trust-domain'],
+            parameters['project'],
+            parameters['head_rev'])
+        for task_id in list_tasks(namespace):
+            fetches.append(e.submit(fetch_cron, task_id))
+
+        
+        
+        for f in futures.as_completed(fetches):
+            f.result()
 
     return (decision_task_id, full_task_graph, label_to_taskid)
 
