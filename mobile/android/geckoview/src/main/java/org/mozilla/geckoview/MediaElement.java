@@ -292,7 +292,8 @@ public class MediaElement {
 
 
         @UiThread
-        void onPlaybackStateChange(@NonNull MediaElement mediaElement, @MediaStateFlags int mediaState);
+        default void onPlaybackStateChange(@NonNull MediaElement mediaElement,
+                                           @MediaStateFlags int mediaState) {}
 
         
 
@@ -302,7 +303,8 @@ public class MediaElement {
 
 
         @UiThread
-        void onReadyStateChange(@NonNull MediaElement mediaElement, @ReadyStateFlags int readyState);
+        default void onReadyStateChange(@NonNull MediaElement mediaElement,
+                                        @ReadyStateFlags int readyState) {}
 
         
 
@@ -311,7 +313,8 @@ public class MediaElement {
 
 
         @UiThread
-        void onMetadataChange(@NonNull MediaElement mediaElement, @NonNull Metadata metaData);
+        default void onMetadataChange(@NonNull MediaElement mediaElement,
+                                      @NonNull Metadata metaData) {}
 
         
 
@@ -320,45 +323,8 @@ public class MediaElement {
 
 
         @UiThread
-        void onLoadProgress(@NonNull MediaElement mediaElement,
-                            @NonNull LoadProgressInfo progressInfo);
-
-        
-
-
-
-
-
-
-        @UiThread
-        void onVolumeChange(@NonNull MediaElement mediaElement, double volume, boolean muted);
-
-        
-
-
-
-
-
-        @UiThread
-        void onTimeChange(@NonNull MediaElement mediaElement, double time);
-
-        
-
-
-
-
-
-        @UiThread
-        void onPlaybackRateChange(@NonNull MediaElement mediaElement, double rate);
-
-        
-
-
-
-
-
-        @UiThread
-        void onFullscreenChange(@NonNull MediaElement mediaElement, boolean fullscreen);
+        default void onLoadProgress(@NonNull MediaElement mediaElement,
+                                    @NonNull LoadProgressInfo progressInfo) {}
 
         
 
@@ -368,7 +334,45 @@ public class MediaElement {
 
 
         @UiThread
-        void onError(@NonNull MediaElement mediaElement, @MediaErrorFlags int errorCode);
+        default void onVolumeChange(@NonNull MediaElement mediaElement, double volume,
+                                    boolean muted) {}
+
+        
+
+
+
+
+
+        @UiThread
+        default void onTimeChange(@NonNull MediaElement mediaElement, double time) {}
+
+        
+
+
+
+
+
+        @UiThread
+        default void onPlaybackRateChange(@NonNull MediaElement mediaElement, double rate) {}
+
+        
+
+
+
+
+
+        @UiThread
+        default void onFullscreenChange(@NonNull MediaElement mediaElement, boolean fullscreen) {}
+
+        
+
+
+
+
+
+
+        @UiThread
+        default void onError(@NonNull MediaElement mediaElement, @MediaErrorFlags int errorCode) {}
     }
 
      long getVideoId() {

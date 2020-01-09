@@ -3123,7 +3123,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void dismiss();
+            default void dismiss() {}
 
             
 
@@ -3135,7 +3135,9 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            boolean hasCheckbox();
+            default boolean hasCheckbox() {
+                return false;
+            }
 
             
 
@@ -3143,7 +3145,9 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            @Nullable String getCheckboxMessage();
+            @Nullable default String getCheckboxMessage() {
+                return null;
+            }
 
             
 
@@ -3151,7 +3155,9 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            boolean getCheckboxValue();
+            default boolean getCheckboxValue() {
+                return false;
+            }
 
             
 
@@ -3159,7 +3165,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void setCheckboxValue(boolean value);
+            default void setCheckboxValue(boolean value) {}
         }
 
         
@@ -3188,7 +3194,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void confirm(int button);
+            default void confirm(int button) {}
         }
 
         static final int BUTTON_TYPE_POSITIVE = 0;
@@ -3228,7 +3234,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void confirm(@Nullable String text);
+            default void confirm(@Nullable String text) {}
         }
 
         
@@ -3259,7 +3265,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void confirm(@Nullable String password);
+            default void confirm(@Nullable String password) {}
 
             
 
@@ -3269,7 +3275,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void confirm(@NonNull String username, @NonNull String password);
+            default void confirm(@NonNull String username, @NonNull String password) {}
         }
 
         class AuthOptions {
@@ -3483,7 +3489,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void confirm(@Nullable String id);
+            default void confirm(@Nullable String id) {}
 
             
 
@@ -3492,17 +3498,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void confirm(@NonNull String[] ids);
-
-            
-
-
-
-
-
-
-            @UiThread
-            void confirm(@NonNull Choice item);
+            default void confirm(@NonNull String[] ids) {}
 
             
 
@@ -3512,7 +3508,17 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void confirm(@Nullable Choice[] items);
+            default void confirm(@NonNull Choice item) {}
+
+            
+
+
+
+
+
+
+            @UiThread
+            default void confirm(@Nullable Choice[] items) {}
         }
 
 
@@ -3612,7 +3618,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void confirm(@Nullable Context context, @Nullable Uri uri);
+            default void confirm(@Nullable Context context, @Nullable Uri uri) {}
 
             
 
@@ -3622,7 +3628,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void confirm(@Nullable Context context, @Nullable Uri[] uris);
+            default void confirm(@Nullable Context context, @Nullable Uri[] uris) {}
         }
 
         @Retention(RetentionPolicy.SOURCE)
@@ -3882,14 +3888,14 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void grant();
+            default void grant() {}
 
             
 
 
 
             @UiThread
-            void reject();
+            default void reject() {}
         }
 
         
@@ -4089,7 +4095,7 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void grant(final @Nullable String video, final @Nullable String audio);
+            default void grant(final @Nullable String video, final @Nullable String audio) {}
 
             
 
@@ -4103,14 +4109,14 @@ public class GeckoSession implements Parcelable {
 
 
             @UiThread
-            void grant(final @Nullable MediaSource video, final @Nullable MediaSource audio);
+            default void grant(final @Nullable MediaSource video, final @Nullable MediaSource audio) {}
 
             
 
 
 
             @UiThread
-            void reject();
+            default void reject() {}
         }
 
         
@@ -4172,7 +4178,7 @@ public class GeckoSession implements Parcelable {
 
 
         @UiThread
-        void restartInput(@NonNull GeckoSession session, @RestartReason int reason);
+        default void restartInput(@NonNull GeckoSession session, @RestartReason int reason) {}
 
         
 
@@ -4182,7 +4188,7 @@ public class GeckoSession implements Parcelable {
 
 
         @UiThread
-        void showSoftInput(@NonNull GeckoSession session);
+        default void showSoftInput(@NonNull GeckoSession session) {}
 
         
 
@@ -4192,21 +4198,7 @@ public class GeckoSession implements Parcelable {
 
 
         @UiThread
-        void hideSoftInput(@NonNull GeckoSession session);
-
-        
-
-
-
-
-
-
-
-
-
-        @UiThread
-        void updateSelection(@NonNull GeckoSession session, int selStart, int selEnd,
-                             int compositionStart, int compositionEnd);
+        default void hideSoftInput(@NonNull GeckoSession session) {}
 
         
 
@@ -4217,10 +4209,24 @@ public class GeckoSession implements Parcelable {
 
 
 
+
         @UiThread
-        void updateExtractedText(@NonNull GeckoSession session,
-                                 @NonNull ExtractedTextRequest request,
-                                 @NonNull ExtractedText text);
+        default void updateSelection(@NonNull GeckoSession session, int selStart, int selEnd,
+                                     int compositionStart, int compositionEnd) {}
+
+        
+
+
+
+
+
+
+
+
+        @UiThread
+        default void updateExtractedText(@NonNull GeckoSession session,
+                                         @NonNull ExtractedTextRequest request,
+                                         @NonNull ExtractedText text) {}
 
         
 
@@ -4231,7 +4237,8 @@ public class GeckoSession implements Parcelable {
 
 
         @UiThread
-        void updateCursorAnchorInfo(@NonNull GeckoSession session, @NonNull CursorAnchorInfo info);
+        default void updateCursorAnchorInfo(@NonNull GeckoSession session,
+                                            @NonNull CursorAnchorInfo info) {}
 
         @Retention(RetentionPolicy.SOURCE)
         @IntDef({AUTO_FILL_NOTIFY_STARTED, AUTO_FILL_NOTIFY_COMMITTED, AUTO_FILL_NOTIFY_CANCELED,
@@ -4271,8 +4278,9 @@ public class GeckoSession implements Parcelable {
 
 
         @UiThread
-        void notifyAutoFill(@NonNull GeckoSession session, @AutoFillNotification int notification,
-                            int virtualId);
+        default void notifyAutoFill(@NonNull GeckoSession session,
+                                    @AutoFillNotification int notification,
+                                    int virtualId) {}
     }
 
      void onSurfaceChanged(final Surface surface, final int x, final int y, final int width,
