@@ -74,7 +74,7 @@ class LogCollector;
 namespace net {
 extern mozilla::LazyLogModule gHttpLog;
 
-typedef nsTArray<Tuple<nsCString, nsCString>> ArrayOfStringPairs;
+class PreferredAlternativeDataTypeParams;
 
 enum CacheDisposition : uint8_t {
   kCacheUnresolved = 0,
@@ -580,7 +580,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   nsString mInitiatorType;
   
-  ArrayOfStringPairs mPreferredCachedAltDataTypes;
+  nsTArray<PreferredAlternativeDataTypeParams> mPreferredCachedAltDataTypes;
   
   nsCString mAvailableCachedAltDataType;
   nsString mIntegrityMetadata;
