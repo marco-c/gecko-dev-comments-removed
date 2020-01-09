@@ -133,14 +133,10 @@ function writeHttpResponse(output, response) {
 
 
 
-function processRequest({ requestLine, headers }) {
-  const [method, path] = requestLine.split(" ");
+function processRequest({requestLine, headers}) {
+  const method = requestLine.split(" ")[0];
   if (method !== "GET") {
     throw new Error("The handshake request must use GET method");
-  }
-
-  if (path !== "/") {
-    throw new Error("The handshake request has unknown path");
   }
 
   const upgrade = headers.get("upgrade");
@@ -164,8 +160,7 @@ function processRequest({ requestLine, headers }) {
     throw new Error("The handshake request must have a Sec-WebSocket-Key header");
   }
 
-  const acceptKey = computeKey(key);
-  return {acceptKey};
+  return { acceptKey: computeKey(key) };
 }
 
 function computeKey(key) {
@@ -179,13 +174,11 @@ function computeKey(key) {
 
 
 
-const serverHandshake = async function(input, output) {
-  
-  const request = await readHttpRequest(input);
 
+async function serverHandshake(request, output) {
   try {
     
-    const { acceptKey } = processRequest(request);
+    const {acceptKey} = processRequest(request);
 
     
     await writeHttpResponse(output, [
@@ -199,40 +192,60 @@ const serverHandshake = async function(input, output) {
     await writeHttpResponse(output, [ "HTTP/1.1 400 Bad Request" ]);
     throw error;
   }
-};
+}
 
-
-
-
-
-
-
-const accept = async function(transport, rx, tx) {
-  await serverHandshake(rx, tx);
-
+async function createWebSocket(transport, input, output) {
   const transportProvider = {
     setListener(upgradeListener) {
       
-      executeSoon(() => {
-        upgradeListener.onTransportAvailable(transport, rx, tx);
+      Services.tm.dispatchToMainThread(() => {
+        upgradeListener.onTransportAvailable(transport, input, output);
       });
     },
   };
 
   return new Promise((resolve, reject) => {
-    const so = WebSocket.createServerWebSocket(null, [], transportProvider, "");
-    so.addEventListener("close", () => {
-      rx.close();
-      tx.close();
+    const socket = WebSocket.createServerWebSocket(null, [], transportProvider, "");
+    socket.addEventListener("close", () => {
+      input.close();
+      output.close();
     });
 
-    so.onopen = () => resolve(so);
-    so.onerror = err => reject(err);
+    socket.onopen = () => resolve(socket);
+    socket.onerror = err => reject(err);
   });
-};
+}
 
-const executeSoon = function(func) {
-  Services.tm.dispatchToMainThread(func);
-};
 
-const WebSocketServer = {accept};
+
+
+
+
+
+async function accept(transport, input, output) {
+  const request = await readHttpRequest(input);
+  await serverHandshake(request, output);
+  return createWebSocket(transport, input, output);
+}
+
+
+async function upgrade(request, response) {
+  
+  response._powerSeized = true;
+
+  const {transport, input, output} = response._connection;
+
+  const headers = new Map();
+  for (let [key, values] of Object.entries(request._headers._headers)) {
+    headers.set(key, values.join("\n"));
+  }
+  const convertedRequest = {
+    requestLine: `${request.method} ${request.path}`,
+    headers,
+  };
+  await serverHandshake(convertedRequest, output);
+
+  return createWebSocket(transport, input, output);
+}
+
+const WebSocketServer = {accept, upgrade};
