@@ -315,13 +315,19 @@ uint64_t Accessible::VisibilityState() const {
     return states::INVISIBLE;
   }
 
-  
-  
   if (!frame->StyleVisibility()->IsVisible()) return states::INVISIBLE;
+
+  
+  
+  if (frame->PresShell()->IsUnderHiddenEmbedderElement()) {
+    return states::INVISIBLE;
+  }
 
   
   if (Document()->IsHidden()) return states::OFFSCREEN;
 
+  
+  
   nsIFrame* curFrame = frame;
   do {
     nsView* view = curFrame->GetView();
@@ -366,8 +372,6 @@ uint64_t Accessible::VisibilityState() const {
 
     if (!parentFrame) {
       parentFrame = nsLayoutUtils::GetCrossDocParentFrame(curFrame);
-      if (parentFrame && !parentFrame->StyleVisibility()->IsVisible())
-        return states::INVISIBLE;
     }
 
     curFrame = parentFrame;
