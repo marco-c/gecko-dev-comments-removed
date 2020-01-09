@@ -100,11 +100,12 @@ add_task(async function testRevoked() {
   
   
   
-  let certBlocklist = Cc["@mozilla.org/security/certblocklist;1"]
-                        .getService(Ci.nsICertBlocklist);
-  certBlocklist.revokeCertBySubjectAndPubKey(
+  let certBlocklist = Cc["@mozilla.org/security/certstorage;1"]
+                        .getService(Ci.nsICertStorage);
+  certBlocklist.setRevocationBySubjectAndPubKey(
     "MBIxEDAOBgNVBAMMB3Jldm9rZWQ=", 
-    "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8="); 
+    "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=", 
+    Ci.nsICertStorage.STATE_ENFORCE); 
   let cert = await readCertificate("revoked.pem", ",,");
   let win = await displayCertificate(cert);
   
