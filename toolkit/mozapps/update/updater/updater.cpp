@@ -123,15 +123,15 @@ BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer, LPCWSTR siblingFilePath,
 
 
 
-#  define EXIT_WHEN_ELEVATED(path, handle, retCode)             \
-    {                                                           \
-      if (handle != INVALID_HANDLE_VALUE) {                     \
-        CloseHandle(handle);                                    \
-      }                                                         \
-      if (_waccess(path, F_OK) == 0 && NS_tremove(path) != 0) { \
-        ImpersonatedLogFinish();                                \
-        return retCode;                                         \
-      }                                                         \
+#  define EXIT_WHEN_ELEVATED(path, handle, retCode) \
+    {                                               \
+      if (handle != INVALID_HANDLE_VALUE) {         \
+        CloseHandle(handle);                        \
+      }                                             \
+      if (NS_tremove(path) && errno != ENOENT) {    \
+        ImpersonatedLogFinish();                    \
+        return retCode;                             \
+      }                                             \
     }
 #endif
 
@@ -908,7 +908,11 @@ static int remove_recursive_on_reboot(const NS_tchar *path,
   if (!S_ISDIR(sInfo.st_mode)) {
     NS_tchar tmpDeleteFile[MAXPATHLEN];
     GetUUIDTempFilePath(deleteDir, L"rep", tmpDeleteFile);
-    NS_tremove(tmpDeleteFile);
+    if (NS_tremove(tmpDeleteFile) && errno != ENOENT) {
+      LOG(("remove_recursive_on_reboot: failed to remove temporary file: " LOG_S
+           ", err: %d",
+           tmpDeleteFile, errno));
+    }
     rv = rename_file(path, tmpDeleteFile, false);
     if (MoveFileEx(rv ? path : tmpDeleteFile, nullptr,
                    MOVEFILE_DELAY_UNTIL_REBOOT)) {
@@ -1410,7 +1414,11 @@ void AddFile::Finish(int status) {
     
     
     if (status && mAdded) {
-      NS_tremove(mFile.get());
+      if (NS_tremove(mFile.get()) && errno != ENOENT) {
+        LOG(("non-fatal error after update failure removing added file: " LOG_S
+             ", err: %d",
+             mFile.get(), errno));
+      }
     }
     backup_finish(mFile.get(), mRelPath.get(), status);
   }
@@ -1454,11 +1462,8 @@ PatchFile::~PatchFile() {
     UnlockFile((HANDLE)_get_osfhandle(fileno(mPatchStream)), 0, 0, -1, -1);
   }
 #endif
-
   
-  if (spath[0]) {
-    NS_tremove(spath);
-  }
+  
 
   if (buf) {
     free(buf);
@@ -1558,7 +1563,13 @@ int PatchFile::Prepare() {
   NS_tsnprintf(spath, sizeof(spath) / sizeof(spath[0]),
                NS_T("%s/updating/%d.patch"), gWorkingDirPath, mPatchIndex);
 
-  NS_tremove(spath);
+  
+  
+  if (NS_tremove(spath) && errno != ENOENT) {
+    LOG(("failure removing pre-existing patch file: " LOG_S ", err: %d", spath,
+         errno));
+    return WRITE_ERROR;
+  }
 
   mPatchStream = NS_tfopen(spath, NS_T("wb+"));
   if (!mPatchStream) {
@@ -1710,7 +1721,8 @@ int PatchFile::Execute() {
   
   
   mPatchStream = nullptr;
-  NS_tremove(spath);
+  
+  
   spath[0] = NS_T('\0');
   free(buf);
   buf = nullptr;
@@ -2343,7 +2355,10 @@ static int ProcessReplaceRequest() {
     NS_tchar destLog[MAXPATHLEN];
     NS_tsnprintf(destLog, sizeof(destLog) / sizeof(destLog[0]),
                  NS_T("%s/updates/last-update.log"), destDir);
-    NS_tremove(destLog);
+    if (NS_tremove(destLog) && errno != ENOENT) {
+      LOG(("non-fatal error removing log file: " LOG_S ", err: %d", destLog,
+           errno));
+    }
     NS_trename(tmpLog, destLog);
   }
 #endif
@@ -2485,8 +2500,7 @@ static void UpdateThreadFunc(void *param) {
           usleep(100000);
 #  endif
           
-          if (!NS_taccess(continueFilePath, F_OK) &&
-              !NS_tremove(continueFilePath)) {
+          if (!NS_tremove(continueFilePath)) {
             break;
           }
         }
@@ -3060,8 +3074,7 @@ int NS_main(int argc, NS_tchar **argv) {
     
     
     
-    if (!_waccess(updateLockFilePath, F_OK) &&
-        NS_tremove(updateLockFilePath) != 0) {
+    if (NS_tremove(updateLockFilePath) && errno != ENOENT) {
       
       
       if (sStagedUpdate || sReplaceRequest) {
@@ -3114,8 +3127,7 @@ int NS_main(int argc, NS_tchar **argv) {
         }
 #  endif
 
-        if (!_waccess(elevatedLockFilePath, F_OK) &&
-            NS_tremove(elevatedLockFilePath) != 0) {
+        if (NS_tremove(elevatedLockFilePath) && errno != ENOENT) {
           fprintf(stderr, "Unable to create elevated lock file! Exiting\n");
           return 1;
         }
@@ -3487,8 +3499,7 @@ int NS_main(int argc, NS_tchar **argv) {
       }
 
       
-      NS_tremove(gCallbackBackupPath);
-      if (!CopyFileW(argv[callbackIndex], gCallbackBackupPath, true)) {
+      if (!CopyFileW(argv[callbackIndex], gCallbackBackupPath, false)) {
         DWORD copyFileError = GetLastError();
         LOG(("NS_main: failed to copy callback file " LOG_S
              " into place at " LOG_S,
@@ -3549,7 +3560,12 @@ int NS_main(int argc, NS_tchar **argv) {
             WriteStatusFile(WRITE_ERROR_CALLBACK_APP);
           }
 
-          NS_tremove(gCallbackBackupPath);
+          if (NS_tremove(gCallbackBackupPath) && errno != ENOENT) {
+            LOG(
+                ("NS_main: unable to remove backup of callback app file, "
+                 "path: " LOG_S,
+                 gCallbackBackupPath));
+          }
           EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
           LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
                             sUsingService);
@@ -3606,7 +3622,12 @@ int NS_main(int argc, NS_tchar **argv) {
       CloseHandle(callbackFile);
     }
     
-    NS_tremove(gCallbackBackupPath);
+    if (NS_tremove(gCallbackBackupPath) && errno != ENOENT) {
+      LOG(
+          ("NS_main: non-fatal error removing backup of callback app file, "
+           "path: " LOG_S,
+           gCallbackBackupPath));
+    }
   }
 
   if (!sStagedUpdate && !sReplaceRequest && _wrmdir(gDeleteDirPath)) {
@@ -4194,7 +4215,8 @@ int DoUpdate() {
   }
 
   NS_tchar *buf = GetManifestContents(manifest);
-  NS_tremove(manifest);
+  
+  
   if (!buf) {
     LOG(("DoUpdate: error opening manifest file: " LOG_S, manifest));
     return READ_ERROR;
