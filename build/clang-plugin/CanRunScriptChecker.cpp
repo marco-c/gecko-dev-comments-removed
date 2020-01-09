@@ -81,15 +81,17 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   auto LocalKnownLive = anyOf(KnownLiveSmartPtr, MozKnownLiveCall);
 
   auto InvalidArg =
-      
-      ignoreTrivials(expr(
-          
-          anyOf(
-            hasType(Refcounted),
-            hasType(pointsTo(Refcounted)),
-            hasType(references(Refcounted)),
-            hasType(isSmartPtrToRefCounted())
-          ),
+      ignoreTrivialsConditional(
+        
+        
+        anyOf(
+          hasType(Refcounted),
+          hasType(pointsTo(Refcounted)),
+          hasType(references(Refcounted)),
+          hasType(isSmartPtrToRefCounted())
+        ),
+        
+        expr(
           
           unless(cxxThisExpr()),
           
@@ -111,6 +113,8 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
           
           
           unless(cxxDefaultArgExpr(isNullDefaultArg())),
+          
+          unless(cxxNullPtrLiteralExpr()),
           
           
           unless(

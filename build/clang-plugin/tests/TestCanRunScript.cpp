@@ -36,6 +36,14 @@ struct RefCountedBase {
   virtual void method_test3() { 
     test(); 
   }
+
+  MOZ_CAN_RUN_SCRIPT void method_test4() {
+    method_test();
+  }
+
+  MOZ_CAN_RUN_SCRIPT void method_test5() {
+    this->method_test();
+  }
 };
 
 MOZ_CAN_RUN_SCRIPT void testLambda() {
@@ -144,6 +152,11 @@ void test5_b() {
   test5();
 }
 
+MOZ_CAN_RUN_SCRIPT void test6() {
+  void* x = new RefCountedBase();
+  test2((RefCountedBase*)x); 
+}
+
 MOZ_CAN_RUN_SCRIPT void test_ref(const RefCountedBase&) {
 
 }
@@ -190,6 +203,16 @@ MOZ_CAN_RUN_SCRIPT void test_ref_8() {
   RefPtr<RefCountedBase> t = new RefCountedBase;
   auto& ref = *t;
   test_ref(MOZ_KnownLive(ref));
+}
+
+MOZ_CAN_RUN_SCRIPT void test_ref_9() {
+  void* x = new RefCountedBase();
+  test_ref(*(RefCountedBase*)x); 
+}
+
+MOZ_CAN_RUN_SCRIPT void test_ref_10() {
+  void* x = new RefCountedBase();
+  test_ref((RefCountedBase&)*x); 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_maybe() {
