@@ -14,7 +14,9 @@
 namespace mozilla {
 namespace widget {
 
-#define MAX_DISPLAY_CONNECTIONS 2
+
+
+#define MAX_DISPLAY_CONNECTIONS 3
 
 static nsWaylandDisplay *gWaylandDisplays[MAX_DISPLAY_CONNECTIONS];
 static StaticMutex gWaylandDisplaysMutex;
