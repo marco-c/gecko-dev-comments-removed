@@ -35,12 +35,19 @@ const {
   getBindingElementAndPseudo,
   getCSSStyleRules,
   l10n,
-  isContentStylesheet,
+  isAgentStylesheet,
+  isAuthorStylesheet,
+  isUserStylesheet,
   shortSource,
   FILTER,
   STATUS,
 } = require("devtools/shared/inspector/css-logic");
 const InspectorUtils = require("InspectorUtils");
+
+const COMPAREMODE = {
+  "BOOLEAN": "bool",
+  "INTEGER": "int",
+};
 
 
 
@@ -170,8 +177,7 @@ CssLogic.prototype = {
 
     
     this.forEachSheet(function(sheet) {
-      sheet._sheetAllowed = -1;
-      if (sheet.contentSheet && sheet.sheetAllowed) {
+      if (sheet.authorSheet && sheet.sheetAllowed) {
         ruleCount += sheet.ruleCount;
       }
     }, this);
@@ -281,7 +287,7 @@ CssLogic.prototype = {
 
     const sheets = [];
     this.forEachSheet(function(sheet) {
-      if (sheet.contentSheet) {
+      if (sheet.authorSheet) {
         sheets.push(sheet);
       }
     }, this);
@@ -324,10 +330,7 @@ CssLogic.prototype = {
     let sheetFound = false;
 
     if (cacheId in this._sheets) {
-      for (let i = 0, numSheets = this._sheets[cacheId].length;
-           i < numSheets;
-           i++) {
-        sheet = this._sheets[cacheId][i];
+      for (sheet of this._sheets[cacheId]) {
         if (sheet.domSheet === domSheet) {
           if (index != -1) {
             sheet.index = index;
@@ -344,7 +347,7 @@ CssLogic.prototype = {
       }
 
       sheet = new CssSheet(this, domSheet, index);
-      if (sheet.sheetAllowed && sheet.contentSheet) {
+      if (sheet.sheetAllowed && sheet.authorSheet) {
         this._ruleCount += sheet.ruleCount;
       }
 
@@ -437,19 +440,18 @@ CssLogic.prototype = {
     this._matchedSelectors = [];
     this._passId++;
 
-    for (let i = 0; i < this._matchedRules.length; i++) {
-      const rule = this._matchedRules[i][0];
-      const status = this._matchedRules[i][1];
+    for (const matchedRule of this._matchedRules) {
+      const [rule, status, distance] = matchedRule;
 
       rule.selectors.forEach(function(selector) {
         if (selector._matchId !== this._matchId &&
-           (selector.elementStyle ||
+           (selector.inlineStyle ||
             this.selectorMatchesElement(rule.domRule,
                                         selector.selectorIndex))) {
           selector._matchId = this._matchId;
-          this._matchedSelectors.push([ selector, status ]);
+          this._matchedSelectors.push([ selector, status, distance ]);
           if (callback) {
-            callback.call(scope, selector, status);
+            callback.call(scope, selector, status, distance);
           }
         }
       }, this);
@@ -532,6 +534,13 @@ CssLogic.prototype = {
     const filter = this.sourceFilter;
     let sheetIndex = 0;
 
+    
+    
+    
+    
+    
+    let distance = 0;
+
     this._matchId++;
     this._passId++;
     this._matchedRules = [];
@@ -552,9 +561,7 @@ CssLogic.prototype = {
       }
 
       
-      const numDomRules = domRules ? domRules.length : 0;
-      for (let i = 0; i < numDomRules; i++) {
-        const domRule = domRules[i];
+      for (const domRule of domRules || []) {
         if (domRule.type !== CSSRule.STYLE_RULE) {
           continue;
         }
@@ -565,7 +572,7 @@ CssLogic.prototype = {
           sheet._passId = this._passId;
         }
 
-        if (filter === FILTER.USER && !sheet.contentSheet) {
+        if (filter === FILTER.USER && !sheet.authorSheet) {
           continue;
         }
 
@@ -576,7 +583,7 @@ CssLogic.prototype = {
 
         rule._matchId = this._matchId;
         rule._passId = this._passId;
-        this._matchedRules.push([rule, status]);
+        this._matchedRules.push([rule, status, distance]);
       }
 
       
@@ -584,8 +591,10 @@ CssLogic.prototype = {
         const rule = new CssRule(null, { style: element.style }, element);
         rule._matchId = this._matchId;
         rule._passId = this._passId;
-        this._matchedRules.push([rule, status]);
+        this._matchedRules.push([rule, status, distance]);
       }
+
+      distance--;
     } while ((element = element.parentNode) &&
               element.nodeType === nodeConstants.ELEMENT_NODE);
   },
@@ -720,7 +729,7 @@ CssLogic.href = function(sheet) {
 function CssSheet(cssLogic, domSheet, index) {
   this._cssLogic = cssLogic;
   this.domSheet = domSheet;
-  this.index = this.contentSheet ? index : -100 * index;
+  this.index = this.authorSheet ? index : -100 * index;
 
   
   this._href = null;
@@ -738,7 +747,33 @@ function CssSheet(cssLogic, domSheet, index) {
 
 CssSheet.prototype = {
   _passId: null,
-  _contentSheet: null,
+  _agentSheet: null,
+  _authorSheet: null,
+  _userSheet: null,
+
+  
+
+
+
+
+  get agentSheet() {
+    if (this._agentSheet === null) {
+      this._agentSheet = isAgentStylesheet(this.domSheet);
+    }
+    return this._agentSheet;
+  },
+
+  
+
+
+
+
+  get authorSheet() {
+    if (this._authorSheet === null) {
+      this._authorSheet = isAuthorStylesheet(this.domSheet);
+    }
+    return this._authorSheet;
+  },
 
   
 
@@ -746,11 +781,11 @@ CssSheet.prototype = {
 
 
 
-  get contentSheet() {
-    if (this._contentSheet === null) {
-      this._contentSheet = isContentStylesheet(this.domSheet);
+  get userSheet() {
+    if (this._userSheet === null) {
+      this._userSheet = isUserStylesheet(this.domSheet);
     }
-    return this._contentSheet;
+    return this._userSheet;
   },
 
   
@@ -803,7 +838,7 @@ CssSheet.prototype = {
     this._sheetAllowed = true;
 
     const filter = this._cssLogic.sourceFilter;
-    if (filter === FILTER.USER && !this.contentSheet) {
+    if (filter === FILTER.USER && !this.authorSheet) {
       this._sheetAllowed = false;
     }
     if (filter !== FILTER.USER && filter !== FILTER.UA) {
@@ -861,10 +896,7 @@ CssSheet.prototype = {
     let ruleFound = false;
 
     if (cacheId in this._rules) {
-      for (let i = 0, rulesLen = this._rules[cacheId].length;
-           i < rulesLen;
-           i++) {
-        rule = this._rules[cacheId][i];
+      for (rule of this._rules[cacheId]) {
         if (rule.domRule === domRule) {
           ruleFound = true;
           break;
@@ -921,13 +953,17 @@ function CssRule(cssSheet, domRule, element) {
       this.source += " @media " + this.mediaText;
     }
     this.href = this._cssSheet.href;
-    this.contentRule = this._cssSheet.contentSheet;
+    this.authorRule = this._cssSheet.authorSheet;
+    this.userRule = this._cssSheet.userSheet;
+    this.agentRule = this._cssSheet.agentSheet;
   } else if (element) {
     this._selectors = [ new CssSelector(this, "@element.style", 0) ];
     this.line = -1;
     this.source = l10n("rule.sourceElement");
     this.href = "#";
-    this.contentRule = true;
+    this.authorRule = true;
+    this.userRule = false;
+    this.agentRule = false;
     this.sourceElement = element;
   }
 }
@@ -1027,7 +1063,7 @@ CssRule.prototype = {
 function CssSelector(cssRule, selector, index) {
   this.cssRule = cssRule;
   this.text = selector;
-  this.elementStyle = this.text == "@element.style";
+  this.inlineStyle = this.text == "@element.style";
   this._specificity = null;
   this.selectorIndex = index;
 }
@@ -1073,9 +1109,27 @@ CssSelector.prototype = {
 
 
 
+  get agentRule() {
+    return this.cssRule.agentRule;
+  },
 
-  get contentRule() {
-    return this.cssRule.contentRule;
+  
+
+
+
+
+  get authorRule() {
+    return this.cssRule.authorRule;
+  },
+
+  
+
+
+
+
+
+  get userRule() {
+    return this.cssRule.userRule;
   },
 
   
@@ -1127,7 +1181,7 @@ CssSelector.prototype = {
 
 
   get specificity() {
-    if (this.elementStyle) {
+    if (this.inlineStyle) {
       
       
       
@@ -1135,12 +1189,10 @@ CssSelector.prototype = {
       return 0x40000000;
     }
 
-    if (this._specificity) {
-      return this._specificity;
+    if (typeof this._specificity !== "number") {
+      this._specificity = InspectorUtils.getSpecificity(this.cssRule.domRule,
+        this.selectorIndex);
     }
-
-    this._specificity = InspectorUtils.getSpecificity(this.cssRule.domRule,
-                                                      this.selectorIndex);
 
     return this._specificity;
   },
@@ -1232,11 +1284,6 @@ CssPropertyInfo.prototype = {
 
     
     this._matchedSelectors.sort(function(selectorInfo1, selectorInfo2) {
-      if (selectorInfo1.status > selectorInfo2.status) {
-        return -1;
-      } else if (selectorInfo2.status > selectorInfo1.status) {
-        return 1;
-      }
       return selectorInfo1.compareTo(selectorInfo2);
     });
 
@@ -1254,7 +1301,7 @@ CssPropertyInfo.prototype = {
 
 
 
-  _processMatchedSelector: function(selector, status) {
+  _processMatchedSelector: function(selector, status, distance) {
     const cssRule = selector.cssRule;
     const value = cssRule.getPropertyValue(this.property);
     if (value &&
@@ -1262,7 +1309,7 @@ CssPropertyInfo.prototype = {
          (status == STATUS.PARENT_MATCH &&
           this._isInherited(this.property)))) {
       const selectorInfo = new CssSelectorInfo(selector, this.property, value,
-          status);
+          status, distance);
       this._matchedSelectors.push(selectorInfo);
     }
   },
@@ -1311,10 +1358,11 @@ CssPropertyInfo.prototype = {
 
 
 
-function CssSelectorInfo(selector, property, value, status) {
+function CssSelectorInfo(selector, property, value, status, distance) {
   this.selector = selector;
   this.property = property;
   this.status = status;
+  this.distance = distance;
   this.value = value;
   const priority = this.selector.cssRule.getPropertyPriority(this.property);
   this.important = (priority === "important");
@@ -1358,8 +1406,8 @@ CssSelectorInfo.prototype = {
 
 
 
-  get elementStyle() {
-    return this.selector.elementStyle;
+  get inlineStyle() {
+    return this.selector.inlineStyle;
   },
 
   
@@ -1418,8 +1466,18 @@ CssSelectorInfo.prototype = {
 
 
 
-  get contentRule() {
-    return this.selector.contentRule;
+  get agentRule() {
+    return this.selector.agentRule;
+  },
+
+  
+
+
+
+
+
+  get authorRule() {
+    return this.selector.authorRule;
   },
 
   
@@ -1429,63 +1487,131 @@ CssSelectorInfo.prototype = {
 
 
 
+  get userRule() {
+    return this.selector.userRule;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   compareTo: function(that) {
-    if (!this.contentRule && that.contentRule) {
-      return 1;
-    }
-    if (this.contentRule && !that.contentRule) {
-      return -1;
+    let current = null;
+
+    
+    
+    current = this.compare(that, "distance", COMPAREMODE.INTEGER);
+    if (current) {
+      return current;
     }
 
-    if (this.elementStyle && !that.elementStyle) {
-      if (!this.important && that.important) {
-        return 1;
+    if (this.important) {
+      
+      
+      
+      for (const propName of ["agentRule", "userRule", "authorRule"]) {
+        current = this.compare(that, propName, COMPAREMODE.BOOLEAN);
+        if (current) {
+          return current;
+        }
       }
-      return -1;
     }
 
-    if (!this.elementStyle && that.elementStyle) {
-      if (this.important && !that.important) {
-        return -1;
+    
+    
+    
+    for (const propName of ["authorRule", "userRule", "agentRule"]) {
+      current = this.compare(that, propName, COMPAREMODE.BOOLEAN);
+      if (current) {
+        return current;
       }
-      return 1;
     }
 
-    if (this.important && !that.important) {
-      return -1;
-    }
-    if (that.important && !this.important) {
-      return 1;
-    }
-
-    if (this.specificity > that.specificity) {
-      return -1;
-    }
-    if (that.specificity > this.specificity) {
-      return 1;
+    
+    
+    
+    
+    for (const propName of ["specificity", "sheetIndex", "ruleLine", "ruleColumn"]) {
+      current = this.compare(that, propName, COMPAREMODE.INTEGER);
+      if (current) {
+        return current;
+      }
     }
 
-    if (this.sheetIndex > that.sheetIndex) {
-      return -1;
-    }
-    if (that.sheetIndex > this.sheetIndex) {
-      return 1;
-    }
+    
+    return 0;
+  },
 
-    if (this.ruleLine > that.ruleLine) {
-      return -1;
+  compare: function(that, propertyName, type) {
+    switch (type) {
+      case COMPAREMODE.BOOLEAN:
+        if (this[propertyName] && !that[propertyName]) {
+          return -1;
+        }
+        if (!this[propertyName] && that[propertyName]) {
+          return 1;
+        }
+        break;
+      case COMPAREMODE.INTEGER:
+        if (this[propertyName] > that[propertyName]) {
+          return -1;
+        }
+        if (this[propertyName] < that[propertyName]) {
+          return 1;
+        }
+        break;
     }
-    if (that.ruleLine > this.ruleLine) {
-      return 1;
-    }
-
-    if (this.ruleColumn > that.ruleColumn) {
-      return -1;
-    }
-    if (that.ruleColumn > this.ruleColumn) {
-      return 1;
-    }
-
     return 0;
   },
 

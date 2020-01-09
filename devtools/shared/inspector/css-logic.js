@@ -118,8 +118,30 @@ exports.l10n = name => styleInspectorL10N.getStr(name);
 
 
 
-exports.isContentStylesheet = function(sheet) {
-  return sheet.parsingMode !== "agent";
+exports.isAuthorStylesheet = function(sheet) {
+  return sheet.parsingMode === "author";
+};
+
+
+
+
+
+
+
+
+exports.isUserStylesheet = function(sheet) {
+  return sheet.parsingMode === "user";
+};
+
+
+
+
+
+
+
+
+exports.isAgentStylesheet = function(sheet) {
+  return sheet.parsingMode === "agent";
 };
 
 
