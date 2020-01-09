@@ -11,10 +11,7 @@
 #include "mozilla/Unused.h"
 #include "nsTextFormatter.h"
 #include "winwebauthn/webauthn.h"
-
-#ifdef OS_WIN
-#  include "WinWebAuthnManager.h"
-#endif
+#include "WinWebAuthnManager.h"
 
 namespace mozilla {
 namespace dom {
@@ -174,102 +171,138 @@ void WinWebAuthnManager::Register(
   ClearTransaction();
   mTransactionParent = aTransactionParent;
 
-  const auto& extra = aInfo.Extra().get_WebAuthnMakeCredentialExtraInfo();
+  BYTE U2FUserId = 0x01;
 
   
-  WEBAUTHN_RP_ENTITY_INFORMATION rpInformation = {
+  WEBAUTHN_RP_ENTITY_INFORMATION rpInfo = {
       WEBAUTHN_RP_ENTITY_INFORMATION_CURRENT_VERSION, aInfo.RpId().get(),
-      extra.Rp().Name().get(), extra.Rp().Icon().get()};
+      nullptr, nullptr};
 
   
-  WEBAUTHN_USER_ENTITY_INFORMATION userInformation = {
+  WEBAUTHN_USER_ENTITY_INFORMATION userInfo = {
       WEBAUTHN_USER_ENTITY_INFORMATION_CURRENT_VERSION,
-      static_cast<DWORD>(extra.User().Id().Length()),
-      const_cast<unsigned char*>(extra.User().Id().Elements()),
-      extra.User().Name().get(),
-      extra.User().Icon().get(),
-      extra.User().DisplayName().get()};
-
-  
-  nsTArray<WEBAUTHN_COSE_CREDENTIAL_PARAMETER> coseParams;
-  for (const auto& coseAlg : extra.coseAlgs()) {
-    WEBAUTHN_COSE_CREDENTIAL_PARAMETER coseAlgorithm = {
-        WEBAUTHN_COSE_CREDENTIAL_PARAMETER_CURRENT_VERSION,
-        WEBAUTHN_CREDENTIAL_TYPE_PUBLIC_KEY, coseAlg.alg()};
-    coseParams.AppendElement(coseAlgorithm);
-  }
-  WEBAUTHN_COSE_CREDENTIAL_PARAMETERS WebAuthNCredentialParameters = {
-      static_cast<DWORD>(coseParams.Length()), coseParams.Elements()};
+      0,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr};
 
   
   WEBAUTHN_CLIENT_DATA WebAuthNClientData = {
       WEBAUTHN_CLIENT_DATA_CURRENT_VERSION, aInfo.ClientDataJSON().Length(),
       (BYTE*)(aInfo.ClientDataJSON().get()), WEBAUTHN_HASH_ALGORITHM_SHA_256};
 
-  const auto& sel = extra.AuthenticatorSelection();
+  
+  nsTArray<WEBAUTHN_COSE_CREDENTIAL_PARAMETER> coseParams;
 
   
-  UserVerificationRequirement userVerificationReq =
-      static_cast<UserVerificationRequirement>(
-          sel.userVerificationRequirement());
   DWORD winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_ANY;
-  switch (userVerificationReq) {
-    case UserVerificationRequirement::Required:
-      winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED;
-      break;
-    case UserVerificationRequirement::Preferred:
-      winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_PREFERRED;
-      break;
-    case UserVerificationRequirement::Discouraged:
-      winUserVerificationReq =
-          WEBAUTHN_USER_VERIFICATION_REQUIREMENT_DISCOURAGED;
-      break;
-    default:
-      winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_ANY;
-      break;
-  }
 
   
   DWORD winAttachment = WEBAUTHN_AUTHENTICATOR_ATTACHMENT_ANY;
-  if (sel.authenticatorAttachment().type() ==
-      WebAuthnMaybeAuthenticatorAttachment::Tuint8_t) {
-    const AuthenticatorAttachment authenticatorAttachment =
-        static_cast<AuthenticatorAttachment>(
-            sel.authenticatorAttachment().get_uint8_t());
-    switch (authenticatorAttachment) {
-      case AuthenticatorAttachment::Platform:
-        winAttachment = WEBAUTHN_AUTHENTICATOR_ATTACHMENT_PLATFORM;
+
+  
+  BOOL winRequireResidentKey = FALSE;
+
+  
+  DWORD winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ANY;
+
+  if (aInfo.Extra().type() ==
+      WebAuthnMaybeMakeCredentialExtraInfo::TWebAuthnMakeCredentialExtraInfo) {
+    const auto& extra = aInfo.Extra().get_WebAuthnMakeCredentialExtraInfo();
+
+    rpInfo.pwszName = extra.Rp().Name().get();
+    rpInfo.pwszIcon = extra.Rp().Icon().get();
+
+    userInfo.cbId = static_cast<DWORD>(extra.User().Id().Length());
+    userInfo.pbId = const_cast<unsigned char*>(extra.User().Id().Elements());
+    userInfo.pwszName = extra.User().Name().get();
+    userInfo.pwszIcon = extra.User().Icon().get();
+    userInfo.pwszDisplayName = extra.User().DisplayName().get();
+
+    for (const auto& coseAlg : extra.coseAlgs()) {
+      WEBAUTHN_COSE_CREDENTIAL_PARAMETER coseAlgorithm = {
+          WEBAUTHN_COSE_CREDENTIAL_PARAMETER_CURRENT_VERSION,
+          WEBAUTHN_CREDENTIAL_TYPE_PUBLIC_KEY, coseAlg.alg()};
+      coseParams.AppendElement(coseAlgorithm);
+    }
+
+    const auto& sel = extra.AuthenticatorSelection();
+
+    UserVerificationRequirement userVerificationReq =
+        static_cast<UserVerificationRequirement>(
+            sel.userVerificationRequirement());
+    switch (userVerificationReq) {
+      case UserVerificationRequirement::Required:
+        winUserVerificationReq =
+            WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED;
         break;
-      case AuthenticatorAttachment::Cross_platform:
-        winAttachment = WEBAUTHN_AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM;
+      case UserVerificationRequirement::Preferred:
+        winUserVerificationReq =
+            WEBAUTHN_USER_VERIFICATION_REQUIREMENT_PREFERRED;
+        break;
+      case UserVerificationRequirement::Discouraged:
+        winUserVerificationReq =
+            WEBAUTHN_USER_VERIFICATION_REQUIREMENT_DISCOURAGED;
         break;
       default:
+        winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_ANY;
         break;
     }
+
+    if (sel.authenticatorAttachment().type() ==
+        WebAuthnMaybeAuthenticatorAttachment::Tuint8_t) {
+      const AuthenticatorAttachment authenticatorAttachment =
+          static_cast<AuthenticatorAttachment>(
+              sel.authenticatorAttachment().get_uint8_t());
+      switch (authenticatorAttachment) {
+        case AuthenticatorAttachment::Platform:
+          winAttachment = WEBAUTHN_AUTHENTICATOR_ATTACHMENT_PLATFORM;
+          break;
+        case AuthenticatorAttachment::Cross_platform:
+          winAttachment = WEBAUTHN_AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM;
+          break;
+        default:
+          break;
+      }
+    }
+
+    winRequireResidentKey = sel.requireResidentKey();
+
+    
+    AttestationConveyancePreference attestation =
+        static_cast<AttestationConveyancePreference>(
+            extra.attestationConveyancePreference());
+    DWORD winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ANY;
+    switch (attestation) {
+      case AttestationConveyancePreference::Direct:
+        winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_DIRECT;
+        break;
+      case AttestationConveyancePreference::Indirect:
+        winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_INDIRECT;
+        break;
+      case AttestationConveyancePreference::None:
+        winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_NONE;
+        break;
+      default:
+        winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ANY;
+        break;
+    }
+  } else {
+    userInfo.cbId = sizeof(BYTE);
+    userInfo.pbId = &U2FUserId;
+
+    WEBAUTHN_COSE_CREDENTIAL_PARAMETER coseAlgorithm = {
+        WEBAUTHN_COSE_CREDENTIAL_PARAMETER_CURRENT_VERSION,
+        WEBAUTHN_CREDENTIAL_TYPE_PUBLIC_KEY,
+        WEBAUTHN_COSE_ALGORITHM_ECDSA_P256_WITH_SHA256};
+    coseParams.AppendElement(coseAlgorithm);
+
+    winAttachment = WEBAUTHN_AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM_U2F_V2;
   }
 
-  
-  BOOL winRequireResidentKey = sel.requireResidentKey() ? TRUE : FALSE;
-
-  
-  AttestationConveyancePreference attestation =
-      static_cast<AttestationConveyancePreference>(
-          extra.attestationConveyancePreference());
-  DWORD winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ANY;
-  switch (attestation) {
-    case AttestationConveyancePreference::Direct:
-      winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_DIRECT;
-      break;
-    case AttestationConveyancePreference::Indirect:
-      winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_INDIRECT;
-      break;
-    case AttestationConveyancePreference::None:
-      winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_NONE;
-      break;
-    default:
-      winAttestation = WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_ANY;
-      break;
-  }
+  WEBAUTHN_COSE_CREDENTIAL_PARAMETERS WebAuthNCredentialParameters = {
+      static_cast<DWORD>(coseParams.Length()), coseParams.Elements()};
 
   
   nsTArray<WEBAUTHN_CREDENTIAL_EX> excludeCredentials;
@@ -338,7 +371,7 @@ void WinWebAuthnManager::Register(
   HWND hWnd = GetForegroundWindow();
 
   HRESULT hr = gWinWebauthnMakeCredential(
-      hWnd, &rpInformation, &userInformation, &WebAuthNCredentialParameters,
+      hWnd, &rpInfo, &userInfo, &WebAuthNCredentialParameters,
       &WebAuthNClientData, &WebAuthNCredentialOptions,
       &pWebAuthNCredentialAttestation);
 
@@ -355,9 +388,51 @@ void WinWebAuthnManager::Register(
                                 pWebAuthNCredentialAttestation->cbCredentialId);
 
     nsTArray<uint8_t> authenticatorData;
-    authenticatorData.AppendElements(
-        pWebAuthNCredentialAttestation->pbAuthenticatorData,
-        pWebAuthNCredentialAttestation->cbAuthenticatorData);
+
+    if (aInfo.Extra().type() == WebAuthnMaybeMakeCredentialExtraInfo::
+                                    TWebAuthnMakeCredentialExtraInfo) {
+      authenticatorData.AppendElements(
+          pWebAuthNCredentialAttestation->pbAuthenticatorData,
+          pWebAuthNCredentialAttestation->cbAuthenticatorData);
+    } else {
+      PWEBAUTHN_COMMON_ATTESTATION attestation =
+          reinterpret_cast<PWEBAUTHN_COMMON_ATTESTATION>(
+              pWebAuthNCredentialAttestation->pvAttestationDecode);
+
+      DWORD coseKeyOffset = 32 +  
+                            1 +   
+                            4 +   
+                            16 +  
+                            2 +   
+                            pWebAuthNCredentialAttestation->cbCredentialId;
+
+      
+      DWORD xOffset = coseKeyOffset + 10;
+      DWORD yOffset = coseKeyOffset + 45;
+
+      
+      if (pWebAuthNCredentialAttestation->cbAuthenticatorData < yOffset + 32) {
+        MaybeAbortRegister(aTransactionId, NS_ERROR_DOM_INVALID_STATE_ERR);
+      }
+
+      authenticatorData.AppendElement(0x05);  
+      authenticatorData.AppendElement(0x04);  
+      authenticatorData.AppendElements(
+          pWebAuthNCredentialAttestation->pbAuthenticatorData + xOffset,
+          32);  
+      authenticatorData.AppendElements(
+          pWebAuthNCredentialAttestation->pbAuthenticatorData + yOffset,
+          32);  
+      authenticatorData.AppendElement(
+          pWebAuthNCredentialAttestation->cbCredentialId);
+      authenticatorData.AppendElements(
+          pWebAuthNCredentialAttestation->pbCredentialId,
+          pWebAuthNCredentialAttestation->cbCredentialId);
+      authenticatorData.AppendElements(attestation->pX5c->pbData,
+                                       attestation->pX5c->cbData);
+      authenticatorData.AppendElements(attestation->pbSignature,
+                                       attestation->cbSignature);
+    }
 
     WebAuthnMakeCredentialResult result(aInfo.ClientDataJSON(), attObject,
                                         credentialId, authenticatorData);
@@ -398,46 +473,54 @@ void WinWebAuthnManager::Sign(PWebAuthnTransactionParent* aTransactionParent,
   ClearTransaction();
   mTransactionParent = aTransactionParent;
 
-  const auto& extra = aInfo.Extra().get_WebAuthnGetAssertionExtraInfo();
+  
+  DWORD winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_ANY;
 
   
   BOOL bU2fAppIdUsed = FALSE;
   BOOL* pbU2fAppIdUsed = nullptr;
   PCWSTR winAppIdentifier = nullptr;
 
-  for (const WebAuthnExtension& ext : extra.Extensions()) {
-    if (ext.type() == WebAuthnExtension::TWebAuthnExtensionAppId) {
-      winAppIdentifier = ext.get_WebAuthnExtensionAppId().appIdentifier().get();
-      pbU2fAppIdUsed = &bU2fAppIdUsed;
-      break;
-    }
-  }
-
   
   WEBAUTHN_CLIENT_DATA WebAuthNClientData = {
       WEBAUTHN_CLIENT_DATA_CURRENT_VERSION, aInfo.ClientDataJSON().Length(),
       (BYTE*)(aInfo.ClientDataJSON().get()), WEBAUTHN_HASH_ALGORITHM_SHA_256};
 
-  
-  UserVerificationRequirement userVerificationReq =
-      static_cast<UserVerificationRequirement>(
-          extra.userVerificationRequirement());
+  if (aInfo.Extra().type() ==
+      WebAuthnMaybeGetAssertionExtraInfo::TWebAuthnGetAssertionExtraInfo) {
+    const auto& extra = aInfo.Extra().get_WebAuthnGetAssertionExtraInfo();
 
-  DWORD winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_ANY;
-  switch (userVerificationReq) {
-    case UserVerificationRequirement::Required:
-      winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED;
-      break;
-    case UserVerificationRequirement::Preferred:
-      winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_PREFERRED;
-      break;
-    case UserVerificationRequirement::Discouraged:
-      winUserVerificationReq =
-          WEBAUTHN_USER_VERIFICATION_REQUIREMENT_DISCOURAGED;
-      break;
-    default:
-      winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_ANY;
-      break;
+    for (const WebAuthnExtension& ext : extra.Extensions()) {
+      if (ext.type() == WebAuthnExtension::TWebAuthnExtensionAppId) {
+        winAppIdentifier =
+            ext.get_WebAuthnExtensionAppId().appIdentifier().get();
+        pbU2fAppIdUsed = &bU2fAppIdUsed;
+        break;
+      }
+    }
+
+    
+    UserVerificationRequirement userVerificationReq =
+        static_cast<UserVerificationRequirement>(
+            extra.userVerificationRequirement());
+
+    switch (userVerificationReq) {
+      case UserVerificationRequirement::Required:
+        winUserVerificationReq =
+            WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED;
+        break;
+      case UserVerificationRequirement::Preferred:
+        winUserVerificationReq =
+            WEBAUTHN_USER_VERIFICATION_REQUIREMENT_PREFERRED;
+        break;
+      case UserVerificationRequirement::Discouraged:
+        winUserVerificationReq =
+            WEBAUTHN_USER_VERIFICATION_REQUIREMENT_DISCOURAGED;
+        break;
+      default:
+        winUserVerificationReq = WEBAUTHN_USER_VERIFICATION_REQUIREMENT_ANY;
+        break;
+    }
   }
 
   
@@ -514,8 +597,27 @@ void WinWebAuthnManager::Sign(PWebAuthnTransactionParent* aTransactionParent,
 
   if (hr == S_OK) {
     nsTArray<uint8_t> signature;
-    signature.AppendElements(pWebAuthNAssertion->pbSignature,
-                             pWebAuthNAssertion->cbSignature);
+    if (aInfo.Extra().type() ==
+        WebAuthnMaybeGetAssertionExtraInfo::TWebAuthnGetAssertionExtraInfo) {
+      signature.AppendElements(pWebAuthNAssertion->pbSignature,
+                               pWebAuthNAssertion->cbSignature);
+    } else {
+      
+      
+      
+      
+      if (pWebAuthNAssertion->cbAuthenticatorData < 32 + 1 + 4) {
+        MaybeAbortRegister(aTransactionId, NS_ERROR_DOM_INVALID_STATE_ERR);
+      }
+
+      signature.AppendElement(0x01);  
+      signature.AppendElements(pWebAuthNAssertion->pbAuthenticatorData +
+                                   32 +  
+                                   1,    
+                               4);       
+      signature.AppendElements(pWebAuthNAssertion->pbSignature,
+                               pWebAuthNAssertion->cbSignature);
+    }
 
     nsTArray<uint8_t> keyHandle;
     keyHandle.AppendElements(pWebAuthNAssertion->Credential.pbId,
