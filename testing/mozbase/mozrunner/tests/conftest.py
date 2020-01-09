@@ -19,13 +19,15 @@ def get_binary():
         os.environ['GECKO_BINARY_PATH'] = os.environ['BROWSER_PATH']
 
     def inner(app):
-        if app not in ('chrome', 'firefox'):
+        if app not in ('chrome', 'chromium', 'firefox'):
             pytest.xfail(reason="{} support not implemented".format(app))
 
         if app == 'firefox':
             binary = fixtures.binary()
         elif app == 'chrome':
             binary = os.environ.get('CHROME_BINARY_PATH')
+        elif app == 'chromium':
+            binary = os.environ.get('CHROMIUM_BINARY_PATH')
 
         if not binary:
             pytest.skip("could not find a {} binary".format(app))
@@ -33,13 +35,13 @@ def get_binary():
     return inner
 
 
-@pytest.fixture(params=['firefox', 'chrome'])
+@pytest.fixture(params=['firefox', 'chrome', 'chromium'])
 def runner(request, get_binary):
     app = request.param
     binary = get_binary(app)
 
     cmdargs = ['--headless']
-    if app == 'chrome':
+    if app in ['chrome', 'chromium']:
         
         cmdargs.append('--remote-debugging-port=9222')
         
