@@ -2,7 +2,6 @@
 
 
 
-
 var expect = 42;
 var actual = (function({
     x: [w]
