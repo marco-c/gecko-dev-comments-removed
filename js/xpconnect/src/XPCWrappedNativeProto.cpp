@@ -75,14 +75,14 @@ void XPCWrappedNativeProto::JSProtoObjectFinalized(js::FreeOp* fop,
 #endif
 
   GetRuntime()->GetDyingWrappedNativeProtoMap()->Add(this);
-
-  mJSProtoObject.finalize(js::CastToJSFreeOp(fop)->runtime());
+  mJSProtoObject = nullptr;
 }
 
 void XPCWrappedNativeProto::JSProtoObjectMoved(JSObject* obj,
                                                const JSObject* old) {
+  
   MOZ_ASSERT(mJSProtoObject == old);
-  mJSProtoObject.init(obj);  
+  mJSProtoObject.unbarrieredSet(obj);
 }
 
 void XPCWrappedNativeProto::SystemIsBeingShutDown() {

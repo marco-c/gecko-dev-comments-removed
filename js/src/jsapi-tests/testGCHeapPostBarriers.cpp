@@ -215,15 +215,6 @@ BEGIN_TEST(testUnbarrieredEquality) {
     CHECK(TestWrapper(constobj, constobj2, heap, heap2));
   }
 
-  {
-    JS::ObjectPtr objptr(obj);
-    JS::ObjectPtr objptr2(obj2);
-    CHECK(TestWrapper(obj, obj2, objptr, objptr2));
-    CHECK(TestWrapper(constobj, constobj2, objptr, objptr2));
-    objptr.finalize(cx);
-    objptr2.finalize(cx);
-  }
-
   
   {
     JS::Heap<JSObject*> heap(obj);
