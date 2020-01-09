@@ -3,6 +3,8 @@
 const MAX_CONCURRENT_TABS = "browser.engagement.max_concurrent_tab_count";
 const TAB_EVENT_COUNT = "browser.engagement.tab_open_event_count";
 const MAX_CONCURRENT_WINDOWS = "browser.engagement.max_concurrent_window_count";
+const MAX_TAB_PINNED = "browser.engagement.max_concurrent_tab_pinned_count";
+const TAB_PINNED_EVENT = "browser.engagement.tab_pinned_event_count";
 const WINDOW_OPEN_COUNT = "browser.engagement.window_open_event_count";
 const TOTAL_URI_COUNT = "browser.engagement.total_uri_count";
 const UNIQUE_DOMAINS_COUNT = "browser.engagement.unique_domains_count";
@@ -27,6 +29,10 @@ let checkScalars = (countsObject) => {
     "The maximum tab count must match the expected value.");
   TelemetryTestUtils.assertScalar(scalars, TAB_EVENT_COUNT, countsObject.tabOpenCount,
     "The number of open tab event count must match the expected value.");
+  TelemetryTestUtils.assertScalar(scalars, MAX_TAB_PINNED, countsObject.maxTabsPinned,
+    "The maximum tabs pinned count must match the expected value.");
+  TelemetryTestUtils.assertScalar(scalars, TAB_PINNED_EVENT, countsObject.tabPinnedCount,
+    "The number of tab pinned event count must match the expected value.");
   TelemetryTestUtils.assertScalar(scalars, MAX_CONCURRENT_WINDOWS, countsObject.maxWindows,
     "The maximum window count must match the expected value.");
   TelemetryTestUtils.assertScalar(scalars, WINDOW_OPEN_COUNT, countsObject.windowsOpenCount,
@@ -48,25 +54,43 @@ add_task(async function test_tabsAndWindows() {
   let expectedWinOpenCount = 0;
   let expectedMaxTabs = 0;
   let expectedMaxWins = 0;
+  let expectedMaxTabsPinned = 0;
+  let expectedTabPinned = 0;
 
   
   openedTabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
+
+  gBrowser.pinTab(openedTabs[0]);
+  gBrowser.unpinTab(openedTabs[0]);
+
   expectedTabOpenCount = 1;
   expectedMaxTabs = 2;
+  expectedMaxTabsPinned = 1;
+  expectedTabPinned += 1;
   
   
   checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
                 windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
-                totalUnfilteredURIs: 0});
+                totalUnfilteredURIs: 0, maxTabsPinned: expectedMaxTabsPinned,
+                tabPinnedCount: expectedTabPinned});
 
   
   openedTabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   openedTabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
+
+  gBrowser.pinTab(openedTabs[1]);
+  gBrowser.pinTab(openedTabs[2]);
+  gBrowser.unpinTab(openedTabs[2]);
+  gBrowser.unpinTab(openedTabs[1]);
+
   expectedTabOpenCount += 2;
   expectedMaxTabs += 2;
+  expectedMaxTabsPinned = 2;
+  expectedTabPinned += 2;
   checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
                 windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
-                totalUnfilteredURIs: 0});
+                totalUnfilteredURIs: 0, maxTabsPinned: expectedMaxTabsPinned,
+                tabPinnedCount: expectedTabPinned});
 
   
   let win = await BrowserTestUtils.openNewBrowserWindow();
@@ -83,7 +107,8 @@ add_task(async function test_tabsAndWindows() {
   BrowserTestUtils.removeTab(openedTabs.pop());
   checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
                 windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
-                totalUnfilteredURIs: 0});
+                totalUnfilteredURIs: 0, maxTabsPinned: expectedMaxTabsPinned,
+                tabPinnedCount: expectedTabPinned});
 
   
   for (let tab of openedTabs) {
@@ -94,7 +119,8 @@ add_task(async function test_tabsAndWindows() {
   
   checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
                 windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
-                totalUnfilteredURIs: 0});
+                totalUnfilteredURIs: 0, maxTabsPinned: expectedMaxTabsPinned,
+                tabPinnedCount: expectedTabPinned});
 });
 
 add_task(async function test_subsessionSplit() {
@@ -112,7 +138,8 @@ add_task(async function test_subsessionSplit() {
   
   
   checkScalars({maxTabs: 5, tabOpenCount: 4, maxWindows: 2, windowsOpenCount: 1,
-                totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 2});
+                totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 2, maxTabsPinned: 0,
+                tabPinnedCount: 0});
 
   
   BrowserTestUtils.removeTab(openedTabs.pop());
@@ -126,7 +153,8 @@ add_task(async function test_subsessionSplit() {
   
   
   checkScalars({maxTabs: 4, tabOpenCount: 0, maxWindows: 2, windowsOpenCount: 0,
-                totalURIs: 0, domainCount: 0, totalUnfilteredURIs: 0});
+                totalURIs: 0, domainCount: 0, totalUnfilteredURIs: 0, maxTabsPinned: 0,
+                tabPinnedCount: 0});
 
   
   for (let tab of openedTabs) {
