@@ -199,9 +199,6 @@ namespace jit {
 
 
 
-
-
-
 class BaselineFrameSlot {
   uint32_t slot_;
 
