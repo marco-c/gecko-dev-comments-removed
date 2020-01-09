@@ -591,6 +591,8 @@ class ContentParent final : public PContentParent,
                                    bool aForceRepaint,
                                    const layers::LayersObserverEpoch& aEpoch);
 
+  void CancelContentJSExecutionIfRunning(BrowserParent* aBrowserParent);
+
   
   
   

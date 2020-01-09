@@ -22,6 +22,7 @@
 #include "nsIMemoryInfoDumper.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserverService.h"
+#include "nsIBrowserChild.h"
 #include "nsIDebug2.h"
 #include "nsIDocShell.h"
 #include "nsIRunnable.h"
@@ -639,26 +640,6 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   }
 
   
-  if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
-    return true;
-  }
-
-  self->mSlowScriptActualWait += duration;
-
-  
-  
-  
-  if (!self->mSlowScriptSecondHalf) {
-    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
-    self->mSlowScriptSecondHalf = true;
-    return true;
-  }
-
-  
-  
-  
-
-  
   
   RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
   RefPtr<nsGlobalWindowInner> win = WindowOrNull(global);
@@ -681,6 +662,40 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     NS_WARNING("No active window");
     return true;
   }
+
+  
+  if (sTabIdToCancelContentJS) {
+    if (nsIBrowserChild* browserChild = win->GetBrowserChild()) {
+      uint64_t tabId;
+      browserChild->GetTabId(&tabId);
+      if (sTabIdToCancelContentJS == tabId) {
+        
+        win->GetExtantDoc()->GetTopLevelContentDocument()->DisallowBFCaching();
+        sTabIdToCancelContentJS = 0;
+        return false;
+      }
+    }
+  }
+
+  
+  if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
+    return true;
+  }
+
+  self->mSlowScriptActualWait += duration;
+
+  
+  
+  
+  if (!self->mSlowScriptSecondHalf) {
+    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
+    self->mSlowScriptSecondHalf = true;
+    return true;
+  }
+
+  
+  
+  
 
   if (win->IsDying()) {
     
@@ -1217,6 +1232,11 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
 }
 
 
+void XPCJSContext::SetTabIdToCancelContentJS(uint64_t aTabId) {
+  sTabIdToCancelContentJS = aTabId;
+}
+
+
 uint32_t XPCJSContext::sInstanceCount;
 
 
@@ -1232,6 +1252,9 @@ WatchdogManager* XPCJSContext::GetWatchdogManager() {
   sWatchdogInstance = new WatchdogManager();
   return sWatchdogInstance;
 }
+
+
+mozilla::Atomic<uint64_t> XPCJSContext::sTabIdToCancelContentJS(0);
 
 
 void XPCJSContext::InitTLS() { MOZ_RELEASE_ASSERT(gTlsContext.init()); }

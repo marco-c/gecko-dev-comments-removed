@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_ProcessHangMonitor_h
 #define mozilla_ProcessHangMonitor_h
@@ -22,11 +22,11 @@ namespace mozilla {
 namespace dom {
 class ContentParent;
 class BrowserParent;
-}  // namespace dom
+}  
 
 namespace layers {
 struct LayersObserverEpoch;
-}  // namespace layers
+}  
 
 class PProcessHangMonitorParent;
 
@@ -54,6 +54,9 @@ class ProcessHangMonitor final : public nsIObserver {
   static void ClearPaintWhileInterruptingJS(
       const layers::LayersObserverEpoch& aEpoch);
   static void MaybeStartPaintWhileInterruptingJS();
+
+  static void CancelContentJSExecutionIfRunning(
+      PProcessHangMonitorParent* aParent, dom::BrowserParent* aTab);
 
   enum SlowScriptAction {
     Continue,
@@ -83,6 +86,6 @@ class ProcessHangMonitor final : public nsIObserver {
   nsCOMPtr<nsIThread> mThread;
 };
 
-}  // namespace mozilla
+}  
 
-#endif  // mozilla_ProcessHangMonitor_h
+#endif  
