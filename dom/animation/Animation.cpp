@@ -18,6 +18,7 @@
 #include "mozilla/TypeTraits.h"     
 #include "nsAnimationManager.h"     
 #include "nsDOMMutationObserver.h"  
+#include "nsIPresShell.h"           
 #include "nsThreadUtils.h"  
 #include "nsTransitionManager.h"      
 #include "PendingAnimationTracker.h"  

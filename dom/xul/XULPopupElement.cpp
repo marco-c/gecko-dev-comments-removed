@@ -5,6 +5,7 @@
 
 
 #include "nsCOMPtr.h"
+#include "nsIPresShell.h"
 #include "nsIContent.h"
 #include "nsNameSpaceManager.h"
 #include "nsGkAtoms.h"
