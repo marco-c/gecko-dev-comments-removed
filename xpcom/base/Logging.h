@@ -14,7 +14,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
-#include "mozilla/Poison.h"
 
 
 
@@ -173,7 +172,6 @@ class LazyLogModule final {
 
  private:
   const char* const mLogName;
-  const CorruptionCanaryForStatics mCanary;
 
   
   
