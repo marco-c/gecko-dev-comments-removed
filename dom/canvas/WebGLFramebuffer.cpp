@@ -1190,7 +1190,8 @@ void WebGLFramebuffer::FramebufferTexture2D(GLenum attachEnum,
   if (level < 0)
     return mContext->ErrorInvalidValue("`level` must not be negative.");
 
-  if (mContext->IsWebGL2()) {
+  if (mContext->IsWebGL2() ||
+      mContext->IsExtensionEnabled(WebGLExtensionID::OES_fbo_render_mipmap)) {
     
 
 
