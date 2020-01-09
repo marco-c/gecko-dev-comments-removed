@@ -344,6 +344,9 @@ void profiler_register_page(const nsID& aDocShellId, uint32_t aHistoryId,
 
 void profiler_unregister_pages(const nsID& aRegisteredDocShellId);
 
+
+void profiler_clear_all_pages();
+
 class BaseProfilerCount;
 void profiler_add_sampled_counter(BaseProfilerCount* aCounter);
 void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
