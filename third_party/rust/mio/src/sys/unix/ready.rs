@@ -110,6 +110,11 @@ const LIO: usize   = 0b100000;
 const LIO: usize   = 0b000000;
 
 
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "solaris"))]
+const PRI: usize = ::libc::EPOLLPRI as usize;
+
+
+
 pub const READY_ALL: usize = ERROR | HUP | AIO | LIO;
 
 impl UnixReady {
@@ -235,6 +240,28 @@ impl UnixReady {
     
     
     #[inline]
+    #[cfg(any(target_os = "linux",
+        target_os = "android", target_os = "solaris"))]
+    pub fn priority() -> UnixReady {
+        UnixReady(ready_from_usize(PRI))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
     #[cfg(any(target_os = "dragonfly",
         target_os = "freebsd", target_os = "ios", target_os = "macos"))]
     pub fn is_aio(&self) -> bool {
@@ -323,6 +350,28 @@ impl UnixReady {
     pub fn is_lio(&self) -> bool {
         self.contains(ready_from_usize(LIO))
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    #[cfg(any(target_os = "linux",
+        target_os = "android", target_os = "solaris"))]
+    pub fn is_priority(&self) -> bool {
+        self.contains(ready_from_usize(PRI))
+    }
 }
 
 impl From<Ready> for UnixReady {
@@ -408,7 +457,11 @@ impl fmt::Debug for UnixReady {
             (UnixReady::error(), "Error"),
             (UnixReady::hup(), "Hup"),
             #[allow(deprecated)]
-            (UnixReady::aio(), "Aio")];
+            (UnixReady::aio(), "Aio"),
+            #[cfg(any(target_os = "linux",
+                target_os = "android", target_os = "solaris"))]
+            (UnixReady::priority(), "Priority"),
+        ];
 
         for &(flag, msg) in &flags {
             if self.contains(flag) {

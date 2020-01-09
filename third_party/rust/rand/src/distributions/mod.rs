@@ -17,34 +17,262 @@
 
 
 
-use core::marker;
-
-use {Rng, Rand};
-
-pub use self::range::Range;
-#[cfg(feature="std")]
-pub use self::gamma::{Gamma, ChiSquared, FisherF, StudentT};
-#[cfg(feature="std")]
-pub use self::normal::{Normal, LogNormal};
-#[cfg(feature="std")]
-pub use self::exponential::Exp;
-
-pub mod range;
-#[cfg(feature="std")]
-pub mod gamma;
-#[cfg(feature="std")]
-pub mod normal;
-#[cfg(feature="std")]
-pub mod exponential;
-
-#[cfg(feature="std")]
-mod ziggurat_tables;
 
 
-pub trait Sample<Support> {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(any(rustc_1_26, features="nightly"))]
+use core::iter;
+use Rng;
+
+pub use self::other::Alphanumeric;
+#[doc(inline)] pub use self::uniform::Uniform;
+pub use self::float::{OpenClosed01, Open01};
+pub use self::bernoulli::Bernoulli;
+#[cfg(feature="alloc")] pub use self::weighted::{WeightedIndex, WeightedError};
+#[cfg(feature="std")] pub use self::unit_sphere::UnitSphereSurface;
+#[cfg(feature="std")] pub use self::unit_circle::UnitCircle;
+#[cfg(feature="std")] pub use self::gamma::{Gamma, ChiSquared, FisherF,
+    StudentT, Beta};
+#[cfg(feature="std")] pub use self::normal::{Normal, LogNormal, StandardNormal};
+#[cfg(feature="std")] pub use self::exponential::{Exp, Exp1};
+#[cfg(feature="std")] pub use self::pareto::Pareto;
+#[cfg(feature="std")] pub use self::poisson::Poisson;
+#[cfg(feature="std")] pub use self::binomial::Binomial;
+#[cfg(feature="std")] pub use self::cauchy::Cauchy;
+#[cfg(feature="std")] pub use self::dirichlet::Dirichlet;
+#[cfg(feature="std")] pub use self::triangular::Triangular;
+#[cfg(feature="std")] pub use self::weibull::Weibull;
+
+pub mod uniform;
+mod bernoulli;
+#[cfg(feature="alloc")] mod weighted;
+#[cfg(feature="std")] mod unit_sphere;
+#[cfg(feature="std")] mod unit_circle;
+#[cfg(feature="std")] mod gamma;
+#[cfg(feature="std")] mod normal;
+#[cfg(feature="std")] mod exponential;
+#[cfg(feature="std")] mod pareto;
+#[cfg(feature="std")] mod poisson;
+#[cfg(feature="std")] mod binomial;
+#[cfg(feature="std")] mod cauchy;
+#[cfg(feature="std")] mod dirichlet;
+#[cfg(feature="std")] mod triangular;
+#[cfg(feature="std")] mod weibull;
+
+mod float;
+mod integer;
+mod other;
+mod utils;
+#[cfg(feature="std")] mod ziggurat_tables;
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait Distribution<T> {
+    
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> T;
+
     
     
-    fn sample<R: Rng>(&mut self, rng: &mut R) -> Support;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn sample_iter<'a, R>(&'a self, rng: &'a mut R) -> DistIter<'a, Self, R, T>
+        where Self: Sized, R: Rng
+    {
+        DistIter {
+            distr: self,
+            rng: rng,
+            phantom: ::core::marker::PhantomData,
+        }
+    }
+}
+
+impl<'a, T, D: Distribution<T>> Distribution<T> for &'a D {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> T {
+        (*self).sample(rng)
+    }
 }
 
 
@@ -52,43 +280,102 @@ pub trait Sample<Support> {
 
 
 
-
-
-
-pub trait IndependentSample<Support>: Sample<Support> {
-    
-    fn ind_sample<R: Rng>(&self, &mut R) -> Support;
-}
 
 
 
 #[derive(Debug)]
-pub struct RandSample<Sup> {
-    _marker: marker::PhantomData<fn() -> Sup>,
+pub struct DistIter<'a, D: 'a, R: 'a, T> {
+    distr: &'a D,
+    rng: &'a mut R,
+    phantom: ::core::marker::PhantomData<T>,
 }
 
-impl<Sup> Copy for RandSample<Sup> {}
-impl<Sup> Clone for RandSample<Sup> {
-    fn clone(&self) -> Self { *self }
-}
+impl<'a, D, R, T> Iterator for DistIter<'a, D, R, T>
+    where D: Distribution<T>, R: Rng + 'a
+{
+    type Item = T;
 
-impl<Sup: Rand> Sample<Sup> for RandSample<Sup> {
-    fn sample<R: Rng>(&mut self, rng: &mut R) -> Sup { self.ind_sample(rng) }
-}
+    #[inline(always)]
+    fn next(&mut self) -> Option<T> {
+        Some(self.distr.sample(self.rng))
+    }
 
-impl<Sup: Rand> IndependentSample<Sup> for RandSample<Sup> {
-    fn ind_sample<R: Rng>(&self, rng: &mut R) -> Sup {
-        rng.gen()
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (usize::max_value(), None)
     }
 }
 
-impl<Sup> RandSample<Sup> {
-    pub fn new() -> RandSample<Sup> {
-        RandSample { _marker: marker::PhantomData }
-    }
-}
+#[cfg(rustc_1_26)]
+impl<'a, D, R, T> iter::FusedIterator for DistIter<'a, D, R, T>
+    where D: Distribution<T>, R: Rng + 'a {}
+
+#[cfg(features = "nightly")]
+impl<'a, D, R, T> iter::TrustedLen for DistIter<'a, D, R, T>
+    where D: Distribution<T>, R: Rng + 'a {}
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct Standard;
+
+
+
+#[deprecated(since="0.6.0", note="use WeightedIndex instead")]
+#[allow(deprecated)]
 #[derive(Copy, Clone, Debug)]
 pub struct Weighted<T> {
     
@@ -102,32 +389,16 @@ pub struct Weighted<T> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#[deprecated(since="0.6.0", note="use WeightedIndex instead")]
+#[allow(deprecated)]
 #[derive(Debug)]
 pub struct WeightedChoice<'a, T:'a> {
     items: &'a mut [Weighted<T>],
-    weight_range: Range<u32>
+    weight_range: Uniform<u32>,
 }
 
+#[deprecated(since="0.6.0", note="use WeightedIndex instead")]
+#[allow(deprecated)]
 impl<'a, T: Clone> WeightedChoice<'a, T> {
     
     
@@ -157,26 +428,24 @@ impl<'a, T: Clone> WeightedChoice<'a, T> {
         assert!(running_total != 0, "WeightedChoice::new called with a total weight of 0");
 
         WeightedChoice {
-            items: items,
+            items,
             
             
-            weight_range: Range::new(0, running_total)
+            weight_range: Uniform::new(0, running_total)
         }
     }
 }
 
-impl<'a, T: Clone> Sample<T> for WeightedChoice<'a, T> {
-    fn sample<R: Rng>(&mut self, rng: &mut R) -> T { self.ind_sample(rng) }
-}
-
-impl<'a, T: Clone> IndependentSample<T> for WeightedChoice<'a, T> {
-    fn ind_sample<R: Rng>(&self, rng: &mut R) -> T {
+#[deprecated(since="0.6.0", note="use WeightedIndex instead")]
+#[allow(deprecated)]
+impl<'a, T: Clone> Distribution<T> for WeightedChoice<'a, T> {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> T {
         
         
         
 
         
-        let sample_weight = self.weight_range.ind_sample(rng);
+        let sample_weight = self.weight_range.sample(rng);
 
         
         if sample_weight < self.items[0].weight {
@@ -208,111 +477,19 @@ impl<'a, T: Clone> IndependentSample<T> for WeightedChoice<'a, T> {
             }
             modifier /= 2;
         }
-        return self.items[idx + 1].item.clone();
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature="std")]
-#[inline(always)]
-fn ziggurat<R: Rng, P, Z>(
-            rng: &mut R,
-            symmetric: bool,
-            x_tab: ziggurat_tables::ZigTable,
-            f_tab: ziggurat_tables::ZigTable,
-            mut pdf: P,
-            mut zero_case: Z)
-            -> f64 where P: FnMut(f64) -> f64, Z: FnMut(&mut R, f64) -> f64 {
-    const SCALE: f64 = (1u64 << 53) as f64;
-    loop {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let bits: u64 = rng.gen();
-        let i = (bits & 0xff) as usize;
-        let f = (bits >> 11) as f64 / SCALE;
-
-        
-        
-        let u = if symmetric {2.0 * f - 1.0} else {f};
-        let x = u * x_tab[i];
-
-        let test_x = if symmetric { x.abs() } else {x};
-
-        
-        if test_x < x_tab[i + 1] {
-            return x;
-        }
-        if i == 0 {
-            return zero_case(rng, u);
-        }
-        
-        if f_tab[i + 1] + (f_tab[i] - f_tab[i + 1]) * rng.gen::<f64>() < pdf(x) {
-            return x;
-        }
+        self.items[idx + 1].item.clone()
     }
 }
 
 #[cfg(test)]
 mod tests {
-
-    use {Rng, Rand};
-    use super::{RandSample, WeightedChoice, Weighted, Sample, IndependentSample};
-
-    #[derive(PartialEq, Debug)]
-    struct ConstRand(usize);
-    impl Rand for ConstRand {
-        fn rand<R: Rng>(_: &mut R) -> ConstRand {
-            ConstRand(0)
-        }
-    }
-
-    
-    struct CountingRng { i: u32 }
-    impl Rng for CountingRng {
-        fn next_u32(&mut self) -> u32 {
-            self.i += 1;
-            self.i - 1
-        }
-        fn next_u64(&mut self) -> u64 {
-            self.next_u32() as u64
-        }
-    }
+    use rngs::mock::StepRng;
+    #[allow(deprecated)]
+    use super::{WeightedChoice, Weighted, Distribution};
 
     #[test]
-    fn test_rand_sample() {
-        let mut rand_sample = RandSample::<ConstRand>::new();
-
-        assert_eq!(rand_sample.sample(&mut ::test::rng()), ConstRand(0));
-        assert_eq!(rand_sample.ind_sample(&mut ::test::rng()), ConstRand(0));
-    }
-    #[test]
+    #[allow(deprecated)]
     fn test_weighted_choice() {
-        
         
         
         
@@ -320,51 +497,58 @@ mod tests {
         macro_rules! t {
             ($items:expr, $expected:expr) => {{
                 let mut items = $items;
+                let mut total_weight = 0;
+                for item in &items { total_weight += item.weight; }
+
                 let wc = WeightedChoice::new(&mut items);
                 let expected = $expected;
 
-                let mut rng = CountingRng { i: 0 };
+                // Use extremely large steps between the random numbers, because
+                // we test with small ranges and `UniformInt` is designed to prefer
+                // the most significant bits.
+                let mut rng = StepRng::new(0, !0 / (total_weight as u64));
 
                 for &val in expected.iter() {
-                    assert_eq!(wc.ind_sample(&mut rng), val)
+                    assert_eq!(wc.sample(&mut rng), val)
                 }
             }}
         }
 
-        t!(vec!(Weighted { weight: 1, item: 10}), [10]);
+        t!([Weighted { weight: 1, item: 10}], [10]);
 
         
-        t!(vec!(Weighted { weight: 0, item: 20},
-                Weighted { weight: 2, item: 21},
-                Weighted { weight: 0, item: 22},
-                Weighted { weight: 1, item: 23}),
-           [21,21, 23]);
+        t!([Weighted { weight: 0, item: 20},
+            Weighted { weight: 2, item: 21},
+            Weighted { weight: 0, item: 22},
+            Weighted { weight: 1, item: 23}],
+           [21, 21, 23]);
 
         
-        t!(vec!(Weighted { weight: 4, item: 30},
-                Weighted { weight: 3, item: 31}),
-           [30,30,30,30, 31,31,31]);
+        t!([Weighted { weight: 4, item: 30},
+            Weighted { weight: 3, item: 31}],
+           [30, 31, 30, 31, 30, 31, 30]);
 
         
         
         
-        t!(vec!(Weighted { weight: 1, item: 40},
-                Weighted { weight: 1, item: 41},
-                Weighted { weight: 1, item: 42},
-                Weighted { weight: 1, item: 43},
-                Weighted { weight: 1, item: 44}),
+        t!([Weighted { weight: 1, item: 40},
+            Weighted { weight: 1, item: 41},
+            Weighted { weight: 1, item: 42},
+            Weighted { weight: 1, item: 43},
+            Weighted { weight: 1, item: 44}],
            [40, 41, 42, 43, 44]);
-        t!(vec!(Weighted { weight: 1, item: 50},
-                Weighted { weight: 1, item: 51},
-                Weighted { weight: 1, item: 52},
-                Weighted { weight: 1, item: 53},
-                Weighted { weight: 1, item: 54},
-                Weighted { weight: 1, item: 55},
-                Weighted { weight: 1, item: 56}),
-           [50, 51, 52, 53, 54, 55, 56]);
+        t!([Weighted { weight: 1, item: 50},
+            Weighted { weight: 1, item: 51},
+            Weighted { weight: 1, item: 52},
+            Weighted { weight: 1, item: 53},
+            Weighted { weight: 1, item: 54},
+            Weighted { weight: 1, item: 55},
+            Weighted { weight: 1, item: 56}],
+           [50, 54, 51, 55, 52, 56, 53]);
     }
 
     #[test]
+    #[allow(deprecated)]
     fn test_weighted_clone_initialization() {
         let initial : Weighted<u32> = Weighted {weight: 1, item: 1};
         let clone = initial.clone();
@@ -373,6 +557,7 @@ mod tests {
     }
 
     #[test] #[should_panic]
+    #[allow(deprecated)]
     fn test_weighted_clone_change_weight() {
         let initial : Weighted<u32> = Weighted {weight: 1, item: 1};
         let mut clone = initial.clone();
@@ -381,6 +566,7 @@ mod tests {
     }
 
     #[test] #[should_panic]
+    #[allow(deprecated)]
     fn test_weighted_clone_change_item() {
         let initial : Weighted<u32> = Weighted {weight: 1, item: 1};
         let mut clone = initial.clone();
@@ -390,20 +576,33 @@ mod tests {
     }
 
     #[test] #[should_panic]
+    #[allow(deprecated)]
     fn test_weighted_choice_no_items() {
         WeightedChoice::<isize>::new(&mut []);
     }
     #[test] #[should_panic]
+    #[allow(deprecated)]
     fn test_weighted_choice_zero_weight() {
         WeightedChoice::new(&mut [Weighted { weight: 0, item: 0},
                                   Weighted { weight: 0, item: 1}]);
     }
     #[test] #[should_panic]
+    #[allow(deprecated)]
     fn test_weighted_choice_weight_overflows() {
-        let x = ::std::u32::MAX / 2; 
+        let x = ::core::u32::MAX / 2; 
         WeightedChoice::new(&mut [Weighted { weight: x, item: 0 },
                                   Weighted { weight: 1, item: 1 },
                                   Weighted { weight: x, item: 2 },
                                   Weighted { weight: 1, item: 3 }]);
+    }
+
+    #[cfg(feature="std")]
+    #[test]
+    fn test_distributions_iter() {
+        use distributions::Normal;
+        let mut rng = ::test::rng(210);
+        let distr = Normal::new(10.0, 10.0);
+        let results: Vec<_> = distr.sample_iter(&mut rng).take(100).collect();
+        println!("{:?}", results);
     }
 }

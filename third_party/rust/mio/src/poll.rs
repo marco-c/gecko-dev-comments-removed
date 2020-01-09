@@ -1157,6 +1157,8 @@ impl Poll {
         if timeout == Some(Duration::from_millis(0)) {
             
             
+            
+            
         } else if self.readiness_queue.prepare_for_sleep() {
             
             
@@ -2116,6 +2118,13 @@ impl ReadinessQueue {
         
         let mut until = ptr::null_mut();
 
+        if dst.len() == dst.capacity() {
+            
+            
+            
+            self.inner.clear_sleep_marker();
+        }
+
         'outer:
         while dst.len() < dst.capacity() {
             
@@ -2353,6 +2362,37 @@ impl ReadinessQueueInner {
         }
     }
 
+    fn clear_sleep_marker(&self) {
+        let end_marker = self.end_marker();
+        let sleep_marker = self.sleep_marker();
+
+        unsafe {
+            let tail = *self.tail_readiness.get();
+
+            if tail != self.sleep_marker() {
+                return;
+            }
+
+            
+            
+            self.end_marker.next_readiness.store(ptr::null_mut(), Relaxed);
+
+            let actual = self.head_readiness.compare_and_swap(
+                sleep_marker, end_marker, AcqRel);
+
+            debug_assert!(actual != end_marker);
+
+            if actual != sleep_marker {
+                
+                
+                return;
+            }
+
+            
+            *self.tail_readiness.get() = end_marker;
+        }
+    }
+
     
     unsafe fn dequeue_node(&self, until: *mut ReadinessNode) -> Dequeue {
         
@@ -2362,6 +2402,10 @@ impl ReadinessQueueInner {
 
         if tail == self.end_marker() || tail == self.sleep_marker() || tail == self.closed_marker() {
             if next.is_null() {
+                
+                
+                self.clear_sleep_marker();
+
                 return Dequeue::Empty;
             }
 

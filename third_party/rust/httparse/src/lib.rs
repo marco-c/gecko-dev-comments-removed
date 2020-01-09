@@ -1,4 +1,5 @@
-#![cfg_attr(not(feature = "std"),  no_std)]
+#![doc(html_root_url = "https://docs.rs/httparse/1.3.3")]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
 
@@ -11,43 +12,25 @@
 
 
 
-#[cfg(feature = "std")] extern crate std as core;
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "std")]
+extern crate std as core;
 
 use core::{fmt, result, str, slice};
 
 use iter::Bytes;
 
 mod iter;
-
-macro_rules! next {
-    ($bytes:ident) => ({
-        match $bytes.next() {
-            Some(b) => b,
-            None => return Ok(Status::Partial)
-        }
-    })
-}
-
-macro_rules! expect {
-    ($bytes:ident.next() == $pat:pat => $ret:expr) => {
-        expect!(next!($bytes) => $pat |? $ret)
-    };
-    ($e:expr => $pat:pat |? $ret:expr) => {
-        match $e {
-            v@$pat => v,
-            _ => return $ret
-        }
-    };
-}
-
-macro_rules! complete {
-    ($e:expr) => {
-        match try!($e) {
-            Status::Complete(v) => v,
-            Status::Partial => return Ok(Status::Partial)
-        }
-    }
-}
+#[macro_use] mod macros;
+mod simd;
 
 #[inline]
 fn shrink<T>(slice: &mut &mut [T], len: usize) {
@@ -70,10 +53,41 @@ fn shrink<T>(slice: &mut &mut [T], len: usize) {
 fn is_token(b: u8) -> bool {
     b > 0x1F && b < 0x7F
 }
-macro_rules! byte_map {
-    ($($flag:expr,)*) => ([
-        $($flag != 0,)*
-    ])
+
+
+
+
+static URI_MAP: [bool; 256] = byte_map![
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  \0                            \n
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//  commands
+    0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//  \w !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
+//  0  1  2  3  4  5  6  7  8  9  :  ;  <  =  >  ?
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//  @  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1,
+//  P  Q  R  S  T  U  V  W  X  Y  Z  [  \  ]  ^  _
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//  `  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+//  p  q  r  s  t  u  v  w  x  y  z  {  |  }  ~  del
+//   ====== Extended ASCII (aka. obs-text) ======
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
+
+#[inline]
+fn is_uri_token(b: u8) -> bool {
+    URI_MAP[b as usize]
 }
 
 static HEADER_NAME_MAP: [bool; 256] = byte_map![
@@ -101,7 +115,7 @@ fn is_header_name_token(b: u8) -> bool {
 }
 
 static HEADER_VALUE_MAP: [bool; 256] = byte_map![
-    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -123,29 +137,6 @@ static HEADER_VALUE_MAP: [bool; 256] = byte_map![
 #[inline]
 fn is_header_value_token(b: u8) -> bool {
     HEADER_VALUE_MAP[b as usize]
-}
-
-
-macro_rules! space {
-    ($bytes:ident or $err:expr) => ({
-        expect!($bytes.next() == b' ' => Err($err));
-        $bytes.slice();
-    })
-}
-
-macro_rules! newline {
-    ($bytes:ident) => ({
-        match next!($bytes) {
-            b'\r' => {
-                expect!($bytes.next() == b'\n' => Err(Error::NewLine));
-                $bytes.slice();
-            },
-            b'\n' => {
-                $bytes.slice();
-            },
-            _ => return Err(Error::NewLine)
-        }
-    })
 }
 
 
@@ -311,7 +302,7 @@ impl<'h, 'b> Request<'h, 'b> {
         let mut bytes = Bytes::new(buf);
         complete!(skip_empty_lines(&mut bytes));
         self.method = Some(complete!(parse_token(&mut bytes)));
-        self.path = Some(complete!(parse_token(&mut bytes)));
+        self.path = Some(complete!(parse_uri(&mut bytes)));
         self.version = Some(complete!(parse_version(&mut bytes)));
         newline!(bytes);
 
@@ -328,11 +319,13 @@ fn skip_empty_lines(bytes: &mut Bytes) -> Result<()> {
         let b = bytes.peek();
         match b {
             Some(b'\r') => {
-                bytes.bump();
+                
+                unsafe { bytes.bump() };
                 expect!(bytes.next() == b'\n' => Err(Error::NewLine));
             },
             Some(b'\n') => {
-                bytes.bump();
+                
+                unsafe { bytes.bump(); }
             },
             Some(..) => {
                 bytes.slice();
@@ -396,6 +389,7 @@ impl<'h, 'b> Response<'h, 'b> {
             },
             b'\r' => {
                 expect!(bytes.next() == b'\n' => Err(Error::Status));
+                bytes.slice();
                 self.reason = Some("");
             },
             b'\n' => self.reason = Some(""),
@@ -448,10 +442,21 @@ fn parse_version(bytes: &mut Bytes) -> Result<u8> {
             b'1' => 1,
             _ => return Err(Error::Version)
         };
-        Ok(Status::Complete(v))
-    } else {
-        Ok(Status::Partial)
+        return Ok(Status::Complete(v))
     }
+
+    
+
+    
+    
+    expect!(bytes.next() == b'H' => Err(Error::Version));
+    expect!(bytes.next() == b'T' => Err(Error::Version));
+    expect!(bytes.next() == b'T' => Err(Error::Version));
+    expect!(bytes.next() == b'P' => Err(Error::Version));
+    expect!(bytes.next() == b'/' => Err(Error::Version));
+    expect!(bytes.next() == b'1' => Err(Error::Version));
+    expect!(bytes.next() == b'.' => Err(Error::Version));
+    Ok(Status::Partial)
 }
 
 
@@ -509,14 +514,32 @@ fn parse_token<'a>(bytes: &mut Bytes<'a>) -> Result<&'a str> {
 }
 
 #[inline]
+fn parse_uri<'a>(bytes: &mut Bytes<'a>) -> Result<&'a str> {
+    simd::match_uri_vectored(bytes);
+
+    loop {
+        let b = next!(bytes);
+        if b == b' ' {
+            return Ok(Status::Complete(unsafe {
+                
+                str::from_utf8_unchecked(bytes.slice_skip(1))
+            }));
+        } else if !is_uri_token(b) {
+            return Err(Error::Token);
+        }
+    }
+}
+
+
+#[inline]
 fn parse_code(bytes: &mut Bytes) -> Result<u16> {
     let hundreds = expect!(bytes.next() == b'0'...b'9' => Err(Error::Status));
     let tens = expect!(bytes.next() == b'0'...b'9' => Err(Error::Status));
     let ones = expect!(bytes.next() == b'0'...b'9' => Err(Error::Status));
 
     Ok(Status::Complete((hundreds - b'0') as u16 * 100 +
-                        (tens - b'0') as u16 * 10 +
-                        (ones - b'0') as u16))
+        (tens - b'0') as u16 * 10 +
+        (ones - b'0') as u16))
 }
 
 
@@ -543,6 +566,7 @@ pub fn parse_headers<'b: 'h, 'h>(src: &'b [u8], mut dst: &'h mut [Header<'b>])
     let pos = complete!(parse_headers_iter(&mut dst, &mut iter));
     Ok(Status::Complete((pos, dst)))
 }
+
 
 #[inline]
 fn parse_headers_iter<'a, 'b>(headers: &mut &mut [Header<'a>], bytes: &'b mut Bytes<'a>)
@@ -609,7 +633,7 @@ fn parse_headers_iter<'a, 'b>(headers: &mut &mut [Header<'a>], bytes: &'b mut By
 
                 
 
-
+                simd::match_header_value_vectored(bytes);
 
                 macro_rules! check {
                     ($bytes:ident, $i:ident) => ({
@@ -641,17 +665,31 @@ fn parse_headers_iter<'a, 'b>(headers: &mut &mut [Header<'a>], bytes: &'b mut By
             }
 
             
-            if b == b'\r' {
+            let value_slice : &[u8] = if b == b'\r' {
                 expect!(bytes.next() == b'\n' => Err(Error::HeaderValue));
                 count += bytes.pos();
-                header.value = bytes.slice_skip(2);
+                
+                unsafe {
+                    bytes.slice_skip(2)
+                }
             } else if b == b'\n' {
                 count += bytes.pos();
-                header.value = bytes.slice_skip(1);
+                
+                unsafe {
+                    bytes.slice_skip(1)
+                }
             } else {
                 return Err(Error::HeaderValue);
+            };
+            
+            if let Some(last_visible) = value_slice.iter().rposition(|b| *b != b' ' && *b != b'\t' ) {
+                
+                header.value = &value_slice[0..last_visible+1];
+            } else {
+                
+                
+                header.value = value_slice;
             }
-
         }
     } 
 
@@ -672,7 +710,7 @@ fn parse_headers_iter<'a, 'b>(headers: &mut &mut [Header<'a>], bytes: &'b mut By
 
 
 pub fn parse_chunk_size(buf: &[u8])
-        -> result::Result<Status<(usize, u64)>, InvalidChunkSize> {
+    -> result::Result<Status<(usize, u64)>, InvalidChunkSize> {
     const RADIX: u64 = 16;
     let mut bytes = Bytes::new(buf);
     let mut size = 0;
@@ -682,7 +720,7 @@ pub fn parse_chunk_size(buf: &[u8])
     loop {
         let b = next!(bytes);
         match b {
-            b'0'...b'9' if in_chunk_size => {
+            b'0' ... b'9' if in_chunk_size => {
                 if count > 15 {
                     return Err(InvalidChunkSize);
                 }
@@ -690,7 +728,7 @@ pub fn parse_chunk_size(buf: &[u8])
                 size *= RADIX;
                 size += (b - b'0') as u64;
             },
-            b'a'...b'f' if in_chunk_size => {
+            b'a' ... b'f' if in_chunk_size => {
                 if count > 15 {
                     return Err(InvalidChunkSize);
                 }
@@ -698,7 +736,7 @@ pub fn parse_chunk_size(buf: &[u8])
                 size *= RADIX;
                 size += (b + 10 - b'a') as u64;
             }
-            b'A'...b'F' if in_chunk_size => {
+            b'A' ... b'F' if in_chunk_size => {
                 if count > 15 {
                     return Err(InvalidChunkSize);
                 }
@@ -786,6 +824,28 @@ mod tests {
     }
 
     req! {
+        test_request_simple_with_query_params,
+        b"GET /thing?data=a HTTP/1.1\r\n\r\n",
+        |req| {
+            assert_eq!(req.method.unwrap(), "GET");
+            assert_eq!(req.path.unwrap(), "/thing?data=a");
+            assert_eq!(req.version.unwrap(), 1);
+            assert_eq!(req.headers.len(), 0);
+        }
+    }
+
+    req! {
+        test_request_simple_with_whatwg_query_params,
+        b"GET /thing?data=a^ HTTP/1.1\r\n\r\n",
+        |req| {
+            assert_eq!(req.method.unwrap(), "GET");
+            assert_eq!(req.path.unwrap(), "/thing?data=a^");
+            assert_eq!(req.version.unwrap(), 1);
+            assert_eq!(req.headers.len(), 0);
+        }
+    }
+
+    req! {
         test_request_headers,
         b"GET / HTTP/1.1\r\nHost: foo.com\r\nCookie: \r\n\r\n",
         |req| {
@@ -797,6 +857,63 @@ mod tests {
             assert_eq!(req.headers[0].value, b"foo.com");
             assert_eq!(req.headers[1].name, "Cookie");
             assert_eq!(req.headers[1].value, b"");
+        }
+    }
+
+    req! {
+        test_request_headers_optional_whitespace,
+        b"GET / HTTP/1.1\r\nHost: \tfoo.com\t \r\nCookie: \t \r\n\r\n",
+        |req| {
+            assert_eq!(req.method.unwrap(), "GET");
+            assert_eq!(req.path.unwrap(), "/");
+            assert_eq!(req.version.unwrap(), 1);
+            assert_eq!(req.headers.len(), 2);
+            assert_eq!(req.headers[0].name, "Host");
+            assert_eq!(req.headers[0].value, b"foo.com");
+            assert_eq!(req.headers[1].name, "Cookie");
+            assert_eq!(req.headers[1].value, b"");
+        }
+    }
+
+    req! {
+        // test the scalar parsing
+        test_request_header_value_htab_short,
+        b"GET / HTTP/1.1\r\nUser-Agent: some\tagent\r\n\r\n",
+        |req| {
+            assert_eq!(req.method.unwrap(), "GET");
+            assert_eq!(req.path.unwrap(), "/");
+            assert_eq!(req.version.unwrap(), 1);
+            assert_eq!(req.headers.len(), 1);
+            assert_eq!(req.headers[0].name, "User-Agent");
+            assert_eq!(req.headers[0].value, b"some\tagent");
+        }
+    }
+
+    req! {
+        // test the sse42 parsing
+        test_request_header_value_htab_med,
+        b"GET / HTTP/1.1\r\nUser-Agent: 1234567890some\tagent\r\n\r\n",
+        |req| {
+            assert_eq!(req.method.unwrap(), "GET");
+            assert_eq!(req.path.unwrap(), "/");
+            assert_eq!(req.version.unwrap(), 1);
+            assert_eq!(req.headers.len(), 1);
+            assert_eq!(req.headers[0].name, "User-Agent");
+            assert_eq!(req.headers[0].value, b"1234567890some\tagent");
+        }
+    }
+
+    req! {
+        // test the avx2 parsing
+        test_request_header_value_htab_long,
+        b"GET / HTTP/1.1\r\nUser-Agent: 1234567890some\t1234567890agent1234567890\r\n\r\n",
+        |req| {
+            assert_eq!(req.method.unwrap(), "GET");
+            assert_eq!(req.path.unwrap(), "/");
+            assert_eq!(req.version.unwrap(), 1);
+            assert_eq!(req.headers.len(), 1);
+            assert_eq!(req.headers[0].name, "User-Agent");
+            assert_eq!(req.headers[0].value, &b"1234567890some\t1234567890agent1234567890"[..]);
         }
     }
 
@@ -826,6 +943,12 @@ mod tests {
     req! {
         test_request_partial,
         b"GET / HTTP/1.1\r\n\r", Ok(Status::Partial),
+        |_req| {}
+    }
+
+    req! {
+        test_request_partial_version,
+        b"GET / HTTP/1.", Ok(Status::Partial),
         |_req| {}
     }
 
@@ -861,6 +984,14 @@ mod tests {
         test_request_with_invalid_token_delimiter,
         b"GET\n/ HTTP/1.1\r\nHost: foo.bar\r\n\r\n",
         Err(::Error::Token),
+        |_r| {}
+    }
+
+
+    req! {
+        test_request_with_invalid_but_short_version,
+        b"GET / HTTP/1!",
+        Err(::Error::Version),
         |_r| {}
     }
 
@@ -917,6 +1048,19 @@ mod tests {
             assert_eq!(res.version.unwrap(), 1);
             assert_eq!(res.code.unwrap(), 200);
             assert_eq!(res.reason.unwrap(), "");
+        }
+    }
+
+    res! {
+        test_response_reason_missing_no_space_with_headers,
+        b"HTTP/1.1 200\r\nFoo: bar\r\n\r\n",
+        |res| {
+            assert_eq!(res.version.unwrap(), 1);
+            assert_eq!(res.code.unwrap(), 200);
+            assert_eq!(res.reason.unwrap(), "");
+            assert_eq!(res.headers.len(), 1);
+            assert_eq!(res.headers[0].name, "Foo");
+            assert_eq!(res.headers[0].value, b"bar");
         }
     }
 

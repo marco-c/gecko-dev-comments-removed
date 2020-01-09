@@ -1,3 +1,6 @@
+#![doc(html_root_url = "https://docs.rs/mio/0.6.16")]
+#![deny(missing_docs, missing_debug_implementations)]
+#![cfg_attr(test, deny(warnings))]
 
 
 
@@ -90,10 +93,6 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/mio/0.6.15")]
-#![crate_name = "mio"]
-
-#![deny(warnings, missing_docs, missing_debug_implementations)]
 
 extern crate lazycell;
 extern crate net2;
