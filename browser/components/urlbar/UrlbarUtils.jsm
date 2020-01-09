@@ -128,10 +128,6 @@ var UrlbarUtils = {
   },
 
   
-  
-  MAX_TEXT_LENGTH: 255,
-
-  
 
 
 
