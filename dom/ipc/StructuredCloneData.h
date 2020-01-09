@@ -30,7 +30,7 @@ class PBackgroundParent;
 namespace dom {
 
 class nsIContentChild;
-class nsIContentParent;
+class ContentParent;
 
 namespace ipc {
 
@@ -181,7 +181,7 @@ class StructuredCloneData : public StructuredCloneHolder {
   
   
   
-  bool BuildClonedMessageDataForParent(nsIContentParent* aParent,
+  bool BuildClonedMessageDataForParent(ContentParent* aParent,
                                        ClonedMessageData& aClonedData);
   bool BuildClonedMessageDataForChild(nsIContentChild* aChild,
                                       ClonedMessageData& aClonedData);
