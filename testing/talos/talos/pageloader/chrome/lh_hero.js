@@ -3,7 +3,7 @@
 
 
 
-function _contentHeroHandler() {
+function _contentHeroHandler(isload) {
   var obs = null;
   var el = content.window.document.querySelector("[elementtiming]");
   if (el) {
@@ -24,11 +24,20 @@ function _contentHeroHandler() {
       sendAsyncMessage("PageLoader:Error", {"msg": err.message});
     }
   } else {
+    
+    dumpLine("no hero, isload = " + isload);
+    if (isload) {
+      setTimeout(function() {_contentHeroHandler(false); }, 5000);
+    } else {
       var err = "Could not find a tag with an elmenttiming attr on the page";
       sendAsyncMessage("PageLoader:Error", {"msg": err});
+    }
   }
   return obs;
 }
 
+function _contentHeroLoadHandler() {
+  _contentHeroHandler(true);
+}
 
-addEventListener("load", contentLoadHandlerCallback(_contentHeroHandler), true); 
+addEventListener("load", contentLoadHandlerCallback(_contentHeroLoadHandler), true); 
