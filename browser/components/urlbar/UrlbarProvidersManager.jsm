@@ -237,9 +237,10 @@ class Query {
       if (this.canceled) {
         break;
       }
-      if (this._providerHasAcceptableSources(provider)) {
-        promises.push(provider.startQuery(this.context, this.add.bind(this)));
-      }
+      
+      
+      
+      promises.push(provider.startQuery(this.context, this.add.bind(this)));
     }
 
     

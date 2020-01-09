@@ -557,6 +557,12 @@ class UrlbarInput {
     
     this.selectionStart = -1;
 
+    
+    
+    
+    
+    
+    
     let event = this.document.createEvent("UIEvents");
     event.initUIEvent("input", true, false, this.window, 0);
     this.inputField.dispatchEvent(event);
