@@ -358,10 +358,13 @@ class FirefoxBrowser(Browser):
         if self.lsan_handler:
             self.lsan_handler.process()
         if self.leak_report_file is not None:
+            
+            
+            
             mozleak.process_leak_log(
                 self.leak_report_file,
                 leak_thresholds=self.mozleak_thresholds,
-                ignore_missing_leaks=["gmplugin"],
+                ignore_missing_leaks=["tab", "gmplugin"],
                 log=self.logger,
                 stack_fixer=self.stack_fixer,
                 scope=self.group_metadata.get("scope"),
