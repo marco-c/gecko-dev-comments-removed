@@ -248,6 +248,7 @@ class EventTarget : public nsISupports, public nsWrapperCache {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) = 0;
 
  protected:
