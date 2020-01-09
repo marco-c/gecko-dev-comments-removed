@@ -11,8 +11,12 @@ const {PanelMultiView} = ChromeUtils.import("resource:///modules/PanelMultiView.
 
 let gAnchor;
 let gPanel;
+let gPanelMultiView;
 let gMainView;
 let gMainButton;
+let gMainSubButton;
+let gSubView;
+let gSubButton;
 
 add_task(async function setup() {
   let navBar = document.getElementById("nav-bar");
@@ -20,22 +24,32 @@ add_task(async function setup() {
   
   gAnchor.style["-moz-user-focus"] = "normal";
   navBar.appendChild(gAnchor);
-  gPanel = document.createXULElement("panel");
-  navBar.appendChild(gPanel);
-  let panelMultiView = document.createXULElement("panelmultiview");
-  panelMultiView.setAttribute("mainViewId", "testMainView");
-  gPanel.appendChild(panelMultiView);
-  gMainView = document.createXULElement("panelview");
-  gMainView.id = "testMainView";
-  panelMultiView.appendChild(gMainView);
-  gMainButton = document.createXULElement("button");
-  gMainView.appendChild(gMainButton);
-
   let onPress = event => PanelMultiView.openPopup(gPanel, gAnchor, {
     triggerEvent: event,
   });
   gAnchor.addEventListener("keypress", onPress);
   gAnchor.addEventListener("click", onPress);
+  gPanel = document.createXULElement("panel");
+  navBar.appendChild(gPanel);
+  gPanelMultiView = document.createXULElement("panelmultiview");
+  gPanelMultiView.setAttribute("mainViewId", "testMainView");
+  gPanel.appendChild(gPanelMultiView);
+
+  gMainView = document.createXULElement("panelview");
+  gMainView.id = "testMainView";
+  gPanelMultiView.appendChild(gMainView);
+  gMainButton = document.createXULElement("button");
+  gMainView.appendChild(gMainButton);
+  gMainSubButton = document.createXULElement("button");
+  gMainView.appendChild(gMainSubButton);
+  gMainSubButton.addEventListener("command", () =>
+      gPanelMultiView.showSubView("testSubView", gMainSubButton));
+
+  gSubView = document.createXULElement("panelview");
+  gSubView.id = "testSubView";
+  gPanelMultiView.appendChild(gSubView);
+  gSubButton = document.createXULElement("button");
+  gSubView.appendChild(gSubButton);
 
   registerCleanupFunction(() => {
     gAnchor.remove();
@@ -61,6 +75,59 @@ add_task(async function testMainViewByClick() {
     () => gAnchor.click());
   Assert.notEqual(document.activeElement, gMainButton,
     "Focus not on button in main view");
+  await gCUITestUtils.hidePanelMultiView(gPanel,
+    () => PanelMultiView.hidePopup(gPanel));
+});
+
+
+
+add_task(async function testSubViewByKeypress() {
+  await gCUITestUtils.openPanelMultiView(gPanel, gMainView,
+    () => gAnchor.click());
+  while (document.activeElement != gMainSubButton) {
+    EventUtils.synthesizeKey("KEY_Tab", {shiftKey: true});
+  }
+  let shown = BrowserTestUtils.waitForEvent(gSubView, "ViewShown");
+  EventUtils.synthesizeKey(" ");
+  await shown;
+  Assert.equal(document.activeElement, gSubButton,
+    "Focus on first button after Back button in subview");
+  await gCUITestUtils.hidePanelMultiView(gPanel,
+    () => PanelMultiView.hidePopup(gPanel));
+});
+
+
+
+add_task(async function testSubViewByClick() {
+  await gCUITestUtils.openPanelMultiView(gPanel, gMainView,
+    () => gAnchor.click());
+  let shown = BrowserTestUtils.waitForEvent(gSubView, "ViewShown");
+  gMainSubButton.click();
+  await shown;
+  let backButton = gSubView.querySelector(".subviewbutton-back");
+  Assert.notEqual(document.activeElement, backButton,
+    "Focus not on Back button in subview");
+  Assert.notEqual(document.activeElement, gSubButton,
+    "Focus not on button after Back button in subview");
+  await gCUITestUtils.hidePanelMultiView(gPanel,
+    () => PanelMultiView.hidePopup(gPanel));
+});
+
+
+add_task(async function testBackRestoresFocus() {
+  await gCUITestUtils.openPanelMultiView(gPanel, gMainView,
+    () => gAnchor.click());
+  while (document.activeElement != gMainSubButton) {
+    EventUtils.synthesizeKey("KEY_Tab", {shiftKey: true});
+  }
+  let shown = BrowserTestUtils.waitForEvent(gSubView, "ViewShown");
+  EventUtils.synthesizeKey(" ");
+  await shown;
+  shown = BrowserTestUtils.waitForEvent(gMainView, "ViewShown");
+  EventUtils.synthesizeKey("KEY_ArrowLeft");
+  await shown;
+  Assert.equal(document.activeElement, gMainSubButton,
+    "Focus on sub button in main view");
   await gCUITestUtils.hidePanelMultiView(gPanel,
     () => PanelMultiView.hidePopup(gPanel));
 });

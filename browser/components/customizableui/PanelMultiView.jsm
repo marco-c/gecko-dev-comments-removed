@@ -647,6 +647,10 @@ var PanelMultiView = class extends AssociatedToNode {
     
     
     
+    let doingKeyboardActivation = prevPanelView._doingKeyboardActivation;
+    
+    
+    
     prevPanelView.active = false;
 
     
@@ -692,6 +696,7 @@ var PanelMultiView = class extends AssociatedToNode {
       }
     }
 
+    nextPanelView.focusWhenActive = doingKeyboardActivation;
     this._activateView(nextPanelView);
   }
 
@@ -814,7 +819,7 @@ var PanelMultiView = class extends AssociatedToNode {
     if (panelView.isOpenIn(this)) {
       panelView.active = true;
       if (panelView.focusWhenActive) {
-        panelView.focusFirstNavigableElement();
+        panelView.focusFirstNavigableElement(false, true);
         panelView.focusWhenActive = false;
       }
       panelView.dispatchCustomEvent("ViewShown");
@@ -1482,12 +1487,18 @@ var PanelView = class extends AssociatedToNode {
 
 
 
-  focusFirstNavigableElement(homeKey = false) {
+
+  focusFirstNavigableElement(homeKey = false, skipBack = false) {
     
     let walker = homeKey ?
       this._arrowNavigableWalker : this._tabNavigableWalker;
     walker.currentNode = walker.root;
     this.selectedElement = walker.firstChild();
+    if (skipBack && walker.currentNode
+        && walker.currentNode.classList.contains("subviewbutton-back")
+        && walker.nextNode()) {
+      this.selectedElement = walker.currentNode;
+    }
     this.focusSelectedElement();
   }
 
@@ -1642,6 +1653,7 @@ var PanelView = class extends AssociatedToNode {
           break;
         stop();
 
+        this._doingKeyboardActivation = true;
         
         
         
@@ -1650,6 +1662,7 @@ var PanelView = class extends AssociatedToNode {
         button.doCommand();
         let clickEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
         button.dispatchEvent(clickEvent);
+        this._doingKeyboardActivation = false;
         break;
       }
     }
