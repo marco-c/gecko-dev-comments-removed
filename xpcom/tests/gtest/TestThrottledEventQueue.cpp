@@ -122,7 +122,8 @@ TEST(ThrottledEventQueue, SimpleDispatch)
   string log;
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 1");
 
   Enqueue(throttled, [&]() { log += 'a'; });
   ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
@@ -137,7 +138,8 @@ TEST(ThrottledEventQueue, MixedDispatch)
   string log;
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 2");
 
   
   
@@ -182,7 +184,8 @@ TEST(ThrottledEventQueue, EnqueueFromRun)
   string log;
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 3");
 
   
   
@@ -207,7 +210,8 @@ TEST(ThrottledEventQueue, RunFromRun)
   string log;
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 4");
 
   
   
@@ -236,7 +240,8 @@ TEST(ThrottledEventQueue, DropWhileRunning)
 
   
   {
-    RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+    RefPtr<ThrottledEventQueue> throttled =
+        ThrottledEventQueue::Create(base, "test queue 5");
     Enqueue(throttled, [&]() { log += 'a'; });
   }
 
@@ -255,7 +260,8 @@ TEST(ThrottledEventQueue, AwaitIdle)
   bool runnableFinished = false;  
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 6");
 
   
   Enqueue(throttled, [&]() { runnableFinished = true; });
@@ -318,7 +324,8 @@ TEST(ThrottledEventQueue, AwaitIdleMixed)
   bool threadFinished = false;
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 7");
 
   Enqueue(throttled, [&]() {
     MutexAutoLock lock(mutex);
@@ -397,7 +404,8 @@ TEST(ThrottledEventQueue, SimplePauseResume)
   string log;
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 8");
 
   ASSERT_FALSE(throttled->IsPaused());
 
@@ -432,7 +440,8 @@ TEST(ThrottledEventQueue, MixedPauseResume)
   string log;
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 9");
 
   ASSERT_FALSE(throttled->IsPaused());
 
@@ -477,7 +486,8 @@ TEST(ThrottledEventQueue, AwaitIdlePaused)
   bool runnableFinished = false;  
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 10");
 
   ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(true)));
 
@@ -545,7 +555,8 @@ TEST(ThrottledEventQueue, ExecutorTransitions)
   string log;
 
   auto base = MakeRefPtr<RunnableQueue>();
-  RefPtr<ThrottledEventQueue> throttled = ThrottledEventQueue::Create(base);
+  RefPtr<ThrottledEventQueue> throttled =
+      ThrottledEventQueue::Create(base, "test queue 11");
 
   ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(true)));
 
