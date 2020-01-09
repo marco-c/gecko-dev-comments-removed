@@ -72,26 +72,6 @@ class MediaEngineSourceInterface {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual bool RequiresSharing() const = 0;
-
-  
-
-
-
   virtual bool IsFake() const = 0;
 
   
@@ -289,9 +269,6 @@ class MediaEngineSource : public MediaEngineSourceInterface {
   void AssertIsOnOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(MediaEngineSource);
   }
-
-  
-  bool RequiresSharing() const override;
 
   
   bool IsFake() const override;
