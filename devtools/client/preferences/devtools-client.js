@@ -343,7 +343,7 @@ pref("devtools.responsive.showUserAgentInput", false);
 #endif
 
 
-pref("devtools.aboutdebugging.new-enabled", false);
+pref("devtools.aboutdebugging.new-enabled", true);
 
 
 #ifdef MOZILLA_OFFICIAL
