@@ -32,8 +32,6 @@ static NS_DEFINE_CID(kPrefServiceCID, NS_PREFSERVICE_CID);
 static const char kCookiesPermissions[] = "network.cookie.cookieBehavior";
 static const char kPrefCookieQuotaPerHost[] = "network.cookie.quotaPerHost";
 static const char kCookiesMaxPerHost[] = "network.cookie.maxPerHost";
-static const char kCookieLeaveSecurityAlone[] =
-    "network.cookie.leave-secure-alone";
 
 #define OFFSET_ONE_WEEK int64_t(604800) * PR_USEC_PER_SEC
 #define OFFSET_ONE_DAY int64_t(86400) * PR_USEC_PER_SEC
@@ -176,7 +174,6 @@ void InitPrefs(nsIPrefBranch *aPrefBranch) {
   
   
   aPrefBranch->SetIntPref(kCookiesPermissions, 0);  
-  aPrefBranch->SetBoolPref(kCookieLeaveSecurityAlone, true);
   
   
   aPrefBranch->SetIntPref(kPrefCookieQuotaPerHost, 49);
@@ -980,8 +977,6 @@ TEST(TestCookie, TestCookieMain) {
   GetACookie(cookieService, "http://creation.ordering.tests/", nullptr, cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, expected.get()));
 
-  
-  
   cookieMgr->RemoveAll();
 
   for (int32_t i = 0; i < 60; ++i) {

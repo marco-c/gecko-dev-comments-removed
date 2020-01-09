@@ -134,8 +134,6 @@ static const char kPrefThirdPartySession[] =
     "network.cookie.thirdparty.sessionOnly";
 static const char kPrefThirdPartyNonsecureSession[] =
     "network.cookie.thirdparty.nonsecureSessionOnly";
-static const char kCookieLeaveSecurityAlone[] =
-    "network.cookie.leave-secure-alone";
 
 
 #define BLOCKED_SECURE_SET_FROM_HTTP 0
@@ -601,7 +599,6 @@ nsCookieService::nsCookieService()
       mCookieBehavior(nsICookieService::BEHAVIOR_ACCEPT),
       mThirdPartySession(false),
       mThirdPartyNonsecureSession(false),
-      mLeaveSecureAlone(true),
       mMaxNumberOfCookies(kMaxNumberOfCookies),
       mMaxCookiesPerHost(kMaxCookiesPerHost),
       mCookieQuotaPerHost(kCookieQuotaPerHost),
@@ -631,7 +628,6 @@ nsresult nsCookieService::Init() {
     prefBranch->AddObserver(kPrefCookiePurgeAge, this, true);
     prefBranch->AddObserver(kPrefThirdPartySession, this, true);
     prefBranch->AddObserver(kPrefThirdPartyNonsecureSession, this, true);
-    prefBranch->AddObserver(kCookieLeaveSecurityAlone, this, true);
     PrefChanged(prefBranch);
   }
 
@@ -2403,10 +2399,6 @@ void nsCookieService::PrefChanged(nsIPrefBranch *aPrefBranch) {
   if (NS_SUCCEEDED(
           aPrefBranch->GetBoolPref(kPrefThirdPartyNonsecureSession, &boolval)))
     mThirdPartyNonsecureSession = boolval;
-
-  if (NS_SUCCEEDED(
-          aPrefBranch->GetBoolPref(kCookieLeaveSecurityAlone, &boolval)))
-    mLeaveSecureAlone = boolval;
 }
 
 
@@ -3239,8 +3231,7 @@ bool nsCookieService::CanSetCookie(nsIURI *aHostURI, const nsCookieKey &aKey,
                                    bool aRequireHostMatch, CookieStatus aStatus,
                                    nsDependentCString &aCookieHeader,
                                    int64_t aServerTime, bool aFromHttp,
-                                   nsIChannel *aChannel, bool aLeaveSecureAlone,
-                                   bool &aSetCookie,
+                                   nsIChannel *aChannel, bool &aSetCookie,
                                    mozIThirdPartyUtil *aThirdPartyUtil) {
   NS_ASSERTION(aHostURI, "null host!");
 
@@ -3373,7 +3364,7 @@ bool nsCookieService::CanSetCookie(nsIURI *aHostURI, const nsCookieKey &aKey,
   
   
   
-  if (aLeaveSecureAlone && aCookieAttributes.isSecure && !isSecure) {
+  if (aCookieAttributes.isSecure && !isSecure) {
     COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
                       "non-https cookie can't set secure flag");
     Telemetry::Accumulate(Telemetry::COOKIE_LEAVE_SECURE_ALONE,
@@ -3427,7 +3418,7 @@ bool nsCookieService::SetCookieInternal(nsIURI *aHostURI,
   bool newCookie =
       CanSetCookie(aHostURI, aKey, cookieAttributes, aRequireHostMatch, aStatus,
                    aCookieHeader, aServerTime, aFromHttp, aChannel,
-                   mLeaveSecureAlone, canSetCookie, mThirdPartyUtil);
+                   canSetCookie, mThirdPartyUtil);
 
   if (!canSetCookie) {
     return newCookie;
@@ -3498,41 +3489,39 @@ void nsCookieService::AddInternal(const nsCookieKey &aKey, nsCookie *aCookie,
     isSecure = false;
   }
   bool oldCookieIsSession = false;
-  if (mLeaveSecureAlone) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!aCookie->IsSecure() &&
-        (foundSecureExact || FindSecureCookie(aKey, aCookie))) {
-      if (!isSecure) {
-        COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
-                          "cookie can't save because older cookie is secure "
-                          "cookie but newer cookie is non-secure cookie");
-        if (foundSecureExact) {
-          Telemetry::Accumulate(Telemetry::COOKIE_LEAVE_SECURE_ALONE,
-                                BLOCKED_DOWNGRADE_SECURE_EXACT);
-        } else {
-          Telemetry::Accumulate(Telemetry::COOKIE_LEAVE_SECURE_ALONE,
-                                BLOCKED_DOWNGRADE_SECURE_INEXACT);
-        }
-        return;
-      }
-      
-      
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aCookie->IsSecure() &&
+      (foundSecureExact || FindSecureCookie(aKey, aCookie))) {
+    if (!isSecure) {
+      COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
+                        "cookie can't save because older cookie is secure "
+                        "cookie but newer cookie is non-secure cookie");
       if (foundSecureExact) {
         Telemetry::Accumulate(Telemetry::COOKIE_LEAVE_SECURE_ALONE,
-                              DOWNGRADE_SECURE_FROM_SECURE_EXACT);
+                              BLOCKED_DOWNGRADE_SECURE_EXACT);
       } else {
         Telemetry::Accumulate(Telemetry::COOKIE_LEAVE_SECURE_ALONE,
-                              DOWNGRADE_SECURE_FROM_SECURE_INEXACT);
+                              BLOCKED_DOWNGRADE_SECURE_INEXACT);
       }
+      return;
+    }
+    
+    
+    if (foundSecureExact) {
+      Telemetry::Accumulate(Telemetry::COOKIE_LEAVE_SECURE_ALONE,
+                            DOWNGRADE_SECURE_FROM_SECURE_EXACT);
+    } else {
+      Telemetry::Accumulate(Telemetry::COOKIE_LEAVE_SECURE_ALONE,
+                            DOWNGRADE_SECURE_FROM_SECURE_INEXACT);
     }
   }
 
@@ -3624,16 +3613,12 @@ void nsCookieService::AddInternal(const nsCookieKey &aKey, nsCookie *aCookie,
       nsTArray<nsListIter> removedIterList;
       
       
-      mozilla::Maybe<bool> optionalSecurity =
-          mLeaveSecureAlone ? Some(false) : Nothing();
       uint32_t limit = mMaxCookiesPerHost - mCookieQuotaPerHost;
-      FindStaleCookies(entry, currentTime, optionalSecurity, removedIterList,
-                       limit);
+      FindStaleCookies(entry, currentTime, false, removedIterList, limit);
       if (removedIterList.Length() == 0) {
         if (aCookie->IsSecure()) {
           
-          FindStaleCookies(entry, currentTime, Some(true), removedIterList,
-                           limit);
+          FindStaleCookies(entry, currentTime, true, removedIterList, limit);
         } else {
           Telemetry::Accumulate(Telemetry::COOKIE_LEAVE_SECURE_ALONE,
                                 EVICTING_SECURE_BLOCKED);
@@ -3651,7 +3636,7 @@ void nsCookieService::AddInternal(const nsCookieKey &aKey, nsCookie *aCookie,
       for (auto it = removedIterList.rbegin(); it != removedIterList.rend();
            it++) {
         RefPtr<nsCookie> evictedCookie = (*it).Cookie();
-        if (mLeaveSecureAlone && evictedCookie->Expiry() <= currentTime) {
+        if (evictedCookie->Expiry() <= currentTime) {
           TelemetryForEvictingStaleCookie(evictedCookie,
                                           evictedCookie->LastAccessed());
         }
@@ -4571,8 +4556,7 @@ class CookieIterComparator {
 
 
 void nsCookieService::FindStaleCookies(nsCookieEntry *aEntry,
-                                       int64_t aCurrentTime,
-                                       const mozilla::Maybe<bool> &aIsSecure,
+                                       int64_t aCurrentTime, bool aIsSecure,
                                        nsTArray<nsListIter> &aOutput,
                                        uint32_t aLimit) {
   MOZ_ASSERT(aLimit);
@@ -4591,7 +4575,7 @@ void nsCookieService::FindStaleCookies(nsCookieEntry *aEntry,
       continue;
     }
 
-    if (aIsSecure.isSome() && !aIsSecure.value()) {
+    if (!aIsSecure) {
       
       
       if (cookie->IsSecure()) {

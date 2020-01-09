@@ -1444,9 +1444,6 @@ pref("privacy.firstparty.isolate.restrict_opener_access", true);
 pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
 
 
-pref("privacy.resistFingerprinting.jsmloglevel", "Warn");
-
-
 
 pref("privacy.reduceTimerPrecision", true);
 
@@ -2375,7 +2372,6 @@ pref("network.proxy.failover_timeout",      1800);
 pref("network.online",                      true); 
 pref("network.cookie.thirdparty.sessionOnly", false);
 pref("network.cookie.thirdparty.nonsecureSessionOnly", false);
-pref("network.cookie.leave-secure-alone",   true);
 pref("network.cookie.same-site.enabled",    true); 
 
 
