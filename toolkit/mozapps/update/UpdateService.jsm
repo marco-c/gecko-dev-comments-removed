@@ -277,13 +277,15 @@ function testWriteAccess(updateTestFile, createDirectory) {
 
 
 function closeHandle(handle) {
-  let lib = ctypes.open("kernel32.dll");
-  let CloseHandle = lib.declare("CloseHandle",
-                                ctypes.winapi_abi,
-                                ctypes.int32_t, 
-                                ctypes.void_t.ptr); 
-  CloseHandle(handle);
-  lib.close();
+  if (handle) {
+    let lib = ctypes.open("kernel32.dll");
+    let CloseHandle = lib.declare("CloseHandle",
+                                  ctypes.winapi_abi,
+                                  ctypes.int32_t, 
+                                  ctypes.void_t.ptr); 
+    CloseHandle(handle);
+    lib.close();
+  }
 }
 
 
@@ -1967,6 +1969,7 @@ UpdateService.prototype = {
           
           
           closeHandle(gUpdateMutexHandle);
+          gUpdateMutexHandle = null;
         }
         if (this._retryTimer) {
           this._retryTimer.cancel();
