@@ -122,4 +122,11 @@ enum class JSSamplingFlags {
   TraceLogging = 0x4
 };
 
+
+void profiler_received_exit_profile(const nsCString& aExitProfile);
+
+
+
+nsTArray<nsCString> profiler_move_exit_profiles();
+
 #endif 
