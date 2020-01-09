@@ -334,12 +334,6 @@ nscoord nsLeafBoxFrame::GetXULBoxAscent(nsBoxLayoutState& aState) {
   return nsBox::GetXULBoxAscent(aState);
 }
 
-
-void nsLeafBoxFrame::MarkIntrinsicISizesDirty() {
-  
-  
-}
-
 NS_IMETHODIMP
 nsLeafBoxFrame::DoXULLayout(nsBoxLayoutState& aState) {
   return nsBox::DoXULLayout(aState);

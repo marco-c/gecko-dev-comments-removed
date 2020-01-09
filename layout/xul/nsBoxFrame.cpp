@@ -858,8 +858,7 @@ void nsBoxFrame::MarkIntrinsicISizesDirty() {
     mLayoutManager->IntrinsicISizesDirty(this, state);
   }
 
-  
-  
+  nsContainerFrame::MarkIntrinsicISizesDirty();
 }
 
 void nsBoxFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
