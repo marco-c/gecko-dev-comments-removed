@@ -4,10 +4,10 @@
 
 
 
-#ifndef mozilla_dom_ipc_PendingIPCBlobParent_h
-#define mozilla_dom_ipc_PendingIPCBlobParent_h
+#ifndef mozilla_dom_PendingIPCBlobParent_h
+#define mozilla_dom_PendingIPCBlobParent_h
 
-#include "mozilla/ipc/PPendingIPCBlobParent.h"
+#include "mozilla/dom/PPendingIPCBlobParent.h"
 
 namespace mozilla {
 
@@ -19,7 +19,7 @@ namespace dom {
 
 class BlobImpl;
 
-class PendingIPCBlobParent final : public mozilla::ipc::PPendingIPCBlobParent {
+class PendingIPCBlobParent final : public PPendingIPCBlobParent {
  public:
   static PendingIPCBlobParent* Create(PBackgroundParent* aManager,
                                       BlobImpl* aBlobImpl);
