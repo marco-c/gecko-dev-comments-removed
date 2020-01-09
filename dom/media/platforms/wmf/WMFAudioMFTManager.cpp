@@ -256,6 +256,18 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
     return E_FAIL;
   }
 
+  UINT32 discontinuity = false;
+  sample->GetUINT32(MFSampleExtension_Discontinuity, &discontinuity);
+  if (mFirstFrame || discontinuity) {
+    
+    
+    
+    
+    hr = UpdateOutputType();
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+    mFirstFrame = false;
+  }
+
   TimeUnit pts = GetSampleTime(sample);
   NS_ENSURE_TRUE(pts.IsValid(), E_FAIL);
 
