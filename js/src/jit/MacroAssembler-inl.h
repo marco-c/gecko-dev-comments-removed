@@ -607,6 +607,21 @@ void MacroAssembler::branchTestNeedsIncrementalBarrier(Condition cond,
   branchTest32(cond, AbsoluteAddress(needsBarrierAddr), Imm32(0x1), label);
 }
 
+void MacroAssembler::branchTestNeedsIncrementalBarrierAnyZone(
+    Condition cond, Label* label, Register scratch) {
+  MOZ_ASSERT(cond == Zero || cond == NonZero);
+  if (GetJitContext()->realm) {
+    branchTestNeedsIncrementalBarrier(cond, label);
+  } else {
+    
+    
+    loadPtr(AbsoluteAddress(GetJitContext()->runtime->addressOfZone()),
+            scratch);
+    Address needsBarrierAddr(scratch, Zone::offsetOfNeedsIncrementalBarrier());
+    branchTest32(cond, needsBarrierAddr, Imm32(0x1), label);
+  }
+}
+
 void MacroAssembler::branchTestMagicValue(Condition cond,
                                           const ValueOperand& val,
                                           JSWhyMagic why, Label* label) {

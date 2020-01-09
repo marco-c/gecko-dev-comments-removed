@@ -843,6 +843,7 @@ struct JSContext : public JS::RootingContext,
   void* addressOfJitStackLimitNoInterrupt() {
     return &jitStackLimitNoInterrupt;
   }
+  void* addressOfZone() { return &zone_; }
 
   
   
