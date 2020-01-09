@@ -117,18 +117,6 @@ nsresult GetClearResetOriginParams(nsIPrincipal* aPrincipal,
   return NS_OK;
 }
 
-class AbortOperationsRunnable final : public Runnable {
-  ContentParentId mContentParentId;
-
- public:
-  explicit AbortOperationsRunnable(ContentParentId aContentParentId)
-      : Runnable("dom::quota::AbortOperationsRunnable"),
-        mContentParentId(aContentParentId) {}
-
- private:
-  NS_DECL_NSIRUNNABLE
-};
-
 }  
 
 class QuotaManagerService::PendingRequestInfo {
@@ -240,35 +228,20 @@ void QuotaManagerService::ClearBackgroundActor() {
   mBackgroundActor = nullptr;
 }
 
-void QuotaManagerService::NoteLiveManager(QuotaManager* aManager) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aManager);
-
-  mBackgroundThread = aManager->OwningThread();
-}
-
-void QuotaManagerService::NoteShuttingDownManager() {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
-
-  mBackgroundThread = nullptr;
-}
-
 void QuotaManagerService::AbortOperationsForProcess(
     ContentParentId aContentParentId) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!mBackgroundThread) {
+  nsresult rv = EnsureBackgroundActor();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
 
-  RefPtr<AbortOperationsRunnable> runnable =
-      new AbortOperationsRunnable(aContentParentId);
-
-  MOZ_ALWAYS_SUCCEEDS(
-      mBackgroundThread->Dispatch(runnable, NS_DISPATCH_NORMAL));
+  if (NS_WARN_IF(
+          !mBackgroundActor->SendAbortOperationsForProcess(aContentParentId))) {
+    return;
+  }
 }
 
 nsresult QuotaManagerService::Init() {
@@ -306,8 +279,9 @@ void QuotaManagerService::Destroy() {
   delete this;
 }
 
-nsresult QuotaManagerService::InitiateRequest(
-    nsAutoPtr<PendingRequestInfo>& aInfo) {
+nsresult QuotaManagerService::EnsureBackgroundActor() {
+  MOZ_ASSERT(NS_IsMainThread());
+
   
   
   if (mBackgroundActorFailed) {
@@ -335,8 +309,17 @@ nsresult QuotaManagerService::InitiateRequest(
     return NS_ERROR_FAILURE;
   }
 
-  
-  nsresult rv = aInfo->InitiateRequest(mBackgroundActor);
+  return NS_OK;
+}
+
+nsresult QuotaManagerService::InitiateRequest(
+    nsAutoPtr<PendingRequestInfo>& aInfo) {
+  nsresult rv = EnsureBackgroundActor();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = aInfo->InitiateRequest(mBackgroundActor);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -826,24 +809,6 @@ QuotaManagerService::Observe(nsISupports* aSubject, const char* aTopic,
 void QuotaManagerService::Notify(const hal::BatteryInformation& aBatteryInfo) {
   
   
-}
-
-NS_IMETHODIMP
-AbortOperationsRunnable::Run() {
-  AssertIsOnBackgroundThread();
-
-  if (QuotaManager::IsShuttingDown()) {
-    return NS_OK;
-  }
-
-  QuotaManager* quotaManager = QuotaManager::Get();
-  if (!quotaManager) {
-    return NS_OK;
-  }
-
-  quotaManager->AbortOperationsForProcess(mContentParentId);
-
-  return NS_OK;
 }
 
 nsresult QuotaManagerService::UsageRequestInfo::InitiateRequest(

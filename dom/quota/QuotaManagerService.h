@@ -44,8 +44,6 @@ class QuotaManagerService final : public nsIQuotaManagerService,
   class RequestInfo;
   class IdleMaintenanceInfo;
 
-  nsCOMPtr<nsIEventTarget> mBackgroundThread;
-
   QuotaChild* mBackgroundActor;
 
   bool mBackgroundActorFailed;
@@ -63,10 +61,6 @@ class QuotaManagerService final : public nsIQuotaManagerService,
 
   void ClearBackgroundActor();
 
-  void NoteLiveManager(QuotaManager* aManager);
-
-  void NoteShuttingDownManager();
-
   
   
   void AbortOperationsForProcess(ContentParentId aContentParentId);
@@ -79,11 +73,9 @@ class QuotaManagerService final : public nsIQuotaManagerService,
 
   void Destroy();
 
+  nsresult EnsureBackgroundActor();
+
   nsresult InitiateRequest(nsAutoPtr<PendingRequestInfo>& aInfo);
-
-  nsresult BackgroundActorCreated(PBackgroundChild* aBackgroundActor);
-
-  void BackgroundActorFailed();
 
   void PerformIdleMaintenance();
 
