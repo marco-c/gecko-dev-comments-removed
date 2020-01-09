@@ -626,11 +626,11 @@ function waitForEvent(client, type, predicate) {
   }
 
   return new Promise(function(resolve) {
-    function listener(type, packet) {
+    function listener(packet) {
       if (!predicate(packet)) {
         return;
       }
-      client.removeListener(listener);
+      client.removeListener(type, listener);
       resolve(packet);
     }
     client.addListener(type, listener);

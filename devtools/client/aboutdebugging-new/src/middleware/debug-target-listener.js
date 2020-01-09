@@ -30,13 +30,13 @@ function debugTargetListenerMiddleware(store) {
         const { clientWrapper } = runtime.runtimeDetails;
 
         
-        clientWrapper.addListener("tabListChanged", onTabsUpdated);
+        clientWrapper.on("tabListChanged", onTabsUpdated);
 
         
-        clientWrapper.addListener("addonListChanged", onExtensionsUpdated);
+        clientWrapper.on("addonListChanged", onExtensionsUpdated);
 
         
-        clientWrapper.addListener("workersUpdated", onWorkersUpdated);
+        clientWrapper.on("workersUpdated", onWorkersUpdated);
         break;
       }
       case UNWATCH_RUNTIME_START: {
@@ -44,13 +44,13 @@ function debugTargetListenerMiddleware(store) {
         const { clientWrapper } = runtime.runtimeDetails;
 
         
-        clientWrapper.removeListener("tabListChanged", onTabsUpdated);
+        clientWrapper.off("tabListChanged", onTabsUpdated);
 
         
-        clientWrapper.removeListener("addonListChanged", onExtensionsUpdated);
+        clientWrapper.off("addonListChanged", onExtensionsUpdated);
 
         
-        clientWrapper.removeListener("workersUpdated", onWorkersUpdated);
+        clientWrapper.off("workersUpdated", onWorkersUpdated);
         break;
       }
     }

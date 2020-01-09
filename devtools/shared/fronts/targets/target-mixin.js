@@ -444,7 +444,7 @@ function TargetMixin(parentClass) {
 
 
     _setupRemoteListeners() {
-      this.client.addListener("closed", this.destroy);
+      this.client.on("closed", this.destroy);
 
       this.on("tabDetached", this.destroy);
     }
@@ -454,7 +454,7 @@ function TargetMixin(parentClass) {
 
     _teardownRemoteListeners() {
       
-      this.client.removeListener("closed", this.destroy);
+      this.client.off("closed", this.destroy);
       this.off("tabDetached", this.destroy);
 
       
