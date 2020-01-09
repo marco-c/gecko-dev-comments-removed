@@ -10,6 +10,7 @@ var EXPORTED_SYMBOLS = [ "LoginManagerContent",
 
 const PASSWORD_INPUT_ADDED_COALESCING_THRESHOLD_MS = 1;
 const AUTOCOMPLETE_AFTER_RIGHT_CLICK_THRESHOLD_MS = 400;
+const AUTOFILL_STATE = "-moz-autofill";
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -607,7 +608,7 @@ var LoginManagerContent = {
   
 
 
-  onUsernameInput(event) {
+  onDOMAutoComplete(event) {
     if (!event.isTrusted) {
       return;
     }
@@ -616,21 +617,27 @@ var LoginManagerContent = {
       return;
     }
 
-    var acInputField = event.target;
+    let acInputField = event.target;
 
     
     if (ChromeUtils.getClassName(acInputField.ownerDocument) != "HTMLDocument") {
       return;
     }
 
-    if (!LoginHelper.isUsernameFieldType(acInputField)) {
+    if (!LoginFormFactory.createFromField(acInputField)) {
       return;
     }
 
-    var acForm = LoginFormFactory.createFromField(acInputField);
-    if (!acForm) {
-      return;
+    if (LoginHelper.isUsernameFieldType(acInputField)) {
+      this.onUsernameInput(event);
     }
+  },
+
+  
+
+
+  onUsernameInput(event) {
+    let acInputField = event.target;
 
     
     
@@ -641,6 +648,7 @@ var LoginManagerContent = {
 
     log("onUsernameInput from", event.type);
 
+    let acForm = LoginFormFactory.createFromField(acInputField);
     let doc = acForm.ownerDocument;
     let formOrigin = LoginUtils._getPasswordOrigin(doc.documentURI);
     let recipes = LoginRecipesContent.getRecipes(formOrigin, doc.defaultView);
@@ -1000,6 +1008,28 @@ var LoginManagerContent = {
 
   
 
+  _removeFillFieldHighlight(event) {
+    let winUtils = event.target.ownerGlobal.windowUtils;
+    winUtils.removeManuallyManagedState(event.target, AUTOFILL_STATE);
+  },
+
+  
+
+
+
+  _highlightFilledField(element) {
+    let winUtils = element.ownerGlobal.windowUtils;
+
+    winUtils.addManuallyManagedState(element, AUTOFILL_STATE);
+    
+    element.addEventListener("input", this._removeFillFieldHighlight, {
+      mozSystemGroup: true,
+      once: true,
+    });
+  },
+
+  
+
 
 
 
@@ -1248,8 +1278,12 @@ var LoginManagerContent = {
         let userEnteredDifferentCase = userTriggered && userNameDiffers &&
                usernameField.value.toLowerCase() == selectedLogin.username.toLowerCase();
 
-        if (!disabledOrReadOnly && !userEnteredDifferentCase && userNameDiffers) {
-          usernameField.setUserInput(selectedLogin.username);
+        if (!disabledOrReadOnly) {
+          if (!userEnteredDifferentCase && userNameDiffers) {
+            usernameField.setUserInput(selectedLogin.username);
+          }
+
+          this._highlightFilledField(usernameField);
         }
       }
 
@@ -1266,6 +1300,8 @@ var LoginManagerContent = {
         log("Saving autoFilledLogin", autoFilledLogin.guid, "for", form.rootElement);
         this.stateForDocument(doc).fillsByRootElement.set(form.rootElement, autoFilledLogin);
       }
+
+      this._highlightFilledField(passwordField);
 
       log("_fillForm succeeded");
       autofillResult = AUTOFILL_RESULT.FILLED;
