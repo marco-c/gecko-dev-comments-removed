@@ -78,7 +78,7 @@ bool testCompile(bool nonSyntactic) {
   JS::SourceText<mozilla::Utf8Unit> buf8;
   CHECK(buf8.init(cx, src, length, JS::SourceOwnership::Borrowed));
 
-  script = CompileForNonSyntacticScope(cx, options, buf8);
+  script = CompileForNonSyntacticScopeDontInflate(cx, options, buf8);
   CHECK(script);
   CHECK_EQUAL(script->hasNonSyntacticScope(), true);
 

@@ -229,6 +229,24 @@ extern JS_PUBLIC_API JSScript* CompileForNonSyntacticScope(
 
 
 
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSScript* CompileForNonSyntacticScopeDontInflate(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf);
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API JSFunction* CompileFunction(
     JSContext* cx, HandleObjectVector envChain,
     const ReadOnlyCompileOptions& options, const char* name, unsigned nargs,

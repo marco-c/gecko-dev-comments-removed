@@ -33,8 +33,8 @@ BEGIN_TEST(testExecuteInJSMEnvironment_Basic) {
   CHECK(srcBuf.init(cx, src, mozilla::ArrayLength(src) - 1,
                     JS::SourceOwnership::Borrowed));
 
-  JS::RootedScript script(cx,
-                          JS::CompileForNonSyntacticScope(cx, options, srcBuf));
+  JS::RootedScript script(
+      cx, JS::CompileForNonSyntacticScopeDontInflate(cx, options, srcBuf));
   CHECK(script);
 
   JS::RootedObject varEnv(cx, js::NewJSMEnvironment(cx));
@@ -91,8 +91,8 @@ BEGIN_TEST(testExecuteInJSMEnvironment_Callback) {
   CHECK(srcBuf.init(cx, src, mozilla::ArrayLength(src) - 1,
                     JS::SourceOwnership::Borrowed));
 
-  JS::RootedScript script(cx,
-                          JS::CompileForNonSyntacticScope(cx, options, srcBuf));
+  JS::RootedScript script(
+      cx, JS::CompileForNonSyntacticScopeDontInflate(cx, options, srcBuf));
   CHECK(script);
 
   JS::RootedObject nsvo(cx, js::NewJSMEnvironment(cx));
