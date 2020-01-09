@@ -27,28 +27,34 @@ class InputStreamHelper {
   
   
   
+  
+  
   static void SerializeInputStream(nsIInputStream* aInputStream,
                                    InputStreamParams& aParams,
                                    nsTArray<FileDescriptor>& aFileDescriptors,
-                                   bool aDelayedStart,
+                                   bool aDelayedStart, uint32_t aMaxSize,
+                                   uint32_t* aSizeUsed,
                                    mozilla::dom::nsIContentChild* aManager);
 
   static void SerializeInputStream(nsIInputStream* aInputStream,
                                    InputStreamParams& aParams,
                                    nsTArray<FileDescriptor>& aFileDescriptors,
-                                   bool aDelayedStart,
+                                   bool aDelayedStart, uint32_t aMaxSize,
+                                   uint32_t* aSizeUsed,
                                    PBackgroundChild* aManager);
 
   static void SerializeInputStream(nsIInputStream* aInputStream,
                                    InputStreamParams& aParams,
                                    nsTArray<FileDescriptor>& aFileDescriptors,
-                                   bool aDelayedStart,
+                                   bool aDelayedStart, uint32_t aMaxSize,
+                                   uint32_t* aSizeUsed,
                                    mozilla::dom::nsIContentParent* aManager);
 
   static void SerializeInputStream(nsIInputStream* aInputStream,
                                    InputStreamParams& aParams,
                                    nsTArray<FileDescriptor>& aFileDescriptors,
-                                   bool aDelayedStart,
+                                   bool aDelayedStart, uint32_t aMaxSize,
+                                   uint32_t* aSizeUsed,
                                    PBackgroundParent* aManager);
 
   
