@@ -32,12 +32,18 @@ class CalcSnapPoints final {
                                nscoord aOffset);
   void AddEdge(nscoord aEdge, nscoord aDestination, nscoord aStartPos,
                nscoord aScrollingDirection, nscoord* aBestEdge,
-               bool* aEdgeFound);
+               nscoord* aSecondBestEdge, bool* aEdgeFound);
   void AddEdgeInterval(nscoord aInterval, nscoord aMinPos, nscoord aMaxPos,
                        nscoord aOffset, nscoord aDestination, nscoord aStartPos,
                        nscoord aScrollingDirection, nscoord* aBestEdge,
-                       bool* aEdgeFound);
+                       nscoord* aSecondBestEdge, bool* aEdgeFound);
   nsPoint GetBestEdge() const;
+  nscoord XDistanceBetweenBestAndSecondEdge() const {
+    return std::abs(mBestEdge.x - mSecondBestEdge.x);
+  }
+  nscoord YDistanceBetweenBestAndSecondEdge() const {
+    return std::abs(mBestEdge.y - mSecondBestEdge.y);
+  }
 
  protected:
   nsIScrollableFrame::ScrollUnit mUnit;
@@ -46,6 +52,8 @@ class CalcSnapPoints final {
   nsPoint mStartPos;     
   nsIntPoint mScrollingDirection;  
   nsPoint mBestEdge;  
+  nsPoint mSecondBestEdge;    
+                              
   bool mHorizontalEdgeFound;  
                               
   bool mVerticalEdgeFound;    
@@ -74,6 +82,7 @@ CalcSnapPoints::CalcSnapPoints(nsIScrollableFrame::ScrollUnit aUnit,
     mScrollingDirection.y = 1;
   }
   mBestEdge = aDestination;
+  mSecondBestEdge = nsPoint(nscoord_MAX, nscoord_MAX);
   mHorizontalEdgeFound = false;
   mVerticalEdgeFound = false;
 }
@@ -85,12 +94,12 @@ nsPoint CalcSnapPoints::GetBestEdge() const {
 
 void CalcSnapPoints::AddHorizontalEdge(nscoord aEdge) {
   AddEdge(aEdge, mDestination.y, mStartPos.y, mScrollingDirection.y,
-          &mBestEdge.y, &mHorizontalEdgeFound);
+          &mBestEdge.y, &mSecondBestEdge.y, &mHorizontalEdgeFound);
 }
 
 void CalcSnapPoints::AddVerticalEdge(nscoord aEdge) {
   AddEdge(aEdge, mDestination.x, mStartPos.x, mScrollingDirection.x,
-          &mBestEdge.x, &mVerticalEdgeFound);
+          &mBestEdge.x, &mSecondBestEdge.x, &mVerticalEdgeFound);
 }
 
 void CalcSnapPoints::AddHorizontalEdgeInterval(const nsRect& aScrollRange,
@@ -98,7 +107,7 @@ void CalcSnapPoints::AddHorizontalEdgeInterval(const nsRect& aScrollRange,
                                                nscoord aOffset) {
   AddEdgeInterval(aInterval, aScrollRange.y, aScrollRange.YMost(), aOffset,
                   mDestination.y, mStartPos.y, mScrollingDirection.y,
-                  &mBestEdge.y, &mHorizontalEdgeFound);
+                  &mBestEdge.y, &mSecondBestEdge.y, &mHorizontalEdgeFound);
 }
 
 void CalcSnapPoints::AddVerticalEdgeInterval(const nsRect& aScrollRange,
@@ -106,12 +115,13 @@ void CalcSnapPoints::AddVerticalEdgeInterval(const nsRect& aScrollRange,
                                              nscoord aOffset) {
   AddEdgeInterval(aInterval, aScrollRange.x, aScrollRange.XMost(), aOffset,
                   mDestination.x, mStartPos.x, mScrollingDirection.x,
-                  &mBestEdge.x, &mVerticalEdgeFound);
+                  &mBestEdge.x, &mSecondBestEdge.x, &mVerticalEdgeFound);
 }
 
 void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
                              nscoord aStartPos, nscoord aScrollingDirection,
-                             nscoord* aBestEdge, bool* aEdgeFound) {
+                             nscoord* aBestEdge, nscoord* aSecondBestEdge,
+                             bool* aEdgeFound) {
   
   
   
@@ -144,11 +154,27 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     *aEdgeFound = true;
     return;
   }
+
+  
+  
+  
+  
+  
+  
+  auto updateBestEdges = [&](bool aIsCloserThanBest, bool aIsCloserThanSecond) {
+    if (aIsCloserThanBest) {
+      *aSecondBestEdge = *aBestEdge;
+      *aBestEdge = aEdge;
+    } else if (aIsCloserThanSecond) {
+      *aSecondBestEdge = aEdge;
+    }
+  };
+
   if (mUnit == nsIScrollableFrame::DEVICE_PIXELS ||
       mUnit == nsIScrollableFrame::LINES) {
-    if (std::abs(aEdge - aDestination) < std::abs(*aBestEdge - aDestination)) {
-      *aBestEdge = aEdge;
-    }
+    nscoord distance = std::abs(aEdge - aDestination);
+    updateBestEdges(distance < std::abs(*aBestEdge - aDestination),
+                    distance < std::abs(*aSecondBestEdge - aDestination));
   } else if (mUnit == nsIScrollableFrame::PAGES) {
     
     
@@ -157,23 +183,27 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     
     nscoord curOvershoot = (*aBestEdge - aDestination) * aScrollingDirection;
 
+    nscoord secondOvershoot =
+        (*aSecondBestEdge - aDestination) * aScrollingDirection;
+
     
     
-    if (overshoot < 0 && (overshoot > curOvershoot || curOvershoot >= 0)) {
-      *aBestEdge = aEdge;
+    if (overshoot < 0) {
+      updateBestEdges(overshoot > curOvershoot || curOvershoot >= 0,
+                      overshoot > secondOvershoot || secondOvershoot >= 0);
     }
     
     
-    if (overshoot > 0 && overshoot < curOvershoot) {
-      *aBestEdge = aEdge;
+    if (overshoot > 0) {
+      updateBestEdges(overshoot < curOvershoot, overshoot < secondOvershoot);
     }
   } else if (mUnit == nsIScrollableFrame::WHOLE) {
     
     
-    if (aScrollingDirection > 0 && aEdge > *aBestEdge) {
-      *aBestEdge = aEdge;
-    } else if (aScrollingDirection < 0 && aEdge < *aBestEdge) {
-      *aBestEdge = aEdge;
+    if (aScrollingDirection > 0) {
+      updateBestEdges(aEdge > *aBestEdge, aEdge > *aSecondBestEdge);
+    } else if (aScrollingDirection < 0) {
+      updateBestEdges(aEdge < *aBestEdge, aEdge < *aSecondBestEdge);
     }
   } else {
     NS_ERROR("Invalid scroll mode");
@@ -181,11 +211,10 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
   }
 }
 
-void CalcSnapPoints::AddEdgeInterval(nscoord aInterval, nscoord aMinPos,
-                                     nscoord aMaxPos, nscoord aOffset,
-                                     nscoord aDestination, nscoord aStartPos,
-                                     nscoord aScrollingDirection,
-                                     nscoord* aBestEdge, bool* aEdgeFound) {
+void CalcSnapPoints::AddEdgeInterval(
+    nscoord aInterval, nscoord aMinPos, nscoord aMaxPos, nscoord aOffset,
+    nscoord aDestination, nscoord aStartPos, nscoord aScrollingDirection,
+    nscoord* aBestEdge, nscoord* aSecondBestEdge, bool* aEdgeFound) {
   if (aInterval == 0) {
     
     
@@ -210,12 +239,12 @@ void CalcSnapPoints::AddEdgeInterval(nscoord aInterval, nscoord aMinPos,
   nscoord edge = clamped - r;
   if (edge >= aMinPos && edge <= aMaxPos) {
     AddEdge(edge, aDestination, aStartPos, aScrollingDirection, aBestEdge,
-            aEdgeFound);
+            aSecondBestEdge, aEdgeFound);
   }
   edge += aInterval;
   if (edge >= aMinPos && edge <= aMaxPos) {
     AddEdge(edge, aDestination, aStartPos, aScrollingDirection, aBestEdge,
-            aEdgeFound);
+            aSecondBestEdge, aEdgeFound);
   }
 }
 
@@ -255,6 +284,28 @@ Maybe<nsPoint> ScrollSnapUtils::GetSnapPointForDestination(
 
   if (StaticPrefs::layout_css_scroll_snap_v1_enabled()) {
     ProcessSnapPositions(calcSnapPoints, aSnapInfo);
+
+    
+    
+    
+    
+    
+    for (auto range : aSnapInfo.mXRangeWiderThanSnapport) {
+      if (range.IsValid(aDestination.x, aSnapInfo.mSnapportSize.width) &&
+          calcSnapPoints.XDistanceBetweenBestAndSecondEdge() >
+              aSnapInfo.mSnapportSize.width) {
+        calcSnapPoints.AddVerticalEdge(aDestination.x);
+        break;
+      }
+    }
+    for (auto range : aSnapInfo.mYRangeWiderThanSnapport) {
+      if (range.IsValid(aDestination.y, aSnapInfo.mSnapportSize.height) &&
+          calcSnapPoints.YDistanceBetweenBestAndSecondEdge() >
+              aSnapInfo.mSnapportSize.height) {
+        calcSnapPoints.AddHorizontalEdge(aDestination.y);
+        break;
+      }
+    }
   } else {
     nsPoint destPos = aSnapInfo.mScrollSnapDestination;
 

@@ -721,7 +721,10 @@ struct ScrollSnapInfo {
            mScrollSnapDestination == aOther.mScrollSnapDestination &&
            mScrollSnapCoordinates == aOther.mScrollSnapCoordinates &&
            mSnapPositionX == aOther.mSnapPositionX &&
-           mSnapPositionY == aOther.mSnapPositionY;
+           mSnapPositionY == aOther.mSnapPositionY &&
+           mXRangeWiderThanSnapport == aOther.mXRangeWiderThanSnapport &&
+           mYRangeWiderThanSnapport == aOther.mYRangeWiderThanSnapport &&
+           mSnapportSize == aOther.mSnapportSize;
   }
 
   bool HasScrollSnapping() const {
@@ -750,6 +753,36 @@ struct ScrollSnapInfo {
   
   nsTArray<nscoord> mSnapPositionX;
   nsTArray<nscoord> mSnapPositionY;
+
+  struct ScrollSnapRange {
+    ScrollSnapRange() = default;
+
+    ScrollSnapRange(nscoord aStart, nscoord aEnd)
+        : mStart(aStart), mEnd(aEnd) {}
+
+    nscoord mStart;
+    nscoord mEnd;
+    bool operator==(const ScrollSnapRange& aOther) const {
+      return mStart == aOther.mStart && mEnd == aOther.mEnd;
+    }
+
+    
+    bool IsValid(nscoord aPoint, nscoord aSnapportSize) const {
+      MOZ_ASSERT(mEnd - mStart > aSnapportSize);
+      return mStart <= aPoint && aPoint <= mEnd - aSnapportSize;
+    }
+  };
+  
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<ScrollSnapRange> mXRangeWiderThanSnapport;
+  nsTArray<ScrollSnapRange> mYRangeWiderThanSnapport;
+  nsSize mSnapportSize;
 };
 
 
