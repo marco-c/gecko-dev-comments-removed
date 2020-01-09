@@ -42,9 +42,14 @@ class nsEffectiveTLDService final : public nsIEffectiveTLDService,
   
   mozilla::Dafsa mGraph;
 
+  
+  
+  
+  
   struct TLDCacheEntry {
     nsCString mHost;
     nsCString mBaseDomain;
+    nsresult mResult;
   };
 
   

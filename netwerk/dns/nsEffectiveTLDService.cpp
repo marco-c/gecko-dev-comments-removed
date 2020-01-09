@@ -190,16 +190,15 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString &aHostname,
     return NS_ERROR_INVALID_ARG;
 
   
-  PRNetAddr addr;
-  PRStatus result = PR_StringToNetAddr(aHostname.get(), &addr);
-  if (result == PR_SUCCESS) return NS_ERROR_HOST_IS_IP_ADDRESS;
-
-  
   
   Maybe<TldCache::Entry> entry;
   if (aAdditionalParts == 1 && NS_IsMainThread()) {
     auto p = mMruTable.Lookup(aHostname);
     if (p) {
+      if (NS_FAILED(p.Data().mResult)) {
+        return p.Data().mResult;
+      }
+
       
       aBaseDomain = p.Data().mBaseDomain;
       if (trailingDot) {
@@ -210,6 +209,19 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString &aHostname,
     }
 
     entry = Some(p);
+  }
+
+  
+  PRNetAddr addr;
+  PRStatus result = PR_StringToNetAddr(aHostname.get(), &addr);
+  if (result == PR_SUCCESS) {
+    
+    if (entry) {
+      entry->Set(TLDCacheEntry{aHostname, EmptyCString(),
+                               NS_ERROR_HOST_IS_IP_ADDRESS});
+    }
+
+    return NS_ERROR_HOST_IS_IP_ADDRESS;
   }
 
   
@@ -225,7 +237,15 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString &aHostname,
     
     
     
-    if (*currDomain == '.') return NS_ERROR_INVALID_ARG;
+    if (*currDomain == '.') {
+      
+      if (entry) {
+        entry->Set(
+            TLDCacheEntry{aHostname, EmptyCString(), NS_ERROR_INVALID_ARG});
+      }
+
+      return NS_ERROR_INVALID_ARG;
+    }
 
     
     const int result = mGraph.Lookup(Substring(currDomain, end));
@@ -287,13 +307,21 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString &aHostname,
     }
   }
 
-  if (aAdditionalParts != 0) return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
+  if (aAdditionalParts != 0) {
+    
+    if (entry) {
+      entry->Set(TLDCacheEntry{aHostname, EmptyCString(),
+                               NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS});
+    }
+
+    return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
+  }
 
   aBaseDomain = Substring(iter, end);
 
   
   if (entry) {
-    entry->Set(TLDCacheEntry{aHostname, nsCString(aBaseDomain)});
+    entry->Set(TLDCacheEntry{aHostname, nsCString(aBaseDomain), NS_OK});
   }
 
   
