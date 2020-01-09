@@ -59,7 +59,8 @@ class VideoFrameConverter {
             new TaskQueue(GetMediaThreadPool(MediaThreadType::WEBRTC_DECODER),
                           "VideoFrameConverter")),
         mPacingTimer(new MediaTimer()),
-        mLastImage(-1),  
+        mLastImage(
+            -2),  
         mBufferPool(false, CONVERTER_BUFFER_POOL_SIZE),
         mLastFrameQueuedForProcessing(TimeStamp::Now()),
         mEnabled(true) {
@@ -203,6 +204,10 @@ class VideoFrameConverter {
       
       
       serial = -1;
+    } else if (!aImage) {
+      
+      
+      serial = -2;
     } else {
       serial = aImage->GetSerial();
     }
@@ -271,7 +276,11 @@ class VideoFrameConverter {
       return;
     }
 
-    MOZ_RELEASE_ASSERT(aImage, "Must have image if not forcing black");
+    if (!aImage) {
+      
+      return;
+    }
+
     MOZ_ASSERT(aImage->GetSize() == aSize);
 
     if (layers::PlanarYCbCrImage* image = aImage->AsPlanarYCbCrImage()) {

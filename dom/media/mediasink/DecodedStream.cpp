@@ -421,9 +421,10 @@ void DecodedStream::Stop() {
   AssertOwnerThread();
   MOZ_ASSERT(mStartTime.isSome(), "playback not started.");
 
+  DisconnectListener();
+  ResetVideo(mPrincipalHandle);
   mStreamTimeOffset += SentDuration();
   mStartTime.reset();
-  DisconnectListener();
   mAudioEndedPromise = nullptr;
   mVideoEndedPromise = nullptr;
 
@@ -609,6 +610,43 @@ static bool ZeroDurationAtLastChunk(VideoSegment& aInput) {
   return lastVideoStratTime == aInput.GetDuration();
 }
 
+void DecodedStream::ResetVideo(const PrincipalHandle& aPrincipalHandle) {
+  AssertOwnerThread();
+
+  if (!mData) {
+    return;
+  }
+
+  if (!mInfo.HasVideo()) {
+    return;
+  }
+
+  VideoSegment resetter;
+  TimeStamp currentTime;
+  TimeUnit currentPosition = GetPosition(&currentTime);
+
+  
+  
+  
+  
+  
+  
+  
+  resetter.AppendFrame(nullptr, mData->mLastVideoImageDisplaySize,
+                       aPrincipalHandle, false, currentTime);
+  mData->mStream->AppendToTrack(mInfo.mVideo.mTrackId, &resetter);
+
+  
+  
+  if (RefPtr<VideoData> v = mVideoQueue.PeekFront()) {
+    mData->mNextVideoTime = v->mTime;
+  } else {
+    
+    
+    mData->mNextVideoTime = currentPosition;
+  }
+}
+
 void DecodedStream::SendVideo(bool aIsSameOrigin,
                               const PrincipalHandle& aPrincipalHandle) {
   AssertOwnerThread();
@@ -727,6 +765,10 @@ void DecodedStream::SendData() {
     return;
   }
 
+  if (!mPlaying) {
+    return;
+  }
+
   SendAudio(mParams.mVolume, mSameOrigin, mPrincipalHandle);
   SendVideo(mSameOrigin, mPrincipalHandle);
 }
@@ -771,6 +813,11 @@ void DecodedStream::NotifyOutput(int64_t aTime) {
 
 void DecodedStream::PlayingChanged() {
   AssertOwnerThread();
+
+  if (!mPlaying) {
+    
+    ResetVideo(mPrincipalHandle);
+  }
 
   mAbstractMainThread->Dispatch(NewRunnableMethod<bool>(
       "OutputStreamManager::SetPlaying", mOutputStreamManager,

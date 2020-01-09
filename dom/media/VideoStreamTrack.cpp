@@ -98,8 +98,10 @@ class VideoOutput : public DirectMediaStreamTrackListener {
       lastPrincipalHandle = chunk.GetPrincipalHandle();
     }
 
-    
     if (images.IsEmpty()) {
+      
+      
+      mVideoFrameContainer->ClearFutureFrames();
       return;
     }
 
@@ -117,8 +119,6 @@ class VideoOutput : public DirectMediaStreamTrackListener {
     mMainThread->Dispatch(NewRunnableMethod("VideoFrameContainer::Invalidate",
                                             mVideoFrameContainer,
                                             &VideoFrameContainer::Invalidate));
-
-    images.ClearAndRetainStorage();
   }
 
  public:
