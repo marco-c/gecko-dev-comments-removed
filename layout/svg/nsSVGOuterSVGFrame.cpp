@@ -79,8 +79,8 @@ nsSVGOuterSVGFrame::nsSVGOuterSVGFrame(ComputedStyle* aStyle,
 
 static inline bool DependsOnIntrinsicSize(const nsIFrame* aEmbeddingFrame) {
   const nsStylePosition* pos = aEmbeddingFrame->StylePosition();
-  const nsStyleCoord& width = pos->mWidth;
-  const nsStyleCoord& height = pos->mHeight;
+  const auto& width = pos->mWidth;
+  const auto& height = pos->mHeight;
 
   
   

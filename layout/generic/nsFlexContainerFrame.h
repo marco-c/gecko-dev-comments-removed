@@ -222,8 +222,8 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  static bool IsUsedFlexBasisContent(const nsStyleCoord* aFlexBasis,
-                                     const nsStyleCoord* aMainSize);
+  static bool IsUsedFlexBasisContent(const StyleFlexBasis& aFlexBasis,
+                                     const StyleSize& aMainSize);
 
   
 

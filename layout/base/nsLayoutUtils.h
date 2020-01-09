@@ -1489,30 +1489,29 @@ class nsLayoutUtils {
 
   static nscoord ComputeBSizeValue(nscoord aContainingBlockBSize,
                                    nscoord aContentEdgeToBoxSizingBoxEdge,
-                                   const nsStyleCoord& aCoord) {
+                                   const LengthPercentage& aCoord) {
     MOZ_ASSERT(aContainingBlockBSize != nscoord_MAX || !aCoord.HasPercent(),
                "caller must deal with %% of unconstrained block-size");
-    MOZ_ASSERT(aCoord.IsCoordPercentCalcUnit());
 
-    nscoord result = aCoord.ComputeCoordPercentCalc(aContainingBlockBSize);
+    nscoord result = aCoord.Resolve(aContainingBlockBSize);
     
     return std::max(0, result - aContentEdgeToBoxSizingBoxEdge);
   }
 
-  static bool IsAutoBSize(const nsStyleCoord& aCoord, nscoord aCBBSize) {
-    nsStyleUnit unit = aCoord.GetUnit();
-    return unit == eStyleUnit_Auto ||  
-           unit == eStyleUnit_None ||  
-           
-           
-           
-           
-           
-           
-           
-           
-           
-           unit == eStyleUnit_Enumerated ||
+  
+
+
+
+
+
+
+
+
+
+
+  template <typename SizeOrMaxSize>
+  static bool IsAutoBSize(const SizeOrMaxSize& aCoord, nscoord aCBBSize) {
+    return aCoord.BehavesLikeInitialValueOnBlockAxis() ||
            (aCBBSize == nscoord_MAX && aCoord.HasPercent());
   }
 

@@ -192,10 +192,7 @@ impl<L> TrackBreadth<L> {
     
     #[inline]
     pub fn is_fixed(&self) -> bool {
-        match *self {
-            TrackBreadth::Breadth(ref _lp) => true,
-            _ => false,
-        }
+        matches!(*self, TrackBreadth::Breadth(..))
     }
 }
 

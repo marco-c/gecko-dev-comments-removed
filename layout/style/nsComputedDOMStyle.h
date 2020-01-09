@@ -51,9 +51,18 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
                                  public nsStubMutationObserver {
  private:
   
-  typedef nsCSSKTableEntry KTableEntry;
-  typedef mozilla::dom::CSSValue CSSValue;
-  typedef mozilla::StyleGeometryBox StyleGeometryBox;
+  using KTableEntry = nsCSSKTableEntry;
+  using CSSValue = mozilla::dom::CSSValue;
+  using StyleGeometryBox = mozilla::StyleGeometryBox;
+  using Element = mozilla::dom::Element;
+  using Document = mozilla::dom::Document;
+  using StyleFlexBasis = mozilla::StyleFlexBasis;
+  using StyleSize = mozilla::StyleSize;
+  using StyleMaxSize = mozilla::StyleMaxSize;
+  using LengthPercentage = mozilla::LengthPercentage;
+  using LengthPercentageOrAuto = mozilla::LengthPercentageOrAuto;
+  using StyleExtremumLength = mozilla::StyleExtremumLength;
+  using ComputedStyle = mozilla::ComputedStyle;
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -74,27 +83,23 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
     eAll           
   };
 
-  nsComputedDOMStyle(mozilla::dom::Element* aElement,
-                     const nsAString& aPseudoElt,
-                     mozilla::dom::Document* aDocument, StyleType aStyleType);
+  nsComputedDOMStyle(Element* aElement, const nsAString& aPseudoElt,
+                     Document* aDocument, StyleType aStyleType);
 
   nsINode* GetParentObject() override { return mElement; }
 
-  static already_AddRefed<mozilla::ComputedStyle> GetComputedStyle(
-      mozilla::dom::Element* aElement, nsAtom* aPseudo,
-      StyleType aStyleType = eAll);
+  static already_AddRefed<ComputedStyle> GetComputedStyle(
+      Element* aElement, nsAtom* aPseudo, StyleType aStyleType = eAll);
 
-  static already_AddRefed<mozilla::ComputedStyle> GetComputedStyleNoFlush(
-      mozilla::dom::Element* aElement, nsAtom* aPseudo,
-      StyleType aStyleType = eAll) {
+  static already_AddRefed<ComputedStyle> GetComputedStyleNoFlush(
+      Element* aElement, nsAtom* aPseudo, StyleType aStyleType = eAll) {
     return DoGetComputedStyleNoFlush(
         aElement, aPseudo, nsContentUtils::GetPresShellForContent(aElement),
         aStyleType);
   }
 
-  static already_AddRefed<mozilla::ComputedStyle>
-  GetUnanimatedComputedStyleNoFlush(mozilla::dom::Element* aElement,
-                                    nsAtom* aPseudo);
+  static already_AddRefed<ComputedStyle> GetUnanimatedComputedStyleNoFlush(
+      Element* aElement, nsAtom* aPseudo);
 
   
   void SetExposeVisitedStyle(bool aExpose) {
@@ -144,14 +149,13 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   
   void ClearComputedStyle();
-  void SetResolvedComputedStyle(RefPtr<mozilla::ComputedStyle>&& aContext,
+  void SetResolvedComputedStyle(RefPtr<ComputedStyle>&& aContext,
                                 uint64_t aGeneration);
-  void SetFrameComputedStyle(mozilla::ComputedStyle* aStyle,
-                             uint64_t aGeneration);
+  void SetFrameComputedStyle(ComputedStyle* aStyle, uint64_t aGeneration);
 
-  static already_AddRefed<mozilla::ComputedStyle> DoGetComputedStyleNoFlush(
-      mozilla::dom::Element* aElement, nsAtom* aPseudo,
-      nsIPresShell* aPresShell, StyleType aStyleType);
+  static already_AddRefed<ComputedStyle> DoGetComputedStyleNoFlush(
+      Element* aElement, nsAtom* aPseudo, nsIPresShell* aPresShell,
+      StyleType aStyleType);
 
 #define STYLE_STRUCT(name_)                \
   const nsStyle##name_* Style##name_() {   \
@@ -407,6 +411,25 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   void SetValueToURLValue(const mozilla::css::URLValue* aURL,
                           nsROCSSPrimitiveValue* aValue);
 
+  void SetValueToSize(nsROCSSPrimitiveValue* aValue, const mozilla::StyleSize&,
+                      nscoord aMinAppUnits = nscoord_MIN,
+                      nscoord aMaxAppUnits = nscoord_MAX);
+
+  void SetValueToLengthPercentageOrAuto(nsROCSSPrimitiveValue* aValue,
+                                        const LengthPercentageOrAuto&,
+                                        bool aClampNegativeCalc);
+
+  void SetValueToLengthPercentage(nsROCSSPrimitiveValue* aValue,
+                                  const LengthPercentage&,
+                                  bool aClampNegativeCalc,
+                                  nscoord aMinAppUnits = nscoord_MIN,
+                                  nscoord aMaxAppUnits = nscoord_MAX);
+
+  void SetValueToMaxSize(nsROCSSPrimitiveValue* aValue, const StyleMaxSize&);
+
+  void SetValueToExtremumLength(nsROCSSPrimitiveValue* aValue,
+                                StyleExtremumLength);
+
   
 
 
@@ -434,9 +457,20 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
 
 
-  nscoord StyleCoordToNSCoord(const nsStyleCoord& aCoord,
+  nscoord StyleCoordToNSCoord(const LengthPercentage& aCoord,
                               PercentageBaseGetter aPercentageBaseGetter,
                               nscoord aDefaultValue, bool aClampNegativeCalc);
+  template <typename LengthPercentageLike>
+  nscoord StyleCoordToNSCoord(const LengthPercentageLike& aCoord,
+                              PercentageBaseGetter aPercentageBaseGetter,
+                              nscoord aDefaultValue, bool aClampNegativeCalc) {
+    if (aCoord.IsLengthPercentage()) {
+      return StyleCoordToNSCoord(aCoord.AsLengthPercentage(),
+                                 aPercentageBaseGetter, aDefaultValue,
+                                 aClampNegativeCalc);
+    }
+    return aDefaultValue;
+  }
 
   
 
@@ -477,7 +511,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   
   
-  bool NeedsToFlush(mozilla::dom::Document*) const;
+  bool NeedsToFlush(Document*) const;
 
   static ComputedStyleMap* GetComputedStyleMap();
 
@@ -485,7 +519,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   
   
   nsWeakPtr mDocumentWeak;
-  RefPtr<mozilla::dom::Element> mElement;
+  RefPtr<Element> mElement;
 
   
 
@@ -500,7 +534,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
 
 
-  RefPtr<mozilla::ComputedStyle> mComputedStyle;
+  RefPtr<ComputedStyle> mComputedStyle;
   RefPtr<nsAtom> mPseudo;
 
   

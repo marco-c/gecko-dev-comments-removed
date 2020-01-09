@@ -254,10 +254,8 @@ static nscoord AddChecked(nscoord aFirst, nscoord aSecond) {
 
 
 
-static inline bool IsAutoOrEnumOnBSize(const nsStyleCoord& aSize,
-                                       bool aIsInline) {
-  return aSize.GetUnit() == eStyleUnit_Auto ||
-         (!aIsInline && aSize.GetUnit() == eStyleUnit_Enumerated);
+static inline bool IsAutoOrEnumOnBSize(const StyleSize& aSize, bool aIsInline) {
+  return aSize.IsAuto() || (!aIsInline && aSize.IsExtremumLength());
 }
 
 
@@ -1403,7 +1401,7 @@ static bool IsCrossSizeDefinite(const ReflowInput& aItemReflowInput,
 
   if (aAxisTracker.IsColumnOriented()) {
     
-    return pos->ISize(containerWM).GetUnit() != eStyleUnit_Auto;
+    return !pos->ISize(containerWM).IsAuto();
   }
   
   
@@ -1486,8 +1484,7 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   
-  if (eStyleUnit_Auto ==
-          aItemReflowInput.mStylePosition->mFlexBasis.GetUnit() &&
+  if (aItemReflowInput.mStylePosition->mFlexBasis.IsAuto() &&
       aFlexItem.GetFlexBaseSize() != NS_AUTOHEIGHT) {
     
     
@@ -2025,10 +2022,9 @@ void FlexItem::CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
   
   
   
-  const nsStyleCoord& mainMinSize =
-      aAxisTracker.IsRowOriented()
-          ? pos->MinISize(aAxisTracker.GetWritingMode())
-          : pos->MinBSize(aAxisTracker.GetWritingMode());
+  const auto& mainMinSize = aAxisTracker.IsRowOriented()
+                                ? pos->MinISize(aAxisTracker.GetWritingMode())
+                                : pos->MinBSize(aAxisTracker.GetWritingMode());
 
   
   
@@ -2083,9 +2079,8 @@ bool FlexItem::IsCrossSizeAuto() const {
   
   
   
-  return eStyleUnit_Auto == (IsInlineAxisCrossAxis()
-                                 ? stylePos->ISize(mWM).GetUnit()
-                                 : stylePos->BSize(mWM).GetUnit());
+  return IsInlineAxisCrossAxis() ? stylePos->ISize(mWM).IsAuto()
+                                 : stylePos->BSize(mWM).IsAuto();
 }
 
 uint32_t FlexItem::GetNumAutoMarginsInAxis(AxisOrientationType aAxis) const {
@@ -4206,11 +4201,11 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   
   WritingMode wm = aReflowInput.GetWritingMode();
   const nsStylePosition* stylePos = StylePosition();
-  const nsStyleCoord& bsize = stylePos->BSize(wm);
-  if (bsize.HasPercent() ||
-      (StyleDisplay()->IsAbsolutelyPositionedStyle() && bsize.IsAutoOrEnum() &&
-       !stylePos->mOffset.GetBStart(wm).IsAuto() &&
-       !stylePos->mOffset.GetBEnd(wm).IsAuto())) {
+  const auto& bsize = stylePos->BSize(wm);
+  if (bsize.HasPercent() || (StyleDisplay()->IsAbsolutelyPositionedStyle() &&
+                             (bsize.IsAuto() || bsize.IsExtremumLength()) &&
+                             !stylePos->mOffset.GetBStart(wm).IsAuto() &&
+                             !stylePos->mOffset.GetBEnd(wm).IsAuto())) {
     AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
   }
 
@@ -4465,15 +4460,15 @@ bool nsFlexContainerFrame::IsItemInlineAxisMainAxis(nsIFrame* aFrame) {
 
 
 bool nsFlexContainerFrame::IsUsedFlexBasisContent(
-    const nsStyleCoord* aFlexBasis, const nsStyleCoord* aMainSize) {
+    const StyleFlexBasis& aFlexBasis, const StyleSize& aMainSize) {
   
   
   
   
-  return (aFlexBasis->GetUnit() == eStyleUnit_Enumerated &&
-          aFlexBasis->GetIntValue() == NS_STYLE_FLEX_BASIS_CONTENT) ||
-         (aFlexBasis->GetUnit() == eStyleUnit_Auto &&
-          aMainSize->GetUnit() == eStyleUnit_Auto);
+  if (aFlexBasis.IsContent()) {
+    return true;
+  }
+  return aFlexBasis.IsAuto() && aMainSize.IsAuto();
 }
 
 static mozilla::dom::FlexPhysicalDirection ConvertAxisOrientationTypeToAPIEnum(

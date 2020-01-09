@@ -115,8 +115,8 @@ static bool HaveSpecifiedSize(const nsStylePosition* aStylePosition) {
   
   
   
-  return aStylePosition->mWidth.IsCoordPercentCalcUnit() &&
-         aStylePosition->mHeight.IsCoordPercentCalcUnit();
+  return aStylePosition->mWidth.IsLengthPercentage() &&
+         aStylePosition->mHeight.IsLengthPercentage();
 }
 
 
@@ -2620,8 +2620,7 @@ static bool IsInAutoWidthTableCellForQuirk(nsIFrame* aFrame) {
   if (ancestor->Style()->GetPseudo() == nsCSSAnonBoxes::cellContent()) {
     
     nsFrame* grandAncestor = static_cast<nsFrame*>(ancestor->GetParent());
-    return grandAncestor &&
-           grandAncestor->StylePosition()->mWidth.GetUnit() == eStyleUnit_Auto;
+    return grandAncestor && grandAncestor->StylePosition()->mWidth.IsAuto();
   }
   return false;
 }

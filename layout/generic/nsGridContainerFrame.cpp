@@ -103,7 +103,8 @@ static nscoord ClampToCSSMaxBSize(nscoord aSize,
   return aSize;
 }
 
-static bool IsPercentOfIndefiniteSize(const nsStyleCoord& aCoord,
+template <typename Size>
+static bool IsPercentOfIndefiniteSize(const Size& aCoord,
                                       nscoord aPercentBasis) {
   return aPercentBasis == NS_UNCONSTRAINEDSIZE && aCoord.HasPercent();
 }
@@ -592,10 +593,10 @@ struct nsGridContainerFrame::GridItemInfo {
     
     
     
-    bool isAuto = size.GetUnit() == eStyleUnit_Auto ||
+    bool isAuto = size.IsAuto() ||
                   (isInlineAxis ==
                        aContainerWM.IsOrthogonalTo(mFrame->GetWritingMode()) &&
-                   size.GetUnit() == eStyleUnit_Enumerated);
+                   size.IsExtremumLength());
     
     
     
@@ -608,10 +609,10 @@ struct nsGridContainerFrame::GridItemInfo {
     
     
     
-    isAuto = minSize.GetUnit() == eStyleUnit_Auto ||
+    isAuto = minSize.IsAuto() ||
              (isInlineAxis ==
                   aContainerWM.IsOrthogonalTo(mFrame->GetWritingMode()) &&
-              minSize.GetUnit() == eStyleUnit_Enumerated);
+              minSize.IsExtremumLength());
     return isAuto &&
            mFrame->StyleDisplay()->mOverflowX == StyleOverflow::Visible;
   }
@@ -3548,7 +3549,7 @@ static nscoord MinSize(const GridItemInfo& aGridItem,
   nsIFrame* child = aGridItem.mFrame;
   PhysicalAxis axis(aCBWM.PhysicalAxis(aAxis));
   const nsStylePosition* stylePos = child->StylePosition();
-  nsStyleCoord sizeStyle =
+  StyleSize sizeStyle =
       axis == eAxisHorizontal ? stylePos->mWidth : stylePos->mHeight;
 
   auto ourInlineAxis = child->GetWritingMode().PhysicalAxis(eLogicalAxisInline);
@@ -3556,11 +3557,11 @@ static nscoord MinSize(const GridItemInfo& aGridItem,
   
   
   
-  if (axis != ourInlineAxis && sizeStyle.GetUnit() == eStyleUnit_Enumerated) {
-    sizeStyle.SetAutoValue();
+  if (axis != ourInlineAxis && sizeStyle.IsExtremumLength()) {
+    sizeStyle = StyleSize::Auto();
   }
 
-  if (sizeStyle.GetUnit() != eStyleUnit_Auto && !sizeStyle.HasPercent()) {
+  if (!sizeStyle.IsAuto() && !sizeStyle.HasPercent()) {
     nscoord s =
         MinContentContribution(aGridItem, aState, aRC, aCBWM, aAxis, aCache);
     aCache->mMinSize.emplace(s);
@@ -3587,20 +3588,19 @@ static nscoord MinSize(const GridItemInfo& aGridItem,
                nsLayoutUtils::MinSizeContributionForAxis(
                    axis, aRC, child, nsLayoutUtils::MIN_ISIZE,
                    *aCache->mPercentageBasis);
-  const nsStyleCoord& style =
+  const StyleSize& style =
       axis == eAxisHorizontal ? stylePos->mMinWidth : stylePos->mMinHeight;
   
   
   
   
-  auto unit = axis != ourInlineAxis && style.GetUnit() == eStyleUnit_Enumerated
-                  ? eStyleUnit_Auto
-                  : style.GetUnit();
-  if (unit == eStyleUnit_Enumerated ||
-      (unit == eStyleUnit_Auto &&
-       child->StyleDisplay()->mOverflowX == StyleOverflow::Visible)) {
+  const bool inInlineAxis = axis == ourInlineAxis;
+  const bool isAuto =
+      style.IsAuto() || (!inInlineAxis && style.IsExtremumLength());
+  if ((inInlineAxis && style.IsExtremumLength()) ||
+      (isAuto && child->StyleDisplay()->mOverflowX == StyleOverflow::Visible)) {
     
-    MOZ_ASSERT(unit != eStyleUnit_Enumerated || sz == NS_UNCONSTRAINEDSIZE);
+    MOZ_ASSERT(isAuto || sz == NS_UNCONSTRAINEDSIZE);
     sz = std::min(
         sz, ContentContribution(aGridItem, aState, aRC, aCBWM, aAxis,
                                 aCache->mPercentageBasis,
@@ -4867,7 +4867,8 @@ void nsGridContainerFrame::ReflowInFlowChild(
   if (isConstrainedBSize && !wm.IsOrthogonalTo(childWM)) {
     bool stretch = false;
     if (!childRI.mStyleMargin->HasBlockAxisAuto(childWM) &&
-        childRI.mStylePosition->BSize(childWM).IsAutoOrEnum()) {
+        (childRI.mStylePosition->BSize(childWM).IsAuto() ||
+         childRI.mStylePosition->BSize(childWM).IsExtremumLength())) {
       auto blockAxisAlignment = childRI.mStylePosition->UsedAlignSelf(Style());
       if (blockAxisAlignment == NS_STYLE_ALIGN_NORMAL ||
           blockAxisAlignment == NS_STYLE_ALIGN_STRETCH) {
@@ -6157,9 +6158,9 @@ nscoord nsGridContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
   GridReflowInput state(this, *aRenderingContext);
   InitImplicitNamedAreas(state.mGridStyle);  
 
-  auto GetDefiniteSizes = [](const nsStyleCoord& aMinCoord,
-                             const nsStyleCoord& aSizeCoord,
-                             const nsStyleCoord& aMaxCoord, nscoord* aMin,
+  auto GetDefiniteSizes = [](const StyleSize& aMinCoord,
+                             const StyleSize& aSizeCoord,
+                             const StyleMaxSize& aMaxCoord, nscoord* aMin,
                              nscoord* aSize, nscoord* aMax) {
     if (aMinCoord.ConvertsToLength()) {
       *aMin = aMinCoord.ToLength();

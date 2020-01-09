@@ -799,10 +799,8 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
     
     
     const nsStylePosition* pos = StylePosition();
-    if (pos->ISize(aWM).GetUnit() == eStyleUnit_Auto ||
-        (pos->mFlexBasis.GetUnit() == eStyleUnit_Enumerated &&
-         pos->mFlexBasis.GetIntValue() == NS_STYLE_FLEX_BASIS_CONTENT &&
-         IsFlexItem() &&
+    if (pos->ISize(aWM).IsAuto() ||
+        (pos->mFlexBasis.IsContent() && IsFlexItem() &&
          nsFlexContainerFrame::IsItemInlineAxisMainAxis(this))) {
       result.ISize(aWM) =
           ShrinkWidthToFit(aRenderingContext, availBased, aFlags);
@@ -1653,7 +1651,7 @@ nsIFrame* nsContainerFrame::PullNextInFlowChild(
     return;
   }
 
-  nsBlockFrame* ourBlock = do_QueryFrame(aOurLineContainer);
+  nsBlockFrame* ourBlock = nsLayoutUtils::GetAsBlock(aOurLineContainer);
   NS_ASSERTION(ourBlock, "Not a block, but broke vertically?");
 
   while (true) {
@@ -1780,7 +1778,7 @@ bool nsContainerFrame::RenumberFrameAndDescendants(int32_t* aOrdinal,
   if (mozilla::StyleDisplay::ListItem == display->mDisplay) {
     
     
-    nsBlockFrame* listItem = do_QueryFrame(kid);
+    nsBlockFrame* listItem = nsLayoutUtils::GetAsBlock(kid);
     if (listItem) {
       nsBulletFrame* bullet = listItem->GetBullet();
       if (bullet) {

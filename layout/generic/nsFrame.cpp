@@ -1099,7 +1099,7 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
         container->InvalidateAnchor();
       }
       if (nsIScrollableFrame* scrollableFrame = do_QueryFrame(this)) {
-        scrollableFrame->Anchor()->InvalidateAnchor();
+        scrollableFrame->GetAnchor()->InvalidateAnchor();
       }
     }
 
@@ -4614,7 +4614,7 @@ static FrameContentRange GetRangeForFrame(nsIFrame* aFrame) {
   }
 
   nsIContent* parent = content->GetParent();
-  if (aFrame->IsBlockFrameOrSubclass() || !parent) {
+  if (nsLayoutUtils::GetAsBlock(aFrame) || !parent) {
     return FrameContentRange(content, 0, content->GetChildCount());
   }
 
@@ -4784,7 +4784,7 @@ static FrameTarget GetSelectionClosestFrameForLine(
 static FrameTarget GetSelectionClosestFrameForBlock(nsIFrame* aFrame,
                                                     const nsPoint& aPoint,
                                                     uint32_t aFlags) {
-  nsBlockFrame* bf = do_QueryFrame(aFrame);
+  nsBlockFrame* bf = nsLayoutUtils::GetAsBlock(aFrame);  
   if (!bf) return FrameTarget::Null();
 
   
@@ -5363,8 +5363,8 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
                                        aPadding.ISize(aWM) -
                                        boxSizingAdjust.ISize(aWM);
 
-  const nsStyleCoord* inlineStyleCoord = &stylePos->ISize(aWM);
-  const nsStyleCoord* blockStyleCoord = &stylePos->BSize(aWM);
+  const auto* inlineStyleCoord = &stylePos->ISize(aWM);
+  const auto* blockStyleCoord = &stylePos->BSize(aWM);
 
   auto parentFrame = GetParent();
   auto alignCB = parentFrame;
@@ -5404,7 +5404,7 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
     
     
     
-    const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
+    const auto* flexBasis = &stylePos->mFlexBasis;
     auto& mainAxisCoord =
         (flexMainAxis == eLogicalAxisInline ? inlineStyleCoord
                                             : blockStyleCoord);
@@ -5415,24 +5415,24 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
     
     
     
-    if (nsFlexContainerFrame::IsUsedFlexBasisContent(flexBasis,
-                                                     mainAxisCoord) &&
+    if (nsFlexContainerFrame::IsUsedFlexBasisContent(*flexBasis,
+                                                     *mainAxisCoord) &&
         MOZ_LIKELY(!IsTableWrapperFrame())) {
-      static const nsStyleCoord maxContStyleCoord(NS_STYLE_WIDTH_MAX_CONTENT,
-                                                  eStyleUnit_Enumerated);
+      static const StyleSize maxContStyleCoord(
+          StyleSize::ExtremumLength(StyleExtremumLength::MaxContent));
       mainAxisCoord = &maxContStyleCoord;
       
       
-    } else if (flexBasis->GetUnit() != eStyleUnit_Auto) {
+    } else if (!flexBasis->IsAuto()) {
       
       
-      mainAxisCoord = flexBasis;
+      mainAxisCoord = &flexBasis->AsSize();
     }  
        
   }
 
   
-  if (inlineStyleCoord->GetUnit() != eStyleUnit_Auto) {
+  if (!inlineStyleCoord->IsAuto()) {
     result.ISize(aWM) = ComputeISizeValue(
         aRenderingContext, aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
         boxSizingToMarginEdgeISize, *inlineStyleCoord, aFlags);
@@ -5462,9 +5462,9 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
   
   
   
-  const nsStyleCoord& maxISizeCoord = stylePos->MaxISize(aWM);
+  const auto& maxISizeCoord = stylePos->MaxISize(aWM);
   nscoord maxISize = NS_UNCONSTRAINEDSIZE;
-  if (maxISizeCoord.GetUnit() != eStyleUnit_None &&
+  if (!maxISizeCoord.IsNone() &&
       !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
     maxISize = ComputeISizeValue(
         aRenderingContext, aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
@@ -5472,9 +5472,9 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
     result.ISize(aWM) = std::min(maxISize, result.ISize(aWM));
   }
 
-  const nsStyleCoord& minISizeCoord = stylePos->MinISize(aWM);
+  const auto& minISizeCoord = stylePos->MinISize(aWM);
   nscoord minISize;
-  if (minISizeCoord.GetUnit() != eStyleUnit_Auto &&
+  if (!minISizeCoord.IsAuto() &&
       !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
     minISize = ComputeISizeValue(
         aRenderingContext, aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
@@ -5483,7 +5483,7 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
     
     
     minISize = std::min(maxISize, GetMinISize(aRenderingContext));
-    if (inlineStyleCoord->IsCoordPercentCalcUnit()) {
+    if (inlineStyleCoord->IsLengthPercentage()) {
       minISize = std::min(minISize, result.ISize(aWM));
     } else if (aFlags & eIClampMarginBoxMinSize) {
       
@@ -5513,8 +5513,10 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
   if (!(aFlags & nsIFrame::eUseAutoBSize)) {
     if (!nsLayoutUtils::IsAutoBSize(*blockStyleCoord, aCBSize.BSize(aWM))) {
       result.BSize(aWM) = nsLayoutUtils::ComputeBSizeValue(
-          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM), *blockStyleCoord);
-    } else if (MOZ_UNLIKELY(isGridItem) && blockStyleCoord->IsAutoOrEnum() &&
+          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+          blockStyleCoord->AsLengthPercentage());
+    } else if (MOZ_UNLIKELY(isGridItem) &&
+               blockStyleCoord->BehavesLikeInitialValueOnBlockAxis() &&
                !IS_TRUE_OVERFLOW_CONTAINER(this)) {
       auto cbSize = aCBSize.BSize(aWM);
       if (cbSize != NS_AUTOHEIGHT) {
@@ -5542,22 +5544,24 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
     }
   }
 
-  const nsStyleCoord& maxBSizeCoord = stylePos->MaxBSize(aWM);
+  const auto& maxBSizeCoord = stylePos->MaxBSize(aWM);
 
   if (result.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
     if (!nsLayoutUtils::IsAutoBSize(maxBSizeCoord, aCBSize.BSize(aWM)) &&
         !(isFlexItem && flexMainAxis == eLogicalAxisBlock)) {
       nscoord maxBSize = nsLayoutUtils::ComputeBSizeValue(
-          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM), maxBSizeCoord);
+          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+          maxBSizeCoord.AsLengthPercentage());
       result.BSize(aWM) = std::min(maxBSize, result.BSize(aWM));
     }
 
-    const nsStyleCoord& minBSizeCoord = stylePos->MinBSize(aWM);
+    const auto& minBSizeCoord = stylePos->MinBSize(aWM);
 
     if (!nsLayoutUtils::IsAutoBSize(minBSizeCoord, aCBSize.BSize(aWM)) &&
         !(isFlexItem && flexMainAxis == eLogicalAxisBlock)) {
       nscoord minBSize = nsLayoutUtils::ComputeBSizeValue(
-          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM), minBSizeCoord);
+          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+          minBSizeCoord.AsLengthPercentage());
       result.BSize(aWM) = std::max(minBSize, result.BSize(aWM));
     }
   }
@@ -5600,8 +5604,8 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
     const LogicalSize& aBorder, const LogicalSize& aPadding,
     ComputeSizeFlags aFlags) {
   const nsStylePosition* stylePos = StylePosition();
-  const nsStyleCoord* inlineStyleCoord = &stylePos->ISize(aWM);
-  const nsStyleCoord* blockStyleCoord = &stylePos->BSize(aWM);
+  const auto* inlineStyleCoord = &stylePos->ISize(aWM);
+  const auto* blockStyleCoord = &stylePos->BSize(aWM);
   auto* parentFrame = GetParent();
   const bool isGridItem = parentFrame && parentFrame->IsGridContainerFrame() &&
                           !HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
@@ -5614,7 +5618,7 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
   
   LogicalAxis flexMainAxis =
       eLogicalAxisInline;  
-  Maybe<nsStyleCoord> imposedMainSizeStyleCoord;
+  Maybe<StyleSize> imposedMainSizeStyleCoord;
 
   
   
@@ -5633,8 +5637,8 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
     nscoord imposedMainSize =
         GetProperty(nsIFrame::FlexItemMainSizeOverride(), &didImposeMainSize);
     if (didImposeMainSize) {
-      imposedMainSizeStyleCoord.emplace(imposedMainSize,
-                                        nsStyleCoord::CoordConstructor);
+      imposedMainSizeStyleCoord = Some(StyleSize::LengthPercentage(
+          LengthPercentage::FromAppUnits(imposedMainSize)));
       if (flexMainAxis == eLogicalAxisInline) {
         inlineStyleCoord = imposedMainSizeStyleCoord.ptr();
       } else {
@@ -5649,13 +5653,13 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
       
       
       
-      const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
+      const auto* flexBasis = &stylePos->mFlexBasis;
       auto& mainAxisCoord =
           (flexMainAxis == eLogicalAxisInline ? inlineStyleCoord
                                               : blockStyleCoord);
 
-      if (nsFlexContainerFrame::IsUsedFlexBasisContent(flexBasis,
-                                                       mainAxisCoord)) {
+      if (nsFlexContainerFrame::IsUsedFlexBasisContent(*flexBasis,
+                                                       *mainAxisCoord)) {
         
         
         
@@ -5668,12 +5672,12 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
         
         
         
-        static const nsStyleCoord autoStyleCoord(eStyleUnit_Auto);
-        mainAxisCoord = &autoStyleCoord;
-      } else if (flexBasis->GetUnit() != eStyleUnit_Auto) {
+        static const StyleSize autoSize(StyleSize::Auto());
+        mainAxisCoord = &autoSize;
+      } else if (!flexBasis->IsAuto()) {
         
         
-        mainAxisCoord = flexBasis;
+        mainAxisCoord = &flexBasis->AsSize();
       }  
          
     }
@@ -5687,7 +5691,7 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
   
   
 
-  const bool isAutoISize = inlineStyleCoord->GetUnit() == eStyleUnit_Auto;
+  const bool isAutoISize = inlineStyleCoord->IsAuto();
   const bool isAutoBSize =
       nsLayoutUtils::IsAutoBSize(*blockStyleCoord, aCBSize.BSize(aWM));
 
@@ -5779,9 +5783,9 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
     }
   }
 
-  const nsStyleCoord& maxISizeCoord = stylePos->MaxISize(aWM);
+  const auto& maxISizeCoord = stylePos->MaxISize(aWM);
 
-  if (maxISizeCoord.GetUnit() != eStyleUnit_None &&
+  if (!maxISizeCoord.IsNone() &&
       !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
     maxISize = ComputeISizeValue(
         aRenderingContext, aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
@@ -5794,9 +5798,9 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
   
   
 
-  const nsStyleCoord& minISizeCoord = stylePos->MinISize(aWM);
+  const auto& minISizeCoord = stylePos->MinISize(aWM);
 
-  if (minISizeCoord.GetUnit() != eStyleUnit_Auto &&
+  if (!minISizeCoord.IsAuto() &&
       !(isFlexItem && flexMainAxis == eLogicalAxisInline)) {
     minISize = ComputeISizeValue(
         aRenderingContext, aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
@@ -5812,7 +5816,8 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
 
   if (!isAutoBSize) {
     bSize = nsLayoutUtils::ComputeBSizeValue(
-        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM), *blockStyleCoord);
+        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+        blockStyleCoord->AsLengthPercentage());
   } else if (MOZ_UNLIKELY(isGridItem)) {
     MOZ_ASSERT(!IS_TRUE_OVERFLOW_CONTAINER(this));
     
@@ -5845,22 +5850,24 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
     }
   }
 
-  const nsStyleCoord& maxBSizeCoord = stylePos->MaxBSize(aWM);
+  const auto& maxBSizeCoord = stylePos->MaxBSize(aWM);
 
   if (!nsLayoutUtils::IsAutoBSize(maxBSizeCoord, aCBSize.BSize(aWM)) &&
       !(isFlexItem && flexMainAxis == eLogicalAxisBlock)) {
     maxBSize = nsLayoutUtils::ComputeBSizeValue(
-        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM), maxBSizeCoord);
+        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+        maxBSizeCoord.AsLengthPercentage());
   } else {
     maxBSize = nscoord_MAX;
   }
 
-  const nsStyleCoord& minBSizeCoord = stylePos->MinBSize(aWM);
+  const auto& minBSizeCoord = stylePos->MinBSize(aWM);
 
   if (!nsLayoutUtils::IsAutoBSize(minBSizeCoord, aCBSize.BSize(aWM)) &&
       !(isFlexItem && flexMainAxis == eLogicalAxisBlock)) {
     minBSize = nsLayoutUtils::ComputeBSizeValue(
-        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM), minBSizeCoord);
+        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+        minBSizeCoord.AsLengthPercentage());
   } else {
     minBSize = 0;
   }
@@ -6064,7 +6071,7 @@ LogicalSize nsFrame::ComputeAutoSize(
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
 
   
-  if (StylePosition()->ISize(aWM).GetUnit() == eStyleUnit_Auto) {
+  if (StylePosition()->ISize(aWM).IsAuto()) {
     nscoord availBased = aAvailableISize - aMargin.ISize(aWM) -
                          aBorder.ISize(aWM) - aPadding.ISize(aWM);
     result.ISize(aWM) = ShrinkWidthToFit(aRenderingContext, availBased, aFlags);
@@ -6098,7 +6105,51 @@ nscoord nsIFrame::ComputeISizeValue(gfxContext* aRenderingContext,
                                     nscoord aContainingBlockISize,
                                     nscoord aContentEdgeToBoxSizing,
                                     nscoord aBoxSizingToMarginEdge,
-                                    const nsStyleCoord& aCoord,
+                                    StyleExtremumLength aSize,
+                                    ComputeSizeFlags aFlags) {
+  
+  
+  AutoMaybeDisableFontInflation an(this);
+  nscoord result;
+  switch (aSize) {
+    case StyleExtremumLength::MaxContent:
+      result = GetPrefISize(aRenderingContext);
+      NS_ASSERTION(result >= 0, "inline-size less than zero");
+      return result;
+    case StyleExtremumLength::MinContent:
+      result = GetMinISize(aRenderingContext);
+      NS_ASSERTION(result >= 0, "inline-size less than zero");
+      if (MOZ_UNLIKELY(aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize)) {
+        auto available = aContainingBlockISize -
+                         (aBoxSizingToMarginEdge + aContentEdgeToBoxSizing);
+        result = std::min(available, result);
+      }
+      return result;
+    case StyleExtremumLength::MozFitContent: {
+      nscoord pref = GetPrefISize(aRenderingContext),
+              min = GetMinISize(aRenderingContext),
+              fill = aContainingBlockISize -
+                     (aBoxSizingToMarginEdge + aContentEdgeToBoxSizing);
+      if (MOZ_UNLIKELY(aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize)) {
+        min = std::min(min, fill);
+      }
+      result = std::max(min, std::min(pref, fill));
+      NS_ASSERTION(result >= 0, "inline-size less than zero");
+      return result;
+    }
+    case StyleExtremumLength::MozAvailable:
+      return aContainingBlockISize -
+             (aBoxSizingToMarginEdge + aContentEdgeToBoxSizing);
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown extremum length?");
+  return 0;
+}
+
+nscoord nsIFrame::ComputeISizeValue(gfxContext* aRenderingContext,
+                                    nscoord aContainingBlockISize,
+                                    nscoord aContentEdgeToBoxSizing,
+                                    nscoord aBoxSizingToMarginEdge,
+                                    const LengthPercentage& aCoord,
                                     ComputeSizeFlags aFlags) {
   MOZ_ASSERT(aRenderingContext, "non-null rendering context expected");
   LAYOUT_WARN_IF_FALSE(
@@ -6108,51 +6159,11 @@ nscoord nsIFrame::ComputeISizeValue(gfxContext* aRenderingContext,
       "calculation");
   MOZ_ASSERT(aContainingBlockISize >= 0, "inline-size less than zero");
 
-  nscoord result;
-  if (aCoord.IsCoordPercentCalcUnit()) {
-    result = aCoord.ComputeCoordPercentCalc(aContainingBlockISize);
-    
-    
-    
-    result -= aContentEdgeToBoxSizing;
-  } else {
-    MOZ_ASSERT(eStyleUnit_Enumerated == aCoord.GetUnit());
-    
-    
-    AutoMaybeDisableFontInflation an(this);
-
-    int32_t val = aCoord.GetIntValue();
-    switch (val) {
-      case NS_STYLE_WIDTH_MAX_CONTENT:
-        result = GetPrefISize(aRenderingContext);
-        NS_ASSERTION(result >= 0, "inline-size less than zero");
-        break;
-      case NS_STYLE_WIDTH_MIN_CONTENT:
-        result = GetMinISize(aRenderingContext);
-        NS_ASSERTION(result >= 0, "inline-size less than zero");
-        if (MOZ_UNLIKELY(aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize)) {
-          auto available = aContainingBlockISize -
-                           (aBoxSizingToMarginEdge + aContentEdgeToBoxSizing);
-          result = std::min(available, result);
-        }
-        break;
-      case NS_STYLE_WIDTH_FIT_CONTENT: {
-        nscoord pref = GetPrefISize(aRenderingContext),
-                min = GetMinISize(aRenderingContext),
-                fill = aContainingBlockISize -
-                       (aBoxSizingToMarginEdge + aContentEdgeToBoxSizing);
-        if (MOZ_UNLIKELY(aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize)) {
-          min = std::min(min, fill);
-        }
-        result = std::max(min, std::min(pref, fill));
-        NS_ASSERTION(result >= 0, "inline-size less than zero");
-      } break;
-      case NS_STYLE_WIDTH_AVAILABLE:
-        result = aContainingBlockISize -
-                 (aBoxSizingToMarginEdge + aContentEdgeToBoxSizing);
-    }
-  }
-
+  nscoord result = aCoord.Resolve(aContainingBlockISize);
+  
+  
+  
+  result -= aContentEdgeToBoxSizing;
   return std::max(0, result);
 }
 
@@ -6171,7 +6182,7 @@ void nsFrame::DidReflow(nsPresContext* aPresContext,
   
   
   if (aReflowInput && aReflowInput->mPercentBSizeObserver && !GetPrevInFlow()) {
-    const nsStyleCoord& bsize =
+    const auto& bsize =
         aReflowInput->mStylePosition->BSize(aReflowInput->GetWritingMode());
     if (bsize.HasPercent()) {
       aReflowInput->mPercentBSizeObserver->NotifyPercentBSize(*aReflowInput);
@@ -7241,8 +7252,8 @@ bool nsIFrame::IsBlockWrapper() const {
           pseudoType == nsCSSAnonBoxes::cellContent());
 }
 
-bool nsIFrame::IsBlockFrameOrSubclass() const {
-  const nsBlockFrame* thisAsBlock = do_QueryFrame(this);
+bool nsIFrame::IsBlockFrameOrSubclass() {
+  nsBlockFrame* thisAsBlock = do_QueryFrame(this);
   return !!thisAsBlock;
 }
 
@@ -7879,7 +7890,7 @@ static nsContentAndOffset FindBlockFrameOrBR(nsIFrame* aFrame,
   
   
   
-  if ((aFrame->IsBlockFrameOrSubclass() &&
+  if ((nsLayoutUtils::GetAsBlock(aFrame) &&
        !(aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT)) ||
       aFrame->IsBrFrame()) {
     nsIContent* content = aFrame->GetContent();
@@ -7925,7 +7936,7 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
   nsIFrame* frame = this;
   nsContentAndOffset blockFrameOrBR;
   blockFrameOrBR.mContent = nullptr;
-  bool reachedBlockAncestor = frame->IsBlockFrameOrSubclass();
+  bool reachedBlockAncestor = !!nsLayoutUtils::GetAsBlock(frame);
 
   
   
@@ -7952,7 +7963,7 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
         break;
       }
       frame = parent;
-      reachedBlockAncestor = (frame && frame->IsBlockFrameOrSubclass());
+      reachedBlockAncestor = (nsLayoutUtils::GetAsBlock(frame) != nullptr);
     }
     if (reachedBlockAncestor) {  
       aPos->mResultContent = frame->GetContent();
@@ -7978,7 +7989,7 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
         break;
       }
       frame = parent;
-      reachedBlockAncestor = (frame && frame->IsBlockFrameOrSubclass());
+      reachedBlockAncestor = !!nsLayoutUtils::GetAsBlock(frame);
     }
     if (reachedBlockAncestor) {  
       aPos->mResultContent = frame->GetContent();

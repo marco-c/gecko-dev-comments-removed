@@ -534,8 +534,8 @@ LogicalSize nsTextControlFrame::ComputeAutoSize(
 
   
   
-  const nsStyleCoord& iSizeCoord = StylePosition()->ISize(aWM);
-  if (iSizeCoord.GetUnit() == eStyleUnit_Auto) {
+  const auto& iSizeCoord = StylePosition()->ISize(aWM);
+  if (iSizeCoord.IsAuto()) {
     if (aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize) {
       
       

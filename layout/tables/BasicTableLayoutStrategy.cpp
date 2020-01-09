@@ -121,8 +121,7 @@ static CellISizeInfo GetISizeInfo(gfxContext *aRenderingContext,
   float prefPercent = 0.0f;
   bool hasSpecifiedISize = false;
 
-  const nsStyleCoord &iSize = stylePos->ISize(aWM);
-  nsStyleUnit unit = iSize.GetUnit();
+  const auto &iSize = stylePos->ISize(aWM);
   
   
   
@@ -145,65 +144,66 @@ static CellISizeInfo GetISizeInfo(gfxContext *aRenderingContext,
       minCoord = c;
     }
     prefCoord = std::max(c, minCoord);
-  } else if (iSize.ConvertsToPercent()) {
-    prefPercent = iSize.ToPercent();
-  } else if (unit == eStyleUnit_Enumerated && aIsCell) {
-    switch (iSize.GetIntValue()) {
-      case NS_STYLE_WIDTH_MAX_CONTENT:
+  } else if (iSize.ConvertsToPercentage()) {
+    prefPercent = iSize.ToPercentage();
+  } else if (iSize.IsExtremumLength() && aIsCell) {
+    switch (iSize.AsExtremumLength()) {
+      case StyleExtremumLength::MaxContent:
         
         
         break;
-      case NS_STYLE_WIDTH_MIN_CONTENT:
+      case StyleExtremumLength::MinContent:
         prefCoord = minCoord;
         break;
-      case NS_STYLE_WIDTH_FIT_CONTENT:
-      case NS_STYLE_WIDTH_AVAILABLE:
-        
+      case StyleExtremumLength::MozFitContent:
+      case StyleExtremumLength::MozAvailable:
         break;
       default:
         MOZ_ASSERT_UNREACHABLE("unexpected enumerated value");
     }
   }
 
-  nsStyleCoord maxISize(stylePos->MaxISize(aWM));
-  if (maxISize.GetUnit() == eStyleUnit_Enumerated) {
-    if (!aIsCell || maxISize.GetIntValue() == NS_STYLE_WIDTH_AVAILABLE) {
-      maxISize.SetNoneValue();
-    } else if (maxISize.GetIntValue() == NS_STYLE_WIDTH_FIT_CONTENT) {
+  StyleMaxSize maxISize = stylePos->MaxISize(aWM);
+  if (maxISize.IsExtremumLength()) {
+    if (!aIsCell ||
+        maxISize.AsExtremumLength() == StyleExtremumLength::MozAvailable) {
+      maxISize = StyleMaxSize::None();
+    } else if (maxISize.AsExtremumLength() ==
+               StyleExtremumLength::MozFitContent) {
       
-      maxISize.SetIntValue(NS_STYLE_WIDTH_MAX_CONTENT, eStyleUnit_Enumerated);
+      maxISize = StyleMaxSize::ExtremumLength(StyleExtremumLength::MaxContent);
     }
   }
-  unit = maxISize.GetUnit();
   
   
-  if (maxISize.ConvertsToLength() || unit == eStyleUnit_Enumerated) {
+  if (maxISize.ConvertsToLength() || maxISize.IsExtremumLength()) {
     nscoord c = aFrame->ComputeISizeValue(aRenderingContext, 0, 0, 0, maxISize);
     minCoord = std::min(c, minCoord);
     prefCoord = std::min(c, prefCoord);
-  } else if (maxISize.ConvertsToPercent()) {
-    float p = maxISize.ToPercent();
+  } else if (maxISize.ConvertsToPercentage()) {
+    float p = maxISize.ToPercentage();
     if (p < prefPercent) {
       prefPercent = p;
     }
   }
 
-  nsStyleCoord minISize(stylePos->MinISize(aWM));
-  if (minISize.GetUnit() == eStyleUnit_Enumerated) {
-    if (!aIsCell || minISize.GetIntValue() == NS_STYLE_WIDTH_AVAILABLE) {
-      minISize.SetCoordValue(0);
-    } else if (minISize.GetIntValue() == NS_STYLE_WIDTH_FIT_CONTENT) {
+  StyleSize minISize = stylePos->MinISize(aWM);
+  if (minISize.IsExtremumLength()) {
+    if (!aIsCell ||
+        minISize.AsExtremumLength() == StyleExtremumLength::MozAvailable) {
+      minISize = StyleSize::LengthPercentage(LengthPercentage::Zero());
+    } else if (minISize.AsExtremumLength() ==
+               StyleExtremumLength::MozFitContent) {
       
-      minISize.SetIntValue(NS_STYLE_WIDTH_MIN_CONTENT, eStyleUnit_Enumerated);
+      minISize = StyleSize::ExtremumLength(StyleExtremumLength::MinContent);
     }
   }
-  unit = minISize.GetUnit();
-  if (minISize.ConvertsToLength() || unit == eStyleUnit_Enumerated) {
+  if (minISize.ConvertsToLength() || minISize.IsExtremumLength()) {
     nscoord c = aFrame->ComputeISizeValue(aRenderingContext, 0, 0, 0, minISize);
     minCoord = std::max(c, minCoord);
     prefCoord = std::max(c, prefCoord);
-  } else if (minISize.ConvertsToPercent()) {
-    float p = minISize.ToPercent();
+  } else if (minISize.ConvertsToPercentage()) {
+    float p = minISize.ToPercentage();
     if (p > prefPercent) {
       prefPercent = p;
     }

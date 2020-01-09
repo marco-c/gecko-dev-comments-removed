@@ -324,19 +324,21 @@ struct SizeComputationInput {
 
 
 
+  template <typename SizeOrMaxSize>
   inline nscoord ComputeISizeValue(nscoord aContainingBlockISize,
                                    nscoord aContentEdgeToBoxSizing,
                                    nscoord aBoxSizingToMarginEdge,
-                                   const nsStyleCoord& aCoord) const;
+                                   const SizeOrMaxSize&) const;
   
   
-  nscoord ComputeISizeValue(nscoord aContainingBlockISize,
-                            mozilla::StyleBoxSizing aBoxSizing,
-                            const nsStyleCoord& aCoord) const;
+  template <typename SizeOrMaxSize>
+  inline nscoord ComputeISizeValue(nscoord aContainingBlockISize,
+                                   mozilla::StyleBoxSizing aBoxSizing,
+                                   const SizeOrMaxSize&) const;
 
   nscoord ComputeBSizeValue(nscoord aContainingBlockBSize,
                             mozilla::StyleBoxSizing aBoxSizing,
-                            const nsStyleCoord& aCoord) const;
+                            const mozilla::LengthPercentage& aCoord) const;
 };
 
 

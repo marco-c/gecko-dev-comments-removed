@@ -761,7 +761,8 @@ nscoord nsRangeFrame::GetMinISize(gfxContext* aRenderingContext) {
   if (pos->ISize(wm).HasPercent()) {
     
     
-    return nsLayoutUtils::ResolveToLength<true>(pos->ISize(wm), nscoord(0));
+    return nsLayoutUtils::ResolveToLength<true>(
+        pos->ISize(wm).AsLengthPercentage(), nscoord(0));
   }
   return GetPrefISize(aRenderingContext);
 }

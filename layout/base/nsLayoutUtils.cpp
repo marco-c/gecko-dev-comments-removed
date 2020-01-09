@@ -4612,7 +4612,12 @@ bool nsLayoutUtils::IsViewportScrollbarFrame(nsIFrame* aFrame) {
 }
 
 
-static bool GetAbsoluteCoord(const LengthPercentage& aStyle, nscoord& aResult) {
+
+
+
+template <typename LengthPercentageLike>
+static bool GetAbsoluteCoord(const LengthPercentageLike& aStyle,
+                             nscoord& aResult) {
   if (!aStyle.ConvertsToLength()) {
     return false;
   }
@@ -4620,37 +4625,31 @@ static bool GetAbsoluteCoord(const LengthPercentage& aStyle, nscoord& aResult) {
   return true;
 }
 
-
-
-static bool GetAbsoluteCoord(const nsStyleCoord& aStyle, nscoord& aResult) {
-  if (aStyle.IsCalcUnit()) {
-    if (aStyle.CalcHasPercent()) {
-      return false;
-    }
-    
-    aResult = aStyle.ComputeComputedCalc(0);
-    if (aResult < 0) aResult = 0;
-    return true;
-  }
-
-  if (eStyleUnit_Coord != aStyle.GetUnit()) return false;
-
-  aResult = aStyle.GetCoordValue();
-  NS_ASSERTION(aResult >= 0, "negative widths not allowed");
-  return true;
-}
-
 static nscoord GetBSizeTakenByBoxSizing(StyleBoxSizing aBoxSizing,
                                         nsIFrame* aFrame, bool aHorizontalAxis,
                                         bool aIgnorePadding);
 
+static bool GetPercentBSize(const LengthPercentage& aStyle, nsIFrame* aFrame,
+                            bool aHorizontalAxis, nscoord& aResult);
 
-static bool GetPercentBSize(const nsStyleCoord& aStyle, nsIFrame* aFrame,
+
+template <typename SizeOrMaxSize>
+static bool GetPercentBSize(const SizeOrMaxSize& aStyle, nsIFrame* aFrame,
                             bool aHorizontalAxis, nscoord& aResult) {
-  if (eStyleUnit_Percent != aStyle.GetUnit() && !aStyle.IsCalcUnit())
+  if (!aStyle.IsLengthPercentage()) {
     return false;
+  }
+  return GetPercentBSize(aStyle.AsLengthPercentage(), aFrame, aHorizontalAxis,
+                         aResult);
+}
 
-  MOZ_ASSERT(!aStyle.IsCalcUnit() || aStyle.CalcHasPercent(),
+static bool GetPercentBSize(const LengthPercentage& aStyle, nsIFrame* aFrame,
+                            bool aHorizontalAxis, nscoord& aResult) {
+  if (!aStyle.HasPercent()) {
+    return false;
+  }
+
+  MOZ_ASSERT(!aStyle.ConvertsToLength(),
              "GetAbsoluteCoord should have handled this");
 
   
@@ -4667,11 +4666,12 @@ static bool GetPercentBSize(const nsStyleCoord& aStyle, nsIFrame* aFrame,
   WritingMode wm = f->GetWritingMode();
 
   const nsStylePosition* pos = f->StylePosition();
-  const nsStyleCoord& bSizeCoord = pos->BSize(wm);
+  const auto& bSizeCoord = pos->BSize(wm);
   nscoord h;
   if (!GetAbsoluteCoord(bSizeCoord, h) &&
       !GetPercentBSize(bSizeCoord, f, aHorizontalAxis, h)) {
-    NS_ASSERTION(bSizeCoord.IsAutoOrEnum() || bSizeCoord.HasPercent(),
+    NS_ASSERTION(bSizeCoord.IsAuto() || bSizeCoord.IsExtremumLength() ||
+                     bSizeCoord.HasPercent(),
                  "unknown block-size unit");
     LayoutFrameType fType = f->Type();
     if (fType != LayoutFrameType::Viewport &&
@@ -4686,7 +4686,7 @@ static bool GetPercentBSize(const nsStyleCoord& aStyle, nsIFrame* aFrame,
     }
 
     NS_ASSERTION(
-        bSizeCoord.IsAutoOrEnum(),
+        bSizeCoord.IsAuto() || bSizeCoord.IsExtremumLength(),
         "Unexpected block-size unit for viewport or canvas or page-content");
     
     
@@ -4697,25 +4697,27 @@ static bool GetPercentBSize(const nsStyleCoord& aStyle, nsIFrame* aFrame,
     }
   }
 
-  const nsStyleCoord& maxBSizeCoord = pos->MaxBSize(wm);
+  const auto& maxBSizeCoord = pos->MaxBSize(wm);
 
   nscoord maxh;
   if (GetAbsoluteCoord(maxBSizeCoord, maxh) ||
       GetPercentBSize(maxBSizeCoord, f, aHorizontalAxis, maxh)) {
     if (maxh < h) h = maxh;
   } else {
-    NS_ASSERTION(maxBSizeCoord.IsAutoOrEnum() || maxBSizeCoord.HasPercent(),
+    NS_ASSERTION(maxBSizeCoord.IsNone() || maxBSizeCoord.IsExtremumLength() ||
+                     maxBSizeCoord.HasPercent(),
                  "unknown max block-size unit");
   }
 
-  const nsStyleCoord& minBSizeCoord = pos->MinBSize(wm);
+  const auto& minBSizeCoord = pos->MinBSize(wm);
 
   nscoord minh;
   if (GetAbsoluteCoord(minBSizeCoord, minh) ||
       GetPercentBSize(minBSizeCoord, f, aHorizontalAxis, minh)) {
     if (minh > h) h = minh;
   } else {
-    NS_ASSERTION(minBSizeCoord.IsAutoOrEnum() || minBSizeCoord.HasPercent(),
+    NS_ASSERTION(minBSizeCoord.IsAuto() || minBSizeCoord.IsExtremumLength() ||
+                     minBSizeCoord.HasPercent(),
                  "unknown min block-size unit");
   }
 
@@ -4727,36 +4729,8 @@ static bool GetPercentBSize(const nsStyleCoord& aStyle, nsIFrame* aFrame,
       GetBSizeTakenByBoxSizing(pos->mBoxSizing, f, aHorizontalAxis, false);
   h = std::max(0, h - bSizeTakenByBoxSizing);
 
-  if (aStyle.IsCalcUnit()) {
-    aResult = std::max(aStyle.ComputeComputedCalc(h), 0);
-    return true;
-  }
-
-  aResult = NSToCoordRound(aStyle.GetPercentValue() * h);
+  aResult = std::max(aStyle.Resolve(h), 0);
   return true;
-}
-
-static bool GetPercentBSize(const LengthPercentage& aStyle, nsIFrame* aFrame,
-                            bool aHorizontalAxis, nscoord& aResult) {
-  if (!aStyle.HasPercent()) {
-    return false;
-  }
-
-  
-  nsStyleCoord coord;
-  if (aStyle.was_calc) {
-    nscoord length = CSSPixel::ToAppUnits(aStyle.LengthInCSSPixels());
-    float percent = aStyle.Percentage();
-    auto* calc = new nsStyleCoord::Calc();
-    calc->mLength = length;
-    calc->mPercent = percent;
-    calc->mHasPercent = true;
-    coord.SetCalcValue(calc);  
-  } else {
-    coord.SetPercentValue(aStyle.Percentage());
-  }
-
-  return GetPercentBSize(coord, aFrame, aHorizontalAxis, aResult);
 }
 
 
@@ -4786,50 +4760,16 @@ static bool GetDefiniteSize(const LengthPercentage& aStyle, nsIFrame* aFrame,
 
 
 
-static bool GetDefiniteSize(const nsStyleCoord& aStyle, nsIFrame* aFrame,
+template <typename SizeOrMaxSize>
+static bool GetDefiniteSize(const SizeOrMaxSize& aStyle, nsIFrame* aFrame,
                             bool aIsInlineAxis,
                             const Maybe<LogicalSize>& aPercentageBasis,
                             nscoord* aResult) {
-  switch (aStyle.GetUnit()) {
-    case eStyleUnit_Coord:
-      *aResult = aStyle.GetCoordValue();
-      return true;
-    case eStyleUnit_Percent: {
-      if (aPercentageBasis.isNothing()) {
-        return false;
-      }
-      auto wm = aFrame->GetWritingMode();
-      nscoord pb = aIsInlineAxis ? aPercentageBasis.value().ISize(wm)
-                                 : aPercentageBasis.value().BSize(wm);
-      if (pb != NS_UNCONSTRAINEDSIZE) {
-        nscoord p = NSToCoordFloorClamped(pb * aStyle.GetPercentValue());
-        *aResult = std::max(nscoord(0), p);
-        return true;
-      }
-      return false;
-    }
-    case eStyleUnit_Calc: {
-      nsStyleCoord::Calc* calc = aStyle.GetCalcValue();
-      if (calc->mPercent != 0.0f) {
-        if (aPercentageBasis.isNothing()) {
-          return false;
-        }
-        auto wm = aFrame->GetWritingMode();
-        nscoord pb = aIsInlineAxis ? aPercentageBasis.value().ISize(wm)
-                                   : aPercentageBasis.value().BSize(wm);
-        if (pb == NS_UNCONSTRAINEDSIZE) {
-          return false;
-        }
-        *aResult = std::max(
-            0, calc->mLength + NSToCoordFloorClamped(pb * calc->mPercent));
-      } else {
-        *aResult = std::max(0, calc->mLength);
-      }
-      return true;
-    }
-    default:
-      return false;
+  if (!aStyle.IsLengthPercentage()) {
+    return false;
   }
+  return GetDefiniteSize(aStyle.AsLengthPercentage(), aFrame, aIsInlineAxis,
+                         aPercentageBasis, aResult);
 }
 
 
@@ -4927,43 +4867,49 @@ static nscoord GetDefiniteSizeTakenByBoxSizing(
 
 
 enum eWidthProperty { PROP_WIDTH, PROP_MAX_WIDTH, PROP_MIN_WIDTH };
-static bool GetIntrinsicCoord(const nsStyleCoord& aStyle,
+static bool GetIntrinsicCoord(StyleExtremumLength aStyle,
                               gfxContext* aRenderingContext, nsIFrame* aFrame,
                               eWidthProperty aProperty, nscoord& aResult) {
   MOZ_ASSERT(aProperty == PROP_WIDTH || aProperty == PROP_MAX_WIDTH ||
                  aProperty == PROP_MIN_WIDTH,
              "unexpected property");
 
-  if (aStyle.GetUnit() != eStyleUnit_Enumerated) return false;
-  int32_t val = aStyle.GetIntValue();
-  NS_ASSERTION(
-      val == NS_STYLE_WIDTH_MAX_CONTENT || val == NS_STYLE_WIDTH_MIN_CONTENT ||
-          val == NS_STYLE_WIDTH_FIT_CONTENT || val == NS_STYLE_WIDTH_AVAILABLE,
-      "unexpected enumerated value for width property");
-  if (val == NS_STYLE_WIDTH_AVAILABLE) return false;
-  if (val == NS_STYLE_WIDTH_FIT_CONTENT) {
+  if (aStyle == StyleExtremumLength::MozAvailable) return false;
+  if (aStyle == StyleExtremumLength::MozFitContent) {
     if (aProperty == PROP_WIDTH) return false;  
     if (aProperty == PROP_MAX_WIDTH)
       
-      val = NS_STYLE_WIDTH_MAX_CONTENT;
+      aStyle = StyleExtremumLength::MaxContent;
     else
       
-      val = NS_STYLE_WIDTH_MIN_CONTENT;
+      aStyle = StyleExtremumLength::MinContent;
   }
 
-  NS_ASSERTION(
-      val == NS_STYLE_WIDTH_MAX_CONTENT || val == NS_STYLE_WIDTH_MIN_CONTENT,
-      "should have reduced everything remaining to one of these");
+  NS_ASSERTION(aStyle == StyleExtremumLength::MinContent ||
+                   aStyle == StyleExtremumLength::MaxContent,
+               "should have reduced everything remaining to one of these");
 
   
   
   AutoMaybeDisableFontInflation an(aFrame);
 
-  if (val == NS_STYLE_WIDTH_MAX_CONTENT)
+  if (aStyle == StyleExtremumLength::MaxContent)
     aResult = aFrame->GetPrefISize(aRenderingContext);
   else
     aResult = aFrame->GetMinISize(aRenderingContext);
   return true;
+}
+
+template <typename SizeOrMaxSize>
+static bool GetIntrinsicCoord(const SizeOrMaxSize& aStyle,
+                              gfxContext* aRenderingContext, nsIFrame* aFrame,
+                              eWidthProperty aProperty, nscoord& aResult) {
+  if (!aStyle.IsExtremumLength()) {
+    return false;
+  }
+
+  return GetIntrinsicCoord(aStyle.AsExtremumLength(), aRenderingContext, aFrame,
+                           aProperty, aResult);
 }
 
 #undef DEBUG_INTRINSIC_WIDTH
@@ -5012,8 +4958,8 @@ inline static bool FormControlShrinksForPercentISize(nsIFrame* aFrame) {
 
 
 static bool IsReplacedBoxResolvedAgainstZero(
-    nsIFrame* aFrame, const nsStyleCoord& aStyleSize,
-    const nsStyleCoord& aStyleMaxSize) {
+    nsIFrame* aFrame, const StyleSize& aStyleSize,
+    const StyleMaxSize& aStyleMaxSize) {
   const bool sizeHasPercent = aStyleSize.HasPercent();
   return ((sizeHasPercent || aStyleMaxSize.HasPercent()) &&
           aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
@@ -5045,10 +4991,10 @@ static nscoord AddIntrinsicSizeOffset(
     gfxContext* aRenderingContext, nsIFrame* aFrame,
     const nsIFrame::IntrinsicISizeOffsetData& aOffsets,
     nsLayoutUtils::IntrinsicISizeType aType, StyleBoxSizing aBoxSizing,
-    nscoord aContentSize, nscoord aContentMinSize,
-    const nsStyleCoord& aStyleSize, const nscoord* aFixedMinSize,
-    const nsStyleCoord& aStyleMinSize, const nscoord* aFixedMaxSize,
-    const nsStyleCoord& aStyleMaxSize, uint32_t aFlags, PhysicalAxis aAxis) {
+    nscoord aContentSize, nscoord aContentMinSize, const StyleSize& aStyleSize,
+    const nscoord* aFixedMinSize, const StyleSize& aStyleMinSize,
+    const nscoord* aFixedMaxSize, const StyleMaxSize& aStyleMaxSize,
+    uint32_t aFlags, PhysicalAxis aAxis) {
   nscoord result = aContentSize;
   nscoord min = aContentMinSize;
   nscoord coordOutsideSize = 0;
@@ -5162,33 +5108,32 @@ static void AddStateBitToAncestors(nsIFrame* aFrame, nsFrameState aBit) {
   const nsStylePosition* stylePos = aFrame->StylePosition();
   StyleBoxSizing boxSizing = stylePos->mBoxSizing;
 
-  nsStyleCoord styleMinISize =
+  StyleSize styleMinISize =
       horizontalAxis ? stylePos->mMinWidth : stylePos->mMinHeight;
-  nsStyleCoord styleISize =
+  StyleSize styleISize =
       (aFlags & MIN_INTRINSIC_ISIZE)
           ? styleMinISize
           : (horizontalAxis ? stylePos->mWidth : stylePos->mHeight);
-  MOZ_ASSERT(!(aFlags & MIN_INTRINSIC_ISIZE) ||
-                 styleISize.GetUnit() == eStyleUnit_Auto ||
-                 styleISize.GetUnit() == eStyleUnit_Enumerated,
+  MOZ_ASSERT(!(aFlags & MIN_INTRINSIC_ISIZE) || styleISize.IsAuto() ||
+                 styleISize.IsExtremumLength(),
              "should only use MIN_INTRINSIC_ISIZE for intrinsic values");
-  nsStyleCoord styleMaxISize =
+  StyleMaxSize styleMaxISize =
       horizontalAxis ? stylePos->mMaxWidth : stylePos->mMaxHeight;
 
   PhysicalAxis ourInlineAxis =
       aFrame->GetWritingMode().PhysicalAxis(eLogicalAxisInline);
   const bool isInlineAxis = aAxis == ourInlineAxis;
 
-  auto resetIfKeywords = [](nsStyleCoord& aSize, nsStyleCoord& aMinSize,
-                            nsStyleCoord& aMaxSize) {
-    if (aSize.GetUnit() == eStyleUnit_Enumerated) {
-      aSize.SetAutoValue();
+  auto resetIfKeywords = [](StyleSize& aSize, StyleSize& aMinSize,
+                            StyleMaxSize& aMaxSize) {
+    if (aSize.IsExtremumLength()) {
+      aSize = StyleSize::Auto();
     }
-    if (aMinSize.GetUnit() == eStyleUnit_Enumerated) {
-      aMinSize.SetAutoValue();
+    if (aMinSize.IsExtremumLength()) {
+      aMinSize = StyleSize::Auto();
     }
-    if (aMaxSize.GetUnit() == eStyleUnit_Enumerated) {
-      aMaxSize.SetNoneValue();
+    if (aMaxSize.IsExtremumLength()) {
+      aMaxSize = StyleMaxSize::None();
     }
   };
   
@@ -5218,7 +5163,7 @@ static void AddStateBitToAncestors(nsIFrame* aFrame, nsFrameState aBit) {
 
   
   bool haveFixedMinISize;
-  if (eStyleUnit_Auto == styleMinISize.GetUnit()) {
+  if (styleMinISize.IsAuto()) {
     
     
     
@@ -5234,9 +5179,9 @@ static void AddStateBitToAncestors(nsIFrame* aFrame, nsFrameState aBit) {
   
   
   
-  if (styleISize.GetUnit() == eStyleUnit_Enumerated &&
-      (styleISize.GetIntValue() == NS_STYLE_WIDTH_MAX_CONTENT ||
-       styleISize.GetIntValue() == NS_STYLE_WIDTH_MIN_CONTENT)) {
+  if (styleISize.IsExtremumLength() &&
+      (styleISize.AsExtremumLength() == StyleExtremumLength::MaxContent ||
+       styleISize.AsExtremumLength() == StyleExtremumLength::MinContent)) {
     MOZ_ASSERT(isInlineAxis);
     
     
@@ -5288,11 +5233,11 @@ static void AddStateBitToAncestors(nsIFrame* aFrame, nsFrameState aBit) {
     
     
     
-    nsStyleCoord styleBSize =
+    StyleSize styleBSize =
         horizontalAxis ? stylePos->mHeight : stylePos->mWidth;
-    nsStyleCoord styleMinBSize =
+    StyleSize styleMinBSize =
         horizontalAxis ? stylePos->mMinHeight : stylePos->mMinWidth;
-    nsStyleCoord styleMaxBSize =
+    StyleMaxSize styleMaxBSize =
         horizontalAxis ? stylePos->mMaxHeight : stylePos->mMaxWidth;
 
     
@@ -5304,11 +5249,12 @@ static void AddStateBitToAncestors(nsIFrame* aFrame, nsFrameState aBit) {
       resetIfKeywords(styleBSize, styleMinBSize, styleMaxBSize);
     }
 
-    if (styleBSize.GetUnit() != eStyleUnit_Auto ||
-        !(styleMinBSize.GetUnit() == eStyleUnit_Auto ||
-          (styleMinBSize.GetUnit() == eStyleUnit_Coord &&
-           styleMinBSize.GetCoordValue() == 0)) ||
-        styleMaxBSize.GetUnit() != eStyleUnit_None) {
+    
+    
+    if (!styleBSize.IsAuto() ||
+        !(styleMinBSize.IsAuto() || (styleMinBSize.ConvertsToLength() &&
+                                     styleMinBSize.ToLength() == 0)) ||
+        !styleMaxBSize.IsNone()) {
       nsSize ratio(aFrame->GetIntrinsicRatio());
       nscoord ratioISize = (horizontalAxis ? ratio.width : ratio.height);
       nscoord ratioBSize = (horizontalAxis ? ratio.height : ratio.width);
@@ -5440,9 +5386,9 @@ static void AddStateBitToAncestors(nsIFrame* aFrame, nsFrameState aBit) {
 
   
   const nsStylePosition* const stylePos = aFrame->StylePosition();
-  nsStyleCoord size =
+  StyleSize size =
       aAxis == eAxisHorizontal ? stylePos->mMinWidth : stylePos->mMinHeight;
-  nsStyleCoord maxSize =
+  StyleMaxSize maxSize =
       aAxis == eAxisHorizontal ? stylePos->mMaxWidth : stylePos->mMaxHeight;
   auto childWM = aFrame->GetWritingMode();
   PhysicalAxis ourInlineAxis = childWM.PhysicalAxis(eLogicalAxisInline);
@@ -5452,24 +5398,23 @@ static void AddStateBitToAncestors(nsIFrame* aFrame, nsFrameState aBit) {
   
   
   if (aAxis != ourInlineAxis) {
-    if (size.GetUnit() == eStyleUnit_Enumerated) {
-      size.SetAutoValue();
+    if (size.IsExtremumLength()) {
+      size = StyleSize::Auto();
     }
-    if (maxSize.GetUnit() == eStyleUnit_Enumerated) {
-      maxSize.SetNoneValue();
+    if (maxSize.IsExtremumLength()) {
+      maxSize = StyleMaxSize::None();
     }
   }
 
   nscoord minSize;
   nscoord* fixedMinSize = nullptr;
-  auto minSizeUnit = size.GetUnit();
-  if (minSizeUnit == eStyleUnit_Auto) {
+  if (size.IsAuto()) {
     if (aFrame->StyleDisplay()->mOverflowX == StyleOverflow::Visible) {
       size = aAxis == eAxisHorizontal ? stylePos->mWidth : stylePos->mHeight;
       
       
-      if (aAxis != ourInlineAxis && size.GetUnit() == eStyleUnit_Enumerated) {
-        size.SetAutoValue();
+      if (aAxis != ourInlineAxis && size.IsExtremumLength()) {
+        size = StyleSize::Auto();
       }
 
       if (GetAbsoluteCoord(size, minSize)) {
@@ -5489,7 +5434,7 @@ static void AddStateBitToAncestors(nsIFrame* aFrame, nsFrameState aBit) {
     }
   } else if (GetAbsoluteCoord(size, minSize)) {
     fixedMinSize = &minSize;
-  } else if (minSizeUnit != eStyleUnit_Enumerated) {
+  } else if (!size.IsExtremumLength()) {
     MOZ_ASSERT(size.HasPercent());
     minSize = 0;
     fixedMinSize = &minSize;
@@ -8009,10 +7954,10 @@ static nscoord MinimumFontSizeFor(nsPresContext* aPresContext,
         return FontSizeInflationFor(grandparent);
       }
       WritingMode wm = f->GetWritingMode();
-      nsStyleCoord stylePosISize = f->StylePosition()->ISize(wm);
-      nsStyleCoord stylePosBSize = f->StylePosition()->BSize(wm);
-      if (stylePosISize.GetUnit() != eStyleUnit_Auto ||
-          !stylePosBSize.IsAutoOrEnum()) {
+      const auto& stylePosISize = f->StylePosition()->ISize(wm);
+      const auto& stylePosBSize = f->StylePosition()->BSize(wm);
+      if (!stylePosISize.IsAuto() ||
+          !stylePosBSize.BehavesLikeInitialValueOnBlockAxis()) {
         return 1.0;
       }
     }

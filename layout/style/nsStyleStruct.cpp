@@ -489,7 +489,7 @@ void nsStyleList::TriggerImageLoads(Document& aDocument,
 }
 
 nsChangeHint nsStyleList::CalcDifference(
-    const nsStyleList& aNewData, const nsStyleDisplay& aOldDisplay) const {
+    const nsStyleList& aNewData, const nsStyleDisplay* aOldDisplay) const {
   
   
   if (mQuotes != aNewData.mQuotes &&
@@ -503,7 +503,7 @@ nsChangeHint nsStyleList::CalcDifference(
   
   
   
-  if (aOldDisplay.mDisplay == StyleDisplay::ListItem) {
+  if (aOldDisplay && aOldDisplay->mDisplay == StyleDisplay::ListItem) {
     if (mListStylePosition != aNewData.mListStylePosition) {
       return nsChangeHint_ReconstructFrame;
     }
@@ -1296,13 +1296,13 @@ bool nsStyleSVGPaint::operator==(const nsStyleSVGPaint& aOther) const {
 
 nsStylePosition::nsStylePosition(const Document& aDocument)
     : mOffset(StyleRectWithAllSides(LengthPercentageOrAuto::Auto())),
-      mWidth(eStyleUnit_Auto),
-      mMinWidth(eStyleUnit_Auto),
-      mMaxWidth(eStyleUnit_None),
-      mHeight(eStyleUnit_Auto),
-      mMinHeight(eStyleUnit_Auto),
-      mMaxHeight(eStyleUnit_None),
-      mFlexBasis(eStyleUnit_Auto),
+      mWidth(StyleSize::Auto()),
+      mMinWidth(StyleSize::Auto()),
+      mMaxWidth(StyleMaxSize::None()),
+      mHeight(StyleSize::Auto()),
+      mMinHeight(StyleSize::Auto()),
+      mMaxHeight(StyleMaxSize::None()),
+      mFlexBasis(StyleFlexBasis::Size(StyleSize::Auto())),
       mGridAutoColumnsMin(eStyleUnit_Auto),
       mGridAutoColumnsMax(eStyleUnit_Auto),
       mGridAutoRowsMin(eStyleUnit_Auto),
@@ -1416,7 +1416,7 @@ static bool IsGridTemplateEqual(
 
 nsChangeHint nsStylePosition::CalcDifference(
     const nsStylePosition& aNewData,
-    const nsStyleVisibility& aOldStyleVisibility) const {
+    const nsStyleVisibility* aOldStyleVisibility) const {
   nsChangeHint hint = nsChangeHint(0);
 
   
@@ -1526,13 +1526,23 @@ nsChangeHint nsStylePosition::CalcDifference(
   
   
   
-  bool isVertical = WritingMode(&aOldStyleVisibility).IsVertical();
-  if (isVertical ? widthChanged : heightChanged) {
-    hint |= nsChangeHint_ReflowHintsForBSizeChange;
-  }
+  
+  
+  
+  
+  if (aOldStyleVisibility) {
+    bool isVertical = WritingMode(aOldStyleVisibility).IsVertical();
+    if (isVertical ? widthChanged : heightChanged) {
+      hint |= nsChangeHint_ReflowHintsForBSizeChange;
+    }
 
-  if (isVertical ? heightChanged : widthChanged) {
-    hint |= nsChangeHint_ReflowHintsForISizeChange;
+    if (isVertical ? heightChanged : widthChanged) {
+      hint |= nsChangeHint_ReflowHintsForISizeChange;
+    }
+  } else {
+    if (widthChanged || heightChanged) {
+      hint |= nsChangeHint_NeutralChange;
+    }
   }
 
   

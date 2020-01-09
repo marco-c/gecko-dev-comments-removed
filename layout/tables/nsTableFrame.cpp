@@ -1761,15 +1761,15 @@ bool nsTableFrame::AncestorsHaveStyleBSize(
     LayoutFrameType frameType = rs->mFrame->Type();
     if (IsTableCell(frameType) || (LayoutFrameType::TableRow == frameType) ||
         (LayoutFrameType::TableRowGroup == frameType)) {
-      const nsStyleCoord& bsize = rs->mStylePosition->BSize(wm);
+      const auto& bsize = rs->mStylePosition->BSize(wm);
       
-      if (bsize.GetUnit() != eStyleUnit_Auto &&
-          (!bsize.IsCalcUnit() || !bsize.HasPercent())) {
+      
+      if (!bsize.IsAuto() && !bsize.HasLengthAndPercentage()) {
         return true;
       }
     } else if (LayoutFrameType::Table == frameType) {
       
-      return rs->mStylePosition->BSize(wm).GetUnit() != eStyleUnit_Auto;
+      return !rs->mStylePosition->BSize(wm).IsAuto();
     }
   }
   return false;
@@ -1789,8 +1789,8 @@ void nsTableFrame::CheckRequestSpecialBSizeReflow(
       (NS_UNCONSTRAINEDSIZE ==
            aReflowInput.ComputedBSize() ||  
        0 == aReflowInput.ComputedBSize()) &&
-      eStyleUnit_Percent ==
-          aReflowInput.mStylePosition->BSize(wm).GetUnit() &&  
+      aReflowInput.mStylePosition->BSize(wm)
+          .ConvertsToPercentage() &&  
       nsTableFrame::AncestorsHaveStyleBSize(*aReflowInput.mParentReflowInput)) {
     nsTableFrame::RequestSpecialBSizeReflow(aReflowInput);
   }
@@ -3894,11 +3894,14 @@ nsTableFrame* nsTableFrame::GetTableFramePassingThrough(
 }
 
 bool nsTableFrame::IsAutoBSize(WritingMode aWM) {
-  const nsStyleCoord& bsize = StylePosition()->BSize(aWM);
+  const auto& bsize = StylePosition()->BSize(aWM);
+  if (bsize.IsAuto()) {
+    return true;
+  }
   
-  return bsize.GetUnit() == eStyleUnit_Auto ||
-         (bsize.GetUnit() == eStyleUnit_Percent &&
-          bsize.GetPercentValue() <= 0.0f);
+  
+  return bsize.HasPercent() && !bsize.AsLengthPercentage().was_calc &&
+         bsize.ToPercentage() <= 0.0f;
 }
 
 nscoord nsTableFrame::CalcBorderBoxBSize(const ReflowInput& aReflowInput) {
@@ -3919,10 +3922,10 @@ bool nsTableFrame::IsAutoLayout() {
   
   
   
-  const nsStyleCoord& iSize = StylePosition()->ISize(GetWritingMode());
-  return (iSize.GetUnit() == eStyleUnit_Auto) ||
-         (iSize.GetUnit() == eStyleUnit_Enumerated &&
-          iSize.GetIntValue() == NS_STYLE_WIDTH_MAX_CONTENT);
+  const auto& iSize = StylePosition()->ISize(GetWritingMode());
+  return iSize.IsAuto() ||
+         (iSize.IsExtremumLength() &&
+          iSize.AsExtremumLength() == StyleExtremumLength::MaxContent);
 }
 
 #ifdef DEBUG_FRAME_DUMP

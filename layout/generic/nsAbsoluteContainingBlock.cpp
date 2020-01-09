@@ -286,9 +286,11 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
     
     
     
+    
+    
+    
     if ((pos->BSizeDependsOnContainer(wm) &&
-         !(pos->BSize(wm).GetUnit() == eStyleUnit_Auto &&
-           pos->mOffset.GetBEnd(wm).IsAuto() &&
+         !(pos->BSize(wm).IsAuto() && pos->mOffset.GetBEnd(wm).IsAuto() &&
            !pos->mOffset.GetBStart(wm).IsAuto())) ||
         pos->MinBSizeDependsOnContainer(wm) ||
         pos->MaxBSizeDependsOnContainer(wm) ||

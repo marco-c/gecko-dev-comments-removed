@@ -14,6 +14,6 @@ impl FlexBasis {
     
     #[inline]
     pub fn auto() -> Self {
-        GenericFlexBasis::Width(Size::auto())
+        GenericFlexBasis::Size(Size::auto())
     }
 }
