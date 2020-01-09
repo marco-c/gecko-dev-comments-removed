@@ -1265,14 +1265,16 @@ class nsPresContext : public nsISupports,
 
   mozilla::TimeStamp mReflowStartTime;
 
+  mozilla::Maybe<TransactionId> mFirstContentfulPaintTransactionId;
+
   
   
   mozilla::TimeStamp mFirstNonBlankPaintTime;
-  mozilla::TimeStamp mFirstContentfulPaintTime;
   mozilla::TimeStamp mFirstClickTime;
   mozilla::TimeStamp mFirstKeyTime;
   mozilla::TimeStamp mFirstMouseMoveTime;
   mozilla::TimeStamp mFirstScrollTime;
+
   bool mInteractionTimeEnabled;
 
   
@@ -1346,6 +1348,8 @@ class nsPresContext : public nsISupports,
   unsigned mHadNonBlankPaint : 1;
   
   unsigned mHadContentfulPaint : 1;
+  
+  unsigned mHadContentfulPaintComposite : 1;
 
 #ifdef DEBUG
   unsigned mInitialized : 1;
