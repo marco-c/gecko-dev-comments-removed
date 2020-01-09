@@ -5902,6 +5902,14 @@ bool nsDisplayOpacity::CanApplyOpacity() const {
 
 
 
+static const size_t kOpacityMaxChildCount = 3;
+
+
+
+static const size_t kOpacityMaxListSize = kOpacityMaxChildCount * 2;
+
+
+
 
 
 
@@ -5915,26 +5923,31 @@ bool nsDisplayOpacity::CanApplyOpacity() const {
 
 
 static bool CollectItemsWithOpacity(nsDisplayList* aList,
-                                    nsTArray<nsDisplayItem*>& aArray,
-                                    const size_t aMaxChildCount) {
+                                    nsTArray<nsDisplayItem*>& aArray) {
+  if (aList->Count() > kOpacityMaxListSize) {
+    
+    
+    return false;
+  }
+
   for (nsDisplayItem* i = aList->GetBottom(); i; i = i->GetAbove()) {
-    DisplayItemType type = i->GetType();
-    nsDisplayList* children = i->GetChildren();
+    const DisplayItemType type = i->GetType();
 
     
-    if (type == DisplayItemType::TYPE_WRAP_LIST && children) {
+    if (type == DisplayItemType::TYPE_WRAP_LIST) {
       
-      if (!CollectItemsWithOpacity(children, aArray, aMaxChildCount)) {
+      if (!CollectItemsWithOpacity(i->GetChildren(), aArray)) {
         return false;
       }
-    }
 
-    if (type == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO ||
-        type == DisplayItemType::TYPE_WRAP_LIST) {
       continue;
     }
 
-    if (!i->CanApplyOpacity() || aArray.Length() == aMaxChildCount) {
+    if (type == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
+      continue;
+    }
+
+    if (!i->CanApplyOpacity() || aArray.Length() == kOpacityMaxChildCount) {
       return false;
     }
 
@@ -5951,12 +5964,8 @@ bool nsDisplayOpacity::ApplyOpacityToChildren(nsDisplayListBuilder* aBuilder) {
 
   
   
-  static const size_t kMaxChildCount = 3;
-
-  
-  
-  AutoTArray<nsDisplayItem*, kMaxChildCount> items;
-  if (!CollectItemsWithOpacity(&mList, items, kMaxChildCount)) {
+  AutoTArray<nsDisplayItem*, kOpacityMaxChildCount> items;
+  if (!CollectItemsWithOpacity(&mList, items)) {
     mChildOpacityState = ChildOpacityState::Deferred;
     return false;
   }
@@ -5964,7 +5973,7 @@ bool nsDisplayOpacity::ApplyOpacityToChildren(nsDisplayListBuilder* aBuilder) {
   struct {
     nsDisplayItem* item;
     nsRect bounds;
-  } children[kMaxChildCount];
+  } children[kOpacityMaxChildCount];
 
   bool snap;
   size_t childCount = 0;
