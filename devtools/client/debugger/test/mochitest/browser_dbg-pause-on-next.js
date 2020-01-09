@@ -3,6 +3,7 @@
 
 
 
+
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html");
   const {
@@ -10,7 +11,7 @@ add_task(async function() {
   } = dbg;
 
   clickElement(dbg, "pause");
-  await waitForState(dbg, state => getIsWaitingOnBreak(state, getCurrentThread(state)));
+  await waitForState(dbg, state => getIsWaitingOnBreak(getCurrentThread()));
   invokeInTab("simple");
 
   await waitForPaused(dbg, "simple3");

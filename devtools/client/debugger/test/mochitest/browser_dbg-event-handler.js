@@ -4,14 +4,12 @@
 
 
 
+
 add_task(async function() {
   const dbg = await initDebugger("doc-event-handler.html");
 
   invokeInTab("synthesizeClick");
-
   await waitForPaused(dbg);
-
-  const state = dbg.store.getState();
-  const source = dbg.selectors.getSelectedSource(state);
+  const source = dbg.selectors.getSelectedSource();
   ok(!source.url, "Selected source should not have a URL");
 });

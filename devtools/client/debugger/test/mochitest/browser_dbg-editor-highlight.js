@@ -5,13 +5,14 @@
 
 
 
+
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "long.js");
   const {
     selectors: { getSource },
     getState
   } = dbg;
-  const sourceUrl = EXAMPLE_URL + "long.js";
+  const sourceUrl = `${EXAMPLE_URL}long.js`;
 
   
   
@@ -22,27 +23,27 @@ add_task(async function() {
   
   
 
-  log(`Select line 16 and make sure the editor scrolled.`);
+  log("Select line 16 and make sure the editor scrolled.");
   await selectSource(dbg, "long.js", 16);
   await waitForElementWithSelector(dbg, ".CodeMirror-code > .highlight-line");
   assertHighlightLocation(dbg, "long.js", 16);
 
-  log(`Select several locations and check that we have one highlight`);
+  log("Select several locations and check that we have one highlight");
   await selectSource(dbg, "long.js", 17);
   await selectSource(dbg, "long.js", 18);
   assertHighlightLocation(dbg, "long.js", 18);
 
   
   
-  log(`Select an unloaded source`);
+  log("Select an unloaded source");
   selectSource(dbg, "simple1.js", 6);
 
   
   
   const simple1 = findSource(dbg, "simple1.js");
-  is(getSource(getState(), simple1.id).loadedState, "loading");
+  is(getSource(simple1.id).loadedState, "loading");
 
   await waitForSelectedSource(dbg, "simple1.js");
-  ok(getSource(getState(), simple1.id).text);
+  ok(getSource(simple1.id).text);
   assertHighlightLocation(dbg, "simple1.js", 6);
 });

@@ -5,6 +5,7 @@
 
 
 
+
 requestLongerTimeout(2);
 
 var gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");
@@ -29,14 +30,13 @@ add_task(async function() {
 });
 
 async function testLayout(dbg, orientation, host) {
-  const { panel, toolbox } = dbg;
   info(`Switching to ${host} ${orientation}.`);
 
   await switchHost(dbg, host);
   await resizeToolboxWindow(dbg, host);
   return waitForState(
     dbg,
-    state => dbg.selectors.getOrientation(state) == orientation
+    state => dbg.selectors.getOrientation() == orientation
   );
 }
 

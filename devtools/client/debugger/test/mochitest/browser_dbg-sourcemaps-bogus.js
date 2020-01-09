@@ -3,6 +3,7 @@
 
 
 
+
 requestLongerTimeout(2);
 
 add_task(async function() {
@@ -20,5 +21,5 @@ add_task(async function() {
 
   
   
-  is(dbg.selectors.getSourceCount(dbg.getState()), 1, "Only 1 source exists");
+  is(dbg.selectors.getSourceCount(), 1, "Only 1 source exists");
 });

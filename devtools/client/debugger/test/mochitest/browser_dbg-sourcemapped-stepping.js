@@ -2,11 +2,14 @@
 
 
 
+
 requestLongerTimeout(4);
 
 async function breakpointSteps(dbg, target, fixture, { line, column }, steps) {
   const filename = `${target}://./${fixture}/input.`;
-  const fnName = (target + "-" + fixture).replace(/-([a-z])/g, (s, c) => c.toUpperCase());
+  const fnName = `${target}-${fixture}`.replace(/-([a-z])/g, (s, c) =>
+    c.toUpperCase()
+  );
 
   await invokeWithBreakpoint(
     dbg,
@@ -39,7 +42,7 @@ async function runSteps(dbg, source, steps) {
         throw new Error("Unknown stepping type");
     }
 
-    const { location } = getVisibleSelectedFrame(getState());
+    const { location } = getVisibleSelectedFrame();
 
     is(location.sourceId, source.id, `Step ${i} has correct sourceId`);
     is(location.line, position.line, `Step ${i} has correct line`);

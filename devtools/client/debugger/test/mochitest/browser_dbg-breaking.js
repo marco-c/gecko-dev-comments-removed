@@ -3,6 +3,7 @@
 
 
 
+
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html");
   const {
@@ -25,12 +26,12 @@ add_task(async function() {
   assertPausedLocation(dbg);
   await resume(dbg);
 
-  info('Create an eval script that pauses itself.')
+  info("Create an eval script that pauses itself.");
   invokeInTab("doEval");
   await waitForPaused(dbg);
 
   await resume(dbg);
-  const source = getSelectedSource(getState())
+  const source = getSelectedSource();
   ok(!source.url, "It is an eval source");
 
   await addBreakpoint(dbg, source, 5);

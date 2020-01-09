@@ -1,5 +1,6 @@
 
 
+
 requestLongerTimeout(2);
 
 function assertBpInGutter(dbg, lineNumber) {
@@ -18,7 +19,11 @@ function assertBpInGutter(dbg, lineNumber) {
 
 add_task(async function() {
   
-  const dbg = await initDebugger("doc-sourcemaps2.html", "main.js", "main.min.js");
+  const dbg = await initDebugger(
+    "doc-sourcemaps2.html",
+    "main.js",
+    "main.min.js"
+  );
   const {
     selectors: { getBreakpoint, getBreakpointCount },
     getState
@@ -31,9 +36,9 @@ add_task(async function() {
 
   
   await addBreakpoint(dbg, mainSrc, 4, 2);
-  is(getBreakpointCount(getState()), 1, "One breakpoint exists");
+  is(getBreakpointCount(), 1, "One breakpoint exists");
   ok(
-    getBreakpoint(getState(), { sourceId: mainSrc.id, line: 4, column: 2 }),
+    getBreakpoint({ sourceId: mainSrc.id, line: 4, column: 2 }),
     "Breakpoint has correct line"
   );
 

@@ -7,11 +7,12 @@
 
 
 
+
 async function waitForBreakpoint(dbg, location) {
   return waitForState(
     dbg,
     state => {
-      return dbg.selectors.getBreakpoint(dbg.getState(), location);
+      return dbg.selectors.getBreakpoint(location);
     },
     "Waiting for breakpoint"
   );
@@ -32,7 +33,7 @@ add_task(async function() {
 
   await waitForBreakpoint(dbg, location);
 
-  const breakpointList = dbg.selectors.getBreakpointsList(dbg.getState());
+  const breakpointList = dbg.selectors.getBreakpointsList();
   const breakpoint = breakpointList[0];
 
   is(breakpointList.length, 1);

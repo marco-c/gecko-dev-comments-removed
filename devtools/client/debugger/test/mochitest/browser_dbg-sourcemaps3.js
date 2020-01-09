@@ -3,6 +3,7 @@
 
 
 
+
 requestLongerTimeout(2);
 
 
@@ -10,7 +11,12 @@ add_task(async function() {
   
   await pushPref("devtools.debugger.features.map-scopes", true);
 
-  const dbg = await initDebugger("doc-sourcemaps3.html", "bundle.js", "sorted.js", "test.js");
+  const dbg = await initDebugger(
+    "doc-sourcemaps3.html",
+    "bundle.js",
+    "sorted.js",
+    "test.js"
+  );
   const {
     selectors: { getBreakpoint, getBreakpointCount },
     getState
@@ -23,9 +29,9 @@ add_task(async function() {
 
   
   await addBreakpoint(dbg, sortedSrc, 9, 4);
-  is(getBreakpointCount(getState()), 1, "One breakpoint exists");
+  is(getBreakpointCount(), 1, "One breakpoint exists");
   ok(
-    getBreakpoint(getState(), { sourceId: sortedSrc.id, line: 9, column: 4 }),
+    getBreakpoint({ sourceId: sortedSrc.id, line: 9, column: 4 }),
     "Breakpoint has correct line"
   );
 

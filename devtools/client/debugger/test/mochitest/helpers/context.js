@@ -5,17 +5,13 @@
 
 
 
+
 function createDebuggerContext(toolbox) {
   const panel = toolbox.getPanel("jsdebugger");
   const win = panel.panelWin;
-  const { store, client, selectors, actions } = panel.getVarsForTests();
 
   return {
-    actions: actions,
-    selectors: selectors,
-    getState: store.getState,
-    store: store,
-    client: client,
+    ...win.dbg,
     toolbox: toolbox,
     win: win,
     panel: panel

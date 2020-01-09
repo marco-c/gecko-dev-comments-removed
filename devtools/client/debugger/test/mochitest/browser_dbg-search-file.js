@@ -3,12 +3,13 @@
 
 
 
+
 function waitForSearchState(dbg) {
   return waitForState(dbg, () => getCM(dbg).state.search);
 }
 
 function getFocusedEl(dbg) {
-  let doc = dbg.win.document;
+  const doc = dbg.win.document;
   return doc.activeElement;
 }
 
@@ -24,11 +25,11 @@ add_task(async function() {
 
   const cm = getCM(dbg);
   pressKey(dbg, "fileSearch");
-  is(dbg.selectors.getActiveSearch(dbg.getState()), "file");
+  is(dbg.selectors.getActiveSearch(), "file");
 
   
   pressKey(dbg, "Escape");
-  is(dbg.selectors.getActiveSearch(dbg.getState()), null);
+  is(dbg.selectors.getActiveSearch(), null);
 
   pressKey(dbg, "fileSearch");
 

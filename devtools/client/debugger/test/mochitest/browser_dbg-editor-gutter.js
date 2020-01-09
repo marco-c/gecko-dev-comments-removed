@@ -27,12 +27,12 @@ add_task(async function() {
   
   clickGutter(dbg, 4);
   await waitForDispatch(dbg, "SET_BREAKPOINT");
-  is(dbg.selectors.getBreakpointCount(getState()), 1, "One breakpoint exists");
+  is(dbg.selectors.getBreakpointCount(), 1, "One breakpoint exists");
   await assertEditorBreakpoint(dbg, 4, true);
 
   
   clickGutter(dbg, 4);
   await waitForDispatch(dbg, "REMOVE_BREAKPOINT");
-  is(dbg.selectors.getBreakpointCount(getState()), 0, "No breakpoints exist");
+  is(dbg.selectors.getBreakpointCount(), 0, "No breakpoints exist");
   await assertEditorBreakpoint(dbg, 4, false);
 });
