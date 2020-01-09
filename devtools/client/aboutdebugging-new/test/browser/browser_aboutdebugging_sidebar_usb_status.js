@@ -3,9 +3,6 @@
 
 "use strict";
 
-
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-adb.js", this);
-
 const { adbAddon } = require("devtools/shared/adb/adb-addon");
 
 
@@ -13,31 +10,35 @@ const { adbAddon } = require("devtools/shared/adb/adb-addon");
 
 
 add_task(async function() {
+  const mocks = new Mocks();
+
   await pushPref("devtools.remote.adb.extensionURL",
                  CHROME_URL_ROOT + "resources/test-adb-extension/adb-extension-#OS#.xpi");
-  await checkAdbNotRunning();
-
   const { document, tab } = await openAboutDebugging();
 
   const usbStatusElement = document.querySelector(".js-sidebar-usb-status");
   ok(usbStatusElement, "Sidebar shows the USB status element");
   ok(usbStatusElement.textContent.includes("USB disabled"),
-    "USB status element has the expected content");
+    "USB status element has 'disabled' content");
 
   info("Install the adb extension and wait for the message to udpate");
   
   adbAddon.install("internal");
-  await waitUntil(() => usbStatusElement.textContent.includes("USB enabled"));
   
-  
-  
-  
-  await waitForAdbStart();
+  await mocks.adbProcessMock.adbProcess.start();
 
-  info("Uninstall the adb extension and wait for the message to udpate");
+  info("Wait till the USB status element has 'enabled' content");
+  await waitUntil(() => {
+    const el = document.querySelector(".js-sidebar-usb-status");
+    return el.textContent.includes("USB enabled");
+  });
+
+  info("Uninstall the adb extension and wait for USB status element to update");
   adbAddon.uninstall();
-  await waitUntil(() => usbStatusElement.textContent.includes("USB disabled"));
-  await stopAdbProcess();
+  await waitUntil(() => {
+    const el = document.querySelector(".js-sidebar-usb-status");
+    return el.textContent.includes("USB disabled");
+  });
 
   await removeTab(tab);
 });
