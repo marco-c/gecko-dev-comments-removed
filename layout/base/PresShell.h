@@ -592,6 +592,30 @@ class PresShell final : public nsIPresShell,
     bool GetRetargetEventDocument(WidgetGUIEvent* aGUIEvent,
                                   Document** aRetargetEventDocument);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    nsIFrame* GetFrameForHandlingEventWith(WidgetGUIEvent* aGUIEvent,
+                                           Document* aRetargetDocument,
+                                           nsIFrame* aFrameForPresShell);
+
     MOZ_CAN_RUN_SCRIPT
     nsresult RetargetEventToParent(WidgetGUIEvent* aGUIEvent,
                                    nsEventStatus* aEventStatus);
