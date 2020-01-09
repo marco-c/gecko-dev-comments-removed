@@ -39,6 +39,22 @@ class HandlerServiceParent final : public mozilla::dom::PHandlerServiceParent {
 
   mozilla::ipc::IPCResult RecvGetApplicationDescription(
       const nsCString& aScheme, nsresult* aRv, nsString* aDescription) override;
+
+  
+
+
+
+  static const size_t MAX_MIMETYPE_LENGTH = 129; 
+
+
+
+
+  static const size_t MAX_EXT_LENGTH = 64;       
+
+
+  static const size_t MAX_SCHEME_LENGTH = 1024;  
+
+
 };
 
 #endif
