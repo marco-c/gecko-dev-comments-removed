@@ -36,6 +36,7 @@ class ChangesApp extends PureComponent {
         return CSSDeclaration({
           key: "remove-" + property + index,
           className: "level diff-remove",
+          marker: getDiffMarker("diff-remove"),
           property,
           value,
         });
@@ -48,6 +49,7 @@ class ChangesApp extends PureComponent {
         return CSSDeclaration({
           key: "add-" + property + index,
           className: "level diff-add",
+          marker: getDiffMarker("diff-add"),
           property,
           value,
         });
@@ -79,8 +81,9 @@ class ChangesApp extends PureComponent {
           className: `level selector ${diffClass}`,
           title: selector,
         },
+        getDiffMarker(diffClass),
         selector,
-        dom.span({ className: "bracket-open" }, "{")
+        dom.span({ className: "bracket-open" }, " {")
       ),
       
       rule.children.map(childRule => {
@@ -88,7 +91,10 @@ class ChangesApp extends PureComponent {
       }),
       
       this.renderDeclarations(rule.remove, rule.add),
-      dom.div({ className: `level bracket-close ${diffClass}` }, "}")
+      dom.div({ className: `level bracket-close ${diffClass}` },
+        getDiffMarker(diffClass),
+        "}"
+      )
     );
   }
 
@@ -148,6 +154,30 @@ class ChangesApp extends PureComponent {
       hasChanges && this.renderDiff(this.props.changesTree)
     );
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function getDiffMarker(className) {
+  let marker = null;
+  switch (className) {
+    case "diff-add":
+      marker = dom.span({ className: "diff-marker" }, "+ ");
+      break;
+    case "diff-remove":
+      marker = dom.span({ className: "diff-marker" }, "- ");
+      break;
+  }
+  return marker;
 }
 
 const mapStateToProps = state => {
