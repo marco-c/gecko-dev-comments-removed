@@ -53,10 +53,6 @@ class WindowGlobalParent final : public nsISupports,
 
   
   
-  already_AddRefed<TabParent> GetTabParent();
-
-  
-  
   
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 
@@ -94,7 +90,6 @@ class WindowGlobalParent final : public nsISupports,
   
   mozilla::ipc::IPCResult RecvUpdateDocumentURI(nsIURI* aURI) override;
   mozilla::ipc::IPCResult RecvBecomeCurrentWindowGlobal() override;
-  mozilla::ipc::IPCResult RecvDestroy() override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 

@@ -42,7 +42,6 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
 
   
   bool IsClosed() { return mIPCClosed; }
-  void Destroy();
 
   
   
@@ -57,10 +56,6 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
   
   
   already_AddRefed<WindowGlobalParent> GetParentActor();
-
-  
-  
-  already_AddRefed<TabChild> GetTabChild();
 
   
   static already_AddRefed<WindowGlobalChild> Create(
