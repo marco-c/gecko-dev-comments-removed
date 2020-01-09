@@ -3677,7 +3677,11 @@ static bool ArrayFromCallArgs(JSContext* cx, CallArgs& args,
 static bool array_of(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  if (IsArrayConstructor(args.thisv()) || !IsConstructor(args.thisv())) {
+  bool isArrayConstructor =
+      IsArrayConstructor(args.thisv()) &&
+      args.thisv().toObject().nonCCWRealm() == cx->realm();
+
+  if (isArrayConstructor || !IsConstructor(args.thisv())) {
     
     
     return ArrayFromCallArgs(cx, args);
