@@ -107,6 +107,11 @@ class MediaEngineSourceInterface {
   
 
 
+  virtual nsString GetGroupId() const = 0;
+
+  
+
+
   virtual dom::MediaSourceEnum GetMediaSource() const = 0;
 
   
