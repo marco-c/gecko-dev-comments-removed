@@ -360,6 +360,7 @@ size_t Assembler::addPatchableJump(BufferOffset src, RelocationKind reloc) {
 
 
 
+
 void PatchJump(CodeLocationJump& jump_, CodeLocationLabel label) {
   MOZ_ASSERT(label.isSet());
 
@@ -369,12 +370,18 @@ void PatchJump(CodeLocationJump& jump_, CodeLocationLabel label) {
   Instruction* branch = (Instruction*)load->NextInstruction()->skipPool();
   MOZ_ASSERT(branch->IsUncondB());
 
-  
-  
   if (branch->IsTargetReachable((Instruction*)label.raw())) {
     branch->SetImmPCOffsetTarget((Instruction*)label.raw());
   } else {
-    MOZ_CRASH("PatchJump target not reachable");
+    
+    load->SetLiteral64(uint64_t(label.raw()));
+    
+    vixl::Register loadTarget = vixl::Register(load->Rt(), 64);
+    
+    
+    Assembler::br(branch, loadTarget);
+    MOZ_ASSERT(branch->IsBR());
+    MOZ_ASSERT(load->Rt() == branch->Rn());
   }
 }
 

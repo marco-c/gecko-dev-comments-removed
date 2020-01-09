@@ -1256,6 +1256,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     BufferOffset load_bo;
 
     
+    
+    
     load_bo = immPool64(scratch64, (uint64_t)label, &pe);
     BufferOffset branch_bo = b(-1, LabelDoc());
 
