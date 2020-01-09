@@ -3166,6 +3166,7 @@ void LIRGenerator::visitLoadElementFromState(MLoadElementFromState* ins) {
       case MIRType::Object:
       case MIRType::String:
       case MIRType::Symbol:
+      case MIRType::BigInt:
         lir->setOperand(1 + BOX_PIECES * i, use(elem));
 #ifdef JS_NUNBOX32
         
