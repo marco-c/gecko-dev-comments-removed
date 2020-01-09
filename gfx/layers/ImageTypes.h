@@ -101,14 +101,6 @@ enum class StereoMode {
   MAX,
 };
 
-enum class YUVColorSpace {
-  BT601,
-  BT709,
-  BT2020,
-  
-  UNKNOWN,
-};
-
 namespace layers {
 
 typedef uint32_t ContainerFrameID;

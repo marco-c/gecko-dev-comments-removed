@@ -221,7 +221,7 @@ void MacIOSurfaceTextureHostOGL::PushDisplayItems(
       
       aBuilder.PushYCbCrInterleavedImage(
           aBounds, aClip, true, aImageKeys[0], wr::ColorDepth::Color8,
-          wr::ToWrYuvColorSpace(YUVColorSpace::BT601), aFilter);
+          wr::ToWrYuvColorSpace(gfx::YUVColorSpace::BT601), aFilter);
       break;
     }
     case gfx::SurfaceFormat::NV12: {
@@ -231,7 +231,7 @@ void MacIOSurfaceTextureHostOGL::PushDisplayItems(
       
       aBuilder.PushNV12Image(aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
                              wr::ColorDepth::Color8,
-                             wr::ToWrYuvColorSpace(YUVColorSpace::BT601),
+                             wr::ToWrYuvColorSpace(gfx::YUVColorSpace::BT601),
                              aFilter);
       break;
     }

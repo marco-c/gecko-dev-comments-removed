@@ -337,7 +337,7 @@ class MLGDevice {
 
   
   
-  RefPtr<MLGBuffer> GetBufferForColorSpace(YUVColorSpace aColorSpace);
+  RefPtr<MLGBuffer> GetBufferForColorSpace(gfx::YUVColorSpace aColorSpace);
   
   
   RefPtr<MLGBuffer> GetBufferForColorDepthCoefficient(
@@ -454,7 +454,7 @@ class MLGDevice {
   nsCString mFailureMessage;
   bool mInitialized;
 
-  typedef EnumeratedArray<YUVColorSpace, YUVColorSpace::UNKNOWN,
+  typedef EnumeratedArray<gfx::YUVColorSpace, gfx::YUVColorSpace::UNKNOWN,
                           RefPtr<MLGBuffer>>
       ColorSpaceArray;
   ColorSpaceArray mColorSpaceBuffers;

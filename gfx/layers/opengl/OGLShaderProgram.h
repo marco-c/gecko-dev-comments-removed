@@ -231,7 +231,7 @@ class ShaderProgramOGL {
     SetUniform(KnownUniform::MaskCoordMultiplier, 2, f);
   }
 
-  void SetYUVColorSpace(YUVColorSpace aYUVColorSpace);
+  void SetYUVColorSpace(gfx::YUVColorSpace aYUVColorSpace);
 
   
   

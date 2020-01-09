@@ -6,12 +6,12 @@
 #define MEDIA_BASE_YUV_CONVERT_H_
 
 #include "chromium_types.h"
-#include "ImageTypes.h"
+#include "mozilla/gfx/Types.h"
 
 namespace mozilla {
 
 namespace gfx {
- 
+
 
 
 enum YUVType {

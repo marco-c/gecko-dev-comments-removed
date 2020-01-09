@@ -247,7 +247,7 @@ class VideoInfo : public TrackInfo {
   
   gfx::ColorDepth mColorDepth = gfx::ColorDepth::COLOR_8;
 
-  YUVColorSpace mColorSpace = YUVColorSpace::UNKNOWN;
+  gfx::YUVColorSpace mColorSpace = gfx::YUVColorSpace::UNKNOWN;
 
   
   
