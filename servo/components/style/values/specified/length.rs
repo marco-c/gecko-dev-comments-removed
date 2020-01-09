@@ -11,9 +11,10 @@ use crate::font_metrics::FontMetricsQueryResult;
 use crate::parser::{Parse, ParserContext};
 use crate::values::computed::{self, CSSPixelLength, Context};
 use crate::values::generics::length as generics;
-use crate::values::generics::length::{MaxSize as GenericMaxSize, Size as GenericSize};
+use crate::values::generics::length::{MaxSize as GenericMaxSize, Size as GenericSize, GenericLengthOrNumber};
 use crate::values::generics::transform::IsZeroLength;
 use crate::values::generics::NonNegative;
+use crate::values::specified::NonNegativeNumber;
 use crate::values::specified::calc::CalcNode;
 use crate::values::{Auto, CSSFloat, Either, Normal};
 use app_units::Au;
@@ -1023,30 +1024,7 @@ pub type LengthOrNormal = Either<Length, Normal>;
 pub type LengthOrAuto = Either<Length, Auto>;
 
 
-pub type LengthOrNumber = Either<Length, Number>;
-
-impl LengthOrNumber {
-    
-    pub fn parse_non_negative<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        
-        
-        
-        if let Ok(v) = input.try(|i| Number::parse_non_negative(context, i)) {
-            return Ok(Either::Second(v));
-        }
-
-        Length::parse_non_negative(context, input).map(Either::First)
-    }
-
-    
-    #[inline]
-    pub fn zero() -> Self {
-        Either::Second(Number::new(0.))
-    }
-}
+pub type LengthOrNumber = GenericLengthOrNumber<Length, Number>;
 
 
 pub type Size = GenericSize<NonNegativeLengthPercentage>;
@@ -1123,3 +1101,6 @@ impl MaxSize {
         Ok(GenericMaxSize::LengthPercentage(length))
     }
 }
+
+
+pub type NonNegativeLengthOrNumber = GenericLengthOrNumber<NonNegativeLength, NonNegativeNumber>;

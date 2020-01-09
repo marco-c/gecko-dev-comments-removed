@@ -8,6 +8,7 @@ use crate::parser::{Parse, ParserContext};
 #[cfg(feature = "gecko")]
 use crate::values::computed::ExtremumLength;
 use cssparser::Parser;
+use num_traits::Zero;
 use style_traits::ParseError;
 
 
@@ -153,5 +154,55 @@ impl<LengthPercentage> MaxSize<LengthPercentage> {
     #[inline]
     pub fn none() -> Self {
         MaxSize::None
+    }
+}
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
+#[repr(C, u8)]
+pub enum GenericLengthOrNumber<L, N> {
+    
+    Length(L),
+    
+    Number(N),
+}
+
+pub use self::GenericLengthOrNumber as LengthOrNumber;
+
+impl<L: Parse, N: Parse> Parse for LengthOrNumber<L, N> {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if let Ok(number) = input.try(|i| N::parse(context, i)) {
+            
+            
+            return Ok(LengthOrNumber::Number(number));
+        }
+
+        Ok(LengthOrNumber::Length(L::parse(context, input)?))
+    }
+}
+
+impl<L, N> LengthOrNumber<L, N> {
+    
+    pub fn zero() -> Self
+    where
+        N: Zero,
+    {
+        LengthOrNumber::Number(num_traits::Zero::zero())
     }
 }

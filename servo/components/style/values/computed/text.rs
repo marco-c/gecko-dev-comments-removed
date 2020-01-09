@@ -10,7 +10,6 @@ use crate::values::computed::length::{Length, LengthPercentage};
 use crate::values::computed::{NonNegativeLength, NonNegativeNumber};
 use crate::values::generics::text::InitialLetter as GenericInitialLetter;
 use crate::values::generics::text::LineHeight as GenericLineHeight;
-use crate::values::generics::text::MozTabSize as GenericMozTabSize;
 use crate::values::generics::text::Spacing;
 use crate::values::specified::text::TextOverflowSide;
 use crate::values::specified::text::{TextEmphasisFillMode, TextEmphasisShapeKeyword};
@@ -123,9 +122,6 @@ impl TextDecorationsInEffect {
         result
     }
 }
-
-
-pub type MozTabSize = GenericMozTabSize<NonNegativeNumber, NonNegativeLength>;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]

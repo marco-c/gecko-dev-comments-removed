@@ -4,8 +4,8 @@
 
 
 
-use crate::values::computed::length::LengthOrNumber;
+use crate::values::computed::length::NonNegativeLengthOrNumber;
 use crate::values::generics::rect::Rect;
 
 
-pub type LengthOrNumberRect = Rect<LengthOrNumber>;
+pub type NonNegativeLengthOrNumberRect = Rect<NonNegativeLengthOrNumber>;

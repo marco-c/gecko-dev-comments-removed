@@ -4,22 +4,8 @@
 
 
 
-use crate::parser::ParserContext;
 use crate::values::generics::rect::Rect;
-use crate::values::specified::length::LengthOrNumber;
-use cssparser::Parser;
-use style_traits::ParseError;
+use crate::values::specified::length::NonNegativeLengthOrNumber;
 
 
-pub type LengthOrNumberRect = Rect<LengthOrNumber>;
-
-impl LengthOrNumberRect {
-    
-    #[inline]
-    pub fn parse_non_negative<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        Rect::parse_with(context, input, LengthOrNumber::parse_non_negative)
-    }
-}
+pub type NonNegativeLengthOrNumberRect = Rect<NonNegativeLengthOrNumber>;
