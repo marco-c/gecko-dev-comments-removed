@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#include "mozilla/ProcInfo.h"
+
+namespace mozilla {
+
+RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
+                                    const ProcType& type) {
+  
+  return nullptr;
+}
+
+}  
