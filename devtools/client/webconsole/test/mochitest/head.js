@@ -340,18 +340,21 @@ function waitForNodeMutation(node, observeConfig = {}) {
 
 
 
-async function testOpenInDebugger(hud, toolbox, text) {
+
+
+
+async function testOpenInDebugger(hud, toolbox, text, expectUrl = true) {
   info(`Finding message for open-in-debugger test; text is "${text}"`);
   const messageNode = await waitFor(() => findMessage(hud, text));
   const frameLinkNode = messageNode.querySelector(".message-location .frame-link");
   ok(frameLinkNode, "The message does have a location link");
-  await checkClickOnNode(hud, toolbox, frameLinkNode);
+  await checkClickOnNode(hud, toolbox, frameLinkNode, expectUrl);
 }
 
 
 
 
-async function checkClickOnNode(hud, toolbox, frameLinkNode) {
+async function checkClickOnNode(hud, toolbox, frameLinkNode, expectUrl) {
   info("checking click on node location");
 
   const url = frameLinkNode.getAttribute("data-url");
@@ -376,7 +379,7 @@ async function checkClickOnNode(hud, toolbox, frameLinkNode) {
 
   is(
     dbg._selectors.getSelectedSource(dbg._getState()).url,
-    url,
+    expectUrl ? url : null,
     "expected source url"
   );
 }
