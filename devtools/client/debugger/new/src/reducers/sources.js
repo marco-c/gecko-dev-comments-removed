@@ -36,8 +36,6 @@ type DisplayedSources = { [ThreadId]: { [SourceId]: boolean } };
 type GetDisplayedSourcesSelector = OuterState => { [ThreadId]: SourcesMap };
 
 export type SourcesState = {
-  epoch: number,
-
   
   sources: SourcesMap,
 
@@ -65,7 +63,6 @@ const emptySources = {
 export function initialSourcesState(): SourcesState {
   return {
     ...emptySources,
-    epoch: 1,
     selectedLocation: undefined,
     pendingSelectedLocation: prefs.pendingSelectedLocation,
     projectDirectoryRoot: prefs.projectDirectoryRoot,
@@ -167,10 +164,7 @@ function update(
       return updateProjectDirectoryRoot(state, action.url);
 
     case "NAVIGATE":
-      return {
-        ...initialSourcesState(),
-        epoch: state.epoch + 1
-      };
+      return initialSourcesState();
 
     case "SET_FOCUSED_SOURCE_ITEM":
       return { ...state, focusedItem: action.item };
@@ -302,26 +296,15 @@ function updateProjectDirectoryRoot(state: SourcesState, root: string) {
 
 
 
-function updateLoadedState(
-  state: SourcesState,
-  action: LoadSourceAction
-): SourcesState {
+function updateLoadedState(state, action: LoadSourceAction): SourcesState {
   const { sourceId } = action;
   let source;
-
-  
-  
-  if (action.epoch !== state.epoch) {
-    return state;
-  }
 
   if (action.status === "start") {
     source = { id: sourceId, loadedState: "loading" };
   } else if (action.status === "error") {
     source = { id: sourceId, error: action.error, loadedState: "loaded" };
   } else {
-    
-    
     if (!action.value) {
       return state;
     }
@@ -537,10 +520,6 @@ export function getHasSiblingOfSameName(state: OuterState, source: ?Source) {
 
 export function getSources(state: OuterState) {
   return state.sources.sources;
-}
-
-export function getSourcesEpoch(state: OuterState) {
-  return state.sources.epoch;
 }
 
 export function getUrls(state: OuterState) {

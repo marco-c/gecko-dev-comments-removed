@@ -5,13 +5,14 @@
 
 
 import { PROMISE } from "../utils/middleware/promise";
-import { getSource, getSourcesEpoch } from "../../selectors";
+import { getSource } from "../../selectors";
 import { setBreakpointPositions } from "../breakpoints";
 
 import * as parser from "../../workers/parser";
 import { isLoaded, isOriginal } from "../../utils/source";
 import { Telemetry } from "devtools-modules";
 
+import defer from "../../utils/defer";
 import type { ThunkArgs } from "../types";
 
 import type { Source } from "../../types";
@@ -22,106 +23,75 @@ const requests = new Map();
 const loadSourceHistogram = "DEVTOOLS_DEBUGGER_LOAD_SOURCE_MS";
 const telemetry = new Telemetry();
 
-async function loadSource(
-  state,
-  source: Source,
-  { sourceMaps, client }
-): Promise<?{
-  text: string,
-  contentType: string
-}> {
+async function loadSource(state, source: Source, { sourceMaps, client }) {
   if (isOriginal(source)) {
-    const result = await sourceMaps.getOriginalSourceText(source);
-    if (!result) {
-      
-      
-      
-      if (source.isPrettyPrinted) {
-        return null;
-      }
-
-      
-      
-      
-      throw new Error("Original source text unavailable");
-    }
-    return result;
+    return sourceMaps.getOriginalSourceText(source);
   }
 
   if (!source.actors.length) {
     throw new Error("No source actor for loadSource");
   }
 
-  telemetry.start(loadSourceHistogram, source);
   const response = await client.sourceContents(source.actors[0]);
   telemetry.finish(loadSourceHistogram, source);
 
   return {
+    id: source.id,
     text: response.source,
     contentType: response.contentType || "text/javascript"
   };
 }
 
-async function loadSourceTextPromise(
-  source: Source,
-  epoch: number,
-  { dispatch, getState, client, sourceMaps }: ThunkArgs
-): Promise<?Source> {
-  if (isLoaded(source)) {
-    return source;
-  }
-
-  await dispatch({
-    type: "LOAD_SOURCE_TEXT",
-    sourceId: source.id,
-    epoch,
-    [PROMISE]: loadSource(getState(), source, { sourceMaps, client })
-  });
-
-  const newSource = getSource(getState(), source.id);
-  if (!newSource) {
-    return;
-  }
-
-  if (!newSource.isWasm && isLoaded(newSource)) {
-    parser.setSource(newSource);
-    await dispatch(setBreakpointPositions(newSource.id));
-  }
-
-  return newSource;
-}
 
 
 
 
-
-export function loadSourceText(inputSource: ?Source) {
-  return async (thunkArgs: ThunkArgs) => {
-    if (!inputSource) {
+export function loadSourceText(source: ?Source) {
+  return async ({ dispatch, getState, client, sourceMaps }: ThunkArgs) => {
+    if (!source) {
       return;
     }
-    
-    
-    const source = inputSource;
 
-    const epoch = getSourcesEpoch(thunkArgs.getState());
-
-    const id = `${epoch}:${source.id}`;
-    let promise = requests.get(id);
-    if (!promise) {
-      promise = (async () => {
-        try {
-          return await loadSourceTextPromise(source, epoch, thunkArgs);
-        } catch (e) {
-          
-          
-        } finally {
-          requests.delete(id);
-        }
-      })();
-      requests.set(id, promise);
+    const id = source.id;
+    
+    if (requests.has(id)) {
+      return requests.get(id);
     }
 
-    return promise;
+    if (isLoaded(source)) {
+      return Promise.resolve();
+    }
+
+    const deferred = defer();
+    requests.set(id, deferred.promise);
+
+    telemetry.start(loadSourceHistogram, source);
+    try {
+      await dispatch({
+        type: "LOAD_SOURCE_TEXT",
+        sourceId: source.id,
+        [PROMISE]: loadSource(getState(), source, { sourceMaps, client })
+      });
+    } catch (e) {
+      deferred.resolve();
+      requests.delete(id);
+      return;
+    }
+
+    const newSource = getSource(getState(), source.id);
+    if (!newSource) {
+      return;
+    }
+
+    if (!newSource.isWasm && isLoaded(newSource)) {
+      parser.setSource(newSource);
+      await dispatch(setBreakpointPositions(newSource.id));
+    }
+
+    
+    deferred.resolve();
+    requests.delete(id);
+
+    return source;
   };
 }
