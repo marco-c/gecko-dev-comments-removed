@@ -41,6 +41,10 @@ const DEV_MODE_PREF = `${PREF_PREFIX}.dev_mode`;
 const API_URL_PREF = `${PREF_PREFIX}.api_url`;
 const LAZY_CLASSIFY_PREF = `${PREF_PREFIX}.experiments.lazy_classify`;
 
+
+
+const TIMER_LAST_UPDATE_PREF = `app.update.lastUpdateTime.${TIMER_NAME}`;
+
 const PREFS_TO_WATCH = [
   RUN_INTERVAL_PREF,
   TELEMETRY_ENABLED_PREF,
@@ -71,9 +75,13 @@ function cacheProxy(target) {
 
 var RecipeRunner = {
   async init() {
+    this.running = false;
     this.enabled = null;
+    this.loadFromRemoteSettings = false;
+
     this.checkPrefs(); 
     this.watchPrefs();
+    await this.setUpRemoteSettings();
 
     
     const firstRun = Services.prefs.getBoolPref(FIRST_RUN_PREF, true);
@@ -190,6 +198,43 @@ var RecipeRunner = {
     timerManager.unregisterTimer(TIMER_NAME);
   },
 
+  async setUpRemoteSettings() {
+    const feature = "normandy-remote-settings";
+
+    if (await FeatureGate.isEnabled(feature)) {
+      this.attachRemoteSettings();
+    }
+    const observer = {
+      onEnable: this.attachRemoteSettings.bind(this),
+      onDisable: this.detachRemoteSettings.bind(this),
+    };
+    await FeatureGate.addObserver(feature, observer);
+    CleanupManager.addCleanupHandler(() => FeatureGate.removeObserver(feature, observer));
+  },
+
+  attachRemoteSettings() {
+    this.loadFromRemoteSettings = true;
+    if (!this._onSync) {
+      this._onSync = async () => {
+        if (!this.enabled) {
+          return;
+        }
+        this.run({ trigger: "sync" });
+      };
+
+      gRemoteSettingsClient.on("sync", this._onSync);
+    }
+  },
+
+  detachRemoteSettings() {
+    this.loadFromRemoteSettings = false;
+    if (this._onSync) {
+      
+      gRemoteSettingsClient.off("sync", this._onSync);
+    }
+    this._onSync = null;
+  },
+
   updateRunInterval() {
     
     
@@ -198,51 +243,69 @@ var RecipeRunner = {
     timerManager.registerTimer(TIMER_NAME, () => this.run(), runInterval);
   },
 
-  async run() {
-    Services.obs.notifyObservers(null, "recipe-runner:start");
-    this.clearCaches();
-    
-    if (!Services.prefs.getBoolPref(LAZY_CLASSIFY_PREF, false)) {
-      try {
-        await ClientEnvironment.getClientClassification();
-      } catch (err) {
-        
-        
-      }
-    }
+  async run(options = {}) {
+    const { trigger = "timer" } = options;
 
-    
-    let recipesToRun;
-    try {
-      recipesToRun = await this.loadRecipes();
-    } catch (e) {
+    if (this.running) {
       
-      
-      let status = Uptake.RUNNER_SERVER_ERROR;
-      if (/NetworkError/.test(e)) {
-        status = Uptake.RUNNER_NETWORK_ERROR;
-      } else if (e instanceof NormandyApi.InvalidSignatureError) {
-        status = Uptake.RUNNER_INVALID_SIGNATURE;
-      }
-      await Uptake.reportRunner(status);
       return;
     }
+    try {
+      this.running = true;
 
-    const actions = new ActionsManager();
+      Services.obs.notifyObservers(null, "recipe-runner:start");
+      this.clearCaches();
+      
+      if (!Services.prefs.getBoolPref(LAZY_CLASSIFY_PREF, false)) {
+        try {
+          await ClientEnvironment.getClientClassification();
+        } catch (err) {
+          
+          
+        }
+      }
 
-    
-    if (recipesToRun.length === 0) {
-      log.debug("No recipes to execute");
-    } else {
-      for (const recipe of recipesToRun) {
-        await actions.runRecipe(recipe);
+      
+      let recipesToRun;
+      try {
+        recipesToRun = await this.loadRecipes();
+      } catch (e) {
+        
+        
+        let status = Uptake.RUNNER_SERVER_ERROR;
+        if (/NetworkError/.test(e)) {
+          status = Uptake.RUNNER_NETWORK_ERROR;
+        } else if (e instanceof NormandyApi.InvalidSignatureError) {
+          status = Uptake.RUNNER_INVALID_SIGNATURE;
+        }
+        await Uptake.reportRunner(status);
+        return;
+      }
+
+      const actions = new ActionsManager();
+
+      
+      if (recipesToRun.length === 0) {
+        log.debug("No recipes to execute");
+      } else {
+        for (const recipe of recipesToRun) {
+          await actions.runRecipe(recipe);
+        }
+      }
+
+      await actions.finalize();
+
+      await Uptake.reportRunner(Uptake.RUNNER_SUCCESS);
+      Services.obs.notifyObservers(null, "recipe-runner:end");
+    } finally {
+      this.running = false;
+      if (trigger != "timer") {
+        
+        
+        const lastUpdateTime = Math.round(Date.now() / 1000);
+        Services.prefs.setIntPref(TIMER_LAST_UPDATE_PREF, lastUpdateTime);
       }
     }
-
-    await actions.finalize();
-
-    await Uptake.reportRunner(Uptake.RUNNER_SUCCESS);
-    Services.obs.notifyObservers(null, "recipe-runner:end");
   },
 
   
@@ -251,7 +314,7 @@ var RecipeRunner = {
   async loadRecipes() {
     
     
-    if (await FeatureGate.isEnabled("normandy-remote-settings")) {
+    if (this.loadFromRemoteSettings) {
       
       const entries = await gRemoteSettingsClient.get();
       
