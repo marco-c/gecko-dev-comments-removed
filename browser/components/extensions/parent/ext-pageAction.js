@@ -118,7 +118,7 @@ this.pageAction = class extends ExtensionAPI {
     }
   }
 
-  onShutdown(reason) {
+  onShutdown(isAppShutdown) {
     pageActionMap.delete(this.extension);
 
     this.tabContext.shutdown();
@@ -127,7 +127,7 @@ this.pageAction = class extends ExtensionAPI {
     
     
     
-    if (reason != "APP_SHUTDOWN" && this.browserPageAction) {
+    if (!isAppShutdown && this.browserPageAction) {
       this.browserPageAction.remove();
       this.browserPageAction = null;
     }

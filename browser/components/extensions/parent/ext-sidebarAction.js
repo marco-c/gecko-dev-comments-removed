@@ -88,14 +88,14 @@ this.sidebarAction = class extends ExtensionAPI {
     this.build();
   }
 
-  onShutdown(reason) {
+  onShutdown(isAppShutdown) {
     sidebarActionMap.delete(this.this);
 
     this.tabContext.shutdown();
 
     
     
-    if (reason === "APP_SHUTDOWN") {
+    if (isAppShutdown) {
       return;
     }
 
