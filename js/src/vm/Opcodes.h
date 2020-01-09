@@ -1996,6 +1996,7 @@
 
 
 
+
  \
     MACRO(JSOP_CALLPROP, 184, "callprop", NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
     
@@ -2082,6 +2083,7 @@
  \
     MACRO(JSOP_ASYNCRESOLVE, 192, "async-resolve", NULL, 2, 2, 1, JOF_UINT8) \
     
+
 
 
 

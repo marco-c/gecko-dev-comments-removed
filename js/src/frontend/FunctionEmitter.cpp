@@ -627,7 +627,10 @@ bool FunctionScriptEmitter::emitInitializeInstanceFields() {
       return false;
     }
 
-    if (!bce_->emit1(JSOP_CALLELEM)) {
+    
+    
+    
+    if (!bce_->emit1(JSOP_GETELEM)) {
       
       return false;
     }

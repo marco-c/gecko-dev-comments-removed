@@ -7776,6 +7776,9 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
   }
 
   if (obj->getKind() == ParseNodeKind::ClassMemberList) {
+    if (!emitCreateFieldKeys(obj)) {
+      return false;
+    }
     if (!emitCreateFieldInitializers(obj)) {
       return false;
     }
@@ -7797,6 +7800,90 @@ FieldInitializers BytecodeEmitter::setupFieldInitializers(
     }
   }
   return FieldInitializers(numFields);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool BytecodeEmitter::emitCreateFieldKeys(ListNode* obj) {
+  size_t numFieldKeys = 0;
+  for (ParseNode* propdef : obj->contents()) {
+    if (propdef->is<ClassField>()) {
+      ClassField* field = &propdef->as<ClassField>();
+      if (field->name().getKind() == ParseNodeKind::ComputedName) {
+        numFieldKeys++;
+      }
+    }
+  }
+
+  if (numFieldKeys == 0) {
+    return true;
+  }
+
+  NameOpEmitter noe(this, cx->names().dotFieldKeys,
+                    NameOpEmitter::Kind::Initialize);
+  if (!noe.prepareForRhs()) {
+    return false;
+  }
+
+  if (!emitUint32Operand(JSOP_NEWARRAY, numFieldKeys)) {
+    
+    return false;
+  }
+
+  size_t curFieldKeyIndex = 0;
+  for (ParseNode* propdef : obj->contents()) {
+    if (propdef->is<ClassField>()) {
+      ClassField* field = &propdef->as<ClassField>();
+      if (field->name().getKind() == ParseNodeKind::ComputedName) {
+        ParseNode* nameExpr = field->name().as<UnaryNode>().kid();
+
+        if (!emitTree(nameExpr)) {
+          
+          return false;
+        }
+
+        if (!emitUint32Operand(JSOP_INITELEM_ARRAY, curFieldKeyIndex)) {
+          
+          return false;
+        }
+
+        curFieldKeyIndex++;
+      }
+    }
+  }
+  MOZ_ASSERT(curFieldKeyIndex == numFieldKeys);
+
+  if (!noe.emitAssignment()) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOP_POP)) {
+    
+    return false;
+  }
+
+  return true;
 }
 
 bool BytecodeEmitter::emitCreateFieldInitializers(ListNode* obj) {
