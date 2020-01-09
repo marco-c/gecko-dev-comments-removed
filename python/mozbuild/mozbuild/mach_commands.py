@@ -2817,7 +2817,8 @@ class StaticAnalysis(MachCommandBase):
                             
                             path_list.append(f_in_dir)
             else:
-                if f.endswith(extensions):
+                
+                if os.path.isfile(f) and f.endswith(extensions):
                     path_list.append(f)
 
         return path_list
