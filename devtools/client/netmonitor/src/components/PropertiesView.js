@@ -15,6 +15,7 @@ const { FILTER_SEARCH_DELAY } = require("../constants");
 
 
 const TreeViewClass = require("devtools/client/shared/components/tree/TreeView");
+const PropertiesViewContextMenu = require("../widgets/PropertiesViewContextMenu");
 const TreeView = createFactory(TreeViewClass);
 
 loader.lazyGetter(this, "SearchBox", function() {
@@ -155,6 +156,23 @@ class PropertiesView extends Component {
     return TreeRow(props);
   }
 
+  onContextMenuRow(member, evt) {
+    evt.preventDefault();
+
+    const { object } = member;
+
+    
+    this.selectRow(evt.currentTarget);
+
+    
+    if (typeof (object) === "object") {
+      if (!this.contextMenu) {
+        this.contextMenu = new PropertiesViewContextMenu({});
+      }
+      this.contextMenu.open(evt, { member, object: this.props.object });
+    }
+  }
+
   renderValueWithRep(props) {
     const { member } = props;
 
@@ -240,6 +258,7 @@ class PropertiesView extends Component {
             renderRow: renderRow || this.renderRowWithExtras,
             renderValue: renderValue || this.renderValueWithRep,
             openLink,
+            onContextMenuRow: this.onContextMenuRow,
           }),
         ),
       )
