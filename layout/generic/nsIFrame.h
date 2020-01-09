@@ -2890,6 +2890,18 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  bool IsBlockFrameOrSubclass();
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
