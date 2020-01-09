@@ -570,16 +570,26 @@ static nsIFrame* GetIBContainingBlockFor(nsIFrame* aFrame) {
   return parentFrame;
 }
 
+
+
+
+
+
+
+
 static nsContainerFrame* GetMultiColumnContainingBlockFor(nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR),
              "Should only be called if the frame has a multi-column ancestor!");
 
   nsContainerFrame* current = aFrame->GetParent();
-  while (current && !current->IsColumnSetWrapperFrame()) {
+  while (current &&
+         (current->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR) ||
+          current->Style()->IsPseudoOrAnonBox())) {
     current = current->GetParent();
   }
 
-  MOZ_ASSERT(current, "No ColumnSetWrapperFrame in a valid column hierarchy?");
+  MOZ_ASSERT(current,
+             "No multicol containing block in a valid column hierarchy?");
 
   return current;
 }
@@ -5956,9 +5966,15 @@ void nsCSSFrameConstructor::AppendFramesToParent(
         
         nullptr);
 
-    FinishBuildingColumns(aState,
-                          GetMultiColumnContainingBlockFor(aParentFrame),
-                          aParentFrame, columnSpanSiblings);
+    nsContainerFrame* columnSetWrapper = aParentFrame->GetParent();
+    while (!columnSetWrapper->IsColumnSetWrapperFrame()) {
+      columnSetWrapper = columnSetWrapper->GetParent();
+    }
+    MOZ_ASSERT(columnSetWrapper,
+               "No ColumnSetWrapperFrame ancestor for -moz-column-content?");
+
+    FinishBuildingColumns(aState, columnSetWrapper, aParentFrame,
+                          columnSpanSiblings);
 
     MOZ_ASSERT(columnSpanSiblings.IsEmpty(),
                "The column-span siblings should be moved to the proper place!");
