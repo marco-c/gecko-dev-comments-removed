@@ -7,11 +7,14 @@
 var EXPORTED_SYMBOLS = ["PictureInPictureChild", "PictureInPictureToggleChild"];
 
 const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "DeferredTask",
   "resource://gre/modules/DeferredTask.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
+
+XPCOMUtils.defineLazyGlobalGetters(this, ["InspectorUtils"]);
 
 const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
@@ -104,7 +107,7 @@ class PictureInPictureToggleChild extends ActorChild {
     if (!state.intersectionObserver) {
       let fn = this.onIntersection.bind(this);
       state.intersectionObserver = new this.content.IntersectionObserver(fn, {
-        threshold: [0.0, 1.0],
+        threshold: [0.0, 0.5],
       });
     }
 
@@ -123,13 +126,7 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
   worthTracking(intersectionEntry) {
-    let video = intersectionEntry.target;
-    let rect = video.ownerGlobal.windowUtils.getBoundsWithoutFlushing(video);
-    let intRect = intersectionEntry.intersectionRect;
-
-    return intersectionEntry.isIntersecting &&
-           rect.width == intRect.width &&
-           rect.height == intRect.height;
+    return intersectionEntry.isIntersecting;
   }
 
   
@@ -247,7 +244,7 @@ class PictureInPictureToggleChild extends ActorChild {
     for (let element of elements) {
       if (state.weakVisibleVideos.has(element) &&
           !element.isCloningElementVisually) {
-        this.onMouseOverVideo(element);
+        this.onMouseOverVideo(element, event);
         return;
       }
     }
@@ -264,15 +261,62 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
 
-  onMouseOverVideo(video) {
+  onMouseOverVideo(video, event) {
     let state = this.docState;
     let oldOverVideo = state.weakOverVideo && state.weakOverVideo.get();
-    if (oldOverVideo && oldOverVideo == video) {
+    let shadowRoot = video.openOrClosedShadowRoot;
+
+    
+    
+    
+    if (!shadowRoot) {
+      if (oldOverVideo) {
+        
+        
+        this.onMouseLeaveVideo(oldOverVideo);
+      }
+
       return;
     }
 
+    let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
+
+    if (oldOverVideo) {
+      if (oldOverVideo == video) {
+        
+        
+        this.checkHoverToggle(toggle, event);
+        return;
+      }
+
+      
+      
+      this.onMouseLeaveVideo(oldOverVideo);
+    }
+
     state.weakOverVideo = Cu.getWeakReference(video);
+    let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
+    InspectorUtils.addPseudoClassLock(controlsOverlay, ":hover");
+
     
+    
+    this.checkHoverToggle(toggle, event);
+  }
+
+  
+
+
+
+
+
+
+
+  checkHoverToggle(toggle, event) {
+    if (this.isMouseOverToggle(toggle, event)) {
+      InspectorUtils.addPseudoClassLock(toggle, ":hover");
+    } else {
+      InspectorUtils.removePseudoClassLock(toggle, ":hover");
+    }
   }
 
   
@@ -282,7 +326,36 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
   onMouseLeaveVideo(video) {
-    
+    let state = this.docState;
+    let shadowRoot = video.openOrClosedShadowRoot;
+
+    if (shadowRoot) {
+      let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
+      let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
+      InspectorUtils.removePseudoClassLock(controlsOverlay, ":hover");
+      InspectorUtils.removePseudoClassLock(toggle, ":hover");
+    }
+
+    state.weakOverVideo = null;
+  }
+
+  
+
+
+
+
+
+
+
+
+  isMouseOverToggle(toggle, event) {
+    let toggleRect =
+      toggle.ownerGlobal.windowUtils.getBoundsWithoutFlushing(toggle);
+    let { clientX, clientY } = event;
+    return clientX >= toggleRect.left &&
+           clientX <= toggleRect.right &&
+           clientY >= toggleRect.top &&
+           clientY <= toggleRect.bottom;
   }
 }
 
