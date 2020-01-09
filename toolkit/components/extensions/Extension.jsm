@@ -272,7 +272,7 @@ var UninstallObserver = {
       
       if (!Services.lsm.nextGenLocalStorageEnabled) {
         
-        let storage = Services.domStorageManager.getStorage(null, principal);
+        let storage = Services.domStorageManager.getStorage(null, principal, storagePrincipal);
         if (storage) {
           storage.clear();
         }

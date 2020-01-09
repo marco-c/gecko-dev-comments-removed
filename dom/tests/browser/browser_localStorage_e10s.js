@@ -88,7 +88,7 @@ function clearOriginStorageEnsuringNoPreload() {
   
   
   
-  let storage = Services.domStorageManager.createStorage(null, principal, "");
+  let storage = Services.domStorageManager.createStorage(null, principal, principal, "");
   storage.clear();
 
   
@@ -107,7 +107,7 @@ async function verifyTabPreload(knownTab, expectStorageExists) {
       if (Services.lsm.nextGenLocalStorageEnabled) {
         return Services.lsm.isPreloaded(principal);
       }
-      return !!Services.domStorageManager.getStorage(null, principal);
+      return !!Services.domStorageManager.getStorage(null, principal, principal);
     });
   is(storageExists, expectStorageExists, "Storage existence === preload");
 }
