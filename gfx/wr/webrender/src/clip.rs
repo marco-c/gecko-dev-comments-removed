@@ -17,7 +17,7 @@ use crate::prim_store::{ClipData, ImageMaskData, SpaceMapper, VisibleMaskImageTi
 use crate::prim_store::{PointKey, SizeKey, RectangleKey};
 use crate::render_task::to_cache_size;
 use crate::resource_cache::{ImageRequest, ResourceCache};
-use std::{cmp, u32};
+use std::{cmp, ops, u32};
 use crate::util::{extract_inner_rect_safe, project_rect, ScaleOffset};
 
 
@@ -240,6 +240,18 @@ pub struct ClipNodeRange {
     pub count: u32,
 }
 
+impl ClipNodeRange {
+    fn to_range(&self) -> ops::Range<usize> {
+        let start = self.first as usize;
+        let end = start + self.count as usize;
+
+        ops::Range {
+            start,
+            end,
+        }
+    }
+}
+
 
 
 
@@ -252,6 +264,38 @@ enum ClipSpaceConversion {
     Local,
     ScaleOffset(ScaleOffset),
     Transform(LayoutToWorldTransform),
+}
+
+impl ClipSpaceConversion {
+    
+    fn new(
+        prim_spatial_node_index: SpatialNodeIndex,
+        clip_spatial_node_index: SpatialNodeIndex,
+        clip_scroll_tree: &ClipScrollTree,
+    ) -> Self {
+        
+        
+        
+        let clip_spatial_node = &clip_scroll_tree
+            .spatial_nodes[clip_spatial_node_index.0 as usize];
+        let prim_spatial_node = &clip_scroll_tree
+            .spatial_nodes[prim_spatial_node_index.0 as usize];
+
+        if prim_spatial_node_index == clip_spatial_node_index {
+            ClipSpaceConversion::Local
+        } else if prim_spatial_node.coordinate_system_id == clip_spatial_node.coordinate_system_id {
+            let scale_offset = prim_spatial_node.coordinate_system_relative_scale_offset
+                .inverse()
+                .accumulate(&clip_spatial_node.coordinate_system_relative_scale_offset);
+            ClipSpaceConversion::ScaleOffset(scale_offset)
+        } else {
+            ClipSpaceConversion::Transform(
+                clip_scroll_tree
+                    .get_world_transform(clip_spatial_node_index)
+                    .into_transform()
+            )
+        }
+    }
 }
 
 
@@ -464,7 +508,9 @@ impl ClipNode {
 pub struct ClipStore {
     pub clip_chain_nodes: Vec<ClipChainNode>,
     clip_node_instances: Vec<ClipNodeInstance>,
-    clip_node_info: Vec<ClipNodeInfo>,
+
+    active_clip_node_info: Vec<ClipNodeInfo>,
+    active_local_clip_rect: Option<LayoutRect>,
 }
 
 
@@ -550,7 +596,9 @@ impl ClipStore {
         ClipStore {
             clip_chain_nodes: Vec::new(),
             clip_node_instances: Vec::new(),
-            clip_node_info: Vec::new(),
+
+            active_clip_node_info: Vec::new(),
+            active_local_clip_rect: None,
         }
     }
 
@@ -586,29 +634,18 @@ impl ClipStore {
     }
 
     
-    
-    pub fn build_clip_chain_instance(
+    pub fn set_active_clips(
         &mut self,
-        clip_chains: &[ClipChainId],
-        local_prim_rect: LayoutRect,
         local_prim_clip_rect: LayoutRect,
         spatial_node_index: SpatialNodeIndex,
-        prim_to_pic_mapper: &SpaceMapper<LayoutPixel, PicturePixel>,
-        pic_to_world_mapper: &SpaceMapper<PicturePixel, WorldPixel>,
+        clip_chains: &[ClipChainId],
         clip_scroll_tree: &ClipScrollTree,
-        gpu_cache: &mut GpuCache,
-        resource_cache: &mut ResourceCache,
-        device_pixel_scale: DevicePixelScale,
-        world_rect: &WorldRect,
         clip_data_store: &mut ClipDataStore,
-        request_resources: bool,
-    ) -> Option<ClipChainInstance> {
+    ) {
+        self.active_clip_node_info.clear();
+        self.active_local_clip_rect = None;
+
         let mut local_clip_rect = local_prim_clip_rect;
-
-        
-        
-
-        self.clip_node_info.clear();
 
         for clip_chain_root in clip_chains {
             let mut current_clip_chain_id = *clip_chain_root;
@@ -621,16 +658,70 @@ impl ClipStore {
                     clip_chain_node,
                     spatial_node_index,
                     &mut local_clip_rect,
-                    &mut self.clip_node_info,
+                    &mut self.active_clip_node_info,
                     clip_data_store,
                     clip_scroll_tree,
                 ) {
-                    return None;
+                    return;
                 }
 
                 current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
             }
         }
+
+        self.active_local_clip_rect = Some(local_clip_rect);
+    }
+
+    
+    pub fn set_active_clips_from_clip_chain(
+        &mut self,
+        prim_clip_chain: &ClipChainInstance,
+        prim_spatial_node_index: SpatialNodeIndex,
+        clip_scroll_tree: &ClipScrollTree,
+    ) {
+        
+        
+        
+
+        self.active_clip_node_info.clear();
+        self.active_local_clip_rect = Some(prim_clip_chain.local_clip_rect);
+
+        let clip_instances = &self
+            .clip_node_instances[prim_clip_chain.clips_range.to_range()];
+        for clip_instance in clip_instances {
+            let conversion = ClipSpaceConversion::new(
+                prim_spatial_node_index,
+                clip_instance.spatial_node_index,
+                clip_scroll_tree,
+            );
+            self.active_clip_node_info.push(ClipNodeInfo {
+                handle: clip_instance.handle,
+                local_pos: clip_instance.local_pos,
+                spatial_node_index: clip_instance.spatial_node_index,
+                conversion,
+            });
+        }
+    }
+
+    
+    
+    pub fn build_clip_chain_instance(
+        &mut self,
+        local_prim_rect: LayoutRect,
+        prim_to_pic_mapper: &SpaceMapper<LayoutPixel, PicturePixel>,
+        pic_to_world_mapper: &SpaceMapper<PicturePixel, WorldPixel>,
+        clip_scroll_tree: &ClipScrollTree,
+        gpu_cache: &mut GpuCache,
+        resource_cache: &mut ResourceCache,
+        device_pixel_scale: DevicePixelScale,
+        world_rect: &WorldRect,
+        clip_data_store: &mut ClipDataStore,
+        request_resources: bool,
+    ) -> Option<ClipChainInstance> {
+        let local_clip_rect = match self.active_local_clip_rect {
+            Some(rect) => rect,
+            None => return None,
+        };
 
         let local_bounding_rect = local_prim_rect.intersection(&local_clip_rect)?;
         let pic_clip_rect = prim_to_pic_mapper.map(&local_bounding_rect)?;
@@ -646,7 +737,7 @@ impl ClipStore {
         let mut needs_mask = false;
 
         
-        for node_info in self.clip_node_info.drain(..) {
+        for node_info in self.active_clip_node_info.drain(..) {
             let node = &mut clip_data_store[node_info.handle];
 
             
@@ -1352,28 +1443,14 @@ fn add_clip_node_to_current_chain(
     clip_scroll_tree: &ClipScrollTree,
 ) -> bool {
     let clip_node = &clip_data_store[node.handle];
-    let clip_spatial_node = &clip_scroll_tree.spatial_nodes[node.spatial_node_index.0 as usize];
-    let ref_spatial_node = &clip_scroll_tree.spatial_nodes[spatial_node_index.0 as usize];
 
     
     
-    
-    
-    
-    let conversion = if spatial_node_index == node.spatial_node_index {
-        ClipSpaceConversion::Local
-    } else if ref_spatial_node.coordinate_system_id == clip_spatial_node.coordinate_system_id {
-        let scale_offset = ref_spatial_node.coordinate_system_relative_scale_offset
-            .inverse()
-            .accumulate(&clip_spatial_node.coordinate_system_relative_scale_offset);
-        ClipSpaceConversion::ScaleOffset(scale_offset)
-    } else {
-        ClipSpaceConversion::Transform(
-            clip_scroll_tree
-                .get_world_transform(node.spatial_node_index)
-                .into_transform()
-        )
-    };
+    let conversion = ClipSpaceConversion::new(
+        spatial_node_index,
+        node.spatial_node_index,
+        clip_scroll_tree,
+    );
 
     
     

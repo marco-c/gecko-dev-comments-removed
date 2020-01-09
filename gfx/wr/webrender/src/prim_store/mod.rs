@@ -1981,13 +1981,18 @@ impl PrimitiveStore {
                     }
                 }
 
+                frame_state.clip_store.set_active_clips(
+                    prim_instance.local_clip_rect,
+                    prim_instance.spatial_node_index,
+                    frame_state.clip_chain_stack.current_clips(),
+                    &frame_context.clip_scroll_tree,
+                    &mut frame_state.data_stores.clip,
+                );
+
                 let clip_chain = frame_state
                     .clip_store
                     .build_clip_chain_instance(
-                        frame_state.clip_chain_stack.current_clips(),
                         local_rect,
-                        prim_instance.local_clip_rect,
-                        prim_instance.spatial_node_index,
                         &map_local_to_surface,
                         &map_surface_to_world,
                         &frame_context.clip_scroll_tree,
@@ -2557,15 +2562,6 @@ impl PrimitiveStore {
             Some((pic_context_for_children, mut pic_state_for_children, mut prim_list)) => {
                 let is_passthrough = pic_context_for_children.is_passthrough;
 
-                
-                
-                
-                if pic_context_for_children.is_composite {
-                    frame_state.clip_chain_stack.push_surface();
-                } else {
-                    frame_state.clip_chain_stack.push_clip(prim_instance.clip_chain_id);
-                }
-
                 self.prepare_primitives(
                     &mut prim_list,
                     &pic_context_for_children,
@@ -2575,13 +2571,6 @@ impl PrimitiveStore {
                     data_stores,
                     scratch,
                 );
-
-                
-                if pic_context_for_children.is_composite {
-                    frame_state.clip_chain_stack.pop_surface();
-                } else {
-                    frame_state.clip_chain_stack.pop_clip();
-                }
 
                 
                 self.pictures[pic_context_for_children.pic_index.0]
@@ -2600,9 +2589,6 @@ impl PrimitiveStore {
         };
 
         if !is_passthrough {
-            
-            frame_state.clip_chain_stack.push_clip(prim_instance.clip_chain_id);
-
             prim_instance.update_clip_task(
                 pic_context.raster_spatial_node_index,
                 pic_context,
@@ -2613,9 +2599,6 @@ impl PrimitiveStore {
                 data_stores,
                 scratch,
             );
-
-            
-            frame_state.clip_chain_stack.pop_clip();
 
             if prim_instance.is_chased() {
                 println!("\tconsidered visible and ready with local pos {:?}", prim_instance.prim_origin);
@@ -3656,16 +3639,19 @@ impl PrimitiveInstance {
                 
                 
                 
+                frame_state.clip_store.set_active_clips_from_clip_chain(
+                    &prim_info.clip_chain,
+                    self.spatial_node_index,
+                    &frame_context.clip_scroll_tree,
+                );
+
                 let segment_clip_chain = frame_state
                     .clip_store
                     .build_clip_chain_instance(
-                        frame_state.clip_chain_stack.current_clips(),
                         segment.local_rect.translate(&LayoutVector2D::new(
                             self.prim_origin.x,
                             self.prim_origin.y,
                         )),
-                        self.local_clip_rect,
-                        self.spatial_node_index,
                         &pic_state.map_local_to_pic,
                         &pic_state.map_pic_to_world,
                         &frame_context.clip_scroll_tree,
