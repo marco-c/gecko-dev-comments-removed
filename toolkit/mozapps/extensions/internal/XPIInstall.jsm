@@ -3314,7 +3314,10 @@ var XPIInstall = {
 
 
 
-  async installDistributionAddon(id, file, location) {
+
+
+
+  async installDistributionAddon(id, file, location, oldAppVersion) {
     let addon = await loadManifestFromFile(file, location);
     addon.installTelemetryInfo = {source: "distribution"};
 
@@ -3335,6 +3338,10 @@ var XPIInstall = {
         logger.warn("Profile contains an add-on with a bad or missing install " +
                     `manifest at ${state.path}, overwriting`, e);
       }
+    } else if (addon.type === "locale" && oldAppVersion && Services.vc.compare(oldAppVersion, "67") < 0) {
+        
+
+      Services.prefs.clearUserPref(PREF_BRANCH_INSTALLED_ADDON + id);
     } else if (Services.prefs.getBoolPref(PREF_BRANCH_INSTALLED_ADDON + id, false)) {
       return null;
     }
