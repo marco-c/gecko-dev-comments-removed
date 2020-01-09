@@ -11,7 +11,7 @@ use crate::clip_scroll_tree::{SpatialNodeIndex, ClipScrollTree};
 use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo};
 use std::{ops, u32};
 use std::sync::Arc;
-use crate::util::{LayoutToWorldFastTransform, WorldToLayoutFastTransform};
+use crate::util::LayoutToWorldFastTransform;
 
 
 
@@ -26,12 +26,6 @@ pub struct HitTestSpatialNode {
 
     
     world_viewport_transform: LayoutToWorldFastTransform,
-
-    
-    inv_world_content_transform: Option<WorldToLayoutFastTransform>,
-
-    
-    inv_world_viewport_transform: Option<WorldToLayoutFastTransform>,
 
     
     external_scroll_offset: LayoutVector2D,
@@ -262,12 +256,18 @@ impl HitTester {
             
             self.pipeline_root_nodes.entry(node.pipeline_id).or_insert(index);
 
+            
+            
+            
+
             self.spatial_nodes.push(HitTestSpatialNode {
                 pipeline_id: node.pipeline_id,
-                world_content_transform: node.world_content_transform,
-                inv_world_content_transform: node.world_content_transform.inverse(),
-                inv_world_viewport_transform: node.world_viewport_transform.inverse(),
-                world_viewport_transform: node.world_viewport_transform,
+                world_content_transform: clip_scroll_tree
+                    .get_world_transform(index)
+                    .into_fast_transform(),
+                world_viewport_transform: clip_scroll_tree
+                    .get_world_viewport_transform(index)
+                    .into_fast_transform(),
                 external_scroll_offset: clip_scroll_tree.external_scroll_offset(index),
             });
         }
@@ -373,7 +373,8 @@ impl HitTester {
             
             if item.spatial_node_index != current_spatial_node_index {
                 point_in_layer = scroll_node
-                    .inv_world_content_transform
+                    .world_content_transform
+                    .inverse()
                     .and_then(|inverted| inverted.transform_point2d(&point));
 
                 current_spatial_node_index = item.spatial_node_index;
@@ -433,7 +434,8 @@ impl HitTester {
             
             if item.spatial_node_index != current_spatial_node_index {
                 point_in_layer = scroll_node
-                    .inv_world_content_transform
+                    .world_content_transform
+                    .inverse()
                     .and_then(|inverted| inverted.transform_point2d(&point));
                 current_spatial_node_index = item.spatial_node_index;
             }
@@ -476,7 +478,8 @@ impl HitTester {
                 if root_spatial_node_index != current_root_spatial_node_index {
                     let root_node = &self.spatial_nodes[root_spatial_node_index.0 as usize];
                     point_in_viewport = root_node
-                        .inv_world_viewport_transform
+                        .world_viewport_transform
+                        .inverse()
                         .and_then(|inverted| inverted.transform_point2d(&point))
                         .map(|pt| pt - scroll_node.external_scroll_offset);
 

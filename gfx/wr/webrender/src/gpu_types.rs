@@ -656,14 +656,9 @@ fn register_transform(
 ) -> usize {
     
     
-    
-    let inv_transform = match transform.inverse() {
-        Some(inv_transform) => inv_transform,
-        None => {
-            error!("Unable to get inverse transform");
-            PictureToLayoutTransform::identity()
-        }
-    };
+    let inv_transform = transform
+        .inverse()
+        .unwrap_or_else(PictureToLayoutTransform::identity);
 
     let metadata = TransformMetadata {
         transform_kind: transform.transform_kind()
