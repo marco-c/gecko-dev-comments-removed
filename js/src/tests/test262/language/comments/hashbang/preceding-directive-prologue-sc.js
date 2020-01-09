@@ -14,6 +14,8 @@
 
 
 
-throw "Test262: This statement should not be evaluated.";
 
-reportCompare(0, 0);
+
+
+
+throw "Test262: This statement should not be evaluated.";

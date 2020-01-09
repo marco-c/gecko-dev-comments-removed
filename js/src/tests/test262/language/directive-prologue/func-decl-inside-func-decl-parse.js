@@ -15,6 +15,8 @@
 
 
 
+$DONOTEVALUATE();
+
 function testcase() {
   "use strict";
   function fun() {

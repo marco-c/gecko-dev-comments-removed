@@ -14,5 +14,5 @@
 
 "use strict";
 "use strict";
-throw new Error("This code should not execute");
+throw "Test262: This statement should not be evaluated.";
 var public = 1;

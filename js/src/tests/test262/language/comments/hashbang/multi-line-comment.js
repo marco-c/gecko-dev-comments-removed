@@ -16,4 +16,6 @@ these characters should not be considered within a comment
 
 
 
-reportCompare(0, 0);
+
+
+
