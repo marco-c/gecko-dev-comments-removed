@@ -172,6 +172,10 @@ CSPService::ShouldLoad(nsIURI *aContentLocation, nsILoadInfo *aLoadInfo,
     return NS_OK;
   }
 
+  nsAutoString cspNonce;
+  rv = aLoadInfo->GetCspNonce(cspNonce);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   
   bool isPreload = nsContentUtils::IsPreloadType(contentType);
 
@@ -186,7 +190,7 @@ CSPService::ShouldLoad(nsIURI *aContentLocation, nsILoadInfo *aLoadInfo,
           contentType, cspEventListener, aContentLocation, requestOrigin,
           requestContext, aMimeTypeGuess,
           nullptr,  
-          aLoadInfo->GetSendCSPViolationEvents(), aDecision);
+          aLoadInfo->GetSendCSPViolationEvents(), cspNonce, aDecision);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
@@ -207,7 +211,8 @@ CSPService::ShouldLoad(nsIURI *aContentLocation, nsILoadInfo *aLoadInfo,
     rv = csp->ShouldLoad(contentType, cspEventListener, aContentLocation,
                          requestOrigin, requestContext, aMimeTypeGuess,
                          nullptr,  
-                         aLoadInfo->GetSendCSPViolationEvents(), aDecision);
+                         aLoadInfo->GetSendCSPViolationEvents(), cspNonce,
+                         aDecision);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
@@ -251,17 +256,6 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
                                    nsIAsyncVerifyRedirectCallback *callback) {
   net::nsAsyncRedirectAutoCallback autoCallback(callback);
 
-  if (XRE_IsE10sParentProcess()) {
-    nsCOMPtr<nsIParentChannel> parentChannel;
-    NS_QueryNotificationCallbacks(oldChannel, parentChannel);
-    if (parentChannel) {
-      
-      
-      
-      return NS_OK;
-    }
-  }
-
   nsCOMPtr<nsIURI> newUri;
   nsresult rv = newChannel->GetURI(getter_AddRefs(newUri));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -303,6 +297,10 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
     return rv;
   }
 
+  nsAutoString cspNonce;
+  rv = loadInfo->GetCspNonce(cspNonce);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   bool isPreload = nsContentUtils::IsPreloadType(policyType);
 
   
@@ -330,6 +328,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
           EmptyCString(),  
           originalUri,     
           true,            
+          cspNonce,        
           &aDecision);
 
       
@@ -356,6 +355,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
                     EmptyCString(),  
                     originalUri,     
                     true,            
+                    cspNonce,        
                     &aDecision);
   }
 
