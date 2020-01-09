@@ -1318,16 +1318,6 @@ CustomizeMode.prototype = {
 
     this._clearLWThemesMenu(aEvent.target);
 
-    function previewTheme(aPreviewThemeEvent) {
-      LightweightThemeManager.previewTheme(
-        aPreviewThemeEvent.target.theme.id != DEFAULT_THEME_ID ?
-        aPreviewThemeEvent.target.theme : null);
-    }
-
-    function resetPreview() {
-      LightweightThemeManager.resetPreview();
-    }
-
     let onThemeSelected = panel => {
       
       
@@ -1352,9 +1342,6 @@ CustomizeMode.prototype = {
       if (isActive) {
         tbb.setAttribute("active", "true");
       }
-      tbb.addEventListener("focus", previewTheme);
-      tbb.addEventListener("mouseover", previewTheme);
-      tbb.addEventListener("blur", resetPreview);
 
       return tbb;
     }
@@ -1399,23 +1386,6 @@ CustomizeMode.prototype = {
       });
       panel.insertBefore(button, recommendedLabel);
     }
-
-    function panelMouseOut(e) {
-      
-      
-      
-      
-      
-      if (e.explicitOriginalTarget == panel) {
-        resetPreview();
-      }
-    }
-
-    panel.addEventListener("mouseout", panelMouseOut);
-    panel.addEventListener("popuphidden", () => {
-      panel.removeEventListener("mouseout", panelMouseOut);
-      resetPreview();
-    }, {once: true});
 
     let lwthemePrefs = Services.prefs.getBranch("lightweightThemes.");
     let recommendedThemes = lwthemePrefs.getStringPref("recommendedThemes");
