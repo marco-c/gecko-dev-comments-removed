@@ -14,6 +14,12 @@
 class nsITransportSecurityInfo;
 class nsIChannel;
 
+namespace mozilla {
+namespace dom {
+class Document;
+}
+}  
+
 #define NS_SECURE_BROWSER_UI_CID                     \
   {                                                  \
     0xcc75499a, 0x1dd1, 0x11b2, {                    \
@@ -34,13 +40,17 @@ class nsSecureBrowserUIImpl : public nsISecureBrowserUI,
  protected:
   virtual ~nsSecureBrowserUIImpl(){};
 
+  already_AddRefed<mozilla::dom::Document> PrepareForContentChecks();
   
-  void CheckForBlockedContent();
+  void CheckForMixedContent();
+  
+  void CheckForContentBlockingEvents();
   
   
   nsresult UpdateStateAndSecurityInfo(nsIChannel* channel, nsIURI* uri);
 
   uint32_t mState;
+  uint32_t mEvent;
   nsWeakPtr mDocShell;
   nsWeakPtr mWebProgress;
   nsCOMPtr<nsITransportSecurityInfo> mTopLevelSecurityInfo;

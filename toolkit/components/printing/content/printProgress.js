@@ -144,6 +144,10 @@ var progressListener = {
       
     },
 
+    onContentBlockingEvent(aWebProgress, aRequest, event) {
+      
+    },
+
     QueryInterface: ChromeUtils.generateQI(["nsIWebProgressListener",
                                             "nsISupportsWeakReference"]),
 };

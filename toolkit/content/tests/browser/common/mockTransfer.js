@@ -44,6 +44,7 @@ MockTransfer.prototype = {
       this._downloadIsSuccessful = false;
   },
   onSecurityChange() {},
+  onContentBlockingEvent() {},
 
   
   onProgressChange64() {},

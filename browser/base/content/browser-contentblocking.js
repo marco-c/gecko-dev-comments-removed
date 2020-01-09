@@ -791,7 +791,7 @@ var ContentBlocking = {
     
     this.reportURI = gBrowser.currentURI;
     let urlWithoutQuery = this.reportURI.asciiSpec.replace("?" + this.reportURI.query, "");
-    this.reportBreakageURL.value = urlWithoutQuery;
+    this.reportBreakageURL.textContent = urlWithoutQuery;
     this.identityPopupMultiView.showSubView("identity-popup-breakageReportView");
   },
 
@@ -812,7 +812,7 @@ var ContentBlocking = {
     Services.telemetry.getHistogramById("TRACKING_PROTECTION_SHIELD").add(value);
   },
 
-  onSecurityChange(state, webProgress, isSimulated) {
+  onContentBlockingEvent(event, webProgress, isSimulated) {
     let baseURI = this._baseURIForChannelClassifier;
 
     
@@ -831,9 +831,9 @@ var ContentBlocking = {
       
       
       
-      blocker.activated = blocker.isBlocking(state);
+      blocker.activated = blocker.isBlocking(event);
       blocker.categoryItem.classList.toggle("blocked", blocker.enabled);
-      let detected = blocker.isDetected(state);
+      let detected = blocker.isDetected(event);
       blocker.categoryItem.hidden = !detected;
       anyDetected = anyDetected || detected;
       anyBlocking = anyBlocking || blocker.activated;
