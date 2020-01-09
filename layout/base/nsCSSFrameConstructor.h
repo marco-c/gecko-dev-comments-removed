@@ -1331,22 +1331,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   
 
-
-
-
-
-
-
-  
-  
-  
-  
-  void AdjustParentFrame(nsContainerFrame** aParentFrame,
-                         const FrameConstructionData* aFCData,
-                         ComputedStyle* aComputedStyle);
-
-  
-
  protected:
   static nsIFrame* CreatePlaceholderFrameFor(nsIPresShell* aPresShell,
                                              nsIContent* aContent,

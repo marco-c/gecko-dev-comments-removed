@@ -1900,56 +1900,15 @@ nsCSSFrameConstructor::ParentType nsCSSFrameConstructor::GetParentType(
   return eTypeBlock;
 }
 
-static nsContainerFrame* AdjustCaptionParentFrame(
-    nsContainerFrame* aParentFrame) {
-  if (aParentFrame->IsTableFrame()) {
-    return aParentFrame->GetParent();
-  }
-  return aParentFrame;
-}
-
-
-
-
-
-
-
-static bool GetCaptionAdjustedParent(nsContainerFrame* aParentFrame,
-                                     const nsIFrame* aChildFrame,
-                                     nsContainerFrame** aAdjParentFrame) {
-  *aAdjParentFrame = aParentFrame;
-  bool haveCaption = false;
-
-  if (aChildFrame->IsTableCaption()) {
-    haveCaption = true;
-    *aAdjParentFrame = ::AdjustCaptionParentFrame(aParentFrame);
-  }
-  return haveCaption;
-}
-
-void nsCSSFrameConstructor::AdjustParentFrame(
-    nsContainerFrame** aParentFrame, const FrameConstructionData* aFCData,
-    ComputedStyle* aComputedStyle) {
-  MOZ_ASSERT(aComputedStyle, "Must have child's style");
-  MOZ_ASSERT(aFCData, "Must have frame construction data");
-
-  bool tablePart = ((aFCData->mBits & FCDATA_IS_TABLE_PART) != 0);
-
-  if (tablePart &&
-      aComputedStyle->StyleDisplay()->mDisplay == StyleDisplay::TableCaption) {
-    *aParentFrame = ::AdjustCaptionParentFrame(*aParentFrame);
-  }
-}
-
 
 static void PullOutCaptionFrames(nsFrameItems& aItems,
                                  nsFrameItems& aCaptions) {
   nsIFrame* child = aItems.FirstChild();
   while (child) {
     nsIFrame* nextSibling = child->GetNextSibling();
-    if (child->IsTableCaption()) {
+    if (child->StyleDisplay()->mDisplay == StyleDisplay::TableCaption) {
       aItems.RemoveFrame(child);
-      aCaptions.AddChild(child);
+      aCaptions.AppendFrame(nullptr, child);
     }
     child = nextSibling;
   }
@@ -2043,6 +2002,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
 
   
   if (captionItems.NotEmpty()) {
+    captionItems.ApplySetParent(newFrame);
     newFrame->SetInitialChildList(nsIFrame::kCaptionList, captionItems);
   }
 
@@ -5697,10 +5657,8 @@ bool nsCSSFrameConstructor::AtLineBoundary(FCItemIterator& aIter) {
 void nsCSSFrameConstructor::ConstructFramesFromItem(
     nsFrameConstructorState& aState, FCItemIterator& aIter,
     nsContainerFrame* aParentFrame, nsFrameItems& aFrameItems) {
-  nsContainerFrame* adjParentFrame = aParentFrame;
   FrameConstructionItem& item = aIter.item();
   ComputedStyle* computedStyle = item.mComputedStyle;
-  AdjustParentFrame(&adjParentFrame, item.mFCData, computedStyle);
 
   if (item.mIsText) {
     
@@ -5726,7 +5684,7 @@ void nsCSSFrameConstructor::ConstructFramesFromItem(
         !mAlwaysCreateFramesForIgnorableWhitespace && item.IsWhitespace(aState))
       return;
 
-    ConstructTextFrame(item.mFCData, aState, item.mContent, adjParentFrame,
+    ConstructTextFrame(item.mFCData, aState, item.mContent, aParentFrame,
                        computedStyle, aFrameItems);
     return;
   }
@@ -5739,7 +5697,7 @@ void nsCSSFrameConstructor::ConstructFramesFromItem(
   }
 
   
-  ConstructFrameFromItemInternal(item, aState, adjParentFrame, aFrameItems);
+  ConstructFrameFromItemInternal(item, aState, aParentFrame, aFrameItems);
 
   if (item.mIsGeneratedContent) {
     
@@ -6946,6 +6904,7 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
   if (captionItems.NotEmpty()) {  
     NS_ASSERTION(LayoutFrameType::Table == frameType, "how did that happen?");
     nsContainerFrame* outerTable = parentFrame->GetParent();
+    captionItems.ApplySetParent(outerTable);
     AppendFrames(outerTable, nsIFrame::kCaptionList, captionItems);
   }
 
@@ -7388,28 +7347,31 @@ void nsCSSFrameConstructor::ContentRangeInserted(
           aStartChild, aEndChild);
     }
 
-    nsContainerFrame* outerTable = nullptr;
-    if (GetCaptionAdjustedParent(captionInsertion.mParentFrame,
-                                 captionItems.FirstChild(), &outerTable)) {
-      
-      
-      
-      NS_ASSERTION(outerTable->IsTableWrapperFrame(),
-                   "Pseudo frame construction failure; "
-                   "a caption can be only a child of a table wrapper frame");
+    nsContainerFrame* outerTable =
+        captionInsertion.mParentFrame->IsTableFrame()
+            ? captionInsertion.mParentFrame->GetParent()
+            : captionInsertion.mParentFrame;
 
-      
-      
-      
-      if (captionPrevSibling && captionPrevSibling->GetParent() != outerTable) {
-        captionPrevSibling = nullptr;
-      }
-      if (captionIsAppend) {
-        AppendFrames(outerTable, nsIFrame::kCaptionList, captionItems);
-      } else {
-        InsertFrames(outerTable, nsIFrame::kCaptionList, captionPrevSibling,
-                     captionItems);
-      }
+    
+    
+    
+    MOZ_ASSERT(outerTable->IsTableWrapperFrame(),
+               "Pseudo frame construction failure; "
+               "a caption can be only a child of a table wrapper frame");
+
+    
+    
+    
+    if (captionPrevSibling && captionPrevSibling->GetParent() != outerTable) {
+      captionPrevSibling = nullptr;
+    }
+
+    captionItems.ApplySetParent(outerTable);
+    if (captionIsAppend) {
+      AppendFrames(outerTable, nsIFrame::kCaptionList, captionItems);
+    } else {
+      InsertFrames(outerTable, nsIFrame::kCaptionList, captionPrevSibling,
+                   captionItems);
     }
   }
 
@@ -10766,6 +10728,7 @@ nsContainerFrame* nsCSSFrameConstructor::BeginBuildingColumns(
     nsContainerFrame* columnSetFrame = NS_NewColumnSetFrame(
         mPresShell, aComputedStyle, nsFrameState(NS_FRAME_OWNS_ANON_BOXES));
     InitAndRestoreFrame(aState, aContent, aParentFrame, columnSetFrame);
+    SetInitialSingleChild(columnSetFrame, aColumnContent);
 
     RefPtr<ComputedStyle> anonBlockStyle =
         mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(
@@ -10773,7 +10736,6 @@ nsContainerFrame* nsCSSFrameConstructor::BeginBuildingColumns(
     aColumnContent->SetComputedStyleWithoutNotification(anonBlockStyle);
     InitAndRestoreFrame(aState, aContent, columnSetFrame, aColumnContent);
 
-    SetInitialSingleChild(columnSetFrame, aColumnContent);
     return columnSetFrame;
   }
 

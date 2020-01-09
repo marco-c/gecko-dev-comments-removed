@@ -82,12 +82,6 @@ void nsTableWrapperFrame::GetChildLists(nsTArray<ChildList>* aLists) const {
 void nsTableWrapperFrame::SetInitialChildList(ChildListID aListID,
                                               nsFrameList& aChildList) {
   if (kCaptionList == aListID) {
-#ifdef DEBUG
-    nsFrame::VerifyDirtyBitSet(aChildList);
-    for (nsIFrame* f : aChildList) {
-      MOZ_ASSERT(f->GetParent() == this, "Unexpected parent");
-    }
-#endif
     
     MOZ_ASSERT(mCaptionFrames.IsEmpty(),
                "already have child frames in CaptionList");
@@ -109,7 +103,7 @@ void nsTableWrapperFrame::AppendFrames(ChildListID aListID,
   MOZ_ASSERT(kCaptionList == aListID, "unexpected child list");
   MOZ_ASSERT(aFrameList.IsEmpty() || aFrameList.FirstChild()->IsTableCaption(),
              "appending non-caption frame to captionList");
-  mCaptionFrames.AppendFrames(this, aFrameList);
+  mCaptionFrames.AppendFrames(nullptr, aFrameList);
 
   
   
