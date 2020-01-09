@@ -43,45 +43,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.27")]
-#![cfg_attr(nightly, feature(proc_macro_span))]
-#![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.24")]
+#![cfg_attr(
+    super_unstable,
+    feature(proc_macro_raw_ident, proc_macro_span, proc_macro_def_site)
+)]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
@@ -99,11 +65,11 @@ use std::str::FromStr;
 
 #[macro_use]
 mod strnom;
-mod fallback;
+mod stable;
 
 #[cfg(not(wrap_proc_macro))]
-use fallback as imp;
-#[path = "wrapper.rs"]
+use stable as imp;
+#[path = "unstable.rs"]
 #[cfg(wrap_proc_macro)]
 mod imp;
 
@@ -134,7 +100,7 @@ impl TokenStream {
         }
     }
 
-    fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
+    fn _new_stable(inner: stable::TokenStream) -> TokenStream {
         TokenStream {
             inner: inner.into(),
             _marker: marker::PhantomData,
@@ -300,7 +266,7 @@ impl fmt::Debug for SourceFile {
 
 
 
-#[cfg(span_locations)]
+#[cfg(procmacro2_semver_exempt)]
 pub struct LineColumn {
     
     
@@ -325,7 +291,7 @@ impl Span {
         }
     }
 
-    fn _new_stable(inner: fallback::Span) -> Span {
+    fn _new_stable(inner: stable::Span) -> Span {
         Span {
             inner: inner.into(),
             _marker: marker::PhantomData,
@@ -368,25 +334,10 @@ impl Span {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(wrap_proc_macro)]
-    pub fn unwrap(self) -> proc_macro::Span {
-        self.inner.unwrap()
-    }
-
-    
-    #[cfg(wrap_proc_macro)]
     #[doc(hidden)]
+    #[cfg(any(feature = "nightly", super_unstable))]
     pub fn unstable(self) -> proc_macro::Span {
-        self.unwrap()
+        self.inner.unstable()
     }
 
     
@@ -400,7 +351,7 @@ impl Span {
     
     
     
-    #[cfg(span_locations)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
         LineColumn {
@@ -412,7 +363,7 @@ impl Span {
     
     
     
-    #[cfg(span_locations)]
+    #[cfg(procmacro2_semver_exempt)]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
         LineColumn {
@@ -536,7 +487,8 @@ impl fmt::Debug for TokenTree {
             TokenTree::Ident(ref t) => {
                 let mut debug = f.debug_struct("Ident");
                 debug.field("sym", &format_args!("{}", t));
-                imp::debug_span_field_if_nontrivial(&mut debug, t.span().inner);
+                #[cfg(any(feature = "nightly", procmacro2_semver_exempt))]
+                debug.field("span", &t.span());
                 debug.finish()
             }
             TokenTree::Punct(ref t) => t.fmt(f),
@@ -575,10 +527,12 @@ pub enum Delimiter {
 
 impl Group {
     fn _new(inner: imp::Group) -> Self {
-        Group { inner: inner }
+        Group {
+            inner: inner,
+        }
     }
 
-    fn _new_stable(inner: fallback::Group) -> Self {
+    fn _new_stable(inner: stable::Group) -> Self {
         Group {
             inner: inner.into(),
         }
@@ -745,10 +699,19 @@ impl fmt::Debug for Punct {
         let mut debug = fmt.debug_struct("Punct");
         debug.field("op", &self.op);
         debug.field("spacing", &self.spacing);
-        imp::debug_span_field_if_nontrivial(&mut debug, self.span.inner);
+        #[cfg(procmacro2_semver_exempt)]
+        debug.field("span", &self.span);
         debug.finish()
     }
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -991,7 +954,7 @@ impl Literal {
         }
     }
 
-    fn _new_stable(inner: fallback::Literal) -> Literal {
+    fn _new_stable(inner: stable::Literal) -> Literal {
         Literal {
             inner: inner.into(),
             _marker: marker::PhantomData,

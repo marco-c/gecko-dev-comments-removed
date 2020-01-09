@@ -1,43 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use std::env;
 use std::process::Command;
 use std::str;
@@ -47,46 +7,33 @@ fn main() {
 
     let target = env::var("TARGET").unwrap();
 
-    let version = match rustc_version() {
-        Some(version) => version,
+    let minor = match rustc_minor_version() {
+        Some(n) => n,
         None => return,
     };
 
-    if version.minor >= 26 {
+    if minor >= 26 {
         println!("cargo:rustc-cfg=u128");
-    }
-
-    let semver_exempt = cfg!(procmacro2_semver_exempt);
-    if semver_exempt {
-        
-        println!("cargo:rustc-cfg=procmacro2_semver_exempt");
-    }
-
-    if semver_exempt || cfg!(feature = "span-locations") {
-        println!("cargo:rustc-cfg=span_locations");
     }
 
     if !enable_use_proc_macro(&target) {
         return;
     }
-
     println!("cargo:rustc-cfg=use_proc_macro");
 
     
-    if version.nightly || version.minor >= 29 && !semver_exempt {
+    if (minor >= 29 && !cfg!(procmacro2_semver_exempt)) || cfg!(feature = "nightly") {
         println!("cargo:rustc-cfg=wrap_proc_macro");
+
+        if cfg!(procmacro2_semver_exempt) {
+            println!("cargo:rustc-cfg=super_unstable");
+            
+            println!("cargo:rustc-cfg=procmacro2_semver_exempt");
+        }
     }
 
-    if version.minor == 29 {
+    if minor == 29 {
         println!("cargo:rustc-cfg=slow_extend");
-    }
-
-    if version.nightly {
-        println!("cargo:rustc-cfg=nightly");
-    }
-
-    if semver_exempt && version.nightly {
-        println!("cargo:rustc-cfg=super_unstable");
     }
 }
 
@@ -100,12 +47,7 @@ fn enable_use_proc_macro(target: &str) -> bool {
     cfg!(feature = "proc-macro")
 }
 
-struct RustcVersion {
-    minor: u32,
-    nightly: bool,
-}
-
-fn rustc_version() -> Option<RustcVersion> {
+fn rustc_minor_version() -> Option<u32> {
     macro_rules! otry {
         ($e:expr) => {
             match $e {
@@ -114,20 +56,12 @@ fn rustc_version() -> Option<RustcVersion> {
             }
         };
     }
-
     let rustc = otry!(env::var_os("RUSTC"));
     let output = otry!(Command::new(rustc).arg("--version").output().ok());
     let version = otry!(str::from_utf8(&output.stdout).ok());
-    let nightly = version.contains("nightly");
     let mut pieces = version.split('.');
     if pieces.next() != Some("rustc 1") {
         return None;
     }
-    let minor = otry!(pieces.next());
-    let minor = otry!(minor.parse().ok());
-
-    Some(RustcVersion {
-        minor: minor,
-        nightly: nightly,
-    })
+    otry!(pieces.next()).parse().ok()
 }

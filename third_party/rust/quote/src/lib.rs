@@ -81,7 +81,18 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/quote/0.6.11")]
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/quote/0.6.10")]
 
 #[cfg(all(
     not(all(target_arch = "wasm32", target_os = "unknown")),
@@ -306,143 +317,21 @@ pub mod __rt {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[macro_export(local_inner_macros)]
 macro_rules! quote {
     ($($tt:tt)*) => (quote_spanned!($crate::__rt::Span::call_site()=> $($tt)*));
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

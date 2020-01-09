@@ -4,6 +4,7 @@
 
 
 
+
 #[macro_use]
 extern crate darling;
 
@@ -57,8 +58,8 @@ impl MyInputReceiver {
         };
 
         Self {
-            name,
-            frequency,
+            name: name,
+            frequency: frequency,
             amplitude: Ok(amplitude),
         }
     }

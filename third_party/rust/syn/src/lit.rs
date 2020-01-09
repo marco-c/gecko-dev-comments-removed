@@ -6,6 +6,8 @@ use proc_macro2::Ident;
 
 #[cfg(feature = "parsing")]
 use proc_macro2::TokenStream;
+#[cfg(feature = "parsing")]
+use Error;
 
 use proc_macro2::TokenTree;
 
@@ -15,7 +17,7 @@ use std::hash::{Hash, Hasher};
 #[cfg(feature = "parsing")]
 use lookahead;
 #[cfg(feature = "parsing")]
-use parse::{Parse, Parser, Result};
+use parse::Parse;
 
 ast_enum_of_structs! {
     /// A Rust literal such as a string or integer or boolean.
@@ -144,38 +146,17 @@ impl LitStr {
     
     
     
-    #[cfg(feature = "parsing")]
-    pub fn parse<T: Parse>(&self) -> Result<T> {
-        self.parse_with(T::parse)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     #[cfg(feature = "parsing")]
-    pub fn parse_with<F: Parser>(&self, parser: F) -> Result<F::Output> {
+    pub fn parse<T: Parse>(&self) -> Result<T, Error> {
         use proc_macro2::Group;
+
+        
+        
+        fn spanned_tokens(s: &LitStr) -> Result<TokenStream, Error> {
+            let stream = ::parse_str(&s.value())?;
+            Ok(respan_token_stream(stream, s.span()))
+        }
 
         
         fn respan_token_stream(stream: TokenStream, span: Span) -> TokenStream {
@@ -198,12 +179,7 @@ impl LitStr {
             token
         }
 
-        
-        
-        let mut tokens = ::parse_str(&self.value())?;
-        tokens = respan_token_stream(tokens, self.span());
-
-        parser.parse2(tokens)
+        spanned_tokens(self).and_then(::parse2)
     }
 
     pub fn span(&self) -> Span {
