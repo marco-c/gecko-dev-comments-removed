@@ -181,7 +181,7 @@ class AddrHostRecord final : public nsHostRecord {
 
   Mutex addr_info_lock;
   int addr_info_gencnt; 
-  mozilla::net::AddrInfo *addr_info;
+  RefPtr<mozilla::net::AddrInfo> addr_info;
   mozilla::UniquePtr<mozilla::net::NetAddr> addr;
 
   
@@ -222,7 +222,7 @@ class AddrHostRecord final : public nsHostRecord {
   mozilla::TimeDuration mTrrDuration;
   mozilla::TimeDuration mNativeDuration;
 
-  nsAutoPtr<mozilla::net::AddrInfo> mFirstTRR;  
+  RefPtr<mozilla::net::AddrInfo> mFirstTRR;  
   nsresult mFirstTRRresult;
 
   uint8_t mTRRSuccess;     
