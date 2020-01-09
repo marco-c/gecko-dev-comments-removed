@@ -526,8 +526,8 @@ class MP4ContainerParser : public ContainerParser,
       
       
       
-      mParser = new MoofParser(mStream, 0,  false,
-                                true);
+      mParser = new MoofParser(mStream, AsVariant(ParseAllTracks{}),
+                                false);
       DDLINKCHILD("parser", mParser.get());
       mInitData = new MediaByteBuffer();
       mCompleteInitSegmentRange = MediaByteRange();

@@ -94,7 +94,7 @@ TEST(MP4Metadata, EmptyStream) {
 TEST(MoofParser, EmptyStream) {
   RefPtr<ByteStream> stream = new TestStream(nullptr, 0);
 
-  MoofParser parser(stream, 0, false, true);
+  MoofParser parser(stream, AsVariant(ParseAllTracks{}), false);
   EXPECT_EQ(0u, parser.mOffset);
   EXPECT_TRUE(parser.ReachedEnd());
 
@@ -411,7 +411,7 @@ TEST(MoofParser, test_case_mp4) {
     RefPtr<ByteStream> stream =
         new TestStream(buffer.Elements(), buffer.Length());
 
-    MoofParser parser(stream, 0, false, true);
+    MoofParser parser(stream, AsVariant(ParseAllTracks{}), false);
     EXPECT_EQ(0u, parser.mOffset) << tests[test].mFilename;
     EXPECT_FALSE(parser.ReachedEnd()) << tests[test].mFilename;
     EXPECT_TRUE(parser.mInitRange.IsEmpty()) << tests[test].mFilename;
@@ -455,7 +455,8 @@ TEST(MoofParser, test_case_sample_description_entries) {
 
     
     
-    MoofParser parser(stream, 1, false);
+    uint32_t trackNumber = 1;
+    MoofParser parser(stream, AsVariant(trackNumber), false);
     EXPECT_EQ(0u, parser.mOffset) << tests[test].mFilename;
     EXPECT_FALSE(parser.ReachedEnd()) << tests[test].mFilename;
     EXPECT_TRUE(parser.mInitRange.IsEmpty()) << tests[test].mFilename;
@@ -501,7 +502,7 @@ TEST(MoofParser, test_case_track_id_0_does_not_read_multitracks) {
   
   
   const uint32_t videoTrackId = 0;
-  MoofParser parser(stream, videoTrackId, false);
+  MoofParser parser(stream, AsVariant(videoTrackId), false);
 
   
   
@@ -556,7 +557,7 @@ TEST(MoofParser, test_case_track_id_0_reads_crypto_metadata) {
   
   
   const uint32_t videoTrackId = 0;
-  MoofParser parser(stream, videoTrackId, false);
+  MoofParser parser(stream, AsVariant(videoTrackId), false);
 
   
   
@@ -611,7 +612,7 @@ TEST(MoofParser, test_case_moofs_missing_trafs) {
       new TestStream(buffer.Elements(), buffer.Length());
 
   
-  MoofParser parser(stream, 0, false, true);
+  MoofParser parser(stream, AsVariant(ParseAllTracks{}), false);
 
   
   
@@ -652,7 +653,7 @@ TEST(MoofParser, test_case_mp4_subsets) {
         RefPtr<TestStream> stream =
           new TestStream(buffer.Elements() + offset, size);
 
-        MoofParser parser(stream, 0, false);
+        MoofParser parser(stream, AsVariant(ParseAllTracks{}), false);
         MediaByteRangeSet byteRanges;
         EXPECT_FALSE(parser.RebuildFragmentedIndex(byteRanges));
         parser.GetCompositionRange(byteRanges);

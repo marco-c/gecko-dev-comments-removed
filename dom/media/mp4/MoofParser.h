@@ -6,6 +6,7 @@
 #define MOOF_PARSER_H_
 
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/Variant.h"
 #include "Atom.h"
 #include "AtomType.h"
 #include "SinfParser.h"
@@ -224,11 +225,16 @@ struct SampleDescriptionEntry {
   bool mIsEncryptedEntry = false;
 };
 
+
+struct ParseAllTracks {};
+
+typedef Variant<ParseAllTracks, uint32_t> TrackParseMode;
+
 class Moof final : public Atom {
  public:
-  Moof(Box& aBox, Trex& aTrex, Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts,
-       Sinf& aSinf, uint64_t* aDecoderTime, bool aIsAudio,
-       bool aIsMultitrackParser);
+  Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
+       Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, Sinf& aSinf,
+       uint64_t* aDecodeTime, bool aIsAudio);
   bool GetAuxInfo(AtomType aType, FallibleTArray<MediaByteRange>* aByteRanges);
   void FixRounding(const Moof& aMoof);
 
@@ -248,9 +254,9 @@ class Moof final : public Atom {
 
  private:
   
-  void ParseTraf(Box& aBox, Trex& aTrex, Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts,
-                 Sinf& aSinf, uint64_t* aDecodeTime, bool aIsAudio,
-                 bool aIsMultitrackParser);
+  void ParseTraf(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
+                 Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, Sinf& aSinf,
+                 uint64_t* aDecodeTime, bool aIsAudio);
   
   Result<Ok, nsresult> ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
                                  Edts& aEdts, uint64_t* aDecodeTime,
@@ -269,14 +275,15 @@ DDLoggedTypeDeclName(MoofParser);
 
 class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
  public:
-  MoofParser(ByteStream* aSource, uint32_t aTrackId, bool aIsAudio,
-             bool aIsMultitrackParser = false)
+  MoofParser(ByteStream* aSource, const TrackParseMode& aTrackParseMode,
+             bool aIsAudio)
       : mSource(aSource),
         mOffset(0),
-        mTrex(aTrackId),
+        mTrex(aTrackParseMode.is<uint32_t>() ? aTrackParseMode.as<uint32_t>()
+                                             : 0),
         mIsAudio(aIsAudio),
         mLastDecodeTime(0),
-        mIsMultitrackParser(aIsMultitrackParser) {
+        mTrackParseMode(aTrackParseMode) {
     
     
     
@@ -332,7 +339,13 @@ class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
   nsTArray<MediaByteRange> mMediaRanges;
   bool mIsAudio;
   uint64_t mLastDecodeTime;
-  bool mIsMultitrackParser;
+  
+  
+  
+  
+  
+  
+  const TrackParseMode mTrackParseMode;
 };
 }  
 
