@@ -28,9 +28,9 @@ namespace mozilla {
 using dom::Element;
 
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY  
-    static nsresult
-    GetListState(HTMLEditor* aHTMLEditor, bool* aMixed, nsAString& aLocalName);
+MOZ_CAN_RUN_SCRIPT
+static nsresult GetListState(HTMLEditor* aHTMLEditor, bool* aMixed,
+                             nsAString& aLocalName);
 
 
 #define STATE_ENABLED "state_enabled"
@@ -97,7 +97,7 @@ nsresult StateUpdatingCommandBase::GetCommandStateParams(
   if (NS_WARN_IF(!tagName)) {
     return NS_ERROR_UNEXPECTED;
   }
-  return GetCurrentState(tagName, htmlEditor, aParams);
+  return GetCurrentState(tagName, MOZ_KnownLive(htmlEditor), aParams);
 }
 
 
