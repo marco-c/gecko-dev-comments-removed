@@ -4,5 +4,5 @@
 
 
 var g = newGlobal();
-assertEq(objectGlobal(g), null); 
+assertEq(isSameCompartment(this, g), false);
 assertEq(isProxy(g), true);
