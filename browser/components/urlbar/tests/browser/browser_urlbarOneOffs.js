@@ -165,10 +165,6 @@ add_task(async function() {
 
 
 add_task(async function searchWith() {
-  
-  if (UrlbarPrefs.get("quantumbar")) {
-    return;
-  }
   let typedValue = "foo";
   await promiseAutocompleteResultPopup(typedValue);
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
