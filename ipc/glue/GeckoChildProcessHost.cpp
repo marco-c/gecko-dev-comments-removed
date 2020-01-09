@@ -950,7 +950,9 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   LaunchAndroidService(childProcessType, childArgv,
                        mLaunchOptions->fds_to_remap, &process);
 #  else   
-  base::LaunchApp(childArgv, *mLaunchOptions, &process);
+  if (!base::LaunchApp(childArgv, *mLaunchOptions, &process)) {
+    return false;
+  }
 #  endif  
 
   
@@ -1222,11 +1224,15 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
           .print("==> process %d launched child process %d (%S)\n",
                  base::GetCurrentProcId(), base::GetProcId(process),
                  cmdLine.command_line_string().c_str());
+    } else {
+      return false;
     }
   } else
 #  endif  
   {
-    base::LaunchApp(cmdLine, *mLaunchOptions, &process);
+    if (!base::LaunchApp(cmdLine, *mLaunchOptions, &process)) {
+      return false;
+    }
 
 #  ifdef MOZ_SANDBOX
     
@@ -1251,9 +1257,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
 #  error Sorry
 #endif  
 
-  if (!process) {
-    return false;
-  }
+  MOZ_ASSERT(process);
   
   
   
