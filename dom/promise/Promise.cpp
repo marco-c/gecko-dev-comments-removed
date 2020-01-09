@@ -575,14 +575,6 @@ void Promise::MaybeRejectWithClone(JSContext* aCx,
   MaybeReject(aCx, value);
 }
 
-JSObject* Promise::GlobalJSObject() const {
-  return mGlobal->GetGlobalJSObject();
-}
-
-JS::Compartment* Promise::Compartment() const {
-  return js::GetObjectCompartment(GlobalJSObject());
-}
-
 
 
 class PromiseWorkerProxyRunnable : public WorkerRunnable {

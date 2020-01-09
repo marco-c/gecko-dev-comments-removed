@@ -120,7 +120,7 @@ class Promise : public nsISupports, public SupportsWeakPtr<Promise> {
 
   
 
-  nsIGlobalObject* GetParentObject() const { return mGlobal; }
+  nsIGlobalObject* GetParentObject() const { return GetGlobalObject(); }
 
   
   
@@ -200,9 +200,7 @@ class Promise : public nsISupports, public SupportsWeakPtr<Promise> {
 
   void AppendNativeHandler(PromiseNativeHandler* aRunnable);
 
-  JSObject* GlobalJSObject() const;
-
-  JS::Compartment* Compartment() const;
+  nsIGlobalObject* GetGlobalObject() const { return mGlobal; }
 
   
   
