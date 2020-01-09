@@ -368,7 +368,6 @@ this.ActivityStream = class ActivityStream {
 
   init() {
     try {
-      this._migratePrefs();
       this._updateDynamicPrefs();
       this._defaultPrefs.init();
 
@@ -420,29 +419,6 @@ this.ActivityStream = class ActivityStream {
     
     cbIfNotDefault(Services.prefs[prefGetter](oldPrefName));
     Services.prefs.clearUserPref(oldPrefName);
-  }
-
-  _migratePrefs() {
-    
-    this._migratePref("browser.newtabpage.rows", rows => {
-      
-      if (rows <= 0) {
-        Services.prefs.setBoolPref("browser.newtabpage.activity-stream.feeds.topsites", false);
-      } else {
-        Services.prefs.setIntPref("browser.newtabpage.activity-stream.topSitesRows", rows);
-      }
-    });
-
-    this._migratePref("browser.newtabpage.activity-stream.showTopSites", value => {
-      if (value === false) {
-        Services.prefs.setBoolPref("browser.newtabpage.activity-stream.feeds.topsites", false);
-      }
-    });
-
-    
-    this._migratePref("browser.newtabpage.activity-stream.topSitesCount", count => {
-      Services.prefs.setIntPref("browser.newtabpage.activity-stream.topSitesRows", Math.ceil(count / 6));
-    });
   }
 
   uninit() {

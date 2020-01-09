@@ -14,17 +14,6 @@ ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
 ChromeUtils.defineModuleGetter(this, "AppConstants",
   "resource://gre/modules/AppConstants.jsm");
 
-
-
-
-const PREF_MIGRATION = {
-  collapsed: new Map([
-    ["collapseTopSites", "topsites"],
-    ["section.highlights.collapsed", "highlights"],
-    ["section.topstories.collapsed", "topstories"],
-  ]),
-};
-
 this.PrefsFeed = class PrefsFeed {
   constructor(prefMap) {
     this._prefMap = prefMap;
@@ -52,20 +41,6 @@ this.PrefsFeed = class PrefsFeed {
     }
 
     this._checkPrerender(name);
-  }
-
-  _migratePrefs() {
-    for (const indexedDBPref of Object.keys(PREF_MIGRATION)) {
-      for (const migratePref of PREF_MIGRATION[indexedDBPref].keys()) {
-        
-        if (this._prefs.get(migratePref, null) === true) {
-          const data = {id: PREF_MIGRATION[indexedDBPref].get(migratePref), value: {}};
-          data.value[indexedDBPref] = true;
-          this.store.dispatch(ac.OnlyToMain({type: at.UPDATE_SECTION_PREFS, data}));
-          this._prefs.reset(migratePref);
-        }
-      }
-    }
   }
 
   init() {
@@ -104,7 +79,6 @@ this.PrefsFeed = class PrefsFeed {
     
     this.store.dispatch(ac.BroadcastToContent({type: at.PREFS_INITIAL_VALUES, data: values}));
 
-    this._migratePrefs();
     this._setPrerenderPref();
   }
 
