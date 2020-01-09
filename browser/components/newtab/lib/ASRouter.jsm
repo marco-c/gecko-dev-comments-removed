@@ -338,8 +338,13 @@ class _ASRouter {
       
       ...ASRouterPreferences.providers.filter(p => (
         p.enabled &&
-        ASRouterPreferences.getUserPreference(p.id) !== false)
-      ),
+        (
+          ASRouterPreferences.getUserPreference(p.id) !== false &&
+          
+          
+          (!p.categories || p.categories.some(c => ASRouterPreferences.getUserPreference(c) !== false))
+        )
+      )),
     ].map(_provider => {
       
       const provider = {..._provider};
@@ -413,7 +418,8 @@ class _ASRouter {
       let newState = {messages: [], providers: []};
       for (const provider of this.state.providers) {
         if (needsUpdate.includes(provider)) {
-          const {messages, lastUpdated} = await MessageLoaderUtils.loadMessagesForProvider(provider, this._storage);
+          let {messages, lastUpdated} = await MessageLoaderUtils.loadMessagesForProvider(provider, this._storage);
+          messages = messages.filter(({category}) => !category || ASRouterPreferences.getUserPreference(category));
           newState.providers.push({...provider, lastUpdated});
           newState.messages = [...newState.messages, ...messages];
         } else {
