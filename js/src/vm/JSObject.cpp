@@ -792,7 +792,7 @@ static inline JSObject* NewObject(JSContext* cx, HandleObjectGroup group,
     return nullptr;
   }
 
-  gc::InitialHeap heap = GetInitialHeap(newKind, group);
+  gc::InitialHeap heap = GetInitialHeap(newKind, clasp);
 
   JSObject* obj;
   if (clasp->isJSFunction()) {
@@ -974,8 +974,8 @@ JSObject* js::NewObjectWithGroupCommon(JSContext* cx, HandleObjectGroup group,
     NewObjectCache& cache = cx->caches().newObjectCache;
     NewObjectCache::EntryIndex entry = -1;
     if (cache.lookupGroup(group, allocKind, &entry)) {
-      JSObject* obj =
-          cache.newObjectFromHit(cx, entry, GetInitialHeap(newKind, group));
+      JSObject* obj = cache.newObjectFromHit(
+          cx, entry, GetInitialHeap(newKind, group->clasp()));
       if (obj) {
         return obj;
       }
@@ -3083,12 +3083,31 @@ extern bool PropertySpecNameToId(JSContext* cx, const char* name,
                                  MutableHandleId id,
                                  js::PinningBehavior pin = js::DoNotPinAtom);
 
+static bool ShouldIgnorePropertyDefinition(JSContext* cx, HandleObject obj,
+                                           HandleId id)
+{
+  if (StandardProtoKeyOrNull(obj) == JSProto_DataView &&
+      !cx->realm()->creationOptions().getBigIntEnabled() &&
+      (id == NameToId(cx->names().getBigInt64) ||
+       id == NameToId(cx->names().getBigUint64) ||
+       id == NameToId(cx->names().setBigInt64) ||
+       id == NameToId(cx->names().setBigUint64))) {
+    return true;
+  }
+
+  return false;
+}
+
 static bool DefineFunctionFromSpec(JSContext* cx, HandleObject obj,
                                    const JSFunctionSpec* fs, unsigned flags,
                                    DefineAsIntrinsic intrinsic) {
   RootedId id(cx);
   if (!PropertySpecNameToId(cx, fs->name, &id)) {
     return false;
+  }
+
+  if (ShouldIgnorePropertyDefinition(cx, obj, id)) {
+    return true;
   }
 
   JSFunction* fun = NewFunctionFromSpec(cx, fs, id);
@@ -4296,13 +4315,6 @@ void JSObject::debugCheckNewObject(ObjectGroup* group, Shape* shape,
                     CanNurseryAllocateFinalizedClass(clasp) ||
                     clasp->isProxy());
   MOZ_ASSERT_IF(group->hasUnanalyzedPreliminaryObjects(),
-                heap == gc::TenuredHeap);
-
-  
-  
-  MOZ_ASSERT_IF(group->shouldPreTenureDontCheckGeneration() &&
-                    clasp != &CallObject::class_ &&
-                    clasp != &LexicalEnvironmentObject::class_,
                 heap == gc::TenuredHeap);
 
   MOZ_ASSERT(!group->realm()->hasObjectPendingMetadata());
