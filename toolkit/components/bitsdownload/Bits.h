@@ -1,0 +1,9 @@
+
+
+
+
+
+
+#include "nsIBits.h"
+
+already_AddRefed<nsIBits> GetBitsService();

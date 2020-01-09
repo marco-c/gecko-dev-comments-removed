@@ -50,6 +50,8 @@ service('ThirdPartyUtil', 'mozIThirdPartyUtil',
         "@mozilla.org/thirdpartyutil;1")
 service('URIFixup', 'nsIURIFixup',
         "@mozilla.org/docshell/urifixup;1")
+service('Bits', 'nsIBits',
+        "@mozilla.org/bits;1")
 
 
 
@@ -82,6 +84,7 @@ CPP_INCLUDES = """
 #include "nsIUUIDGenerator.h"
 #include "nsIGfxInfo.h"
 #include "nsIURIFixup.h"
+#include "nsIBits.h"
 """
 
 
