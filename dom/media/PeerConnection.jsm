@@ -586,10 +586,11 @@ class RTCPeerConnection {
 
   
   async _queueTaskWithClosedCheck(func) {
+    let pc = this;
     return new this._win.Promise((resolve,reject) => {
       Services.tm.dispatchToMainThread({ run() {
         try {
-          if (!this._closed) {
+          if (!pc._closed) {
             func();
             resolve();
           }
