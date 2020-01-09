@@ -6583,16 +6583,16 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     
     
     
-    nsIFrame* frameToHandleEvent = rootFrameToHandleEvent;
+    EventTargetData eventTargetData(mPresShell, rootFrameToHandleEvent);
     if (!isCaptureRetargeted && !isWindowLevelMouseExit &&
         !pointerCapturingContent) {
       if (aGUIEvent->mClass == eTouchEventClass) {
-        frameToHandleEvent = TouchManager::SetupTarget(
-            aGUIEvent->AsTouchEvent(), rootFrameToHandleEvent);
+        eventTargetData.SetFrameAndComputePresShell(TouchManager::SetupTarget(
+            aGUIEvent->AsTouchEvent(), rootFrameToHandleEvent));
       } else {
-        frameToHandleEvent =
-            GetFrameToHandleNonTouchEvent(rootFrameToHandleEvent, aGUIEvent);
-        if (!frameToHandleEvent) {
+        eventTargetData.SetFrameAndComputePresShell(
+            GetFrameToHandleNonTouchEvent(rootFrameToHandleEvent, aGUIEvent));
+        if (!eventTargetData.mFrame) {
           *aEventStatus = nsEventStatus_eIgnore;
           return NS_OK;
         }
@@ -6604,31 +6604,30 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     
     
     if (capturingContent && !pointerCapturingContent &&
-        (gCaptureInfo.mRetargetToElement || !frameToHandleEvent->GetContent() ||
+        (gCaptureInfo.mRetargetToElement ||
+         !eventTargetData.mFrame->GetContent() ||
          !nsContentUtils::ContentIsCrossDocDescendantOf(
-             frameToHandleEvent->GetContent(), capturingContent))) {
+             eventTargetData.mFrame->GetContent(), capturingContent))) {
       
       
       NS_ASSERTION(capturingContent->GetComposedDoc() == GetDocument(),
                    "Unexpected document");
       nsIFrame* capturingFrame = capturingContent->GetPrimaryFrame();
       if (capturingFrame) {
-        frameToHandleEvent = capturingFrame;
+        eventTargetData.SetFrameAndComputePresShell(capturingFrame);
       }
     }
 
-    if (NS_WARN_IF(!frameToHandleEvent)) {
+    if (NS_WARN_IF(!eventTargetData.mFrame)) {
       return NS_OK;
     }
 
     
     
-    if (MaybeDiscardOrDelayMouseEvent(frameToHandleEvent, aGUIEvent)) {
+    if (MaybeDiscardOrDelayMouseEvent(eventTargetData.mFrame, aGUIEvent)) {
       return NS_OK;
     }
 
-    RefPtr<PresShell> shell =
-        static_cast<PresShell*>(frameToHandleEvent->PresShell());
     
     
     
@@ -6642,13 +6641,15 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
             EventStateManager::GetActiveEventStateManager()) {
       if (aGUIEvent->mClass == ePointerEventClass ||
           aGUIEvent->HasMouseEventMessage()) {
-        if (activeESM != shell->GetPresContext()->EventStateManager()) {
+        if (activeESM != eventTargetData.GetEventStateManager()) {
           if (nsPresContext* activeContext = activeESM->GetPresContext()) {
             if (nsIPresShell* activeShell = activeContext->GetPresShell()) {
               if (nsContentUtils::ContentIsCrossDocDescendantOf(
-                      activeShell->GetDocument(), shell->GetDocument())) {
-                shell = static_cast<PresShell*>(activeShell);
-                frameToHandleEvent = shell->GetRootFrame();
+                      activeShell->GetDocument(),
+                      eventTargetData.GetDocument())) {
+                eventTargetData.SetPresShellAndFrame(
+                    static_cast<PresShell*>(activeShell),
+                    activeShell->GetRootFrame());
               }
             }
           }
@@ -6656,19 +6657,16 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
       }
     }
 
-    if (!frameToHandleEvent) {
-      NS_WARNING("Nothing to handle this event!");
+    if (NS_WARN_IF(!eventTargetData.mFrame)) {
       return NS_OK;
     }
 
-    nsCOMPtr<nsIContent> targetElement;
-    frameToHandleEvent->GetContentForEvent(aGUIEvent,
-                                           getter_AddRefs(targetElement));
+    eventTargetData.SetContentForEventFromFrame(aGUIEvent);
 
     
     
     
-    if (targetElement) {
+    if (eventTargetData.mContent) {
       
       
       
@@ -6677,12 +6675,14 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
       
       
       
-      while (targetElement && !targetElement->IsElement()) {
-        targetElement = targetElement->GetFlattenedTreeParent();
+      while (eventTargetData.mContent &&
+             !eventTargetData.mContent->IsElement()) {
+        eventTargetData.mContent =
+            eventTargetData.mContent->GetFlattenedTreeParent();
       }
 
       
-      if (!targetElement) {
+      if (!eventTargetData.mContent) {
         return NS_OK;
       }
     }
@@ -6700,14 +6700,15 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
       
       
       
-      nsIFrame* targetFrame =
-          aGUIEvent->mClass == eTouchEventClass ? aFrame : frameToHandleEvent;
+      nsIFrame* targetFrame = aGUIEvent->mClass == eTouchEventClass
+                                  ? aFrame
+                                  : eventTargetData.mFrame;
 
       if (pointerCapturingContent) {
         overrideClickTarget = GetOverrideClickTarget(aGUIEvent, aFrame);
-        shell =
+        eventTargetData.mPresShell =
             PresShell::GetShellForEventTarget(nullptr, pointerCapturingContent);
-        if (!shell) {
+        if (!eventTargetData.mPresShell) {
           
           
           PointerEventHandler::ReleaseIfCaptureByDescendant(
@@ -6716,14 +6717,15 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
         }
 
         targetFrame = pointerCapturingContent->GetPrimaryFrame();
-        frameToHandleEvent = targetFrame;
+        eventTargetData.mFrame = targetFrame;
       }
 
       AutoWeakFrame weakTargetFrame(targetFrame);
-      AutoWeakFrame weakFrame(frameToHandleEvent);
+      AutoWeakFrame weakFrame(eventTargetData.mFrame);
       nsCOMPtr<nsIContent> targetContent;
       PointerEventHandler::DispatchPointerFromMouseOrTouch(
-          shell, targetFrame, targetElement, aGUIEvent, aDontRetargetEvents,
+          eventTargetData.mPresShell, eventTargetData.mFrame,
+          eventTargetData.mContent, aGUIEvent, aDontRetargetEvents,
           aEventStatus, getter_AddRefs(targetContent));
 
       if (!weakTargetFrame.IsAlive() && aGUIEvent->mClass == eMouseEventClass) {
@@ -6734,10 +6736,11 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
         if (!targetContent) {
           return NS_OK;
         }
-        frameToHandleEvent = targetContent->GetPrimaryFrame();
-        shell = PresShell::GetShellForEventTarget(frameToHandleEvent,
-                                                  targetContent);
-        if (!shell) {
+        
+        eventTargetData.mFrame = targetContent->GetPrimaryFrame();
+        eventTargetData.mPresShell = PresShell::GetShellForEventTarget(
+            eventTargetData.mFrame, targetContent);
+        if (!eventTargetData.mPresShell) {
           return NS_OK;
         }
       } else if (!weakFrame.IsAlive()) {
@@ -6752,16 +6755,14 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
         if (nsIFrame* newFrame =
                 TouchManager::SuppressInvalidPointsAndGetTargetedFrame(
                     touchEvent)) {
-          frameToHandleEvent = newFrame;
-          frameToHandleEvent->GetContentForEvent(aGUIEvent,
-                                                 getter_AddRefs(targetElement));
-          shell = static_cast<PresShell*>(frameToHandleEvent->PresShell());
+          eventTargetData.SetFrameAndComputePresShellAndContent(newFrame,
+                                                                aGUIEvent);
         }
       } else if (PresShell* newShell =
                      PresShell::GetShellForTouchEvent(aGUIEvent)) {
         
         
-        shell = newShell;
+        eventTargetData.mPresShell = newShell;
       }
     }
 
@@ -6770,14 +6771,15 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     
     
     
-    shell->PushCurrentEventInfo(frameToHandleEvent, targetElement);
-    EventHandler eventHandler(*shell);
+    eventTargetData.mPresShell->PushCurrentEventInfo(eventTargetData.mFrame,
+                                                     eventTargetData.mContent);
+    EventHandler eventHandler(*eventTargetData.mPresShell);
     nsresult rv = eventHandler.HandleEventInternal(aGUIEvent, aEventStatus,
                                                    true, overrideClickTarget);
 #ifdef DEBUG
-    shell->ShowEventTargetDebug();
+    eventTargetData.mPresShell->ShowEventTargetDebug();
 #endif
-    shell->PopCurrentEventInfo();
+    eventTargetData.mPresShell->PopCurrentEventInfo();
     return rv;
   }
 
@@ -10734,4 +10736,40 @@ nsIContent* PresShell::EventHandler::GetOverrideClickTarget(
     overrideClickTarget = overrideClickTarget->GetFlattenedTreeParent();
   }
   return overrideClickTarget;
+}
+
+
+
+
+
+void PresShell::EventHandler::EventTargetData::SetFrameAndComputePresShell(
+    nsIFrame* aFrameToHandleEvent) {
+  if (aFrameToHandleEvent) {
+    mFrame = aFrameToHandleEvent;
+    mPresShell = static_cast<PresShell*>(aFrameToHandleEvent->PresShell());
+  } else {
+    mFrame = nullptr;
+    mPresShell = nullptr;
+  }
+}
+
+void PresShell::EventHandler::EventTargetData::
+    SetFrameAndComputePresShellAndContent(nsIFrame* aFrameToHandleEvent,
+                                          WidgetGUIEvent* aGUIEvent) {
+  MOZ_ASSERT(aFrameToHandleEvent);
+  MOZ_ASSERT(aGUIEvent);
+
+  SetFrameAndComputePresShell(aFrameToHandleEvent);
+  SetContentForEventFromFrame(aGUIEvent);
+}
+
+void PresShell::EventHandler::EventTargetData::SetContentForEventFromFrame(
+    WidgetGUIEvent* aGUIEvent) {
+  MOZ_ASSERT(mFrame);
+  mContent = nullptr;
+  mFrame->GetContentForEvent(aGUIEvent, getter_AddRefs(mContent));
+}
+
+nsIContent* PresShell::EventHandler::EventTargetData::GetFrameContent() const {
+  return mFrame ? mFrame->GetContent() : nullptr;
 }
