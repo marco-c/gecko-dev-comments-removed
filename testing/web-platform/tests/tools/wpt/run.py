@@ -568,8 +568,12 @@ def setup_wptrunner(venv, prompt=True, install_browser=False, **kwargs):
     if not venv.skip_virtualenv_setup:
         venv.install_requirements(os.path.join(wptrunner_path, "requirements.txt"))
 
-    kwargs['browser_version'] = setup_cls.browser.version(binary=kwargs.get("binary"),
-                                                          webdriver_binary=kwargs.get("webdriver_binary"))
+    
+    
+    if not kwargs["browser_version"]:
+        kwargs["browser_version"] = setup_cls.browser.version(binary=kwargs.get("binary"),
+                                                              webdriver_binary=kwargs.get("webdriver_binary"))
+
     return kwargs
 
 
