@@ -157,7 +157,7 @@ pub struct ColorStop<Color, LengthPercentage> {
 
 
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, ToComputedValue)]
+#[derive(Clone, Debug, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 pub struct PaintWorklet {
     
     pub name: Atom,

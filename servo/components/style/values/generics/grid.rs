@@ -557,7 +557,7 @@ pub enum TrackListType {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem, ToResolvedValue)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToResolvedValue, ToShmem)]
 pub struct TrackList<LengthPercentage, Integer> {
     
     

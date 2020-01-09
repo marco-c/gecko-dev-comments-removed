@@ -29,6 +29,7 @@ use std::mem::{self, ManuallyDrop};
 #[cfg(feature = "servo")]
 use std::slice;
 use style_traits::{CssWriter, ParseError, ToCss};
+#[cfg(feature = "gecko")]
 use to_shmem::{SharedMemoryBuilder, ToShmem};
 
 pub use crate::values::computed::Length as MozScriptMinSize;
@@ -284,7 +285,7 @@ pub enum FontFamilyNameSyntax {
     Identifiers,
 }
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToResolvedValue, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize, Hash))]
 
 pub enum SingleFontFamily {
@@ -299,7 +300,10 @@ pub enum SingleFontFamily {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, Parse, ToCss, ToResolvedValue)]
+#[derive(
+    Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, Parse, ToCss, ToResolvedValue, ToShmem,
+)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum GenericFontFamily {
@@ -373,6 +377,35 @@ impl SingleFontFamily {
         }))
     }
 
+    #[cfg(feature = "servo")]
+    
+    pub fn from_atom(input: Atom) -> SingleFontFamily {
+        match input {
+            atom!("serif") => return SingleFontFamily::Generic(GenericFontFamily::Serif),
+            atom!("sans-serif") => return SingleFontFamily::Generic(GenericFontFamily::SansSerif),
+            atom!("cursive") => return SingleFontFamily::Generic(GenericFontFamily::Cursive),
+            atom!("fantasy") => return SingleFontFamily::Generic(GenericFontFamily::Fantasy),
+            atom!("monospace") => return SingleFontFamily::Generic(GenericFontFamily::Monospace),
+            _ => {},
+        }
+
+        match_ignore_ascii_case! { &input,
+            "serif" => return SingleFontFamily::Generic(GenericFontFamily::Serif),
+            "sans-serif" => return SingleFontFamily::Generic(GenericFontFamily::SansSerif),
+            "cursive" => return SingleFontFamily::Generic(GenericFontFamily::Cursive),
+            "fantasy" => return SingleFontFamily::Generic(GenericFontFamily::Fantasy),
+            "monospace" => return SingleFontFamily::Generic(GenericFontFamily::Monospace),
+            _ => {}
+        }
+
+        
+        
+        SingleFontFamily::FamilyName(FamilyName {
+            name: input,
+            syntax: FontFamilyNameSyntax::Quoted,
+        })
+    }
+
     #[cfg(feature = "gecko")]
     
     fn from_font_family_name(family: &structs::FontFamilyName) -> SingleFontFamily {
@@ -389,7 +422,7 @@ impl SingleFontFamily {
 }
 
 #[cfg(feature = "servo")]
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToResolvedValue)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToResolvedValue, ToShmem)]
 
 pub struct FontFamilyList(Box<[SingleFontFamily]>);
 
@@ -501,7 +534,7 @@ impl FontFamilyList {
         let mut iter = self.iter();
         if let Some(SingleFontFamily::Generic(f)) = iter.next() {
             if iter.next().is_none() {
-                return Some(f);
+                return Some(f.clone());
             }
         }
         None

@@ -12,7 +12,7 @@ use std::fmt::{self, Write};
 
 
 use crate::values::computed::{Context, ToComputedValue};
-use std::sync::Arc;
+use servo_arc::Arc;
 use style_traits::{CssWriter, ParseError, ToCss};
 
 
@@ -26,7 +26,7 @@ use style_traits::{CssWriter, ParseError, ToCss};
 
 
 
-#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize, SpecifiedValueInfo)]
+#[derive(Clone, Debug, Deserialize, MallocSizeOf, Serialize, SpecifiedValueInfo, ToShmem)]
 pub struct CssUrl {
     
     
