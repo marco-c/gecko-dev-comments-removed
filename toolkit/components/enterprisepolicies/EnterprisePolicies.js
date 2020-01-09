@@ -44,6 +44,9 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   });
 });
 
+let env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
+const isXpcshell = env.exists("XPCSHELL_TEST_PROFILE_DIR");
+
 function EnterprisePoliciesManager() {
   Services.obs.addObserver(this, "profile-after-change", true);
   Services.obs.addObserver(this, "final-ui-startup", true);
@@ -336,7 +339,7 @@ function areEnterpriseOnlyPoliciesAllowed() {
   }
 
   if (AppConstants.MOZ_UPDATE_CHANNEL != "release" ||
-      Cu.isInAutomation) {
+      Cu.isInAutomation || isXpcshell) {
     return true;
   }
 
@@ -388,7 +391,7 @@ class JSONPoliciesProvider {
     
     
     
-    if (alternatePath && (Cu.isInAutomation || AppConstants.NIGHTLY_BUILD) &&
+    if (alternatePath && (Cu.isInAutomation || AppConstants.NIGHTLY_BUILD || isXpcshell) &&
         (!configFile || !configFile.exists())) {
       if (alternatePath.startsWith(MAGIC_TEST_ROOT_PREFIX)) {
         
