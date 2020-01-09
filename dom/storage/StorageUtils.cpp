@@ -118,8 +118,9 @@ nsCString Scheme0Scope(const nsACString& aOriginSuffix,
     MOZ_ASSERT(success);
   }
 
-  if (oa.mInIsolatedMozBrowser) {
-    result.AppendInt(0);  
+  if (oa.mAppId != nsIScriptSecurityManager::NO_APP_ID ||
+      oa.mInIsolatedMozBrowser) {
+    result.AppendInt(oa.mAppId);
     result.Append(':');
     result.Append(oa.mInIsolatedMozBrowser ? 't' : 'f');
     result.Append(':');
@@ -131,6 +132,7 @@ nsCString Scheme0Scope(const nsACString& aOriginSuffix,
   
   
   nsAutoCString remaining;
+  oa.mAppId = 0;
   oa.mInIsolatedMozBrowser = false;
   oa.CreateSuffix(remaining);
   if (!remaining.IsEmpty()) {

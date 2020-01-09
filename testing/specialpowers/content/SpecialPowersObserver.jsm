@@ -225,7 +225,7 @@ SpecialPowersObserver.prototype._registerObservers = {
         
         msg.permission = {
           principal: {
-            originAttributes: {},
+            originAttributes: {appId: permission.principal.appId},
           },
           type: permission.type,
         };

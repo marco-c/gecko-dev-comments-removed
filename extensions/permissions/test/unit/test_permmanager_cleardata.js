@@ -53,14 +53,16 @@ function run_test()
          .getService(Ci.nsIPermissionManager);
 
   let entries = [
+    { origin: 'http://example.com', originAttributes: { appId: 1 } },
+    { origin: 'http://example.com', originAttributes: { appId: 1, inIsolatedMozBrowser: true } },
     { origin: 'http://example.com', originAttributes: {} },
-    { origin: 'http://example.com', originAttributes: { inIsolatedMozBrowser: true } },
+    { origin: 'http://example.com', originAttributes: { appId: 2 } },
   ];
 
   
-  test(entries, getData({}), [ pm.UNKNOWN_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
+  test(entries, getData({appId: 1}), [ pm.UNKNOWN_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
 
   
   
-  test(entries, getData({ inIsolatedMozBrowser: true}), [ pm.ALLOW_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
+  test(entries, getData({appId: 1, inIsolatedMozBrowser: true}), [ pm.ALLOW_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
 }

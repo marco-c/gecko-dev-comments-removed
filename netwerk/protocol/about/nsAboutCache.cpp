@@ -103,7 +103,9 @@ nsresult nsAboutCache::Channel::Init(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   
   
   
+  
   mBuffer.AppendLiteral(
+      "<label><input id='appid' type='text' size='6'/> AppID</label>\n"
       "<label><input id='inbrowser' type='checkbox'/> In Browser "
       "Element</label>\n");
 
