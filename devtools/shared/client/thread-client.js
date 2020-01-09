@@ -705,19 +705,6 @@ ThreadClient.prototype = {
     return this._threadGrips[form.actor];
   },
 
-  
-
-
-
-
-
-
-
-  getPrototypesAndProperties: DebuggerClient.requester({
-    type: "prototypesAndProperties",
-    actors: arg(0),
-  }),
-
   events: ["newSource", "progress"],
 };
 
