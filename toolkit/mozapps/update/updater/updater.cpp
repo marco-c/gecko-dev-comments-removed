@@ -2485,9 +2485,8 @@ static void UpdateThreadFunc(void *param) {
           usleep(100000);
 #  endif
           
-          if (!NS_taccess(continueFilePath, F_OK)) {
-            
-            NS_tremove(continueFilePath);
+          if (!NS_taccess(continueFilePath, F_OK) &&
+              !NS_tremove(continueFilePath)) {
             break;
           }
         }
