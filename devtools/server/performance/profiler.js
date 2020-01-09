@@ -112,9 +112,7 @@ const ProfilerManager = (function() {
           config.entries,
           config.interval,
           config.features,
-          config.features.length,
           config.threadFilters,
-          config.threadFilters.length
         );
       } catch (e) {
         

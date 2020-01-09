@@ -7,7 +7,7 @@ function run_test() {
 
   
   (function() {
-    Services.profiler.StartProfiler(100, 10, ["js"], 1);
+    Services.profiler.StartProfiler(100, 10, ["js"]);
     let n = 10000;
     while (--n); 
     
