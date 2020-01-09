@@ -13701,10 +13701,12 @@ class CGDictionary(CGThing):
             disallowCopyConstruction = False
             
             
+            
             ctors.append(ClassConstructor([Argument("const %s&" % selfName,
                                                     "aOther")],
                                           bodyInHeader=True,
                                           visibility="public",
+                                          baseConstructors=baseConstructors,
                                           explicit=True,
                                           body="*this = aOther;\n"))
             methods.append(self.assignmentOperator())
