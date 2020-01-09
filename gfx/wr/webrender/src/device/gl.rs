@@ -924,7 +924,6 @@ pub struct Device {
     
     depth_available: bool,
 
-    device_pixel_ratio: f32,
     upload_method: UploadMethod,
 
     
@@ -1176,9 +1175,6 @@ impl Device {
         Device {
             gl,
             resource_override_path,
-            
-            
-            device_pixel_ratio: 1.0,
             upload_method,
             inside_frame: false,
 
@@ -1219,10 +1215,6 @@ impl Device {
 
     pub fn rc_gl(&self) -> &Rc<gl::Gl> {
         &self.gl
-    }
-
-    pub fn set_device_pixel_ratio(&mut self, ratio: f32) {
-        self.device_pixel_ratio = ratio;
     }
 
     pub fn update_program_cache(&mut self, cached_programs: Rc<ProgramCache>) {
