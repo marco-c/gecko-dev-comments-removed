@@ -166,7 +166,7 @@ class SVGPathData {
 
 
   static already_AddRefed<Path> BuildPath(
-      const nsTArray<StylePathCommand>& aPath, PathBuilder* aBuilder,
+      Span<const StylePathCommand> aPath, PathBuilder* aBuilder,
       uint8_t aStrokeLineCap, Float aStrokeWidth, float aZoomFactor = 1.0);
 
   const_iterator begin() const { return mData.Elements(); }

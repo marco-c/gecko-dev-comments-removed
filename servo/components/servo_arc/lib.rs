@@ -310,6 +310,9 @@ impl<T: ?Sized> Clone for Arc<T> {
     fn clone(&self) -> Self {
         
         
+        
+        
+        
         if self.inner().count.load(Relaxed) != STATIC_REFCOUNT {
             
             
@@ -416,6 +419,9 @@ impl<T: ?Sized> Arc<T> {
 impl<T: ?Sized> Drop for Arc<T> {
     #[inline]
     fn drop(&mut self) {
+        
+        
+        
         
         
         if self.inner().count.load(Relaxed) == STATIC_REFCOUNT {
@@ -571,6 +577,7 @@ impl<T: Serialize> Serialize for Arc<T> {
 
 
 #[derive(Debug, Eq, PartialEq, PartialOrd)]
+#[repr(C)]
 pub struct HeaderSlice<H, T: ?Sized> {
     
     pub header: H,
@@ -743,6 +750,7 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
 
 
 #[derive(Debug, Eq, PartialEq, PartialOrd)]
+#[repr(C)]
 pub struct HeaderWithLength<H> {
     
     pub header: H,
