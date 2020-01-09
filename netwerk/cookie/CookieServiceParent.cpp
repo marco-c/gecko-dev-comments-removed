@@ -162,7 +162,7 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel) {
 
   nsTArray<nsCookie *> foundCookieList;
   mCookieService->GetCookiesForURI(
-      uri, isForeign, isTrackingResource, storageAccessGranted,
+      uri, aChannel, isForeign, isTrackingResource, storageAccessGranted,
       isSafeTopLevelNav, aIsSameSiteForeign, false, attrs, foundCookieList);
   nsTArray<CookieStruct> matchingCookiesList;
   SerialializeCookieList(foundCookieList, matchingCookiesList, uri);
@@ -199,9 +199,13 @@ mozilla::ipc::IPCResult CookieServiceParent::RecvPrepareCookieList(
 
   
   nsTArray<nsCookie *> foundCookieList;
+  
+  
+  
   mCookieService->GetCookiesForURI(
-      hostURI, aIsForeign, aIsTrackingResource, aFirstPartyStorageAccessGranted,
-      aIsSafeTopLevelNav, aIsSameSiteForeign, false, aAttrs, foundCookieList);
+      hostURI, nullptr, aIsForeign, aIsTrackingResource,
+      aFirstPartyStorageAccessGranted, aIsSafeTopLevelNav, aIsSameSiteForeign,
+      false, aAttrs, foundCookieList);
   nsTArray<CookieStruct> matchingCookiesList;
   SerialializeCookieList(foundCookieList, matchingCookiesList, hostURI);
   Unused << SendTrackCookiesLoad(matchingCookiesList, aAttrs);

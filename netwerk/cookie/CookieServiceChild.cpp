@@ -161,9 +161,19 @@ void CookieServiceChild::TrackCookieLoad(nsIChannel *aChannel) {
     
     
     
+    uint32_t rejectedReason = 0;
     if (isForeign && AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-                         httpChannel, uri, nullptr)) {
+                         httpChannel, uri, &rejectedReason)) {
       firstPartyStorageAccessGranted = true;
+    }
+
+    
+    
+    
+    if (!firstPartyStorageAccessGranted) {
+      AntiTrackingCommon::NotifyBlockingDecision(
+          aChannel, AntiTrackingCommon::BlockingDecision::eBlock,
+          rejectedReason);
     }
   }
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
