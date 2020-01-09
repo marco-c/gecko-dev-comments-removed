@@ -2,6 +2,18 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::{
     error::{XULStoreError, XULStoreResult},
     ffi::XpcomShutdownObserver,
@@ -14,18 +26,6 @@ use nserror::nsresult;
 use rkv::{StoreError as RkvStoreError, Value};
 use std::{collections::HashMap, sync::Mutex, thread::sleep, time::Duration};
 use xpcom::{interfaces::nsIThread, RefPtr, ThreadBoundRefPtr};
-
-
-
-
-
-
-
-
-
-
-
-
 
 lazy_static! {
     /// A map of key/value pairs to persist.  Values are Options so we can
