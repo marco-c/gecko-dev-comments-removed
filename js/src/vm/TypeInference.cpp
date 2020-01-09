@@ -3514,10 +3514,6 @@ static void FillBytecodeTypeMap(JSScript* script, uint32_t* bytecodeMap) {
     }
   }
   MOZ_ASSERT(added == script->numBytecodeTypeSets());
-
-  
-  
-  bytecodeMap[script->numBytecodeTypeSets()] = 0;
 }
 
 void js::TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
@@ -3590,7 +3586,9 @@ static size_t NumTypeSets(JSScript* script) {
 
 TypeScript::TypeScript(JSScript* script, ICScriptPtr&& icScript,
                        uint32_t numTypeSets)
-    : icScript_(std::move(icScript)), numTypeSets_(numTypeSets) {
+    : icScript_(std::move(icScript)),
+      numTypeSets_(numTypeSets),
+      bytecodeTypeMapHint_(0) {
   StackTypeSet* array = typeArray();
   for (unsigned i = 0; i < numTypeSets; i++) {
     new (&array[i]) StackTypeSet();
@@ -3615,10 +3613,7 @@ bool JSScript::makeTypes(JSContext* cx) {
       [&] { icScript->prepareForDestruction(cx->zone()); });
 
   size_t numTypeSets = NumTypeSets(this);
-
-  
-  
-  size_t bytecodeTypeMapEntries = numBytecodeTypeSets() + 1;
+  size_t bytecodeTypeMapEntries = numBytecodeTypeSets();
 
   
   

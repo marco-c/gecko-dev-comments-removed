@@ -217,6 +217,10 @@ class TypeScript {
   uint32_t numTypeSets_;
 
   
+  
+  uint32_t bytecodeTypeMapHint_;
+
+  
   StackTypeSet typeArray_[1];
 
  public:
@@ -231,6 +235,8 @@ class TypeScript {
   }
 
   uint32_t numTypeSets() const { return numTypeSets_; }
+
+  uint32_t* bytecodeTypeMapHint() { return &bytecodeTypeMapHint_; }
 
   jit::ICScript* icScript() const {
     MOZ_ASSERT(icScript_);
