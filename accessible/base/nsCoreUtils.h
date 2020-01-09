@@ -157,8 +157,8 @@ class nsCoreUtils {
 
 
   static nsresult ScrollSubstringTo(nsIFrame *aFrame, nsRange *aRange,
-                                    nsIPresShell::ScrollAxis aVertical,
-                                    nsIPresShell::ScrollAxis aHorizontal);
+                                    mozilla::ScrollAxis aVertical,
+                                    mozilla::ScrollAxis aHorizontal);
 
   
 
@@ -175,9 +175,9 @@ class nsCoreUtils {
 
 
 
-  static void ConvertScrollTypeToPercents(
-      uint32_t aScrollType, nsIPresShell::ScrollAxis *aVertical,
-      nsIPresShell::ScrollAxis *aHorizontal);
+  static void ConvertScrollTypeToPercents(uint32_t aScrollType,
+                                          mozilla::ScrollAxis *aVertical,
+                                          mozilla::ScrollAxis *aHorizontal);
 
   
 

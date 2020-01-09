@@ -3389,8 +3389,8 @@ static void ScrollToShowRect(nsIScrollableFrame* aFrameAsScrollable,
 }
 
 nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
-                                          nsIPresShell::ScrollAxis aVertical,
-                                          nsIPresShell::ScrollAxis aHorizontal,
+                                          ScrollAxis aVertical,
+                                          ScrollAxis aHorizontal,
                                           ScrollFlags aScrollFlags) {
   NS_ENSURE_TRUE(aContent, NS_ERROR_NULL_POINTER);
   RefPtr<Document> composedDoc = aContent->GetComposedDoc();
@@ -3507,8 +3507,8 @@ void PresShell::DoScrollContentIntoView() {
 
 bool nsIPresShell::ScrollFrameRectIntoView(nsIFrame* aFrame,
                                            const nsRect& aRect,
-                                           nsIPresShell::ScrollAxis aVertical,
-                                           nsIPresShell::ScrollAxis aHorizontal,
+                                           ScrollAxis aVertical,
+                                           ScrollAxis aHorizontal,
                                            ScrollFlags aScrollFlags) {
   bool didScroll = false;
   
@@ -8502,15 +8502,13 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
     
     
     
-    rv = MOZ_KnownLive(mPresShell)
-             ->ScrollContentIntoView(
-                 content,
-                 nsIPresShell::ScrollAxis(kScrollMinimum,
-                                          WhenToScroll::IfNotVisible),
-                 nsIPresShell::ScrollAxis(kScrollMinimum,
-                                          WhenToScroll::IfNotVisible),
-                 ScrollFlags::ScrollOverflowHidden |
-                     ScrollFlags::IgnoreMarginAndPadding);
+    rv =
+        MOZ_KnownLive(mPresShell)
+            ->ScrollContentIntoView(
+                content, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
+                ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
+                ScrollFlags::ScrollOverflowHidden |
+                    ScrollFlags::IgnoreMarginAndPadding);
     NS_ENSURE_SUCCESS(rv, false);
     frame = content->GetPrimaryFrame();
     NS_WARNING_ASSERTION(frame, "No frame for focused content?");

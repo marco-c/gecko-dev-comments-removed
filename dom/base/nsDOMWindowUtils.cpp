@@ -2516,9 +2516,8 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     
     
     presShell->ScrollContentIntoView(
-        content,
-        nsIPresShell::ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
-        nsIPresShell::ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
+        content, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
+        ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
         ScrollFlags::ScrollOverflowHidden);
 
     CSSRect bounds =
