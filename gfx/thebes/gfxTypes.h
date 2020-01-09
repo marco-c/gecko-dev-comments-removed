@@ -7,6 +7,7 @@
 #define GFX_TYPES_H
 
 #include <stdint.h>
+#include "mozilla/TypedEnumBits.h"
 
 typedef struct _cairo_surface cairo_surface_t;
 typedef struct _cairo_user_data_key cairo_user_data_key_t;
@@ -81,5 +82,24 @@ enum class gfxAlphaType {
   Premult,
   NonPremult,
 };
+
+
+
+
+
+enum class FontMatchType : uint16_t {
+  
+  
+  
+  kGenericMask = 0x00ff,
+
+  
+  
+  kFontGroup = 0x0100,
+  kPrefsFallback = 0x0200,
+  kSystemFallback = 0x0400
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(FontMatchType)
 
 #endif 

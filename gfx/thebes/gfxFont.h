@@ -606,35 +606,6 @@ class gfxTextRunFactory {
   virtual ~gfxTextRunFactory();
 };
 
-struct gfxTextRange {
-  enum class MatchType : uint16_t {
-    
-    
-    
-    kGenericMask = 0x00ff,
-
-    
-    
-    kFontGroup = 0x0100,
-    kPrefsFallback = 0x0200,
-    kSystemFallback = 0x0400
-  };
-  gfxTextRange(uint32_t aStart, uint32_t aEnd, gfxFont* aFont,
-               MatchType aMatchType, mozilla::gfx::ShapedTextFlags aOrientation)
-      : start(aStart),
-        end(aEnd),
-        font(aFont),
-        matchType(aMatchType),
-        orientation(aOrientation) {}
-  uint32_t Length() const { return end - start; }
-  uint32_t start, end;
-  RefPtr<gfxFont> font;
-  MatchType matchType;
-  mozilla::gfx::ShapedTextFlags orientation;
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxTextRange::MatchType)
-
 
 
 
@@ -1765,7 +1736,7 @@ class gfxFont {
   template <typename T>
   bool InitFakeSmallCapsRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
                             const T* aText, uint32_t aOffset, uint32_t aLength,
-                            gfxTextRange::MatchType aMatchType,
+                            FontMatchType aMatchType,
                             mozilla::gfx::ShapedTextFlags aOrientation,
                             Script aScript, bool aSyntheticLower,
                             bool aSyntheticUpper);

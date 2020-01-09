@@ -560,7 +560,7 @@ void MathMLTextRunFactory::RebuildTextRun(
         
         
         
-        gfxTextRange::MatchType matchType;
+        FontMatchType matchType;
         RefPtr<gfxFont> mathFont = fontGroup->FindFontForChar(
             ch2, 0, 0, unicode::Script::COMMON, nullptr, &matchType);
         if (mathFont) {
