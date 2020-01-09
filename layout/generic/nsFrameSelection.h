@@ -72,7 +72,8 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
       nsPoint aDesiredPos, bool aJumpLines, bool aScrollViewStop,
       bool aIsKeyboardSelect, bool aVisual, bool aExtend,
       ForceEditableRegion = ForceEditableRegion::No,
-      mozilla::EWordMovementType aWordMovementType = mozilla::eDefaultBehavior);
+      mozilla::EWordMovementType aWordMovementType = mozilla::eDefaultBehavior,
+      bool aTrimSpaces = true);
 
   
   
@@ -118,6 +119,9 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
   
   
   bool mJumpLines;
+
+  
+  bool mTrimSpaces;
 
   
   
