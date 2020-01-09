@@ -2,10 +2,6 @@
 
 
 
-:root {
-  --icon-size: 13px;
-}
-
 :root.theme-light,
 :root .theme-light {
   --search-overlays-semitransparent: rgba(221, 225, 228, 0.66);
