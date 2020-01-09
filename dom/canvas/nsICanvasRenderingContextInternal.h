@@ -112,7 +112,7 @@ class nsICanvasRenderingContextInternal : public nsISupports,
   
   
   NS_IMETHOD GetInputStream(const char* mimeType,
-                            const char16_t* encoderOptions,
+                            const nsAString& encoderOptions,
                             nsIInputStream** stream) = 0;
 
   

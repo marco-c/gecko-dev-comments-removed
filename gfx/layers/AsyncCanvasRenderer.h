@@ -89,7 +89,7 @@ class AsyncCanvasRenderer final {
   
   
   nsresult GetInputStream(const char* aMimeType,
-                          const char16_t* aEncoderOptions,
+                          const nsAString& aEncoderOptions,
                           nsIInputStream** aStream);
 
   gfx::IntSize GetSize() const { return gfx::IntSize(mWidth, mHeight); }
