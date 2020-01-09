@@ -818,11 +818,12 @@ UniquePtr<FormatUsageAuthority> FormatUsageAuthority::CreateForWebGL1(
   fnSet(EffectiveFormat::Luminance8, false, true);
   fnSet(EffectiveFormat::Alpha8, false, true);
 
-  fnSet(EffectiveFormat::DEPTH_COMPONENT16, true, false);
+  fnSet(EffectiveFormat::DEPTH_COMPONENT16, true, true);
+  fnSet(EffectiveFormat::DEPTH_COMPONENT24, true, true); 
   fnSet(EffectiveFormat::STENCIL_INDEX8, true, false);
 
   
-  fnSet(EffectiveFormat::DEPTH24_STENCIL8, true, false);
+  fnSet(EffectiveFormat::DEPTH24_STENCIL8, true, true);
 
   
   
@@ -1048,11 +1049,14 @@ UniquePtr<FormatUsageAuthority> FormatUsageAuthority::CreateForWebGL2(
   fnAllowES3TexFormat(FOO(RGBA32UI), true, false);
 
   
-  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT16), true, false);
-  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT24), true, false);
-  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT32F), true, false);
-  fnAllowES3TexFormat(FOO(DEPTH24_STENCIL8), true, false);
-  fnAllowES3TexFormat(FOO(DEPTH32F_STENCIL8), true, false);
+  
+  
+  
+  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT16), true, true);
+  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT24), true, true);
+  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT32F), true, true);
+  fnAllowES3TexFormat(FOO(DEPTH24_STENCIL8), true, true);
+  fnAllowES3TexFormat(FOO(DEPTH32F_STENCIL8), true, true);
 
 #undef FOO
 
