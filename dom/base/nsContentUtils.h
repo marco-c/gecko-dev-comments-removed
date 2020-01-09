@@ -1524,12 +1524,6 @@ class nsContentUtils {
 
 
 
-  static void RequestFrameFocus(Element& aFrameElement, bool aCanRaise);
-
-  
-
-
-
 
 
 
