@@ -183,12 +183,10 @@ enum {
 
   NODE_ALL_DIRECTION_FLAGS = NODE_HAS_DIRECTION_LTR | NODE_HAS_DIRECTION_RTL,
 
-  NODE_CHROME_ONLY_ACCESS = NODE_FLAG_BIT(18),
-
-  NODE_IS_ROOT_OF_CHROME_ONLY_ACCESS = NODE_FLAG_BIT(19),
+  NODE_HAS_BEEN_IN_UA_WIDGET = NODE_FLAG_BIT(18),
 
   
-  NODE_TYPE_SPECIFIC_BITS_OFFSET = 20
+  NODE_TYPE_SPECIFIC_BITS_OFFSET = 19
 };
 
 
@@ -1073,7 +1071,7 @@ class nsINode : public mozilla::dom::EventTarget {
         !(aFlagsToSet &
           (NODE_IS_ANONYMOUS_ROOT | NODE_IS_NATIVE_ANONYMOUS_ROOT |
            NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE | NODE_DESCENDANTS_NEED_FRAMES |
-           NODE_NEEDS_FRAME | NODE_CHROME_ONLY_ACCESS)) ||
+           NODE_NEEDS_FRAME | NODE_HAS_BEEN_IN_UA_WIDGET)) ||
             IsContent(),
         "Flag only permitted on nsIContent nodes");
     nsWrapperCache::SetFlags(aFlagsToSet);
@@ -1081,7 +1079,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
   void UnsetFlags(FlagsType aFlagsToUnset) {
     NS_ASSERTION(!(aFlagsToUnset & (NODE_IS_ANONYMOUS_ROOT |
-                                    NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
+                                    NODE_HAS_BEEN_IN_UA_WIDGET |
                                     NODE_IS_NATIVE_ANONYMOUS_ROOT)),
                  "Trying to unset write-only flags");
     nsWrapperCache::UnsetFlags(aFlagsToUnset);
@@ -1125,13 +1123,13 @@ class nsINode : public mozilla::dom::EventTarget {
     return DoGetContainingSVGUseShadowHost();
   }
 
-  bool IsInUAWidget() const;
-
   
+  bool HasBeenInUAWidget() const { return HasFlag(NODE_HAS_BEEN_IN_UA_WIDGET); }
+
   
   bool ChromeOnlyAccess() const {
     return HasFlag(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
-                   NODE_CHROME_ONLY_ACCESS);
+                   NODE_HAS_BEEN_IN_UA_WIDGET);
   }
 
   bool IsInShadowTree() const { return HasFlag(NODE_IS_IN_SHADOW_TREE); }
@@ -1149,10 +1147,12 @@ class nsINode : public mozilla::dom::EventTarget {
     return HasFlag(NODE_IS_NATIVE_ANONYMOUS_ROOT);
   }
 
-  bool IsRootOfChromeAccessOnlySubtree() const {
-    return HasFlag(NODE_IS_NATIVE_ANONYMOUS_ROOT |
-                   NODE_IS_ROOT_OF_CHROME_ONLY_ACCESS);
-  }
+  
+  inline bool IsUAWidget() const;
+  
+  inline bool IsInUAWidget() const;
+  
+  inline bool IsRootOfChromeAccessOnlySubtree() const;
 
   
 
