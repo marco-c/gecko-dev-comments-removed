@@ -13,27 +13,23 @@ add_task(async () => {
       path: defaultProfile.leafName,
       default: true,
     }],
-  };
-  writeProfilesIni(profilesIni);
-
-  let installsIni = {
     installs: {
       [hash]: {
         default: defaultProfile.leafName,
       },
     },
   };
-  writeInstallsIni(installsIni);
+  writeProfilesIni(profilesIni);
 
   let service = getProfileService();
-  checkProfileService(profilesIni, installsIni);
+  checkProfileService(profilesIni);
 
   let { profile, didCreate } = selectStartupProfile();
   Assert.ok(!didCreate, "Should have not created a new profile.");
   Assert.equal(profile.name, "default", "Should have selected the default profile.");
   Assert.equal(profile, service.defaultProfile, "Should have selected the default profile.");
 
-  checkProfileService(profilesIni, installsIni);
+  checkProfileService(profilesIni);
 
   
   
@@ -45,9 +41,10 @@ add_task(async () => {
 
   
   profilesIni.profiles.pop();
-  installsIni.installs[hash].default = "";
+  profilesIni.installs[hash].default = "";
 
-  checkProfileService(profilesIni, installsIni);
+  
+  checkProfileService(profilesIni, false);
 
   service.flush();
 
@@ -56,6 +53,6 @@ add_task(async () => {
 
   
   
-  let installs = readInstallsIni();
-  Assert.equal(installs.installs[hash].default, "", "Should be a blank default profile.");
+  profilesIni = readProfilesIni();
+  Assert.equal(profilesIni.installs[hash].default, "", "Should be a blank default profile.");
 });

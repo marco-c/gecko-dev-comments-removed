@@ -15,20 +15,20 @@
 #include "nsProfileLock.h"
 #include "nsINIParser.h"
 
-class nsToolkitProfile final : public nsIToolkitProfile {
+class nsToolkitProfile final
+    : public nsIToolkitProfile,
+      public mozilla::LinkedListElement<RefPtr<nsToolkitProfile>> {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSITOOLKITPROFILE
 
   friend class nsToolkitProfileService;
-  RefPtr<nsToolkitProfile> mNext;
-  nsToolkitProfile* mPrev;
 
  private:
   ~nsToolkitProfile() = default;
 
   nsToolkitProfile(const nsACString& aName, nsIFile* aRootDir,
-                   nsIFile* aLocalDir, nsToolkitProfile* aPrev);
+                   nsIFile* aLocalDir, bool aFromDB);
 
   nsresult RemoveInternal(bool aRemoveFiles, bool aInBackground);
 
@@ -38,6 +38,8 @@ class nsToolkitProfile final : public nsIToolkitProfile {
   nsCOMPtr<nsIFile> mRootDir;
   nsCOMPtr<nsIFile> mLocalDir;
   nsIProfileLock* mLock;
+  uint32_t mIndex;
+  nsCString mSection;
 };
 
 class nsToolkitProfileLock final : public nsIProfileLock {
@@ -103,6 +105,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   bool MaybeMakeDefaultDedicatedProfile(nsIToolkitProfile* aProfile);
   bool IsSnapEnvironment();
   nsresult CreateDefaultProfile(nsIToolkitProfile** aResult);
+  void SetNormalDefault(nsIToolkitProfile* aProfile);
 
   
   
@@ -111,7 +114,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   
   bool mStartupProfileSelected;
   
-  RefPtr<nsToolkitProfile> mFirst;
+  mozilla::LinkedList<RefPtr<nsToolkitProfile>> mProfiles;
   
   nsCOMPtr<nsIToolkitProfile> mCurrent;
   
@@ -126,13 +129,13 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   
   nsCOMPtr<nsIFile> mTempData;
   
-  nsCOMPtr<nsIFile> mListFile;
+  nsCOMPtr<nsIFile> mProfileDBFile;
   
-  nsCOMPtr<nsIFile> mInstallFile;
+  nsCOMPtr<nsIFile> mInstallDBFile;
   
-  nsINIParser mInstallData;
+  nsINIParser mProfileDB;
   
-  nsCString mInstallHash;
+  nsCString mInstallSection;
   
   bool mStartWithLast;
   
