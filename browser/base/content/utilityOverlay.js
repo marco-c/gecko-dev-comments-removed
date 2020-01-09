@@ -973,6 +973,8 @@ function openHelpLink(aHelpTopic, aCalledFromModal, aWhere) {
   openTrustedLinkIn(url, where);
 }
 
+window.addEventListener("dialoghelp", openPrefsHelp);
+
 function openPrefsHelp() {
   
   
