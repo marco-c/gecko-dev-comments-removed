@@ -127,10 +127,6 @@ fn eval_device_aspect_ratio(
 }
 
 
-
-
-
-
 fn eval_device_pixel_ratio(
     device: &Device,
     query_value: Option<f32>,
