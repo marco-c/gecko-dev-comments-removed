@@ -13,14 +13,14 @@ add_task(async function() {
     { waitForRecording: true }
   );
 
-  const {tab, toolbox, threadClient} = dbg;
+  const {tab, toolbox, threadClient, target} = dbg;
   const console = await getDebuggerSplitConsole(dbg);
   const hud = console.hud;
 
   await warpToMessage(hud, dbg, "Number 5");
   await threadClient.interrupt();
 
-  await checkEvaluateInTopFrame(threadClient, "number", 5);
+  await checkEvaluateInTopFrame(target, "number", 5);
 
   
   
@@ -28,9 +28,9 @@ add_task(async function() {
   await reverseStepOverToLine(threadClient, 18);
   const bp = await setBreakpoint(threadClient, "doc_rr_error.html", 12);
   await rewindToLine(threadClient, 12);
-  await checkEvaluateInTopFrame(threadClient, "number", 4);
+  await checkEvaluateInTopFrame(target, "number", 4);
   await resumeToLine(threadClient, 12);
-  await checkEvaluateInTopFrame(threadClient, "number", 5);
+  await checkEvaluateInTopFrame(target, "number", 5);
 
   await threadClient.removeBreakpoint(bp);
   await toolbox.destroy();

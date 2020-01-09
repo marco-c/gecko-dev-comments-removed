@@ -11,45 +11,39 @@
 
 add_task(threadClientTest(({ threadClient, debuggee }) => {
   return new Promise(resolve => {
-    threadClient.addOneTimeListener("paused", function(event, packet) {
-      threadClient.eval(packet.frame.actor, "foo", function(response) {
-        threadClient.addOneTimeListener("paused", async function(event, packet) {
-          const obj = threadClient.pauseGrip(packet.why.frameFinished.return);
-          const site = await obj.getDefinitionSite();
+    threadClient.addOneTimeListener("paused", async function(event, packet) {
+      const line = debuggee.line0 + 3;
+      const source = await getSourceById(
+        threadClient,
+        packet.frame.where.actor
+      );
 
-          const location = { line: debuggee.line0 + 3 };
-          const source = await getSourceById(
-            threadClient,
-            site.source.actor
-          );
+      
+      const response = await threadClient
+        .setBreakpoint({ sourceUrl: source.url, line: line }, {});
+      
+      assert.equal(response.actuallocation.source.actor, source.actor);
+      Assert.equal(response.actualLocation.line, location.line + 1);
 
-          source.setBreakpoint(location).then(function([response, bpClient]) {
-            
-            Assert.equal(response.actualLocation.source.actor, source.actor);
-            Assert.equal(response.actualLocation.line, location.line + 1);
+      threadClient.addOneTimeListener("paused", function(event, packet) {
+        
+        Assert.equal(packet.type, "paused");
+        Assert.equal(packet.frame.where.actor, source.actor);
+        Assert.equal(packet.frame.where.line, location.line + 1);
+        Assert.equal(packet.why.type, "breakpoint");
+        Assert.equal(packet.why.actors[0], response.bpClient.actor);
+        
+        Assert.equal(debuggee.a, 1);
+        Assert.equal(debuggee.b, undefined);
 
-            threadClient.addOneTimeListener("paused", function(event, packet) {
-              
-              Assert.equal(packet.type, "paused");
-              Assert.equal(packet.frame.where.actor, source.actor);
-              Assert.equal(packet.frame.where.line, location.line + 1);
-              Assert.equal(packet.why.type, "breakpoint");
-              Assert.equal(packet.why.actors[0], bpClient.actor);
-              
-              Assert.equal(debuggee.a, 1);
-              Assert.equal(debuggee.b, undefined);
-
-              
-              bpClient.remove(function(response) {
-                threadClient.resume(resolve);
-              });
-            });
-
-            
-            threadClient.resume();
-          });
+        
+        response.bpClient.remove(function(response) {
+          threadClient.resume(resolve);
         });
       });
+
+      
+      threadClient.resume();
     });
 
     

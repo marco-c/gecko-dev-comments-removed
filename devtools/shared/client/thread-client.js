@@ -274,39 +274,6 @@ ThreadClient.prototype = {
 
 
 
-
-
-
-
-
-
-  eval: DebuggerClient.requester({
-    type: "clientEvaluate",
-    frame: arg(0),
-    expression: arg(1),
-  }, {
-    before: function(packet) {
-      this._assertPaused("eval");
-      
-      
-      this._state = "resuming";
-      return packet;
-    },
-    after: function(response) {
-      if (response.error) {
-        
-        this._state = "paused";
-      }
-      return response;
-    },
-  }),
-
-  
-
-
-
-
-
   detach: DebuggerClient.requester({
     type: "detach",
   }, {
