@@ -41,7 +41,8 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Performance)
 NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(Performance, DOMEventTargetHelper,
-                                   mUserEntries, mResourceEntries);
+                                   mUserEntries, mResourceEntries,
+                                   mSecondaryResourceEntries);
 
 NS_IMPL_ADDREF_INHERITED(Performance, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(Performance, DOMEventTargetHelper)
@@ -71,6 +72,7 @@ already_AddRefed<Performance> Performance::CreateForWorker(
 Performance::Performance(bool aSystemPrincipal)
     : mResourceTimingBufferSize(kDefaultResourceTimingBufferSize),
       mPendingNotificationObserversTask(false),
+      mPendingResourceTimingBufferFullEvent(false),
       mSystemPrincipal(aSystemPrincipal) {
   MOZ_ASSERT(!NS_IsMainThread());
 }
@@ -79,6 +81,7 @@ Performance::Performance(nsPIDOMWindowInner* aWindow, bool aSystemPrincipal)
     : DOMEventTargetHelper(aWindow),
       mResourceTimingBufferSize(kDefaultResourceTimingBufferSize),
       mPendingNotificationObserversTask(false),
+      mPendingResourceTimingBufferFullEvent(false),
       mSystemPrincipal(aSystemPrincipal) {
   MOZ_ASSERT(NS_IsMainThread());
 }
@@ -373,29 +376,161 @@ void Performance::InsertUserEntry(PerformanceEntry* aEntry) {
   QueueEntry(aEntry);
 }
 
+
+
+
+
+
+
+void Performance::BufferEvent() {
+  
+
+
+
+  while (!mSecondaryResourceEntries.IsEmpty()) {
+    uint32_t secondaryResourceEntriesBeforeCount = 0;
+    uint32_t secondaryResourceEntriesAfterCount = 0;
+
+    
+
+
+
+    secondaryResourceEntriesBeforeCount = mSecondaryResourceEntries.Length();
+
+    
+
+
+
+
+    if (!CanAddResourceTimingEntry()) {
+      DispatchBufferFullEvent();
+    }
+
+    
+
+
+
+
+
+
+    while (!mSecondaryResourceEntries.IsEmpty() &&
+           CanAddResourceTimingEntry()) {
+      
+
+
+
+
+
+      mResourceEntries.InsertElementSorted(
+          mSecondaryResourceEntries.ElementAt(0), PerformanceEntryComparator());
+      
+
+
+
+
+      mSecondaryResourceEntries.RemoveElementAt(0);
+    }
+
+    
+
+
+
+    secondaryResourceEntriesAfterCount = mSecondaryResourceEntries.Length();
+
+    
+
+
+
+
+
+
+    if (secondaryResourceEntriesBeforeCount <=
+        secondaryResourceEntriesAfterCount) {
+      mSecondaryResourceEntries.Clear();
+      break;
+    }
+  }
+  
+
+
+
+  mPendingResourceTimingBufferFullEvent = false;
+}
+
 void Performance::SetResourceTimingBufferSize(uint64_t aMaxSize) {
   mResourceTimingBufferSize = aMaxSize;
 }
 
+
+
+
+
+
+
+MOZ_ALWAYS_INLINE bool Performance::CanAddResourceTimingEntry() {
+  
+
+
+
+  return mResourceEntries.Length() < mResourceTimingBufferSize;
+}
+
+
+
+
+
+
+
 void Performance::InsertResourceEntry(PerformanceEntry* aEntry) {
   MOZ_ASSERT(aEntry);
 
-  
   if (nsContentUtils::ShouldResistFingerprinting()) {
     return;
   }
 
   
-  if (mResourceEntries.Length() >= mResourceTimingBufferSize) {
+
+
+
+
+
+  if (CanAddResourceTimingEntry() && !mPendingResourceTimingBufferFullEvent) {
+    
+
+
+
+    mResourceEntries.InsertElementSorted(aEntry, PerformanceEntryComparator());
+    QueueEntry(aEntry);
+    
+
+
     return;
   }
 
-  mResourceEntries.InsertElementSorted(aEntry, PerformanceEntryComparator());
-  if (mResourceEntries.Length() == mResourceTimingBufferSize) {
+  
+
+
+
+  if (!mPendingResourceTimingBufferFullEvent) {
     
-    DispatchBufferFullEvent();
+
+
+
+    mPendingResourceTimingBufferFullEvent = true;
+
+    
+
+
+    NS_DispatchToCurrentThread(NewCancelableRunnableMethod(
+        "Performance::BufferEvent", this, &Performance::BufferEvent));
   }
-  QueueEntry(aEntry);
+  
+
+
+
+
+  mSecondaryResourceEntries.InsertElementSorted(aEntry,
+                                                PerformanceEntryComparator());
 }
 
 void Performance::AddObserver(PerformanceObserver* aObserver) {
