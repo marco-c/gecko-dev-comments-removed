@@ -98,16 +98,38 @@ static nsRect FindScrollAnchoringBoundingRect(const nsIFrame* aScrollFrame,
                                               nsIFrame* aCandidate) {
   MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrame(aScrollFrame, aCandidate));
   if (!!Text::FromNodeOrNull(aCandidate->GetContent())) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsIFrame* blockAncestor =
+        nsLayoutUtils::FindNearestBlockAncestor(aCandidate);
+    MOZ_ASSERT(
+        nsLayoutUtils::IsProperAncestorFrame(aScrollFrame, blockAncestor));
     nsRect bounding;
     for (nsIFrame* continuation = aCandidate->FirstContinuation(); continuation;
          continuation = continuation->GetNextContinuation()) {
       nsRect overflowRect =
           continuation->GetScrollableOverflowRectRelativeToSelf();
-      nsRect transformed = nsLayoutUtils::TransformFrameRectToAncestor(
-          continuation, overflowRect, aScrollFrame);
-      bounding = bounding.Union(transformed);
+      overflowRect += continuation->GetOffsetTo(blockAncestor);
+      bounding = bounding.Union(overflowRect);
     }
-    return bounding;
+    return nsLayoutUtils::TransformFrameRectToAncestor(blockAncestor, bounding,
+                                                       aScrollFrame);
   }
 
   nsRect borderRect = aCandidate->GetRectRelativeToSelf();
