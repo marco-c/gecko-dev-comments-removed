@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  y = this.#x;
+  #x;
+}
+
+assert.throws(TypeError, function() { new C(); })
+
+reportCompare(0, 0);

@@ -1,0 +1,61 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  [Symbol.toPrimitive]: function() {
+    throw new Test262Error();
+  }
+};
+
+
+
+function evaluate() {
+  var C = class {
+    [obj]
+  };
+}
+
+assert.throws(Test262Error, evaluate);
+
+reportCompare(0, 0);

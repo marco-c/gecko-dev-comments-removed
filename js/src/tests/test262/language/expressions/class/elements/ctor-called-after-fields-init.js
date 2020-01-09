@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ctor;
+
+
+var C = class {
+  constructor() {
+    ctor = this.foo;
+  }
+  foo = 42;
+}
+
+var c = new C();
+
+assert.sameValue(ctor, 42);
+
+reportCompare(0, 0);

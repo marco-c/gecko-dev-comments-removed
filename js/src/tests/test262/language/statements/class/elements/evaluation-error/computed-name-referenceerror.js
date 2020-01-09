@@ -1,0 +1,59 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function fn() {
+  throw new Test262Error();
+}
+
+
+
+function evaluate() {
+  class C {
+    [noRef] = fn();
+  }
+}
+
+assert.throws(ReferenceError, evaluate);
+
+reportCompare(0, 0);

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  x = "lol"
+  [1]
+}
+
+var c = new C();
+
+assert.sameValue(c.x, 'o');
+
+reportCompare(0, 0);
