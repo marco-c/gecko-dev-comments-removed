@@ -311,7 +311,12 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
   
   
   
-  if (aButtonReflowInput.mStyleDisplay->IsContainSize()) {
+  if (aButtonReflowInput.mStyleDisplay->IsContainLayout()) {
+    
+    
+    
+    
+    
     
     
     
