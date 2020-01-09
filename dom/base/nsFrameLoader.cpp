@@ -399,8 +399,18 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
   
   
   
+  
+  
   nsCOMPtr<nsIContentSecurityPolicy> csp;
-  loadState->TriggeringPrincipal()->GetCsp(getter_AddRefs(csp));
+  if (BasePrincipal::Cast(loadState->TriggeringPrincipal())
+          ->OverridesCSP(mOwnerContent->NodePrincipal())) {
+    loadState->TriggeringPrincipal()->GetCsp(getter_AddRefs(csp));
+  } else {
+    
+    
+    
+    mOwnerContent->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+  }
   loadState->SetCsp(csp);
 
   nsCOMPtr<nsIURI> referrer;
