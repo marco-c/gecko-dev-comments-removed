@@ -5,6 +5,8 @@
 
 
 
+const {RemoteAgent} = ChromeUtils.import("chrome://remote/content/RemoteAgent.jsm");
+
 
 
 const TEST_URI = "data:text/html;charset=utf-8,default-test-page";
@@ -28,7 +30,7 @@ async function testCDP() {
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URI);
 
   
-  const RemoteAgent = Cc["@mozilla.org/remote/agent"].getService(Ci.nsISupports).wrappedJSObject;
+  RemoteAgent.init();
   RemoteAgent.tabs.start();
   RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
 
