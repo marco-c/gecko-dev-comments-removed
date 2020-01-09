@@ -57,6 +57,9 @@ function convertTestData(testData) {
   return result;
 }
 
+
+
+
 function getLastNonemptyBucket(buckets) {
   for (var i = buckets.length - 1; i >= 0; --i) {
     if (buckets[i].scrollFrames.length > 0) {
@@ -126,8 +129,9 @@ function findRcdNode(apzcTree) {
 
 function isLayerized(elementId) {
   var contentTestData = SpecialPowers.getDOMWindowUtils(window).getContentAPZTestData();
-  ok(contentTestData.paints.length > 0, "expected at least one paint");
-  var seqno = contentTestData.paints[contentTestData.paints.length - 1].sequenceNumber;
+  var nonEmptyBucket = getLastNonemptyBucket(contentTestData.paints);
+  ok(nonEmptyBucket != null, "expected at least one nonempty paint");
+  var seqno = nonEmptyBucket.sequenceNumber;
   contentTestData = convertTestData(contentTestData);
   var paint = contentTestData.paints[seqno];
   for (var scrollId in paint) {
