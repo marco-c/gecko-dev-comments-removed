@@ -11,9 +11,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
 
-#include <algorithm>
-#include <iterator>
-
 #include "jsdate.h"
 #include "jsfriendapi.h"
 #include "selfhosted.out.h"
@@ -1970,17 +1967,6 @@ bool js::ReportIncompatibleSelfHostedMethod(JSContext* cx,
   
   
   
-
-  static const char* const internalNames[] = {
-      "IsTypedArrayEnsuringArrayBuffer",
-      "UnwrapAndCallRegExpBuiltinExec",
-      "RegExpBuiltinExec",
-      "RegExpExec",
-      "RegExpSearchSlowPath",
-      "RegExpReplaceSlowPath",
-      "RegExpMatchSlowPath",
-  };
-
   ScriptFrameIter iter(cx);
   MOZ_ASSERT(iter.isFunctionFrame());
 
@@ -1993,9 +1979,7 @@ bool js::ReportIncompatibleSelfHostedMethod(JSContext* cx,
     if (!funName) {
       return false;
     }
-    if (std::all_of(
-            std::begin(internalNames), std::end(internalNames),
-            [funName](auto* name) { return strcmp(funName, name) != 0; })) {
+    if (strcmp(funName, "IsTypedArrayEnsuringArrayBuffer") != 0) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_INCOMPATIBLE_METHOD, funName, "method",
                                InformalValueTypeName(args.thisv()));
