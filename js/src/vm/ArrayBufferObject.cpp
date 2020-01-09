@@ -293,7 +293,7 @@ static const ClassOps ArrayBufferObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
-    ArrayBufferObject::trace,
+    nullptr, 
 };
 
 static const JSFunctionSpec arraybuffer_functions[] = {
@@ -1392,14 +1392,6 @@ ArrayBufferObject::externalizeContents(JSContext* cx,
 
   memcpy(toBuffer->dataPointer() + toIndex,
          fromBuffer->dataPointer() + fromIndex, count);
-}
-
- void ArrayBufferObject::trace(JSTracer* trc, JSObject* obj) {
-  
-  
-  
-  
-  MOZ_ASSERT(obj->is<ArrayBufferObject>());
 }
 
  size_t ArrayBufferObject::objectMoved(JSObject* obj,
