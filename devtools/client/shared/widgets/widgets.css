@@ -15,13 +15,6 @@
 
 
 
-.simple-list-widget-container {
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-
-
 .fast-list-widget-container {
   overflow: auto;
 }
