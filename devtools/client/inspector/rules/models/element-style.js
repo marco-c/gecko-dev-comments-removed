@@ -20,50 +20,49 @@ loader.lazyRequireGetter(this, "isCssVariable", "devtools/shared/fronts/css-prop
 
 
 
-class ElementStyle {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ElementStyle(element, ruleView, store, pageStyle, showUserAgentStyles) {
+  this.element = element;
+  this.ruleView = ruleView;
+  this.store = store || {};
+  this.pageStyle = pageStyle;
+  this.showUserAgentStyles = showUserAgentStyles;
+  this.rules = [];
+  this.cssProperties = this.ruleView.cssProperties;
+  this.variables = new Map();
+
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  constructor(element, ruleView, store, pageStyle, showUserAgentStyles) {
-    this.element = element;
-    this.ruleView = ruleView;
-    this.store = store || {};
-    this.pageStyle = pageStyle;
-    this.showUserAgentStyles = showUserAgentStyles;
-    this.rules = [];
-    this.cssProperties = this.ruleView.cssProperties;
-    this.variables = new Map();
-
-    
-    
-    if (!("userProperties" in this.store)) {
-      this.store.userProperties = new UserProperties();
-    }
-
-    if (!("disabled" in this.store)) {
-      this.store.disabled = new WeakMap();
-    }
-
-    this.onStyleSheetUpdated = this.onStyleSheetUpdated.bind(this);
-
-    if (this.ruleView.isNewRulesView) {
-      this.pageStyle.on("stylesheet-updated", this.onStyleSheetUpdated);
-    }
+  
+  if (!("userProperties" in this.store)) {
+    this.store.userProperties = new UserProperties();
   }
 
-  destroy() {
+  if (!("disabled" in this.store)) {
+    this.store.disabled = new WeakMap();
+  }
+
+  this.onStyleSheetUpdated = this.onStyleSheetUpdated.bind(this);
+
+  if (this.ruleView.isNewRulesView) {
+    this.pageStyle.on("stylesheet-updated", this.onStyleSheetUpdated);
+  }
+}
+
+ElementStyle.prototype = {
+  destroy: function() {
     if (this.destroyed) {
       return;
     }
@@ -79,17 +78,17 @@ class ElementStyle {
     if (this.ruleView.isNewRulesView) {
       this.pageStyle.off("stylesheet-updated", this.onStyleSheetUpdated);
     }
-  }
+  },
 
   
 
 
 
-  _changed() {
+  _changed: function() {
     if (this.onChanged) {
       this.onChanged();
     }
-  }
+  },
 
   
 
@@ -98,7 +97,7 @@ class ElementStyle {
 
 
 
-  populate() {
+  populate: function() {
     const populated = this.pageStyle.getApplied(this.element, {
       inherited: true,
       matchedSelectors: true,
@@ -141,7 +140,7 @@ class ElementStyle {
     });
     this.populated = populated;
     return this.populated;
-  }
+  },
 
   
 
@@ -150,9 +149,9 @@ class ElementStyle {
 
 
 
-  getRule(id) {
+  getRule: function(id) {
     return this.rules.find(rule => rule.domRule.actorID === id);
-  }
+  },
 
   
 
@@ -160,7 +159,7 @@ class ElementStyle {
 
 
 
-  getUsedFontFamilies() {
+  getUsedFontFamilies: function() {
     return new Promise((resolve, reject) => {
       this.ruleView.styleWindow.requestIdleCallback(async () => {
         try {
@@ -172,16 +171,16 @@ class ElementStyle {
         }
       });
     });
-  }
+  },
 
   
 
 
-  _sortRulesForPseudoElement() {
+  _sortRulesForPseudoElement: function() {
     this.rules = this.rules.sort((a, b) => {
       return (a.pseudoElement || "z") > (b.pseudoElement || "z");
     });
-  }
+  },
 
   
 
@@ -194,7 +193,7 @@ class ElementStyle {
 
 
 
-  _maybeAddRule(options, existingRules) {
+  _maybeAddRule: function(options, existingRules) {
     
     
     if (options.system ||
@@ -227,19 +226,19 @@ class ElementStyle {
 
     this.rules.push(rule);
     return true;
-  }
+  },
 
   
 
 
-  markOverriddenAll() {
+  markOverriddenAll: function() {
     this.variables.clear();
     this.markOverridden();
 
     for (const pseudo of this.cssProperties.pseudoElements) {
       this.markOverridden(pseudo);
     }
-  }
+  },
 
   
 
@@ -249,7 +248,7 @@ class ElementStyle {
 
 
 
-  markOverridden(pseudo = "") {
+  markOverridden: function(pseudo = "") {
     
     
     
@@ -344,7 +343,7 @@ class ElementStyle {
         textProp.updateEditor();
       }
     }
-  }
+  },
 
   
 
@@ -354,7 +353,7 @@ class ElementStyle {
 
 
 
-  addNewDeclaration(ruleId, value) {
+  addNewDeclaration: function(ruleId, value) {
     const rule = this.getRule(ruleId);
     if (!rule) {
       return;
@@ -367,7 +366,7 @@ class ElementStyle {
     }
 
     this._addMultipleDeclarations(rule, declarationsToAdd);
-  }
+  },
 
   
 
@@ -376,7 +375,7 @@ class ElementStyle {
 
   async addNewRule() {
     await this.pageStyle.addNewRule(this.element, this.element.pseudoClassLocks);
-  }
+  },
 
   
 
@@ -389,7 +388,7 @@ class ElementStyle {
 
 
 
-  async modifyDeclarationName(ruleID, declarationId, name) {
+  modifyDeclarationName: async function(ruleID, declarationId, name) {
     const rule = this.getRule(ruleID);
     if (!rule) {
       return;
@@ -412,7 +411,7 @@ class ElementStyle {
     if (!declaration.enabled) {
       await declaration.setEnabled(true);
     }
-  }
+  },
 
   
 
@@ -425,14 +424,14 @@ class ElementStyle {
 
 
 
-  _addMultipleDeclarations(rule, declarationsToAdd, siblingDeclaration = null) {
+  _addMultipleDeclarations: function(rule, declarationsToAdd, siblingDeclaration = null) {
     for (const { commentOffsets, name, value, priority } of declarationsToAdd) {
       const isCommented = Boolean(commentOffsets);
       const enabled = !isCommented;
       siblingDeclaration = rule.createProperty(name, value, priority, enabled,
         siblingDeclaration);
     }
-  }
+  },
 
   
 
@@ -449,7 +448,7 @@ class ElementStyle {
 
 
 
-  _getValueAndExtraProperties(value) {
+  _getValueAndExtraProperties: function(value) {
     
     
     
@@ -479,7 +478,7 @@ class ElementStyle {
       declarationsToAdd,
       firstValue,
     };
-  }
+  },
 
   
 
@@ -492,7 +491,7 @@ class ElementStyle {
 
 
 
-  async modifyDeclarationValue(ruleId, declarationId, value) {
+  modifyDeclarationValue: async function(ruleId, declarationId, value) {
     const rule = this.getRule(ruleId);
     if (!rule) {
       return;
@@ -520,7 +519,7 @@ class ElementStyle {
     }
 
     this._addMultipleDeclarations(rule, declarationsToAdd, declaration);
-  }
+  },
 
   
 
@@ -530,7 +529,7 @@ class ElementStyle {
 
 
 
-  async modifySelector(ruleId, selector) {
+  modifySelector: async function(ruleId, selector) {
     try {
       const rule = this.getRule(ruleId);
       if (!rule) {
@@ -587,7 +586,7 @@ class ElementStyle {
     } catch (e) {
       console.error(e);
     }
-  }
+  },
 
   
 
@@ -597,7 +596,7 @@ class ElementStyle {
 
 
 
-  toggleDeclaration(ruleId, declarationId) {
+  toggleDeclaration: function(ruleId, declarationId) {
     const rule = this.getRule(ruleId);
     if (!rule) {
       return;
@@ -609,7 +608,7 @@ class ElementStyle {
     }
 
     declaration.setEnabled(!declaration.enabled);
-  }
+  },
 
   
 
@@ -621,7 +620,7 @@ class ElementStyle {
 
 
 
-  _updatePropertyOverridden(prop) {
+  _updatePropertyOverridden: function(prop) {
     let overridden = true;
     let dirty = false;
 
@@ -637,7 +636,7 @@ class ElementStyle {
     dirty = (!!prop.overridden !== overridden) || dirty;
     prop.overridden = overridden;
     return dirty;
-  }
+  },
 
  
 
@@ -648,15 +647,15 @@ class ElementStyle {
 
 
 
-  getVariable(name) {
+  getVariable: function(name) {
     return this.variables.get(name);
-  }
+  },
 
   
 
 
 
-  async onStyleSheetUpdated() {
+  onStyleSheetUpdated: async function() {
     
     const promises = [];
     for (const rule of this.rules) {
@@ -668,7 +667,7 @@ class ElementStyle {
     await Promise.all(promises);
     await this.populate();
     this._changed();
-  }
-}
+  },
+};
 
 module.exports = ElementStyle;

@@ -28,23 +28,23 @@ const CLASSES = new WeakMap();
 
 
 
-class ClassList {
-  constructor(inspector) {
-    EventEmitter.decorate(this);
+function ClassList(inspector) {
+  EventEmitter.decorate(this);
 
-    this.inspector = inspector;
+  this.inspector = inspector;
 
-    this.onMutations = this.onMutations.bind(this);
-    this.inspector.on("markupmutation", this.onMutations);
+  this.onMutations = this.onMutations.bind(this);
+  this.inspector.on("markupmutation", this.onMutations);
 
-    this.classListProxyNode = this.inspector.panelDoc.createElement("div");
-  }
+  this.classListProxyNode = this.inspector.panelDoc.createElement("div");
+}
 
+ClassList.prototype = {
   destroy() {
     this.inspector.off("markupmutation", this.onMutations);
     this.inspector = null;
     this.classListProxyNode = null;
-  }
+  },
 
   
 
@@ -56,7 +56,7 @@ class ClassList {
       return this.inspector.selection.nodeFront;
     }
     return null;
-  }
+  },
 
   
 
@@ -79,7 +79,7 @@ class ClassList {
     }
 
     return CLASSES.get(this.currentNode);
-  }
+  },
 
   
 
@@ -89,7 +89,7 @@ class ClassList {
     return this.currentClasses.filter(({ isApplied }) => isApplied)
                               .map(({ name }) => name)
                               .join(" ");
-  }
+  },
 
   
 
@@ -106,7 +106,7 @@ class ClassList {
     nodeClasses.find(({ name: cName }) => cName === name).isApplied = isApplied;
 
     return this.applyClassState();
-  }
+  },
 
   
 
@@ -120,7 +120,7 @@ class ClassList {
     return Promise.all([...new Set([...this.classListProxyNode.classList])].map(name => {
       return this.addClass(name);
     }));
-  }
+  },
 
   
 
@@ -139,7 +139,7 @@ class ClassList {
     this.currentClasses.push({ name, isApplied: true });
 
     return this.applyClassState();
-  }
+  },
 
   
 
@@ -165,7 +165,7 @@ class ClassList {
     const mod = this.currentNode.startModifyingAttributes();
     mod.setAttribute("class", this.currentClassesPreview);
     return mod.apply();
-  }
+  },
 
   onMutations(mutations) {
     for (const {type, target, attributeName} of mutations) {
@@ -185,7 +185,7 @@ class ClassList {
         }
       }
     }
-  }
-}
+  },
+};
 
 module.exports = ClassList;

@@ -44,10 +44,6 @@ const declaration = exports.declaration = {
   isEnabled: PropTypes.bool,
 
   
-  
-  isInvisible: PropTypes.bool,
-
-  
   isKnownProperty: PropTypes.bool,
 
   
