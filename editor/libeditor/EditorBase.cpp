@@ -2977,6 +2977,22 @@ void EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
 
   
   
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (NS_WARN_IF(parent != aStartOfRightNode.GetContainer()->GetParentNode()) ||
+      NS_WARN_IF(parent != aNewLeftNode.GetParentNode()) ||
+      NS_WARN_IF(aNewLeftNode.GetNextSibling() !=
+                 aStartOfRightNode.GetContainer())) {
+    aError.Throw(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
 }
 
 nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
