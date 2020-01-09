@@ -8,6 +8,7 @@
 #define mozilla_dom_RemoteObjectProxy_h
 
 #include "js/Proxy.h"
+#include "mozilla/dom/MaybeCrossOriginObject.h"
 #include "mozilla/dom/PrototypeList.h"
 #include "xpcpublic.h"
 
@@ -19,7 +20,8 @@ namespace dom {
 
 
 
-class RemoteObjectProxyBase : public js::BaseProxyHandler {
+class RemoteObjectProxyBase : public js::BaseProxyHandler,
+                              public MaybeCrossOriginObjectMixins {
  protected:
   explicit constexpr RemoteObjectProxyBase(prototypes::ID aPrototypeID)
       : BaseProxyHandler(&sCrossOriginProxyFamily, false),
@@ -80,6 +82,7 @@ class RemoteObjectProxyBase : public js::BaseProxyHandler {
 
 
 
+
   static inline bool IsRemoteObjectProxy(JSObject* aProxy,
                                          prototypes::ID aProtoID) {
     const js::BaseProxyHandler* handler = js::GetProxyHandler(aProxy);
@@ -88,61 +91,18 @@ class RemoteObjectProxyBase : public js::BaseProxyHandler {
                aProtoID;
   }
 
- protected:
-  bool getOwnPropertyDescriptorInternal(
-      JSContext* aCx, JS::Handle<JSObject*> aProxy, JS::Handle<jsid> aId,
-      JS::MutableHandle<JS::PropertyDescriptor> aDesc) const {
-    JS::Rooted<JSObject*> holder(aCx);
-    if (!EnsureHolder(aCx, aProxy, &holder) ||
-        !JS_GetOwnPropertyDescriptorById(aCx, holder, aId, aDesc)) {
-      return false;
-    }
+  
 
-    if (aDesc.object()) {
-      aDesc.object().set(aProxy);
-    }
 
-    return true;
+
+  static inline bool IsRemoteObjectProxy(JSObject* aProxy) {
+    const js::BaseProxyHandler* handler = js::GetProxyHandler(aProxy);
+    return handler->family() == &sCrossOriginProxyFamily;
   }
 
+ protected:
   JSObject* CreateProxyObject(JSContext* aCx, void* aNative,
                               const js::Class* aClasp) const;
-
-  
-
-
-
-  static bool getOwnPropertyDescriptorTail(
-      JSContext* aCx, JS::Handle<JSObject*> aProxy, JS::Handle<jsid> aId,
-      JS::MutableHandle<JS::PropertyDescriptor> aDesc);
-  static bool ReportCrossOriginDenial(JSContext* aCx, JS::Handle<jsid> aId,
-                                      const nsACString& aAccessType);
-
-  
-
-
-
-  bool EnsureHolder(JSContext* aCx, JS::Handle<JSObject*> aProxy,
-                    JS::MutableHandle<JSObject*> aHolder) const {
-    
-    
-    JS::Value v = js::GetProxyReservedSlot(aProxy, 0);
-    if (v.isObject()) {
-      aHolder.set(&v.toObject());
-      return true;
-    }
-
-    aHolder.set(JS_NewObjectWithGivenProto(aCx, nullptr, nullptr));
-    if (!aHolder || !DefinePropertiesAndFunctions(aCx, aHolder)) {
-      return false;
-    }
-
-    js::SetProxyReservedSlot(aProxy, 0, JS::ObjectValue(*aHolder));
-    return true;
-  }
-
-  virtual bool DefinePropertiesAndFunctions(
-      JSContext* aCx, JS::Handle<JSObject*> aHolder) const = 0;
 
   const prototypes::ID mPrototypeID;
 
@@ -175,12 +135,13 @@ class RemoteObjectProxy : public RemoteObjectProxyBase {
   using RemoteObjectProxyBase::RemoteObjectProxyBase;
 
  private:
-  bool DefinePropertiesAndFunctions(JSContext* aCx,
-                                    JS::Handle<JSObject*> aHolder) const final {
-    return JS_DefineProperties(aCx, aHolder, P) &&
-           JS_DefineFunctions(aCx, aHolder, F);
+  bool EnsureHolder(JSContext* aCx, JS::Handle<JSObject*> aProxy,
+                    JS::MutableHandle<JSObject*> aHolder) const final {
+    return MaybeCrossOriginObjectMixins::EnsureHolder(
+        aCx, aProxy,  0, P, F, aHolder);
   }
 };
+
 
 
 
@@ -192,6 +153,17 @@ static inline bool IsRemoteObjectProxy(JSObject* aObj,
     return false;
   }
   return RemoteObjectProxyBase::IsRemoteObjectProxy(aObj, aProtoID);
+}
+
+
+
+
+
+static inline bool IsRemoteObjectProxy(JSObject* aObj) {
+  if (!js::IsProxy(aObj)) {
+    return false;
+  }
+  return RemoteObjectProxyBase::IsRemoteObjectProxy(aObj);
 }
 
 }  
