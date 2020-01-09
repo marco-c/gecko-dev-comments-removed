@@ -1,0 +1,7 @@
+
+
+self.addEventListener('message', function(e) {
+    var t1 = setTimeout(function () { postMessage(1); }, 5);
+    setTimeout(function () { postMessage(2); }, 10);
+    clearTimeout(t1);
+}, false);
