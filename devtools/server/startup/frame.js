@@ -12,12 +12,29 @@
 
 
 
+
 try {
   var chromeGlobal = this;
 
   
   (function() {
-    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+    
+    
+    
+    
+    
+    let loader, customLoader = false;
+    if (content.document.nodePrincipal.isSystemPrincipal) {
+      const { DevToolsLoader } =
+        ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+      loader = new DevToolsLoader();
+      loader.invisibleToDebugger = true;
+      customLoader = true;
+    } else {
+      
+      loader = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+    }
+    const { require } = loader;
 
     const DevToolsUtils = require("devtools/shared/DevToolsUtils");
     const { dumpn } = DevToolsUtils;
@@ -133,6 +150,11 @@ try {
       }
       DebuggerServer.off("connectionchange", destroyServer);
       DebuggerServer.destroy();
+
+      
+      if (customLoader) {
+        loader.destroy();
+      }
     }
     DebuggerServer.on("connectionchange", destroyServer);
   })();

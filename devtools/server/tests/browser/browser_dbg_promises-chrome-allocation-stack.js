@@ -22,6 +22,16 @@ const STACK_DATA = [
 add_task(async function test() {
   requestLongerTimeout(10);
 
+  
+  
+  
+  
+  const { DevToolsLoader } =
+    ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+  const customLoader = new DevToolsLoader();
+  customLoader.invisibleToDebugger = true;
+  const { DebuggerServer } = customLoader.require("devtools/server/main");
+
   DebuggerServer.init();
   DebuggerServer.registerAllActors();
   DebuggerServer.allowChromeProcess = true;
