@@ -304,7 +304,7 @@ impl ElementCascadeInputs {
 
 
 
-#[derive(Default)]
+#[derive(AddAssign, Clone, Default)]
 pub struct PerThreadTraversalStatistics {
     
     pub elements_traversed: u32,
@@ -317,20 +317,6 @@ pub struct PerThreadTraversalStatistics {
     
     
     pub styles_reused: u32,
-}
-
-
-impl<'a> ops::Add for &'a PerThreadTraversalStatistics {
-    type Output = PerThreadTraversalStatistics;
-    fn add(self, other: Self) -> PerThreadTraversalStatistics {
-        PerThreadTraversalStatistics {
-            elements_traversed: self.elements_traversed + other.elements_traversed,
-            elements_styled: self.elements_styled + other.elements_styled,
-            elements_matched: self.elements_matched + other.elements_matched,
-            styles_shared: self.styles_shared + other.styles_shared,
-            styles_reused: self.styles_reused + other.styles_reused,
-        }
-    }
 }
 
 
