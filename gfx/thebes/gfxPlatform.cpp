@@ -948,10 +948,6 @@ void gfxPlatform::Init() {
     }
   };
   gfxPrefs::SetLayoutFrameRateChangeCallback(updateFrameRateCallback);
-  gfxPrefs::SetIsLowEndMachineDoNotUseDirectlyChangeCallback(
-      updateFrameRateCallback);
-  gfxPrefs::SetAdjustToMachineChangeCallback(updateFrameRateCallback);
-  gfxPrefs::SetResistFingerprintingChangeCallback(updateFrameRateCallback);
   
   ReInitFrameRate();
 
@@ -2915,12 +2911,6 @@ bool gfxPlatform::ContentUsesTiling() const {
 }
 
 
-bool gfxPlatform::ShouldAdjustForLowEndMachine() {
-  return gfxPrefs::AdjustToMachine() && !gfxPrefs::ResistFingerprinting() &&
-         gfxPrefs::IsLowEndMachineDoNotUseDirectly();
-}
-
-
 
 
 
@@ -2946,8 +2936,7 @@ bool gfxPlatform::IsInLayoutAsapMode() {
 
 
 bool gfxPlatform::ForceSoftwareVsync() {
-  return ShouldAdjustForLowEndMachine() || gfxPrefs::LayoutFrameRate() > 0 ||
-         recordreplay::IsRecordingOrReplaying();
+  return gfxPrefs::LayoutFrameRate() > 0 || recordreplay::IsRecordingOrReplaying();
 }
 
 
@@ -2961,7 +2950,7 @@ int gfxPlatform::GetSoftwareVsyncRate() {
 
 
 int gfxPlatform::GetDefaultFrameRate() {
-  return ShouldAdjustForLowEndMachine() ? 30 : 60;
+  return 60;
 }
 
 

@@ -1775,7 +1775,6 @@ EnvironmentCache.prototype = {
       D2DEnabled: getGfxField("D2DEnabled", null),
       DWriteEnabled: getGfxField("DWriteEnabled", null),
       ContentBackend: getGfxField("ContentBackend", null),
-      LowEndMachine: getGfxField("LowEndMachine", false),
       
       
       

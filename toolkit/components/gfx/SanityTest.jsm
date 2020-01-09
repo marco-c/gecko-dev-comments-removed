@@ -6,9 +6,6 @@
 
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "AppConstants",
-  "resource://gre/modules/AppConstants.jsm");
-
 const FRAME_SCRIPT_URL = "chrome://gfxsanity/content/gfxFrameScript.js";
 
 const PAGE_WIDTH = 160;
@@ -27,8 +24,6 @@ const VERSION_PREF = "sanity-test.version";
 const ADVANCED_LAYERS_PREF = "sanity-test.advanced-layers";
 const DISABLE_VIDEO_PREF = "media.hardware-video-decoding.failed";
 const RUNNING_PREF = "sanity-test.running";
-const PERF_ADJUSTMENT_PREF = "performance.adjust_to_machine";
-const LOWEND_DEVICE_PREF = "performance.low_end_machine";
 const TIMEOUT_SEC = 20;
 
 const AL_ENABLED_PREF = "layers.mlgpu.enabled";
@@ -335,24 +330,6 @@ SanityTest.prototype = {
     return true;
   },
 
-  _updateLowEndState() {
-    
-    if (Services.prefs.getBoolPref(PERF_ADJUSTMENT_PREF, AppConstants.EARLY_BETA_OR_EARLIER)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      let isLowEnd = Services.sysinfo.get("cpucores") <= 2 && Services.sysinfo.get("cpuspeed") < 1800;
-      Services.prefs.setBoolPref(LOWEND_DEVICE_PREF, isLowEnd);
-    } else {
-      Services.prefs.clearUserPref(LOWEND_DEVICE_PREF);
-    }
-  },
-
   observe(subject, topic, data) {
     if (topic != "profile-after-change") return;
 
@@ -364,8 +341,6 @@ SanityTest.prototype = {
     if (!this.shouldRunTest()) return;
 
     annotateCrashReport();
-
-    this._updateLowEndState();
 
     
     var sanityTest = Services.ww.openWindow(null,
