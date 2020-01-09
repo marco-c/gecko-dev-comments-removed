@@ -3,6 +3,12 @@
 
 
 
+
+const { PromiseTestUtils } = scopedCuImport(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
+PromiseTestUtils.whitelistRejectionsGlobally(/Page has navigated/);
+
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "simple1", "simple2");
 
