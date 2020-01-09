@@ -326,6 +326,11 @@ class EventListenerManager final : public EventListenerManagerBase {
 
   void RemoveEventHandler(nsAtom* aName);
 
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void HandleEvent(nsPresContext* aPresContext, WidgetEvent* aEvent,
                    dom::Event** aDOMEvent, dom::EventTarget* aCurrentTarget,
                    nsEventStatus* aEventStatus, bool aItemInShadowTree) {
@@ -462,11 +467,13 @@ class EventListenerManager final : public EventListenerManagerBase {
   void RemoveAllListeners();
 
  protected:
+  MOZ_CAN_RUN_SCRIPT
   void HandleEventInternal(nsPresContext* aPresContext, WidgetEvent* aEvent,
                            dom::Event** aDOMEvent,
                            dom::EventTarget* aCurrentTarget,
                            nsEventStatus* aEventStatus, bool aItemInShadowTree);
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult HandleEventSubType(Listener* aListener, dom::Event* aDOMEvent,
                               dom::EventTarget* aCurrentTarget);
 

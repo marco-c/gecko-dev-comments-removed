@@ -1039,7 +1039,8 @@ nsresult EventListenerManager::HandleEventSubType(Listener* aListener,
                                                       *aDOMEvent, rv);
       result = rv.StealNSResult();
     } else {
-      result = listenerHolder.GetXPCOMCallback()->HandleEvent(aDOMEvent);
+      
+      result = MOZ_KnownLive(listenerHolder.GetXPCOMCallback())->HandleEvent(aDOMEvent);
     }
   }
 
@@ -1233,8 +1234,10 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
               oldWindowEvent = innerWindow->SetEvent(*aDOMEvent);
             }
 
+            
+            
             nsresult rv =
-                HandleEventSubType(listener, *aDOMEvent, aCurrentTarget);
+                HandleEventSubType(listener, MOZ_KnownLive(*aDOMEvent), aCurrentTarget);
 
             if (innerWindow) {
               Unused << innerWindow->SetEvent(oldWindowEvent);
