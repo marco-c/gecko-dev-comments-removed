@@ -112,6 +112,11 @@ EventTooltip.prototype = {
               eventEditor.uri = newURI;
 
               
+              
+              
+              eventEditor.sourceActor = null;
+
+              
               this._tooltip.emit("event-tooltip-source-map-ready");
             }
           };
