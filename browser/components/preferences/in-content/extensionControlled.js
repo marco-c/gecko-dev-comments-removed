@@ -137,23 +137,38 @@ function settingNameToL10nID(settingName) {
 
 
 
-function setControllingExtensionDescription(elem, addon, settingName) {
-  
-  while (elem.firstChild) {
-    elem.firstChild.remove();
-  }
 
+
+
+
+
+function setControllingExtensionDescription(elem, addon, settingName) {
+  const existingImg = elem.querySelector("img");
   if (addon === null) {
+    
+    
+    if (existingImg) {
+      existingImg.remove();
+    }
     document.l10n.setAttributes(elem, settingName);
     return;
   }
 
-  let image = document.createElementNS("http://www.w3.org/1999/xhtml", "img");
   const defaultIcon = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
-  image.setAttribute("src", addon.iconURL || defaultIcon);
-  image.setAttribute("data-l10n-name", "icon");
-  image.classList.add("extension-controlled-icon");
-  elem.appendChild(image);
+  const src = addon.iconURL || defaultIcon;
+
+  if (!existingImg) {
+    
+    
+    let image = document.createElementNS("http://www.w3.org/1999/xhtml", "img");
+    image.setAttribute("src", src);
+    image.setAttribute("data-l10n-name", "icon");
+    image.classList.add("extension-controlled-icon");
+    elem.appendChild(image);
+  } else if (existingImg.getAttribute("src") !== src) {
+    existingImg.setAttribute("src", src);
+  }
+
   const l10nId = settingNameToL10nID(settingName);
   document.l10n.setAttributes(elem, l10nId, {
     name: addon.name,
