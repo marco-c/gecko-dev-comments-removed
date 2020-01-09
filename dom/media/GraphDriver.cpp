@@ -770,25 +770,25 @@ void AudioCallbackDriver::ResetDefaultDevice() {
 }
 #endif
 
- long AudioCallbackDriver::DataCallback_s(cubeb_stream* aStream,
-                                                      void* aUser,
-                                                      const void* aInputBuffer,
-                                                      void* aOutputBuffer,
-                                                      long aFrames) {
+
+long AudioCallbackDriver::DataCallback_s(cubeb_stream* aStream, void* aUser,
+                                         const void* aInputBuffer,
+                                         void* aOutputBuffer, long aFrames) {
   AudioCallbackDriver* driver = reinterpret_cast<AudioCallbackDriver*>(aUser);
   return driver->DataCallback(static_cast<const AudioDataValue*>(aInputBuffer),
                               static_cast<AudioDataValue*>(aOutputBuffer),
                               aFrames);
 }
 
- void AudioCallbackDriver::StateCallback_s(cubeb_stream* aStream,
-                                                       void* aUser,
-                                                       cubeb_state aState) {
+
+void AudioCallbackDriver::StateCallback_s(cubeb_stream* aStream, void* aUser,
+                                          cubeb_state aState) {
   AudioCallbackDriver* driver = reinterpret_cast<AudioCallbackDriver*>(aUser);
   driver->StateCallback(aState);
 }
 
- void AudioCallbackDriver::DeviceChangedCallback_s(void* aUser) {
+
+void AudioCallbackDriver::DeviceChangedCallback_s(void* aUser) {
   AudioCallbackDriver* driver = reinterpret_cast<AudioCallbackDriver*>(aUser);
   driver->DeviceChangedCallback();
 }
