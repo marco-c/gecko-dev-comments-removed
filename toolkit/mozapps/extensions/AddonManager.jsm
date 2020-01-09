@@ -529,8 +529,6 @@ var gShutdownInProgress = false;
 var gPluginPageListener = null;
 var gBrowserUpdated = null;
 
-var AMTelemetry;
-
 
 
 
@@ -698,9 +696,6 @@ var AddonManagerInternal = {
         return;
 
       this.recordTimestamp("AMI_startup_begin");
-
-      
-      AMTelemetry.init();
 
       
       for (let provider in this.telemetryDetails)
@@ -1548,8 +1543,6 @@ var AddonManagerInternal = {
   },
 
   
-
-
 
 
 
@@ -2688,7 +2681,7 @@ var AddonManagerInternal = {
         installPromise.catch(() => {});
 
         return {listener, installPromise};
-      };
+     };
 
       try {
         checkInstallUrl(options.url);
@@ -2697,15 +2690,18 @@ var AddonManagerInternal = {
       }
 
       return AddonManagerInternal.getInstallForURL(options.url, {
-        browser: target,
-        triggeringPrincipal: options.triggeringPrincipal,
         hash: options.hash,
         telemetryInfo: {
           source: AddonManager.getInstallSourceFromHost(options.sourceHost),
           method: "amWebAPI",
         },
       }).then(install => {
-        AddonManagerInternal.setupPromptHandler(target, null, install, false, "AMO");
+        let requireConfirm = true;
+        if (target.contentDocument &&
+            target.contentDocument.nodePrincipal.isSystemPrincipal) {
+          requireConfirm = false;
+        }
+        AddonManagerInternal.setupPromptHandler(target, null, install, requireConfirm, "AMO");
 
         let id = this.nextInstall++;
         let {listener, installPromise} = makeListener(id, target.messageManager);
@@ -3515,16 +3511,8 @@ var AddonManager = {
 
 
 
-AMTelemetry = {
+var AMTelemetry = {
   telemetrySetupDone: false,
-
-  init() {
-    
-    
-    
-    
-    Services.telemetry.setEventRecordingEnabled("addonsManager", true);
-  },
 
   
   
@@ -3535,6 +3523,8 @@ AMTelemetry = {
     }
 
     this.telemetrySetupDone = true;
+
+    Services.telemetry.setEventRecordingEnabled("addonsManager", true);
 
     Services.obs.addObserver(this, "addon-install-origin-blocked");
     Services.obs.addObserver(this, "addon-install-disabled");
