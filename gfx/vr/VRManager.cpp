@@ -246,6 +246,13 @@ void VRManager::RunTasks() {
   
   
 
+  if (!mInitialized) {
+    
+    
+    
+    return;
+  }
+
   TimeStamp now = TimeStamp::Now();
   double lastTickMs = mAccumulator100ms;
   double deltaTime = 0.0f;
