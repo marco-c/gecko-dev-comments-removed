@@ -6,6 +6,8 @@
 
 package org.mozilla.geckoview;
 
+import org.json.JSONObject;
+
 import org.mozilla.gecko.annotation.WrapForJNI;
 
 import android.support.annotation.AnyThread;
@@ -17,6 +19,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 
 
@@ -166,6 +169,42 @@ public class WebRequest extends WebMessage {
                 throw new IllegalArgumentException("body must be directly allocated");
             }
             mBody = buffer;
+            return this;
+        }
+
+        
+
+
+
+
+
+        public @NonNull Builder body(final @NonNull byte[] bytes) {
+            final ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+            buffer.put(bytes);
+
+            body(buffer);
+            return this;
+        }
+
+        
+
+
+
+
+
+        public @NonNull Builder body(final @NonNull String bodyString) {
+            body(bodyString.getBytes(Charset.forName("UTF-8")));
+            return this;
+        }
+
+        
+
+
+
+
+
+        public @NonNull Builder body(final @NonNull JSONObject object) {
+            body(object.toString());
             return this;
         }
 
