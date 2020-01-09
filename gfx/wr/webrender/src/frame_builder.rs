@@ -141,6 +141,7 @@ pub struct PictureContext {
     pub raster_spatial_node_index: SpatialNodeIndex,
     
     pub surface_index: SurfaceIndex,
+    pub dirty_region_count: usize,
 }
 
 
@@ -372,7 +373,6 @@ impl FrameBuilder {
         let mut default_dirty_region = DirtyRegion::new();
         default_dirty_region.push(
             frame_context.screen_world_rect,
-            frame_context.device_pixel_scale,
         );
         frame_state.push_dirty_region(default_dirty_region);
 
