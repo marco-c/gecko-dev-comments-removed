@@ -135,12 +135,12 @@ pub unsafe trait HasArcFFI: HasFFI {
     }
 }
 
+
+
+
+
+
 #[repr(C)]
-
-
-
-
-
 pub struct Strong<GeckoType> {
     ptr: *const GeckoType,
     _marker: PhantomData<GeckoType>,
