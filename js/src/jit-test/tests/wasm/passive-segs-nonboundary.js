@@ -163,7 +163,6 @@ tab_test("(table.init 1 (i32.const 7) (i32.const 0) (i32.const 4)) \n" +
 
 
 
-
 function gen_mem_mod_t(insn)
 {
   let t =
@@ -297,6 +296,44 @@ checkNoDataCount([I32ConstCode, 0,
 
 checkNoDataCount([MiscPrefix, DataDropCode, 0],
                  /data.drop requires a DataCount section/);
+
+
+
+
+function checkPassiveElemSegment(mangle, err) {
+    let bin = moduleWithSections(
+        [v2vSigSection, declSection([0]), 
+         tableSection(1),                 
+         { name: elemId,                  
+           body: (function () {
+               let body = [];
+               body.push(1);           
+               body.push(1);           
+               body.push(AnyFuncCode + (mangle == "type" ? 1 : 0)); 
+               body.push(1);           
+               body.push(PlaceholderRefFunc + (mangle == "ref.func" ? 1 : 0)); 
+               body.push(0);           
+               body.push(EndCode + (mangle == "end" ? 1 : 0));
+               return body;
+           })() },
+         bodySection(                   
+             [funcBody(
+                 {locals:[],
+                  body:[]})])
+        ]);
+    if (err) {
+        assertErrorMessage(() => new WebAssembly.Module(bin),
+                           WebAssembly.CompileError,
+                           err);
+    } else {
+        new WebAssembly.Module(bin);
+    }
+}
+
+checkPassiveElemSegment("");
+checkPassiveElemSegment("type", /passive segments can only contain function references/);
+checkPassiveElemSegment("ref.func", /failed to read ref.func operation/);
+checkPassiveElemSegment("end", /failed to read end of ref.func expression/);
 
 
 

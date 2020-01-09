@@ -357,6 +357,11 @@ enum class Op {
   Limit = 0x100
 };
 
+
+
+
+constexpr uint16_t PlaceholderRefFunc = 0xd2;
+
 inline bool IsPrefixByte(uint8_t b) { return b >= uint8_t(Op::FirstPrefix); }
 
 
