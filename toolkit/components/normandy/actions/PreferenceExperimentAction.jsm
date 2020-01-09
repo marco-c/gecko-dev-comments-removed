@@ -119,6 +119,12 @@ class PreferenceExperimentAction extends BaseAction {
   async _finalize() {
     const activeExperiments = await PreferenceExperiments.getAllActive();
     return Promise.all(activeExperiments.map(experiment => {
+      if (this.name != experiment.action) {
+        
+        
+        return null;
+      }
+
       if (this.seenExperimentNames.includes(experiment.name)) {
         return null;
       }
