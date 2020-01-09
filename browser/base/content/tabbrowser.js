@@ -3705,6 +3705,13 @@ window._gBrowser = {
 
     
     
+    
+    let activeTab = gBrowser.selectedTab;
+    let inactiveTabs = tabs.filter(t => t != activeTab);
+    let activeTabNewIndex = tabs.indexOf(activeTab);
+
+    
+    
     if (this.animationsEnabled) {
       for (let tab of tabs) {
         tab.style.maxWidth = ""; 
@@ -3712,28 +3719,33 @@ window._gBrowser = {
       }
     }
 
-    
-    
-    
-    
-    
-    
-    let selectedTabIndex = Math.max(0, tabs.indexOf(gBrowser.selectedTab));
-    let selectedTab = tabs[selectedTabIndex];
-    let win = this.replaceTabWithWindow(selectedTab, aOptions);
-    win.addEventListener("before-initial-tab-adopted", () => {
-      for (let i = 0; i < tabs.length; ++i) {
-        if (i != selectedTabIndex) {
-          win.gBrowser.adoptTab(tabs[i], i);
-        }
+    let win;
+    let firstInactiveTab = inactiveTabs[0];
+
+    let adoptRemainingTabs = () => {
+      for (let i = 1; i < inactiveTabs.length; i++) {
+        win.gBrowser.adoptTab(inactiveTabs[i], i);
       }
+
+      if (activeTabNewIndex > -1) {
+        win.gBrowser.adoptTab(activeTab, activeTabNewIndex, true );
+      }
+
       
       let winVisibleTabs = win.gBrowser.visibleTabs;
       let winTabLength = winVisibleTabs.length;
       win.gBrowser.addRangeToMultiSelectedTabs(winVisibleTabs[0],
                                                winVisibleTabs[winTabLength - 1]);
-      win.gBrowser.lockClearMultiSelectionOnce();
-    }, {once: true});
+    };
+
+    
+    if (firstInactiveTab.hasAttribute("pending")) {
+      firstInactiveTab.addEventListener("TabClose", adoptRemainingTabs, {once: true});
+    } else {
+      firstInactiveTab.linkedBrowser.addEventListener("EndSwapDocShells", adoptRemainingTabs, {once: true});
+    }
+
+    win = this.replaceTabWithWindow(firstInactiveTab, aOptions);
     return win;
   },
 
