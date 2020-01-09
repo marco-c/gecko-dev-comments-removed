@@ -15,6 +15,7 @@
 #include "MediaChangeMonitor.h"
 #include "MediaInfo.h"
 #include "VPXDecoder.h"
+#include "gfxPrefs.h"
 #include "nsIXULRuntime.h" 
 #include "mozilla/CDMProxy.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -173,6 +174,7 @@ void PDMFactory::EnsureInit() {
     if (!sInstance) {
       
       gfx::gfxVars::Initialize();
+      gfxPrefs::GetSingleton();
       
       sInstance = new PDMFactoryImpl();
       ClearOnShutdown(&sInstance);

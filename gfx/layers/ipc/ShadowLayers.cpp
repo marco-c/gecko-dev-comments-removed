@@ -14,7 +14,7 @@
 #include "RenderTrace.h"        
 #include "gfx2DGlue.h"          
 #include "gfxPlatform.h"        
-
+#include "gfxPrefs.h"
 
 #include "ipc/IPCMessageUtils.h"  
 #include "IPDLActor.h"
@@ -546,7 +546,7 @@ bool ShadowLayerForwarder::EndTransaction(
   }
 
   Maybe<TimeStamp> startTime;
-  if (StaticPrefs::LayersDrawFPS()) {
+  if (gfxPrefs::LayersDrawFPS()) {
     startTime = Some(TimeStamp::Now());
   }
 

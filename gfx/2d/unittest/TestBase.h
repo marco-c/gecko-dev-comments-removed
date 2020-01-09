@@ -9,8 +9,7 @@
 #include <string>
 #include <vector>
 
-#if defined(_MSC_VER) && !defined(__clang__)
-
+#ifdef _MSC_VER
 
 #  pragma pointers_to_members(full_generality, single_inheritance)
 #endif

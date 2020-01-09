@@ -5,6 +5,7 @@
 
 #include "nsWindowBase.h"
 
+#include "gfxPrefs.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/PresShell.h"
 #include "KeyboardLayout.h"
@@ -133,7 +134,7 @@ nsresult nsWindowBase::SynthesizeNativeTouchPoint(
     uint32_t aPointerOrientation, nsIObserver* aObserver) {
   AutoObserverNotifier notifier(aObserver, "touchpoint");
 
-  if (StaticPrefs::APZTestFailsWithNativeInjection() || !InitTouchInjection()) {
+  if (gfxPrefs::APZTestFailsWithNativeInjection() || !InitTouchInjection()) {
     
     
     

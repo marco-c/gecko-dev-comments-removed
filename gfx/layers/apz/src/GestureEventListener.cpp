@@ -10,8 +10,8 @@
 #include "AsyncPanZoomController.h"  
 #include "InputBlockState.h"         
 #include "base/task.h"               
+#include "gfxPrefs.h"                
 #include "InputBlockState.h"         
-#include "mozilla/StaticPrefs.h"     
 #include "nsDebug.h"                 
 #include "nsMathUtils.h"             
 
@@ -297,7 +297,7 @@ nsEventStatus GestureEventListener::HandleInputTouchMove() {
         CancelLongTapTimeoutTask();
         CancelMaxTapTimeoutTask();
         mSingleTapSent = Nothing();
-        if (!StaticPrefs::APZOneTouchPinchEnabled()) {
+        if (!gfxPrefs::APZOneTouchPinchEnabled()) {
           
           
           SetState(GESTURE_NONE);
@@ -601,7 +601,7 @@ void GestureEventListener::CreateLongTapTimeoutTask() {
 
   mLongTapTimeoutTask = task;
   mAsyncPanZoomController->PostDelayedTask(
-      task.forget(), StaticPrefs::UiClickHoldContextMenusDelay());
+      task.forget(), gfxPrefs::UiClickHoldContextMenusDelay());
 }
 
 void GestureEventListener::CancelMaxTapTimeoutTask() {
@@ -629,7 +629,7 @@ void GestureEventListener::CreateMaxTapTimeoutTask() {
 
   mMaxTapTimeoutTask = task;
   mAsyncPanZoomController->PostDelayedTask(task.forget(),
-                                           StaticPrefs::APZMaxTapTime());
+                                           gfxPrefs::APZMaxTapTime());
 }
 
 }  

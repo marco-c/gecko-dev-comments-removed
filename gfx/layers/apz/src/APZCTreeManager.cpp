@@ -10,6 +10,7 @@
 #include "AsyncPanZoomController.h"
 #include "Compositor.h"                     
 #include "DragTracker.h"                    
+#include "gfxPrefs.h"                       
 #include "GenericFlingAnimation.h"          
 #include "HitTestingTreeNode.h"             
 #include "InputBlockState.h"                
@@ -36,9 +37,8 @@
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/mozalloc.h"  
-#include "mozilla/Preferences.h"        
-#include "mozilla/StaticPrefs.h"        
 #include "mozilla/TouchEvents.h"
+#include "mozilla/Preferences.h"        
 #include "mozilla/EventStateManager.h"  
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDebug.h"                 
@@ -272,7 +272,7 @@ APZCTreeManager::APZCTreeManager(LayersId aRootLayersId)
       "layers::APZCTreeManager::APZCTreeManager",
       [self] { self->mFlushObserver = new CheckerboardFlushObserver(self); }));
   AsyncPanZoomController::InitializeGlobalState();
-  mApzcTreeLog.ConditionOnPrefFunction(StaticPrefs::APZPrintTree);
+  mApzcTreeLog.ConditionOnPrefFunction(gfxPrefs::APZPrintTree);
 #if defined(MOZ_WIDGET_ANDROID)
   if (jni::IsFennec()) {
     mToolbarAnimator = new AndroidDynamicToolbarAnimator(this);
@@ -369,7 +369,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
   
   
   APZTestData* testData = nullptr;
-  if (StaticPrefs::APZTestLoggingEnabled()) {
+  if (gfxPrefs::APZTestLoggingEnabled()) {
     MutexAutoLock lock(mTestDataLock);
     UniquePtr<APZTestData> ptr = MakeUnique<APZTestData>();
     auto result = mTestData.insert(
@@ -604,7 +604,7 @@ void APZCTreeManager::UpdateFocusState(LayersId aRootLayerTreeId,
                                        const FocusTarget& aFocusTarget) {
   AssertOnUpdaterThread();
 
-  if (!StaticPrefs::APZKeyboardEnabled()) {
+  if (!gfxPrefs::APZKeyboardEnabled()) {
     return;
   }
 
@@ -1306,7 +1306,7 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
       }
 
       if (apzc) {
-        if (StaticPrefs::APZTestLoggingEnabled() &&
+        if (gfxPrefs::APZTestLoggingEnabled() &&
             mouseInput.mType == MouseInput::MOUSE_HITTEST) {
           ScrollableLayerGuid guid = apzc->GetGuid();
 
@@ -1318,7 +1318,7 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
         }
 
         TargetConfirmationFlags confFlags{hitResult};
-        bool apzDragEnabled = StaticPrefs::APZDragEnabled();
+        bool apzDragEnabled = gfxPrefs::APZDragEnabled();
         if (apzDragEnabled && hitScrollbar) {
           
           
@@ -1543,8 +1543,8 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
     case KEYBOARD_INPUT: {
       
       
-      if (!StaticPrefs::APZKeyboardEnabled() ||
-          StaticPrefs::AccessibilityBrowseWithCaret()) {
+      if (!gfxPrefs::APZKeyboardEnabled() ||
+          gfxPrefs::AccessibilityBrowseWithCaret()) {
         APZ_KEY_LOG("Skipping key input from invalid prefs\n");
         return result;
       }
@@ -1740,7 +1740,7 @@ nsEventStatus APZCTreeManager::ProcessTouchInput(
     
     
     mInScrollbarTouchDrag =
-        StaticPrefs::APZDragEnabled() && StaticPrefs::APZTouchDragEnabled() &&
+        gfxPrefs::APZDragEnabled() && gfxPrefs::APZTouchDragEnabled() &&
         hitScrollbarNode && hitScrollbarNode->IsScrollThumbNode() &&
         hitScrollbarNode->GetScrollbarData().mThumbIsAsyncDraggable;
 
@@ -1923,7 +1923,7 @@ void APZCTreeManager::SetupScrollbarDrag(
 
   
   
-  if (StaticPrefs::APZDragInitiationEnabled() &&
+  if (gfxPrefs::APZDragInitiationEnabled() &&
       
       aScrollThumbNode->GetScrollTargetId() == aApzc->GetGuid().mScrollId &&
       !aApzc->IsScrollInfoLayer()) {
@@ -2387,7 +2387,7 @@ ParentLayerPoint APZCTreeManager::DispatchFling(
     AsyncPanZoomController* aPrev, const FlingHandoffState& aHandoffState) {
   
   
-  if (aHandoffState.mIsHandoff && !StaticPrefs::APZAllowImmediateHandoff() &&
+  if (aHandoffState.mIsHandoff && !gfxPrefs::APZAllowImmediateHandoff() &&
       aHandoffState.mScrolledApzc == aPrev) {
     FLING_LOG("APZCTM dropping handoff due to disallowed immediate handoff\n");
     return aHandoffState.mVelocity;
@@ -3294,8 +3294,7 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
   
   
   bool scrollbarSubjectToResolution =
-      aMetrics.IsRootContent() &&
-      StaticPrefs::LayoutUseContainersForRootFrames();
+      aMetrics.IsRootContent() && gfxPrefs::LayoutUseContainersForRootFrames();
 
   
   

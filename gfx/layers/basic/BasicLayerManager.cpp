@@ -23,7 +23,7 @@
 #include "gfxImageSurface.h"        
 #include "gfxMatrix.h"              
 #include "gfxPlatform.h"            
-
+#include "gfxPrefs.h"               
 #include "gfxPoint.h"               
 #include "gfxRect.h"                
 #include "gfxUtils.h"               
@@ -661,7 +661,7 @@ bool BasicLayerManager::EndTransactionInternal(
 }
 
 void BasicLayerManager::FlashWidgetUpdateArea(gfxContext* aContext) {
-  if (StaticPrefs::WidgetUpdateFlashing()) {
+  if (gfxPrefs::WidgetUpdateFlashing()) {
     float r = float(rand()) / RAND_MAX;
     float g = float(rand()) / RAND_MAX;
     float b = float(rand()) / RAND_MAX;

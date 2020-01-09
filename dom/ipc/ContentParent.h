@@ -1217,8 +1217,6 @@ class ContentParent final : public PContentParent,
 
   void UpdateNetworkLinkType();
 
-  static bool ShouldSyncPreference(const char16_t* aData);
-
  private:
   
   RefPtr<ContentParent> mSelfRef;

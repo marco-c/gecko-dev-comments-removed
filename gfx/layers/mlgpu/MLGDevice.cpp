@@ -9,7 +9,7 @@
 #include "BufferCache.h"
 #include "ClearRegionHelper.h"
 #include "gfxConfig.h"
-#include "mozilla/StaticPrefs.h"
+#include "gfxPrefs.h"
 #include "gfxUtils.h"
 #include "LayersLogging.h"
 #include "ShaderDefinitionsMLGPU.h"
@@ -85,7 +85,7 @@ bool MLGDevice::Initialize() {
 
   
   
-  if (!StaticPrefs::AdvancedLayersEnableBufferSharing()) {
+  if (!gfxPrefs::AdvancedLayersEnableBufferSharing()) {
     gfxConfig::EnableFallback(Fallback::NO_CONSTANT_BUFFER_OFFSETTING,
                               "Disabled by pref");
     mCanUseConstantBufferOffsetBinding = false;
@@ -99,7 +99,7 @@ bool MLGDevice::Initialize() {
   
   
   
-  if (!StaticPrefs::AdvancedLayersEnableClearView()) {
+  if (!gfxPrefs::AdvancedLayersEnableClearView()) {
     mCanUseClearView = false;
   }
 
@@ -127,7 +127,7 @@ bool MLGDevice::Initialize() {
                 "Failed to allocate a shared shader buffer");
   }
 
-  if (StaticPrefs::AdvancedLayersEnableBufferCache()) {
+  if (gfxPrefs::AdvancedLayersEnableBufferCache()) {
     mConstantBufferCache = MakeUnique<BufferCache>(this);
   }
 

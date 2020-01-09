@@ -9,7 +9,7 @@
 #include "APZUtils.h"
 #include "AsyncPanZoomController.h"  
 #include "ScrollAnimationPhysics.h"  
-
+#include "gfxPrefs.h"                
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Telemetry.h"                
 #include "mozilla/layers/IAPZCTreeManager.h"  
@@ -149,7 +149,7 @@ bool InputBlockState::IsDownchainOf(AsyncPanZoomController* aA,
 
 void InputBlockState::SetScrolledApzc(AsyncPanZoomController* aApzc) {
   
-  MOZ_ASSERT(!mScrolledApzc || (StaticPrefs::APZAllowImmediateHandoff()
+  MOZ_ASSERT(!mScrolledApzc || (gfxPrefs::APZAllowImmediateHandoff()
                                     ? IsDownchainOf(mScrolledApzc, aApzc)
                                     : mScrolledApzc == aApzc));
 
@@ -404,8 +404,7 @@ bool WheelBlockState::MaybeTimeout(const ScrollWheelInput& aEvent) {
     
     
     TimeDuration duration = TimeStamp::Now() - mLastMouseMove;
-    if (duration.ToMilliseconds() >=
-        StaticPrefs::MouseWheelIgnoreMoveDelayMs()) {
+    if (duration.ToMilliseconds() >= gfxPrefs::MouseWheelIgnoreMoveDelayMs()) {
       TBS_LOG("%p wheel transaction timed out after mouse move\n", this);
       EndTransaction();
       return true;
@@ -421,14 +420,13 @@ bool WheelBlockState::MaybeTimeout(const TimeStamp& aTimeStamp) {
   
   
   TimeDuration duration = aTimeStamp - mLastEventTime;
-  if (duration.ToMilliseconds() <
-      StaticPrefs::MouseWheelTransactionTimeoutMs()) {
+  if (duration.ToMilliseconds() < gfxPrefs::MouseWheelTransactionTimeoutMs()) {
     return false;
   }
 
   TBS_LOG("%p wheel transaction timed out\n", this);
 
-  if (StaticPrefs::MouseScrollTestingEnabled()) {
+  if (gfxPrefs::MouseScrollTestingEnabled()) {
     RefPtr<AsyncPanZoomController> apzc = GetTargetApzc();
     apzc->NotifyMozMouseScrollEvent(
         NS_LITERAL_STRING("MozMouseScrollTransactionTimeout"));
@@ -452,8 +450,7 @@ void WheelBlockState::OnMouseMove(const ScreenIntPoint& aPoint) {
     
     TimeStamp now = TimeStamp::Now();
     TimeDuration duration = now - mLastEventTime;
-    if (duration.ToMilliseconds() >=
-        StaticPrefs::MouseWheelIgnoreMoveDelayMs()) {
+    if (duration.ToMilliseconds() >= gfxPrefs::MouseWheelIgnoreMoveDelayMs()) {
       mLastMouseMove = now;
     }
   }
@@ -584,7 +581,7 @@ TouchBlockState::TouchBlockState(
       mInSlop(false),
       mTouchCounter(aCounter) {
   TBS_LOG("Creating %p\n", this);
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!gfxPrefs::TouchActionEnabled()) {
     mAllowedTouchBehaviorSet = true;
   }
 }
@@ -616,7 +613,7 @@ bool TouchBlockState::HasAllowedTouchBehaviors() const {
 
 void TouchBlockState::CopyPropertiesFrom(const TouchBlockState& aOther) {
   TBS_LOG("%p copying properties from %p\n", this, &aOther);
-  if (StaticPrefs::TouchActionEnabled()) {
+  if (gfxPrefs::TouchActionEnabled()) {
     MOZ_ASSERT(aOther.mAllowedTouchBehaviorSet ||
                aOther.IsContentResponseTimerExpired());
     SetAllowedTouchBehaviors(aOther.mAllowedTouchBehaviors);
@@ -627,7 +624,7 @@ void TouchBlockState::CopyPropertiesFrom(const TouchBlockState& aOther) {
 bool TouchBlockState::HasReceivedAllContentNotifications() const {
   return CancelableBlockState::HasReceivedAllContentNotifications()
          
-         && (!StaticPrefs::TouchActionEnabled() || mAllowedTouchBehaviorSet);
+         && (!gfxPrefs::TouchActionEnabled() || mAllowedTouchBehaviorSet);
 }
 
 bool TouchBlockState::IsReadyForHandling() const {
@@ -635,7 +632,7 @@ bool TouchBlockState::IsReadyForHandling() const {
     return false;
   }
 
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!gfxPrefs::TouchActionEnabled()) {
     
     
     
@@ -673,7 +670,7 @@ void TouchBlockState::DispatchEvent(const InputData& aEvent) const {
 }
 
 bool TouchBlockState::TouchActionAllowsPinchZoom() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!gfxPrefs::TouchActionEnabled()) {
     return true;
   }
   
@@ -686,7 +683,7 @@ bool TouchBlockState::TouchActionAllowsPinchZoom() const {
 }
 
 bool TouchBlockState::TouchActionAllowsDoubleTapZoom() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!gfxPrefs::TouchActionEnabled()) {
     return true;
   }
   for (size_t i = 0; i < mAllowedTouchBehaviors.Length(); i++) {
@@ -698,7 +695,7 @@ bool TouchBlockState::TouchActionAllowsDoubleTapZoom() const {
 }
 
 bool TouchBlockState::TouchActionAllowsPanningX() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!gfxPrefs::TouchActionEnabled()) {
     return true;
   }
   if (mAllowedTouchBehaviors.IsEmpty()) {
@@ -710,7 +707,7 @@ bool TouchBlockState::TouchActionAllowsPanningX() const {
 }
 
 bool TouchBlockState::TouchActionAllowsPanningY() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!gfxPrefs::TouchActionEnabled()) {
     return true;
   }
   if (mAllowedTouchBehaviors.IsEmpty()) {
@@ -722,7 +719,7 @@ bool TouchBlockState::TouchActionAllowsPanningY() const {
 }
 
 bool TouchBlockState::TouchActionAllowsPanningXY() const {
-  if (!StaticPrefs::TouchActionEnabled()) {
+  if (!gfxPrefs::TouchActionEnabled()) {
     return true;
   }
   if (mAllowedTouchBehaviors.IsEmpty()) {
@@ -780,8 +777,8 @@ Maybe<ScrollDirection> TouchBlockState::GetBestGuessPanDirection(
   angle = fabs(angle);                       
 
   double angleThreshold = TouchActionAllowsPanningXY()
-                              ? StaticPrefs::APZAxisLockAngle()
-                              : StaticPrefs::APZAllowedDirectPanAngle();
+                              ? gfxPrefs::APZAxisLockAngle()
+                              : gfxPrefs::APZAllowedDirectPanAngle();
   if (apz::IsCloseToHorizontal(angle, angleThreshold)) {
     return Some(ScrollDirection::eHorizontal);
   }

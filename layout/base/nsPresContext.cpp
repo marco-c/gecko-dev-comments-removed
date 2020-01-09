@@ -66,7 +66,7 @@
 #include "LayerUserData.h"
 #include "ClientLayerManager.h"
 #include "mozilla/dom/NotifyPaintEvent.h"
-
+#include "gfxPrefs.h"
 #include "nsIDOMChromeWindow.h"
 #include "nsFrameLoader.h"
 #include "nsContentUtils.h"
@@ -339,6 +339,10 @@ bool nsPresContext::IsChromeOriginImage() const {
 }
 
 void nsPresContext::GetDocumentColorPreferences() {
+  
+  
+  
+  gfxPrefs::GetSingleton();
   PreferenceSheet::EnsureInitialized();
 }
 

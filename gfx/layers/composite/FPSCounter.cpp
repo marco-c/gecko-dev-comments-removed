@@ -7,13 +7,13 @@
 #include <stddef.h>                     
 #include "Units.h"                      
 #include "gfxRect.h"                    
+#include "gfxPrefs.h"                   
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/Effects.h"  
-#include "mozilla/StaticPrefs.h"     
 #include "mozilla/TimeStamp.h"       
 #include "nsPoint.h"                 
 #include "nsRect.h"                  
@@ -259,7 +259,7 @@ double FPSCounter::GetStdDev(std::map<int, int> aHistogram) {
 }
 
 void FPSCounter::PrintFPS() {
-  if (!StaticPrefs::FPSPrintHistogram()) {
+  if (!gfxPrefs::FPSPrintHistogram()) {
     return;
   }
 
@@ -308,7 +308,7 @@ void FPSCounter::PrintHistogram(std::map<int, int>& aHistogram) {
 
 
 nsresult FPSCounter::WriteFrameTimeStamps() {
-  if (!StaticPrefs::WriteFPSToFile()) {
+  if (!gfxPrefs::WriteFPSToFile()) {
     return NS_OK;
   }
 

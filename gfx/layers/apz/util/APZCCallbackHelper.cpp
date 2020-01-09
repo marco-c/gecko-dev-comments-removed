@@ -8,7 +8,7 @@
 
 #include "TouchActionHelper.h"
 #include "gfxPlatform.h"  
-
+#include "gfxPrefs.h"
 #include "LayersLogging.h"  
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/MouseEventBinding.h"

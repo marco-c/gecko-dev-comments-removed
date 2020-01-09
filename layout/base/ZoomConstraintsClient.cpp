@@ -7,13 +7,13 @@
 #include "ZoomConstraintsClient.h"
 
 #include <inttypes.h>
+#include "gfxPrefs.h"
 #include "LayersLogging.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
 #include "mozilla/layers/ZoomConstraints.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/StaticPrefs.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "nsIFrame.h"
@@ -173,7 +173,7 @@ static mozilla::layers::ZoomConstraints ComputeZoomConstraintsFromViewportInfo(
   constraints.mAllowZoom = aViewportInfo.IsZoomAllowed() &&
                            nsLayoutUtils::AllowZoomingForDocument(aDocument);
   constraints.mAllowDoubleTapZoom =
-      constraints.mAllowZoom && StaticPrefs::APZAllowDoubleTapZooming();
+      constraints.mAllowZoom && gfxPrefs::APZAllowDoubleTapZooming();
   if (constraints.mAllowZoom) {
     constraints.mMinZoom.scale = aViewportInfo.GetMinZoom().scale;
     constraints.mMaxZoom.scale = aViewportInfo.GetMaxZoom().scale;

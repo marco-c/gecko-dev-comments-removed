@@ -39,6 +39,7 @@
 #endif
 
 #include "gfxContext.h"
+#include "gfxPrefs.h"
 #include "gfxUserFontSet.h"
 #include "nsContentList.h"
 #include "nsPresContext.h"
@@ -3396,7 +3397,7 @@ static void ScrollToShowRect(PresShell* aPresShell,
     bool smoothScroll = (aScrollFlags & ScrollFlags::ScrollSmooth) ||
                         ((aScrollFlags & ScrollFlags::ScrollSmoothAuto) &&
                          autoBehaviorIsSmooth);
-    if (StaticPrefs::ScrollBehaviorEnabled() && smoothScroll) {
+    if (gfxPrefs::ScrollBehaviorEnabled() && smoothScroll) {
       scrollMode = ScrollMode::SmoothMsd;
     }
     nsIFrame* frame = do_QueryFrame(aFrameAsScrollable);
@@ -5099,7 +5100,7 @@ void PresShell::AddCanvasBackgroundColorItem(
   bool forceUnscrolledItem =
       nsLayoutUtils::UsesAsyncScrolling(aFrame) && NS_GET_A(bgcolor) == 255;
   if ((aFlags & AddCanvasBackgroundColorFlags::AddForSubDocument) &&
-      StaticPrefs::LayoutUseContainersForRootFrames()) {
+      gfxPrefs::LayoutUseContainersForRootFrames()) {
     
     
     
@@ -6012,7 +6013,7 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
     return;
   }
 
-  if (StaticPrefs::APZKeyboardEnabled()) {
+  if (gfxPrefs::APZKeyboardEnabled()) {
     
     
     

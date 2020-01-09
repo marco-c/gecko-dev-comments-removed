@@ -16,11 +16,11 @@
 #include "gfxCrashReporterUtils.h"  
 #include "gfxEnv.h"                 
 #include "gfxPlatform.h"            
+#include "gfxPrefs.h"               
 #include "gfxRect.h"                
 #include "gfxUtils.h"               
 #include "mozilla/ArrayUtils.h"     
 #include "mozilla/Preferences.h"    
-#include "mozilla/StaticPrefs.h"    
 #include "mozilla/gfx/BasePoint.h"  
 #include "mozilla/gfx/Matrix.h"     
 #include "mozilla/gfx/Triangle.h"   
@@ -805,10 +805,10 @@ void CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
 
 #if defined(MOZ_WIDGET_ANDROID)
   if ((mSurfaceOrigin.x > 0) || (mSurfaceOrigin.y > 0)) {
-    mGLContext->fClearColor(StaticPrefs::CompositorOverrideClearColorR(),
-                            StaticPrefs::CompositorOverrideClearColorG(),
-                            StaticPrefs::CompositorOverrideClearColorB(),
-                            StaticPrefs::CompositorOverrideClearColorA());
+    mGLContext->fClearColor(gfxPrefs::CompositorOverrideClearColorR(),
+                            gfxPrefs::CompositorOverrideClearColorG(),
+                            gfxPrefs::CompositorOverrideClearColorB(),
+                            gfxPrefs::CompositorOverrideClearColorA());
   } else {
     mGLContext->fClearColor(mClearColor.r, mClearColor.g, mClearColor.b,
                             mClearColor.a);
@@ -1233,7 +1233,7 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
   
   
   bool bEnableAA =
-      StaticPrefs::LayersDEAAEnabled() && !aTransform.Is2DIntegerTranslation();
+      gfxPrefs::LayersDEAAEnabled() && !aTransform.Is2DIntegerTranslation();
 
   bool colorMatrix = aEffectChain.mSecondaryEffects[EffectTypes::COLOR_MATRIX];
   ShaderConfigOGL config =
@@ -1548,7 +1548,7 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
       BindAndDrawGeometry(program, aGeometry);
     } break;
     case EffectTypes::COMPONENT_ALPHA: {
-      MOZ_ASSERT(StaticPrefs::ComponentAlphaEnabled());
+      MOZ_ASSERT(gfxPrefs::ComponentAlphaEnabled());
       MOZ_ASSERT(blendMode == gfx::CompositionOp::OP_OVER,
                  "Can't support blend modes with component alpha!");
       EffectComponentAlpha* effectComponentAlpha =
@@ -1972,7 +1972,7 @@ GLuint CompositorOGL::GetTemporaryTexture(GLenum aTarget, GLenum aUnit) {
 }
 
 bool CompositorOGL::SupportsTextureDirectMapping() {
-  if (!StaticPrefs::AllowTextureDirectMapping()) {
+  if (!gfxPrefs::AllowTextureDirectMapping()) {
     return false;
   }
 
@@ -2026,7 +2026,7 @@ void PerUnitTexturePoolOGL::DestroyTextures() {
 }
 
 bool CompositorOGL::SupportsLayerGeometry() const {
-  return StaticPrefs::OGLLayerGeometry();
+  return gfxPrefs::OGLLayerGeometry();
 }
 
 void CompositorOGL::RegisterTextureSource(TextureSource* aTextureSource) {

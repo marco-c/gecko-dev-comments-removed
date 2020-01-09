@@ -61,7 +61,7 @@
 #include "nsIFrameInlines.h"
 #include "nsILayoutHistoryState.h"
 #include "gfxPlatform.h"
-#include "mozilla/StaticPrefs.h"
+#include "gfxPrefs.h"
 #include "ScrollAnimationPhysics.h"
 #include "ScrollAnimationBezierPhysics.h"
 #include "ScrollAnimationMSDPhysics.h"
@@ -1638,12 +1638,12 @@ class ScrollFrameHelper::AsyncSmoothMSDScroll final
                        nsPresContext* aPresContext)
       : mXAxisModel(aInitialPosition.x, aInitialDestination.x,
                     aInitialVelocity.width,
-                    StaticPrefs::ScrollBehaviorSpringConstant(),
-                    StaticPrefs::ScrollBehaviorDampingRatio()),
+                    gfxPrefs::ScrollBehaviorSpringConstant(),
+                    gfxPrefs::ScrollBehaviorDampingRatio()),
         mYAxisModel(aInitialPosition.y, aInitialDestination.y,
                     aInitialVelocity.height,
-                    StaticPrefs::ScrollBehaviorSpringConstant(),
-                    StaticPrefs::ScrollBehaviorDampingRatio()),
+                    gfxPrefs::ScrollBehaviorSpringConstant(),
+                    gfxPrefs::ScrollBehaviorDampingRatio()),
         mRange(aRange),
         mLastRefreshTime(aStartTime),
         mCallee(nullptr),
@@ -1927,7 +1927,7 @@ void ScrollFrameHelper::AsyncScroll::InitSmoothScroll(
   
   if (!mAnimationPhysics || aOrigin != mOrigin) {
     mOrigin = aOrigin;
-    if (StaticPrefs::SmoothScrollMSDPhysicsEnabled()) {
+    if (gfxPrefs::SmoothScrollMSDPhysicsEnabled()) {
       mAnimationPhysics =
           MakeUnique<ScrollAnimationMSDPhysics>(aInitialPosition);
     } else {
@@ -2036,7 +2036,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
 
   EnsureFrameVisPrefsCached();
 
-  if (IsAlwaysActive() && StaticPrefs::LayersTilesEnabled() &&
+  if (IsAlwaysActive() && gfxPrefs::LayersTilesEnabled() &&
       !nsLayoutUtils::UsesAsyncScrolling(mOuter) && mOuter->GetContent()) {
     
     
@@ -2277,7 +2277,7 @@ void ScrollFrameHelper::ScrollToWithOrigin(
 
   nsSize currentVelocity(0, 0);
 
-  if (StaticPrefs::ScrollBehaviorEnabled()) {
+  if (gfxPrefs::ScrollBehaviorEnabled()) {
     if (aMode == ScrollMode::SmoothMsd) {
       mIgnoreMomentumScroll = true;
       if (!mAsyncSmoothMSDScroll) {
@@ -2474,8 +2474,8 @@ void ScrollFrameHelper::MarkRecentlyScrolled() {
 void ScrollFrameHelper::ResetDisplayPortExpiryTimer() {
   if (mDisplayPortExpiryTimer) {
     mDisplayPortExpiryTimer->InitWithNamedFuncCallback(
-        RemoveDisplayPortCallback, this,
-        StaticPrefs::APZDisplayPortExpiryTime(), nsITimer::TYPE_ONE_SHOT,
+        RemoveDisplayPortCallback, this, gfxPrefs::APZDisplayPortExpiryTime(),
+        nsITimer::TYPE_ONE_SHOT,
         "ScrollFrameHelper::ResetDisplayPortExpiryTimer");
   }
 }
@@ -2495,7 +2495,7 @@ void ScrollFrameHelper::TriggerDisplayPortExpiration() {
     return;
   }
 
-  if (!StaticPrefs::APZDisplayPortExpiryTime()) {
+  if (!gfxPrefs::APZDisplayPortExpiryTime()) {
     
     return;
   }
@@ -2811,7 +2811,7 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   bool schedulePaint = true;
   if (nsLayoutUtils::AsyncPanZoomEnabled(mOuter) &&
       !nsLayoutUtils::ShouldDisableApzForElement(content) &&
-      StaticPrefs::APZPaintSkipping()) {
+      gfxPrefs::APZPaintSkipping()) {
     
     
     
@@ -2846,7 +2846,7 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
       bool haveScrollLinkedEffects =
           content->GetComposedDoc()->HasScrollLinkedEffect();
       bool apzDisabled = haveScrollLinkedEffects &&
-                         StaticPrefs::APZDisableForScrollLinkedEffects();
+                         gfxPrefs::APZDisableForScrollLinkedEffects();
       if (!apzDisabled && !HasPluginFrames()) {
         if (LastScrollOrigin() == nsGkAtoms::apz) {
           schedulePaint = false;
@@ -3088,7 +3088,7 @@ void ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
   if (mIsRoot) {
     nsRect scrollPartsClip =
         mOuter->GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(mOuter);
-    if (!StaticPrefs::LayoutUseContainersForRootFrames() &&
+    if (!gfxPrefs::LayoutUseContainersForRootFrames() &&
         mOuter->PresContext()->IsRootContentDocument()) {
       
       
@@ -3136,9 +3136,8 @@ void ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
     
     const bool isOverlayScrollbar =
         scrollDirection.isSome() && overlayScrollbars;
-    const bool createLayer =
-        aCreateLayer || isOverlayScrollbar ||
-        StaticPrefs::AlwaysLayerizeScrollbarTrackTestOnly();
+    const bool createLayer = aCreateLayer || isOverlayScrollbar ||
+                             gfxPrefs::AlwaysLayerizeScrollbarTrackTestOnly();
 
     nsDisplayListCollection partList(aBuilder);
     {
@@ -3394,7 +3393,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
           aBuilder);
       if (aBuilder->IsPaintingToWindow() &&
-          StaticPrefs::LayoutUseContainersForRootFrames() && mIsRoot) {
+          gfxPrefs::LayoutUseContainersForRootFrames() && mIsRoot) {
         asrSetter.EnterScrollFrame(sf);
         if (isRcdRsf) {
           aBuilder->SetActiveScrolledRootForRootScrollframe(
@@ -3442,7 +3441,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           
           
           
-          (!(StaticPrefs::LayoutUseContainersForRootFrames() && mIsRoot) ||
+          (!(gfxPrefs::LayoutUseContainersForRootFrames() && mIsRoot) ||
            (aBuilder->RootReferenceFrame()->PresContext() !=
             mOuter->PresContext()));
     }
@@ -3532,7 +3531,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   bool haveRadii = mOuter->GetPaddingBoxBorderRadii(radii);
   if (mIsRoot) {
     clipRect.SizeTo(nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
-    if ((StaticPrefs::LayoutUseContainersForRootFrames() ||
+    if ((gfxPrefs::LayoutUseContainersForRootFrames() ||
          !aBuilder->IsPaintingToWindow()) &&
         mOuter->PresContext()->IsRootContentDocument()) {
       double res = mOuter->PresShell()->GetResolution();
@@ -3644,8 +3643,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
       mOuter->BuildDisplayListForChild(aBuilder, mScrolledFrame, set);
 
-      if (dirtyRectHasBeenOverriden &&
-          StaticPrefs::LayoutDisplayListShowArea()) {
+      if (dirtyRectHasBeenOverriden && gfxPrefs::LayoutDisplayListShowArea()) {
         nsDisplaySolidColor* color = MakeDisplayItem<nsDisplaySolidColor>(
             aBuilder, mOuter,
             dirtyRect + aBuilder->GetCurrentFrameOffsetToReferenceFrame(),
@@ -3670,7 +3668,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       mIsScrollParent = idSetter.ShouldForceLayerForScrollParent();
     }
     if (idSetter.ShouldForceLayerForScrollParent() &&
-        !StaticPrefs::LayoutUseContainersForRootFrames()) {
+        !gfxPrefs::LayoutUseContainersForRootFrames()) {
       
       
       
@@ -3975,7 +3973,7 @@ bool ScrollFrameHelper::DecideScrollableLayer(
   }
 
   mIsScrollableLayerInRootContainer =
-      StaticPrefs::LayoutUseContainersForRootFrames() &&
+      gfxPrefs::LayoutUseContainersForRootFrames() &&
       mWillBuildScrollableLayer && mIsRoot;
   return mWillBuildScrollableLayer;
 }
@@ -4022,7 +4020,7 @@ void ScrollFrameHelper::ClipLayerToDisplayPort(
   if (!nsLayoutUtils::UsesAsyncScrolling(mOuter)) {
     Maybe<nsRect> parentLayerClip;
     
-    if (aClip && (!StaticPrefs::LayoutUseContainersForRootFrames() ||
+    if (aClip && (!gfxPrefs::LayoutUseContainersForRootFrames() ||
                   mAddClipRectToLayer)) {
       parentLayerClip = Some(aClip->GetClipRect());
     }
@@ -4349,8 +4347,8 @@ void ScrollFrameHelper::ScrollByCSSPixels(
 }
 
 void ScrollFrameHelper::ScrollSnap(ScrollMode aMode) {
-  float flingSensitivity = StaticPrefs::ScrollSnapPredictionSensitivity();
-  int maxVelocity = StaticPrefs::ScrollSnapPredictionMaxVelocity();
+  float flingSensitivity = gfxPrefs::ScrollSnapPredictionSensitivity();
+  int maxVelocity = gfxPrefs::ScrollSnapPredictionMaxVelocity();
   maxVelocity = nsPresContext::CSSPixelsToAppUnits(maxVelocity);
   int maxOffset = maxVelocity * flingSensitivity;
   nsPoint velocity = mVelocityQueue.GetVelocity();
@@ -6884,7 +6882,7 @@ bool ScrollFrameHelper::GetSnapPointForDestination(
 }
 
 bool ScrollFrameHelper::UsesContainerScrolling() const {
-  if (StaticPrefs::LayoutUseContainersForRootFrames()) {
+  if (gfxPrefs::LayoutUseContainersForRootFrames()) {
     return mIsRoot;
   }
   return false;
@@ -7044,7 +7042,7 @@ void ScrollFrameHelper::ApzSmoothScrollTo(const nsPoint& aDestination,
 bool ScrollFrameHelper::SmoothScrollVisual(
     const nsPoint& aVisualViewportOffset,
     FrameMetrics::ScrollOffsetUpdateType aUpdateType) {
-  bool canDoApzSmoothScroll = StaticPrefs::ScrollBehaviorEnabled() &&
+  bool canDoApzSmoothScroll = gfxPrefs::ScrollBehaviorEnabled() &&
                               nsLayoutUtils::AsyncPanZoomEnabled(mOuter) &&
                               WantAsyncScroll();
   if (!canDoApzSmoothScroll) {

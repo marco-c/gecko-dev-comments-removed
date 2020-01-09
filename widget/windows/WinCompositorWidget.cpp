@@ -4,7 +4,7 @@
 
 
 #include "WinCompositorWidget.h"
-
+#include "gfxPrefs.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/Compositor.h"
@@ -37,7 +37,7 @@ WinCompositorWidget::WinCompositorWidget(
 
   
   
-  mNotDeferEndRemoteDrawing = StaticPrefs::LayersCompositionFrameRate() == 0 ||
+  mNotDeferEndRemoteDrawing = gfxPrefs::LayersCompositionFrameRate() == 0 ||
                               gfxPlatform::IsInLayoutAsapMode() ||
                               gfxPlatform::ForceSoftwareVsync();
 }

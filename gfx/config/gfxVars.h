@@ -49,8 +49,7 @@ class gfxVarReceiver;
   _(ProfDirectory, nsString, nsString())                           \
   _(UseOMTP, bool, false)                                          \
   _(AllowD3D11KeyedMutex, bool, false)                             \
-  _(SystemTextQuality, int32_t, 5 /* CLEARTYPE_QUALITY */)         \
-  _(LayersWindowRecordingPath, nsCString, nsCString())
+  _(SystemTextQuality, int32_t, 5 /* CLEARTYPE_QUALITY */)
 
 
 

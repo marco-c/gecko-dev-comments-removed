@@ -9,7 +9,6 @@
 #include <cmath>
 
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/StaticPrefs.h"
 #include "mozilla/StaticPtr.h"
 
 namespace mozilla {
@@ -33,7 +32,7 @@ const float kDecelerationRate = 2.3582018f;
 
 
 static float GetFlingFriction() {
-  return StaticPrefs::APZChromeFlingPhysicsFriction();
+  return gfxPrefs::APZChromeFlingPhysicsFriction();
 }
 
 
@@ -41,7 +40,7 @@ static float GetInflexion() {
   
   
   
-  const float inflexion = StaticPrefs::APZChromeFlingPhysicsInflexion();
+  const float inflexion = gfxPrefs::APZChromeFlingPhysicsInflexion();
   if (inflexion < 0.0f) {
     return 0.0f;
   }
@@ -54,7 +53,7 @@ static float GetInflexion() {
 
 
 static float GetThresholdForFlingEnd() {
-  return StaticPrefs::APZChromeFlingPhysicsStopThreshold();
+  return gfxPrefs::APZChromeFlingPhysicsStopThreshold();
 }
 
 static double ComputeSplineDeceleration(ParentLayerCoord aVelocity,

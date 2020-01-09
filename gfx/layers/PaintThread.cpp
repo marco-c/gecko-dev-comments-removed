@@ -10,13 +10,13 @@
 
 #include "base/task.h"
 #include "gfxPlatform.h"
+#include "gfxPrefs.h"
 #include "GeckoProfiler.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/ShadowLayers.h"
 #include "mozilla/layers/SyncObject.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/SyncRunnable.h"
 #include "nsIPropertyBag2.h"
@@ -48,7 +48,7 @@ void PaintThread::AddRef() {}
 
 int32_t PaintThread::CalculatePaintWorkerCount() {
   int32_t cpuCores = PR_GetNumberOfProcessors();
-  int32_t workerCount = StaticPrefs::LayersOMTPPaintWorkers();
+  int32_t workerCount = gfxPrefs::LayersOMTPPaintWorkers();
 
   
   
@@ -162,7 +162,7 @@ void PaintThread::QueuePaintTask(UniquePtr<PaintTask>&& aTask) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aTask);
 
-  if (StaticPrefs::LayersOMTPDumpCapture() && aTask->mCapture) {
+  if (gfxPrefs::LayersOMTPDumpCapture() && aTask->mCapture) {
     aTask->mCapture->Dump();
   }
 
@@ -207,7 +207,7 @@ void PaintThread::AsyncPaintTask(CompositorBridgeChild* aBridge,
     target->Flush();
   }
 
-  if (StaticPrefs::LayersOMTPReleaseCaptureOnMainThread()) {
+  if (gfxPrefs::LayersOMTPReleaseCaptureOnMainThread()) {
     
     
     

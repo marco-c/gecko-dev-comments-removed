@@ -7,14 +7,10 @@
 #ifndef mozilla_StaticPrefs_h
 #define mozilla_StaticPrefs_h
 
-#include "gfxPlatform.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TypeTraits.h"
-#include "mozilla/gfx/LoggingConstants.h"
 #include "MainThreadUtils.h"
-#include <atomic>
-#include <cmath>  
 
 namespace mozilla {
 
@@ -36,10 +32,6 @@ typedef Atomic<uint32_t, ReleaseAcquire> ReleaseAcquireAtomicUint32;
 typedef Atomic<uint32_t, SequentiallyConsistent>
     SequentiallyConsistentAtomicUint32;
 
-
-
-typedef std::atomic<float> AtomicFloat;
-
 template <typename T>
 struct StripAtomicImpl {
   typedef T Type;
@@ -47,11 +39,6 @@ struct StripAtomicImpl {
 
 template <typename T, MemoryOrdering Order>
 struct StripAtomicImpl<Atomic<T, Order>> {
-  typedef T Type;
-};
-
-template <typename T>
-struct StripAtomicImpl<std::atomic<T>> {
   typedef T Type;
 };
 
@@ -64,61 +51,36 @@ struct IsAtomic : FalseType {};
 template <typename T, MemoryOrdering Order>
 struct IsAtomic<Atomic<T, Order>> : TrueType {};
 
-template <typename T>
-struct IsAtomic<std::atomic<T>> : TrueType {};
-
 class StaticPrefs {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
- public:
-  
-  enum class UpdatePolicy {
-    Skip,  
-    Once,  
-    Live   
-  };
+
+
+
+
+
+
+
+
+
 
 #define PREF(str, cpp_type, default_value)
-#define VARCACHE_PREF(policy, str, id, cpp_type, default_value)               \
- private:                                                                     \
-  static cpp_type sVarCache_##id;                                             \
-                                                                              \
- public:                                                                      \
-  static StripAtomic<cpp_type> id() {                                         \
-    MOZ_DIAGNOSTIC_ASSERT(UpdatePolicy::policy != UpdatePolicy::Live ||       \
-                              IsAtomic<cpp_type>::value || NS_IsMainThread(), \
-                          "Non-atomic static pref '" str                      \
-                          "' being accessed on background thread by getter"); \
-    return sVarCache_##id;                                                    \
-  }                                                                           \
-  static void Set##id(StripAtomic<cpp_type> aValue);                          \
-  static const char* Get##id##PrefName() { return str; }                      \
-  static StripAtomic<cpp_type> Get##id##PrefDefault() { return default_value; }
-
+#define VARCACHE_PREF(str, id, cpp_type, default_value)        \
+ private:                                                      \
+  static cpp_type sVarCache_##id;                              \
+                                                               \
+ public:                                                       \
+  static StripAtomic<cpp_type> id() {                          \
+    MOZ_ASSERT(IsAtomic<cpp_type>::value || NS_IsMainThread(), \
+               "Non-atomic static pref '" str                  \
+               "' being accessed on background thread");       \
+    return sVarCache_##id;                                     \
+  }
 #include "mozilla/StaticPrefList.h"
 #undef PREF
 #undef VARCACHE_PREF
 
  public:
   static void InitAll(bool aIsStartup);
-  static void InitOncePrefs();
 };
 
 }  

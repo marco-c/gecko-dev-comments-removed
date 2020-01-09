@@ -13,7 +13,7 @@
 #include "gfx2DGlue.h"
 #include "gfxEnv.h"              
 #include "gfxRect.h"             
-
+#include "gfxPrefs.h"            
 #include "mozilla/Assertions.h"  
 #include "mozilla/gfx/2D.h"      
 #include "mozilla/gfx/DrawEventRecorder.h"
