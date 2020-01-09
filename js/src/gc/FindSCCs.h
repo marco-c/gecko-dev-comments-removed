@@ -12,23 +12,21 @@
 #include "jsfriendapi.h"
 #include "jsutil.h"
 
+#include "js/HashTable.h"
+
 namespace js {
 namespace gc {
 
-template <class Node>
+template <typename Node>
 struct GraphNodeBase {
-  Node* gcNextGraphNode;
-  Node* gcNextGraphComponent;
-  unsigned gcDiscoveryTime;
-  unsigned gcLowLink;
+  using NodeSet =
+      js::HashSet<Node*, js::DefaultHasher<Node*>, js::SystemAllocPolicy>;
 
-  GraphNodeBase()
-      : gcNextGraphNode(nullptr),
-        gcNextGraphComponent(nullptr),
-        gcDiscoveryTime(0),
-        gcLowLink(0) {}
-
-  ~GraphNodeBase() {}
+  NodeSet gcGraphEdges;
+  Node* gcNextGraphNode = nullptr;
+  Node* gcNextGraphComponent = nullptr;
+  unsigned gcDiscoveryTime = 0;
+  unsigned gcLowLink = 0;
 
   Node* nextNodeInGroup() const {
     if (gcNextGraphNode &&
@@ -65,21 +63,11 @@ struct GraphNodeBase {
 
 
 
-
-
-
-
-
-template <typename Node, typename Derived>
+template <typename Node>
 class ComponentFinder {
  public:
   explicit ComponentFinder(uintptr_t sl)
-      : clock(1),
-        stack(nullptr),
-        firstComponent(nullptr),
-        cur(nullptr),
-        stackLimit(sl),
-        stackFull(false) {}
+      : stackLimit(sl) {}
 
   ~ComponentFinder() {
     MOZ_ASSERT(!stack);
@@ -131,8 +119,14 @@ class ComponentFinder {
     }
   }
 
- public:
+ private:
   
+  static const unsigned Undefined = 0;
+
+  
+  
+  static const unsigned Finished = (unsigned)-1;
+
   void addEdgeTo(Node* w) {
     if (w->gcDiscoveryTime == Undefined) {
       processNode(w);
@@ -141,14 +135,6 @@ class ComponentFinder {
       cur->gcLowLink = Min(cur->gcLowLink, w->gcDiscoveryTime);
     }
   }
-
- private:
-  
-  static const unsigned Undefined = 0;
-
-  
-  
-  static const unsigned Finished = (unsigned)-1;
 
   void processNode(Node* v) {
     v->gcDiscoveryTime = clock;
@@ -166,7 +152,9 @@ class ComponentFinder {
 
     Node* old = cur;
     cur = v;
-    cur->findOutgoingEdges(*static_cast<Derived*>(this));
+    for (auto r = cur->gcGraphEdges.all(); !r.empty(); r.popFront()) {
+      addEdgeTo(r.front());
+    }
     cur = old;
 
     if (stackFull) {
@@ -201,12 +189,12 @@ class ComponentFinder {
   }
 
  private:
-  unsigned clock;
-  Node* stack;
-  Node* firstComponent;
-  Node* cur;
+  unsigned clock = 1;
+  Node* stack = nullptr;
+  Node* firstComponent = nullptr;
+  Node* cur = nullptr;
   uintptr_t stackLimit;
-  bool stackFull;
+  bool stackFull = false;
 };
 
 } 

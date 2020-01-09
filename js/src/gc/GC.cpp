@@ -4840,71 +4840,61 @@ static void DropStringWrappers(JSRuntime* rt) {
 
 
 
-void Compartment::findOutgoingEdges(ZoneComponentFinder& finder) {
+bool Compartment::findSweepGroupEdges() {
+  Zone* source = zone();
   for (js::WrapperMap::Enum e(crossCompartmentWrappers); !e.empty();
        e.popFront()) {
     CrossCompartmentKey& key = e.front().mutableKey();
     MOZ_ASSERT(!key.is<JSString*>());
+
+    
+    
+
     if (key.is<JSObject*>() &&
         key.as<JSObject*>()->asTenured().isMarkedBlack()) {
       
       
       continue;
     }
-    key.applyToWrapped([&finder](auto tp) {
-      
 
-
-
-
-      JS::Zone* zone = (*tp)->asTenured().zone();
-      if (zone->isGCMarking()) {
-        finder.addEdgeTo(zone);
-      }
+    Zone* target = key.applyToWrapped([](auto tp) {
+      return (*tp)->asTenured().zone();
     });
-  }
-}
-
-void Zone::findOutgoingEdges(ZoneComponentFinder& finder) {
-  
-
-
-
-  if (Zone* zone = finder.maybeAtomsZone) {
-    MOZ_ASSERT(zone->isCollecting());
-    finder.addEdgeTo(zone);
-  }
-
-  for (CompartmentsInZoneIter comp(this); !comp.done(); comp.next()) {
-    comp->findOutgoingEdges(finder);
-  }
-
-  for (ZoneSet::Range r = gcSweepGroupEdges().all(); !r.empty(); r.popFront()) {
-    if (r.front()->isGCMarking()) {
-      finder.addEdgeTo(r.front());
+    if (!target->isGCMarking()) {
+      continue;
     }
-  }
 
-  Debugger::findZoneEdges(this, finder);
-}
-
-bool GCRuntime::findInterZoneEdges() {
-  
-
-
-
-
-
-
-
-
-
-  for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
-    if (!WeakMapBase::findInterZoneEdges(zone)) {
+    if (!source->addSweepGroupEdgeTo(target)) {
       return false;
     }
   }
 
+  return true;
+}
+
+bool Zone::findSweepGroupEdges(Zone* atomsZone) {
+  
+  
+  if (atomsZone->wasGCStarted() && !addSweepGroupEdgeTo(atomsZone)) {
+    return false;
+  }
+
+  for (CompartmentsInZoneIter comp(this); !comp.done(); comp.next()) {
+    if (!comp->findSweepGroupEdges()) {
+      return false;
+    }
+  }
+
+  return WeakMapBase::findSweepGroupEdges(this) &&
+         Debugger::findSweepGroupEdges(this);
+}
+
+bool GCRuntime::findSweepGroupEdges() {
+  for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
+    if (!zone->findSweepGroupEdges(atomsZone)) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -4916,10 +4906,8 @@ void GCRuntime::groupZonesForSweeping(JS::GCReason reason) {
 #endif
 
   JSContext* cx = rt->mainContextFromOwnThread();
-  Zone* maybeAtomsZone = atomsZone->wasGCStarted() ? atomsZone.ref() : nullptr;
-  ZoneComponentFinder finder(cx->nativeStackLimit[JS::StackForSystemCode],
-                             maybeAtomsZone);
-  if (!isIncremental || !findInterZoneEdges()) {
+  ZoneComponentFinder finder(cx->nativeStackLimit[JS::StackForSystemCode]);
+  if (!isIncremental || !findSweepGroupEdges()) {
     finder.useOneComponent();
   }
 
@@ -4939,7 +4927,7 @@ void GCRuntime::groupZonesForSweeping(JS::GCReason reason) {
   sweepGroupIndex = 1;
 
   for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
-    zone->gcSweepGroupEdges().clear();
+    zone->clearSweepGroupEdges();
   }
 
 #ifdef DEBUG

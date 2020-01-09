@@ -28,14 +28,7 @@ class JitZone;
 
 namespace gc {
 
-struct ZoneComponentFinder
-    : public ComponentFinder<JS::Zone, ZoneComponentFinder> {
-  ZoneComponentFinder(uintptr_t sl, JS::Zone* maybeAtomsZone)
-      : ComponentFinder<JS::Zone, ZoneComponentFinder>(sl),
-        maybeAtomsZone(maybeAtomsZone) {}
-
-  JS::Zone* maybeAtomsZone;
-};
+using ZoneComponentFinder = ComponentFinder<JS::Zone>;
 
 struct UniqueIdGCPolicy {
   static bool needsSweep(Cell** cell, uint64_t* value);
@@ -185,7 +178,7 @@ class Zone : public JS::shadow::Zone,
     helperThreadUse_ = HelperThreadUse::None;
   }
 
-  void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
+  MOZ_MUST_USE bool findSweepGroupEdges(Zone* atomsZone);
 
   enum ShouldDiscardBaselineCode : bool {
     KeepBaselineCode = false,
@@ -419,15 +412,18 @@ class Zone : public JS::shadow::Zone,
  public:
   js::gc::WeakKeyTable& gcWeakKeys() { return gcWeakKeys_.ref(); }
 
- private:
   
   
-  
-  
-  js::MainThreadData<ZoneSet> gcSweepGroupEdges_;
-
- public:
-  ZoneSet& gcSweepGroupEdges() { return gcSweepGroupEdges_.ref(); }
+  NodeSet& gcSweepGroupEdges() {
+    return gcGraphEdges; 
+  }
+  MOZ_MUST_USE bool addSweepGroupEdgeTo(Zone* otherZone) {
+    MOZ_ASSERT(otherZone->isGCMarking());
+    return gcSweepGroupEdges().put(otherZone);
+  }
+  void clearSweepGroupEdges() {
+    gcSweepGroupEdges().clear();
+  }
 
   
   

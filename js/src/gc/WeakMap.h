@@ -80,7 +80,7 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   static bool markZoneIteratively(JS::Zone* zone, GCMarker* marker);
 
   
-  static bool findInterZoneEdges(JS::Zone* zone);
+  static MOZ_MUST_USE bool findSweepGroupEdges(JS::Zone* zone);
 
   
   
