@@ -9159,10 +9159,9 @@ bool nsLayoutUtils::ContainsMetricsWithId(const Layer* aLayer,
 }
 
 
-uint32_t nsLayoutUtils::GetTouchActionFromFrame(nsIFrame* aFrame) {
-  
+StyleTouchAction nsLayoutUtils::GetTouchActionFromFrame(nsIFrame* aFrame) {
   if (!aFrame) {
-    return NS_STYLE_TOUCH_ACTION_AUTO;
+    return StyleTouchAction_AUTO;
   }
 
   
@@ -9171,13 +9170,13 @@ uint32_t nsLayoutUtils::GetTouchActionFromFrame(nsIFrame* aFrame) {
   bool isNonReplacedInlineElement =
       aFrame->IsFrameOfType(nsIFrame::eLineParticipant);
   if (isNonReplacedInlineElement) {
-    return NS_STYLE_TOUCH_ACTION_AUTO;
+    return StyleTouchAction_AUTO;
   }
 
   const nsStyleDisplay* disp = aFrame->StyleDisplay();
   bool isTableElement = disp->IsInternalTableStyleExceptCell();
   if (isTableElement) {
-    return NS_STYLE_TOUCH_ACTION_AUTO;
+    return StyleTouchAction_AUTO;
   }
 
   return disp->mTouchAction;

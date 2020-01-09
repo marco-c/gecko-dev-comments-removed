@@ -2620,7 +2620,7 @@ class nsLayoutUtils {
   
 
 
-  static uint32_t GetTouchActionFromFrame(nsIFrame* aFrame);
+  static mozilla::StyleTouchAction GetTouchActionFromFrame(nsIFrame* aFrame);
 
   
 

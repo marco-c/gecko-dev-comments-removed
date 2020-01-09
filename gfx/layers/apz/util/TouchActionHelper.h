@@ -20,11 +20,6 @@ namespace layers {
 
 
 class TouchActionHelper {
- private:
-  static void UpdateAllowedBehavior(uint32_t aTouchActionValue,
-                                    bool aConsiderPanning,
-                                    TouchBehaviorFlags& aOutBehavior);
-
  public:
   
 

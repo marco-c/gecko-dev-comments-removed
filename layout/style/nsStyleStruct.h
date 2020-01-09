@@ -1888,7 +1888,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
                                 
   nsTArray<RefPtr<nsAtom>> mWillChange;
 
-  uint8_t mTouchAction;     
+  mozilla::StyleTouchAction mTouchAction;
   uint8_t mScrollBehavior;  
   mozilla::StyleOverscrollBehavior mOverscrollBehaviorX;
   mozilla::StyleOverscrollBehavior mOverscrollBehaviorY;
