@@ -1463,6 +1463,8 @@ bool js::TryConvertToUnboxedLayout(JSContext* cx, AutoEnterAnalysis& enter,
   if (objectCount <= 1) {
     
     
+    
+    
     return true;
   }
 

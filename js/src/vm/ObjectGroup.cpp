@@ -19,7 +19,6 @@
 #include "js/CharacterEncoding.h"
 #include "js/UniquePtr.h"
 #include "vm/ArrayObject.h"
-#include "vm/GlobalObject.h"
 #include "vm/JSObject.h"
 #include "vm/RegExpObject.h"
 #include "vm/Shape.h"
@@ -252,14 +251,21 @@ void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
 
 
 
-bool GlobalObject::shouldSplicePrototype() {
+bool JSObject::shouldSplicePrototype() {
   
-  
-  
-  return staticPrototype() == nullptr;
+
+
+
+
+
+  if (staticPrototype() != nullptr) {
+    return false;
+  }
+  return isSingleton();
 }
 
  bool JSObject::splicePrototype(JSContext* cx, HandleObject obj,
+                                            const Class* clasp,
                                             Handle<TaggedProto> proto) {
   MOZ_ASSERT(cx->compartment() == obj->compartment());
 
@@ -272,10 +278,6 @@ bool GlobalObject::shouldSplicePrototype() {
 
   
   MOZ_ASSERT_IF(proto.isObject(), !IsWindow(proto.toObject()));
-
-#ifdef DEBUG
-  const Class* oldClass = obj->getClass();
-#endif
 
   if (proto.isObject()) {
     RootedObject protoObj(cx, proto.toObject());
@@ -298,8 +300,7 @@ bool GlobalObject::shouldSplicePrototype() {
     }
   }
 
-  MOZ_ASSERT(group->clasp() == oldClass,
-             "splicing a prototype doesn't change a group's class");
+  group->setClasp(clasp);
   group->setProto(proto);
   return true;
 }
@@ -725,6 +726,17 @@ inline const Class* GetClassForProtoKey(JSProtoKey key) {
     case JSProto_Array:
       return &ArrayObject::class_;
 
+    case JSProto_Number:
+      return &NumberObject::class_;
+    case JSProto_Boolean:
+      return &BooleanObject::class_;
+    case JSProto_String:
+      return &StringObject::class_;
+    case JSProto_Symbol:
+      return &SymbolObject::class_;
+    case JSProto_RegExp:
+      return &RegExpObject::class_;
+
     case JSProto_Int8Array:
     case JSProto_Uint8Array:
     case JSProto_Int16Array:
@@ -736,8 +748,16 @@ inline const Class* GetClassForProtoKey(JSProtoKey key) {
     case JSProto_Uint8ClampedArray:
       return &TypedArrayObject::classes[key - JSProto_Int8Array];
 
+    case JSProto_ArrayBuffer:
+      return &ArrayBufferObject::class_;
+
+    case JSProto_SharedArrayBuffer:
+      return &SharedArrayBufferObject::class_;
+
+    case JSProto_DataView:
+      return &DataViewObject::class_;
+
     default:
-      
       MOZ_CRASH("Bad proto key");
   }
 }
@@ -1744,13 +1764,15 @@ ObjectGroup* ObjectGroupRealm::getStringSplitStringGroup(JSContext* cx) {
   
   
 
+  const Class* clasp = GetClassForProtoKey(JSProto_Array);
+
   JSObject* proto = GlobalObject::getOrCreateArrayPrototype(cx, cx->global());
   if (!proto) {
     return nullptr;
   }
   Rooted<TaggedProto> tagged(cx, TaggedProto(proto));
 
-  group = makeGroup(cx, cx->realm(), &ArrayObject::class_, tagged);
+  group = makeGroup(cx, cx->realm(), clasp, tagged,  0);
   if (!group) {
     return nullptr;
   }
