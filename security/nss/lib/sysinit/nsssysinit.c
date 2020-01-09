@@ -37,9 +37,41 @@ testdir(char *dir)
     return S_ISDIR(buf.st_mode);
 }
 
+
+
+
+
+
+
+static int
+appendDirAndCreate(char *path, char *dir, mode_t mode)
+{
+    PORT_Strcat(path, dir);
+    if (!testdir(path)) {
+        if (mkdir(path, mode)) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+#define XDG_NSS_USER_PATH1 "/.local"
+#define XDG_NSS_USER_PATH2 "/share"
+#define XDG_NSS_USER_PATH3 "/pki"
+
 #define NSS_USER_PATH1 "/.pki"
 #define NSS_USER_PATH2 "/nssdb"
-static char *
+
+
+
+
+
+
+
+
+
+
+char *
 getUserDB(void)
 {
     char *userdir = PR_GetEnvSecure("HOME");
@@ -50,22 +82,47 @@ getUserDB(void)
     }
 
     nssdir = PORT_Alloc(strlen(userdir) + sizeof(NSS_USER_PATH1) + sizeof(NSS_USER_PATH2));
+    PORT_Strcpy(nssdir, userdir);
+    PORT_Strcat(nssdir, NSS_USER_PATH1 NSS_USER_PATH2);
+    if (testdir(nssdir)) {
+        
+        return nssdir;
+    } else {
+        
+        PORT_Free(nssdir);
+    }
+    int size = 0;
+    char *xdguserdatadir = PR_GetEnvSecure("XDG_DATA_HOME");
+    if (xdguserdatadir) {
+        size = strlen(xdguserdatadir);
+    } else {
+        size = strlen(userdir) + sizeof(XDG_NSS_USER_PATH1) + sizeof(XDG_NSS_USER_PATH2);
+    }
+    size += sizeof(XDG_NSS_USER_PATH3) + sizeof(NSS_USER_PATH2);
+
+    nssdir = PORT_Alloc(size);
     if (nssdir == NULL) {
         return NULL;
     }
-    PORT_Strcpy(nssdir, userdir);
+
+    if (xdguserdatadir) {
+        PORT_Strcpy(nssdir, xdguserdatadir);
+        if (!testdir(nssdir)) {
+            PORT_Free(nssdir);
+            return NULL;
+        }
+
+    } else {
+        PORT_Strcpy(nssdir, userdir);
+        if (appendDirAndCreate(nssdir, XDG_NSS_USER_PATH1, 0755) ||
+            appendDirAndCreate(nssdir, XDG_NSS_USER_PATH2, 0755)) {
+            PORT_Free(nssdir);
+            return NULL;
+        }
+    }
     
-    if (!testdir(nssdir)) {
-        PORT_Free(nssdir);
-        return NULL;
-    }
-    PORT_Strcat(nssdir, NSS_USER_PATH1);
-    if (!testdir(nssdir) && mkdir(nssdir, 0760)) {
-        PORT_Free(nssdir);
-        return NULL;
-    }
-    PORT_Strcat(nssdir, NSS_USER_PATH2);
-    if (!testdir(nssdir) && mkdir(nssdir, 0760)) {
+    if (appendDirAndCreate(nssdir, XDG_NSS_USER_PATH3, 0760) ||
+        appendDirAndCreate(nssdir, NSS_USER_PATH2, 0760)) {
         PORT_Free(nssdir);
         return NULL;
     }
