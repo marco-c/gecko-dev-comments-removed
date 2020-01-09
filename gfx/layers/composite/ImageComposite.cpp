@@ -112,6 +112,7 @@ int ImageComposite::ChooseImageIndex() {
     
     
     mDroppedFrames += result - mLastChosenImageIndex - 1;
+    PROFILER_ADD_MARKER("Video frames dropped", GRAPHICS);
   }
   mLastChosenImageIndex = result;
   return result;
@@ -182,6 +183,7 @@ uint32_t ImageComposite::ScanForLastFrameIndex(
   }
   if (dropped > 0) {
     mDroppedFrames += dropped;
+    PROFILER_ADD_MARKER("Video frames dropped", GRAPHICS);
   }
   if (newIndex >= aNewImages.Length()) {
     
