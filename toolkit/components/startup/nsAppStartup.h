@@ -62,7 +62,6 @@ class nsAppStartup final : public nsIAppStartup,
   bool mIsSafeModeNecessary;        
   bool mStartupCrashTrackingEnded;  
                                     
-  bool mRestartNotSameProfile;      
 
 #if defined(XP_WIN)
   
