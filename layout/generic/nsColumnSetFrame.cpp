@@ -190,7 +190,6 @@ void nsColumnSetFrame::CreateBorderRenderers(
   else
     ruleStyle = colStyle->mColumnRuleStyle;
 
-  nsPresContext* presContext = PresContext();
   nscoord ruleWidth = colStyle->GetComputedColumnRuleWidth();
   if (!ruleWidth) return;
 
@@ -198,12 +197,13 @@ void nsColumnSetFrame::CreateBorderRenderers(
   nscolor ruleColor =
       GetVisitedDependentColor(&nsStyleColumn::mColumnRuleColor);
 
+  nsPresContext* presContext = PresContext();
   
   
   
   
   
-  nsStyleBorder border(presContext);
+  nsStyleBorder border(*presContext->Document());
   Sides skipSides;
   if (isVertical) {
     border.SetBorderWidth(eSideTop, ruleWidth);
