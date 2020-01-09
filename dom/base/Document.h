@@ -52,7 +52,6 @@
 #include "mozilla/dom/ContentBlockingLog.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
-#include "mozilla/HashTable.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/SegmentedVector.h"
@@ -2923,34 +2922,16 @@ class Document : public nsINode,
 
   SVGSVGElement* GetSVGRootElement() const;
 
-  struct FrameRequest {
-    FrameRequest(FrameRequestCallback& aCallback, int32_t aHandle);
-
-    
-    
-    bool operator==(int32_t aHandle) const { return mHandle == aHandle; }
-    bool operator<(int32_t aHandle) const { return mHandle < aHandle; }
-
-    RefPtr<FrameRequestCallback> mCallback;
-    int32_t mHandle;
-  };
-
   nsresult ScheduleFrameRequestCallback(FrameRequestCallback& aCallback,
                                         int32_t* aHandle);
   void CancelFrameRequestCallback(int32_t aHandle);
 
+  typedef nsTArray<RefPtr<FrameRequestCallback>> FrameRequestCallbackList;
   
 
 
 
-
-  bool IsCanceledFrameRequestCallback(int32_t aHandle) const;
-
-  
-
-
-
-  void TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks);
+  void TakeFrameRequestCallbacks(FrameRequestCallbackList& aCallbacks);
 
   
 
@@ -4399,11 +4380,9 @@ class Document : public nsINode,
 
   nsCOMPtr<nsIDocumentEncoder> mCachedEncoder;
 
-  nsTArray<FrameRequest> mFrameRequestCallbacks;
+  struct FrameRequest;
 
-  
-  
-  HashSet<int32_t> mCanceledFrameRequestCallbacks;
+  nsTArray<FrameRequest> mFrameRequestCallbacks;
 
   
   

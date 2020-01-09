@@ -1168,9 +1168,22 @@ void Document::SelectorCache::NotifyExpired(SelectorCacheKey* aSelector) {
   delete aSelector;
 }
 
-Document::FrameRequest::FrameRequest(FrameRequestCallback& aCallback,
-                                     int32_t aHandle)
-    : mCallback(&aCallback), mHandle(aHandle) {}
+struct Document::FrameRequest {
+  FrameRequest(FrameRequestCallback& aCallback, int32_t aHandle)
+      : mCallback(&aCallback), mHandle(aHandle) {}
+
+  
+  
+  operator const RefPtr<FrameRequestCallback>&() const { return mCallback; }
+
+  
+  
+  bool operator==(int32_t aHandle) const { return mHandle == aHandle; }
+  bool operator<(int32_t aHandle) const { return mHandle < aHandle; }
+
+  RefPtr<FrameRequestCallback> mCallback;
+  int32_t mHandle;
+};
 
 
 
@@ -3660,10 +3673,9 @@ void Document::UpdateFrameRequestCallbackSchedulingState(
   mFrameRequestCallbacksScheduled = shouldBeScheduled;
 }
 
-void Document::TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks) {
-  MOZ_ASSERT(aCallbacks.IsEmpty());
-  aCallbacks.SwapElements(mFrameRequestCallbacks);
-  mCanceledFrameRequestCallbacks.clear();
+void Document::TakeFrameRequestCallbacks(FrameRequestCallbackList& aCallbacks) {
+  aCallbacks.AppendElements(mFrameRequestCallbacks);
+  mFrameRequestCallbacks.Clear();
   
   
   mFrameRequestCallbacksScheduled = false;
@@ -8975,14 +8987,7 @@ void Document::CancelFrameRequestCallback(int32_t aHandle) {
   
   if (mFrameRequestCallbacks.RemoveElementSorted(aHandle)) {
     UpdateFrameRequestCallbackSchedulingState();
-  } else {
-    Unused << mCanceledFrameRequestCallbacks.put(aHandle);
   }
-}
-
-bool Document::IsCanceledFrameRequestCallback(int32_t aHandle) const {
-  return !mCanceledFrameRequestCallbacks.empty() &&
-         mCanceledFrameRequestCallbacks.has(aHandle);
 }
 
 nsresult Document::GetStateObject(nsIVariant** aState) {
