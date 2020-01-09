@@ -29,25 +29,16 @@ def dependentlibs_win32_objdump(lib):
     proc.wait()
     return deps
 
-def dependentlibs_readelf(lib):
+def dependentlibs_elf_objdump(lib):
     '''Returns the list of dependencies declared in the given ELF .so'''
-    proc = subprocess.Popen([substs.get('TOOLCHAIN_PREFIX', '') + 'readelf', '-d', lib], stdout = subprocess.PIPE)
+    proc = subprocess.Popen([substs['LLVM_OBJDUMP'], '--private-headers', lib], stdout = subprocess.PIPE)
     deps = []
     for line in proc.stdout:
         
         
-        
-        
-        
-        tmp = line.split(' ', 3)
-        if len(tmp) > 3 and 'NEEDED' in tmp[2]:
-            
-            
-            
-            
-            match = re.search('\[(.*)\]', tmp[3])
-            if match:
-                deps.append(match.group(1))
+        tmp = line.split()
+        if len(tmp) == 2 and tmp[0] == 'NEEDED':
+            deps.append(tmp[1])
     proc.wait()
     return deps
 
@@ -99,7 +90,7 @@ def gen_list(output, lib):
     libpaths = [os.path.join(substs['DIST'], 'bin')]
     binary_type = get_type(lib)
     if binary_type == ELF:
-        func = dependentlibs_readelf
+        func = dependentlibs_elf_objdump
     elif binary_type == MACHO:
         func = dependentlibs_mac_objdump
     else:
