@@ -38,6 +38,10 @@
 
       document.addEventListener("focus", this);
 
+      this.promiseHtmlAboutAddons.then(win => {
+        win.document.addEventListener("abuse-report:new", this);
+      });
+
       this.update();
     }
 
@@ -47,6 +51,10 @@
       this.promiseBrowserLoaded = null;
       this.report = null;
       document.removeEventListener("focus", this);
+
+      this.promiseHtmlAboutAddons.then(win => {
+        win.document.removeEventListener("abuse-report:new", this);
+      });
     }
 
     handleEvent(evt) {
@@ -55,9 +63,15 @@
       
       
       
+      
+      
       switch (evt.type) {
         case "focus":
           this.focus();
+          break;
+        case "abuse-report:new":
+          this.openReport(evt.detail);
+          this.forwardEvent(evt);
           break;
         case "abuse-report:cancel":
           this.cancelReport();

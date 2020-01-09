@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -21,6 +22,9 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "", null, val => Services.urlFormatter.formatURL(val));
 
 const UPDATES_RECENT_TIMESPAN = 2 * 24 * 3600000; 
+
+XPCOMUtils.defineLazyPreferenceGetter(this, "ABUSE_REPORT_ENABLED",
+                                      "extensions.abuseReport.enabled", false);
 
 const PLUGIN_ICON_URL = "chrome://global/skin/plugins/pluginGeneric.svg";
 const PERMISSION_MASKS = {
@@ -362,6 +366,34 @@ class AddonOptions extends HTMLElement {
     }
   }
 
+  get panel() {
+    return this.querySelector("panel-list");
+  }
+
+  updateSeparatorsVisibility() {
+    let lastSeparator;
+    let elWasVisible = false;
+
+    
+    const children = Array.from(this.panel.children)
+                          .filter(el => !el.hidden);
+
+    for (let child of children) {
+      if (child.tagName == "PANEL-ITEM-SEPARATOR") {
+        child.hidden = !elWasVisible;
+        if (!child.hidden) {
+          lastSeparator = child;
+        }
+        elWasVisible = false;
+      } else {
+        elWasVisible = true;
+      }
+    }
+    if (!elWasVisible && lastSeparator) {
+      lastSeparator.hidden = true;
+    }
+  }
+
   render() {
     this.appendChild(importTemplate("addon-options"));
   }
@@ -370,6 +402,9 @@ class AddonOptions extends HTMLElement {
     
     let removeButton = this.querySelector('[action="remove"]');
     removeButton.hidden = !hasPermission(addon, "uninstall");
+
+    
+    this.querySelector('[action="report"]').hidden = !ABUSE_REPORT_ENABLED;
 
     
     let toggleDisabledButton = this.querySelector('[action="toggle-disabled"]');
@@ -382,13 +417,11 @@ class AddonOptions extends HTMLElement {
     this.querySelector('[action="install-update"]').hidden = !updateInstall;
 
     
-    
-    let separator = this.querySelector("panel-item-separator");
-    separator.hidden = card.expanded ||
-      removeButton.hidden && toggleDisabledButton.hidden;
+    this.querySelector('[action="expand"]').hidden = card.expanded;
 
     
-    this.querySelector('[action="expand"]').hidden = card.expanded;
+    
+    this.updateSeparatorsVisibility();
   }
 }
 customElements.define("addon-options", AddonOptions);
@@ -750,6 +783,10 @@ class AddonCard extends HTMLElement {
           if (e.mozInputSource == MouseEvent.MOZ_SOURCE_KEYBOARD) {
             this.panel.toggle(e);
           }
+          break;
+        case "report":
+          this.panel.hide();
+          openAbuseReport({addonId: addon.id, reportEntryPoint: "menu"});
           break;
       }
     } else if (e.type == "change") {

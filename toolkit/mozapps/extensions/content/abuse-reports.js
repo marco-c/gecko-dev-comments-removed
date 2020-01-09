@@ -10,6 +10,8 @@
 
 
 
+
+
 const ABUSE_REPORT_MESSAGE_BARS = {
   
   "submitting": {id: "submitting", actions: ["cancel"]},
@@ -46,6 +48,12 @@ const ABUSE_REPORT_MESSAGE_BARS = {
     id: "error", actions: ["retry", "cancel"], type: "error",
   },
 };
+
+function openAbuseReport({addonId, reportEntryPoint}) {
+  document.dispatchEvent(new CustomEvent("abuse-report:new", {
+    detail: {addonId, reportEntryPoint},
+  }));
+}
 
 
 
