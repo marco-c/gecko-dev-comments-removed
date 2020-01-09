@@ -322,30 +322,6 @@ struct Token {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    NoneIsOperand,
-
-    
-    
     OperandIsNone,
   };
   friend class TokenStreamShared;
@@ -491,7 +467,6 @@ class TokenStreamShared {
 
   using ModifierException = Token::ModifierException;
   static constexpr ModifierException NoException = Token::NoException;
-  static constexpr ModifierException NoneIsOperand = Token::NoneIsOperand;
   static constexpr ModifierException OperandIsNone = Token::OperandIsNone;
 
   static void verifyConsistentModifier(Modifier modifier,
@@ -505,13 +480,6 @@ class TokenStreamShared {
     if (lookaheadToken.modifierException == OperandIsNone) {
       
       if (modifier == Operand && lookaheadToken.modifier == None) {
-        return;
-      }
-    }
-
-    if (lookaheadToken.modifierException == NoneIsOperand) {
-      
-      if (modifier == None && lookaheadToken.modifier == Operand) {
         return;
       }
     }
@@ -669,26 +637,8 @@ class TokenStreamAnyChars : public TokenStreamShared {
       return;
     }
 
-    if (next.modifierException == NoneIsOperand) {
-      
-      
-      MOZ_ASSERT(modifierException == OperandIsNone);
-      MOZ_ASSERT(next.type != TokenKind::Div,
-                 "next token requires contextual specifier to be parsed "
-                 "unambiguously");
-
-      
-      return;
-    }
-
     MOZ_ASSERT(next.modifierException == NoException);
     switch (modifierException) {
-      case NoneIsOperand:
-        MOZ_ASSERT(next.modifier == Operand);
-        MOZ_ASSERT(next.type != TokenKind::Div,
-                   "next token requires contextual specifier to be parsed "
-                   "unambiguously");
-        break;
       case OperandIsNone:
         MOZ_ASSERT(next.modifier == None);
         MOZ_ASSERT(
