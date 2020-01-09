@@ -463,6 +463,13 @@ class RefTest(object):
         self._populate_logger(options)
 
         
+        
+        
+        
+        if hasattr(options, 'log'):
+            delattr(options, 'log')
+
+        
         VERIFY_REPEAT = 10
         
         VERIFY_REPEAT_SINGLE_BROWSER = 5
