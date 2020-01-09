@@ -521,8 +521,6 @@ class ObjectGroup : public gc::TenuredCell {
   
   static bool useSingletonForAllocationSite(JSScript* script, jsbytecode* pc,
                                             JSProtoKey key);
-  static bool useSingletonForAllocationSite(JSScript* script, jsbytecode* pc,
-                                            const Class* clasp);
 
   
 
