@@ -525,8 +525,9 @@ class CallbackObjectHolder : CallbackObjectHolderBase {
   void UnlinkSelf() {
     
     nsISupports* ptr = GetISupports();
-    NS_IF_RELEASE(ptr);
+    
     mPtrBits = 0;
+    NS_IF_RELEASE(ptr);
   }
 
   uintptr_t mPtrBits;
