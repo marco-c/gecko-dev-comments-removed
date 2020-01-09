@@ -67,9 +67,11 @@ class MarkupContextMenu {
 
 
   _copyAttributeLink(link) {
-    this.inspector.resolveRelativeURL(link, this.selection.nodeFront).then(url => {
-      clipboardHelper.copyString(url);
-    }, console.error);
+    this.inspector.inspector
+      .resolveRelativeURL(link, this.selection.nodeFront)
+      .then(url => {
+        clipboardHelper.copyString(url);
+      }, console.error);
   }
 
   
@@ -212,7 +214,7 @@ class MarkupContextMenu {
 
 
   _onCopyLink() {
-    this.copyAttributeLink(this.contextMenuTarget.dataset.link);
+    this._copyAttributeLink(this.contextMenuTarget.dataset.link);
   }
 
   
