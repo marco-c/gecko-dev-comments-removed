@@ -321,6 +321,8 @@ class BaselineCodeGen {
   void pushUint16BytecodeOperandArg();
 
   void loadResumeIndexBytecodeOperand(Register dest);
+  void loadInt32LengthBytecodeOperand(Register dest);
+  void loadInt32IndexBytecodeOperand(ValueOperand dest);
 
   
   void loadScript(Register dest);
