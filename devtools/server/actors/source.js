@@ -14,6 +14,7 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { assert, fetch } = DevToolsUtils;
 const { joinURI } = require("devtools/shared/path");
 const { sourceSpec } = require("devtools/shared/specs/source");
+const { findClosestScriptBySource } = require("devtools/server/actors/utils/closest-scripts");
 
 loader.lazyRequireGetter(this, "arrayBufferGrip", "devtools/server/actors/array-buffer", true);
 
@@ -433,13 +434,13 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     const { line, column } = actor.location;
 
     
+    
+    let scripts = this._findDebuggeeScripts({ line });
+    scripts = scripts.filter((script) => !actor.hasScript(script));
+
+    
     const entryPoints = [];
     if (column === undefined) {
-      
-      
-      const scripts = this._findDebuggeeScripts({ line })
-        .filter((script) => !actor.hasScript(script));
-
       
       
       const lineMatches = [];
@@ -467,21 +468,52 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     } else {
       
       
-      const scripts = this._findDebuggeeScripts({ line, column })
-        .filter((script) => !actor.hasScript(script));
+      const columnToOffsetMaps = scripts.map(script =>
+        [
+          script,
+          script.getPossibleBreakpoints({ line }),
+        ]
+      );
 
-      for (const script of scripts) {
+      
+      
+      for (const [script, columnToOffsetMap] of columnToOffsetMaps) {
+        for (const { columnNumber, offset } of columnToOffsetMap) {
+          if (columnNumber >= column && columnNumber <= column + 1) {
+            entryPoints.push({ script, offsets: [offset] });
+          }
+        }
+      }
+
+      
+      
+      if (entryPoints.length === 0) {
         
         
-        const possibleBreakpoint = script.getPossibleBreakpoints({
+        
+        
+        const closestScripts = findClosestScriptBySource(
+          columnToOffsetMaps.map(pair => pair[0]),
           line,
-          minColumn: column,
-          maxColumn: column + 1,
-        }).pop();
+          column,
+        );
 
-        if (possibleBreakpoint) {
-          const { offset } = possibleBreakpoint;
-          entryPoints.push({ script, offsets: [offset] });
+        const columnToOffsetLookup = new Map(columnToOffsetMaps);
+        for (const script of closestScripts) {
+          const columnToOffsetMap = columnToOffsetLookup.get(script);
+
+          if (columnToOffsetMap.length > 0) {
+            const firstColumnOffset = columnToOffsetMap[0];
+            const lastColumnOffset = columnToOffsetMap[columnToOffsetMap.length - 1];
+
+            if (column < firstColumnOffset.columnNumber) {
+              entryPoints.push({ script, offsets: [firstColumnOffset.offset] });
+            }
+
+            if (column > lastColumnOffset.columnNumber) {
+              entryPoints.push({ script, offsets: [lastColumnOffset.offset] });
+            }
+          }
         }
       }
     }
