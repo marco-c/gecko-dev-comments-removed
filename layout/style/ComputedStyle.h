@@ -87,7 +87,6 @@ class ComputedStyle {
   
   
   nsPresContext* PresContextForFrame() const { return mPresContext; }
-  const ServoComputedData* ComputedData() const { return &mSource; }
 
   
   
@@ -115,7 +114,7 @@ class ComputedStyle {
   
   
   ComputedStyle* GetStyleIfVisited() const {
-    return ComputedData()->visited_style.mPtr;
+    return mSource.visited_style.mPtr;
   }
 
   bool IsLazilyCascadedPseudoElement() const {
