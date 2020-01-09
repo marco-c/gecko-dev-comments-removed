@@ -184,6 +184,7 @@ class MOZ_STACK_CLASS WSRunObject final {
   
   
   
+  MOZ_CAN_RUN_SCRIPT
   static nsresult PrepareToJoinBlocks(HTMLEditor* aHTMLEditor,
                                       dom::Element* aLeftBlock,
                                       dom::Element* aRightBlock);
@@ -195,6 +196,7 @@ class MOZ_STACK_CLASS WSRunObject final {
   
   
   
+  MOZ_CAN_RUN_SCRIPT
   static nsresult PrepareToDeleteRange(HTMLEditor* aHTMLEditor,
                                        nsCOMPtr<nsINode>* aStartNode,
                                        int32_t* aStartOffset,
@@ -204,6 +206,7 @@ class MOZ_STACK_CLASS WSRunObject final {
   
   
   
+  MOZ_CAN_RUN_SCRIPT
   static nsresult PrepareToDeleteNode(HTMLEditor* aHTMLEditor,
                                       nsIContent* aContent);
 
@@ -212,6 +215,7 @@ class MOZ_STACK_CLASS WSRunObject final {
   
   
   
+  MOZ_CAN_RUN_SCRIPT
   static nsresult PrepareToSplitAcrossBlocks(HTMLEditor* aHTMLEditor,
                                              nsCOMPtr<nsINode>* aSplitNode,
                                              int32_t* aSplitOffset);
@@ -236,7 +240,7 @@ class MOZ_STACK_CLASS WSRunObject final {
 
 
   template <typename PT, typename CT>
-  already_AddRefed<dom::Element> InsertBreak(
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<dom::Element> InsertBreak(
       Selection& aSelection, const EditorDOMPointBase<PT, CT>& aPointToInsert,
       nsIEditor::EDirection aSelect);
 
@@ -267,12 +271,12 @@ class MOZ_STACK_CLASS WSRunObject final {
   
   
   
-  nsresult DeleteWSBackward();
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteWSBackward();
 
   
   
   
-  nsresult DeleteWSForward();
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteWSForward();
 
   
   
@@ -310,7 +314,7 @@ class MOZ_STACK_CLASS WSRunObject final {
 
   
   
-  nsresult AdjustWhitespace();
+  MOZ_CAN_RUN_SCRIPT nsresult AdjustWhitespace();
 
  protected:
   
@@ -370,8 +374,8 @@ class MOZ_STACK_CLASS WSRunObject final {
   nsIContent* GetNextWSNodeInner(nsINode* aStartNode, nsINode* aBlockParent);
   nsIContent* GetNextWSNode(const EditorDOMPoint& aPoint,
                             nsINode* aBlockParent);
-  nsresult PrepareToDeleteRangePriv(WSRunObject* aEndObject);
-  nsresult PrepareToSplitAcrossBlocksPriv();
+  MOZ_CAN_RUN_SCRIPT nsresult PrepareToDeleteRangePriv(WSRunObject* aEndObject);
+  MOZ_CAN_RUN_SCRIPT nsresult PrepareToSplitAcrossBlocksPriv();
 
   
 
@@ -422,6 +426,7 @@ class MOZ_STACK_CLASS WSRunObject final {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertNBSPAndRemoveFollowingASCIIWhitespaces(WSPoint aPoint);
 
   
@@ -475,7 +480,7 @@ class MOZ_STACK_CLASS WSRunObject final {
                              bool aForward) const;
 
   char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset) const;
-  nsresult CheckTrailingNBSPOfRun(WSFragment* aRun);
+  MOZ_CAN_RUN_SCRIPT nsresult CheckTrailingNBSPOfRun(WSFragment* aRun);
 
   
 
@@ -486,9 +491,10 @@ class MOZ_STACK_CLASS WSRunObject final {
 
 
   template <typename PT, typename CT>
-  nsresult ReplacePreviousNBSPIfUnncessary(
+  MOZ_CAN_RUN_SCRIPT nsresult ReplacePreviousNBSPIfUnncessary(
       WSFragment* aRun, const EditorDOMPointBase<PT, CT>& aPoint);
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode, int32_t aOffset);
 
   nsresult Scrub();

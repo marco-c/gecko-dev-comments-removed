@@ -658,6 +658,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ReturnInHeader(Element& aHeader, nsINode& aNode,
                                        int32_t aOffset);
 
@@ -672,6 +673,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE EditActionResult ReturnInParagraph(Element& aParentDivOrP);
 
   
@@ -687,7 +689,7 @@ class HTMLEditRules : public TextEditRules {
 
 
   template <typename PT, typename CT>
-  MOZ_MUST_USE nsresult SplitParagraph(
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult SplitParagraph(
       Element& aParentDivOrP,
       const EditorDOMPointBase<PT, CT>& aStartOfRightNode, nsIContent* aBRNode);
 

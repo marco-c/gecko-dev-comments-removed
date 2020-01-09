@@ -2540,7 +2540,7 @@ nsresult EditorBase::InsertTextWithTransaction(
   
   
   
-  EditorRawDOMPoint pointToInsert = FindBetterInsertionPoint(aPointToInsert);
+  EditorDOMPoint pointToInsert = FindBetterInsertionPoint(aPointToInsert);
 
   
   if (!pointToInsert.IsInTextNode()) {
@@ -2573,7 +2573,7 @@ nsresult EditorBase::InsertTextWithTransaction(
       NS_ENSURE_TRUE(newOffset.isValid(), NS_ERROR_FAILURE);
     }
     nsresult rv = InsertTextIntoTextNodeWithTransaction(
-        aStringToInsert, *pointToInsert.GetContainerAsText(),
+        aStringToInsert, MOZ_KnownLive(*pointToInsert.GetContainerAsText()),
         pointToInsert.Offset());
     NS_ENSURE_SUCCESS(rv, rv);
     if (aPointAfterInsertedString) {
@@ -2588,7 +2588,7 @@ nsresult EditorBase::InsertTextWithTransaction(
     NS_ENSURE_TRUE(newOffset.isValid(), NS_ERROR_FAILURE);
     
     nsresult rv = InsertTextIntoTextNodeWithTransaction(
-        aStringToInsert, *pointToInsert.GetContainerAsText(),
+        aStringToInsert, MOZ_KnownLive(*pointToInsert.GetContainerAsText()),
         pointToInsert.Offset());
     NS_ENSURE_SUCCESS(rv, rv);
     if (aPointAfterInsertedString) {

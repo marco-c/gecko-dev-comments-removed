@@ -1543,8 +1543,9 @@ nsresult HTMLEditRules::WillInsertText(EditSubAction aEditSubAction,
         }
         
         else if (subStr.Equals(newlineStr)) {
-          RefPtr<Element> newBRElement = wsObj.InsertBreak(
-              *SelectionRefPtr(), currentPoint, nsIEditor::eNone);
+          RefPtr<Element> newBRElement =
+              wsObj.InsertBreak(MOZ_KnownLive(*SelectionRefPtr()), currentPoint,
+                                nsIEditor::eNone);
           if (NS_WARN_IF(!CanHandleEditAction())) {
             return NS_ERROR_EDITOR_DESTROYED;
           }
@@ -1853,9 +1854,9 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
 
   if (HTMLEditUtils::IsHeader(*blockParent)) {
     
-    nsresult rv =
-        ReturnInHeader(*blockParent, *atStartOfSelection.GetContainer(),
-                       atStartOfSelection.Offset());
+    nsresult rv = ReturnInHeader(
+        *blockParent, MOZ_KnownLive(*atStartOfSelection.GetContainer()),
+        atStartOfSelection.Offset());
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -1952,8 +1953,8 @@ nsresult HTMLEditRules::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
       }
       pointToBreak = splitLinkNodeResult.SplitPoint();
     }
-    brElement =
-        wsObj.InsertBreak(*SelectionRefPtr(), pointToBreak, nsIEditor::eNone);
+    brElement = wsObj.InsertBreak(MOZ_KnownLive(*SelectionRefPtr()),
+                                  pointToBreak, nsIEditor::eNone);
     if (NS_WARN_IF(!CanHandleEditAction())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -2432,8 +2433,9 @@ nsresult HTMLEditRules::WillDeleteSelection(
         so = range->StartOffset();
         eo = range->EndOffset();
       }
-      rv = WSRunObject::PrepareToDeleteRange(
-          &HTMLEditorRef(), address_of(visNode), &so, address_of(visNode), &eo);
+      rv = WSRunObject::PrepareToDeleteRange(MOZ_KnownLive(&HTMLEditorRef()),
+                                             address_of(visNode), &so,
+                                             address_of(visNode), &eo);
       if (NS_WARN_IF(!CanHandleEditAction())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -2577,8 +2579,8 @@ nsresult HTMLEditRules::WillDeleteSelection(
               return NS_ERROR_FAILURE;
             }
             nsIContent* otherContent = otherNode->AsContent();
-            rv = WSRunObject::PrepareToDeleteNode(&HTMLEditorRef(),
-                                                  otherContent);
+            rv = WSRunObject::PrepareToDeleteNode(
+                MOZ_KnownLive(&HTMLEditorRef()), MOZ_KnownLive(otherContent));
             if (NS_WARN_IF(!CanHandleEditAction())) {
               return NS_ERROR_EDITOR_DESTROYED;
             }
@@ -2603,8 +2605,8 @@ nsresult HTMLEditRules::WillDeleteSelection(
         return NS_ERROR_FAILURE;
       }
       
-      rv = WSRunObject::PrepareToDeleteNode(&HTMLEditorRef(),
-                                            visNode->AsContent());
+      rv = WSRunObject::PrepareToDeleteNode(
+          MOZ_KnownLive(&HTMLEditorRef()), MOZ_KnownLive(visNode->AsContent()));
       if (NS_WARN_IF(!CanHandleEditAction())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -2877,7 +2879,7 @@ nsresult HTMLEditRules::WillDeleteSelection(
   
   if (!IsPlaintextEditor()) {
     AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
-    rv = WSRunObject::PrepareToDeleteRange(&HTMLEditorRef(),
+    rv = WSRunObject::PrepareToDeleteRange(MOZ_KnownLive(&HTMLEditorRef()),
                                            address_of(startNode), &startOffset,
                                            address_of(endNode), &endOffset);
     if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -3535,8 +3537,8 @@ EditActionResult HTMLEditRules::TryToJoinBlocksWithTransaction(
   
 
   
-  nsresult rv =
-      WSRunObject::PrepareToJoinBlocks(&HTMLEditorRef(), leftBlock, rightBlock);
+  nsresult rv = WSRunObject::PrepareToJoinBlocks(
+      MOZ_KnownLive(&HTMLEditorRef()), leftBlock, rightBlock);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
   }
@@ -7678,7 +7680,7 @@ nsresult HTMLEditRules::ReturnInHeader(Element& aHeader, nsINode& aNode,
   
   nsCOMPtr<nsINode> node = &aNode;
   nsresult rv = WSRunObject::PrepareToSplitAcrossBlocks(
-      &HTMLEditorRef(), address_of(node), &aOffset);
+      MOZ_KnownLive(&HTMLEditorRef()), address_of(node), &aOffset);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -8000,7 +8002,7 @@ nsresult HTMLEditRules::SplitParagraph(
   nsCOMPtr<nsINode> selNode = aStartOfRightNode.GetContainer();
   int32_t selOffset = aStartOfRightNode.Offset();
   nsresult rv = WSRunObject::PrepareToSplitAcrossBlocks(
-      &HTMLEditorRef(), address_of(selNode), &selOffset);
+      MOZ_KnownLive(&HTMLEditorRef()), address_of(selNode), &selOffset);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -8196,7 +8198,7 @@ nsresult HTMLEditRules::ReturnInListItem(Element& aListItem, nsINode& aNode,
   
   nsCOMPtr<nsINode> selNode = &aNode;
   nsresult rv = WSRunObject::PrepareToSplitAcrossBlocks(
-      &HTMLEditorRef(), address_of(selNode), &aOffset);
+      MOZ_KnownLive(&HTMLEditorRef()), address_of(selNode), &aOffset);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
