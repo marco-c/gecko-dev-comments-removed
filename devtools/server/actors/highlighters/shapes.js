@@ -1957,7 +1957,14 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     if (!this.origCoordUnits) {
       this.origCoordUnits = this.coordUnits;
     }
-    const values = definition.split(" at ");
+    let values = definition.split(" at ");
+
+    
+    
+    if (values[0] === definition) {
+      values = `closest-side closest-side ${definition}`.split(" at ");
+    }
+
     const center = splitCoords(values[1]).map(this.convertCoordsToPercent.bind(this));
 
     const radii = splitCoords(values[0]).map((radius, i) => {
@@ -2766,6 +2773,7 @@ const isUnitless = (point) => {
          
          (parseFloat(point) === 0 && (parseFloat(point).toString() === point)) ||
          point.includes("(") ||
+         point === "center" ||
          point === "closest-side" ||
          point === "farthest-side";
 };
