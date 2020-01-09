@@ -2495,7 +2495,7 @@ static bool ReadGeckoProfilingStack(JSContext* cx, unsigned argc, Value* vp) {
       }
 
       UniqueChars label =
-          DuplicateStringToArena(js::MallocArena, cx, frames[i].label);
+          DuplicateStringToArena(js::StringBufferArena, cx, frames[i].label);
       if (!label) {
         return false;
       }
@@ -3558,7 +3558,7 @@ struct FindPathHandler {
     
     
     EdgeName edgeName =
-        DuplicateStringToArena(js::MallocArena, cx, edge.name.get());
+        DuplicateStringToArena(js::StringBufferArena, cx, edge.name.get());
     if (!edgeName) {
       return false;
     }

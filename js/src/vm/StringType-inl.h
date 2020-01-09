@@ -249,12 +249,16 @@ MOZ_ALWAYS_INLINE JSLinearString* JSDependentString::new_(
 MOZ_ALWAYS_INLINE void JSFlatString::init(const char16_t* chars,
                                           size_t length) {
   setLengthAndFlags(length, INIT_FLAT_FLAGS);
+  
+  checkStringCharsArena(chars);
   d.s.u2.nonInlineCharsTwoByte = chars;
 }
 
 MOZ_ALWAYS_INLINE void JSFlatString::init(const JS::Latin1Char* chars,
                                           size_t length) {
   setLengthAndFlags(length, INIT_FLAT_FLAGS | LATIN1_CHARS_BIT);
+  
+  checkStringCharsArena(chars);
   d.s.u2.nonInlineCharsLatin1 = chars;
 }
 
