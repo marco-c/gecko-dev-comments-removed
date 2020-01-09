@@ -2,14 +2,10 @@
 
 
 
-const { Task } = require("devtools/shared/task");
 const { LocalizationHelper } = require("devtools/shared/l10n");
-const { gDevTools } = require("devtools/client/framework/devtools");
 const {
   gDevToolsBrowser
 } = require("devtools/client/framework/devtools-browser");
-const { TargetFactory } = require("devtools/client/framework/target");
-const { Toolbox } = require("devtools/client/framework/toolbox");
 loader.lazyRequireGetter(
   this,
   "openContentLink",

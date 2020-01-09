@@ -87,11 +87,13 @@ export function selectSourceURL(
 
 
 
-export function selectSource(sourceId: string,
-                             options: PartialPosition = { line: 1 }) {
+export function selectSource(
+  sourceId: string,
+  options: PartialPosition = { line: 1 }
+) {
   return async ({ dispatch }: ThunkArgs) => {
     const location = createLocation({ ...options, sourceId });
-    return await dispatch(selectSpecificLocation(location));
+    return dispatch(selectSpecificLocation(location));
   };
 }
 

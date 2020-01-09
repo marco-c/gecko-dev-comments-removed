@@ -28,7 +28,9 @@ const webpackConfig = {
   entry: {
     
     
-    debugger: getEntry(isProduction ? "src/main.js" : "src/main.development.js"),
+    debugger: getEntry(
+      isProduction ? "src/main.js" : "src/main.development.js"
+    ),
     "parser-worker": getEntry("src/workers/parser/worker.js"),
     "pretty-print-worker": getEntry("src/workers/pretty-print/worker.js"),
     "search-worker": getEntry("src/workers/search/worker.js"),

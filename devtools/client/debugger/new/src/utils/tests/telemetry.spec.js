@@ -27,6 +27,7 @@ describe("telemetry.recordEvent()", () => {
       "debugger",
       null,
       {
+        
         session_id: -1,
         bar: 1
       }
