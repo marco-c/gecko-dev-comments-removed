@@ -284,6 +284,9 @@ class Chrome(BrowserSetup):
         
         kwargs["binary_args"] += ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
 
+        
+        kwargs["binary_args"].append("--short-reporting-delay")
+
 
 class ChromeAndroid(BrowserSetup):
     name = "chrome_android"
