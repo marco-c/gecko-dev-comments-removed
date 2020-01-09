@@ -7208,13 +7208,8 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     MaybeAllowStorageForOpenedWindow(uri);
   }
 
-  NS_ENSURE_TRUE(domReturn, NS_OK);
-  nsCOMPtr<nsPIDOMWindowOuter> outerReturn =
-      nsPIDOMWindowOuter::From(domReturn);
-  outerReturn.swap(*aReturn);
-
-  if (aDoJSFixups) {
-    nsCOMPtr<nsIDOMChromeWindow> chrome_win(do_QueryInterface(*aReturn));
+  if (domReturn && aDoJSFixups) {
+    nsCOMPtr<nsIDOMChromeWindow> chrome_win(do_QueryInterface(domReturn));
     if (!chrome_win) {
       
       
@@ -7224,12 +7219,13 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       
 
       
-      nsCOMPtr<Document> doc = (*aReturn)->GetDoc();
+      nsCOMPtr<Document> doc = nsPIDOMWindowOuter::From(domReturn)->GetDoc();
       Unused << doc;
     }
   }
 
-  return rv;
+  *aReturn = do_AddRef(nsPIDOMWindowOuter::From(domReturn)).take();
+  return NS_OK;
 }
 
 void nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI) {
