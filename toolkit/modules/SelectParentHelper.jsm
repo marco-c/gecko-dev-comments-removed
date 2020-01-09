@@ -18,6 +18,13 @@ const MAX_ROWS = 20;
 const SEARCH_MINIMUM_ELEMENTS = 40;
 
 
+const PROPERTIES_RESET_WHEN_ACTIVE = [
+  "color",
+  "background-color",
+  "text-shadow",
+];
+
+
 var currentBrowser = null;
 var currentMenulist = null;
 var selectRect = null;
@@ -352,8 +359,12 @@ function populateChildren(menulist, options, uniqueOptionStyles, selectedIndex,
       for (let property in style) {
         if (property == "direction" || property == "font-size")
           continue; 
-        if (style[property] != selectStyle[property]) {
+        if (style[property] == selectStyle[property])
+          continue;
+        if (PROPERTIES_RESET_WHEN_ACTIVE.includes(property)) {
           ruleBody += `${property}: ${style[property]};`;
+        } else {
+          item.style.setProperty(property, style[property]);
         }
       }
 
