@@ -19,6 +19,7 @@ add_task(async function() {
   const global = Cu.Sandbox("http://example.com");
 
   const tracker = allocationTracker({ watchGlobal: global });
+  const before = tracker.stillAllocatedObjects();
 
   
   Cu.evalInSandbox("let list; new " + function() {
@@ -36,6 +37,21 @@ add_task(async function() {
   
   
   
+
+  const afterCreation = tracker.stillAllocatedObjects();
+  ok(afterCreation - before > 1000,
+    `At least 1000 more objects are reported still allocated (${before}` +
+    ` + ${afterCreation - before} -> ${afterCreation})`);
+
+  Cu.evalInSandbox("list = null;", global, undefined, "test-file.js", 7);
+
+  Cu.forceGC();
+  Cu.forceCC();
+
+  const afterGC = tracker.stillAllocatedObjects();
+  ok(afterCreation - afterGC > 1000,
+    `At least 1000 less objects are reported still allocated (${afterCreation}` +
+    ` -(${afterGC - afterCreation})-> ${afterGC})`);
 
   tracker.stop();
 });
