@@ -20,6 +20,9 @@ function checkValueAndTrigger(request, data, ctx)
 function run_test()
 {
     
+    Services.prefs.setBoolPref("network.cookieSettings.unblocked_for_testing", true);
+
+    
     Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
 
     httpserver.registerPathHandler("/redirect1", redirectHandler1);
