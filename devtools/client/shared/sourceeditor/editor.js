@@ -433,6 +433,19 @@ Editor.prototype = {
 
     if (!this.config.disableSearchAddon) {
       this._initSearchShortcuts(win);
+    } else {
+      
+      Object.assign(win.CodeMirror.commands, {
+        find: null,
+        findPersistent: null,
+        findPersistentNext: null,
+        findPersistentPrev: null,
+        findNext: null,
+        findPrev: null,
+        clearSearch: null,
+        replace: null,
+        replaceAll: null,
+      });
     }
 
     editors.set(this, cm);
