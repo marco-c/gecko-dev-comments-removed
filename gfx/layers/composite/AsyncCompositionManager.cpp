@@ -1381,15 +1381,6 @@ bool AsyncCompositionManager::TransformShadowTree(
   if (!(aSkip & CompositorBridgeParentBase::TransformsToSkip::APZ)) {
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
     bool foundRoot = false;
     if (ApplyAsyncContentTransformToTree(root, &foundRoot)) {
 #if defined(MOZ_WIDGET_ANDROID)
