@@ -21,6 +21,7 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Move.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/TextComposition.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/Selection.h"
@@ -337,12 +338,17 @@ nsresult HTMLEditRules::BeforeEdit(EditSubAction aEditSubAction,
     AutoSafeEditorData setData(*this, *mHTMLEditor);
 
     
-
-    
-    if (!SelectionRefPtr()->RangeCount()) {
-      return NS_ERROR_UNEXPECTED;
+    if (HTMLEditorRef().GetCompositionStartPoint().IsSet()) {
+      
+      
+      mRangeItem->StoreRange(HTMLEditorRef().GetCompositionStartPoint(), HTMLEditorRef().GetCompositionEndPoint());
+    } else {
+      
+      if (!SelectionRefPtr()->RangeCount()) {
+        return NS_ERROR_UNEXPECTED;
+      }
+      mRangeItem->StoreRange(SelectionRefPtr()->GetRangeAt(0));
     }
-    mRangeItem->StoreRange(SelectionRefPtr()->GetRangeAt(0));
     nsCOMPtr<nsINode> selStartNode = mRangeItem->mStartContainer;
     nsCOMPtr<nsINode> selEndNode = mRangeItem->mEndContainer;
 
@@ -529,7 +535,24 @@ nsresult HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
         aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
         aEditSubAction == EditSubAction::ePasteHTMLContent ||
         aEditSubAction == EditSubAction::eInsertHTMLSource) {
-      rv = AdjustWhitespace();
+      
+      
+      
+      
+      
+      
+      EditorRawDOMPoint pointToAdjust(HTMLEditorRef().GetCompositionEndPoint());
+      if (!pointToAdjust.IsSet()) {
+        
+        pointToAdjust = EditorBase::GetStartPoint(*SelectionRefPtr());
+        if (NS_WARN_IF(!pointToAdjust.IsSet())) {
+          return NS_ERROR_FAILURE;
+        }
+      }
+      rv = WSRunObject(&HTMLEditorRef(), pointToAdjust).AdjustWhitespace();
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1331,21 +1354,19 @@ nsresult HTMLEditRules::WillInsertText(EditSubAction aEditSubAction,
   }
 
   if (aEditSubAction == EditSubAction::eInsertTextComingFromIME) {
-    
-    
-    
-    
-    
-    int32_t IMESelectionOffset = HTMLEditorRef().GetIMESelectionStartOffsetIn(
-        pointToInsert.GetContainer());
-    if (IMESelectionOffset >= 0) {
-      pointToInsert.Set(pointToInsert.GetContainer(), IMESelectionOffset);
+    EditorRawDOMPoint compositionStartPoint =
+        HTMLEditorRef().GetCompositionStartPoint();
+    if (!compositionStartPoint.IsSet()) {
+      compositionStartPoint = pointToInsert;
     }
 
     if (inString->IsEmpty()) {
+      
+      
+      
       rv = MOZ_KnownLive(HTMLEditorRef())
                .InsertTextWithTransaction(*doc, *inString,
-                                          EditorRawDOMPoint(pointToInsert));
+                                          compositionStartPoint);
       if (NS_WARN_IF(!CanHandleEditAction())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -1355,11 +1376,33 @@ nsresult HTMLEditRules::WillInsertText(EditSubAction aEditSubAction,
       return NS_OK;
     }
 
-    WSRunObject wsObj(&HTMLEditorRef(), pointToInsert);
-    rv = wsObj.InsertText(*doc, *inString, pointToInsert);
+    EditorRawDOMPoint compositionEndPoint =
+        HTMLEditorRef().GetCompositionEndPoint();
+    if (!compositionEndPoint.IsSet()) {
+      compositionEndPoint = compositionStartPoint;
+    }
+    WSRunObject wsObj(&HTMLEditorRef(), compositionStartPoint,
+                      compositionEndPoint);
+    rv = wsObj.InsertText(*doc, *inString);
     if (NS_WARN_IF(!CanHandleEditAction())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    compositionStartPoint = HTMLEditorRef().GetCompositionStartPoint();
+    compositionEndPoint = HTMLEditorRef().GetCompositionEndPoint();
+    if (NS_WARN_IF(!compositionStartPoint.IsSet()) ||
+        NS_WARN_IF(!compositionEndPoint.IsSet())) {
+      
+      return NS_OK;
+    }
+    if (!mDocChangeRange) {
+      mDocChangeRange = new nsRange(compositionStartPoint.GetContainer());
+    }
+    rv = mDocChangeRange->SetStartAndEnd(compositionStartPoint,
+                                         compositionEndPoint);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1486,8 +1529,7 @@ nsresult HTMLEditRules::WillInsertText(EditSubAction aEditSubAction,
         
         if (subStr.Equals(tabStr)) {
           EditorRawDOMPoint pointAfterInsertedSpaces;
-          rv = wsObj.InsertText(*doc, spacesStr, currentPoint,
-                                &pointAfterInsertedSpaces);
+          rv = wsObj.InsertText(*doc, spacesStr, &pointAfterInsertedSpaces);
           if (NS_WARN_IF(!CanHandleEditAction())) {
             return NS_ERROR_EDITOR_DESTROYED;
           }
@@ -1527,8 +1569,7 @@ nsresult HTMLEditRules::WillInsertText(EditSubAction aEditSubAction,
               "Perhaps, newBRElement has been moved or removed unexpectedly");
         } else {
           EditorRawDOMPoint pointAfterInsertedString;
-          rv = wsObj.InsertText(*doc, subStr, currentPoint,
-                                &pointAfterInsertedString);
+          rv = wsObj.InsertText(*doc, subStr, &pointAfterInsertedString);
           if (NS_WARN_IF(!CanHandleEditAction())) {
             return NS_ERROR_EDITOR_DESTROYED;
           }
@@ -9050,27 +9091,6 @@ HTMLEditRules::InsertBRElementToEmptyListItemsAndTableCellsInChangedRange() {
     if (NS_WARN_IF(createMozBrResult.Failed())) {
       return createMozBrResult.Rv();
     }
-  }
-  return NS_OK;
-}
-
-nsresult HTMLEditRules::AdjustWhitespace() {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  EditorRawDOMPoint selectionStartPoint(
-      EditorBase::GetStartPoint(*SelectionRefPtr()));
-  if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  nsresult rv =
-      WSRunObject(&HTMLEditorRef(), selectionStartPoint).AdjustWhitespace();
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
   }
   return NS_OK;
 }

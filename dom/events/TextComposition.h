@@ -16,6 +16,7 @@
 #include "nsPresContext.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/RangeBoundary.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/dom/Text.h"
@@ -124,6 +125,16 @@ class TextComposition final {
   uint32_t NativeOffsetOfTargetClause() const {
     return mCompositionStartOffset + mTargetClauseOffsetInComposition;
   }
+
+  
+
+
+
+
+
+
+  RawRangeBoundary GetStartRef() const;
+  RawRangeBoundary GetEndRef() const;
 
   
 

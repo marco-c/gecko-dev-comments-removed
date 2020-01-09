@@ -7,6 +7,7 @@
 #define WSRunObject_h
 
 #include "mozilla/dom/Text.h"
+#include "mozilla/EditAction.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/EditorDOMPoint.h"  
 
@@ -143,10 +144,35 @@ class MOZ_STACK_CLASS WSRunObject final {
   enum { eAfter = 1 << 1 };
   enum { eBoth = eBefore | eAfter };
 
+  
+
+
+
+
+
+
+
+
+
   template <typename PT, typename CT>
   WSRunObject(HTMLEditor* aHTMLEditor,
-              const EditorDOMPointBase<PT, CT>& aPoint);
-  WSRunObject(HTMLEditor* aHTMLEditor, nsINode* aNode, int32_t aOffset);
+              const EditorDOMPointBase<PT, CT>& aScanStartPoint,
+              const EditorDOMPointBase<PT, CT>& aScanEndPoint);
+  template <typename PT, typename CT>
+  WSRunObject(HTMLEditor* aHTMLEditor,
+              const EditorDOMPointBase<PT, CT>& aScanStartPoint)
+      : WSRunObject(aHTMLEditor, aScanStartPoint, aScanStartPoint) {}
+  WSRunObject(HTMLEditor* aHTMLEditor, nsINode* aScanStartNode,
+              int32_t aScanStartOffset, nsINode* aScanEndNode,
+              int32_t aScanEndOffset)
+      : WSRunObject(aHTMLEditor,
+                    EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
+                    EditorRawDOMPoint(aScanEndNode, aScanEndOffset)) {}
+  WSRunObject(HTMLEditor* aHTMLEditor, nsINode* aScanStartNode,
+              int32_t aScanStartOffset)
+      : WSRunObject(aHTMLEditor,
+                    EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
+                    EditorRawDOMPoint(aScanStartNode, aScanStartOffset)) {}
   ~WSRunObject();
 
   
@@ -233,12 +259,8 @@ class MOZ_STACK_CLASS WSRunObject final {
 
 
 
-
-
-  template <typename PT, typename CT>
   MOZ_CAN_RUN_SCRIPT nsresult
   InsertText(dom::Document& aDocument, const nsAString& aStringToInsert,
-             const EditorDOMPointBase<PT, CT>& aPointToInsert,
              EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
 
   
@@ -420,10 +442,9 @@ class MOZ_STACK_CLASS WSRunObject final {
 
 
 
-
-
-
-  void GetASCIIWhitespacesBounds(int16_t aDir, nsINode* aNode, int32_t aOffset,
+  template <typename PT, typename CT>
+  void GetASCIIWhitespacesBounds(int16_t aDir,
+                                 const EditorDOMPointBase<PT, CT>& aPoint,
                                  dom::Text** outStartNode,
                                  int32_t* outStartOffset,
                                  dom::Text** outEndNode, int32_t* outEndOffset);
@@ -473,7 +494,6 @@ class MOZ_STACK_CLASS WSRunObject final {
   nsresult Scrub();
   bool IsBlockNode(nsINode* aNode);
 
-  EditorRawDOMPoint Point() const { return EditorRawDOMPoint(mNode, mOffset); }
   EditorRawDOMPoint StartPoint() const {
     return EditorRawDOMPoint(mStartNode, mStartOffset);
   }
@@ -482,9 +502,9 @@ class MOZ_STACK_CLASS WSRunObject final {
   }
 
   
-  nsCOMPtr<nsINode> mNode;
-  
-  int32_t mOffset;
+  EditorDOMPoint mScanStartPoint;
+  EditorDOMPoint mScanEndPoint;
+
   
   
 

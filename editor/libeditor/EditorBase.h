@@ -871,6 +871,14 @@ class EditorBase : public nsIEditor,
 
 
 
+  EditorRawDOMPoint GetCompositionStartPoint() const;
+  EditorRawDOMPoint GetCompositionEndPoint() const;
+
+  
+
+
+
+
 
 
 
@@ -1712,12 +1720,6 @@ class EditorBase : public nsIEditor,
 
 
   virtual bool IsActiveInDOMWindow();
-
-  
-
-
-
-  int32_t GetIMESelectionStartOffsetIn(nsINode* aTextNode);
 
   
 
