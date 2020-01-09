@@ -473,7 +473,7 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, bool aScreenCTM,
     gfxMatrix ret;
 
     if (auto* f = e->GetPrimaryFrame()) {
-      ret = nsSVGUtils::GetTransformMatrixInUserSpace(f, f->GetParent());
+      ret = nsSVGUtils::GetTransformMatrixInUserSpace(f);
     } else {
       
       

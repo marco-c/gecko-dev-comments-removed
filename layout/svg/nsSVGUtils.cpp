@@ -28,6 +28,7 @@
 #include "nsPresContext.h"
 #include "nsStyleCoord.h"
 #include "nsStyleStruct.h"
+#include "nsStyleTransformMatrix.h"
 #include "SVGAnimatedLength.h"
 #include "nsSVGClipPathFrame.h"
 #include "nsSVGContainerFrame.h"
@@ -1094,9 +1095,8 @@ gfxRect nsSVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
           matrix = gfxMatrix();
         }
 
-        matrix = nsSVGUtils::GetTransformMatrixInUserSpace(
-                     clipPathFrame, clipPathFrame->GetParent()) *
-                 matrix;
+        matrix =
+            nsSVGUtils::GetTransformMatrixInUserSpace(clipPathFrame) * matrix;
 
         bbox = clipPathFrame->GetBBoxForClipPathFrame(bbox, matrix, aFlags)
                    .ToThebesRect();
@@ -1251,8 +1251,8 @@ bool nsSVGUtils::GetNonScalingStrokeTransform(nsIFrame* aFrame,
 
   MOZ_ASSERT(aFrame->GetContent()->IsSVGElement(), "should be an SVG element");
 
-  nsSVGOuterSVGFrame* outer = nsSVGUtils::GetOuterSVGFrame(aFrame);
-  *aUserToOuterSVG = nsSVGUtils::GetTransformMatrixInUserSpace(aFrame, outer);
+  *aUserToOuterSVG = ThebesMatrix(SVGContentUtils::GetCTM(
+      static_cast<SVGElement*>(aFrame->GetContent()), true));
 
   return aUserToOuterSVG->HasNonTranslation();
 }
@@ -1642,7 +1642,7 @@ void nsSVGUtils::PaintSVGGlyph(Element* aElement, gfxContext* aContext) {
   if (frame->GetContent()->IsSVGElement()) {
     
     
-    m = nsSVGUtils::GetTransformMatrixInUserSpace(frame, frame->GetParent());
+    m = nsSVGUtils::GetTransformMatrixInUserSpace(frame);
   }
 
   
@@ -1696,29 +1696,49 @@ gfxMatrix nsSVGUtils::GetCSSPxToDevPxMatrix(nsIFrame* aNonSVGFrame) {
   return gfxMatrix(devPxPerCSSPx, 0.0, 0.0, devPxPerCSSPx, 0.0, 0.0);
 }
 
-gfxMatrix nsSVGUtils::GetTransformMatrixInUserSpace(const nsIFrame* aFrame,
-                                                    const nsIFrame* aAncestor) {
+gfxMatrix nsSVGUtils::GetTransformMatrixInUserSpace(const nsIFrame* aFrame) {
   
   
   MOZ_ASSERT(aFrame->GetContent() && aFrame->GetContent()->IsSVGElement(),
              "Only use this wrapper for SVG elements");
 
+  if (!aFrame->IsTransformed()) {
+    return {};
+  }
+
+  nsDisplayTransform::FrameTransformProperties properties{
+      aFrame, AppUnitsPerCSSPixel(), nullptr};
+  nsStyleTransformMatrix::TransformReferenceBox refBox;
+  refBox.Init(aFrame);
+
+  
+  
+  Point3D svgTransformOrigin{
+      properties.mToTransformOrigin.x - CSSPixel::FromAppUnits(refBox.X()),
+      properties.mToTransformOrigin.y - CSSPixel::FromAppUnits(refBox.Y()),
+      properties.mToTransformOrigin.z};
+
+  Matrix svgTransform;
+  Matrix4x4 trans;
+  (void)aFrame->IsSVGTransformed(&svgTransform);
+
+  if (properties.HasTransform()) {
+    trans = nsStyleTransformMatrix::ReadTransforms(
+        properties.mIndividualTransformList
+            ? properties.mIndividualTransformList->mHead
+            : nullptr,
+        properties.mMotion,
+        properties.mTransformList ? properties.mTransformList->mHead : nullptr,
+        refBox, AppUnitsPerCSSPixel());
+  } else {
+    trans = Matrix4x4::From2D(svgTransform);
+  }
+
+  trans.ChangeBasis(svgTransformOrigin);
+
   Matrix mm;
-  auto trans = nsLayoutUtils::GetTransformToAncestor(aFrame, aAncestor,
-                                                     nsIFrame::IN_CSS_UNITS);
-
   trans.ProjectTo2D();
-  trans.CanDraw2D(&mm);
-  gfxMatrix ret = ThebesMatrix(mm);
+  (void)trans.CanDraw2D(&mm);
 
-  float initPositionX = NSAppUnitsToFloatPixels(aFrame->GetPosition().x,
-                                                AppUnitsPerCSSPixel()),
-        initPositionY = NSAppUnitsToFloatPixels(aFrame->GetPosition().y,
-                                                AppUnitsPerCSSPixel());
-
-  
-  
-  ret = ret.PreTranslate(-initPositionX, -initPositionY);
-
-  return ret;
+  return ThebesMatrix(mm);
 }

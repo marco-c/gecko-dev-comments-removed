@@ -599,8 +599,10 @@ class nsSVGUtils {
 
 
 
-  static gfxMatrix GetTransformMatrixInUserSpace(const nsIFrame* aFrame,
-                                                 const nsIFrame* aAncestor);
+
+
+
+  static gfxMatrix GetTransformMatrixInUserSpace(const nsIFrame* aFrame);
 };
 
 #endif
