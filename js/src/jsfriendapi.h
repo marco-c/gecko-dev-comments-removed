@@ -1961,40 +1961,6 @@ extern JS_FRIEND_API bool JS_IsDetachedArrayBufferObject(JSObject* obj);
 JS_FRIEND_API JSObject* JS_NewDataView(JSContext* cx, JS::HandleObject buffer,
                                        uint32_t byteOffset, int32_t byteLength);
 
-
-
-
-
-
-
-
-
-JS_FRIEND_API uint32_t JS_GetDataViewByteOffset(JSObject* obj);
-
-
-
-
-
-
-
-
-
-JS_FRIEND_API uint32_t JS_GetDataViewByteLength(JSObject* obj);
-
-
-
-
-
-
-
-
-
-
-
-
-JS_FRIEND_API void* JS_GetDataViewData(JSObject* obj, bool* isSharedMemory,
-                                       const JS::AutoRequireNoGC&);
-
 namespace js {
 namespace jit {
 
