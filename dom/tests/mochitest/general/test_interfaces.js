@@ -392,7 +392,11 @@ var interfaceNamesInGlobalScope =
 
     {name: "GamepadHapticActuator", insecureContext: true},
 
+    {name: "GamepadLightIndicator", insecureContext: false, disabled: true},
+
     {name: "GamepadPose", insecureContext: true},
+
+    {name: "GamepadTouch", insecureContext: false, disabled: true},
 
     {name: "HashChangeEvent", insecureContext: true},
 
