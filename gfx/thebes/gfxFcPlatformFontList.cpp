@@ -536,7 +536,8 @@ double gfxFontconfigFontEntry::GetAspect() {
   s.size = 100.0;  
   RefPtr<gfxFont> font = FindOrMakeFont(&s);
   if (font) {
-    const gfxFont::Metrics& metrics = font->GetMetrics(gfxFont::eHorizontal);
+    const gfxFont::Metrics& metrics =
+        font->GetMetrics(nsFontMetrics::eHorizontal);
 
     
     

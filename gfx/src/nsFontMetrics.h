@@ -8,7 +8,6 @@
 
 #include <stdint.h>              
 #include <sys/types.h>           
-#include "gfxTextRun.h"          
 #include "mozilla/Assertions.h"  
 #include "mozilla/RefPtr.h"      
 #include "nsCOMPtr.h"            
@@ -19,11 +18,18 @@
 #include "nscore.h"              
 
 class gfxContext;
+class gfxFontGroup;
 class gfxUserFontSet;
 class gfxTextPerfMetrics;
 class nsDeviceContext;
 class nsAtom;
 struct nsBoundingMetrics;
+
+namespace mozilla {
+namespace gfx {
+class DrawTarget;
+}  
+}  
 
 
 
@@ -45,13 +51,14 @@ struct nsBoundingMetrics;
 
 class nsFontMetrics final {
  public:
-  typedef gfxTextRun::Range Range;
   typedef mozilla::gfx::DrawTarget DrawTarget;
+
+  enum FontOrientation { eHorizontal, eVertical };
 
   struct MOZ_STACK_CLASS Params {
     nsAtom* language = nullptr;
     bool explicitLanguage = false;
-    gfxFont::Orientation orientation = gfxFont::eHorizontal;
+    FontOrientation orientation = eHorizontal;
     gfxUserFontSet* userFontSet = nullptr;
     gfxTextPerfMetrics* textPerf = nullptr;
     gfxFontFeatureValueSet* featureValueLookup = nullptr;
@@ -184,7 +191,7 @@ class nsFontMetrics final {
   
 
 
-  gfxFont::Orientation Orientation() const { return mOrientation; }
+  FontOrientation Orientation() const { return mOrientation; }
 
   int32_t GetMaxStringLength();
 
@@ -225,22 +232,13 @@ class nsFontMetrics final {
   uint8_t GetTextOrientation() const { return mTextOrientation; }
 
   gfxFontGroup* GetThebesFontGroup() const { return mFontGroup; }
-  gfxUserFontSet* GetUserFontSet() const {
-    return mFontGroup->GetUserFontSet();
-  }
+  gfxUserFontSet* GetUserFontSet() const;
 
   int32_t AppUnitsPerDevPixel() const { return mP2A; }
 
  private:
   
   ~nsFontMetrics();
-
-  const gfxFont::Metrics& GetMetrics() const {
-    return GetMetrics(mOrientation);
-  }
-
-  const gfxFont::Metrics& GetMetrics(
-      const gfxFont::Orientation aFontOrientation) const;
 
   nsFont mFont;
   RefPtr<gfxFontGroup> mFontGroup;
@@ -253,7 +251,7 @@ class nsFontMetrics final {
   
   
   
-  gfxFont::Orientation mOrientation;
+  FontOrientation mOrientation;
 
   
   

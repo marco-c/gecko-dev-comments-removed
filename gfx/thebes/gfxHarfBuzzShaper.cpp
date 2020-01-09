@@ -310,7 +310,8 @@ hb_position_t gfxHarfBuzzShaper::GetGlyphVAdvance(hb_codepoint_t glyph) const {
   if (!mVmtxTable) {
     
     
-    return FloatToFixed(mFont->GetMetrics(gfxFont::eVertical).aveCharWidth);
+    return FloatToFixed(
+        mFont->GetMetrics(nsFontMetrics::eVertical).aveCharWidth);
   }
 
   NS_ASSERTION(mNumLongVMetrics > 0,
@@ -473,7 +474,8 @@ void gfxHarfBuzzShaper::GetGlyphVOrigin(hb_codepoint_t aGlyph,
       
       
       const gfxFont::Metrics &mtx = mFont->GetHorizontalMetrics();
-      gfxFloat advance = mFont->GetMetrics(gfxFont::eVertical).aveCharWidth;
+      gfxFloat advance =
+          mFont->GetMetrics(nsFontMetrics::eVertical).aveCharWidth;
       gfxFloat ascent = mtx.emAscent;
       gfxFloat height = ascent + mtx.emDescent;
       

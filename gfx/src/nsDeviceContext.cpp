@@ -8,9 +8,9 @@
 #include <algorithm>      
 #include "gfxASurface.h"  
 #include "gfxContext.h"
-#include "gfxFont.h"             
 #include "gfxImageSurface.h"     
 #include "gfxPoint.h"            
+#include "gfxTextRun.h"          
 #include "mozilla/Attributes.h"  
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/PrintTarget.h"
