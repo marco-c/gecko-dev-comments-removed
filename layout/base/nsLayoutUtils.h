@@ -2156,6 +2156,8 @@ class nsLayoutUtils {
     
     mozilla::gfx::IntSize mSize;
     
+    mozilla::gfx::IntSize mIntrinsicSize;
+    
 
     nsCOMPtr<nsIPrincipal> mPrincipal;
     
