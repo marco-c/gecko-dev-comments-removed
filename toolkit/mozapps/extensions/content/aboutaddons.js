@@ -3211,6 +3211,14 @@ async function show(type, param, { isKeyboardNavigation }) {
     container.append(elem);
   } else if (type == "updates") {
     await new UpdatesView({ param, root: container }).render();
+  } else if (type == "shortcuts") {
+    
+    
+    setCategoryFn("extension");
+    let view = document.createElement("addon-shortcuts");
+    await view.render();
+    await document.l10n.translateFragment(view);
+    container.appendChild(view);
   } else {
     throw new Error(`Unknown view type: ${type}`);
   }
