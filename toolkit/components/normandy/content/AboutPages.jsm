@@ -244,13 +244,22 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
 
 
     async removeAddonStudy(recipeId, reason) {
-      const action = new AddonStudyAction();
-      await action.unenroll(recipeId, reason);
-
-      
-      Services.mm.broadcastAsyncMessage("Shield:ReceiveAddonStudyList", {
-        studies: await AddonStudies.getAll(),
-      });
+      try {
+        const action = new AddonStudyAction();
+        await action.unenroll(recipeId, reason);
+      } catch (err) {
+        
+        
+        if (!err.toString().includes("already inactive")) {
+          throw err;
+        }
+      } finally {
+        
+        
+        Services.mm.broadcastAsyncMessage("Shield:ReceiveAddonStudyList", {
+          studies: await AddonStudies.getAll(),
+        });
+      }
     },
 
     
@@ -258,12 +267,21 @@ XPCOMUtils.defineLazyGetter(this.AboutPages, "aboutStudies", () => {
 
 
     async removePreferenceStudy(experimentName, reason) {
-      PreferenceExperiments.stop(experimentName, { reason });
-
-      
-      Services.mm.broadcastAsyncMessage("Shield:ReceivePreferenceStudyList", {
-        studies: await PreferenceExperiments.getAll(),
-      });
+      try {
+        await PreferenceExperiments.stop(experimentName, { reason });
+      } catch (err) {
+        
+        
+        if (!err.toString().includes("already expired")) {
+          throw err;
+        }
+      } finally {
+        
+        
+        Services.mm.broadcastAsyncMessage("Shield:ReceivePreferenceStudyList", {
+          studies: await PreferenceExperiments.getAll(),
+        });
+      }
     },
 
     openDataPreferences() {
