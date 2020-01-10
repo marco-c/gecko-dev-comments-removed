@@ -531,6 +531,16 @@ static string GetProgramPath(const string& exename) {
   string path = gArgv[0];
   size_t pos = path.rfind(UI_CRASH_REPORTER_FILENAME BIN_SUFFIX);
   path.erase(pos);
+#ifdef XP_MACOSX
+  
+  
+  
+  
+  
+  
+  
+  path.append("../../../");
+#endif  
   path.append(exename + BIN_SUFFIX);
 
   return path;
