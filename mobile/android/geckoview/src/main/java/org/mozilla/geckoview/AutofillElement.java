@@ -13,6 +13,7 @@ import android.view.View;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Map;
@@ -88,7 +89,7 @@ public class AutofillElement {
     
 
 
-    public final @NonNull Iterable<AutofillElement> children;
+    public final @NonNull Collection<AutofillElement> children;
 
     
 
