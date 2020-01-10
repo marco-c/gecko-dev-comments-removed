@@ -228,9 +228,10 @@ async function setDefaultEngine(
     testPrivate ? "engine-default-private" : "engine-default",
     "browser-search-engine-modified"
   );
-  const popupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+  
+  
+  
   EventUtils.synthesizeMouseAtCenter(engine2Item, {}, engine2Item.ownerGlobal);
-  await popupHidden;
   await defaultChanged;
 
   const newDefault = testPrivate
