@@ -1832,7 +1832,7 @@ void SavedStacks::chooseSamplingProbability(Realm* realm) {
     
     Debugger* dbgp = p->unbarrieredGet();
 
-    if (dbgp->trackingAllocationSites && dbgp->enabled) {
+    if (dbgp->trackingAllocationSites) {
       foundAnyDebuggers = true;
       probability = std::max(dbgp->allocationSamplingProbability, probability);
     }
