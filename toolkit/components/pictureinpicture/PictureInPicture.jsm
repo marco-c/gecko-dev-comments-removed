@@ -13,7 +13,7 @@ const { AppConstants } = ChromeUtils.import(
 
 const PLAYER_URI = "chrome://global/content/pictureinpicture/player.xhtml";
 var PLAYER_FEATURES =
-  "chrome,titlebar=no,alwaysontop,lockaspectratio,resizable";
+  "chrome,titlebar=yes,alwaysontop,lockaspectratio,resizable";
 
 if (!AppConstants.MOZ_WIDGET_GTK) {
   PLAYER_FEATURES += ",dialog";
