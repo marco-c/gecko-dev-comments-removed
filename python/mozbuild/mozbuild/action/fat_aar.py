@@ -127,12 +127,17 @@ def fat_aar(distdir, architectures=[],
 
     
     
-    allow_list = {
+    allow_pattern_list = {
         'AndroidManifest.xml',  
         'classes.jar!/org/mozilla/gecko/util/HardwareUtils.class',  
         'classes.jar!/org/mozilla/geckoview/BuildConfig.class',
         
         'chrome/toolkit/content/global/buildconfig.html',
+        
+        
+        '**/*.ftl',
+        '**/*.dtd',
+        '**/*.properties',
     }
 
     not_allowed = OrderedDict()
@@ -149,7 +154,7 @@ def fat_aar(distdir, architectures=[],
             
             continue
 
-        if p in allow_list:
+        if any(mozpath.match(p, pat) for pat in allow_pattern_list):
             print('Allowed: Path "{path}" has architecture-specific versions:\n{ds_repr}'.format(
                 path=p, ds_repr=format_diffs(ds)))
             continue
