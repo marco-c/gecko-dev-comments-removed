@@ -49,6 +49,10 @@ document.addEventListener("DOMContentLoaded", e => {
     );
   }
 
+  let legend = document.getElementById("legend");
+  legend.style.gridTemplateAreas =
+    "'social cookie tracker fingerprinter cryptominer'";
+
   let createGraph = data => {
     
     
@@ -121,12 +125,6 @@ document.addEventListener("DOMContentLoaded", e => {
       );
       weekSummary.setAttribute("data-l10n-id", "graph-week-summary");
 
-      
-      for (let type of dataTypes) {
-        document.querySelector(`label[data-type=${type}]`).textContent =
-          weekTypeCounts[type];
-      }
-
       let label = document.createElement("span");
       label.className = "column-label";
       if (i == 6) {
@@ -137,11 +135,21 @@ document.addEventListener("DOMContentLoaded", e => {
       graph.append(label);
       date.setDate(date.getDate() - 1);
     }
-
-    let legend = document.getElementById("legend");
     
-    legend.style.gridTemplateAreas =
-      "'social cookie tracker fingerprinter cryptominer'";
+    for (let type of dataTypes) {
+      document.querySelector(`label[data-type=${type}]`).textContent =
+        weekTypeCounts[type];
+    }
+
+    
+    
+    if (weekTypeCounts.tracker == 0 && cbCategory == "standard") {
+      legend.style.gridTemplateAreas =
+        "'social cookie fingerprinter cryptominer'";
+      let radio = document.getElementById("tab-tracker");
+      radio.setAttribute("disabled", true);
+      document.querySelector("#tab-tracker ~ label").style.display = "none";
+    }
 
     addListeners();
   };
