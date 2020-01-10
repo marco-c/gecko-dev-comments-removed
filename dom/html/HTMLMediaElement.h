@@ -1174,7 +1174,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void Seek(double aTime, SeekTarget::Type aSeekType, ErrorResult& aRv);
 
   
-  void UpdateAudioChannelPlayingState(bool aForcePlaying = false);
+  void UpdateAudioChannelPlayingState();
 
   
   

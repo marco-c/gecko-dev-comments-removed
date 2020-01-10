@@ -992,10 +992,9 @@ class HTMLMediaElement::AudioChannelAgentCallback final
     MaybeCreateAudioChannelAgent();
   }
 
-  void UpdateAudioChannelPlayingState(bool aForcePlaying = false) {
+  void UpdateAudioChannelPlayingState() {
     MOZ_ASSERT(!mIsShutDown);
-    bool playingThroughTheAudioChannel =
-        aForcePlaying || IsPlayingThroughTheAudioChannel();
+    bool playingThroughTheAudioChannel = IsPlayingThroughTheAudioChannel();
 
     if (playingThroughTheAudioChannel != mPlayingThroughTheAudioChannel) {
       if (!MaybeCreateAudioChannelAgent()) {
@@ -1013,18 +1012,8 @@ class HTMLMediaElement::AudioChannelAgentCallback final
 
   bool ShouldResetSuspend() const {
     
-    if (!mOwner->Paused() &&
-        mSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE) {
-      return true;
-    }
-
-    
-    
-    if (mOwner->Paused() && mSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
-      return true;
-    }
-
-    return false;
+    return !mOwner->Paused() &&
+           mSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE;
   }
 
   void NotifyPlayStateChanged() {
@@ -1076,7 +1065,6 @@ class HTMLMediaElement::AudioChannelAgentCallback final
         break;
       case nsISuspendedTypes::SUSPENDED_PAUSE:
       case nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE:
-      case nsISuspendedTypes::SUSPENDED_BLOCK:
         Suspend(aSuspend);
         break;
       case nsISuspendedTypes::SUSPENDED_STOP_DISPOSABLE:
@@ -1125,21 +1113,6 @@ class HTMLMediaElement::AudioChannelAgentCallback final
     NotifyMediaAudibleChanged(
         mAudioChannelAgent->WindowID(),
         mIsOwnerAudible == AudioChannelService::AudibleState::eAudible);
-  }
-
-  bool IsPlaybackBlocked() {
-    MOZ_ASSERT(!mIsShutDown);
-    
-    
-    
-    if (!IsTabActivated()) {
-      
-      
-      UpdateAudioChannelPlayingState(true );
-      return true;
-    }
-
-    return false;
   }
 
   void Shutdown() {
@@ -1310,17 +1283,9 @@ class HTMLMediaElement::AudioChannelAgentCallback final
         }));
   }
 
-  bool IsTabActivated() {
-    if (MaybeCreateAudioChannelAgent()) {
-      return !mAudioChannelAgent->ShouldBlockMedia();
-    }
-    return false;
-  }
-
   bool IsSuspended() const {
     return (mSuspended == nsISuspendedTypes::SUSPENDED_PAUSE ||
-            mSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE ||
-            mSuspended == nsISuspendedTypes::SUSPENDED_BLOCK);
+            mSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE);
   }
 
   AudibleState IsOwnerAudible() const {
@@ -1382,10 +1347,6 @@ class HTMLMediaElement::AudioChannelAgentCallback final
   float mAudioChannelVolume;
   
   bool mPlayingThroughTheAudioChannel;
-  
-  
-  
-  
   
   
   
@@ -5815,16 +5776,9 @@ bool HTMLMediaElement::CanActivateAutoplay() {
     return false;
   }
 
-  if (mAudioChannelWrapper) {
-    
-    
-    if (mAudioChannelWrapper->GetSuspendType() ==
-            nsISuspendedTypes::SUSPENDED_PAUSE ||
-        mAudioChannelWrapper->GetSuspendType() ==
-            nsISuspendedTypes::SUSPENDED_BLOCK ||
-        mAudioChannelWrapper->IsPlaybackBlocked()) {
-      return false;
-    }
+  if (mAudioChannelWrapper && mAudioChannelWrapper->GetSuspendType() ==
+                                  nsISuspendedTypes::SUSPENDED_PAUSE) {
+    return false;
   }
 
   return mReadyState >= HAVE_ENOUGH_DATA;
@@ -6519,9 +6473,9 @@ ImageContainer* HTMLMediaElement::GetImageContainer() {
   return container ? container->GetImageContainer() : nullptr;
 }
 
-void HTMLMediaElement::UpdateAudioChannelPlayingState(bool aForcePlaying) {
+void HTMLMediaElement::UpdateAudioChannelPlayingState() {
   if (mAudioChannelWrapper) {
-    mAudioChannelWrapper->UpdateAudioChannelPlayingState(aForcePlaying);
+    mAudioChannelWrapper->UpdateAudioChannelPlayingState();
   }
 }
 
@@ -6535,11 +6489,8 @@ bool HTMLMediaElement::AudioChannelAgentBlockedPlay() {
     return true;
   }
 
-  
-  
   const auto suspendType = mAudioChannelWrapper->GetSuspendType();
-  return suspendType == nsISuspendedTypes::SUSPENDED_PAUSE ||
-         suspendType == nsISuspendedTypes::SUSPENDED_BLOCK;
+  return suspendType == nsISuspendedTypes::SUSPENDED_PAUSE;
 }
 
 static const char* VisibilityString(Visibility aVisibility) {
