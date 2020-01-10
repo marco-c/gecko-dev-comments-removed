@@ -479,16 +479,21 @@ async function testFileAccess() {
       minLevel: minHomeReadSandboxLevel(),
       func: readDir,
     });
+
     
-    let network = GetDir("/Network");
-    tests.push({
-      desc: "/Network",
-      ok: false,
-      browser: webBrowser,
-      file: network,
-      minLevel: minHomeReadSandboxLevel(),
-      func: readDir,
-    });
+    
+    if (AppConstants.isPlatformAndVersionAtMost("macosx", 18)) {
+      
+      let network = GetDir("/Network");
+      tests.push({
+        desc: "/Network",
+        ok: false,
+        browser: webBrowser,
+        file: network,
+        minLevel: minHomeReadSandboxLevel(),
+        func: readDir,
+      });
+    }
     
     let users = GetDir("/Users");
     tests.push({
