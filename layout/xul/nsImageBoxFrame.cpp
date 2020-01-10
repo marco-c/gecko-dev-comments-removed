@@ -256,9 +256,20 @@ void nsImageBoxFrame::UpdateImage() {
         }
       }
     }
-  } else if (auto* styleRequest = GetRequestFromStyle()) {
-    styleRequest->SyncClone(mListener, mContent->GetComposedDoc(),
-                            getter_AddRefs(mImageRequest));
+  } else {
+    
+    
+    auto* display = StyleDisplay();
+    if (!(display->HasAppearance() && nsBox::gTheme &&
+          nsBox::gTheme->ThemeSupportsWidget(nullptr, this,
+                                             display->mAppearance))) {
+      
+      imgRequestProxy* styleRequest = StyleList()->GetListStyleImage();
+      if (styleRequest) {
+        styleRequest->SyncClone(mListener, mContent->GetComposedDoc(),
+                                getter_AddRefs(mImageRequest));
+      }
+    }
   }
 
   if (!mImageRequest) {
@@ -591,19 +602,15 @@ bool nsImageBoxFrame::CanOptimizeToImageLayer() {
   return true;
 }
 
-imgRequestProxy* nsImageBoxFrame::GetRequestFromStyle() {
-  const nsStyleDisplay* disp = StyleDisplay();
-  if (disp->HasAppearance() && nsBox::gTheme &&
-      nsBox::gTheme->ThemeSupportsWidget(nullptr, this, disp->mAppearance)) {
-    return nullptr;
-  }
-
-  return StyleList()->GetListStyleImage();
-}
 
 
-void nsImageBoxFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
-  nsLeafBoxFrame::DidSetComputedStyle(aOldStyle);
+
+
+
+
+
+void nsImageBoxFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
+  nsLeafBoxFrame::DidSetComputedStyle(aOldComputedStyle);
 
   
   const nsStyleList* myList = StyleList();
@@ -613,19 +620,21 @@ void nsImageBoxFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
     return;  
 
   
+  const nsStyleDisplay* disp = StyleDisplay();
+  if (disp->HasAppearance() && nsBox::gTheme &&
+      nsBox::gTheme->ThemeSupportsWidget(nullptr, this, disp->mAppearance))
+    return;
+
+  
   nsCOMPtr<nsIURI> oldURI, newURI;
-  if (mImageRequest) {
-    mImageRequest->GetURI(getter_AddRefs(oldURI));
-  }
-  if (auto* newImage = GetRequestFromStyle()) {
-    newImage->GetURI(getter_AddRefs(newURI));
-  }
+  if (mImageRequest) mImageRequest->GetURI(getter_AddRefs(oldURI));
+  if (myList->GetListStyleImage())
+    myList->GetListStyleImage()->GetURI(getter_AddRefs(newURI));
   bool equal;
   if (newURI == oldURI ||  
       (newURI && oldURI && NS_SUCCEEDED(newURI->Equals(oldURI, &equal)) &&
-       equal)) {
+       equal))
     return;
-  }
 
   UpdateImage();
 }  
