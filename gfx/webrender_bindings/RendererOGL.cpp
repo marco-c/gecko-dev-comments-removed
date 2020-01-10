@@ -110,6 +110,9 @@ bool RendererOGL::UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
   
 
   if (!mCompositor->BeginFrame()) {
+    if (mCompositor->IsContextLost()) {
+      RenderThread::Get()->HandleDeviceReset("BeginFrame",  true);
+    }
     return false;
   }
 
@@ -172,7 +175,13 @@ void RendererOGL::CheckGraphicsResetStatus() {
   }
 }
 
-void RendererOGL::WaitForGPU() { mCompositor->WaitForGPU(); }
+void RendererOGL::WaitForGPU() {
+  if (!mCompositor->WaitForGPU()) {
+    if (mCompositor->IsContextLost()) {
+      RenderThread::Get()->HandleDeviceReset("WaitForGPU",  true);
+    }
+  }
+}
 
 void RendererOGL::Pause() { mCompositor->Pause(); }
 

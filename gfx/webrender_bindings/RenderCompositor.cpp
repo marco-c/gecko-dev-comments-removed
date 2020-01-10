@@ -55,5 +55,11 @@ RenderCompositor::~RenderCompositor() {}
 
 bool RenderCompositor::MakeCurrent() { return gl()->MakeCurrent(); }
 
+bool RenderCompositor::IsContextLost() {
+  
+  
+  return false;
+}
+
 }  
 }  
