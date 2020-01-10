@@ -7199,13 +7199,6 @@ bool nsPIDOMWindowInner::HasStorageAccessGranted(
   return mStorageAccessGranted.Contains(aPermissionKey);
 }
 
-
-namespace mozilla {
-namespace dom {
-extern uint64_t NextWindowID();
-}  
-}  
-
 nsPIDOMWindowInner::nsPIDOMWindowInner(nsPIDOMWindowOuter* aOuterWindow)
     : mMutationBits(0),
       mActivePeerConnections(0),
@@ -7218,8 +7211,7 @@ nsPIDOMWindowInner::nsPIDOMWindowInner(nsPIDOMWindowOuter* aOuterWindow)
       mMayHavePointerEnterLeaveEventListener(false),
       mMayHaveTextEventListenerInDefaultGroup(false),
       mOuterWindow(aOuterWindow),
-      
-      mWindowID(NextWindowID()),
+      mWindowID(nsContentUtils::GenerateWindowId()),
       mHasNotifiedGlobalCreated(false),
       mMarkedCCGeneration(0),
       mHasTriedToCacheTopInnerWindow(false),
