@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+const { WS_ADD_FRAME } = require("../constants");
+
+function addFrame(httpChannelId, data) {
+  return {
+    type: WS_ADD_FRAME,
+    httpChannelId,
+    data,
+  };
+}
+
+module.exports = {
+  addFrame,
+};

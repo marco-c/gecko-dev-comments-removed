@@ -1,0 +1,13 @@
+
+
+
+
+"use strict";
+
+function getFramesByChannelId(state, channelId) {
+  return state.webSockets.frames.get(channelId);
+}
+
+module.exports = {
+  getFramesByChannelId,
+};
