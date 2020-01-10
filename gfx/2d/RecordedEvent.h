@@ -169,6 +169,71 @@ struct MemWriter {
   char* mPtr;
 };
 
+
+
+class EventRingBuffer {
+ public:
+  
+
+
+
+
+
+  template <class RE>
+  void RecordEvent(const RE* aRecordedEvent) {
+    SizeCollector size;
+    WriteElement(size, aRecordedEvent->GetType());
+    aRecordedEvent->Record(size);
+    if (size.mTotalSize > mAvailable) {
+      WaitForAndRecalculateAvailableSpace();
+    }
+    if (size.mTotalSize <= mAvailable) {
+      MemWriter writer(mBufPos);
+      WriteElement(writer, aRecordedEvent->GetType());
+      aRecordedEvent->Record(writer);
+      UpdateWriteTotalsBy(size.mTotalSize);
+    } else {
+      WriteElement(*this, aRecordedEvent->GetType());
+      aRecordedEvent->Record(*this);
+    }
+  }
+
+  
+
+
+
+
+
+  virtual void write(const char* const aData, const size_t aSize) = 0;
+
+  
+
+
+
+
+
+  virtual void read(char* const aOut, const size_t aSize) = 0;
+
+  virtual bool good() const = 0;
+
+ protected:
+  
+
+
+
+  virtual bool WaitForAndRecalculateAvailableSpace() = 0;
+
+  
+
+
+
+
+  virtual void UpdateWriteTotalsBy(uint32_t aCount) = 0;
+
+  char* mBufPos = nullptr;
+  uint32_t mAvailable = 0;
+};
+
 struct MemStream {
   char* mData;
   size_t mLength;
@@ -274,6 +339,7 @@ class RecordedEvent {
 
   virtual void RecordToStream(std::ostream& aStream) const = 0;
   virtual void RecordToStream(EventStream& aStream) const = 0;
+  virtual void RecordToStream(EventRingBuffer& aStream) const = 0;
   virtual void RecordToStream(MemStream& aStream) const = 0;
 
   virtual void OutputSimpleEventInfo(std::stringstream& aStringStream) const {}
@@ -302,6 +368,9 @@ class RecordedEvent {
                           const std::function<bool(RecordedEvent*)>& aAction);
   static bool DoWithEventFromStream(
       EventStream& aStream, EventType aType,
+      const std::function<bool(RecordedEvent*)>& aAction);
+  static bool DoWithEventFromStream(
+      EventRingBuffer& aStream, EventType aType,
       const std::function<bool(RecordedEvent*)>& aAction);
 
   EventType GetType() const { return (EventType)mType; }
