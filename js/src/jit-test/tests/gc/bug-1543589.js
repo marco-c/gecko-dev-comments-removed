@@ -2,6 +2,7 @@
 
 
 gczeal(0);
+gcparam('maxNurseryBytes', 16 * 1024 * 1024);
 gcparam('minNurseryBytes', 16 * 1024 * 1024);
 
 let a = [];
