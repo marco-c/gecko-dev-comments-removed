@@ -23,6 +23,7 @@
 #  include "jit/arm64/vixl/Cpu-vixl.h"
 #endif
 #include "jit/AtomicOperations.h"
+#include "jit/FlushICache.h"  
 #include "threading/LockGuard.h"
 #include "threading/Mutex.h"
 #include "util/Memory.h"

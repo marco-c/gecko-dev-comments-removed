@@ -476,10 +476,6 @@ inline bool hasUnaliasedDouble() { return false; }
 
 inline bool hasMultiAlias() { return false; }
 
-inline void FlushICache(void* code, size_t size) {
-  
-}
-
 }  
 }  
 

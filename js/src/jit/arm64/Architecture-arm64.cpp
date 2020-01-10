@@ -9,6 +9,7 @@
 #include <cstring>
 
 #include "jit/arm64/vixl/Cpu-vixl.h"
+#include "jit/FlushICache.h"  
 #include "jit/RegisterSets.h"
 
 namespace js {
