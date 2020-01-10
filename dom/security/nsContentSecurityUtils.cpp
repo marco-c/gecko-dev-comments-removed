@@ -24,9 +24,11 @@
 
 
 
+
 nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
                    bool aOnlyMatch, bool& aMatchResult,
                    nsTArray<nsString>* aRegexResults = nullptr) {
+  MOZ_ASSERT(NS_IsMainThread());
   aMatchResult = false;
 
   AutoJSAPI jsapi;
@@ -147,6 +149,7 @@ FilenameType nsContentSecurityUtils::FilenameToEvalType(
   static NS_NAMED_LITERAL_CSTRING(kSuspectedUserChromeJS,
                                   "suspectedUserChromeJS");
   static NS_NAMED_LITERAL_CSTRING(kOther, "other");
+  static NS_NAMED_LITERAL_CSTRING(kOtherWorker, "other-on-worker");
   static NS_NAMED_LITERAL_CSTRING(kRegexFailure, "regexfailure");
 
   static NS_NAMED_LITERAL_STRING(kUCJSRegex, "(.+).uc.js\\?*[0-9]*$");
@@ -159,6 +162,11 @@ FilenameType nsContentSecurityUtils::FilenameToEvalType(
   }
   if (StringBeginsWith(fileName, NS_LITERAL_STRING("resource://"))) {
     return FilenameType(kResourceURI, Some(fileName));
+  }
+
+  if (!NS_IsMainThread()) {
+    
+    return FilenameType(kOtherWorker, Nothing());
   }
 
   
@@ -201,9 +209,38 @@ FilenameType nsContentSecurityUtils::FilenameToEvalType(
   return FilenameType(kOther, Nothing());
 }
 
+class EvalUsageNotificationRunnable final : public Runnable {
+ public:
+  EvalUsageNotificationRunnable(bool aIsSystemPrincipal,
+                                NS_ConvertUTF8toUTF16& aFileNameA,
+                                uint64_t aWindowID, uint32_t aLineNumber,
+                                uint32_t aColumnNumber)
+      : mozilla::Runnable("EvalUsageNotificationRunnable"),
+        mIsSystemPrincipal(aIsSystemPrincipal),
+        mFileNameA(aFileNameA),
+        mWindowID(aWindowID),
+        mLineNumber(aLineNumber),
+        mColumnNumber(aColumnNumber) {}
+
+  NS_IMETHOD Run() override {
+    nsContentSecurityUtils::NotifyEvalUsage(
+        mIsSystemPrincipal, mFileNameA, mWindowID, mLineNumber, mColumnNumber);
+    return NS_OK;
+  }
+
+  void Revoke() {}
+
+ private:
+  bool mIsSystemPrincipal;
+  NS_ConvertUTF8toUTF16 mFileNameA;
+  uint64_t mWindowID;
+  uint32_t mLineNumber;
+  uint32_t mColumnNumber;
+};
+
 
 bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
-                                           nsIPrincipal* aSubjectPrincipal,
+                                           bool aIsSystemPrincipal,
                                            const nsAString& aScript) {
   
   
@@ -217,6 +254,16 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       NS_LITERAL_CSTRING("resource://testing-common/content-task.js"),
 
       
+      NS_LITERAL_CSTRING("resource:///modules/translation/cld-worker.js"),
+
+      
+      
+      
+      
+      
+      NS_LITERAL_CSTRING("resource://gre/modules/workers/require.js"),
+
+      
       NS_LITERAL_CSTRING("debugger"),
   };
 
@@ -227,14 +274,13 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   static NS_NAMED_LITERAL_STRING(sAllowedEval2,
                                  "function anonymous(\n) {\nreturn this\n}");
 
-  bool systemPrincipal = aSubjectPrincipal->IsSystemPrincipal();
-  if (systemPrincipal &&
+  if (aIsSystemPrincipal &&
       StaticPrefs::security_allow_eval_with_system_principal()) {
     MOZ_LOG(
         sCSMLog, LogLevel::Debug,
         ("Allowing eval() %s because allowing pref is "
          "enabled",
-         (systemPrincipal ? "with System Principal" : "in parent process")));
+         (aIsSystemPrincipal ? "with System Principal" : "in parent process")));
     return true;
   }
 
@@ -246,7 +292,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     return true;
   }
 
-  if (!systemPrincipal && !XRE_IsE10sParentProcess()) {
+  if (!aIsSystemPrincipal && !XRE_IsE10sParentProcess()) {
     
     return true;
   }
@@ -255,31 +301,42 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   
   
   
-  nsAutoString jsConfigPref;
-  Preferences::GetString("general.config.filename", jsConfigPref);
-  if (!jsConfigPref.IsEmpty()) {
-    MOZ_LOG(
-        sCSMLog, LogLevel::Debug,
-        ("Allowing eval() %s because of "
-         "general.config.filename",
-         (systemPrincipal ? "with System Principal" : "in parent process")));
-    return true;
-  }
+  
+  
+  
+  
+  
+  if (NS_IsMainThread()) {
+    
+    
+    
+    
+    nsAutoString jsConfigPref;
+    Preferences::GetString("general.config.filename", jsConfigPref);
+    if (!jsConfigPref.IsEmpty()) {
+      MOZ_LOG(sCSMLog, LogLevel::Debug,
+              ("Allowing eval() %s because of "
+               "general.config.filename",
+               (aIsSystemPrincipal ? "with System Principal"
+                                   : "in parent process")));
+      return true;
+    }
 
-  
-  
-  
-  
-  
-  
-  if (Preferences::GetBool(
-          "toolkit.legacyUserProfileCustomizations.stylesheets")) {
-    MOZ_LOG(
-        sCSMLog, LogLevel::Debug,
-        ("Allowing eval() %s because of "
-         "toolkit.legacyUserProfileCustomizations.stylesheets",
-         (systemPrincipal ? "with System Principal" : "in parent process")));
-    return true;
+    
+    
+    
+    
+    
+    
+    if (Preferences::GetBool(
+            "toolkit.legacyUserProfileCustomizations.stylesheets")) {
+      MOZ_LOG(sCSMLog, LogLevel::Debug,
+              ("Allowing eval() %s because of "
+               "toolkit.legacyUserProfileCustomizations.stylesheets",
+               (aIsSystemPrincipal ? "with System Principal"
+                                   : "in parent process")));
+      return true;
+    }
   }
 
   
@@ -289,7 +346,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
         sCSMLog, LogLevel::Debug,
         ("Allowing eval() %s because a key string is "
          "provided",
-         (systemPrincipal ? "with System Principal" : "in parent process")));
+         (aIsSystemPrincipal ? "with System Principal" : "in parent process")));
     return true;
   }
 
@@ -318,28 +375,60 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   NS_ConvertUTF8toUTF16 fileNameA(fileName);
   for (const nsLiteralCString& allowlistEntry : evalAllowlist) {
     if (fileName.Equals(allowlistEntry)) {
-      MOZ_LOG(
-          sCSMLog, LogLevel::Debug,
-          ("Allowing eval() %s because the containing "
-           "file is in the allowlist",
-           (systemPrincipal ? "with System Principal" : "in parent process")));
+      MOZ_LOG(sCSMLog, LogLevel::Debug,
+              ("Allowing eval() %s because the containing "
+               "file is in the allowlist",
+               (aIsSystemPrincipal ? "with System Principal"
+                                   : "in parent process")));
       return true;
     }
+  }
+
+  
+  uint64_t windowID = nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(cx);
+  if (NS_IsMainThread()) {
+    nsContentSecurityUtils::NotifyEvalUsage(aIsSystemPrincipal, fileNameA,
+                                            windowID, lineNumber, columnNumber);
+  } else {
+    auto runnable = new EvalUsageNotificationRunnable(
+        aIsSystemPrincipal, fileNameA, windowID, lineNumber, columnNumber);
+    NS_DispatchToMainThread(runnable);
   }
 
   
   MOZ_LOG(sCSMLog, LogLevel::Warning,
           ("Blocking eval() %s from file %s and script "
            "provided %s",
-           (systemPrincipal ? "with System Principal" : "in parent process"),
+           (aIsSystemPrincipal ? "with System Principal" : "in parent process"),
            fileName.get(), NS_ConvertUTF16toUTF8(aScript).get()));
 
   
-  Telemetry::EventID eventType =
-      systemPrincipal ? Telemetry::EventID::Security_Evalusage_Systemcontext
-                      : Telemetry::EventID::Security_Evalusage_Parentprocess;
+#ifdef DEBUG
+  MOZ_CRASH_UNSAFE_PRINTF(
+      "Blocking eval() %s from file %s and script provided "
+      "%s",
+      (aIsSystemPrincipal ? "with System Principal" : "in parent process"),
+      fileName.get(), NS_ConvertUTF16toUTF8(aScript).get());
+#endif
 
-  FilenameType fileNameType = FilenameToEvalType(fileNameA);
+  
+  
+  
+  return !NS_IsMainThread();
+}
+
+
+void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
+                                             NS_ConvertUTF8toUTF16& aFileNameA,
+                                             uint64_t aWindowID,
+                                             uint32_t aLineNumber,
+                                             uint32_t aColumnNumber) {
+  
+  Telemetry::EventID eventType =
+      aIsSystemPrincipal ? Telemetry::EventID::Security_Evalusage_Systemcontext
+                         : Telemetry::EventID::Security_Evalusage_Parentprocess;
+
+  FilenameType fileNameType = FilenameToEvalType(aFileNameA);
   mozilla::Maybe<nsTArray<EventExtraEntry>> extra;
   if (fileNameType.second().isSome()) {
     extra = Some<nsTArray<EventExtraEntry>>({EventExtraEntry{
@@ -358,52 +447,40 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   nsCOMPtr<nsIConsoleService> console(
       do_GetService(NS_CONSOLESERVICE_CONTRACTID));
   if (!console) {
-    return false;
+    return;
   }
   nsCOMPtr<nsIScriptError> error(do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
   if (!error) {
-    return false;
+    return;
   }
   nsCOMPtr<nsIStringBundle> bundle;
   nsCOMPtr<nsIStringBundleService> stringService =
       mozilla::services::GetStringBundleService();
   if (!stringService) {
-    return false;
+    return;
   }
   stringService->CreateBundle(
       "chrome://global/locale/security/security.properties",
       getter_AddRefs(bundle));
   if (!bundle) {
-    return false;
+    return;
   }
   nsAutoString message;
-  AutoTArray<nsString, 1> formatStrings = {fileNameA};
+  AutoTArray<nsString, 1> formatStrings = {aFileNameA};
   nsresult rv = bundle->FormatStringFromName("RestrictBrowserEvalUsage",
                                              formatStrings, message);
   if (NS_FAILED(rv)) {
-    return false;
+    return;
   }
 
-  uint64_t windowID = nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(cx);
-  rv = error->InitWithWindowID(message, fileNameA, EmptyString(), lineNumber,
-                               columnNumber, nsIScriptError::errorFlag,
-                               "BrowserEvalUsage", windowID,
+  rv = error->InitWithWindowID(message, aFileNameA, EmptyString(), aLineNumber,
+                               aColumnNumber, nsIScriptError::errorFlag,
+                               "BrowserEvalUsage", aWindowID,
                                true );
   if (NS_FAILED(rv)) {
-    return false;
+    return;
   }
   console->LogMessage(error);
-
-  
-#ifdef DEBUG
-  MOZ_CRASH_UNSAFE_PRINTF(
-      "Blocking eval() %s from file %s and script provided "
-      "%s",
-      (systemPrincipal ? "with System Principal" : "in parent process"),
-      fileName.get(), NS_ConvertUTF16toUTF8(aScript).get());
-#endif
-
-  return false;
 }
 
 #if defined(DEBUG)
