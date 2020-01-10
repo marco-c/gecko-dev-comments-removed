@@ -18,6 +18,8 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["Blob", "FileReader"]);
 
 const SETTLE_WAIT_TIME = 2500;
 
+const TESTING_SETTLE_WAIT_TIME = 0;
+
 const STATE_LOADING = 1;
 const STATE_CAPTURING = 2;
 const STATE_CANCELED = 3;
@@ -140,11 +142,14 @@ const backgroundPageThumbsContent = {
         this._state == STATE_LOADING &&
         (Components.isSuccessCode(status) || status === Cr.NS_BINDING_ABORTED)
       ) {
+        let waitTime = Cu.isInAutomation
+          ? TESTING_SETTLE_WAIT_TIME
+          : SETTLE_WAIT_TIME;
         
         
         if (this._captureTimer) {
           
-          this._captureTimer.delay = SETTLE_WAIT_TIME;
+          this._captureTimer.delay = waitTime;
         } else {
           
           this._captureTimer = Cc["@mozilla.org/timer;1"].createInstance(
@@ -156,7 +161,7 @@ const backgroundPageThumbsContent = {
               this._captureCurrentPage();
               delete this._captureTimer;
             },
-            SETTLE_WAIT_TIME,
+            waitTime,
             Ci.nsITimer.TYPE_ONE_SHOT
           );
         }
