@@ -78,11 +78,8 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult Init(TextEditor* aTextEditor) override;
   virtual nsresult DetachEditor() override;
-  virtual nsresult BeforeEdit(EditSubAction aEditSubAction,
-                              nsIEditor::EDirection aDirection) override;
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult AfterEdit(EditSubAction aEditSubAction,
-                             nsIEditor::EDirection aDirection) override;
+  virtual nsresult BeforeEdit() override;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult AfterEdit() override;
   
   
   
@@ -701,9 +698,7 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult AfterEditInner(EditSubAction aEditSubAction,
-                                       nsIEditor::EDirection aDirection);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult AfterEditInner();
 
   
 

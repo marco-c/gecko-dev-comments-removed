@@ -79,11 +79,8 @@ class TextEditRules {
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult Init(TextEditor* aTextEditor);
   virtual nsresult DetachEditor();
-  virtual nsresult BeforeEdit(EditSubAction aEditSubAction,
-                              nsIEditor::EDirection aDirection);
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult AfterEdit(EditSubAction aEditSubAction,
-                             nsIEditor::EDirection aDirection);
+  virtual nsresult BeforeEdit();
+  MOZ_CAN_RUN_SCRIPT virtual nsresult AfterEdit();
   
   
   
