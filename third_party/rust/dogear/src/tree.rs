@@ -64,6 +64,12 @@ impl Tree {
 
     
     #[inline]
+    pub fn size(&self) -> usize {
+        self.entries.len()
+    }
+
+    
+    #[inline]
     pub fn root(&self) -> Node<'_> {
         Node(self, &self.entries[0])
     }
@@ -1040,6 +1046,88 @@ pub enum Problem {
     MissingChild { child_guid: Guid },
 }
 
+impl Problem {
+    
+    fn counts(&self) -> ProblemCounts {
+        let (parents, deltas) = match self {
+            Problem::Orphan => {
+                return ProblemCounts {
+                    orphans: 1,
+                    ..ProblemCounts::default()
+                }
+            }
+            Problem::MissingChild { .. } => {
+                return ProblemCounts {
+                    missing_children: 1,
+                    ..ProblemCounts::default()
+                }
+            }
+            
+            
+            
+            
+            
+            
+            Problem::MisparentedRoot(parents) => (
+                parents,
+                ProblemCounts {
+                    misparented_roots: 1,
+                    ..ProblemCounts::default()
+                },
+            ),
+            Problem::DivergedParents(parents) => (parents, ProblemCounts::default()),
+        };
+        let deltas = match parents.as_slice() {
+            
+            
+            [DivergedParent::ByChildren(_)]
+            | [DivergedParent::ByParentGuid(_)]
+            | [DivergedParent::ByChildren(_), DivergedParent::ByParentGuid(_)]
+            | [DivergedParent::ByParentGuid(_), DivergedParent::ByChildren(_)] => ProblemCounts {
+                parent_child_disagreements: 1,
+                ..deltas
+            },
+            
+            
+            _ => ProblemCounts {
+                multiple_parents_by_children: 1,
+                parent_child_disagreements: 1,
+                ..deltas
+            },
+        };
+        
+        
+        
+        
+        parents.iter().fold(deltas, |deltas, parent| match parent {
+            DivergedParent::ByChildren(_) => deltas,
+            DivergedParent::ByParentGuid(p) => match p {
+                DivergedParentGuid::Folder(_) => deltas,
+                DivergedParentGuid::NonFolder(_) => {
+                    if deltas.non_folder_parent_guids > 0 {
+                        deltas
+                    } else {
+                        ProblemCounts {
+                            non_folder_parent_guids: 1,
+                            ..deltas
+                        }
+                    }
+                }
+                DivergedParentGuid::Missing(_) => {
+                    if deltas.missing_parent_guids > 0 {
+                        deltas
+                    } else {
+                        ProblemCounts {
+                            missing_parent_guids: 1,
+                            ..deltas
+                        }
+                    }
+                }
+            },
+        })
+    }
+}
+
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum DivergedParent {
@@ -1091,12 +1179,14 @@ pub struct Problems(HashMap<Guid, Vec<Problem>>);
 
 impl Problems {
     
+    #[inline]
     pub fn note(&mut self, guid: &Guid, problem: Problem) -> &mut Problems {
         self.0.entry(guid.clone()).or_default().push(problem);
         self
     }
 
     
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -1108,6 +1198,17 @@ impl Problems {
                 .iter()
                 .map(move |problem| ProblemSummary(guid, problem))
         })
+    }
+
+    
+    
+    pub fn counts(&self) -> ProblemCounts {
+        self.0
+            .values()
+            .flatten()
+            .fold(ProblemCounts::default(), |totals, problem| {
+                totals.add(problem.counts())
+            })
     }
 }
 
@@ -1166,6 +1267,46 @@ impl<'a> fmt::Display for ProblemSummary<'a> {
             }
         }
         Ok(())
+    }
+}
+
+
+
+#[derive(Clone, Copy, Default, Debug, Eq, Hash, PartialEq)]
+pub struct ProblemCounts {
+    
+    
+    
+    pub orphans: usize,
+    
+    pub misparented_roots: usize,
+    
+    pub multiple_parents_by_children: usize,
+    
+    pub missing_parent_guids: usize,
+    
+    pub non_folder_parent_guids: usize,
+    
+    
+    pub parent_child_disagreements: usize,
+    
+    pub missing_children: usize,
+}
+
+impl ProblemCounts {
+    
+    pub fn add(&self, other: ProblemCounts) -> ProblemCounts {
+        ProblemCounts {
+            orphans: self.orphans + other.orphans,
+            misparented_roots: self.misparented_roots + other.misparented_roots,
+            multiple_parents_by_children: self.multiple_parents_by_children
+                + other.multiple_parents_by_children,
+            missing_parent_guids: self.missing_parent_guids + other.missing_parent_guids,
+            non_folder_parent_guids: self.non_folder_parent_guids + other.non_folder_parent_guids,
+            parent_child_disagreements: self.parent_child_disagreements
+                + other.parent_child_disagreements,
+            missing_children: self.missing_children + other.missing_children,
+        }
     }
 }
 

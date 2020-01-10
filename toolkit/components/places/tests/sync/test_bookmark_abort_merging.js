@@ -5,6 +5,7 @@ add_task(async function test_abort_merging() {
   let buf = await openMirror("abort_merging");
 
   let promise = new Promise((resolve, reject) => {
+    buf.merger.finalize();
     let callback = {
       handleResult() {
         reject(new Error("Shouldn't have merged after aborting"));
@@ -14,12 +15,7 @@ add_task(async function test_abort_merging() {
         resolve();
       },
     };
-    
-    
-    
-    
     buf.merger.merge(0, 0, [], callback);
-    buf.merger.finalize();
   });
 
   await promise;

@@ -12,12 +12,14 @@
 
 
 
-use std::fmt::Arguments;
+use std::{fmt::Arguments, time::Duration};
 
 use log::{Level, LevelFilter, Log};
 
 use crate::error::{ErrorKind, Result};
 use crate::guid::Guid;
+use crate::merge::StructureCounts;
+use crate::tree::ProblemCounts;
 
 
 
@@ -51,6 +53,30 @@ impl AbortSignal for DefaultAbortSignal {
     fn aborted(&self) -> bool {
         false
     }
+}
+
+
+pub enum TelemetryEvent {
+    FetchLocalTree(TreeStats),
+    FetchNewLocalContents(ContentsStats),
+    FetchRemoteTree(TreeStats),
+    FetchNewRemoteContents(ContentsStats),
+    Merge(Duration, StructureCounts),
+    Apply(Duration),
+}
+
+
+
+pub struct TreeStats {
+    pub time: Duration,
+    pub items: usize,
+    pub problems: ProblemCounts,
+}
+
+
+pub struct ContentsStats {
+    pub time: Duration,
+    pub items: usize,
 }
 
 
@@ -88,6 +114,13 @@ pub trait Driver {
     fn logger(&self) -> &dyn Log {
         log::logger()
     }
+
+    
+    
+    
+    
+    
+    fn record_telemetry_event(&self, _: TelemetryEvent) {}
 }
 
 

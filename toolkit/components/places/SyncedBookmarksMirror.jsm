@@ -173,6 +173,83 @@ class MirrorLoggerAdapter {
 
 
 
+class ProgressTracker {
+  constructor(recordStepTelemetry) {
+    this.recordStepTelemetry = recordStepTelemetry;
+    this.steps = [];
+  }
+
+  
+
+
+
+
+
+
+  step(name) {
+    this.steps.push({ step: name, at: Date.now() });
+  }
+
+  
+
+
+
+
+
+
+
+  stepWithTelemetry(name, took, counts = null) {
+    this.step(name);
+    this.recordStepTelemetry(name, took, counts);
+  }
+
+  
+
+
+
+
+
+
+  stepWithItemCount(name, took, count) {
+    this.stepWithTelemetry(name, took, [{ name: "items", count }]);
+  }
+
+  
+
+
+  reset() {
+    this.steps = [];
+  }
+
+  
+
+
+
+
+
+
+  fetchState() {
+    return { steps: this.steps };
+  }
+}
+
+
+ProgressTracker.STEPS = {
+  FETCH_LOCAL_TREE: "fetchLocalTree",
+  FETCH_NEW_LOCAL_CONTENTS: "fetchNewLocalContents",
+  FETCH_REMOTE_TREE: "fetchRemoteTree",
+  FETCH_NEW_REMOTE_CONTENTS: "fetchNewRemoteContents",
+  MERGE: "merge",
+  APPLY: "apply",
+  NOTIFY_OBSERVERS: "notifyObservers",
+  FETCH_LOCAL_CHANGE_RECORDS: "fetchLocalChangeRecords",
+  FINALIZE: "finalize",
+};
+
+
+
+
+
 
 
 
@@ -205,10 +282,12 @@ class MirrorLoggerAdapter {
 
 
 class SyncedBookmarksMirror {
-  constructor(db, { recordTelemetryEvent, finalizeAt =
-                      AsyncShutdown.profileBeforeChange } = {}) {
+  constructor(db, { recordTelemetryEvent, recordStepTelemetry,
+                    recordValidationTelemetry,
+                    finalizeAt = AsyncShutdown.profileBeforeChange } = {}) {
     this.db = db;
     this.recordTelemetryEvent = recordTelemetryEvent;
+    this.recordValidationTelemetry = recordValidationTelemetry;
 
     this.merger = new SyncedBookmarksMerger();
     this.merger.db = db.unsafeRawConnection.QueryInterface(
@@ -216,13 +295,26 @@ class SyncedBookmarksMirror {
     this.merger.logger = new MirrorLoggerAdapter(MirrorLog);
 
     
+    
+    this.progress = new ProgressTracker(recordStepTelemetry);
     this.finalizeAt = finalizeAt;
     this.finalizeBound = () => this.finalize();
     this.finalizeAt.addBlocker("SyncedBookmarksMirror: finalize",
-                               this.finalizeBound);
+                               this.finalizeBound, this.progress);
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -506,41 +598,76 @@ class SyncedBookmarksMirror {
         "Local tree has misparented root");
     }
 
-    
-    let flowID = PlacesUtils.history.makeGuid();
-
     let changeRecords;
     try {
-      changeRecords = await this.tryApply(flowID, localTimeSeconds,
+      changeRecords = await this.tryApply(localTimeSeconds,
                                           remoteTimeSeconds,
                                           observersToNotify,
                                           weakUpload);
-    } catch (ex) {
-      
-      
-      let why = (typeof ex.message == "string" ? ex.message :
-                 String(ex)).slice(0, 85);
-      this.recordTelemetryEvent("mirror", "apply", "error", { flowID, why });
-      throw ex;
+    } finally {
+      this.progress.reset();
     }
 
     return changeRecords;
   }
 
-  async tryApply(flowID, localTimeSeconds, remoteTimeSeconds, observersToNotify,
+  async tryApply(localTimeSeconds, remoteTimeSeconds, observersToNotify,
                  weakUpload) {
-    let result = await withTiming(
+    await withTiming(
       "Merging bookmarks in Rust",
       () => {
         return new Promise((resolve, reject) => {
           let callback = {
-            handleResult: resolve,
+            QueryInterface: ChromeUtils.generateQI([
+              Ci.mozISyncedBookmarksMirrorProgressListener,
+              Ci.mozISyncedBookmarksMirrorCallback,
+            ]),
+            
+            onFetchLocalTree: (took, count, problems) => {
+              this.progress.stepWithItemCount(ProgressTracker.STEPS.FETCH_LOCAL_TREE, took, count);
+              
+            },
+            onFetchNewLocalContents: (took, count) => {
+              this.progress.stepWithItemCount(ProgressTracker.STEPS.FETCH_NEW_LOCAL_CONTENTS, took,
+                count);
+            },
+            onFetchRemoteTree: (took, count, problemsBag) => {
+              this.progress.stepWithItemCount(ProgressTracker.STEPS.FETCH_REMOTE_TREE, took, count);
+              
+              let problems = bagToNamedCounts(problemsBag, ["orphans",
+                "misparentedRoots", "multipleParents", "nonFolderParents",
+                "parentChildDisagreements", "missingChildren"]);
+              this.recordValidationTelemetry(took, count, problems);
+            },
+            onFetchNewRemoteContents: (took, count) => {
+              this.progress.stepWithItemCount(ProgressTracker.STEPS.FETCH_NEW_REMOTE_CONTENTS, took,
+                count);
+            },
+            onMerge: (took, countsBag) => {
+              let counts = bagToNamedCounts(countsBag, ["items", "deletes",
+                "dupes", "remoteRevives", "localDeletes", "localRevives",
+                "remoteDeletes"]);
+              this.progress.stepWithTelemetry(ProgressTracker.STEPS.MERGE, took, counts);
+            },
+            onApply: took => {
+              this.progress.stepWithTelemetry(ProgressTracker.STEPS.APPLY, took);
+            },
+            
+            handleSuccess: resolve,
             handleError(code, message) {
-              if (code == Cr.NS_ERROR_STORAGE_BUSY) {
-                reject(new SyncedBookmarksMirror.MergeConflictError(
-                  "Local tree changed during merge"));
-              } else {
-                reject(new SyncedBookmarksMirror.MergeError(message));
+              switch (code) {
+                case Cr.NS_ERROR_STORAGE_BUSY:
+                  reject(new SyncedBookmarksMirror.MergeConflictError(
+                    "Local tree changed during merge"));
+                  break;
+
+                case Cr.NS_ERROR_ABORT:
+                  reject(new SyncedBookmarksMirror.ShutdownError(
+                    "Merge interrupted at shutdown"));
+                  break;
+
+                default:
+                  reject(new SyncedBookmarksMirror.MergeError(message));
               }
             },
           };
@@ -549,28 +676,6 @@ class SyncedBookmarksMirror {
         });
       },
     );
-    let telem = result.QueryInterface(Ci.nsIPropertyBag);
-    const telemPropToEventValue = [
-      ["fetchLocalTreeTime", "fetchLocalTree"],
-      ["fetchNewLocalContentsTime", "fetchNewLocalContents"],
-      ["fetchRemoteTreeTime", "fetchRemoteTree"],
-      ["fetchNewRemoteContentsTime", "fetchNewRemoteContents"],
-    ];
-    for (let [prop, value] of telemPropToEventValue) {
-      this.recordTelemetryEvent("mirror", "apply", value,
-        { flowID, time: telem.getProperty(prop) });
-    }
-    this.recordTelemetryEvent("mirror", "apply", "merge",
-      { flowID, time: telem.getProperty("mergeTime"),
-        nodes: telem.getProperty("mergedNodesCount"),
-        deletions: telem.getProperty("mergedDeletionsCount"),
-        dupes: telem.getProperty("dupesCount") });
-    this.recordTelemetryEvent("mirror", "merge", "structure", {
-      remoteRevives: telem.getProperty("remoteRevivesCount"),
-      localDeletes: telem.getProperty("localDeletesCount"),
-      localRevives: telem.getProperty("localRevivesCount"),
-      remoteDeletes: telem.getProperty("remoteDeletesCount"),
-    });
 
     
     
@@ -596,8 +701,7 @@ class SyncedBookmarksMirror {
           });
         }
       },
-      time => this.recordTelemetryEvent("mirror", "apply",
-        "notifyObservers", { flowID, time })
+      time => this.progress.stepWithTelemetry(ProgressTracker.STEPS.NOTIFY_OBSERVERS, time)
     );
 
     return withTiming(
@@ -610,8 +714,8 @@ class SyncedBookmarksMirror {
           await this.db.execute(`DELETE FROM itemsToUpload`);
         }
       },
-      time => this.recordTelemetryEvent("mirror", "apply",
-        "fetchLocalChangeRecords", { flowID, time })
+      (time, records) => this.progress.stepWithItemCount(
+        ProgressTracker.STEPS.FETCH_LOCAL_CHANGE_RECORDS, time, Object.keys(records).length)
     );
   }
 
@@ -1080,6 +1184,7 @@ class SyncedBookmarksMirror {
   finalize() {
     if (!this.finalizePromise) {
       this.finalizePromise = (async () => {
+        this.progress.step(ProgressTracker.STEPS.FINALIZE);
         this.merger.finalize();
         await this.db.close();
         this.finalizeAt.removeBlocker(this.finalizeBound);
@@ -1096,6 +1201,20 @@ SyncedBookmarksMirror.META_KEY = {
   LAST_MODIFIED: "collection/lastModified",
   SYNC_ID: "collection/syncId",
 };
+
+
+
+
+class ShutdownError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "ShutdownError";
+    
+    
+    this.appIsShuttingDown = true;
+  }
+}
+SyncedBookmarksMirror.ShutdownError = ShutdownError;
 
 
 
@@ -1916,7 +2035,7 @@ async function withTiming(name, func, recordTiming) {
 
   MirrorLog.trace(`${name} took ${elapsedTime.toFixed(3)}ms`);
   if (typeof recordTiming == "function") {
-    recordTiming(elapsedTime);
+    recordTiming(elapsedTime, result);
   }
 
   return result;
@@ -2224,6 +2343,10 @@ async function updateFrecencies(db, limit) {
 
   
   await db.execute(`DELETE FROM moz_updateoriginsupdate_temp`);
+}
+
+function bagToNamedCounts(bag, names) {
+  return names.map(name => ({ name, count: bag.getProperty(name) }));
 }
 
 
