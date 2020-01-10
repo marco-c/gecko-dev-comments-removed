@@ -14,6 +14,7 @@
 #include "nsXULElement.h"
 #include "nsIDOMXULMenuListElement.h"
 #include "nsIDOMXULCommandDispatcher.h"
+#include "nsBindingManager.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsGlobalWindow.h"
 #include "nsLayoutUtils.h"
@@ -35,6 +36,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"  
+#include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/KeyboardEvent.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
 #include "mozilla/dom/MouseEvent.h"
@@ -2233,16 +2235,26 @@ bool nsXULPopupManager::HandleKeyboardEventWithKeyCode(
   return true;
 }
 
+
+
+
+static nsIContent* FindDefaultInsertionPoint(nsIContent* aParent) {
+  if (ShadowRoot* shadow = aParent->GetShadowRoot()) {
+    if (HTMLSlotElement* slot = shadow->GetDefaultSlot()) {
+      return slot;
+    }
+  }
+  bool multiple = false;  
+  return aParent
+          ->OwnerDoc()
+          ->BindingManager()
+          ->FindNestedSingleInsertionPoint(aParent, &multiple);
+}
+
 nsContainerFrame* nsXULPopupManager::ImmediateParentFrame(
     nsContainerFrame* aFrame) {
   MOZ_ASSERT(aFrame && aFrame->GetContent());
-
-  bool multiple = false;  
-  nsIContent* insertionPoint =
-      aFrame->GetContent()
-          ->OwnerDoc()
-          ->BindingManager()
-          ->FindNestedSingleInsertionPoint(aFrame->GetContent(), &multiple);
+  nsIContent* insertionPoint = FindDefaultInsertionPoint(aFrame->GetContent());
 
   nsCSSFrameConstructor* fc = aFrame->PresContext()->FrameConstructor();
   nsContainerFrame* insertionFrame =
