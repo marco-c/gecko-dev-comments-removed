@@ -2175,6 +2175,9 @@ pref("network.http.tailing.delay-max", 6000);
 
 pref("network.http.tailing.total-max", 45000);
 
+
+pref("network.http.spdy.bug1563538", true);
+
 pref("permissions.default.image",           1); 
 
 pref("network.proxy.type",                  5);

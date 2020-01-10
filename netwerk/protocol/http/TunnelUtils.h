@@ -182,6 +182,11 @@ class TLSFilterTransaction final : public nsAHttpTransaction,
   nsresult mFilterReadCode;
   bool mForce;
   nsresult mReadSegmentReturnValue;
+  
+  
+  
+  
+  nsresult mCloseReason;
   uint32_t mNudgeCounter;
 };
 
@@ -227,6 +232,7 @@ class SpdyConnectTransaction final : public NullHttpTransaction {
   void SetConnRefTaken();
 
  private:
+  friend class SocketTransportShim;
   friend class InputStreamShim;
   friend class OutputStreamShim;
 
