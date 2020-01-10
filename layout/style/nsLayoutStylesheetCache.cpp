@@ -262,6 +262,9 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache() : mUsedSharedMemory(0) {
       
       
       mSharedMemory = sSharedMemory.forget();
+      MOZ_ASSERT(!mSharedMemory || mSharedMemory->mShm.memory(),
+                 "nsLayoutStylesheetCache::SetSharedMemory should have mapped "
+                 "the shared memory");
     }
   }
 
@@ -273,9 +276,14 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache() : mUsedSharedMemory(0) {
   
   
   
+  
+  
+  
+  
+  
   if (mSharedMemory) {
-    Header* header = static_cast<Header*>(mSharedMemory->mShm.memory());
-    MOZ_RELEASE_ASSERT(header->mMagic == Header::kMagic);
+    if (auto header = static_cast<Header*>(mSharedMemory->mShm.memory())) {
+      MOZ_RELEASE_ASSERT(header->mMagic == Header::kMagic);
 
 #define STYLE_SHEET(identifier_, url_, shared_)                           \
   if (shared_) {                                                          \
@@ -285,6 +293,7 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache() : mUsedSharedMemory(0) {
   }
 #include "mozilla/UserAgentStyleSheetList.h"
 #undef STYLE_SHEET
+    }
   }
 }
 
@@ -316,7 +325,10 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   mSharedMemory = new Shm();
-  mSharedMemory->mShm.Create(kSharedMemorySize);
+  if (NS_WARN_IF(!mSharedMemory->mShm.CreateFreezeable(kSharedMemorySize))) {
+    mSharedMemory = nullptr;
+    return;
+  }
 
   
   
@@ -353,10 +365,14 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
     
     
     
-    mSharedMemory->mShm.Map(kSharedMemorySize);
+    if (NS_WARN_IF(!mSharedMemory->mShm.Map(kSharedMemorySize))) {
+      mSharedMemory = nullptr;
+      return;
+    }
   }
+  address = mSharedMemory->mShm.memory();
 
-  Header* header = static_cast<Header*>(mSharedMemory->mShm.memory());
+  auto header = static_cast<Header*>(address);
   header->mMagic = Header::kMagic;
 #ifdef DEBUG
   for (auto ptr : header->mSheets) {
@@ -378,6 +394,20 @@ void nsLayoutStylesheetCache::InitSharedSheetsInParent() {
   }
 #include "mozilla/UserAgentStyleSheetList.h"
 #undef STYLE_SHEET
+
+  
+  
+  if (NS_WARN_IF(!mSharedMemory->mShm.Freeze())) {
+    mSharedMemory = nullptr;
+    return;
+  }
+
+  
+  
+  
+  
+  
+  mSharedMemory->mShm.Map(kSharedMemorySize, address);
 
   
   
