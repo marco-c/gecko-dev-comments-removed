@@ -121,6 +121,7 @@ pub enum DisplayItem {
     SetGradientStops,
     SetFilterOps,
     SetFilterData,
+    SetFilterPrimitives,
 
     
     PopReferenceFrame,
@@ -159,6 +160,7 @@ pub enum DebugDisplayItem {
     SetGradientStops(Vec<GradientStop>),
     SetFilterOps(Vec<FilterOp>),
     SetFilterData(FilterData),
+    SetFilterPrimitives(Vec<FilterPrimitive>),
 
     PopReferenceFrame,
     PopStackingContext,
@@ -697,6 +699,34 @@ pub enum MixBlendMode {
     Luminosity = 15,
 }
 
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum FilterPrimitiveInput {
+    
+    Original,
+    
+    Previous,
+    
+    OutputOfPrimitiveIndex(usize),
+}
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub struct BlendPrimitive {
+    pub input1: FilterPrimitiveInput,
+    pub input2: FilterPrimitiveInput,
+    pub mode: MixBlendMode,
+}
+
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum FilterPrimitive {
+    Blend(BlendPrimitive),
+}
+
+
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum FilterOp {
@@ -1162,6 +1192,7 @@ impl DisplayItem {
             DisplayItem::PushStackingContext(..) => "push_stacking_context",
             DisplayItem::SetFilterOps => "set_filter_ops",
             DisplayItem::SetFilterData => "set_filter_data",
+            DisplayItem::SetFilterPrimitives => "set_filter_primitives",
             DisplayItem::RadialGradient(..) => "radial_gradient",
             DisplayItem::Rectangle(..) => "rectangle",
             DisplayItem::ScrollFrame(..) => "scroll_frame",
