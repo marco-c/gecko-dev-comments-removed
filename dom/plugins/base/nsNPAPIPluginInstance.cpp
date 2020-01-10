@@ -63,8 +63,7 @@ nsNPAPIPluginInstance::nsNPAPIPluginInstance()
       ,
       mCachedParamLength(0),
       mCachedParamNames(nullptr),
-      mCachedParamValues(nullptr),
-      mMuted(false) {
+      mCachedParamValues(nullptr) {
   mNPP.pdata = nullptr;
   mNPP.ndata = this;
 
@@ -1119,13 +1118,6 @@ void nsNPAPIPluginInstance::NotifyStartedPlaying() {
     return;
   }
 
-  
-  
-  
-  if (config.mMuted) {
-    return;
-  }
-
   rv = WindowSuspendChanged(config.mSuspend);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
@@ -1134,9 +1126,6 @@ void nsNPAPIPluginInstance::NotifyStartedPlaying() {
 
 void nsNPAPIPluginInstance::NotifyStoppedPlaying() {
   MOZ_ASSERT(mAudioChannelAgent);
-
-  
-  mMuted = false;
   nsresult rv = mAudioChannelAgent->NotifyStoppedPlaying();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
@@ -1149,21 +1138,12 @@ nsNPAPIPluginInstance::WindowVolumeChanged(float aVolume, bool aMuted) {
           ("nsNPAPIPluginInstance, WindowVolumeChanged, "
            "this = %p, aVolume = %f, aMuted = %s\n",
            this, aVolume, aMuted ? "true" : "false"));
-
   
-  nsresult rv = SetMuted(aMuted);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetMuted failed");
-  if (mMuted != aMuted) {
-    mMuted = aMuted;
-    if (mAudioChannelAgent) {
-      AudioChannelService::AudibleState audible =
-          aMuted ? AudioChannelService::AudibleState::eNotAudible
-                 : AudioChannelService::AudibleState::eAudible;
-      mAudioChannelAgent->NotifyStartedAudible(
-          audible, AudioChannelService::AudibleChangedReasons::eVolumeChanged);
-    }
+  if (mWindowMuted != aMuted) {
+    mWindowMuted = aMuted;
+    return UpdateMutedIfNeeded();
   }
-  return rv;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1172,16 +1152,46 @@ nsNPAPIPluginInstance::WindowSuspendChanged(nsSuspendedTypes aSuspend) {
           ("nsNPAPIPluginInstance, WindowSuspendChanged, "
            "this = %p, aSuspend = %s\n",
            this, SuspendTypeToStr(aSuspend)));
-
-  
-  WindowVolumeChanged(1.0, 
-                      aSuspend != nsISuspendedTypes::NONE_SUSPENDED);
+  const bool isSuspended = aSuspend != nsISuspendedTypes::NONE_SUSPENDED;
+  if (mWindowSuspended != isSuspended) {
+    mWindowSuspended = isSuspended;
+    
+    return UpdateMutedIfNeeded();
+  }
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsNPAPIPluginInstance::WindowAudioCaptureChanged(bool aCapture) {
   return NS_OK;
+}
+
+void nsNPAPIPluginInstance::NotifyAudibleStateChanged() const {
+  
+  
+  if (!mAudioChannelAgent) {
+    return;
+  }
+  AudioChannelService::AudibleState audibleState =
+      mIsMuted ? AudioChannelService::AudibleState::eNotAudible
+               : AudioChannelService::AudibleState::eAudible;
+  
+  
+  mAudioChannelAgent->NotifyStartedAudible(
+      audibleState, AudioChannelService::AudibleChangedReasons::eVolumeChanged);
+}
+
+nsresult nsNPAPIPluginInstance::UpdateMutedIfNeeded() {
+  const bool shouldMute = mWindowSuspended || mWindowMuted;
+  if (mIsMuted == shouldMute) {
+    return NS_OK;
+  }
+
+  mIsMuted = shouldMute;
+  NotifyAudibleStateChanged();
+  nsresult rv = SetMuted(mIsMuted);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetMuted failed");
+  return rv;
 }
 
 nsresult nsNPAPIPluginInstance::SetMuted(bool aIsMuted) {
