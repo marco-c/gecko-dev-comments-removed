@@ -743,6 +743,9 @@ class HuffmanPreludeReader {
                                        Entry entry, uint32_t numberOfSymbols) {
     
     
+
+    
+    
     
     MOZ_ASSERT(
         auxStorageLength_.empty());  
@@ -767,6 +770,15 @@ class HuffmanPreludeReader {
           largestBitLength = bitLength;
         }
       }
+    }
+
+    if (auxStorageLength_.length() == 1) {
+      
+      BINJS_MOZ_TRY_DECL(symbol,
+                         readSymbol<Entry>(entry, auxStorageLength_[0].index_));
+      MOZ_TRY(table.initWithSingleValue(cx_, symbol));
+      auxStorageLength_.clear();
+      return Ok();
     }
 
     
@@ -803,11 +815,8 @@ class HuffmanPreludeReader {
       MOZ_ASSERT(bitLength <= nextBitLength);
 
       
-      BINJS_MOZ_TRY_DECL(
-          symbol,
-          readSymbol<Entry>(
-              entry,
-              auxStorageLength_[i].index_));  
+      BINJS_MOZ_TRY_DECL(symbol,
+                         readSymbol<Entry>(entry, auxStorageLength_[i].index_));
 
       MOZ_TRY(table.addSymbol(code, bitLength, symbol));
 
@@ -1787,8 +1796,13 @@ JS::Result<Ok> GenericHuffmanTable::initStart(JSContext* cx,
   
   static_assert(MAX_CODE_BIT_LENGTH <= ThreeLookupsHuffmanTable::MAX_BIT_LENGTH,
                 "ThreeLookupsHuffmanTable cannot hold all bit lengths");
+
   
   MOZ_ASSERT(implementation_.template is<HuffmanTableUnreachable>());
+
+  
+  MOZ_ASSERT(numberOfSymbols != 1,
+             "Should have used `initWithSingleValue` instead");
 
   
   
