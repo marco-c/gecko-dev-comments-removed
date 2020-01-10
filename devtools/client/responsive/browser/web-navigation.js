@@ -28,6 +28,10 @@ function BrowserElementWebNavigation(browser) {
 BrowserElementWebNavigation.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIWebNavigation]),
 
+  get _mm() {
+    return this._browser.frameLoader.messageManager;
+  },
+
   canGoBack: false,
   canGoForward: false,
 
@@ -74,7 +78,7 @@ BrowserElementWebNavigation.prototype = {
     );
     referrerInfo.init(referrerPolicy, true, referrer);
 
-    this._browser.browsingContext.loadURI(uri, {
+    this._browser.frameLoader.browsingContext.loadURI(uri, {
       loadFlags: flags,
       referrerInfo,
       postData,
@@ -135,15 +139,7 @@ BrowserElementWebNavigation.prototype = {
 
   _sendMessage(message, data) {
     try {
-      if (this._browser.frameLoader) {
-        const windowGlobal = this._browser.browsingContext
-          .currentWindowGlobal;
-        if (windowGlobal) {
-          windowGlobal
-            .getActor("WebNavigation")
-            .sendAsyncMessage(message, data);
-        }
-      }
+      this._mm.sendAsyncMessage(message, data);
     } catch (e) {
       Cu.reportError(e);
     }
