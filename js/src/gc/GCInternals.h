@@ -20,6 +20,57 @@
 namespace js {
 namespace gc {
 
+
+
+
+
+
+
+
+
+struct MOZ_RAII AutoAssertNoNurseryAlloc {
+#ifdef DEBUG
+  AutoAssertNoNurseryAlloc();
+  ~AutoAssertNoNurseryAlloc();
+#else
+  AutoAssertNoNurseryAlloc() {}
+#endif
+};
+
+
+
+
+
+class MOZ_RAII AutoAssertEmptyNursery {
+ protected:
+  JSContext* cx;
+
+  mozilla::Maybe<AutoAssertNoNurseryAlloc> noAlloc;
+
+  
+  void checkCondition(JSContext* cx);
+
+  
+  AutoAssertEmptyNursery() : cx(nullptr) {}
+
+ public:
+  explicit AutoAssertEmptyNursery(JSContext* cx) : cx(nullptr) {
+    checkCondition(cx);
+  }
+
+  AutoAssertEmptyNursery(const AutoAssertEmptyNursery& other)
+      : AutoAssertEmptyNursery(other.cx) {}
+};
+
+
+
+
+
+class MOZ_RAII AutoEmptyNursery : public AutoAssertEmptyNursery {
+ public:
+  explicit AutoEmptyNursery(JSContext* cx);
+};
+
 class MOZ_RAII AutoCheckCanAccessAtomsDuringGC {
 #ifdef DEBUG
   JSRuntime* runtime;
@@ -96,6 +147,20 @@ class MOZ_RAII AutoPrepareForTracing : private AutoFinishGC,
  public:
   explicit AutoPrepareForTracing(JSContext* cx)
       : AutoFinishGC(cx, JS::GCReason::PREPARE_FOR_TRACING),
+        AutoTraceSession(cx->runtime()) {}
+};
+
+
+
+
+
+class MOZ_RAII AutoEmptyNurseryAndPrepareForTracing : private AutoFinishGC,
+                                                      public AutoEmptyNursery,
+                                                      public AutoTraceSession {
+ public:
+  explicit AutoEmptyNurseryAndPrepareForTracing(JSContext* cx)
+      : AutoFinishGC(cx, JS::GCReason::PREPARE_FOR_TRACING),
+        AutoEmptyNursery(cx),
         AutoTraceSession(cx->runtime()) {}
 };
 
@@ -242,63 +307,6 @@ struct TenureCountCache {
   TenureCount& findEntry(ObjectGroup* group) {
     return entries[hash(group) % EntryCount];
   }
-};
-
-struct MOZ_RAII AutoAssertNoNurseryAlloc {
-#ifdef DEBUG
-  AutoAssertNoNurseryAlloc();
-  ~AutoAssertNoNurseryAlloc();
-#else
-  AutoAssertNoNurseryAlloc() {}
-#endif
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_RAII AutoAssertEmptyNursery {
- protected:
-  JSContext* cx;
-
-  mozilla::Maybe<AutoAssertNoNurseryAlloc> noAlloc;
-
-  
-  void checkCondition(JSContext* cx);
-
-  
-  AutoAssertEmptyNursery() : cx(nullptr) {}
-
- public:
-  explicit AutoAssertEmptyNursery(JSContext* cx) : cx(nullptr) {
-    checkCondition(cx);
-  }
-
-  AutoAssertEmptyNursery(const AutoAssertEmptyNursery& other)
-      : AutoAssertEmptyNursery(other.cx) {}
-};
-
-
-
-
-
-
-
-
-
-
-class MOZ_RAII AutoEmptyNursery : public AutoAssertEmptyNursery {
- public:
-  explicit AutoEmptyNursery(JSContext* cx);
 };
 
 extern void DelayCrossCompartmentGrayMarking(JSObject* src);
