@@ -78,25 +78,6 @@ void NeckoChild::InitNeckoChild() {
   }
 }
 
-PHttpChannelChild* NeckoChild::AllocPHttpChannelChild(
-    const PBrowserOrId& browser, const SerializedLoadContext& loadContext,
-    const HttpChannelCreationArgs& aOpenArgs) {
-  
-  
-  MOZ_ASSERT_UNREACHABLE(
-      "AllocPHttpChannelChild should not be called on "
-      "child");
-  return nullptr;
-}
-
-bool NeckoChild::DeallocPHttpChannelChild(PHttpChannelChild* channel) {
-  MOZ_ASSERT(IsNeckoChild(), "DeallocPHttpChannelChild called by non-child!");
-
-  HttpChannelChild* child = static_cast<HttpChannelChild*>(channel);
-  child->Release();
-  return true;
-}
-
 PStunAddrsRequestChild* NeckoChild::AllocPStunAddrsRequestChild() {
   
   

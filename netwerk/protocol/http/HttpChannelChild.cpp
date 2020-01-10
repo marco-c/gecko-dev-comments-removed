@@ -2168,10 +2168,6 @@ HttpChannelChild::ConnectParent(uint32_t registrarId) {
 
   
   
-  AddRef();
-
-  
-  
   
   SetEventTarget();
 
@@ -2932,10 +2928,6 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   
   
   SetEventTarget();
-
-  
-  
-  AddRef();
 
   PBrowserOrId browser = cc->GetBrowserOrId(browserChild);
   if (!gNeckoChild->SendPHttpChannelConstructor(
