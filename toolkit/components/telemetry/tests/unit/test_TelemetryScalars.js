@@ -1104,7 +1104,6 @@ add_task(
 
     
     Services.prefs.setBoolPref("toolkit.telemetry.isGeckoViewMode", true);
-    Telemetry.resetCurrentProduct();
 
     
     let expectedValue = 11714;
@@ -1149,6 +1148,5 @@ add_task(
 
     
     Services.prefs.clearUserPref("toolkit.telemetry.isGeckoViewMode");
-    Telemetry.resetCurrentProduct();
   }
 );

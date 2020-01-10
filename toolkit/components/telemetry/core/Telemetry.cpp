@@ -108,7 +108,6 @@ using mozilla::Telemetry::EventExtraEntry;
 using mozilla::Telemetry::TelemetryIOInterposeObserver;
 using Telemetry::Common::AutoHashtable;
 using Telemetry::Common::GetCurrentProduct;
-using Telemetry::Common::SetCurrentProduct;
 using Telemetry::Common::StringHashSet;
 using Telemetry::Common::SupportedProduct;
 using Telemetry::Common::ToJSString;
@@ -1194,9 +1193,6 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
 #endif
 
   
-  SetCurrentProduct();
-
-  
   TelemetryHistogram::InitializeGlobalState(useTelemetry, useTelemetry);
   TelemetryScalar::InitializeGlobalState(useTelemetry, useTelemetry);
 
@@ -1690,16 +1686,6 @@ NS_IMETHODIMP
 TelemetryImpl::ClearEvents() {
   TelemetryEvent::ClearEvents();
   return NS_OK;
-}
-
-NS_IMETHODIMP
-TelemetryImpl::ResetCurrentProduct() {
-#if defined(MOZ_WIDGET_ANDROID)
-  SetCurrentProduct();
-  return NS_OK;
-#else
-  return NS_ERROR_FAILURE;
-#endif
 }
 
 NS_IMETHODIMP

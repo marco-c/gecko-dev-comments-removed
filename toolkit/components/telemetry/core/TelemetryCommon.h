@@ -38,6 +38,7 @@ enum class SupportedProduct : uint8_t {
   Firefox = (1 << 0),
   Fennec = (1 << 1),
   Geckoview = (1 << 2),
+  GeckoviewStreaming = (1 << 3),
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SupportedProduct);
 
@@ -153,13 +154,6 @@ JSString* ToJSString(JSContext* cx, const nsACString& aStr);
 
 JSString* ToJSString(JSContext* cx, const nsAString& aStr);
 
-
-
-
-
-
-
-void SetCurrentProduct();
 
 
 
