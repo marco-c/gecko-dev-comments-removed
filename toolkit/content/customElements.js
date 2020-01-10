@@ -616,7 +616,6 @@
   };
 
   const MozXULElement = MozElements.MozElementMixin(XULElement);
-  const MozHTMLElement = MozElements.MozElementMixin(HTMLElement);
 
   
 
@@ -738,7 +737,6 @@
 
   
   window.MozXULElement = MozXULElement;
-  window.MozHTMLElement = MozHTMLElement;
 
   customElements.setElementCreationCallback("browser", () => {
     Services.scriptloader.loadSubScript(
@@ -779,10 +777,6 @@
       ["findbar", "chrome://global/content/elements/findbar.js"],
       ["menulist", "chrome://global/content/elements/menulist.js"],
       ["search-textbox", "chrome://global/content/elements/search-textbox.js"],
-      [
-        "autocomplete-input",
-        "chrome://global/content/elements/autocomplete-input.js",
-      ],
       ["stringbundle", "chrome://global/content/elements/stringbundle.js"],
       [
         "printpreview-toolbar",

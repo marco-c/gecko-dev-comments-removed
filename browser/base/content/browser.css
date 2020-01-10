@@ -557,7 +557,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 }
 
 #urlbar,
-#searchbar {
+.searchbar-textbox {
   
 
   width: 1px;
