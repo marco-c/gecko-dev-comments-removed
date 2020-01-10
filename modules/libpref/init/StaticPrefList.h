@@ -4736,6 +4736,14 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  Live,
+  "layout.css.backdrop-filter.enabled",
+  layout_css_backdrop_filter_enabled,
+  bool, false
+)
+
+
 #ifdef EARLY_BETA_OR_EARLIER
 #define PREF_VALUE true
 #else
@@ -5455,6 +5463,21 @@ VARCACHE_PREF(
   Live,
   "layout.css.line-height.normal-as-resolved-value.enabled",
   layout_css_line_height_normal_as_resolved_value_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+#ifdef EARLY_BETA_OR_EARLIER
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.css.width-and-height-map-to-aspect-ratio.enabled",
+  layout_css_width_and_height_map_to_aspect_ratio_enabled,
   bool, PREF_VALUE
 )
 #undef PREF_VALUE
