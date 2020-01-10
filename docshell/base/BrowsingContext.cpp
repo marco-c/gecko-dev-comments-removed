@@ -339,12 +339,18 @@ void BrowsingContext::PrepareForProcessChange() {
 
   
   
-  mWindowProxy = nullptr;
+  
+  mDocShell = nullptr;
+
+  if (!mWindowProxy) {
+    return;
+  }
 
   
   
   
-  mDocShell = nullptr;
+  nsGlobalWindowOuter::PrepareForProcessChange(mWindowProxy);
+  MOZ_ASSERT(!mWindowProxy);
 }
 
 void BrowsingContext::CacheChildren(bool aFromIPC) {

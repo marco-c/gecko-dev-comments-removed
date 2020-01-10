@@ -2284,6 +2284,51 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   return NS_OK;
 }
 
+
+void nsGlobalWindowOuter::PrepareForProcessChange(JSObject* aProxy) {
+  MOZ_ASSERT(js::IsWindowProxy(aProxy));
+
+  RefPtr<nsGlobalWindowOuter> outerWindow =
+      nsOuterWindowProxy::GetOuterWindow(aProxy);
+  if (!outerWindow) {
+    return;
+  }
+
+  AutoJSAPI jsapi;
+  jsapi.Init();
+  JSContext* cx = jsapi.cx();
+
+  JS::Rooted<JSObject*> localProxy(cx, aProxy);
+  JSAutoRealm ar(cx, localProxy);
+
+  
+  
+  
+  
+  
+  outerWindow->ClearWrapper(localProxy);
+  RefPtr<BrowsingContext> bc = outerWindow->GetBrowsingContext();
+  MOZ_ASSERT(bc);
+  MOZ_ASSERT(bc->GetWindowProxy() == localProxy);
+  bc->ClearWindowProxy();
+  js::SetProxyReservedSlot(localProxy, OUTER_WINDOW_SLOT,
+                           js::PrivateValue(nullptr));
+  js::SetProxyReservedSlot(localProxy, HOLDER_WEAKMAP_SLOT,
+                           JS::UndefinedValue());
+
+  
+  JS::Rooted<JSObject*> remoteProxy(cx);
+
+  if (!mozilla::dom::GetRemoteOuterWindowProxy(cx, bc, localProxy,
+                                               &remoteProxy)) {
+    MOZ_CRASH("PrepareForProcessChange GetRemoteOuterWindowProxy");
+  }
+
+  if (!xpc::TransplantObject(cx, localProxy, remoteProxy)) {
+    MOZ_CRASH("PrepareForProcessChange TransplantObject");
+  }
+}
+
 void nsGlobalWindowOuter::PreloadLocalStorage() {
   if (!Storage::StoragePrefIsEnabled()) {
     return;
