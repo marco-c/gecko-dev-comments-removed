@@ -77,14 +77,24 @@ export default class MonitorClass {
     const exposedPasswords = this.doc.querySelector(
       "span[data-type='exposed-passwords']"
     );
-    const exposedLockwisePasswords = this.doc.querySelector(
-      "span[data-type='breached-lockwise-passwords']"
-    );
 
     storedEmail.textContent = monitorData.monitoredEmails;
     knownBreaches.textContent = monitorData.numBreaches;
     exposedPasswords.textContent = monitorData.passwords;
-    exposedLockwisePasswords.textContent =
-      monitorData.potentiallyBreachedLogins;
+
+    
+    if (monitorData.potentiallyBreachedLogins > 0) {
+      const lockwiseSection = this.doc.querySelector(
+        ".monitor-breached-passwords"
+      );
+      const exposedLockwisePasswords = this.doc.querySelector(
+        "span[data-type='breached-lockwise-passwords']"
+      );
+
+      exposedLockwisePasswords.textContent =
+        monitorData.potentiallyBreachedLogins;
+
+      lockwiseSection.classList.remove("hidden");
+    }
   }
 }
