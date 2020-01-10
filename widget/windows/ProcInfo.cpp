@@ -5,7 +5,6 @@
 
 
 #include "mozilla/ProcInfo.h"
-#include "mozilla/ipc/GeckoChildProcessHost.h"
 #include <windows.h>
 #include <psapi.h>
 #include <tlhelp32.h>
@@ -73,8 +72,7 @@ void AppendThreads(ProcInfo* info) {
 }
 
 RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
-                                    const ProcType& type,
-                                    ipc::GeckoChildProcessHost* childProcess) {
+                                    const ProcType& type) {
   auto holder = MakeUnique<MozPromiseHolder<ProcInfoPromise>>();
   RefPtr<ProcInfoPromise> promise = holder->Ensure(__func__);
 
