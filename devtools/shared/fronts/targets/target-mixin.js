@@ -46,6 +46,12 @@ function TargetMixin(parentClass) {
       this.activeConsole = null;
       this.threadFront = null;
 
+      
+      
+      
+      
+      this.shouldCloseClient = this.isLocalTab;
+
       this._client = client;
 
       
@@ -453,16 +459,12 @@ function TargetMixin(parentClass) {
 
         this.threadFront = null;
 
-        if (this.isLocalTab || this.shouldCloseClient) {
-          
-          
-          
-          
-          
-          
+        if (this.shouldCloseClient) {
           try {
             await this._client.close();
           } catch (e) {
+            
+            
             console.warn(`Error while closing client: ${e.message}`);
           }
 
