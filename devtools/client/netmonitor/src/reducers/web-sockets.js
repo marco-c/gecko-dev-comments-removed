@@ -12,13 +12,34 @@ const {
   WS_CLEAR_FRAMES,
   WS_TOGGLE_FRAME_FILTER_TYPE,
   WS_SET_REQUEST_FILTER_TEXT,
+  WS_TOGGLE_COLUMN,
+  WS_RESET_COLUMNS,
 } = require("../constants");
 
 
 
 
+const defaultColumnsState = {
+  data: true,
+  size: false,
+  opCode: false,
+  maskBit: false,
+  finBit: false,
+  time: true,
+};
 
-function WebSockets() {
+
+
+
+function getWebSocketsDefaultColumnsState() {
+  return Object.assign({}, defaultColumnsState);
+}
+
+
+
+
+
+function WebSockets(initialState = {}) {
   return {
     
     frames: new Map(),
@@ -28,6 +49,8 @@ function WebSockets() {
     selectedFrame: null,
     frameDetailsOpen: false,
     currentChannelId: null,
+    columns: getWebSocketsDefaultColumnsState(),
+    ...initialState,
   };
 }
 
@@ -123,6 +146,31 @@ function setFrameFilterText(state, action) {
 
 
 
+function toggleColumn(state, action) {
+  const { column } = action;
+
+  return {
+    ...state,
+    columns: {
+      ...state.columns,
+      [column]: !state.columns[column],
+    },
+  };
+}
+
+
+
+
+function resetColumns(state) {
+  return {
+    ...state,
+    columns: getWebSocketsDefaultColumnsState(),
+  };
+}
+
+
+
+
 function mapSet(map, key, value) {
   const newMap = new Map(map);
   if (newMap.has(key)) {
@@ -154,6 +202,10 @@ function webSockets(state = WebSockets(), action) {
       return toggleFrameFilterType(state, action);
     case WS_SET_REQUEST_FILTER_TEXT:
       return setFrameFilterText(state, action);
+    case WS_TOGGLE_COLUMN:
+      return toggleColumn(state, action);
+    case WS_RESET_COLUMNS:
+      return resetColumns(state);
     default:
       return state;
   }
@@ -162,4 +214,5 @@ function webSockets(state = WebSockets(), action) {
 module.exports = {
   WebSockets,
   webSockets,
+  getWebSocketsDefaultColumnsState,
 };
