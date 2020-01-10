@@ -14,6 +14,7 @@ const {
   UPDATE_SEARCH_STATUS,
   SEARCH_STATUS,
   SET_TARGET_SEARCH_RESULT,
+  TOGGLE_SEARCH_CASE_SENSITIVE_SEARCH,
 } = require("../constants");
 
 const {
@@ -105,9 +106,15 @@ async function loadResource(connector, resource) {
 
 function searchResource(resource, query) {
   return async (dispatch, getState) => {
+    const state = getState();
+
+    const modifiers = {
+      caseSensitive: state.search.caseSensitive,
+    };
+
     
     
-    const result = await searchInResource(resource, query);
+    const result = await searchInResource(resource, query, modifiers);
 
     if (!result.length) {
       return;
@@ -167,9 +174,23 @@ function closeSearch() {
   };
 }
 
+
+
+
+
 function openSearch() {
   return (dispatch, getState) => {
     dispatch({ type: OPEN_SEARCH });
+  };
+}
+
+
+
+
+
+function toggleCaseSensitiveSearch() {
+  return (dispatch, getState) => {
+    dispatch({ type: TOGGLE_SEARCH_CASE_SENSITIVE_SEARCH });
   };
 }
 
@@ -249,4 +270,5 @@ module.exports = {
   toggleSearchPanel,
   navigate,
   setTargetSearchResult,
+  toggleCaseSensitiveSearch,
 };
