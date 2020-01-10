@@ -6,6 +6,7 @@
 
 import LockwiseCard from "./lockwise-card.js";
 import MonitorCard from "./monitor-card.js";
+import ProxyCard from "./proxy-card.js";
 
 
 window.addEventListener("beforeunload", () => {
@@ -308,6 +309,20 @@ document.addEventListener("DOMContentLoaded", e => {
   
   const monitorUI = document.querySelector(".monitor-card");
   monitorUI.dataset.enabled = monitorEnabled;
+
+  const proxyEnabled = RPMGetBoolPref(
+    "browser.contentblocking.report.proxy.enabled",
+    true
+  );
+
+  if (proxyEnabled) {
+    const proxyCard = new ProxyCard(document);
+    proxyCard.init();
+  }
+
+  
+  const proxyUI = document.querySelector(".proxy-card");
+  proxyUI.dataset.enabled = proxyEnabled;
 
   
   

@@ -19,6 +19,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   fxAccounts: "resource://gre/modules/FxAccounts.jsm",
   FXA_PWDMGR_HOST: "resource://gre/modules/FxAccountsCommon.js",
   FXA_PWDMGR_REALM: "resource://gre/modules/FxAccountsCommon.js",
+  AddonManager: "resource://gre/modules/AddonManager.jsm",
   LoginBreaches: "resource:///modules/LoginBreaches.jsm",
   LoginHelper: "resource://gre/modules/LoginHelper.jsm",
 });
@@ -39,6 +40,8 @@ let idToTextMap = new Map([
 ]);
 
 const MONITOR_API_ENDPOINT = "https://monitor.firefox.com/user/breach-stats";
+
+const SECURE_PROXY_ADDON_ID = "secure-proxy@mozilla.com";
 
 
 
@@ -70,6 +73,7 @@ var AboutProtectionsHandler = {
     "FetchContentBlockingEvents",
     "FetchMonitorData",
     "FetchUserLoginsData",
+    "GetShowProxyCard",
   ],
 
   init() {
@@ -282,6 +286,25 @@ var AboutProtectionsHandler = {
 
 
 
+  async shouldShowProxyCard() {
+    const region = Services.prefs.getCharPref("browser.search.region");
+    const languages = Services.prefs.getComplexValue(
+      "intl.accept_languages",
+      Ci.nsIPrefLocalizedString
+    );
+    const alreadyInstalled = await AddonManager.getAddonByID(
+      SECURE_PROXY_ADDON_ID
+    );
+
+    return (
+      region === "US" && !alreadyInstalled && languages.data.includes("en-US")
+    );
+  },
+
+  
+
+
+
 
 
 
@@ -375,6 +398,10 @@ var AboutProtectionsHandler = {
       case "ClearMonitorCache":
         this.monitorResponse = null;
         break;
+      case "GetShowProxyCard":
+        if (await this.shouldShowProxyCard()) {
+          this.sendMessage(aMessage.target, "SendShowProxyCard");
+        }
     }
   },
 };
