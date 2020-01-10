@@ -14,6 +14,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gTouchBarUpdater",
+  "@mozilla.org/widget/touchbarupdater;1",
+  "nsITouchBarUpdater"
+);
+
 
 
 
@@ -24,8 +31,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 function execCommand(commandName, telemetryKey) {
-  let win = BrowserWindowTracker.getTopWindow();
-  let command = win.document.getElementById(commandName);
+  let command = TouchBarHelper.window.document.getElementById(commandName);
   if (command) {
     command.doCommand();
   }
@@ -52,6 +58,15 @@ function hexToInt(hexString) {
   return isNaN(val) ? null : val;
 }
 
+const kInputTypes = {
+  BUTTON: "button",
+  LABEL: "label",
+  MAIN_BUTTON: "mainButton",
+  POPOVER: "popover",
+  SCROLLVIEW: "scrollView",
+  SCRUBBER: "scrubber",
+};
+
 
 
 
@@ -59,25 +74,25 @@ const kBuiltInInputs = {
   Back: {
     title: "back",
     image: "chrome://browser/skin/back.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => execCommand("Browser:Back", "Back"),
   },
   Forward: {
     title: "forward",
     image: "chrome://browser/skin/forward.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => execCommand("Browser:Forward", "Forward"),
   },
   Reload: {
     title: "reload",
     image: "chrome://browser/skin/reload.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => execCommand("Browser:Reload", "Reload"),
   },
   Home: {
     title: "home",
     image: "chrome://browser/skin/home.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => {
       let win = BrowserWindowTracker.getTopWindow();
       win.BrowserHome();
@@ -90,25 +105,25 @@ const kBuiltInInputs = {
   Fullscreen: {
     title: "fullscreen",
     image: "chrome://browser/skin/fullscreen.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => execCommand("View:FullScreen", "Fullscreen"),
   },
   Find: {
     title: "find",
     image: "chrome://browser/skin/search-glass.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => execCommand("cmd_find", "Find"),
   },
   NewTab: {
     title: "new-tab",
     image: "chrome://browser/skin/add.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => execCommand("cmd_newNavigatorTabNoEvent", "NewTab"),
   },
   Sidebar: {
     title: "open-sidebar",
     image: "chrome://browser/skin/sidebars.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => {
       let win = BrowserWindowTracker.getTopWindow();
       win.SidebarUI.toggle();
@@ -121,20 +136,20 @@ const kBuiltInInputs = {
   AddBookmark: {
     title: "add-bookmark",
     image: "chrome://browser/skin/bookmark-hollow.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => execCommand("Browser:AddBookmarkAs", "AddBookmark"),
   },
   ReaderView: {
     title: "reader-view",
     image: "chrome://browser/skin/readerMode.svg",
-    type: "button",
+    type: kInputTypes.BUTTON,
     callback: () => execCommand("View:ReaderView", "ReaderView"),
     disabled: true, 
   },
   OpenLocation: {
     title: "open-location",
     image: "chrome://browser/skin/search-glass.svg",
-    type: "mainButton",
+    type: kInputTypes.MAIN_BUTTON,
     callback: () => execCommand("Browser:OpenLocation", "OpenLocation"),
   },
   
@@ -142,8 +157,8 @@ const kBuiltInInputs = {
   
   Share: {
     title: "share",
-    type: "scrubber",
     image: "chrome://browser/skin/share.svg",
+    type: kInputTypes.SCRUBBER,
     callback: () => execCommand("cmd_share", "Share"),
   },
 };
@@ -154,6 +169,8 @@ const kHelperObservers = new Set([
   "touchbar-location-change",
   "quit-application",
   "intl:app-locales-changed",
+  "urlbar-focus",
+  "urlbar-blur",
 ]);
 
 
@@ -174,7 +191,7 @@ class TouchBarHelper {
   }
 
   get activeTitle() {
-    let tabbrowser = this.window.ownerGlobal.gBrowser;
+    let tabbrowser = TouchBarHelper.window.ownerGlobal.gBrowser;
     let activeTitle;
     if (tabbrowser) {
       activeTitle = tabbrowser.selectedBrowser.contentTitle;
@@ -201,12 +218,14 @@ class TouchBarHelper {
     return layoutItems;
   }
 
-  get window() {
+  static get window() {
     return BrowserWindowTracker.getTopWindow();
   }
 
-  get bookmarkingUI() {
-    return this.window.BookmarkingUI;
+  static get baseWindow() {
+    return TouchBarHelper.window.docShell.treeOwner.QueryInterface(
+      Ci.nsIBaseWindow
+    );
   }
 
   getTouchBarInput(inputName) {
@@ -227,8 +246,13 @@ class TouchBarHelper {
     let inputData = kBuiltInInputs[inputName];
 
     let item = new TouchBarInput(inputData);
+
     
-    if (kBuiltInInputs[inputName].hasOwnProperty("localTitle")) {
+    
+    if (
+      kBuiltInInputs[inputName].hasOwnProperty("localTitle") ||
+      !kBuiltInInputs[inputName].hasOwnProperty("title")
+    ) {
       return item;
     }
 
@@ -237,14 +261,10 @@ class TouchBarHelper {
       item.title = result;
       kBuiltInInputs[inputName].localTitle = result; 
       
-      if (this.window) {
-        let baseWindow = this.window.docShell.treeOwner.QueryInterface(
-          Ci.nsIBaseWindow
-        );
-        let updater = Cc["@mozilla.org/widget/touchbarupdater;1"].getService(
-          Ci.nsITouchBarUpdater
-        );
-        updater.updateTouchBarInputs(baseWindow, [item]);
+      if (TouchBarHelper.window) {
+        gTouchBarUpdater.updateTouchBarInputs(TouchBarHelper.baseWindow, [
+          item,
+        ]);
       }
     });
 
@@ -259,7 +279,7 @@ class TouchBarHelper {
 
 
   _updateTouchBarInputs(...inputNames) {
-    if (!this.window) {
+    if (!TouchBarHelper.window) {
       return;
     }
 
@@ -272,13 +292,7 @@ class TouchBarHelper {
       inputs.push(input);
     }
 
-    let baseWindow = this.window.docShell.treeOwner.QueryInterface(
-      Ci.nsIBaseWindow
-    );
-    let updater = Cc["@mozilla.org/widget/touchbarupdater;1"].getService(
-      Ci.nsITouchBarUpdater
-    );
-    updater.updateTouchBarInputs(baseWindow, inputs);
+    gTouchBarUpdater.updateTouchBarInputs(TouchBarHelper.baseWindow, inputs);
   }
 
   observe(subject, topic, data) {
@@ -288,8 +302,10 @@ class TouchBarHelper {
         
         
         kBuiltInInputs.ReaderView.disabled = !data.startsWith("about:reader");
-        kBuiltInInputs.Back.disabled = !this.window.gBrowser.canGoBack;
-        kBuiltInInputs.Forward.disabled = !this.window.gBrowser.canGoForward;
+        kBuiltInInputs.Back.disabled = !TouchBarHelper.window.gBrowser
+          .canGoBack;
+        kBuiltInInputs.Forward.disabled = !TouchBarHelper.window.gBrowser
+          .canGoForward;
         this._updateTouchBarInputs("ReaderView", "Back", "Forward");
         break;
       case "bookmark-icon-updated":
@@ -347,15 +363,39 @@ helperProto._l10n = new Localization(["browser/touchbar/touchbar.ftl"]);
 
 
 
+
+
+
 class TouchBarInput {
   constructor(input) {
-    this._key = input.title;
+    this._key = input.key || input.title;
     this._title = input.hasOwnProperty("localTitle") ? input.localTitle : "";
     this._image = input.image;
     this._type = input.type;
     this._callback = input.callback;
     this._color = hexToInt(input.color);
     this._disabled = input.hasOwnProperty("disabled") ? input.disabled : false;
+    if (input.children) {
+      this._children = [];
+      let toLocalize = [];
+      for (let childData of Object.values(input.children)) {
+        let initializedChild = new TouchBarInput(childData);
+        if (!initializedChild) {
+          continue;
+        }
+        
+        
+        
+        
+        initializedChild.type = input.type + "-" + initializedChild.type;
+        this._children.push(initializedChild);
+        
+        if (childData.title && childData.title != "") {
+          toLocalize.push(initializedChild);
+        }
+      }
+      this._localizeChildren(toLocalize);
+    }
   }
 
   get key() {
@@ -368,7 +408,7 @@ class TouchBarInput {
     this._title = title;
   }
   get image() {
-    return PlacesUtils.toURI(this._image);
+    return this._image ? PlacesUtils.toURI(this._image) : null;
   }
   set image(image) {
     this._image = image;
@@ -400,6 +440,35 @@ class TouchBarInput {
   }
   set disabled(disabled) {
     this._disabled = disabled;
+  }
+  get children() {
+    if (!this._children) {
+      return null;
+    }
+    let children = Cc["@mozilla.org/array;1"].createInstance(
+      Ci.nsIMutableArray
+    );
+    for (let child of this._children) {
+      children.appendElement(child);
+    }
+    return children;
+  }
+
+  
+
+
+
+  async _localizeChildren(children) {
+    let titles = await helperProto._l10n.formatValues(
+      children.map(child => ({ id: child.key }))
+    );
+    
+    
+    
+    children.forEach(function(child, index) {
+      child.title = titles[index];
+    });
+    gTouchBarUpdater.updateTouchBarInputs(TouchBarHelper.baseWindow, children);
   }
 }
 
