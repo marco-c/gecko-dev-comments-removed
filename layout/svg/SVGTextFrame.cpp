@@ -16,10 +16,6 @@
 #include "gfxTypes.h"
 #include "gfxUtils.h"
 #include "LookAndFeel.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/PatternHelpers.h"
-#include "mozilla/Likely.h"
-#include "mozilla/PresShell.h"
 #include "nsAlgorithm.h"
 #include "nsBidiPresUtils.h"
 #include "nsBlockFrame.h"
@@ -30,14 +26,10 @@
 #include "SVGObserverUtils.h"
 #include "nsSVGOuterSVGFrame.h"
 #include "nsSVGPaintServerFrame.h"
-#include "mozilla/dom/Selection.h"
-#include "mozilla/dom/SVGRect.h"
-#include "mozilla/dom/SVGTextContentElementBinding.h"
 #include "nsSVGIntegrationUtils.h"
 #include "nsSVGUtils.h"
 #include "nsTArray.h"
 #include "nsTextFrame.h"
-#include "nsTextNode.h"
 #include "SVGAnimatedNumberList.h"
 #include "SVGContentUtils.h"
 #include "SVGContextPaint.h"
@@ -48,6 +40,14 @@
 #include "nsLayoutUtils.h"
 #include "nsFrameSelection.h"
 #include "nsStyleStructInlines.h"
+#include "mozilla/Likely.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/dom/Selection.h"
+#include "mozilla/dom/SVGRect.h"
+#include "mozilla/dom/SVGTextContentElementBinding.h"
+#include "mozilla/dom/Text.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/PatternHelpers.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -243,7 +243,7 @@ static bool IsNonEmptyTextFrame(nsIFrame* aFrame) {
 
 static bool GetNonEmptyTextFrameAndNode(nsIFrame* aFrame,
                                         nsTextFrame*& aTextFrame,
-                                        nsTextNode*& aTextNode) {
+                                        Text*& aTextNode) {
   nsTextFrame* text = do_QueryFrame(aFrame);
   bool isNonEmptyTextFrame = text && text->GetContentLength() != 0;
 
@@ -252,7 +252,7 @@ static bool GetNonEmptyTextFrameAndNode(nsIFrame* aFrame,
     NS_ASSERTION(content && content->IsText(),
                  "unexpected content type for nsTextFrame");
 
-    nsTextNode* node = static_cast<nsTextNode*>(content);
+    Text* node = content->AsText();
     MOZ_ASSERT(node->TextLength() != 0,
                "frame's GetContentLength() should be 0 if the text node "
                "has no content");
@@ -1117,13 +1117,13 @@ class TextNodeIterator {
   
 
 
-  nsTextNode* Current() const { return static_cast<nsTextNode*>(mCurrent); }
+  Text* Current() const { return mCurrent ? mCurrent->AsText() : nullptr; }
 
   
 
 
 
-  nsTextNode* Next();
+  Text* Next();
 
   
 
@@ -1160,7 +1160,7 @@ class TextNodeIterator {
   SubtreePosition mSubtreePosition;
 };
 
-nsTextNode* TextNodeIterator::Next() {
+Text* TextNodeIterator::Next() {
   
   
   
@@ -1199,7 +1199,7 @@ nsTextNode* TextNodeIterator::Next() {
     } while (mCurrent && !mCurrent->IsText());
   }
 
-  return static_cast<nsTextNode*>(mCurrent);
+  return mCurrent ? mCurrent->AsText() : nullptr;
 }
 
 
@@ -1270,7 +1270,7 @@ class TextNodeCorrespondenceRecorder {
   
 
 
-  nsTextNode* NextNode();
+  Text* NextNode();
 
   
 
@@ -1281,7 +1281,7 @@ class TextNodeCorrespondenceRecorder {
   
 
 
-  nsTextNode* mPreviousNode;
+  Text* mPreviousNode;
 
   
 
@@ -1322,7 +1322,7 @@ void TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot) {
       undisplayed += mPreviousNode->TextLength() - mNodeCharIndex;
     }
     
-    for (nsTextNode* textNode = mNodeIterator.Current(); textNode;
+    for (Text* textNode = mNodeIterator.Current(); textNode;
          textNode = NextNode()) {
       undisplayed += textNode->TextLength();
     }
@@ -1333,9 +1333,9 @@ void TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot) {
   aRoot->mTrailingUndisplayedCharacters = undisplayed;
 }
 
-nsTextNode* TextNodeCorrespondenceRecorder::NextNode() {
+Text* TextNodeCorrespondenceRecorder::NextNode() {
   mPreviousNode = mNodeIterator.Current();
-  nsTextNode* next;
+  Text* next;
   do {
     next = mNodeIterator.Next();
   } while (next && next->TextLength() == 0);
@@ -1353,7 +1353,7 @@ void TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame) {
   }
 
   nsTextFrame* frame;  
-  nsTextNode* node;    
+  Text* node;          
   if (!GetNonEmptyTextFrameAndNode(aFrame, frame, node)) {
     
     return;
@@ -3589,7 +3589,7 @@ static bool HasTextContent(nsIContent* aContent) {
   NS_ASSERTION(aContent, "expected non-null aContent");
 
   TextNodeIterator it(aContent);
-  for (nsTextNode* text = it.Current(); text; text = it.Next()) {
+  for (Text* text = it.Current(); text; text = it.Next()) {
     if (text->TextLength() != 0) {
       return true;
     }
@@ -3605,7 +3605,7 @@ static uint32_t GetTextContentLength(nsIContent* aContent) {
 
   uint32_t length = 0;
   TextNodeIterator it(aContent);
-  for (nsTextNode* text = it.Current(); text; text = it.Next()) {
+  for (Text* text = it.Current(); text; text = it.Next()) {
     length += text->TextLength();
   }
   return length;
@@ -4169,7 +4169,7 @@ bool SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
                                            nsTArray<gfxPoint>& aDeltas) {
   if (aContent->IsText()) {
     
-    uint32_t length = static_cast<nsTextNode*>(aContent)->TextLength();
+    uint32_t length = aContent->AsText()->TextLength();
     if (length) {
       uint32_t end = aIndex + length;
       if (MOZ_UNLIKELY(end > mPositions.Length())) {
