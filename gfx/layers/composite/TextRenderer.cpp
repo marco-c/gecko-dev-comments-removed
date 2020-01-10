@@ -126,10 +126,32 @@ RefPtr<TextureSource> TextRenderer::RenderText(TextureSourceProvider* aProvider,
   RefPtr<DrawTarget> dt =
       Factory::CreateDrawTarget(BackendType::SKIA, size, sTextureFormat);
 
+  RenderTextToDrawTarget(dt, aText, aTargetPixelWidth, aFontType);
+  RefPtr<SourceSurface> surf = dt->Snapshot();
+  RefPtr<DataSourceSurface> dataSurf = surf->GetDataSurface();
+  RefPtr<DataTextureSource> src = aProvider->CreateDataTextureSource();
+
+  if (!src->Update(dataSurf)) {
+    
+    return nullptr;
+  }
+
+  return src;
+}
+
+void TextRenderer::RenderTextToDrawTarget(DrawTarget* aDrawTarget,
+                                          const string& aText,
+                                          uint32_t aTargetPixelWidth,
+                                          FontType aFontType) {
+  if (!EnsureInitialized(aFontType)) {
+    return;
+  }
+
   
-  dt->FillRect(Rect(0, 0, size.width, size.height),
-               ColorPattern(Color(1.0, 1.0, 1.0, sBackgroundOpacity)),
-               DrawOptions(1.0, CompositionOp::OP_SOURCE));
+  IntSize size = aDrawTarget->GetSize();
+  aDrawTarget->FillRect(Rect(0, 0, size.width, size.height),
+                        ColorPattern(Color(1.0, 1.0, 1.0, sBackgroundOpacity)),
+                        DrawOptions(1.0, CompositionOp::OP_SOURCE));
 
   IntPoint currentPos;
 
@@ -155,21 +177,10 @@ RefPtr<TextureSource> TextRenderer::RenderText(TextureSourceProvider* aProvider,
                     cellIndexY * info->mCellHeight, glyphWidth,
                     info->mCellHeight);
 
-    dt->CopySurface(cache->mGlyphBitmaps, srcRect, currentPos);
+    aDrawTarget->CopySurface(cache->mGlyphBitmaps, srcRect, currentPos);
 
     currentPos.x += glyphWidth;
   }
-
-  RefPtr<SourceSurface> surf = dt->Snapshot();
-  RefPtr<DataSourceSurface> dataSurf = surf->GetDataSurface();
-  RefPtr<DataTextureSource> src = aProvider->CreateDataTextureSource();
-
-  if (!src->Update(dataSurf)) {
-    
-    return nullptr;
-  }
-
-  return src;
 }
 
  const FontBitmapInfo* TextRenderer::GetFontInfo(FontType aType) {
