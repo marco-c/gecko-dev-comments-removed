@@ -830,6 +830,13 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush) {
 
   
   
+  if (!mElement->IsInComposedDoc()) {
+    ClearComputedStyle();
+    return;
+  }
+
+  
+  
   
   
 
