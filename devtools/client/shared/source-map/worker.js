@@ -4169,8 +4169,6 @@ module.exports = {
  513:
  (function(module, exports, __webpack_require__) {
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 
 
 
@@ -4349,10 +4347,6 @@ function filterScopes(items, pc, lastItem, index) {
 
 class XScope {
   constructor(xScopeData, sourceMapContext) {
-    _defineProperty(this, "xScope", void 0);
-
-    _defineProperty(this, "sourceMapContext", void 0);
-
     this.xScope = xScopeData;
     this.sourceMapContext = sourceMapContext;
   }
@@ -4416,8 +4410,6 @@ module.exports = {
  514:
  (function(module, exports) {
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 
 
 
@@ -4427,8 +4419,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 class Value {
   constructor(val) {
-    _defineProperty(this, "val", void 0);
-
     this.val = val;
   }
 

@@ -17148,8 +17148,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = createSimplePath;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 
 
 
@@ -17170,14 +17168,6 @@ function createSimplePath(ancestors) {
 
 class SimplePath {
   constructor(ancestors, index = ancestors.length - 1) {
-    _defineProperty(this, "_index", void 0);
-
-    _defineProperty(this, "_ancestors", void 0);
-
-    _defineProperty(this, "_ancestor", void 0);
-
-    _defineProperty(this, "_parentPath", void 0);
-
     if (index < 0 || index >= ancestors.length) {
       console.error(ancestors);
       throw new Error("Created invalid path");
