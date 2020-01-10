@@ -89,12 +89,6 @@ host_fetches = {
         
         
         
-        'ImageMagick': {
-            'type': 'static-url',
-            'url': 'https://imagemagick.org/download/binaries/ImageMagick-x86_64-pc-linux-gnu.tar.gz',  
-            
-            'path': 'ImageMagick-6.9.2',
-        },
     },
     'win64': {
         'ffmpeg': {
@@ -136,6 +130,23 @@ class MachBrowsertime(MachCommandBase):
         from mozbuild.artifact_cache import ArtifactCache
         sys.path.append(mozpath.join(self.topsrcdir, 'tools', 'lint', 'eslint'))
         import setup_helper
+
+        if host_platform().startswith('linux'):
+            
+            
+            import which
+            im_programs = ('compare', 'convert', 'mogrify')
+            try:
+                for im_program in im_programs:
+                    which.which(im_program)
+            except which.WhichError as e:
+                print('Error: {} On Linux, ImageMagick must be on the PATH. '
+                      'Install ImageMagick manually and try again (or update PATH). '
+                      'On Ubuntu and Debian, try `sudo apt-get install imagemagick`. '
+                      'On Fedora, try `sudo dnf install imagemagick`. '
+                      'On CentOS, try `sudo yum install imagemagick`.'
+                      .format(e))
+                return 1
 
         
         artifact_cache = ArtifactCache(self.artifact_cache_path,
@@ -238,14 +249,17 @@ class MachBrowsertime(MachCommandBase):
             self.state_path,
             fetches['ffmpeg']['path'])
 
-        path_to_imagemagick = mozpath.join(
-            self.state_path,
-            fetches['ImageMagick']['path'])
+        path_to_imagemagick = None
+        if 'ImageMagick' in fetches:
+            path_to_imagemagick = mozpath.join(
+                self.state_path,
+                fetches['ImageMagick']['path'])
 
-        path = [
-            path_to_ffmpeg if host_platform().startswith('linux') else mozpath.join(path_to_ffmpeg, 'bin'),  
-            self.state_path if host_platform().startswith('win') else mozpath.join(path_to_imagemagick, 'bin'),  
-        ] + path
+        if path_to_imagemagick:
+            
+            
+            path.insert(0, self.state_path if host_platform().startswith('win') else mozpath.join(path_to_imagemagick, 'bin'))  
+        path.insert(0, path_to_ffmpeg if host_platform().startswith('linux') else mozpath.join(path_to_ffmpeg, 'bin'))  
 
         
         
@@ -258,13 +272,19 @@ class MachBrowsertime(MachCommandBase):
         
         path = [os.path.dirname(self.virtualenv_manager.python_path)] + path
 
-        return {
-            
-            'LD_LIBRARY_PATH': mozpath.join(path_to_imagemagick, 'lib'),
-            'DYLD_LIBRARY_PATH': mozpath.join(path_to_imagemagick, 'lib'),
-            'MAGICK_HOME': path_to_imagemagick,
+        append_env = {
             'PATH': os.pathsep.join(path),
         }
+
+        if path_to_imagemagick:
+            append_env.update({
+                
+                'LD_LIBRARY_PATH': mozpath.join(path_to_imagemagick, 'lib'),
+                'DYLD_LIBRARY_PATH': mozpath.join(path_to_imagemagick, 'lib'),
+                'MAGICK_HOME': path_to_imagemagick,
+            })
+
+        return append_env
 
     def _activate_virtualenv(self, *args, **kwargs):
         MachCommandBase._activate_virtualenv(self, *args, **kwargs)
