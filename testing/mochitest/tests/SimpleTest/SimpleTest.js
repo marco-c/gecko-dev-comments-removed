@@ -22,7 +22,7 @@ var parentRunner = null;
 
 
 
-var isSingleTestRun = (parent == window && !(opener || window.arguments && window.arguments[0].SimpleTest));
+var isSingleTestRun = (parent == window && !opener)
 try {
   var isPrimaryTestWindow = !!parent.TestRunner || isSingleTestRun;
 } catch(e) {
@@ -39,7 +39,7 @@ try {
 
 (function() {
     function ancestor(w) {
-        return w.parent != w ? w.parent : w.opener || w.arguments && w.arguments[0];
+        return w.parent != w ? w.parent : w.opener;
     }
 
     var w = ancestor(window);

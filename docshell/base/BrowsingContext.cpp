@@ -101,8 +101,6 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
     Type aType) {
   MOZ_DIAGNOSTIC_ASSERT(!aParent || aParent->mType == aType);
 
-  MOZ_DIAGNOSTIC_ASSERT(aType != Type::Chrome || XRE_IsParentProcess());
-
   uint64_t id = nsContentUtils::GenerateBrowsingContextId();
 
   MOZ_LOG(GetLog(), LogLevel::Debug,
@@ -125,8 +123,6 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
   
   context->mName = aName;
   if (aOpener) {
-    MOZ_DIAGNOSTIC_ASSERT(aOpener->Group() == context->Group());
-    MOZ_DIAGNOSTIC_ASSERT(aOpener->mType == context->mType);
     context->mOpenerId = aOpener->Id();
     context->mHadOriginalOpener = true;
   }
@@ -1033,7 +1029,7 @@ void BrowsingContext::Transaction::Apply(BrowsingContext* aBrowsingContext) {
 }
 
 BrowsingContext::IPCInitializer BrowsingContext::GetIPCInitializer() {
-  MOZ_DIAGNOSTIC_ASSERT(mType == Type::Content);
+  
 
   IPCInitializer init;
   init.mId = Id();

@@ -450,7 +450,7 @@ function openModalWindow(domWin, uri, args) {
   
 
   Services.ww.openWindow(
-    domWin.docShell.rootTreeItem.domWindow,
+    domWin,
     uri,
     "_blank",
     "centerscreen,chrome,modal,titlebar",
