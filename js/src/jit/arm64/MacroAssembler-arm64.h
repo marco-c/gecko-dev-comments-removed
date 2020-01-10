@@ -1919,6 +1919,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
   
   void writeDataRelocation(ImmGCPtr ptr, BufferOffset load) {
+    
+    
     if (ptr.value) {
       if (gc::IsInsideNursery(ptr.value)) {
         embedsNurseryPointers_ = true;
@@ -1927,6 +1929,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     }
   }
   void writeDataRelocation(const Value& val, BufferOffset load) {
+    
+    
     if (val.isGCThing()) {
       gc::Cell* cell = val.toGCThing();
       if (cell && gc::IsInsideNursery(cell)) {

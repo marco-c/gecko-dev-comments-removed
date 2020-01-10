@@ -85,6 +85,8 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   
   
   void writeDataRelocation(const Value& val) {
+    
+    
     if (val.isGCThing()) {
       gc::Cell* cell = val.toGCThing();
       if (cell && gc::IsInsideNursery(cell)) {
