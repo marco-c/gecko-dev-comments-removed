@@ -1287,13 +1287,35 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   
   class MOZ_STACK_CLASS AutoBase {
    protected:
-    explicit AutoBase(BinASTTokenReaderContext& reader);
-    ~AutoBase();
+    explicit AutoBase(BinASTTokenReaderContext& reader)
+#ifdef DEBUG
+        : initialized_(false),
+          reader_(reader)
+#endif
+    {
+    }
+    ~AutoBase() {
+      
+      
+      
+      MOZ_ASSERT_IF(initialized_, reader_.hasRaisedError());
+    }
 
     friend BinASTTokenReaderContext;
 
    public:
-    void init();
+    inline void init() {
+#ifdef DEBUG
+      initialized_ = true;
+#endif
+    }
+
+    inline MOZ_MUST_USE JS::Result<Ok> done() {
+#ifdef DEBUG
+      initialized_ = false;
+#endif
+      return Ok();
+    }
 
    protected:
 #ifdef DEBUG
@@ -1305,22 +1327,14 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   
   class MOZ_STACK_CLASS AutoList : public AutoBase {
    public:
-    explicit AutoList(BinASTTokenReaderContext& reader);
-
-    
-    MOZ_MUST_USE JS::Result<Ok> done();
-
-   protected:
-    friend BinASTTokenReaderContext;
+    explicit AutoList(BinASTTokenReaderContext& reader) : AutoBase(reader) {}
   };
 
   
   class MOZ_STACK_CLASS AutoTaggedTuple : public AutoBase {
    public:
-    explicit AutoTaggedTuple(BinASTTokenReaderContext& reader);
-
-    
-    MOZ_MUST_USE JS::Result<Ok> done();
+    explicit AutoTaggedTuple(BinASTTokenReaderContext& reader)
+        : AutoBase(reader) {}
   };
 
   
