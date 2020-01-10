@@ -15,84 +15,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var EXPORTED_SYMBOLS = ["ActorManagerParent"];
 
 const { ExtensionUtils } = ChromeUtils.import(
@@ -101,6 +23,37 @@ const { ExtensionUtils } = ChromeUtils.import(
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const { DefaultMap } = ExtensionUtils;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 let ACTORS = {
   AudioPlayback: {
@@ -119,18 +72,10 @@ let ACTORS = {
   AutoComplete: {
     parent: {
       moduleURI: "resource://gre/actors/AutoCompleteParent.jsm",
-      messages: [
-        "FormAutoComplete:SelectBy",
-        "FormAutoComplete:SetSelectedIndex",
-        "FormAutoComplete:MaybeOpenPopup",
-        "FormAutoComplete:Invalidate",
-        "FormAutoComplete:ClosePopup",
-        "FormAutoComplete:Disconnect",
-        
-        
-        
-        
-      ],
+      
+      
+      
+      
     },
 
     child: {
@@ -150,11 +95,6 @@ let ACTORS = {
         compositionend: { capture: true },
         contextmenu: { capture: true },
       },
-      messages: [
-        "FormAutoComplete:HandleEnter",
-        "FormAutoComplete:PopupClosed",
-        "FormAutoComplete:PopupOpened",
-      ],
     },
 
     allFrames: true,
@@ -210,11 +150,6 @@ let ACTORS = {
   ExtFind: {
     child: {
       moduleURI: "resource://gre/actors/ExtFindChild.jsm",
-      messages: [
-        "ext-Finder:CollectResults",
-        "ext-Finder:HighlightResults",
-        "ext-Finder:ClearHighlighting",
-      ],
     },
 
     allFrames: true,
@@ -223,7 +158,6 @@ let ACTORS = {
   FindBar: {
     parent: {
       moduleURI: "resource://gre/actors/FindBarParent.jsm",
-      messages: ["Findbar:Keypress", "Findbar:Mouseup"],
     },
     child: {
       moduleURI: "resource://gre/actors/FindBarChild.jsm",
@@ -240,24 +174,6 @@ let ACTORS = {
   Finder: {
     child: {
       moduleURI: "resource://gre/actors/FinderChild.jsm",
-      messages: [
-        "Finder:CaseSensitive",
-        "Finder:EntireWord",
-        "Finder:Find",
-        "Finder:SetSearchStringToSelection",
-        "Finder:GetInitialSelection",
-        "Finder:Highlight",
-        "Finder:UpdateHighlightAndMatchCount",
-        "Finder:HighlightAllChange",
-        "Finder:EnableSelection",
-        "Finder:RemoveSelection",
-        "Finder:FocusContent",
-        "Finder:FindbarClose",
-        "Finder:FindbarOpen",
-        "Finder:KeyPress",
-        "Finder:MatchesCount",
-        "Finder:ModalHighlightChange",
-      ],
     },
 
     allFrames: true,
@@ -303,16 +219,6 @@ let ACTORS = {
   LoginManager: {
     parent: {
       moduleURI: "resource://gre/modules/LoginManagerParent.jsm",
-      messages: [
-        "PasswordManager:findLogins",
-        "PasswordManager:onFormSubmit",
-        "PasswordManager:onGeneratedPasswordFilledOrEdited",
-        "PasswordManager:insecureLoginFormPresent",
-        "PasswordManager:autoCompleteLogins",
-        "PasswordManager:removeLogin",
-        "PasswordManager:OpenPreferences",
-        "PasswordManager:formProcessed",
-      ],
     },
     child: {
       moduleURI: "resource://gre/modules/LoginManagerChild.jsm",
@@ -321,12 +227,6 @@ let ACTORS = {
         DOMFormHasPassword: {},
         DOMInputPasswordAdded: {},
       },
-      messages: [
-        "PasswordManager:fillForm",
-        "PasswordManager:fillGeneratedPassword",
-        "FormAutoComplete:PopupOpened",
-        "FormAutoComplete:PopupClosed",
-      ],
     },
 
     allFrames: true,
@@ -432,6 +332,94 @@ let ACTORS = {
     allFrames: true,
   },
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 let LEGACY_ACTORS = {
   Controllers: {
