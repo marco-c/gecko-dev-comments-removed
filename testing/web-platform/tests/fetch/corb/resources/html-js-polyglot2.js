@@ -5,6 +5,6 @@
 
 
 
-window.polyglot = "html-js-polyglot2.js";
+window['html-js-polyglot2.js'] = true;
 
 //]]>--></script>
