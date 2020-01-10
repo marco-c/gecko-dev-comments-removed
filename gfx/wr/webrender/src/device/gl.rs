@@ -1464,6 +1464,12 @@ impl Device {
     }
 
     
+    
+    pub fn renderer_name(&self) -> &str {
+        &self.renderer_name
+    }
+
+    
     pub fn max_texture_size(&self) -> i32 {
         self.max_texture_size
     }

@@ -34,7 +34,7 @@ use crate::render_task::{RenderTask, RenderTaskLocation, BlurTaskCache, ClearMod
 use crate::resource_cache::ResourceCache;
 use crate::scene::SceneProperties;
 use smallvec::SmallVec;
-use std::{mem, u8};
+use std::{mem, u8, marker};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::texture_cache::TextureCacheHandle;
 use crate::util::{TransformedRectKind, MatrixHelpers, MaxRect, scale_factors, VecHelper, subtract_rect};
@@ -141,6 +141,8 @@ pub struct PictureCacheState {
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
     
     root_transform: TransformKey,
+    
+    current_tile_size: DeviceIntSize,
 }
 
 
@@ -178,14 +180,18 @@ pub type TileSize = Size2D<i32, TileCoordinate>;
 pub type TileRect = Rect<i32, TileCoordinate>;
 
 
+pub const TILE_SIZE_LARGE: DeviceIntSize = DeviceIntSize {
+    width: 2048,
+    height: 512,
+    _unit: marker::PhantomData,
+};
 
 
-
-
-
-
-pub const TILE_SIZE_WIDTH: i32 = 2048;
-pub const TILE_SIZE_HEIGHT: i32 = 512;
+pub const TILE_SIZE_SMALL: DeviceIntSize = DeviceIntSize {
+    width: 128,
+    height: 128,
+    _unit: marker::PhantomData,
+};
 
 
 
@@ -286,6 +292,9 @@ struct TilePostUpdateContext<'a> {
 
     
     pic_to_world_mapper: SpaceMapper<PicturePixel, WorldPixel>,
+
+    
+    current_tile_size: DeviceIntSize,
 }
 
 
@@ -629,9 +638,19 @@ impl Tile {
         }
 
         
+        
+        
+        let max_split_level = if ctx.current_tile_size == TILE_SIZE_LARGE {
+            3
+        } else {
+            1
+        };
+
+        
         self.root.maybe_merge_or_split(
             0,
             &self.current_descriptor.prims,
+            max_split_level,
         );
 
         
@@ -715,12 +734,8 @@ impl Tile {
             
             if let TileSurface::Texture { ref mut handle, ref mut visibility_mask } = surface {
                 if !state.resource_cache.texture_cache.is_allocated(handle) {
-                    let tile_size = DeviceIntSize::new(
-                        TILE_SIZE_WIDTH,
-                        TILE_SIZE_HEIGHT,
-                    );
                     state.resource_cache.texture_cache.update_picture_cache(
-                        tile_size,
+                        ctx.current_tile_size,
                         handle,
                         state.gpu_cache,
                     );
@@ -1082,6 +1097,8 @@ pub struct TileCacheInstance {
     
     pub slice: usize,
     
+    pub current_tile_size: DeviceIntSize,
+    
     pub spatial_node_index: SpatialNodeIndex,
     
     pub tiles: FastHashMap<TileOffset, Tile>,
@@ -1175,6 +1192,7 @@ impl TileCacheInstance {
             root_transform: TransformKey::Local,
             shared_clips,
             shared_clip_chain,
+            current_tile_size: DeviceIntSize::zero(),
         }
     }
 
@@ -1221,8 +1239,6 @@ impl TileCacheInstance {
         frame_context: &FrameVisibilityContext,
         frame_state: &mut FrameVisibilityState,
     ) -> WorldRect {
-        let tile_width = TILE_SIZE_WIDTH;
-        let tile_height = TILE_SIZE_HEIGHT;
         self.surface_index = surface_index;
         self.local_rect = pic_rect;
         self.local_clip_rect = PictureRect::max_rect();
@@ -1292,6 +1308,26 @@ impl TileCacheInstance {
             self.root_transform = prev_state.root_transform;
             self.spatial_nodes = prev_state.spatial_nodes;
             self.opacity_bindings = prev_state.opacity_bindings;
+            self.current_tile_size = prev_state.current_tile_size;
+        }
+
+        
+        let desired_tile_size = if pic_rect.size.width < 2.0 * TILE_SIZE_SMALL.width as f32 ||
+           pic_rect.size.height < 2.0 * TILE_SIZE_SMALL.height as f32 {
+            TILE_SIZE_SMALL
+        } else {
+            TILE_SIZE_LARGE
+        };
+
+        
+        
+        
+        
+        
+        
+        if desired_tile_size != self.current_tile_size {
+            self.tiles.clear();
+            self.current_tile_size = desired_tile_size;
         }
 
         
@@ -1352,8 +1388,8 @@ impl TileCacheInstance {
         }
 
         let world_tile_size = WorldSize::new(
-            tile_width as f32 / frame_context.global_device_pixel_scale.0,
-            tile_height as f32 / frame_context.global_device_pixel_scale.0,
+            self.current_tile_size.width as f32 / frame_context.global_device_pixel_scale.0,
+            self.current_tile_size.height as f32 / frame_context.global_device_pixel_scale.0,
         );
 
         
@@ -1760,6 +1796,7 @@ impl TileCacheInstance {
             spatial_nodes: &self.spatial_nodes,
             opacity_bindings: &self.opacity_bindings,
             pic_to_world_mapper,
+            current_tile_size: self.current_tile_size,
         };
 
         let mut state = TilePostUpdateState {
@@ -2248,6 +2285,8 @@ bitflags! {
         const CREATE_PICTURE_CACHE_PRE = 16;
         /// Force creation of a picture caching slice after this cluster.
         const CREATE_PICTURE_CACHE_POST = 32;
+        /// If set, this cluster represents a scroll bar container.
+        const SCROLLBAR_CONTAINER = 64;
     }
 }
 
@@ -2366,6 +2405,10 @@ impl PrimitiveList {
 
         if prim_flags.contains(PrimitiveFlags::IS_BACKFACE_VISIBLE) {
             flags.insert(ClusterFlags::IS_BACKFACE_VISIBLE);
+        }
+
+        if prim_flags.contains(PrimitiveFlags::IS_SCROLLBAR_CONTAINER) {
+            flags.insert(ClusterFlags::SCROLLBAR_CONTAINER);
         }
 
         
@@ -2628,6 +2671,7 @@ impl PicturePrimitive {
                         opacity_bindings: tile_cache.opacity_bindings,
                         fract_offset: tile_cache.fract_offset,
                         root_transform: tile_cache.root_transform,
+                        current_tile_size: tile_cache.current_tile_size,
                     },
                 );
             }
@@ -3034,11 +3078,6 @@ impl PicturePrimitive {
                         let tile_cache = self.tile_cache.as_mut().unwrap();
                         let mut first = true;
 
-                        let tile_size = DeviceSize::new(
-                            TILE_SIZE_WIDTH as f32,
-                            TILE_SIZE_HEIGHT as f32,
-                        );
-
                         for key in &tile_cache.tiles_to_draw {
                             let tile = tile_cache.tiles.get_mut(key).expect("bug: no tile found!");
 
@@ -3080,9 +3119,9 @@ impl PicturePrimitive {
                                     RenderTaskLocation::PictureCache {
                                         texture: cache_item.texture_id,
                                         layer: cache_item.texture_layer,
-                                        size: tile_size.to_i32(),
+                                        size: tile_cache.current_tile_size,
                                     },
-                                    tile_size,
+                                    tile_cache.current_tile_size.to_f32(),
                                     pic_index,
                                     content_origin.to_i32(),
                                     UvRectKind::Rect,
@@ -4168,7 +4207,7 @@ impl TileNode {
                 let world_rect = pic_to_world_mapper.map(&self.rect).unwrap();
                 let device_rect = world_rect * global_device_pixel_scale;
 
-                let outer_color = color.scale_alpha(0.6);
+                let outer_color = color.scale_alpha(0.3);
                 let inner_color = outer_color.scale_alpha(0.5);
                 scratch.push_debug_rect(
                     device_rect.inflate(-3.0, -3.0),
@@ -4268,6 +4307,7 @@ impl TileNode {
         &self,
         level: i32,
         can_merge: bool,
+        max_split_levels: i32,
     ) -> Option<TileModification> {
         match self.kind {
             TileNodeKind::Leaf { dirty_tracker, frames_since_modified, .. } => {
@@ -4275,7 +4315,7 @@ impl TileNode {
                 if frames_since_modified > 64 {
                     let dirty_frames = dirty_tracker.count_ones();
                     
-                    if level < 3 && dirty_frames > 32 {
+                    if level < max_split_levels && dirty_frames > 32 {
                         Some(TileModification::Split)
                     } else if can_merge && (dirty_tracker == 0 || dirty_frames == 64) && level > 0 {
                         
@@ -4298,15 +4338,16 @@ impl TileNode {
         &mut self,
         level: i32,
         curr_prims: &[PrimitiveDescriptor],
+        max_split_levels: i32,
     ) {
         
         let tile_mod = match self.kind {
             TileNodeKind::Leaf { .. } => {
-                self.get_preference(level, false)
+                self.get_preference(level, false, max_split_levels)
             }
             TileNodeKind::Node { ref children, .. } => {
                 
-                if children.iter().all(|c| c.get_preference(level+1, true) == Some(TileModification::Merge)) {
+                if children.iter().all(|c| c.get_preference(level+1, true, max_split_levels) == Some(TileModification::Merge)) {
                     Some(TileModification::Merge)
                 } else {
                     None
@@ -4396,6 +4437,7 @@ impl TileNode {
                         child.maybe_merge_or_split(
                             level+1,
                             curr_prims,
+                            max_split_levels,
                         );
                     }
                 }
