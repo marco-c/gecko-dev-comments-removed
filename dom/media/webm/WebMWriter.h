@@ -42,27 +42,29 @@ class VP8Metadata : public TrackMetadataBase {
 class WebMWriter : public ContainerWriter {
  public:
   
-  WebMWriter();
+  
+  explicit WebMWriter(uint32_t aTrackTypes);
   virtual ~WebMWriter();
 
   
-  
-  
-  nsresult WriteEncodedTrack(const nsTArray<RefPtr<EncodedFrame>>& aData,
+  nsresult WriteEncodedTrack(const EncodedFrameContainer& aData,
                              uint32_t aFlags = 0) override;
 
   
   
   
-  nsresult GetContainerData(nsTArray<nsTArray<uint8_t>>* aOutputBufs,
+  nsresult GetContainerData(nsTArray<nsTArray<uint8_t> >* aOutputBufs,
                             uint32_t aFlags = 0) override;
 
   
-  nsresult SetMetadata(
-      const nsTArray<RefPtr<TrackMetadataBase>>& aMetadata) override;
+  nsresult SetMetadata(TrackMetadataBase* aMetadata) override;
 
  private:
   nsAutoPtr<EbmlComposer> mEbmlComposer;
+
+  
+  
+  uint8_t mMetadataRequiredFlag;
 };
 
 }  

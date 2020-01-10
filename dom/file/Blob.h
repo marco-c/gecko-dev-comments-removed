@@ -50,9 +50,6 @@ class Blob : public nsIMutable,
   
   static Blob* Create(nsISupports* aParent, BlobImpl* aImpl);
 
-  static already_AddRefed<Blob> CreateEmptyBlob(nsISupports* aParent,
-                                                const nsAString& aContentType);
-
   static already_AddRefed<Blob> CreateStringBlob(nsISupports* aParent,
                                                  const nsACString& aData,
                                                  const nsAString& aContentType);
