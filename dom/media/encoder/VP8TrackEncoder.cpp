@@ -570,3 +570,5 @@ nsresult VP8TrackEncoder::GetEncodedTrack(
 }
 
 }  
+
+#undef VP8LOG
