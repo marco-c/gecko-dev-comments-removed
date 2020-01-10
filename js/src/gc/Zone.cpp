@@ -228,7 +228,7 @@ void Zone::sweepWeakKeysAfterMinorGC() {
     
     
 
-    JSObject* delegate = WeakMapBase::getDelegate(key->as<JSObject>());
+    JSObject* delegate = gc::detail::GetDelegate(key->as<JSObject>());
     if (!delegate) {
       continue;
     }

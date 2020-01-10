@@ -284,21 +284,6 @@ class GCMarker : public JSTracer {
   
   void setMainStackColor(gc::MarkColor newColor);
 
-  
-  
-  
-  template <typename T>
-  bool isMarked(T* thingp) {
-    return color == gc::MarkColor::Black ? gc::IsMarkedBlack(runtime(), thingp)
-                                         : gc::IsMarked(runtime(), thingp);
-  }
-  template <typename T>
-  bool isMarkedUnbarriered(T* thingp) {
-    return color == gc::MarkColor::Black
-               ? gc::IsMarkedBlackUnbarriered(runtime(), thingp)
-               : gc::IsMarkedUnbarriered(runtime(), thingp);
-  }
-
   void enterWeakMarkingMode();
   void leaveWeakMarkingMode();
   void abortLinearWeakMarking() {
@@ -512,6 +497,9 @@ class MOZ_RAII AutoSetMarkColor {
       : marker_(marker), initialColor_(marker.markColor()) {
     marker_.setMarkColor(newColor);
   }
+
+  AutoSetMarkColor(GCMarker& marker, CellColor newColor)
+      : AutoSetMarkColor(marker, newColor.asMarkColor()) {}
 
   ~AutoSetMarkColor() { marker_.setMarkColor(initialColor_); }
 };
