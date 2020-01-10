@@ -787,12 +787,10 @@ bool Debugger::addGeneratorFrame(JSContext* cx,
   if (p) {
     MOZ_ASSERT(p->value() == frameObj);
   } else {
-    {
-      AutoRealm ar(cx, frameObj);
-      if (!frameObj->setGenerator(cx, genObj)) {
-        return false;
-      }
+    if (!frameObj->setGenerator(cx, genObj)) {
+      return false;
     }
+
     if (!generatorFrames.relookupOrAdd(p, genObj, frameObj)) {
       frameObj->clearGenerator(cx->runtime()->defaultFreeOp());
       ReportOutOfMemory(cx);
@@ -1171,13 +1169,17 @@ bool Debugger::slowPathOnNewGenerator(JSContext* cx, AbstractFramePtr frame,
 
     RootedDebuggerFrame frameObj(cx, frameObjPtr);
     Debugger* dbg = Debugger::fromChildJSObject(frameObj);
-    if (!dbg->addGeneratorFrame(cx, genObj, frameObj)) {
-      ReportOutOfMemory(cx);
+    {
+      AutoRealm ar(cx, frameObj);
 
-      
-      
-      
-      ok = false;
+      if (!dbg->addGeneratorFrame(cx, genObj, frameObj)) {
+        ReportOutOfMemory(cx);
+
+        
+        
+        
+        ok = false;
+      }
     }
   });
   return ok;
