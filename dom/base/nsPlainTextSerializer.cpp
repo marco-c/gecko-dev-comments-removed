@@ -1468,7 +1468,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
   int32_t bol = 0;
   int32_t newline;
 
-  int32_t totLen = str.Length();
+  const int32_t totLen = str.Length();
 
   
   if (totLen <= 0) return;
@@ -1506,7 +1506,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
     
     
     while (bol < totLen) {
-      bool outputQuotes = mAtFirstColumn;
+      const bool outputQuotes = mAtFirstColumn;
       bool atFirstColumn;
       bool outputLineBreak = false;
       bool spacesOnly = true;
@@ -1545,7 +1545,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
           }
         }
         mEmptyLines = -1;
-        atFirstColumn = mAtFirstColumn && (totLen - bol) == 0;
+        atFirstColumn = false;
         bol = totLen;
       } else {
         
