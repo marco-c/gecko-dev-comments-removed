@@ -539,6 +539,10 @@ class BaselineInterpreter {
   uint32_t bailoutPrologueOffset_ = 0;
 
   
+  
+  uint32_t generatorThrowOrReturnCallOffset_ = 0;
+
+  
   uint32_t profilerEnterToggleOffset_ = 0;
   uint32_t profilerExitToggleOffset_ = 0;
 
@@ -573,7 +577,9 @@ class BaselineInterpreter {
 
   void init(JitCode* code, uint32_t interpretOpOffset,
             uint32_t interpretOpNoDebugTrapOffset,
-            uint32_t bailoutPrologueOffset, uint32_t profilerEnterToggleOffset,
+            uint32_t bailoutPrologueOffset,
+            uint32_t generatorThrowOrReturnCallOffset,
+            uint32_t profilerEnterToggleOffset,
             uint32_t profilerExitToggleOffset,
             CodeOffsetVector&& debugInstrumentationOffsets,
             CodeOffsetVector&& debugTrapOffsets,
@@ -603,6 +609,9 @@ class BaselineInterpreter {
   }
   TrampolinePtr interpretOpNoDebugTrapAddr() const {
     return TrampolinePtr(codeAtOffset(interpretOpNoDebugTrapOffset_));
+  }
+  TrampolinePtr generatorThrowOrReturnCallAddr() const {
+    return TrampolinePtr(codeAtOffset(generatorThrowOrReturnCallOffset_));
   }
 
   void toggleProfilerInstrumentation(bool enable);

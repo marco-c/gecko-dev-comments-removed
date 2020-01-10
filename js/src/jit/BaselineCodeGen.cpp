@@ -703,6 +703,12 @@ void BaselineInterpreterCodeGen::storeFrameSizeAndPushDescriptor(
   masm.push(scratch1);
 }
 
+static uint32_t GetVMFunctionArgSize(const VMFunctionData& fun) {
+  
+  
+  return fun.explicitStackSlots() * sizeof(void*) + sizeof(void*);
+}
+
 template <typename Handler>
 bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
                                               RetAddrEntry::Kind kind,
@@ -727,9 +733,7 @@ bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
   TrampolinePtr code = cx->runtime()->jitRuntime()->getVMWrapper(id);
   const VMFunctionData& fun = GetVMFunction(id);
 
-  
-  
-  uint32_t argSize = fun.explicitStackSlots() * sizeof(void*) + sizeof(void*);
+  uint32_t argSize = GetVMFunctionArgSize(fun);
 
   
   MOZ_ASSERT(masm.framePushed() - pushedBeforeCall_ == argSize);
@@ -758,7 +762,8 @@ bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
   masm.Pop(BaselineFrameReg);
 
   
-  masm.implicitPop(fun.explicitStackSlots() * sizeof(void*));
+  
+  masm.implicitPop(argSize - sizeof(void*));
 
   restoreInterpreterPCReg();
 
@@ -6017,6 +6022,36 @@ bool BaselineCodeGen<Handler>::emit_JSOP_FINALYIELDRVAL() {
 }
 
 template <>
+bool BaselineInterpreterCodeGen::emitGeneratorThrowOrReturnCallVM() {
+  
+  handler.setGeneratorThrowOrReturnCallOffset(masm.currentOffset());
+
+  using Fn = bool (*)(JSContext*, BaselineFrame*,
+                      Handle<AbstractGeneratorObject*>, HandleValue, uint32_t);
+  return callVM<Fn, jit::GeneratorThrowOrReturn>();
+}
+
+template <>
+bool BaselineCompilerCodeGen::emitGeneratorThrowOrReturnCallVM() {
+  
+  
+  
+  
+  const BaselineInterpreter& interp =
+      cx->runtime()->jitRuntime()->baselineInterpreter();
+  TrampolinePtr code = interp.generatorThrowOrReturnCallAddr();
+  masm.jump(code);
+
+  
+  using Fn = bool (*)(JSContext*, BaselineFrame*,
+                      Handle<AbstractGeneratorObject*>, HandleValue, uint32_t);
+  VMFunctionId id = VMFunctionToId<Fn, jit::GeneratorThrowOrReturn>::id;
+  const VMFunctionData& fun = GetVMFunction(id);
+  masm.implicitPop(GetVMFunctionArgSize(fun));
+  return true;
+}
+
+template <>
 void BaselineCompilerCodeGen::emitJumpToInterpretOpLabel() {
   TrampolinePtr code =
       cx->runtime()->jitRuntime()->baselineInterpreter().interpretOpAddr();
@@ -6262,55 +6297,18 @@ bool BaselineCodeGen<Handler>::emitGeneratorResume(
     MOZ_ASSERT(resumeKind == GeneratorResumeKind::Throw ||
                resumeKind == GeneratorResumeKind::Return);
 
-    
-    masm.computeEffectiveAddress(
-        Address(BaselineFrameReg, BaselineFrame::FramePointerOffset), scratch2);
-    masm.movePtr(scratch2, scratch1);
-    masm.subStackPtrFrom(scratch2);
-    masm.store32(scratch2, Address(BaselineFrameReg,
-                                   BaselineFrame::reverseOffsetOfFrameSize()));
     masm.loadBaselineFramePtr(BaselineFrameReg, scratch2);
 
     prepareVMCall();
+
     pushArg(Imm32(int32_t(resumeKind)));
     pushArg(retVal);
     pushArg(genObj);
     pushArg(scratch2);
 
-    using Fn =
-        bool (*)(JSContext*, BaselineFrame*, Handle<AbstractGeneratorObject*>,
-                 HandleValue, uint32_t);
-    TailCallVMFunctionId id =
-        TailCallVMFunctionToId<Fn, jit::GeneratorThrowOrReturn>::id;
-    TrampolinePtr code = cx->runtime()->jitRuntime()->getVMWrapper(id);
-    const VMFunctionData& fun = GetVMFunction(id);
-
-    
-    masm.subStackPtrFrom(scratch1);
-    masm.makeFrameDescriptor(scratch1, FrameType::BaselineJS,
-                             ExitFrameLayout::Size());
-    masm.push(scratch1);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-#ifndef JS_CODEGEN_ARM64
-    masm.push(ImmWord(0));
-#endif
-    masm.jump(code);
-
-    
-    
-    masm.implicitPop((fun.explicitStackSlots() + 1) * sizeof(void*));
+    if (!emitGeneratorThrowOrReturnCallVM()) {
+      return false;
+    }
   }
 
   
@@ -7213,6 +7211,7 @@ bool BaselineInterpreterGenerator::generate(BaselineInterpreter& interpreter) {
     interpreter.init(
         code, interpretOpOffset_, interpretOpNoDebugTrapOffset_,
         bailoutPrologueOffset_.offset(),
+        handler.generatorThrowOrReturnCallOffset(),
         profilerEnterFrameToggleOffset_.offset(),
         profilerExitFrameToggleOffset_.offset(),
         std::move(handler.debugInstrumentationOffsets()),
