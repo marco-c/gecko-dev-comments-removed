@@ -3336,41 +3336,40 @@ void BackgroundCursorChild::SendContinueInternal(
       }
 
       
-      size_t discardedCount = 0;
-      while (!mCachedResponses.empty()) {
-        
-        
-        
-        
-        const auto& cachedSortKey =
-            mCursor->IsLocaleAware() ? mCachedResponses.front().mLocaleAwareKey
-                                     : mCachedResponses.front().mKey;
-        const auto& keyOperator = GetKeyOperator(mDirection);
-        if ((cachedSortKey.*keyOperator)(key)) {
-          IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-              "PRELOAD: Continue to key %s, keeping cached key %s/%s and "
-              "further",
-              "Continue/keep", mTransaction->LoggingSerialNumber(),
-              mRequest->LoggingSerialNumber(), key.GetBuffer().get(),
-              mCachedResponses.front().mKey.GetBuffer().get(),
-              mCachedResponses.front().mObjectStoreKey.GetBuffer().get());
-          break;
-        }
-        IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-            "PRELOAD: Continue to key %s, discarding cached key %s/%s",
-            "Continue/discard", mTransaction->LoggingSerialNumber(),
-            mRequest->LoggingSerialNumber(), key.GetBuffer().get(),
-            mCachedResponses.front().mKey.GetBuffer().get(),
-            mCachedResponses.front().mObjectStoreKey.GetBuffer().get());
-        mCachedResponses.pop_front();
-        ++discardedCount;
-      }
-      IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-          "PRELOAD: Discarded %zu cached responses before requested "
-          "continue key, %zu remaining",
-          "Discarding", mTransaction->LoggingSerialNumber(),
-          mRequest->LoggingSerialNumber(), discardedCount,
-          mCachedResponses.size());
+      DiscardCachedResponses(
+          [&key, isLocaleAware = mCursor->IsLocaleAware(),
+           keyOperator = GetKeyOperator(mDirection),
+           transactionSerialNumber = mTransaction->LoggingSerialNumber(),
+           requestSerialNumber = mRequest->LoggingSerialNumber()](
+              const auto& currentCachedResponse) {
+            
+            
+            
+            
+            const auto& cachedSortKey =
+                isLocaleAware ? currentCachedResponse.mLocaleAwareKey
+                              : currentCachedResponse.mKey;
+            const bool discard = !(cachedSortKey.*keyOperator)(key);
+            if (discard) {
+              IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+                  "PRELOAD: Continue to key %s, discarding cached key %s/%s",
+                  "Continue, discarding", transactionSerialNumber,
+                  requestSerialNumber, key.GetBuffer().get(),
+                  cachedSortKey.GetBuffer().get(),
+                  currentCachedResponse.mObjectStoreKey.GetBuffer().get());
+            } else {
+              IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+                  "PRELOAD: Continue to key %s, keeping cached key %s/%s and "
+                  "further",
+                  "Continue, keeping", transactionSerialNumber,
+                  requestSerialNumber, key.GetBuffer().get(),
+                  cachedSortKey.GetBuffer().get(),
+                  currentCachedResponse.mObjectStoreKey.GetBuffer().get());
+            }
+
+            return discard;
+          });
+
       break;
     }
 
@@ -3387,23 +3386,20 @@ void BackgroundCursorChild::SendContinueInternal(
           advanceCount);
 
       
-      size_t discardedCount = 0;
-      while (!mCachedResponses.empty() && advanceCount > 1) {
-        --advanceCount;
+      DiscardCachedResponses(
+          [&advanceCount, &currentKey,
+           &currentObjectStoreKey](const auto& currentCachedResponse) {
+            const bool res = advanceCount > 1;
+            if (res) {
+              --advanceCount;
 
-        
-        
-        currentKey = mCachedResponses.front().mKey;
-        currentObjectStoreKey = mCachedResponses.front().mObjectStoreKey;
-        mCachedResponses.pop_front();
-        ++discardedCount;
-      }
-      IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
-          "PRELOAD: Discarded %zu cached responses that are advanced over, "
-          "%zu remaining",
-          "Discarded", mTransaction->LoggingSerialNumber(),
-          mRequest->LoggingSerialNumber(), discardedCount,
-          mCachedResponses.size());
+              
+              
+              currentKey = currentCachedResponse.mKey;
+              currentObjectStoreKey = currentCachedResponse.mObjectStoreKey;
+            }
+            return res;
+          });
       break;
     }
 
@@ -3516,6 +3512,21 @@ void BackgroundCursorChild::InvalidateCachedResponses() {
       mCachedResponses.size());
 
   mCachedResponses.clear();
+}
+
+template <typename Condition>
+void BackgroundCursorChild::DiscardCachedResponses(
+    const Condition& aConditionFunc) {
+  size_t discardedCount = 0;
+  while (!mCachedResponses.empty() &&
+         aConditionFunc(mCachedResponses.front())) {
+    mCachedResponses.pop_front();
+    ++discardedCount;
+  }
+  IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
+      "PRELOAD: Discarded %zu cached responses, %zu remaining", "Discarded",
+      mTransaction->LoggingSerialNumber(), mRequest->LoggingSerialNumber(),
+      discardedCount, mCachedResponses.size());
 }
 
 void BackgroundCursorChild::HandleResponse(nsresult aResponse) {
