@@ -1336,6 +1336,18 @@ struct MOZ_RAII AutoSetThreadIsSweeping {
 #endif
 };
 
+
+
+class MOZ_RAII AutoSuppressNurseryCellAlloc {
+  JSContext* cx_;
+
+ public:
+  explicit AutoSuppressNurseryCellAlloc(JSContext* cx) : cx_(cx) {
+    cx_->nurserySuppressions_++;
+  }
+  ~AutoSuppressNurseryCellAlloc() { cx_->nurserySuppressions_--; }
+};
+
 }  
 
 } 
