@@ -27,10 +27,9 @@ BrowserBridgeParent::BrowserBridgeParent() {}
 
 BrowserBridgeParent::~BrowserBridgeParent() { Destroy(); }
 
-nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
-                                   const nsString& aRemoteType,
-                                   const WindowGlobalInit& aWindowInit,
-                                   const uint32_t& aChromeFlags, TabId aTabId) {
+nsresult BrowserBridgeParent::InitWithProcess(
+    ContentParent* aContentParent, const nsString& aPresentationURL,
+    const WindowGlobalInit& aWindowInit, uint32_t aChromeFlags, TabId aTabId) {
   RefPtr<CanonicalBrowsingContext> browsingContext =
       aWindowInit.browsingContext()->Canonical();
 
@@ -42,30 +41,19 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
                            Manager()->OriginAttributesRef(), aPresentationURL,
                            Manager()->GetMaxTouchPoints());
 
-  ProcessPriority initialPriority = PROCESS_PRIORITY_FOREGROUND;
-
-  
-  RefPtr<ContentParent> constructorSender =
-      ContentParent::GetNewOrUsedBrowserProcess(
-          nullptr, aRemoteType, initialPriority, nullptr, false);
-  if (NS_WARN_IF(!constructorSender)) {
-    MOZ_ASSERT(false, "Unable to allocate content process!");
-    return NS_ERROR_FAILURE;
-  }
-
   
   
-  browsingContext->Group()->EnsureSubscribed(constructorSender);
-  browsingContext->SetOwnerProcessId(constructorSender->ChildID());
+  browsingContext->Group()->EnsureSubscribed(aContentParent);
+  browsingContext->SetOwnerProcessId(aContentParent->ChildID());
 
   
   auto browserParent = MakeRefPtr<BrowserParent>(
-      constructorSender, aTabId, tabContext, browsingContext, aChromeFlags);
+      aContentParent, aTabId, tabContext, browsingContext, aChromeFlags);
   browserParent->SetBrowserBridgeParent(this);
 
   
   ManagedEndpoint<PBrowserChild> childEp =
-      constructorSender->OpenPBrowserEndpoint(browserParent);
+      aContentParent->OpenPBrowserEndpoint(browserParent);
   if (NS_WARN_IF(!childEp.IsValid())) {
     MOZ_ASSERT(false, "Browser Open Endpoint Failed");
     return NS_ERROR_FAILURE;
@@ -85,10 +73,10 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
   }
 
   
-  bool ok = constructorSender->SendConstructBrowser(
+  bool ok = aContentParent->SendConstructBrowser(
       std::move(childEp), std::move(windowChildEp), aTabId, TabId(0),
       tabContext.AsIPCTabContext(), aWindowInit, aChromeFlags,
-      constructorSender->ChildID(), constructorSender->IsForBrowser(),
+      aContentParent->ChildID(), aContentParent->IsForBrowser(),
        false);
   if (NS_WARN_IF(!ok)) {
     MOZ_ASSERT(false, "Browser Constructor Failed");
@@ -105,6 +93,23 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
   
   Unused << SendSetLayersId(mBrowserParent->GetLayersId());
   return NS_OK;
+}
+
+nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
+                                   const nsString& aRemoteType,
+                                   const WindowGlobalInit& aWindowInit,
+                                   uint32_t aChromeFlags, TabId aTabId) {
+  
+  RefPtr<ContentParent> constructorSender =
+      ContentParent::GetNewOrUsedBrowserProcess(
+          nullptr, aRemoteType, PROCESS_PRIORITY_FOREGROUND, nullptr, false);
+  if (NS_WARN_IF(!constructorSender)) {
+    MOZ_ASSERT(false, "Unable to allocate content process!");
+    return NS_ERROR_FAILURE;
+  }
+
+  return InitWithProcess(constructorSender, aPresentationURL, aWindowInit,
+                         aChromeFlags, aTabId);
 }
 
 CanonicalBrowsingContext* BrowserBridgeParent::GetBrowsingContext() {
