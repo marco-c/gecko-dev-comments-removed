@@ -9,9 +9,11 @@ const {
   createNode,
 } = require("./utils/markup");
 
-const { LocalizationHelper } = require("devtools/shared/l10n");
-const STRINGS_URI = "devtools/client/locales/debugger.properties";
-const L10N = new LocalizationHelper(STRINGS_URI);
+loader.lazyGetter(this, "L10N", () => {
+  const { LocalizationHelper } = require("devtools/shared/l10n");
+  const STRINGS_URI = "devtools/client/locales/debugger.properties";
+  return new LocalizationHelper(STRINGS_URI);
+});
 
 
 
@@ -207,6 +209,19 @@ PausedDebuggerOverlay.prototype = {
       return false;
     }
 
+    let reason;
+    try {
+      reason = L10N.getStr(`whyPaused.${options.reason}`);
+    } catch (e) {
+      
+      
+      
+      
+      
+      
+      return false;
+    }
+
     
     
     const { pageListenerTarget } = this.env;
@@ -219,9 +234,7 @@ PausedDebuggerOverlay.prototype = {
 
     
     const toolbar = this.getElement("toolbar");
-    this.getElement("reason").setTextContent(
-      L10N.getStr(`whyPaused.${options.reason}`)
-    );
+    this.getElement("reason").setTextContent(reason);
     toolbar.removeAttribute("hidden");
 
     this.env.window.document.setSuppressedEventListener(this);
