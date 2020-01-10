@@ -1570,10 +1570,14 @@ class alignas(uintptr_t) PrivateScriptData final {
 
 
 
-
 class alignas(uint32_t) SharedScriptData final {
+  
+  using Offset = uint32_t;
+
+  Offset optArrayOffset_ = 0;
+
+  
   uint32_t codeLength_ = 0;
-  uint32_t optArrayOffset_ = 0;  
 
   
   uint32_t mainOffset = 0;
@@ -1631,7 +1635,7 @@ class alignas(uint32_t) SharedScriptData final {
     MOZ_ASSERT(numOffsets >= flags().scopeNotesEndIndex);
     MOZ_ASSERT(numOffsets >= flags().resumeOffsetsEndIndex);
 
-    return optArrayOffset_ - (numOffsets * sizeof(uint32_t));
+    return optArrayOffset_ - (numOffsets * sizeof(Offset));
   }
   size_t resumeOffsetsOffset() const { return optArrayOffset_; }
   size_t scopeNotesOffset() const {
@@ -1668,19 +1672,19 @@ class alignas(uint32_t) SharedScriptData final {
                    uint32_t numResumeOffsets, uint32_t numScopeNotes,
                    uint32_t numTryNotes);
 
-  void setOptionalOffset(int index, uint32_t offset) {
-    MOZ_ASSERT((index > 0) && (offset != optArrayOffset_),
-               "Implicit offset should not be stored");
-    offsetToPointer<uint32_t>(optArrayOffset_)[-index] = offset;
+  void setOptionalOffset(int index, Offset offset) {
+    MOZ_ASSERT(index > 0);
+    MOZ_ASSERT(offset != optArrayOffset_, "Do not store implicit offset");
+    offsetToPointer<Offset>(optArrayOffset_)[-index] = offset;
   }
-  uint32_t getOptionalOffset(int index) const {
+  Offset getOptionalOffset(int index) const {
     
     if (index == 0) {
       return optArrayOffset_;
     }
 
     SharedScriptData* this_ = const_cast<SharedScriptData*>(this);
-    return this_->offsetToPointer<uint32_t>(optArrayOffset_)[-index];
+    return this_->offsetToPointer<Offset>(optArrayOffset_)[-index];
   }
 
  public:
