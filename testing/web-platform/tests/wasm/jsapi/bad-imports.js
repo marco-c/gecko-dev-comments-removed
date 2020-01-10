@@ -1,3 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
 function test_bad_imports(t) {
   for (const value of [null, true, "", Symbol(), 1, 0.1, NaN]) {
     t(`Non-object imports argument: ${format_value(value)}`,
@@ -15,7 +27,7 @@ function test_bad_imports(t) {
       builder => {
         builder.addImport("module", "fn", kSig_v_v);
       },
-      value);
+      imports);
   }
 
   t(`Missing imports argument`,
