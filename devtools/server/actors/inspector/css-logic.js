@@ -654,7 +654,7 @@ CssLogic.getShortName = function(element) {
 
 
 CssLogic.getSelectors = function(domRule) {
-  if (domRule.type === CSSRule.MEDIA_RULE) {
+  if (domRule.type !== CSSRule.STYLE_RULE) {
     
     
     return [];
