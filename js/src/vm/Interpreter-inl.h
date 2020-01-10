@@ -10,6 +10,7 @@
 #include "vm/Interpreter.h"
 
 #include "mozilla/Maybe.h"
+#include "mozilla/WrappingOperations.h"
 
 #include "jsnum.h"
 
@@ -916,7 +917,12 @@ static MOZ_ALWAYS_INLINE bool BitLsh(JSContext* cx, MutableHandleValue lhs,
     return BigInt::lsh(cx, lhs, rhs, out);
   }
 
-  out.setInt32(lhs.toInt32() << (rhs.toInt32() & 31));
+  
+  
+  
+  uint32_t left = static_cast<uint32_t>(lhs.toInt32());
+  uint8_t right = rhs.toInt32() & 31;
+  out.setInt32(mozilla::WrapToSigned(left << right));
   return true;
 }
 
