@@ -4,17 +4,32 @@ function test() {
 
   
   
-  var snapshot = Services.telemetry.getHistogramById("STARTUP_MEASUREMENT_ERRORS")
-                                   .snapshot();
+  var snapshot = Services.telemetry
+    .getHistogramById("STARTUP_MEASUREMENT_ERRORS")
+    .snapshot();
 
-  if (snapshot.values[0] == 0)
-    ok(startup_info.process <= startup_info.main, "process created before main is run " + uneval(startup_info));
-  else
-    todo(false, "An error occurred while recording the process creation timestamp, skipping this test");
+  if (snapshot.values[0] == 0) {
+    ok(
+      startup_info.process <= startup_info.main,
+      "process created before main is run " + uneval(startup_info)
+    );
+  } else {
+    todo(
+      false,
+      "An error occurred while recording the process creation timestamp, skipping this test"
+    );
+  }
 
   
-  if (startup_info.firstPaint)
-    ok(startup_info.main <= startup_info.firstPaint, "main ran before first paint " + uneval(startup_info));
+  if (startup_info.firstPaint) {
+    ok(
+      startup_info.main <= startup_info.firstPaint,
+      "main ran before first paint " + uneval(startup_info)
+    );
+  }
 
-  ok(startup_info.main < startup_info.sessionRestored, "Session restored after main " + uneval(startup_info));
+  ok(
+    startup_info.main < startup_info.sessionRestored,
+    "Session restored after main " + uneval(startup_info)
+  );
 }

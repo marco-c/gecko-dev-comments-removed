@@ -19,7 +19,7 @@ export default function HandleEventMixin(superclass) {
       }
       
       let fn = "on" + capitalize(evt.type);
-      if (this[fn] && typeof(this[fn]) === "function") {
+      if (this[fn] && typeof this[fn] === "function") {
         return this[fn](evt);
       }
       return null;

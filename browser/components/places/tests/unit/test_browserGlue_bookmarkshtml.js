@@ -13,14 +13,18 @@ add_task(async function() {
   remove_bookmarks_html();
 
   Services.prefs.setBoolPref("browser.bookmarks.autoExportHTML", true);
-  registerCleanupFunction(() => Services.prefs.clearUserPref("browser.bookmarks.autoExportHTML"));
+  registerCleanupFunction(() =>
+    Services.prefs.clearUserPref("browser.bookmarks.autoExportHTML")
+  );
 
   
   Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsISupports);
 
   
-  Assert.equal(PlacesUtils.history.databaseStatus,
-               PlacesUtils.history.DATABASE_STATUS_CREATE);
+  Assert.equal(
+    PlacesUtils.history.databaseStatus,
+    PlacesUtils.history.DATABASE_STATUS_CREATE
+  );
 
   Services.obs.addObserver(function observer() {
     Services.obs.removeObserver(observer, "profile-before-change");

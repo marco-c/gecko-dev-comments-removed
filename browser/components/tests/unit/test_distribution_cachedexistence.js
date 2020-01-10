@@ -7,13 +7,15 @@
 
 
 
-const PREF_CACHED_FILE_EXISTENCE  = "distribution.iniFile.exists.value";
+const PREF_CACHED_FILE_EXISTENCE = "distribution.iniFile.exists.value";
 const PREF_CACHED_FILE_APPVERSION = "distribution.iniFile.exists.appversion";
-const PREF_LOAD_FROM_PROFILE      = "distribution.testing.loadFromProfile";
+const PREF_LOAD_FROM_PROFILE = "distribution.testing.loadFromProfile";
 
 const gTestDir = do_get_cwd();
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 add_task(async function() {
   
@@ -21,7 +23,9 @@ add_task(async function() {
   Services.prefs.clearUserPref(PREF_CACHED_FILE_EXISTENCE);
   setupTest();
 
-  let {DistributionCustomizer} = ChromeUtils.import("resource:///modules/distribution.js");
+  let { DistributionCustomizer } = ChromeUtils.import(
+    "resource:///modules/distribution.js"
+  );
   let distribution = new DistributionCustomizer();
 
   copyDistributionToProfile();
@@ -31,10 +35,14 @@ add_task(async function() {
   let exists = distribution._hasDistributionIni;
 
   Assert.ok(exists);
-  Assert.equal(Services.prefs.getBoolPref(PREF_CACHED_FILE_EXISTENCE, undefined),
-               true);
-  Assert.equal(Services.prefs.getStringPref(PREF_CACHED_FILE_APPVERSION, "unknown"),
-               AppConstants.MOZ_APP_VERSION);
+  Assert.equal(
+    Services.prefs.getBoolPref(PREF_CACHED_FILE_EXISTENCE, undefined),
+    true
+  );
+  Assert.equal(
+    Services.prefs.getStringPref(PREF_CACHED_FILE_APPVERSION, "unknown"),
+    AppConstants.MOZ_APP_VERSION
+  );
 
   
   
@@ -54,8 +62,10 @@ add_task(async function() {
 
   
   Assert.ok(!exists);
-  Assert.equal(Services.prefs.getBoolPref(PREF_CACHED_FILE_EXISTENCE, undefined),
-               false);
+  Assert.equal(
+    Services.prefs.getBoolPref(PREF_CACHED_FILE_EXISTENCE, undefined),
+    false
+  );
 
   
   
@@ -72,12 +82,15 @@ add_task(async function() {
   exists = distribution._hasDistributionIni;
 
   Assert.ok(exists);
-  Assert.equal(Services.prefs.getBoolPref(PREF_CACHED_FILE_EXISTENCE, undefined),
-               true);
-  Assert.equal(Services.prefs.getStringPref(PREF_CACHED_FILE_APPVERSION, "unknown"),
-               AppConstants.MOZ_APP_VERSION);
+  Assert.equal(
+    Services.prefs.getBoolPref(PREF_CACHED_FILE_EXISTENCE, undefined),
+    true
+  );
+  Assert.equal(
+    Services.prefs.getStringPref(PREF_CACHED_FILE_APPVERSION, "unknown"),
+    AppConstants.MOZ_APP_VERSION
+  );
 });
-
 
 
 

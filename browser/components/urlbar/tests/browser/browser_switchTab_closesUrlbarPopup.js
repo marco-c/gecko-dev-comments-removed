@@ -31,8 +31,11 @@ add_task(async function() {
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   
   await UrlbarTestUtils.promisePopupOpen(window, () => {
-    let historyDropMarker =
-      window.document.getAnonymousElementByAttribute(gURLBar.textbox, "anonid", "historydropmarker");
+    let historyDropMarker = window.document.getAnonymousElementByAttribute(
+      gURLBar.textbox,
+      "anonid",
+      "historydropmarker"
+    );
     EventUtils.synthesizeMouseAtCenter(historyDropMarker, {}, window);
   });
   

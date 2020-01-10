@@ -3,7 +3,7 @@
 
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function test() {
   waitForExplicitFinish();
@@ -22,7 +22,9 @@ function test() {
         continue;
       }
       Services.prefs.clearUserPref("network.proxy.backup." + proxyType);
-      Services.prefs.clearUserPref("network.proxy.backup." + proxyType + "_port");
+      Services.prefs.clearUserPref(
+        "network.proxy.backup." + proxyType + "_port"
+      );
     }
   });
 
@@ -44,9 +46,16 @@ function test() {
 
 
   open_preferences(async function tabOpened(aContentWindow) {
-    is(gBrowser.currentURI.spec, "about:preferences", "about:preferences loaded");
+    is(
+      gBrowser.currentURI.spec,
+      "about:preferences",
+      "about:preferences loaded"
+    );
     let dialog = await openAndLoadSubDialog(connectionURL);
-    let dialogClosingPromise = BrowserTestUtils.waitForEvent(dialog.document.documentElement, "dialogclosing");
+    let dialogClosingPromise = BrowserTestUtils.waitForEvent(
+      dialog.document.documentElement,
+      "dialogclosing"
+    );
 
     ok(dialog, "connection window opened");
     dialog.document.documentElement.acceptDialog();
@@ -55,8 +64,16 @@ function test() {
     ok(dialogClosingEvent, "connection window closed");
 
     
-    is(Services.prefs.getCharPref("network.proxy.backup.socks"), "127.0.0.1", "Shared proxy backup shouldn't be replaced");
-    is(Services.prefs.getIntPref("network.proxy.backup.socks_port"), 9050, "Shared proxy port backup shouldn't be replaced");
+    is(
+      Services.prefs.getCharPref("network.proxy.backup.socks"),
+      "127.0.0.1",
+      "Shared proxy backup shouldn't be replaced"
+    );
+    is(
+      Services.prefs.getIntPref("network.proxy.backup.socks_port"),
+      9050,
+      "Shared proxy port backup shouldn't be replaced"
+    );
 
     gBrowser.removeCurrentTab();
     finish();

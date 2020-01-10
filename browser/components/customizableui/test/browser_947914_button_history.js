@@ -4,19 +4,28 @@
 
 "use strict";
 
-const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.com");
+const TEST_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "http://example.com"
+);
 
 add_task(async function() {
   info("Check history button existence and functionality");
   
   
   gBrowser.selectedTab.focus();
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PATH + "dummy_history_item.html");
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PATH + "dummy_history_item.html"
+  );
   BrowserTestUtils.removeTab(tab);
 
   tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PATH); 
 
-  CustomizableUI.addWidgetToArea("history-panelmenu", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  CustomizableUI.addWidgetToArea(
+    "history-panelmenu",
+    CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+  );
   registerCleanupFunction(() => CustomizableUI.reset());
 
   await waitForOverflowButtonShown();
@@ -37,11 +46,20 @@ add_task(async function() {
   let panelHiddenPromise = promiseOverflowHidden(window);
 
   let historyItems = document.getElementById("appMenu_historyMenu");
-  let historyItemForURL = historyItems.querySelector("toolbarbutton.bookmark-item[label='Happy History Hero']");
-  ok(historyItemForURL, "Should have a history item for the history we just made.");
+  let historyItemForURL = historyItems.querySelector(
+    "toolbarbutton.bookmark-item[label='Happy History Hero']"
+  );
+  ok(
+    historyItemForURL,
+    "Should have a history item for the history we just made."
+  );
   EventUtils.synthesizeMouseAtCenter(historyItemForURL, {});
   await browserLoaded;
-  is(gBrowser.currentURI.spec, TEST_PATH + "dummy_history_item.html", "Should have expected page load");
+  is(
+    gBrowser.currentURI.spec,
+    TEST_PATH + "dummy_history_item.html",
+    "Should have expected page load"
+  );
 
   await panelHiddenPromise;
   BrowserTestUtils.removeTab(tab);

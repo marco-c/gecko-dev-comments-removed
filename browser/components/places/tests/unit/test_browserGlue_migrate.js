@@ -22,8 +22,10 @@ registerCleanupFunction(remove_bookmarks_html);
 add_task(async function test_migrate_bookmarks() {
   
   
-  Assert.equal(PlacesUtils.history.databaseStatus,
-               PlacesUtils.history.DATABASE_STATUS_CREATE);
+  Assert.equal(
+    PlacesUtils.history.databaseStatus,
+    PlacesUtils.history.DATABASE_STATUS_CREATE
+  );
 
   
   
@@ -50,13 +52,17 @@ add_task(async function test_migrate_bookmarks() {
   Assert.equal(bm.title, "migrated");
 
   
-  Assert.ok(!(await PlacesUtils.bookmarks.fetch({
-    parentGuid: PlacesUtils.bookmarks.menuGuid,
-    index: 1,
-  })));
+  Assert.ok(
+    !(await PlacesUtils.bookmarks.fetch({
+      parentGuid: PlacesUtils.bookmarks.menuGuid,
+      index: 1,
+    }))
+  );
 
-  Assert.ok(!(await PlacesUtils.bookmarks.fetch({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    index: 0,
-  })));
+  Assert.ok(
+    !(await PlacesUtils.bookmarks.fetch({
+      parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+      index: 0,
+    }))
+  );
 });

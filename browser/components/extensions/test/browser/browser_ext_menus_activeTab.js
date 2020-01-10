@@ -7,8 +7,10 @@
 
 
 async function openTwoTabsAndOpenTabMenu(onTabMenuClicked) {
-  const PAGE_URL = "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html";
-  const OTHER_URL = "http://127.0.0.1:8888/browser/browser/components/extensions/test/browser/context.html";
+  const PAGE_URL =
+    "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html";
+  const OTHER_URL =
+    "http://127.0.0.1:8888/browser/browser/components/extensions/test/browser/context.html";
 
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, PAGE_URL);
   let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, OTHER_URL);
@@ -22,16 +24,19 @@ async function openTwoTabsAndOpenTabMenu(onTabMenuClicked) {
       browser.test.sendMessage("onCommand_on_tab_click");
     });
 
-    browser.menus.create({
-      title: "menu item on tab",
-      contexts: ["tab"],
-    }, () => {
-      browser.test.sendMessage("ready");
-    });
+    browser.menus.create(
+      {
+        title: "menu item on tab",
+        contexts: ["tab"],
+      },
+      () => {
+        browser.test.sendMessage("ready");
+      }
+    );
   }
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
-      "permissions": ["menus", "activeTab"],
+      permissions: ["menus", "activeTab"],
     },
     background: `(${background})(${onTabMenuClicked})`,
   });
@@ -44,7 +49,11 @@ async function openTwoTabsAndOpenTabMenu(onTabMenuClicked) {
   gBrowser.selectedTab.focus();
 
   
-  let menu = await openChromeContextMenu("tabContextMenu", ".tabbrowser-tab", window);
+  let menu = await openChromeContextMenu(
+    "tabContextMenu",
+    ".tabbrowser-tab",
+    window
+  );
   let menuItem = menu.getElementsByAttribute("label", "menu item on tab")[0];
   await closeTabContextMenu(menuItem);
   await extension.awaitMessage("onCommand_on_tab_click");
@@ -60,29 +69,47 @@ add_task(async function activeTabForTabMenu() {
     browser.test.assertEq(0, tab.index, "Expected a menu on the first tab.");
 
     try {
-      let [actualUrl] = await browser.tabs.executeScript(tab.id, {code: "document.URL"});
-      browser.test.assertEq(tab.url, actualUrl, "Content script to execute in the first tab");
+      let [actualUrl] = await browser.tabs.executeScript(tab.id, {
+        code: "document.URL",
+      });
+      browser.test.assertEq(
+        tab.url,
+        actualUrl,
+        "Content script to execute in the first tab"
+      );
       
     } catch (e) {
-      browser.test.fail(`Unexpected error in executeScript: ${e} :: ${e.stack}`);
+      browser.test.fail(
+        `Unexpected error in executeScript: ${e} :: ${e.stack}`
+      );
     }
   });
 });
 
 add_task(async function noActiveTabForCurrentTab() {
   await openTwoTabsAndOpenTabMenu(async function onTabMenuClicked(info, tab) {
-    const PAGE_URL = "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html";
+    const PAGE_URL =
+      "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html";
     browser.test.assertEq(0, tab.index, "Expected a menu on the first tab.");
-    browser.test.assertEq(PAGE_URL, tab.url, "Expected tab.url to be available for the first tab");
+    browser.test.assertEq(
+      PAGE_URL,
+      tab.url,
+      "Expected tab.url to be available for the first tab"
+    );
 
-    let [tab2] = await browser.tabs.query({windowId: tab.windowId, index: 1});
+    let [tab2] = await browser.tabs.query({ windowId: tab.windowId, index: 1 });
     browser.test.assertTrue(tab2.active, "The second tab should be focused.");
-    browser.test.assertEq(undefined, tab2.url, "Expected tab.url to be unavailable for the second tab.");
+    browser.test.assertEq(
+      undefined,
+      tab2.url,
+      "Expected tab.url to be unavailable for the second tab."
+    );
 
     await browser.test.assertRejects(
-      browser.tabs.executeScript(tab2.id, {code: "document.URL"}),
+      browser.tabs.executeScript(tab2.id, { code: "document.URL" }),
       /Missing host permission for the tab/,
-      "Content script should not run in the second tab");
+      "Content script should not run in the second tab"
+    );
     
   });
 });

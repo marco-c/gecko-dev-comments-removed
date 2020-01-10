@@ -7,15 +7,17 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "DevToolsShim",
-                               "chrome://devtools-startup/content/DevToolsShim.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "DevToolsShim",
+  "chrome://devtools-startup/content/DevToolsShim.jsm"
+);
 
-var {ExtensionParent} = ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+var { ExtensionParent } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 
-var {
-  HiddenExtensionPage,
-  watchExtensionProxyContextLoad,
-} = ExtensionParent;
+var { HiddenExtensionPage, watchExtensionProxyContextLoad } = ExtensionParent;
 
 
 function getDevToolsPrefBranchName(extensionId) {
@@ -33,14 +35,18 @@ function getDevToolsPrefBranchName(extensionId) {
 
 
 
-global.getDevToolsTargetForContext = async (context) => {
+global.getDevToolsTargetForContext = async context => {
   if (!context.devToolsTargetPromise) {
     if (!context.devToolsToolbox || !context.devToolsToolbox.target) {
-      throw new Error("Unable to get a Target for a context not associated to any toolbox");
+      throw new Error(
+        "Unable to get a Target for a context not associated to any toolbox"
+      );
     }
 
     if (!context.devToolsToolbox.target.isLocalTab) {
-      throw new Error("Unexpected target type: only local tabs are currently supported.");
+      throw new Error(
+        "Unexpected target type: only local tabs are currently supported."
+      );
     }
 
     const tab = context.devToolsToolbox.target.tab;
@@ -64,11 +70,13 @@ global.getDevToolsTargetForContext = async (context) => {
 
 
 
-global.getTargetTabIdForToolbox = (toolbox) => {
-  let {target} = toolbox;
+global.getTargetTabIdForToolbox = toolbox => {
+  let { target } = toolbox;
 
   if (!target.isLocalTab) {
-    throw new Error("Unexpected target type: only local tabs are currently supported.");
+    throw new Error(
+      "Unexpected target type: only local tabs are currently supported."
+    );
   }
 
   let parentWindow = target.tab.linkedBrowser.ownerGlobal;
@@ -145,21 +153,24 @@ class DevToolsPage extends HiddenExtensionPage {
     await this.createBrowserElement();
 
     
-    this.unwatchExtensionProxyContextLoad = watchExtensionProxyContextLoad(this, context => {
-      
-      
-      context.devToolsToolbox = this.toolbox;
-
-      if (!this.topLevelContext) {
-        this.topLevelContext = context;
-
+    this.unwatchExtensionProxyContextLoad = watchExtensionProxyContextLoad(
+      this,
+      context => {
         
         
-        this.topLevelContext.callOnClose(this);
+        context.devToolsToolbox = this.toolbox;
 
-        this.resolveTopLevelContext(context);
+        if (!this.topLevelContext) {
+          this.topLevelContext = context;
+
+          
+          
+          this.topLevelContext.callOnClose(this);
+
+          this.resolveTopLevelContext(context);
+        }
       }
-    });
+    );
 
     extensions.emit("extension-browser-inserted", this.browser, {
       devtoolsToolboxInfo: {
@@ -228,7 +239,9 @@ class DevToolsPageDefinition {
   }
 
   onThemeChanged(themeName) {
-    Services.ppmm.broadcastAsyncMessage("Extension:DevToolsThemeChanged", {themeName});
+    Services.ppmm.broadcastAsyncMessage("Extension:DevToolsThemeChanged", {
+      themeName,
+    });
   }
 
   buildForToolbox(toolbox) {
@@ -239,11 +252,15 @@ class DevToolsPageDefinition {
     }
 
     if (this.devtoolsPageForTarget.has(toolbox.target)) {
-      return Promise.reject(new Error("DevtoolsPage has been already created for this toolbox"));
+      return Promise.reject(
+        new Error("DevtoolsPage has been already created for this toolbox")
+      );
     }
 
     const devtoolsPage = new DevToolsPage(this.extension, {
-      toolbox, url: this.url, devToolsPageDefinition: this,
+      toolbox,
+      url: this.url,
+      devToolsPageDefinition: this,
     });
 
     
@@ -263,7 +280,9 @@ class DevToolsPageDefinition {
       
       
       if (this.devtoolsPageForTarget.has(target)) {
-        throw new Error(`Leaked DevToolsPage instance for target "${target.toString()}"`);
+        throw new Error(
+          `Leaked DevToolsPage instance for target "${target.toString()}"`
+        );
       }
 
       
@@ -285,8 +304,10 @@ class DevToolsPageDefinition {
     
     
     for (let toolbox of DevToolsShim.getToolboxes()) {
-      if (!toolbox.target.isLocalTab ||
-          !this.extension.canAccessWindow(toolbox.target.tab.ownerGlobal)) {
+      if (
+        !toolbox.target.isLocalTab ||
+        !this.extension.canAccessWindow(toolbox.target.tab.ownerGlobal)
+      ) {
         
         
         continue;
@@ -312,7 +333,9 @@ class DevToolsPageDefinition {
 
     if (this.devtoolsPageForTarget.size > 0) {
       throw new Error(
-        `Leaked ${this.devtoolsPageForTarget.size} DevToolsPage instances in devtoolsPageForTarget Map`
+        `Leaked ${
+          this.devtoolsPageForTarget.size
+        } DevToolsPage instances in devtoolsPageForTarget Map`
       );
     }
   }
@@ -332,19 +355,22 @@ this.devtools = class extends ExtensionAPI {
   static onUninstall(extensionId) {
     
     const prefBranch = Services.prefs.getBranch(
-      `${getDevToolsPrefBranchName(extensionId)}.`);
+      `${getDevToolsPrefBranchName(extensionId)}.`
+    );
 
     prefBranch.deleteBranch("");
   }
 
   onManifestEntry(entryName) {
-    const {extension} = this;
+    const { extension } = this;
 
     this.initDevToolsPref();
 
     
     this.pageDefinition = new DevToolsPageDefinition(
-      extension, extension.manifest.devtools_page);
+      extension,
+      extension.manifest.devtools_page
+    );
 
     
     
@@ -379,8 +405,10 @@ this.devtools = class extends ExtensionAPI {
   }
 
   onToolboxCreated(toolbox) {
-    if (!toolbox.target.isLocalTab ||
-        !this.extension.canAccessWindow(toolbox.target.tab.ownerGlobal)) {
+    if (
+      !toolbox.target.isLocalTab ||
+      !this.extension.canAccessWindow(toolbox.target.tab.ownerGlobal)
+    ) {
       
       
       
@@ -416,7 +444,8 @@ this.devtools = class extends ExtensionAPI {
 
   initDevToolsPref() {
     const prefBranch = Services.prefs.getBranch(
-      `${getDevToolsPrefBranchName(this.extension.id)}.`);
+      `${getDevToolsPrefBranchName(this.extension.id)}.`
+    );
 
     
     if (prefBranch.getPrefType("enabled") === prefBranch.PREF_INVALID) {

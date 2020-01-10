@@ -47,7 +47,11 @@ add_task(async function() {
     tab1 = ss.undoCloseTab(window, 0);
     ok(true, "Public tab supports undo close");
 
-    is(ss.getClosedTabCount(window), 0, "Private tab does not support undo close");
+    is(
+      ss.getClosedTabCount(window),
+      0,
+      "Private tab does not support undo close"
+    );
   } finally {
     if (tab1) {
       gBrowser.removeTab(tab1);
@@ -59,7 +63,8 @@ add_task(async function() {
 });
 
 add_task(async function() {
-  const FRAME_SCRIPT = "data:," +
+  const FRAME_SCRIPT =
+    "data:," +
     "docShell.QueryInterface%28Components.interfaces.nsILoadContext%29.usePrivateBrowsing%3Dtrue";
 
   
@@ -105,7 +110,7 @@ add_task(async function() {
   forgetClosedWindows();
 
   
-  let win = await promiseNewWindowLoaded({private: true});
+  let win = await promiseNewWindowLoaded({ private: true });
 
   
   let tab = BrowserTestUtils.addTab(win.gBrowser, "about:mozilla");
@@ -129,4 +134,3 @@ add_task(async function() {
 function setUsePrivateBrowsing(browser, val) {
   return sendMessage(browser, "ss-test:setUsePrivateBrowsing", val);
 }
-

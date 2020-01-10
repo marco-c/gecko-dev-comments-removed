@@ -3,15 +3,15 @@
 "use strict";
 
 add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({set: [
-    ["extensions.allowPrivateBrowsingByDefault", false],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.allowPrivateBrowsingByDefault", false]],
+  });
 });
 
 async function testIncognito(incognitoOverride) {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
-      "browser_action": {},
+      browser_action: {},
     },
     incognitoOverride,
   });
@@ -19,9 +19,9 @@ async function testIncognito(incognitoOverride) {
   
   
   
-  let p1 = await BrowserTestUtils.openNewBrowserWindow({private: true});
+  let p1 = await BrowserTestUtils.openNewBrowserWindow({ private: true });
   await extension.startup();
-  let p2 = await BrowserTestUtils.openNewBrowserWindow({private: true});
+  let p2 = await BrowserTestUtils.openNewBrowserWindow({ private: true });
 
   let action = getBrowserActionWidget(extension);
   await showBrowserAction(extension);

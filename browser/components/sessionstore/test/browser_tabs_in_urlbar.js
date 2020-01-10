@@ -9,18 +9,22 @@
 
 const RESTRICT_TOKEN_OPENPAGE = "%";
 
-const {UrlbarTestUtils} = ChromeUtils.import("resource://testing-common/UrlbarTestUtils.jsm");
+const { UrlbarTestUtils } = ChromeUtils.import(
+  "resource://testing-common/UrlbarTestUtils.jsm"
+);
 
 var stateBackup = ss.getBrowserState();
 
 add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({set: [
-    
-    
-    ["browser.sessionstore.restore_on_demand", true],
-    
-    ["browser.sessionstore.restore_tabs_lazily", false],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["browser.sessionstore.restore_on_demand", true],
+      
+      ["browser.sessionstore.restore_tabs_lazily", false],
+    ],
+  });
 
   registerCleanupFunction(() => {
     ss.setBrowserState(stateBackup);
@@ -28,12 +32,35 @@ add_task(async function setup() {
 });
 
 add_task(async function test_unrestored_tabs_listed() {
-  const state = { windows: [{ tabs: [
-    { entries: [{ url: "http://example.org/#1", triggeringPrincipal_base64 }] },
-    { entries: [{ url: "http://example.org/#2", triggeringPrincipal_base64 }] },
-    { entries: [{ url: "http://example.org/#3", triggeringPrincipal_base64 }] },
-    { entries: [{ url: "http://example.org/#4", triggeringPrincipal_base64 }] },
-  ], selected: 1 }] };
+  const state = {
+    windows: [
+      {
+        tabs: [
+          {
+            entries: [
+              { url: "http://example.org/#1", triggeringPrincipal_base64 },
+            ],
+          },
+          {
+            entries: [
+              { url: "http://example.org/#2", triggeringPrincipal_base64 },
+            ],
+          },
+          {
+            entries: [
+              { url: "http://example.org/#3", triggeringPrincipal_base64 },
+            ],
+          },
+          {
+            entries: [
+              { url: "http://example.org/#4", triggeringPrincipal_base64 },
+            ],
+          },
+        ],
+        selected: 1,
+      },
+    ],
+  };
 
   const tabsForEnsure = {};
   state.windows[0].tabs.forEach(function(tab) {
@@ -51,12 +78,20 @@ add_task(async function test_unrestored_tabs_listed() {
         tabsRestored++;
       }
 
-      if (tabsRestoring < state.windows[0].tabs.length ||
-          tabsRestored < 1)
+      if (tabsRestoring < state.windows[0].tabs.length || tabsRestored < 1) {
         return;
+      }
 
-      gBrowser.tabContainer.removeEventListener("SSTabRestoring", handleEvent, true);
-      gBrowser.tabContainer.removeEventListener("SSTabRestored", handleEvent, true);
+      gBrowser.tabContainer.removeEventListener(
+        "SSTabRestoring",
+        handleEvent,
+        true
+      );
+      gBrowser.tabContainer.removeEventListener(
+        "SSTabRestored",
+        handleEvent,
+        true
+      );
       executeSoon(resolve);
     }
 
@@ -85,9 +120,13 @@ add_task(async function test_unrestored_tabs_listed() {
       info("Skip heuristic match");
       continue;
     }
-    const url = quantumbar ? result.url : PlacesUtils.parseActionUrl(result.url).params.url;
-    Assert.ok(url in tabsForEnsure,
-      `Should have the found result '${url}' in the expected list of entries`);
+    const url = quantumbar
+      ? result.url
+      : PlacesUtils.parseActionUrl(result.url).params.url;
+    Assert.ok(
+      url in tabsForEnsure,
+      `Should have the found result '${url}' in the expected list of entries`
+    );
     
     delete tabsForEnsure[url];
   }

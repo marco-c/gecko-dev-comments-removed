@@ -24,7 +24,7 @@ add_task(async function() {
 function sendHome() {
   
   if (AppConstants.platform == "macosx") {
-    EventUtils.synthesizeKey("KEY_ArrowLeft", {metaKey: true});
+    EventUtils.synthesizeKey("KEY_ArrowLeft", { metaKey: true });
   } else {
     EventUtils.synthesizeKey("KEY_Home");
   }

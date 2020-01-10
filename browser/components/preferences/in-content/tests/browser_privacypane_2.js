@@ -5,7 +5,10 @@ if (jar) {
   rootDir = "file://" + tmpdir.path + "/";
 }
 
-Services.scriptloader.loadSubScript(rootDir + "privacypane_tests_perwindow.js", this);
+Services.scriptloader.loadSubScript(
+  rootDir + "privacypane_tests_perwindow.js",
+  this
+);
 
 run_test_subset([
   test_pane_visibility,

@@ -6,16 +6,28 @@
 
 var EXPORTED_SYMBOLS = ["StartupPerformance"];
 
-ChromeUtils.defineModuleGetter(this, "Services",
-  "resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "setTimeout",
-  "resource://gre/modules/Timer.jsm");
-ChromeUtils.defineModuleGetter(this, "clearTimeout",
-  "resource://gre/modules/Timer.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Services",
+  "resource://gre/modules/Services.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "setTimeout",
+  "resource://gre/modules/Timer.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "clearTimeout",
+  "resource://gre/modules/Timer.jsm"
+);
 
 const COLLECT_RESULTS_AFTER_MS = 10000;
 
-const OBSERVED_TOPICS = ["sessionstore-restoring-on-startup", "sessionstore-initiating-manual-restore"];
+const OBSERVED_TOPICS = [
+  "sessionstore-restoring-on-startup",
+  "sessionstore-initiating-manual-restore",
+];
 
 var StartupPerformance = {
   
@@ -107,20 +119,26 @@ var StartupPerformance = {
         }
 
         
-        let histogramName = isAutoRestore ?
-          "FX_SESSION_RESTORE_AUTO_RESTORE_DURATION_UNTIL_EAGER_TABS_RESTORED_MS" :
-          "FX_SESSION_RESTORE_MANUAL_RESTORE_DURATION_UNTIL_EAGER_TABS_RESTORED_MS";
+        let histogramName = isAutoRestore
+          ? "FX_SESSION_RESTORE_AUTO_RESTORE_DURATION_UNTIL_EAGER_TABS_RESTORED_MS"
+          : "FX_SESSION_RESTORE_MANUAL_RESTORE_DURATION_UNTIL_EAGER_TABS_RESTORED_MS";
         let histogram = Services.telemetry.getHistogramById(histogramName);
         let delta = this._latestRestoredTimeStamp - this._startTimeStamp;
         histogram.add(delta);
 
-        Services.telemetry.getHistogramById("FX_SESSION_RESTORE_NUMBER_OF_EAGER_TABS_RESTORED").add(this._totalNumberOfEagerTabs);
-        Services.telemetry.getHistogramById("FX_SESSION_RESTORE_NUMBER_OF_TABS_RESTORED").add(this._totalNumberOfTabs);
-        Services.telemetry.getHistogramById("FX_SESSION_RESTORE_NUMBER_OF_WINDOWS_RESTORED").add(this._totalNumberOfWindows);
+        Services.telemetry
+          .getHistogramById("FX_SESSION_RESTORE_NUMBER_OF_EAGER_TABS_RESTORED")
+          .add(this._totalNumberOfEagerTabs);
+        Services.telemetry
+          .getHistogramById("FX_SESSION_RESTORE_NUMBER_OF_TABS_RESTORED")
+          .add(this._totalNumberOfTabs);
+        Services.telemetry
+          .getHistogramById("FX_SESSION_RESTORE_NUMBER_OF_WINDOWS_RESTORED")
+          .add(this._totalNumberOfWindows);
 
         
         this._startTimeStamp = null;
-     } catch (ex) {
+      } catch (ex) {
         console.error("StartupPerformance: error after resolving promise", ex);
       }
     });
@@ -143,7 +161,10 @@ var StartupPerformance = {
         this._deadlineTimer = null;
         this._hasFired = true;
         this._resolveFinished = null;
-        Services.obs.removeObserver(this, "sessionstore-single-window-restored");
+        Services.obs.removeObserver(
+          this,
+          "sessionstore-single-window-restored"
+        );
       }
     }, COLLECT_RESULTS_AFTER_MS);
   },
@@ -157,70 +178,77 @@ var StartupPerformance = {
         case "sessionstore-initiating-manual-restore":
           this._onRestorationStarts(false);
           break;
-        case "sessionstore-single-window-restored": {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          this._startTimer();
+        case "sessionstore-single-window-restored":
+          {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            this._startTimer();
 
-          this._totalNumberOfWindows += 1;
+            this._totalNumberOfWindows += 1;
 
-          
-          
-          
-          
-          let win = subject;
+            
+            
+            
+            
+            let win = subject;
 
-          let observer = (event) => {
-            
-            
-            
-            
-            
-            if (!event.detail.isRemotenessUpdate) {
-              if (Services.profiler) {
-                Services.profiler.AddMarker("SSTabRestored");
-              }
-              this._latestRestoredTimeStamp = Date.now();
-              this._totalNumberOfEagerTabs += 1;
-            }
-          };
-          win.gBrowser.tabContainer.addEventListener("SSTabRestored", observer);
-          this._totalNumberOfTabs += win.gBrowser.tabContainer.itemCount;
-
-          
-          this._promiseFinished.then(() => {
-            if (!win.gBrowser.tabContainer) {
+            let observer = event => {
               
-              return;
-            }
-            win.gBrowser.tabContainer.removeEventListener("SSTabRestored", observer);
-          });
-        }
-        break;
+              
+              
+              
+              
+              if (!event.detail.isRemotenessUpdate) {
+                if (Services.profiler) {
+                  Services.profiler.AddMarker("SSTabRestored");
+                }
+                this._latestRestoredTimeStamp = Date.now();
+                this._totalNumberOfEagerTabs += 1;
+              }
+            };
+            win.gBrowser.tabContainer.addEventListener(
+              "SSTabRestored",
+              observer
+            );
+            this._totalNumberOfTabs += win.gBrowser.tabContainer.itemCount;
+
+            
+            this._promiseFinished.then(() => {
+              if (!win.gBrowser.tabContainer) {
+                
+                return;
+              }
+              win.gBrowser.tabContainer.removeEventListener(
+                "SSTabRestored",
+                observer
+              );
+            });
+          }
+          break;
         default:
           throw new Error(`Unexpected topic ${topic}`);
       }

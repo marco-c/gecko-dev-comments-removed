@@ -12,7 +12,7 @@ async function createTabWithRandomValue(url) {
   
   await TabStateFlusher.flush(browser);
 
-  return {tab, r};
+  return { tab, r };
 }
 
 function isValueInClosedData(rval) {
@@ -60,14 +60,16 @@ function promiseNewLocationAndHistoryEntryReplaced(browser, snippet) {
       addEventListener("unload", function() {
         try {
           shistory.removeSHistoryListener(listener);
-        } catch (e) {  }
+        } catch (e) {
+          
+        }
       });
     });
   });
 }
 
 add_task(async function dont_save_empty_tabs() {
-  let {tab, r} = await createTabWithRandomValue("about:blank");
+  let { tab, r } = await createTabWithRandomValue("about:blank");
 
   
   let promise = promiseRemoveTabAndSessionState(tab);
@@ -81,7 +83,7 @@ add_task(async function dont_save_empty_tabs() {
 });
 
 add_task(async function save_worthy_tabs_remote() {
-  let {tab, r} = await createTabWithRandomValue("https://example.com/");
+  let { tab, r } = await createTabWithRandomValue("https://example.com/");
   ok(tab.linkedBrowser.isRemoteBrowser, "browser is remote");
 
   
@@ -96,7 +98,7 @@ add_task(async function save_worthy_tabs_remote() {
 });
 
 add_task(async function save_worthy_tabs_nonremote() {
-  let {tab, r} = await createTabWithRandomValue("about:robots");
+  let { tab, r } = await createTabWithRandomValue("about:robots");
   ok(!tab.linkedBrowser.isRemoteBrowser, "browser is not remote");
 
   
@@ -111,12 +113,13 @@ add_task(async function save_worthy_tabs_nonremote() {
 });
 
 add_task(async function save_worthy_tabs_remote_final() {
-  let {tab, r} = await createTabWithRandomValue("about:blank");
+  let { tab, r } = await createTabWithRandomValue("about:blank");
   let browser = tab.linkedBrowser;
   ok(browser.isRemoteBrowser, "browser is remote");
 
   
-  let snippet = 'webNavigation.loadURI("https://example.com/",\
+  let snippet =
+    'webNavigation.loadURI("https://example.com/",\
     {triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()})';
   await promiseNewLocationAndHistoryEntryReplaced(browser, snippet);
 
@@ -135,7 +138,7 @@ add_task(async function save_worthy_tabs_remote_final() {
 });
 
 add_task(async function save_worthy_tabs_nonremote_final() {
-  let {tab, r} = await createTabWithRandomValue("about:blank");
+  let { tab, r } = await createTabWithRandomValue("about:blank");
   let browser = tab.linkedBrowser;
   ok(browser.isRemoteBrowser, "browser is remote");
 
@@ -160,7 +163,7 @@ add_task(async function save_worthy_tabs_nonremote_final() {
 });
 
 add_task(async function dont_save_empty_tabs_final() {
-  let {tab, r} = await createTabWithRandomValue("https://example.com/");
+  let { tab, r } = await createTabWithRandomValue("https://example.com/");
   let browser = tab.linkedBrowser;
 
   
@@ -179,7 +182,7 @@ add_task(async function dont_save_empty_tabs_final() {
 });
 
 add_task(async function undo_worthy_tabs() {
-  let {tab, r} = await createTabWithRandomValue("https://example.com/");
+  let { tab, r } = await createTabWithRandomValue("https://example.com/");
   ok(tab.linkedBrowser.isRemoteBrowser, "browser is remote");
 
   
@@ -202,7 +205,7 @@ add_task(async function undo_worthy_tabs() {
 });
 
 add_task(async function forget_worthy_tabs_remote() {
-  let {tab, r} = await createTabWithRandomValue("https://example.com/");
+  let { tab, r } = await createTabWithRandomValue("https://example.com/");
   ok(tab.linkedBrowser.isRemoteBrowser, "browser is remote");
 
   

@@ -1,8 +1,20 @@
 export const TOP_SITES_SOURCE = "TOP_SITES";
-export const TOP_SITES_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator",
-  "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"];
+export const TOP_SITES_CONTEXT_MENU_OPTIONS = [
+  "CheckPinTopSite",
+  "EditTopSite",
+  "Separator",
+  "OpenInNewWindow",
+  "OpenInPrivateWindow",
+  "Separator",
+  "BlockUrl",
+  "DeleteUrl",
+];
 
-export const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "Separator", "BlockUrl"];
+export const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = [
+  "CheckPinTopSite",
+  "Separator",
+  "BlockUrl",
+];
 
 export const MIN_RICH_FAVICON_SIZE = 96;
 

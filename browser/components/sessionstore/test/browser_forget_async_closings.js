@@ -24,8 +24,11 @@ let forgetTabHelper = async function(forgetFn) {
   
   Services.obs.notifyObservers(null, "browser:purge-session-history");
 
-  is(ss.getClosedTabCount(window), 0,
-     "We should have 0 closed tabs being stored.");
+  is(
+    ss.getClosedTabCount(window),
+    0,
+    "We should have 0 closed tabs being stored."
+  );
 
   
   let tab = BrowserTestUtils.addTab(gBrowser, PAGE);
@@ -46,8 +49,11 @@ let forgetTabHelper = async function(forgetFn) {
   
   await promise;
 
-  is(ss.getClosedTabCount(window), 0,
-     "Should not have stored the forgotten closed tab");
+  is(
+    ss.getClosedTabCount(window),
+    0,
+    "Should not have stored the forgotten closed tab"
+  );
 };
 
 
@@ -71,7 +77,11 @@ let forgetWinHelper = async function(forgetFn) {
   
   Services.obs.notifyObservers(null, "browser:purge-session-history");
 
-  is(ss.getClosedWindowCount(), 0, "We should have 0 closed windows being stored.");
+  is(
+    ss.getClosedWindowCount(),
+    0,
+    "We should have 0 closed windows being stored."
+  );
 
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
 

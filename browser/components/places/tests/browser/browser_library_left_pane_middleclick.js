@@ -3,7 +3,7 @@
 
 
 
- 
+
 
 
 
@@ -13,9 +13,7 @@ var gLibrary = null;
 
 add_task(async function test_setup() {
   
-  await SpecialPowers.pushPrefEnv({set: [
-    ["places.history.enabled", false],
-  ]});
+  await SpecialPowers.pushPrefEnv({ set: [["places.history.enabled", false]] });
 
   
   gLibrary = await promiseLibrary();
@@ -43,17 +41,22 @@ add_task(async function test_open_folder_in_tabs() {
   
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.unfiledGuid,
-    children: [{
-      title: "Folder",
-      type: PlacesUtils.bookmarks.TYPE_FOLDER,
-      children,
-    }],
+    children: [
+      {
+        title: "Folder",
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+        children,
+      },
+    ],
   });
 
   
   gLibrary.PlacesOrganizer.selectLeftPaneBuiltIn("UnfiledBookmarks");
-  Assert.notEqual(gLibrary.PlacesOrganizer._places.selectedNode, null,
-        "We correctly have selection in the Library left pane");
+  Assert.notEqual(
+    gLibrary.PlacesOrganizer._places.selectedNode,
+    null,
+    "We correctly have selection in the Library left pane"
+  );
 
   
   var folderNode = gLibrary.ContentTree.view.view.nodeForTreeIndex(0);
@@ -62,14 +65,19 @@ add_task(async function test_open_folder_in_tabs() {
   gLibrary.PlacesOrganizer._places.selectedNode.containerOpen = true;
 
   
-  let promiseLoaded = Promise.all(URIs.map(uri =>
-    BrowserTestUtils.waitForNewTab(gBrowser, uri, false, true)));
+  let promiseLoaded = Promise.all(
+    URIs.map(uri => BrowserTestUtils.waitForNewTab(gBrowser, uri, false, true))
+  );
 
-  let bookmarkedNode = gLibrary.PlacesOrganizer._places.selectedNode.getChild(0);
-  mouseEventOnCell(gLibrary.PlacesOrganizer._places,
+  let bookmarkedNode = gLibrary.PlacesOrganizer._places.selectedNode.getChild(
+    0
+  );
+  mouseEventOnCell(
+    gLibrary.PlacesOrganizer._places,
     gLibrary.PlacesOrganizer._places.view.treeIndexForNode(bookmarkedNode),
     0,
-    { button: 1 });
+    { button: 1 }
+  );
 
   let tabs = await promiseLoaded;
 
@@ -89,6 +97,11 @@ function mouseEventOnCell(aTree, aRowIndex, aColumnIndex, aEventDetails) {
   
   var rect = aTree.getCoordsForCellItem(aRowIndex, column, "text");
 
-  EventUtils.synthesizeMouse(aTree.body, rect.x, rect.y,
-                             aEventDetails, gLibrary);
+  EventUtils.synthesizeMouse(
+    aTree.body,
+    rect.x,
+    rect.y,
+    aEventDetails,
+    gLibrary
+  );
 }

@@ -1,10 +1,13 @@
 
 
 
-const SECURE_CONTAINER_URL = "https://example.com/browser/browser/components/safebrowsing/content/test/empty_file.html";
+const SECURE_CONTAINER_URL =
+  "https://example.com/browser/browser/components/safebrowsing/content/test/empty_file.html";
 
 add_task(async function testNormalBrowsing() {
-  await BrowserTestUtils.withNewTab(SECURE_CONTAINER_URL, async function(browser) {
+  await BrowserTestUtils.withNewTab(SECURE_CONTAINER_URL, async function(
+    browser
+  ) {
     
     
     await new Promise(resolve => waitForDBInit(resolve));

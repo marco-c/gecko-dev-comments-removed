@@ -30,8 +30,10 @@ add_task(async function() {
 
   
   
-  Assert.equal(PlacesUtils.history.databaseStatus,
-               PlacesUtils.history.DATABASE_STATUS_CORRUPT);
+  Assert.equal(
+    PlacesUtils.history.databaseStatus,
+    PlacesUtils.history.DATABASE_STATUS_CORRUPT
+  );
 
   
   await promiseTopicObserved("places-browser-init-complete");

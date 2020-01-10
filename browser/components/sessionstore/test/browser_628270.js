@@ -31,7 +31,11 @@ function test() {
 
       
       whenTabIsLoaded(tab, function() {
-        is(tab.linkedBrowser.currentURI.spec, "about:mozilla", "restored tab has correct url");
+        is(
+          tab.linkedBrowser.currentURI.spec,
+          "about:mozilla",
+          "restored tab has correct url"
+        );
 
         gBrowser.removeTab(tab);
         finish();
@@ -41,7 +45,11 @@ function test() {
 }
 
 function whenTabIsLoaded(tab, callback) {
-  tab.linkedBrowser.addEventListener("load", function() {
-    callback();
-  }, {capture: true, once: true});
+  tab.linkedBrowser.addEventListener(
+    "load",
+    function() {
+      callback();
+    },
+    { capture: true, once: true }
+  );
 }

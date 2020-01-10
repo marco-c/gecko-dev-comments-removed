@@ -1,7 +1,9 @@
 "use strict";
 
-const PATH = getRootDirectory(gTestPath)
-             .replace("chrome://mochitests/content/", "http://example.com/");
+const PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content/",
+  "http://example.com/"
+);
 const URL = PATH + "file_async_flushes.html";
 
 add_task(async function test_flush() {
@@ -14,7 +16,7 @@ add_task(async function test_flush() {
   await TabStateFlusher.flush(browser);
 
   
-  let {entries} = JSON.parse(ss.getTabState(tab));
+  let { entries } = JSON.parse(ss.getTabState(tab));
   is(entries.length, 1, "there is a single history entry");
 
   
@@ -34,7 +36,7 @@ add_task(async function test_flush() {
   await TabStateFlusher.flush(browser);
 
   
-  ({entries} = JSON.parse(ss.getTabState(tab)));
+  ({ entries } = JSON.parse(ss.getTabState(tab)));
   is(entries.length, 2, "there are two shistory entries");
 
   
@@ -52,7 +54,7 @@ add_task(async function test_crash() {
   await TabStateFlusher.flush(browser);
 
   
-  let {entries} = JSON.parse(ss.getTabState(tab));
+  let { entries } = JSON.parse(ss.getTabState(tab));
   is(entries.length, 1, "there is a single history entry");
 
   
@@ -77,7 +79,7 @@ add_task(async function test_crash() {
   await Promise.all([promise1, promise2]);
 
   
-  ({entries} = JSON.parse(ss.getTabState(tab)));
+  ({ entries } = JSON.parse(ss.getTabState(tab)));
   is(entries.length, 1, "still only one history entry");
 
   
@@ -94,7 +96,7 @@ add_task(async function test_remove() {
   await TabStateFlusher.flush(browser);
 
   
-  let {entries} = JSON.parse(ss.getTabState(tab));
+  let { entries } = JSON.parse(ss.getTabState(tab));
   is(entries.length, 1, "there is a single history entry");
 
   

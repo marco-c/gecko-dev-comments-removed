@@ -1,7 +1,10 @@
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "SessionStartup",
-  "resource:///modules/sessionstore/SessionStartup.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "SessionStartup",
+  "resource:///modules/sessionstore/SessionStartup.jsm"
+);
 
 
 function afterSessionStartupInitialization(cb) {
@@ -19,7 +22,9 @@ function afterSessionStartupInitialization(cb) {
 
   
   
-  const {CrashMonitor} = ChromeUtils.import("resource://gre/modules/CrashMonitor.jsm");
+  const { CrashMonitor } = ChromeUtils.import(
+    "resource://gre/modules/CrashMonitor.jsm"
+  );
   CrashMonitor.init();
 
   
@@ -30,6 +35,6 @@ function afterSessionStartupInitialization(cb) {
 
 async function writeCompressedFile(source, destination) {
   let s = await OS.File.read(source);
-  await OS.File.writeAtomic(destination, s, {compression: "lz4"});
+  await OS.File.writeAtomic(destination, s, { compression: "lz4" });
   await OS.File.remove(source);
 }

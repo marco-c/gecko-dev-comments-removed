@@ -4,8 +4,8 @@
 
 let extData = {
   manifest: {
-    "sidebar_action": {
-      "default_panel": "sidebar.html",
+    sidebar_action: {
+      default_panel: "sidebar.html",
     },
   },
   useAddonManager: "temporary",
@@ -35,7 +35,10 @@ add_task(async function sidebar_windows() {
   await extension.startup();
   
   await extension.awaitMessage("sidebar");
-  ok(!document.getElementById("sidebar-box").hidden, "sidebar box is visible in first window");
+  ok(
+    !document.getElementById("sidebar-box").hidden,
+    "sidebar box is visible in first window"
+  );
   
   let elements = document.getElementsByClassName("webextension-menuitem");
   
@@ -51,7 +54,10 @@ add_task(async function sidebar_windows() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   await secondSidebar;
-  ok(!win.document.getElementById("sidebar-box").hidden, "sidebar box is visible in second window");
+  ok(
+    !win.document.getElementById("sidebar-box").hidden,
+    "sidebar box is visible in second window"
+  );
   
   elements = win.document.getElementsByClassName("webextension-menuitem");
   ok(elements.length > 0, "have a menuitem");

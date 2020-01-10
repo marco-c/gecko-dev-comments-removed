@@ -6,7 +6,10 @@
 
 add_task(async function() {
   info("Check new window button existence and functionality");
-  CustomizableUI.addWidgetToArea("new-window-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  CustomizableUI.addWidgetToArea(
+    "new-window-button",
+    CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+  );
   registerCleanupFunction(() => CustomizableUI.reset());
 
   await waitForOverflowButtonShown();
@@ -21,12 +24,22 @@ add_task(async function() {
     observe(aSubject, aTopic, aData) {
       if (aTopic == "domwindowopened") {
         newWindow = aSubject.QueryInterface(Ci.nsIDOMWindow);
-        newWindow.addEventListener("load", function() {
-          is(newWindow.location.href, AppConstants.BROWSER_CHROME_URL,
-             "A new browser window was opened");
-          ok(!PrivateBrowsingUtils.isWindowPrivate(newWindow), "Window is not private");
-          windowWasHandled = true;
-        }, {once: true});
+        newWindow.addEventListener(
+          "load",
+          function() {
+            is(
+              newWindow.location.href,
+              AppConstants.BROWSER_CHROME_URL,
+              "A new browser window was opened"
+            );
+            ok(
+              !PrivateBrowsingUtils.isWindowPrivate(newWindow),
+              "Window is not private"
+            );
+            windowWasHandled = true;
+          },
+          { once: true }
+        );
       }
     },
   };

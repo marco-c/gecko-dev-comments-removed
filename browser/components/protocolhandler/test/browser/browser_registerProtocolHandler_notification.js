@@ -2,35 +2,56 @@
 
 
 
-const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://example.com");
+const TEST_PATH = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://example.com"
+);
 add_task(async function() {
   let notificationValue = "Protocol Registration: web+testprotocol";
   let testURI = TEST_PATH + "browser_registerProtocolHandler_notification.html";
 
   BrowserTestUtils.loadURI(window.gBrowser.selectedBrowser, testURI);
-  await TestUtils.waitForCondition(function() {
-    
-    let notificationBox = window.gBrowser.getNotificationBox();
-    let notification = notificationBox.getNotificationWithValue(notificationValue);
-    return notification;
-  }, "Still can not get notification after retrying 100 times.", 100, 100);
+  await TestUtils.waitForCondition(
+    function() {
+      
+      let notificationBox = window.gBrowser.getNotificationBox();
+      let notification = notificationBox.getNotificationWithValue(
+        notificationValue
+      );
+      return notification;
+    },
+    "Still can not get notification after retrying 100 times.",
+    100,
+    100
+  );
 
   let notificationBox = window.gBrowser.getNotificationBox();
-  let notification = notificationBox.getNotificationWithValue(notificationValue);
+  let notification = notificationBox.getNotificationWithValue(
+    notificationValue
+  );
   ok(notification, "Notification box should be displayed");
   if (notification == null) {
     finish();
     return;
   }
-  is(notification.getAttribute("type"), "info",
-     "We expect this notification to have the type of 'info'.");
-  ok(notification.messageImage.getAttribute("src"),
-     "We expect this notification to have an icon.");
+  is(
+    notification.getAttribute("type"),
+    "info",
+    "We expect this notification to have the type of 'info'."
+  );
+  ok(
+    notification.messageImage.getAttribute("src"),
+    "We expect this notification to have an icon."
+  );
 
   let buttons = notification.getElementsByClassName("notification-button");
   is(buttons.length, 1, "We expect see one button.");
 
   let button = buttons[0];
   isnot(button.label, null, "We expect the add button to have a label.");
-  todo_isnot(button.accesskey, null, "We expect the add button to have a accesskey.");
+  todo_isnot(
+    button.accesskey,
+    null,
+    "We expect the add button to have a accesskey."
+  );
 });

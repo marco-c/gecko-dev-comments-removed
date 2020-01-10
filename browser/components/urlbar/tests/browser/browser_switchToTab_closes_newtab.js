@@ -10,26 +10,36 @@
 "use strict";
 
 add_task(async function test_switchToTab_closes() {
-  let testURL = "http://example.org/browser/browser/components/urlbar/tests/browser/dummy_page.html";
+  let testURL =
+    "http://example.org/browser/browser/components/urlbar/tests/browser/dummy_page.html";
 
   
   let baseTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
 
-  if (baseTab.linkedBrowser.currentURI.spec == "about:blank")
+  if (baseTab.linkedBrowser.currentURI.spec == "about:blank") {
     return;
+  }
 
   
   let testTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
 
   
-  let tabClosePromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer,
-    "TabClose", false, event => {
+  let tabClosePromise = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "TabClose",
+    false,
+    event => {
       return event.originalTarget == testTab;
-    });
-  let tabSelectPromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer,
-    "TabSelect", false, event => {
+    }
+  );
+  let tabSelectPromise = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "TabSelect",
+    false,
+    event => {
       return event.originalTarget == baseTab;
-    });
+    }
+  );
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -44,8 +54,11 @@ add_task(async function test_switchToTab_closes() {
   await Promise.all([tabSelectPromise, tabClosePromise]);
 
   
-  Assert.equal(gBrowser.selectedTab, baseTab,
-    "Should have switched to the correct tab");
+  Assert.equal(
+    gBrowser.selectedTab,
+    baseTab,
+    "Should have switched to the correct tab"
+  );
 
   gBrowser.removeTab(baseTab);
 });

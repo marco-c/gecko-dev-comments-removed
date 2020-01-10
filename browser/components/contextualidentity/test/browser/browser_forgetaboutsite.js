@@ -4,15 +4,17 @@
 
 const CC = Components.Constructor;
 
-let {ForgetAboutSite} = ChromeUtils.import("resource://gre/modules/ForgetAboutSite.jsm");
-let {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+let { ForgetAboutSite } = ChromeUtils.import(
+  "resource://gre/modules/ForgetAboutSite.jsm"
+);
+let { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
-const USER_CONTEXTS = [
-  "default",
-  "personal",
-];
+const USER_CONTEXTS = ["default", "personal"];
 const TEST_HOST = "example.com";
-const TEST_URL = "http://" + TEST_HOST + "/browser/browser/components/contextualidentity/test/browser/";
+const TEST_URL =
+  "http://" +
+  TEST_HOST +
+  "/browser/browser/components/contextualidentity/test/browser/";
 const COOKIE_NAME = "userContextId";
 
 
@@ -23,8 +25,10 @@ let gHttpServer = null;
 function imageHandler(metadata, response) {
   
   
-  const IMAGE = atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAA" +
-                     "ACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=");
+  const IMAGE = atob(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAA" +
+      "ACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII="
+  );
   gHits++;
   response.setHeader("Cache-Control", "max-age=10000", false);
   response.setStatusLine(metadata.httpVersion, 200, "OK");
@@ -36,7 +40,8 @@ function loadImagePageHandler(metadata, response) {
   response.setHeader("Cache-Control", "max-age=10000", false);
   response.setStatusLine(metadata.httpVersion, 200, "Ok");
   response.setHeader("Content-Type", "text/html", false);
-  let body = "<!DOCTYPE HTML>\
+  let body =
+    "<!DOCTYPE HTML>\
               <html>\
                 <head>\
                   <meta charset='utf-8'>\
@@ -51,7 +56,7 @@ function loadImagePageHandler(metadata, response) {
 
 async function openTabInUserContext(uri, userContextId) {
   
-  let tab = BrowserTestUtils.addTab(gBrowser, uri, {userContextId});
+  let tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
 
   
   gBrowser.selectedTab = tab;
@@ -59,11 +64,11 @@ async function openTabInUserContext(uri, userContextId) {
 
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);
-  return {tab, browser};
+  return { tab, browser };
 }
 
 function getCookiesForOA(host, userContextId) {
-  return Services.cookies.getCookiesFromHost(host, {userContextId});
+  return Services.cookies.getCookiesFromHost(host, { userContextId });
 }
 
 function createURI(uri) {
@@ -71,12 +76,18 @@ function createURI(uri) {
 }
 
 function getCacheStorage(where, lci, appcache) {
-  if (!lci) lci = Services.loadContextInfo.default;
+  if (!lci) {
+    lci = Services.loadContextInfo.default;
+  }
   switch (where) {
-    case "disk": return Services.cache2.diskCacheStorage(lci, false);
-    case "memory": return Services.cache2.memoryCacheStorage(lci);
-    case "appcache": return Services.cache2.appCacheStorage(lci, appcache);
-    case "pin": return Services.cache2.pinningCacheStorage(lci);
+    case "disk":
+      return Services.cache2.diskCacheStorage(lci, false);
+    case "memory":
+      return Services.cache2.memoryCacheStorage(lci);
+    case "appcache":
+      return Services.cache2.appCacheStorage(lci, appcache);
+    case "pin":
+      return Services.cache2.pinningCacheStorage(lci);
   }
   return null;
 }
@@ -84,7 +95,7 @@ function getCacheStorage(where, lci, appcache) {
 function OpenCacheEntry(key, where, flags, lci) {
   return new Promise(resolve => {
     key = createURI(key);
-    function CacheListener() { }
+    function CacheListener() {}
     CacheListener.prototype = {
       _appCache: null,
 
@@ -104,7 +115,7 @@ function OpenCacheEntry(key, where, flags, lci) {
       },
     };
 
-    (new CacheListener()).run();
+    new CacheListener().run();
   });
 }
 
@@ -122,7 +133,10 @@ async function test_cookie_cleared() {
     let value = USER_CONTEXTS[userContextId];
 
     
-    tabs[userContextId] = await openTabInUserContext(TEST_URL + "file_reflect_cookie_into_title.html?" + value, userContextId);
+    tabs[userContextId] = await openTabInUserContext(
+      TEST_URL + "file_reflect_cookie_into_title.html?" + value,
+      userContextId
+    );
 
     
     BrowserTestUtils.removeTab(tabs[userContextId].tab);
@@ -134,7 +148,11 @@ async function test_cookie_cleared() {
 
     let foundCookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
     Assert.equal(foundCookie.name, COOKIE_NAME, "Check cookie name");
-    Assert.equal(foundCookie.value, USER_CONTEXTS[userContextId], "Check cookie value");
+    Assert.equal(
+      foundCookie.value,
+      USER_CONTEXTS[userContextId],
+      "Check cookie value"
+    );
   }
 
   
@@ -151,25 +169,40 @@ async function test_cookie_cleared() {
 async function test_cache_cleared() {
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
-    await OpenCacheEntry("http://" + TEST_HOST + "/",
-                         "disk",
-                         Ci.nsICacheStorage.OPEN_NORMALLY,
-                         Services.loadContextInfo.custom(false, {userContextId}));
+    await OpenCacheEntry(
+      "http://" + TEST_HOST + "/",
+      "disk",
+      Ci.nsICacheStorage.OPEN_NORMALLY,
+      Services.loadContextInfo.custom(false, { userContextId })
+    );
 
-    await OpenCacheEntry("http://" + TEST_HOST + "/",
-                         "memory",
-                         Ci.nsICacheStorage.OPEN_NORMALLY,
-                         Services.loadContextInfo.custom(false, {userContextId}));
+    await OpenCacheEntry(
+      "http://" + TEST_HOST + "/",
+      "memory",
+      Ci.nsICacheStorage.OPEN_NORMALLY,
+      Services.loadContextInfo.custom(false, { userContextId })
+    );
   }
-
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
-    let mem = getCacheStorage("memory", Services.loadContextInfo.custom(false, {userContextId}));
-    let disk = getCacheStorage("disk", Services.loadContextInfo.custom(false, {userContextId}));
+    let mem = getCacheStorage(
+      "memory",
+      Services.loadContextInfo.custom(false, { userContextId })
+    );
+    let disk = getCacheStorage(
+      "disk",
+      Services.loadContextInfo.custom(false, { userContextId })
+    );
 
-    Assert.ok(mem.exists(createURI("http://" + TEST_HOST + "/"), ""), "The memory cache has been set correctly");
-    Assert.ok(disk.exists(createURI("http://" + TEST_HOST + "/"), ""), "The disk cache has been set correctly");
+    Assert.ok(
+      mem.exists(createURI("http://" + TEST_HOST + "/"), ""),
+      "The memory cache has been set correctly"
+    );
+    Assert.ok(
+      disk.exists(createURI("http://" + TEST_HOST + "/"), ""),
+      "The disk cache has been set correctly"
+    );
   }
 
   
@@ -177,11 +210,23 @@ async function test_cache_cleared() {
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
-    let mem = getCacheStorage("memory", Services.loadContextInfo.custom(false, {userContextId}));
-    let disk = getCacheStorage("disk", Services.loadContextInfo.custom(false, {userContextId}));
+    let mem = getCacheStorage(
+      "memory",
+      Services.loadContextInfo.custom(false, { userContextId })
+    );
+    let disk = getCacheStorage(
+      "disk",
+      Services.loadContextInfo.custom(false, { userContextId })
+    );
 
-    Assert.ok(!mem.exists(createURI("http://" + TEST_HOST + "/"), ""), "The memory cache is cleared");
-    Assert.ok(!disk.exists(createURI("http://" + TEST_HOST + "/"), ""), "The disk cache is cleared");
+    Assert.ok(
+      !mem.exists(createURI("http://" + TEST_HOST + "/"), ""),
+      "The memory cache is cleared"
+    );
+    Assert.ok(
+      !disk.exists(createURI("http://" + TEST_HOST + "/"), ""),
+      "The disk cache is cleared"
+    );
   }
 }
 
@@ -191,15 +236,23 @@ async function test_image_cache_cleared() {
 
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    tabs[userContextId] = await openTabInUserContext("http://localhost:" + gHttpServer.identity.primaryPort + "/loadImage.html",
-                                                      userContextId);
+    tabs[userContextId] = await openTabInUserContext(
+      "http://localhost:" +
+        gHttpServer.identity.primaryPort +
+        "/loadImage.html",
+      userContextId
+    );
     BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 
   let expectedHits = USER_CONTEXTS.length;
 
   
-  is(gHits, expectedHits, "The image should be loaded" + expectedHits + "times.");
+  is(
+    gHits,
+    expectedHits,
+    "The image should be loaded" + expectedHits + "times."
+  );
 
   
   gHits = 0;
@@ -210,13 +263,21 @@ async function test_image_cache_cleared() {
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    tabs[userContextId] = await openTabInUserContext("http://localhost:" + gHttpServer.identity.primaryPort + "/loadImage.html",
-                                                      userContextId);
+    tabs[userContextId] = await openTabInUserContext(
+      "http://localhost:" +
+        gHttpServer.identity.primaryPort +
+        "/loadImage.html",
+      userContextId
+    );
     BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 
   
-  is(gHits, expectedHits, "The image should be loaded" + expectedHits + "times.");
+  is(
+    gHits,
+    expectedHits,
+    "The image should be loaded" + expectedHits + "times."
+  );
 }
 
 
@@ -227,37 +288,56 @@ async function test_storage_cleared() {
     let value = USER_CONTEXTS[userContextId];
 
     
-    let tabInfo = await openTabInUserContext(TEST_URL + "file_set_storages.html?" + value, userContextId);
+    let tabInfo = await openTabInUserContext(
+      TEST_URL + "file_set_storages.html?" + value,
+      userContextId
+    );
 
     
-    await ContentTask.spawn(tabInfo.browser, { userContext: USER_CONTEXTS[userContextId] }, async function(arg) {
-      
-      Assert.equal(content.localStorage.getItem("userContext"), arg.userContext, "Check the local storage value");
+    await ContentTask.spawn(
+      tabInfo.browser,
+      { userContext: USER_CONTEXTS[userContextId] },
+      async function(arg) {
+        
+        Assert.equal(
+          content.localStorage.getItem("userContext"),
+          arg.userContext,
+          "Check the local storage value"
+        );
 
-      
-      Assert.equal(content.sessionStorage.getItem("userContext"), arg.userContext, "Check the session storage value");
+        
+        Assert.equal(
+          content.sessionStorage.getItem("userContext"),
+          arg.userContext,
+          "Check the session storage value"
+        );
 
-      
-      let request = content.indexedDB.open("idb", 1);
+        
+        let request = content.indexedDB.open("idb", 1);
 
-      let db = await new Promise(done => {
-        request.onsuccess = event => {
-          done(event.target.result);
-        };
-      });
+        let db = await new Promise(done => {
+          request.onsuccess = event => {
+            done(event.target.result);
+          };
+        });
 
-      let transaction = db.transaction(["obj"], "readonly");
-      let store = transaction.objectStore("obj");
-      let storeRequest = store.get(1);
+        let transaction = db.transaction(["obj"], "readonly");
+        let store = transaction.objectStore("obj");
+        let storeRequest = store.get(1);
 
-      await new Promise(done => {
-        storeRequest.onsuccess = event => {
-          let res = storeRequest.result;
-          Assert.equal(res.userContext, arg.userContext, "Check the indexedDB value");
-          done();
-        };
-      });
-    });
+        await new Promise(done => {
+          storeRequest.onsuccess = event => {
+            let res = storeRequest.result;
+            Assert.equal(
+              res.userContext,
+              arg.userContext,
+              "Check the indexedDB value"
+            );
+            done();
+          };
+        });
+      }
+    );
 
     
     BrowserTestUtils.removeTab(tabInfo.tab);
@@ -270,15 +350,24 @@ async function test_storage_cleared() {
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    let tabInfo = await openTabInUserContext(TEST_URL + "file_set_storages.html", userContextId);
+    let tabInfo = await openTabInUserContext(
+      TEST_URL + "file_set_storages.html",
+      userContextId
+    );
 
     
     await ContentTask.spawn(tabInfo.browser, null, async function() {
       
-      Assert.ok(!content.localStorage.getItem("userContext"), "The local storage has been cleared");
+      Assert.ok(
+        !content.localStorage.getItem("userContext"),
+        "The local storage has been cleared"
+      );
 
       
-      Assert.ok(!content.sessionStorage.getItem("userContext"), "The session storage has been cleared");
+      Assert.ok(
+        !content.sessionStorage.getItem("userContext"),
+        "The session storage has been cleared"
+      );
 
       
       let request = content.indexedDB.open("idb", 1);
@@ -292,7 +381,11 @@ async function test_storage_cleared() {
         db.transaction(["obj"], "readonly");
         Assert.ok(false, "The indexedDB should not exist");
       } catch (e) {
-        Assert.equal(e.name, "NotFoundError", "The indexedDB does not exist as expected");
+        Assert.equal(
+          e.name,
+          "NotFoundError",
+          "The indexedDB does not exist as expected"
+        );
       }
     });
 
@@ -303,9 +396,9 @@ async function test_storage_cleared() {
 
 add_task(async function setup() {
   
-  await SpecialPowers.pushPrefEnv({"set": [
-    ["privacy.userContext.enabled", true],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.userContext.enabled", true]],
+  });
 
   
   if (!gHttpServer) {
@@ -324,8 +417,9 @@ let tests = [
 ];
 
 add_task(async function test() {
-  for (let i = 0; i < tests.length; i++)
+  for (let i = 0; i < tests.length; i++) {
     add_task(tests[i]);
+  }
 });
 
 registerCleanupFunction(() => {

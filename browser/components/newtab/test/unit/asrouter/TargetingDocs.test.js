@@ -1,4 +1,4 @@
-import {ASRouterTargeting} from "lib/ASRouterTargeting.jsm";
+import { ASRouterTargeting } from "lib/ASRouterTargeting.jsm";
 import docs from "content-src/asrouter/docs/targeting-attributes.md";
 
 
@@ -46,7 +46,9 @@ describe("ASRTargeting docs", () => {
   const DOCS_TARGETING_HEADINGS = getHeadingsFromDocs();
   const DOCS_TOC = getTOCFromDocs();
   const ASRTargetingAttributes = [
-    ...Object.keys(ASRouterTargeting.Environment).filter(attribute => !SKIP_DOCS.includes(attribute)),
+    ...Object.keys(ASRouterTargeting.Environment).filter(
+      attribute => !SKIP_DOCS.includes(attribute)
+    ),
     ...MESSAGE_CONTEXT_ATTRIBUTES,
   ];
 
@@ -55,8 +57,16 @@ describe("ASRTargeting docs", () => {
       
       
       it(`should have docs and table of contents entry for ${targetingParam}`, () => {
-        assert.include(DOCS_TARGETING_HEADINGS, targetingParam, `Didn't find the heading: ### \`${targetingParam}\``);
-        assert.include(DOCS_TOC, targetingParam, `Didn't find a table of contents entry for ${targetingParam}`);
+        assert.include(
+          DOCS_TARGETING_HEADINGS,
+          targetingParam,
+          `Didn't find the heading: ### \`${targetingParam}\``
+        );
+        assert.include(
+          DOCS_TOC,
+          targetingParam,
+          `Didn't find a table of contents entry for ${targetingParam}`
+        );
       });
     }
   });
@@ -65,7 +75,11 @@ describe("ASRTargeting docs", () => {
       
       
       it(`should have an implementation for ${targetingParam} in ASRouterTargeting.Environment`, () => {
-        assert.include(ASRTargetingAttributes, targetingParam, `Didn't find an implementation for ${targetingParam}`);
+        assert.include(
+          ASRTargetingAttributes,
+          targetingParam,
+          `Didn't find an implementation for ${targetingParam}`
+        );
       });
     }
   });

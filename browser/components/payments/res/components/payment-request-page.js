@@ -15,10 +15,13 @@ export default class PaymentRequestPage extends HTMLElement {
     this.pageTitleHeading = document.createElement("h2");
 
     
-    this.body = this.querySelector(":scope > .page-body") || document.createElement("div");
+    this.body =
+      this.querySelector(":scope > .page-body") ||
+      document.createElement("div");
     this.body.classList.add("page-body");
 
-    this.footer = this.querySelector(":scope > footer") || document.createElement("footer");
+    this.footer =
+      this.querySelector(":scope > footer") || document.createElement("footer");
   }
 
   connectedCallback() {

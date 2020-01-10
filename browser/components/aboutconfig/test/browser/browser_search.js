@@ -6,7 +6,9 @@
 
 
 ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
-PromiseTestUtils.whitelistRejectionsGlobally(/Too many characters in placeable/);
+PromiseTestUtils.whitelistRejectionsGlobally(
+  /Too many characters in placeable/
+);
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
@@ -34,8 +36,9 @@ add_task(async function test_search() {
     
     this.search("Wser.down   ");
 
-    let filteredPrefArray =
-        prefArray.filter(pref => pref.includes("wser.down"));
+    let filteredPrefArray = prefArray.filter(pref =>
+      pref.includes("wser.down")
+    );
     
     
     

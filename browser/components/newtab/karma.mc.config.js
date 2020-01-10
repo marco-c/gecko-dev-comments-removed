@@ -108,14 +108,13 @@ module.exports = function(config) {
       mode: "none",
       devtool: "inline-source-map",
       
-      resolveLoader: {alias: {inject: path.join(__dirname, "loaders/inject-loader")}},
+      resolveLoader: {
+        alias: { inject: path.join(__dirname, "loaders/inject-loader") },
+      },
       
       resolve: {
         extensions: [".js", ".jsx"],
-        modules: [
-          PATHS.moduleResolveDirectory,
-          "node_modules",
-        ],
+        modules: [PATHS.moduleResolveDirectory, "node_modules"],
       },
       externals: {
         
@@ -130,15 +129,24 @@ module.exports = function(config) {
           {
             test: /\.jsm$/,
             exclude: [/node_modules/],
-            use: [{
-              loader: "babel-loader", 
-              options: {
-                plugins: [
-                  
-                  ["jsm-to-commonjs", {basePath: PATHS.resourcePathRegEx, removeOtherImports: true, replace: true}], 
-                ],
+            use: [
+              {
+                loader: "babel-loader", 
+                options: {
+                  plugins: [
+                    
+                    [
+                      "jsm-to-commonjs",
+                      {
+                        basePath: PATHS.resourcePathRegEx,
+                        removeOtherImports: true,
+                        replace: true,
+                      },
+                    ], 
+                  ],
+                },
               },
-            }],
+            ],
           },
           {
             test: /\.js$/,
@@ -161,7 +169,7 @@ module.exports = function(config) {
             enforce: "post",
             test: /\.js[mx]?$/,
             loader: "istanbul-instrumenter-loader",
-            options: {esModules: true},
+            options: { esModules: true },
             include: [
               path.resolve("content-src"),
               path.resolve("lib"),
@@ -181,6 +189,6 @@ module.exports = function(config) {
       },
     },
     
-    webpackMiddleware: {noInfo: true},
+    webpackMiddleware: { noInfo: true },
   });
 };

@@ -13,43 +13,49 @@ function test() {
 
   
   
-  let wasLoaded = { };
+  let wasLoaded = {};
   let restoringTabsCount = 0;
   let restoredTabsCount = 0;
-  let uniq2 = { };
+  let uniq2 = {};
   let uniq2Count = 0;
   let state = { windows: [{ tabs: [] }] };
   
   for (let i = 0; i < NUM_TABS; i++) {
     let uniq = r();
     let tabData = {
-      entries: [{ url: "http://example.com/#" + i, triggeringPrincipal_base64}],
-      extData: { "uniq": uniq, "baz": "qux" },
+      entries: [
+        { url: "http://example.com/#" + i, triggeringPrincipal_base64 },
+      ],
+      extData: { uniq, baz: "qux" },
     };
     state.windows[0].tabs.push(tabData);
     wasLoaded[uniq] = false;
   }
-
 
   function onSSTabRestoring(aEvent) {
     restoringTabsCount++;
     let uniq = ss.getCustomTabValue(aEvent.originalTarget, "uniq");
     wasLoaded[uniq] = true;
 
-    is(ss.getCustomTabValue(aEvent.originalTarget, "foo"), "",
-       "There is no value for 'foo'");
+    is(
+      ss.getCustomTabValue(aEvent.originalTarget, "foo"),
+      "",
+      "There is no value for 'foo'"
+    );
 
     
     
-    if (restoringTabsCount == 1)
+    if (restoringTabsCount == 1) {
       onFirstSSTabRestoring();
-    else if (restoringTabsCount == NUM_TABS)
+    } else if (restoringTabsCount == NUM_TABS) {
       onLastSSTabRestoring();
+    }
   }
 
   function onSSTabRestored(aEvent) {
-    if (++restoredTabsCount < NUM_TABS)
+    if (++restoredTabsCount < NUM_TABS) {
       return;
+    }
     cleanup();
   }
 
@@ -103,7 +109,11 @@ function test() {
 
       
       if (uniq in uniq2) {
-        is(ss.getCustomTabValue(tab, "uniq2"), uniq2[uniq], "tab " + i + " has correct uniq2 value");
+        is(
+          ss.getCustomTabValue(tab, "uniq2"),
+          uniq2[uniq],
+          "tab " + i + " has correct uniq2 value"
+        );
         checked++;
       }
     }
@@ -113,8 +123,15 @@ function test() {
 
   function cleanup() {
     
-    gBrowser.tabContainer.removeEventListener("SSTabRestoring", onSSTabRestoring);
-    gBrowser.tabContainer.removeEventListener("SSTabRestored", onSSTabRestored, true);
+    gBrowser.tabContainer.removeEventListener(
+      "SSTabRestoring",
+      onSSTabRestoring
+    );
+    gBrowser.tabContainer.removeEventListener(
+      "SSTabRestored",
+      onSSTabRestored,
+      true
+    );
     gBrowser.tabContainer.removeEventListener("TabOpen", onTabOpen);
     
     
@@ -127,7 +144,11 @@ function test() {
 
   
   gBrowser.tabContainer.addEventListener("SSTabRestoring", onSSTabRestoring);
-  gBrowser.tabContainer.addEventListener("SSTabRestored", onSSTabRestored, true);
+  gBrowser.tabContainer.addEventListener(
+    "SSTabRestored",
+    onSSTabRestored,
+    true
+  );
   gBrowser.tabContainer.addEventListener("TabOpen", onTabOpen);
   
   ss.setBrowserState(JSON.stringify(state));

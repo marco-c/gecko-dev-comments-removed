@@ -37,8 +37,10 @@ function getResult() {
 
 
 
-IsolationTestTools.runTests("https://requireclientcert.example.com",
-                            getResult,
-                            null, 
-                            setup, 
-                            true); 
+IsolationTestTools.runTests(
+  "https://requireclientcert.example.com",
+  getResult,
+  null, 
+  setup, 
+  true
+); 

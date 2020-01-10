@@ -2,8 +2,11 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "SyncDisconnect",
-  "resource://services-sync/SyncDisconnect.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "SyncDisconnect",
+  "resource://services-sync/SyncDisconnect.jsm"
+);
 
 let gSyncDisconnectDialog = {
   init() {
@@ -16,10 +19,12 @@ let gSyncDisconnectDialog = {
 
   
   onDeleteOptionChange() {
-    let eitherChecked = document.getElementById("deleteRemoteSyncData").checked ||
-                        document.getElementById("deleteRemoteOtherData").checked;
-    let newTitle = eitherChecked ? "sync-disconnect-confirm-disconnect-delete" :
-                                   "sync-disconnect-confirm-disconnect";
+    let eitherChecked =
+      document.getElementById("deleteRemoteSyncData").checked ||
+      document.getElementById("deleteRemoteOtherData").checked;
+    let newTitle = eitherChecked
+      ? "sync-disconnect-confirm-disconnect-delete"
+      : "sync-disconnect-confirm-disconnect";
     let butDisconnect = document.getElementById("butDisconnect");
     document.l10n.setAttributes(butDisconnect, newTitle);
   },
@@ -27,7 +32,8 @@ let gSyncDisconnectDialog = {
   accept(event) {
     let options = {
       sanitizeSyncData: document.getElementById("deleteRemoteSyncData").checked,
-      sanitizeBrowserData: document.getElementById("deleteRemoteOtherData").checked,
+      sanitizeBrowserData: document.getElementById("deleteRemoteOtherData")
+        .checked,
     };
 
     
@@ -40,18 +46,20 @@ let gSyncDisconnectDialog = {
     document.getElementById("deletingContent").hidden = false;
 
     
-    promiseComplete.catch(ex => {
-      console.error("Failed to sanitize", ex);
-    }).then(() => {
-      
-      
-      
-      let closingEvent = new CustomEvent("dialogclosing", {
-        bubbles: true,
-        detail: {button: "accept"},
+    promiseComplete
+      .catch(ex => {
+        console.error("Failed to sanitize", ex);
+      })
+      .then(() => {
+        
+        
+        
+        let closingEvent = new CustomEvent("dialogclosing", {
+          bubbles: true,
+          detail: { button: "accept" },
+        });
+        document.documentElement.dispatchEvent(closingEvent);
+        close();
       });
-      document.documentElement.dispatchEvent(closingEvent);
-      close();
-    });
   },
 };

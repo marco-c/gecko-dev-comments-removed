@@ -6,16 +6,18 @@ requestLongerTimeout(2);
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({"set": [
-    ["browser.preferences.search", true],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.preferences.search", true]],
+  });
 });
 
 
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+    leaveOpen: true,
+  });
   await evaluateSearchResults("Security Modules and Devices", "certSelection");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
@@ -24,8 +26,9 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+    leaveOpen: true,
+  });
   await evaluateSearchResults("Use system proxy settings", "connectionGroup");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
-

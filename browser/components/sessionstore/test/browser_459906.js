@@ -8,56 +8,72 @@ function test() {
 
   waitForExplicitFinish();
 
-  let testURL = "http://mochi.test:8888/browser/" +
+  let testURL =
+    "http://mochi.test:8888/browser/" +
     "browser/components/sessionstore/test/browser_459906_sample.html";
   let uniqueValue = "<b>Unique:</b> " + Date.now();
 
   var frameCount = 0;
   let tab = BrowserTestUtils.addTab(gBrowser, testURL);
-  tab.linkedBrowser.addEventListener("load", function listener(aEvent) {
-    
-    if (frameCount++ < 2)
-      return;
-    tab.linkedBrowser.removeEventListener("load", listener, true);
-
-    let iframes = tab.linkedBrowser.contentWindow.frames;
-    
-    iframes[1].document.body.innerHTML = uniqueValue;
-
-    frameCount = 0;
-    let tab2 = gBrowser.duplicateTab(tab);
-    tab2.linkedBrowser.addEventListener("load", function loadListener(eventTab2) {
+  tab.linkedBrowser.addEventListener(
+    "load",
+    function listener(aEvent) {
       
-      if (frameCount++ < 2)
+      if (frameCount++ < 2) {
         return;
-      tab2.linkedBrowser.removeEventListener("load", loadListener, true);
+      }
+      tab.linkedBrowser.removeEventListener("load", listener, true);
 
-      executeSoon(function innerHTMLPoller() {
-        let iframesTab2 = tab2.linkedBrowser.contentWindow.frames;
-        if (iframesTab2[1].document.body.innerHTML !== uniqueValue) {
+      let iframes = tab.linkedBrowser.contentWindow.frames;
+      
+      iframes[1].document.body.innerHTML = uniqueValue;
+
+      frameCount = 0;
+      let tab2 = gBrowser.duplicateTab(tab);
+      tab2.linkedBrowser.addEventListener(
+        "load",
+        function loadListener(eventTab2) {
           
-          
-          
-          info("Polling for innerHTML value");
-          setTimeout(innerHTMLPoller, 100);
-          return;
-        }
+          if (frameCount++ < 2) {
+            return;
+          }
+          tab2.linkedBrowser.removeEventListener("load", loadListener, true);
 
-        is(iframesTab2[1].document.body.innerHTML, uniqueValue,
-           "rich textarea's content correctly duplicated");
+          executeSoon(function innerHTMLPoller() {
+            let iframesTab2 = tab2.linkedBrowser.contentWindow.frames;
+            if (iframesTab2[1].document.body.innerHTML !== uniqueValue) {
+              
+              
+              
+              info("Polling for innerHTML value");
+              setTimeout(innerHTMLPoller, 100);
+              return;
+            }
 
-        let innerDomain = null;
-        try {
-          innerDomain = iframesTab2[0].document.domain;
-        } catch (ex) {  }
-        is(innerDomain, "mochi.test", "XSS exploit prevented!");
+            is(
+              iframesTab2[1].document.body.innerHTML,
+              uniqueValue,
+              "rich textarea's content correctly duplicated"
+            );
 
-        
-        gBrowser.removeTab(tab2);
-        gBrowser.removeTab(tab);
+            let innerDomain = null;
+            try {
+              innerDomain = iframesTab2[0].document.domain;
+            } catch (ex) {
+              
+            }
+            is(innerDomain, "mochi.test", "XSS exploit prevented!");
 
-        finish();
-      });
-    }, true);
-  }, true);
+            
+            gBrowser.removeTab(tab2);
+            gBrowser.removeTab(tab);
+
+            finish();
+          });
+        },
+        true
+      );
+    },
+    true
+  );
 }

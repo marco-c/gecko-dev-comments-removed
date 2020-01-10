@@ -20,9 +20,14 @@ add_task(async function test_label_and_icon() {
   
   
   
-  await BrowserTestUtils.waitForCondition(() => {
-    return gBrowser.getIcon(tab) != null;
-  }, "wait for favicon load to finish", 100, 5);
+  await BrowserTestUtils.waitForCondition(
+    () => {
+      return gBrowser.getIcon(tab) != null;
+    },
+    "wait for favicon load to finish",
+    100,
+    5
+  );
 
   
   await TabStateFlusher.flush(browser);
@@ -36,7 +41,11 @@ add_task(async function test_label_and_icon() {
   await promiseTabRestoring(tab);
 
   
-  is(gBrowser.getIcon(tab), "chrome://browser/content/robot.ico", "icon is set");
+  is(
+    gBrowser.getIcon(tab),
+    "chrome://browser/content/robot.ico",
+    "icon is set"
+  );
   is(tab.label, "Gort! Klaatu barada nikto!", "label is set");
 
   

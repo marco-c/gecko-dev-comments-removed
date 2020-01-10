@@ -6,102 +6,106 @@
 
 
 {
+  
 
 
 
+  class MozSearchAutocompleteRichlistboxPopup extends MozElements.MozAutocompleteRichlistboxPopup {
+    constructor() {
+      super();
 
-class MozSearchAutocompleteRichlistboxPopup extends MozElements.MozAutocompleteRichlistboxPopup {
-  constructor() {
-    super();
+      this.addEventListener("popupshowing", event => {
+        
+        
+        let DOMUtils = window.windowUtils;
+        let textboxRect = DOMUtils.getBoundsWithoutFlushing(this.mInput);
+        let inputRect = DOMUtils.getBoundsWithoutFlushing(
+          this.mInput.inputField
+        );
 
-    this.addEventListener("popupshowing", (event) => {
-      
-      
-      let DOMUtils = window.windowUtils;
-      let textboxRect = DOMUtils.getBoundsWithoutFlushing(this.mInput);
-      let inputRect = DOMUtils.getBoundsWithoutFlushing(this.mInput.inputField);
-
-      
-      let minWidth = Math.max(textboxRect.width,
-        this.oneOffButtons.buttonWidth * 3);
-      this.style.minWidth = Math.round(minWidth) + "px";
-      
-      
-      this.style.marginLeft = (textboxRect.left - inputRect.left) + "px";
-      
-      
-      this.style.marginRight = (inputRect.right - textboxRect.right) + "px";
-
-      
-      
-      
-      let searchbar = document.getElementById("searchbar");
-      if (searchbar.hasAttribute("showonlysettings")) {
-        searchbar.removeAttribute("showonlysettings");
-        this.setAttribute("showonlysettings", "true");
+        
+        let minWidth = Math.max(
+          textboxRect.width,
+          this.oneOffButtons.buttonWidth * 3
+        );
+        this.style.minWidth = Math.round(minWidth) + "px";
+        
+        
+        this.style.marginLeft = textboxRect.left - inputRect.left + "px";
+        
+        
+        this.style.marginRight = inputRect.right - textboxRect.right + "px";
 
         
         
-        this.richlistbox.collapsed = true;
-      } else {
-        this.removeAttribute("showonlysettings");
         
+        let searchbar = document.getElementById("searchbar");
+        if (searchbar.hasAttribute("showonlysettings")) {
+          searchbar.removeAttribute("showonlysettings");
+          this.setAttribute("showonlysettings", "true");
+
+          
+          
+          this.richlistbox.collapsed = true;
+        } else {
+          this.removeAttribute("showonlysettings");
+          
+          
+          
+          
+          this.richlistbox.collapsed = this.matchCount == 0;
+        }
+
         
-        
-        
-        this.richlistbox.collapsed = (this.matchCount == 0);
-      }
+        this.updateHeader();
+      });
 
       
-      this.updateHeader();
-    });
-
-    
 
 
 
-    this.addEventListener("click", (event) => {
-      if (event.button == 2) {
-        
-        return;
-      }
-      let button = event.originalTarget;
-      let engine = button.parentNode.engine;
-      if (!engine) {
-        return;
-      }
-      this.oneOffButtons.handleSearchCommand(event, engine);
-    });
+      this.addEventListener("click", event => {
+        if (event.button == 2) {
+          
+          return;
+        }
+        let button = event.originalTarget;
+        let engine = button.parentNode.engine;
+        if (!engine) {
+          return;
+        }
+        this.oneOffButtons.handleSearchCommand(event, engine);
+      });
 
-    this._bundle = null;
-  }
-
-  static get inheritedAttributes() {
-    return {
-      ".search-panel-current-engine": "showonlysettings",
-      ".searchbar-engine-image": "src",
-    };
-  }
-
-  initialize() {
-    super.initialize();
-    this.initializeAttributeInheritance();
-
-    this._searchOneOffsContainer = this.querySelector(".search-one-offs");
-    this._searchbarEngine = this.querySelector(".search-panel-header");
-    this._searchbarEngineName = this.querySelector(".searchbar-engine-name");
-    this._oneOffButtons = new SearchOneOffs(this._searchOneOffsContainer);
-  }
-
-  get oneOffButtons() {
-    if (!this._oneOffButtons) {
-      this.initialize();
+      this._bundle = null;
     }
-    return this._oneOffButtons;
-  }
 
-  get _markup() {
-    return `
+    static get inheritedAttributes() {
+      return {
+        ".search-panel-current-engine": "showonlysettings",
+        ".searchbar-engine-image": "src",
+      };
+    }
+
+    initialize() {
+      super.initialize();
+      this.initializeAttributeInheritance();
+
+      this._searchOneOffsContainer = this.querySelector(".search-one-offs");
+      this._searchbarEngine = this.querySelector(".search-panel-header");
+      this._searchbarEngineName = this.querySelector(".searchbar-engine-name");
+      this._oneOffButtons = new SearchOneOffs(this._searchOneOffsContainer);
+    }
+
+    get oneOffButtons() {
+      if (!this._oneOffButtons) {
+        this.initialize();
+      }
+      return this._oneOffButtons;
+    }
+
+    get _markup() {
+      return `
       <hbox class="search-panel-header search-panel-current-engine">
         <image class="searchbar-engine-image"></image>
         <label class="searchbar-engine-name" flex="1" crop="end" role="presentation"></label>
@@ -109,133 +113,149 @@ class MozSearchAutocompleteRichlistboxPopup extends MozElements.MozAutocompleteR
       <richlistbox class="autocomplete-richlistbox search-panel-tree" flex="1"></richlistbox>
       <hbox class="search-one-offs"></hbox>
     `;
-  }
-
-  get searchOneOffsContainer() {
-    if (!this._searchOneOffsContainer) {
-      this.initialize();
-    }
-    return this._searchOneOffsContainer;
-  }
-
-  get searchbarEngine() {
-    if (!this._searchbarEngine) {
-      this.initialize();
-    }
-    return this._searchbarEngine;
-  }
-
-  get searchbarEngineName() {
-    if (!this._searchbarEngineName) {
-      this.initialize();
-    }
-    return this._searchbarEngineName;
-  }
-
-  get bundle() {
-    if (!this._bundle) {
-      const kBundleURI = "chrome://browser/locale/search.properties";
-      this._bundle = Services.strings.createBundle(kBundleURI);
-    }
-    return this._bundle;
-  }
-
-  openAutocompletePopup(aInput, aElement) {
-    
-    
-    aInput.popup.hidden = false;
-
-    
-    this._openAutocompletePopup(aInput, aElement);
-  }
-
-  onPopupClick(aEvent) {
-    
-    if (aEvent.button == 2)
-      return;
-
-    let searchBar = BrowserSearch.searchBar;
-    let popupForSearchBar = searchBar && searchBar.textbox == this.mInput;
-    if (popupForSearchBar) {
-      searchBar.telemetrySearchDetails = {
-        index: this.selectedIndex,
-        kind: "mouse",
-      };
     }
 
-    
-    if (aEvent.button == 0 && !aEvent.shiftKey && !aEvent.ctrlKey &&
-      !aEvent.altKey && !aEvent.metaKey) {
-      this.input.controller.handleEnter(true, aEvent);
-      return;
+    get searchOneOffsContainer() {
+      if (!this._searchOneOffsContainer) {
+        this.initialize();
+      }
+      return this._searchOneOffsContainer;
     }
 
-    
-    if (popupForSearchBar) {
-      BrowserUsageTelemetry.recordSearchbarSelectedResultMethod(
-        aEvent,
-        this.selectedIndex
-      );
+    get searchbarEngine() {
+      if (!this._searchbarEngine) {
+        this.initialize();
+      }
+      return this._searchbarEngine;
+    }
+
+    get searchbarEngineName() {
+      if (!this._searchbarEngineName) {
+        this.initialize();
+      }
+      return this._searchbarEngineName;
+    }
+
+    get bundle() {
+      if (!this._bundle) {
+        const kBundleURI = "chrome://browser/locale/search.properties";
+        this._bundle = Services.strings.createBundle(kBundleURI);
+      }
+      return this._bundle;
+    }
+
+    openAutocompletePopup(aInput, aElement) {
+      
+      
+      aInput.popup.hidden = false;
 
       
-      let search = this.input.controller.getValueAt(this.selectedIndex);
+      this._openAutocompletePopup(aInput, aElement);
+    }
 
+    onPopupClick(aEvent) {
       
-      let where = whereToOpenLink(aEvent, false, true);
-      let params = {};
-
-      
-      let modifier = AppConstants.platform == "macosx" ?
-        aEvent.metaKey :
-        aEvent.ctrlKey;
-      if (where == "tab" && (aEvent instanceof MouseEvent) &&
-        (aEvent.button == 1 || modifier))
-        params.inBackground = true;
-
-      
-      if (!(where == "tab" && params.inBackground)) {
-        
-        this.closePopup();
-        this.input.controller.handleEscape();
+      if (aEvent.button == 2) {
+        return;
       }
 
-      searchBar.doSearch(search, where, null, params);
-      if (where == "tab" && params.inBackground)
-        searchBar.focus();
-      else
-        searchBar.value = search;
+      let searchBar = BrowserSearch.searchBar;
+      let popupForSearchBar = searchBar && searchBar.textbox == this.mInput;
+      if (popupForSearchBar) {
+        searchBar.telemetrySearchDetails = {
+          index: this.selectedIndex,
+          kind: "mouse",
+        };
+      }
+
+      
+      if (
+        aEvent.button == 0 &&
+        !aEvent.shiftKey &&
+        !aEvent.ctrlKey &&
+        !aEvent.altKey &&
+        !aEvent.metaKey
+      ) {
+        this.input.controller.handleEnter(true, aEvent);
+        return;
+      }
+
+      
+      if (popupForSearchBar) {
+        BrowserUsageTelemetry.recordSearchbarSelectedResultMethod(
+          aEvent,
+          this.selectedIndex
+        );
+
+        
+        let search = this.input.controller.getValueAt(this.selectedIndex);
+
+        
+        let where = whereToOpenLink(aEvent, false, true);
+        let params = {};
+
+        
+        let modifier =
+          AppConstants.platform == "macosx" ? aEvent.metaKey : aEvent.ctrlKey;
+        if (
+          where == "tab" &&
+          aEvent instanceof MouseEvent &&
+          (aEvent.button == 1 || modifier)
+        ) {
+          params.inBackground = true;
+        }
+
+        
+        if (!(where == "tab" && params.inBackground)) {
+          
+          this.closePopup();
+          this.input.controller.handleEscape();
+        }
+
+        searchBar.doSearch(search, where, null, params);
+        if (where == "tab" && params.inBackground) {
+          searchBar.focus();
+        } else {
+          searchBar.value = search;
+        }
+      }
+    }
+
+    updateHeader() {
+      Services.search.getDefault().then(currentEngine => {
+        let uri = currentEngine.iconURI;
+        if (uri) {
+          this.setAttribute("src", uri.spec);
+        } else {
+          
+          
+          this.removeAttribute("src");
+        }
+
+        let headerText = this.bundle.formatStringFromName("searchHeader", [
+          currentEngine.name,
+        ]);
+        this.searchbarEngineName.setAttribute("value", headerText);
+        this.searchbarEngine.engine = currentEngine;
+      });
+    }
+
+    
+
+
+
+    
+    handleOneOffSearch(event, engine, where, params) {
+      let searchbar = document.getElementById("searchbar");
+      searchbar.handleSearchCommandWhere(event, engine, where, params);
     }
   }
 
-  updateHeader() {
-    Services.search.getDefault().then(currentEngine => {
-      let uri = currentEngine.iconURI;
-      if (uri) {
-        this.setAttribute("src", uri.spec);
-      } else {
-        
-        
-        this.removeAttribute("src");
-      }
-
-      let headerText = this.bundle.formatStringFromName("searchHeader", [currentEngine.name]);
-      this.searchbarEngineName.setAttribute("value", headerText);
-      this.searchbarEngine.engine = currentEngine;
-    });
-  }
-
-  
-
-
-
-  
-  handleOneOffSearch(event, engine, where, params) {
-    let searchbar = document.getElementById("searchbar");
-    searchbar.handleSearchCommandWhere(event, engine, where, params);
-  }
-}
-
-customElements.define("search-autocomplete-richlistbox-popup", MozSearchAutocompleteRichlistboxPopup, {
-  extends: "panel",
-});
+  customElements.define(
+    "search-autocomplete-richlistbox-popup",
+    MozSearchAutocompleteRichlistboxPopup,
+    {
+      extends: "panel",
+    }
+  );
 }

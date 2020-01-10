@@ -24,13 +24,15 @@ const WINDOW_BODY = `data:text/html,
 add_task(async function test_private_popup_window_opens_private_tabs() {
   
   await SpecialPowers.pushPrefEnv({
-    "set": [["security.data_uri.block_toplevel_data_uri_navigations", false]],
+    set: [["security.data_uri.block_toplevel_data_uri_navigations", false]],
   });
   let privWin = await BrowserTestUtils.openNewBrowserWindow({ private: true });
 
   
-  ok(PrivateBrowsingUtils.isWindowPrivate(privWin),
-     "Opened a private browsing window.");
+  ok(
+    PrivateBrowsingUtils.isWindowPrivate(privWin),
+    "Opened a private browsing window."
+  );
 
   
   
@@ -40,12 +42,14 @@ add_task(async function test_private_popup_window_opens_private_tabs() {
 
   
   
-  let openedPromise = BrowserTestUtils.waitForNewWindow({url: POPUP_LINK});
+  let openedPromise = BrowserTestUtils.waitForNewWindow({ url: POPUP_LINK });
 
   await BrowserTestUtils.synthesizeMouseAtCenter("#first", {}, privBrowser);
   let popupWin = await openedPromise;
-  ok(PrivateBrowsingUtils.isWindowPrivate(popupWin),
-     "Popup window was private.");
+  ok(
+    PrivateBrowsingUtils.isWindowPrivate(popupWin),
+    "Popup window was private."
+  );
 
   
   
@@ -55,8 +59,10 @@ add_task(async function test_private_popup_window_opens_private_tabs() {
   let newPrivTab = await newTabPromise;
 
   
-  ok(PrivateBrowsingUtils.isBrowserPrivate(newPrivTab.linkedBrowser),
-     "Newly opened tab should be private.");
+  ok(
+    PrivateBrowsingUtils.isBrowserPrivate(newPrivTab.linkedBrowser),
+    "Newly opened tab should be private."
+  );
 
   
   BrowserTestUtils.removeTab(newPrivTab);

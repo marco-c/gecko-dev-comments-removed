@@ -4,10 +4,12 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [ "TranslationDocument" ];
+var EXPORTED_SYMBOLS = ["TranslationDocument"];
 
-const {Async} = ChromeUtils.import("resource://services-common/async.js");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Async } = ChromeUtils.import("resource://services-common/async.js");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser"]);
 
 
@@ -70,8 +72,7 @@ this.TranslationDocument.prototype = {
     
 
     for (let root of this.roots) {
-      if (root.children.length == 0 &&
-          root.nodeRef.childElementCount == 0) {
+      if (root.children.length == 0 && root.nodeRef.childElementCount == 0) {
         root.isSimpleRoot = true;
       }
     }
@@ -206,7 +207,11 @@ this.TranslationDocument.prototype = {
       
       
       const YIELD_INTERVAL = 100;
-      await Async.yieldingForEach(this.roots, root => root.swapText(target), YIELD_INTERVAL);
+      await Async.yieldingForEach(
+        this.roots,
+        root => root.swapText(target),
+        YIELD_INTERVAL
+      );
     })();
   },
 };
@@ -268,8 +273,13 @@ TranslationItem.prototype = {
         rootType = " (non simple root)";
       }
     }
-    return "[object TranslationItem: <" + this.nodeRef.localName + ">"
-           + rootType + "]";
+    return (
+      "[object TranslationItem: <" +
+      this.nodeRef.localName +
+      ">" +
+      rootType +
+      "]"
+    );
   },
 
   
@@ -310,7 +320,7 @@ TranslationItem.prototype = {
 
   getChildById(id) {
     for (let child of this.children) {
-      if (("n" + child.id) == id) {
+      if ("n" + child.id == id) {
         return child;
       }
     }
@@ -352,12 +362,12 @@ const TranslationItem_NodePlaceholder = {
 
 function generateTranslationHtmlForItem(item, content) {
   let localName = item.isRoot ? "div" : "b";
-  return "<" + localName + " id=n" + item.id + ">" +
-         content +
-         "</" + localName + ">";
+  return (
+    "<" + localName + " id=n" + item.id + ">" + content + "</" + localName + ">"
+  );
 }
 
- 
+
 
 
 
@@ -485,7 +495,7 @@ function parseResultNode(item, node) {
 function swapTextForItem(item, target) {
   
   
-  let visitStack = [ item ];
+  let visitStack = [item];
 
   while (visitStack.length > 0) {
     let curItem = visitStack.shift();
@@ -550,9 +560,11 @@ function swapTextForItem(item, target) {
     
     
     
-    while (curNode &&
-           curNode.nodeType == curNode.TEXT_NODE &&
-           curNode.nodeValue.trim() == "") {
+    while (
+      curNode &&
+      curNode.nodeType == curNode.TEXT_NODE &&
+      curNode.nodeValue.trim() == ""
+    ) {
       curNode = curNode.nextSibling;
     }
 
@@ -567,14 +579,16 @@ function swapTextForItem(item, target) {
 
         let targetNode = targetItem.nodeRef;
 
-            
-            
-        if (curNode != targetNode &&
-            
-            
-            
-            
-            targetNode.parentNode == domNode) {
+        
+        
+        if (
+          curNode != targetNode &&
+          
+          
+          
+          
+          targetNode.parentNode == domNode
+        ) {
           
           
           
@@ -597,9 +611,11 @@ function swapTextForItem(item, target) {
         
         
 
-        while (curNode &&
-               (curNode.nodeType != curNode.TEXT_NODE ||
-                curNode.nodeValue.trim() == "")) {
+        while (
+          curNode &&
+          (curNode.nodeType != curNode.TEXT_NODE ||
+            curNode.nodeValue.trim() == "")
+        ) {
           curNode = curNode.nextSibling;
         }
       } else {
@@ -616,7 +632,9 @@ function swapTextForItem(item, target) {
           
           
           
-          curNode = domNode.appendChild(domNode.ownerDocument.createTextNode(" "));
+          curNode = domNode.appendChild(
+            domNode.ownerDocument.createTextNode(" ")
+          );
         }
 
         
@@ -642,9 +660,11 @@ function swapTextForItem(item, target) {
 
 function getNextSiblingSkippingEmptyTextNodes(startSibling) {
   let item = startSibling.nextSibling;
-  while (item &&
-         item.nodeType == item.TEXT_NODE &&
-         item.nodeValue.trim() == "") {
+  while (
+    item &&
+    item.nodeType == item.TEXT_NODE &&
+    item.nodeValue.trim() == ""
+  ) {
     item = item.nextSibling;
   }
   return item;
@@ -653,8 +673,7 @@ function getNextSiblingSkippingEmptyTextNodes(startSibling) {
 function clearRemainingNonEmptyTextNodesFromElement(startSibling) {
   let item = startSibling;
   while (item) {
-    if (item.nodeType == item.TEXT_NODE &&
-        item.nodeValue != "") {
+    if (item.nodeType == item.TEXT_NODE && item.nodeValue != "") {
       item.nodeValue = "";
     }
     item = item.nextSibling;

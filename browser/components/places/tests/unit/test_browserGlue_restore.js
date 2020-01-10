@@ -35,8 +35,9 @@ add_task(async function test_main() {
   Cc["@mozilla.org/browser/browserglue;1"].getService(Ci.nsISupports);
 
   
-  let hs = Cc["@mozilla.org/browser/nav-history-service;1"].
-           getService(Ci.nsINavHistoryService);
+  let hs = Cc["@mozilla.org/browser/nav-history-service;1"].getService(
+    Ci.nsINavHistoryService
+  );
 
   
   

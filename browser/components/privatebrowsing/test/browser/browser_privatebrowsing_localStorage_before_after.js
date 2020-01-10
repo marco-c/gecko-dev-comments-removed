@@ -11,20 +11,27 @@
 
 
 add_task(async function test() {
-  let prefix = "http://mochi.test:8888/browser/browser/components/privatebrowsing/test/browser/";
+  let prefix =
+    "http://mochi.test:8888/browser/browser/components/privatebrowsing/test/browser/";
 
   
-  let privateWin = await BrowserTestUtils.openNewBrowserWindow({private: true});
-  let privateBrowser = BrowserTestUtils.addTab(privateWin.gBrowser,
-    prefix + "browser_privatebrowsing_localStorage_before_after_page.html").linkedBrowser;
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+  let privateBrowser = BrowserTestUtils.addTab(
+    privateWin.gBrowser,
+    prefix + "browser_privatebrowsing_localStorage_before_after_page.html"
+  ).linkedBrowser;
   await BrowserTestUtils.browserLoaded(privateBrowser);
 
   is(privateBrowser.contentTitle, "1", "localStorage should contain 1 item");
 
   
   let win = await BrowserTestUtils.openNewBrowserWindow();
-  let browser = BrowserTestUtils.addTab(win.gBrowser,
-    prefix + "browser_privatebrowsing_localStorage_before_after_page2.html").linkedBrowser;
+  let browser = BrowserTestUtils.addTab(
+    win.gBrowser,
+    prefix + "browser_privatebrowsing_localStorage_before_after_page2.html"
+  ).linkedBrowser;
   await BrowserTestUtils.browserLoaded(browser);
 
   is(browser.contentTitle, "null|0", "localStorage should contain 0 items");

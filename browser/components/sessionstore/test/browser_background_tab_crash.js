@@ -36,25 +36,29 @@ async function setupBackgroundTabs(testFn) {
   await BrowserTestUtils.browserLoaded(initialBrowser);
 
   
-  let tab1 =
-    await BrowserTestUtils.openNewForegroundTab(gBrowser, REMOTE_PAGE);
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, REMOTE_PAGE);
   let remoteBrowser1 = tab1.linkedBrowser;
   await TabStateFlusher.flush(remoteBrowser1);
 
-  let tab2 =
-    await BrowserTestUtils.openNewForegroundTab(gBrowser, REMOTE_PAGE);
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, REMOTE_PAGE);
   let remoteBrowser2 = tab2.linkedBrowser;
   await TabStateFlusher.flush(remoteBrowser2);
 
   
   
-  Assert.ok(remoteBrowser1.isRemoteBrowser,
-            "Browser should be remote in order to crash.");
-  Assert.ok(remoteBrowser2.isRemoteBrowser,
-            "Browser should be remote in order to crash.");
-  Assert.equal(remoteBrowser1.frameLoader.childID,
-               remoteBrowser2.frameLoader.childID,
-               "Both remote browsers should share the same content process.");
+  Assert.ok(
+    remoteBrowser1.isRemoteBrowser,
+    "Browser should be remote in order to crash."
+  );
+  Assert.ok(
+    remoteBrowser2.isRemoteBrowser,
+    "Browser should be remote in order to crash."
+  );
+  Assert.equal(
+    remoteBrowser1.frameLoader.childID,
+    remoteBrowser2.frameLoader.childID,
+    "Both remote browsers should share the same content process."
+  );
 
   
   await BrowserTestUtils.switchTab(gBrowser, initialTab);
@@ -81,11 +85,11 @@ async function crashBackgroundTabs(tabs) {
     Assert.ok(tab.linkedBrowser.isRemoteBrowser, "tab is remote");
   }
 
-  let remotenessChangePromises = tabs.map((t) => {
+  let remotenessChangePromises = tabs.map(t => {
     return BrowserTestUtils.waitForEvent(t, "TabRemotenessChange");
   });
 
-  let tabsRevived = tabs.map((t) => {
+  let tabsRevived = tabs.map(t => {
     return promiseTabRestoring(t);
   });
 
@@ -105,7 +109,7 @@ async function crashBackgroundTabs(tabs) {
 add_task(async function setup() {
   
   
-  await SpecialPowers.pushPrefEnv({ set: [[ "dom.ipc.processCount", 1 ]] });
+  await SpecialPowers.pushPrefEnv({ set: [["dom.ipc.processCount", 1]] });
 
   
   
@@ -125,10 +129,13 @@ add_task(async function test_background_crash_simple() {
     await crashBackgroundTabs([tab1, tab2]);
 
     
-    let tabCrashedPagePromise =
-      BrowserTestUtils.waitForContentEvent(tab1.linkedBrowser,
-                                           "AboutTabCrashedReady",
-                                           false, null, true);
+    let tabCrashedPagePromise = BrowserTestUtils.waitForContentEvent(
+      tab1.linkedBrowser,
+      "AboutTabCrashedReady",
+      false,
+      null,
+      true
+    );
     await BrowserTestUtils.switchTab(gBrowser, tab1);
     await tabCrashedPagePromise;
 
@@ -186,10 +193,13 @@ add_task(async function test_background_crash_multiple() {
     await crashBackgroundTabs([tab1, tab2]);
 
     
-    let tabCrashedPagePromise =
-      BrowserTestUtils.waitForContentEvent(tab1.linkedBrowser,
-                                           "AboutTabCrashedReady",
-                                           false, null, true);
+    let tabCrashedPagePromise = BrowserTestUtils.waitForContentEvent(
+      tab1.linkedBrowser,
+      "AboutTabCrashedReady",
+      false,
+      null,
+      true
+    );
     await BrowserTestUtils.switchTab(gBrowser, tab1);
     await tabCrashedPagePromise;
 
@@ -205,10 +215,13 @@ add_task(async function test_background_crash_multiple() {
       await tabRestored;
 
       
-      tabCrashedPagePromise =
-        BrowserTestUtils.waitForContentEvent(tab4.linkedBrowser,
-                                             "AboutTabCrashedReady",
-                                             false, null, true);
+      tabCrashedPagePromise = BrowserTestUtils.waitForContentEvent(
+        tab4.linkedBrowser,
+        "AboutTabCrashedReady",
+        false,
+        null,
+        true
+      );
       await BrowserTestUtils.switchTab(gBrowser, tab4);
       await tabCrashedPagePromise;
 

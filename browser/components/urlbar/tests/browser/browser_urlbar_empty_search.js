@@ -26,7 +26,7 @@ add_task(async function test_empty() {
   
   
   let results = [{}]; 
-  for (let i = 0; i < await UrlbarTestUtils.getResultCount(window); ++i) {
+  for (let i = 0; i < (await UrlbarTestUtils.getResultCount(window)); ++i) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     
     delete result.element;
@@ -37,16 +37,17 @@ add_task(async function test_empty() {
     info(`Test searching for "${str}"`);
     await promiseAutocompleteResultPopup(str, window, true);
     
-    Assert.ok((await UrlbarTestUtils.getDetailsOfResultAt(window, 0)).heuristic,
-              "The first result is heuristic");
+    Assert.ok(
+      (await UrlbarTestUtils.getDetailsOfResultAt(window, 0)).heuristic,
+      "The first result is heuristic"
+    );
     let length = await UrlbarTestUtils.getResultCount(window);
     Assert.equal(length, results.length, "Comparing results count");
     for (let i = 1; i < length; ++i) {
       let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
       
       delete result.element;
-      Assert.deepEqual(result, results[i],
-                       `Comparing result at index ${i}`);
+      Assert.deepEqual(result, results[i], `Comparing result at index ${i}`);
     }
   }
   await UrlbarTestUtils.promisePopupClose(window);

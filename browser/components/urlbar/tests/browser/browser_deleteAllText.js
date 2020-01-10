@@ -19,8 +19,9 @@ add_task(async function test() {
   await checkResults();
 
   
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Backspace"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Backspace")
+  );
 
   
   
@@ -33,16 +34,18 @@ add_task(async function test() {
 
   
   for (let i = 0; i < 2; i++) {
-    await UrlbarTestUtils.promisePopupClose(window,
-      () => EventUtils.synthesizeKey("KEY_Backspace"));
+    await UrlbarTestUtils.promisePopupClose(window, () =>
+      EventUtils.synthesizeKey("KEY_Backspace")
+    );
     EventUtils.synthesizeKey("x");
     await UrlbarTestUtils.promiseSearchComplete(window);
     await checkResults();
   }
 
   
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Backspace"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Backspace")
+  );
 });
 
 async function checkResults() {

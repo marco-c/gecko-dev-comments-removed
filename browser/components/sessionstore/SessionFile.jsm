@@ -25,13 +25,21 @@ var EXPORTED_SYMBOLS = ["SessionFile"];
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const {AsyncShutdown} = ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { AsyncShutdown } = ChromeUtils.import(
+  "resource://gre/modules/AsyncShutdown.jsm"
+);
 
-XPCOMUtils.defineLazyServiceGetter(this, "Telemetry",
-  "@mozilla.org/base/telemetry;1", "nsITelemetry");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "Telemetry",
+  "@mozilla.org/base/telemetry;1",
+  "nsITelemetry"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   RunState: "resource:///modules/sessionstore/RunState.jsm",
@@ -40,13 +48,18 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const PREF_UPGRADE_BACKUP = "browser.sessionstore.upgradeBackup.latestBuildID";
-const PREF_MAX_UPGRADE_BACKUPS = "browser.sessionstore.upgradeBackup.maxUpgradeBackups";
+const PREF_MAX_UPGRADE_BACKUPS =
+  "browser.sessionstore.upgradeBackup.maxUpgradeBackups";
 
 const PREF_MAX_SERIALIZE_BACK = "browser.sessionstore.max_serialize_back";
 const PREF_MAX_SERIALIZE_FWD = "browser.sessionstore.max_serialize_forward";
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "kMaxWriteFailures",
-  "browser.sessionstore.max_write_failures", 5);
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "kMaxWriteFailures",
+  "browser.sessionstore.max_write_failures",
+  5
+);
 
 var SessionFile = {
   
@@ -94,7 +107,11 @@ var SessionFileInternal = {
 
     
     
-    cleanBackup: Path.join(profileDir, "sessionstore-backups", "previous.jsonlz4"),
+    cleanBackup: Path.join(
+      profileDir,
+      "sessionstore-backups",
+      "previous.jsonlz4"
+    ),
 
     
     backups: Path.join(profileDir, "sessionstore-backups"),
@@ -113,13 +130,21 @@ var SessionFileInternal = {
     
     
     
-    recoveryBackup: Path.join(profileDir, "sessionstore-backups", "recovery.baklz4"),
+    recoveryBackup: Path.join(
+      profileDir,
+      "sessionstore-backups",
+      "recovery.baklz4"
+    ),
 
     
     
     
     
-    upgradeBackupPrefix: Path.join(profileDir, "sessionstore-backups", "upgrade.jsonlz4-"),
+    upgradeBackupPrefix: Path.join(
+      profileDir,
+      "sessionstore-backups",
+      "upgrade.jsonlz4-"
+    ),
 
     
     
@@ -155,10 +180,7 @@ var SessionFileInternal = {
       
       
       
-      let order = ["clean",
-                   "recovery",
-                   "recoveryBackup",
-                   "cleanBackup"];
+      let order = ["clean", "recovery", "recoveryBackup", "cleanBackup"];
       if (SessionFileInternal.latestUpgradeBackupID) {
         
         order.push("upgradeBackup");
@@ -221,11 +243,11 @@ var SessionFileInternal = {
         let path;
         let startMs = Date.now();
 
-        let options = {encoding: "utf-8"};
+        let options = { encoding: "utf-8" };
         if (useOldExtension) {
           path = this.Paths[key]
-                     .replace("jsonlz4", "js")
-                     .replace("baklz4", "bak");
+            .replace("jsonlz4", "js")
+            .replace("baklz4", "bak");
         } else {
           path = this.Paths[key];
           options.compression = "lz4";
@@ -233,10 +255,22 @@ var SessionFileInternal = {
         let source = await OS.File.read(path, options);
         let parsed = JSON.parse(source);
 
-        if (!SessionStore.isFormatVersionCompatible(parsed.version || ["sessionrestore", 0] )) {
+        if (
+          !SessionStore.isFormatVersionCompatible(
+            parsed.version || [
+              "sessionrestore",
+              0,
+            ] 
+          )
+        ) {
           
-          Cu.reportError("Cannot extract data from Session Restore file " + path +
-            ". Wrong format/version: " + JSON.stringify(parsed.version) + ".");
+          Cu.reportError(
+            "Cannot extract data from Session Restore file " +
+              path +
+              ". Wrong format/version: " +
+              JSON.stringify(parsed.version) +
+              "."
+          );
           continue;
         }
         result = {
@@ -245,39 +279,46 @@ var SessionFileInternal = {
           parsed,
           useOldExtension,
         };
-        Telemetry.getHistogramById("FX_SESSION_RESTORE_CORRUPT_FILE").
-          add(false);
-        Telemetry.getHistogramById("FX_SESSION_RESTORE_READ_FILE_MS").
-          add(Date.now() - startMs);
+        Telemetry.getHistogramById("FX_SESSION_RESTORE_CORRUPT_FILE").add(
+          false
+        );
+        Telemetry.getHistogramById("FX_SESSION_RESTORE_READ_FILE_MS").add(
+          Date.now() - startMs
+        );
         break;
       } catch (ex) {
-          if (ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
-            exists = false;
-          } else if (ex instanceof OS.File.Error) {
-            
-            
-            console.error("Could not read session file ", ex, ex.stack);
-            corrupted = true;
-          } else if (ex instanceof SyntaxError) {
-            console.error("Corrupt session file (invalid JSON found) ", ex, ex.stack);
-            
-            corrupted = true;
-          }
+        if (ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
+          exists = false;
+        } else if (ex instanceof OS.File.Error) {
+          
+          
+          console.error("Could not read session file ", ex, ex.stack);
+          corrupted = true;
+        } else if (ex instanceof SyntaxError) {
+          console.error(
+            "Corrupt session file (invalid JSON found) ",
+            ex,
+            ex.stack
+          );
+          
+          corrupted = true;
+        }
       } finally {
         if (exists) {
           noFilesFound = false;
-          Telemetry.getHistogramById("FX_SESSION_RESTORE_CORRUPT_FILE").
-            add(corrupted);
+          Telemetry.getHistogramById("FX_SESSION_RESTORE_CORRUPT_FILE").add(
+            corrupted
+          );
         }
       }
     }
-    return {result, noFilesFound};
+    return { result, noFilesFound };
   },
 
   
   async read() {
     
-    let {result, noFilesFound} = await this._readInternal(false);
+    let { result, noFilesFound } = await this._readInternal(false);
     if (!result) {
       
       
@@ -287,8 +328,9 @@ var SessionFileInternal = {
 
     
     let allCorrupt = !noFilesFound && !result;
-    Telemetry.getHistogramById("FX_SESSION_RESTORE_ALL_FILES_CORRUPT").
-      add(allCorrupt);
+    Telemetry.getHistogramById("FX_SESSION_RESTORE_ALL_FILES_CORRUPT").add(
+      allCorrupt
+    );
 
     if (!result) {
       
@@ -330,18 +372,36 @@ var SessionFileInternal = {
       }
 
       if (!this._readOrigin) {
-        throw new Error("_initWorker called too early! Please read the session file from disk first.");
+        throw new Error(
+          "_initWorker called too early! Please read the session file from disk first."
+        );
       }
 
       this._initializationStarted = true;
-      SessionWorker.post("init", [this._readOrigin, this._usingOldExtension, this.Paths, {
-        maxUpgradeBackups: Services.prefs.getIntPref(PREF_MAX_UPGRADE_BACKUPS, 3),
-        maxSerializeBack: Services.prefs.getIntPref(PREF_MAX_SERIALIZE_BACK, 10),
-        maxSerializeForward: Services.prefs.getIntPref(PREF_MAX_SERIALIZE_FWD, -1),
-      }]).catch(err => {
-        
-        Promise.reject(err);
-      }).then(resolve);
+      SessionWorker.post("init", [
+        this._readOrigin,
+        this._usingOldExtension,
+        this.Paths,
+        {
+          maxUpgradeBackups: Services.prefs.getIntPref(
+            PREF_MAX_UPGRADE_BACKUPS,
+            3
+          ),
+          maxSerializeBack: Services.prefs.getIntPref(
+            PREF_MAX_SERIALIZE_BACK,
+            10
+          ),
+          maxSerializeForward: Services.prefs.getIntPref(
+            PREF_MAX_SERIALIZE_FWD,
+            -1
+          ),
+        },
+      ])
+        .catch(err => {
+          
+          Promise.reject(err);
+        })
+        .then(resolve);
     });
   },
 
@@ -384,29 +444,34 @@ var SessionFileInternal = {
     let performShutdownCleanup = isFinalWrite && !SessionStore.willAutoRestore;
 
     this._attempts++;
-    let options = {isFinalWrite, performShutdownCleanup};
+    let options = { isFinalWrite, performShutdownCleanup };
     let promise = this._postToWorker("write", [aData, options]);
 
     
-    promise = promise.then(msg => {
-      
-      this._recordTelemetry(msg.telemetry);
-      this._successes++;
-      if (msg.result.upgradeBackup) {
+    promise = promise.then(
+      msg => {
+        
+        this._recordTelemetry(msg.telemetry);
+        this._successes++;
+        if (msg.result.upgradeBackup) {
+          
+          
+          Services.prefs.setCharPref(
+            PREF_UPGRADE_BACKUP,
+            Services.appinfo.platformBuildID
+          );
+        }
+      },
+      err => {
+        
+        console.error("Could not write session state file ", err, err.stack);
+        this._failures++;
+        this._workerHealth.failures++;
         
         
-        Services.prefs.setCharPref(PREF_UPGRADE_BACKUP,
-          Services.appinfo.platformBuildID);
+        
       }
-    }, err => {
-      
-      console.error("Could not write session state file ", err, err.stack);
-      this._failures++;
-      this._workerHealth.failures++;
-      
-      
-      
-    });
+    );
 
     
     
@@ -420,7 +485,8 @@ var SessionFileInternal = {
           successes: this._successes,
           failures: this._failures,
         }),
-      });
+      }
+    );
 
     
     
@@ -430,7 +496,10 @@ var SessionFileInternal = {
       AsyncShutdown.profileBeforeChange.removeBlocker(promise);
 
       if (isFinalWrite) {
-        Services.obs.notifyObservers(null, "sessionstore-final-state-write-complete");
+        Services.obs.notifyObservers(
+          null,
+          "sessionstore-final-state-write-complete"
+        );
       } else {
         this._checkWorkerHealth();
       }

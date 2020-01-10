@@ -3,7 +3,9 @@
 
 "use strict";
 
-var {SitePermissions} = ChromeUtils.import("resource:///modules/SitePermissions.jsm");
+var { SitePermissions } = ChromeUtils.import(
+  "resource:///modules/SitePermissions.jsm"
+);
 
 async function testClearData(clearSiteData, clearCache) {
   let quotaURI = Services.io.newURI(TEST_QUOTA_USAGE_ORIGIN);
@@ -19,7 +21,12 @@ async function testClearData(clearSiteData, clearCache) {
   
   BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_QUOTA_USAGE_URL, false);
   await BrowserTestUtils.waitForContentEvent(
-    gBrowser.selectedBrowser, "test-indexedDB-done", false, null, true);
+    gBrowser.selectedBrowser,
+    "test-indexedDB-done",
+    false,
+    null,
+    true
+  );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
   
@@ -30,21 +37,29 @@ async function testClearData(clearSiteData, clearCache) {
 
   
   let cacheUsage = await SiteDataManager.getCacheSize();
-  let quotaUsage = await SiteDataTestUtils.getQuotaUsage(TEST_QUOTA_USAGE_ORIGIN);
+  let quotaUsage = await SiteDataTestUtils.getQuotaUsage(
+    TEST_QUOTA_USAGE_ORIGIN
+  );
   let totalUsage = await SiteDataManager.getTotalUsage();
   Assert.greater(cacheUsage, 0, "The cache usage should not be 0");
   Assert.greater(quotaUsage, 0, "The quota usage should not be 0");
   Assert.greater(totalUsage, 0, "The total usage should not be 0");
 
-  let initialSizeLabelValue = await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
-    let sizeLabel = content.document.getElementById("totalSiteDataSize");
-    return sizeLabel.textContent;
-  });
+  let initialSizeLabelValue = await ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    null,
+    async function() {
+      let sizeLabel = content.document.getElementById("totalSiteDataSize");
+      return sizeLabel.textContent;
+    }
+  );
 
   let doc = gBrowser.selectedBrowser.contentDocument;
   let clearSiteDataButton = doc.getElementById("clearSiteDataButton");
 
-  let dialogOpened = promiseLoadSubDialog("chrome://browser/content/preferences/clearSiteData.xul");
+  let dialogOpened = promiseLoadSubDialog(
+    "chrome://browser/content/preferences/clearSiteData.xul"
+  );
   clearSiteDataButton.doCommand();
   let dialogWin = await dialogOpened;
 
@@ -55,15 +70,25 @@ async function testClearData(clearSiteData, clearCache) {
   
   let [, convertedCacheUnit] = DownloadUtils.convertByteUnits(cacheUsage);
 
-  let clearSiteDataCheckbox = dialogWin.document.getElementById("clearSiteData");
+  let clearSiteDataCheckbox = dialogWin.document.getElementById(
+    "clearSiteData"
+  );
   let clearCacheCheckbox = dialogWin.document.getElementById("clearCache");
   
   
   await Promise.all([
     TestUtils.waitForCondition(
-      () => clearSiteDataCheckbox.label && clearSiteDataCheckbox.label.includes(convertedTotalUsage), "Should show the quota usage"),
+      () =>
+        clearSiteDataCheckbox.label &&
+        clearSiteDataCheckbox.label.includes(convertedTotalUsage),
+      "Should show the quota usage"
+    ),
     TestUtils.waitForCondition(
-      () => clearCacheCheckbox.label && clearCacheCheckbox.label.includes(convertedCacheUnit), "Should show the cache usage"),
+      () =>
+        clearCacheCheckbox.label &&
+        clearCacheCheckbox.label.includes(convertedCacheUnit),
+      "Should show the cache usage"
+    ),
   ]);
 
   
@@ -89,7 +114,10 @@ async function testClearData(clearSiteData, clearCache) {
     
     clearCacheCheckbox.doCommand();
     
-    await TestUtils.waitForCondition(() => clearButton.disabled, "Clear button should be disabled");
+    await TestUtils.waitForCondition(
+      () => clearButton.disabled,
+      "Clear button should be disabled"
+    );
     let cancelButton = dialogWin.document.getElementById("cancelButton");
     
     cancelButton.click();
@@ -112,7 +140,11 @@ async function testClearData(clearSiteData, clearCache) {
       return usage == 0;
     }, "The cache usage should be removed");
   } else {
-    Assert.greater(await SiteDataManager.getCacheSize(), 0, "The cache usage should not be 0");
+    Assert.greater(
+      await SiteDataManager.getCacheSize(),
+      0,
+      "The cache usage should not be 0"
+    );
   }
 
   if (clearSiteData) {
@@ -133,16 +165,28 @@ async function testClearData(clearSiteData, clearCache) {
 
   if (clearCache || clearSiteData) {
     
-    await ContentTask.spawn(gBrowser.selectedBrowser, {initialSizeLabelValue}, async function(opts) {
-      let sizeLabel = content.document.getElementById("totalSiteDataSize");
-      await ContentTaskUtils.waitForCondition(
-        () => sizeLabel.textContent != opts.initialSizeLabelValue, "Site data size label should have updated.");
-    });
+    await ContentTask.spawn(
+      gBrowser.selectedBrowser,
+      { initialSizeLabelValue },
+      async function(opts) {
+        let sizeLabel = content.document.getElementById("totalSiteDataSize");
+        await ContentTaskUtils.waitForCondition(
+          () => sizeLabel.textContent != opts.initialSizeLabelValue,
+          "Site data size label should have updated."
+        );
+      }
+    );
   }
 
-  let desiredPermissionState = clearSiteData ? SitePermissions.UNKNOWN : SitePermissions.ALLOW;
+  let desiredPermissionState = clearSiteData
+    ? SitePermissions.UNKNOWN
+    : SitePermissions.ALLOW;
   let permission = SitePermissions.get(quotaURI, "persistent-storage");
-  is(permission.state, desiredPermissionState, "Should have the correct permission state.");
+  is(
+    permission.state,
+    desiredPermissionState,
+    "Should have the correct permission state."
+  );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   await SiteDataManager.removeAll();

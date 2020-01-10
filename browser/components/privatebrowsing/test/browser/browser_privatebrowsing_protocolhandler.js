@@ -8,24 +8,36 @@
 
 add_task(async function test() {
   let notificationValue = "Protocol Registration: web+testprotocol";
-  let testURI = "https://example.com/browser/" +
+  let testURI =
+    "https://example.com/browser/" +
     "browser/components/privatebrowsing/test/browser/browser_privatebrowsing_protocolhandler_page.html";
 
   let doTest = async function(aIsPrivateMode, aWindow) {
-    let tab = aWindow.gBrowser.selectedTab = BrowserTestUtils.addTab(aWindow.gBrowser, testURI);
+    let tab = (aWindow.gBrowser.selectedTab = BrowserTestUtils.addTab(
+      aWindow.gBrowser,
+      testURI
+    ));
     await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
     let promiseFinished = PromiseUtils.defer();
     setTimeout(function() {
       let notificationBox = aWindow.gBrowser.getNotificationBox();
-      let notification = notificationBox.getNotificationWithValue(notificationValue);
+      let notification = notificationBox.getNotificationWithValue(
+        notificationValue
+      );
 
       if (aIsPrivateMode) {
         
-        ok(!notification, "Notification box should not be displayed inside of private browsing mode");
+        ok(
+          !notification,
+          "Notification box should not be displayed inside of private browsing mode"
+        );
       } else {
         
-        ok(notification, "Notification box should be displaying outside of private browsing mode");
+        ok(
+          notification,
+          "Notification box should be displaying outside of private browsing mode"
+        );
       }
 
       promiseFinished.resolve();
@@ -39,7 +51,9 @@ add_task(async function test() {
   await doTest(false, win);
 
   
-  let privateWin = await BrowserTestUtils.openNewBrowserWindow({private: true});
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
   await doTest(true, privateWin);
 
   

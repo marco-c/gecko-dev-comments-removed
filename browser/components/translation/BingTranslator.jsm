@@ -4,19 +4,23 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [ "BingTranslator" ];
+var EXPORTED_SYMBOLS = ["BingTranslator"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
-const {Async} = ChromeUtils.import("resource://services-common/async.js");
-const {httpRequest} = ChromeUtils.import("resource://gre/modules/Http.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
+const { Async } = ChromeUtils.import("resource://services-common/async.js");
+const { httpRequest } = ChromeUtils.import("resource://gre/modules/Http.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
 
 const MAX_REQUEST_DATA = 5000; 
-                               
+
 
 
 
@@ -39,7 +43,11 @@ const MAX_REQUESTS = 15;
 
 
 
-var BingTranslator = function(translationDocument, sourceLanguage, targetLanguage) {
+var BingTranslator = function(
+  translationDocument,
+  sourceLanguage,
+  targetLanguage
+) {
   this.translationDocument = translationDocument;
   this.sourceLanguage = sourceLanguage;
   this.targetLanguage = targetLanguage;
@@ -76,12 +84,15 @@ this.BingTranslator.prototype = {
 
         
         
-        let bingRequest = new BingRequest(request.data,
-                                          this.sourceLanguage,
-                                          this.targetLanguage);
+        let bingRequest = new BingRequest(
+          request.data,
+          this.sourceLanguage,
+          this.targetLanguage
+        );
         this._pendingRequests++;
-        bingRequest.fireRequest().then(this._chunkCompleted.bind(this),
-                                       this._chunkFailed.bind(this));
+        bingRequest
+          .fireRequest()
+          .then(this._chunkCompleted.bind(this), this._chunkFailed.bind(this));
 
         currentIndex = request.lastIndex;
         if (request.finished) {
@@ -131,12 +142,18 @@ this.BingTranslator.prototype = {
 
 
   _chunkFailed(aError) {
-    if (aError instanceof XMLHttpRequest &&
-        [400, 401].includes(aError.status)) {
+    if (
+      aError instanceof XMLHttpRequest &&
+      [400, 401].includes(aError.status)
+    ) {
       let body = aError.responseText;
-      if (body && body.includes("TranslateApiException") &&
-          (body.includes("balance") || body.includes("active state")))
+      if (
+        body &&
+        body.includes("TranslateApiException") &&
+        (body.includes("balance") || body.includes("active state"))
+      ) {
         this._serviceUnavailable = true;
+      }
     }
 
     this._checkIfFinished();
@@ -206,7 +223,9 @@ this.BingTranslator.prototype = {
         }
 
         root.parseResult(result);
-      } catch (e) { error = true; }
+      } catch (e) {
+        error = true;
+      }
     }
 
     return !error;
@@ -236,8 +255,7 @@ this.BingTranslator.prototype = {
       let newCurSize = currentDataSize + text.length;
       let newChunks = currentChunks + 1;
 
-      if (newCurSize > MAX_REQUEST_DATA ||
-          newChunks > MAX_REQUEST_CHUNKS) {
+      if (newCurSize > MAX_REQUEST_DATA || newChunks > MAX_REQUEST_CHUNKS) {
         
         
         
@@ -290,8 +308,10 @@ BingRequest.prototype = {
       let auth = "Bearer " + token;
 
       
-      let url = getUrlParam("https://api.microsofttranslator.com/v2/Http.svc/TranslateArray",
-                            "browser.translation.bing.translateArrayURL");
+      let url = getUrlParam(
+        "https://api.microsofttranslator.com/v2/Http.svc/TranslateArray",
+        "browser.translation.bing.translateArrayURL"
+      );
 
       
       let headers = [["Content-type", "text/xml"], ["Authorization", auth]];
@@ -299,21 +319,26 @@ BingRequest.prototype = {
       
       let requestString =
         "<TranslateArrayRequest>" +
-          "<AppId/>" +
-          "<From>" + this.sourceLanguage + "</From>" +
-          "<Options>" +
-            '<ContentType xmlns="http://schemas.datacontract.org/2004/07/Microsoft.MT.Web.Service.V2">text/html</ContentType>' +
-            '<ReservedFlags xmlns="http://schemas.datacontract.org/2004/07/Microsoft.MT.Web.Service.V2" />' +
-          "</Options>" +
-          '<Texts xmlns:s="http://schemas.microsoft.com/2003/10/Serialization/Arrays">';
+        "<AppId/>" +
+        "<From>" +
+        this.sourceLanguage +
+        "</From>" +
+        "<Options>" +
+        '<ContentType xmlns="http://schemas.datacontract.org/2004/07/Microsoft.MT.Web.Service.V2">text/html</ContentType>' +
+        '<ReservedFlags xmlns="http://schemas.datacontract.org/2004/07/Microsoft.MT.Web.Service.V2" />' +
+        "</Options>" +
+        '<Texts xmlns:s="http://schemas.microsoft.com/2003/10/Serialization/Arrays">';
 
       for (let [, text] of this.translationData) {
         requestString += "<s:string>" + text + "</s:string>";
         this.characterCount += text.length;
       }
 
-      requestString += "</Texts>" +
-          "<To>" + this.targetLanguage + "</To>" +
+      requestString +=
+        "</Texts>" +
+        "<To>" +
+        this.targetLanguage +
+        "</To>" +
         "</TranslateArrayRequest>";
 
       
@@ -377,15 +402,27 @@ var BingTokenManager = {
 
 
   _getNewToken() {
-    let url = getUrlParam("https://datamarket.accesscontrol.windows.net/v2/OAuth2-13",
-                          "browser.translation.bing.authURL");
+    let url = getUrlParam(
+      "https://datamarket.accesscontrol.windows.net/v2/OAuth2-13",
+      "browser.translation.bing.authURL"
+    );
     let params = [
       ["grant_type", "client_credentials"],
       ["scope", "http://api.microsofttranslator.com"],
-      ["client_id",
-      getUrlParam("%BING_API_CLIENTID%", "browser.translation.bing.clientIdOverride")],
-      ["client_secret",
-      getUrlParam("%BING_API_KEY%", "browser.translation.bing.apiKeyOverride")],
+      [
+        "client_id",
+        getUrlParam(
+          "%BING_API_CLIENTID%",
+          "browser.translation.bing.clientIdOverride"
+        ),
+      ],
+      [
+        "client_secret",
+        getUrlParam(
+          "%BING_API_KEY%",
+          "browser.translation.bing.apiKeyOverride"
+        ),
+      ],
     ];
 
     this._pendingRequest = new Promise((resolve, reject) => {
@@ -403,7 +440,9 @@ var BingTokenManager = {
             let token = json.access_token;
             let expires_in = json.expires_in;
             BingTokenManager._currentToken = token;
-            BingTokenManager._currentExpiryTime = new Date(Date.now() + expires_in * 1000);
+            BingTokenManager._currentExpiryTime = new Date(
+              Date.now() + expires_in * 1000
+            );
             resolve(token);
           } catch (e) {
             reject(e);
@@ -426,12 +465,13 @@ var BingTokenManager = {
 
 
 function escapeXML(aStr) {
-  return aStr.toString()
-             .replace(/&/g, "&amp;")
-             .replace(/\"/g, "&quot;")
-             .replace(/\'/g, "&apos;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;");
+  return aStr
+    .toString()
+    .replace(/&/g, "&amp;")
+    .replace(/\"/g, "&quot;")
+    .replace(/\'/g, "&apos;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 
@@ -439,8 +479,9 @@ function escapeXML(aStr) {
 
 
 function getUrlParam(paramValue, prefName) {
-  if (Services.prefs.getPrefType(prefName))
+  if (Services.prefs.getPrefType(prefName)) {
     paramValue = Services.prefs.getCharPref(prefName);
+  }
   paramValue = Services.urlFormatter.formatURL(paramValue);
   return paramValue;
 }

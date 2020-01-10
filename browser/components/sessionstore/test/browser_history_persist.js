@@ -26,21 +26,31 @@ add_task(async function check_history_not_persisted() {
   await promiseTabState(tab, state);
 
   await ContentTask.spawn(browser, null, function() {
-    let sessionHistory = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsISHistory);
+    let sessionHistory = docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsISHistory);
 
     is(sessionHistory.count, 1, "Should be a single history entry");
-    is(sessionHistory.getEntryAtIndex(0).URI.spec, "about:blank", "Should be the right URL");
+    is(
+      sessionHistory.getEntryAtIndex(0).URI.spec,
+      "about:blank",
+      "Should be the right URL"
+    );
   });
 
   
   BrowserTestUtils.loadURI(browser, "about:robots");
   await promiseBrowserLoaded(browser);
   await ContentTask.spawn(browser, null, function() {
-    let sessionHistory = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsISHistory);
+    let sessionHistory = docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsISHistory);
     is(sessionHistory.count, 1, "Should be a single history entry");
-    is(sessionHistory.getEntryAtIndex(0).URI.spec, "about:robots", "Should be the right URL");
+    is(
+      sessionHistory.getEntryAtIndex(0).URI.spec,
+      "about:robots",
+      "Should be the right URL"
+    );
   });
 
   
@@ -69,22 +79,36 @@ add_task(async function check_history_default_persisted() {
   browser = tab.linkedBrowser;
   await promiseTabState(tab, state);
   await ContentTask.spawn(browser, null, function() {
-    let sessionHistory = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsISHistory);
+    let sessionHistory = docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsISHistory);
 
     is(sessionHistory.count, 1, "Should be a single history entry");
-    is(sessionHistory.getEntryAtIndex(0).URI.spec, "about:blank", "Should be the right URL");
+    is(
+      sessionHistory.getEntryAtIndex(0).URI.spec,
+      "about:blank",
+      "Should be the right URL"
+    );
   });
 
   
   BrowserTestUtils.loadURI(browser, "about:robots");
   await promiseBrowserLoaded(browser);
   await ContentTask.spawn(browser, null, function() {
-    let sessionHistory = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsISHistory);
+    let sessionHistory = docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsISHistory);
     is(sessionHistory.count, 2, "Should be two history entries");
-    is(sessionHistory.getEntryAtIndex(0).URI.spec, "about:blank", "Should be the right URL");
-    is(sessionHistory.getEntryAtIndex(1).URI.spec, "about:robots", "Should be the right URL");
+    is(
+      sessionHistory.getEntryAtIndex(0).URI.spec,
+      "about:blank",
+      "Should be the right URL"
+    );
+    is(
+      sessionHistory.getEntryAtIndex(1).URI.spec,
+      "about:robots",
+      "Should be the right URL"
+    );
   });
 
   

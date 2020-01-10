@@ -2,8 +2,9 @@
 
 
 
-const TEST_PAGE = "http://mochi.test:8888/browser/browser/components/" +
-                  "originattributes/test/browser/file_firstPartyBasic.html";
+const TEST_PAGE =
+  "http://mochi.test:8888/browser/browser/components/" +
+  "originattributes/test/browser/file_firstPartyBasic.html";
 
 
 const key = Math.random().toString();

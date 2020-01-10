@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 
@@ -30,22 +29,22 @@ const POLICIES_TESTS = [
 
 
 
-   
+  
   {
-    policies: { "OfferToSaveLogins": false },
+    policies: { OfferToSaveLogins: false },
     lockedPrefs: { "signon.rememberSignons": false },
   },
   {
-    policies: { "OfferToSaveLogins": true },
+    policies: { OfferToSaveLogins: true },
     lockedPrefs: { "signon.rememberSignons": true },
   },
 
   
   {
     policies: {
-      "DisableSecurityBypass": {
-        "InvalidCertificate": true,
-        "SafeBrowsing": true,
+      DisableSecurityBypass: {
+        InvalidCertificate: true,
+        SafeBrowsing: true,
       },
     },
     lockedPrefs: {
@@ -56,21 +55,21 @@ const POLICIES_TESTS = [
 
   
   {
-    policies: { "DisableBuiltinPDFViewer": true },
+    policies: { DisableBuiltinPDFViewer: true },
     lockedPrefs: { "pdfjs.disabled": true },
   },
 
   
   {
-    policies: { "DisableFormHistory": true },
+    policies: { DisableFormHistory: true },
     lockedPrefs: { "browser.formfill.enable": false },
   },
 
   
   {
     policies: {
-      "EnableTrackingProtection": {
-        "Value": true,
+      EnableTrackingProtection: {
+        Value: true,
       },
     },
     unlockedPrefs: {
@@ -80,9 +79,9 @@ const POLICIES_TESTS = [
   },
   {
     policies: {
-      "EnableTrackingProtection": {
-        "Value": false,
-        "Locked": true,
+      EnableTrackingProtection: {
+        Value: false,
+        Locked: true,
       },
     },
     lockedPrefs: {
@@ -93,20 +92,20 @@ const POLICIES_TESTS = [
 
   
   {
-    policies: { "OverrideFirstRunPage": "https://www.example.com/" },
+    policies: { OverrideFirstRunPage: "https://www.example.com/" },
     lockedPrefs: { "startup.homepage_welcome_url": "https://www.example.com/" },
   },
 
   
   {
     policies: {
-      "Authentication": {
-        "SPNEGO": ["a.com", "b.com"],
-        "Delegated": ["a.com", "b.com"],
-        "NTLM": ["a.com", "b.com"],
-        "AllowNonFQDN": {
-          "SPNEGO": true,
-          "NTLM": true,
+      Authentication: {
+        SPNEGO: ["a.com", "b.com"],
+        Delegated: ["a.com", "b.com"],
+        NTLM: ["a.com", "b.com"],
+        AllowNonFQDN: {
+          SPNEGO: true,
+          NTLM: true,
         },
       },
     },
@@ -122,8 +121,8 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "Certificates": {
-        "ImportEnterpriseRoots": true,
+      Certificates: {
+        ImportEnterpriseRoots: true,
       },
     },
     lockedPrefs: {
@@ -134,8 +133,8 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "Certificates": {
-        "ImportEnterpriseRoots": false,
+      Certificates: {
+        ImportEnterpriseRoots: false,
       },
     },
     lockedPrefs: {
@@ -146,8 +145,8 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "InstallAddonsPermission": {
-        "Default": false,
+      InstallAddonsPermission: {
+        Default: false,
       },
     },
     lockedPrefs: {
@@ -160,7 +159,7 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "SanitizeOnShutdown": true,
+      SanitizeOnShutdown: true,
     },
     lockedPrefs: {
       "privacy.sanitize.sanitizeOnShutdown": true,
@@ -177,8 +176,8 @@ const POLICIES_TESTS = [
 
   {
     policies: {
-      "SanitizeOnShutdown": {
-        "Cache": true,
+      SanitizeOnShutdown: {
+        Cache: true,
       },
     },
     lockedPrefs: {
@@ -194,8 +193,8 @@ const POLICIES_TESTS = [
 
   {
     policies: {
-      "SanitizeOnShutdown": {
-        "Cookies": true,
+      SanitizeOnShutdown: {
+        Cookies: true,
       },
     },
     lockedPrefs: {
@@ -211,8 +210,8 @@ const POLICIES_TESTS = [
 
   {
     policies: {
-      "SanitizeOnShutdown": {
-        "Downloads": true,
+      SanitizeOnShutdown: {
+        Downloads: true,
       },
     },
     lockedPrefs: {
@@ -228,8 +227,8 @@ const POLICIES_TESTS = [
 
   {
     policies: {
-      "SanitizeOnShutdown": {
-        "FormData": true,
+      SanitizeOnShutdown: {
+        FormData: true,
       },
     },
     lockedPrefs: {
@@ -245,8 +244,8 @@ const POLICIES_TESTS = [
 
   {
     policies: {
-      "SanitizeOnShutdown": {
-        "History": true,
+      SanitizeOnShutdown: {
+        History: true,
       },
     },
     lockedPrefs: {
@@ -262,8 +261,8 @@ const POLICIES_TESTS = [
 
   {
     policies: {
-      "SanitizeOnShutdown": {
-        "Sessions": true,
+      SanitizeOnShutdown: {
+        Sessions: true,
       },
     },
     lockedPrefs: {
@@ -279,8 +278,8 @@ const POLICIES_TESTS = [
 
   {
     policies: {
-      "SanitizeOnShutdown": {
-        "SiteSettings": true,
+      SanitizeOnShutdown: {
+        SiteSettings: true,
       },
     },
     lockedPrefs: {
@@ -297,8 +296,8 @@ const POLICIES_TESTS = [
 
   {
     policies: {
-      "SanitizeOnShutdown": {
-        "OfflineApps": true,
+      SanitizeOnShutdown: {
+        OfflineApps: true,
       },
     },
     lockedPrefs: {
@@ -316,10 +315,10 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "DNSOverHTTPS": {
-        "Enabled": true,
-        "ProviderURL": "http://example.com/provider",
-        "Locked": true,
+      DNSOverHTTPS: {
+        Enabled: true,
+        ProviderURL: "http://example.com/provider",
+        Locked: true,
       },
     },
     lockedPrefs: {
@@ -331,9 +330,9 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "DNSOverHTTPS": {
-        "Enabled": false,
-        "ProviderURL": "http://example.com/provider",
+      DNSOverHTTPS: {
+        Enabled: false,
+        ProviderURL: "http://example.com/provider",
       },
     },
     unlockedPrefs: {
@@ -345,8 +344,8 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "SSLVersionMin": "tls1",
-      "SSLVersionMax": "tls1.1",
+      SSLVersionMin: "tls1",
+      SSLVersionMax: "tls1.1",
     },
     lockedPrefs: {
       "security.tls.version.min": 1,
@@ -357,8 +356,8 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "SSLVersionMin": "tls1.2",
-      "SSLVersionMax": "tls1.3",
+      SSLVersionMin: "tls1.2",
+      SSLVersionMax: "tls1.3",
     },
     lockedPrefs: {
       "security.tls.version.min": 3,
@@ -369,7 +368,7 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "CaptivePortal": false,
+      CaptivePortal: false,
     },
     lockedPrefs: {
       "network.captive-portal-service.enabled": false,
@@ -379,7 +378,7 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "NetworkPrediction": false,
+      NetworkPrediction: false,
     },
     lockedPrefs: {
       "network.dns.disablePrefetch": true,
@@ -390,7 +389,7 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "ExtensionUpdate": false,
+      ExtensionUpdate: false,
     },
     lockedPrefs: {
       "extensions.update.enabled": false,
@@ -400,7 +399,7 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "DisableFirefoxStudies": true,
+      DisableFirefoxStudies: true,
     },
     lockedPrefs: {
       "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons": false,
@@ -411,7 +410,7 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "NewTabPage": false,
+      NewTabPage: false,
     },
     lockedPrefs: {
       "browser.newtabpage.enabled": false,
@@ -421,7 +420,7 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "SearchSuggestEnabled": false,
+      SearchSuggestEnabled: false,
     },
     lockedPrefs: {
       "browser.urlbar.suggest.searches": false,
@@ -432,10 +431,10 @@ const POLICIES_TESTS = [
   
   {
     policies: {
-      "FirefoxHome": {
-        "Pocket": false,
-        "Snippets": false,
-        "Locked": true,
+      FirefoxHome: {
+        Pocket: false,
+        Snippets: false,
+        Locked: true,
       },
     },
     lockedPrefs: {
@@ -448,7 +447,7 @@ const POLICIES_TESTS = [
 add_task(async function test_policy_simple_prefs() {
   for (let test of POLICIES_TESTS) {
     await setupPolicyEngineWithJson({
-      "policies": test.policies,
+      policies: test.policies,
     });
 
     info("Checking policy: " + Object.keys(test.policies)[0]);
@@ -457,8 +456,10 @@ add_task(async function test_policy_simple_prefs() {
       checkLockedPref(prefName, prefValue);
     }
 
-    for (let [prefName, prefValue] of Object.entries(test.unlockedPrefs || {})) {
+    for (let [prefName, prefValue] of Object.entries(
+      test.unlockedPrefs || {}
+    )) {
       checkUnlockedPref(prefName, prefValue);
     }
   }
- });
+});

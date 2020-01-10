@@ -9,80 +9,97 @@ const GS_OPTION_KEY = "picture-options";
 const GS_DRAW_BG_KEY = "draw-background";
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: "about:logo",
-  }, (browser) => {
-    var brandName = Services.strings.createBundle("chrome://branding/locale/brand.properties").
-                    GetStringFromName("brandShortName");
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:logo",
+    },
+    browser => {
+      var brandName = Services.strings
+        .createBundle("chrome://branding/locale/brand.properties")
+        .GetStringFromName("brandShortName");
 
-    var dirSvc = Cc["@mozilla.org/file/directory_service;1"].
-                 getService(Ci.nsIDirectoryServiceProvider);
-    var homeDir = dirSvc.getFile("Home", {});
+      var dirSvc = Cc["@mozilla.org/file/directory_service;1"].getService(
+        Ci.nsIDirectoryServiceProvider
+      );
+      var homeDir = dirSvc.getFile("Home", {});
 
-    var wpFile = homeDir.clone();
-    wpFile.append(brandName + "_wallpaper.png");
+      var wpFile = homeDir.clone();
+      wpFile.append(brandName + "_wallpaper.png");
 
-    
-    
-    var wpFileBackup = homeDir.clone();
-    wpFileBackup.append(brandName + "_wallpaper.png.backup");
-
-    if (wpFileBackup.exists())
-      wpFileBackup.remove(false);
-
-    if (wpFile.exists())
-      wpFile.copyTo(null, wpFileBackup.leafName);
-
-    var shell = Cc["@mozilla.org/browser/shell-service;1"].
-                getService(Ci.nsIShellService);
-
-    
-    
-    
-    Assert.ok(!gBrowser.selectedBrowser.isRemoteBrowser,
-              "image can be accessed synchronously from the parent process");
-
-    var image = content.document.images[0];
-
-    let checkWallpaper, restoreSettings;
-    try {
       
-      const gsettings = Cc["@mozilla.org/gsettings-service;1"].
-                        getService(Ci.nsIGSettingsService).
-                        getCollectionForSchema(GS_BG_SCHEMA);
+      
+      var wpFileBackup = homeDir.clone();
+      wpFileBackup.append(brandName + "_wallpaper.png.backup");
 
-      const prevImage = gsettings.getString(GS_IMAGE_KEY);
-      const prevOption = gsettings.getString(GS_OPTION_KEY);
-      const prevDrawBG = gsettings.getBoolean(GS_DRAW_BG_KEY);
+      if (wpFileBackup.exists()) {
+        wpFileBackup.remove(false);
+      }
 
-      checkWallpaper = function(position, expectedGSettingsPosition) {
-        shell.setDesktopBackground(image, position, "");
-        ok(wpFile.exists(), "Wallpaper was written to disk");
-        is(gsettings.getString(GS_IMAGE_KEY), encodeURI("file://" + wpFile.path),
-          "Wallpaper file GSettings key is correct");
-        is(gsettings.getString(GS_OPTION_KEY), expectedGSettingsPosition,
-          "Wallpaper position GSettings key is correct");
-      };
+      if (wpFile.exists()) {
+        wpFile.copyTo(null, wpFileBackup.leafName);
+      }
 
-      restoreSettings = function() {
-        gsettings.setString(GS_IMAGE_KEY, prevImage);
-        gsettings.setString(GS_OPTION_KEY, prevOption);
-        gsettings.setBoolean(GS_DRAW_BG_KEY, prevDrawBG);
-      };
-    } catch (e) {}
+      var shell = Cc["@mozilla.org/browser/shell-service;1"].getService(
+        Ci.nsIShellService
+      );
 
-    checkWallpaper(Ci.nsIShellService.BACKGROUND_TILE, "wallpaper");
-    checkWallpaper(Ci.nsIShellService.BACKGROUND_STRETCH, "stretched");
-    checkWallpaper(Ci.nsIShellService.BACKGROUND_CENTER, "centered");
-    checkWallpaper(Ci.nsIShellService.BACKGROUND_FILL, "zoom");
-    checkWallpaper(Ci.nsIShellService.BACKGROUND_FIT, "scaled");
-    checkWallpaper(Ci.nsIShellService.BACKGROUND_SPAN, "spanned");
+      
+      
+      
+      Assert.ok(
+        !gBrowser.selectedBrowser.isRemoteBrowser,
+        "image can be accessed synchronously from the parent process"
+      );
 
-    restoreSettings();
+      var image = content.document.images[0];
 
-    
-    if (wpFileBackup.exists())
-      wpFileBackup.moveTo(null, wpFile.leafName);
-  });
+      let checkWallpaper, restoreSettings;
+      try {
+        
+        const gsettings = Cc["@mozilla.org/gsettings-service;1"]
+          .getService(Ci.nsIGSettingsService)
+          .getCollectionForSchema(GS_BG_SCHEMA);
+
+        const prevImage = gsettings.getString(GS_IMAGE_KEY);
+        const prevOption = gsettings.getString(GS_OPTION_KEY);
+        const prevDrawBG = gsettings.getBoolean(GS_DRAW_BG_KEY);
+
+        checkWallpaper = function(position, expectedGSettingsPosition) {
+          shell.setDesktopBackground(image, position, "");
+          ok(wpFile.exists(), "Wallpaper was written to disk");
+          is(
+            gsettings.getString(GS_IMAGE_KEY),
+            encodeURI("file://" + wpFile.path),
+            "Wallpaper file GSettings key is correct"
+          );
+          is(
+            gsettings.getString(GS_OPTION_KEY),
+            expectedGSettingsPosition,
+            "Wallpaper position GSettings key is correct"
+          );
+        };
+
+        restoreSettings = function() {
+          gsettings.setString(GS_IMAGE_KEY, prevImage);
+          gsettings.setString(GS_OPTION_KEY, prevOption);
+          gsettings.setBoolean(GS_DRAW_BG_KEY, prevDrawBG);
+        };
+      } catch (e) {}
+
+      checkWallpaper(Ci.nsIShellService.BACKGROUND_TILE, "wallpaper");
+      checkWallpaper(Ci.nsIShellService.BACKGROUND_STRETCH, "stretched");
+      checkWallpaper(Ci.nsIShellService.BACKGROUND_CENTER, "centered");
+      checkWallpaper(Ci.nsIShellService.BACKGROUND_FILL, "zoom");
+      checkWallpaper(Ci.nsIShellService.BACKGROUND_FIT, "scaled");
+      checkWallpaper(Ci.nsIShellService.BACKGROUND_SPAN, "spanned");
+
+      restoreSettings();
+
+      
+      if (wpFileBackup.exists()) {
+        wpFileBackup.moveTo(null, wpFile.leafName);
+      }
+    }
+  );
 });

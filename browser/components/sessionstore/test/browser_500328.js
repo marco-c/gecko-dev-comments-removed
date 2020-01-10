@@ -21,15 +21,19 @@ async function checkState(browser) {
     let event = await ContentTaskUtils.waitForEvent(this, "popstate", true);
     ok(event.state, "Event should have a state property.");
 
-    is(content.testState, "foo",
-       "testState after going back");
-    is(JSON.stringify(content.history.state), JSON.stringify({obj1: 1}),
-       "first popstate object.");
+    is(content.testState, "foo", "testState after going back");
+    is(
+      JSON.stringify(content.history.state),
+      JSON.stringify({ obj1: 1 }),
+      "first popstate object."
+    );
 
     
     let doc = content.document;
-    ok(!doc.getElementById("new-elem"),
-       "doc shouldn't contain new-elem before we add it.");
+    ok(
+      !doc.getElementById("new-elem"),
+      "doc shouldn't contain new-elem before we add it."
+    );
     let elem = doc.createElement("div");
     elem.id = "new-elem";
     doc.body.appendChild(elem);
@@ -51,8 +55,11 @@ async function checkState(browser) {
     
     
     
-    Assert.equal(Cu.waiveXrays(event.state).obj3.toString(),
-                 "/^a$/", "second popstate object.");
+    Assert.equal(
+      Cu.waiveXrays(event.state).obj3.toString(),
+      "/^a$/",
+      "second popstate object."
+    );
 
     
     
@@ -79,37 +86,43 @@ add_task(async function test() {
   
   
   let state;
-  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, async function(browser) {
-    BrowserTestUtils.loadURI(browser, "http://example.com");
-    await BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function(browser) {
+      BrowserTestUtils.loadURI(browser, "http://example.com");
+      await BrowserTestUtils.browserLoaded(browser);
 
-    
-    
-    
-    
-    
-    function contentTest() {
-      let history = content.window.history;
-      history.pushState({obj1: 1}, "title-obj1");
-      history.pushState({obj2: 2}, "title-obj2", "?page2");
-      history.replaceState({obj3: /^a$/}, "title-obj3");
+      
+      
+      
+      
+      
+      function contentTest() {
+        let history = content.window.history;
+        history.pushState({ obj1: 1 }, "title-obj1");
+        history.pushState({ obj2: 2 }, "title-obj2", "?page2");
+        history.replaceState({ obj3: /^a$/ }, "title-obj3");
+      }
+      await ContentTask.spawn(browser, null, contentTest);
+      await TabStateFlusher.flush(browser);
+
+      state = ss.getTabState(gBrowser.getTabForBrowser(browser));
     }
-    await ContentTask.spawn(browser, null, contentTest);
-    await TabStateFlusher.flush(browser);
-
-    state = ss.getTabState(gBrowser.getTabForBrowser(browser));
-  });
+  );
 
   
   
-  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, async function(browser) {
-    let tab2 = gBrowser.getTabForBrowser(browser);
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function(browser) {
+      let tab2 = gBrowser.getTabForBrowser(browser);
 
-    let tabRestoredPromise = promiseTabRestored(tab2);
-    ss.setTabState(tab2, state, true);
+      let tabRestoredPromise = promiseTabRestored(tab2);
+      ss.setTabState(tab2, state, true);
 
-    
-    await tabRestoredPromise;
-    await checkState(browser);
-  });
+      
+      await tabRestoredPromise;
+      await checkState(browser);
+    }
+  );
 });

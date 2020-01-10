@@ -6,11 +6,14 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetter(this, "pkcs11db",
-                                   "@mozilla.org/security/pkcs11moduledb;1",
-                                   "nsIPKCS11ModuleDB");
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "pkcs11db",
+  "@mozilla.org/security/pkcs11moduledb;1",
+  "nsIPKCS11ModuleDB"
+);
 
-var {DefaultMap} = ExtensionUtils;
+var { DefaultMap } = ExtensionUtils;
 
 const findModuleByPath = function(path) {
   for (let module of pkcs11db.listModules()) {
@@ -24,10 +27,17 @@ const findModuleByPath = function(path) {
 this.pkcs11 = class extends ExtensionAPI {
   getAPI(context) {
     let manifestCache = new DefaultMap(async name => {
-      let hostInfo = await NativeManifests.lookupManifest("pkcs11", name, context);
+      let hostInfo = await NativeManifests.lookupManifest(
+        "pkcs11",
+        name,
+        context
+      );
       if (hostInfo) {
         if (AppConstants.platform === "win") {
-          hostInfo.manifest.path = OS.Path.join(OS.Path.dirname(hostInfo.path), hostInfo.manifest.path);
+          hostInfo.manifest.path = OS.Path.join(
+            OS.Path.dirname(hostInfo.path),
+            hostInfo.manifest.path
+          );
         }
         let manifestLib = OS.Path.basename(hostInfo.manifest.path);
         if (AppConstants.platform !== "linux") {
@@ -37,7 +47,7 @@ this.pkcs11 = class extends ExtensionAPI {
           return hostInfo.manifest;
         }
       }
-      return Promise.reject({message: `No such PKCS#11 module ${name}`});
+      return Promise.reject({ message: `No such PKCS#11 module ${name}` });
     });
     return {
       pkcs11: {
@@ -69,7 +79,9 @@ this.pkcs11 = class extends ExtensionAPI {
         async installModule(name, flags = 0) {
           let manifest = await manifestCache.get(name);
           if (!manifest.description) {
-            return Promise.reject({message: `The description field in the manifest for PKCS#11 module ${name} must have a value`});
+            return Promise.reject({
+              message: `The description field in the manifest for PKCS#11 module ${name} must have a value`,
+            });
           }
           pkcs11db.addModule(manifest.description, manifest.path, flags, 0);
         },
@@ -87,7 +99,9 @@ this.pkcs11 = class extends ExtensionAPI {
           let manifest = await manifestCache.get(name);
           let module = findModuleByPath(manifest.path);
           if (!module) {
-            return Promise.reject({message: `The PKCS#11 module ${name} is not loaded`});
+            return Promise.reject({
+              message: `The PKCS#11 module ${name} is not loaded`,
+            });
           }
           pkcs11db.deleteModule(module.name);
         },
@@ -114,7 +128,9 @@ this.pkcs11 = class extends ExtensionAPI {
           let manifest = await manifestCache.get(name);
           let module = findModuleByPath(manifest.path);
           if (!module) {
-            return Promise.reject({message: `The module ${name} is not installed`});
+            return Promise.reject({
+              message: `The module ${name} is not installed`,
+            });
           }
           let rv = [];
           for (let slot of module.listSlots()) {

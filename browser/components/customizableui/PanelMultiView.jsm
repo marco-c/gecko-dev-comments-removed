@@ -99,19 +99,22 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "PanelMultiView",
-  "PanelView",
-];
+var EXPORTED_SYMBOLS = ["PanelMultiView", "PanelView"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "CustomizableUI",
-  "resource:///modules/CustomizableUI.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "CustomizableUI",
+  "resource:///modules/CustomizableUI.jsm"
+);
 
 XPCOMUtils.defineLazyGetter(this, "gBundle", function() {
   return Services.strings.createBundle(
-    "chrome://browser/locale/browser.properties");
+    "chrome://browser/locale/browser.properties"
+  );
 });
 
 
@@ -223,33 +226,42 @@ var AssociatedToNode = class {
   async dispatchAsyncEvent(eventName) {
     
     let blockersPromise = this._blockersPromise.catch(() => {});
-    return this._blockersPromise = blockersPromise.then(async () => {
+    return (this._blockersPromise = blockersPromise.then(async () => {
       let blockers = new Set();
-      let cancel = this.dispatchCustomEvent(eventName, {
-        addBlocker(promise) {
-          
-          blockers.add(promise.catch(ex => {
-            Cu.reportError(ex);
-            return true;
-          }));
+      let cancel = this.dispatchCustomEvent(
+        eventName,
+        {
+          addBlocker(promise) {
+            
+            blockers.add(
+              promise.catch(ex => {
+                Cu.reportError(ex);
+                return true;
+              })
+            );
+          },
         },
-      }, true);
+        true
+      );
       if (blockers.size) {
         let timeoutPromise = new Promise((resolve, reject) => {
           this.window.setTimeout(reject, BLOCKERS_TIMEOUT_MS);
         });
         try {
-          let results = await Promise.race([Promise.all(blockers),
-                                            timeoutPromise]);
+          let results = await Promise.race([
+            Promise.all(blockers),
+            timeoutPromise,
+          ]);
           cancel = cancel || results.some(result => result === false);
         } catch (ex) {
-          Cu.reportError(new Error(
-            `One of the blockers for ${eventName} timed out.`));
+          Cu.reportError(
+            new Error(`One of the blockers for ${eventName} timed out.`)
+          );
           return true;
         }
       }
       return cancel;
-    });
+    }));
   }
 };
 
@@ -326,12 +338,17 @@ var PanelMultiView = class extends AssociatedToNode {
       return;
     }
 
-    window.addEventListener("unload", () => {
-      for (let panelMultiViewNode of
-           window.document.querySelectorAll("panelmultiview")) {
-        this.forNode(panelMultiViewNode).disconnect();
-      }
-    }, { once: true });
+    window.addEventListener(
+      "unload",
+      () => {
+        for (let panelMultiViewNode of window.document.querySelectorAll(
+          "panelmultiview"
+        )) {
+          this.forNode(panelMultiViewNode).disconnect();
+        }
+      },
+      { once: true }
+    );
 
     gWindowsWithUnloadHandler.add(window);
   }
@@ -349,10 +366,12 @@ var PanelMultiView = class extends AssociatedToNode {
   }
 
   get _screenManager() {
-    if (this.__screenManager)
+    if (this.__screenManager) {
       return this.__screenManager;
-    return this.__screenManager = Cc["@mozilla.org/gfx/screenmanager;1"]
-                                    .getService(Ci.nsIScreenManager);
+    }
+    return (this.__screenManager = Cc[
+      "@mozilla.org/gfx/screenmanager;1"
+    ].getService(Ci.nsIScreenManager));
   }
 
   constructor(node) {
@@ -366,19 +385,21 @@ var PanelMultiView = class extends AssociatedToNode {
 
     PanelMultiView.ensureUnloadHandlerRegistered(this.window);
 
-    let viewContainer = this._viewContainer =
-      this.document.createXULElement("box");
+    let viewContainer = (this._viewContainer = this.document.createXULElement(
+      "box"
+    ));
     viewContainer.classList.add("panel-viewcontainer");
 
-    let viewStack = this._viewStack = this.document.createXULElement("box");
+    let viewStack = (this._viewStack = this.document.createXULElement("box"));
     viewStack.classList.add("panel-viewstack");
     viewContainer.append(viewStack);
 
     let offscreenViewContainer = this.document.createXULElement("box");
     offscreenViewContainer.classList.add("panel-viewcontainer", "offscreen");
 
-    let offscreenViewStack = this._offscreenViewStack =
-      this.document.createXULElement("box");
+    let offscreenViewStack = (this._offscreenViewStack = this.document.createXULElement(
+      "box"
+    ));
     offscreenViewStack.classList.add("panel-viewstack");
     offscreenViewContainer.append(offscreenViewStack);
 
@@ -404,8 +425,9 @@ var PanelMultiView = class extends AssociatedToNode {
 
   disconnect() {
     
-    if (!this.node || !this.connected)
+    if (!this.node || !this.connected) {
       return;
+    }
 
     this._panel.removeEventListener("mousemove", this);
     this._panel.removeEventListener("popupshowing", this);
@@ -413,8 +435,7 @@ var PanelMultiView = class extends AssociatedToNode {
     this._panel.removeEventListener("popupshown", this);
     this._panel.removeEventListener("popuphidden", this);
     this.window.removeEventListener("keydown", this, true);
-    this.node = this._openPopupPromise = this._openPopupCancelCallback =
-      this._viewContainer = this._viewStack = this._transitionDetails = null;
+    this.node = this._openPopupPromise = this._openPopupCancelCallback = this._viewContainer = this._viewStack = this._transitionDetails = null;
   }
 
   
@@ -462,7 +483,7 @@ var PanelMultiView = class extends AssociatedToNode {
     
     
     let canCancel = true;
-    let cancelCallback = this._openPopupCancelCallback = () => {
+    let cancelCallback = (this._openPopupCancelCallback = () => {
       
       
       
@@ -472,7 +493,7 @@ var PanelMultiView = class extends AssociatedToNode {
         canCancel = false;
         this.dispatchCustomEvent("popuphidden");
       }
-    };
+    });
 
     
     
@@ -483,7 +504,7 @@ var PanelMultiView = class extends AssociatedToNode {
     
     
     
-    return this._openPopupPromise = openPopupPromise.then(async wasShown => {
+    return (this._openPopupPromise = openPopupPromise.then(async wasShown => {
       
       if (!this.node) {
         return false;
@@ -527,9 +548,13 @@ var PanelMultiView = class extends AssociatedToNode {
           return false;
         }
 
-        if (options && typeof options == "object" && options.triggerEvent &&
-            options.triggerEvent.type == "keypress" &&
-            this.openViews.length) {
+        if (
+          options &&
+          typeof options == "object" &&
+          options.triggerEvent &&
+          options.triggerEvent.type == "keypress" &&
+          this.openViews.length
+        ) {
           
           this.openViews[0].focusWhenActive = true;
         }
@@ -539,7 +564,7 @@ var PanelMultiView = class extends AssociatedToNode {
         this.dispatchCustomEvent("popuphidden");
         throw ex;
       }
-    });
+    }));
   }
 
   
@@ -618,8 +643,10 @@ var PanelMultiView = class extends AssociatedToNode {
     this._showSubView(viewIdOrNode, anchor).catch(Cu.reportError);
   }
   async _showSubView(viewIdOrNode, anchor) {
-    let viewNode = typeof viewIdOrNode == "string" ?
-                   this.document.getElementById(viewIdOrNode) : viewIdOrNode;
+    let viewNode =
+      typeof viewIdOrNode == "string"
+        ? this.document.getElementById(viewIdOrNode)
+        : viewIdOrNode;
     if (!viewNode) {
       Cu.reportError(new Error(`Subview ${viewIdOrNode} doesn't exist.`));
       return;
@@ -680,8 +707,9 @@ var PanelMultiView = class extends AssociatedToNode {
       
       nextPanelView.mainview = false;
       
-      nextPanelView.headerText = viewNode.getAttribute("title") ||
-                                 (anchor && anchor.getAttribute("label"));
+      nextPanelView.headerText =
+        viewNode.getAttribute("title") ||
+        (anchor && anchor.getAttribute("label"));
       
       nextPanelView.minMaxWidth = prevPanelView.knownWidth;
 
@@ -736,8 +764,9 @@ var PanelMultiView = class extends AssociatedToNode {
 
 
   async _showMainView() {
-    let nextPanelView = PanelView.forNode(this.document.getElementById(
-      this.node.getAttribute("mainViewId")));
+    let nextPanelView = PanelView.forNode(
+      this.document.getElementById(this.node.getAttribute("mainViewId"))
+    );
 
     
     let oldPanelMultiViewNode = nextPanelView.node.panelMultiView;
@@ -877,9 +906,9 @@ var PanelMultiView = class extends AssociatedToNode {
     let nextPanelView = PanelView.forNode(viewNode);
     let prevPanelView = PanelView.forNode(previousViewNode);
 
-    let details = this._transitionDetails = {
+    let details = (this._transitionDetails = {
       phase: TRANSITION_PHASES.START,
-    };
+    });
 
     
     
@@ -896,8 +925,10 @@ var PanelMultiView = class extends AssociatedToNode {
     if (reverse) {
       
       
-      viewRect = { width: nextPanelView.knownWidth,
-                   height: nextPanelView.knownHeight };
+      viewRect = {
+        width: nextPanelView.knownWidth,
+        height: nextPanelView.knownHeight,
+      };
       nextPanelView.visible = true;
     } else if (viewNode.customRectGetter) {
       
@@ -906,7 +937,7 @@ var PanelMultiView = class extends AssociatedToNode {
       
       let width = prevPanelView.knownWidth;
       let height = prevPanelView.knownHeight;
-      viewRect = Object.assign({height, width}, viewNode.customRectGetter());
+      viewRect = Object.assign({ height, width }, viewNode.customRectGetter());
       nextPanelView.visible = true;
       
       
@@ -945,21 +976,24 @@ var PanelMultiView = class extends AssociatedToNode {
     details.phase = TRANSITION_PHASES.PREPARE;
 
     
-    let moveToLeft = (this.window.RTL_UI && !reverse) || (!this.window.RTL_UI && reverse);
+    let moveToLeft =
+      (this.window.RTL_UI && !reverse) || (!this.window.RTL_UI && reverse);
     let deltaX = prevPanelView.knownWidth;
     let deepestNode = reverse ? previousViewNode : viewNode;
 
     
     
     
-    if (reverse)
+    if (reverse) {
       this._viewStack.style.marginInlineStart = "-" + deltaX + "px";
+    }
 
     
     
     
     
-    this._viewStack.style.transition = "transform var(--animation-easing-function)" +
+    this._viewStack.style.transition =
+      "transform var(--animation-easing-function)" +
       " var(--panelui-subview-transition-duration)";
     this._viewStack.style.willChange = "transform";
     
@@ -985,27 +1019,42 @@ var PanelMultiView = class extends AssociatedToNode {
 
     
     details.phase = TRANSITION_PHASES.TRANSITION;
-    this._viewStack.style.transform = "translateX(" + (moveToLeft ? "" : "-") + deltaX + "px)";
+    this._viewStack.style.transform =
+      "translateX(" + (moveToLeft ? "" : "-") + deltaX + "px)";
 
     await new Promise(resolve => {
       details.resolve = resolve;
-      this._viewContainer.addEventListener("transitionend", details.listener = ev => {
-        
-        
-        
-        if (ev.target != this._viewStack || ev.propertyName != "transform")
-          return;
-        this._viewContainer.removeEventListener("transitionend", details.listener);
-        delete details.listener;
-        resolve();
-      });
-      this._viewContainer.addEventListener("transitioncancel", details.cancelListener = ev => {
-        if (ev.target != this._viewStack)
-          return;
-        this._viewContainer.removeEventListener("transitioncancel", details.cancelListener);
-        delete details.cancelListener;
-        resolve();
-      });
+      this._viewContainer.addEventListener(
+        "transitionend",
+        (details.listener = ev => {
+          
+          
+          
+          if (ev.target != this._viewStack || ev.propertyName != "transform") {
+            return;
+          }
+          this._viewContainer.removeEventListener(
+            "transitionend",
+            details.listener
+          );
+          delete details.listener;
+          resolve();
+        })
+      );
+      this._viewContainer.addEventListener(
+        "transitioncancel",
+        (details.cancelListener = ev => {
+          if (ev.target != this._viewStack) {
+            return;
+          }
+          this._viewContainer.removeEventListener(
+            "transitioncancel",
+            details.cancelListener
+          );
+          delete details.cancelListener;
+          resolve();
+        })
+      );
     });
 
     
@@ -1032,7 +1081,7 @@ var PanelMultiView = class extends AssociatedToNode {
       return;
     }
 
-    let {phase, resolve, listener, cancelListener} = this._transitionDetails;
+    let { phase, resolve, listener, cancelListener } = this._transitionDetails;
     this._transitionDetails = null;
 
     if (phase >= TRANSITION_PHASES.START) {
@@ -1048,12 +1097,18 @@ var PanelMultiView = class extends AssociatedToNode {
     }
     if (phase >= TRANSITION_PHASES.TRANSITION) {
       this._viewStack.style.removeProperty("transform");
-      if (listener)
+      if (listener) {
         this._viewContainer.removeEventListener("transitionend", listener);
-      if (cancelListener)
-        this._viewContainer.removeEventListener("transitioncancel", cancelListener);
-      if (resolve)
+      }
+      if (cancelListener) {
+        this._viewContainer.removeEventListener(
+          "transitioncancel",
+          cancelListener
+        );
+      }
+      if (resolve) {
         resolve();
+      }
     }
   }
 
@@ -1065,11 +1120,14 @@ var PanelMultiView = class extends AssociatedToNode {
     let anchor = this._panel.anchorNode;
     let anchorRect = anchor.getBoundingClientRect();
 
-    let screen = this._screenManager.screenForRect(anchor.screenX,
-                                                   anchor.screenY,
-                                                   anchorRect.width,
-                                                   anchorRect.height);
-    let availTop = {}, availHeight = {};
+    let screen = this._screenManager.screenForRect(
+      anchor.screenX,
+      anchor.screenY,
+      anchorRect.width,
+      anchorRect.height
+    );
+    let availTop = {},
+      availHeight = {};
     screen.GetAvailRect({}, availTop, {}, availHeight);
     let cssAvailTop = availTop.value / screen.defaultCSSScaleFactor;
 
@@ -1101,8 +1159,11 @@ var PanelMultiView = class extends AssociatedToNode {
   handleEvent(aEvent) {
     
     
-    if (aEvent.type.startsWith("popup") && aEvent.target != this._panel &&
-                                           aEvent.target != this.node) {
+    if (
+      aEvent.type.startsWith("popup") &&
+      aEvent.target != this._panel &&
+      aEvent.target != this.node
+    ) {
       return;
     }
     switch (aEvent.type) {
@@ -1273,8 +1334,10 @@ var PanelView = class extends AssociatedToNode {
       "subviewbutton subviewbutton-iconic subviewbutton-back";
     backButton.setAttribute("closemenu", "none");
     backButton.setAttribute("tabindex", "0");
-    backButton.setAttribute("aria-label",
-      gBundle.GetStringFromName("panel.back"));
+    backButton.setAttribute(
+      "aria-label",
+      gBundle.GetStringFromName("panel.back")
+    );
     backButton.addEventListener("command", () => {
       
       this.node.panelMultiView.goBack();
@@ -1349,7 +1412,10 @@ var PanelView = class extends AssociatedToNode {
         }
 
         
-        if (element.tagName != "toolbarbutton" && element.closest("toolbarbutton")) {
+        if (
+          element.tagName != "toolbarbutton" &&
+          element.closest("toolbarbutton")
+        ) {
           continue;
         }
 
@@ -1360,9 +1426,13 @@ var PanelView = class extends AssociatedToNode {
         let previous = gMultiLineElementsMap.get(element);
         
         
-        if (!bounds.width || !bounds.height ||
-            (previous && element.textContent == previous.textContent &&
-                         bounds.width == previous.bounds.width)) {
+        if (
+          !bounds.width ||
+          !bounds.height ||
+          (previous &&
+            element.textContent == previous.textContent &&
+            bounds.width == previous.bounds.width)
+        ) {
           continue;
         }
 
@@ -1404,7 +1474,10 @@ var PanelView = class extends AssociatedToNode {
 
     
     for (let { element, bounds } of items) {
-      gMultiLineElementsMap.set(element, { bounds, textContent: element.textContent });
+      gMultiLineElementsMap.set(element, {
+        bounds,
+        textContent: element.textContent,
+      });
       element.style.height = bounds.height + "px";
     }
   }
@@ -1415,10 +1488,15 @@ var PanelView = class extends AssociatedToNode {
 
   _isNavigableWithTabOnly(element) {
     let tag = element.localName;
-    return tag == "menulist" || tag == "textbox" || tag == "input"
-           || tag == "textarea"
-           
-           || tag == "browser" || tag == "iframe";
+    return (
+      tag == "menulist" ||
+      tag == "textbox" ||
+      tag == "input" ||
+      tag == "textarea" ||
+      
+      tag == "browser" ||
+      tag == "iframe"
+    );
   }
 
   
@@ -1436,23 +1514,32 @@ var PanelView = class extends AssociatedToNode {
       if (bounds.width == 0 || bounds.height == 0) {
         return NodeFilter.FILTER_REJECT;
       }
-      if (node.tagName == "button" || node.tagName == "toolbarbutton" ||
-          node.classList.contains("text-link") ||
-          node.classList.contains("navigable") ||
-          (!arrowKey && this._isNavigableWithTabOnly(node))) {
+      if (
+        node.tagName == "button" ||
+        node.tagName == "toolbarbutton" ||
+        node.classList.contains("text-link") ||
+        node.classList.contains("navigable") ||
+        (!arrowKey && this._isNavigableWithTabOnly(node))
+      ) {
         
         
         
-        if (node.tagName != "browser" && node.tagName != "iframe" &&
-            !node.hasAttribute("tabindex")) {
+        if (
+          node.tagName != "browser" &&
+          node.tagName != "iframe" &&
+          !node.hasAttribute("tabindex")
+        ) {
           node.setAttribute("tabindex", "-1");
         }
         return NodeFilter.FILTER_ACCEPT;
       }
       return NodeFilter.FILTER_SKIP;
     };
-    return this.document.createTreeWalker(this.node, NodeFilter.SHOW_ELEMENT,
-      filter);
+    return this.document.createTreeWalker(
+      this.node,
+      NodeFilter.SHOW_ELEMENT,
+      filter
+    );
   }
 
   
@@ -1500,13 +1587,17 @@ var PanelView = class extends AssociatedToNode {
 
   focusFirstNavigableElement(homeKey = false, skipBack = false) {
     
-    let walker = homeKey ?
-      this._arrowNavigableWalker : this._tabNavigableWalker;
+    let walker = homeKey
+      ? this._arrowNavigableWalker
+      : this._tabNavigableWalker;
     walker.currentNode = walker.root;
     this.selectedElement = walker.firstChild();
-    if (skipBack && walker.currentNode
-        && walker.currentNode.classList.contains("subviewbutton-back")
-        && walker.nextNode()) {
+    if (
+      skipBack &&
+      walker.currentNode &&
+      walker.currentNode.classList.contains("subviewbutton-back") &&
+      walker.nextNode()
+    ) {
       this.selectedElement = walker.currentNode;
     }
     this.focusSelectedElement( true);
@@ -1520,8 +1611,7 @@ var PanelView = class extends AssociatedToNode {
 
   focusLastNavigableElement(endKey = false) {
     
-    let walker = endKey ?
-      this._arrowNavigableWalker : this._tabNavigableWalker;
+    let walker = endKey ? this._arrowNavigableWalker : this._tabNavigableWalker;
     walker.currentNode = walker.root;
     this.selectedElement = walker.lastChild();
     this.focusSelectedElement( true);
@@ -1536,8 +1626,9 @@ var PanelView = class extends AssociatedToNode {
 
 
   moveSelection(isDown, arrowKey = false) {
-    let walker = arrowKey ?
-      this._arrowNavigableWalker : this._tabNavigableWalker;
+    let walker = arrowKey
+      ? this._arrowNavigableWalker
+      : this._tabNavigableWalker;
     let oldSel = this.selectedElement;
     let newSel;
     if (oldSel) {
@@ -1582,8 +1673,13 @@ var PanelView = class extends AssociatedToNode {
     
     
     
-    if (focus && !(this.node.compareDocumentPosition(focus)
-                   & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+    if (
+      focus &&
+      !(
+        this.node.compareDocumentPosition(focus) &
+        Node.DOCUMENT_POSITION_CONTAINED_BY
+      )
+    ) {
       focus = null;
     }
 
@@ -1633,14 +1729,14 @@ var PanelView = class extends AssociatedToNode {
         if (tabOnly()) {
           break;
         }
-        
+      
       case "Tab": {
         if (isContextMenuOpen()) {
           break;
         }
         stop();
-        let isDown = (keyCode == "ArrowDown") ||
-                     (keyCode == "Tab" && !event.shiftKey);
+        let isDown =
+          keyCode == "ArrowDown" || (keyCode == "Tab" && !event.shiftKey);
         let button = this.moveSelection(isDown, keyCode != "Tab");
         Services.focus.setFocus(button, Services.focus.FLAG_BYKEY);
         break;
@@ -1665,8 +1761,10 @@ var PanelView = class extends AssociatedToNode {
           break;
         }
         stop();
-        if ((!this.window.RTL_UI && keyCode == "ArrowLeft") ||
-            (this.window.RTL_UI && keyCode == "ArrowRight")) {
+        if (
+          (!this.window.RTL_UI && keyCode == "ArrowLeft") ||
+          (this.window.RTL_UI && keyCode == "ArrowRight")
+        ) {
           this.node.panelMultiView.goBack();
           break;
         }
@@ -1685,8 +1783,9 @@ var PanelView = class extends AssociatedToNode {
           break;
         }
         let button = this.selectedElement;
-        if (!button)
+        if (!button) {
           break;
+        }
         stop();
 
         this._doingKeyboardActivation = true;
@@ -1699,9 +1798,13 @@ var PanelView = class extends AssociatedToNode {
         
         
         button.doCommand();
-        let dispEvent = new event.target.ownerGlobal.MouseEvent("mousedown", {"bubbles": true});
+        let dispEvent = new event.target.ownerGlobal.MouseEvent("mousedown", {
+          bubbles: true,
+        });
         button.dispatchEvent(dispEvent);
-        dispEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
+        dispEvent = new event.target.ownerGlobal.MouseEvent("click", {
+          bubbles: true,
+        });
         button.dispatchEvent(dispEvent);
         this._doingKeyboardActivation = false;
         break;

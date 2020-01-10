@@ -2,11 +2,11 @@
 
 
 
-var EXPORTED_SYMBOLS = [
-  "Panel",
-];
+var EXPORTED_SYMBOLS = ["Panel"];
 
-const {clearInterval, setInterval, setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { clearInterval, setInterval, setTimeout } = ChromeUtils.import(
+  "resource://gre/modules/Timer.jsm"
+);
 
 var Panel = function(panelElt, iframeURL) {
   this.p = panelElt;
@@ -18,7 +18,6 @@ var Panel = function(panelElt, iframeURL) {
 };
 
 this.Panel.prototype = {
-
   get document() {
     return this.p.ownerDocument;
   },
@@ -215,9 +214,7 @@ this.Panel.prototype = {
 
 
 
-
 let iframeAPIPrototype = {
-
   getPanelHeight() {
     return this._panel.height;
   },

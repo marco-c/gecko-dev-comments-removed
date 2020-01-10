@@ -8,9 +8,11 @@ add_task(async function noAutofillWhenCaretNotAtEnd() {
 
   
   await PlacesUtils.history.clear();
-  await PlacesTestUtils.addVisits([{
-    uri: "http://example.com/",
-  }]);
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com/",
+    },
+  ]);
 
   
   gURLBar.inputField.value = "xample";

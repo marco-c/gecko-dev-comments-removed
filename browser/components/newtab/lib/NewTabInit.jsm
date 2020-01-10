@@ -3,7 +3,9 @@
 
 "use strict";
 
-const {actionCreators: ac, actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm");
+const { actionCreators: ac, actionTypes: at } = ChromeUtils.import(
+  "resource://activity-stream/common/Actions.jsm"
+);
 
 
 
@@ -20,7 +22,10 @@ this.NewTabInit = class NewTabInit {
       return;
     }
 
-    const action = {type: at.NEW_TAB_INITIAL_STATE, data: this.store.getState()};
+    const action = {
+      type: at.NEW_TAB_INITIAL_STATE,
+      data: this.store.getState(),
+    };
     this.store.dispatch(ac.AlsoToOneContent(action, target));
 
     

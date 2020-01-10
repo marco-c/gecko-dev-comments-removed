@@ -1,22 +1,17 @@
 
 
 
+const USER_CONTEXTS = ["default", "personal", "work"];
 
-const USER_CONTEXTS = [
-  "default",
-  "personal",
-  "work",
-];
-
-const BASE_URI = "http://mochi.test:8888/browser/browser/components/"
-  + "contextualidentity/test/browser/file_reflect_cookie_into_title.html";
-
+const BASE_URI =
+  "http://mochi.test:8888/browser/browser/components/" +
+  "contextualidentity/test/browser/file_reflect_cookie_into_title.html";
 
 
 
 function openTabInUserContext(uri, userContextId) {
   
-  let tab = BrowserTestUtils.addTab(gBrowser, uri, {userContextId});
+  let tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
 
   
   gBrowser.selectedTab = tab;
@@ -27,10 +22,9 @@ function openTabInUserContext(uri, userContextId) {
 
 add_task(async function setup() {
   
-  await SpecialPowers.pushPrefEnv({"set": [
-    ["privacy.userContext.enabled", true],
-    ["dom.ipc.processCount", 1],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.userContext.enabled", true], ["dom.ipc.processCount", 1]],
+  });
 });
 
 add_task(async function test() {
@@ -74,9 +68,16 @@ add_task(async function test() {
     
     for (let part of title) {
       let [storageMethodName, value] = part.split("=");
-      is(value, expectedContext,
-            "the title reflects the expected contextual identity of " +
-            expectedContext + " for method " + storageMethodName + ": " + value);
+      is(
+        value,
+        expectedContext,
+        "the title reflects the expected contextual identity of " +
+          expectedContext +
+          " for method " +
+          storageMethodName +
+          ": " +
+          value
+      );
     }
 
     gBrowser.removeTab(tab);

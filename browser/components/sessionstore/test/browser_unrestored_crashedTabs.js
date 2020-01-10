@@ -11,59 +11,63 @@
 
 
 const PREF = "browser.sessionstore.restore_on_demand";
-const PAGE = "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
+const PAGE =
+  "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
 
 add_task(async function test() {
   await pushPrefs([PREF, true]);
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE,
-  }, async function(browser) {
-    await TabStateFlusher.flush(browser);
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE,
+    },
+    async function(browser) {
+      await TabStateFlusher.flush(browser);
 
-    
-    
-    
-    
-    let unrestoredTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
-      skipAnimation: true,
-      forceNotRemote: true,
-    });
+      
+      
+      
+      
+      let unrestoredTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
+        skipAnimation: true,
+        forceNotRemote: true,
+      });
 
-    let state = {
-      entries: [{url: PAGE, triggeringPrincipal_base64}],
-    };
+      let state = {
+        entries: [{ url: PAGE, triggeringPrincipal_base64 }],
+      };
 
-    ss.setTabState(unrestoredTab, JSON.stringify(state));
+      ss.setTabState(unrestoredTab, JSON.stringify(state));
 
-    ok(!unrestoredTab.hasAttribute("crashed"), "tab is not crashed");
-    ok(unrestoredTab.hasAttribute("pending"), "tab is pending");
+      ok(!unrestoredTab.hasAttribute("crashed"), "tab is not crashed");
+      ok(unrestoredTab.hasAttribute("pending"), "tab is pending");
 
-    
-    await BrowserTestUtils.crashBrowser(browser);
+      
+      await BrowserTestUtils.crashBrowser(browser);
 
-    ok(!unrestoredTab.hasAttribute("crashed"), "tab is still not crashed");
-    ok(unrestoredTab.hasAttribute("pending"), "tab is still pending");
+      ok(!unrestoredTab.hasAttribute("crashed"), "tab is still not crashed");
+      ok(unrestoredTab.hasAttribute("pending"), "tab is still pending");
 
-    
-    gBrowser.selectedTab = unrestoredTab;
-    await promiseTabRestored(unrestoredTab);
+      
+      gBrowser.selectedTab = unrestoredTab;
+      await promiseTabRestored(unrestoredTab);
 
-    ok(!unrestoredTab.hasAttribute("crashed"), "tab is still not crashed");
-    ok(!unrestoredTab.hasAttribute("pending"), "tab is no longer pending");
+      ok(!unrestoredTab.hasAttribute("crashed"), "tab is still not crashed");
+      ok(!unrestoredTab.hasAttribute("pending"), "tab is no longer pending");
 
-    
-    let originalTab = gBrowser.getTabForBrowser(browser);
-    ok(originalTab.hasAttribute("crashed"), "original tab is crashed");
-    ok(!originalTab.isRemoteBrowser, "Should not be remote");
+      
+      let originalTab = gBrowser.getTabForBrowser(browser);
+      ok(originalTab.hasAttribute("crashed"), "original tab is crashed");
+      ok(!originalTab.isRemoteBrowser, "Should not be remote");
 
-    
-    gBrowser.selectedTab = originalTab;
-    SessionStore.reviveCrashedTab(originalTab);
-    await promiseTabRestored(originalTab);
+      
+      gBrowser.selectedTab = originalTab;
+      SessionStore.reviveCrashedTab(originalTab);
+      await promiseTabRestored(originalTab);
 
-    
-    BrowserTestUtils.removeTab(unrestoredTab);
-  });
+      
+      BrowserTestUtils.removeTab(unrestoredTab);
+    }
+  );
 });

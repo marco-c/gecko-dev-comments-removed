@@ -6,9 +6,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "DownloadsCommon",
-];
+var EXPORTED_SYMBOLS = ["DownloadsCommon"];
 
 
 
@@ -32,8 +30,10 @@ var EXPORTED_SYMBOLS = [
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   NetUtil: "resource://gre/modules/NetUtil.jsm",
@@ -49,7 +49,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyServiceGetters(this, {
-  gClipboardHelper: ["@mozilla.org/widget/clipboardhelper;1", "nsIClipboardHelper"],
+  gClipboardHelper: [
+    "@mozilla.org/widget/clipboardhelper;1",
+    "nsIClipboardHelper",
+  ],
 });
 
 XPCOMUtils.defineLazyGetter(this, "DownloadsLogger", () => {
@@ -79,15 +82,17 @@ const kMaxHistoryResultsForLimitedView = 42;
 const kPrefBranch = Services.prefs.getBranch("browser.download.");
 
 var PrefObserver = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
-                                          Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
   getPref(name) {
     try {
       switch (typeof this.prefs[name]) {
         case "boolean":
           return kPrefBranch.getBoolPref(name);
       }
-    } catch (ex) { }
+    } catch (ex) {}
     return this.prefs[name];
   },
   observe(aSubject, aTopic, aData) {
@@ -112,7 +117,6 @@ PrefObserver.register({
   
   animateNotifications: true,
 });
-
 
 
 
@@ -152,14 +156,15 @@ var DownloadsCommon = {
       if (stringName in kDownloadsStringsRequiringFormatting) {
         strings[stringName] = function() {
           
-          return sb.formatStringFromName(stringName,
-                                         Array.from(arguments));
+          return sb.formatStringFromName(stringName, Array.from(arguments));
         };
       } else if (stringName in kDownloadsStringsRequiringPluralForm) {
         strings[stringName] = function(aCount) {
           
-          let formattedString = sb.formatStringFromName(stringName,
-                                         Array.from(arguments));
+          let formattedString = sb.formatStringFromName(
+            stringName,
+            Array.from(arguments)
+          );
           return PluralForm.get(aCount, formattedString);
         };
       } else {
@@ -167,7 +172,7 @@ var DownloadsCommon = {
       }
     }
     delete this.strings;
-    return this.strings = strings;
+    return (this.strings = strings);
   },
 
   
@@ -196,13 +201,15 @@ var DownloadsCommon = {
 
 
   getData(window, history = false, privateAll = false, limited = false) {
-    let isPrivate = window && PrivateBrowsingUtils.isContentWindowPrivate(window);
+    let isPrivate =
+      window && PrivateBrowsingUtils.isContentWindowPrivate(window);
     if (isPrivate && !privateAll) {
       return PrivateDownloadsData;
     }
     if (history) {
-      if (isPrivate && privateAll)
+      if (isPrivate && privateAll) {
         return LimitedPrivateHistoryDownloadData;
+      }
       return limited ? LimitedHistoryDownloadsData : HistoryDownloadsData;
     }
     return DownloadsData;
@@ -244,12 +251,15 @@ var DownloadsCommon = {
       if (this._privateSummary) {
         return this._privateSummary;
       }
-      return this._privateSummary = new DownloadsSummaryData(true, aNumToExclude);
+      return (this._privateSummary = new DownloadsSummaryData(
+        true,
+        aNumToExclude
+      ));
     }
     if (this._summary) {
       return this._summary;
     }
-    return this._summary = new DownloadsSummaryData(false, aNumToExclude);
+    return (this._summary = new DownloadsSummaryData(false, aNumToExclude));
   },
   _summary: null,
   _privateSummary: null,
@@ -350,10 +360,11 @@ var DownloadsCommon = {
         summary.numDownloading++;
         if (download.hasProgress && download.speed > 0) {
           let sizeLeft = download.totalBytes - download.currentBytes;
-          summary.rawTimeLeft = Math.max(summary.rawTimeLeft,
-                                         sizeLeft / download.speed);
-          summary.slowestSpeed = Math.min(summary.slowestSpeed,
-                                          download.speed);
+          summary.rawTimeLeft = Math.max(
+            summary.rawTimeLeft,
+            sizeLeft / download.speed
+          );
+          summary.slowestSpeed = Math.min(summary.slowestSpeed, download.speed);
         }
       } else if (download.canceled && download.hasPartialData) {
         summary.numPaused++;
@@ -370,8 +381,9 @@ var DownloadsCommon = {
     }
 
     if (summary.totalSize != 0) {
-      summary.percentComplete =
-        Math.floor((summary.totalTransferred / summary.totalSize) * 100);
+      summary.percentComplete = Math.floor(
+        (summary.totalTransferred / summary.totalSize) * 100
+      );
     }
 
     if (summary.slowestSpeed == Infinity) {
@@ -394,27 +406,26 @@ var DownloadsCommon = {
     
     
     
-    let shouldApplySmoothing = aLastSeconds >= 0 &&
-                               aSeconds > aLastSeconds / 2;
+    let shouldApplySmoothing = aLastSeconds >= 0 && aSeconds > aLastSeconds / 2;
     if (shouldApplySmoothing) {
       
       
       let diff = aSeconds - aLastSeconds;
-      aSeconds = aLastSeconds + (diff < 0 ? .3 : .1) * diff;
+      aSeconds = aLastSeconds + (diff < 0 ? 0.3 : 0.1) * diff;
 
       
       
       diff = aSeconds - aLastSeconds;
-      let diffPercent = diff / aLastSeconds * 100;
+      let diffPercent = (diff / aLastSeconds) * 100;
       if (Math.abs(diff) < 5 || Math.abs(diffPercent) < 5) {
-        aSeconds = aLastSeconds - (diff < 0 ? .4 : .2);
+        aSeconds = aLastSeconds - (diff < 0 ? 0.4 : 0.2);
       }
     }
 
     
     
     
-    return aLastSeconds = Math.max(aSeconds, 1);
+    return (aLastSeconds = Math.max(aSeconds, 1));
   },
 
   
@@ -438,7 +449,8 @@ var DownloadsCommon = {
       throw new Error("aOwnerWindow must be a dom-window object");
     }
 
-    let isWindowsExe = AppConstants.platform == "win" &&
+    let isWindowsExe =
+      AppConstants.platform == "win" &&
       aFile.leafName.toLowerCase().endsWith(".exe");
 
     let promiseShouldLaunch;
@@ -446,38 +458,43 @@ var DownloadsCommon = {
     if (aFile.isExecutable() && !isWindowsExe) {
       
       
-      promiseShouldLaunch =
-        DownloadUIHelper.getPrompter(aOwnerWindow)
-                        .confirmLaunchExecutable(aFile.path);
+      promiseShouldLaunch = DownloadUIHelper.getPrompter(
+        aOwnerWindow
+      ).confirmLaunchExecutable(aFile.path);
     } else {
       promiseShouldLaunch = Promise.resolve(true);
     }
 
-    promiseShouldLaunch.then(shouldLaunch => {
-      if (!shouldLaunch) {
-        return;
-      }
-
-      
-      try {
-        if (aMimeInfo && aMimeInfo.preferredAction == aMimeInfo.useHelperApp) {
-          aMimeInfo.launchWithFile(aFile);
+    promiseShouldLaunch
+      .then(shouldLaunch => {
+        if (!shouldLaunch) {
           return;
         }
-      } catch (ex) { }
 
-      
-      
-      try {
-        aFile.launch();
-      } catch (ex) {
+        
+        try {
+          if (
+            aMimeInfo &&
+            aMimeInfo.preferredAction == aMimeInfo.useHelperApp
+          ) {
+            aMimeInfo.launchWithFile(aFile);
+            return;
+          }
+        } catch (ex) {}
+
         
         
-        Cc["@mozilla.org/uriloader/external-protocol-service;1"]
-          .getService(Ci.nsIExternalProtocolService)
-          .loadURI(NetUtil.newURI(aFile));
-      }
-    }).catch(Cu.reportError);
+        try {
+          aFile.launch();
+        } catch (ex) {
+          
+          
+          Cc["@mozilla.org/uriloader/external-protocol-service;1"]
+            .getService(Ci.nsIExternalProtocolService)
+            .loadURI(NetUtil.newURI(aFile));
+        }
+      })
+      .catch(Cu.reportError);
   },
 
   
@@ -552,8 +569,7 @@ var DownloadsCommon = {
 
 
 
-  async confirmUnblockDownload({ verdict, window,
-                                                  dialogType }) {
+  async confirmUnblockDownload({ verdict, window, dialogType }) {
     let s = DownloadsCommon.strings;
 
     
@@ -564,8 +580,8 @@ var DownloadsCommon = {
     let firstButtonText = s.unblockButtonUnblock;
     let firstButtonAction = "unblock";
     let buttonFlags =
-        (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_0) +
-        (Ci.nsIPrompt.BUTTON_TITLE_CANCEL * Ci.nsIPrompt.BUTTON_POS_1);
+      Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_0 +
+      Ci.nsIPrompt.BUTTON_TITLE_CANCEL * Ci.nsIPrompt.BUTTON_POS_1;
 
     switch (dialogType) {
       case "unblock":
@@ -575,7 +591,7 @@ var DownloadsCommon = {
       case "chooseUnblock":
         
         buttonFlags +=
-          (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2) +
+          Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2 +
           Ci.nsIPrompt.BUTTON_POS_2_DEFAULT;
         break;
       case "chooseOpen":
@@ -584,7 +600,7 @@ var DownloadsCommon = {
         firstButtonText = s.unblockButtonOpen;
         firstButtonAction = "open";
         buttonFlags +=
-          (Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2) +
+          Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_2 +
           Ci.nsIPrompt.BUTTON_POS_0_DEFAULT;
         break;
       default:
@@ -600,7 +616,8 @@ var DownloadsCommon = {
       case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
         message = s.unblockTypePotentiallyUnwanted2;
         break;
-      default: 
+      default:
+        
         message = s.unblockTypeMalware;
         break;
     }
@@ -610,23 +627,37 @@ var DownloadsCommon = {
       if (topic == "domwindowopened" && subj instanceof Ci.nsIDOMWindow) {
         
         
-        subj.addEventListener("DOMContentLoaded", function() {
-          if (subj.document.documentURI ==
-              "chrome://global/content/commonDialog.xul") {
-            Services.ww.unregisterNotification(onOpen);
-            let dialog = subj.document.getElementById("commonDialog");
-            if (dialog) {
-              
-              dialog.classList.add("alert-dialog");
+        subj.addEventListener(
+          "DOMContentLoaded",
+          function() {
+            if (
+              subj.document.documentURI ==
+              "chrome://global/content/commonDialog.xul"
+            ) {
+              Services.ww.unregisterNotification(onOpen);
+              let dialog = subj.document.getElementById("commonDialog");
+              if (dialog) {
+                
+                dialog.classList.add("alert-dialog");
+              }
             }
-          }
-        }, {once: true});
+          },
+          { once: true }
+        );
       }
     });
 
-    let rv = Services.prompt.confirmEx(window, title, message, buttonFlags,
-                                       firstButtonText, null,
-                                       s.unblockButtonConfirmBlock, null, {});
+    let rv = Services.prompt.confirmEx(
+      window,
+      title,
+      message,
+      buttonFlags,
+      firstButtonText,
+      null,
+      s.unblockButtonConfirmBlock,
+      null,
+      {}
+    );
     return [firstButtonAction, "cancel", "confirmBlock"][rv];
   },
 };
@@ -694,9 +725,10 @@ function DownloadsDataCtor({ isPrivate, isHistory, maxHistoryResults } = {}) {
   
   
   this._promiseList = (async () => {
-    await new Promise(resolve => this.initializeDataLink = resolve);
-    let list = await Downloads.getList(isPrivate ? Downloads.PRIVATE
-                                                 : Downloads.PUBLIC);
+    await new Promise(resolve => (this.initializeDataLink = resolve));
+    let list = await Downloads.getList(
+      isPrivate ? Downloads.PRIVATE : Downloads.PUBLIC
+    );
     await list.addView(this);
     return list;
   })();
@@ -741,10 +773,11 @@ DownloadsDataCtor.prototype = {
 
   removeFinished() {
     Downloads.getList(this._isPrivate ? Downloads.PRIVATE : Downloads.PUBLIC)
-             .then(list => list.removeFinished())
-             .catch(Cu.reportError);
-    let indicatorData = this._isPrivate ? PrivateDownloadsIndicatorData
-                                        : DownloadsIndicatorData;
+      .then(list => list.removeFinished())
+      .catch(Cu.reportError);
+    let indicatorData = this._isPrivate
+      ? PrivateDownloadsIndicatorData
+      : DownloadsIndicatorData;
     indicatorData.attention = DownloadsCommon.ATTENTION_NONE;
   },
 
@@ -757,8 +790,10 @@ DownloadsDataCtor.prototype = {
     
     download.endTime = Date.now();
 
-    this.oldDownloadStates.set(download,
-                               DownloadsCommon.stateOfDownload(download));
+    this.oldDownloadStates.set(
+      download,
+      DownloadsCommon.stateOfDownload(download)
+    );
   },
 
   onDownloadChanged(download) {
@@ -767,9 +802,11 @@ DownloadsDataCtor.prototype = {
     this.oldDownloadStates.set(download, newState);
 
     if (oldState != newState) {
-      if (download.succeeded ||
-          (download.canceled && !download.hasPartialData) ||
-          download.error) {
+      if (
+        download.succeeded ||
+        (download.canceled && !download.hasPartialData) ||
+        download.error
+      ) {
         
         download.endTime = Date.now();
 
@@ -778,8 +815,10 @@ DownloadsDataCtor.prototype = {
         DownloadHistory.updateMetaData(download).catch(Cu.reportError);
       }
 
-      if (download.succeeded ||
-          (download.error && download.error.becauseBlocked)) {
+      if (
+        download.succeeded ||
+        (download.error && download.error.becauseBlocked)
+      ) {
         this._notifyDownloadEvent("finish");
       }
     }
@@ -805,8 +844,7 @@ DownloadsDataCtor.prototype = {
 
 
   addView(aView) {
-    this._promiseList.then(list => list.addView(aView))
-                     .catch(Cu.reportError);
+    this._promiseList.then(list => list.addView(aView)).catch(Cu.reportError);
   },
 
   
@@ -816,8 +854,9 @@ DownloadsDataCtor.prototype = {
 
 
   removeView(aView) {
-    this._promiseList.then(list => list.removeView(aView))
-                     .catch(Cu.reportError);
+    this._promiseList
+      .then(list => list.removeView(aView))
+      .catch(Cu.reportError);
   },
 
   
@@ -829,7 +868,7 @@ DownloadsDataCtor.prototype = {
   get panelHasShownBefore() {
     try {
       return Services.prefs.getBoolPref("browser.download.panel.shown");
-    } catch (ex) { }
+    } catch (ex) {}
     return false;
   },
 
@@ -846,10 +885,14 @@ DownloadsDataCtor.prototype = {
 
 
   _notifyDownloadEvent(aType) {
-    DownloadsCommon.log("Attempting to notify that a new download has started or finished.");
+    DownloadsCommon.log(
+      "Attempting to notify that a new download has started or finished."
+    );
 
     
-    let browserWin = BrowserWindowTracker.getTopWindow({ private: this._isPrivate });
+    let browserWin = BrowserWindowTracker.getTopWindow({
+      private: this._isPrivate,
+    });
     if (!browserWin) {
       return;
     }
@@ -872,13 +915,23 @@ XPCOMUtils.defineLazyGetter(this, "HistoryDownloadsData", function() {
 });
 
 XPCOMUtils.defineLazyGetter(this, "LimitedHistoryDownloadsData", function() {
-  return new DownloadsDataCtor({ isHistory: true, maxHistoryResults: kMaxHistoryResultsForLimitedView });
+  return new DownloadsDataCtor({
+    isHistory: true,
+    maxHistoryResults: kMaxHistoryResultsForLimitedView,
+  });
 });
 
-XPCOMUtils.defineLazyGetter(this, "LimitedPrivateHistoryDownloadData", function() {
-  return new DownloadsDataCtor({ isPrivate: true, isHistory: true,
-    maxHistoryResults: kMaxHistoryResultsForLimitedView });
-});
+XPCOMUtils.defineLazyGetter(
+  this,
+  "LimitedPrivateHistoryDownloadData",
+  function() {
+    return new DownloadsDataCtor({
+      isPrivate: true,
+      isHistory: true,
+      maxHistoryResults: kMaxHistoryResultsForLimitedView,
+    });
+  }
+);
 
 XPCOMUtils.defineLazyGetter(this, "PrivateDownloadsData", function() {
   return new DownloadsDataCtor({ isPrivate: true });
@@ -1009,8 +1062,10 @@ const DownloadsViewPrototype = {
 
 
   onDownloadAdded(download) {
-    this._oldDownloadStates.set(download,
-                                DownloadsCommon.stateOfDownload(download));
+    this._oldDownloadStates.set(
+      download,
+      DownloadsCommon.stateOfDownload(download)
+    );
   },
 
   
@@ -1132,7 +1187,11 @@ DownloadsIndicatorDataCtor.prototype = {
   },
 
   onDownloadStateChanged(download) {
-    if (!download.succeeded && download.error && download.error.reputationCheckVerdict) {
+    if (
+      !download.succeeded &&
+      download.error &&
+      download.error.reputationCheckVerdict
+    ) {
       switch (download.error.reputationCheckVerdict) {
         case Downloads.Error.BLOCK_VERDICT_UNCOMMON: 
         case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
@@ -1146,13 +1205,17 @@ DownloadsIndicatorDataCtor.prototype = {
           break;
         default:
           this.attention = DownloadsCommon.ATTENTION_SEVERE;
-          Cu.reportError("Unknown reputation verdict: " +
-                         download.error.reputationCheckVerdict);
+          Cu.reportError(
+            "Unknown reputation verdict: " +
+              download.error.reputationCheckVerdict
+          );
       }
     } else if (download.succeeded) {
       
-      if (this._attention != DownloadsCommon.ATTENTION_SEVERE &&
-          this._attention != DownloadsCommon.ATTENTION_WARNING) {
+      if (
+        this._attention != DownloadsCommon.ATTENTION_SEVERE &&
+        this._attention != DownloadsCommon.ATTENTION_WARNING
+      ) {
         this.attention = DownloadsCommon.ATTENTION_SUCCESS;
       }
     } else if (download.error) {
@@ -1211,8 +1274,9 @@ DownloadsIndicatorDataCtor.prototype = {
   _updateView(aView) {
     aView.hasDownloads = this._hasDownloads;
     aView.percentComplete = this._percentComplete;
-    aView.attention = this._attentionSuppressed ? DownloadsCommon.ATTENTION_NONE
-                                                : this._attention;
+    aView.attention = this._attentionSuppressed
+      ? DownloadsCommon.ATTENTION_NONE
+      : this._attention;
   },
 
   
@@ -1228,9 +1292,10 @@ DownloadsIndicatorDataCtor.prototype = {
 
 
 
-  * _activeDownloads() {
-    let downloads = this._isPrivate ? PrivateDownloadsData.downloads
-                                    : DownloadsData.downloads;
+  *_activeDownloads() {
+    let downloads = this._isPrivate
+      ? PrivateDownloadsData.downloads
+      : DownloadsData.downloads;
     for (let download of downloads) {
       if (!download.stopped || (download.canceled && download.hasPartialData)) {
         yield download;
@@ -1242,11 +1307,10 @@ DownloadsIndicatorDataCtor.prototype = {
 
 
   _refreshProperties() {
-    let summary =
-      DownloadsCommon.summarizeDownloads(this._activeDownloads());
+    let summary = DownloadsCommon.summarizeDownloads(this._activeDownloads());
 
     
-    this._hasDownloads = (this._itemCount > 0);
+    this._hasDownloads = this._itemCount > 0;
 
     
     if (summary.percentComplete >= 0) {
@@ -1383,7 +1447,7 @@ DownloadsSummaryData.prototype = {
 
 
 
-  * _downloadsForSummary() {
+  *_downloadsForSummary() {
     if (this._downloads.length > 0) {
       for (let i = this._numToExclude; i < this._downloads.length; ++i) {
         yield this._downloads[i];
@@ -1396,11 +1460,13 @@ DownloadsSummaryData.prototype = {
 
   _refreshProperties() {
     
-    let summary =
-      DownloadsCommon.summarizeDownloads(this._downloadsForSummary());
+    let summary = DownloadsCommon.summarizeDownloads(
+      this._downloadsForSummary()
+    );
 
-    this._description = DownloadsCommon.strings
-                                       .otherDownloads3(summary.numDownloading);
+    this._description = DownloadsCommon.strings.otherDownloads3(
+      summary.numDownloading
+    );
     this._percentComplete = summary.percentComplete;
 
     
@@ -1416,12 +1482,17 @@ DownloadsSummaryData.prototype = {
       
       if (this._lastRawTimeLeft != summary.rawTimeLeft) {
         this._lastRawTimeLeft = summary.rawTimeLeft;
-        this._lastTimeLeft = DownloadsCommon.smoothSeconds(summary.rawTimeLeft,
-                                                           this._lastTimeLeft);
+        this._lastTimeLeft = DownloadsCommon.smoothSeconds(
+          summary.rawTimeLeft,
+          this._lastTimeLeft
+        );
       }
       [this._details] = DownloadUtils.getDownloadStatusNoRate(
-        summary.totalTransferred, summary.totalSize, summary.slowestSpeed,
-        this._lastTimeLeft);
+        summary.totalTransferred,
+        summary.totalSize,
+        summary.slowestSpeed,
+        this._lastTimeLeft
+      );
     }
   },
 };

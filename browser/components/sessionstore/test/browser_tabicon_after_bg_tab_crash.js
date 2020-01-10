@@ -1,6 +1,7 @@
 "use strict";
 
-const FAVICON = "data:image/gif;base64,R0lGODlhCwALAIAAAAAA3pn/ZiH5BAEAAAEALAAAAAALAAsAAAIUhA+hkcuO4lmNVindo7qyrIXiGBYAOw==";
+const FAVICON =
+  "data:image/gif;base64,R0lGODlhCwALAIAAAAAA3pn/ZiH5BAEAAAEALAAAAAALAAsAAAIUhA+hkcuO4lmNVindo7qyrIXiGBYAOw==";
 const PAGE_URL = `data:text/html,
 <html>
   <head>
@@ -18,21 +19,34 @@ const PAGE_URL = `data:text/html,
 add_task(async function test_tabicon_after_bg_tab_crash() {
   let originalTab = gBrowser.selectedTab;
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: PAGE_URL,
-  }, async function(browser) {
-    
-    
-    
-    await BrowserTestUtils.waitForCondition(() => {
-      return gBrowser.getIcon() != null;
-    }, "wait for favicon load to finish", 100, 5);
-    Assert.equal(browser.mIconURL, FAVICON, "Favicon is correctly set.");
-    await BrowserTestUtils.switchTab(gBrowser, originalTab);
-    await BrowserTestUtils.crashBrowser(browser,
-                                        false );
-    Assert.equal(browser.mIconURL, FAVICON,
-                 "Favicon is still set after crash.");
-  });
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: PAGE_URL,
+    },
+    async function(browser) {
+      
+      
+      
+      await BrowserTestUtils.waitForCondition(
+        () => {
+          return gBrowser.getIcon() != null;
+        },
+        "wait for favicon load to finish",
+        100,
+        5
+      );
+      Assert.equal(browser.mIconURL, FAVICON, "Favicon is correctly set.");
+      await BrowserTestUtils.switchTab(gBrowser, originalTab);
+      await BrowserTestUtils.crashBrowser(
+        browser,
+        false 
+      );
+      Assert.equal(
+        browser.mIconURL,
+        FAVICON,
+        "Favicon is still set after crash."
+      );
+    }
+  );
 });

@@ -2,12 +2,21 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "AppMenuNotifications",
-                               "resource://gre/modules/AppMenuNotifications.jsm");
-ChromeUtils.defineModuleGetter(this, "NewTabUtils",
-                               "resource://gre/modules/NewTabUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "PanelMultiView",
-                               "resource:///modules/PanelMultiView.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "AppMenuNotifications",
+  "resource://gre/modules/AppMenuNotifications.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "NewTabUtils",
+  "resource://gre/modules/NewTabUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "PanelMultiView",
+  "resource:///modules/PanelMultiView.jsm"
+);
 
 
 
@@ -51,8 +60,12 @@ const PanelUI = {
     Services.obs.addObserver(this, "fullscreen-nav-toolbox");
     Services.obs.addObserver(this, "appMenu-notifications");
 
-    XPCOMUtils.defineLazyPreferenceGetter(this, "autoHideToolbarInFullScreen",
-      "browser.fullscreen.autohide", false, (pref, previousValue, newValue) => {
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "autoHideToolbarInFullScreen",
+      "browser.fullscreen.autohide",
+      false,
+      (pref, previousValue, newValue) => {
         
         
         
@@ -69,7 +82,9 @@ const PanelUI = {
         }
 
         this._updateNotifications(false);
-      }, autoHidePref => autoHidePref && Services.appinfo.OS !== "Darwin");
+      },
+      autoHidePref => autoHidePref && Services.appinfo.OS !== "Darwin"
+    );
 
     if (this.autoHideToolbarInFullScreen) {
       window.addEventListener("fullscreen", this);
@@ -78,11 +93,17 @@ const PanelUI = {
       window.addEventListener("MozDOMFullscreen:Exited", this);
     }
 
-    XPCOMUtils.defineLazyPreferenceGetter(this, "libraryRecentHighlightsEnabled",
-      "browser.library.activity-stream.enabled", false, (pref, previousValue, newValue) => {
-        if (!newValue)
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "libraryRecentHighlightsEnabled",
+      "browser.library.activity-stream.enabled",
+      false,
+      (pref, previousValue, newValue) => {
+        if (!newValue) {
           this.clearLibraryRecentHighlights();
-      });
+        }
+      }
+    );
 
     window.addEventListener("activate", this);
     CustomizableUI.addListener(this);
@@ -96,10 +117,17 @@ const PanelUI = {
     this.overflowFixedList.hidden = false;
     
     this.overflowFixedList.previousElementSibling.hidden = false;
-    CustomizableUI.registerMenuPanel(this.overflowFixedList, CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+    CustomizableUI.registerMenuPanel(
+      this.overflowFixedList,
+      CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+    );
     this.updateOverflowStatus();
 
-    Services.obs.notifyObservers(null, "appMenu-notifications-request", "refresh");
+    Services.obs.notifyObservers(
+      null,
+      "appMenu-notifications-request",
+      "refresh"
+    );
 
     this._initialized = true;
   },
@@ -111,15 +139,16 @@ const PanelUI = {
       let id = v;
       this.__defineGetter__(getKey, function() {
         delete this[getKey];
-        return this[getKey] = document.getElementById(id);
+        return (this[getKey] = document.getElementById(id));
       });
     }
   },
 
   _eventListenersAdded: false,
   _ensureEventListenersAdded() {
-    if (this._eventListenersAdded)
+    if (this._eventListenersAdded) {
       return;
+    }
     this._addEventListeners();
   },
 
@@ -191,8 +220,10 @@ const PanelUI = {
     (async () => {
       await this.ensureReady();
 
-      if (this.panel.state == "open" ||
-          document.documentElement.hasAttribute("customizing")) {
+      if (
+        this.panel.state == "open" ||
+        document.documentElement.hasAttribute("customizing")
+      ) {
         return;
       }
 
@@ -239,24 +270,23 @@ const PanelUI = {
 
   handleEvent(aEvent) {
     
-    if (aEvent.type.startsWith("popup") &&
-        aEvent.target != this.panel) {
+    if (aEvent.type.startsWith("popup") && aEvent.target != this.panel) {
       return;
     }
     switch (aEvent.type) {
       case "popupshowing":
         updateEditUIVisibility();
-        
+      
       case "popupshown":
         if (aEvent.type == "popupshown") {
           CustomizableUI.addPanelCloseListeners(this.panel);
         }
-        
+      
       case "popuphiding":
         if (aEvent.type == "popuphiding") {
           updateEditUIVisibility();
         }
-        
+      
       case "popuphidden":
         this._updateNotifications();
         this._updatePanelButton(aEvent.target);
@@ -265,8 +295,9 @@ const PanelUI = {
         }
         break;
       case "mousedown":
-        if (aEvent.button == 0)
+        if (aEvent.button == 0) {
           this.toggle(aEvent);
+        }
         break;
       case "keypress":
         if (aEvent.key == " " || aEvent.key == "Enter") {
@@ -343,15 +374,35 @@ const PanelUI = {
       if (aEvent.type == "mousedown" && aEvent.button != 0) {
         return;
       }
-      if (aEvent.type == "keypress" && aEvent.key != " " &&
-          aEvent.key != "Enter") {
+      if (
+        aEvent.type == "keypress" &&
+        aEvent.key != " " &&
+        aEvent.key != "Enter"
+      ) {
         return;
       }
       if (aEvent.type == "command" && aEvent.inputSource != null) {
         
         domEvent = document.createEvent("MouseEvent");
-        domEvent.initNSMouseEvent("click", true, true, null, 0, aEvent.screenX, aEvent.screenY,
-                                  0, 0, false, false, false, false, 0, aEvent.target, 0, aEvent.inputSource);
+        domEvent.initNSMouseEvent(
+          "click",
+          true,
+          true,
+          null,
+          0,
+          aEvent.screenX,
+          aEvent.screenY,
+          0,
+          0,
+          false,
+          false,
+          false,
+          false,
+          0,
+          aEvent.target,
+          0,
+          aEvent.inputSource
+        );
       } else if (aEvent.mozInputSource != null || aEvent.type == "keypress") {
         domEvent = aEvent;
       }
@@ -365,7 +416,9 @@ const PanelUI = {
     }
 
     if (!aAnchor) {
-      Cu.reportError("Expected an anchor when opening subview with id: " + aViewId);
+      Cu.reportError(
+        "Expected an anchor when opening subview with id: " + aViewId
+      );
       return;
     }
 
@@ -390,10 +443,14 @@ const PanelUI = {
       }
       tempPanel.setAttribute("context", "");
       tempPanel.setAttribute("photon", true);
-      document.getElementById(CustomizableUI.AREA_NAVBAR).appendChild(tempPanel);
+      document
+        .getElementById(CustomizableUI.AREA_NAVBAR)
+        .appendChild(tempPanel);
       
-      tempPanel.classList.toggle("cui-widget-panelWithFooter",
-                                 viewNode.querySelector(".panel-subview-footer"));
+      tempPanel.classList.toggle(
+        "cui-widget-panelWithFooter",
+        viewNode.querySelector(".panel-subview-footer")
+      );
 
       let multiView = document.createXULElement("panelmultiview");
       multiView.setAttribute("id", "customizationui-widget-multiview");
@@ -448,8 +505,9 @@ const PanelUI = {
 
 
   ensureLibraryInitialized(viewNode) {
-    if (viewNode != this.libraryView || viewNode._initialized)
+    if (viewNode != this.libraryView || viewNode._initialized) {
       return;
+    }
 
     viewNode._initialized = true;
     viewNode.addEventListener("ViewShowing", this);
@@ -487,17 +545,19 @@ const PanelUI = {
 
 
   async fetchAndPopulateLibraryRecentHighlights() {
-    let highlights = await NewTabUtils.activityStreamLinks.getHighlights({
-      
-      
-      numItems: 6,
-      withFavicons: true,
-      excludePocket: true,
-    }).catch(ex => {
-      
-      Cu.reportError(ex);
-      return [];
-    });
+    let highlights = await NewTabUtils.activityStreamLinks
+      .getHighlights({
+        
+        
+        numItems: 6,
+        withFavicons: true,
+        excludePocket: true,
+      })
+      .catch(ex => {
+        
+        Cu.reportError(ex);
+        return [];
+      });
 
     
     
@@ -509,12 +569,16 @@ const PanelUI = {
     }
 
     let container = this.libraryRecentHighlights;
-    container.hidden = container.previousElementSibling.hidden =
-      container.previousElementSibling.previousElementSibling.hidden = false;
+    container.hidden = container.previousElementSibling.hidden = container.previousElementSibling.previousElementSibling.hidden = false;
     let fragment = document.createDocumentFragment();
     for (let highlight of highlights) {
       let button = document.createXULElement("toolbarbutton");
-      button.classList.add("subviewbutton", "highlight", "subviewbutton-iconic", "bookmark-item");
+      button.classList.add(
+        "subviewbutton",
+        "highlight",
+        "subviewbutton-iconic",
+        "bookmark-item"
+      );
       let title = highlight.title || highlight.url;
       button.setAttribute("label", title);
       button.setAttribute("tooltiptext", title);
@@ -548,8 +612,7 @@ const PanelUI = {
     while (container.firstChild) {
       container.firstChild.remove();
     }
-    container.hidden = container.previousElementSibling.hidden =
-      container.previousElementSibling.previousElementSibling.hidden = true;
+    container.hidden = container.previousElementSibling.hidden = container.previousElementSibling.previousElementSibling.hidden = true;
   },
 
   
@@ -567,7 +630,9 @@ const PanelUI = {
       CustomizableUI.hidePanelForNode(button);
     }
     window.openUILink(button._highlight.url, event, {
-      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({}),
+      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
+        {}
+      ),
     });
   },
 
@@ -613,8 +678,8 @@ const PanelUI = {
 
 
   _updatePanelButton() {
-    this.menuButton.open = this.panel.state == "open" ||
-                           this.panel.state == "showing";
+    this.menuButton.open =
+      this.panel.state == "open" || this.panel.state == "showing";
   },
 
   _onHelpViewShow(aEvent) {
@@ -631,16 +696,20 @@ const PanelUI = {
     }
 
     
-    let menuItems = Array.prototype.slice.call(helpMenu.getElementsByTagName("menuitem"));
+    let menuItems = Array.prototype.slice.call(
+      helpMenu.getElementsByTagName("menuitem")
+    );
     let fragment = document.createDocumentFragment();
     for (let node of menuItems) {
-      if (node.hidden)
+      if (node.hidden) {
         continue;
+      }
       let button = document.createXULElement("toolbarbutton");
       
       for (let attrName of attrs) {
-        if (!node.hasAttribute(attrName))
+        if (!node.hasAttribute(attrName)) {
           continue;
+        }
         button.setAttribute(attrName, node.getAttribute(attrName));
       }
       button.setAttribute("class", "subviewbutton");
@@ -654,16 +723,23 @@ const PanelUI = {
       return;
     }
 
-    let tooltipId = AppConstants.platform == "macosx" ?
-                    "quit-button.tooltiptext.mac" :
-                    "quit-button.tooltiptext.linux2";
+    let tooltipId =
+      AppConstants.platform == "macosx"
+        ? "quit-button.tooltiptext.mac"
+        : "quit-button.tooltiptext.linux2";
 
-    let brands = Services.strings.createBundle("chrome://branding/locale/brand.properties");
+    let brands = Services.strings.createBundle(
+      "chrome://branding/locale/brand.properties"
+    );
     let stringArgs = [brands.GetStringFromName("brandShortName")];
 
     let key = document.getElementById("key_quitApplication");
     stringArgs.push(ShortcutUtils.prettifyShortcut(key));
-    let tooltipString = CustomizableUI.getLocalizedProperty({x: tooltipId}, "x", stringArgs);
+    let tooltipString = CustomizableUI.getLocalizedProperty(
+      { x: tooltipId },
+      "x",
+      stringArgs
+    );
     let quitButton = document.getElementById("PanelUI-quit");
     quitButton.setAttribute("tooltiptext", tooltipString);
   },
@@ -684,13 +760,17 @@ const PanelUI = {
       return;
     }
 
-    if ((window.fullScreen && FullScreen.navToolboxHidden) || document.fullscreenElement) {
+    if (
+      (window.fullScreen && FullScreen.navToolboxHidden) ||
+      document.fullscreenElement
+    ) {
       this._hidePopup();
       return;
     }
 
-    let doorhangers =
-      notifications.filter(n => !n.dismissed && !n.options.badgeOnly);
+    let doorhangers = notifications.filter(
+      n => !n.dismissed && !n.options.badgeOnly
+    );
 
     if (this.panel.state == "showing" || this.panel.state == "open") {
       
@@ -708,7 +788,10 @@ const PanelUI = {
       }
     } else if (doorhangers.length > 0) {
       
-      if ((window.fullScreen && this.autoHideToolbarInFullScreen) || Services.focus.activeWindow !== window) {
+      if (
+        (window.fullScreen && this.autoHideToolbarInFullScreen) ||
+        Services.focus.activeWindow !== window
+      ) {
         this._hidePopup();
         this._showBadge(doorhangers[0]);
         this._showBannerItem(doorhangers[0]);
@@ -743,10 +826,13 @@ const PanelUI = {
     MozXULElement.insertFTLIfNeeded("browser/appMenuNotifications.ftl");
 
     
-    document.getElementById("appMenu-notification-popup").querySelectorAll("[data-lazy-l10n-id]").forEach(el => {
-      el.setAttribute("data-l10n-id", el.getAttribute("data-lazy-l10n-id"));
-      el.removeAttribute("data-lazy-l10n-id");
-    });
+    document
+      .getElementById("appMenu-notification-popup")
+      .querySelectorAll("[data-lazy-l10n-id]")
+      .forEach(el => {
+        el.setAttribute("data-l10n-id", el.getAttribute("data-lazy-l10n-id"));
+        el.removeAttribute("data-lazy-l10n-id");
+      });
 
     this.notificationPanel.openPopup(anchor, "bottomcenter topright");
   },
@@ -780,9 +866,14 @@ const PanelUI = {
     let popupnotification = document.getElementById(popupnotificationID);
 
     popupnotification.setAttribute("id", popupnotificationID);
-    popupnotification.setAttribute("buttoncommand", "PanelUI._onNotificationButtonEvent(event, 'buttoncommand');");
-    popupnotification.setAttribute("secondarybuttoncommand",
-      "PanelUI._onNotificationButtonEvent(event, 'secondarybuttoncommand');");
+    popupnotification.setAttribute(
+      "buttoncommand",
+      "PanelUI._onNotificationButtonEvent(event, 'buttoncommand');"
+    );
+    popupnotification.setAttribute(
+      "secondarybuttoncommand",
+      "PanelUI._onNotificationButtonEvent(event, 'secondarybuttoncommand');"
+    );
 
     if (notification.options.message) {
       let desc = this._formatDescriptionMessage(notification);
@@ -837,11 +928,17 @@ const PanelUI = {
   _onNotificationButtonEvent(event, type) {
     let notificationEl = getNotificationFromElement(event.originalTarget);
 
-    if (!notificationEl)
-      throw new Error("PanelUI._onNotificationButtonEvent: couldn't find notification element");
+    if (!notificationEl) {
+      throw new Error(
+        "PanelUI._onNotificationButtonEvent: couldn't find notification element"
+      );
+    }
 
-    if (!notificationEl.notification)
-      throw new Error("PanelUI._onNotificationButtonEvent: couldn't find notification");
+    if (!notificationEl.notification) {
+      throw new Error(
+        "PanelUI._onNotificationButtonEvent: couldn't find notification"
+      );
+    }
 
     let notification = notificationEl.notification;
 
@@ -854,16 +951,23 @@ const PanelUI = {
 
   _onBannerItemSelected(event) {
     let target = event.originalTarget;
-    if (!target.notification)
-      throw new Error("menucommand target has no associated action/notification");
+    if (!target.notification) {
+      throw new Error(
+        "menucommand target has no associated action/notification"
+      );
+    }
 
     event.stopPropagation();
     AppMenuNotifications.callMainAction(window, target.notification, false);
   },
 
-  _getPopupId(notification) { return "appMenu-" + notification.id + "-notification"; },
+  _getPopupId(notification) {
+    return "appMenu-" + notification.id + "-notification";
+  },
 
-  _getBadgeStatus(notification) { return notification.id; },
+  _getBadgeStatus(notification) {
+    return notification.id;
+  },
 
   _getPanelAnchor(candidate) {
     let iconAnchor = candidate.badgeStack || candidate.icon;

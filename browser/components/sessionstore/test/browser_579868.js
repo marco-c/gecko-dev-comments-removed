@@ -10,7 +10,8 @@ function test() {
 
   promiseBrowserLoaded(tab1.linkedBrowser).then(() => {
     
-    let newTabState = '{"entries":[{"url":"about:rights"}],"pinned":true,"userTypedValue":"Hello World!"}';
+    let newTabState =
+      '{"entries":[{"url":"about:rights"}],"pinned":true,"userTypedValue":"Hello World!"}';
     ss.setTabState(tab1, newTabState);
 
     

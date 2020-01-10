@@ -10,8 +10,9 @@ requestLongerTimeout(2);
 
 
 add_task(async function test_formdata() {
-  const URL = "http://mochi.test:8888/browser/browser/components/" +
-              "sessionstore/test/browser_formdata_sample.html";
+  const URL =
+    "http://mochi.test:8888/browser/browser/components/" +
+    "sessionstore/test/browser_formdata_sample.html";
 
   const OUTER_VALUE = "browser_formdata_" + Math.random();
   const INNER_VALUE = "browser_formdata_" + Math.random();
@@ -25,15 +26,19 @@ add_task(async function test_formdata() {
     await promiseBrowserLoaded(browser);
 
     
-    await setInputValue(browser, {id: "txt", value: OUTER_VALUE});
-    await setInputValue(browser, {id: "txt", value: INNER_VALUE, frame: 0});
+    await setInputValue(browser, { id: "txt", value: OUTER_VALUE });
+    await setInputValue(browser, { id: "txt", value: INNER_VALUE, frame: 0 });
 
     
     await promiseRemoveTabAndSessionState(tab);
   }
 
   await createAndRemoveTab();
-  let [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
+  let [
+    {
+      state: { formdata },
+    },
+  ] = JSON.parse(ss.getClosedTabData(window));
   is(formdata.id.txt, OUTER_VALUE, "outer value is correct");
   is(formdata.children[0].id.txt, INNER_VALUE, "inner value is correct");
 
@@ -41,7 +46,11 @@ add_task(async function test_formdata() {
   Services.prefs.setIntPref("browser.sessionstore.privacy_level", 1);
 
   await createAndRemoveTab();
-  [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
+  [
+    {
+      state: { formdata },
+    },
+  ] = JSON.parse(ss.getClosedTabData(window));
   is(formdata.id.txt, OUTER_VALUE, "outer value is correct");
   ok(!formdata.children, "inner value was *not* stored");
 
@@ -49,7 +58,11 @@ add_task(async function test_formdata() {
   Services.prefs.setIntPref("browser.sessionstore.privacy_level", 2);
 
   await createAndRemoveTab();
-  [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
+  [
+    {
+      state: { formdata },
+    },
+  ] = JSON.parse(ss.getClosedTabData(window));
   ok(!formdata, "form data has *not* been stored");
 
   
@@ -72,21 +85,26 @@ add_task(async function test_url_check() {
 
   
   function restoreStateWithURL(url) {
-    let state = {entries: [{url: URL, triggeringPrincipal_base64}], formdata: {id: {input: VALUE}}};
+    let state = {
+      entries: [{ url: URL, triggeringPrincipal_base64 }],
+      formdata: { id: { input: VALUE } },
+    };
 
     if (url) {
       state.formdata.url = url;
     }
 
-    return promiseTabState(tab, state).then(() => getInputValue(browser, "input"));
+    return promiseTabState(tab, state).then(() =>
+      getInputValue(browser, "input")
+    );
   }
 
   
-  is((await restoreStateWithURL(URL)), VALUE, "form data restored");
+  is(await restoreStateWithURL(URL), VALUE, "form data restored");
 
   
-  is((await restoreStateWithURL(URL + "?")), "", "form data not restored");
-  is((await restoreStateWithURL()), "", "form data not restored");
+  is(await restoreStateWithURL(URL + "?"), "", "form data not restored");
+  is(await restoreStateWithURL(), "", "form data not restored");
 
   
   gBrowser.removeTab(tab);
@@ -97,19 +115,22 @@ add_task(async function test_url_check() {
 
 
 add_task(async function test_nested() {
-  const URL = "data:text/html;charset=utf-8," +
-              "<iframe src='data:text/html;charset=utf-8," +
-              "<input autofocus=true>'/>";
+  const URL =
+    "data:text/html;charset=utf-8," +
+    "<iframe src='data:text/html;charset=utf-8," +
+    "<input autofocus=true>'/>";
 
   const FORM_DATA = {
-    children: [{
-      url: "data:text/html;charset=utf-8,<input autofocus=true>",
-      xpath: {"/xhtml:html/xhtml:body/xhtml:input": "m"},
-    }],
+    children: [
+      {
+        url: "data:text/html;charset=utf-8,<input autofocus=true>",
+        xpath: { "/xhtml:html/xhtml:body/xhtml:input": "m" },
+      },
+    ],
   };
 
   
-  let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, URL);
+  let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, URL));
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 
@@ -118,9 +139,16 @@ add_task(async function test_nested() {
 
   
   await promiseRemoveTabAndSessionState(tab);
-  let [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
-  is(JSON.stringify(formdata), JSON.stringify(FORM_DATA),
-    "formdata for iframe stored correctly");
+  let [
+    {
+      state: { formdata },
+    },
+  ] = JSON.parse(ss.getClosedTabData(window));
+  is(
+    JSON.stringify(formdata),
+    JSON.stringify(FORM_DATA),
+    "formdata for iframe stored correctly"
+  );
 
   
   tab = ss.undoCloseTab(window, 0);
@@ -129,9 +157,12 @@ add_task(async function test_nested() {
 
   
   await TabStateFlusher.flush(browser);
-  ({formdata} = JSON.parse(ss.getTabState(tab)));
-  is(JSON.stringify(formdata), JSON.stringify(FORM_DATA),
-    "formdata for iframe restored correctly");
+  ({ formdata } = JSON.parse(ss.getTabState(tab)));
+  is(
+    JSON.stringify(formdata),
+    JSON.stringify(FORM_DATA),
+    "formdata for iframe restored correctly"
+  );
 
   
   gBrowser.removeTab(tab);
@@ -142,11 +173,12 @@ add_task(async function test_nested() {
 
 
 add_task(async function test_design_mode() {
-  const URL = "data:text/html;charset=utf-8,<h1>mozilla</h1>" +
-              "<script>document.designMode='on'</script>";
+  const URL =
+    "data:text/html;charset=utf-8,<h1>mozilla</h1>" +
+    "<script>document.designMode='on'</script>";
 
   
-  let tab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, URL);
+  let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, URL));
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 
@@ -180,7 +212,7 @@ add_task(async function test_design_mode() {
 });
 
 function getInputValue(browser, id) {
-  return sendMessage(browser, "ss-test:getInputValue", {id});
+  return sendMessage(browser, "ss-test:getInputValue", { id });
 }
 
 function setInputValue(browser, data) {
@@ -188,5 +220,5 @@ function setInputValue(browser, data) {
 }
 
 function getInnerHTML(browser) {
-  return sendMessage(browser, "ss-test:getInnerHTML", {selector: "body"});
+  return sendMessage(browser, "ss-test:getInnerHTML", { selector: "body" });
 }

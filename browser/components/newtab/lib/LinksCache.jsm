@@ -28,7 +28,12 @@ this.LinksCache = class LinksCache {
 
 
 
-  constructor(linkObject, linkProperty, properties = [], shouldRefresh = () => {}) {
+  constructor(
+    linkObject,
+    linkProperty,
+    properties = [],
+    shouldRefresh = () => {}
+  ) {
     this.clear();
 
     
@@ -67,10 +72,12 @@ this.LinksCache = class LinksCache {
   async request(options = {}) {
     
     const now = Date.now();
-    if (this.lastUpdate === undefined ||
-        now > this.lastUpdate + EXPIRATION_TIME ||
-        
-        this.shouldRefresh(this.lastOptions, options)) {
+    if (
+      this.lastUpdate === undefined ||
+      now > this.lastUpdate + EXPIRATION_TIME ||
+      
+      this.shouldRefresh(this.lastOptions, options)
+    ) {
       
       this.lastOptions = options;
       this.lastUpdate = now;
@@ -86,33 +93,35 @@ this.LinksCache = class LinksCache {
         }
 
         
-        resolve((await this.linkGetter(options)).map(link => {
-          
-          if (!link) {
-            return link;
-          }
-
-          
-          const newLink = Object.assign({}, link);
-          const oldLink = toMigrate.get(newLink.url);
-          if (oldLink) {
-            for (const property of this.migrateProperties) {
-              const oldValue = oldLink[property];
-              if (oldValue !== undefined) {
-                newLink[property] = oldValue;
-              }
-            }
-          } else {
+        resolve(
+          (await this.linkGetter(options)).map(link => {
             
-            newLink.__sharedCache = {};
-          }
-          
-          newLink.__sharedCache.updateLink = (property, value) => {
-            newLink[property] = value;
-          };
+            if (!link) {
+              return link;
+            }
 
-          return newLink;
-        }));
+            
+            const newLink = Object.assign({}, link);
+            const oldLink = toMigrate.get(newLink.url);
+            if (oldLink) {
+              for (const property of this.migrateProperties) {
+                const oldValue = oldLink[property];
+                if (oldValue !== undefined) {
+                  newLink[property] = oldValue;
+                }
+              }
+            } else {
+              
+              newLink.__sharedCache = {};
+            }
+            
+            newLink.__sharedCache.updateLink = (property, value) => {
+              newLink[property] = value;
+            };
+
+            return newLink;
+          })
+        );
       });
     }
 

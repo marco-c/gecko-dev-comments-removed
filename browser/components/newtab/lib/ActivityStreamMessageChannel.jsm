@@ -4,18 +4,29 @@
 
 "use strict";
 
-const {AboutNewTab} = ChromeUtils.import("resource:///modules/AboutNewTab.jsm");
- 
-const {RemotePages} = ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm");
+const { AboutNewTab } = ChromeUtils.import(
+  "resource:///modules/AboutNewTab.jsm"
+); 
+ const { RemotePages } = ChromeUtils.import(
+  "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
+);
 
-const {actionCreators: ac, actionTypes: at, actionUtils: au} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm");
+const {
+  actionCreators: ac,
+  actionTypes: at,
+  actionUtils: au,
+} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm");
 
 const ABOUT_NEW_TAB_URL = "about:newtab";
 const ABOUT_HOME_URL = "about:home";
 
 const DEFAULT_OPTIONS = {
   dispatch(action) {
-    throw new Error(`\nMessageChannel: Received action ${action.type}, but no dispatcher was defined.\n`);
+    throw new Error(
+      `\nMessageChannel: Received action ${
+        action.type
+      }, but no dispatcher was defined.\n`
+    );
   },
   pageURL: ABOUT_NEW_TAB_URL,
   outgoingMessageName: "ActivityStream:MainToContent",
@@ -192,8 +203,10 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
   createChannel() {
     
-    const channel = this.pageURL === ABOUT_NEW_TAB_URL && AboutNewTab.override(true);
-    this.channel = channel || new RemotePages([ABOUT_HOME_URL, ABOUT_NEW_TAB_URL]);
+    const channel =
+      this.pageURL === ABOUT_NEW_TAB_URL && AboutNewTab.override(true);
+    this.channel =
+      channel || new RemotePages([ABOUT_HOME_URL, ABOUT_NEW_TAB_URL]);
     this.channel.addMessageListener("RemotePage:Init", this.onNewTabInit);
     this.channel.addMessageListener("RemotePage:Load", this.onNewTabLoad);
     this.channel.addMessageListener("RemotePage:Unload", this.onNewTabUnload);
@@ -203,7 +216,9 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
   simulateMessagesForExistingTabs() {
     
     for (const target of this.channel.messagePorts) {
-      const simulatedMsg = {target: Object.assign({simulated: true}, target)};
+      const simulatedMsg = {
+        target: Object.assign({ simulated: true }, target),
+      };
       this.onNewTabInit(simulatedMsg);
       if (target.loaded) {
         this.onNewTabLoad(simulatedMsg);
@@ -217,8 +232,14 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
   destroyChannel() {
     this.channel.removeMessageListener("RemotePage:Init", this.onNewTabInit);
     this.channel.removeMessageListener("RemotePage:Load", this.onNewTabLoad);
-    this.channel.removeMessageListener("RemotePage:Unload", this.onNewTabUnload);
-    this.channel.removeMessageListener(this.incomingMessageName, this.onMessage);
+    this.channel.removeMessageListener(
+      "RemotePage:Unload",
+      this.onNewTabUnload
+    );
+    this.channel.removeMessageListener(
+      this.incomingMessageName,
+      this.onMessage
+    );
     if (this.pageURL === ABOUT_NEW_TAB_URL) {
       AboutNewTab.reset(this.channel);
     } else {
@@ -227,17 +248,20 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
     this.channel = null;
   }
 
-
+  
 
 
 
 
 
   onNewTabInit(msg) {
-    this.onActionFromContent({
-      type: at.NEW_TAB_INIT,
-      data: msg.target,
-    }, msg.target.portID);
+    this.onActionFromContent(
+      {
+        type: at.NEW_TAB_INIT,
+        data: msg.target,
+      },
+      msg.target.portID
+    );
   }
 
   
@@ -246,7 +270,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   onNewTabLoad(msg) {
-    let {browser} = msg.target;
+    let { browser } = msg.target;
     if (this.isPreloadedBrowser(browser)) {
       
       
@@ -255,7 +279,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
       browser.renderLayers = true;
     }
 
-    this.onActionFromContent({type: at.NEW_TAB_LOAD}, msg.target.portID);
+    this.onActionFromContent({ type: at.NEW_TAB_LOAD }, msg.target.portID);
   }
 
   
@@ -264,7 +288,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   onNewTabUnload(msg) {
-    this.onActionFromContent({type: at.NEW_TAB_UNLOAD}, msg.target.portID);
+    this.onActionFromContent({ type: at.NEW_TAB_UNLOAD }, msg.target.portID);
   }
 
   
@@ -276,9 +300,11 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   onMessage(msg) {
-    const {portID} = msg.target;
+    const { portID } = msg.target;
     if (!msg.data || !msg.data.type) {
-      Cu.reportError(new Error(`Received an improperly formatted message from ${portID}`));
+      Cu.reportError(
+        new Error(`Received an improperly formatted message from ${portID}`)
+      );
       return;
     }
     let action = {};

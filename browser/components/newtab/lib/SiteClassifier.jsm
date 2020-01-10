@@ -3,7 +3,9 @@
 
 "use strict";
 
-const {RemoteSettings} = ChromeUtils.import("resource://services-settings/remote-settings.js");
+const { RemoteSettings } = ChromeUtils.import(
+  "resource://services-settings/remote-settings.js"
+);
 
 
 
@@ -11,9 +13,11 @@ const {RemoteSettings} = ChromeUtils.import("resource://services-settings/remote
 function _hasParams(criteria, params) {
   for (let param of criteria) {
     const val = params.get(param.key);
-    if (val === null ||
-        (param.value && param.value !== val) ||
-        (param.prefix && !val.startsWith(param.prefix))) {
+    if (
+      val === null ||
+      (param.value && param.value !== val) ||
+      (param.prefix && !val.startsWith(param.prefix))
+    ) {
       return false;
     }
   }
@@ -68,7 +72,9 @@ async function classifySite(url, RS = RemoteSettings) {
     
     
     const siteTypes = await RS("sites-classification").get();
-    const sortedSiteTypes = siteTypes.sort((x, y) => (y.weight || 0) - (x.weight || 0));
+    const sortedSiteTypes = siteTypes.sort(
+      (x, y) => (y.weight || 0) - (x.weight || 0)
+    );
     for (let type of sortedSiteTypes) {
       for (let criteria of type.criteria) {
         if (criteria.url && criteria.url !== url) {

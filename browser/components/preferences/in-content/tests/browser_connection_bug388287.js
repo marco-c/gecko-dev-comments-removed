@@ -2,7 +2,7 @@
 
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function test() {
   waitForExplicitFinish();
@@ -23,7 +23,9 @@ function test() {
         continue;
       }
       Services.prefs.clearUserPref("network.proxy.backup." + proxyType);
-      Services.prefs.clearUserPref("network.proxy.backup." + proxyType + "_port");
+      Services.prefs.clearUserPref(
+        "network.proxy.backup." + proxyType + "_port"
+      );
     }
   });
 
@@ -34,7 +36,13 @@ function test() {
 
   open_preferences(async function tabOpened(aContentWindow) {
     let dialog, dialogClosingPromise;
-    let doc, proxyTypePref, sharePref, httpPref, httpPortPref, ftpPref, ftpPortPref;
+    let doc,
+      proxyTypePref,
+      sharePref,
+      httpPref,
+      httpPortPref,
+      ftpPref,
+      ftpPortPref;
 
     
     async function setDoc() {
@@ -50,7 +58,10 @@ function test() {
       }
 
       dialog = await openAndLoadSubDialog(connectionURL);
-      dialogClosingPromise = BrowserTestUtils.waitForEvent(dialog.document.documentElement, "dialogclosing");
+      dialogClosingPromise = BrowserTestUtils.waitForEvent(
+        dialog.document.documentElement,
+        "dialogclosing"
+      );
 
       doc = dialog.document;
       proxyTypePref = dialog.Preferences.get("network.proxy.type");

@@ -21,16 +21,27 @@ add_task(async function test() {
   ok(engine, "Found Google search engine");
 
   
-  let url = engine.getSubmission("foo", "application/x-suggestions+json").uri.spec;
-  is(url, "https://www.google.com/complete/search?client=firefox&q=foo", "Check search suggestion URL for 'foo'");
+  let url = engine.getSubmission("foo", "application/x-suggestions+json").uri
+    .spec;
+  is(
+    url,
+    "https://www.google.com/complete/search?client=firefox&q=foo",
+    "Check search suggestion URL for 'foo'"
+  );
 
   
   let base = "https://www.google.com/search?q=foo";
-  is(Services.search.parseSubmissionURL(base).terms, "foo",
-     "Check result parsing");
+  is(
+    Services.search.parseSubmissionURL(base).terms,
+    "foo",
+    "Check result parsing"
+  );
   let alternateBase = base.replace("www.google.com", "www.google.fr");
-  is(Services.search.parseSubmissionURL(alternateBase).terms, "foo",
-     "Check alternate domain");
+  is(
+    Services.search.parseSubmissionURL(alternateBase).terms,
+    "foo",
+    "Check alternate domain"
+  );
 
   
   isSubObjectOf(expectedEngine, engine, "Google");

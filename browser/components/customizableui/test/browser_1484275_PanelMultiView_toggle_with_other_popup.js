@@ -43,45 +43,48 @@ add_task(async function test_PanelMultiView_toggle_with_other_popup() {
   });
   registerCleanupFunction(() => PlacesUtils.bookmarks.remove(bookmark));
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: TEST_URL,
-  }, async function(browser) {
-    
-    await gCUITestUtils.openMainMenu();
-
-    
-    let bookmarkPanel = document.getElementById("editBookmarkPanel");
-    let shown = BrowserTestUtils.waitForEvent(bookmarkPanel, "popupshown");
-    let hidden = BrowserTestUtils.waitForEvent(bookmarkPanel, "popuphidden");
-    EventUtils.synthesizeKey("D", { accelKey: true });
-    await shown;
-
-    
-    
-    let clickFn = () => synthesizeNativeMouseClick(
-      document.getElementById("PanelUI-button"));
-
-    if (AppConstants.platform == "win") {
-      
-      await gCUITestUtils.hidePanelMultiView(PanelUI.panel, clickFn);
-      await new Promise(resolve => executeSoon(resolve));
-
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: TEST_URL,
+    },
+    async function(browser) {
       
       await gCUITestUtils.openMainMenu();
-      Assert.equal(PanelUI.panel.state, "open");
-    } else {
+
       
-      
-      shown = BrowserTestUtils.waitForEvent(PanelUI.mainView, "ViewShown");
-      clickFn();
+      let bookmarkPanel = document.getElementById("editBookmarkPanel");
+      let shown = BrowserTestUtils.waitForEvent(bookmarkPanel, "popupshown");
+      let hidden = BrowserTestUtils.waitForEvent(bookmarkPanel, "popuphidden");
+      EventUtils.synthesizeKey("D", { accelKey: true });
       await shown;
+
+      
+      
+      let clickFn = () =>
+        synthesizeNativeMouseClick(document.getElementById("PanelUI-button"));
+
+      if (AppConstants.platform == "win") {
+        
+        await gCUITestUtils.hidePanelMultiView(PanelUI.panel, clickFn);
+        await new Promise(resolve => executeSoon(resolve));
+
+        
+        await gCUITestUtils.openMainMenu();
+        Assert.equal(PanelUI.panel.state, "open");
+      } else {
+        
+        
+        shown = BrowserTestUtils.waitForEvent(PanelUI.mainView, "ViewShown");
+        clickFn();
+        await shown;
+      }
+
+      await gCUITestUtils.hideMainMenu();
+
+      
+      
+      await hidden;
     }
-
-    await gCUITestUtils.hideMainMenu();
-
-    
-    
-    await hidden;
-  });
+  );
 });

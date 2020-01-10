@@ -13,20 +13,32 @@
 
 
 
-const {MigrationUtils, MigratorPrototype} = ChromeUtils.import("resource:///modules/MigrationUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { MigrationUtils, MigratorPrototype } = ChromeUtils.import(
+  "resource:///modules/MigrationUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "PlacesBackups",
-                               "resource://gre/modules/PlacesBackups.jsm");
-ChromeUtils.defineModuleGetter(this, "SessionMigration",
-                               "resource:///modules/sessionstore/SessionMigration.jsm");
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "FileUtils",
-                               "resource://gre/modules/FileUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "ProfileAge",
-                               "resource://gre/modules/ProfileAge.jsm");
-
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesBackups",
+  "resource://gre/modules/PlacesBackups.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "SessionMigration",
+  "resource:///modules/sessionstore/SessionMigration.jsm"
+);
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "FileUtils",
+  "resource://gre/modules/FileUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "ProfileAge",
+  "resource://gre/modules/ProfileAge.jsm"
+);
 
 function FirefoxProfileMigrator() {
   this.wrappedJSObject = this; 
@@ -36,13 +48,17 @@ FirefoxProfileMigrator.prototype = Object.create(MigratorPrototype);
 
 FirefoxProfileMigrator.prototype._getAllProfiles = function() {
   let allProfiles = new Map();
-  let profileService = Cc["@mozilla.org/toolkit/profile-service;1"]
-      .getService(Ci.nsIToolkitProfileService);
+  let profileService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
+    Ci.nsIToolkitProfileService
+  );
   for (let profile of profileService.profiles) {
     let rootDir = profile.rootDir;
 
-    if (rootDir.exists() && rootDir.isReadable() &&
-        !rootDir.equals(MigrationUtils.profileStartup.directory)) {
+    if (
+      rootDir.exists() &&
+      rootDir.isReadable() &&
+      !rootDir.equals(MigrationUtils.profileStartup.directory)
+    ) {
       allProfiles.set(profile.name, rootDir);
     }
   }
@@ -54,7 +70,9 @@ function sorter(a, b) {
 }
 
 FirefoxProfileMigrator.prototype.getSourceProfiles = function() {
-  return [...this._getAllProfiles().keys()].map(x => ({id: x, name: x})).sort(sorter);
+  return [...this._getAllProfiles().keys()]
+    .map(x => ({ id: x, name: x }))
+    .sort(sorter);
 };
 
 FirefoxProfileMigrator.prototype._getFileObject = function(dir, fileName) {
@@ -68,21 +86,27 @@ FirefoxProfileMigrator.prototype._getFileObject = function(dir, fileName) {
 };
 
 FirefoxProfileMigrator.prototype.getResources = function(aProfile) {
-  let sourceProfileDir = aProfile ? this._getAllProfiles().get(aProfile.id) :
-    Cc["@mozilla.org/toolkit/profile-service;1"]
-      .getService(Ci.nsIToolkitProfileService)
-      .defaultProfile.rootDir;
-  if (!sourceProfileDir || !sourceProfileDir.exists() ||
-      !sourceProfileDir.isReadable())
+  let sourceProfileDir = aProfile
+    ? this._getAllProfiles().get(aProfile.id)
+    : Cc["@mozilla.org/toolkit/profile-service;1"].getService(
+        Ci.nsIToolkitProfileService
+      ).defaultProfile.rootDir;
+  if (
+    !sourceProfileDir ||
+    !sourceProfileDir.exists() ||
+    !sourceProfileDir.isReadable()
+  ) {
     return null;
+  }
 
   
   
   let currentProfileDir = MigrationUtils.profileStartup.directory;
 
   
-  if (sourceProfileDir.equals(currentProfileDir))
+  if (sourceProfileDir.equals(currentProfileDir)) {
     return null;
+  }
 
   return this._getResourcesInternal(sourceProfileDir, currentProfileDir);
 };
@@ -94,13 +118,17 @@ FirefoxProfileMigrator.prototype.getLastUsedDate = function() {
   return Promise.resolve(new Date(0));
 };
 
-FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileDir, currentProfileDir) {
+FirefoxProfileMigrator.prototype._getResourcesInternal = function(
+  sourceProfileDir,
+  currentProfileDir
+) {
   let getFileResource = (aMigrationType, aFileNames) => {
     let files = [];
     for (let fileName of aFileNames) {
       let file = this._getFileObject(sourceProfileDir, fileName);
-      if (file)
+      if (file) {
         files.push(file);
+      }
     }
     if (!files.length) {
       return null;
@@ -126,51 +154,91 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
   }
 
   let types = MigrationUtils.resourceTypes;
-  let places = getFileResource(types.HISTORY, ["places.sqlite", "places.sqlite-wal"]);
-  let favicons = getFileResource(types.HISTORY, ["favicons.sqlite", "favicons.sqlite-wal"]);
-  let cookies = getFileResource(types.COOKIES, ["cookies.sqlite", "cookies.sqlite-wal"]);
-  let passwords = getFileResource(types.PASSWORDS,
-    ["signons.sqlite", "logins.json", "key3.db", "key4.db"]);
+  let places = getFileResource(types.HISTORY, [
+    "places.sqlite",
+    "places.sqlite-wal",
+  ]);
+  let favicons = getFileResource(types.HISTORY, [
+    "favicons.sqlite",
+    "favicons.sqlite-wal",
+  ]);
+  let cookies = getFileResource(types.COOKIES, [
+    "cookies.sqlite",
+    "cookies.sqlite-wal",
+  ]);
+  let passwords = getFileResource(types.PASSWORDS, [
+    "signons.sqlite",
+    "logins.json",
+    "key3.db",
+    "key4.db",
+  ]);
   let formData = getFileResource(types.FORMDATA, [
     "formhistory.sqlite",
     "autofill-profiles.json",
   ]);
-  let bookmarksBackups = getFileResource(types.OTHERDATA,
-    [PlacesBackups.profileRelativeFolderPath]);
+  let bookmarksBackups = getFileResource(types.OTHERDATA, [
+    PlacesBackups.profileRelativeFolderPath,
+  ]);
   let dictionary = getFileResource(types.OTHERDATA, ["persdict.dat"]);
 
   let session;
-  let env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
   if (env.get("MOZ_RESET_PROFILE_MIGRATE_SESSION")) {
     
     
     
     
     env.set("MOZ_RESET_PROFILE_MIGRATE_SESSION", "");
-    let sessionCheckpoints = this._getFileObject(sourceProfileDir, "sessionCheckpoints.json");
-    let sessionFile = this._getFileObject(sourceProfileDir, "sessionstore.jsonlz4");
+    let sessionCheckpoints = this._getFileObject(
+      sourceProfileDir,
+      "sessionCheckpoints.json"
+    );
+    let sessionFile = this._getFileObject(
+      sourceProfileDir,
+      "sessionstore.jsonlz4"
+    );
     if (sessionFile) {
       session = {
         type: types.SESSION,
         migrate(aCallback) {
-          sessionCheckpoints.copyTo(currentProfileDir, "sessionCheckpoints.json");
+          sessionCheckpoints.copyTo(
+            currentProfileDir,
+            "sessionCheckpoints.json"
+          );
           let newSessionFile = currentProfileDir.clone();
           newSessionFile.append("sessionstore.jsonlz4");
-          let migrationPromise = SessionMigration.migrate(sessionFile.path, newSessionFile.path);
-          migrationPromise.then(function() {
-            let buildID = Services.appinfo.platformBuildID;
-            let mstone = Services.appinfo.platformVersion;
-            
-            Services.prefs.setBoolPref("browser.sessionstore.resume_session_once", true);
-            
-            
-            Services.prefs.setCharPref("browser.startup.homepage_override.mstone", mstone);
-            Services.prefs.setCharPref("browser.startup.homepage_override.buildID", buildID);
-            savePrefs();
-            aCallback(true);
-          }, function() {
-            aCallback(false);
-          });
+          let migrationPromise = SessionMigration.migrate(
+            sessionFile.path,
+            newSessionFile.path
+          );
+          migrationPromise.then(
+            function() {
+              let buildID = Services.appinfo.platformBuildID;
+              let mstone = Services.appinfo.platformVersion;
+              
+              Services.prefs.setBoolPref(
+                "browser.sessionstore.resume_session_once",
+                true
+              );
+              
+              
+              Services.prefs.setCharPref(
+                "browser.startup.homepage_override.mstone",
+                mstone
+              );
+              Services.prefs.setCharPref(
+                "browser.startup.homepage_override.buildID",
+                buildID
+              );
+              savePrefs();
+              aCallback(true);
+            },
+            function() {
+              aCallback(false);
+            }
+          );
         },
       };
     }
@@ -181,14 +249,14 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
     name: "sync", 
     type: types.OTHERDATA,
     migrate: async aCallback => {
-        
-        
-        
+      
+      
+      
       try {
         let oldPath = OS.Path.join(sourceProfileDir.path, "signedInUser.json");
         let exists = await OS.File.exists(oldPath);
         if (exists) {
-          let raw = await OS.File.read(oldPath, {encoding: "utf-8"});
+          let raw = await OS.File.read(oldPath, { encoding: "utf-8" });
           let data = JSON.parse(raw);
           if (data && data.accountData && data.accountData.email) {
             let username = data.accountData.email;
@@ -196,7 +264,10 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
             Services.prefs.setStringPref("services.sync.username", username);
             savePrefs();
             
-            await OS.File.copy(oldPath, OS.Path.join(currentProfileDir.path, "signedInUser.json"));
+            await OS.File.copy(
+              oldPath,
+              OS.Path.join(currentProfileDir.path, "signedInUser.json")
+            );
           }
         }
       } catch (ex) {
@@ -234,7 +305,7 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
     name: "telemetry", 
     type: types.OTHERDATA,
     migrate: aCallback => {
-      let createSubDir = (name) => {
+      let createSubDir = name => {
         let dir = currentProfileDir.clone();
         dir.append(name);
         dir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
@@ -242,7 +313,10 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
       };
 
       
-      let dataReportingDir = this._getFileObject(sourceProfileDir, "datareporting");
+      let dataReportingDir = this._getFileObject(
+        sourceProfileDir,
+        "datareporting"
+      );
       if (dataReportingDir && dataReportingDir.isDirectory()) {
         
         let toCopy = ["state.json", "session-state.json"];
@@ -262,17 +336,30 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
     },
   };
 
-  return [places, cookies, passwords, formData, dictionary, bookmarksBackups,
-          session, sync, times, telemetry, favicons].filter(r => r);
+  return [
+    places,
+    cookies,
+    passwords,
+    formData,
+    dictionary,
+    bookmarksBackups,
+    session,
+    sync,
+    times,
+    telemetry,
+    favicons,
+  ].filter(r => r);
 };
 
 Object.defineProperty(FirefoxProfileMigrator.prototype, "startupOnlyMigrator", {
   get: () => true,
 });
 
-
 FirefoxProfileMigrator.prototype.classDescription = "Firefox Profile Migrator";
-FirefoxProfileMigrator.prototype.contractID = "@mozilla.org/profile/migrator;1?app=browser&type=firefox";
-FirefoxProfileMigrator.prototype.classID = Components.ID("{91185366-ba97-4438-acba-48deaca63386}");
+FirefoxProfileMigrator.prototype.contractID =
+  "@mozilla.org/profile/migrator;1?app=browser&type=firefox";
+FirefoxProfileMigrator.prototype.classID = Components.ID(
+  "{91185366-ba97-4438-acba-48deaca63386}"
+);
 
 var EXPORTED_SYMBOLS = ["FirefoxProfileMigrator"];

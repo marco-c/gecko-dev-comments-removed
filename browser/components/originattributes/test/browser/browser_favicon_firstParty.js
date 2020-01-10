@@ -4,11 +4,15 @@
 
 const CC = Components.Constructor;
 
-const {PlacesUtils} = ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
+const { PlacesUtils } = ChromeUtils.import(
+  "resource://gre/modules/PlacesUtils.jsm"
+);
 
 let EventUtils = {};
 Services.scriptloader.loadSubScript(
-  "chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
+  "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
+  EventUtils
+);
 
 const FIRST_PARTY_ONE = "example.com";
 const FIRST_PARTY_TWO = "example.org";
@@ -17,7 +21,8 @@ const THIRD_PARTY = "mochi.test:8888";
 const TEST_SITE_ONE = "http://" + FIRST_PARTY_ONE;
 const TEST_SITE_TWO = "http://" + FIRST_PARTY_TWO;
 const THIRD_PARTY_SITE = "http://" + THIRD_PARTY;
-const TEST_DIRECTORY = "/browser/browser/components/originattributes/test/browser/";
+const TEST_DIRECTORY =
+  "/browser/browser/components/originattributes/test/browser/";
 
 const TEST_PAGE = TEST_DIRECTORY + "file_favicon.html";
 const TEST_THIRD_PARTY_PAGE = TEST_DIRECTORY + "file_favicon_thirdParty.html";
@@ -26,22 +31,26 @@ const TEST_CACHE_PAGE = TEST_DIRECTORY + "file_favicon_cache.html";
 const FAVICON_URI = TEST_DIRECTORY + "file_favicon.png";
 const TEST_FAVICON_CACHE_URI = TEST_DIRECTORY + "file_favicon_cache.png";
 
-const ICON_DATA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABH0lEQVRYw2P8////f4YBBEwMAwxGHcBCUMX/91DGOSj/BpT/DkpzQChGBSjfBErLQsVZhmoI/L8LpRdD6X1QietQGhYy7FB5aAgwmkLpBKi4BZTPMThDgBGjHIDF+f9mKD0fKvGBRKNdoF7sgPL1saaJwZgGDkJ9vpZMn8PAHqg5G9FyifBgD4H/W9HyOWrU/f+DIzHhkoeZxxgzZEIAVtJ9RxX+Q6DAxCmP3byhXxkxshAs5odqbcioAY3UC1CBLyTGOTqAmsfAOWRCwBvqxV0oIUB2OQAzDy3/D+a6wB7q8mCU2vD/nw94GziYIQOtDRn9oXz+IZMGBKGMbCjNh9Ii+v8HR4uIAUeLiEEbb9twELaIRlqrmHG0bzjiHQAA1LVfww8jwM4AAAAASUVORK5CYII=";
+const ICON_DATA =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABH0lEQVRYw2P8////f4YBBEwMAwxGHcBCUMX/91DGOSj/BpT/DkpzQChGBSjfBErLQsVZhmoI/L8LpRdD6X1QietQGhYy7FB5aAgwmkLpBKi4BZTPMThDgBGjHIDF+f9mKD0fKvGBRKNdoF7sgPL1saaJwZgGDkJ9vpZMn8PAHqg5G9FyifBgD4H/W9HyOWrU/f+DIzHhkoeZxxgzZEIAVtJ9RxX+Q6DAxCmP3byhXxkxshAs5odqbcioAY3UC1CBLyTGOTqAmsfAOWRCwBvqxV0oIUB2OQAzDy3/D+a6wB7q8mCU2vD/nw94GziYIQOtDRn9oXz+IZMGBKGMbCjNh9Ii+v8HR4uIAUeLiEEbb9twELaIRlqrmHG0bzjiHQAA1LVfww8jwM4AAAAASUVORK5CYII=";
 
 let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-let makeURI = ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm", {}).BrowserUtils.makeURI;
+let makeURI = ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm", {})
+  .BrowserUtils.makeURI;
 
 function clearAllImageCaches() {
-  let tools = SpecialPowers.Cc["@mozilla.org/image/tools;1"]
-                             .getService(SpecialPowers.Ci.imgITools);
+  let tools = SpecialPowers.Cc["@mozilla.org/image/tools;1"].getService(
+    SpecialPowers.Ci.imgITools
+  );
   let imageCache = tools.getImgCacheForDocument(window.document);
   imageCache.clearCache(true); 
   imageCache.clearCache(false); 
 }
 
 function clearAllPlacesFavicons() {
-  let faviconService = Cc["@mozilla.org/browser/favicon-service;1"]
-                          .getService(Ci.nsIFaviconService);
+  let faviconService = Cc["@mozilla.org/browser/favicon-service;1"].getService(
+    Ci.nsIFaviconService
+  );
 
   return new Promise(resolve => {
     let observer = {
@@ -59,8 +68,10 @@ function clearAllPlacesFavicons() {
 }
 
 function observeFavicon(aFirstPartyDomain, aExpectedCookie, aPageURI) {
-  let expectedPrincipal = Services.scriptSecurityManager
-                                  .createCodebasePrincipal(aPageURI, { firstPartyDomain: aFirstPartyDomain });
+  let expectedPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(
+    aPageURI,
+    { firstPartyDomain: aFirstPartyDomain }
+  );
 
   return new Promise(resolve => {
     let observer = {
@@ -85,17 +96,28 @@ function observeFavicon(aFirstPartyDomain, aExpectedCookie, aPageURI) {
           }
 
           
-          is(reqLoadInfo.originAttributes.firstPartyDomain, aFirstPartyDomain,
-            "The loadInfo has correct first party domain");
+          is(
+            reqLoadInfo.originAttributes.firstPartyDomain,
+            aFirstPartyDomain,
+            "The loadInfo has correct first party domain"
+          );
 
-          ok(loadingPrincipal.equals(expectedPrincipal),
-            "The loadingPrincipal of favicon loads should be the content prinicpal");
-          ok(triggeringPrincipal.equals(expectedPrincipal),
-            "The triggeringPrincipal of favicon loads should be the content prinicpal");
+          ok(
+            loadingPrincipal.equals(expectedPrincipal),
+            "The loadingPrincipal of favicon loads should be the content prinicpal"
+          );
+          ok(
+            triggeringPrincipal.equals(expectedPrincipal),
+            "The triggeringPrincipal of favicon loads should be the content prinicpal"
+          );
 
           let faviconCookie = httpChannel.getRequestHeader("cookie");
 
-          is(faviconCookie, aExpectedCookie, "The cookie of the favicon loading is correct.");
+          is(
+            faviconCookie,
+            aExpectedCookie,
+            "The cookie of the favicon loading is correct."
+          );
         } else {
           ok(false, "Received unexpected topic: ", aTopic);
         }
@@ -113,8 +135,10 @@ function waitOnFaviconResponse(aFaviconURL) {
   return new Promise(resolve => {
     let observer = {
       observe(aSubject, aTopic, aData) {
-        if (aTopic === "http-on-examine-response" ||
-            aTopic === "http-on-examine-cached-response") {
+        if (
+          aTopic === "http-on-examine-response" ||
+          aTopic === "http-on-examine-cached-response"
+        ) {
           let httpChannel = aSubject.QueryInterface(Ci.nsIHttpChannel);
           let loadInfo = httpChannel.loadInfo;
 
@@ -129,7 +153,10 @@ function waitOnFaviconResponse(aFaviconURL) {
 
           resolve(result);
           Services.obs.removeObserver(observer, "http-on-examine-response");
-          Services.obs.removeObserver(observer, "http-on-examine-cached-response");
+          Services.obs.removeObserver(
+            observer,
+            "http-on-examine-cached-response"
+          );
         }
       },
     };
@@ -143,8 +170,10 @@ function waitOnFaviconLoaded(aFaviconURL) {
   return new Promise(resolve => {
     let observer = {
       onPageChanged(uri, attr, value, id) {
-        if (attr === Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON &&
-            value === aFaviconURL) {
+        if (
+          attr === Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON &&
+          value === aFaviconURL
+        ) {
           resolve();
           PlacesUtils.history.removeObserver(observer, false);
         }
@@ -164,7 +193,7 @@ async function openTab(aURL) {
 
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);
-  return {tab, browser};
+  return { tab, browser };
 }
 
 async function assignCookiesUnderFirstParty(aURL, aFirstParty, aCookieValue) {
@@ -207,7 +236,11 @@ async function generateCookies(aThirdParty) {
 
 function assertIconIsData(item) {
   let icon = item.getAttribute("image");
-  is(icon.substring(0, 5), "data:", "Expected the image element to be a data URI");
+  is(
+    icon.substring(0, 5),
+    "data:",
+    "Expected the image element to be a data URI"
+  );
   is(icon, ICON_DATA, "Expected to see the correct data.");
 }
 
@@ -219,7 +252,11 @@ async function doTest(aTestPage, aExpectedCookies, aFaviconURL) {
   let promiseFaviconLoaded = waitOnFaviconLoaded(aFaviconURL);
 
   
-  let promiseObserveFavicon = observeFavicon(FIRST_PARTY_ONE, aExpectedCookies[0], firstPageURI);
+  let promiseObserveFavicon = observeFavicon(
+    FIRST_PARTY_ONE,
+    aExpectedCookies[0],
+    firstPageURI
+  );
 
   
   let tabInfo = await openTab(TEST_SITE_ONE + aTestPage);
@@ -238,7 +275,11 @@ async function doTest(aTestPage, aExpectedCookies, aFaviconURL) {
   await new Promise(executeSoon);
 
   
-  promiseObserveFavicon = observeFavicon(FIRST_PARTY_TWO, aExpectedCookies[1], secondPageURI);
+  promiseObserveFavicon = observeFavicon(
+    FIRST_PARTY_TWO,
+    aExpectedCookies[1],
+    secondPageURI
+  );
 
   
   tabInfo = await openTab(TEST_SITE_TWO + aTestPage);
@@ -249,9 +290,14 @@ async function doTest(aTestPage, aExpectedCookies, aFaviconURL) {
   BrowserTestUtils.removeTab(tabInfo.tab);
 }
 
-async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdParty) {
-  let faviconURI = aIsThirdParty ? THIRD_PARTY_SITE + FAVICON_URI :
-                                   TEST_SITE_ONE + FAVICON_URI;
+async function doTestForAllTabsFavicon(
+  aTestPage,
+  aExpectedCookies,
+  aIsThirdParty
+) {
+  let faviconURI = aIsThirdParty
+    ? THIRD_PARTY_SITE + FAVICON_URI
+    : TEST_SITE_ONE + FAVICON_URI;
 
   
   let tabBrowser = document.getElementById("tabbrowser-tabs");
@@ -270,22 +316,31 @@ async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdPart
 
   
   let allTabsView = document.getElementById("allTabsMenu-allTabsView");
-  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
+  let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(
+    allTabsView,
+    "ViewShown"
+  );
   gTabsPanel.showAllTabsPanel();
   await allTabsPopupShownPromise;
 
-  assertIconIsData(gTabsPanel.allTabsViewTabs.lastElementChild.firstElementChild);
+  assertIconIsData(
+    gTabsPanel.allTabsViewTabs.lastElementChild.firstElementChild
+  );
 
   
-  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
+  let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(
+    allTabsView.panelMultiView,
+    "PanelMultiViewHidden"
+  );
   gTabsPanel.hideAllTabsPanel();
   await allTabsPopupHiddenPromise;
 
   
   BrowserTestUtils.removeTab(tabInfo.tab);
 
-  faviconURI = aIsThirdParty ? THIRD_PARTY_SITE + FAVICON_URI :
-                               TEST_SITE_TWO + FAVICON_URI;
+  faviconURI = aIsThirdParty
+    ? THIRD_PARTY_SITE + FAVICON_URI
+    : TEST_SITE_TWO + FAVICON_URI;
 
   
   promiseFaviconLoaded = waitOnFaviconLoaded(faviconURI);
@@ -299,14 +354,22 @@ async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdPart
   assertIconIsData(tabInfo.tab);
 
   
-  allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(allTabsView, "ViewShown");
+  allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(
+    allTabsView,
+    "ViewShown"
+  );
   gTabsPanel.showAllTabsPanel();
   await allTabsPopupShownPromise;
 
-  assertIconIsData(gTabsPanel.allTabsViewTabs.lastElementChild.firstElementChild);
+  assertIconIsData(
+    gTabsPanel.allTabsViewTabs.lastElementChild.firstElementChild
+  );
 
   
-  allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(allTabsView.panelMultiView, "PanelMultiViewHidden");
+  allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(
+    allTabsView.panelMultiView,
+    "PanelMultiViewHidden"
+  );
   gTabsPanel.hideAllTabsPanel();
   await allTabsPopupHiddenPromise;
 
@@ -319,9 +382,9 @@ async function doTestForAllTabsFavicon(aTestPage, aExpectedCookies, aIsThirdPart
 
 add_task(async function setup() {
   
-  await SpecialPowers.pushPrefEnv({"set": [
-      ["privacy.firstparty.isolate", true],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.firstparty.isolate", true]],
+  });
 });
 
 
@@ -348,7 +411,11 @@ add_task(async function test_favicon_firstParty() {
     let cookies = await generateCookies(testThirdParty);
 
     if (testThirdParty) {
-      await doTest(TEST_THIRD_PARTY_PAGE, cookies, THIRD_PARTY_SITE + FAVICON_URI);
+      await doTest(
+        TEST_THIRD_PARTY_PAGE,
+        cookies,
+        THIRD_PARTY_SITE + FAVICON_URI
+      );
     } else {
       await doTest(TEST_PAGE, cookies, TEST_SITE_ONE + FAVICON_URI);
     }
@@ -368,7 +435,11 @@ add_task(async function test_allTabs_favicon_firstParty() {
     let cookies = await generateCookies(testThirdParty);
 
     if (testThirdParty) {
-      await doTestForAllTabsFavicon(TEST_THIRD_PARTY_PAGE, cookies, testThirdParty);
+      await doTestForAllTabsFavicon(
+        TEST_THIRD_PARTY_PAGE,
+        cookies,
+        testThirdParty
+      );
     } else {
       await doTestForAllTabsFavicon(TEST_PAGE, cookies, testThirdParty);
     }
@@ -382,10 +453,14 @@ add_task(async function test_favicon_cache_firstParty() {
   Services.cache2.clear();
 
   
-  let promiseForFaviconLoaded = waitOnFaviconLoaded(THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI);
+  let promiseForFaviconLoaded = waitOnFaviconLoaded(
+    THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI
+  );
 
   
-  let responsePromise = waitOnFaviconResponse(THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI);
+  let responsePromise = waitOnFaviconResponse(
+    THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI
+  );
 
   
   let tabInfoA = await openTab(TEST_SITE_ONE + TEST_CACHE_PAGE);
@@ -394,15 +469,25 @@ add_task(async function test_favicon_cache_firstParty() {
   let response = await responsePromise;
 
   
-  is(response.topic, "http-on-examine-response", "The favicon image should be loaded through network.");
-  is(response.firstPartyDomain, FIRST_PARTY_ONE, "We should only observe the network response for the first first party.");
+  is(
+    response.topic,
+    "http-on-examine-response",
+    "The favicon image should be loaded through network."
+  );
+  is(
+    response.firstPartyDomain,
+    FIRST_PARTY_ONE,
+    "We should only observe the network response for the first first party."
+  );
 
   
   await promiseForFaviconLoaded;
 
   
   
-  let promiseForFaviconResponse = waitOnFaviconResponse(THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI);
+  let promiseForFaviconResponse = waitOnFaviconResponse(
+    THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI
+  );
 
   
   let tabInfoB = await openTab(TEST_SITE_TWO + TEST_CACHE_PAGE);
@@ -414,8 +499,16 @@ add_task(async function test_favicon_cache_firstParty() {
 
   
   
-  is(response.topic, "http-on-examine-response", "The favicon image should be loaded through network again.");
-  is(response.firstPartyDomain, FIRST_PARTY_TWO, "We should only observe the network response for the second first party.");
+  is(
+    response.topic,
+    "http-on-examine-response",
+    "The favicon image should be loaded through network again."
+  );
+  is(
+    response.firstPartyDomain,
+    FIRST_PARTY_TWO,
+    "We should only observe the network response for the second first party."
+  );
 
   BrowserTestUtils.removeTab(tabInfoA.tab);
   BrowserTestUtils.removeTab(tabInfoB.tab);

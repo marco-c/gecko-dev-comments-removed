@@ -4,17 +4,24 @@
 
 var EXPORTED_SYMBOLS = ["RecentlyClosedTabsAndWindowsMenuUtils"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "PluralForm",
-                               "resource://gre/modules/PluralForm.jsm");
-ChromeUtils.defineModuleGetter(this, "SessionStore",
-                               "resource:///modules/sessionstore/SessionStore.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PluralForm",
+  "resource://gre/modules/PluralForm.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "SessionStore",
+  "resource:///modules/sessionstore/SessionStore.jsm"
+);
 
-var navigatorBundle = Services.strings.createBundle("chrome://browser/locale/browser.properties");
+var navigatorBundle = Services.strings.createBundle(
+  "chrome://browser/locale/browser.properties"
+);
 
 var RecentlyClosedTabsAndWindowsMenuUtils = {
-
   
 
 
@@ -28,19 +35,37 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
 
 
 
-  getTabsFragment(aWindow, aTagName, aPrefixRestoreAll = false,
-                  aRestoreAllLabel = "menuRestoreAllTabs.label") {
+  getTabsFragment(
+    aWindow,
+    aTagName,
+    aPrefixRestoreAll = false,
+    aRestoreAllLabel = "menuRestoreAllTabs.label"
+  ) {
     let doc = aWindow.document;
     let fragment = doc.createDocumentFragment();
     if (SessionStore.getClosedTabCount(aWindow) != 0) {
       let closedTabs = SessionStore.getClosedTabData(aWindow, false);
       for (let i = 0; i < closedTabs.length; i++) {
-        createEntry(aTagName, false, i, closedTabs[i], doc,
-                    closedTabs[i].title, fragment);
+        createEntry(
+          aTagName,
+          false,
+          i,
+          closedTabs[i],
+          doc,
+          closedTabs[i].title,
+          fragment
+        );
       }
 
-    createRestoreAllEntry(doc, fragment, aPrefixRestoreAll, false,
-                          aRestoreAllLabel, closedTabs.length, aTagName);
+      createRestoreAllEntry(
+        doc,
+        fragment,
+        aPrefixRestoreAll,
+        false,
+        aRestoreAllLabel,
+        closedTabs.length,
+        aTagName
+      );
     }
     return fragment;
   },
@@ -58,36 +83,50 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
 
 
 
-  getWindowsFragment(aWindow, aTagName, aPrefixRestoreAll = false,
-                     aRestoreAllLabel = "menuRestoreAllWindows.label") {
+  getWindowsFragment(
+    aWindow,
+    aTagName,
+    aPrefixRestoreAll = false,
+    aRestoreAllLabel = "menuRestoreAllWindows.label"
+  ) {
     let closedWindowData = SessionStore.getClosedWindowData(false);
     let doc = aWindow.document;
     let fragment = doc.createDocumentFragment();
     if (closedWindowData.length != 0) {
-      let menuLabelString = navigatorBundle.GetStringFromName("menuUndoCloseWindowLabel");
-      let menuLabelStringSingleTab =
-        navigatorBundle.GetStringFromName("menuUndoCloseWindowSingleTabLabel");
+      let menuLabelString = navigatorBundle.GetStringFromName(
+        "menuUndoCloseWindowLabel"
+      );
+      let menuLabelStringSingleTab = navigatorBundle.GetStringFromName(
+        "menuUndoCloseWindowSingleTabLabel"
+      );
 
       for (let i = 0; i < closedWindowData.length; i++) {
         let undoItem = closedWindowData[i];
         let otherTabsCount = undoItem.tabs.length - 1;
-        let label = (otherTabsCount == 0) ? menuLabelStringSingleTab
-                                          : PluralForm.get(otherTabsCount, menuLabelString);
-        let menuLabel = label.replace("#1", undoItem.title)
-                             .replace("#2", otherTabsCount);
+        let label =
+          otherTabsCount == 0
+            ? menuLabelStringSingleTab
+            : PluralForm.get(otherTabsCount, menuLabelString);
+        let menuLabel = label
+          .replace("#1", undoItem.title)
+          .replace("#2", otherTabsCount);
         let selectedTab = undoItem.tabs[undoItem.selected - 1];
 
-        createEntry(aTagName, true, i, selectedTab, doc, menuLabel,
-                    fragment);
+        createEntry(aTagName, true, i, selectedTab, doc, menuLabel, fragment);
       }
 
-      createRestoreAllEntry(doc, fragment, aPrefixRestoreAll, true,
-                            aRestoreAllLabel, closedWindowData.length,
-                            aTagName);
+      createRestoreAllEntry(
+        doc,
+        fragment,
+        aPrefixRestoreAll,
+        true,
+        aRestoreAllLabel,
+        closedWindowData.length,
+        aTagName
+      );
     }
     return fragment;
   },
-
 
   
 
@@ -96,8 +135,9 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
 
 
   _undoCloseMiddleClick(aEvent) {
-    if (aEvent.button != 1)
+    if (aEvent.button != 1) {
       return;
+    }
 
     aEvent.view.undoCloseTab(aEvent.originalTarget.getAttribute("value"));
     aEvent.view.gBrowser.moveTabToEnd();
@@ -111,8 +151,9 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
 function setImage(aItem, aElement) {
   let iconURL = aItem.image;
   
-  if (/^https?:/.test(iconURL))
+  if (/^https?:/.test(iconURL)) {
     iconURL = "moz-anno:favicon:" + iconURL;
+  }
 
   aElement.setAttribute("image", iconURL);
 }
@@ -134,8 +175,15 @@ function setImage(aItem, aElement) {
 
 
 
-function createEntry(aTagName, aIsWindowsFragment, aIndex, aClosedTab,
-                     aDocument, aMenuLabel, aFragment) {
+function createEntry(
+  aTagName,
+  aIsWindowsFragment,
+  aIndex,
+  aClosedTab,
+  aDocument,
+  aMenuLabel,
+  aFragment
+) {
   let element = aDocument.createXULElement(aTagName);
 
   element.setAttribute("label", aMenuLabel);
@@ -147,27 +195,37 @@ function createEntry(aTagName, aIsWindowsFragment, aIndex, aClosedTab,
   }
 
   if (aTagName == "menuitem") {
-    element.setAttribute("class", "menuitem-iconic bookmark-item menuitem-with-favicon");
+    element.setAttribute(
+      "class",
+      "menuitem-iconic bookmark-item menuitem-with-favicon"
+    );
   }
 
-  element.setAttribute("oncommand", "undoClose" + (aIsWindowsFragment ? "Window" : "Tab") +
-                       "(" + aIndex + ");");
+  element.setAttribute(
+    "oncommand",
+    "undoClose" + (aIsWindowsFragment ? "Window" : "Tab") + "(" + aIndex + ");"
+  );
 
   
   
   let tabData;
-  tabData = aIsWindowsFragment ? aClosedTab
-                     : aClosedTab.state;
+  tabData = aIsWindowsFragment ? aClosedTab : aClosedTab.state;
   let activeIndex = (tabData.index || tabData.entries.length) - 1;
   if (activeIndex >= 0 && tabData.entries[activeIndex]) {
     element.setAttribute("targetURI", tabData.entries[activeIndex].url);
   }
 
   if (!aIsWindowsFragment) {
-    element.addEventListener("click", RecentlyClosedTabsAndWindowsMenuUtils._undoCloseMiddleClick);
+    element.addEventListener(
+      "click",
+      RecentlyClosedTabsAndWindowsMenuUtils._undoCloseMiddleClick
+    );
   }
   if (aIndex == 0) {
-    element.setAttribute("key", "key_undoClose" + (aIsWindowsFragment ? "Window" : "Tab"));
+    element.setAttribute(
+      "key",
+      "key_undoClose" + (aIsWindowsFragment ? "Window" : "Tab")
+    );
   }
 
   aFragment.appendChild(element);
@@ -191,15 +249,29 @@ function createEntry(aTagName, aIsWindowsFragment, aIndex, aClosedTab,
 
 
 
-function createRestoreAllEntry(aDocument, aFragment, aPrefixRestoreAll,
-                                aIsWindowsFragment, aRestoreAllLabel,
-                                aEntryCount, aTagName) {
+function createRestoreAllEntry(
+  aDocument,
+  aFragment,
+  aPrefixRestoreAll,
+  aIsWindowsFragment,
+  aRestoreAllLabel,
+  aEntryCount,
+  aTagName
+) {
   let restoreAllElements = aDocument.createXULElement(aTagName);
   restoreAllElements.classList.add("restoreallitem");
-  restoreAllElements.setAttribute("label", navigatorBundle.GetStringFromName(aRestoreAllLabel));
-  restoreAllElements.setAttribute("oncommand",
-                                  "for (var i = 0; i < " + aEntryCount + "; i++) undoClose" +
-                                    (aIsWindowsFragment ? "Window" : "Tab") + "();");
+  restoreAllElements.setAttribute(
+    "label",
+    navigatorBundle.GetStringFromName(aRestoreAllLabel)
+  );
+  restoreAllElements.setAttribute(
+    "oncommand",
+    "for (var i = 0; i < " +
+      aEntryCount +
+      "; i++) undoClose" +
+      (aIsWindowsFragment ? "Window" : "Tab") +
+      "();"
+  );
   if (aPrefixRestoreAll) {
     aFragment.insertBefore(restoreAllElements, aFragment.firstChild);
   } else {

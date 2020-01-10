@@ -28,25 +28,56 @@ function testBug600545() {
   
   
   
-  let state = { windows: [
-    {
-      tabs: [
-        { entries: [{ url: "http://example.org#0", triggeringPrincipal_base64 }], pinned: true },
-        { entries: [{ url: "http://example.com#1", triggeringPrincipal_base64 }] },
-        { entries: [{ url: "http://example.com#2", triggeringPrincipal_base64 }] },
-      ],
-      selected: 2,
-    },
-    {
-      tabs: [
-        { entries: [{ url: "http://example.com#3", triggeringPrincipal_base64 }] },
-        { entries: [{ url: "http://example.com#4", triggeringPrincipal_base64 }] },
-        { entries: [{ url: "http://example.com#5", triggeringPrincipal_base64 }] },
-        { entries: [{ url: "http://example.com#6", triggeringPrincipal_base64 }] },
-      ],
-      selected: 3,
-    },
-  ] };
+  let state = {
+    windows: [
+      {
+        tabs: [
+          {
+            entries: [
+              { url: "http://example.org#0", triggeringPrincipal_base64 },
+            ],
+            pinned: true,
+          },
+          {
+            entries: [
+              { url: "http://example.com#1", triggeringPrincipal_base64 },
+            ],
+          },
+          {
+            entries: [
+              { url: "http://example.com#2", triggeringPrincipal_base64 },
+            ],
+          },
+        ],
+        selected: 2,
+      },
+      {
+        tabs: [
+          {
+            entries: [
+              { url: "http://example.com#3", triggeringPrincipal_base64 },
+            ],
+          },
+          {
+            entries: [
+              { url: "http://example.com#4", triggeringPrincipal_base64 },
+            ],
+          },
+          {
+            entries: [
+              { url: "http://example.com#5", triggeringPrincipal_base64 },
+            ],
+          },
+          {
+            entries: [
+              { url: "http://example.com#6", triggeringPrincipal_base64 },
+            ],
+          },
+        ],
+        selected: 3,
+      },
+    ],
+  };
 
   waitForBrowserState(state, function() {
     
@@ -56,8 +87,11 @@ function testBug600545() {
       let retrievedState = JSON.parse(ss.getBrowserState());
       let actualNumberOfTabs = getStateTabCount(retrievedState);
 
-      is(actualNumberOfTabs, expectedNumberOfTabs,
-        "Number of tabs in retreived session data, matches number of tabs set.");
+      is(
+        actualNumberOfTabs,
+        expectedNumberOfTabs,
+        "Number of tabs in retreived session data, matches number of tabs set."
+      );
 
       done();
     });
@@ -69,8 +103,9 @@ function done() {
   
   let closeWinPromises = [];
   for (let currentWindow of Services.wm.getEnumerator("navigator:browser")) {
-    if (currentWindow != window)
+    if (currentWindow != window) {
       closeWinPromises.push(BrowserTestUtils.closeWindow(currentWindow));
+    }
   }
 
   Promise.all(closeWinPromises).then(() => {
@@ -81,7 +116,8 @@ function done() {
 
 function getStateTabCount(aState) {
   let tabCount = 0;
-  for (let i in aState.windows)
+  for (let i in aState.windows) {
     tabCount += aState.windows[i].tabs.length;
+  }
   return tabCount;
 }

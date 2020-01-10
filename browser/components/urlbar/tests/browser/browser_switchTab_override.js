@@ -11,7 +11,6 @@
 
 const TEST_URL = `${TEST_BASE_URL}dummy_page.html`;
 
-
 add_task(async function test_switchtab_override() {
   info("Opening first tab");
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
@@ -22,7 +21,9 @@ add_task(async function test_switchtab_override() {
     try {
       gBrowser.removeTab(tab);
       gBrowser.removeTab(secondTab);
-    } catch (ex) {  }
+    } catch (ex) {
+      
+    }
   });
 
   info("Wait for autocomplete");
@@ -30,8 +31,10 @@ add_task(async function test_switchtab_override() {
 
   info("Select second autocomplete popup entry");
   EventUtils.synthesizeKey("KEY_ArrowDown");
-  let result = await UrlbarTestUtils.getDetailsOfResultAt(window,
-    UrlbarTestUtils.getSelectedIndex(window));
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(
+    window,
+    UrlbarTestUtils.getSelectedIndex(window)
+  );
   Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TAB_SWITCH);
 
   
@@ -56,9 +59,11 @@ add_task(async function test_switchtab_override() {
     gBrowser.tabContainer.removeEventListener("TabSelect", onTabSelect);
   });
   
-  BrowserTestUtils.browserLoaded(secondTab.linkedBrowser).then(deferred.resolve);
+  BrowserTestUtils.browserLoaded(secondTab.linkedBrowser).then(
+    deferred.resolve
+  );
 
-  EventUtils.synthesizeKey("KEY_Shift", {type: "keydown"});
+  EventUtils.synthesizeKey("KEY_Shift", { type: "keydown" });
 
   
   for (let label of allLabels) {
@@ -67,20 +72,26 @@ add_task(async function test_switchtab_override() {
 
   registerCleanupFunction(() => {
     
-    EventUtils.synthesizeKey("KEY_Shift", {type: "keyup"});
+    EventUtils.synthesizeKey("KEY_Shift", { type: "keyup" });
   });
 
-  let attribute = UrlbarPrefs.get("quantumbar") ? "actionoverride" : "noactions";
-  Assert.ok(UrlbarTestUtils.getPanel(window).hasAttribute(attribute),
-            "We should be overriding");
+  let attribute = UrlbarPrefs.get("quantumbar")
+    ? "actionoverride"
+    : "noactions";
+  Assert.ok(
+    UrlbarTestUtils.getPanel(window).hasAttribute(attribute),
+    "We should be overriding"
+  );
 
   EventUtils.synthesizeKey("KEY_Enter");
   info(`gURLBar.value = ${gURLBar.value}`);
   await deferred.promise;
 
   
-  Assert.ok(!UrlbarTestUtils.getPanel(window).hasAttribute(attribute),
-            "We should not be overriding anymore");
+  Assert.ok(
+    !UrlbarTestUtils.getPanel(window).hasAttribute(attribute),
+    "We should not be overriding anymore"
+  );
 
   await PlacesUtils.history.clear();
   gBrowser.removeTab(tab);

@@ -19,11 +19,18 @@ async function testModeMenuitem(mode, modePref) {
   EventUtils.synthesizeMouseAtCenter(popupButton, {});
   await popupShownPromise;
 
-  let item = document.getElementById("customization-uidensity-menuitem-" + mode);
-  let normalItem = document.getElementById("customization-uidensity-menuitem-normal");
+  let item = document.getElementById(
+    "customization-uidensity-menuitem-" + mode
+  );
+  let normalItem = document.getElementById(
+    "customization-uidensity-menuitem-normal"
+  );
 
-  is(normalItem.getAttribute("active"), "true",
-     "Normal mode menuitem should be active by default");
+  is(
+    normalItem.getAttribute("active"),
+    "true",
+    "Normal mode menuitem should be active by default"
+  );
 
   
   
@@ -31,18 +38,26 @@ async function testModeMenuitem(mode, modePref) {
   EventUtils.synthesizeMouseAtCenter(item, { type: "mouseover" });
   await mouseoverPromise;
 
-  is(win.getAttribute("uidensity"), mode,
-     `UI Density should be set to ${mode} on ${mode} menuitem hover`);
+  is(
+    win.getAttribute("uidensity"),
+    mode,
+    `UI Density should be set to ${mode} on ${mode} menuitem hover`
+  );
 
-  is(Services.prefs.getIntPref(PREF_UI_DENSITY), window.gUIDensity.MODE_NORMAL,
-     `UI Density pref should still be set to normal on ${mode} menuitem hover`);
+  is(
+    Services.prefs.getIntPref(PREF_UI_DENSITY),
+    window.gUIDensity.MODE_NORMAL,
+    `UI Density pref should still be set to normal on ${mode} menuitem hover`
+  );
 
   
   EventUtils.synthesizeMouseAtCenter(normalItem, { type: "mouseover" });
   await BrowserTestUtils.waitForCondition(() => !win.hasAttribute("uidensity"));
 
-  ok(!win.hasAttribute("uidensity"),
-     `UI Density should be reset when no longer hovering the ${mode} menuitem`);
+  ok(
+    !win.hasAttribute("uidensity"),
+    `UI Density should be reset when no longer hovering the ${mode} menuitem`
+  );
 
   
   let popupHiddenPromise = popupHidden(popup);
@@ -50,10 +65,16 @@ async function testModeMenuitem(mode, modePref) {
   await popupHiddenPromise;
 
   
-  is(win.getAttribute("uidensity"), mode,
-     `UI Density should be set to ${mode} on ${mode} menuitem click`);
-  is(Services.prefs.getIntPref(PREF_UI_DENSITY), modePref,
-     `UI Density pref should be set to ${mode} when clicking the ${mode} menuitem`);
+  is(
+    win.getAttribute("uidensity"),
+    mode,
+    `UI Density should be set to ${mode} on ${mode} menuitem click`
+  );
+  is(
+    Services.prefs.getIntPref(PREF_UI_DENSITY),
+    modePref,
+    `UI Density pref should be set to ${mode} when clicking the ${mode} menuitem`
+  );
 
   
   popupShownPromise = popupShown(popup);
@@ -61,7 +82,11 @@ async function testModeMenuitem(mode, modePref) {
   await popupShownPromise;
 
   
-  is(item.getAttribute("active"), "true", `${mode} mode menuitem should be active`);
+  is(
+    item.getAttribute("active"),
+    "true",
+    `${mode} mode menuitem should be active`
+  );
 
   
   popupHiddenPromise = popupHidden(popup);
@@ -76,19 +101,27 @@ async function testModeMenuitem(mode, modePref) {
   EventUtils.synthesizeMouseAtCenter(popupButton, {});
   await popupShownPromise;
 
-  is(item.getAttribute("active"), "true",
-     `${mode} mode menuitem should be active after entering and exiting customize mode`);
+  is(
+    item.getAttribute("active"),
+    "true",
+    `${mode} mode menuitem should be active after entering and exiting customize mode`
+  );
 
   
   popupHiddenPromise = popupHidden(popup);
   EventUtils.synthesizeMouseAtCenter(normalItem, {});
   await popupHiddenPromise;
 
-  ok(!win.hasAttribute("uidensity"),
-     "UI Density should be reset when clicking the normal menuitem");
+  ok(
+    !win.hasAttribute("uidensity"),
+    "UI Density should be reset when clicking the normal menuitem"
+  );
 
-  is(Services.prefs.getIntPref(PREF_UI_DENSITY), window.gUIDensity.MODE_NORMAL,
-     "UI Density pref should be set to normal.");
+  is(
+    Services.prefs.getIntPref(PREF_UI_DENSITY),
+    window.gUIDensity.MODE_NORMAL,
+    "UI Density pref should be set to normal."
+  );
 
   
   
@@ -100,19 +133,30 @@ async function testModeMenuitem(mode, modePref) {
   EventUtils.synthesizeMouseAtCenter(item, {});
   await popupHiddenPromise;
 
-  is(win.getAttribute("uidensity"), mode,
-     `UI Density should be set to ${mode} on ${mode} menuitem click`);
+  is(
+    win.getAttribute("uidensity"),
+    mode,
+    `UI Density should be set to ${mode} on ${mode} menuitem click`
+  );
 
-  is(Services.prefs.getIntPref(PREF_UI_DENSITY), modePref,
-     `UI Density pref should be set to ${mode} when clicking the ${mode} menuitem`);
+  is(
+    Services.prefs.getIntPref(PREF_UI_DENSITY),
+    modePref,
+    `UI Density pref should be set to ${mode} when clicking the ${mode} menuitem`
+  );
 
   await gCustomizeMode.reset();
 
-  ok(!win.hasAttribute("uidensity"),
-     "UI Density should be reset when clicking the normal menuitem");
+  ok(
+    !win.hasAttribute("uidensity"),
+    "UI Density should be reset when clicking the normal menuitem"
+  );
 
-  is(Services.prefs.getIntPref(PREF_UI_DENSITY), window.gUIDensity.MODE_NORMAL,
-     "UI Density pref should be set to normal.");
+  is(
+    Services.prefs.getIntPref(PREF_UI_DENSITY),
+    window.gUIDensity.MODE_NORMAL,
+    "UI Density pref should be set to normal."
+  );
 
   await endCustomizing();
 }
@@ -124,8 +168,11 @@ add_task(async function test_compact_mode_menuitem() {
 add_task(async function test_touch_mode_menuitem() {
   
   if (AppConstants.platform == "macosx") {
-    is(document.getElementById("customization-uidensity-menuitem-touch"), null,
-       "There's no touch option on Mac OSX");
+    is(
+      document.getElementById("customization-uidensity-menuitem-touch"),
+      null,
+      "There's no touch option on Mac OSX"
+    );
     return;
   }
 
@@ -142,26 +189,40 @@ add_task(async function test_touch_mode_menuitem() {
     EventUtils.synthesizeMouseAtCenter(popupButton, {});
     await popupShownPromise;
 
-    let checkbox = document.getElementById("customization-uidensity-autotouchmode-checkbox");
+    let checkbox = document.getElementById(
+      "customization-uidensity-autotouchmode-checkbox"
+    );
     ok(checkbox.checked, "Checkbox should be checked by default");
 
     
     EventUtils.synthesizeMouseAtCenter(checkbox, {});
-    is(Services.prefs.getBoolPref(PREF_AUTO_TOUCH_MODE), false,
-       "Automatic Touch Mode is off when the checkbox is unchecked.");
+    is(
+      Services.prefs.getBoolPref(PREF_AUTO_TOUCH_MODE),
+      false,
+      "Automatic Touch Mode is off when the checkbox is unchecked."
+    );
 
     EventUtils.synthesizeMouseAtCenter(checkbox, {});
-    is(Services.prefs.getBoolPref(PREF_AUTO_TOUCH_MODE), true,
-       "Automatic Touch Mode is on when the checkbox is checked.");
+    is(
+      Services.prefs.getBoolPref(PREF_AUTO_TOUCH_MODE),
+      true,
+      "Automatic Touch Mode is on when the checkbox is checked."
+    );
 
     
     EventUtils.synthesizeMouseAtCenter(checkbox, {});
-    is(Services.prefs.getBoolPref(PREF_AUTO_TOUCH_MODE), false,
-       "Automatic Touch Mode is off when the checkbox is unchecked.");
+    is(
+      Services.prefs.getBoolPref(PREF_AUTO_TOUCH_MODE),
+      false,
+      "Automatic Touch Mode is off when the checkbox is unchecked."
+    );
 
     await gCustomizeMode.reset();
-    is(Services.prefs.getBoolPref(PREF_AUTO_TOUCH_MODE), true,
-       "Automatic Touch Mode is on when the checkbox is checked.");
+    is(
+      Services.prefs.getBoolPref(PREF_AUTO_TOUCH_MODE),
+      true,
+      "Automatic Touch Mode is on when the checkbox is checked."
+    );
   }
 });
 

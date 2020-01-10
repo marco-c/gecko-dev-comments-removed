@@ -5,15 +5,43 @@
 add_task(async function test_deleteClosedWindow() {
   
 
-  const REMEMBER = Date.now(), FORGET = Math.random();
+  const REMEMBER = Date.now(),
+    FORGET = Math.random();
   let test_state = {
-    windows: [ { tabs: [{ entries: [{ url: "http://example.com/", triggeringPrincipal_base64 }] }], selected: 1 } ],
+    windows: [
+      {
+        tabs: [
+          {
+            entries: [
+              { url: "http://example.com/", triggeringPrincipal_base64 },
+            ],
+          },
+        ],
+        selected: 1,
+      },
+    ],
     _closedWindows: [
       
       {
         tabs: [
-          { entries: [{ url: "http://example.com/", triggeringPrincipal_base64, title: "title" }] },
-          { entries: [{ url: "http://mozilla.org/", triggeringPrincipal_base64, title: "title" }] },
+          {
+            entries: [
+              {
+                url: "http://example.com/",
+                triggeringPrincipal_base64,
+                title: "title",
+              },
+            ],
+          },
+          {
+            entries: [
+              {
+                url: "http://mozilla.org/",
+                triggeringPrincipal_base64,
+                title: "title",
+              },
+            ],
+          },
         ],
         selected: 2,
         title: FORGET,
@@ -22,9 +50,33 @@ add_task(async function test_deleteClosedWindow() {
       
       {
         tabs: [
-         { entries: [{ url: "http://mozilla.org/", triggeringPrincipal_base64, title: "title" }] },
-         { entries: [{ url: "http://example.com/", triggeringPrincipal_base64, title: "title" }] },
-         { entries: [{ url: "http://mozilla.org/", triggeringPrincipal_base64, title: "title" }] },
+          {
+            entries: [
+              {
+                url: "http://mozilla.org/",
+                triggeringPrincipal_base64,
+                title: "title",
+              },
+            ],
+          },
+          {
+            entries: [
+              {
+                url: "http://example.com/",
+                triggeringPrincipal_base64,
+                title: "title",
+              },
+            ],
+          },
+          {
+            entries: [
+              {
+                url: "http://mozilla.org/",
+                triggeringPrincipal_base64,
+                title: "title",
+              },
+            ],
+          },
         ],
         selected: 3,
         title: REMEMBER,
@@ -33,7 +85,15 @@ add_task(async function test_deleteClosedWindow() {
       
       {
         tabs: [
-          { entries: [{ url: "http://example.com/", triggeringPrincipal_base64, title: "title" }] },
+          {
+            entries: [
+              {
+                url: "http://example.com/",
+                triggeringPrincipal_base64,
+                title: "title",
+              },
+            ],
+          },
         ],
         selected: 1,
         title: FORGET,
@@ -41,8 +101,16 @@ add_task(async function test_deleteClosedWindow() {
           {
             state: {
               entries: [
-                { url: "http://mozilla.org/", triggeringPrincipal_base64, title: "title" },
-                { url: "http://mozilla.org/again", triggeringPrincipal_base64, title: "title" },
+                {
+                  url: "http://mozilla.org/",
+                  triggeringPrincipal_base64,
+                  title: "title",
+                },
+                {
+                  url: "http://mozilla.org/again",
+                  triggeringPrincipal_base64,
+                  title: "title",
+                },
               ],
             },
             pos: 1,
@@ -51,7 +119,11 @@ add_task(async function test_deleteClosedWindow() {
           {
             state: {
               entries: [
-                { url: "http://example.com", triggeringPrincipal_base64, title: "title" },
+                {
+                  url: "http://example.com",
+                  triggeringPrincipal_base64,
+                  title: "title",
+                },
               ],
             },
             title: "title",
@@ -78,36 +150,61 @@ add_task(async function test_deleteClosedWindow() {
   
   let newWin = openDialog(location, "_blank", "chrome,all,dialog=no");
   await promiseWindowLoaded(newWin);
-  Services.prefs.setIntPref("browser.sessionstore.max_windows_undo",
-                            test_state._closedWindows.length);
+  Services.prefs.setIntPref(
+    "browser.sessionstore.max_windows_undo",
+    test_state._closedWindows.length
+  );
   await setWindowState(newWin, test_state, true);
 
   let closedWindows = JSON.parse(ss.getClosedWindowData());
-  is(closedWindows.length, test_state._closedWindows.length,
-     "Closed window list has the expected length");
-  is(countByTitle(closedWindows, FORGET),
-     test_state._closedWindows.length - remember_count,
-     "The correct amount of windows are to be forgotten");
-  is(countByTitle(closedWindows, REMEMBER), remember_count,
-     "Everything is set up.");
+  is(
+    closedWindows.length,
+    test_state._closedWindows.length,
+    "Closed window list has the expected length"
+  );
+  is(
+    countByTitle(closedWindows, FORGET),
+    test_state._closedWindows.length - remember_count,
+    "The correct amount of windows are to be forgotten"
+  );
+  is(
+    countByTitle(closedWindows, REMEMBER),
+    remember_count,
+    "Everything is set up."
+  );
 
   
-  ok(testForError(() => ss.forgetClosedWindow(-1)),
-     "Invalid window for forgetClosedWindow throws");
-  ok(testForError(() => ss.forgetClosedWindow(test_state._closedWindows.length + 1)),
-     "Invalid window for forgetClosedWindow throws");
+  ok(
+    testForError(() => ss.forgetClosedWindow(-1)),
+    "Invalid window for forgetClosedWindow throws"
+  );
+  ok(
+    testForError(() =>
+      ss.forgetClosedWindow(test_state._closedWindows.length + 1)
+    ),
+    "Invalid window for forgetClosedWindow throws"
+  );
 
   
   ss.forgetClosedWindow(2);
   ss.forgetClosedWindow(null);
 
   closedWindows = JSON.parse(ss.getClosedWindowData());
-  is(closedWindows.length, remember_count,
-     "The correct amount of windows were removed");
-  is(countByTitle(closedWindows, FORGET), 0,
-     "All windows specifically forgotten were indeed removed");
-  is(countByTitle(closedWindows, REMEMBER), remember_count,
-     "... and windows not specifically forgetten weren't.");
+  is(
+    closedWindows.length,
+    remember_count,
+    "The correct amount of windows were removed"
+  );
+  is(
+    countByTitle(closedWindows, FORGET),
+    0,
+    "All windows specifically forgotten were indeed removed"
+  );
+  is(
+    countByTitle(closedWindows, REMEMBER),
+    remember_count,
+    "... and windows not specifically forgetten weren't."
+  );
 
   
   Services.prefs.clearUserPref("browser.sessionstore.max_windows_undo");

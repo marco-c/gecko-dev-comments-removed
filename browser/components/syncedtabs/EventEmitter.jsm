@@ -4,9 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "EventEmitter",
-];
+var EXPORTED_SYMBOLS = ["EventEmitter"];
 
 
 function EventEmitter() {
@@ -40,4 +38,3 @@ EventEmitter.prototype = {
     }
   },
 };
-

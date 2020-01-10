@@ -2,7 +2,9 @@
 
 
 
-const {UrlbarTestUtils} = ChromeUtils.import("resource://testing-common/UrlbarTestUtils.jsm");
+const { UrlbarTestUtils } = ChromeUtils.import(
+  "resource://testing-common/UrlbarTestUtils.jsm"
+);
 
 
 
@@ -27,8 +29,11 @@ async function testLinkOpensUrl({ win, tab, elementId, expectedUrl }) {
     content.document.getElementById(elemId).click();
   });
   await loadedPromise;
-  is(tab.currentURI.spec, expectedUrl,
-     `Clicking ${elementId} opened ${expectedUrl} in the same tab.`);
+  is(
+    tab.currentURI.spec,
+    expectedUrl,
+    `Clicking ${elementId} opened ${expectedUrl} in the same tab.`
+  );
 }
 
 
@@ -42,7 +47,9 @@ add_task(async function test_myths_link() {
 
   let { win, tab } = await openAboutPrivateBrowsing();
 
-  await testLinkOpensUrl({ win, tab,
+  await testLinkOpensUrl({
+    win,
+    tab,
     elementId: "private-browsing-myths",
     expectedUrl: "https://example.com/private-browsing-myths",
   });
@@ -51,13 +58,17 @@ add_task(async function test_myths_link() {
 });
 
 function urlBarHasHiddenFocus(win) {
-  return win.gURLBar.hasAttribute("focused") &&
-    win.gURLBar.textbox.classList.contains("hidden-focus");
+  return (
+    win.gURLBar.hasAttribute("focused") &&
+    win.gURLBar.textbox.classList.contains("hidden-focus")
+  );
 }
 
 function urlBarHasNormalFocus(win) {
-  return win.gURLBar.hasAttribute("focused") &&
-    !win.gURLBar.textbox.classList.contains("hidden-focus");
+  return (
+    win.gURLBar.hasAttribute("focused") &&
+    !win.gURLBar.textbox.classList.contains("hidden-focus")
+  );
 }
 
 
@@ -74,8 +85,12 @@ add_task(async function test_search_handoff_on_keydown() {
   ok(urlBarHasHiddenFocus(win), "url bar has hidden focused");
   await new Promise(r => EventUtils.synthesizeKey("f", {}, win, r));
   await ContentTask.spawn(tab, null, async function() {
-    ok(content.document.getElementById("search-handoff-button").classList.contains("hidden"),
-      "in-content search is hidden");
+    ok(
+      content.document
+        .getElementById("search-handoff-button")
+        .classList.contains("hidden"),
+      "in-content search is hidden"
+    );
   });
   ok(urlBarHasNormalFocus(win), "url bar has normal focused");
   is(win.gURLBar.value, "@google f", "url bar has search text");
@@ -86,8 +101,12 @@ add_task(async function test_search_handoff_on_keydown() {
   
   await new Promise(r => EventUtils.synthesizeKey("KEY_Escape", {}, win, r));
   await ContentTask.spawn(tab, null, async function() {
-    ok(!content.document.getElementById("search-handoff-button").classList.contains("hidden"),
-      "in-content search is not hidden");
+    ok(
+      !content.document
+        .getElementById("search-handoff-button")
+        .classList.contains("hidden"),
+      "in-content search is not hidden"
+    );
   });
 
   await BrowserTestUtils.closeWindow(win);
@@ -103,7 +122,9 @@ add_task(async function test_search_handoff_on_composition_start() {
     content.document.getElementById("search-handoff-button").click();
   });
   ok(urlBarHasHiddenFocus(win), "url bar has hidden focused");
-  await new Promise(r => EventUtils.synthesizeComposition({type: "compositionstart"}, win, r));
+  await new Promise(r =>
+    EventUtils.synthesizeComposition({ type: "compositionstart" }, win, r)
+  );
   ok(urlBarHasNormalFocus(win), "url bar has normal focused");
 
   await BrowserTestUtils.closeWindow(win);
@@ -119,10 +140,13 @@ add_task(async function test_search_handoff_on_paste() {
     content.document.getElementById("search-handoff-button").click();
   });
   ok(urlBarHasHiddenFocus(win), "url bar has hidden focused");
-  var helper = SpecialPowers.Cc["@mozilla.org/widget/clipboardhelper;1"]
-     .getService(SpecialPowers.Ci.nsIClipboardHelper);
+  var helper = SpecialPowers.Cc[
+    "@mozilla.org/widget/clipboardhelper;1"
+  ].getService(SpecialPowers.Ci.nsIClipboardHelper);
   helper.copyString("words");
-  await new Promise(r => EventUtils.synthesizeKey("v", {accelKey: true}, win, r));
+  await new Promise(r =>
+    EventUtils.synthesizeKey("v", { accelKey: true }, win, r)
+  );
   
   
   if (UrlbarPrefs.get("quantumbar")) {

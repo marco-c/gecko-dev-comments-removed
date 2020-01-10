@@ -3,8 +3,10 @@
 
 
 
-const PTU = SpecialPowers.Cu.import("resource://testing-common/PaymentTestUtils.jsm", {})
-                            .PaymentTestUtils;
+const PTU = SpecialPowers.Cu.import(
+  "resource://testing-common/PaymentTestUtils.jsm",
+  {}
+).PaymentTestUtils;
 
 
 
@@ -58,7 +60,9 @@ function importDialogDependencies(templateFrame, destinationEl) {
   }
 
   let baseURL = new URL("../../res/", window.location.href);
-  let stylesheetLinks = templateFrame.contentDocument.querySelectorAll("link[rel~='stylesheet']");
+  let stylesheetLinks = templateFrame.contentDocument.querySelectorAll(
+    "link[rel~='stylesheet']"
+  );
   for (let stylesheet of stylesheetLinks) {
     let imported = document.importNode(stylesheet, true);
     imported.href = new URL(imported.getAttribute("href"), baseURL);
@@ -84,8 +88,8 @@ async function fillField(field, value) {
       return;
     }
     field.value = value;
-    field.dispatchEvent(new Event("input", {bubbles: true}));
-    field.dispatchEvent(new Event("change", {bubbles: true}));
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("change", { bubbles: true }));
     return;
   }
   while (field.value) {
@@ -105,22 +109,34 @@ function registerConsoleFilter(filterFn) {
 
 
 SpecialPowers.registerConsoleListener(function onConsoleMessage(msg) {
-  if (msg.isWarning || !msg.errorMessage || msg.errorMessage == "paymentRequest.xhtml:") {
+  if (
+    msg.isWarning ||
+    !msg.errorMessage ||
+    msg.errorMessage == "paymentRequest.xhtml:"
+  ) {
     
     return;
   }
-  if (msg.category == "CSP_CSPViolationWithURI" && msg.errorMessage.includes("at inline")) {
+  if (
+    msg.category == "CSP_CSPViolationWithURI" &&
+    msg.errorMessage.includes("at inline")
+  ) {
     
     return;
   }
-  if (msg.message && msg.message.includes("Security Error: Content at http://mochi.test:8888")) {
+  if (
+    msg.message &&
+    msg.message.includes("Security Error: Content at http://mochi.test:8888")
+  ) {
     
-    if (msg.message.includes("icon-credit-card-generic.svg") ||
-        msg.message.includes("accepted-cards.css") ||
-        msg.message.includes("editDialog-shared.css") ||
-        msg.message.includes("editAddress.css") ||
-        msg.message.includes("editDialog.css") ||
-        msg.message.includes("editCreditCard.css")) {
+    if (
+      msg.message.includes("icon-credit-card-generic.svg") ||
+      msg.message.includes("accepted-cards.css") ||
+      msg.message.includes("editDialog-shared.css") ||
+      msg.message.includes("editAddress.css") ||
+      msg.message.includes("editDialog.css") ||
+      msg.message.includes("editCreditCard.css")
+    ) {
       return;
     }
   }

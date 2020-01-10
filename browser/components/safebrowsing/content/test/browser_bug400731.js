@@ -28,7 +28,10 @@ function test() {
   waitForExplicitFinish();
 
   waitForDBInit(() => {
-    gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "http://www.itisatrap.org/firefox/its-an-attack.html");
+    gBrowser.selectedTab = BrowserTestUtils.addTab(
+      gBrowser,
+      "http://www.itisatrap.org/firefox/its-an-attack.html"
+    );
     onDOMContentLoaded(testMalware);
   });
 }
@@ -40,18 +43,27 @@ function testMalware(data) {
 
   
   onDOMContentLoaded(testUnwanted);
-  BrowserTestUtils.loadURI(gBrowser, "http://www.itisatrap.org/firefox/unwanted.html");
+  BrowserTestUtils.loadURI(
+    gBrowser,
+    "http://www.itisatrap.org/firefox/unwanted.html"
+  );
 }
 
 function testUnwanted(data) {
   
-  ok(!data.buttonPresent, "Ignore warning link should be missing for unwanted software");
+  ok(
+    !data.buttonPresent,
+    "Ignore warning link should be missing for unwanted software"
+  );
 
   Services.prefs.setBoolPref("browser.safebrowsing.allowOverride", true);
 
   
   onDOMContentLoaded(testPhishing);
-  BrowserTestUtils.loadURI(gBrowser, "http://www.itisatrap.org/firefox/its-a-trap.html");
+  BrowserTestUtils.loadURI(
+    gBrowser,
+    "http://www.itisatrap.org/firefox/its-a-trap.html"
+  );
 }
 
 function testPhishing(data) {

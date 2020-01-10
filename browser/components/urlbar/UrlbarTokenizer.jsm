@@ -12,13 +12,15 @@
 
 var EXPORTED_SYMBOLS = ["UrlbarTokenizer"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "Log",
-                               "resource://gre/modules/Log.jsm");
+ChromeUtils.defineModuleGetter(this, "Log", "resource://gre/modules/Log.jsm");
 XPCOMUtils.defineLazyGetter(this, "logger", () =>
-  Log.repository.getLogger("Urlbar.Tokenizer"));
+  Log.repository.getLogger("Urlbar.Tokenizer")
+);
 
 var UrlbarTokenizer = {
   
@@ -85,30 +87,36 @@ var UrlbarTokenizer = {
 
 
   looksLikeUrl(token, options = {}) {
-    if (token.length < 2)
+    if (token.length < 2) {
       return false;
+    }
     
-    if (this.REGEXP_SPACES.test(token))
+    if (this.REGEXP_SPACES.test(token)) {
       return false;
+    }
     
-    if (this.REGEXP_LIKE_PROTOCOL.test(token))
+    if (this.REGEXP_LIKE_PROTOCOL.test(token)) {
       return true;
+    }
     
     
     let slashIndex = token.indexOf("/");
     let prePath = slashIndex != -1 ? token.slice(0, slashIndex) : token;
-    if (!this.looksLikeOrigin(prePath))
+    if (!this.looksLikeOrigin(prePath)) {
       return false;
+    }
 
     let path = slashIndex != -1 ? token.slice(slashIndex) : "";
     logger.debug("path", path);
-    if (options.requirePath && !path)
+    if (options.requirePath && !path) {
       return false;
+    }
     
     let atIndex = prePath.indexOf("@");
     let userinfo = atIndex != -1 ? prePath.slice(0, atIndex) : "";
-    if (path.length && userinfo.length)
+    if (path.length && userinfo.length) {
       return true;
+    }
 
     
     
@@ -116,20 +124,26 @@ var UrlbarTokenizer = {
       return true;
     }
     
-    if (["%", "?", "#"].some(c => path.includes(c)))
+    if (["%", "?", "#"].some(c => path.includes(c))) {
       return true;
+    }
 
     
     
     let hostPort = atIndex != -1 ? prePath.slice(atIndex + 1) : prePath;
-    if (this.REGEXP_HOSTPORT_IPV4.test(hostPort))
+    if (this.REGEXP_HOSTPORT_IPV4.test(hostPort)) {
       return true;
+    }
     
-    if (this.REGEXP_HOSTPORT_IPV6.test(hostPort) &&
-        ["[", "]", ":"].some(c => hostPort.includes(c)))
+    if (
+      this.REGEXP_HOSTPORT_IPV6.test(hostPort) &&
+      ["[", "]", ":"].some(c => hostPort.includes(c))
+    ) {
       return true;
-    if (Services.uriFixup.isDomainWhitelisted(hostPort, -1))
+    }
+    if (Services.uriFixup.isDomainWhitelisted(hostPort, -1)) {
       return true;
+    }
     return false;
   },
 
@@ -156,17 +170,21 @@ var UrlbarTokenizer = {
     let hostPort = atIndex != -1 ? token.slice(atIndex + 1) : token;
     logger.debug("userinfo", userinfo);
     logger.debug("hostPort", hostPort);
-    if (this.REGEXP_HOSTPORT_IPV4.test(hostPort) ||
-        this.REGEXP_HOSTPORT_IPV6.test(hostPort)) {
+    if (
+      this.REGEXP_HOSTPORT_IPV4.test(hostPort) ||
+      this.REGEXP_HOSTPORT_IPV6.test(hostPort)
+    ) {
       return true;
     }
 
     
-    return !this.REGEXP_LIKE_PROTOCOL.test(hostPort) &&
-           !this.REGEXP_USERINFO_INVALID_CHARS.test(userinfo) &&
-           !this.REGEXP_HOSTPORT_INVALID_CHARS.test(hostPort) &&
-           (!this.REGEXP_HOSTPORT_IP_LIKE.test(hostPort) ||
-            !this.REGEXP_HOSTPORT_INVALID_IP.test(hostPort));
+    return (
+      !this.REGEXP_LIKE_PROTOCOL.test(hostPort) &&
+      !this.REGEXP_USERINFO_INVALID_CHARS.test(userinfo) &&
+      !this.REGEXP_HOSTPORT_INVALID_CHARS.test(hostPort) &&
+      (!this.REGEXP_HOSTPORT_IP_LIKE.test(hostPort) ||
+        !this.REGEXP_HOSTPORT_INVALID_IP.test(hostPort))
+    );
   },
 
   
@@ -196,15 +214,18 @@ var UrlbarTokenizer = {
 
 
   isRestrictionToken(token) {
-    return token.type >= this.TYPE.RESTRICT_HISTORY &&
-           token.type <= this.TYPE.RESTRICT_URL;
+    return (
+      token.type >= this.TYPE.RESTRICT_HISTORY &&
+      token.type <= this.TYPE.RESTRICT_URL
+    );
   },
 };
 
 const CHAR_TO_TYPE_MAP = new Map(
-  Object.entries(UrlbarTokenizer.RESTRICT).map(
-    ([type, char]) => [ char, UrlbarTokenizer.TYPE[`RESTRICT_${type}`] ]
-  )
+  Object.entries(UrlbarTokenizer.RESTRICT).map(([type, char]) => [
+    char,
+    UrlbarTokenizer.TYPE[`RESTRICT_${type}`],
+  ])
 );
 
 
@@ -231,16 +252,20 @@ function splitString(searchString) {
     if (!hasRestrictionToken && token.length > 1) {
       
       
-      if (i == 0 &&
-          chars.includes(token[0]) &&
-          !UrlbarTokenizer.REGEXP_PERCENT_ENCODED_START.test(token)) {
+      if (
+        i == 0 &&
+        chars.includes(token[0]) &&
+        !UrlbarTokenizer.REGEXP_PERCENT_ENCODED_START.test(token)
+      ) {
         hasRestrictionToken = true;
         accumulator.push(token[0]);
         accumulator.push(token.slice(1));
         continue;
-      } else if (i == tokens.length - 1 &&
-                 chars.includes(token[token.length - 1]) &&
-                 !UrlbarTokenizer.looksLikeUrl(token, {requirePath: true})) {
+      } else if (
+        i == tokens.length - 1 &&
+        chars.includes(token[token.length - 1]) &&
+        !UrlbarTokenizer.looksLikeUrl(token, { requirePath: true })
+      ) {
         hasRestrictionToken = true;
         accumulator.push(token.slice(0, token.length - 1));
         accumulator.push(token[token.length - 1]);
@@ -277,10 +302,10 @@ function filterTokens(tokens) {
     };
     let restrictionType = CHAR_TO_TYPE_MAP.get(token);
     if (restrictionType) {
-      restrictions.push({index: i, type: restrictionType});
+      restrictions.push({ index: i, type: restrictionType });
     } else if (UrlbarTokenizer.looksLikeOrigin(token)) {
       tokenObj.type = UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN;
-    } else if (UrlbarTokenizer.looksLikeUrl(token, {requirePath: true})) {
+    } else if (UrlbarTokenizer.looksLikeUrl(token, { requirePath: true })) {
       tokenObj.type = UrlbarTokenizer.TYPE.POSSIBLE_URL;
     }
     filtered.push(tokenObj);
@@ -295,8 +320,12 @@ function filterTokens(tokens) {
     let typeRestrictionFound = false;
     function assignRestriction(r) {
       if (r && !(matchingRestrictionFound && typeRestrictionFound)) {
-        if ([UrlbarTokenizer.TYPE.RESTRICT_TITLE,
-             UrlbarTokenizer.TYPE.RESTRICT_URL].includes(r.type)) {
+        if (
+          [
+            UrlbarTokenizer.TYPE.RESTRICT_TITLE,
+            UrlbarTokenizer.TYPE.RESTRICT_URL,
+          ].includes(r.type)
+        ) {
           if (!matchingRestrictionFound) {
             matchingRestrictionFound = true;
             filtered[r.index].type = r.type;

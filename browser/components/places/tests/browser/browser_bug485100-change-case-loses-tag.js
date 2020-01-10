@@ -22,7 +22,9 @@ add_task(async function() {
   
   document.getElementById("editBMPanel_tagsField").value = testTag;
   let promiseNotification = PlacesTestUtils.waitForNotification(
-    "onItemChanged", (id, property) => property == "tags");
+    "onItemChanged",
+    (id, property) => property == "tags"
+  );
   gEditItemOverlay.onTagsFieldChange();
   await promiseNotification;
 
@@ -35,7 +37,9 @@ add_task(async function() {
   
   
   promiseNotification = PlacesTestUtils.waitForNotification(
-    "onItemChanged", (id, property) => property == "title");
+    "onItemChanged",
+    (id, property) => property == "title"
+  );
   gEditItemOverlay.onTagsFieldChange();
   await promiseNotification;
 

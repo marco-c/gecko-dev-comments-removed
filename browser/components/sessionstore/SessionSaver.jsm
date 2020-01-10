@@ -170,7 +170,9 @@ var SessionSaverInternal = {
     }
 
     
-    let interval = this._isIdle ? this._intervalWhileIdle : this._intervalWhileActive;
+    let interval = this._isIdle
+      ? this._intervalWhileIdle
+      : this._intervalWhileActive;
     delay = Math.max(this._lastSaveTime + interval - Date.now(), delay, 0);
 
     
@@ -178,7 +180,7 @@ var SessionSaverInternal = {
     this._timeoutID = setTimeout(() => {
       
       
-      let saveStateAsyncWhenIdle = (deadline) => {
+      let saveStateAsyncWhenIdle = deadline => {
         
         
         
@@ -303,14 +305,18 @@ var SessionSaverInternal = {
     }
 
     
-    if (Services.prefs.getBoolPref("browser.sessionstore.resume_session_once")) {
+    if (
+      Services.prefs.getBoolPref("browser.sessionstore.resume_session_once")
+    ) {
       return;
     }
 
-    let expireCookies = Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
-                        Services.cookies.QueryInterface(Ci.nsICookieService).ACCEPT_SESSION;
-    let sanitizeCookies = Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown") &&
-                          Services.prefs.getBoolPref("privacy.clearOnShutdown.cookies");
+    let expireCookies =
+      Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
+      Services.cookies.QueryInterface(Ci.nsICookieService).ACCEPT_SESSION;
+    let sanitizeCookies =
+      Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown") &&
+      Services.prefs.getBoolPref("privacy.clearOnShutdown.cookies");
 
     if (expireCookies || sanitizeCookies) {
       
@@ -358,31 +364,52 @@ var SessionSaverInternal = {
   },
 };
 
-XPCOMUtils.defineLazyPreferenceGetter(SessionSaverInternal, "_intervalWhileActive", PREF_INTERVAL_ACTIVE,
-  15000 , () => {
-  
-  
-  SessionSaverInternal.cancel();
-  SessionSaverInternal.runDelayed(0);
-});
-
-XPCOMUtils.defineLazyPreferenceGetter(SessionSaverInternal, "_intervalWhileIdle", PREF_INTERVAL_IDLE,
-  3600000 );
-
-XPCOMUtils.defineLazyPreferenceGetter(SessionSaverInternal, "_idleDelay", PREF_IDLE_DELAY,
-  180000 , (key, previous, latest) => {
-  
-  
-  
-  
-  var idleService = Cc["@mozilla.org/widget/idleservice;1"].getService(Ci.nsIIdleService);
-  if (previous != undefined) {
-    idleService.removeIdleObserver(SessionSaverInternal, previous);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SessionSaverInternal,
+  "_intervalWhileActive",
+  PREF_INTERVAL_ACTIVE,
+  15000 ,
+  () => {
+    
+    
+    SessionSaverInternal.cancel();
+    SessionSaverInternal.runDelayed(0);
   }
-  if (latest != undefined) {
-    idleService.addIdleObserver(SessionSaverInternal, latest);
-  }
-});
+);
 
-var idleService = Cc["@mozilla.org/widget/idleservice;1"].getService(Ci.nsIIdleService);
-idleService.addIdleObserver(SessionSaverInternal, SessionSaverInternal._idleDelay);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SessionSaverInternal,
+  "_intervalWhileIdle",
+  PREF_INTERVAL_IDLE,
+  3600000 
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  SessionSaverInternal,
+  "_idleDelay",
+  PREF_IDLE_DELAY,
+  180000 ,
+  (key, previous, latest) => {
+    
+    
+    
+    
+    var idleService = Cc["@mozilla.org/widget/idleservice;1"].getService(
+      Ci.nsIIdleService
+    );
+    if (previous != undefined) {
+      idleService.removeIdleObserver(SessionSaverInternal, previous);
+    }
+    if (latest != undefined) {
+      idleService.addIdleObserver(SessionSaverInternal, latest);
+    }
+  }
+);
+
+var idleService = Cc["@mozilla.org/widget/idleservice;1"].getService(
+  Ci.nsIIdleService
+);
+idleService.addIdleObserver(
+  SessionSaverInternal,
+  SessionSaverInternal._idleDelay
+);

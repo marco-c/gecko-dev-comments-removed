@@ -22,7 +22,7 @@ export default function ObservedPropertiesMixin(superClass) {
       };
 
       
-      for (let name of (this.constructor.observedAttributes || [])) {
+      for (let name of this.constructor.observedAttributes || []) {
         if (name in this) {
           
           continue;

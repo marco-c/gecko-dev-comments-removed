@@ -2,7 +2,6 @@
 
 "use strict";
 
-
 this.devtools = class extends ExtensionAPI {
   getAPI(context) {
     return {
@@ -10,4 +9,3 @@ this.devtools = class extends ExtensionAPI {
     };
   }
 };
-

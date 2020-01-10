@@ -4,12 +4,9 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "getChromeWindow",
-];
+var EXPORTED_SYMBOLS = ["getChromeWindow"];
 
 
 function getChromeWindow(window) {
-  return window.docShell.rootTreeItem.domWindow
-         .wrappedJSObject;
+  return window.docShell.rootTreeItem.domWindow.wrappedJSObject;
 }

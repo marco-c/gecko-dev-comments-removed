@@ -15,14 +15,21 @@ var tabs = [];
 
 add_task(async function setup() {
   originalEngine = await Services.search.getDefault();
-  expectedString = gBrowserBundle.formatStringFromName("urlbar.placeholder", [originalEngine.name]);
+  expectedString = gBrowserBundle.formatStringFromName("urlbar.placeholder", [
+    originalEngine.name,
+  ]);
 
   let rootDir = getRootDirectory(gTestPath);
-  extraEngine = await SearchTestUtils.promiseNewSearchEngine(rootDir + TEST_ENGINE_BASENAME);
+  extraEngine = await SearchTestUtils.promiseNewSearchEngine(
+    rootDir + TEST_ENGINE_BASENAME
+  );
 
   
   
-  let urlTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:mozilla");
+  let urlTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:mozilla"
+  );
   BrowserTestUtils.removeTab(urlTab);
 
   registerCleanupFunction(async () => {
@@ -39,22 +46,32 @@ add_task(async function test_change_default_engine_updates_placeholder() {
   await Services.search.setDefault(extraEngine);
 
   await TestUtils.waitForCondition(
-    () => gURLBar.getAttribute("placeholder") == gURLBar.getAttribute("defaultPlaceholder"),
-    "The placeholder should match the default placeholder for non-built-in engines.");
-  Assert.equal(gURLBar.getAttribute("placeholder"), gURLBar.getAttribute("defaultPlaceholder"));
+    () =>
+      gURLBar.getAttribute("placeholder") ==
+      gURLBar.getAttribute("defaultPlaceholder"),
+    "The placeholder should match the default placeholder for non-built-in engines."
+  );
+  Assert.equal(
+    gURLBar.getAttribute("placeholder"),
+    gURLBar.getAttribute("defaultPlaceholder")
+  );
 
   await Services.search.setDefault(originalEngine);
 
   await TestUtils.waitForCondition(
     () => gURLBar.getAttribute("placeholder") == expectedString,
-    "The placeholder should include the engine name for built-in engines.");
+    "The placeholder should include the engine name for built-in engines."
+  );
   Assert.equal(gURLBar.getAttribute("placeholder"), expectedString);
 });
 
 add_task(async function test_delayed_update_placeholder() {
   
   
-  let urlTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:mozilla");
+  let urlTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:mozilla"
+  );
   tabs.push(urlTab);
 
   
@@ -64,15 +81,21 @@ add_task(async function test_delayed_update_placeholder() {
   
   BrowserSearch._updateURLBarPlaceholder(extraEngine.name, true);
 
-  Assert.equal(gURLBar.getAttribute("placeholder"), expectedString,
-    "Placeholder should be unchanged.");
+  Assert.equal(
+    gURLBar.getAttribute("placeholder"),
+    expectedString,
+    "Placeholder should be unchanged."
+  );
 
   
   await BrowserTestUtils.switchTab(gBrowser, urlTab);
 
   await TestUtils.waitForCondition(
-    () => gURLBar.getAttribute("placeholder") == gURLBar.getAttribute("defaultPlaceholder"),
-    "The placeholder should have updated in the background.");
+    () =>
+      gURLBar.getAttribute("placeholder") ==
+      gURLBar.getAttribute("defaultPlaceholder"),
+    "The placeholder should have updated in the background."
+  );
 
   
   await BrowserTestUtils.switchTab(gBrowser, blankTab);
@@ -80,19 +103,26 @@ add_task(async function test_delayed_update_placeholder() {
   BrowserSearch._updateURLBarPlaceholder(originalEngine.name, true);
   await TestUtils.waitForTick();
 
-  Assert.equal(gURLBar.getAttribute("placeholder"), gURLBar.getAttribute("defaultPlaceholder"),
-    "Placeholder should be unchanged.");
+  Assert.equal(
+    gURLBar.getAttribute("placeholder"),
+    gURLBar.getAttribute("defaultPlaceholder"),
+    "Placeholder should be unchanged."
+  );
 
   await BrowserTestUtils.switchTab(gBrowser, urlTab);
 
   await TestUtils.waitForCondition(
     () => gURLBar.getAttribute("placeholder") == expectedString,
-    "The placeholder should include the engine name for built-in engines.");
+    "The placeholder should include the engine name for built-in engines."
+  );
 
   
   BrowserSearch._updateURLBarPlaceholder(extraEngine.name);
   await TestUtils.waitForTick();
 
-  Assert.equal(gURLBar.getAttribute("placeholder"), gURLBar.getAttribute("defaultPlaceholder"),
-    "Placeholder should be the default.");
+  Assert.equal(
+    gURLBar.getAttribute("placeholder"),
+    gURLBar.getAttribute("defaultPlaceholder"),
+    "Placeholder should be the default."
+  );
 });

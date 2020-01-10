@@ -4,11 +4,15 @@
 
 
 
-const {PrivateBrowsingUtils} = ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
+const { PrivateBrowsingUtils } = ChromeUtils.import(
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
 
 var ContentAreaDownloadsView = {
   init() {
-    let view = new DownloadsPlacesView(document.getElementById("downloadsRichListBox"));
+    let view = new DownloadsPlacesView(
+      document.getElementById("downloadsRichListBox")
+    );
     
     if (!PrivateBrowsingUtils.isContentWindowPrivate(window)) {
       view.place = "place:transition=7&sort=4";

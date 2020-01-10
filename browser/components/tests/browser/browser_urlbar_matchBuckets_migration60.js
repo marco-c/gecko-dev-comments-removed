@@ -13,22 +13,24 @@ ChromeUtils.import("resource://normandy/lib/PreferenceExperiments.jsm", this);
 
 
 
-
 add_task(async function migrate() {
   await sanityCheckInitialState();
 
   
   
   await promiseMigration();
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""),
-               PREF_VALUE_GENERAL_FIRST,
-               "Pref should be set, general first");
-  Assert.ok(Services.prefs.prefHasUserValue(PREF_NAME),
-            "Pref should be set on user branch");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    PREF_VALUE_GENERAL_FIRST,
+    "Pref should be set, general first"
+  );
+  Assert.ok(
+    Services.prefs.prefHasUserValue(PREF_NAME),
+    "Pref should be set on user branch"
+  );
 
   Services.prefs.clearUserPref(PREF_NAME);
 });
-
 
 
 
@@ -41,15 +43,18 @@ add_task(async function setUserPrefAndMigrate() {
 
   
   await promiseMigration();
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""),
-               userValue,
-               "Pref should remain same");
-  Assert.ok(Services.prefs.prefHasUserValue(PREF_NAME),
-            "Pref should remain on user branch");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    userValue,
+    "Pref should remain same"
+  );
+  Assert.ok(
+    Services.prefs.prefHasUserValue(PREF_NAME),
+    "Pref should remain on user branch"
+  );
 
   Services.prefs.clearUserPref(PREF_NAME);
 });
-
 
 
 
@@ -62,15 +67,18 @@ add_task(async function setDefaultPrefAndMigrate() {
 
   
   await promiseMigration();
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""),
-               defaultValue,
-               "Pref should remain same");
-  Assert.ok(!Services.prefs.prefHasUserValue(PREF_NAME),
-            "Pref should remain on default branch");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    defaultValue,
+    "Pref should remain same"
+  );
+  Assert.ok(
+    !Services.prefs.prefHasUserValue(PREF_NAME),
+    "Pref should remain on default branch"
+  );
 
   Services.prefs.deleteBranch(PREF_NAME);
 });
-
 
 
 
@@ -84,22 +92,25 @@ add_task(async function installStudyAndMigrate() {
 
   
   await PreferenceExperiments.start(newExperimentOpts());
-  Assert.ok(await PreferenceExperiments.has(STUDY_NAME),
-            "Study installed");
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""),
-               PREF_VALUE_SUGGESTIONS_FIRST,
-               "Pref should be set by study");
+  Assert.ok(await PreferenceExperiments.has(STUDY_NAME), "Study installed");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    PREF_VALUE_SUGGESTIONS_FIRST,
+    "Pref should be set by study"
+  );
 
   
   
   await promiseMigration();
   Assert.ok(!(await getNonExpiredExperiment()), "Study stopped");
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""), "",
-               "Pref should be cleared");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    "",
+    "Pref should be cleared"
+  );
 
   await PreferenceExperiments.clearAllExperimentStorage();
 });
-
 
 
 
@@ -120,21 +131,25 @@ add_task(async function installStudyPrefWithSpacesAndMigrate() {
     },
   });
   await PreferenceExperiments.start(experiment);
-  Assert.ok(await PreferenceExperiments.has(STUDY_NAME),
-            "Study installed");
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""), preferenceValue,
-               "Pref should be set by study");
+  Assert.ok(await PreferenceExperiments.has(STUDY_NAME), "Study installed");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    preferenceValue,
+    "Pref should be set by study"
+  );
 
   
   
   await promiseMigration();
   Assert.ok(!(await getNonExpiredExperiment()), "Study stopped");
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""), "",
-               "Pref should be cleared");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    "",
+    "Pref should be cleared"
+  );
 
   await PreferenceExperiments.clearAllExperimentStorage();
 });
-
 
 
 
@@ -153,26 +168,31 @@ add_task(async function installStudyMinorityPrefAndMigrate() {
     },
   });
   await PreferenceExperiments.start(experiment);
-  Assert.ok(await PreferenceExperiments.has(STUDY_NAME),
-            "Study installed");
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""), preferenceValue,
-               "Pref should be set by study");
+  Assert.ok(await PreferenceExperiments.has(STUDY_NAME), "Study installed");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    preferenceValue,
+    "Pref should be set by study"
+  );
 
   
   
   
   await promiseMigration();
   Assert.ok(!(await getNonExpiredExperiment()), "Study stopped");
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""),
-               preferenceValue,
-               "Pref should remain the same");
-  Assert.ok(Services.prefs.prefHasUserValue(PREF_NAME),
-            "Pref should be set on user branch");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    preferenceValue,
+    "Pref should remain the same"
+  );
+  Assert.ok(
+    Services.prefs.prefHasUserValue(PREF_NAME),
+    "Pref should be set on user branch"
+  );
 
   await PreferenceExperiments.clearAllExperimentStorage();
   Services.prefs.clearUserPref(PREF_NAME);
 });
-
 
 
 
@@ -188,29 +208,37 @@ add_task(async function setDefaultPrefInstallStudyAndMigrate() {
 
   
   await PreferenceExperiments.start(newExperimentOpts());
-  Assert.ok(await PreferenceExperiments.has(STUDY_NAME),
-            "Study installed");
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""),
-               PREF_VALUE_SUGGESTIONS_FIRST,
-               "Pref should be set by study");
+  Assert.ok(await PreferenceExperiments.has(STUDY_NAME), "Study installed");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    PREF_VALUE_SUGGESTIONS_FIRST,
+    "Pref should be set by study"
+  );
 
   
   
   await promiseMigration();
   Assert.ok(!(await getNonExpiredExperiment()), "Study stopped");
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""), defaultValue,
-               "Pref should be restored to user value");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    defaultValue,
+    "Pref should be restored to user value"
+  );
 
   await PreferenceExperiments.clearAllExperimentStorage();
   Services.prefs.deleteBranch(PREF_NAME);
 });
 
-
 async function sanityCheckInitialState() {
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""), "",
-               "Pref should be cleared initially");
-  Assert.ok(!(await PreferenceExperiments.has(STUDY_NAME)),
-            "Study should not be installed initially");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    "",
+    "Pref should be cleared initially"
+  );
+  Assert.ok(
+    !(await PreferenceExperiments.has(STUDY_NAME)),
+    "Study should not be installed initially"
+  );
 }
 
 function promiseMigration() {
@@ -234,17 +262,23 @@ function newExperimentOpts(opts = {}) {
     preferenceType: "string",
   };
   const preferences = {};
-  for (const [prefName, prefInfo] of Object.entries(opts.preferences || defaultPref)) {
+  for (const [prefName, prefInfo] of Object.entries(
+    opts.preferences || defaultPref
+  )) {
     preferences[prefName] = { ...defaultPrefInfo, ...prefInfo };
   }
 
-  return Object.assign({
-    name: STUDY_NAME,
-    actionName: "SomeAction",
-    branch: "branch",
-  }, opts, {
-    preferences,
-  });
+  return Object.assign(
+    {
+      name: STUDY_NAME,
+      actionName: "SomeAction",
+      branch: "branch",
+    },
+    opts,
+    {
+      preferences,
+    }
+  );
 }
 
 async function getNonExpiredExperiment() {

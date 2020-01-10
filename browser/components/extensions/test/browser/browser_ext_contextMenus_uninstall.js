@@ -5,17 +5,18 @@
 add_task(async function() {
   let tab1 = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html");
+    "http://mochi.test:8888/browser/browser/components/extensions/test/browser/context.html"
+  );
 
   
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
-      "permissions": ["contextMenus"],
+      permissions: ["contextMenus"],
     },
 
     background: function() {
-      browser.contextMenus.create({title: "a"});
-      browser.contextMenus.create({title: "b"});
+      browser.contextMenus.create({ title: "a" });
+      browser.contextMenus.create({ title: "b" });
       browser.test.notifyPass("contextmenus-icons");
     },
   });
@@ -27,8 +28,15 @@ add_task(async function() {
   let contextMenu = await openContextMenu("#img1");
 
   
-  let topLevelExtensionMenuItems = contextMenu.getElementsByAttribute("ext-type", "top-level-menu");
-  is(topLevelExtensionMenuItems.length, 1, "the top level extension menu item exists");
+  let topLevelExtensionMenuItems = contextMenu.getElementsByAttribute(
+    "ext-type",
+    "top-level-menu"
+  );
+  is(
+    topLevelExtensionMenuItems.length,
+    1,
+    "the top level extension menu item exists"
+  );
 
   await closeContextMenu();
 
@@ -39,19 +47,26 @@ add_task(async function() {
   contextMenu = await openContextMenu("#img1");
 
   
-  topLevelExtensionMenuItems = contextMenu.getElementsByAttribute("ext-type", "top-level-menu");
-  is(topLevelExtensionMenuItems.length, 0, "no top level extension menu items should exist");
+  topLevelExtensionMenuItems = contextMenu.getElementsByAttribute(
+    "ext-type",
+    "top-level-menu"
+  );
+  is(
+    topLevelExtensionMenuItems.length,
+    0,
+    "no top level extension menu items should exist"
+  );
 
   await closeContextMenu();
 
   
   extension = ExtensionTestUtils.loadExtension({
     manifest: {
-      "permissions": ["contextMenus"],
+      permissions: ["contextMenus"],
     },
     background: function() {
-      browser.contextMenus.create({title: "c"});
-      browser.contextMenus.create({title: "d"});
+      browser.contextMenus.create({ title: "c" });
+      browser.contextMenus.create({ title: "d" });
       browser.test.notifyPass("contextmenus-uninstall-second-extension");
     },
   });
@@ -63,8 +78,15 @@ add_task(async function() {
   contextMenu = await openContextMenu("#img1");
 
   
-  topLevelExtensionMenuItems = contextMenu.getElementsByAttribute("ext-type", "top-level-menu");
-  is(topLevelExtensionMenuItems.length, 1, "only one top level extension menu item should exist");
+  topLevelExtensionMenuItems = contextMenu.getElementsByAttribute(
+    "ext-type",
+    "top-level-menu"
+  );
+  is(
+    topLevelExtensionMenuItems.length,
+    1,
+    "only one top level extension menu item should exist"
+  );
 
   
   await closeContextMenu();
@@ -76,8 +98,15 @@ add_task(async function() {
   contextMenu = await openContextMenu("#img1");
 
   
-  topLevelExtensionMenuItems = contextMenu.getElementsByAttribute("ext-type", "top-level-menu");
-  is(topLevelExtensionMenuItems.length, 0, "no top level extension menu items should exist");
+  topLevelExtensionMenuItems = contextMenu.getElementsByAttribute(
+    "ext-type",
+    "top-level-menu"
+  );
+  is(
+    topLevelExtensionMenuItems.length,
+    0,
+    "no top level extension menu items should exist"
+  );
 
   await closeContextMenu();
 

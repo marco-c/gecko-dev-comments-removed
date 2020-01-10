@@ -8,8 +8,9 @@ this.devtools_inspectedWindow = class extends ExtensionAPI {
     
     
     
-    let tabId = (context.devtoolsToolboxInfo &&
-                 context.devtoolsToolboxInfo.inspectedWindowTabId);
+    let tabId =
+      context.devtoolsToolboxInfo &&
+      context.devtoolsToolboxInfo.inspectedWindowTabId;
 
     return {
       devtools: {

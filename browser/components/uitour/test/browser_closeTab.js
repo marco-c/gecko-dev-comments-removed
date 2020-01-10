@@ -9,7 +9,10 @@ add_task(setup_UITourTest);
 add_UITour_task(async function test_closeTab() {
   
   
-  let closePromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabClose");
+  let closePromise = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "TabClose"
+  );
   
   
   

@@ -2,7 +2,9 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
@@ -26,7 +28,9 @@ function execCommand(commandName, telemetryKey) {
   if (command) {
     command.doCommand();
   }
-  let telemetry = Services.telemetry.getHistogramById("TOUCHBAR_BUTTON_PRESSES");
+  let telemetry = Services.telemetry.getHistogramById(
+    "TOUCHBAR_BUTTON_PRESSES"
+  );
   telemetry.add(telemetryKey);
 }
 
@@ -110,7 +114,7 @@ const kBuiltInInputs = {
     image: "reader-mode.pdf",
     type: "button",
     callback: () => execCommand("View:ReaderView", "ReaderView"),
-    disabled: true,  
+    disabled: true, 
   },
   OpenLocation: {
     title: "open-location",
@@ -129,8 +133,13 @@ const kBuiltInInputs = {
   },
 };
 
-const kHelperObservers = new Set(["bookmark-icon-updated", "reader-mode-available",
-  "touchbar-location-change", "quit-application", "intl:app-locales-changed"]);
+const kHelperObservers = new Set([
+  "bookmark-icon-updated",
+  "reader-mode-available",
+  "touchbar-location-change",
+  "quit-application",
+  "intl:app-locales-changed",
+]);
 
 
 
@@ -142,8 +151,12 @@ class TouchBarHelper {
       Services.obs.addObserver(this, topic);
     }
 
-    XPCOMUtils.defineLazyPreferenceGetter(this, "_touchBarLayout",
-      "ui.touchbar.layout", "Back,Forward,Reload,OpenLocation,NewTab,Share");
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_touchBarLayout",
+      "ui.touchbar.layout",
+      "Back,Forward,Reload,OpenLocation,NewTab,Share"
+    );
   }
 
   destructor() {
@@ -163,7 +176,9 @@ class TouchBarHelper {
 
   get layout() {
     let prefArray = this.storedLayout;
-    let layoutItems = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+    let layoutItems = Cc["@mozilla.org/array;1"].createInstance(
+      Ci.nsIMutableArray
+    );
 
     for (let inputName of prefArray) {
       if (typeof kBuiltInInputs[inputName].context == "function") {
@@ -199,7 +214,8 @@ class TouchBarHelper {
 
     
     prefArray = prefArray.filter(input =>
-      Object.keys(kBuiltInInputs).includes(input));
+      Object.keys(kBuiltInInputs).includes(input)
+    );
     this._storedLayout = prefArray;
     return this._storedLayout;
   }
@@ -229,14 +245,17 @@ class TouchBarHelper {
     }
 
     
-    this._l10n.formatValue(item.key).then((result) => {
+    this._l10n.formatValue(item.key).then(result => {
       item.title = result;
       kBuiltInInputs[inputName].localTitle = result; 
       
       if (this.window) {
-        let baseWindow = this.window.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
-        let updater = Cc["@mozilla.org/widget/touchbarupdater;1"]
-                        .getService(Ci.nsITouchBarUpdater);
+        let baseWindow = this.window.docShell.treeOwner.QueryInterface(
+          Ci.nsIBaseWindow
+        );
+        let updater = Cc["@mozilla.org/widget/touchbarupdater;1"].getService(
+          Ci.nsITouchBarUpdater
+        );
         updater.updateTouchBarInputs(baseWindow, [item]);
       }
     });
@@ -271,9 +290,12 @@ class TouchBarHelper {
       inputs.push(input);
     }
 
-    let baseWindow = this.window.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
-    let updater = Cc["@mozilla.org/widget/touchbarupdater;1"]
-                    .getService(Ci.nsITouchBarUpdater);
+    let baseWindow = this.window.docShell.treeOwner.QueryInterface(
+      Ci.nsIBaseWindow
+    );
+    let updater = Cc["@mozilla.org/widget/touchbarupdater;1"].getService(
+      Ci.nsITouchBarUpdater
+    );
     updater.updateTouchBarInputs(baseWindow, inputs);
   }
 
@@ -289,9 +311,9 @@ class TouchBarHelper {
         this._updateTouchBarInputs("ReaderView", "Back", "Forward");
         break;
       case "bookmark-icon-updated":
-        data == "starred" ?
-          kBuiltInInputs.AddBookmark.image = "bookmark-filled.pdf"
-          : kBuiltInInputs.AddBookmark.image = "bookmark.pdf";
+        data == "starred"
+          ? (kBuiltInInputs.AddBookmark.image = "bookmark-filled.pdf")
+          : (kBuiltInInputs.AddBookmark.image = "bookmark.pdf");
         this._updateTouchBarInputs("AddBookmark");
         break;
       case "reader-mode-available":
@@ -399,5 +421,7 @@ inputProto.classID = Components.ID("{77441d17-f29c-49d7-982f-f20a5ab5a900}");
 inputProto.contractID = "@mozilla.org/widget/touchbarinput;1";
 inputProto.QueryInterface = ChromeUtils.generateQI([Ci.nsITouchBarInput]);
 
-this.NSGetFactory =
-  XPCOMUtils.generateNSGetFactory([TouchBarHelper, TouchBarInput]);
+this.NSGetFactory = XPCOMUtils.generateNSGetFactory([
+  TouchBarHelper,
+  TouchBarInput,
+]);

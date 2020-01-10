@@ -3,15 +3,25 @@
 
 "use strict";
 
-const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm"
+);
 
 
-ChromeUtils.defineModuleGetter(this, "ExtensionParent",
-                               "resource://gre/modules/ExtensionParent.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExtensionParent",
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
-AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");
+AddonTestUtils.createAppInfo(
+  "xpcshell@tests.mozilla.org",
+  "XPCShell",
+  "42",
+  "42"
+);
 
 add_task(async function shutdown_during_search_provider_startup() {
   await AddonTestUtils.promiseStartupManager();
@@ -57,22 +67,27 @@ add_task(async function shutdown_during_search_provider_startup() {
   
   let uninstallingPromise = new Promise(resolve => {
     let Management = ExtensionParent.apiManager;
-    Management.on("uninstall", function listener(eventName, {id}) {
+    Management.on("uninstall", function listener(eventName, { id }) {
       Management.off("uninstall", listener);
       Assert.equal(id, extension.id, "Expected extension");
       resolve();
     });
   });
 
-  let extRestartPromise = AddonTestUtils.waitForSearchProviderStartup(extension, {
-    
-    
-    expectPending: true,
-  });
+  let extRestartPromise = AddonTestUtils.waitForSearchProviderStartup(
+    extension,
+    {
+      
+      
+      expectPending: true,
+    }
+  );
 
   let uninstalledPromise = extension.addon.uninstall();
   let uninstalled = false;
-  uninstalledPromise.then(() => { uninstalled = true; });
+  uninstalledPromise.then(() => {
+    uninstalled = true;
+  });
 
   await uninstallingPromise;
   Assert.ok(!uninstalled, "Uninstall should not be finished yet");

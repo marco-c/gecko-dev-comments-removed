@@ -5,7 +5,7 @@
 
 
 export function isEmailOrPhoneNumber(val, content) {
-  const {locale} = content;
+  const { locale } = content;
   
   const email_re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   const check_email = email_re.test(val);

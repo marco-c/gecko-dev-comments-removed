@@ -2,8 +2,12 @@
 
 "use strict";
 
-const {PageActions} = ChromeUtils.import("resource:///modules/PageActions.jsm");
-const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
+const { PageActions } = ChromeUtils.import(
+  "resource:///modules/PageActions.jsm"
+);
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm"
+);
 
 const {
   createAppInfo,

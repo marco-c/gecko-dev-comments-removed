@@ -3,11 +3,14 @@
 
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-var commonFile = do_get_file("../../../../../toolkit/components/places/tests/head_common.js", false);
+var commonFile = do_get_file(
+  "../../../../../toolkit/components/places/tests/head_common.js",
+  false
+);
 if (commonFile) {
   let uri = Services.io.newFileURI(commonFile);
   Services.scriptloader.loadSubScript(uri.spec, this);
@@ -15,8 +18,11 @@ if (commonFile) {
 
 
 
-ChromeUtils.defineModuleGetter(this, "PlacesUIUtils",
-                               "resource:///modules/PlacesUIUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUIUtils",
+  "resource:///modules/PlacesUIUtils.jsm"
+);
 
 
 ChromeUtils.import("resource://testing-common/AppInfo.jsm", this);
@@ -48,7 +54,7 @@ var createCorruptDB = async function() {
   await OS.File.copy(src, dbPath);
 
   
-  Assert.ok((await OS.File.exists(dbPath)), "should have a DB now");
+  Assert.ok(await OS.File.exists(dbPath), "should have a DB now");
 };
 
 const SINGLE_TRY_TIMEOUT = 100;
@@ -70,7 +76,11 @@ const NUMBER_OF_TRIES = 30;
 
 
 
-var waitForResolvedPromise = async function(promiseFn, timeoutMsg, tryCount = NUMBER_OF_TRIES) {
+var waitForResolvedPromise = async function(
+  promiseFn,
+  timeoutMsg,
+  tryCount = NUMBER_OF_TRIES
+) {
   let tries = 0;
   do {
     try {

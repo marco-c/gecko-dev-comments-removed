@@ -2,7 +2,8 @@
 
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  CustomizableUITestUtils: "resource://testing-common/CustomizableUITestUtils.jsm",
+  CustomizableUITestUtils:
+    "resource://testing-common/CustomizableUITestUtils.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
 });
 
@@ -21,11 +22,20 @@ let gCUITestUtils = new CustomizableUITestUtils(window);
 
 function isSubObjectOf(expectedObj, actualObj, name) {
   for (let prop in expectedObj) {
-    if (typeof expectedObj[prop] == "function")
+    if (typeof expectedObj[prop] == "function") {
       continue;
+    }
     if (expectedObj[prop] instanceof Object) {
-      is(actualObj[prop].length, expectedObj[prop].length, name + "[" + prop + "]");
-      isSubObjectOf(expectedObj[prop], actualObj[prop], name + "[" + prop + "]");
+      is(
+        actualObj[prop].length,
+        expectedObj[prop].length,
+        name + "[" + prop + "]"
+      );
+      isSubObjectOf(
+        expectedObj[prop],
+        actualObj[prop],
+        name + "[" + prop + "]"
+      );
     } else {
       is(actualObj[prop], expectedObj[prop], name + "[" + prop + "]");
     }
@@ -64,11 +74,16 @@ function promiseEvent(aTarget, aEventName, aPreventDefault) {
 
 async function promiseNewEngine(basename, options = {}) {
   
-  let setAsCurrent = options.setAsCurrent == undefined ? true : options.setAsCurrent;
+  let setAsCurrent =
+    options.setAsCurrent == undefined ? true : options.setAsCurrent;
   info("Waiting for engine to be added: " + basename);
   let url = getRootDirectory(options.testPath || gTestPath) + basename;
   let current = await Services.search.getDefault();
-  let engine = await Services.search.addEngine(url, options.iconURL || "", false);
+  let engine = await Services.search.addEngine(
+    url,
+    options.iconURL || "",
+    false
+  );
   info("Search engine added: " + basename);
   if (setAsCurrent) {
     await Services.search.setDefault(engine);
@@ -83,45 +98,54 @@ async function promiseNewEngine(basename, options = {}) {
   return engine;
 }
 
-let promiseStateChangeFrameScript = "data:," + encodeURIComponent(`(${
-  () => {
-    
+let promiseStateChangeFrameScript =
+  "data:," +
+  encodeURIComponent(
+    `(${() => {
+      
 
-    const global = this;
-    const LISTENER = Symbol("listener");
-    let listener = {
-      QueryInterface: ChromeUtils.generateQI(["nsISupportsWeakReference",
-                                              "nsIWebProgressListener"]),
+      const global = this;
+      const LISTENER = Symbol("listener");
+      let listener = {
+        QueryInterface: ChromeUtils.generateQI([
+          "nsISupportsWeakReference",
+          "nsIWebProgressListener",
+        ]),
 
-      onStateChange: function onStateChange(webProgress, req, flags, status) {
-        
-        if (!webProgress.isTopLevel ||
-            !(flags & Ci.nsIWebProgressListener.STATE_START)) {
-          return;
-        }
+        onStateChange: function onStateChange(webProgress, req, flags, status) {
+          
+          if (
+            !webProgress.isTopLevel ||
+            !(flags & Ci.nsIWebProgressListener.STATE_START)
+          ) {
+            return;
+          }
 
-        req.QueryInterface(Ci.nsIChannel);
-        let spec = req.originalURI.spec;
-        if (spec == "about:blank")
-          return;
+          req.QueryInterface(Ci.nsIChannel);
+          let spec = req.originalURI.spec;
+          if (spec == "about:blank") {
+            return;
+          }
 
-        delete global[LISTENER];
-        docShell.removeProgressListener(listener);
+          delete global[LISTENER];
+          docShell.removeProgressListener(listener);
 
-        req.cancel(Cr.NS_ERROR_FAILURE);
+          req.cancel(Cr.NS_ERROR_FAILURE);
 
-        sendAsyncMessage("PromiseStateChange::StateChanged", spec);
-      },
-    };
+          sendAsyncMessage("PromiseStateChange::StateChanged", spec);
+        },
+      };
 
-    
-    global[LISTENER] = listener;
+      
+      global[LISTENER] = listener;
 
-    docShell.QueryInterface(Ci.nsIWebProgress);
-    docShell.addProgressListener(listener,
-                                 Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
-  }
-})()`);
+      docShell.QueryInterface(Ci.nsIWebProgress);
+      docShell.addProgressListener(
+        listener,
+        Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+      );
+    }})()`
+  );
 
 function promiseStateChangeURI() {
   const MSG = "PromiseStateChange::StateChanged";
@@ -153,7 +177,6 @@ function promiseStateChangeURI() {
 
 
 
-
 function promiseTabLoadEvent(tab, url) {
   info("Wait tab event: load");
 
@@ -169,8 +192,9 @@ function promiseTabLoadEvent(tab, url) {
 
   let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);
 
-  if (url)
+  if (url) {
     BrowserTestUtils.loadURI(tab.linkedBrowser, url);
+  }
 
   return loaded;
 }
@@ -180,13 +204,15 @@ function getOneOffs() {
   let oneOffs = [];
   let searchPopup = document.getElementById("PopupSearchAutoComplete");
   let oneOffsContainer = searchPopup.searchOneOffsContainer;
-  let oneOff =
-    oneOffsContainer.querySelector(".search-panel-one-offs");
+  let oneOff = oneOffsContainer.querySelector(".search-panel-one-offs");
   for (oneOff = oneOff.firstChild; oneOff; oneOff = oneOff.nextSibling) {
     if (oneOff.nodeType == Node.ELEMENT_NODE) {
-      if (oneOff.classList.contains("dummy") ||
-          oneOff.classList.contains("search-setting-button-compact"))
+      if (
+        oneOff.classList.contains("dummy") ||
+        oneOff.classList.contains("search-setting-button-compact")
+      ) {
         break;
+      }
       oneOffs.push(oneOff);
     }
   }

@@ -4,29 +4,45 @@
 
 "use strict";
 
-const kLoginsKey = "Software\\Microsoft\\Internet Explorer\\IntelliForms\\Storage2";
+const kLoginsKey =
+  "Software\\Microsoft\\Internet Explorer\\IntelliForms\\Storage2";
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {MigrationUtils, MigratorPrototype} = ChromeUtils.import("resource:///modules/MigrationUtils.jsm");
-const {MSMigrationUtils} = ChromeUtils.import("resource:///modules/MSMigrationUtils.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { MigrationUtils, MigratorPrototype } = ChromeUtils.import(
+  "resource:///modules/MigrationUtils.jsm"
+);
+const { MSMigrationUtils } = ChromeUtils.import(
+  "resource:///modules/MSMigrationUtils.jsm"
+);
 
-
-ChromeUtils.defineModuleGetter(this, "ctypes",
-                               "resource://gre/modules/ctypes.jsm");
-ChromeUtils.defineModuleGetter(this, "PlacesUtils",
-                               "resource://gre/modules/PlacesUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "OSCrypto",
-                               "resource://gre/modules/OSCrypto.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "ctypes",
+  "resource://gre/modules/ctypes.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUtils",
+  "resource://gre/modules/PlacesUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "OSCrypto",
+  "resource://gre/modules/OSCrypto.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
 
 
-function History() {
-}
+function History() {}
 
 History.prototype = {
   type: MigrationUtils.resourceTypes.HISTORY,
@@ -37,9 +53,12 @@ History.prototype = {
 
   migrate: function H_migrate(aCallback) {
     let pageInfos = [];
-    let typedURLs = MSMigrationUtils.getTypedURLs("Software\\Microsoft\\Internet Explorer");
-    for (let entry of Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"]
-            .createInstance(Ci.nsISimpleEnumerator)) {
+    let typedURLs = MSMigrationUtils.getTypedURLs(
+      "Software\\Microsoft\\Internet Explorer"
+    );
+    for (let entry of Cc[
+      "@mozilla.org/profile/migrator/iehistoryenumerator;1"
+    ].createInstance(Ci.nsISimpleEnumerator)) {
       let url = entry.get("uri").QueryInterface(Ci.nsIURI);
       
       
@@ -55,19 +74,21 @@ History.prototype = {
       }
 
       
-      let transition = typedURLs.has(url.spec) ?
-        PlacesUtils.history.TRANSITIONS.LINK :
-        PlacesUtils.history.TRANSITIONS.TYPED;
+      let transition = typedURLs.has(url.spec)
+        ? PlacesUtils.history.TRANSITIONS.LINK
+        : PlacesUtils.history.TRANSITIONS.TYPED;
       
       let time = entry.get("time");
 
       pageInfos.push({
         url,
         title,
-        visits: [{
-          transition,
-          date: time ? PlacesUtils.toDate(entry.get("time")) : new Date(),
-        }],
+        visits: [
+          {
+            transition,
+            date: time ? PlacesUtils.toDate(entry.get("time")) : new Date(),
+          },
+        ],
       });
     }
 
@@ -79,7 +100,8 @@ History.prototype = {
 
     MigrationUtils.insertVisitsWrapper(pageInfos).then(
       () => aCallback(true),
-      () => aCallback(false));
+      () => aCallback(false)
+    );
   },
 };
 
@@ -100,10 +122,14 @@ IE7FormPasswords.prototype = {
 
     try {
       let nsIWindowsRegKey = Ci.nsIWindowsRegKey;
-      let key = Cc["@mozilla.org/windows-registry-key;1"].
-                createInstance(nsIWindowsRegKey);
-      key.open(nsIWindowsRegKey.ROOT_KEY_CURRENT_USER, kLoginsKey,
-               nsIWindowsRegKey.ACCESS_READ);
+      let key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
+        nsIWindowsRegKey
+      );
+      key.open(
+        nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+        kLoginsKey,
+        nsIWindowsRegKey.ACCESS_READ
+      );
       let count = key.valueCount;
       key.close();
       return count > 0;
@@ -114,8 +140,9 @@ IE7FormPasswords.prototype = {
 
   async migrate(aCallback) {
     let uris = []; 
-    for (let entry of Cc["@mozilla.org/profile/migrator/iehistoryenumerator;1"]
-            .createInstance(Ci.nsISimpleEnumerator)) {
+    for (let entry of Cc[
+      "@mozilla.org/profile/migrator/iehistoryenumerator;1"
+    ].createInstance(Ci.nsISimpleEnumerator)) {
       let uri = entry.get("uri").QueryInterface(Ci.nsIURI);
       
       
@@ -138,10 +165,14 @@ IE7FormPasswords.prototype = {
     this.ctypesKernelHelpers = new MSMigrationUtils.CtypesKernelHelpers();
     this._crypto = new OSCrypto();
     let nsIWindowsRegKey = Ci.nsIWindowsRegKey;
-    let key = Cc["@mozilla.org/windows-registry-key;1"].
-              createInstance(nsIWindowsRegKey);
-    key.open(nsIWindowsRegKey.ROOT_KEY_CURRENT_USER, kLoginsKey,
-             nsIWindowsRegKey.ACCESS_READ);
+    let key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
+      nsIWindowsRegKey
+    );
+    key.open(
+      nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
+      kLoginsKey,
+      nsIWindowsRegKey.ACCESS_READ
+    );
 
     let urlsSet = new Set(); 
     
@@ -198,7 +229,9 @@ IE7FormPasswords.prototype = {
           });
         }
       } catch (e) {
-        Cu.reportError("Error while importing logins for " + uri.spec + ": " + e);
+        Cu.reportError(
+          "Error while importing logins for " + uri.spec + ": " + e
+        );
       }
     }
 
@@ -209,10 +242,12 @@ IE7FormPasswords.prototype = {
     
     
     if (successfullyDecryptedValues < key.valueCount) {
-      Cu.reportError("We failed to decrypt and import some logins. " +
-                     "This is likely because we didn't find the URLs where these " +
-                     "passwords were submitted in the IE history and which are needed to be used " +
-                     "as keys in the decryption.");
+      Cu.reportError(
+        "We failed to decrypt and import some logins. " +
+          "This is likely because we didn't find the URLs where these " +
+          "passwords were submitted in the IE history and which are needed to be used " +
+          "as keys in the decryption."
+      );
     }
 
     key.close();
@@ -233,37 +268,37 @@ IE7FormPasswords.prototype = {
     
     let loginData = new ctypes.StructType("loginData", [
       
-      {"unknown1": ctypes.uint32_t},
+      { unknown1: ctypes.uint32_t },
       
-      {"headerSize": ctypes.uint32_t},
+      { headerSize: ctypes.uint32_t },
       
-      {"dataSize": ctypes.uint32_t},
+      { dataSize: ctypes.uint32_t },
       
-      {"unknown2": ctypes.uint32_t},
-      {"unknown3": ctypes.uint32_t},
+      { unknown2: ctypes.uint32_t },
+      { unknown3: ctypes.uint32_t },
       
-      {"dataMax": ctypes.uint32_t},
+      { dataMax: ctypes.uint32_t },
       
-      {"unknown4": ctypes.uint32_t},
-      {"unknown5": ctypes.uint32_t},
-      {"unknown6": ctypes.uint32_t},
+      { unknown4: ctypes.uint32_t },
+      { unknown5: ctypes.uint32_t },
+      { unknown6: ctypes.uint32_t },
     ]);
 
     
     let loginItem = new ctypes.StructType("loginItem", [
       
-      {"usernameOffset": ctypes.uint32_t},
+      { usernameOffset: ctypes.uint32_t },
       
-      {"loDateTime": ctypes.uint32_t},
-      {"hiDateTime": ctypes.uint32_t},
+      { loDateTime: ctypes.uint32_t },
+      { hiDateTime: ctypes.uint32_t },
       
-      {"foo": ctypes.uint32_t},
+      { foo: ctypes.uint32_t },
       
-      {"passwordOffset": ctypes.uint32_t},
+      { passwordOffset: ctypes.uint32_t },
       
-      {"unknown1": ctypes.uint32_t},
-      {"unknown2": ctypes.uint32_t},
-      {"unknown3": ctypes.uint32_t},
+      { unknown1: ctypes.uint32_t },
+      { unknown2: ctypes.uint32_t },
+      { unknown3: ctypes.uint32_t },
     ]);
 
     let url = uri.prePath;
@@ -276,8 +311,10 @@ IE7FormPasswords.prototype = {
     let headerSize = currentLoginData.headerSize;
     let currentInfoIndex = loginData.size;
     
-    let currentLoginItemPointer = ctypes.cast(cdata.addressOfElement(currentInfoIndex),
-                                              loginItem.ptr);
+    let currentLoginItemPointer = ctypes.cast(
+      cdata.addressOfElement(currentInfoIndex),
+      loginItem.ptr
+    );
     
     
     let numLogins = currentLoginData.dataMax / 2;
@@ -285,21 +322,33 @@ IE7FormPasswords.prototype = {
       
       
       let currentLoginItem = currentLoginItemPointer.contents;
-      let creation = this.ctypesKernelHelpers.
-                     fileTimeToSecondsSinceEpoch(currentLoginItem.hiDateTime,
-                                                 currentLoginItem.loDateTime) * 1000;
+      let creation =
+        this.ctypesKernelHelpers.fileTimeToSecondsSinceEpoch(
+          currentLoginItem.hiDateTime,
+          currentLoginItem.loDateTime
+        ) * 1000;
       let currentResult = {
         creation,
         url,
       };
       
-      currentResult.username =
-        ctypes.cast(cdata.addressOfElement(headerSize + 12 + currentLoginItem.usernameOffset),
-                                          ctypes.char16_t.ptr).readString();
+      currentResult.username = ctypes
+        .cast(
+          cdata.addressOfElement(
+            headerSize + 12 + currentLoginItem.usernameOffset
+          ),
+          ctypes.char16_t.ptr
+        )
+        .readString();
       
-      currentResult.password =
-        ctypes.cast(cdata.addressOfElement(headerSize + 12 + currentLoginItem.passwordOffset),
-                                          ctypes.char16_t.ptr).readString();
+      currentResult.password = ctypes
+        .cast(
+          cdata.addressOfElement(
+            headerSize + 12 + currentLoginItem.passwordOffset
+          ),
+          ctypes.char16_t.ptr
+        )
+        .readString();
       results.push(currentResult);
       
       currentLoginItemPointer = currentLoginItemPointer.increment();
@@ -324,8 +373,7 @@ IEProfileMigrator.prototype.getResources = function IE_getResources() {
   if (AppConstants.isPlatformAndVersionAtMost("win", "6.1")) {
     resources.push(new IE7FormPasswords());
   }
-  let windowsVaultFormPasswordsMigrator =
-    MSMigrationUtils.getWindowsVaultFormPasswordsMigrator();
+  let windowsVaultFormPasswordsMigrator = MSMigrationUtils.getWindowsVaultFormPasswordsMigrator();
   windowsVaultFormPasswordsMigrator.name = "IEVaultFormPasswords";
   resources.push(windowsVaultFormPasswordsMigrator);
   return resources.filter(r => r.exists);
@@ -333,27 +381,36 @@ IEProfileMigrator.prototype.getResources = function IE_getResources() {
 
 IEProfileMigrator.prototype.getLastUsedDate = function IE_getLastUsedDate() {
   let datePromises = ["Favs", "CookD"].map(dirId => {
-    let {path} = Services.dirsvc.get(dirId, Ci.nsIFile);
-    return OS.File.stat(path).catch(() => null).then(info => {
-      return info ? info.lastModificationDate : 0;
-    });
+    let { path } = Services.dirsvc.get(dirId, Ci.nsIFile);
+    return OS.File.stat(path)
+      .catch(() => null)
+      .then(info => {
+        return info ? info.lastModificationDate : 0;
+      });
   });
-  datePromises.push(new Promise(resolve => {
-    let typedURLs = new Map();
-    try {
-      typedURLs = MSMigrationUtils.getTypedURLs("Software\\Microsoft\\Internet Explorer");
-    } catch (ex) {}
-    let dates = [0, ...typedURLs.values()];
-    
-    resolve(Math.max.apply(Math, dates) / 1000);
-  }));
+  datePromises.push(
+    new Promise(resolve => {
+      let typedURLs = new Map();
+      try {
+        typedURLs = MSMigrationUtils.getTypedURLs(
+          "Software\\Microsoft\\Internet Explorer"
+        );
+      } catch (ex) {}
+      let dates = [0, ...typedURLs.values()];
+      
+      resolve(Math.max.apply(Math, dates) / 1000);
+    })
+  );
   return Promise.all(datePromises).then(dates => {
     return new Date(Math.max.apply(Math, dates));
   });
 };
 
 IEProfileMigrator.prototype.classDescription = "IE Profile Migrator";
-IEProfileMigrator.prototype.contractID = "@mozilla.org/profile/migrator;1?app=browser&type=ie";
-IEProfileMigrator.prototype.classID = Components.ID("{3d2532e3-4932-4774-b7ba-968f5899d3a4}");
+IEProfileMigrator.prototype.contractID =
+  "@mozilla.org/profile/migrator;1?app=browser&type=ie";
+IEProfileMigrator.prototype.classID = Components.ID(
+  "{3d2532e3-4932-4774-b7ba-968f5899d3a4}"
+);
 
 var EXPORTED_SYMBOLS = ["IEProfileMigrator"];

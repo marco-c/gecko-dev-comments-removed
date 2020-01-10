@@ -6,14 +6,21 @@ const CC = Components.Constructor;
 
 const FIRST_PARTY_OPENER = "example.com";
 const FIRST_PARTY_TARGET = "example.org";
-const OPENER_PAGE = "http://" + FIRST_PARTY_OPENER + "/browser/browser/components/" +
-                    "originattributes/test/browser/file_windowOpenerRestriction.html";
-const TARGET_PAGE = "http://" + FIRST_PARTY_TARGET + "/browser/browser/components/" +
-                    "originattributes/test/browser/file_windowOpenerRestrictionTarget.html";
+const OPENER_PAGE =
+  "http://" +
+  FIRST_PARTY_OPENER +
+  "/browser/browser/components/" +
+  "originattributes/test/browser/file_windowOpenerRestriction.html";
+const TARGET_PAGE =
+  "http://" +
+  FIRST_PARTY_TARGET +
+  "/browser/browser/components/" +
+  "originattributes/test/browser/file_windowOpenerRestrictionTarget.html";
 
 async function testPref(aIsPrefEnabled) {
   
-  let cookieStr = "key" + Math.random().toString() + "=" + Math.random().toString();
+  let cookieStr =
+    "key" + Math.random().toString() + "=" + Math.random().toString();
 
   
   let tab = BrowserTestUtils.addTab(gBrowser, OPENER_PAGE);
@@ -25,34 +32,40 @@ async function testPref(aIsPrefEnabled) {
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);
 
-  await ContentTask.spawn(browser, {cookieStr,
-                                    page: TARGET_PAGE,
-                                    isPrefEnabled: aIsPrefEnabled}, async function(obj) {
-    
-    let childFrame = content.document.getElementById("child");
-
-    
-    childFrame.contentDocument.cookie = obj.cookieStr;
-
-    
-    let openedPath = obj.page;
-    if (!obj.isPrefEnabled) {
+  await ContentTask.spawn(
+    browser,
+    { cookieStr, page: TARGET_PAGE, isPrefEnabled: aIsPrefEnabled },
+    async function(obj) {
       
+      let childFrame = content.document.getElementById("child");
+
       
-      openedPath += "?" + obj.cookieStr;
+      childFrame.contentDocument.cookie = obj.cookieStr;
+
+      
+      let openedPath = obj.page;
+      if (!obj.isPrefEnabled) {
+        
+        
+        openedPath += "?" + obj.cookieStr;
+      }
+
+      
+      this.openedWindow = content.open(openedPath);
+      this.openedWindow.focus();
     }
-
-    
-    this.openedWindow = content.open(openedPath);
-    this.openedWindow.focus();
-  });
+  );
 
   
   let targetBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
   await BrowserTestUtils.browserLoaded(targetBrowser);
 
   
-  is(targetBrowser.contentTitle, "pass", "The behavior of window.opener is correct.");
+  is(
+    targetBrowser.contentTitle,
+    "pass",
+    "The behavior of window.opener is correct."
+  );
 
   
   await ContentTask.spawn(browser, null, async function() {
@@ -68,26 +81,26 @@ add_task(async function runTests() {
   let tests = [true, false];
 
   
-  await SpecialPowers.pushPrefEnv({"set":
-    [["privacy.firstparty.isolate", true]],
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.firstparty.isolate", true]],
   });
 
   for (let enabled of tests) {
-    await SpecialPowers.pushPrefEnv({"set":
-      [["privacy.firstparty.isolate.restrict_opener_access", enabled]],
+    await SpecialPowers.pushPrefEnv({
+      set: [["privacy.firstparty.isolate.restrict_opener_access", enabled]],
     });
 
     await testPref(enabled);
   }
 
   
-  await SpecialPowers.pushPrefEnv({"set":
-    [["privacy.firstparty.isolate", false]],
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.firstparty.isolate", false]],
   });
 
   for (let enabled of tests) {
-    await SpecialPowers.pushPrefEnv({"set":
-      [["privacy.firstparty.isolate.restrict_opener_access", enabled]],
+    await SpecialPowers.pushPrefEnv({
+      set: [["privacy.firstparty.isolate.restrict_opener_access", enabled]],
     });
 
     

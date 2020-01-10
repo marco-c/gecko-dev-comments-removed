@@ -6,15 +6,22 @@
 
 
 add_task(async function reset_should_not_keep_currentArea() {
-  CustomizableUI.addWidgetToArea("save-page-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  CustomizableUI.addWidgetToArea(
+    "save-page-button",
+    CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+  );
   
-  is(CustomizableUI.getWidget("save-page-button").areaType,
-     CustomizableUI.TYPE_MENU_PANEL,
-     "Button should know it's in the overflow panel");
+  is(
+    CustomizableUI.getWidget("save-page-button").areaType,
+    CustomizableUI.TYPE_MENU_PANEL,
+    "Button should know it's in the overflow panel"
+  );
   CustomizableUI.reset();
-  is(CustomizableUI.getWidget("save-page-button").areaType,
-     null,
-     "Button should know it's not in the overflow panel anymore");
+  is(
+    CustomizableUI.getWidget("save-page-button").areaType,
+    null,
+    "Button should know it's not in the overflow panel anymore"
+  );
 });
 
 
@@ -22,21 +29,29 @@ add_task(async function reset_should_not_keep_currentArea() {
 add_task(async function reset_should_not_keep_currentArea() {
   const kButtonId = "sidebar-button";
   
-  is(CustomizableUI.getWidget(kButtonId).areaType,
-     CustomizableUI.TYPE_TOOLBAR,
-     "Button should know it's in the toolbar");
+  is(
+    CustomizableUI.getWidget(kButtonId).areaType,
+    CustomizableUI.TYPE_TOOLBAR,
+    "Button should know it's in the toolbar"
+  );
   CustomizableUI.removeWidgetFromArea(kButtonId);
-  is(CustomizableUI.getWidget(kButtonId).areaType,
-     null,
-     "Button should know it's no longer in the toolbar");
+  is(
+    CustomizableUI.getWidget(kButtonId).areaType,
+    null,
+    "Button should know it's no longer in the toolbar"
+  );
   CustomizableUI.reset();
-  is(CustomizableUI.getWidget(kButtonId).areaType,
-     CustomizableUI.TYPE_TOOLBAR,
-     "Button should know it's in the toolbar again");
+  is(
+    CustomizableUI.getWidget(kButtonId).areaType,
+    CustomizableUI.TYPE_TOOLBAR,
+    "Button should know it's in the toolbar again"
+  );
   CustomizableUI.undoReset();
-  is(CustomizableUI.getWidget(kButtonId).areaType,
-     null,
-     "Button should know it's no longer in the toolbar again");
+  is(
+    CustomizableUI.getWidget(kButtonId).areaType,
+    null,
+    "Button should know it's no longer in the toolbar again"
+  );
 });
 
 registerCleanupFunction(() => CustomizableUI.reset());

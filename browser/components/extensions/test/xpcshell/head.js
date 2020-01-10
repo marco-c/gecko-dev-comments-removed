@@ -2,8 +2,10 @@
 
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -21,7 +23,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
 
 ExtensionTestUtils.init(this);
-
 
 
 
@@ -70,7 +71,7 @@ var promiseConsoleOutput = async function(task) {
     Services.console.logStringMessage(DONE);
     await awaitListener;
 
-    return {messages, result};
+    return { messages, result };
   } finally {
     Services.console.unregisterListener(listener);
   }

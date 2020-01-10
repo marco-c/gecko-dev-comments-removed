@@ -88,8 +88,7 @@ AreaPositionManager.prototype = {
       
       
       if (aY > targetBounds.top && aY < targetBounds.bottom) {
-        if ((!this._rtl && aX > outsideX) ||
-            (this._rtl && aX < outsideX)) {
+        if ((!this._rtl && aX > outsideX) || (this._rtl && aX < outsideX)) {
           return closest.nextElementSibling || aContainer;
         }
       }
@@ -127,8 +126,11 @@ AreaPositionManager.prototype = {
         child.style.transform = "";
       }
     }
-    if (aContainer.lastElementChild && aIsFromThisArea &&
-        !this._lastPlaceholderInsertion) {
+    if (
+      aContainer.lastElementChild &&
+      aIsFromThisArea &&
+      !this._lastPlaceholderInsertion
+    ) {
       
       aContainer.lastElementChild.getBoundingClientRect();
       
@@ -226,8 +228,10 @@ AreaPositionManager.prototype = {
     
     
     let bound = this._containerInfo[this._rtl ? "left" : "right"];
-    if ((!this._rtl && xDiff + aNodeBounds.right > bound) ||
-        (this._rtl && xDiff + aNodeBounds.left < bound)) {
+    if (
+      (!this._rtl && xDiff + aNodeBounds.right > bound) ||
+      (this._rtl && xDiff + aNodeBounds.left < bound)
+    ) {
       xDiff = this._lazyStoreGet(aFirstNodeInRow)[side] - aNodeBounds[side];
     }
     return xDiff;

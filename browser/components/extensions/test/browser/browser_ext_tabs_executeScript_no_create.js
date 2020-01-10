@@ -3,7 +3,8 @@
 "use strict";
 
 add_task(async function testExecuteScriptAtOnUpdated() {
-  const BASE = "http://mochi.test:8888/browser/browser/components/extensions/test/browser/";
+  const BASE =
+    "http://mochi.test:8888/browser/browser/components/extensions/test/browser/";
   const URL = BASE + "file_iframe_document.html";
   
   
@@ -21,24 +22,38 @@ add_task(async function testExecuteScriptAtOnUpdated() {
     let ignore = false;
     let url;
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      if (url && changeInfo.status === "loading" && tab.url === url && !ignore) {
+      if (
+        url &&
+        changeInfo.status === "loading" &&
+        tab.url === url &&
+        !ignore
+      ) {
         ignore = true;
-        browser.tabs.executeScript(tabId, {
-          code: "document.URL",
-        }).then(results => {
-          browser.test.assertEq(url, results[0], "Content script should run");
-          browser.test.notifyPass("executeScript-at-onUpdated");
-        }, error => {
-          browser.test.fail(`Unexpected error: ${error} :: ${error.stack}`);
-          browser.test.notifyFail("executeScript-at-onUpdated");
-        });
+        browser.tabs
+          .executeScript(tabId, {
+            code: "document.URL",
+          })
+          .then(
+            results => {
+              browser.test.assertEq(
+                url,
+                results[0],
+                "Content script should run"
+              );
+              browser.test.notifyPass("executeScript-at-onUpdated");
+            },
+            error => {
+              browser.test.fail(`Unexpected error: ${error} :: ${error.stack}`);
+              browser.test.notifyFail("executeScript-at-onUpdated");
+            }
+          );
         
         
         browser.test.log(`Found expected navigation to ${url}`);
       } else {
         
         
-        browser.tabs.executeScript(tabId, {code: ""});
+        browser.tabs.executeScript(tabId, { code: "" });
       }
     });
     browser.test.onMessage.addListener(testUrl => {
@@ -49,7 +64,7 @@ add_task(async function testExecuteScriptAtOnUpdated() {
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
-      "permissions": ["http://mochi.test/", "tabs"],
+      permissions: ["http://mochi.test/", "tabs"],
     },
     background,
   });

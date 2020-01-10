@@ -3,7 +3,9 @@
 
 "use strict";
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
@@ -53,33 +55,46 @@ this.PersistentCache = class PersistentCache {
 
 
   _load() {
-    return this._cache || (this._cache = new Promise(async resolve => {
-      let file;
-      let data = {};
-      const filepath = OS.Path.join(OS.Constants.Path.localProfileDir, this._filename);
+    return (
+      this._cache ||
+      (this._cache = new Promise(async resolve => {
+        let file;
+        let data = {};
+        const filepath = OS.Path.join(
+          OS.Constants.Path.localProfileDir,
+          this._filename
+        );
 
-      try {
-        file = await fetch(`file://${filepath}`);
-      } catch (error) {} 
-
-      if (file) {
         try {
-          data = await file.json();
-        } catch (error) {
-          Cu.reportError(`Failed to parse ${this._filename}: ${error.message}`);
-        }
-      }
+          file = await fetch(`file://${filepath}`);
+        } catch (error) {} 
 
-      resolve(data);
-    }));
+        if (file) {
+          try {
+            data = await file.json();
+          } catch (error) {
+            Cu.reportError(
+              `Failed to parse ${this._filename}: ${error.message}`
+            );
+          }
+        }
+
+        resolve(data);
+      }))
+    );
   }
 
   
 
 
   _persist(data) {
-    const filepath = OS.Path.join(OS.Constants.Path.localProfileDir, this._filename);
-    return OS.File.writeAtomic(filepath, JSON.stringify(data), {tmpPath: `${filepath}.tmp`});
+    const filepath = OS.Path.join(
+      OS.Constants.Path.localProfileDir,
+      this._filename
+    );
+    return OS.File.writeAtomic(filepath, JSON.stringify(data), {
+      tmpPath: `${filepath}.tmp`,
+    });
   }
 };
 

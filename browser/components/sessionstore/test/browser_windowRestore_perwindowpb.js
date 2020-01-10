@@ -12,14 +12,21 @@ function test() {
 
   
   
-  whenNewWindowLoaded({private: true}, function(win) {
+  whenNewWindowLoaded({ private: true }, function(win) {
     info("The private window got loaded");
-    win.addEventListener("SSWindowClosing", function() {
-      executeSoon(function() {
-        is(ss.getClosedWindowCount(), 0,
-            "The private window should not have been stored");
-      });
-    }, {once: true});
+    win.addEventListener(
+      "SSWindowClosing",
+      function() {
+        executeSoon(function() {
+          is(
+            ss.getClosedWindowCount(),
+            0,
+            "The private window should not have been stored"
+          );
+        });
+      },
+      { once: true }
+    );
     BrowserTestUtils.closeWindow(win).then(finish);
   });
 }

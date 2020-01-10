@@ -3,7 +3,10 @@
 
 
 var EventUtils = {};
-Services.scriptloader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
+Services.scriptloader.loadSubScript(
+  "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
+  EventUtils
+);
 
 add_task(async function test() {
   
@@ -21,7 +24,10 @@ add_task(async function test() {
   
   let placesItems = document.getElementById("PlacesToolbarItems");
   ok(placesItems, "PlacesToolbarItems should not be null");
-  ok(placesItems.localName == "scrollbox", "PlacesToolbarItems should not be null");
+  ok(
+    placesItems.localName == "scrollbox",
+    "PlacesToolbarItems should not be null"
+  );
 
   
 
@@ -33,32 +39,39 @@ add_task(async function test() {
 
   let simulateDragDrop = async function(aEffect, aMimeType) {
     const url = "http://www.mozilla.org/D1995729-A152-4e30-8329-469B01F30AA7";
-    let promiseItemAddedNotification =
-      PlacesTestUtils.waitForNotification("bookmark-added",
-                                          events => events.some(({url: eventUrl}) => eventUrl == url),
-                                          "places");
+    let promiseItemAddedNotification = PlacesTestUtils.waitForNotification(
+      "bookmark-added",
+      events => events.some(({ url: eventUrl }) => eventUrl == url),
+      "places"
+    );
 
     
     
     
     
     
-    EventUtils.synthesizeDrop(toolbar,
-                              placesItems,
-                              [[{type: aMimeType,
-                                data: url}]],
-                              aEffect, window);
+    EventUtils.synthesizeDrop(
+      toolbar,
+      placesItems,
+      [[{ type: aMimeType, data: url }]],
+      aEffect,
+      window
+    );
 
     await promiseItemAddedNotification;
 
     
-    let bookmark = await PlacesUtils.bookmarks.fetch({url});
+    let bookmark = await PlacesUtils.bookmarks.fetch({ url });
     Assert.ok(bookmark, "There should be exactly one bookmark");
 
     await PlacesUtils.bookmarks.remove(bookmark.guid);
 
     
-    Assert.equal(await PlacesUtils.bookmarks.fetch({url}), null, "URI should be removed");
+    Assert.equal(
+      await PlacesUtils.bookmarks.fetch({ url }),
+      null,
+      "URI should be removed"
+    );
   };
 
   
@@ -76,34 +89,46 @@ add_task(async function test() {
       "http://www.mozilla.org/091A88BD-5743-4C16-A005-3D2EA3A3B71E",
     ];
     let data;
-    if (aMimeType == "text/x-moz-url")
+    if (aMimeType == "text/x-moz-url") {
       data = urls.map(spec => spec + "\n" + spec).join("\n");
-    else
+    } else {
       data = urls.join("\n");
+    }
 
-    let promiseItemAddedNotification =
-      PlacesTestUtils.waitForNotification("bookmark-added",
-                                          events => events.some(({url}) => url == urls[2]),
-                                          "places");
+    let promiseItemAddedNotification = PlacesTestUtils.waitForNotification(
+      "bookmark-added",
+      events => events.some(({ url }) => url == urls[2]),
+      "places"
+    );
 
     
-    EventUtils.synthesizeDrop(toolbar,
-                              placesItems,
-                              [[{type: aMimeType,
-                                 data}]],
-                              aEffect, window);
+    EventUtils.synthesizeDrop(
+      toolbar,
+      placesItems,
+      [[{ type: aMimeType, data }]],
+      aEffect,
+      window
+    );
 
     await promiseItemAddedNotification;
 
     
     for (let url of urls) {
-      let bookmark = await PlacesUtils.bookmarks.fetch({url});
-      Assert.equal(typeof(bookmark), "object", "There should be exactly one bookmark");
+      let bookmark = await PlacesUtils.bookmarks.fetch({ url });
+      Assert.equal(
+        typeof bookmark,
+        "object",
+        "There should be exactly one bookmark"
+      );
 
       await PlacesUtils.bookmarks.remove(bookmark.guid);
 
       
-      Assert.equal(await PlacesUtils.bookmarks.fetch({url}), null, "URI should be removed");
+      Assert.equal(
+        await PlacesUtils.bookmarks.fetch({ url }),
+        null,
+        "URI should be removed"
+      );
     }
   };
 

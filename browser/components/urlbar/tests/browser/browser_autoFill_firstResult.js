@@ -9,9 +9,7 @@
 add_task(async function init() {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();
-  await PlacesTestUtils.addVisits([
-    "http://example.com/",
-  ]);
+  await PlacesTestUtils.addVisits(["http://example.com/"]);
 
   
   

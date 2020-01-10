@@ -9,39 +9,43 @@
 
 
 {
+  
 
 
+  class MozSearchbar extends MozXULElement {
+    static get inheritedAttributes() {
+      return {
+        ".searchbar-textbox":
+          "disabled,disableautocomplete,searchengine,src,newlines",
+        ".searchbar-search-button": "addengines",
+      };
+    }
 
-class MozSearchbar extends MozXULElement {
-  static get inheritedAttributes() {
-    return {
-      ".searchbar-textbox": "disabled,disableautocomplete,searchengine,src,newlines",
-      ".searchbar-search-button": "addengines",
-    };
-  }
+    constructor() {
+      super();
 
-  constructor() {
-    super();
+      this.destroy = this.destroy.bind(this);
+      this._setupEventListeners();
+      let searchbar = this;
+      this.observer = {
+        observe(aEngine, aTopic, aVerb) {
+          if (
+            aTopic == "browser-search-engine-modified" ||
+            (aTopic == "browser-search-service" && aVerb == "init-complete")
+          ) {
+            
+            searchbar._engines = null;
 
-    this.destroy = this.destroy.bind(this);
-    this._setupEventListeners();
-    let searchbar = this;
-    this.observer = {
-      observe(aEngine, aTopic, aVerb) {
-        if (aTopic == "browser-search-engine-modified" ||
-          (aTopic == "browser-search-service" && aVerb == "init-complete")) {
-          
-          searchbar._engines = null;
+            
+            searchbar._textbox.popup.updateHeader();
+            searchbar.updateDisplay();
+          }
+        },
+        QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+      };
 
-          
-          searchbar._textbox.popup.updateHeader();
-          searchbar.updateDisplay();
-        }
-      },
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
-    };
-
-    this.content = MozXULElement.parseXULToFragment(`
+      this.content = MozXULElement.parseXULToFragment(
+        `
       <stringbundle src="chrome://browser/locale/search.properties"></stringbundle>
       <hbox class="searchbar-search-button" tooltiptext="&searchIcon.tooltip;">
         <image class="searchbar-search-icon"></image>
@@ -51,712 +55,847 @@ class MozSearchbar extends MozXULElement {
       <hbox class="search-go-container">
         <image class="search-go-button urlbar-icon" hidden="true" onclick="handleSearchCommand(event);" tooltiptext="&contentSearchSubmit.tooltip;"></image>
       </hbox>
-    `, ["chrome://browser/locale/browser.dtd"]);
+    `,
+        ["chrome://browser/locale/browser.dtd"]
+      );
 
-    this._ignoreFocus = false;
-    this._engines = null;
-  }
-
-  connectedCallback() {
-    
-    if (this.closest("#BrowserToolbarPalette")) {
-      return;
+      this._ignoreFocus = false;
+      this._engines = null;
     }
 
-    this.appendChild(document.importNode(this.content, true));
-    this.initializeAttributeInheritance();
-
-    
-    if (this.parentNode.parentNode.localName == "toolbarpaletteitem") {
-      return;
-    }
-
-    this._stringBundle = this.querySelector("stringbundle");
-    this._textbox = this.querySelector(".searchbar-textbox");
-
-    this._setupTextboxEventListeners();
-    this._initTextbox();
-
-    window.addEventListener("unload", this.destroy);
-
-    this.FormHistory = (ChromeUtils.import("resource://gre/modules/FormHistory.jsm", {})).FormHistory;
-
-    Services.obs.addObserver(this.observer, "browser-search-engine-modified");
-    Services.obs.addObserver(this.observer, "browser-search-service");
-
-    this._initialized = true;
-
-    (window.delayedStartupPromise || Promise.resolve()).then(() => {
-      window.requestIdleCallback(() => {
-        Services.search.init().then(aStatus => {
-          
-          if (!this._initialized)
-            return;
-
-          
-          this.updateDisplay();
-          BrowserSearch.updateOpenSearchBadge();
-        }).catch(status => Cu.reportError("Cannot initialize search service, bailing out: " + status));
-      });
-    });
-
-    
-    
-    this.textbox.popup.addEventListener("popupshowing", () => {
-      let oneOffButtons = this.textbox.popup.oneOffButtons;
+    connectedCallback() {
       
-      
-      if (oneOffButtons) {
-        oneOffButtons.telemetryOrigin = "searchbar";
-        
-        
-        oneOffButtons.textbox = this.textbox;
-        oneOffButtons.popup = this.textbox.popup;
-      }
-    }, { capture: true, once: true });
-  }
-
-  async getEngines() {
-    if (!this._engines)
-      this._engines = await Services.search.getVisibleEngines();
-    return this._engines;
-  }
-
-  set currentEngine(val) {
-    Services.search.defaultEngine = val;
-    return val;
-  }
-
-  get currentEngine() {
-    let currentEngine = Services.search.defaultEngine;
-    
-    return currentEngine || { name: "", uri: null };
-  }
-  
-
-
-
-  get textbox() {
-    return this._textbox;
-  }
-
-  set value(val) {
-    return this._textbox.value = val;
-  }
-
-  get value() {
-    return this._textbox.value;
-  }
-
-  destroy() {
-    if (this._initialized) {
-      this._initialized = false;
-      window.removeEventListener("unload", this.destroy);
-
-      Services.obs.removeObserver(this.observer, "browser-search-engine-modified");
-      Services.obs.removeObserver(this.observer, "browser-search-service");
-    }
-
-    
-    
-    
-    
-    
-    if (this._textbox && this._textbox.mController &&
-        this._textbox.mController.input == this) {
-      this._textbox.mController.input = null;
-    }
-  }
-
-  focus() {
-    this._textbox.focus();
-  }
-
-  select() {
-    this._textbox.select();
-  }
-
-  setIcon(element, uri) {
-    element.setAttribute("src", uri);
-  }
-
-  updateDisplay() {
-    let uri = this.currentEngine.iconURI;
-    this.setIcon(this, uri ? uri.spec : "");
-
-    let name = this.currentEngine.name;
-    let text = this._stringBundle.getFormattedString("searchtip", [name]);
-    this._textbox.label = text;
-    this._textbox.tooltipText = text;
-  }
-
-  updateGoButtonVisibility() {
-    this.querySelector(".search-go-button").hidden = !this._textbox.value;
-  }
-
-  openSuggestionsPanel(aShowOnlySettingsIfEmpty) {
-    if (this._textbox.open)
-      return;
-
-    this._textbox.showHistoryPopup();
-
-    if (this._textbox.value) {
-      
-      
-      this._textbox.mController.handleText();
-    } else if (aShowOnlySettingsIfEmpty) {
-      this.setAttribute("showonlysettings", "true");
-    }
-  }
-
-  async selectEngine(aEvent, isNextEngine) {
-    
-    aEvent.preventDefault();
-    aEvent.stopPropagation();
-
-    
-    let engines = await this.getEngines();
-    let currentName = this.currentEngine.name;
-    let newIndex = -1;
-    let lastIndex = engines.length - 1;
-    for (let i = lastIndex; i >= 0; --i) {
-      if (engines[i].name == currentName) {
-        
-        if (!isNextEngine && i == 0) {
-          newIndex = lastIndex;
-        } else if (isNextEngine && i == lastIndex) {
-          newIndex = 0;
-        } else {
-          newIndex = i + (isNextEngine ? 1 : -1);
-        }
-        break;
-      }
-    }
-
-    this.currentEngine = engines[newIndex];
-
-    this.openSuggestionsPanel();
-  }
-
-  handleSearchCommand(aEvent, aEngine, aForceNewTab) {
-    let where = "current";
-    let params;
-
-    
-    if (aEvent && aEvent.originalTarget.classList.contains("search-go-button")) {
-      if (aEvent.button == 2)
+      if (this.closest("#BrowserToolbarPalette")) {
         return;
-      where = whereToOpenLink(aEvent, false, true);
-    } else if (aForceNewTab) {
-      where = "tab";
-      if (Services.prefs.getBoolPref("browser.tabs.loadInBackground"))
-        where += "-background";
-    } else {
-      let newTabPref = Services.prefs.getBoolPref("browser.search.openintab");
-      if (((aEvent instanceof KeyboardEvent && aEvent.altKey) ^ newTabPref) &&
-        !gBrowser.selectedTab.isEmpty) {
-        where = "tab";
       }
-      if ((aEvent instanceof MouseEvent) &&
-        (aEvent.button == 1 || aEvent.getModifierState("Accel"))) {
-        where = "tab";
-        params = {
-          inBackground: true,
-        };
+
+      this.appendChild(document.importNode(this.content, true));
+      this.initializeAttributeInheritance();
+
+      
+      if (this.parentNode.parentNode.localName == "toolbarpaletteitem") {
+        return;
       }
-    }
 
-    this.handleSearchCommandWhere(aEvent, aEngine, where, params);
-  }
+      this._stringBundle = this.querySelector("stringbundle");
+      this._textbox = this.querySelector(".searchbar-textbox");
 
-  handleSearchCommandWhere(aEvent, aEngine, aWhere, aParams) {
-    let textBox = this._textbox;
-    let textValue = textBox.value;
+      this._setupTextboxEventListeners();
+      this._initTextbox();
 
-    let selection = this.telemetrySearchDetails;
-    let oneOffRecorded = false;
+      window.addEventListener("unload", this.destroy);
 
-    BrowserUsageTelemetry.recordSearchbarSelectedResultMethod(
-      aEvent,
-      selection ? selection.index : -1
-    );
+      this.FormHistory = ChromeUtils.import(
+        "resource://gre/modules/FormHistory.jsm",
+        {}
+      ).FormHistory;
 
-    if (!selection || (selection.index == -1)) {
-      oneOffRecorded = this.textbox.popup.oneOffButtons
-        .maybeRecordTelemetry(aEvent);
-      if (!oneOffRecorded) {
-        let source = "unknown";
-        let type = "unknown";
-        let target = aEvent.originalTarget;
-        if (aEvent instanceof KeyboardEvent) {
-          type = "key";
-        } else if (aEvent instanceof MouseEvent) {
-          type = "mouse";
-          if (target.classList.contains("search-panel-header") ||
-            target.parentNode.classList.contains("search-panel-header")) {
-            source = "header";
+      Services.obs.addObserver(this.observer, "browser-search-engine-modified");
+      Services.obs.addObserver(this.observer, "browser-search-service");
+
+      this._initialized = true;
+
+      (window.delayedStartupPromise || Promise.resolve()).then(() => {
+        window.requestIdleCallback(() => {
+          Services.search
+            .init()
+            .then(aStatus => {
+              
+              if (!this._initialized) {
+                return;
+              }
+
+              
+              this.updateDisplay();
+              BrowserSearch.updateOpenSearchBadge();
+            })
+            .catch(status =>
+              Cu.reportError(
+                "Cannot initialize search service, bailing out: " + status
+              )
+            );
+        });
+      });
+
+      
+      
+      this.textbox.popup.addEventListener(
+        "popupshowing",
+        () => {
+          let oneOffButtons = this.textbox.popup.oneOffButtons;
+          
+          
+          if (oneOffButtons) {
+            oneOffButtons.telemetryOrigin = "searchbar";
+            
+            
+            oneOffButtons.textbox = this.textbox;
+            oneOffButtons.popup = this.textbox.popup;
           }
-        } else if (aEvent instanceof XULCommandEvent) {
-          if (target.getAttribute("anonid") == "paste-and-search") {
-            source = "paste";
-          }
-        }
-        if (!aEngine) {
-          aEngine = this.currentEngine;
-        }
-        BrowserSearch.recordOneoffSearchInTelemetry(aEngine, source, type);
-      }
-    }
-
-    
-    this.doSearch(textValue, aWhere, aEngine, aParams, oneOffRecorded);
-
-    if (aWhere == "tab" && aParams && aParams.inBackground)
-      this.focus();
-  }
-
-  doSearch(aData, aWhere, aEngine, aParams, aOneOff) {
-    let textBox = this._textbox;
-
-    
-    if (aData && !PrivateBrowsingUtils.isWindowPrivate(window) && this.FormHistory.enabled) {
-      this.FormHistory.update({
-        op: "bump",
-        fieldname: textBox.getAttribute("autocompletesearchparam"),
-        value: aData,
-      }, {
-        handleError(aError) {
-          Cu.reportError("Saving search to form history failed: " + aError.message);
         },
-      });
+        { capture: true, once: true }
+      );
     }
 
-    let engine = aEngine || this.currentEngine;
-    let submission = engine.getSubmission(aData, null, "searchbar");
-    let telemetrySearchDetails = this.telemetrySearchDetails;
-    this.telemetrySearchDetails = null;
-    if (telemetrySearchDetails && telemetrySearchDetails.index == -1) {
-      telemetrySearchDetails = null;
+    async getEngines() {
+      if (!this._engines) {
+        this._engines = await Services.search.getVisibleEngines();
+      }
+      return this._engines;
+    }
+
+    set currentEngine(val) {
+      Services.search.defaultEngine = val;
+      return val;
+    }
+
+    get currentEngine() {
+      let currentEngine = Services.search.defaultEngine;
+      
+      return currentEngine || { name: "", uri: null };
     }
     
-    const details = {
-      isOneOff: aOneOff,
-      isSuggestion: (!aOneOff && telemetrySearchDetails),
-      selection: telemetrySearchDetails,
-    };
-    BrowserSearch.recordSearchInTelemetry(engine, "searchbar", details);
-    
-    let params = {
-      postData: submission.postData,
-    };
-    if (aParams) {
-      for (let key in aParams) {
-        params[key] = aParams[key];
+
+
+
+    get textbox() {
+      return this._textbox;
+    }
+
+    set value(val) {
+      return (this._textbox.value = val);
+    }
+
+    get value() {
+      return this._textbox.value;
+    }
+
+    destroy() {
+      if (this._initialized) {
+        this._initialized = false;
+        window.removeEventListener("unload", this.destroy);
+
+        Services.obs.removeObserver(
+          this.observer,
+          "browser-search-engine-modified"
+        );
+        Services.obs.removeObserver(this.observer, "browser-search-service");
+      }
+
+      
+      
+      
+      
+      
+      if (
+        this._textbox &&
+        this._textbox.mController &&
+        this._textbox.mController.input == this
+      ) {
+        this._textbox.mController.input = null;
       }
     }
-    openTrustedLinkIn(submission.uri.spec, aWhere, params);
-  }
 
-  disconnectedCallback() {
-    this.destroy();
-    while (this.firstChild) {
-      this.firstChild.remove();
+    focus() {
+      this._textbox.focus();
     }
-  }
 
-  _setupEventListeners() {
-    this.addEventListener("command", (event) => {
-      const target = event.originalTarget;
-      if (target.engine) {
-        this.currentEngine = target.engine;
-      } else if (target.classList.contains("addengine-item")) {
+    select() {
+      this._textbox.select();
+    }
+
+    setIcon(element, uri) {
+      element.setAttribute("src", uri);
+    }
+
+    updateDisplay() {
+      let uri = this.currentEngine.iconURI;
+      this.setIcon(this, uri ? uri.spec : "");
+
+      let name = this.currentEngine.name;
+      let text = this._stringBundle.getFormattedString("searchtip", [name]);
+      this._textbox.label = text;
+      this._textbox.tooltipText = text;
+    }
+
+    updateGoButtonVisibility() {
+      this.querySelector(".search-go-button").hidden = !this._textbox.value;
+    }
+
+    openSuggestionsPanel(aShowOnlySettingsIfEmpty) {
+      if (this._textbox.open) {
+        return;
+      }
+
+      this._textbox.showHistoryPopup();
+
+      if (this._textbox.value) {
         
-        Services.search.addEngine(target.getAttribute("uri"),
-          target.getAttribute("src"), false).then(engine => this.currentEngine = engine);
-      } else {
-        return;
-      }
-
-      this.focus();
-      this.select();
-    });
-
-    this.addEventListener("DOMMouseScroll", (event) => {
-      if (event.getModifierState("Accel")) {
-        this.selectEngine(event, event.detail > 0);
-      }
-    }, true);
-
-    this.addEventListener("input", (event) => { this.updateGoButtonVisibility(); });
-
-    this.addEventListener("drop", (event) => { this.updateGoButtonVisibility(); });
-
-    this.addEventListener("blur", (event) => {
-      
-      
-      this._ignoreFocus = (document.activeElement == this._textbox.inputField);
-    }, true);
-
-    this.addEventListener("focus", (event) => {
-      
-      
-      this.currentEngine.speculativeConnect({
-        window,
-        originAttributes: gBrowser.contentPrincipal
-          .originAttributes,
-      });
-
-      if (this._ignoreFocus) {
         
-        this._ignoreFocus = false;
-        return;
+        this._textbox.mController.handleText();
+      } else if (aShowOnlySettingsIfEmpty) {
+        this.setAttribute("showonlysettings", "true");
+      }
+    }
+
+    async selectEngine(aEvent, isNextEngine) {
+      
+      aEvent.preventDefault();
+      aEvent.stopPropagation();
+
+      
+      let engines = await this.getEngines();
+      let currentName = this.currentEngine.name;
+      let newIndex = -1;
+      let lastIndex = engines.length - 1;
+      for (let i = lastIndex; i >= 0; --i) {
+        if (engines[i].name == currentName) {
+          
+          if (!isNextEngine && i == 0) {
+            newIndex = lastIndex;
+          } else if (isNextEngine && i == lastIndex) {
+            newIndex = 0;
+          } else {
+            newIndex = i + (isNextEngine ? 1 : -1);
+          }
+          break;
+        }
       }
 
-      
-      if (!this._textbox.value)
-        return;
-
-      
-      
-      if (Services.focus.getLastFocusMethod(window) & Services.focus.FLAG_BYMOUSE)
-        return;
+      this.currentEngine = engines[newIndex];
 
       this.openSuggestionsPanel();
-    }, true);
-
-    this.addEventListener("mousedown", (event) => {
-      
-      if (event.button != 0) {
-        return;
-      }
-
-      
-      if (event.originalTarget.classList.contains("search-go-button")) {
-        return;
-      }
-
-      
-      if (event.originalTarget.localName == "menuitem") {
-        return;
-      }
-
-      let isIconClick = event.originalTarget.classList.contains("searchbar-search-button");
-
-      
-      if (isIconClick && this.textbox.popup.popupOpen) {
-        this.textbox.popup.closePopup();
-      } else if (isIconClick || this._textbox.value) {
-        
-        
-        this.openSuggestionsPanel(true);
-      }
-    });
-  }
-
-  _setupTextboxEventListeners() {
-    this.textbox.addEventListener("input", (event) => {
-      this.textbox.popup.removeAttribute("showonlysettings");
-    });
-
-    this.textbox.addEventListener("keypress", (event) => {
-      
-      
-      let popup = this.textbox.popup;
-      if (!popup.popupOpen || event.getModifierState("Accel")) {
-        return;
-      }
-
-      let suggestionsHidden = popup.richlistbox.getAttribute("collapsed") == "true";
-      let numItems = suggestionsHidden ? 0 : popup.matchCount;
-      popup.oneOffButtons.handleKeyPress(event, numItems, true);
-    }, true);
-
-    this.textbox.addEventListener("keypress", (event) => {
-      if (event.keyCode == KeyEvent.DOM_VK_UP && event.getModifierState("Accel")) {
-        this.selectEngine(event, false);
-      }
-    }, true);
-
-    this.textbox.addEventListener("keypress", (event) => {
-      if (event.keyCode == KeyEvent.DOM_VK_DOWN && event.getModifierState("Accel")) {
-        this.selectEngine(event, true);
-      }
-    }, true);
-
-    this.textbox.addEventListener("keypress", (event) => {
-      if (event.getModifierState("Alt") &&
-          (event.keyCode == KeyEvent.DOM_VK_DOWN ||
-           event.keyCode == KeyEvent.DOM_VK_UP)) {
-        this.textbox.openSearch();
-      }
-    }, true);
-
-    this.textbox.addEventListener("dragover", (event) => {
-      let types = event.dataTransfer.types;
-      if (types.includes("text/plain") ||
-          types.includes("text/x-moz-text-internal")) {
-        event.preventDefault();
-      }
-    });
-
-    this.textbox.addEventListener("drop", (event) => {
-      let dataTransfer = event.dataTransfer;
-      let data = dataTransfer.getData("text/plain");
-      if (!data) {
-        data = dataTransfer.getData("text/x-moz-text-internal");
-      }
-      if (data) {
-        event.preventDefault();
-        this.textbox.value = data;
-        this.openSuggestionsPanel();
-      }
-    });
-  }
-
-  _initTextbox() {
-    
-    this.searchbarController = {
-      textbox: this.textbox,
-      supportsCommand(command) {
-        return command == "cmd_clearhistory" ||
-               command == "cmd_togglesuggest";
-      },
-      isCommandEnabled(command) {
-        return true;
-      },
-      doCommand(command) {
-        switch (command) {
-          case "cmd_clearhistory":
-            let param = this.textbox.getAttribute("autocompletesearchparam");
-            BrowserSearch.searchBar.FormHistory.
-              update({ op: "remove", fieldname: param }, null);
-            this.textbox.value = "";
-            break;
-          case "cmd_togglesuggest":
-            let enabled =
-              Services.prefs.getBoolPref("browser.search.suggest.enabled");
-            Services.prefs.setBoolPref(
-              "browser.search.suggest.enabled", !enabled);
-            break;
-          default:
-            
-        }
-      },
-    };
-
-    if (this.parentNode.parentNode.localName == "toolbarpaletteitem") {
-      return;
     }
 
-    if (Services.prefs.getBoolPref("browser.urlbar.clickSelectsAll")) {
-      this.textbox.setAttribute("clickSelectsAll", true);
-    }
+    handleSearchCommand(aEvent, aEngine, aForceNewTab) {
+      let where = "current";
+      let params;
 
-    let inputBox = document.getAnonymousElementByAttribute(this.textbox,
-      "anonid", "moz-input-box");
-
-    
-    window.customElements.upgrade(inputBox);
-    let cxmenu = inputBox.menupopup;
-    cxmenu.addEventListener("popupshowing",
-      () => { this._initContextMenu(cxmenu); }, { capture: true, once: true });
-
-    this.textbox.setAttribute("aria-owns", this.textbox.popup.id);
-
-    
-    
-    
-    
-    
-    
-    Object.defineProperty(this.textbox, "searchParam", {
-      get() {
-        return this.getAttribute("autocompletesearchparam") +
-          (PrivateBrowsingUtils.isWindowPrivate(window) ? "|private" : "");
-      },
-      set(val) {
-        this.setAttribute("autocompletesearchparam", val);
-        return val;
-      },
-    });
-
-    Object.defineProperty(this.textbox, "selectedButton", {
-      get() {
-        return this.popup.oneOffButtons.selectedButton;
-      },
-      set(val) {
-        return this.popup.oneOffButtons.selectedButton = val;
-      },
-    });
-
-    
-    
-    this.textbox.onBeforeValueSet = (aValue) => {
-      this.textbox.popup.oneOffButtons.query = aValue;
-      return aValue;
-    };
-
-    
-    
-    
-    
-    this.textbox.openPopup = () => {
       
-      
-      
-      if (document.documentElement.getAttribute("customizing") == "true") {
-        return;
-      }
-
-      let popup = this.textbox.popup;
-      if (!popup.mPopupOpen) {
-        
-        
-        
-        
-        
-        
-        
-        popup.hidden = false;
-
-        
-        if (popup.id == "PopupSearchAutoComplete") {
-          popup.setAttribute("norolluponanchor", "true");
-        }
-
-        popup.mInput = this.textbox;
-        
-        popup.selectedIndex = -1;
-
-        document.popupNode = null;
-
-        let { width } = this.getBoundingClientRect();
-        popup.setAttribute("width", width > 100 ? width : 100);
-
-        
-        popup._invalidate();
-
-        popup.openPopup(this, "after_start");
-      }
-    };
-
-    this.textbox.openSearch = () => {
-      if (!this.textbox.popupOpen) {
-        this.openSuggestionsPanel();
-        return false;
-      }
-      return true;
-    };
-
-    this.textbox.handleEnter = (event) => {
-      
-      
-      
-      if (this.textbox.selectedButton &&
-          this.textbox.selectedButton.getAttribute("anonid") ==
-            "addengine-menu-button") {
-        this.textbox.selectedButton.open = !this.textbox.selectedButton.open;
-        return true;
-      }
-      
-      
-      return this.textbox.mController.handleEnter(false, event || null);
-    };
-
-    
-    this.textbox.onTextEntered = (event) => {
-      let engine;
-      let oneOff = this.textbox.selectedButton;
-      if (oneOff) {
-        if (!oneOff.engine) {
-          oneOff.doCommand();
+      if (
+        aEvent &&
+        aEvent.originalTarget.classList.contains("search-go-button")
+      ) {
+        if (aEvent.button == 2) {
           return;
         }
-        engine = oneOff.engine;
-      }
-      if (this.textbox._selectionDetails) {
-        BrowserSearch.searchBar.telemetrySearchDetails = this.textbox._selectionDetails;
-        this.textbox._selectionDetails = null;
-      }
-      this.handleSearchCommand(event, engine);
-    };
-  }
-
-  _initContextMenu(aMenu) {
-    let stringBundle = this._stringBundle;
-
-    let pasteAndSearch, suggestMenuItem;
-    let element, label, akey;
-
-    element = document.createXULElement("menuseparator");
-    aMenu.appendChild(element);
-
-    let insertLocation = aMenu.firstElementChild;
-    while (insertLocation.nextElementSibling &&
-      insertLocation.getAttribute("cmd") != "cmd_paste")
-      insertLocation = insertLocation.nextElementSibling;
-    if (insertLocation) {
-      element = document.createXULElement("menuitem");
-      label = stringBundle.getString("cmd_pasteAndSearch");
-      element.setAttribute("label", label);
-      element.setAttribute("anonid", "paste-and-search");
-      element.setAttribute("oncommand", "BrowserSearch.pasteAndSearch(event)");
-      aMenu.insertBefore(element, insertLocation.nextElementSibling);
-      pasteAndSearch = element;
-    }
-
-    element = document.createXULElement("menuitem");
-    label = stringBundle.getString("cmd_clearHistory");
-    akey = stringBundle.getString("cmd_clearHistory_accesskey");
-    element.setAttribute("label", label);
-    element.setAttribute("accesskey", akey);
-    element.setAttribute("cmd", "cmd_clearhistory");
-    aMenu.appendChild(element);
-
-    element = document.createXULElement("menuitem");
-    label = stringBundle.getString("cmd_showSuggestions");
-    akey = stringBundle.getString("cmd_showSuggestions_accesskey");
-    element.setAttribute("anonid", "toggle-suggest-item");
-    element.setAttribute("label", label);
-    element.setAttribute("accesskey", akey);
-    element.setAttribute("cmd", "cmd_togglesuggest");
-    element.setAttribute("type", "checkbox");
-    element.setAttribute("autocheck", "false");
-    suggestMenuItem = element;
-    aMenu.appendChild(element);
-
-    if (AppConstants.platform == "macosx") {
-      this.textbox.addEventListener("keypress", (event) => {
-        if (event.keyCode == KeyEvent.DOM_VK_F4) {
-          this.textbox.openSearch();
+        where = whereToOpenLink(aEvent, false, true);
+      } else if (aForceNewTab) {
+        where = "tab";
+        if (Services.prefs.getBoolPref("browser.tabs.loadInBackground")) {
+          where += "-background";
         }
-      }, true);
-    }
-
-    this.textbox.controllers.appendController(this.searchbarController);
-
-    let onpopupshowing = function() {
-      BrowserSearch.searchBar._textbox.closePopup();
-      if (suggestMenuItem) {
-        let enabled =
-          Services.prefs.getBoolPref("browser.search.suggest.enabled");
-        suggestMenuItem.setAttribute("checked", enabled);
+      } else {
+        let newTabPref = Services.prefs.getBoolPref("browser.search.openintab");
+        if (
+          (aEvent instanceof KeyboardEvent && aEvent.altKey) ^ newTabPref &&
+          !gBrowser.selectedTab.isEmpty
+        ) {
+          where = "tab";
+        }
+        if (
+          aEvent instanceof MouseEvent &&
+          (aEvent.button == 1 || aEvent.getModifierState("Accel"))
+        ) {
+          where = "tab";
+          params = {
+            inBackground: true,
+          };
+        }
       }
 
-      if (!pasteAndSearch)
+      this.handleSearchCommandWhere(aEvent, aEngine, where, params);
+    }
+
+    handleSearchCommandWhere(aEvent, aEngine, aWhere, aParams) {
+      let textBox = this._textbox;
+      let textValue = textBox.value;
+
+      let selection = this.telemetrySearchDetails;
+      let oneOffRecorded = false;
+
+      BrowserUsageTelemetry.recordSearchbarSelectedResultMethod(
+        aEvent,
+        selection ? selection.index : -1
+      );
+
+      if (!selection || selection.index == -1) {
+        oneOffRecorded = this.textbox.popup.oneOffButtons.maybeRecordTelemetry(
+          aEvent
+        );
+        if (!oneOffRecorded) {
+          let source = "unknown";
+          let type = "unknown";
+          let target = aEvent.originalTarget;
+          if (aEvent instanceof KeyboardEvent) {
+            type = "key";
+          } else if (aEvent instanceof MouseEvent) {
+            type = "mouse";
+            if (
+              target.classList.contains("search-panel-header") ||
+              target.parentNode.classList.contains("search-panel-header")
+            ) {
+              source = "header";
+            }
+          } else if (aEvent instanceof XULCommandEvent) {
+            if (target.getAttribute("anonid") == "paste-and-search") {
+              source = "paste";
+            }
+          }
+          if (!aEngine) {
+            aEngine = this.currentEngine;
+          }
+          BrowserSearch.recordOneoffSearchInTelemetry(aEngine, source, type);
+        }
+      }
+
+      
+      this.doSearch(textValue, aWhere, aEngine, aParams, oneOffRecorded);
+
+      if (aWhere == "tab" && aParams && aParams.inBackground) {
+        this.focus();
+      }
+    }
+
+    doSearch(aData, aWhere, aEngine, aParams, aOneOff) {
+      let textBox = this._textbox;
+
+      
+      if (
+        aData &&
+        !PrivateBrowsingUtils.isWindowPrivate(window) &&
+        this.FormHistory.enabled
+      ) {
+        this.FormHistory.update(
+          {
+            op: "bump",
+            fieldname: textBox.getAttribute("autocompletesearchparam"),
+            value: aData,
+          },
+          {
+            handleError(aError) {
+              Cu.reportError(
+                "Saving search to form history failed: " + aError.message
+              );
+            },
+          }
+        );
+      }
+
+      let engine = aEngine || this.currentEngine;
+      let submission = engine.getSubmission(aData, null, "searchbar");
+      let telemetrySearchDetails = this.telemetrySearchDetails;
+      this.telemetrySearchDetails = null;
+      if (telemetrySearchDetails && telemetrySearchDetails.index == -1) {
+        telemetrySearchDetails = null;
+      }
+      
+      const details = {
+        isOneOff: aOneOff,
+        isSuggestion: !aOneOff && telemetrySearchDetails,
+        selection: telemetrySearchDetails,
+      };
+      BrowserSearch.recordSearchInTelemetry(engine, "searchbar", details);
+      
+      let params = {
+        postData: submission.postData,
+      };
+      if (aParams) {
+        for (let key in aParams) {
+          params[key] = aParams[key];
+        }
+      }
+      openTrustedLinkIn(submission.uri.spec, aWhere, params);
+    }
+
+    disconnectedCallback() {
+      this.destroy();
+      while (this.firstChild) {
+        this.firstChild.remove();
+      }
+    }
+
+    _setupEventListeners() {
+      this.addEventListener("command", event => {
+        const target = event.originalTarget;
+        if (target.engine) {
+          this.currentEngine = target.engine;
+        } else if (target.classList.contains("addengine-item")) {
+          
+          Services.search
+            .addEngine(
+              target.getAttribute("uri"),
+              target.getAttribute("src"),
+              false
+            )
+            .then(engine => (this.currentEngine = engine));
+        } else {
+          return;
+        }
+
+        this.focus();
+        this.select();
+      });
+
+      this.addEventListener(
+        "DOMMouseScroll",
+        event => {
+          if (event.getModifierState("Accel")) {
+            this.selectEngine(event, event.detail > 0);
+          }
+        },
+        true
+      );
+
+      this.addEventListener("input", event => {
+        this.updateGoButtonVisibility();
+      });
+
+      this.addEventListener("drop", event => {
+        this.updateGoButtonVisibility();
+      });
+
+      this.addEventListener(
+        "blur",
+        event => {
+          
+          
+          this._ignoreFocus =
+            document.activeElement == this._textbox.inputField;
+        },
+        true
+      );
+
+      this.addEventListener(
+        "focus",
+        event => {
+          
+          
+          this.currentEngine.speculativeConnect({
+            window,
+            originAttributes: gBrowser.contentPrincipal.originAttributes,
+          });
+
+          if (this._ignoreFocus) {
+            
+            this._ignoreFocus = false;
+            return;
+          }
+
+          
+          if (!this._textbox.value) {
+            return;
+          }
+
+          
+          
+          if (
+            Services.focus.getLastFocusMethod(window) &
+            Services.focus.FLAG_BYMOUSE
+          ) {
+            return;
+          }
+
+          this.openSuggestionsPanel();
+        },
+        true
+      );
+
+      this.addEventListener("mousedown", event => {
+        
+        if (event.button != 0) {
+          return;
+        }
+
+        
+        if (event.originalTarget.classList.contains("search-go-button")) {
+          return;
+        }
+
+        
+        if (event.originalTarget.localName == "menuitem") {
+          return;
+        }
+
+        let isIconClick = event.originalTarget.classList.contains(
+          "searchbar-search-button"
+        );
+
+        
+        if (isIconClick && this.textbox.popup.popupOpen) {
+          this.textbox.popup.closePopup();
+        } else if (isIconClick || this._textbox.value) {
+          
+          
+          this.openSuggestionsPanel(true);
+        }
+      });
+    }
+
+    _setupTextboxEventListeners() {
+      this.textbox.addEventListener("input", event => {
+        this.textbox.popup.removeAttribute("showonlysettings");
+      });
+
+      this.textbox.addEventListener(
+        "keypress",
+        event => {
+          
+          
+          let popup = this.textbox.popup;
+          if (!popup.popupOpen || event.getModifierState("Accel")) {
+            return;
+          }
+
+          let suggestionsHidden =
+            popup.richlistbox.getAttribute("collapsed") == "true";
+          let numItems = suggestionsHidden ? 0 : popup.matchCount;
+          popup.oneOffButtons.handleKeyPress(event, numItems, true);
+        },
+        true
+      );
+
+      this.textbox.addEventListener(
+        "keypress",
+        event => {
+          if (
+            event.keyCode == KeyEvent.DOM_VK_UP &&
+            event.getModifierState("Accel")
+          ) {
+            this.selectEngine(event, false);
+          }
+        },
+        true
+      );
+
+      this.textbox.addEventListener(
+        "keypress",
+        event => {
+          if (
+            event.keyCode == KeyEvent.DOM_VK_DOWN &&
+            event.getModifierState("Accel")
+          ) {
+            this.selectEngine(event, true);
+          }
+        },
+        true
+      );
+
+      this.textbox.addEventListener(
+        "keypress",
+        event => {
+          if (
+            event.getModifierState("Alt") &&
+            (event.keyCode == KeyEvent.DOM_VK_DOWN ||
+              event.keyCode == KeyEvent.DOM_VK_UP)
+          ) {
+            this.textbox.openSearch();
+          }
+        },
+        true
+      );
+
+      this.textbox.addEventListener("dragover", event => {
+        let types = event.dataTransfer.types;
+        if (
+          types.includes("text/plain") ||
+          types.includes("text/x-moz-text-internal")
+        ) {
+          event.preventDefault();
+        }
+      });
+
+      this.textbox.addEventListener("drop", event => {
+        let dataTransfer = event.dataTransfer;
+        let data = dataTransfer.getData("text/plain");
+        if (!data) {
+          data = dataTransfer.getData("text/x-moz-text-internal");
+        }
+        if (data) {
+          event.preventDefault();
+          this.textbox.value = data;
+          this.openSuggestionsPanel();
+        }
+      });
+    }
+
+    _initTextbox() {
+      
+      this.searchbarController = {
+        textbox: this.textbox,
+        supportsCommand(command) {
+          return (
+            command == "cmd_clearhistory" || command == "cmd_togglesuggest"
+          );
+        },
+        isCommandEnabled(command) {
+          return true;
+        },
+        doCommand(command) {
+          switch (command) {
+            case "cmd_clearhistory":
+              let param = this.textbox.getAttribute("autocompletesearchparam");
+              BrowserSearch.searchBar.FormHistory.update(
+                { op: "remove", fieldname: param },
+                null
+              );
+              this.textbox.value = "";
+              break;
+            case "cmd_togglesuggest":
+              let enabled = Services.prefs.getBoolPref(
+                "browser.search.suggest.enabled"
+              );
+              Services.prefs.setBoolPref(
+                "browser.search.suggest.enabled",
+                !enabled
+              );
+              break;
+            default:
+            
+          }
+        },
+      };
+
+      if (this.parentNode.parentNode.localName == "toolbarpaletteitem") {
         return;
+      }
 
-      let controller = document.commandDispatcher.getControllerForCommand("cmd_paste");
-      let enabled = controller.isCommandEnabled("cmd_paste");
-      if (enabled)
-        pasteAndSearch.removeAttribute("disabled");
-      else
-        pasteAndSearch.setAttribute("disabled", "true");
-    };
-    aMenu.addEventListener("popupshowing", onpopupshowing);
-    onpopupshowing();
+      if (Services.prefs.getBoolPref("browser.urlbar.clickSelectsAll")) {
+        this.textbox.setAttribute("clickSelectsAll", true);
+      }
+
+      let inputBox = document.getAnonymousElementByAttribute(
+        this.textbox,
+        "anonid",
+        "moz-input-box"
+      );
+
+      
+      window.customElements.upgrade(inputBox);
+      let cxmenu = inputBox.menupopup;
+      cxmenu.addEventListener(
+        "popupshowing",
+        () => {
+          this._initContextMenu(cxmenu);
+        },
+        { capture: true, once: true }
+      );
+
+      this.textbox.setAttribute("aria-owns", this.textbox.popup.id);
+
+      
+      
+      
+      
+      
+      
+      Object.defineProperty(this.textbox, "searchParam", {
+        get() {
+          return (
+            this.getAttribute("autocompletesearchparam") +
+            (PrivateBrowsingUtils.isWindowPrivate(window) ? "|private" : "")
+          );
+        },
+        set(val) {
+          this.setAttribute("autocompletesearchparam", val);
+          return val;
+        },
+      });
+
+      Object.defineProperty(this.textbox, "selectedButton", {
+        get() {
+          return this.popup.oneOffButtons.selectedButton;
+        },
+        set(val) {
+          return (this.popup.oneOffButtons.selectedButton = val);
+        },
+      });
+
+      
+      
+      this.textbox.onBeforeValueSet = aValue => {
+        this.textbox.popup.oneOffButtons.query = aValue;
+        return aValue;
+      };
+
+      
+      
+      
+      
+      this.textbox.openPopup = () => {
+        
+        
+        
+        if (document.documentElement.getAttribute("customizing") == "true") {
+          return;
+        }
+
+        let popup = this.textbox.popup;
+        if (!popup.mPopupOpen) {
+          
+          
+          
+          
+          
+          
+          
+          popup.hidden = false;
+
+          
+          if (popup.id == "PopupSearchAutoComplete") {
+            popup.setAttribute("norolluponanchor", "true");
+          }
+
+          popup.mInput = this.textbox;
+          
+          popup.selectedIndex = -1;
+
+          document.popupNode = null;
+
+          let { width } = this.getBoundingClientRect();
+          popup.setAttribute("width", width > 100 ? width : 100);
+
+          
+          popup._invalidate();
+
+          popup.openPopup(this, "after_start");
+        }
+      };
+
+      this.textbox.openSearch = () => {
+        if (!this.textbox.popupOpen) {
+          this.openSuggestionsPanel();
+          return false;
+        }
+        return true;
+      };
+
+      this.textbox.handleEnter = event => {
+        
+        
+        
+        if (
+          this.textbox.selectedButton &&
+          this.textbox.selectedButton.getAttribute("anonid") ==
+            "addengine-menu-button"
+        ) {
+          this.textbox.selectedButton.open = !this.textbox.selectedButton.open;
+          return true;
+        }
+        
+        
+        return this.textbox.mController.handleEnter(false, event || null);
+      };
+
+      
+      this.textbox.onTextEntered = event => {
+        let engine;
+        let oneOff = this.textbox.selectedButton;
+        if (oneOff) {
+          if (!oneOff.engine) {
+            oneOff.doCommand();
+            return;
+          }
+          engine = oneOff.engine;
+        }
+        if (this.textbox._selectionDetails) {
+          BrowserSearch.searchBar.telemetrySearchDetails = this.textbox._selectionDetails;
+          this.textbox._selectionDetails = null;
+        }
+        this.handleSearchCommand(event, engine);
+      };
+    }
+
+    _initContextMenu(aMenu) {
+      let stringBundle = this._stringBundle;
+
+      let pasteAndSearch, suggestMenuItem;
+      let element, label, akey;
+
+      element = document.createXULElement("menuseparator");
+      aMenu.appendChild(element);
+
+      let insertLocation = aMenu.firstElementChild;
+      while (
+        insertLocation.nextElementSibling &&
+        insertLocation.getAttribute("cmd") != "cmd_paste"
+      ) {
+        insertLocation = insertLocation.nextElementSibling;
+      }
+      if (insertLocation) {
+        element = document.createXULElement("menuitem");
+        label = stringBundle.getString("cmd_pasteAndSearch");
+        element.setAttribute("label", label);
+        element.setAttribute("anonid", "paste-and-search");
+        element.setAttribute(
+          "oncommand",
+          "BrowserSearch.pasteAndSearch(event)"
+        );
+        aMenu.insertBefore(element, insertLocation.nextElementSibling);
+        pasteAndSearch = element;
+      }
+
+      element = document.createXULElement("menuitem");
+      label = stringBundle.getString("cmd_clearHistory");
+      akey = stringBundle.getString("cmd_clearHistory_accesskey");
+      element.setAttribute("label", label);
+      element.setAttribute("accesskey", akey);
+      element.setAttribute("cmd", "cmd_clearhistory");
+      aMenu.appendChild(element);
+
+      element = document.createXULElement("menuitem");
+      label = stringBundle.getString("cmd_showSuggestions");
+      akey = stringBundle.getString("cmd_showSuggestions_accesskey");
+      element.setAttribute("anonid", "toggle-suggest-item");
+      element.setAttribute("label", label);
+      element.setAttribute("accesskey", akey);
+      element.setAttribute("cmd", "cmd_togglesuggest");
+      element.setAttribute("type", "checkbox");
+      element.setAttribute("autocheck", "false");
+      suggestMenuItem = element;
+      aMenu.appendChild(element);
+
+      if (AppConstants.platform == "macosx") {
+        this.textbox.addEventListener(
+          "keypress",
+          event => {
+            if (event.keyCode == KeyEvent.DOM_VK_F4) {
+              this.textbox.openSearch();
+            }
+          },
+          true
+        );
+      }
+
+      this.textbox.controllers.appendController(this.searchbarController);
+
+      let onpopupshowing = function() {
+        BrowserSearch.searchBar._textbox.closePopup();
+        if (suggestMenuItem) {
+          let enabled = Services.prefs.getBoolPref(
+            "browser.search.suggest.enabled"
+          );
+          suggestMenuItem.setAttribute("checked", enabled);
+        }
+
+        if (!pasteAndSearch) {
+          return;
+        }
+
+        let controller = document.commandDispatcher.getControllerForCommand(
+          "cmd_paste"
+        );
+        let enabled = controller.isCommandEnabled("cmd_paste");
+        if (enabled) {
+          pasteAndSearch.removeAttribute("disabled");
+        } else {
+          pasteAndSearch.setAttribute("disabled", "true");
+        }
+      };
+      aMenu.addEventListener("popupshowing", onpopupshowing);
+      onpopupshowing();
+    }
   }
-}
 
-customElements.define("searchbar", MozSearchbar);
+  customElements.define("searchbar", MozSearchbar);
 }

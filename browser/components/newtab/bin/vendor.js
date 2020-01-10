@@ -2,7 +2,7 @@
 
 
 
-const {cp, set} = require("shelljs");
+const { cp, set } = require("shelljs");
 const path = require("path");
 
 const filesToVendor = {
@@ -19,8 +19,10 @@ const filesToVendor = {
 
 set("-v"); 
 for (let srcPath of Object.keys(filesToVendor)) {
-  cp(path.join("node_modules", srcPath),
-    path.join("vendor", filesToVendor[srcPath]));
+  cp(
+    path.join("node_modules", srcPath),
+    path.join("vendor", filesToVendor[srcPath])
+  );
 }
 
 console.log(`

@@ -3,8 +3,10 @@
 
 
 
-var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
@@ -92,8 +94,10 @@ HistoryDownloadElementShell.prototype = {
     if (!this.active && aCommand != "cmd_delete") {
       return false;
     }
-    return DownloadsViewUI.DownloadElementShell.prototype
-                          .isCommandEnabled.call(this, aCommand);
+    return DownloadsViewUI.DownloadElementShell.prototype.isCommandEnabled.call(
+      this,
+      aCommand
+    );
   },
 
   downloadsCmd_unblock() {
@@ -117,8 +121,10 @@ HistoryDownloadElementShell.prototype = {
     }
     aTerm = aTerm.toLowerCase();
     let displayName = DownloadsViewUI.getDisplayName(this.download);
-    return displayName.toLowerCase().includes(aTerm) ||
-           this.download.source.url.toLowerCase().includes(aTerm);
+    return (
+      displayName.toLowerCase().includes(aTerm) ||
+      this.download.source.url.toLowerCase().includes(aTerm)
+    );
   },
 
   
@@ -150,10 +156,13 @@ HistoryDownloadElementShell.prototype = {
     
     
     if (!this._targetFileChecked) {
-      this.download.refresh().catch(Cu.reportError).then(() => {
-        
-        this._targetFileChecked = true;
-      });
+      this.download
+        .refresh()
+        .catch(Cu.reportError)
+        .then(() => {
+          
+          this._targetFileChecked = true;
+        });
     }
   },
 };
@@ -201,18 +210,27 @@ function DownloadsPlacesView(aRichListBox, aActive = true) {
 
   
   
-  DownloadsCommon.getIndicatorData(window).attention = DownloadsCommon.ATTENTION_NONE;
+  DownloadsCommon.getIndicatorData(window).attention =
+    DownloadsCommon.ATTENTION_NONE;
 
   
-  window.addEventListener("unload", () => {
-    window.controllers.removeController(this);
-    this._downloadsData.removeView(this);
-    this.result = null;
-  }, true);
+  window.addEventListener(
+    "unload",
+    () => {
+      window.controllers.removeController(this);
+      this._downloadsData.removeView(this);
+      this.result = null;
+    },
+    true
+  );
   
-  window.addEventListener("resize", () => {
-    this._ensureVisibleElementsAreActive();
-  }, true);
+  window.addEventListener(
+    "resize",
+    () => {
+      this._ensureVisibleElementsAreActive();
+    },
+    true
+  );
 }
 
 DownloadsPlacesView.prototype = {
@@ -227,14 +245,18 @@ DownloadsPlacesView.prototype = {
   },
   set active(val) {
     this._active = val;
-    if (this._active)
+    if (this._active) {
       this._ensureVisibleElementsAreActive();
+    }
     return this._active;
   },
 
   _ensureVisibleElementsAreActive() {
-    if (!this.active || this._ensureVisibleTimer ||
-        !this._richlistbox.firstChild) {
+    if (
+      !this.active ||
+      this._ensureVisibleTimer ||
+      !this._richlistbox.firstChild
+    ) {
       return;
     }
 
@@ -246,9 +268,17 @@ DownloadsPlacesView.prototype = {
 
       let rlbRect = this._richlistbox.getBoundingClientRect();
       let winUtils = window.windowUtils;
-      let nodes = winUtils.nodesFromRect(rlbRect.left, rlbRect.top,
-                                         0, rlbRect.width, rlbRect.height, 0,
-                                         true, false, false);
+      let nodes = winUtils.nodesFromRect(
+        rlbRect.left,
+        rlbRect.top,
+        0,
+        rlbRect.width,
+        rlbRect.height,
+        0,
+        true,
+        false,
+        false
+      );
       
       
       
@@ -273,8 +303,8 @@ DownloadsPlacesView.prototype = {
         nodeBelowVisibleArea._shell.ensureActive();
       }
 
-      let nodeAboveVisibleArea = firstVisibleNode &&
-                                 firstVisibleNode.previousSibling;
+      let nodeAboveVisibleArea =
+        firstVisibleNode && firstVisibleNode.previousSibling;
       if (nodeAboveVisibleArea && nodeAboveVisibleArea._shell) {
         nodeAboveVisibleArea._shell.ensureActive();
       }
@@ -297,7 +327,8 @@ DownloadsPlacesView.prototype = {
   get selectedNodes() {
     return Array.prototype.filter.call(
       this._richlistbox.selectedItems,
-      element => element._shell.download.placesNode);
+      element => element._shell.download.placesNode
+    );
   },
 
   get selectedNode() {
@@ -323,7 +354,7 @@ DownloadsPlacesView.prototype = {
       }
       this._ensureVisibleElementsAreActive();
     }
-    return this._searchTerm = aValue;
+    return (this._searchTerm = aValue);
   },
 
   
@@ -424,8 +455,9 @@ DownloadsPlacesView.prototype = {
     
     
     if (insertBefore) {
-      this._viewItemsForDownloads.get(insertBefore)
-          .element.insertAdjacentElement("afterend", shell.element);
+      this._viewItemsForDownloads
+        .get(insertBefore)
+        .element.insertAdjacentElement("afterend", shell.element);
     } else {
       (this.batchFragment || this._richlistbox).prepend(shell.element);
     }
@@ -450,12 +482,15 @@ DownloadsPlacesView.prototype = {
 
     
     
-    if ((element.nextSibling || element.previousSibling) &&
-        this._richlistbox.selectedItems &&
-        this._richlistbox.selectedItems.length == 1 &&
-        this._richlistbox.selectedItems[0] == element) {
-      this._richlistbox.selectItem(element.nextSibling ||
-                                   element.previousSibling);
+    if (
+      (element.nextSibling || element.previousSibling) &&
+      this._richlistbox.selectedItems &&
+      this._richlistbox.selectedItems.length == 1 &&
+      this._richlistbox.selectedItems[0] == element
+    ) {
+      this._richlistbox.selectItem(
+        element.nextSibling || element.previousSibling
+      );
     }
 
     this._richlistbox.removeItemFromSelection(element);
@@ -474,8 +509,10 @@ DownloadsPlacesView.prototype = {
     if (!DownloadsViewUI.isCommandName(aCommand)) {
       return false;
     }
-    if (!(aCommand in this) &&
-        !(aCommand in HistoryDownloadElementShell.prototype)) {
+    if (
+      !(aCommand in this) &&
+      !(aCommand in HistoryDownloadElementShell.prototype)
+    ) {
       return false;
     }
     
@@ -484,8 +521,10 @@ DownloadsPlacesView.prototype = {
     
     
     
-    return aCommand == "downloadsCmd_clearDownloads" ||
-           document.activeElement == this._richlistbox;
+    return (
+      aCommand == "downloadsCmd_clearDownloads" ||
+      document.activeElement == this._richlistbox
+    );
   },
 
   
@@ -504,13 +543,16 @@ DownloadsPlacesView.prototype = {
       default:
         return Array.prototype.every.call(
           this._richlistbox.selectedItems,
-          element => element._shell.isCommandEnabled(aCommand));
+          element => element._shell.isCommandEnabled(aCommand)
+        );
     }
   },
 
   _copySelectedDownloadsToClipboard() {
-    let urls = Array.from(this._richlistbox.selectedItems,
-                          element => element._shell.download.source.url);
+    let urls = Array.from(
+      this._richlistbox.selectedItems,
+      element => element._shell.download.source.url
+    );
 
     Cc["@mozilla.org/widget/clipboardhelper;1"]
       .getService(Ci.nsIClipboardHelper)
@@ -518,8 +560,9 @@ DownloadsPlacesView.prototype = {
   },
 
   _getURLFromClipboardData() {
-    let trans = Cc["@mozilla.org/widget/transferable;1"].
-                createInstance(Ci.nsITransferable);
+    let trans = Cc["@mozilla.org/widget/transferable;1"].createInstance(
+      Ci.nsITransferable
+    );
     trans.init(null);
 
     let flavors = ["text/x-moz-url", "text/unicode"];
@@ -531,8 +574,9 @@ DownloadsPlacesView.prototype = {
     try {
       let data = {};
       trans.getAnyTransferData({}, data);
-      let [url, name] = data.value.QueryInterface(Ci.nsISupportsString)
-                            .data.split("\n");
+      let [url, name] = data.value
+        .QueryInterface(Ci.nsISupportsString)
+        .data.split("\n");
       if (url) {
         return [NetUtil.newURI(url).spec, name];
       }
@@ -594,9 +638,11 @@ DownloadsPlacesView.prototype = {
   downloadsCmd_clearDownloads() {
     this._downloadsData.removeFinished();
     if (this._place) {
-      PlacesUtils.history.removeVisitsByFilter({
-        transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
-      }).catch(Cu.reportError);
+      PlacesUtils.history
+        .removeVisitsByFilter({
+          transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
+        })
+        .catch(Cu.reportError);
     }
     
     
@@ -612,11 +658,12 @@ DownloadsPlacesView.prototype = {
     
     let contextMenu = document.getElementById("downloadsContextMenu");
     let download = element._shell.download;
-    contextMenu.setAttribute("state",
-                             DownloadsCommon.stateOfDownload(download));
+    contextMenu.setAttribute(
+      "state",
+      DownloadsCommon.stateOfDownload(download)
+    );
     contextMenu.setAttribute("exists", "true");
-    contextMenu.classList.toggle("temporary-block",
-                                 !!download.hasBlockedData);
+    contextMenu.classList.toggle("temporary-block", !!download.hasBlockedData);
 
     if (!download.stopped) {
       
@@ -710,9 +757,11 @@ DownloadsPlacesView.prototype = {
 
   onDragOver(aEvent) {
     let types = aEvent.dataTransfer.types;
-    if (types.includes("text/uri-list") ||
-        types.includes("text/x-moz-url") ||
-        types.includes("text/plain")) {
+    if (
+      types.includes("text/uri-list") ||
+      types.includes("text/x-moz-url") ||
+      types.includes("text/plain")
+    ) {
       aEvent.preventDefault();
     }
   },
@@ -726,13 +775,15 @@ DownloadsPlacesView.prototype = {
     }
 
     let links = Services.droppedLinkHandler.dropLinks(aEvent);
-    if (!links.length)
+    if (!links.length) {
       return;
+    }
     let browserWin = BrowserWindowTracker.getTopWindow();
     let initiatingDoc = browserWin ? browserWin.document : document;
     for (let link of links) {
-      if (link.url.startsWith("about:"))
+      if (link.url.startsWith("about:")) {
         continue;
+      }
       DownloadURL(link.url, link.name, initiatingDoc);
     }
   },
@@ -740,8 +791,9 @@ DownloadsPlacesView.prototype = {
 
 for (let methodName of ["load", "applyFilter", "selectNode", "selectItems"]) {
   DownloadsPlacesView.prototype[methodName] = function() {
-    throw new Error("|" + methodName +
-                    "| is not implemented by the downloads view.");
+    throw new Error(
+      "|" + methodName + "| is not implemented by the downloads view."
+    );
   };
 }
 

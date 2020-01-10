@@ -27,9 +27,17 @@ function test() {
   let placement = CustomizableUI.getPlacementOfWidget(buttonID);
   
   ok(placement, "Button should be placed");
-  is(placement && placement.area, CustomizableUI.AREA_TABSTRIP, "Should be placed on tabstrip.");
+  is(
+    placement && placement.area,
+    CustomizableUI.AREA_TABSTRIP,
+    "Should be placed on tabstrip."
+  );
   
-  is(btn.parentNode && btn.parentNode.id, "nav-bar", "Actual button should still be on navbar.");
+  is(
+    btn.parentNode && btn.parentNode.id,
+    "nav-bar",
+    "Actual button should still be on navbar."
+  );
 
   
   
@@ -38,6 +46,9 @@ function test() {
   
   ok(!placement, "Button should no longer have a placement.");
   
-  is(btn.parentNode && btn.parentNode.id, "nav-bar", "Actual button should still be on navbar.");
+  is(
+    btn.parentNode && btn.parentNode.id,
+    "nav-bar",
+    "Actual button should still be on navbar."
+  );
 }
-

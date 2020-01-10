@@ -20,12 +20,9 @@ add_task(async function init() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.suggest.searches", true],
-    ],
+    set: [["browser.urlbar.suggest.searches", true]],
   });
 });
-
 
 
 
@@ -35,11 +32,9 @@ add_task(async function testNoRevert() {
 
 
 
-
 add_task(async function testRevert() {
   await doSimpleTest(true);
 });
-
 
 
 
@@ -49,10 +44,10 @@ add_task(async function spacesBeforeAlias() {
   await waitForAutocompleteResultAt(0);
   await assertAlias(true);
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 });
-
 
 
 add_task(async function charsBeforeAlias() {
@@ -61,10 +56,10 @@ add_task(async function charsBeforeAlias() {
   await waitForAutocompleteResultAt(0);
   await assertAlias(false);
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 });
-
 
 
 
@@ -74,10 +69,10 @@ add_task(async function restrictionCharBeforeAlias() {
   await waitForAutocompleteResultAt(0);
   await assertAlias(false);
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 });
-
 
 
 
@@ -89,10 +84,10 @@ add_task(async function aliasCase() {
   await waitForAutocompleteResultAt(0);
   await assertAlias(true, alias);
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 });
-
 
 
 
@@ -108,8 +103,9 @@ add_task(async function inputDoesntMatchHeuristicResult() {
   await waitForAutocompleteResultAt(0);
   await assertAlias(true);
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 
   
   
@@ -128,8 +124,9 @@ add_task(async function inputDoesntMatchHeuristicResult() {
   await waitForAutocompleteResultAt(0);
   await assertAlias(true);
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 
   
   
@@ -144,7 +141,6 @@ add_task(async function inputDoesntMatchHeuristicResult() {
   
   gURLBar.search("");
 });
-
 
 
 
@@ -167,8 +163,9 @@ add_task(async function nonHeuristicAliases() {
     Assert.ok(true, "No token alias engines, skipping task.");
     return;
   }
-  info("Got token alias engines: " +
-       tokenEngines.map(({ engine }) => engine.name));
+  info(
+    "Got token alias engines: " + tokenEngines.map(({ engine }) => engine.name)
+  );
 
   
   
@@ -183,10 +180,10 @@ add_task(async function nonHeuristicAliases() {
     assertHighlighted(true, alias);
   }
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 });
-
 
 
 add_task(async function nonTokenAlias() {
@@ -201,12 +198,12 @@ add_task(async function nonTokenAlias() {
   await assertFirstResultIsAlias(true, alias);
   assertHighlighted(false);
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 
   engine.alias = ALIAS;
 });
-
 
 
 
@@ -249,10 +246,10 @@ add_task(async function clickAndFillAlias() {
     Assert.equal(gURLBar.textValue, `${ALIAS} `);
   }
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 });
-
 
 
 
@@ -264,7 +261,7 @@ add_task(async function enterAndFillAlias() {
   
   
   let index = 0;
-  for (;; index++) {
+  for (; ; index++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
     if (details.searchParams && details.searchParams.keyword == ALIAS) {
       index++;
@@ -303,10 +300,10 @@ add_task(async function enterAndFillAlias() {
     Assert.equal(gURLBar.textValue, `${ALIAS} `);
   }
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 });
-
 
 
 
@@ -333,10 +330,10 @@ add_task(async function enterAutofillsAlias() {
     Assert.equal(gURLBar.selectionEnd, expectedString.length);
     await assertAlias(true);
   }
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 });
-
 
 async function doSimpleTest(revertBetweenSteps) {
   
@@ -347,8 +344,11 @@ async function doSimpleTest(revertBetweenSteps) {
   });
 
   
-  await promiseAutocompleteResultPopup(ALIAS.substr(0, ALIAS.length - 1),
-                                       window, true);
+  await promiseAutocompleteResultPopup(
+    ALIAS.substr(0, ALIAS.length - 1),
+    window,
+    true
+  );
   await waitForAutocompleteResultAt(0);
   await assertAlias(false);
 
@@ -388,13 +388,17 @@ async function doSimpleTest(revertBetweenSteps) {
   }
 
   
-  await promiseAutocompleteResultPopup(ALIAS.substr(0, ALIAS.length - 1),
-                                       window, true);
+  await promiseAutocompleteResultPopup(
+    ALIAS.substr(0, ALIAS.length - 1),
+    window,
+    true
+  );
   await waitForAutocompleteResultAt(0);
   await assertAlias(false);
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 
   Services.prefs.clearUserPref("browser.urlbar.autoFill");
 }
@@ -406,14 +410,23 @@ async function assertAlias(aliasPresent, expectedAlias = ALIAS) {
 
 async function assertFirstResultIsAlias(isAlias, expectedAlias) {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH,
-    "Should have the correct type");
+  Assert.equal(
+    result.type,
+    UrlbarUtils.RESULT_TYPE.SEARCH,
+    "Should have the correct type"
+  );
 
-  Assert.equal("keyword" in result.searchParams && !!result.searchParams.keyword,
-    isAlias, "Should have a keyword if expected");
+  Assert.equal(
+    "keyword" in result.searchParams && !!result.searchParams.keyword,
+    isAlias,
+    "Should have a keyword if expected"
+  );
   if (isAlias) {
-    Assert.equal(result.searchParams.keyword, expectedAlias,
-      "Should have the correct keyword");
+    Assert.equal(
+      result.searchParams.keyword,
+      expectedAlias,
+      "Should have the correct keyword"
+    );
   }
 }
 
@@ -442,7 +455,6 @@ function assertHighlighted(highlighted, expectedAlias) {
 
 
 
-
 add_task(async function hiddenEngine() {
   await promiseAutocompleteResultPopup("@", window, true);
 
@@ -460,8 +472,9 @@ add_task(async function hiddenEngine() {
   }
   Assert.ok(foundDefaultEngineInPopup, "Default engine appears in the popup.");
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 
   
   
@@ -475,10 +488,14 @@ add_task(async function hiddenEngine() {
       break;
     }
   }
-  Assert.ok(!foundDefaultEngineInPopup, "Hidden default engine does not appear in the popup");
+  Assert.ok(
+    !foundDefaultEngineInPopup,
+    "Hidden default engine does not appear in the popup"
+  );
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 
   defaultEngine.hidden = false;
 });
@@ -504,8 +521,9 @@ add_task(async function hiddenEngine() {
   }
   Assert.ok(foundDefaultEngineInPopup, "Default engine appears in the popup.");
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 
   
   
@@ -519,10 +537,14 @@ add_task(async function hiddenEngine() {
       break;
     }
   }
-  Assert.ok(!foundDefaultEngineInPopup, "Hidden default engine does not appear in the popup");
+  Assert.ok(
+    !foundDefaultEngineInPopup,
+    "Hidden default engine does not appear in the popup"
+  );
 
-  await UrlbarTestUtils.promisePopupClose(window,
-    () => EventUtils.synthesizeKey("KEY_Escape"));
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeKey("KEY_Escape")
+  );
 
   defaultEngine.hidden = false;
 });

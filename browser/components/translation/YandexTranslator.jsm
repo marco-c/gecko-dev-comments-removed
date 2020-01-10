@@ -4,19 +4,23 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [ "YandexTranslator" ];
+var EXPORTED_SYMBOLS = ["YandexTranslator"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
-const {Async} = ChromeUtils.import("resource://services-common/async.js");
-const {httpRequest} = ChromeUtils.import("resource://gre/modules/Http.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
+const { Async } = ChromeUtils.import("resource://services-common/async.js");
+const { httpRequest } = ChromeUtils.import("resource://gre/modules/Http.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
 
 const MAX_REQUEST_DATA = 5000; 
-                               
+
 
 
 
@@ -28,9 +32,9 @@ const MAX_REQUEST_CHUNKS = 1000;
 
 const MAX_REQUESTS = 15;
 
-const YANDEX_ERR_KEY_INVALID               = 401; 
-const YANDEX_ERR_KEY_BLOCKED               = 402; 
-const YANDEX_ERR_DAILY_REQ_LIMIT_EXCEEDED  = 403; 
+const YANDEX_ERR_KEY_INVALID = 401; 
+const YANDEX_ERR_KEY_BLOCKED = 402; 
+const YANDEX_ERR_DAILY_REQ_LIMIT_EXCEEDED = 403; 
 const YANDEX_ERR_DAILY_CHAR_LIMIT_EXCEEDED = 404; 
 
 
@@ -55,7 +59,11 @@ const YANDEX_PERMANENT_ERRORS = [
 
 
 
-var YandexTranslator = function(translationDocument, sourceLanguage, targetLanguage) {
+var YandexTranslator = function(
+  translationDocument,
+  sourceLanguage,
+  targetLanguage
+) {
   this.translationDocument = translationDocument;
   this.sourceLanguage = sourceLanguage;
   this.targetLanguage = targetLanguage;
@@ -92,12 +100,15 @@ this.YandexTranslator.prototype = {
 
         
         
-        let yandexRequest = new YandexRequest(request.data,
-                                          this.sourceLanguage,
-                                          this.targetLanguage);
+        let yandexRequest = new YandexRequest(
+          request.data,
+          this.sourceLanguage,
+          this.targetLanguage
+        );
         this._pendingRequests++;
-        yandexRequest.fireRequest().then(this._chunkCompleted.bind(this),
-                                       this._chunkFailed.bind(this));
+        yandexRequest
+          .fireRequest()
+          .then(this._chunkCompleted.bind(this), this._chunkFailed.bind(this));
 
         currentIndex = request.lastIndex;
         if (request.finished) {
@@ -145,8 +156,9 @@ this.YandexTranslator.prototype = {
         json = JSON.parse(body);
       } catch (e) {}
 
-      if (json.code && YANDEX_PERMANENT_ERRORS.includes(json.code))
+      if (json.code && YANDEX_PERMANENT_ERRORS.includes(json.code)) {
         this._serviceUnavailable = true;
+      }
     }
 
     this._checkIfFinished();
@@ -190,7 +202,9 @@ this.YandexTranslator.prototype = {
     try {
       let result = JSON.parse(yandexRequest.networkRequest.responseText);
       if (result.code != 200) {
-        Services.console.logStringMessage("YandexTranslator: Result is " + result.code);
+        Services.console.logStringMessage(
+          "YandexTranslator: Result is " + result.code
+        );
         return false;
       }
       results = result.text;
@@ -212,7 +226,9 @@ this.YandexTranslator.prototype = {
         let result = results[i];
         let root = yandexRequest.translationData[i][0];
         root.parseResult(result);
-      } catch (e) { error = true; }
+      } catch (e) {
+        error = true;
+      }
     }
 
     return !error;
@@ -241,8 +257,7 @@ this.YandexTranslator.prototype = {
       let newCurSize = currentDataSize + text.length;
       let newChunks = currentChunks + 1;
 
-      if (newCurSize > MAX_REQUEST_DATA ||
-          newChunks > MAX_REQUEST_CHUNKS) {
+      if (newCurSize > MAX_REQUEST_DATA || newChunks > MAX_REQUEST_CHUNKS) {
         
         
         
@@ -291,11 +306,16 @@ YandexRequest.prototype = {
   fireRequest() {
     return (async () => {
       
-      let url = getUrlParam("https://translate.yandex.net/api/v1.5/tr.json/translate",
-                            "browser.translation.yandex.translateURLOverride");
+      let url = getUrlParam(
+        "https://translate.yandex.net/api/v1.5/tr.json/translate",
+        "browser.translation.yandex.translateURLOverride"
+      );
 
       
-      let apiKey = getUrlParam("%YANDEX_API_KEY%", "browser.translation.yandex.apiKeyOverride");
+      let apiKey = getUrlParam(
+        "%YANDEX_API_KEY%",
+        "browser.translation.yandex.apiKeyOverride"
+      );
       let params = [
         ["key", apiKey],
         ["format", "html"],
@@ -331,8 +351,9 @@ YandexRequest.prototype = {
 
 
 function getUrlParam(paramValue, prefName) {
-  if (Services.prefs.getPrefType(prefName))
+  if (Services.prefs.getPrefType(prefName)) {
     paramValue = Services.prefs.getCharPref(prefName);
+  }
   paramValue = Services.urlFormatter.formatURL(paramValue);
   return paramValue;
 }

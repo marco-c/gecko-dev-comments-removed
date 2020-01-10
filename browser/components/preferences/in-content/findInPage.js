@@ -17,7 +17,9 @@ class HighlightableButton extends MozButton {
     });
   }
 }
-customElements.define("highlightable-button", HighlightableButton, {extends: "button"});
+customElements.define("highlightable-button", HighlightableButton, {
+  extends: "button",
+});
 
 var gSearchResultsPane = {
   listSearchTooltips: new Set(),
@@ -34,7 +36,9 @@ var gSearchResultsPane = {
     }
     this.inited = true;
     this.searchInput = document.getElementById("searchInput");
-    this.searchInput.hidden = !Services.prefs.getBoolPref("browser.preferences.search");
+    this.searchInput.hidden = !Services.prefs.getBoolPref(
+      "browser.preferences.search"
+    );
     if (!this.searchInput.hidden) {
       this.searchInput.addEventListener("input", this);
       this.searchInput.addEventListener("command", this);
@@ -44,7 +48,9 @@ var gSearchResultsPane = {
       
       window.requestIdleCallback(() => this.initializeCategories());
     }
-    let helpUrl = Services.urlFormatter.formatURLPref("app.support.baseURL") + "preferences";
+    let helpUrl =
+      Services.urlFormatter.formatURLPref("app.support.baseURL") +
+      "preferences";
     let helpContainer = document.getElementById("need-help");
     helpContainer.querySelector("a").href = helpUrl;
   },
@@ -82,7 +88,7 @@ var gSearchResultsPane = {
     if (!this.categoriesInitialized) {
       this.categoriesInitialized = true;
       
-      for (let [, category] of gCategoryInits) {
+      for (let [,  category] of gCategoryInits) {
         if (!category.inited) {
           await category.init();
         }
@@ -177,7 +183,7 @@ var gSearchResultsPane = {
           endNode = textNodes[index];
           
           
-          if (index != nodeStartIndex || index > 0 ) {
+          if (index != nodeStartIndex || index > 0) {
             endValue -= nodeSizes[index - 1];
           }
         }
@@ -201,11 +207,14 @@ var gSearchResultsPane = {
     
     let docShell = win.docShell;
 
-    let controller = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsISelectionDisplay)
-                              .QueryInterface(Ci.nsISelectionController);
+    let controller = docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsISelectionDisplay)
+      .QueryInterface(Ci.nsISelectionController);
 
-    let selection = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
+    let selection = controller.getSelection(
+      Ci.nsISelectionController.SELECTION_FIND
+    );
     selection.setColors("currentColor", "#ffe900", "currentColor", "#003eaa");
 
     return selection;
@@ -245,13 +254,18 @@ var gSearchResultsPane = {
       let resultsFound = false;
 
       
-      let rootPreferencesChildren = [...document
-        .querySelectorAll("#mainPrefPane > *:not([data-hidden-from-search]):not(script):not(stringbundle)")];
+      let rootPreferencesChildren = [
+        ...document.querySelectorAll(
+          "#mainPrefPane > *:not([data-hidden-from-search]):not(script):not(stringbundle)"
+        ),
+      ];
 
       if (subQuery) {
         
         
-        rootPreferencesChildren = rootPreferencesChildren.filter(el => !el.hidden);
+        rootPreferencesChildren = rootPreferencesChildren.filter(
+          el => !el.hidden
+        );
       }
 
       
@@ -272,20 +286,25 @@ var gSearchResultsPane = {
           for (let anchorNode of this.listSearchTooltips) {
             this.createSearchTooltip(anchorNode, this.query);
           }
-          ts = await new Promise(resolve => window.requestAnimationFrame(resolve));
+          ts = await new Promise(resolve =>
+            window.requestAnimationFrame(resolve)
+          );
           if (query !== this.query) {
             return;
           }
         }
 
-        if (!child.classList.contains("header") &&
-            !child.classList.contains("subcategory") &&
-            await this.searchWithinNode(child, this.query)) {
+        if (
+          !child.classList.contains("header") &&
+          !child.classList.contains("subcategory") &&
+          (await this.searchWithinNode(child, this.query))
+        ) {
           child.classList.remove("visually-hidden");
 
           
           let groupbox = child.closest("groupbox");
-          let groupHeader = groupbox && groupbox.querySelector(".search-header");
+          let groupHeader =
+            groupbox && groupbox.querySelector(".search-header");
           if (groupHeader) {
             groupHeader.hidden = false;
           }
@@ -313,7 +332,11 @@ var gSearchResultsPane = {
         
         if (this.query.length >= 2) {
           this.telemetryTimer = setTimeout(() => {
-            Services.telemetry.keyedScalarAdd("preferences.search_query", this.query, 1);
+            Services.telemetry.keyedScalarAdd(
+              "preferences.search_query",
+              this.query,
+              1
+            );
           }, 1000);
         }
       }
@@ -330,7 +353,9 @@ var gSearchResultsPane = {
       }
     }
 
-    window.dispatchEvent(new CustomEvent("PreferencesSearchCompleted", { detail: query }));
+    window.dispatchEvent(
+      new CustomEvent("PreferencesSearchCompleted", { detail: query })
+    );
   },
 
   
@@ -345,14 +370,21 @@ var gSearchResultsPane = {
 
   async searchWithinNode(nodeObject, searchPhrase) {
     let matchesFound = false;
-    if (nodeObject.childElementCount == 0 ||
-        nodeObject.tagName == "button" ||
-        nodeObject.tagName == "label" ||
-        nodeObject.tagName == "description" ||
-        nodeObject.tagName == "menulist") {
+    if (
+      nodeObject.childElementCount == 0 ||
+      nodeObject.tagName == "button" ||
+      nodeObject.tagName == "label" ||
+      nodeObject.tagName == "description" ||
+      nodeObject.tagName == "menulist"
+    ) {
       let simpleTextNodes = this.textNodeDescendants(nodeObject);
       for (let node of simpleTextNodes) {
-        let result = this.highlightMatches([node], [node.length], node.textContent.toLowerCase(), searchPhrase);
+        let result = this.highlightMatches(
+          [node],
+          [node.length],
+          node.textContent.toLowerCase(),
+          searchPhrase
+        );
         matchesFound = matchesFound || result;
       }
 
@@ -369,7 +401,10 @@ var gSearchResultsPane = {
         }
       }
 
-      if (nodeObject.tagName == "label" || nodeObject.tagName == "description") {
+      if (
+        nodeObject.tagName == "label" ||
+        nodeObject.tagName == "description"
+      ) {
         accessKeyTextNodes.push(...simpleTextNodes);
       }
 
@@ -380,21 +415,34 @@ var gSearchResultsPane = {
       }
 
       
-      let complexTextNodesResult = this.highlightMatches(accessKeyTextNodes, nodeSizes, allNodeText.toLowerCase(), searchPhrase);
+      let complexTextNodesResult = this.highlightMatches(
+        accessKeyTextNodes,
+        nodeSizes,
+        allNodeText.toLowerCase(),
+        searchPhrase
+      );
 
       
-      let labelResult = this.queryMatchesContent(nodeObject.getAttribute("label"), searchPhrase);
+      let labelResult = this.queryMatchesContent(
+        nodeObject.getAttribute("label"),
+        searchPhrase
+      );
 
       
       
-      let valueResult = nodeObject.tagName !== "menuitem" && nodeObject.tagName !== "radio" ?
-        this.queryMatchesContent(nodeObject.getAttribute("value"), searchPhrase) : false;
+      let valueResult =
+        nodeObject.tagName !== "menuitem" && nodeObject.tagName !== "radio"
+          ? this.queryMatchesContent(
+              nodeObject.getAttribute("value"),
+              searchPhrase
+            )
+          : false;
 
       
       
       let keywordsResult =
         nodeObject.hasAttribute("search-l10n-ids") &&
-        await this.matchesSearchL10nIDs(nodeObject, searchPhrase);
+        (await this.matchesSearchL10nIDs(nodeObject, searchPhrase));
 
       if (!keywordsResult) {
         
@@ -402,11 +450,17 @@ var gSearchResultsPane = {
         keywordsResult =
           !keywordsResult &&
           nodeObject.hasAttribute("searchkeywords") &&
-          this.queryMatchesContent(nodeObject.getAttribute("searchkeywords"), searchPhrase);
+          this.queryMatchesContent(
+            nodeObject.getAttribute("searchkeywords"),
+            searchPhrase
+          );
       }
 
       
-      if (keywordsResult && (nodeObject.tagName === "button" || nodeObject.tagName == "menulist")) {
+      if (
+        keywordsResult &&
+        (nodeObject.tagName === "button" || nodeObject.tagName == "menulist")
+      ) {
         this.listSearchTooltips.add(nodeObject);
       }
 
@@ -419,13 +473,20 @@ var gSearchResultsPane = {
         this.listSearchMenuitemIndicators.add(menulist);
       }
 
-      if ((nodeObject.tagName == "menulist" ||
-           nodeObject.tagName == "menuitem") &&
-           (labelResult || valueResult || keywordsResult)) {
+      if (
+        (nodeObject.tagName == "menulist" ||
+          nodeObject.tagName == "menuitem") &&
+        (labelResult || valueResult || keywordsResult)
+      ) {
         nodeObject.setAttribute("highlightable", "true");
       }
 
-      matchesFound = matchesFound || complexTextNodesResult || labelResult || valueResult || keywordsResult;
+      matchesFound =
+        matchesFound ||
+        complexTextNodesResult ||
+        labelResult ||
+        valueResult ||
+        keywordsResult;
     }
 
     
@@ -433,12 +494,20 @@ var gSearchResultsPane = {
     if (nodeObject.tagName == "deck" && nodeObject.id != "historyPane") {
       let index = nodeObject.selectedIndex;
       if (index != -1) {
-        let result = await this.searchChildNodeIfVisible(nodeObject, index, searchPhrase);
+        let result = await this.searchChildNodeIfVisible(
+          nodeObject,
+          index,
+          searchPhrase
+        );
         matchesFound = matchesFound || result;
       }
     } else {
       for (let i = 0; i < nodeObject.childNodes.length; i++) {
-        let result = await this.searchChildNodeIfVisible(nodeObject, i, searchPhrase);
+        let result = await this.searchChildNodeIfVisible(
+          nodeObject,
+          i,
+          searchPhrase
+        );
         matchesFound = matchesFound || result;
       }
     }
@@ -458,8 +527,14 @@ var gSearchResultsPane = {
 
   async searchChildNodeIfVisible(nodeObject, index, searchPhrase) {
     let result = false;
-    if (!nodeObject.childNodes[index].hidden && nodeObject.getAttribute("data-hidden-from-search") !== "true") {
-      result = await this.searchWithinNode(nodeObject.childNodes[index], searchPhrase);
+    if (
+      !nodeObject.childNodes[index].hidden &&
+      nodeObject.getAttribute("data-hidden-from-search") !== "true"
+    ) {
+      result = await this.searchWithinNode(
+        nodeObject.childNodes[index],
+        searchPhrase
+      );
       
       if (result && nodeObject.tagName === "menulist") {
         this.listSearchTooltips.add(nodeObject);
@@ -488,43 +563,55 @@ var gSearchResultsPane = {
       
       
       
-      const refs = nodeObject.getAttribute("search-l10n-ids")
+      const refs = nodeObject
+        .getAttribute("search-l10n-ids")
         .split(",")
-        .map(s => s.trim().split(".")).filter(s => s[0].length > 0);
+        .map(s => s.trim().split("."))
+        .filter(s => s[0].length > 0);
 
       const messages = await document.l10n.formatMessages(
-        refs.map(ref => ({ id: ref[0] })));
+        refs.map(ref => ({ id: ref[0] }))
+      );
 
       
       
-      let keywords = messages.map((msg, i) => {
-        let [refId, refAttr] = refs[i];
-        if (!msg) {
-          console.error(`Missing search l10n id "${refId}"`);
-          return null;
-        }
-        if (refAttr) {
-          let attr = msg.attributes && msg.attributes.find(a => a.name === refAttr);
-          if (!attr) {
-            console.error(`Missing search l10n id "${refId}.${refAttr}"`);
+      let keywords = messages
+        .map((msg, i) => {
+          let [refId, refAttr] = refs[i];
+          if (!msg) {
+            console.error(`Missing search l10n id "${refId}"`);
             return null;
           }
-          if (attr.value === "") {
-            console.error(`Empty value added to search-l10n-ids "${refId}.${refAttr}"`);
+          if (refAttr) {
+            let attr =
+              msg.attributes && msg.attributes.find(a => a.name === refAttr);
+            if (!attr) {
+              console.error(`Missing search l10n id "${refId}.${refAttr}"`);
+              return null;
+            }
+            if (attr.value === "") {
+              console.error(
+                `Empty value added to search-l10n-ids "${refId}.${refAttr}"`
+              );
+            }
+            return attr.value;
           }
-          return attr.value;
-        }
-        if (msg.value === "") {
-          console.error(`Empty value added to search-l10n-ids "${refId}"`);
-        }
-        return msg.value;
-      }).filter(keyword => keyword !== null).join(" ");
+          if (msg.value === "") {
+            console.error(`Empty value added to search-l10n-ids "${refId}"`);
+          }
+          return msg.value;
+        })
+        .filter(keyword => keyword !== null)
+        .join(" ");
 
       this.searchKeywords.set(nodeObject, keywords);
       return this.queryMatchesContent(keywords, searchPhrase);
     }
 
-    return this.queryMatchesContent(this.searchKeywords.get(nodeObject), searchPhrase);
+    return this.queryMatchesContent(
+      this.searchKeywords.get(nodeObject),
+      searchPhrase
+    );
   },
 
   
@@ -560,7 +647,10 @@ var gSearchResultsPane = {
     
     
     let tooltipRect = searchTooltip.getBoundingClientRect();
-    searchTooltip.style.setProperty("left", `calc(50% - ${(tooltipRect.width / 2)}px)`);
+    searchTooltip.style.setProperty(
+      "left",
+      `calc(50% - ${tooltipRect.width / 2}px)`
+    );
   },
 
   

@@ -7,6 +7,9 @@ add_task(async function() {
   document.documentElement.focus();
   EventUtils.synthesizeKey("k", { accelKey: true });
   await focusPromise;
-  Assert.equal(document.activeElement, gURLBar.inputField, "URL Bar should be focused");
+  Assert.equal(
+    document.activeElement,
+    gURLBar.inputField,
+    "URL Bar should be focused"
+  );
 });
-

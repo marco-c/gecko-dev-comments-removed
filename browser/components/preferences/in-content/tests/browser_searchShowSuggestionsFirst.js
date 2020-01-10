@@ -7,12 +7,17 @@ const CHECKBOX_ID = "showSearchSuggestionsFirstCheckbox";
 
 
 add_task(async function openWithSearchSuggestionsShownFirst() {
-  await SpecialPowers.pushPrefEnv({set: [["browser.urlbar.suggest.searches", true]]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.searches", true]],
+  });
 
   
   
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""), "",
-               "Pref should be cleared initially");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    "",
+    "Pref should be cleared initially"
+  );
 
   
   await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
@@ -25,16 +30,21 @@ add_task(async function openWithSearchSuggestionsShownFirst() {
   checkbox.doCommand();
 
   
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""),
-               HISTORY_FIRST_PREF_VALUE,
-               "Pref should now be set to show history first");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    HISTORY_FIRST_PREF_VALUE,
+    "Pref should now be set to show history first"
+  );
 
   
   Services.prefs.clearUserPref(PREF_NAME);
 
   
-  Assert.equal(checkbox.checked, true,
-               "Checkbox should become checked after clearing pref");
+  Assert.equal(
+    checkbox.checked,
+    true,
+    "Checkbox should become checked after clearing pref"
+  );
 
   
   gBrowser.removeCurrentTab();
@@ -56,15 +66,21 @@ add_task(async function openWithHistoryShownFirst() {
   checkbox.doCommand();
 
   
-  Assert.equal(Services.prefs.getCharPref(PREF_NAME, ""), "",
-               "Pref should now be cleared to show search suggestions first");
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_NAME, ""),
+    "",
+    "Pref should now be cleared to show search suggestions first"
+  );
 
   
   Services.prefs.setCharPref(PREF_NAME, HISTORY_FIRST_PREF_VALUE);
 
   
-  Assert.equal(checkbox.checked, false,
-               "Checkbox should become unchecked after setting pref");
+  Assert.equal(
+    checkbox.checked,
+    false,
+    "Checkbox should become unchecked after setting pref"
+  );
 
   
   gBrowser.removeCurrentTab();

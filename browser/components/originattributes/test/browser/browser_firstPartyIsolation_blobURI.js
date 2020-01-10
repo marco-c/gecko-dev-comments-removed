@@ -15,8 +15,9 @@ add_task(async function setup() {
 
 
 add_task(async function test_blob_uri_inherit_oa_from_content() {
-  const BASE_URI = "http://mochi.test:8888/browser/browser/components/" +
-                   "originattributes/test/browser/dummy.html";
+  const BASE_URI =
+    "http://mochi.test:8888/browser/browser/components/" +
+    "originattributes/test/browser/dummy.html";
   const BASE_DOMAIN = "mochi.test";
 
   
@@ -26,17 +27,29 @@ add_task(async function test_blob_uri_inherit_oa_from_content() {
   await BrowserTestUtils.browserLoaded(browser);
 
   
-  await ContentTask.spawn(browser, { firstPartyDomain: BASE_DOMAIN }, async function(attrs) {
-    info("origin " + content.document.nodePrincipal.origin);
-    Assert.equal(content.document.nodePrincipal.originAttributes.firstPartyDomain,
-                 attrs.firstPartyDomain, "The document should have firstPartyDomain");
+  await ContentTask.spawn(
+    browser,
+    { firstPartyDomain: BASE_DOMAIN },
+    async function(attrs) {
+      info("origin " + content.document.nodePrincipal.origin);
+      Assert.equal(
+        content.document.nodePrincipal.originAttributes.firstPartyDomain,
+        attrs.firstPartyDomain,
+        "The document should have firstPartyDomain"
+      );
 
-    
-    let url = content.window.URL.createObjectURL(new content.window.Blob([
-      `<script src="http://mochi.test:8888/browser/browser/components/originattributes/test/browser/test.js"></script>`],
-      {"type": "text/html"}));
-    content.document.location = url;
-  });
+      
+      let url = content.window.URL.createObjectURL(
+        new content.window.Blob(
+          [
+            `<script src="http://mochi.test:8888/browser/browser/components/originattributes/test/browser/test.js"></script>`,
+          ],
+          { type: "text/html" }
+        )
+      );
+      content.document.location = url;
+    }
+  );
 
   
   await BrowserTestUtils.browserLoaded(browser, false, function(url) {
@@ -46,31 +59,47 @@ add_task(async function test_blob_uri_inherit_oa_from_content() {
 
   
   
-  await ContentTask.spawn(browser, { firstPartyDomain: BASE_DOMAIN }, async function(attrs) {
-    Assert.ok(content.document.documentURI.startsWith("blob:http://mochi.test:8888/"),
-              "the document URI should be a blob URI.");
-    info("origin " + content.document.nodePrincipal.origin);
-    Assert.equal(content.document.nodePrincipal.originAttributes.firstPartyDomain,
-                 attrs.firstPartyDomain, "The document should have firstPartyDomain");
+  await ContentTask.spawn(
+    browser,
+    { firstPartyDomain: BASE_DOMAIN },
+    async function(attrs) {
+      Assert.ok(
+        content.document.documentURI.startsWith("blob:http://mochi.test:8888/"),
+        "the document URI should be a blob URI."
+      );
+      info("origin " + content.document.nodePrincipal.origin);
+      Assert.equal(
+        content.document.nodePrincipal.originAttributes.firstPartyDomain,
+        attrs.firstPartyDomain,
+        "The document should have firstPartyDomain"
+      );
 
-    let iframe = content.document.createElement("iframe");
-    iframe.src = "http://example.com";
-    iframe.id = "iframe1";
-    content.document.body.appendChild(iframe);
-  });
+      let iframe = content.document.createElement("iframe");
+      iframe.src = "http://example.com";
+      iframe.id = "iframe1";
+      content.document.body.appendChild(iframe);
+    }
+  );
 
   
-
-
-
-
+  
+  
+  
+  
 
   
-  await ContentTask.spawn(browser, { firstPartyDomain: BASE_DOMAIN }, async function(attrs) {
-    let iframe = content.document.getElementById("iframe1");
-    Assert.equal(iframe.contentDocument.nodePrincipal.originAttributes.firstPartyDomain,
-                 attrs.firstPartyDomain, "iframe should inherit firstPartyDomain from blob: URI");
-  });
+  await ContentTask.spawn(
+    browser,
+    { firstPartyDomain: BASE_DOMAIN },
+    async function(attrs) {
+      let iframe = content.document.getElementById("iframe1");
+      Assert.equal(
+        iframe.contentDocument.nodePrincipal.originAttributes.firstPartyDomain,
+        attrs.firstPartyDomain,
+        "iframe should inherit firstPartyDomain from blob: URI"
+      );
+    }
+  );
 
   win.close();
 });

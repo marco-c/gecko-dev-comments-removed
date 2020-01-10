@@ -14,5 +14,11 @@ function getResult(aBrowser) {
   });
 }
 
-IsolationTestTools.runTests("https://test2.example.com", getResult, null, null,
-                            false,  true);
+IsolationTestTools.runTests(
+  "https://test2.example.com",
+  getResult,
+  null,
+  null,
+  false,
+   true
+);

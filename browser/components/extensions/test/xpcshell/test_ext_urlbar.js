@@ -1,6 +1,8 @@
 "use strict";
 
-const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarController: "resource:///modules/UrlbarController.jsm",
@@ -13,9 +15,15 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
-AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
+AddonTestUtils.createAppInfo(
+  "xpcshell@tests.mozilla.org",
+  "XPCShell",
+  "1",
+  "42"
+);
 
-const ORIGINAL_NOTIFICATION_TIMEOUT = UrlbarProviderExtension.notificationTimeout;
+const ORIGINAL_NOTIFICATION_TIMEOUT =
+  UrlbarProviderExtension.notificationTimeout;
 
 add_task(async function startup() {
   Services.prefs.setCharPref("browser.search.region", "US");
@@ -37,19 +45,20 @@ add_task(async function startup() {
 });
 
 
-
 add_task(async function test_urlbar_without_urlbar_permission() {
   let ext = ExtensionTestUtils.loadExtension({
     isPrivileged: true,
     background() {
-      browser.test.assertEq(browser.urlbar, undefined,
-                            "'urlbar' permission is required");
+      browser.test.assertEq(
+        browser.urlbar,
+        undefined,
+        "'urlbar' permission is required"
+      );
     },
   });
   await ext.startup();
   await ext.unload();
 });
-
 
 
 add_task(async function test_urlbar_no_privilege() {
@@ -58,14 +67,16 @@ add_task(async function test_urlbar_no_privilege() {
       permissions: ["urlbar"],
     },
     background() {
-      browser.test.assertEq(browser.urlbar, undefined,
-                            "'urlbar' permission is privileged");
+      browser.test.assertEq(
+        browser.urlbar,
+        undefined,
+        "'urlbar' permission is privileged"
+      );
     },
   });
   await ext.startup();
   await ext.unload();
 });
-
 
 
 add_task(async function test_registerProvider() {
@@ -82,14 +93,16 @@ add_task(async function test_registerProvider() {
       for (let state of ["active", "inactive", "restricting"]) {
         let name = `Test-${state}`;
         browser.urlbar.onBehaviorRequested.addListener(query => {
-          browser.test.assertFalse(query.isPrivate,
-                                   "Context is non private");
-          browser.test.assertEq(query.maxResults, 10,
-                                "Check maxResults");
-          browser.test.assertTrue(query.searchString,
-                                  "SearchString is non empty");
-          browser.test.assertTrue(Array.isArray(query.acceptableSources),
-                                  "acceptableSources is an array");
+          browser.test.assertFalse(query.isPrivate, "Context is non private");
+          browser.test.assertEq(query.maxResults, 10, "Check maxResults");
+          browser.test.assertTrue(
+            query.searchString,
+            "SearchString is non empty"
+          );
+          browser.test.assertTrue(
+            Array.isArray(query.acceptableSources),
+            "acceptableSources is an array"
+          );
           return state;
         }, name);
         browser.urlbar.onResultsRequested.addListener(query => [], name);
@@ -98,8 +111,11 @@ add_task(async function test_registerProvider() {
   });
   await ext.startup();
 
-  Assert.greater(UrlbarProvidersManager.providers.length, providers.length,
-                 "Providers have been added");
+  Assert.greater(
+    UrlbarProvidersManager.providers.length,
+    providers.length,
+    "Providers have been added"
+  );
 
   
   
@@ -126,19 +142,27 @@ add_task(async function test_registerProvider() {
     let [, state] = provider.name.split("-");
     let isActive = state != "inactive";
     let restricting = state == "restricting";
-    Assert.equal(isActive, provider.isActive(queryContext),
-                 "Check active callback");
-    Assert.equal(restricting, provider.isRestricting(queryContext),
-                 "Check restrict callback");
+    Assert.equal(
+      isActive,
+      provider.isActive(queryContext),
+      "Check active callback"
+    );
+    Assert.equal(
+      restricting,
+      provider.isRestricting(queryContext),
+      "Check restrict callback"
+    );
   }
 
   await ext.unload();
 
   
-  Assert.deepEqual(UrlbarProvidersManager.providers, providers,
-                   "Should return to the default providers");
+  Assert.deepEqual(
+    UrlbarProvidersManager.providers,
+    providers,
+    "Should return to the default providers"
+  );
 });
-
 
 
 
@@ -276,7 +300,6 @@ add_task(async function test_onProviderResultsRequested() {
 
 
 
-
 add_task(async function test_activeAndInactiveProviders() {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -291,7 +314,8 @@ add_task(async function test_activeAndInactiveProviders() {
         }, behavior);
         browser.urlbar.onResultsRequested.addListener(query => {
           browser.test.assertEq(
-            behavior, "active",
+            behavior,
+            "active",
             "onResultsRequested should be fired only for the active provider"
           );
           return [
@@ -345,7 +369,6 @@ add_task(async function test_activeAndInactiveProviders() {
 
   await ext.unload();
 });
-
 
 
 add_task(async function test_threeActiveProviders() {
@@ -421,7 +444,6 @@ add_task(async function test_threeActiveProviders() {
 
 
 
-
 add_task(async function test_threeInactiveProviders() {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -435,7 +457,8 @@ add_task(async function test_threeInactiveProviders() {
         
         browser.urlbar.onResultsRequested.addListener(query => {
           browser.test.notifyFail(
-            "onResultsRequested fired for inactive provider");
+            "onResultsRequested fired for inactive provider"
+          );
         }, `test-${i}`);
       }
     },
@@ -482,7 +505,6 @@ add_task(async function test_threeInactiveProviders() {
 
 
 
-
 add_task(async function test_activeInactiveAndRestrictingProviders() {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -497,7 +519,8 @@ add_task(async function test_activeInactiveAndRestrictingProviders() {
         }, behavior);
         browser.urlbar.onResultsRequested.addListener(query => {
           browser.test.assertEq(
-            behavior, "restricting",
+            behavior,
+            "restricting",
             "onResultsRequested should be fired for the restricting provider"
           );
           return [
@@ -557,7 +580,6 @@ add_task(async function test_activeInactiveAndRestrictingProviders() {
 
 
 
-
 add_task(async function test_onResultsRequestedNotImplemented() {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -603,7 +625,6 @@ add_task(async function test_onResultsRequestedNotImplemented() {
 
   await ext.unload();
 });
-
 
 
 
@@ -668,7 +689,6 @@ add_task(async function test_badPayload() {
 });
 
 
-
 add_task(async function test_onQueryCanceled() {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -717,7 +737,6 @@ add_task(async function test_onQueryCanceled() {
 
 
 
-
 add_task(async function test_onBehaviorRequestedTimeout() {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -733,7 +752,8 @@ add_task(async function test_onBehaviorRequestedTimeout() {
       }, "test");
       browser.urlbar.onResultsRequested.addListener(query => {
         browser.test.notifyFail(
-          "onResultsRequested fired for inactive provider");
+          "onResultsRequested fired for inactive provider"
+        );
       }, "test");
     },
   });
@@ -773,7 +793,6 @@ add_task(async function test_onBehaviorRequestedTimeout() {
 
   await ext.unload();
 });
-
 
 
 
@@ -848,7 +867,6 @@ add_task(async function test_onResultsRequestedTimeout() {
 
 
 
-
 add_task(async function test_privateBrowsing_not_allowed() {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -859,11 +877,11 @@ add_task(async function test_privateBrowsing_not_allowed() {
     background() {
       browser.urlbar.onBehaviorRequested.addListener(query => {
         browser.test.notifyFail(
-          "onBehaviorRequested fired in private browsing");
+          "onBehaviorRequested fired in private browsing"
+        );
       }, "Test-private");
       browser.urlbar.onResultsRequested.addListener(query => {
-        browser.test.notifyFail(
-          "onResultsRequested fired in private browsing");
+        browser.test.notifyFail("onResultsRequested fired in private browsing");
       }, "Test-private");
       
       
@@ -900,7 +918,6 @@ add_task(async function test_privateBrowsing_not_allowed() {
 
 
 
-
 add_task(async function test_privateBrowsing_not_allowed_onQueryCanceled() {
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -911,11 +928,11 @@ add_task(async function test_privateBrowsing_not_allowed_onQueryCanceled() {
     background() {
       browser.urlbar.onBehaviorRequested.addListener(query => {
         browser.test.notifyFail(
-          "onBehaviorRequested fired in private browsing");
+          "onBehaviorRequested fired in private browsing"
+        );
       }, "test");
       browser.urlbar.onQueryCanceled.addListener(query => {
-        browser.test.notifyFail(
-          "onQueryCanceled fired in private browsing");
+        browser.test.notifyFail("onQueryCanceled fired in private browsing");
       }, "test");
     },
   });
@@ -950,7 +967,6 @@ add_task(async function test_privateBrowsing_not_allowed_onQueryCanceled() {
 
   await ext.unload();
 });
-
 
 
 
@@ -1003,14 +1019,14 @@ add_task(async function test_privateBrowsing_allowed() {
   Assert.ok(!provider.isRestricting(context));
 
   
-  await Promise.all([
-    "onBehaviorRequested",
-    "onResultsRequested",
-  ].map(msg => ext.awaitMessage(msg)));
+  await Promise.all(
+    ["onBehaviorRequested", "onResultsRequested"].map(msg =>
+      ext.awaitMessage(msg)
+    )
+  );
 
   await ext.unload();
 });
-
 
 
 
@@ -1064,14 +1080,12 @@ add_task(async function test_privateBrowsing_allowed_onQueryCanceled() {
   Assert.ok(!provider.isRestricting(context));
 
   
-  await Promise.all([
-    "onBehaviorRequested",
-    "onQueryCanceled",
-  ].map(msg => ext.awaitMessage(msg)));
+  await Promise.all(
+    ["onBehaviorRequested", "onQueryCanceled"].map(msg => ext.awaitMessage(msg))
+  );
 
   await ext.unload();
 });
-
 
 
 
@@ -1136,12 +1150,14 @@ add_task(async function test_nonPrivateBrowsing() {
 });
 
 
-
 add_task(async function test_setOpenViewOnFocus() {
   let getPrefValue = () => UrlbarPrefs.get("openViewOnFocus");
 
-  Assert.equal(getPrefValue(), false,
-               "Open-view-on-focus mode should be disabled by default");
+  Assert.equal(
+    getPrefValue(),
+    false,
+    "Open-view-on-focus mode should be disabled by default"
+  );
 
   let ext = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -1151,16 +1167,22 @@ add_task(async function test_setOpenViewOnFocus() {
     incognitoOverride: "spanning",
     useAddonManager: "temporary",
     background() {
-      browser.urlbar.openViewOnFocus.set({value: true});
+      browser.urlbar.openViewOnFocus.set({ value: true });
     },
   });
   await ext.startup();
 
-  Assert.equal(getPrefValue(), true,
-               "Successfully enabled the open-view-on-focus mode");
+  Assert.equal(
+    getPrefValue(),
+    true,
+    "Successfully enabled the open-view-on-focus mode"
+  );
 
   await ext.unload();
 
-  Assert.equal(getPrefValue(), false,
-               "Open-view-on-focus mode should be reset after unloading the add-on");
+  Assert.equal(
+    getPrefValue(),
+    false,
+    "Open-view-on-focus mode should be reset after unloading the add-on"
+  );
 });

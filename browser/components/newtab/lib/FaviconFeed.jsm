@@ -3,16 +3,31 @@
 
 "use strict";
 
-const {actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm");
-const {getDomain} = ChromeUtils.import("resource://activity-stream/lib/TippyTopProvider.jsm");
-const {RemoteSettings} = ChromeUtils.import("resource://services-settings/remote-settings.js");
+const { actionTypes: at } = ChromeUtils.import(
+  "resource://activity-stream/common/Actions.jsm"
+);
+const { getDomain } = ChromeUtils.import(
+  "resource://activity-stream/lib/TippyTopProvider.jsm"
+);
+const { RemoteSettings } = ChromeUtils.import(
+  "resource://services-settings/remote-settings.js"
+);
 
-ChromeUtils.defineModuleGetter(this, "PlacesUtils",
-  "resource://gre/modules/PlacesUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "Services",
-  "resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "NewTabUtils",
-  "resource://gre/modules/NewTabUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUtils",
+  "resource://gre/modules/PlacesUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "Services",
+  "resource://gre/modules/Services.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "NewTabUtils",
+  "resource://gre/modules/NewTabUtils.jsm"
+);
 
 const MIN_FAVICON_SIZE = 96;
 
@@ -25,12 +40,15 @@ const MIN_FAVICON_SIZE = 96;
 function getFaviconInfo(uri) {
   
   const preferredWidth = 0;
-  return new Promise(resolve => PlacesUtils.favicons.getFaviconDataForPage(
-    uri,
-    
-    (iconUri, faviconLength, favicon, mimeType, faviconSize) =>
-      resolve(iconUri ? {iconUri, faviconSize} : null),
-    preferredWidth));
+  return new Promise(resolve =>
+    PlacesUtils.favicons.getFaviconDataForPage(
+      uri,
+      
+      (iconUri, faviconLength, favicon, mimeType, faviconSize) =>
+        resolve(iconUri ? { iconUri, faviconSize } : null),
+      preferredWidth
+    )
+  );
 }
 
 
@@ -76,10 +94,13 @@ async function fetchVisitPaths(url) {
     FROM path
   `;
 
-  const visits = await NewTabUtils.activityStreamProvider.executePlacesQuery(query, {
-    columns: ["visit_id", "url"],
-    params: {url},
-  });
+  const visits = await NewTabUtils.activityStreamProvider.executePlacesQuery(
+    query,
+    {
+      columns: ["visit_id", "url"],
+      params: { url },
+    }
+  );
   return visits;
 }
 
@@ -138,7 +159,10 @@ this.FaviconFeed = class FaviconFeed {
 
     let iconUri = Services.io.newURI(site.image_url);
     
-    iconUri = iconUri.mutate().setRef("tippytop").finalize();
+    iconUri = iconUri
+      .mutate()
+      .setRef("tippytop")
+      .finalize();
     PlacesUtils.favicons.setAndFetchFaviconForPage(
       Services.io.newURI(url),
       iconUri,
@@ -154,7 +178,7 @@ this.FaviconFeed = class FaviconFeed {
 
   async getSite(domain) {
     const sites = await this.tippyTop.get({
-      filters: {domain},
+      filters: { domain },
       syncIfEmpty: false,
     });
     return sites.length ? sites[0] : null;

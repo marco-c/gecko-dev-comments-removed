@@ -4,22 +4,34 @@
 
 function test() {
   
-  CustomizableUI.addWidgetToArea("save-page-button", CustomizableUI.AREA_NAVBAR);
+  CustomizableUI.addWidgetToArea(
+    "save-page-button",
+    CustomizableUI.AREA_NAVBAR
+  );
 
-  let CustomizableUIBSPass = ChromeUtils.import("resource:///modules/CustomizableUI.jsm", null);
+  let CustomizableUIBSPass = ChromeUtils.import(
+    "resource:///modules/CustomizableUI.jsm",
+    null
+  );
 
-  is(CustomizableUIBSPass.gFuturePlacements.size, 0,
-     "All future placements should be dealt with by now.");
+  is(
+    CustomizableUIBSPass.gFuturePlacements.size,
+    0,
+    "All future placements should be dealt with by now."
+  );
 
-  let {CustomizableUIInternal, gFuturePlacements, gPalette} = CustomizableUIBSPass;
+  let {
+    CustomizableUIInternal,
+    gFuturePlacements,
+    gPalette,
+  } = CustomizableUIBSPass;
 
   
   CustomizableUIInternal.saveState();
   CustomizableUIInternal.loadSavedState();
 
   CustomizableUIInternal._updateForNewVersion();
-  is(gFuturePlacements.size, 0,
-     "No change to future placements initially.");
+  is(gFuturePlacements.size, 0, "No change to future placements initially.");
 
   
   let testWidgetNew = {
@@ -29,8 +41,10 @@ function test() {
     introducedInVersion: "pref",
   };
 
-  let normalizedWidget = CustomizableUIInternal.normalizeWidget(testWidgetNew,
-                                                                CustomizableUI.SOURCE_BUILTIN);
+  let normalizedWidget = CustomizableUIInternal.normalizeWidget(
+    testWidgetNew,
+    CustomizableUI.SOURCE_BUILTIN
+  );
   ok(normalizedWidget, "Widget should be normalizable");
   if (!normalizedWidget) {
     return;
@@ -40,28 +54,45 @@ function test() {
   
   let navbarArea = CustomizableUIBSPass.gAreas.get(CustomizableUI.AREA_NAVBAR);
   let navbarPlacements = navbarArea.get("defaultPlacements");
-  navbarPlacements.splice(navbarPlacements.indexOf("bookmarks-menu-button") + 1, 0, testWidgetNew.id);
+  navbarPlacements.splice(
+    navbarPlacements.indexOf("bookmarks-menu-button") + 1,
+    0,
+    testWidgetNew.id
+  );
 
-  let savedPlacements = CustomizableUIBSPass.gSavedState.placements[CustomizableUI.AREA_NAVBAR];
+  let savedPlacements =
+    CustomizableUIBSPass.gSavedState.placements[CustomizableUI.AREA_NAVBAR];
   
   CustomizableUIInternal._updateForNewVersion();
-  is(gFuturePlacements.size, 1,
-     "Should have 1 more future placement");
-  let futureNavbarPlacements = gFuturePlacements.get(CustomizableUI.AREA_NAVBAR);
+  is(gFuturePlacements.size, 1, "Should have 1 more future placement");
+  let futureNavbarPlacements = gFuturePlacements.get(
+    CustomizableUI.AREA_NAVBAR
+  );
   ok(futureNavbarPlacements, "Should have placements for nav-bar");
   if (futureNavbarPlacements) {
-    ok(futureNavbarPlacements.has(testWidgetNew.id), "widget should be in future placements");
+    ok(
+      futureNavbarPlacements.has(testWidgetNew.id),
+      "widget should be in future placements"
+    );
   }
-  CustomizableUIInternal._placeNewDefaultWidgetsInArea(CustomizableUI.AREA_NAVBAR);
+  CustomizableUIInternal._placeNewDefaultWidgetsInArea(
+    CustomizableUI.AREA_NAVBAR
+  );
 
   let indexInSavedPlacements = savedPlacements.indexOf(testWidgetNew.id);
   info("Saved placements: " + savedPlacements.join(", "));
   isnot(indexInSavedPlacements, -1, "Widget should have been inserted");
-  is(indexInSavedPlacements, savedPlacements.indexOf("bookmarks-menu-button") + 1,
-     "Widget should be in the right place.");
+  is(
+    indexInSavedPlacements,
+    savedPlacements.indexOf("bookmarks-menu-button") + 1,
+    "Widget should be in the right place."
+  );
 
   if (futureNavbarPlacements) {
-    ok(!futureNavbarPlacements.has(testWidgetNew.id), "widget should be out of future placements");
+    ok(
+      !futureNavbarPlacements.has(testWidgetNew.id),
+      "widget should be out of future placements"
+    );
   }
 
   if (indexInSavedPlacements != -1) {

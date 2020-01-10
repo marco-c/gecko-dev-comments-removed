@@ -11,7 +11,10 @@ add_task(async function() {
 
   is(initialPageZoom, 1, "Page zoom reset correctly");
   ZoomManager.zoom = 0.5;
-  CustomizableUI.addWidgetToArea("zoom-controls", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  CustomizableUI.addWidgetToArea(
+    "zoom-controls",
+    CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+  );
   registerCleanupFunction(() => CustomizableUI.reset());
 
   await waitForOverflowButtonShown();

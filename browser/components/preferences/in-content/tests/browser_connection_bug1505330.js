@@ -2,25 +2,29 @@
 
 
 
- "use strict";
+"use strict";
 
- 
- 
- add_task(async function testAutoconfigReloadButton() {
-   Services.prefs.lockPref("signon.autologin.proxy");
 
-   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
-   const connectionURL = "chrome://browser/content/preferences/connection.xul";
-   const promiseDialogLoaded = promiseLoadSubDialog(connectionURL);
-   gBrowser.contentDocument.getElementById("connectionSettings").click();
-   const dialog = await promiseDialogLoaded;
 
-   ok(!dialog.document.getElementById("networkProxyType").firstChild.disabled,
-      "Connection options should not be disabled");
-   ok(dialog.document.getElementById("autologinProxy").disabled,
-      "Proxy autologin should be disabled");
+add_task(async function testAutoconfigReloadButton() {
+  Services.prefs.lockPref("signon.autologin.proxy");
 
-   dialog.close();
-   Services.prefs.unlockPref("signon.autologin.proxy");
-   gBrowser.removeCurrentTab();
- });
+  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  const connectionURL = "chrome://browser/content/preferences/connection.xul";
+  const promiseDialogLoaded = promiseLoadSubDialog(connectionURL);
+  gBrowser.contentDocument.getElementById("connectionSettings").click();
+  const dialog = await promiseDialogLoaded;
+
+  ok(
+    !dialog.document.getElementById("networkProxyType").firstChild.disabled,
+    "Connection options should not be disabled"
+  );
+  ok(
+    dialog.document.getElementById("autologinProxy").disabled,
+    "Proxy autologin should be disabled"
+  );
+
+  dialog.close();
+  Services.prefs.unlockPref("signon.autologin.proxy");
+  gBrowser.removeCurrentTab();
+});

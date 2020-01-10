@@ -3,7 +3,10 @@
 
 "use strict";
 
-var HiddenFrame = ChromeUtils.import("resource://testing-common/HiddenFrame.jsm", {}).HiddenFrame;
+var HiddenFrame = ChromeUtils.import(
+  "resource://testing-common/HiddenFrame.jsm",
+  {}
+).HiddenFrame;
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -26,8 +29,9 @@ function createHiddenBrowser(aURL) {
       browser.setAttribute("src", aURL);
 
       doc.documentElement.appendChild(browser);
-      resolve({frame, browser});
-    }));
+      resolve({ frame, browser });
+    })
+  );
 }
 
 
@@ -68,32 +72,44 @@ add_task(async function test_windowless_UITour() {
 
       
       frameInfo.browser.messageManager.loadFrameScript(
-        "chrome://browser/content/content-UITour.js", false);
+        "chrome://browser/content/content-UITour.js",
+        false
+      );
 
       
-      frameInfo.browser.addEventListener("load", function loadListener() {
-        info("The test page was correctly loaded.");
+      frameInfo.browser.addEventListener(
+        "load",
+        function loadListener() {
+          info("The test page was correctly loaded.");
 
-        frameInfo.browser.removeEventListener("load", loadListener, true);
-
-        
-        info("Testing access to the UITour API.");
-        let contentWindow = Cu.waiveXrays(frameInfo.browser.contentDocument.defaultView);
-        isnot(contentWindow, null, "The content window must exist and not be null.");
-
-        let uitourAPI = contentWindow.Mozilla.UITour;
-
-        
-        uitourAPI.ping(function() {
-          info("Ping response received from the UITour API.");
+          frameInfo.browser.removeEventListener("load", loadListener, true);
 
           
-          destroyHiddenBrowser(frameInfo.frame, frameInfo.browser);
+          info("Testing access to the UITour API.");
+          let contentWindow = Cu.waiveXrays(
+            frameInfo.browser.contentDocument.defaultView
+          );
+          isnot(
+            contentWindow,
+            null,
+            "The content window must exist and not be null."
+          );
+
+          let uitourAPI = contentWindow.Mozilla.UITour;
 
           
-          resolve();
-        });
-      }, true);
+          uitourAPI.ping(function() {
+            info("Ping response received from the UITour API.");
+
+            
+            destroyHiddenBrowser(frameInfo.frame, frameInfo.browser);
+
+            
+            resolve();
+          });
+        },
+        true
+      );
     });
 
     

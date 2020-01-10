@@ -12,7 +12,11 @@
 
 export const ScreenshotUtils = {
   isBlob(isLocal, image) {
-    return !!(image && image.path && ((!isLocal && image.data) || (isLocal && image.url)));
+    return !!(
+      image &&
+      image.path &&
+      ((!isLocal && image.data) || (isLocal && image.url))
+    );
   },
 
   
@@ -21,9 +25,12 @@ export const ScreenshotUtils = {
       return null;
     }
     if (this.isBlob(false, remoteImage)) {
-      return {url: global.URL.createObjectURL(remoteImage.data), path: remoteImage.path};
+      return {
+        url: global.URL.createObjectURL(remoteImage.data),
+        path: remoteImage.path,
+      };
     }
-    return {url: remoteImage};
+    return { url: remoteImage };
   },
 
   
@@ -38,9 +45,9 @@ export const ScreenshotUtils = {
   isRemoteImageLocal(localImage, remoteImage) {
     
     if (remoteImage && localImage) {
-      return this.isBlob(false, remoteImage) ?
-             localImage.path === remoteImage.path :
-             localImage.url === remoteImage;
+      return this.isBlob(false, remoteImage)
+        ? localImage.path === remoteImage.path
+        : localImage.url === remoteImage;
     }
 
     

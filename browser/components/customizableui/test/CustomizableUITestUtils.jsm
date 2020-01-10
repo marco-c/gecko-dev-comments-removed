@@ -10,12 +10,19 @@
 
 var EXPORTED_SYMBOLS = ["CustomizableUITestUtils"];
 
-const {Assert} = ChromeUtils.import("resource://testing-common/Assert.jsm");
-const {BrowserTestUtils} = ChromeUtils.import("resource://testing-common/BrowserTestUtils.jsm");
-const {TestUtils} = ChromeUtils.import("resource://testing-common/TestUtils.jsm");
+const { Assert } = ChromeUtils.import("resource://testing-common/Assert.jsm");
+const { BrowserTestUtils } = ChromeUtils.import(
+  "resource://testing-common/BrowserTestUtils.jsm"
+);
+const { TestUtils } = ChromeUtils.import(
+  "resource://testing-common/TestUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "CustomizableUI",
-                               "resource:///modules/CustomizableUI.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "CustomizableUI",
+  "resource:///modules/CustomizableUI.jsm"
+);
 
 class CustomizableUITestUtils {
   
@@ -35,9 +42,12 @@ class CustomizableUITestUtils {
     if (panel.state == "open") {
       
       
-      Assert.ok(true, "A previous test left the panel open. This should be" +
-                      " fixed, but we can still do a best-effort recovery and" +
-                      " assume that the requested view will be made visible.");
+      Assert.ok(
+        true,
+        "A previous test left the panel open. This should be" +
+          " fixed, but we can still do a best-effort recovery and" +
+          " assume that the requested view will be made visible."
+      );
       await openFn();
       return;
     }
@@ -48,9 +58,12 @@ class CustomizableUITestUtils {
       
       
       
-      Assert.ok(true, "A previous test requested the panel to close but" +
-                      " didn't wait for the operation to complete. While" +
-                      " the test should be fixed, we can still continue.");
+      Assert.ok(
+        true,
+        "A previous test requested the panel to close but" +
+          " didn't wait for the operation to complete. While" +
+          " the test should be fixed, we can still continue."
+      );
     } else {
       Assert.equal(panel.state, "closed", "The panel is closed to begin with.");
     }
@@ -76,16 +89,20 @@ class CustomizableUITestUtils {
 
 
   async openMainMenu() {
-    await this.openPanelMultiView(this.PanelUI.panel, this.PanelUI.mainView,
-                                  () => this.PanelUI.show());
+    await this.openPanelMultiView(
+      this.PanelUI.panel,
+      this.PanelUI.mainView,
+      () => this.PanelUI.show()
+    );
   }
 
   
 
 
   async hideMainMenu() {
-    await this.hidePanelMultiView(this.PanelUI.panel,
-                                  () => this.PanelUI.hide());
+    await this.hidePanelMultiView(this.PanelUI.panel, () =>
+      this.PanelUI.hide()
+    );
   }
 
   
@@ -97,8 +114,10 @@ class CustomizableUITestUtils {
 
   async addSearchBar() {
     CustomizableUI.addWidgetToArea(
-      "search-container", CustomizableUI.AREA_NAVBAR,
-      CustomizableUI.getPlacementOfWidget("urlbar-container").position + 1);
+      "search-container",
+      CustomizableUI.AREA_NAVBAR,
+      CustomizableUI.getPlacementOfWidget("urlbar-container").position + 1
+    );
 
     
     
@@ -113,7 +132,9 @@ class CustomizableUITestUtils {
     
     
     
-    let navbar = this.window.document.getElementById(CustomizableUI.AREA_NAVBAR);
+    let navbar = this.window.document.getElementById(
+      CustomizableUI.AREA_NAVBAR
+    );
     await TestUtils.waitForCondition(() => {
       
       
@@ -131,9 +152,11 @@ class CustomizableUITestUtils {
     
     
     if (searchbar.closest("#widget-overflow")) {
-      throw new Error("The search bar should not overflow from the nav bar. " +
-                      "This test fails if the screen resolution is small and " +
-                      "the search bar overflows from the nav bar.");
+      throw new Error(
+        "The search bar should not overflow from the nav bar. " +
+          "This test fails if the screen resolution is small and " +
+          "the search bar overflows from the nav bar."
+      );
     }
 
     return searchbar;

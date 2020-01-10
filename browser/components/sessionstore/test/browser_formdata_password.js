@@ -4,8 +4,9 @@
 
 
 
-const URL = "https://example.com/browser/browser/components/" +
-            "sessionstore/test/file_formdata_password.html";
+const URL =
+  "https://example.com/browser/browser/components/" +
+  "sessionstore/test/file_formdata_password.html";
 
 add_task(async function test_hasBeenTypePassword() {
   let tab = BrowserTestUtils.addTab(gBrowser, URL);
@@ -35,7 +36,11 @@ add_task(async function test_hasBeenTypePassword() {
   
   await promiseRemoveTabAndSessionState(tab);
 
-  let [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
+  let [
+    {
+      state: { formdata },
+    },
+  ] = JSON.parse(ss.getClosedTabData(window));
   let expected = [
     ["TextValue", "abc"],
     ["TextValuePassword", undefined],
@@ -46,6 +51,10 @@ add_task(async function test_hasBeenTypePassword() {
   ];
 
   for (let [id, expectedValue] of expected) {
-    is(formdata.id[id], expectedValue, `Value should be ${expectedValue} for ${id}`);
+    is(
+      formdata.id[id],
+      expectedValue,
+      `Value should be ${expectedValue} for ${id}`
+    );
   }
 });

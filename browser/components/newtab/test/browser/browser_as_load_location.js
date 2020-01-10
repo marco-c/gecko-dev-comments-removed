@@ -15,8 +15,11 @@ async function checkNewtabLoads(selector, message) {
   await waitForPreloaded(browser);
 
   
-  let found = await ContentTask.spawn(browser, selector, arg =>
-    content.document.querySelector(arg) !== null);
+  let found = await ContentTask.spawn(
+    browser,
+    selector,
+    arg => content.document.querySelector(arg) !== null
+  );
   ok(found, message);
 
   
@@ -25,7 +28,10 @@ async function checkNewtabLoads(selector, message) {
 
 
 async function checkActivityStreamLoads() {
-  await checkNewtabLoads("body.activity-stream", "Got <body class='activity-stream'> Element");
+  await checkNewtabLoads(
+    "body.activity-stream",
+    "Got <body class='activity-stream'> Element"
+  );
 }
 
 

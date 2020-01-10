@@ -6,15 +6,21 @@ function test() {
 
   
   
-  let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin("https://www.foo.com");
-  Services.perms.addFromPrincipal(principal, "persistent-storage", Ci.nsIPermissionManager.ALLOW_ACTION);
+  let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(
+    "https://www.foo.com"
+  );
+  Services.perms.addFromPrincipal(
+    principal,
+    "persistent-storage",
+    Ci.nsIPermissionManager.ALLOW_ACTION
+  );
   registerCleanupFunction(function() {
     Services.perms.removeFromPrincipal(principal, "persistent-storage");
   });
 
-  SpecialPowers.pushPrefEnv({set: [
-    ["privacy.userContext.ui.enabled", true],
-  ]}).then(() => open_preferences(runTest));
+  SpecialPowers.pushPrefEnv({
+    set: [["privacy.userContext.ui.enabled", true]],
+  }).then(() => open_preferences(runTest));
 }
 
 async function runTest(win) {
@@ -28,9 +34,15 @@ async function runTest(win) {
   for (let element of elements) {
     let attributeValue = element.getAttribute("data-category");
     if (attributeValue == "panePrivacy") {
-      is_element_visible(element, `Privacy element of id=${element.id} should be visible`);
+      is_element_visible(
+        element,
+        `Privacy element of id=${element.id} should be visible`
+      );
     } else {
-      is_element_hidden(element, `Non-Privacy element of id=${element.id} should be hidden`);
+      is_element_hidden(
+        element,
+        `Non-Privacy element of id=${element.id} should be hidden`
+      );
     }
   }
 

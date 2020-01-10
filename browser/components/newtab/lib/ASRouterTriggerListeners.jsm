@@ -3,13 +3,16 @@
 
 "use strict";
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
 
 const FEW_MINUTES = 15 * 60 * 1000; 
-const MATCH_PATTERN_OPTIONS = {ignorePath: true};
+const MATCH_PATTERN_OPTIONS = { ignorePath: true };
 
 
 
@@ -20,18 +23,28 @@ async function checkStartupFinished(win) {
     await new Promise(resolve => {
       let delayedStartupObserver = (subject, topic) => {
         if (topic === "browser-delayed-startup-finished" && subject === win) {
-          Services.obs.removeObserver(delayedStartupObserver, "browser-delayed-startup-finished");
+          Services.obs.removeObserver(
+            delayedStartupObserver,
+            "browser-delayed-startup-finished"
+          );
           resolve();
         }
       };
 
-      Services.obs.addObserver(delayedStartupObserver, "browser-delayed-startup-finished");
+      Services.obs.addObserver(
+        delayedStartupObserver,
+        "browser-delayed-startup-finished"
+      );
     });
   }
 }
 
 function isPrivateWindow(win) {
-  return !(win instanceof Ci.nsIDOMWindow) || win.closed || PrivateBrowsingUtils.isWindowPrivate(win);
+  return (
+    !(win instanceof Ci.nsIDOMWindow) ||
+    win.closed ||
+    PrivateBrowsingUtils.isWindowPrivate(win)
+  );
 }
 
 
@@ -41,12 +54,13 @@ function isPrivateWindow(win) {
 
 
 
-function checkURLMatch(aLocationURI, {hosts, matchPatternSet}, aRequest) {
+function checkURLMatch(aLocationURI, { hosts, matchPatternSet }, aRequest) {
   
   let match;
   try {
-    match = {host: aLocationURI.host, url: aLocationURI.spec};
-  } catch (e) { 
+    match = { host: aLocationURI.host, url: aLocationURI.spec };
+  } catch (e) {
+    
     return false;
   }
 
@@ -70,10 +84,12 @@ function checkURLMatch(aLocationURI, {hosts, matchPatternSet}, aRequest) {
   const originalLocation = aRequest.QueryInterface(Ci.nsIChannel).originalURI;
   
   if (originalLocation.spec !== aLocationURI.spec) {
-    return hosts.has(originalLocation.host) && {
-      host: originalLocation.host,
-      url: originalLocation.spec,
-    };
+    return (
+      hosts.has(originalLocation.host) && {
+        host: originalLocation.host,
+        url: originalLocation.spec,
+      }
+    );
   }
 
   return false;
@@ -84,260 +100,298 @@ function checkURLMatch(aLocationURI, {hosts, matchPatternSet}, aRequest) {
 
 
 this.ASRouterTriggerListeners = new Map([
-  ["frequentVisits", {
-    _initialized: false,
-    _triggerHandler: null,
-    _hosts: null,
-    _matchPatternSet: null,
-    _visits: null,
+  [
+    "frequentVisits",
+    {
+      _initialized: false,
+      _triggerHandler: null,
+      _hosts: null,
+      _matchPatternSet: null,
+      _visits: null,
 
-    async init(triggerHandler, hosts = [], patterns) {
-      if (!this._initialized) {
-        this.onTabSwitch = this.onTabSwitch.bind(this);
+      async init(triggerHandler, hosts = [], patterns) {
+        if (!this._initialized) {
+          this.onTabSwitch = this.onTabSwitch.bind(this);
+
+          
+          for (let win of Services.wm.getEnumerator("navigator:browser")) {
+            if (isPrivateWindow(win)) {
+              continue;
+            }
+            await checkStartupFinished(win);
+            win.addEventListener("TabSelect", this.onTabSwitch);
+            win.gBrowser.addTabsProgressListener(this);
+          }
+
+          this._initialized = true;
+          this._visits = new Map();
+        }
+        this._triggerHandler = triggerHandler;
+        if (patterns) {
+          if (this._matchPatternSet) {
+            this._matchPatternSet = new MatchPatternSet(
+              new Set([...this._matchPatternSet.patterns, ...patterns]),
+              MATCH_PATTERN_OPTIONS
+            );
+          } else {
+            this._matchPatternSet = new MatchPatternSet(
+              patterns,
+              MATCH_PATTERN_OPTIONS
+            );
+          }
+        }
+        if (this._hosts) {
+          hosts.forEach(h => this._hosts.add(h));
+        } else {
+          this._hosts = new Set(hosts); 
+        }
+      },
+
+      
+
+
+
+
+      _updateVisits(host) {
+        const visits = this._visits.get(host);
+
+        if (visits && Date.now() - visits[0] > FEW_MINUTES) {
+          this._visits.set(host, [Date.now(), ...visits]);
+          return true;
+        }
+        if (!visits) {
+          this._visits.set(host, [Date.now()]);
+          return true;
+        }
+
+        return false;
+      },
+
+      onTabSwitch(event) {
+        if (!event.target.ownerGlobal.gBrowser) {
+          return;
+        }
+
+        const { gBrowser } = event.target.ownerGlobal;
+        const match = checkURLMatch(gBrowser.currentURI, {
+          hosts: this._hosts,
+          matchPatternSet: this._matchPatternSet,
+        });
+        if (match) {
+          this.triggerHandler(gBrowser.selectedBrowser, match);
+        }
+      },
+
+      triggerHandler(aBrowser, match) {
+        const updated = this._updateVisits(match.host);
 
         
-        for (let win of Services.wm.getEnumerator("navigator:browser")) {
-          if (isPrivateWindow(win)) {
-            continue;
-          }
-          await checkStartupFinished(win);
-          win.addEventListener("TabSelect", this.onTabSwitch);
-          win.gBrowser.addTabsProgressListener(this);
+        
+        if (!updated) {
+          return;
         }
 
-        this._initialized = true;
-        this._visits = new Map();
-      }
-      this._triggerHandler = triggerHandler;
-      if (patterns) {
-        if (this._matchPatternSet) {
-          this._matchPatternSet = new MatchPatternSet(new Set([
-            ...this._matchPatternSet.patterns,
-            ...patterns,
-          ]), MATCH_PATTERN_OPTIONS);
-        } else {
-          this._matchPatternSet = new MatchPatternSet(patterns, MATCH_PATTERN_OPTIONS);
-        }
-      }
-      if (this._hosts) {
-        hosts.forEach(h => this._hosts.add(h));
-      } else {
-        this._hosts = new Set(hosts); 
-      }
-    },
-
-    
-
-
-
-
-    _updateVisits(host) {
-      const visits = this._visits.get(host);
-
-      if (visits && Date.now() - visits[0] > FEW_MINUTES) {
-        this._visits.set(host, [Date.now(), ...visits]);
-        return true;
-      }
-      if (!visits) {
-        this._visits.set(host, [Date.now()]);
-        return true;
-      }
-
-      return false;
-    },
-
-    onTabSwitch(event) {
-      if (!event.target.ownerGlobal.gBrowser) {
-        return;
-      }
-
-      const {gBrowser} = event.target.ownerGlobal;
-      const match = checkURLMatch(gBrowser.currentURI, {hosts: this._hosts, matchPatternSet: this._matchPatternSet});
-      if (match) {
-        this.triggerHandler(gBrowser.selectedBrowser, match);
-      }
-    },
-
-    triggerHandler(aBrowser, match) {
-      const updated = this._updateVisits(match.host);
-
-      
-      
-      if (!updated) {
-        return;
-      }
-
-      this._triggerHandler(aBrowser, {
-        id: "frequentVisits",
-        param: match,
-        context: {
-          
-          
-          recentVisits: this._visits.get(match.host).map(timestamp => ({host: match.host, timestamp})),
-        },
-      });
-    },
-
-    onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
-      
-      
-      
-      const isSameDocument = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
-      if (aWebProgress.isTopLevel && !isSameDocument) {
-        const match = checkURLMatch(aLocationURI, {hosts: this._hosts, matchPatternSet: this._matchPatternSet}, aRequest);
-        if (match) {
-          this.triggerHandler(aBrowser, match);
-        }
-      }
-    },
-
-    observe(win, topic, data) {
-      let onLoad;
-
-      switch (topic) {
-        case "domwindowopened":
-          if (isPrivateWindow(win)) {
-            break;
-          }
-          onLoad = () => {
+        this._triggerHandler(aBrowser, {
+          id: "frequentVisits",
+          param: match,
+          context: {
             
-            if (win.document.documentElement.getAttribute("windowtype") === "navigator:browser") {
-              win.addEventListener("TabSelect", this.onTabSwitch);
-              win.gBrowser.addTabsProgressListener(this);
-            }
-          };
-          win.addEventListener("load", onLoad, {once: true});
-          break;
+            
+            recentVisits: this._visits
+              .get(match.host)
+              .map(timestamp => ({ host: match.host, timestamp })),
+          },
+        });
+      },
 
-        case "domwindowclosed":
-          if ((win instanceof Ci.nsIDOMWindow) &&
-              win.document.documentElement.getAttribute("windowtype") === "navigator:browser") {
+      onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
+        
+        
+        
+        const isSameDocument = !!(
+          aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
+        );
+        if (aWebProgress.isTopLevel && !isSameDocument) {
+          const match = checkURLMatch(
+            aLocationURI,
+            { hosts: this._hosts, matchPatternSet: this._matchPatternSet },
+            aRequest
+          );
+          if (match) {
+            this.triggerHandler(aBrowser, match);
+          }
+        }
+      },
+
+      observe(win, topic, data) {
+        let onLoad;
+
+        switch (topic) {
+          case "domwindowopened":
+            if (isPrivateWindow(win)) {
+              break;
+            }
+            onLoad = () => {
+              
+              if (
+                win.document.documentElement.getAttribute("windowtype") ===
+                "navigator:browser"
+              ) {
+                win.addEventListener("TabSelect", this.onTabSwitch);
+                win.gBrowser.addTabsProgressListener(this);
+              }
+            };
+            win.addEventListener("load", onLoad, { once: true });
+            break;
+
+          case "domwindowclosed":
+            if (
+              win instanceof Ci.nsIDOMWindow &&
+              win.document.documentElement.getAttribute("windowtype") ===
+                "navigator:browser"
+            ) {
+              win.removeEventListener("TabSelect", this.onTabSwitch);
+              win.gBrowser.removeTabsProgressListener(this);
+            }
+            break;
+        }
+      },
+
+      uninit() {
+        if (this._initialized) {
+          Services.ww.unregisterNotification(this);
+
+          for (let win of Services.wm.getEnumerator("navigator:browser")) {
+            if (isPrivateWindow(win)) {
+              continue;
+            }
+
             win.removeEventListener("TabSelect", this.onTabSwitch);
             win.gBrowser.removeTabsProgressListener(this);
           }
-          break;
-      }
-    },
 
-    uninit() {
-      if (this._initialized) {
-        Services.ww.unregisterNotification(this);
-
-        for (let win of Services.wm.getEnumerator("navigator:browser")) {
-          if (isPrivateWindow(win)) {
-            continue;
-          }
-
-          win.removeEventListener("TabSelect", this.onTabSwitch);
-          win.gBrowser.removeTabsProgressListener(this);
+          this._initialized = false;
+          this._triggerHandler = null;
+          this._hosts = null;
+          this._matchPatternSet = null;
+          this._visits = null;
         }
-
-        this._initialized = false;
-        this._triggerHandler = null;
-        this._hosts = null;
-        this._matchPatternSet = null;
-        this._visits = null;
-      }
+      },
     },
-  }],
+  ],
 
   
 
 
 
 
-  ["openURL", {
-    _initialized: false,
-    _triggerHandler: null,
-    _hosts: null,
+  [
+    "openURL",
+    {
+      _initialized: false,
+      _triggerHandler: null,
+      _hosts: null,
 
-    
-
-
-
-    async init(triggerHandler, hosts = [], patterns) {
-      if (!this._initialized) {
-        this.onLocationChange = this.onLocationChange.bind(this);
-
-        
-        Services.ww.registerNotification(this);
-
-        
-        for (let win of Services.wm.getEnumerator("navigator:browser")) {
-          if (isPrivateWindow(win)) {
-            continue;
-          }
-          await checkStartupFinished(win);
-          win.gBrowser.addTabsProgressListener(this);
-        }
-
-        this._initialized = true;
-      }
-      this._triggerHandler = triggerHandler;
-      if (this._hosts) {
-        hosts.forEach(h => this._hosts.add(h));
-      } else {
-        this._hosts = new Set(hosts); 
-      }
-    },
-
-    uninit() {
-      if (this._initialized) {
-        Services.ww.unregisterNotification(this);
-
-        for (let win of Services.wm.getEnumerator("navigator:browser")) {
-          if (isPrivateWindow(win)) {
-            continue;
-          }
-
-          win.gBrowser.removeTabsProgressListener(this);
-        }
-
-        this._initialized = false;
-        this._triggerHandler = null;
-        this._hosts = null;
-      }
-    },
-
-    onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
       
-      
-      
-      const isSameDocument = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
-      if (aWebProgress.isTopLevel && !isSameDocument) {
-        const match = checkURLMatch(aLocationURI, {hosts: this._hosts}, aRequest);
-        if (match) {
-          this._triggerHandler(aBrowser, {id: "openURL", param: match});
-        }
-      }
-    },
 
-    observe(win, topic, data) {
-      let onLoad;
 
-      switch (topic) {
-        case "domwindowopened":
-          if (isPrivateWindow(win)) {
-            break;
-          }
-          onLoad = () => {
-            
-            if (win.document.documentElement.getAttribute("windowtype") === "navigator:browser") {
-              win.gBrowser.addTabsProgressListener(this);
+
+      async init(triggerHandler, hosts = [], patterns) {
+        if (!this._initialized) {
+          this.onLocationChange = this.onLocationChange.bind(this);
+
+          
+          Services.ww.registerNotification(this);
+
+          
+          for (let win of Services.wm.getEnumerator("navigator:browser")) {
+            if (isPrivateWindow(win)) {
+              continue;
             }
-          };
-          win.addEventListener("load", onLoad, {once: true});
-          break;
+            await checkStartupFinished(win);
+            win.gBrowser.addTabsProgressListener(this);
+          }
 
-        case "domwindowclosed":
-          if ((win instanceof Ci.nsIDOMWindow) &&
-              win.document.documentElement.getAttribute("windowtype") === "navigator:browser") {
+          this._initialized = true;
+        }
+        this._triggerHandler = triggerHandler;
+        if (this._hosts) {
+          hosts.forEach(h => this._hosts.add(h));
+        } else {
+          this._hosts = new Set(hosts); 
+        }
+      },
+
+      uninit() {
+        if (this._initialized) {
+          Services.ww.unregisterNotification(this);
+
+          for (let win of Services.wm.getEnumerator("navigator:browser")) {
+            if (isPrivateWindow(win)) {
+              continue;
+            }
+
             win.gBrowser.removeTabsProgressListener(this);
           }
-          break;
-      }
+
+          this._initialized = false;
+          this._triggerHandler = null;
+          this._hosts = null;
+        }
+      },
+
+      onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
+        
+        
+        
+        const isSameDocument = !!(
+          aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT
+        );
+        if (aWebProgress.isTopLevel && !isSameDocument) {
+          const match = checkURLMatch(
+            aLocationURI,
+            { hosts: this._hosts },
+            aRequest
+          );
+          if (match) {
+            this._triggerHandler(aBrowser, { id: "openURL", param: match });
+          }
+        }
+      },
+
+      observe(win, topic, data) {
+        let onLoad;
+
+        switch (topic) {
+          case "domwindowopened":
+            if (isPrivateWindow(win)) {
+              break;
+            }
+            onLoad = () => {
+              
+              if (
+                win.document.documentElement.getAttribute("windowtype") ===
+                "navigator:browser"
+              ) {
+                win.gBrowser.addTabsProgressListener(this);
+              }
+            };
+            win.addEventListener("load", onLoad, { once: true });
+            break;
+
+          case "domwindowclosed":
+            if (
+              win instanceof Ci.nsIDOMWindow &&
+              win.document.documentElement.getAttribute("windowtype") ===
+                "navigator:browser"
+            ) {
+              win.gBrowser.removeTabsProgressListener(this);
+            }
+            break;
+        }
+      },
     },
-  }],
+  ],
 ]);
 
 const EXPORTED_SYMBOLS = ["ASRouterTriggerListeners"];

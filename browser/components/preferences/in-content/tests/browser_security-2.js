@@ -9,10 +9,15 @@ const PREFS = [
 ];
 
 let originals = PREFS.map(pref => [pref, Services.prefs.getBoolPref(pref)]);
-let originalMalwareTable = Services.prefs.getCharPref("urlclassifier.malwareTable");
+let originalMalwareTable = Services.prefs.getCharPref(
+  "urlclassifier.malwareTable"
+);
 registerCleanupFunction(function() {
   originals.forEach(([pref, val]) => Services.prefs.setBoolPref(pref, val));
-  Services.prefs.setCharPref("urlclassifier.malwareTable", originalMalwareTable);
+  Services.prefs.setCharPref(
+    "urlclassifier.malwareTable",
+    originalMalwareTable
+  );
 });
 
 
@@ -41,18 +46,33 @@ add_task(async function() {
     let checked = checkbox.checked;
     is(checked, val, "downloads preference is initialized correctly");
     
-    is(blockUncommon.hasAttribute("disabled"), !val, "block uncommon checkbox is set correctly");
+    is(
+      blockUncommon.hasAttribute("disabled"),
+      !val,
+      "block uncommon checkbox is set correctly"
+    );
 
     
     checkbox.scrollIntoView();
-    EventUtils.synthesizeMouseAtCenter(checkbox, {}, gBrowser.selectedBrowser.contentWindow);
+    EventUtils.synthesizeMouseAtCenter(
+      checkbox,
+      {},
+      gBrowser.selectedBrowser.contentWindow
+    );
 
     
-    is(Services.prefs.getBoolPref("browser.safebrowsing.downloads.enabled"), !checked,
-       "safebrowsing.downloads preference is set correctly");
+    is(
+      Services.prefs.getBoolPref("browser.safebrowsing.downloads.enabled"),
+      !checked,
+      "safebrowsing.downloads preference is set correctly"
+    );
 
     
-    is(blockUncommon.hasAttribute("disabled"), val, "block uncommon checkbox is set correctly");
+    is(
+      blockUncommon.hasAttribute("disabled"),
+      val,
+      "block uncommon checkbox is set correctly"
+    );
   }
 
   await checkPrefSwitch(true);
@@ -63,8 +83,14 @@ requestLongerTimeout(2);
 
 add_task(async function() {
   async function checkPrefSwitch(val1, val2, isV2) {
-    Services.prefs.setBoolPref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", val1);
-    Services.prefs.setBoolPref("browser.safebrowsing.downloads.remote.block_uncommon", val2);
+    Services.prefs.setBoolPref(
+      "browser.safebrowsing.downloads.remote.block_potentially_unwanted",
+      val1
+    );
+    Services.prefs.setBoolPref(
+      "browser.safebrowsing.downloads.remote.block_uncommon",
+      val2
+    );
     let testMalwareTable = "goog-malware-" + (isV2 ? "shavar" : "proto");
     testMalwareTable += ",test-malware-simple";
     if (val1 && val2) {
@@ -79,32 +105,65 @@ add_task(async function() {
     let doc = gBrowser.selectedBrowser.contentDocument;
     let checkbox = doc.getElementById("blockUncommonUnwanted");
     let checked = checkbox.checked;
-    is(checked, val1 && val2, "unwanted/uncommon preference is initialized correctly");
+    is(
+      checked,
+      val1 && val2,
+      "unwanted/uncommon preference is initialized correctly"
+    );
 
     
     checkbox.scrollIntoView();
-    EventUtils.synthesizeMouseAtCenter(checkbox, {}, gBrowser.selectedBrowser.contentWindow);
+    EventUtils.synthesizeMouseAtCenter(
+      checkbox,
+      {},
+      gBrowser.selectedBrowser.contentWindow
+    );
 
     
-    is(Services.prefs.getBoolPref("browser.safebrowsing.downloads.remote.block_potentially_unwanted"), !checked,
-       "block_potentially_unwanted is set correctly");
-    is(Services.prefs.getBoolPref("browser.safebrowsing.downloads.remote.block_uncommon"), !checked,
-       "block_uncommon is set correctly");
+    is(
+      Services.prefs.getBoolPref(
+        "browser.safebrowsing.downloads.remote.block_potentially_unwanted"
+      ),
+      !checked,
+      "block_potentially_unwanted is set correctly"
+    );
+    is(
+      Services.prefs.getBoolPref(
+        "browser.safebrowsing.downloads.remote.block_uncommon"
+      ),
+      !checked,
+      "block_uncommon is set correctly"
+    );
 
     
-    let malwareTable = Services.prefs.getCharPref("urlclassifier.malwareTable").split(",");
+    let malwareTable = Services.prefs
+      .getCharPref("urlclassifier.malwareTable")
+      .split(",");
     if (isV2) {
-      is(malwareTable.includes("goog-unwanted-shavar"), !checked,
-         "malware table doesn't include goog-unwanted-shavar");
+      is(
+        malwareTable.includes("goog-unwanted-shavar"),
+        !checked,
+        "malware table doesn't include goog-unwanted-shavar"
+      );
     } else {
-      is(malwareTable.includes("goog-unwanted-proto"), !checked,
-         "malware table doesn't include goog-unwanted-proto");
+      is(
+        malwareTable.includes("goog-unwanted-proto"),
+        !checked,
+        "malware table doesn't include goog-unwanted-proto"
+      );
     }
-    is(malwareTable.includes("test-unwanted-simple"), !checked,
-       "malware table doesn't include test-unwanted-simple");
+    is(
+      malwareTable.includes("test-unwanted-simple"),
+      !checked,
+      "malware table doesn't include test-unwanted-simple"
+    );
     let sortedMalware = malwareTable.slice(0);
     sortedMalware.sort();
-    Assert.deepEqual(malwareTable, sortedMalware, "malware table has been sorted");
+    Assert.deepEqual(
+      malwareTable,
+      sortedMalware,
+      "malware table has been sorted"
+    );
   }
 
   await checkPrefSwitch(true, true, false);

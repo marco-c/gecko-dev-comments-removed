@@ -8,39 +8,55 @@ var initialLocation = gBrowser.currentURI.spec;
 var globalClipboard;
 
 add_task(async function() {
-  await BrowserTestUtils.withNewTab({gBrowser, url: "about:blank"}, async function() {
-    info("Check copy button existence and functionality");
-    CustomizableUI.addWidgetToArea("edit-controls", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function() {
+      info("Check copy button existence and functionality");
+      CustomizableUI.addWidgetToArea(
+        "edit-controls",
+        CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+      );
 
-    await waitForOverflowButtonShown();
+      await waitForOverflowButtonShown();
 
-    let testText = "copy text test";
+      let testText = "copy text test";
 
-    gURLBar.focus();
-    info("The URL bar was focused");
-    await document.getElementById("nav-bar").overflowable.show();
-    info("Menu panel was opened");
+      gURLBar.focus();
+      info("The URL bar was focused");
+      await document.getElementById("nav-bar").overflowable.show();
+      info("Menu panel was opened");
 
-    let copyButton = document.getElementById("copy-button");
-    ok(copyButton, "Copy button exists in Panel Menu");
-    ok(copyButton.getAttribute("disabled"), "Copy button is initially disabled");
+      let copyButton = document.getElementById("copy-button");
+      ok(copyButton, "Copy button exists in Panel Menu");
+      ok(
+        copyButton.getAttribute("disabled"),
+        "Copy button is initially disabled"
+      );
 
-    
-    gURLBar.value = testText;
-    gURLBar.valueIsTyped = true;
-    gURLBar.focus();
-    gURLBar.select();
-    await document.getElementById("nav-bar").overflowable.show();
-    info("Menu panel was opened");
+      
+      gURLBar.value = testText;
+      gURLBar.valueIsTyped = true;
+      gURLBar.focus();
+      gURLBar.select();
+      await document.getElementById("nav-bar").overflowable.show();
+      info("Menu panel was opened");
 
-    ok(!copyButton.hasAttribute("disabled"), "Copy button is enabled when selecting");
+      ok(
+        !copyButton.hasAttribute("disabled"),
+        "Copy button is enabled when selecting"
+      );
 
-    await SimpleTest.promiseClipboardChange(testText, () => {
-      copyButton.click();
-    });
+      await SimpleTest.promiseClipboardChange(testText, () => {
+        copyButton.click();
+      });
 
-    is(gURLBar.value, testText, "Selected text is unaltered when clicking copy");
-  });
+      is(
+        gURLBar.value,
+        testText,
+        "Selected text is unaltered when clicking copy"
+      );
+    }
+  );
 });
 
 registerCleanupFunction(function cleanup() {

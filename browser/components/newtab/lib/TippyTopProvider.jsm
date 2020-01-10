@@ -2,12 +2,16 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch", "URL"]);
 
-const TIPPYTOP_JSON_PATH = "resource://activity-stream/data/content/tippytop/top_sites.json";
-const TIPPYTOP_URL_PREFIX = "resource://activity-stream/data/content/tippytop/images/";
+const TIPPYTOP_JSON_PATH =
+  "resource://activity-stream/data/content/tippytop/top_sites.json";
+const TIPPYTOP_URL_PREFIX =
+  "resource://activity-stream/data/content/tippytop/images/";
 
 function getDomain(url) {
   let domain;
@@ -29,7 +33,9 @@ this.TippyTopProvider = class TippyTopProvider {
   async init() {
     
     try {
-      for (const site of await (await fetch(TIPPYTOP_JSON_PATH, {credentials: "omit"})).json()) {
+      for (const site of await (await fetch(TIPPYTOP_JSON_PATH, {
+        credentials: "omit",
+      })).json()) {
         
         
         for (const url of site.url ? [site.url] : site.urls || []) {

@@ -13,13 +13,21 @@ add_task(async function() {
   
   let tab2 = ss.duplicateTab(window, tab1);
   await promiseTabRestored(tab2);
-  is(ss.getCustomTabValue(tab2, uniqueName), uniqueValue1, "tab value was duplicated");
+  is(
+    ss.getCustomTabValue(tab2, uniqueName),
+    uniqueValue1,
+    "tab value was duplicated"
+  );
 
   ss.setCustomTabValue(tab2, uniqueName, uniqueValue2);
-  isnot(ss.getCustomTabValue(tab1, uniqueName), uniqueValue2, "tab values aren't sync'd");
+  isnot(
+    ss.getCustomTabValue(tab1, uniqueName),
+    uniqueValue2,
+    "tab values aren't sync'd"
+  );
 
   
-  await promiseTabState(tab1, {entries: []});
+  await promiseTabState(tab1, { entries: [] });
   is(ss.getCustomTabValue(tab1, uniqueName), "", "tab value was cleared");
 
   

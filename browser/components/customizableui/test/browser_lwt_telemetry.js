@@ -8,9 +8,9 @@ add_task(async function testCustomize() {
   let getMoreURL = "about:blank#getMoreThemes";
 
   
-  await SpecialPowers.pushPrefEnv({set: [
-    ["lightweightThemes.getMoreURL", getMoreURL],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["lightweightThemes.getMoreURL", getMoreURL]],
+  });
 
   await startCustomizing();
 
@@ -35,26 +35,35 @@ add_task(async function testCustomize() {
   BrowserTestUtils.removeTab(addonsTab);
 
   let snapshot = Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS, true);
+    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
+    true
+  );
 
   
-  ok(snapshot.parent && snapshot.parent.length > 0, "Got parent telemetry events in the snapshot");
+  ok(
+    snapshot.parent && snapshot.parent.length > 0,
+    "Got parent telemetry events in the snapshot"
+  );
 
   
   let relatedEvents = snapshot.parent
-    .filter(([timestamp, category, method, object]) =>
-      category == "addonsManager" && object == "customize")
+    .filter(
+      ([timestamp, category, method, object]) =>
+        category == "addonsManager" && object == "customize"
+    )
     .map(relatedEvent => relatedEvent.slice(2, 6));
 
   
-  Assert.deepEqual(relatedEvents, [
-    ["link", "customize", "manageThemes"],
-    ["link", "customize", "getThemes"],
-  ], "The events are recorded correctly");
+  Assert.deepEqual(
+    relatedEvents,
+    [["link", "customize", "manageThemes"], ["link", "customize", "getThemes"]],
+    "The events are recorded correctly"
+  );
 
   
   
   await TestUtils.waitForCondition(
-    () => document.documentElement.getAttribute("customizing") == "true");
+    () => document.documentElement.getAttribute("customizing") == "true"
+  );
   await endCustomizing();
 });

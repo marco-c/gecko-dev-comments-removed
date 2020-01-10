@@ -15,15 +15,20 @@ registerCleanupFunction(async function() {
 
 
 add_task(async function test_overflow_anchor() {
-  await SpecialPowers.pushPrefEnv({set: [["browser.download.autohideButton", false]]});
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.download.autohideButton", false]],
+  });
   
   await task_resetState();
 
   
-  let button = CustomizableUI.getWidget("downloads-button")
-                             .forWindow(window);
+  let button = CustomizableUI.getWidget("downloads-button").forWindow(window);
   ok(!button.overflowed, "Downloads button should not be overflowed.");
-  is(button.node.getAttribute("cui-areatype"), "toolbar", "Button should know it's in the toolbar");
+  is(
+    button.node.getAttribute("cui-areatype"),
+    "toolbar",
+    "Button should know it's in the toolbar"
+  );
 
   await gCustomizeMode.addToPanel(button.node);
 
@@ -35,7 +40,11 @@ add_task(async function test_overflow_anchor() {
   let panel = DownloadsPanel.panel;
   let chevron = document.getElementById("nav-bar-overflow-button");
 
-  is(panel.anchorNode, chevron.icon, "Panel should be anchored to the chevron`s icon.");
+  is(
+    panel.anchorNode,
+    chevron.icon,
+    "Panel should be anchored to the chevron`s icon."
+  );
 
   DownloadsPanel.hidePanel();
 
@@ -51,4 +60,3 @@ add_task(async function test_overflow_anchor() {
 
   DownloadsPanel.hidePanel();
 });
-

@@ -8,7 +8,10 @@ var initialLocation = gBrowser.currentURI.spec;
 var newTab = null;
 
 add_task(async function() {
-  CustomizableUI.addWidgetToArea("add-ons-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  CustomizableUI.addWidgetToArea(
+    "add-ons-button",
+    CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+  );
   info("Check addons button existence and functionality");
 
   await waitForOverflowButtonShown();
@@ -21,11 +24,13 @@ add_task(async function() {
   addonsButton.click();
 
   newTab = gBrowser.selectedTab;
-  await TestUtils.waitForCondition(() => gBrowser.currentURI &&
-                                         gBrowser.currentURI.spec == "about:addons");
+  await TestUtils.waitForCondition(
+    () => gBrowser.currentURI && gBrowser.currentURI.spec == "about:addons"
+  );
 
-  let addonsPage = gBrowser.selectedBrowser.contentWindow.document.
-                            getElementById("addons-page");
+  let addonsPage = gBrowser.selectedBrowser.contentWindow.document.getElementById(
+    "addons-page"
+  );
   ok(addonsPage, "Add-ons page was opened");
 });
 

@@ -9,7 +9,10 @@ add_task(async function() {
   
   
   gBrowser.selectedTab.focus();
-  CustomizableUI.addWidgetToArea("find-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
+  CustomizableUI.addWidgetToArea(
+    "find-button",
+    CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+  );
   registerCleanupFunction(() => CustomizableUI.reset());
 
   await waitForOverflowButtonShown();
@@ -20,8 +23,9 @@ add_task(async function() {
   let findButton = document.getElementById("find-button");
   ok(findButton, "Find button exists in Panel Menu");
 
-  let findBarPromise = gBrowser.isFindBarInitialized() ?
-    null : BrowserTestUtils.waitForEvent(gBrowser.selectedTab, "TabFindInitialized");
+  let findBarPromise = gBrowser.isFindBarInitialized()
+    ? null
+    : BrowserTestUtils.waitForEvent(gBrowser.selectedTab, "TabFindInitialized");
 
   findButton.click();
   await findBarPromise;
