@@ -18,6 +18,12 @@
 #include <limits.h>
 
 
+#if defined(__aarch64__) && defined(IS_LITTLE_ENDIAN) && \
+    (defined(__clang__) || defined(__GNUC__) && __GNUC__ > 6)
+#define USE_ARM_GCM
+#endif
+
+
 SECStatus gcm_HashInit_hw(gcmHashContext *ghash);
 SECStatus gcm_HashWrite_hw(gcmHashContext *ghash, unsigned char *outbuf);
 SECStatus gcm_HashMult_hw(gcmHashContext *ghash, const unsigned char *buf,
@@ -30,7 +36,7 @@ SECStatus gcm_HashMult_sftw32(gcmHashContext *ghash, const unsigned char *buf,
 
 
 
-#ifndef NSS_X86_OR_X64
+#if !defined(NSS_X86_OR_X64) && !defined(USE_ARM_GCM)
 SECStatus
 gcm_HashWrite_hw(gcmHashContext *ghash, unsigned char *outbuf)
 {
@@ -86,7 +92,11 @@ gcmHash_InitContext(gcmHashContext *ghash, const unsigned char *H, PRBool sw)
 
     ghash->h_low = get64(H + 8);
     ghash->h_high = get64(H);
+#ifdef USE_ARM_GCM
+    if (arm_pmull_support() && !sw) {
+#else
     if (clmul_support() && !sw) {
+#endif
         rv = gcm_HashInit_hw(ghash);
     } else {
 
