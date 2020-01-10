@@ -108,6 +108,9 @@ const startupPhases = {
     {
       name: "PGPU::Msg_GetDeviceStatus",
       condition: WIN && WEBRENDER, 
+      
+      
+      ignoreIfUnused: true,
       maxCount: 1,
     },
   ],
