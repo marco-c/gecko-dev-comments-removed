@@ -638,8 +638,8 @@ static PropertyIteratorObject* CreatePropertyIterator(
 NativeIterator::NativeIterator() {
   
   
-  AlwaysPoison(static_cast<void*>(this), 0xCC, sizeof(*this),
-               MemCheckKind::MakeUndefined);
+  AlwaysPoison(static_cast<void*>(this), JS_NEW_NATIVE_ITERATOR_PATTERN,
+               sizeof(*this), MemCheckKind::MakeUndefined);
 
   
   
