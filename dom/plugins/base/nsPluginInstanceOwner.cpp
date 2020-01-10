@@ -401,11 +401,9 @@ NS_IMETHODIMP nsPluginInstanceOwner::GetURL(
     unitarget.AssignASCII(aTarget);  
   }
 
-  nsCOMPtr<nsIURI> baseURI = GetBaseURI();
-
   
   nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), aURL, baseURI);
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), aURL, GetBaseURI());
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
   nsCOMPtr<nsIInputStream> headersDataStream;
