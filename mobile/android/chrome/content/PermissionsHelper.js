@@ -145,6 +145,7 @@ var PermissionsHelper = {
 
 
   getPermission: function getPermission(aPrincipal, aType) {
+    let aURI = BrowserApp.selectedBrowser.lastURI;
     
     
     if (aType == "password") {
@@ -164,10 +165,10 @@ var PermissionsHelper = {
 
     
     if (aType == "geolocation") {
-      return Services.perms.testExactPermissionForPrincipal(aPrincipal, aType);
+      return Services.perms.testExactPermissionFromPrincipal(aPrincipal, aType);
     }
 
-    return Services.perms.testPermissionForPrincipal(aPrincipal, aType);
+    return Services.perms.testPermissionFromPrincipal(aPrincipal, aType);
   },
 
   
