@@ -47,28 +47,6 @@ RayReferenceData::RayReferenceData(const nsIFrame* aFrame) {
       CSSRect::FromAppUnits(container->GetRectRelativeToSelf());
 }
 
-static already_AddRefed<gfx::Path> BuildPath(
-    const Span<const StylePathCommand>& aPath, gfx::PathBuilder* aPathBuilder) {
-  if (!aPathBuilder) {
-    return nullptr;
-  }
-
-  return SVGPathData::BuildPath(aPath, aPathBuilder,
-                                NS_STYLE_STROKE_LINECAP_BUTT, 0.0);
-}
-
-
-OffsetPathData OffsetPathData::Path(const StyleSVGPathData& aPath,
-                                    gfx::PathBuilder* aPathBuilder) {
-  const auto& path = aPath._0.AsSpan();
-
-  
-  
-  
-  RefPtr<gfx::Path> gfxPath = BuildPath(path, aPathBuilder);
-  return OffsetPathData(gfxPath, !path.empty() && path.rbegin()->IsClosePath());
-}
-
 
 
 
@@ -465,11 +443,14 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
       
       
       
-      RefPtr<gfx::DrawTarget> drawTarget =
-          gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+      
       RefPtr<gfx::PathBuilder> builder =
-          drawTarget->CreatePathBuilder(gfx::FillRule::FILL_WINDING);
-      return OffsetPathData::Path(path.AsPath(), builder);
+          gfxPlatform::GetPlatform()
+              ->ScreenReferenceDrawTarget()
+              ->CreatePathBuilder(gfx::FillRule::FILL_WINDING);
+      RefPtr<gfx::Path> gfxPath =
+          MotionPathUtils::BuildPath(path.AsPath(), builder);
+      return OffsetPathData::Path(path.AsPath(), gfxPath.forget());
     }
     case StyleOffsetPath::Tag::Ray:
       return OffsetPathData::Ray(path.AsRay(), RayReferenceData(aFrame));
@@ -508,11 +489,36 @@ Maybe<MotionPathData> MotionPathUtils::ResolveMotionPath(
                         : Nothing());
 }
 
+static OffsetPathData GenerateOffsetPathData(
+    const StyleOffsetPath& aPath, const layers::TransformData& aTransformData,
+    gfx::Path* aCachedMotionPath) {
+  switch (aPath.tag) {
+    case StyleOffsetPath::Tag::Path: {
+      const StyleSVGPathData& svgPathData = aPath.AsPath();
+      
+      
+      RefPtr<gfx::Path> path = aCachedMotionPath;
+      if (!path) {
+        RefPtr<gfx::PathBuilder> builder =
+            MotionPathUtils::GetCompositorPathBuilder();
+        path = MotionPathUtils::BuildPath(svgPathData, builder);
+      }
+      return OffsetPathData::Path(svgPathData, path.forget());
+    }
+    case StyleOffsetPath::Tag::Ray:
+      return OffsetPathData::Ray(aPath.AsRay(),
+                                 aTransformData.motionPathRayReferenceData());
+    case StyleOffsetPath::Tag::None:
+    default:
+      return OffsetPathData::None();
+  }
+}
+
 
 Maybe<MotionPathData> MotionPathUtils::ResolveMotionPath(
     const StyleOffsetPath* aPath, const StyleLengthPercentage* aDistance,
     const StyleOffsetRotate* aRotate, const StylePositionOrAuto* aAnchor,
-    const layers::TransformData& aTransformData) {
+    const layers::TransformData& aTransformData, gfx::Path* aCachedMotionPath) {
   if (!aPath) {
     return Nothing();
   }
@@ -523,30 +529,8 @@ Maybe<MotionPathData> MotionPathUtils::ResolveMotionPath(
   Maybe<CSSPoint> framePosition =
       Some(aTransformData.motionPathFramePosition());
 
-  auto generateOffsetPathData = [&](const StyleOffsetPath& aPath) {
-    switch (aPath.tag) {
-      case StyleOffsetPath::Tag::Path: {
-        
-        
-        RefPtr<gfx::PathBuilder> builder =
-            gfxPlatform::Initialized()
-                ? gfxPlatform::GetPlatform()
-                      ->ScreenReferenceDrawTarget()
-                      ->CreatePathBuilder(gfx::FillRule::FILL_WINDING)
-                : gfx::Factory::CreateSimplePathBuilder();
-        return OffsetPathData::Path(aPath.AsPath(), builder);
-      }
-      case StyleOffsetPath::Tag::Ray:
-        return OffsetPathData::Ray(aPath.AsRay(),
-                                   aTransformData.motionPathRayReferenceData());
-      case StyleOffsetPath::Tag::None:
-      default:
-        return OffsetPathData::None();
-    }
-  };
-
   return MotionPathUtils::ResolveMotionPath(
-      generateOffsetPathData(*aPath),
+      GenerateOffsetPathData(*aPath, aTransformData, aCachedMotionPath),
       aDistance ? *aDistance : zeroOffsetDistance,
       aRotate ? *aRotate : autoOffsetRotate,
       aAnchor ? *aAnchor : autoOffsetAnchor, aTransformData.motionPathOrigin(),
@@ -633,6 +617,30 @@ MotionPathUtils::NormalizeAndConvertToPathCommands(
     }
   }
   return commands;
+}
+
+
+already_AddRefed<gfx::Path> MotionPathUtils::BuildPath(
+    const StyleSVGPathData& aPath, gfx::PathBuilder* aPathBuilder) {
+  if (!aPathBuilder) {
+    return nullptr;
+  }
+
+  const Span<const StylePathCommand>& path = aPath._0.AsSpan();
+  return SVGPathData::BuildPath(path, aPathBuilder,
+                                NS_STYLE_STROKE_LINECAP_BUTT, 0.0);
+}
+
+
+already_AddRefed<gfx::PathBuilder> MotionPathUtils::GetCompositorPathBuilder() {
+  
+  RefPtr<gfx::PathBuilder> builder =
+      gfxPlatform::Initialized()
+          ? gfxPlatform::GetPlatform()
+                ->ScreenReferenceDrawTarget()
+                ->CreatePathBuilder(gfx::FillRule::FILL_WINDING)
+          : gfx::Factory::CreateSimplePathBuilder();
+  return builder.forget();
 }
 
 }  

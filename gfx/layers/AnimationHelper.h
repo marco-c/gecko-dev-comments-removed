@@ -116,6 +116,19 @@ struct AnimatedValue final {
   AnimatedValueType mValue;
 };
 
+struct AnimationStorageData {
+  nsTArray<PropertyAnimationGroup> mAnimation;
+  RefPtr<gfx::Path> mCachedMotionPath;
+
+  AnimationStorageData() = default;
+  AnimationStorageData(AnimationStorageData&& aOther) = default;
+  AnimationStorageData& operator=(AnimationStorageData&& aOther) = default;
+
+  
+  AnimationStorageData(const AnimationStorageData& aOther) = delete;
+  AnimationStorageData& operator=(const AnimationStorageData& aOther) = delete;
+};
+
 
 
 
@@ -132,7 +145,7 @@ struct AnimatedValue final {
 
 class CompositorAnimationStorage final {
   typedef nsClassHashtable<nsUint64HashKey, AnimatedValue> AnimatedValueTable;
-  typedef nsClassHashtable<nsUint64HashKey, nsTArray<PropertyAnimationGroup>>
+  typedef nsDataHashtable<nsUint64HashKey, AnimationStorageData>
       AnimationsTable;
   typedef nsDataHashtable<nsUint64HashKey, wr::RenderRoot>
       AnimationsRenderRootsTable;
@@ -183,11 +196,6 @@ class CompositorAnimationStorage final {
 
   void SetAnimations(uint64_t aId, const AnimationArray& aAnimations,
                      wr::RenderRoot aRenderRoot);
-
-  
-
-
-  nsTArray<PropertyAnimationGroup>* GetAnimations(const uint64_t& aId) const;
 
   
 
@@ -305,7 +313,7 @@ class AnimationHelper {
 
 
 
-  static nsTArray<PropertyAnimationGroup> ExtractAnimations(
+  static AnimationStorageData ExtractAnimations(
       const AnimationArray& aAnimations);
 
   
@@ -340,7 +348,7 @@ class AnimationHelper {
 
   static gfx::Matrix4x4 ServoAnimationValueToMatrix4x4(
       const nsTArray<RefPtr<RawServoAnimationValue>>& aValue,
-      const TransformData& aTransformData);
+      const TransformData& aTransformData, gfx::Path* aCachedMotionPath);
 };
 
 }  

@@ -11,6 +11,7 @@
 #include "nsCSSPropertyIDSet.h"
 #include "nsDisplayItemTypes.h"
 #include "mozilla/Array.h"
+#include "mozilla/MotionPathUtils.h"
 
 struct RawServoAnimationValue;
 class nsIContent;
@@ -72,6 +73,8 @@ class AnimationInfo final {
   bool ApplyPendingUpdatesForThisTransaction();
   bool HasTransformAnimation() const;
 
+  gfx::Path* CachedMotionPath() { return mCachedMotionPath; }
+
   
   
   static Maybe<uint64_t> GetGenerationFromFrame(
@@ -108,7 +111,12 @@ class AnimationInfo final {
   
   
   
+  
+  
+  
   nsTArray<PropertyAnimationGroup> mPropertyAnimationGroups;
+  
+  RefPtr<gfx::Path> mCachedMotionPath;
   
   
   Maybe<uint64_t> mAnimationGeneration;
