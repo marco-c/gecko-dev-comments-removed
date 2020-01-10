@@ -410,6 +410,7 @@ class LDefinition {
     DOUBLE,      
     SIMD128INT,  
     SIMD128FLOAT,  
+    SINCOS,
 #ifdef JS_NUNBOX32
     
     
@@ -537,6 +538,8 @@ class LDefinition {
       case MIRType::Value:
         return LDefinition::BOX;
 #endif
+      case MIRType::SinCosDouble:
+        return LDefinition::SINCOS;
       case MIRType::Slots:
       case MIRType::Elements:
         return LDefinition::SLOTS;
