@@ -2313,20 +2313,6 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
   uint32_t offset = 0;
   netCoalesceFlags coalesceFlag = NET_COALESCE_NORMAL;
 
-  nsAutoCString baseProtocol(Scheme());
-  nsAutoCString protocol;
-  rv = net_ExtractURLScheme(buf, protocol);
-
-  
-  
-  
-  
-  
-  if (NS_SUCCEEDED(rv) && protocol != baseProtocol) {
-    out = buf;
-    return NS_OK;
-  }
-
   
   
   
@@ -2337,7 +2323,8 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
   
   if (NS_FAILED(rv)) scheme.Reset();
 
-  protocol.Assign(Segment(scheme));
+  nsAutoCString protocol(Segment(scheme));
+  nsAutoCString baseProtocol(Scheme());
 
   
   
