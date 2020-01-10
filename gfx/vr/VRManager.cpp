@@ -116,7 +116,6 @@ VRManager::VRManager()
       mLastSubmittedFrameId(0),
       mLastStartedFrame(0),
       mEnumerationCompleted(false),
-      mAppPaused(false),
       mShmem(nullptr),
       mHapticPulseRemaining{},
       mDisplayInfo{},
@@ -143,12 +142,6 @@ VRManager::VRManager()
   
   mVRProcessEnabled = false;
 #endif  
-
-  nsCOMPtr<nsIObserverService> service = services::GetObserverService();
-  if (service) {
-    service->AddObserver(this, "application-background", false);
-    service->AddObserver(this, "application-foreground", false);
-  }
 }
 
 void VRManager::OpenShmem() {
@@ -183,13 +176,6 @@ void VRManager::CloseShmem() {
 VRManager::~VRManager() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == VRManagerState::Disabled);
-
-  nsCOMPtr<nsIObserverService> service = services::GetObserverService();
-  if (service) {
-    service->RemoveObserver(this, "application-background");
-    service->RemoveObserver(this, "application-foreground");
-  }
-
 #if !defined(MOZ_WIDGET_ANDROID)
   mServiceHost->Shutdown();
 #endif
@@ -303,12 +289,6 @@ void VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure) {
 
   VRManager* self = static_cast<VRManager*>(aClosure);
   self->RunTasks();
-
-  if (self->mAppPaused) {
-    
-    
-    self->StopTasks();
-  }
 }
 
 void VRManager::RunTasks() {
@@ -1261,28 +1241,6 @@ void VRManager::CancelCurrentSubmitTask() {
     mCurrentSubmitTask = nullptr;
   }
 }
-
-
-
-
-
-NS_IMETHODIMP
-VRManager::Observe(nsISupports* subject, const char* topic,
-                   const char16_t* data) {
-  if (!strcmp(topic, "application-background")) {
-    
-    
-    mAppPaused = true;
-  } else if (!strcmp(topic, "application-foreground") && mAppPaused) {
-    mAppPaused = false;
-    
-    
-    StartTasks();
-  }
-  return NS_OK;
-}
-
-NS_IMPL_ISUPPORTS(VRManager, nsIObserver)
 
 }  
 }  
