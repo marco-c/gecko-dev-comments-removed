@@ -371,6 +371,7 @@ pref("media.peerconnection.ice.link_local", false);
 pref("media.peerconnection.ice.force_interface", ""); 
 pref("media.peerconnection.ice.relay_only", false); 
 pref("media.peerconnection.use_document_iceservers", true);
+
 pref("media.peerconnection.identity.timeout", 10000);
 pref("media.peerconnection.ice.stun_client_maximum_transmits", 7);
 pref("media.peerconnection.ice.trickle_grace_period", 5000);
@@ -1743,12 +1744,6 @@ pref("network.sts.max_time_for_pr_close_during_shutdown", 5000);
 
 
 pref("network.sts.pollable_event_timeout", 6);
-
-
-
-
-
-pref("network.process.enabled", false);
 
 
 pref("network.security.esni.enabled", false);

@@ -1645,6 +1645,23 @@ pref("browser.tabs.remote.autostart", true);
 pref("browser.tabs.remote.desktopbehavior", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("media.peerconnection.mtransport_process", true);
+#else
+pref("media.peerconnection.mtransport_process", false);
+#endif
+
+
+
+
+
+#ifdef NIGHTLY_BUILD
+pref("network.process.enabled", true);
+#else
+pref("network.process.enabled", false);
+#endif
+
+
 
 pref("browser.tabs.remote.warmup.enabled", true);
 
