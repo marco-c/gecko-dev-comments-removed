@@ -134,7 +134,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   URLExtraData* URLData() const { return Inner().mURLData; }
 
   
-  NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasAlternate,
+  NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
                               nsresult aStatus) final;
 
   

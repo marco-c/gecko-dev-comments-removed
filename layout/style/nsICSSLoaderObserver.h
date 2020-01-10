@@ -39,9 +39,7 @@ class nsICSSLoaderObserver : public nsISupports {
 
 
 
-
-
-  NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet, bool aWasAlternate,
+  NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet, bool aWasDeferred,
                               nsresult aStatus) = 0;
 };
 

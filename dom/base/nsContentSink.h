@@ -91,7 +91,7 @@ class nsContentSink : public nsICSSLoaderObserver,
   NS_DECL_NSINAMED
 
   
-  NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet, bool aWasAlternate,
+  NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet, bool aWasDeferred,
                               nsresult aStatus) override;
 
   virtual nsresult ProcessMETATag(nsIContent* aContent);
