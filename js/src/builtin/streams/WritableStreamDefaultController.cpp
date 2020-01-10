@@ -10,11 +10,23 @@
 
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/WritableStream.h"  
+#include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
+#include "js/CallArgs.h"                     
 #include "js/Class.h"                        
 #include "js/PropertySpec.h"  
+#include "js/Value.h"         
+
+#include "vm/Compartment-inl.h"  
+
+using JS::CallArgs;
+using JS::CallArgsFromVp;
+using JS::Rooted;
+using JS::Value;
 
 using js::ClassSpec;
+using js::UnwrapAndTypeCheckThis;
 using js::WritableStreamDefaultController;
+using js::WritableStreamDefaultControllerError;
 
 
 
@@ -31,11 +43,40 @@ bool WritableStreamDefaultController::constructor(JSContext* cx, unsigned argc,
   return false;
 }
 
+
+
+
+static bool WritableStreamDefaultController_error(JSContext* cx, unsigned argc,
+                                                  Value* vp) {
+  
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  Rooted<WritableStreamDefaultController*> unwrappedController(
+      cx, UnwrapAndTypeCheckThis<WritableStreamDefaultController>(cx, args,
+                                                                  "error"));
+  if (!unwrappedController) {
+    return false;
+  }
+
+  
+  
+  if (unwrappedController->stream()->writable()) {
+    
+    if (!WritableStreamDefaultControllerError(cx, unwrappedController,
+                                              args.get(0))) {
+      return false;
+    }
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
 static const JSPropertySpec WritableStreamDefaultController_properties[] = {
     JS_PS_END};
 
 static const JSFunctionSpec WritableStreamDefaultController_methods[] = {
-    JS_FS_END};
+    JS_FN("error", WritableStreamDefaultController_error, 1, 0), JS_FS_END};
 
 JS_STREAMS_CLASS_SPEC(WritableStreamDefaultController, 0, SlotCount,
                       ClassSpec::DontDefineConstructor, 0, JS_NULL_CLASS_OPS);
