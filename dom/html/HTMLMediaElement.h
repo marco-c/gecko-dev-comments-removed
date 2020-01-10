@@ -1320,7 +1320,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  bool mSrcStreamPlaybackEnded = false;
+  Watchable<bool> mSrcStreamPlaybackEnded = {
+      false, "HTMLMediaElement::mSrcStreamPlaybackEnded"};
 
   
   
@@ -1371,7 +1372,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   nsMediaNetworkState mNetworkState = HTMLMediaElement_Binding::NETWORK_EMPTY;
-  nsMediaReadyState mReadyState = HTMLMediaElement_Binding::HAVE_NOTHING;
+  Watchable<nsMediaReadyState> mReadyState = {
+      HTMLMediaElement_Binding::HAVE_NOTHING, "HTMLMediaElement::mReadyState"};
 
   enum LoadAlgorithmState {
     
