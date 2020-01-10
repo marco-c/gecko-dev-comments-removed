@@ -513,8 +513,6 @@ async function testFileAccess() {
     
     
     
-    
-    
     let libraryDir = GetDir("/Library");
     tests.push({
       desc: "/Library",
@@ -532,15 +530,6 @@ async function testFileAccess() {
       minLevel: minHomeReadSandboxLevel(),
       func: readDir,
     });
-    let libraryWidgetsDir = GetDir("/Library/Widgets");
-    tests.push({
-      desc: "/Library/Widgets",
-      ok: false,
-      browser: webBrowser,
-      file: libraryWidgetsDir,
-      minLevel: minHomeReadSandboxLevel(),
-      func: statPath,
-    });
 
     
     let privateDir = GetDir("/private");
@@ -549,15 +538,6 @@ async function testFileAccess() {
       ok: true,
       browser: webBrowser,
       file: privateDir,
-      minLevel: minHomeReadSandboxLevel(),
-      func: statPath,
-    });
-    let privateEtcDir = GetFile("/private/etc");
-    tests.push({
-      desc: "/private/etc",
-      ok: false,
-      browser: webBrowser,
-      file: privateEtcDir,
       minLevel: minHomeReadSandboxLevel(),
       func: statPath,
     });
