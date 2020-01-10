@@ -8,24 +8,28 @@
 
 #include "ProfileJSONWriter.h"
 
-PageInformation::PageInformation(const nsID& aDocShellId,
-                                 uint32_t aDocShellHistoryId,
-                                 const nsCString& aUrl, bool aIsSubFrame)
-    : mDocShellId(aDocShellId),
-      mDocShellHistoryId(aDocShellHistoryId),
+PageInformation::PageInformation(uint64_t aBrowsingContextID,
+                                 uint64_t aInnerWindowID, const nsCString& aUrl,
+                                 bool aIsSubFrame)
+    : mBrowsingContextID(aBrowsingContextID),
+      mInnerWindowID(aInnerWindowID),
       mUrl(aUrl),
       mIsSubFrame(aIsSubFrame) {}
 
-bool PageInformation::Equals(PageInformation* aOtherPageInfo) {
-  return DocShellHistoryId() == aOtherPageInfo->DocShellHistoryId() &&
-         DocShellId().Equals(aOtherPageInfo->DocShellId()) &&
-         IsSubFrame() == aOtherPageInfo->IsSubFrame();
+bool PageInformation::Equals(PageInformation* aOtherPageInfo) const {
+  
+  
+  return InnerWindowID() == aOtherPageInfo->InnerWindowID();
 }
 
-void PageInformation::StreamJSON(SpliceableJSONWriter& aWriter) {
+void PageInformation::StreamJSON(SpliceableJSONWriter& aWriter) const {
+  
+  
+  
+  
   aWriter.StartObjectElement();
-  aWriter.StringProperty("docshellId", nsIDToCString(DocShellId()).get());
-  aWriter.DoubleProperty("historyId", DocShellHistoryId());
+  aWriter.DoubleProperty("browsingContextID", BrowsingContextID());
+  aWriter.DoubleProperty("innerWindowID", InnerWindowID());
   aWriter.StringProperty("url", Url().get());
   aWriter.BoolProperty("isSubFrame", IsSubFrame());
   aWriter.EndObject();

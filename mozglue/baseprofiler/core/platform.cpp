@@ -365,11 +365,11 @@ class CorePS {
         sInstance->mRegisteredPages.append(std::move(aRegisteredPage)));
   }
 
-  static void RemoveRegisteredPages(PSLockRef,
-                                    const std::string& aRegisteredDocShellId) {
+  static void RemoveRegisteredPage(PSLockRef,
+                                   uint64_t aRegisteredInnerWindowID) {
     
     sInstance->mRegisteredPages.eraseIf([&](const RefPtr<PageInformation>& rd) {
-      return rd->DocShellId() == aRegisteredDocShellId;
+      return rd->InnerWindowID() == aRegisteredInnerWindowID;
     });
   }
 
@@ -741,12 +741,12 @@ class ActivePS {
         });
   }
 
-  static void UnregisterPages(PSLockRef aLock,
-                              const std::string& aRegisteredDocShellId) {
+  static void UnregisterPage(PSLockRef aLock,
+                             uint64_t aRegisteredInnerWindowID) {
     auto& registeredPages = CorePS::RegisteredPages(aLock);
     for (size_t i = 0; i < registeredPages.length(); i++) {
       RefPtr<PageInformation>& page = registeredPages[i];
-      if (page->DocShellId() == aRegisteredDocShellId) {
+      if (page->InnerWindowID() == aRegisteredInnerWindowID) {
         page->NotifyUnregistered(sInstance->mProfileBuffer->BufferRangeEnd());
         MOZ_RELEASE_ASSERT(
             sInstance->mDeadProfiledPages.append(std::move(page)));
@@ -3059,23 +3059,18 @@ void profiler_unregister_thread() {
   }
 }
 
-void profiler_register_page(const std::string& aDocShellId, uint32_t aHistoryId,
-                            const std::string& aUrl, bool aIsSubFrame) {
-  DEBUG_LOG("profiler_register_page(%s, %u, %s, %d)", aDocShellId.c_str(),
-            aHistoryId, aUrl.c_str(), aIsSubFrame);
+void profiler_register_page(uint64_t aBrowsingContextID,
+                            uint64_t aInnerWindowID, const std::string& aUrl,
+                            bool aIsSubFrame) {
+  DEBUG_LOG("profiler_register_page(%" PRIu64 ", %" PRIu64 ", %s, %d)",
+            aBrowsingContextID, aInnerWindowID, aUrl.c_str(), aIsSubFrame);
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock;
 
-  
-  
-  if (!ActivePS::Exists(lock)) {
-    CorePS::RemoveRegisteredPages(lock, aDocShellId);
-  }
-
-  RefPtr<PageInformation> pageInfo =
-      new PageInformation(aDocShellId, aHistoryId, aUrl, aIsSubFrame);
+  RefPtr<PageInformation> pageInfo = new PageInformation(
+      aBrowsingContextID, aInnerWindowID, aUrl, aIsSubFrame);
   CorePS::AppendRegisteredPage(lock, std::move(pageInfo));
 
   
@@ -3085,7 +3080,7 @@ void profiler_register_page(const std::string& aDocShellId, uint32_t aHistoryId,
   }
 }
 
-void profiler_unregister_pages(const std::string& aRegisteredDocShellId) {
+void profiler_unregister_page(uint64_t aRegisteredInnerWindowID) {
   if (!CorePS::Exists()) {
     
     return;
@@ -3098,9 +3093,9 @@ void profiler_unregister_pages(const std::string& aRegisteredDocShellId) {
   
   
   if (ActivePS::Exists(lock)) {
-    ActivePS::UnregisterPages(lock, aRegisteredDocShellId);
+    ActivePS::UnregisterPage(lock, aRegisteredInnerWindowID);
   } else {
-    CorePS::RemoveRegisteredPages(lock, aRegisteredDocShellId);
+    CorePS::RemoveRegisteredPage(lock, aRegisteredInnerWindowID);
   }
 }
 
@@ -3312,8 +3307,26 @@ void profiler_add_marker_for_thread(int aThreadId,
 
 void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
                       ProfilingCategoryPair aCategoryPair, TracingKind aKind,
-                      const Maybe<std::string>& aDocShellId,
-                      const Maybe<uint32_t>& aDocShellHistoryId) {
+                      const Maybe<uint64_t>& aInnerWindowID) {
+  MOZ_RELEASE_ASSERT(CorePS::Exists());
+
+  VTUNE_TRACING(aMarkerName, aKind);
+
+  
+  if (!profiler_can_accept_markers()) {
+    return;
+  }
+
+  AUTO_PROFILER_STATS(base_add_marker_with_TracingMarkerPayload);
+  profiler_add_marker(
+      aMarkerName, aCategoryPair,
+      TracingMarkerPayload(aCategoryString, aKind, aInnerWindowID));
+}
+
+void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
+                      ProfilingCategoryPair aCategoryPair, TracingKind aKind,
+                      UniqueProfilerBacktrace aCause,
+                      const Maybe<uint64_t>& aInnerWindowID) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   VTUNE_TRACING(aMarkerName, aKind);
@@ -3325,43 +3338,20 @@ void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
 
   AUTO_PROFILER_STATS(base_add_marker_with_TracingMarkerPayload);
   profiler_add_marker(aMarkerName, aCategoryPair,
-                      TracingMarkerPayload(aCategoryString, aKind, aDocShellId,
-                                           aDocShellHistoryId));
-}
-
-void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
-                      ProfilingCategoryPair aCategoryPair, TracingKind aKind,
-                      UniqueProfilerBacktrace aCause,
-                      const Maybe<std::string>& aDocShellId,
-                      const Maybe<uint32_t>& aDocShellHistoryId) {
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  VTUNE_TRACING(aMarkerName, aKind);
-
-  
-  if (!profiler_can_accept_markers()) {
-    return;
-  }
-
-  AUTO_PROFILER_STATS(base_add_marker_with_TracingMarkerPayload);
-  profiler_add_marker(
-      aMarkerName, aCategoryPair,
-      TracingMarkerPayload(aCategoryString, aKind, aDocShellId,
-                           aDocShellHistoryId, std::move(aCause)));
+                      TracingMarkerPayload(aCategoryString, aKind,
+                                           aInnerWindowID, std::move(aCause)));
 }
 
 void profiler_add_text_marker(const char* aMarkerName, const std::string& aText,
                               ProfilingCategoryPair aCategoryPair,
                               const TimeStamp& aStartTime,
                               const TimeStamp& aEndTime,
-                              const Maybe<std::string>& aDocShellId,
-                              const Maybe<uint32_t>& aDocShellHistoryId,
+                              const Maybe<uint64_t>& aInnerWindowID,
                               UniqueProfilerBacktrace aCause) {
   AUTO_PROFILER_STATS(base_add_marker_with_TextMarkerPayload);
-  profiler_add_marker(
-      aMarkerName, aCategoryPair,
-      TextMarkerPayload(aText, aStartTime, aEndTime, aDocShellId,
-                        aDocShellHistoryId, std::move(aCause)));
+  profiler_add_marker(aMarkerName, aCategoryPair,
+                      TextMarkerPayload(aText, aStartTime, aEndTime,
+                                        aInnerWindowID, std::move(aCause)));
 }
 
 

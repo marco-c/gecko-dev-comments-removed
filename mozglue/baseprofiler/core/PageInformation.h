@@ -27,7 +27,7 @@ class SpliceableJSONWriter;
 
 class PageInformation final {
  public:
-  PageInformation(const std::string& aDocShellId, uint32_t aDocShellHistoryId,
+  PageInformation(uint64_t aBrowsingContextID, uint64_t aInnerWindowID,
                   const std::string& aUrl, bool aIsSubFrame);
 
   
@@ -41,15 +41,15 @@ class PageInformation final {
   }
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
-  bool Equals(PageInformation* aOtherDocShellInfo);
-  void StreamJSON(SpliceableJSONWriter& aWriter);
+  bool Equals(PageInformation* aOtherPageInfo) const;
+  void StreamJSON(SpliceableJSONWriter& aWriter) const;
 
-  uint32_t DocShellHistoryId() { return mDocShellHistoryId; }
-  const std::string& DocShellId() { return mDocShellId; }
-  const std::string& Url() { return mUrl; }
-  bool IsSubFrame() { return mIsSubFrame; }
+  uint64_t InnerWindowID() const { return mInnerWindowID; }
+  uint64_t BrowsingContextID() const { return mBrowsingContextID; }
+  const std::string& Url() const { return mUrl; }
+  bool IsSubFrame() const { return mIsSubFrame; }
 
-  Maybe<uint64_t> BufferPositionWhenUnregistered() {
+  Maybe<uint64_t> BufferPositionWhenUnregistered() const {
     return mBufferPositionWhenUnregistered;
   }
 
@@ -58,8 +58,8 @@ class PageInformation final {
   }
 
  private:
-  const std::string mDocShellId;
-  const uint32_t mDocShellHistoryId;
+  const uint64_t mBrowsingContextID;
+  const uint64_t mInnerWindowID;
   const std::string mUrl;
   const bool mIsSubFrame;
 

@@ -112,8 +112,7 @@ ProfilerMarkerPayload::CommonPropsTagAndSerializationBytes() const {
   return sizeof(DeserializerTag) +
          BlocksRingBuffer::SumBytes(mCommonProps.mStartTime,
                                     mCommonProps.mEndTime, mCommonProps.mStack,
-                                    mCommonProps.mDocShellId,
-                                    mCommonProps.mDocShellHistoryId);
+                                    mCommonProps.mInnerWindowID);
 }
 
 void ProfilerMarkerPayload::SerializeTagAndCommonProps(
@@ -123,8 +122,7 @@ void ProfilerMarkerPayload::SerializeTagAndCommonProps(
   aEntryWriter.WriteObject(mCommonProps.mStartTime);
   aEntryWriter.WriteObject(mCommonProps.mEndTime);
   aEntryWriter.WriteObject(mCommonProps.mStack);
-  aEntryWriter.WriteObject(mCommonProps.mDocShellId);
-  aEntryWriter.WriteObject(mCommonProps.mDocShellHistoryId);
+  aEntryWriter.WriteObject(mCommonProps.mInnerWindowID);
 }
 
 
@@ -135,8 +133,7 @@ ProfilerMarkerPayload::DeserializeCommonProps(
   aEntryReader.ReadIntoObject(props.mStartTime);
   aEntryReader.ReadIntoObject(props.mEndTime);
   aEntryReader.ReadIntoObject(props.mStack);
-  aEntryReader.ReadIntoObject(props.mDocShellId);
-  aEntryReader.ReadIntoObject(props.mDocShellHistoryId);
+  aEntryReader.ReadIntoObject(props.mInnerWindowID);
   return props;
 }
 
@@ -146,13 +143,13 @@ void ProfilerMarkerPayload::StreamCommonProps(
   StreamType(aMarkerType, aWriter);
   WriteTime(aWriter, aProcessStartTime, mCommonProps.mStartTime, "startTime");
   WriteTime(aWriter, aProcessStartTime, mCommonProps.mEndTime, "endTime");
-  if (mCommonProps.mDocShellId) {
-    aWriter.StringProperty("docShellId",
-                           nsIDToCString(*mCommonProps.mDocShellId).get());
-  }
-  if (mCommonProps.mDocShellHistoryId) {
-    aWriter.DoubleProperty("docshellHistoryId",
-                           mCommonProps.mDocShellHistoryId.ref());
+  if (mCommonProps.mInnerWindowID) {
+    
+    
+    
+    
+    
+    aWriter.DoubleProperty("innerWindowID", mCommonProps.mInnerWindowID.ref());
   }
   if (mCommonProps.mStack) {
     aWriter.StartObjectProperty("stack");

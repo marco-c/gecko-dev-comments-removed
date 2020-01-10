@@ -68,19 +68,10 @@
 #  define BASE_PROFILER_ADD_MARKER_WITH_PAYLOAD( \
       markerName, categoryPair, PayloadType, parenthesizedPayloadArgs)
 
-#  define MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell)
 #  define BASE_PROFILER_TRACING(categoryString, markerName, categoryPair, kind)
-#  define BASE_PROFILER_TRACING_DOCSHELL(categoryString, markerName, \
-                                         categoryPair, kind, docshell)
 #  define AUTO_BASE_PROFILER_TRACING(categoryString, markerName, categoryPair)
-#  define AUTO_BASE_PROFILER_TRACING_DOCSHELL(categoryString, markerName, \
-                                              categoryPair, docShell)
 #  define AUTO_BASE_PROFILER_TEXT_MARKER_CAUSE(markerName, text, categoryPair, \
                                                cause)
-#  define AUTO_BASE_PROFILER_TEXT_MARKER_DOCSHELL(markerName, text, \
-                                                  categoryPair, docShell)
-#  define AUTO_BASE_PROFILER_TEXT_MARKER_DOCSHELL_CAUSE( \
-      markerName, text, categoryPair, docShell, cause)
 
 #  define AUTO_PROFILER_STATS(name)
 
@@ -347,15 +338,13 @@ MFBT_API void profiler_unregister_thread();
 
 
 
-
-MFBT_API void profiler_register_page(const std::string& aDocShellId,
-                                     uint32_t aHistoryId,
+MFBT_API void profiler_register_page(uint64_t aBrowsingContextID,
+                                     uint64_t aInnerWindowID,
                                      const std::string& aUrl, bool aIsSubFrame);
 
 
 
-MFBT_API void profiler_unregister_pages(
-    const std::string& aRegisteredDocShellId);
+MFBT_API void profiler_unregister_page(uint64_t aRegisteredInnerWindowID);
 
 
 void profiler_clear_all_pages();
@@ -757,24 +746,6 @@ enum TracingKind {
 };
 
 
-#  define MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell)   \
-    Maybe<std::string> docShellId;                       \
-    Maybe<uint32_t> docShellHistoryId;                   \
-    if (docShell) {                                      \
-      docShellId = mozilla::Some(docShell->HistoryID()); \
-      uint32_t id;                                       \
-      nsresult rv = docShell->GetOSHEId(&id);            \
-      if (NS_SUCCEEDED(rv)) {                            \
-        docShellHistoryId = mozilla::Some(id);           \
-      } else {                                           \
-        docShellHistoryId = mozilla::Nothing();          \
-      }                                                  \
-    } else {                                             \
-      docShellId = mozilla::Nothing();                   \
-      docShellHistoryId = mozilla::Nothing();            \
-    }
-
-
 
 
 #  define BASE_PROFILER_TRACING(categoryString, markerName, categoryPair, \
@@ -782,39 +753,23 @@ enum TracingKind {
     ::mozilla::baseprofiler::profiler_tracing(                            \
         categoryString, markerName,                                       \
         ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, kind)
-#  define BASE_PROFILER_TRACING_DOCSHELL(categoryString, markerName,        \
-                                         categoryPair, kind, docShell)      \
-    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                           \
-    ::mozilla::baseprofiler::profiler_tracing(                              \
-        categoryString, markerName,                                         \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, kind, \
-        docShellId, docShellHistoryId)
 
 MFBT_API void profiler_tracing(
     const char* aCategoryString, const char* aMarkerName,
     ProfilingCategoryPair aCategoryPair, TracingKind aKind,
-    const Maybe<std::string>& aDocShellId = Nothing(),
-    const Maybe<uint32_t>& aDocShellHistoryId = Nothing());
+    const Maybe<uint64_t>& aInnerWindowID = Nothing());
 MFBT_API void profiler_tracing(
     const char* aCategoryString, const char* aMarkerName,
     ProfilingCategoryPair aCategoryPair, TracingKind aKind,
     UniqueProfilerBacktrace aCause,
-    const Maybe<std::string>& aDocShellId = Nothing(),
-    const Maybe<uint32_t>& aDocShellHistoryId = Nothing());
+    const Maybe<uint64_t>& aInnerWindowID = Nothing());
 
 
 #  define AUTO_BASE_PROFILER_TRACING(categoryString, markerName, categoryPair) \
     ::mozilla::baseprofiler::AutoProfilerTracing BASE_PROFILER_RAII(           \
         categoryString, markerName,                                            \
         ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,          \
-        Nothing(), Nothing())
-#  define AUTO_BASE_PROFILER_TRACING_DOCSHELL(categoryString, markerName, \
-                                              categoryPair, docShell)     \
-    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                         \
-    ::mozilla::baseprofiler::AutoProfilerTracing BASE_PROFILER_RAII(      \
-        categoryString, markerName,                                       \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,     \
-        docShellId, docShellHistoryId)
+        Nothing())
 
 
 
@@ -826,16 +781,14 @@ MFBT_API void profiler_add_text_marker(
     const char* aMarkerName, const std::string& aText,
     ProfilingCategoryPair aCategoryPair, const TimeStamp& aStartTime,
     const TimeStamp& aEndTime,
-    const Maybe<std::string>& aDocShellId = Nothing(),
-    const Maybe<uint32_t>& aDocShellHistoryId = Nothing(),
+    const Maybe<uint64_t>& aInnerWindowID = Nothing(),
     UniqueProfilerBacktrace aCause = nullptr);
 
 class MOZ_RAII AutoProfilerTextMarker {
  public:
   AutoProfilerTextMarker(const char* aMarkerName, const std::string& aText,
                          ProfilingCategoryPair aCategoryPair,
-                         const Maybe<std::string>& aDocShellId,
-                         const Maybe<uint32_t>& aDocShellHistoryId,
+                         const Maybe<uint64_t>& aInnerWindowID,
                          UniqueProfilerBacktrace&& aCause =
                              nullptr MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mMarkerName(aMarkerName),
@@ -843,15 +796,14 @@ class MOZ_RAII AutoProfilerTextMarker {
         mCategoryPair(aCategoryPair),
         mStartTime(TimeStamp::NowUnfuzzed()),
         mCause(std::move(aCause)),
-        mDocShellId(aDocShellId),
-        mDocShellHistoryId(aDocShellHistoryId) {
+        mInnerWindowID(aInnerWindowID) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
 
   ~AutoProfilerTextMarker() {
     profiler_add_text_marker(mMarkerName, mText, mCategoryPair, mStartTime,
-                             TimeStamp::NowUnfuzzed(), mDocShellId,
-                             mDocShellHistoryId, std::move(mCause));
+                             TimeStamp::NowUnfuzzed(), mInnerWindowID,
+                             std::move(mCause));
   }
 
  protected:
@@ -861,8 +813,7 @@ class MOZ_RAII AutoProfilerTextMarker {
   const ProfilingCategoryPair mCategoryPair;
   TimeStamp mStartTime;
   UniqueProfilerBacktrace mCause;
-  const Maybe<std::string> mDocShellId;
-  const Maybe<uint32_t> mDocShellHistoryId;
+  const Maybe<uint64_t> mInnerWindowID;
 };
 
 #  define AUTO_BASE_PROFILER_TEXT_MARKER_CAUSE(markerName, text, categoryPair, \
@@ -870,23 +821,7 @@ class MOZ_RAII AutoProfilerTextMarker {
     ::mozilla::baseprofiler::AutoProfilerTextMarker BASE_PROFILER_RAII(        \
         markerName, text,                                                      \
         ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,          \
-        mozilla::Nothing(), mozilla::Nothing(), cause)
-
-#  define AUTO_BASE_PROFILER_TEXT_MARKER_DOCSHELL(markerName, text,       \
-                                                  categoryPair, docShell) \
-    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                         \
-    ::mozilla::baseprofiler::AutoProfilerTextMarker BASE_PROFILER_RAII(   \
-        markerName, text,                                                 \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,     \
-        docShellId, docShellHistoryId)
-
-#  define AUTO_BASE_PROFILER_TEXT_MARKER_DOCSHELL_CAUSE(                \
-      markerName, text, categoryPair, docShell, cause)                  \
-    MOZDECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                       \
-    ::mozilla::baseprofiler::AutoProfilerTextMarker BASE_PROFILER_RAII( \
-        markerName, text,                                               \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,   \
-        docShellId, docShellHistoryId, cause)
+        mozilla::Nothing(), cause)
 
 
 
@@ -1041,38 +976,34 @@ class MOZ_RAII AutoProfilerTracing {
  public:
   AutoProfilerTracing(const char* aCategoryString, const char* aMarkerName,
                       ProfilingCategoryPair aCategoryPair,
-                      const Maybe<std::string>& aDocShellId,
-                      const Maybe<uint32_t>& aDocShellHistoryId
+                      const Maybe<uint64_t>& aInnerWindowID
                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mCategoryString(aCategoryString),
         mMarkerName(aMarkerName),
         mCategoryPair(aCategoryPair),
-        mDocShellId(aDocShellId),
-        mDocShellHistoryId(aDocShellHistoryId) {
+        mInnerWindowID(aInnerWindowID) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     profiler_tracing(mCategoryString, mMarkerName, aCategoryPair,
-                     TRACING_INTERVAL_START, mDocShellId, mDocShellHistoryId);
+                     TRACING_INTERVAL_START, mInnerWindowID);
   }
 
   AutoProfilerTracing(
       const char* aCategoryString, const char* aMarkerName,
       ProfilingCategoryPair aCategoryPair, UniqueProfilerBacktrace aBacktrace,
-      const Maybe<std::string>& aDocShellId,
-      const Maybe<uint32_t>& aDocShellHistoryId MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      const Maybe<uint64_t>& aInnerWindowID MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : mCategoryString(aCategoryString),
         mMarkerName(aMarkerName),
         mCategoryPair(aCategoryPair),
-        mDocShellId(aDocShellId),
-        mDocShellHistoryId(aDocShellHistoryId) {
+        mInnerWindowID(aInnerWindowID) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     profiler_tracing(mCategoryString, mMarkerName, aCategoryPair,
-                     TRACING_INTERVAL_START, std::move(aBacktrace), mDocShellId,
-                     mDocShellHistoryId);
+                     TRACING_INTERVAL_START, std::move(aBacktrace),
+                     mInnerWindowID);
   }
 
   ~AutoProfilerTracing() {
     profiler_tracing(mCategoryString, mMarkerName, mCategoryPair,
-                     TRACING_INTERVAL_END, mDocShellId, mDocShellHistoryId);
+                     TRACING_INTERVAL_END, mInnerWindowID);
   }
 
  protected:
@@ -1080,8 +1011,7 @@ class MOZ_RAII AutoProfilerTracing {
   const char* mCategoryString;
   const char* mMarkerName;
   const ProfilingCategoryPair mCategoryPair;
-  const Maybe<std::string> mDocShellId;
-  const Maybe<uint32_t> mDocShellHistoryId;
+  const Maybe<uint64_t> mInnerWindowID;
 };
 
 
