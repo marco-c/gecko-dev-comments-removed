@@ -1216,8 +1216,15 @@ nsGlobalWindowOuter::~nsGlobalWindowOuter() {
 
   JSObject* proxy = GetWrapperMaybeDead();
   if (proxy) {
-    if (mBrowsingContext) {
-      mBrowsingContext->ClearWindowProxy();
+    if (mBrowsingContext && mBrowsingContext->GetUnbarrieredWindowProxy()) {
+      nsGlobalWindowOuter* outer = nsOuterWindowProxy::GetOuterWindow(
+          mBrowsingContext->GetUnbarrieredWindowProxy());
+      
+      
+      
+      if (outer == this) {
+        mBrowsingContext->ClearWindowProxy();
+      }
     }
     js::SetProxyReservedSlot(proxy, OUTER_WINDOW_SLOT,
                              js::PrivateValue(nullptr));
@@ -1433,7 +1440,16 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowOuter)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell)
   if (tmp->mBrowsingContext) {
-    tmp->mBrowsingContext->ClearWindowProxy();
+    if (tmp->mBrowsingContext->GetUnbarrieredWindowProxy()) {
+      nsGlobalWindowOuter* outer = nsOuterWindowProxy::GetOuterWindow(
+          tmp->mBrowsingContext->GetUnbarrieredWindowProxy());
+      
+      
+      
+      if (outer == tmp) {
+        tmp->mBrowsingContext->ClearWindowProxy();
+      }
+    }
     tmp->mBrowsingContext = nullptr;
   }
 

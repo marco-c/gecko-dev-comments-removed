@@ -307,6 +307,10 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
   
   inline JSObject* GetWindowProxy() const { return mWindowProxy; }
+  inline JSObject* GetUnbarrieredWindowProxy() const {
+    return mWindowProxy.unbarrieredGet();
+  }
+
   
   void SetWindowProxy(JS::Handle<JSObject*> aWindowProxy) {
     mWindowProxy = aWindowProxy;
