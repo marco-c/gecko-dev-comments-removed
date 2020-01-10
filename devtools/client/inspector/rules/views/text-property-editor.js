@@ -35,6 +35,12 @@ loader.lazyRequireGetter(
   "devtools/shared/css/parsing-utils",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "findCssSelector",
+  "devtools/shared/inspector/css-logic",
+  true
+);
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
@@ -497,6 +503,12 @@ TextPropertyEditor.prototype = {
       };
     }
 
+    
+    let focusedElSelector = null;
+    if (this.valueSpan.contains(this.doc.activeElement)) {
+      focusedElSelector = findCssSelector(this.doc.activeElement);
+    }
+
     this.valueSpan.innerHTML = "";
     this.valueSpan.appendChild(frag);
 
@@ -681,6 +693,14 @@ TextPropertyEditor.prototype = {
 
     
     this.ruleView._updatePropertyHighlight(this);
+
+    
+    if (focusedElSelector) {
+      const elementToFocus = this.doc.querySelector(focusedElSelector);
+      if (elementToFocus) {
+        elementToFocus.focus();
+      }
+    }
   },
   
 
