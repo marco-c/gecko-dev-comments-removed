@@ -805,11 +805,8 @@ nsresult XULContentSinkImpl::AddAttributes(const char16_t** aAttributes,
   
   nsXULPrototypeAttribute* attrs = nullptr;
   if (aAttrLen > 0) {
-    attrs = new nsXULPrototypeAttribute[aAttrLen];
+    attrs = aElement->mAttributes.AppendElements(aAttrLen);
   }
-
-  aElement->mAttributes = attrs;
-  aElement->mNumAttributes = aAttrLen;
 
   
   uint32_t i;
