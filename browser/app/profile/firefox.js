@@ -1720,27 +1720,11 @@ pref("browser.tabs.crashReporting.email", "");
 pref("extensions.legacy.enabled", false);
 
 
-
-pref("dom.ipc.cpow.timeout", 500);
-
-
 pref("dom.ipc.cpows.forbid-unsafe-from-browser", true);
-
-
-
-pref("dom.ipc.processHangMonitor", true);
 
 #if defined(XP_WIN)
   
   pref("dom.ipc.processPriorityManager.enabled", true);
-#endif
-
-#ifdef DEBUG
-  
-  
-  pref("dom.ipc.reportProcessHangs", false);
-#else
-  pref("dom.ipc.reportProcessHangs", true);
 #endif
 
 

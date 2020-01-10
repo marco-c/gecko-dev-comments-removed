@@ -2240,7 +2240,7 @@ void ContentParent::LaunchSubprocessInternal(
     mHangMonitorActor = ProcessHangMonitor::AddProcess(this);
 
     
-    SetReplyTimeoutMs(Preferences::GetInt("dom.ipc.cpow.timeout", 0));
+    SetReplyTimeoutMs(StaticPrefs::dom_ipc_cpow_timeout());
 
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {

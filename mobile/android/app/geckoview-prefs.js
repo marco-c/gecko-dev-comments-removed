@@ -19,11 +19,7 @@ pref("privacy.trackingprotection.pbmode.enabled", false);
 
 pref("dom.ipc.keepProcessesAlive.web", 1);
 pref("dom.ipc.processCount", 1);
-pref("dom.ipc.processHangMonitor", true);
 pref("dom.ipc.processPrelaunch.enabled", false);
-
-
-pref("dom.ipc.reportProcessHangs", true);
 
 
 pref("toolkit.telemetry.isGeckoViewMode", true);
