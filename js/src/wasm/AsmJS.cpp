@@ -6081,7 +6081,7 @@ static bool CheckFunction(ModuleValidator<Unit>& m) {
   
   
   
-  FunctionTree* tree = m.parser().getTreeHolder()->getCurrentParent();
+  FunctionTree* tree = m.parser().getTreeHolder().getCurrentParent();
   if (tree) {
     m.parser().publishDeferredItems(tree);
 

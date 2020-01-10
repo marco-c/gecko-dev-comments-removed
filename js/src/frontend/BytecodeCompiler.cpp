@@ -535,7 +535,7 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
 
     
     info.usedNames->reset();
-    parser->getTreeHolder()->resetFunctionTree();
+    parser->getTreeHolder().resetFunctionTree();
   }
 
   

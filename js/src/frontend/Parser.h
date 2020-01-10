@@ -206,7 +206,7 @@ class SourceParseContext : public ParseContext {
   SourceParseContext(GeneralParser<ParseHandler, Unit>* prs, SharedContext* sc,
                      Directives* newDirectives)
       : ParseContext(prs->cx_, prs->pc_, sc, prs->tokenStream, prs->usedNames_,
-                     newDirectives, prs->getTreeHolder(),
+                     prs->getTreeHolder(), newDirectives,
                      mozilla::IsSame<ParseHandler, FullParseHandler>::value) {}
 };
 
@@ -347,17 +347,32 @@ class FunctionTree {
 
 
 
+
+
+
+
+
+
+
 class FunctionTreeHolder {
+ public:
+  enum Mode { Eager, Deferred };
+
+ private:
   FunctionTree treeRoot_;
   FunctionTree* currentParent_;
+  Mode mode_;
 
  public:
-  explicit FunctionTreeHolder(JSContext* cx)
-      : treeRoot_(cx), currentParent_(&treeRoot_) {}
+  explicit FunctionTreeHolder(JSContext* cx, Mode mode = Mode::Eager)
+      : treeRoot_(cx), currentParent_(&treeRoot_), mode_(mode) {}
 
   FunctionTree* getFunctionTree() { return &treeRoot_; }
   FunctionTree* getCurrentParent() { return currentParent_; }
   void setCurrentParent(FunctionTree* parent) { currentParent_ = parent; }
+
+  bool isEager() { return mode_ == Mode::Eager; }
+  bool isDeferred() { return mode_ == Mode::Deferred; }
 
   
   
@@ -397,10 +412,10 @@ class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
   FunctionTreeHolder treeHolder_;
 
  public:
-  FunctionTreeHolder* getTreeHolder() { return &treeHolder_; }
+  FunctionTreeHolder& getTreeHolder() { return treeHolder_; }
 
   bool publishDeferredItems() {
-    return publishDeferredItems(getTreeHolder()->getFunctionTree());
+    return publishDeferredItems(getTreeHolder().getFunctionTree());
   }
 
   bool publishDeferredItems(FunctionTree* root) {

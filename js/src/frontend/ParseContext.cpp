@@ -221,8 +221,8 @@ void ParseContext::Scope::removeCatchParameters(ParseContext* pc,
 ParseContext::ParseContext(JSContext* cx, ParseContext*& parent,
                            SharedContext* sc, ErrorReporter& errorReporter,
                            class UsedNameTracker& usedNames,
-                           Directives* newDirectives,
-                           FunctionTreeHolder* treeHolder, bool isFull)
+                           FunctionTreeHolder& treeHolder,
+                           Directives* newDirectives, bool isFull)
     : Nestable<ParseContext>(&parent),
       traceLog_(sc->cx_,
                 isFull ? TraceLogger_ParsingFull : TraceLogger_ParsingSyntax,
@@ -246,9 +246,14 @@ ParseContext::ParseContext(JSContext* cx, ParseContext*& parent,
     
     
     
-    if (treeHolder && !this->functionBox()->useAsmOrInsideUseAsm()) {
+    
+    
+    
+    if (treeHolder.isDeferred() &&
+        !this->functionBox()->useAsmOrInsideUseAsm()) {
       tree.emplace(treeHolder);
     }
+
     if (functionBox()->isNamedLambda()) {
       namedLambdaScope_.emplace(cx, parent, usedNames);
     }
@@ -265,8 +270,10 @@ bool ParseContext::init() {
   JSContext* cx = sc()->cx_;
 
   if (isFunctionBox()) {
-    if (tree && !tree->init(cx, this->functionBox())) {
-      return false;
+    if (tree) {
+      if (!tree->init(cx, this->functionBox())) {
+        return false;
+      }
     }
     
     
