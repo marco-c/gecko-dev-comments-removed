@@ -340,12 +340,29 @@ class RequestListContextMenu {
         this.useAsFetch(id, url, method, requestHeaders, requestPostData),
     });
 
+    if (Services.prefs.getBoolPref("devtools.netmonitor.features.search")) {
+      const { toggleSearchPanel, panelOpen } = this.props;
+
+      menu.push({
+        type: "separator",
+      });
+
+      menu.push({
+        id: "request-list-context-search",
+        label: "Search...", 
+        accesskey: "S", 
+        type: "checkbox",
+        checked: panelOpen,
+        visible: !!clickedRequest,
+        click: () => toggleSearchPanel(),
+      });
+    }
+
     showMenu(menu, {
       screenX: event.screenX,
       screenY: event.screenY,
     });
   }
-  
 
   
 

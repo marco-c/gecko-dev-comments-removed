@@ -164,6 +164,9 @@ pref("devtools.serviceWorkers.testing.enabled", false);
 pref("devtools.netmonitor.enabled", true);
 
 
+pref("devtools.netmonitor.features.search", false);
+
+
 pref("devtools.application.enabled", false);
 
 

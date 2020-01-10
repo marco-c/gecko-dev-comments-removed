@@ -89,19 +89,22 @@ async function fetchHeaders(headers, getLongString) {
 
 
 function fetchNetworkUpdatePacket(requestData, request, updateTypes) {
+  const promises = [];
   updateTypes.forEach(updateType => {
     
     if (updateType === "stackTrace") {
       if (request.cause.stacktraceAvailable && !request.stacktrace) {
-        requestData(request.id, updateType);
+        promises.push(requestData(request.id, updateType));
       }
       return;
     }
 
     if (request[`${updateType}Available`] && !request[updateType]) {
-      requestData(request.id, updateType);
+      promises.push(requestData(request.id, updateType));
     }
   });
+
+  return Promise.all(promises);
 }
 
 

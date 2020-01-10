@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+
+importScripts("./search.js", "../worker-utils.js");
+
+
+self.onmessage = workerHandler({ searchInResource });
