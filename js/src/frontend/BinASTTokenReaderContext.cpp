@@ -469,23 +469,26 @@ class HuffmanPreludeReader {
   
   MOZ_MUST_USE JS::Result<Ok> pushValue(NormalizedInterfaceAndField identity,
                                         const List& list) {
-    auto& table = dictionary_.tableForListLength(list.contents_);
-    if (table.is<HuffmanTableUnreachable>()) {
+    auto index = list.contents_;
+    auto& status = dictionary_.listLengthStatus(index);
+    if (status == HuffmanDictionary::TableStatus::Unreachable) {
       
       
-      table = {mozilla::VariantType<HuffmanTableInitializing>{}};
+      status = HuffmanDictionary::TableStatus::Initializing;
+
+      auto& table = dictionary_.tableForListLength(index);
 
       
-      MOZ_TRY((readTable<List>(table, list)));
+      MOZ_TRY((readTable<List>(table, status, list)));
     }
 
     
     
     
     
-    auto& lengthTable = table.as<GenericHuffmanTable>();
+    auto& table = dictionary_.tableForListLength(index);
     bool empty = true;
-    for (auto iter : lengthTable) {
+    for (auto iter : table) {
       if (iter->toListLength() > 0) {
         empty = false;
         break;
@@ -520,15 +523,16 @@ class HuffmanPreludeReader {
 
   MOZ_MUST_USE JS::Result<Ok> pushValue(NormalizedInterfaceAndField identity,
                                         const Interface& interface) {
-    
-    
-    auto& table = dictionary_.tableForField(identity);
-    if (table.is<HuffmanTableUnreachable>()) {
+    auto& status = dictionary_.fieldStatus(identity);
+    if (status == HuffmanDictionary::TableStatus::Unreachable) {
       
-      GenericHuffmanTable sum;
-      MOZ_TRY(sum.initWithSingleValue(
+      auto& table = dictionary_.tableForField(identity);
+
+      status = HuffmanDictionary::TableStatus::Ready;
+      new (mozilla::KnownNotNull, &table) GenericHuffmanTable();
+
+      MOZ_TRY(table.initWithSingleValue(
           cx_, BinASTSymbol::fromKind(BinASTKind(interface.kind_))));
-      table = {mozilla::VariantType<GenericHuffmanTable>{}, std::move(sum)};
     }
 
     
@@ -543,15 +547,15 @@ class HuffmanPreludeReader {
                                         const Entry& entry) {
     
     
-    auto& table = dictionary_.tableForField(identity);
-    if (!table.is<HuffmanTableUnreachable>()) {
+    auto& status = dictionary_.fieldStatus(identity);
+    if (status != HuffmanDictionary::TableStatus::Unreachable) {
       
       return Ok();
     }
 
     
     
-    table = {mozilla::VariantType<HuffmanTableInitializing>{}};
+    status = HuffmanDictionary::TableStatus::Initializing;
 
     
     
@@ -815,42 +819,42 @@ class HuffmanPreludeReader {
   
   template <typename Entry>
   MOZ_MUST_USE JS::Result<Ok> readTable(Entry entry) {
-    auto& table = dictionary_.tableForField(entry.identity_);
-    return readTable<Entry>(table, entry);
+    auto index = entry.identity_;
+    auto& status = dictionary_.fieldStatus(index);
+    if (MOZ_UNLIKELY(status != HuffmanDictionary::TableStatus::Initializing)) {
+      
+      
+      return raiseDuplicateTableError(index);
+    }
+
+    auto& table = dictionary_.tableForField(index);
+    return readTable<Entry>(table, status, entry);
   }
 
   
   
   
   template <typename Entry>
-  MOZ_MUST_USE JS::Result<Ok> readTable(HuffmanTableValue& table, Entry entry) {
-    if (MOZ_UNLIKELY(!table.template is<HuffmanTableInitializing>())) {
-      
-      
-      return raiseDuplicateTableError(entry.identity_);
-    }
-
+  MOZ_MUST_USE JS::Result<Ok> readTable(GenericHuffmanTable& table,
+                                        HuffmanDictionary::TableStatus& status,
+                                        Entry entry) {
     uint8_t headerByte;
     MOZ_TRY_VAR(headerByte, reader_.readByte<Compression::No>());
     switch (headerByte) {
-      case TableHeader::SingleValue: {
-        
-        table = {mozilla::VariantType<GenericHuffmanTable>{}};
-        auto& tableRef = table.template as<GenericHuffmanTable>();
+      case TableHeader::SingleValue:
+        new (mozilla::KnownNotNull, &table) GenericHuffmanTable();
+        status = HuffmanDictionary::TableStatus::Ready;
 
         
-        MOZ_TRY((readSingleValueTable<Entry>(tableRef, entry)));
+        MOZ_TRY((readSingleValueTable<Entry>(table, entry)));
         return Ok();
-      }
-      case TableHeader::MultipleValues: {
-        
-        
-        table = {mozilla::VariantType<GenericHuffmanTable>{}};
-        auto& tableRef = table.template as<GenericHuffmanTable>();
+      case TableHeader::MultipleValues:
+        new (mozilla::KnownNotNull, &table) GenericHuffmanTable();
+        status = HuffmanDictionary::TableStatus::Ready;
 
-        MOZ_TRY((readMultipleValuesTable<Entry>(tableRef, entry)));
+        
+        MOZ_TRY((readMultipleValuesTable<Entry>(table, entry)));
         return Ok();
-      }
       case TableHeader::Unreachable:
         
         return Ok();
@@ -913,12 +917,14 @@ class HuffmanPreludeReader {
       
       
       
-      const auto& table = owner.dictionary_.tableForField(entry.identity_);
-      if (table.is<HuffmanTableUnreachable>()) {
+      auto index = entry.identity_;
+      auto& status = owner.dictionary_.fieldStatus(index);
+      if (status == HuffmanDictionary::TableStatus::Unreachable) {
         return Ok();
       }
-      const auto& tableRef = table.as<GenericHuffmanTable>();
-      if (!tableRef.isMaybeInterfaceAlwaysNull()) {
+
+      const auto& table = owner.dictionary_.tableForField(index);
+      if (!table.isMaybeInterfaceAlwaysNull()) {
         MOZ_TRY(owner.pushFields(entry.kind_));
       }
       return Ok();
@@ -934,15 +940,15 @@ class HuffmanPreludeReader {
       
       
 
-      const auto& table = owner.dictionary_.tableForField(entry.identity_);
-      if (table.is<HuffmanTableInitializing>()) {
+      auto index = entry.identity_;
+      auto& status = owner.dictionary_.fieldStatus(index);
+      if (status == HuffmanDictionary::TableStatus::Initializing) {
         return Ok();
       }
-      const auto& tableRef = table.as<GenericHuffmanTable>();
 
-      for (auto iter : tableRef) {
-        MOZ_TRY(owner.pushValue(entry.identity_,
-                                Interface(entry.identity_, iter->toKind())));
+      const auto& table = owner.dictionary_.tableForField(index);
+      for (auto iter : table) {
+        MOZ_TRY(owner.pushValue(index, Interface(index, iter->toKind())));
       }
       return Ok();
     }
@@ -957,16 +963,15 @@ class HuffmanPreludeReader {
       
       
       
-
-      const auto& table = owner.dictionary_.tableForField(entry.identity_);
-      if (table.is<HuffmanTableUnreachable>()) {
+      auto index = entry.identity_;
+      auto& status = owner.dictionary_.fieldStatus(index);
+      if (status == HuffmanDictionary::TableStatus::Unreachable) {
         return Ok();
       }
-      const auto& tableRef = table.as<GenericHuffmanTable>();
 
-      for (auto iter : tableRef) {
-        MOZ_TRY(owner.pushValue(entry.identity_,
-                                Interface(entry.identity_, iter->toKind())));
+      const auto& table = owner.dictionary_.tableForField(index);
+      for (auto iter : table) {
+        MOZ_TRY(owner.pushValue(index, Interface(index, iter->toKind())));
       }
       return Ok();
     }
@@ -1331,15 +1336,13 @@ struct ExtractBinASTInterfaceAndFieldMatcher {
 JS::Result<BinASTKind> BinASTTokenReaderContext::readTagFromTable(
     const BinASTInterfaceAndField& identity) {
   
-  const auto& table =
-      dictionary_.tableForField(NormalizedInterfaceAndField(identity));
+  auto index = NormalizedInterfaceAndField(identity);
+  const auto& table = dictionary_.tableForField(index);
   BINJS_MOZ_TRY_DECL(bits_,
                      (bitBuffer.getHuffmanLookup<Compression::No>(*this)));
 
-  const auto& specialized = table.as<GenericHuffmanTable>();
-
   
-  const auto result = specialized.lookup(bits_);
+  const auto result = table.lookup(bits_);
   if (MOZ_UNLIKELY(!result.isFound())) {
     return raiseInvalidValue();
   }
@@ -1349,17 +1352,21 @@ JS::Result<BinASTKind> BinASTTokenReaderContext::readTagFromTable(
 
 JS::Result<BinASTSymbol> BinASTTokenReaderContext::readFieldFromTable(
     const BinASTInterfaceAndField& identity) {
-  
-  const auto& table =
-      dictionary_.tableForField(NormalizedInterfaceAndField(identity));
-  if (MOZ_UNLIKELY(!table.is<GenericHuffmanTable>())) {
+  auto index = NormalizedInterfaceAndField(identity);
+
+  auto& status = dictionary_.fieldStatus(index);
+  if (status != HuffmanDictionary::TableStatus::Ready) {
     return raiseNotInPrelude();
   }
+
+  const auto& table = dictionary_.tableForField(index);
   BINJS_MOZ_TRY_DECL(bits_, bitBuffer.getHuffmanLookup<Compression::No>(*this));
-  const auto result = table.as<GenericHuffmanTable>().lookup(bits_);
+
+  const auto result = table.lookup(bits_);
   if (MOZ_UNLIKELY(!result.isFound())) {
     return raiseInvalidValue();
   }
+
   bitBuffer.advanceBitBuffer<Compression::No>(result.bitLength());
   return result.value();
 }
@@ -1490,8 +1497,7 @@ JS::Result<Ok> BinASTTokenReaderContext::enterList(uint32_t& items,
   const auto identity = context.content_;
   const auto& table = dictionary_.tableForListLength(identity);
   BINJS_MOZ_TRY_DECL(bits_, bitBuffer.getHuffmanLookup<Compression::No>(*this));
-  const auto& tableForLookup = table.as<GenericHuffmanTable>();
-  const auto result = tableForLookup.lookup(bits_);
+  const auto result = table.lookup(bits_);
   if (MOZ_UNLIKELY(!result.isFound())) {
     return raiseInvalidValue();
   }
@@ -2779,19 +2785,36 @@ HuffmanPreludeReader::readSingleValueTable<UnsignedLong>(
   return Ok();
 }
 
-HuffmanDictionary::HuffmanDictionary()
-    : fields_(BINAST_PARAM_NUMBER_OF_INTERFACE_AND_FIELD(
-          mozilla::AsVariant(HuffmanTableUnreachable()))),
-      listLengths_(BINAST_PARAM_NUMBER_OF_LIST_TYPES(
-          mozilla::AsVariant(HuffmanTableUnreachable()))) {}
-
-HuffmanTableValue& HuffmanDictionary::tableForField(
-    NormalizedInterfaceAndField index) {
-  return fields_[static_cast<size_t>(index.identity_)];
+HuffmanDictionary::~HuffmanDictionary() {
+  for (size_t i = 0; i < BINAST_INTERFACE_AND_FIELD_LIMIT; i++) {
+    if (fieldStatus(i) == TableStatus::Ready) {
+      tableForField(i).~GenericHuffmanTable();
+    }
+  }
+  for (size_t i = 0; i < BINAST_NUMBER_OF_LIST_TYPES; i++) {
+    if (listLengthStatus(i) == TableStatus::Ready) {
+      tableForListLength(i).~GenericHuffmanTable();
+    }
+  }
 }
 
-HuffmanTableValue& HuffmanDictionary::tableForListLength(BinASTList list) {
-  return listLengths_[static_cast<size_t>(list)];
+HuffmanDictionary::TableStatus& HuffmanDictionary::fieldStatus(
+    NormalizedInterfaceAndField index) {
+  return fieldStatus(static_cast<size_t>(index.identity_));
+}
+
+GenericHuffmanTable& HuffmanDictionary::tableForField(
+    NormalizedInterfaceAndField index) {
+  return tableForField(static_cast<size_t>(index.identity_));
+}
+
+HuffmanDictionary::TableStatus& HuffmanDictionary::listLengthStatus(
+    BinASTList list) {
+  return listLengthStatus(static_cast<size_t>(list));
+}
+
+GenericHuffmanTable& HuffmanDictionary::tableForListLength(BinASTList list) {
+  return tableForListLength(static_cast<size_t>(list));
 }
 
 uint32_t HuffmanLookup::leadingBits(const uint8_t aBitLength) const {

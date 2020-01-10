@@ -252,11 +252,6 @@ class HuffmanLookupResult {
 
 
 
-
-const size_t HUFFMAN_TABLE_DEFAULT_INLINE_BUFFER_LENGTH = 8;
-
-
-
 enum class Nullable {
   Null,
   NonNull,
@@ -778,12 +773,6 @@ using TwoLookupsHuffmanTable =
 using ThreeLookupsHuffmanTable =
     MultiLookupHuffmanTable<TwoLookupsHuffmanTable, 6>;
 
-
-
-
-
-
-
 struct HuffmanTableUnreachable {};
 
 
@@ -880,26 +869,26 @@ struct GenericHuffmanTable {
 
 
 
-
-
-struct HuffmanTableInitializing {};
-
-
-using HuffmanTableValue =
-    mozilla::Variant<HuffmanTableUnreachable,  
-                     HuffmanTableInitializing, GenericHuffmanTable>;
-
-
-
-
-
-
 class HuffmanDictionary {
  public:
-  HuffmanDictionary();
+  HuffmanDictionary() {}
+  ~HuffmanDictionary();
 
-  HuffmanTableValue& tableForField(NormalizedInterfaceAndField index);
-  HuffmanTableValue& tableForListLength(BinASTList list);
+  
+  
+  
+  
+  enum class TableStatus : uint8_t {
+    Unreachable,
+    Initializing,
+    Ready,
+  };
+
+  TableStatus& fieldStatus(NormalizedInterfaceAndField index);
+  GenericHuffmanTable& tableForField(NormalizedInterfaceAndField index);
+
+  TableStatus& listLengthStatus(BinASTList list);
+  GenericHuffmanTable& tableForListLength(BinASTList list);
 
  private:
   
@@ -909,7 +898,22 @@ class HuffmanDictionary {
   
   
   
-  mozilla::Array<HuffmanTableValue, BINAST_INTERFACE_AND_FIELD_LIMIT> fields_;
+  
+  
+  
+  
+  TableStatus fieldStatus_[BINAST_INTERFACE_AND_FIELD_LIMIT] = {
+      TableStatus::Unreachable};
+  TableStatus listLengthStatus_[BINAST_NUMBER_OF_LIST_TYPES] = {
+      TableStatus::Unreachable};
+
+  TableStatus& fieldStatus(size_t i) {
+    return fieldStatus_[i];
+  }
+
+  TableStatus& listLengthStatus(size_t i) {
+    return listLengthStatus_[i];
+  }
 
   
   
@@ -917,7 +921,31 @@ class HuffmanDictionary {
   
   
   
-  mozilla::Array<HuffmanTableValue, BINAST_NUMBER_OF_LIST_TYPES> listLengths_;
+  
+  
+  
+  
+  alignas(GenericHuffmanTable) char fields_[sizeof(GenericHuffmanTable) *
+                                            BINAST_INTERFACE_AND_FIELD_LIMIT];
+
+  GenericHuffmanTable& tableForField(size_t i) {
+    return (reinterpret_cast<GenericHuffmanTable*>(fields_))[i];
+  }
+  GenericHuffmanTable& tableForListLength(size_t i) {
+    return (reinterpret_cast<GenericHuffmanTable*>(listLengths_))[i];
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  alignas(GenericHuffmanTable) char listLengths_[sizeof(GenericHuffmanTable) *
+                                                 BINAST_NUMBER_OF_LIST_TYPES];
 };
 
 
