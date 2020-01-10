@@ -285,9 +285,7 @@ class SpecialPowersChild extends JSWindowActorChild {
           
           let { name, passed, stack, diag } = message.data;
 
-          let SimpleTest =
-            this.contentWindow && this.contentWindow.wrappedJSObject.SimpleTest;
-
+          let { SimpleTest } = this;
           if (SimpleTest) {
             SimpleTest.record(
               passed,
@@ -1661,6 +1659,7 @@ class SpecialPowersChild extends JSWindowActorChild {
       args,
       task: String(task),
       caller: SpecialPowersSandbox.getCallerInfo(Components.stack.caller),
+      hasHarness: typeof this.SimpleTest === "object",
     });
   }
 
@@ -1690,6 +1689,21 @@ class SpecialPowersChild extends JSWindowActorChild {
     });
 
     return sb.execute(task, args, caller);
+  }
+
+  get SimpleTest() {
+    return this._SimpleTest || this.contentWindow.wrappedJSObject.SimpleTest;
+  }
+  set SimpleTest(val) {
+    this._SimpleTest = val;
+  }
+
+  
+
+
+
+  setAsDefaultAssertHandler() {
+    this.sendAsyncMessage("SetAsDefaultAssertHandler");
   }
 
   getFocusedElementForWindow(targetWindow, aDeep) {
