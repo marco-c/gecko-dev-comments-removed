@@ -1156,7 +1156,7 @@ const JsonView = {
     
     
     
-    Services.ppmm.addMessageListener("devtools:jsonview:save", this.onSave);
+    Services.mm.addMessageListener("devtools:jsonview:save", this.onSave);
   },
 
   
@@ -1166,8 +1166,8 @@ const JsonView = {
 
 
   onSave: function(message) {
-    const chrome = Services.wm.getMostRecentWindow("navigator:browser");
-    const browser = chrome.gBrowser.selectedBrowser;
+    const browser = message.target;
+    const chrome = browser.ownerGlobal;
     if (message.data === null) {
       
       chrome.saveBrowser(browser);
