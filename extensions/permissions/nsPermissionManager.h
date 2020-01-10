@@ -284,6 +284,15 @@ class nsPermissionManager final : public nsIPermissionManager,
   
   nsresult RemoveAllFromIPC();
 
+  
+
+
+
+
+
+
+  bool PermissionAvailable(nsIPrincipal* aPrincipal, const nsACString& aType);
+
  private:
   virtual ~nsPermissionManager();
 
@@ -517,15 +526,6 @@ class nsPermissionManager final : public nsIPermissionManager,
 
   template <class T>
   nsresult RemovePermissionEntries(T aCondition);
-
-  
-
-
-
-
-
-
-  bool PermissionAvailable(nsIPrincipal* aPrincipal, const nsACString& aType);
 
   nsRefPtrHashtable<nsCStringHashKey,
                     mozilla::GenericNonExclusivePromise::Private>
