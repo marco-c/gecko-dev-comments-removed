@@ -82,6 +82,7 @@ class FakeBluetooth {
     this.fake_bluetooth_ptr_ = new bluetooth.mojom.FakeBluetoothPtr();
     Mojo.bindInterface(bluetooth.mojom.FakeBluetooth.name,
         mojo.makeRequest(this.fake_bluetooth_ptr_).handle, 'process');
+    this.fake_central_ = null;
   }
 
   
@@ -105,12 +106,16 @@ class FakeBluetooth {
   
   
   async simulateCentral({state}) {
+    if (this.fake_central_)
+      throw 'simulateCentral() should only be called once';
+
     await this.setLESupported(true);
 
     let {fakeCentral: fake_central_ptr} =
       await this.fake_bluetooth_ptr_.simulateCentral(
         toMojoCentralState(state));
-    return new FakeCentral(fake_central_ptr);
+    this.fake_central_ = new FakeCentral(fake_central_ptr);
+    return this.fake_central_;
   }
 
   
@@ -200,6 +205,16 @@ class FakeCentral {
         new bluetooth.mojom.ScanResult(scanResult));
 
     return this.fetchOrCreatePeripheral_(scanResult.deviceAddress);
+  }
+
+  
+  
+  
+  
+  
+  
+  async setState(state) {
+    await this.fake_central_ptr_.setState(toMojoCentralState(state));
   }
 
   
