@@ -1689,6 +1689,14 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
   RefPtr<ContentCompositorBridgeParent> cpcp;
   RefPtr<WebRenderBridgeParent> childWrBridge;
 
+  
+  
+  
+  
+  
+  RefPtr<GeckoContentController> oldRootController =
+      GetGeckoContentControllerForRoot(child);
+
   {  
     MonitorAutoLock lock(*sIndirectLayerTreesLock);
     
@@ -1746,6 +1754,17 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
     
     
     MOZ_ASSERT(mApzUpdater);
+
+    
+    
+    
+    
+    
+    if (!mApzUpdater && oldRootController) {
+      nsTArray<MatrixMessage> clear;
+      clear.AppendElement(MatrixMessage(Nothing(), child));
+      oldRootController->NotifyLayerTransforms(clear);
+    }
   }
   if (mApzUpdater) {
     if (parent) {
