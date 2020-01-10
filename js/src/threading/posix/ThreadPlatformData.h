@@ -25,14 +25,18 @@
 
 #include "threading/Thread.h"
 
-class js::Thread::Id::PlatformData {
-  friend class js::Thread;
-  friend js::Thread::Id js::ThisThread::GetId();
+namespace js {
+
+class Thread::Id::PlatformData {
+  friend class Thread;
+  friend Thread::Id ThisThread::GetId();
   pthread_t ptThread;
 
   
   
   bool hasThread;
 };
+
+}  
 
 #endif  
