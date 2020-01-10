@@ -192,7 +192,7 @@ document.addEventListener("DOMContentLoaded", e => {
     
     
     for (let type of dataTypes) {
-      document.querySelector(`label[data-type=${type}]`).textContent =
+      document.querySelector(`label[data-type=${type}] span`).textContent =
         weekTypeCounts[type];
       const learnMoreLink = document.getElementById(`${type}-link`);
       learnMoreLink.href = RPMGetFormatURLPref(
