@@ -229,7 +229,7 @@ TEST(OpusAudioTrackEncoder, FrameEncode)
   
   uint64_t totalDuration = 0;
   for (auto& frame : frames) {
-    totalDuration += frame->GetDuration();
+    totalDuration += frame->mDuration;
   }
   
   const uint64_t five = 48000 * 5;

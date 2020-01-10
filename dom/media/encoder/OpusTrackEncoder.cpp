@@ -326,7 +326,7 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
     MOZ_ASSERT(frameCopied <= 3844, "frameCopied exceeded expected range");
 
     RefPtr<EncodedFrame> audiodata = new EncodedFrame();
-    audiodata->SetFrameType(EncodedFrame::OPUS_AUDIO_FRAME);
+    audiodata->mFrameType = EncodedFrame::OPUS_AUDIO_FRAME;
     int framesInPCM = frameCopied;
     if (mResampler) {
       AutoTArray<AudioDataValue, 9600> resamplingDest;
@@ -368,10 +368,10 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
               mResampledLeftover.Length());
       
       framesInPCM = framesLeft + outframesToCopy;
-      audiodata->SetDuration(framesInPCM);
+      audiodata->mDuration = framesInPCM;
     } else {
       
-      audiodata->SetDuration(frameCopied * (kOpusSamplingRate / mSamplingRate));
+      audiodata->mDuration = frameCopied * (kOpusSamplingRate / mSamplingRate);
     }
 
     
@@ -423,7 +423,7 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
 
     audiodata->SwapInFrameData(frameData);
     
-    audiodata->SetTimeStamp(mOutputTimeStamp);
+    audiodata->mTime = mOutputTimeStamp;
     mOutputTimeStamp +=
         FramesToUsecs(GetPacketDuration(), kOpusSamplingRate).value();
     LOG("[Opus] mOutputTimeStamp %lld.", mOutputTimeStamp);
