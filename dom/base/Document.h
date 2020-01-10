@@ -3908,7 +3908,9 @@ class Document : public nsINode,
   
   
   void NoteScriptTrackingStatus(const nsACString& aURL, bool isTracking);
-  bool IsScriptTracking(const nsACString& aURL) const;
+  
+  
+  bool IsScriptTracking(JSContext* aCx) const;
 
   
   
