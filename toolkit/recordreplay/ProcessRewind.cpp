@@ -182,12 +182,14 @@ void DivergeFromRecording() {
     
     child::SendResetMiddlemanCalls();
 
-    
-    
+    thread->DivergeFromRecording();
+
     
     Thread::WaitForIdleThreads();
-
-    thread->DivergeFromRecording();
+    for (size_t i = MainThreadId + 1; i <= MaxRecordedThreadId; i++) {
+      Thread::GetById(i)->SetShouldDivergeFromRecording();
+    }
+    Thread::ResumeIdleThreads();
   }
 
   gUnhandledDivergeAllowed = true;

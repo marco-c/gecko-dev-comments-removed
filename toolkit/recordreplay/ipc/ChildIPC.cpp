@@ -538,14 +538,6 @@ bool Repaint(nsAString& aData) {
 
     
     
-    
-    for (size_t i = MainThreadId + 1; i <= MaxRecordedThreadId; i++) {
-      Thread::GetById(i)->SetShouldDivergeFromRecording();
-    }
-    Thread::ResumeIdleThreads();
-
-    
-    
     NotifyVsyncObserver();
 
     
@@ -557,7 +549,6 @@ bool Repaint(nsAString& aData) {
       }
     }
 
-    Thread::WaitForIdleThreads();
     gRepainting = false;
   }
 
