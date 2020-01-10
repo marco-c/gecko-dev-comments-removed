@@ -41,7 +41,6 @@
 
 
 #define APPSTARTUP_CATEGORY "app-startup"
-#define APPSTARTUP_TOPIC "app-startup"
 
 
 
