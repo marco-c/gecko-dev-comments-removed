@@ -9028,18 +9028,6 @@ AbortReasonOr<Ok> IonBuilder::getElemTryTypedArray(bool* emitted,
   }
 
   
-  
-  
-  
-  
-  
-  
-  if (inspector->hasSeenNonIntegerIndex(pc)) {
-    trackOptimizationOutcome(TrackedOutcome::ArraySeenNonIntegerIndex);
-    return Ok();
-  }
-
-  
   MOZ_TRY(jsop_getelem_typed(obj, index, arrayType));
 
   trackOptimizationSuccess();
@@ -9569,14 +9557,19 @@ AbortReasonOr<Ok> IonBuilder::jsop_getelem_typed(MDefinition* obj,
   
   bool allowDouble = types->hasType(TypeSet::DoubleType());
 
-  
-  MInstruction* idInt32 = MToNumberInt32::New(alloc(), index);
-  current->add(idInt32);
-  index = idInt32;
-
   if (!maybeUndefined) {
     
     
+
+    
+    
+    
+    
+    
+    
+    MInstruction* indexInt32 = MToNumberInt32::New(alloc(), index);
+    current->add(indexInt32);
+    index = indexInt32;
 
     
     
@@ -9600,6 +9593,11 @@ AbortReasonOr<Ok> IonBuilder::jsop_getelem_typed(MDefinition* obj,
     load->setResultType(knownType);
     return Ok();
   } else {
+    
+    auto* indexInt32 = MTypedArrayIndexToInt32::New(alloc(), index);
+    current->add(indexInt32);
+    index = indexInt32;
+
     
     
     
