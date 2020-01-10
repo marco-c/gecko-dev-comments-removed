@@ -1155,6 +1155,28 @@ void nsWindow::HideWaylandPopupAndAllChildren() {
   }
 }
 
+bool IsPopupWithoutToplevelParent(nsMenuPopupFrame* aMenuPopupFrame) {
+  
+  
+  nsAtom* popupId = aMenuPopupFrame->GetContent()->GetID();
+  if (popupId && popupId->Equals(NS_LITERAL_STRING("PopupAutoComplete"))) {
+    return true;
+  }
+
+  
+  
+  nsIFrame* parentFrame = aMenuPopupFrame->GetParent();
+  if (!parentFrame) {
+    return false;
+  }
+  parentFrame = parentFrame->GetParent();
+  if (parentFrame && parentFrame->GetContent()->NodeName().EqualsLiteral(
+                         "popupnotificationcontent")) {
+    return true;
+  }
+  return false;
+}
+
 
 
 
@@ -1214,7 +1236,11 @@ GtkWidget* nsWindow::ConfigureWaylandPopupWindows() {
       
       
       
-      if (!parentWindow && !menuPopupFrame->IsContextMenu()) {
+      
+      
+      
+      if (!parentWindow && !menuPopupFrame->IsContextMenu() &&
+          !IsPopupWithoutToplevelParent(menuPopupFrame)) {
         parentWindow =
             get_window_for_gtk_widget(GTK_WIDGET(mToplevelParentWindow));
       }
