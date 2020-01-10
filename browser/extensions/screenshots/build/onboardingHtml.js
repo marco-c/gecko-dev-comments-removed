@@ -1,4 +1,8 @@
 
+
+
+
+
 window.onboardingHtml = `
 <!DOCTYPE html>
 <html>

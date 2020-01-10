@@ -1,3 +1,7 @@
+
+
+
+
 const THUMBNAIL_DIRECTORY = "thumbnails";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);

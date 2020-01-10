@@ -1,4 +1,8 @@
 
+
+
+
+
 window.onboardingCss = `
 .loader {
   background: rgba(12, 12, 13, 0.2);

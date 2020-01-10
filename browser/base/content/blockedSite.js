@@ -8,6 +8,10 @@
 
 
 
+
+
+
+
 function getErrorCode() {
   var url = document.documentURI;
   var error = url.search(/e\=/);

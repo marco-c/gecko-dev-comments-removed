@@ -1,5 +1,9 @@
 
 
+
+
+
+
 "use strict";
 
 this.devtools = class extends ExtensionAPI {
