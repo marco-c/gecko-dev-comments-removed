@@ -31,6 +31,42 @@ using dom::MediaTrackConstraintSet;
 using dom::MediaTrackSettings;
 using dom::VideoFacingModeEnum;
 
+static Maybe<VideoFacingModeEnum> GetFacingMode(const nsString& aDeviceName) {
+  
+#if defined(ANDROID)
+  
+  
+  
+  
+
+  if (aDeviceName.Find(NS_LITERAL_STRING("Facing back")) != kNotFound) {
+    return Some(VideoFacingModeEnum::Environment);
+  }
+  if (aDeviceName.Find(NS_LITERAL_STRING("Facing front")) != kNotFound) {
+    return Some(VideoFacingModeEnum::User);
+  }
+#endif  
+#ifdef XP_MACOSX
+  
+  if (aDeviceName.Find(NS_LITERAL_STRING("Face")) != -1) {
+    return Some(VideoFacingModeEnum::User);
+  }
+#endif
+#ifdef XP_WIN
+  
+  
+
+  if (aDeviceName.Find(NS_LITERAL_STRING("Front")) != kNotFound) {
+    return Some(VideoFacingModeEnum::User);
+  }
+  if (aDeviceName.Find(NS_LITERAL_STRING("Rear")) != kNotFound) {
+    return Some(VideoFacingModeEnum::Environment);
+  }
+#endif  
+
+  return Nothing();
+}
+
 MediaEngineRemoteVideoSource::MediaEngineRemoteVideoSource(
     int aIndex, camera::CaptureEngine aCapEngine, bool aScary)
     : mCaptureIndex(aIndex),
@@ -113,49 +149,29 @@ void MediaEngineRemoteVideoSource::SetName(nsString aName) {
   AssertIsOnOwningThread();
 
   mDeviceName = std::move(aName);
-  bool hasFacingMode = false;
-  VideoFacingModeEnum facingMode = VideoFacingModeEnum::User;
 
-  
-#if defined(ANDROID)
-  
-  
-  
-  
+  Maybe<VideoFacingModeEnum> facingMode;
+  if (GetMediaSource() == MediaSourceEnum::Camera) {
+    
+    facingMode = GetFacingMode(mDeviceName);
+  }
 
-  if (mDeviceName.Find(NS_LITERAL_STRING("Facing back")) != kNotFound) {
-    hasFacingMode = true;
-    facingMode = VideoFacingModeEnum::Environment;
-  } else if (mDeviceName.Find(NS_LITERAL_STRING("Facing front")) != kNotFound) {
-    hasFacingMode = true;
-    facingMode = VideoFacingModeEnum::User;
-  }
-#endif  
-#ifdef XP_MACOSX
-  
-  if (mDeviceName.Find(NS_LITERAL_STRING("Face")) != -1) {
-    hasFacingMode = true;
-    facingMode = VideoFacingModeEnum::User;
-  }
-#endif
-#ifdef XP_WIN
-  
-  
-
-  if (mDeviceName.Find(NS_LITERAL_STRING("Front")) != kNotFound) {
-    hasFacingMode = true;
-    facingMode = VideoFacingModeEnum::User;
-  } else if (mDeviceName.Find(NS_LITERAL_STRING("Rear")) != kNotFound) {
-    hasFacingMode = true;
-    facingMode = VideoFacingModeEnum::Environment;
-  }
-#endif  
-  if (hasFacingMode) {
+  if (facingMode.isSome()) {
     mFacingMode.Assign(NS_ConvertUTF8toUTF16(
-        dom::VideoFacingModeEnumValues::strings[uint32_t(facingMode)].value));
+        dom::VideoFacingModeEnumValues::strings[uint32_t(*facingMode)].value));
   } else {
     mFacingMode.Truncate();
   }
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "MediaEngineRemoteVideoSource::SetName (facingMode updater)",
+      [settings = mSettings, hasFacingMode = facingMode.isSome(),
+       mode = mFacingMode]() {
+        if (!hasFacingMode) {
+          settings->mFacingMode.Reset();
+          return;
+        }
+        settings->mFacingMode.Construct(mode);
+      }));
 }
 
 nsString MediaEngineRemoteVideoSource::GetName() const {
