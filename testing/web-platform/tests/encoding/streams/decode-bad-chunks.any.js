@@ -22,20 +22,6 @@ const badChunks = [
   {
     name: 'array',
     value: [65]
-  },
-  {
-    name: 'SharedArrayBuffer',
-    
-    
-    get value() {
-      return new SharedArrayBuffer();
-    }
-  },
-  {
-    name: 'shared Uint8Array',
-    get value() {
-      new Uint8Array(new SharedArrayBuffer())
-    }
   }
 ];
 
