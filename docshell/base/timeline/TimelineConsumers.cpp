@@ -15,7 +15,7 @@ namespace mozilla {
 
 NS_IMPL_ISUPPORTS(TimelineConsumers, nsIObserver);
 
-StaticMutex TimelineConsumers::sMutex;
+StaticMutexNotRecorded TimelineConsumers::sMutex;
 
 
 
