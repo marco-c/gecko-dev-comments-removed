@@ -145,7 +145,9 @@ static StorageAccess InternalStorageAllowedCheck(
 
   
   if (aRejectedReason ==
-      nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER) {
+          nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER ||
+      aRejectedReason ==
+          nsIWebProgressListener::STATE_COOKIES_BLOCKED_SOCIALTRACKER) {
     return StorageAccess::ePartitionTrackersOrDeny;
   }
 
@@ -321,6 +323,8 @@ bool ShouldPartitionStorage(uint32_t aRejectedReason) {
   return aRejectedReason ==
              nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER ||
          aRejectedReason ==
+             nsIWebProgressListener::STATE_COOKIES_BLOCKED_SOCIALTRACKER ||
+         aRejectedReason ==
              nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN;
 }
 
@@ -341,7 +345,9 @@ bool StoragePartitioningEnabled(StorageAccess aAccess,
 bool StoragePartitioningEnabled(uint32_t aRejectedReason,
                                 nsICookieSettings* aCookieSettings) {
   if (aRejectedReason ==
-      nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER) {
+          nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER ||
+      aRejectedReason ==
+          nsIWebProgressListener::STATE_COOKIES_BLOCKED_SOCIALTRACKER) {
     return aCookieSettings->GetCookieBehavior() ==
                nsICookieService::BEHAVIOR_REJECT_TRACKER &&
            StaticPrefs::privacy_storagePrincipal_enabledForTrackers();

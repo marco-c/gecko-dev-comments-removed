@@ -44,6 +44,7 @@ class AntiTrackingCommon final {
   
   
   
+  
   static bool IsFirstPartyStorageAccessGrantedFor(
       nsPIDOMWindowInner* a3rdPartyTrackingWindow, nsIURI* aURI,
       uint32_t* aRejectedReason);
@@ -152,6 +153,7 @@ class AntiTrackingCommon final {
     eAllow,
   };
 
+  
   
   
   
