@@ -34,6 +34,12 @@ class TimeoutHandler : public nsISupports {
   
   virtual void GetLocation(const char** aFileName, uint32_t* aLineNo,
                            uint32_t* aColumn);
+  
+  
+  
+  
+  
+  virtual void GetDescription(nsACString& aOutString);
   virtual void MarkForCC() {}
 
  protected:
@@ -65,6 +71,7 @@ class ScriptTimeoutHandler : public TimeoutHandler {
   MOZ_CAN_RUN_SCRIPT virtual bool Call(const char* ) override {
     return false;
   };
+  virtual void GetDescription(nsACString& aOutString) override;
 
  protected:
   virtual ~ScriptTimeoutHandler() {}
@@ -87,6 +94,7 @@ class CallbackTimeoutHandler final : public TimeoutHandler {
 
   MOZ_CAN_RUN_SCRIPT virtual bool Call(const char* aExecutionReason) override;
   virtual void MarkForCC() override;
+  virtual void GetDescription(nsACString& aOutString) override;
 
   void ReleaseJSObjects();
 
