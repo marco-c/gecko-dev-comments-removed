@@ -456,8 +456,6 @@ class HTMLEditRules : public TextEditRules {
 
   Element* IsInListItem(nsINode* aNode);
 
-  nsAtom& DefaultParagraphSeparator();
-
   
 
 
