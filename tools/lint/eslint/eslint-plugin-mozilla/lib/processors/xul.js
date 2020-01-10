@@ -139,7 +139,8 @@ function recursiveExpand(node) {
         
         continue;
       }
-      let nodeDesc = node.local;
+      
+      let nodeDesc = node.local.replace(/-/g, "");
       if (node.attributes.id) {
         nodeDesc += "_" + node.attributes.id.replace(/[^a-z]/gi, "_");
       }
