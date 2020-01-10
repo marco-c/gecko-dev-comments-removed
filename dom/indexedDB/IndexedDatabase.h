@@ -39,7 +39,10 @@ struct StructuredCloneFile {
   FileType mType;
 
   
-  inline StructuredCloneFile();
+  inline explicit StructuredCloneFile(FileType aType, RefPtr<Blob> aBlob = {});
+
+  
+  inline explicit StructuredCloneFile(RefPtr<IDBMutableFile> aMutableFile);
 
   
   inline ~StructuredCloneFile();
@@ -61,17 +64,39 @@ struct StructuredCloneReadInfo {
   inline StructuredCloneReadInfo();
 
   
+  inline StructuredCloneReadInfo(JSStructuredCloneData&& aData,
+                                 nsTArray<StructuredCloneFile> aFiles,
+                                 IDBDatabase* aDatabase,
+                                 bool aHasPreprocessInfo);
+
+#ifdef NS_BUILD_REFCNT_LOGGING
+  
   inline ~StructuredCloneReadInfo();
 
   
-  inline StructuredCloneReadInfo(StructuredCloneReadInfo&& aOther);
+  
+  
+  
+  
+  inline StructuredCloneReadInfo(StructuredCloneReadInfo&& aOther) noexcept;
 
   
-  inline StructuredCloneReadInfo& operator=(StructuredCloneReadInfo&& aOther);
-
   
-  inline MOZ_IMPLICIT StructuredCloneReadInfo(
-      SerializedStructuredCloneReadInfo&& aOther);
+  
+  
+  
+  
+  inline StructuredCloneReadInfo& operator=(
+      StructuredCloneReadInfo&& aOther) noexcept;
+#else
+  StructuredCloneReadInfo(StructuredCloneReadInfo&& aOther) = default;
+  StructuredCloneReadInfo& operator=(StructuredCloneReadInfo&& aOther) =
+      default;
+#endif
+
+  StructuredCloneReadInfo(const StructuredCloneReadInfo& aOther) = delete;
+  StructuredCloneReadInfo& operator=(const StructuredCloneReadInfo& aOther) =
+      delete;
 
   
   inline size_t Size() const;
@@ -81,4 +106,4 @@ struct StructuredCloneReadInfo {
 }  
 }  
 
-#endif  
+#endif
