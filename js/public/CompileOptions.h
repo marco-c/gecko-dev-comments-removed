@@ -98,6 +98,11 @@ class JS_PUBLIC_API TransitiveCompileOptions {
 
   bool mutedErrors_ = false;
 
+  
+  
+  
+  bool forceFullParse_ = false;
+
   const char* filename_ = nullptr;
   const char* introducerFilename_ = nullptr;
   const char16_t* sourceMapURL_ = nullptr;
@@ -140,6 +145,7 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   
   
   bool mutedErrors() const { return mutedErrors_; }
+  bool forceFullParse() const { return forceFullParse_; }
   const char* filename() const { return filename_; }
   const char* introducerFilename() const { return introducerFilename_; }
   const char16_t* sourceMapURL() const { return sourceMapURL_; }

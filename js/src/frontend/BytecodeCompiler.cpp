@@ -402,14 +402,8 @@ bool BytecodeCompiler::createScriptSource(
 }
 
 bool BytecodeCompiler::canLazilyParse() const {
-  return options.canLazilyParse &&
-         !cx->realm()->behaviors().disableLazyParsing() &&
-         !options.discardSource && !options.sourceIsLazy &&
-         !coverage::IsLCovEnabled() &&
-         
-         
-         
-         !mozilla::recordreplay::IsRecordingOrReplaying();
+  return options.canLazilyParse && !options.discardSource &&
+         !options.sourceIsLazy && !options.forceFullParse();
 }
 
 template <typename Unit>
