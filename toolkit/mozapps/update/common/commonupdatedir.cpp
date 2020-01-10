@@ -1510,12 +1510,6 @@ static HRESULT EnsureCorrectPermissions(SimpleAutoString& path,
     return returnValue;
   }
 
-  SimpleAutoString childBuffer;
-  if (!childBuffer.AllocEmpty(MAX_PATH)) {
-    
-    return FAILED(returnValue) ? returnValue : E_OUTOFMEMORY;
-  }
-
   
   DIR directoryHandle(path.String());
   errno = 0;
@@ -1524,6 +1518,13 @@ static HRESULT EnsureCorrectPermissions(SimpleAutoString& path,
     if (wcscmp(entry->d_name, L".") == 0 || wcscmp(entry->d_name, L"..") == 0 ||
         file.LockFilenameMatches(entry->d_name)) {
       continue;
+    }
+
+    SimpleAutoString childBuffer;
+    if (!childBuffer.AllocEmpty(MAX_PATH)) {
+      
+      
+      return FAILED(returnValue) ? returnValue : E_OUTOFMEMORY;
     }
 
     childBuffer.AssignSprintf(MAX_PATH + 1, L"%s\\%s", path.String(),
