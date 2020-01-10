@@ -9,6 +9,7 @@
 #include "ProfileBufferEntry.h"
 #include "ProfilerMarker.h"
 
+#include "mozilla/BlocksRingBuffer.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PowerOfTwo.h"
 
@@ -19,25 +20,26 @@ namespace baseprofiler {
 
 
 
-
-
-
-
-
-
-
-
-
 class ProfileBuffer final {
  public:
+  
+  
+  
+  
+  
+  using BlockIndex = BlocksRingBuffer::BlockIndex;
+
   
   
   explicit ProfileBuffer(PowerOfTwo32 aCapacity);
 
   ~ProfileBuffer();
 
+  bool IsThreadSafe() const { return mEntries.IsThreadSafe(); }
+
   
-  void AddEntry(const ProfileBufferEntry& aEntry);
+  
+  uint64_t AddEntry(const ProfileBufferEntry& aEntry);
 
   
   
@@ -82,16 +84,12 @@ class ProfileBuffer final {
 
   void DiscardSamplesBeforeTime(double aTime);
 
-  void AddStoredMarker(ProfilerMarker* aStoredMarker);
+  void AddMarker(ProfilerMarker* aMarker);
 
   
   void DeleteExpiredStoredMarkers();
 
-  
-  ProfileBufferEntry& GetEntry(uint64_t aPosition) const {
-    return mEntries[aPosition & mEntryIndexMask];
-  }
-
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
   void CollectOverheadStats(TimeDuration aSamplingTime, TimeDuration aLocking,
@@ -104,11 +102,18 @@ class ProfileBuffer final {
   
   
   
-  
-  UniquePtr<ProfileBufferEntry[]> mEntries;
+  static BlockIndex AddEntry(BlocksRingBuffer& aBlocksRingBuffer,
+                             const ProfileBufferEntry& aEntry);
 
   
-  PowerOfTwoMask32 mEntryIndexMask;
+  
+  
+  
+  static BlockIndex AddThreadIdEntry(BlocksRingBuffer& aBlocksRingBuffer,
+                                     int aThreadId);
+
+  
+  BlocksRingBuffer mEntries;
 
  public:
   
@@ -124,15 +129,20 @@ class ProfileBuffer final {
   
   
   
-  
-  
-  uint64_t mRangeStart;
-  uint64_t mRangeEnd;
+  uint64_t BufferRangeStart() const {
+    return mEntries.GetState().mRangeStart.ConvertToU64();
+  }
+  uint64_t BufferRangeEnd() const {
+    return mEntries.GetState().mRangeEnd.ConvertToU64();
+  }
 
   
   ProfilerMarkerLinkedList mStoredMarkers;
 
  private:
+  
+  const UniquePtr<BlocksRingBuffer::Byte[]> mDuplicationBuffer;
+
   
   double mFirstSamplingTimeNs = 0.0;
   
@@ -167,7 +177,9 @@ class ProfileBufferCollector final : public ProfilerStackCollector {
     return Some(mSamplePositionInBuffer);
   }
 
-  Maybe<uint64_t> BufferRangeStart() override { return Some(mBuf.mRangeStart); }
+  Maybe<uint64_t> BufferRangeStart() override {
+    return Some(mBuf.BufferRangeStart());
+  }
 
   virtual void CollectNativeLeafAddr(void* aAddr) override;
   virtual void CollectProfilingStackFrame(
