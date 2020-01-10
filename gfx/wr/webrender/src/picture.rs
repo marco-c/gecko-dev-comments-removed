@@ -809,14 +809,6 @@ impl TileCacheInstance {
             tile.is_opaque = false;
 
             
-            for image_key in tile.descriptor.image_keys.items() {
-                if frame_state.resource_cache.is_image_dirty(*image_key) {
-                    tile.is_same_content = false;
-                    break;
-                }
-            }
-
-            
             for binding in tile.descriptor.opacity_bindings.items() {
                 if let OpacityBinding::Binding(id) = binding {
                     let changed = match self.opacity_bindings.get(id) {
@@ -1145,6 +1137,17 @@ impl TileCacheInstance {
                         )
                 };
                 tile.descriptor.transforms.push(transform.into());
+            }
+
+            
+            
+            
+            
+            for image_key in tile.descriptor.image_keys.items() {
+                if resource_cache.is_image_dirty(*image_key) {
+                    tile.is_same_content = false;
+                    break;
+                }
             }
 
             
