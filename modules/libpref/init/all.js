@@ -1255,11 +1255,8 @@ pref("dom.storage.enabled", true);
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
+
 pref("dom.storage.next_gen", true);
-#else
-pref("dom.storage.next_gen", false);
-#endif
 pref("dom.storage.default_quota",      5120);
 pref("dom.storage.shadow_writes", true);
 pref("dom.storage.snapshot_prefill", 16384);
