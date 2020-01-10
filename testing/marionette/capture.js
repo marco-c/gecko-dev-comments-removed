@@ -149,18 +149,12 @@ capture.canvas = function(
   let ctx = canvas.getContext(CONTEXT_2D);
   if (flags === null) {
     flags = ctx.DRAWWINDOW_DRAW_CARET;
-    
-    
-    
-    
-    
-    
-
 
     
     
-
-
+    
+    
+    
   }
 
   ctx.scale(scale, scale);
