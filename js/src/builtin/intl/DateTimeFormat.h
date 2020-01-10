@@ -74,18 +74,6 @@ extern MOZ_MUST_USE bool intl_DateTimeFormat(JSContext* cx, unsigned argc,
 
 
 
-extern MOZ_MUST_USE bool intl_DateTimeFormat_availableLocales(JSContext* cx,
-                                                              unsigned argc,
-                                                              JS::Value* vp);
-
-
-
-
-
-
-
-
-
 extern MOZ_MUST_USE bool intl_availableCalendars(JSContext* cx, unsigned argc,
                                                  JS::Value* vp);
 

@@ -89,18 +89,6 @@ extern MOZ_MUST_USE bool intl_NumberFormat(JSContext* cx, unsigned argc,
 
 
 
-
-extern MOZ_MUST_USE bool intl_NumberFormat_availableLocales(JSContext* cx,
-                                                            unsigned argc,
-                                                            Value* vp);
-
-
-
-
-
-
-
-
 extern MOZ_MUST_USE bool intl_numberingSystem(JSContext* cx, unsigned argc,
                                               Value* vp);
 

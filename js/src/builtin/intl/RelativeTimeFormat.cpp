@@ -31,7 +31,6 @@
 using namespace js;
 
 using js::intl::CallICU;
-using js::intl::GetAvailableLocales;
 using js::intl::IcuLocale;
 
 
@@ -172,17 +171,6 @@ JSObject* js::CreateRelativeTimeFormatPrototype(JSContext* cx,
   }
 
   return proto;
-}
-
-bool js::intl_RelativeTimeFormat_availableLocales(JSContext* cx, unsigned argc,
-                                                  Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 0);
-
-  
-  
-  return GetAvailableLocales(cx, uloc_countAvailable, uloc_getAvailable,
-                             args.rval());
 }
 
 

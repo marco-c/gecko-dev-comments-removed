@@ -88,18 +88,6 @@ extern JSObject* CreatePluralRulesPrototype(JSContext* cx,
 
 
 
-extern MOZ_MUST_USE bool intl_PluralRules_availableLocales(JSContext* cx,
-                                                           unsigned argc,
-                                                           JS::Value* vp);
-
-
-
-
-
-
-
-
-
 
 extern MOZ_MUST_USE bool intl_SelectPluralRule(JSContext* cx, unsigned argc,
                                                JS::Value* vp);

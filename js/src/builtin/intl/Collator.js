@@ -213,17 +213,6 @@ function Intl_Collator_supportedLocalesOf(locales ) {
 var collatorInternalProperties = {
     sortLocaleData: collatorSortLocaleData,
     searchLocaleData: collatorSearchLocaleData,
-    _availableLocales: null,
-    availableLocales: function() 
-    {
-        var locales = this._availableLocales;
-        if (locales)
-            return locales;
-
-        locales = intl_Collator_availableLocales();
-        addSpecialMissingLanguageTags(locales);
-        return (this._availableLocales = locales);
-    },
     relevantExtensionKeys: ["co", "kf", "kn"],
 };
 

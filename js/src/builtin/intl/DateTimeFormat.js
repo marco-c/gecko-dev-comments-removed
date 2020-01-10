@@ -760,17 +760,6 @@ function Intl_DateTimeFormat_supportedLocalesOf(locales ) {
 
 var dateTimeFormatInternalProperties = {
     localeData: dateTimeFormatLocaleData,
-    _availableLocales: null,
-    availableLocales: function() 
-    {
-        var locales = this._availableLocales;
-        if (locales)
-            return locales;
-
-        locales = intl_DateTimeFormat_availableLocales();
-        addSpecialMissingLanguageTags(locales);
-        return (this._availableLocales = locales);
-    },
     relevantExtensionKeys: ["ca", "hc", "nu"],
 };
 

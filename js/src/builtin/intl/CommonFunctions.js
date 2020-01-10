@@ -226,30 +226,6 @@ function DefaultLocale() {
 
 
 
-
-function addSpecialMissingLanguageTags(availableLocales) {
-    
-    
-    var oldStyleLocales = std_Object_getOwnPropertyNames(oldStyleLanguageTagMappings);
-    for (var i = 0; i < oldStyleLocales.length; i++) {
-        var oldStyleLocale = oldStyleLocales[i];
-        if (availableLocales[oldStyleLanguageTagMappings[oldStyleLocale]])
-            availableLocales[oldStyleLocale] = true;
-    }
-
-    
-    var lastDitch = lastDitchLocale();
-    assert(lastDitch === "en-GB" && availableLocales.en,
-           "shouldn't be a need to add every locale implied by the last-" +
-           "ditch locale, merely just the last-ditch locale");
-    availableLocales[lastDitch] = true;
-}
-
-
-
-
-
-
 function CanonicalizeLocaleList(locales) {
     
     if (locales === undefined)

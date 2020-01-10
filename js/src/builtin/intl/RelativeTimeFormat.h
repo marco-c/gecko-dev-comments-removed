@@ -61,17 +61,6 @@ extern JSObject* CreateRelativeTimeFormatPrototype(
 
 
 
-extern MOZ_MUST_USE bool intl_RelativeTimeFormat_availableLocales(
-    JSContext* cx, unsigned argc, JS::Value* vp);
-
-
-
-
-
-
-
-
-
 
 
 

@@ -144,26 +144,6 @@ static JSString* CallICU(JSContext* cx, const ICUStringFunction& strFn) {
   return NewStringCopyN<CanGC>(cx, chars.begin(), size_t(size));
 }
 
-
-
-using CountAvailable = int32_t (*)();
-using GetAvailable = const char* (*)(int32_t localeIndex);
-
-
-
-
-
-
-
-
-
-
-
-
-extern bool GetAvailableLocales(JSContext* cx, CountAvailable countAvailable,
-                                GetAvailable getAvailable,
-                                JS::MutableHandle<JS::Value> result);
-
 }  
 
 }  
