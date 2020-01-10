@@ -309,11 +309,6 @@ class JSString : public js::gc::CellWithLengthAndFlags<js::gc::Cell> {
 
   static const uint32_t PINNED_ATOM_BIT = JS_BIT(11);
 
-  
-  
-  
-  static const uint32_t NON_DEDUP_BIT = JS_BIT(11);
-
   static const uint32_t MAX_LENGTH = js::MaxStringLength;
 
   static const JS::Latin1Char MAX_LATIN1_CHAR = 0xff;
@@ -389,6 +384,9 @@ class JSString : public js::gc::CellWithLengthAndFlags<js::gc::Cell> {
   template <typename CharT>
   MOZ_ALWAYS_INLINE void setNonInlineChars(const CharT* chars);
 
+  MOZ_ALWAYS_INLINE
+  uint32_t flags() const { return flagsField(); }
+
   template <typename CharT>
   static MOZ_ALWAYS_INLINE void checkStringCharsArena(const CharT* chars) {
 #ifdef MOZ_DEBUG
@@ -399,9 +397,6 @@ class JSString : public js::gc::CellWithLengthAndFlags<js::gc::Cell> {
  public:
   MOZ_ALWAYS_INLINE
   size_t length() const { return lengthField(); }
-
-  MOZ_ALWAYS_INLINE
-  uint32_t flags() const { return flagsField(); }
 
  protected:
   void setFlattenData(uintptr_t data) { setTemporaryGCUnsafeData(data); }
@@ -536,18 +531,6 @@ class JSString : public js::gc::CellWithLengthAndFlags<js::gc::Cell> {
     return *(JSAtom*)this;
   }
 
-  MOZ_ALWAYS_INLINE
-  void setNonDeduplicatable() {
-    MOZ_ASSERT(~(flags() & NON_DEDUP_BIT));
-    setFlagBit(NON_DEDUP_BIT);
-  }
-
-  MOZ_ALWAYS_INLINE
-  void clearNonDeduplicatable() { clearFlagBit(NON_DEDUP_BIT); }
-
-  MOZ_ALWAYS_INLINE
-  bool isDeduplicatable() { return !(flags() & NON_DEDUP_BIT); }
-
   
   
   static bool fillWithRepresentatives(JSContext* cx,
@@ -558,15 +541,6 @@ class JSString : public js::gc::CellWithLengthAndFlags<js::gc::Cell> {
   inline bool hasBase() const { return flags() & HAS_BASE_BIT; }
 
   inline JSLinearString* base() const;
-
-  
-  
-  
-  inline JSLinearString* nurseryBaseOrRelocOverlay() const;
-
-  inline bool canBeRootBase() const;
-
-  inline void setBase(JSLinearString* newBase);
 
   void traceBase(JSTracer* trc);
 
@@ -911,26 +885,6 @@ class JSDependentString : public JSLinearString {
  public:
   static inline JSLinearString* new_(JSContext* cx, JSLinearString* base,
                                      size_t start, size_t length);
-
-  template <typename T>
-  void relocateNonInlineChars(T chars, size_t offset) {
-    setNonInlineChars(chars + offset);
-  }
-
-  template <typename CharT>
-  bool charsFromUndependedString(JSLinearString* undependedStr) {
-    JS::AutoCheckCannotGC nogc;
-
-    const CharT* dependentStrCharsStart = nonInlineChars<CharT>(nogc);
-    const CharT* dependentStrCharsEnd = dependentStrCharsStart + length();
-    const CharT* undependedStrCharsStart =
-        undependedStr->nonInlineChars<CharT>(nogc);
-    const CharT* undependedStrCharsEnd =
-        undependedStrCharsStart + undependedStr->length();
-
-    return (dependentStrCharsStart >= undependedStrCharsStart &&
-            dependentStrCharsEnd <= undependedStrCharsEnd);
-  }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dumpRepresentation(js::GenericPrinter& out, int indent) const;
@@ -1797,28 +1751,6 @@ inline JSLinearString* JSString::base() const {
   MOZ_ASSERT(hasBase());
   MOZ_ASSERT(!d.s.u3.base->isInline());
   return d.s.u3.base;
-}
-
-inline JSLinearString* JSString::nurseryBaseOrRelocOverlay() const {
-  MOZ_ASSERT(hasBase());
-  return d.s.u3.base;
-}
-
-inline bool JSString::canBeRootBase() const {
-  
-  
-  
-  
-  
-  
-  
-  return isLinear() && !isInline() && !hasBase();
-}
-
-inline void JSString::setBase(JSLinearString* newBase) {
-  MOZ_ASSERT(hasBase());
-  MOZ_ASSERT(!newBase->isInline());
-  d.s.u3.base = newBase;
 }
 
 template <>

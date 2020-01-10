@@ -2872,58 +2872,6 @@ static inline void TraceWholeCell(TenuringTracer& mover, JSObject* object) {
 }
 
 static inline void TraceWholeCell(TenuringTracer& mover, JSString* str) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (str->hasBase()) {
-    MOZ_ASSERT(str->isTenured());
-    MOZ_ASSERT(!str->isForwarded());
-
-    JSLinearString* baseOrRelocOverlay = str->nurseryBaseOrRelocOverlay();
-
-    while (true) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (baseOrRelocOverlay->isForwarded()) {
-        StringRelocationOverlay* relocOverlay =
-            reinterpret_cast<StringRelocationOverlay*>(baseOrRelocOverlay);
-        JSLinearString* tenuredBase = Forwarded((JSLinearString*)relocOverlay);
-        if (!tenuredBase->hasBase()) {
-          break;
-        }
-        baseOrRelocOverlay = relocOverlay->savedNurseryBaseOrRelocOverlay();
-      } else {
-        JSLinearString* base = baseOrRelocOverlay;
-        if (base->isTenured()) {
-          break;
-        }
-        base->setNonDeduplicatable();
-        if (!base->hasBase()) {
-          break;
-        }
-        baseOrRelocOverlay = base->nurseryBaseOrRelocOverlay();
-      }
-    }
-  }
-
   str->traceChildren(&mover);
 }
 
@@ -3076,15 +3024,6 @@ inline void js::TenuringTracer::insertIntoObjectFixupList(
 template <typename T>
 inline T* js::TenuringTracer::allocTenured(Zone* zone, AllocKind kind) {
   return static_cast<T*>(static_cast<Cell*>(AllocateCellInGC(zone, kind)));
-}
-
-JSString* js::TenuringTracer::allocTenuredString(JSString* src, Zone* zone,
-                                                 AllocKind dstKind) {
-  JSString* dst = allocTenured<JSString>(zone, dstKind);
-  tenuredSize += moveStringToTenured(dst, src, dstKind);
-  tenuredCells++;
-
-  return dst;
 }
 
 JSObject* js::TenuringTracer::moveToTenuredSlow(JSObject* src) {
@@ -3288,7 +3227,7 @@ size_t js::TenuringTracer::moveElementsToTenured(NativeObject* dst,
 }
 
 inline void js::TenuringTracer::insertIntoStringFixupList(
-    StringRelocationOverlay* entry) {
+    RelocationOverlay* entry) {
   *stringTail = entry;
   stringTail = &entry->nextRef();
   *stringTail = nullptr;
@@ -3297,157 +3236,21 @@ inline void js::TenuringTracer::insertIntoStringFixupList(
 JSString* js::TenuringTracer::moveToTenured(JSString* src) {
   MOZ_ASSERT(IsInsideNursery(src));
   MOZ_ASSERT(!src->zone()->usedByHelperThread());
-  MOZ_ASSERT(!src->isExternal());
 
   AllocKind dstKind = src->getAllocKind();
   Zone* zone = src->zone();
   zone->tenuredStrings++;
 
-  JSString* dst;
+  JSString* dst = allocTenured<JSString>(zone, dstKind);
+  tenuredSize += moveStringToTenured(dst, src, dstKind);
+  tenuredCells++;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  const size_t dedupStringLenLimit = 500;
-
-  if (src->length() < dedupStringLenLimit && src->isLinear() &&
-      !src->isUndepended() && src->isDeduplicatable() &&
-      nursery().stringDeDupSet.isSome()) {
-    if (auto p = nursery().stringDeDupSet->lookup(src)) {
-      dst = *p;
-
-      StringRelocationOverlay* overlay = StringRelocationOverlay::fromCell(src);
-      overlay->saveCharsOrBase(src);
-      overlay->forwardTo(dst);
-
-      gcTracer.tracePromoteToTenured(src, dst);
-      return dst;
-    }
-
-    dst = allocTenuredString(src, zone, dstKind);
-
-    
-    
-    if (!nursery().stringDeDupSet->putNew(dst)) {
-      nursery().stringDeDupSet.reset();
-    }
-
-  } else {
-    dst = allocTenuredString(src, zone, dstKind);
-  }
-
-  StringRelocationOverlay* overlay = StringRelocationOverlay::fromCell(src);
-  overlay->saveCharsOrBase(src);
+  RelocationOverlay* overlay = RelocationOverlay::fromCell(src);
   overlay->forwardTo(dst);
-  
-  
-  dst->clearNonDeduplicatable();
   insertIntoStringFixupList(overlay);
 
   gcTracer.tracePromoteToTenured(src, dst);
   return dst;
-}
-
-template <typename CharT>
-void js::Nursery::relocateDependentStringChars(
-    JSDependentString* tenuredDependentStr, JSLinearString* baseOrRelocOverlay,
-    size_t* offset, bool* rootBaseWasNotForwarded, JSLinearString** rootBase) {
-  MOZ_ASSERT(*offset == 0);
-  MOZ_ASSERT(*rootBaseWasNotForwarded == false);
-  MOZ_ASSERT(*rootBase == NULL);
-
-  JS::AutoCheckCannotGC nogc;
-
-  
-  
-  
-  bool canUseUndependedStrChars = true;
-
-  const CharT* dependentStrChars =
-      tenuredDependentStr->nonInlineChars<CharT>(nogc);
-
-  
-  
-  while (true) {
-    if (baseOrRelocOverlay->isForwarded()) {
-      StringRelocationOverlay* relocOverlay =
-          reinterpret_cast<StringRelocationOverlay*>(baseOrRelocOverlay);
-      JSLinearString* tenuredBase = Forwarded((JSLinearString*)relocOverlay);
-
-      
-      if (canUseUndependedStrChars && tenuredBase->isUndepended()) {
-        if (tenuredDependentStr->charsFromUndependedString<CharT>(
-                tenuredBase)) {
-          tenuredDependentStr->setBase(tenuredBase);
-          return;
-        }
-        canUseUndependedStrChars = false;
-      }
-
-      if (!tenuredBase->hasBase()) {
-        
-        
-        
-        JSLinearString* tenuredRootBase = tenuredBase;
-        const CharT* rootBaseChars = relocOverlay->savedNurseryChars<CharT>();
-        *offset = dependentStrChars - rootBaseChars;
-        MOZ_ASSERT(*offset < tenuredRootBase->length());
-        tenuredDependentStr->relocateNonInlineChars<const CharT*>(
-            tenuredRootBase->nonInlineChars<CharT>(nogc), *offset);
-        tenuredDependentStr->setBase(tenuredRootBase);
-        return;
-      }
-
-      baseOrRelocOverlay = relocOverlay->savedNurseryBaseOrRelocOverlay();
-
-    } else {
-      JSLinearString* base = baseOrRelocOverlay;
-
-      
-      if (canUseUndependedStrChars && base->isUndepended()) {
-        if (tenuredDependentStr->charsFromUndependedString<CharT>(base)) {
-          tenuredDependentStr->setBase(base);
-          return;
-        }
-        canUseUndependedStrChars = false;
-      }
-
-      if (!base->hasBase()) {
-        
-        *rootBase = base;
-
-        
-        
-        
-        if (!(*rootBase)->isTenured()) {
-          *rootBaseWasNotForwarded = true;
-          const CharT* rootBaseChars = (*rootBase)->nonInlineChars<CharT>(nogc);
-          *offset = dependentStrChars - rootBaseChars;
-        }
-
-        tenuredDependentStr->setBase(*rootBase);
-
-        return;
-      }
-
-      baseOrRelocOverlay = base->nurseryBaseOrRelocOverlay();
-    }
-  }
 }
 
 void js::Nursery::collectToFixedPoint(TenuringTracer& mover,
@@ -3465,48 +3268,8 @@ void js::Nursery::collectToFixedPoint(TenuringTracer& mover,
     }
   }
 
-  for (StringRelocationOverlay* p = mover.stringHead; p; p = p->next()) {
-    JSString* tenuredStr = static_cast<JSString*>(p->forwardingAddress());
-    
-    MOZ_ASSERT(tenuredStr->isDeduplicatable());
-
-    
-    
-    
-    
-    size_t offset = 0;
-    bool rootBaseWasNotForwarded = false;
-    JSLinearString* rootBase = NULL;
-
-    if (tenuredStr->isDependent()) {
-      if (tenuredStr->hasTwoByteChars()) {
-        relocateDependentStringChars<char16_t>(
-            &tenuredStr->asDependent(), p->savedNurseryBaseOrRelocOverlay(),
-            &offset, &rootBaseWasNotForwarded, &rootBase);
-      } else {
-        relocateDependentStringChars<JS::Latin1Char>(
-            &tenuredStr->asDependent(), p->savedNurseryBaseOrRelocOverlay(),
-            &offset, &rootBaseWasNotForwarded, &rootBase);
-      }
-    }
-
-    mover.traceString(tenuredStr);
-
-    if (rootBaseWasNotForwarded) {
-      MOZ_ASSERT(rootBase->isForwarded());
-      JS::AutoCheckCannotGC nogc;
-
-      JSLinearString* tenuredRootBase = Forwarded(rootBase);
-      MOZ_ASSERT(offset < tenuredRootBase->length());
-
-      if (tenuredStr->hasTwoByteChars()) {
-        tenuredStr->asDependent().relocateNonInlineChars<const char16_t*>(
-            tenuredRootBase->twoByteChars(nogc), offset);
-      } else {
-        tenuredStr->asDependent().relocateNonInlineChars<const JS::Latin1Char*>(
-            tenuredRootBase->latin1Chars(nogc), offset);
-      }
-    }
+  for (RelocationOverlay* p = mover.stringHead; p; p = p->next()) {
+    mover.traceString(static_cast<JSString*>(p->forwardingAddress()));
   }
 }
 
