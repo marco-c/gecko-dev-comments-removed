@@ -4299,48 +4299,10 @@ nsresult HttpBaseChannel::GetResponseEmbedderPolicy(
   return NS_OK;
 }
 
-namespace {
-
-nsILoadInfo::CrossOriginOpenerPolicy GetSameness(
-    nsILoadInfo::CrossOriginOpenerPolicy aPolicy) {
-  uint8_t sameness = aPolicy & nsILoadInfo::OPENER_POLICY_SAMENESS_MASK;
-  return nsILoadInfo::CrossOriginOpenerPolicy(sameness);
-}
-
-nsILoadInfo::CrossOriginOpenerPolicy CreateCrossOriginOpenerPolicy(
-    nsILoadInfo::CrossOriginOpenerPolicy aSameness, bool aUnsafeAllowOutgoing,
-    bool aEmbedderPolicy) {
-  uint8_t policy = aSameness;
-
-  if (aUnsafeAllowOutgoing) {
-    policy |= nsILoadInfo::OPENER_POLICY_UNSAFE_ALLOW_OUTGOING_FLAG;
-  }
-
-  if (aEmbedderPolicy) {
-    policy |= nsILoadInfo::OPENER_POLICY_EMBEDDER_POLICY_REQUIRE_CORP_FLAG;
-  }
-
-  return nsILoadInfo::CrossOriginOpenerPolicy(policy);
-}
-
-}  
-
-
-
-
 NS_IMETHODIMP HttpBaseChannel::GetCrossOriginOpenerPolicy(
-    nsILoadInfo::CrossOriginOpenerPolicy aInitiatorPolicy,
-    nsILoadInfo::CrossOriginOpenerPolicy* aOutPolicy) {
-  MOZ_ASSERT(aOutPolicy);
-  *aOutPolicy = nsILoadInfo::OPENER_POLICY_NULL;
-
+    nsILoadInfo::CrossOriginOpenerPolicy* aPolicy) {
   if (!mResponseHead) {
     return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  
-  if (!mURI->SchemeIs("https")) {
-    return NS_OK;
   }
 
   nsAutoCString openerPolicy;
@@ -4350,64 +4312,56 @@ NS_IMETHODIMP HttpBaseChannel::GetCrossOriginOpenerPolicy(
   
   
   
+
+  Tokenizer t(openerPolicy);
+  nsAutoCString sameness;
+  nsAutoCString outgoing;
+
   
-
-  nsILoadInfo::CrossOriginOpenerPolicy sameness =
-      nsILoadInfo::OPENER_POLICY_NULL;
-  bool unsafeAllowOutgoing = false;
-  bool embedderPolicy = false;
-  if (openerPolicy.EqualsLiteral("unsafe-inherit")) {
-    
-    sameness = GetSameness(aInitiatorPolicy);
-    unsafeAllowOutgoing =
-        !!(aInitiatorPolicy &
-           nsILoadInfo::OPENER_POLICY_UNSAFE_ALLOW_OUTGOING_FLAG);
-  } else {
-    
-    Tokenizer t(openerPolicy);
-    nsAutoCString samenessString;
-    nsAutoCString outgoingString;
-
-    
-    
-    
-    bool unsafeAllowOutgoing =
-        t.ReadUntil(Tokenizer::Token::Whitespace(), samenessString);
-    if (unsafeAllowOutgoing) {
-      t.SkipWhites();
-      bool foundEOF =
-          t.ReadUntil(Tokenizer::Token::EndOfFile(), outgoingString);
-      if (!foundEOF) {
-        
-        return NS_OK;
-      }
-      if (!outgoingString.EqualsLiteral("unsafe-allow-outgoing")) {
-        
-        return NS_OK;
-      }
+  
+  
+  bool allowOutgoing = t.ReadUntil(Tokenizer::Token::Whitespace(), sameness);
+  if (allowOutgoing) {
+    t.SkipWhites();
+    bool foundEOF = t.ReadUntil(Tokenizer::Token::EndOfFile(), outgoing);
+    if (!foundEOF) {
+      
+      *aPolicy = nsILoadInfo::OPENER_POLICY_NULL;
+      return NS_OK;
     }
+    if (!outgoing.EqualsLiteral("unsafe-allow-outgoing")) {
+      
+      *aPolicy = nsILoadInfo::OPENER_POLICY_NULL;
+      return NS_OK;
+    }
+  }
 
-    if (samenessString.EqualsLiteral("same-origin")) {
-      sameness = nsILoadInfo::OPENER_POLICY_SAME_ORIGIN;
-    } else if (samenessString.EqualsLiteral("same-site")) {
-      sameness = nsILoadInfo::OPENER_POLICY_SAME_SITE;
+  nsILoadInfo::CrossOriginOpenerPolicy policy = nsILoadInfo::OPENER_POLICY_NULL;
+  if (sameness.EqualsLiteral("same-origin")) {
+    policy = nsILoadInfo::OPENER_POLICY_SAME_ORIGIN;
+    if (allowOutgoing) {
+      policy = nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_ALLOW_OUTGOING;
+    }
+  } else if (sameness.EqualsLiteral("same-site")) {
+    policy = nsILoadInfo::OPENER_POLICY_SAME_SITE;
+    if (allowOutgoing) {
+      policy = nsILoadInfo::OPENER_POLICY_SAME_SITE_ALLOW_OUTGOING;
     }
   }
 
   
   
-  if (sameness == nsILoadInfo::OPENER_POLICY_SAME_ORIGIN &&
-      !unsafeAllowOutgoing) {
+  if (policy == nsILoadInfo::OPENER_POLICY_SAME_ORIGIN) {
     nsILoadInfo::CrossOriginEmbedderPolicy coep =
         nsILoadInfo::EMBEDDER_POLICY_NULL;
     if (NS_SUCCEEDED(GetResponseEmbedderPolicy(&coep)) &&
         coep == nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
-      embedderPolicy = true;
+      policy =
+          nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
     }
   }
 
-  *aOutPolicy = CreateCrossOriginOpenerPolicy(sameness, unsafeAllowOutgoing,
-                                              embedderPolicy);
+  *aPolicy = policy;
   return NS_OK;
 }
 
