@@ -775,6 +775,12 @@ JS_FRIEND_API JSObject* js::NewProxyObject(JSContext* cx,
                                            const ProxyOptions& options) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
+
+  
+  
+  
+  cx->realm()->maybeGlobal();
+
   if (proto_ != TaggedProto::LazyProto) {
     cx->check(proto_);  
   }
