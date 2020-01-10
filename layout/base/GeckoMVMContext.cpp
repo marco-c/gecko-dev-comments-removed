@@ -151,7 +151,8 @@ void GeckoMVMContext::UpdateDisplayPortMargins() {
     
     
     
-    MOZ_ASSERT(mPresShell->GetPresContext()->IsRootContentDocument());
+    MOZ_ASSERT(
+        mPresShell->GetPresContext()->IsRootContentDocumentCrossProcess());
     nsLayoutUtils::SetDisplayPortBaseIfNotSet(root->GetContent(),
                                               displayportBase);
     nsIScrollableFrame* scrollable = do_QueryFrame(root);

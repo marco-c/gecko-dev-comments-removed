@@ -230,7 +230,7 @@ void ZoomConstraintsClient::RefreshZoomConstraints() {
 
   
   
-  MOZ_ASSERT(mPresShell->GetPresContext()->IsRootContentDocument());
+  MOZ_ASSERT(mPresShell->GetPresContext()->IsRootContentDocumentCrossProcess());
   if (nsIScrollableFrame* rcdrsf =
           mPresShell->GetRootScrollFrameAsScrollable()) {
     ZCC_LOG("Notifying RCD-RSF that it is zoomable: %d\n",
