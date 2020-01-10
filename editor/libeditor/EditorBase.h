@@ -211,7 +211,9 @@ class EditorBase : public nsIEditor,
   nsPIDOMWindowInner* GetInnerWindow() const {
     return mDocument ? mDocument->GetInnerWindow() : nullptr;
   }
-  bool HasMutationEventListeners(
+  
+  
+  bool MaybeHasMutationEventListeners(
       uint32_t aMutationEventType = 0xFFFFFFFF) const {
     if (!mIsHTMLEditorClass) {
       

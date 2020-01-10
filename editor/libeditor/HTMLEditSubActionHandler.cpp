@@ -3930,7 +3930,7 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContents(
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                            "DeleteNodeWithTransaction() failed, but ignored");
       result.MarkAsHandled();
-      if (HasMutationEventListeners()) {
+      if (MaybeHasMutationEventListeners()) {
         
         
         
@@ -3997,7 +3997,7 @@ MoveNodeResult HTMLEditor::MoveNodeOrChildren(
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return MoveNodeResult(rv);
   }
-  if (HasMutationEventListeners()) {
+  if (MaybeHasMutationEventListeners()) {
     
     
     
