@@ -37,14 +37,6 @@ class HyphenReporter final : public nsIMemoryReporter,
  public:
   NS_DECL_ISUPPORTS
 
-  static void* Malloc(long aSize) { return CountingMalloc(aSize); }
-
-  static void Free(void* aPtr) { return CountingFree(aPtr); }
-
-  static void* Realloc(void* aPtr, long aNewSize) {
-    return CountingRealloc(aPtr, aNewSize);
-  }
-
   NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
                             nsISupports* aData, bool aAnonymize) override {
     size_t total = MemoryAllocated();
@@ -67,19 +59,22 @@ CountingAllocatorBase<HyphenReporter>::AmountType
 
 
 
+
 extern "C" {
 void* hnj_malloc(size_t aSize);
 void* hnj_realloc(void* aPtr, size_t aSize);
 void hnj_free(void* aPtr);
 };
 
-void* hnj_malloc(size_t aSize) { return HyphenReporter::Malloc(aSize); }
-
-void* hnj_realloc(void* aPtr, size_t aSize) {
-  return HyphenReporter::Realloc(aPtr, aSize);
+void* hnj_malloc(size_t aSize) {
+  return HyphenReporter::InfallibleCountingMalloc(aSize);
 }
 
-void hnj_free(void* aPtr) { HyphenReporter::Free(aPtr); }
+void* hnj_realloc(void* aPtr, size_t aSize) {
+  return HyphenReporter::InfallibleCountingRealloc(aPtr, aSize);
+}
+
+void hnj_free(void* aPtr) { HyphenReporter::CountingFree(aPtr); }
 
 nsHyphenationManager* nsHyphenationManager::sInstance = nullptr;
 
