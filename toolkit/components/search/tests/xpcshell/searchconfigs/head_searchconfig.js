@@ -188,7 +188,13 @@ class SearchConfigTest {
       code: config.searchUrlGetExtraCodes,
     };
 
-    let locale = config.webExtensionLocale || "default";
+    
+    
+    
+    let locale =
+      "webExtensionLocales" in config
+        ? config.webExtensionLocales[0]
+        : "default";
     
     
     await policy.readyPromise;

@@ -1151,12 +1151,10 @@ SearchService.prototype = {
 
   async _loadEnginesFromConfig(engineConfigs) {
     for (let config of engineConfigs) {
-      
-      
       SearchUtils.log("_loadEnginesFromConfig: " + JSON.stringify(config));
       let locales =
-        "webExtensionLocale" in config
-          ? [config.webExtensionLocale]
+        "webExtensionLocales" in config
+          ? config.webExtensionLocales
           : [DEFAULT_TAG];
       await this.ensureBuiltinExtension(config.webExtensionId, locales);
     }
