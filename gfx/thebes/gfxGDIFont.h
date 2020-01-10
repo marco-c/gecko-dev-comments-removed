@@ -30,6 +30,8 @@ class gfxGDIFont : public gfxFont {
   
   uint32_t GetSpaceGlyph() override;
 
+  bool SetupCairoFont(DrawTarget* aDrawTarget) override;
+
   already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(
       DrawTarget* aTarget) override;
 

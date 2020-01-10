@@ -1520,9 +1520,6 @@ class gfxFont {
   
   RoundingFlags GetRoundOffsetsToPixels(DrawTarget* aDrawTarget);
 
-  virtual bool ShouldHintMetrics() const { return true; }
-  virtual bool ShouldRoundXOffset(cairo_t* aCairo) const { return true; }
-
   
   struct Metrics {
     gfxFloat capHeight;
@@ -1689,8 +1686,12 @@ class gfxFont {
 
   gfxGlyphExtents* GetOrCreateGlyphExtents(int32_t aAppUnitsPerDevUnit);
 
+  
   void SetupGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphID,
                          bool aNeedTight, gfxGlyphExtents* aExtents);
+
+  
+  virtual bool SetupCairoFont(DrawTarget* aDrawTarget) = 0;
 
   virtual bool AllowSubpixelAA() { return true; }
 
@@ -1860,6 +1861,11 @@ class gfxFont {
   
   
   gfxFont* GetSubSuperscriptFont(int32_t aAppUnitsPerDevPixel);
+
+  
+
+
+  static cairo_t* RefCairo(mozilla::gfx::DrawTarget* aDT);
 
  protected:
   virtual const Metrics& GetHorizontalMetrics() = 0;

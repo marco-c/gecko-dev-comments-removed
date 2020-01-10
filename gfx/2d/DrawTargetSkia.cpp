@@ -911,6 +911,29 @@ void DrawTargetSkia::Fill(const Path* aPath, const Pattern& aPattern,
   mCanvas->drawPath(skiaPath->GetPath(), paint.mPaint);
 }
 
+bool DrawTargetSkia::ShouldLCDRenderText(FontType aFontType,
+                                         AntialiasMode aAntialiasMode) {
+  
+  if (!GetPermitSubpixelAA()) {
+    return false;
+  }
+
+  if (aAntialiasMode == AntialiasMode::DEFAULT) {
+    switch (aFontType) {
+      case FontType::MAC:
+      case FontType::GDI:
+      case FontType::DWRITE:
+      case FontType::FONTCONFIG:
+        return true;
+      case FontType::FREETYPE:
+      default:
+        
+        return false;
+    }
+  }
+  return (aAntialiasMode == AntialiasMode::SUBPIXEL);
+}
+
 #ifdef MOZ_WIDGET_COCOA
 static inline CGAffineTransform GfxMatrixToCGAffineTransform(const Matrix& m) {
   CGAffineTransform t;
@@ -1298,14 +1321,56 @@ void DrawTargetSkia::DrawGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
 
   SkFont font(sk_ref_sp(typeface), SkFloatToScalar(skiaFont->mSize));
 
-  bool useSubpixelAA =
-      GetPermitSubpixelAA() &&
-      (aaMode == AntialiasMode::DEFAULT || aaMode == AntialiasMode::SUBPIXEL);
+  bool useSubpixelAA = ShouldLCDRenderText(aFont->GetType(), aaMode);
   font.setEdging(useSubpixelAA ? SkFont::Edging::kSubpixelAntiAlias
                                : (aaEnabled ? SkFont::Edging::kAntiAlias
                                             : SkFont::Edging::kAlias));
 
-  skiaFont->SetupSkFontDrawOptions(font);
+  bool useSubpixelText = true;
+  switch (aFont->GetType()) {
+    case FontType::FREETYPE:
+    case FontType::FONTCONFIG:
+      
+      
+      useSubpixelText = false;
+      break;
+    case FontType::MAC:
+      if (aaMode == AntialiasMode::GRAY) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        font.setHinting(kNo_SkFontHinting);
+      }
+      break;
+#ifdef XP_WIN
+    case FontType::DWRITE: {
+      ScaledFontDWrite* dwriteFont = static_cast<ScaledFontDWrite*>(aFont);
+      if (dwriteFont->ForceGDIMode()) {
+        font.setEmbeddedBitmaps(true);
+        useSubpixelText = false;
+      } else {
+        font.setEmbeddedBitmaps(dwriteFont->UseEmbeddedBitmaps());
+      }
+      break;
+    }
+#endif
+    default:
+      break;
+  }
+
+  font.setSubpixel(useSubpixelText);
 
   
   const uint32_t kMaxGlyphBatchSize = 8192;

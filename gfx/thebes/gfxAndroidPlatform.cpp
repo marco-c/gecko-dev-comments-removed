@@ -246,6 +246,8 @@ gfxFontGroup* gfxAndroidPlatform::CreateFontGroup(
                           aDevToCssSize);
 }
 
+FT_Library gfxAndroidPlatform::GetFTLibrary() { return gPlatformFTLibrary; }
+
 bool gfxAndroidPlatform::FontHintingEnabled() {
   
   

@@ -21,12 +21,14 @@ class FontNameCache;
 typedef struct FT_FaceRec_* FT_Face;
 class nsZipArchive;
 class WillShutdownObserver;
-class FTUserFontData;
 
 class FT2FontEntry : public gfxFontEntry {
  public:
   explicit FT2FontEntry(const nsACString& aFaceName)
-      : gfxFontEntry(aFaceName), mFTFontIndex(0) {}
+      : gfxFontEntry(aFaceName),
+        mFTFace(nullptr),
+        mFontFace(nullptr),
+        mFTFontIndex(0) {}
 
   ~FT2FontEntry();
 
@@ -49,16 +51,22 @@ class FT2FontEntry : public gfxFontEntry {
   
   
   
-  static FT2FontEntry* CreateFontEntry(FT_Face, const char* aFilename,
-                                       uint8_t aIndex, const nsACString& aName);
+  static FT2FontEntry* CreateFontEntry(FT_Face aFace, const char* aFilename,
+                                       uint8_t aIndex, const nsACString& aName,
+                                       const uint8_t* aFontData = nullptr,
+                                       uint32_t aLength = 0);
 
-  gfxFont* CreateFontInstance(const gfxFontStyle* aStyle) override;
+  gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
   
   
-  cairo_scaled_font_t* CreateScaledFont(
-      const gfxFontStyle* aStyle, RefPtr<mozilla::gfx::SharedFTFace> aFace,
-      int* aOutLoadFlags, unsigned int* aOutSynthFlags);
+  
+  
+  cairo_font_face_t* CairoFontFace(const gfxFontStyle* aStyle = nullptr);
+
+  
+  
+  cairo_scaled_font_t* CreateScaledFont(const gfxFontStyle* aStyle);
 
   nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
 
@@ -78,9 +86,6 @@ class FT2FontEntry : public gfxFontEntry {
   void CheckForBrokenFont(gfxFontFamily* aFamily);
   void CheckForBrokenFont(const nsACString& aFamilyKey);
 
-  already_AddRefed<mozilla::gfx::SharedFTFace> GetFTFace(bool aCommit = false);
-  FTUserFontData* GetUserFontData();
-
   FT_MM_Var* GetMMVar() override;
 
   
@@ -98,7 +103,8 @@ class FT2FontEntry : public gfxFontEntry {
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontListSizes* aSizes) const override;
 
-  RefPtr<mozilla::gfx::SharedFTFace> mFTFace;
+  FT_Face mFTFace;
+  cairo_font_face_t* mFontFace;
 
   FT_MM_Var* mMMVar = nullptr;
 

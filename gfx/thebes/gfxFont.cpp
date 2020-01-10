@@ -789,10 +789,6 @@ gfxFont::gfxFont(const RefPtr<UnscaledFont>& aUnscaledFont,
   ++gFontCount;
 #endif
 
-  if (MOZ_UNLIKELY(StaticPrefs::gfx_text_disable_aa_AtStartup())) {
-    mAntialiasOption = kAntialiasNone;
-  }
-
   
   if (MOZ_UNLIKELY(StaticPrefs::gfx_font_rendering_ahem_antialias_none() &&
                    mFontEntry->FamilyName().EqualsLiteral("Ahem"))) {
@@ -822,45 +818,95 @@ gfxFont::~gfxFont() {
 
 gfxFont::RoundingFlags gfxFont::GetRoundOffsetsToPixels(
     DrawTarget* aDrawTarget) {
+  RoundingFlags result = RoundingFlags(0);
+
   
   
   
   
-  if (aDrawTarget->GetTransform().HasNonTranslation() || !ShouldHintMetrics()) {
-    return RoundingFlags(0);
+  if (aDrawTarget->GetTransform().HasNonTranslation()) {
+    return result;
   }
 
-  cairo_t* cr = nullptr;
-  if (aDrawTarget->GetBackendType() == BackendType::CAIRO) {
-    cr = static_cast<cairo_t*>(
-        aDrawTarget->GetNativeSurface(NativeSurfaceType::CAIRO_CONTEXT));
-    cairo_surface_t* target = cairo_get_target(cr);
+  
+  
+  result |= RoundingFlags::kRoundY;
 
-    
-    cairo_font_options_t* fontOptions = cairo_font_options_create();
-    cairo_surface_get_font_options(target, fontOptions);
-    cairo_hint_metrics_t hintMetrics =
-        cairo_font_options_get_hint_metrics(fontOptions);
-    cairo_font_options_destroy(fontOptions);
-
-    switch (hintMetrics) {
-      case CAIRO_HINT_METRICS_OFF:
-        return RoundingFlags(0);
-      case CAIRO_HINT_METRICS_ON:
-        return RoundingFlags::kRoundX | RoundingFlags::kRoundY;
-      default:
-        break;
-    }
+  
+  if (!SetupCairoFont(aDrawTarget)) {
+    return result;
   }
 
-  if (ShouldRoundXOffset(cr)) {
-    return RoundingFlags::kRoundX | RoundingFlags::kRoundY;
-  } else {
-    return RoundingFlags::kRoundY;
+  cairo_t* cr = gfxFont::RefCairo(aDrawTarget);
+  cairo_scaled_font_t* scaled_font = cairo_get_scaled_font(cr);
+
+  
+  NS_ASSERTION(scaled_font,
+               "null cairo scaled font should never be returned "
+               "by cairo_get_scaled_font");
+  if (!scaled_font) {
+    result |= RoundingFlags::kRoundX;  
+                                       
+    return result;
   }
+
+  
+#ifdef MOZ_TREE_CAIRO
+  cairo_hint_metrics_t hint_metrics =
+      cairo_scaled_font_get_hint_metrics(scaled_font);
+#else
+  cairo_font_options_t* font_options = cairo_font_options_create();
+  cairo_scaled_font_get_font_options(scaled_font, font_options);
+  cairo_hint_metrics_t hint_metrics =
+      cairo_font_options_get_hint_metrics(font_options);
+  cairo_font_options_destroy(font_options);
+#endif
+
+  switch (hint_metrics) {
+    case CAIRO_HINT_METRICS_OFF:
+      result &= ~RoundingFlags::kRoundY;
+      return result;
+    case CAIRO_HINT_METRICS_DEFAULT:
+      
+      
+      
+      
+      
+      switch (cairo_scaled_font_get_type(scaled_font)) {
+#if CAIRO_HAS_DWRITE_FONT  
+        case CAIRO_FONT_TYPE_DWRITE:
+          
+          
+          
+          if (!cairo_dwrite_scaled_font_get_force_GDI_classic(scaled_font) &&
+              gfxWindowsPlatform::GetPlatform()->DWriteMeasuringMode() ==
+                  DWRITE_MEASURING_MODE_NATURAL) {
+            return result;
+          }
+          MOZ_FALLTHROUGH;
+#endif
+        case CAIRO_FONT_TYPE_QUARTZ:
+          
+          if (cairo_surface_get_type(cairo_get_target(cr)) ==
+              CAIRO_SURFACE_TYPE_QUARTZ) {
+            return result;
+          }
+          break;
+        default:
+          break;
+      }
+      break;
+    case CAIRO_HINT_METRICS_ON:
+      break;
+  }
+  result |= RoundingFlags::kRoundX;
+  return result;
 }
 
 gfxFloat gfxFont::GetGlyphHAdvance(DrawTarget* aDrawTarget, uint16_t aGID) {
+  if (!SetupCairoFont(aDrawTarget)) {
+    return 0;
+  }
   if (ProvidesGlyphWidths()) {
     return GetGlyphWidth(aGID) / 65536.0;
   }
@@ -3344,6 +3390,38 @@ gfxFont* gfxFont::GetSubSuperscriptFont(int32_t aAppUnitsPerDevPixel) {
   style.AdjustForSubSuperscript(aAppUnitsPerDevPixel);
   gfxFontEntry* fe = GetFontEntry();
   return fe->FindOrMakeFont(&style, mUnicodeRangeMap);
+}
+
+static void DestroyRefCairo(void* aData) {
+  cairo_t* refCairo = static_cast<cairo_t*>(aData);
+  MOZ_ASSERT(refCairo);
+  cairo_destroy(refCairo);
+}
+
+
+cairo_t* gfxFont::RefCairo(DrawTarget* aDT) {
+  
+  
+  
+  static UserDataKey sRefCairo;
+
+  cairo_t* refCairo = nullptr;
+  if (aDT->GetBackendType() == BackendType::CAIRO) {
+    refCairo = static_cast<cairo_t*>(
+        aDT->GetNativeSurface(NativeSurfaceType::CAIRO_CONTEXT));
+    if (refCairo) {
+      return refCairo;
+    }
+  }
+
+  refCairo = static_cast<cairo_t*>(aDT->GetUserData(&sRefCairo));
+  if (!refCairo) {
+    refCairo = cairo_create(
+        gfxPlatform::GetPlatform()->ScreenReferenceSurface()->CairoSurface());
+    aDT->AddUserData(&sRefCairo, refCairo, DestroyRefCairo);
+  }
+
+  return refCairo;
 }
 
 gfxGlyphExtents* gfxFont::GetOrCreateGlyphExtents(int32_t aAppUnitsPerDevUnit) {

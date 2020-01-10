@@ -1319,6 +1319,11 @@ bool gfxHarfBuzzShaper::ShapeText(DrawTarget* aDrawTarget,
                                   uint32_t aLength, Script aScript,
                                   bool aVertical, RoundingFlags aRounding,
                                   gfxShapedText* aShapedText) {
+  
+  if (!mFont->SetupCairoFont(aDrawTarget)) {
+    return false;
+  }
+
   mUseVerticalPresentationForms = false;
 
   if (!Initialize()) {
