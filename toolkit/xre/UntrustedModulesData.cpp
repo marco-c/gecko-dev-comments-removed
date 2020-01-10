@@ -99,8 +99,12 @@ ModuleRecord::ModuleRecord(const nsAString& aResolvedPath)
 
 void ModuleRecord::GetVersionAndVendorInfo(const nsAString& aPath) {
   RefPtr<DllServices> dllSvc(DllServices::Get());
+
+  
+  
   UniquePtr<wchar_t[]> signedBy(
-      dllSvc->GetBinaryOrgName(PromiseFlatString(aPath).get()));
+      dllSvc->GetBinaryOrgName(PromiseFlatString(aPath).get(),
+                               AuthenticodeFlags::SkipTrustVerification));
   if (signedBy) {
     mVendorInfo = Some(VendorInfo(VendorInfo::Source::Signature,
                                   nsDependentString(signedBy.get())));
