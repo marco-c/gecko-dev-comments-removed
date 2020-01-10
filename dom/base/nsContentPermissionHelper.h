@@ -232,7 +232,7 @@ class RemotePermissionRequest final
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvNotifyResult(
-      const bool& aAllow, InfallibleTArray<PermissionChoice>&& aChoices);
+      const bool& aAllow, nsTArray<PermissionChoice>&& aChoices);
 
   mozilla::ipc::IPCResult RecvGetVisibility();
 
