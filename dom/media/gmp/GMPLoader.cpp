@@ -160,6 +160,12 @@ class WinSandboxStarter : public mozilla::gmp::SandboxStarter {
 class MacSandboxStarter : public mozilla::gmp::SandboxStarter {
  public:
   bool Start(const char* aLibPath) override {
+    
+    
+    if (IsMacSandboxStarted()) {
+      return true;
+    }
+
     std::string err;
     bool rv = mozilla::StartMacSandbox(mInfo, err);
     if (!rv) {
