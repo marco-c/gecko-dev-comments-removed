@@ -2764,6 +2764,12 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
              !(debuggerRunnablesPending = !mDebuggerQueue.IsEmpty()) &&
              !(normalRunnablesPending = NS_HasPendingEvents(mThread)) &&
              !(mStatus != Running && !HasActiveWorkerRefs())) {
+        
+        
+        
+        
+        mThread->SetRunningEventDelay(TimeDuration(), TimeStamp());
+
         WaitForWorkerEvents();
       }
 
