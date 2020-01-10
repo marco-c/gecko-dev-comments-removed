@@ -8,6 +8,9 @@
 const TEST_URI = `
 <head>
   <style>
+    html {
+      grid-area: foo;
+    }
     #container {
       width: 200px;
       height: 100px;
@@ -42,6 +45,19 @@ const TEST_URI = `
 </body>`;
 
 const BEFORE = [
+  {
+    
+    
+    selector: "html",
+    inactiveDeclarations: [
+      {
+        declaration: {
+          "grid-area": "foo",
+        },
+        ruleIndex: 1,
+      },
+    ],
+  },
   {
     selector: "#self-aligned",
     inactiveDeclarations: [

@@ -575,6 +575,11 @@ class InactivePropertyHelper {
   }
 
   getParentGridElement(node) {
+    
+    if (node.flattenedTreeParentNode === node.ownerDocument) {
+      return null;
+    }
+
     if (node.nodeType === node.ELEMENT_NODE) {
       const display = this.style ? this.style.display : null;
 
