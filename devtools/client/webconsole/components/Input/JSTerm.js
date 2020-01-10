@@ -65,6 +65,8 @@ const {
   HISTORY_FORWARD,
 } = require("devtools/client/webconsole/constants");
 
+const JSTERM_CODEMIRROR_ORIGIN = "jsterm";
+
 
 
 
@@ -645,10 +647,20 @@ class JSTerm extends Component {
   
 
 
-  _onEditorChanges() {
+  _onEditorChanges(cm, changes) {
     const value = this._getValue();
+
     if (this.lastInputValue !== value) {
-      if (this.props.autocomplete || this.autocompletePopup.isOpen) {
+      
+      
+      const isJsTermChangeOnly = changes.every(
+        ({ origin }) => origin === JSTERM_CODEMIRROR_ORIGIN
+      );
+
+      if (
+        !isJsTermChangeOnly &&
+        (this.props.autocomplete || this.autocompletePopup.isOpen)
+      ) {
         this.autocompleteUpdate();
       }
       this.lastInputValue = value;
@@ -944,27 +956,15 @@ class JSTerm extends Component {
       return;
     }
 
-    const value = this._getValue();
-    let prefix = this.getInputValueBeforeCursor();
-    const suffix = value.replace(prefix, "");
+    const cursor = this.editor.getCursor();
+    const from = {
+      line: cursor.line,
+      ch: cursor.ch - numberOfCharsToReplaceCharsBeforeCursor,
+    };
 
-    if (numberOfCharsToReplaceCharsBeforeCursor) {
-      prefix = prefix.substring(
-        0,
-        prefix.length - numberOfCharsToReplaceCharsBeforeCursor
-      );
-    }
-
-    
-    const { line, ch } = this.editor.getCursor();
-
-    this._setValue(prefix + str + suffix);
-
-    
-    this.editor.setCursor({
-      line,
-      ch: ch + str.length - numberOfCharsToReplaceCharsBeforeCursor,
-    });
+    this.editor
+      .getDoc()
+      .replaceRange(str, from, cursor, JSTERM_CODEMIRROR_ORIGIN);
   }
 
   
