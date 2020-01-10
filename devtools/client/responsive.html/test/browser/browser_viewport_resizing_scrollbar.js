@@ -10,18 +10,6 @@ Services.scriptloader.loadSubScript(
   "chrome://mochikit/content/tests/SimpleTest/WindowSnapshot.js", this);
 
 
-async function setTouchAndMetaViewportSupport(ui, value) {
-  const reloadNeeded = await ui.updateTouchSimulation(value);
-  if (reloadNeeded) {
-    info("Reload is needed -- waiting for it.");
-    const reload = waitForViewportLoad(ui);
-    const browser = ui.getViewportBrowser();
-    browser.reload();
-    await reload;
-  }
-}
-
-
 
 
 
