@@ -28,7 +28,6 @@ this.Corroborate = {
       AppConstants.OMNIJAR_NAME,
     ]);
     const greOmniJar = FileUtils.getFile("GreD", [AppConstants.OMNIJAR_NAME]);
-    const systemAddons = FileUtils.getFile("XCurProcD", ["features"]);
 
     let corruptOmnijar = true;
     
@@ -40,18 +39,10 @@ this.Corroborate = {
       );
     }
 
-    
-    
-    
-    let corruptSystemAddons = false;
-    for (let file of systemAddons.directoryEntries) {
-      if (!(await this.verifyJar(file))) {
-        corruptSystemAddons = true;
-        break;
-      }
-    }
-
-    this.reportTelemetry(corruptOmnijar, corruptSystemAddons);
+    Services.telemetry.scalarSet(
+      "corroborate.omnijar_corrupted",
+      corruptOmnijar
+    );
   },
 
   
@@ -75,16 +66,5 @@ this.Corroborate = {
         );
       });
     });
-  },
-
-  reportTelemetry(corruptOmnijar, corruptSystemAddons) {
-    Services.telemetry.scalarSet(
-      "corroborate.omnijar_corrupted",
-      corruptOmnijar
-    );
-    Services.telemetry.scalarSet(
-      "corroborate.system_addons_corrupted",
-      corruptSystemAddons
-    );
   },
 };
