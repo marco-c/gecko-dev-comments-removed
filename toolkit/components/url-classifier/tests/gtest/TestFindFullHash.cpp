@@ -1,16 +1,23 @@
-#include "safebrowsing.pb.h"
+
+
+
+
+
 #include "gtest/gtest.h"
-#include "nsUrlClassifierUtils.h"
 #include "mozilla/Base64.h"
+#include "nsUrlClassifierUtils.h"
+#include "safebrowsing.pb.h"
 
-using namespace mozilla;
-using namespace mozilla::safebrowsing;
-
-namespace {
 template <size_t N>
-void ToBase64EncodedStringArray(nsCString (&aInput)[N],
-                                nsTArray<nsCString>& aEncodedArray);
-}  
+static void ToBase64EncodedStringArray(nsCString (&aInput)[N],
+                                       nsTArray<nsCString>& aEncodedArray) {
+  for (size_t i = 0; i < N; i++) {
+    nsCString encoded;
+    nsresult rv = mozilla::Base64Encode(aInput[i], encoded);
+    NS_ENSURE_SUCCESS_VOID(rv);
+    aEncodedArray.AppendElement(encoded);
+  }
+}
 
 TEST(UrlClassifierFindFullHash, Request)
 {
@@ -204,19 +211,3 @@ TEST(UrlClassifierFindFullHash, ParseRequest)
 
   ASSERT_EQ(callbackCount, ArrayLength(EXPECTED_MATCH));
 }
-
-
-namespace {
-
-template <size_t N>
-void ToBase64EncodedStringArray(nsCString (&aArray)[N],
-                                nsTArray<nsCString>& aEncodedArray) {
-  for (size_t i = 0; i < N; i++) {
-    nsCString encoded;
-    nsresult rv = Base64Encode(aArray[i], encoded);
-    NS_ENSURE_SUCCESS_VOID(rv);
-    aEncodedArray.AppendElement(encoded);
-  }
-}
-
-}  

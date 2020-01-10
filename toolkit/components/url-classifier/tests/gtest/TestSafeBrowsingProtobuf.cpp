@@ -1,5 +1,10 @@
-#include "safebrowsing.pb.h"
+
+
+
+
+
 #include "gtest/gtest.h"
+#include "safebrowsing.pb.h"
 
 TEST(UrlClassifierProtobuf, Empty)
 {

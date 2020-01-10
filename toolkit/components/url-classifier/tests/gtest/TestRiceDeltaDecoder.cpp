@@ -1,12 +1,13 @@
 
 
 
-#include "gtest/gtest.h"
-#include "RiceDeltaDecoder.h"
-#include "mozilla/ArrayUtils.h"
 
-using namespace mozilla;
-using namespace mozilla::safebrowsing;
+
+#include "gtest/gtest.h"
+#include "mozilla/ArrayUtils.h"
+#include "RiceDeltaDecoder.h"
+
+namespace {
 
 struct TestingData {
   std::vector<uint32_t> mExpectedDecoded;
@@ -14,7 +15,21 @@ struct TestingData {
   uint32_t mRiceParameter;
 };
 
-static bool runOneTest(TestingData& aData);
+}  
+
+static bool runOneTest(TestingData& aData) {
+  RiceDeltaDecoder decoder(&aData.mEncoded[0], aData.mEncoded.size());
+
+  std::vector<uint32_t> decoded(aData.mExpectedDecoded.size());
+
+  uint32_t firstValue = aData.mExpectedDecoded[0];
+  bool rv = decoder.Decode(
+      aData.mRiceParameter, firstValue,
+      decoded.size() - 1,  
+      &decoded[0]);
+
+  return rv && decoded == aData.mExpectedDecoded;
+}
 
 TEST(UrlClassifierRiceDeltaDecoder, SingleEncodedValue)
 {
@@ -154,18 +169,4 @@ TEST(UrlClassifierRiceDeltaDecoder, Empty)
 
     ASSERT_TRUE(runOneTest(d));
   }
-}
-
-static bool runOneTest(TestingData& aData) {
-  RiceDeltaDecoder decoder(&aData.mEncoded[0], aData.mEncoded.size());
-
-  std::vector<uint32_t> decoded(aData.mExpectedDecoded.size());
-
-  uint32_t firstValue = aData.mExpectedDecoded[0];
-  bool rv = decoder.Decode(
-      aData.mRiceParameter, firstValue,
-      decoded.size() - 1,  
-      &decoded[0]);
-
-  return rv && decoded == aData.mExpectedDecoded;
 }
