@@ -161,8 +161,17 @@ class UrlbarResult {
 
 
 
+
+
   static payloadAndSimpleHighlights(tokens, payloadInfo) {
-    if ((!payloadInfo.title || (payloadInfo.title && !payloadInfo.title[0])) &&
+    
+    for (let [name, info] of Object.entries(payloadInfo)) {
+      if (typeof(info) == "string") {
+        payloadInfo[name] = [info, false];
+      }
+    }
+
+    if ((!payloadInfo.title || !payloadInfo.title[0]) &&
         payloadInfo.url && typeof payloadInfo.url[0] == "string") {
       
       

@@ -12,9 +12,9 @@
 var EXPORTED_SYMBOLS = [
   "UrlbarMuxer",
   "UrlbarProvider",
-  "UrlbarProviderExtension",
   "UrlbarQueryContext",
   "UrlbarUtils",
+  "SkippableTimer",
 ];
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -436,6 +436,7 @@ class UrlbarQueryContext {
       throw new Error(`Invalid sources list`);
     }
 
+    this.lastResultCount = 0;
     this.userContextId = options.userContextId;
   }
 
@@ -547,29 +548,81 @@ class UrlbarProvider {
 
 
 
-class UrlbarProviderExtension extends UrlbarProvider {
-  constructor(name) {
-    super();
-    this._name = name;
-    this.behavior = "inactive";
+
+
+
+
+
+
+
+
+
+class SkippableTimer {
+  
+
+
+
+
+
+
+
+
+
+  constructor({
+    name = "<anonymous timer>",
+    callback = null,
+    time = 0,
+    reportErrorOnTimeout = false,
+    logger = null,
+  } = {}) {
+    this.name = name;
+    this.logger = logger;
+
+    let timerPromise = new Promise(resolve => {
+      this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+      this._timer.initWithCallback(() => {
+        this._log(`Timed out!`, reportErrorOnTimeout);
+        resolve();
+      }, time, Ci.nsITimer.TYPE_ONE_SHOT);
+      this._log(`Started`);
+    });
+
+    let firePromise = new Promise(resolve => {
+      this.fire = () => {
+        this._log(`Skipped`);
+        resolve();
+        return this.promise;
+      };
+    });
+
+    this.promise = Promise.race([timerPromise, firePromise]).then(() => {
+      
+      if (this._timer && callback) {
+        callback();
+      }
+    });
   }
-  get name() {
-    return this._name;
+
+  
+
+
+
+
+
+  cancel() {
+    this._log(`Canceling`);
+    this._timer.cancel();
+    delete this._timer;
+    return this.fire();
   }
-  get type() {
-    return UrlbarUtils.PROVIDER_TYPE.EXTENSION;
-  }
-  isActive(queryContext) {
-    return this.behavior != "inactive";
-  }
-  isRestricting(queryContext) {
-    return this.behavior == "restricting";
-  }
-  startQuery(queryContext, addCallback) {
-    
-    return Promise.resolve();
-  }
-  cancelQuery(queryContext) {
-    
+
+  _log(msg, isError = false) {
+    let line = `SkippableTimer :: ${this.name} :: ${msg}`;
+    if (this.logger) {
+      this.logger.debug(line);
+    }
+    if (isError) {
+      Cu.reportError(line);
+    }
   }
 }
