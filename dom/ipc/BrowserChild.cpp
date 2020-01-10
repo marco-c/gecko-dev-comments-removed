@@ -3451,6 +3451,12 @@ nsresult BrowserChild::CanCancelContentJS(
       return NS_ERROR_FAILURE;
     }
 
+    if (aNavigationURI->SchemeIs("javascript")) {
+      
+      
+      return NS_OK;
+    }
+
     
     
     

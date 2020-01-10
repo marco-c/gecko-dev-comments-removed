@@ -1,47 +1,67 @@
+
+
+
+
 "use strict";
+
+requestLongerTimeout(10);
 
 const TEST_PAGE =
   "http://mochi.test:8888/browser/dom/ipc/tests/file_cancel_content_js.html";
 const NEXT_PAGE = "https://example.org/";
+const JS_URI = "javascript:void(document.title = 'foo')";
 
 function sleep(ms) {
   
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function test_navigation(cancelContentJS) {
+async function test_navigation(nextPage, cancelContentJSPref, shouldCancel) {
   await SpecialPowers.pushPrefEnv({
-    set: [["dom.ipc.cancel_content_js_when_navigating", cancelContentJS]],
+    set: [["dom.ipc.cancel_content_js_when_navigating", cancelContentJSPref]],
   });
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening: TEST_PAGE,
   });
 
+  const loopEnded = ContentTask.spawn(tab.linkedBrowser, {}, async function() {
+    return new Promise(resolve => {
+      content.window.addEventListener("LongLoopEnded", resolve);
+    });
+  });
+
+  
+  
   await sleep(1000);
-  BrowserTestUtils.loadURI(gBrowser, NEXT_PAGE);
-  const nextPageLoaded = BrowserTestUtils.browserLoaded(
-    tab.linkedBrowser,
-    false,
-    NEXT_PAGE
+
+  info(
+    `navigating to ${nextPage} with cancel content JS ${
+      cancelContentJSPref ? "enabled" : "disabled"
+    }`
   );
+  const nextPageLoaded = BrowserTestUtils.waitForContentEvent(
+    tab.linkedBrowser,
+    "DOMTitleChanged"
+  );
+  BrowserTestUtils.loadURI(gBrowser, nextPage);
+
   const result = await Promise.race([
     nextPageLoaded,
-    sleep(1000).then(() => "timeout"),
+    loopEnded.then(() => "timeout"),
   ]);
 
   const timedOut = result === "timeout";
-  if (cancelContentJS) {
+  if (shouldCancel) {
     ok(timedOut === false, "expected next page to be loaded");
   } else {
     ok(timedOut === true, "expected timeout");
-    
-    
-    await nextPageLoaded;
   }
 
   BrowserTestUtils.removeTab(tab);
 }
 
-add_task(async () => test_navigation(true));
-add_task(async () => test_navigation(false));
+add_task(async () => test_navigation(NEXT_PAGE, true, true));
+add_task(async () => test_navigation(NEXT_PAGE, false, false));
+add_task(async () => test_navigation(JS_URI, true, false));
+add_task(async () => test_navigation(JS_URI, false, false));
