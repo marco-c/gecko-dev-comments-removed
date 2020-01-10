@@ -11,6 +11,7 @@
 
 #include "MobileViewportManager.h"
 #include "mozilla/MVMContext.h"
+#include "mozilla/dom/Event.h"
 
 using namespace mozilla;
 
@@ -40,11 +41,24 @@ class MockMVMContext : public MVMContext {
   MOCK_METHOD1(SetVisualViewportSize, void(const CSSSize& aSize));
   MOCK_METHOD0(UpdateDisplayPortMargins, void());
 
+  void SetMVM(MobileViewportManager* aMVM) { mMVM = aMVM; }
+
   
   nsViewportInfo GetViewportInfo(const ScreenIntSize& aDisplaySize) const {
-    return nsViewportInfo(mDefaultScale, mMinScale, mMaxScale,
-                          mDisplaySize / mDeviceScale, mAutoSizeFlag,
-                          mAutoScaleFlag, mZoomFlag);
+    
+    
+    
+    
+    
+    
+    CSSSize viewportSize = mDisplaySize / mDeviceScale;
+    if (mAutoSizeFlag == AutoSizeFlag::FixedSize) {
+      viewportSize = CSSSize(mFixedViewportWidth,
+                             mFixedViewportWidth * (float(mDisplaySize.height) /
+                                                    mDisplaySize.width));
+    }
+    return nsViewportInfo(mDefaultScale, mMinScale, mMaxScale, viewportSize,
+                          mAutoSizeFlag, mAutoScaleFlag, mZoomFlag);
   }
   CSSToLayoutDeviceScale CSSToDevPixelScale() const { return mDeviceScale; }
   float GetResolution() const { return mResolution; }
@@ -64,6 +78,7 @@ class MockMVMContext : public MVMContext {
   void SetResolutionAndScaleTo(float aResolution,
                                ResolutionChangeOrigin aOrigin) {
     mResolution = aResolution;
+    mMVM->ResolutionUpdated(aOrigin);
   }
   void Reflow(const CSSSize& aNewSize, const CSSSize& aOldSize,
               ResizeEventFlag aResizeEventFlag) {
@@ -77,6 +92,10 @@ class MockMVMContext : public MVMContext {
   void SetInitialScale(CSSToScreenScale aInitialScale) {
     mDefaultScale = aInitialScale;
     mAutoScaleFlag = AutoScaleFlag::FixedScale;
+  }
+  void SetFixedViewportWidth(CSSCoord aWidth) {
+    mFixedViewportWidth = aWidth;
+    mAutoSizeFlag = AutoSizeFlag::FixedSize;
   }
   void SetDisplaySize(const LayoutDeviceIntSize& aNewDisplaySize) {
     mDisplaySize = aNewDisplaySize;
@@ -96,6 +115,7 @@ class MockMVMContext : public MVMContext {
   CSSToScreenScale mMinScale{0.25f};
   CSSToScreenScale mMaxScale{10.0f};
   CSSToLayoutDeviceScale mDeviceScale{1.0f};
+  CSSCoord mFixedViewportWidth;
   AutoSizeFlag mAutoSizeFlag = AutoSizeFlag::AutoSize;
   AutoScaleFlag mAutoScaleFlag = AutoScaleFlag::AutoScale;
   ZoomFlag mZoomFlag = ZoomFlag::AllowZoom;
@@ -106,13 +126,17 @@ class MockMVMContext : public MVMContext {
   float mResolution = 1.0f;
   CSSSize mICBSize;
   CSSSize mContentSize;
+
+  MobileViewportManager* mMVM = nullptr;
 };
 
 class MVMTester : public ::testing::Test {
  public:
   MVMTester()
       : mMVMContext(new MockMVMContext()),
-        mMVM(new MobileViewportManager(mMVMContext)) {}
+        mMVM(new MobileViewportManager(mMVMContext)) {
+    mMVMContext->SetMVM(mMVM.get());
+  }
 
   void Resize(const LayoutDeviceIntSize& aNewDisplaySize) {
     mMVMContext->SetDisplaySize(aNewDisplaySize);
@@ -149,4 +173,43 @@ TEST_F(MVMTester, ZoomBoundsRespectedAfterRotation_Bug1536755) {
   EXPECT_EQ(CSSSize(300, 600), mMVMContext->GetICBSize());
   EXPECT_EQ(CSSSize(300, 600), mMVMContext->GetContentSize());
   EXPECT_EQ(1.0f, mMVMContext->GetResolution());
+}
+
+TEST_F(MVMTester, LandscapeToPortraitRotation_Bug1523844) {
+  
+  mMVMContext->SetDisplaySize(LayoutDeviceIntSize(300, 600));
+  
+  
+  
+  mMVMContext->SetLayoutFunction(
+      [](CSSSize aICBSize) { return CSSSize(600, 1200); });
+
+  
+  
+  
+  
+  
+  
+  
+  mMVM->HandleDOMMetaAdded();
+
+  
+  
+  mMVM->SetInitialViewport();
+  EXPECT_EQ(CSSSize(300, 600), mMVMContext->GetICBSize());
+  EXPECT_EQ(CSSSize(600, 1200), mMVMContext->GetContentSize());
+  EXPECT_EQ(0.5f, mMVMContext->GetResolution());
+
+  
+  Resize(LayoutDeviceIntSize(600, 300));
+  EXPECT_EQ(CSSSize(600, 300), mMVMContext->GetICBSize());
+  EXPECT_EQ(CSSSize(600, 1200), mMVMContext->GetContentSize());
+  EXPECT_EQ(1.0f, mMVMContext->GetResolution());
+
+  
+  
+  Resize(LayoutDeviceIntSize(300, 600));
+  EXPECT_EQ(CSSSize(300, 600), mMVMContext->GetICBSize());
+  EXPECT_EQ(CSSSize(600, 1200), mMVMContext->GetContentSize());
+  EXPECT_EQ(0.5f, mMVMContext->GetResolution());
 }

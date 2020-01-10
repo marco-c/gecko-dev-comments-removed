@@ -54,6 +54,11 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   float ComputeIntrinsicResolution() const;
 
+  
+
+
+  void HandleDOMMetaAdded();
+
  private:
   void SetRestoreResolution(float aResolution);
 
