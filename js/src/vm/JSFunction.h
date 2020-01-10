@@ -672,11 +672,6 @@ class JSFunction : public js::NativeObject {
   
   
   
-  
-  
-  
-  
-  
 
   static JSScript* getOrCreateScript(JSContext* cx, js::HandleFunction fun) {
     MOZ_ASSERT(fun->isInterpreted());
@@ -690,29 +685,14 @@ class JSFunction : public js::NativeObject {
     return fun->nonLazyScript();
   }
 
-  JSScript* existingScriptNonDelazifying() const {
-    MOZ_ASSERT(isInterpreted());
-    if (isInterpretedLazy()) {
-      
-      
-      
-      
-      
-      js::LazyScript* lazy = lazyScript();
-      JSFunction* fun = lazy->function();
-      MOZ_ASSERT(fun);
-      return fun->nonLazyScript();
-    }
-    return nonLazyScript();
-  }
-
   JSScript* existingScript() {
     MOZ_ASSERT(isInterpreted());
     if (isInterpretedLazy()) {
       if (shadowZone()->needsIncrementalBarrier()) {
         js::LazyScript::writeBarrierPre(lazyScript());
       }
-      JSScript* script = existingScriptNonDelazifying();
+      JSFunction* canonicalFunction = lazyScript()->function();
+      JSScript* script = canonicalFunction->nonLazyScript();
       flags_.clearInterpretedLazy();
       flags_.setInterpreted();
       initScript(script);
