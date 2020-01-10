@@ -111,9 +111,9 @@ host_fetches = {
             
             
             
-            'url': 'https://imagemagick.org/download/binaries/ImageMagick-x86_64-apple-darwin17.7.0.tar.gz',  
+            'url': 'https://imagemagick.org/download/binaries/ImageMagick-x86_64-apple-darwin18.7.0.tar.gz',  
             
-            'path': 'ImageMagick-7.0.8',
+            'path': 'ImageMagick-18.7.0',
         },
     },
     'linux64': {
