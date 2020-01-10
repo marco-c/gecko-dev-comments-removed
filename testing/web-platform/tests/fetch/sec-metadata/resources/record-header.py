@@ -55,6 +55,14 @@ def main(request, response):
       response.headers.set("Content-Type", "application/javascript")
 
     
+    if key.startswith("image"):
+      response.headers.set("Content-Type", "image/png")
+      file = open(os.path.join(request.doc_root, "media", "1x1-green.png"), "r")
+      image = file.read()
+      file.close()
+      return image
+
+    
     if key.startswith("track"):
       return "WEBVTT"
 
