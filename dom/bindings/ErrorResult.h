@@ -164,6 +164,11 @@ class TErrorResult {
   operator const ErrorResult&() const;
   operator OOMReporter&();
 
+  
+  
+  
+  
+  
   void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG Throw(nsresult rv) {
     MOZ_ASSERT(NS_FAILED(rv), "Please don't try throwing success");
     AssignErrorCode(rv);
@@ -599,6 +604,7 @@ class ErrorResult : public binding_danger::TErrorResult<
 
   explicit ErrorResult(nsresult aRv) : BaseErrorResult(aRv) {}
 
+  
   void operator=(nsresult rv) { BaseErrorResult::operator=(rv); }
 
   ErrorResult& operator=(ErrorResult&& aRHS) {
@@ -659,6 +665,7 @@ class CopyableErrorResult
 
   explicit CopyableErrorResult(nsresult aRv) : BaseErrorResult(aRv) {}
 
+  
   void operator=(nsresult rv) { BaseErrorResult::operator=(rv); }
 
   CopyableErrorResult& operator=(CopyableErrorResult&& aRHS) {

@@ -89,6 +89,13 @@ class Promise : public nsISupports, public SupportsWeakPtr<Promise> {
   void MaybeReject(JS::Handle<JS::Value> aValue) {
     MaybeSomething(aValue, &Promise::MaybeReject);
   }
+
+  
+  
+  
+  
+  
+  
   inline void MaybeReject(nsresult aArg) {
     MOZ_ASSERT(NS_FAILED(aArg));
     MaybeSomething(aArg, &Promise::MaybeReject);
