@@ -28,16 +28,6 @@ enum class ValidityCheckingMode {
   CheckForEV = 1,
 };
 
-enum class NSSDBConfig {
-  ReadWrite = 0,
-  ReadOnly = 1,
-};
-
-enum class PKCS11DBConfig {
-  DoNotLoadModules = 0,
-  LoadModules = 1,
-};
-
 
 
 
@@ -52,8 +42,8 @@ enum class NetscapeStepUpPolicy : uint32_t {
   NeverMatch = 3,
 };
 
-SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
-                        PKCS11DBConfig pkcs11DbConfig);
+SECStatus InitializeNSS(const nsACString& dir, bool readOnly,
+                        bool loadPKCS11Modules);
 
 void DisableMD5();
 
