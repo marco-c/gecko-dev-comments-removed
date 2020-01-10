@@ -5,22 +5,6 @@ const pushNotifier = Cc["@mozilla.org/push/Notifier;1"].getService(
 );
 
 add_task(async function test_observer_remoting() {
-  
-
-
-
-
-
-
-
-  const isParentInterceptEnabled = Cc["@mozilla.org/serviceworkers/manager;1"]
-    .getService(Ci.nsIServiceWorkerManager)
-    .isParentInterceptEnabled();
-
-  if (isParentInterceptEnabled) {
-    return;
-  }
-
   do_get_profile();
   if (isParent) {
     await testInParent();
