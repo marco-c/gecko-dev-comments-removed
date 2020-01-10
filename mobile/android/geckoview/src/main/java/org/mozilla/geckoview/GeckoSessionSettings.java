@@ -338,8 +338,15 @@ public final class GeckoSessionSettings implements Parcelable {
     
 
 
+
     private static final Key<String> CONTEXT_ID =
         new Key<String>("sessionContextId",  true,  null);
+
+    
+
+
+    private static final Key<String> UNSAFE_CONTEXT_ID =
+        new Key<String>("unsafeSessionContextId",  true,  null);
 
     private final GeckoSession mSession;
     private final GeckoBundle mBundle;
@@ -375,6 +382,7 @@ public final class GeckoSessionSettings implements Parcelable {
         mBundle.putInt(VIEWPORT_MODE.name, VIEWPORT_MODE_MOBILE);
         mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
         mBundle.putString(CONTEXT_ID.name, null);
+        mBundle.putString(UNSAFE_CONTEXT_ID.name, null);
     }
 
     
@@ -473,7 +481,8 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
     public @Nullable String getContextId() {
-        return getString(CONTEXT_ID);
+        
+        return getString(UNSAFE_CONTEXT_ID);
     }
 
     
@@ -635,7 +644,8 @@ public final class GeckoSessionSettings implements Parcelable {
     }
 
     private void setContextId(final @Nullable String value) {
-        setString(CONTEXT_ID, value);
+        setString(UNSAFE_CONTEXT_ID, value);
+        setString(CONTEXT_ID, StorageController.createSafeSessionContextId(value));
     }
 
     private void setString(final Key<String> key, final String value) {
