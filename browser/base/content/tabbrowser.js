@@ -1325,7 +1325,7 @@
       
       if (newBrowser._urlbarFocused && gURLBar) {
         
-        gURLBar.closePopup();
+        gURLBar.view.close();
 
         
         

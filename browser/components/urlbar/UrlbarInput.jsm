@@ -301,15 +301,6 @@ class UrlbarInput {
     }
   }
 
-  
-
-
-
-
-  closePopup() {
-    this.view.close();
-  }
-
   focus() {
     this.inputField.focus();
   }
