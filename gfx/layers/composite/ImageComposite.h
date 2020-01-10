@@ -94,13 +94,6 @@ class ImageComposite {
   uint32_t ScanForLastFrameIndex(const nsTArray<TimedImage>& aNewImages);
 
   
-  
-  
-  
-  bool IsImagesUpdateRateFasterThanCompositedRate(
-      const TimedImage& aNewImage, const TimedImage& aOldImage) const;
-
-  
 
 
   Bias mBias;
