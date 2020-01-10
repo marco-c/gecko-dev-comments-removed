@@ -11,6 +11,123 @@ SpecialPowers.pushPrefEnv({
 const PAGE =
   "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
 
+let gListenerId = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function addContentEventListenerWithMessageManager(
+  browser,
+  eventName,
+  listener,
+  listenerOptions = {},
+  checkFn,
+  autoremove = true
+) {
+  let id = gListenerId++;
+  let checkFnSource = checkFn
+    ? encodeURIComponent(escape(checkFn.toSource()))
+    : "";
+
+  
+  
+  
+
+  
+  function frameScript(id, eventName, listenerOptions, checkFnSource) {
+    let checkFn;
+    if (checkFnSource) {
+      checkFn = eval(`(() => (${unescape(checkFnSource)}))()`);
+    }
+
+    function listener(event) {
+      if (checkFn && !checkFn(event)) {
+        return;
+      }
+      sendAsyncMessage("ContentEventListener:Run", id);
+    }
+    function removeListener(msg) {
+      if (msg.data == id) {
+        removeMessageListener("ContentEventListener:Remove", removeListener);
+        removeEventListener(eventName, listener, listenerOptions);
+      }
+    }
+    addMessageListener("ContentEventListener:Remove", removeListener);
+    addEventListener(eventName, listener, listenerOptions);
+  }
+  
+
+  let frameScriptSource = `data:,(${frameScript.toString()})(${id}, "${eventName}", ${uneval(
+    listenerOptions
+  )}, "${checkFnSource}")`;
+
+  let mm = Services.mm;
+
+  function runListener(msg) {
+    if (msg.data == id && msg.target == browser) {
+      listener();
+    }
+  }
+  mm.addMessageListener("ContentEventListener:Run", runListener);
+
+  let needCleanup = true;
+
+  let unregisterFunction = function() {
+    if (!needCleanup) {
+      return;
+    }
+    needCleanup = false;
+    mm.removeMessageListener("ContentEventListener:Run", runListener);
+    mm.broadcastAsyncMessage("ContentEventListener:Remove", id);
+    mm.removeDelayedFrameScript(frameScriptSource);
+    if (autoremove) {
+      Services.obs.removeObserver(cleanupObserver, "message-manager-close");
+    }
+  };
+
+  function cleanupObserver(subject, topic, data) {
+    if (subject == browser.messageManager) {
+      unregisterFunction();
+    }
+  }
+  if (autoremove) {
+    Services.obs.addObserver(cleanupObserver, "message-manager-close");
+  }
+
+  mm.loadFrameScript(frameScriptSource, true);
+
+  return unregisterFunction;
+}
+
 
 
 
@@ -54,7 +171,7 @@ function prepareForVisibilityEvents(browser, expectedOrder) {
 
     let checkFn = e => e.persisted;
 
-    rmvHide = BrowserTestUtils.addContentEventListener(
+    rmvHide = addContentEventListenerWithMessageManager(
       browser,
       "pagehide",
       () => eventListener("pagehide"),
@@ -62,7 +179,7 @@ function prepareForVisibilityEvents(browser, expectedOrder) {
       checkFn,
        false
     );
-    rmvShow = BrowserTestUtils.addContentEventListener(
+    rmvShow = addContentEventListenerWithMessageManager(
       browser,
       "pageshow",
       () => eventListener("pageshow"),
