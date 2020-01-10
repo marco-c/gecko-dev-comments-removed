@@ -53,16 +53,22 @@ const Curl = {
 
 
 
-  generateCommand: function(data) {
+
+
+
+
+  generateCommand: function(data, platform) {
     const utils = CurlUtils;
 
     let command = ["curl"];
     const ignoredHeaders = new Set();
 
+    const currentPlatform = platform || Services.appinfo.OS;
+
     
     
     const escapeString =
-      Services.appinfo.OS == "WINNT"
+      currentPlatform == "WINNT"
         ? utils.escapeStringWin
         : utils.escapeStringPosix;
 
