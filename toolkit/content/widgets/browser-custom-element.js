@@ -401,6 +401,30 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     return document.getElementById(this.getAttribute("datetimepicker"));
   }
 
+  
+
+
+
+
+  get popupAnchor() {
+    let stack = this.closest("stack");
+    if (!stack) {
+      return null;
+    }
+
+    let popupAnchor = stack.querySelector(".popup-anchor");
+    if (popupAnchor) {
+      return popupAnchor;
+    }
+
+    
+    popupAnchor = document.createXULElement("hbox");
+    popupAnchor.className = "popup-anchor";
+    popupAnchor.hidden = true;
+    stack.appendChild(popupAnchor);
+    return popupAnchor;
+  }
+
   set docShellIsActive(val) {
     if (this.isRemoteBrowser) {
       let { frameLoader } = this;
