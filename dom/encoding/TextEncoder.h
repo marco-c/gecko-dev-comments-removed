@@ -40,7 +40,7 @@ class TextEncoder final : public NonRefcountedDOMObject {
 
 
 
-  void GetEncoding(nsAString& aEncoding);
+  void GetEncoding(nsACString& aEncoding);
 
   
 
@@ -52,11 +52,12 @@ class TextEncoder final : public NonRefcountedDOMObject {
 
 
   void Encode(JSContext* aCx, JS::Handle<JSObject*> aObj,
-              const nsAString& aString, JS::MutableHandle<JSObject*> aRetval,
-              ErrorResult& aRv);
+              JS::Handle<JSString*> aString,
+              JS::MutableHandle<JSObject*> aRetval, ErrorResult& aRv);
 
-  void EncodeInto(const nsAString& aSrc, const Uint8Array& aDst,
-                  TextEncoderEncodeIntoResult& aResult);
+  void EncodeInto(JSContext* aCx, JS::Handle<JSString*> aSrc,
+                  const Uint8Array& aDst, TextEncoderEncodeIntoResult& aResult,
+                  OOMReporter& aError);
 };
 
 }  
