@@ -5380,6 +5380,15 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+
+
+VARCACHE_PREF(
+  Live,
+  "layout.show_previous_page",
+   layout_show_previous_page,
+  bool, true
+)
+
 VARCACHE_PREF(
   Live,
   "layout.smaller-painted-layers",
