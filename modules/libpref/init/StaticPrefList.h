@@ -729,6 +729,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "browser.cache.disk.metadata_memory_limit",
+   browser_cache_disk_metadata_memory_limit,
+  RelaxedAtomicUint32, 250 
+)
+
+
+VARCACHE_PREF(
+  Live,
   "browser.contentblocking.allowlist.storage.enabled",
   browser_contentblocking_allowlist_storage_enabled,
   bool, false
