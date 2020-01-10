@@ -151,12 +151,15 @@ HUDService.prototype = {
       
       
       
+      
+      
+      
       const ChromeUtils = require("ChromeUtils");
       const { DevToolsLoader } = ChromeUtils.import(
         "resource://devtools/shared/Loader.jsm"
       );
       const loader = new DevToolsLoader();
-      loader.invisibleToDebugger = true;
+      loader.freshCompartment = true;
       const { DebuggerServer } = loader.require("devtools/server/main");
 
       DebuggerServer.init();
