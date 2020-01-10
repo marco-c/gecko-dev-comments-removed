@@ -2856,9 +2856,7 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
             
             
             wr::RenderRoot renderRoot = wr::RenderRoot::Default;
-            if (XRE_IsContentProcess()) {
-              renderRoot = gfxUtils::GetContentRenderRoot();
-            } else {
+            if (XRE_IsParentProcess()) {
               renderRoot = gfxUtils::RecursivelyGetRenderRootForFrame(mOuter);
             }
             success = manager->SetPendingScrollUpdateForNextTransaction(
