@@ -1333,20 +1333,35 @@ class MOZ_RAII AutoResetInFrameSwap final {
     
     
     
-    nsContentUtils::FirePageShowEvent(mThisDocShell, mThisEventTarget, false);
-    nsContentUtils::FirePageShowEvent(mOtherDocShell, mOtherEventTarget, false);
-    nsContentUtils::FirePageHideEvent(mThisDocShell, mThisEventTarget);
-    nsContentUtils::FirePageHideEvent(mOtherDocShell, mOtherEventTarget);
+    nsContentUtils::FirePageShowEventForFrameLoaderSwap(
+        mThisDocShell, mThisEventTarget, false);
+    nsContentUtils::FirePageShowEventForFrameLoaderSwap(
+        mOtherDocShell, mOtherEventTarget, false);
+    nsContentUtils::FirePageHideEventForFrameLoaderSwap(mThisDocShell,
+                                                        mThisEventTarget);
+    nsContentUtils::FirePageHideEventForFrameLoaderSwap(mOtherDocShell,
+                                                        mOtherEventTarget);
   }
 
   ~AutoResetInFrameSwap() {
-    nsContentUtils::FirePageShowEvent(mThisDocShell, mThisEventTarget, true);
-    nsContentUtils::FirePageShowEvent(mOtherDocShell, mOtherEventTarget, true);
+    nsContentUtils::FirePageShowEventForFrameLoaderSwap(mThisDocShell,
+                                                        mThisEventTarget, true);
+    nsContentUtils::FirePageShowEventForFrameLoaderSwap(
+        mOtherDocShell, mOtherEventTarget, true);
 
     mThisFrameLoader->mInSwap = false;
     mOtherFrameLoader->mInSwap = false;
     mThisDocShell->SetInFrameSwap(false);
     mOtherDocShell->SetInFrameSwap(false);
+
+    
+    
+    if (RefPtr<Document> doc = mThisDocShell->GetDocument()) {
+      doc->UpdateVisibilityState();
+    }
+    if (RefPtr<Document> doc = mOtherDocShell->GetDocument()) {
+      doc->UpdateVisibilityState();
+    }
   }
 
  private:
