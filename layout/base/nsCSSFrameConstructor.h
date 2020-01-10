@@ -37,7 +37,6 @@ class nsCSSAnonBoxPseudoStaticAtom;
 class nsPageSequenceFrame;
 
 class nsPageContentFrame;
-struct PendingBinding;
 
 class nsFrameConstructorState;
 
@@ -769,26 +768,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   static const PseudoParentData sPseudoParentData[eParentTypeCount];
 
-#ifdef MOZ_XBL
-  
-  
-  
-  
-  
-  struct MOZ_STACK_CLASS XBLBindingLoadInfo {
-    mozilla::UniquePtr<PendingBinding> mPendingBinding;
-    bool mSuccess = false;
-
-    
-    XBLBindingLoadInfo();
-    explicit XBLBindingLoadInfo(mozilla::UniquePtr<PendingBinding>);
-  };
-
-  
-  XBLBindingLoadInfo LoadXBLBindingIfNeeded(nsIContent&, const ComputedStyle&,
-                                            uint32_t aFlags);
-#endif
-
   const FrameConstructionData* FindDataForContent(nsIContent&, ComputedStyle&,
                                                   nsIFrame* aParentFrame,
                                                   uint32_t aFlags);
@@ -863,12 +842,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     FrameConstructionItem* AppendItem(
         nsCSSFrameConstructor* aFCtor, const FrameConstructionData* aFCData,
-        nsIContent* aContent, PendingBinding* aPendingBinding,
-        already_AddRefed<ComputedStyle>&& aComputedStyle,
+        nsIContent* aContent, already_AddRefed<ComputedStyle>&& aComputedStyle,
         bool aSuppressWhiteSpaceOptimizations) {
-      FrameConstructionItem* item = new (aFCtor) FrameConstructionItem(
-          aFCData, aContent, aPendingBinding, std::move(aComputedStyle),
-          aSuppressWhiteSpaceOptimizations);
+      FrameConstructionItem* item = new (aFCtor)
+          FrameConstructionItem(aFCData, aContent, std::move(aComputedStyle),
+                                aSuppressWhiteSpaceOptimizations);
       mItems.insertBack(item);
       ++mItemCount;
       ++mDesiredParentCounts[item->DesiredParentType()];
@@ -878,12 +856,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     FrameConstructionItem* PrependItem(
         nsCSSFrameConstructor* aFCtor, const FrameConstructionData* aFCData,
-        nsIContent* aContent, PendingBinding* aPendingBinding,
-        already_AddRefed<ComputedStyle>&& aComputedStyle,
+        nsIContent* aContent, already_AddRefed<ComputedStyle>&& aComputedStyle,
         bool aSuppressWhiteSpaceOptimizations) {
-      FrameConstructionItem* item = new (aFCtor) FrameConstructionItem(
-          aFCData, aContent, aPendingBinding, std::move(aComputedStyle),
-          aSuppressWhiteSpaceOptimizations);
+      FrameConstructionItem* item = new (aFCtor)
+          FrameConstructionItem(aFCData, aContent, std::move(aComputedStyle),
+                                aSuppressWhiteSpaceOptimizations);
       mItems.insertFront(item);
       ++mItemCount;
       ++mDesiredParentCounts[item->DesiredParentType()];
@@ -1098,12 +1075,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   struct FrameConstructionItem final
       : public mozilla::LinkedListElement<FrameConstructionItem> {
     FrameConstructionItem(const FrameConstructionData* aFCData,
-                          nsIContent* aContent, PendingBinding* aPendingBinding,
+                          nsIContent* aContent,
                           already_AddRefed<ComputedStyle>&& aComputedStyle,
                           bool aSuppressWhiteSpaceOptimizations)
         : mFCData(aFCData),
           mContent(aContent),
-          mPendingBinding(aPendingBinding),
           mComputedStyle(std::move(aComputedStyle)),
           mSuppressWhiteSpaceOptimizations(aSuppressWhiteSpaceOptimizations),
           mIsText(false),
@@ -1159,15 +1135,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     const FrameConstructionData* mFCData;
     
     nsIContent* mContent;
-    
-    
-    
-    
-    
-    
-    
-    
-    PendingBinding* mPendingBinding;
     
     RefPtr<ComputedStyle> mComputedStyle;
     
@@ -1631,14 +1598,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-
-
   void ProcessChildren(nsFrameConstructorState& aState, nsIContent* aContent,
                        ComputedStyle* aComputedStyle,
                        nsContainerFrame* aParentFrame,
                        const bool aCanHaveGeneratedContent,
                        nsFrameList& aFrameList, const bool aAllowBlockStyles,
-                       PendingBinding* aPendingBinding,
                        nsIFrame* aPossiblyLeafFrame = nullptr);
 
   
@@ -1688,7 +1652,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                              nsIContent* aContent,
                              nsContainerFrame* aParentFrame,
                              ComputedStyle* aComputedStyle, bool aBuildCombobox,
-                             PendingBinding* aPendingBinding,
                              nsFrameList& aFrameList);
 
   
@@ -1763,15 +1726,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  
-  
   void ConstructBlock(nsFrameConstructorState& aState, nsIContent* aContent,
                       nsContainerFrame* aParentFrame,
                       nsContainerFrame* aContentParentFrame,
                       ComputedStyle* aComputedStyle,
                       nsContainerFrame** aNewFrame, nsFrameList& aFrameList,
-                      nsIFrame* aPositionedFrameForAbsPosContainer,
-                      PendingBinding* aPendingBinding);
+                      nsIFrame* aPositionedFrameForAbsPosContainer);
 
   
   
