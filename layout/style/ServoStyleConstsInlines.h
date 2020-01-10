@@ -442,6 +442,10 @@ nscoord StyleCSSPixelLength::ToAppUnits() const {
   
   
   
+  if (IsZero()) {
+    
+    return 0;
+  }
   float length = _0 * float(mozilla::AppUnitsPerCSSPixel());
   if (length >= nscoord_MAX) {
     return nscoord_MAX;
