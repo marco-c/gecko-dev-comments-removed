@@ -941,6 +941,8 @@ nsNSSCertList::AsPKCS7Blob( nsACString& result) {
   return NS_OK;
 }
 
+
+
 NS_IMETHODIMP
 nsNSSCertList::Write(nsIObjectOutputStream* aStream) {
   
@@ -964,6 +966,8 @@ nsNSSCertList::Write(nsIObjectOutputStream* aStream) {
 
   return rv;
 }
+
+
 
 NS_IMETHODIMP
 nsNSSCertList::Read(nsIObjectInputStream* aStream) {
@@ -990,6 +994,35 @@ nsNSSCertList::Read(nsIObjectInputStream* aStream) {
   }
 
   return NS_OK;
+}
+
+void nsNSSCertList::SerializeToIPC(IPC::Message* aMsg) {
+  const size_t certCount = static_cast<size_t>(mCerts.size());
+  WriteParam(aMsg, certCount);
+
+  for (const auto& certRef : mCerts) {
+    RefPtr<nsIX509Cert> cert = nsNSSCertificate::Create(certRef.get());
+    MOZ_RELEASE_ASSERT(cert);
+
+    WriteParam(aMsg, cert);
+  }
+}
+
+bool nsNSSCertList::DeserializeFromIPC(const IPC::Message* aMsg,
+                                       PickleIterator* aIter) {
+  size_t count = 0;
+  if (!ReadParam(aMsg, aIter, &count)) {
+    return false;
+  }
+
+  for (size_t i = 0; i < count; i++) {
+    RefPtr<nsIX509Cert> cert;
+    if (!ReadParam(aMsg, aIter, &cert) || !cert || NS_FAILED(AddCert(cert))) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 NS_IMETHODIMP
@@ -1197,6 +1230,8 @@ nsNSSCertListEnumerator::GetNext(nsISupports** _retval) {
   return NS_OK;
 }
 
+
+
 NS_IMETHODIMP
 nsNSSCertificate::Write(nsIObjectOutputStream* aStream) {
   NS_ENSURE_STATE(mCert);
@@ -1212,6 +1247,8 @@ nsNSSCertificate::Write(nsIObjectOutputStream* aStream) {
   return aStream->WriteBytes(
       AsBytes(MakeSpan(mCert->derCert.data, mCert->derCert.len)));
 }
+
+
 
 NS_IMETHODIMP
 nsNSSCertificate::Read(nsIObjectInputStream* aStream) {
@@ -1241,6 +1278,45 @@ nsNSSCertificate::Read(nsIObjectInputStream* aStream) {
   }
 
   return NS_OK;
+}
+
+void nsNSSCertificate::SerializeToIPC(IPC::Message* aMsg) {
+  bool hasCert = static_cast<bool>(mCert);
+  WriteParam(aMsg, hasCert);
+
+  if (!hasCert) {
+    return;
+  }
+
+  const nsDependentCSubstring certBytes(
+      reinterpret_cast<char*>(mCert->derCert.data), mCert->derCert.len);
+
+  WriteParam(aMsg, certBytes);
+}
+
+bool nsNSSCertificate::DeserializeFromIPC(const IPC::Message* aMsg,
+                                          PickleIterator* aIter) {
+  bool hasCert = false;
+  if (!ReadParam(aMsg, aIter, &hasCert)) {
+    return false;
+  }
+
+  if (!hasCert) {
+    return true;
+  }
+
+  nsCString derBytes;
+  if (!ReadParam(aMsg, aIter, &derBytes)) {
+    return false;
+  }
+
+  if (derBytes.Length() == 0) {
+    return false;
+  }
+
+  
+  
+  return InitFromDER(const_cast<char*>(derBytes.get()), derBytes.Length());
 }
 
 NS_IMETHODIMP
