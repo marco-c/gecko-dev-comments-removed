@@ -1282,7 +1282,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
  protected:
   friend class HuffmanPreludeReader;
-  friend struct TagReader;
 
  public:
   
