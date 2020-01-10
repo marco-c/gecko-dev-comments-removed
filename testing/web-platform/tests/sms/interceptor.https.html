@@ -34,12 +34,10 @@
 'use strict';
 
 promise_test(async t => {
-  await expect(getNextMessage).andReturn((timeout) => {
+  await expect(receive).andReturn((timeout) => {
       return Promise.resolve({
-        sms: {
-          content: "hello",
-          status: Status.kSuccess,
-        }
+        status: Status.kSuccess,
+        message: "hello",
       });
   });
 
@@ -49,20 +47,16 @@ promise_test(async t => {
 }, 'Basic usage');
 
 promise_test(async t => {
-  await expect(getNextMessage).andReturn((timeout) => {
+  await expect(receive).andReturn((timeout) => {
       return Promise.resolve({
-        sms: {
-          content: "hello1",
-          status: Status.kSuccess,
-        }
+        status: Status.kSuccess,
+        message: "hello1",
       });
   });
-  await expect(getNextMessage).andReturn((timeout) => {
+  await expect(receive).andReturn((timeout) => {
       return Promise.resolve({
-        sms: {
-          content: "hello2",
-          status: Status.kSuccess,
-        }
+        status: Status.kSuccess,
+        message: "hello2",
       });
   });
 
@@ -77,19 +71,15 @@ promise_test(async t => {
 }, 'Handle multiple requests in different order.');
 
 promise_test(async t => {
-  await expect(getNextMessage).andReturn((timeout) => {
+  await expect(receive).andReturn((timeout) => {
       return Promise.resolve({
-        sms: {
-          status: Status.kTimeout
-        }
+        status: Status.kTimeout,
       });
   });
-  await expect(getNextMessage).andReturn((timeout) => {
+  await expect(receive).andReturn((timeout) => {
       return Promise.resolve({
-        sms: {
-          content: "success",
-          status: Status.kSuccess
-        }
+        status: Status.kSuccess,
+        message: "success",
       });
   });
 
@@ -109,11 +99,9 @@ promise_test(async t => {
 }, 'Handle multiple requests with success and error.');
 
 promise_test(async t => {
-  await expect(getNextMessage).andReturn((timeout) => {
+  await expect(receive).andReturn((timeout) => {
       return Promise.resolve({
-        sms: {
-          status: Status.kTimeout,
-        }
+        status: Status.kTimeout,
       });
   });
 
@@ -167,12 +155,10 @@ promise_test(async t => {
 }, 'Should throw error with invalid timeout (NaN)');
 
 promise_test(async t => {
-  await expect(getNextMessage).andReturn((timeout) => {
+  await expect(receive).andReturn((timeout) => {
       return Promise.resolve({
-        sms: {
-          content: "hello",
-          status: Status.kSuccess,
-        }
+        status: Status.kSuccess,
+        message: "hello",
       });
   });
 
