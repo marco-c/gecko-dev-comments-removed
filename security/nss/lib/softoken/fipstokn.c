@@ -645,17 +645,37 @@ FC_SetPIN(CK_SESSION_HANDLE hSession, CK_CHAR_PTR pOldPin,
 
     CHECK_FORK();
 
-    if ((rv = sftk_fipsCheck()) == CKR_OK &&
-        (rv = sftk_newPinCheck(pNewPin, usNewLen)) == CKR_OK) {
+    rv = sftk_fipsCheck();
+    if (rv != CKR_OK) {
+        goto loser;
+    }
+
+    if (isLevel2 || usNewLen > 0) {
+        rv = sftk_newPinCheck(pNewPin, usNewLen);
+        if (rv != CKR_OK) {
+            goto loser;
+        }
         rv = NSC_SetPIN(hSession, pOldPin, usOldLen, pNewPin, usNewLen);
-        if ((rv == CKR_OK) &&
-            (sftk_SlotIDFromSessionHandle(hSession) == FIPS_SLOT_ID)) {
+        if (rv != CKR_OK) {
+            goto loser;
+        }
+        if (sftk_SlotIDFromSessionHandle(hSession) == FIPS_SLOT_ID) {
             
 
 
             isLevel2 = PR_TRUE;
         }
+    } else {
+        
+
+        PORT_Assert(usNewLen == 0);
+        rv = NSC_SetPIN(hSession, pOldPin, usOldLen, pNewPin, usNewLen);
+        if (rv != CKR_OK) {
+            goto loser;
+        }
     }
+
+loser:
     if (sftk_audit_enabled) {
         char msg[128];
         NSSAuditSeverity severity = (rv == CKR_OK) ? NSS_AUDIT_INFO : NSS_AUDIT_ERROR;
