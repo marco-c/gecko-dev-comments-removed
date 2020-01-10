@@ -676,8 +676,7 @@ class TransportTestPeer : public sigslot::has_slots<> {
 
     
     test_utils_->sts_target()->Dispatch(
-        WrapRunnableRet(&res, peer_->ice_ctx_, &NrIceCtx::StartChecks,
-                        offerer_),
+        WrapRunnableRet(&res, peer_->ice_ctx_, &NrIceCtx::StartChecks),
         NS_DISPATCH_SYNC);
     ASSERT_TRUE(NS_SUCCEEDED(res));
   }

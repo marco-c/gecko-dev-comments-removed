@@ -2360,34 +2360,6 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
   docURI->SchemeIs("file", &isFile);
   bool isApp;
   docURI->SchemeIs("app", &isApp);
-  
-  
-  bool isLocalhost =
-      NS_SUCCEEDED(rv) && (host.LowerCaseEqualsLiteral("localhost") ||
-                           host.LowerCaseEqualsLiteral("127.0.0.1") ||
-                           host.LowerCaseEqualsLiteral("::1"));
-
-  
-  
-  if (privileged) {
-    Telemetry::Accumulate(Telemetry::WEBRTC_GET_USER_MEDIA_SECURE_ORIGIN,
-                          (uint32_t)GetUserMediaSecurityState::Privileged);
-  } else if (isHTTPS) {
-    Telemetry::Accumulate(Telemetry::WEBRTC_GET_USER_MEDIA_SECURE_ORIGIN,
-                          (uint32_t)GetUserMediaSecurityState::HTTPS);
-  } else if (isFile) {
-    Telemetry::Accumulate(Telemetry::WEBRTC_GET_USER_MEDIA_SECURE_ORIGIN,
-                          (uint32_t)GetUserMediaSecurityState::File);
-  } else if (isApp) {
-    Telemetry::Accumulate(Telemetry::WEBRTC_GET_USER_MEDIA_SECURE_ORIGIN,
-                          (uint32_t)GetUserMediaSecurityState::App);
-  } else if (isLocalhost) {
-    Telemetry::Accumulate(Telemetry::WEBRTC_GET_USER_MEDIA_SECURE_ORIGIN,
-                          (uint32_t)GetUserMediaSecurityState::Localhost);
-  } else {
-    Telemetry::Accumulate(Telemetry::WEBRTC_GET_USER_MEDIA_SECURE_ORIGIN,
-                          (uint32_t)GetUserMediaSecurityState::Other);
-  }
 
   nsCOMPtr<nsIPrincipal> principal =
       nsGlobalWindowInner::Cast(aWindow)->GetPrincipal();

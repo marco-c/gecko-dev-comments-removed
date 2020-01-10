@@ -60,7 +60,6 @@
 #include "prnetdb.h"
 
 #include "mozilla/RefPtr.h"
-#include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
 #include "nsIEventTarget.h"
@@ -88,11 +87,6 @@ typedef void* NR_SOCKET;
 namespace mozilla {
 
 class NrSocketProxyConfig;
-
-
-
-TimeStamp nr_socket_short_term_violation_time();
-TimeStamp nr_socket_long_term_violation_time();
 
 class NrIceMediaStream;
 
@@ -318,7 +312,7 @@ class NrIceCtx {
   nsresult StartGathering(bool default_route_only, bool proxy_only);
 
   
-  nsresult StartChecks(bool offerer);
+  nsresult StartChecks();
 
   
   void UpdateNetworkState(bool online);
@@ -383,8 +377,6 @@ class NrIceCtx {
   ConnectionState connection_state_;
   GatheringState gathering_state_;
   const std::string name_;
-  bool offerer_;
-  TimeStamp ice_start_time_;
   bool ice_controlling_set_;
   std::map<std::string, RefPtr<NrIceMediaStream>> streams_;
   nr_ice_ctx* ctx_;
