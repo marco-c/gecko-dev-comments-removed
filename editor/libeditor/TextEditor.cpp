@@ -2165,7 +2165,7 @@ nsresult TextEditor::RemoveAttributeOrEquivalent(Element* aElement,
   return NS_OK;
 }
 
-nsresult TextEditor::MaybeChangePaddingBRElementForEmptyEditor() {
+nsresult TextEditor::EnsurePaddingBRElementForEmptyEditor() {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!AsHTMLEditor());
 
@@ -2178,15 +2178,27 @@ nsresult TextEditor::MaybeChangePaddingBRElementForEmptyEditor() {
   
   
   if (IsSingleLineEditor()) {
-    return NS_OK;
+    nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "Failed to create padding <br> element for empty editor");
+    return rv;
   }
 
   if (NS_WARN_IF(!mRootElement)) {
     return NS_ERROR_FAILURE;
   }
 
-  if (mRootElement->GetChildCount() > 1) {
-    
+  uint32_t childCount = mRootElement->GetChildCount();
+  if (childCount == 0) {
+    nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "Failed to create padding <br> element for empty editor");
+    return rv;
+  }
+
+  if (childCount > 1) {
     return NS_OK;
   }
 
@@ -2194,8 +2206,6 @@ nsresult TextEditor::MaybeChangePaddingBRElementForEmptyEditor() {
       HTMLBRElement::FromNodeOrNull(mRootElement->GetFirstChild());
   if (!brElement ||
       !EditorBase::IsPaddingBRElementForEmptyLastLine(*brElement)) {
-    
-    
     return NS_OK;
   }
 

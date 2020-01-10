@@ -638,7 +638,8 @@ nsresult HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
   
   
   
-  rv = CreatePaddingBRElementForEmptyEditorIfNeeded();
+  rv = MOZ_KnownLive(HTMLEditorRef())
+           .MaybeCreatePaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -11167,10 +11168,12 @@ void HTMLEditRules::OnModifyDocument() {
   }
 
   
-  DebugOnly<nsresult> rv = CreatePaddingBRElementForEmptyEditorIfNeeded();
+  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                    .MaybeCreatePaddingBRElementForEmptyEditor();
   NS_WARNING_ASSERTION(
-      rv.value != NS_ERROR_EDITOR_DESTROYED,
+      rv != NS_ERROR_EDITOR_DESTROYED,
       "The editor has been destroyed during creating a padding <br> element");
+  Unused << rv;
 }
 
 }  

@@ -589,7 +589,7 @@ class TextEditor : public EditorBase,
 
 
 
-  nsresult MaybeChangePaddingBRElementForEmptyEditor();
+  MOZ_CAN_RUN_SCRIPT nsresult EnsurePaddingBRElementForEmptyEditor();
 
  protected:  
   virtual ~TextEditor();

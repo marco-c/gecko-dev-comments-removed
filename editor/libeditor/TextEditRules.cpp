@@ -135,9 +135,8 @@ nsresult TextEditRules::Init(TextEditor* aTextEditor) {
   mTextEditor = aTextEditor;
   AutoSafeEditorData setData(*this, *mTextEditor);
 
-  
-  
-  nsresult rv = CreatePaddingBRElementForEmptyEditorIfNeeded();
+  nsresult rv = MOZ_KnownLive(TextEditorRef())
+                    .MaybeCreatePaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -250,14 +249,8 @@ nsresult TextEditRules::AfterEdit(EditSubAction aEditSubAction,
     
     mCachedSelectionNode = nullptr;
 
-    rv = TextEditorRef().MaybeChangePaddingBRElementForEmptyEditor();
+    rv = MOZ_KnownLive(TextEditorRef()).EnsurePaddingBRElementForEmptyEditor();
     if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-    rv = CreatePaddingBRElementForEmptyEditorIfNeeded();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
@@ -1237,6 +1230,9 @@ nsresult TextEditRules::CreateTrailingBRIfNeeded() {
 
   
   
+  
+  
+  
   if (NS_WARN_IF(!rootElement->GetLastChild())) {
     return NS_ERROR_FAILURE;
   }
@@ -1267,84 +1263,6 @@ nsresult TextEditRules::CreateTrailingBRIfNeeded() {
   brElement->UnsetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
   brElement->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
 
-  return NS_OK;
-}
-
-nsresult TextEditRules::CreatePaddingBRElementForEmptyEditorIfNeeded() {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  if (TextEditorRef().mPaddingBRElementForEmptyEditor) {
-    
-    return NS_OK;
-  }
-
-  
-  AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-      TextEditorRef(), EditSubAction::eCreatePaddingBRElementForEmptyEditor,
-      nsIEditor::eNone);
-
-  RefPtr<Element> rootElement = TextEditorRef().GetRoot();
-  if (!rootElement) {
-    
-    
-    return NS_OK;
-  }
-
-  
-  
-  
-  bool isRootEditable = TextEditorRef().IsEditable(rootElement);
-  for (nsIContent* rootChild = rootElement->GetFirstChild(); rootChild;
-       rootChild = rootChild->GetNextSibling()) {
-    if (EditorBase::IsPaddingBRElementForEmptyEditor(*rootChild) ||
-        !isRootEditable || TextEditorRef().IsEditable(rootChild) ||
-        TextEditorRef().IsBlockNode(rootChild)) {
-      return NS_OK;
-    }
-  }
-
-  
-  
-  if (!TextEditorRef().IsModifiableNode(*rootElement)) {
-    return NS_OK;
-  }
-
-  
-  RefPtr<Element> newBrElement =
-      TextEditorRef().CreateHTMLContent(nsGkAtoms::br);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  if (NS_WARN_IF(!newBrElement)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  TextEditorRef().mPaddingBRElementForEmptyEditor =
-      static_cast<HTMLBRElement*>(newBrElement.get());
-
-  
-  newBrElement->SetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
-
-  
-  nsresult rv = MOZ_KnownLive(TextEditorRef())
-                    .InsertNodeWithTransaction(*newBrElement,
-                                               EditorDOMPoint(rootElement, 0));
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  IgnoredErrorResult error;
-  SelectionRefPtr()->Collapse(EditorRawDOMPoint(rootElement, 0), error);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  NS_WARNING_ASSERTION(
-      !error.Failed(),
-      "Failed to collapse selection at start of the root element");
   return NS_OK;
 }
 
