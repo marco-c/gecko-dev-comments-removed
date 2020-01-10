@@ -1606,6 +1606,68 @@ NSC_DecryptUpdate(CK_SESSION_HANDLE hSession,
 }
 
 
+
+#define DUPLICATE_MSB_TO_ALL(x) ((unsigned int)((int)(x) >> (sizeof(int) * 8 - 1)))
+
+
+static unsigned int
+CK_RVToMask(CK_RV rv)
+{
+    unsigned int good;
+    
+
+    good = rv ^ CKR_OK;
+    good--;
+    return DUPLICATE_MSB_TO_ALL(good);
+}
+
+
+#define CT_SEL(m, l, r) (((m) & (l)) | (~(m) & (r)))
+
+
+#define CT_NOT_ZERO(x) (DUPLICATE_MSB_TO_ALL(((x) | (0 - x))))
+
+
+
+static CK_RV
+sftk_CheckCBCPadding(CK_BYTE_PTR pLastPart,
+                     unsigned int blockSize, unsigned int *outPadSize)
+{
+    PORT_Assert(outPadSize);
+
+    unsigned int padSize = (unsigned int)pLastPart[blockSize - 1];
+
+    
+    unsigned int goodPad = DUPLICATE_MSB_TO_ALL(~(blockSize - padSize));
+    
+    goodPad &= CT_NOT_ZERO(padSize);
+
+    unsigned int i;
+    for (i = 0; i < blockSize; i++) {
+        
+        unsigned int loopMask = DUPLICATE_MSB_TO_ALL(~(padSize - 1 - i));
+        
+        unsigned int padVal = pLastPart[blockSize - 1 - i];
+        
+        goodPad &= CT_SEL(loopMask, ~(padVal ^ padSize), goodPad);
+    }
+
+    
+
+
+    goodPad &= goodPad >> 4;
+    goodPad &= goodPad >> 2;
+    goodPad &= goodPad >> 1;
+    goodPad <<= sizeof(goodPad) * 8 - 1;
+    goodPad = DUPLICATE_MSB_TO_ALL(goodPad);
+
+    
+    *outPadSize = CT_SEL(goodPad, padSize, 0);
+    
+    return CT_SEL(goodPad, CKR_OK, CKR_ENCRYPTED_DATA_INVALID);
+}
+
+
 CK_RV
 NSC_DecryptFinal(CK_SESSION_HANDLE hSession,
                  CK_BYTE_PTR pLastPart, CK_ULONG_PTR pulLastPartLen)
@@ -1643,24 +1705,10 @@ NSC_DecryptFinal(CK_SESSION_HANDLE hSession,
             if (rv != SECSuccess) {
                 crv = sftk_MapDecryptError(PORT_GetError());
             } else {
-                unsigned int padSize =
-                    (unsigned int)pLastPart[context->blockSize - 1];
-                if ((padSize > context->blockSize) || (padSize == 0)) {
-                    crv = CKR_ENCRYPTED_DATA_INVALID;
-                } else {
-                    unsigned int i;
-                    unsigned int badPadding = 0; 
-                    for (i = 0; i < padSize; i++) {
-                        badPadding |=
-                            (unsigned int)pLastPart[context->blockSize - 1 - i] ^
-                            padSize;
-                    }
-                    if (badPadding) {
-                        crv = CKR_ENCRYPTED_DATA_INVALID;
-                    } else {
-                        *pulLastPartLen = outlen - padSize;
-                    }
-                }
+                unsigned int padSize = 0;
+                crv = sftk_CheckCBCPadding(&pLastPart[outlen - context->blockSize], context->blockSize, &padSize);
+                
+                *pulLastPartLen = CT_SEL(CK_RVToMask(crv), outlen - padSize, *pulLastPartLen);
             }
         }
     }
@@ -1693,7 +1741,7 @@ NSC_Decrypt(CK_SESSION_HANDLE hSession,
         return crv;
 
     if (!pData) {
-        outlen = ulEncryptedDataLen + context->blockSize;
+        *pulDataLen = (CK_ULONG)(ulEncryptedDataLen + context->blockSize);
         goto done;
     }
 
@@ -1721,29 +1769,19 @@ NSC_Decrypt(CK_SESSION_HANDLE hSession,
                             pEncryptedData, ulEncryptedDataLen);
     
     crv = (rv == SECSuccess) ? CKR_OK : sftk_MapDecryptError(PORT_GetError());
-    if (rv == SECSuccess && context->doPad) {
-        unsigned int padding = pData[outlen - 1];
-        if (padding > context->blockSize || !padding) {
-            crv = CKR_ENCRYPTED_DATA_INVALID;
+    if (rv == SECSuccess) {
+        if (context->doPad) {
+            unsigned int padSize = 0;
+            crv = sftk_CheckCBCPadding(&pData[outlen - context->blockSize], context->blockSize, &padSize);
+            
+            *pulDataLen = CT_SEL(CK_RVToMask(crv), outlen - padSize, *pulDataLen);
         } else {
-            unsigned int i;
-            unsigned int badPadding = 0; 
-            for (i = 0; i < padding; i++) {
-                badPadding |= (unsigned int)pData[outlen - 1 - i] ^ padding;
-            }
-            if (badPadding) {
-                crv = CKR_ENCRYPTED_DATA_INVALID;
-            } else {
-                outlen -= padding;
-            }
+            *pulDataLen = (CK_ULONG)outlen;
         }
     }
     sftk_TerminateOp(session, SFTK_DECRYPT, context);
 done:
     sftk_FreeSession(session);
-    if (crv == CKR_OK) {
-        *pulDataLen = (CK_ULONG)outlen;
-    }
     return crv;
 }
 
