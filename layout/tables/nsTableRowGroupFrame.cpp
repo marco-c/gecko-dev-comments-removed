@@ -348,8 +348,7 @@ void nsTableRowGroupFrame::ReflowChildren(
 
   bool haveRow = false;
   bool reflowAllKids = aReflowInput.reflowInput.ShouldReflowAllKids() ||
-                       tableFrame->IsGeometryDirty() ||
-                       tableFrame->NeedToCollapse();
+                       tableFrame->IsGeometryDirty();
 
   
   
