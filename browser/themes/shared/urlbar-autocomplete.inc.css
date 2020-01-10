@@ -29,6 +29,8 @@
 }
 
 .urlbarView {
+  
+  -moz-window-dragging: no-drag;
   text-shadow: none;
 }
 
