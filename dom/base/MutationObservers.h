@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsNodeUtils_h___
-#define nsNodeUtils_h___
+#ifndef DOM_BASE_MUTATIONOBSERVERS_H_
+#define DOM_BASE_MUTATIONOBSERVERS_H_
 
 #include "nsIContent.h"  
 #include "nsIMutationObserver.h"  
@@ -146,7 +146,6 @@ class MutationObservers {
   static void NotifyAnimationMutated(mozilla::dom::Animation* aAnimation,
                                      AnimationMutationType aMutatedType);
 };
-
 }  
 }  
 

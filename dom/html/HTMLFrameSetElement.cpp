@@ -39,6 +39,7 @@ nsresult HTMLFrameSetElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
 
 
 
+
   mCurrentRowColHint = NS_STYLE_HINT_REFLOW;
   if (aNamespaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::rows) {

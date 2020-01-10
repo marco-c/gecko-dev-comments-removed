@@ -4,7 +4,8 @@
 
 
 
-#include "nsNodeUtils.h"
+#include "MutationObservers.h"
+
 #include "nsContentUtils.h"
 #include "nsCSSPseudoElements.h"
 #include "nsINode.h"

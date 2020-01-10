@@ -5,7 +5,6 @@
 
 
 #include "nsError.h"
-#include "nsNodeUtils.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Likely.h"
 #include "mozilla/UniquePtr.h"
