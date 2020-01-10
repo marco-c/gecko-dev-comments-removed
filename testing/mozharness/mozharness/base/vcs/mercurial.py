@@ -300,7 +300,7 @@ class MercurialVCS(ScriptMixin, LogMixin, TransferMixin):
                         branch = "default"
                     revs.append((rev, branch))
                 return revs
-            except subprocess.CalledProcessError, inst:
+            except subprocess.CalledProcessError as inst:
                 
                 
                 
