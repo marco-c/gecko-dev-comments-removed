@@ -266,9 +266,7 @@ static void StatsZoneCallback(JSRuntime* rt, void* data, Zone* zone) {
   
   MOZ_ALWAYS_TRUE(rtStats->zoneStatsVector.growBy(1));
   ZoneStats& zStats = rtStats->zoneStatsVector.back();
-  if (!zStats.initStrings()) {
-    MOZ_CRASH("oom");
-  }
+  zStats.initStrings();
   rtStats->initExtraZoneStats(zone, &zStats);
   rtStats->currZoneStats = &zStats;
 
@@ -288,9 +286,7 @@ static void StatsRealmCallback(JSContext* cx, void* data,
   
   MOZ_ALWAYS_TRUE(rtStats->realmStatsVector.growBy(1));
   RealmStats& realmStats = rtStats->realmStatsVector.back();
-  if (!realmStats.initClasses()) {
-    MOZ_CRASH("oom");
-  }
+  realmStats.initClasses();
   rtStats->initExtraRealmStats(realm, &realmStats);
 
   realm->setRealmStats(&realmStats);
@@ -573,26 +569,14 @@ static void StatsCellCallback(JSRuntime* rt, void* data, void* thing,
   zStats->unusedGCThings.addToKind(traceKind, -thingSize);
 }
 
-bool ZoneStats::initStrings() {
+void ZoneStats::initStrings() {
   isTotals = false;
-  allStrings = js_new<StringsHashMap>();
-  if (!allStrings) {
-    js_delete(allStrings);
-    allStrings = nullptr;
-    return false;
-  }
-  return true;
+  allStrings.emplace();
 }
 
-bool RealmStats::initClasses() {
+void RealmStats::initClasses() {
   isTotals = false;
-  allClasses = js_new<ClassesHashMap>();
-  if (!allClasses) {
-    js_delete(allClasses);
-    allClasses = nullptr;
-    return false;
-  }
-  return true;
+  allClasses.emplace();
 }
 
 static bool FindNotableStrings(ZoneStats& zStats) {
@@ -622,8 +606,7 @@ static bool FindNotableStrings(ZoneStats& zStats) {
   }
   
   
-  js_delete(zStats.allStrings);
-  zStats.allStrings = nullptr;
+  zStats.allStrings.reset();
   return true;
 }
 
@@ -656,8 +639,7 @@ static bool FindNotableClasses(RealmStats& realmStats) {
   }
   
   
-  js_delete(realmStats.allClasses);
-  realmStats.allClasses = nullptr;
+  realmStats.allClasses.reset();
   return true;
 }
 
@@ -690,8 +672,7 @@ static bool FindNotableScriptSources(JS::RuntimeSizes& runtime) {
   }
   
   
-  js_delete(runtime.allScriptSources);
-  runtime.allScriptSources = nullptr;
+  runtime.allScriptSources.reset();
   return true;
 }
 
