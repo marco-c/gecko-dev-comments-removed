@@ -1213,6 +1213,12 @@ if (http2_internal) {
       stream.end();
       return;
     }
+    if (target == '429.example.com:443') {
+      
+      stream.respond({ ':status': 429 });
+      stream.end();
+      return;
+    }
     if (target == '502.example.com:443') {
       
       stream.respond({ ':status': 502 });

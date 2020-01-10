@@ -1960,6 +1960,9 @@ nsresult nsHttpChannel::ProcessFailedProxyConnect(uint32_t httpStatus) {
     case 407:  
       rv = NS_ERROR_PROXY_AUTHENTICATION_FAILED;
       break;
+    case 429:
+      rv = NS_ERROR_TOO_MANY_REQUESTS;
+      break;
       
     case 404:  
                
@@ -2786,6 +2789,7 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
       break;
 
     case 425:
+    case 429:
       
       CloseCacheEntry(false);
       MOZ_FALLTHROUGH;  
