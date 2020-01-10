@@ -13,6 +13,7 @@
 "use strict";
 
 const EXPORTED_SYMBOLS = ["LoginHelper"];
+const REMOTE_SETTINGS_BREACHES_COLLECTION = "fxmonitor-breaches";
 
 
 
@@ -25,6 +26,12 @@ ChromeUtils.defineModuleGetter(
   this,
   "RemoteSettings",
   "resource://services-settings/remote-settings.js"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "RemoteSettingsClient",
+  "resource://services-settings/RemoteSettingsClient.jsm"
 );
 
 
@@ -1107,8 +1114,23 @@ this.LoginHelper = {
   },
 
   async getBreachesForLogins(logins, breaches = null) {
+    const breachesByLoginGUID = new Map();
     if (!breaches) {
-      breaches = await RemoteSettings("fxmonitor-breaches").get();
+      try {
+        breaches = await RemoteSettings(
+          REMOTE_SETTINGS_BREACHES_COLLECTION
+        ).get();
+      } catch (ex) {
+        if (ex instanceof RemoteSettingsClient.UnknownCollectionError) {
+          log.warn(
+            "Could not get Remote Settings collection.",
+            REMOTE_SETTINGS_BREACHES_COLLECTION,
+            ex
+          );
+          return breachesByLoginGUID;
+        }
+        throw ex;
+      }
     }
     const BREACH_ALERT_URL = Services.prefs.getStringPref(
       "signon.management.page.breachAlertUrl"
@@ -1118,7 +1140,6 @@ this.LoginHelper = {
     
     
     
-    const breachesByLoginGUID = new Map();
     for (const login of logins) {
       const loginURI = Services.io.newURI(login.origin);
       for (const breach of breaches) {
