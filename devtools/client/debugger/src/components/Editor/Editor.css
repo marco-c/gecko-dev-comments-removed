@@ -30,6 +30,12 @@
 }
 
 
+.CodeMirror-linewidget {
+  padding: 0;
+  display: flow-root;
+}
+
+
 
 
 
