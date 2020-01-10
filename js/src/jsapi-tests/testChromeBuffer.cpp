@@ -52,6 +52,12 @@ BEGIN_TEST(testChromeBuffer) {
   {
     
     JS::ContextOptions oldOptions = JS::ContextOptionsRef(cx);
+    uint32_t oldBaselineInterpreterEnabled;
+    CHECK(JS_GetGlobalJitCompilerOption(
+        cx, JSJITCOMPILER_BASELINE_INTERPRETER_ENABLE,
+        &oldBaselineInterpreterEnabled));
+    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_BASELINE_INTERPRETER_ENABLE,
+                                  0);
     JS::ContextOptionsRef(cx).setIon(false).setBaseline(false);
     {
       JSAutoRealm ar(cx, trusted_glob);
@@ -106,6 +112,8 @@ BEGIN_TEST(testChromeBuffer) {
     CHECK(JS_CallFunction(cx, nullptr, fun, JS::HandleValueArray(v), &rval));
     CHECK(rval.toInt32() == 100);
     JS::ContextOptionsRef(cx) = oldOptions;
+    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_BASELINE_INTERPRETER_ENABLE,
+                                  oldBaselineInterpreterEnabled);
   }
 
   
