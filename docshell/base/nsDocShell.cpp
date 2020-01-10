@@ -307,10 +307,9 @@ static void DecreasePrivateDocShellCount() {
   }
 }
 
-nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
-                       uint64_t aContentWindowID)
+nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext)
     : nsDocLoader(),
-      mContentWindowID(aContentWindowID),
+      mContentWindowID(NextWindowID()),
       mBrowsingContext(aBrowsingContext),
       mForcedCharset(nullptr),
       mParentCharset(nullptr),
@@ -396,11 +395,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
 
   nsContentUtils::GenerateUUIDInPlace(mHistoryID);
 
-  
-  if (aContentWindowID == 0) {
-    mContentWindowID = nsContentUtils::GenerateWindowId();
-  }
-
   if (gDocShellCount++ == 0) {
     NS_ASSERTION(sURIFixup == nullptr,
                  "Huh, sURIFixup not null in first nsDocShell ctor!");
@@ -467,11 +461,11 @@ nsDocShell::~nsDocShell() {
 
 
 already_AddRefed<nsDocShell> nsDocShell::Create(
-    BrowsingContext* aBrowsingContext, uint64_t aContentWindowID) {
+    BrowsingContext* aBrowsingContext) {
   MOZ_ASSERT(aBrowsingContext, "DocShell without a BrowsingContext!");
 
   nsresult rv;
-  RefPtr<nsDocShell> ds = new nsDocShell(aBrowsingContext, aContentWindowID);
+  RefPtr<nsDocShell> ds = new nsDocShell(aBrowsingContext);
 
   
   rv = ds->nsDocLoader::Init();
@@ -525,7 +519,6 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
 
   
   aBrowsingContext->SetDocShell(ds);
-
   return ds.forget();
 }
 
@@ -6373,12 +6366,12 @@ nsresult nsDocShell::RefreshURIFromQueue() {
 }
 
 nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
-                           WindowGlobalChild* aWindowActor) {
+                           const char* aCommand, nsISupports* aExtraInfo) {
   
   
   PersistLayoutHistoryState();
 
-  nsresult rv = SetupNewViewer(aContentViewer, aWindowActor);
+  nsresult rv = SetupNewViewer(aContentViewer);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -7014,7 +7007,6 @@ nsresult nsDocShell::EnsureContentViewer() {
   nsCOMPtr<nsIURI> baseURI;
   nsIPrincipal* principal = GetInheritedPrincipal(false);
   nsIPrincipal* storagePrincipal = GetInheritedPrincipal(false, true);
-
   nsCOMPtr<nsIDocShellTreeItem> parentItem;
   GetSameTypeParent(getter_AddRefs(parentItem));
   if (parentItem) {
@@ -7056,13 +7048,10 @@ nsresult nsDocShell::EnsureContentViewer() {
 nsresult nsDocShell::CreateAboutBlankContentViewer(
     nsIPrincipal* aPrincipal, nsIPrincipal* aStoragePrincipal,
     nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI,
-    bool aTryToSaveOldPresentation, bool aCheckPermitUnload,
-    WindowGlobalChild* aActor) {
+    bool aTryToSaveOldPresentation, bool aCheckPermitUnload) {
   RefPtr<Document> blankDoc;
   nsCOMPtr<nsIContentViewer> viewer;
   nsresult rv = NS_ERROR_FAILURE;
-
-  MOZ_ASSERT_IF(aActor, aActor->DocumentPrincipal() == aPrincipal);
 
   
 
@@ -7192,7 +7181,7 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
       
       if (viewer) {
         viewer->SetContainer(this);
-        rv = Embed(viewer, aActor);
+        rv = Embed(viewer, "", 0);
         NS_ENSURE_SUCCESS(rv, rv);
 
         SetCurrentURI(blankDoc->GetDocumentURI(), nullptr, true, 0);
@@ -7220,32 +7209,6 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
                                           nsIContentSecurityPolicy* aCSP) {
   return CreateAboutBlankContentViewer(aPrincipal, aStoragePrincipal, aCSP,
                                        nullptr);
-}
-
-nsresult nsDocShell::CreateContentViewerForActor(
-    WindowGlobalChild* aWindowActor) {
-  MOZ_ASSERT(aWindowActor);
-
-  
-  nsresult rv = CreateAboutBlankContentViewer(
-      aWindowActor->DocumentPrincipal(), aWindowActor->DocumentPrincipal(),
-       nullptr,
-       nullptr,
-       true,
-       true, aWindowActor);
-  if (NS_SUCCEEDED(rv)) {
-    RefPtr<Document> doc(GetDocument());
-    MOZ_ASSERT(
-        doc,
-        "Should have a document if CreateAboutBlankContentViewer succeeded");
-    MOZ_ASSERT(doc->GetOwnerGlobal() == aWindowActor->WindowGlobal(),
-               "New document should be in the same global as our actor");
-
-    
-    doc->SetIsInitialDocument(true);
-  }
-
-  return rv;
 }
 
 bool nsDocShell::CanSavePresentation(uint32_t aLoadType,
@@ -8375,7 +8338,7 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
     }
   }
 
-  NS_ENSURE_SUCCESS(Embed(viewer), NS_ERROR_FAILURE);
+  NS_ENSURE_SUCCESS(Embed(viewer, "", nullptr), NS_ERROR_FAILURE);
 
   if (TreatAsBackgroundLoad()) {
     nsCOMPtr<nsIRunnable> triggerParentCheckDocShell =
@@ -8448,8 +8411,7 @@ nsresult nsDocShell::NewContentViewerObj(const nsACString& aContentType,
   return NS_OK;
 }
 
-nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
-                                    WindowGlobalChild* aWindowActor) {
+nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer) {
   MOZ_ASSERT(!mIsBeingDestroyed);
 
   
@@ -8573,7 +8535,7 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
 
   mContentViewer->SetNavigationTiming(mTiming);
 
-  if (NS_FAILED(mContentViewer->Init(widget, bounds, aWindowActor))) {
+  if (NS_FAILED(mContentViewer->Init(widget, bounds))) {
     mContentViewer = nullptr;
     NS_WARNING("ContentViewer Initialization failed");
     return NS_ERROR_FAILURE;

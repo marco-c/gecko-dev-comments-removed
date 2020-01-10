@@ -1227,16 +1227,16 @@ IPCResult BrowserParent::RecvIndexedDBPermissionRequest(
   return IPC_OK();
 }
 
-IPCResult BrowserParent::RecvNewWindowGlobal(
-    ManagedEndpoint<PWindowGlobalParent>&& aEndpoint,
+IPCResult BrowserParent::RecvPWindowGlobalConstructor(
+    PWindowGlobalParent* aActor, const WindowGlobalInit& aInit) {
+  static_cast<WindowGlobalParent*>(aActor)->Init(aInit);
+  return IPC_OK();
+}
+
+PWindowGlobalParent* BrowserParent::AllocPWindowGlobalParent(
     const WindowGlobalInit& aInit) {
   
-  auto wgp = MakeRefPtr<WindowGlobalParent>(aInit,  false);
-
-  
-  BindPWindowGlobalEndpoint(std::move(aEndpoint), do_AddRef(wgp).take());
-  wgp->Init(aInit);
-  return IPC_OK();
+  return do_AddRef(new WindowGlobalParent(aInit,  false)).take();
 }
 
 bool BrowserParent::DeallocPWindowGlobalParent(PWindowGlobalParent* aActor) {
@@ -1247,10 +1247,11 @@ bool BrowserParent::DeallocPWindowGlobalParent(PWindowGlobalParent* aActor) {
 
 IPCResult BrowserParent::RecvPBrowserBridgeConstructor(
     PBrowserBridgeParent* aActor, const nsString& aName,
-    const nsString& aRemoteType, const WindowGlobalInit& aWindowInit,
+    const nsString& aRemoteType, BrowsingContext* aBrowsingContext,
     const uint32_t& aChromeFlags, const TabId& aTabId) {
   nsresult rv = static_cast<BrowserBridgeParent*>(aActor)->Init(
-      aName, aRemoteType, aWindowInit, aChromeFlags, aTabId);
+      aName, aRemoteType, CanonicalBrowsingContext::Cast(aBrowsingContext),
+      aChromeFlags, aTabId);
   if (NS_FAILED(rv)) {
     return IPC_FAIL(this, "Failed to construct BrowserBridgeParent");
   }
@@ -1259,7 +1260,7 @@ IPCResult BrowserParent::RecvPBrowserBridgeConstructor(
 
 PBrowserBridgeParent* BrowserParent::AllocPBrowserBridgeParent(
     const nsString& aName, const nsString& aRemoteType,
-    const WindowGlobalInit& aWindowInit, const uint32_t& aChromeFlags,
+    BrowsingContext* aBrowsingContext, const uint32_t& aChromeFlags,
     const TabId& aTabId) {
   
   return do_AddRef(new BrowserBridgeParent()).take();

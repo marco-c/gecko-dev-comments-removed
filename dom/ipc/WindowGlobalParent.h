@@ -55,7 +55,7 @@ class WindowGlobalParent final : public WindowGlobalActor,
   }
 
   
-  bool IsClosed() { return !CanSend(); }
+  bool IsClosed() { return mIPCClosed; }
 
   
   
@@ -171,6 +171,7 @@ class WindowGlobalParent final : public WindowGlobalActor,
   uint64_t mInnerWindowId;
   uint64_t mOuterWindowId;
   bool mInProcess;
+  bool mIPCClosed;
   bool mIsInitialDocument;
 
   

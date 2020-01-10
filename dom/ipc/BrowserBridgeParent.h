@@ -33,7 +33,7 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
 
   
   nsresult Init(const nsString& aPresentationURL, const nsString& aRemoteType,
-                const WindowGlobalInit& aWindowInit,
+                CanonicalBrowsingContext* aBrowsingContext,
                 const uint32_t& aChromeFlags, TabId aTabId);
 
   BrowserParent* GetBrowserParent() { return mBrowserParent; }
