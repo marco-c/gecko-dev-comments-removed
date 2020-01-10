@@ -517,16 +517,7 @@ class Loader final {
   
   void MarkLoadTreeFailed(SheetLoadData* aLoadData);
 
-  struct Sheets {
-    nsBaseHashtable<SheetLoadDataHashKey, RefPtr<StyleSheet>, StyleSheet*>
-        mCompleteSheets;
-    nsDataHashtable<SheetLoadDataHashKey,
-                    SheetLoadData*>
-        mLoadingDatas;  
-    nsDataHashtable<SheetLoadDataHashKey,
-                    SheetLoadData*>
-        mPendingDatas;  
-  };
+  struct Sheets;
   UniquePtr<Sheets> mSheets;
 
   
