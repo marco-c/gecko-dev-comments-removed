@@ -6,5 +6,9 @@ module.exports = {
   },
   "globals": {
     "ExtensionAPI": true,
+    
+    "addMessageListener": false,
+    "content": false,
+    "sendAsyncMessage": false,
   }
 };

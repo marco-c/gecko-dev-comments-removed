@@ -2232,6 +2232,25 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
+    
+
+
+
+
+
+
+    public String getLinkColor(final String uri, final String selector) {
+        try {
+            final JSONObject args = new JSONObject();
+            args.put("uri", uri);
+            args.put("selector", selector);
+
+            return (String) webExtensionApiCall("GetLinkColor", args);
+        } catch (JSONException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     private Object webExtensionApiCall(final String apiName, JSONObject args) throws JSONException {
         
         UiThreadUtils.waitForCondition(() -> RuntimeCreator.backgroundPort() != null,
