@@ -335,10 +335,17 @@ class Editor extends PureComponent<Props, State> {
       breakpointActions,
       editorActions,
       isPaused,
+      conditionalPanelLocation,
+      closeConditionalPanel,
     } = this.props;
     const { editor } = this.state;
     if (!selectedSourceWithContent || !editor) {
       return;
+    }
+
+    
+    if (conditionalPanelLocation) {
+      closeConditionalPanel();
     }
 
     const target: Element = (event.target: any);
