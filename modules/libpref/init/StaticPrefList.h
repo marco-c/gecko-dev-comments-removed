@@ -4738,14 +4738,6 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
-  "layout.css.text-decoration-skip-ink.enabled",
-  layout_css_text_decoration_skip_ink_enabled,
-  bool, false
-)
-
-
-VARCACHE_PREF(
-  Live,
   "layout.css.column-span.enabled",
   layout_css_column_span_enabled,
   bool, false

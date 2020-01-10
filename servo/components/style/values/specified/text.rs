@@ -1054,28 +1054,3 @@ pub enum OverflowWrap {
     BreakWord,
     Anywhere,
 }
-
-
-
-
-#[repr(u8)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[allow(missing_docs)]
-pub enum TextDecorationSkipInk {
-    Auto,
-    None,
-}
