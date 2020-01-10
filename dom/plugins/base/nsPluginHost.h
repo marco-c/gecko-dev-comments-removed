@@ -310,15 +310,13 @@ class nsPluginHost final : public nsIPluginHost,
   nsresult ScanPluginsDirectory(nsIFile* pluginsDir, bool aCreatePluginList,
                                 bool* aPluginsChanged);
 
-  nsresult ScanPluginsDirectoryList(nsISimpleEnumerator* dirEnum,
-                                    bool aCreatePluginList,
-                                    bool* aPluginsChanged);
-
   nsresult EnsurePluginLoaded(nsPluginTag* aPluginTag);
 
   bool IsRunningPlugin(nsPluginTag* aPluginTag);
 
   nsresult EnsurePluginReg();
+
+  nsresult DeterminePluginDirs(nsTArray<nsCOMPtr<nsIFile>>& pluginDirs);
 
   
   nsresult ReadPluginInfo();
@@ -345,8 +343,6 @@ class nsPluginHost final : public nsIPluginHost,
 
   
   nsPluginTag* FirstPluginWithPath(const nsCString& path);
-
-  nsresult EnsurePrivateDirServiceProvider();
 
   void OnPluginInstanceDestroyed(nsPluginTag* aPluginTag);
 
@@ -390,8 +386,6 @@ class nsPluginHost final : public nsIPluginHost,
   
   nsCOMPtr<nsIFile> mPluginRegFile;
 #ifdef XP_WIN
-  RefPtr<nsPluginDirServiceProvider> mPrivateDirServiceProvider;
-
   
   
   nsCOMPtr<nsIWindowsRegKey> mRegKeyHKLM;

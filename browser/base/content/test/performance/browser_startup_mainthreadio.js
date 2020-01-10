@@ -334,12 +334,6 @@ const startupPhases = {
   "before first paint": [
     {
       
-      path: "ProfD:",
-      condition: WIN,
-      stat: 1,
-    },
-    {
-      
       path: "OldUpdRootD:",
       condition: WIN,
       stat: 1,
@@ -366,12 +360,6 @@ const startupPhases = {
     {
       
       path: "UserPlugins.parent:",
-      condition: WIN,
-      stat: 1,
-    },
-    {
-      
-      path: "UserPlugins:",
       condition: WIN,
       stat: 1,
     },

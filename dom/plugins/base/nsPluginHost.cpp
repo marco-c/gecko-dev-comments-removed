@@ -99,6 +99,8 @@
 
 #include "mozilla/dom/Promise.h"
 
+#include "mozilla/ResultExtensions.h"
+
 #if defined(XP_WIN)
 #  include "nsIWindowMediator.h"
 #  include "nsIBaseWindow.h"
@@ -144,9 +146,6 @@ static const char* kPrefUnloadPluginTimeoutSecs =
 static const uint32_t kDefaultPluginUnloadingTimeout = 30;
 
 static const char* kPluginRegistryVersion = "0.19";
-
-static const char kDirectoryServiceContractID[] =
-    "@mozilla.org/file/directory_service;1";
 
 #define kPluginRegistryFilename NS_LITERAL_CSTRING("pluginreg.dat")
 
@@ -836,15 +835,6 @@ nsresult nsPluginHost::UnloadPlugins() {
     sPluginTempDir->Remove(true);
     NS_RELEASE(sPluginTempDir);
   }
-
-#ifdef XP_WIN
-  if (mPrivateDirServiceProvider) {
-    nsCOMPtr<nsIDirectoryService> dirService =
-        do_GetService(kDirectoryServiceContractID);
-    if (dirService) dirService->UnregisterProvider(mPrivateDirServiceProvider);
-    mPrivateDirServiceProvider = nullptr;
-  }
-#endif 
 
   mPluginsLoaded = false;
 
@@ -2280,31 +2270,6 @@ void nsPluginHost::UpdatePluginBlocklistState(nsPluginTag* aPluginTag,
   }
 }
 
-nsresult nsPluginHost::ScanPluginsDirectoryList(nsISimpleEnumerator* dirEnum,
-                                                bool aCreatePluginList,
-                                                bool* aPluginsChanged) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-
-  bool hasMore;
-  while (NS_SUCCEEDED(dirEnum->HasMoreElements(&hasMore)) && hasMore) {
-    nsCOMPtr<nsISupports> supports;
-    nsresult rv = dirEnum->GetNext(getter_AddRefs(supports));
-    if (NS_FAILED(rv)) continue;
-    nsCOMPtr<nsIFile> nextDir(do_QueryInterface(supports, &rv));
-    if (NS_FAILED(rv)) continue;
-
-    
-    bool pluginschanged = false;
-    ScanPluginsDirectory(nextDir, aCreatePluginList, &pluginschanged);
-
-    if (pluginschanged) *aPluginsChanged = true;
-
-    
-    if (!aCreatePluginList && *aPluginsChanged) break;
-  }
-  return NS_OK;
-}
-
 void nsPluginHost::IncrementChromeEpoch() {
   MOZ_ASSERT(XRE_IsParentProcess());
   mPluginEpoch++;
@@ -2465,87 +2430,62 @@ nsresult nsPluginHost::FindPlugins(bool aCreatePluginList,
 
   *aPluginsChanged = false;
 
-  nsresult rv;
-
-  
-  
-  if (ReadPluginInfo() == NS_ERROR_NOT_AVAILABLE) return NS_OK;
-
-#ifdef XP_WIN
-  
-  rv = EnsurePrivateDirServiceProvider();
-  NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to register dir service provider.");
-#endif 
-
-  nsCOMPtr<nsIProperties> dirService(
-      do_GetService(kDirectoryServiceContractID, &rv));
-  if (NS_FAILED(rv)) return rv;
-
-  nsCOMPtr<nsISimpleEnumerator> dirList;
-
-  
-  
-  
-  bool pluginschanged = false;
-
-  
-  rv = dirService->Get(NS_APP_PLUGINS_DIR_LIST, NS_GET_IID(nsISimpleEnumerator),
-                       getter_AddRefs(dirList));
-  if (NS_SUCCEEDED(rv)) {
-    ScanPluginsDirectoryList(dirList, aCreatePluginList, &pluginschanged);
-
-    if (pluginschanged) *aPluginsChanged = true;
-
+  nsresult rv = EnsurePluginReg();
+  if (NS_FAILED(rv)) {
     
-    if (xpc::IsInAutomation()) {
-      nsCOMPtr<nsIFile> profDir;
-      rv = dirService->Get(NS_APP_USER_PROFILE_50_DIR, NS_GET_IID(nsIFile),
-                           getter_AddRefs(profDir));
-      if (NS_SUCCEEDED(rv)) {
-        profDir->Append(NS_LITERAL_STRING("plugins"));
-        ScanPluginsDirectory(profDir, aCreatePluginList, &pluginschanged);
-        if (pluginschanged) {
-          *aPluginsChanged = true;
-        }
+    return rv == NS_ERROR_NOT_AVAILABLE ? NS_OK : rv;
+  }
+
+  
+  ReadPluginInfo();
+
+  
+  nsTArray<nsCOMPtr<nsIFile>> pluginDirs;
+  MOZ_TRY(DeterminePluginDirs(pluginDirs));
+
+  for (nsIFile* pluginDir : pluginDirs) {
+    if (!pluginDir) {
+      continue;
+    }
+    
+    
+    
+    bool isDir = false;
+    nsCOMPtr<nsIFile> parent;
+    if (NS_FAILED(pluginDir->IsDirectory(&isDir)) || !isDir) {
+      pluginDir->GetParent(getter_AddRefs(parent));
+      pluginDir = parent;
+      if (!pluginDir) {
+        continue;
       }
     }
+    
+    
 
     
     
-    if (!aCreatePluginList && *aPluginsChanged) {
-      NS_ITERATIVE_UNREF_LIST(RefPtr<nsPluginTag>, mCachedPlugins, mNext);
-      NS_ITERATIVE_UNREF_LIST(RefPtr<nsInvalidPluginTag>, mInvalidPlugins,
-                              mNext);
-      return NS_OK;
+    bool pluginschanged = false;
+    ScanPluginsDirectory(pluginDir, aCreatePluginList, &pluginschanged);
+
+    if (pluginschanged) {
+      *aPluginsChanged = true;
+      if (!aCreatePluginList) {
+        
+        break;
+      }
     }
+  }
+
+  
+  
+  if (!aCreatePluginList && *aPluginsChanged) {
+    NS_ITERATIVE_UNREF_LIST(RefPtr<nsPluginTag>, mCachedPlugins, mNext);
+    NS_ITERATIVE_UNREF_LIST(RefPtr<nsInvalidPluginTag>, mInvalidPlugins, mNext);
+    return NS_OK;
   }
 
   mPluginsLoaded = true;  
                           
-
-#ifdef XP_WIN
-  bool bScanPLIDs = Preferences::GetBool("plugin.scan.plid.all", false);
-
-  
-  if (bScanPLIDs && mPrivateDirServiceProvider) {
-    rv =
-        mPrivateDirServiceProvider->GetPLIDDirectories(getter_AddRefs(dirList));
-    if (NS_SUCCEEDED(rv)) {
-      ScanPluginsDirectoryList(dirList, aCreatePluginList, &pluginschanged);
-
-      if (pluginschanged) *aPluginsChanged = true;
-
-      
-      
-      if (!aCreatePluginList && *aPluginsChanged) {
-        NS_ITERATIVE_UNREF_LIST(RefPtr<nsPluginTag>, mCachedPlugins, mNext);
-        NS_ITERATIVE_UNREF_LIST(RefPtr<nsInvalidPluginTag>, mInvalidPlugins,
-                                mNext);
-        return NS_OK;
-      }
-    }
-  }
-#endif
 
   
   
@@ -2882,7 +2822,6 @@ nsresult nsPluginHost::EnsurePluginReg() {
   }
 
   nsresult rv;
-
   nsCOMPtr<nsIProperties> directoryService(
       do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv));
   if (NS_FAILED(rv)) return rv;
@@ -2903,6 +2842,55 @@ nsresult nsPluginHost::EnsurePluginReg() {
     return NS_ERROR_NOT_AVAILABLE;
   }
   return mPluginRegFile->AppendNative(kPluginRegistryFilename);
+}
+
+nsresult nsPluginHost::DeterminePluginDirs(
+    nsTArray<nsCOMPtr<nsIFile>>& pluginDirs) {
+  nsresult rv;
+  nsCOMPtr<nsIProperties> dirService(
+      do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  nsCOMPtr<nsISimpleEnumerator> dirEnum;
+  MOZ_TRY(dirService->Get(NS_APP_PLUGINS_DIR_LIST,
+                          NS_GET_IID(nsISimpleEnumerator),
+                          getter_AddRefs(dirEnum)));
+
+  bool hasMore = false;
+  while (NS_SUCCEEDED(dirEnum->HasMoreElements(&hasMore)) && hasMore) {
+    nsCOMPtr<nsISupports> supports;
+    nsresult rv = dirEnum->GetNext(getter_AddRefs(supports));
+    if (NS_SUCCEEDED(rv)) {
+      nsCOMPtr<nsIFile> nextDir(do_QueryInterface(supports, &rv));
+      if (NS_SUCCEEDED(rv)) {
+        pluginDirs.AppendElement(nextDir);
+      }
+    }
+  }
+
+  
+  if (xpc::IsInAutomation()) {
+    nsCOMPtr<nsIFile> profDir;
+    rv = dirService->Get(NS_APP_USER_PROFILE_50_DIR, NS_GET_IID(nsIFile),
+                         getter_AddRefs(profDir));
+    if (NS_SUCCEEDED(rv)) {
+      profDir->Append(NS_LITERAL_STRING("plugins"));
+      pluginDirs.AppendElement(profDir);
+    }
+  }
+
+  
+  
+#ifdef XP_WIN
+  bool bScanPLIDs = Preferences::GetBool("plugin.scan.plid.all", false);
+  if (bScanPLIDs) {
+    GetPLIDDirectories(pluginDirs);
+  }
+#endif 
+  return NS_OK;
 }
 
 nsresult nsPluginHost::ReadPluginInfo() {
@@ -3159,21 +3147,6 @@ void nsPluginHost::RemoveCachedPluginsInfo(const char* filePath,
     tag = tag->mNext;
   }
 }
-
-#ifdef XP_WIN
-nsresult nsPluginHost::EnsurePrivateDirServiceProvider() {
-  if (!mPrivateDirServiceProvider) {
-    nsresult rv;
-    mPrivateDirServiceProvider = new nsPluginDirServiceProvider();
-    nsCOMPtr<nsIDirectoryService> dirService(
-        do_GetService(kDirectoryServiceContractID, &rv));
-    if (NS_FAILED(rv)) return rv;
-    rv = dirService->RegisterProvider(mPrivateDirServiceProvider);
-    if (NS_FAILED(rv)) return rv;
-  }
-  return NS_OK;
-}
-#endif 
 
 nsresult nsPluginHost::NewPluginURLStream(
     const nsString& aURL, nsNPAPIPluginInstance* aInstance,
