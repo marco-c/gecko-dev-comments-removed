@@ -1818,6 +1818,8 @@ Toolbox.prototype = {
     this.tellRDMAboutPickerState(true);
     this.pickerButton.isChecked = true;
     await this.selectTool("inspector", "inspect_dom");
+    
+    this.getPanel("inspector").hideEyeDropper();
     this.on("select", this.nodePicker.stop);
   },
 

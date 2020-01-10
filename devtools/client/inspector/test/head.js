@@ -89,6 +89,16 @@ var startPicker = async function(toolbox, skipFocus) {
 
 
 
+var startEyeDropper = async function(toolbox) {
+  info("Start the eye dropper tool");
+  toolbox.win.focus();
+  await toolbox.getPanel("inspector").showEyeDropper();
+};
+
+
+
+
+
 
 
 
