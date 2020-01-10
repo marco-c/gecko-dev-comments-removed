@@ -10,6 +10,7 @@
 
 
 
+
 const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/client/shared/browser-loader.js"
 );
@@ -61,17 +62,20 @@ async function gInit(perfFront, preferenceFront) {
       
       
       
-      recordingSettingsFromPreferences: await getRecordingPreferencesFromDebuggee(
+      recordingPreferences: await getRecordingPreferencesFromDebuggee(
         preferenceFront,
         getDefaultRecordingPreferences()
       ),
 
       
       
-      setRecordingPreferences: () =>
+      
+
+
+      setRecordingPreferences: recordingPreferences =>
         setRecordingPreferencesOnDebuggee(
           preferenceFront,
-          selectors.getRecordingSettings(store.getState())
+          recordingPreferences
         ),
 
       

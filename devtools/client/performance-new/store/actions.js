@@ -5,6 +5,10 @@
 "use strict";
 
 const selectors = require("devtools/client/performance-new/store/selectors");
+const {
+  translatePreferencesToState,
+  translatePreferencesFromState,
+} = require("devtools/client/performance-new/preference-management");
 
 
 
@@ -65,7 +69,7 @@ function _dispatchAndUpdatePreferences(action) {
       getState()
     );
     const recordingSettings = selectors.getRecordingSettings(getState());
-    setRecordingPreferences(recordingSettings);
+    setRecordingPreferences(translatePreferencesFromState(recordingSettings));
   };
 }
 
@@ -130,10 +134,16 @@ exports.changeObjdirs = objdirs =>
 
 
 
-exports.initializeStore = values => ({
-  type: "INITIALIZE_STORE",
-  ...values,
-});
+exports.initializeStore = values => {
+  const { recordingPreferences, ...initValues } = values;
+  return {
+    ...initValues,
+    type: "INITIALIZE_STORE",
+    recordingSettingsFromPreferences: translatePreferencesToState(
+      recordingPreferences
+    ),
+  };
+};
 
 
 

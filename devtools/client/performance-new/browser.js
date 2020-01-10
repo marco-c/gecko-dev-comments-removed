@@ -257,10 +257,9 @@ async function getRecordingPreferencesFromDebuggee(
     _getArrayOfStringsHostPref(OBJDIRS_PREF, defaultPrefs.objdirs),
   ]);
 
-  
-  const newInterval = interval / 1000;
-  return { entries, interval: newInterval, features, threads, objdirs };
+  return { entries, interval, features, threads, objdirs };
 }
+
 
 
 
@@ -274,8 +273,7 @@ async function setRecordingPreferencesOnDebuggee(preferenceFront, settings) {
   const { Services } = lazyServices();
   await Promise.all([
     preferenceFront.setIntPref(ENTRIES_PREF, settings.entries),
-    
-    preferenceFront.setIntPref(INTERVAL_PREF, settings.interval * 1000),
+    preferenceFront.setIntPref(INTERVAL_PREF, settings.interval),
     preferenceFront.setCharPref(
       FEATURES_PREF,
       JSON.stringify(settings.features)

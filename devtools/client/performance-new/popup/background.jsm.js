@@ -83,6 +83,16 @@ const lazyReceiveProfile = requireLazy(() => {
   return browserModule.receiveProfile;
 });
 
+const lazyPreferenceManagement = requireLazy(() => {
+  const { require } = ChromeUtils.import(
+    "resource://devtools/shared/Loader.jsm"
+  );
+
+  
+  const preferenceManagementModule = require("devtools/client/performance-new/preference-management");
+  return preferenceManagementModule;
+});
+
 
 
 
@@ -160,13 +170,14 @@ async function captureProfile() {
 
 
 function startProfiler() {
+  const { translatePreferencesToState } = lazyPreferenceManagement();
   const {
     entries,
     interval,
     features,
     threads,
     duration,
-  } = getRecordingPreferencesFromBrowser();
+  } = translatePreferencesToState(getRecordingPreferencesFromBrowser());
 
   Services.profiler.StartProfiler(
     entries,
@@ -316,8 +327,7 @@ function getRecordingPreferencesFromBrowser() {
 
   return {
     entries,
-    
-    interval: interval / 1000,
+    interval,
     
     features: features.filter(feature => supportedFeatures.has(feature)),
     threads,
@@ -331,8 +341,7 @@ function getRecordingPreferencesFromBrowser() {
 
 function setRecordingPreferencesOnBrowser(settings) {
   Services.prefs.setIntPref(ENTRIES_PREF, settings.entries);
-  
-  Services.prefs.setIntPref(INTERVAL_PREF, settings.interval * 1000);
+  Services.prefs.setIntPref(INTERVAL_PREF, settings.interval);
   Services.prefs.setCharPref(FEATURES_PREF, JSON.stringify(settings.features));
   Services.prefs.setCharPref(THREADS_PREF, JSON.stringify(settings.threads));
   Services.prefs.setCharPref(OBJDIRS_PREF, JSON.stringify(settings.objdirs));

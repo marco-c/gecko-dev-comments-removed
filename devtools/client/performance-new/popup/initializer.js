@@ -49,7 +49,6 @@ const Perf = require("devtools/client/performance-new/components/Perf");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const React = require("devtools/client/shared/vendor/react");
 const createStore = require("devtools/client/shared/redux/create-store");
-const selectors = require("devtools/client/performance-new/store/selectors");
 const reducers = require("devtools/client/performance-new/store/reducers");
 const actions = require("devtools/client/performance-new/store/actions");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
@@ -75,12 +74,9 @@ async function gInit() {
       perfFront: perfFrontInterface,
       receiveProfile,
       
-      recordingSettingsFromPreferences: getRecordingPreferencesFromBrowser(),
+      recordingPreferences: getRecordingPreferencesFromBrowser(),
       
-      setRecordingPreferences: () =>
-        setRecordingPreferencesOnBrowser(
-          selectors.getRecordingSettings(store.getState())
-        ),
+      setRecordingPreferences: setRecordingPreferencesOnBrowser,
       
       
       getSymbolTableGetter: () => getSymbolsFromThisBrowser,
