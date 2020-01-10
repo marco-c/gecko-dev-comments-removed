@@ -231,6 +231,9 @@ struct IonScript {
   uint32_t constantEntries_;
 
   
+  uint32_t allocBytes_ = 0;
+
+  
   uint32_t invalidationCount_;
 
   
@@ -451,6 +454,8 @@ struct IonScript {
   bool isRecompiling() const { return recompiling_; }
 
   void clearRecompiling() { recompiling_ = false; }
+
+  size_t allocBytes() const { return allocBytes_; }
 
   enum ShouldIncreaseAge { IncreaseAge = true, KeepAge = false };
 

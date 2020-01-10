@@ -1914,8 +1914,6 @@ class JSScript : public js::gc::TenuredCell {
     FunHasExtensibleScope = 1 << 6,
 
     
-    
-    HasCallSiteObj = 1 << 7,
 
     
     HasSingletons = 1 << 8,
@@ -2324,10 +2322,6 @@ class JSScript : public js::gc::TenuredCell {
     return hasFlag(ImmutableFlags::FunHasExtensibleScope);
   }
 
-  bool hasCallSiteObj() const {
-    return hasFlag(ImmutableFlags::HasCallSiteObj);
-  }
-
   bool hasSingletons() const { return hasFlag(ImmutableFlags::HasSingletons); }
   bool treatAsRunOnce() const {
     return hasFlag(ImmutableFlags::TreatAsRunOnce);
@@ -2497,7 +2491,6 @@ class JSScript : public js::gc::TenuredCell {
     return needsArgsObj() && hasMappedArgsObj();
   }
 
-  bool hasDoNotRelazify() const { return hasFlag(MutableFlags::DoNotRelazify); }
   void setDoNotRelazify(bool b) { setFlag(MutableFlags::DoNotRelazify, b); }
 
   bool hasInnerFunctions() const {
@@ -2535,6 +2528,7 @@ class JSScript : public js::gc::TenuredCell {
   js::jit::IonScript* maybeIonScript() const { return ion; }
   js::jit::IonScript* const* addressOfIonScript() const { return &ion; }
   void setIonScript(JSRuntime* rt, js::jit::IonScript* ionScript);
+  inline void clearIonScript();
 
   bool hasBaselineScript() const {
     bool res = baseline && baseline != BASELINE_DISABLED_SCRIPT;
@@ -2550,6 +2544,7 @@ class JSScript : public js::gc::TenuredCell {
   }
   inline void setBaselineScript(JSRuntime* rt,
                                 js::jit::BaselineScript* baselineScript);
+  inline void clearBaselineScript();
 
   void updateJitCodeRaw(JSRuntime* rt);
 
@@ -2568,7 +2563,7 @@ class JSScript : public js::gc::TenuredCell {
   bool isRelazifiableIgnoringJitCode() const {
     return (selfHosted() || lazyScript) && !hasInnerFunctions() &&
            !isGenerator() && !isAsync() && !isDefaultClassConstructor() &&
-           !hasDoNotRelazify() && !hasCallSiteObj();
+           !hasFlag(MutableFlags::DoNotRelazify);
   }
   bool isRelazifiable() const {
     MOZ_ASSERT_IF(hasBaselineScript() || hasIonScript(), jitScript_);

@@ -234,6 +234,42 @@ struct BaselineScript final {
   TraceLoggerEvent traceLoggerScriptEvent_ = {};
 #endif
 
+ private:
+  void trace(JSTracer* trc);
+
+  uint32_t retAddrEntriesOffset_ = 0;
+  uint32_t retAddrEntries_ = 0;
+
+  uint32_t pcMappingIndexOffset_ = 0;
+  uint32_t pcMappingIndexEntries_ = 0;
+
+  uint32_t pcMappingOffset_ = 0;
+  uint32_t pcMappingSize_ = 0;
+
+  
+  
+  uint32_t resumeEntriesOffset_ = 0;
+
+  
+  
+  uint32_t traceLoggerToggleOffsetsOffset_ = 0;
+  uint32_t numTraceLoggerToggleOffsets_ = 0;
+
+  
+  uint32_t allocBytes_ = 0;
+
+  
+  
+  
+  uint16_t inlinedBytecodeLength_ = 0;
+
+  
+  
+  
+  
+  
+  uint8_t maxInliningDepth_ = UINT8_MAX;
+
  public:
   enum Flag {
     
@@ -261,40 +297,7 @@ struct BaselineScript final {
   };
 
  private:
-  uint32_t flags_ = 0;
-
- private:
-  void trace(JSTracer* trc);
-
-  uint32_t retAddrEntriesOffset_ = 0;
-  uint32_t retAddrEntries_ = 0;
-
-  uint32_t pcMappingIndexOffset_ = 0;
-  uint32_t pcMappingIndexEntries_ = 0;
-
-  uint32_t pcMappingOffset_ = 0;
-  uint32_t pcMappingSize_ = 0;
-
-  
-  
-  uint32_t resumeEntriesOffset_ = 0;
-
-  
-  
-  uint32_t traceLoggerToggleOffsetsOffset_ = 0;
-  uint32_t numTraceLoggerToggleOffsets_ = 0;
-
-  
-  
-  
-  uint16_t inlinedBytecodeLength_ = 0;
-
-  
-  
-  
-  
-  
-  uint8_t maxInliningDepth_ = UINT8_MAX;
+  uint8_t flags_ = 0;
 
   
   IonBuilder* pendingBuilder_ = nullptr;
@@ -465,7 +468,6 @@ struct BaselineScript final {
   }
 #endif
 
-  static size_t offsetOfFlags() { return offsetof(BaselineScript, flags_); }
   static size_t offsetOfResumeEntriesOffset() {
     return offsetof(BaselineScript, resumeEntriesOffset_);
   }
@@ -518,6 +520,8 @@ struct BaselineScript final {
   void setControlFlowGraph(ControlFlowGraph* controlFlowGraph) {
     controlFlowGraph_ = controlFlowGraph;
   }
+
+  size_t allocBytes() const { return allocBytes_; }
 };
 static_assert(
     sizeof(BaselineScript) % sizeof(uintptr_t) == 0,
