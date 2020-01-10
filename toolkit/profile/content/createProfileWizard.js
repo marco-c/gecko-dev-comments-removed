@@ -153,7 +153,8 @@ function chooseProfileFolder() {
 
 
 function checkCurrentInput(currentInput) {
-  var finishButton = document.documentElement.getButton("finish");
+  let wizard = document.querySelector("wizard");
+  var finishButton = wizard.getButton("finish");
   var finishText = document.getElementById("finishText");
   var canAdvance;
 
@@ -177,7 +178,7 @@ function checkCurrentInput(currentInput) {
     canAdvance = false;
   }
 
-  document.documentElement.canAdvance = canAdvance;
+  wizard.canAdvance = canAdvance;
   finishButton.disabled = !canAdvance;
 
   updateProfileDisplay();
@@ -226,7 +227,7 @@ function profileExists(aName) {
 
 
 function enableNextButton() {
-  document.documentElement.canAdvance = true;
+  document.querySelector("wizard").canAdvance = true;
 }
 
 function onFinish(event) {
