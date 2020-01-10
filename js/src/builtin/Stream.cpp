@@ -13,6 +13,7 @@
 #include "builtin/streams/ClassSpecMacro.h"           
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/QueueWithSizes.h"  
+#include "builtin/streams/ReadableStreamReader.h"  
 #include "gc/Heap.h"
 #include "js/ArrayBuffer.h"  
 #include "js/PropertySpec.h"
@@ -588,12 +589,6 @@ static MOZ_MUST_USE bool ReadableStream_cancel(JSContext* cx, unsigned argc,
 
 
 
-static MOZ_MUST_USE ReadableStreamDefaultReader*
-CreateReadableStreamDefaultReader(
-    JSContext* cx, Handle<ReadableStream*> unwrappedStream,
-    ForAuthorCodeBool forAuthorCode = ForAuthorCodeBool::No,
-    HandleObject proto = nullptr);
-
 
 
 
@@ -986,9 +981,6 @@ static bool TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static MOZ_MUST_USE JSObject* ReadableStreamDefaultReaderRead(
-    JSContext* cx, Handle<ReadableStreamDefaultReader*> unwrappedReader);
-
 
 
 
@@ -1017,7 +1009,7 @@ static MOZ_MUST_USE JSObject* ReadableStreamTee_Pull(
   
   
   RootedObject readPromise(
-      cx, ::ReadableStreamDefaultReaderRead(cx, unwrappedReader));
+      cx, js::ReadableStreamDefaultReaderRead(cx, unwrappedReader));
   if (!readPromise) {
     return nullptr;
   }
@@ -1706,256 +1698,20 @@ static MOZ_MUST_USE bool ReadableStreamHasDefaultReader(
 
 
 
-static MOZ_MUST_USE bool ReadableStreamReaderGenericInitialize(
-    JSContext* cx, Handle<ReadableStreamReader*> reader,
-    Handle<ReadableStream*> unwrappedStream, ForAuthorCodeBool forAuthorCode);
 
 
 
 
 
-static MOZ_MUST_USE ReadableStreamDefaultReader*
-CreateReadableStreamDefaultReader(JSContext* cx,
-                                  Handle<ReadableStream*> unwrappedStream,
-                                  ForAuthorCodeBool forAuthorCode,
-                                  HandleObject proto ) {
-  Rooted<ReadableStreamDefaultReader*> reader(
-      cx, NewObjectWithClassProto<ReadableStreamDefaultReader>(cx, proto));
-  if (!reader) {
-    return nullptr;
-  }
 
-  
-  
-  if (unwrappedStream->locked()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAM_LOCKED);
-    return nullptr;
-  }
 
-  
-  
-  if (!ReadableStreamReaderGenericInitialize(cx, reader, unwrappedStream,
-                                             forAuthorCode)) {
-    return nullptr;
-  }
 
-  return reader;
-}
 
 
 
 
-bool ReadableStreamDefaultReader::constructor(JSContext* cx, unsigned argc,
-                                              Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
 
-  if (!ThrowIfNotConstructing(cx, args, "ReadableStreamDefaultReader")) {
-    return false;
-  }
-
-  
-  RootedObject proto(cx);
-  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Null, &proto)) {
-    return false;
-  }
-
-  
-  
-  Rooted<ReadableStream*> unwrappedStream(
-      cx, UnwrapAndTypeCheckArgument<ReadableStream>(
-              cx, args, "ReadableStreamDefaultReader constructor", 0));
-  if (!unwrappedStream) {
-    return false;
-  }
-
-  RootedObject reader(
-      cx, CreateReadableStreamDefaultReader(cx, unwrappedStream,
-                                            ForAuthorCodeBool::Yes, proto));
-  if (!reader) {
-    return false;
-  }
-
-  args.rval().setObject(*reader);
-  return true;
-}
-
-
-
-
-static MOZ_MUST_USE bool ReadableStreamDefaultReader_closed(JSContext* cx,
-                                                            unsigned argc,
-                                                            Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  
-  Rooted<ReadableStreamDefaultReader*> unwrappedReader(
-      cx, UnwrapAndTypeCheckThis<ReadableStreamDefaultReader>(cx, args,
-                                                              "get closed"));
-  if (!unwrappedReader) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  
-  RootedObject closedPromise(cx, unwrappedReader->closedPromise());
-  if (!cx->compartment()->wrap(cx, &closedPromise)) {
-    return false;
-  }
-
-  args.rval().setObject(*closedPromise);
-  return true;
-}
-
-static MOZ_MUST_USE JSObject* ReadableStreamReaderGenericCancel(
-    JSContext* cx, Handle<ReadableStreamReader*> unwrappedReader,
-    HandleValue reason);
-
-
-
-
-static MOZ_MUST_USE bool ReadableStreamDefaultReader_cancel(JSContext* cx,
-                                                            unsigned argc,
-                                                            Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  
-  Rooted<ReadableStreamDefaultReader*> unwrappedReader(
-      cx,
-      UnwrapAndTypeCheckThis<ReadableStreamDefaultReader>(cx, args, "cancel"));
-  if (!unwrappedReader) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  
-  
-  if (!unwrappedReader->hasStream()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAMREADER_NOT_OWNED, "cancel");
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  
-  JSObject* cancelPromise =
-      ReadableStreamReaderGenericCancel(cx, unwrappedReader, args.get(0));
-  if (!cancelPromise) {
-    return false;
-  }
-  args.rval().setObject(*cancelPromise);
-  return true;
-}
-
-
-
-
-static MOZ_MUST_USE bool ReadableStreamDefaultReader_read(JSContext* cx,
-                                                          unsigned argc,
-                                                          Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  
-  Rooted<ReadableStreamDefaultReader*> unwrappedReader(
-      cx,
-      UnwrapAndTypeCheckThis<ReadableStreamDefaultReader>(cx, args, "read"));
-  if (!unwrappedReader) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  
-  
-  if (!unwrappedReader->hasStream()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAMREADER_NOT_OWNED, "read");
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  
-  JSObject* readPromise =
-      ::ReadableStreamDefaultReaderRead(cx, unwrappedReader);
-  if (!readPromise) {
-    return false;
-  }
-  args.rval().setObject(*readPromise);
-  return true;
-}
-
-static MOZ_MUST_USE bool ReadableStreamReaderGenericRelease(
-    JSContext* cx, Handle<ReadableStreamReader*> reader);
-
-
-
-
-static bool ReadableStreamDefaultReader_releaseLock(JSContext* cx,
-                                                    unsigned argc, Value* vp) {
-  
-  
-  CallArgs args = CallArgsFromVp(argc, vp);
-  Rooted<ReadableStreamDefaultReader*> reader(
-      cx, UnwrapAndTypeCheckThis<ReadableStreamDefaultReader>(cx, args,
-                                                              "releaseLock"));
-  if (!reader) {
-    return false;
-  }
-
-  
-  if (!reader->hasStream()) {
-    args.rval().setUndefined();
-    return true;
-  }
-
-  
-  Value val = reader->getFixedSlot(ReadableStreamReader::Slot_Requests);
-  if (!val.isUndefined()) {
-    ListObject* readRequests = &val.toObject().as<ListObject>();
-    if (readRequests->length() != 0) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_READABLESTREAMREADER_NOT_EMPTY,
-                                "releaseLock");
-      return false;
-    }
-  }
-
-  
-  if (!ReadableStreamReaderGenericRelease(cx, reader)) {
-    return false;
-  }
-
-  args.rval().setUndefined();
-  return true;
-}
-
-static const JSFunctionSpec ReadableStreamDefaultReader_methods[] = {
-    JS_FN("cancel", ReadableStreamDefaultReader_cancel, 1, 0),
-    JS_FN("read", ReadableStreamDefaultReader_read, 0, 0),
-    JS_FN("releaseLock", ReadableStreamDefaultReader_releaseLock, 0, 0),
-    JS_FS_END};
-
-static const JSPropertySpec ReadableStreamDefaultReader_properties[] = {
-    JS_PSG("closed", ReadableStreamDefaultReader_closed, 0), JS_PS_END};
-
-const JSClass ReadableStreamReader::class_ = {"ReadableStreamReader"};
-
-JS_STREAMS_CLASS_SPEC(ReadableStreamDefaultReader, 1, SlotCount,
-                      ClassSpec::DontDefineConstructor, 0, JS_NULL_CLASS_OPS);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static MOZ_MUST_USE JSObject* ReadableStreamReaderGenericCancel(
+MOZ_MUST_USE JSObject* js::ReadableStreamReaderGenericCancel(
     JSContext* cx, Handle<ReadableStreamReader*> unwrappedReader,
     HandleValue reason) {
   
@@ -1974,7 +1730,7 @@ static MOZ_MUST_USE JSObject* ReadableStreamReaderGenericCancel(
 
 
 
-static MOZ_MUST_USE bool ReadableStreamReaderGenericInitialize(
+MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
     JSContext* cx, Handle<ReadableStreamReader*> reader,
     Handle<ReadableStream*> unwrappedStream, ForAuthorCodeBool forAuthorCode) {
   cx->check(reader);
@@ -2057,7 +1813,7 @@ static MOZ_MUST_USE bool ReadableStreamReaderGenericInitialize(
 
 
 
-static MOZ_MUST_USE bool ReadableStreamReaderGenericRelease(
+MOZ_MUST_USE bool js::ReadableStreamReaderGenericRelease(
     JSContext* cx, Handle<ReadableStreamReader*> unwrappedReader) {
   
   Rooted<ReadableStream*> unwrappedStream(
@@ -2138,7 +1894,7 @@ static MOZ_MUST_USE JSObject* ReadableStreamControllerPullSteps(
 
 
 
-static MOZ_MUST_USE JSObject* ReadableStreamDefaultReaderRead(
+MOZ_MUST_USE JSObject* js::ReadableStreamDefaultReaderRead(
     JSContext* cx, Handle<ReadableStreamDefaultReader*> unwrappedReader) {
   
 
@@ -4490,5 +4246,5 @@ JS_PUBLIC_API JSObject* JS::ReadableStreamDefaultReaderRead(
   MOZ_ASSERT(unwrappedReader->forAuthorCode() == ForAuthorCodeBool::No,
              "C++ code should not touch readers created by scripts");
 
-  return ::ReadableStreamDefaultReaderRead(cx, unwrappedReader);
+  return js::ReadableStreamDefaultReaderRead(cx, unwrappedReader);
 }
