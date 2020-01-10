@@ -277,7 +277,6 @@ function attrsToString(attrs) {
 
 function wrapWithFissionIFrame(doc, options = {}) {
   const srcURL = new URL(`${CURRENT_CONTENT_DIR}fission_document_builder.sjs`);
-  const { fissionIFrameAttrs = {} } = options;
   if (doc.endsWith("html")) {
     srcURL.searchParams.append("file", `${CURRENT_FILE_DIR}e10s/${doc}`);
   } else {
@@ -299,13 +298,7 @@ function wrapWithFissionIFrame(doc, options = {}) {
     );
   }
 
-  const iframeAttrs = {
-    id: FISSION_IFRAME_ID,
-    src: srcURL.href,
-    ...fissionIFrameAttrs,
-  };
-
-  return `<iframe ${attrsToString(iframeAttrs)}/>`;
+  return `<iframe id="${FISSION_IFRAME_ID}" src="${srcURL.href}"/>`;
 }
 
 
@@ -375,7 +368,7 @@ function accessibleTask(doc, task, options = {}) {
     let onFissionDocLoad;
     if (options.fission) {
       gIsFission = true;
-      if (gFissionBrowser && !options.skipFissionDocLoad) {
+      if (gFissionBrowser) {
         onFissionDocLoad = waitForEvent(
           EVENT_DOCUMENT_LOAD_COMPLETE,
           DEFAULT_FISSION_DOC_BODY_ID
@@ -408,7 +401,7 @@ function accessibleTask(doc, task, options = {}) {
 
         const { accessible: docAccessible } = await onContentDocLoad;
         let fissionDocAccessible;
-        if (options.fission && !options.skipFissionDocLoad) {
+        if (options.fission) {
           fissionDocAccessible = gFissionBrowser
             ? (await onFissionDocLoad).accessible
             : findAccessibleChildByID(docAccessible, FISSION_IFRAME_ID)
@@ -442,20 +435,17 @@ function accessibleTask(doc, task, options = {}) {
 
 
 
-
-
-
-
-
-
-function addAccessibleTask(doc, task, options = {}) {
-  const { topLevel = true, iframe = false } = options;
+function addAccessibleTask(
+  doc,
+  task,
+  { topLevel = true, iframe = false } = {}
+) {
   if (topLevel) {
-    add_task(accessibleTask(doc, task, options));
+    add_task(accessibleTask(doc, task));
   }
 
   if (iframe) {
-    add_task(accessibleTask(doc, task, { ...options, fission: true }));
+    add_task(accessibleTask(doc, task, { fission: true }));
   }
 }
 
