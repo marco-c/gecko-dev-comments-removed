@@ -1,0 +1,8 @@
+
+
+
+
+
+"use strict";
+
+Services.prefs.setBoolPref("browser.search.modernConfig", true);

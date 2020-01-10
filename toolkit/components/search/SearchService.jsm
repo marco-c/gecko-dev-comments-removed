@@ -54,12 +54,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 
-
-XPCOMUtils.defineLazyGetter(this, "distroID", () => {
-  return Services.prefs.getDefaultBranch("distribution.").getCharPref("id", "");
-});
-
-
 XPCOMUtils.defineLazyGetter(this, "gEncoder", function() {
   return new TextEncoder();
 });
@@ -119,11 +113,6 @@ const MULTI_LOCALE_ENGINES = [
 
 
 const DEFAULT_TAG = "default";
-
-function isPartnerBuild() {
-  
-  return distroID && !distroID.startsWith("mozilla");
-}
 
 
 function isUSTimezone() {
@@ -924,7 +913,7 @@ SearchService.prototype = {
       
       
       
-      if (distroID && !privateMode) {
+      if (SearchUtils.distroID && !privateMode) {
         let defaultPrefB = Services.prefs.getDefaultBranch(
           SearchUtils.BROWSER_SEARCH_PREF
         );
@@ -1840,7 +1829,7 @@ SearchService.prototype = {
       SearchUtils.BROWSER_SEARCH_PREF
     );
     if (
-      isPartnerBuild() &&
+      SearchUtils.isPartnerBuild() &&
       branch.getPrefType("ignoredJAREngines") == branch.PREF_STRING
     ) {
       let ignoredJAREngines = branch
@@ -2015,7 +2004,7 @@ SearchService.prototype = {
         addedEngines[originalPrivateDefault.name] = originalPrivateDefault;
       }
 
-      if (distroID) {
+      if (SearchUtils.distroID) {
         try {
           var extras = Services.prefs.getChildList(
             SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
@@ -2169,7 +2158,7 @@ SearchService.prototype = {
     
     
 
-    if (distroID) {
+    if (SearchUtils.distroID) {
       
       try {
         var extras = Services.prefs.getChildList(

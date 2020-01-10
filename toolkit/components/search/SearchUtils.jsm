@@ -144,6 +144,16 @@ var SearchUtils = {
 
     return null;
   },
+
+  
+
+
+
+
+
+  isPartnerBuild() {
+    return SearchUtils.distroID && !SearchUtils.distroID.startsWith("mozilla");
+  },
 };
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -152,3 +162,9 @@ XPCOMUtils.defineLazyPreferenceGetter(
   BROWSER_SEARCH_PREF + "log",
   false
 );
+
+
+
+XPCOMUtils.defineLazyGetter(SearchUtils, "distroID", () => {
+  return Services.prefs.getDefaultBranch("distribution.").getCharPref("id", "");
+});
