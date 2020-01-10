@@ -446,6 +446,7 @@ class RTCPeerConnection {
     
     
     this._canTrickle = null;
+    this._localUfragsToReplace = new Set();
 
     
     this._iceConnectionState = "new";
@@ -936,12 +937,13 @@ class RTCPeerConnection {
     } else {
       options = optionsOrOnSucc;
     }
-
+    if (this._localUfragsToReplace.size > 0) {
+      options.iceRestart = true;
+    }
     
     if (onSuccess) {
       return this._legacy(onSuccess, onErr, () => this._createOffer(options));
     }
-
     return this._async(() => this._createOffer(options));
   }
 
@@ -1136,6 +1138,12 @@ class RTCPeerConnection {
       if (type == "answer") {
         this._currentRole = "answerer";
         this._pendingRole = null;
+        if (this._localUfragsToReplace.size > 0) {
+          const ufrags = new Set(this._getUfragsWithPwds(sdp));
+          if (![...this._localUfragsToReplace].some(uf => ufrags.has(uf))) {
+            this._localUfragsToReplace.clear();
+          }
+        }
       } else {
         this._pendingRole = "offerer";
       }
@@ -1235,6 +1243,14 @@ class RTCPeerConnection {
       if (type == "answer") {
         this._currentRole = "offerer";
         this._pendingRole = null;
+        if (this._localUfragsToReplace.size > 0) {
+          const ufrags = new Set(
+            this._getUfragsWithPwds(this._impl.currentLocalDescription)
+          );
+          if (![...this._localUfragsToReplace].some(uf => ufrags.has(uf))) {
+            this._localUfragsToReplace.clear();
+          }
+        }
       } else {
         this._pendingRole = "answerer";
       }
@@ -1332,6 +1348,32 @@ class RTCPeerConnection {
         );
       });
     });
+  }
+
+  restartIce() {
+    this._localUfragsToReplace = new Set([
+      ...this._getUfragsWithPwds(this._impl.currentLocalDescription),
+      ...this._getUfragsWithPwds(this._impl.pendingLocalDescription),
+    ]);
+    this.updateNegotiationNeeded();
+  }
+
+  _getUfragsWithPwds(sdp) {
+    return (
+      sdp
+        .split("\r\nm=")
+        .map(block => block.split("\r\n"))
+        .map(lines => [
+          lines.find(l => l.startsWith("a=ice-ufrag:")),
+          lines.find(l => l.startsWith("a=ice-pwd:")),
+        ])
+        
+        
+        
+        .map(([a, b], i, array) => [a || array[0][0], b || array[0][1]])
+        .filter(([a, b]) => a && b)
+        .map(array => array.join())
+    );
   }
 
   addStream(stream) {
@@ -1500,7 +1542,9 @@ class RTCPeerConnection {
       return;
     }
 
-    let negotiationNeeded = this._impl.checkNegotiationNeeded();
+    let negotiationNeeded =
+      this._impl.checkNegotiationNeeded() ||
+      this._localUfragsToReplace.size > 0;
     if (!negotiationNeeded) {
       this._negotiationNeeded = false;
       return;
