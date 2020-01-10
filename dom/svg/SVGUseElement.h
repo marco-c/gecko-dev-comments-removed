@@ -97,7 +97,21 @@ class SVGUseElement final : public SVGUseElementBase,
                         nsIPrincipal* aSubjectPrincipal, bool aNotify) final;
 
  protected:
-  bool IsCyclicReferenceTo(const Element& aTarget) const;
+  
+  enum class ScanResult {
+    
+    Ok,
+    
+    
+    
+    
+    
+    Invisible,
+    
+    
+    CyclicReference,
+  };
+  ScanResult ScanAncestors(const Element& aTarget) const;
 
   
 
