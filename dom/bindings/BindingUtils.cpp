@@ -735,8 +735,8 @@ static JSObject* CreateInterfaceObject(
   JS::Rooted<JSObject*> constructor(cx);
   MOZ_ASSERT(constructorProto);
   MOZ_ASSERT(constructorClass);
-  constructor = JS_NewObjectWithGivenProto(cx, Jsvalify(constructorClass),
-                                           constructorProto);
+  constructor =
+      JS_NewObjectWithGivenProto(cx, constructorClass, constructorProto);
   if (!constructor) {
     return nullptr;
   }
@@ -861,7 +861,7 @@ static JSObject* CreateInterfacePrototypeObject(
     const char* const* unscopableNames, const char* toStringTag,
     bool isGlobal) {
   JS::Rooted<JSObject*> ourProto(
-      cx, JS_NewObjectWithUniqueType(cx, Jsvalify(protoClass), parentProto));
+      cx, JS_NewObjectWithUniqueType(cx, protoClass, parentProto));
   if (!ourProto ||
       
       
@@ -1091,7 +1091,7 @@ bool TryPreserveWrapper(JS::Handle<JSObject*> obj) {
   JSAddPropertyOp addProperty = clasp->getAddProperty();
 
   
-  MOZ_RELEASE_ASSERT(!js::Valueify(clasp)->isProxy(),
+  MOZ_RELEASE_ASSERT(!clasp->isProxy(),
                      "Should not call addProperty for proxies.");
 
   
