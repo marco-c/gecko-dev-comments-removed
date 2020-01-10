@@ -26,6 +26,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "mozilla/HelperMacros.h"
 #include "mozilla/RefCountType.h"
 
 
@@ -242,12 +243,6 @@ inline Result<Ok, nsresult> ToResult(nsresult aValue);
 #define NS_PTR_TO_INT32(x) ((int32_t)(intptr_t)(x))
 #define NS_PTR_TO_UINT32(x) ((uint32_t)(intptr_t)(x))
 #define NS_INT32_TO_PTR(x) ((void*)(intptr_t)(x))
-
-
-
-
-#define NS_STRINGIFY_HELPER(x_) #x_
-#define NS_STRINGIFY(x_) NS_STRINGIFY_HELPER(x_)
 
 
 

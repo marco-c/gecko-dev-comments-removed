@@ -3340,7 +3340,7 @@ static bool TelemetryPrefValue() {
   
   
 
-  NS_NAMED_LITERAL_CSTRING(channel, NS_STRINGIFY(MOZ_UPDATE_CHANNEL));
+  NS_NAMED_LITERAL_CSTRING(channel, MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL));
 
   
   if (channel.EqualsLiteral("nightly") || channel.EqualsLiteral("aurora") ||

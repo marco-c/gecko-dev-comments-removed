@@ -612,7 +612,7 @@ void BackgroundHangMonitor::Startup() {
     return;
   }
 
-  if (!strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta")) {
+  if (!strcmp(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta")) {
     if (XRE_IsParentProcess()) {  
       BackgroundHangThread::Startup();
       BackgroundHangManager::sInstance = new BackgroundHangManager();
