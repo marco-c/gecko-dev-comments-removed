@@ -1268,9 +1268,6 @@ pref("javascript.options.dump_stack_on_debuggee_would_run", false);
 #endif
 
 
-pref("javascript.options.streams", true);
-
-
 pref("javascript.options.dynamicImport", true);
 
 
@@ -4270,16 +4267,6 @@ pref("layers.max-active", -1);
 pref("layers.offmainthreadcomposition.frame-rate", -1);
 
 pref("layers.single-tile.enabled", true);
-pref("layers.low-precision-buffer", false);
-pref("layers.progressive-paint", false);
-pref("layers.tiles.retain-back-buffer", true);
-#ifdef MOZ_WIDGET_ANDROID
-  pref("layers.tiles.edge-padding", true);
-#else
-  pref("layers.tiles.edge-padding", false);
-#endif
-
-pref("layers.draw-mask-debug", false);
 
 #ifdef MOZ_X11
   #ifdef MOZ_WIDGET_GTK
@@ -4292,9 +4279,6 @@ pref("layers.draw-mask-debug", false);
 #endif
 
 pref("widget.window-transforms.disabled", false);
-
-
-pref("layers.shared-buffer-provider.enabled", true);
 
 
 pref("geo.wifi.xhr.timeout", 60000);
@@ -4927,12 +4911,6 @@ pref("dom.payments.request.supportedRegions", "US,CA");
   pref("toolkit.telemetry.overrideUpdateChannel", "nightly-asan");
 #endif
 
-#if defined(XP_WIN)
-  
-  
-  pref("layers.mlgpu.enable-on-windows7", true);
-#endif
-
 
 
 
@@ -4962,8 +4940,6 @@ pref("dom.noopener.newprocess.enabled", true);
 #else
   pref("layers.omtp.enabled", false);
 #endif
-pref("layers.omtp.release-capture-on-main-thread", false);
-pref("layers.omtp.dump-capture", false);
 
 
 
