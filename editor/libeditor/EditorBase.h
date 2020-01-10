@@ -971,6 +971,10 @@ class EditorBase : public nsIEditor,
     return mEditActionData && mEditActionData->CanHandle();
   }
 
+  bool IsTopLevelEditSubActionDataAvailable() const {
+    return mEditActionData && !!GetTopLevelEditSubAction();
+  }
+
   
 
 
