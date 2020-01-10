@@ -1407,14 +1407,6 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
 bool js::Nursery::maybeResizeExact(JS::GCReason reason) {
   
   
-  
-  if (tunables().gcMaxNurseryBytes() == 0) {
-    disable();
-    return true;
-  }
-
-  
-  
   if (gc::IsOOMReason(reason) || runtime()->gc.systemHasLowMemory()) {
     minimizeAllocableSpace();
     return true;
@@ -1427,6 +1419,7 @@ bool js::Nursery::maybeResizeExact(JS::GCReason reason) {
   }
 #endif
 
+  MOZ_ASSERT(tunables().gcMaxNurseryBytes() >= ArenaSize);
   CheckedInt<unsigned> newMaxNurseryChunksChecked =
       (JS_ROUND(CheckedInt<size_t>(tunables().gcMaxNurseryBytes()), ChunkSize) /
        ChunkSize)
