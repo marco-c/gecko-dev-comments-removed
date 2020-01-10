@@ -107,7 +107,7 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
   
   
   
-  DO_STRUCT_DIFFERENCE(Display);
+  DO_STRUCT_DIFFERENCE_WITH_ARGS(Display, (, *StylePosition()));
   DO_STRUCT_DIFFERENCE(XUL);
   DO_STRUCT_DIFFERENCE(Column);
   DO_STRUCT_DIFFERENCE(Content);

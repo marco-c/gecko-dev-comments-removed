@@ -237,19 +237,7 @@ bool nsAbsoluteContainingBlock::FrameDependsOnContainer(nsIFrame* f,
   const nsStylePosition* pos = f->StylePosition();
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if ((pos->mOffset.Get(eSideTop).IsAuto() &&
-       pos->mOffset.Get(eSideBottom).IsAuto()) ||
-      (pos->mOffset.Get(eSideLeft).IsAuto() &&
-       pos->mOffset.Get(eSideRight).IsAuto())) {
+  if (pos->NeedsHypotheticalPositionIfAbsPos()) {
     return true;
   }
   if (!aCBWidthChanged && !aCBHeightChanged) {

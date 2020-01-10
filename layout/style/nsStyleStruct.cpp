@@ -1491,10 +1491,6 @@ nsChangeHint nsStylePosition::CalcDifference(
   
   
   
-  
-  
-  
-  
   bool isVertical = WritingMode(&aOldStyleVisibility).IsVertical();
   if (isVertical ? widthChanged : heightChanged) {
     hint |= nsChangeHint_ReflowHintsForBSizeChange;
@@ -2989,7 +2985,7 @@ static inline nsChangeHint CompareMotionValues(
 }
 
 nsChangeHint nsStyleDisplay::CalcDifference(
-    const nsStyleDisplay& aNewData) const {
+    const nsStyleDisplay& aNewData, const nsStylePosition& aOldPosition) const {
   nsChangeHint hint = nsChangeHint(0);
 
   if (mBinding != aNewData.mBinding || mPosition != aNewData.mPosition ||
@@ -3176,6 +3172,20 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     hint |= nsChangeHint_SchedulePaint;
   }
 
+  if (mOriginalDisplay != aNewData.mOriginalDisplay) {
+    
+    
+    
+    
+    
+    if (IsAbsolutelyPositionedStyle() &&
+        aOldPosition.NeedsHypotheticalPositionIfAbsPos()) {
+      hint |= nsChangeHint_NeedReflow | nsChangeHint_ReflowChangesSizeOrPosition;
+    } else {
+      hint |= nsChangeHint_NeutralChange;
+    }
+  }
+
   
   
   
@@ -3193,8 +3203,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   
   
 
-  if (!hint && (mOriginalDisplay != aNewData.mOriginalDisplay ||
-                mTransitions != aNewData.mTransitions ||
+  if (!hint && (mTransitions != aNewData.mTransitions ||
                 mTransitionTimingFunctionCount !=
                     aNewData.mTransitionTimingFunctionCount ||
                 mTransitionDurationCount != aNewData.mTransitionDurationCount ||
