@@ -233,16 +233,17 @@ bool CompositorD3D11::Initialize(nsCString* const out_failureReason) {
       hr = dxgiFactory2->CreateSwapChainForHwnd(mDevice, mHwnd, &swapDesc,
                                                 nullptr, nullptr,
                                                 getter_AddRefs(swapChain));
-      if (Failed(hr, "create swap chain")) {
-        *out_failureReason = "FEATURE_FAILURE_D3D11_SWAP_CHAIN";
-        return false;
+      if (SUCCEEDED(hr)) {
+        DXGI_RGBA color = {1.0f, 1.0f, 1.0f, 1.0f};
+        swapChain->SetBackgroundColor(&color);
+
+        mSwapChain = swapChain;
       }
+    }
 
-      DXGI_RGBA color = {1.0f, 1.0f, 1.0f, 1.0f};
-      swapChain->SetBackgroundColor(&color);
-
-      mSwapChain = swapChain;
-    } else
+    
+    
+    if (!mSwapChain)
 #endif
     {
       DXGI_SWAP_CHAIN_DESC swapDesc;
