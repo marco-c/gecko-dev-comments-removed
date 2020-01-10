@@ -86,6 +86,17 @@ function mockServicesChromeScript() {
     mockAlertsService
   );
 
+  function clickNotifications(doClose) {
+    
+    for (let [name, notification] of Object.entries(activeNotifications)) {
+      let { listener, cookie } = notification;
+      listener.observe(null, "alertclickcallback", cookie);
+      if (doClose) {
+        mockAlertsService.closeAlert(name);
+      }
+    }
+  }
+
   function closeAllNotifications() {
     for (let alertName of Object.keys(activeNotifications)) {
       mockAlertsService.closeAlert(alertName);
@@ -100,6 +111,11 @@ function mockServicesChromeScript() {
     registrar.unregisterFactory(MOCK_ALERTS_CID, mockAlertsService);
     sendAsyncMessage("mock-alert-service:unregistered");
   });
+
+  addMessageListener(
+    "mock-alert-service:click-notifications",
+    clickNotifications
+  );
 
   addMessageListener(
     "mock-alert-service:close-notifications",
@@ -130,6 +146,20 @@ const MockAlertsService = {
         this._chromeScript.destroy();
         this._chromeScript = null;
       });
+  },
+  async clickNotifications() {
+    
+    await this._chromeScript.sendAsyncMessage(
+      "mock-alert-service:click-notifications",
+      true
+    );
+  },
+  async clickNotificationsWithoutClose() {
+    
+    await this._chromeScript.sendAsyncMessage(
+      "mock-alert-service:click-notifications",
+      false
+    );
   },
   async closeNotifications() {
     await this._chromeScript.sendAsyncMessage(
