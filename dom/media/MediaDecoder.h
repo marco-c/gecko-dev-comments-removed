@@ -155,7 +155,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   void SetLooping(bool aLooping);
 
   
-  RefPtr<GenericPromise> SetSink(AudioDeviceInfo* aSink);
+  RefPtr<GenericPromise> SetSink(AudioDeviceInfo* aSinkDevice);
 
   bool GetMinimizePreroll() const { return mMinimizePreroll; }
 
@@ -616,6 +616,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
+  Canonical<RefPtr<AudioDeviceInfo>> mSinkDevice;
+
+  
+  
   Canonical<bool> mOutputCaptured;
 
   
@@ -656,6 +660,9 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
     return &mPreservesPitch;
   }
   AbstractCanonical<bool>* CanonicalLooping() { return &mLooping; }
+  AbstractCanonical<RefPtr<AudioDeviceInfo>>* CanonicalSinkDevice() {
+    return &mSinkDevice;
+  }
   AbstractCanonical<bool>* CanonicalOutputCaptured() {
     return &mOutputCaptured;
   }

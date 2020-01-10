@@ -23,11 +23,20 @@ namespace mozilla {
 class AudioConverter;
 
 class AudioSink : private AudioStream::DataSource {
-  using PlaybackParams = MediaSink::PlaybackParams;
-
  public:
+  struct PlaybackParams {
+    PlaybackParams(double aVolume, double aPlaybackRate, bool aPreservesPitch)
+        : mVolume(aVolume),
+          mPlaybackRate(aPlaybackRate),
+          mPreservesPitch(aPreservesPitch) {}
+    double mVolume;
+    double mPlaybackRate;
+    bool mPreservesPitch;
+  };
+
   AudioSink(AbstractThread* aThread, MediaQueue<AudioData>& aAudioQueue,
-            const media::TimeUnit& aStartTime, const AudioInfo& aInfo);
+            const media::TimeUnit& aStartTime, const AudioInfo& aInfo,
+            AudioDeviceInfo* aAudioDevice);
 
   ~AudioSink();
 
@@ -59,6 +68,8 @@ class AudioSink : private AudioStream::DataSource {
 
   void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo);
 
+  const RefPtr<AudioDeviceInfo>& AudioDevice() { return mAudioDevice; }
+
  private:
   
   nsresult InitializeAudioStream(const PlaybackParams& aParams);
@@ -86,6 +97,10 @@ class AudioSink : private AudioStream::DataSource {
   media::TimeUnit mLastGoodPosition;
 
   const AudioInfo mInfo;
+
+  
+  
+  const RefPtr<AudioDeviceInfo> mAudioDevice;
 
   
   bool mPlaying;
