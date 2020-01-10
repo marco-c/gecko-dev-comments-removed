@@ -580,6 +580,7 @@ static bool IsBidiLeaf(nsIFrame* aFrame) {
 
 
 static nsresult SplitInlineAncestors(nsContainerFrame* aParent,
+                                     nsLineList::iterator aLine,
                                      nsIFrame* aFrame) {
   nsPresContext* presContext = aParent->PresContext();
   PresShell* presShell = presContext->PresShell();
@@ -609,14 +610,28 @@ static nsresult SplitInlineAncestors(nsContainerFrame* aParent,
       }
 
       
+      MOZ_ASSERT(!newParent->IsBlockFrameOrSubclass(),
+                 "blocks should not be IsBidiSplittable");
       newParent->InsertFrames(nsIFrame::kNoReflowPrincipalList, nullptr,
                               nullptr, tail);
 
       
       
+      
+      
+      const nsLineList::iterator* parentLine;
+      if (grandparent->IsBlockFrameOrSubclass()) {
+        MOZ_ASSERT(aLine->Contains(parent));
+        parentLine = &aLine;
+      } else {
+        parentLine = nullptr;
+      }
+
+      
+      
       nsFrameList temp(newParent, newParent);
       grandparent->InsertFrames(nsIFrame::kNoReflowPrincipalList, parent,
-                                nullptr, temp);
+                                parentLine, temp);
     }
 
     frame = parent;
@@ -720,7 +735,7 @@ static nsresult CreateContinuation(nsIFrame* aFrame,
 
   if (!aIsFluid) {
     
-    rv = SplitInlineAncestors(parent, aFrame);
+    rv = SplitInlineAncestors(parent, aLine, aFrame);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -1103,7 +1118,9 @@ nsresult nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd) {
             parent = child->GetParent();
           }
           if (parent && IsBidiSplittable(parent)) {
-            SplitInlineAncestors(parent, child);
+            aBpd->mCurrentResolveLine.AdvanceToLinesAndFrame(lastRealFrame);
+            SplitInlineAncestors(parent, aBpd->mCurrentResolveLine.GetLine(),
+                                 child);
 
             
             
