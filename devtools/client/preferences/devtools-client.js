@@ -351,12 +351,7 @@ pref("devtools.responsive.showUserAgentInput", false);
 #endif
 
 
-
-#if defined(MOZ_DEV_EDITION) || defined(NIGHTLY_BUILD)
 pref("devtools.aboutdebugging.new-enabled", true);
-#else
-pref("devtools.aboutdebugging.new-enabled", false);
-#endif
 
 
 #ifdef MOZILLA_OFFICIAL
