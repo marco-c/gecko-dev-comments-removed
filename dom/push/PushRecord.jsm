@@ -186,7 +186,7 @@ PushRecord.prototype = {
         continue;
       }
       
-      let tabs = window.gBrowser ? window.gBrowser.tabContainer.children :
+      let tabs = window.gBrowser ? window.gBrowser.tabs :
                  window.BrowserApp.tabs;
       for (let tab of tabs) {
         

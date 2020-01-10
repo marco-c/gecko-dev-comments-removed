@@ -564,7 +564,7 @@ Tester.prototype = {
     
     if (this.currentTest && window.gBrowser && gBrowser.tabs.length > 1) {
       while (gBrowser.tabs.length > 1) {
-        let lastTab = gBrowser.tabContainer.lastElementChild;
+        let lastTab = gBrowser.tabs[gBrowser.tabs.length - 1];
         if (!lastTab.closing) {
           
           
