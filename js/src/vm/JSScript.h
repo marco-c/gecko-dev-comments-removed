@@ -2258,10 +2258,6 @@ class JSScript : public js::BaseScript {
   static bool fullyInitFromEmitter(JSContext* cx, js::HandleScript script,
                                    js::frontend::BytecodeEmitter* bce);
 
-  
-  static bool initFunctionPrototype(JSContext* cx, js::HandleScript script,
-                                    JS::HandleFunction functionProto);
-
 #ifdef DEBUG
  private:
   
