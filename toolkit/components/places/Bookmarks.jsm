@@ -103,7 +103,6 @@ async function promiseTagsFolderId() {
 const MATCH_ANYWHERE_UNMODIFIED =
   Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE_UNMODIFIED;
 const BEHAVIOR_BOOKMARK = Ci.mozIPlacesAutoComplete.BEHAVIOR_BOOKMARK;
-const SQLITE_MAX_VARIABLE_NUMBER = 999;
 
 var Bookmarks = Object.freeze({
   
@@ -2217,16 +2216,10 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
         );
 
         
-        for (let chunk of PlacesUtils.chunkArray(
-          items,
-          SQLITE_MAX_VARIABLE_NUMBER
-        )) {
+        for (let chunk of PlacesUtils.chunkArray(items, db.variableLimit)) {
           await db.executeCached(
-            `DELETE FROM moz_bookmarks_deleted WHERE guid IN (${new Array(
-              chunk.length
-            )
-              .fill("?")
-              .join(",")})`,
+            `DELETE FROM moz_bookmarks_deleted
+             WHERE guid IN (${sqlBindPlaceholders(chunk)})`,
             chunk.map(item => item.guid)
           );
         }
@@ -2628,10 +2621,7 @@ function removeBookmarks(items, options) {
           }
         }
 
-        for (let chunk of PlacesUtils.chunkArray(
-          items,
-          SQLITE_MAX_VARIABLE_NUMBER
-        )) {
+        for (let chunk of PlacesUtils.chunkArray(items, db.variableLimit)) {
           
           
           
@@ -2639,9 +2629,8 @@ function removeBookmarks(items, options) {
 
           
           await db.executeCached(
-            `DELETE FROM moz_bookmarks WHERE guid IN (${new Array(chunk.length)
-              .fill("?")
-              .join(",")})`,
+            `DELETE FROM moz_bookmarks
+             WHERE guid IN (${sqlBindPlaceholders(chunk)})`,
             chunk.map(item => item.guid)
           );
         }
