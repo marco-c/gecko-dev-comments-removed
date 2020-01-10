@@ -5653,3 +5653,7 @@ pref("fission.preserve_browsing_contexts", false);
 
 
 pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
+
+pref("services.common.log.logger.rest.request", "Debug");
+pref("services.common.log.logger.rest.response", "Debug");
+pref("services.common.log.logger.tokenserverclient", "Debug");
