@@ -2306,7 +2306,8 @@ ScratchpadSidebar.prototype = {
               return this._scratchpad.webConsoleClient.longString(actor);
             },
             releaseActor: actor => {
-              this._scratchpad.debuggerClient.release(actor);
+              
+              this._scratchpad.debuggerClient.release(actor).catch(() => {});
             },
           });
         }

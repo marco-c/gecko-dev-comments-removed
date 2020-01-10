@@ -7212,7 +7212,8 @@ function rootsChanged(props) {
 function releaseActors(state, client) {
   const actors = getActors(state);
   for (const actor of actors) {
-    client.releaseActor(actor);
+    
+    client.releaseActor(actor).catch(() => {});
   }
 }
 

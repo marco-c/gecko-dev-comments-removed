@@ -575,7 +575,12 @@ function TargetMixin(parentClass) {
         if (this.isLocalTab) {
           
           
-          await this._client.close();
+          
+          try {
+            await this._client.close();
+          } catch (e) {
+            console.warn(`Error while closing client: ${e.message}`);
+          }
 
           
           

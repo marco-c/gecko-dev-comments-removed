@@ -34,7 +34,7 @@ function run_test() {
 }
 
 function test_pause_frame() {
-  gThreadClient.once("paused", function(packet) {
+  gThreadClient.once("paused", async function(packet) {
     const args = packet.frame.arguments;
     const objActor = args[0].actor;
     Assert.equal(args[0].class, "Object");
@@ -45,21 +45,27 @@ function test_pause_frame() {
 
     
     
-    gClient.request({ to: objActor, type: "bogusRequest" }, function(response) {
-      Assert.equal(response.error, "unrecognizedPacketType");
-      Assert.ok(objClient.valid);
+    try {
+      await gClient.request({ to: objActor, type: "bogusRequest" });
+      ok(false, "bogusRequest should throw");
+    } catch (e) {
+      ok(true, "bogusRequest thrown");
+      Assert.equal(e.error, "unrecognizedPacketType");
+    }
+    Assert.ok(objClient.valid);
 
-      gThreadClient.resume().then(function() {
-        
-        
-        gClient.request({ to: objActor, type: "bogusRequest" }, function(
-          response
-        ) {
-          Assert.ok(!objClient.valid);
-          Assert.equal(response.error, "noSuchActor");
-          finishClient(gClient);
-        });
-      });
+    gThreadClient.resume().then(async function() {
+      
+      
+      try {
+        await gClient.request({ to: objActor, type: "bogusRequest" });
+        ok(false, "bogusRequest should throw");
+      } catch (e) {
+        ok(true, "bogusRequest thrown");
+        Assert.equal(e.error, "noSuchActor");
+      }
+      Assert.ok(!objClient.valid);
+      finishClient(gClient);
     });
   });
 

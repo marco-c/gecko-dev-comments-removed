@@ -34,31 +34,33 @@ function run_test() {
 }
 
 function test_thread_lifetime() {
-  gThreadClient.once("paused", function(packet) {
+  gThreadClient.once("paused", async function(packet) {
     const pauseGrip = packet.frame.arguments[0];
 
     
-    gClient.request({ to: pauseGrip.actor, type: "threadGrip" }, function(
-      response
-    ) {
-      
-      Assert.equal(response.error, undefined);
-      gThreadClient.once("paused", function(packet) {
-        
-        Assert.equal(pauseGrip.actor, packet.frame.arguments[0].actor);
-        
-        
-        gClient.request({ to: pauseGrip.actor, type: "bogusRequest" }, function(
-          response
-        ) {
-          Assert.equal(response.error, "unrecognizedPacketType");
-          gThreadClient.resume().then(function() {
-            finishClient(gClient);
-          });
-        });
-      });
-      gThreadClient.resume();
+    const response = await gClient.request({
+      to: pauseGrip.actor,
+      type: "threadGrip",
     });
+    
+    Assert.equal(response.error, undefined);
+    gThreadClient.once("paused", async function(packet) {
+      
+      Assert.equal(pauseGrip.actor, packet.frame.arguments[0].actor);
+      
+      
+      try {
+        await gClient.request({ to: pauseGrip.actor, type: "bogusRequest" });
+        ok(false, "bogusRequest should throw");
+      } catch (e) {
+        Assert.equal(e.error, "unrecognizedPacketType");
+        ok(true, "bogusRequest thrown");
+      }
+      gThreadClient.resume().then(function() {
+        finishClient(gClient);
+      });
+    });
+    gThreadClient.resume();
   });
 
   gDebuggee.eval(

@@ -34,26 +34,30 @@ function run_test() {
 }
 
 function test_pause_frame() {
-  gThreadClient.once("paused", function(packet) {
+  gThreadClient.once("paused", async function(packet) {
     const pauseActor = packet.actor;
 
     
     
-    gClient.request({ to: pauseActor, type: "bogusRequest" }, function(
-      response
-    ) {
-      Assert.equal(response.error, "unrecognizedPacketType");
+    try {
+      await gClient.request({ to: pauseActor, type: "bogusRequest" });
+      ok(false, "bogusRequest should throw");
+    } catch (e) {
+      ok(true, "bogusRequest thrown");
+      Assert.equal(e.error, "unrecognizedPacketType");
+    }
 
-      gThreadClient.resume().then(function() {
-        
-        
-        gClient.request({ to: pauseActor, type: "bogusRequest" }, function(
-          response
-        ) {
-          Assert.equal(response.error, "noSuchActor");
-          finishClient(gClient);
-        });
-      });
+    gThreadClient.resume().then(async function() {
+      
+      
+      try {
+        await gClient.request({ to: pauseActor, type: "bogusRequest" });
+        ok(false, "bogusRequest should throw");
+      } catch (e) {
+        ok(true, "bogusRequest thrown");
+        Assert.equal(e.error, "noSuchActor");
+      }
+      finishClient(gClient);
     });
   });
 

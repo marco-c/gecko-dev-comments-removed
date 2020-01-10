@@ -34,21 +34,23 @@ function run_test() {
 }
 
 function test_thread_lifetime() {
-  gThreadClient.once("paused", function(packet) {
+  gThreadClient.once("paused", async function(packet) {
     const pauseGrip = packet.frame.arguments[0];
 
     
-    gClient.request({ to: pauseGrip.actor, type: "threadGrip" }, function(
-      response
-    ) {
+    const response = await gClient.request({
+      to: pauseGrip.actor,
+      type: "threadGrip",
+    });
+    
+    Assert.equal(response.error, undefined);
+    gThreadClient.once("paused", function(packet) {
       
-      Assert.equal(response.error, undefined);
-      gThreadClient.once("paused", function(packet) {
-        
-        Assert.equal(pauseGrip.actor, packet.frame.arguments[0].actor);
-        
-        gClient.release(pauseGrip.actor, function(response) {
-          gClient.request(
+      Assert.equal(pauseGrip.actor, packet.frame.arguments[0].actor);
+      
+      gClient.release(pauseGrip.actor, async function(response) {
+        try {
+          await gClient.request(
             { to: pauseGrip.actor, type: "bogusRequest" },
             function(response) {
               Assert.equal(response.error, "noSuchActor");
@@ -57,10 +59,13 @@ function test_thread_lifetime() {
               });
             }
           );
-        });
+          ok(false, "bogusRequest should throw");
+        } catch (e) {
+          ok(true, "bogusRequest thrown");
+        }
       });
-      gThreadClient.resume();
     });
+    gThreadClient.resume();
   });
 
   gDebuggee.eval(
