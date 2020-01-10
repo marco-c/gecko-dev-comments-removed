@@ -23,7 +23,9 @@
 #include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/PTextureChild.h"
 #include "nsImportModule.h"
+#include "nsStringStream.h"
 #include "rrIGraphics.h"
+#include "ImageOps.h"
 
 #include <mach/mach_vm.h>
 
@@ -91,47 +93,12 @@ static void InitGraphicsSandbox() {
 
 static void* gBufferMemory;
 
-
-static size_t gLastPaintWidth, gLastPaintHeight;
-
-
-
-
-
-
-
-
-
-
-
-void UpdateGraphicsInUIProcess(const PaintMessage* aMsg) {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  if (aMsg) {
-    gLastPaintWidth = aMsg->mWidth;
-    gLastPaintHeight = aMsg->mHeight;
-  }
-
-  if (!gLastPaintWidth || !gLastPaintHeight) {
-    return;
-  }
-
-  bool hadFailure = !aMsg;
-
+static void UpdateMiddlemanCanvas(size_t aWidth, size_t aHeight, size_t aStride,
+                                  void* aData) {
   
-  if (!gGraphics) {
-    InitGraphicsSandbox();
-  }
-
-  size_t width = gLastPaintWidth;
-  size_t height = gLastPaintHeight;
-  size_t stride =
-      layers::ImageDataSerializer::ComputeRGBStride(gSurfaceFormat, width);
-
-  
-  CheckedInt<size_t> scaledWidth = CheckedInt<size_t>(width) * 4;
-  CheckedInt<size_t> scaledHeight = CheckedInt<size_t>(height) * stride;
-  MOZ_RELEASE_ASSERT(scaledWidth.isValid() && scaledWidth.value() <= stride);
+  CheckedInt<size_t> scaledWidth = CheckedInt<size_t>(aWidth) * 4;
+  CheckedInt<size_t> scaledHeight = CheckedInt<size_t>(aHeight) * aStride;
+  MOZ_RELEASE_ASSERT(scaledWidth.isValid() && scaledWidth.value() <= aStride);
   MOZ_RELEASE_ASSERT(scaledHeight.isValid() &&
                      scaledHeight.value() <= GraphicsMemorySize);
 
@@ -139,17 +106,17 @@ void UpdateGraphicsInUIProcess(const PaintMessage* aMsg) {
   
   
   
-  MOZ_RELEASE_ASSERT(gGraphicsMemory);
-  void* memory = gGraphicsMemory;
-  if (stride != width * 4) {
+  MOZ_RELEASE_ASSERT(aData);
+  void* memory = aData;
+  if (aStride != aWidth * 4) {
     if (!gBufferMemory) {
       gBufferMemory = malloc(GraphicsMemorySize);
     }
     memory = gBufferMemory;
-    for (size_t y = 0; y < height; y++) {
-      char* src = (char*)gGraphicsMemory + y * stride;
-      char* dst = (char*)gBufferMemory + y * width * 4;
-      memcpy(dst, src, width * 4);
+    for (size_t y = 0; y < aHeight; y++) {
+      char* src = (char*)aData + y * aStride;
+      char* dst = (char*)gBufferMemory + y * aWidth * 4;
+      memcpy(dst, src, aWidth * 4);
     }
   }
 
@@ -159,20 +126,89 @@ void UpdateGraphicsInUIProcess(const PaintMessage* aMsg) {
   
   JS::Rooted<JSObject*> bufferObject(cx);
   bufferObject =
-      JS::NewArrayBufferWithUserOwnedContents(cx, width * height * 4, memory);
+      JS::NewArrayBufferWithUserOwnedContents(cx, aWidth * aHeight * 4, memory);
   MOZ_RELEASE_ASSERT(bufferObject);
 
   JS::Rooted<JS::Value> buffer(cx, JS::ObjectValue(*bufferObject));
 
   
-  if (NS_FAILED(gGraphics->UpdateCanvas(buffer, width, height, hadFailure))) {
-    MOZ_CRASH("UpdateGraphicsInUIProcess");
+  if (NS_FAILED(gGraphics->UpdateCanvas(buffer, aWidth, aHeight))) {
+    MOZ_CRASH("UpdateMiddlemanCanvas");
   }
 
   
   
   
   MOZ_ALWAYS_TRUE(JS::DetachArrayBuffer(cx, bufferObject));
+}
+
+
+static size_t gLastPaintWidth, gLastPaintHeight;
+
+void UpdateGraphicsAfterPaint(const PaintMessage& aMsg) {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  gLastPaintWidth = aMsg.mWidth;
+  gLastPaintHeight = aMsg.mHeight;
+
+  if (!aMsg.mWidth || !aMsg.mHeight) {
+    return;
+  }
+
+  
+  if (!gGraphics) {
+    InitGraphicsSandbox();
+  }
+
+  size_t stride =
+      layers::ImageDataSerializer::ComputeRGBStride(gSurfaceFormat,
+                                                    aMsg.mWidth);
+  UpdateMiddlemanCanvas(aMsg.mWidth, aMsg.mHeight, stride, gGraphicsMemory);
+}
+
+void UpdateGraphicsAfterRepaint(const nsACString& aImageData) {
+  nsCOMPtr<nsIInputStream> stream;
+  nsresult rv = NS_NewCStringInputStream(getter_AddRefs(stream), aImageData);
+  MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
+
+  RefPtr<gfx::SourceSurface> surface =
+    image::ImageOps::DecodeToSurface(stream.forget(),
+                                     NS_LITERAL_CSTRING("image/png"), 0);
+  MOZ_RELEASE_ASSERT(surface);
+
+  RefPtr<gfx::DataSourceSurface> dataSurface = surface->GetDataSurface();
+
+  gfx::DataSourceSurface::ScopedMap map(dataSurface,
+                                        gfx::DataSourceSurface::READ);
+
+  UpdateMiddlemanCanvas(surface->GetSize().width,
+                        surface->GetSize().height,
+                        map.GetStride(), map.GetData());
+}
+
+void RestoreMainGraphics() {
+  if (!gLastPaintWidth || !gLastPaintHeight) {
+    return;
+  }
+
+  size_t stride =
+      layers::ImageDataSerializer::ComputeRGBStride(gSurfaceFormat,
+                                                    gLastPaintWidth);
+  UpdateMiddlemanCanvas(gLastPaintWidth, gLastPaintHeight, stride,
+                        gGraphicsMemory);
+}
+
+void ClearGraphics() {
+  if (!gGraphics) {
+    return;
+  }
+
+  AutoSafeJSContext cx;
+  JSAutoRealm ar(cx, xpc::PrivilegedJunkScope());
+
+  if (NS_FAILED(gGraphics->ClearCanvas())) {
+    MOZ_CRASH("ClearGraphics");
+  }
 }
 
 bool InRepaintStressMode() {
