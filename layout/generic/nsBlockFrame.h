@@ -310,6 +310,9 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
+
+
+
   nscoord ComputeFinalBSize(const ReflowInput& aReflowInput,
                             nsReflowStatus& aStatus, nscoord aContentBSize,
                             const mozilla::LogicalMargin& aBorderPadding,
