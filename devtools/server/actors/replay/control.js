@@ -340,13 +340,14 @@ let gDebugger;
 
 
 
-const gAsyncManifests = new Set();
-const gAsyncManifestsLowPriority = new Set();
+const Priority = {
+  HIGH: 0,
+  MEDIUM: 1,
+  LOW: 2,
+};
 
-function asyncManifestWorklist(lowPriority) {
-  return lowPriority ? gAsyncManifestsLowPriority : gAsyncManifests;
-}
 
+const gAsyncManifests = [new Set(), new Set(), new Set()];
 
 
 
@@ -382,13 +383,14 @@ function sendAsyncManifest(manifest) {
   pokeChildrenSoon();
   return new Promise(resolve => {
     manifest.resolve = resolve;
-    asyncManifestWorklist(manifest.lowPriority).add(manifest);
+    const priority = manifest.priority || Priority.HIGH;
+    gAsyncManifests[priority].add(manifest);
   });
 }
 
 
-function pickAsyncManifest(child, lowPriority) {
-  const worklist = asyncManifestWorklist(lowPriority);
+function pickAsyncManifest(child, priority) {
+  const worklist = gAsyncManifests[priority];
 
   let best = null,
     bestTime = Infinity;
@@ -447,12 +449,14 @@ function processAsyncManifest(child) {
   }
 
   if (!manifest) {
-    manifest = pickAsyncManifest(child,  false);
-    if (!manifest) {
-      manifest = pickAsyncManifest(child,  true);
-      if (!manifest) {
-        return false;
+    for (const priority of Object.values(Priority)) {
+      manifest = pickAsyncManifest(child, priority);
+      if (manifest) {
+        break;
       }
+    }
+    if (!manifest) {
+      return false;
     }
   }
 
@@ -1039,7 +1043,7 @@ async function queuePauseData({
     point,
     snapshot,
     expectedDuration: 250,
-    lowPriority: true,
+    priority: Priority.LOW,
     mightRewind: true,
   });
 }
@@ -1576,7 +1580,7 @@ async function evaluateLogpoint({
     point,
     snapshot,
     expectedDuration: 250,
-    lowPriority: true,
+    priority: Priority.MEDIUM,
     mightRewind: true,
   });
 }
