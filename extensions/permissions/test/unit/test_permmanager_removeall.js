@@ -6,8 +6,9 @@ function run_test() {
   var dir = do_get_profile();
 
   
-  var pm = Cc["@mozilla.org/permissionmanager;1"].
-           getService(Ci.nsIPermissionManager);
+  var pm = Cc["@mozilla.org/permissionmanager;1"].getService(
+    Ci.nsIPermissionManager
+  );
 
   
   var file = dir.clone();
@@ -15,14 +16,17 @@ function run_test() {
   Assert.ok(file.exists());
 
   
-  var ostream = Cc["@mozilla.org/network/file-output-stream;1"].
-                createInstance(Ci.nsIFileOutputStream);
+  var ostream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(
+    Ci.nsIFileOutputStream
+  );
   ostream.init(file, 0x02, 0o666, 0);
-  var conv = Cc["@mozilla.org/intl/converter-output-stream;1"].
-             createInstance(Ci.nsIConverterOutputStream);
+  var conv = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(
+    Ci.nsIConverterOutputStream
+  );
   conv.init(ostream, "UTF-8");
-  for (var i = 0; i < file.fileSize; ++i)
+  for (var i = 0; i < file.fileSize; ++i) {
     conv.writeString("a");
+  }
   conv.close();
 
   

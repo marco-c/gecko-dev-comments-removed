@@ -2,8 +2,8 @@
 
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 function do_run_generator(generator) {
@@ -30,4 +30,3 @@ function do_count_enumerator(enumerator) {
   }
   return i;
 }
-

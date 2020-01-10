@@ -1,19 +1,27 @@
 add_task(async function() {
   
   
-  Services.perms.add(Services.io.newURI("http://example.com"),
-                     "viewsourceTestingPerm",
-                     Services.perms.ALLOW_ACTION);
+  Services.perms.add(
+    Services.io.newURI("http://example.com"),
+    "viewsourceTestingPerm",
+    Services.perms.ALLOW_ACTION
+  );
 
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser,
-                                                        "view-source:http://example.com",
-                                                         true,
-                                                         false,
-                                                         true);
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "view-source:http://example.com",
+     true,
+     false,
+     true
+  );
   await ContentTask.spawn(tab.linkedBrowser, null, async function() {
-    is(Services.perms.testPermission(Services.io.newURI("http://example.com"),
-                                     "viewsourceTestingPerm"),
-       Services.perms.ALLOW_ACTION);
+    is(
+      Services.perms.testPermission(
+        Services.io.newURI("http://example.com"),
+        "viewsourceTestingPerm"
+      ),
+      Services.perms.ALLOW_ACTION
+    );
   });
   BrowserTestUtils.removeTab(tab);
 });

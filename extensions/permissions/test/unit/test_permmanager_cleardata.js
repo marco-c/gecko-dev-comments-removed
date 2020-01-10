@@ -4,22 +4,22 @@
 var pm;
 
 
-function createPrincipal(aOrigin, aOriginAttributes)
-{
-  return Services.scriptSecurityManager.createCodebasePrincipal(NetUtil.newURI(aOrigin), aOriginAttributes);
+function createPrincipal(aOrigin, aOriginAttributes) {
+  return Services.scriptSecurityManager.createCodebasePrincipal(
+    NetUtil.newURI(aOrigin),
+    aOriginAttributes
+  );
 }
 
 
-function getData(aPattern)
-{
+function getData(aPattern) {
   return JSON.stringify(aPattern);
 }
 
 
 
 
-function test(aEntries, aData, aResults)
-{
+function test(aEntries, aData, aResults) {
   let principals = [];
 
   for (entry of aEntries) {
@@ -27,40 +27,68 @@ function test(aEntries, aData, aResults)
   }
 
   for (principal of principals) {
-    Assert.equal(pm.testPermissionFromPrincipal(principal, "test/clear-origin"), pm.UNKNOWN_ACTION);
-    pm.addFromPrincipal(principal, "test/clear-origin", pm.ALLOW_ACTION, pm.EXPIRE_NEVER, 0);
-    Assert.equal(pm.testPermissionFromPrincipal(principal, "test/clear-origin"), pm.ALLOW_ACTION);
+    Assert.equal(
+      pm.testPermissionFromPrincipal(principal, "test/clear-origin"),
+      pm.UNKNOWN_ACTION
+    );
+    pm.addFromPrincipal(
+      principal,
+      "test/clear-origin",
+      pm.ALLOW_ACTION,
+      pm.EXPIRE_NEVER,
+      0
+    );
+    Assert.equal(
+      pm.testPermissionFromPrincipal(principal, "test/clear-origin"),
+      pm.ALLOW_ACTION
+    );
   }
 
-  Services.obs.notifyObservers(null, 'clear-origin-attributes-data', aData);
+  Services.obs.notifyObservers(null, "clear-origin-attributes-data", aData);
 
   var length = aEntries.length;
-  for (let i=0; i<length; ++i) {
-    Assert.equal(pm.testPermissionFromPrincipal(principals[i], 'test/clear-origin'), aResults[i]);
+  for (let i = 0; i < length; ++i) {
+    Assert.equal(
+      pm.testPermissionFromPrincipal(principals[i], "test/clear-origin"),
+      aResults[i]
+    );
 
     
     if (aResults[i] == pm.ALLOW_ACTION) {
-      pm.removeFromPrincipal(principals[i], 'test/clear-origin');
+      pm.removeFromPrincipal(principals[i], "test/clear-origin");
     }
   }
 }
 
-function run_test()
-{
+function run_test() {
   do_get_profile();
 
-  pm = Cc["@mozilla.org/permissionmanager;1"]
-         .getService(Ci.nsIPermissionManager);
+  pm = Cc["@mozilla.org/permissionmanager;1"].getService(
+    Ci.nsIPermissionManager
+  );
 
   let entries = [
-    { origin: 'http://example.com', originAttributes: {} },
-    { origin: 'http://example.com', originAttributes: { inIsolatedMozBrowser: true } },
+    { origin: "http://example.com", originAttributes: {} },
+    {
+      origin: "http://example.com",
+      originAttributes: { inIsolatedMozBrowser: true },
+    },
   ];
 
   
-  test(entries, getData({}), [ pm.UNKNOWN_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
+  test(entries, getData({}), [
+    pm.UNKNOWN_ACTION,
+    pm.UNKNOWN_ACTION,
+    pm.ALLOW_ACTION,
+    pm.ALLOW_ACTION,
+  ]);
 
   
   
-  test(entries, getData({ inIsolatedMozBrowser: true}), [ pm.ALLOW_ACTION, pm.UNKNOWN_ACTION, pm.ALLOW_ACTION, pm.ALLOW_ACTION ]);
+  test(entries, getData({ inIsolatedMozBrowser: true }), [
+    pm.ALLOW_ACTION,
+    pm.UNKNOWN_ACTION,
+    pm.ALLOW_ACTION,
+    pm.ALLOW_ACTION,
+  ]);
 }

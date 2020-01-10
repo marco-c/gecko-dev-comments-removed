@@ -3,8 +3,7 @@
 
 
 
-function getPrincipalFromURIString(uriStr)
-{
+function getPrincipalFromURIString(uriStr) {
   let uri = NetUtil.newURI(uriStr);
   return Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
 }
@@ -15,29 +14,61 @@ function run_test() {
   
   let principal = getPrincipalFromURIString("file:///foo/bar");
   pm.addFromPrincipal(principal, "test/local-files", pm.ALLOW_ACTION, 0, 0);
-  Assert.equal(pm.testPermissionFromPrincipal(principal, "test/local-files"), pm.ALLOW_ACTION);
+  Assert.equal(
+    pm.testPermissionFromPrincipal(principal, "test/local-files"),
+    pm.ALLOW_ACTION
+  );
 
   
   let witnessPrincipal = getPrincipalFromURIString("file:///bar/foo");
-  Assert.equal(pm.testPermissionFromPrincipal(witnessPrincipal, "test/local-files"), pm.UNKNOWN_ACTION);
+  Assert.equal(
+    pm.testPermissionFromPrincipal(witnessPrincipal, "test/local-files"),
+    pm.UNKNOWN_ACTION
+  );
 
   
   let rootPrincipal = getPrincipalFromURIString("file:///");
   pm.addFromPrincipal(rootPrincipal, "test/local-files", pm.ALLOW_ACTION, 0, 0);
-  Assert.equal(pm.testPermissionFromPrincipal(witnessPrincipal, "test/local-files"), pm.UNKNOWN_ACTION);
+  Assert.equal(
+    pm.testPermissionFromPrincipal(witnessPrincipal, "test/local-files"),
+    pm.UNKNOWN_ACTION
+  );
 
   
   let schemeRootPrincipal = getPrincipalFromURIString("file://");
-  pm.addFromPrincipal(schemeRootPrincipal, "test/local-files", pm.ALLOW_ACTION, 0, 0);
-  Assert.equal(pm.testPermissionFromPrincipal(witnessPrincipal, "test/local-files"), pm.UNKNOWN_ACTION);
+  pm.addFromPrincipal(
+    schemeRootPrincipal,
+    "test/local-files",
+    pm.ALLOW_ACTION,
+    0,
+    0
+  );
+  Assert.equal(
+    pm.testPermissionFromPrincipal(witnessPrincipal, "test/local-files"),
+    pm.UNKNOWN_ACTION
+  );
 
   
-  let fileInDirPrincipal = getPrincipalFromURIString("file:///foo/bar/foobar.txt");
-  Assert.equal(pm.testPermissionFromPrincipal(fileInDirPrincipal, "test/local-files"), pm.UNKNOWN_ACTION);
+  let fileInDirPrincipal = getPrincipalFromURIString(
+    "file:///foo/bar/foobar.txt"
+  );
+  Assert.equal(
+    pm.testPermissionFromPrincipal(fileInDirPrincipal, "test/local-files"),
+    pm.UNKNOWN_ACTION
+  );
 
   
   pm.removeFromPrincipal(principal, "test/local-files");
-  Assert.equal(pm.testPermissionFromPrincipal(principal, "test/local-files"), pm.UNKNOWN_ACTION);
-  Assert.equal(pm.testPermissionFromPrincipal(witnessPrincipal, "test/local-files"), pm.UNKNOWN_ACTION);
-  Assert.equal(pm.testPermissionFromPrincipal(fileInDirPrincipal, "test/local-files"), pm.UNKNOWN_ACTION);
+  Assert.equal(
+    pm.testPermissionFromPrincipal(principal, "test/local-files"),
+    pm.UNKNOWN_ACTION
+  );
+  Assert.equal(
+    pm.testPermissionFromPrincipal(witnessPrincipal, "test/local-files"),
+    pm.UNKNOWN_ACTION
+  );
+  Assert.equal(
+    pm.testPermissionFromPrincipal(fileInDirPrincipal, "test/local-files"),
+    pm.UNKNOWN_ACTION
+  );
 }

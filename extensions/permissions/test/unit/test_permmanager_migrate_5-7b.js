@@ -1,13 +1,15 @@
 
 
 
-ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
-                               "resource://testing-common/PlacesTestUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesTestUtils",
+  "resource://testing-common/PlacesTestUtils.jsm"
+);
 
 var PERMISSIONS_FILE_NAME = "permissions.sqlite";
 
-function GetPermissionsFile(profile)
-{
+function GetPermissionsFile(profile) {
   let file = profile.clone();
   file.append(PERMISSIONS_FILE_NAME);
   return file;
@@ -35,18 +37,27 @@ add_task(function test() {
       ",expireType INTEGER" +
       ",expireTime INTEGER" +
       ",modificationTime INTEGER" +
-    ")");
+      ")"
+  );
 
   let stmt5Insert = db.createStatement(
     "INSERT INTO moz_hosts (" +
       "id, origin, type, permission, expireType, expireTime, modificationTime" +
-    ") VALUES (" +
+      ") VALUES (" +
       ":id, :origin, :type, :permission, :expireType, :expireTime, :modificationTime" +
-    ")");
+      ")"
+  );
 
   let id = 0;
 
-  function insertOrigin(origin, type, permission, expireType, expireTime, modificationTime) {
+  function insertOrigin(
+    origin,
+    type,
+    permission,
+    expireType,
+    expireTime,
+    modificationTime
+  ) {
     let thisId = id++;
 
     stmt5Insert.bindByName("id", thisId);
@@ -70,7 +81,7 @@ add_task(function test() {
       permission,
       expireType,
       expireTime,
-      modificationTime
+      modificationTime,
     };
   }
 
@@ -100,7 +111,7 @@ add_task(function test() {
     ["http://localhost", "B", 2, 0, 0, 0],
   ];
 
-  let found = expected.map((it) => 0);
+  let found = expected.map(it => 0);
 
   
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
@@ -110,28 +121,43 @@ add_task(function test() {
     let isExpected = false;
 
     expected.forEach((it, i) => {
-      if (permission.principal.origin == it[0] &&
-          permission.type == it[1] &&
-          permission.capability == it[2] &&
-          permission.expireType == it[3] &&
-          permission.expireTime == it[4]) {
+      if (
+        permission.principal.origin == it[0] &&
+        permission.type == it[1] &&
+        permission.capability == it[2] &&
+        permission.expireType == it[3] &&
+        permission.expireTime == it[4]
+      ) {
         isExpected = true;
         found[i]++;
       }
     });
 
-    Assert.ok(isExpected,
-              "Permission " + (isExpected ? "should" : "shouldn't") +
-              " be in permission database: " +
-              permission.principal.origin + ", " +
-              permission.type + ", " +
-              permission.capability + ", " +
-              permission.expireType + ", " +
-              permission.expireTime);
+    Assert.ok(
+      isExpected,
+      "Permission " +
+        (isExpected ? "should" : "shouldn't") +
+        " be in permission database: " +
+        permission.principal.origin +
+        ", " +
+        permission.type +
+        ", " +
+        permission.capability +
+        ", " +
+        permission.expireType +
+        ", " +
+        permission.expireTime
+    );
   }
 
   found.forEach((count, i) => {
-    Assert.ok(count == 1, "Expected count = 1, got count = " + count + " for permission " + expected[i]);
+    Assert.ok(
+      count == 1,
+      "Expected count = 1, got count = " +
+        count +
+        " for permission " +
+        expected[i]
+    );
   });
 
   
@@ -142,13 +168,15 @@ add_task(function test() {
     Assert.ok(!db.tableExists("moz_hosts_is_backup"));
     Assert.ok(!db.tableExists("moz_perms_v6"));
 
-    let mozHostsStmt = db.createStatement("SELECT " +
-                                          "host, type, permission, expireType, expireTime, " +
-                                          "modificationTime, isInBrowserElement " +
-                                          "FROM moz_hosts WHERE id = :id");
+    let mozHostsStmt = db.createStatement(
+      "SELECT " +
+        "host, type, permission, expireType, expireTime, " +
+        "modificationTime, isInBrowserElement " +
+        "FROM moz_hosts WHERE id = :id"
+    );
     try {
       
-      created4.forEach((it) => {
+      created4.forEach(it => {
         mozHostsStmt.reset();
         mozHostsStmt.bindByName("id", it.id);
         mozHostsStmt.executeStep();

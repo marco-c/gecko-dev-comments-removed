@@ -10,8 +10,7 @@ function run_test() {
   test_generator.next();
 }
 
-function continue_test()
-{
+function continue_test() {
   do_run_generator(test_generator);
 }
 
@@ -24,10 +23,16 @@ function* do_run_test() {
   
   
   let permURI1 = NetUtil.newURI("http://example.com");
-  let principal1 = Services.scriptSecurityManager.createCodebasePrincipal(permURI1, {});
+  let principal1 = Services.scriptSecurityManager.createCodebasePrincipal(
+    permURI1,
+    {}
+  );
 
   let permURI2 = NetUtil.newURI("http://example.org");
-  let principal2 = Services.scriptSecurityManager.createCodebasePrincipal(permURI2, {});
+  let principal2 = Services.scriptSecurityManager.createCodebasePrincipal(
+    permURI2,
+    {}
+  );
 
   
   pm.addFromPrincipal(principal1, "test/remove-since", 1);
@@ -57,13 +62,25 @@ function* do_run_test() {
   pm.removeAllSince(since);
 
   
-  Assert.equal(1, pm.testPermissionFromPrincipal(principal1, "test/remove-since"));
+  Assert.equal(
+    1,
+    pm.testPermissionFromPrincipal(principal1, "test/remove-since")
+  );
   
-  Assert.equal(0, pm.testPermissionFromPrincipal(principal1, "test/remove-since-2"));
+  Assert.equal(
+    0,
+    pm.testPermissionFromPrincipal(principal1, "test/remove-since-2")
+  );
 
   
-  Assert.equal(0, pm.testPermissionFromPrincipal(principal2, "test/remove-since"));
-  Assert.equal(0, pm.testPermissionFromPrincipal(principal2, "test/remove-since-2"));
+  Assert.equal(
+    0,
+    pm.testPermissionFromPrincipal(principal2, "test/remove-since")
+  );
+  Assert.equal(
+    0,
+    pm.testPermissionFromPrincipal(principal2, "test/remove-since-2")
+  );
 
   do_finish_generator_test(test_generator);
 }

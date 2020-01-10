@@ -5,33 +5,65 @@ function run_test() {
   let uri = Services.io.newURI("https://example.org");
 
   
-  Assert.equal(Services.perms.testPermission(uri, "camera"), Services.perms.UNKNOWN_ACTION);
+  Assert.equal(
+    Services.perms.testPermission(uri, "camera"),
+    Services.perms.UNKNOWN_ACTION
+  );
 
   
-  Services.prefs.setIntPref("permissions.default.camera", Services.perms.DENY_ACTION);
-  Assert.equal(Services.perms.testPermission(uri, "camera"), Services.perms.DENY_ACTION);
+  Services.prefs.setIntPref(
+    "permissions.default.camera",
+    Services.perms.DENY_ACTION
+  );
+  Assert.equal(
+    Services.perms.testPermission(uri, "camera"),
+    Services.perms.DENY_ACTION
+  );
 
   
   
-  Assert.equal(null, Services.perms.getPermissionObjectForURI(uri, "camera", false));
+  Assert.equal(
+    null,
+    Services.perms.getPermissionObjectForURI(uri, "camera", false)
+  );
 
   
-  Assert.equal(Services.perms.testPermission(uri, "geo"), Services.perms.UNKNOWN_ACTION);
+  Assert.equal(
+    Services.perms.testPermission(uri, "geo"),
+    Services.perms.UNKNOWN_ACTION
+  );
 
   
-  Services.prefs.setIntPref("permissions.default.camera", Services.perms.ALLOW_ACTION);
-  Assert.equal(Services.perms.testPermission(uri, "camera"), Services.perms.ALLOW_ACTION);
+  Services.prefs.setIntPref(
+    "permissions.default.camera",
+    Services.perms.ALLOW_ACTION
+  );
+  Assert.equal(
+    Services.perms.testPermission(uri, "camera"),
+    Services.perms.ALLOW_ACTION
+  );
 
   
   Services.perms.add(uri, "camera", Services.perms.DENY_ACTION);
-  Assert.equal(Services.perms.testPermission(uri, "camera"), Services.perms.DENY_ACTION);
-  Assert.ok(Services.perms.getPermissionObjectForURI(uri, "camera", false) != null);
+  Assert.equal(
+    Services.perms.testPermission(uri, "camera"),
+    Services.perms.DENY_ACTION
+  );
+  Assert.ok(
+    Services.perms.getPermissionObjectForURI(uri, "camera", false) != null
+  );
 
   
   Services.perms.removeAll();
-  Assert.equal(Services.perms.testPermission(uri, "camera"), Services.perms.ALLOW_ACTION);
+  Assert.equal(
+    Services.perms.testPermission(uri, "camera"),
+    Services.perms.ALLOW_ACTION
+  );
 
   
   Services.prefs.clearUserPref("permissions.default.camera");
-  Assert.equal(Services.perms.testPermission(uri, "camera"), Services.perms.UNKNOWN_ACTION);
+  Assert.equal(
+    Services.perms.testPermission(uri, "camera"),
+    Services.perms.UNKNOWN_ACTION
+  );
 }

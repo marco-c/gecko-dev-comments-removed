@@ -10,8 +10,7 @@ function run_test() {
   test_generator.next();
 }
 
-function continue_test()
-{
+function continue_test() {
   do_run_generator(test_generator);
 }
 
@@ -21,62 +20,181 @@ function* do_run_test() {
 
   let pm = Services.perms;
   let permURI = NetUtil.newURI("http://example.com");
-  let principal = Services.scriptSecurityManager.createCodebasePrincipal(permURI, {});
+  let principal = Services.scriptSecurityManager.createCodebasePrincipal(
+    permURI,
+    {}
+  );
 
   let now = Number(Date.now());
 
   
-  pm.addFromPrincipal(principal, "test/expiration-perm-exp", 1, pm.EXPIRE_TIME, now);
-  pm.addFromPrincipal(principal, "test/expiration-session-exp", 1, pm.EXPIRE_SESSION, now);
+  pm.addFromPrincipal(
+    principal,
+    "test/expiration-perm-exp",
+    1,
+    pm.EXPIRE_TIME,
+    now
+  );
+  pm.addFromPrincipal(
+    principal,
+    "test/expiration-session-exp",
+    1,
+    pm.EXPIRE_SESSION,
+    now
+  );
 
   
-  pm.addFromPrincipal(principal, "test/expiration-perm-exp2", 1, pm.EXPIRE_TIME, now + 100);
-  pm.addFromPrincipal(principal, "test/expiration-session-exp2", 1, pm.EXPIRE_SESSION, now + 100);
+  pm.addFromPrincipal(
+    principal,
+    "test/expiration-perm-exp2",
+    1,
+    pm.EXPIRE_TIME,
+    now + 100
+  );
+  pm.addFromPrincipal(
+    principal,
+    "test/expiration-session-exp2",
+    1,
+    pm.EXPIRE_SESSION,
+    now + 100
+  );
 
   
-  pm.addFromPrincipal(principal, "test/expiration-perm-exp3", 1, pm.EXPIRE_TIME, now + 1e6);
-  pm.addFromPrincipal(principal, "test/expiration-session-exp3", 1, pm.EXPIRE_SESSION, now + 1e6);
+  pm.addFromPrincipal(
+    principal,
+    "test/expiration-perm-exp3",
+    1,
+    pm.EXPIRE_TIME,
+    now + 1e6
+  );
+  pm.addFromPrincipal(
+    principal,
+    "test/expiration-session-exp3",
+    1,
+    pm.EXPIRE_SESSION,
+    now + 1e6
+  );
 
   
-  pm.addFromPrincipal(principal, "test/expiration-perm-nexp", 1, pm.EXPIRE_NEVER, 0);
+  pm.addFromPrincipal(
+    principal,
+    "test/expiration-perm-nexp",
+    1,
+    pm.EXPIRE_NEVER,
+    0
+  );
 
   
-  pm.addFromPrincipal(principal, "test/expiration-perm-renewable", 1, pm.EXPIRE_TIME, now + 100);
-  pm.addFromPrincipal(principal, "test/expiration-session-renewable", 1, pm.EXPIRE_SESSION, now + 100);
+  pm.addFromPrincipal(
+    principal,
+    "test/expiration-perm-renewable",
+    1,
+    pm.EXPIRE_TIME,
+    now + 100
+  );
+  pm.addFromPrincipal(
+    principal,
+    "test/expiration-session-renewable",
+    1,
+    pm.EXPIRE_SESSION,
+    now + 100
+  );
 
   
-  pm.updateExpireTime(principal, "test/expiration-perm-renewable", true, now + 100, now + 1e6);
-  pm.updateExpireTime(principal, "test/expiration-session-renewable", true, now + 1e6, now + 100);
+  pm.updateExpireTime(
+    principal,
+    "test/expiration-perm-renewable",
+    true,
+    now + 100,
+    now + 1e6
+  );
+  pm.updateExpireTime(
+    principal,
+    "test/expiration-session-renewable",
+    true,
+    now + 1e6,
+    now + 100
+  );
 
   
-  Assert.equal(1, pm.testPermissionFromPrincipal(principal, "test/expiration-perm-exp3"));
-  Assert.equal(1, pm.testPermissionFromPrincipal(principal, "test/expiration-session-exp3"));
-  Assert.equal(1, pm.testPermissionFromPrincipal(principal, "test/expiration-perm-nexp"));
-  Assert.equal(1, pm.testPermissionFromPrincipal(principal, "test/expiration-perm-renewable"));
-  Assert.equal(1, pm.testPermissionFromPrincipal(principal, "test/expiration-session-renewable"));
+  Assert.equal(
+    1,
+    pm.testPermissionFromPrincipal(principal, "test/expiration-perm-exp3")
+  );
+  Assert.equal(
+    1,
+    pm.testPermissionFromPrincipal(principal, "test/expiration-session-exp3")
+  );
+  Assert.equal(
+    1,
+    pm.testPermissionFromPrincipal(principal, "test/expiration-perm-nexp")
+  );
+  Assert.equal(
+    1,
+    pm.testPermissionFromPrincipal(principal, "test/expiration-perm-renewable")
+  );
+  Assert.equal(
+    1,
+    pm.testPermissionFromPrincipal(
+      principal,
+      "test/expiration-session-renewable"
+    )
+  );
 
   
   do_timeout(10, continue_test);
   yield;
-  Assert.equal(0, pm.testPermissionFromPrincipal(principal, "test/expiration-perm-exp"));
-  Assert.equal(0, pm.testPermissionFromPrincipal(principal, "test/expiration-session-exp"));
+  Assert.equal(
+    0,
+    pm.testPermissionFromPrincipal(principal, "test/expiration-perm-exp")
+  );
+  Assert.equal(
+    0,
+    pm.testPermissionFromPrincipal(principal, "test/expiration-session-exp")
+  );
 
   
   do_timeout(200, continue_test);
   yield;
-  Assert.equal(0, pm.testPermissionFromPrincipal(principal, "test/expiration-perm-exp2"));
-  Assert.equal(0, pm.testPermissionFromPrincipal(principal, "test/expiration-session-exp2"));
+  Assert.equal(
+    0,
+    pm.testPermissionFromPrincipal(principal, "test/expiration-perm-exp2")
+  );
+  Assert.equal(
+    0,
+    pm.testPermissionFromPrincipal(principal, "test/expiration-session-exp2")
+  );
 
   
-  Assert.equal(null, pm.getPermissionObject(principal, "test/expiration-perm-exp", false));
-  Assert.equal(null, pm.getPermissionObject(principal, "test/expiration-session-exp", false));
-  Assert.equal(null, pm.getPermissionObject(principal, "test/expiration-perm-exp2", false));
-  Assert.equal(null, pm.getPermissionObject(principal, "test/expiration-session-exp2", false));
+  Assert.equal(
+    null,
+    pm.getPermissionObject(principal, "test/expiration-perm-exp", false)
+  );
+  Assert.equal(
+    null,
+    pm.getPermissionObject(principal, "test/expiration-session-exp", false)
+  );
+  Assert.equal(
+    null,
+    pm.getPermissionObject(principal, "test/expiration-perm-exp2", false)
+  );
+  Assert.equal(
+    null,
+    pm.getPermissionObject(principal, "test/expiration-session-exp2", false)
+  );
 
   
-  Assert.equal(1, pm.testPermissionFromPrincipal(principal, "test/expiration-perm-renewable"));
-  Assert.equal(1, pm.testPermissionFromPrincipal(principal, "test/expiration-session-renewable"));
+  Assert.equal(
+    1,
+    pm.testPermissionFromPrincipal(principal, "test/expiration-perm-renewable")
+  );
+  Assert.equal(
+    1,
+    pm.testPermissionFromPrincipal(
+      principal,
+      "test/expiration-session-renewable"
+    )
+  );
 
   do_finish_generator_test(test_generator);
 }
-
