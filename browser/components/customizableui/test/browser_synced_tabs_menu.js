@@ -176,6 +176,16 @@ add_task(asyncCleanup);
 
 
 add_task(async function() {
+  gSync.updateAllUI({ status: UIState.STATUS_SIGNED_IN, syncEnabled: false });
+  await openPrefsFromMenuPanel(
+    "PanelUI-remotetabs-syncdisabled",
+    "synced-tabs"
+  );
+});
+add_task(asyncCleanup);
+
+
+add_task(async function() {
   gSync.updateAllUI({
     status: UIState.STATUS_NOT_VERIFIED,
     email: "foo@bar.com",
@@ -197,6 +207,7 @@ add_task(async function() {
 add_task(async function() {
   gSync.updateAllUI({
     status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
     email: "foo@bar.com",
     lastSync: new Date(),
   });
@@ -223,6 +234,7 @@ add_task(async function() {
 add_task(async function() {
   gSync.updateAllUI({
     status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
     email: "foo@bar.com",
     lastSync: new Date(),
   });
@@ -396,6 +408,7 @@ add_task(async function() {
 
   gSync.updateAllUI({
     status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
     lastSync: new Date(),
     email: "foo@bar.com",
   });

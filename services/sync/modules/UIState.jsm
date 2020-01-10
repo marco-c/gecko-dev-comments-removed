@@ -111,7 +111,9 @@ const UIStateInternal = {
   async refreshState() {
     const newState = {};
     await this._refreshFxAState(newState);
-    this._setLastSyncTime(newState); 
+    if (newState.syncEnabled) {
+      this._setLastSyncTime(newState); 
+    }
     this._state = newState;
 
     this.notifyStateUpdated();
@@ -145,14 +147,14 @@ const UIStateInternal = {
 
   async _populateWithUserData(state, userData) {
     let status;
+    let syncUserName = Services.prefs.getStringPref(
+      "services.sync.username",
+      ""
+    );
     if (!userData) {
       
       
       
-      let syncUserName = Services.prefs.getStringPref(
-        "services.sync.username",
-        ""
-      );
       if (syncUserName) {
         state.email = syncUserName;
         status = STATUS_LOGIN_FAILED;
@@ -171,6 +173,7 @@ const UIStateInternal = {
       }
       state.uid = userData.uid;
       state.email = userData.email;
+      state.syncEnabled = !!syncUserName;
     }
     state.status = status;
   },
