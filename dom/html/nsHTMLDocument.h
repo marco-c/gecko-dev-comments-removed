@@ -9,7 +9,6 @@
 #include "mozilla/Attributes.h"
 #include "nsContentList.h"
 #include "mozilla/dom/Document.h"
-#include "nsIHTMLDocument.h"
 #include "nsIHTMLCollection.h"
 #include "nsIScriptElement.h"
 #include "nsTArray.h"
@@ -35,7 +34,7 @@ class WindowProxyHolder;
 }  
 }  
 
-class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
+class nsHTMLDocument : public mozilla::dom::Document {
  protected:
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
   typedef mozilla::dom::Document Document;
@@ -70,7 +69,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   virtual bool UseWidthDeviceWidthFallbackViewport() const override;
 
  public:
-  
   virtual Element* GetUnfocusedKeyEventTarget() override;
 
   nsContentList* GetExistingForms() const { return mForms; }
@@ -82,9 +80,23 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
                    JS::MutableHandle<JS::Value> aRetval,
                    mozilla::ErrorResult& aError);
 
-  virtual void AddedForm() override;
-  virtual void RemovedForm() override;
-  virtual int32_t GetNumFormsSynchronous() override;
+  
+
+
+
+  void AddedForm();
+  
+
+
+
+  void RemovedForm();
+  
+
+
+
+  
+  
+  int32_t GetNumFormsSynchronous();
   void SetIsXHTML(bool aXHTML) { mType = (aXHTML ? eXHTML : eHTML); }
 
   virtual nsresult Clone(mozilla::dom::NodeInfo*,
@@ -216,9 +228,5 @@ inline nsHTMLDocument* Document::AsHTMLDocument() {
 
 }  
 }  
-
-#define NS_HTML_DOCUMENT_INTERFACE_TABLE_BEGIN(_class) \
-  NS_DOCUMENT_INTERFACE_TABLE_BEGIN(_class)            \
-  NS_INTERFACE_TABLE_ENTRY(_class, nsIHTMLDocument)
 
 #endif 

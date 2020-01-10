@@ -17,13 +17,13 @@
 #include "nsIFactory.h"
 #include "nsISupports.h"
 #include "mozilla/dom/Document.h"
-#include "nsIHTMLDocument.h"
 #include "nsCOMPtr.h"
 #include "nsIContentSerializer.h"
 #include "mozilla/Encoding.h"
 #include "nsIOutputStream.h"
 #include "nsRange.h"
 #include "nsGkAtoms.h"
+#include "nsHTMLDocument.h"
 #include "nsIContent.h"
 #include "nsIScriptContext.h"
 #include "nsIScriptGlobalObject.h"
@@ -1347,8 +1347,7 @@ nsHTMLCopyEncoder::SetSelection(Selection* aSelection) {
   
 
   
-  nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
-  if (!(htmlDoc && mDocument->IsHTMLDocument())) {
+  if (!(mDocument && mDocument->IsHTMLDocument())) {
     mIsTextWidget = true;
     mEncodingScope.mSelection = aSelection;
     

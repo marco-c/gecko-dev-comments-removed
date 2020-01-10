@@ -28,7 +28,7 @@
 
 #include "nsPIDOMWindow.h"
 #include "mozilla/dom/Document.h"
-#include "nsIHTMLDocument.h"
+#include "nsHTMLDocument.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
 #include "nsIURI.h"
@@ -124,8 +124,7 @@ static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
     
     
     
-    nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(&aDocument);
-    if (!htmlDoc) {
+    if (!aDocument.IsHTMLOrXHTML()) {
       selForcedTextPlain = true;
     }
   }
@@ -562,10 +561,6 @@ static nsresult AppendDOMNode(nsITransferable* aTransferable,
   
   
   
-  DebugOnly<nsCOMPtr<nsIHTMLDocument>> htmlDoc =
-      nsCOMPtr<nsIHTMLDocument>(do_QueryInterface(document, &rv));
-  NS_ENSURE_SUCCESS(rv, NS_OK);
-
   NS_ENSURE_TRUE(document->IsHTMLDocument(), NS_OK);
 
   

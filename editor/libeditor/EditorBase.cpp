@@ -83,7 +83,6 @@
 #include "nsIEditorObserver.h"         
 #include "nsIEditorSpellCheck.h"       
 #include "nsIFrame.h"                  
-#include "nsIHTMLDocument.h"           
 #include "nsIInlineSpellChecker.h"     
 #include "nsNameSpaceManager.h"        
 #include "nsINode.h"                   
