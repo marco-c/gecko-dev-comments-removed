@@ -105,21 +105,6 @@ class ReferrerInfo : public nsIReferrerInfo {
   
 
 
-  static nsresult HandleSecureToInsecureReferral(nsIURI* aOriginalURI,
-                                                 nsIURI* aURI, uint32_t aPolicy,
-                                                 bool& aAllowed);
-
-  
-
-
-
-
-
-  static bool IsCrossOriginRequest(nsIHttpChannel* aChannel);
-
-  
-
-
 
 
 
@@ -194,6 +179,19 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
   bool HasRelNoReferrer(nsINode* aNode) const;
+
+  
+
+
+
+
+
+  bool IsCrossOriginRequest(nsIHttpChannel* aChannel) const;
+
+  
+
+
+  nsresult HandleSecureToInsecureReferral(nsIURI* aURI, bool& aAllowed) const;
 
   
 
