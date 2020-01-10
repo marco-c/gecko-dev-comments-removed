@@ -1,6 +1,14 @@
 
 
 
+
+
+
+
+
+
+requestLongerTimeout(2);
+
 add_task(async function() {
   let url =
     "http://mochi.test:8888/browser/browser/base/content/test/general/discovery.html";
@@ -73,7 +81,7 @@ async function searchDiscovery() {
     });
 
     await promiseLinkAdded;
-    await new Promise(resolve => executeSoon(resolve));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     if (browser.engines) {
       info(`Found ${browser.engines.length} engines`);
@@ -112,7 +120,7 @@ async function searchDiscovery() {
   });
 
   await promiseLinkAdded;
-  await new Promise(resolve => executeSoon(resolve));
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
   ok(browser.engines, "has engines");
   is(browser.engines.length, 1, "only one engine");
