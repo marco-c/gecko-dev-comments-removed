@@ -374,11 +374,10 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
 
 
 
-
-  async simulateScreenOrientationChange(type, angle, deviceChange) {
+  async simulateScreenOrientationChange(type, angle, isViewportRotated = false) {
     
     
-    if (deviceChange) {
+    if (!isViewportRotated) {
       this.setScreenOrientation(type, angle);
       return;
     }
