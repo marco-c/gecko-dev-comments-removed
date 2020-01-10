@@ -41,6 +41,8 @@
 using namespace js;
 using namespace js::jit;
 
+using JS::TraceKind;
+
 using mozilla::AssertedCast;
 using mozilla::Maybe;
 
@@ -926,33 +928,89 @@ void BaselineInterpreterCodeGen::pushScriptNameArg(Register scratch1,
   pushArg(scratch2);
 }
 
-template <>
-void BaselineCompilerCodeGen::pushScriptObjectArg(ScriptObjectType type) {
-  JSScript* script = handler.script();
+static gc::Cell* GetScriptGCThing(JSScript* script, jsbytecode* pc,
+                                  ScriptGCThingType type) {
   switch (type) {
-    case ScriptObjectType::RegExp:
-      pushArg(ImmGCPtr(script->getRegExp(handler.pc())));
-      return;
-    case ScriptObjectType::Function:
-      pushArg(ImmGCPtr(script->getFunction(handler.pc())));
-      return;
+    case ScriptGCThingType::RegExp:
+      return script->getRegExp(pc);
+    case ScriptGCThingType::Function:
+      return script->getFunction(pc);
+    case ScriptGCThingType::Scope:
+      return script->getScope(pc);
+    case ScriptGCThingType::BigInt:
+      return script->getBigInt(pc);
   }
-  MOZ_CRASH("Unexpected object type");
+  MOZ_CRASH("Unexpected GCThing type");
 }
 
 template <>
-void BaselineInterpreterCodeGen::pushScriptObjectArg(ScriptObjectType type) {
-  MOZ_CRASH("NYI: interpreter pushScriptObjectArg");
+void BaselineCompilerCodeGen::loadScriptGCThing(ScriptGCThingType type,
+                                                Register dest,
+                                                Register scratch) {
+  gc::Cell* thing = GetScriptGCThing(handler.script(), handler.pc(), type);
+  masm.movePtr(ImmGCPtr(thing), dest);
 }
 
 template <>
-void BaselineCompilerCodeGen::pushScriptScopeArg() {
-  pushArg(ImmGCPtr(handler.script()->getScope(handler.pc())));
+void BaselineInterpreterCodeGen::loadScriptGCThing(ScriptGCThingType type,
+                                                   Register dest,
+                                                   Register scratch) {
+  MOZ_ASSERT(dest != scratch);
+
+  
+  masm.loadPtr(frame.addressOfInterpreterPC(), scratch);
+  LoadInt32Operand(masm, scratch, scratch);
+
+  
+  loadScript(dest);
+  masm.loadPtr(Address(dest, JSScript::offsetOfPrivateScriptData()), dest);
+  masm.loadPtr(BaseIndex(dest, scratch, ScalePointer,
+                         PrivateScriptData::offsetOfGCThings()),
+               dest);
+
+  
+  switch (type) {
+    case ScriptGCThingType::RegExp:
+    case ScriptGCThingType::Function:
+      
+      static_assert(uintptr_t(TraceKind::Object) == 0,
+                    "Unexpected tag bits for object GCCellPtr");
+      break;
+    case ScriptGCThingType::Scope:
+    case ScriptGCThingType::BigInt:
+      
+      
+      static_assert(uintptr_t(TraceKind::Scope) >= JS::OutOfLineTraceKindMask,
+                    "Expected Scopes to have OutOfLineTraceKindMask tag");
+      static_assert(uintptr_t(TraceKind::BigInt) >= JS::OutOfLineTraceKindMask,
+                    "Expected BigInts to have OutOfLineTraceKindMask tag");
+      masm.xorPtr(Imm32(JS::OutOfLineTraceKindMask), dest);
+      break;
+  }
+
+#ifdef DEBUG
+  
+  Label ok;
+  masm.branchTestPtr(Assembler::Zero, dest, Imm32(0b111), &ok);
+  masm.assumeUnreachable("GC pointer with tag bits set");
+  masm.bind(&ok);
+#endif
 }
 
 template <>
-void BaselineInterpreterCodeGen::pushScriptScopeArg() {
-  MOZ_CRASH("NYI: interpreter pushScriptScopeArg");
+void BaselineCompilerCodeGen::pushScriptGCThingArg(ScriptGCThingType type,
+                                                   Register scratch1,
+                                                   Register scratch2) {
+  gc::Cell* thing = GetScriptGCThing(handler.script(), handler.pc(), type);
+  pushArg(ImmGCPtr(thing));
+}
+
+template <>
+void BaselineInterpreterCodeGen::pushScriptGCThingArg(ScriptGCThingType type,
+                                                      Register scratch1,
+                                                      Register scratch2) {
+  loadScriptGCThing(type, scratch1, scratch2);
+  pushArg(scratch1);
 }
 
 template <>
@@ -1530,7 +1588,10 @@ bool BaselineCompilerCodeGen::emitTraceLoggerEnter() {
 
 template <>
 bool BaselineInterpreterCodeGen::emitTraceLoggerEnter() {
-  MOZ_CRASH("NYI: interpreter emitTraceLoggerEnter");
+  if (JS::TraceLoggerSupported()) {
+    MOZ_CRASH("NYI: interpreter emitTraceLoggerEnter");
+  }
+  return true;
 }
 
 template <typename Handler>
@@ -2466,7 +2527,12 @@ bool BaselineCompilerCodeGen::emit_JSOP_BIGINT() {
 
 template <>
 bool BaselineInterpreterCodeGen::emit_JSOP_BIGINT() {
-  MOZ_CRASH("NYI: interpreter JSOP_BIGINT");
+  Register scratch1 = R0.scratchReg();
+  Register scratch2 = R1.scratchReg();
+  loadScriptGCThing(ScriptGCThingType::BigInt, scratch1, scratch2);
+  masm.tagValue(JSVAL_TYPE_BIGINT, scratch1, R0);
+  frame.push(R0);
+  return true;
 }
 
 template <>
@@ -2579,7 +2645,8 @@ bool BaselineInterpreterCodeGen::emit_JSOP_CALLSITEOBJ() {
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_JSOP_REGEXP() {
   prepareVMCall();
-  pushScriptObjectArg(ScriptObjectType::RegExp);
+  pushScriptGCThingArg(ScriptGCThingType::RegExp, R0.scratchReg(),
+                       R1.scratchReg());
 
   using Fn = JSObject* (*)(JSContext*, Handle<RegExpObject*>);
   if (!callVM<Fn, CloneRegExpObject>()) {
@@ -2598,7 +2665,8 @@ bool BaselineCodeGen<Handler>::emit_JSOP_LAMBDA() {
   masm.loadPtr(frame.addressOfEnvironmentChain(), R0.scratchReg());
 
   pushArg(R0.scratchReg());
-  pushScriptObjectArg(ScriptObjectType::Function);
+  pushScriptGCThingArg(ScriptGCThingType::Function, R0.scratchReg(),
+                       R1.scratchReg());
 
   using Fn = JSObject* (*)(JSContext*, HandleFunction, HandleObject);
   if (!callVM<Fn, js::Lambda>()) {
@@ -2621,7 +2689,8 @@ bool BaselineCodeGen<Handler>::emit_JSOP_LAMBDA_ARROW() {
 
   pushArg(R0);
   pushArg(R2.scratchReg());
-  pushScriptObjectArg(ScriptObjectType::Function);
+  pushScriptGCThingArg(ScriptGCThingType::Function, R0.scratchReg(),
+                       R1.scratchReg());
 
   using Fn =
       JSObject* (*)(JSContext*, HandleFunction, HandleObject, HandleValue);
@@ -4738,6 +4807,32 @@ static void LoadBaselineScriptResumeEntries(MacroAssembler& masm,
   masm.addPtr(scratch, dest);
 }
 
+template <typename Handler>
+void BaselineCodeGen<Handler>::emitInterpJumpToResumeEntry(Register script,
+                                                           Register resumeIndex,
+                                                           Register scratch) {
+  
+  masm.loadPtr(Address(script, JSScript::offsetOfScriptData()), script);
+
+  
+  masm.load32(Address(script, SharedScriptData::offsetOfResumeOffsetsOffset()),
+              scratch);
+  masm.computeEffectiveAddress(BaseIndex(scratch, resumeIndex, TimesFour),
+                               scratch);
+  masm.load32(BaseIndex(script, scratch, TimesOne), resumeIndex);
+
+  
+  masm.load32(Address(script, SharedScriptData::offsetOfCodeOffset()), scratch);
+  masm.addPtr(scratch, script);
+
+  
+  masm.addPtr(resumeIndex, script);
+  Address pcAddr(BaselineFrameReg,
+                 BaselineFrame::reverseOffsetOfInterpreterPC());
+  masm.storePtr(script, pcAddr);
+  emitJumpToInterpretOpLabel();
+}
+
 template <>
 void BaselineCompilerCodeGen::jumpToResumeEntry(Register resumeIndex,
                                                 Register scratch1,
@@ -4753,7 +4848,8 @@ template <>
 void BaselineInterpreterCodeGen::jumpToResumeEntry(Register resumeIndex,
                                                    Register scratch1,
                                                    Register scratch2) {
-  MOZ_CRASH("NYI: interpreter jumpToResumeEntry");
+  loadScript(scratch1);
+  emitInterpJumpToResumeEntry(scratch1, resumeIndex, scratch2);
 }
 
 template <typename Handler>
@@ -4837,7 +4933,8 @@ bool BaselineCodeGen<Handler>::emit_JSOP_PUSHLEXICALENV() {
   prepareVMCall();
   masm.loadBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
 
-  pushScriptScopeArg();
+  pushScriptGCThingArg(ScriptGCThingType::Scope, R1.scratchReg(),
+                       R2.scratchReg());
   pushArg(R0.scratchReg());
 
   using Fn = bool (*)(JSContext*, BaselineFrame*, Handle<LexicalScope*>);
@@ -4934,7 +5031,8 @@ template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_JSOP_PUSHVARENV() {
   prepareVMCall();
   masm.loadBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
-  pushScriptScopeArg();
+  pushScriptGCThingArg(ScriptGCThingType::Scope, R1.scratchReg(),
+                       R2.scratchReg());
   pushArg(R0.scratchReg());
 
   using Fn = bool (*)(JSContext*, BaselineFrame*, HandleScope);
@@ -4958,10 +5056,11 @@ bool BaselineCodeGen<Handler>::emit_JSOP_ENTERWITH() {
 
   
   prepareVMCall();
-  masm.loadBaselineFramePtr(BaselineFrameReg, R1.scratchReg());
 
-  pushScriptScopeArg();
+  pushScriptGCThingArg(ScriptGCThingType::Scope, R1.scratchReg(),
+                       R2.scratchReg());
   pushArg(R0);
+  masm.loadBaselineFramePtr(BaselineFrameReg, R1.scratchReg());
   pushArg(R1.scratchReg());
 
   using Fn =
@@ -5274,15 +5373,22 @@ bool BaselineCodeGen<Handler>::emit_JSOP_TOSTRING() {
   return true;
 }
 
+static constexpr uint32_t TableSwitchOpLowOffset = 1 * JUMP_OFFSET_LEN;
+static constexpr uint32_t TableSwitchOpHighOffset = 2 * JUMP_OFFSET_LEN;
+static constexpr uint32_t TableSwitchOpFirstResumeIndexOffset =
+    3 * JUMP_OFFSET_LEN;
+
 template <>
 void BaselineCompilerCodeGen::emitGetTableSwitchIndex(ValueOperand val,
-                                                      Register dest) {
+                                                      Register dest,
+                                                      Register scratch1,
+                                                      Register scratch2) {
   jsbytecode* pc = handler.pc();
   jsbytecode* defaultpc = pc + GET_JUMP_OFFSET(pc);
   Label* defaultLabel = handler.labelOf(defaultpc);
 
-  int32_t low = GET_JUMP_OFFSET(pc + 1 * JUMP_OFFSET_LEN);
-  int32_t high = GET_JUMP_OFFSET(pc + 2 * JUMP_OFFSET_LEN);
+  int32_t low = GET_JUMP_OFFSET(pc + TableSwitchOpLowOffset);
+  int32_t high = GET_JUMP_OFFSET(pc + TableSwitchOpHighOffset);
   int32_t length = high - low + 1;
 
   
@@ -5299,8 +5405,35 @@ void BaselineCompilerCodeGen::emitGetTableSwitchIndex(ValueOperand val,
 
 template <>
 void BaselineInterpreterCodeGen::emitGetTableSwitchIndex(ValueOperand val,
-                                                         Register dest) {
-  MOZ_CRASH("NYI: interpreter emitTableSwitchJumpTableIndex");
+                                                         Register dest,
+                                                         Register scratch1,
+                                                         Register scratch2) {
+  
+  
+  Label done, jumpToDefault;
+  masm.branchTestInt32(Assembler::NotEqual, val, &jumpToDefault);
+  masm.unboxInt32(val, dest);
+
+  masm.loadPtr(frame.addressOfInterpreterPC(), scratch1);
+
+  Address lowAddr(scratch1, sizeof(jsbytecode) + TableSwitchOpLowOffset);
+  Address highAddr(scratch1, sizeof(jsbytecode) + TableSwitchOpHighOffset);
+
+  
+  masm.branch32(Assembler::LessThan, highAddr, dest, &jumpToDefault);
+
+  
+  masm.load32(lowAddr, scratch2);
+  masm.branch32(Assembler::GreaterThan, scratch2, dest, &jumpToDefault);
+
+  
+  masm.sub32(scratch2, dest);
+  masm.jump(&done);
+
+  masm.bind(&jumpToDefault);
+  emitJump();
+
+  masm.bind(&done);
 }
 
 template <>
@@ -5312,7 +5445,7 @@ void BaselineCompilerCodeGen::emitTableSwitchJump(Register key,
   
   
   uint32_t firstResumeIndex =
-      GET_RESUMEINDEX(handler.pc() + 3 * JUMP_OFFSET_LEN);
+      GET_RESUMEINDEX(handler.pc() + TableSwitchOpFirstResumeIndexOffset);
   LoadBaselineScriptResumeEntries(masm, handler.script(), scratch1, scratch2);
   masm.loadPtr(BaseIndex(scratch1, key, ScaleFromElemWidth(sizeof(uintptr_t)),
                          firstResumeIndex * sizeof(uintptr_t)),
@@ -5324,7 +5457,13 @@ template <>
 void BaselineInterpreterCodeGen::emitTableSwitchJump(Register key,
                                                      Register scratch1,
                                                      Register scratch2) {
-  MOZ_CRASH("NYI: interpreter emitTableSwitchJump");
+  
+  masm.loadPtr(frame.addressOfInterpreterPC(), scratch1);
+  LoadUint24Operand(masm, scratch1, TableSwitchOpFirstResumeIndexOffset,
+                    scratch1);
+
+  masm.add32(key, scratch1);
+  jumpToResumeEntry(scratch1, key, scratch2);
 }
 
 template <typename Handler>
@@ -5341,7 +5480,7 @@ bool BaselineCodeGen<Handler>::emit_JSOP_TABLESWITCH() {
 
   
   
-  emitGetTableSwitchIndex(R0, key);
+  emitGetTableSwitchIndex(R0, key, scratch1, scratch2);
 
   
   emitTableSwitchJump(key, scratch1, scratch2);
@@ -5872,7 +6011,17 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
   emitEnterBaseline();
 
   masm.bind(&noBaselineScript);
-  MOZ_CRASH("NYI: enter interpreted generator");
+
+  
+  Address flagsAddr(BaselineFrameReg, BaselineFrame::reverseOffsetOfFlags());
+  Address scriptAddr(BaselineFrameReg,
+                     BaselineFrame::reverseOffsetOfInterpreterScript());
+  masm.or32(Imm32(BaselineFrame::RUNNING_IN_INTERPRETER), flagsAddr);
+  masm.storePtr(script, scriptAddr);
+
+  
+  emitInterpJumpToResumeEntry(script, resumeIndex, scratch);
+  return true;
 }
 
 template <typename Handler>
@@ -6369,7 +6518,8 @@ bool BaselineCodeGen<Handler>::emit_JSOP_FUNWITHPROTO() {
   prepareVMCall();
   pushArg(R0.scratchReg());
   pushArg(R1.scratchReg());
-  pushScriptObjectArg(ScriptObjectType::Function);
+  pushScriptGCThingArg(ScriptGCThingType::Function, R0.scratchReg(),
+                       R1.scratchReg());
 
   using Fn =
       JSObject* (*)(JSContext*, HandleFunction, HandleObject, HandleObject);

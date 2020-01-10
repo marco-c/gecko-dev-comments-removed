@@ -1474,9 +1474,13 @@ class alignas(uintptr_t) PrivateScriptData final {
   explicit PrivateScriptData(uint32_t ngcthings);
 
  public:
+  static constexpr size_t offsetOfGCThings() {
+    return sizeof(PrivateScriptData);
+  }
+
   
   mozilla::Span<JS::GCCellPtr> gcthings() {
-    size_t offset = sizeof(PrivateScriptData);
+    size_t offset = offsetOfGCThings();
     return mozilla::MakeSpan(offsetToPointer<JS::GCCellPtr>(offset), ngcthings);
   }
 
@@ -1777,6 +1781,11 @@ class alignas(uintptr_t) SharedScriptData final {
 
   static constexpr size_t offsetOfCodeOffset() {
     return offsetof(SharedScriptData, codeOffset_);
+  }
+  static constexpr size_t offsetOfResumeOffsetsOffset() {
+    
+    
+    return offsetof(SharedScriptData, optArrayOffset_);
   }
   static constexpr size_t offsetOfNfixed() {
     return offsetof(SharedScriptData, nfixed);
@@ -2551,6 +2560,9 @@ class JSScript : public js::gc::TenuredCell {
   }
   static constexpr size_t offsetOfScriptData() {
     return offsetof(JSScript, scriptData_);
+  }
+  static constexpr size_t offsetOfPrivateScriptData() {
+    return offsetof(JSScript, data_);
   }
   static constexpr size_t offsetOfJitScript() {
     return offsetof(JSScript, jitScript_);

@@ -256,6 +256,8 @@ namespace jit {
   _(JSOP_INC)                   \
   _(JSOP_DEC)
 
+enum class ScriptGCThingType { RegExp, Function, Scope, BigInt };
+
 
 
 
@@ -318,10 +320,11 @@ class BaselineCodeGen {
 
   
   
-  enum class ScriptObjectType { RegExp, Function };
-  void pushScriptObjectArg(ScriptObjectType type);
+  void loadScriptGCThing(ScriptGCThingType type, Register dest,
+                         Register scratch);
+  void pushScriptGCThingArg(ScriptGCThingType type, Register scratch1,
+                            Register scratch2);
   void pushScriptNameArg(Register scratch1, Register scratch2);
-  void pushScriptScopeArg();
 
   
   void pushUint8BytecodeOperandArg(Register scratch);
@@ -407,6 +410,8 @@ class BaselineCodeGen {
   MOZ_MUST_USE bool emitEnterGeneratorCode(Register script,
                                            Register resumeIndex,
                                            Register scratch);
+  void emitInterpJumpToResumeEntry(Register script, Register resumeIndex,
+                                   Register scratch);
   void emitJumpToInterpretOpLabel();
 
   MOZ_MUST_USE bool emitIncExecutionProgressCounter(Register scratch);
@@ -444,7 +449,8 @@ class BaselineCodeGen {
 
   
   
-  void emitGetTableSwitchIndex(ValueOperand val, Register dest);
+  void emitGetTableSwitchIndex(ValueOperand val, Register dest,
+                               Register scratch1, Register scratch2);
 
   
   
