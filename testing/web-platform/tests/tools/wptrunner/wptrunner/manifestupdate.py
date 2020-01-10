@@ -409,6 +409,13 @@ class PropertyUpdate(object):
                 print(msg)
 
         
+        
+        
+        new_default = conditions[-1][1] if conditions[-1][0] is None else self.default_value
+        if all(condition[1] == new_default for condition in conditions):
+            conditions = [(None, new_default)]
+
+        
         if (conditions and
             conditions[-1][0] is None and
             conditions[-1][1] == self.default_value):
@@ -450,9 +457,8 @@ class PropertyUpdate(object):
         
         
         
+        
         prev_default = None
-        if full_update:
-            return self._update_conditions_full(property_tree)
 
         current_conditions = self.node.get_conditions(self.property_name)
 
@@ -483,6 +489,23 @@ class PropertyUpdate(object):
                                                            current_conditions)
 
         run_info_with_condition = set()
+
+        if full_update:
+            
+            
+            top_level_props, dependent_props = self.node.root.run_info_properties
+            update_properties = set(top_level_props)
+            for item in dependent_props.itervalues():
+                update_properties |= set(dependent_props)
+            for condition in current_conditions:
+                if (not condition.variables.issubset(update_properties) and
+                    not run_info_by_condition[condition]):
+                    conditions.append((condition.condition_node,
+                                       self.from_ini_value(condition.value)))
+            new_conditions, errors = self._update_conditions_full(property_tree,
+                                                                  prev_default=prev_default)
+            conditions.extend(new_conditions)
+            return conditions, errors
 
         
         for condition in current_conditions:
