@@ -15,286 +15,283 @@ const {bindDOMWindowUtils, SpecialPowersAPI} = ChromeUtils.import("resource://sp
 
 Cu.forcePermissiveCOWs();
 
-function SpecialPowers(window, mm) {
-  this.mm = mm;
+class SpecialPowers extends SpecialPowersAPI {
+  constructor(window, mm) {
+    super();
 
-  this.window = Cu.getWeakReference(window);
-  this._windowID = window.windowUtils.currentInnerWindowID;
-  this._encounteredCrashDumpFiles = [];
-  this._unexpectedCrashDumpFiles = { };
-  this._crashDumpDir = null;
-  this._serviceWorkerRegistered = false;
-  this._serviceWorkerCleanUpRequests = new Map();
-  this.DOMWindowUtils = bindDOMWindowUtils(window);
-  Object.defineProperty(this, "Components", {
-      configurable: true, enumerable: true, value: this.getFullComponents(),
-  });
-  this._pongHandlers = [];
-  this._messageListener = this._messageReceived.bind(this);
-  this._grandChildFrameMM = null;
-  this._createFilesOnError = null;
-  this._createFilesOnSuccess = null;
-  this.SP_SYNC_MESSAGES = ["SPChromeScriptMessage",
-                           "SPLoadChromeScript",
-                           "SPImportInMainProcess",
-                           "SPObserverService",
-                           "SPPermissionManager",
-                           "SPPrefService",
-                           "SPProcessCrashService",
-                           "SPSetTestPluginEnabledState",
-                           "SPCleanUpSTSData",
-                           "SPCheckServiceWorkers"];
+    this.mm = mm;
 
-  this.SP_ASYNC_MESSAGES = ["SpecialPowers.Focus",
-                            "SpecialPowers.Quit",
-                            "SpecialPowers.CreateFiles",
-                            "SpecialPowers.RemoveFiles",
-                            "SPPingService",
-                            "SPLoadExtension",
-                            "SPProcessCrashManagerWait",
-                            "SPStartupExtension",
-                            "SPUnloadExtension",
-                            "SPExtensionMessage",
-                            "SPRequestDumpCoverageCounters",
-                            "SPRequestResetCoverageCounters",
-                            "SPRemoveAllServiceWorkers",
-                            "SPRemoveServiceWorkerDataForExampleDomain"];
-  mm.addMessageListener("SPPingService", this._messageListener);
-  mm.addMessageListener("SPServiceWorkerRegistered", this._messageListener);
-  mm.addMessageListener("SpecialPowers.FilesCreated", this._messageListener);
-  mm.addMessageListener("SpecialPowers.FilesError", this._messageListener);
-  mm.addMessageListener("SPServiceWorkerCleanupComplete", this._messageListener);
-  let self = this;
-  Services.obs.addObserver(function onInnerWindowDestroyed(subject, topic, data) {
-    var id = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    if (self._windowID === id) {
-      Services.obs.removeObserver(onInnerWindowDestroyed, "inner-window-destroyed");
-      try {
-        mm.removeMessageListener("SPPingService", self._messageListener);
-        mm.removeMessageListener("SpecialPowers.FilesCreated", self._messageListener);
-        mm.removeMessageListener("SpecialPowers.FilesError", self._messageListener);
-        mm.removeMessageListener("SPServiceWorkerCleanupComplete", self._messageListener);
-      } catch (e) {
+    this.window = Cu.getWeakReference(window);
+    this._windowID = window.windowUtils.currentInnerWindowID;
+    this._encounteredCrashDumpFiles = [];
+    this._unexpectedCrashDumpFiles = { };
+    this._crashDumpDir = null;
+    this._serviceWorkerRegistered = false;
+    this._serviceWorkerCleanUpRequests = new Map();
+    this.DOMWindowUtils = bindDOMWindowUtils(window);
+    Object.defineProperty(this, "Components", {
+        configurable: true, enumerable: true, value: this.getFullComponents(),
+    });
+    this._pongHandlers = [];
+    this._messageListener = this._messageReceived.bind(this);
+    this._grandChildFrameMM = null;
+    this._createFilesOnError = null;
+    this._createFilesOnSuccess = null;
+    this.SP_SYNC_MESSAGES = ["SPChromeScriptMessage",
+                             "SPLoadChromeScript",
+                             "SPImportInMainProcess",
+                             "SPObserverService",
+                             "SPPermissionManager",
+                             "SPPrefService",
+                             "SPProcessCrashService",
+                             "SPSetTestPluginEnabledState",
+                             "SPCleanUpSTSData",
+                             "SPCheckServiceWorkers"];
+
+    this.SP_ASYNC_MESSAGES = ["SpecialPowers.Focus",
+                              "SpecialPowers.Quit",
+                              "SpecialPowers.CreateFiles",
+                              "SpecialPowers.RemoveFiles",
+                              "SPPingService",
+                              "SPLoadExtension",
+                              "SPProcessCrashManagerWait",
+                              "SPStartupExtension",
+                              "SPUnloadExtension",
+                              "SPExtensionMessage",
+                              "SPRequestDumpCoverageCounters",
+                              "SPRequestResetCoverageCounters",
+                              "SPRemoveAllServiceWorkers",
+                              "SPRemoveServiceWorkerDataForExampleDomain"];
+    mm.addMessageListener("SPPingService", this._messageListener);
+    mm.addMessageListener("SPServiceWorkerRegistered", this._messageListener);
+    mm.addMessageListener("SpecialPowers.FilesCreated", this._messageListener);
+    mm.addMessageListener("SpecialPowers.FilesError", this._messageListener);
+    mm.addMessageListener("SPServiceWorkerCleanupComplete", this._messageListener);
+    let self = this;
+    Services.obs.addObserver(function onInnerWindowDestroyed(subject, topic, data) {
+      var id = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+      if (self._windowID === id) {
+        Services.obs.removeObserver(onInnerWindowDestroyed, "inner-window-destroyed");
+        try {
+          mm.removeMessageListener("SPPingService", self._messageListener);
+          mm.removeMessageListener("SpecialPowers.FilesCreated", self._messageListener);
+          mm.removeMessageListener("SpecialPowers.FilesError", self._messageListener);
+          mm.removeMessageListener("SPServiceWorkerCleanupComplete", self._messageListener);
+        } catch (e) {
+          
+          if (e.result != Cr.NS_ERROR_ILLEGAL_VALUE) {
+            throw e;
+          }
+        }
+      }
+    }, "inner-window-destroyed");
+  }
+
+  toString() { return "[SpecialPowers]"; }
+  sanityCheck() { return "foo"; }
+
+  _sendSyncMessage(msgname, msg) {
+    if (!this.SP_SYNC_MESSAGES.includes(msgname)) {
+      dump("TEST-INFO | specialpowers.js |  Unexpected SP message: " + msgname + "\n");
+    }
+    let result = this.mm.sendSyncMessage(msgname, msg);
+    return Cu.cloneInto(result, this);
+  }
+
+  _sendAsyncMessage(msgname, msg) {
+    if (!this.SP_ASYNC_MESSAGES.includes(msgname)) {
+      dump("TEST-INFO | specialpowers.js |  Unexpected SP message: " + msgname + "\n");
+    }
+    this.mm.sendAsyncMessage(msgname, msg);
+  }
+
+  _addMessageListener(msgname, listener) {
+    this.mm.addMessageListener(msgname, listener);
+    this.mm.sendAsyncMessage("SPPAddNestedMessageListener", { name: msgname });
+  }
+
+  _removeMessageListener(msgname, listener) {
+    this.mm.removeMessageListener(msgname, listener);
+  }
+
+  registerProcessCrashObservers() {
+    this.mm.addMessageListener("SPProcessCrashService", this._messageListener);
+    this.mm.sendSyncMessage("SPProcessCrashService", { op: "register-observer" });
+  }
+
+  unregisterProcessCrashObservers() {
+    this.mm.removeMessageListener("SPProcessCrashService", this._messageListener);
+    this.mm.sendSyncMessage("SPProcessCrashService", { op: "unregister-observer" });
+  }
+
+  _messageReceived(aMessage) {
+    switch (aMessage.name) {
+      case "SPProcessCrashService":
+        if (aMessage.json.type == "crash-observed") {
+          for (let e of aMessage.json.dumpIDs) {
+            this._encounteredCrashDumpFiles.push(e.id + "." + e.extension);
+          }
+        }
+        break;
+
+      case "SPPingService":
+        if (aMessage.json.op == "pong") {
+          var handler = this._pongHandlers.shift();
+          if (handler) {
+            handler();
+          }
+          if (this._grandChildFrameMM) {
+            this._grandChildFrameMM.sendAsyncMessage("SPPingService", { op: "pong" });
+          }
+        }
+        break;
+
+      case "SPServiceWorkerRegistered":
+        this._serviceWorkerRegistered = aMessage.data.registered;
+        break;
+
+      case "SpecialPowers.FilesCreated":
+        var createdHandler = this._createFilesOnSuccess;
+        this._createFilesOnSuccess = null;
+        this._createFilesOnError = null;
+        if (createdHandler) {
+          createdHandler(Cu.cloneInto(aMessage.data, this.mm.content));
+        }
+        break;
+
+      case "SpecialPowers.FilesError":
+        var errorHandler = this._createFilesOnError;
+        this._createFilesOnSuccess = null;
+        this._createFilesOnError = null;
+        if (errorHandler) {
+          errorHandler(aMessage.data);
+        }
+        break;
+
+      case "SPServiceWorkerCleanupComplete": {
+        let id = aMessage.data.id;
         
-        if (e.result != Cr.NS_ERROR_ILLEGAL_VALUE) {
-          throw e;
+        
+        if (this._serviceWorkerCleanUpRequests.has(id)) {
+          let resolve = this._serviceWorkerCleanUpRequests.get(id);
+          this._serviceWorkerCleanUpRequests.delete(id);
+          resolve();
         }
+        break;
       }
     }
-  }, "inner-window-destroyed");
-}
 
-SpecialPowers.prototype = new SpecialPowersAPI();
-
-SpecialPowers.prototype.toString = function() { return "[SpecialPowers]"; };
-SpecialPowers.prototype.sanityCheck = function() { return "foo"; };
-
-
-SpecialPowers.prototype.DOMWindowUtils = undefined;
-SpecialPowers.prototype.Components = undefined;
-SpecialPowers.prototype.IsInNestedFrame = false;
-
-SpecialPowers.prototype._sendSyncMessage = function(msgname, msg) {
-  if (!this.SP_SYNC_MESSAGES.includes(msgname)) {
-    dump("TEST-INFO | specialpowers.js |  Unexpected SP message: " + msgname + "\n");
+    return true;
   }
-  let result = this.mm.sendSyncMessage(msgname, msg);
-  return Cu.cloneInto(result, this);
-};
 
-SpecialPowers.prototype._sendAsyncMessage = function(msgname, msg) {
-  if (!this.SP_ASYNC_MESSAGES.includes(msgname)) {
-    dump("TEST-INFO | specialpowers.js |  Unexpected SP message: " + msgname + "\n");
+  quit() {
+    this.mm.sendAsyncMessage("SpecialPowers.Quit", {});
   }
-  this.mm.sendAsyncMessage(msgname, msg);
-};
 
-SpecialPowers.prototype._addMessageListener = function(msgname, listener) {
-  this.mm.addMessageListener(msgname, listener);
-  this.mm.sendAsyncMessage("SPPAddNestedMessageListener", { name: msgname });
-};
-
-SpecialPowers.prototype._removeMessageListener = function(msgname, listener) {
-  this.mm.removeMessageListener(msgname, listener);
-};
-
-SpecialPowers.prototype.registerProcessCrashObservers = function() {
-  this.mm.addMessageListener("SPProcessCrashService", this._messageListener);
-  this.mm.sendSyncMessage("SPProcessCrashService", { op: "register-observer" });
-};
-
-SpecialPowers.prototype.unregisterProcessCrashObservers = function() {
-  this.mm.removeMessageListener("SPProcessCrashService", this._messageListener);
-  this.mm.sendSyncMessage("SPProcessCrashService", { op: "unregister-observer" });
-};
-
-SpecialPowers.prototype._messageReceived = function(aMessage) {
-  switch (aMessage.name) {
-    case "SPProcessCrashService":
-      if (aMessage.json.type == "crash-observed") {
-        for (let e of aMessage.json.dumpIDs) {
-          this._encounteredCrashDumpFiles.push(e.id + "." + e.extension);
-        }
-      }
-      break;
-
-    case "SPPingService":
-      if (aMessage.json.op == "pong") {
-        var handler = this._pongHandlers.shift();
-        if (handler) {
-          handler();
-        }
-        if (this._grandChildFrameMM) {
-          this._grandChildFrameMM.sendAsyncMessage("SPPingService", { op: "pong" });
-        }
-      }
-      break;
-
-    case "SPServiceWorkerRegistered":
-      this._serviceWorkerRegistered = aMessage.data.registered;
-      break;
-
-    case "SpecialPowers.FilesCreated":
-      var createdHandler = this._createFilesOnSuccess;
-      this._createFilesOnSuccess = null;
-      this._createFilesOnError = null;
-      if (createdHandler) {
-        createdHandler(Cu.cloneInto(aMessage.data, this.mm.content));
-      }
-      break;
-
-    case "SpecialPowers.FilesError":
-      var errorHandler = this._createFilesOnError;
-      this._createFilesOnSuccess = null;
-      this._createFilesOnError = null;
-      if (errorHandler) {
-        errorHandler(aMessage.data);
-      }
-      break;
-
-    case "SPServiceWorkerCleanupComplete": {
-      let id = aMessage.data.id;
-      
-      
-      if (this._serviceWorkerCleanUpRequests.has(id)) {
-        let resolve = this._serviceWorkerCleanUpRequests.get(id);
-        this._serviceWorkerCleanUpRequests.delete(id);
-        resolve();
-      }
-      break;
+  
+  
+  
+  
+  createFiles(fileRequests, onCreation, onError) {
+    if (this._createFilesOnSuccess || this._createFilesOnError) {
+      onError("Already waiting for SpecialPowers.createFiles() to finish.");
+      return;
     }
+
+    this._createFilesOnSuccess = onCreation;
+    this._createFilesOnError = onError;
+    this.mm.sendAsyncMessage("SpecialPowers.CreateFiles", fileRequests);
   }
 
-  return true;
-};
-
-SpecialPowers.prototype.quit = function() {
-  this.mm.sendAsyncMessage("SpecialPowers.Quit", {});
-};
-
-
-
-
-
-SpecialPowers.prototype.createFiles = function(fileRequests, onCreation, onError) {
-  if (this._createFilesOnSuccess || this._createFilesOnError) {
-    onError("Already waiting for SpecialPowers.createFiles() to finish.");
-    return;
+  
+  
+  removeFiles() {
+    this.mm.sendAsyncMessage("SpecialPowers.RemoveFiles", {});
   }
 
-  this._createFilesOnSuccess = onCreation;
-  this._createFilesOnError = onError;
-  this.mm.sendAsyncMessage("SpecialPowers.CreateFiles", fileRequests);
-};
+  executeAfterFlushingMessageQueue(aCallback) {
+    this._pongHandlers.push(aCallback);
+    this.mm.sendAsyncMessage("SPPingService", { op: "ping" });
+  }
 
+  nestedFrameSetup() {
+    let self = this;
+    Services.obs.addObserver(function onRemoteBrowserShown(subject, topic, data) {
+      let frameLoader = subject;
+      
+      let frame = frameLoader.ownerElement;
+      let frameId = frame.getAttribute("id");
+      if (frameId === "nested-parent-frame") {
+        Services.obs.removeObserver(onRemoteBrowserShown, "remote-browser-shown");
 
+        let mm = frame.frameLoader.messageManager;
+        self._grandChildFrameMM = mm;
 
-SpecialPowers.prototype.removeFiles = function() {
-  this.mm.sendAsyncMessage("SpecialPowers.RemoveFiles", {});
-};
-
-SpecialPowers.prototype.executeAfterFlushingMessageQueue = function(aCallback) {
-  this._pongHandlers.push(aCallback);
-  this.mm.sendAsyncMessage("SPPingService", { op: "ping" });
-};
-
-SpecialPowers.prototype.nestedFrameSetup = function() {
-  let self = this;
-  Services.obs.addObserver(function onRemoteBrowserShown(subject, topic, data) {
-    let frameLoader = subject;
-    
-    let frame = frameLoader.ownerElement;
-    let frameId = frame.getAttribute("id");
-    if (frameId === "nested-parent-frame") {
-      Services.obs.removeObserver(onRemoteBrowserShown, "remote-browser-shown");
-
-      let mm = frame.frameLoader.messageManager;
-      self._grandChildFrameMM = mm;
-
-      self.SP_SYNC_MESSAGES.forEach(function(msgname) {
-        mm.addMessageListener(msgname, function(msg) {
-          return self._sendSyncMessage(msgname, msg.data)[0];
-        });
-      });
-      self.SP_ASYNC_MESSAGES.forEach(function(msgname) {
-        mm.addMessageListener(msgname, function(msg) {
-          self._sendAsyncMessage(msgname, msg.data);
-        });
-      });
-      mm.addMessageListener("SPPAddNestedMessageListener", function(msg) {
-        self._addMessageListener(msg.json.name, function(aMsg) {
-          mm.sendAsyncMessage(aMsg.name, aMsg.data);
+        self.SP_SYNC_MESSAGES.forEach(function(msgname) {
+          mm.addMessageListener(msgname, function(msg) {
+            return self._sendSyncMessage(msgname, msg.data)[0];
           });
-      });
+        });
+        self.SP_ASYNC_MESSAGES.forEach(function(msgname) {
+          mm.addMessageListener(msgname, function(msg) {
+            self._sendAsyncMessage(msgname, msg.data);
+          });
+        });
+        mm.addMessageListener("SPPAddNestedMessageListener", function(msg) {
+          self._addMessageListener(msg.json.name, function(aMsg) {
+            mm.sendAsyncMessage(aMsg.name, aMsg.data);
+            });
+        });
 
-      mm.loadFrameScript("resource://specialpowers/specialpowersFrameScript.js", false);
+        mm.loadFrameScript("resource://specialpowers/specialpowersFrameScript.js", false);
 
-      let frameScript = "SpecialPowers.prototype.IsInNestedFrame=true;";
-      mm.loadFrameScript("data:," + frameScript, false);
-    }
-  }, "remote-browser-shown");
-};
-
-SpecialPowers.prototype.registeredServiceWorkers = function() {
-  
-  
-  
-  if (!Services.prefs.getBoolPref("dom.serviceWorkers.parent_intercept", false)) {
-    let swm = Cc["@mozilla.org/serviceworkers/manager;1"]
-                .getService(Ci.nsIServiceWorkerManager);
-    let regs = swm.getAllRegistrations();
-
-    
-    let workers = new Array(regs.length);
-    for (let i = 0; i < workers.length; ++i) {
-      let { scope, scriptSpec } = regs.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
-      workers[i] = { scope, scriptSpec };
-    }
-
-    return workers;
+        let frameScript = "SpecialPowers.prototype.IsInNestedFrame=true;";
+        mm.loadFrameScript("data:," + frameScript, false);
+      }
+    }, "remote-browser-shown");
   }
 
-  
-  
-  if (this._serviceWorkerRegistered) {
+  registeredServiceWorkers() {
     
     
     
-    let { workers } = this._sendSyncMessage("SPCheckServiceWorkers")[0];
-    return workers;
+    if (!Services.prefs.getBoolPref("dom.serviceWorkers.parent_intercept", false)) {
+      let swm = Cc["@mozilla.org/serviceworkers/manager;1"]
+                  .getService(Ci.nsIServiceWorkerManager);
+      let regs = swm.getAllRegistrations();
+
+      
+      let workers = new Array(regs.length);
+      for (let i = 0; i < workers.length; ++i) {
+        let { scope, scriptSpec } = regs.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
+        workers[i] = { scope, scriptSpec };
+      }
+
+      return workers;
+    }
+
+    
+    
+    if (this._serviceWorkerRegistered) {
+      
+      
+      
+      let { workers } = this._sendSyncMessage("SPCheckServiceWorkers")[0];
+      return workers;
+    }
+
+    return [];
   }
 
-  return [];
-};
-
-SpecialPowers.prototype._removeServiceWorkerData = function(messageName) {
-  return new Promise(resolve => {
-    let id = Cc["@mozilla.org/uuid-generator;1"]
-               .getService(Ci.nsIUUIDGenerator).generateUUID().toString();
-    this._serviceWorkerCleanUpRequests.set(id, resolve);
-    this._sendAsyncMessage(messageName, { id });
-  });
-};
+  _removeServiceWorkerData(messageName) {
+    return new Promise(resolve => {
+      let id = Cc["@mozilla.org/uuid-generator;1"]
+                 .getService(Ci.nsIUUIDGenerator).generateUUID().toString();
+      this._serviceWorkerCleanUpRequests.set(id, resolve);
+      this._sendAsyncMessage(messageName, { id });
+    });
+  }
+}
 
 
 function attachSpecialPowersToWindow(aWindow, mm) {
