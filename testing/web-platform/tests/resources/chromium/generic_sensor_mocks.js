@@ -199,6 +199,19 @@ var GenericSensorTest = (() => {
         this.maxFrequency_ = Math.min(10, this.maxFrequency_);
       }
 
+      
+      
+      
+      
+      
+      
+      if (type == device.mojom.SensorType.AMBIENT_LIGHT) {
+        this.activeSensors_.get(type).setSensorReading([
+          [window.performance.now() * 100],
+          [(window.performance.now() + 50) * 100]
+        ]);
+      }
+
       const initParams = new device.mojom.SensorInitParams({
         sensor: sensorPtr,
         clientReceiver: mojo.makeRequest(this.activeSensors_.get(type).client_),
