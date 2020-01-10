@@ -140,7 +140,7 @@ async function selectStandardOptions(itemToUse) {
   let popup = list.menupopup;
 
   
-  let handlerItem = list.querySelector("menuitem[label*='Handler 1']");
+  let handlerItem = list.querySelector("menuitem[data-l10n-args*='Handler 1']");
   await selectItemInPopup(handlerItem);
   let {
     preferredAction,
@@ -218,6 +218,11 @@ async function selectStandardOptions(itemToUse) {
   );
   let selectedItem = await selectItemInPopup(webAppItems[0]);
 
+  
+  
+  let win = gBrowser.selectedBrowser.contentWindow;
+  await win.document.l10n.translateFragment(selectedItem);
+  await win.document.l10n.translateFragment(itemToUse);
   Assert.equal(
     selectedItem.label,
     itemToUse.querySelector(".actionContainer label").value,
@@ -236,6 +241,10 @@ async function selectStandardOptions(itemToUse) {
   
   selectedItem = await selectItemInPopup(webAppItems[1]);
 
+  
+  
+  await win.document.l10n.translateFragment(selectedItem);
+  await win.document.l10n.translateFragment(itemToUse);
   Assert.equal(
     selectedItem.label,
     itemToUse.querySelector(".actionContainer label").value,
