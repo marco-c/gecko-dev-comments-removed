@@ -71,7 +71,11 @@ export default class LoginList extends HTMLElement {
   render() {
     let visibleLoginGuids = this._applyFilter();
     this._updateVisibleLoginCount(visibleLoginGuids.size);
-    this.classList.toggle("empty-search", visibleLoginGuids.size == 0);
+    this.classList.toggle("empty-search", !visibleLoginGuids.size);
+    document.documentElement.classList.toggle(
+      "empty-search",
+      this._filter && !visibleLoginGuids.size
+    );
 
     
     let fragment = document.createDocumentFragment();
@@ -102,11 +106,6 @@ export default class LoginList extends HTMLElement {
       );
       listItem.hidden = !visibleLoginGuids.has(listItem.dataset.guid);
     }
-
-    let createLoginSelected =
-      this._selectedGuid == null && Object.keys(this._logins).length > 0;
-    this.classList.toggle("create-login-selected", createLoginSelected);
-    this._createLoginButton.disabled = createLoginSelected;
 
     
     for (let i = this._loginGuidsSortedOrder.length - 1; i >= 0; i--) {
