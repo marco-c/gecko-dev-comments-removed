@@ -997,7 +997,7 @@ Notification::~Notification() {
   mData.setUndefined();
   mozilla::DropJSObjects(this);
   AssertIsOnTargetThread();
-  MOZ_ASSERT(!mWorkerHolder);
+  MOZ_ASSERT(!mWorkerRef);
   MOZ_ASSERT(!mTempRef);
 }
 
@@ -2054,10 +2054,10 @@ void Notification::InitFromBase64(const nsAString& aData, ErrorResult& aRv) {
 
 bool Notification::AddRefObject() {
   AssertIsOnTargetThread();
-  MOZ_ASSERT_IF(mWorkerPrivate && !mWorkerHolder, mTaskCount == 0);
-  MOZ_ASSERT_IF(mWorkerPrivate && mWorkerHolder, mTaskCount > 0);
-  if (mWorkerPrivate && !mWorkerHolder) {
-    if (!RegisterWorkerHolder()) {
+  MOZ_ASSERT_IF(mWorkerPrivate && !mWorkerRef, mTaskCount == 0);
+  MOZ_ASSERT_IF(mWorkerPrivate && mWorkerRef, mTaskCount > 0);
+  if (mWorkerPrivate && !mWorkerRef) {
+    if (!CreateWorkerRef()) {
       return false;
     }
   }
@@ -2069,19 +2069,14 @@ bool Notification::AddRefObject() {
 void Notification::ReleaseObject() {
   AssertIsOnTargetThread();
   MOZ_ASSERT(mTaskCount > 0);
-  MOZ_ASSERT_IF(mWorkerPrivate, mWorkerHolder);
+  MOZ_ASSERT_IF(mWorkerPrivate, mWorkerRef);
 
   --mTaskCount;
   if (mWorkerPrivate && mTaskCount == 0) {
-    UnregisterWorkerHolder();
+    MOZ_ASSERT(mWorkerRef);
+    mWorkerRef = nullptr;
   }
   Release();
-}
-
-NotificationWorkerHolder::NotificationWorkerHolder(Notification* aNotification)
-    : WorkerHolder("NotificationWorkerHolder"), mNotification(aNotification) {
-  MOZ_ASSERT(mNotification->mWorkerPrivate);
-  mNotification->mWorkerPrivate->AssertIsOnWorkerThread();
 }
 
 
@@ -2116,64 +2111,55 @@ class CloseNotificationRunnable final : public WorkerMainThreadRunnable {
   bool HadObserver() { return mHadObserver; }
 };
 
-bool NotificationWorkerHolder::Notify(WorkerStatus aStatus) {
-  if (aStatus >= Canceling) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    RefPtr<Notification> kungFuDeathGrip = mNotification;
-
-    
-    RefPtr<CloseNotificationRunnable> r =
-        new CloseNotificationRunnable(kungFuDeathGrip);
-    ErrorResult rv;
-    r->Dispatch(Killing, rv);
-    
-    
-    
-    rv.SuppressException();
-
-    
-    
-    
-    if (r->HadObserver()) {
-      kungFuDeathGrip->ReleaseObject();
-    }
-
-    
-    
-    
-  }
-  return true;
-}
-
-bool Notification::RegisterWorkerHolder() {
+bool Notification::CreateWorkerRef() {
   MOZ_ASSERT(mWorkerPrivate);
   mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(!mWorkerHolder);
-  mWorkerHolder = MakeUnique<NotificationWorkerHolder>(this);
-  if (NS_WARN_IF(!mWorkerHolder->HoldWorker(mWorkerPrivate, Canceling))) {
+  MOZ_ASSERT(!mWorkerRef);
+
+  RefPtr<Notification> self = this;
+  mWorkerRef =
+      StrongWorkerRef::Create(mWorkerPrivate, "Notification", [self]() {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        RefPtr<CloseNotificationRunnable> r =
+            new CloseNotificationRunnable(self);
+        ErrorResult rv;
+        r->Dispatch(Killing, rv);
+        
+        
+        
+        rv.SuppressException();
+
+        
+        
+        
+        if (r->HadObserver()) {
+          self->ReleaseObject();
+        }
+
+        
+        
+        
+      });
+
+  if (NS_WARN_IF(!mWorkerRef)) {
     return false;
   }
 
   return true;
-}
-
-void Notification::UnregisterWorkerHolder() {
-  MOZ_ASSERT(mWorkerPrivate);
-  mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(mWorkerHolder);
-  mWorkerHolder = nullptr;
 }
 
 

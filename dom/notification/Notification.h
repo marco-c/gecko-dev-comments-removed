@@ -10,7 +10,6 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/NotificationBinding.h"
-#include "mozilla/dom/WorkerHolder.h"
 
 #include "nsIObserver.h"
 #include "nsISupports.h"
@@ -32,19 +31,8 @@ namespace dom {
 class NotificationRef;
 class WorkerNotificationObserver;
 class Promise;
+class StrongWorkerRef;
 class WorkerPrivate;
-
-class Notification;
-class NotificationWorkerHolder final : public WorkerHolder {
-  
-  
-  Notification* mNotification;
-
- public:
-  explicit NotificationWorkerHolder(Notification* aNotification);
-
-  bool Notify(WorkerStatus aStatus) override;
-};
 
 
 
@@ -385,13 +373,12 @@ class Notification : public DOMEventTargetHelper,
 
   bool IsTargetThread() const { return NS_IsMainThread() == !mWorkerPrivate; }
 
-  bool RegisterWorkerHolder();
-  void UnregisterWorkerHolder();
+  bool CreateWorkerRef();
 
   nsresult ResolveIconAndSoundURL(nsString&, nsString&);
 
   
-  UniquePtr<NotificationWorkerHolder> mWorkerHolder;
+  RefPtr<StrongWorkerRef> mWorkerRef;
   
   uint32_t mTaskCount;
 };
