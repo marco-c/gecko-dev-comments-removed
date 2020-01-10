@@ -309,7 +309,6 @@ You can set this by specifying --test-url URL
         
         
         aliases = {
-            'robocop': 'mochitest',
             'mochitest-chrome': 'mochitest',
             'mochitest-media': 'mochitest',
             'mochitest-plain': 'mochitest',

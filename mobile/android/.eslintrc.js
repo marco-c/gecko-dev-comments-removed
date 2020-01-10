@@ -27,8 +27,6 @@ module.exports = {
       "components/extensions/**",
       
       "modules/WebsiteMetadata.jsm",
-      
-      "tests/browser/robocop/**",
     ],
     rules: {
       "no-unused-vars": "off",
