@@ -166,6 +166,11 @@ nsNotifyAddrListener::GetNetworkID(nsACString& aNetworkID) {
 void nsNotifyAddrListener::calculateNetworkId(void) {
   MOZ_ASSERT(!NS_IsMainThread(), "Must not be called on the main thread");
 
+  
+  if (mShutdown) {
+    return;
+  }
+
   if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) {
     return;
   }
