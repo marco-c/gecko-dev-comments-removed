@@ -71,6 +71,7 @@
 
 #else  
 
+#  include "BaseProfiler.h"
 #  include "js/AllocationRecording.h"
 #  include "js/ProfilingFrameIterator.h"
 #  include "js/ProfilingStack.h"
@@ -676,8 +677,12 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 
-#  define PROFILER_ADD_MARKER(markerName, categoryPair) \
-    ::profiler_add_marker(markerName, ::JS::ProfilingCategoryPair::categoryPair)
+#  define PROFILER_ADD_MARKER(markerName, categoryPair)                 \
+    do {                                                                \
+      AUTO_PROFILER_STATS(add_marker);                                  \
+      ::profiler_add_marker(markerName,                                 \
+                            ::JS::ProfilingCategoryPair::categoryPair); \
+    } while (false)
 
 void profiler_add_marker(const char* aMarkerName,
                          JS::ProfilingCategoryPair aCategoryPair);
@@ -686,11 +691,14 @@ void profiler_add_marker(const char* aMarkerName,
 
 
 
-#  define PROFILER_ADD_MARKER_WITH_PAYLOAD(                            \
-      markerName, categoryPair, PayloadType, parenthesizedPayloadArgs) \
-    ::profiler_add_marker(                                             \
-        markerName, ::JS::ProfilingCategoryPair::categoryPair,         \
-        ::mozilla::MakeUnique<PayloadType> parenthesizedPayloadArgs)
+#  define PROFILER_ADD_MARKER_WITH_PAYLOAD(                             \
+      markerName, categoryPair, PayloadType, parenthesizedPayloadArgs)  \
+    do {                                                                \
+      AUTO_PROFILER_STATS(add_marker_with_##PayloadType);               \
+      ::profiler_add_marker(                                            \
+          markerName, ::JS::ProfilingCategoryPair::categoryPair,        \
+          ::mozilla::MakeUnique<PayloadType> parenthesizedPayloadArgs); \
+    } while (false)
 
 void profiler_add_marker(const char* aMarkerName,
                          JS::ProfilingCategoryPair aCategoryPair,

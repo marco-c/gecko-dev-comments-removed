@@ -109,6 +109,7 @@ void ProfilerScreenshots::SubmitScreenshot(
               gfxUtils::eDataURIEncode, nullptr, &dataURL);
           if (NS_SUCCEEDED(rv)) {
             
+            AUTO_PROFILER_STATS(add_marker_with_ScreenshotPayload);
             profiler_add_marker_for_thread(
                 sourceThread, JS::ProfilingCategoryPair::GRAPHICS,
                 "CompositorScreenshot",
