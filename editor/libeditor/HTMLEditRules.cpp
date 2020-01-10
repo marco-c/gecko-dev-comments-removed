@@ -6513,14 +6513,18 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
     
     
     if (HTMLEditUtils::IsListItem(curNode) || HTMLEditUtils::IsList(curNode)) {
+      Element* listOrListItemElement = curNode->AsElement();
       AutoEditorDOMPointOffsetInvalidator lockChild(atCurNode);
-      rv = RemoveAlignment(*curNode, aAlignType, true);
+      rv = MOZ_KnownLive(HTMLEditorRef())
+               .RemoveAlignFromDescendants(
+                   MOZ_KnownLive(*listOrListItemElement), aAlignType,
+                   HTMLEditor::EditTarget::OnlyDescendantsExceptTable);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
       if (useCSS) {
         HTMLEditorRef().mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
-            MOZ_KnownLive(curNode->AsElement()), nullptr, nsGkAtoms::align,
+            MOZ_KnownLive(listOrListItemElement), nullptr, nsGkAtoms::align,
             &aAlignType, false);
         if (NS_WARN_IF(!CanHandleEditAction())) {
           return NS_ERROR_EDITOR_DESTROYED;
@@ -6536,7 +6540,7 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
         
         rv = MOZ_KnownLive(HTMLEditorRef())
                  .AlignContentsInAllTableCellsAndListItems(
-                     MOZ_KnownLive(*curNode->AsElement()), aAlignType);
+                     MOZ_KnownLive(*listOrListItemElement), aAlignType);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -10582,40 +10586,37 @@ void HTMLEditRules::WillDeleteSelection() {
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AddRangeToChangedRange() failed");
 }
 
-nsresult HTMLEditRules::RemoveAlignment(nsINode& aNode,
-                                        const nsAString& aAlignType,
-                                        bool aDescendantsOnly) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::RemoveAlignFromDescendants(Element& aElement,
+                                                const nsAString& aAlignType,
+                                                EditTarget aEditTarget) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(!aElement.IsHTMLElement(nsGkAtoms::table));
 
-  if (EditorBase::IsTextNode(&aNode) || HTMLEditUtils::IsTable(&aNode)) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsINode> child, tmp;
-  if (aDescendantsOnly) {
-    child = aNode.GetFirstChild();
-  } else {
-    child = &aNode;
-  }
-
-  bool useCSS = HTMLEditorRef().IsCSSEnabled();
+  bool useCSS = IsCSSEnabled();
 
   
   
   
   
-  while (child) {
-    if (aDescendantsOnly) {
-      
-      tmp = child->GetNextSibling();
-    } else {
-      tmp = nullptr;
-    }
+  nsCOMPtr<nsIContent> nextSibling;
+  for (nsIContent* content =
+           aEditTarget == EditTarget::NodeAndDescendantsExceptTable
+               ? &aElement
+               : aElement.GetFirstChild();
+       content; content = nextSibling) {
+    
+    
+    
+    
+    
+    nextSibling = aEditTarget == EditTarget::NodeAndDescendantsExceptTable
+                      ? nullptr
+                      : content->GetNextSibling();
 
-    if (child->IsHTMLElement(nsGkAtoms::center)) {
-      
-      
-      nsresult rv = RemoveAlignment(*child, aAlignType, true);
+    if (content->IsHTMLElement(nsGkAtoms::center)) {
+      OwningNonNull<Element> centerElement = *content->AsElement();
+      nsresult rv = RemoveAlignFromDescendants(
+          centerElement, aAlignType, EditTarget::OnlyDescendantsExceptTable);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -10623,9 +10624,7 @@ nsresult HTMLEditRules::RemoveAlignment(nsINode& aNode,
       
       
       
-      rv = MOZ_KnownLive(HTMLEditorRef())
-               .EnsureHardLineBeginsWithFirstChildOf(
-                   MOZ_KnownLive(*child->AsElement()));
+      rv = EnsureHardLineBeginsWithFirstChildOf(centerElement);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -10633,72 +10632,68 @@ nsresult HTMLEditRules::RemoveAlignment(nsINode& aNode,
       
       
       
-      rv = MOZ_KnownLive(HTMLEditorRef())
-               .EnsureHardLineEndsWithLastChildOf(
-                   MOZ_KnownLive(*child->AsElement()));
+      rv = EnsureHardLineEndsWithLastChildOf(centerElement);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
 
-      
-      rv = MOZ_KnownLive(HTMLEditorRef())
-               .RemoveContainerWithTransaction(
-                   MOZ_KnownLive(*child->AsElement()));
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      rv = RemoveContainerWithTransaction(centerElement);
+      if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-    } else if (HTMLEditor::NodeIsBlockStatic(*child) ||
-               child->IsHTMLElement(nsGkAtoms::hr)) {
-      
-      if (HTMLEditUtils::SupportsAlignAttr(*child)) {
-        
-        nsresult rv =
-            MOZ_KnownLive(HTMLEditorRef())
-                .RemoveAttributeWithTransaction(
-                    MOZ_KnownLive(*child->AsElement()), *nsGkAtoms::align);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+      continue;
+    }
+
+    if (!HTMLEditor::NodeIsBlockStatic(*content) &&
+        !content->IsHTMLElement(nsGkAtoms::hr)) {
+      continue;
+    }
+
+    OwningNonNull<Element> blockOrHRElement = *content->AsElement();
+    if (HTMLEditUtils::SupportsAlignAttr(blockOrHRElement)) {
+      nsresult rv =
+          RemoveAttributeWithTransaction(blockOrHRElement, *nsGkAtoms::align);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+    if (useCSS) {
+      if (blockOrHRElement->IsAnyOfHTMLElements(nsGkAtoms::table,
+                                                nsGkAtoms::hr)) {
+        nsresult rv = SetAttributeOrEquivalent(
+            blockOrHRElement, nsGkAtoms::align, aAlignType, false);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+      } else {
+        nsAutoString dummyCssValue;
+        nsresult rv = mCSSEditUtils->RemoveCSSInlineStyle(
+            blockOrHRElement, nsGkAtoms::textAlign, dummyCssValue);
+        if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       }
-      if (useCSS) {
-        if (child->IsAnyOfHTMLElements(nsGkAtoms::table, nsGkAtoms::hr)) {
-          nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                            .SetAttributeOrEquivalent(
-                                MOZ_KnownLive(child->AsElement()),
-                                nsGkAtoms::align, aAlignType, false);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-        } else {
-          nsAutoString dummyCssValue;
-          nsresult rv = HTMLEditorRef().mCSSEditUtils->RemoveCSSInlineStyle(
-              *child, nsGkAtoms::textAlign, dummyCssValue);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-        }
-      }
-      if (!child->IsHTMLElement(nsGkAtoms::table)) {
-        
-        nsresult rv = RemoveAlignment(*child, aAlignType, true);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
+    }
+    if (!blockOrHRElement->IsHTMLElement(nsGkAtoms::table)) {
+      
+      nsresult rv = RemoveAlignFromDescendants(
+          blockOrHRElement, aAlignType, EditTarget::OnlyDescendantsExceptTable);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
       }
     }
-    child = tmp;
   }
   return NS_OK;
 }
@@ -10788,10 +10783,17 @@ nsresult HTMLEditRules::AlignBlock(Element& aElement,
     return NS_OK;
   }
 
-  nsresult rv = RemoveAlignment(aElement, aAlignType,
-                                aResetAlignOf == ResetAlignOf::OnlyDescendants);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!aElement.IsHTMLElement(nsGkAtoms::table)) {
+    nsresult rv =
+        MOZ_KnownLive(HTMLEditorRef())
+            .RemoveAlignFromDescendants(
+                aElement, aAlignType,
+                aResetAlignOf == ResetAlignOf::OnlyDescendants
+                    ? HTMLEditor::EditTarget::OnlyDescendantsExceptTable
+                    : HTMLEditor::EditTarget::NodeAndDescendantsExceptTable);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
   if (HTMLEditorRef().IsCSSEnabled()) {
     
@@ -10815,9 +10817,9 @@ nsresult HTMLEditRules::AlignBlock(Element& aElement,
     return NS_OK;
   }
 
-  rv = MOZ_KnownLive(HTMLEditorRef())
-           .SetAttributeOrEquivalent(&aElement, nsGkAtoms::align, aAlignType,
-                                     false);
+  nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                    .SetAttributeOrEquivalent(&aElement, nsGkAtoms::align,
+                                              aAlignType, false);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }

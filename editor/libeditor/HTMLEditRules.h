@@ -292,32 +292,6 @@ class HTMLEditRules : public TextEditRules {
   
 
 
-  bool IsEmptyInline(nsINode& aNode);
-
-  bool ListIsEmptyLine(nsTArray<OwningNonNull<nsINode>>& arrayOfNodes);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult RemoveAlignment(nsINode& aNode,
-                                        const nsAString& aAlignType,
-                                        bool aDescendantsOnly);
-
-  
-
-
 
 
 
