@@ -262,6 +262,18 @@ class DebugScript {
 
 
 
+
+
+
+
+  uint32_t generatorObserverCount;
+
+  
+
+
+
+
+
   uint32_t stepperCount;
 
   
@@ -282,7 +294,9 @@ class DebugScript {
 
 
 
-  bool needed() const { return stepperCount > 0 || numSites > 0; }
+  bool needed() const {
+    return generatorObserverCount > 0 || stepperCount > 0 || numSites > 0;
+  }
 };
 
 using UniqueDebugScript = js::UniquePtr<DebugScript, JS::FreePolicy>;
@@ -2997,6 +3011,15 @@ class JSScript : public js::gc::TenuredCell {
     return hasDebugScript() ? debugScript()->stepperCount : 0;
   }
 #endif
+
+  
+
+
+
+
+
+  bool incrementGeneratorObserverCount(JSContext* cx);
+  void decrementGeneratorObserverCount(js::FreeOp* fop);
 
   void finalize(js::FreeOp* fop);
 
