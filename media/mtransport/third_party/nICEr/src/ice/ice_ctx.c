@@ -420,6 +420,8 @@ int nr_ice_ctx_create(char *label, UINT4 flags, nr_ice_ctx **ctxp)
       }
     }
 
+    ctx->remote_addr=0;
+
     STAILQ_INIT(&ctx->streams);
     STAILQ_INIT(&ctx->sockets);
     STAILQ_INIT(&ctx->foundations);
@@ -454,6 +456,8 @@ static void nr_ice_ctx_destroy_cb(NR_SOCKET s, int how, void *cb_arg)
     RFREE(ctx->stun_servers);
 
     RFREE(ctx->local_addrs);
+
+    RFREE(ctx->remote_addr);
 
     for (i = 0; i < ctx->turn_server_ct; i++) {
         RFREE(ctx->turn_servers[i].username);
@@ -612,25 +616,33 @@ static int nr_ice_ctx_pair_new_trickle_candidates(nr_ice_ctx *ctx, nr_ice_candid
 
 
 
-static int nr_ice_get_default_address(nr_ice_ctx *ctx, int ip_version, nr_transport_addr* addrp)
+
+
+static int nr_ice_get_default_address(nr_ice_ctx *ctx, int ip_version, nr_transport_addr *addrp)
   {
     int r,_status;
-    nr_transport_addr addr;
-    nr_transport_addr remote_addr;
+    nr_transport_addr addr, known_remote_addr;
+    nr_transport_addr *remote_addr=ctx->remote_addr;
     nr_socket *sock=0;
 
     switch(ip_version) {
       case NR_IPV4:
         if ((r=nr_str_port_to_transport_addr("0.0.0.0", 0, IPPROTO_UDP, &addr)))
           ABORT(r);
-        if ((r=nr_str_port_to_transport_addr("8.8.8.8", 53, IPPROTO_UDP, &remote_addr)))
-          ABORT(r);
+        if (!remote_addr) {
+          if ((r=nr_str_port_to_transport_addr("8.8.8.8", 53, IPPROTO_UDP, &known_remote_addr)))
+            ABORT(r);
+          remote_addr = &known_remote_addr;
+        }
         break;
       case NR_IPV6:
         if ((r=nr_str_port_to_transport_addr("::0", 0, IPPROTO_UDP, &addr)))
           ABORT(r);
-        if ((r=nr_str_port_to_transport_addr("2001:4860:4860::8888", 53, IPPROTO_UDP, &remote_addr)))
-          ABORT(r);
+        if (!remote_addr) {
+          if ((r=nr_str_port_to_transport_addr("2001:4860:4860::8888", 53, IPPROTO_UDP, &known_remote_addr)))
+            ABORT(r);
+          remote_addr = &known_remote_addr;
+        }
         break;
       default:
         assert(0);
@@ -639,7 +651,7 @@ static int nr_ice_get_default_address(nr_ice_ctx *ctx, int ip_version, nr_transp
 
     if ((r=nr_socket_factory_create_socket(ctx->socket_factory, &addr, &sock)))
       ABORT(r);
-    if ((r=nr_socket_connect(sock, &remote_addr)))
+    if ((r=nr_socket_connect(sock, remote_addr)))
       ABORT(r);
     if ((r=nr_socket_getaddr(sock, addrp)))
       ABORT(r);
@@ -777,6 +789,26 @@ int nr_ice_set_local_addresses(nr_ice_ctx *ctx,
     if (r=nr_ice_ctx_set_local_addrs(ctx,addrs,addr_ct)) {
       ABORT(r);
     }
+
+    _status=0;
+  abort:
+    return(_status);
+  }
+
+int nr_ice_set_remote_address(nr_ice_ctx *ctx, const char *remote_ip, UINT2 remote_port)
+  {
+    int r,_status;
+
+    if (ctx->remote_addr) {
+      RFREE(ctx->remote_addr);
+      ctx->remote_addr=0;
+    }
+
+    if (!(ctx->remote_addr=RCALLOC(sizeof(nr_transport_addr))))
+      ABORT(R_NO_MEMORY);
+
+    if ((r=nr_str_port_to_transport_addr(remote_ip, remote_port, IPPROTO_UDP, ctx->remote_addr)))
+      ABORT(r);
 
     _status=0;
   abort:

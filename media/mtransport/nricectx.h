@@ -226,6 +226,10 @@ class NrIceCtx {
 
   
   
+  void SetRemoteAddr(const std::string& remote_ip, uint16_t remote_port);
+
+  
+  
   static nsTArray<NrIceStunAddr> GetStunAddrs();
   void SetStunAddrs(const nsTArray<NrIceStunAddr>& addrs);
 
