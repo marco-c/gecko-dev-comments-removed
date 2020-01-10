@@ -12,11 +12,13 @@ add_task(async function test_tabs_mediaIndicators() {
   
   
   
-  gBrowser.setBrowserSharing(tab.linkedBrowser, {
-    sharing: "screen",
-    screen: "Window",
-    microphone: Ci.nsIMediaManagerService.STATE_CAPTURE_ENABLED,
-    camera: Ci.nsIMediaManagerService.STATE_CAPTURE_ENABLED,
+  gBrowser.updateBrowserSharing(tab.linkedBrowser, {
+    webRTC: {
+      sharing: "screen",
+      screen: "Window",
+      microphone: Ci.nsIMediaManagerService.STATE_CAPTURE_ENABLED,
+      camera: Ci.nsIMediaManagerService.STATE_CAPTURE_ENABLED,
+    },
   });
 
   async function background() {
@@ -71,7 +73,7 @@ add_task(async function test_tabs_mediaIndicators() {
   
   
   await extension.awaitMessage("ready");
-  gBrowser.setBrowserSharing(tab.linkedBrowser, {});
+  gBrowser.resetBrowserSharing(tab.linkedBrowser);
 
   await extension.awaitFinish("done");
   await extension.unload();
