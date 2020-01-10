@@ -1,0 +1,19 @@
+
+
+
+"use strict";
+
+const { generateActorSpec, RetVal } = require("devtools/shared/protocol");
+
+const frameDescriptorSpec = generateActorSpec({
+  typeName: "frameDescriptor",
+
+  methods: {
+    getTarget: {
+      request: {},
+      response: { process: RetVal("json") },
+    },
+  },
+});
+
+exports.frameDescriptorSpec = frameDescriptorSpec;
