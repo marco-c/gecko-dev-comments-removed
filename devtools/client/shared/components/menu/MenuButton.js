@@ -46,6 +46,9 @@ class MenuButton extends PureComponent {
       doc: PropTypes.object.isRequired,
 
       
+      label: PropTypes.string,
+
+      
       menuId: PropTypes.string,
 
       
@@ -411,10 +414,10 @@ class MenuButton extends PureComponent {
         this.tooltip.panel
       );
 
-      return button(buttonProps, menu);
+      return button(buttonProps, this.props.label, menu);
     }
 
-    return button(buttonProps);
+    return button(buttonProps, this.props.label);
   }
 }
 

@@ -31,13 +31,7 @@ class MenuItem extends PureComponent {
       className: PropTypes.string,
 
       
-      id: PropTypes.string,
-
-      
-      label: PropTypes.string.isRequired,
-
-      
-      onClick: PropTypes.func,
+      disabled: PropTypes.bool,
 
       
       
@@ -48,6 +42,22 @@ class MenuItem extends PureComponent {
       
       
       icon: PropTypes.string,
+
+      
+      id: PropTypes.string,
+
+      
+      label: PropTypes.string.isRequired,
+
+      
+      onClick: PropTypes.func,
+
+      
+      
+      role: PropTypes.string,
+
+      
+      tooltip: PropTypes.string,
     };
   }
 
@@ -111,13 +121,24 @@ class MenuItem extends PureComponent {
       attr.onClick = this.props.onClick;
     }
 
-    if (typeof this.props.checked !== "undefined") {
+    if (this.props.tooltip) {
+      attr.title = this.props.tooltip;
+    }
+
+    if (this.props.disabled) {
+      attr.disabled = this.props.disabled;
+    }
+
+    if (this.props.role) {
+      attr.role = this.props.role;
+    } else if (typeof this.props.checked !== "undefined") {
       attr.role = "menuitemcheckbox";
-      if (this.props.checked) {
-        attr["aria-checked"] = true;
-      }
     } else {
       attr.role = "menuitem";
+    }
+
+    if (this.props.checked) {
+      attr["aria-checked"] = true;
     }
 
     const textLabel = span(
