@@ -2606,17 +2606,8 @@ toolbar#nav-bar {
             "e10s": options.e10s,
             "fission": self.extraPrefs.get('fission.autostart', False),
             "headless": options.headless,
-
-            
-            
-            
-            
-            
-            
-            
             "serviceworker_e10s": self.extraPrefs.get(
-                'dom.serviceWorkers.parent_intercept', mozinfo.info['nightly_build']),
-
+                'dom.serviceWorkers.parent_intercept', False),
             "socketprocess_e10s": self.extraPrefs.get(
                 'network.process.enabled', False),
             "verify": options.verify,
