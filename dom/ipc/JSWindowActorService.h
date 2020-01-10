@@ -70,8 +70,8 @@ class JSWindowActorProtocol final : public nsIObserver,
   const ParentSide& Parent() const { return mParent; }
   const ChildSide& Child() const { return mChild; }
 
-  void RegisterListenersFor(EventTarget* aTarget);
-  void UnregisterListenersFor(EventTarget* aTarget);
+  void RegisterListenersFor(EventTarget* aRoot);
+  void UnregisterListenersFor(EventTarget* aRoot);
   void AddObservers();
   void RemoveObservers();
   bool Matches(BrowsingContext* aBrowsingContext, nsIURI* aURI,
@@ -115,10 +115,10 @@ class JSWindowActorService final {
   void GetJSWindowActorInfos(nsTArray<JSWindowActorInfo>& aInfos);
 
   
-  void RegisterChromeEventTarget(EventTarget* aTarget);
+  void RegisterWindowRoot(EventTarget* aRoot);
 
   
-  static void UnregisterChromeEventTarget(EventTarget* aTarget);
+  static void UnregisterWindowRoot(EventTarget* aRoot);
 
   already_AddRefed<JSWindowActorProtocol> GetProtocol(const nsAString& aName);
 
@@ -126,7 +126,7 @@ class JSWindowActorService final {
   JSWindowActorService();
   ~JSWindowActorService();
 
-  nsTArray<EventTarget*> mChromeEventTargets;
+  nsTArray<EventTarget*> mRoots;
   nsRefPtrHashtable<nsStringHashKey, JSWindowActorProtocol> mDescriptors;
 };
 
