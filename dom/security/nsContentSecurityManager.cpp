@@ -51,8 +51,6 @@ static nsLiteralCString evalWhitelist[] = {
     
     NS_LITERAL_CSTRING("chrome://global/content/bindings/autocomplete.xml"),
     
-    NS_LITERAL_CSTRING("resource://devtools/client/shared/vendor/redux.js"),
-    
     NS_LITERAL_CSTRING(
         "resource://devtools/client/shared/vendor/react-redux.js"),
     
