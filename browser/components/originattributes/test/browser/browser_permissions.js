@@ -14,12 +14,27 @@ const uri = Services.io.newURI(TEST_PAGE);
 function disableCookies() {
   Services.cookies.removeAll();
   PermissionTestUtils.add(uri, "cookie", Services.perms.DENY_ACTION);
+
+  
+  
+  
+  
+  
+  let principal = Services.scriptSecurityManager.createContentPrincipal(uri, {
+    firstPartyDomain: "example.com",
+  });
+  PermissionTestUtils.add(principal, "cookie", Services.perms.DENY_ACTION);
+
+  principal = Services.scriptSecurityManager.createContentPrincipal(uri, {
+    firstPartyDomain: "example.org",
+  });
+  PermissionTestUtils.add(principal, "cookie", Services.perms.DENY_ACTION);
 }
 
-function ensureCookieNotSet(aBrowser) {
-  ContentTask.spawn(aBrowser, null, async function() {
+async function ensureCookieNotSet(aBrowser) {
+  await SpecialPowers.spawn(aBrowser, [], async function() {
     content.document.cookie = "key=value";
-    is(
+    Assert.equal(
       content.document.cookie,
       "",
       "Setting/reading cookies should be disabled" +
@@ -38,12 +53,23 @@ IsolationTestTools.runTests(
 function enableCookies() {
   Services.cookies.removeAll();
   PermissionTestUtils.add(uri, "cookie", Services.perms.ALLOW_ACTION);
+
+  
+  let principal = Services.scriptSecurityManager.createContentPrincipal(uri, {
+    firstPartyDomain: "example.com",
+  });
+  PermissionTestUtils.add(principal, "cookie", Services.perms.ALLOW_ACTION);
+
+  principal = Services.scriptSecurityManager.createContentPrincipal(uri, {
+    firstPartyDomain: "example.org",
+  });
+  PermissionTestUtils.add(principal, "cookie", Services.perms.ALLOW_ACTION);
 }
 
-function ensureCookieSet(aBrowser) {
-  ContentTask.spawn(aBrowser, null, function() {
+async function ensureCookieSet(aBrowser) {
+  await SpecialPowers.spawn(aBrowser, [], function() {
     content.document.cookie = "key=value";
-    is(
+    Assert.equal(
       content.document.cookie,
       "key=value",
       "Setting/reading cookies should be" +
