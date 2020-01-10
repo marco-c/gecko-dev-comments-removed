@@ -86,6 +86,17 @@ class BlocksRingBuffer {
    public:
     
     
+    
+    
+    
+    BlockIndex() : mBlockIndex(0) {}
+
+    
+    
+    explicit operator bool() const { return mBlockIndex != 0; }
+
+    
+    
     bool operator==(const BlockIndex& aRhs) const {
       return mBlockIndex == aRhs.mBlockIndex;
     }
@@ -761,9 +772,11 @@ class BlocksRingBuffer {
   
   Buffer mBuffer;
   
-  BlockIndex mFirstReadIndex = BlockIndex(Index(0));
   
-  BlockIndex mNextWriteIndex = BlockIndex(Index(0));
+  BlockIndex mFirstReadIndex = BlockIndex(Index(1));
+  
+  
+  BlockIndex mNextWriteIndex = BlockIndex(Index(1));
   
   std::function<void(EntryReader)> mDeleter;
 

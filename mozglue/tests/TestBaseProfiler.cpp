@@ -476,30 +476,54 @@ void TestBlocksRingBufferAPI() {
 
     
     
-    VERIFY_START_END_DESTROYED(0, 0, 0);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    VERIFY_START_END_DESTROYED(1, 1, 0);
 
     
-    MOZ_RELEASE_ASSERT(ExtractBlockIndex(rb.PutObject(uint32_t(1))) == 0);
+    BlocksRingBuffer::BlockIndex bi0;
+    if (bi0) {
+      MOZ_RELEASE_ASSERT(false, "if (BlockIndex{}) should fail test");
+    }
+    if (!bi0) {
+    } else {
+      MOZ_RELEASE_ASSERT(false, "if (!BlockIndex{}) should succeed test");
+    }
+    MOZ_RELEASE_ASSERT(!bi0);
+    MOZ_RELEASE_ASSERT(bi0 == bi0);
+    MOZ_RELEASE_ASSERT(bi0 <= bi0);
+    MOZ_RELEASE_ASSERT(bi0 >= bi0);
+    MOZ_RELEASE_ASSERT(!(bi0 != bi0));
+    MOZ_RELEASE_ASSERT(!(bi0 < bi0));
+    MOZ_RELEASE_ASSERT(!(bi0 > bi0));
+
+    
+    rb.ReadAt(bi0, [](Maybe<BlocksRingBuffer::EntryReader>&& aMaybeReader) {
+      MOZ_RELEASE_ASSERT(aMaybeReader.isNothing());
+    });
+
+    
+    MOZ_RELEASE_ASSERT(ExtractBlockIndex(rb.PutObject(uint32_t(1))) == 1);
     
     
-    VERIFY_START_END_DESTROYED(0, 5, 0);
+    VERIFY_START_END_DESTROYED(1, 6, 0);
 
     
     auto bi2 = rb.Put([](BlocksRingBuffer::EntryReserver aER) {
@@ -509,10 +533,10 @@ void TestBlocksRingBufferAPI() {
         std::is_same<decltype(bi2), BlocksRingBuffer::BlockIndex>::value,
         "All index-returning functions should return a "
         "BlocksRingBuffer::BlockIndex");
-    MOZ_RELEASE_ASSERT(ExtractBlockIndex(bi2) == 5);
+    MOZ_RELEASE_ASSERT(ExtractBlockIndex(bi2) == 6);
     
     
-    VERIFY_START_END_DESTROYED(0, 10, 0);
+    VERIFY_START_END_DESTROYED(1, 11, 0);
 
     
     auto bi2Next =
@@ -530,6 +554,53 @@ void TestBlocksRingBufferAPI() {
     });
 
     
+    if (bi2) {
+    } else {
+      MOZ_RELEASE_ASSERT(false,
+                         "if (non-default-BlockIndex) should succeed test");
+    }
+    if (!bi2) {
+      MOZ_RELEASE_ASSERT(false,
+                         "if (!non-default-BlockIndex) should fail test");
+    }
+
+    MOZ_RELEASE_ASSERT(!!bi2);
+    MOZ_RELEASE_ASSERT(bi2 == bi2);
+    MOZ_RELEASE_ASSERT(bi2 <= bi2);
+    MOZ_RELEASE_ASSERT(bi2 >= bi2);
+    MOZ_RELEASE_ASSERT(!(bi2 != bi2));
+    MOZ_RELEASE_ASSERT(!(bi2 < bi2));
+    MOZ_RELEASE_ASSERT(!(bi2 > bi2));
+
+    MOZ_RELEASE_ASSERT(bi0 != bi2);
+    MOZ_RELEASE_ASSERT(bi0 < bi2);
+    MOZ_RELEASE_ASSERT(bi0 <= bi2);
+    MOZ_RELEASE_ASSERT(!(bi0 == bi2));
+    MOZ_RELEASE_ASSERT(!(bi0 > bi2));
+    MOZ_RELEASE_ASSERT(!(bi0 >= bi2));
+
+    MOZ_RELEASE_ASSERT(bi2 != bi0);
+    MOZ_RELEASE_ASSERT(bi2 > bi0);
+    MOZ_RELEASE_ASSERT(bi2 >= bi0);
+    MOZ_RELEASE_ASSERT(!(bi2 == bi0));
+    MOZ_RELEASE_ASSERT(!(bi2 < bi0));
+    MOZ_RELEASE_ASSERT(!(bi2 <= bi0));
+
+    MOZ_RELEASE_ASSERT(bi2 != bi2Next);
+    MOZ_RELEASE_ASSERT(bi2 < bi2Next);
+    MOZ_RELEASE_ASSERT(bi2 <= bi2Next);
+    MOZ_RELEASE_ASSERT(!(bi2 == bi2Next));
+    MOZ_RELEASE_ASSERT(!(bi2 > bi2Next));
+    MOZ_RELEASE_ASSERT(!(bi2 >= bi2Next));
+
+    MOZ_RELEASE_ASSERT(bi2Next != bi2);
+    MOZ_RELEASE_ASSERT(bi2Next > bi2);
+    MOZ_RELEASE_ASSERT(bi2Next >= bi2);
+    MOZ_RELEASE_ASSERT(!(bi2Next == bi2));
+    MOZ_RELEASE_ASSERT(!(bi2Next < bi2));
+    MOZ_RELEASE_ASSERT(!(bi2Next <= bi2));
+
+    
     
     auto put3 = rb.Put([&](BlocksRingBuffer::EntryReserver aER) {
       return aER.Reserve(
@@ -540,10 +611,10 @@ void TestBlocksRingBufferAPI() {
     });
     static_assert(std::is_same<decltype(put3), float>::value,
                   "Expect float as returned by callback.");
-    MOZ_RELEASE_ASSERT(put3 == 10.0);
+    MOZ_RELEASE_ASSERT(put3 == 11.0);
     
     
-    VERIFY_START_END_DESTROYED(0, 15, 0);
+    VERIFY_START_END_DESTROYED(1, 16, 0);
 
     
     rb.ReadAt(bi2, [&](Maybe<BlocksRingBuffer::EntryReader>&& aMaybeReader) {
@@ -586,7 +657,7 @@ void TestBlocksRingBufferAPI() {
     
     
     
-    VERIFY_START_END_DESTROYED(5, 20, 1);
+    VERIFY_START_END_DESTROYED(6, 21, 1);
 
     
     count = 1;
@@ -612,7 +683,7 @@ void TestBlocksRingBufferAPI() {
     });
     
     
-    VERIFY_START_END_DESTROYED(10, 25, 2);
+    VERIFY_START_END_DESTROYED(11, 26, 2);
 
     
     rb.ReadAt(bi2, [](Maybe<BlocksRingBuffer::EntryReader>&& aMaybeReader) {
@@ -638,7 +709,7 @@ void TestBlocksRingBufferAPI() {
     rb.ClearBefore(bi4);
     
     
-    VERIFY_START_END_DESTROYED(15, 25, 3);
+    VERIFY_START_END_DESTROYED(16, 26, 3);
 
     
     count = 3;
@@ -650,14 +721,14 @@ void TestBlocksRingBufferAPI() {
     
     lastDestroyed = 0;
     rb.ClearBefore(bi4);
-    VERIFY_START_END_DESTROYED(15, 25, 0);
+    VERIFY_START_END_DESTROYED(16, 26, 0);
 
     
     
     rb.Clear();
     
     
-    VERIFY_START_END_DESTROYED(25, 25, 5);
+    VERIFY_START_END_DESTROYED(26, 26, 5);
 
     
     rb.ReadEach([&](auto&&) { MOZ_RELEASE_ASSERT(false); });
@@ -670,13 +741,13 @@ void TestBlocksRingBufferAPI() {
     
     lastDestroyed = 0;
     rb.ClearBefore(bi4);
-    VERIFY_START_END_DESTROYED(25, 25, 0);
+    VERIFY_START_END_DESTROYED(26, 26, 0);
 
     
-    MOZ_RELEASE_ASSERT(ExtractBlockIndex(rb.PutObject(uint32_t(6))) == 25);
+    MOZ_RELEASE_ASSERT(ExtractBlockIndex(rb.PutObject(uint32_t(6))) == 26);
     
     
-    VERIFY_START_END_DESTROYED(25, 30, 0);
+    VERIFY_START_END_DESTROYED(26, 31, 0);
 
     
   }
