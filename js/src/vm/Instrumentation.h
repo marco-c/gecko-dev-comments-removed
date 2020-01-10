@@ -39,12 +39,12 @@ enum class InstrumentationKind {
 
 class RealmInstrumentation {
   
-  GCPtrObject callback;
+  const GCPtrObject callback;
 
   
   
   
-  GCPtrObject dbgObject;
+  const GCPtrObject dbgObject;
 
   
   uint32_t kinds = 0;

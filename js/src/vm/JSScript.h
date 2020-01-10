@@ -1404,7 +1404,7 @@ class BaseScript : public gc::TenuredCell {
   
   
   
-  GCPtrObject functionOrGlobal_;
+  const GCPtrObject functionOrGlobal_;
 
   
   GCPtr<ScriptSourceObject*> sourceObject_ = {};
