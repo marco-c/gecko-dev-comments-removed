@@ -27,7 +27,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
   }
 );
 
-AntiTracking.runTestInNormalAndPrivateMode(
+AntiTracking.runTest(
   "IndexedDB and Storage Access API",
   
   async _ => {

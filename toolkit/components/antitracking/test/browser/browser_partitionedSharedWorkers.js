@@ -1,6 +1,6 @@
 
 
-PartitionedStorageHelper.runTestInNormalAndPrivateMode(
+PartitionedStorageHelper.runTest(
   "SharedWorkers",
   async (win3rdParty, win1stParty, allowed) => {
     
@@ -53,7 +53,7 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
   }
 );
 
-PartitionedStorageHelper.runPartitioningTestInNormalAndPrivateMode(
+PartitionedStorageHelper.runPartitioningTest(
   "Partitioned tabs - SharedWorker",
 
   

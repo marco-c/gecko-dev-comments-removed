@@ -15511,6 +15511,13 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
 
+  if (nsContentUtils::IsInPrivateBrowsing(this)) {
+    
+    
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
   if (CookieSettings()->GetRejectThirdPartyTrackers() && inner) {
     
     if (StorageDisabledByAntiTracking(this, nullptr)) {

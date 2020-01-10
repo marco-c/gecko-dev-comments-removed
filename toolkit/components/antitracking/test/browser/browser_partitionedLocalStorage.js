@@ -1,7 +1,7 @@
 
 
 
-AntiTracking.runTestInNormalAndPrivateMode(
+AntiTracking.runTest(
   "localStorage and Storage Access API",
   async _ => {
     
@@ -93,7 +93,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
   false
 );
 
-PartitionedStorageHelper.runPartitioningTestInNormalAndPrivateMode(
+PartitionedStorageHelper.runPartitioningTest(
   "Partitioned tabs - localStorage",
 
   
