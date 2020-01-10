@@ -192,6 +192,14 @@ class AudioContext final : public DOMEventTargetHelper,
 
   AudioContextState State() const { return mAudioContextState; }
 
+  double BaseLatency() const {
+    
+    
+    return 0.0;
+  }
+
+  double OutputLatency();
+
   Worklet* GetAudioWorklet(ErrorResult& aRv);
 
   bool IsRunning() const;
