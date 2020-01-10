@@ -8,6 +8,67 @@ const { LoginManagerContextMenu } = ChromeUtils.import(
   "resource://gre/modules/LoginManagerContextMenu.jsm"
 );
 
+const dateAndTimeFormatter = new Services.intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+});
+
+const ORIGIN_HTTP_EXAMPLE_ORG = "http://example.org";
+const ORIGIN_HTTPS_EXAMPLE_ORG = "https://example.org";
+const ORIGIN_HTTPS_EXAMPLE_ORG_8080 = "https://example.org:8080";
+const ORIGIN_HTTPS_SUB_EXAMPLE_ORG = "https://sub.example.org";
+
+const FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1 = formLogin({
+  formActionOrigin: ORIGIN_HTTPS_EXAMPLE_ORG,
+  guid: "FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1",
+  origin: ORIGIN_HTTPS_EXAMPLE_ORG,
+});
+
+
+const FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1 = formLogin({
+  formActionOrigin: ORIGIN_HTTP_EXAMPLE_ORG,
+  guid: "FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1",
+  origin: ORIGIN_HTTP_EXAMPLE_ORG,
+});
+
+
+const FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P2 = formLogin({
+  formActionOrigin: ORIGIN_HTTP_EXAMPLE_ORG,
+  guid: "FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P2",
+  origin: ORIGIN_HTTP_EXAMPLE_ORG,
+  password: "pass2",
+});
+
+
+
+const FORM_LOGIN_HTTPS_EXAMPLE_ORG_8080_U1_P2 = formLogin({
+  formActionOrigin: ORIGIN_HTTPS_EXAMPLE_ORG_8080,
+  guid: "FORM_LOGIN_HTTPS_EXAMPLE_ORG_8080_U1_P2",
+  origin: ORIGIN_HTTPS_EXAMPLE_ORG_8080,
+  password: "pass2",
+});
+
+
+
+const FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P1 = formLogin({
+  formActionOrigin: ORIGIN_HTTPS_SUB_EXAMPLE_ORG,
+  guid: "FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P1",
+  origin: ORIGIN_HTTPS_SUB_EXAMPLE_ORG,
+});
+
+const FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P2 = formLogin({
+  formActionOrigin: ORIGIN_HTTPS_SUB_EXAMPLE_ORG,
+  guid: "FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P2",
+  origin: ORIGIN_HTTPS_SUB_EXAMPLE_ORG,
+  password: "pass2",
+});
+
+
+
+const HTTP_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1 = authLogin({
+  guid: "FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1",
+  origin: ORIGIN_HTTPS_EXAMPLE_ORG,
+});
+
 XPCOMUtils.defineLazyGetter(this, "_stringBundle", function() {
   return Services.strings.createBundle(
     "chrome://passwordmgr/locale/passwordmgr.properties"
@@ -18,69 +79,337 @@ XPCOMUtils.defineLazyGetter(this, "_stringBundle", function() {
 
 
 add_task(async function test_initialize() {
-  for (let login of loginList()) {
+  Services.prefs.setBoolPref("signon.schemeUpgrades", true);
+  Services.prefs.setBoolPref("signon.includeOtherSubdomainsInLookup", true);
+});
+
+add_task(async function test_sameOriginOnlyHTTPS() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      },
+    ],
+  });
+});
+
+add_task(async function test_sameOriginOnlyHTTPS_noUsername() {
+  let loginWithoutUsername = FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.clone();
+  loginWithoutUsername.QueryInterface(Ci.nsILoginMetaInfo).guid = "no-username";
+  loginWithoutUsername.username = "";
+  await runTestcase({
+    formOrigin: loginWithoutUsername.origin,
+    savedLogins: [loginWithoutUsername],
+    expectedItems: [
+      {
+        login: loginWithoutUsername,
+        time: true,
+      },
+    ],
+  });
+});
+
+add_task(async function test_sameOriginOnlyHTTP() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1,
+      },
+    ],
+  });
+});
+
+
+
+add_task(async function test_sameOriginDedupeSchemeUpgrade() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1,
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      },
+    ],
+  });
+});
+
+add_task(async function test_sameOriginSchemeDowngrade() {
+  
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1,
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1,
+      },
+    ],
+  });
+});
+
+add_task(async function test_sameOriginShadowedSchemeUpgrade() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P2, 
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      },
+    ],
+  });
+});
+
+add_task(async function test_sameOriginShadowedSchemeDowngrade() {
+  
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P2, 
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTP_EXAMPLE_ORG_U1_P2,
+      },
+    ],
+  });
+});
+
+
+
+add_task(async function test_sameDomainDifferentPort_onDefault() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_8080_U1_P2,
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+        time: true,
+      },
+      "--", 
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_8080_U1_P2.displayOrigin, 
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_8080_U1_P2,
+        time: true,
+      },
+    ],
+  });
+});
+
+add_task(async function test_sameDomainDifferentPort_onNonDefault() {
+  await runTestcase({
+    
+    formOrigin: FORM_LOGIN_HTTPS_EXAMPLE_ORG_8080_U1_P2.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_8080_U1_P2,
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_8080_U1_P2,
+        time: true,
+      },
+      "--", 
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.displayOrigin, 
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+        time: true,
+      },
+    ],
+  });
+});
+
+
+
+add_task(async function test_onlySubdomainOnBaseDomain() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P1],
+    expectedItems: [
+      
+      FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P1.displayOrigin,
+      {
+        login: FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P1,
+      },
+    ],
+  });
+});
+
+add_task(async function test_subdomainDedupeOnBaseDomain() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P1,
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      },
+    ],
+  });
+});
+
+add_task(async function test_subdomainDedupeOnSubDomain() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P1,
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P1,
+      },
+    ],
+  });
+});
+
+add_task(async function test_subdomainIncludedOnBaseDomain() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P2,
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+        time: true,
+      },
+      "--", 
+      FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P2.displayOrigin, 
+      {
+        login: FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P2,
+        time: true,
+      },
+    ],
+  });
+});
+
+add_task(async function test_subdomainIncludedOnSubDomain() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P2.origin,
+    savedLogins: [
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P2,
+    ],
+    expectedItems: [
+      {
+        login: FORM_LOGIN_HTTPS_SUB_EXAMPLE_ORG_U1_P2,
+        time: true,
+      },
+      "--", 
+      FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.displayOrigin, 
+      {
+        login: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+        time: true,
+      },
+    ],
+  });
+});
+
+
+
+add_task(async function test_sameOriginOnlyHTTPAuth() {
+  await runTestcase({
+    formOrigin: FORM_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.origin,
+    savedLogins: [HTTP_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1],
+    expectedItems: [
+      
+      HTTP_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1.displayOrigin, 
+      {
+        login: HTTP_LOGIN_HTTPS_EXAMPLE_ORG_U1_P1,
+      },
+    ],
+  });
+});
+
+
+
+function formLogin(modifications = {}) {
+  let mods = Object.assign(
+    {},
+    {
+      timePasswordChanged: 1573821296000,
+    },
+    modifications
+  );
+  return TestData.formLogin(mods);
+}
+
+function authLogin(modifications = {}) {
+  let mods = Object.assign(
+    {},
+    {
+      timePasswordChanged: 1573821296000,
+    },
+    modifications
+  );
+  return TestData.authLogin(mods);
+}
+
+
+
+
+async function runTestcase({ formOrigin, savedLogins, expectedItems }) {
+  const DOCUMENT_CONTENT = "<form><input id='pw' type=password></form>";
+
+  for (let login of savedLogins) {
     Services.logins.addLogin(login);
   }
-});
 
+  
+  let { fragment, document } = createLoginsFragment(
+    formOrigin,
+    DOCUMENT_CONTENT
+  );
 
-
-
-add_task(async function test_contextMenuAddAndRemoveLogins() {
-  const DOCUMENT_CONTENT = "<form><input id='pw' type=password></form>";
-  const INPUT_QUERY = "input[type='password']";
-
-  let testOrigins = [
-    "http://www.example.com",
-    "http://www2.example.com",
-    "http://www3.example.com",
-    "http://empty.example.com",
-  ];
-
-  for (let origin of testOrigins) {
-    info("test for origin: " + origin);
-    
-    let logins = getExpectedLogins(origin);
-
-    
-    let { fragment, document } = createLoginsFragment(
-      origin,
-      DOCUMENT_CONTENT,
-      INPUT_QUERY
-    );
-
-    if (!logins.length) {
-      Assert.ok(fragment === null, "Null returned. No logins where found.");
-      continue;
-    }
-    let items = [...fragment.querySelectorAll("menuitem")];
-
-    
-    Assert.ok(checkLoginItems(logins, items), "All expected logins found.");
-    document.body.appendChild(fragment);
-
-    
-    LoginManagerContextMenu.clearLoginsFromMenu(document);
-    Assert.equal(
-      fragment.querySelectorAll("menuitem").length,
-      0,
-      "All items correctly cleared."
-    );
+  if (!expectedItems.length) {
+    Assert.ok(fragment === null, "Null returned. No logins were found.");
+    return;
   }
+  let actualItems = [...fragment.children];
+
+  
+  checkLoginItems(actualItems, expectedItems);
+
+  document.body.appendChild(fragment);
+
+  
+  LoginManagerContextMenu.clearLoginsFromMenu(document);
+  Assert.equal(
+    document.querySelectorAll("menuitem, menuseparator, menucaption").length,
+    0,
+    "All items correctly cleared."
+  );
 
   Services.logins.removeAllLogins();
-});
+}
 
 
 
 
-function createLoginsFragment(url, content, elementQuery) {
-  const CHROME_URL = "chrome://mock-chrome";
+function createLoginsFragment(url, content) {
+  const CHROME_URL = "chrome://mock-chrome/content/";
 
   
   let document = MockDocument.createTestDocument(CHROME_URL, content);
-  let inputElement = document.querySelector(elementQuery);
-  MockDocument.mockOwnerDocumentProperty(inputElement, document, url);
 
   
   document.createXULElement = document.createElement.bind(document);
@@ -92,143 +421,54 @@ function createLoginsFragment(url, content, elementQuery) {
   return {
     document,
     fragment: LoginManagerContextMenu.addLoginsToMenu(
-      inputElement,
+      null,
       browser,
       formOrigin
     ),
   };
 }
 
+function checkLoginItems(actualItems, expectedDetails) {
+  for (let [i, expectedDetail] of expectedDetails.entries()) {
+    let actualElement = actualItems[i];
 
-
-
-
-function checkLoginItems(logins, items) {
-  function findDuplicates(unfilteredLoginList) {
-    let seen = new Set();
-    let duplicates = new Set();
-    for (let login of unfilteredLoginList) {
-      if (seen.has(login.username)) {
-        duplicates.add(login.username);
-      }
-      seen.add(login.username);
-    }
-    return duplicates;
-  }
-  let duplicates = findDuplicates(logins);
-
-  let dateAndTimeFormatter = new Services.intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-  });
-  for (let login of logins) {
-    if (login.username && !duplicates.has(login.username)) {
-      
-      if (!items.find(item => item.label == login.username)) {
-        return false;
-      }
+    
+    if (expectedDetail == "--") {
+      Assert.equal(actualElement.localName, "menuseparator", "Check localName");
       continue;
     }
 
-    let meta = login.QueryInterface(Ci.nsILoginMetaInfo);
-    let time = dateAndTimeFormatter.format(new Date(meta.timePasswordChanged));
     
-    if (
-      login.username &&
-      !items.find(item => item.label == login.username + " (" + time + ")")
-    ) {
-      return false;
+    if (typeof expectedDetail == "string") {
+      Assert.equal(actualElement.localName, "menucaption", "Check localName");
+      continue;
     }
-    
-    if (
-      !login.username &&
-      !items.find(
-        item =>
-          item.label ==
-          _stringBundle.GetStringFromName("noUsername") + " (" + time + ")"
-      )
-    ) {
-      return false;
+
+    Assert.equal(actualElement.localName, "menuitem", "Check localName");
+    Assert.equal(
+      actualElement.id,
+      "login-" + expectedDetail.login.guid,
+      `Check id ${i}`
+    );
+
+    let expectedLabel = expectedDetail.login.username;
+    if (!expectedLabel) {
+      expectedLabel += _stringBundle.GetStringFromName("noUsername");
     }
+    if (expectedDetail.time) {
+      expectedLabel +=
+        " (" +
+        dateAndTimeFormatter.format(
+          new Date(expectedDetail.login.timePasswordChanged)
+        ) +
+        ")";
+    }
+    Assert.equal(actualElement.label, expectedLabel, `Check label ${i}`);
   }
-  return true;
-}
 
-
-
-
-function getExpectedLogins(origin) {
-  return Services.logins
-    .getAllLogins()
-    .filter(entry => entry.origin === origin);
-}
-
-function loginList() {
-  return [
-    new LoginInfo(
-      "http://www.example.com",
-      "http://www.example.com",
-      null,
-      "username1",
-      "password",
-      "form_field_username",
-      "form_field_password"
-    ),
-
-    new LoginInfo(
-      "http://www.example.com",
-      "http://www.example.com",
-      null,
-      "username2",
-      "password",
-      "form_field_username",
-      "form_field_password"
-    ),
-
-    new LoginInfo(
-      "http://www2.example.com",
-      "http://www.example.com",
-      null,
-      "username",
-      "password",
-      "form_field_username",
-      "form_field_password"
-    ),
-    new LoginInfo(
-      "http://www2.example.com",
-      "http://www2.example.com",
-      null,
-      "username",
-      "password2",
-      "form_field_username",
-      "form_field_password"
-    ),
-    new LoginInfo(
-      "http://www2.example.com",
-      "http://www2.example.com",
-      null,
-      "username2",
-      "password2",
-      "form_field_username",
-      "form_field_password"
-    ),
-
-    new LoginInfo(
-      "http://www3.example.com",
-      "http://www.example.com",
-      null,
-      "",
-      "password",
-      "form_field_username",
-      "form_field_password"
-    ),
-    new LoginInfo(
-      "http://www3.example.com",
-      "http://www3.example.com",
-      null,
-      "",
-      "password2",
-      "form_field_username",
-      "form_field_password"
-    ),
-  ];
+  Assert.equal(
+    actualItems.length,
+    expectedDetails.length,
+    "Should have the correct number of menu items"
+  );
 }

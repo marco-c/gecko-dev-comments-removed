@@ -42,8 +42,15 @@ this.LoginManagerContextMenu = {
 
 
 
-  addLoginsToMenu(inputElementIdentifier, browser, formOrigin) {
-    let foundLogins = this._findLogins(formOrigin);
+
+
+  addLoginsToMenu(
+    inputElementIdentifier,
+    browser,
+    formOrigin,
+    formActionOrigin
+  ) {
+    let foundLogins = this._findLogins(formOrigin, formActionOrigin);
 
     if (!foundLogins.length) {
       return null;
@@ -51,7 +58,32 @@ this.LoginManagerContextMenu = {
 
     let fragment = browser.ownerDocument.createDocumentFragment();
     let duplicateUsernames = this._findDuplicates(foundLogins);
+    
+    
+    let lastDisplayOrigin = LoginHelper.maybeGetHostPortForURL(formOrigin);
+    let lastMenuCaption = null;
     for (let login of foundLogins) {
+      
+      
+      if (lastDisplayOrigin != login.displayOrigin) {
+        if (fragment.children.length) {
+          let menuSeparator = fragment.ownerDocument.createXULElement(
+            "menuseparator"
+          );
+          menuSeparator.className = "context-login-item";
+          fragment.appendChild(menuSeparator);
+        }
+
+        lastMenuCaption = fragment.ownerDocument.createXULElement(
+          "menucaption"
+        );
+        lastMenuCaption.setAttribute("role", "group");
+        lastMenuCaption.label = login.displayOrigin;
+        lastMenuCaption.className = "context-login-item";
+
+        fragment.appendChild(lastMenuCaption);
+      }
+
       let item = fragment.ownerDocument.createXULElement("menuitem");
 
       let username = login.username;
@@ -66,8 +98,16 @@ this.LoginManagerContextMenu = {
         );
         username = this._getLocalizedString("loginHostAge", [username, time]);
       }
+      item.id = "login-" + login.guid;
       item.setAttribute("label", username);
       item.setAttribute("class", "context-login-item");
+      if (lastMenuCaption) {
+        item.setAttribute("aria-level", "2");
+        lastMenuCaption.setAttribute(
+          "aria-owns",
+          lastMenuCaption.getAttribute("aria-owns") + item.id + " "
+        );
+      }
 
       
       item.addEventListener(
@@ -83,6 +123,7 @@ this.LoginManagerContextMenu = {
       );
 
       fragment.appendChild(item);
+      lastDisplayOrigin = login.displayOrigin;
     }
 
     return fragment;
@@ -140,6 +181,27 @@ this.LoginManagerContextMenu = {
     });
   },
 
+  loginSort(formHostPort, a, b) {
+    let maybeHostPortA = LoginHelper.maybeGetHostPortForURL(a.origin);
+    let maybeHostPortB = LoginHelper.maybeGetHostPortForURL(b.origin);
+
+    
+    if (formHostPort == maybeHostPortA && formHostPort != maybeHostPortB) {
+      return -1;
+    }
+    if (formHostPort != maybeHostPortA && formHostPort == maybeHostPortB) {
+      return 1;
+    }
+
+    
+    if (a.displayOrigin !== b.displayOrigin) {
+      return a.displayOrigin.localeCompare(b.displayOrigin);
+    }
+
+    
+    return a.username.localeCompare(b.username);
+  },
+
   
 
 
@@ -150,41 +212,21 @@ this.LoginManagerContextMenu = {
 
 
 
-  _findLogins(formOrigin) {
+
+  _findLogins(formOrigin, formActionOrigin) {
     let searchParams = {
-      origin: formOrigin,
-      schemeUpgrades: LoginHelper.schemeUpgrades,
+      acceptDifferentSubdomains: LoginHelper.includeOtherSubdomainsInLookup,
+      formActionOrigin,
+      ignoreActionAndRealm: true,
     };
-    let logins = LoginHelper.searchLoginsWithObject(searchParams);
-    let resolveBy = ["scheme", "timePasswordChanged"];
-    logins = LoginHelper.dedupeLogins(
-      logins,
-      ["username", "password"],
-      resolveBy,
-      formOrigin
+
+    let logins = LoginManagerParent.searchAndDedupeLogins(
+      formOrigin,
+      searchParams
     );
 
-    
-    logins.sort((loginA, loginB) => {
-      
-      let result = loginA.username.localeCompare(loginB.username);
-      if (result) {
-        
-        if (!loginA.username) {
-          return 1;
-        }
-        if (!loginB.username) {
-          return -1;
-        }
-        return result;
-      }
-
-      
-      let metaA = loginA.QueryInterface(Ci.nsILoginMetaInfo);
-      let metaB = loginB.QueryInterface(Ci.nsILoginMetaInfo);
-      return metaB.timePasswordChanged - metaA.timePasswordChanged;
-    });
-
+    let formHostPort = LoginHelper.maybeGetHostPortForURL(formOrigin);
+    logins.sort(this.loginSort.bind(null, formHostPort));
     return logins;
   },
 
