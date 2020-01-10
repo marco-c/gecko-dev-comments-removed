@@ -9,11 +9,10 @@
 #ifndef builtin_streams_WritableStreamWriterOperations_h
 #define builtin_streams_WritableStreamWriterOperations_h
 
-#include "mozilla/Attributes.h"  
-
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 
+struct JSContext;
 class JSObject;
 
 namespace js {
