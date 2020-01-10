@@ -3,10 +3,13 @@ use crate::environ::{WasmError, WasmResult};
 use core::u32;
 use cranelift_codegen::entity::entity_impl;
 use cranelift_codegen::ir;
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
 use wasmparser;
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct FuncIndex(u32);
 entity_impl!(FuncIndex);
 
@@ -51,7 +54,7 @@ pub struct SignatureIndex(u32);
 entity_impl!(SignatureIndex);
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct Global {
     
     pub ty: ir::Type,
@@ -62,7 +65,7 @@ pub struct Global {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub enum GlobalInit {
     
     I32Const(i32),
@@ -79,7 +82,7 @@ pub enum GlobalInit {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct Table {
     
     pub ty: TableElementType,
@@ -90,7 +93,7 @@ pub struct Table {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub enum TableElementType {
     
     Val(ir::Type),
@@ -99,7 +102,7 @@ pub enum TableElementType {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct Memory {
     
     pub minimum: u32,

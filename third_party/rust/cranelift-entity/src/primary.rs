@@ -7,6 +7,8 @@ use core::iter::FromIterator;
 use core::marker::PhantomData;
 use core::ops::{Index, IndexMut};
 use core::slice;
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
 use std::boxed::Box;
 use std::vec::Vec;
 
@@ -25,7 +27,8 @@ use std::vec::Vec;
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct PrimaryMap<K, V>
 where
     K: EntityRef,

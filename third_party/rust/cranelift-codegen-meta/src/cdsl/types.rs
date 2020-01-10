@@ -27,7 +27,7 @@ static _RUST_NAME_PREFIX: &'static str = "ir::types::";
 
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ValueType {
     BV(BVType),
     Lane(LaneType),
@@ -147,7 +147,7 @@ impl From<VectorType> for ValueType {
 }
 
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LaneType {
     BoolType(shared_types::Bool),
     FloatType(shared_types::Float),
@@ -327,7 +327,7 @@ impl Iterator for LaneTypeIterator {
 
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct VectorType {
     base: LaneType,
     lanes: u64,
@@ -393,7 +393,7 @@ impl fmt::Debug for VectorType {
 }
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct BVType {
     bits: u64,
 }

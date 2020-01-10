@@ -22,6 +22,8 @@
 use crate::entity::entity_impl;
 use core::fmt;
 use core::u32;
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -67,6 +69,7 @@ entity_impl!(Inst, "inst");
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct StackSlot(u32);
 entity_impl!(StackSlot, "ss");
 
@@ -103,6 +106,7 @@ impl GlobalValue {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct JumpTable(u32);
 entity_impl!(JumpTable, "jt");
 

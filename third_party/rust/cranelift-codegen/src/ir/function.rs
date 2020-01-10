@@ -19,6 +19,9 @@ use crate::value_label::ValueLabelsRanges;
 use crate::write::write_function;
 use core::fmt;
 
+#[cfg(feature = "basic-blocks")]
+use crate::ir::{Inst, Opcode};
+
 
 
 
@@ -219,25 +222,41 @@ impl Function {
     pub fn collect_debug_info(&mut self) {
         self.dfg.collect_debug_info();
     }
+
+    
+    
+    
+    #[cfg(feature = "basic-blocks")]
+    pub fn is_ebb_basic(&self, ebb: Ebb) -> Result<(), (Inst, &'static str)> {
+        let dfg = &self.dfg;
+        let inst_iter = self.layout.ebb_insts(ebb);
+
+        
+        let mut inst_iter = inst_iter.skip_while(|&inst| !dfg[inst].opcode().is_branch());
+
+        
+        
+        if let Some(_branch) = inst_iter.next() {
+            if let Some(next) = inst_iter.next() {
+                match dfg[next].opcode() {
+                    Opcode::Fallthrough | Opcode::Jump => (),
+                    _ => return Err((next, "post-branch instruction not fallthrough or jump")),
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 
+#[derive(Default)]
 pub struct DisplayFunctionAnnotations<'a> {
     
     pub isa: Option<&'a dyn TargetIsa>,
 
     
     pub value_ranges: Option<&'a ValueLabelsRanges>,
-}
-
-impl<'a> DisplayFunctionAnnotations<'a> {
-    
-    pub fn default() -> Self {
-        DisplayFunctionAnnotations {
-            isa: None,
-            value_ranges: None,
-        }
-    }
 }
 
 impl<'a> From<Option<&'a dyn TargetIsa>> for DisplayFunctionAnnotations<'a> {

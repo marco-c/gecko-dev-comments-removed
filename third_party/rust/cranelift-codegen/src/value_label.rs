@@ -8,8 +8,12 @@ use std::ops::Bound::*;
 use std::ops::Deref;
 use std::vec::Vec;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct ValueLocRange {
     
     pub loc: ValueLoc,

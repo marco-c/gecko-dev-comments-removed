@@ -1,6 +1,6 @@
 
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Bool {
     
     B1 = 1,
@@ -41,7 +41,7 @@ impl Iterator for BoolIterator {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Int {
     
     I8 = 8,
@@ -79,7 +79,7 @@ impl Iterator for IntIterator {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Float {
     F32 = 32,
     F64 = 64,

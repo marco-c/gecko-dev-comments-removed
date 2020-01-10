@@ -41,11 +41,21 @@ pub struct FunctionBuilder<'a> {
 
 #[derive(Clone, Default)]
 struct EbbData {
-    filled: bool,
+    
+    
     pristine: bool,
+
+    
+    
+    
+    
+    filled: bool,
+
+    
     user_param_count: usize,
 }
 
+#[derive(Default)]
 struct Position {
     ebb: PackedOption<Ebb>,
     basic_block: PackedOption<Block>,
@@ -56,13 +66,6 @@ impl Position {
         Self {
             ebb: PackedOption::from(ebb),
             basic_block: PackedOption::from(basic_block),
-        }
-    }
-
-    fn default() -> Self {
-        Self {
-            ebb: PackedOption::default(),
-            basic_block: PackedOption::default(),
         }
     }
 
@@ -477,6 +480,19 @@ impl<'a> FunctionBuilder<'a> {
         );
 
         
+        #[cfg(feature = "basic-blocks")]
+        #[cfg(debug_assertions)]
+        {
+            
+            for ebb in self.func_ctx.ebbs.keys() {
+                if let Err((inst, _msg)) = self.func.is_ebb_basic(ebb) {
+                    let inst_str = self.func.dfg.display_inst(inst, None);
+                    panic!("{} failed basic block invariants on {}", ebb, inst_str);
+                }
+            }
+        }
+
+        
         
         self.func_ctx.clear();
 
@@ -846,6 +862,7 @@ impl<'a> FunctionBuilder<'a> {
         );
     }
 
+    
     fn fill_current_block(&mut self) {
         self.func_ctx.ebbs[self.position.ebb.unwrap()].filled = true;
     }

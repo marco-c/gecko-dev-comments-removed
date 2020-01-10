@@ -267,8 +267,6 @@ struct Verifier<'a> {
     expected_cfg: ControlFlowGraph,
     expected_domtree: DominatorTree,
     isa: Option<&'a dyn TargetIsa>,
-    
-    verify_encodable_as_bb: bool,
 }
 
 impl<'a> Verifier<'a> {
@@ -280,7 +278,6 @@ impl<'a> Verifier<'a> {
             expected_cfg,
             expected_domtree,
             isa: fisa.isa,
-            verify_encodable_as_bb: std::env::var("CRANELIFT_BB").is_ok(),
         }
     }
 
@@ -473,48 +470,11 @@ impl<'a> Verifier<'a> {
 
     
     
+    #[cfg(feature = "basic-blocks")]
     fn encodable_as_bb(&self, ebb: Ebb, errors: &mut VerifierErrors) -> VerifierStepResult<()> {
-        
-        if !self.verify_encodable_as_bb {
-            return Ok(());
-        };
-
-        let dfg = &self.func.dfg;
-        let inst_iter = self.func.layout.ebb_insts(ebb);
-        
-        let mut inst_iter = inst_iter.skip_while(|&inst| !dfg[inst].opcode().is_branch());
-
-        let branch = match inst_iter.next() {
-            
-            None => return Ok(()),
-            Some(br) => br,
-        };
-
-        let after_branch = match inst_iter.next() {
-            
-            None => return Ok(()),
-            Some(inst) => inst,
-        };
-
-        let after_branch_opcode = dfg[after_branch].opcode();
-        if !after_branch_opcode.is_terminator() {
-            return fatal!(
-                errors,
-                branch,
-                "branch followed by a non-terminator instruction."
-            );
-        };
-
-        
-        
-        
-        match after_branch_opcode {
-            Opcode::Fallthrough | Opcode::Jump => Ok(()),
-            _ => fatal!(
-                errors,
-                after_branch,
-                "terminator instruction not fallthrough or jump"
-            ),
+        match self.func.is_ebb_basic(ebb) {
+            Ok(()) => Ok(()),
+            Err((inst, message)) => fatal!(errors, inst, message),
         }
     }
 
@@ -1794,6 +1754,8 @@ impl<'a> Verifier<'a> {
                 self.verify_encoding(inst, errors)?;
                 self.immediate_constraints(inst, errors)?;
             }
+
+            #[cfg(feature = "basic-blocks")]
             self.encodable_as_bb(ebb, errors)?;
         }
 

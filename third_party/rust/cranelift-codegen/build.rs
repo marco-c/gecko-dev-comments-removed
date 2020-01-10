@@ -51,37 +51,10 @@ fn main() {
 
     
     
-    
     println!(
         "cargo:rerun-if-changed={}",
         crate_dir.join("build.rs").to_str().unwrap()
     );
-
-    
-    let meta_dir = crate_dir.join("meta-python");
-    let build_script = meta_dir.join("build.py");
-
-    
-    
-    
-    let python = identify_python();
-    let status = process::Command::new(python)
-        .current_dir(crate_dir)
-        .arg("-B")
-        .arg(build_script)
-        .arg("--out-dir")
-        .arg(out_dir.clone())
-        .status()
-        .expect("Failed to launch second-level build script; is python installed?");
-    if !status.success() {
-        process::exit(status.code().unwrap());
-    }
-
-    
-    
-    
-    
-    
 
     if let Err(err) = meta::generate(&isas, &out_dir) {
         eprintln!("Error: {}", err);
@@ -98,17 +71,4 @@ fn main() {
         );
         println!("cargo:warning=Generated files are in {}", out_dir);
     }
-}
-
-fn identify_python() -> &'static str {
-    for python in &["python", "python3", "python2.7"] {
-        if process::Command::new(python)
-            .arg("--version")
-            .status()
-            .is_ok()
-        {
-            return python;
-        }
-    }
-    panic!("The Cranelift build requires Python (version 2.7 or version 3)");
 }

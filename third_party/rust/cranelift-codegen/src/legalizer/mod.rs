@@ -19,6 +19,7 @@ use crate::flowgraph::ControlFlowGraph;
 use crate::ir::types::I32;
 use crate::ir::{self, InstBuilder, MemFlags};
 use crate::isa::TargetIsa;
+use crate::predicates;
 use crate::timing;
 
 mod boundary;
@@ -156,22 +157,38 @@ fn expand_cond_trap(
     
     
     
+    
+    
+    
+    
+    
     let old_ebb = func.layout.pp_ebb(inst);
-    let new_ebb = func.dfg.make_ebb();
+    let new_ebb_trap = func.dfg.make_ebb();
+    let new_ebb_resume = func.dfg.make_ebb();
+
+    
     if trapz {
-        func.dfg.replace(inst).brnz(arg, new_ebb, &[]);
+        func.dfg.replace(inst).brnz(arg, new_ebb_resume, &[]);
     } else {
-        func.dfg.replace(inst).brz(arg, new_ebb, &[]);
+        func.dfg.replace(inst).brz(arg, new_ebb_resume, &[]);
     }
 
+    
     let mut pos = FuncCursor::new(func).after_inst(inst);
     pos.use_srcloc(inst);
+    pos.ins().jump(new_ebb_trap, &[]);
+
+    
+    pos.insert_ebb(new_ebb_trap);
     pos.ins().trap(code);
-    pos.insert_ebb(new_ebb);
+
+    
+    pos.insert_ebb(new_ebb_resume);
 
     
     cfg.recompute_ebb(pos.func, old_ebb);
-    cfg.recompute_ebb(pos.func, new_ebb);
+    cfg.recompute_ebb(pos.func, new_ebb_resume);
+    cfg.recompute_ebb(pos.func, new_ebb_trap);
 }
 
 
@@ -207,31 +224,57 @@ fn expand_br_table_jt(
         _ => panic!("Expected br_table: {}", func.dfg.display_inst(inst, None)),
     };
 
-    let table_size = func.jump_tables[table].len();
-    let addr_ty = isa.pointer_type();
-    let entry_ty = I32;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    let ebb = func.layout.pp_ebb(inst);
+    let jump_table_ebb = func.dfg.make_ebb();
 
     let mut pos = FuncCursor::new(func).at_inst(inst);
     pos.use_srcloc(inst);
 
     
+    let table_size = pos.func.jump_tables[table].len() as i64;
     let oob = pos
         .ins()
-        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, arg, table_size as i64);
+        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, arg, table_size);
 
     pos.ins().brnz(oob, default_ebb, &[]);
+    pos.ins().jump(jump_table_ebb, &[]);
+    pos.insert_ebb(jump_table_ebb);
+
+    let addr_ty = isa.pointer_type();
+
+    let arg = if pos.func.dfg.value_type(arg) == addr_ty {
+        arg
+    } else {
+        pos.ins().uextend(addr_ty, arg)
+    };
 
     let base_addr = pos.ins().jump_table_base(addr_ty, table);
     let entry = pos
         .ins()
-        .jump_table_entry(addr_ty, arg, base_addr, entry_ty.bytes() as u8, table);
+        .jump_table_entry(arg, base_addr, I32.bytes() as u8, table);
 
     let addr = pos.ins().iadd(base_addr, entry);
     pos.ins().indirect_jump_table_br(addr, table);
 
-    let ebb = pos.current_ebb().unwrap();
     pos.remove_inst();
     cfg.recompute_ebb(pos.func, ebb);
+    cfg.recompute_ebb(pos.func, jump_table_ebb);
 }
 
 
@@ -253,8 +296,18 @@ fn expand_br_table_conds(
         _ => panic!("Expected br_table: {}", func.dfg.display_inst(inst, None)),
     };
 
+    let ebb = func.layout.pp_ebb(inst);
+
     
     let table_size = func.jump_tables[table].len();
+    let mut cond_failed_ebb = vec![];
+    if table_size >= 1 {
+        cond_failed_ebb = std::vec::Vec::with_capacity(table_size - 1);
+        for _ in 0..table_size - 1 {
+            cond_failed_ebb.push(func.dfg.make_ebb());
+        }
+    }
+
     let mut pos = FuncCursor::new(func).at_inst(inst);
     pos.use_srcloc(inst);
 
@@ -262,14 +315,21 @@ fn expand_br_table_conds(
         let dest = pos.func.jump_tables[table].as_slice()[i];
         let t = pos.ins().icmp_imm(IntCC::Equal, arg, i as i64);
         pos.ins().brnz(t, dest, &[]);
+        
+        if i < table_size - 1 {
+            pos.ins().jump(cond_failed_ebb[i], &[]);
+            pos.insert_ebb(cond_failed_ebb[i]);
+        }
     }
 
     
     pos.ins().jump(default_ebb, &[]);
 
-    let ebb = pos.current_ebb().unwrap();
     pos.remove_inst();
     cfg.recompute_ebb(pos.func, ebb);
+    for failed_ebb in cond_failed_ebb.into_iter() {
+        cfg.recompute_ebb(pos.func, failed_ebb);
+    }
 }
 
 

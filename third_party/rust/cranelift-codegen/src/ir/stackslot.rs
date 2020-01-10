@@ -13,6 +13,9 @@ use core::slice;
 use core::str::FromStr;
 use std::vec::Vec;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 
 
@@ -38,6 +41,7 @@ fn spill_size(ty: Type) -> StackSize {
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum StackSlotKind {
     
     SpillSlot,
@@ -98,6 +102,7 @@ impl fmt::Display for StackSlotKind {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct StackSlotData {
     
     pub kind: StackSlotKind,
@@ -150,6 +155,7 @@ impl fmt::Display for StackSlotData {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct StackSlots {
     
     slots: PrimaryMap<StackSlot, StackSlotData>,

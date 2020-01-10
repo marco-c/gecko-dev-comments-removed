@@ -33,11 +33,12 @@ pub fn shrink_instructions(func: &mut Function, isa: &dyn TargetIsa) {
                 
                 
                 
-                match func.dfg[inst] {
+                let inst_data = &func.dfg[inst];
+                match inst_data {
                     InstructionData::RegMove { .. }
                     | InstructionData::RegFill { .. }
                     | InstructionData::RegSpill { .. } => {
-                        divert.apply(&func.dfg[inst]);
+                        divert.apply(inst_data);
                         continue;
                     }
                     _ => (),

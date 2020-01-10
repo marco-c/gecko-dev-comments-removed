@@ -129,9 +129,36 @@ impl ControlStackFrame {
 
 
 
+
+pub struct VisibleTranslationState<'a> {
+    state: &'a TranslationState,
+}
+
+impl<'a> VisibleTranslationState<'a> {
+    
+    pub fn new(state: &'a TranslationState) -> Self {
+        VisibleTranslationState { state }
+    }
+
+    
+    pub fn reachable(&self) -> bool {
+        self.state.reachable
+    }
+}
+
+
+
+
+
+
 pub struct TranslationState {
+    
+    
     pub stack: Vec<Value>,
+    
     pub control_stack: Vec<ControlStackFrame>,
+    
+    
     pub reachable: bool,
 
     
@@ -155,6 +182,7 @@ pub struct TranslationState {
 }
 
 impl TranslationState {
+    
     pub fn new() -> Self {
         Self {
             stack: Vec::new(),

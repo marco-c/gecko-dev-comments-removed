@@ -7,6 +7,8 @@ use crate::ir::{
 use crate::isa::{CallConv, RegUnit, TargetIsa};
 use core::fmt;
 use core::str::FromStr;
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
 
 
 
@@ -17,6 +19,7 @@ use core::str::FromStr;
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum LibCall {
     
     

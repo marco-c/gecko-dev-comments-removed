@@ -4,6 +4,8 @@
 
 
 use core::fmt;
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
 
 
 
@@ -13,6 +15,7 @@ use core::fmt;
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct SourceLoc(u32);
 
 impl SourceLoc {

@@ -7,8 +7,12 @@ use crate::ir::StackSlot;
 use crate::isa::{RegInfo, RegUnit};
 use core::fmt;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum ValueLoc {
     
     Unassigned,

@@ -14,6 +14,8 @@ pub use crate::regalloc::RegDiversions;
 
 use crate::ir::{ExternalName, Function, Inst, JumpTable, SourceLoc, TrapCode};
 use core::fmt;
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
 
 
 
@@ -26,6 +28,7 @@ pub type Addend = i64;
 
 
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum Reloc {
     
     Abs4,

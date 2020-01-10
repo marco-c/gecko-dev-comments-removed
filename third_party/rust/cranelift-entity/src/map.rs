@@ -57,8 +57,20 @@ where
     }
 
     
+    
+    
+    pub fn len(&self) -> usize {
+        self.elems.len()
+    }
+
+    
     pub fn get(&self, k: K) -> Option<&V> {
         self.elems.get(k.index())
+    }
+
+    
+    pub fn get_default(&self) -> &V {
+        &self.default
     }
 
     

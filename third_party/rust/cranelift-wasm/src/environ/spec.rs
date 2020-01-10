@@ -6,6 +6,7 @@
 
 
 
+use crate::state::VisibleTranslationState;
 use crate::translation_utils::{
     FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, SignatureIndex, Table, TableIndex,
 };
@@ -14,9 +15,11 @@ use cranelift_codegen::cursor::FuncCursor;
 use cranelift_codegen::ir::immediates::Offset32;
 use cranelift_codegen::ir::{self, InstBuilder};
 use cranelift_codegen::isa::TargetFrontendConfig;
+use cranelift_frontend::FunctionBuilder;
 use failure_derive::Fail;
 use std::boxed::Box;
 use wasmparser::BinaryReaderError;
+use wasmparser::Operator;
 
 
 #[derive(Clone, Copy)]
@@ -251,6 +254,28 @@ pub trait FuncEnvironment {
     
     fn translate_loop_header(&mut self, _pos: FuncCursor) -> WasmResult<()> {
         
+        Ok(())
+    }
+
+    
+    
+    fn before_translate_operator(
+        &mut self,
+        _op: &Operator,
+        _builder: &mut FunctionBuilder,
+        _state: &VisibleTranslationState,
+    ) -> WasmResult<()> {
+        Ok(())
+    }
+
+    
+    
+    fn after_translate_operator(
+        &mut self,
+        _op: &Operator,
+        _builder: &mut FunctionBuilder,
+        _state: &VisibleTranslationState,
+    ) -> WasmResult<()> {
         Ok(())
     }
 }
