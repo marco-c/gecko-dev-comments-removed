@@ -102,12 +102,6 @@ class alignas(uintptr_t) JitScript final {
 
   
   
-  
-  
-  RecompileInfoVector inlinedCompilations_;
-
-  
-  
   uint8_t* jitCodeSkipArgCheck_ = nullptr;
 
   
@@ -121,6 +115,12 @@ class alignas(uintptr_t) JitScript final {
   
   
   struct CachedIonData {
+    
+    
+    
+    
+    RecompileInfoVector inlinedCompilations_;
+
     
     
     
@@ -247,18 +247,22 @@ class alignas(uintptr_t) JitScript final {
   void clearIonCompiledOrInlined() { flags_.ionCompiledOrInlined = false; }
   bool ionCompiledOrInlined() const { return flags_.ionCompiledOrInlined; }
 
-  RecompileInfoVector& inlinedCompilations(
+  RecompileInfoVector* maybeInlinedCompilations(
       const js::AutoSweepJitScript& sweep) {
     MOZ_ASSERT(sweep.jitScript() == this);
-    return inlinedCompilations_;
+    if (!hasCachedIonData()) {
+      return nullptr;
+    }
+    return &cachedIonData().inlinedCompilations_;
   }
   MOZ_MUST_USE bool addInlinedCompilation(const js::AutoSweepJitScript& sweep,
                                           RecompileInfo info) {
     MOZ_ASSERT(sweep.jitScript() == this);
-    if (!inlinedCompilations_.empty() && inlinedCompilations_.back() == info) {
+    auto& inlinedCompilations = cachedIonData().inlinedCompilations_;
+    if (!inlinedCompilations.empty() && inlinedCompilations.back() == info) {
       return true;
     }
-    return inlinedCompilations_.append(info);
+    return inlinedCompilations.append(info);
   }
 
   uint32_t numICEntries() const {
