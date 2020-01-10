@@ -825,6 +825,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
+
+  void UpdateSrcStreamPotentiallyPlaying();
+
+  
+
+
+
   void UpdateSrcStreamTime();
 
   
