@@ -491,16 +491,6 @@ class BufferGrayRootsTracer final : public JS::CallbackTracer {
 #endif
 };
 
-#ifdef DEBUG
-
-
-bool js::IsBufferGrayRootsTracer(JSTracer* trc) {
-  return trc->isCallbackTracer() &&
-         trc->asCallbackTracer()->getTracerKind() ==
-             JS::CallbackTracer::TracerKind::GrayBuffering;
-}
-#endif
-
 void js::gc::GCRuntime::bufferGrayRoots() {
   
   
