@@ -32,3 +32,9 @@
 .longDescription:empty {
   display: none;
 }
+
+#locationTextBox {
+  -moz-box-flex: 1;
+  
+  margin-inline: 6px 5px;
+}
