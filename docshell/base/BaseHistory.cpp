@@ -128,22 +128,13 @@ void BaseHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   
   auto entry = mTrackedURIs.Lookup(aURI);
   if (!entry) {
-    
-    
-    
-    
-    
-#ifndef MOZ_WIDGET_ANDROID
     MOZ_ASSERT_UNREACHABLE("Trying to unregister URI that wasn't registered!");
-#endif
     return;
   }
 
   ObserverArray& observers = entry.Data().mLinks;
   if (!observers.RemoveElement(aLink)) {
-#ifndef MOZ_WIDGET_ANDROID
     MOZ_ASSERT_UNREACHABLE("Trying to unregister node that wasn't registered!");
-#endif
     return;
   }
 
