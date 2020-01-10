@@ -512,7 +512,8 @@ impl FrameBuilder {
                 let spatial_node = &scene
                     .clip_scroll_tree
                     .spatial_nodes[spatial_node_index.0 as usize];
-                spatial_node.coordinate_system_id != CoordinateSystemId::root()
+                spatial_node.coordinate_system_id != CoordinateSystemId::root() ||
+                    spatial_node.is_ancestor_or_self_zooming
             });
 
         let mut composite_state = CompositeState::new(
