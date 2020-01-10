@@ -2166,12 +2166,6 @@ bool RunIterativeFailureTest(JSContext* cx,
   JS_SetGCZeal(cx, 0, JS_DEFAULT_ZEAL_FREQ);
 #  endif
 
-  
-  if (params.testFunction->isInterpreted() &&
-      !JSFunction::getOrCreateScript(cx, params.testFunction)) {
-    return false;
-  }
-
   size_t compartmentCount = CountCompartments(cx);
 
   RootedValue exception(cx);
