@@ -987,6 +987,14 @@ impl TextureCache {
 
     
     
+    pub fn is_recently_used(&self, handle: &TextureCacheHandle, margin: usize) -> bool {
+        self.entries.get_opt(handle).map_or(false, |entry| {
+            entry.last_access.frame_id() + margin >= self.now.frame_id()
+        })
+    }
+
+    
+    
     pub fn get_allocated_size(&self, handle: &TextureCacheHandle) -> Option<usize> {
         self.entries.get_opt(handle).map(|entry| {
             (entry.input_format.bytes_per_pixel() * entry.size.area()) as usize
