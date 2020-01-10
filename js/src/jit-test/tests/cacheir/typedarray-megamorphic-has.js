@@ -43,3 +43,11 @@ test(has)("-Infinity");
 
 test(has)(NaN);
 test(has)("NaN");
+
+
+test(has)(1.1);
+test(has)("1.1");
+
+
+test(has)(1e+25);
+test(has)("1e+25");

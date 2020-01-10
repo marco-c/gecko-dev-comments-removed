@@ -43,3 +43,11 @@ test(get)("-Infinity");
 
 test(get)(NaN);
 test(get)("NaN");
+
+
+test(get)(1.1);
+test(get)("1.1");
+
+
+test(get)(1e+25);
+test(get)("1e+25");

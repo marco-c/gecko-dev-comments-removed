@@ -112,7 +112,7 @@ extern char* NumberToCString(JSContext* cx, ToCStringBuf* cbuf, double d,
 
 
 
-const double DOUBLE_INTEGRAL_PRECISION_LIMIT = uint64_t(1) << 53;
+constexpr double DOUBLE_INTEGRAL_PRECISION_LIMIT = uint64_t(1) << 53;
 
 
 

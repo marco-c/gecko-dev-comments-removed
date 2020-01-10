@@ -34,6 +34,7 @@
 #include "js/PropertySpec.h"
 #include "js/UniquePtr.h"
 #include "js/Wrapper.h"
+#include "util/Text.h"
 #include "util/Windows.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/GlobalObject.h"
@@ -2350,6 +2351,58 @@ static inline bool StringIsNaN(mozilla::Range<const CharT> s) {
 }
 
 template <typename CharT>
+static JS::Result<mozilla::Maybe<uint64_t>> StringIsTypedArrayIndexSlow(
+    JSContext* cx, mozilla::Range<const CharT> s) {
+  using ResultType = decltype(StringIsTypedArrayIndexSlow(cx, s));
+
+  const mozilla::RangedPtr<const CharT> start = s.begin();
+  const mozilla::RangedPtr<const CharT> end = s.end();
+
+  const CharT* actualEnd;
+  double result;
+  if (!js_strtod(cx, start.get(), end.get(), &actualEnd, &result)) {
+    return cx->alreadyReportedOOM();
+  }
+
+  
+  if (actualEnd != end.get()) {
+    return ResultType(mozilla::Nothing());
+  }
+
+  
+  ToCStringBuf cbuf;
+  const char* cstr = js::NumberToCString(cx, &cbuf, result);
+  if (!cstr) {
+    return ReportOutOfMemoryResult(cx);
+  }
+
+  
+  if (s.length() != strlen(cstr) ||
+      !EqualChars(start.get(), cstr, s.length())) {
+    return ResultType(mozilla::Nothing());
+  }
+
+  
+  
+  
+  
+  
+  
+  if (result < 0 || !IsInteger(result)) {
+    return mozilla::Some(UINT64_MAX);
+  }
+
+  
+  
+  if (result >= DOUBLE_INTEGRAL_PRECISION_LIMIT) {
+    return mozilla::Some(UINT64_MAX);
+  }
+
+  
+  return mozilla::Some(uint64_t(result));
+}
+
+template <typename CharT>
 JS::Result<mozilla::Maybe<uint64_t>> js::StringIsTypedArrayIndex(
     JSContext* cx, mozilla::Range<const CharT> s) {
   using ResultType = decltype(StringIsTypedArrayIndex(cx, s));
@@ -2380,6 +2433,11 @@ JS::Result<mozilla::Maybe<uint64_t>> js::StringIsTypedArrayIndex(
 
   
   if (digit == 0 && cp != end) {
+    
+    
+    if (*cp == '.') {
+      return StringIsTypedArrayIndexSlow(cx, s);
+    }
     return ResultType(mozilla::Nothing());
   }
 
@@ -2387,16 +2445,24 @@ JS::Result<mozilla::Maybe<uint64_t>> js::StringIsTypedArrayIndex(
 
   for (; cp < end; cp++) {
     if (!IsAsciiDigit(*cp)) {
+      
+      if (*cp == '.' || *cp == 'e') {
+        return StringIsTypedArrayIndexSlow(cx, s);
+      }
       return ResultType(mozilla::Nothing());
     }
 
     digit = AsciiDigitToNumber(*cp);
 
+    static_assert(
+        uint64_t(DOUBLE_INTEGRAL_PRECISION_LIMIT) < (UINT64_MAX - 10) / 10,
+        "2^53 is way below UINT64_MAX, so |10 * index + digit| can't overflow");
+
+    index = 10 * index + digit;
+
     
-    if ((UINT64_MAX - digit) / 10 < index) {
-      index = UINT64_MAX;
-    } else {
-      index = 10 * index + digit;
+    if (index >= uint64_t(DOUBLE_INTEGRAL_PRECISION_LIMIT)) {
+      return StringIsTypedArrayIndexSlow(cx, s);
     }
   }
 
