@@ -17,6 +17,8 @@ class nsITimer;
 namespace mozilla {
 namespace dom {
 
+class StorageEvent;
+
 class ContentSessionStore {
  public:
   explicit ContentSessionStore(nsIDocShell* aDocShell);
@@ -37,11 +39,37 @@ class ContentSessionStore {
   nsTArray<InputFormData> GetInputs(
       nsTArray<CollectedInputDataValue>& aIdVals,
       nsTArray<CollectedInputDataValue>& aXPathVals);
+
+  
+  bool IsStorageUpdated() { return mStorageStatus != NO_STORAGE; }
+  void ResetStorage() { mStorageStatus = RESET; }
+  
+
+
+
+
+
+
+
+  void SetFullStorageNeeded();
+  void ResetStorageChanges();
+  
+  
+  
+  
+  bool GetAndClearStorageChanges(nsTArray<nsCString>& aOrigins,
+                                 nsTArray<nsString>& aKeys,
+                                 nsTArray<nsString>& aValues);
+  
+  
+  
+  bool AppendSessionStorageChange(StorageEvent* aEvent);
+
   void OnDocumentStart();
   void OnDocumentEnd();
   bool UpdateNeeded() {
     return mPrivateChanged || mDocCapChanged || IsScrollPositionChanged() ||
-           IsFormDataChanged();
+           IsFormDataChanged() || IsStorageUpdated();
   }
 
  private:
@@ -57,8 +85,18 @@ class ContentSessionStore {
     WITH_CHANGE,      
   } mScrollChanged,
       mFormDataChanged;
+  enum {
+    NO_STORAGE,
+    RESET,
+    FULLSTORAGE,
+    STORAGECHANGE,
+  } mStorageStatus;
   bool mDocCapChanged;
   nsCString mDocCaps;
+  
+  nsTArray<nsCString> mOrigins;
+  nsTArray<nsString> mKeys;
+  nsTArray<nsString> mValues;
 };
 
 class TabListener : public nsIDOMEventListener,
@@ -68,6 +106,7 @@ class TabListener : public nsIDOMEventListener,
                     public nsSupportsWeakReference {
  public:
   explicit TabListener(nsIDocShell* aDocShell, Element* aElement);
+  EventTarget* GetEventTarget();
   nsresult Init();
   ContentSessionStore* GetSessionStore() { return mSessionStore; }
   
@@ -89,6 +128,8 @@ class TabListener : public nsIDOMEventListener,
   void AddTimerForUpdate();
   void StopTimerForUpdate();
   bool UpdateSessionStore(uint32_t aFlushId = 0, bool aIsFinal = false);
+  void ResetStorageChangeListener();
+  void RemoveStorageChangeListener();
   virtual ~TabListener();
 
   nsCOMPtr<nsIDocShell> mDocShell;
@@ -97,6 +138,8 @@ class TabListener : public nsIDOMEventListener,
   bool mProgressListenerRegistered;
   bool mEventListenerRegistered;
   bool mPrefObserverRegistered;
+  bool mStorageObserverRegistered;
+  bool mStorageChangeListenerRegistered;
   
   nsCOMPtr<nsITimer> mUpdatedTimer;
   bool mTimeoutDisabled;

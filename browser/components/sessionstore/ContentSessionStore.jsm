@@ -26,9 +26,6 @@ ChromeUtils.defineModuleGetter(
 );
 
 
-const DOM_STORAGE_LIMIT_PREF = "browser.sessionstore.dom_storage_limit";
-
-
 
 const TIMEOUT_DISABLED_PREF = "browser.sessionstore.debug.no_auto_updates";
 
@@ -320,144 +317,6 @@ SessionHistoryListener.prototype.QueryInterface = ChromeUtils.generateQI([
 
 
 
-
-
-class SessionStorageListener extends Handler {
-  constructor(store) {
-    super(store);
-
-    
-    
-    
-    
-    
-    this._changes = undefined;
-
-    
-    this._listener = null;
-
-    Services.obs.addObserver(this, "browser:purge-sessionStorage");
-    this.stateChangeNotifier.addObserver(this);
-    this.resetEventListener();
-  }
-
-  uninit() {
-    Services.obs.removeObserver(this, "browser:purge-sessionStorage");
-  }
-
-  observe() {
-    
-    
-    setTimeoutWithTarget(() => this.collect(), 0, this.mm.tabEventTarget);
-  }
-
-  resetChanges() {
-    this._changes = undefined;
-  }
-
-  resetEventListener() {
-    if (!this._listener) {
-      this._listener = SessionStoreUtils.addDynamicFrameFilteredListener(
-        this.mm,
-        "MozSessionStorageChanged",
-        this,
-        true
-      );
-    }
-  }
-
-  removeEventListener() {
-    SessionStoreUtils.removeDynamicFrameFilteredListener(
-      this.mm,
-      "MozSessionStorageChanged",
-      this._listener,
-      true
-    );
-    this._listener = null;
-  }
-
-  handleEvent(event) {
-    if (!this.mm.docShell) {
-      return;
-    }
-
-    let { content } = this.mm;
-
-    
-    let usage = content.windowUtils.getStorageUsage(event.storageArea);
-
-    
-    
-    if (usage > Services.prefs.getIntPref(DOM_STORAGE_LIMIT_PREF)) {
-      this.messageQueue.push("storage", () => null);
-      this.removeEventListener();
-      this.resetChanges();
-      return;
-    }
-
-    let { url, key, newValue } = event;
-    let uri = Services.io.newURI(url);
-    let domain = uri.prePath;
-    if (!this._changes) {
-      this._changes = {};
-    }
-    if (!this._changes[domain]) {
-      this._changes[domain] = {};
-    }
-
-    
-    
-    
-    if (!key) {
-      this._changes[domain] = null;
-    } else {
-      this._changes[domain][key] = newValue;
-    }
-
-    this.messageQueue.push("storagechange", () => {
-      let tmp = this._changes;
-      
-      
-      
-      this.resetChanges();
-      return tmp;
-    });
-  }
-
-  collect() {
-    if (!this.mm.docShell) {
-      return;
-    }
-
-    let { content } = this.mm;
-
-    
-    
-    this.resetChanges();
-
-    this.messageQueue.push("storage", () => {
-      let data = SessionStoreUtils.collectSessionStorage(content);
-      return Object.keys(data).length ? data : null;
-    });
-  }
-
-  onPageLoadCompleted() {
-    this.collect();
-  }
-
-  onPageLoadStarted() {
-    this.resetEventListener();
-    this.collect();
-  }
-}
-
-
-
-
-
-
-
-
 class MessageQueue extends Handler {
   constructor(store) {
     super(store);
@@ -715,7 +574,6 @@ class ContentSessionStore {
     this.handlers = [
       new EventListener(this),
       new SessionHistoryListener(this),
-      new SessionStorageListener(this),
       this.stateChangeNotifier,
       this.messageQueue,
     ];

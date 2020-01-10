@@ -2690,11 +2690,13 @@ void BrowserParent::ReconstructWebProgressAndRequest(
 
 mozilla::ipc::IPCResult BrowserParent::RecvSessionStoreUpdate(
     const Maybe<nsCString>& aDocShellCaps, const Maybe<bool>& aPrivatedMode,
-    const nsTArray<nsCString>&& aPositions,
-    const nsTArray<int32_t>&& aPositionDescendants,
+    nsTArray<nsCString>&& aPositions,
+    nsTArray<int32_t>&& aPositionDescendants,
     const nsTArray<InputFormData>& aInputs,
     const nsTArray<CollectedInputDataValue>& aIdVals,
     const nsTArray<CollectedInputDataValue>& aXPathVals,
+    nsTArray<nsCString>&& aOrigins, nsTArray<nsString>&& aKeys,
+    nsTArray<nsString>&& aValues, const bool aIsFullStorage,
     const uint32_t& aFlushId, const bool& aIsFinal, const uint32_t& aEpoch) {
   UpdateSessionStoreData data;
   if (aDocShellCaps.isSome()) {
@@ -2731,6 +2733,16 @@ mozilla::ipc::IPCResult BrowserParent::RecvSessionStoreUpdate(
     data.mNumXPath.Construct().Assign(std::move(numXPath));
     data.mInnerHTML.Construct().Assign(std::move(innerHTML));
     data.mUrl.Construct().Assign(std::move(url));
+  }
+  
+  
+  
+  
+  if (aOrigins.Length() != 0 || aIsFullStorage) {
+    data.mStorageOrigins.Construct().Assign(std::move(aOrigins));
+    data.mStorageKeys.Construct().Assign(std::move(aKeys));
+    data.mStorageValues.Construct().Assign(std::move(aValues));
+    data.mIsFullStorage.Construct() = aIsFullStorage;
   }
 
   nsCOMPtr<nsISessionStoreFunctions> funcs =
