@@ -1454,23 +1454,11 @@ FxAccountsInternal.prototype = {
 
     
     
-    
-    
-    
-    
 
     
     
     
-
-    this.whenVerified(data).then(
-      () => {
-        log.info("the user became verified");
-        
-        
-        
-        return this.notifyObservers(ONVERIFIED_NOTIFICATION);
-      },
+    this.whenVerified(data).catch(
       err => log.info("startVerifiedCheck promise was rejected: " + err)
     );
   },
@@ -1520,7 +1508,13 @@ FxAccountsInternal.prototype = {
       
       
       
-      currentState.whenVerifiedDeferred.promise.catch(err => {
+      currentState.whenVerifiedDeferred.promise.then(() => {
+        log.info("the user became verified");
+        
+        
+        
+        this.notifyObservers(ONVERIFIED_NOTIFICATION);
+      }, err => {
         log.info("the wait for user verification was stopped: " + err);
       });
     }
