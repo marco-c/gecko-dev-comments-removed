@@ -612,6 +612,10 @@ bool nsOuterWindowProxy::getOwnPropertyDescriptor(
 
   
   if (isSameOrigin) {
+    if (StaticPrefs::dom_missing_prop_counters_enabled() && JSID_IS_ATOM(id)) {
+      Window_Binding::CountMaybeMissingProperty(proxy, id);
+    }
+
     
     {  
       
@@ -892,6 +896,10 @@ bool nsOuterWindowProxy::get(JSContext* cx, JS::Handle<JSObject*> proxy,
 
   if (found) {
     return true;
+  }
+
+  if (StaticPrefs::dom_missing_prop_counters_enabled() && JSID_IS_ATOM(id)) {
+    Window_Binding::CountMaybeMissingProperty(proxy, id);
   }
 
   {  

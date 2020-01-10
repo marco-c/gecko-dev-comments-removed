@@ -7344,7 +7344,13 @@ class Parser(Tokenizer):
             IdentifierList : IDENTIFIER Identifiers
         """
         idents = list(p[2])
-        idents.insert(0, p[1])
+        
+        
+        
+        ident = p[1]
+        if ident[0] == '_':
+            ident = ident[1:]
+        idents.insert(0, ident)
         p[0] = idents
 
     def p_IdentifiersList(self, p):
@@ -7352,7 +7358,13 @@ class Parser(Tokenizer):
             Identifiers : COMMA IDENTIFIER Identifiers
         """
         idents = list(p[3])
-        idents.insert(0, p[2])
+        
+        
+        
+        ident = p[2]
+        if ident[0] == '_':
+            ident = ident[1:]
+        idents.insert(0, ident)
         p[0] = idents
 
     def p_IdentifiersEmpty(self, p):
