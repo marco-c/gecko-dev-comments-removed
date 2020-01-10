@@ -178,20 +178,8 @@ uint32_t CheckCookiePermissionForPrincipal(nsICookieSettings* aCookieSettings,
   return cookiePermission;
 }
 
-int32_t CookiesBehavior(Document* aTopLevelDocument,
-                        Document* a3rdPartyDocument) {
-  MOZ_ASSERT(aTopLevelDocument);
+int32_t CookiesBehavior(Document* a3rdPartyDocument) {
   MOZ_ASSERT(a3rdPartyDocument);
-
-  
-  
-  
-  
-  
-  if (StaticPrefs::extensions_cookiesBehavior_overrideOnTopLevel() &&
-      BasePrincipal::Cast(aTopLevelDocument->NodePrincipal())->AddonPolicy()) {
-    return nsICookieService::BEHAVIOR_ACCEPT;
-  }
 
   
   
@@ -202,22 +190,9 @@ int32_t CookiesBehavior(Document* aTopLevelDocument,
   return a3rdPartyDocument->CookieSettings()->GetCookieBehavior();
 }
 
-int32_t CookiesBehavior(nsILoadInfo* aLoadInfo,
-                        nsIPrincipal* aTopLevelPrincipal,
-                        nsIURI* a3rdPartyURI) {
+int32_t CookiesBehavior(nsILoadInfo* aLoadInfo, nsIURI* a3rdPartyURI) {
   MOZ_ASSERT(aLoadInfo);
-  MOZ_ASSERT(aTopLevelPrincipal);
   MOZ_ASSERT(a3rdPartyURI);
-
-  
-  
-  
-  
-  
-  if (StaticPrefs::extensions_cookiesBehavior_overrideOnTopLevel() &&
-      BasePrincipal::Cast(aTopLevelPrincipal)->AddonPolicy()) {
-    return nsICookieService::BEHAVIOR_ACCEPT;
-  }
 
   
   
@@ -1375,7 +1350,6 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
     
     
     
-    
     nsGlobalWindowOuter* outerWindow =
         nsGlobalWindowOuter::Cast(aWindow->GetOuterWindow());
     if (!outerWindow) {
@@ -1399,14 +1373,6 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
     return false;
   }
 
-  Document* toplevelDocument = topInnerWindow->GetExtantDoc();
-  if (!toplevelDocument) {
-    LOG(("No top level document."));
-    return false;
-  }
-
-  MOZ_ASSERT(toplevelDocument);
-
   uint32_t cookiePermission = CheckCookiePermissionForPrincipal(
       document->CookieSettings(), document->NodePrincipal());
   if (cookiePermission != nsICookiePermission::ACCESS_DEFAULT) {
@@ -1425,7 +1391,7 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
     return false;
   }
 
-  int32_t behavior = CookiesBehavior(toplevelDocument, document);
+  int32_t behavior = CookiesBehavior(document);
   if (behavior == nsICookieService::BEHAVIOR_ACCEPT) {
     LOG(("The cookie behavior pref mandates accepting all cookies!"));
     return true;
@@ -1664,7 +1630,7 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
     return false;
   }
 
-  int32_t behavior = CookiesBehavior(loadInfo, toplevelPrincipal, channelURI);
+  int32_t behavior = CookiesBehavior(loadInfo, channelURI);
   if (behavior == nsICookieService::BEHAVIOR_ACCEPT) {
     LOG(("The cookie behavior pref mandates accepting all cookies!"));
     return true;
