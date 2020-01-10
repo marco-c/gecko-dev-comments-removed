@@ -72,6 +72,9 @@ FETCH_SCHEMA = Schema({
             },
 
             
+            
+            
+            
             Optional('artifact-name'): basestring,
 
             
