@@ -154,10 +154,6 @@ nsresult nsObserverService::Create(nsISupports* aOuter, const nsIID& aIID,
 
   RefPtr<nsObserverService> os = new nsObserverService();
 
-  if (!os) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
   
   
   
