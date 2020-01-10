@@ -103,6 +103,8 @@ class ServiceWorkerPrivate final {
   NS_DECL_OWNINGTHREAD
 
  public:
+  
+  
   class Inner {
    public:
     NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
@@ -202,6 +204,16 @@ class ServiceWorkerPrivate final {
 
   bool IsIdle() const;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   RefPtr<GenericPromise> GetIdlePromise();
 
   void SetHandlesFetch(bool aValue);

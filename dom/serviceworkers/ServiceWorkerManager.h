@@ -14,6 +14,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ConsoleReportCollector.h"
+#include "mozilla/HashTable.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Preferences.h"
@@ -71,6 +72,28 @@ class ServiceWorkerUpdateFinishCallback {
       0xa6, 0x5d, 0x77, 0x57, 0x45, 0x53, 0x59, 0x90 \
     }                                                \
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -368,6 +391,18 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   
   void ForceUnregister(RegistrationDataPerPrincipal* aRegistrationData,
                        ServiceWorkerRegistrationInfo* aRegistration);
+
+  
+  
+  
+  
+  void AddOrphanedRegistration(ServiceWorkerRegistrationInfo* aRegistration);
+
+  void RemoveOrphanedRegistration(ServiceWorkerRegistrationInfo* aRegistration);
+
+  HashSet<RefPtr<ServiceWorkerRegistrationInfo>,
+          PointerHasher<ServiceWorkerRegistrationInfo*>>
+      mOrphanedRegistrations;
 
   RefPtr<ServiceWorkerShutdownBlocker> mShutdownBlocker;
 

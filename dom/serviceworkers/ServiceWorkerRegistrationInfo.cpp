@@ -41,19 +41,15 @@ class ContinueActivateRunnable final : public LifeCycleEventCallback {
 
 void ServiceWorkerRegistrationInfo::ShutdownWorkers() {
   ForEachWorker([](RefPtr<ServiceWorkerInfo>& aWorker) {
-    if (aWorker) {
-      aWorker->WorkerPrivate()->NoteDeadServiceWorkerInfo();
-      aWorker = nullptr;
-    }
+    aWorker->WorkerPrivate()->NoteDeadServiceWorkerInfo();
+    aWorker = nullptr;
   });
 }
 
 void ServiceWorkerRegistrationInfo::Clear() {
   ForEachWorker([](RefPtr<ServiceWorkerInfo>& aWorker) {
-    if (aWorker) {
-      aWorker->UpdateState(ServiceWorkerState::Redundant);
-      aWorker->UpdateRedundantTime();
-    }
+    aWorker->UpdateState(ServiceWorkerState::Redundant);
+    aWorker->UpdateRedundantTime();
   });
 
   
@@ -741,6 +737,11 @@ void ServiceWorkerRegistrationInfo::ClearWhenIdle() {
   MOZ_ASSERT(!IsControllingClients());
   MOZ_ASSERT(!IsIdle(), "Already idle!");
 
+  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  MOZ_ASSERT(swm);
+
+  swm->AddOrphanedRegistration(this);
+
   
 
 
@@ -768,6 +769,11 @@ void ServiceWorkerRegistrationInfo::ClearWhenIdle() {
         MOZ_ASSERT(!self->IsControllingClients());
         MOZ_ASSERT(self->IsIdle());
         self->Clear();
+
+        RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+        if (swm) {
+          swm->RemoveOrphanedRegistration(self);
+        }
       });
 }
 
