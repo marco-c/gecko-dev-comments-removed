@@ -23,7 +23,7 @@ function crashTabTestHelper() {
       
       TabCrashHandler.testBuildIDMismatch = true;
 
-      await BrowserTestUtils.crashBrowser(browser, false);
+      await BrowserTestUtils.crashFrame(browser, false);
       let doc = browser.contentDocument;
 
       

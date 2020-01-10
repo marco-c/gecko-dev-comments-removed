@@ -150,7 +150,7 @@ add_task(async function test_crash_page_not_in_history() {
   await TabStateFlusher.flush(browser);
 
   
-  await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashFrame(browser);
 
   
   
@@ -182,7 +182,7 @@ add_task(async function test_revived_history_from_remote() {
   await TabStateFlusher.flush(browser);
 
   
-  await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashFrame(browser);
 
   
   
@@ -230,7 +230,7 @@ add_task(async function test_revived_history_from_non_remote() {
   await TabStateFlusher.flush(browser);
 
   
-  await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashFrame(browser);
 
   
   
@@ -291,7 +291,7 @@ add_task(async function test_revive_tab_from_session_store() {
   await TabStateFlusher.flush(browser);
 
   
-  await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashFrame(browser);
   
   
   ok(!newTab2.hasAttribute("crashed"), "Second tab should not be crashed.");
@@ -355,7 +355,7 @@ add_task(async function test_revive_all_tabs_from_session_store() {
   await TabStateFlusher.flush(browser2);
 
   
-  await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashFrame(browser);
   
   is(newTab.getAttribute("crashed"), "true", "First tab should be crashed");
   is(
@@ -408,7 +408,7 @@ add_task(async function test_close_tab_after_crash() {
   await TabStateFlusher.flush(browser);
 
   
-  await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashFrame(browser);
 
   let promise = BrowserTestUtils.waitForEvent(
     gBrowser.tabContainer,
@@ -439,7 +439,7 @@ add_task(async function test_hide_restore_all_button() {
   await TabStateFlusher.flush(browser);
 
   
-  await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashFrame(browser);
 
   let doc = browser.contentDocument;
   let restoreAllButton = doc.getElementById("restoreAll");
@@ -473,7 +473,7 @@ add_task(async function test_hide_restore_all_button() {
   let otherBrowserReady = promiseTabCrashedReady(otherWinBrowser);
 
   
-  await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashFrame(browser);
   await otherBrowserReady;
 
   doc = browser.contentDocument;
@@ -513,7 +513,7 @@ add_task(async function test_aboutcrashedtabzoom() {
   await TabStateFlusher.flush(browser);
 
   
-  await BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashFrame(browser);
 
   ok(
     ZoomManager.getZoomForBrowser(browser) === 1,
