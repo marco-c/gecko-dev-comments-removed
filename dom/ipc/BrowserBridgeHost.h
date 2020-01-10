@@ -50,14 +50,11 @@ class BrowserBridgeHost : public RemoteBrowser {
   void UpdateDimensions(const nsIntRect& aRect,
                         const ScreenIntSize& aSize) override;
 
-  void UpdateEffects(EffectsInfo aInfo) override;
-
  private:
   virtual ~BrowserBridgeHost() = default;
 
   
   RefPtr<BrowserBridgeChild> mBridge;
-  EffectsInfo mEffectsInfo;
 };
 
 }  

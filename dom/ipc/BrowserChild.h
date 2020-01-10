@@ -242,7 +242,7 @@ class BrowserChild final : public BrowserChildBase,
 
   BrowserChild(ContentChild* aManager, const TabId& aTabId, TabGroup* aTabGroup,
                const TabContext& aContext, BrowsingContext* aBrowsingContext,
-               uint32_t aChromeFlags, bool aIsTopLevel);
+               uint32_t aChromeFlags);
 
   nsresult Init(mozIDOMWindowProxy* aParent);
 
@@ -250,7 +250,7 @@ class BrowserChild final : public BrowserChildBase,
   static already_AddRefed<BrowserChild> Create(
       ContentChild* aManager, const TabId& aTabId, const TabId& aSameTabGroupAs,
       const TabContext& aContext, BrowsingContext* aBrowsingContext,
-      uint32_t aChromeFlags, bool aIsTopLevel);
+      uint32_t aChromeFlags);
 
   
   bool IsDestroyed() const { return mDestroyed; }
@@ -307,7 +307,6 @@ class BrowserChild final : public BrowserChildBase,
   mozilla::ipc::IPCResult RecvResumeLoad(const uint64_t& aPendingSwitchID,
                                          const ShowInfo& aInfo);
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvShow(const ScreenIntSize& aSize,
                                    const ShowInfo& aInfo,
                                    const bool& aParentIsActive,
@@ -475,23 +474,18 @@ class BrowserChild final : public BrowserChildBase,
 
   void NotifyPainted();
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual mozilla::ipc::IPCResult RecvUpdateEffects(
-      const EffectsInfo& aEffects);
-
   void RequestEditCommands(nsIWidget::NativeKeyBindingsType aType,
                            const WidgetKeyboardEvent& aEvent,
                            nsTArray<CommandInt>& aCommands);
-
-  bool IsVisible();
 
   
 
 
 
 
-  MOZ_CAN_RUN_SCRIPT void UpdateVisibility(bool aForceRepaint);
-  MOZ_CAN_RUN_SCRIPT void MakeVisible(bool aForceRepaint);
+  void MakeVisible();
   void MakeHidden();
+  bool IsVisible();
 
   ContentChild* Manager() const { return mManager; }
 
@@ -848,7 +842,6 @@ class BrowserChild final : public BrowserChildBase,
   int64_t mBeforeUnloadListeners;
   CSSRect mUnscaledOuterRect;
   Maybe<bool> mLayersConnected;
-  EffectsInfo mEffectsInfo;
   bool mDidFakeShow;
   bool mNotified;
   bool mTriedBrowserInit;
@@ -865,10 +858,6 @@ class BrowserChild final : public BrowserChildBase,
   
   LayoutDeviceIntPoint mChromeOffset;
   TabId mUniqueId;
-
-  
-  
-  bool mIsTopLevel;
 
   
   
@@ -928,9 +917,6 @@ class BrowserChild final : public BrowserChildBase,
   bool mCoalesceMouseMoveEvents;
 
   bool mShouldSendWebProgressEventsToParent;
-
-  
-  bool mRenderLayers;
 
   
   

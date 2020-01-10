@@ -21,7 +21,6 @@
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/dom/EffectsInfo.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
@@ -218,27 +217,20 @@ already_AddRefed<Layer> nsDisplayRemote::BuildLayer(
     return nullptr;
   }
 
-  if (RefPtr<RemoteBrowser> remoteBrowser =
-          GetFrameLoader()->GetRemoteBrowser()) {
-    
-    aBuilder->AddEffectUpdate(remoteBrowser, EffectsInfo::FullyVisible());
-    
-    
-  }
-
   RefPtr<Layer> layer =
       aManager->GetLayerBuilder()->GetLeafLayerFor(aBuilder, this);
 
   if (!layer) {
     layer = aManager->CreateRefLayer();
   }
-  if (!layer || !layer->AsRefLayer()) {
+
+  if (!layer) {
     
     
     return nullptr;
   }
-  RefLayer* refLayer = layer->AsRefLayer();
 
+  static_cast<RefLayer*>(layer.get())->SetReferentId(mLayersId);
   LayoutDeviceIntPoint offset = GetContentRectLayerOffset(Frame(), aBuilder);
   
   
@@ -248,9 +240,11 @@ already_AddRefed<Layer> nsDisplayRemote::BuildLayer(
   
   
   m.PreScale(aContainerParameters.mXScale, aContainerParameters.mYScale, 1.0);
-  refLayer->SetBaseTransform(m);
-  refLayer->SetEventRegionsOverride(mEventRegionsOverride);
-  refLayer->SetReferentId(mLayersId);
+  layer->SetBaseTransform(m);
+
+  if (layer->AsRefLayer()) {
+    layer->AsRefLayer()->SetEventRegionsOverride(mEventRegionsOverride);
+  }
 
   return layer.forget();
 }
@@ -276,21 +270,6 @@ bool nsDisplayRemote::CreateWebRenderCommands(
     nsDisplayListBuilder* aDisplayListBuilder) {
   if (!mLayersId.IsValid()) {
     return true;
-  }
-
-  if (RefPtr<RemoteBrowser> remoteBrowser =
-          GetFrameLoader()->GetRemoteBrowser()) {
-    
-    aDisplayListBuilder->AddEffectUpdate(remoteBrowser,
-                                         EffectsInfo::FullyVisible());
-
-    
-    
-    RefPtr<WebRenderRemoteData> userData =
-        aManager->CommandBuilder()
-            .CreateOrRecycleWebRenderUserData<WebRenderRemoteData>(
-                this, aBuilder.GetRenderRoot(), nullptr);
-    userData->SetRemoteBrowser(remoteBrowser);
   }
 
   mOffset = GetContentRectLayerOffset(mFrame, aDisplayListBuilder);
