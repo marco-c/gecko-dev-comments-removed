@@ -3161,6 +3161,9 @@ pref("dom.largeAllocationHeader.enabled", true);
 pref("browser.tabs.remote.autostart", false);
 
 
+pref("fission.autostart", false);
+
+
 
 pref("browser.tabs.remote.separateFileUriProcess", true);
 
