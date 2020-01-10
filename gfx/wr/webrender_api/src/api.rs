@@ -997,9 +997,9 @@ impl RenderApiSender {
                 
                 let webrender_is_alive = self.api_sender.send(ApiMsg::WakeUp);
                 if webrender_is_alive.is_err() {
-                    panic!("Webrender was shut down before processing CloneApi: {}", e);
+                    panic!("WebRender was shut down before processing CloneApi: {}", e);
                 } else {
-                    panic!("CloneApi message response was dropped while Webrender was still alive: {}", e);
+                    panic!("CloneApi message response was dropped while WebRender was still alive: {}", e);
                 }
             }
         };

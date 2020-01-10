@@ -5253,7 +5253,7 @@ pub struct ExternalImage<'a> {
 
 /// The interfaces that an application can implement to support providing
 /// external image buffers.
-/// When the the application passes an external image to WR, it should kepp that
+/// When the application passes an external image to WR, it should keep that
 /// external image life time. People could check the epoch id in RenderNotifier
 /// at the client side to make sure that the external image is not used by WR.
 /// Then, do the clean up for that external image.
