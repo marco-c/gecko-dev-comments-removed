@@ -71,5 +71,5 @@ function functionB() {
 }
 
 async function functionC() {
-  return doAtLeastOnePeriodicSample();
+  return captureAtLeastOneJsSample();
 }

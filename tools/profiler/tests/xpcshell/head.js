@@ -2,52 +2,26 @@
 
 
 
+
+
+
+
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var { AppConstants } = ChromeUtils.import(
+
+const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-var { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 
-
-
-
-
-
-
-
-function getAllPayloadsOfType(profile, type, payloadTarget = []) {
-  for (const { markers } of profile.threads) {
-    for (const markerTuple of markers.data) {
-      const payload = markerTuple[markers.schema.data];
-      if (payload && payload.type === type) {
-        payloadTarget.push(payload);
-      }
-    }
-  }
-
-  for (const subProcess of profile.processes) {
-    getAllPayloadsOfType(subProcess, type, payloadTarget);
-  }
-
-  return payloadTarget;
+const sharedHead = do_get_file("shared-head.js", false);
+if (!sharedHead) {
+  throw new Error("Could not load the shared head.");
 }
-
-
-
-
-
-
-
-
-
-
-function wait(time) {
-  return new Promise(resolve => {
-    
-    setTimeout(resolve, time);
-  });
-}
+Services.scriptloader.loadSubScript(
+  Services.io.newFileURI(sharedHead).spec,
+  this
+);
 
 
 
@@ -79,28 +53,6 @@ function getInflatedStackLocations(thread, sample) {
 
   
   return locations.reverse();
-}
-
-
-
-
-
-
-
-
-function doAtLeastOnePeriodicSample() {
-  function getProfileSampleCount() {
-    const profile = Services.profiler.getProfileData();
-    return profile.threads[0].samples.data.length;
-  }
-
-  const sampleCount = getProfileSampleCount();
-  
-  while (true) {
-    if (sampleCount < getProfileSampleCount()) {
-      return sampleCount;
-    }
-  }
 }
 
 
