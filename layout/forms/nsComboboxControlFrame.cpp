@@ -719,16 +719,9 @@ nscoord nsComboboxControlFrame::GetIntrinsicISize(
 
   const bool isContainSize = StyleDisplay()->IsContainSize();
   nscoord displayISize = 0;
-  if (MOZ_LIKELY(mDisplayFrame)) {
-    if (isContainSize) {
-      
-      
-      
-      displayISize = mDisplayFrame->IntrinsicISizeOffsets().hPadding;
-    } else {
-      displayISize = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
-                                                          mDisplayFrame, aType);
-    }
+  if (MOZ_LIKELY(mDisplayFrame) && !isContainSize) {
+    displayISize = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
+                                                        mDisplayFrame, aType);
   }
 
   if (mDropdownFrame) {
@@ -997,14 +990,7 @@ void nsComboboxControlFrame::ActuallyDisplayText(bool aNotify) {
   if (mDisplayedOptionTextOrPreview.IsEmpty()) {
     
     
-    
-    
-    
-    
-    
-    
-    
-    static const char16_t space = 0xFEFF;
+    static const char16_t space = 0xA0;
     displayContent->SetText(&space, 1, aNotify);
   } else {
     displayContent->SetText(mDisplayedOptionTextOrPreview, aNotify);
