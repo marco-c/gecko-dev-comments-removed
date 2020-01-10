@@ -159,7 +159,13 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
   }
 }
 
-SamplerThread::~SamplerThread() { pthread_join(mThread, nullptr); }
+SamplerThread::~SamplerThread() {
+  pthread_join(mThread, nullptr);
+  
+  
+  InvokePostSamplingCallbacks(std::move(mPostSamplingCallbackList),
+                              SamplingState::JustStopped);
+}
 
 void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
   usleep(aMicroseconds);

@@ -397,6 +397,29 @@ void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 #  define AUTO_PROFILER_REGISTER_THREAD(name) \
     mozilla::AutoProfilerRegisterThread PROFILER_RAII(name)
 
+enum class SamplingState {
+  JustStopped,  
+                
+  SamplingPaused,  
+                   
+  NoStackSamplingCompleted,  
+                             
+  SamplingCompleted          
+};
+
+using PostSamplingCallback = std::function<void(SamplingState)>;
+
+
+
+
+
+
+
+
+
+MOZ_MUST_USE bool profiler_callback_after_sampling(
+    PostSamplingCallback&& aCallback);
+
 
 
 

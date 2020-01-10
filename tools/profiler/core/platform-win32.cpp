@@ -215,6 +215,11 @@ SamplerThread::~SamplerThread() {
   if (mThread != kNoThread) {
     CloseHandle(mThread);
   }
+
+  
+  
+  InvokePostSamplingCallbacks(std::move(mPostSamplingCallbackList),
+                              SamplingState::JustStopped);
 }
 
 void SamplerThread::SleepMicro(uint32_t aMicroseconds) {

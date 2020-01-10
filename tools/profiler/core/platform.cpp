@@ -57,6 +57,7 @@
 #include "mozilla/SystemGroup.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/TypeTraits.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
@@ -763,6 +764,9 @@ class ActivePS {
     return ((aInfo->IsMainThread() || FeatureThreads(aLock)) &&
             sInstance->ThreadSelected(aInfo->Name()));
   }
+
+  static MOZ_MUST_USE bool AppendPostSamplingCallback(
+      PSLockRef, PostSamplingCallback&& aCallback);
 
   
   static void WriteActiveConfiguration(PSLockRef aLock, JSONWriter& aWriter,
@@ -2623,7 +2627,56 @@ class SamplerThread {
   
   void Stop(PSLockRef aLock);
 
+  void AppendPostSamplingCallback(PSLockRef, PostSamplingCallback&& aCallback) {
+    
+    
+    
+    
+    mPostSamplingCallbackList = MakeUnique<PostSamplingCallbackListItem>(
+        std::move(mPostSamplingCallbackList), std::move(aCallback));
+  }
+
  private:
+  
+  
+  
+  struct PostSamplingCallbackListItem {
+    UniquePtr<PostSamplingCallbackListItem> mPrev;
+    PostSamplingCallback mCallback;
+
+    PostSamplingCallbackListItem(UniquePtr<PostSamplingCallbackListItem> aPrev,
+                                 PostSamplingCallback&& aCallback)
+        : mPrev(std::move(aPrev)), mCallback(std::move(aCallback)) {}
+  };
+
+  MOZ_MUST_USE UniquePtr<PostSamplingCallbackListItem>
+  TakePostSamplingCallbacks(PSLockRef) {
+    return std::move(mPostSamplingCallbackList);
+  }
+
+  static void InvokePostSamplingCallbacks(
+      UniquePtr<PostSamplingCallbackListItem> aCallbacks,
+      SamplingState aSamplingState) {
+    if (!aCallbacks) {
+      return;
+    }
+    
+    
+    
+    
+    InvokePostSamplingCallbacks(std::move(aCallbacks->mPrev), aSamplingState);
+    
+    
+    
+    std::move(aCallbacks->mCallback)(aSamplingState);
+    
+    
+    static_assert(
+        IsSame<decltype(aCallbacks),
+               UniquePtr<PostSamplingCallbackListItem>>::value,
+        "We need to capture the list by-value, to implicitly destroy it");
+  }
+
   
   
   void SleepMicro(uint32_t aMicroseconds);
@@ -2644,9 +2697,24 @@ class SamplerThread {
   pthread_t mThread;
 #endif
 
+  
+  
+  UniquePtr<PostSamplingCallbackListItem> mPostSamplingCallbackList;
+
   SamplerThread(const SamplerThread&) = delete;
   void operator=(const SamplerThread&) = delete;
 };
+
+
+bool ActivePS::AppendPostSamplingCallback(PSLockRef aLock,
+                                          PostSamplingCallback&& aCallback) {
+  if (!sInstance || !sInstance->mSamplerThread) {
+    return false;
+  }
+  sInstance->mSamplerThread->AppendPostSamplingCallback(aLock,
+                                                        std::move(aCallback));
+  return true;
+}
 
 
 
@@ -2690,21 +2758,40 @@ void SamplerThread::Run() {
   TimeDuration lastSleepOvershoot = 0;
   TimeStamp sampleStart = TimeStamp::NowUnfuzzed();
 
+  
+  
+  UniquePtr<PostSamplingCallbackListItem> postSamplingCallbacks;
+  
+  SamplingState samplingState{};
+
   while (true) {
     
     {
+      
+      MOZ_ASSERT(!postSamplingCallbacks);
+
       PSAutoLock lock(gPSMutex);
       TimeStamp lockAcquired = TimeStamp::NowUnfuzzed();
 
+      
+      
+      postSamplingCallbacks = TakePostSamplingCallbacks(lock);
+
       if (!ActivePS::Exists(lock)) {
-        return;
+        
+        
+        samplingState = SamplingState::JustStopped;
+        break;
       }
 
       
       
       
       if (ActivePS::Generation(lock) != mActivityGeneration) {
-        return;
+        samplingState = SamplingState::JustStopped;
+        
+        
+        break;
       }
 
       ActivePS::ClearExpiredExitProfiles(lock);
@@ -2737,6 +2824,8 @@ void SamplerThread::Run() {
         TimeStamp countersSampled = TimeStamp::NowUnfuzzed();
 
         if (!noStackSampling) {
+          samplingState = SamplingState::SamplingCompleted;
+
           const Vector<LiveProfiledThreadData>& liveThreads =
               ActivePS::LiveProfiledThreads(lock);
 
@@ -2828,6 +2917,8 @@ void SamplerThread::Run() {
             localBlocksRingBuffer.Clear();
             previousState = localBlocksRingBuffer.GetState();
           }
+        } else {
+          samplingState = SamplingState::NoStackSamplingCompleted;
         }
 
 #if defined(USE_LUL_STACKWALK)
@@ -2844,9 +2935,15 @@ void SamplerThread::Run() {
                                     expiredMarkersCleaned - lockAcquired,
                                     countersSampled - expiredMarkersCleaned,
                                     threadsSampled - countersSampled);
+      } else {
+        samplingState = SamplingState::SamplingPaused;
       }
     }
     
+
+    
+    InvokePostSamplingCallbacks(std::move(postSamplingCallbacks),
+                                samplingState);
 
     
     
@@ -2864,6 +2961,9 @@ void SamplerThread::Run() {
     lastSleepOvershoot =
         sampleStart - (beforeSleep + TimeDuration::FromMicroseconds(sleepTime));
   }
+
+  
+  InvokePostSamplingCallbacks(std::move(postSamplingCallbacks), samplingState);
 }
 
 
@@ -3937,6 +4037,17 @@ bool profiler_is_paused() {
   }
 
   return ActivePS::IsPaused(lock);
+}
+
+ bool profiler_callback_after_sampling(
+    PostSamplingCallback&& aCallback) {
+  LOG("profiler_callback_after_sampling");
+
+  MOZ_RELEASE_ASSERT(CorePS::Exists());
+
+  PSAutoLock lock(gPSMutex);
+
+  return ActivePS::AppendPostSamplingCallback(lock, std::move(aCallback));
 }
 
 void profiler_pause() {
