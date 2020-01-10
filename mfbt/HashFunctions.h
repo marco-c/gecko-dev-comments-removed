@@ -285,9 +285,6 @@ inline HashNumber HashString(const unsigned char* aStr, size_t aLength) {
   return HashStringKnownLength(aStr, aLength);
 }
 
-
-
-
 MOZ_MUST_USE constexpr HashNumber HashString(const char16_t* aStr) {
   return HashStringUntilZero(aStr);
 }
