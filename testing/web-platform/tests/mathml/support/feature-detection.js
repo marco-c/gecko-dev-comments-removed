@@ -2,9 +2,14 @@
 
 
 var MathMLFeatureDetection = {
+
     has_mspace: function() {
+        
         if (!this.hasOwnProperty("_has_mspace")) {
-            document.body.insertAdjacentHTML("beforeend", "<math><mspace></mspace><mspace width='20px'></mspace></math>");
+            document.body.insertAdjacentHTML("beforeend", "<math>\
+<mspace></mspace>\
+<mspace width='20px'></mspace>\
+</math>");
             var math = document.body.lastElementChild;
             
             this._has_mspace =
@@ -16,16 +21,62 @@ var MathMLFeatureDetection = {
     },
 
     has_operator_spacing: function() {
+        
+        
         if (!this.hasOwnProperty("_has_operator_spacing")) {
-            document.body.insertAdjacentHTML("beforeend", "<math><mrow><mn>1</mn><mo lspace='0px' rspace='0px'>+</mo><mn>2</mn><mo lspace='8px' rspace='8px'>+</mo><mn>3</mn></mspace></mrow></math>");
+            document.body.insertAdjacentHTML("beforeend", "<math>\
+<mrow>\
+  <mn>1</mn><mo lspace='0px' rspace='0px'>+</mo><mn>2</mn>\
+</mrow>\
+<mrow>\
+  <mn>1</mn><mo lspace='8px' rspace='8px'>+</mo><mn>2</mn>\
+</mrow>\
+</math>");
             var math = document.body.lastElementChild;
-            var mo = math.getElementsByTagName("mo");
+            var mrow = math.getElementsByTagName("mrow");
             
             this._has_operator_spacing =
-                mo[1].getBoundingClientRect().width -
-                mo[0].getBoundingClientRect().width > 10;
+                mrow[1].getBoundingClientRect().width -
+                mrow[0].getBoundingClientRect().width > 10;
             document.body.removeChild(math);
         }
         return this._has_operator_spacing;
+    },
+
+    has_mfrac: function() {
+        if (!this.hasOwnProperty("_has_mfrac")) {
+            
+            document.body.insertAdjacentHTML("beforeend", "<math>\
+<mfrac>\
+  <mspace height='50px' depth='50px'></mspace>\
+  <mspace height='50px' depth='50px'></mspace>\
+</mfrac>\
+<mfrac>\
+  <mspace height='60px' depth='60px'></mspace>\
+  <mspace height='60px' depth='60px'></mspace>\
+</mfrac>\
+</math>");
+            var math = document.body.lastElementChild;
+            var mfrac = math.getElementsByTagName("mfrac");
+            
+            this._has_mfrac =
+                mfrac[1].getBoundingClientRect().height -
+                mfrac[0].getBoundingClientRect().height > 30;
+            document.body.removeChild(math);
+        }
+        return this._has_mfrac;
+    },
+
+    ensure_for_match_reftest: function(has_function) {
+        if (!document.querySelector("link[rel='match']"))
+            throw "This function must only be used for match reftest";
+        
+        if (!this[has_function]()) {
+            document.body.insertAdjacentHTML("beforeend", "\
+<div style='width: 10px !important; height: 10px !important;\
+            position: absolute !important;\
+            left: 0 !important; top: 0 !important;\
+            background: red !important; z-index: 1000 !important;'></div>");
+        }
     }
 };
