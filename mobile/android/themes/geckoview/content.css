@@ -321,7 +321,7 @@ div:-moz-native-anonymous.moz-accessiblecaret > #image {
    
   padding-left: 59%; 
   padding-right: 59%; 
-  left: -59%;
+  margin-left: -59%;
 }
 
 div:-moz-native-anonymous.moz-accessiblecaret > #image {
@@ -334,7 +334,7 @@ div:-moz-native-anonymous.moz-accessiblecaret.normal > #image {
 
 div:-moz-native-anonymous.moz-accessiblecaret.left > #text-overlay,
 div:-moz-native-anonymous.moz-accessiblecaret.left > #image {
-  margin-left: -50%;
+  margin-left: -109%;
 }
 
 div:-moz-native-anonymous.moz-accessiblecaret.left > #image {
@@ -343,7 +343,7 @@ div:-moz-native-anonymous.moz-accessiblecaret.left > #image {
 
 div:-moz-native-anonymous.moz-accessiblecaret.right > #text-overlay,
 div:-moz-native-anonymous.moz-accessiblecaret.right > #image {
-  margin-left: 47%;
+  margin-left: -12%;
 }
 
 div:-moz-native-anonymous.moz-accessiblecaret.right > #image {
