@@ -266,6 +266,8 @@ class DrawTargetWrapAndRecord : public DrawTarget {
   virtual bool CanCreateSimilarDrawTarget(const IntSize& aSize,
                                           SurfaceFormat aFormat) const override;
 
+  virtual RefPtr<DrawTarget> CreateClippedDrawTarget(
+      const Rect& aBounds, SurfaceFormat aFormat) override;
   
 
 

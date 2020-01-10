@@ -80,12 +80,9 @@ class nsSVGClipPathFrame final : public nsSVGContainerFrame {
 
 
 
-
-
   already_AddRefed<SourceSurface> GetClipMask(
       gfxContext& aReferenceContext, nsIFrame* aClippedFrame,
-      const gfxMatrix& aMatrix, Matrix* aMaskTransform,
-      SourceSurface* aExtraMask = nullptr,
+      const gfxMatrix& aMatrix, SourceSurface* aExtraMask = nullptr,
       const Matrix& aExtraMasksTransform = Matrix());
 
   
@@ -101,11 +98,8 @@ class nsSVGClipPathFrame final : public nsSVGContainerFrame {
 
 
 
-
-
   void PaintClipMask(gfxContext& aMaskContext, nsIFrame* aClippedFrame,
-                     const gfxMatrix& aMatrix, Matrix* aMaskTransform,
-                     SourceSurface* aExtraMask,
+                     const gfxMatrix& aMatrix, SourceSurface* aExtraMask,
                      const Matrix& aExtraMasksTransform);
 
   

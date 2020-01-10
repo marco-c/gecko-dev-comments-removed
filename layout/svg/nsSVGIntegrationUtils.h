@@ -158,7 +158,7 @@ class nsSVGIntegrationUtils final {
     mozilla::layers::LayerManager* layerManager;
     bool handleOpacity;  
                          
-    IntRect maskRect;
+    mozilla::Maybe<mozilla::gfx::Rect> maskRect;
     imgDrawingParams& imgParams;
 
     explicit PaintFramesParams(gfxContext& aCtx, nsIFrame* aFrame,
