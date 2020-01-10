@@ -2283,9 +2283,7 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
   
   if (NS_WARN_IF(aRv.Failed()) ||
       permission == NotificationPermission::Denied) {
-    ErrorResult result;
-    result.ThrowTypeError(u"Permission to show Notification denied.");
-    p->MaybeReject(result);
+    p->MaybeRejectWithTypeError(u"Permission to show Notification denied.");
     return p.forget();
   }
 

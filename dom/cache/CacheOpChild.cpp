@@ -140,10 +140,8 @@ mozilla::ipc::IPCResult CacheOpChild::Recv__delete__(
       
       MOZ_DIAGNOSTIC_ASSERT(actor);
       if (!actor) {
-        ErrorResult status;
-        status.ThrowTypeError(
+        mPromise->MaybeRejectWithTypeError(
             u"CacheStorage.open() failed to access the storage system.");
-        mPromise->MaybeReject(status);
         break;
       }
 
