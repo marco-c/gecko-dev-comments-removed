@@ -6,12 +6,61 @@
 
 var EXPORTED_SYMBOLS = ["Page"];
 
+const { DialogHandler } = ChromeUtils.import(
+  "chrome://remote/content/domains/parent/page/DialogHandler.jsm"
+);
 const { Domain } = ChromeUtils.import(
   "chrome://remote/content/domains/Domain.jsm"
 );
 
 class Page extends Domain {
+  constructor(session) {
+    super(session);
+
+    this._onDialogLoaded = this._onDialogLoaded.bind(this);
+
+    this.enabled = false;
+  }
+
+  destructor() {
+    
+    this._isDestroyed = false;
+    this.disable();
+
+    super.destructor();
+  }
+
   
+
+  async enable() {
+    if (this.enabled) {
+      return;
+    }
+
+    this.enabled = true;
+
+    const { browser } = this.session.target;
+    this._dialogHandler = new DialogHandler(browser);
+    this._dialogHandler.on("dialog-loaded", this._onDialogLoaded);
+    await this.executeInChild("enable");
+  }
+
+  async disable() {
+    if (!this.enabled) {
+      return;
+    }
+
+    this._dialogHandler.destructor();
+    this._dialogHandler = null;
+    this.enabled = false;
+
+    if (!this._isDestroyed) {
+      
+      
+      
+      await this.executeInChild("disable");
+    }
+  }
 
   bringToFront() {
     const { browser } = this.session.target;
@@ -23,5 +72,41 @@ class Page extends Domain {
 
     
     gBrowser.selectedTab = gBrowser.getTabForBrowser(browser);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async handleJavaScriptDialog({ accept, promptText }) {
+    if (!this.enabled) {
+      throw new Error("Page domain is not enabled");
+    }
+    await this._dialogHandler.handleJavaScriptDialog({ accept, promptText });
+  }
+
+  
+
+
+
+  _onDialogLoaded(e, data) {
+    const { message, type } = data;
+    
+    
+    
+    
+    
+    
+    
+    
+    this.emit("Page.javascriptDialogOpening", { message, type });
   }
 }

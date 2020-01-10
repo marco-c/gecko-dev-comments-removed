@@ -127,3 +127,15 @@ async function setupTestForUri(uri) {
   ok(true, "CDP client has been instantiated");
   return { client, tab };
 }
+
+
+
+
+function getContentProperty(prop) {
+  info(`Retrieve ${prop} on the content window`);
+  return ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    prop,
+    _prop => content[_prop]
+  );
+}
