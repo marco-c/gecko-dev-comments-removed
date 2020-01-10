@@ -237,14 +237,17 @@ class HitTestingTreeNode {
 
 
 
-class MOZ_RAII HitTestingTreeNodeAutoLock final {
+class HitTestingTreeNodeAutoLock final {
  public:
   HitTestingTreeNodeAutoLock();
-  HitTestingTreeNodeAutoLock(const HitTestingTreeNodeAutoLock&) = delete;
-  HitTestingTreeNodeAutoLock& operator=(const HitTestingTreeNodeAutoLock&) =
-      delete;
-  HitTestingTreeNodeAutoLock(HitTestingTreeNodeAutoLock&&) = delete;
   ~HitTestingTreeNodeAutoLock();
+  
+  
+  
+  
+  
+  HitTestingTreeNodeAutoLock(HitTestingTreeNodeAutoLock&&) = default;
+  HitTestingTreeNodeAutoLock& operator=(HitTestingTreeNodeAutoLock&&) = default;
 
   void Initialize(const RecursiveMutexAutoLock& aProofOfTreeLock,
                   already_AddRefed<HitTestingTreeNode> aNode,
