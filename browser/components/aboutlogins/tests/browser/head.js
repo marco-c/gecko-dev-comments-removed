@@ -87,6 +87,13 @@ add_task(async function setup() {
       
       return;
     }
+    if (
+      msg.errorMessage == "Refreshing device list failed." ||
+      msg.errorMessage == "Skipping device list refresh; not signed in"
+    ) {
+      
+      return;
+    }
     ok(false, msg.message || msg.errorMessage);
   });
 
