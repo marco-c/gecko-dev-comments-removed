@@ -2,6 +2,8 @@
 
 
 
+
+
 from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
@@ -39,14 +41,14 @@ RaptorErrorList = PythonErrorList + HarnessErrorList + [
     {'regex': re.compile(r'''No machine_name called '.*' can be found'''), 'level': CRITICAL},
     {'substr': r"""No such file or directory: 'browser_output.txt'""",
      'level': CRITICAL,
-     'explanation': "Most likely the browser failed to launch, or the test was otherwise "
-     "unsuccessful in even starting."},
+     'explanation': "Most likely the browser failed to launch, or the test otherwise "
+     "failed to start."},
 ]
 
 
 class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
     """
-    install and run raptor tests
+    Install and run Raptor tests
     """
 
     
@@ -89,16 +91,16 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
          {"default": "firefox",
           "choices": ["firefox", "chrome", "chromium", "fennec", "geckoview", "refbrow", "fenix"],
           "dest": "app",
-          "help": "name of the application we are testing (default: firefox)"
+          "help": "Name of the application we are testing (default: firefox)."
           }],
         [["--activity"],
          {"dest": "activity",
-          "help": "the android activity used to launch the android app. "
-                  "ex: org.mozilla.fenix.browser.BrowserPerformanceTestActivity"
+          "help": "The Android activity used to launch the Android app. "
+                  "e.g.: org.mozilla.fenix.browser.BrowserPerformanceTestActivity"
           }],
         [["--intent"],
          {"dest": "intent",
-          "help": "name of the android intent action used to launch the android app"
+          "help": "Name of the Android intent action used to launch the Android app"
           }],
         [["--is-release-build"],
          {"action": "store_true",
@@ -111,7 +113,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
          {"action": "extend",
           "dest": "raptor_cmd_line_args",
           "default": None,
-          "help": "extra options to raptor"
+          "help": "Extra options to Raptor."
           }],
         [["--enable-webrender"], {
             "action": "store_true",
@@ -139,39 +141,39 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             "dest": "gecko_profile",
             "action": "store_true",
             "default": False,
-            "help": "Whether or not to profile the test run and save the profile results"
+            "help": "Whether to profile the test run and save the profile results."
         }],
         [["--gecko-profile-interval"], {
             "dest": "gecko_profile_interval",
             "type": "int",
-            "help": "The interval between samples taken by the profiler (milliseconds)"
+            "help": "The interval between samples taken by the profiler (ms)."
         }],
         [["--gecko-profile-entries"], {
             "dest": "gecko_profile_entries",
             "type": "int",
-            "help": "How many samples to take with the profiler"
+            "help": "How many samples to take with the profiler."
         }],
         [["--page-cycles"], {
             "dest": "page_cycles",
             "type": "int",
             "help": "How many times to repeat loading the test page (for page load tests); "
-                    "for benchmark tests this is how many times the benchmark test will be run"
+                    "for benchmark tests this is how many times the benchmark test will be run."
         }],
         [["--page-timeout"], {
             "dest": "page_timeout",
             "type": "int",
-            "help": "How long to wait (ms) for one page_cycle to complete, before timing out"
+            "help": "How long to wait (ms) for one page_cycle to complete, before timing out."
         }],
         [["--browser-cycles"], {
             "dest": "browser_cycles",
             "type": "int",
             "help": "The number of times a cold load test is repeated (for cold load tests only, "
-                    "where the browser is shutdown and restarted between test iterations)"
+                    "where the browser is shutdown and restarted between test iterations)."
         }],
         [["--test-url-params"], {
             "action": "store",
             "dest": "test_url_params",
-            "help": "Parameters to add to the test_url query string"
+            "help": "Parameters to add to the test_url query string."
         }],
         [["--host"], {
             "dest": "host",
@@ -183,9 +185,8 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             "dest": "power_test",
             "action": "store_true",
             "default": False,
-            "help": "Use Raptor to measure power usage. Currently only supported for Geckoview. "
-                    "The host ip address must be specified either via the --host command line "
-                    "argument.",
+            "help": "Use Raptor to measure power usage; the host IP address must be specified via "
+            "the --host command-line argument.",
         }],
         [["--memory-test"], {
             "dest": "memory_test",
@@ -197,7 +198,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             "dest": "cpu_test",
             "action": "store_true",
             "default": False,
-            "help": "Use Raptor to measure CPU usage"
+            "help": "Use Raptor to measure CPU usage."
         }],
         [["--debug-mode"], {
             "dest": "debug_mode",
@@ -209,7 +210,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             "dest": "noinstall",
             "action": "store_true",
             "default": False,
-            "help": "Do not offer to install Android APK",
+            "help": "Do not offer to install Android APK.",
         }],
         [["--disable-e10s"], {
             "dest": "e10s",
@@ -243,7 +244,8 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         kwargs.setdefault('config', {})
         super(Raptor, self).__init__(**kwargs)
 
-        self.workdir = self.query_abs_dirs()['abs_work_dir']  
+        
+        self.workdir = self.query_abs_dirs()['abs_work_dir']
 
         self.run_local = self.config.get('run_local')
 
@@ -251,7 +253,6 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         self.app = "firefox"
 
         if self.run_local:
-            
             
             
             
@@ -343,8 +344,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         return self.abs_dirs
 
     def install_chromium_distribution(self):
-        '''install Google Chromium distribution in production; installation
-        requirements depend on the platform'''
+        '''Install Google Chromium distribution in production'''
         linux, mac, win = 'linux', 'mac', 'win'
         chrome, chromium = 'chrome', 'chromium'
 
@@ -364,7 +364,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         chromium_dist = self.app
 
         if self.config.get("run_local"):
-            self.info("expecting %s to be pre-installed locally" % chromium_dist)
+            self.info("Expecting %s to be pre-installed locally" % chromium_dist)
             return
 
         self.info("Getting fetched %s build" % chromium_dist)
@@ -387,13 +387,13 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
 
         
         if os.path.exists(self.chromium_dist_path):
-            self.info("successfully installed %s to: %s"
+            self.info("Successfully installed %s to: %s"
                       % (chromium_dist, self.chromium_dist_path))
         else:
-            self.info("abort: failed to install %s" % chromium_dist)
+            self.info("Abort: failed to install %s" % chromium_dist)
 
     def raptor_options(self, args=None, **kw):
-        """return options to raptor"""
+        """Return options to Raptor"""
         options = []
         kw_options = {}
 
@@ -410,9 +410,10 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
                 
                 
                 kw_options['binary'] = self.query_package_name()
-                self.info("set binary to %s instead of %s" % (kw_options['binary'], binary_path))
+                self.info("Set binary to %s instead of %s" % (kw_options['binary'], binary_path))
         else:  
             if not self.run_local:
+                
                 
                 
                 kw_options['binary'] = self.chromium_dist_path
@@ -474,9 +475,6 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         if self.config.get('run_local'):
             self.raptor_path = os.path.join(self.repo_path, 'testing', 'raptor')
 
-    
-    
-
     def clobber(self):
         
         
@@ -501,8 +499,8 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         )
 
     def create_virtualenv(self, **kwargs):
-        """VirtualenvMixin.create_virtualenv() assuemes we're using
-        self.config['virtualenv_modules']. Since we are installing
+        """VirtualenvMixin.create_virtualenv() assumes we're using
+        self.config['virtualenv_modules']. Since we're installing
         raptor from its source, we have to wrap that method here."""
         
         
@@ -553,7 +551,6 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             modules=['pip>=1.5']
         )
         
-        
         self.install_module(
             requirements=[os.path.join(self.raptor_path,
                                        'requirements.txt')]
@@ -578,15 +575,15 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             view_gecko_profile_req = os.path.join(tools,
                                                   'view_gecko_profile',
                                                   'requirements.txt')
-            self.info("installing requirements for the view-gecko-profile tool")
+            self.info("Installing requirements for the view-gecko-profile tool")
             self.install_module(requirements=[view_gecko_profile_req])
 
     def _artifact_perf_data(self, src, dest):
         if not os.path.isdir(os.path.dirname(dest)):
             
-            self.info("creating dir: %s" % os.path.dirname(dest))
+            self.info("Creating dir: %s" % os.path.dirname(dest))
             os.makedirs(os.path.dirname(dest))
-        self.info('copying raptor results from %s to %s' % (src, dest))
+        self.info('Copying raptor results from %s to %s' % (src, dest))
         try:
             copyfile(src, dest)
         except Exception as e:
@@ -594,7 +591,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             self.info(str(e))
 
     def run_tests(self, args=None, **kw):
-        """run raptor tests"""
+        """Run raptor tests"""
 
         
         options = self.raptor_options(args=args, **kw)
@@ -679,7 +676,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
 
         elif not self.run_local:
             
-            self.info("copying raptor results to upload dir:")
+            self.info("Copying Raptor results to upload dir:")
 
             src = os.path.join(self.query_abs_dirs()['abs_work_dir'], 'raptor.json')
             dest = os.path.join(env['MOZ_UPLOAD_DIR'], 'perfherder-data.json')
