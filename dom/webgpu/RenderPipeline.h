@@ -3,8 +3,8 @@
 
 
 
-#ifndef WEBGPU_RenderPipeline_H_
-#define WEBGPU_RenderPipeline_H_
+#ifndef GPU_RenderPipeline_H_
+#define GPU_RenderPipeline_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
@@ -14,9 +14,10 @@ namespace webgpu {
 
 class Device;
 
-class RenderPipeline final : public ChildOf<Device> {
+class RenderPipeline final : public ObjectBase, public ChildOf<Device> {
  public:
-  WEBGPU_DECL_GOOP(RenderPipeline)
+  GPU_DECL_CYCLE_COLLECTION(RenderPipeline)
+  GPU_DECL_JS_WRAP(RenderPipeline)
 
  private:
   RenderPipeline() = delete;

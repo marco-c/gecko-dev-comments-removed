@@ -3,8 +3,8 @@
 
 
 
-#ifndef WEBGPU_INSTANCE_PROVIDER_H_
-#define WEBGPU_INSTANCE_PROVIDER_H_
+#ifndef GPU_INSTANCE_PROVIDER_H_
+#define GPU_INSTANCE_PROVIDER_H_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Maybe.h"

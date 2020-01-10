@@ -1,0 +1,20 @@
+
+
+
+
+
+#include "mozilla/dom/WebGPUBinding.h"
+#include "RenderBundle.h"
+
+#include "Device.h"
+
+namespace mozilla {
+namespace webgpu {
+
+RenderBundle::~RenderBundle() = default;
+
+GPU_IMPL_CYCLE_COLLECTION(RenderBundle, mParent)
+GPU_IMPL_JS_WRAP(RenderBundle)
+
+}  
+}  

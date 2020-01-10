@@ -3,8 +3,8 @@
 
 
 
-#ifndef WEBGPU_PipelineLayout_H_
-#define WEBGPU_PipelineLayout_H_
+#ifndef GPU_PipelineLayout_H_
+#define GPU_PipelineLayout_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
@@ -14,9 +14,10 @@ namespace webgpu {
 
 class Device;
 
-class PipelineLayout final : public ChildOf<Device> {
+class PipelineLayout final : public ObjectBase, public ChildOf<Device> {
  public:
-  WEBGPU_DECL_GOOP(PipelineLayout)
+  GPU_DECL_CYCLE_COLLECTION(PipelineLayout)
+  GPU_DECL_JS_WRAP(PipelineLayout)
 
  private:
   PipelineLayout() = delete;

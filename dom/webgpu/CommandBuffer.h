@@ -3,8 +3,8 @@
 
 
 
-#ifndef WEBGPU_CommandBuffer_H_
-#define WEBGPU_CommandBuffer_H_
+#ifndef GPU_CommandBuffer_H_
+#define GPU_CommandBuffer_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
@@ -14,9 +14,10 @@ namespace webgpu {
 
 class Device;
 
-class CommandBuffer final : public ChildOf<Device> {
+class CommandBuffer final : public ObjectBase, public ChildOf<Device> {
  public:
-  WEBGPU_DECL_GOOP(CommandBuffer)
+  GPU_DECL_CYCLE_COLLECTION(CommandBuffer)
+  GPU_DECL_JS_WRAP(CommandBuffer)
 
  private:
   CommandBuffer() = delete;

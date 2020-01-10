@@ -3,8 +3,8 @@
 
 
 
-#ifndef WEBGPU_BindGroup_H_
-#define WEBGPU_BindGroup_H_
+#ifndef GPU_BindGroup_H_
+#define GPU_BindGroup_H_
 
 #include "nsWrapperCache.h"
 #include "ObjectModel.h"
@@ -14,9 +14,10 @@ namespace webgpu {
 
 class Device;
 
-class BindGroup final : public ChildOf<Device> {
+class BindGroup final : public ObjectBase, public ChildOf<Device> {
  public:
-  WEBGPU_DECL_GOOP(BindGroup)
+  GPU_DECL_CYCLE_COLLECTION(BindGroup)
+  GPU_DECL_JS_WRAP(BindGroup)
 
  private:
   BindGroup() = delete;

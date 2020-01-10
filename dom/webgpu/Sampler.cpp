@@ -3,17 +3,18 @@
 
 
 
+#include "mozilla/dom/WebGPUBinding.h"
 #include "Sampler.h"
 
 #include "Device.h"
-#include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla {
 namespace webgpu {
 
 Sampler::~Sampler() = default;
 
-WEBGPU_IMPL_GOOP_0(Sampler)
+GPU_IMPL_CYCLE_COLLECTION(Sampler, mParent)
+GPU_IMPL_JS_WRAP(Sampler)
 
 }  
 }  
