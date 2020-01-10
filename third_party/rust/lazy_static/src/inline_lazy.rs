@@ -10,13 +10,16 @@ extern crate std;
 
 use self::std::prelude::v1::*;
 use self::std::cell::Cell;
+use self::std::hint::unreachable_unchecked;
 use self::std::sync::Once;
+#[allow(deprecated)]
 pub use self::std::sync::ONCE_INIT;
 
 
 pub struct Lazy<T: Sync>(Cell<Option<T>>, Once);
 
 impl<T: Sync> Lazy<T> {
+    #[allow(deprecated)]
     pub const INIT: Self = Lazy(Cell::new(None), ONCE_INIT);
 
     #[inline(always)]
@@ -51,15 +54,4 @@ macro_rules! __lazy_static_create {
     ($NAME:ident, $T:ty) => {
         static $NAME: $crate::lazy::Lazy<$T> = $crate::lazy::Lazy::INIT;
     };
-}
-
-
-
-
-
-
-
-unsafe fn unreachable_unchecked() -> ! {
-    enum Void {}
-    match std::mem::uninitialized::<Void>() {}
 }
