@@ -514,10 +514,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   
-  nsCOMPtr<nsIThread> mBackgroundThread;
-
-  
-  
   
 
   enum HttpVersion mHttpVersion;
