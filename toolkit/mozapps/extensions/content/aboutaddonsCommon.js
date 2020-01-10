@@ -9,6 +9,8 @@
 
 
 
+const {AddonSettings} =
+  ChromeUtils.import("resource://gre/modules/addons/AddonSettings.jsm");
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -172,3 +174,16 @@ var gBrowser = {
     return null;
   },
 };
+
+function isCorrectlySigned(addon) {
+  
+  
+  return addon.isCorrectlySigned !== false;
+}
+
+function isDisabledUnsigned(addon) {
+  let signingRequired = (addon.type == "locale") ?
+                        AddonSettings.LANGPACKS_REQUIRE_SIGNING :
+                        AddonSettings.REQUIRE_SIGNING;
+  return signingRequired && !isCorrectlySigned(addon);
+}

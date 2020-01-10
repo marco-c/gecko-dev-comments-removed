@@ -82,6 +82,10 @@
   align-items: center;
 }
 
+:host([align="center"]) .container {
+  justify-content: center;
+}
+
 :host([dismissable]) .container {
   
   padding-inline-end: 4px;
@@ -93,7 +97,6 @@
 
 .content {
   margin-inline-end: 4px;
-  flex-grow: 1;
   display: flex;
   
   align-items: center;

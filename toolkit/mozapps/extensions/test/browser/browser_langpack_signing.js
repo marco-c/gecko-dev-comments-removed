@@ -3,7 +3,6 @@
 
 
 
-
 SpecialPowers.pushPrefEnv({
   set: [["extensions.htmlaboutaddons.enabled", false]],
 });
