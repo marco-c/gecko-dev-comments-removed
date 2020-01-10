@@ -251,6 +251,8 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
   
   bool useWrTextureWrapper =
       useExternalImage && wrTexture && wrTexture->SupportsWrNativeTexture();
+  
+  useWrTextureWrapper = false;
 
   
   
