@@ -31,19 +31,7 @@ const IS_SUPPORTED_PLATFORM = "nsIProfiler" in Ci;
 
 
 class ActorReadyGeckoProfilerInterface {
-  
-
-
-
-
-
-
-
-  constructor(
-    options = {
-      gzipped: true,
-    }
-  ) {
+  constructor() {
     
     if (IS_SUPPORTED_PLATFORM) {
       this._observer = {
@@ -57,7 +45,6 @@ class ActorReadyGeckoProfilerInterface {
       );
       Services.obs.addObserver(this._observer, "last-pb-context-exited");
     }
-    this.gzipped = options.gzipped;
 
     EventEmitter.decorate(this);
   }
@@ -141,32 +128,20 @@ class ActorReadyGeckoProfilerInterface {
     let profile;
     try {
       
-      if (this.gzipped) {
-        profile = await Services.profiler.getProfileDataAsGzippedArrayBuffer();
-      } else {
-        profile = await Services.profiler.getProfileDataAsync();
+      profile = await Services.profiler.getProfileDataAsync();
 
-        if (Object.keys(profile).length === 0) {
-          console.error(
-            "An empty object was received from getProfileDataAsync.getProfileDataAsync(), " +
-              "meaning that a profile could not successfully be serialized and captured."
-          );
-          profile = null;
-        }
-      }
+      
+      Services.profiler.StopProfiler();
     } catch (e) {
       
-      profile = null;
-      console.error(
-        `There was an error fetching a profile (gzipped: ${this.gzipped})`,
-        e
-      );
+      return null;
     }
 
     
-    Services.profiler.StopProfiler();
-
     
+    if (Object.keys(profile).length === 0) {
+      return null;
+    }
     return profile;
   }
 

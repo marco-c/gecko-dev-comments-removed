@@ -12,6 +12,10 @@ const {
     REQUEST_TO_STOP_PROFILER,
   },
 } = require("devtools/client/performance-new/utils");
+const { OS } = require("resource://gre/modules/osfile.jsm");
+const {
+  ProfilerGetSymbols,
+} = require("resource://gre/modules/ProfilerGetSymbols.jsm");
 
 
 
@@ -139,6 +143,127 @@ exports.startRecording = () => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createLibraryMap(profile) {
+  const map = new Map();
+  function fillMapForProcessRecursive(processProfile) {
+    for (const lib of processProfile.libs) {
+      const { debugName, breakpadId } = lib;
+      const key = [debugName, breakpadId].join(":");
+      map.set(key, lib);
+    }
+    for (const subprocess of processProfile.processes) {
+      fillMapForProcessRecursive(subprocess);
+    }
+  }
+
+  fillMapForProcessRecursive(profile);
+  return function getLibraryFor(debugName, breakpadId) {
+    const key = [debugName, breakpadId].join(":");
+    return map.get(key);
+  };
+}
+
+async function getSymbolTableFromDebuggee(perfFront, path, breakpadId) {
+  const [addresses, index, buffer] = await perfFront.getSymbolTable(
+    path,
+    breakpadId
+  );
+  
+  
+  return [
+    new Uint32Array(addresses),
+    new Uint32Array(index),
+    new Uint8Array(buffer),
+  ];
+}
+
+async function doesFileExistAtPath(path) {
+  try {
+    const result = await OS.File.stat(path);
+    return !result.isDir;
+  } catch (e) {
+    if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
+      return false;
+    }
+    throw e;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getSymbolTableFromLocalBinary(objdirs, filename, breakpadId) {
+  const candidatePaths = [];
+  for (const objdirPath of objdirs) {
+    
+    candidatePaths.push(OS.Path.join(objdirPath, "dist", "bin", filename));
+    
+    
+    
+    
+    candidatePaths.push(OS.Path.join(objdirPath, filename));
+  }
+
+  for (const path of candidatePaths) {
+    if (await doesFileExistAtPath(path)) {
+      try {
+        return await ProfilerGetSymbols.getSymbolTable(path, path, breakpadId);
+      } catch (e) {
+        
+        
+        
+        
+      }
+    }
+  }
+  throw new Error("Could not find any matching binary.");
+}
+
+
+
+
+
 exports.getProfileAndStopProfiler = window => {
   return async (dispatch, getState) => {
     const perfFront = selectors.getPerfFront(getState());
@@ -150,11 +275,46 @@ exports.getProfileAndStopProfiler = window => {
       window.gClosePopup();
     }
 
-    const getSymbolTable = selectors.getSymbolTableGetter(getState())(profile);
-    const receiveProfile = selectors.getReceiveProfileFn(getState());
+    const libraryGetter = createLibraryMap(profile);
+    async function getSymbolTable(debugName, breakpadId) {
+      const { name, path, debugPath } = libraryGetter(debugName, breakpadId);
+      if (await doesFileExistAtPath(path)) {
+        
+        
+        
+        return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
+      }
+      
+      
+      
+      try {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const objdirs = selectors.getObjdirs(getState());
+        return await getSymbolTableFromLocalBinary(objdirs, name, breakpadId);
+      } catch (e) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        return getSymbolTableFromDebuggee(perfFront, path, breakpadId);
+      }
+    }
 
-    receiveProfile(profile, getSymbolTable);
-
+    selectors.getReceiveProfileFn(getState())(profile, getSymbolTable);
     dispatch(changeRecordingState(AVAILABLE_TO_RECORD));
   };
 };

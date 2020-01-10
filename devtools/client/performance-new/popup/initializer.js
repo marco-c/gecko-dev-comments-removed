@@ -33,7 +33,6 @@ const { require } = BrowserLoader({
 const {
   getRecordingPreferencesFromBrowser,
   setRecordingPreferencesOnBrowser,
-  getSymbolsFromThisBrowser,
 } = ChromeUtils.import(
   "resource://devtools/client/performance-new/popup/background.jsm"
 );
@@ -59,15 +58,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-async function gInit() {
+
+
+
+async function gInit(perfFront, preferenceFront) {
   const store = createStore(reducers);
-  const perfFrontInterface = new ActorReadyGeckoProfilerInterface();
 
   
   
   store.dispatch(
     actions.initializeStore({
-      perfFront: perfFrontInterface,
+      perfFront: new ActorReadyGeckoProfilerInterface(),
       receiveProfile,
       
       
@@ -79,9 +80,6 @@ async function gInit() {
         setRecordingPreferencesOnBrowser(
           selectors.getRecordingSettings(store.getState())
         ),
-      
-      
-      getSymbolTableGetter: () => getSymbolsFromThisBrowser,
       isPopup: true,
     })
   );
@@ -90,12 +88,6 @@ async function gInit() {
     React.createElement(Provider, { store }, React.createElement(Perf)),
     document.querySelector("#root")
   );
-
-  window.addEventListener("unload", function() {
-    
-    
-    perfFrontInterface.destroy();
-  });
 
   resizeWindow();
 }
