@@ -3,6 +3,11 @@
 
 
 
+
+
+
+
+
 pref("devtools.debugger.enabled", true);
 pref("devtools.debugger.chrome-debugging-host", "localhost");
 pref("devtools.debugger.chrome-debugging-websocket", false);
