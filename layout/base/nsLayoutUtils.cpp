@@ -9002,6 +9002,18 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
         metrics.SetVisualScrollUpdateType(visualUpdate->mUpdateType);
         presShell->AcknowledgePendingVisualScrollUpdate();
       }
+      
+      
+      
+      
+      
+      
+      if (presContext->HasDynamicToolbar()) {
+        CSSRect viewport = metrics.GetLayoutViewport();
+        viewport.SizeTo(nsLayoutUtils::ExpandHeightForViewportUnits(
+            presContext, viewport.Size()));
+        metrics.SetLayoutViewport(viewport);
+      }
     }
 
     CSSRect viewport = metrics.GetLayoutViewport();
