@@ -1946,33 +1946,6 @@ int32_t nsWindowWatcher::WinHasOption(const nsACString& aOptions,
   return found;
 }
 
-
-
-
-
-NS_IMETHODIMP
-nsWindowWatcher::FindItemWithName(const nsAString& aName,
-                                  nsIDocShellTreeItem* aRequestor,
-                                  nsIDocShellTreeItem* aOriginalRequestor,
-                                  nsIDocShellTreeItem** aFoundItem) {
-  *aFoundItem = nullptr;
-  if (aName.IsEmpty()) {
-    return NS_OK;
-  }
-
-  if (aName.LowerCaseEqualsLiteral("_blank") ||
-      aName.LowerCaseEqualsLiteral("_top") ||
-      aName.LowerCaseEqualsLiteral("_parent") ||
-      aName.LowerCaseEqualsLiteral("_self")) {
-    return NS_OK;
-  }
-
-  
-  
-  return TabGroup::GetChromeTabGroup()->FindItemWithName(
-      aName, aRequestor, aOriginalRequestor, aFoundItem);
-}
-
 already_AddRefed<nsIDocShellTreeItem> nsWindowWatcher::GetCallerTreeItem(
     nsIDocShellTreeItem* aParentItem) {
   nsCOMPtr<nsIWebNavigation> callerWebNav = do_GetInterface(GetEntryGlobal());
@@ -1987,6 +1960,10 @@ already_AddRefed<nsIDocShellTreeItem> nsWindowWatcher::GetCallerTreeItem(
 nsPIDOMWindowOuter* nsWindowWatcher::SafeGetWindowByName(
     const nsAString& aName, bool aForceNoOpener,
     mozIDOMWindowProxy* aCurrentWindow) {
+  if (aName.IsEmpty()) {
+    return nullptr;
+  }
+
   if (aForceNoOpener) {
     if (!aName.LowerCaseEqualsLiteral("_self") &&
         !aName.LowerCaseEqualsLiteral("_top") &&
@@ -2007,7 +1984,17 @@ nsPIDOMWindowOuter* nsWindowWatcher::SafeGetWindowByName(
                                  false,
                                 getter_AddRefs(foundItem));
   } else {
-    FindItemWithName(aName, nullptr, callerItem, getter_AddRefs(foundItem));
+    if (aName.LowerCaseEqualsLiteral("_blank") ||
+        aName.LowerCaseEqualsLiteral("_top") ||
+        aName.LowerCaseEqualsLiteral("_parent") ||
+        aName.LowerCaseEqualsLiteral("_self")) {
+      return nullptr;
+    }
+
+    
+    
+    Unused << TabGroup::GetChromeTabGroup()->FindItemWithName(
+        aName, nullptr, callerItem, getter_AddRefs(foundItem));
   }
 
   return foundItem ? foundItem->GetWindow() : nullptr;
