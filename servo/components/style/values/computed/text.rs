@@ -196,20 +196,16 @@ impl TextDecorationsInEffect {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
+#[allow(missing_docs)]
 pub enum TextEmphasisStyle {
     
-    Keyword(TextEmphasisKeywordValue),
+    Keyword {
+        #[css(skip_if = "TextEmphasisFillMode::is_filled")]
+        fill: TextEmphasisFillMode,
+        shape: TextEmphasisShapeKeyword,
+    },
     
     None,
     
-    String(String),
-}
-
-
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
-pub struct TextEmphasisKeywordValue {
-    
-    pub fill: TextEmphasisFillMode,
-    
-    pub shape: TextEmphasisShapeKeyword,
+    String(crate::OwnedStr),
 }
