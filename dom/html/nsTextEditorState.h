@@ -133,8 +133,6 @@ class HTMLInputElement;
 
 
 
-
-
 class RestoreSelectionState;
 
 class nsTextEditorState : public mozilla::SupportsWeakPtr<nsTextEditorState> {
