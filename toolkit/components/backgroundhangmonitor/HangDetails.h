@@ -10,6 +10,7 @@
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/ProcessedStack.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
 #include "mozilla/Move.h"
 #include "mozilla/HangTypes.h"
 #include "mozilla/HangAnnotations.h"
@@ -18,6 +19,11 @@
 #include "mozilla/TimeStamp.h"
 
 namespace mozilla {
+
+enum class PersistedToDisk {
+  No,
+  Yes,
+};
 
 
 
@@ -29,8 +35,9 @@ class nsHangDetails : public nsIHangDetails {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIHANGDETAILS
 
-  explicit nsHangDetails(HangDetails&& aDetails)
-      : mDetails(std::move(aDetails)) {}
+  explicit nsHangDetails(HangDetails&& aDetails,
+                         PersistedToDisk aPersistedToDisk)
+      : mDetails(std::move(aDetails)), mPersistedToDisk(aPersistedToDisk) {}
 
   
   
@@ -41,7 +48,11 @@ class nsHangDetails : public nsIHangDetails {
   virtual ~nsHangDetails() {}
 
   HangDetails mDetails;
+  PersistedToDisk mPersistedToDisk;
 };
+
+Result<Ok, nsresult> WriteHangDetailsToFile(HangDetails& aDetails,
+                                            nsIFile* aFile);
 
 
 
@@ -53,14 +64,34 @@ class nsHangDetails : public nsIHangDetails {
 
 class ProcessHangStackRunnable final : public Runnable {
  public:
-  explicit ProcessHangStackRunnable(HangDetails&& aHangDetails)
+  explicit ProcessHangStackRunnable(HangDetails&& aHangDetails,
+                                    PersistedToDisk aPersistedToDisk)
       : Runnable("ProcessHangStackRunnable"),
-        mHangDetails(std::move(aHangDetails)) {}
+        mHangDetails(std::move(aHangDetails)),
+        mPersistedToDisk(aPersistedToDisk) {}
 
   NS_IMETHOD Run() override;
 
  private:
   HangDetails mHangDetails;
+  PersistedToDisk mPersistedToDisk;
+};
+
+
+
+
+
+
+class SubmitPersistedPermahangRunnable final : public Runnable {
+ public:
+  explicit SubmitPersistedPermahangRunnable(nsIFile* aPermahangFile)
+      : Runnable("SubmitPersistedPermahangRunnable"),
+        mPermahangFile(aPermahangFile) {}
+
+  NS_IMETHOD Run() override;
+
+ private:
+  nsCOMPtr<nsIFile> mPermahangFile;
 };
 
 }  
