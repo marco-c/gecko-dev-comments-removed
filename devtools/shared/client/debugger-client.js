@@ -10,11 +10,7 @@ const {
   callFunctionWithAsyncStack,
 } = require("devtools/shared/platform/stack");
 const EventEmitter = require("devtools/shared/event-emitter");
-const {
-  ThreadStateTypes,
-  UnsolicitedNotifications,
-  UnsolicitedPauses,
-} = require("./constants");
+const { UnsolicitedNotifications } = require("./constants");
 
 loader.lazyRequireGetter(
   this,
@@ -581,12 +577,6 @@ DebuggerClient.prototype = {
     }
 
     
-    if (!this.traits.hasThreadFront && packet.from.includes("context")) {
-      this.sendToDeprecatedThreadClient(packet);
-      return;
-    }
-
-    
     
     const front = this.getFrontByID(packet.from);
     if (front) {
@@ -628,60 +618,6 @@ DebuggerClient.prototype = {
       } else {
         emitReply();
       }
-    }
-  },
-
-  
-  
-  
-  sendToDeprecatedThreadClient(packet) {
-    const deprecatedThreadClient = this.getFrontByID(packet.from);
-    if (deprecatedThreadClient && packet.type) {
-      const type = packet.type;
-      if (deprecatedThreadClient.events.includes(type)) {
-        deprecatedThreadClient.emit(type, packet);
-        
-        return;
-      }
-    }
-
-    let activeRequest;
-    
-    
-    
-    if (
-      this._activeRequests.has(packet.from) &&
-      !(
-        packet.type == ThreadStateTypes.paused &&
-        packet.why.type in UnsolicitedPauses
-      )
-    ) {
-      activeRequest = this._activeRequests.get(packet.from);
-      this._activeRequests.delete(packet.from);
-    }
-
-    
-    
-    
-    this._attemptNextRequest(packet.from);
-
-    
-    if (
-      packet.type in ThreadStateTypes &&
-      deprecatedThreadClient &&
-      typeof deprecatedThreadClient._onThreadState == "function"
-    ) {
-      deprecatedThreadClient._onThreadState(packet);
-    }
-
-    
-    
-    if (packet.type) {
-      this.emit(packet.type, packet);
-    }
-
-    if (activeRequest) {
-      activeRequest.emit("json-reply", packet);
     }
   },
 
