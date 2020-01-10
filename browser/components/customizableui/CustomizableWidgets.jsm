@@ -621,12 +621,13 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
       this._tabsList = doc.getElementById("PanelUI-remotetabs-tabslist");
       Services.obs.addObserver(this, SyncedTabs.TOPIC_TABS_CHANGED);
 
+      let deck = doc.getElementById("PanelUI-remotetabs-deck");
       if (SyncedTabs.isConfiguredToSyncTabs) {
         if (SyncedTabs.hasSyncedThisSession) {
-          this.setDeckIndex(this.deckIndices.DECKINDEX_TABS);
+          deck.selectedIndex = this.deckIndices.DECKINDEX_TABS;
         } else {
           
-          this.setDeckIndex(this.deckIndices.DECKINDEX_FETCHING);
+          deck.selectedIndex = this.deckIndices.DECKINDEX_FETCHING;
         }
         
         SyncedTabs.syncTabs().catch(ex => {
@@ -636,7 +637,7 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
         this._showTabs();
       } else {
         
-        this.setDeckIndex(this.deckIndices.DECKINDEX_TABSDISABLED);
+        deck.selectedIndex = this.deckIndices.DECKINDEX_TABSDISABLED;
       }
     },
     onViewHiding() {
@@ -652,15 +653,6 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
         default:
           break;
       }
-    },
-    setDeckIndex(index) {
-      let deck = this._tabsList.ownerDocument.getElementById(
-        "PanelUI-remotetabs-deck"
-      );
-      
-      
-      
-      deck.setAttribute("selectedIndex", index);
     },
 
     _showTabsPromise: Promise.resolve(),
@@ -683,6 +675,7 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
         return undefined;
       }
       let doc = this._tabsList.ownerDocument;
+      let deck = doc.getElementById("PanelUI-remotetabs-deck");
       return SyncedTabs.getTabClients()
         .then(clients => {
           
@@ -696,11 +689,11 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
           }
 
           if (clients.length === 0) {
-            this.setDeckIndex(this.deckIndices.DECKINDEX_NOCLIENTS);
+            deck.selectedIndex = this.deckIndices.DECKINDEX_NOCLIENTS;
             return;
           }
 
-          this.setDeckIndex(this.deckIndices.DECKINDEX_TABS);
+          deck.selectedIndex = this.deckIndices.DECKINDEX_TABS;
           this._clearTabList();
           SyncedTabs.sortTabClientsByLastUsed(clients);
           let fragment = doc.createDocumentFragment();
