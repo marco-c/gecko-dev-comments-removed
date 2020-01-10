@@ -245,6 +245,8 @@ customElements.define(
       const nsIWebBrowserPrint = Ci.nsIWebBrowserPrint;
       let navType, pageNum;
 
+      let { min: lowerLimit, max: upperLimit } = this.mPageTextBox;
+
       
       if (aHomeOrEnd) {
         
@@ -254,19 +256,23 @@ customElements.define(
           this.mPageTextBox.value = 1;
         } else {
           navType = nsIWebBrowserPrint.PRINTPREVIEW_END;
-          this.mPageTextBox.value = this.mPageTextBox.max;
+          this.mPageTextBox.value = upperLimit;
         }
         pageNum = 0;
       } else if (aDirection) {
         
         
-        this.mPageTextBox.value = Number(this.mPageTextBox.value) + aDirection;
+        pageNum = Number(this.mPageTextBox.value) + aDirection;
+        pageNum = Math.min(upperLimit, Math.max(lowerLimit, pageNum));
+        this.mPageTextBox.value = pageNum;
         navType = nsIWebBrowserPrint.PRINTPREVIEW_GOTO_PAGENUM;
-        pageNum = this.mPageTextBox.value;
       } else {
         
         navType = nsIWebBrowserPrint.PRINTPREVIEW_GOTO_PAGENUM;
-        pageNum = aPageNum;
+        pageNum = Math.min(upperLimit, Math.max(lowerLimit, aPageNum));
+        if (pageNum != aPageNum) {
+          this.mPageTextBox.value = pageNum;
+        }
       }
 
       this.mMessageManager.sendAsyncMessage("Printing:Preview:Navigate", {
