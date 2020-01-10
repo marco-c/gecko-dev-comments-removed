@@ -847,31 +847,31 @@ class nsDisplayListBuilder {
 
 
 
-  bool IsInSubdocument() { return mPresShellStates.Length() > 1; }
+  bool IsInSubdocument() const { return mPresShellStates.Length() > 1; }
 
   void SetDisablePartialUpdates(bool aDisable) {
     mDisablePartialUpdates = aDisable;
   }
-  bool DisablePartialUpdates() { return mDisablePartialUpdates; }
+  bool DisablePartialUpdates() const { return mDisablePartialUpdates; }
 
   void SetPartialBuildFailed(bool aFailed) { mPartialBuildFailed = aFailed; }
-  bool PartialBuildFailed() { return mPartialBuildFailed; }
+  bool PartialBuildFailed() const { return mPartialBuildFailed; }
 
-  bool IsInActiveDocShell() { return mIsInActiveDocShell; }
+  bool IsInActiveDocShell() const { return mIsInActiveDocShell; }
   void SetInActiveDocShell(bool aActive) { mIsInActiveDocShell = aActive; }
 
   
 
 
 
-  bool IsInChromeDocumentOrPopup() {
+  bool IsInChromeDocumentOrPopup() const {
     return mIsInChromePresContext || mIsBuildingForPopup;
   }
 
   
 
 
-  bool ShouldSyncDecodeImages() { return mSyncDecodeImages; }
+  bool ShouldSyncDecodeImages() const { return mSyncDecodeImages; }
 
   
 
