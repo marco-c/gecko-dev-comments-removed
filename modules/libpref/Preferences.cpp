@@ -5493,19 +5493,39 @@ static void InitStaticPrefsFromShared() {
                         "Must be called once gSharedMap has been created");
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 #define NEVER_PREF(name, cpp_type, value)
 #define ALWAYS_PREF(name, base_id, full_id, cpp_type, value) \
   {                                                          \
     StripAtomic<cpp_type> val;                               \
     nsresult rv = Internals::GetSharedPrefValue(name, &val); \
-    MOZ_DIAGNOSTIC_ALWAYS_TRUE(NS_SUCCEEDED(rv));            \
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(rv));                       \
     StaticPrefs::sMirror_##full_id = val;                    \
   }
 #define ONCE_PREF(name, base_id, full_id, cpp_type, value)                   \
   {                                                                          \
     cpp_type val;                                                            \
     nsresult rv = Internals::GetSharedPrefValue(ONCE_PREF_NAME(name), &val); \
-    MOZ_DIAGNOSTIC_ALWAYS_TRUE(NS_SUCCEEDED(rv));                            \
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(rv));                                       \
     StaticPrefs::sMirror_##full_id = val;                                    \
   }
 #include "mozilla/StaticPrefListAll.h"
