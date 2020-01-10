@@ -10,6 +10,7 @@
 #include "mozilla/EditorDOMPoint.h"  
 #include "mozilla/SelectionState.h"
 #include "mozilla/TextEditRules.h"
+#include "mozilla/TypeInState.h"  
 #include "nsCOMPtr.h"
 #include "nsIEditor.h"
 #include "nsIHTMLEditor.h"
@@ -18,7 +19,6 @@
 #include "nscore.h"
 
 class nsAtom;
-class nsIEditor;
 class nsINode;
 class nsRange;
 
@@ -36,23 +36,6 @@ class Element;
 class Selection;
 }  
 
-struct StyleCache final : public PropItem {
-  bool mPresent;
-
-  StyleCache() : PropItem(), mPresent(false) { MOZ_COUNT_CTOR(StyleCache); }
-
-  StyleCache(nsAtom* aTag, nsAtom* aAttr, const nsAString& aValue)
-      : PropItem(aTag, aAttr, aValue), mPresent(false) {
-    MOZ_COUNT_CTOR(StyleCache);
-  }
-
-  StyleCache(nsAtom* aTag, nsAtom* aAttr)
-      : PropItem(aTag, aAttr, EmptyString()), mPresent(false) {
-    MOZ_COUNT_CTOR(StyleCache);
-  }
-
-  ~StyleCache() { MOZ_COUNT_DTOR(StyleCache); }
-};
 
 
 
@@ -66,9 +49,6 @@ struct StyleCache final : public PropItem {
 
 
 
-
-
-#define SIZE_STYLE_TABLE 19
 
 class HTMLEditRules : public TextEditRules {
  public:
@@ -1336,15 +1316,9 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  void InitStyleCacheArray(StyleCache aStyleCache[SIZE_STYLE_TABLE]);
 
-  
-
-
-
-
-  MOZ_MUST_USE nsresult
-  GetInlineStyles(nsINode* aNode, StyleCache aStyleCache[SIZE_STYLE_TABLE]);
+  MOZ_MUST_USE nsresult GetInlineStyles(nsINode* aNode,
+                                        AutoStyleCacheArray& aStyleCacheArray);
 
  protected:
   HTMLEditor* mHTMLEditor;
@@ -1355,12 +1329,6 @@ class HTMLEditRules : public TextEditRules {
   RefPtr<nsRange> mUtilRange;
   
   uint32_t mJoinOffset;
-
-  
-  
-  
-  
-  StyleCache mCachedStyles[SIZE_STYLE_TABLE];
 
   friend class NS_CYCLE_COLLECTION_CLASSNAME(TextEditRules);
 };

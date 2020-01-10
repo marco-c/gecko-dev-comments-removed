@@ -12,6 +12,7 @@
 #include "mozilla/Maybe.h"               
 #include "mozilla/OwningNonNull.h"       
 #include "mozilla/PresShell.h"           
+#include "mozilla/TypeInState.h"         
 #include "mozilla/RangeBoundary.h"       
 #include "mozilla/SelectionState.h"      
 #include "mozilla/StyleSheet.h"          
@@ -620,6 +621,12 @@ class EditorBase : public nsIEditor,
     RefPtr<RangeItem> mSelectedRange;
 
     
+    
+    
+    
+    AutoStyleCacheArray mCachedInlineStyles;
+
+    
     bool mDidDeleteSelection;
 
     
@@ -655,6 +662,7 @@ class EditorBase : public nsIEditor,
       }
       mNewBlockElement = nullptr;
       mSelectedRange->Clear();
+      mCachedInlineStyles.Clear();
       mDidDeleteSelection = false;
       mDidDeleteNonCollapsedRange = false;
       mDidDeleteEmptyParentBlocks = false;
