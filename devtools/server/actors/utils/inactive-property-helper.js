@@ -472,9 +472,18 @@ class InactivePropertyHelper {
         "embed",
         "hr",
         "iframe",
+        
+        
+        
+        
+        "input",
         "math",
         "object",
         "picture",
+        
+        
+        
+        "select",
         "svg",
         "video",
       ])
