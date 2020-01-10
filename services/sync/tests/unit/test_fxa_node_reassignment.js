@@ -7,11 +7,17 @@ _("Test that node reassignment happens correctly using the FxA identity mgr.");
 
 
 
-const {RESTRequest} = ChromeUtils.import("resource://services-common/rest.js");
-const {Service} = ChromeUtils.import("resource://services-sync/service.js");
-const {Status} = ChromeUtils.import("resource://services-sync/status.js");
-const {BrowserIDManager} = ChromeUtils.import("resource://services-sync/browserid_identity.js");
-const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+const { RESTRequest } = ChromeUtils.import(
+  "resource://services-common/rest.js"
+);
+const { Service } = ChromeUtils.import("resource://services-sync/service.js");
+const { Status } = ChromeUtils.import("resource://services-sync/status.js");
+const { BrowserIDManager } = ChromeUtils.import(
+  "resource://services-sync/browserid_identity.js"
+);
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 add_task(async function setup() {
   
@@ -24,11 +30,10 @@ add_task(async function setup() {
 
 
 
-
 function handleReassign(handler, req, resp) {
   resp.setStatusLine(req.httpVersion, 401, "Node reassignment");
   resp.setHeader("Content-Type", "application/json");
-  let reassignBody = JSON.stringify({error: "401inator in place"});
+  let reassignBody = JSON.stringify({ error: "401inator in place" });
   resp.bodyOutputStream.write(reassignBody, reassignBody.length);
 }
 
@@ -36,7 +41,7 @@ var numTokenRequests = 0;
 
 function prepareServer(cbAfterTokenFetch) {
   syncTestLogging();
-  let config = makeIdentityConfig({username: "johndoe"});
+  let config = makeIdentityConfig({ username: "johndoe" });
   
   
   let callback = {
@@ -44,8 +49,10 @@ function prepareServer(cbAfterTokenFetch) {
     onRequest(req, resp) {
       let full = `${req.scheme}://${req.host}:${req.port}${req.path}`;
       let expected = config.fxaccount.token.endpoint;
-      Assert.ok(full.startsWith(expected),
-                `request made to ${full}, expected ${expected}`);
+      Assert.ok(
+        full.startsWith(expected),
+        `request made to ${full}, expected ${expected}`
+      );
     },
   };
   let server = new SyncServer(callback);
@@ -87,8 +94,9 @@ function getReassigned() {
     return Services.prefs.getBoolPref("services.sync.lastSyncReassigned");
   } catch (ex) {
     if (ex.result != Cr.NS_ERROR_UNEXPECTED) {
-      do_throw("Got exception retrieving lastSyncReassigned: " +
-               Log.exceptionStr(ex));
+      do_throw(
+        "Got exception retrieving lastSyncReassigned: " + Log.exceptionStr(ex)
+      );
     }
   }
   return false;
@@ -100,8 +108,13 @@ function getReassigned() {
 
 
 
-async function syncAndExpectNodeReassignment(server, firstNotification, between,
-                                             secondNotification, url) {
+async function syncAndExpectNodeReassignment(
+  server,
+  firstNotification,
+  between,
+  secondNotification,
+  url
+) {
   _("Starting syncAndExpectNodeReassignment\n");
   let deferred = PromiseUtils.defer();
   async function onwards() {
@@ -128,7 +141,11 @@ async function syncAndExpectNodeReassignment(server, firstNotification, between,
       
       waitForZeroTimer(function() {
         _("Second sync nextTick.");
-        Assert.equal(numTokenRequests, numTokenRequestsBefore + 1, "fetched a new token");
+        Assert.equal(
+          numTokenRequests,
+          numTokenRequestsBefore + 1,
+          "fetched a new token"
+        );
         Service.startOver().then(() => {
           server.stop(deferred.resolve);
         });
@@ -194,16 +211,18 @@ add_task(async function test_momentary_401_engine() {
 
   _("Test a failure for engine URLs that's resolved by reassignment.");
   let server = await prepareServer();
-  let john   = server.user("johndoe");
+  let john = server.user("johndoe");
 
   _("Enabling the Rotary engine.");
   let { engine, syncID, tracker } = await registerRotaryEngine();
 
   
   
-  let global = {syncID: Service.syncID,
-                storageVersion: STORAGE_VERSION,
-                rotary: {version: engine.version, syncID}};
+  let global = {
+    syncID: Service.syncID,
+    storageVersion: STORAGE_VERSION,
+    rotary: { version: engine.version, syncID },
+  };
   john.createCollection("meta").insert("global", global);
 
   _("First sync to prepare server contents.");
@@ -233,11 +252,13 @@ add_task(async function test_momentary_401_engine() {
     Svc.Obs.add("weave:service:login:start", onLoginStart);
   }
 
-  await syncAndExpectNodeReassignment(server,
-                                      "weave:service:sync:finish",
-                                      between,
-                                      "weave:service:sync:finish",
-                                      Service.storageURL + "rotary");
+  await syncAndExpectNodeReassignment(
+    server,
+    "weave:service:sync:finish",
+    between,
+    "weave:service:sync:finish",
+    Service.storageURL + "rotary"
+  );
 
   await tracker.clearChangedIDs();
   await Service.engineManager.unregister(engine);
@@ -247,7 +268,9 @@ add_task(async function test_momentary_401_engine() {
 add_task(async function test_momentary_401_info_collections_loggedin() {
   enableValidationPrefs();
 
-  _("Test a failure for info/collections after login that's resolved by reassignment.");
+  _(
+    "Test a failure for info/collections after login that's resolved by reassignment."
+  );
   let server = await prepareServer();
 
   _("First sync to prepare server contents.");
@@ -264,11 +287,13 @@ add_task(async function test_momentary_401_info_collections_loggedin() {
 
   Assert.ok(Service.isLoggedIn, "already logged in");
 
-  await syncAndExpectNodeReassignment(server,
-                                      "weave:service:sync:error",
-                                      undo,
-                                      "weave:service:sync:finish",
-                                      Service.infoURL);
+  await syncAndExpectNodeReassignment(
+    server,
+    "weave:service:sync:error",
+    undo,
+    "weave:service:sync:finish",
+    Service.infoURL
+  );
 });
 
 
@@ -277,7 +302,9 @@ add_task(async function test_momentary_401_info_collections_loggedin() {
 add_task(async function test_momentary_401_info_collections_loggedout() {
   enableValidationPrefs();
 
-  _("Test a failure for info/collections before login that's resolved by reassignment.");
+  _(
+    "Test a failure for info/collections before login that's resolved by reassignment."
+  );
 
   let oldHandler;
   let sawTokenFetch = false;
@@ -311,8 +338,10 @@ add_task(async function test_momentary_401_info_collections_loggedout() {
 add_task(async function test_momentary_401_storage_loggedin() {
   enableValidationPrefs();
 
-  _("Test a failure for any storage URL after login that's resolved by" +
-    "reassignment.");
+  _(
+    "Test a failure for any storage URL after login that's resolved by" +
+      "reassignment."
+  );
   let server = await prepareServer();
 
   _("First sync to prepare server contents.");
@@ -329,19 +358,23 @@ add_task(async function test_momentary_401_storage_loggedin() {
 
   Assert.ok(Service.isLoggedIn, "already logged in");
 
-  await syncAndExpectNodeReassignment(server,
-                                      "weave:service:sync:error",
-                                      undo,
-                                      "weave:service:sync:finish",
-                                      Service.storageURL + "meta/global");
+  await syncAndExpectNodeReassignment(
+    server,
+    "weave:service:sync:error",
+    undo,
+    "weave:service:sync:finish",
+    Service.storageURL + "meta/global"
+  );
 });
 
 
 add_task(async function test_momentary_401_storage_loggedout() {
   enableValidationPrefs();
 
-  _("Test a failure for any storage URL before login, not just engine parts. " +
-    "Resolved by reassignment.");
+  _(
+    "Test a failure for any storage URL before login, not just engine parts. " +
+      "Resolved by reassignment."
+  );
   let server = await prepareServer();
 
   
@@ -355,9 +388,11 @@ add_task(async function test_momentary_401_storage_loggedout() {
 
   Assert.ok(!Service.isLoggedIn, "already logged in");
 
-  await syncAndExpectNodeReassignment(server,
-                                      "weave:service:login:error",
-                                      undo,
-                                      "weave:service:sync:finish",
-                                      Service.storageURL + "meta/global");
+  await syncAndExpectNodeReassignment(
+    server,
+    "weave:service:login:error",
+    undo,
+    "weave:service:sync:finish",
+    Service.storageURL + "meta/global"
+  );
 });

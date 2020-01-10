@@ -4,18 +4,31 @@
 
 "use strict";
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
-const {Utils} = ChromeUtils.import("resource://services-sync/util.js");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { CommonUtils } = ChromeUtils.import(
+  "resource://services-common/utils.js"
+);
+const { Utils } = ChromeUtils.import("resource://services-sync/util.js");
 
-ChromeUtils.defineModuleGetter(this, "Async",
-                               "resource://services-common/async.js");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Async",
+  "resource://services-common/async.js"
+);
 
-ChromeUtils.defineModuleGetter(this, "PlacesUtils",
-                               "resource://gre/modules/PlacesUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesUtils",
+  "resource://gre/modules/PlacesUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "PlacesSyncUtils",
-                               "resource://gre/modules/PlacesSyncUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesSyncUtils",
+  "resource://gre/modules/PlacesSyncUtils.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["URLSearchParams"]);
 
@@ -61,8 +74,12 @@ function areURLsEqual(a, b) {
     if (!bKeys.has(key)) {
       return false;
     }
-    if (!CommonUtils.arrayEqual(aParams.getAll(key).sort(),
-                                bParams.getAll(key).sort())) {
+    if (
+      !CommonUtils.arrayEqual(
+        aParams.getAll(key).sort(),
+        bParams.getAll(key).sort()
+      )
+    ) {
       return false;
     }
   }
@@ -179,14 +196,20 @@ class BookmarkProblemData {
       { name: "serverDeleted", count: this.serverDeleted.length },
       { name: "serverUnexpected", count: this.serverUnexpected.length },
 
-      { name: "structuralDifferences", count: this.structuralDifferences.length },
+      {
+        name: "structuralDifferences",
+        count: this.structuralDifferences.length,
+      },
       { name: "differences", count: this.differences.length },
 
       { name: "missingIDs", count: this.missingIDs },
       { name: "rootOnServer", count: this.rootOnServer ? 1 : 0 },
 
       { name: "duplicates", count: this.duplicates.length },
-      { name: "parentChildMismatches", count: this.parentChildMismatches.length },
+      {
+        name: "parentChildMismatches",
+        count: this.parentChildMismatches.length,
+      },
       { name: "cycles", count: this.cycles.length },
       { name: "clientCycles", count: this.clientCycles.length },
       { name: "badClientRoots", count: this.badClientRoots.length },
@@ -200,7 +223,10 @@ class BookmarkProblemData {
       { name: "parentNotFolder", count: this.parentNotFolder.length },
     ];
     if (full) {
-      let structural = this._summarizeDifferences("sdiff", this.structuralDifferences);
+      let structural = this._summarizeDifferences(
+        "sdiff",
+        this.structuralDifferences
+      );
       result.push.apply(result, structural);
     }
     return result;
@@ -242,7 +268,7 @@ async function detectCycles(records) {
   let seenEver = new Set();
   const yieldState = Async.yieldState();
 
-  const traverse = async (node) => {
+  const traverse = async node => {
     if (pathLookup.has(node)) {
       let cycleStart = currentPath.lastIndexOf(node);
       let cyclePath = currentPath.slice(cycleStart).map(n => n.id);
@@ -267,11 +293,15 @@ async function detectCycles(records) {
     }
   };
 
-  await Async.yieldingForEach(records, async (record) => {
-    if (!seenEver.has(record)) {
-      await traverse(record);
-    }
-  }, yieldState);
+  await Async.yieldingForEach(
+    records,
+    async record => {
+      if (!seenEver.has(record)) {
+        await traverse(record);
+      }
+    },
+    yieldState
+  );
 
   return cycles;
 }
@@ -332,10 +362,11 @@ class ServerRecordInspection {
   }
 
   noteMismatch(child, parent) {
-    let exists = this.problemData.parentChildMismatches.some(match =>
-      match.child == child && match.parent == parent);
+    let exists = this.problemData.parentChildMismatches.some(
+      match => match.child == child && match.parent == parent
+    );
     if (!exists) {
-      this.problemData.parentChildMismatches.push({child, parent});
+      this.problemData.parentChildMismatches.push({ child, parent });
     }
   }
 
@@ -350,78 +381,87 @@ class ServerRecordInspection {
     this.serverRecords = records;
     let rootChildren = [];
 
-    await Async.yieldingForEach(this.serverRecords, async (record) => {
-      if (!record.id) {
-        ++this.problemData.missingIDs;
-        return;
-      }
-
-      if (record.deleted) {
-        this.deletedIds.add(record.id);
-      }
-      if (this.idToRecord.has(record.id)) {
-        this.problemData.duplicates.push(record.id);
-        return;
-      }
-
-      this.idToRecord.set(record.id, record);
-
-      if (!record.deleted) {
-        this.liveRecords.push(record);
-
-        if (record.parentid == "places") {
-          rootChildren.push(record);
-        }
-      }
-
-      if (!record.children) {
-        return;
-      }
-
-      if (record.type != "folder") {
-        
-        
-        
-        if (!record.children.length) {
+    await Async.yieldingForEach(
+      this.serverRecords,
+      async record => {
+        if (!record.id) {
+          ++this.problemData.missingIDs;
           return;
         }
+
+        if (record.deleted) {
+          this.deletedIds.add(record.id);
+        }
+        if (this.idToRecord.has(record.id)) {
+          this.problemData.duplicates.push(record.id);
+          return;
+        }
+
+        this.idToRecord.set(record.id, record);
+
+        if (!record.deleted) {
+          this.liveRecords.push(record);
+
+          if (record.parentid == "places") {
+            rootChildren.push(record);
+          }
+        }
+
+        if (!record.children) {
+          return;
+        }
+
+        if (record.type != "folder") {
+          
+          
+          
+          if (!record.children.length) {
+            return;
+          }
+          
+          this.problemData.childrenOnNonFolder.push(record.id);
+        }
+
+        this.folders.push(record);
+
+        if (new Set(record.children).size !== record.children.length) {
+          this.problemData.duplicateChildren.push(record.id);
+        }
+
         
-        this.problemData.childrenOnNonFolder.push(record.id);
-      }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        record.childGUIDs = record.children;
 
-      this.folders.push(record);
+        await Async.yieldingForEach(
+          record.childGUIDs,
+          id => {
+            this.noteParent(id, record.id);
+          },
+          this.yieldState
+        );
 
-      if (new Set(record.children).size !== record.children.length) {
-        this.problemData.duplicateChildren.push(record.id);
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      record.childGUIDs = record.children;
-
-      await Async.yieldingForEach(record.childGUIDs, id => {
-        this.noteParent(id, record.id);
-      }, this.yieldState);
-
-      record.children = [];
-    }, this.yieldState);
+        record.children = [];
+      },
+      this.yieldState
+    );
 
     
-    this.deletedRecords = Array.from(this.deletedIds,
-      id => this.idToRecord.get(id));
+    this.deletedRecords = Array.from(this.deletedIds, id =>
+      this.idToRecord.get(id)
+    );
 
     this._initRoot(rootChildren);
   }
@@ -454,82 +494,100 @@ class ServerRecordInspection {
 
   
   async _linkParentIDs() {
-    await Async.yieldingForEach(this.idToRecord, ([id, record]) => {
-      if (record == this.root || record.deleted) {
-        return false;
-      }
-
-      
-      let parentID = record.parentid;
-      let parent = this.idToRecord.get(parentID);
-      if (!parentID || !parent) {
-        this._noteOrphan(id, parentID);
-        return false;
-      }
-
-      record.parent = parent;
-
-      if (parent.deleted) {
-        this.problemData.deletedParents.push(id);
-        return true;
-      } else if (parent.type != "folder") {
-        this.problemData.parentNotFolder.push(record.id);
-        return true;
-      }
-
-      if (parent.id !== "place" || this.problemData.rootOnServer) {
-        if (!parent.childGUIDs.includes(record.id)) {
-          this.noteMismatch(record.id, parent.id);
+    await Async.yieldingForEach(
+      this.idToRecord,
+      ([id, record]) => {
+        if (record == this.root || record.deleted) {
+          return false;
         }
-      }
 
-      if (parent.deleted && !record.deleted) {
-        this.problemData.deletedParents.push(record.id);
-      }
+        
+        let parentID = record.parentid;
+        let parent = this.idToRecord.get(parentID);
+        if (!parentID || !parent) {
+          this._noteOrphan(id, parentID);
+          return false;
+        }
 
-      
-      
-      
-      
-      return false;
-    }, this.yieldState);
+        record.parent = parent;
+
+        if (parent.deleted) {
+          this.problemData.deletedParents.push(id);
+          return true;
+        } else if (parent.type != "folder") {
+          this.problemData.parentNotFolder.push(record.id);
+          return true;
+        }
+
+        if (parent.id !== "place" || this.problemData.rootOnServer) {
+          if (!parent.childGUIDs.includes(record.id)) {
+            this.noteMismatch(record.id, parent.id);
+          }
+        }
+
+        if (parent.deleted && !record.deleted) {
+          this.problemData.deletedParents.push(record.id);
+        }
+
+        
+        
+        
+        
+        return false;
+      },
+      this.yieldState
+    );
   }
 
   
   
   async _linkChildren() {
     
-    await Async.yieldingForEach(this.folders, async (folder) => {
-      folder.children = [];
-      folder.unfilteredChildren = [];
+    await Async.yieldingForEach(
+      this.folders,
+      async folder => {
+        folder.children = [];
+        folder.unfilteredChildren = [];
 
-      let idsThisFolder = new Set();
+        let idsThisFolder = new Set();
 
-      await Async.yieldingForEach(folder.childGUIDs, childID => {
-        let child = this.idToRecord.get(childID);
+        await Async.yieldingForEach(
+          folder.childGUIDs,
+          childID => {
+            let child = this.idToRecord.get(childID);
 
-        if (!child) {
-          this.problemData.missingChildren.push({ parent: folder.id, child: childID });
-          return;
-        }
+            if (!child) {
+              this.problemData.missingChildren.push({
+                parent: folder.id,
+                child: childID,
+              });
+              return;
+            }
 
-        if (child.deleted) {
-          this.problemData.deletedChildren.push({ parent: folder.id, child: childID });
-          return;
-        }
+            if (child.deleted) {
+              this.problemData.deletedChildren.push({
+                parent: folder.id,
+                child: childID,
+              });
+              return;
+            }
 
-        if (child.parentid != folder.id) {
-          this.noteMismatch(childID, folder.id);
-          return;
-        }
+            if (child.parentid != folder.id) {
+              this.noteMismatch(childID, folder.id);
+              return;
+            }
 
-        if (idsThisFolder.has(childID)) {
-          
-          return;
-        }
-        folder.children.push(child);
-      }, this.yieldState);
-    }, this.yieldState);
+            if (idsThisFolder.has(childID)) {
+              
+              return;
+            }
+            folder.children.push(child);
+          },
+          this.yieldState
+        );
+      },
+      this.yieldState
+    );
   }
 
   
@@ -539,33 +597,45 @@ class ServerRecordInspection {
   async _findOrphans() {
     let seen = new Set([this.root.id]);
 
-    const inCycle = await Async.yieldingForEach(Utils.walkTree(this.root), ([node]) => {
-      if (seen.has(node.id)) {
-        
-        
-        return true;
-      }
-      seen.add(node.id);
+    const inCycle = await Async.yieldingForEach(
+      Utils.walkTree(this.root),
+      ([node]) => {
+        if (seen.has(node.id)) {
+          
+          
+          return true;
+        }
+        seen.add(node.id);
 
-      return false;
-    }, this.yieldState);
+        return false;
+      },
+      this.yieldState
+    );
 
     if (inCycle) {
       return;
     }
 
-    await Async.yieldingForEach(this.liveRecords, (record, i) => {
-      if (!seen.has(record.id)) {
-        
-        
-        
-        this._noteOrphan(record.id);
-      }
-    }, this.yieldState);
+    await Async.yieldingForEach(
+      this.liveRecords,
+      (record, i) => {
+        if (!seen.has(record.id)) {
+          
+          
+          
+          this._noteOrphan(record.id);
+        }
+      },
+      this.yieldState
+    );
 
-    await Async.yieldingForEach(this._orphans, ([id, parent]) => {
-      this.problemData.orphans.push({id, parent});
-    }, this.yieldState);
+    await Async.yieldingForEach(
+      this._orphans,
+      ([id, parent]) => {
+        this.problemData.orphans.push({ id, parent });
+      },
+      this.yieldState
+    );
   }
 
   async _finish() {
@@ -598,31 +668,40 @@ class BookmarkValidator {
   }
 
   async canValidate() {
-    return !await PlacesSyncUtils.bookmarks.havePendingChanges();
+    return !(await PlacesSyncUtils.bookmarks.havePendingChanges());
   }
 
   async _followQueries(recordsByQueryId) {
-    await Async.yieldingForEach(recordsByQueryId.values(), entry => {
-      if (entry.type !== "query" && (!entry.bmkUri || !entry.bmkUri.startsWith(QUERY_PROTOCOL))) {
-        return;
-      }
-      let params = new URLSearchParams(entry.bmkUri.slice(QUERY_PROTOCOL.length));
-      
-      
-      let excludeQueries = params.get("excludeQueries");
-      if (excludeQueries === "1" || excludeQueries === "true") {
-        
-        return;
-      }
-      entry.concreteItems = [];
-      let queryIds = params.getAll("folder");
-      for (let queryId of queryIds) {
-        let concreteItem = recordsByQueryId.get(queryId);
-        if (concreteItem) {
-          entry.concreteItems.push(concreteItem);
+    await Async.yieldingForEach(
+      recordsByQueryId.values(),
+      entry => {
+        if (
+          entry.type !== "query" &&
+          (!entry.bmkUri || !entry.bmkUri.startsWith(QUERY_PROTOCOL))
+        ) {
+          return;
         }
-      }
-    }, this.yieldState);
+        let params = new URLSearchParams(
+          entry.bmkUri.slice(QUERY_PROTOCOL.length)
+        );
+        
+        
+        let excludeQueries = params.get("excludeQueries");
+        if (excludeQueries === "1" || excludeQueries === "true") {
+          
+          return;
+        }
+        entry.concreteItems = [];
+        let queryIds = params.getAll("folder");
+        for (let queryId of queryIds) {
+          let concreteItem = recordsByQueryId.get(queryId);
+          if (concreteItem) {
+            entry.concreteItems.push(concreteItem);
+          }
+        }
+      },
+      this.yieldState
+    );
   }
 
   async createClientRecordsFromTree(clientTree) {
@@ -700,12 +779,16 @@ class BookmarkValidator {
           treeNode.children = [];
         }
 
-        await Async.yieldingForEach(treeNode.children, async (child) => {
-          await traverse(child, synced);
-          child.parent = treeNode;
-          child.parentid = guid;
-          treeNode.childGUIDs.push(child.guid);
-        }, this.yieldState);
+        await Async.yieldingForEach(
+          treeNode.children,
+          async child => {
+            await traverse(child, synced);
+            child.parent = treeNode;
+            child.parentid = guid;
+            treeNode.childGUIDs.push(child.guid);
+          },
+          this.yieldState
+        );
       }
     };
 
@@ -755,8 +838,7 @@ class BookmarkValidator {
   async _validateClient(problemData, clientRecords) {
     problemData.clientCycles = await detectCycles(clientRecords);
     for (let rootGUID of SYNCED_ROOTS) {
-      let record = clientRecords.find(record =>
-        record.guid === rootGUID);
+      let record = clientRecords.find(record => record.guid === rootGUID);
       if (!record || record.parentid !== "places") {
         problemData.badClientRoots.push(rootGUID);
       }
@@ -765,21 +847,29 @@ class BookmarkValidator {
 
   async _computeUnifiedRecordMap(serverRecords, clientRecords) {
     let allRecords = new Map();
-    await Async.yieldingForEach(serverRecords, sr => {
-      if (sr.fake) {
-        return;
-      }
-      allRecords.set(sr.id, {client: null, server: sr});
-    }, this.yieldState);
+    await Async.yieldingForEach(
+      serverRecords,
+      sr => {
+        if (sr.fake) {
+          return;
+        }
+        allRecords.set(sr.id, { client: null, server: sr });
+      },
+      this.yieldState
+    );
 
-    await Async.yieldingForEach(clientRecords, cr => {
-      let unified = allRecords.get(cr.id);
-      if (!unified) {
-        allRecords.set(cr.id, {client: cr, server: null});
-      } else {
-        unified.client = cr;
-      }
-    }, this.yieldState);
+    await Async.yieldingForEach(
+      clientRecords,
+      cr => {
+        let unified = allRecords.get(cr.id);
+        if (!unified) {
+          allRecords.set(cr.id, { client: cr, server: null });
+        } else {
+          unified.client = cr;
+        }
+      },
+      this.yieldState
+    );
 
     return allRecords;
   }
@@ -828,8 +918,11 @@ class BookmarkValidator {
 
     let sameType = client.type === server.type;
     if (!sameType) {
-      if (server.type === "query" && client.type === "bookmark" &&
-          client.bmkUri.startsWith(QUERY_PROTOCOL)) {
+      if (
+        server.type === "query" &&
+        client.type === "bookmark" &&
+        client.bmkUri.startsWith(QUERY_PROTOCOL)
+      ) {
         sameType = true;
       }
     }
@@ -897,27 +990,40 @@ class BookmarkValidator {
 
     await this._validateClient(problemData, clientRecords);
 
-    let allRecords = await this._computeUnifiedRecordMap(serverRecords, clientRecords);
+    let allRecords = await this._computeUnifiedRecordMap(
+      serverRecords,
+      clientRecords
+    );
 
     let serverDeleted = new Set(inspectionInfo.deletedRecords.map(r => r.id));
 
-    await Async.yieldingForEach(allRecords, ([id, {client, server}]) => {
-      if (!client || !server) {
-        this._recordMissing(problemData, id, client, server, serverDeleted);
-        return;
-      }
-      if (server && client && client.ignored) {
-        problemData.serverUnexpected.push(id);
-      }
-      let { differences, structuralDifferences } = this._compareRecords(client, server);
+    await Async.yieldingForEach(
+      allRecords,
+      ([id, { client, server }]) => {
+        if (!client || !server) {
+          this._recordMissing(problemData, id, client, server, serverDeleted);
+          return;
+        }
+        if (server && client && client.ignored) {
+          problemData.serverUnexpected.push(id);
+        }
+        let { differences, structuralDifferences } = this._compareRecords(
+          client,
+          server
+        );
 
-      if (differences.length) {
-        problemData.differences.push({ id, differences });
-      }
-      if (structuralDifferences.length) {
-        problemData.structuralDifferences.push({ id, differences: structuralDifferences });
-      }
-    }, this.yieldState);
+        if (differences.length) {
+          problemData.differences.push({ id, differences });
+        }
+        if (structuralDifferences.length) {
+          problemData.structuralDifferences.push({
+            id,
+            differences: structuralDifferences,
+          });
+        }
+      },
+      this.yieldState
+    );
 
     return inspectionInfo;
   }
@@ -926,17 +1032,23 @@ class BookmarkValidator {
     
     
     let collection = engine.itemSource();
-    let collectionKey = engine.service.collectionKeys.keyForCollection(engine.name);
+    let collectionKey = engine.service.collectionKeys.keyForCollection(
+      engine.name
+    );
     collection.full = true;
     let result = await collection.getBatched();
     if (!result.response.success) {
       throw result.response;
     }
     let cleartexts = [];
-    await Async.yieldingForEach(result.records, async (record) => {
-      await record.decrypt(collectionKey);
-      cleartexts.push(record.cleartext);
-    }, this.yieldState);
+    await Async.yieldingForEach(
+      result.records,
+      async record => {
+        await record.decrypt(collectionKey);
+        cleartexts.push(record.cleartext);
+      },
+      this.yieldState
+    );
     return cleartexts;
   }
 

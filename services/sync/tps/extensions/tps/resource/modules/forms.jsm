@@ -2,17 +2,19 @@
 
 
 
- 
+
 
 
 
 
 var EXPORTED_SYMBOLS = ["FormData"];
 
-const {Logger} = ChromeUtils.import("resource://tps/logger.jsm");
+const { Logger } = ChromeUtils.import("resource://tps/logger.jsm");
 
-const {FormHistory} = ChromeUtils.import("resource://gre/modules/FormHistory.jsm");
-const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { FormHistory } = ChromeUtils.import(
+  "resource://gre/modules/FormHistory.jsm"
+);
+const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 
 
 
@@ -24,7 +26,9 @@ var FormDB = {
     return new Promise((resolve, reject) => {
       let handlers = {
         handleError(error) {
-          Logger.logError("Error occurred updating form history: " + Log.exceptionStr(error));
+          Logger.logError(
+            "Error occurred updating form history: " + Log.exceptionStr(error)
+          );
           reject(error);
         },
         handleCompletion(reason) {
@@ -47,8 +51,14 @@ var FormDB = {
 
 
   insertValue(fieldname, value, us) {
-    let data = { op: "add", fieldname, value, timesUsed: 1,
-                 firstUsed: us, lastUsed: us };
+    let data = {
+      op: "add",
+      fieldname,
+      value,
+      timesUsed: 1,
+      firstUsed: us,
+      lastUsed: us,
+    };
     return this._update(data);
   },
 
@@ -89,14 +99,20 @@ var FormDB = {
           result = oneResult;
         },
         handleError(error) {
-          Logger.logError("Error occurred updating form history: " + Log.exceptionStr(error));
+          Logger.logError(
+            "Error occurred updating form history: " + Log.exceptionStr(error)
+          );
           reject(error);
         },
         handleCompletion(reason) {
           resolve(result);
         },
       };
-      FormHistory.search(["guid", "lastUsed", "firstUsed"], { fieldname, value }, handlers);
+      FormHistory.search(
+        ["guid", "lastUsed", "firstUsed"],
+        { fieldname, value },
+        handlers
+      );
     });
   },
 
@@ -108,7 +124,7 @@ var FormDB = {
 
 
 
-   remove(guid) {
+  remove(guid) {
     return this._update({ op: "remove", guid });
   },
 };
@@ -146,7 +162,7 @@ FormData.prototype = {
 
 
   hours_to_us(hours) {
-    return this.usSinceEpoch + (hours * 60 * 60 * 1000 * 1000);
+    return this.usSinceEpoch + hours * 60 * 60 * 1000 * 1000;
   },
 
   
@@ -158,14 +174,19 @@ FormData.prototype = {
 
 
   Create() {
-    Logger.AssertTrue(this.fieldname != null && this.value != null,
-      "Must specify both fieldname and value");
+    Logger.AssertTrue(
+      this.fieldname != null && this.value != null,
+      "Must specify both fieldname and value"
+    );
 
     return FormDB.getDataForValue(this.fieldname, this.value).then(formdata => {
       if (!formdata) {
         
-        return FormDB.insertValue(this.fieldname, this.value,
-                                  this.hours_to_us(this.date));
+        return FormDB.insertValue(
+          this.fieldname,
+          this.value,
+          this.hours_to_us(this.date)
+        );
       }
       
 
@@ -196,7 +217,7 @@ FormData.prototype = {
 
 
 
-          this.id = formdata.guid;
+        this.id = formdata.guid;
       }
       return status;
     });

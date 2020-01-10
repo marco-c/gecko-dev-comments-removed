@@ -5,7 +5,9 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
@@ -61,7 +63,9 @@ this.SyncDisconnectInternal = {
         }
         attempts += 1;
         if (attempts >= this.lockRetryCount) {
-          log.error("Gave up waiting for the sync lock - going ahead with sanitize anyway");
+          log.error(
+            "Gave up waiting for the sync lock - going ahead with sanitize anyway"
+          );
           resolve(false);
           return;
         }
@@ -119,7 +123,9 @@ this.SyncDisconnectInternal = {
       
       
       
-      let itemsToClear = Object.keys(Sanitizer.items).filter(k => k != "openWindows");
+      let itemsToClear = Object.keys(Sanitizer.items).filter(
+        k => k != "openWindows"
+      );
       await Sanitizer.sanitize(itemsToClear);
     } catch (ex) {
       console.error("Failed to sanitize other data", ex);
@@ -149,8 +155,10 @@ this.SyncDisconnectInternal = {
   
   
   
-  async _startDisconnect(abortController,
-                         {sanitizeSyncData = false, sanitizeBrowserData = false} = {}) {
+  async _startDisconnect(
+    abortController,
+    { sanitizeSyncData = false, sanitizeBrowserData = false } = {}
+  ) {
     
     
     
@@ -163,7 +171,9 @@ this.SyncDisconnectInternal = {
     
     log.info("checking master-password state");
     if (!Utils.ensureMPUnlocked()) {
-      log.warn("The master-password needs to be unlocked to fully disconnect from sync");
+      log.warn(
+        "The master-password needs to be unlocked to fully disconnect from sync"
+      );
       return;
     }
 
@@ -188,10 +198,13 @@ this.SyncDisconnectInternal = {
 
   async disconnect(options) {
     if (this.promiseDisconnectFinished) {
-        throw new Error("A disconnect is already in progress");
+      throw new Error("A disconnect is already in progress");
     }
     let abortController = new AbortController();
-    let promiseDisconnectFinished = this._startDisconnect(abortController, options);
+    let promiseDisconnectFinished = this._startDisconnect(
+      abortController,
+      options
+    );
     this.promiseDisconnectFinished = promiseDisconnectFinished;
     let shutdownBlocker = () => {
       
@@ -202,7 +215,8 @@ this.SyncDisconnectInternal = {
     };
     AsyncShutdown.quitApplicationGranted.addBlocker(
       "SyncDisconnect: removing requested data",
-      shutdownBlocker);
+      shutdownBlocker
+    );
 
     
     await promiseDisconnectFinished;
@@ -215,11 +229,11 @@ this.SyncDisconnectInternal = {
 };
 
 this.SyncDisconnect = {
-    get promiseDisconnectFinished() {
-        return SyncDisconnectInternal.promiseDisconnectFinished;
-    },
+  get promiseDisconnectFinished() {
+    return SyncDisconnectInternal.promiseDisconnectFinished;
+  },
 
-    disconnect(options) {
-      return SyncDisconnectInternal.disconnect(options);
-    },
+  disconnect(options) {
+    return SyncDisconnectInternal.disconnect(options);
+  },
 };

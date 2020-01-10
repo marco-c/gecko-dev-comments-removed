@@ -3,19 +3,25 @@
 
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 
 do_get_profile();
 
 
-var fhs = Cc["@mozilla.org/satchel/form-history-startup;1"]
-            .getService(Ci.nsIObserver);
+var fhs = Cc["@mozilla.org/satchel/form-history-startup;1"].getService(
+  Ci.nsIObserver
+);
 fhs.observe(null, "profile-after-change", null);
 
 
-Services.prefs.setCharPref("identity.sync.tokenserver.uri", "http://token-server");
+Services.prefs.setCharPref(
+  "identity.sync.tokenserver.uri",
+  "http://token-server"
+);
 
 
 function getOS() {
@@ -40,8 +46,9 @@ updateAppInfo({
 
 
 function addResourceAlias() {
-  const resProt = Services.io.getProtocolHandler("resource")
-                          .QueryInterface(Ci.nsIResProtocolHandler);
+  const resProt = Services.io
+    .getProtocolHandler("resource")
+    .QueryInterface(Ci.nsIResProtocolHandler);
   for (let s of ["common", "sync", "crypto"]) {
     let uri = Services.io.newURI("resource://gre/modules/services-" + s + "/");
     resProt.setSubstitution("services-" + s, uri);

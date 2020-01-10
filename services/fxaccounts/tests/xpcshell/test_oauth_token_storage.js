@@ -3,11 +3,18 @@
 
 "use strict";
 
-const {FxAccounts} = ChromeUtils.import("resource://gre/modules/FxAccounts.jsm");
-const {FxAccountsClient} = ChromeUtils.import("resource://gre/modules/FxAccountsClient.jsm");
+const { FxAccounts } = ChromeUtils.import(
+  "resource://gre/modules/FxAccounts.jsm"
+);
+const { FxAccountsClient } = ChromeUtils.import(
+  "resource://gre/modules/FxAccountsClient.jsm"
+);
 
 
-var {AccountState} = ChromeUtils.import("resource://gre/modules/FxAccounts.jsm", null);
+var { AccountState } = ChromeUtils.import(
+  "resource://gre/modules/FxAccounts.jsm",
+  null
+);
 
 function promiseNotification(topic) {
   return new Promise(resolve => {
@@ -20,8 +27,7 @@ function promiseNotification(topic) {
 }
 
 
-function MockStorageManager() {
-}
+function MockStorageManager() {}
 
 MockStorageManager.prototype = {
   promiseInitialized: Promise.resolve(),
@@ -56,20 +62,29 @@ MockStorageManager.prototype = {
 };
 
 
-
 function MockFxAccountsClient() {
   this._email = "nobody@example.com";
   this._verified = false;
 
   this.accountStatus = function(uid) {
-    return Promise.resolve(!!uid && (!this._deletedOnServer));
+    return Promise.resolve(!!uid && !this._deletedOnServer);
   };
 
-  this.signOut = function() { return Promise.resolve(); };
-  this.registerDevice = function() { return Promise.resolve(); };
-  this.updateDevice = function() { return Promise.resolve(); };
-  this.signOutAndDestroyDevice = function() { return Promise.resolve(); };
-  this.getDeviceList = function() { return Promise.resolve(); };
+  this.signOut = function() {
+    return Promise.resolve();
+  };
+  this.registerDevice = function() {
+    return Promise.resolve();
+  };
+  this.updateDevice = function() {
+    return Promise.resolve();
+  };
+  this.signOutAndDestroyDevice = function() {
+    return Promise.resolve();
+  };
+  this.getDeviceList = function() {
+    return Promise.resolve();
+  };
 
   FxAccountsClient.apply(this);
 }
@@ -92,7 +107,7 @@ function MockFxAccounts(device = {}) {
     },
     fxaPushService: {
       registerPushEndpoint() {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           resolve({
             endpoint: "http://mochi.test:8888",
           });
@@ -134,17 +149,19 @@ add_task(async function testCacheStorage() {
   };
 
   let promiseWritten = promiseNotification("testhelper-fxa-cache-persist-done");
-  let tokenData = {token: "token1", somethingelse: "something else"};
+  let tokenData = { token: "token1", somethingelse: "something else" };
   let scopeArray = ["foo", "bar"];
   cas.setCachedToken(scopeArray, tokenData);
   deepEqual(cas.getCachedToken(scopeArray), tokenData);
 
-  deepEqual(cas.oauthTokens, {"bar|foo": tokenData});
+  deepEqual(cas.oauthTokens, { "bar|foo": tokenData });
   
   await promiseWritten;
 
   
-  deepEqual(cas.storageManager.accountData.oauthTokens, {"bar|foo": tokenData});
+  deepEqual(cas.storageManager.accountData.oauthTokens, {
+    "bar|foo": tokenData,
+  });
 
   
   promiseWritten = promiseNotification("testhelper-fxa-cache-persist-done");
@@ -155,6 +172,6 @@ add_task(async function testCacheStorage() {
 
   
   let storageManager = cas.storageManager; 
-  await fxa.signOut(  true);
+  await fxa.signOut( true);
   deepEqual(storageManager.accountData, null);
 });

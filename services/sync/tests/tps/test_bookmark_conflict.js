@@ -8,15 +8,16 @@
 
 EnableEngines(["bookmarks"]);
 
-var phases = { "phase1": "profile1",
-               "phase2": "profile2",
-               "phase3": "profile1",
-               "phase4": "profile2" };
-
+var phases = {
+  phase1: "profile1",
+  phase2: "profile2",
+  phase3: "profile1",
+  phase4: "profile2",
+};
 
 
 var bookmarksInitial = {
-  "menu": [
+  menu: [
     { folder: "foldera" },
     { folder: "folderb" },
     { folder: "folderc" },
@@ -32,18 +33,14 @@ var bookmarksInitial = {
 
 
 var bookmarksToDelete = {
-  "menu": [
-    { folder: "foldera" },
-    { folder: "folderb" },
-  ],
+  menu: [{ folder: "foldera" }, { folder: "folderb" }],
   "menu/folderc": [{ uri: "http://www.yahoo.com", title: "Yahoo" }],
 };
 
 
 
-
 var bookmarkMods = {
-  "menu": [
+  menu: [
     { folder: "foldera" },
     { folder: "folderb" },
     { folder: "folderc" },
@@ -52,48 +49,46 @@ var bookmarkMods = {
 
   
   
-  "menu/foldera": [{
-    uri: "http://www.cnn.com",
-    title: "CNN",
-    changes: { location: "menu/folderd" },
-  }],
+  "menu/foldera": [
+    {
+      uri: "http://www.cnn.com",
+      title: "CNN",
+      changes: { location: "menu/folderd" },
+    },
+  ],
 
   
   
-  "menu/folderb": [{
-    uri: "http://www.apple.com",
-    title: "Apple",
-    tags: [],
-    changes: { title: "Mac" },
-  }],
-
+  "menu/folderb": [
+    {
+      uri: "http://www.apple.com",
+      title: "Apple",
+      tags: [],
+      changes: { title: "Mac" },
+    },
+  ],
 
   
-  "menu/folderc": [{
-    uri: "http://www.yahoo.com",
-    title: "Yahoo",
-    changes: { location: "menu/folderd" },
-  }],
+  "menu/folderc": [
+    {
+      uri: "http://www.yahoo.com",
+      title: "Yahoo",
+      changes: { location: "menu/folderd" },
+    },
+  ],
 
   "menu/folderd": [],
 };
 
 
 bookmarksToDelete = {
-  "menu": [
-    { folder: "foldera" },
-    { folder: "folderb" },
-  ],
-  "menu/folderc": [
-    { uri: "http://www.yahoo.com", title: "Yahoo" },
-  ],
+  menu: [{ folder: "foldera" }, { folder: "folderb" }],
+  "menu/folderc": [{ uri: "http://www.yahoo.com", title: "Yahoo" }],
 };
 
 
-
-
 var bookmarksExpected = {
-  "menu": [
+  menu: [
     { folder: "folderc" },
     { folder: "folderd" },
     { uri: "http://www.apple.com", title: "Mac" },

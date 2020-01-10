@@ -1,14 +1,18 @@
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "initializeIdentityWithTokenServerResponse",
-];
+var EXPORTED_SYMBOLS = ["initializeIdentityWithTokenServerResponse"];
 
-const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
-const {Weave} = ChromeUtils.import("resource://services-sync/main.js");
-const {BrowserIDManager} = ChromeUtils.import("resource://services-sync/browserid_identity.js");
-const {TokenServerClient} = ChromeUtils.import("resource://services-common/tokenserverclient.js");
-const {configureFxAccountIdentity} = ChromeUtils.import("resource://testing-common/services/sync/utils.js");
+const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { Weave } = ChromeUtils.import("resource://services-sync/main.js");
+const { BrowserIDManager } = ChromeUtils.import(
+  "resource://services-sync/browserid_identity.js"
+);
+const { TokenServerClient } = ChromeUtils.import(
+  "resource://services-common/tokenserverclient.js"
+);
+const { configureFxAccountIdentity } = ChromeUtils.import(
+  "resource://testing-common/services/sync/utils.js"
+);
 
 
 
@@ -16,7 +20,8 @@ var initializeIdentityWithTokenServerResponse = function(response) {
   
   
   let requestLog = Log.repository.getLogger("testing.mock-rest");
-  if (!requestLog.appenders.length) { 
+  if (!requestLog.appenders.length) {
+    
     requestLog.addAppender(new Log.DumpAppender());
     requestLog.level = Log.Level.Trace;
   }
@@ -32,7 +37,7 @@ var initializeIdentityWithTokenServerResponse = function(response) {
     },
   };
   
-  function MockTSC() { }
+  function MockTSC() {}
   MockTSC.prototype = new TokenServerClient();
   MockTSC.prototype.constructor = MockTSC;
   MockTSC.prototype.newRESTRequest = function(url) {

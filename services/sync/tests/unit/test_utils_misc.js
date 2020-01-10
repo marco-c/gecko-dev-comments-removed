@@ -12,14 +12,18 @@ add_test(function test_default_device_name() {
   
   
   
-  let hostname = Services.sysinfo.get("device") ||
-                 Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService).myHostName;
+  let hostname =
+    Services.sysinfo.get("device") ||
+    Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService)
+      .myHostName;
   _("hostname is " + hostname);
   ok(hostname.length > 0);
   
   ok(def.includes(hostname));
   
-  let fallback = Cc["@mozilla.org/network/protocol;1?name=http"].getService(Ci.nsIHttpProtocolHandler).oscpu;
+  let fallback = Cc["@mozilla.org/network/protocol;1?name=http"].getService(
+    Ci.nsIHttpProtocolHandler
+  ).oscpu;
   _("UA fallback is " + fallback);
   ok(fallback.length > 0);
   

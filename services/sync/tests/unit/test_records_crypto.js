@@ -1,15 +1,19 @@
 
 
 
-const {CollectionKeyManager, CryptoWrapper} = ChromeUtils.import("resource://services-sync/record.js");
-const {Service} = ChromeUtils.import("resource://services-sync/service.js");
+const { CollectionKeyManager, CryptoWrapper } = ChromeUtils.import(
+  "resource://services-sync/record.js"
+);
+const { Service } = ChromeUtils.import("resource://services-sync/service.js");
 
 var cryptoWrap;
 
 function crypted_resource_handler(metadata, response) {
-  let obj = {id: "resource",
-             modified: cryptoWrap.modified,
-             payload: JSON.stringify(cryptoWrap.payload)};
+  let obj = {
+    id: "resource",
+    modified: cryptoWrap.modified,
+    payload: JSON.stringify(cryptoWrap.payload),
+  };
   return httpd_basic_auth_handler(JSON.stringify(obj), metadata, response);
 }
 
@@ -33,7 +37,7 @@ add_task(async function test_records_crypto() {
 
     log.info("Setting up server and authenticator");
 
-    server = httpd_setup({"/steam/resource": crypted_resource_handler});
+    server = httpd_setup({ "/steam/resource": crypted_resource_handler });
 
     log.info("Creating a record");
 
@@ -95,17 +99,25 @@ add_task(async function test_records_crypto() {
     } catch (ex) {
       error = ex;
     }
-    Assert.equal(error.message.substr(0, 42), "Record SHA256 HMAC mismatch: should be foo");
+    Assert.equal(
+      error.message.substr(0, 42),
+      "Record SHA256 HMAC mismatch: should be foo"
+    );
 
     
 
     await generateNewKeys(Service.collectionKeys);
     let bookmarkItem = prepareCryptoWrap("bookmarks", "foo");
-    await bookmarkItem.encrypt(Service.collectionKeys.keyForCollection("bookmarks"));
+    await bookmarkItem.encrypt(
+      Service.collectionKeys.keyForCollection("bookmarks")
+    );
     log.info("Ciphertext is " + bookmarkItem.ciphertext);
     Assert.ok(bookmarkItem.ciphertext != null);
     log.info("Decrypting the record explicitly with the default key.");
-    Assert.equal((await bookmarkItem.decrypt(Service.collectionKeys._default)).stuff, "my payload here");
+    Assert.equal(
+      (await bookmarkItem.decrypt(Service.collectionKeys._default)).stuff,
+      "my payload here"
+    );
 
     
     
@@ -115,7 +127,9 @@ add_task(async function test_records_crypto() {
 
     
     
-    await bookmarkItem.encrypt(Service.collectionKeys.keyForCollection("bookmarks"));
+    await bookmarkItem.encrypt(
+      Service.collectionKeys.keyForCollection("bookmarks")
+    );
     Assert.ok(bookmarkItem.ciphertext != null);
 
     
@@ -131,8 +145,12 @@ add_task(async function test_records_crypto() {
 
     
     
-    Assert.equal((await bookmarkItem.decrypt(Service.collectionKeys.keyForCollection("bookmarks"))).stuff,
-                 "my payload here");
+    Assert.equal(
+      (await bookmarkItem.decrypt(
+        Service.collectionKeys.keyForCollection("bookmarks")
+      )).stuff,
+      "my payload here"
+    );
 
     Assert.ok(Service.collectionKeys.hasKeysFor(["bookmarks"]));
 

@@ -1,7 +1,9 @@
 
 
 
-const {CryptoUtils} = ChromeUtils.import("resource://services-crypto/utils.js");
+const { CryptoUtils } = ChromeUtils.import(
+  "resource://services-crypto/utils.js"
+);
 
 function run_test() {
   initTestLogging();
@@ -21,50 +23,62 @@ add_task(async function test_hawk() {
     key: "2983d45yun89q",
   };
 
-  let uri_https = CommonUtils.makeURI("https://example.net/somewhere/over/the/rainbow");
-  let opts = { credentials,
-                      ext: "Bazinga!",
-                      ts,
-                      nonce,
-                      payload: "something to write about",
-                      contentType: "text/plain",
-                    };
+  let uri_https = CommonUtils.makeURI(
+    "https://example.net/somewhere/over/the/rainbow"
+  );
+  let opts = {
+    credentials,
+    ext: "Bazinga!",
+    ts,
+    nonce,
+    payload: "something to write about",
+    contentType: "text/plain",
+  };
 
   let result = await compute(uri_https, method, opts);
-  Assert.equal(result.field,
-               'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ' +
-               'hash="2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=", ' +
-               'ext="Bazinga!", ' +
-               'mac="q1CwFoSHzPZSkbIvl0oYlD+91rBUEvFk763nMjMndj8="'
-             );
+  Assert.equal(
+    result.field,
+    'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ' +
+      'hash="2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=", ' +
+      'ext="Bazinga!", ' +
+      'mac="q1CwFoSHzPZSkbIvl0oYlD+91rBUEvFk763nMjMndj8="'
+  );
   Assert.equal(result.artifacts.ts, ts);
   Assert.equal(result.artifacts.nonce, nonce);
   Assert.equal(result.artifacts.method, method);
   Assert.equal(result.artifacts.resource, "/somewhere/over/the/rainbow");
   Assert.equal(result.artifacts.host, "example.net");
   Assert.equal(result.artifacts.port, 443);
-  Assert.equal(result.artifacts.hash, "2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=");
+  Assert.equal(
+    result.artifacts.hash,
+    "2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY="
+  );
   Assert.equal(result.artifacts.ext, "Bazinga!");
 
-  let opts_noext = { credentials,
-                            ts,
-                            nonce,
-                            payload: "something to write about",
-                            contentType: "text/plain",
-                          };
+  let opts_noext = {
+    credentials,
+    ts,
+    nonce,
+    payload: "something to write about",
+    contentType: "text/plain",
+  };
   result = await compute(uri_https, method, opts_noext);
-  Assert.equal(result.field,
-               'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ' +
-               'hash="2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=", ' +
-               'mac="HTgtd0jPI6E4izx8e4OHdO36q00xFCU0FolNq3RiCYs="'
-             );
+  Assert.equal(
+    result.field,
+    'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ' +
+      'hash="2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=", ' +
+      'mac="HTgtd0jPI6E4izx8e4OHdO36q00xFCU0FolNq3RiCYs="'
+  );
   Assert.equal(result.artifacts.ts, ts);
   Assert.equal(result.artifacts.nonce, nonce);
   Assert.equal(result.artifacts.method, method);
   Assert.equal(result.artifacts.resource, "/somewhere/over/the/rainbow");
   Assert.equal(result.artifacts.host, "example.net");
   Assert.equal(result.artifacts.port, 443);
-  Assert.equal(result.artifacts.hash, "2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=");
+  Assert.equal(
+    result.artifacts.hash,
+    "2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY="
+  );
 
   
 
@@ -83,31 +97,35 @@ add_task(async function test_hawk() {
   Assert.ok(result.artifacts.ts > 1000 * 1000 * 1000);
   Assert.ok(result.artifacts.ts < 1000 * 1000 * 1000 * 1000);
   Assert.ok(fields[3].startsWith('nonce="'));
-  Assert.equal(fields[3].length, ('nonce="12345678901=",').length);
-  Assert.equal(result.artifacts.nonce.length, ("12345678901=").length);
+  Assert.equal(fields[3].length, 'nonce="12345678901=",'.length);
+  Assert.equal(result.artifacts.nonce.length, "12345678901=".length);
 
   let result2 = await compute(uri_https, method, { credentials });
   Assert.notEqual(result.artifacts.nonce, result2.artifacts.nonce);
 
   
 
-  let uri_https_upper = CommonUtils.makeURI("https://EXAMPLE.NET/somewhere/over/the/rainbow");
+  let uri_https_upper = CommonUtils.makeURI(
+    "https://EXAMPLE.NET/somewhere/over/the/rainbow"
+  );
   result = await compute(uri_https_upper, method, opts);
-  Assert.equal(result.field,
-               'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ' +
-               'hash="2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=", ' +
-               'ext="Bazinga!", ' +
-               'mac="q1CwFoSHzPZSkbIvl0oYlD+91rBUEvFk763nMjMndj8="'
-             );
+  Assert.equal(
+    result.field,
+    'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ' +
+      'hash="2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=", ' +
+      'ext="Bazinga!", ' +
+      'mac="q1CwFoSHzPZSkbIvl0oYlD+91rBUEvFk763nMjMndj8="'
+  );
 
   
   result = await compute(uri_https_upper, method.toLowerCase(), opts);
-  Assert.equal(result.field,
-               'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ' +
-               'hash="2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=", ' +
-               'ext="Bazinga!", ' +
-               'mac="q1CwFoSHzPZSkbIvl0oYlD+91rBUEvFk763nMjMndj8="'
-             );
+  Assert.equal(
+    result.field,
+    'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ' +
+      'hash="2QfCt3GuY9HQnHWyWD3wX68ZOKbynqlfYmuO2ZBRqtY=", ' +
+      'ext="Bazinga!", ' +
+      'mac="q1CwFoSHzPZSkbIvl0oYlD+91rBUEvFk763nMjMndj8="'
+  );
 
   
 
@@ -116,121 +134,181 @@ add_task(async function test_hawk() {
 
 
 
-  result = await compute(uri_https, method, { credentials,
-                                        now: 1378848968650,
-                                      });
+  result = await compute(uri_https, method, {
+    credentials,
+    now: 1378848968650,
+  });
   Assert.equal(result.artifacts.ts, 1378848968);
 
-  result = await compute(uri_https, method, { credentials,
-                                        now: 1378848968650,
-                                        localtimeOffsetMsec: 1000 * 1000,
-                                      });
+  result = await compute(uri_https, method, {
+    credentials,
+    now: 1378848968650,
+    localtimeOffsetMsec: 1000 * 1000,
+  });
   Assert.equal(result.artifacts.ts, 1378848968 + 1000);
 
   
   let makeURI = CommonUtils.makeURI;
   result = await compute(makeURI("http://example.net/path"), method, opts);
   Assert.equal(result.artifacts.resource, "/path");
-  Assert.equal(result.artifacts.mac, "WyKHJjWaeYt8aJD+H9UeCWc0Y9C+07ooTmrcrOW4MPI=");
+  Assert.equal(
+    result.artifacts.mac,
+    "WyKHJjWaeYt8aJD+H9UeCWc0Y9C+07ooTmrcrOW4MPI="
+  );
 
   result = await compute(makeURI("http://example.net/path/"), method, opts);
   Assert.equal(result.artifacts.resource, "/path/");
-  Assert.equal(result.artifacts.mac, "xAYp2MgZQFvTKJT9u8nsvMjshCRRkuaeYqQbYSFp9Qw=");
+  Assert.equal(
+    result.artifacts.mac,
+    "xAYp2MgZQFvTKJT9u8nsvMjshCRRkuaeYqQbYSFp9Qw="
+  );
 
-  result = await compute(makeURI("http://example.net/path?query=search"), method, opts);
+  result = await compute(
+    makeURI("http://example.net/path?query=search"),
+    method,
+    opts
+  );
   Assert.equal(result.artifacts.resource, "/path?query=search");
-  Assert.equal(result.artifacts.mac, "C06a8pip2rA4QkBiosEmC32WcgFcW/R5SQC6kUWyqho=");
+  Assert.equal(
+    result.artifacts.mac,
+    "C06a8pip2rA4QkBiosEmC32WcgFcW/R5SQC6kUWyqho="
+  );
 
   
 
 
-  result = await compute(makeURI("http://example.net/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                   });
+  result = await compute(makeURI("http://example.net/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+  });
   Assert.equal(result.artifacts.hash, undefined);
-  Assert.equal(result.artifacts.mac, "S3f8E4hAURAqJxOlsYugkPZxLoRYrClgbSQ/3FmKMbY=");
+  Assert.equal(
+    result.artifacts.mac,
+    "S3f8E4hAURAqJxOlsYugkPZxLoRYrClgbSQ/3FmKMbY="
+  );
 
   
-  result = await compute(makeURI("http://example.net/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                     payload: null,
-                   });
+  result = await compute(makeURI("http://example.net/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+    payload: null,
+  });
   Assert.equal(result.artifacts.hash, undefined);
-  Assert.equal(result.artifacts.mac, "S3f8E4hAURAqJxOlsYugkPZxLoRYrClgbSQ/3FmKMbY=");
+  Assert.equal(
+    result.artifacts.mac,
+    "S3f8E4hAURAqJxOlsYugkPZxLoRYrClgbSQ/3FmKMbY="
+  );
 
-  result = await compute(makeURI("http://example.net/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                     payload: "hello",
-                   });
-  Assert.equal(result.artifacts.hash, "uZJnFj0XVBA6Rs1hEvdIDf8NraM0qRNXdFbR3NEQbVA=");
-  Assert.equal(result.artifacts.mac, "pLsHHzngIn5CTJhWBtBr+BezUFvdd/IadpTp/FYVIRM=");
-
-  
-  result = await compute(makeURI("http://example.net/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                     payload: "andré@example.org", 
-                   });
-  Assert.equal(result.artifacts.hash, "66DiyapJ0oGgj09IXWdMv8VCg9xk0PL5RqX7bNnQW2k=");
-  Assert.equal(result.artifacts.mac, "2B++3x5xfHEZbPZGDiK3IwfPZctkV4DUr2ORg1vIHvk=");
-
-  
-  result = await compute(makeURI("http://example.net/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                     hash: "66DiyapJ0oGgj09IXWdMv8VCg9xk0PL5RqX7bNnQW2k=",
-                     payload: "something else",
-                   });
-  Assert.equal(result.artifacts.hash, "66DiyapJ0oGgj09IXWdMv8VCg9xk0PL5RqX7bNnQW2k=");
-  Assert.equal(result.artifacts.mac, "2B++3x5xfHEZbPZGDiK3IwfPZctkV4DUr2ORg1vIHvk=");
+  result = await compute(makeURI("http://example.net/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+    payload: "hello",
+  });
+  Assert.equal(
+    result.artifacts.hash,
+    "uZJnFj0XVBA6Rs1hEvdIDf8NraM0qRNXdFbR3NEQbVA="
+  );
+  Assert.equal(
+    result.artifacts.mac,
+    "pLsHHzngIn5CTJhWBtBr+BezUFvdd/IadpTp/FYVIRM="
+  );
 
   
-  result = await compute(makeURI("http://example.net/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                     payload: "something else",
-                   });
-  Assert.equal(result.artifacts.hash, "lERFXr/IKOaAoYw+eBseDUSwmqZTX0uKZpcWLxsdzt8=");
-  Assert.equal(result.artifacts.mac, "jiZuhsac35oD7IdcblhFncBr8tJFHcwWLr8NIYWr9PQ=");
+  result = await compute(makeURI("http://example.net/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+    payload: "andré@example.org", 
+  });
+  Assert.equal(
+    result.artifacts.hash,
+    "66DiyapJ0oGgj09IXWdMv8VCg9xk0PL5RqX7bNnQW2k="
+  );
+  Assert.equal(
+    result.artifacts.mac,
+    "2B++3x5xfHEZbPZGDiK3IwfPZctkV4DUr2ORg1vIHvk="
+  );
+
+  
+  result = await compute(makeURI("http://example.net/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+    hash: "66DiyapJ0oGgj09IXWdMv8VCg9xk0PL5RqX7bNnQW2k=",
+    payload: "something else",
+  });
+  Assert.equal(
+    result.artifacts.hash,
+    "66DiyapJ0oGgj09IXWdMv8VCg9xk0PL5RqX7bNnQW2k="
+  );
+  Assert.equal(
+    result.artifacts.mac,
+    "2B++3x5xfHEZbPZGDiK3IwfPZctkV4DUr2ORg1vIHvk="
+  );
+
+  
+  result = await compute(makeURI("http://example.net/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+    payload: "something else",
+  });
+  Assert.equal(
+    result.artifacts.hash,
+    "lERFXr/IKOaAoYw+eBseDUSwmqZTX0uKZpcWLxsdzt8="
+  );
+  Assert.equal(
+    result.artifacts.mac,
+    "jiZuhsac35oD7IdcblhFncBr8tJFHcwWLr8NIYWr9PQ="
+  );
 
   
 
 
 
 
-  result = await compute(makeURI("http://ëxample.net/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                   });
-  Assert.equal(result.artifacts.mac, "pILiHl1q8bbNQIdaaLwAFyaFmDU70MGehFuCs3AA5M0=");
+  result = await compute(makeURI("http://ëxample.net/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+  });
+  Assert.equal(
+    result.artifacts.mac,
+    "pILiHl1q8bbNQIdaaLwAFyaFmDU70MGehFuCs3AA5M0="
+  );
   Assert.equal(result.artifacts.host, "xn--xample-ova.net");
 
-  result = await compute(makeURI("http://example.net/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                     ext: "backslash=\\ quote=\" EOF",
-                   });
-  Assert.equal(result.artifacts.mac, "BEMW76lwaJlPX4E/dajF970T6+GzWvaeyLzUt8eOTOc=");
-  Assert.equal(result.field, 'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ext="backslash=\\\\ quote=\\\" EOF", mac="BEMW76lwaJlPX4E/dajF970T6+GzWvaeyLzUt8eOTOc="');
+  result = await compute(makeURI("http://example.net/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+    ext: 'backslash=\\ quote=" EOF',
+  });
+  Assert.equal(
+    result.artifacts.mac,
+    "BEMW76lwaJlPX4E/dajF970T6+GzWvaeyLzUt8eOTOc="
+  );
+  Assert.equal(
+    result.field,
+    'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", ext="backslash=\\\\ quote=\\" EOF", mac="BEMW76lwaJlPX4E/dajF970T6+GzWvaeyLzUt8eOTOc="'
+  );
 
-  result = await compute(makeURI("http://example.net:1234/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                   });
-  Assert.equal(result.artifacts.mac, "6D3JSFDtozuq8QvJTNUc1JzeCfy6h5oRvlhmSTPv6LE=");
-  Assert.equal(result.field, 'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", mac="6D3JSFDtozuq8QvJTNUc1JzeCfy6h5oRvlhmSTPv6LE="');
+  result = await compute(makeURI("http://example.net:1234/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+  });
+  Assert.equal(
+    result.artifacts.mac,
+    "6D3JSFDtozuq8QvJTNUc1JzeCfy6h5oRvlhmSTPv6LE="
+  );
+  Assert.equal(
+    result.field,
+    'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", mac="6D3JSFDtozuq8QvJTNUc1JzeCfy6h5oRvlhmSTPv6LE="'
+  );
 
   
 
@@ -240,15 +318,20 @@ add_task(async function test_hawk() {
 
 
 
-  result = await compute(makeURI("http://example.net:01234/path"), method,
-                   { credentials,
-                     ts: 1353809207,
-                     nonce: "Ygvqdz",
-                   });
-  Assert.equal(result.artifacts.mac, "6D3JSFDtozuq8QvJTNUc1JzeCfy6h5oRvlhmSTPv6LE=");
-  Assert.equal(result.field, 'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", mac="6D3JSFDtozuq8QvJTNUc1JzeCfy6h5oRvlhmSTPv6LE="');
+  result = await compute(makeURI("http://example.net:01234/path"), method, {
+    credentials,
+    ts: 1353809207,
+    nonce: "Ygvqdz",
+  });
+  Assert.equal(
+    result.artifacts.mac,
+    "6D3JSFDtozuq8QvJTNUc1JzeCfy6h5oRvlhmSTPv6LE="
+  );
+  Assert.equal(
+    result.field,
+    'Hawk id="123456", ts="1353809207", nonce="Ygvqdz", mac="6D3JSFDtozuq8QvJTNUc1JzeCfy6h5oRvlhmSTPv6LE="'
+  );
 });
-
 
 add_test(function test_strip_header_attributes() {
   let strip = CryptoUtils.stripHeaderAttributes;

@@ -1,7 +1,9 @@
 
 
 
-const {Observers} = ChromeUtils.import("resource://services-common/observers.js");
+const { Observers } = ChromeUtils.import(
+  "resource://services-common/observers.js"
+);
 
 var gSubject = {};
 

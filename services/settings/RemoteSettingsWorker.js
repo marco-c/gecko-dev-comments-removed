@@ -10,9 +10,11 @@
 
 
 
-importScripts("resource://gre/modules/workers/require.js",
-              "resource://gre/modules/CanonicalJSON.jsm",
-              "resource://gre/modules/third_party/jsesc/jsesc.js");
+importScripts(
+  "resource://gre/modules/workers/require.js",
+  "resource://gre/modules/CanonicalJSON.jsm",
+  "resource://gre/modules/third_party/jsesc/jsesc.js"
+);
 
 const IDB_NAME = "remote-settings";
 const IDB_VERSION = 2;
@@ -40,7 +42,7 @@ const Agent = {
     });
     
     
-    for (let i = 0; i < allRecords.length; ) {
+    for (let i = 0; i < allRecords.length ; ) {
       const rec = allRecords[i];
       const next = allRecords[i + 1];
       if ((next && rec.id == next.id) || rec.deleted) {
@@ -105,10 +107,10 @@ const Agent = {
 
 
 
-self.onmessage = (event) => {
+self.onmessage = event => {
   const { callbackId, method, args = [] } = event.data;
   Agent[method](...args)
-    .then((result) => {
+    .then(result => {
       self.postMessage({ callbackId, result });
     })
     .catch(error => {
@@ -169,8 +171,13 @@ async function importDumpIDB(bucket, collection, records) {
   });
 
   
-  const timestamp = records.length === 0 ? 0 : Math.max(...records.map(record => record.last_modified));
-  await executeIDB(db, IDB_TIMESTAMPS_STORE, store => store.put({ cid, value: timestamp }));
+  const timestamp =
+    records.length === 0
+      ? 0
+      : Math.max(...records.map(record => record.last_modified));
+  await executeIDB(db, IDB_TIMESTAMPS_STORE, store =>
+    store.put({ cid, value: timestamp })
+  );
 }
 
 
@@ -181,7 +188,9 @@ async function openIDB(dbname, version) {
     const request = indexedDB.open(dbname, version);
     request.onupgradeneeded = () => {
       
-      reject(new Error(`Error accessing ${dbname} Chrome IDB at version ${version}`));
+      reject(
+        new Error(`Error accessing ${dbname} Chrome IDB at version ${version}`)
+      );
     };
     request.onerror = event => reject(event.target.error);
     request.onsuccess = event => {

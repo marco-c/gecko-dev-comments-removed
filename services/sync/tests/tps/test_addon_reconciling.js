@@ -7,12 +7,12 @@
 EnableEngines(["addons"]);
 
 var phases = {
-  "phase01": "profile1",
-  "phase02": "profile2",
-  "phase03": "profile1",
-  "phase04": "profile2",
-  "phase05": "profile1",
-  "phase06": "profile2"
+  phase01: "profile1",
+  phase02: "profile2",
+  phase03: "profile1",
+  phase04: "profile2",
+  phase05: "profile1",
+  phase06: "profile2",
 };
 
 const id = "restartless-xpi@tests.mozilla.org";
@@ -38,17 +38,8 @@ Phase("phase03", [
   
   [Addons.skipValidation],
 ]);
-Phase("phase04", [
-  [EnsureTracking],
-  [Addons.uninstall, [id]],
-  [Sync],
-]);
+Phase("phase04", [[EnsureTracking], [Addons.uninstall, [id]], [Sync]]);
 
 
-Phase("phase05", [
-  [Sync],
-]);
-Phase("phase06", [
-  [Sync],
-  [Addons.verifyNot, [id]],
-]);
+Phase("phase05", [[Sync]]);
+Phase("phase06", [[Sync], [Addons.verifyNot, [id]]]);

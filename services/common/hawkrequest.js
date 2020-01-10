@@ -9,15 +9,26 @@ var EXPORTED_SYMBOLS = [
   "deriveHawkCredentials",
 ];
 
-const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
-const {RESTRequest} = ChromeUtils.import("resource://services-common/rest.js");
-const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
-const {Credentials} = ChromeUtils.import("resource://gre/modules/Credentials.jsm");
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { RESTRequest } = ChromeUtils.import(
+  "resource://services-common/rest.js"
+);
+const { CommonUtils } = ChromeUtils.import(
+  "resource://services-common/utils.js"
+);
+const { Credentials } = ChromeUtils.import(
+  "resource://gre/modules/Credentials.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "CryptoUtils",
-                               "resource://services-crypto/utils.js");
+ChromeUtils.defineModuleGetter(
+  this,
+  "CryptoUtils",
+  "resource://services-crypto/utils.js"
+);
 
 const Prefs = new Preferences("services.common.rest.");
 
@@ -49,14 +60,19 @@ const Prefs = new Preferences("services.common.rest.");
 
 
 
-var HAWKAuthenticatedRESTRequest =
- function HawkAuthenticatedRESTRequest(uri, credentials, extra = {}) {
+var HAWKAuthenticatedRESTRequest = function HawkAuthenticatedRESTRequest(
+  uri,
+  credentials,
+  extra = {}
+) {
   RESTRequest.call(this, uri);
 
   this.credentials = credentials;
   this.now = extra.now || Date.now();
   this.localtimeOffsetMsec = extra.localtimeOffsetMsec || 0;
-  this._log.trace("local time, offset: " + this.now + ", " + (this.localtimeOffsetMsec));
+  this._log.trace(
+    "local time, offset: " + this.now + ", " + this.localtimeOffsetMsec
+  );
   this.extraHeaders = extra.headers || {};
 
   
@@ -75,7 +91,7 @@ HAWKAuthenticatedRESTRequest.prototype = {
         now: this.now,
         localtimeOffsetMsec: this.localtimeOffsetMsec,
         credentials: this.credentials,
-        payload: data && JSON.stringify(data) || "",
+        payload: (data && JSON.stringify(data)) || "",
         contentType,
       };
       let header = await CryptoUtils.computeHAWK(this.uri, method, options);
@@ -116,10 +132,14 @@ HAWKAuthenticatedRESTRequest.prototype = {
 
 
 
-
 async function deriveHawkCredentials(tokenHex, context, size = 96) {
   let token = CommonUtils.hexToBytes(tokenHex);
-  let out = await CryptoUtils.hkdfLegacy(token, undefined, Credentials.keyWord(context), size);
+  let out = await CryptoUtils.hkdfLegacy(
+    token,
+    undefined,
+    Credentials.keyWord(context),
+    size
+  );
 
   let result = {
     key: out.slice(32, 64),
@@ -162,7 +182,9 @@ this.Intl.prototype = {
     this._everRead = true;
     try {
       this._accepted = Services.prefs.getComplexValue(
-        "intl.accept_languages", Ci.nsIPrefLocalizedString).data;
+        "intl.accept_languages",
+        Ci.nsIPrefLocalizedString
+      ).data;
     } catch (err) {
       this._log.error("Error reading intl.accept_languages pref", err);
     }

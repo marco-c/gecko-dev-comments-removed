@@ -1,15 +1,15 @@
 
 
 
- "use strict";
+"use strict";
 
-var EXPORTED_SYMBOLS = [
-  "RemoteSettingsTimer",
-];
+var EXPORTED_SYMBOLS = ["RemoteSettingsTimer"];
 
-ChromeUtils.defineModuleGetter(this, "RemoteSettings",
-  "resource://services-settings/remote-settings.js");
-
+ChromeUtils.defineModuleGetter(
+  this,
+  "RemoteSettings",
+  "resource://services-settings/remote-settings.js"
+);
 
 var RemoteSettingsTimer = function() {};
 RemoteSettingsTimer.prototype = {
@@ -19,7 +19,8 @@ RemoteSettingsTimer.prototype = {
 
   
   notify(timer) {
-    RemoteSettings.pollChanges({ trigger: "timer" })
-      .catch(e => Cu.reportError(e));
+    RemoteSettings.pollChanges({ trigger: "timer" }).catch(e =>
+      Cu.reportError(e)
+    );
   },
 };

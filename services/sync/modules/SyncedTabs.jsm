@@ -6,18 +6,21 @@
 
 var EXPORTED_SYMBOLS = ["SyncedTabs"];
 
-
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
-const {Weave} = ChromeUtils.import("resource://services-sync/main.js");
-const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { Weave } = ChromeUtils.import("resource://services-sync/main.js");
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
 
 
 XPCOMUtils.defineLazyGetter(this, "weaveXPCService", function() {
-  return Cc["@mozilla.org/weave/service;1"]
-           .getService(Ci.nsISupports)
-           .wrappedJSObject;
+  return Cc["@mozilla.org/weave/service;1"].getService(
+    Ci.nsISupports
+  ).wrappedJSObject;
 });
 
 
@@ -56,7 +59,7 @@ let SyncedTabsInternal = {
       icon = "page-icon:" + url;
     }
     return {
-      type:  "tab",
+      type: "tab",
       title: tab.title || url,
       url,
       icon,
@@ -93,7 +96,10 @@ let SyncedTabsInternal = {
     }
 
     
-    const showRemoteIcons = Preferences.get("services.sync.syncedTabs.showRemoteIcons", true);
+    const showRemoteIcons = Preferences.get(
+      "services.sync.syncedTabs.showRemoteIcons",
+      true
+    );
 
     let engine = Weave.Service.engineManager.get("tabs");
 
@@ -148,7 +154,7 @@ let SyncedTabsInternal = {
     
     try {
       log.info("Doing a tab sync.");
-      await Weave.Service.sync({why: "tabs", engines: ["tabs"]});
+      await Weave.Service.sync({ why: "tabs", engines: ["tabs"] });
       return true;
     } catch (ex) {
       log.error("Sync failed", ex);
@@ -166,7 +172,10 @@ let SyncedTabsInternal = {
         
         
         
-        Preferences.set("services.sync.lastTabFetch", Math.floor(Date.now() / 1000));
+        Preferences.set(
+          "services.sync.lastTabFetch",
+          Math.floor(Date.now() / 1000)
+        );
         Services.obs.notifyObservers(null, TOPIC_TABS_CHANGED);
         break;
       case "weave:service:start-over":

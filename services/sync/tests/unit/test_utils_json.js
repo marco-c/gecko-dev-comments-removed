@@ -1,7 +1,9 @@
 
 
 
-const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+const { FileUtils } = ChromeUtils.import(
+  "resource://gre/modules/FileUtils.jsm"
+);
 
 add_task(async function test_roundtrip() {
   _("Do a simple write of an array to json and read");
@@ -43,7 +45,17 @@ add_task(async function test_nonexistent_file() {
 add_task(async function test_save_logging() {
   _("Verify that writes are logged.");
   let trace;
-  await Utils.jsonSave("log", {_log: {trace(msg) { trace = msg; }}}, "hi");
+  await Utils.jsonSave(
+    "log",
+    {
+      _log: {
+        trace(msg) {
+          trace = msg;
+        },
+      },
+    },
+    "hi"
+  );
   Assert.ok(!!trace);
 });
 
@@ -53,13 +65,15 @@ add_task(async function test_load_logging() {
   
   let filePath = "weave/log.json";
   let file = FileUtils.getFile("ProfD", filePath.split("/"), true);
-  let fos = Cc["@mozilla.org/network/file-output-stream;1"]
-              .createInstance(Ci.nsIFileOutputStream);
-  let flags = FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE
-              | FileUtils.MODE_TRUNCATE;
+  let fos = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(
+    Ci.nsIFileOutputStream
+  );
+  let flags =
+    FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE | FileUtils.MODE_TRUNCATE;
   fos.init(file, flags, FileUtils.PERMS_FILE, fos.DEFER_OPEN);
-  let stream = Cc["@mozilla.org/intl/converter-output-stream;1"]
-                 .createInstance(Ci.nsIConverterOutputStream);
+  let stream = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(
+    Ci.nsIConverterOutputStream
+  );
   stream.init(fos, "UTF-8");
   stream.writeString("invalid json!");
   stream.close();

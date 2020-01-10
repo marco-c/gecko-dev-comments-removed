@@ -1,8 +1,10 @@
 
 
 
-const {Service} = ChromeUtils.import("resource://services-sync/service.js");
-const {RotaryEngine} = ChromeUtils.import("resource://testing-common/services/sync/rotaryengine.js");
+const { Service } = ChromeUtils.import("resource://services-sync/service.js");
+const { RotaryEngine } = ChromeUtils.import(
+  "resource://testing-common/services/sync/rotaryengine.js"
+);
 
 add_task(async function test_412_not_treated_as_failure() {
   await Service.engineManager.register(RotaryEngine);
@@ -15,7 +17,10 @@ add_task(async function test_412_not_treated_as_failure() {
 
   
   let collection = server.getCollection("foo", "rotary");
-  let payload = encryptPayload({id: "existing", something: "existing record"});
+  let payload = encryptPayload({
+    id: "existing",
+    something: "existing record",
+  });
   collection.insert("existing", payload);
 
   let promiseObserved = promiseOneObserver("weave:engine:sync:finish");
@@ -26,7 +31,7 @@ add_task(async function test_412_not_treated_as_failure() {
 
     
     
-    engine._store.items = {new: "new record"};
+    engine._store.items = { new: "new record" };
     await engine._tracker.addChangedID("new", 0);
 
     let saw412 = false;

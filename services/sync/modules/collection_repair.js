@@ -3,15 +3,21 @@
 
 "use strict";
 
-const {Weave} = ChromeUtils.import("resource://services-sync/main.js");
+const { Weave } = ChromeUtils.import("resource://services-sync/main.js");
 
-ChromeUtils.defineModuleGetter(this, "BookmarkRepairRequestor",
-  "resource://services-sync/bookmark_repair.js");
+ChromeUtils.defineModuleGetter(
+  this,
+  "BookmarkRepairRequestor",
+  "resource://services-sync/bookmark_repair.js"
+);
 
-var EXPORTED_SYMBOLS = ["getRepairRequestor", "getAllRepairRequestors",
-                        "CollectionRepairRequestor",
-                        "getRepairResponder",
-                        "CollectionRepairResponder"];
+var EXPORTED_SYMBOLS = [
+  "getRepairRequestor",
+  "getAllRepairRequestors",
+  "CollectionRepairRequestor",
+  "getRepairResponder",
+  "CollectionRepairResponder",
+];
 
 
 const REQUESTORS = {

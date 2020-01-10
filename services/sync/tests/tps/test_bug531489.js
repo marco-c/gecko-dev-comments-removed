@@ -8,9 +8,7 @@
 
 EnableEngines(["bookmarks"]);
 
-var phases = { "phase1": "profile1",
-               "phase2": "profile2",
-               "phase3": "profile1"};
+var phases = { phase1: "profile1", phase2: "profile2", phase3: "profile1" };
 
 
 
@@ -18,22 +16,12 @@ var phases = { "phase1": "profile1",
 
 
 var bookmarks_initial = {
-  "menu": [
+  menu: [
     { folder: "foldera" },
-    { uri: "http://www.google.com",
-      title: "Google",
-    },
+    { uri: "http://www.google.com", title: "Google" },
   ],
-  "menu/foldera": [
-    { uri: "http://www.google.com",
-      title: "Google",
-    },
-  ],
-  "toolbar": [
-    { uri: "http://www.google.com",
-      title: "Google",
-    },
-  ],
+  "menu/foldera": [{ uri: "http://www.google.com", title: "Google" }],
+  toolbar: [{ uri: "http://www.google.com", title: "Google" }],
 };
 
 
@@ -48,15 +36,8 @@ Phase("phase1", [
 ]);
 
 
-Phase("phase2", [
-  [Sync],
-  [Bookmarks.verify, bookmarks_initial],
-]);
+Phase("phase2", [[Sync], [Bookmarks.verify, bookmarks_initial]]);
 
 
 
-Phase("phase3", [
-  [Sync],
-  [Bookmarks.verify, bookmarks_initial],
-]);
-
+Phase("phase3", [[Sync], [Bookmarks.verify, bookmarks_initial]]);

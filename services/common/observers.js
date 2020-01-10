@@ -4,7 +4,7 @@
 
 var EXPORTED_SYMBOLS = ["Observers"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -53,9 +53,10 @@ var Observers = {
     
     
     
-    let [observer] = this._cache.filter(v => v.topic == topic &&
-                                             v.callback == callback &&
-                                             v.thisObject == thisObject);
+    let [observer] = this._cache.filter(
+      v =>
+        v.topic == topic && v.callback == callback && v.thisObject == thisObject
+    );
     if (observer) {
       Services.obs.removeObserver(observer, topic);
       this._cache.splice(this._cache.indexOf(observer), 1);
@@ -81,8 +82,8 @@ var Observers = {
 
 
   notify(topic, subject, data) {
-    subject = (typeof subject == "undefined") ? null : new Subject(subject);
-       data = (typeof data == "undefined") ? null : data;
+    subject = typeof subject == "undefined" ? null : new Subject(subject);
+    data = typeof data == "undefined" ? null : data;
     Services.obs.notifyObservers(subject, topic, data);
   },
 
@@ -99,7 +100,6 @@ var Observers = {
   _cache: [],
 };
 
-
 function Observer(topic, callback, thisObject) {
   this.topic = topic;
   this.callback = callback;
@@ -107,27 +107,35 @@ function Observer(topic, callback, thisObject) {
 }
 
 Observer.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver, Ci.nsISupportsWeakReference]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
   observe(subject, topic, data) {
     
     
     
-    if (subject && typeof subject == "object" &&
-        ("wrappedJSObject" in subject) &&
-        ("observersModuleSubjectWrapper" in subject.wrappedJSObject))
+    if (
+      subject &&
+      typeof subject == "object" &&
+      "wrappedJSObject" in subject &&
+      "observersModuleSubjectWrapper" in subject.wrappedJSObject
+    ) {
       subject = subject.wrappedJSObject.object;
+    }
 
     if (typeof this.callback == "function") {
-      if (this.thisObject)
+      if (this.thisObject) {
         this.callback.call(this.thisObject, subject, data);
-      else
+      } else {
         this.callback(subject, data);
-    } else { 
+      }
+    } else {
+      
       this.callback.observe(subject, topic, data);
     }
   },
 };
-
 
 function Subject(object) {
   

@@ -4,29 +4,53 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "RemoteSettingsClient",
-];
+var EXPORTED_SYMBOLS = ["RemoteSettingsClient"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "Kinto",
-                               "resource://services-common/kinto-offline-client.js");
-ChromeUtils.defineModuleGetter(this, "KintoHttpClient",
-                               "resource://services-common/kinto-http-client.js");
-ChromeUtils.defineModuleGetter(this, "UptakeTelemetry",
-                               "resource://services-common/uptake-telemetry.js");
-ChromeUtils.defineModuleGetter(this, "ClientEnvironmentBase",
-                               "resource://gre/modules/components-utils/ClientEnvironment.jsm");
-ChromeUtils.defineModuleGetter(this, "RemoteSettingsWorker",
-                               "resource://services-settings/RemoteSettingsWorker.jsm");
-ChromeUtils.defineModuleGetter(this, "Utils",
-                               "resource://services-settings/Utils.jsm");
-ChromeUtils.defineModuleGetter(this, "Downloader",
-                               "resource://services-settings/Attachments.jsm");
-ChromeUtils.defineModuleGetter(this, "ObjectUtils",
-                               "resource://gre/modules/ObjectUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Kinto",
+  "resource://services-common/kinto-offline-client.js"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "KintoHttpClient",
+  "resource://services-common/kinto-http-client.js"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "UptakeTelemetry",
+  "resource://services-common/uptake-telemetry.js"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "ClientEnvironmentBase",
+  "resource://gre/modules/components-utils/ClientEnvironment.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "RemoteSettingsWorker",
+  "resource://services-settings/RemoteSettingsWorker.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "Utils",
+  "resource://services-settings/Utils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "Downloader",
+  "resource://services-settings/Attachments.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "ObjectUtils",
+  "resource://gre/modules/ObjectUtils.jsm"
+);
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
@@ -36,8 +60,11 @@ const DB_NAME = "remote-settings";
 const TELEMETRY_COMPONENT = "remotesettings";
 
 XPCOMUtils.defineLazyGetter(this, "console", () => Utils.log);
-XPCOMUtils.defineLazyPreferenceGetter(this, "gServerURL",
-                                      "services.settings.server");
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gServerURL",
+  "services.settings.server"
+);
 
 
 
@@ -141,10 +168,23 @@ class MissingSignatureError extends Error {
 }
 
 class RemoteSettingsClient extends EventEmitter {
-  static get InvalidSignatureError() { return InvalidSignatureError; }
-  static get MissingSignatureError() { return MissingSignatureError; }
+  static get InvalidSignatureError() {
+    return InvalidSignatureError;
+  }
+  static get MissingSignatureError() {
+    return MissingSignatureError;
+  }
 
-  constructor(collectionName, { bucketNamePref, signerName, filterFunc, localFields = [], lastCheckTimePref }) {
+  constructor(
+    collectionName,
+    {
+      bucketNamePref,
+      signerName,
+      filterFunc,
+      localFields = [],
+      lastCheckTimePref,
+    }
+  ) {
     super(["sync"]); 
 
     this.collectionName = collectionName;
@@ -161,15 +201,28 @@ class RemoteSettingsClient extends EventEmitter {
     
     
     this.bucketNamePref = bucketNamePref;
-    XPCOMUtils.defineLazyPreferenceGetter(this, "bucketName", this.bucketNamePref);
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "bucketName",
+      this.bucketNamePref
+    );
 
-    XPCOMUtils.defineLazyGetter(this, "_kinto", () => new Kinto({
-      bucket: this.bucketName,
-      adapter: Kinto.adapters.IDB,
-      adapterOptions: { dbName: DB_NAME, migrateOldData: false },
-    }));
+    XPCOMUtils.defineLazyGetter(
+      this,
+      "_kinto",
+      () =>
+        new Kinto({
+          bucket: this.bucketName,
+          adapter: Kinto.adapters.IDB,
+          adapterOptions: { dbName: DB_NAME, migrateOldData: false },
+        })
+    );
 
-    XPCOMUtils.defineLazyGetter(this, "attachments", () => new Downloader(this.bucketName, collectionName));
+    XPCOMUtils.defineLazyGetter(
+      this,
+      "attachments",
+      () => new Downloader(this.bucketName, collectionName)
+    );
   }
 
   get identifier() {
@@ -177,7 +230,10 @@ class RemoteSettingsClient extends EventEmitter {
   }
 
   get lastCheckTimePref() {
-    return this._lastCheckTimePref || `services.settings.${this.bucketName}.${this.collectionName}.last_check`;
+    return (
+      this._lastCheckTimePref ||
+      `services.settings.${this.bucketName}.${this.collectionName}.last_check`
+    );
   }
 
   httpClient() {
@@ -221,10 +277,15 @@ class RemoteSettingsClient extends EventEmitter {
         if (await Utils.hasLocalDump(this.bucketName, this.collectionName)) {
           
           console.debug(`${this.identifier} Local DB is empty, load JSON dump`);
-          await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
+          await RemoteSettingsWorker.importJSONDump(
+            this.bucketName,
+            this.collectionName
+          );
         } else {
           
-          console.debug(`${this.identifier} Local DB is empty, pull data from server`);
+          console.debug(
+            `${this.identifier} Local DB is empty, pull data from server`
+          );
           await this.sync({ loadDump: false });
         }
         
@@ -243,18 +304,21 @@ class RemoteSettingsClient extends EventEmitter {
     if (verifySignature) {
       console.debug(`${this.identifier} verify signature of local data`);
       const { data: allData } = await kintoCollection.list({ order: "" });
-      const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
+      const localRecords = allData.map(r =>
+        kintoCollection.cleanLocalFields(r)
+      );
       const timestamp = await kintoCollection.db.getLastModified();
       let metadata = await kintoCollection.metadata();
       if (syncIfEmpty && ObjectUtils.isEmpty(metadata)) {
         
-        console.debug(`Required metadata for ${this.identifier}, fetching from server.`);
+        console.debug(
+          `Required metadata for ${this.identifier}, fetching from server.`
+        );
         metadata = await kintoCollection.pullMetadata(this.httpClient());
       }
-      await this._validateCollectionSignature([],
-                                              timestamp,
-                                              metadata,
-                                              { localRecords });
+      await this._validateCollectionSignature([], timestamp, metadata, {
+        localRecords,
+      });
     }
 
     
@@ -312,11 +376,18 @@ class RemoteSettingsClient extends EventEmitter {
       
       if (!collectionLastModified && loadDump) {
         try {
-          const imported = await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
+          const imported = await RemoteSettingsWorker.importJSONDump(
+            this.bucketName,
+            this.collectionName
+          );
           
           if (imported > 0) {
-            console.debug(`${this.identifier} ${imported} records loaded from JSON dump`);
-            ({ data: importedFromDump } = await kintoCollection.list({ order: "" }));
+            console.debug(
+              `${this.identifier} ${imported} records loaded from JSON dump`
+            );
+            ({ data: importedFromDump } = await kintoCollection.list({
+              order: "",
+            }));
           }
           collectionLastModified = await kintoCollection.db.getLastModified();
         } catch (e) {
@@ -328,19 +399,23 @@ class RemoteSettingsClient extends EventEmitter {
       
       
       if (this.verifySignature) {
-        kintoCollection.hooks["incoming-changes"] = [async (payload, collection) => {
-          const { changes: remoteRecords, lastModified: timestamp } = payload;
-          const { data } = await collection.list({ order: "" }); 
-          const metadata = await collection.metadata();
-          
-          const localRecords = data.map(r => collection.cleanLocalFields(r));
-          await this._validateCollectionSignature(remoteRecords,
-                                                  timestamp,
-                                                  metadata,
-                                                  { localRecords });
-          
-          return payload;
-        }];
+        kintoCollection.hooks["incoming-changes"] = [
+          async (payload, collection) => {
+            const { changes: remoteRecords, lastModified: timestamp } = payload;
+            const { data } = await collection.list({ order: "" }); 
+            const metadata = await collection.metadata();
+            
+            const localRecords = data.map(r => collection.cleanLocalFields(r));
+            await this._validateCollectionSignature(
+              remoteRecords,
+              timestamp,
+              metadata,
+              { localRecords }
+            );
+            
+            return payload;
+          },
+        ];
       } else {
         console.warn(`Signature disabled on ${this.identifier}`);
       }
@@ -354,19 +429,32 @@ class RemoteSettingsClient extends EventEmitter {
 
           
           
-          if (this.verifySignature && ObjectUtils.isEmpty(await kintoCollection.metadata())) {
+          if (
+            this.verifySignature &&
+            ObjectUtils.isEmpty(await kintoCollection.metadata())
+          ) {
             console.debug(`${this.identifier} pull collection metadata`);
-            const metadata = await kintoCollection.pullMetadata(this.httpClient());
+            const metadata = await kintoCollection.pullMetadata(
+              this.httpClient()
+            );
             
             
             if (this.verifySignature && importedFromDump.length == 0) {
-              console.debug(`${this.identifier} verify signature of local data`);
-              const { data: allData } = await kintoCollection.list({ order: "" });
-              const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
-              await this._validateCollectionSignature([],
-                                                      collectionLastModified,
-                                                      metadata,
-                                                      { localRecords });
+              console.debug(
+                `${this.identifier} verify signature of local data`
+              );
+              const { data: allData } = await kintoCollection.list({
+                order: "",
+              });
+              const localRecords = allData.map(r =>
+                kintoCollection.cleanLocalFields(r)
+              );
+              await this._validateCollectionSignature(
+                [],
+                collectionLastModified,
+                metadata,
+                { localRecords }
+              );
             }
           }
 
@@ -375,31 +463,40 @@ class RemoteSettingsClient extends EventEmitter {
             return;
           }
           
-          syncResult = { current: importedFromDump, created: importedFromDump, updated: [], deleted: [] };
+          syncResult = {
+            current: importedFromDump,
+            created: importedFromDump,
+            updated: [],
+            deleted: [],
+          };
         } else {
           
           
           const strategy = Kinto.syncStrategy.PULL_ONLY;
-          syncResult = await kintoCollection.sync({ remote: gServerURL, strategy, expectedTimestamp });
+          syncResult = await kintoCollection.sync({
+            remote: gServerURL,
+            strategy,
+            expectedTimestamp,
+          });
           if (!syncResult.ok) {
             
             throw new Error("Sync failed");
           }
-        
-        
-        const importedById = importedFromDump.reduce((acc, r) => {
-          acc.set(r.id, r);
-          return acc;
-        }, new Map());
-        
-        syncResult.deleted.forEach(r => importedById.delete(r.id));
-        
-        syncResult.updated.forEach(u => {
-          if (importedById.has(u.old.id)) {
-            importedById.set(u.old.id, u.new);
-          }
-        });
-        syncResult.add("created", Array.from(importedById.values()));
+          
+          
+          const importedById = importedFromDump.reduce((acc, r) => {
+            acc.set(r.id, r);
+            return acc;
+          }, new Map());
+          
+          syncResult.deleted.forEach(r => importedById.delete(r.id));
+          
+          syncResult.updated.forEach(u => {
+            if (importedById.has(u.old.id)) {
+              importedById.set(u.old.id, u.new);
+            }
+          });
+          syncResult.add("created", Array.from(importedById.values()));
         }
       } catch (e) {
         if (e instanceof RemoteSettingsClient.InvalidSignatureError) {
@@ -410,8 +507,15 @@ class RemoteSettingsClient extends EventEmitter {
           
           
           try {
-            console.warn(`Signature verified failed for ${this.identifier}. Retry from scratch`);
-            syncResult = await this._retrySyncFromScratch(kintoCollection, expectedTimestamp);
+            console.warn(
+              `Signature verified failed for ${
+                this.identifier
+              }. Retry from scratch`
+            );
+            syncResult = await this._retrySyncFromScratch(
+              kintoCollection,
+              expectedTimestamp
+            );
           } catch (e) {
             
             
@@ -440,7 +544,10 @@ class RemoteSettingsClient extends EventEmitter {
         }
       }
       
-      const filteredSyncResult = await this._filterSyncResult(kintoCollection, syncResult);
+      const filteredSyncResult = await this._filterSyncResult(
+        kintoCollection,
+        syncResult
+      );
       
       if (filteredSyncResult) {
         try {
@@ -450,11 +557,17 @@ class RemoteSettingsClient extends EventEmitter {
           throw e;
         }
       } else {
-        console.info(`All changes are filtered by JEXL expressions for ${this.identifier}`);
+        console.info(
+          `All changes are filtered by JEXL expressions for ${this.identifier}`
+        );
       }
     } catch (e) {
       
-      if (/(IndexedDB|AbortError|ConstraintError|QuotaExceededError|VersionError)/.test(e.message)) {
+      if (
+        /(IndexedDB|AbortError|ConstraintError|QuotaExceededError|VersionError)/.test(
+          e.message
+        )
+      ) {
         reportStatus = UptakeTelemetry.STATUS.CUSTOM_1_ERROR;
       }
       
@@ -489,7 +602,12 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-  async _validateCollectionSignature(remoteRecords, timestamp, metadata, options = {}) {
+  async _validateCollectionSignature(
+    remoteRecords,
+    timestamp,
+    metadata,
+    options = {}
+  ) {
     const { localRecords = [] } = options;
 
     if (!metadata || !metadata.signature) {
@@ -497,21 +615,30 @@ class RemoteSettingsClient extends EventEmitter {
     }
 
     if (!this._verifier) {
-        this._verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
-          .createInstance(Ci.nsIContentSignatureVerifier);
+      this._verifier = Cc[
+        "@mozilla.org/security/contentsignatureverifier;1"
+      ].createInstance(Ci.nsIContentSignatureVerifier);
     }
 
     
-    const { signature: { x5u, signature } } = metadata;
+    const {
+      signature: { x5u, signature },
+    } = metadata;
     const certChain = await (await fetch(x5u)).text();
     
-    const serialized = await RemoteSettingsWorker.canonicalStringify(localRecords,
-                                                                     remoteRecords,
-                                                                     timestamp);
-    if (!await this._verifier.asyncVerifyContentSignature(serialized,
-                                                          "p384ecdsa=" + signature,
-                                                          certChain,
-                                                          this.signerName)) {
+    const serialized = await RemoteSettingsWorker.canonicalStringify(
+      localRecords,
+      remoteRecords,
+      timestamp
+    );
+    if (
+      !(await this._verifier.asyncVerifyContentSignature(
+        serialized,
+        "p384ecdsa=" + signature,
+        certChain,
+        this.signerName
+      ))
+    ) {
       throw new RemoteSettingsClient.InvalidSignatureError(this.identifier);
     }
   }
@@ -529,16 +656,19 @@ class RemoteSettingsClient extends EventEmitter {
   async _retrySyncFromScratch(kintoCollection, expectedTimestamp) {
     
     const client = this.httpClient();
-    const metadata = await client.getData({ query: { _expected: expectedTimestamp }});
+    const metadata = await client.getData({
+      query: { _expected: expectedTimestamp },
+    });
     
     const {
       data: remoteRecords,
       last_modified: timestamp,
-    } = await client.listRecords({ sort: "id", filters: { _expected: expectedTimestamp } });
+    } = await client.listRecords({
+      sort: "id",
+      filters: { _expected: expectedTimestamp },
+    });
     
-    await this._validateCollectionSignature(remoteRecords,
-                                            timestamp,
-                                            metadata);
+    await this._validateCollectionSignature(remoteRecords, timestamp, metadata);
 
     
     
@@ -593,13 +723,21 @@ class RemoteSettingsClient extends EventEmitter {
   async _filterSyncResult(kintoCollection, syncResult) {
     
     
-    const { created: allCreated, updated: allUpdated, deleted: allDeleted } = syncResult;
+    const {
+      created: allCreated,
+      updated: allUpdated,
+      deleted: allDeleted,
+    } = syncResult;
     const [created, deleted, updatedFiltered] = await Promise.all(
-      [allCreated, allDeleted, allUpdated.map(e => e.new)].map(this._filterEntries.bind(this))
+      [allCreated, allDeleted, allUpdated.map(e => e.new)].map(
+        this._filterEntries.bind(this)
+      )
     );
     
     const updatedFilteredIds = new Set(updatedFiltered.map(e => e.id));
-    const updated = allUpdated.filter(({ new: { id } }) => updatedFilteredIds.has(id));
+    const updated = allUpdated.filter(({ new: { id } }) =>
+      updatedFilteredIds.has(id)
+    );
 
     if (!created.length && !updated.length && !deleted.length) {
       return null;

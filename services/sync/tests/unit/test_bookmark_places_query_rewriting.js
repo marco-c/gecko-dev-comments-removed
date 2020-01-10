@@ -2,8 +2,10 @@
 
 
 _("Rewrite place: URIs.");
-const {BookmarkQuery, BookmarksEngine} = ChromeUtils.import("resource://services-sync/engines/bookmarks.js");
-const {Service} = ChromeUtils.import("resource://services-sync/service.js");
+const { BookmarkQuery, BookmarksEngine } = ChromeUtils.import(
+  "resource://services-sync/engines/bookmarks.js"
+);
+const { Service } = ChromeUtils.import("resource://services-sync/service.js");
 
 let engine = new BookmarksEngine(Service);
 let store = engine._store;

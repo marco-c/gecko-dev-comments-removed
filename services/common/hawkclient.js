@@ -26,11 +26,17 @@
 
 var EXPORTED_SYMBOLS = ["HawkClient"];
 
-const {HAWKAuthenticatedRESTRequest} = ChromeUtils.import("resource://services-common/hawkrequest.js");
-const {Observers} = ChromeUtils.import("resource://services-common/observers.js");
-const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { HAWKAuthenticatedRESTRequest } = ChromeUtils.import(
+  "resource://services-common/hawkrequest.js"
+);
+const { Observers } = ChromeUtils.import(
+  "resource://services-common/observers.js"
+);
+const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -55,8 +61,9 @@ XPCOMUtils.defineLazyGetter(this, "log", function() {
   appender.level = Log.Level.Error;
   try {
     let level =
-      Services.prefs.getPrefType(PREF_LOG_LEVEL) == Ci.nsIPrefBranch.PREF_STRING
-      && Services.prefs.getCharPref(PREF_LOG_LEVEL);
+      Services.prefs.getPrefType(PREF_LOG_LEVEL) ==
+        Ci.nsIPrefBranch.PREF_STRING &&
+      Services.prefs.getCharPref(PREF_LOG_LEVEL);
     appender.level = Log.Level[level] || Log.Level.Error;
   } catch (e) {
     log.error(e);
@@ -95,7 +102,6 @@ var HawkClient = function(host) {
 };
 
 this.HawkClient.prototype = {
-
   
 
 
@@ -120,7 +126,8 @@ this.HawkClient.prototype = {
         return this.code + ": " + this.message;
       },
     };
-    let retryAfter = restResponse.headers && restResponse.headers["retry-after"];
+    let retryAfter =
+      restResponse.headers && restResponse.headers["retry-after"];
     retryAfter = retryAfter ? parseInt(retryAfter) : retryAfter;
     if (retryAfter) {
       errorObj.retryAfter = retryAfter;
@@ -151,7 +158,9 @@ this.HawkClient.prototype = {
     try {
       let serverDateMsec = Date.parse(dateString);
       this._localtimeOffsetMsec = serverDateMsec - this.now();
-      log.debug("Clock offset vs " + this.host + ": " + this._localtimeOffsetMsec);
+      log.debug(
+        "Clock offset vs " + this.host + ": " + this._localtimeOffsetMsec
+      );
     } catch (err) {
       log.warn("Bad date header in server response: " + dateString);
     }
@@ -194,8 +203,14 @@ this.HawkClient.prototype = {
 
 
 
-  async request(path, method, credentials = null, payloadObj = {}, extraHeaders = {},
-                retryOK = true) {
+  async request(
+    path,
+    method,
+    credentials = null,
+    payloadObj = {},
+    extraHeaders = {},
+    retryOK = true
+  ) {
     method = method.toLowerCase();
 
     let uri = this.host + path;
@@ -223,8 +238,14 @@ this.HawkClient.prototype = {
 
     let status = restResponse.status;
 
-    log.debug("(Response) " + path + ": code: " + status +
-              " - Status text: " + restResponse.statusText);
+    log.debug(
+      "(Response) " +
+        path +
+        ": code: " +
+        status +
+        " - Status text: " +
+        restResponse.statusText
+    );
     if (logPII) {
       log.debug("Response text", restResponse.body);
     }
@@ -246,7 +267,14 @@ this.HawkClient.prototype = {
       
       
       log.debug("Received 401 for " + path + ": retrying");
-      return this.request(path, method, credentials, payloadObj, extraHeaders, false);
+      return this.request(
+        path,
+        method,
+        credentials,
+        payloadObj,
+        extraHeaders,
+        false
+      );
     }
 
     
@@ -261,7 +289,7 @@ this.HawkClient.prototype = {
       jsonResponse = JSON.parse(restResponse.body);
     } catch (notJSON) {}
 
-    let okResponse = (200 <= status && status < 300);
+    let okResponse = 200 <= status && status < 300;
     if (!okResponse || jsonResponse.error) {
       if (jsonResponse.error) {
         throw jsonResponse;
@@ -296,16 +324,22 @@ this.HawkClient.prototype = {
     try {
       backoffInterval = parseInt(headerVal, 10);
     } catch (ex) {
-      log.error("hawkclient response had invalid backoff value in '" +
-                headerName + "' header: " + headerVal);
+      log.error(
+        "hawkclient response had invalid backoff value in '" +
+          headerName +
+          "' header: " +
+          headerVal
+      );
       return;
     }
-    Observers.notify(this.observerPrefix + ":backoff:interval", backoffInterval);
+    Observers.notify(
+      this.observerPrefix + ":backoff:interval",
+      backoffInterval
+    );
   },
 
   
   newHAWKAuthenticatedRESTRequest(uri, credentials, extra) {
     return new HAWKAuthenticatedRESTRequest(uri, credentials, extra);
   },
-
 };

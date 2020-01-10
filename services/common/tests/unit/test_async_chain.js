@@ -1,7 +1,7 @@
 
 
 
-const {Async} = ChromeUtils.import("resource://services-common/async.js");
+const { Async } = ChromeUtils.import("resource://services-common/async.js");
 
 function run_test() {
   _("Chain a few async methods, making sure the 'this' object is correct.");
@@ -24,7 +24,15 @@ function run_test() {
   methods.chain = Async.chain;
 
   
-  methods.chain(methods.save, methods.addX, methods.addX, methods.neg,
-                methods.addX, methods.double, methods.addX, methods.save)(1);
+  methods.chain(
+    methods.save,
+    methods.addX,
+    methods.addX,
+    methods.neg,
+    methods.addX,
+    methods.double,
+    methods.addX,
+    methods.save
+  )(1);
   Assert.equal(methods.x, -3);
 }

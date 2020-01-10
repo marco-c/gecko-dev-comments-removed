@@ -1,7 +1,10 @@
 
 
 
-const { Doctor, REPAIR_ADVANCE_PERIOD } = ChromeUtils.import("resource://services-sync/doctor.js", null);
+const { Doctor, REPAIR_ADVANCE_PERIOD } = ChromeUtils.import(
+  "resource://services-sync/doctor.js",
+  null
+);
 
 function mockDoctor(mocks) {
   
@@ -29,11 +32,23 @@ add_task(async function test_validation_interval() {
   };
 
   
-  Services.prefs.setBoolPref("services.sync.engine.test-engine.validation.enabled", true);
-  Services.prefs.setIntPref("services.sync.engine.test-engine.validation.percentageChance", 100);
-  Services.prefs.setIntPref("services.sync.engine.test-engine.validation.maxRecords", 1);
+  Services.prefs.setBoolPref(
+    "services.sync.engine.test-engine.validation.enabled",
+    true
+  );
+  Services.prefs.setIntPref(
+    "services.sync.engine.test-engine.validation.percentageChance",
+    100
+  );
+  Services.prefs.setIntPref(
+    "services.sync.engine.test-engine.validation.maxRecords",
+    1
+  );
   
-  Services.prefs.setIntPref("services.sync.engine.test-engine.validation.interval", 10);
+  Services.prefs.setIntPref(
+    "services.sync.engine.test-engine.validation.interval",
+    10
+  );
 
   deepEqual(doctor._getEnginesToValidate([engine]), {
     "test-engine": {
@@ -99,7 +114,9 @@ add_task(async function test_repairs_start() {
       return true;
     },
   });
-  let promiseValidationDone = promiseOneObserver("weave:engine:validate:finish");
+  let promiseValidationDone = promiseOneObserver(
+    "weave:engine:validate:finish"
+  );
   await doctor.consult([engine]);
   await promiseValidationDone;
   ok(repairStarted);

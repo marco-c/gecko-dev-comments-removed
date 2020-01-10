@@ -2,29 +2,43 @@
 
 
 
- 
+
 
 
 
 
 var EXPORTED_SYMBOLS = ["Password", "DumpPasswords"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {Logger} = ChromeUtils.import("resource://tps/logger.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Logger } = ChromeUtils.import("resource://tps/logger.jsm");
 
 var nsLoginInfo = new Components.Constructor(
-                      "@mozilla.org/login-manager/loginInfo;1",
-                      Ci.nsILoginInfo,
-                      "init");
+  "@mozilla.org/login-manager/loginInfo;1",
+  Ci.nsILoginInfo,
+  "init"
+);
 
 var DumpPasswords = function TPS__Passwords__DumpPasswords() {
   let logins = Services.logins.getAllLogins();
   Logger.logInfo("\ndumping password list\n", true);
   for (var i = 0; i < logins.length; i++) {
-    Logger.logInfo("* origin=" + logins[i].origin + ", formActionOrigin=" + logins[i].formActionOrigin +
-                   ", realm=" + logins[i].httpRealm + ", password=" + logins[i].password +
-                   ", passwordField=" + logins[i].passwordField + ", username=" +
-                   logins[i].username + ", usernameField=" + logins[i].usernameField, true);
+    Logger.logInfo(
+      "* origin=" +
+        logins[i].origin +
+        ", formActionOrigin=" +
+        logins[i].formActionOrigin +
+        ", realm=" +
+        logins[i].httpRealm +
+        ", password=" +
+        logins[i].password +
+        ", passwordField=" +
+        logins[i].passwordField +
+        ", username=" +
+        logins[i].username +
+        ", usernameField=" +
+        logins[i].usernameField,
+      true
+    );
   }
   Logger.logInfo("\n\nend password list\n", true);
 };
@@ -79,11 +93,15 @@ Password.prototype = {
 
 
   Create() {
-    let login = new nsLoginInfo(this.props.hostname, this.props.submitURL,
-                                this.props.realm, this.props.username,
-                                this.props.password,
-                                this.props.usernameField,
-                                this.props.passwordField);
+    let login = new nsLoginInfo(
+      this.props.hostname,
+      this.props.submitURL,
+      this.props.realm,
+      this.props.username,
+      this.props.password,
+      this.props.usernameField,
+      this.props.passwordField
+    );
     Services.logins.addLogin(login);
     login.QueryInterface(Ci.nsILoginMetaInfo);
     return login.guid;
@@ -98,14 +116,18 @@ Password.prototype = {
 
 
   Find() {
-    let logins = Services.logins.findLogins(this.props.hostname,
-                                            this.props.submitURL,
-                                            this.props.realm);
+    let logins = Services.logins.findLogins(
+      this.props.hostname,
+      this.props.submitURL,
+      this.props.realm
+    );
     for (var i = 0; i < logins.length; i++) {
-      if (logins[i].username == this.props.username &&
-          logins[i].password == this.props.password &&
-          logins[i].usernameField == this.props.usernameField &&
-          logins[i].passwordField == this.props.passwordField) {
+      if (
+        logins[i].username == this.props.username &&
+        logins[i].password == this.props.password &&
+        logins[i].usernameField == this.props.usernameField &&
+        logins[i].passwordField == this.props.passwordField
+      ) {
         logins[i].QueryInterface(Ci.nsILoginMetaInfo);
         return logins[i].guid;
       }
@@ -124,20 +146,24 @@ Password.prototype = {
 
 
   Update() {
-    let oldlogin = new nsLoginInfo(this.props.hostname,
-                                   this.props.submitURL,
-                                   this.props.realm,
-                                   this.props.username,
-                                   this.props.password,
-                                   this.props.usernameField,
-                                   this.props.passwordField);
-    let newlogin = new nsLoginInfo(this.updateProps.hostname,
-                                   this.updateProps.submitURL,
-                                   this.updateProps.realm,
-                                   this.updateProps.username,
-                                   this.updateProps.password,
-                                   this.updateProps.usernameField,
-                                   this.updateProps.passwordField);
+    let oldlogin = new nsLoginInfo(
+      this.props.hostname,
+      this.props.submitURL,
+      this.props.realm,
+      this.props.username,
+      this.props.password,
+      this.props.usernameField,
+      this.props.passwordField
+    );
+    let newlogin = new nsLoginInfo(
+      this.updateProps.hostname,
+      this.updateProps.submitURL,
+      this.updateProps.realm,
+      this.updateProps.username,
+      this.updateProps.password,
+      this.updateProps.usernameField,
+      this.updateProps.passwordField
+    );
     Services.logins.modifyLogin(oldlogin, newlogin);
   },
 
@@ -150,13 +176,15 @@ Password.prototype = {
 
 
   Remove() {
-    let login = new nsLoginInfo(this.props.hostname,
-                                this.props.submitURL,
-                                this.props.realm,
-                                this.props.username,
-                                this.props.password,
-                                this.props.usernameField,
-                                this.props.passwordField);
+    let login = new nsLoginInfo(
+      this.props.hostname,
+      this.props.submitURL,
+      this.props.realm,
+      this.props.username,
+      this.props.password,
+      this.props.usernameField,
+      this.props.passwordField
+    );
     Services.logins.removeLogin(login);
   },
 };

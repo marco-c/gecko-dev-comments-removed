@@ -2,32 +2,77 @@
 
 
 
-var EXPORTED_SYMBOLS = [
-  "ErrorHandler",
-  "SyncScheduler",
-];
+var EXPORTED_SYMBOLS = ["ErrorHandler", "SyncScheduler"];
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
-const {CREDENTIALS_CHANGED, ENGINE_APPLY_FAIL, ENGINE_UNKNOWN_FAIL, IDLE_OBSERVER_BACK_DELAY, LOGIN_FAILED_INVALID_PASSPHRASE, LOGIN_FAILED_LOGIN_REJECTED, LOGIN_FAILED_NETWORK_ERROR, LOGIN_FAILED_NO_PASSPHRASE, LOGIN_SUCCEEDED, MASTER_PASSWORD_LOCKED, MASTER_PASSWORD_LOCKED_RETRY_INTERVAL, MAX_ERROR_COUNT_BEFORE_BACKOFF, MINIMUM_BACKOFF_INTERVAL, MULTI_DEVICE_THRESHOLD, NO_SYNC_NODE_FOUND, NO_SYNC_NODE_INTERVAL, OVER_QUOTA, RESPONSE_OVER_QUOTA, SCORE_UPDATE_DELAY, SERVER_MAINTENANCE, SINGLE_USER_THRESHOLD, STATUS_OK, SYNC_FAILED_PARTIAL, SYNC_SUCCEEDED, kSyncBackoffNotMet, kSyncMasterPasswordLocked} = ChromeUtils.import("resource://services-sync/constants.js");
-const {Svc, Utils} = ChromeUtils.import("resource://services-sync/util.js");
-const {LogManager} = ChromeUtils.import("resource://services-common/logmanager.js");
-const {Async} = ChromeUtils.import("resource://services-common/async.js");
-const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const {
+  CREDENTIALS_CHANGED,
+  ENGINE_APPLY_FAIL,
+  ENGINE_UNKNOWN_FAIL,
+  IDLE_OBSERVER_BACK_DELAY,
+  LOGIN_FAILED_INVALID_PASSPHRASE,
+  LOGIN_FAILED_LOGIN_REJECTED,
+  LOGIN_FAILED_NETWORK_ERROR,
+  LOGIN_FAILED_NO_PASSPHRASE,
+  LOGIN_SUCCEEDED,
+  MASTER_PASSWORD_LOCKED,
+  MASTER_PASSWORD_LOCKED_RETRY_INTERVAL,
+  MAX_ERROR_COUNT_BEFORE_BACKOFF,
+  MINIMUM_BACKOFF_INTERVAL,
+  MULTI_DEVICE_THRESHOLD,
+  NO_SYNC_NODE_FOUND,
+  NO_SYNC_NODE_INTERVAL,
+  OVER_QUOTA,
+  RESPONSE_OVER_QUOTA,
+  SCORE_UPDATE_DELAY,
+  SERVER_MAINTENANCE,
+  SINGLE_USER_THRESHOLD,
+  STATUS_OK,
+  SYNC_FAILED_PARTIAL,
+  SYNC_SUCCEEDED,
+  kSyncBackoffNotMet,
+  kSyncMasterPasswordLocked,
+} = ChromeUtils.import("resource://services-sync/constants.js");
+const { Svc, Utils } = ChromeUtils.import("resource://services-sync/util.js");
+const { LogManager } = ChromeUtils.import(
+  "resource://services-common/logmanager.js"
+);
+const { Async } = ChromeUtils.import("resource://services-common/async.js");
+const { CommonUtils } = ChromeUtils.import(
+  "resource://services-common/utils.js"
+);
 
-ChromeUtils.defineModuleGetter(this, "Status",
-                               "resource://services-sync/status.js");
-ChromeUtils.defineModuleGetter(this, "AddonManager",
-                               "resource://gre/modules/AddonManager.jsm");
-ChromeUtils.defineModuleGetter(this, "fxAccounts",
-                               "resource://gre/modules/FxAccounts.jsm");
-XPCOMUtils.defineLazyServiceGetter(this, "IdleService",
-                                   "@mozilla.org/widget/idleservice;1",
-                                   "nsIIdleService");
-XPCOMUtils.defineLazyServiceGetter(this, "CaptivePortalService",
-                                   "@mozilla.org/network/captive-portal-service;1",
-                                   "nsICaptivePortalService");
+ChromeUtils.defineModuleGetter(
+  this,
+  "Status",
+  "resource://services-sync/status.js"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "AddonManager",
+  "resource://gre/modules/AddonManager.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "fxAccounts",
+  "resource://gre/modules/FxAccounts.jsm"
+);
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "IdleService",
+  "@mozilla.org/widget/idleservice;1",
+  "nsIIdleService"
+);
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "CaptivePortalService",
+  "@mozilla.org/network/captive-portal-service;1",
+  "nsICaptivePortalService"
+);
 
 
 
@@ -43,9 +88,11 @@ function SyncScheduler(service) {
 SyncScheduler.prototype = {
   _log: Log.repository.getLogger("Sync.SyncScheduler"),
 
-  _fatalLoginStatus: [LOGIN_FAILED_NO_PASSPHRASE,
-                      LOGIN_FAILED_INVALID_PASSPHRASE,
-                      LOGIN_FAILED_LOGIN_REJECTED],
+  _fatalLoginStatus: [
+    LOGIN_FAILED_NO_PASSPHRASE,
+    LOGIN_FAILED_INVALID_PASSPHRASE,
+    LOGIN_FAILED_LOGIN_REJECTED,
+  ],
 
   
 
@@ -55,10 +102,18 @@ SyncScheduler.prototype = {
   setDefaults: function setDefaults() {
     this._log.trace("Setting SyncScheduler policy values to defaults.");
 
-    this.singleDeviceInterval = getThrottledIntervalPreference("scheduler.fxa.singleDeviceInterval");
-    this.idleInterval         = getThrottledIntervalPreference("scheduler.idleInterval");
-    this.activeInterval       = getThrottledIntervalPreference("scheduler.activeInterval");
-    this.immediateInterval    = getThrottledIntervalPreference("scheduler.immediateInterval");
+    this.singleDeviceInterval = getThrottledIntervalPreference(
+      "scheduler.fxa.singleDeviceInterval"
+    );
+    this.idleInterval = getThrottledIntervalPreference(
+      "scheduler.idleInterval"
+    );
+    this.activeInterval = getThrottledIntervalPreference(
+      "scheduler.activeInterval"
+    );
+    this.immediateInterval = getThrottledIntervalPreference(
+      "scheduler.immediateInterval"
+    );
 
     
     this.idle = false;
@@ -84,15 +139,23 @@ SyncScheduler.prototype = {
   },
 
   get missedFxACommandsFetchInterval() {
-    return Services.prefs.getIntPref("identity.fxaccounts.commands.missed.fetch_interval");
+    return Services.prefs.getIntPref(
+      "identity.fxaccounts.commands.missed.fetch_interval"
+    );
   },
 
   get missedFxACommandsLastFetch() {
-    return Services.prefs.getIntPref("identity.fxaccounts.commands.missed.last_fetch", 0);
+    return Services.prefs.getIntPref(
+      "identity.fxaccounts.commands.missed.last_fetch",
+      0
+    );
   },
 
   set missedFxACommandsLastFetch(val) {
-    Services.prefs.setIntPref("identity.fxaccounts.commands.missed.last_fetch", val);
+    Services.prefs.setIntPref(
+      "identity.fxaccounts.commands.missed.last_fetch",
+      val
+    );
   },
 
   get syncInterval() {
@@ -141,8 +204,10 @@ SyncScheduler.prototype = {
     
     
     try {
-      if (Services.io.offline ||
-          CaptivePortalService.state == CaptivePortalService.LOCKED_PORTAL) {
+      if (
+        Services.io.offline ||
+        CaptivePortalService.state == CaptivePortalService.LOCKED_PORTAL
+      ) {
         return true;
       }
     } catch (ex) {
@@ -152,26 +217,53 @@ SyncScheduler.prototype = {
   },
 
   _initPrefGetters() {
-    XPCOMUtils.defineLazyPreferenceGetter(this,
-      "idleTime", "services.sync.scheduler.idleTime");
-    XPCOMUtils.defineLazyPreferenceGetter(this,
-      "maxResyncs", "services.sync.maxResyncs", 0);
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "idleTime",
+      "services.sync.scheduler.idleTime"
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "maxResyncs",
+      "services.sync.maxResyncs",
+      0
+    );
 
     
     
-    XPCOMUtils.defineLazyPreferenceGetter(this,
-      "numDesktopClients", "services.sync.clients.devices.desktop", 0);
-    XPCOMUtils.defineLazyPreferenceGetter(this,
-      "numMobileClients", "services.sync.clients.devices.mobile", 0);
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "numDesktopClients",
+      "services.sync.clients.devices.desktop",
+      0
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "numMobileClients",
+      "services.sync.clients.devices.mobile",
+      0
+    );
 
     
     
-    XPCOMUtils.defineLazyPreferenceGetter(this,
-      "_syncThreshold", "services.sync.syncThreshold", SINGLE_USER_THRESHOLD);
-    XPCOMUtils.defineLazyPreferenceGetter(this,
-      "_syncInterval", "services.sync.syncInterval", this.singleDeviceInterval);
-    XPCOMUtils.defineLazyPreferenceGetter(this,
-      "_globalScore", "services.sync.globalScore", 0);
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_syncThreshold",
+      "services.sync.syncThreshold",
+      SINGLE_USER_THRESHOLD
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_syncInterval",
+      "services.sync.syncInterval",
+      this.singleDeviceInterval
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_globalScore",
+      "services.sync.globalScore",
+      0
+    );
   },
 
   init: function init() {
@@ -210,8 +302,12 @@ SyncScheduler.prototype = {
     switch (topic) {
       case "weave:engine:score:updated":
         if (Status.login == LOGIN_SUCCEEDED) {
-          CommonUtils.namedTimer(this.calculateScore, SCORE_UPDATE_DELAY, this,
-                           "_scoreTimer");
+          CommonUtils.namedTimer(
+            this.calculateScore,
+            SCORE_UPDATE_DELAY,
+            this,
+            "_scoreTimer"
+          );
         }
         break;
       case "network:link-status-changed":
@@ -222,13 +318,15 @@ SyncScheduler.prototype = {
         
         
         let isOffline = this.offline;
-        this._log.debug(`Network link status changed to "${data}". Offline?`,
-                        isOffline);
+        this._log.debug(
+          `Network link status changed to "${data}". Offline?`,
+          isOffline
+        );
         
         
         if (data == "up" && !isOffline) {
           this._log.debug("Network link looks up. Syncing.");
-          this.scheduleNextSync(0, {why: topic});
+          this.scheduleNextSync(0, { why: topic });
         } else if (data == "down") {
           
           
@@ -272,8 +370,10 @@ SyncScheduler.prototype = {
           if (this._resyncs <= this.maxResyncs) {
             sync_interval = 0;
           } else {
-            this._log.warn(`Resync attempt ${this._resyncs} exceeded ` +
-                           `maximum ${this.maxResyncs}`);
+            this._log.warn(
+              `Resync attempt ${this._resyncs} exceeded ` +
+                `maximum ${this.maxResyncs}`
+            );
             Svc.Obs.notify("weave:service:resyncs-finished");
           }
         } else {
@@ -288,7 +388,7 @@ SyncScheduler.prototype = {
           this._log.trace("Scheduling a sync at interval NO_SYNC_NODE_FOUND.");
           sync_interval = NO_SYNC_NODE_INTERVAL;
         }
-        this.scheduleNextSync(sync_interval, {why: "schedule"});
+        this.scheduleNextSync(sync_interval, { why: "schedule" });
         break;
       case "weave:engine:sync:finish":
         if (data == "clients") {
@@ -310,7 +410,9 @@ SyncScheduler.prototype = {
           
           
           this._log.debug("Couldn't log in: master password is locked.");
-          this._log.trace("Scheduling a sync at MASTER_PASSWORD_LOCKED_RETRY_INTERVAL");
+          this._log.trace(
+            "Scheduling a sync at MASTER_PASSWORD_LOCKED_RETRY_INTERVAL"
+          );
           this.scheduleAtInterval(MASTER_PASSWORD_LOCKED_RETRY_INTERVAL);
         } else if (!this._fatalLoginStatus.includes(Status.login)) {
           
@@ -334,7 +436,9 @@ SyncScheduler.prototype = {
       case "FxA:hawk:backoff:interval":
       case "weave:service:backoff:interval":
         let requested_interval = subject * 1000;
-        this._log.debug("Got backoff notification: " + requested_interval + "ms");
+        this._log.debug(
+          "Got backoff notification: " + requested_interval + "ms"
+        );
         
         let interval = requested_interval * (1 + Math.random() * 0.25);
         Status.backoffInterval = interval;
@@ -351,34 +455,39 @@ SyncScheduler.prototype = {
         break;
       case "weave:engine:sync:applied":
         let numItems = subject.succeeded;
-        this._log.trace("Engine " + data + " successfully applied " + numItems +
-                        " items.");
+        this._log.trace(
+          "Engine " + data + " successfully applied " + numItems + " items."
+        );
         if (numItems) {
           this.hasIncomingItems = true;
         }
         if (subject.newFailed) {
-          this._log.error(`Engine ${data} found ${subject.newFailed} new records that failed to apply`);
+          this._log.error(
+            `Engine ${data} found ${
+              subject.newFailed
+            } new records that failed to apply`
+          );
         }
         break;
       case "weave:service:setup-complete":
-         Services.prefs.savePrefFile(null);
-         IdleService.addIdleObserver(this, this.idleTime);
-         Svc.Obs.add("wake_notification", this);
-         Svc.Obs.add("captive-portal-login-success", this);
-         Svc.Obs.add("sleep_notification", this);
-         break;
+        Services.prefs.savePrefFile(null);
+        IdleService.addIdleObserver(this, this.idleTime);
+        Svc.Obs.add("wake_notification", this);
+        Svc.Obs.add("captive-portal-login-success", this);
+        Svc.Obs.add("sleep_notification", this);
+        break;
       case "weave:service:start-over":
-         this.setDefaults();
-         try {
-           IdleService.removeIdleObserver(this, this.idleTime);
-         } catch (ex) {
-           if (ex.result != Cr.NS_ERROR_FAILURE) {
-             throw ex;
-           }
-           
-           
-         }
-         break;
+        this.setDefaults();
+        try {
+          IdleService.removeIdleObserver(this, this.idleTime);
+        } catch (ex) {
+          if (ex.result != Cr.NS_ERROR_FAILURE) {
+            throw ex;
+          }
+          
+          
+        }
+        break;
       case "idle":
         this._log.trace("We're idle.");
         this.idle = true;
@@ -390,19 +499,26 @@ SyncScheduler.prototype = {
       case "active":
         this._log.trace("Received notification that we're back from idle.");
         this.idle = false;
-        CommonUtils.namedTimer(function onBack() {
-          if (this.idle) {
-            this._log.trace("... and we're idle again. " +
-                            "Ignoring spurious back notification.");
-            return;
-          }
+        CommonUtils.namedTimer(
+          function onBack() {
+            if (this.idle) {
+              this._log.trace(
+                "... and we're idle again. " +
+                  "Ignoring spurious back notification."
+              );
+              return;
+            }
 
-          this._log.trace("Genuine return from idle. Syncing.");
-          
-          if (this.numClients > 1) {
-            this.scheduleNextSync(0, {why: topic});
-          }
-        }, IDLE_OBSERVER_BACK_DELAY, this, "idleDebouncerTimer");
+            this._log.trace("Genuine return from idle. Syncing.");
+            
+            if (this.numClients > 1) {
+              this.scheduleNextSync(0, { why: topic });
+            }
+          },
+          IDLE_OBSERVER_BACK_DELAY,
+          this,
+          "idleDebouncerTimer"
+        );
         break;
       case "wake_notification":
         this._log.debug("Woke from sleep.");
@@ -413,7 +529,7 @@ SyncScheduler.prototype = {
           if (this.numClients > 1) {
             if (!this.offline) {
               this._log.debug("Online, will sync in 2s.");
-              this.scheduleNextSync(2000, {why: topic});
+              this.scheduleNextSync(2000, { why: topic });
             }
           }
         });
@@ -421,13 +537,13 @@ SyncScheduler.prototype = {
       case "captive-portal-login-success":
         this._log.debug("Captive portal login success. Scheduling a sync.");
         CommonUtils.nextTick(() => {
-          this.scheduleNextSync(3000, {why: topic});
+          this.scheduleNextSync(3000, { why: topic });
         });
         break;
       case "sleep_notification":
         if (this.service.engineManager.get("tabs")._tracker.modified) {
           this._log.debug("Going to sleep, doing a quick sync.");
-          this.scheduleNextSync(0, {engines: ["tabs"], why: "sleep"});
+          this.scheduleNextSync(0, { engines: ["tabs"], why: "sleep" });
         }
         break;
     }
@@ -459,9 +575,11 @@ SyncScheduler.prototype = {
   },
 
   updateGlobalScore() {
-    let engines = [this.service.clientsEngine].concat(this.service.engineManager.getEnabled());
+    let engines = [this.service.clientsEngine].concat(
+      this.service.engineManager.getEnabled()
+    );
     let globalScore = this.globalScore;
-    for (let i = 0;i < engines.length;i++) {
+    for (let i = 0; i < engines.length; i++) {
       this._log.trace(engines[i].name + ": score: " + engines[i].score);
       globalScore += engines[i].score;
       engines[i]._tracker.resetScore();
@@ -485,7 +603,9 @@ SyncScheduler.prototype = {
       return;
     }
 
-    this._log.debug(`Client count: ${this.numClientsLastSync} -> ${numClients}`);
+    this._log.debug(
+      `Client count: ${this.numClientsLastSync} -> ${numClients}`
+    );
     this.numClientsLastSync = numClients;
 
     if (numClients <= 1) {
@@ -506,7 +626,7 @@ SyncScheduler.prototype = {
     
     let ignore = [kSyncBackoffNotMet, kSyncMasterPasswordLocked];
     let skip = this.service._checkSync(ignore);
-    this._log.trace("_checkSync returned \"" + skip + "\".");
+    this._log.trace('_checkSync returned "' + skip + '".');
     if (skip) {
       this.clearSyncTriggers();
       return;
@@ -520,7 +640,7 @@ SyncScheduler.prototype = {
       wait = 0;
       why = "score";
     }
-    this.scheduleNextSync(wait, {why});
+    this.scheduleNextSync(wait, { why });
   },
 
   
@@ -530,12 +650,13 @@ SyncScheduler.prototype = {
 
   syncIfMPUnlocked(engines, why) {
     
-    if (Status.login == MASTER_PASSWORD_LOCKED &&
-        Utils.mpLocked()) {
+    if (Status.login == MASTER_PASSWORD_LOCKED && Utils.mpLocked()) {
       this._log.debug("Not initiating sync: Login status is " + Status.login);
 
       
-      this._log.trace("Scheduling a sync at MASTER_PASSWORD_LOCKED_RETRY_INTERVAL");
+      this._log.trace(
+        "Scheduling a sync at MASTER_PASSWORD_LOCKED_RETRY_INTERVAL"
+      );
       this.scheduleAtInterval(MASTER_PASSWORD_LOCKED_RETRY_INTERVAL);
       return;
     }
@@ -545,16 +666,23 @@ SyncScheduler.prototype = {
       return;
     }
     Services.tm.dispatchToMainThread(() => {
-      this.service.sync({engines, why});
+      this.service.sync({ engines, why });
       const now = Math.round(new Date().getTime() / 1000);
       
       
-      if (why == "schedule" && now >= this.missedFxACommandsLastFetch + this.missedFxACommandsFetchInterval) {
-        fxAccounts.commands.pollDeviceCommands().then(() => {
-          this.missedFxACommandsLastFetch = now;
-        }).catch(e => {
-          this._log.error("Fetching missed remote commands failed.", e);
-        });
+      if (
+        why == "schedule" &&
+        now >=
+          this.missedFxACommandsLastFetch + this.missedFxACommandsFetchInterval
+      ) {
+        fxAccounts.commands
+          .pollDeviceCommands()
+          .then(() => {
+            this.missedFxACommandsLastFetch = now;
+          })
+          .catch(e => {
+            this._log.error("Fetching missed remote commands failed.", e);
+          });
       }
     });
   },
@@ -562,7 +690,7 @@ SyncScheduler.prototype = {
   
 
 
-  scheduleNextSync(interval, {engines = null, why = null} = {}) {
+  scheduleNextSync(interval, { engines = null, why = null } = {}) {
     
     if (interval == null) {
       interval = this.syncInterval;
@@ -570,10 +698,14 @@ SyncScheduler.prototype = {
 
     
     if (Status.backoffInterval && interval < Status.backoffInterval) {
-      this._log.trace("Requested interval " + interval +
-                      " ms is smaller than the backoff interval. " +
-                      "Using backoff interval " +
-                      Status.backoffInterval + " ms instead.");
+      this._log.trace(
+        "Requested interval " +
+          interval +
+          " ms is smaller than the backoff interval. " +
+          "Using backoff interval " +
+          Status.backoffInterval +
+          " ms instead."
+      );
       interval = Status.backoffInterval;
     }
     let nextSync = this.nextSync;
@@ -581,11 +713,13 @@ SyncScheduler.prototype = {
       
       
       let currentInterval = nextSync - Date.now();
-      this._log.trace("There's already a sync scheduled in " +
-                      currentInterval + " ms.");
+      this._log.trace(
+        "There's already a sync scheduled in " + currentInterval + " ms."
+      );
       if (currentInterval < interval && this.syncTimer) {
-        this._log.trace("Ignoring scheduling request for next sync in " +
-                        interval + " ms.");
+        this._log.trace(
+          "Ignoring scheduling request for next sync in " + interval + " ms."
+        );
         return;
       }
     }
@@ -598,32 +732,40 @@ SyncScheduler.prototype = {
     }
 
     this._log.debug(`Next sync in ${interval} ms. (why=${why})`);
-    CommonUtils.namedTimer(() => { this.syncIfMPUnlocked(engines, why); },
-                           interval, this, "syncTimer");
+    CommonUtils.namedTimer(
+      () => {
+        this.syncIfMPUnlocked(engines, why);
+      },
+      interval,
+      this,
+      "syncTimer"
+    );
 
     
     this.nextSync = Date.now() + interval;
   },
-
 
   
 
 
 
   scheduleAtInterval: function scheduleAtInterval(minimumInterval) {
-    let interval = Utils.calculateBackoff(this._syncErrors,
-                                          MINIMUM_BACKOFF_INTERVAL,
-                                          Status.backoffInterval);
+    let interval = Utils.calculateBackoff(
+      this._syncErrors,
+      MINIMUM_BACKOFF_INTERVAL,
+      Status.backoffInterval
+    );
     if (minimumInterval) {
       interval = Math.max(minimumInterval, interval);
     }
 
-    this._log.debug("Starting client-initiated backoff. Next sync in " +
-                    interval + " ms.");
-    this.scheduleNextSync(interval, {why: "client-backoff-schedule"});
+    this._log.debug(
+      "Starting client-initiated backoff. Next sync in " + interval + " ms."
+    );
+    this.scheduleNextSync(interval, { why: "client-backoff-schedule" });
   },
 
- 
+  
 
 
 
@@ -633,7 +775,12 @@ SyncScheduler.prototype = {
 
   delayedAutoConnect: function delayedAutoConnect(delay) {
     if (this.service._checkSetup() == STATUS_OK) {
-      CommonUtils.namedTimer(this.autoConnect, delay * 1000, this, "_autoTimer");
+      CommonUtils.namedTimer(
+        this.autoConnect,
+        delay * 1000,
+        this,
+        "_autoTimer"
+      );
     }
   },
 
@@ -642,7 +789,7 @@ SyncScheduler.prototype = {
       
       
       
-      this.scheduleNextSync(this.nextSync - Date.now(), {why: "startup"});
+      this.scheduleNextSync(this.nextSync - Date.now(), { why: "startup" });
     }
 
     
@@ -663,17 +810,19 @@ SyncScheduler.prototype = {
     
     if (!Status.enforceBackoff) {
       if (this._syncErrors < MAX_ERROR_COUNT_BEFORE_BACKOFF) {
-        this.scheduleNextSync(null, {why: "reschedule"});
+        this.scheduleNextSync(null, { why: "reschedule" });
         return;
       }
-      this._log.debug("Sync error count has exceeded " +
-                      MAX_ERROR_COUNT_BEFORE_BACKOFF + "; enforcing backoff.");
+      this._log.debug(
+        "Sync error count has exceeded " +
+          MAX_ERROR_COUNT_BEFORE_BACKOFF +
+          "; enforcing backoff."
+      );
       Status.enforceBackoff = true;
     }
 
     this.scheduleAtInterval();
   },
-
 
   
 
@@ -687,7 +836,6 @@ SyncScheduler.prototype = {
       this.syncTimer.clear();
     }
   },
-
 };
 
 function ErrorHandler(service) {
@@ -709,14 +857,22 @@ ErrorHandler.prototype = {
   initLogs: function initLogs() {
     
     
-    Log.repository.getLogger("Sync").manageLevelFromPref(`services.sync.log.logger`);
+    Log.repository
+      .getLogger("Sync")
+      .manageLevelFromPref(`services.sync.log.logger`);
     
     this._log = Log.repository.getLogger("Sync.ErrorHandler");
     this._log.manageLevelFromPref("services.sync.log.logger.service.main");
 
-    let logs = ["Sync", "Services.Common", "FirefoxAccounts", "Hawk",
-                "browserwindow.syncui", "BookmarkSyncUtils", "addons.xpi",
-               ];
+    let logs = [
+      "Sync",
+      "Services.Common",
+      "FirefoxAccounts",
+      "Hawk",
+      "browserwindow.syncui",
+      "BookmarkSyncUtils",
+      "addons.xpi",
+    ];
 
     this._logManager = new LogManager(Svc.Prefs, logs, "sync");
   },
@@ -739,9 +895,15 @@ ErrorHandler.prototype = {
 
         this.checkServerError(exception);
 
-        Status.engines = [engine_name, exception.failureCode || ENGINE_UNKNOWN_FAIL];
+        Status.engines = [
+          engine_name,
+          exception.failureCode || ENGINE_UNKNOWN_FAIL,
+        ];
         if (Async.isShutdownException(exception)) {
-          this._log.debug(engine_name + " was interrupted due to the application shutting down");
+          this._log.debug(
+            engine_name +
+              " was interrupted due to the application shutting down"
+          );
         } else {
           this._log.debug(engine_name + " failed", exception);
         }
@@ -760,7 +922,9 @@ ErrorHandler.prototype = {
         if (Async.isShutdownException(exception)) {
           
           
-          this._log.error("Sync was interrupted due to the application shutting down");
+          this._log.error(
+            "Sync was interrupted due to the application shutting down"
+          );
           this.resetFileLog();
           break;
         }
@@ -777,8 +941,7 @@ ErrorHandler.prototype = {
         
         
         
-        if (Status.sync == SYNC_SUCCEEDED &&
-            Status.service == STATUS_OK) {
+        if (Status.sync == SYNC_SUCCEEDED && Status.service == STATUS_OK) {
           
           this._log.trace("Clearing lastSyncReassigned.");
           Svc.Prefs.reset("lastSyncReassigned");
@@ -791,20 +954,22 @@ ErrorHandler.prototype = {
         break;
       case "weave:service:start-over:finish":
         
-        this.resetFileLog().then(() => {
-          
-          
-          if (!Svc.Prefs.get("log.keepLogsOnReset", false)) {
-            return this._logManager.removeAllLogs().then(() => {
-              Svc.Obs.notify("weave:service:remove-file-log");
-            });
-          }
-          return null;
-        }).catch(err => {
-          
-          
-          this._log.error("Failed to delete logs on reset", err);
-        });
+        this.resetFileLog()
+          .then(() => {
+            
+            
+            if (!Svc.Prefs.get("log.keepLogsOnReset", false)) {
+              return this._logManager.removeAllLogs().then(() => {
+                Svc.Obs.notify("weave:service:remove-file-log");
+              });
+            }
+            return null;
+          })
+          .catch(err => {
+            
+            
+            this._log.error("Failed to delete logs on reset", err);
+          });
         break;
     }
   },
@@ -837,7 +1002,9 @@ ErrorHandler.prototype = {
     }
     const logType = await this._logManager.resetFileLog();
     if (logType == this._logManager.ERROR_LOG_WRITTEN) {
-      Cu.reportError("Sync encountered an error - see about:sync-log for the log file.");
+      Cu.reportError(
+        "Sync encountered an error - see about:sync-log for the log file."
+      );
     }
     Svc.Obs.notify("weave:service:reset-file-log");
   },
@@ -876,7 +1043,7 @@ ErrorHandler.prototype = {
           Svc.Prefs.set("lastSyncReassigned", true);
         }
         this._log.info("Attempting to schedule another sync.");
-        this.service.scheduler.scheduleNextSync(delay, {why: "reschedule"});
+        this.service.scheduler.scheduleNextSync(delay, { why: "reschedule" });
         break;
 
       case 500:
@@ -892,8 +1059,10 @@ ErrorHandler.prototype = {
           } else {
             Status.login = SERVER_MAINTENANCE;
           }
-          Svc.Obs.notify("weave:service:backoff:interval",
-                         parseInt(retryAfter, 10));
+          Svc.Obs.notify(
+            "weave:service:backoff:interval",
+            parseInt(retryAfter, 10)
+          );
         }
         break;
     }

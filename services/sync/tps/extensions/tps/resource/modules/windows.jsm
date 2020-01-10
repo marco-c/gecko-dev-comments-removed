@@ -3,14 +3,14 @@
 
 "use strict";
 
- 
+
 
 
 
 
 const EXPORTED_SYMBOLS = ["BrowserWindows"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var BrowserWindows = {
   
@@ -24,10 +24,14 @@ var BrowserWindows = {
   Add(aPrivate, fn) {
     return new Promise(resolve => {
       let mainWindow = Services.wm.getMostRecentWindow("navigator:browser");
-      let win = mainWindow.OpenBrowserWindow({private: aPrivate});
-      win.addEventListener("load", function() {
-        resolve(win);
-      }, {once: true});
+      let win = mainWindow.OpenBrowserWindow({ private: aPrivate });
+      win.addEventListener(
+        "load",
+        function() {
+          resolve(win);
+        },
+        { once: true }
+      );
     });
   },
 };

@@ -11,9 +11,15 @@ var EXPORTED_SYMBOLS = [
   "RotaryTracker",
 ];
 
-const {Store, SyncEngine, Tracker} = ChromeUtils.import("resource://services-sync/engines.js");
-const {CryptoWrapper} = ChromeUtils.import("resource://services-sync/record.js");
-const {SerializableSet, Utils} = ChromeUtils.import("resource://services-sync/util.js");
+const { Store, SyncEngine, Tracker } = ChromeUtils.import(
+  "resource://services-sync/engines.js"
+);
+const { CryptoWrapper } = ChromeUtils.import(
+  "resource://services-sync/record.js"
+);
+const { SerializableSet, Utils } = ChromeUtils.import(
+  "resource://services-sync/util.js"
+);
 
 
 
@@ -50,7 +56,7 @@ RotaryStore.prototype = {
   },
 
   async itemExists(id) {
-    return (id in this.items);
+    return id in this.items;
   },
 
   async createRecord(id, collection) {
@@ -94,11 +100,10 @@ RotaryTracker.prototype = {
   persistChangedIDs: false,
 };
 
-
 function RotaryEngine(service) {
   SyncEngine.call(this, "Rotary", service);
   
-  this.toFetch        = new SerializableSet();
+  this.toFetch = new SerializableSet();
   this.previousFailed = new SerializableSet();
 }
 RotaryEngine.prototype = {

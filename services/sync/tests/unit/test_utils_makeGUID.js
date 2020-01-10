@@ -1,4 +1,3 @@
-
 const base64url =
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
 
@@ -15,9 +14,11 @@ function run_test() {
     Assert.equal(encodeURIComponent(newGuid).length, 12);
 
     
-    Assert.ok(Array.prototype.every.call(newGuid, function(chr) {
-      return base64url.includes(chr);
-    }));
+    Assert.ok(
+      Array.prototype.every.call(newGuid, function(chr) {
+        return base64url.includes(chr);
+      })
+    );
 
     
     Assert.ok(Utils.checkGUID(newGuid));
@@ -25,7 +26,11 @@ function run_test() {
     
     
     
-    Assert.ok(guids.every(function(g) { return g != newGuid; }));
+    Assert.ok(
+      guids.every(function(g) {
+        return g != newGuid;
+      })
+    );
     guids.push(newGuid);
   }
 

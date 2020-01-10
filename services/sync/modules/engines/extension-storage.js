@@ -6,11 +6,18 @@
 
 var EXPORTED_SYMBOLS = ["ExtensionStorageEngine"];
 
-const {SCORE_INCREMENT_MEDIUM} = ChromeUtils.import("resource://services-sync/constants.js");
-const {SyncEngine, Tracker} = ChromeUtils.import("resource://services-sync/engines.js");
-const {Svc} = ChromeUtils.import("resource://services-sync/util.js");
-ChromeUtils.defineModuleGetter(this, "extensionStorageSync",
-                               "resource://gre/modules/ExtensionStorageSync.jsm");
+const { SCORE_INCREMENT_MEDIUM } = ChromeUtils.import(
+  "resource://services-sync/constants.js"
+);
+const { SyncEngine, Tracker } = ChromeUtils.import(
+  "resource://services-sync/engines.js"
+);
+const { Svc } = ChromeUtils.import("resource://services-sync/util.js");
+ChromeUtils.defineModuleGetter(
+  this,
+  "extensionStorageSync",
+  "resource://gre/modules/ExtensionStorageSync.jsm"
+);
 
 
 
@@ -44,7 +51,10 @@ ExtensionStorageEngine.prototype = {
     
     
     
-    const forced = Svc.Prefs.get("engine." + this.prefName + ".force", undefined);
+    const forced = Svc.Prefs.get(
+      "engine." + this.prefName + ".force",
+      undefined
+    );
     if (forced !== undefined) {
       return forced;
     }
@@ -54,7 +64,6 @@ ExtensionStorageEngine.prototype = {
   _wipeClient() {
     return extensionStorageSync.clearAll();
   },
-
 };
 
 function ExtensionStorageTracker(name, engine) {
@@ -87,14 +96,9 @@ ExtensionStorageTracker.prototype = {
 
   
   
-  ignoreID() {
-  },
-  unignoreID() {
-  },
-  addChangedID() {
-  },
-  removeChangedID() {
-  },
-  clearChangedIDs() {
-  },
+  ignoreID() {},
+  unignoreID() {},
+  addChangedID() {},
+  removeChangedID() {},
+  clearChangedIDs() {},
 };

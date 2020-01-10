@@ -6,20 +6,34 @@
 
 var EXPORTED_SYMBOLS = ["BookmarkRepairRequestor", "BookmarkRepairResponder"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
-const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
-const {Svc, Utils} = ChromeUtils.import("resource://services-sync/util.js");
-const {CollectionRepairRequestor, CollectionRepairResponder} = ChromeUtils.import("resource://services-sync/collection_repair.js");
-const {DEVICE_TYPE_DESKTOP} = ChromeUtils.import("resource://services-sync/constants.js");
-const {Resource} = ChromeUtils.import("resource://services-sync/resource.js");
-const {Doctor} = ChromeUtils.import("resource://services-sync/doctor.js");
-const {SyncTelemetry} = ChromeUtils.import("resource://services-sync/telemetry.js");
-const {Async} = ChromeUtils.import("resource://services-common/async.js");
-const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
+const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { Svc, Utils } = ChromeUtils.import("resource://services-sync/util.js");
+const {
+  CollectionRepairRequestor,
+  CollectionRepairResponder,
+} = ChromeUtils.import("resource://services-sync/collection_repair.js");
+const { DEVICE_TYPE_DESKTOP } = ChromeUtils.import(
+  "resource://services-sync/constants.js"
+);
+const { Resource } = ChromeUtils.import("resource://services-sync/resource.js");
+const { Doctor } = ChromeUtils.import("resource://services-sync/doctor.js");
+const { SyncTelemetry } = ChromeUtils.import(
+  "resource://services-sync/telemetry.js"
+);
+const { Async } = ChromeUtils.import("resource://services-common/async.js");
+const { CommonUtils } = ChromeUtils.import(
+  "resource://services-common/utils.js"
+);
 
-ChromeUtils.defineModuleGetter(this, "PlacesSyncUtils",
-                               "resource://gre/modules/PlacesSyncUtils.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "PlacesSyncUtils",
+  "resource://gre/modules/PlacesSyncUtils.jsm"
+);
 
 const log = Log.repository.getLogger("Sync.Engine.Bookmarks.Repair");
 
@@ -108,7 +122,8 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
     
 
     
-    for (let { parent, child } of validationInfo.problems.missingChildren || []) {
+    for (let { parent, child } of validationInfo.problems.missingChildren ||
+      []) {
       
       
       ids.add(parent);
@@ -132,7 +147,8 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
 
     
     
-    for (let { parent, child } of validationInfo.problems.deletedChildren || []) {
+    for (let { parent, child } of validationInfo.problems.deletedChildren ||
+      []) {
       
       ids.add(parent);
       ids.add(child);
@@ -143,7 +159,8 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
 
     
     
-    for (let { parent, child } of validationInfo.problems.deletedParents || []) {
+    for (let { parent, child } of validationInfo.problems.deletedParents ||
+      []) {
       
       ids.add(parent);
       ids.add(child);
@@ -153,7 +170,8 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
     }
 
     
-    for (let { parent, child } of validationInfo.problems.parentChildMismatches || []) {
+    for (let { parent, child } of validationInfo.problems
+      .parentChildMismatches || []) {
       
       ids.add(parent);
       ids.add(child);
@@ -166,7 +184,8 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
     
     
     
-    for (let { parents, child } of validationInfo.problems.multipleParents || []) {
+    for (let { parents, child } of validationInfo.problems.multipleParents ||
+      []) {
       for (let parent of parents) {
         ids.add(parent);
       }
@@ -192,8 +211,7 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
       engine.addForWeakUpload(id);
     }
     engine.toFetch = Utils.setAddAll(
-      Utils.setAddAll(engine.toFetch,
-                      validationInfo.problems.clientMissing),
+      Utils.setAddAll(engine.toFetch, validationInfo.problems.clientMissing),
       validationInfo.problems.serverDeleted
     );
     return true;
@@ -205,13 +223,21 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
 
   async startRepairs(validationInfo, flowID) {
     if (this._currentState != STATE.NOT_REPAIRING) {
-      log.info(`Can't start a repair - repair with ID ${this._flowID} is already in progress`);
+      log.info(
+        `Can't start a repair - repair with ID ${
+          this._flowID
+        } is already in progress`
+      );
       return false;
     }
 
     let ids = this.getProblemIDs(validationInfo);
     if (ids.size > MAX_REQUESTED_IDS) {
-      log.info("Not starting a repair as there are over " + MAX_REQUESTED_IDS + " problems");
+      log.info(
+        "Not starting a repair as there are over " +
+          MAX_REQUESTED_IDS +
+          " problems"
+      );
       let extra = { flowID, reason: `too many problems: ${ids.size}` };
       this.service.recordTelemetryEvent("repair", "aborted", undefined, extra);
       return false;
@@ -223,7 +249,9 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
     }
 
     if (this.anyClientsRepairing()) {
-      log.info("Can't start repair, since other clients are already repairing bookmarks");
+      log.info(
+        "Can't start repair, since other clients are already repairing bookmarks"
+      );
       let extra = { flowID, reason: "other clients repairing" };
       this.service.recordTelemetryEvent("repair", "aborted", undefined, extra);
       return false;
@@ -234,7 +262,10 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
     this._flowID = flowID;
     this._currentIDs = Array.from(ids);
     this._currentState = STATE.NEED_NEW_CLIENT;
-    this.service.recordTelemetryEvent("repair", "started", undefined, { flowID, numIDs: ids.size.toString() });
+    this.service.recordTelemetryEvent("repair", "started", undefined, {
+      flowID,
+      numIDs: ids.size.toString(),
+    });
     return this.continueRepairs();
   }
 
@@ -309,7 +340,9 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
         let flowID = this._flowID;
         let clientID = this._currentRemoteClient;
         if (!clientID) {
-          throw new AbortRepairError(`In state ${state} but have no client IDs listed`);
+          throw new AbortRepairError(
+            `In state ${state} but have no client IDs listed`
+          );
         }
         if (response) {
           
@@ -322,34 +355,51 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
         let client = this.service.clientsEngine.remoteClient(clientID);
         if (!client) {
           
-          log.info(`previously requested client "${clientID}" has vanished - moving to next step`);
+          log.info(
+            `previously requested client "${clientID}" has vanished - moving to next step`
+          );
           state = STATE.NEED_NEW_CLIENT;
           let extra = {
             deviceID: this.service.identity.hashedDeviceID(clientID),
             flowID,
           };
-          this.service.recordTelemetryEvent("repair", "abandon", "missing", extra);
+          this.service.recordTelemetryEvent(
+            "repair",
+            "abandon",
+            "missing",
+            extra
+          );
           break;
         }
-        if ((await this._isCommandPending(clientID, flowID))) {
+        if (await this._isCommandPending(clientID, flowID)) {
           
           
           
           let lastRequestSent = this.prefs.get(PREF.REPAIR_WHEN);
-          let timeLeft = lastRequestSent + RESPONSE_INTERVAL_TIMEOUT - this._now();
+          let timeLeft =
+            lastRequestSent + RESPONSE_INTERVAL_TIMEOUT - this._now();
           if (timeLeft <= 0) {
-            log.info(`previous request to client ${clientID} is pending, but has taken too long`);
+            log.info(
+              `previous request to client ${clientID} is pending, but has taken too long`
+            );
             state = STATE.NEED_NEW_CLIENT;
             
             let extra = {
               deviceID: this.service.identity.hashedDeviceID(clientID),
               flowID,
             };
-            this.service.recordTelemetryEvent("repair", "abandon", "silent", extra);
+            this.service.recordTelemetryEvent(
+              "repair",
+              "abandon",
+              "silent",
+              extra
+            );
             break;
           }
           
-          log.trace(`previous request to client ${clientID} has ${timeLeft} seconds before we give up on it`);
+          log.trace(
+            `previous request to client ${clientID} has ${timeLeft} seconds before we give up on it`
+          );
           break;
         }
         
@@ -359,12 +409,16 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
         
         
         if (state == STATE.SENT_REQUEST) {
-          log.info(`previous request to client ${clientID} was removed - trying a second time`);
+          log.info(
+            `previous request to client ${clientID} was removed - trying a second time`
+          );
           state = STATE.SENT_SECOND_REQUEST;
           await this._writeRequest(clientID);
         } else {
           
-          log.info(`previous 2 requests to client ${clientID} were removed - need a new client`);
+          log.info(
+            `previous 2 requests to client ${clientID} were removed - need a new client`
+          );
           state = STATE.NEED_NEW_CLIENT;
         }
         break;
@@ -408,8 +462,11 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
     let clientID = this._currentRemoteClient;
     let flowID = this._flowID;
 
-    if (response.flowID != flowID || response.clientID != clientID ||
-        response.request != "upload") {
+    if (
+      response.flowID != flowID ||
+      response.clientID != clientID ||
+      response.request != "upload"
+    ) {
       log.info("got a response to a different repair request", response);
       
       
@@ -417,8 +474,14 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
       return state;
     }
     
-    let remainingIDs = Array.from(CommonUtils.difference(this._currentIDs, response.ids));
-    log.info(`repair response from ${clientID} provided "${response.ids}", remaining now "${remainingIDs}"`);
+    let remainingIDs = Array.from(
+      CommonUtils.difference(this._currentIDs, response.ids)
+    );
+    log.info(
+      `repair response from ${clientID} provided "${
+        response.ids
+      }", remaining now "${remainingIDs}"`
+    );
     this._currentIDs = remainingIDs;
     if (remainingIDs.length) {
       
@@ -442,7 +505,9 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
     log.trace("writing repair request to client", clientID);
     let ids = this._currentIDs;
     if (!ids) {
-      throw new AbortRepairError("Attempting to write a request, but there are no IDs");
+      throw new AbortRepairError(
+        "Attempting to write a request, but there are no IDs"
+      );
     }
     let flowID = this._flowID;
     
@@ -453,7 +518,12 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
       ids,
       flowID,
     };
-    await this.service.clientsEngine.sendCommand("repairRequest", [request], clientID, { flowID });
+    await this.service.clientsEngine.sendCommand(
+      "repairRequest",
+      [request],
+      clientID,
+      { flowID }
+    );
     this.prefs.set(PREF.REPAIR_WHEN, Math.floor(this._now()));
     
     let extra = {
@@ -484,8 +554,10 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
 
   _isSuitableClient(client) {
     
-    return (client.type == DEVICE_TYPE_DESKTOP &&
-            Services.vc.compare(client.version, 53) > 0);
+    return (
+      client.type == DEVICE_TYPE_DESKTOP &&
+      Services.vc.compare(client.version, 53) > 0
+    );
   }
 
   
@@ -494,16 +566,23 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
     
     
     
-    let clientCommands = await this.service.clientsEngine.getClientCommands(clientID);
-    let commands = [...clientCommands,
-                    ...this.service.clientsEngine.remoteClient(clientID).commands || []];
+    let clientCommands = await this.service.clientsEngine.getClientCommands(
+      clientID
+    );
+    let commands = [
+      ...clientCommands,
+      ...(this.service.clientsEngine.remoteClient(clientID).commands || []),
+    ];
     for (let command of commands) {
       if (command.command != "repairRequest" || command.args.length != 1) {
         continue;
       }
       let arg = command.args[0];
-      if (arg.collection == "bookmarks" && arg.request == "upload" &&
-          arg.flowID == flowID) {
+      if (
+        arg.collection == "bookmarks" &&
+        arg.request == "upload" &&
+        arg.flowID == flowID
+      ) {
         return true;
       }
     }
@@ -564,8 +643,11 @@ class BookmarkRepairRequestor extends CollectionRepairRequestor {
 class BookmarkRepairResponder extends CollectionRepairResponder {
   async repair(request, rawCommand) {
     if (request.request != "upload") {
-      await this._abortRepair(request, rawCommand,
-                              `Don't understand request type '${request.request}'`);
+      await this._abortRepair(
+        request,
+        rawCommand,
+        `Don't understand request type '${request.request}'`
+      );
       return;
     }
 
@@ -587,7 +669,11 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
       let { toUpload, toDelete } = await this._fetchItemsToUpload(request);
 
       if (toUpload.size || toDelete.size) {
-        log.debug(`repair request will upload ${toUpload.size} items and delete ${toDelete.size} items`);
+        log.debug(
+          `repair request will upload ${toUpload.size} items and delete ${
+            toDelete.size
+          } items`
+        );
         
         
         
@@ -608,7 +694,12 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
           flowID: request.flowID,
           numIDs: this._currentState.ids.length.toString(),
         };
-        this.service.recordTelemetryEvent("repairResponse", "uploading", undefined, eventExtra);
+        this.service.recordTelemetryEvent(
+          "repairResponse",
+          "uploading",
+          undefined,
+          eventExtra
+        );
       } else {
         
         await this._finishRepair();
@@ -636,7 +727,9 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     
     
     
-    let repairable = await PlacesSyncUtils.bookmarks.fetchRecordIdsForRepair(request.ids);
+    let repairable = await PlacesSyncUtils.bookmarks.fetchRecordIdsForRepair(
+      request.ids
+    );
     if (repairable.length == 0) {
       
       
@@ -668,23 +761,33 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     for (let { recordId: id, syncable } of repairable) {
       if (requested.has(id)) {
         if (syncable) {
-          log.debug(`repair request to upload item '${id}' which exists locally; uploading`);
+          log.debug(
+            `repair request to upload item '${id}' which exists locally; uploading`
+          );
           toUpload.add(id);
         } else {
           
-          log.debug(`repair request to upload item '${id}' but it isn't under a syncable root; writing a tombstone`);
+          log.debug(
+            `repair request to upload item '${id}' but it isn't under a syncable root; writing a tombstone`
+          );
           toDelete.add(id);
         }
-      
-      
+        
+        
       } else if (syncable && !existRemotely.has(id)) {
-        log.debug(`repair request found related item '${id}' which isn't on the server; uploading`);
+        log.debug(
+          `repair request found related item '${id}' which isn't on the server; uploading`
+        );
         toUpload.add(id);
       } else if (!syncable && existRemotely.has(id)) {
-        log.debug(`repair request found non-syncable related item '${id}' on the server; writing a tombstone`);
+        log.debug(
+          `repair request found non-syncable related item '${id}' on the server; writing a tombstone`
+        );
         toDelete.add(id);
       } else {
-        log.debug(`repair request found related item '${id}' which we will not upload; ignoring`);
+        log.debug(
+          `repair request found related item '${id}' which we will not upload; ignoring`
+        );
       }
     }
     return { toUpload, toDelete };
@@ -698,8 +801,13 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     if (subject.failed) {
       return;
     }
-    log.debug(`bookmarks engine has uploaded stuff - creating a repair response`, subject);
-    this.service.clientsEngine._tracker.asyncObserver.enqueueCall(() => this._finishRepair());
+    log.debug(
+      `bookmarks engine has uploaded stuff - creating a repair response`,
+      subject
+    );
+    this.service.clientsEngine._tracker.asyncObserver.enqueueCall(() =>
+      this._finishRepair()
+    );
   }
 
   async _finishRepair() {
@@ -713,7 +821,9 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
       ids: this._currentState.ids,
     };
     let clientID = this._currentState.request.requestor;
-    await clientsEngine.sendCommand("repairResponse", [response], clientID, { flowID });
+    await clientsEngine.sendCommand("repairResponse", [response], clientID, {
+      flowID,
+    });
     
     await clientsEngine.removeLocalCommand(this._currentState.rawCommand);
     let eventExtra = {
@@ -723,10 +833,22 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     if (this._currentState.failureReason) {
       
       
-      eventExtra.failureReason = JSON.stringify(this._currentState.failureReason).substring(0, 85);
-      this.service.recordTelemetryEvent("repairResponse", "failed", undefined, eventExtra);
+      eventExtra.failureReason = JSON.stringify(
+        this._currentState.failureReason
+      ).substring(0, 85);
+      this.service.recordTelemetryEvent(
+        "repairResponse",
+        "failed",
+        undefined,
+        eventExtra
+      );
     } else {
-      this.service.recordTelemetryEvent("repairResponse", "finished", undefined, eventExtra);
+      this.service.recordTelemetryEvent(
+        "repairResponse",
+        "finished",
+        undefined,
+        eventExtra
+      );
     }
     this._currentState = null;
   }
@@ -739,7 +861,12 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
       flowID: request.flowID,
       reason: why,
     };
-    this.service.recordTelemetryEvent("repairResponse", "aborted", undefined, eventExtra);
+    this.service.recordTelemetryEvent(
+      "repairResponse",
+      "aborted",
+      undefined,
+      eventExtra
+    );
     
     
     

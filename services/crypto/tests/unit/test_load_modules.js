@@ -1,10 +1,7 @@
 
 
 
-const modules = [
-  "utils.js",
-  "WeaveCrypto.js",
-];
+const modules = ["utils.js", "WeaveCrypto.js"];
 
 function run_test() {
   for (let m of modules) {
@@ -13,4 +10,3 @@ function run_test() {
     ChromeUtils.import(resource, {});
   }
 }
-

@@ -6,17 +6,30 @@ var EXPORTED_SYMBOLS = ["PrefsEngine", "PrefRec"];
 
 const PREF_SYNC_PREFS_PREFIX = "services.sync.prefs.sync.";
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
-const {Store, SyncEngine, Tracker} = ChromeUtils.import("resource://services-sync/engines.js");
-const {CryptoWrapper} = ChromeUtils.import("resource://services-sync/record.js");
-const {Svc, Utils} = ChromeUtils.import("resource://services-sync/util.js");
-const {SCORE_INCREMENT_XLARGE} = ChromeUtils.import("resource://services-sync/constants.js");
-const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
+const { Store, SyncEngine, Tracker } = ChromeUtils.import(
+  "resource://services-sync/engines.js"
+);
+const { CryptoWrapper } = ChromeUtils.import(
+  "resource://services-sync/record.js"
+);
+const { Svc, Utils } = ChromeUtils.import("resource://services-sync/util.js");
+const { SCORE_INCREMENT_XLARGE } = ChromeUtils.import(
+  "resource://services-sync/constants.js"
+);
+const { CommonUtils } = ChromeUtils.import(
+  "resource://services-common/utils.js"
+);
 
-XPCOMUtils.defineLazyGetter(this, "PREFS_GUID",
-                            () => CommonUtils.encodeBase64URL(Services.appinfo.ID));
+XPCOMUtils.defineLazyGetter(this, "PREFS_GUID", () =>
+  CommonUtils.encodeBase64URL(Services.appinfo.ID)
+);
 
 
 
@@ -25,16 +38,22 @@ XPCOMUtils.defineLazyGetter(this, "PREFS_GUID",
 
 
 
-const PREF_SYNC_PREFS_ARBITRARY = "services.sync.prefs.dangerously_allow_arbitrary";
+const PREF_SYNC_PREFS_ARBITRARY =
+  "services.sync.prefs.dangerously_allow_arbitrary";
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "ALLOW_ARBITRARY", PREF_SYNC_PREFS_ARBITRARY);
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "ALLOW_ARBITRARY",
+  PREF_SYNC_PREFS_ARBITRARY
+);
 
 
 
-const PREFS_DOC_URL_TEMPLATE = "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/sync-custom-preferences";
-XPCOMUtils.defineLazyGetter(this, "PREFS_DOC_URL",
-  () => Services.urlFormatter.formatURL(PREFS_DOC_URL_TEMPLATE));
-
+const PREFS_DOC_URL_TEMPLATE =
+  "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/sync-custom-preferences";
+XPCOMUtils.defineLazyGetter(this, "PREFS_DOC_URL", () =>
+  Services.urlFormatter.formatURL(PREFS_DOC_URL_TEMPLATE)
+);
 
 
 this.isAllowedPrefName = function(prefName) {
@@ -66,7 +85,6 @@ PrefRec.prototype = {
 };
 
 Utils.deferGetSet(PrefRec, "cleartext", ["value"]);
-
 
 function PrefsEngine(service) {
   SyncEngine.call(this, "Prefs", service);
@@ -120,14 +138,18 @@ function isUnsyncableURLPref(prefName) {
 
 function PrefStore(name, engine) {
   Store.call(this, name, engine);
-  Svc.Obs.add("profile-before-change", function() {
-    this.__prefs = null;
-  }, this);
+  Svc.Obs.add(
+    "profile-before-change",
+    function() {
+      this.__prefs = null;
+    },
+    this
+  );
 }
 PrefStore.prototype = {
   __proto__: Store.prototype,
 
- __prefs: null,
+  __prefs: null,
   get _prefs() {
     if (!this.__prefs) {
       this.__prefs = new Preferences();
@@ -136,9 +158,10 @@ PrefStore.prototype = {
   },
 
   _getSyncPrefs() {
-    let syncPrefs = Services.prefs.getBranch(PREF_SYNC_PREFS_PREFIX)
-                                  .getChildList("")
-                                  .filter(pref => isAllowedPrefName(pref) && !isUnsyncableURLPref(pref));
+    let syncPrefs = Services.prefs
+      .getBranch(PREF_SYNC_PREFS_PREFIX)
+      .getChildList("")
+      .filter(pref => isAllowedPrefName(pref) && !isUnsyncableURLPref(pref));
     
     let controlPrefs = syncPrefs.map(pref => PREF_SYNC_PREFS_PREFIX + pref);
     return controlPrefs.concat(syncPrefs);
@@ -168,7 +191,9 @@ PrefStore.prototype = {
       
       if (this._isSynced(pref) && !isUnsyncableURLPref(pref)) {
         
-        values[pref] = this._prefs.isSet(pref) ? this._prefs.get(pref, null) : null;
+        values[pref] = this._prefs.isSet(pref)
+          ? this._prefs.get(pref, null)
+          : null;
       }
     }
     return values;
@@ -177,7 +202,9 @@ PrefStore.prototype = {
   _setAllPrefs(values) {
     
     
-    let prefs = Object.keys(values).sort(a => -a.indexOf(PREF_SYNC_PREFS_PREFIX));
+    let prefs = Object.keys(values).sort(
+      a => -a.indexOf(PREF_SYNC_PREFS_PREFIX)
+    );
     for (let pref of prefs) {
       let value = values[pref];
       if (!this._isSynced(pref)) {
@@ -191,7 +218,8 @@ PrefStore.prototype = {
           
           
           
-          if (value !== null) { 
+          if (value !== null) {
+            
             let controlPref = PREF_SYNC_PREFS_PREFIX + pref;
             let controlPrefExists;
             try {
@@ -204,7 +232,8 @@ PrefStore.prototype = {
               
               
               
-              let msg = `Not syncing the preference '${pref}' because it has no local ` +
+              let msg =
+                `Not syncing the preference '${pref}' because it has no local ` +
                 `control preference (${PREF_SYNC_PREFS_PREFIX}${pref}) and ` +
                 `the preference ${PREF_SYNC_PREFS_ARBITRARY} isn't true. ` +
                 `See ${PREFS_DOC_URL} for more information`;
@@ -246,7 +275,7 @@ PrefStore.prototype = {
   },
 
   async itemExists(id) {
-    return (id === PREFS_GUID);
+    return id === PREFS_GUID;
   },
 
   async createRecord(id, collection) {
@@ -302,7 +331,7 @@ PrefTracker.prototype = {
     this.modified = false;
   },
 
- __prefs: null,
+  __prefs: null,
   get _prefs() {
     if (!this.__prefs) {
       this.__prefs = new Preferences();
@@ -330,8 +359,10 @@ PrefTracker.prototype = {
         }
         
         
-        if (data.indexOf(PREF_SYNC_PREFS_PREFIX) == 0 ||
-            this._prefs.get(PREF_SYNC_PREFS_PREFIX + data, false)) {
+        if (
+          data.indexOf(PREF_SYNC_PREFS_PREFIX) == 0 ||
+          this._prefs.get(PREF_SYNC_PREFS_PREFIX + data, false)
+        ) {
           this.score += SCORE_INCREMENT_XLARGE;
           this.modified = true;
           this._log.trace("Preference " + data + " changed");

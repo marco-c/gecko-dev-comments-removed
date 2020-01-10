@@ -1,14 +1,19 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {AsyncShutdown} = ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AsyncShutdown } = ChromeUtils.import(
+  "resource://gre/modules/AsyncShutdown.jsm"
+);
 
-const {FirefoxAdapter} = ChromeUtils.import("resource://services-common/kinto-storage-adapter.js");
-
+const { FirefoxAdapter } = ChromeUtils.import(
+  "resource://services-common/kinto-storage-adapter.js"
+);
 
 add_task(async function test_sqlite_shutdown() {
-  const sqliteHandle = await FirefoxAdapter.openConnection({path: "kinto.sqlite"});
+  const sqliteHandle = await FirefoxAdapter.openConnection({
+    path: "kinto.sqlite",
+  });
 
   
   Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);

@@ -2,20 +2,31 @@
 
 
 
- 
 
 
 
 
-var EXPORTED_SYMBOLS = ["Address", "CreditCard", "DumpAddresses", "DumpCreditCards"];
 
-const {Logger} = ChromeUtils.import("resource://tps/logger.jsm");
+var EXPORTED_SYMBOLS = [
+  "Address",
+  "CreditCard",
+  "DumpAddresses",
+  "DumpCreditCards",
+];
 
-ChromeUtils.defineModuleGetter(this, "formAutofillStorage",
-                               "resource://formautofill/FormAutofillStorage.jsm");
+const { Logger } = ChromeUtils.import("resource://tps/logger.jsm");
 
-ChromeUtils.defineModuleGetter(this, "OSKeyStore",
-                               "resource://formautofill/OSKeyStore.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "formAutofillStorage",
+  "resource://formautofill/FormAutofillStorage.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "OSKeyStore",
+  "resource://formautofill/OSKeyStore.jsm"
+);
 
 class FormAutofillBase {
   constructor(props, subStorageName, fields) {
@@ -28,7 +39,7 @@ class FormAutofillBase {
       this.updateProps = props.changes;
     }
     for (const field of this._fields) {
-      this.props[field] = (field in props) ? props[field] : null;
+      this.props[field] = field in props ? props[field] : null;
     }
   }
 
@@ -51,13 +62,13 @@ class FormAutofillBase {
 
   async Update() {
     const storage = await this.getStorage();
-    const {guid} = await this.Find();
+    const { guid } = await this.Find();
     await storage.update(guid, this.updateProps, true);
   }
 
   async Remove() {
     const storage = await this.getStorage();
-    const {guid} = await this.Find();
+    const { guid } = await this.Find();
     storage.remove(guid);
   }
 }
@@ -110,8 +121,14 @@ class CreditCard extends FormAutofillBase {
 
   async Find() {
     const storage = await this.getStorage();
-    await Promise.all(storage._data.map(
-      async entry => entry["cc-number"] = await OSKeyStore.decrypt(entry["cc-number-encrypted"])));
+    await Promise.all(
+      storage._data.map(
+        async entry =>
+          (entry["cc-number"] = await OSKeyStore.decrypt(
+            entry["cc-number-encrypted"]
+          ))
+      )
+    );
     return storage._data.find(entry => {
       return this._fields.every(field => entry[field] === this.props[field]);
     });

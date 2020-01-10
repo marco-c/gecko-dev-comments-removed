@@ -4,9 +4,13 @@
 
 
 
-const {LogManager} = ChromeUtils.import("resource://services-common/logmanager.js");
-const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { LogManager } = ChromeUtils.import(
+  "resource://services-common/logmanager.js"
+);
+const { FileUtils } = ChromeUtils.import(
+  "resource://gre/modules/FileUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -15,7 +19,9 @@ function getAppenders(log) {
   equal(capps.length, 1, "should only have one console appender");
   let dapps = log.appenders.filter(app => app instanceof Log.DumpAppender);
   equal(dapps.length, 1, "should only have one dump appender");
-  let fapps = log.appenders.filter(app => app instanceof LogManager.StorageStreamAppender);
+  let fapps = log.appenders.filter(
+    app => app instanceof LogManager.StorageStreamAppender
+  );
   return [capps[0], dapps[0], fapps];
 }
 
@@ -39,7 +45,10 @@ add_task(async function test_noPrefs() {
 add_task(async function test_PrefChanges() {
   Services.prefs.setCharPref("log-manager.test.log.appender.console", "Trace");
   Services.prefs.setCharPref("log-manager.test.log.appender.dump", "Trace");
-  Services.prefs.setCharPref("log-manager.test.log.appender.file.level", "Trace");
+  Services.prefs.setCharPref(
+    "log-manager.test.log.appender.file.level",
+    "Trace"
+  );
   let lm = new LogManager("log-manager.test.", ["TestLog2"], "test");
 
   let log = Log.repository.getLogger("TestLog2");
@@ -50,7 +59,10 @@ add_task(async function test_PrefChanges() {
   
   Services.prefs.setCharPref("log-manager.test.log.appender.console", "Debug");
   Services.prefs.setCharPref("log-manager.test.log.appender.dump", "Debug");
-  Services.prefs.setCharPref("log-manager.test.log.appender.file.level", "Debug");
+  Services.prefs.setCharPref(
+    "log-manager.test.log.appender.file.level",
+    "Debug"
+  );
   equal(capp.level, Log.Level.Debug);
   equal(dapp.level, Log.Level.Debug);
   equal(fapp.level, Log.Level.Debug);
@@ -67,19 +79,31 @@ add_task(async function test_PrefChanges() {
 
 add_task(async function test_SharedLogs() {
   
-  Services.prefs.setCharPref("log-manager-1.test.log.appender.console", "Trace");
+  Services.prefs.setCharPref(
+    "log-manager-1.test.log.appender.console",
+    "Trace"
+  );
   Services.prefs.setCharPref("log-manager-1.test.log.appender.dump", "Trace");
-  Services.prefs.setCharPref("log-manager-1.test.log.appender.file.level", "Trace");
+  Services.prefs.setCharPref(
+    "log-manager-1.test.log.appender.file.level",
+    "Trace"
+  );
   let lm1 = new LogManager("log-manager-1.test.", ["TestLog3"], "test");
 
   
-  Services.prefs.setCharPref("log-manager-2.test.log.appender.console", "Debug");
+  Services.prefs.setCharPref(
+    "log-manager-2.test.log.appender.console",
+    "Debug"
+  );
   Services.prefs.setCharPref("log-manager-2.test.log.appender.dump", "Debug");
-  Services.prefs.setCharPref("log-manager-2.test.log.appender.file.level", "Debug");
+  Services.prefs.setCharPref(
+    "log-manager-2.test.log.appender.file.level",
+    "Debug"
+  );
   let lm2 = new LogManager("log-manager-2.test.", ["TestLog3"], "test");
 
   let log = Log.repository.getLogger("TestLog3");
-  let [capp, dapp ] = getAppenders(log);
+  let [capp, dapp] = getAppenders(log);
 
   
   
@@ -88,9 +112,15 @@ add_task(async function test_SharedLogs() {
 
   
   
-  Services.prefs.setCharPref("log-manager-1.test.log.appender.console", "Error");
+  Services.prefs.setCharPref(
+    "log-manager-1.test.log.appender.console",
+    "Error"
+  );
   Services.prefs.setCharPref("log-manager-1.test.log.appender.dump", "Error");
-  Services.prefs.setCharPref("log-manager-1.test.log.appender.file.level", "Error");
+  Services.prefs.setCharPref(
+    "log-manager-1.test.log.appender.file.level",
+    "Error"
+  );
 
   equal(capp.level, Log.Level.Debug);
   equal(dapp.level, Log.Level.Debug);
@@ -133,8 +163,14 @@ add_task(async function test_logFileErrorDefault() {
 
 
 add_task(async function test_logFileSuccess() {
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnError", false);
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", false);
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnError",
+    false
+  );
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnSuccess",
+    false
+  );
 
   let lm = new LogManager("log-manager.test.", ["TestLog2"], "test");
 
@@ -145,7 +181,10 @@ add_task(async function test_logFileSuccess() {
   checkLogFile(null);
 
   
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", true);
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnSuccess",
+    true
+  );
   log.info("an info message");
   await lm.resetFileLog();
 
@@ -174,8 +213,14 @@ add_task(async function test_logFileSuccess() {
 
 
 add_task(async function test_logFileError() {
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnError", false);
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", false);
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnError",
+    false
+  );
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnSuccess",
+    false
+  );
 
   let lm = new LogManager("log-manager.test.", ["TestLog2"], "test");
 
@@ -187,15 +232,24 @@ add_task(async function test_logFileError() {
   checkLogFile(null);
 
   
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", true);
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnSuccess",
+    true
+  );
   log.info("an info message");
   reason = await lm.resetFileLog();
   Assert.equal(reason, lm.SUCCESS_LOG_WRITTEN);
   checkLogFile("success");
 
   
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", false);
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnError", true);
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnSuccess",
+    false
+  );
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnError",
+    true
+  );
   log.error("an error message");
   reason = await lm.resetFileLog();
   Assert.equal(reason, lm.ERROR_LOG_WRITTEN);
@@ -236,8 +290,14 @@ function countLogFiles() {
 
 
 add_task(async function test_logFileError() {
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnError", true);
-  Services.prefs.setBoolPref("log-manager.test.log.appender.file.logOnSuccess", true);
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnError",
+    true
+  );
+  Services.prefs.setBoolPref(
+    "log-manager.test.log.appender.file.logOnSuccess",
+    true
+  );
 
   let lm = new LogManager("log-manager.test.", ["TestLog2"], "test");
 
@@ -252,7 +312,11 @@ add_task(async function test_logFileError() {
 
   Assert.equal(countLogFiles(), 2, "expect 2 log files");
   await lm.removeAllLogs();
-  Assert.equal(countLogFiles(), 0, "should be no log files after removing them");
+  Assert.equal(
+    countLogFiles(),
+    0,
+    "should be no log files after removing them"
+  );
 
   lm.finalize();
 });
