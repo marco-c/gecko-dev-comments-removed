@@ -25,7 +25,7 @@ function xr_promise_test(name, func, properties) {
 
 
 function xr_session_promise_test(
-    name, func, fakeDeviceInit, sessionMode, properties) {
+    name, func, fakeDeviceInit, sessionMode, sessionInit, properties) {
   let testDeviceController;
   let testSession;
 
@@ -39,7 +39,22 @@ function xr_session_promise_test(
 
   xr_promise_test(
       name,
-      (t) =>{
+      (t) => {
+          
+          
+          
+          
+          
+          
+          t.add_cleanup(async () => {
+                
+                if (testSession) {
+                  await testSession.end().catch(() => {});
+                }
+                
+                await navigator.xr.test.disconnectAllDevices();
+          });
+
           return navigator.xr.test.simulateDeviceConnection(fakeDeviceInit)
               .then((controller) => {
                 testDeviceController = controller;
@@ -48,7 +63,7 @@ function xr_session_promise_test(
               .then(() => new Promise((resolve, reject) => {
                       
                       navigator.xr.test.simulateUserActivation(() => {
-                        navigator.xr.requestSession(sessionMode)
+                        navigator.xr.requestSession(sessionMode, sessionInit || {})
                             .then((session) => {
                               testSession = session;
                               session.mode = sessionMode;
@@ -71,13 +86,8 @@ function xr_session_promise_test(
                                   ' with error: ' + err);
                             });
                       });
-                    }))
-              .then(() => {
-                
-                testSession.end().catch(() => {});
-                return navigator.xr.test.disconnectAllDevices();
-              })
-            },
+              }));
+      },
       properties);
 }
 
