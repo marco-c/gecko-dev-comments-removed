@@ -5,13 +5,14 @@
 #ifndef INDEX_H_
 #define INDEX_H_
 
+#include "ByteStream.h"
 #include "MediaData.h"
 #include "MediaResource.h"
-#include "TimeUnits.h"
 #include "MoofParser.h"
+#include "mozilla/Result.h"
 #include "MP4Interval.h"
-#include "ByteStream.h"
 #include "nsISupportsImpl.h"
+#include "TimeUnits.h"
 
 template <class T>
 class nsAutoPtr;
@@ -40,6 +41,14 @@ class SampleIterator {
   
   SampleDescriptionEntry* GetSampleDescriptionEntry();
   CencSampleEncryptionInfoEntry* GetSampleEncryptionEntry();
+
+  
+  
+  
+  
+  
+  
+  Result<CryptoScheme, const nsCString> GetEncryptionScheme();
 
   void Next();
   RefPtr<Index> mIndex;

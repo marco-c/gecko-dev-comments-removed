@@ -2,16 +2,17 @@
 
 
 
-#include "BufferReader.h"
 #include "Index.h"
-#include "MP4Interval.h"
-#include "MP4Metadata.h"
-#include "SinfParser.h"
-#include "nsAutoPtr.h"
-#include "mozilla/RefPtr.h"
 
 #include <algorithm>
 #include <limits>
+
+#include "BufferReader.h"
+#include "mozilla/RefPtr.h"
+#include "MP4Interval.h"
+#include "MP4Metadata.h"
+#include "nsAutoPtr.h"
+#include "SinfParser.h"
 
 using namespace mozilla::media;
 
@@ -118,37 +119,6 @@ already_AddRefed<MediaRawData> SampleIterator::GetNext() {
     return sample.forget();
   }
 
-  SampleDescriptionEntry* sampleDescriptionEntry = GetSampleDescriptionEntry();
-  if (!sampleDescriptionEntry) {
-    
-    
-    return nullptr;
-  }
-
-  
-  CryptoScheme cryptoScheme = CryptoScheme::None;
-  
-  
-  if (sampleDescriptionEntry->mIsEncryptedEntry) {
-    if (!moofParser->mSinf.IsValid()) {
-      
-      
-      return nullptr;
-    }
-    if (moofParser->mSinf.mDefaultEncryptionType == AtomType("cenc")) {
-      cryptoScheme = CryptoScheme::Cenc;
-      writer->mCrypto.mCryptoScheme = CryptoScheme::Cenc;
-    } else if (moofParser->mSinf.mDefaultEncryptionType == AtomType("cbcs")) {
-      cryptoScheme = CryptoScheme::Cbcs;
-      writer->mCrypto.mCryptoScheme = CryptoScheme::Cbcs;
-    } else {
-      MOZ_ASSERT_UNREACHABLE(
-          "Sample description entry reports sample is encrypted, but no "
-          "scheme, or an unsupported shceme is in use!");
-      return nullptr;
-    }
-  }
-
   
   
   
@@ -164,82 +134,90 @@ already_AddRefed<MediaRawData> SampleIterator::GetNext() {
     }
   }
 
-  if (sampleDescriptionEntry->mIsEncryptedEntry) {
-    writer->mCrypto.mCryptoScheme = cryptoScheme;
+  auto cryptoSchemeResult = GetEncryptionScheme();
+  if (cryptoSchemeResult.isErr()) {
+    
+    return nullptr;
+  }
+  CryptoScheme cryptoScheme = cryptoSchemeResult.unwrap();
+  if (cryptoScheme == CryptoScheme::None) {
+    
+    Next();
+    return sample.forget();
+  }
 
-    MOZ_ASSERT(writer->mCrypto.mKeyId.IsEmpty(),
-               "Sample should not already have a key ID");
-    MOZ_ASSERT(writer->mCrypto.mConstantIV.IsEmpty(),
-               "Sample should not already have a constant IV");
-    CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
-    if (sampleInfo) {
-      
-      
-      writer->mCrypto.mKeyId.AppendElements(sampleInfo->mKeyId);
-      writer->mCrypto.mIVSize = sampleInfo->mIVSize;
-      writer->mCrypto.mCryptByteBlock = sampleInfo->mCryptByteBlock;
-      writer->mCrypto.mSkipByteBlock = sampleInfo->mSkipByteBlock;
-      writer->mCrypto.mConstantIV.AppendElements(sampleInfo->mConsantIV);
-    } else {
-      
-      writer->mCrypto.mKeyId.AppendElements(moofParser->mSinf.mDefaultKeyID,
-                                            16);
-      writer->mCrypto.mIVSize = moofParser->mSinf.mDefaultIVSize;
-      writer->mCrypto.mCryptByteBlock =
-          moofParser->mSinf.mDefaultCryptByteBlock;
-      writer->mCrypto.mSkipByteBlock = moofParser->mSinf.mDefaultSkipByteBlock;
-      writer->mCrypto.mConstantIV.AppendElements(
-          moofParser->mSinf.mDefaultConstantIV);
-    }
+  writer->mCrypto.mCryptoScheme = cryptoScheme;
+  MOZ_ASSERT(writer->mCrypto.mCryptoScheme != CryptoScheme::None,
+             "Should have early returned if we don't have a crypto scheme!");
+  MOZ_ASSERT(writer->mCrypto.mKeyId.IsEmpty(),
+             "Sample should not already have a key ID");
+  MOZ_ASSERT(writer->mCrypto.mConstantIV.IsEmpty(),
+             "Sample should not already have a constant IV");
+  CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
+  if (sampleInfo) {
+    
+    
+    writer->mCrypto.mKeyId.AppendElements(sampleInfo->mKeyId);
+    writer->mCrypto.mIVSize = sampleInfo->mIVSize;
+    writer->mCrypto.mCryptByteBlock = sampleInfo->mCryptByteBlock;
+    writer->mCrypto.mSkipByteBlock = sampleInfo->mSkipByteBlock;
+    writer->mCrypto.mConstantIV.AppendElements(sampleInfo->mConsantIV);
+  } else {
+    
+    writer->mCrypto.mKeyId.AppendElements(moofParser->mSinf.mDefaultKeyID, 16);
+    writer->mCrypto.mIVSize = moofParser->mSinf.mDefaultIVSize;
+    writer->mCrypto.mCryptByteBlock = moofParser->mSinf.mDefaultCryptByteBlock;
+    writer->mCrypto.mSkipByteBlock = moofParser->mSinf.mDefaultSkipByteBlock;
+    writer->mCrypto.mConstantIV.AppendElements(
+        moofParser->mSinf.mDefaultConstantIV);
+  }
 
-    if ((writer->mCrypto.mIVSize == 0 &&
-         writer->mCrypto.mConstantIV.IsEmpty()) ||
-        (writer->mCrypto.mIVSize != 0 && s->mCencRange.IsEmpty())) {
-      
-      
-      
-      
-      
+  if ((writer->mCrypto.mIVSize == 0 && writer->mCrypto.mConstantIV.IsEmpty()) ||
+      (writer->mCrypto.mIVSize != 0 && s->mCencRange.IsEmpty())) {
+    
+    
+    
+    
+    
+    return nullptr;
+  }
+  
+  if (!s->mCencRange.IsEmpty()) {
+    
+    AutoTArray<uint8_t, 256> cencAuxInfo;
+    cencAuxInfo.SetLength(s->mCencRange.Length());
+    if (!mIndex->mSource->ReadAt(s->mCencRange.mStart, cencAuxInfo.Elements(),
+                                 cencAuxInfo.Length(), &bytesRead) ||
+        bytesRead != cencAuxInfo.Length()) {
       return nullptr;
     }
+    BufferReader reader(cencAuxInfo);
+    if (!reader.ReadArray(writer->mCrypto.mIV, writer->mCrypto.mIVSize)) {
+      return nullptr;
+    }
+
     
-    if (!s->mCencRange.IsEmpty()) {
-      
-      AutoTArray<uint8_t, 256> cencAuxInfo;
-      cencAuxInfo.SetLength(s->mCencRange.Length());
-      if (!mIndex->mSource->ReadAt(s->mCencRange.mStart, cencAuxInfo.Elements(),
-                                   cencAuxInfo.Length(), &bytesRead) ||
-          bytesRead != cencAuxInfo.Length()) {
-        return nullptr;
-      }
-      BufferReader reader(cencAuxInfo);
-      if (!reader.ReadArray(writer->mCrypto.mIV, writer->mCrypto.mIVSize)) {
+    auto res = reader.ReadU16();
+    if (res.isOk() && res.unwrap() > 0) {
+      uint16_t count = res.unwrap();
+
+      if (reader.Remaining() < count * 6) {
         return nullptr;
       }
 
-      
-      auto res = reader.ReadU16();
-      if (res.isOk() && res.unwrap() > 0) {
-        uint16_t count = res.unwrap();
-
-        if (reader.Remaining() < count * 6) {
+      for (size_t i = 0; i < count; i++) {
+        auto res_16 = reader.ReadU16();
+        auto res_32 = reader.ReadU32();
+        if (res_16.isErr() || res_32.isErr()) {
           return nullptr;
         }
-
-        for (size_t i = 0; i < count; i++) {
-          auto res_16 = reader.ReadU16();
-          auto res_32 = reader.ReadU32();
-          if (res_16.isErr() || res_32.isErr()) {
-            return nullptr;
-          }
-          writer->mCrypto.mPlainSizes.AppendElement(res_16.unwrap());
-          writer->mCrypto.mEncryptedSizes.AppendElement(res_32.unwrap());
-        }
-      } else {
-        
-        writer->mCrypto.mPlainSizes.AppendElement(0);
-        writer->mCrypto.mEncryptedSizes.AppendElement(sample->Size());
+        writer->mCrypto.mPlainSizes.AppendElement(res_16.unwrap());
+        writer->mCrypto.mEncryptedSizes.AppendElement(res_32.unwrap());
       }
+    } else {
+      
+      writer->mCrypto.mPlainSizes.AppendElement(0);
+      writer->mCrypto.mEncryptedSizes.AppendElement(sample->Size());
     }
   }
 
@@ -319,6 +297,59 @@ CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry() {
   
   return groupIndex > entries->Length() ? nullptr
                                         : &entries->ElementAt(groupIndex - 1);
+}
+
+Result<CryptoScheme, const nsCString> SampleIterator::GetEncryptionScheme() {
+  
+  MoofParser* moofParser = mIndex->mMoofParser.get();
+  if (!moofParser) {
+    
+    return CryptoScheme::None;
+  }
+
+  SampleDescriptionEntry* sampleDescriptionEntry = GetSampleDescriptionEntry();
+  if (!sampleDescriptionEntry) {
+    
+    
+    
+    
+    return mozilla::Err(NS_LITERAL_CSTRING(
+        "Could not determine encryption scheme due to bad index for sample "
+        "description entry."));
+  }
+
+  if (!sampleDescriptionEntry->mIsEncryptedEntry) {
+    return CryptoScheme::None;
+  }
+
+  if (!moofParser->mSinf.IsValid()) {
+    
+    
+    
+    return mozilla::Err(NS_LITERAL_CSTRING(
+        "Could not determine encryption scheme. Sample description entry "
+        "indicates encryption, but could not find associated sinf box."));
+  }
+
+  CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
+  if (sampleInfo && !sampleInfo->mIsEncrypted) {
+    
+    
+    return mozilla::Err(NS_LITERAL_CSTRING(
+        "Could not determine encryption scheme. Sample description entry "
+        "indicates encryption, but sample encryption entry indicates sample is "
+        "not encrypted. These should be consistent."));
+  }
+
+  if (moofParser->mSinf.mDefaultEncryptionType == AtomType("cenc")) {
+    return CryptoScheme::Cenc;
+  } else if (moofParser->mSinf.mDefaultEncryptionType == AtomType("cbcs")) {
+    return CryptoScheme::Cbcs;
+  }
+  return mozilla::Err(NS_LITERAL_CSTRING(
+      "Could not determine encryption scheme. Sample description entry "
+      "reports sample is encrypted, but no scheme, or an unsupported scheme "
+      "is in use."));
 }
 
 Sample* SampleIterator::Get() {
