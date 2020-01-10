@@ -1127,7 +1127,7 @@ static bool ClearLineClampEllipsis(nsBlockFrame* aFrame) {
     ++line;
   }
 
-  MOZ_ASSERT_UNREACHABLE("expected to find a line with HasLineClampEllipsis");
+  
   return true;
 }
 
