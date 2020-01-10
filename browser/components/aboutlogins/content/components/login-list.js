@@ -338,17 +338,20 @@ export default class LoginList extends HTMLElement {
 
 
   loginRemoved(login) {
-    this._logins[login.guid].listItem.remove();
-
     
     
     
     if (this._selectedGuid == login.guid) {
-      let index = this._loginGuidsSortedOrder.indexOf(login.guid);
-      if (this._loginGuidsSortedOrder.length > 1) {
+      let visibleListItems = this._list.querySelectorAll(
+        ".login-list-item[data-guid]:not([hidden])"
+      );
+      if (visibleListItems.length > 1) {
+        let index = [...visibleListItems].findIndex(listItem => {
+          return listItem.dataset.guid == login.guid;
+        });
         let newlySelectedIndex = index > 0 ? index - 1 : index + 1;
         let newlySelectedLogin = this._logins[
-          this._loginGuidsSortedOrder[newlySelectedIndex]
+          visibleListItems[newlySelectedIndex].dataset.guid
         ].login;
         window.dispatchEvent(
           new CustomEvent("AboutLoginsLoginSelected", {
@@ -359,16 +362,15 @@ export default class LoginList extends HTMLElement {
       }
     }
 
+    this._logins[login.guid].listItem.remove();
     delete this._logins[login.guid];
     this._loginGuidsSortedOrder = this._loginGuidsSortedOrder.filter(guid => {
       return guid != login.guid;
     });
 
-    let visibleLoginGuids = this._applyFilter();
-    this._updateVisibleLoginCount(visibleLoginGuids.size);
-
     
     
+    this.render();
   }
 
   
