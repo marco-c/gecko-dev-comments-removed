@@ -20,12 +20,9 @@ var UrlbarTestUtils = {
 
 
 
-  promiseSearchComplete(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return BrowserTestUtils.waitForPopupEvent(urlbar.panel, "shown").then(
-      async () => {
-        await urlbar.promiseSearchComplete();
-      }
+  async promiseSearchComplete(win) {
+    return BrowserTestUtils.waitForPopupEvent(win.gURLBar.panel, "shown").then(
+      () => win.gURLBar.lastQueryContextPromise
     );
   },
 
@@ -48,18 +45,17 @@ var UrlbarTestUtils = {
     selectionStart = -1,
     selectionEnd = -1,
   } = {}) {
-    let urlbar = getUrlbarAbstraction(window);
     await new Promise(resolve => waitForFocus(resolve, window));
-    let lastSearchString = urlbar.lastSearchString;
-    urlbar.focus();
-    urlbar.value = value;
+    let lastSearchString = window.gURLBar._lastSearchString;
+    window.gURLBar.inputField.focus();
+    window.gURLBar.value = value;
     if (selectionStart >= 0 && selectionEnd >= 0) {
-      urlbar.selectionEnd = selectionEnd;
-      urlbar.selectionStart = selectionStart;
+      window.gURLBar.selectionEnd = selectionEnd;
+      window.gURLBar.selectionStart = selectionStart;
     }
     if (fireInputEvent) {
       
-      urlbar.fireInputEvent();
+      this.fireInputEvent(window);
     } else {
       window.gURLBar.setAttribute("pageproxystate", "invalid");
     }
@@ -70,7 +66,7 @@ var UrlbarTestUtils = {
     
     
     if (!fireInputEvent || value == lastSearchString) {
-      urlbar.startSearch(value, selectionStart, selectionEnd);
+      this._startSearch(window.gURLBar, value, selectionStart, selectionEnd);
     }
     return this.promiseSearchComplete(window);
   },
@@ -84,8 +80,12 @@ var UrlbarTestUtils = {
 
 
   async waitForAutocompleteResultAt(win, index) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.promiseResultAt(index);
+    
+    await this.promiseSearchComplete(win);
+    if (index >= win.gURLBar.view._rows.length) {
+      throw new Error("Not enough results");
+    }
+    return win.gURLBar.view._rows.children[index];
   },
 
   
@@ -94,8 +94,7 @@ var UrlbarTestUtils = {
 
 
   getOneOffSearchButtons(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.oneOffSearchButtons;
+    return win.gURLBar.view.oneOffSearchButtons;
   },
 
   
@@ -104,291 +103,27 @@ var UrlbarTestUtils = {
 
 
   getOneOffSearchButtonsVisible(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.oneOffSearchButtonsVisible;
+    return this.getOneOffSearchButtons(win).style.display != "none";
+  },
+
+  _startSearch(urlbar, text, selectionStart = -1, selectionEnd = -1) {
+    urlbar.value = text;
+    if (selectionStart >= 0 && selectionEnd >= 0) {
+      urlbar.selectionEnd = selectionEnd;
+      urlbar.selectionStart = selectionStart;
+    }
+    urlbar.setAttribute("pageproxystate", "invalid");
+    urlbar.startQuery();
   },
 
   
-
 
 
 
 
 
   async getDetailsOfResultAt(win, index) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.getDetailsOfResultAt(index);
-  },
-
-  
-
-
-
-
-  getSelectedElement(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.getSelectedElement();
-  },
-
-  
-
-
-
-
-  getSelectedIndex(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.getSelectedIndex();
-  },
-
-  
-
-
-
-
-  setSelectedIndex(win, index) {
-    let urlbar = getUrlbarAbstraction(win);
-    urlbar.setSelectedIndex(index);
-  },
-
-  
-
-
-
-
-
-  getResultCount(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.getResultCount();
-  },
-
-  
-
-
-
-
-
-
-  getPanel(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.panel;
-  },
-
-  getDropMarker(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.dropMarker;
-  },
-
-  
-
-
-
-
-  promiseSuggestionsPresent(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.promiseSearchSuggestions();
-  },
-
-  
-
-
-
-
-
-  promiseSpeculativeConnections(httpserver, count) {
-    if (!httpserver) {
-      throw new Error("Must provide an http server");
-    }
-    return BrowserTestUtils.waitForCondition(
-      () => httpserver.connectionNumber == count,
-      "Waiting for speculative connection setup"
-    );
-  },
-
-  
-
-
-
-
-
-  promisePopupOpen(win, openFn) {
-    if (!openFn) {
-      throw new Error("openFn should be supplied to promisePopupOpen");
-    }
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.promisePopupOpen(openFn);
-  },
-
-  
-
-
-
-
-
-
-  promisePopupClose(win, closeFn = null) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.promisePopupClose(closeFn);
-  },
-
-  
-
-
-
-  isPopupOpen(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.isPopupOpen();
-  },
-
-  
-
-
-
-
-
-  promiseUserContextId(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.promiseUserContextId();
-  },
-
-  
-
-
-
-  fireInputEvent(win) {
-    getUrlbarAbstraction(win).fireInputEvent();
-  },
-};
-
-
-
-
-var gUrlbarAbstractions = new WeakMap();
-
-function getUrlbarAbstraction(win) {
-  if (!gUrlbarAbstractions.has(win)) {
-    gUrlbarAbstractions.set(win, new UrlbarAbstraction(win));
-  }
-  return gUrlbarAbstractions.get(win);
-}
-
-
-
-
-
-class UrlbarAbstraction {
-  constructor(win) {
-    if (!win) {
-      throw new Error("Must provide a browser window");
-    }
-    this.urlbar = win.gURLBar;
-    this.window = win;
-    this.window.addEventListener(
-      "unload",
-      () => {
-        this.urlbar = null;
-        this.window = null;
-      },
-      { once: true }
-    );
-  }
-
-  
-
-
-  focus() {
-    this.urlbar.inputField.focus();
-  }
-
-  
-
-
-  fireInputEvent() {
-    
-    
-    let event = new InputEvent("input", {
-      data: this.urlbar.value[this.urlbar.value.length - 1] || null,
-    });
-    this.urlbar.inputField.dispatchEvent(event);
-  }
-
-  set value(val) {
-    this.urlbar.value = val;
-  }
-  get value() {
-    return this.urlbar.value;
-  }
-
-  get lastSearchString() {
-    return this.urlbar._lastSearchString;
-  }
-
-  get panel() {
-    return this.urlbar.panel;
-  }
-
-  get dropMarker() {
-    return this.window.document.getAnonymousElementByAttribute(
-      this.urlbar.textbox,
-      "anonid",
-      "historydropmarker"
-    );
-  }
-
-  get oneOffSearchButtons() {
-    return this.urlbar.view.oneOffSearchButtons;
-  }
-
-  get oneOffSearchButtonsVisible() {
-    return this.oneOffSearchButtons.style.display != "none";
-  }
-
-  startSearch(text, selectionStart = -1, selectionEnd = -1) {
-    this.urlbar.value = text;
-    if (selectionStart >= 0 && selectionEnd >= 0) {
-      this.urlbar.selectionEnd = selectionEnd;
-      this.urlbar.selectionStart = selectionStart;
-    }
-    this.urlbar.setAttribute("pageproxystate", "invalid");
-    this.urlbar.startQuery();
-  }
-
-  promiseSearchComplete() {
-    return this.urlbar.lastQueryContextPromise;
-  }
-
-  async promiseUserContextId() {
-    const defaultId = Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
-    let context = await this.urlbar.lastQueryContextPromise;
-    return context.userContextId || defaultId;
-  }
-
-  async promiseResultAt(index) {
-    
-    await this.promiseSearchComplete();
-    if (index >= this.urlbar.view._rows.length) {
-      throw new Error("Not enough results");
-    }
-    return this.urlbar.view._rows.children[index];
-  }
-
-  getSelectedElement() {
-    return this.urlbar.view._selected || null;
-  }
-
-  getSelectedIndex() {
-    return this.urlbar.view.selectedIndex;
-  }
-
-  setSelectedIndex(index) {
-    return (this.urlbar.view.selectedIndex = index);
-  }
-
-  getResultCount() {
-    return this.urlbar.view._rows.children.length;
-  }
-
-  async getDetailsOfResultAt(index) {
-    let element = await this.promiseResultAt(index);
+    let element = await this.waitForAutocompleteResultAt(win, index);
     let details = {};
     let result = element.result;
     let { url, postData } = UrlbarUtils.getUrlFromResult(result);
@@ -403,7 +138,7 @@ class UrlbarAbstraction {
     let actions = element.getElementsByClassName("urlbarView-action");
     let urls = element.getElementsByClassName("urlbarView-url");
     let typeIcon = element.querySelector(".urlbarView-type-icon");
-    let typeIconStyle = this.window.getComputedStyle(typeIcon);
+    let typeIconStyle = win.getComputedStyle(typeIcon);
     details.displayed = {
       title: element.getElementsByClassName("urlbarView-title")[0].textContent,
       action: actions.length > 0 ? actions[0].textContent : null,
@@ -430,44 +165,162 @@ class UrlbarAbstraction {
       details.keyword = result.payload.keyword;
     }
     return details;
-  }
+  },
 
-  async promiseSearchSuggestions() {
+  
+
+
+
+
+  getSelectedElement(win) {
+    return win.gURLBar.view._selected || null;
+  },
+
+  
+
+
+
+
+  getSelectedIndex(win) {
+    return win.gURLBar.view.selectedIndex;
+  },
+
+  
+
+
+
+
+  setSelectedIndex(win, index) {
+    win.gURLBar.view.selectedIndex = index;
+  },
+
+  
+
+
+
+
+
+  getResultCount(win) {
+    return win.gURLBar.view._rows.children.length;
+  },
+
+  
+
+
+
+
+
+
+  getPanel(win) {
+    return win.gURLBar.panel;
+  },
+
+  getDropMarker(win) {
+    return win.document.getAnonymousElementByAttribute(
+      win.gURLBar.textbox,
+      "anonid",
+      "historydropmarker"
+    );
+  },
+
+  
+
+
+
+
+  promiseSuggestionsPresent(win) {
     
     
     
     
-    return this.promiseSearchComplete().then(context => {
+    return this.promiseSearchComplete(win).then(context => {
       
-      if (
-        !context.results.some(
-          r => r.type == UrlbarUtils.RESULT_TYPE.SEARCH && r.payload.suggestion
-        )
-      ) {
+      let hasSearchSuggestion = context.results.some(
+        r => r.type == UrlbarUtils.RESULT_TYPE.SEARCH && r.payload.suggestion
+      );
+      if (!hasSearchSuggestion) {
         throw new Error("Cannot find a search suggestion");
       }
     });
-  }
+  },
 
-  async promisePopupOpen(openFn) {
+  
+
+
+
+
+
+  promiseSpeculativeConnections(httpserver, count) {
+    if (!httpserver) {
+      throw new Error("Must provide an http server");
+    }
+    return BrowserTestUtils.waitForCondition(
+      () => httpserver.connectionNumber == count,
+      "Waiting for speculative connection setup"
+    );
+  },
+
+  
+
+
+
+
+
+  async promisePopupOpen(win, openFn) {
+    if (!openFn) {
+      throw new Error("openFn should be supplied to promisePopupOpen");
+    }
     await openFn();
-    return BrowserTestUtils.waitForPopupEvent(this.panel, "shown");
-  }
+    return BrowserTestUtils.waitForPopupEvent(this.getPanel(win), "shown");
+  },
 
-  closePopup() {
-    this.urlbar.view.close();
-  }
+  
 
-  async promisePopupClose(closeFn) {
+
+
+
+
+
+  async promisePopupClose(win, closeFn = null) {
     if (closeFn) {
       await closeFn();
     } else {
-      this.closePopup();
+      win.gURLBar.view.close();
     }
-    return BrowserTestUtils.waitForPopupEvent(this.panel, "hidden");
-  }
+    return BrowserTestUtils.waitForPopupEvent(this.getPanel(win), "hidden");
+  },
 
-  isPopupOpen() {
-    return this.panel.state == "open" || this.panel.state == "showing";
-  }
-}
+  
+
+
+
+  isPopupOpen(win) {
+    let panel = this.getPanel(win);
+    return panel.state == "open" || panel.state == "showing";
+  },
+
+  
+
+
+
+
+
+  async promiseUserContextId(win) {
+    const defaultId = Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
+    let context = await win.gURLBar.lastQueryContextPromise;
+    return context.userContextId || defaultId;
+  },
+
+  
+
+
+
+  fireInputEvent(win) {
+    
+    
+    let event = new InputEvent("input", {
+      data: win.gURLBar.value[win.gURLBar.value.length - 1] || null,
+    });
+    win.gURLBar.inputField.dispatchEvent(event);
+  },
+};
