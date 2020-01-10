@@ -35,6 +35,11 @@ XPCOMUtils.defineLazyServiceGetter(
 
 const PREF_PDFJS_ENABLED_CACHE_STATE = "pdfjs.enabledCache.state";
 
+
+
+
+
+
 let ACTORS = {
   BrowserTab: {
     parent: {
