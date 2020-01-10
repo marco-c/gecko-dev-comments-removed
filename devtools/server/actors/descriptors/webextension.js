@@ -83,16 +83,17 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
         manifestURL: policy && policy.getURL("manifest.json"),
         name: this.addon.name,
         temporarilyInstalled: this.addon.temporarilyInstalled,
+        traits: {
+          
+          
+          isDescriptor: true,
+        },
         type: this.addon.type,
         url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
         warnings: ExtensionParent.DebugUtils.getExtensionManifestWarnings(
           this.addonId
         ),
       };
-    },
-
-    connect() {
-      return this.getTarget();
     },
 
     getTarget() {
