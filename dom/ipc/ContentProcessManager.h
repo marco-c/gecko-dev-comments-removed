@@ -51,12 +51,6 @@ class ContentProcessManager final {
   
 
 
-  nsTArray<TabContext> GetTabContextByContentProcess(
-      const ContentParentId& aChildCpId);
-
-  
-
-
   ContentParentId GetTabProcessId(const TabId& aChildTabId);
 
   
