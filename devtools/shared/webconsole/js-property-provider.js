@@ -34,6 +34,7 @@ const OPEN_CLOSE_BODY = {
 };
 
 const NO_AUTOCOMPLETE_PREFIXES = ["var", "const", "let", "function", "class"];
+const OPERATOR_CHARS_SET = new Set(";,:=<>+-*/%|&^~?!".split(""));
 
 function hasArrayIndex(str) {
   return /\[\d+\]$/.test(str);
@@ -88,9 +89,21 @@ function analyzeInputString(str) {
     };
   };
 
-  for (let i = 0; i < characters.length; i++) {
-    c = characters[i];
+  const TIMEOUT = 2500;
+  const startingTime = Date.now();
 
+  for (let i = 0; i < characters.length; i++) {
+    
+    
+    
+    
+    if (Date.now() - startingTime > TIMEOUT) {
+      return {
+        err: "timeout",
+      };
+    }
+
+    c = characters[i];
     switch (state) {
       
       case STATE_NORMAL:
@@ -100,7 +113,7 @@ function analyzeInputString(str) {
           state = STATE_QUOTE;
         } else if (c == "`") {
           state = STATE_TEMPLATE_LITERAL;
-        } else if (";,:=<>+-*/%|&^~?!".split("").includes(c)) {
+        } else if (OPERATOR_CHARS_SET.has(c)) {
           
           start = i + 1;
         } else if (c == " ") {
@@ -276,6 +289,7 @@ function JSPropertyProvider({
 
   
   if (err) {
+    console.error("Failed to analyze input string", err);
     return null;
   }
 
