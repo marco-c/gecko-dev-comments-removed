@@ -13,8 +13,16 @@ use crate::values::specified::grid::parse_line_names;
 use crate::values::{CSSFloat, CustomIdent};
 use cssparser::Parser;
 use std::fmt::{self, Write};
-use std::{mem, usize};
+use std::{cmp, mem, usize};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+
+
+
+
+
+pub const MIN_GRID_LINE: i32 = -10000;
+
+pub const MAX_GRID_LINE: i32 = 10000;
 
 
 
@@ -33,13 +41,19 @@ use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 #[repr(C)]
 pub struct GenericGridLine<Integer> {
     
-    pub is_span: bool,
-    
     
     
     pub ident: Atom,
     
+    
+    
+    
+    
+    
+    
     pub line_num: Integer,
+    
+    pub is_span: bool,
 }
 
 pub use self::GenericGridLine as GridLine;
@@ -128,11 +142,12 @@ impl Parse for GridLine<specified::Integer> {
                 grid_line.is_span = true;
             } else if let Ok(i) = input.try(|i| specified::Integer::parse(context, i)) {
                 
-                if i.value() == 0 || val_before_span || grid_line.line_num.value() != 0 {
+                let value = i.value();
+                if value == 0 || val_before_span || !grid_line.line_num.is_zero() {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
 
-                grid_line.line_num = i;
+                grid_line.line_num = specified::Integer::new(cmp::max(MIN_GRID_LINE, cmp::min(value, MAX_GRID_LINE)));
             } else if let Ok(name) = input.try(|i| i.expect_ident_cloned()) {
                 if val_before_span || grid_line.ident != atom!("") {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));

@@ -46,9 +46,6 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
- const int32_t nsStyleGridLine::kMinLine;
- const int32_t nsStyleGridLine::kMaxLine;
-
 static const nscoord kMediumBorderWidth = nsPresContext::CSSPixelsToAppUnits(3);
 
 
