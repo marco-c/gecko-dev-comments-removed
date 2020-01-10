@@ -33,16 +33,6 @@ enum FailureAction { eCrash = 0, eLogToConsole };
 }  
 }  
 
-
-
-struct nsLayoutStylesheetCacheShm final {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsLayoutStylesheetCacheShm)
-  base::SharedMemory mShm;
-
- private:
-  ~nsLayoutStylesheetCacheShm() = default;
-};
-
 class nsLayoutStylesheetCache final : public nsIObserver,
                                       public nsIMemoryReporter {
  public:
@@ -88,7 +78,7 @@ class nsLayoutStylesheetCache final : public nsIObserver,
   
   
   uintptr_t GetSharedMemoryAddress() {
-    return mSharedMemory ? uintptr_t(mSharedMemory->mShm.memory()) : 0;
+    return sSharedMemory ? uintptr_t(sSharedMemory->memory()) : 0;
   }
 
   
@@ -144,15 +134,11 @@ class nsLayoutStylesheetCache final : public nsIObserver,
   RefPtr<mozilla::StyleSheet> mUserContentSheet;
 
   
-  RefPtr<Shm> mSharedMemory;
+  static mozilla::StaticAutoPtr<base::SharedMemory> sSharedMemory;
 
   
   
-  size_t mUsedSharedMemory;
-
-  
-  
-  static mozilla::StaticRefPtr<Shm> sSharedMemory;
+  static size_t sUsedSharedMemory;
 };
 
 #endif
