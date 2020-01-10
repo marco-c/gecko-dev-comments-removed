@@ -146,6 +146,14 @@ class ProfilingStackFrame {
       pcOffsetIfJS_;
 
   
+  
+  
+  
+  mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      realmID_;
+
+  
   Atomic<uint32_t, ReleaseAcquire, recordreplay::Behavior::DontPreserve>
       flagsAndCategoryPair_;
 
@@ -158,6 +166,8 @@ class ProfilingStackFrame {
     spOrScript = spScript;
     int32_t offsetIfJS = other.pcOffsetIfJS_;
     pcOffsetIfJS_ = offsetIfJS;
+    int64_t realmID = other.realmID_;
+    realmID_ = realmID;
     uint32_t flagsAndCategory = other.flagsAndCategoryPair_;
     flagsAndCategoryPair_ = flagsAndCategory;
     return *this;
@@ -280,11 +290,13 @@ class ProfilingStackFrame {
   }
 
   void initJsFrame(const char* aLabel, const char* aDynamicString,
-                   void*  aScript, int32_t aOffset) {
+                   void*  aScript, int32_t aOffset,
+                   uint64_t aRealmID) {
     label_ = aLabel;
     dynamicString_ = aDynamicString;
     spOrScript = aScript;
     pcOffsetIfJS_ = aOffset;
+    realmID_ = aRealmID;
     flagsAndCategoryPair_ =
         uint32_t(Flags::IS_JS_FRAME) | (uint32_t(ProfilingCategoryPair::JS)
                                         << uint32_t(Flags::FLAGS_BITCOUNT));
@@ -299,6 +311,8 @@ class ProfilingStackFrame {
     return ProfilingCategoryPair(flagsAndCategoryPair_ >>
                                  uint32_t(Flags::FLAGS_BITCOUNT));
   }
+
+  uint64_t realmID() const { return realmID_; }
 
   void* stackAddress() const {
     MOZ_ASSERT(!isJsFrame());
@@ -396,7 +410,7 @@ class ProfilingStack final {
   }
 
   void pushJsOffsetFrame(const char* label, const char* dynamicString,
-                         void* script, int32_t offset) {
+                         void* script, int32_t offset, uint64_t aRealmID) {
     
     
     uint32_t oldStackPointer = stackPointer;
@@ -404,7 +418,8 @@ class ProfilingStack final {
     if (MOZ_UNLIKELY(oldStackPointer >= capacity)) {
       ensureCapacitySlow();
     }
-    frames[oldStackPointer].initJsFrame(label, dynamicString, script, offset);
+    frames[oldStackPointer].initJsFrame(label, dynamicString, script, offset,
+                                        aRealmID);
 
     
     stackPointer = stackPointer + 1;
