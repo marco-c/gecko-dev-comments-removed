@@ -765,7 +765,8 @@ class Output(object):
         for name in names:
             _subtests[name]['value'] = round(filters.median(_subtests[name]['replicates']), 2)
             subtests.append(_subtests[name])
-            if name.endswith("dropped_frames"):
+            
+            if name.endswith("X_dropped_frames"):
                 vals.append([_subtests[name]['value'], name])
 
         return subtests, vals
