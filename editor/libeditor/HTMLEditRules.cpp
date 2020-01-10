@@ -187,6 +187,7 @@ HTMLEditRules::HTMLEditRules()
       mReturnInEmptyLIKillsList(false),
       mDidDeleteSelection(false),
       mDidRangedDelete(false),
+      mDidEmptyParentBlocksRemoved(false),
       mRestoreContentEditableCount(false),
       mJoinOffset(0) {
   mIsHTMLEditRules = true;
@@ -199,6 +200,7 @@ void HTMLEditRules::InitFields() {
   mReturnInEmptyLIKillsList = true;
   mDidDeleteSelection = false;
   mDidRangedDelete = false;
+  mDidEmptyParentBlocksRemoved = false;
   mRestoreContentEditableCount = false;
   mUtilRange = nullptr;
   mJoinOffset = 0;
@@ -492,8 +494,11 @@ nsresult HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     
     
     
+    
+    
+    
     if (aEditSubAction == EditSubAction::eDeleteSelectedContent &&
-        mDidRangedDelete) {
+        mDidRangedDelete && !mDidEmptyParentBlocksRemoved) {
       nsresult rv = InsertBRIfNeeded();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -588,16 +593,25 @@ nsresult HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     }
 
     
-    if (aEditSubAction == EditSubAction::eInsertText ||
-        aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-        aEditSubAction == EditSubAction::eDeleteSelectedContent ||
-        aEditSubAction == EditSubAction::eInsertLineBreak ||
-        aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
-        aEditSubAction == EditSubAction::ePasteHTMLContent ||
-        aEditSubAction == EditSubAction::eInsertHTMLSource) {
-      rv = AdjustSelection(aDirection);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+    
+    
+    
+    if (!mDidEmptyParentBlocksRemoved) {
+      switch (aEditSubAction) {
+        case EditSubAction::eInsertText:
+        case EditSubAction::eInsertTextComingFromIME:
+        case EditSubAction::eDeleteSelectedContent:
+        case EditSubAction::eInsertLineBreak:
+        case EditSubAction::eInsertParagraphSeparator:
+        case EditSubAction::ePasteHTMLContent:
+        case EditSubAction::eInsertHTMLSource:
+          rv = AdjustSelection(aDirection);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return rv;
+          }
+          break;
+        default:
+          break;
       }
     }
 
@@ -3097,6 +3111,39 @@ nsresult HTMLEditRules::WillDeleteSelection(
           }
         }
       }
+    }
+  }
+
+  
+  
+  if (HTMLEditorRef().GetEditAction() == EditAction::eDrop) {
+    MOZ_ASSERT(startNode == endNode);
+    MOZ_ASSERT(startOffset == endOffset);
+    {
+      AutoTrackDOMPoint startTracker(HTMLEditorRef().RangeUpdaterRef(),
+                                     address_of(startNode), &startOffset);
+      AutoTrackDOMPoint endTracker(HTMLEditorRef().RangeUpdaterRef(),
+                                   address_of(endNode), &endOffset);
+
+      EditorDOMPoint atStart(startNode, startOffset);
+      nsresult rv = MOZ_KnownLive(HTMLEditorRef())
+                        .DeleteParentBlocksWithTransactionIfEmpty(atStart);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      mDidEmptyParentBlocksRemoved = rv == NS_OK;
+    }
+    
+    
+    if (mDidEmptyParentBlocksRemoved) {
+      rv = SelectionRefPtr()->Collapse(startNode, startOffset);
+      if (NS_WARN_IF(!CanHandleEditAction())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      return NS_OK;
     }
   }
 

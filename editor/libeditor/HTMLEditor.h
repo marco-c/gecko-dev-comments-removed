@@ -625,6 +625,23 @@ class HTMLEditor final : public TextEditor,
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  DeleteParentBlocksWithTransactionIfEmpty(const EditorDOMPoint& aPoint);
+
+  
+
+
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult InsertTextWithTransaction(
       Document& aDocument, const nsAString& aStringToInsert,
