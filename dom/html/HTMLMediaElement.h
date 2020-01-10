@@ -1346,9 +1346,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   RefPtr<MediaStreamRenderer> mMediaStreamRenderer;
 
   
-  bool mSrcStreamTracksAvailable = false;
-
-  
   
   Watchable<bool> mSrcStreamPlaybackEnded = {
       false, "HTMLMediaElement::mSrcStreamPlaybackEnded"};
