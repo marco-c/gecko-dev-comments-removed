@@ -23,11 +23,11 @@
   
 
   
-  -moz-column-count: inherit;
-  -moz-column-width: inherit;
-  -moz-column-gap: inherit;
-  -moz-column-rule: inherit;
-  -moz-column-fill: inherit;
+  column-count: inherit;
+  column-width: inherit;
+  column-gap: inherit;
+  column-rule: inherit;
+  column-fill: inherit;
   
   flex-direction: inherit;
   flex-wrap: inherit;
@@ -642,11 +642,11 @@ button {
   
 
   
-  -moz-column-count: inherit;
-  -moz-column-width: inherit;
-  -moz-column-gap: inherit;
-  -moz-column-rule: inherit;
-  -moz-column-fill: inherit;
+  column-count: inherit;
+  column-width: inherit;
+  column-gap: inherit;
+  column-rule: inherit;
+  column-fill: inherit;
   
   flex-direction: inherit;
   flex-wrap: inherit;
