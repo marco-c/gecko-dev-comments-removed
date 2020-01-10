@@ -3,8 +3,7 @@
 
 function run_test() {
   var nsIFile = Ci.nsIFile;
-  var root = Cc["@mozilla.org/file/local;1"].
-              createInstance(nsIFile);
+  var root = Cc["@mozilla.org/file/local;1"].createInstance(nsIFile);
 
   
   

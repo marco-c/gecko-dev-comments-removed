@@ -1,11 +1,12 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 function TestProcessDirective() {}
 TestProcessDirective.prototype = {
-
   
   QueryInterface: ChromeUtils.generateQI([Ci.nsIProperty]),
   contractID: "@mozilla.org/xpcom/tests/MainProcessDirectiveTest;1",
