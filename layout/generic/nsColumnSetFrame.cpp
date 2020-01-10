@@ -311,11 +311,6 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
     colBSize = aReflowInput.ComputedBSize();
   } else if (aReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE) {
     colBSize = std::min(colBSize, aReflowInput.ComputedMaxBSize());
-  } else if (StaticPrefs::layout_css_column_span_enabled() &&
-             aReflowInput.mCBReflowInput->ComputedMaxBSize() !=
-                 NS_UNCONSTRAINEDSIZE) {
-    colBSize =
-        std::min(colBSize, aReflowInput.mCBReflowInput->ComputedMaxBSize());
   }
 
   nscoord colGap =
@@ -1064,6 +1059,8 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
     }
 
     if (aConfig.mKnownInfeasibleBSize >= availableContentBSize) {
+      
+      
       break;
     }
 
@@ -1124,7 +1121,29 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
     if (aConfig.mKnownInfeasibleBSize >= availableContentBSize) {
       aConfig.mColMaxBSize = availableContentBSize;
       if (mLastBalanceBSize == availableContentBSize) {
-        skip = true;
+        if (StaticPrefs::layout_css_column_span_enabled() &&
+            aUnboundedLastColumn &&
+            !aReflowInput.mCBReflowInput->mFrame->HasAnyStateBits(
+                NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          aConfig = ChooseColumnStrategy(aReflowInput, true);
+        } else {
+          skip = true;
+        }
       }
     } else {
       aConfig.mColMaxBSize = aConfig.mKnownFeasibleBSize;

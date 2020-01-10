@@ -3604,6 +3604,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     
     Maybe<ReflowInput> blockReflowInput;
     Maybe<LogicalSize> cbSize;
+    LogicalSize availSize = availSpace.Size(wm);
     if (Style()->GetPseudoType() == PseudoStyleType::columnContent) {
       
       
@@ -3628,11 +3629,39 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
           frame->IsColumnSetWrapperFrame()) {
         frame->AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
       }
+    } else if (IsColumnSetWrapperFrame()) {
+      
+      
+      
+      
+      if (frame->IsColumnSetFrame()) {
+        if (availSize.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
+          
+          
+          availSize.BSize(wm) -= aState.BorderPadding().BEnd(wm);
+        }
+
+        nscoord contentBSize = aState.mReflowInput.ComputedBSize();
+        if (aState.mReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE) {
+          contentBSize =
+              std::min(contentBSize, aState.mReflowInput.ComputedMaxBSize());
+        }
+        if (contentBSize != NS_UNCONSTRAINEDSIZE) {
+          
+          
+          
+          
+          const nscoord availContentBSize = std::max(
+              0, contentBSize - (aState.mBCoord - aState.ContentBStart()));
+          availSize.BSize(wm) =
+              std::min(availSize.BSize(wm), availContentBSize);
+        }
+      }
     }
 
-    blockReflowInput.emplace(
-        aState.mPresContext, aState.mReflowInput, frame,
-        availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm), cbSize);
+    blockReflowInput.emplace(aState.mPresContext, aState.mReflowInput, frame,
+                             availSize.ConvertTo(frame->GetWritingMode(), wm),
+                             cbSize);
 
     nsFloatManager::SavedState floatManagerState;
     nsReflowStatus frameReflowStatus;
