@@ -4662,7 +4662,9 @@ pref("dom.events.testing.asyncClipboard", false);
 
 pref("dom.datatransfer.mozAtAPIs", false);
 
-pref("fission.rebuild_frameloaders_on_remoteness_change", true);
+
+
+pref("fission.rebuild_frameloaders_on_remoteness_change", false);
 
 
 
