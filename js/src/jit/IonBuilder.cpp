@@ -1142,6 +1142,7 @@ AbortReasonOr<Ok> IonBuilder::buildInline(IonBuilder* callerBuilder,
 void IonBuilder::runTask() {
   
   JSRuntime* rt = script()->runtimeFromAnyThread();
+  AutoSetHelperThreadContext usesContext;
 
   TraceLoggerThread* logger = TraceLoggerForCurrentThread();
   TraceLoggerEvent event(TraceLogger_AnnotateScripts, script());
