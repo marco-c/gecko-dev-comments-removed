@@ -1482,14 +1482,7 @@ XDRResult XDRScriptConst(XDRState<mode>* xdr, MutableHandleValue vp);
 
 
 
-
-
-
-
-
-
-
-class alignas(JS::Value) PrivateScriptData final {
+class alignas(uintptr_t) PrivateScriptData final {
   struct PackedOffsets {
     static constexpr size_t SCALE = sizeof(uint32_t);
     static constexpr size_t MAX_OFFSET = 0b1111;
@@ -1498,7 +1491,7 @@ class alignas(JS::Value) PrivateScriptData final {
     uint32_t scopesOffset : 8;
 
     
-    uint32_t constsSpanOffset : 4;
+    uint32_t bigintsSpanOffset : 4;
     uint32_t objectsSpanOffset : 4;
     uint32_t tryNotesSpanOffset : 4;
     uint32_t scopeNotesSpanOffset : 4;
@@ -1553,12 +1546,12 @@ class alignas(JS::Value) PrivateScriptData final {
   void initElements(size_t offset, size_t length);
 
   
-  static size_t AllocationSize(uint32_t nscopes, uint32_t nconsts,
+  static size_t AllocationSize(uint32_t nscopes, uint32_t nbigints,
                                uint32_t nobjects, uint32_t ntrynotes,
                                uint32_t nscopenotes, uint32_t nresumeoffsets);
 
   
-  PrivateScriptData(uint32_t nscopes_, uint32_t nconsts, uint32_t nobjects,
+  PrivateScriptData(uint32_t nscopes_, uint32_t nbigints, uint32_t nobjects,
                     uint32_t ntrynotes, uint32_t nscopenotes,
                     uint32_t nresumeoffsets);
 
@@ -1569,8 +1562,8 @@ class alignas(JS::Value) PrivateScriptData final {
         packedOffsetToPointer<GCPtrScope>(packedOffsets.scopesOffset);
     return mozilla::MakeSpan(base, nscopes);
   }
-  mozilla::Span<GCPtrValue> consts() {
-    return packedOffsetToSpan<GCPtrValue>(packedOffsets.constsSpanOffset);
+  mozilla::Span<GCPtrBigInt> bigints() {
+    return packedOffsetToSpan<GCPtrBigInt>(packedOffsets.bigintsSpanOffset);
   }
   mozilla::Span<GCPtrObject> objects() {
     return packedOffsetToSpan<GCPtrObject>(packedOffsets.objectsSpanOffset);
@@ -1586,7 +1579,7 @@ class alignas(JS::Value) PrivateScriptData final {
   }
 
   
-  bool hasConsts() const { return packedOffsets.constsSpanOffset != 0; }
+  bool hasBigInts() const { return packedOffsets.bigintsSpanOffset != 0; }
   bool hasObjects() const { return packedOffsets.objectsSpanOffset != 0; }
   bool hasTryNotes() const { return packedOffsets.tryNotesSpanOffset != 0; }
   bool hasScopeNotes() const { return packedOffsets.scopeNotesSpanOffset != 0; }
@@ -1601,7 +1594,7 @@ class alignas(JS::Value) PrivateScriptData final {
   
   
   static PrivateScriptData* new_(JSContext* cx, uint32_t nscopes,
-                                 uint32_t nconsts, uint32_t nobjects,
+                                 uint32_t nbigints, uint32_t nobjects,
                                  uint32_t ntrynotes, uint32_t nscopenotes,
                                  uint32_t nresumeoffsets, uint32_t* dataSize);
 
@@ -2114,7 +2107,7 @@ class JSScript : public js::gc::TenuredCell {
   
   static bool createPrivateScriptData(JSContext* cx,
                                       JS::Handle<JSScript*> script,
-                                      uint32_t nscopes, uint32_t nconsts,
+                                      uint32_t nscopes, uint32_t nbigints,
                                       uint32_t nobjects, uint32_t ntrynotes,
                                       uint32_t nscopenotes,
                                       uint32_t nresumeoffsets);
@@ -2815,7 +2808,7 @@ class JSScript : public js::gc::TenuredCell {
 
   size_t dataSize() const { return dataSize_; }
 
-  bool hasConsts() const { return data_->hasConsts(); }
+  bool hasBigInts() const { return data_->hasBigInts(); }
   bool hasObjects() const { return data_->hasObjects(); }
   bool hasTrynotes() const { return data_->hasTryNotes(); }
   bool hasScopeNotes() const { return data_->hasScopeNotes(); }
@@ -2823,9 +2816,9 @@ class JSScript : public js::gc::TenuredCell {
 
   mozilla::Span<const js::GCPtrScope> scopes() const { return data_->scopes(); }
 
-  mozilla::Span<const js::GCPtrValue> consts() const {
-    MOZ_ASSERT(hasConsts());
-    return data_->consts();
+  mozilla::Span<const js::GCPtrBigInt> bigints() const {
+    MOZ_ASSERT(hasBigInts());
+    return data_->bigints();
   }
 
   mozilla::Span<const js::GCPtrObject> objects() const {
@@ -2932,7 +2925,13 @@ class JSScript : public js::gc::TenuredCell {
   inline js::RegExpObject* getRegExp(size_t index);
   inline js::RegExpObject* getRegExp(jsbytecode* pc);
 
-  const js::Value& getConst(size_t index) { return consts()[index]; }
+  js::BigInt* getBigInt(size_t index) { return bigints()[index]; }
+
+  js::BigInt* getBigInt(jsbytecode* pc) {
+    MOZ_ASSERT(containsPC(pc));
+    MOZ_ASSERT(js::JOF_OPTYPE(JSOp(*pc)) == JOF_BIGINT);
+    return getBigInt(GET_UINT32_INDEX(pc));
+  }
 
   
   
