@@ -1199,7 +1199,6 @@ class nsDocShell final : public nsDocLoader,
   
   int32_t mChildOffset;
 
-  uint32_t mSandboxFlags;
   BusyFlags mBusyFlags;
   AppType mAppType;
   uint32_t mLoadType;

@@ -3041,12 +3041,13 @@ nsIFrame* nsFrameLoader::GetDetachedSubdocFrame(
 }
 
 void nsFrameLoader::ApplySandboxFlags(uint32_t sandboxFlags) {
+  uint32_t parentSandboxFlags = mOwnerContent->OwnerDoc()->GetSandboxFlags();
+
+  
+  sandboxFlags |= parentSandboxFlags;
+
+  
   if (GetDocShell()) {
-    uint32_t parentSandboxFlags = mOwnerContent->OwnerDoc()->GetSandboxFlags();
-
-    
-    sandboxFlags |= parentSandboxFlags;
-
     
     
     
@@ -3055,8 +3056,8 @@ void nsFrameLoader::ApplySandboxFlags(uint32_t sandboxFlags) {
     if (!presentationURL.IsEmpty()) {
       sandboxFlags |= SANDBOXED_AUXILIARY_NAVIGATION;
     }
-    GetDocShell()->SetSandboxFlags(sandboxFlags);
   }
+  mBrowsingContext->SetSandboxFlags(sandboxFlags);
 }
 
 

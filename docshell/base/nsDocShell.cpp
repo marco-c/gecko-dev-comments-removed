@@ -328,7 +328,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mPreviousEntryIndex(-1),
       mLoadedEntryIndex(-1),
       mChildOffset(0),
-      mSandboxFlags(0),
       mBusyFlags(BUSY_FLAGS_NONE),
       mAppType(nsIDocShell::APP_TYPE_UNKNOWN),
       mLoadType(0),
@@ -2545,7 +2544,7 @@ void nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal) {
   
   
   
-  if (!aPrincipal && mSandboxFlags) {
+  if (!aPrincipal && mBrowsingContext->GetSandboxFlags()) {
     return;
   }
 
@@ -2937,7 +2936,7 @@ bool nsDocShell::IsSandboxedFrom(BrowsingContext* aTargetBC) {
 
   
   
-  uint32_t sandboxFlags = mSandboxFlags;
+  uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
   if (mContentViewer) {
     RefPtr<Document> doc = mContentViewer->GetDocument();
     if (doc) {
@@ -5161,18 +5160,6 @@ nsDocShell::GetIsAppTab(bool* aIsAppTab) {
 }
 
 NS_IMETHODIMP
-nsDocShell::SetSandboxFlags(uint32_t aSandboxFlags) {
-  mSandboxFlags = aSandboxFlags;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetSandboxFlags(uint32_t* aSandboxFlags) {
-  *aSandboxFlags = mSandboxFlags;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsDocShell::SetDefaultLoadFlags(uint32_t aDefaultLoadFlags) {
   mDefaultLoadFlags = aDefaultLoadFlags;
 
@@ -6827,7 +6814,8 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
 
   if (docFactory) {
     nsCOMPtr<nsIPrincipal> principal, storagePrincipal;
-    if (mSandboxFlags & SANDBOXED_ORIGIN) {
+    uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
+    if (sandboxFlags & SANDBOXED_ORIGIN) {
       if (aPrincipal) {
         principal = NullPrincipal::CreateWithInheritedAttributes(aPrincipal);
       } else {
@@ -6861,7 +6849,7 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
 
       
       
-      blankDoc->SetSandboxFlags(mSandboxFlags);
+      blankDoc->SetSandboxFlags(sandboxFlags);
 
       
       docFactory->CreateInstanceForDocument(
@@ -8006,7 +7994,7 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
     
     aOpenedChannel->GetLoadFlags(&loadFlags);
     loadFlags |= nsIChannel::LOAD_DOCUMENT_URI;
-    if (SandboxFlagsImplyCookies(mSandboxFlags)) {
+    if (SandboxFlagsImplyCookies(mBrowsingContext->GetSandboxFlags())) {
       loadFlags |= nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
     }
 
@@ -10145,7 +10133,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     return NS_ERROR_FAILURE;
   }
 
-  bool isSandBoxed = mSandboxFlags & SANDBOXED_ORIGIN;
+  bool isSandBoxed = mBrowsingContext->GetSandboxFlags() & SANDBOXED_ORIGIN;
 
   
   
@@ -10267,7 +10255,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
       mIsActive || (mLoadType & (LOAD_CMD_NORMAL | LOAD_CMD_HISTORY));
   if (!CreateChannelForLoadState(aLoadState, loadInfo, this, this,
                                  initiatorType, loadFlags, mLoadType, cacheKey,
-                                 isActive, isTopLevelDoc, mSandboxFlags, rv,
+                                 isActive, isTopLevelDoc, mBrowsingContext->GetSandboxFlags(), rv,
                                  getter_AddRefs(channel))) {
     return rv;
   }
@@ -10279,7 +10267,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   }
 
   rv = ConfigureChannel(channel, aLoadState, initiatorType, mLoadType, cacheKey,
-                        mSandboxFlags);
+                        mBrowsingContext->GetSandboxFlags());
   NS_ENSURE_SUCCESS(rv, rv);
 
   const nsACString& typeHint = aLoadState->TypeHint();
@@ -10407,7 +10395,8 @@ nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   loadFlags |=
       nsIChannel::LOAD_DOCUMENT_URI | nsIChannel::LOAD_CALL_CONTENT_SNIFFERS;
 
-  if (SandboxFlagsImplyCookies(mSandboxFlags)) {
+  uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
+  if (SandboxFlagsImplyCookies(sandboxFlags)) {
     loadFlags |= nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
   }
 
@@ -13064,7 +13053,7 @@ bool nsDocShell::ServiceWorkerAllowedToControlWindow(nsIPrincipal* aPrincipal,
   MOZ_ASSERT(aPrincipal);
   MOZ_ASSERT(aURI);
 
-  if (UsePrivateBrowsing() || mSandboxFlags) {
+  if (UsePrivateBrowsing() || mBrowsingContext->GetSandboxFlags()) {
     return false;
   }
 

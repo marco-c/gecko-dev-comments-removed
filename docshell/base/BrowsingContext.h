@@ -261,6 +261,8 @@ class BrowsingContext : public nsISupports,
 
   BrowsingContextGroup* Group() { return mGroup; }
 
+  uint32_t SandboxFlags() { return mSandboxFlags; }
+
   
   
   

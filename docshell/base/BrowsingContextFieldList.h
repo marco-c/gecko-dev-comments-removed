@@ -37,4 +37,8 @@ MOZ_BC_FIELD(UserActivationState, UserActivation::State)
 MOZ_BC_FIELD(Muted, bool)
 
 MOZ_BC_FIELD(FeaturePolicy, RefPtr<mozilla::dom::FeaturePolicy>)
+
+
+MOZ_BC_FIELD(SandboxFlags, uint32_t)
+
 #undef MOZ_BC_FIELD

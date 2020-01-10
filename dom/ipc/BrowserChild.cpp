@@ -628,7 +628,7 @@ void BrowserChild::NotifyTabContextUpdated(bool aIsPreallocated) {
 
   
   if (!PresentationURL().IsEmpty()) {
-    docShell->SetSandboxFlags(SANDBOXED_AUXILIARY_NAVIGATION);
+    mBrowsingContext->SetSandboxFlags(SANDBOXED_AUXILIARY_NAVIGATION);
   }
 }
 
