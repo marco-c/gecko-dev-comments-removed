@@ -140,6 +140,12 @@ void nsPresContext::ForceReflowForFontInfoUpdate() {
 
   
   
+  if (Document()->GetFonts()) {
+    Document()->GetFonts()->GetUserFontSet()->ForgetLocalFaces();
+  }
+
+  
+  
   
   PreferenceChanged("font.internaluseonly.changed");
 }

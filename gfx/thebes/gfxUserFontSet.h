@@ -298,6 +298,12 @@ class gfxUserFontSet {
   
   void RebuildLocalRules();
 
+  
+  
+  
+  
+  void ForgetLocalFaces();
+
   class UserFontCache {
    public:
     
