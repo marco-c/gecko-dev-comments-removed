@@ -27,12 +27,15 @@ struct ImportScanner final {
   nsTArray<nsString> Stop();
 
   
-  void Scan(Span<const char16_t> aFragment) {
-    if (mState == State::OutsideOfStyleElement || mState == State::Done) {
-      return;
-    }
-    DoScan(aFragment);
+  bool ShouldScan() const {
+    return mState != State::OutsideOfStyleElement && mState != State::Done;
   }
+
+  
+  
+  
+  
+  nsTArray<nsString> Scan(Span<const char16_t> aFragment);
 
  private:
   enum class State {
@@ -64,7 +67,6 @@ struct ImportScanner final {
   };
 
   void EmitUrl();
-  void DoScan(Span<const char16_t> aFragment);
   MOZ_MUST_USE State Scan(char16_t aChar);
 
   static constexpr const uint32_t kMaxRuleNameLength = 7;  
