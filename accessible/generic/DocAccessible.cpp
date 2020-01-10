@@ -1327,8 +1327,11 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     nsIFrame* frame = acc->GetFrame();
 
     
+    
+    
+    
     if (!frame && !nsCoreUtils::IsDisplayContents(aRoot)) {
-      ContentRemoved(acc);
+      ContentRemoved(aRoot);
       return false;
     }
 
