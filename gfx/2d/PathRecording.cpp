@@ -183,9 +183,13 @@ void PathBuilderRecording::Arc(const Point& aOrigin, float aRadius,
 }
 
 already_AddRefed<Path> PathBuilderRecording::Finish() {
+  
+  
+  Point beginPoint = BeginPoint();
+  Point currentPoint = CurrentPoint();
   RefPtr<Path> path = mPathBuilder->Finish();
   return MakeAndAddRef<PathRecording>(path, std::move(mPathOps), mFillRule,
-                                      mCurrentPoint, mBeginPoint);
+                                      currentPoint, beginPoint);
 }
 
 PathRecording::~PathRecording() {
