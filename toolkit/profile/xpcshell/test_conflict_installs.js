@@ -19,20 +19,6 @@ function check_unchanged(service) {
   }
 }
 
-function check_outdated(service) {
-  Assert.ok(service.isListOutdated, "Should have detected a modification.");
-  try {
-    service.flush();
-    Assert.ok(false, "Should have failed to flush.");
-  } catch (e) {
-    Assert.equal(
-      e.result,
-      Cr.NS_ERROR_DATABASE_CHANGED,
-      "Should have refused to flush."
-    );
-  }
-}
-
 add_task(async () => {
   let service = getProfileService();
 
@@ -43,16 +29,11 @@ add_task(async () => {
 
   Assert.ok(!installsini.exists(), "File should not exist yet.");
   installsini.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o644);
-  check_outdated(service);
 
   installsini.remove(false);
   
   selectStartupProfile();
   check_unchanged(service);
-
-  let oldTime = installsini.lastModifiedTime;
-  installsini.lastModifiedTime = oldTime - 10000;
-  check_outdated(service);
 
   
   

@@ -111,15 +111,6 @@ const startupPhases = {
     },
     {
       
-      path: "UAppData:installs.ini",
-      condition: WIN || MAC,
-      ignoreIfUnused: true, 
-      read: 1,
-      stat: 2,
-      close: 1,
-    },
-    {
-      
       path: "UAppData:profiles.ini",
       condition: WIN,
       ignoreIfUnused: true, 
