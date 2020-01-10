@@ -292,13 +292,8 @@ void gfxContext::SnappedClip(const gfxRect& rect) {
 
 
 void gfxContext::Multiply(const gfxMatrix& matrix) {
-  Multiply(ToMatrix(matrix));
-}
-
-
-void gfxContext::Multiply(const Matrix& matrix) {
   CURRENTSTATE_CHANGED()
-  ChangeTransform(matrix * mTransform);
+  ChangeTransform(ToMatrix(matrix) * mTransform);
 }
 
 void gfxContext::SetMatrix(const gfx::Matrix& matrix) {

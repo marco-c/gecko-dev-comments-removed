@@ -29,7 +29,6 @@ DrawTargetCaptureImpl::DrawTargetCaptureImpl(gfx::DrawTarget* aTarget,
       mSurfaceAllocationSize(0),
       mFlushBytes(aFlushBytes) {
   mSize = aTarget->GetSize();
-  mCurrentClipBounds.push(IntRect(IntPoint(0, 0), mSize));
   mFormat = aTarget->GetFormat();
   SetPermitSubpixelAA(aTarget->GetPermitSubpixelAA());
 
@@ -47,7 +46,6 @@ DrawTargetCaptureImpl::DrawTargetCaptureImpl(BackendType aBackend,
   RefPtr<DrawTarget> screenRefDT =
       gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
 
-  mCurrentClipBounds.push(IntRect(IntPoint(0, 0), aSize));
   mFormat = aFormat;
   SetPermitSubpixelAA(IsOpaque(mFormat));
   if (aBackend == screenRefDT->GetBackendType()) {
@@ -79,8 +77,6 @@ bool DrawTargetCaptureImpl::Init(const IntSize& aSize, DrawTarget* aRefDT) {
   mRefDT = aRefDT;
 
   mSize = aSize;
-  mCurrentClipBounds.push(IntRect(IntPoint(0, 0), aSize));
-
   mFormat = aRefDT->GetFormat();
   SetPermitSubpixelAA(IsOpaque(mFormat));
   return true;
@@ -249,18 +245,10 @@ void DrawTargetCaptureImpl::Mask(const Pattern& aSource, const Pattern& aMask,
 }
 
 void DrawTargetCaptureImpl::PushClip(const Path* aPath) {
-  
-  
-  
-  mCurrentClipBounds.push(mCurrentClipBounds.top());
-
   AppendCommand(PushClipCommand)(aPath);
 }
 
 void DrawTargetCaptureImpl::PushClipRect(const Rect& aRect) {
-  IntRect deviceRect = RoundedOut(mTransform.TransformBounds(aRect));
-  mCurrentClipBounds.push(mCurrentClipBounds.top().Intersect(deviceRect));
-
   AppendCommand(PushClipRectCommand)(aRect);
 }
 
@@ -292,10 +280,7 @@ void DrawTargetCaptureImpl::PopLayer() {
   AppendCommand(PopLayerCommand)();
 }
 
-void DrawTargetCaptureImpl::PopClip() {
-  mCurrentClipBounds.pop();
-  AppendCommand(PopClipCommand)();
-}
+void DrawTargetCaptureImpl::PopClip() { AppendCommand(PopClipCommand)(); }
 
 void DrawTargetCaptureImpl::SetTransform(const Matrix& aTransform) {
   
@@ -348,17 +333,6 @@ void DrawTargetCaptureImpl::MarkChanged() {
 already_AddRefed<DrawTarget> DrawTargetCaptureImpl::CreateSimilarDrawTarget(
     const IntSize& aSize, SurfaceFormat aFormat) const {
   return MakeAndAddRef<DrawTargetCaptureImpl>(GetBackendType(), aSize, aFormat);
-}
-
-RefPtr<DrawTarget> DrawTargetCaptureImpl::CreateClippedDrawTarget(
-    const Rect& aBounds, SurfaceFormat aFormat) {
-  IntRect& bounds = mCurrentClipBounds.top();
-  auto dt = MakeRefPtr<DrawTargetCaptureImpl>(GetBackendType(), bounds.Size(),
-                                              aFormat);
-  RefPtr<DrawTarget> result =
-      gfx::Factory::CreateOffsetDrawTarget(dt, bounds.TopLeft());
-  result->SetTransform(mTransform);
-  return result;
 }
 
 RefPtr<DrawTarget> DrawTargetCaptureImpl::CreateSimilarRasterTarget(

@@ -589,15 +589,23 @@ class PathSink : public RefCounted<PathSink> {
   virtual void Arc(const Point& aOrigin, float aRadius, float aStartAngle,
                    float aEndAngle, bool aAntiClockwise = false) = 0;
 
-  virtual Point CurrentPoint() const { return mCurrentPoint; }
+  virtual Point CurrentPoint() const {
+    return mCurrentPoint;
+  }
 
-  virtual Point BeginPoint() const { return mBeginPoint; }
+  virtual Point BeginPoint() const {
+    return mBeginPoint;
+  }
 
-  virtual void SetCurrentPoint(const Point& aPoint) { mCurrentPoint = aPoint; }
+  virtual void SetCurrentPoint(const Point& aPoint) {
+    mCurrentPoint = aPoint;
+  }
 
-  virtual void SetBeginPoint(const Point& aPoint) { mBeginPoint = aPoint; }
+  virtual void SetBeginPoint(const Point& aPoint) {
+    mBeginPoint = aPoint;
+  }
 
- protected:
+protected:
   
 
 
@@ -1361,9 +1369,11 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
-
-  virtual RefPtr<DrawTarget> CreateClippedDrawTarget(const Rect& aBounds,
-                                                     SurfaceFormat aFormat) = 0;
+  virtual RefPtr<DrawTarget> CreateClippedDrawTarget(
+      const IntSize& aMaxSize, const Matrix& aTransform,
+      SurfaceFormat aFormat) const {
+    return CreateSimilarDrawTarget(aMaxSize, aFormat);
+  }
 
   
 

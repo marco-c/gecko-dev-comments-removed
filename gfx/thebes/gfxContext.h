@@ -168,7 +168,6 @@ class gfxContext final {
 
 
   void Multiply(const gfxMatrix& other);
-  void Multiply(const mozilla::gfx::Matrix& other);
 
   
 
