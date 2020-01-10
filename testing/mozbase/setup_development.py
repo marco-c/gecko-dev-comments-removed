@@ -73,7 +73,7 @@ def info(directory):
     
     pkg_info = os.path.join(egg_info, 'PKG-INFO')
     info_dict = {}
-    for line in file(pkg_info).readlines():
+    for line in open(pkg_info).readlines():
         if not line or line[0].isspace():
             continue  
         assert ':' in line
@@ -97,7 +97,7 @@ def get_dependencies(directory):
     requires = os.path.join(directory, egg_info, 'requires.txt')
     dependencies = []
     if os.path.exists(requires):
-        for line in file(requires):
+        for line in open(requires):
             line = line.strip()
             
             
