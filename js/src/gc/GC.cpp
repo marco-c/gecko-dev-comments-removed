@@ -8233,6 +8233,13 @@ void GCRuntime::mergeRealms(Realm* source, Realm* target) {
   
   
 
+  for (auto script = source->zone()->cellIterUnsafe<JSScript>(); !script.done();
+       script.next()) {
+    MOZ_ASSERT(script->realm() == source);
+    script->realm_ = target;
+    MOZ_ASSERT(!script->jitScript());
+  }
+
   GlobalObject* global = target->maybeGlobal();
   MOZ_ASSERT(global);
 
