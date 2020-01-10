@@ -36,7 +36,7 @@ using mozilla::MakeEnumeratedRange;
 
 
 
-#if defined(WASM_HUGE_MEMORY)
+#if defined(WASM_SUPPORTS_HUGE_MEMORY)
 #  if !(defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64))
 #    error "Not an expected configuration"
 #  endif
