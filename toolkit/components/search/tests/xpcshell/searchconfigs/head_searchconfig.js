@@ -3,8 +3,6 @@
 
 "use strict";
 
-Cu.importGlobalProperties(["fetch"]);
-
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -12,9 +10,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonTestUtils: "resource://testing-common/AddonTestUtils.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
-  SearchExtensionLoader: "resource://gre/modules/SearchUtils.jsm",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.jsm",
-  SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -29,21 +25,6 @@ const SUBMISSION_PURPOSES = [
   "homepage",
   "newtab",
 ];
-
-const ORIG_LIST_JSON_URL = SearchUtils.LIST_JSON_URL;
-SearchExtensionLoader._chaosMode = true;
-
-function traverse(obj, fun) {
-  for (var i in obj) {
-    let r = fun.apply(this, [i, obj[i]]);
-    if (r !== undefined) {
-      obj[i] = r;
-    }
-    if (obj[i] !== null && typeof obj[i] == "object") {
-      traverse(obj[i], fun);
-    }
-  }
-}
 
 
 
@@ -101,44 +82,9 @@ class SearchConfigTest {
   }
 
   
-  
-  
-  async setupListJSON() {
-    let origListJSON = await fetch(ORIG_LIST_JSON_URL).then(req => req.json());
-    let target = this._config.identifier;
-    let listJSON = Object.assign({}, origListJSON);
-    
-    
-    
-    let defaults = ["google", "yandex", "baidu"];
-    
-    traverse(listJSON, (key, val) => {
-      if (key === "searchOrder") {
-        return val.filter(
-          v =>
-            v.startsWith(target) ||
-            defaults.filter(d => v.startsWith(d)).length > 0
-        );
-      }
-      if (key === "visibleDefaultEngines") {
-        return val.filter(
-          v =>
-            v.startsWith(target) ||
-            defaults.filter(d => v.startsWith(d)).length > 0
-        );
-      }
-      return val;
-    });
-    SearchUtils.LIST_JSON_URL =
-      "data:application/json," + JSON.stringify(listJSON);
-  }
-
-  
 
 
   async setup() {
-    await this.setupListJSON();
-
     AddonTestUtils.init(GLOBAL_SCOPE);
     AddonTestUtils.createAppInfo(
       "xpcshell@tests.mozilla.org",
@@ -150,9 +96,6 @@ class SearchConfigTest {
     
     Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
     Services.prefs.setCharPref("browser.search.geoip.url", "");
-    Services.prefs.setIntPref("browser.search.addonLoadTimeout", 0);
-    
-    Services.prefs.setBoolPref("extensions.logging.enabled", false);
 
     await AddonTestUtils.promiseStartupManager();
     await Services.search.init();
