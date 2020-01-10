@@ -598,7 +598,8 @@ nsresult nsTypeAheadFind::FindItNow(bool aIsLinksOnly,
       
       if (selection) {
         selection->RemoveAllRanges(IgnoreErrors());
-        selection->AddRange(*returnRange, IgnoreErrors());
+        selection->AddRangeAndSelectFramesAndNotifyListeners(*returnRange,
+                                                             IgnoreErrors());
       }
 
       if (!mFoundEditable && fm) {

@@ -101,6 +101,8 @@ class RestoreSelectionState : public Runnable {
     if (mFrame) {
       
       
+      
+      
       nsAutoScriptBlocker scriptBlocker;
       nsTextEditorState::SelectionProperties& properties =
           mTextEditorState->GetSelectionProperties();
