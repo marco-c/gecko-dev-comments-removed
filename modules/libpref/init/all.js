@@ -1424,13 +1424,13 @@ pref("javascript.options.mem.gc_dynamic_heap_growth", true);
 pref("javascript.options.mem.gc_dynamic_mark_slice", true);
 
 
-pref("javascript.options.mem.gc_allocation_threshold_mb", 30);
+pref("javascript.options.mem.gc_allocation_threshold_mb", 27);
 
 
-pref("javascript.options.mem.gc_allocation_threshold_factor", 90);
+pref("javascript.options.mem.gc_non_incremental_factor", 112);
 
 
-pref("javascript.options.mem.gc_allocation_threshold_factor_avoid_interrupt", 90);
+pref("javascript.options.mem.gc_avoid_interrupt_factor", 100);
 
 
 pref("javascript.options.mem.gc_min_empty_chunk_count", 1);

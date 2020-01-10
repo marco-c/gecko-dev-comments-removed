@@ -148,6 +148,7 @@ typedef enum JSGCParamKey {
 
 
 
+
   
 
 
@@ -259,7 +260,9 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_ALLOCATION_THRESHOLD_FACTOR = 25,
+
+
+  JSGC_NON_INCREMENTAL_FACTOR = 25,
 
   
 
@@ -268,9 +271,7 @@ typedef enum JSGCParamKey {
 
 
 
-
-
-  JSGC_ALLOCATION_THRESHOLD_FACTOR_AVOID_INTERRUPT = 26,
+  JSGC_AVOID_INTERRUPT_FACTOR = 26,
 
   
 
