@@ -23,7 +23,7 @@ struct Tile {
     
     IDCompositionSurface *pSurface;
     
-    IDCompositionVisual *pVisual;
+    IDCompositionVisual2 *pVisual;
 };
 
 struct Window {
@@ -37,7 +37,7 @@ struct Window {
 
     
     ID3D11Device *pD3D11Device;
-    IDCompositionDevice *pDCompDevice;
+    IDCompositionDesktopDevice *pDCompDevice;
     IDCompositionTarget *pDCompTarget;
     IDXGIDevice *pDXGIDevice;
 
@@ -55,7 +55,8 @@ struct Window {
 
     
     
-    IDCompositionVisual *pRoot;
+    IDCompositionVisual2 *pRoot;
+    IDCompositionVisualDebug *pVisualDebug;
     
     std::map<uint64_t, Tile> tiles;
 };
@@ -145,9 +146,9 @@ extern "C" {
         assert(SUCCEEDED(hr));
 
         
-        hr = DCompositionCreateDevice(
+        hr = DCompositionCreateDevice2(
             window->pDXGIDevice,
-            __uuidof(IDCompositionDevice),
+            __uuidof(IDCompositionDesktopDevice),
             (void **) &window->pDCompDevice
         );
         assert(SUCCEEDED(hr));
@@ -237,6 +238,15 @@ extern "C" {
         hr = window->pDCompTarget->SetRoot(window->pRoot);
         assert(SUCCEEDED(hr));
 
+        hr = window->pRoot->QueryInterface(
+            __uuidof(IDCompositionVisualDebug),
+            (void **) &window->pVisualDebug
+        );
+        assert(SUCCEEDED(hr));
+
+        
+        
+
         EGLBoolean ok = eglMakeCurrent(
             window->EGLDisplay,
             window->fb_surface,
@@ -262,6 +272,7 @@ extern "C" {
         eglReleaseDeviceANGLE(window->EGLDevice);
 
         window->pRoot->Release();
+        window->pVisualDebug->Release();
         window->pD3D11Device->Release();
         window->pDXGIDevice->Release();
         window->pDCompDevice->Release();
@@ -348,7 +359,11 @@ extern "C" {
         Window *window,
         uint64_t id,
         int *x_offset,
-        int *y_offset
+        int *y_offset,
+        int dirty_x0,
+        int dirty_y0,
+        int dirty_width,
+        int dirty_height
     ) {
         assert(window->tiles.count(id) == 1);
         Tile &tile = window->tiles[id];
@@ -359,15 +374,24 @@ extern "C" {
         
         
         
+        RECT update_rect;
+        update_rect.left = dirty_x0;
+        update_rect.top = dirty_y0;
+        update_rect.right = dirty_x0 + dirty_width;
+        update_rect.bottom = dirty_y0 + dirty_height;
         POINT offset;
         D3D11_TEXTURE2D_DESC desc;
         ID3D11Texture2D *pTexture;
         HRESULT hr = tile.pSurface->BeginDraw(
-            NULL,
+            &update_rect,
             __uuidof(ID3D11Texture2D),
             (void **) &pTexture,
             &offset
         );
+        
+        
+        offset.x -= dirty_x0;
+        offset.y -= dirty_y0;
         assert(SUCCEEDED(hr));
         pTexture->GetDesc(&desc);
 

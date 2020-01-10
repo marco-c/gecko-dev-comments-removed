@@ -243,9 +243,17 @@ pub trait Compositor {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     fn bind(
         &mut self,
         id: NativeSurfaceId,
+        dirty_rect: DeviceIntRect,
     ) -> NativeSurfaceInfo;
 
     
