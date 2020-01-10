@@ -24,6 +24,10 @@ Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
 
 
 registerCleanupFunction(async function() {
+  
+  
+  Services.prefs.clearUserPref("devtools.toolbox.selectedTool");
+
   try {
     const { adbAddon } = require("devtools/shared/adb/adb-addon");
     await adbAddon.uninstall();
@@ -118,6 +122,12 @@ async function closeAboutDevtoolsToolbox(
   devtoolsTab,
   win
 ) {
+  
+  const devtoolsBrowser = devtoolsTab.linkedBrowser;
+  const devtoolsWindow = devtoolsBrowser.contentWindow;
+  const toolbox = getToolbox(devtoolsWindow);
+  await toolbox.target.client.waitForRequestsToSettle();
+
   info("Close about:devtools-toolbox page");
   const onToolboxDestroyed = gDevTools.once("toolbox-destroyed");
 
