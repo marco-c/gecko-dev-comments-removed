@@ -31,28 +31,28 @@ bool UsingScattershotAllocator();
 
 
 
-void* MapAlignedPages(size_t size, size_t alignment);
-void UnmapPages(void* p, size_t size);
+void* MapAlignedPages(size_t length, size_t alignment);
+void UnmapPages(void* region, size_t length);
 
 
 
-bool MarkPagesUnusedSoft(void* p, size_t size);
-
-
-
-
-bool MarkPagesUnusedHard(void* p, size_t size);
+bool MarkPagesUnusedSoft(void* region, size_t length);
 
 
 
 
-void MarkPagesInUseSoft(void* p, size_t size);
+bool MarkPagesUnusedHard(void* region, size_t length);
+
+
+
+
+void MarkPagesInUseSoft(void* region, size_t length);
 
 
 
 
 
-MOZ_MUST_USE bool MarkPagesInUseHard(void* p, size_t size);
+MOZ_MUST_USE bool MarkPagesInUseHard(void* region, size_t length);
 
 
 size_t GetPageFaultCount();
@@ -63,13 +63,13 @@ void* AllocateMappedContent(int fd, size_t offset, size_t length,
                             size_t alignment);
 
 
-void DeallocateMappedContent(void* p, size_t length);
+void DeallocateMappedContent(void* region, size_t length);
 
 void* TestMapAlignedPagesLastDitch(size_t size, size_t alignment);
 
-void ProtectPages(void* p, size_t size);
-void MakePagesReadOnly(void* p, size_t size);
-void UnprotectPages(void* p, size_t size);
+void ProtectPages(void* region, size_t length);
+void MakePagesReadOnly(void* region, size_t length);
+void UnprotectPages(void* region, size_t length);
 
 }  
 }  
