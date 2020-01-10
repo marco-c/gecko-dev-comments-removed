@@ -48,8 +48,16 @@ struct MOZ_STACK_CLASS BindContext final {
   bool SubtreeRootChanges() const { return mSubtreeRootChanges; }
 
   
+  
+  
+  Element* GetBindingParent() const { return mBindingParent; }
+
+  
   explicit BindContext(nsINode& aParent)
       : mDoc(*aParent.OwnerDoc()),
+        mBindingParent(aParent.IsContent()
+                           ? aParent.AsContent()->GetBindingParent()
+                           : nullptr),
         mInComposedDoc(aParent.IsInComposedDoc()),
         mInUncomposedDoc(aParent.IsInUncomposedDoc()),
         mSubtreeRootChanges(true),
@@ -65,6 +73,7 @@ struct MOZ_STACK_CLASS BindContext final {
   
   explicit BindContext(ShadowRoot& aShadowRoot)
       : mDoc(*aShadowRoot.OwnerDoc()),
+        mBindingParent(aShadowRoot.Host()),
         mInComposedDoc(aShadowRoot.IsInComposedDoc()),
         mInUncomposedDoc(false),
         mSubtreeRootChanges(false),
@@ -77,6 +86,7 @@ struct MOZ_STACK_CLASS BindContext final {
   enum ForNativeAnonymous { ForNativeAnonymous };
   BindContext(Element& aParentElement, enum ForNativeAnonymous)
       : mDoc(*aParentElement.OwnerDoc()),
+        mBindingParent(&aParentElement),
         mInComposedDoc(aParentElement.IsInComposedDoc()),
         mInUncomposedDoc(aParentElement.IsInUncomposedDoc()),
         mSubtreeRootChanges(true),
@@ -103,6 +113,8 @@ struct MOZ_STACK_CLASS BindContext final {
   }
 
   Document& mDoc;
+
+  Element* const mBindingParent;
 
   const bool mInComposedDoc;
   const bool mInUncomposedDoc;
