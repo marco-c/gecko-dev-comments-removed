@@ -52,11 +52,13 @@ function xr_session_promise_test(
                             .then((session) => {
                               testSession = session;
                               session.mode = sessionMode;
+                              let glLayer = new XRWebGLLayer(session, gl, {
+                                compositionDisabled: session.mode == 'inline'
+                              });
                               
                               
                               session.updateRenderState({
-                                  baseLayer: new XRWebGLLayer(session, gl),
-                                  outputContext: getOutputContext()
+                                  baseLayer: glLayer
                               });
                               resolve(func(session, testDeviceController, t));
                             })
@@ -76,15 +78,6 @@ function xr_session_promise_test(
                 XRTest.simulateDeviceDisconnection();
               }),
       properties);
-}
-
-
-
-
-function getOutputContext() {
-  let outputCanvas = document.createElement('canvas');
-  document.body.appendChild(outputCanvas);
-  return outputCanvas.getContext('xrpresent');
 }
 
 
