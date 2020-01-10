@@ -252,6 +252,9 @@ nsPlainTextSerializer::Init(const uint32_t aFlags, uint32_t aWrapColumn,
         "Can't do formatted and preformatted output at the same time!");
   }
 #endif
+  MOZ_ASSERT(!(aFlags & nsIDocumentEncoder::OutputFormatDelSp) ||
+             (aFlags & nsIDocumentEncoder::OutputFormatFlowed));
+
   *aNeedsPreformatScanning = true;
   mSettings.Init(aFlags);
   mOutputManager.emplace(mSettings.GetFlags(), aOutput);
@@ -1403,10 +1406,11 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
     
     
     if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatDelSp) &&
-        aBreakBySpace)
+        aBreakBySpace) {
       mCurrentLine.mContent.mValue.AppendLiteral("  ");
-    else
+    } else {
       mCurrentLine.mContent.mValue.Append(char16_t(' '));
+    }
   }
 
   if (aSoftlinebreak) {
@@ -1450,7 +1454,6 @@ void nsPlainTextSerializer::CurrentLine::CreateQuotesAndIndent(
     }
     if (!mContent.mValue.IsEmpty()) {
       
-
 
 
 
