@@ -519,43 +519,6 @@ var fetchRegionDefault = ss =>
 
 
 
-function makeURI(urlSpec) {
-  try {
-    return Services.io.newURI(urlSpec);
-  } catch (ex) {}
-
-  return null;
-}
-
-
-
-
-
-
-
-
-function makeChannel(url) {
-  try {
-    let uri = typeof url == "string" ? Services.io.newURI(url) : url;
-    return Services.io.newChannelFromURI(
-      uri,
-      null ,
-      Services.scriptSecurityManager.getSystemPrincipal(),
-      null ,
-      Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-      Ci.nsIContentPolicy.TYPE_OTHER
-    );
-  } catch (ex) {}
-
-  return null;
-}
-
-
-
-
-
-
-
 
 
 
@@ -1017,11 +980,6 @@ SearchService.prototype = {
 
   async _loadEngines(cache, isReload) {
     SearchUtils.log("_loadEngines: start");
-    Services.obs.notifyObservers(
-      null,
-      SearchUtils.TOPIC_SEARCH_SERVICE,
-      "find-jar-engines"
-    );
     let engines = await this._findEngines();
     SearchUtils.log("_loadEngines: loading - " + engines.join(","));
 
@@ -1605,15 +1563,13 @@ SearchService.prototype = {
   async _findEngines() {
     SearchUtils.log("_findEngines: looking for engines in list.json");
 
-    let chan = makeChannel(this._listJSONURL);
+    let chan = SearchUtils.makeChannel(this._listJSONURL);
     if (!chan) {
       SearchUtils.log(
         "_findEngines: " + this._listJSONURL + " isn't registered"
       );
       return [];
     }
-
-    let uris = [];
 
     
     let request = new XMLHttpRequest();
@@ -1630,18 +1586,17 @@ SearchService.prototype = {
       request.send();
     });
 
-    this._parseListJSON(list, uris);
-    return uris;
+    return this._parseListJSON(list);
   },
 
-  _parseListJSON(list, uris) {
+  _parseListJSON(list) {
     let json;
     try {
       json = JSON.parse(list);
     } catch (e) {
       Cu.reportError("parseListJSON: Failed to parse list.json: " + e);
       dump("parseListJSON: Failed to parse list.json: " + e + "\n");
-      return;
+      return [];
     }
 
     let searchRegion = Services.prefs.getCharPref(
@@ -1659,7 +1614,7 @@ SearchService.prototype = {
       if (!("default" in json)) {
         Cu.reportError("parseListJSON: Missing default in list.json");
         dump("parseListJSON: Missing default in list.json\n");
-        return;
+        return [];
       }
       searchSettings = json;
     }
@@ -1771,10 +1726,6 @@ SearchService.prototype = {
       }
     }
 
-    for (let name of engineNames) {
-      uris.push(name);
-    }
-
     
     this._visibleDefaultEngines = engineNames;
 
@@ -1805,6 +1756,7 @@ SearchService.prototype = {
     } else if ("searchOrder" in json.default) {
       this._searchOrder = json.default.searchOrder;
     }
+    return [...engineNames];
   },
 
   _saveSortedEngineList() {
@@ -2019,15 +1971,13 @@ SearchService.prototype = {
   async getEngines() {
     await this.init(true);
     SearchUtils.log("getEngines: getting all engines");
-    var engines = this._getSortedEngines(true);
-    return engines;
+    return this._getSortedEngines(true);
   },
 
   async getVisibleEngines() {
     await this.init();
     SearchUtils.log("getVisibleEngines: getting all visible engines");
-    var engines = this._getSortedEngines(false);
-    return engines;
+    return this._getSortedEngines(false);
   },
 
   async getDefaultEngines() {
@@ -3157,7 +3107,7 @@ var engineUpdateService = {
     let updateURI =
       updateURL && updateURL._hasRelation("self")
         ? updateURL.getSubmission("", engine).uri
-        : makeURI(engine._updateURL);
+        : SearchUtils.makeURI(engine._updateURL);
     if (updateURI) {
       if (engine._isDefault && !updateURI.schemeIs("https")) {
         this._log("Invalid scheme for default engine update");
