@@ -85,7 +85,7 @@ async function pushGetUserMediaTestPrefs({
 
 
 async function setupGetUserMediaTestPrefs() {
-  prefRequests = {};
+  let prefRequests = {};
   let audioLoopDev = SpecialPowers.getCharPref("media.audio_loopback_dev", "");
   if (audioLoopDev) {
     prefRequests.fakeAudio = false;

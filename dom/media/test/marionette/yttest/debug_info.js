@@ -1,3 +1,5 @@
+
+
 video.mozRequestDebugInfo().then(debugInfo => {
   
   try {
