@@ -3350,27 +3350,14 @@ bool DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame,
 
 void ICStubCompilerBase::pushCallArguments(MacroAssembler& masm,
                                            AllocatableGeneralRegisterSet regs,
-                                           Register argcReg, bool isJitCall,
+                                           Register argcReg,
                                            bool isConstructing) {
   MOZ_ASSERT(!regs.has(argcReg));
 
   
   Register count = regs.takeAny();
-
   masm.move32(argcReg, count);
-
-  
-  
-  
-  
-  
-  if (isJitCall) {
-    if (isConstructing) {
-      masm.add32(Imm32(1), count);
-    }
-  } else {
-    masm.add32(Imm32(2 + isConstructing), count);
-  }
+  masm.add32(Imm32(2 + isConstructing), count);
 
   
   Register argPtr = regs.takeAny();
@@ -3379,15 +3366,6 @@ void ICStubCompilerBase::pushCallArguments(MacroAssembler& masm,
   
   
   masm.addPtr(Imm32(STUB_FRAME_SIZE), argPtr);
-
-  
-  
-  if (isJitCall) {
-    masm.alignJitStackBasedOnNArgs(count, false);
-
-    
-    masm.add32(Imm32(2), count);
-  }
 
   
   Label loop, done;
@@ -3465,8 +3443,7 @@ bool FallbackICCodeCompiler::emitCall(bool isSpread, bool isConstructing) {
 
   regs.take(R0.scratchReg());  
 
-  pushCallArguments(masm, regs, R0.scratchReg(),  false,
-                    isConstructing);
+  pushCallArguments(masm, regs, R0.scratchReg(), isConstructing);
 
   masm.push(masm.getStackPointer());
   masm.push(R0.scratchReg());
