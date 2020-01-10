@@ -518,6 +518,23 @@ function runContinuation(testFunction) {
 
 
 
+function runAsyncContinuation(testFunction) {
+  return async function() {
+    var asyncContinuation = testFunction();
+    try {
+      var ret = await asyncContinuation.next();
+      while (!ret.done) {
+        ret = await asyncContinuation.next();
+      }
+    } catch (ex) {
+      SimpleTest.ok(false, "APZ async test continuation failed with exception: " + ex);
+      throw ex;
+    }
+  };
+}
+
+
+
 
 
 
