@@ -12,6 +12,10 @@
 #include "mozilla/fallible.h"
 #include "mozilla/UniquePtr.h"
 
+#ifdef XP_WIN
+#  include <cstdint>
+#endif
+
 namespace mozilla {
 
 
@@ -42,10 +46,80 @@ struct FreePolicy {
   void operator()(const void* ptr) { free(const_cast<void*>(ptr)); }
 };
 
+#if defined(XP_WIN)
+
+
+typedef void* FileHandleType;
+#elif defined(XP_UNIX)
+typedef int FileHandleType;
+#else
+#  error "Unsupported OS?"
+#endif
+
+struct FileHandleHelper {
+  MOZ_IMPLICIT FileHandleHelper(FileHandleType aHandle) : mHandle(aHandle) {}
+
+  MOZ_IMPLICIT constexpr FileHandleHelper(std::nullptr_t)
+      : mHandle(kInvalidHandle) {}
+
+  bool operator!=(std::nullptr_t) const {
+#ifdef XP_WIN
+    
+    
+    
+    
+    
+    if (mHandle == (void*)-1) {
+      return false;
+    }
+#endif
+    return mHandle != kInvalidHandle;
+  }
+
+  operator FileHandleType() const { return mHandle; }
+
+#ifdef XP_WIN
+  
+  
+  
+  operator std::intptr_t() const {
+    return reinterpret_cast<std::intptr_t>(mHandle);
+  }
+#endif
+
+  
+  
+  
+  bool operator==(const FileHandleHelper& aOther) const {
+    return mHandle == aOther.mHandle;
+  }
+
+ private:
+  FileHandleType mHandle;
+
+#ifdef XP_WIN
+  
+  
+  static constexpr FileHandleType kInvalidHandle = nullptr;
+#else
+  static constexpr FileHandleType kInvalidHandle = -1;
+#endif
+};
+
+struct FileHandleDeleter {
+  typedef FileHandleHelper pointer;
+  MFBT_API void operator()(FileHandleHelper aHelper);
+};
+
 }  
 
 template <typename T>
 using UniqueFreePtr = UniquePtr<T, detail::FreePolicy<T>>;
+
+
+
+using UniqueFileHandle =
+    UniquePtr<detail::FileHandleType, detail::FileHandleDeleter>;
 
 }  
 
