@@ -107,6 +107,11 @@ add_task(async function setup() {
       
       return;
     }
+    if (msg.errorMessage.includes("Error reading typed URL history")) {
+      
+      
+      return;
+    }
     if (msg.errorMessage.includes(EXPECTED_ERROR_MESSAGE)) {
       return;
     }
