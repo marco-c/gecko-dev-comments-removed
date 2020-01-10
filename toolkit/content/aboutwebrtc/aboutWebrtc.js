@@ -527,18 +527,20 @@ RTPStats.prototype = {
   },
 
   generateRTPStats() {
-    let remoteRtpStats = {};
+    const remoteRtpStatsMap = {};
     let rtpStats = [].concat(
-      this._report.inboundRTPStreamStats || [],
-      this._report.outboundRTPStreamStats || []
+      this._report.inboundRtpStreamStats || [],
+      this._report.outboundRtpStreamStats || []
+    );
+    let remoteRtpStats = [].concat(
+      this._report.remoteInboundRtpStreamStats || [],
+      this._report.remoteOutboundRtpStreamStats || []
     );
 
     
     
-    for (let stats of rtpStats) {
-      if (stats.isRemote) {
-        remoteRtpStats[stats.id] = stats;
-      }
+    for (let stats of remoteRtpStats) {
+      remoteRtpStatsMap[stats.id] = stats;
     }
 
     
@@ -546,11 +548,11 @@ RTPStats.prototype = {
     
     for (let stats of rtpStats) {
       if (stats.remoteId) {
-        stats.remoteRtpStats = remoteRtpStats[stats.remoteId];
+        stats.remoteRtpStats = remoteRtpStatsMap[stats.remoteId];
       }
     }
 
-    this._stats = rtpStats;
+    this._stats = rtpStats.concat(remoteRtpStats);
   },
 
   renderCoderStats(stats) {
