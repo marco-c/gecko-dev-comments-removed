@@ -159,9 +159,8 @@ NS_IMPL_MAIN_THREAD_ONLY_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE(
 nsIContent* nsIContent::FindFirstNonChromeOnlyAccessContent() const {
   
   for (const nsIContent* content = this; content;
-       content = content->GetBindingParent()) {
+       content = content->GetChromeOnlyAccessSubtreeRootParent()) {
     if (!content->ChromeOnlyAccess()) {
-      
       
       
       return const_cast<nsIContent*>(content);
