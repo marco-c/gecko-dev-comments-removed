@@ -450,6 +450,21 @@ bool ExtractH264CodecDetails(const nsAString& aCodec, uint8_t& aProfile,
     aLevel *= 10;
   }
 
+  
+  
+  Telemetry::Accumulate(Telemetry::VIDEO_CANPLAYTYPE_H264_CONSTRAINT_SET_FLAG,
+                        aConstraint >= 4 ? aConstraint : 0);
+  
+  
+  
+  Telemetry::Accumulate(Telemetry::VIDEO_CANPLAYTYPE_H264_PROFILE,
+                        aProfile <= 244 ? aProfile : 0);
+
+  
+  
+  Telemetry::Accumulate(Telemetry::VIDEO_CANPLAYTYPE_H264_LEVEL,
+                        (aLevel >= 10 && aLevel <= 52) ? aLevel : 0);
+
   return true;
 }
 

@@ -20,6 +20,7 @@
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "nsContentUtils.h"
 #include "nsPrintfCString.h"
@@ -45,6 +46,80 @@ mozilla::LazyLogModule gMediaDemuxerLog("MediaDemuxer");
 namespace mozilla {
 
 typedef void* MediaDataDecoderID;
+
+
+
+
+
+
+
+
+
+
+
+
+class GPUProcessCrashTelemetryLogger {
+  struct GPUCrashData {
+    GPUCrashData(MediaDataDecoderID aMediaDataDecoderID,
+                 mozilla::TimeStamp aGPUCrashTime,
+                 mozilla::TimeStamp aErrorNotifiedTime)
+        : mMediaDataDecoderID(aMediaDataDecoderID),
+          mGPUCrashTime(aGPUCrashTime),
+          mErrorNotifiedTime(aErrorNotifiedTime) {
+      MOZ_ASSERT(mMediaDataDecoderID);
+      MOZ_ASSERT(!mGPUCrashTime.IsNull());
+      MOZ_ASSERT(!mErrorNotifiedTime.IsNull());
+    }
+
+    MediaDataDecoderID mMediaDataDecoderID;
+    mozilla::TimeStamp mGPUCrashTime;
+    mozilla::TimeStamp mErrorNotifiedTime;
+  };
+
+ public:
+  static void RecordGPUCrashData(MediaDecoderOwnerID aMediaDecoderOwnerID,
+                                 MediaDataDecoderID aMediaDataDecoderID,
+                                 const TimeStamp& aGPUCrashTime,
+                                 const TimeStamp& aErrorNotifiedTime) {
+    MOZ_ASSERT(aMediaDecoderOwnerID);
+    MOZ_ASSERT(aMediaDataDecoderID);
+    MOZ_ASSERT(!aGPUCrashTime.IsNull());
+    MOZ_ASSERT(!aErrorNotifiedTime.IsNull());
+    StaticMutexAutoLock lock(sGPUCrashMapMutex);
+    auto it = sGPUCrashDataMap.find(aMediaDecoderOwnerID);
+    if (it == sGPUCrashDataMap.end()) {
+      sGPUCrashDataMap.insert(std::make_pair(
+          aMediaDecoderOwnerID, GPUCrashData(aMediaDataDecoderID, aGPUCrashTime,
+                                             aErrorNotifiedTime)));
+    }
+  }
+
+  static void ReportTelemetry(MediaDecoderOwnerID aMediaDecoderOwnerID,
+                              MediaDataDecoderID aMediaDataDecoderID) {
+    MOZ_ASSERT(aMediaDecoderOwnerID);
+    MOZ_ASSERT(aMediaDataDecoderID);
+    StaticMutexAutoLock lock(sGPUCrashMapMutex);
+    auto it = sGPUCrashDataMap.find(aMediaDecoderOwnerID);
+    if (it != sGPUCrashDataMap.end() &&
+        it->second.mMediaDataDecoderID != aMediaDataDecoderID) {
+      Telemetry::AccumulateTimeDelta(
+          Telemetry::VIDEO_HW_DECODER_CRASH_RECOVERY_TIME_SINCE_GPU_CRASHED_MS,
+          it->second.mGPUCrashTime);
+      Telemetry::AccumulateTimeDelta(
+          Telemetry::VIDEO_HW_DECODER_CRASH_RECOVERY_TIME_SINCE_MFR_NOTIFIED_MS,
+          it->second.mErrorNotifiedTime);
+      sGPUCrashDataMap.erase(aMediaDecoderOwnerID);
+    }
+  }
+
+ private:
+  static std::map<MediaDecoderOwnerID, GPUCrashData> sGPUCrashDataMap;
+  static StaticMutex sGPUCrashMapMutex;
+};
+
+std::map<MediaDecoderOwnerID, GPUProcessCrashTelemetryLogger::GPUCrashData>
+    GPUProcessCrashTelemetryLogger::sGPUCrashDataMap;
+StaticMutex GPUProcessCrashTelemetryLogger::sGPUCrashMapMutex;
 
 
 
@@ -1584,6 +1659,18 @@ void MediaFormatReader::NotifyError(TrackType aTrack,
   auto& decoder = GetDecoderData(aTrack);
   decoder.mError = decoder.HasFatalError() ? decoder.mError : Some(aError);
 
+  
+  
+  
+  
+  if (aTrack == TrackType::kVideoTrack &&
+      aError == NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER &&
+      !aError.GPUCrashTimeStamp().IsNull()) {
+    GPUProcessCrashTelemetryLogger::RecordGPUCrashData(
+        mMediaDecoderOwnerID, decoder.mDecoder.get(),
+        aError.GPUCrashTimeStamp(), TimeStamp::Now());
+  }
+
   ScheduleUpdate(aTrack);
 }
 
@@ -1775,6 +1862,13 @@ void MediaFormatReader::DecodeDemuxedSamples(TrackType aTrack,
           [self, aTrack, &decoder](MediaDataDecoder::DecodedData&& aResults) {
             decoder.mDecodeRequest.Complete();
             self->NotifyNewOutput(aTrack, std::move(aResults));
+
+            
+            
+            if (aTrack == TrackType::kVideoTrack) {
+              GPUProcessCrashTelemetryLogger::ReportTelemetry(
+                  self->mMediaDecoderOwnerID, decoder.mDecoder.get());
+            }
           },
           [self, aTrack, &decoder](const MediaResult& aError) {
             decoder.mDecodeRequest.Complete();

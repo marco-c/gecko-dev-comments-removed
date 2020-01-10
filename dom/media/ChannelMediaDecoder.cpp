@@ -179,6 +179,11 @@ already_AddRefed<ChannelMediaDecoder> ChannelMediaDecoder::Create(
     return decoder.forget();
   }
 
+  if (DecoderTraits::IsHttpLiveStreamingType(type)) {
+    
+    Telemetry::Accumulate(Telemetry::MEDIA_HLS_DECODER_SUCCESS, false);
+  }
+
   return nullptr;
 }
 

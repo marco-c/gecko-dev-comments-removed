@@ -139,6 +139,7 @@ PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
     const RemoteDecoderInfoIPDL& ,
     const CreateDecoderParams::OptionSet& aOptions,
     const Maybe<layers::TextureFactoryIdentifier>& aIdentifier, bool* aSuccess,
+    nsCString* , nsCString* ,
     nsCString* ) {
   
   

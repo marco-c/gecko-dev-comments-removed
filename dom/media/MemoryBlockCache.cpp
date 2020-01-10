@@ -9,6 +9,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Telemetry.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "nsIObserver.h"
@@ -28,6 +29,107 @@ LazyLogModule gMemoryBlockCacheLog("MemoryBlockCache");
 
 
 static Atomic<size_t> gCombinedSizes;
+
+class MemoryBlockCacheTelemetry final : public nsIObserver,
+                                        public nsSupportsWeakReference {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  
+  
+  
+  
+  static size_t NotifyCombinedSizeGrown(size_t aNewSize);
+
+ private:
+  MemoryBlockCacheTelemetry() {}
+  ~MemoryBlockCacheTelemetry() {}
+
+  
+  
+  
+  static StaticRefPtr<MemoryBlockCacheTelemetry> gMemoryBlockCacheTelemetry;
+
+  
+  static Atomic<size_t> gCombinedSizesWatermark;
+};
+
+
+
+StaticRefPtr<MemoryBlockCacheTelemetry>
+    MemoryBlockCacheTelemetry::gMemoryBlockCacheTelemetry;
+
+
+
+Atomic<size_t> MemoryBlockCacheTelemetry::gCombinedSizesWatermark;
+
+NS_IMPL_ISUPPORTS(MemoryBlockCacheTelemetry, nsIObserver,
+                  nsISupportsWeakReference)
+
+
+size_t MemoryBlockCacheTelemetry::NotifyCombinedSizeGrown(size_t aNewSize) {
+  
+  if (!gMemoryBlockCacheTelemetry) {
+    MOZ_ASSERT(NS_IsMainThread());
+    gMemoryBlockCacheTelemetry = new MemoryBlockCacheTelemetry();
+
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+    if (observerService) {
+      observerService->AddObserver(gMemoryBlockCacheTelemetry,
+                                   "profile-change-teardown", true);
+    }
+
+    
+    
+    
+    
+    ClearOnShutdown(&gMemoryBlockCacheTelemetry);
+  }
+
+  
+  for (;;) {
+    size_t oldSize = gMemoryBlockCacheTelemetry->gCombinedSizesWatermark;
+    if (aNewSize < oldSize) {
+      return oldSize;
+    }
+    if (gMemoryBlockCacheTelemetry->gCombinedSizesWatermark.compareExchange(
+            oldSize, aNewSize)) {
+      return aNewSize;
+    }
+  }
+}
+
+NS_IMETHODIMP
+MemoryBlockCacheTelemetry::Observe(nsISupports* aSubject, char const* aTopic,
+                                   char16_t const* aData) {
+  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+
+  if (strcmp(aTopic, "profile-change-teardown") == 0) {
+    uint32_t watermark = static_cast<uint32_t>(gCombinedSizesWatermark);
+    LOG("MemoryBlockCacheTelemetry::~Observe() "
+        "MEDIACACHE_MEMORY_WATERMARK=%" PRIu32,
+        watermark);
+    Telemetry::Accumulate(Telemetry::HistogramID::MEDIACACHE_MEMORY_WATERMARK,
+                          watermark);
+    return NS_OK;
+  }
+  return NS_OK;
+}
+
+enum MemoryBlockCacheTelemetryErrors {
+  
+  
+  InitUnderuse = 0,
+  InitAllocation = 1,
+  ReadOverrun = 2,
+  WriteBlockOverflow = 3,
+  WriteBlockCannotGrow = 4,
+  MoveBlockSourceOverrun = 5,
+  MoveBlockDestOverflow = 6,
+  MoveBlockCannotGrow = 7,
+};
 
 static int32_t CalculateMaxBlocks(int64_t aContentLength) {
   int64_t maxSize = int64_t(StaticPrefs::media_memory_cache_max_size()) * 1024;
@@ -50,6 +152,8 @@ MemoryBlockCache::MemoryBlockCache(int64_t aContentLength)
       mHasGrown(false) {
   if (aContentLength <= 0) {
     LOG("MemoryBlockCache() MEMORYBLOCKCACHE_ERRORS='InitUnderuse'");
+    Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
+                          InitUnderuse);
   }
 }
 
@@ -116,6 +220,15 @@ bool MemoryBlockCache::EnsureBufferCanContain(size_t aContentLength) {
     
     mBuffer.SetLength(capacity);
   }
+  size_t newSizes =
+      static_cast<size_t>(gCombinedSizes += (extra + extraCapacity));
+  size_t watermark =
+      MemoryBlockCacheTelemetry::NotifyCombinedSizeGrown(newSizes);
+  LOG("EnsureBufferCanContain(%zu) - buffer size %zu + requested %zu + bonus "
+      "%zu = %zu; combined "
+      "sizes %zu, watermark %zu",
+      aContentLength, initialLength, extra, extraCapacity, capacity, newSizes,
+      watermark);
   mHasGrown = true;
   return true;
 }
@@ -127,6 +240,8 @@ nsresult MemoryBlockCache::Init() {
   
   if (!EnsureBufferCanContain(mInitialContentLength)) {
     LOG("Init() MEMORYBLOCKCACHE_ERRORS='InitAllocation'");
+    Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
+                          InitAllocation);
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
@@ -149,9 +264,13 @@ nsresult MemoryBlockCache::WriteBlock(uint32_t aBlockIndex,
   if (offset + aData1.Length() + aData2.Length() > mBuffer.Length() &&
       !mHasGrown) {
     LOG("WriteBlock() MEMORYBLOCKCACHE_ERRORS='WriteBlockOverflow'");
+    Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
+                          WriteBlockOverflow);
   }
   if (!EnsureBufferCanContain(offset + aData1.Length() + aData2.Length())) {
     LOG("WriteBlock() MEMORYBLOCKCACHE_ERRORS='WriteBlockCannotGrow'");
+    Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
+                          WriteBlockCannotGrow);
     return NS_ERROR_FAILURE;
   }
 
@@ -171,6 +290,8 @@ nsresult MemoryBlockCache::Read(int64_t aOffset, uint8_t* aData,
   MOZ_ASSERT(aOffset >= 0);
   if (aOffset + aLength > int64_t(mBuffer.Length())) {
     LOG("Read() MEMORYBLOCKCACHE_ERRORS='ReadOverrun'");
+    Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
+                          ReadOverrun);
     return NS_ERROR_FAILURE;
   }
 
@@ -188,13 +309,19 @@ nsresult MemoryBlockCache::MoveBlock(int32_t aSourceBlockIndex,
   size_t destOffset = BlockIndexToOffset(aDestBlockIndex);
   if (sourceOffset + BLOCK_SIZE > mBuffer.Length()) {
     LOG("MoveBlock() MEMORYBLOCKCACHE_ERRORS='MoveBlockSourceOverrun'");
+    Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
+                          MoveBlockSourceOverrun);
     return NS_ERROR_FAILURE;
   }
   if (destOffset + BLOCK_SIZE > mBuffer.Length() && !mHasGrown) {
     LOG("MoveBlock() MEMORYBLOCKCACHE_ERRORS='MoveBlockDestOverflow'");
+    Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
+                          MoveBlockDestOverflow);
   }
   if (!EnsureBufferCanContain(destOffset + BLOCK_SIZE)) {
     LOG("MoveBlock() MEMORYBLOCKCACHE_ERRORS='MoveBlockCannotGrow'");
+    Telemetry::Accumulate(Telemetry::HistogramID::MEMORYBLOCKCACHE_ERRORS,
+                          MoveBlockCannotGrow);
     return NS_ERROR_FAILURE;
   }
 

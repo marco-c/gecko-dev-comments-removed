@@ -147,8 +147,13 @@ class TextTrackManager final : public nsIDOMEventListener {
   bool TrackIsDefault(TextTrack* aTextTrack);
 
   void ReportTelemetryForTrack(TextTrack* aTextTrack) const;
+  void ReportTelemetryForCue();
 
   bool IsShutdown() const;
+
+  
+  
+  bool mCueTelemetryReported;
 
   
   
