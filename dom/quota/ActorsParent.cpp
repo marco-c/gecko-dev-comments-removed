@@ -51,6 +51,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Telemetry.h"
@@ -104,11 +105,6 @@
 
 
 #define DEFAULT_SHUTDOWN_TIMER_MS 30000
-
-
-
-#define PREF_FIXED_LIMIT "dom.quotaManager.temporaryStorage.fixedLimit"
-#define PREF_CHUNK_SIZE "dom.quotaManager.temporaryStorage.chunkSize"
 
 
 #define PROFILE_BEFORE_CHANGE_QM_OBSERVER_ID "profile-before-change-qm"
@@ -1561,12 +1557,6 @@ StaticRefPtr<QuotaManager> gInstance;
 bool gCreateFailed = false;
 mozilla::Atomic<bool> gShutdown(false);
 
-
-static const int32_t kDefaultFixedLimitKB = -1;
-static const uint32_t kDefaultChunkSizeKB = 10 * 1024;
-Atomic<int32_t, Relaxed> gFixedLimitKB(kDefaultFixedLimitKB);
-Atomic<uint32_t, Relaxed> gChunkSizeKB(kDefaultChunkSizeKB);
-
 class StorageOperationBase {
  protected:
   struct OriginProps;
@@ -2307,11 +2297,13 @@ nsresult GetTemporaryStorageLimit(nsIFile* aDirectory, uint64_t aCurrentUsage,
 
   uint64_t availableKB =
       static_cast<uint64_t>((bytesAvailable + aCurrentUsage) / 1024);
+  uint32_t chunkSizeKB =
+      StaticPrefs::dom_quotaManager_temporaryStorage_chunkSize();
 
   
   
   
-  availableKB = (availableKB / gChunkSizeKB) * gChunkSizeKB;
+  availableKB = (availableKB / chunkSizeKB) * chunkSizeKB;
 
   
   uint64_t resultKB = availableKB * .50;
@@ -2342,11 +2334,6 @@ void InitializeQuotaManager() {
   if (NS_FAILED(QuotaManager::Initialize())) {
     NS_WARNING("Failed to initialize quota manager!");
   }
-
-  Preferences::AddAtomicIntVarCache(&gFixedLimitKB, PREF_FIXED_LIMIT,
-                                    kDefaultFixedLimitKB);
-  Preferences::AddAtomicUintVarCache(&gChunkSizeKB, PREF_CHUNK_SIZE,
-                                     kDefaultChunkSizeKB);
 
 #ifdef DEBUG
   gQuotaManagerInitialized = true;
@@ -5837,8 +5824,11 @@ nsresult QuotaManager::EnsureTemporaryStorageIsInitialized() {
   Telemetry::AccumulateTimeDelta(Telemetry::QM_REPOSITORIES_INITIALIZATION_TIME,
                                  startTime, TimeStamp::Now());
 
-  if (gFixedLimitKB >= 0) {
-    mTemporaryStorageLimit = static_cast<uint64_t>(gFixedLimitKB) * 1024;
+  if (StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit() >= 0) {
+    mTemporaryStorageLimit =
+        static_cast<uint64_t>(
+            StaticPrefs::dom_quotaManager_temporaryStorage_fixedLimit()) *
+        1024;
   } else {
     nsCOMPtr<nsIFile> storageDir =
         do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv);
