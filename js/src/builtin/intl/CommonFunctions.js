@@ -572,82 +572,6 @@ function parseLanguageTag(locale) {
 
 
 
-function parseStandaloneLanguage(language) {
-    
-    var length = language.length;
-    if (length < 2 || length === 4 || length > 8 || !IsASCIIAlphaString(language)) {
-        
-        
-        
-        return null;
-    }
-
-    return callFunction(std_String_toLowerCase, language);
-}
-
-
-
-
-
-function parseStandaloneScript(script) {
-    
-    if (script.length !== 4 || !IsASCIIAlphaString(script)) {
-        return null;
-    }
-
-    
-    
-    return callFunction(std_String_toUpperCase, script[0]) +
-           callFunction(std_String_toLowerCase, Substring(script, 1, script.length - 1));
-}
-
-
-
-
-
-function parseStandaloneRegion(region) {
-    
-    var length = region.length;
-    if ((length !== 2 || !IsASCIIAlphaString(region)) &&
-        (length !== 3 || !IsASCIIDigitString(region)))
-    {
-        return null;
-    }
-
-    
-    return callFunction(std_String_toUpperCase, region);
-}
-
-
-
-
-
-
-function parseStandaloneUnicodeExtensionType(type) {
-    
-    var ts = new BCP47TokenStream(type);
-    NEXT_TOKEN_OR_RETURN_NULL(ts);
-
-    
-    
-    
-    
-    
-    
-    do {
-        if (ts.tokenLength < 3 || ts.tokenLength > 8)
-            return null;
-
-        NEXT_TOKEN_OR_RETURN_NULL(ts);
-    } while (ts.token !== NONE);
-
-    return ts.localeLowercase;
-}
-
-
-
-
-
 function TransformExtensionComponents(extension) {
     assert(typeof extension === "string", "extension is a String value");
     assert(callFunction(std_String_startsWith, extension, "t-"),
@@ -1239,20 +1163,6 @@ function IsASCIIAlphaString(s) {
 
 
 
-function IsASCIIDigitString(s) {
-    assert(typeof s === "string", "IsASCIIDigitString");
-
-    for (var i = 0; i < s.length; i++) {
-        var c = callFunction(std_String_charCodeAt, s, i);
-        if (!(0x30 <= c && c <= 0x39))
-            return false;
-    }
-    return true;
-}
-
-
-
-
 function ValidateAndCanonicalizeLanguageTag(locale) {
     assert(typeof locale === "string", "ValidateAndCanonicalizeLanguageTag");
 
@@ -1443,9 +1353,9 @@ function CanonicalizeLocaleList(locales) {
     if (typeof locales === "string")
         return [ValidateAndCanonicalizeLanguageTag(locales)];
 
-    var unboxedLocale = callFunction(unboxLocaleOrNull, locales);
+    var unboxedLocale = LocaleToStringOrNull(locales);
     if (unboxedLocale !== null)
-        return [StringFromLanguageTagObject(unboxedLocale.locale)]
+        return [unboxedLocale];
 
     
     var seen = [];
@@ -1471,9 +1381,9 @@ function CanonicalizeLocaleList(locales) {
                 ThrowTypeError(JSMSG_INVALID_LOCALES_ELEMENT);
 
             
-            var unboxedLocale = callFunction(unboxLocaleOrNull, kValue);
+            var unboxedLocale = LocaleToStringOrNull(kValue);
             var tag = unboxedLocale !== null
-                      ? StringFromLanguageTagObject(unboxedLocale.locale)
+                      ? unboxedLocale
                       : ValidateAndCanonicalizeLanguageTag(ToString(kValue));
 
             
