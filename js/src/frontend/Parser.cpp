@@ -332,6 +332,34 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
   return funbox;
 }
 
+template <class ParseHandler>
+FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
+    FunctionNodeType funNode, FunctionCreationData& fcd, uint32_t toStringStart,
+    Directives inheritedDirectives, GeneratorKind generatorKind,
+    FunctionAsyncKind asyncKind) {
+  
+
+
+
+
+
+
+  FunctionBox* funbox = alloc_.new_<FunctionBox>(
+      cx_, traceListHead_, fcd, toStringStart, inheritedDirectives,
+      options().extraWarningsOption, generatorKind, asyncKind);
+  if (!funbox) {
+    ReportOutOfMemory(cx_);
+    return nullptr;
+  }
+
+  traceListHead_ = funbox;
+  if (funNode) {
+    handler_.setFunctionBox(funNode, funbox);
+  }
+
+  return funbox;
+}
+
 void ParserBase::trace(JSTracer* trc) {
   TraceListNode::TraceList(trc, traceListHead_);
 }
@@ -1713,8 +1741,8 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
                                         pc_->sc()->strict());
 }
 
-bool ParserBase::publishLazyScripts() {
-  if (FunctionTree* root = getTreeHolder()->getFunctionTree()) {
+bool ParserBase::publishLazyScripts(FunctionTree* root) {
+  if (root) {
     auto visitor = [](ParserBase* parser, FunctionTree* tree) {
       FunctionBox* funbox = tree->funbox();
       if (!funbox) {
@@ -1734,12 +1762,42 @@ bool ParserBase::publishLazyScripts() {
   return true;
 }
 
+bool ParserBase::publishDeferredFunctions(FunctionTree* root) {
+  if (root) {
+    auto visitor = [](ParserBase* parser, FunctionTree* tree) {
+      FunctionBox* funbox = tree->funbox();
+      if (!funbox) {
+        return true;
+      }
+
+      if (!funbox->functionCreationData().isSome()) {
+        return true;
+      }
+
+      Rooted<FunctionCreationData> fcd(parser->cx_,
+                                       *funbox->functionCreationData());
+
+      RootedFunction fun(parser->cx_, AllocNewFunction(parser->cx_, fcd));
+      if (!fun) {
+        return false;
+      }
+
+      funbox->initializeFunction(fun);
+      funbox->functionCreationData().reset();
+      return true;
+    };
+    return root->visitRecursively(this->cx_, this, visitor);
+  }
+  return true;
+}
+
 static bool EmitLazyScript(JSContext* cx, FunctionBox* funbox,
                            HandleScriptSourceObject sourceObject,
                            ParseGoal parseGoal) {
   LazyScriptCreationData& data = *funbox->lazyScriptData();
 
   Rooted<JSFunction*> function(cx, funbox->function());
+  MOZ_ASSERT(function);
   LazyScript* lazy = LazyScript::Create(
       cx, function, sourceObject, data.closedOverBindings,
       data.innerFunctionBoxes, funbox->bufStart, funbox->bufEnd,
@@ -2092,16 +2150,6 @@ JSFunction* AllocNewFunction(JSContext* cx,
     MOZ_ASSERT(!fun->isInterpretedLazy());
   }
   return fun;
-}
-
-JSFunction* ParserBase::newFunction(HandleAtom atom, FunctionSyntaxKind kind,
-                                    GeneratorKind generatorKind,
-                                    FunctionAsyncKind asyncKind) {
-  Rooted<FunctionCreationData> fcd(
-      cx_, GenerateFunctionCreationData(atom, kind, generatorKind, asyncKind,
-                                        options().selfHostingMode,
-                                        pc_->isFunctionBox()));
-  return AllocNewFunction(cx_, fcd);
 }
 
 template <class ParseHandler, typename Unit>
@@ -2705,11 +2753,9 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
     return funNode;
   }
 
-  RootedFunction fun(
-      cx_, newFunction(funName, kind, generatorKind, asyncKind));
-  if (!fun) {
-    return null();
-  }
+  FunctionCreationData fcd = GenerateFunctionCreationData(
+      funName, kind, generatorKind, asyncKind, options().selfHostingMode,
+      pc_->isFunctionBox());
 
   
   
@@ -2725,7 +2771,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
   
   while (true) {
     if (trySyntaxParseInnerFunction(
-            &funNode, fun, toStringStart, inHandling, yieldHandling, kind,
+            &funNode, fcd, toStringStart, inHandling, yieldHandling, kind,
             generatorKind, asyncKind, tryAnnexB, directives, &newDirectives)) {
       break;
     }
@@ -2753,7 +2799,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
 
 template <typename Unit>
 bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
-    FunctionNode** funNode, HandleFunction fun, uint32_t toStringStart,
+    FunctionNode** funNode, FunctionCreationData& fcd, uint32_t toStringStart,
     InHandling inHandling, YieldHandling yieldHandling, FunctionSyntaxKind kind,
     GeneratorKind generatorKind, FunctionAsyncKind asyncKind, bool tryAnnexB,
     Directives inheritedDirectives, Directives* newDirectives) {
@@ -2786,12 +2832,12 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
     
     
     FunctionBox* funbox =
-        newFunctionBox(*funNode, fun, toStringStart, inheritedDirectives,
+        newFunctionBox(*funNode, fcd, toStringStart, inheritedDirectives,
                        generatorKind, asyncKind);
     if (!funbox) {
       return false;
     }
-    funbox->initWithEnclosingParseContext(pc_, fun, kind);
+    funbox->initWithEnclosingParseContext(pc_, fcd, kind);
 
     
     
@@ -2836,7 +2882,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
 
   
   FunctionNodeType innerFunc = innerFunction(
-      *funNode, pc_, fun, toStringStart, inHandling, yieldHandling, kind,
+      *funNode, pc_, fcd, toStringStart, inHandling, yieldHandling, kind,
       generatorKind, asyncKind, tryAnnexB, inheritedDirectives, newDirectives);
   if (!innerFunc) {
     return false;
@@ -2848,13 +2894,14 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
 
 template <typename Unit>
 bool Parser<SyntaxParseHandler, Unit>::trySyntaxParseInnerFunction(
-    FunctionNodeType* funNode, HandleFunction fun, uint32_t toStringStart,
-    InHandling inHandling, YieldHandling yieldHandling, FunctionSyntaxKind kind,
-    GeneratorKind generatorKind, FunctionAsyncKind asyncKind, bool tryAnnexB,
-    Directives inheritedDirectives, Directives* newDirectives) {
+    FunctionNodeType* funNode, FunctionCreationData& fcd,
+    uint32_t toStringStart, InHandling inHandling, YieldHandling yieldHandling,
+    FunctionSyntaxKind kind, GeneratorKind generatorKind,
+    FunctionAsyncKind asyncKind, bool tryAnnexB, Directives inheritedDirectives,
+    Directives* newDirectives) {
   
   FunctionNodeType innerFunc = innerFunction(
-      *funNode, pc_, fun, toStringStart, inHandling, yieldHandling, kind,
+      *funNode, pc_, fcd, toStringStart, inHandling, yieldHandling, kind,
       generatorKind, asyncKind, tryAnnexB, inheritedDirectives, newDirectives);
 
   if (!innerFunc) {
@@ -2867,12 +2914,13 @@ bool Parser<SyntaxParseHandler, Unit>::trySyntaxParseInnerFunction(
 
 template <class ParseHandler, typename Unit>
 inline bool GeneralParser<ParseHandler, Unit>::trySyntaxParseInnerFunction(
-    FunctionNodeType* funNode, HandleFunction fun, uint32_t toStringStart,
-    InHandling inHandling, YieldHandling yieldHandling, FunctionSyntaxKind kind,
-    GeneratorKind generatorKind, FunctionAsyncKind asyncKind, bool tryAnnexB,
-    Directives inheritedDirectives, Directives* newDirectives) {
+    FunctionNodeType* funNode, FunctionCreationData& fcd,
+    uint32_t toStringStart, InHandling inHandling, YieldHandling yieldHandling,
+    FunctionSyntaxKind kind, GeneratorKind generatorKind,
+    FunctionAsyncKind asyncKind, bool tryAnnexB, Directives inheritedDirectives,
+    Directives* newDirectives) {
   return asFinalParser()->trySyntaxParseInnerFunction(
-      funNode, fun, toStringStart, inHandling, yieldHandling, kind,
+      funNode, fcd, toStringStart, inHandling, yieldHandling, kind,
       generatorKind, asyncKind, tryAnnexB, inheritedDirectives, newDirectives);
 }
 
@@ -2908,7 +2956,7 @@ GeneralParser<ParseHandler, Unit>::innerFunctionForFunctionBox(
 template <class ParseHandler, typename Unit>
 typename ParseHandler::FunctionNodeType
 GeneralParser<ParseHandler, Unit>::innerFunction(
-    FunctionNodeType funNode, ParseContext* outerpc, HandleFunction fun,
+    FunctionNodeType funNode, ParseContext* outerpc, FunctionCreationData& fcd,
     uint32_t toStringStart, InHandling inHandling, YieldHandling yieldHandling,
     FunctionSyntaxKind kind, GeneratorKind generatorKind,
     FunctionAsyncKind asyncKind, bool tryAnnexB, Directives inheritedDirectives,
@@ -2919,12 +2967,12 @@ GeneralParser<ParseHandler, Unit>::innerFunction(
   
 
   FunctionBox* funbox =
-      newFunctionBox(funNode, fun, toStringStart, inheritedDirectives,
+      newFunctionBox(funNode, fcd, toStringStart, inheritedDirectives,
                      generatorKind, asyncKind);
   if (!funbox) {
     return null();
   }
-  funbox->initWithEnclosingParseContext(outerpc, fun, kind);
+  funbox->initWithEnclosingParseContext(outerpc, fcd, kind);
 
   FunctionNodeType innerFunc = innerFunctionForFunctionBox(
       funNode, outerpc, funbox, inHandling, yieldHandling, kind, newDirectives);
@@ -3058,7 +3106,6 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
   
 
   FunctionBox* funbox = pc_->functionBox();
-  RootedFunction fun(cx_, funbox->function());
 
   if (kind == FunctionSyntaxKind::ClassConstructor ||
       kind == FunctionSyntaxKind::DerivedClassConstructor) {
@@ -3155,12 +3202,12 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
   
   if ((kind == FunctionSyntaxKind::Statement ||
        kind == FunctionSyntaxKind::Expression) &&
-      fun->explicitName() && !inheritedStrict && pc_->sc()->strict()) {
+      funbox->explicitName() && !inheritedStrict && pc_->sc()->strict()) {
     MOZ_ASSERT(pc_->sc()->hasExplicitUseStrict(),
                "strict mode should only change when a 'use strict' directive "
                "is present");
 
-    PropertyName* propertyName = fun->explicitName()->asPropertyName();
+    PropertyName* propertyName = funbox->explicitName()->asPropertyName();
     YieldHandling nameYieldHandling;
     if (kind == FunctionSyntaxKind::Expression) {
       
@@ -7304,13 +7351,10 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
           ? FunctionSyntaxKind::DerivedClassConstructor
           : FunctionSyntaxKind::ClassConstructor;
 
-  
-  RootedFunction fun(cx_, newFunction(className, functionSyntaxKind,
-                                      GeneratorKind::NotGenerator,
-                                      FunctionAsyncKind::SyncFunction));
-  if (!fun) {
-    return null();
-  }
+  FunctionCreationData data = GenerateFunctionCreationData(
+      className, functionSyntaxKind, GeneratorKind::NotGenerator,
+      FunctionAsyncKind::SyncFunction, options().selfHostingMode,
+      pc_->isFunctionBox());
 
   
   FunctionNodeType funNode = handler_.newFunction(functionSyntaxKind, pos());
@@ -7320,13 +7364,13 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
 
   
   Directives directives(true);
-  FunctionBox* funbox = newFunctionBox(funNode, fun, classNameOffset,
+  FunctionBox* funbox = newFunctionBox(funNode, data, classNameOffset,
                                        directives, GeneratorKind::NotGenerator,
                                        FunctionAsyncKind::SyncFunction);
   if (!funbox) {
     return null();
   }
-  funbox->initWithEnclosingParseContext(pc_, fun, functionSyntaxKind);
+  funbox->initWithEnclosingParseContext(pc_, data, functionSyntaxKind);
   handler_.setFunctionBox(funNode, funbox);
   setFunctionEndFromCurrentToken(funbox);
 
@@ -7476,13 +7520,10 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
     firstTokenPos = TokenPos(endPos, endPos);
   }
 
-  
-  RootedFunction fun(cx_, newFunction(nullptr, FunctionSyntaxKind::Method,
-                                      GeneratorKind::NotGenerator,
-                                      FunctionAsyncKind::SyncFunction));
-  if (!fun) {
-    return null();
-  }
+  FunctionCreationData data = GenerateFunctionCreationData(
+      nullptr, FunctionSyntaxKind::Method, GeneratorKind::NotGenerator,
+      FunctionAsyncKind::SyncFunction, options().selfHostingMode,
+      pc_->isFunctionBox());
 
   
   FunctionNodeType funNode =
@@ -7493,13 +7534,13 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
 
   
   Directives directives(true);
-  FunctionBox* funbox = newFunctionBox(funNode, fun, firstTokenPos.begin,
+  FunctionBox* funbox = newFunctionBox(funNode, data, firstTokenPos.begin,
                                        directives, GeneratorKind::NotGenerator,
                                        FunctionAsyncKind::SyncFunction);
   if (!funbox) {
     return null();
   }
-  funbox->initFieldInitializer(pc_, fun, hasHeritage);
+  funbox->initFieldInitializer(pc_, data, hasHeritage);
   handler_.setFunctionBox(funNode, funbox);
 
   

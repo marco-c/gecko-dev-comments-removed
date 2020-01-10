@@ -494,11 +494,6 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
 
   TokenStreamPosition startPosition(info.keepAtoms, parser->tokenStream);
 
-  Maybe<BytecodeEmitter> emitter;
-  if (!emplaceEmitter(info, emitter, sc)) {
-    return nullptr;
-  }
-
   JSContext* cx = info.cx;
 
   for (;;) {
@@ -518,7 +513,12 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
                                        JS::ProfilingCategoryPair::JS_Parsing);
     if (pn) {
       
-      if (!parser->publishLazyScripts()) {
+      if (!parser->publishDeferredItems()) {
+        return nullptr;
+      }
+
+      Maybe<BytecodeEmitter> emitter;
+      if (!emplaceEmitter(info, emitter, sc)) {
         return nullptr;
       }
 
@@ -577,7 +577,7 @@ ModuleObject* frontend::ModuleCompiler<Unit>::compile(ModuleInfo& info) {
     return nullptr;
   }
 
-  if (!parser->publishLazyScripts()) {
+  if (!parser->publishDeferredItems()) {
     return nullptr;
   }
 
@@ -659,7 +659,7 @@ bool frontend::StandaloneFunctionCompiler<Unit>::compile(
       return false;
     }
 
-    if (!parser->publishLazyScripts()) {
+    if (!parser->publishDeferredItems()) {
       return false;
     }
     Maybe<BytecodeEmitter> emitter;
