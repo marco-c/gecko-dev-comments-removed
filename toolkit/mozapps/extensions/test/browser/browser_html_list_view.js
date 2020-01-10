@@ -185,6 +185,20 @@ add_task(async function testExtensionList() {
 
   
   
+  const themeXpi = AddonTestUtils.createTempWebExtensionFile({
+    manifest: {
+      name: "My theme",
+      applications: {gecko: {id: "theme@mochi.test"}},
+      theme: {},
+    },
+  });
+  const themeAddon = await AddonManager.installTemporaryAddon(themeXpi);
+  
+  
+  await themeAddon.uninstall(true);
+
+  
+  
   const xpi = AddonTestUtils.createTempWebExtensionFile({
     manifest: {
       name: "Test extension 3",
@@ -215,6 +229,14 @@ add_task(async function testExtensionList() {
 
   ok(!await AddonManager.getAddonByID(addon3.id),
      "The third addon has been fully uninstalled");
+
+  ok(themeAddon.pendingOperations & AddonManager.PENDING_UNINSTALL,
+     "The theme addon is pending after the list extension view is closed");
+
+  await themeAddon.uninstall();
+
+  ok(!await AddonManager.getAddonByID(themeAddon.id),
+     "The theme addon is fully uninstalled");
 });
 
 add_task(async function testMouseSupport() {
