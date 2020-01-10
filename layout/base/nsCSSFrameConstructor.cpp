@@ -10803,9 +10803,6 @@ void nsCSSFrameConstructor::FinishBuildingColumns(
 
   nsFrameList finalList;
   while (aColumnContentSiblings.NotEmpty()) {
-    
-    prevColumnSet->SetProperty(nsIFrame::HasColumnSpanSiblings(), true);
-
     nsIFrame* f = aColumnContentSiblings.RemoveFirstChild();
     if (f->IsColumnSpan()) {
       
