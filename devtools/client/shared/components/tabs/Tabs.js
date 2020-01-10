@@ -232,6 +232,13 @@ define(function(require, exports, module) {
       }
     }
 
+    onMouseDown(event) {
+      
+      if (event) {
+        event.preventDefault();
+      }
+    }
+
     
 
     setActive(index) {
@@ -322,6 +329,7 @@ define(function(require, exports, module) {
                 "aria-selected": isTabSelected,
                 role: "tab",
                 onClick: this.onClickTab.bind(this, index),
+                onMouseDown: this.onMouseDown.bind(this),
               },
               title,
               badge && !isTabSelected && showBadge()
