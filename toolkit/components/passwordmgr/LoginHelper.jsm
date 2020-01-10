@@ -722,6 +722,14 @@ this.LoginHelper = {
             ) {
               return true;
             }
+            
+            
+            if (
+              existingLoginURI.host == preferredOriginURI.host &&
+              newLoginURI.host != preferredOriginURI.host
+            ) {
+              return false;
+            }
             break;
           }
           case "timeLastUsed":
