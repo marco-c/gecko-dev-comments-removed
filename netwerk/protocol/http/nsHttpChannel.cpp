@@ -2254,9 +2254,7 @@ void nsHttpChannel::ProcessSecurityReport(nsresult status) {
   }
 }
 
-bool nsHttpChannel::IsHTTPS() {
-  return mURI->SchemeIs("https");
-}
+bool nsHttpChannel::IsHTTPS() { return mURI->SchemeIs("https"); }
 
 void nsHttpChannel::ProcessSSLInformation() {
   
@@ -2895,7 +2893,8 @@ nsresult nsHttpChannel::ContinueProcessResponse4(nsresult rv) {
   bool doNotRender = DoNotRender3xxBody(rv);
 
   if (rv == NS_ERROR_DOM_BAD_URI && mRedirectURI) {
-    bool isHTTP = mRedirectURI->SchemeIs("http") || mRedirectURI->SchemeIs("https");
+    bool isHTTP =
+        mRedirectURI->SchemeIs("http") || mRedirectURI->SchemeIs("https");
     if (!isHTTP) {
       
       
@@ -7567,7 +7566,8 @@ nsresult nsHttpChannel::ProcessCrossOriginResourcePolicyHeader() {
     
     
     if ((content.IsEmpty() && ctx &&
-        ctx->GetEmbedderPolicy() == nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP)) {
+         ctx->GetEmbedderPolicy() ==
+             nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP)) {
       content = NS_LITERAL_CSTRING("same-origin");
     }
   }
@@ -9634,12 +9634,6 @@ void nsHttpChannel::MaybeWarnAboutAppCache() {
   GetCallback(warner);
   if (warner) {
     warner->IssueWarning(Document::eAppCache, false);
-    
-    
-    if (!IsHTTPS() &&
-        Preferences::GetBool("browser.cache.offline.insecure.enable")) {
-      warner->IssueWarning(Document::eAppCacheInsecure, true);
-    }
   }
 }
 
