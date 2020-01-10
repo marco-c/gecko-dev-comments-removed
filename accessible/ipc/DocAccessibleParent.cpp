@@ -846,11 +846,18 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvBatch(
   
   
 #  if defined(ANDROID)
+  if (mShutdown) {
+    return IPC_OK();
+  }
   nsTArray<ProxyAccessible*> proxies(aData.Length());
   for (size_t i = 0; i < aData.Length(); i++) {
     DocAccessibleParent* doc = static_cast<DocAccessibleParent*>(
         aData.ElementAt(i).Document().get_PDocAccessibleParent());
     MOZ_ASSERT(doc);
+
+    if (doc->IsShutdown()) {
+      continue;
+    }
 
     ProxyAccessible* proxy = doc->GetAccessible(aData.ElementAt(i).ID());
     if (!proxy) {
