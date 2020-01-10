@@ -6,12 +6,23 @@ import subprocess
 import tempfile
 from datetime import datetime, timedelta
 
-from six import iteritems
+from six import iteritems, PY2
 
 
 
 
 CERT_EXPIRY_BUFFER = dict(hours=6)
+
+
+def _ensure_str(s, encoding):
+    """makes sure s is an instance of str, converting with encoding if needed"""
+    if isinstance(s, str):
+        return s
+
+    if PY2:
+        return s.encode(encoding)
+    else:
+        return s.decode(encoding)
 
 
 class OpenSSL(object):
@@ -67,16 +78,12 @@ class OpenSSL(object):
 
         
         
-        
         env = {}
         for k, v in iteritems(os.environ):
-            try:
-                env[k.encode("utf8")] = v.encode("utf8")
-            except UnicodeDecodeError:
-                pass
+            env[_ensure_str(k, "utf8")] = _ensure_str(v, "utf8")
 
         if self.base_conf_path is not None:
-            env["OPENSSL_CONF"] = self.base_conf_path.encode("utf8")
+            env["OPENSSL_CONF"] = _ensure_str(self.base_conf_path, "utf-8")
 
         self.proc = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                      env=env)
