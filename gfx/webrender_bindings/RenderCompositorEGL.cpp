@@ -81,7 +81,7 @@ bool RenderCompositorEGL::BeginFrame() {
     
     const auto* egl = gl::GLLibraryEGL::Get();
     
-    egl->fSwapInterval(gl::EGL_DISPLAY(), 0);
+    egl->fSwapInterval(egl->Display(), 0);
   }
 #endif
 
