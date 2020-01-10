@@ -21,6 +21,7 @@ add_task(async function() {
       </html>`,
     },
     async function(browser) {
+      await loadContentScripts(browser, "Common.jsm");
       info(
         "Creating a service in parent and waiting for service to be created " +
           "in content"
@@ -40,12 +41,9 @@ add_task(async function() {
           "process"
       );
       
-      loadFrameScripts(
-        browser,
-        `let accService = Components.classes[
-      '@mozilla.org/accessibilityService;1'].getService(
-        Components.interfaces.nsIAccessibilityService);`
-      );
+      await ContentTask.spawn(browser, {}, () => {
+        content.CommonUtils.accService;
+      });
 
       info(
         "Trying to shut down a service in content and making sure it stays " +
@@ -65,10 +63,9 @@ add_task(async function() {
       
       
       
-      loadFrameScripts(
-        browser,
-        `accService = null; Components.utils.forceGC();`
-      );
+      await ContentTask.spawn(browser, {}, () => {
+        content.CommonUtils.clearAccService();
+      });
 
       
       await new Promise(resolve => executeSoon(resolve));
