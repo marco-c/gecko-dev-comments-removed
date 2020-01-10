@@ -4,6 +4,7 @@
 
 
 #include "SessionAccessibility.h"
+#include "Accessible-inl.h"
 #include "AndroidUiThread.h"
 #include "DocAccessibleParent.h"
 #include "nsThreadUtils.h"

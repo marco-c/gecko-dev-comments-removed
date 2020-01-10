@@ -5,12 +5,13 @@
 
 #include "AccessibleWrap.h"
 
+#include "JavaBuiltins.h"
 #include "Accessible-inl.h"
+#include "HyperTextAccessible-inl.h"
 #include "AccEvent.h"
 #include "AndroidInputType.h"
 #include "DocAccessibleWrap.h"
 #include "IDSet.h"
-#include "JavaBuiltins.h"
 #include "SessionAccessibility.h"
 #include "TraversalRule.h"
 #include "Pivot.h"
@@ -27,6 +28,13 @@
 #include "mozilla/jni/GeckoBundleUtils.h"
 
 #define ROLE_STRINGS_URL "chrome://global/locale/AccessFu.properties"
+
+
+
+
+#ifdef TRUE
+#  undef TRUE
+#endif
 
 using namespace mozilla::a11y;
 
