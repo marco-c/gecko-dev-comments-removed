@@ -184,8 +184,13 @@ struct MOZ_STACK_CLASS BidiParagraphData {
 
 
   struct FastLineIterator {
-    FastLineIterator() : mPrevFrame(nullptr) {}
+    FastLineIterator() : mPrevFrame(nullptr), mNextLineStart(nullptr) {}
 
+    
+    
+    
+    
+    
     
     
     
@@ -194,6 +199,7 @@ struct MOZ_STACK_CLASS BidiParagraphData {
     
     nsBlockInFlowLineIterator mLineIterator;
     nsIFrame* mPrevFrame;
+    nsIFrame* mNextLineStart;
 
     nsLineList::iterator GetLine() { return mLineIterator.GetLine(); }
 
@@ -213,10 +219,27 @@ struct MOZ_STACK_CLASS BidiParagraphData {
       return false;
     }
 
+    static nsIFrame* FirstChildOfNextLine(
+        nsBlockInFlowLineIterator& aIterator) {
+      const nsLineList::iterator line = aIterator.GetLine();
+      const nsLineList::iterator lineEnd = aIterator.End();
+      MOZ_ASSERT(line != lineEnd, "iterator should start off valid");
+      const nsLineList::iterator nextLine = line.next();
+
+      return nextLine != lineEnd ? nextLine->mFirstChild : nullptr;
+    }
+
     
     
     
     void AdvanceToFrame(nsIFrame* aFrame) {
+      if (mPrevFrame && FirstChildOfNextLine(mLineIterator) != mNextLineStart) {
+        
+        
+        
+        
+        mPrevFrame = nullptr;
+      }
       nsIFrame* child = aFrame;
       nsIFrame* parent = nsLayoutUtils::GetParentOrPlaceholderFor(child);
       while (parent && !parent->IsBlockFrameOrSubclass()) {
@@ -233,6 +256,7 @@ struct MOZ_STACK_CLASS BidiParagraphData {
         mPrevFrame = nullptr;
       }
       mPrevFrame = child;
+      mNextLineStart = FirstChildOfNextLine(mLineIterator);
     }
 
     
@@ -1018,20 +1042,6 @@ nsresult nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd) {
           frameInfo.mFrame = frame;
           contentOffset = runEnd;
 
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          aBpd->mCurrentResolveLine.mPrevFrame = nullptr;
-          aBpd->mCurrentTraverseLine.mPrevFrame = nullptr;
-
           aBpd->mCurrentResolveLine.AdvanceToFrame(frame);
         }  
         else {
@@ -1121,13 +1131,6 @@ nsresult nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd) {
             aBpd->mCurrentResolveLine.AdvanceToLinesAndFrame(lastRealFrame);
             SplitInlineAncestors(parent, aBpd->mCurrentResolveLine.GetLine(),
                                  child);
-
-            
-            
-            
-            
-            aBpd->mCurrentResolveLine.mPrevFrame = nullptr;
-            aBpd->mCurrentTraverseLine.mPrevFrame = nullptr;
 
             aBpd->mCurrentResolveLine.AdvanceToLinesAndFrame(lastRealFrame);
           }
