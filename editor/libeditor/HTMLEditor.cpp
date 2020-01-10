@@ -3376,6 +3376,8 @@ nsresult HTMLEditor::DeleteNodeWithTransaction(nsINode& aNode) {
 }
 
 nsresult HTMLEditor::DeleteAllChildrenWithTransaction(Element& aElement) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
   
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
       *this, EditSubAction::eDeleteNode, nsIEditor::eNext);

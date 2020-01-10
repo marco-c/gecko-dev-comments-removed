@@ -2037,6 +2037,8 @@ nsresult TextEditor::SharedOutputString(uint32_t aFlags, bool* aIsCollapsed,
 
 void TextEditor::OnStartToHandleTopLevelEditSubAction(
     EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
   
   RefPtr<TextEditRules> rules(mRules);
 
@@ -2047,6 +2049,35 @@ void TextEditor::OnStartToHandleTopLevelEditSubAction(
 
   MOZ_ASSERT(GetTopLevelEditSubAction() == aEditSubAction);
   MOZ_ASSERT(GetDirectionOfTopLevelEditSubAction() == aDirection);
+
+  if (rules->IsLocked()) {
+    return;
+  }
+
+  if (aEditSubAction == EditSubAction::eSetText) {
+    
+    
+    SetSpellCheckRestartPoint(EditorDOMPoint(mRootElement, 0));
+  } else {
+    bool useSelectionAnchor = true;
+    if (aEditSubAction == EditSubAction::eInsertText ||
+        aEditSubAction == EditSubAction::eInsertTextComingFromIME) {
+      
+      
+      
+      EditorRawDOMPoint point = FindBetterInsertionPoint(
+          EditorRawDOMPoint(SelectionRefPtr()->AnchorRef()));
+      if (point.IsSet()) {
+        SetSpellCheckRestartPoint(point);
+        useSelectionAnchor = false;
+      }
+    }
+    if (useSelectionAnchor && SelectionRefPtr()->AnchorRef().IsSet()) {
+      SetSpellCheckRestartPoint(
+          EditorRawDOMPoint(SelectionRefPtr()->AnchorRef()));
+    }
+  }
+
   DebugOnly<nsresult> rv = rules->BeforeEdit(aEditSubAction, aDirection);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rv),
@@ -2054,16 +2085,21 @@ void TextEditor::OnStartToHandleTopLevelEditSubAction(
 }
 
 void TextEditor::OnEndHandlingTopLevelEditSubAction() {
-  
-  RefPtr<TextEditRules> rules(mRules);
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
-  
-  DebugOnly<nsresult> rv =
-      rules ? rules->AfterEdit(GetTopLevelEditSubAction(),
-                               GetDirectionOfTopLevelEditSubAction())
-            : NS_OK;
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "TextEditRules::AfterEdit() failed to handle something");
+  if (mRules) {
+    
+    RefPtr<TextEditRules> rules(mRules);
+
+    if (!rules->IsLocked()) {
+      
+      DebugOnly<nsresult> rv = rules->AfterEdit(
+          GetTopLevelEditSubAction(), GetDirectionOfTopLevelEditSubAction());
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "TextEditRules::AfterEdit() failed to handle something");
+    }
+  }
   EditorBase::OnEndHandlingTopLevelEditSubAction();
   MOZ_ASSERT(!GetTopLevelEditSubAction());
   MOZ_ASSERT(GetDirectionOfTopLevelEditSubAction() == eNone);

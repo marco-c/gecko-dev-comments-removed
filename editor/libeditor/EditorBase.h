@@ -638,6 +638,21 @@ class EditorBase : public nsIEditor,
     const RefPtr<Selection>& SelectionRefPtr() const { return mSelection; }
     EditAction GetEditAction() const { return mEditAction; }
 
+    template <typename PT, typename CT>
+    void SetSpellCheckRestartPoint(const EditorDOMPointBase<PT, CT>& aPoint) {
+      MOZ_ASSERT(aPoint.IsSet());
+      
+      
+      
+      
+      mSpellCheckRestartPoint =
+          EditorDOMPoint(aPoint.GetContainer(), aPoint.Offset());
+    }
+    void ClearSpellCheckRestartPoint() { mSpellCheckRestartPoint.Clear(); }
+    const EditorDOMPoint& GetSpellCheckRestartPoint() const {
+      return mSpellCheckRestartPoint;
+    }
+
     void SetData(const nsAString& aData) { mData = aData; }
     const nsString& GetData() const { return mData; }
 
@@ -783,6 +798,10 @@ class EditorBase : public nsIEditor,
     
     RefPtr<dom::DataTransfer> mDataTransfer;
 
+    
+    
+    EditorDOMPoint mSpellCheckRestartPoint;
+
     EditAction mEditAction;
     EditSubAction mTopLevelEditSubAction;
     EDirection mDirectionOfTopLevelEditSubAction;
@@ -894,6 +913,22 @@ class EditorBase : public nsIEditor,
   const RangeUpdater& RangeUpdaterRef() const {
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->RangeUpdaterRef();
+  }
+
+  template <typename PT, typename CT>
+  void SetSpellCheckRestartPoint(const EditorDOMPointBase<PT, CT>& aPoint) {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return mEditActionData->SetSpellCheckRestartPoint(aPoint);
+  }
+
+  void ClearSpellCheckRestartPoint() {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return mEditActionData->ClearSpellCheckRestartPoint();
+  }
+
+  const EditorDOMPoint& GetSpellCheckRestartPoint() const {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return mEditActionData->GetSpellCheckRestartPoint();
   }
 
   
