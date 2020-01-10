@@ -10,12 +10,6 @@
 
 
 
-
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
-);
-PromiseTestUtils.whitelistRejectionsGlobally(/Page has navigated/);
-
 const server = createTestHTTPServer();
 
 let docValue = 1;

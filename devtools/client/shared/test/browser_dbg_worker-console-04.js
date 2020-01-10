@@ -19,9 +19,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
-);
 PromiseTestUtils.whitelistRejectionsGlobally(/connection just closed/);
 
 const TAB_URL = EXAMPLE_URL + "doc_WorkerTargetActor.attachThread-tab.html";

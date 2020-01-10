@@ -229,17 +229,8 @@ async function checkMessageObjectContents(msg, expected, expandList = []) {
   });
 }
 
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
-);
 PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_NOT_INITIALIZED/);
 PromiseTestUtils.whitelistRejectionsGlobally(/Error in asyncStorage/);
-
-
-
-PromiseTestUtils.whitelistRejectionsGlobally(
-  /Current thread has paused or resumed/
-);
 
 
 

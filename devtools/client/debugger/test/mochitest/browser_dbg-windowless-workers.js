@@ -2,15 +2,6 @@
 
 
 
-
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
-);
-PromiseTestUtils.whitelistRejectionsGlobally(
-  /Current thread has paused or resumed/
-);
-PromiseTestUtils.whitelistRejectionsGlobally(/Current thread has changed/);
-
 function assertClass(dbg, selector, className, ...args) {
   ok(
     findElement(dbg, selector, ...args).classList.contains(className),

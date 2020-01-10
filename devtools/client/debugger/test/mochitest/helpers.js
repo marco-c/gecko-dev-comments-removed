@@ -1832,3 +1832,16 @@ function evaluateExpressionInConsole(hud, expression) {
 function waitForInspectorPanelChange(dbg) {
   return dbg.toolbox.getPanelWhenReady("inspector");
 }
+
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
+
+
+
+
+PromiseTestUtils.whitelistRejectionsGlobally(/Page has navigated/);
+PromiseTestUtils.whitelistRejectionsGlobally(/Current thread has changed/);
+PromiseTestUtils.whitelistRejectionsGlobally(
+  /Current thread has paused or resumed/
+);

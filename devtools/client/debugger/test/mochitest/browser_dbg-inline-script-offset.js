@@ -6,12 +6,6 @@
 
 
 
-
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
-);
-PromiseTestUtils.whitelistRejectionsGlobally(/Page has navigated/);
-
 add_task(async function() {
   const dbg = await initDebugger("doc-inline-script-offset.html");
   await addBreakpoint(dbg, "doc-inline-script-offset.html", 6, 66);

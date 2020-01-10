@@ -3,9 +3,6 @@
 
 
 
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
-);
 PromiseTestUtils.whitelistRejectionsGlobally(/No such actor/);
 PromiseTestUtils.whitelistRejectionsGlobally(/connection just closed/);
 
