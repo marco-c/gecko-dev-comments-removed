@@ -1382,32 +1382,6 @@ RemoteWindowContext::GetUsePrivateBrowsing(bool* aUsePrivateBrowsing) {
 
 }  
 
-void ContentParent::MaybeAsyncSendShutDownMessage() {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!TryToRecycle());
-
-#ifdef DEBUG
-  
-  bool shouldKeepProcessAlive = ShouldKeepProcessAlive();
-#endif
-
-  auto lock = mRemoteWorkerActorData.Lock();
-  MOZ_ASSERT_IF(!lock->mCount, !shouldKeepProcessAlive);
-
-  if (lock->mCount) {
-    return;
-  }
-
-  MOZ_ASSERT(!lock->mShutdownStarted);
-  lock->mShutdownStarted = true;
-
-  
-  
-  MessageLoop::current()->PostTask(NewRunnableMethod<ShutDownMethod>(
-      "dom::ContentParent::ShutDownProcess", this,
-      &ContentParent::ShutDownProcess, SEND_SHUTDOWN_MESSAGE));
-}
-
 void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
   if (mScriptableHelper) {
     static_cast<ScriptableCPInfo*>(mScriptableHelper.get())->ProcessDied();
@@ -1752,17 +1726,14 @@ bool ContentParent::TryToRecycle() {
   return true;
 }
 
-bool ContentParent::ShouldKeepProcessAlive() {
+bool ContentParent::ShouldKeepProcessAlive() const {
   if (IsForJSPlugin()) {
     return true;
   }
 
   
-  {
-    const auto lock = mRemoteWorkerActorData.Lock();
-    if (lock->mCount) {
-      return true;
-    }
+  if (mRemoteWorkerActors) {
+    return true;
   }
 
   if (!sBrowserContentParents) {
@@ -1874,7 +1845,11 @@ void ContentParent::NotifyTabDestroyed(const TabId& aTabId,
   
   if (ManagedPBrowserParent().Count() == 1 && !ShouldKeepProcessAlive() &&
       !TryToRecycle()) {
-    MaybeAsyncSendShutDownMessage();
+    
+    
+    MessageLoop::current()->PostTask(NewRunnableMethod<ShutDownMethod>(
+        "dom::ContentParent::ShutDownProcess", this,
+        &ContentParent::ShutDownProcess, SEND_SHUTDOWN_MESSAGE));
   }
 }
 
@@ -2299,7 +2274,7 @@ ContentParent::ContentParent(ContentParent* aOpener,
       mChildID(gContentChildID++),
       mGeolocationWatchID(-1),
       mJSPluginID(aJSPluginID),
-      mRemoteWorkerActorData("ContentParent::mRemoteWorkerActorData"),
+      mRemoteWorkerActors(0),
       mNumDestroyingTabs(0),
       mLifecycleState(LifecycleState::LAUNCHING),
       mIsForBrowser(!mRemoteType.IsEmpty()),
@@ -5934,25 +5909,23 @@ mozilla::ipc::IPCResult ContentParent::RecvRestoreBrowsingContextChildren(
   return IPC_OK();
 }
 
-void ContentParent::RegisterRemoteWorkerActor() {
-  auto lock = mRemoteWorkerActorData.Lock();
-  ++lock->mCount;
-}
+void ContentParent::RegisterRemoteWorkerActor() { ++mRemoteWorkerActors; }
 
 void ContentParent::UnregisterRemoveWorkerActor() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  {
-    auto lock = mRemoteWorkerActorData.Lock();
-    if (--lock->mCount) {
-      return;
-    }
+  if (--mRemoteWorkerActors) {
+    return;
   }
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   if (!cpm->GetBrowserParentCountByProcessId(ChildID()) &&
       !ShouldKeepProcessAlive() && !TryToRecycle()) {
-    MaybeAsyncSendShutDownMessage();
+    
+    
+    MessageLoop::current()->PostTask(NewRunnableMethod<ShutDownMethod>(
+        "dom::ContentParent::ShutDownProcess", this,
+        &ContentParent::ShutDownProcess, SEND_SHUTDOWN_MESSAGE));
   }
 }
 

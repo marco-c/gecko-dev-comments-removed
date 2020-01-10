@@ -12,7 +12,6 @@
 #include "mozilla/dom/PushManager.h"
 #include "mozilla/dom/ServiceWorker.h"
 #include "mozilla/dom/ServiceWorkerRegistrationBinding.h"
-#include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsPrimitives.h"
@@ -198,41 +197,6 @@ already_AddRefed<Promise> ServiceWorkerRegistration::Update(ErrorResult& aRv) {
   RefPtr<Promise> outer = Promise::Create(global, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
-  }
-
-  
-
-
-
-  const bool hasNewestWorker = mDescriptor.GetInstalling() ||
-                               mDescriptor.GetWaiting() ||
-                               mDescriptor.GetActive();
-
-  
-
-
-
-  if (!hasNewestWorker) {
-    outer->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return outer.forget();
-  }
-
-  
-
-
-
-
-
-  if (!NS_IsMainThread()) {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(workerPrivate);
-
-    if (workerPrivate->IsServiceWorker() &&
-        (workerPrivate->GetServiceWorkerDescriptor().State() ==
-         ServiceWorkerState::Installing)) {
-      outer->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-      return outer.forget();
-    }
   }
 
   RefPtr<ServiceWorkerRegistration> self = this;
