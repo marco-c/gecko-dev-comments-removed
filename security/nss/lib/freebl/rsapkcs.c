@@ -115,7 +115,7 @@ rsa_FormatOneBlock(unsigned modulusLen,
 {
     unsigned char *block;
     unsigned char *bp;
-    int padLen;
+    unsigned int padLen;
     int i, j;
     SECStatus rv;
 
@@ -143,6 +143,7 @@ rsa_FormatOneBlock(unsigned modulusLen,
 
 
 
+
             padLen = modulusLen - data->len - 3;
             PORT_Assert(padLen >= RSA_BLOCK_MIN_PAD_LEN);
             if (padLen < RSA_BLOCK_MIN_PAD_LEN) {
@@ -160,6 +161,7 @@ rsa_FormatOneBlock(unsigned modulusLen,
 
         case RSA_BlockPublic:
             
+
 
 
 
@@ -236,8 +238,9 @@ rsa_FormatBlock(SECItem *result,
 
 
 
-            PORT_Assert(data->len <= (modulusLen - (3 + RSA_BLOCK_MIN_PAD_LEN)));
-
+            if (data->len > (modulusLen - (3 + RSA_BLOCK_MIN_PAD_LEN))) {
+                return SECFailure;
+            }
             result->data = rsa_FormatOneBlock(modulusLen, blockType, data);
             if (result->data == NULL) {
                 result->len = 0;

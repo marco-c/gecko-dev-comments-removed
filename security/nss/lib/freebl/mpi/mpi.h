@@ -288,7 +288,14 @@ void freebl_cpuid(unsigned long op, unsigned long *eax,
 #define DIGITS(MP) MP_DIGITS(MP)
 #define DIGIT(MP, N) MP_DIGIT(MP, N)
 
+
+
+
+
+
+
 #if MP_ARGCHK == 1
+#define ARGMPCHK(X)
 #define ARGCHK(X, Y)    \
     {                   \
         if (!(X)) {     \
@@ -297,8 +304,10 @@ void freebl_cpuid(unsigned long op, unsigned long *eax,
     }
 #elif MP_ARGCHK == 2
 #include <assert.h>
+#define ARGMPCHK(X) assert(X)
 #define ARGCHK(X, Y) assert(X)
 #else
+#define ARGMPCHK(X)
 #define ARGCHK(X, Y)
 #endif
 
