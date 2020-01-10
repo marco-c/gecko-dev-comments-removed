@@ -1,7 +1,12 @@
 
 
 
+
+
 "use strict";
+
+
+
 
 
 
@@ -67,12 +72,14 @@ async function gInit(perfFront, preferenceFront) {
 
       
       
-      getSymbolTableGetter: profile =>
-        createMultiModalGetSymbolTableFn(
-          profile,
-          selectors.getPerfFront(store.getState()),
-          selectors.getObjdirs(store.getState())
-        ),
+      getSymbolTableGetter:
+        
+        profile =>
+          createMultiModalGetSymbolTableFn(
+            profile,
+            selectors.getPerfFront(store.getState()),
+            selectors.getObjdirs(store.getState())
+          ),
     })
   );
 

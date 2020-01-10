@@ -16,6 +16,11 @@
 
 
 
+
+
+
+
+
 const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/client/shared/browser-loader.js"
 );
@@ -102,8 +107,9 @@ async function gInit() {
 
 function resizeWindow() {
   window.requestAnimationFrame(() => {
-    if (window.gResizePopup) {
-      window.gResizePopup(document.body.clientHeight);
+    const { gResizePopup } =  (window);
+    if (gResizePopup) {
+      gResizePopup(document.body.clientHeight);
     }
   });
 }

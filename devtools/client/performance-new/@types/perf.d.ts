@@ -1,12 +1,17 @@
 
 
 
+
+
+
+
+
 import {
   Reducer as ReduxReducer,
   Store as ReduxStore,
 } from "devtools/client/shared/vendor/redux";
 
-export interface PanelWindow extends Window {
+export interface PanelWindow {
   gToolbox?: any;
   gTarget?: any;
   gInit(perfFront: any, preferenceFront: any): void;
@@ -44,7 +49,15 @@ export interface PerfFront {
 
 
 
-export interface PreferenceFront {}
+export interface PreferenceFront {
+  clearUserPref: (prefName: string) => Promise<void>;
+  getStringPref: (prefName: string) => Promise<string>;
+  setStringPref: (prefName: string, value: string) => Promise<void>;
+  getCharPref: (prefName: string) => Promise<string>;
+  setCharPref: (prefName: string, value: string) => Promise<void>;
+  getIntPref: (prefName: string) => Promise<number>;
+  setIntPref: (prefName: string, value: number) => Promise<void>;
+}
 
 export type RecordingState =
   
@@ -122,7 +135,15 @@ export type ReceiveProfile = (
   getSymbolTableCallback: GetSymbolTableCallback
 ) => void;
 
-export type SetRecordingPreferences = (settings: Object) => void;
+export type SetRecordingPreferences = (settings: object) => void;
+
+
+
+
+interface GeckoProfilerFrameScriptInterface {
+  getProfile: () => Promise<object>;
+  getSymbolTable: GetSymbolTableCallback;
+}
 
 export interface RecordingStateFromPreferences {
   entries: number;
@@ -148,7 +169,7 @@ export interface InitializedValues {
   
   isPopup: boolean;
   
-  getSymbolTableGetter: (profile: Object) => GetSymbolTableCallback;
+  getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
 }
 
 
@@ -195,5 +216,27 @@ export type Action =
       setRecordingPreferences: SetRecordingPreferences;
       isPopup: boolean;
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
-      getSymbolTableGetter: (profile: Object) => GetSymbolTableCallback;
+      getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
     };
+
+export type PopupBackgroundFeatures = { [feature: string]: boolean };
+
+
+
+
+export interface PopupBackgroundState {
+  isRunning: boolean;
+  settingsOpen: boolean;
+  features: PopupBackgroundFeatures;
+  buffersize: number;
+  windowLength: number;
+  interval: number;
+  threads: string;
+}
+
+
+export interface ContentFrameMessageManager {
+  addMessageListener: (event: string, listener: (event: any) => void) => void;
+  addEventListener: (event: string, listener: (event: any) => void) => void;
+  sendAsyncMessage: (name: string, data: any) => void;
+}

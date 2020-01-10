@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 
@@ -8,20 +9,37 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "Services",
-  "resource://gre/modules/Services.jsm"
+
+
+
+
+
+
+
+
+
+function requireLazy(callback) {
+  
+  let cache;
+  return () => {
+    if (cache === undefined) {
+      cache = callback();
+    }
+    return cache;
+  };
+}
+
+const lazyServices = requireLazy(() =>
+  
+  (ChromeUtils.import("resource://gre/modules/Services.jsm"))
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "CustomizableUI",
-  "resource:///modules/CustomizableUI.jsm"
+const lazyCustomizableUI = requireLazy(() =>
+  
+  ChromeUtils.import("resource:///modules/CustomizableUI.jsm")
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "CustomizableWidgets",
-  "resource:///modules/CustomizableWidgets.jsm"
+const lazyCustomizableWidgets = requireLazy(() =>
+  
+  ChromeUtils.import("resource:///modules/CustomizableWidgets.jsm")
 );
 
 
@@ -31,17 +49,27 @@ ChromeUtils.defineModuleGetter(
 const BUTTON_ENABLED_PREF = "devtools.performance.popup.enabled";
 const WIDGET_ID = "profiler-button";
 
+
+
+
 function isEnabled() {
+  const { Services } = lazyServices();
   return Services.prefs.getBoolPref(BUTTON_ENABLED_PREF, false);
 }
+
+
+
+
+
 
 function setMenuItemChecked(document, isChecked) {
   const menuItem = document.querySelector("#menu_toggleProfilerButtonMenu");
   if (!menuItem) {
     return;
   }
-  menuItem.setAttribute("checked", isChecked);
+  menuItem.setAttribute("checked", isChecked.toString());
 }
+
 
 
 
@@ -49,8 +77,12 @@ function setMenuItemChecked(document, isChecked) {
 
 
 function toggle(document) {
+  const { CustomizableUI } = lazyCustomizableUI();
+  const { Services } = lazyServices();
+
   const toggledValue = !isEnabled();
   Services.prefs.setBoolPref(BUTTON_ENABLED_PREF, toggledValue);
+
   if (toggledValue) {
     initialize();
     CustomizableUI.addWidgetToArea(WIDGET_ID, CustomizableUI.AREA_NAVBAR);
@@ -67,68 +99,106 @@ function toggle(document) {
 
 
 
-const updateButtonColorForElement = buttonElement => () => {
-  const isRunning = Services.profiler.IsActive();
 
-  
-  buttonElement.style.fill = isRunning ? "#0060df" : "";
-};
+
+
+
+
+function updateButtonColorForElement(buttonElement) {
+  return () => {
+    const { Services } = lazyServices();
+    const isRunning = Services.profiler.IsActive();
+
+    
+    buttonElement.style.fill = isRunning ? "#0060df" : "";
+  };
+}
+
 
 
 
 
 
 function initialize() {
+  const { CustomizableUI } = lazyCustomizableUI();
+  const { CustomizableWidgets } = lazyCustomizableWidgets();
+  const { Services } = lazyServices();
+
   const widget = CustomizableUI.getWidget(WIDGET_ID);
   if (widget && widget.provider == CustomizableUI.PROVIDER_API) {
     
     return;
   }
 
-  let observer;
+  
+
+  
+  let observer = null;
 
   const item = {
     id: WIDGET_ID,
     type: "view",
     viewId: "PanelUI-profiler",
     tooltiptext: "profiler-button.tooltiptext",
-    onViewShowing: event => {
-      const panelview = event.target;
-      const document = panelview.ownerDocument;
 
+    onViewShowing:
       
-      const iframe = document.createXULElement("iframe");
-      iframe.id = "PanelUI-profilerIframe";
-      iframe.className = "PanelUI-developer-iframe";
-      iframe.src =
-        "chrome://devtools/content/performance-new/popup/popup.xhtml";
 
-      panelview.appendChild(iframe);
 
-      
-      iframe.contentWindow.gClosePopup = () => {
-        CustomizableUI.hidePanelForNode(iframe);
-      };
 
-      
-      iframe.contentWindow.gResizePopup = height => {
-        iframe.style.height = `${Math.min(600, height)}px`;
-      };
 
-      
-      
-      event.detail.addBlocker(
-        new Promise(resolve => {
-          iframe.contentWindow.gReportReady = () => {
-            
-            
-            delete iframe.contentWindow.gReportReady;
-            
-            resolve();
-          };
-        })
-      );
-    },
+
+
+
+      event => {
+        const panelview = event.target;
+        const document = panelview.ownerDocument;
+        if (!document) {
+          throw new Error(
+            "Expected to find a document on the panelview element."
+          );
+        }
+
+        
+        const iframe = document.createXULElement("iframe");
+        iframe.id = "PanelUI-profilerIframe";
+        iframe.className = "PanelUI-developer-iframe";
+        iframe.src =
+          "chrome://devtools/content/performance-new/popup/popup.xhtml";
+
+        panelview.appendChild(iframe);
+        
+        const contentWindow = iframe.contentWindow;
+
+        
+        contentWindow.gClosePopup = () => {
+          CustomizableUI.hidePanelForNode(iframe);
+        };
+
+        
+        
+        contentWindow.gResizePopup = height => {
+          iframe.style.height = `${Math.min(600, height)}px`;
+        };
+
+        
+        
+        event.detail.addBlocker(
+          new Promise(resolve => {
+            contentWindow.gReportReady = () => {
+              
+              
+              delete contentWindow.gReportReady;
+              
+              resolve();
+            };
+          })
+        );
+      },
+
+    
+
+
     onViewHiding(event) {
       const document = event.target.ownerDocument;
 
@@ -141,9 +211,13 @@ function initialize() {
       
       iframe.remove();
     },
+
+    
     onBeforeCreated: document => {
       setMenuItemChecked(document, true);
     },
+
+    
     onCreated: buttonElement => {
       observer = updateButtonColorForElement(buttonElement);
       Services.obs.addObserver(observer, "profiler-started");
@@ -153,12 +227,16 @@ function initialize() {
       
       observer();
     },
+
     onDestroyed: () => {
-      Services.obs.removeObserver(observer, "profiler-started");
-      Services.obs.removeObserver(observer, "profiler-stopped");
-      observer = null;
+      if (observer) {
+        Services.obs.removeObserver(observer, "profiler-started");
+        Services.obs.removeObserver(observer, "profiler-stopped");
+        observer = null;
+      }
     },
   };
+
   CustomizableUI.createWidget(item);
   CustomizableWidgets.push(item);
 }

@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 
@@ -11,27 +12,62 @@
 
 
 
+
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-const { loader } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 
 
 
 
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(
-  this,
-  "ProfilerGetSymbols",
-  "resource://gre/modules/ProfilerGetSymbols.jsm"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function requireLazy(callback) {
+  
+  let cache;
+  return () => {
+    if (cache === undefined) {
+      cache = callback();
+    }
+    return cache;
+  };
+}
+
+const lazyOS = requireLazy(() =>
+  
+  (ChromeUtils.import("resource://gre/modules/osfile.jsm"))
 );
-loader.lazyRequireGetter(
-  this,
-  "receiveProfile",
-  "devtools/client/performance-new/browser",
-  true
+
+const lazyProfilerGetSymbols = requireLazy(() =>
+  
+  (ChromeUtils.import("resource://gre/modules/ProfilerGetSymbols.jsm"))
 );
+
+const lazyReceiveProfile = requireLazy(() => {
+  const { require } = ChromeUtils.import(
+    "resource://devtools/shared/Loader.jsm"
+  );
+  
+  const browserModule = require("devtools/client/performance-new/browser");
+  return browserModule.receiveProfile;
+});
 
 
 
@@ -43,13 +79,33 @@ const DEFAULT_THREADS = "GeckoMain,Compositor";
 const DEFAULT_STACKWALK_FEATURE = true;
 
 
+
+
+
 const symbolCache = new Map();
+
+
+
+
+
+
+
+
+
+
 
 const primeSymbolStore = libs => {
   for (const { path, debugName, debugPath, breakpadId } of libs) {
     symbolCache.set(`${debugName}/${breakpadId}`, { path, debugPath });
   }
 };
+
+
+
+
+
+
+
 
 const state = initializeState();
 
@@ -66,6 +122,9 @@ const forTestsOnly = {
   },
 };
 
+
+
+
 function adjustState(newState) {
   
   
@@ -79,6 +138,10 @@ function adjustState(newState) {
     throw error;
   }
 }
+
+
+
+
 
 async function getSymbolsFromThisBrowser(debugName, breakpadId) {
   if (symbolCache.size === 0) {
@@ -98,6 +161,7 @@ async function getSymbolsFromThisBrowser(debugName, breakpadId) {
   }
 
   const { path, debugPath } = cachedLibInfo;
+  const { OS } = lazyOS();
   if (!OS.Path.split(path).absolute) {
     throw new Error(
       "Services.profiler.sharedLibraries did not contain an absolute path for " +
@@ -106,8 +170,12 @@ async function getSymbolsFromThisBrowser(debugName, breakpadId) {
     );
   }
 
+  const { ProfilerGetSymbols } = lazyProfilerGetSymbols();
   return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
 }
+
+
+
 
 async function captureProfile() {
   if (!state.isRunning) {
@@ -120,15 +188,21 @@ async function captureProfile() {
 
   const profile = await Services.profiler
     .getProfileDataAsGzippedArrayBuffer()
-    .catch(e => {
-      console.error(e);
-      return {};
-    });
+    .catch(
+       e => {
+        console.error(e);
+        return {};
+      }
+    );
 
+  const receiveProfile = lazyReceiveProfile();
   receiveProfile(profile, getSymbolsFromThisBrowser);
 
   Services.profiler.StopProfiler();
 }
+
+
+
 
 
 
@@ -160,9 +234,15 @@ function startProfiler() {
   );
 }
 
+
+
+
 function stopProfiler() {
   Services.profiler.StopProfiler();
 }
+
+
+
 
 function toggleProfiler() {
   if (state.isRunning) {
@@ -172,6 +252,9 @@ function toggleProfiler() {
   }
 }
 
+
+
+
 function restartProfiler() {
   stopProfiler();
   startProfiler();
@@ -180,6 +263,11 @@ function restartProfiler() {
 
 const isRunningObserver = {
   _observers: new Set(),
+
+  
+
+
+
 
   observe(subject, topic, data) {
     switch (topic) {
@@ -204,6 +292,9 @@ const isRunningObserver = {
     Services.obs.removeObserver(this, "profiler-stopped");
   },
 
+  
+
+
   addObserver(observer) {
     if (this._observers.size === 0) {
       this._startListening();
@@ -214,12 +305,18 @@ const isRunningObserver = {
     Promise.resolve(Services.profiler.IsActive()).then(observer);
   },
 
+  
+
+
   removeObserver(observer) {
     if (this._observers.delete(observer) && this._observers.size === 0) {
       this._stopListening();
     }
   },
 };
+
+
+
 
 function getStoredStateOrNull() {
   
@@ -243,6 +340,10 @@ function getStoredStateOrNull() {
   return null;
 }
 
+
+
+
+
 function _getArrayOfStringsPref(prefName, defaultValue) {
   let array;
   try {
@@ -261,6 +362,11 @@ function _getArrayOfStringsPref(prefName, defaultValue) {
 
   return defaultValue;
 }
+
+
+
+
+
 
 function _getArrayOfStringsHostPref(prefName, defaultValue) {
   let array;
@@ -284,7 +390,11 @@ function _getArrayOfStringsHostPref(prefName, defaultValue) {
   return defaultValue;
 }
 
-function getRecordingPreferencesFromBrowser(defaultSettings = {}) {
+
+
+
+
+function getRecordingPreferencesFromBrowser(defaultSettings) {
   const [entries, interval, features, threads, objdirs] = [
     Services.prefs.getIntPref(
       `devtools.performance.recording.entries`,
@@ -313,6 +423,9 @@ function getRecordingPreferencesFromBrowser(defaultSettings = {}) {
   return { entries, interval: newInterval, features, threads, objdirs };
 }
 
+
+
+
 function setRecordingPreferencesOnBrowser(settings) {
   Services.prefs.setIntPref(
     `devtools.performance.recording.entries`,
@@ -336,6 +449,9 @@ function setRecordingPreferencesOnBrowser(settings) {
     JSON.stringify(settings.objdirs)
   );
 }
+
+
+
 
 function initializeState() {
   const features = {
@@ -368,18 +484,28 @@ function initializeState() {
     
     
     for (const key of Object.keys(features)) {
-      features[key] =
-        key in storedFeatures ? Boolean(storedFeatures[key]) : features[key];
+      
+      const featureAsObjMap = features;
+      featureAsObjMap[key] =
+        key in storedFeatures
+          ? Boolean(storedFeatures[key])
+          : featureAsObjMap[key];
     }
   }
 
   
-  
+
+
+
+
+
   function validateStoredState(key, type, defaultValue) {
     if (!storedState) {
       return defaultValue;
     }
-    const storedValue = storedState[key];
+    
+    const storedStateAsObjMap = storedState;
+    const storedValue = storedStateAsObjMap[key];
     return typeof storedValue === type ? storedValue : defaultValue;
   }
 

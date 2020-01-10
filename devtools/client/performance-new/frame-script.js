@@ -1,7 +1,14 @@
 
 
 
+
+
+
 "use strict";
+
+
+
+
 
 
 
@@ -13,19 +20,33 @@ const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
 const SYMBOL_TABLE_REQUEST_EVENT = "devtools:perf-html-request-symbol-table";
 const SYMBOL_TABLE_RESPONSE_EVENT = "devtools:perf-html-reply-symbol-table";
 
+
 let gProfile = null;
 const symbolReplyPromiseMap = new Map();
 
-addMessageListener(TRANSFER_EVENT, e => {
+
+
+
+
+
+
+
+let frameScript;
+{
+  const any =  (this);
+  frameScript = any;
+}
+
+frameScript.addMessageListener(TRANSFER_EVENT, e => {
   gProfile = e.data;
   
   connectToPage();
   
   
-  addEventListener("DOMContentLoaded", connectToPage);
+  frameScript.addEventListener("DOMContentLoaded", connectToPage);
 });
 
-addMessageListener(SYMBOL_TABLE_RESPONSE_EVENT, e => {
+frameScript.addMessageListener(SYMBOL_TABLE_RESPONSE_EVENT, e => {
   const { debugName, breakpadId, status, result, error } = e.data;
   const promiseKey = [debugName, breakpadId].join(":");
   const { resolve, reject } = symbolReplyPromiseMap.get(promiseKey);
@@ -55,9 +76,13 @@ function connectToPage() {
   }
 }
 
+
 function getSymbolTable(debugName, breakpadId) {
   return new Promise((resolve, reject) => {
-    sendAsyncMessage(SYMBOL_TABLE_REQUEST_EVENT, { debugName, breakpadId });
+    frameScript.sendAsyncMessage(SYMBOL_TABLE_REQUEST_EVENT, {
+      debugName,
+      breakpadId,
+    });
     symbolReplyPromiseMap.set([debugName, breakpadId].join(":"), {
       resolve,
       reject,
@@ -73,10 +98,22 @@ function getSymbolTable(debugName, breakpadId) {
 
 
 
+
+
+
+
+
 function createPromiseInPage(fun, contentGlobal) {
+  
+
+
+
+
   function funThatClonesObjects(resolve, reject) {
     return fun(
+      
       result => resolve(Cu.cloneInto(result, contentGlobal)),
+      
       error => reject(Cu.cloneInto(error, contentGlobal))
     );
   }
@@ -89,8 +126,12 @@ function createPromiseInPage(fun, contentGlobal) {
 
 
 
+
+
+
 function wrapFunction(fun, contentGlobal) {
   return function() {
+    
     const result = fun.apply(this, arguments);
     if (typeof result === "object") {
       if ("then" in result && typeof result.then === "function") {
@@ -111,11 +152,17 @@ function wrapFunction(fun, contentGlobal) {
 
 
 
+
+
+
+
 function makeAccessibleToPage(obj, contentGlobal) {
+  
   const result = Cu.createObjectIn(contentGlobal);
   for (const field in obj) {
     switch (typeof obj[field]) {
       case "function":
+        
         Cu.exportFunction(wrapFunction(obj[field], contentGlobal), result, {
           defineAs: field,
         });

@@ -1,10 +1,8 @@
 
 
 
+
 "use strict";
-
-
-loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 
@@ -28,7 +26,7 @@ class PerformancePanel {
     this.panelWin = iframeWindow;
     this.toolbox = toolbox;
 
-    
+    const EventEmitter = require("devtools/shared/event-emitter");
     EventEmitter.decorate(this);
   }
 

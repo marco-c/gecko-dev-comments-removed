@@ -1,16 +1,47 @@
 
 
 
+
 "use strict";
 
 
-loader.lazyRequireGetter(this, "Services");
-loader.lazyRequireGetter(this, "OS", "resource://gre/modules/osfile.jsm", true);
-loader.lazyRequireGetter(
-  this,
-  "ProfilerGetSymbols",
-  "resource://gre/modules/ProfilerGetSymbols.jsm",
-  true
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function requireLazy(callback) {
+  
+  let cache;
+  return () => {
+    if (cache === undefined) {
+      cache = callback();
+    }
+    return cache;
+  };
+}
+
+const lazyServices = requireLazy(() =>
+  require("resource://gre/modules/Services.jsm")
+);
+
+const lazyOS = requireLazy(() => require("resource://gre/modules/osfile.jsm"));
+
+const lazyProfilerGetSymbols = requireLazy(() =>
+  require("resource://gre/modules/ProfilerGetSymbols.jsm")
 );
 
 const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
@@ -42,6 +73,7 @@ const OBJDIRS_PREF = "devtools.performance.recording.objdirs";
 
 
 function receiveProfile(profile, getSymbolTableCallback) {
+  const { Services } = lazyServices();
   
   
   const win = Services.wm.getMostRecentWindow("navigator:browser");
@@ -135,6 +167,7 @@ async function _getArrayOfStringsPref(preferenceFront, prefName, defaultValue) {
 
 
 async function _getArrayOfStringsHostPref(prefName, defaultValue) {
+  const { Services } = lazyServices();
   let array;
   try {
     const text = Services.prefs.getStringPref(
@@ -224,6 +257,7 @@ async function getRecordingPreferencesFromDebuggee(
 
 
 async function setRecordingPreferencesOnDebuggee(preferenceFront, settings) {
+  const { Services } = lazyServices();
   await Promise.all([
     preferenceFront.setIntPref(
       `devtools.performance.recording.entries`,
@@ -274,8 +308,13 @@ async function setRecordingPreferencesOnDebuggee(preferenceFront, settings) {
 
 
 
+
 function createLibraryMap(profile) {
   const map = new Map();
+
+  
+
+
   function fillMapForProcessRecursive(processProfile) {
     for (const lib of processProfile.libs) {
       const { debugName, breakpadId } = lib;
@@ -294,6 +333,12 @@ function createLibraryMap(profile) {
   };
 }
 
+
+
+
+
+
+
 async function getSymbolTableFromDebuggee(perfFront, path, breakpadId) {
   const [addresses, index, buffer] = await perfFront.getSymbolTable(
     path,
@@ -308,7 +353,12 @@ async function getSymbolTableFromDebuggee(perfFront, path, breakpadId) {
   ];
 }
 
+
+
+
+
 async function doesFileExistAtPath(path) {
+  const { OS } = lazyOS();
   try {
     const result = await OS.File.stat(path);
     return !result.isDir;
@@ -341,6 +391,7 @@ async function doesFileExistAtPath(path) {
 
 
 async function getSymbolTableFromLocalBinary(objdirs, filename, breakpadId) {
+  const { OS } = lazyOS();
   const candidatePaths = [];
   for (const objdirPath of objdirs) {
     
@@ -354,6 +405,7 @@ async function getSymbolTableFromLocalBinary(objdirs, filename, breakpadId) {
 
   for (const path of candidatePaths) {
     if (await doesFileExistAtPath(path)) {
+      const { ProfilerGetSymbols } = lazyProfilerGetSymbols();
       try {
         return await ProfilerGetSymbols.getSymbolTable(path, path, breakpadId);
       } catch (e) {
@@ -389,8 +441,15 @@ function createMultiModalGetSymbolTableFn(profile, objdirs, perfFront) {
   const libraryGetter = createLibraryMap(profile);
 
   return async function getSymbolTable(debugName, breakpadId) {
-    const { name, path, debugPath } = libraryGetter(debugName, breakpadId);
+    const result = libraryGetter(debugName, breakpadId);
+    if (!result) {
+      throw new Error(
+        `Could not find the library for "${debugName}", "${breakpadId}".`
+      );
+    }
+    const { name, path, debugPath } = result;
     if (await doesFileExistAtPath(path)) {
+      const { ProfilerGetSymbols } = lazyProfilerGetSymbols();
       
       
       
