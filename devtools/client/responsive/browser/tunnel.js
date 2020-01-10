@@ -142,7 +142,6 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      
       outer[FRAME_LOADER] = outer.frameLoader;
       Object.defineProperty(outer, "frameLoader", {
         get() {
