@@ -488,8 +488,7 @@ IdlArray.prototype.internal_add_idls = function(parsed_idls, options)
             break;
 
         case "callback":
-            
-            console.log("callback not yet supported");
+            this.members[parsed_idl.name] = new IdlCallback(parsed_idl);
             break;
 
         case "enum":
@@ -1163,9 +1162,13 @@ IdlArray.prototype.assert_type_is = function(value, type)
     {
         
     }
+    else if (this.members[type] instanceof IdlCallback)
+    {
+        assert_equals(typeof value, "function");
+    }
     else
     {
-        throw new IdlHarnessError("Type " + type + " isn't an interface or dictionary");
+        throw new IdlHarnessError("Type " + type + " isn't an interface, callback or dictionary");
     }
 };
 
@@ -3095,6 +3098,24 @@ function IdlEnum(obj)
 }
 
 IdlEnum.prototype = Object.create(IdlObject.prototype);
+
+
+
+function IdlCallback(obj)
+{
+    
+
+
+
+
+    
+    this.name = obj.name;
+
+    
+    this.arguments = obj.arguments;
+}
+
+IdlCallback.prototype = Object.create(IdlObject.prototype);
 
 
 
