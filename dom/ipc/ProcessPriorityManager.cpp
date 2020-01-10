@@ -14,6 +14,7 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Logging.h"
@@ -144,9 +145,6 @@ class ProcessPriorityManagerImpl final : public nsIObserver,
   void TabActivityChanged(BrowserParent* aBrowserParent, bool aIsActive);
 
  private:
-  static bool sPrefsEnabled;
-  static bool sRemoteTabsDisabled;
-  static bool sTestMode;
   static bool sPrefListenersRegistered;
   static bool sInitialized;
   static StaticRefPtr<ProcessPriorityManagerImpl> sSingleton;
@@ -293,12 +291,6 @@ class ParticularProcessPriorityManager final : public WakeLockObserver,
 
 bool ProcessPriorityManagerImpl::sInitialized = false;
 
-bool ProcessPriorityManagerImpl::sPrefsEnabled = false;
-
-bool ProcessPriorityManagerImpl::sRemoteTabsDisabled = true;
-
-bool ProcessPriorityManagerImpl::sTestMode = false;
-
 bool ProcessPriorityManagerImpl::sPrefListenersRegistered = false;
 
 StaticRefPtr<ProcessPriorityManagerImpl> ProcessPriorityManagerImpl::sSingleton;
@@ -323,12 +315,15 @@ void ProcessPriorityManagerImpl::PrefChangedCallback(const char* aPref,
 
 
 bool ProcessPriorityManagerImpl::PrefsEnabled() {
-  return sPrefsEnabled && hal::SetProcessPrioritySupported() &&
-         !sRemoteTabsDisabled;
+  return StaticPrefs::dom_ipc_processPriorityManager_enabled() &&
+         hal::SetProcessPrioritySupported() &&
+         !StaticPrefs::dom_ipc_tabs_disabled();
 }
 
 
-bool ProcessPriorityManagerImpl::TestMode() { return sTestMode; }
+bool ProcessPriorityManagerImpl::TestMode() {
+  return StaticPrefs::dom_ipc_processPriorityManager_testMode();
+}
 
 
 void ProcessPriorityManagerImpl::StaticInit() {
@@ -340,14 +335,6 @@ void ProcessPriorityManagerImpl::StaticInit() {
   if (!XRE_IsParentProcess()) {
     sInitialized = true;
     return;
-  }
-
-  if (!sPrefListenersRegistered) {
-    Preferences::AddBoolVarCache(&sPrefsEnabled,
-                                 "dom.ipc.processPriorityManager.enabled");
-    Preferences::AddBoolVarCache(&sRemoteTabsDisabled, "dom.ipc.tabs.disabled");
-    Preferences::AddBoolVarCache(&sTestMode,
-                                 "dom.ipc.processPriorityManager.testMode");
   }
 
   
