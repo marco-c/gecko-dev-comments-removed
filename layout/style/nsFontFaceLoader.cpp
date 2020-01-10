@@ -57,6 +57,11 @@ nsFontFaceLoader::nsFontFaceLoader(gfxUserFontEntry* aUserFontEntry,
   MOZ_ASSERT(mFontFaceSet,
              "We should get a valid FontFaceSet from the caller!");
   mStartTime = TimeStamp::Now();
+
+  
+  
+  
+  mFontFaceSet->Document()->BlockOnload();
 }
 
 nsFontFaceLoader::~nsFontFaceLoader() {
@@ -71,6 +76,7 @@ nsFontFaceLoader::~nsFontFaceLoader() {
   }
   if (mFontFaceSet) {
     mFontFaceSet->RemoveLoader(this);
+    mFontFaceSet->Document()->UnblockOnload(false);
   }
 }
 
@@ -206,6 +212,11 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
 
   DropChannel();
 
+  if (mLoadTimer) {
+    mLoadTimer->Cancel();
+    mLoadTimer = nullptr;
+  }
+
   if (!mFontFaceSet) {
     
     return aStatus;
@@ -257,42 +268,43 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  bool fontUpdate =
-      mUserFontEntry->FontDataDownloadComplete(aString, aStringLen, aStatus);
-
   mFontFaceSet->GetUserFontSet()->RecordFontLoadDone(aStringLen, doneTime);
 
   
-  if (fontUpdate) {
-    nsTArray<gfxUserFontSet*> fontSets;
-    mUserFontEntry->GetUserFontSets(fontSets);
-    for (gfxUserFontSet* fontSet : fontSets) {
-      nsPresContext* ctx = FontFaceSet::GetPresContextFor(fontSet);
-      if (ctx) {
-        
-        
-        ctx->UserFontSetUpdated(mUserFontEntry);
-        LOG(("userfonts (%p) reflow for pres context %p\n", this, ctx));
-      }
+  
+  
+  
+  
+  
+
+  
+  
+  mUserFontEntry->FontDataDownloadComplete(aString, aStringLen, aStatus, this);
+  return NS_SUCCESS_ADOPTED_DATA;
+}
+
+nsresult nsFontFaceLoader::FontLoadComplete() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  nsTArray<gfxUserFontSet*> fontSets;
+  mUserFontEntry->GetUserFontSets(fontSets);
+  for (gfxUserFontSet* fontSet : fontSets) {
+    nsPresContext* ctx = FontFaceSet::GetPresContextFor(fontSet);
+    if (ctx) {
+      
+      
+      ctx->UserFontSetUpdated(mUserFontEntry);
+      LOG(("userfonts (%p) reflow for pres context %p\n", this, ctx));
     }
   }
 
   MOZ_DIAGNOSTIC_ASSERT(mFontFaceSet);
   mFontFaceSet->RemoveLoader(this);
-  
+  mFontFaceSet->Document()->UnblockOnload(false);
   mFontFaceSet = nullptr;
-  if (mLoadTimer) {
-    mLoadTimer->Cancel();
-    mLoadTimer = nullptr;
-  }
 
-  return NS_SUCCESS_ADOPTED_DATA;
+  return NS_OK;
 }
 
 
@@ -323,6 +335,7 @@ void nsFontFaceLoader::Cancel() {
 
   mUserFontEntry->LoadCanceled();
   mUserFontEntry = nullptr;
+  mFontFaceSet->Document()->UnblockOnload(false);
   mFontFaceSet = nullptr;
   if (mLoadTimer) {
     mLoadTimer->Cancel();

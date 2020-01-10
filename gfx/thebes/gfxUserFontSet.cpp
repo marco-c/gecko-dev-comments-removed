@@ -688,6 +688,27 @@ bool gfxUserFontEntry::LoadPlatformFontSync(const uint8_t* aFontData,
   return LoadPlatformFont(aFontData, aLength, fontType, saneData, saneLen);
 }
 
+void gfxUserFontEntry::StartPlatformFontLoadOnWorkerThread(
+    const uint8_t* aFontData, uint32_t aLength,
+    nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback) {
+  MOZ_ASSERT(sFontLoadingThread);
+  MOZ_ASSERT(sFontLoadingThread->IsOnCurrentThread());
+
+  uint32_t saneLen;
+  gfxUserFontType fontType;
+  const uint8_t* saneData =
+      SanitizeOpenTypeData(aFontData, aLength, saneLen, fontType);
+
+  nsCOMPtr<nsIRunnable> event =
+      NewRunnableMethod<const uint8_t*, uint32_t, gfxUserFontType,
+                        const uint8_t*, uint32_t,
+                        nsMainThreadPtrHandle<nsIFontLoadCompleteCallback>>(
+          "gfxUserFontEntry::ContinuePlatformFontLoadOnMainThread", this,
+          &gfxUserFontEntry::ContinuePlatformFontLoadOnMainThread, aFontData,
+          aLength, fontType, saneData, saneLen, aCallback);
+  NS_DispatchToMainThread(event.forget());
+}
+
 bool gfxUserFontEntry::LoadPlatformFont(const uint8_t* aOriginalFontData,
                                         uint32_t aOriginalLength,
                                         gfxUserFontType aFontType,
@@ -829,9 +850,11 @@ void gfxUserFontEntry::IncrementGeneration() {
 
 
 
-bool gfxUserFontEntry::FontDataDownloadComplete(const uint8_t* aFontData,
-                                                uint32_t aLength,
-                                                nsresult aDownloadStatus) {
+void gfxUserFontEntry::FontDataDownloadComplete(
+    const uint8_t* aFontData, uint32_t aLength, nsresult aDownloadStatus,
+    nsIFontLoadCompleteCallback* aCallback) {
+  MOZ_ASSERT(NS_IsMainThread());
+
   
   
   mLoader = nullptr;
@@ -839,26 +862,72 @@ bool gfxUserFontEntry::FontDataDownloadComplete(const uint8_t* aFontData,
   
   if (NS_SUCCEEDED(aDownloadStatus) &&
       mFontDataLoadingState != LOADING_TIMED_OUT) {
-    bool loaded = LoadPlatformFontSync(aFontData, aLength);
-    aFontData = nullptr;
-
-    if (loaded) {
-      IncrementGeneration();
-      return true;
-    }
-
-  } else {
-    
-    mFontSet->LogMessage(
-        this,
-        (mFontDataLoadingState != LOADING_TIMED_OUT ? "download failed"
-                                                    : "download timed out"),
-        nsIScriptError::errorFlag, aDownloadStatus);
+    LoadPlatformFontAsync(aFontData, aLength, aCallback);
+    return;
   }
+
+  
+  mFontSet->LogMessage(
+      this,
+      (mFontDataLoadingState != LOADING_TIMED_OUT ? "download failed"
+                                                  : "download timed out"),
+      nsIScriptError::errorFlag, aDownloadStatus);
 
   if (aFontData) {
     free((void*)aFontData);
   }
+
+  FontLoadFailed(aCallback);
+}
+
+void gfxUserFontEntry::LoadPlatformFontAsync(
+    const uint8_t* aFontData, uint32_t aLength,
+    nsIFontLoadCompleteCallback* aCallback) {
+  
+  if (!sFontLoadingThread) {
+    sFontLoadingThread =
+        new LazyIdleThread(5000, NS_LITERAL_CSTRING("FontLoader"));
+  }
+
+  nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> cb(
+      new nsMainThreadPtrHolder<nsIFontLoadCompleteCallback>("FontLoader",
+                                                             aCallback));
+
+  
+  
+  nsCOMPtr<nsIRunnable> event =
+      NewRunnableMethod<const uint8_t*, uint32_t,
+                        nsMainThreadPtrHandle<nsIFontLoadCompleteCallback>>(
+          "gfxUserFontEntry::StartPlatformFontLoadOnWorkerThread", this,
+          &gfxUserFontEntry::StartPlatformFontLoadOnWorkerThread, aFontData,
+          aLength, cb);
+  MOZ_ALWAYS_SUCCEEDS(
+      sFontLoadingThread->Dispatch(event.forget(), NS_DISPATCH_NORMAL));
+}
+
+void gfxUserFontEntry::ContinuePlatformFontLoadOnMainThread(
+    const uint8_t* aOriginalFontData, uint32_t aOriginalLength,
+    gfxUserFontType aFontType, const uint8_t* aSanitizedFontData,
+    uint32_t aSanitizedLength,
+    nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  bool loaded = LoadPlatformFont(aOriginalFontData, aOriginalLength, aFontType,
+                                 aSanitizedFontData, aSanitizedLength);
+  aOriginalFontData = nullptr;
+  aSanitizedFontData = nullptr;
+
+  if (loaded) {
+    IncrementGeneration();
+    aCallback->FontLoadComplete();
+    return;
+  }
+
+  FontLoadFailed(aCallback);
+}
+
+void gfxUserFontEntry::FontLoadFailed(nsIFontLoadCompleteCallback* aCallback) {
+  MOZ_ASSERT(NS_IsMainThread());
 
   
   
@@ -874,7 +943,7 @@ bool gfxUserFontEntry::FontDataDownloadComplete(const uint8_t* aFontData,
   
   
   IncrementGeneration();
-  return true;
+  aCallback->FontLoadComplete();
 }
 
 void gfxUserFontEntry::GetUserFontSets(nsTArray<gfxUserFontSet*>& aResult) {
@@ -1294,6 +1363,8 @@ gfxUserFontSet::UserFontCache::MemoryReporter::CollectReports(
 
   return NS_OK;
 }
+
+StaticRefPtr<LazyIdleThread> gfxUserFontEntry::sFontLoadingThread;
 
 #ifdef DEBUG_USERFONT_CACHE
 

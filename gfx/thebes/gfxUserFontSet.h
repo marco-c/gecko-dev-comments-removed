@@ -10,8 +10,10 @@
 #include "gfxFontFamilyList.h"
 #include "gfxFontSrcPrincipal.h"
 #include "gfxFontSrcURI.h"
+#include "nsProxyRelease.h"
 #include "nsRefPtrHashtable.h"
 #include "nsCOMPtr.h"
+#include "nsIFontLoadCompleteCallback.h"
 #include "nsIMemoryReporter.h"
 #include "nsIPrincipal.h"
 #include "nsIRunnable.h"
@@ -22,6 +24,8 @@
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/net/ReferrerPolicy.h"
 #include "gfxFontConstants.h"
+#include "mozilla/LazyIdleThread.h"
+#include "mozilla/StaticPtr.h"
 
 class gfxFont;
 
@@ -635,6 +639,8 @@ class gfxUserFontEntry : public gfxFontEntry {
     MOZ_ASSERT_UNREACHABLE("not meaningful for a userfont placeholder");
   }
 
+  static void Shutdown() { sFontLoadingThread = nullptr; }
+
  protected:
   const uint8_t* SanitizeOpenTypeData(const uint8_t* aData, uint32_t aLength,
                                       uint32_t& aSaneLength,
@@ -652,10 +658,9 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   
   
-  
-  
-  bool FontDataDownloadComplete(const uint8_t* aFontData, uint32_t aLength,
-                                nsresult aDownloadStatus);
+  void FontDataDownloadComplete(const uint8_t* aFontData, uint32_t aLength,
+                                nsresult aDownloadStatus,
+                                nsIFontLoadCompleteCallback* aCallback);
 
   
   
@@ -663,11 +668,31 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   bool LoadPlatformFontSync(const uint8_t* aFontData, uint32_t aLength);
 
+  void LoadPlatformFontAsync(const uint8_t* aFontData, uint32_t aLength,
+                             nsIFontLoadCompleteCallback* aCallback);
+
+  
+  void StartPlatformFontLoadOnWorkerThread(
+      const uint8_t* aFontData, uint32_t aLength,
+      nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback);
+
+  
+  void ContinuePlatformFontLoadOnMainThread(
+      const uint8_t* aOriginalFontData, uint32_t aOriginalLength,
+      gfxUserFontType aFontType, const uint8_t* aSanitizedFontData,
+      uint32_t aSanitizedLength,
+      nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback);
+
+  
   
   bool LoadPlatformFont(const uint8_t* aOriginalFontData,
                         uint32_t aOriginalLength, gfxUserFontType aFontType,
                         const uint8_t* aSanitizedFontData,
                         uint32_t aSanitizedLength);
+
+  
+  
+  void FontLoadFailed(nsIFontLoadCompleteCallback* aCallback);
 
   
   void StoreUserFontData(gfxFontEntry* aFontEntry, bool aPrivate,
@@ -715,6 +740,8 @@ class gfxUserFontEntry : public gfxFontEntry {
   gfxUserFontSet* MOZ_NON_OWNING_REF
       mFontSet;  
   RefPtr<gfxFontSrcPrincipal> mPrincipal;
+
+  static mozilla::StaticRefPtr<mozilla::LazyIdleThread> sFontLoadingThread;
 };
 
 #endif 
