@@ -69,6 +69,17 @@ add_task(async function setup() {
   registerCleanupFunction(async () => {
     await Services.search.setDefault(oldDefaultEngine);
   });
+
+  
+  
+  await new Promise(resolve => {
+    EventUtils.synthesizeNativeMouseMove(
+      window.document.documentElement,
+      0,
+      0,
+      resolve
+    );
+  });
 });
 
 add_task(async function test_tab_switch_result() {
