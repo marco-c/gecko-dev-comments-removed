@@ -108,6 +108,7 @@ class GlobalObject : public NativeObject {
     WINDOW_PROXY,
     GLOBAL_THIS_RESOLVED,
     INSTRUMENTATION,
+    SOURCE_URLS,
 
     
     RESERVED_SLOTS
@@ -915,6 +916,19 @@ class GlobalObject : public NativeObject {
   }
   void setInstrumentationHolder(JSObject* instrumentation) {
     setReservedSlot(INSTRUMENTATION, ObjectValue(*instrumentation));
+  }
+
+  JSObject* getSourceURLsHolder() const {
+    Value v = getReservedSlot(SOURCE_URLS);
+    MOZ_ASSERT(v.isObject() || v.isUndefined());
+    return v.isObject() ? &v.toObject() : nullptr;
+  }
+  void setSourceURLsHolder(JSObject* holder) {
+    setReservedSlot(SOURCE_URLS, ObjectValue(*holder));
+  }
+  void clearSourceURLSHolder() {
+    
+    getSlotRef(SOURCE_URLS).unsafeSet(UndefinedValue());
   }
 
   
