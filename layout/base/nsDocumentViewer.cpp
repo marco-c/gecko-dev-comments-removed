@@ -1102,7 +1102,7 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
       }
 
       nsPIDOMWindowInner* innerWindow = window->GetCurrentInnerWindow();
-      RefPtr<DocGroup> docGroup = mDocument->GetDocGroup();
+      RefPtr<DocGroup> docGroup = d->GetDocGroup();
       
       
       
@@ -1155,7 +1155,7 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
       d->SetLoadEventFiring(false);
 
       RefPtr<nsDocShell> dShell = nsDocShell::Cast(docShell);
-      if (dShell->TreatAsBackgroundLoad()) {
+      if (docGroup && dShell->TreatAsBackgroundLoad()) {
         docGroup->TryFlushIframePostMessages(dShell->GetOuterWindowID());
       }
 
