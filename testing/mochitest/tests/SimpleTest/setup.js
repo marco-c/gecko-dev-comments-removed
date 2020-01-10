@@ -126,8 +126,8 @@ if (params.debugOnFailure) {
 
 
 if (params.logFile) {
-  var spl = new SpecialPowersLogger(params.logFile);
-  TestRunner.logger.addListener("mozLogger", fileLevel + "", spl.getLogCallback());
+  var mfl = new MozillaFileLogger(params.logFile);
+  TestRunner.logger.addListener("mozLogger", fileLevel + "", mfl.logCallback);
 }
 
 

@@ -36,21 +36,21 @@ classifierHelper.waitForInit = function() {
 
 
 
-classifierHelper.allowCompletion = function(lists, url) {
+classifierHelper.allowCompletion = async function(lists, url) {
   for (var list of lists) {
     
-    var pref = SpecialPowers.getCharPref(PREFS.PROVIDER_LISTS);
+    var pref = await SpecialPowers.getParentCharPref(PREFS.PROVIDER_LISTS);
     pref += "," + list;
-    SpecialPowers.setCharPref(PREFS.PROVIDER_LISTS, pref);
+    await SpecialPowers.setCharPref(PREFS.PROVIDER_LISTS, pref);
 
     
-    pref = SpecialPowers.getCharPref(PREFS.DISALLOW_COMPLETIONS);
+    pref = await SpecialPowers.getParentCharPref(PREFS.DISALLOW_COMPLETIONS);
     pref = pref.replace(list, list + "-backup");
-    SpecialPowers.setCharPref(PREFS.DISALLOW_COMPLETIONS, pref);
+    await SpecialPowers.setCharPref(PREFS.DISALLOW_COMPLETIONS, pref);
   }
 
   
-  SpecialPowers.setCharPref(PREFS.PROVIDER_GETHASHURL, url);
+  await SpecialPowers.setCharPref(PREFS.PROVIDER_GETHASHURL, url);
 };
 
 
