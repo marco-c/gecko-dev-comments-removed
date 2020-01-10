@@ -113,6 +113,12 @@ nsresult nsScreen::GetAvailRect(nsRect& aRect) {
     return GetWindowInnerRect(aRect);
   }
 
+  
+  
+  if (IsInRDMPane()) {
+    return GetRDMScreenSize(aRect);
+  }
+
   nsDeviceContext* context = GetDeviceContext();
 
   if (!context) {
@@ -137,6 +143,29 @@ nsresult nsScreen::GetAvailRect(nsRect& aRect) {
   aRect.SetWidth(nsPresContext::AppUnitsToIntCSSPixels(aRect.Width()));
 
   return NS_OK;
+}
+
+nsresult nsScreen::GetRDMScreenSize(nsRect& aRect) {
+  GetWindowInnerRect(aRect);
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowInner> owner = GetOwner();
+  if (owner) {
+    nsIDocShell* docShell = owner->GetDocShell();
+    if (docShell) {
+      RefPtr<nsPresContext> presContext = docShell->GetPresContext();
+      if (presContext) {
+        float zoom = presContext->GetDeviceFullZoom();
+        int32_t width = std::round(aRect.Width() * zoom);
+        int32_t height = std::round(aRect.Height() * zoom);
+        aRect.SetHeight(height);
+        aRect.SetWidth(width);
+        return NS_OK;
+      }
+    }
+  }
+  return NS_ERROR_FAILURE;
 }
 
 mozilla::dom::ScreenOrientation* nsScreen::Orientation() const {
@@ -287,4 +316,16 @@ bool nsScreen::ShouldResistFingerprinting() const {
     resist = nsContentUtils::ShouldResistFingerprinting(owner->GetDocShell());
   }
   return resist;
+}
+
+bool nsScreen::IsInRDMPane() const {
+  bool isInRDM = false;
+  nsCOMPtr<nsPIDOMWindowInner> owner = GetOwner();
+
+  if (owner) {
+    Document* doc = owner->GetExtantDoc();
+    isInRDM = doc && doc->InRDMPane();
+  }
+
+  return isInRDM;
 }
