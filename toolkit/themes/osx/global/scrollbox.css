@@ -3,14 +3,7 @@
 
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
-
-arrowscrollbox[scrolledtoend=true]::part(arrowscrollbox-overflow-end-indicator),
-arrowscrollbox[scrolledtostart=true]::part(arrowscrollbox-overflow-start-indicator),
-arrowscrollbox[notoverflowing=true]::part(scrollbutton-up),
-arrowscrollbox[notoverflowing=true]::part(scrollbutton-down) {
-  visibility: collapse;
-}
-
+ 
 
 .scrollbutton-up[orient="horizontal"] {
   list-style-image: url("chrome://global/skin/arrow/arrow-lft-sharp.gif");

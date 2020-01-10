@@ -382,6 +382,13 @@ notification[value="translation"] menulist > .menulist-dropmarker {
 
 
 
+.tabbrowser-arrowscrollbox > .scrollbutton-up > .toolbarbutton-icon,
+.tabbrowser-arrowscrollbox > .scrollbutton-down > .toolbarbutton-icon {
+  -moz-appearance: none;
+}
+
+
+
 .alltabs-item[selected="true"] {
   font-weight: bold;
 }

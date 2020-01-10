@@ -53,7 +53,7 @@
       this._scrollButtonWidth = 0;
       this._lastNumPinned = 0;
       this._pinnedTabsLayoutCache = null;
-      this._animateElement = this.arrowScrollbox;
+      this._animateElement = this.arrowScrollbox._scrollButtonDown;
       this._tabClipWidth = Services.prefs.getIntPref(
         "browser.tabs.tabClipWidth"
       );
@@ -518,11 +518,12 @@
       
       var pixelsToScroll = 0;
       if (this.getAttribute("overflow") == "true") {
-        switch (event.originalTarget) {
-          case arrowScrollbox._scrollButtonUp:
+        var targetAnonid = event.originalTarget.getAttribute("anonid");
+        switch (targetAnonid) {
+          case "scrollbutton-up":
             pixelsToScroll = arrowScrollbox.scrollIncrement * -1;
             break;
-          case arrowScrollbox._scrollButtonDown:
+          case "scrollbutton-down":
             pixelsToScroll = arrowScrollbox.scrollIncrement;
             break;
         }
@@ -955,7 +956,7 @@
 
     _initializeArrowScrollbox() {
       let arrowScrollbox = this.arrowScrollbox;
-      arrowScrollbox.shadowRoot.addEventListener(
+      arrowScrollbox.addEventListener(
         "underflow",
         event => {
           
@@ -985,7 +986,7 @@
         true
       );
 
-      arrowScrollbox.shadowRoot.addEventListener("overflow", event => {
+      arrowScrollbox.addEventListener("overflow", event => {
         
         
         
