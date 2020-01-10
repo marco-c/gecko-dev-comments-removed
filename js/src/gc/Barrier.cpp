@@ -175,7 +175,6 @@ template <typename T>
 #  pragma GCC diagnostic ignored "-Wattributes"
 #endif  
 
-template struct JS_PUBLIC_API MovableCellHasher<JSObject*>;
 template struct JS_PUBLIC_API MovableCellHasher<GlobalObject*>;
 template struct JS_PUBLIC_API MovableCellHasher<SavedFrame*>;
 template struct JS_PUBLIC_API MovableCellHasher<EnvironmentObject*>;
