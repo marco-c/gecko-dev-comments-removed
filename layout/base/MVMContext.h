@@ -63,8 +63,7 @@ class MVMContext {
     IfNecessary,  
     Suppress,     
   };
-  virtual void Reflow(const CSSSize& aNewSize, const CSSSize& aOldSize,
-                      ResizeEventFlag aResizeEventFlag) = 0;
+  virtual void Reflow(const CSSSize& aNewSize, ResizeEventFlag) = 0;
 };
 
 }  

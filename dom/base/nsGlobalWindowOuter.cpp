@@ -3852,6 +3852,11 @@ void nsGlobalWindowOuter::SetCSSViewportWidthAndHeight(nscoord aInnerWidth,
   shellArea.SetHeight(aInnerHeight);
   shellArea.SetWidth(aInnerWidth);
 
+  
+  
+  
+  
+  
   presContext->SetVisibleArea(shellArea);
 }
 
