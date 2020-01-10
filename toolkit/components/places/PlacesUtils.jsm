@@ -1907,6 +1907,32 @@ var PlacesUtils = {
 
     return rootItem;
   },
+
+  
+
+
+
+
+
+
+
+
+  *chunkArray(array, chunkLength) {
+    if (chunkLength <= 0 || !Number.isInteger(chunkLength)) {
+      throw new TypeError("Chunk length must be a positive integer");
+    }
+    if (!array.length) {
+      return;
+    }
+    if (array.length <= chunkLength) {
+      yield array;
+      return;
+    }
+    let startIndex = 0;
+    while (startIndex < array.length) {
+      yield array.slice(startIndex, (startIndex += chunkLength));
+    }
+  },
 };
 
 XPCOMUtils.defineLazyGetter(PlacesUtils, "history", function() {

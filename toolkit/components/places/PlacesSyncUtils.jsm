@@ -26,27 +26,7 @@ ChromeUtils.defineModuleGetter(
 
 
 
-var PlacesSyncUtils = {
-  
-
-
-
-
-
-
-
-
-  *chunkArray(array, chunkLength) {
-    if (!array.length || chunkLength <= 0) {
-      return;
-    }
-    let startIndex = 0;
-    while (startIndex < array.length) {
-      yield [startIndex, array.slice(startIndex, startIndex + chunkLength)];
-      startIndex += chunkLength;
-    }
-  },
-};
+var PlacesSyncUtils = {};
 
 const { SOURCE_SYNC } = Ci.nsINavBookmarksService;
 
@@ -258,7 +238,7 @@ const HistorySyncUtils = (PlacesSyncUtils.history = Object.freeze({
     
     let db = await PlacesUtils.promiseDBConnection();
     let nonSyncableGuids = [];
-    for (let [, chunk] of PlacesSyncUtils.chunkArray(
+    for (let chunk of PlacesUtils.chunkArray(
       guids,
       SQLITE_MAX_VARIABLE_NUMBER
     )) {
