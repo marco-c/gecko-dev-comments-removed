@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+export function recordTelemetryEvent(event) {
+  document.dispatchEvent(new CustomEvent("AboutLoginsRecordTelemetryEvent", {
+    bubbles: true,
+    detail: event,
+  }));
+}
