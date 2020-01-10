@@ -927,8 +927,6 @@ void BasicCompositor::BeginFrame(
     
     
     
-    
-    
     mDrawTarget = mTarget;
     mDrawTargetBounds = mTargetBounds;
     bufferMode = BufferMode::BUFFER_NONE;
@@ -963,6 +961,8 @@ void BasicCompositor::BeginFrame(
     clearRegion.SubOut(LayoutDeviceIntRegion::FromUnknownRegion(aOpaqueRegion));
   }
 
+  
+  
   
   
   RefPtr<CompositingRenderTarget> target =
