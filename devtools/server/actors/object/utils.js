@@ -199,10 +199,14 @@ function getArrayLength(object) {
   }
 
   
-  
-  
-  if (object.class === "Array" || isReplaying) {
+  if (object.class === "Array") {
     return DevToolsUtils.getProperty(object, "length");
+  }
+
+  
+  
+  if (isReplaying) {
+    return object.getTypedArrayLength();
   }
 
   
@@ -211,6 +215,25 @@ function getArrayLength(object) {
   const typedProto = Object.getPrototypeOf(Uint8Array.prototype);
   const getter = Object.getOwnPropertyDescriptor(typedProto, "length").get;
   return getter.call(object.unsafeDereference());
+}
+
+
+
+
+
+
+
+
+function getContainerSize(object) {
+  if (object.class != "Set" && object.class != "Map") {
+    throw new Error(`Expected a set/map, got a ${object.class}`);
+  }
+
+  if (isReplaying) {
+    return object.getContainerSize();
+  }
+
+  return DevToolsUtils.getProperty(object, "size");
 }
 
 
@@ -256,6 +279,41 @@ function getStorageLength(object) {
   return DevToolsUtils.getProperty(object, "length");
 }
 
+
+function getRegExpString(object) {
+  if (isReplaying) {
+    return object.getRegExpString();
+  }
+
+  return DevToolsUtils.callPropertyOnObject(object, "toString");
+}
+
+
+function getDateTime(object) {
+  if (isReplaying) {
+    return object.getDateTime();
+  }
+
+  return DevToolsUtils.callPropertyOnObject(object, "getTime");
+}
+
+
+
+function getErrorProperties(object) {
+  if (isReplaying) {
+    return object.getErrorProperties();
+  }
+
+  return {
+    name: DevToolsUtils.getProperty(object, "name"),
+    message: DevToolsUtils.getProperty(object, "message"),
+    stack: DevToolsUtils.getProperty(object, "stack"),
+    fileName: DevToolsUtils.getProperty(object, "fileName"),
+    lineNumber: DevToolsUtils.getProperty(object, "lineNumber"),
+    columnNumber: DevToolsUtils.getProperty(object, "columnNumber"),
+  };
+}
+
 module.exports = {
   getPromiseState,
   makeDebuggeeValueIfNeeded,
@@ -267,5 +325,9 @@ module.exports = {
   isStorage,
   getArrayLength,
   getStorageLength,
+  getContainerSize,
   isArrayIndex,
+  getRegExpString,
+  getDateTime,
+  getErrorProperties,
 };

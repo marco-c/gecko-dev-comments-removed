@@ -888,12 +888,6 @@ errorOnFlag(exports, "wantVerbose");
 
 function callPropertyOnObject(object, name, ...args) {
   
-  
-  if (isReplaying && args.length == 0 && object.replayHasCallResult(name)) {
-    return object.replayCallResult(name);
-  }
-
-  
   let descriptor;
   let proto = object;
   do {

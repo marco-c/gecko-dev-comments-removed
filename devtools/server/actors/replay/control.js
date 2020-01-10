@@ -1482,14 +1482,10 @@ async function evaluateLogpoint({ point, text, condition, callback }) {
       return { kind: "hitLogpoint", text, condition, skipPauseData };
     },
     onFinished(child, { pauseData, result, resultData, restoredSnapshot }) {
-      if (restoredSnapshot) {
-        if (!skipPauseData) {
-          
-          skipPauseData = true;
-          sendAsyncManifest(manifest);
-        } else {
-          callback(point, ["Recording divergence evaluating logpoint"]);
-        }
+      if (restoredSnapshot && !skipPauseData) {
+        
+        skipPauseData = true;
+        sendAsyncManifest(manifest);
       } else {
         if (result) {
           if (!skipPauseData) {
