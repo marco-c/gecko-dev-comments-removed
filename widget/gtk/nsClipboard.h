@@ -63,9 +63,6 @@ class nsClipboard : public nsIClipboard, public nsIObserver {
   virtual ~nsClipboard();
 
   
-  nsresult Store(void);
-
-  
   
   nsITransferable* GetTransferable(int32_t aWhichClipboard);
 
