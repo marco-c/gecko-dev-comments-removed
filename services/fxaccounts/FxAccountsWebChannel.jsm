@@ -485,14 +485,16 @@ this.FxAccountsWebChannelHelpers.prototype = {
 
 
   logout(uid) {
-    return this._fxAccounts._internal.getUserAccountData(["uid"]).then(userData => {
-      if (userData && userData.uid === uid) {
-        
-        
-        return fxAccounts.signOut(true);
-      }
-      return null;
-    });
+    return this._fxAccounts._internal
+      .getUserAccountData(["uid"])
+      .then(userData => {
+        if (userData && userData.uid === uid) {
+          
+          
+          return fxAccounts.signOut(true);
+        }
+        return null;
+      });
   },
 
   
