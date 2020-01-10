@@ -26,6 +26,8 @@
 #include "pk11sdr.h"  
 #include "ssl.h"      
 
+static mozilla::LazyLogModule gSDRLog("sdrlog");
+
 using namespace mozilla;
 using dom::Promise;
 
@@ -73,8 +75,22 @@ void BackgroundSdrDecryptStrings(const nsTArray<nsCString>& encryptedStrings,
     nsCString plainText;
     rv = sdrService->DecryptString(encryptedString, plainText);
 
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      break;
+    if (NS_FAILED(rv)) {
+      if (rv == NS_ERROR_NOT_AVAILABLE) {
+        
+        break;
+      }
+
+      
+      
+      
+      
+      
+      MOZ_LOG(gSDRLog, LogLevel::Warning,
+              ("Couldn't decrypt string: %s", encryptedString.get()));
+      plainTexts.AppendElement(nullptr);
+      rv = NS_OK;
+      continue;
     }
 
     plainTexts.AppendElement(NS_ConvertUTF8toUTF16(plainText));
