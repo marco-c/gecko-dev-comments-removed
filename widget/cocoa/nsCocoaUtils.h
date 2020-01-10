@@ -299,6 +299,11 @@ class nsCocoaUtils {
   
 
 
+  static NSString* ToNSString(const nsACString& aCString);
+
+  
+
+
 
 
   static void GeckoRectToNSRect(const nsIntRect& aGeckoRect, NSRect& aOutCocoaRect);
