@@ -864,22 +864,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult
-  BustUpInlinesAtBRs(nsIContent& aNode,
-                     nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes) const;
-
-  
-
-
-
-
   void MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
                           nsTArray<bool>& aTransitionArray);
 

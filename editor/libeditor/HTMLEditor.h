@@ -1241,6 +1241,28 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult SplitElementsAtEveryBRElement(
+      nsIContent& aMostAncestorToBeSplit,
+      nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   enum class CollectListChildren { No, Yes };
   enum class CollectTableChildren { No, Yes };
   size_t CollectChildren(

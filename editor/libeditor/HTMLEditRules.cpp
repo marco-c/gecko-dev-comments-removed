@@ -7322,8 +7322,10 @@ nsresult HTMLEditRules::GetNodesForOperation(
           HTMLEditor::NodeIsInlineStatic(node) &&
           HTMLEditorRef().IsContainer(node) && !EditorBase::IsTextNode(node)) {
         nsTArray<OwningNonNull<nsINode>> arrayOfInlines;
-        nsresult rv = BustUpInlinesAtBRs(MOZ_KnownLive(*node->AsContent()),
-                                         arrayOfInlines);
+        nsresult rv =
+            MOZ_KnownLive(HTMLEditorRef())
+                .SplitElementsAtEveryBRElement(
+                    MOZ_KnownLive(*node->AsContent()), arrayOfInlines);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -7561,36 +7563,33 @@ nsresult HTMLEditor::SplitParentInlineElementsAtRangeEdges(
   return NS_OK;
 }
 
-nsresult HTMLEditRules::BustUpInlinesAtBRs(
-    nsIContent& aNode,
-    nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes) const {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::SplitElementsAtEveryBRElement(
+    nsIContent& aMostAncestorToBeSplit,
+    nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfBreaks;
   BRNodeFunctor functor;
-  DOMIterator iter(aNode);
+  DOMIterator iter(aMostAncestorToBeSplit);
   iter.AppendList(functor, arrayOfBreaks);
 
   
   if (arrayOfBreaks.IsEmpty()) {
-    aOutArrayOfNodes.AppendElement(aNode);
+    aOutArrayOfNodes.AppendElement(aMostAncestorToBeSplit);
     return NS_OK;
   }
 
   
-  nsCOMPtr<nsIContent> nextNode = &aNode;
+  nsCOMPtr<nsIContent> nextContent = &aMostAncestorToBeSplit;
   for (OwningNonNull<nsINode>& brNode : arrayOfBreaks) {
     EditorDOMPoint atBrNode(brNode);
     if (NS_WARN_IF(!atBrNode.IsSet())) {
       return NS_ERROR_FAILURE;
     }
-    SplitNodeResult splitNodeResult =
-        MOZ_KnownLive(HTMLEditorRef())
-            .SplitNodeDeepWithTransaction(
-                *nextNode, atBrNode,
-                SplitAtEdges::eAllowToCreateEmptyContainer);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
+        *nextContent, atBrNode, SplitAtEdges::eAllowToCreateEmptyContainer);
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(splitNodeResult.Failed())) {
@@ -7607,10 +7606,9 @@ nsresult HTMLEditRules::BustUpInlinesAtBRs(
 
     
     EditorDOMPoint atNextNode(splitNodeResult.GetNextNode());
-    nsresult rv = MOZ_KnownLive(HTMLEditorRef())
-                      .MoveNodeWithTransaction(
-                          MOZ_KnownLive(*brNode->AsContent()), atNextNode);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    nsresult rv = MoveNodeWithTransaction(MOZ_KnownLive(*brNode->AsContent()),
+                                          atNextNode);
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -7618,11 +7616,11 @@ nsresult HTMLEditRules::BustUpInlinesAtBRs(
     }
     aOutArrayOfNodes.AppendElement(*brNode);
 
-    nextNode = splitNodeResult.GetNextNode();
+    nextContent = splitNodeResult.GetNextNode();
   }
 
   
-  aOutArrayOfNodes.AppendElement(*nextNode);
+  aOutArrayOfNodes.AppendElement(*nextContent);
 
   return NS_OK;
 }
