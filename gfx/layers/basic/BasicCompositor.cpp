@@ -292,7 +292,7 @@ BasicCompositor::CreateRenderTargetFromSource(
 
 already_AddRefed<CompositingRenderTarget>
 BasicCompositor::CreateRenderTargetForWindow(
-    const LayoutDeviceIntRect& aRect, const LayoutDeviceIntRect& aClearRect,
+    const LayoutDeviceIntRect& aRect, const LayoutDeviceIntRegion& aClearRegion,
     BufferMode aBufferMode) {
   MOZ_ASSERT(mDrawTarget);
   MOZ_ASSERT(!aRect.IsZeroArea(),
@@ -325,9 +325,12 @@ BasicCompositor::CreateRenderTargetForWindow(
 
   rt->mDrawTarget->SetTransform(Matrix::Translation(-rt->GetOrigin()));
 
-  if (!aClearRect.IsEmpty() && !isCleared) {
-    gfx::IntRect clearRect = aClearRect.ToUnknownRect();
+  if (!aClearRegion.IsEmpty() && !isCleared) {
+    gfx::IntRegion clearRegion = aClearRegion.ToUnknownRegion();
+    gfx::IntRect clearRect = clearRegion.GetBounds();
+    gfxUtils::ClipToRegion(rt->mDrawTarget, clearRegion);
     rt->mDrawTarget->ClearRect(gfx::Rect(clearRect));
+    rt->mDrawTarget->PopClip();
   }
 
   return rt.forget();
@@ -949,24 +952,15 @@ void BasicCompositor::BeginFrame(
     return;
   }
 
-  LayoutDeviceIntRect clearRect;
+  LayoutDeviceIntRegion clearRegion = mInvalidRegion;
   if (!aOpaqueRegion.IsEmpty()) {
-    LayoutDeviceIntRegion clearRegion = mInvalidRegion;
     clearRegion.SubOut(LayoutDeviceIntRegion::FromUnknownRegion(aOpaqueRegion));
-    clearRect = clearRegion.GetBounds();
-  } else {
-    clearRect = mInvalidRect;
   }
-
-  
-  gfxUtils::ClipToRegion(mDrawTarget, mInvalidRegion.ToUnknownRegion());
 
   
   
   RefPtr<CompositingRenderTarget> target =
-      CreateRenderTargetForWindow(mInvalidRect, clearRect, bufferMode);
-
-  mDrawTarget->PopClip();
+      CreateRenderTargetForWindow(mInvalidRect, clearRegion, bufferMode);
 
   if (!target) {
     if (!mTarget) {
