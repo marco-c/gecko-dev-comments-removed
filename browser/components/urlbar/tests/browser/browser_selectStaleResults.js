@@ -96,7 +96,7 @@ add_task(async function viewContainsStaleRows() {
 
   
   let items = Array.from(gURLBar.view._rows.children).filter(r =>
-    gURLBar.view._isRowVisible(r)
+    gURLBar.view._isElementVisible(r)
   );
   Assert.equal(items.length, maxResults);
 

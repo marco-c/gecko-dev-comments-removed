@@ -84,7 +84,7 @@ class UrlbarView {
 
     
     
-    if (this.visibleItemCount == 0) {
+    if (this.visibleRowCount == 0) {
       this._enableOrDisableOneOffSearches(false);
     }
 
@@ -101,7 +101,7 @@ class UrlbarView {
       
       
       this.input.lastQueryContextPromise.then(() => {
-        if (this.visibleItemCount == 0) {
+        if (this.visibleRowCount == 0) {
           this.close();
         }
       });
@@ -148,14 +148,21 @@ class UrlbarView {
     );
   }
 
-  get selectedIndex() {
-    if (!this.isOpen || !this._selected) {
+  get selectedRowIndex() {
+    if (!this.isOpen) {
       return -1;
     }
-    return this._selected.result.uiIndex;
+
+    let selectedRow = this._getSelectedRow();
+
+    if (!selectedRow) {
+      return -1;
+    }
+
+    return selectedRow.result.uiIndex;
   }
 
-  set selectedIndex(val) {
+  set selectedRowIndex(val) {
     if (!this.isOpen) {
       throw new Error(
         "UrlbarView: Cannot select an item if the view isn't open."
@@ -163,17 +170,17 @@ class UrlbarView {
     }
 
     if (val < 0) {
-      this._selectItem(null);
+      this._selectElement(null);
       return val;
     }
 
     let items = Array.from(this._rows.children).filter(r =>
-      this._isRowVisible(r)
+      this._isElementVisible(r)
     );
     if (val >= items.length) {
       throw new Error(`UrlbarView: Index ${val} is out of bounds.`);
     }
-    this._selectItem(items[val]);
+    this._selectElement(items[val]);
     return val;
   }
 
@@ -182,10 +189,17 @@ class UrlbarView {
 
 
   get selectedResult() {
-    if (!this.isOpen || !this._selected) {
+    if (!this.isOpen) {
       return null;
     }
-    return this._selected.result;
+
+    let selectedRow = this._getSelectedRow();
+
+    if (!selectedRow) {
+      return null;
+    }
+
+    return selectedRow.result;
   }
 
   
@@ -194,10 +208,10 @@ class UrlbarView {
 
 
 
-  get visibleItemCount() {
+  get visibleRowCount() {
     let sum = 0;
     for (let row of this._rows.children) {
-      sum += Number(this._isRowVisible(row));
+      sum += Number(this._isElementVisible(row));
     }
     return sum;
   }
@@ -221,45 +235,49 @@ class UrlbarView {
     
     this.controller.cancelQuery();
 
-    let row = this._selected;
+    let selectedElement = this._selectedElement;
 
     
-    let lastElementChild = this._rows.lastElementChild;
-    while (lastElementChild && !this._isRowVisible(lastElementChild)) {
-      lastElementChild = lastElementChild.previousElementSibling;
-    }
+    
+    let firstSelectableElement = this._getFirstSelectableElement();
+    
+    
+    let lastSelectableElement = this._getLastSelectableElement();
 
-    if (!row) {
-      this._selectItem(
-        reverse ? lastElementChild : this._rows.firstElementChild
+    if (!selectedElement) {
+      this._selectElement(
+        reverse ? lastSelectableElement : firstSelectableElement
       );
       return;
     }
-
     let endReached = reverse
-      ? row == this._rows.firstElementChild
-      : row == lastElementChild;
+      ? selectedElement == firstSelectableElement
+      : selectedElement == lastSelectableElement;
     if (endReached) {
       if (this.allowEmptySelection) {
-        row = null;
+        selectedElement = null;
       } else {
-        row = reverse ? lastElementChild : this._rows.firstElementChild;
+        selectedElement = reverse
+          ? lastSelectableElement
+          : firstSelectableElement;
       }
-      this._selectItem(row);
+      this._selectElement(selectedElement);
       return;
     }
 
     while (amount-- > 0) {
-      let next = reverse ? row.previousElementSibling : row.nextElementSibling;
+      let next = reverse
+        ? this._getPreviousSelectableElement(selectedElement)
+        : this._getNextSelectableElement(selectedElement);
       if (!next) {
         break;
       }
-      if (!this._isRowVisible(next)) {
+      if (!this._isElementVisible(next)) {
         continue;
       }
-      row = next;
+      selectedElement = next;
     }
-    this._selectItem(row);
+    this._selectElement(selectedElement);
   }
 
   removeAccessibleFocus() {
@@ -326,13 +344,13 @@ class UrlbarView {
     if (queryContext.lastResultCount == 0) {
       if (queryContext.preselected) {
         isFirstPreselectedResult = true;
-        this._selectItem(this._rows.firstElementChild, {
+        this._selectElement(this._getFirstSelectableElement(), {
           updateInput: false,
           setAccessibleFocus: this.controller._userSelectionBehavior == "arrow",
         });
       } else {
         
-        this._selectItem(null, {
+        this._selectElement(null, {
           updateInput: false,
         });
       }
@@ -372,7 +390,7 @@ class UrlbarView {
 
     this._updateIndices();
 
-    if (rowToRemove != this._selected) {
+    if (rowToRemove != this._getSelectedRow()) {
       return;
     }
 
@@ -382,7 +400,7 @@ class UrlbarView {
       newSelectionIndex = this._queryContext.results.length - 1;
     }
     if (newSelectionIndex >= 0) {
-      this.selectedIndex = newSelectionIndex;
+      this.selectedRowIndex = newSelectionIndex;
     }
   }
 
@@ -837,8 +855,24 @@ class UrlbarView {
     }
   }
 
-  _isRowVisible(row) {
-    return row.style.display != "none";
+  
+
+
+
+
+
+
+
+  _isElementVisible(element) {
+    if (!element.classList.contains("urlbarView-row")) {
+      element = element.closest(".urlbarView-row");
+    }
+
+    if (!element) {
+      return false;
+    }
+
+    return element.style.display != "none";
   }
 
   _removeStaleRows() {
@@ -869,21 +903,143 @@ class UrlbarView {
     }
   }
 
-  _selectItem(item, { updateInput = true, setAccessibleFocus = true } = {}) {
-    if (this._selected) {
-      this._selected.toggleAttribute("selected", false);
-      this._selected.removeAttribute("aria-selected");
+  _selectElement(item, { updateInput = true, setAccessibleFocus = true } = {}) {
+    if (this._selectedElement) {
+      this._selectedElement.toggleAttribute("selected", false);
+      this._selectedElement.removeAttribute("aria-selected");
     }
     if (item) {
       item.toggleAttribute("selected", true);
       item.setAttribute("aria-selected", "true");
     }
     this._setAccessibleFocus(setAccessibleFocus && item);
-    this._selected = item;
+    this._selectedElement = item;
 
     if (updateInput) {
       this.input.setValueFromResult(item && item.result);
     }
+  }
+
+  
+
+
+
+
+  _getFirstSelectableElement() {
+    let firstElementChild = this._rows.firstElementChild;
+    if (
+      firstElementChild.result &&
+      firstElementChild.result.type == UrlbarUtils.RESULT_TYPE.TIP
+    ) {
+      firstElementChild = firstElementChild.querySelector(
+        ".urlbarView-tip-button"
+      );
+    }
+    return firstElementChild;
+  }
+
+  
+
+
+
+
+  _getLastSelectableElement() {
+    let lastElementChild = this._rows.lastElementChild;
+
+    
+    while (lastElementChild && !this._isElementVisible(lastElementChild)) {
+      lastElementChild = this._getPreviousSelectableElement(lastElementChild);
+    }
+
+    if (
+      lastElementChild.result &&
+      lastElementChild.result.type == UrlbarUtils.RESULT_TYPE.TIP
+    ) {
+      lastElementChild = lastElementChild.querySelector(".urlbarView-tip-help");
+    }
+
+    return lastElementChild;
+  }
+
+  
+
+
+
+
+  _getNextSelectableElement(element) {
+    let next;
+    if (element.classList.contains("urlbarView-tip-button")) {
+      next = element
+        .closest(".urlbarView-row")
+        .querySelector(".urlbarView-tip-help");
+    } else if (element.classList.contains("urlbarView-tip-help")) {
+      next = element.closest(".urlbarView-row").nextElementSibling;
+    } else {
+      next = element.nextElementSibling;
+    }
+
+    if (!next) {
+      return null;
+    }
+
+    if (next.result && next.result.type == UrlbarUtils.RESULT_TYPE.TIP) {
+      next = next.querySelector(".urlbarView-tip-button");
+    }
+
+    return next;
+  }
+
+  
+
+
+
+
+  _getPreviousSelectableElement(element) {
+    let previous;
+    if (element.classList.contains("urlbarView-tip-button")) {
+      previous = element.closest(".urlbarView-row").previousElementSibling;
+    } else if (element.classList.contains("urlbarView-tip-help")) {
+      previous = element
+        .closest(".urlbarView-row")
+        .querySelector(".urlbarView-tip-button");
+    } else {
+      previous = element.previousElementSibling;
+    }
+
+    if (!previous) {
+      return null;
+    }
+
+    if (
+      previous.result &&
+      previous.result.type == UrlbarUtils.RESULT_TYPE.TIP
+    ) {
+      previous = previous.querySelector(".urlbarView-tip-help");
+    }
+
+    return previous;
+  }
+
+  
+
+
+
+
+
+
+
+  _getSelectedRow() {
+    if (!this.isOpen || !this._selectedElement) {
+      return null;
+    }
+    let selected = this._selectedElement;
+
+    if (!selected.classList.contains("urlbarView-row")) {
+      
+      selected = selected.closest(".urlbarView-row");
+    }
+
+    return selected;
   }
 
   _setAccessibleFocus(item) {
@@ -1033,7 +1189,7 @@ class UrlbarView {
         while (!row.classList.contains("urlbarView-row")) {
           row = row.parentNode;
         }
-        this._selectItem(row, { updateInput: false });
+        this._selectElement(row, { updateInput: false });
         this.controller.speculativeConnect(
           this.selectedResult,
           this._queryContext,

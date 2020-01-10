@@ -173,7 +173,17 @@ var UrlbarTestUtils = {
 
 
   getSelectedElement(win) {
-    return win.gURLBar.view._selected || null;
+    return win.gURLBar.view._selectedElement || null;
+  },
+
+  
+
+
+
+
+
+  getSelectedRow(win) {
+    return win.gURLBar.view._getSelectedRow() || null;
   },
 
   
@@ -182,7 +192,7 @@ var UrlbarTestUtils = {
 
 
   getSelectedIndex(win) {
-    return win.gURLBar.view.selectedIndex;
+    return win.gURLBar.view.selectedRowIndex;
   },
 
   
@@ -191,7 +201,7 @@ var UrlbarTestUtils = {
 
 
   setSelectedIndex(win, index) {
-    win.gURLBar.view.selectedIndex = index;
+    win.gURLBar.view.selectedRowIndex = index;
   },
 
   
