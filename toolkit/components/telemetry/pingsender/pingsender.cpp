@@ -4,7 +4,6 @@
 
 
 #include <cstdlib>
-#include <cstring>
 #include <ctime>
 #include <fstream>
 #include <iomanip>
@@ -25,25 +24,6 @@ const char* kContentEncodingHeader = "Content-Encoding: gzip";
 
 
 const uint32_t kConnectionTimeoutMs = 30 * 1000;
-
-
-bool IsValidDestination(std::string aHost) {
-  static const std::string kValidDestinations[] = {
-    "localhost",
-    "incoming.telemetry.mozilla.org",
-  };
-  for (auto destination : kValidDestinations) {
-    if (aHost == destination) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool IsValidDestination(char* aHost) {
-  return IsValidDestination(std::string(aHost));
-}
-
 
 
 

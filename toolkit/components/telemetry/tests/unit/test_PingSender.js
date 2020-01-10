@@ -96,16 +96,7 @@ add_task(async function test_pingSender() {
 
   
   const url = "http://localhost:" + PingServer.port + "/submit/telemetry/";
-  TelemetrySend.testRunPingSender(url, pingPath, (subject, topic, data) => {
-        switch (topic) {
-          case "process-finished": 
-            Assert.equal(true, true, "Pingsender should be able to post to localhost");
-            break;
-          case "process-failed": 
-            Assert.equal(true, false, "Pingsender should be able to post to localhost");
-            break;
-        }
-      });
+  TelemetrySend.testRunPingSender(url, pingPath);
 
   let req = await PingServer.promiseNextRequest();
   let ping = decodeRequestPayload(req);
@@ -140,28 +131,6 @@ add_task(async function test_pingSender() {
 
   
   await waitForPingDeletion(data.id);
-
-  
-  let bannedUris = [
-    "https://example.com",
-    "http://localhost.com",
-    "http://localHOST.com",
-    "http://localhost@example.com",
-    "http://localhost:bob@example.com",
-    "http://localhost:localhost@localhost.example.com"
-  ];
-  for (let indx in bannedUris) {
-    TelemetrySend.testRunPingSender(bannedUris[indx], pingPath, (subject, topic, data) => {
-        switch (topic) {
-          case "process-finished": 
-            Assert.equal(false, true, "Pingsender should not be able to post to any banned urls: " + bannedUris[indx]);
-            break;
-          case "process-failed": 
-            Assert.equal(true, true, "Pingsender should not be able to post to any banned urls: " + bannedUris[indx]);
-            break;
-        }
-      });
-  }
 
   
   
