@@ -2507,7 +2507,7 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
 
   
   DebugAPI::sweepAll(rt->defaultFreeOp());
-  jit::JitRuntime::SweepJitcodeGlobalTable(rt);
+  jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
   for (JS::detail::WeakCacheBase* cache : rt->weakCaches()) {
     cache->sweep();
   }
@@ -5208,6 +5208,7 @@ void GCRuntime::sweepDebuggerOnMainThread(JSFreeOp* fop) {
 }
 
 void GCRuntime::sweepJitDataOnMainThread(JSFreeOp* fop) {
+  SweepingTracer trc(rt);
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
 
@@ -5223,7 +5224,7 @@ void GCRuntime::sweepJitDataOnMainThread(JSFreeOp* fop) {
 
     
     
-    jit::JitRuntime::SweepJitcodeGlobalTable(rt);
+    jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
   }
 
   if (initialState != State::NotActive) {
@@ -5238,7 +5239,6 @@ void GCRuntime::sweepJitDataOnMainThread(JSFreeOp* fop) {
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
 
-    SweepingTracer trc(rt);
     for (SweepGroupRealmsIter r(rt); !r.done(); r.next()) {
       r->traceWeakEdgesInJitRealm(&trc);
     }
