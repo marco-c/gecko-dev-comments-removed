@@ -414,7 +414,7 @@ function add_connection_test(aHost, aExpectedResult,
     this.defer = Promise.defer();
     let sts = Cc["@mozilla.org/network/socket-transport-service;1"]
                 .getService(Ci.nsISocketTransportService);
-    this.transport = sts.createTransport(["ssl"], 1, host, REMOTE_PORT, null);
+    this.transport = sts.createTransport(["ssl"], host, REMOTE_PORT, null);
     
     
     this.transport.connectionFlags |= Ci.nsISocketTransport.DISABLE_IPV6;

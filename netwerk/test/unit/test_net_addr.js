@@ -166,7 +166,7 @@ function testIpv4() {
 
 
 
-  testDataStore.transport = sts.createTransport(null, 0, '127.0.0.1', serv.port, null);
+  testDataStore.transport = sts.createTransport([], '127.0.0.1', serv.port, null);
   
 
 
