@@ -533,18 +533,19 @@ nsAsyncResolveRequest::AsyncApplyFilters::OnProxyFilterResult(
   }
 
   mFilterCalledBack = true;
+
+  if (!mRequest) {
+    
+    LOG(("  canceled"));
+    return NS_OK;
+  }
+
   mProxyInfo = aProxyInfo;
 
   if (mProcessingInLoop) {
     
     
     LOG(("  in a root loop"));
-    return NS_OK;
-  }
-
-  if (!mRequest) {
-    
-    LOG(("  canceled"));
     return NS_OK;
   }
 
