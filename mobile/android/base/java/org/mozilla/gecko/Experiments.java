@@ -23,6 +23,9 @@ public class Experiments {
     private static final String LOGTAG = "GeckoExperiments";
 
     
+    public static final String ENHANCED_SEARCH = "enhanced-search";
+
+    
     public static final String WHATSNEW_NOTIFICATION = "whatsnew-notification";
 
     
