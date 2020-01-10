@@ -10,31 +10,28 @@ if (typeof registerManifests === "undefined") {
 
 var manifestFile = do_get_file("../unit/data/test_resolve_uris.manifest");
 
-var manifests = [ manifestFile ];
+var manifests = [manifestFile];
 registerManifests(manifests);
 
 function do_run_test() {
-  let cr = Cc["@mozilla.org/chrome/chrome-registry;1"].
-           getService(Ci.nsIChromeRegistry);
+  let cr = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
+    Ci.nsIChromeRegistry
+  );
 
   
   
   var appInfo = Cc["@mozilla.org/xre/app-info;1"];
-  if (!appInfo ||
-      
-      (appInfo.getService(Ci.nsIXULRuntime).processType ==
-       Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT)) {
+  if (
+    !appInfo ||
+    
+    appInfo.getService(Ci.nsIXULRuntime).processType ==
+      Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT
+  ) {
     cr.checkForNewChrome();
   }
 
   
-  let registrationTypes = [
-      "content",
-      "locale",
-      "skin",
-      "override",
-      "resource",
-  ];
+  let registrationTypes = ["content", "locale", "skin", "override", "resource"];
 
   for (let j = 0; j < registrationTypes.length; j++) {
     let type = registrationTypes[j];
@@ -65,8 +62,9 @@ function do_run_test() {
       let uri;
       if (type == "resource") {
         
-        let rph = Services.io.getProtocolHandler("resource").
-            QueryInterface(Ci.nsIResProtocolHandler);
+        let rph = Services.io
+          .getProtocolHandler("resource")
+          .QueryInterface(Ci.nsIResProtocolHandler);
         uri = rph.resolveURI(sourceURI);
       } else {
         uri = cr.convertChromeURL(sourceURI).spec;
@@ -75,8 +73,7 @@ function do_run_test() {
       Assert.equal(expectedURI, uri);
     } catch (e) {
       dump(e + "\n");
-      do_throw("Should have registered a handler for type '" +
-               type + "'\n");
+      do_throw("Should have registered a handler for type '" + type + "'\n");
     }
   }
 }
