@@ -1614,6 +1614,7 @@ pref("browser.contentblocking.report.monitor.enabled", true);
 
 #ifdef NIGHTLY_BUILD
 pref("browser.protections_panel.enabled", true);
+pref("browser.protections_panel.infoMessage.seen", false);
 #endif
 
 

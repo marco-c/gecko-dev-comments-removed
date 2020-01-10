@@ -20,6 +20,8 @@ ChromeUtils.defineModuleGetter(
 );
 
 const WHATSNEW_ENABLED_PREF = "browser.messaging-system.whatsNewPanel.enabled";
+const PROTECTIONS_PANEL_INFOMSG_PREF =
+  "browser.protections_panel.infoMessage.seen";
 
 const TOOLBAR_BUTTON_ID = "whats-new-menu-button";
 const APPMENU_BUTTON_ID = "appMenu-whatsnew-button";
@@ -34,6 +36,11 @@ class _ToolbarPanelHub {
     this._hideAppmenuButton = this._hideAppmenuButton.bind(this);
     this._showToolbarButton = this._showToolbarButton.bind(this);
     this._hideToolbarButton = this._hideToolbarButton.bind(this);
+    this.insertProtectionPanelMessage = this.insertProtectionPanelMessage.bind(
+      this
+    );
+
+    this.state = null;
   }
 
   async init(waitForInitialized, { getMessages, dispatch }) {
@@ -49,6 +56,13 @@ class _ToolbarPanelHub {
     }
     
     Services.prefs.addObserver(WHATSNEW_ENABLED_PREF, this);
+
+    this.state = {
+      protectionPanelMessageSeen: Services.prefs.getBoolPref(
+        PROTECTIONS_PANEL_INFOMSG_PREF,
+        false
+      ),
+    };
   }
 
   uninit() {
@@ -222,6 +236,42 @@ class _ToolbarPanelHub {
     return messageEl;
   }
 
+  _createHeroElement(win, doc, content) {
+    const messageEl = this._createElement(doc, "div");
+    messageEl.setAttribute("id", "protections-popup-message");
+    messageEl.classList.add("whatsNew-hero-message");
+    const wrapperEl = this._createElement(doc, "div");
+    wrapperEl.classList.add("whatsNew-message-body");
+    messageEl.appendChild(wrapperEl);
+    wrapperEl.addEventListener("click", () => {
+      win.ownerGlobal.openLinkIn(content.cta_url, "tabshifted", {
+        private: false,
+        relatedToCurrent: true,
+        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
+          {}
+        ),
+        csp: null,
+      });
+    });
+    const titleEl = this._createElement(doc, "h2");
+    titleEl.classList.add("whatsNew-message-title");
+    this._setString(doc, titleEl, content.title);
+    wrapperEl.appendChild(titleEl);
+
+    const bodyEl = this._createElement(doc, "p");
+    this._setString(doc, bodyEl, content.body);
+    wrapperEl.appendChild(bodyEl);
+
+    if (content.link_text) {
+      const linkEl = this._createElement(doc, "button");
+      linkEl.classList.add("text-link");
+      this._setString(doc, linkEl, content.link_text);
+      wrapperEl.appendChild(linkEl);
+    }
+
+    return messageEl;
+  }
+
   _createElement(doc, elem) {
     return doc.createElementNS("http://www.w3.org/1999/xhtml", elem);
   }
@@ -319,6 +369,64 @@ class _ToolbarPanelHub {
         value: options.value,
       });
     }
+  }
+
+  
+
+
+
+
+  async insertProtectionPanelMessage(event) {
+    const win = event.target.ownerGlobal;
+    const doc = event.target.ownerDocument;
+    const container = doc.getElementById("messaging-system-message-container");
+    const infoButton = doc.getElementById("protections-popup-info-button");
+    const panelContainer = doc.getElementById("protections-popup");
+    const toggleMessage = () => {
+      container.toggleAttribute("disabled");
+      infoButton.toggleAttribute("checked");
+    };
+    if (!container.childElementCount) {
+      const message = await this._getMessages({
+        template: "protections_panel",
+        triggerId: "protectionsPanelOpen",
+      });
+      if (message) {
+        const messageEl = this._createHeroElement(win, doc, message.content);
+        container.appendChild(messageEl);
+        infoButton.addEventListener("click", toggleMessage);
+        this.sendUserEventTelemetry(win, "IMPRESSION", message.id);
+      }
+    }
+    
+    
+    if (
+      !this.state.protectionPanelMessageSeen &&
+      container.hasAttribute("disabled")
+    ) {
+      toggleMessage();
+    }
+    
+    if (!this.state.protectionPanelMessageSeen) {
+      Services.prefs.setBoolPref(PROTECTIONS_PANEL_INFOMSG_PREF, true);
+      this.state.protectionPanelMessageSeen = true;
+    }
+    
+    
+    panelContainer.addEventListener(
+      "popuphidden",
+      () => {
+        if (
+          this.state.protectionPanelMessageSeen &&
+          !container.hasAttribute("disabled")
+        ) {
+          toggleMessage();
+        }
+      },
+      {
+        once: true,
+      }
+    );
   }
 }
 

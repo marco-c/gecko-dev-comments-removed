@@ -4,11 +4,11 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ContentBlockingAllowList",
-  "resource://gre/modules/ContentBlockingAllowList.jsm"
-);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  ContentBlockingAllowList:
+    "resource://gre/modules/ContentBlockingAllowList.jsm",
+  ToolbarPanelHub: "resource://activity-stream/lib/ToolbarPanelHub.jsm",
+});
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -1501,6 +1501,17 @@ var gProtectionsHandler = {
   onPopupShown(event) {
     if (event.target == this._protectionsPopup) {
       window.addEventListener("focus", this, true);
+
+      
+      
+      gIdentityHandler._trackingProtectionIconContainer.setAttribute(
+        "open",
+        "true"
+      );
+
+      
+      
+      ToolbarPanelHub.insertProtectionPanelMessage(event);
     }
   },
 
