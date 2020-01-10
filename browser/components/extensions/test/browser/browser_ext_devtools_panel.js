@@ -285,14 +285,14 @@ add_task(async function test_devtools_page_panels_create() {
   );
 
   
-  const getPanelId = toolbox => {
+  const getPanelInfo = toolbox => {
     let toolboxAdditionalTools = toolbox.getAdditionalTools();
     is(
       toolboxAdditionalTools.length,
       1,
       "Got the expected number of toolbox specific panel registered."
     );
-    return toolboxAdditionalTools[0].id;
+    return toolboxAdditionalTools[0];
   };
 
   
@@ -390,7 +390,7 @@ add_task(async function test_devtools_page_panels_create() {
         "Got one extension devtools panel registered"
       );
 
-      let newPanelId = getPanelId(toolbox);
+      let newPanelId = getPanelInfo(toolbox).id;
       is(
         toolbox.visibleAdditionalTools.filter(toolId => toolId == newPanelId)
           .length,
@@ -404,7 +404,7 @@ add_task(async function test_devtools_page_panels_create() {
   
   let { toolbox, target } = await openToolboxForTab(tab);
   await extension.awaitMessage("devtools_panel_created");
-  let panelId = getPanelId(toolbox);
+  let panelId = getPanelInfo(toolbox).id;
 
   info("Test panel show and hide - first cycle");
   await testPanelShowAndHide({
@@ -433,6 +433,21 @@ add_task(async function test_devtools_page_panels_create() {
   
   await gDevTools.showToolbox(target, panelId);
   await extension.awaitMessage("devtools_panel_shown");
+
+  
+  const panelFrame = toolbox.doc.getElementById(
+    `toolbox-panel-iframe-${panelId}`
+  );
+  const panelInfo = getPanelInfo(toolbox);
+  ok(
+    panelInfo.panelLabel && panelInfo.panelLabel.length > 0,
+    "Expect the registered panel to include a non empty panelLabel property"
+  );
+  is(
+    panelFrame && panelFrame.getAttribute("aria-label"),
+    panelInfo.panelLabel,
+    "Got the expected aria-label on the extension panel frame"
+  );
 
   
   
@@ -470,7 +485,7 @@ add_task(async function test_devtools_page_panels_create() {
 
   
   
-  panelId = getPanelId(toolbox);
+  panelId = getPanelInfo(toolbox).id;
 
   info("Test panel show and hide - after disabling/enabling devtools_page");
   await testPanelShowAndHide({
