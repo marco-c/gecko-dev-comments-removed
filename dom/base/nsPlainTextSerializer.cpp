@@ -1458,6 +1458,91 @@ static void ReplaceVisiblyTrailingNbsps(nsAString& aString) {
   }
 }
 
+void nsPlainTextSerializer::ConvertToLinesAndOutput(const nsAString& aString) {
+  const int32_t totLen = aString.Length();
+  int32_t newline{0};
+
+  
+  
+  int32_t bol = 0;
+  while (bol < totLen) {
+    bool outputLineBreak = false;
+    bool spacesOnly = true;
+
+    
+    
+    nsAString::const_iterator iter;
+    aString.BeginReading(iter);
+    nsAString::const_iterator done_searching;
+    aString.EndReading(done_searching);
+    iter.advance(bol);
+    int32_t new_newline = bol;
+    newline = kNotFound;
+    while (iter != done_searching) {
+      if ('\n' == *iter || '\r' == *iter) {
+        newline = new_newline;
+        break;
+      }
+      if (' ' != *iter) {
+        spacesOnly = false;
+      }
+      ++new_newline;
+      ++iter;
+    }
+
+    
+    nsAutoString stringpart;
+    if (newline == kNotFound) {
+      
+      stringpart.Assign(Substring(aString, bol, totLen - bol));
+      if (!stringpart.IsEmpty()) {
+        char16_t lastchar = stringpart.Last();
+        mInWhitespace = IsLineFeedCarriageReturnBlankOrTab(lastchar);
+      }
+      mEmptyLines = -1;
+      bol = totLen;
+    } else {
+      
+      stringpart.Assign(Substring(aString, bol, newline - bol));
+      mInWhitespace = true;
+      outputLineBreak = true;
+      mEmptyLines = 0;
+      bol = newline + 1;
+      if ('\r' == *iter && bol < totLen && '\n' == *++iter) {
+        
+        
+        
+        bol++;
+      }
+    }
+
+    if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
+      if ((outputLineBreak || !spacesOnly) &&  
+          !IsQuotedLine(stringpart) && !IsSignatureSeparator(stringpart)) {
+        stringpart.Trim(" ", false, true, true);
+      }
+      if (IsSpaceStuffable(stringpart.get()) && !IsQuotedLine(stringpart)) {
+        mCurrentLine.mContent.mValue.Append(char16_t(' '));
+      }
+    }
+    mCurrentLine.mContent.mValue.Append(stringpart);
+
+    mCurrentLine.mContent.MaybeReplaceNbsps(mSettings.GetFlags());
+
+    mOutputManager->Append(mCurrentLine,
+                           OutputManager::StripTrailingWhitespaces::kNo);
+    if (outputLineBreak) {
+      mOutputManager->AppendLineBreak();
+    }
+
+    mCurrentLine.ResetContentAndIndentationHeader();
+  }
+
+#ifdef DEBUG_wrapping
+  printf("No wrapping: newline is %d, totLen is %d\n", newline, totLen);
+#endif
+}
+
 
 
 
@@ -1503,87 +1588,7 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
       mOutputManager->Flush(mCurrentLine);
     }
 
-    int32_t newline{0};
-
-    
-    
-    int32_t bol = 0;
-    while (bol < totLen) {
-      bool outputLineBreak = false;
-      bool spacesOnly = true;
-
-      
-      
-      nsAString::const_iterator iter;
-      str.BeginReading(iter);
-      nsAString::const_iterator done_searching;
-      str.EndReading(done_searching);
-      iter.advance(bol);
-      int32_t new_newline = bol;
-      newline = kNotFound;
-      while (iter != done_searching) {
-        if ('\n' == *iter || '\r' == *iter) {
-          newline = new_newline;
-          break;
-        }
-        if (' ' != *iter) {
-          spacesOnly = false;
-        }
-        ++new_newline;
-        ++iter;
-      }
-
-      
-      nsAutoString stringpart;
-      if (newline == kNotFound) {
-        
-        stringpart.Assign(Substring(str, bol, totLen - bol));
-        if (!stringpart.IsEmpty()) {
-          char16_t lastchar = stringpart.Last();
-          mInWhitespace = IsLineFeedCarriageReturnBlankOrTab(lastchar);
-        }
-        mEmptyLines = -1;
-        bol = totLen;
-      } else {
-        
-        stringpart.Assign(Substring(str, bol, newline - bol));
-        mInWhitespace = true;
-        outputLineBreak = true;
-        mEmptyLines = 0;
-        bol = newline + 1;
-        if ('\r' == *iter && bol < totLen && '\n' == *++iter) {
-          
-          
-          
-          bol++;
-        }
-      }
-
-      if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
-        if ((outputLineBreak || !spacesOnly) &&  
-            !IsQuotedLine(stringpart) && !IsSignatureSeparator(stringpart)) {
-          stringpart.Trim(" ", false, true, true);
-        }
-        if (IsSpaceStuffable(stringpart.get()) && !IsQuotedLine(stringpart)) {
-          mCurrentLine.mContent.mValue.Append(char16_t(' '));
-        }
-      }
-      mCurrentLine.mContent.mValue.Append(stringpart);
-
-      mCurrentLine.mContent.MaybeReplaceNbsps(mSettings.GetFlags());
-
-      mOutputManager->Append(mCurrentLine,
-                             OutputManager::StripTrailingWhitespaces::kNo);
-      if (outputLineBreak) {
-        mOutputManager->AppendLineBreak();
-      }
-
-      mCurrentLine.ResetContentAndIndentationHeader();
-    }
-
-#ifdef DEBUG_wrapping
-    printf("No wrapping: newline is %d, totLen is %d\n", newline, totLen);
-#endif
+    ConvertToLinesAndOutput(str);
     return;
   }
 
