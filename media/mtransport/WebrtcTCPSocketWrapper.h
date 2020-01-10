@@ -4,15 +4,15 @@
 
 
 
-#ifndef webrtc_proxy_channel_wrapper__
-#define webrtc_proxy_channel_wrapper__
+#ifndef webrtc_tcp_socket_wrapper__
+#define webrtc_tcp_socket_wrapper__
 
 #include <memory>
 
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 
-#include "mozilla/net/WebrtcProxyChannelCallback.h"
+#include "mozilla/net/WebrtcTCPSocketCallback.h"
 
 class nsIEventTarget;
 
@@ -22,7 +22,7 @@ class NrSocketProxyConfig;
 
 namespace net {
 
-class WebrtcProxyChannelChild;
+class WebrtcTCPSocketChild;
 
 
 
@@ -35,11 +35,11 @@ class WebrtcProxyChannelChild;
 
 
 
-class WebrtcProxyChannelWrapper : public WebrtcProxyChannelCallback {
+class WebrtcTCPSocketWrapper : public WebrtcTCPSocketCallback {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebrtcProxyChannelWrapper, override)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebrtcTCPSocketWrapper, override)
 
-  explicit WebrtcProxyChannelWrapper(WebrtcProxyChannelCallback* aCallbacks);
+  explicit WebrtcTCPSocketWrapper(WebrtcTCPSocketCallback* aCallbacks);
 
   virtual void AsyncOpen(const nsCString& aHost, const int& aPort,
                          const std::shared_ptr<NrSocketProxyConfig>& aConfig);
@@ -52,13 +52,13 @@ class WebrtcProxyChannelWrapper : public WebrtcProxyChannelCallback {
   virtual void OnRead(nsTArray<uint8_t>&& aReadData) override;
 
  protected:
-  RefPtr<WebrtcProxyChannelCallback> mProxyCallbacks;
-  RefPtr<WebrtcProxyChannelChild> mWebrtcProxyChannel;
+  RefPtr<WebrtcTCPSocketCallback> mProxyCallbacks;
+  RefPtr<WebrtcTCPSocketChild> mWebrtcTCPSocket;
 
   nsCOMPtr<nsIEventTarget> mMainThread;
   nsCOMPtr<nsIEventTarget> mSocketThread;
 
-  virtual ~WebrtcProxyChannelWrapper();
+  virtual ~WebrtcTCPSocketWrapper();
 };
 
 }  

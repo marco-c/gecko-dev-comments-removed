@@ -1,0 +1,92 @@
+
+
+
+
+
+
+#include "WebrtcTCPSocketChild.h"
+
+#include "mozilla/net/NeckoChild.h"
+#include "mozilla/net/SocketProcessChild.h"
+
+#include "LoadInfo.h"
+
+#include "WebrtcTCPSocketLog.h"
+#include "WebrtcTCPSocketCallback.h"
+
+using namespace mozilla::ipc;
+
+namespace mozilla {
+namespace net {
+
+mozilla::ipc::IPCResult WebrtcTCPSocketChild::RecvOnClose(
+    const nsresult& aReason) {
+  LOG(("WebrtcTCPSocketChild::RecvOnClose %p\n", this));
+
+  MOZ_ASSERT(mProxyCallbacks, "webrtc TCP callbacks should be non-null");
+  mProxyCallbacks->OnClose(aReason);
+  mProxyCallbacks = nullptr;
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult WebrtcTCPSocketChild::RecvOnConnected() {
+  LOG(("WebrtcTCPSocketChild::RecvOnConnected %p\n", this));
+
+  MOZ_ASSERT(mProxyCallbacks, "webrtc TCP callbacks should be non-null");
+  mProxyCallbacks->OnConnected();
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult WebrtcTCPSocketChild::RecvOnRead(
+    nsTArray<uint8_t>&& aReadData) {
+  LOG(("WebrtcTCPSocketChild::RecvOnRead %p\n", this));
+
+  MOZ_ASSERT(mProxyCallbacks, "webrtc TCP callbacks should be non-null");
+  mProxyCallbacks->OnRead(std::move(aReadData));
+
+  return IPC_OK();
+}
+
+WebrtcTCPSocketChild::WebrtcTCPSocketChild(
+    WebrtcTCPSocketCallback* aProxyCallbacks)
+    : mProxyCallbacks(aProxyCallbacks) {
+  MOZ_COUNT_CTOR(WebrtcTCPSocketChild);
+
+  LOG(("WebrtcTCPSocketChild::WebrtcTCPSocketChild %p\n", this));
+}
+
+WebrtcTCPSocketChild::~WebrtcTCPSocketChild() {
+  MOZ_COUNT_DTOR(WebrtcTCPSocketChild);
+
+  LOG(("WebrtcTCPSocketChild::~WebrtcTCPSocketChild %p\n", this));
+}
+
+void WebrtcTCPSocketChild::AsyncOpen(const nsCString& aHost, const int& aPort,
+                                     const net::LoadInfoArgs& aArgs,
+                                     const nsCString& aAlpn,
+                                     const dom::TabId& aTabId) {
+  LOG(("WebrtcTCPSocketChild::AsyncOpen %p %s:%d\n", this, aHost.get(), aPort));
+
+  MOZ_ASSERT(NS_IsMainThread(), "not main thread");
+
+  AddIPDLReference();
+
+  if (IsNeckoChild()) {
+    
+    gNeckoChild->SetEventTargetForActor(this, GetMainThreadEventTarget());
+    gNeckoChild->SendPWebrtcTCPSocketConstructor(this, aTabId);
+  } else if (IsSocketProcessChild()) {
+    
+    SocketProcessChild::GetSingleton()->SetEventTargetForActor(
+        this, GetMainThreadEventTarget());
+    SocketProcessChild::GetSingleton()->SendPWebrtcTCPSocketConstructor(this,
+                                                                        aTabId);
+  }
+
+  SendAsyncOpen(aHost, aPort, aArgs, aAlpn);
+}
+
+}  
+}  

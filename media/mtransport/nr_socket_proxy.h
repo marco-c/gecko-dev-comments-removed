@@ -44,7 +44,7 @@
 
 #include <list>
 
-#include "mozilla/net/WebrtcProxyChannelCallback.h"
+#include "mozilla/net/WebrtcTCPSocketCallback.h"
 
 #include "nsTArray.h"
 
@@ -60,13 +60,13 @@ namespace mozilla {
 using namespace net;
 
 namespace net {
-class WebrtcProxyChannelWrapper;
+class WebrtcTCPSocketWrapper;
 }  
 
 class NrSocketProxyData;
 class NrSocketProxyConfig;
 
-class NrSocketProxy : public NrSocketBase, public WebrtcProxyChannelCallback {
+class NrSocketProxy : public NrSocketBase, public WebrtcTCPSocketCallback {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrSocketProxy, override)
 
@@ -96,7 +96,7 @@ class NrSocketProxy : public NrSocketBase, public WebrtcProxyChannelCallback {
   size_t CountUnreadBytes() const;
 
   
-  void AssignChannel_DoNotUse(WebrtcProxyChannelWrapper* aWrapper);
+  void AssignChannel_DoNotUse(WebrtcTCPSocketWrapper* aWrapper);
 
  protected:
   virtual ~NrSocketProxy();
@@ -111,7 +111,7 @@ class NrSocketProxy : public NrSocketBase, public WebrtcProxyChannelCallback {
 
   std::shared_ptr<NrSocketProxyConfig> mConfig;
 
-  RefPtr<WebrtcProxyChannelWrapper> mWebrtcProxyChannel;
+  RefPtr<WebrtcTCPSocketWrapper> mWebrtcTCPSocket;
 };
 
 }  

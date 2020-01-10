@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef webrtc_tcp_socket_log_h__
+#define webrtc_tcp_socket_log_h__
+
+#include "mozilla/Logging.h"
+
+namespace mozilla {
+namespace net {
+extern LazyLogModule webrtcTCPSocketLog;
+}  
+}  
+
+#undef LOG
+#define LOG(args) \
+  MOZ_LOG(mozilla::net::webrtcTCPSocketLog, mozilla::LogLevel::Debug, args)
+
+#endif  

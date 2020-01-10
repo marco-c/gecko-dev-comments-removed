@@ -4,24 +4,24 @@
 
 
 
-#ifndef mozilla_net_WebrtcProxyChannelParent_h
-#define mozilla_net_WebrtcProxyChannelParent_h
+#ifndef mozilla_net_WebrtcTCPSocketParent_h
+#define mozilla_net_WebrtcTCPSocketParent_h
 
-#include "mozilla/net/PWebrtcProxyChannelParent.h"
+#include "mozilla/net/PWebrtcTCPSocketParent.h"
 
-#include "WebrtcProxyChannelCallback.h"
+#include "WebrtcTCPSocketCallback.h"
 
 class nsIAuthPromptProvider;
 
 namespace mozilla {
 namespace net {
 
-class WebrtcProxyChannel;
+class WebrtcTCPSocket;
 
-class WebrtcProxyChannelParent : public PWebrtcProxyChannelParent,
-                                 public WebrtcProxyChannelCallback {
+class WebrtcTCPSocketParent : public PWebrtcTCPSocketParent,
+                              public WebrtcTCPSocketCallback {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebrtcProxyChannelParent, override)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebrtcTCPSocketParent, override)
 
   mozilla::ipc::IPCResult RecvAsyncOpen(const nsCString& aHost,
                                         const int& aPort,
@@ -34,7 +34,7 @@ class WebrtcProxyChannelParent : public PWebrtcProxyChannelParent,
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  explicit WebrtcProxyChannelParent(dom::TabId aTabId);
+  explicit WebrtcTCPSocketParent(dom::TabId aTabId);
 
   
   void OnClose(nsresult aReason) override;
@@ -45,13 +45,13 @@ class WebrtcProxyChannelParent : public PWebrtcProxyChannelParent,
   void ReleaseIPDLReference() { Release(); }
 
  protected:
-  virtual ~WebrtcProxyChannelParent();
+  virtual ~WebrtcTCPSocketParent();
 
  private:
   void CleanupChannel();
 
   
-  RefPtr<WebrtcProxyChannel> mChannel;
+  RefPtr<WebrtcTCPSocket> mChannel;
 };
 
 }  
