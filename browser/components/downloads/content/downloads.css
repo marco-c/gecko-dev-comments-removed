@@ -29,21 +29,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-#downloadsRichListBox > richlistitem:not([active]) {
-  -moz-binding: none;
-}
-
 #downloadsRichListBox > richlistitem button {
   
 
