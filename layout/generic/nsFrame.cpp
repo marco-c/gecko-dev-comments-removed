@@ -6467,6 +6467,10 @@ void nsFrame::DidReflow(nsPresContext* aPresContext,
 
   
   
+  SetHasBSizeChange(false);
+
+  
+  
   
   
   if (aReflowInput && aReflowInput->mPercentBSizeObserver && !GetPrevInFlow()) {

@@ -488,6 +488,7 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
                                   LayoutFrameType aFrameType) {
   SetBResize(false);
   SetIResize(false);
+  mFlags.mIsBResizeForPercentages = false;
 
   const WritingMode wm = mWritingMode;  
   
@@ -608,52 +609,57 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
 
   
   
-  if (IsTableCell(aFrameType) &&
-      (mFlags.mSpecialBSizeReflow || (mFrame->FirstInFlow()->GetStateBits() &
-                                      NS_TABLE_CELL_HAD_SPECIAL_REFLOW)) &&
-      (mFrame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+  if (mFrame->HasBSizeChange()) {
+    
+    
     
     
     
     SetBResize(true);
+    mFlags.mIsBResizeForPercentages = true;
+    
+    
+    
+    
+  } else if (mCBReflowInput &&
+             mCBReflowInput->IsBResizeForPercentagesForWM(wm) &&
+             (mStylePosition->BSize(wm).HasPercent() ||
+              mStylePosition->MinBSize(wm).HasPercent() ||
+              mStylePosition->MaxBSize(wm).HasPercent())) {
+    
+    
+    SetBResize(true);
+    mFlags.mIsBResizeForPercentages = true;
+  } else if (IsTableCell(aFrameType) &&
+             (mFlags.mSpecialBSizeReflow ||
+              (mFrame->FirstInFlow()->GetStateBits() &
+               NS_TABLE_CELL_HAD_SPECIAL_REFLOW)) &&
+             (mFrame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+    
+    
+    
+    SetBResize(true);
+    mFlags.mIsBResizeForPercentages = true;
   } else if (mCBReflowInput && mFrame->IsBlockWrapper()) {
     
     
     
     
     SetBResize(mCBReflowInput->IsBResizeForWM(wm));
-  } else if (mCBReflowInput && !mFrame->IsBlockFrameOrSubclass()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SetBResize(mCBReflowInput->IsBResizeForWM(wm));
-    if (ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
-      SetBResize(IsBResize() || NS_SUBTREE_DIRTY(mFrame));
-    }
+    mFlags.mIsBResizeForPercentages =
+        mCBReflowInput->IsBResizeForPercentagesForWM(wm);
   } else if (ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
+    
     if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
         mCBReflowInput) {
+      
       SetBResize(mCBReflowInput->IsBResizeForWM(wm));
     } else {
       SetBResize(IsIResize());
     }
     SetBResize(IsBResize() || NS_SUBTREE_DIRTY(mFrame));
   } else {
+    
     
     SetBResize(mFrame->BSize(wm) !=
                ComputedBSize() + ComputedLogicalBorderPadding().BStartEnd(wm));

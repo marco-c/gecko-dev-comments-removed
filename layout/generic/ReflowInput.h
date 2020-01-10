@@ -217,6 +217,19 @@ struct SizeComputationInput {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool mIsBResizeForPercentages : 1;
+
+    
+    
     bool mTableIsSplittable : 1;
 
     
@@ -683,6 +696,13 @@ struct ReflowInput : public SizeComputationInput {
   bool IsBResizeForWM(mozilla::WritingMode aWM) const {
     return aWM.IsOrthogonalTo(mWritingMode) ? mFlags.mIsIResize
                                             : mFlags.mIsBResize;
+  }
+  bool IsBResizeForPercentagesForWM(mozilla::WritingMode aWM) const {
+    
+    
+    
+    return !aWM.IsOrthogonalTo(mWritingMode) ? mFlags.mIsBResizeForPercentages
+                                             : IsIResize();
   }
   void SetHResize(bool aValue) {
     if (mWritingMode.IsVertical()) {
