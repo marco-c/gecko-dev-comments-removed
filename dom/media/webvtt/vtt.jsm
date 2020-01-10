@@ -926,6 +926,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
     const fullDimension = isWritingDirectionHorizontal ?
       containerBox.height : containerBox.width;
     if (cue.snapToLines) {
+      LOG(`Adjust position when 'snap-to-lines' is true.`);
       
       
       
@@ -1014,6 +1015,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
         });
       }
     } else {
+      LOG(`Adjust position when 'snap-to-lines' is false.`);
       
       if (cue.lineAlign != "start") {
         const isCenterAlign = cue.lineAlign == "center";
