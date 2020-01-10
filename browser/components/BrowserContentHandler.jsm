@@ -1034,6 +1034,11 @@ nsDefaultCommandLineHandler.prototype = {
       if (win) {
         win.close();
       }
+      
+      
+      
+      
+      Services.startup.quit(Services.startup.eForceQuit);
     }
   },
 
