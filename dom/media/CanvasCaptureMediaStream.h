@@ -14,7 +14,7 @@ class nsIPrincipal;
 
 namespace mozilla {
 class DOMMediaStream;
-class SourceMediaStream;
+class SourceMediaTrack;
 
 namespace layers {
 class Image;
@@ -61,7 +61,7 @@ class OutputStreamFrameListener;
 
 class OutputStreamDriver : public FrameCaptureListener {
  public:
-  OutputStreamDriver(SourceMediaStream* aSourceStream,
+  OutputStreamDriver(SourceMediaTrack* aSourceStream,
                      const PrincipalHandle& aPrincipalHandle);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OutputStreamDriver);
@@ -84,7 +84,7 @@ class OutputStreamDriver : public FrameCaptureListener {
 
   virtual void Forget() {}
 
-  const RefPtr<SourceMediaStream> mSourceStream;
+  const RefPtr<SourceMediaTrack> mSourceStream;
   const PrincipalHandle mPrincipalHandle;
 
  protected:
@@ -116,7 +116,7 @@ class CanvasCaptureMediaStream : public DOMMediaStream {
 
   void StopCapture();
 
-  SourceMediaStream* GetSourceStream() const;
+  SourceMediaTrack* GetSourceStream() const;
 
  protected:
   ~CanvasCaptureMediaStream();

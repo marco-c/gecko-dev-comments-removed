@@ -12,7 +12,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
 #include "AudioContext.h"
-#include "MediaStreamGraph.h"
+#include "MediaTrackGraph.h"
 #include "WebAudioUtils.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsWeakReference.h"
@@ -66,7 +66,7 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
             ChannelInterpretation aChannelInterpretation);
 
   
-  virtual void DestroyMediaStream();
+  virtual void DestroyMediaTrack();
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AudioNode, DOMEventTargetHelper)
@@ -121,13 +121,13 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
       return;
     }
     mChannelCount = aChannelCount;
-    SendChannelMixingParametersToStream();
+    SendChannelMixingParametersToTrack();
   }
   ChannelCountMode ChannelCountModeValue() const { return mChannelCountMode; }
   virtual void SetChannelCountModeValue(ChannelCountMode aMode,
                                         ErrorResult& aRv) {
     mChannelCountMode = aMode;
-    SendChannelMixingParametersToStream();
+    SendChannelMixingParametersToTrack();
   }
   ChannelInterpretation ChannelInterpretationValue() const {
     return mChannelInterpretation;
@@ -135,20 +135,20 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   virtual void SetChannelInterpretationValue(ChannelInterpretation aMode,
                                              ErrorResult& aRv) {
     mChannelInterpretation = aMode;
-    SendChannelMixingParametersToStream();
+    SendChannelMixingParametersToTrack();
   }
 
   struct InputNode final {
     ~InputNode() {
-      if (mStreamPort) {
-        mStreamPort->Destroy();
+      if (mTrackPort) {
+        mTrackPort->Destroy();
       }
     }
 
     size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
       size_t amount = 0;
-      if (mStreamPort) {
-        amount += mStreamPort->SizeOfIncludingThis(aMallocSizeOf);
+      if (mTrackPort) {
+        amount += mTrackPort->SizeOfIncludingThis(aMallocSizeOf);
       }
 
       return amount;
@@ -156,7 +156,7 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
 
     
     AudioNode* MOZ_NON_OWNING_REF mInputNode;
-    RefPtr<MediaInputPort> mStreamPort;
+    RefPtr<MediaInputPort> mTrackPort;
     
     
     uint32_t mInputPort;
@@ -165,7 +165,7 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   };
 
   
-  AudioNodeStream* GetStream() const { return mStream; }
+  AudioNodeTrack* GetTrack() const { return mTrack; }
 
   const nsTArray<InputNode>& InputNodes() const { return mInputNodes; }
   const nsTArray<RefPtr<AudioNode>>& OutputNodes() const {
@@ -234,9 +234,9 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   void Initialize(const AudioNodeOptions& aOptions, ErrorResult& aRv);
 
   
-  void SendDoubleParameterToStream(uint32_t aIndex, double aValue);
-  void SendInt32ParameterToStream(uint32_t aIndex, int32_t aValue);
-  void SendChannelMixingParametersToStream();
+  void SendDoubleParameterToTrack(uint32_t aIndex, double aValue);
+  void SendInt32ParameterToTrack(uint32_t aIndex, int32_t aValue);
+  void SendChannelMixingParametersToTrack();
 
  private:
   RefPtr<AudioContext> mContext;
@@ -244,7 +244,7 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
  protected:
   
   
-  RefPtr<AudioNodeStream> mStream;
+  RefPtr<AudioNodeTrack> mTrack;
 
   
   nsTArray<RefPtr<AudioParam>> mParams;

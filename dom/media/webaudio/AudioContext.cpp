@@ -47,7 +47,7 @@
 #include "AudioChannelService.h"
 #include "AudioDestinationNode.h"
 #include "AudioListener.h"
-#include "AudioNodeStream.h"
+#include "AudioNodeTrack.h"
 #include "AudioStream.h"
 #include "AudioWorkletImpl.h"
 #include "AutoplayPolicy.h"
@@ -64,7 +64,7 @@
 #include "MediaElementAudioSourceNode.h"
 #include "MediaStreamAudioDestinationNode.h"
 #include "MediaStreamAudioSourceNode.h"
-#include "MediaStreamGraph.h"
+#include "MediaTrackGraph.h"
 #include "MediaStreamTrackAudioSourceNode.h"
 #include "nsContentUtils.h"
 #include "nsIScriptError.h"
@@ -265,7 +265,7 @@ already_AddRefed<AudioContext> AudioContext::Constructor(
     return nullptr;
   }
 
-  float sampleRate = MediaStreamGraph::REQUEST_DEFAULT_SAMPLE_RATE;
+  float sampleRate = MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE;
   if (aOptions.mSampleRate > 0 &&
       (aOptions.mSampleRate - WebAudioUtils::MinSampleRate < 0.0 ||
        WebAudioUtils::MaxSampleRate - aOptions.mSampleRate < 0.0)) {
@@ -672,13 +672,13 @@ uint32_t AudioContext::MaxChannelCount() const {
 
 uint32_t AudioContext::ActiveNodeCount() const { return mActiveNodes.Count(); }
 
-MediaStreamGraph* AudioContext::Graph() const {
-  return Destination()->Stream()->Graph();
+MediaTrackGraph* AudioContext::Graph() const {
+  return Destination()->Track()->Graph();
 }
 
-AudioNodeStream* AudioContext::DestinationStream() const {
+AudioNodeTrack* AudioContext::DestinationTrack() const {
   if (Destination()) {
-    return Destination()->Stream();
+    return Destination()->Track();
   }
   return nullptr;
 }
@@ -690,9 +690,9 @@ void AudioContext::ShutdownWorklet() {
 }
 
 double AudioContext::CurrentTime() {
-  MediaStream* stream = Destination()->Stream();
+  mozilla::MediaTrack* track = Destination()->Track();
 
-  double rawTime = stream->StreamTimeToSeconds(stream->GetCurrentTime());
+  double rawTime = track->TrackTimeToSeconds(track->GetCurrentTime());
 
   
   
@@ -777,18 +777,18 @@ StateChangeTask::StateChangeTask(AudioContext* aAudioContext, void* aPromise,
     : Runnable("dom::StateChangeTask"),
       mAudioContext(aAudioContext),
       mPromise(aPromise),
-      mAudioNodeStream(nullptr),
+      mAudioNodeTrack(nullptr),
       mNewState(aNewState) {
   MOZ_ASSERT(NS_IsMainThread(),
              "This constructor should be used from the main thread.");
 }
 
-StateChangeTask::StateChangeTask(AudioNodeStream* aStream, void* aPromise,
+StateChangeTask::StateChangeTask(AudioNodeTrack* aTrack, void* aPromise,
                                  AudioContextState aNewState)
     : Runnable("dom::StateChangeTask"),
       mAudioContext(nullptr),
       mPromise(aPromise),
-      mAudioNodeStream(aStream),
+      mAudioNodeTrack(aTrack),
       mNewState(aNewState) {
   MOZ_ASSERT(!NS_IsMainThread(),
              "This constructor should be used from the graph thread.");
@@ -798,11 +798,11 @@ NS_IMETHODIMP
 StateChangeTask::Run() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!mAudioContext && !mAudioNodeStream) {
+  if (!mAudioContext && !mAudioNodeTrack) {
     return NS_OK;
   }
-  if (mAudioNodeStream) {
-    AudioNode* node = mAudioNodeStream->Engine()->NodeMainThread();
+  if (mAudioNodeTrack) {
+    AudioNode* node = mAudioNodeTrack->Engine()->NodeMainThread();
     if (!node) {
       return NS_OK;
     }
@@ -933,26 +933,26 @@ void AudioContext::OnStateChanged(void* aPromise, AudioContextState aNewState) {
   mAudioContextState = aNewState;
 }
 
-nsTArray<MediaStream*> AudioContext::GetAllStreams() const {
-  nsTArray<MediaStream*> streams;
+nsTArray<mozilla::MediaTrack*> AudioContext::GetAllTracks() const {
+  nsTArray<mozilla::MediaTrack*> tracks;
   for (auto iter = mAllNodes.ConstIter(); !iter.Done(); iter.Next()) {
     AudioNode* node = iter.Get()->GetKey();
-    MediaStream* s = node->GetStream();
-    if (s) {
-      streams.AppendElement(s);
+    mozilla::MediaTrack* t = node->GetTrack();
+    if (t) {
+      tracks.AppendElement(t);
     }
     
     const nsTArray<RefPtr<AudioParam>>& audioParams = node->GetAudioParams();
     if (!audioParams.IsEmpty()) {
       for (auto& param : audioParams) {
-        s = param->GetStream();
-        if (s && !streams.Contains(s)) {
-          streams.AppendElement(s);
+        t = param->GetTrack();
+        if (t && !tracks.Contains(t)) {
+          tracks.AppendElement(t);
         }
       }
     }
   }
-  return streams;
+  return tracks;
 }
 
 already_AddRefed<Promise> AudioContext::Suspend(ErrorResult& aRv) {
@@ -989,15 +989,15 @@ void AudioContext::SuspendInternal(void* aPromise,
                                    AudioContextOperationFlags aFlags) {
   Destination()->Suspend();
 
-  nsTArray<MediaStream*> streams;
+  nsTArray<mozilla::MediaTrack*> tracks;
   
   
   
   
   if (!mSuspendCalled) {
-    streams = GetAllStreams();
+    tracks = GetAllTracks();
   }
-  Graph()->ApplyAudioContextOperation(DestinationStream(), streams,
+  Graph()->ApplyAudioContextOperation(DestinationTrack(), tracks,
                                       AudioContextOperation::Suspend, aPromise,
                                       aFlags);
 
@@ -1052,15 +1052,15 @@ void AudioContext::ResumeInternal(AudioContextOperationFlags aFlags) {
 
   Destination()->Resume();
 
-  nsTArray<MediaStream*> streams;
+  nsTArray<mozilla::MediaTrack*> tracks;
   
   
   
   
   if (mSuspendCalled) {
-    streams = GetAllStreams();
+    tracks = GetAllTracks();
   }
-  Graph()->ApplyAudioContextOperation(DestinationStream(), streams,
+  Graph()->ApplyAudioContextOperation(DestinationTrack(), tracks,
                                       AudioContextOperation::Resume, nullptr,
                                       aFlags);
   mSuspendCalled = false;
@@ -1165,19 +1165,19 @@ void AudioContext::CloseInternal(void* aPromise,
                                  AudioContextOperationFlags aFlags) {
   
   
-  AudioNodeStream* ds = DestinationStream();
+  AudioNodeTrack* ds = DestinationTrack();
   if (ds) {
     Destination()->DestroyAudioChannelAgent();
 
-    nsTArray<MediaStream*> streams;
+    nsTArray<mozilla::MediaTrack*> tracks;
     
     
     
     if (!mSuspendCalled && !mCloseCalled) {
-      streams = GetAllStreams();
+      tracks = GetAllTracks();
     }
     Graph()->ApplyAudioContextOperation(
-        ds, streams, AudioContextOperation::Close, aPromise, aFlags);
+        ds, tracks, AudioContextOperation::Close, aPromise, aFlags);
   }
   mCloseCalled = true;
 }

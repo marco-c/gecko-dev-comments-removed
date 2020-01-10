@@ -289,7 +289,7 @@ nsresult OpusTrackEncoder::GetEncodedTrack(
       AudioChunk chunk = *iter;
 
       
-      StreamTime frameToCopy = chunk.GetDuration();
+      TrackTime frameToCopy = chunk.GetDuration();
       if (frameToCopy > framesToFetch - frameCopied) {
         frameToCopy = framesToFetch - frameCopied;
       }

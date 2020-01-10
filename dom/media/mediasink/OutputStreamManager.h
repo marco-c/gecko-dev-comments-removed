@@ -16,10 +16,9 @@ namespace mozilla {
 
 class DOMMediaStream;
 class MediaInputPort;
-class MediaStream;
 class OutputStreamManager;
-class ProcessedMediaStream;
-class SourceMediaStream;
+class ProcessedMediaTrack;
+class SourceMediaTrack;
 
 namespace dom {
 class MediaStreamTrack;
@@ -38,10 +37,10 @@ class OutputStreamData {
   
   
   
-  void AddTrack(SourceMediaStream* aStream, MediaSegment::Type aType,
+  void AddTrack(SourceMediaTrack* aTrack, MediaSegment::Type aType,
                 nsIPrincipal* aPrincipal, bool aAsyncAddTrack);
   
-  void RemoveTrack(SourceMediaStream* aStream);
+  void RemoveTrack(SourceMediaTrack* aTrack);
 
   void SetPrincipal(nsIPrincipal* aPrincipal);
 
@@ -59,7 +58,7 @@ class OutputStreamManager {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OutputStreamManager);
 
  public:
-  OutputStreamManager(SharedDummyStream* aDummyStream, nsIPrincipal* aPrincipal,
+  OutputStreamManager(SharedDummyTrack* aDummyStream, nsIPrincipal* aPrincipal,
                       AbstractThread* aAbstractMainThread);
   
   void Add(DOMMediaStream* aDOMStream);
@@ -69,16 +68,16 @@ class OutputStreamManager {
   bool HasTrackType(MediaSegment::Type aType);
   
   
-  bool HasTracks(SourceMediaStream* aAudioStream,
-                 SourceMediaStream* aVideoStream);
+  bool HasTracks(SourceMediaTrack* aAudioStream,
+                 SourceMediaTrack* aVideoStream);
   
   
-  SourceMediaStream* GetPrecreatedTrackOfType(MediaSegment::Type aType) const;
+  SourceMediaTrack* GetPrecreatedTrackOfType(MediaSegment::Type aType) const;
   
   size_t NumberOfTracks();
   
   
-  already_AddRefed<SourceMediaStream> AddTrack(MediaSegment::Type aType);
+  already_AddRefed<SourceMediaTrack> AddTrack(MediaSegment::Type aType);
   
   void RemoveTracks();
   
@@ -103,11 +102,10 @@ class OutputStreamManager {
 
   class LiveTrack {
    public:
-    LiveTrack(SourceMediaStream* aSourceStream, MediaSegment::Type aType)
-        : mSourceStream(aSourceStream), mType(aType) {}
+    LiveTrack(SourceMediaTrack* aSourceTrack, MediaSegment::Type aType);
     ~LiveTrack();
 
-    const RefPtr<SourceMediaStream> mSourceStream;
+    const RefPtr<SourceMediaTrack> mSourceTrack;
     const MediaSegment::Type mType;
     bool mEverPlayed = false;
   };
@@ -120,8 +118,8 @@ class OutputStreamManager {
   };
   struct TrackStreamComparator {
     static bool Equals(const UniquePtr<LiveTrack>& aLiveTrack,
-                       SourceMediaStream* aStream) {
-      return aLiveTrack->mSourceStream == aStream;
+                       SourceMediaTrack* aTrack) {
+      return aLiveTrack->mSourceTrack == aTrack;
     }
   };
   struct TrackTypeComparator {
@@ -139,8 +137,8 @@ class OutputStreamManager {
   struct TrackComparator {
     static bool Equals(
         const UniquePtr<LiveTrack>& aLiveTrack,
-        const Pair<SourceMediaStream*, MediaSegment::Type>& aOther) {
-      return aLiveTrack->mSourceStream == aOther.first() &&
+        const Pair<SourceMediaTrack*, MediaSegment::Type>& aOther) {
+      return aLiveTrack->mSourceTrack == aOther.first() &&
              aLiveTrack->mType == aOther.second();
     }
   };
@@ -149,9 +147,9 @@ class OutputStreamManager {
   void AutoRemoveDestroyedStreams();
 
   
-  void RemoveTrack(SourceMediaStream* aStream);
+  void RemoveTrack(SourceMediaTrack* aTrack);
 
-  const RefPtr<SharedDummyStream> mDummyStream;
+  const RefPtr<SharedDummyTrack> mDummyStream;
   nsTArray<UniquePtr<OutputStreamData>> mStreams;
   nsTArray<UniquePtr<LiveTrack>> mLiveTracks;
   Canonical<PrincipalHandle> mPrincipalHandle;

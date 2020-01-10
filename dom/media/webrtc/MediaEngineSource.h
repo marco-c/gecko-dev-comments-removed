@@ -28,7 +28,7 @@ class PrincipalInfo;
 
 class MediaEnginePhotoCallback;
 class MediaEnginePrefs;
-class SourceMediaStream;
+class SourceMediaTrack;
 
 
 
@@ -119,7 +119,7 @@ class MediaEngineSourceInterface {
 
 
 
-  virtual void SetTrack(const RefPtr<SourceMediaStream>& aStream,
+  virtual void SetTrack(const RefPtr<SourceMediaTrack>& aTrack,
                         const PrincipalHandle& aPrincipal) = 0;
 
   

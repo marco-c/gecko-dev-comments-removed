@@ -53,10 +53,10 @@ class ErrorResult;
 class MediaResource;
 class MediaDecoder;
 class MediaInputPort;
-class MediaStream;
-class MediaStreamGraph;
+class MediaTrack;
+class MediaTrackGraph;
 class MediaStreamWindowCapturer;
-struct SharedDummyStream;
+struct SharedDummyTrack;
 class VideoFrameContainer;
 namespace dom {
 class MediaKeys;
@@ -109,7 +109,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::layers::ImageContainer ImageContainer;
   typedef mozilla::VideoFrameContainer VideoFrameContainer;
-  typedef mozilla::MediaStream MediaStream;
   typedef mozilla::MediaResource MediaResource;
   typedef mozilla::MediaDecoderOwner MediaDecoderOwner;
   typedef mozilla::MetadataTags MetadataTags;
@@ -335,13 +334,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void NotifyMediaTrackEnabled(MediaTrack* aTrack);
+  void NotifyMediaTrackEnabled(dom::MediaTrack* aTrack);
 
   
 
 
 
-  void NotifyMediaTrackDisabled(MediaTrack* aTrack);
+  void NotifyMediaTrackDisabled(dom::MediaTrack* aTrack);
 
   
 
@@ -613,7 +612,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void NotifyWaitingForKey() override;
 
   already_AddRefed<DOMMediaStream> CaptureAudio(ErrorResult& aRv,
-                                                MediaStreamGraph* aGraph);
+                                                MediaTrackGraph* aGraph);
 
   already_AddRefed<DOMMediaStream> MozCaptureStream(ErrorResult& aRv);
 
@@ -755,7 +754,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
     
     
     
-    RefPtr<SharedDummyStream> mGraphKeepAliveDummyStream;
+    RefPtr<SharedDummyTrack> mGraphKeepAliveDummyStream;
     bool mFinishWhenEnded;
     bool mCapturingAudioOnly;
     bool mCapturingDecoder;
@@ -830,7 +829,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void UpdateSrcStreamTime();
+  void UpdateSrcTrackTime();
 
   
 
@@ -858,7 +857,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void AddCaptureMediaTrackToOutputStream(MediaTrack* aTrack,
+  void AddCaptureMediaTrackToOutputStream(dom::MediaTrack* aTrack,
                                           OutputMediaStream& aOutputStream,
                                           bool aAsyncAddtrack = true);
 
@@ -880,7 +879,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   already_AddRefed<DOMMediaStream> CaptureStreamInternal(
       StreamCaptureBehavior aBehavior, StreamCaptureType aType,
-      MediaStreamGraph* aGraph);
+      MediaTrackGraph* aGraph);
 
   
 
@@ -1193,7 +1192,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool ShouldElementBePaused();
 
   
-  void AudioCaptureStreamChange(bool aCapture);
+  void AudioCaptureTrackChange(bool aCapture);
 
   
   bool AudioChannelAgentBlockedPlay();
@@ -1312,7 +1311,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   nsCOMPtr<nsIPrincipal> mSrcAttrTriggeringPrincipal;
 
-  
   
   
   RefPtr<DOMMediaStream> mSrcStream;

@@ -30,14 +30,14 @@ class WorkletNodeEngine final : public AudioNodeEngine {
       AudioWorkletImpl* aWorkletImpl, const nsAString& aName,
       NotNull<StructuredCloneHolder*> aOptionsSerialization);
 
-  void ProcessBlock(AudioNodeStream* aStream, GraphTime aFrom,
+  void ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
                     const AudioBlock& aInput, AudioBlock* aOutput,
                     bool* aFinished) override {
-    ProcessBlocksOnPorts(aStream, MakeSpan(&aInput, 1), MakeSpan(aOutput, 1),
+    ProcessBlocksOnPorts(aTrack, MakeSpan(&aInput, 1), MakeSpan(aOutput, 1),
                          aFinished);
   }
 
-  void ProcessBlocksOnPorts(AudioNodeStream* aStream,
+  void ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
                             Span<const AudioBlock> aInput,
                             Span<AudioBlock> aOutput, bool* aFinished) override;
 
@@ -263,7 +263,7 @@ static void ProduceSilence(Span<AudioBlock> aOutput) {
   }
 }
 
-void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeStream* aStream,
+void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
                                              Span<const AudioBlock> aInput,
                                              Span<AudioBlock> aOutput,
                                              bool* aFinished) {
@@ -438,8 +438,8 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
 
   auto engine =
       new WorkletNodeEngine(audioWorkletNode, aOptions.mOutputChannelCount);
-  audioWorkletNode->mStream = AudioNodeStream::Create(
-      &aAudioContext, engine, AudioNodeStream::NO_STREAM_FLAGS,
+  audioWorkletNode->mTrack = AudioNodeTrack::Create(
+      &aAudioContext, engine, AudioNodeTrack::NO_TRACK_FLAGS,
       aAudioContext.Graph());
 
   
@@ -449,15 +449,15 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
   Worklet* worklet = aAudioContext.GetAudioWorklet(aRv);
   MOZ_ASSERT(worklet, "Worklet already existed and so getter shouldn't fail.");
   auto workletImpl = static_cast<AudioWorkletImpl*>(worklet->Impl());
-  audioWorkletNode->mStream->SendRunnable(NS_NewRunnableFunction(
+  audioWorkletNode->mTrack->SendRunnable(NS_NewRunnableFunction(
       "WorkletNodeEngine::ConstructProcessor",
       
       
-      [stream = audioWorkletNode->mStream,
+      [track = audioWorkletNode->mTrack,
        workletImpl = RefPtr<AudioWorkletImpl>(workletImpl),
        name = nsString(aName), options = std::move(optionsSerialization)]()
           MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-            auto engine = static_cast<WorkletNodeEngine*>(stream->Engine());
+            auto engine = static_cast<WorkletNodeEngine*>(track->Engine());
             engine->ConstructProcessor(workletImpl, name,
                                        WrapNotNull(options.get()));
           }));

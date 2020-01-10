@@ -20,8 +20,8 @@
 #include "MediaEngine.h"
 #include "MediaPipelineFilter.h"
 #include "MediaSegment.h"
-#include "MediaStreamGraphImpl.h"
-#include "MediaStreamListener.h"
+#include "MediaTrackGraphImpl.h"
+#include "MediaTrackListener.h"
 #include "MediaStreamTrack.h"
 #include "RemoteTrackSource.h"
 #include "RtpLogger.h"
@@ -658,7 +658,7 @@ void MediaPipeline::EncryptedPacketSending(const std::string& aTransportId,
 }
 
 class MediaPipelineTransmit::PipelineListener
-    : public DirectMediaStreamTrackListener {
+    : public DirectMediaTrackListener {
   friend class MediaPipelineTransmit;
 
  public:
@@ -701,14 +701,13 @@ class MediaPipelineTransmit::PipelineListener
   }
 
   
-  void NotifyQueuedChanges(MediaStreamGraph* aGraph, StreamTime aTrackOffset,
+  void NotifyQueuedChanges(MediaTrackGraph* aGraph, TrackTime aOffset,
                            const MediaSegment& aQueuedMedia) override;
-  void NotifyEnabledStateChanged(MediaStreamGraph* aGraph,
+  void NotifyEnabledStateChanged(MediaTrackGraph* aGraph,
                                  bool aEnabled) override;
 
   
-  void NotifyRealtimeTrackData(MediaStreamGraph* aGraph,
-                               StreamTime aTrackOffset,
+  void NotifyRealtimeTrackData(MediaTrackGraph* aGraph, TrackTime aOffset,
                                const MediaSegment& aMedia) override;
   void NotifyDirectListenerInstalled(InstallationResult aResult) override;
   void NotifyDirectListenerUninstalled() override;
@@ -1049,7 +1048,7 @@ nsresult MediaPipeline::PipelineTransport::SendRtcpPacket(const uint8_t* aData,
 
 
 void MediaPipelineTransmit::PipelineListener::NotifyRealtimeTrackData(
-    MediaStreamGraph* aGraph, StreamTime aOffset, const MediaSegment& aMedia) {
+    MediaTrackGraph* aGraph, TrackTime aOffset, const MediaSegment& aMedia) {
   MOZ_LOG(
       gMediaPipelineLog, LogLevel::Debug,
       ("MediaPipeline::NotifyRealtimeTrackData() listener=%p, offset=%" PRId64
@@ -1061,7 +1060,7 @@ void MediaPipelineTransmit::PipelineListener::NotifyRealtimeTrackData(
 }
 
 void MediaPipelineTransmit::PipelineListener::NotifyQueuedChanges(
-    MediaStreamGraph* aGraph, StreamTime aOffset,
+    MediaTrackGraph* aGraph, TrackTime aOffset,
     const MediaSegment& aQueuedMedia) {
   MOZ_LOG(gMediaPipelineLog, LogLevel::Debug,
           ("MediaPipeline::NotifyQueuedChanges()"));
@@ -1089,7 +1088,7 @@ void MediaPipelineTransmit::PipelineListener::NotifyQueuedChanges(
 }
 
 void MediaPipelineTransmit::PipelineListener::NotifyEnabledStateChanged(
-    MediaStreamGraph* aGraph, bool aEnabled) {
+    MediaTrackGraph* aGraph, bool aEnabled) {
   if (mConduit->type() != MediaSessionConduit::VIDEO) {
     return;
   }
@@ -1161,7 +1160,7 @@ void MediaPipelineTransmit::PipelineListener::NewData(
   }
 }
 
-class GenericReceiveListener : public MediaStreamTrackListener {
+class GenericReceiveListener : public MediaTrackListener {
  public:
   explicit GenericReceiveListener(dom::MediaStreamTrack* aTrack)
       : mTrackSource(new nsMainThreadPtrHolder<RemoteTrackSource>(
@@ -1173,7 +1172,7 @@ class GenericReceiveListener : public MediaStreamTrackListener {
         mListening(false),
         mMaybeTrackNeedsUnmute(true) {
     MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-    MOZ_DIAGNOSTIC_ASSERT(mSource, "Must be used with a SourceMediaStream");
+    MOZ_DIAGNOSTIC_ASSERT(mSource, "Must be used with a SourceMediaTrack");
   }
 
   virtual ~GenericReceiveListener() = default;
@@ -1241,7 +1240,7 @@ class GenericReceiveListener : public MediaStreamTrackListener {
             mPrincipalHandle(aPrincipalHandle) {}
 
       void Run() override {
-        mListener->SetPrincipalHandle_msg(mPrincipalHandle);
+        mListener->SetPrincipalHandle_mtg(mPrincipalHandle);
       }
 
       const RefPtr<GenericReceiveListener> mListener;
@@ -1253,13 +1252,13 @@ class GenericReceiveListener : public MediaStreamTrackListener {
   }
 
   
-  void SetPrincipalHandle_msg(const PrincipalHandle& aPrincipalHandle) {
+  void SetPrincipalHandle_mtg(const PrincipalHandle& aPrincipalHandle) {
     mPrincipalHandle = aPrincipalHandle;
   }
 
  protected:
   const nsMainThreadPtrHandle<RemoteTrackSource> mTrackSource;
-  const RefPtr<SourceMediaStream> mSource;
+  const RefPtr<SourceMediaTrack> mSource;
   const bool mIsAudio;
   PrincipalHandle mPrincipalHandle;
   bool mListening;
@@ -1299,8 +1298,8 @@ class MediaPipelineReceiveAudio::PipelineListener
   }
 
   
-  void NotifyPull(MediaStreamGraph* aGraph, StreamTime aEndOfAppendedData,
-                  StreamTime aDesiredTime) override {
+  void NotifyPull(MediaTrackGraph* aGraph, TrackTime aEndOfAppendedData,
+                  TrackTime aDesiredTime) override {
     NotifyPullImpl(aDesiredTime);
   }
 
@@ -1310,7 +1309,7 @@ class MediaPipelineReceiveAudio::PipelineListener
                                       mConduit.forget());
   }
 
-  void NotifyPullImpl(StreamTime aDesiredTime) {
+  void NotifyPullImpl(TrackTime aDesiredTime) {
     TRACE_AUDIO_CALLBACK_COMMENT("Listener %p", this);
     uint32_t samplesPer10ms = mRate / 100;
 
@@ -1341,7 +1340,7 @@ class MediaPipelineReceiveAudio::PipelineListener
                 ("Audio conduit failed (%d) to return data @ %" PRId64
                  " (desired %" PRId64 " -> %f)",
                  err, mPlayedTicks, aDesiredTime,
-                 mSource->StreamTimeToSeconds(aDesiredTime)));
+                 mSource->TrackTimeToSeconds(aDesiredTime)));
         
         samplesLength = samplesPer10ms;
         PodArrayZero(scratchBuffer);
@@ -1381,7 +1380,7 @@ class MediaPipelineReceiveAudio::PipelineListener
                            mPrincipalHandle);
 
       
-      if (StreamTime appended = mSource->AppendData(&segment)) {
+      if (TrackTime appended = mSource->AppendData(&segment)) {
         mPlayedTicks += appended;
       } else {
         MOZ_LOG(gMediaPipelineLog, LogLevel::Error, ("AppendData failed"));

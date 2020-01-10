@@ -41,9 +41,9 @@ namespace mozilla {
 
 class DOMMediaStream;
 class ErrorResult;
-class MediaStream;
-class MediaStreamGraph;
-class AudioNodeStream;
+class MediaTrack;
+class MediaTrackGraph;
+class AudioNodeTrack;
 
 namespace dom {
 
@@ -109,7 +109,7 @@ class StateChangeTask final : public Runnable {
 
   
 
-  StateChangeTask(AudioNodeStream* aStream, void* aPromise,
+  StateChangeTask(AudioNodeTrack* aTrack, void* aPromise,
                   AudioContextState aNewState);
 
   NS_IMETHOD Run() override;
@@ -117,7 +117,7 @@ class StateChangeTask final : public Runnable {
  private:
   RefPtr<AudioContext> mAudioContext;
   void* mPromise;
-  RefPtr<AudioNodeStream> mAudioNodeStream;
+  RefPtr<AudioNodeTrack> mAudioNodeTrack;
   AudioContextState mNewState;
 };
 
@@ -185,7 +185,7 @@ class AudioContext final : public DOMEventTargetHelper,
 
   float SampleRate() const { return mSampleRate; }
 
-  bool ShouldSuspendNewStream() const { return mSuspendCalled; }
+  bool ShouldSuspendNewTrack() const { return mSuspendCalled; }
 
   double CurrentTime();
 
@@ -304,8 +304,8 @@ class AudioContext final : public DOMEventTargetHelper,
 
   bool IsOffline() const { return mIsOffline; }
 
-  MediaStreamGraph* Graph() const;
-  AudioNodeStream* DestinationStream() const;
+  MediaTrackGraph* Graph() const;
+  AudioNodeTrack* DestinationTrack() const;
 
   
   
@@ -355,7 +355,7 @@ class AudioContext final : public DOMEventTargetHelper,
 
   friend struct ::mozilla::WebAudioDecodeJob;
 
-  nsTArray<MediaStream*> GetAllStreams() const;
+  nsTArray<mozilla::MediaTrack*> GetAllTracks() const;
 
   void ResumeInternal(AudioContextOperationFlags aFlags);
   void SuspendInternal(void* aPromise, AudioContextOperationFlags aFlags);

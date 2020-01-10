@@ -6,13 +6,13 @@
 
 #include "MediaManager.h"
 
-#include "AudioCaptureStream.h"
+#include "AudioCaptureTrack.h"
 #include "AudioDeviceInfo.h"
 #include "AudioStreamTrack.h"
-#include "MediaStreamGraphImpl.h"
+#include "MediaTrackGraphImpl.h"
 #include "MediaTimer.h"
 #include "mozilla/dom/MediaDeviceInfo.h"
-#include "MediaStreamListener.h"
+#include "MediaTrackListener.h"
 #include "nsArray.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindow.h"
@@ -343,7 +343,7 @@ class SourceListener : public SupportsWeakPtr<SourceListener> {
 
 
 
-  void StopTrack(MediaStream* aStream);
+  void StopTrack(MediaTrack* aTrack);
 
   
 
@@ -359,7 +359,7 @@ class SourceListener : public SupportsWeakPtr<SourceListener> {
 
 
 
-  void GetSettingsFor(MediaStream* aStream,
+  void GetSettingsFor(MediaTrack* aTrack,
                       MediaTrackSettings& aOutSettings) const;
 
   
@@ -384,7 +384,7 @@ class SourceListener : public SupportsWeakPtr<SourceListener> {
 
 
 
-  void SetEnabledFor(MediaStream* aStream, bool aEnabled);
+  void SetEnabledFor(MediaTrack* aTrack, bool aEnabled);
 
   
 
@@ -411,7 +411,7 @@ class SourceListener : public SupportsWeakPtr<SourceListener> {
   CaptureState CapturingSource(MediaSourceEnum aSource) const;
 
   RefPtr<SourceListenerPromise> ApplyConstraintsToTrack(
-      MediaStream* aStream, const MediaTrackConstraints& aConstraints,
+      MediaTrack* aTrack, const MediaTrackConstraints& aConstraints,
       CallerType aCallerType);
 
   PrincipalHandle GetPrincipalHandle() const;
@@ -429,7 +429,7 @@ class SourceListener : public SupportsWeakPtr<SourceListener> {
 
 
 
-  DeviceState& GetDeviceStateFor(MediaStream* aStream) const;
+  DeviceState& GetDeviceStateFor(MediaTrack* aTrack) const;
 
   
   bool mStopped;
@@ -699,8 +699,6 @@ class GetUserMediaWindowListener {
     MOZ_ASSERT(mActiveListeners.Length() == 0,
                "Active listeners should already be removed");
     Unused << mMediaThread;
-    
-    
   }
 
   
@@ -721,11 +719,11 @@ class LocalTrackSource : public MediaStreamTrackSource {
  public:
   LocalTrackSource(nsIPrincipal* aPrincipal, const nsString& aLabel,
                    const RefPtr<SourceListener>& aListener,
-                   MediaSourceEnum aSource, MediaStream* aStream,
+                   MediaSourceEnum aSource, MediaTrack* aTrack,
                    RefPtr<PeerIdentity> aPeerIdentity)
       : MediaStreamTrackSource(aPrincipal, aLabel),
         mSource(aSource),
-        mStream(aStream),
+        mTrack(aTrack),
         mPeerIdentity(std::move(aPeerIdentity)),
         mListener(aListener.get()) {}
 
@@ -743,46 +741,46 @@ class LocalTrackSource : public MediaStreamTrackSource {
       return MediaStreamTrackSource::ApplyConstraintsPromise::CreateAndResolve(
           false, __func__);
     }
-    return mListener->ApplyConstraintsToTrack(mStream, aConstraints,
+    return mListener->ApplyConstraintsToTrack(mTrack, aConstraints,
                                               aCallerType);
   }
 
   void GetSettings(MediaTrackSettings& aOutSettings) override {
     if (mListener) {
-      mListener->GetSettingsFor(mStream, aOutSettings);
+      mListener->GetSettingsFor(mTrack, aOutSettings);
     }
   }
 
   void Stop() override {
     if (mListener) {
-      mListener->StopTrack(mStream);
+      mListener->StopTrack(mTrack);
       mListener = nullptr;
     }
-    if (!mStream->IsDestroyed()) {
-      mStream->Destroy();
+    if (!mTrack->IsDestroyed()) {
+      mTrack->Destroy();
     }
   }
 
   void Disable() override {
     if (mListener) {
-      mListener->SetEnabledFor(mStream, false);
+      mListener->SetEnabledFor(mTrack, false);
     }
   }
 
   void Enable() override {
     if (mListener) {
-      mListener->SetEnabledFor(mStream, true);
+      mListener->SetEnabledFor(mTrack, true);
     }
   }
 
   const MediaSourceEnum mSource;
-  const RefPtr<MediaStream> mStream;
+  const RefPtr<MediaTrack> mTrack;
   const RefPtr<const PeerIdentity> mPeerIdentity;
 
  protected:
   ~LocalTrackSource() {
     MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(mStream->IsDestroyed());
+    MOZ_ASSERT(mTrack->IsDestroyed());
   }
 
   
@@ -797,45 +795,43 @@ class AudioCaptureTrackSource : public LocalTrackSource {
  public:
   AudioCaptureTrackSource(nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aWindow,
                           const nsString& aLabel,
-                          AudioCaptureStream* aAudioCaptureStream,
+                          AudioCaptureTrack* aAudioCaptureTrack,
                           RefPtr<PeerIdentity> aPeerIdentity)
       : LocalTrackSource(aPrincipal, aLabel, nullptr,
-                         MediaSourceEnum::AudioCapture, aAudioCaptureStream,
+                         MediaSourceEnum::AudioCapture, aAudioCaptureTrack,
                          std::move(aPeerIdentity)),
         mWindow(aWindow),
-        mAudioCaptureStream(aAudioCaptureStream) {
-    mAudioCaptureStream->Start();
-    mAudioCaptureStream->Graph()->RegisterCaptureStreamForWindow(
-        mWindow->WindowID(), mAudioCaptureStream);
+        mAudioCaptureTrack(aAudioCaptureTrack) {
+    mAudioCaptureTrack->Start();
+    mAudioCaptureTrack->Graph()->RegisterCaptureTrackForWindow(
+        mWindow->WindowID(), mAudioCaptureTrack);
     mWindow->SetAudioCapture(true);
   }
 
   void Stop() override {
     MOZ_ASSERT(NS_IsMainThread());
-    if (!mAudioCaptureStream->IsDestroyed()) {
+    if (!mAudioCaptureTrack->IsDestroyed()) {
       MOZ_ASSERT(mWindow);
       mWindow->SetAudioCapture(false);
-      mAudioCaptureStream->Graph()->UnregisterCaptureStreamForWindow(
+      mAudioCaptureTrack->Graph()->UnregisterCaptureTrackForWindow(
           mWindow->WindowID());
       mWindow = nullptr;
     }
     
     LocalTrackSource::Stop();
-    MOZ_ASSERT(mAudioCaptureStream->IsDestroyed());
+    MOZ_ASSERT(mAudioCaptureTrack->IsDestroyed());
   }
 
-  ProcessedMediaStream* InputStream() const {
-    return mAudioCaptureStream.get();
-  }
+  ProcessedMediaTrack* InputTrack() const { return mAudioCaptureTrack.get(); }
 
  protected:
   ~AudioCaptureTrackSource() {
     MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(mAudioCaptureStream->IsDestroyed());
+    MOZ_ASSERT(mAudioCaptureTrack->IsDestroyed());
   }
 
   RefPtr<nsPIDOMWindowInner> mWindow;
-  const RefPtr<AudioCaptureStream> mAudioCaptureStream;
+  const RefPtr<AudioCaptureTrack> mAudioCaptureTrack;
 };
 
 
@@ -1050,11 +1046,11 @@ nsresult MediaDevice::Allocate(const MediaTrackConstraints& aConstraints,
                            aOutBadConstraint);
 }
 
-void MediaDevice::SetTrack(const RefPtr<SourceMediaStream>& aStream,
+void MediaDevice::SetTrack(const RefPtr<SourceMediaTrack>& aTrack,
                            const PrincipalHandle& aPrincipalHandle) {
   MOZ_ASSERT(MediaManager::IsInMediaThread());
   MOZ_ASSERT(mSource);
-  mSource->SetTrack(aStream, aPrincipalHandle);
+  mSource->SetTrack(aTrack, aPrincipalHandle);
 }
 
 nsresult MediaDevice::Start() {
@@ -1176,11 +1172,11 @@ class GetUserMediaStreamRunnable : public Runnable {
       return NS_OK;
     }
 
-    MediaStreamGraph::GraphDriverType graphDriverType =
-        mAudioDevice ? MediaStreamGraph::AUDIO_THREAD_DRIVER
-                     : MediaStreamGraph::SYSTEM_THREAD_DRIVER;
-    MediaStreamGraph* msg = MediaStreamGraph::GetInstance(
-        graphDriverType, window, MediaStreamGraph::REQUEST_DEFAULT_SAMPLE_RATE);
+    MediaTrackGraph::GraphDriverType graphDriverType =
+        mAudioDevice ? MediaTrackGraph::AUDIO_THREAD_DRIVER
+                     : MediaTrackGraph::SYSTEM_THREAD_DRIVER;
+    MediaTrackGraph* mtg = MediaTrackGraph::GetInstance(
+        graphDriverType, window, MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE);
 
     auto domStream = MakeRefPtr<DOMMediaStream>(window);
     RefPtr<LocalTrackSource> audioTrackSource;
@@ -1205,38 +1201,37 @@ class GetUserMediaStreamRunnable : public Runnable {
             "before shipping.");
         auto audioCaptureSource = MakeRefPtr<AudioCaptureTrackSource>(
             principal, window, NS_LITERAL_STRING("Window audio capture"),
-            msg->CreateAudioCaptureStream(), mPeerIdentity);
+            mtg->CreateAudioCaptureTrack(), mPeerIdentity);
         audioTrackSource = audioCaptureSource;
         RefPtr<MediaStreamTrack> track = new dom::AudioStreamTrack(
-            window, audioCaptureSource->InputStream(), audioCaptureSource);
+            window, audioCaptureSource->InputTrack(), audioCaptureSource);
         domStream->AddTrackInternal(track);
       } else {
         nsString audioDeviceName;
         mAudioDevice->GetName(audioDeviceName);
-        RefPtr<MediaStream> stream =
-            msg->CreateSourceStream(MediaSegment::AUDIO);
+        RefPtr<MediaTrack> track = mtg->CreateSourceTrack(MediaSegment::AUDIO);
         audioTrackSource = new LocalTrackSource(
             principal, audioDeviceName, mSourceListener,
-            mAudioDevice->GetMediaSource(), stream, mPeerIdentity);
+            mAudioDevice->GetMediaSource(), track, mPeerIdentity);
         MOZ_ASSERT(IsOn(mConstraints.mAudio));
-        RefPtr<MediaStreamTrack> track = new dom::AudioStreamTrack(
-            window, stream, audioTrackSource, dom::MediaStreamTrackState::Live,
+        RefPtr<MediaStreamTrack> domTrack = new dom::AudioStreamTrack(
+            window, track, audioTrackSource, dom::MediaStreamTrackState::Live,
             GetInvariant(mConstraints.mAudio));
-        domStream->AddTrackInternal(track);
+        domStream->AddTrackInternal(domTrack);
       }
     }
     if (mVideoDevice) {
       nsString videoDeviceName;
       mVideoDevice->GetName(videoDeviceName);
-      RefPtr<MediaStream> stream = msg->CreateSourceStream(MediaSegment::VIDEO);
+      RefPtr<MediaTrack> track = mtg->CreateSourceTrack(MediaSegment::VIDEO);
       videoTrackSource = new LocalTrackSource(
           principal, videoDeviceName, mSourceListener,
-          mVideoDevice->GetMediaSource(), stream, mPeerIdentity);
+          mVideoDevice->GetMediaSource(), track, mPeerIdentity);
       MOZ_ASSERT(IsOn(mConstraints.mVideo));
-      RefPtr<MediaStreamTrack> track = new dom::VideoStreamTrack(
-          window, stream, videoTrackSource, dom::MediaStreamTrackState::Live,
+      RefPtr<MediaStreamTrack> domTrack = new dom::VideoStreamTrack(
+          window, track, videoTrackSource, dom::MediaStreamTrackState::Live,
           GetInvariant(mConstraints.mVideo));
-      domStream->AddTrackInternal(track);
+      domStream->AddTrackInternal(domTrack);
       switch (mVideoDevice->GetMediaSource()) {
         case MediaSourceEnum::Browser:
         case MediaSourceEnum::Screen:
@@ -4112,22 +4107,20 @@ SourceListener::InitializeAsync() {
               audioDevice =
                   mAudioDeviceState ? mAudioDeviceState->mDevice : nullptr,
               audioStream = mAudioDeviceState
-                                ? mAudioDeviceState->mTrackSource->mStream
+                                ? mAudioDeviceState->mTrackSource->mTrack
                                 : nullptr,
               videoDevice =
                   mVideoDeviceState ? mVideoDeviceState->mDevice : nullptr,
               videoStream = mVideoDeviceState
-                                ? mVideoDeviceState->mTrackSource->mStream
+                                ? mVideoDeviceState->mTrackSource->mTrack
                                 : nullptr](
                  MozPromiseHolder<SourceListenerPromise>& aHolder) {
                if (audioDevice) {
-                 audioDevice->SetTrack(audioStream->AsSourceStream(),
-                                       principal);
+                 audioDevice->SetTrack(audioStream->AsSourceTrack(), principal);
                }
 
                if (videoDevice) {
-                 videoDevice->SetTrack(videoStream->AsSourceStream(),
-                                       principal);
+                 videoDevice->SetTrack(videoStream->AsSourceTrack(), principal);
                }
 
                if (audioDevice) {
@@ -4251,13 +4244,13 @@ void SourceListener::Stop() {
   mWindowListener = nullptr;
 }
 
-void SourceListener::StopTrack(MediaStream* aStream) {
+void SourceListener::StopTrack(MediaTrack* aTrack) {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
   MOZ_ASSERT(Activated(), "No device to stop");
-  DeviceState& state = GetDeviceStateFor(aStream);
+  DeviceState& state = GetDeviceStateFor(aTrack);
 
-  LOG("SourceListener %p stopping %s track for stream %p", this,
-      &state == mAudioDeviceState.get() ? "audio" : "video", aStream);
+  LOG("SourceListener %p stopping %s track for track %p", this,
+      &state == mAudioDeviceState.get() ? "audio" : "video", aTrack);
 
   if (state.mStopped) {
     
@@ -4283,17 +4276,17 @@ void SourceListener::StopTrack(MediaStream* aStream) {
 }
 
 void SourceListener::StopAudioTrack() {
-  StopTrack(mAudioDeviceState->mTrackSource->mStream);
+  StopTrack(mAudioDeviceState->mTrackSource->mTrack);
 }
 
 void SourceListener::StopVideoTrack() {
-  StopTrack(mVideoDeviceState->mTrackSource->mStream);
+  StopTrack(mVideoDeviceState->mTrackSource->mTrack);
 }
 
-void SourceListener::GetSettingsFor(MediaStream* aStream,
+void SourceListener::GetSettingsFor(MediaTrack* aTrack,
                                     MediaTrackSettings& aOutSettings) const {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
-  DeviceState& state = GetDeviceStateFor(aStream);
+  DeviceState& state = GetDeviceStateFor(aTrack);
   state.mDevice->GetSettings(aOutSettings);
 
   MediaSourceEnum mediaSource = state.mDevice->GetMediaSource();
@@ -4304,15 +4297,15 @@ void SourceListener::GetSettingsFor(MediaStream* aStream,
   }
 }
 
-void SourceListener::SetEnabledFor(MediaStream* aStream, bool aEnable) {
+void SourceListener::SetEnabledFor(MediaTrack* aTrack, bool aEnable) {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread");
   MOZ_ASSERT(Activated(), "No device to set enabled state for");
 
-  DeviceState& state = GetDeviceStateFor(aStream);
+  DeviceState& state = GetDeviceStateFor(aTrack);
 
-  LOG("SourceListener %p %s %s track for stream %p", this,
+  LOG("SourceListener %p %s %s track for track %p", this,
       aEnable ? "enabling" : "disabling",
-      &state == mAudioDeviceState.get() ? "audio" : "video", aStream);
+      &state == mAudioDeviceState.get() ? "audio" : "video", aTrack);
 
   state.mTrackEnabled = aEnable;
 
@@ -4362,18 +4355,18 @@ void SourceListener::SetEnabledFor(MediaStream* aStream, bool aEnable) {
   timerPromise
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [self, this, &state, stream = RefPtr<MediaStream>(aStream),
+          [self, this, &state, track = RefPtr<MediaTrack>(aTrack),
            aEnable]() mutable {
             MOZ_ASSERT(state.mDeviceEnabled != aEnable,
                        "Device operation hasn't started");
             MOZ_ASSERT(state.mOperationInProgress,
                        "It's our responsibility to reset the inProgress state");
 
-            LOG("SourceListener %p %s %s track for stream %p - starting device "
+            LOG("SourceListener %p %s %s track for track %p - starting device "
                 "operation",
                 this, aEnable ? "enabling" : "disabling",
                 &state == mAudioDeviceState.get() ? "audio" : "video",
-                stream.get());
+                track.get());
 
             if (state.mStopped) {
               
@@ -4408,7 +4401,7 @@ void SourceListener::SetEnabledFor(MediaStream* aStream, bool aEnable) {
           })
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [self, this, &state, stream = RefPtr<MediaStream>(aStream),
+          [self, this, &state, track = RefPtr<MediaTrack>(aTrack),
            aEnable](nsresult aResult) mutable {
             MOZ_ASSERT_IF(aResult != NS_ERROR_ABORT,
                           state.mDeviceEnabled == aEnable);
@@ -4421,10 +4414,10 @@ void SourceListener::SetEnabledFor(MediaStream* aStream, bool aEnable) {
               return;
             }
 
-            LOG("SourceListener %p %s %s track for stream %p %s", this,
+            LOG("SourceListener %p %s %s track for track %p %s", this,
                 aEnable ? "enabling" : "disabling",
                 &state == mAudioDeviceState.get() ? "audio" : "video",
-                stream.get(), NS_SUCCEEDED(aResult) ? "succeeded" : "failed");
+                track.get(), NS_SUCCEEDED(aResult) ? "succeeded" : "failed");
 
             if (NS_FAILED(aResult) && aResult != NS_ERROR_ABORT) {
               
@@ -4434,7 +4427,7 @@ void SourceListener::SetEnabledFor(MediaStream* aStream, bool aEnable) {
                 
                 
                 
-                StopTrack(stream);
+                StopTrack(track);
               } else {
                 
                 MOZ_ASSERT_UNREACHABLE("The device should be stoppable");
@@ -4460,9 +4453,9 @@ void SourceListener::SetEnabledFor(MediaStream* aStream, bool aEnable) {
 
             
             if (state.mTrackEnabled) {
-              SetEnabledFor(stream, true);
+              SetEnabledFor(track, true);
             } else {
-              SetEnabledFor(stream, false);
+              SetEnabledFor(track, false);
             }
           },
           []() { MOZ_ASSERT_UNREACHABLE("Unexpected and unhandled reject"); });
@@ -4486,7 +4479,7 @@ void SourceListener::StopSharing() {
     
     
     
-    StopTrack(mVideoDeviceState->mTrackSource->mStream);
+    StopTrack(mVideoDeviceState->mTrackSource->mTrack);
   }
   if (mAudioDeviceState && mAudioDeviceState->mDevice->GetMediaSource() ==
                                MediaSourceEnum::AudioCapture) {
@@ -4547,14 +4540,14 @@ CaptureState SourceListener::CapturingSource(MediaSourceEnum aSource) const {
 
 RefPtr<SourceListener::SourceListenerPromise>
 SourceListener::ApplyConstraintsToTrack(
-    MediaStream* aStream, const MediaTrackConstraints& aConstraints,
+    MediaTrack* aTrack, const MediaTrackConstraints& aConstraints,
     CallerType aCallerType) {
   MOZ_ASSERT(NS_IsMainThread());
-  DeviceState& state = GetDeviceStateFor(aStream);
+  DeviceState& state = GetDeviceStateFor(aTrack);
 
   if (mStopped || state.mStopped) {
-    LOG("gUM %s track for stream %p applyConstraints, but source is stopped",
-        &state == mAudioDeviceState.get() ? "audio" : "video", aStream);
+    LOG("gUM %s track for track %p applyConstraints, but source is stopped",
+        &state == mAudioDeviceState.get() ? "audio" : "video", aTrack);
     return SourceListenerPromise::CreateAndResolve(false, __func__);
   }
 
@@ -4605,16 +4598,14 @@ PrincipalHandle SourceListener::GetPrincipalHandle() const {
   return mPrincipalHandle;
 }
 
-DeviceState& SourceListener::GetDeviceStateFor(MediaStream* aStream) const {
-  if (mAudioDeviceState &&
-      mAudioDeviceState->mTrackSource->mStream == aStream) {
+DeviceState& SourceListener::GetDeviceStateFor(MediaTrack* aTrack) const {
+  if (mAudioDeviceState && mAudioDeviceState->mTrackSource->mTrack == aTrack) {
     return *mAudioDeviceState;
   }
-  if (mVideoDeviceState &&
-      mVideoDeviceState->mTrackSource->mStream == aStream) {
+  if (mVideoDeviceState && mVideoDeviceState->mTrackSource->mTrack == aTrack) {
     return *mVideoDeviceState;
   }
-  MOZ_CRASH("Unknown stream");
+  MOZ_CRASH("Unknown track");
 }
 
 

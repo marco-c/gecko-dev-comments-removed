@@ -19,7 +19,7 @@ class AudioContext;
 
 class AudioDestinationNode final : public AudioNode,
                                    public nsIAudioChannelAgentCallback,
-                                   public MainThreadMediaStreamListener {
+                                   public MainThreadMediaTrackListener {
  public:
   
   
@@ -27,7 +27,7 @@ class AudioDestinationNode final : public AudioNode,
                        bool aAllowedToStart, uint32_t aNumberOfChannels,
                        uint32_t aLength);
 
-  void DestroyMediaStream() override;
+  void DestroyMediaTrack() override;
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AudioDestinationNode, AudioNode)
@@ -42,7 +42,7 @@ class AudioDestinationNode final : public AudioNode,
   void SetChannelCount(uint32_t aChannelCount, ErrorResult& aRv) override;
 
   
-  AudioNodeStream* Stream();
+  AudioNodeTrack* Track();
 
   void Mute();
   void Unmute();
@@ -82,14 +82,14 @@ class AudioDestinationNode final : public AudioNode,
   
   
   bool IsCapturingAudio() const;
-  void StartAudioCapturingStream();
-  void StopAudioCapturingStream();
+  void StartAudioCapturingTrack();
+  void StopAudioCapturingTrack();
 
   SelfReference<AudioDestinationNode> mOfflineRenderingRef;
   uint32_t mFramesToProduce;
 
   RefPtr<AudioChannelAgent> mAudioChannelAgent;
-  RefPtr<MediaInputPort> mCaptureStreamPort;
+  RefPtr<MediaInputPort> mCaptureTrackPort;
 
   RefPtr<Promise> mOfflineRenderingPromise;
 

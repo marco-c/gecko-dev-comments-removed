@@ -7,7 +7,7 @@
 #include "MediaStreamAudioSourceNode.h"
 #include "mozilla/dom/MediaStreamAudioSourceNodeBinding.h"
 #include "AudioNodeEngine.h"
-#include "AudioNodeExternalInputStream.h"
+#include "AudioNodeExternalInputTrack.h"
 #include "AudioStreamTrack.h"
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
@@ -72,7 +72,7 @@ void MediaStreamAudioSourceNode::Init(DOMMediaStream* aMediaStream,
 
   mInputStream = aMediaStream;
   AudioNodeEngine* engine = new MediaStreamAudioSourceNodeEngine(this);
-  mStream = AudioNodeExternalInputStream::Create(Context()->Graph(), engine);
+  mTrack = AudioNodeExternalInputTrack::Create(Context()->Graph(), engine);
   mInputStream->AddConsumerToKeepAlive(ToSupports(this));
 
   mInputStream->RegisterTrackListener(this);
@@ -98,7 +98,7 @@ void MediaStreamAudioSourceNode::AttachToTrack(
   MOZ_ASSERT(aTrack->AsAudioStreamTrack());
   MOZ_DIAGNOSTIC_ASSERT(!aTrack->Ended());
 
-  if (!mStream) {
+  if (!mTrack) {
     return;
   }
 
@@ -114,9 +114,9 @@ void MediaStreamAudioSourceNode::AttachToTrack(
   }
 
   mInputTrack = aTrack;
-  ProcessedMediaStream* outputStream =
-      static_cast<ProcessedMediaStream*>(mStream.get());
-  mInputPort = mInputTrack->ForwardTrackContentsTo(outputStream);
+  ProcessedMediaTrack* outputTrack =
+      static_cast<ProcessedMediaTrack*>(mTrack.get());
+  mInputPort = mInputTrack->ForwardTrackContentsTo(outputTrack);
   PrincipalChanged(mInputTrack);  
   mInputTrack->AddPrincipalChangeObserver(this);
 }
@@ -238,9 +238,9 @@ void MediaStreamAudioSourceNode::PrincipalChanged(
       }
     }
   }
-  auto stream = static_cast<AudioNodeExternalInputStream*>(mStream.get());
+  auto track = static_cast<AudioNodeExternalInputTrack*>(mTrack.get());
   bool enabled = subsumes;
-  stream->SetInt32Parameter(MediaStreamAudioSourceNodeEngine::ENABLE, enabled);
+  track->SetInt32Parameter(MediaStreamAudioSourceNodeEngine::ENABLE, enabled);
 
   if (!enabled && doc) {
     nsContentUtils::ReportToConsole(
@@ -265,12 +265,12 @@ size_t MediaStreamAudioSourceNode::SizeOfIncludingThis(
   return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
-void MediaStreamAudioSourceNode::DestroyMediaStream() {
+void MediaStreamAudioSourceNode::DestroyMediaTrack() {
   if (mInputPort) {
     mInputPort->Destroy();
     mInputPort = nullptr;
   }
-  AudioNode::DestroyMediaStream();
+  AudioNode::DestroyMediaTrack();
 }
 
 JSObject* MediaStreamAudioSourceNode::WrapObject(

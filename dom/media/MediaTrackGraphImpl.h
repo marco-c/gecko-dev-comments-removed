@@ -3,10 +3,10 @@
 
 
 
-#ifndef MOZILLA_MEDIASTREAMGRAPHIMPL_H_
-#define MOZILLA_MEDIASTREAMGRAPHIMPL_H_
+#ifndef MOZILLA_MEDIATRACKGRAPHIMPL_H_
+#define MOZILLA_MEDIATRACKGRAPHIMPL_H_
 
-#include "MediaStreamGraph.h"
+#include "MediaTrackGraph.h"
 
 #include "AudioMixer.h"
 #include "GraphDriver.h"
@@ -37,9 +37,9 @@ class GraphRunner;
 
 
 
-struct StreamUpdate {
-  RefPtr<MediaStream> mStream;
-  StreamTime mNextMainThreadCurrentTime;
+struct TrackUpdate {
+  RefPtr<MediaTrack> mTrack;
+  TrackTime mNextMainThreadCurrentTime;
   bool mNextMainThreadEnded;
 };
 
@@ -52,7 +52,7 @@ struct StreamUpdate {
 
 class ControlMessage {
  public:
-  explicit ControlMessage(MediaStream* aStream) : mStream(aStream) {
+  explicit ControlMessage(MediaTrack* aTrack) : mTrack(aTrack) {
     MOZ_COUNT_CTOR(ControlMessage);
   }
   
@@ -68,13 +68,13 @@ class ControlMessage {
   
   
   virtual void RunDuringShutdown() {}
-  MediaStream* GetStream() { return mStream; }
+  MediaTrack* GetTrack() { return mTrack; }
 
  protected:
   
   
   
-  MediaStream* mStream;
+  MediaTrack* mTrack;
 };
 
 class MessageBlock {
@@ -91,10 +91,10 @@ class MessageBlock {
 
 
 
-class MediaStreamGraphImpl : public MediaStreamGraph,
-                             public nsIMemoryReporter,
-                             public nsITimerCallback,
-                             public nsINamed {
+class MediaTrackGraphImpl : public MediaTrackGraph,
+                            public nsIMemoryReporter,
+                            public nsITimerCallback,
+                            public nsINamed {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
@@ -109,10 +109,10 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  explicit MediaStreamGraphImpl(GraphDriverType aGraphDriverRequested,
-                                GraphRunType aRunTypeRequested,
-                                TrackRate aSampleRate, uint32_t aChannelCount,
-                                AbstractThread* aWindow);
+  explicit MediaTrackGraphImpl(GraphDriverType aGraphDriverRequested,
+                               GraphRunType aRunTypeRequested,
+                               TrackRate aSampleRate, uint32_t aChannelCount,
+                               AbstractThread* aWindow);
 
   
   
@@ -143,7 +143,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  void RunInStableState(bool aSourceIsMSG);
+  void RunInStableState(bool aSourceIsMTG);
   
 
 
@@ -153,7 +153,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   
 
 
-  void ApplyStreamUpdate(StreamUpdate* aUpdate);
+  void ApplyTrackUpdate(TrackUpdate* aUpdate);
   
 
 
@@ -196,7 +196,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
   static void FinishCollectReports(
       nsIHandleReportCallback* aHandleReport, nsISupports* aData,
-      const nsTArray<AudioNodeSizes>& aAudioStreamSizes);
+      const nsTArray<AudioNodeSizes>& aAudioTrackSizes);
 
   
   
@@ -255,7 +255,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   
 
 
-  void UpdateCurrentTimeForStreams(GraphTime aPrevCurrentTime);
+  void UpdateCurrentTimeForTracks(GraphTime aPrevCurrentTime);
   
 
 
@@ -266,8 +266,8 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
   template <typename C, typename Chunk>
-  void ProcessChunkMetadataForInterval(MediaStream* aStream, C& aSegment,
-                                       StreamTime aStart, StreamTime aEnd);
+  void ProcessChunkMetadataForInterval(MediaTrack* aTrack, C& aSegment,
+                                       TrackTime aStart, TrackTime aEnd);
   
 
 
@@ -302,7 +302,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  void AudioContextOperationCompleted(MediaStream* aStream, void* aPromise,
+  void AudioContextOperationCompleted(MediaTrack* aTrack, void* aPromise,
                                       dom::AudioContextOperation aOperation,
                                       dom::AudioContextOperationFlags aFlags);
 
@@ -310,8 +310,8 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  void ApplyAudioContextOperationImpl(MediaStream* aDestinationStream,
-                                      const nsTArray<MediaStream*>& aStreams,
+  void ApplyAudioContextOperationImpl(MediaTrack* aDestinationTrack,
+                                      const nsTArray<MediaTrack*>& aTracks,
                                       dom::AudioContextOperation aOperation,
                                       void* aPromise,
                                       dom::AudioContextOperationFlags aSource);
@@ -320,19 +320,19 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  void IncrementSuspendCount(MediaStream* aStream);
+  void IncrementSuspendCount(MediaTrack* aTrack);
   
 
 
 
-  void DecrementSuspendCount(MediaStream* aStream);
+  void DecrementSuspendCount(MediaTrack* aTrack);
 
   
 
 
 
-  void SuspendOrResumeStreams(dom::AudioContextOperation aAudioContextOperation,
-                              const nsTArray<MediaStream*>& aStreamSet);
+  void SuspendOrResumeTracks(dom::AudioContextOperation aAudioContextOperation,
+                             const nsTArray<MediaTrack*>& aTrackSet);
 
   
 
@@ -344,7 +344,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  void UpdateStreamOrder();
+  void UpdateTrackOrder();
 
   
 
@@ -362,32 +362,32 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  void ProduceDataForStreamsBlockByBlock(uint32_t aStreamIndex,
-                                         TrackRate aSampleRate);
+  void ProduceDataForTracksBlockByBlock(uint32_t aTrackIndex,
+                                        TrackRate aSampleRate);
   
 
 
 
 
-  GraphTime WillUnderrun(MediaStream* aStream, GraphTime aEndBlockingDecisions);
+  GraphTime WillUnderrun(MediaTrack* aTrack, GraphTime aEndBlockingDecisions);
 
   
 
 
 
-  StreamTime GraphTimeToStreamTimeWithBlocking(const MediaStream* aStream,
-                                               GraphTime aTime) const;
+  TrackTime GraphTimeToTrackTimeWithBlocking(const MediaTrack* aTrack,
+                                             GraphTime aTime) const;
 
   
 
 
 
-  void CreateOrDestroyAudioStreams(MediaStream* aStream);
+  void CreateOrDestroyAudioTracks(MediaTrack* aTrack);
   
 
 
 
-  StreamTime PlayAudio(MediaStream* aStream);
+  TrackTime PlayAudio(MediaTrack* aTrack);
   
 
 
@@ -431,7 +431,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   
 
 
-  StreamTime GetDesiredBufferEnd(MediaStream* aStream);
+  TrackTime GetDesiredBufferEnd(MediaTrack* aTrack);
   
 
 
@@ -440,22 +440,22 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
         OnGraphThreadOrNotRunning() ||
         (NS_IsMainThread() &&
          LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP));
-    return mStreams.IsEmpty() && mSuspendedStreams.IsEmpty() && mPortCount == 0;
+    return mTracks.IsEmpty() && mSuspendedTracks.IsEmpty() && mPortCount == 0;
   }
 
   
 
 
-  void AddStreamGraphThread(MediaStream* aStream);
+  void AddTrackGraphThread(MediaTrack* aTrack);
   
 
 
 
-  void RemoveStreamGraphThread(MediaStream* aStream);
+  void RemoveTrackGraphThread(MediaTrack* aTrack);
   
 
 
-  void RemoveStream(MediaStream* aStream);
+  void RemoveTrack(MediaTrack* aTrack);
   
 
 
@@ -463,9 +463,9 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   
 
 
-  void SetStreamOrderDirty() {
+  void SetTrackOrderDirty() {
     MOZ_ASSERT(OnGraphThreadOrNotRunning());
-    mStreamOrderDirty = true;
+    mTrackOrderDirty = true;
   }
 
   uint32_t AudioOutputChannelCount() const { return mOutputChannels; }
@@ -531,7 +531,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   CubebUtils::AudioDeviceID InputDeviceID() { return mInputDeviceID; }
 
   double MediaTimeToSeconds(GraphTime aTime) const {
-    NS_ASSERTION(aTime > -STREAM_TIME_MAX && aTime <= STREAM_TIME_MAX,
+    NS_ASSERTION(aTime > -TRACK_TIME_MAX && aTime <= TRACK_TIME_MAX,
                  "Bad time");
     return static_cast<double>(aTime) / GraphRate();
   }
@@ -603,24 +603,24 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   }
 
   
-  void RegisterCaptureStreamForWindow(uint64_t aWindowId,
-                                      ProcessedMediaStream* aCaptureStream);
-  void UnregisterCaptureStreamForWindow(uint64_t aWindowId);
-  already_AddRefed<MediaInputPort> ConnectToCaptureStream(
-      uint64_t aWindowId, MediaStream* aMediaStream);
+  void RegisterCaptureTrackForWindow(uint64_t aWindowId,
+                                     ProcessedMediaTrack* aCaptureTrack);
+  void UnregisterCaptureTrackForWindow(uint64_t aWindowId);
+  already_AddRefed<MediaInputPort> ConnectToCaptureTrack(
+      uint64_t aWindowId, MediaTrack* aMediaTrack);
 
   Watchable<GraphTime>& CurrentTime() override;
 
-  class StreamSet {
+  class TrackSet {
    public:
     class iterator {
      public:
-      explicit iterator(MediaStreamGraphImpl& aGraph)
+      explicit iterator(MediaTrackGraphImpl& aGraph)
           : mGraph(&aGraph), mArrayNum(-1), mArrayIndex(0) {
         ++(*this);
       }
       iterator() : mGraph(nullptr), mArrayNum(2), mArrayIndex(0) {}
-      MediaStream* operator*() { return Array()->ElementAt(mArrayIndex); }
+      MediaTrack* operator*() { return Array()->ElementAt(mArrayIndex); }
       iterator operator++() {
         ++mArrayIndex;
         while (mArrayNum < 2 &&
@@ -639,22 +639,22 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
       }
 
      private:
-      nsTArray<MediaStream*>* Array() {
-        return mArrayNum == 0 ? &mGraph->mStreams : &mGraph->mSuspendedStreams;
+      nsTArray<MediaTrack*>* Array() {
+        return mArrayNum == 0 ? &mGraph->mTracks : &mGraph->mSuspendedTracks;
       }
-      MediaStreamGraphImpl* mGraph;
+      MediaTrackGraphImpl* mGraph;
       int mArrayNum;
       uint32_t mArrayIndex;
     };
 
-    explicit StreamSet(MediaStreamGraphImpl& aGraph) : mGraph(aGraph) {}
+    explicit TrackSet(MediaTrackGraphImpl& aGraph) : mGraph(aGraph) {}
     iterator begin() { return iterator(mGraph); }
     iterator end() { return iterator(); }
 
    private:
-    MediaStreamGraphImpl& mGraph;
+    MediaTrackGraphImpl& mGraph;
   };
-  StreamSet AllStreams() { return StreamSet(*this); }
+  TrackSet AllTracks() { return TrackSet(*this); }
 
   
 
@@ -671,7 +671,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  size_t mMainThreadStreamCount = 0;
+  size_t mMainThreadTrackCount = 0;
 
   
 
@@ -702,7 +702,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  nsTArray<MediaStream*> mStreams;
+  nsTArray<MediaTrack*> mTracks;
   
 
 
@@ -710,9 +710,8 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  nsTArray<MediaStream*> mSuspendedStreams;
+  nsTArray<MediaTrack*> mSuspendedTracks;
   
-
 
 
 
@@ -782,7 +781,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   
 
 
-  nsTArray<StreamUpdate> mStreamUpdates;
+  nsTArray<TrackUpdate> mTrackUpdates;
   
 
 
@@ -849,7 +848,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
     
     
     
-    LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION
+    LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION
   };
 
   
@@ -927,7 +926,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  bool mStreamOrderDirty;
+  bool mTrackOrderDirty;
   AudioMixer mMixer;
   const RefPtr<AbstractThread> mAbstractMainThread;
 
@@ -936,7 +935,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   nsCOMPtr<nsITimer> mShutdownTimer;
 
  private:
-  virtual ~MediaStreamGraphImpl();
+  virtual ~MediaTrackGraphImpl();
 
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
@@ -947,16 +946,16 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
 
-  RefPtr<MediaStreamGraphImpl> mSelfRef;
+  RefPtr<MediaTrackGraphImpl> mSelfRef;
 
-  struct WindowAndStream {
+  struct WindowAndTrack {
     uint64_t mWindowId;
-    RefPtr<ProcessedMediaStream> mCaptureStreamSink;
+    RefPtr<ProcessedMediaTrack> mCaptureTrackSink;
   };
   
 
 
-  nsTArray<WindowAndStream> mWindowCaptureStreams;
+  nsTArray<WindowAndTrack> mWindowCaptureTracks;
 
   
 

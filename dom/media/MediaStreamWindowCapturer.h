@@ -14,6 +14,8 @@ class AudioStreamTrack;
 class MediaStreamTrack;
 }  
 
+class MediaInputPort;
+
 
 
 
