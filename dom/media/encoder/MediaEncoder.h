@@ -95,6 +95,13 @@ class MediaEncoderListener {
 
 
 
+
+
+
+
+
+
+
 class MediaEncoder {
  private:
   class AudioTrackListener;
@@ -223,6 +230,12 @@ class MediaEncoder {
 
 
 
+  void EnsureGraphStreamFrom(MediaStream* aStream);
+
+  
+
+
+
   void RunOnGraph(already_AddRefed<Runnable> aRunnable);
 
   
@@ -263,6 +276,9 @@ class MediaEncoder {
   
   
   RefPtr<dom::VideoStreamTrack> mVideoTrack;
+
+  
+  RefPtr<SharedDummyStream> mGraphStream;
 
   TimeStamp mStartTime;
   const nsString mMIMEType;
