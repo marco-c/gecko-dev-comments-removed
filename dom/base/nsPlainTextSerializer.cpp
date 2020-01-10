@@ -1140,7 +1140,10 @@ void nsPlainTextSerializer::FlushLine() {
     MOZ_ASSERT(mOutputManager);
 
     if (mOutputManager->IsAtFirstColumn()) {
-      OutputQuotesAndIndent();  
+      nsAutoString quotesAndIndent;
+      CreateQuotesAndIndent(
+          quotesAndIndent);  
+      mOutputManager->Append(quotesAndIndent);
     }
 
     mCurrentLineContent.MaybeReplaceNbsps();
@@ -1399,8 +1402,15 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
     
     
     
-    bool stripTrailingSpaces = mCurrentLineContent.mValue.IsEmpty();
-    OutputQuotesAndIndent(stripTrailingSpaces);
+    const bool stripTrailingSpaces = mCurrentLineContent.mValue.IsEmpty();
+    nsAutoString quotesAndIndent;
+    CreateQuotesAndIndent(quotesAndIndent);
+
+    if (stripTrailingSpaces) {
+      quotesAndIndent.Trim(" ", false, true, false);
+    }
+
+    mOutputManager->Append(quotesAndIndent);
   }
 
   mCurrentLineContent.MaybeReplaceNbsps();
@@ -1418,12 +1428,7 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
 
 
 
-void nsPlainTextSerializer::OutputQuotesAndIndent(
-    bool stripTrailingSpaces ) {
-  MOZ_ASSERT(mOutputManager);
-
-  nsAutoString stringToOutput;
-
+void nsPlainTextSerializer::CreateQuotesAndIndent(nsAString& aResult) {
   
   if (mCiteQuoteLevel > 0) {
     nsAutoString quotes;
@@ -1438,7 +1443,7 @@ void nsPlainTextSerializer::OutputQuotesAndIndent(
 
       quotes.Append(char16_t(' '));
     }
-    stringToOutput = quotes;
+    aResult = quotes;
   }
 
   
@@ -1449,24 +1454,12 @@ void nsPlainTextSerializer::OutputQuotesAndIndent(
   ) {
     nsAutoString spaces;
     for (int i = 0; i < indentwidth; ++i) spaces.Append(char16_t(' '));
-    stringToOutput += spaces;
+    aResult += spaces;
   }
 
   if (!mIndentation.mHeader.IsEmpty()) {
-    stringToOutput += mIndentation.mHeader;
+    aResult += mIndentation.mHeader;
     mIndentation.mHeader.Truncate();
-  }
-
-  if (stripTrailingSpaces) {
-    int32_t lineLength = stringToOutput.Length();
-    while (lineLength > 0 && ' ' == stringToOutput[lineLength - 1]) {
-      --lineLength;
-    }
-    stringToOutput.SetLength(lineLength);
-  }
-
-  if (!stringToOutput.IsEmpty()) {
-    mOutputManager->Append(stringToOutput);
   }
 }
 
@@ -1603,7 +1596,9 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
       mCurrentLineContent.mValue.Append(stringpart);
 
       if (outputQuotes) {
-        OutputQuotesAndIndent();
+        nsAutoString quotesAndIndent;
+        CreateQuotesAndIndent(quotesAndIndent);
+        mOutputManager->Append(quotesAndIndent);
       }
 
       mCurrentLineContent.MaybeReplaceNbsps();
