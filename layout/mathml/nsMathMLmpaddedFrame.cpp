@@ -5,7 +5,7 @@
 
 
 #include "nsMathMLmpaddedFrame.h"
-#include "nsMathMLElement.h"
+#include "mozilla/dom/MathMLElement.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/TextUtils.h"
@@ -207,8 +207,8 @@ bool nsMathMLmpaddedFrame::ParseAttribute(nsString& aString, int32_t& aSign,
   else if (!gotPercent) {  
 
     
-    if (nsMathMLElement::ParseNamedSpaceValue(
-            unit, aCSSValue, nsMathMLElement::PARSE_ALLOW_NEGATIVE,
+    if (dom::MathMLElement::ParseNamedSpaceValue(
+            unit, aCSSValue, dom::MathMLElement::PARSE_ALLOW_NEGATIVE,
             *mContent->OwnerDoc())) {
       
       floatValue *= aCSSValue.GetFloatValue();
@@ -221,8 +221,8 @@ bool nsMathMLmpaddedFrame::ParseAttribute(nsString& aString, int32_t& aSign,
     
     
     number.Append(unit);  
-    if (nsMathMLElement::ParseNumericValue(
-            number, aCSSValue, nsMathMLElement::PARSE_SUPPRESS_WARNINGS,
+    if (dom::MathMLElement::ParseNumericValue(
+            number, aCSSValue, dom::MathMLElement::PARSE_SUPPRESS_WARNINGS,
             nullptr))
       return true;
   }

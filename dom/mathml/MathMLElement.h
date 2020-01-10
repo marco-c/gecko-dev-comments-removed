@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLElement_h
-#define nsMathMLElement_h
+#ifndef mozilla_dom_MathMLElement_h_
+#define mozilla_dom_MathMLElement_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Element.h"
@@ -15,22 +15,21 @@
 
 class nsCSSValue;
 
-typedef nsMappedAttributeElement nsMathMLElementBase;
-
 namespace mozilla {
 class EventChainPostVisitor;
 class EventChainPreVisitor;
-}  
+namespace dom {
+
+typedef nsMappedAttributeElement MathMLElementBase;
 
 
 
 
-class nsMathMLElement final : public nsMathMLElementBase,
-                              public mozilla::dom::Link {
+class MathMLElement final : public MathMLElementBase,
+                            public mozilla::dom::Link {
  public:
-  explicit nsMathMLElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
-  explicit nsMathMLElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit MathMLElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
+  explicit MathMLElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   
   NS_DECL_ISUPPORTS_INHERITED
@@ -83,11 +82,11 @@ class nsMathMLElement final : public nsMathMLElementBase,
 
   virtual void NodeInfoChanged(Document* aOldDoc) override {
     ClearHasPendingLinkUpdate();
-    nsMathMLElementBase::NodeInfoChanged(aOldDoc);
+    MathMLElementBase::NodeInfoChanged(aOldDoc);
   }
 
  protected:
-  virtual ~nsMathMLElement() {}
+  virtual ~MathMLElement() {}
 
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
@@ -101,5 +100,8 @@ class nsMathMLElement final : public nsMathMLElementBase,
  private:
   bool mIncrementScriptLevel;
 };
+
+}  
+}  
 
 #endif  
