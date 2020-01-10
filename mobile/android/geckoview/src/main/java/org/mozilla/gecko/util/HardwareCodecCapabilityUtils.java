@@ -29,17 +29,7 @@ public final class HardwareCodecCapabilityUtils {
         "OMX.qcom.", "OMX.Nvidia.", "OMX.Exynos.", "OMX.Intel."
     };
     private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
-    
-    private static final String[] supportedVp9HwCodecPrefixes = {
-        "OMX.qcom.", "OMX.Exynos."
-    };
     private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
-    
-    private static final String[] supportedH264HwCodecPrefixes = {
-        "OMX.qcom.", "OMX.Intel.", "OMX.Exynos.", "OMX.Nvidia", "OMX.SEC.",
-        "OMX.IMG.", "OMX.k3.", "OMX.hisi.", "OMX.TI.", "OMX.MTK."
-    };
-    private static final String H264_MIME_TYPE = "video/avc";
     
     
     private static final int
@@ -133,11 +123,73 @@ public final class HardwareCodecCapabilityUtils {
         return false;
     }
 
-    public static boolean getHWCodecCapability(final String aMimeType, final boolean aIsEncoder) {
+    public static boolean getHWEncoderCapability() {
         if (Build.VERSION.SDK_INT >= 20) {
             for (int i = 0; i < MediaCodecList.getCodecCount(); ++i) {
-                final MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
-                if (info.isEncoder() != aIsEncoder) {
+                MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
+                if (!info.isEncoder()) {
+                    continue;
+                }
+                String name = null;
+                for (String mimeType : info.getSupportedTypes()) {
+                    if (mimeType.equals(VP8_MIME_TYPE)) {
+                        name = info.getName();
+                        break;
+                    }
+                }
+                if (name == null) {
+                    continue;  
+                }
+                Log.e(LOGTAG, "Found candidate encoder " + name);
+
+                
+                boolean supportedCodec = false;
+                for (String codecPrefix : supportedVp8HwEncCodecPrefixes) {
+                    if (name.startsWith(codecPrefix)) {
+                        supportedCodec = true;
+                        break;
+                    }
+                }
+                if (!supportedCodec) {
+                    continue;
+                }
+
+                
+                CodecCapabilities capabilities =
+                        info.getCapabilitiesForType(VP8_MIME_TYPE);
+                for (int colorFormat : capabilities.colorFormats) {
+                    Log.v(LOGTAG, "   Color: 0x" + Integer.toHexString(colorFormat));
+                }
+                for (int supportedColorFormat : supportedColorList) {
+                    for (int codecColorFormat : capabilities.colorFormats) {
+                        if (codecColorFormat == supportedColorFormat) {
+                            
+                            Log.e(LOGTAG, "Found target encoder " + name +
+                                    ". Color: 0x" + Integer.toHexString(codecColorFormat));
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    public static boolean getHWDecoderCapability() {
+        return getHWDecoderCapability(VP8_MIME_TYPE);
+    }
+
+    @WrapForJNI
+    public static boolean HasHWVP9() {
+        return getHWDecoderCapability(VP9_MIME_TYPE);
+    }
+
+    public static boolean getHWDecoderCapability(final String aMimeType) {
+        if (Build.VERSION.SDK_INT >= 20) {
+            for (int i = 0; i < MediaCodecList.getCodecCount(); ++i) {
+                MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
+                if (info.isEncoder()) {
                     continue;
                 }
                 String name = null;
@@ -150,15 +202,11 @@ public final class HardwareCodecCapabilityUtils {
                 if (name == null) {
                     continue;  
                 }
-                Log.d(LOGTAG, "Found candidate" + (aIsEncoder ? " encoder " : " decoder ") + name);
+                Log.e(LOGTAG, "Found candidate decoder " + name);
 
                 
-                final String[] hwList = getSupportedHWCodecPrefixes(aMimeType, aIsEncoder);
-                if (hwList == null) {
-                    continue;
-                }
                 boolean supportedCodec = false;
-                for (final String codecPrefix : hwList) {
+                for (String codecPrefix : supportedVp8HwDecCodecPrefixes) {
                     if (name.startsWith(codecPrefix)) {
                         supportedCodec = true;
                         break;
@@ -169,7 +217,7 @@ public final class HardwareCodecCapabilityUtils {
                 }
 
                 
-                final CodecCapabilities capabilities =
+                CodecCapabilities capabilities =
                         info.getCapabilitiesForType(aMimeType);
                 for (int colorFormat : capabilities.colorFormats) {
                     Log.v(LOGTAG, "   Color: 0x" + Integer.toHexString(colorFormat));
@@ -178,8 +226,7 @@ public final class HardwareCodecCapabilityUtils {
                     for (int codecColorFormat : capabilities.colorFormats) {
                         if (codecColorFormat == supportedColorFormat) {
                             
-                            Log.d(LOGTAG, "Found target" +
-                                    (aIsEncoder ? " encoder " : " decoder ") + name +
+                            Log.e(LOGTAG, "Found target decoder " + name +
                                     ". Color: 0x" + Integer.toHexString(codecColorFormat));
                             return true;
                         }
@@ -187,35 +234,6 @@ public final class HardwareCodecCapabilityUtils {
                 }
             }
         }
-        
-        return false;
-    }
-
-    private static String[] getSupportedHWCodecPrefixes(final String aMimeType, final boolean aIsEncoder) {
-        if (aMimeType.equals(H264_MIME_TYPE)) {
-            return supportedH264HwCodecPrefixes;
-        }
-        if (aMimeType.equals(VP9_MIME_TYPE)) {
-            return supportedVp9HwCodecPrefixes;
-        }
-        if (aMimeType.equals(VP8_MIME_TYPE)) {
-            return aIsEncoder ? supportedVp8HwEncCodecPrefixes : supportedVp8HwDecCodecPrefixes;
-        }
-        return null;
-    }
-
-    public static boolean hasHWVP8(final boolean aIsEncoder) {
-        return getHWCodecCapability(VP8_MIME_TYPE, aIsEncoder);
-    }
-
-    @WrapForJNI
-    public static boolean hasHWVP9(final boolean aIsEncoder) {
-        return getHWCodecCapability(VP9_MIME_TYPE, aIsEncoder);
-    }
-
-    @WrapForJNI(calledFrom = "gecko")
-    public static boolean hasHWH264() {
-        return getHWCodecCapability(H264_MIME_TYPE, true) &&
-               getHWCodecCapability(H264_MIME_TYPE, false);
+        return false;  
     }
 }
