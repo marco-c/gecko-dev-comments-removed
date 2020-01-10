@@ -254,7 +254,7 @@ struct TilePostUpdateContext<'a> {
     clip_scroll_tree: &'a ClipScrollTree,
 
     
-    opaque_rect: PictureRect,
+    backdrop: BackdropInfo,
 
     
     cache_spatial_node_index: SpatialNodeIndex,
@@ -337,6 +337,29 @@ pub struct TileId(usize);
 
 
 #[derive(Debug)]
+pub enum TileSurface {
+    Texture {
+        
+        handle: TextureCacheHandle,
+        
+        visibility_mask: PrimitiveVisibilityMask,
+    },
+    Color {
+        color: ColorF,
+    },
+}
+
+impl TileSurface {
+    fn kind(&self) -> &'static str {
+        match *self {
+            TileSurface::Color { .. } => "Color",
+            TileSurface::Texture { .. } => "Texture",
+        }
+    }
+}
+
+
+#[derive(Debug)]
 pub struct Tile {
     
     pub world_rect: WorldRect,
@@ -348,7 +371,7 @@ pub struct Tile {
     
     pub descriptor: TileDescriptor,
     
-    pub handle: TextureCacheHandle,
+    pub surface: Option<TileSurface>,
     
     
     
@@ -363,8 +386,6 @@ pub struct Tile {
     
     transforms: FastHashSet<SpatialNodeIndex>,
     
-    visibility_mask: PrimitiveVisibilityMask,
-    
     
     pub is_opaque: bool,
 }
@@ -378,13 +399,12 @@ impl Tile {
             rect: PictureRect::zero(),
             clipped_rect: PictureRect::zero(),
             world_rect: WorldRect::zero(),
-            handle: TextureCacheHandle::invalid(),
+            surface: None,
             descriptor: TileDescriptor::new(),
             is_same_content: false,
             is_valid: false,
             transforms: FastHashSet::default(),
             id,
-            visibility_mask: PrimitiveVisibilityMask::empty(),
             is_opaque: false,
         }
     }
@@ -521,7 +541,7 @@ impl Tile {
         state: &mut TilePostUpdateState,
     ) -> bool {
         
-        self.is_opaque = ctx.opaque_rect.contains_rect(&self.clipped_rect);
+        self.is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
 
         
         let mut transform_spatial_nodes: Vec<SpatialNodeIndex> = self.transforms.drain().collect();
@@ -557,23 +577,6 @@ impl Tile {
         }
 
         
-        if state.resource_cache.texture_cache.is_allocated(&self.handle) {
-            
-            
-            
-            
-            
-            
-            
-            
-            state.resource_cache.texture_cache.request(&self.handle, state.gpu_cache);
-        } else {
-            
-            
-            self.is_valid = false;
-        }
-
-        
         self.update_content_validity();
 
         
@@ -583,6 +586,55 @@ impl Tile {
 
         if !self.world_rect.intersects(&ctx.global_screen_world_rect) {
             return false;
+        }
+
+        
+        
+        let is_solid_color = self.descriptor.prims.len() == 1 && self.is_opaque;
+
+        
+        let mut surface = if is_solid_color {
+            
+            
+            
+            TileSurface::Color {
+                color: ctx.backdrop.color,
+            }
+        } else {
+            
+            
+            
+            
+            match self.surface.take() {
+                Some(old_surface @ TileSurface::Texture { .. }) => {
+                    old_surface
+                }
+                Some(TileSurface::Color { .. }) | None => {
+                    TileSurface::Texture {
+                        handle: TextureCacheHandle::invalid(),
+                        visibility_mask: PrimitiveVisibilityMask::empty(),
+                    }
+                }
+            }
+        };
+
+        if let TileSurface::Texture { ref handle, .. } = surface {
+            
+            if state.resource_cache.texture_cache.is_allocated(handle) {
+                
+                
+                
+                
+                
+                
+                
+                
+                state.resource_cache.texture_cache.request(handle, state.gpu_cache);
+            } else {
+                
+                
+                self.is_valid = false;
+            }
         }
 
         
@@ -603,7 +655,11 @@ impl Tile {
                     state.scratch.push_debug_string(
                         tile_device_rect.origin + label_offset,
                         debug_colors::RED,
-                        format!("{:?}: is_opaque={}", self.id, self.is_opaque),
+                        format!("{:?}: is_opaque={} surface={}",
+                            self.id,
+                            self.is_opaque,
+                            surface.kind(),
+                        ),
                     );
                 }
             }
@@ -616,42 +672,47 @@ impl Tile {
             }
 
             
-            if !state.resource_cache.texture_cache.is_allocated(&self.handle) {
-                let tile_size = DeviceIntSize::new(
-                    TILE_SIZE_WIDTH,
-                    TILE_SIZE_HEIGHT,
-                );
-                state.resource_cache.texture_cache.update_picture_cache(
-                    tile_size,
-                    &mut self.handle,
-                    state.gpu_cache,
-                );
-            }
+            if let TileSurface::Texture { ref mut handle, ref mut visibility_mask } = surface {
+                if !state.resource_cache.texture_cache.is_allocated(handle) {
+                    let tile_size = DeviceIntSize::new(
+                        TILE_SIZE_WIDTH,
+                        TILE_SIZE_HEIGHT,
+                    );
+                    state.resource_cache.texture_cache.update_picture_cache(
+                        tile_size,
+                        handle,
+                        state.gpu_cache,
+                    );
+                }
 
-            self.visibility_mask = PrimitiveVisibilityMask::empty();
-            let dirty_region_index = state.dirty_region.dirty_rects.len();
+                *visibility_mask = PrimitiveVisibilityMask::empty();
+                let dirty_region_index = state.dirty_region.dirty_rects.len();
 
-            
-            
-            
-            
-            
-            if dirty_region_index < PrimitiveVisibilityMask::MAX_DIRTY_REGIONS {
-                self.visibility_mask.set_visible(dirty_region_index);
+                
+                
+                
+                
+                
+                if dirty_region_index < PrimitiveVisibilityMask::MAX_DIRTY_REGIONS {
+                    visibility_mask.set_visible(dirty_region_index);
 
-                state.dirty_region.push(
-                    self.world_rect,
-                    self.visibility_mask,
-                );
-            } else {
-                self.visibility_mask.set_visible(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1);
+                    state.dirty_region.push(
+                        self.world_rect,
+                        *visibility_mask,
+                    );
+                } else {
+                    visibility_mask.set_visible(PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1);
 
-                state.dirty_region.include_rect(
-                    PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1,
-                    self.world_rect,
-                );
+                    state.dirty_region.include_rect(
+                        PrimitiveVisibilityMask::MAX_DIRTY_REGIONS - 1,
+                        self.world_rect,
+                    );
+                }
             }
         }
+
+        
+        self.surface = Some(surface);
 
         true
     }
@@ -928,6 +989,26 @@ impl ::std::fmt::Debug for RecordedDirtyRegion {
 }
 
 
+#[derive(Debug, Copy, Clone)]
+struct BackdropInfo {
+    
+    
+    
+    rect: PictureRect,
+    
+    color: ColorF,
+}
+
+impl BackdropInfo {
+    fn empty() -> Self {
+        BackdropInfo {
+            rect: PictureRect::zero(),
+            color: ColorF::BLACK,
+        }
+    }
+}
+
+
 pub struct TileCacheInstance {
     
     
@@ -971,9 +1052,7 @@ pub struct TileCacheInstance {
     
     pub background_color: Option<ColorF>,
     
-    
-    
-    pub opaque_rect: PictureRect,
+    backdrop: BackdropInfo,
     
     
     pub subpixel_mode: SubpixelMode,
@@ -1009,7 +1088,7 @@ impl TileCacheInstance {
             world_viewport_rect: WorldRect::zero(),
             surface_index: SurfaceIndex(0),
             background_color,
-            opaque_rect: PictureRect::zero(),
+            backdrop: BackdropInfo::empty(),
             subpixel_mode: SubpixelMode::Allow,
             fract_offset: PictureVector2D::zero(),
         }
@@ -1064,7 +1143,7 @@ impl TileCacheInstance {
 
         
         
-        self.opaque_rect = PictureRect::zero();
+        self.backdrop = BackdropInfo::empty();
         self.subpixel_mode = SubpixelMode::Allow;
 
         self.map_local_to_surface = SpaceMapper::new(
@@ -1395,10 +1474,12 @@ impl TileCacheInstance {
 
                     let on_picture_surface = surface_index == self.surface_index;
 
-                    let prim_is_opaque = match data_stores.prim[data_handle].kind {
-                        PrimitiveTemplateKind::Rectangle { ref color, .. } => color.a >= 1.0,
+                    let color = match data_stores.prim[data_handle].kind {
+                        PrimitiveTemplateKind::Rectangle { color, .. } => color,
                         _ => unreachable!(),
                     };
+
+                    let prim_is_opaque = color.a >= 1.0;
 
                     let same_coord_system = {
                         let prim_spatial_node = &clip_scroll_tree
@@ -1411,8 +1492,11 @@ impl TileCacheInstance {
 
                     if let Some(ref clip_chain) = prim_clip_chain {
                         if prim_is_opaque && same_coord_system && !clip_chain.needs_mask && on_picture_surface {
-                            if clip_chain.pic_clip_rect.contains_rect(&self.opaque_rect) {
-                                self.opaque_rect = clip_chain.pic_clip_rect;
+                            if clip_chain.pic_clip_rect.contains_rect(&self.backdrop.rect) {
+                                self.backdrop = BackdropInfo {
+                                    rect: clip_chain.pic_clip_rect,
+                                    color,
+                                };
                             }
                         }
                     };
@@ -1471,7 +1555,7 @@ impl TileCacheInstance {
                     };
 
                     if on_picture_surface && subpx_requested {
-                        if !self.opaque_rect.contains_rect(&prim_info.prim_clip_rect) {
+                        if !self.backdrop.rect.contains_rect(&prim_info.prim_clip_rect) {
                             self.subpixel_mode = SubpixelMode::Deny;
                         }
                     }
@@ -1521,7 +1605,7 @@ impl TileCacheInstance {
             debug_flags: frame_context.debug_flags,
             global_device_pixel_scale: frame_context.global_device_pixel_scale,
             global_screen_world_rect: frame_context.global_screen_world_rect,
-            opaque_rect: self.opaque_rect,
+            backdrop: self.backdrop,
             cache_spatial_node_index: self.spatial_node_index,
             clip_scroll_tree: frame_context.clip_scroll_tree,
         };
@@ -2713,45 +2797,48 @@ impl PicturePrimitive {
                                 continue;
                             }
 
-                            let content_origin_f = tile.world_rect.origin * device_pixel_scale;
-                            let content_origin = content_origin_f.round();
-                            debug_assert!((content_origin_f.x - content_origin.x).abs() < 0.01);
-                            debug_assert!((content_origin_f.y - content_origin.y).abs() < 0.01);
+                            let surface = tile.surface.as_ref().expect("no tile surface set!");
+                            if let TileSurface::Texture { ref handle, visibility_mask } = surface {
+                                let content_origin_f = tile.world_rect.origin * device_pixel_scale;
+                                let content_origin = content_origin_f.round();
+                                debug_assert!((content_origin_f.x - content_origin.x).abs() < 0.01);
+                                debug_assert!((content_origin_f.y - content_origin.y).abs() < 0.01);
 
-                            let cache_item = frame_state.resource_cache.texture_cache.get(&tile.handle);
+                                let cache_item = frame_state.resource_cache.texture_cache.get(handle);
 
-                            let task = RenderTask::new_picture(
-                                RenderTaskLocation::PictureCache {
-                                    texture: cache_item.texture_id,
-                                    layer: cache_item.texture_layer,
-                                    size: tile_size.to_i32(),
-                                },
-                                tile_size,
-                                pic_index,
-                                content_origin.to_i32(),
-                                UvRectKind::Rect,
-                                surface_spatial_node_index,
-                                device_pixel_scale,
-                                tile.visibility_mask,
-                            );
+                                let task = RenderTask::new_picture(
+                                    RenderTaskLocation::PictureCache {
+                                        texture: cache_item.texture_id,
+                                        layer: cache_item.texture_layer,
+                                        size: tile_size.to_i32(),
+                                    },
+                                    tile_size,
+                                    pic_index,
+                                    content_origin.to_i32(),
+                                    UvRectKind::Rect,
+                                    surface_spatial_node_index,
+                                    device_pixel_scale,
+                                    *visibility_mask,
+                                );
 
-                            let render_task_id = frame_state.render_tasks.add(task);
+                                let render_task_id = frame_state.render_tasks.add(task);
 
-                            frame_state.render_tasks.add_dependency(
-                                frame_state.surfaces[parent_surface_index.0].render_tasks.unwrap().port,
-                                render_task_id,
-                            );
+                                frame_state.render_tasks.add_dependency(
+                                    frame_state.surfaces[parent_surface_index.0].render_tasks.unwrap().port,
+                                    render_task_id,
+                                );
 
-                            if first {
-                                
-                                
-                                
-                                frame_state.surfaces[raster_config.surface_index.0].render_tasks = Some(SurfaceRenderTasks {
-                                    root: render_task_id,
-                                    port: render_task_id,
-                                });
+                                if first {
+                                    
+                                    
+                                    
+                                    frame_state.surfaces[raster_config.surface_index.0].render_tasks = Some(SurfaceRenderTasks {
+                                        root: render_task_id,
+                                        port: render_task_id,
+                                    });
 
-                                first = false;
+                                    first = false;
+                                }
                             }
 
                             tile.is_valid = true;
