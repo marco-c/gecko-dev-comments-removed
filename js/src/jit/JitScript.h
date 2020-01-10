@@ -239,6 +239,10 @@ class alignas(uintptr_t) JitScript final {
     
     
     MOZ_ASSERT(fallbackStubSpace_.isEmpty());
+
+    
+    MOZ_ASSERT(!hasBaselineScript());
+    MOZ_ASSERT(!hasIonScript());
   }
 #endif
 
