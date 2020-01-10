@@ -6,17 +6,33 @@
 
 var EXPORTED_SYMBOLS = ["TraversalRules", "TraversalHelper"]; 
 
-const {PrefCache, Utils} = ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
-ChromeUtils.defineModuleGetter(this, "Roles", 
-  "resource://gre/modules/accessibility/Constants.jsm");
-ChromeUtils.defineModuleGetter(this, "Filters", 
-  "resource://gre/modules/accessibility/Constants.jsm");
-ChromeUtils.defineModuleGetter(this, "States", 
-  "resource://gre/modules/accessibility/Constants.jsm");
-ChromeUtils.defineModuleGetter(this, "Prefilters", 
-  "resource://gre/modules/accessibility/Constants.jsm");
+const { PrefCache, Utils } = ChromeUtils.import(
+  "resource://gre/modules/accessibility/Utils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "Roles", 
+  "resource://gre/modules/accessibility/Constants.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "Filters", 
+  "resource://gre/modules/accessibility/Constants.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "States", 
+  "resource://gre/modules/accessibility/Constants.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "Prefilters", 
+  "resource://gre/modules/accessibility/Constants.jsm"
+);
 
-var gSkipEmptyImages = new PrefCache("accessibility.accessfu.skip_empty_images");
+var gSkipEmptyImages = new PrefCache(
+  "accessibility.accessfu.skip_empty_images"
+);
 
 function BaseTraversalRule(aRoles, aMatchFunc, aPreFilter, aContainerRule) {
   this._explicitMatchRoles = new Set(aRoles);
@@ -30,66 +46,71 @@ function BaseTraversalRule(aRoles, aMatchFunc, aPreFilter, aContainerRule) {
       this._matchRoles.push(Roles.INTERNAL_FRAME);
     }
   }
-  this._matchFunc = aMatchFunc || function() { return Filters.MATCH; };
+  this._matchFunc =
+    aMatchFunc ||
+    function() {
+      return Filters.MATCH;
+    };
   this.preFilter = aPreFilter || gSimplePreFilter;
   this.containerRule = aContainerRule;
 }
 
 BaseTraversalRule.prototype = {
-    getMatchRoles: function BaseTraversalRule_getmatchRoles() {
-      return this._matchRoles;
-    },
+  getMatchRoles: function BaseTraversalRule_getmatchRoles() {
+    return this._matchRoles;
+  },
 
-    match: function BaseTraversalRule_match(aAccessible) {
-      let role = aAccessible.role;
-      if (role == Roles.INTERNAL_FRAME) {
-        return (Utils.getMessageManagerForFrame(aAccessible.DOMNode)) ?
-          Filters.MATCH | Filters.IGNORE_SUBTREE : Filters.IGNORE;
-      }
+  match: function BaseTraversalRule_match(aAccessible) {
+    let role = aAccessible.role;
+    if (role == Roles.INTERNAL_FRAME) {
+      return Utils.getMessageManagerForFrame(aAccessible.DOMNode)
+        ? Filters.MATCH | Filters.IGNORE_SUBTREE
+        : Filters.IGNORE;
+    }
 
-      if (this._explicitMatchRoles.has(role) ||
-          !this._explicitMatchRoles.size) {
-        return this._matchFunc(aAccessible);
-      }
+    if (this._explicitMatchRoles.has(role) || !this._explicitMatchRoles.size) {
+      return this._matchFunc(aAccessible);
+    }
 
-      return Filters.IGNORE;
-    },
+    return Filters.IGNORE;
+  },
 
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIAccessibleTraversalRule]),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIAccessibleTraversalRule]),
 };
 
-var gSimpleTraversalRoles =
-  [Roles.MENUITEM,
-   Roles.LINK,
-   Roles.PAGETAB,
-   Roles.GRAPHIC,
-   Roles.STATICTEXT,
-   Roles.TEXT_LEAF,
-   Roles.PUSHBUTTON,
-   Roles.CHECKBUTTON,
-   Roles.RADIOBUTTON,
-   Roles.COMBOBOX,
-   Roles.PROGRESSBAR,
-   Roles.BUTTONDROPDOWN,
-   Roles.BUTTONMENU,
-   Roles.CHECK_MENU_ITEM,
-   Roles.PASSWORD_TEXT,
-   Roles.RADIO_MENU_ITEM,
-   Roles.TOGGLE_BUTTON,
-   Roles.ENTRY,
-   Roles.KEY,
-   Roles.HEADER,
-   Roles.HEADING,
-   Roles.SLIDER,
-   Roles.SPINBUTTON,
-   Roles.OPTION,
-   Roles.LISTITEM,
-   Roles.GRID_CELL,
-   Roles.COLUMNHEADER,
-   Roles.ROWHEADER,
-   Roles.STATUSBAR,
-   Roles.SWITCH,
-   Roles.MATHML_MATH];
+var gSimpleTraversalRoles = [
+  Roles.MENUITEM,
+  Roles.LINK,
+  Roles.PAGETAB,
+  Roles.GRAPHIC,
+  Roles.STATICTEXT,
+  Roles.TEXT_LEAF,
+  Roles.PUSHBUTTON,
+  Roles.CHECKBUTTON,
+  Roles.RADIOBUTTON,
+  Roles.COMBOBOX,
+  Roles.PROGRESSBAR,
+  Roles.BUTTONDROPDOWN,
+  Roles.BUTTONMENU,
+  Roles.CHECK_MENU_ITEM,
+  Roles.PASSWORD_TEXT,
+  Roles.RADIO_MENU_ITEM,
+  Roles.TOGGLE_BUTTON,
+  Roles.ENTRY,
+  Roles.KEY,
+  Roles.HEADER,
+  Roles.HEADING,
+  Roles.SLIDER,
+  Roles.SPINBUTTON,
+  Roles.OPTION,
+  Roles.LISTITEM,
+  Roles.GRID_CELL,
+  Roles.COLUMNHEADER,
+  Roles.ROWHEADER,
+  Roles.STATUSBAR,
+  Roles.SWITCH,
+  Roles.MATHML_MATH,
+];
 
 var gSimpleMatchFunc = function gSimpleMatchFunc(aAccessible) {
   
@@ -118,90 +139,101 @@ var gSimpleMatchFunc = function gSimpleMatchFunc(aAccessible) {
   }
 
   switch (aAccessible.role) {
-  case Roles.COMBOBOX:
-    
-    
-    return Filters.MATCH;
-  case Roles.TEXT_LEAF:
-    {
+    case Roles.COMBOBOX:
+      
+      
+      return Filters.MATCH;
+    case Roles.TEXT_LEAF: {
       
       let name = aAccessible.name;
-      return (name && name.trim()) ? Filters.MATCH : Filters.IGNORE;
+      return name && name.trim() ? Filters.MATCH : Filters.IGNORE;
     }
-  case Roles.STATICTEXT:
-    
-    return Utils.isListItemDecorator(aAccessible) ?
-      Filters.IGNORE : Filters.MATCH;
-  case Roles.GRAPHIC:
-    return TraversalRules._shouldSkipImage(aAccessible);
-  case Roles.HEADER:
-  case Roles.HEADING:
-  case Roles.COLUMNHEADER:
-  case Roles.ROWHEADER:
-  case Roles.STATUSBAR:
-    if ((aAccessible.childCount > 0 || aAccessible.name) &&
-        (isSingleLineage(aAccessible) || isFlatSubtree(aAccessible))) {
+    case Roles.STATICTEXT:
+      
+      return Utils.isListItemDecorator(aAccessible)
+        ? Filters.IGNORE
+        : Filters.MATCH;
+    case Roles.GRAPHIC:
+      return TraversalRules._shouldSkipImage(aAccessible);
+    case Roles.HEADER:
+    case Roles.HEADING:
+    case Roles.COLUMNHEADER:
+    case Roles.ROWHEADER:
+    case Roles.STATUSBAR:
+      if (
+        (aAccessible.childCount > 0 || aAccessible.name) &&
+        (isSingleLineage(aAccessible) || isFlatSubtree(aAccessible))
+      ) {
+        return Filters.MATCH | Filters.IGNORE_SUBTREE;
+      }
+      return Filters.IGNORE;
+    case Roles.GRID_CELL:
+      return isSingleLineage(aAccessible) || isFlatSubtree(aAccessible)
+        ? Filters.MATCH | Filters.IGNORE_SUBTREE
+        : Filters.IGNORE;
+    case Roles.LISTITEM: {
+      let item =
+        aAccessible.childCount === 2 &&
+        aAccessible.firstChild.role === Roles.STATICTEXT
+          ? aAccessible.lastChild
+          : aAccessible;
+      return isSingleLineage(item) || isFlatSubtree(item)
+        ? Filters.MATCH | Filters.IGNORE_SUBTREE
+        : Filters.IGNORE;
+    }
+    default:
+      
+      
       return Filters.MATCH | Filters.IGNORE_SUBTREE;
-    }
-    return Filters.IGNORE;
-  case Roles.GRID_CELL:
-    return isSingleLineage(aAccessible) || isFlatSubtree(aAccessible) ?
-      Filters.MATCH | Filters.IGNORE_SUBTREE : Filters.IGNORE;
-  case Roles.LISTITEM:
-    {
-      let item = aAccessible.childCount === 2 &&
-        aAccessible.firstChild.role === Roles.STATICTEXT ?
-        aAccessible.lastChild : aAccessible;
-        return isSingleLineage(item) || isFlatSubtree(item) ?
-          Filters.MATCH | Filters.IGNORE_SUBTREE : Filters.IGNORE;
-    }
-  default:
-    
-    
-    return Filters.MATCH |
-      Filters.IGNORE_SUBTREE;
   }
 };
 
-var gSimplePreFilter = Prefilters.DEFUNCT |
+var gSimplePreFilter =
+  Prefilters.DEFUNCT |
   Prefilters.INVISIBLE |
   Prefilters.TRANSPARENT |
   Prefilters.PLATFORM_PRUNED;
 
-var TraversalRules = { 
+var TraversalRules = {
+  
   Simple: new BaseTraversalRule(gSimpleTraversalRoles, gSimpleMatchFunc),
 
   SimpleOnScreen: new BaseTraversalRule(
-    gSimpleTraversalRoles, gSimpleMatchFunc,
-    gSimplePreFilter | Prefilters.OFFSCREEN),
+    gSimpleTraversalRoles,
+    gSimpleMatchFunc,
+    gSimplePreFilter | Prefilters.OFFSCREEN
+  ),
 
-  Anchor: new BaseTraversalRule(
-    [Roles.LINK],
-    function Anchor_match(aAccessible) {
-      
-      if (Utils.getState(aAccessible).contains(States.LINKED)) {
-        return Filters.IGNORE;
-      }
-      return Filters.MATCH;
-    }),
+  Anchor: new BaseTraversalRule([Roles.LINK], function Anchor_match(
+    aAccessible
+  ) {
+    
+    if (Utils.getState(aAccessible).contains(States.LINKED)) {
+      return Filters.IGNORE;
+    }
+    return Filters.MATCH;
+  }),
 
-  Button: new BaseTraversalRule(
-    [Roles.PUSHBUTTON,
-     Roles.SPINBUTTON,
-     Roles.TOGGLE_BUTTON,
-     Roles.BUTTONDROPDOWN,
-     Roles.BUTTONDROPDOWNGRID]),
+  Button: new BaseTraversalRule([
+    Roles.PUSHBUTTON,
+    Roles.SPINBUTTON,
+    Roles.TOGGLE_BUTTON,
+    Roles.BUTTONDROPDOWN,
+    Roles.BUTTONDROPDOWNGRID,
+  ]),
 
-  Combobox: new BaseTraversalRule(
-    [Roles.COMBOBOX,
-     Roles.LISTBOX]),
+  Combobox: new BaseTraversalRule([Roles.COMBOBOX, Roles.LISTBOX]),
 
   Landmark: new BaseTraversalRule(
     [],
     function Landmark_match(aAccessible) {
-      return Utils.getLandmarkName(aAccessible) ? Filters.MATCH :
-        Filters.IGNORE;
-    }, null, true),
+      return Utils.getLandmarkName(aAccessible)
+        ? Filters.MATCH
+        : Filters.IGNORE;
+    },
+    null,
+    true
+  ),
 
   
 
@@ -220,123 +252,131 @@ var TraversalRules = {
         "navigation",
         "search",
         "region",
-        ]);
+      ]);
 
       return matchedRole ? Filters.MATCH : Filters.IGNORE;
-    }, null, true),
+    },
+    null,
+    true
+  ),
 
-  Entry: new BaseTraversalRule(
-    [Roles.ENTRY,
-     Roles.PASSWORD_TEXT]),
+  Entry: new BaseTraversalRule([Roles.ENTRY, Roles.PASSWORD_TEXT]),
 
-  FormElement: new BaseTraversalRule(
-    [Roles.PUSHBUTTON,
-     Roles.SPINBUTTON,
-     Roles.TOGGLE_BUTTON,
-     Roles.BUTTONDROPDOWN,
-     Roles.BUTTONDROPDOWNGRID,
-     Roles.COMBOBOX,
-     Roles.LISTBOX,
-     Roles.ENTRY,
-     Roles.PASSWORD_TEXT,
-     Roles.PAGETAB,
-     Roles.RADIOBUTTON,
-     Roles.RADIO_MENU_ITEM,
-     Roles.SLIDER,
-     Roles.CHECKBUTTON,
-     Roles.CHECK_MENU_ITEM,
-     Roles.SWITCH]),
+  FormElement: new BaseTraversalRule([
+    Roles.PUSHBUTTON,
+    Roles.SPINBUTTON,
+    Roles.TOGGLE_BUTTON,
+    Roles.BUTTONDROPDOWN,
+    Roles.BUTTONDROPDOWNGRID,
+    Roles.COMBOBOX,
+    Roles.LISTBOX,
+    Roles.ENTRY,
+    Roles.PASSWORD_TEXT,
+    Roles.PAGETAB,
+    Roles.RADIOBUTTON,
+    Roles.RADIO_MENU_ITEM,
+    Roles.SLIDER,
+    Roles.CHECKBUTTON,
+    Roles.CHECK_MENU_ITEM,
+    Roles.SWITCH,
+  ]),
 
-  Graphic: new BaseTraversalRule(
-    [Roles.GRAPHIC],
-    function Graphic_match(aAccessible) {
-      return TraversalRules._shouldSkipImage(aAccessible);
-    }),
+  Graphic: new BaseTraversalRule([Roles.GRAPHIC], function Graphic_match(
+    aAccessible
+  ) {
+    return TraversalRules._shouldSkipImage(aAccessible);
+  }),
 
-  Heading: new BaseTraversalRule(
-    [Roles.HEADING],
-    function Heading_match(aAccessible) {
-      return aAccessible.childCount > 0 ? Filters.MATCH : Filters.IGNORE;
-    }),
+  Heading: new BaseTraversalRule([Roles.HEADING], function Heading_match(
+    aAccessible
+  ) {
+    return aAccessible.childCount > 0 ? Filters.MATCH : Filters.IGNORE;
+  }),
 
-  ListItem: new BaseTraversalRule(
-    [Roles.LISTITEM,
-     Roles.TERM]),
+  ListItem: new BaseTraversalRule([Roles.LISTITEM, Roles.TERM]),
 
-  Link: new BaseTraversalRule(
-    [Roles.LINK],
-    function Link_match(aAccessible) {
-      
-      if (Utils.getState(aAccessible).contains(States.LINKED)) {
-        return Filters.MATCH;
-      }
-      return Filters.IGNORE;
-    }),
+  Link: new BaseTraversalRule([Roles.LINK], function Link_match(aAccessible) {
+    
+    if (Utils.getState(aAccessible).contains(States.LINKED)) {
+      return Filters.MATCH;
+    }
+    return Filters.IGNORE;
+  }),
 
   
   Control: new BaseTraversalRule(
-    [Roles.PUSHBUTTON,
-     Roles.SPINBUTTON,
-     Roles.TOGGLE_BUTTON,
-     Roles.BUTTONDROPDOWN,
-     Roles.BUTTONDROPDOWNGRID,
-     Roles.COMBOBOX,
-     Roles.LISTBOX,
-     Roles.ENTRY,
-     Roles.PASSWORD_TEXT,
-     Roles.PAGETAB,
-     Roles.RADIOBUTTON,
-     Roles.RADIO_MENU_ITEM,
-     Roles.SLIDER,
-     Roles.CHECKBUTTON,
-     Roles.CHECK_MENU_ITEM,
-     Roles.SWITCH,
-     Roles.LINK,
-     Roles.MENUITEM],
+    [
+      Roles.PUSHBUTTON,
+      Roles.SPINBUTTON,
+      Roles.TOGGLE_BUTTON,
+      Roles.BUTTONDROPDOWN,
+      Roles.BUTTONDROPDOWNGRID,
+      Roles.COMBOBOX,
+      Roles.LISTBOX,
+      Roles.ENTRY,
+      Roles.PASSWORD_TEXT,
+      Roles.PAGETAB,
+      Roles.RADIOBUTTON,
+      Roles.RADIO_MENU_ITEM,
+      Roles.SLIDER,
+      Roles.CHECKBUTTON,
+      Roles.CHECK_MENU_ITEM,
+      Roles.SWITCH,
+      Roles.LINK,
+      Roles.MENUITEM,
+    ],
     function Control_match(aAccessible) {
       
-      if (aAccessible.role == Roles.LINK &&
-          !Utils.getState(aAccessible).contains(States.LINKED)) {
+      if (
+        aAccessible.role == Roles.LINK &&
+        !Utils.getState(aAccessible).contains(States.LINKED)
+      ) {
         return Filters.IGNORE;
       }
       return Filters.MATCH;
-    }),
+    }
+  ),
 
   List: new BaseTraversalRule(
-    [Roles.LIST,
-     Roles.DEFINITION_LIST],
-    null, null, true),
+    [Roles.LIST, Roles.DEFINITION_LIST],
+    null,
+    null,
+    true
+  ),
 
-  PageTab: new BaseTraversalRule(
-    [Roles.PAGETAB]),
+  PageTab: new BaseTraversalRule([Roles.PAGETAB]),
 
   Paragraph: new BaseTraversalRule(
-    [Roles.PARAGRAPH,
-     Roles.SECTION],
+    [Roles.PARAGRAPH, Roles.SECTION],
     function Paragraph_match(aAccessible) {
-      for (let child = aAccessible.firstChild; child; child = child.nextSibling) {
+      for (
+        let child = aAccessible.firstChild;
+        child;
+        child = child.nextSibling
+      ) {
         if (child.role === Roles.TEXT_LEAF) {
           return Filters.MATCH | Filters.IGNORE_SUBTREE;
         }
       }
 
       return Filters.IGNORE;
-    }),
+    }
+  ),
 
-  RadioButton: new BaseTraversalRule(
-    [Roles.RADIOBUTTON,
-     Roles.RADIO_MENU_ITEM]),
+  RadioButton: new BaseTraversalRule([
+    Roles.RADIOBUTTON,
+    Roles.RADIO_MENU_ITEM,
+  ]),
 
-  Separator: new BaseTraversalRule(
-    [Roles.SEPARATOR]),
+  Separator: new BaseTraversalRule([Roles.SEPARATOR]),
 
-  Table: new BaseTraversalRule(
-    [Roles.TABLE]),
+  Table: new BaseTraversalRule([Roles.TABLE]),
 
-  Checkbox: new BaseTraversalRule(
-    [Roles.CHECKBUTTON,
-     Roles.CHECK_MENU_ITEM,
-     Roles.SWITCH ]),
+  Checkbox: new BaseTraversalRule([
+    Roles.CHECKBUTTON,
+    Roles.CHECK_MENU_ITEM,
+    Roles.SWITCH ,
+  ]),
 
   _shouldSkipImage: function _shouldSkipImage(aAccessible) {
     if (gSkipEmptyImages.value && aAccessible.name === "") {
@@ -390,5 +430,4 @@ var TraversalHelper = {
     }
     return aVirtualCursor[aMethod](rule);
   },
-
 };

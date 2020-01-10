@@ -8,10 +8,13 @@
 loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
 
-addAccessibleTask("doc_treeupdate_ariadialog.html", async function(browser, accDoc) {
+addAccessibleTask("doc_treeupdate_ariadialog.html", async function(
+  browser,
+  accDoc
+) {
   testAccessibleTree(accDoc, {
     role: ROLE_DOCUMENT,
-    children: [ ]
+    children: [],
   });
 
   
@@ -29,13 +32,13 @@ addAccessibleTask("doc_treeupdate_ariadialog.html", async function(browser, accD
         children: [
           {
             role: ROLE_PUSHBUTTON,
-            children: [ { role: ROLE_TEXT_LEAF } ]
+            children: [{ role: ROLE_TEXT_LEAF }],
           },
           {
-            role: ROLE_ENTRY
-          }
-        ]
-      }
-    ]
+            role: ROLE_ENTRY,
+          },
+        ],
+      },
+    ],
   });
 });

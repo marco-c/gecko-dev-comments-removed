@@ -8,94 +8,165 @@ add_task(async function() {
   
   await setE10sPrefs();
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: `data:text/html,
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: `data:text/html,
       <html>
         <head>
           <meta charset="utf-8"/>
           <title>Accessibility Test</title>
         </head>
         <body></body>
-      </html>`
-  }, async function(browser) {
-    info("Creating a service in parent and waiting for service to be created " +
-      "in content");
-    
-    
-    let parentA11yInit = initPromise();
-    let contentA11yInit = initPromise(browser);
-    let contentConsumersChanged =
-      ContentTask.spawn(browser, {}, a11yConsumersChangedPromise);
-    let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
-      Ci.nsIAccessibilityService);
-    ok(accService, "Service initialized in parent");
-    await Promise.all([parentA11yInit, contentA11yInit]);
-    await contentConsumersChanged.then(data => Assert.deepEqual(data, {
-      XPCOM: false, MainProcess: true, PlatformAPI: false
-    }, "Accessibility service consumers in content are correct."));
+      </html>`,
+    },
+    async function(browser) {
+      info(
+        "Creating a service in parent and waiting for service to be created " +
+          "in content"
+      );
+      
+      
+      let parentA11yInit = initPromise();
+      let contentA11yInit = initPromise(browser);
+      let contentConsumersChanged = ContentTask.spawn(
+        browser,
+        {},
+        a11yConsumersChangedPromise
+      );
+      let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
+        Ci.nsIAccessibilityService
+      );
+      ok(accService, "Service initialized in parent");
+      await Promise.all([parentA11yInit, contentA11yInit]);
+      await contentConsumersChanged.then(data =>
+        Assert.deepEqual(
+          data,
+          {
+            XPCOM: false,
+            MainProcess: true,
+            PlatformAPI: false,
+          },
+          "Accessibility service consumers in content are correct."
+        )
+      );
 
-    info("Adding additional reference to accessibility service in content " +
-      "process");
-    contentConsumersChanged =
-      ContentTask.spawn(browser, {}, a11yConsumersChangedPromise);
-    
-    loadFrameScripts(browser, `var accService = Components.classes[
+      info(
+        "Adding additional reference to accessibility service in content " +
+          "process"
+      );
+      contentConsumersChanged = ContentTask.spawn(
+        browser,
+        {},
+        a11yConsumersChangedPromise
+      );
+      
+      loadFrameScripts(
+        browser,
+        `var accService = Components.classes[
       '@mozilla.org/accessibilityService;1'].getService(
-        Components.interfaces.nsIAccessibilityService);`);
-    await contentConsumersChanged.then(data => Assert.deepEqual(data, {
-      XPCOM: true, MainProcess: true, PlatformAPI: false
-    }, "Accessibility service consumers in content are correct."));
+        Components.interfaces.nsIAccessibilityService);`
+      );
+      await contentConsumersChanged.then(data =>
+        Assert.deepEqual(
+          data,
+          {
+            XPCOM: true,
+            MainProcess: true,
+            PlatformAPI: false,
+          },
+          "Accessibility service consumers in content are correct."
+        )
+      );
 
-    const contentConsumers = await ContentTask.spawn(browser, {}, () =>
-      accService.getConsumers());
-    Assert.deepEqual(JSON.parse(contentConsumers), {
-      XPCOM: true, MainProcess: true, PlatformAPI: false
-    }, "Accessibility service consumers in parent are correct.");
+      const contentConsumers = await ContentTask.spawn(browser, {}, () =>
+        accService.getConsumers()
+      );
+      Assert.deepEqual(
+        JSON.parse(contentConsumers),
+        {
+          XPCOM: true,
+          MainProcess: true,
+          PlatformAPI: false,
+        },
+        "Accessibility service consumers in parent are correct."
+      );
 
-    info("Shutting down a service in parent and making sure the one in " +
-      "content stays alive");
-    let contentCanShutdown = false;
-    let parentA11yShutdown = shutdownPromise();
-    contentConsumersChanged =
-      ContentTask.spawn(browser, {}, a11yConsumersChangedPromise);
-    
-    
-    
-    let contentA11yShutdown = new Promise((resolve, reject) =>
-      shutdownPromise(browser).then(flag => contentCanShutdown ?
-        resolve() : reject("Accessible service was shut down incorrectly")));
-    
-    
-    
-    accService = null;
-    ok(!accService, "Service is removed in parent");
-    
-    
-    forceGC();
-    loadFrameScripts(browser, `Components.utils.forceGC();`);
-    await parentA11yShutdown;
-    await contentConsumersChanged.then(data => Assert.deepEqual(data, {
-      XPCOM: true, MainProcess: false, PlatformAPI: false
-    }, "Accessibility service consumers in content are correct."));
+      info(
+        "Shutting down a service in parent and making sure the one in " +
+          "content stays alive"
+      );
+      let contentCanShutdown = false;
+      let parentA11yShutdown = shutdownPromise();
+      contentConsumersChanged = ContentTask.spawn(
+        browser,
+        {},
+        a11yConsumersChangedPromise
+      );
+      
+      
+      
+      let contentA11yShutdown = new Promise((resolve, reject) =>
+        shutdownPromise(browser).then(flag =>
+          contentCanShutdown
+            ? resolve()
+            : reject("Accessible service was shut down incorrectly")
+        )
+      );
+      
+      
+      
+      accService = null;
+      ok(!accService, "Service is removed in parent");
+      
+      
+      forceGC();
+      loadFrameScripts(browser, `Components.utils.forceGC();`);
+      await parentA11yShutdown;
+      await contentConsumersChanged.then(data =>
+        Assert.deepEqual(
+          data,
+          {
+            XPCOM: true,
+            MainProcess: false,
+            PlatformAPI: false,
+          },
+          "Accessibility service consumers in content are correct."
+        )
+      );
 
-    
-    await new Promise(resolve => executeSoon(resolve));
+      
+      await new Promise(resolve => executeSoon(resolve));
 
-    info("Removing a service in content");
-    
-    contentCanShutdown = true;
-    contentConsumersChanged =
-      ContentTask.spawn(browser, {}, a11yConsumersChangedPromise);
-    
-    
-    loadFrameScripts(browser, `accService = null; Components.utils.forceGC();`);
-    await contentA11yShutdown;
-    await contentConsumersChanged.then(data => Assert.deepEqual(data, {
-      XPCOM: false, MainProcess: false, PlatformAPI: false
-    }, "Accessibility service consumers in content are correct."));
+      info("Removing a service in content");
+      
+      contentCanShutdown = true;
+      contentConsumersChanged = ContentTask.spawn(
+        browser,
+        {},
+        a11yConsumersChangedPromise
+      );
+      
+      
+      loadFrameScripts(
+        browser,
+        `accService = null; Components.utils.forceGC();`
+      );
+      await contentA11yShutdown;
+      await contentConsumersChanged.then(data =>
+        Assert.deepEqual(
+          data,
+          {
+            XPCOM: false,
+            MainProcess: false,
+            PlatformAPI: false,
+          },
+          "Accessibility service consumers in content are correct."
+        )
+      );
 
-    
-    await unsetE10sPrefs();
-  });
+      
+      await unsetE10sPrefs();
+    }
+  );
 });

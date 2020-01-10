@@ -1,4 +1,3 @@
-
 const nsISupports = Ci.nsISupports;
 const nsIAutoCompleteResult = Ci.nsIAutoCompleteResult;
 const nsIAutoCompleteSearch = Ci.nsIAutoCompleteSearch;
@@ -16,10 +15,14 @@ var gDefaultAutoCompleteSearch = null;
 
 function initAutoComplete(aValues, aComments) {
   var allResults = new ResultsHeap(aValues, aComments);
-  gDefaultAutoCompleteSearch =
-    new AutoCompleteSearch("test-a11y-search", allResults);
-  registerAutoCompleteSearch(gDefaultAutoCompleteSearch,
-                             "Accessibility Test AutoCompleteSearch");
+  gDefaultAutoCompleteSearch = new AutoCompleteSearch(
+    "test-a11y-search",
+    allResults
+  );
+  registerAutoCompleteSearch(
+    gDefaultAutoCompleteSearch,
+    "Accessibility Test AutoCompleteSearch"
+  );
 }
 
 
@@ -37,15 +40,17 @@ function shutdownAutoComplete() {
 
 
 
-
 function registerAutoCompleteSearch(aSearch, aDescription) {
   var name = "@mozilla.org/autocomplete/search;1?name=" + aSearch.name;
 
-  var uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].
-    getService(nsIUUIDGenerator);
+  var uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(
+    nsIUUIDGenerator
+  );
   var cid = uuidGenerator.generateUUID();
 
-  var componentManager = Components.manager.QueryInterface(nsIComponentRegistrar);
+  var componentManager = Components.manager.QueryInterface(
+    nsIComponentRegistrar
+  );
   componentManager.registerFactory(cid, aDescription, name, aSearch);
 
   
@@ -56,10 +61,11 @@ function registerAutoCompleteSearch(aSearch, aDescription) {
 
 
 function unregisterAutoCompleteSearch(aSearch) {
-  var componentManager = Components.manager.QueryInterface(nsIComponentRegistrar);
+  var componentManager = Components.manager.QueryInterface(
+    nsIComponentRegistrar
+  );
   componentManager.unregisterFactory(aSearch.cid, aSearch);
 }
-
 
 
 
@@ -69,15 +75,15 @@ function ResultsHeap(aValues, aComments) {
   this.comments = aComments;
 }
 
-ResultsHeap.prototype =
-{
+ResultsHeap.prototype = {
   constructor: ResultsHeap,
 
   
 
 
   getAutoCompleteResultFor(aSearchString) {
-    var values = [], comments = [];
+    var values = [],
+      comments = [];
     for (var idx = 0; idx < this.values.length; idx++) {
       if (this.values[idx].includes(aSearchString)) {
         values.push(this.values[idx]);
@@ -94,14 +100,12 @@ ResultsHeap.prototype =
 
 
 
-
 function AutoCompleteSearch(aName, aAllResults) {
   this.name = aName;
   this.allResults = aAllResults;
 }
 
-AutoCompleteSearch.prototype =
-{
+AutoCompleteSearch.prototype = {
   constructor: AutoCompleteSearch,
 
   
@@ -113,7 +117,10 @@ AutoCompleteSearch.prototype =
   stopSearch() {},
 
   
-  QueryInterface: ChromeUtils.generateQI(["nsIFactory", "nsIAutoCompleteSearch"]),
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIFactory",
+    "nsIAutoCompleteSearch",
+  ]),
 
   
   createInstance(outer, iid) {
@@ -130,19 +137,18 @@ AutoCompleteSearch.prototype =
 
 
 
-
 function AutoCompleteResult(aValues, aComments) {
   this.values = aValues;
   this.comments = aComments;
 
-  if (this.values.length > 0)
+  if (this.values.length > 0) {
     this.searchResult = nsIAutoCompleteResult.RESULT_SUCCESS;
-  else
+  } else {
     this.searchResult = nsIAutoCompleteResult.NOMATCH;
+  }
 }
 
-AutoCompleteResult.prototype =
-{
+AutoCompleteResult.prototype = {
   constructor: AutoCompleteResult,
 
   searchString: "",

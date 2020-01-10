@@ -9,55 +9,65 @@ add_task(async function() {
   await setE10sPrefs();
 
   let docLoaded = waitForEvent(
-    Ci.nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE, "body");
+    Ci.nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE,
+    "body"
+  );
   let a11yInit = initPromise();
   let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
-    Ci.nsIAccessibilityService);
+    Ci.nsIAccessibilityService
+  );
   ok(accService, "Service initialized");
   await a11yInit;
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: `data:text/html,
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: `data:text/html,
       <html>
         <head>
           <meta charset="utf-8"/>
           <title>Accessibility Test</title>
         </head>
         <body id="body"></body>
-      </html>`
-  }, async function(browser) {
-    let docLoadedEvent = await docLoaded;
-    let docAcc = docLoadedEvent.accessibleDocument;
-    ok(docAcc, "Accessible document proxy is created");
-    
-    docLoaded = null;
-    docLoadedEvent = null;
-    forceGC();
+      </html>`,
+    },
+    async function(browser) {
+      let docLoadedEvent = await docLoaded;
+      let docAcc = docLoadedEvent.accessibleDocument;
+      ok(docAcc, "Accessible document proxy is created");
+      
+      docLoaded = null;
+      docLoadedEvent = null;
+      forceGC();
 
-    let canShutdown = false;
-    let a11yShutdown = new Promise((resolve, reject) =>
-    shutdownPromise().then(flag => canShutdown ? resolve() :
-      reject("Accessible service was shut down incorrectly")));
+      let canShutdown = false;
+      let a11yShutdown = new Promise((resolve, reject) =>
+        shutdownPromise().then(flag =>
+          canShutdown
+            ? resolve()
+            : reject("Accessible service was shut down incorrectly")
+        )
+      );
 
-    accService = null;
-    ok(!accService, "Service is removed");
-    
-    
-    forceGC();
-    
-    await new Promise(resolve => executeSoon(resolve));
+      accService = null;
+      ok(!accService, "Service is removed");
+      
+      
+      forceGC();
+      
+      await new Promise(resolve => executeSoon(resolve));
 
-    
-    canShutdown = true;
-    
-    docAcc = null;
-    ok(!docAcc, "Accessible document proxy is removed");
+      
+      canShutdown = true;
+      
+      docAcc = null;
+      ok(!docAcc, "Accessible document proxy is removed");
 
-    
-    forceGC();
-    await a11yShutdown;
-  });
+      
+      forceGC();
+      await a11yShutdown;
+    }
+  );
 
   
   await unsetE10sPrefs();

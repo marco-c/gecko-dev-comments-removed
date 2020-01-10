@@ -16,102 +16,104 @@ const iframeSrc = `data:text/html,
     <body id='inner-iframe'></body>
   </html>`;
 
-addAccessibleTask(`
-  <iframe id="iframe" src="${iframeSrc}"></iframe>`, async function(browser, accDoc) {
-  
-  const id = "inner-iframe";
-
-  let iframe = findAccessibleChildByID(accDoc, id);
-
-  
-  let tree = {
-    role: ROLE_DOCUMENT,
-    children: [ ]
-  };
-  testAccessibleTree(iframe, tree);
-
-  
-  let reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, id, contentId => {
-    let docNode = content.document.getElementById("iframe").contentDocument;
-    let newHTMLNode = docNode.createElement("html");
-    let newBodyNode = docNode.createElement("body");
-    let newTextNode = docNode.createTextNode("New Wave");
-    newBodyNode.id = contentId;
-    newBodyNode.appendChild(newTextNode);
-    newHTMLNode.appendChild(newBodyNode);
-    docNode.replaceChild(newHTMLNode, docNode.documentElement);
-  });
-  await reorderEventPromise;
-
-  tree = {
-    role: ROLE_DOCUMENT,
-    children: [
-      {
-        role: ROLE_TEXT_LEAF,
-        name: "New Wave"
-      }
-    ]
-  };
-  testAccessibleTree(iframe, tree);
-
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, id, contentId => {
-    let docNode = content.document.getElementById("iframe").contentDocument;
+addAccessibleTask(
+  `
+  <iframe id="iframe" src="${iframeSrc}"></iframe>`,
+  async function(browser, accDoc) {
     
+    const id = "inner-iframe";
+
+    let iframe = findAccessibleChildByID(accDoc, id);
+
     
-    let script = docNode.createElement("script");
-    script.textContent = `
+    let tree = {
+      role: ROLE_DOCUMENT,
+      children: [],
+    };
+    testAccessibleTree(iframe, tree);
+
+    
+    let reorderEventPromise = waitForEvent(EVENT_REORDER, id);
+    await ContentTask.spawn(browser, id, contentId => {
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      let newHTMLNode = docNode.createElement("html");
+      let newBodyNode = docNode.createElement("body");
+      let newTextNode = docNode.createTextNode("New Wave");
+      newBodyNode.id = contentId;
+      newBodyNode.appendChild(newTextNode);
+      newHTMLNode.appendChild(newBodyNode);
+      docNode.replaceChild(newHTMLNode, docNode.documentElement);
+    });
+    await reorderEventPromise;
+
+    tree = {
+      role: ROLE_DOCUMENT,
+      children: [
+        {
+          role: ROLE_TEXT_LEAF,
+          name: "New Wave",
+        },
+      ],
+    };
+    testAccessibleTree(iframe, tree);
+
+    
+    reorderEventPromise = waitForEvent(EVENT_REORDER, id);
+    await ContentTask.spawn(browser, id, contentId => {
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      
+      
+      let script = docNode.createElement("script");
+      script.textContent = `
       document.open();
       document.write('<body id="${contentId}">hello</body>');
       document.close();`;
-    docNode.body.appendChild(script);
-  });
-  await reorderEventPromise;
+      docNode.body.appendChild(script);
+    });
+    await reorderEventPromise;
 
-  tree = {
-    role: ROLE_DOCUMENT,
-    children: [
-      {
-        role: ROLE_TEXT_LEAF,
-        name: "hello"
-      }
-    ]
-  };
-  testAccessibleTree(iframe, tree);
+    tree = {
+      role: ROLE_DOCUMENT,
+      children: [
+        {
+          role: ROLE_TEXT_LEAF,
+          name: "hello",
+        },
+      ],
+    };
+    testAccessibleTree(iframe, tree);
 
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, id, contentId => {
-    let docNode = content.document.getElementById("iframe").contentDocument;
-    let newBodyNode = docNode.createElement("body");
-    let newTextNode = docNode.createTextNode("New Hello");
-    newBodyNode.id = contentId;
-    newBodyNode.appendChild(newTextNode);
-    newBodyNode.setAttribute("role", "button");
-    docNode.documentElement.replaceChild(newBodyNode, docNode.body);
-  });
-  await reorderEventPromise;
-
-  tree = {
-    role: ROLE_PUSHBUTTON,
-    children: [
-      {
-        role: ROLE_TEXT_LEAF,
-        name: "New Hello"
-      }
-    ]
-  };
-  testAccessibleTree(iframe, tree);
-
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, id, contentId => {
     
-    let docNode = content.document.getElementById("iframe").contentDocument;
-    let script = docNode.createElement("script");
-    script.textContent = `
+    reorderEventPromise = waitForEvent(EVENT_REORDER, id);
+    await ContentTask.spawn(browser, id, contentId => {
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      let newBodyNode = docNode.createElement("body");
+      let newTextNode = docNode.createTextNode("New Hello");
+      newBodyNode.id = contentId;
+      newBodyNode.appendChild(newTextNode);
+      newBodyNode.setAttribute("role", "button");
+      docNode.documentElement.replaceChild(newBodyNode, docNode.body);
+    });
+    await reorderEventPromise;
+
+    tree = {
+      role: ROLE_PUSHBUTTON,
+      children: [
+        {
+          role: ROLE_TEXT_LEAF,
+          name: "New Hello",
+        },
+      ],
+    };
+    testAccessibleTree(iframe, tree);
+
+    
+    reorderEventPromise = waitForEvent(EVENT_REORDER, id);
+    await ContentTask.spawn(browser, id, contentId => {
+      
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      let script = docNode.createElement("script");
+      script.textContent = `
       function closeMe() {
         document.write('Works?');
         document.close();
@@ -119,192 +121,199 @@ addAccessibleTask(`
       window.closeMe = closeMe;
       document.open();
       document.write('<body id="${contentId}"></body>');`;
-    docNode.body.appendChild(script);
-  });
-  await reorderEventPromise;
+      docNode.body.appendChild(script);
+    });
+    await reorderEventPromise;
 
-  tree = {
-    role: ROLE_DOCUMENT,
-    children: [ ]
-  };
-  testAccessibleTree(iframe, tree);
+    tree = {
+      role: ROLE_DOCUMENT,
+      children: [],
+    };
+    testAccessibleTree(iframe, tree);
 
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, {}, () => {
     
-    let docNode = content.document.getElementById("iframe").contentDocument;
-    docNode.write("Works?");
-    docNode.close();
-  });
-  await reorderEventPromise;
+    reorderEventPromise = waitForEvent(EVENT_REORDER, id);
+    await ContentTask.spawn(browser, {}, () => {
+      
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      docNode.write("Works?");
+      docNode.close();
+    });
+    await reorderEventPromise;
 
-  tree = {
-    role: ROLE_DOCUMENT,
-    children: [
-      {
-        role: ROLE_TEXT_LEAF,
-        name: "Works?"
-      }
-    ]
-  };
-  testAccessibleTree(iframe, tree);
+    tree = {
+      role: ROLE_DOCUMENT,
+      children: [
+        {
+          role: ROLE_TEXT_LEAF,
+          name: "Works?",
+        },
+      ],
+    };
+    testAccessibleTree(iframe, tree);
 
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
-  await ContentTask.spawn(browser, {}, () => {
     
-    let docNode = content.document.getElementById("iframe").contentDocument;
-    docNode.firstChild.remove();
-  });
-  let event = await reorderEventPromise;
+    reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
+    await ContentTask.spawn(browser, {}, () => {
+      
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      docNode.firstChild.remove();
+    });
+    let event = await reorderEventPromise;
 
-  ok(event.accessible instanceof nsIAccessibleDocument,
-    "Reorder should happen on the document");
-  tree = {
-    role: ROLE_DOCUMENT,
-    children: [ ]
-  };
-  testAccessibleTree(iframe, tree);
+    ok(
+      event.accessible instanceof nsIAccessibleDocument,
+      "Reorder should happen on the document"
+    );
+    tree = {
+      role: ROLE_DOCUMENT,
+      children: [],
+    };
+    testAccessibleTree(iframe, tree);
 
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, id, contentId => {
     
-    let docNode = content.document.getElementById("iframe").contentDocument;
-    let html = docNode.createElement("html");
-    let body = docNode.createElement("body");
-    let text = docNode.createTextNode("Haha");
-    body.appendChild(text);
-    body.id = contentId;
-    html.appendChild(body);
-    docNode.appendChild(html);
-  });
-  await reorderEventPromise;
+    reorderEventPromise = waitForEvent(EVENT_REORDER, id);
+    await ContentTask.spawn(browser, id, contentId => {
+      
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      let html = docNode.createElement("html");
+      let body = docNode.createElement("body");
+      let text = docNode.createTextNode("Haha");
+      body.appendChild(text);
+      body.id = contentId;
+      html.appendChild(body);
+      docNode.appendChild(html);
+    });
+    await reorderEventPromise;
 
-  tree = {
-    role: ROLE_DOCUMENT,
-    children: [
-      {
-        role: ROLE_TEXT_LEAF,
-        name: "Haha"
-      }
-    ]
-  };
-  testAccessibleTree(iframe, tree);
+    tree = {
+      role: ROLE_DOCUMENT,
+      children: [
+        {
+          role: ROLE_TEXT_LEAF,
+          name: "Haha",
+        },
+      ],
+    };
+    testAccessibleTree(iframe, tree);
 
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
-  await ContentTask.spawn(browser, {}, () => {
     
-    let docNode = content.document.getElementById("iframe").contentDocument;
-    docNode.documentElement.removeChild(docNode.body);
-  });
-  event = await reorderEventPromise;
+    reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
+    await ContentTask.spawn(browser, {}, () => {
+      
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      docNode.documentElement.removeChild(docNode.body);
+    });
+    event = await reorderEventPromise;
 
-  ok(event.accessible instanceof nsIAccessibleDocument,
-    "Reorder should happen on the document");
-  tree = {
-    role: ROLE_DOCUMENT,
-    children: [ ]
-  };
-  testAccessibleTree(iframe, tree);
+    ok(
+      event.accessible instanceof nsIAccessibleDocument,
+      "Reorder should happen on the document"
+    );
+    tree = {
+      role: ROLE_DOCUMENT,
+      children: [],
+    };
+    testAccessibleTree(iframe, tree);
 
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
-  await ContentTask.spawn(browser, {}, () => {
-    let docNode = content.document.getElementById("iframe").contentDocument;
-    let inputNode = content.window.inputNode = docNode.createElement("input");
-    docNode.documentElement.appendChild(inputNode);
-  });
-  event = await reorderEventPromise;
-
-  ok(event.accessible instanceof nsIAccessibleDocument,
-    "Reorder should happen on the document");
-  tree = {
-    DOCUMENT: [
-      { ENTRY: [ ] }
-    ]
-  };
-  testAccessibleTree(iframe, tree);
-
-  reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
-  await ContentTask.spawn(browser, {}, () => {
-    let docEl =
-      content.document.getElementById("iframe").contentDocument.documentElement;
     
-    docEl.firstChild.remove();
-  });
-  
-  await reorderEventPromise;
-  tree = {
-    role: ROLE_DOCUMENT,
-    children: [ ]
-  };
-  testAccessibleTree(iframe, tree);
+    reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
+    await ContentTask.spawn(browser, {}, () => {
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      let inputNode = (content.window.inputNode = docNode.createElement(
+        "input"
+      ));
+      docNode.documentElement.appendChild(inputNode);
+    });
+    event = await reorderEventPromise;
 
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, id, contentId => {
+    ok(
+      event.accessible instanceof nsIAccessibleDocument,
+      "Reorder should happen on the document"
+    );
+    tree = {
+      DOCUMENT: [{ ENTRY: [] }],
+    };
+    testAccessibleTree(iframe, tree);
+
+    reorderEventPromise = waitForEvent(EVENT_REORDER, iframe);
+    await ContentTask.spawn(browser, {}, () => {
+      let docEl = content.document.getElementById("iframe").contentDocument
+        .documentElement;
+      
+      docEl.firstChild.remove();
+    });
     
-    let docNode = content.document.getElementById("iframe").contentDocument;
+    await reorderEventPromise;
+    tree = {
+      role: ROLE_DOCUMENT,
+      children: [],
+    };
+    testAccessibleTree(iframe, tree);
+
     
-    let body = docNode.createElement("body");
-    let text = docNode.createTextNode("Yo ho ho i butylka roma!");
-    body.appendChild(text);
-    body.id = contentId;
-    docNode.documentElement.appendChild(body);
-  });
-  await reorderEventPromise;
+    reorderEventPromise = waitForEvent(EVENT_REORDER, id);
+    await ContentTask.spawn(browser, id, contentId => {
+      
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      
+      let body = docNode.createElement("body");
+      let text = docNode.createTextNode("Yo ho ho i butylka roma!");
+      body.appendChild(text);
+      body.id = contentId;
+      docNode.documentElement.appendChild(body);
+    });
+    await reorderEventPromise;
 
-  tree = {
-    role: ROLE_DOCUMENT,
-    children: [
-      {
-        role: ROLE_TEXT_LEAF,
-        name: "Yo ho ho i butylka roma!"
-      }
-    ]
-  };
-  testAccessibleTree(iframe, tree);
+    tree = {
+      role: ROLE_DOCUMENT,
+      children: [
+        {
+          role: ROLE_TEXT_LEAF,
+          name: "Yo ho ho i butylka roma!",
+        },
+      ],
+    };
+    testAccessibleTree(iframe, tree);
 
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, "iframe");
-  await invokeSetAttribute(browser, "iframe", "src",
-    `data:text/html,<html><body id="${id}"><input></body></html>`);
-  event = await reorderEventPromise;
+    
+    reorderEventPromise = waitForEvent(EVENT_REORDER, "iframe");
+    await invokeSetAttribute(
+      browser,
+      "iframe",
+      "src",
+      `data:text/html,<html><body id="${id}"><input></body></html>`
+    );
+    event = await reorderEventPromise;
 
-  tree = {
-    INTERNAL_FRAME: [
-      { DOCUMENT: [
-        { ENTRY: [ ] }
-      ] }
-    ]
-  };
-  testAccessibleTree(event.accessible, tree);
-  iframe = findAccessibleChildByID(event.accessible, id);
+    tree = {
+      INTERNAL_FRAME: [{ DOCUMENT: [{ ENTRY: [] }] }],
+    };
+    testAccessibleTree(event.accessible, tree);
+    iframe = findAccessibleChildByID(event.accessible, id);
 
-  
-  reorderEventPromise = waitForEvent(EVENT_REORDER, id);
-  await ContentTask.spawn(browser, id, contentId => {
-    let docNode = content.document.getElementById("iframe").contentDocument;
-    let newBodyNode = docNode.createElement("body");
-    let newTextNode = docNode.createTextNode("New Hello");
-    newBodyNode.appendChild(newTextNode);
-    newBodyNode.setAttribute("role", "button");
-    newBodyNode.id = contentId;
-    docNode.documentElement.replaceChild(newBodyNode, docNode.body);
-  });
-  await reorderEventPromise;
+    
+    reorderEventPromise = waitForEvent(EVENT_REORDER, id);
+    await ContentTask.spawn(browser, id, contentId => {
+      let docNode = content.document.getElementById("iframe").contentDocument;
+      let newBodyNode = docNode.createElement("body");
+      let newTextNode = docNode.createTextNode("New Hello");
+      newBodyNode.appendChild(newTextNode);
+      newBodyNode.setAttribute("role", "button");
+      newBodyNode.id = contentId;
+      docNode.documentElement.replaceChild(newBodyNode, docNode.body);
+    });
+    await reorderEventPromise;
 
-  tree = {
-    role: ROLE_PUSHBUTTON,
-    children: [
-      {
-        role: ROLE_TEXT_LEAF,
-        name: "New Hello"
-      }
-    ]
-  };
-  testAccessibleTree(iframe, tree);
-});
+    tree = {
+      role: ROLE_PUSHBUTTON,
+      children: [
+        {
+          role: ROLE_TEXT_LEAF,
+          name: "New Hello",
+        },
+      ],
+    };
+    testAccessibleTree(iframe, tree);
+  }
+);

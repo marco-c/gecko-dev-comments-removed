@@ -7,7 +7,8 @@
 
 loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 
-addAccessibleTask(`
+addAccessibleTask(
+  `
   <style>
     .gentext:before {
       content: "START"
@@ -25,16 +26,22 @@ addAccessibleTask(`
     let container2 = findAccessibleChildByID(accDoc, id2);
 
     let tree = {
-      SECTION: [ ] 
+      SECTION: [], 
     };
     testAccessibleTree(container1, tree);
 
     tree = {
-      SECTION: [ { 
-        SECTION: [ { 
-          TEXT_LEAF: [ ] 
-        } ]
-      } ]
+      SECTION: [
+        {
+          
+          SECTION: [
+            {
+              
+              TEXT_LEAF: [], 
+            },
+          ],
+        },
+      ],
     };
     testAccessibleTree(container2, tree);
 
@@ -49,13 +56,17 @@ addAccessibleTask(`
     await onReorder;
 
     tree = {
-      SECTION: [ 
-        { SECTION: [ 
-          { STATICTEXT: [] }, 
-          { TEXT_LEAF: [] }, 
-          { STATICTEXT: [] } 
-        ] }
-      ]
+      SECTION: [
+        
+        {
+          SECTION: [
+            
+            { STATICTEXT: [] }, 
+            { TEXT_LEAF: [] }, 
+            { STATICTEXT: [] }, 
+          ],
+        },
+      ],
     };
     testAccessibleTree(container1, tree);
 
@@ -65,13 +76,18 @@ addAccessibleTask(`
     await onReorder;
 
     tree = {
-      SECTION: [ 
-        { SECTION: [ 
-          { STATICTEXT: [] }, 
-          { TEXT_LEAF: [] }, 
-          { STATICTEXT: [] } 
-        ] }
-      ]
+      SECTION: [
+        
+        {
+          SECTION: [
+            
+            { STATICTEXT: [] }, 
+            { TEXT_LEAF: [] }, 
+            { STATICTEXT: [] }, 
+          ],
+        },
+      ],
     };
     testAccessibleTree(container2, tree);
-  });
+  }
+);

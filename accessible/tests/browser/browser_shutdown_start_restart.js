@@ -9,7 +9,8 @@ add_task(async function() {
   
   let a11yInit = initPromise();
   let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
-    Ci.nsIAccessibilityService);
+    Ci.nsIAccessibilityService
+  );
   await a11yInit;
   ok(accService, "Service initialized");
 
@@ -26,7 +27,8 @@ add_task(async function() {
   
   a11yInit = initPromise();
   accService = Cc["@mozilla.org/accessibilityService;1"].getService(
-    Ci.nsIAccessibilityService);
+    Ci.nsIAccessibilityService
+  );
   await a11yInit;
   ok(accService, "Service initialized again");
 

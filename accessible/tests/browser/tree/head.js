@@ -10,7 +10,8 @@
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
-  this);
+  this
+);
 
 
 
@@ -22,6 +23,9 @@ loadScripts({ name: "common.js", dir: MOCHITESTS_DIR }, "events.js");
 
 function testChildrenIds(acc, expectedIds) {
   let ids = arrayFromChildren(acc).map(child => getAccessibleDOMNodeID(child));
-  Assert.deepEqual(ids, expectedIds,
-    `Children for ${getAccessibleDOMNodeID(acc)} are wrong.`);
+  Assert.deepEqual(
+    ids,
+    expectedIds,
+    `Children for ${getAccessibleDOMNodeID(acc)} are wrong.`
+  );
 }

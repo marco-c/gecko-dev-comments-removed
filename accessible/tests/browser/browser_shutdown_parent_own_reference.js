@@ -8,65 +8,85 @@ add_task(async function() {
   
   await setE10sPrefs();
 
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: `data:text/html,
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: `data:text/html,
       <html>
         <head>
           <meta charset="utf-8"/>
           <title>Accessibility Test</title>
         </head>
         <body></body>
-      </html>`
-  }, async function(browser) {
-    info("Creating a service in parent and waiting for service to be created " +
-      "in content");
-    
-    
-    let parentA11yInit = initPromise();
-    let contentA11yInit = initPromise(browser);
-    let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
-      Ci.nsIAccessibilityService);
-    ok(accService, "Service initialized in parent");
-    await Promise.all([parentA11yInit, contentA11yInit]);
+      </html>`,
+    },
+    async function(browser) {
+      info(
+        "Creating a service in parent and waiting for service to be created " +
+          "in content"
+      );
+      
+      
+      let parentA11yInit = initPromise();
+      let contentA11yInit = initPromise(browser);
+      let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
+        Ci.nsIAccessibilityService
+      );
+      ok(accService, "Service initialized in parent");
+      await Promise.all([parentA11yInit, contentA11yInit]);
 
-    info("Adding additional reference to accessibility service in content " +
-      "process");
-    
-    loadFrameScripts(browser, `let accService = Components.classes[
+      info(
+        "Adding additional reference to accessibility service in content " +
+          "process"
+      );
+      
+      loadFrameScripts(
+        browser,
+        `let accService = Components.classes[
       '@mozilla.org/accessibilityService;1'].getService(
-        Components.interfaces.nsIAccessibilityService);`);
+        Components.interfaces.nsIAccessibilityService);`
+      );
 
-    info("Trying to shut down a service in content and making sure it stays " +
-      "alive as it was started by parent");
-    let contentCanShutdown = false;
-    
-    
-    
-    let contentA11yShutdown = new Promise((resolve, reject) =>
-      shutdownPromise(browser).then(flag => contentCanShutdown ?
-        resolve() : reject("Accessible service was shut down incorrectly")));
-    
-    
-    
-    loadFrameScripts(browser, `accService = null; Components.utils.forceGC();`);
+      info(
+        "Trying to shut down a service in content and making sure it stays " +
+          "alive as it was started by parent"
+      );
+      let contentCanShutdown = false;
+      
+      
+      
+      let contentA11yShutdown = new Promise((resolve, reject) =>
+        shutdownPromise(browser).then(flag =>
+          contentCanShutdown
+            ? resolve()
+            : reject("Accessible service was shut down incorrectly")
+        )
+      );
+      
+      
+      
+      loadFrameScripts(
+        browser,
+        `accService = null; Components.utils.forceGC();`
+      );
 
-    
-    await new Promise(resolve => executeSoon(resolve));
+      
+      await new Promise(resolve => executeSoon(resolve));
 
-    info("Removing a service in parent");
-    
-    contentCanShutdown = true;
-    
-    let parentA11yShutdown = shutdownPromise();
-    accService = null;
-    ok(!accService, "Service is removed in parent");
-    
-    
-    forceGC();
-    await Promise.all([parentA11yShutdown, contentA11yShutdown]);
+      info("Removing a service in parent");
+      
+      contentCanShutdown = true;
+      
+      let parentA11yShutdown = shutdownPromise();
+      accService = null;
+      ok(!accService, "Service is removed in parent");
+      
+      
+      forceGC();
+      await Promise.all([parentA11yShutdown, contentA11yShutdown]);
 
-    
-    await unsetE10sPrefs();
-  });
+      
+      await unsetE10sPrefs();
+    }
+  );
 });
