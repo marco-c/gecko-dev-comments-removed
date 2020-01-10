@@ -1,9 +1,3 @@
-
-
-
-
-
-
 <!doctype html>
 <title>encoding, shared worker</title>
 <script src="/resources/testharness.js"></script>
@@ -11,12 +5,10 @@
 <div id=log></div>
 <script>
 async_test(function() {
-  var worker = new SharedWorker('#', '');
+  var worker = new SharedWorker('002.js', '');
   worker.port.onmessage = this.step_func(function(e) {
     assert_equals(e.data, '\u00e5');
     this.done();
   });
 });
 </script>
-
-

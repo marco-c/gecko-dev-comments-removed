@@ -1,0 +1,8 @@
+onconnect = function (e) {
+  setTimeout(function() { e.ports[0].postMessage(''); }, 250);
+  y(); 
+  
+  
+  
+  
+}
