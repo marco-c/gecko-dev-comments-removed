@@ -23,8 +23,7 @@ def test_usage_with_invalid_data_returns_zero():
     with mock.patch('mozdevice.adb.ADBDevice') as device:
         with mock.patch('raptor.raptor.RaptorControlServer') as control_server:
             
-            device.shell_output.return_value = 'geckoview'
-            device.version = 8
+            device.shell_output.side_effect = ['8.0.0', 'geckoview']
             device._verbose = True
 
             
@@ -55,10 +54,10 @@ def test_usage_with_output():
         with mock.patch('raptor.raptor.RaptorControlServer') as control_server:
             
             filepath = os.path.abspath(os.path.dirname(__file__)) + '/files/'
-            f = open(filepath + 'top-info.txt', 'r')
-            device.shell_output.return_value = f.read()
+            with open(filepath + 'top-info.txt', 'r') as f:
+                test_data = f.read()
+            device.shell_output.side_effect = ['8.0.0', test_data]
             device._verbose = True
-            device.version = 8
 
             
             control_server.cpu_test = True
@@ -88,13 +87,13 @@ def test_usage_with_output():
 def test_usage_with_fallback():
     with mock.patch('mozdevice.adb.ADBDevice') as device:
         with mock.patch('raptor.raptor.RaptorControlServer') as control_server:
-            
-            device.version = 7
             device._verbose = True
 
             
             shell_output = ' 34% 14781/org.mozilla.geckoview_example: 26% user + 7.5% kernel'
-            device.shell_output.return_value = shell_output
+
+            
+            device.shell_output.side_effect = ['7.0.0', shell_output]
 
             
             control_server.cpu_test = True
