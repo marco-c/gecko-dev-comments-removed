@@ -534,6 +534,12 @@ int nr_ice_peer_ctx_start_checks2(nr_ice_peer_ctx *pctx, int allow_non_first)
     int started = 0;
 
     
+    if(pctx->trickle_grace_period_timer) {
+      NR_async_timer_cancel(pctx->trickle_grace_period_timer);
+      pctx->trickle_grace_period_timer=0;
+    }
+
+    
     pctx->reported_connected = 0;
     NR_async_timer_cancel(pctx->connected_cb_timer);
     pctx->connected_cb_timer = 0;
@@ -736,6 +742,12 @@ void nr_ice_peer_ctx_check_if_connected(nr_ice_peer_ctx *pctx)
 
     
     r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s): all checks completed success=%d fail=%d",pctx->label,succeeded,failed);
+
+    
+    if(pctx->trickle_grace_period_timer) {
+      NR_async_timer_cancel(pctx->trickle_grace_period_timer);
+      pctx->trickle_grace_period_timer=0;
+    }
 
     
 
