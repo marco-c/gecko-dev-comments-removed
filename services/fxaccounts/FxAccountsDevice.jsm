@@ -35,19 +35,19 @@ const PREF_DEPRECATED_DEVICE_NAME = "services.sync.client.name";
 
 
 class FxAccountsDevice {
-  constructor(fxa) {
-    this._fxa = fxa;
+  constructor(fxai) {
+    this._fxai = fxai;
   }
 
   async getLocalId() {
-    let data = await this._fxa.currentAccountState.getUserAccountData();
+    let data = await this._fxai.currentAccountState.getUserAccountData();
     if (!data) {
       
       return null;
     }
     const { device } = data;
-    if (await this._fxa.checkDeviceUpdateNeeded(device)) {
-      return this._fxa._registerOrUpdateDevice(data);
+    if (await this._fxai.checkDeviceUpdateNeeded(device)) {
+      return this._fxai._registerOrUpdateDevice(data);
     }
     
     return device.id;
@@ -137,7 +137,7 @@ class FxAccountsDevice {
     Services.prefs.clearUserPref(PREF_DEPRECATED_DEVICE_NAME);
     Services.prefs.setStringPref(PREF_LOCAL_DEVICE_NAME, newName);
     
-    this._fxa.updateDeviceRegistration().catch(error => {
+    this._fxai.updateDeviceRegistration().catch(error => {
       log.warn("failed to update fxa device registration", error);
     });
   }

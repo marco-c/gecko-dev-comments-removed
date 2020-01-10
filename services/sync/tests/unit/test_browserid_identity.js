@@ -63,13 +63,13 @@ function MockFxAccounts() {
 
     fxAccountsClient: new MockFxAccountsClient(),
   });
-  fxa.internal.currentAccountState.getCertificate = function(
+  fxa._internal.currentAccountState.getCertificate = function(
     data,
     keyPair,
     mustBeValidUntil
   ) {
     this.cert = {
-      validUntil: fxa.internal.now() + CERT_LIFETIME,
+      validUntil: fxa._internal.now() + CERT_LIFETIME,
       cert: "certificate",
     };
     return Promise.resolve(this.cert.cert);
@@ -104,7 +104,7 @@ add_task(async function test_initialializeWithAuthErrorAndDeletedAccount() {
   delete fxaInternal._getAssertion;
 
   configureFxAccountIdentity(browseridManager, identityConfig, fxaInternal);
-  browseridManager._fxaService.internal.initialize();
+  browseridManager._fxaService._internal.initialize();
 
   let signCertificateCalled = false;
   let accountStatusCalled = false;
@@ -128,7 +128,7 @@ add_task(async function test_initialializeWithAuthErrorAndDeletedAccount() {
   };
 
   let mockFxAClient = new AuthErrorMockFxAClient();
-  browseridManager._fxaService.internal._fxAccountsClient = mockFxAClient;
+  browseridManager._fxaService._internal._fxAccountsClient = mockFxAClient;
 
   await Assert.rejects(
     browseridManager._ensureValidToken(),
@@ -211,15 +211,15 @@ add_task(async function test_resourceAuthenticatorSkew() {
     fxaInternal
   );
 
-  Assert.equal(browseridManager._fxaService.internal.now(), now);
+  Assert.equal(browseridManager._fxaService._internal.now(), now);
   Assert.equal(
-    browseridManager._fxaService.internal.localtimeOffsetMsec,
+    browseridManager._fxaService._internal.localtimeOffsetMsec,
     localtimeOffsetMsec
   );
 
-  Assert.equal(browseridManager._fxaService.now(), now);
+  Assert.equal(browseridManager._fxaService._internal.now(), now);
   Assert.equal(
-    browseridManager._fxaService.localtimeOffsetMsec,
+    browseridManager._fxaService._internal.localtimeOffsetMsec,
     localtimeOffsetMsec
   );
 
@@ -269,7 +269,7 @@ add_task(async function test_RESTResourceAuthenticatorSkew() {
     fxaInternal
   );
 
-  Assert.equal(browseridManager._fxaService.internal.now(), now);
+  Assert.equal(browseridManager._fxaService._internal.now(), now);
 
   let request = new Resource("https://example.net/i/like/pie/");
   let authenticator = browseridManager.getResourceAuthenticator();
@@ -293,15 +293,15 @@ add_task(async function test_ensureLoggedIn() {
   
   let fxa = globalBrowseridManager._fxaService;
   let signedInUser =
-    fxa.internal.currentAccountState.storageManager.accountData;
-  fxa.internal.currentAccountState.storageManager.accountData = null;
+    fxa._internal.currentAccountState.storageManager.accountData;
+  fxa._internal.currentAccountState.storageManager.accountData = null;
   await Assert.rejects(
     globalBrowseridManager._ensureValidToken(true),
     /Can't possibly get keys; User is not signed in/,
     "expecting rejection due to no user"
   );
   
-  fxa.internal.currentAccountState.storageManager.accountData = signedInUser;
+  fxa._internal.currentAccountState.storageManager.accountData = signedInUser;
   Status.login = LOGIN_FAILED_LOGIN_REJECTED;
   await globalBrowseridManager._ensureValidToken();
   Assert.equal(Status.login, LOGIN_SUCCEEDED, "final ensureLoggedIn worked");
@@ -321,8 +321,8 @@ add_task(async function test_syncState() {
   
   let fxa = globalBrowseridManager._fxaService;
   let signedInUser =
-    fxa.internal.currentAccountState.storageManager.accountData;
-  fxa.internal.currentAccountState.storageManager.accountData = null;
+    fxa._internal.currentAccountState.storageManager.accountData;
+  fxa._internal.currentAccountState.storageManager.accountData = null;
   await Assert.rejects(
     globalBrowseridManager._ensureValidToken(true),
     /Can't possibly get keys; User is not signed in/,
@@ -330,7 +330,7 @@ add_task(async function test_syncState() {
   );
   
   signedInUser.verified = false;
-  fxa.internal.currentAccountState.storageManager.accountData = signedInUser;
+  fxa._internal.currentAccountState.storageManager.accountData = signedInUser;
   Status.login = LOGIN_FAILED_LOGIN_REJECTED;
   
   await globalBrowseridManager.observe(null, ONLOGIN_NOTIFICATION, "");
@@ -428,7 +428,7 @@ add_task(async function test_refreshCertificateOn401() {
   let fxaInternal = makeFxAccountsInternalMock(identityConfig);
   delete fxaInternal._getAssertion;
   configureFxAccountIdentity(browseridManager, identityConfig, fxaInternal);
-  browseridManager._fxaService.internal.initialize();
+  browseridManager._fxaService._internal.initialize();
 
   let getCertCount = 0;
 
@@ -443,7 +443,7 @@ add_task(async function test_refreshCertificateOn401() {
   };
 
   let mockFxAClient = new CheckSignMockFxAClient();
-  browseridManager._fxaService.internal._fxAccountsClient = mockFxAClient;
+  browseridManager._fxaService._internal._fxAccountsClient = mockFxAClient;
 
   let didReturn401 = false;
   let didReturn200 = false;
@@ -735,9 +735,6 @@ add_task(async function test_getKeysMissing() {
 
   
   let fxa = new FxAccounts({
-    fetchAndUnwrapKeys() {
-      return Promise.resolve({});
-    },
     fxAccountsClient: new MockFxAccountsClient(),
     newAccountState(credentials) {
       
@@ -749,16 +746,22 @@ add_task(async function test_getKeysMissing() {
       storageManager.initialize(identityConfig.fxaccount.user);
       return new AccountState(storageManager);
     },
+    
+    keys: {
+      fetchAndUnwrapKeys() {
+        return Promise.resolve({});
+      },
+    },
   });
 
   
-  fxa.internal.currentAccountState.getCertificate = function(
+  fxa._internal.currentAccountState.getCertificate = function(
     data,
     keyPair,
     mustBeValidUntil
   ) {
     this.cert = {
-      validUntil: fxa.internal.now() + CERT_LIFETIME,
+      validUntil: fxa._internal.now() + CERT_LIFETIME,
       cert: "certificate",
     };
     return Promise.resolve(this.cert.cert);

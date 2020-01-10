@@ -566,14 +566,19 @@ add_task(async function test_autoconnect_mp_locked() {
   };
   let origFxA = Service.identity._fxaService;
   Service.identity._fxaService = new FxAccounts({
-    canGetKeys() {
-      return false;
+    currentAccountState: {
+      getUserAccountData(...args) {
+        return origFxA._internal.currentAccountState.getUserAccountData(
+          ...args
+        );
+      },
     },
-    getSignedInUser() {
-      return origFxA.getSignedInUser();
+    keys: {
+      canGetKeys() {
+        return false;
+      },
     },
   });
-
   
   
   let promiseObserved = promiseOneObserver("weave:service:login:error");

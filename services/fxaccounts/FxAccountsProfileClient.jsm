@@ -52,7 +52,7 @@ var FxAccountsProfileClient = function(options) {
     throw new Error("Missing 'serverURL' configuration option");
   }
 
-  this.fxa = options.fxa || fxAccounts;
+  this.fxai = options.fxai || fxAccounts._internal;
   
   
   
@@ -102,7 +102,7 @@ this.FxAccountsProfileClient.prototype = {
     let token = this.token;
     if (!token) {
       
-      token = await this.fxa.getOAuthToken(this.oauthOptions);
+      token = await this.fxai.getOAuthToken(this.oauthOptions);
     }
     try {
       return await this._rawRequest(path, method, token, etag);
@@ -118,8 +118,8 @@ this.FxAccountsProfileClient.prototype = {
       log.info(
         "Fetching the profile returned a 401 - revoking our token and retrying"
       );
-      await this.fxa.removeCachedOAuthToken({ token });
-      token = await this.fxa.getOAuthToken(this.oauthOptions);
+      await this.fxai.removeCachedOAuthToken({ token });
+      token = await this.fxai.getOAuthToken(this.oauthOptions);
       
       
       try {
@@ -131,7 +131,7 @@ this.FxAccountsProfileClient.prototype = {
         log.info(
           "Retry fetching the profile still returned a 401 - revoking our token and failing"
         );
-        await this.fxa.removeCachedOAuthToken({ token });
+        await this.fxai.removeCachedOAuthToken({ token });
         throw ex;
       }
     }

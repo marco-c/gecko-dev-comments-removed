@@ -50,7 +50,7 @@ let mockResponse = function(response) {
 
 
 
-let mockFxa = {
+let mockFxaInternal = {
   getOAuthToken(options) {
     Assert.equal(options.scope, "profile");
     return "token";
@@ -59,7 +59,7 @@ let mockFxa = {
 
 const PROFILE_OPTIONS = {
   serverURL: "http://127.0.0.1:1111/v1",
-  fxa: mockFxa,
+  fxai: mockFxaInternal,
 };
 
 
@@ -201,7 +201,7 @@ add_test(function server401ResponseThenSuccess() {
   };
   let profileOptions = {
     serverURL: "http://127.0.0.1:1111/v1",
-    fxa: mockFxaWithRemove,
+    fxai: mockFxaWithRemove,
   };
   let client = new FxAccountsProfileClient(profileOptions);
 
@@ -275,7 +275,7 @@ add_test(function server401ResponsePersists() {
   };
   let profileOptions = {
     serverURL: "http://127.0.0.1:1111/v1",
-    fxa: mockFxaWithRemove,
+    fxai: mockFxaWithRemove,
   };
   let client = new FxAccountsProfileClient(profileOptions);
 
@@ -320,7 +320,7 @@ add_test(function server401ResponsePersists() {
 add_test(function networkErrorResponse() {
   let client = new FxAccountsProfileClient({
     serverURL: "http://domain.dummy",
-    fxa: mockFxa,
+    fxai: mockFxaInternal,
   });
   client.fetchProfile().catch(function(e) {
     Assert.equal(e.name, "FxAccountsProfileClientError");
@@ -415,7 +415,7 @@ add_test(function errorTests() {
 function validationHelper(options, expected) {
   
   if (options) {
-    options.fxa = mockFxa;
+    options.fxai = mockFxaInternal;
   }
   try {
     new FxAccountsProfileClient(options);

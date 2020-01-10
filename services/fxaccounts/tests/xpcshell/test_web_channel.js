@@ -369,22 +369,24 @@ add_test(function test_helpers_should_allow_relink_different_email() {
 add_task(async function test_helpers_login_without_customize_sync() {
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
-      setSignedInUser(accountData) {
-        return new Promise(resolve => {
-          
-          Assert.equal(accountData.email, "testuser@testuser.com");
+      _internal: {
+        setSignedInUser(accountData) {
+          return new Promise(resolve => {
+            
+            Assert.equal(accountData.email, "testuser@testuser.com");
 
-          
-          Assert.equal(false, "verifiedCanLinkAccount" in accountData);
+            
+            Assert.equal(false, "verifiedCanLinkAccount" in accountData);
 
-          
-          Assert.equal(
-            helpers.getPreviousAccountNameHashPref(),
-            CryptoUtils.sha256Base64("testuser@testuser.com")
-          );
+            
+            Assert.equal(
+              helpers.getPreviousAccountNameHashPref(),
+              CryptoUtils.sha256Base64("testuser@testuser.com")
+            );
 
-          resolve();
-        });
+            resolve();
+          });
+        },
       },
     },
   });
@@ -402,16 +404,18 @@ add_task(async function test_helpers_login_without_customize_sync() {
 add_task(async function test_helpers_login_with_customize_sync() {
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
-      setSignedInUser(accountData) {
-        return new Promise(resolve => {
-          
-          Assert.equal(accountData.email, "testuser@testuser.com");
+      _internal: {
+        setSignedInUser(accountData) {
+          return new Promise(resolve => {
+            
+            Assert.equal(accountData.email, "testuser@testuser.com");
 
-          
-          Assert.equal(false, "customizeSync" in accountData);
+            
+            Assert.equal(false, "customizeSync" in accountData);
 
-          resolve();
-        });
+            resolve();
+          });
+        },
       },
     },
   });
@@ -427,41 +431,42 @@ add_task(
   async function test_helpers_login_with_customize_sync_and_declined_engines() {
     let helpers = new FxAccountsWebChannelHelpers({
       fxAccounts: {
-        setSignedInUser(accountData) {
-          return new Promise(resolve => {
-            
-            Assert.equal(accountData.email, "testuser@testuser.com");
+        _internal: {
+          setSignedInUser(accountData) {
+            return new Promise(resolve => {
+              
+              Assert.equal(accountData.email, "testuser@testuser.com");
 
-            
-            Assert.equal(false, "customizeSync" in accountData);
-            Assert.equal(false, "declinedSyncEngines" in accountData);
-            Assert.equal(
-              Services.prefs.getBoolPref("services.sync.engine.addons"),
-              false
-            );
-            Assert.equal(
-              Services.prefs.getBoolPref("services.sync.engine.bookmarks"),
-              true
-            );
-            Assert.equal(
-              Services.prefs.getBoolPref("services.sync.engine.history"),
-              true
-            );
-            Assert.equal(
-              Services.prefs.getBoolPref("services.sync.engine.passwords"),
-              true
-            );
-            Assert.equal(
-              Services.prefs.getBoolPref("services.sync.engine.prefs"),
-              false
-            );
-            Assert.equal(
-              Services.prefs.getBoolPref("services.sync.engine.tabs"),
-              true
-            );
-
-            resolve();
-          });
+              
+              Assert.equal(false, "customizeSync" in accountData);
+              Assert.equal(false, "declinedSyncEngines" in accountData);
+              Assert.equal(
+                Services.prefs.getBoolPref("services.sync.engine.addons"),
+                false
+              );
+              Assert.equal(
+                Services.prefs.getBoolPref("services.sync.engine.bookmarks"),
+                true
+              );
+              Assert.equal(
+                Services.prefs.getBoolPref("services.sync.engine.history"),
+                true
+              );
+              Assert.equal(
+                Services.prefs.getBoolPref("services.sync.engine.passwords"),
+                true
+              );
+              Assert.equal(
+                Services.prefs.getBoolPref("services.sync.engine.prefs"),
+                false
+              );
+              Assert.equal(
+                Services.prefs.getBoolPref("services.sync.engine.tabs"),
+                true
+              );
+              resolve();
+            });
+          },
         },
       },
     });
@@ -501,8 +506,10 @@ add_task(async function test_helpers_login_with_offered_sync_engines() {
   const setSignedInUserCalled = new Promise(resolve => {
     helpers = new FxAccountsWebChannelHelpers({
       fxAccounts: {
-        async setSignedInUser(accountData) {
-          resolve(accountData);
+        _internal: {
+          async setSignedInUser(accountData) {
+            resolve(accountData);
+          },
         },
       },
     });
@@ -907,25 +914,27 @@ add_task(async function test_helpers_change_password() {
   };
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
-      updateUserAccountData(credentials) {
-        return new Promise(resolve => {
-          Assert.ok(credentials.hasOwnProperty("email"));
-          Assert.ok(credentials.hasOwnProperty("uid"));
-          Assert.ok(credentials.hasOwnProperty("unwrapBKey"));
-          Assert.ok(credentials.hasOwnProperty("device"));
-          Assert.equal(null, credentials.device);
-          
-          Assert.ok(!credentials.hasOwnProperty("foo"));
-          wasCalled.updateUserAccountData = true;
+      _internal: {
+        updateUserAccountData(credentials) {
+          return new Promise(resolve => {
+            Assert.ok(credentials.hasOwnProperty("email"));
+            Assert.ok(credentials.hasOwnProperty("uid"));
+            Assert.ok(credentials.hasOwnProperty("unwrapBKey"));
+            Assert.ok(credentials.hasOwnProperty("device"));
+            Assert.equal(null, credentials.device);
+            
+            Assert.ok(!credentials.hasOwnProperty("foo"));
+            wasCalled.updateUserAccountData = true;
 
-          resolve();
-        });
-      },
+            resolve();
+          });
+        },
 
-      updateDeviceRegistration() {
-        Assert.equal(arguments.length, 0);
-        wasCalled.updateDeviceRegistration = true;
-        return Promise.resolve();
+        updateDeviceRegistration() {
+          Assert.equal(arguments.length, 0);
+          wasCalled.updateDeviceRegistration = true;
+          return Promise.resolve();
+        },
       },
     },
   });
@@ -946,14 +955,16 @@ add_task(async function test_helpers_change_password_with_error() {
   };
   let helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
-      updateUserAccountData() {
-        wasCalled.updateUserAccountData = true;
-        return Promise.reject();
-      },
+      _internal: {
+        updateUserAccountData() {
+          wasCalled.updateUserAccountData = true;
+          return Promise.reject();
+        },
 
-      updateDeviceRegistration() {
-        wasCalled.updateDeviceRegistration = true;
-        return Promise.resolve();
+        updateDeviceRegistration() {
+          wasCalled.updateDeviceRegistration = true;
+          return Promise.resolve();
+        },
       },
     },
   });

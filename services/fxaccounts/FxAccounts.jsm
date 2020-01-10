@@ -27,7 +27,6 @@ const {
   ASSERTION_USE_PERIOD,
   CERT_LIFETIME,
   COMMAND_SENDTAB,
-  DERIVED_KEYS_NAMES,
   ERRNO_DEVICE_SESSION_CONFLICT,
   ERRNO_INVALID_AUTH_TOKEN,
   ERRNO_UNKNOWN_DEVICE,
@@ -53,7 +52,6 @@ const {
   PREF_ACCOUNT_ROOT,
   PREF_LAST_FXA_USER,
   SERVER_ERRNO_TO_ERROR,
-  SCOPE_OLD_SYNC,
   log,
   logPII,
 } = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
@@ -96,6 +94,12 @@ ChromeUtils.defineModuleGetter(
 
 ChromeUtils.defineModuleGetter(
   this,
+  "FxAccountsKeys",
+  "resource://gre/modules/FxAccountsKeys.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
   "FxAccountsProfile",
   "resource://gre/modules/FxAccountsProfile.jsm"
 );
@@ -111,45 +115,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true
 );
 
-
-var publicProperties = [
-  "_withCurrentAccountState", 
-  "accountStatus",
-  "canGetKeys",
-  "checkVerificationStatus",
-  "commands",
-  "device",
-  "getAccountsClient",
-  "getAssertion",
-  "getDeviceList",
-  "getKeys",
-  "authorizeOAuthCode",
-  "getOAuthToken",
-  "getProfileCache",
-  "getPushSubscription",
-  "getScopedKeys",
-  "getSignedInUser",
-  "getSignedInUserProfile",
-  "handleAccountDestroyed",
-  "handleDeviceDisconnection",
-  "handleEmailUpdated",
-  "hasLocalSession",
-  "invalidateCertificate",
-  "loadAndPoll",
-  "localtimeOffsetMsec",
-  "notifyDevices",
-  "now",
-  "removeCachedOAuthToken",
-  "resendVerificationEmail",
-  "resetCredentials",
-  "sessionStatus",
-  "setProfileCache",
-  "setSignedInUser",
-  "signOut",
-  "updateDeviceRegistration",
-  "updateUserAccountData",
-  "whenVerified",
-];
 
 
 
@@ -268,8 +233,8 @@ AccountState.prototype = {
     
     if (!this.isCurrent) {
       log.info(
-        "An accountState promise was rejected, but we are ignoring that" +
-          "reason and rejecting it due to a different user being signed in." +
+        "An accountState promise was rejected, but we are ignoring that " +
+          "reason and rejecting it due to a different user being signed in. " +
           "Originally rejected with",
         error
       );
@@ -402,75 +367,377 @@ function urlsafeBase64Encode(key) {
 
 
 
-var FxAccounts = function(mockInternal) {
-  let external = {};
-  let internal;
 
-  if (!mockInternal) {
-    internal = new FxAccountsInternal();
-    copyObjectProperties(
-      FxAccountsInternal.prototype,
-      external,
-      internal,
-      publicProperties
-    );
-  } else {
-    internal = Object.create(
-      FxAccountsInternal.prototype,
-      Object.getOwnPropertyDescriptors(mockInternal)
-    );
-    copyObjectProperties(internal, external, internal, publicProperties);
+
+
+
+
+class FxAccounts {
+  constructor(mocks = null) {
+    this._internal = new FxAccountsInternal();
+    if (mocks) {
+      
+      
+      
+      
+      copyObjectProperties(
+        mocks,
+        this._internal,
+        this._internal,
+        Object.keys(mocks)
+      );
+    }
+    this._internal.initialize();
     
-    external.internal = internal;
+    if (mocks) {
+      for (let subobject of ["currentAccountState", "keys", "fxaPushService"]) {
+        if (typeof mocks[subobject] == "object") {
+          copyObjectProperties(
+            mocks[subobject],
+            this._internal[subobject],
+            this._internal[subobject],
+            Object.keys(mocks[subobject])
+          );
+        }
+      }
+    }
   }
 
-  if (!internal.fxaPushService) {
-    
-    
-    XPCOMUtils.defineLazyGetter(internal, "fxaPushService", function() {
-      return Cc["@mozilla.org/fxaccounts/push;1"].getService(
-        Ci.nsISupports
-      ).wrappedJSObject;
+  get commands() {
+    return this._internal.commands;
+  }
+
+  static get config() {
+    return FxAccountsConfig;
+  }
+
+  get device() {
+    return this._internal.device;
+  }
+
+  get keys() {
+    return this._internal.keys;
+  }
+
+  _withCurrentAccountState(func) {
+    return this._internal.withCurrentAccountState(func);
+  }
+
+  _withVerifiedAccountState(func) {
+    return this._internal.withVerifiedAccountState(func);
+  }
+
+  getDeviceList() {
+    return this._internal.getDeviceList();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  authorizeOAuthCode(options) {
+    return this._withVerifiedAccountState(async state => {
+      const client = this._internal.oauthClient;
+      const oAuthURL = client.serverURL.href;
+      const params = { ...options };
+      if (params.keys_jwk) {
+        const jwk = JSON.parse(
+          new TextDecoder().decode(
+            ChromeUtils.base64URLDecode(params.keys_jwk, { padding: "reject" })
+          )
+        );
+        params.keys_jwe = await this._internal.createKeysJWE(
+          params.client_id,
+          params.scope,
+          jwk
+        );
+        delete params.keys_jwk;
+      }
+      try {
+        const assertion = await this._internal.getAssertion(oAuthURL);
+        return await client.authorizeCodeFromAssertion(assertion, params);
+      } catch (err) {
+        throw this._internal._errorToErrorClass(err);
+      }
     });
   }
 
-  if (!internal.observerPreloads) {
-    
-    
-    
-    
-    internal.observerPreloads = [
-      
-      () => {
-        let scope = {};
-        ChromeUtils.import("resource://services-sync/main.js", scope);
-        return scope.Weave.Service.promiseInitialized;
-      },
-    ];
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getOAuthToken(options = {}) {
+    return this._internal.getOAuthToken(options);
   }
 
   
-  internal.initialize();
-
-  return Object.freeze(external);
-};
-this.FxAccounts.config = FxAccountsConfig;
 
 
 
 
-function FxAccountsInternal() {
+
+
+
+
+
+
+
+  removeCachedOAuthToken(options) {
+    return this._internal.removeCachedOAuthToken(options);
+  }
+
   
-  this.POLL_SESSION = POLL_SESSION;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   
   
+  getSignedInUser() {
+    return this._withCurrentAccountState(async currentState => {
+      const data = await currentState.getUserAccountData();
+      if (!data) {
+        return null;
+      }
+      if (!FXA_ENABLED) {
+        await this.signOut();
+        return null;
+      }
+      if (this._internal.isUserEmailVerified(data)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        if (
+          !Services.prefs.prefHasUserValue("services.sync.username") &&
+          data.email
+        ) {
+          Services.prefs.setStringPref("services.sync.username", data.email);
+        }
+      } else {
+        
+        
+        
+        this._internal.startVerifiedCheck(data);
+      }
+      return data;
+    });
+  }
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getSignedInUserProfile() {
+    return this._withCurrentAccountState(async currentState => {
+      try {
+        let profileData = await this._internal.profile.getProfile();
+        let profile = Cu.cloneInto(profileData, {});
+        return profile;
+      } catch (error) {
+        log.error("Could not retrieve profile data", error);
+        throw this._internal._errorToErrorClass(error);
+      }
+    });
+  }
+
+  
+
+
+  
+  
+  
+  accountStatus() {
+    return this._withCurrentAccountState(async state => {
+      let data = await state.getUserAccountData();
+      if (!data) {
+        return false;
+      }
+      return this._internal.fxAccountsClient.accountStatus(data.uid);
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async hasLocalSession() {
+    let data = await this.getSignedInUser();
+    return data && data.sessionToken;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  sessionStatus() {
+    return this._withCurrentAccountState(async currentState => {
+      return this._internal.sessionStatus(currentState);
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  notifyDevices(deviceIds, excludedIds, payload, TTL) {
+    return this._internal.notifyDevices(deviceIds, excludedIds, payload, TTL);
+  }
+
+  
+
+
+
+  resendVerificationEmail() {
+    return this._withCurrentAccountState(currentState => {
+      return currentState.getUserAccountData().then(data => {
+        
+        
+        
+        if (data) {
+          if (!data.sessionToken) {
+            return Promise.reject(
+              new Error(
+                "resendVerificationEmail called without a session token"
+              )
+            );
+          }
+          this._internal.startPollEmailStatus(
+            currentState,
+            data.sessionToken,
+            "start"
+          );
+          return this._internal.fxAccountsClient
+            .resendVerificationEmail(data.sessionToken)
+            .catch(err => this._internal._handleTokenError(err));
+        }
+        throw new Error("Cannot resend verification email; no signed-in user");
+      });
+    });
+  }
+
+  async signOut(localOnly) {
+    
+    
+    
+    return this._internal.signOut(localOnly);
+  }
+
+  
+  
+  
+  updateDeviceRegistration() {
+    return this._withCurrentAccountState(_ => {
+      return this._internal.updateDeviceRegistration();
+    });
+  }
+
+  
+  whenVerified(data) {
+    return this._withCurrentAccountState(_ => {
+      return this._internal.whenVerified(data);
+    });
+  }
 }
+
+var FxAccountsInternal = function() {};
 
 
 
 
 FxAccountsInternal.prototype = {
+  
+  POLL_SESSION,
+
   
   
   
@@ -489,8 +756,61 @@ FxAccountsInternal.prototype = {
   
   
   initialize() {
+    XPCOMUtils.defineLazyGetter(this, "fxaPushService", function() {
+      return Cc["@mozilla.org/fxaccounts/push;1"].getService(
+        Ci.nsISupports
+      ).wrappedJSObject;
+    });
+
+    this.keys = new FxAccountsKeys(this);
+
+    if (!this.observerPreloads) {
+      
+      
+      
+      
+      this.observerPreloads = [
+        
+        () => {
+          let scope = {};
+          ChromeUtils.import("resource://services-sync/main.js", scope);
+          return scope.Weave.Service.promiseInitialized;
+        },
+      ];
+    }
+
     this.currentTimer = null;
+    
+    
+    
     this.currentAccountState = this.newAccountState();
+  },
+
+  async withCurrentAccountState(func) {
+    const state = this.currentAccountState;
+    let result;
+    try {
+      result = await func(state);
+    } catch (ex) {
+      return state.reject(ex);
+    }
+    return state.resolve(result);
+  },
+
+  async withVerifiedAccountState(func) {
+    return this.withCurrentAccountState(async state => {
+      let data = await state.getUserAccountData();
+      if (!data) {
+        
+        throw this._error(ERROR_NO_ACCOUNT);
+      }
+
+      if (!this.isUserEmailVerified(data)) {
+        
+        throw this._error(ERROR_UNVERIFIED_ACCOUNT);
+      }
+      return func(state);
+    });
   },
 
   get fxAccountsClient() {
@@ -552,27 +872,6 @@ FxAccountsInternal.prototype = {
     return new AccountState(storage);
   },
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  _withCurrentAccountState(func) {
-    const state = this.currentAccountState;
-    const getUserData = fields => state.getUserAccountData(fields);
-    const updateUserData = data => state.updateUserAccountData(data);
-    return func(getUserData, updateUserData);
-  },
-
-  
-
-
-
-
   notifyDevices(deviceIds, excludedIds, payload, TTL) {
     if (typeof deviceIds == "string") {
       deviceIds = [deviceIds];
@@ -605,10 +904,6 @@ FxAccountsInternal.prototype = {
     return this.fxAccountsClient.now();
   },
 
-  getAccountsClient() {
-    return this.fxAccountsClient;
-  },
-
   
 
 
@@ -619,6 +914,14 @@ FxAccountsInternal.prototype = {
 
   get localtimeOffsetMsec() {
     return this.fxAccountsClient.localtimeOffsetMsec;
+  },
+
+  async sessionStatus(currentState) {
+    let data = await currentState.getUserAccountData();
+    if (!data.sessionToken) {
+      throw new Error("sessionStatus called without a session token");
+    }
+    return this.fxAccountsClient.sessionStatus(data.sessionToken);
   },
 
   
@@ -636,16 +939,6 @@ FxAccountsInternal.prototype = {
   },
 
   
-
-
-  fetchKeys: function fetchKeys(keyFetchToken) {
-    log.debug("fetchKeys: " + !!keyFetchToken);
-    if (logPII) {
-      log.debug("fetchKeys - the token is " + keyFetchToken);
-    }
-    return this.fxAccountsClient.accountKeys(keyFetchToken);
-  },
-
   
   
   
@@ -656,60 +949,6 @@ FxAccountsInternal.prototype = {
   
   
   
-  
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async getSignedInUser() {
-    let currentState = this.currentAccountState;
-    const data = await currentState.getUserAccountData();
-    if (!data) {
-      return currentState.resolve(null);
-    }
-    if (!FXA_ENABLED) {
-      await this.signOut();
-      return currentState.resolve(null);
-    }
-    if (this.isUserEmailVerified(data)) {
-      
-      
-      
-      
-      
-      
-      
-      
-      if (
-        !Services.prefs.prefHasUserValue("services.sync.username") &&
-        data.email
-      ) {
-        Services.prefs.setStringPref("services.sync.username", data.email);
-      }
-    } else {
-      
-      
-      
-      this.startVerifiedCheck(data);
-    }
-    return currentState.resolve(data);
-  },
 
   
 
@@ -738,7 +977,7 @@ FxAccountsInternal.prototype = {
     }
     Preferences.resetBranch(PREF_ACCOUNT_ROOT);
     log.debug("setSignedInUser - aborting any existing flows");
-    const signedInUser = await this.getSignedInUser();
+    const signedInUser = await this.currentAccountState.getUserAccountData();
     if (signedInUser) {
       await this._signOutServer(
         signedInUser.sessionToken,
@@ -847,14 +1086,6 @@ FxAccountsInternal.prototype = {
       .then(result => currentState.resolve(result));
   },
 
-  
-
-
-
-  invalidateCertificate() {
-    return this.currentAccountState.updateUserAccountData({ cert: null });
-  },
-
   async checkDeviceUpdateNeeded(device) {
     
     
@@ -874,44 +1105,21 @@ FxAccountsInternal.prototype = {
     );
   },
 
-  async getDeviceList() {
-    const accountData = await this._getVerifiedAccountOrReject();
-    const devices = await this.fxAccountsClient.getDeviceList(
-      accountData.sessionToken
-    );
+  getDeviceList() {
+    return this.withVerifiedAccountState(async state => {
+      let accountData = await state.getUserAccountData();
 
-    
-    const ourDevice = devices.find(device => device.isCurrentDevice);
-    if (ourDevice.pushEndpointExpired) {
-      await this.fxaPushService.unsubscribe();
-      await this._registerOrUpdateDevice(accountData);
-    }
+      const devices = await this.fxAccountsClient.getDeviceList(
+        accountData.sessionToken
+      );
 
-    return devices;
-  },
-
-  
-
-
-
-  resendVerificationEmail: function resendVerificationEmail() {
-    let currentState = this.currentAccountState;
-    return this.getSignedInUser().then(data => {
       
-      
-      
-      if (data) {
-        if (!data.sessionToken) {
-          return Promise.reject(
-            new Error("resendVerificationEmail called without a session token")
-          );
-        }
-        this.startPollEmailStatus(currentState, data.sessionToken, "start");
-        return this.fxAccountsClient
-          .resendVerificationEmail(data.sessionToken)
-          .catch(err => this._handleTokenError(err));
+      const ourDevice = devices.find(device => device.isCurrentDevice);
+      if (ourDevice.pushEndpointExpired) {
+        await this.fxaPushService.unsubscribe();
+        await this._registerOrUpdateDevice(accountData);
       }
-      throw new Error("Cannot resend verification email; no signed-in user");
+      return devices;
     });
   },
 
@@ -945,21 +1153,20 @@ FxAccountsInternal.prototype = {
     });
   },
 
-  checkVerificationStatus() {
+  async checkVerificationStatus() {
     log.trace("checkVerificationStatus");
-    let currentState = this.currentAccountState;
-    return currentState.getUserAccountData().then(data => {
-      if (!data) {
-        log.trace("checkVerificationStatus - no user data");
-        return null;
-      }
+    let state = this.currentAccountState;
+    let data = await state.getUserAccountData();
+    if (!data) {
+      log.trace("checkVerificationStatus - no user data");
+      return null;
+    }
 
-      
-      
-      
-      log.trace("checkVerificationStatus - forcing verification status check");
-      return this.startPollEmailStatus(currentState, data.sessionToken, "push");
-    });
+    
+    
+    
+    log.trace("checkVerificationStatus - forcing verification status check");
+    return this.startPollEmailStatus(state, data.sessionToken, "push");
   },
 
   _destroyOAuthToken(tokenData) {
@@ -1040,264 +1247,6 @@ FxAccountsInternal.prototype = {
     } catch (err) {
       log.error("Error during destruction of oauth tokens during signout", err);
     }
-  },
-
-  
-
-
-
-
-
-  sessionStatus() {
-    return this.getSignedInUser().then(data => {
-      if (!data.sessionToken) {
-        return Promise.reject(
-          new Error("sessionStatus called without a session token")
-        );
-      }
-      return this.fxAccountsClient.sessionStatus(data.sessionToken);
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async hasLocalSession() {
-    let data = await this.getSignedInUser();
-    return data && data.sessionToken;
-  },
-
-  
-
-
-
-  async canGetKeys() {
-    let currentState = this.currentAccountState;
-    let userData = await currentState.getUserAccountData();
-    if (!userData) {
-      throw new Error("Can't possibly get keys; User is not signed in");
-    }
-    
-    
-    
-    return (
-      userData &&
-      (userData.keyFetchToken ||
-        DERIVED_KEYS_NAMES.every(k => userData[k]) ||
-        userData.kB)
-    );
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async getKeys() {
-    let currentState = this.currentAccountState;
-    try {
-      let userData = await currentState.getUserAccountData();
-      if (!userData) {
-        throw new Error("Can't get keys; User is not signed in");
-      }
-      if (userData.kB) {
-        
-        log.info("Migrating kB to derived keys.");
-        const { uid, kB } = userData;
-        await this.updateUserAccountData({
-          uid,
-          ...(await this._deriveKeys(uid, CommonUtils.hexToBytes(kB))),
-          kA: null, 
-          kB: null,
-        });
-        userData = await this.getUserAccountData();
-      }
-      if (DERIVED_KEYS_NAMES.every(k => userData[k])) {
-        return currentState.resolve(userData);
-      }
-      if (!currentState.whenKeysReadyDeferred) {
-        currentState.whenKeysReadyDeferred = PromiseUtils.defer();
-        if (userData.keyFetchToken) {
-          this.fetchAndUnwrapKeys(userData.keyFetchToken).then(
-            dataWithKeys => {
-              if (DERIVED_KEYS_NAMES.some(k => !dataWithKeys[k])) {
-                const missing = DERIVED_KEYS_NAMES.filter(
-                  k => !dataWithKeys[k]
-                );
-                currentState.whenKeysReadyDeferred.reject(
-                  new Error(`user data missing: ${missing.join(", ")}`)
-                );
-                return;
-              }
-              currentState.whenKeysReadyDeferred.resolve(dataWithKeys);
-            },
-            err => {
-              currentState.whenKeysReadyDeferred.reject(err);
-            }
-          );
-        } else {
-          currentState.whenKeysReadyDeferred.reject("No keyFetchToken");
-        }
-      }
-      return await currentState.resolve(
-        currentState.whenKeysReadyDeferred.promise
-      );
-    } catch (err) {
-      return currentState.resolve(this._handleTokenError(err));
-    }
-  },
-
-  async fetchAndUnwrapKeys(keyFetchToken) {
-    if (logPII) {
-      log.debug("fetchAndUnwrapKeys: token: " + keyFetchToken);
-    }
-    let currentState = this.currentAccountState;
-    
-    if (!keyFetchToken) {
-      log.warn("improper fetchAndUnwrapKeys() call: token missing");
-      await this.signOut();
-      return currentState.resolve(null);
-    }
-
-    let { wrapKB } = await this.fetchKeys(keyFetchToken);
-
-    let data = await currentState.getUserAccountData();
-
-    
-    if (data.keyFetchToken !== keyFetchToken) {
-      throw new Error("Signed in user changed while fetching keys!");
-    }
-
-    
-    
-    let kBbytes = CryptoUtils.xor(
-      CommonUtils.hexToBytes(data.unwrapBKey),
-      wrapKB
-    );
-
-    if (logPII) {
-      log.debug("kBbytes: " + kBbytes);
-    }
-    let updateData = {
-      ...(await this._deriveKeys(data.uid, kBbytes)),
-      keyFetchToken: null, 
-      unwrapBKey: null,
-    };
-
-    log.debug(
-      "Keys Obtained:" +
-        DERIVED_KEYS_NAMES.map(k => `${k}=${!!updateData[k]}`).join(", ")
-    );
-    if (logPII) {
-      log.debug(
-        "Keys Obtained:" +
-          DERIVED_KEYS_NAMES.map(k => `${k}=${updateData[k]}`).join(", ")
-      );
-    }
-
-    await currentState.updateUserAccountData(updateData);
-    
-    
-    
-    await this.notifyObservers(ONVERIFIED_NOTIFICATION);
-    
-    
-    await this.updateDeviceRegistration();
-    data = await currentState.getUserAccountData();
-    return currentState.resolve(data);
-  },
-
-  async _deriveKeys(uid, kBbytes) {
-    return {
-      kSync: CommonUtils.bytesAsHex(await this._deriveSyncKey(kBbytes)),
-      kXCS: CommonUtils.bytesAsHex(this._deriveXClientState(kBbytes)),
-      kExtSync: CommonUtils.bytesAsHex(
-        await this._deriveWebExtSyncStoreKey(kBbytes)
-      ),
-      kExtKbHash: CommonUtils.bytesAsHex(
-        this._deriveWebExtKbHash(uid, kBbytes)
-      ),
-    };
-  },
-
-  
-
-
-
-
-  _deriveSyncKey(kBbytes) {
-    return CryptoUtils.hkdfLegacy(
-      kBbytes,
-      undefined,
-      "identity.mozilla.com/picl/v1/oldsync",
-      2 * 32
-    );
-  },
-
-  
-
-
-
-
-  _deriveWebExtSyncStoreKey(kBbytes) {
-    return CryptoUtils.hkdfLegacy(
-      kBbytes,
-      undefined,
-      "identity.mozilla.com/picl/v1/chrome.storage.sync",
-      2 * 32
-    );
-  },
-
-  
-
-
-
-
-  _deriveWebExtKbHash(uid, kBbytes) {
-    return this._sha256(uid + kBbytes);
-  },
-
-  
-
-
-
-
-  _deriveXClientState(kBbytes) {
-    return this._sha256(kBbytes).slice(0, 16);
-  },
-
-  _sha256(bytes) {
-    let hasher = Cc["@mozilla.org/security/hash;1"].createInstance(
-      Ci.nsICryptoHash
-    );
-    hasher.init(hasher.SHA256);
-    return CryptoUtils.digestBytes(bytes, hasher);
   },
 
   async getAssertionFromCert(data, keyPair, cert, audience) {
@@ -1446,51 +1395,8 @@ FxAccountsInternal.prototype = {
     };
   },
 
-  
-
-
-  async getKeyForScope(scope, { keyRotationTimestamp }) {
-    if (scope !== SCOPE_OLD_SYNC) {
-      throw new Error(`Unavailable key material for ${scope}`);
-    }
-    let { kSync, kXCS } = await this.getKeys();
-    if (!kSync || !kXCS) {
-      throw new Error("Could not find requested key.");
-    }
-    kXCS = ChromeUtils.base64URLEncode(CommonUtils.hexToArrayBuffer(kXCS), {
-      pad: false,
-    });
-    kSync = ChromeUtils.base64URLEncode(CommonUtils.hexToArrayBuffer(kSync), {
-      pad: false,
-    });
-    const kid = `${keyRotationTimestamp}-${kXCS}`;
-    return {
-      scope,
-      kid,
-      k: kSync,
-      kty: "oct",
-    };
-  },
-
-  
-
-
-  async getScopedKeys(scopes, clientId) {
-    const { sessionToken } = await this._getVerifiedAccountOrReject();
-    const keyData = await this.fxAccountsClient.getScopedKeyData(
-      sessionToken,
-      clientId,
-      scopes
-    );
-    const scopedKeys = {};
-    for (const [scope, data] of Object.entries(keyData)) {
-      scopedKeys[scope] = await this.getKeyForScope(scope, data);
-    }
-    return scopedKeys;
-  },
-
-  getUserAccountData() {
-    return this.currentAccountState.getUserAccountData();
+  getUserAccountData(fieldNames = null) {
+    return this.currentAccountState.getUserAccountData(fieldNames);
   },
 
   isUserEmailVerified: function isUserEmailVerified(data) {
@@ -1533,8 +1439,15 @@ FxAccountsInternal.prototype = {
     
     
     
+
     this.whenVerified(data).then(
-      () => this.getKeys(),
+      () => {
+        log.info("the user became verified");
+        
+        
+        
+        return this.notifyObservers(ONVERIFIED_NOTIFICATION);
+      },
       err => log.info("startVerifiedCheck promise was rejected: " + err)
     );
   },
@@ -1679,91 +1592,6 @@ FxAccountsInternal.prototype = {
   },
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async getOAuthToken(options = {}) {
-    log.debug("getOAuthToken enter");
-    let scope = options.scope;
-    if (typeof scope === "string") {
-      scope = [scope];
-    }
-
-    if (!scope || !scope.length) {
-      throw this._error(
-        ERROR_INVALID_PARAMETER,
-        "Missing or invalid 'scope' option"
-      );
-    }
-
-    await this._getVerifiedAccountOrReject();
-
-    
-    let currentState = this.currentAccountState;
-    let cached = currentState.getCachedToken(scope);
-    if (cached) {
-      log.debug("getOAuthToken returning a cached token");
-      return cached.token;
-    }
-
-    
-    
-    let scopeString = scope.sort().join(" ");
-    let client = options.client || this.oauthClient;
-    let oAuthURL = client.serverURL.href;
-
-    
-    
-    let maybeInFlight = currentState.inFlightTokenRequests.get(scopeString);
-    if (maybeInFlight) {
-      log.debug("getOAuthToken has an in-flight request for this scope");
-      return maybeInFlight;
-    }
-
-    
-    
-    let promise = this._doTokenFetch(client, scopeString)
-      .then(token => {
-        
-        
-        
-        if (currentState.getCachedToken(scope)) {
-          log.error(`detected a race for oauth token with scope ${scope}`);
-        }
-        
-        if (token) {
-          let entry = { token, server: oAuthURL };
-          currentState.setCachedToken(scope, entry);
-        }
-        return token;
-      })
-      .finally(() => {
-        
-        
-        
-        currentState.inFlightTokenRequests.delete(scopeString);
-      });
-
-    currentState.inFlightTokenRequests.set(scopeString, promise);
-    return promise;
-  },
-
   async _doTokenFetch(client, scopeString) {
     let oAuthURL = client.serverURL.href;
     try {
@@ -1775,6 +1603,91 @@ FxAccountsInternal.prototype = {
     } catch (err) {
       throw this._errorToErrorClass(err);
     }
+  },
+
+  getOAuthToken(options = {}) {
+    log.debug("getOAuthToken enter");
+    let scope = options.scope;
+    if (typeof scope === "string") {
+      scope = [scope];
+    }
+
+    if (!scope || !scope.length) {
+      return Promise.reject(
+        this._error(
+          ERROR_INVALID_PARAMETER,
+          "Missing or invalid 'scope' option"
+        )
+      );
+    }
+
+    return this.withVerifiedAccountState(async currentState => {
+      
+      let cached = currentState.getCachedToken(scope);
+      if (cached) {
+        log.debug("getOAuthToken returning a cached token");
+        return cached.token;
+      }
+
+      
+      
+      let scopeString = scope.sort().join(" ");
+      let client = options.client || this.oauthClient;
+      let oAuthURL = client.serverURL.href;
+
+      
+      
+      let maybeInFlight = currentState.inFlightTokenRequests.get(scopeString);
+      if (maybeInFlight) {
+        log.debug("getOAuthToken has an in-flight request for this scope");
+        return maybeInFlight;
+      }
+
+      
+      
+      let promise = this._doTokenFetch(client, scopeString)
+        .then(token => {
+          
+          
+          
+          if (currentState.getCachedToken(scope)) {
+            log.error(`detected a race for oauth token with scope ${scope}`);
+          }
+          
+          if (token) {
+            let entry = { token, server: oAuthURL };
+            currentState.setCachedToken(scope, entry);
+          }
+          return token;
+        })
+        .finally(() => {
+          
+          
+          
+          currentState.inFlightTokenRequests.delete(scopeString);
+        });
+
+      currentState.inFlightTokenRequests.set(scopeString, promise);
+      return promise;
+    });
+  },
+
+  removeCachedOAuthToken(options) {
+    if (!options.token || typeof options.token !== "string") {
+      throw this._error(
+        ERROR_INVALID_PARAMETER,
+        "Missing or invalid 'token' option"
+      );
+    }
+    return this.withCurrentAccountState(currentState => {
+      let existing = currentState.removeCachedToken(options.token);
+      if (existing) {
+        
+        this._destroyOAuthToken(existing).catch(err => {
+          log.warn("FxA failed to revoke a cached token", err);
+        });
+      }
+    });
   },
 
   
@@ -1789,74 +1702,6 @@ FxAccountsInternal.prototype = {
     return jwcrypto.generateJWE(jwk, scopedKeys);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async authorizeOAuthCode(options) {
-    await this._getVerifiedAccountOrReject();
-    const client = this.oauthClient;
-    const oAuthURL = client.serverURL.href;
-    const params = { ...options };
-    if (params.keys_jwk) {
-      const jwk = JSON.parse(
-        new TextDecoder().decode(
-          ChromeUtils.base64URLDecode(params.keys_jwk, { padding: "reject" })
-        )
-      );
-      params.keys_jwe = await this.createKeysJWE(
-        params.client_id,
-        params.scope,
-        jwk
-      );
-      delete params.keys_jwk;
-    }
-    try {
-      const assertion = await this.getAssertion(oAuthURL);
-      return client.authorizeCodeFromAssertion(assertion, params);
-    } catch (err) {
-      throw this._errorToErrorClass(err);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  async removeCachedOAuthToken(options) {
-    if (!options.token || typeof options.token !== "string") {
-      throw this._error(
-        ERROR_INVALID_PARAMETER,
-        "Missing or invalid 'token' option"
-      );
-    }
-    let currentState = this.currentAccountState;
-    let existing = currentState.removeCachedToken(options.token);
-    if (existing) {
-      
-      this._destroyOAuthToken(existing).catch(err => {
-        log.warn("FxA failed to revoke a cached token", err);
-      });
-    }
-  },
-
   async _getVerifiedAccountOrReject() {
     let data = await this.currentAccountState.getUserAccountData();
     if (!data) {
@@ -1868,6 +1713,54 @@ FxAccountsInternal.prototype = {
       throw this._error(ERROR_UNVERIFIED_ACCOUNT);
     }
     return data;
+  },
+
+  
+  
+  async _handleAccountDestroyed(uid) {
+    let state = this.currentAccountState;
+    const accountData = await state.getUserAccountData();
+    const localUid = accountData ? accountData.uid : null;
+    if (!localUid) {
+      log.info(
+        `Account destroyed push notification received, but we're already logged-out`
+      );
+      return null;
+    }
+    if (uid == localUid) {
+      const data = JSON.stringify({ isLocalDevice: true });
+      await this.notifyObservers(ON_DEVICE_DISCONNECTED_NOTIFICATION, data);
+      return this.signOut(true);
+    }
+    log.info(
+      `The destroyed account uid doesn't match with the local uid. ` +
+        `Local: ${localUid}, account uid destroyed: ${uid}`
+    );
+    return null;
+  },
+
+  async _handleDeviceDisconnection(deviceId) {
+    let state = this.currentAccountState;
+    const accountData = await state.getUserAccountData();
+    if (!accountData || !accountData.device) {
+      
+      return;
+    }
+    const localDeviceId = accountData.device.id;
+    const isLocalDevice = deviceId == localDeviceId;
+    if (isLocalDevice) {
+      this.signOut(true);
+    }
+    const data = JSON.stringify({ isLocalDevice });
+    await this.notifyObservers(ON_DEVICE_DISCONNECTED_NOTIFICATION, data);
+  },
+
+  async _handleEmailUpdated(newEmail) {
+    Services.prefs.setStringPref(
+      PREF_LAST_FXA_USER,
+      CryptoUtils.sha256Base64(newEmail)
+    );
+    await this.currentAccountState.updateUserAccountData({ email: newEmail });
   },
 
   
@@ -1913,46 +1806,11 @@ FxAccountsInternal.prototype = {
   },
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getSignedInUserProfile() {
-    let currentState = this.currentAccountState;
-    return this.profile
-      .getProfile()
-      .then(
-        profileData => {
-          let profile = Cu.cloneInto(profileData, {});
-          return currentState.resolve(profile);
-        },
-        error => {
-          log.error("Could not retrieve profile data", error);
-          return currentState.reject(error);
-        }
-      )
-      .catch(err => Promise.reject(this._errorToErrorClass(err)));
-  },
-
-  
   
   
   async updateDeviceRegistration() {
     try {
-      const signedInUser = await this.getSignedInUser();
+      const signedInUser = await this.currentAccountState.getUserAccountData();
       if (signedInUser) {
         await this._registerOrUpdateDevice(signedInUser);
       }
@@ -1961,56 +1819,13 @@ FxAccountsInternal.prototype = {
     }
   },
 
-  async handleDeviceDisconnection(deviceId) {
-    const accountData = await this.currentAccountState.getUserAccountData();
-    if (!accountData || !accountData.device) {
-      
-      return;
-    }
-    const localDeviceId = accountData.device.id;
-    const isLocalDevice = deviceId == localDeviceId;
-    if (isLocalDevice) {
-      this.signOut(true);
-    }
-    const data = JSON.stringify({ isLocalDevice });
-    await this.notifyObservers(ON_DEVICE_DISCONNECTED_NOTIFICATION, data);
-  },
-
-  handleEmailUpdated(newEmail) {
-    Services.prefs.setStringPref(
-      PREF_LAST_FXA_USER,
-      CryptoUtils.sha256Base64(newEmail)
-    );
-    return this.currentAccountState.updateUserAccountData({ email: newEmail });
-  },
-
-  async handleAccountDestroyed(uid) {
-    const accountData = await this.currentAccountState.getUserAccountData();
-    const localUid = accountData ? accountData.uid : null;
-    if (!localUid) {
-      log.info(
-        `Account destroyed push notification received, but we're already logged-out`
-      );
-      return null;
-    }
-    if (uid == localUid) {
-      const data = JSON.stringify({ isLocalDevice: true });
-      await this.notifyObservers(ON_DEVICE_DISCONNECTED_NOTIFICATION, data);
-      return this.signOut(true);
-    }
-    log.info(
-      `The destroyed account uid doesn't match with the local uid. ` +
-        `Local: ${localUid}, account uid destroyed: ${uid}`
-    );
-    return null;
-  },
-
   
 
 
 
 
-  resetCredentials() {
+
+  dropCredentials(state) {
     
     
     let updateData = {};
@@ -2023,25 +1838,7 @@ FxAccountsInternal.prototype = {
     FXA_PWDMGR_SECURE_FIELDS.forEach(clearField);
     FXA_PWDMGR_MEMORY_FIELDS.forEach(clearField);
 
-    let currentState = this.currentAccountState;
-    return currentState.updateUserAccountData(updateData);
-  },
-
-  getProfileCache() {
-    return this.currentAccountState
-      .getUserAccountData(["profileCache"])
-      .then(data => (data ? data.profileCache : null));
-  },
-
-  setProfileCache(profileCache) {
-    return this.currentAccountState.updateUserAccountData({
-      profileCache,
-    });
-  },
-
-  
-  getPushSubscription() {
-    return this.fxaPushService.getSubscription();
+    return state.updateUserAccountData(updateData);
   },
 
   async availableCommands() {
@@ -2110,7 +1907,9 @@ FxAccountsInternal.prototype = {
       }
 
       
-      let { device: deviceProps } = await this.getSignedInUser();
+      let {
+        device: deviceProps,
+      } = await this.currentAccountState.getUserAccountData();
       await this.currentAccountState.updateUserAccountData({
         device: {
           ...deviceProps, 
@@ -2228,7 +2027,7 @@ FxAccountsInternal.prototype = {
           return this.signOut(true);
         }
         log.info("clearing credentials to handle invalid token error");
-        return this.resetCredentials();
+        return this.dropCredentials(this.currentAccountState);
       })
       .then(() => Promise.reject(err));
   },
@@ -2240,7 +2039,7 @@ XPCOMUtils.defineLazyGetter(this, "fxAccounts", function() {
 
   
   
-  a.loadAndPoll();
+  a._internal.loadAndPoll();
 
   return a;
 });

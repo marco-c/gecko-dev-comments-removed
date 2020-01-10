@@ -324,11 +324,11 @@ this.BrowserIDManager.prototype = {
 
 
   _now() {
-    return this._fxaService.now();
+    return this._fxaService._internal.now();
   },
 
   get _localtimeOffsetMsec() {
-    return this._fxaService.localtimeOffsetMsec;
+    return this._fxaService._internal.localtimeOffsetMsec;
   },
 
   get syncKeyBundle() {
@@ -364,6 +364,8 @@ this.BrowserIDManager.prototype = {
   },
 
   
+
+
 
 
   resetCredentials() {
@@ -417,7 +419,7 @@ this.BrowserIDManager.prototype = {
       return LOGIN_FAILED_LOGIN_REJECTED;
     }
     this._updateSignedInUser(data);
-    if (await this._fxaService.canGetKeys()) {
+    if (await this._fxaService.keys.canGetKeys()) {
       log.debug(
         "unlockAndVerifyAuthState already has (or can fetch) sync keys"
       );
@@ -439,7 +441,7 @@ this.BrowserIDManager.prototype = {
     
     
     let result;
-    if (await this._fxaService.canGetKeys()) {
+    if (await this._fxaService.keys.canGetKeys()) {
       telemetryHelper.maybeRecordLoginState(telemetryHelper.STATES.SUCCESS);
       result = STATUS_OK;
     } else {
@@ -499,7 +501,7 @@ this.BrowserIDManager.prototype = {
     
     
     
-    if (!(await this._fxaService.canGetKeys())) {
+    if (!(await this._fxaService.keys.canGetKeys())) {
       this._log.info(
         "Unable to fetch keys (master-password locked?), so aborting token fetch"
       );
@@ -510,7 +512,7 @@ this.BrowserIDManager.prototype = {
     let getToken = async () => {
       this._log.info("Getting an assertion from", this._tokenServerUrl);
       const audience = Services.io.newURI(this._tokenServerUrl).prePath;
-      const assertion = await this._fxaService.getAssertion(audience);
+      const assertion = await this._fxaService._internal.getAssertion(audience);
 
       this._log.debug("Getting a token");
       const headers = { "X-Client-State": this._signedInUser.kXCS };
@@ -527,7 +529,7 @@ this.BrowserIDManager.prototype = {
     try {
       try {
         this._log.info("Getting keys");
-        this._updateSignedInUser(await this._fxaService.getKeys()); 
+        this._updateSignedInUser(await this._fxaService.keys.getKeys()); 
 
         token = await getToken();
       } catch (err) {
@@ -539,7 +541,7 @@ this.BrowserIDManager.prototype = {
         this._log.warn(
           "Token server returned 401, refreshing certificate and retrying token fetch"
         );
-        await this._fxaService.invalidateCertificate();
+        await this._fxaService.keys.invalidateCertificate();
         token = await getToken();
       }
       

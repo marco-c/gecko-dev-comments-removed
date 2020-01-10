@@ -82,7 +82,7 @@ add_task(async function test_reset() {
     kExtKbHash: "cheese",
     verified: true,
   };
-  await fxAccounts.setSignedInUser(credentials);
+  await fxAccounts._internal.setSignedInUser(credentials);
   ok(!Services.prefs.prefHasUserValue(testPref));
   
   const namePref = PREF_ACCOUNT_ROOT + "device.name";

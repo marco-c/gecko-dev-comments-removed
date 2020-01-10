@@ -89,7 +89,7 @@ add_task(async function test_simple() {
     kExtKbHash: "the kExtKbHash value",
     verified: true,
   };
-  await fxa.setSignedInUser(creds);
+  await fxa._internal.setSignedInUser(creds);
 
   
   
@@ -187,7 +187,7 @@ add_task(async function test_MPLocked() {
   Assert.strictEqual(getLoginMgrData(), null, "no login mgr at the start");
   
   setLoginMgrLoggedInState(false);
-  await fxa.setSignedInUser(creds);
+  await fxa._internal.setSignedInUser(creds);
 
   
   
@@ -253,14 +253,14 @@ add_task(async function test_consistentWithMPEdgeCases() {
   };
 
   
-  await fxa.setSignedInUser(creds1);
+  await fxa._internal.setSignedInUser(creds1);
 
   
   
   setLoginMgrLoggedInState(false);
 
   
-  await fxa.setSignedInUser(creds2);
+  await fxa._internal.setSignedInUser(creds2);
 
   
   let login = getLoginMgrData();
