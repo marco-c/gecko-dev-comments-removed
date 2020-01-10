@@ -12,22 +12,27 @@ add_task(async function testNormalBrowsing() {
     
     await new Promise(resolve => waitForDBInit(resolve));
 
-    await ContentTask.spawn(browser, PHISH_URL, async function(aPhishUrl) {
-      return new Promise(resolve => {
-        
-        let listener = e => {
-          removeEventListener("AboutBlockedLoaded", listener, false, true);
+    let promise = new Promise(resolve => {
+      
+      let removeFunc = BrowserTestUtils.addContentEventListener(
+        browser,
+        "AboutBlockedLoaded",
+        () => {
+          removeFunc();
           resolve();
-        };
-        addEventListener("AboutBlockedLoaded", listener, false, true);
-
-        
-        let iframe = content.document.createElement("iframe");
-        iframe.src = aPhishUrl;
-        content.document.body.appendChild(iframe);
-      });
+        },
+        { wantUntrusted: true }
+      );
     });
 
+    await ContentTask.spawn(browser, PHISH_URL, async function(aPhishUrl) {
+      
+      let iframe = content.document.createElement("iframe");
+      iframe.src = aPhishUrl;
+      content.document.body.appendChild(iframe);
+    });
+
+    await promise;
     ok(true, "about:blocked is successfully loaded!");
   });
 });
