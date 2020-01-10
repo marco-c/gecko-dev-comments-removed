@@ -420,7 +420,7 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
   }
 
   ReflowConfig config;
-  config.mBalanceColCount = numColumns;
+  config.mUsedColCount = numColumns;
   config.mColISize = colISize;
   config.mExpectedISizeLeftOver = expectedISizeLeftOver;
   config.mColGap = colGap;
@@ -432,9 +432,9 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
   config.mConsumedBSize = consumedBSize;
 
   COLUMN_SET_LOG(
-      "%s: this=%p, mBalanceColCount=%d, mColISize=%d, "
+      "%s: this=%p, mUsedColCount=%d, mColISize=%d, "
       "mExpectedISizeLeftOver=%d, mColGap=%d, mColMaxBSize=%d, mIsBalancing=%d",
-      __func__, this, config.mBalanceColCount, config.mColISize,
+      __func__, this, config.mUsedColCount, config.mColISize,
       config.mExpectedISizeLeftOver, config.mColGap, config.mColMaxBSize,
       config.mIsBalancing);
 
@@ -567,10 +567,10 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
 
   COLUMN_SET_LOG(
       "%s: Doing column reflow pass: mLastBalanceBSize=%d,"
-      " mColMaxBSize=%d, RTL=%d, mBalanceColCount=%d,"
+      " mColMaxBSize=%d, RTL=%d, mUsedColCount=%d,"
       " mColISize=%d, mColGap=%d",
       __func__, mLastBalanceBSize, aConfig.mColMaxBSize, isRTL,
-      aConfig.mBalanceColCount, aConfig.mColISize, aConfig.mColGap);
+      aConfig.mUsedColCount, aConfig.mColISize, aConfig.mColGap);
 
   DrainOverflowColumns();
 
@@ -650,7 +650,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
 
   while (child) {
     const bool isMeasuringFeasibleContentBSize =
-        aUnboundedLastColumn && columnCount == aConfig.mBalanceColCount - 1;
+        aUnboundedLastColumn && columnCount == aConfig.mUsedColCount - 1;
 
     
     
@@ -891,7 +891,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       colData.mHasExcessBSize = true;
     }
 
-    if (columnCount >= aConfig.mBalanceColCount - 1) {
+    if (columnCount >= aConfig.mUsedColCount - 1) {
       
       aStatus.SetNextInFlowNeedsReflow();
       kidNextInFlow->MarkSubtreeDirty();
@@ -1093,7 +1093,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
       
       
       
-      if (mFrames.GetLength() == aConfig.mBalanceColCount) {
+      if (mFrames.GetLength() == aConfig.mUsedColCount) {
         aConfig.mKnownInfeasibleBSize =
             std::max(aConfig.mKnownInfeasibleBSize, aColData.mLastBSize - 1);
       }
@@ -1156,7 +1156,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
       
       
       
-      nextGuess = aColData.mSumBSize / aConfig.mBalanceColCount + 600;
+      nextGuess = aColData.mSumBSize / aConfig.mUsedColCount + 600;
       
       nextGuess = clamped(nextGuess, aConfig.mKnownInfeasibleBSize + 1,
                           aConfig.mKnownFeasibleBSize - 1);
