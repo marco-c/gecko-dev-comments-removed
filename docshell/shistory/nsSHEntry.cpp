@@ -1038,6 +1038,7 @@ nsLegacySHEntry::CreateLoadInfo(nsDocShellLoadState** aLoadState) {
 void nsSHEntry::EvictContentViewer() {
   nsCOMPtr<nsIContentViewer> viewer = GetContentViewer();
   if (viewer) {
+    mShared->NotifyListenersContentViewerEvicted();
     
     
     SetContentViewer(nullptr);
