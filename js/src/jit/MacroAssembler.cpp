@@ -2189,7 +2189,6 @@ void MacroAssembler::convertValueToInt(
           if (handleStrings) {
             maybeBranchTestType(MIRType::String, maybeInput, tag, &isString);
           }
-          maybeBranchTestType(MIRType::Object, maybeInput, tag, fail);
           branchTestUndefined(Assembler::NotEqual, tag, fail);
           break;
       }
