@@ -11,19 +11,21 @@ add_task(async function test_async_distribution() {
 
   Assert.ok(!Services.search.isInitialized);
 
-  return Services.search.init().then(function search_initialized(aStatus) {
-    Assert.ok(Components.isSuccessCode(aStatus));
-    Assert.ok(Services.search.isInitialized);
+  let aStatus = await Services.search.init();
+  Assert.ok(Components.isSuccessCode(aStatus));
+  Assert.ok(Services.search.isInitialized);
 
-    
-    return Services.search.getEngines().then(engines => {
-      Assert.equal(engines.length, 1);
+  
+  let engines = await Services.search.getEngines();
+  Assert.equal(engines.length, 1);
 
-      let engine = Services.search.getEngineByName("bug645970");
-      Assert.notEqual(engine, null);
+  let engine = Services.search.getEngineByName("bug645970");
+  Assert.ok(!!engine, "engine is installed");
 
-      
-      Assert.equal(engine.description, "override");
-    });
-  });
+  
+  Assert.equal(
+    engine.description,
+    "override",
+    "distribution engine override installed"
+  );
 });

@@ -43,6 +43,10 @@ Services.prefs.setBoolPref("browser.search.log", true);
 
 
 
+Services.prefs.setIntPref("browser.search.addonLoadTimeout", 0);
+
+
+
 Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
 Services.prefs.setIntPref("browser.search.geoip.timeout", 3000);
 

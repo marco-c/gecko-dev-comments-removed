@@ -74,7 +74,14 @@ AddonTestUtils.createAppInfo(
 );
 
 add_task(async function setup() {
+  
+  
+  Services.prefs.setCharPref("browser.search.region", "US");
+  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
+  Services.prefs.setIntPref("browser.search.addonLoadTimeout", 0);
+
   await AddonTestUtils.promiseStartupManager();
+  await Services.search.init();
 });
 
 async function cleanup() {
@@ -568,6 +575,9 @@ function addTestEngine(basename, httpServer = undefined) {
 
 
 
+
+
+
 async function addTestSuggestionsEngine(suggestionsFn = null) {
   
   let server = makeTestServer(9000);
@@ -606,6 +616,7 @@ add_task(async function ensure_search_engine() {
   await Services.search.addEngineWithDetails("MozSearch", {
     method: "GET",
     template: "http://s.example.com/search",
+    isBuiltin: true,
   });
   let engine = Services.search.getEngineByName("MozSearch");
   await Services.search.setDefault(engine);
