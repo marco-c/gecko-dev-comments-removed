@@ -244,11 +244,18 @@ this.storage = class extends ExtensionAPI {
             
             if (method !== "get") {
               
-              const result = await context.childManager.callParentAsyncFunction(
-                "storage.local.callMethodInParentProcess",
-                [method, args]
-              );
-              return result;
+              try {
+                const result = await context.childManager.callParentAsyncFunction(
+                  "storage.local.callMethodInParentProcess",
+                  [method, args]
+                );
+                return result;
+              } catch (err) {
+                
+                
+                
+                return Promise.reject(err);
+              }
             }
 
             
@@ -259,10 +266,7 @@ this.storage = class extends ExtensionAPI {
           const result = await selectedBackend[method](...args);
           return result;
         } catch (err) {
-          
-          
-          
-          throw new ExtensionUtils.ExtensionError(String(err));
+          throw ExtensionStorageIDB.normalizeStorageError(err);
         }
       };
     }

@@ -15,6 +15,7 @@ const { IndexedDB } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionStorage: "resource://gre/modules/ExtensionStorage.jsm",
+  ExtensionUtils: "resource://gre/modules/ExtensionUtils.jsm",
   getTrimmedString: "resource://gre/modules/ExtensionTelemetry.jsm",
   Services: "resource://gre/modules/Services.jsm",
   OS: "resource://gre/modules/osfile.jsm",
@@ -765,6 +766,49 @@ this.ExtensionStorageIDB = {
     return setPersistentMode.then(() =>
       ExtensionStorageLocalIDB.openForPrincipal(storagePrincipal)
     );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  normalizeStorageError(error) {
+    const { ExtensionError } = ExtensionUtils;
+
+    if (error instanceof ExtensionError) {
+      return error;
+    }
+
+    let errorMessage;
+
+    if (error instanceof DOMException) {
+      switch (error.name) {
+        case "DataCloneError":
+          errorMessage = String(error);
+          break;
+        case "QuotaExceededError":
+          errorMessage = `${
+            error.name
+          }: storage.local API call exceeded its quota limitations.`;
+          break;
+      }
+    }
+
+    if (!errorMessage) {
+      Cu.reportError(error);
+
+      errorMessage = "An unexpected error occurred";
+    }
+
+    return new ExtensionError(errorMessage);
   },
 
   addOnChangedListener(extensionId, listener) {
