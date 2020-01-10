@@ -1288,25 +1288,8 @@ bool nsAttrValue::DoParseHTMLDimension(const nsAString& aInput,
   }
 
   
-  if (position == end) {
-    return false;
-  }
-
-  
-  if (*position == char16_t('+')) {
-    canonical = false;  
-    ++position;
-
-    
-    
-    
-    if (position == end) {
-      return false;
-    }
-  }
-
-  
-  if (*position < char16_t('0') || *position > char16_t('9')) {
+  if (position == end || *position < char16_t('0') ||
+      *position > char16_t('9')) {
     return false;
   }
 
@@ -1338,23 +1321,30 @@ bool nsAttrValue::DoParseHTMLDimension(const nsAString& aInput,
 
   Maybe<double> doubleValue;
   
+  
+  
   if (position != end && *position == char16_t('.')) {
     canonical = false;  
                         
+    
     ++position;
     
     
     
     doubleValue.emplace(value.value());
+    
     double divisor = 1.0f;
-    
-    
     
     while (position != end && *position >= char16_t('0') &&
            *position <= char16_t('9')) {
+      
       divisor = divisor * 10.0f;
+      
       doubleValue.ref() += (*position - char16_t('0')) / divisor;
+      
       ++position;
+      
+      
     }
   }
 

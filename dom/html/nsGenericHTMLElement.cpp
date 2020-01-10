@@ -1418,7 +1418,21 @@ uint32_t nsGenericHTMLElement::GetDimensionAttrAsUnsignedInt(
     return uint32_t(attrVal->GetDoubleValue());
   }
 
-  return aDefault;
+  
+  
+  
+  
+  
+  nsAutoString val;
+  attrVal->ToString(val);
+  nsContentUtils::ParseHTMLIntegerResultFlags result;
+  int32_t parsedInt = nsContentUtils::ParseHTMLInteger(val, &result);
+  if ((result & nsContentUtils::eParseHTMLInteger_Error) ||
+      parsedInt < 0) {
+    return aDefault;
+  }
+
+  return parsedInt;
 }
 
 void nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr, nsAtom* aBaseAttr,
