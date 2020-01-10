@@ -13,7 +13,7 @@
 #  include "nsIStringEnumerator.h"
 #endif
 
-#include "nsIXULWindow.h"
+#include "nsIAppWindow.h"
 
 namespace mozilla {
 namespace dom {
@@ -137,8 +137,8 @@ void XULPersist::Persist(Element* aElement, int32_t aNameSpaceID,
 
   
   if (IsRootElement(aElement)) {
-    if (nsCOMPtr<nsIXULWindow> win =
-            mDocument->GetXULWindowIfToplevelChrome()) {
+    if (nsCOMPtr<nsIAppWindow> win =
+            mDocument->GetAppWindowIfToplevelChrome()) {
       return;
     }
   }
@@ -302,8 +302,8 @@ nsresult XULPersist::ApplyPersistentAttributesToElements(
       
       
       if (IsRootElement(element)) {
-        if (nsCOMPtr<nsIXULWindow> win =
-                mDocument->GetXULWindowIfToplevelChrome()) {
+        if (nsCOMPtr<nsIAppWindow> win =
+                mDocument->GetAppWindowIfToplevelChrome()) {
           continue;
         }
       }

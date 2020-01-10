@@ -449,11 +449,11 @@ let LEGACY_ACTORS = {
     
     
     
-    let xulWin = win.docShell.treeOwner
+    let appWin = win.docShell.treeOwner
       .QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIXULWindow);
-    height -= xulWin.outerToInnerHeightDifferenceInCSSPixels;
-    width -= xulWin.outerToInnerWidthDifferenceInCSSPixels;
+      .getInterface(Ci.nsIAppWindow);
+    height -= appWin.outerToInnerHeightDifferenceInCSSPixels;
+    width -= appWin.outerToInnerWidthDifferenceInCSSPixels;
     docElt.setAttribute("height", height);
     docElt.setAttribute("width", width);
   } else {
