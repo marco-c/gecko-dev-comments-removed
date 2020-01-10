@@ -3770,20 +3770,7 @@ class Document : public nsINode,
 
   bool IsSynthesized();
 
-  enum class UseCounterReportKind {
-    
-    
-    
-    eDefault,
-
-    
-    
-    
-    eIncludeExternalResources,
-  };
-
-  void ReportUseCounters(
-      UseCounterReportKind aKind = UseCounterReportKind::eDefault);
+  void ReportUseCounters();
 
   void SetDocumentUseCounter(UseCounter aUseCounter) {
     if (!mUseCounters[aUseCounter]) {

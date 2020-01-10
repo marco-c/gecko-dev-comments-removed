@@ -247,12 +247,6 @@ class HTMLImageElement final : public nsGenericHTMLElement,
       const nsAString& aTypeAttr, const nsAString& aMediaAttr,
       nsAString& aResult);
 
-  
-
-
-
-  void FlushUseCounters();
-
  protected:
   virtual ~HTMLImageElement();
 

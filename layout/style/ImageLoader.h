@@ -84,8 +84,6 @@ class ImageLoader final : public imgINotificationObserver {
   
   static void DeregisterCSSImageFromAllLoaders(const StyleLoadData&);
 
-  void FlushUseCounters();
-
  private:
   
   
