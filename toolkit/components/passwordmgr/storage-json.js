@@ -117,7 +117,22 @@ this.LoginManagerStorage_json.prototype = {
     return this._store._save();
   },
 
-  addLogin(login, preEncrypted = false) {
+  addLogin(
+    login,
+    preEncrypted = false,
+    plaintextUsername = null,
+    plaintextPassword = null
+  ) {
+    if (
+      preEncrypted &&
+      (typeof plaintextUsername != "string" ||
+        typeof plaintextPassword != "string")
+    ) {
+      throw new Error(
+        "plaintextUsername and plaintextPassword are required when preEncrypted is true"
+      );
+    }
+
     this._store.ensureDataReady();
 
     
@@ -129,6 +144,8 @@ this.LoginManagerStorage_json.prototype = {
 
     
     let loginClone = login.clone();
+    loginClone.username = preEncrypted ? plaintextUsername : login.username;
+    loginClone.password = preEncrypted ? plaintextPassword : login.password;
 
     
     loginClone.QueryInterface(Ci.nsILoginMetaInfo);

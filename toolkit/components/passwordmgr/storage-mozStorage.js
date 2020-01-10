@@ -217,7 +217,22 @@ LoginManagerStorage_mozStorage.prototype = {
     return Promise.resolve();
   },
 
-  addLogin(login, preEncrypted = false) {
+  addLogin(
+    login,
+    preEncrypted = false,
+    plaintextUsername = null,
+    plaintextPassword = null
+  ) {
+    if (
+      preEncrypted &&
+      (typeof plaintextUsername != "string" ||
+        typeof plaintextPassword != "string")
+    ) {
+      throw new Error(
+        "plaintextUsername and plaintextPassword are required when preEncrypted is true"
+      );
+    }
+
     
     LoginHelper.checkLoginValues(login);
 
@@ -227,6 +242,8 @@ LoginManagerStorage_mozStorage.prototype = {
 
     
     let loginClone = login.clone();
+    loginClone.username = preEncrypted ? plaintextUsername : login.username;
+    loginClone.password = preEncrypted ? plaintextPassword : login.password;
 
     
     loginClone.QueryInterface(Ci.nsILoginMetaInfo);
