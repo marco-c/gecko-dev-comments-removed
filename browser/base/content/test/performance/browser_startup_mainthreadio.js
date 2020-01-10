@@ -470,18 +470,6 @@ const startupPhases = {
       condition: MAC,
       write: 3,
     },
-    {
-      
-      path: "GreD:omni.ja",
-      condition: WIN,
-      stat: 1,
-    },
-    {
-      
-      path: "XCurProcD:omni.ja",
-      condition: WIN,
-      stat: 2,
-    },
   ],
 
   
@@ -687,12 +675,6 @@ const startupPhases = {
       condition: WIN,
       ignoreIfUnused: true,
       stat: 3,
-    },
-    {
-      
-      path: "XCurProcD:omni.ja",
-      condition: WIN,
-      stat: 7,
     },
     {
       
