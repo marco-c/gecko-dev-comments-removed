@@ -153,22 +153,27 @@ class nsJSContext : public nsIScriptContext {
 namespace mozilla {
 namespace dom {
 
+class SerializedStackHolder;
+
 void StartupJSEnvironment();
 void ShutdownJSEnvironment();
 
 
 class AsyncErrorReporter final : public mozilla::Runnable {
  public:
-  explicit AsyncErrorReporter(xpc::ErrorReport* aReport)
-      : Runnable("dom::AsyncErrorReporter"), mReport(aReport) {}
-
-  NS_IMETHOD Run() override {
-    mReport->LogToConsole();
-    return NS_OK;
-  }
+  explicit AsyncErrorReporter(xpc::ErrorReport* aReport);
+  
+  
+  
+  void SerializeStack(JSContext* aCx, JS::Handle<JSObject*> aStack);
 
  protected:
+  NS_IMETHOD Run() override;
+
   RefPtr<xpc::ErrorReport> mReport;
+  
+  
+  UniquePtr<SerializedStackHolder> mStackHolder;
 };
 
 }  
