@@ -4779,28 +4779,19 @@
         label = tab._fullLabel || tab.getAttribute("label");
       }
       if (AppConstants.NIGHTLY_BUILD) {
-        if (
-          tab.linkedBrowser &&
-          tab.linkedBrowser.isRemoteBrowser &&
-          tab.linkedBrowser.frameLoader
-        ) {
-          label +=
-            " (pid " + tab.linkedBrowser.frameLoader.remoteTab.osPid + ")";
-
+        if (tab.linkedBrowser) {
           
           
-          if (gFissionBrowser) {
-            let pids = new Set();
-            let stack = [tab.linkedBrowser.browsingContext];
-            while (stack.length) {
-              let bc = stack.pop();
-              stack.push(...bc.getChildren());
-              if (bc.currentWindowGlobal) {
-                pids.add(bc.currentWindowGlobal.osPid);
-              }
+          
+          let [contentPid, ...framePids] = E10SUtils.getBrowserPids(
+            tab.linkedBrowser,
+            gFissionBrowser
+          );
+          if (contentPid) {
+            label += " (pid " + contentPid + ")";
+            if (gFissionBrowser) {
+              label += " [F " + framePids.join(", ") + "]";
             }
-
-            label += " [F " + Array.from(pids).join(", ") + "]";
           }
         }
       }
