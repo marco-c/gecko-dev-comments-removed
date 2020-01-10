@@ -164,44 +164,10 @@ class TErrorResult {
   operator const ErrorResult&() const;
   operator OOMReporter&();
 
-  void MOZ_MUST_RETURN_FROM_CALLER Throw(nsresult rv) {
+  void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG Throw(nsresult rv) {
     MOZ_ASSERT(NS_FAILED(rv), "Please don't try throwing success");
     AssignErrorCode(rv);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void ThrowWithCustomCleanup(nsresult rv) { Throw(rv); }
 
   
   
@@ -362,7 +328,7 @@ class TErrorResult {
   }
 
   
-  void MOZ_MUST_RETURN_FROM_CALLER ThrowUncatchableException() {
+  void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG ThrowUncatchableException() {
     Throw(NS_ERROR_UNCATCHABLE_EXCEPTION);
   }
   bool IsUncatchableException() const {

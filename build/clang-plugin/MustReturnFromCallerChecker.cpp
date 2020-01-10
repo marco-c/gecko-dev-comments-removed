@@ -8,9 +8,11 @@
 void MustReturnFromCallerChecker::registerMatchers(MatchFinder *AstMatcher) {
   
   AstMatcher->addMatcher(
-      callExpr(callee(functionDecl(isMozMustReturnFromCaller())),
-               anyOf(hasAncestor(lambdaExpr().bind("containing-lambda")),
-                     hasAncestor(functionDecl().bind("containing-func"))))
+      cxxMemberCallExpr(
+              on(declRefExpr(to(parmVarDecl()))),
+              callee(functionDecl(isMozMustReturnFromCaller())),
+              anyOf(hasAncestor(lambdaExpr().bind("containing-lambda")),
+                    hasAncestor(functionDecl().bind("containing-func"))))
           .bind("call"),
       this);
 }

@@ -403,7 +403,7 @@ CallbackObject::CallSetup::~CallSetup() {
 
         
         
-        mErrorResult.ThrowWithCustomCleanup(NS_ERROR_UNEXPECTED);
+        mErrorResult.Throw(NS_ERROR_UNEXPECTED);
       }
     }
   }

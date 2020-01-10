@@ -1,10 +1,13 @@
 #include <cstddef>
 #include <utility>
 
-#define MOZ_MUST_RETURN_FROM_CALLER __attribute__((annotate("moz_must_return_from_caller")))
+#define MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG __attribute__((annotate("moz_must_return_from_caller_if_this_is_arg")))
 #define MOZ_MAY_CALL_AFTER_MUST_RETURN __attribute__((annotate("moz_may_call_after_must_return")))
 
-void MOZ_MUST_RETURN_FROM_CALLER Throw() {}
+struct Thrower {
+  void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG Throw() {}
+};
+
 void DoAnythingElse();
 int MakeAnInt();
 int MOZ_MAY_CALL_AFTER_MUST_RETURN SafeMakeInt();
@@ -47,61 +50,61 @@ public:
   Foo();
 };
 
-void a1() {
-  Throw();
+void a1(Thrower& thrower) {
+  thrower.Throw();
 }
 
-int a2() {
-  Throw(); 
+int a2(Thrower& thrower) {
+  thrower.Throw(); 
   return MakeAnInt();
 }
 
-int a3() {
+int a3(Thrower& thrower) {
   
   auto atExit = MakeScopeExit([] { DoAnythingElse(); });
-  Throw();
+  thrower.Throw();
   return 5;
 }
 
-int a4() {
-  Throw(); 
+int a4(Thrower& thrower) {
+  thrower.Throw(); 
   return Condition() ? MakeAnInt() : MakeAnInt();
 }
 
-void a5() {
-  Throw(); 
+void a5(Thrower& thrower) {
+  thrower.Throw(); 
   DoAnythingElse();
 }
 
-int a6() {
-  Throw(); 
+int a6(Thrower& thrower) {
+  thrower.Throw(); 
   DoAnythingElse();
   return MakeAnInt();
 }
 
-int a7() {
-  Throw(); 
+int a7(Thrower& thrower) {
+  thrower.Throw(); 
   DoAnythingElse();
   return Condition() ? MakeAnInt() : MakeAnInt();
 }
 
-int a8() {
-  Throw();
+int a8(Thrower& thrower) {
+  thrower.Throw();
   return SafeMakeInt();
 }
 
-int a9() {
+int a9(Thrower& thrower) {
   if (Condition()) {
-    Throw();
+    thrower.Throw();
   }
   return SafeMakeInt();
 }
 
-int a10() {
+int a10(Thrower& thrower) {
   auto atExit = MakeScopeExit([] { DoAnythingElse(); });
 
   if (Condition()) {
-    Throw();
+    thrower.Throw();
     return SafeMakeInt();
   }
 
@@ -110,79 +113,79 @@ int a10() {
   return 5;
 }
 
-void b1() {
+void b1(Thrower& thrower) {
   if (Condition()) {
-    Throw();
+    thrower.Throw();
   }
 }
 
-int b2() {
+int b2(Thrower& thrower) {
   if (Condition()) {
-    Throw(); 
+    thrower.Throw(); 
   }
   return MakeAnInt();
 }
 
-int b3() {
+int b3(Thrower& thrower) {
   if (Condition()) {
-    Throw();
+    thrower.Throw();
   }
   return 5;
 }
 
-int b4() {
+int b4(Thrower& thrower) {
   if (Condition()) {
-    Throw(); 
+    thrower.Throw(); 
   }
   return Condition() ? MakeAnInt() : MakeAnInt();
 }
 
-void b5() {
+void b5(Thrower& thrower) {
   if (Condition()) {
-    Throw(); 
+    thrower.Throw(); 
   }
   DoAnythingElse();
 }
 
-void b6() {
+void b6(Thrower& thrower) {
   if (Condition()) {
-    Throw(); 
+    thrower.Throw(); 
     DoAnythingElse();
   }
 }
 
-void b7() {
+void b7(Thrower& thrower) {
   if (Condition()) {
-    Throw();
+    thrower.Throw();
     return;
   }
   DoAnythingElse();
 }
 
-void b8() {
+void b8(Thrower& thrower) {
   if (Condition()) {
-    Throw(); 
+    thrower.Throw(); 
     DoAnythingElse();
     return;
   }
   DoAnythingElse();
 }
 
-void b9() {
+void b9(Thrower& thrower) {
   while (Condition()) {
-    Throw(); 
+    thrower.Throw(); 
   }
 }
 
-void b10() {
+void b10(Thrower& thrower) {
   while (Condition()) {
-    Throw();
+    thrower.Throw();
     return;
   }
 }
 
-void b11() {
-  Throw(); 
+void b11(Thrower& thrower) {
+  thrower.Throw(); 
   if (Condition()) {
     return;
   } else {
@@ -190,41 +193,47 @@ void b11() {
   }
 }
 
-void b12() {
+void b12(Thrower& thrower) {
   switch (MakeAnInt()) {
   case 1:
     break;
   default:
-    Throw();
+    thrower.Throw();
     return;
   }
 }
 
-void b13() {
+void b13(Thrower& thrower) {
   if (Condition()) {
-    Throw();
+    thrower.Throw();
   }
   return;
 }
 
-Foo b14() {
+Foo b14(Thrower& thrower) {
   if (Condition()) {
-    Throw();
+    thrower.Throw();
     return nullptr;
   }
   return nullptr;
 }
 
-Foo b15() {
+Foo b15(Thrower& thrower) {
   if (Condition()) {
-    Throw();
+    thrower.Throw();
   }
   return nullptr;
 }
 
-Foo b16() {
+Foo b16(Thrower& thrower) {
   if (Condition()) {
-    Throw();
+    thrower.Throw();
   }
   return Foo();
+}
+
+void c1() {
+  Thrower thrower;
+  thrower.Throw();
+  DoAnythingElse(); 
 }
