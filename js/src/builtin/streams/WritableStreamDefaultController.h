@@ -39,6 +39,14 @@ class WritableStreamDefaultController : public StreamController {
 
     Slot_Stream = StreamController::SlotCount,
 
+    
+
+
+
+
+
+
+
     Slot_UnderlyingSink,
 
     

@@ -284,6 +284,9 @@ MOZ_MUST_USE bool js::SetUpWritableStreamDefaultController(
   
   
   
+  
+  
+  controller->setUnderlyingSink(underlyingSink);
   controller->setWriteMethod(writeMethod);
   controller->setCloseMethod(closeMethod);
   controller->setAbortMethod(abortMethod);
