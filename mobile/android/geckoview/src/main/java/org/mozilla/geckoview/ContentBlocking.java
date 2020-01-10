@@ -458,6 +458,7 @@ public class ContentBlocking {
 
 
 
+
         @UiThread
         public @CBAntiTracking int getAntiTrackingCategory() {
             return mAntiTrackingCat;
@@ -467,12 +468,14 @@ public class ContentBlocking {
 
 
 
+
         @UiThread
         public @CBSafeBrowsing int getSafeBrowsingCategory() {
             return mSafeBrowsingCat;
         }
 
         
+
 
 
 
