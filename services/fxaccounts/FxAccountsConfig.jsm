@@ -40,7 +40,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "REQUIRES_HTTPS",
-  
   "identity.fxaccounts.allowHttp",
   false,
   null,
