@@ -42,6 +42,7 @@
 #include "nsStyleStructInlines.h"
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/DOMPointBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
@@ -3925,7 +3926,7 @@ nsresult SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
 
 
 int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
-                                           nsISVGPoint* aPoint) {
+                                           const DOMPointInit& aPoint) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (NS_SUBTREE_DIRTY(kid)) {
     
@@ -3937,7 +3938,7 @@ int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
 
   nsPresContext* context = PresContext();
 
-  gfxPoint p(aPoint->X(), aPoint->Y());
+  gfxPoint p(aPoint.mX, aPoint.mY);
 
   int32_t result = -1;
 
