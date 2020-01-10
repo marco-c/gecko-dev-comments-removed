@@ -1450,55 +1450,7 @@ XDRResult XDRScriptConst(XDRState<mode>* xdr, MutableHandleValue vp);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class alignas(uintptr_t) PrivateScriptData final {
-  struct PackedOffsets {
-    static constexpr size_t SCALE = sizeof(uint32_t);
-    static constexpr size_t MAX_OFFSET = 0b1111;
-
-    
-    uint32_t gcthingsOffset : 8;
-  };
-
-  
-  static_assert(sizeof(PackedOffsets) == sizeof(uint32_t),
-                "unexpected bit-field packing");
-
-  
-  
-  struct alignas(uintptr_t) PackedSpan {
-    uint32_t offset;
-    uint32_t length;
-  };
-
-  
-  PackedOffsets packedOffsets = {};  
   uint32_t ngcthings = 0;
 
   js::FieldInitializers fieldInitializers_ = js::FieldInitializers::Invalid();
@@ -1513,24 +1465,6 @@ class alignas(uintptr_t) PrivateScriptData final {
 
   
   template <typename T>
-  T* packedOffsetToPointer(size_t packedOffset) {
-    return offsetToPointer<T>(packedOffset * PackedOffsets::SCALE);
-  }
-
-  
-  
-  template <typename T>
-  mozilla::Span<T> packedOffsetToSpan(size_t scaledSpanOffset) {
-    PackedSpan* span = packedOffsetToPointer<PackedSpan>(scaledSpanOffset);
-    T* base = offsetToPointer<T>(span->offset);
-    return mozilla::MakeSpan(base, span->length);
-  }
-
-  
-  template <typename T>
-  void initSpan(size_t* cursor, uint32_t scaledSpanOffset, size_t length);
-
-  template <typename T>
   void initElements(size_t offset, size_t length);
 
   
@@ -1542,9 +1476,8 @@ class alignas(uintptr_t) PrivateScriptData final {
  public:
   
   mozilla::Span<JS::GCCellPtr> gcthings() {
-    JS::GCCellPtr* base =
-        packedOffsetToPointer<JS::GCCellPtr>(packedOffsets.gcthingsOffset);
-    return mozilla::MakeSpan(base, ngcthings);
+    size_t offset = sizeof(PrivateScriptData);
+    return mozilla::MakeSpan(offsetToPointer<JS::GCCellPtr>(offset), ngcthings);
   }
 
   void setFieldInitializers(FieldInitializers fieldInitializers) {

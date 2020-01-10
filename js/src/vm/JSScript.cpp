@@ -3555,52 +3555,21 @@ void PrivateScriptData::initElements(size_t offset, size_t length) {
   DefaultInitializeElements<T>(raw, length);
 }
 
-template <typename T>
-void PrivateScriptData::initSpan(size_t* cursor, uint32_t scaledSpanOffset,
-                                 size_t length) {
-  
-  if (scaledSpanOffset == 0) {
-    MOZ_ASSERT(length == 0);
-    return;
-  }
-
-  
-  PackedSpan* span = packedOffsetToPointer<PackedSpan>(scaledSpanOffset);
-  span = new (span) PackedSpan{uint32_t(*cursor), uint32_t(length)};
-
-  
-  initElements<T>(*cursor, length);
-
-  
-  (*cursor) += length * sizeof(T);
-}
-
 
 PrivateScriptData::PrivateScriptData(uint32_t ngcthings)
     : ngcthings(ngcthings) {
-  
-  auto ToPackedOffset = [](size_t cursor) {
-    MOZ_ASSERT(cursor % PackedOffsets::SCALE == 0);
-    return cursor / PackedOffsets::SCALE;
-  };
-
   
   
   
   size_t cursor = sizeof(*this);
 
   
-  static_assert(alignof(PrivateScriptData) >= alignof(PackedSpan),
-                "Incompatible alignment");
-
-  
   {
     MOZ_ASSERT(ngcthings > 0);
 
-    static_assert(alignof(PackedSpan) >= alignof(JS::GCCellPtr),
+    static_assert(alignof(PrivateScriptData) >= alignof(JS::GCCellPtr),
                   "Incompatible alignment");
     initElements<JS::GCCellPtr>(cursor, ngcthings);
-    packedOffsets.gcthingsOffset = ToPackedOffset(cursor);
 
     cursor += ngcthings * sizeof(JS::GCCellPtr);
   }
