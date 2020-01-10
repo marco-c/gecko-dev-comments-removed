@@ -1,4 +1,4 @@
-use super::{ParallelIterator, IndexedParallelIterator, IntoParallelIterator, ParallelExtend};
+use super::{IndexedParallelIterator, IntoParallelIterator, ParallelExtend, ParallelIterator};
 use std::collections::LinkedList;
 use std::slice;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -12,9 +12,10 @@ mod test;
 
 
 
-pub fn collect_into_vec<I, T>(pi: I, v: &mut Vec<T>)
-    where I: IndexedParallelIterator<Item = T>,
-          T: Send
+pub(super) fn collect_into_vec<I, T>(pi: I, v: &mut Vec<T>)
+where
+    I: IndexedParallelIterator<Item = T>,
+    T: Send,
 {
     v.truncate(0); 
     let mut collect = Collect::new(v, pi.len());
@@ -34,8 +35,9 @@ pub fn collect_into_vec<I, T>(pi: I, v: &mut Vec<T>)
 
 
 fn special_extend<I, T>(pi: I, len: usize, v: &mut Vec<T>)
-    where I: ParallelIterator<Item = T>,
-          T: Send
+where
+    I: ParallelIterator<Item = T>,
+    T: Send,
 {
     let mut collect = Collect::new(v, len);
     pi.drive_unindexed(collect.as_consumer());
@@ -45,10 +47,11 @@ fn special_extend<I, T>(pi: I, len: usize, v: &mut Vec<T>)
 
 
 
-pub fn unzip_into_vecs<I, A, B>(pi: I, left: &mut Vec<A>, right: &mut Vec<B>)
-    where I: IndexedParallelIterator<Item = (A, B)>,
-          A: Send,
-          B: Send
+pub(super) fn unzip_into_vecs<I, A, B>(pi: I, left: &mut Vec<A>, right: &mut Vec<B>)
+where
+    I: IndexedParallelIterator<Item = (A, B)>,
+    A: Send,
+    B: Send,
 {
     
     left.truncate(0);
@@ -65,7 +68,6 @@ pub fn unzip_into_vecs<I, A, B>(pi: I, left: &mut Vec<A>, right: &mut Vec<B>)
 }
 
 
-
 struct Collect<'c, T: Send + 'c> {
     writes: AtomicUsize,
     vec: &'c mut Vec<T>,
@@ -76,13 +78,13 @@ impl<'c, T: Send + 'c> Collect<'c, T> {
     fn new(vec: &'c mut Vec<T>, len: usize) -> Self {
         Collect {
             writes: AtomicUsize::new(0),
-            vec: vec,
-            len: len,
+            vec,
+            len,
         }
     }
 
     
-    fn as_consumer(&mut self) -> CollectConsumer<T> {
+    fn as_consumer(&mut self) -> CollectConsumer<'_, T> {
         
         self.vec.reserve(self.len);
 
@@ -104,10 +106,12 @@ impl<'c, T: Send + 'c> Collect<'c, T> {
             
             
             let actual_writes = self.writes.load(Ordering::Relaxed);
-            assert!(actual_writes == self.len,
-                    "expected {} total writes, but got {}",
-                    self.len,
-                    actual_writes);
+            assert!(
+                actual_writes == self.len,
+                "expected {} total writes, but got {}",
+                self.len,
+                actual_writes
+            );
             let new_len = self.vec.len() + self.len;
             self.vec.set_len(new_len);
         }
@@ -115,12 +119,13 @@ impl<'c, T: Send + 'c> Collect<'c, T> {
 }
 
 
-
 impl<T> ParallelExtend<T> for Vec<T>
-    where T: Send
+where
+    T: Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         
         let par_iter = par_iter.into_par_iter();

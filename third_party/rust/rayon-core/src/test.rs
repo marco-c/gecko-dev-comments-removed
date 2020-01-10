@@ -1,10 +1,10 @@
 #![cfg(test)]
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Barrier};
 #[allow(deprecated)]
 use Configuration;
-use {ThreadPoolBuilder, ThreadPoolBuildError};
-use std::sync::{Arc, Barrier};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use {ThreadPoolBuildError, ThreadPoolBuilder};
 
 #[test]
 fn worker_thread_index() {
@@ -128,8 +128,7 @@ fn check_config_build() {
 }
 
 
-
-fn _send_sync<T: Send + Sync>() { }
+fn _send_sync<T: Send + Sync>() {}
 
 #[test]
 fn check_error_send_sync() {
@@ -139,10 +138,10 @@ fn check_error_send_sync() {
 #[allow(deprecated)]
 #[test]
 fn configuration() {
-    let start_handler = move |_| { };
-    let exit_handler = move |_| {  };
-    let panic_handler = move |_| { };
-    let thread_name = move |i| { format!("thread_name_{}", i) };
+    let start_handler = move |_| {};
+    let exit_handler = move |_| {};
+    let panic_handler = move |_| {};
+    let thread_name = move |i| format!("thread_name_{}", i);
 
     
     Configuration::new()
@@ -153,5 +152,44 @@ fn configuration() {
         .breadth_first()
         .start_handler(start_handler)
         .exit_handler(exit_handler)
-        .build().unwrap();
+        .build()
+        .unwrap();
+}
+
+#[test]
+fn default_pool() {
+    ThreadPoolBuilder::default().build().unwrap();
+}
+
+
+
+
+#[test]
+fn cleared_current_thread() -> Result<(), ThreadPoolBuildError> {
+    let n_threads = 5;
+    let mut handles = vec![];
+    let pool = ThreadPoolBuilder::new()
+        .num_threads(n_threads)
+        .spawn_handler(|thread| {
+            let handle = std::thread::spawn(move || {
+                thread.run();
+
+                
+                assert_eq!(crate::current_thread_index(), None);
+            });
+            handles.push(handle);
+            Ok(())
+        })
+        .build()?;
+    assert_eq!(handles.len(), n_threads);
+
+    pool.install(|| assert!(crate::current_thread_index().is_some()));
+    drop(pool);
+
+    
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    Ok(())
 }

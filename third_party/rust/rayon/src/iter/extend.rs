@@ -1,17 +1,18 @@
-use super::{ParallelExtend, IntoParallelIterator, ParallelIterator};
+use super::{IntoParallelIterator, ParallelExtend, ParallelIterator};
 
 use std::borrow::Cow;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::hash::{BuildHasher, Hash};
 use std::collections::LinkedList;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::collections::{BinaryHeap, VecDeque};
+use std::hash::{BuildHasher, Hash};
 
 
 
 fn extend<C, I, F>(collection: &mut C, par_iter: I, reserve: F)
-    where I: IntoParallelIterator,
-          F: FnOnce(&mut C, &LinkedList<Vec<I::Item>>),
-          C: Extend<I::Item>
+where
+    I: IntoParallelIterator,
+    F: FnOnce(&mut C, &LinkedList<Vec<I::Item>>),
+    C: Extend<I::Item>,
 {
     let list = par_iter
         .into_par_iter()
@@ -42,7 +43,8 @@ fn len<T>(list: &LinkedList<Vec<T>>) -> usize {
 
 
 fn str_len<T>(list: &LinkedList<Vec<T>>) -> usize
-    where T: AsRef<str>
+where
+    T: AsRef<str>,
 {
     list.iter()
         .flat_map(|vec| vec.iter().map(|s| s.as_ref().len()))
@@ -50,12 +52,13 @@ fn str_len<T>(list: &LinkedList<Vec<T>>) -> usize
 }
 
 
-
 impl<T> ParallelExtend<T> for BinaryHeap<T>
-    where T: Ord + Send
+where
+    T: Ord + Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         extend(self, par_iter, |heap, list| heap.reserve(len(list)));
     }
@@ -63,23 +66,26 @@ impl<T> ParallelExtend<T> for BinaryHeap<T>
 
 
 impl<'a, T> ParallelExtend<&'a T> for BinaryHeap<T>
-    where T: 'a + Copy + Ord + Send + Sync
+where
+    T: 'a + Copy + Ord + Send + Sync,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = &'a T>
+    where
+        I: IntoParallelIterator<Item = &'a T>,
     {
         extend(self, par_iter, |heap, list| heap.reserve(len(list)));
     }
 }
 
 
-
 impl<K, V> ParallelExtend<(K, V)> for BTreeMap<K, V>
-    where K: Ord + Send,
-          V: Send
+where
+    K: Ord + Send,
+    V: Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = (K, V)>
+    where
+        I: IntoParallelIterator<Item = (K, V)>,
     {
         extend(self, par_iter, |_, _| {});
     }
@@ -87,23 +93,26 @@ impl<K, V> ParallelExtend<(K, V)> for BTreeMap<K, V>
 
 
 impl<'a, K, V> ParallelExtend<(&'a K, &'a V)> for BTreeMap<K, V>
-    where K: Copy + Ord + Send + Sync,
-          V: Copy + Send + Sync
+where
+    K: Copy + Ord + Send + Sync,
+    V: Copy + Send + Sync,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = (&'a K, &'a V)>
+    where
+        I: IntoParallelIterator<Item = (&'a K, &'a V)>,
     {
         extend(self, par_iter, |_, _| {});
     }
 }
 
 
-
 impl<T> ParallelExtend<T> for BTreeSet<T>
-    where T: Ord + Send
+where
+    T: Ord + Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         extend(self, par_iter, |_, _| {});
     }
@@ -111,24 +120,27 @@ impl<T> ParallelExtend<T> for BTreeSet<T>
 
 
 impl<'a, T> ParallelExtend<&'a T> for BTreeSet<T>
-    where T: 'a + Copy + Ord + Send + Sync
+where
+    T: 'a + Copy + Ord + Send + Sync,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = &'a T>
+    where
+        I: IntoParallelIterator<Item = &'a T>,
     {
         extend(self, par_iter, |_, _| {});
     }
 }
 
 
-
 impl<K, V, S> ParallelExtend<(K, V)> for HashMap<K, V, S>
-    where K: Eq + Hash + Send,
-          V: Send,
-          S: BuildHasher + Send
+where
+    K: Eq + Hash + Send,
+    V: Send,
+    S: BuildHasher + Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = (K, V)>
+    where
+        I: IntoParallelIterator<Item = (K, V)>,
     {
         
         extend(self, par_iter, |map, list| map.reserve(len(list)));
@@ -137,25 +149,28 @@ impl<K, V, S> ParallelExtend<(K, V)> for HashMap<K, V, S>
 
 
 impl<'a, K, V, S> ParallelExtend<(&'a K, &'a V)> for HashMap<K, V, S>
-    where K: Copy + Eq + Hash + Send + Sync,
-          V: Copy + Send + Sync,
-          S: BuildHasher + Send
+where
+    K: Copy + Eq + Hash + Send + Sync,
+    V: Copy + Send + Sync,
+    S: BuildHasher + Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = (&'a K, &'a V)>
+    where
+        I: IntoParallelIterator<Item = (&'a K, &'a V)>,
     {
         extend(self, par_iter, |map, list| map.reserve(len(list)));
     }
 }
 
 
-
 impl<T, S> ParallelExtend<T> for HashSet<T, S>
-    where T: Eq + Hash + Send,
-          S: BuildHasher + Send
+where
+    T: Eq + Hash + Send,
+    S: BuildHasher + Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         extend(self, par_iter, |set, list| set.reserve(len(list)));
     }
@@ -163,23 +178,26 @@ impl<T, S> ParallelExtend<T> for HashSet<T, S>
 
 
 impl<'a, T, S> ParallelExtend<&'a T> for HashSet<T, S>
-    where T: 'a + Copy + Eq + Hash + Send + Sync,
-          S: BuildHasher + Send
+where
+    T: 'a + Copy + Eq + Hash + Send + Sync,
+    S: BuildHasher + Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = &'a T>
+    where
+        I: IntoParallelIterator<Item = &'a T>,
     {
         extend(self, par_iter, |set, list| set.reserve(len(list)));
     }
 }
 
 
-
 impl<T> ParallelExtend<T> for LinkedList<T>
-    where T: Send
+where
+    T: Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         let mut list = par_iter
             .into_par_iter()
@@ -196,22 +214,23 @@ impl<T> ParallelExtend<T> for LinkedList<T>
 }
 
 
-
 impl<'a, T> ParallelExtend<&'a T> for LinkedList<T>
-    where T: 'a + Copy + Send + Sync
+where
+    T: 'a + Copy + Send + Sync,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = &'a T>
+    where
+        I: IntoParallelIterator<Item = &'a T>,
     {
         self.par_extend(par_iter.into_par_iter().cloned())
     }
 }
 
 
-
 impl ParallelExtend<char> for String {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = char>
+    where
+        I: IntoParallelIterator<Item = char>,
     {
         
         
@@ -239,7 +258,8 @@ impl ParallelExtend<char> for String {
 
 impl<'a> ParallelExtend<&'a char> for String {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = &'a char>
+    where
+        I: IntoParallelIterator<Item = &'a char>,
     {
         self.par_extend(par_iter.into_par_iter().cloned())
     }
@@ -248,7 +268,8 @@ impl<'a> ParallelExtend<&'a char> for String {
 
 impl<'a> ParallelExtend<&'a str> for String {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = &'a str>
+    where
+        I: IntoParallelIterator<Item = &'a str>,
     {
         extend(self, par_iter, |string, list| string.reserve(str_len(list)));
     }
@@ -257,7 +278,8 @@ impl<'a> ParallelExtend<&'a str> for String {
 
 impl ParallelExtend<String> for String {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = String>
+    where
+        I: IntoParallelIterator<Item = String>,
     {
         extend(self, par_iter, |string, list| string.reserve(str_len(list)));
     }
@@ -266,7 +288,8 @@ impl ParallelExtend<String> for String {
 
 impl<'a> ParallelExtend<Cow<'a, str>> for String {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = Cow<'a, str>>
+    where
+        I: IntoParallelIterator<Item = Cow<'a, str>>,
     {
         
         
@@ -276,15 +299,15 @@ impl<'a> ParallelExtend<Cow<'a, str>> for String {
                 vec.push(elem);
                 vec
             })
-        .map(|vec| {
-            let mut list = LinkedList::new();
-            list.push_back(vec);
-            list
-        })
-        .reduce(LinkedList::new, |mut list1, mut list2| {
-            list1.append(&mut list2);
-            list1
-        });
+            .map(|vec| {
+                let mut list = LinkedList::new();
+                list.push_back(vec);
+                list
+            })
+            .reduce(LinkedList::new, |mut list1, mut list2| {
+                list1.append(&mut list2);
+                list1
+            });
 
         self.reserve(str_len(&list));
         for vec in list {
@@ -294,12 +317,13 @@ impl<'a> ParallelExtend<Cow<'a, str>> for String {
 }
 
 
-
 impl<T> ParallelExtend<T> for VecDeque<T>
-    where T: Send
+where
+    T: Send,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         extend(self, par_iter, |deque, list| deque.reserve(len(list)));
     }
@@ -307,10 +331,12 @@ impl<T> ParallelExtend<T> for VecDeque<T>
 
 
 impl<'a, T> ParallelExtend<&'a T> for VecDeque<T>
-    where T: 'a + Copy + Send + Sync
+where
+    T: 'a + Copy + Send + Sync,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = &'a T>
+    where
+        I: IntoParallelIterator<Item = &'a T>,
     {
         extend(self, par_iter, |deque, list| deque.reserve(len(list)));
     }
@@ -320,12 +346,13 @@ impl<'a, T> ParallelExtend<&'a T> for VecDeque<T>
 
 
 
-
 impl<'a, T> ParallelExtend<&'a T> for Vec<T>
-    where T: 'a + Copy + Send + Sync
+where
+    T: 'a + Copy + Send + Sync,
 {
     fn par_extend<I>(&mut self, par_iter: I)
-        where I: IntoParallelIterator<Item = &'a T>
+    where
+        I: IntoParallelIterator<Item = &'a T>,
     {
         self.par_extend(par_iter.into_par_iter().cloned())
     }

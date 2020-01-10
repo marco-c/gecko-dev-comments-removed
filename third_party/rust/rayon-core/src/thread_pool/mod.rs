@@ -3,16 +3,17 @@
 
 
 
-#[allow(deprecated)]
-use Configuration;
-use {ThreadPoolBuilder, ThreadPoolBuildError};
 use join;
-use {scope, Scope};
+use registry::{Registry, ThreadSpawn, WorkerThread};
 use spawn;
-use std::sync::Arc;
 use std::error::Error;
 use std::fmt;
-use registry::{Registry, WorkerThread};
+use std::sync::Arc;
+#[allow(deprecated)]
+use Configuration;
+use {scope, Scope};
+use {scope_fifo, ScopeFifo};
+use {ThreadPoolBuildError, ThreadPoolBuilder};
 
 mod internal;
 mod test;
@@ -52,17 +53,22 @@ pub struct ThreadPool {
     registry: Arc<Registry>,
 }
 
-pub fn build(builder: ThreadPoolBuilder) -> Result<ThreadPool, ThreadPoolBuildError> {
-    let registry = try!(Registry::new(builder));
-    Ok(ThreadPool { registry: registry })
-}
-
 impl ThreadPool {
     #[deprecated(note = "Use `ThreadPoolBuilder::build`")]
     #[allow(deprecated)]
     
     pub fn new(configuration: Configuration) -> Result<ThreadPool, Box<Error>> {
-        build(configuration.into_builder()).map_err(|e| e.into())
+        Self::build(configuration.into_builder()).map_err(Box::from)
+    }
+
+    pub(super) fn build<S>(
+        builder: ThreadPoolBuilder<S>,
+    ) -> Result<ThreadPool, ThreadPoolBuildError>
+    where
+        S: ThreadSpawn,
+    {
+        let registry = Registry::new(builder)?;
+        Ok(ThreadPool { registry })
     }
 
     
@@ -78,8 +84,9 @@ impl ThreadPool {
     #[cfg(rayon_unstable)]
     pub fn global() -> &'static Arc<ThreadPool> {
         lazy_static! {
-            static ref DEFAULT_THREAD_POOL: Arc<ThreadPool> =
-                Arc::new(ThreadPool { registry: Registry::global() });
+            static ref DEFAULT_THREAD_POOL: Arc<ThreadPool> = Arc::new(ThreadPool {
+                registry: Registry::global()
+            });
         }
 
         &DEFAULT_THREAD_POOL
@@ -118,8 +125,9 @@ impl ThreadPool {
     
     
     pub fn install<OP, R>(&self, op: OP) -> R
-        where OP: FnOnce() -> R + Send,
-              R: Send
+    where
+        OP: FnOnce() -> R + Send,
+        R: Send,
     {
         self.registry.in_worker(|_, _| op())
     }
@@ -162,16 +170,8 @@ impl ThreadPool {
     
     #[inline]
     pub fn current_thread_index(&self) -> Option<usize> {
-        unsafe {
-            let curr = WorkerThread::current();
-            if curr.is_null() {
-                None
-            } else if (*curr).registry().id() != self.registry.id() {
-                None
-            } else {
-                Some((*curr).index())
-            }
-        }
+        let curr = self.registry.current_thread()?;
+        Some(curr.index())
     }
 
     
@@ -197,26 +197,19 @@ impl ThreadPool {
     
     #[inline]
     pub fn current_thread_has_pending_tasks(&self) -> Option<bool> {
-        unsafe {
-            let curr = WorkerThread::current();
-            if curr.is_null() {
-                None
-            } else if (*curr).registry().id() != self.registry.id() {
-                None
-            } else {
-                Some(!(*curr).local_deque_is_empty())
-            }
-        }
+        let curr = self.registry.current_thread()?;
+        Some(!curr.local_deque_is_empty())
     }
 
     
     
     
     pub fn join<A, B, RA, RB>(&self, oper_a: A, oper_b: B) -> (RA, RB)
-        where A: FnOnce() -> RA + Send,
-              B: FnOnce() -> RB + Send,
-              RA: Send,
-              RB: Send
+    where
+        A: FnOnce() -> RA + Send,
+        B: FnOnce() -> RB + Send,
+        RA: Send,
+        RB: Send,
     {
         self.install(|| join(oper_a, oper_b))
     }
@@ -228,7 +221,9 @@ impl ThreadPool {
     
     
     pub fn scope<'scope, OP, R>(&self, op: OP) -> R
-        where OP: for<'s> FnOnce(&'s Scope<'scope>) -> R + 'scope + Send, R: Send
+    where
+        OP: for<'s> FnOnce(&'s Scope<'scope>) -> R + 'scope + Send,
+        R: Send,
     {
         self.install(|| scope(op))
     }
@@ -240,12 +235,44 @@ impl ThreadPool {
     
     
     
+    pub fn scope_fifo<'scope, OP, R>(&self, op: OP) -> R
+    where
+        OP: for<'s> FnOnce(&'s ScopeFifo<'scope>) -> R + 'scope + Send,
+        R: Send,
+    {
+        self.install(|| scope_fifo(op))
+    }
+
+    
+    
+    
+    
+    
+    
+    
     
     pub fn spawn<OP>(&self, op: OP)
-        where OP: FnOnce() + Send + 'static
+    where
+        OP: FnOnce() + Send + 'static,
     {
         
         unsafe { spawn::spawn_in(op, &self.registry) }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn spawn_fifo<OP>(&self, op: OP)
+    where
+        OP: FnOnce() + Send + 'static,
+    {
+        
+        unsafe { spawn::spawn_fifo_in(op, &self.registry) }
     }
 }
 
@@ -290,12 +317,8 @@ impl fmt::Debug for ThreadPool {
 #[inline]
 pub fn current_thread_index() -> Option<usize> {
     unsafe {
-        let curr = WorkerThread::current();
-        if curr.is_null() {
-            None
-        } else {
-            Some((*curr).index())
-        }
+        let curr = WorkerThread::current().as_ref()?;
+        Some(curr.index())
     }
 }
 
@@ -308,11 +331,7 @@ pub fn current_thread_index() -> Option<usize> {
 #[inline]
 pub fn current_thread_has_pending_tasks() -> Option<bool> {
     unsafe {
-        let curr = WorkerThread::current();
-        if curr.is_null() {
-            None
-        } else {
-            Some(!(*curr).local_deque_is_empty())
-        }
+        let curr = WorkerThread::current().as_ref()?;
+        Some(!curr.local_deque_is_empty())
     }
 }

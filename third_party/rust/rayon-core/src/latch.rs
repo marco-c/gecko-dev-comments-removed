@@ -1,5 +1,5 @@
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Mutex, Condvar};
+use std::sync::{Condvar, Mutex};
 use std::usize;
 
 use sleep::Sleep;
@@ -30,12 +30,12 @@ use sleep::Sleep;
 
 
 
-pub trait Latch: LatchProbe {
+pub(super) trait Latch: LatchProbe {
     
     fn set(&self);
 }
 
-pub trait LatchProbe {
+pub(super) trait LatchProbe {
     
     fn probe(&self) -> bool;
 }
@@ -43,14 +43,16 @@ pub trait LatchProbe {
 
 
 
-pub struct SpinLatch {
+pub(super) struct SpinLatch {
     b: AtomicBool,
 }
 
 impl SpinLatch {
     #[inline]
-    pub fn new() -> SpinLatch {
-        SpinLatch { b: AtomicBool::new(false) }
+    pub(super) fn new() -> SpinLatch {
+        SpinLatch {
+            b: AtomicBool::new(false),
+        }
     }
 }
 
@@ -70,14 +72,14 @@ impl Latch for SpinLatch {
 
 
 
-pub struct LockLatch {
+pub(super) struct LockLatch {
     m: Mutex<bool>,
     v: Condvar,
 }
 
 impl LockLatch {
     #[inline]
-    pub fn new() -> LockLatch {
+    pub(super) fn new() -> LockLatch {
         LockLatch {
             m: Mutex::new(false),
             v: Condvar::new(),
@@ -85,7 +87,7 @@ impl LockLatch {
     }
 
     
-    pub fn wait(&self) {
+    pub(super) fn wait(&self) {
         let mut guard = self.m.lock().unwrap();
         while !*guard {
             guard = self.v.wait(guard).unwrap();
@@ -117,18 +119,20 @@ impl Latch for LockLatch {
 
 
 #[derive(Debug)]
-pub struct CountLatch {
+pub(super) struct CountLatch {
     counter: AtomicUsize,
 }
 
 impl CountLatch {
     #[inline]
-    pub fn new() -> CountLatch {
-        CountLatch { counter: AtomicUsize::new(1) }
+    pub(super) fn new() -> CountLatch {
+        CountLatch {
+            counter: AtomicUsize::new(1),
+        }
     }
 
     #[inline]
-    pub fn increment(&self) {
+    pub(super) fn increment(&self) {
         debug_assert!(!self.probe());
         self.counter.fetch_add(1, Ordering::Relaxed);
     }
@@ -153,18 +157,17 @@ impl Latch for CountLatch {
 
 
 
-
-pub struct TickleLatch<'a, L: Latch> {
+pub(super) struct TickleLatch<'a, L: Latch> {
     inner: L,
     sleep: &'a Sleep,
 }
 
 impl<'a, L: Latch> TickleLatch<'a, L> {
     #[inline]
-    pub fn new(latch: L, sleep: &'a Sleep) -> Self {
+    pub(super) fn new(latch: L, sleep: &'a Sleep) -> Self {
         TickleLatch {
             inner: latch,
-            sleep: sleep,
+            sleep,
         }
     }
 }

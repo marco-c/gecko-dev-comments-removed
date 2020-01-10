@@ -7,7 +7,7 @@ use std::sync::{Condvar, Mutex};
 use std::thread;
 use std::usize;
 
-pub struct Sleep {
+pub(super) struct Sleep {
     state: AtomicUsize,
     data: Mutex<()>,
     tickle: Condvar,
@@ -20,7 +20,7 @@ const ROUNDS_UNTIL_SLEEPY: usize = 32;
 const ROUNDS_UNTIL_ASLEEP: usize = 64;
 
 impl Sleep {
-    pub fn new() -> Sleep {
+    pub(super) fn new() -> Sleep {
         Sleep {
             state: AtomicUsize::new(AWAKE),
             data: Mutex::new(()),
@@ -46,7 +46,7 @@ impl Sleep {
     }
 
     #[inline]
-    pub fn work_found(&self, worker_index: usize, yields: usize) -> usize {
+    pub(super) fn work_found(&self, worker_index: usize, yields: usize) -> usize {
         log!(FoundWork {
             worker: worker_index,
             yields: yields,
@@ -61,7 +61,7 @@ impl Sleep {
     }
 
     #[inline]
-    pub fn no_work_found(&self, worker_index: usize, yields: usize) -> usize {
+    pub(super) fn no_work_found(&self, worker_index: usize, yields: usize) -> usize {
         log!(DidNotFindWork {
             worker: worker_index,
             yields: yields,
@@ -81,7 +81,9 @@ impl Sleep {
             if self.still_sleepy(worker_index) {
                 yields + 1
             } else {
-                log!(GotInterrupted { worker: worker_index });
+                log!(GotInterrupted {
+                    worker: worker_index
+                });
                 0
             }
         } else {
@@ -91,7 +93,7 @@ impl Sleep {
         }
     }
 
-    pub fn tickle(&self, worker_index: usize) {
+    pub(super) fn tickle(&self, worker_index: usize) {
         
         
         
@@ -140,11 +142,13 @@ impl Sleep {
             });
             if self.any_worker_is_sleepy(state) {
                 
-                debug_assert!(!self.worker_is_sleepy(state, worker_index),
-                              "worker {} called `is_sleepy()`, \
-                               but they are already sleepy (state={})",
-                              worker_index,
-                              state);
+                debug_assert!(
+                    !self.worker_is_sleepy(state, worker_index),
+                    "worker {} called `is_sleepy()`, \
+                     but they are already sleepy (state={})",
+                    worker_index,
+                    state
+                );
                 return false;
             } else {
                 
@@ -163,9 +167,11 @@ impl Sleep {
                 
                 
                 
-                if self.state
+                if self
+                    .state
                     .compare_exchange(state, new_state, Ordering::SeqCst, Ordering::Relaxed)
-                    .is_ok() {
+                    .is_ok()
+                {
                     log!(GotSleepy {
                         worker: worker_index,
                         old_state: state,
@@ -244,22 +250,30 @@ impl Sleep {
                 
                 
                 
-                if self.state
+                if self
+                    .state
                     .compare_exchange(state, SLEEPING, Ordering::SeqCst, Ordering::Relaxed)
-                    .is_ok() {
+                    .is_ok()
+                {
                     
                     
                     
                     
                     
                     
-                    log!(FellAsleep { worker: worker_index });
+                    log!(FellAsleep {
+                        worker: worker_index
+                    });
                     let _ = self.tickle.wait(data).unwrap();
-                    log!(GotAwoken { worker: worker_index });
+                    log!(GotAwoken {
+                        worker: worker_index
+                    });
                     return;
                 }
             } else {
-                log!(GotInterrupted { worker: worker_index });
+                log!(GotInterrupted {
+                    worker: worker_index
+                });
                 return;
             }
         }

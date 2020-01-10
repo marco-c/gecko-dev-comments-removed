@@ -133,7 +133,12 @@ pub fn traverse_dom<E, D>(
                 let root_opaque = root.as_node().opaque();
                 let drain = discovered.drain(..);
                 pool.install(|| {
-                    rayon::scope(|scope| {
+                    
+                    
+                    
+                    
+                    
+                    rayon::scope_fifo(|scope| {
                         profiler_label!(Style);
                         parallel::traverse_nodes(
                             drain,

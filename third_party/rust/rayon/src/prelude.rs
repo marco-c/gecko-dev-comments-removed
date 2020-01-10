@@ -3,10 +3,11 @@
 
 
 pub use iter::FromParallelIterator;
+pub use iter::IndexedParallelIterator;
 pub use iter::IntoParallelIterator;
 pub use iter::IntoParallelRefIterator;
 pub use iter::IntoParallelRefMutIterator;
-pub use iter::IndexedParallelIterator;
+pub use iter::ParallelBridge;
 pub use iter::ParallelExtend;
 pub use iter::ParallelIterator;
 pub use slice::ParallelSlice;

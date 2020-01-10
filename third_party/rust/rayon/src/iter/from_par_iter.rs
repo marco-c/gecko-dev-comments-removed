@@ -1,16 +1,16 @@
-use super::{FromParallelIterator, IntoParallelIterator, ParallelIterator, ParallelExtend};
+use super::{FromParallelIterator, IntoParallelIterator, ParallelExtend, ParallelIterator};
 
 use std::borrow::Cow;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::hash::{BuildHasher, Hash};
 use std::collections::LinkedList;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::collections::{BinaryHeap, VecDeque};
-
+use std::hash::{BuildHasher, Hash};
 
 
 fn collect_extended<C, I>(par_iter: I) -> C
-    where I: IntoParallelIterator,
-          C: ParallelExtend<I::Item> + Default
+where
+    I: IntoParallelIterator,
+    C: ParallelExtend<I::Item> + Default,
 {
     let mut collection = C::default();
     collection.par_extend(par_iter);
@@ -18,12 +18,13 @@ fn collect_extended<C, I>(par_iter: I) -> C
 }
 
 
-
 impl<T> FromParallelIterator<T> for Vec<T>
-    where T: Send
+where
+    T: Send,
 {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         collect_extended(par_iter)
     }
@@ -31,10 +32,12 @@ impl<T> FromParallelIterator<T> for Vec<T>
 
 
 impl<T> FromParallelIterator<T> for VecDeque<T>
-    where T: Send
+where
+    T: Send,
 {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         Vec::from_par_iter(par_iter).into()
     }
@@ -43,10 +46,12 @@ impl<T> FromParallelIterator<T> for VecDeque<T>
 
 
 impl<T> FromParallelIterator<T> for BinaryHeap<T>
-    where T: Ord + Send
+where
+    T: Ord + Send,
 {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         Vec::from_par_iter(par_iter).into()
     }
@@ -55,10 +60,12 @@ impl<T> FromParallelIterator<T> for BinaryHeap<T>
 
 
 impl<T> FromParallelIterator<T> for LinkedList<T>
-    where T: Send
+where
+    T: Send,
 {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         collect_extended(par_iter)
     }
@@ -69,12 +76,14 @@ impl<T> FromParallelIterator<T> for LinkedList<T>
 
 
 impl<K, V, S> FromParallelIterator<(K, V)> for HashMap<K, V, S>
-    where K: Eq + Hash + Send,
-          V: Send,
-          S: BuildHasher + Default + Send
+where
+    K: Eq + Hash + Send,
+    V: Send,
+    S: BuildHasher + Default + Send,
 {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = (K, V)>
+    where
+        I: IntoParallelIterator<Item = (K, V)>,
     {
         collect_extended(par_iter)
     }
@@ -85,11 +94,13 @@ impl<K, V, S> FromParallelIterator<(K, V)> for HashMap<K, V, S>
 
 
 impl<K, V> FromParallelIterator<(K, V)> for BTreeMap<K, V>
-    where K: Ord + Send,
-          V: Send
+where
+    K: Ord + Send,
+    V: Send,
 {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = (K, V)>
+    where
+        I: IntoParallelIterator<Item = (K, V)>,
     {
         collect_extended(par_iter)
     }
@@ -97,11 +108,13 @@ impl<K, V> FromParallelIterator<(K, V)> for BTreeMap<K, V>
 
 
 impl<V, S> FromParallelIterator<V> for HashSet<V, S>
-    where V: Eq + Hash + Send,
-          S: BuildHasher + Default + Send
+where
+    V: Eq + Hash + Send,
+    S: BuildHasher + Default + Send,
 {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = V>
+    where
+        I: IntoParallelIterator<Item = V>,
     {
         collect_extended(par_iter)
     }
@@ -109,10 +122,12 @@ impl<V, S> FromParallelIterator<V> for HashSet<V, S>
 
 
 impl<V> FromParallelIterator<V> for BTreeSet<V>
-    where V: Send + Ord
+where
+    V: Send + Ord,
 {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = V>
+    where
+        I: IntoParallelIterator<Item = V>,
     {
         collect_extended(par_iter)
     }
@@ -121,7 +136,8 @@ impl<V> FromParallelIterator<V> for BTreeSet<V>
 
 impl FromParallelIterator<char> for String {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = char>
+    where
+        I: IntoParallelIterator<Item = char>,
     {
         collect_extended(par_iter)
     }
@@ -130,7 +146,8 @@ impl FromParallelIterator<char> for String {
 
 impl<'a> FromParallelIterator<&'a char> for String {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = &'a char>
+    where
+        I: IntoParallelIterator<Item = &'a char>,
     {
         collect_extended(par_iter)
     }
@@ -139,7 +156,8 @@ impl<'a> FromParallelIterator<&'a char> for String {
 
 impl<'a> FromParallelIterator<&'a str> for String {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = &'a str>
+    where
+        I: IntoParallelIterator<Item = &'a str>,
     {
         collect_extended(par_iter)
     }
@@ -148,7 +166,8 @@ impl<'a> FromParallelIterator<&'a str> for String {
 
 impl FromParallelIterator<String> for String {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = String>
+    where
+        I: IntoParallelIterator<Item = String>,
     {
         collect_extended(par_iter)
     }
@@ -157,7 +176,8 @@ impl FromParallelIterator<String> for String {
 
 impl<'a> FromParallelIterator<Cow<'a, str>> for String {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = Cow<'a, str>>
+    where
+        I: IntoParallelIterator<Item = Cow<'a, str>>,
     {
         collect_extended(par_iter)
     }
@@ -169,12 +189,14 @@ impl<'a> FromParallelIterator<Cow<'a, str>> for String {
 
 
 impl<'a, C: ?Sized, T> FromParallelIterator<T> for Cow<'a, C>
-    where C: ToOwned,
-          C::Owned: FromParallelIterator<T>,
-          T: Send
+where
+    C: ToOwned,
+    C::Owned: FromParallelIterator<T>,
+    T: Send,
 {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = T>
+    where
+        I: IntoParallelIterator<Item = T>,
     {
         Cow::Owned(C::Owned::from_par_iter(par_iter))
     }
@@ -197,7 +219,8 @@ impl<'a, C: ?Sized, T> FromParallelIterator<T> for Cow<'a, C>
 
 impl FromParallelIterator<()> for () {
     fn from_par_iter<I>(par_iter: I) -> Self
-        where I: IntoParallelIterator<Item = ()>
+    where
+        I: IntoParallelIterator<Item = ()>,
     {
         par_iter.into_par_iter().for_each(|()| {})
     }

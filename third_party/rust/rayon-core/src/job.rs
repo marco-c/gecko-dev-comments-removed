@@ -1,10 +1,11 @@
+use crossbeam_queue::SegQueue;
 use latch::Latch;
 use std::any::Any;
 use std::cell::UnsafeCell;
 use std::mem;
 use unwind;
 
-pub enum JobResult<T> {
+pub(super) enum JobResult<T> {
     None,
     Ok(T),
     Panic(Box<Any + Send>),
@@ -15,7 +16,7 @@ pub enum JobResult<T> {
 
 
 
-pub trait Job {
+pub(super) trait Job {
     
     
     
@@ -29,7 +30,7 @@ pub trait Job {
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct JobRef {
+pub(super) struct JobRef {
     pointer: *const (),
     execute_fn: unsafe fn(*const ()),
 }
@@ -40,23 +41,21 @@ unsafe impl Sync for JobRef {}
 impl JobRef {
     
     
-    pub unsafe fn new<T>(data: *const T) -> JobRef
-        where T: Job
+    pub(super) unsafe fn new<T>(data: *const T) -> JobRef
+    where
+        T: Job,
     {
         let fn_ptr: unsafe fn(*const T) = <T as Job>::execute;
 
         
-        let fn_ptr: unsafe fn(*const ()) = mem::transmute(fn_ptr);
-        let pointer = data as *const ();
-
         JobRef {
-            pointer: pointer,
-            execute_fn: fn_ptr,
+            pointer: data as *const (),
+            execute_fn: mem::transmute(fn_ptr),
         }
     }
 
     #[inline]
-    pub unsafe fn execute(&self) {
+    pub(super) unsafe fn execute(&self) {
         (self.execute_fn)(self.pointer)
     }
 }
@@ -65,46 +64,49 @@ impl JobRef {
 
 
 
-pub struct StackJob<L, F, R>
-    where L: Latch + Sync,
-          F: FnOnce(bool) -> R + Send,
-          R: Send
+pub(super) struct StackJob<L, F, R>
+where
+    L: Latch + Sync,
+    F: FnOnce(bool) -> R + Send,
+    R: Send,
 {
-    pub latch: L,
+    pub(super) latch: L,
     func: UnsafeCell<Option<F>>,
     result: UnsafeCell<JobResult<R>>,
 }
 
 impl<L, F, R> StackJob<L, F, R>
-    where L: Latch + Sync,
-          F: FnOnce(bool) -> R + Send,
-          R: Send
+where
+    L: Latch + Sync,
+    F: FnOnce(bool) -> R + Send,
+    R: Send,
 {
-    pub fn new(func: F, latch: L) -> StackJob<L, F, R> {
+    pub(super) fn new(func: F, latch: L) -> StackJob<L, F, R> {
         StackJob {
-            latch: latch,
+            latch,
             func: UnsafeCell::new(Some(func)),
             result: UnsafeCell::new(JobResult::None),
         }
     }
 
-    pub unsafe fn as_job_ref(&self) -> JobRef {
+    pub(super) unsafe fn as_job_ref(&self) -> JobRef {
         JobRef::new(self)
     }
 
-    pub unsafe fn run_inline(self, stolen: bool) -> R {
+    pub(super) unsafe fn run_inline(self, stolen: bool) -> R {
         self.func.into_inner().unwrap()(stolen)
     }
 
-    pub unsafe fn into_result(self) -> R {
+    pub(super) unsafe fn into_result(self) -> R {
         self.result.into_inner().into_return_value()
     }
 }
 
 impl<L, F, R> Job for StackJob<L, F, R>
-    where L: Latch + Sync,
-          F: FnOnce(bool) -> R + Send,
-          R: Send
+where
+    L: Latch + Sync,
+    F: FnOnce(bool) -> R + Send,
+    R: Send,
 {
     unsafe fn execute(this: *const Self) {
         let this = &*this;
@@ -125,30 +127,35 @@ impl<L, F, R> Job for StackJob<L, F, R>
 
 
 
-pub struct HeapJob<BODY>
-    where BODY: FnOnce() + Send
+pub(super) struct HeapJob<BODY>
+where
+    BODY: FnOnce() + Send,
 {
     job: UnsafeCell<Option<BODY>>,
 }
 
 impl<BODY> HeapJob<BODY>
-    where BODY: FnOnce() + Send
+where
+    BODY: FnOnce() + Send,
 {
-    pub fn new(func: BODY) -> Self {
-        HeapJob { job: UnsafeCell::new(Some(func)) }
+    pub(super) fn new(func: BODY) -> Self {
+        HeapJob {
+            job: UnsafeCell::new(Some(func)),
+        }
     }
 
     
     
     
-    pub unsafe fn as_job_ref(self: Box<Self>) -> JobRef {
+    pub(super) unsafe fn as_job_ref(self: Box<Self>) -> JobRef {
         let this: *const Self = mem::transmute(self);
         JobRef::new(this)
     }
 }
 
 impl<BODY> Job for HeapJob<BODY>
-    where BODY: FnOnce() + Send
+where
+    BODY: FnOnce() + Send,
 {
     unsafe fn execute(this: *const Self) {
         let this: Box<Self> = mem::transmute(this);
@@ -162,11 +169,39 @@ impl<T> JobResult<T> {
     
     
     
-    pub fn into_return_value(self) -> T {
+    pub(super) fn into_return_value(self) -> T {
         match self {
             JobResult::None => unreachable!(),
             JobResult::Ok(x) => x,
             JobResult::Panic(x) => unwind::resume_unwinding(x),
         }
+    }
+}
+
+
+pub(super) struct JobFifo {
+    inner: SegQueue<JobRef>,
+}
+
+impl JobFifo {
+    pub(super) fn new() -> Self {
+        JobFifo {
+            inner: SegQueue::new(),
+        }
+    }
+
+    pub(super) unsafe fn push(&self, job_ref: JobRef) -> JobRef {
+        
+        
+        
+        self.inner.push(job_ref);
+        JobRef::new(self)
+    }
+}
+
+impl Job for JobFifo {
+    unsafe fn execute(this: *const Self) {
+        
+        (*this).inner.pop().expect("job in fifo queue").execute()
     }
 }

@@ -64,7 +64,9 @@ where
             
             
             
-            let mut tmp = NoDrop { value: Some(ptr::read(v.get_unchecked(0))) };
+            let mut tmp = NoDrop {
+                value: Some(ptr::read(v.get_unchecked(0))),
+            };
             let mut hole = CopyOnDrop {
                 src: tmp.value.as_mut().unwrap(),
                 dest: v.get_unchecked_mut(1),
@@ -97,7 +99,9 @@ where
             
             
             
-            let mut tmp = NoDrop { value: Some(ptr::read(v.get_unchecked(len - 1))) };
+            let mut tmp = NoDrop {
+                value: Some(ptr::read(v.get_unchecked(len - 1))),
+            };
             let mut hole = CopyOnDrop {
                 src: tmp.value.as_mut().unwrap(),
                 dest: v.get_unchecked_mut(len - 2),
@@ -171,7 +175,7 @@ where
     F: Fn(&T, &T) -> bool,
 {
     for i in 1..v.len() {
-        shift_tail(&mut v[..i + 1], is_less);
+        shift_tail(&mut v[..=i], is_less);
     }
 }
 
@@ -255,7 +259,7 @@ where
     let mut offsets_l: [u8; BLOCK] = unsafe { mem::uninitialized() };
 
     
-    let mut r = unsafe { l.offset(v.len() as isize) };
+    let mut r = unsafe { l.add(v.len()) };
     let mut block_r = BLOCK;
     let mut start_r = ptr::null_mut();
     let mut end_r = ptr::null_mut();
@@ -329,8 +333,16 @@ where
         let count = cmp::min(width(start_l, end_l), width(start_r, end_r));
 
         if count > 0 {
-            macro_rules! left { () => { l.offset(*start_l as isize) } }
-            macro_rules! right { () => { r.offset(-(*start_r as isize) - 1) } }
+            macro_rules! left {
+                () => {
+                    l.offset(*start_l as isize)
+                };
+            }
+            macro_rules! right {
+                () => {
+                    r.offset(-(*start_r as isize) - 1)
+                };
+            }
 
             
             
@@ -355,12 +367,12 @@ where
 
         if start_l == end_l {
             
-            l = unsafe { l.offset(block_l as isize) };
+            l = unsafe { l.add(block_l) };
         }
 
         if start_r == end_r {
             
-            r = unsafe { r.offset(-(block_r as isize)) };
+            r = unsafe { r.sub(block_r) };
         }
 
         if is_done {
@@ -527,10 +539,12 @@ fn break_patterns<T>(v: &mut [T]) {
             random ^= random << 5;
             random
         };
-        let mut gen_usize = || if mem::size_of::<usize>() <= 4 {
-            gen_u32() as usize
-        } else {
-            (((gen_u32() as u64) << 32) | (gen_u32() as u64)) as usize
+        let mut gen_usize = || {
+            if mem::size_of::<usize>() <= 4 {
+                gen_u32() as usize
+            } else {
+                ((u64::from(gen_u32()) << 32) | u64::from(gen_u32())) as usize
+            }
         };
 
         
@@ -688,7 +702,7 @@ where
                 let mid = partition_equal(v, pivot, is_less);
 
                 
-                v = &mut {v}[mid..];
+                v = &mut { v }[mid..];
                 continue;
             }
         }
@@ -699,7 +713,7 @@ where
         was_partitioned = was_p;
 
         
-        let (left, right) = {v}.split_at_mut(mid);
+        let (left, right) = { v }.split_at_mut(mid);
         let (pivot, right) = right.split_at_mut(1);
         let pivot = &mut pivot[0];
 
@@ -729,7 +743,7 @@ where
 
 
 
-pub fn par_quicksort<T, F>(v: &mut [T], is_less: F)
+pub(super) fn par_quicksort<T, F>(v: &mut [T], is_less: F)
 where
     T: Send,
     F: Fn(&T, &T) -> bool + Sync,
@@ -747,8 +761,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use rand::{thread_rng, Rng};
     use super::heapsort;
+    use rand::distributions::Uniform;
+    use rand::{thread_rng, Rng};
 
     #[test]
     fn test_heapsort() {
@@ -756,11 +771,9 @@ mod tests {
 
         for len in (0..25).chain(500..501) {
             for &modulus in &[5, 10, 100] {
+                let dist = Uniform::new(0, modulus);
                 for _ in 0..100 {
-                    let v: Vec<_> = rng.gen_iter::<i32>()
-                        .map(|x| x % modulus)
-                        .take(len)
-                        .collect();
+                    let v: Vec<i32> = rng.sample_iter(&dist).take(len).collect();
 
                     
                     let mut tmp = v.clone();

@@ -47,8 +47,20 @@ use unwind;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 pub fn spawn<F>(func: F)
-    where F: FnOnce() + Send + 'static
+where
+    F: FnOnce() + Send + 'static,
 {
     
     unsafe { spawn_in(func, &Registry::current()) }
@@ -57,37 +69,99 @@ pub fn spawn<F>(func: F)
 
 
 
-
-
-pub unsafe fn spawn_in<F>(func: F, registry: &Arc<Registry>)
-    where F: FnOnce() + Send + 'static
+pub(super) unsafe fn spawn_in<F>(func: F, registry: &Arc<Registry>)
+where
+    F: FnOnce() + Send + 'static,
 {
-    
-    
-    registry.increment_terminate_count();
-
-    let async_job = Box::new(HeapJob::new({
-        let registry = registry.clone();
-        move || {
-            match unwind::halt_unwinding(func) {
-                Ok(()) => {
-                }
-                Err(err) => {
-                    registry.handle_panic(err);
-                }
-            }
-            registry.terminate(); 
-        }
-    }));
-
     
     
     
     
     
     let abort_guard = unwind::AbortIfPanic; 
-    let job_ref = HeapJob::as_job_ref(async_job);
+    let job_ref = spawn_job(func, registry);
     registry.inject_or_push(job_ref);
+    mem::forget(abort_guard);
+}
+
+unsafe fn spawn_job<F>(func: F, registry: &Arc<Registry>) -> JobRef
+where
+    F: FnOnce() + Send + 'static,
+{
+    
+    
+    registry.increment_terminate_count();
+
+    Box::new(HeapJob::new({
+        let registry = registry.clone();
+        move || {
+            match unwind::halt_unwinding(func) {
+                Ok(()) => {}
+                Err(err) => {
+                    registry.handle_panic(err);
+                }
+            }
+            registry.terminate(); 
+        }
+    }))
+    .as_job_ref()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn spawn_fifo<F>(func: F)
+where
+    F: FnOnce() + Send + 'static,
+{
+    
+    unsafe { spawn_fifo_in(func, &Registry::current()) }
+}
+
+
+
+
+pub(super) unsafe fn spawn_fifo_in<F>(func: F, registry: &Arc<Registry>)
+where
+    F: FnOnce() + Send + 'static,
+{
+    
+    
+    
+    
+    
+    let abort_guard = unwind::AbortIfPanic; 
+    let job_ref = spawn_job(func, registry);
+
+    
+    
+    match registry.current_thread() {
+        Some(worker) => worker.push_fifo(job_ref),
+        None => registry.inject(&[job_ref]),
+    }
     mem::forget(abort_guard);
 }
 

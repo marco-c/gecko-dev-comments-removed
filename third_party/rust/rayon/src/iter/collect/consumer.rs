@@ -1,10 +1,16 @@
-use super::super::plumbing::*;
 use super::super::noop::*;
+use super::super::plumbing::*;
 use std::ptr;
 use std::slice;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-pub struct CollectConsumer<'c, T: Send + 'c> {
+pub(super) struct CollectConsumer<'c, T: Send + 'c> {
+    
+    
+    
+    
+    
+    
     
     
     writes: &'c AtomicUsize,
@@ -13,7 +19,7 @@ pub struct CollectConsumer<'c, T: Send + 'c> {
     target: &'c mut [T],
 }
 
-pub struct CollectFolder<'c, T: Send + 'c> {
+pub(super) struct CollectFolder<'c, T: Send + 'c> {
     global_writes: &'c AtomicUsize,
     local_writes: usize,
 
@@ -21,15 +27,11 @@ pub struct CollectFolder<'c, T: Send + 'c> {
     target: slice::IterMut<'c, T>,
 }
 
-
 impl<'c, T: Send + 'c> CollectConsumer<'c, T> {
     
     
-    pub fn new(writes: &'c AtomicUsize, target: &'c mut [T]) -> CollectConsumer<'c, T> {
-        CollectConsumer {
-            writes: writes,
-            target: target,
-        }
+    pub(super) fn new(writes: &'c AtomicUsize, target: &'c mut [T]) -> Self {
+        CollectConsumer { writes, target }
     }
 }
 
@@ -47,14 +49,18 @@ impl<'c, T: Send + 'c> Consumer<T> for CollectConsumer<'c, T> {
         
         
         let (left, right) = target.split_at_mut(index);
-        (CollectConsumer::new(writes, left), CollectConsumer::new(writes, right), NoopReducer)
+        (
+            CollectConsumer::new(writes, left),
+            CollectConsumer::new(writes, right),
+            NoopReducer,
+        )
     }
 
     fn into_folder(self) -> CollectFolder<'c, T> {
         CollectFolder {
             global_writes: self.writes,
             local_writes: 0,
-            target: self.target.into_iter(),
+            target: self.target.iter_mut(),
         }
     }
 
@@ -69,7 +75,10 @@ impl<'c, T: Send + 'c> Folder<T> for CollectFolder<'c, T> {
     fn consume(mut self, item: T) -> CollectFolder<'c, T> {
         
         
-        let head = self.target.next().expect("too many values pushed to consumer");
+        let head = self
+            .target
+            .next()
+            .expect("too many values pushed to consumer");
         unsafe {
             ptr::write(head, item);
         }
@@ -79,10 +88,12 @@ impl<'c, T: Send + 'c> Folder<T> for CollectFolder<'c, T> {
     }
 
     fn complete(self) {
-        assert!(self.target.len() == 0, "too few values pushed to consumer");
+        
+        
 
         
-        self.global_writes.fetch_add(self.local_writes, Ordering::Relaxed);
+        self.global_writes
+            .fetch_add(self.local_writes, Ordering::Relaxed);
     }
 
     fn full(&self) -> bool {

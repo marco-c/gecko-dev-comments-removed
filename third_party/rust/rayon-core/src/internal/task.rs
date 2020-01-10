@@ -81,4 +81,3 @@ pub trait ToScopeHandle<'scope> {
     
     fn to_scope_handle(&self) -> Self::ScopeHandle;
 }
-
