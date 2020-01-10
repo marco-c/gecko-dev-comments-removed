@@ -1110,6 +1110,10 @@ this.LoginHelper = {
     if (!breaches) {
       breaches = await RemoteSettings("fxmonitor-breaches").get();
     }
+    const BREACH_ALERT_URL = Services.prefs.getStringPref(
+      "signon.management.page.breachAlertUrl"
+    );
+    const baseBreachAlertURL = new URL(BREACH_ALERT_URL);
 
     
     
@@ -1125,6 +1129,8 @@ this.LoginHelper = {
           Services.eTLD.hasRootDomain(loginURI.host, breach.Domain) &&
           login.timePasswordChanged < new Date(breach.BreachDate).getTime()
         ) {
+          let breachAlertURL = new URL(breach.Name, baseBreachAlertURL);
+          breach.breachAlertURL = breachAlertURL.href;
           breachesByLoginGUID.set(login.guid, breach);
         }
       }
