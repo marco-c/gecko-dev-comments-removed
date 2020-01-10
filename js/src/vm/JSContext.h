@@ -552,14 +552,6 @@ struct JSContext : public JS::RootingContext,
 
 #ifdef DEBUG
   
-  js::ContextData<bool> ionCompiling;
-
-  
-  
-  
-  js::ContextData<bool> ionCompilingSafeForMinorGC;
-
-  
   js::ContextData<size_t> isTouchingGrayThings;
 
   js::ContextData<size_t> noNurseryAllocationCheck;
@@ -1249,35 +1241,6 @@ class MOZ_RAII AutoKeepAtoms {
  public:
   explicit inline AutoKeepAtoms(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
   inline ~AutoKeepAtoms();
-};
-
-
-
-class MOZ_RAII AutoEnterIonCompilation {
- public:
-  explicit AutoEnterIonCompilation(
-      bool safeForMinorGC MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-
-#ifdef DEBUG
-    JSContext* cx = TlsContext.get();
-    MOZ_ASSERT(!cx->ionCompiling);
-    MOZ_ASSERT(!cx->ionCompilingSafeForMinorGC);
-    cx->ionCompiling = true;
-    cx->ionCompilingSafeForMinorGC = safeForMinorGC;
-#endif
-  }
-
-  ~AutoEnterIonCompilation() {
-#ifdef DEBUG
-    JSContext* cx = TlsContext.get();
-    MOZ_ASSERT(cx->ionCompiling);
-    cx->ionCompiling = false;
-    cx->ionCompilingSafeForMinorGC = false;
-#endif
-  }
-
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 enum UnsafeABIStrictness {
