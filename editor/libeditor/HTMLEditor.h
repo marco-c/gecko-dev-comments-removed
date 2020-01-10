@@ -44,6 +44,7 @@ class AlignStateAtSelection;
 class AutoSelectionSetterAfterTableEdit;
 class AutoSetTemporaryAncestorLimiter;
 class EditActionResult;
+class EditResult;
 class EmptyEditableFunctor;
 class ListElementSelectionState;
 class ListItemElementSelectionState;
@@ -977,11 +978,24 @@ class HTMLEditor final : public TextEditor,
   nsresult SetInlinePropertyOnNode(nsIContent& aNode, nsAtom& aProperty,
                                    nsAtom* aAttribute, const nsAString& aValue);
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
-                                nsAtom* aProperty, nsAtom* aAttribute,
-                                nsIContent** aOutLeftNode = nullptr,
-                                nsIContent** aOutRightNode = nullptr);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE SplitNodeResult
+  SplitAncestorStyledInlineElementsAt(const EditorDOMPoint& aPointToSplit,
+                                      nsAtom* aProperty, nsAtom* aAttribute);
 
   nsIContent* GetPriorHTMLSibling(nsINode* aNode);
 
@@ -1138,9 +1152,20 @@ class HTMLEditor final : public TextEditor,
                                  bool* aAny, bool* aAll,
                                  nsAString* outValue) const;
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult ClearStyle(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
-                      nsAtom* aProperty, nsAtom* aAttribute);
+  
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditResult ClearStyleAt(
+      const EditorDOMPoint& aPoint, nsAtom* aProperty, nsAtom* aAttribute);
 
   MOZ_CAN_RUN_SCRIPT nsresult SetPositionToAbsolute(Element& aElement);
   MOZ_CAN_RUN_SCRIPT nsresult SetPositionToStatic(Element& aElement);
