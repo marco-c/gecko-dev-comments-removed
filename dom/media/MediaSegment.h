@@ -6,9 +6,8 @@
 #ifndef MOZILLA_MEDIASEGMENT_H_
 #define MOZILLA_MEDIASEGMENT_H_
 
+#include "PrincipalHandle.h"
 #include "nsTArray.h"
-#include "nsIPrincipal.h"
-#include "nsProxyRelease.h"
 #ifdef MOZILLA_INTERNAL_API
 #  include "mozilla/TimeStamp.h"
 #endif
@@ -64,49 +63,6 @@ const GraphTime GRAPH_TIME_MAX = MEDIA_TIME_MAX;
 
 
 const size_t DEFAULT_SEGMENT_CAPACITY = 16;
-
-
-
-
-
-
-
-typedef nsMainThreadPtrHandle<nsIPrincipal> PrincipalHandle;
-
-inline PrincipalHandle MakePrincipalHandle(nsIPrincipal* aPrincipal) {
-  RefPtr<nsMainThreadPtrHolder<nsIPrincipal>> holder =
-      new nsMainThreadPtrHolder<nsIPrincipal>(
-          "MakePrincipalHandle::nsIPrincipal", aPrincipal);
-  return PrincipalHandle(holder);
-}
-
-#define PRINCIPAL_HANDLE_NONE nullptr
-
-inline nsIPrincipal* GetPrincipalFromHandle(
-    const PrincipalHandle& aPrincipalHandle) {
-  MOZ_ASSERT(NS_IsMainThread());
-  return aPrincipalHandle.get();
-}
-
-inline bool PrincipalHandleMatches(const PrincipalHandle& aPrincipalHandle,
-                                   nsIPrincipal* aOther) {
-  if (!aOther) {
-    return false;
-  }
-
-  nsIPrincipal* principal = GetPrincipalFromHandle(aPrincipalHandle);
-  if (!principal) {
-    return false;
-  }
-
-  bool result;
-  if (NS_FAILED(principal->Equals(aOther, &result))) {
-    NS_ERROR("Principal check failed");
-    return false;
-  }
-
-  return result;
-}
 
 
 
