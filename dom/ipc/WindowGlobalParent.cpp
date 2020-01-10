@@ -78,7 +78,11 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
   
   dom::ContentParentId processId(0);
   if (!mInProcess) {
-    processId = static_cast<ContentParent*>(Manager()->Manager())->ChildID();
+    ContentParent* cp = static_cast<ContentParent*>(Manager()->Manager());
+    processId = cp->ChildID();
+
+    
+    cp->TransmitPermissionsForPrincipal(mDocumentPrincipal);
   }
 
   mBrowsingContext = CanonicalBrowsingContext::Cast(aInit.browsingContext());
