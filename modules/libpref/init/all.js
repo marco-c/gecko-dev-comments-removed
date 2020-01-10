@@ -5175,6 +5175,13 @@ pref("extensions.htmlaboutaddons.enabled", false);
 
 pref("extensions.htmlaboutaddons.inline-options.enabled", true);
 
+pref("extensions.htmlaboutaddons.recommendations.enabled", true);
+
+
+pref("extensions.recommendations.privacyPolicyUrl", "");
+
+pref("extensions.recommendations.themeRecommendationUrl", "");
+
 
 
 
