@@ -414,6 +414,7 @@ function convertGoogleEngines(engineNames) {
 
 
 
+
 var fetchRegionDefault = ss =>
   new Promise(resolve => {
     let urlTemplate = Services.prefs
@@ -621,9 +622,12 @@ SearchService.prototype = {
   
 
 
+
+
   _searchDefault: null,
 
   
+
 
 
 
@@ -925,6 +929,59 @@ SearchService.prototype = {
 
 
   _originalDefaultEngine(privateMode = false) {
+    
+    
+    
+    if (gModernConfig) {
+      
+      
+      
+      if (SearchUtils.distroID && !privateMode) {
+        let defaultPrefB = Services.prefs.getDefaultBranch(
+          SearchUtils.BROWSER_SEARCH_PREF
+        );
+        try {
+          let defaultEngineName = defaultPrefB.getComplexValue(
+            "defaultenginename",
+            Ci.nsIPrefLocalizedString
+          ).data;
+
+          let defaultEngine = this.getEngineByName(defaultEngineName);
+          if (defaultEngine) {
+            return defaultEngine;
+          }
+        } catch (ex) {
+          
+          
+          
+        }
+      }
+
+      
+      
+      let defaultEngine = this._getEngineByWebExtensionDetails(
+        privateMode && this._searchPrivateDefault
+          ? this._searchPrivateDefault
+          : this._searchDefault
+      );
+
+      if (defaultEngine) {
+        return defaultEngine;
+      }
+
+      if (privateMode) {
+        
+        
+        return this._originalDefaultEngine(false);
+      }
+
+      
+      
+      return this._getSortedEngines(false)[0];
+    }
+
+    
+
     let defaultEngineName = this.getVerifiedGlobalAttr(
       privateMode ? "searchDefaultPrivate" : "searchDefault"
     );
@@ -1712,10 +1769,23 @@ SearchService.prototype = {
       region
     );
 
-    this._searchDefault = engines[0].engineName;
+    const defaultEngine = engines[0];
+    this._searchDefault = {
+      id: defaultEngine.webExtensionId,
+      locale:
+        "webExtensionLocales" in defaultEngine
+          ? defaultEngine.webExtensionLocales[0]
+          : DEFAULT_TAG,
+    };
     this._searchOrder = engines.map(e => e.engineName);
     if (privateDefault) {
-      this._searchPrivateDefault = privateDefault;
+      this._searchPrivateDefault = {
+        id: privateDefault.webExtensionId,
+        locale:
+          "webExtensionLocales" in privateDefault
+            ? privateDefault.webExtensionLocales[0]
+            : DEFAULT_TAG,
+      };
     }
     return engines;
   },
@@ -1757,6 +1827,14 @@ SearchService.prototype = {
 
     return this._parseListJSON(list);
   },
+
+  
+
+
+
+
+
+
 
   _parseListJSON(list) {
     let json;
@@ -2281,6 +2359,29 @@ SearchService.prototype = {
     return null;
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+  _getEngineByWebExtensionDetails(details) {
+    for (const engine of this._engines.values()) {
+      if (
+        engine._extensionID == details.id &&
+        engine._locale == details.locale
+      ) {
+        return engine;
+      }
+    }
+    return null;
+  },
+
   async addEngineWithDetails(name, details, isReload = false) {
     SearchUtils.log('addEngineWithDetails: Adding "' + name + '".');
     let isCurrent = false;
@@ -2561,6 +2662,7 @@ SearchService.prototype = {
       icons: iconList,
       alias: searchProvider.keyword,
       extensionID: extension.id,
+      locale,
       isBuiltin: extension.addonData.builtIn,
       
       suggestURL: searchProvider.suggest_url,

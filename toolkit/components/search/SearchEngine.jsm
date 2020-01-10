@@ -815,6 +815,8 @@ SearchEngine.prototype = {
   
   _extensionID: null,
   
+  _locale: null,
+  
   _isBuiltin: false,
 
   
@@ -1397,6 +1399,7 @@ SearchEngine.prototype = {
 
   _initFromMetadata(engineName, params) {
     this._extensionID = params.extensionID;
+    this._locale = params.locale;
     this._isBuiltin = !!params.isBuiltin;
 
     this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SEARCH, {
