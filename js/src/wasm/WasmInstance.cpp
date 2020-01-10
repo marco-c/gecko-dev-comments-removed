@@ -998,6 +998,33 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   return table.length();
 }
 
+ void* Instance::funcRef(Instance* instance, uint32_t funcIndex) {
+  MOZ_ASSERT(SASigFuncRef.failureMode == FailureMode::FailOnInvalidRef);
+  JSContext* cx = TlsContext.get();
+
+  Tier tier = instance->code().bestTier();
+  const MetadataTier& metadataTier = instance->metadata(tier);
+  const FuncImportVector& funcImports = metadataTier.funcImports;
+
+  
+  
+  
+  
+  if (funcIndex < funcImports.length()) {
+    FuncImportTls& import = instance->funcImportTls(funcImports[funcIndex]);
+    return AnyRef::fromJSObject(import.fun).forCompiledCode();
+  }
+
+  RootedFunction fun(cx);
+  RootedWasmInstanceObject instanceObj(cx, instance->object());
+  if (WasmInstanceObject::getExportedFunction(cx, instanceObj, funcIndex,
+                                              &fun)) {
+    return AnyRef::fromJSObject(fun).forCompiledCode();
+  }
+
+  return AnyRef::invalid().forCompiledCode();
+}
+
  void Instance::postBarrier(Instance* instance,
                                         gc::Cell** location) {
   MOZ_ASSERT(SASigPostBarrier.failureMode == FailureMode::Infallible);
