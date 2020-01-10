@@ -97,7 +97,9 @@ class RaptorResultsHandler():
                     return None
 
         if self.config.get('power_test', None):
-            expected_perfherder += 1
+            
+            
+            expected_perfherder += 2
         if self.config.get('memory_test', None):
             expected_perfherder += 1
         if self.config.get('cpu_test', None):
