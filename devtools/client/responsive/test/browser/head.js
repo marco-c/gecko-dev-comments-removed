@@ -139,20 +139,60 @@ var closeRDM = async function(tab, options) {
 
 
 
-function addRDMTask(url, task) {
-  add_task(async function() {
-    const tab = await addTab(url);
-    const results = await openRDM(tab);
 
-    try {
-      await task(results);
-    } catch (err) {
-      ok(false, "Got an error: " + DevToolsUtils.safeErrorString(err));
-    }
 
-    await closeRDM(tab);
-    await removeTab(tab);
-  });
+
+
+
+function addRDMTask(rdmUrl, rdmTask, includeBrowserEmbeddedUI) {
+  
+  
+  function taskSetup(url, task) {
+    add_task(async function() {
+      const tab = await addTab(url);
+      const { ui, manager } = await openRDM(tab);
+      const usingBrowserUI = Services.prefs.getBoolPref(
+        "devtools.responsive.browserUI.enabled"
+      );
+      const browser = usingBrowserUI
+        ? tab.linkedBrowser
+        : ui.getViewportBrowser();
+      try {
+        await task({ ui, manager, browser, usingBrowserUI });
+      } catch (err) {
+        ok(
+          false,
+          "Got an error with usingBrowserUI " +
+            usingBrowserUI +
+            ": " +
+            DevToolsUtils.safeErrorString(err)
+        );
+      }
+
+      await closeRDM(tab);
+      await removeTab(tab);
+    });
+  }
+
+  
+  const oldPrefValue = Services.prefs.getBoolPref(
+    "devtools.responsive.browserUI.enabled"
+  );
+  Services.prefs.setBoolPref("devtools.responsive.browserUI.enabled", false);
+
+  taskSetup(rdmUrl, rdmTask);
+
+  if (includeBrowserEmbeddedUI) {
+    
+    Services.prefs.setBoolPref("devtools.responsive.browserUI.enabled", true);
+
+    taskSetup(rdmUrl, rdmTask);
+  }
+
+  Services.prefs.setBoolPref(
+    "devtools.responsive.browserUI.enabled",
+    oldPrefValue
+  );
 }
 
 function spawnViewportTask(ui, args, task) {
