@@ -206,9 +206,9 @@ class Frame extends Component {
 
     
     
-    if (frame.origin) {
+    if (frame.options) {
       let locationPrefix;
-      if (frame.origin === "logPoint") {
+      if (frame.options.logPoint) {
         locationPrefix = "Logpoint @ ";
       }
 

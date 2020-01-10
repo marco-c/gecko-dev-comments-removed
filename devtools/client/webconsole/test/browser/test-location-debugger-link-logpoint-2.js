@@ -1,0 +1,15 @@
+
+
+
+
+
+"use strict";
+
+function subtract() {
+  const c = 1;
+  const d = 2;
+
+  return c - d;
+}
+
+subtract();

@@ -400,13 +400,17 @@ function waitForNodeMutation(node, observeConfig = {}) {
 
 
 
+
+
+
 async function testOpenInDebugger(
   hud,
   toolbox,
   text,
   expectUrl = true,
   expectLine = true,
-  expectColumn = true
+  expectColumn = true,
+  logPointExpr = undefined
 ) {
   info(`Finding message for open-in-debugger test; text is "${text}"`);
   const messageNode = await waitFor(() => findMessage(hud, text));
@@ -420,7 +424,8 @@ async function testOpenInDebugger(
     frameLinkNode,
     expectUrl,
     expectLine,
-    expectColumn
+    expectColumn,
+    logPointExpr
   );
 }
 
@@ -433,7 +438,8 @@ async function checkClickOnNode(
   frameLinkNode,
   expectUrl,
   expectLine,
-  expectColumn
+  expectColumn,
+  logPointExpr
 ) {
   info("checking click on node location");
 
@@ -483,6 +489,22 @@ async function checkClickOnNode(
       dbg._selectors.getSelectedLocation(dbg._getState()).column,
       column,
       "expected source column"
+    );
+  }
+
+  if (logPointExpr !== undefined && logPointExpr !== "") {
+    const inputEl = dbg.panelWin.document.activeElement;
+    is(
+      inputEl.tagName,
+      "TEXTAREA",
+      "The textarea of logpoint panel is focused"
+    );
+
+    const inputValue = inputEl.parentElement.parentElement.innerText.trim();
+    is(
+      inputValue,
+      logPointExpr,
+      "The input in the open logpoint panel matches the logpoint expression"
     );
   }
 }
