@@ -1625,50 +1625,37 @@ nsresult NS_ReadInputStreamToString(nsIInputStream* aInputStream,
   return NS_OK;
 }
 
-nsresult NS_NewURI(
-    nsIURI** result, const nsACString& spec, NotNull<const Encoding*> encoding,
-    nsIURI* baseURI ,
-    nsIIOService*
-        ioService )  
-{
+nsresult NS_NewURI(nsIURI** result, const nsACString& spec,
+                   NotNull<const Encoding*> encoding,
+                   nsIURI* baseURI ) {
   nsAutoCString charset;
   encoding->Name(charset);
-  return NS_NewURI(result, spec, charset.get(), baseURI, ioService);
+  return NS_NewURI(result, spec, charset.get(), baseURI);
 }
 
-nsresult NS_NewURI(
-    nsIURI** result, const nsAString& aSpec,
-    const char* charset , nsIURI* baseURI ,
-    nsIIOService*
-        ioService )  
-{
+nsresult NS_NewURI(nsIURI** result, const nsAString& aSpec,
+                   const char* charset ,
+                   nsIURI* baseURI ) {
   nsAutoCString spec;
   if (!AppendUTF16toUTF8(aSpec, spec, mozilla::fallible)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
-  return NS_NewURI(result, spec, charset, baseURI, ioService);
+  return NS_NewURI(result, spec, charset, baseURI);
 }
 
-nsresult NS_NewURI(
-    nsIURI** result, const nsAString& aSpec, NotNull<const Encoding*> encoding,
-    nsIURI* baseURI ,
-    nsIIOService*
-        ioService )  
-{
+nsresult NS_NewURI(nsIURI** result, const nsAString& aSpec,
+                   NotNull<const Encoding*> encoding,
+                   nsIURI* baseURI ) {
   nsAutoCString spec;
   if (!AppendUTF16toUTF8(aSpec, spec, mozilla::fallible)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
-  return NS_NewURI(result, spec, encoding, baseURI, ioService);
+  return NS_NewURI(result, spec, encoding, baseURI);
 }
 
-nsresult NS_NewURI(
-    nsIURI** result, const char* spec, nsIURI* baseURI ,
-    nsIIOService*
-        ioService )  
-{
-  return NS_NewURI(result, nsDependentCString(spec), nullptr, baseURI,
-                   ioService);
+nsresult NS_NewURI(nsIURI** result, const char* spec,
+                   nsIURI* baseURI ) {
+  return NS_NewURI(result, nsDependentCString(spec), nullptr, baseURI);
 }
 
 static nsresult NewStandardURI(const nsACString& aSpec, const char* aCharset,
@@ -1706,8 +1693,7 @@ class TlsAutoIncrement {
 
 nsresult NS_NewURI(nsIURI** aURI, const nsACString& aSpec,
                    const char* aCharset ,
-                   nsIURI* aBaseURI ,
-                   nsIIOService* aIOService ) {
+                   nsIURI* aBaseURI ) {
   TlsAutoIncrement<decltype(gTlsURLRecursionCount)> inc(gTlsURLRecursionCount);
   if (inc.value() >= MAX_RECURSION_COUNT) {
     return NS_ERROR_MALFORMED_URI;
@@ -1866,7 +1852,7 @@ nsresult NS_NewURI(nsIURI** aURI, const nsACString& aSpec,
   }
 
 #if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
-  rv = NS_NewMailnewsURI(aURI, aSpec, aCharset, aBaseURI, aIOService);
+  rv = NS_NewMailnewsURI(aURI, aSpec, aCharset, aBaseURI);
   if (rv != NS_ERROR_UNKNOWN_PROTOCOL) {
     return rv;
   }

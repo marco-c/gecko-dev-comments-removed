@@ -397,7 +397,7 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
 
   
   
-  rv = NS_NewURI(getter_AddRefs(uri), asciiUrl.get(), nullptr, serv);
+  rv = NS_NewURI(getter_AddRefs(uri), asciiUrl);
   if (NS_FAILED(rv)) {
     ReportError(cx, NS_LITERAL_CSTRING(LOAD_ERROR_NOURI));
     return NS_OK;

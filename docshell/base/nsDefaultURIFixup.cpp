@@ -251,7 +251,7 @@ nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
 
   if (ourHandler != extHandler || !PossiblyHostPortUrl(uriString)) {
     
-    rv = NS_NewURI(getter_AddRefs(info->mFixedURI), uriString, nullptr);
+    rv = NS_NewURI(getter_AddRefs(info->mFixedURI), uriString);
 
     if (!info->mFixedURI && rv != NS_ERROR_MALFORMED_URI) {
       return rv;
@@ -595,7 +595,7 @@ nsresult nsDefaultURIFixup::FileURIFixup(const nsACString& aStringURI,
   nsresult rv = ConvertFileToStringURI(aStringURI, uriSpecOut);
   if (NS_SUCCEEDED(rv)) {
     
-    if (NS_SUCCEEDED(NS_NewURI(aURI, uriSpecOut.get(), nullptr))) {
+    if (NS_SUCCEEDED(NS_NewURI(aURI, uriSpecOut.get()))) {
       return NS_OK;
     }
   }
@@ -672,7 +672,7 @@ nsresult nsDefaultURIFixup::FixupURIProtocol(const nsACString& aURIString,
     aFixupInfo->mFixupChangedProtocol = true;
   }  
 
-  return NS_NewURI(aURI, uriString, nullptr);
+  return NS_NewURI(aURI, uriString);
 }
 
 bool nsDefaultURIFixup::PossiblyHostPortUrl(const nsACString& aUrl) {

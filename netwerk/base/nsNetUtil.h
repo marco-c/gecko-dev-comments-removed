@@ -76,30 +76,21 @@ already_AddRefed<nsINetUtil> do_GetNetUtil(nsresult* error = nullptr);
 nsresult net_EnsureIOService(nsIIOService** ios, nsCOMPtr<nsIIOService>& grip);
 
 nsresult NS_NewURI(nsIURI** result, const nsACString& spec,
-                   const char* charset = nullptr, nsIURI* baseURI = nullptr,
-                   nsIIOService* ioService =
-                       nullptr);  
+                   const char* charset = nullptr, nsIURI* baseURI = nullptr);
 
 nsresult NS_NewURI(nsIURI** result, const nsACString& spec,
                    mozilla::NotNull<const mozilla::Encoding*> encoding,
-                   nsIURI* baseURI = nullptr,
-                   nsIIOService* ioService =
-                       nullptr);  
+                   nsIURI* baseURI = nullptr);
 
 nsresult NS_NewURI(nsIURI** result, const nsAString& spec,
-                   const char* charset = nullptr, nsIURI* baseURI = nullptr,
-                   nsIIOService* ioService =
-                       nullptr);  
+                   const char* charset = nullptr, nsIURI* baseURI = nullptr);
 
 nsresult NS_NewURI(nsIURI** result, const nsAString& spec,
                    mozilla::NotNull<const mozilla::Encoding*> encoding,
-                   nsIURI* baseURI = nullptr,
-                   nsIIOService* ioService =
-                       nullptr);  
+                   nsIURI* baseURI = nullptr);
 
-nsresult NS_NewURI(nsIURI** result, const char* spec, nsIURI* baseURI = nullptr,
-                   nsIIOService* ioService =
-                       nullptr);  
+nsresult NS_NewURI(nsIURI** result, const char* spec,
+                   nsIURI* baseURI = nullptr);
 
 nsresult NS_NewFileURI(
     nsIURI** result, nsIFile* spec,

@@ -133,7 +133,7 @@ nsresult FetchUtil::SetRequestReferrer(nsIPrincipal* aPrincipal, Document* aDoc,
     
     
     nsCOMPtr<nsIURI> referrerURI;
-    rv = NS_NewURI(getter_AddRefs(referrerURI), referrer, nullptr, nullptr);
+    rv = NS_NewURI(getter_AddRefs(referrerURI), referrer);
     NS_ENSURE_SUCCESS(rv, rv);
     referrerInfo = new ReferrerInfo(referrerURI, policy);
   }
