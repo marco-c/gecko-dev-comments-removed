@@ -7156,15 +7156,14 @@ void nsCSSFrameConstructor::ContentRangeInserted(
   
   
   
-  StyleDisplay parentDisplay = insertion.mParentFrame->GetDisplay();
+  StyleDisplayInside parentDisplayInside =
+    insertion.mParentFrame->StyleDisplay()->DisplayInside();
 
   
   
   
-  if ((StyleDisplay::Block == parentDisplay) ||
-      (StyleDisplay::ListItem == parentDisplay) ||
-      (StyleDisplay::Inline == parentDisplay) ||
-      (StyleDisplay::InlineBlock == parentDisplay)) {
+  if (StyleDisplayInside::Block == parentDisplayInside ||
+      StyleDisplayInside::Inline == parentDisplayInside) {
     
     if (containingBlock) {
       haveFirstLetterStyle = HasFirstLetterStyle(containingBlock);
@@ -9541,8 +9540,7 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
     if (!listItemListIsDirty &&
         iter.item().mComputedStyle->StyleList()->mMozListReversed ==
             StyleMozListReversed::True &&
-        iter.item().mComputedStyle->StyleDisplay()->mDisplay ==
-            StyleDisplay::ListItem) {
+        iter.item().mComputedStyle->StyleDisplay()->IsListItem()) {
       auto* list = mCounterManager.CounterListFor(nsGkAtoms::list_item);
       list->SetDirty();
       CountersDirty();
@@ -9672,7 +9670,7 @@ void nsCSSFrameConstructor::ProcessChildren(
       auto* styleParentFrame =
           nsFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
       computedStyle = styleParentFrame->Style();
-      if (computedStyle->StyleDisplay()->mDisplay == StyleDisplay::ListItem &&
+      if (computedStyle->StyleDisplay()->IsListItem() &&
           (listItem = do_QueryFrame(aFrame)) &&
           !styleParentFrame->IsFieldSetFrame()) {
         isOutsideMarker = computedStyle->StyleList()->mListStylePosition ==

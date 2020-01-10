@@ -203,7 +203,7 @@ bool nsCounterManager::AddCounterChanges(nsIFrame* aFrame) {
   
   
   const bool requiresListItemIncrement =
-      aFrame->StyleDisplay()->mDisplay == StyleDisplay::ListItem &&
+      aFrame->StyleDisplay()->IsListItem() &&
       !aFrame->Style()->IsAnonBox();
 
   const nsStyleContent* styleContent = aFrame->StyleContent();

@@ -670,7 +670,7 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
 
   if (type == PseudoStyleType::marker) {
     
-    if (aParentStyle.StyleDisplay()->mDisplay != StyleDisplay::ListItem) {
+    if (!aParentStyle.StyleDisplay()->IsListItem()) {
       return false;
     }
     

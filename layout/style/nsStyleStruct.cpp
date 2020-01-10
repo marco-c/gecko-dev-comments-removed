@@ -585,7 +585,7 @@ nsChangeHint nsStyleList::CalcDifference(
   
   
   
-  if (aOldDisplay.mDisplay == StyleDisplay::ListItem) {
+  if (aOldDisplay.IsListItem()) {
     if (mListStylePosition != aNewData.mListStylePosition) {
       return nsChangeHint_ReconstructFrame;
     }
