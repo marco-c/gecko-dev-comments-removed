@@ -25,4 +25,8 @@ MOZ_BC_FIELD(OnePermittedSandboxedNavigatorId, uint64_t)
 
 MOZ_BC_FIELD(IsActivatedByUserGesture, bool)
 
+
+
+MOZ_BC_FIELD(Muted, bool)
+
 #undef MOZ_BC_FIELD

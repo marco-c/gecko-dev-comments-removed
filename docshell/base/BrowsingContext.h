@@ -493,6 +493,11 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   void DidSetIsActivatedByUserGesture();
 
   
+  
+  
+  void DidSetMuted();
+
+  
   const Type mType;
 
   
