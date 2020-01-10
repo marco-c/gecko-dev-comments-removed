@@ -1824,25 +1824,24 @@ OwningNonNull<dom::MediaStreamTrack> PeerConnectionImpl::CreateReceiveTrack(
   }
 
   RefPtr<MediaStreamTrack> track;
+  RefPtr<RemoteTrackSource> trackSource;
   if (audio) {
-    track = stream->CreateDOMTrack(
-        333,  
-              
-        MediaSegment::AUDIO,
-        new RemoteTrackSource(principal,
-                              NS_ConvertASCIItoUTF16("remote audio")));
+    trackSource = new RemoteTrackSource(principal,
+                                        NS_ConvertASCIItoUTF16("remote audio"));
+    track = stream->CreateDOMTrack(333,  
+                                         
+                                   MediaSegment::AUDIO, trackSource);
   } else {
-    track = stream->CreateDOMTrack(
-        666,  
-              
-        MediaSegment::VIDEO,
-        new RemoteTrackSource(principal,
-                              NS_ConvertASCIItoUTF16("remote video")));
+    trackSource = new RemoteTrackSource(principal,
+                                        NS_ConvertASCIItoUTF16("remote video"));
+    track = stream->CreateDOMTrack(666,  
+                                         
+                                   MediaSegment::VIDEO, trackSource);
   }
 
   stream->AddTrackInternal(track);
   
-  track->MutedChanged(true);
+  trackSource->SetMuted(true);
 
   return OwningNonNull<dom::MediaStreamTrack>(*track);
 }
