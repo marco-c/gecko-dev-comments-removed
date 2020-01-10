@@ -3,6 +3,11 @@
 
 
 
+
+
+
+
+
 "use strict";
 
 const Babel = require("./babel");
@@ -43,13 +48,32 @@ ${err.stack}
   return out.code;
 }
 
-const deps = [__filename, _path.resolve(__dirname, "babel.js")];
 
-for (let i = 2; i < process.argv.length; i++) {
+
+function mkdirs(filePath) {
+  if (fs.existsSync(filePath)) {
+    return;
+  }
+  mkdirs(_path.dirname(filePath));
+  try {
+    fs.mkdirSync(filePath);
+  } catch (err) {
+    
+    if (err.code != "EEXIST") {
+      throw err;
+    }
+  }
+}
+
+const deps = [__filename, _path.resolve(__dirname, "babel.js")];
+const outputDir = process.argv[process.argv.length - 1];
+mkdirs(outputDir);
+
+for (let i = 2; i < process.argv.length - 1; i++) {
   const srcPath = process.argv[i];
   const code = transform(srcPath);
-  const filePath = _path.basename(srcPath);
-  fs.writeFileSync(filePath, code);
+  const fullPath = _path.join(outputDir, _path.basename(srcPath));
+  fs.writeFileSync(fullPath, code);
   deps.push(srcPath);
 }
 
