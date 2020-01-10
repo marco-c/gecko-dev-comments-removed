@@ -22,6 +22,7 @@ nsresult GetInstallHash(const char16_t* installPath, const char* vendor,
 enum class SetPermissionsOf {
   BaseDirIfNotExists,
   AllFilesAndDirs,
+  FilesAndDirsWithBadPerms,
 };
 
 

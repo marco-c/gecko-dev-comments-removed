@@ -649,6 +649,11 @@ class FileOrDirectory {
     
     mozilla::UniquePtr<SECURITY_DESCRIPTOR, LocalFreeDeleter>
         autoSecurityDescriptor(securityDescriptor);
+    if (drv == ERROR_ACCESS_DENIED) {
+      
+      
+      return Tristate::False;
+    }
     if (drv != ERROR_SUCCESS || dacl == nullptr) {
       return Tristate::Unknown;
     }
@@ -659,6 +664,9 @@ class FileOrDirectory {
       ACCESS_MASK expectedMask = perms.ea[eaIndex].grfAccessPermissions;
       ACCESS_MASK actualMask;
       drv = GetEffectiveRightsFromAclW(dacl, trustee, &actualMask);
+      if (drv == ERROR_ACCESS_DENIED) {
+        return Tristate::False;
+      }
       if (drv != ERROR_SUCCESS) {
         return Tristate::Unknown;
       }
@@ -705,11 +713,15 @@ static HRESULT MoveConflicting(const SimpleAutoString& path,
 static HRESULT EnsureCorrectPermissions(SimpleAutoString& path,
                                         FileOrDirectory& file,
                                         const SimpleAutoString& leafUpdateDir,
-                                        const AutoPerms& perms);
+                                        const AutoPerms& perms,
+                                        SetPermissionsOf permsToSet);
 static HRESULT FixDirectoryPermissions(const SimpleAutoString& path,
                                        FileOrDirectory& directory,
                                        const AutoPerms& perms,
                                        bool& permissionsFixed);
+static HRESULT MoveFileOrDir(const SimpleAutoString& moveFrom,
+                             const SimpleAutoString& moveTo,
+                             const AutoPerms& perms);
 static HRESULT SplitPath(const SimpleAutoString& path,
                          SimpleAutoString& parentPath,
                          SimpleAutoString& filename);
@@ -805,6 +817,7 @@ static bool GetCachedHash(const char16_t* installPath, HKEY rootKey,
                      RRF_RT_REG_SZ, nullptr, result.get(), &bufferSize);
   return (lrv == ERROR_SUCCESS);
 }
+
 
 
 
@@ -1034,9 +1047,9 @@ static HRESULT EnsureUpdateDirectoryPermissions(
                                
                                
 
-  Lockstate shouldLock = permsToSet == SetPermissionsOf::AllFilesAndDirs
-                             ? Lockstate::Locked
-                             : Lockstate::Unlocked;
+  Lockstate shouldLock = permsToSet == SetPermissionsOf::BaseDirIfNotExists
+                             ? Lockstate::Unlocked
+                             : Lockstate::Locked;
   FileOrDirectory baseDir(basePath, shouldLock);
   
   
@@ -1094,15 +1107,18 @@ static HRESULT EnsureUpdateDirectoryPermissions(
         leafDirLen, L"%s\\%s\\%s", updatePath.String(), updateSubdirectoryName,
         patchDirectoryName);
     if (leafDirPath.Length() == leafDirLen) {
-      hrv = EnsureCorrectPermissions(mutBasePath, baseDir, leafDirPath, perms);
+      hrv = EnsureCorrectPermissions(mutBasePath, baseDir, leafDirPath, perms,
+                                     permsToSet);
     } else {
       
       
       returnValue = FAILED(returnValue) ? returnValue : E_FAIL;
-      hrv = EnsureCorrectPermissions(mutBasePath, baseDir, updatePath, perms);
+      hrv = EnsureCorrectPermissions(mutBasePath, baseDir, updatePath, perms,
+                                     permsToSet);
     }
   } else {
-    hrv = EnsureCorrectPermissions(mutBasePath, baseDir, updatePath, perms);
+    hrv = EnsureCorrectPermissions(mutBasePath, baseDir, updatePath, perms,
+                                   permsToSet);
   }
   returnValue = FAILED(returnValue) ? returnValue : hrv;
 
@@ -1325,7 +1341,7 @@ static HRESULT MoveConflicting(const SimpleAutoString& path,
   file.Unlock();
   
   SimpleAutoString newPath;
-  unsigned int maxTries = 9;
+  unsigned int maxTries = 3;
   const wchar_t newPathFormat[] = L"%s.bak%u";
   size_t newPathMaxLength =
       newPath.AllocFromScprintf(newPathFormat, path.String(), maxTries);
@@ -1413,7 +1429,8 @@ static HRESULT MoveConflicting(const SimpleAutoString& path,
 static HRESULT EnsureCorrectPermissions(SimpleAutoString& path,
                                         FileOrDirectory& file,
                                         const SimpleAutoString& leafUpdateDir,
-                                        const AutoPerms& perms) {
+                                        const AutoPerms& perms,
+                                        SetPermissionsOf permsToSet) {
   HRESULT returnValue = S_OK;  
                                
                                
@@ -1448,7 +1465,15 @@ static HRESULT EnsureCorrectPermissions(SimpleAutoString& path,
     return returnValue;
   }
 
-  if (file.PermsOk(path, perms) != Tristate::True) {
+  
+  
+  
+  
+  
+  
+  Tristate permissionsOk = file.PermsOk(path, perms);
+  if (permissionsOk == Tristate::False || (permissionsOk == Tristate::Unknown &&
+      permsToSet == SetPermissionsOf::AllFilesAndDirs)) {
     bool permissionsFixed;
     hrv = FixDirectoryPermissions(path, file, perms, permissionsFixed);
     returnValue = FAILED(returnValue) ? returnValue : hrv;
@@ -1471,6 +1496,10 @@ static HRESULT EnsureCorrectPermissions(SimpleAutoString& path,
       
       file.Reset(path, Lockstate::Locked);
     }
+  } else if (permissionsOk != Tristate::True) {
+    
+    
+    returnValue = FAILED(returnValue) ? returnValue : E_FAIL;
   }
 
   
@@ -1506,7 +1535,8 @@ static HRESULT EnsureCorrectPermissions(SimpleAutoString& path,
     }
 
     FileOrDirectory child(childBuffer, Lockstate::Locked);
-    hrv = EnsureCorrectPermissions(childBuffer, child, leafUpdateDir, perms);
+    hrv = EnsureCorrectPermissions(childBuffer, child, leafUpdateDir, perms,
+                                   permsToSet);
     returnValue = FAILED(returnValue) ? returnValue : hrv;
 
     
@@ -1629,10 +1659,9 @@ static HRESULT FixDirectoryPermissions(const SimpleAutoString& path,
       continue;
     }
 
-    success = MoveFileW(moveFrom.String(), moveTo.String());
-    if (!success) {
-      returnValue = FAILED(returnValue) ? returnValue
-                                        : HRESULT_FROM_WIN32(GetLastError());
+    hrv = MoveFileOrDir(moveFrom, moveTo, perms);
+    if (FAILED(hrv)) {
+      returnValue = FAILED(returnValue) ? returnValue : hrv;
     }
 
     
@@ -1645,6 +1674,126 @@ static HRESULT FixDirectoryPermissions(const SimpleAutoString& path,
 
   hrv = RemoveRecursive(tempPath, tempDir);
   returnValue = FAILED(returnValue) ? returnValue : hrv;
+
+  return returnValue;
+}
+
+
+
+
+
+
+
+
+
+static HRESULT MoveFileOrDir(const SimpleAutoString& moveFrom,
+                             const SimpleAutoString& moveTo,
+                             const AutoPerms& perms) {
+  BOOL success = MoveFileW(moveFrom.String(), moveTo.String());
+  if (success) {
+   return S_OK;
+  }
+
+  FileOrDirectory fileToMove(moveFrom, Lockstate::Locked);
+
+  
+  
+  HRESULT returnValue = S_OK;
+
+  if (fileToMove.IsDirectory() != Tristate::True) {
+    fileToMove.Unlock();
+    if (fileToMove.IsLink() == Tristate::False) {
+      success = CopyFileW(moveFrom.String(), moveTo.String(), TRUE);
+      if (!success) {
+        returnValue = FAILED(returnValue) ? returnValue
+                                          : HRESULT_FROM_WIN32(GetLastError());
+      }
+    }
+    success = DeleteFileW(moveFrom.String());
+    if (!success) {
+      
+      success = MoveFileExW(moveFrom.String(), nullptr,
+                            MOVEFILE_DELAY_UNTIL_REBOOT);
+      if (!success) {
+        returnValue = FAILED(returnValue) ? returnValue
+                                          : HRESULT_FROM_WIN32(GetLastError());
+      }
+    }
+    return returnValue;
+  } 
+
+  success = CreateDirectoryW(
+    moveTo.String(),
+    const_cast<LPSECURITY_ATTRIBUTES>(&perms.securityAttributes));
+  if (!success) {
+    return HRESULT_FROM_WIN32(GetLastError());
+  }
+  FileOrDirectory destDir(moveTo, Lockstate::Locked);
+
+  SimpleAutoString childPath;
+  SimpleAutoString childDestPath;
+  if (!childPath.AllocEmpty(MAX_PATH) || !childDestPath.AllocEmpty(MAX_PATH)) {
+    return E_OUTOFMEMORY;
+  }
+
+  if (!fileToMove.IsLocked() || !destDir.IsLocked() ||
+      destDir.IsDirectory() != Tristate::True ||
+      destDir.IsLink() != Tristate::False) {
+    returnValue = FAILED(returnValue) ? returnValue : E_FAIL;
+  } else if (fileToMove.IsLink() == Tristate::False) {
+    DIR directoryHandle(moveFrom.String());
+    errno = 0;
+    for (dirent* entry = readdir(&directoryHandle); entry;
+         entry = readdir(&directoryHandle)) {
+      if (wcscmp(entry->d_name, L".") == 0 ||
+          wcscmp(entry->d_name, L"..") == 0 ||
+          fileToMove.LockFilenameMatches(entry->d_name)) {
+        continue;
+      }
+
+      childPath.AssignSprintf(MAX_PATH + 1, L"%s\\%s", moveFrom.String(),
+                             entry->d_name);
+      if (childPath.Length() == 0) {
+        returnValue = FAILED(returnValue)
+                          ? returnValue
+                          : HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
+        continue;
+      }
+
+      childDestPath.AssignSprintf(MAX_PATH + 1, L"%s\\%s", moveTo.String(),
+                                  entry->d_name);
+      if (childDestPath.Length() == 0) {
+        returnValue = FAILED(returnValue)
+                          ? returnValue
+                          : HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
+        continue;
+      }
+
+      HRESULT hrv = MoveFileOrDir(childPath, childDestPath, perms);
+      if (FAILED(hrv)) {
+        returnValue = FAILED(returnValue) ? returnValue : hrv;
+      }
+
+      
+      
+      errno = 0;
+    }
+    if (errno != 0) {
+      returnValue = FAILED(returnValue) ? returnValue : E_FAIL;
+    }
+  }
+
+  
+  HRESULT hrv = RemoveRecursive(moveFrom, fileToMove);
+  if (FAILED(hrv)) {
+    
+    success = MoveFileExW(moveFrom.String(), nullptr,
+                          MOVEFILE_DELAY_UNTIL_REBOOT);
+    if (!success) {
+      returnValue = FAILED(returnValue) ? returnValue
+                                        : HRESULT_FROM_WIN32(GetLastError());
+    }
+  }
 
   return returnValue;
 }
