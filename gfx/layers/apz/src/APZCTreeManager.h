@@ -507,7 +507,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void CollectTransformsForChromeMainThread(
+  void SendSubtreeTransformsToChromeMainThread(
       const AsyncPanZoomController* aAncestor);
 
   
