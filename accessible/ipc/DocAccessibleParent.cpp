@@ -126,6 +126,18 @@ uint32_t DocAccessibleParent::AddSubtree(
   WrapperFor(newProxy)->SetID(newChild.MsaaID());
 #endif
 
+  for (uint32_t index = 0, len = mPendingChildDocs.Length(); index < len;
+       ++index) {
+    PendingChildDoc& pending = mPendingChildDocs[index];
+    if (pending.mParentID == newChild.ID()) {
+      if (!pending.mChildDoc->IsShutdown()) {
+        AddChildDoc(pending.mChildDoc, pending.mParentID, false);
+      }
+      mPendingChildDocs.RemoveElementAt(index);
+      break;
+    }
+  }
+
   uint32_t accessibles = 1;
   uint32_t kids = newChild.ChildrenCount();
   for (uint32_t i = 0; i < kids; i++) {
@@ -508,6 +520,24 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   
   ProxyEntry* e = mAccessibles.GetEntry(aParentID);
   if (!e) {
+    if (aChildDoc->IsTopLevelInContentProcess()) {
+      
+      
+      
+      
+#ifdef DEBUG
+      for (uint32_t index = 0, len = mPendingChildDocs.Length(); index < len;
+           ++index) {
+        MOZ_ASSERT(mPendingChildDocs[index].mChildDoc != aChildDoc,
+                   "Child doc already pending addition!");
+      }
+#endif
+      mPendingChildDocs.AppendElement(PendingChildDoc(aChildDoc, aParentID));
+      if (aCreating) {
+        ProxyCreated(aChildDoc, Interfaces::DOCUMENT | Interfaces::HYPERTEXT);
+      }
+      return IPC_OK();
+    }
     return IPC_FAIL(this, "binding to nonexistant proxy!");
   }
 
