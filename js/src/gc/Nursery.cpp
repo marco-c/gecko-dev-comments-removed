@@ -69,7 +69,7 @@ struct NurseryChunk {
 static_assert(sizeof(js::NurseryChunk) == gc::ChunkSize,
               "Nursery chunk size must match gc::Chunk size.");
 
-} 
+}  
 
 inline void js::NurseryChunk::poisonAndInit(JSRuntime* rt, size_t size) {
   poisonRange(0, size, JS_FRESH_NURSERY_PATTERN, MemCheckKind::MakeUndefined);
@@ -683,9 +683,7 @@ inline float js::Nursery::calcPromotionRate(bool* validForTenuring) const {
   if (previousGC.nurseryUsedBytes > 0) {
     if (validForTenuring) {
       
-
-
-
+      
       *validForTenuring = used > capacity * 0.9f;
     }
     rate = tenured / used;
@@ -1231,9 +1229,7 @@ void js::Nursery::clear() {
   }
 
   
-
-
-
+  
   MOZ_ASSERT(maxChunkCount() > 0);
   if (!runtime()->hasZealMode(ZealMode::GenerationalGC) ||
       (runtime()->hasZealMode(ZealMode::GenerationalGC) &&
@@ -1343,18 +1339,14 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
   }
 
   
-
-
-
-
+  
+  
   const float promotionRate =
       float(previousGC.tenuredBytes) / float(previousGC.nurseryCapacity);
 
   
-
-
-
-
+  
+  
   static const float GrowThreshold = 0.03f;
   static const float ShrinkThreshold = 0.01f;
   static const float PromotionGoal = (GrowThreshold + ShrinkThreshold) / 2.0f;
@@ -1440,9 +1432,7 @@ bool js::Nursery::maybeResizeExact(JS::GCReason reason) {
 
   if (minNurseryBytes > capacity()) {
     
-
-
-
+    
     MOZ_ASSERT(minNurseryBytes <= roundSize(tunables().gcMaxNurseryBytes()));
     growAllocableSpace(minNurseryBytes);
     return true;

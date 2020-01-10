@@ -67,7 +67,7 @@ class RelocationOverlay;
 struct TenureCountCache;
 enum class AllocKind : uint8_t;
 class TenuredCell;
-} 
+}  
 
 namespace jit {
 class MacroAssembler;
@@ -156,8 +156,6 @@ class TenuringTracer : public JSTracer {
 
 
 
-
-
 inline bool CanNurseryAllocateFinalizedClass(const js::Class* const clasp) {
   MOZ_ASSERT(clasp->hasFinalize());
   return clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE;
@@ -169,8 +167,6 @@ class Nursery {
   static const size_t ChunkShift = gc::ChunkShift;
 
   
-
-
   static const size_t SubChunkStep = gc::ArenaSize;
 
   struct alignas(gc::CellAlignBytes) CellAlignedByte {
@@ -217,9 +213,7 @@ class Nursery {
   bool isEmpty() const;
 
   
-
-
-
+  
   MOZ_ALWAYS_INLINE bool isInside(gc::Cell* cellp) const = delete;
   MOZ_ALWAYS_INLINE bool isInside(const void* p) const {
     for (auto chunk : chunks_) {
@@ -234,21 +228,15 @@ class Nursery {
   inline bool isInside(const SharedMem<T>& p) const;
 
   
-
-
-
+  
   JSObject* allocateObject(JSContext* cx, size_t size, size_t numDynamic,
                            const js::Class* clasp);
 
   
-
-
-
+  
   gc::Cell* allocateString(JS::Zone* zone, size_t size, gc::AllocKind kind);
 
   
-
-
   static JS::Zone* getStringZone(const JSString* str) {
 #ifdef DEBUG
     auto cell = reinterpret_cast<const js::gc::Cell*>(
@@ -268,30 +256,23 @@ class Nursery {
   void* allocateBuffer(JS::Zone* zone, size_t nbytes);
 
   
-
-
-
+  
   void* allocateBuffer(JSObject* obj, size_t nbytes);
 
   
-
-
-
-
+  
+  
   void* allocateBufferSameLocation(JSObject* obj, size_t nbytes);
 
   
-
-
-
+  
+  
   void* allocateZeroedBuffer(JS::Zone* zone, size_t nbytes,
                              arena_id_t arena = js::MallocArena);
 
   
-
-
-
-
+  
+  
   void* allocateZeroedBuffer(JSObject* obj, size_t nbytes,
                              arena_id_t arena = js::MallocArena);
 
@@ -309,10 +290,8 @@ class Nursery {
   void collect(JS::GCReason reason);
 
   
-
-
-
-
+  
+  
   MOZ_ALWAYS_INLINE MOZ_MUST_USE static bool getForwardedPointer(
       js::gc::Cell** ref);
 
@@ -325,10 +304,8 @@ class Nursery {
                                                 bool direct);
 
   
-
-
-
-
+  
+  
   bool registerMallocedBuffer(void* buffer);
 
   
@@ -443,10 +420,8 @@ class Nursery {
   uintptr_t position_;
 
   
-
-
-
-
+  
+  
   unsigned currentStartChunk_;
   uintptr_t currentStartPosition_;
 
@@ -454,26 +429,20 @@ class Nursery {
   uintptr_t currentEnd_;
 
   
-
-
-
+  
   uintptr_t currentStringEnd_;
 
   
   unsigned currentChunk_;
 
   
-
-
-
-
-
+  
+  
+  
   size_t capacity_;
 
   
-
-
-
+  
   unsigned chunkCountLimit_;
 
   mozilla::TimeDuration timeInChunkAlloc_;
@@ -489,10 +458,8 @@ class Nursery {
   int64_t reportTenurings_;
 
   
-
-
-
-
+  
+  
   mutable JS::GCReason minorGCTriggerReason_;
 
   
@@ -525,45 +492,37 @@ class Nursery {
   } previousGC;
 
   
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
   float calcPromotionRate(bool* validForTenuring) const;
 
   
-
-
-
-
+  
+  
   BufferSet mallocedBuffers;
 
   
-
-
-
-
-
-
+  
+  
+  
+  
   typedef HashMap<void*, void*, PointerHasher<void*>, SystemAllocPolicy>
       ForwardedBufferMap;
   ForwardedBufferMap forwardedBuffers;
 
   
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
   using CellsWithUniqueIdVector = Vector<gc::Cell*, 8, SystemAllocPolicy>;
   CellsWithUniqueIdVector cellsWithUid_;
 
@@ -571,9 +530,7 @@ class Nursery {
   NativeObjectVector dictionaryModeObjects_;
 
   
-
-
-
+  
   Vector<MapObject*, 0, SystemAllocPolicy> mapsWithNurseryMemory_;
   Vector<SetObject*, 0, SystemAllocPolicy> setsWithNurseryMemory_;
 
@@ -587,12 +544,10 @@ class Nursery {
   NurseryChunk& chunk(unsigned index) const { return *chunks_[index]; }
 
   
-
-
-
-
-
-
+  
+  
+  
+  
   void setCurrentChunk(unsigned chunkno);
 
   
@@ -603,9 +558,7 @@ class Nursery {
   void setStartPosition();
 
   
-
-
-
+  
   MOZ_MUST_USE bool allocateNextChunk(unsigned chunkno,
                                       AutoLockGCBgAlloc& lock);
 
@@ -629,9 +582,7 @@ class Nursery {
                       gc::TenureCountCache& tenureCounts);
 
   
-
-
-
+  
   void collectToFixedPoint(TenuringTracer& trc,
                            gc::TenureCountCache& tenureCounts);
 
@@ -648,15 +599,11 @@ class Nursery {
                                            uint32_t capacity);
 
   
-
-
-
+  
   void sweep(JSTracer* trc);
 
   
-
-
-
+  
   void clear();
 
   void sweepDictionaryModeObjects();
@@ -686,6 +633,6 @@ class Nursery {
   friend struct NurseryChunk;
 };
 
-} 
+}  
 
-#endif 
+#endif  
