@@ -88,7 +88,7 @@ inline bool strimatch(const wchar_t* lowerstr, const wchar_t* mixedstr) {
   return internal::strimatch(&towlower, lowerstr, mixedstr);
 }
 
-enum class FlagLiteral { osint, safemode, url };
+enum class FlagLiteral { osint, safemode };
 
 template <typename CharT, FlagLiteral Literal>
 inline const CharT* GetLiteral();
@@ -106,7 +106,6 @@ inline const CharT* GetLiteral();
 
 DECLARE_FLAG_LITERAL(osint, "osint")
 DECLARE_FLAG_LITERAL(safemode, "safe-mode")
-DECLARE_FLAG_LITERAL(url, "url")
 
 enum class CheckArgFlag : uint32_t {
   None = 0,
@@ -193,7 +192,10 @@ inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const CharT* aArg,
 }
 
 template <typename CharT>
-inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv) {
+inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
+                                  const CharT** aAcceptableArgs) {
+  
+  
   
   
   
@@ -203,6 +205,7 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv) {
 
   if (CheckArg(aArgc, aArgv, osintLit, static_cast<const CharT**>(nullptr),
                CheckArgFlag::None) == ARG_FOUND) {
+    
     
     if (aArgc != 4) {
       exit(127);
@@ -240,7 +243,16 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv) {
     if (*arg == '-') {
       ++arg;
     }
-    if (!strimatch(GetLiteral<CharT, FlagLiteral::url>(), arg)) {
+    bool haveAcceptableArg = false;
+    const CharT** acceptableArg = aAcceptableArgs;
+    while (*acceptableArg) {
+      if (strimatch(*acceptableArg, arg)) {
+        haveAcceptableArg = true;
+        break;
+      }
+      acceptableArg++;
+    }
+    if (!haveAcceptableArg) {
       exit(127);
     }
     
@@ -433,8 +445,12 @@ inline bool SetArgv0ToFullBinaryPath(wchar_t* aArgv[]) {
 #endif  
 
 
+
+#if defined(MOZILLA_INTERNAL_API) || defined(XP_WIN)
+
+
 MOZ_NEVER_INLINE inline void SaveToEnv(const char* aEnvString) {
-#if defined(MOZILLA_INTERNAL_API)
+#  if defined(MOZILLA_INTERNAL_API)
   char* expr = strdup(aEnvString);
   if (expr) {
     PR_SetEnv(expr);
@@ -442,28 +458,26 @@ MOZ_NEVER_INLINE inline void SaveToEnv(const char* aEnvString) {
 
   
   MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(expr);
-#elif defined(XP_WIN)
+#  elif defined(XP_WIN)
   
   
   
   _putenv(aEnvString);
-#else
-#  error "Not implemented for this configuration"
-#endif
+#  endif
 }
 
 inline bool EnvHasValue(const char* aVarName) {
-#if defined(MOZILLA_INTERNAL_API)
+#  if defined(MOZILLA_INTERNAL_API)
   const char* val = PR_GetEnv(aVarName);
   return val && *val;
-#elif defined(XP_WIN)
+#  elif defined(XP_WIN)
   
   const char* val = getenv(aVarName);
   return val && *val;
-#else
-#  error "Not implemented for this configuration"
-#endif
+#  endif
 }
+
+#endif  
 
 #ifndef NS_NO_XPCOM
 already_AddRefed<nsIFile> GetFileFromEnv(const char* name);

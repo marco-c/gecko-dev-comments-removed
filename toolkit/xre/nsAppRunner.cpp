@@ -4599,9 +4599,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   gArgc = argc;
   gArgv = argv;
 
-  EnsureCommandlineSafe(gArgc, gArgv);
-  
-
   ScopedLogging log;
 
   mozilla::LogModule::Init(gArgc, gArgv);
