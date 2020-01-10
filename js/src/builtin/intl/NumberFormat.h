@@ -68,8 +68,6 @@ class NumberFormatObject : public NativeObject {
   static void finalize(JSFreeOp* fop, JSObject* obj);
 };
 
-extern bool CreateNumberFormat(JSContext* cx, HandleObject Intl);
-
 
 
 

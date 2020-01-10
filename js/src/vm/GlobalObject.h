@@ -468,14 +468,6 @@ class GlobalObject : public NativeObject {
     return &global->getPrototype(JSProto_WeakSet).toObject().as<NativeObject>();
   }
 
-#if ENABLE_INTL_API
-  static JSObject* getOrCreateIntlObject(JSContext* cx,
-                                         Handle<GlobalObject*> global) {
-    return getOrCreateObject(cx, global, APPLICATION_SLOTS + JSProto_Intl,
-                             initIntlObject);
-  }
-#endif
-
   static JSObject* getOrCreateTypedObjectModule(JSContext* cx,
                                                 Handle<GlobalObject*> global) {
     return getOrCreateObject(cx, global,
@@ -861,11 +853,6 @@ class GlobalObject : public NativeObject {
   
   static bool initMapIteratorProto(JSContext* cx, Handle<GlobalObject*> global);
   static bool initSetIteratorProto(JSContext* cx, Handle<GlobalObject*> global);
-
-#ifdef ENABLE_INTL_API
-  
-  static bool initIntlObject(JSContext* cx, Handle<GlobalObject*> global);
-#endif
 
   
   static bool initModuleProto(JSContext* cx, Handle<GlobalObject*> global);

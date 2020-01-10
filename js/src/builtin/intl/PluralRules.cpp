@@ -147,17 +147,6 @@ void js::PluralRulesObject::finalize(JSFreeOp* fop, JSObject* obj) {
   }
 }
 
-bool js::CreatePluralRules(JSContext* cx, HandleObject Intl) {
-  JSObject* ctor =
-      GlobalObject::getOrCreateConstructor(cx, JSProto_PluralRules);
-  if (!ctor) {
-    return false;
-  }
-
-  RootedValue ctorValue(cx, ObjectValue(*ctor));
-  return DefineDataProperty(cx, Intl, cx->names().PluralRules, ctorValue, 0);
-}
-
 
 
 
