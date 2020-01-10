@@ -121,6 +121,11 @@ class BigInt final : public js::gc::TenuredCell {
   static int64_t toInt64(BigInt* x);
   static uint64_t toUint64(BigInt* x);
 
+  
+  
+  
+  static bool isInt64(BigInt* x, int64_t* result);
+
   static BigInt* asIntN(JSContext* cx, Handle<BigInt*> x, uint64_t bits);
   static BigInt* asUintN(JSContext* cx, Handle<BigInt*> x, uint64_t bits);
 
