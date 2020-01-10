@@ -9,7 +9,8 @@ const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
 const { accessibleSpec } = require("devtools/shared/specs/accessibility");
 const { accessibility: { AUDIT_TYPE } } = require("devtools/shared/constants");
 
-loader.lazyRequireGetter(this, "getContrastRatioFor", "devtools/server/actors/accessibility/contrast", true);
+loader.lazyRequireGetter(this, "getContrastRatioFor", "devtools/server/actors/accessibility/audit/contrast", true);
+loader.lazyRequireGetter(this, "auditTextLabel", "devtools/server/actors/accessibility/audit/text-label", true);
 loader.lazyRequireGetter(this, "isDefunct", "devtools/server/actors/utils/accessibility", true);
 loader.lazyRequireGetter(this, "findCssSelector", "devtools/shared/inspector/css-logic", true);
 loader.lazyRequireGetter(this, "events", "devtools/shared/event-emitter");
@@ -428,10 +429,24 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     return contrastRatio;
   },
 
+  
+
+
+
+
+
+
+
+
+
   _getAuditByType(type) {
     switch (type) {
       case AUDIT_TYPE.CONTRAST:
         return this._getContrastRatio();
+      case AUDIT_TYPE.TEXT_LABEL:
+        
+        
+        return auditTextLabel(this.rawAccessible);
       default:
         return null;
     }
