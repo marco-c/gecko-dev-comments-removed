@@ -14,11 +14,6 @@ ChromeUtils.defineModuleGetter(
   "TelemetryEnvironment",
   "resource://gre/modules/TelemetryEnvironment.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "TelemetryEvents",
-  "resource://normandy/lib/TelemetryEvents.jsm"
-);
 
 
 
@@ -133,40 +128,6 @@ const AddonRollouts = {
 
 
 
-
-  async updateMany(rollouts) {
-    
-    if (!rollouts.length) {
-      return;
-    }
-
-    
-    
-    
-    
-
-    const db = await getDatabase();
-    let store = await getStore(db, "readonly");
-    await Promise.all(
-      rollouts.map(async ({ slug }) => {
-        let existingRollout = await store.get(slug);
-        if (!existingRollout) {
-          throw new Error(`Tried to update ${slug}, but it doesn't exist.`);
-        }
-      })
-    );
-
-    
-    
-    store = await getStore(db, "readwrite");
-    await Promise.all(rollouts.map(rollout => store.put(rollout)));
-  },
-
-  
-
-
-
-
   async has(slug) {
     const db = await getDatabase();
     const rollout = await getStore(db, "readonly").get(slug);
@@ -212,19 +173,5 @@ const AddonRollouts = {
         await Promise.all(oldData.map(d => store.add(d)));
       }
     };
-  },
-
-  migrations: {
-    async migration01AddFillerEnrollmentId() {
-      const rollouts = await AddonRollouts.getAll();
-      const rolloutsToUpdate = [];
-      for (const rollout of rollouts) {
-        if (typeof rollout.enrollmentId != "string") {
-          rollout.enrollmentId = TelemetryEvents.NO_ENROLLMENT_ID_MARKER;
-          rolloutsToUpdate.push(rollout);
-        }
-      }
-      await AddonRollouts.updateMany(rolloutsToUpdate);
-    },
   },
 };

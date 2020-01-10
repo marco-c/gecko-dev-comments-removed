@@ -48,14 +48,35 @@ function experimentFactory(attrs) {
 
 const NOW = new Date();
 
+const mockV1Data = {
+  hypothetical_experiment: {
+    name: "hypothetical_experiment",
+    branch: "hypo_1",
+    expired: false,
+    lastSeen: NOW.toJSON(),
+    preferenceName: "some.pref",
+    preferenceValue: 2,
+    preferenceType: "integer",
+    previousPreferenceValue: 1,
+    preferenceBranchType: "user",
+    experimentType: "exp",
+  },
+  another_experiment: {
+    name: "another_experiment",
+    branch: "another_4",
+    expired: true,
+    lastSeen: NOW.toJSON(),
+    preferenceName: "another.pref",
+    preferenceValue: true,
+    preferenceType: "boolean",
+    previousPreferenceValue: false,
+    preferenceBranchType: "default",
+    experimentType: "exp",
+  },
+};
 
-
-
-
-
-const mockDataVersions = [
-  
-  {
+const mockV2Data = {
+  experiments: {
     hypothetical_experiment: {
       name: "hypothetical_experiment",
       branch: "hypo_1",
@@ -67,7 +88,6 @@ const mockDataVersions = [
       previousPreferenceValue: 1,
       preferenceBranchType: "user",
       experimentType: "exp",
-      enrollmentId: "existing-enrollment-id",
     },
     another_experiment: {
       name: "another_experiment",
@@ -82,193 +102,116 @@ const mockDataVersions = [
       experimentType: "exp",
     },
   },
+};
 
-  
-  {
-    experiments: {
-      hypothetical_experiment: {
-        name: "hypothetical_experiment",
-        branch: "hypo_1",
-        expired: false,
-        lastSeen: NOW.toJSON(),
-        preferenceName: "some.pref",
-        preferenceValue: 2,
-        preferenceType: "integer",
-        previousPreferenceValue: 1,
-        preferenceBranchType: "user",
-        experimentType: "exp",
-        enrollmentId: "existing-enrollment-id",
+const mockV3Data = {
+  experiments: {
+    hypothetical_experiment: {
+      name: "hypothetical_experiment",
+      branch: "hypo_1",
+      expired: false,
+      lastSeen: NOW.toJSON(),
+      preferences: {
+        "some.pref": {
+          preferenceValue: 2,
+          preferenceType: "integer",
+          previousPreferenceValue: 1,
+          preferenceBranchType: "user",
+        },
       },
-      another_experiment: {
-        name: "another_experiment",
-        branch: "another_4",
-        expired: true,
-        lastSeen: NOW.toJSON(),
-        preferenceName: "another.pref",
-        preferenceValue: true,
-        preferenceType: "boolean",
-        previousPreferenceValue: false,
-        preferenceBranchType: "default",
-        experimentType: "exp",
+      experimentType: "exp",
+    },
+    another_experiment: {
+      name: "another_experiment",
+      branch: "another_4",
+      expired: true,
+      lastSeen: NOW.toJSON(),
+      preferences: {
+        "another.pref": {
+          preferenceValue: true,
+          preferenceType: "boolean",
+          previousPreferenceValue: false,
+          preferenceBranchType: "default",
+        },
       },
+      experimentType: "exp",
     },
   },
+};
 
-  
-  {
-    experiments: {
-      hypothetical_experiment: {
-        name: "hypothetical_experiment",
-        branch: "hypo_1",
-        expired: false,
-        lastSeen: NOW.toJSON(),
-        preferences: {
-          "some.pref": {
-            preferenceValue: 2,
-            preferenceType: "integer",
-            previousPreferenceValue: 1,
-            preferenceBranchType: "user",
-          },
+const mockV4Data = {
+  experiments: {
+    hypothetical_experiment: {
+      name: "hypothetical_experiment",
+      branch: "hypo_1",
+      actionName: "SinglePreferenceExperimentAction",
+      expired: false,
+      lastSeen: NOW.toJSON(),
+      preferences: {
+        "some.pref": {
+          preferenceValue: 2,
+          preferenceType: "integer",
+          previousPreferenceValue: 1,
+          preferenceBranchType: "user",
         },
-        experimentType: "exp",
-        enrollmentId: "existing-enrollment-id",
       },
-      another_experiment: {
-        name: "another_experiment",
-        branch: "another_4",
-        expired: true,
-        lastSeen: NOW.toJSON(),
-        preferences: {
-          "another.pref": {
-            preferenceValue: true,
-            preferenceType: "boolean",
-            previousPreferenceValue: false,
-            preferenceBranchType: "default",
-          },
+      experimentType: "exp",
+    },
+    another_experiment: {
+      name: "another_experiment",
+      branch: "another_4",
+      actionName: "SinglePreferenceExperimentAction",
+      expired: true,
+      lastSeen: NOW.toJSON(),
+      preferences: {
+        "another.pref": {
+          preferenceValue: true,
+          preferenceType: "boolean",
+          previousPreferenceValue: false,
+          preferenceBranchType: "default",
         },
-        experimentType: "exp",
       },
+      experimentType: "exp",
     },
   },
+};
 
-  
-  {
-    experiments: {
-      hypothetical_experiment: {
-        name: "hypothetical_experiment",
-        branch: "hypo_1",
-        actionName: "SinglePreferenceExperimentAction",
-        expired: false,
-        lastSeen: NOW.toJSON(),
-        preferences: {
-          "some.pref": {
-            preferenceValue: 2,
-            preferenceType: "integer",
-            previousPreferenceValue: 1,
-            preferenceBranchType: "user",
-          },
+const mockV5Data = {
+  experiments: {
+    hypothetical_experiment: {
+      slug: "hypothetical_experiment",
+      branch: "hypo_1",
+      actionName: "SinglePreferenceExperimentAction",
+      expired: false,
+      lastSeen: NOW.toJSON(),
+      preferences: {
+        "some.pref": {
+          preferenceValue: 2,
+          preferenceType: "integer",
+          previousPreferenceValue: 1,
+          preferenceBranchType: "user",
         },
-        experimentType: "exp",
-        enrollmentId: "existing-enrollment-id",
       },
-      another_experiment: {
-        name: "another_experiment",
-        branch: "another_4",
-        actionName: "SinglePreferenceExperimentAction",
-        expired: true,
-        lastSeen: NOW.toJSON(),
-        preferences: {
-          "another.pref": {
-            preferenceValue: true,
-            preferenceType: "boolean",
-            previousPreferenceValue: false,
-            preferenceBranchType: "default",
-          },
+      experimentType: "exp",
+    },
+    another_experiment: {
+      slug: "another_experiment",
+      branch: "another_4",
+      actionName: "SinglePreferenceExperimentAction",
+      expired: true,
+      lastSeen: NOW.toJSON(),
+      preferences: {
+        "another.pref": {
+          preferenceValue: true,
+          preferenceType: "boolean",
+          previousPreferenceValue: false,
+          preferenceBranchType: "default",
         },
-        experimentType: "exp",
       },
+      experimentType: "exp",
     },
   },
-
-  
-  {
-    experiments: {
-      hypothetical_experiment: {
-        slug: "hypothetical_experiment",
-        branch: "hypo_1",
-        actionName: "SinglePreferenceExperimentAction",
-        expired: false,
-        lastSeen: NOW.toJSON(),
-        preferences: {
-          "some.pref": {
-            preferenceValue: 2,
-            preferenceType: "integer",
-            previousPreferenceValue: 1,
-            preferenceBranchType: "user",
-          },
-        },
-        experimentType: "exp",
-        enrollmentId: "existing-enrollment-id",
-      },
-      another_experiment: {
-        slug: "another_experiment",
-        branch: "another_4",
-        actionName: "SinglePreferenceExperimentAction",
-        expired: true,
-        lastSeen: NOW.toJSON(),
-        preferences: {
-          "another.pref": {
-            preferenceValue: true,
-            preferenceType: "boolean",
-            previousPreferenceValue: false,
-            preferenceBranchType: "default",
-          },
-        },
-        experimentType: "exp",
-      },
-    },
-  },
-
-  
-  {
-    experiments: {
-      hypothetical_experiment: {
-        slug: "hypothetical_experiment",
-        branch: "hypo_1",
-        actionName: "SinglePreferenceExperimentAction",
-        expired: false,
-        lastSeen: NOW.toJSON(),
-        preferences: {
-          "some.pref": {
-            preferenceValue: 2,
-            preferenceType: "integer",
-            previousPreferenceValue: 1,
-            preferenceBranchType: "user",
-          },
-        },
-        experimentType: "exp",
-        enrollmentId: "existing-enrollment-id",
-      },
-      another_experiment: {
-        slug: "another_experiment",
-        branch: "another_4",
-        actionName: "SinglePreferenceExperimentAction",
-        expired: true,
-        lastSeen: NOW.toJSON(),
-        preferences: {
-          "another.pref": {
-            preferenceValue: true,
-            preferenceType: "boolean",
-            previousPreferenceValue: false,
-            preferenceBranchType: "default",
-          },
-        },
-        experimentType: "exp",
-        enrollmentId: "__NO_ENROLLMENT_ID__",
-      },
-    },
-  },
-];
+};
 
 
 
@@ -283,33 +226,37 @@ function makeMockJsonFile(data = {}) {
   };
 }
 
-let migrationsList = [
-  PreferenceExperiments.migrations.migration01MoveExperiments,
-  PreferenceExperiments.migrations.migration02MultiPreference,
-  PreferenceExperiments.migrations.migration03AddActionName,
-  PreferenceExperiments.migrations.migration04RenameNameToSlug,
-  PreferenceExperiments.migrations.migration05AddFillerEnrollmentId,
-];
-
 
 add_task(async function test_migrations() {
-  let mockJsonFile = makeMockJsonFile(mockDataVersions[0]);
-  for (let i = 0; i < migrationsList.length; i++) {
-    await migrationsList[i](mockJsonFile);
-    Assert.deepEqual(
-      mockJsonFile.data,
-      mockDataVersions[i + 1],
-      `Migration ${i + 1} should produce the expected results`
-    );
-  }
+  let mockJsonFile = makeMockJsonFile(mockV1Data);
+  await PreferenceExperiments.migrations.migration01MoveExperiments(
+    mockJsonFile
+  );
+  Assert.deepEqual(mockJsonFile.data, mockV2Data);
+
+  mockJsonFile = makeMockJsonFile(mockV2Data);
+  await PreferenceExperiments.migrations.migration02MultiPreference(
+    mockJsonFile
+  );
+  Assert.deepEqual(mockJsonFile.data, mockV3Data);
+
+  mockJsonFile = makeMockJsonFile(mockV3Data);
+  await PreferenceExperiments.migrations.migration03AddActionName(mockJsonFile);
+  Assert.deepEqual(mockJsonFile.data, mockV4Data);
+
+  mockJsonFile = makeMockJsonFile(mockV4Data);
+  await PreferenceExperiments.migrations.migration04RenameNameToSlug(
+    mockJsonFile
+  );
+  Assert.deepEqual(mockJsonFile.data, mockV5Data);
 });
 
 add_task(async function migration03KeepsActionName() {
-  let mockData = JSON.parse(JSON.stringify(mockDataVersions[2]));
+  let mockData = JSON.parse(JSON.stringify(mockV3Data));
   mockData.experiments.another_experiment.actionName = "SomeOldAction";
   const mockJsonFile = makeMockJsonFile(mockData);
   
-  const migratedData = JSON.parse(JSON.stringify(mockDataVersions[3]));
+  const migratedData = JSON.parse(JSON.stringify(mockV4Data));
   migratedData.experiments.another_experiment.actionName = "SomeOldAction";
 
   await PreferenceExperiments.migrations.migration03AddActionName(mockJsonFile);
@@ -317,9 +264,13 @@ add_task(async function migration03KeepsActionName() {
 });
 
 add_task(async function migrations_are_idempotent() {
-  for (let i = 0; i < migrationsList.length; i++) {
-    const migration = migrationsList[i];
-    const mockOldData = mockDataVersions[i];
+  let dataVersions = [
+    [PreferenceExperiments.migrations.migration01MoveExperiments, mockV1Data],
+    [PreferenceExperiments.migrations.migration02MultiPreference, mockV2Data],
+    [PreferenceExperiments.migrations.migration03AddActionName, mockV3Data],
+    [PreferenceExperiments.migrations.migration04RenameNameToSlug, mockV4Data],
+  ];
+  for (const [migration, mockOldData] of dataVersions) {
     const mockJsonFileOnce = makeMockJsonFile(mockOldData);
     const mockJsonFileTwice = makeMockJsonFile(mockOldData);
     await migration(mockJsonFileOnce);
