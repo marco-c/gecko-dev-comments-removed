@@ -299,9 +299,9 @@ nsresult nsIOService::InitializeCaptivePortalService() {
         ->Initialize();
   }
 
+  
   RefPtr<NetworkConnectivityService> ncs =
       NetworkConnectivityService::GetSingleton();
-  ncs->Init();
 
   return NS_OK;
 }
