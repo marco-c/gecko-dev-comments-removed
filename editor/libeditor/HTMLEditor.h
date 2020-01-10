@@ -1327,8 +1327,9 @@ class HTMLEditor final : public TextEditor,
 
 
   enum class ScanDirection { Backward, Forward };
-  static EditorDOMPoint GetWhiteSpaceEndPoint(const RangeBoundary& aPoint,
-                                              ScanDirection aScanDirection);
+  template <typename PT, typename RT>
+  static EditorDOMPoint GetWhiteSpaceEndPoint(
+      const RangeBoundaryBase<PT, RT>& aPoint, ScanDirection aScanDirection);
 
   
 
@@ -1338,8 +1339,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  EditorDOMPoint GetCurrentHardLineStartPoint(const RangeBoundary& aPoint,
-                                              EditSubAction aEditSubAction);
+  template <typename PT, typename RT>
+  EditorDOMPoint GetCurrentHardLineStartPoint(
+      const RangeBoundaryBase<PT, RT>& aPoint, EditSubAction aEditSubAction);
 
   
 
@@ -1351,7 +1353,45 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  EditorDOMPoint GetCurrentHardLineEndPoint(const RangeBoundary& aPoint);
+  template <typename PT, typename RT>
+  EditorDOMPoint GetCurrentHardLineEndPoint(
+      const RangeBoundaryBase<PT, RT>& aPoint);
+
+  
+
+
+
+
+  already_AddRefed<nsRange> CreateRangeIncludingAdjuscentWhiteSpaces(
+      const dom::AbstractRange& aAbstractRange);
+  template <typename SPT, typename SRT, typename EPT, typename ERT>
+  already_AddRefed<nsRange> CreateRangeIncludingAdjuscentWhiteSpaces(
+      const RangeBoundaryBase<SPT, SRT>& aStartRef,
+      const RangeBoundaryBase<EPT, ERT>& aEndRef);
+
+  
+
+
+
+
+  already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
+      const dom::AbstractRange& aAbstractRange, EditSubAction aEditSubAction);
+  template <typename SPT, typename SRT, typename EPT, typename ERT>
+  already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
+      const RangeBoundaryBase<SPT, SRT>& aStartRef,
+      const RangeBoundaryBase<EPT, ERT>& aEndRef, EditSubAction aEditSubAction);
+
+  
+
+
+
+
+
+
+  template <typename SPT, typename SRT, typename EPT, typename ERT>
+  void SelectBRElementIfCollapsedInEmptyBlock(
+      RangeBoundaryBase<SPT, SRT>& aStartRef,
+      RangeBoundaryBase<EPT, ERT>& aEndRef);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(

@@ -793,12 +793,6 @@ class HTMLEditRules : public TextEditRules {
   void GetPromotedRanges(nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
                          EditSubAction aEditSubAction) const;
 
-  
-
-
-
-  void PromoteRange(nsRange& aRange, EditSubAction aEditSubAction) const;
-
   void GetChildNodesForOperation(
       nsINode& aNode, nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
 
