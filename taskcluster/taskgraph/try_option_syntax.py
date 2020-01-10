@@ -261,6 +261,7 @@ class TryOptionSyntax(object):
             'only_chunks': set([..chunk numbers..]), # to limit only to certain chunks
         }
         """
+        self.full_task_graph = full_task_graph
         self.graph_config = graph_config
         self.jobs = []
         self.build_types = []
@@ -617,19 +618,28 @@ class TryOptionSyntax(object):
             elif tier != 1:
                 
                 
+                build_task = self.full_task_graph.tasks[task.dependencies['build']]
+                build_task_tier = build_task.task['extra']['treeherder']['tier']
+
                 name = attr('unittest_try_name')
                 test_tiers = self.test_tiers.get(name)
-                if 1 not in test_tiers:
-                    logger.debug("not skipping tier {} test without explicit inclusion: {}; "
+
+                if tier <= build_task_tier:
+                    logger.debug("not skipping tier {} test {} because build task {} "
+                                 "is tier {}"
+                                 .format(tier, task.label, build_task.label,
+                                         build_task_tier))
+                    return True
+                elif 1 not in test_tiers:
+                    logger.debug("not skipping tier {} test {} without explicit inclusion; "
                                  "it is configured to run on tiers {}"
                                  .format(tier, task.label, test_tiers))
                     return True
                 else:
-                    logger.debug(
-                        "skipping mixed tier {} (of {}) test without explicit inclusion: {}"
-                        .format(tier, test_tiers, task.label))
+                    logger.debug("skipping tier {} test {} because build task {} is "
+                                 "tier {} and there is a higher-tier test of the same name"
+                                 .format(tier, task.label, build_task.label, build_task_tier))
                     return False
-
             elif run_by_default:
                 return check_run_on_projects()
             else:
