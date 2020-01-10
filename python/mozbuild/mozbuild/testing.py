@@ -69,16 +69,15 @@ TEST_MANIFESTS = dict(
 )
 
 
-
 REFTEST_FLAVORS = ('crashtest', 'reftest')
-PUPPETEER_FLAVORS = ('puppeteer',)
+
+
 WEB_PLATFORM_TESTS_FLAVORS = ('web-platform-tests',)
 
 
 def all_test_flavors():
     return ([v[0] for v in TEST_MANIFESTS.values()] +
             list(REFTEST_FLAVORS) +
-            list(PUPPETEER_FLAVORS) +
             list(WEB_PLATFORM_TESTS_FLAVORS))
 
 
