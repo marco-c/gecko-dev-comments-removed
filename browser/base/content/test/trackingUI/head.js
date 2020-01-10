@@ -53,7 +53,7 @@ function openProtectionsPopup() {
   let mainView = document.getElementById("protections-popup-mainView");
   let viewShown = BrowserTestUtils.waitForEvent(mainView, "ViewShown");
   
-  gProtectionsHandler.showProtectionsPopup();
+  gIdentityHandler._trackingProtectionIconContainer.click();
   return viewShown;
 }
 
