@@ -351,8 +351,7 @@ class ContentParent final : public PContentParent,
                                       nsIPrincipal* aPrincipal) override;
 
   
-  static void NotifyTabDestroying(const TabId& aTabId,
-                                  const ContentParentId& aCpId);
+  void NotifyTabDestroying();
 
   
   void NotifyTabDestroyed(const TabId& aTabId, bool aNotifiedDestroying);
