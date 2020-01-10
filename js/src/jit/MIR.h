@@ -7934,9 +7934,8 @@ class MArrayPopShift : public MUnaryInstruction,
 };
 
 
-class MArrayPush
-    : public MBinaryInstruction,
-      public MixPolicy<SingleObjectPolicy, NoFloatPolicy<1>>::Data {
+class MArrayPush : public MBinaryInstruction,
+                   public MixPolicy<SingleObjectPolicy, BoxPolicy<1>>::Data {
   MArrayPush(MDefinition* object, MDefinition* value)
       : MBinaryInstruction(classOpcode, object, value) {
     setResultType(MIRType::Int32);
