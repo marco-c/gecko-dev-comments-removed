@@ -1613,19 +1613,16 @@ class nsDisplayListBuilder {
   
 
 
-  void AddWindowOpaqueRegion(const nsRegion& bounds) {
-    mWindowOpaqueRegion.Or(mWindowOpaqueRegion, bounds);
+  void AddWindowOpaqueRegion(nsIFrame* aFrame, const nsRect& aBounds) {
+    mWindowOpaqueRegion.Add(aFrame, aBounds);
   }
   
 
 
 
-  const nsRegion& GetWindowOpaqueRegion() { return mWindowOpaqueRegion; }
-
-  
-
-
-  void ClearWindowOpaqueRegion() { mWindowOpaqueRegion.SetEmpty(); }
+  const nsRegion GetWindowOpaqueRegion() {
+    return mWindowOpaqueRegion.ToRegion();
+  }
 
   void SetGlassDisplayItem(nsDisplayItem* aItem);
   void ClearGlassDisplayItem() { mGlassDisplayItem = nullptr; }
@@ -1933,11 +1930,11 @@ class nsDisplayListBuilder {
   WeakFrameRegion mRetainedWindowNoDraggingRegion;
 
   
-  LayoutDeviceIntRegion mWindowDraggingRegion;
-  LayoutDeviceIntRegion mWindowNoDraggingRegion;
+  WeakFrameRegion mWindowOpaqueRegion;
 
   
-  nsRegion mWindowOpaqueRegion;
+  LayoutDeviceIntRegion mWindowDraggingRegion;
+  LayoutDeviceIntRegion mWindowNoDraggingRegion;
 
   
   
@@ -2694,6 +2691,8 @@ class nsDisplayItem : public nsDisplayItemBase {
   virtual void AddSizeOfExcludingThis(nsWindowSizes&) const {}
 
   
+
+
 
 
 
