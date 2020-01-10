@@ -20,13 +20,6 @@ loader.lazyRequireGetter(
   "devtools/shared/dom-node-constants"
 );
 
-loader.lazyRequireGetter(
-  this,
-  "BrowsingContextTargetFront",
-  "devtools/shared/fronts/targets/browsing-context",
-  true
-);
-
 const BROWSER_TOOLBOX_FISSION_ENABLED = Services.prefs.getBoolPref(
   "devtools.browsertoolbox.fission",
   false
@@ -534,12 +527,10 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
       return this._remoteFrameTarget;
     }
     
-    const form = await super.connectToRemoteFrame();
-    
-    this._remoteFrameTarget = new BrowsingContextTargetFront(this.conn);
-    this._remoteFrameTarget.actorID = form.actor;
-    this._remoteFrameTarget.form(form);
-    this._remoteFrameTarget.manage(this._remoteFrameTarget);
+    const descriptor = await this.targetFront.client.mainRoot.getBrowsingContextDescriptor(
+      this._form.browsingContextID
+    );
+    this._remoteFrameTarget = await descriptor.getTarget();
     return this._remoteFrameTarget;
   }
 }
