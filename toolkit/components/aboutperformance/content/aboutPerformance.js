@@ -482,6 +482,17 @@ var State = {
     }
     return counters;
   },
+
+  getMaxEnergyImpact(counters) {
+    return Math.max(
+      ...counters.map(c => {
+        return Control._computeEnergyImpact(
+          c.dispatchesSincePrevious,
+          c.durationSincePrevious
+        );
+      })
+    );
+  },
 };
 
 var View = {
@@ -503,22 +514,52 @@ var View = {
     row.parentNode.insertBefore(this._fragment, row.nextSibling);
     this._fragment = document.createDocumentFragment();
   },
-  displayEnergyImpact(elt, energyImpact) {
+  displayEnergyImpact(elt, energyImpact, maxEnergyImpact) {
     if (!energyImpact) {
       elt.textContent = "–";
+      elt.style.setProperty("--bar-width", 0);
     } else {
-      let impact = "high";
+      let impact;
+      let barWidth;
+      const mediumEnergyImpact = 25;
       if (energyImpact < 1) {
         impact = "low";
-      } else if (energyImpact < 25) {
+        
+        barWidth = 10 * energyImpact;
+      } else if (energyImpact < mediumEnergyImpact) {
         impact = "medium";
+        
+        barWidth = (10 + 2 * energyImpact) * (5 / 6);
+      } else {
+        impact = "high";
+        
+        let energyImpactFromZero = energyImpact - mediumEnergyImpact;
+        if (maxEnergyImpact > 100) {
+          barWidth =
+            50 +
+            (energyImpactFromZero / (maxEnergyImpact - mediumEnergyImpact)) *
+              50;
+        } else {
+          barWidth = 50 + energyImpactFromZero * (2 / 3);
+        }
       }
       document.l10n.setAttributes(elt, "energy-impact-" + impact, {
         value: energyImpact,
       });
+      if (maxEnergyImpact != -1) {
+        elt.style.setProperty("--bar-width", barWidth);
+      }
     }
   },
-  appendRow(name, energyImpact, memory, tooltip, type, image = "") {
+  appendRow(
+    name,
+    energyImpact,
+    memory,
+    tooltip,
+    type,
+    maxEnergyImpact = -1,
+    image = ""
+  ) {
     let row = document.createElement("tr");
 
     let elt = document.createElement("td");
@@ -551,7 +592,8 @@ var View = {
     row.appendChild(elt);
 
     elt = document.createElement("td");
-    this.displayEnergyImpact(elt, energyImpact);
+    elt.classList.add("energy-impact");
+    this.displayEnergyImpact(elt, energyImpact, maxEnergyImpact);
     row.appendChild(elt);
 
     elt = document.createElement("td");
@@ -749,6 +791,8 @@ var Control = {
   
   
   async _updateDisplay(force = false) {
+    let counters = State.getCounters();
+    let maxEnergyImpact = State.getMaxEnergyImpact(counters);
     
     
     
@@ -763,7 +807,7 @@ var Control = {
         id,
         dispatchesSincePrevious,
         durationSincePrevious,
-      } of State.getCounters()) {
+      } of counters) {
         let energyImpact = this._computeEnergyImpact(
           dispatchesSincePrevious,
           durationSincePrevious
@@ -779,7 +823,11 @@ var Control = {
           
           const kEnergyImpactColumn = 2;
           let elt = row.childNodes[kEnergyImpactColumn];
-          View.displayEnergyImpact(elt, energyImpactPerId.get(row.windowId));
+          View.displayEnergyImpact(
+            elt,
+            energyImpactPerId.get(row.windowId),
+            maxEnergyImpact
+          );
         }
         row = row.nextSibling;
       }
@@ -796,7 +844,7 @@ var Control = {
     let openItems = this._openItems;
     this._openItems = new Set();
 
-    let counters = this._sortCounters(State.getCounters());
+    counters = this._sortCounters(counters);
     for (let {
       id,
       name,
@@ -823,6 +871,7 @@ var Control = {
           durationSincePrevious: Math.ceil(durationSincePrevious / 1000),
         },
         type,
+        maxEnergyImpact,
         image
       );
       row.windowId = id;
