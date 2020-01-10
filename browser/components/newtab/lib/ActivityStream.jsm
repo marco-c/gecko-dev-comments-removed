@@ -10,6 +10,11 @@ ChromeUtils.defineModuleGetter(
   "AppConstants",
   "resource://gre/modules/AppConstants.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
 
 
 
@@ -646,7 +651,10 @@ this.ActivityStream = class ActivityStream {
         this.feeds,
         ac.BroadcastToContent({
           type: at.INIT,
-          data: {},
+          data: {
+            permanentPrivateBrowsing:
+              PrivateBrowsingUtils.permanentPrivateBrowsing,
+          },
         }),
         { type: at.UNINIT }
       );
