@@ -19,6 +19,7 @@
 #include "RemoteMediaDataDecoder.h"
 #include "RemoteVideoDecoder.h"
 #include "OpusDecoder.h"
+#include "VideoUtils.h"
 #include "VorbisDecoder.h"
 #include "WAVDecoder.h"
 
@@ -105,6 +106,16 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
     return nullptr;
   }
 
+  
+  
+  
+  
+  CreateDecoderParams::OptionSet options(aParams.mOptions);
+  if (OpusDataDecoder::IsOpus(aParams.mConfig.mMimeType) &&
+      IsDefaultPlaybackDeviceMono()) {
+    options += CreateDecoderParams::Option::DefaultPlaybackDeviceMono;
+  }
+
   RefPtr<RemoteAudioDecoderChild> child = new RemoteAudioDecoderChild();
   MediaResult result(NS_OK);
   
@@ -116,7 +127,7 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
   
   RefPtr<Runnable> task =
       NS_NewRunnableFunction("RemoteDecoderModule::CreateAudioDecoder", [&]() {
-        result = child->InitIPDL(aParams.AudioConfig(), aParams.mOptions);
+        result = child->InitIPDL(aParams.AudioConfig(), options);
         if (NS_FAILED(result)) {
           
           

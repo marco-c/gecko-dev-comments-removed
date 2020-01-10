@@ -53,6 +53,8 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
                                   
                                   
                                   
+    DefaultPlaybackDeviceMono,    
+                                  
 
     SENTINEL  
   };
