@@ -5,11 +5,10 @@
 
 package org.mozilla.geckoview.test.rule;
 
-import org.mozilla.gecko.GeckoThread;
-import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.GeckoDisplay;
 import org.mozilla.geckoview.GeckoResult;
+import org.mozilla.geckoview.GeckoResult.OnValueListener;
 import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.GeckoSessionSettings;
@@ -37,14 +36,15 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 import android.app.Instrumentation;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.net.LocalSocketAddress;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.test.InstrumentationRegistry;
-import android.util.Log;
 import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -69,7 +69,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -274,6 +273,17 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
+    @Target({ElementType.METHOD, ElementType.TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface ReuseSession {
+        boolean value() default true;
+    }
+
+    
+
+
+
+
 
 
 
@@ -397,8 +407,9 @@ public class GeckoSessionTestRule implements TestRule {
 
 
         public Object getValue() {
-            UiThreadUtils.waitForCondition(() -> !mPromise.isPending(), mTimeoutMillis);
-
+            while (mPromise.isPending()) {
+                UiThreadUtils.loopUntilIdle(mTimeoutMillis);
+            }
             if (mPromise.isRejected()) {
                 throw new RejectedPromiseException(mPromise.getReason());
             }
@@ -815,6 +826,8 @@ public class GeckoSessionTestRule implements TestRule {
     private static final Set<Class<?>> DEFAULT_DELEGATES = getDefaultDelegates();
 
     private static RDPConnection sRDPConnection;
+    protected static GeckoSession sCachedSession;
+    protected static Tab sCachedRDPTab;
 
     public final Environment env = new Environment();
 
@@ -844,6 +857,7 @@ public class GeckoSessionTestRule implements TestRule {
     protected boolean mWithDevTools;
     protected Map<GeckoSession, Tab> mRDPTabs;
     protected Tab mRDPChromeProcess;
+    protected boolean mReuseSession;
     protected boolean mIgnoreCrash;
 
     public GeckoSessionTestRule() {
@@ -1038,6 +1052,8 @@ public class GeckoSessionTestRule implements TestRule {
                 mClosedSession = ((ClosedSessionAtStart) annotation).value();
             } else if (WithDevToolsAPI.class.equals(annotation.annotationType())) {
                 mWithDevTools = ((WithDevToolsAPI) annotation).value();
+            } else if (ReuseSession.class.equals(annotation.annotationType())) {
+                mReuseSession = ((ReuseSession) annotation).value();
             } else if (IgnoreCrash.class.equals(annotation.annotationType())) {
                 mIgnoreCrash = ((IgnoreCrash) annotation).value();
             }
@@ -1055,12 +1071,13 @@ public class GeckoSessionTestRule implements TestRule {
         return new RuntimeException(cause != null ? cause : e);
     }
 
-    protected void prepareStatement(final Description description) {
+    protected void prepareStatement(final Description description) throws Throwable {
         final GeckoSessionSettings settings = new GeckoSessionSettings(mDefaultSettings);
         mTimeoutMillis = env.getDefaultTimeoutMillis();
         mNullDelegates = new HashSet<>();
         mClosedSession = false;
         mWithDevTools = false;
+        mReuseSession = true;
         mIgnoreCrash = false;
 
         applyAnnotations(Arrays.asList(description.getTestClass().getAnnotations()), settings);
@@ -1098,9 +1115,8 @@ public class GeckoSessionTestRule implements TestRule {
                         !DEFAULT_DELEGATES.contains(method.getDeclaringClass());
 
                 if (!ignore) {
-                    if (!isExternalDelegate) {
-                        ThreadUtils.assertOnUiThread();
-                    }
+                    assertThat("Callbacks must be on UI thread",
+                               Looper.myLooper(), equalTo(Looper.getMainLooper()));
 
                     final GeckoSession session;
                     if (isExternalDelegate) {
@@ -1156,17 +1172,25 @@ public class GeckoSessionTestRule implements TestRule {
                 @SuppressWarnings("unchecked")
                 final GeckoResult<GeckoSession> result = (GeckoResult<GeckoSession>)returnValue;
                 final GeckoResult<GeckoSession> tmpResult = new GeckoResult<>();
-                result.accept(session -> {
-                    tmpResult.complete(session);
+                result.then(new OnValueListener<GeckoSession, Void>() {
+                    @Override
+                    public GeckoResult<Void> onValue(final GeckoSession newSession) throws Throwable {
+                        tmpResult.complete(newSession);
 
-                    
-                    
-                    
-                    tmpResult.accept(newSession -> {
-                        if (oldSession.isOpen() && newSession != null) {
-                            GeckoSessionTestRule.this.waitForOpenSession(newSession);
-                        }
-                    });
+                        
+                        
+                        
+                        tmpResult.then(new OnValueListener<GeckoSession, Void>() {
+                            @Override
+                            public GeckoResult<Void> onValue(GeckoSession newSession) throws Throwable {
+                                if (oldSession.isOpen() && newSession != null) {
+                                    GeckoSessionTestRule.this.waitForOpenSession(newSession);
+                                }
+                                return null;
+                            }
+                        });
+                        return null;
+                    }
                 });
 
                 return tmpResult;
@@ -1179,7 +1203,16 @@ public class GeckoSessionTestRule implements TestRule {
                                                 classes, recorder);
         mAllDelegates = new HashSet<>(DEFAULT_DELEGATES);
 
-        mMainSession = new GeckoSession(settings);
+        if (sCachedSession != null && !sCachedSession.isOpen()) {
+            sCachedSession = null;
+        }
+
+        final boolean useDefaultSession = !mClosedSession && mDefaultSettings.equals(settings);
+        if (useDefaultSession && mReuseSession && sCachedSession != null) {
+            mMainSession = sCachedSession;
+        } else {
+            mMainSession = new GeckoSession(settings);
+        }
         prepareSession(mMainSession);
 
         if (mDisplaySize != null) {
@@ -1190,18 +1223,28 @@ public class GeckoSessionTestRule implements TestRule {
             mDisplay.surfaceChanged(mDisplaySurface, mDisplaySize.x, mDisplaySize.y);
         }
 
-        if (!mClosedSession) {
+        if (useDefaultSession && mReuseSession) {
+            if (sCachedSession == null) {
+                
+                final boolean withDevTools = mWithDevTools;
+                mWithDevTools = true; 
+                openSession(mMainSession);
+                sCachedSession = mMainSession;
+                sCachedRDPTab = mRDPTabs.get(mMainSession);
+                mWithDevTools = withDevTools;
+            } else {
+                
+                mMainSession.loadUri("about:blank");
+                waitForOpenSession(mMainSession);
+            }
+        } else if (!mClosedSession) {
             openSession(mMainSession);
         }
     }
 
-    protected void prepareSession(final GeckoSession session) {
+    protected void prepareSession(final GeckoSession session) throws Throwable {
         for (final Class<?> cls : DEFAULT_DELEGATES) {
-            try {
-                setDelegate(cls, session, mNullDelegates.contains(cls) ? null : mCallbackProxy);
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
+            setDelegate(cls, session, mNullDelegates.contains(cls) ? null : mCallbackProxy);
         }
     }
 
@@ -1212,92 +1255,88 @@ public class GeckoSessionTestRule implements TestRule {
 
 
     public void openSession(final GeckoSession session) {
-        ThreadUtils.assertOnUiThread();
-        
-        
-        
-
-        try {
-            
-            assertThat("ProgressDelegate cannot be null-delegate when opening session",
-                    GeckoSession.ProgressDelegate.class, not(isIn(mNullDelegates)));
-            mCallRecordHandler = (method, args) -> {
-                Log.e(LOGTAG, "method: " + method);
-                final boolean matching = DEFAULT_DELEGATES.contains(
-                        method.getDeclaringClass()) && session.equals(args[0]);
-                if (matching && sOnPageStop.equals(method)) {
-                    mCallRecordHandler = null;
-                }
-                return matching;
-            };
-
-            session.open(getRuntime());
-
-            UiThreadUtils.waitForCondition(() -> mCallRecordHandler == null,
-                    env.getDefaultTimeoutMillis());
-        } finally {
-            mCallRecordHandler = null;
-        }
-
-        attachDevTools(session);
+        session.open(getRuntime());
+        waitForOpenSession(session);
     }
 
-    private void attachDevTools(final GeckoSession session) {
-        if (!mWithDevTools) {
-            return;
-        }
+     void waitForOpenSession(final GeckoSession session) {
+        waitForInitialLoad(session);
 
-        if (sRDPConnection == null) {
-            final String packageName = InstrumentationRegistry.getTargetContext()
-                    .getPackageName();
-            final LocalSocketAddress address = new LocalSocketAddress(
-                    packageName + "/firefox-debugger-socket",
-                    LocalSocketAddress.Namespace.ABSTRACT);
-            sRDPConnection = new RDPConnection(address);
-            sRDPConnection.setTimeout(mTimeoutMillis);
+        if (mWithDevTools) {
+            if (sRDPConnection == null) {
+                final String packageName = InstrumentationRegistry.getTargetContext()
+                                                                  .getPackageName();
+                final LocalSocketAddress address = new LocalSocketAddress(
+                        packageName + "/firefox-debugger-socket",
+                        LocalSocketAddress.Namespace.ABSTRACT);
+                sRDPConnection = new RDPConnection(address);
+                sRDPConnection.setTimeout(mTimeoutMillis);
+            }
+            if (mRDPTabs == null) {
+                mRDPTabs = new HashMap<>();
+            }
+            final Tab tab = session.equals(sCachedSession) ? sCachedRDPTab
+                                                           : sRDPConnection.getMostRecentTab();
+            mRDPTabs.put(session, tab);
         }
-        if (mRDPTabs == null) {
-            mRDPTabs = new HashMap<>();
-        }
-        final Tab tab = sRDPConnection.getMostRecentTab();
-        mRDPTabs.put(session, tab);
     }
 
-    private void waitForOpenSession(final GeckoSession session) {
-        ThreadUtils.assertOnUiThread();
+    private void waitForInitialLoad(final GeckoSession session) {
         
         
         
+
+        
+        
+        final boolean lookForAboutBlank = session.equals(sCachedSession);
 
         try {
             
             assertThat("ProgressDelegate cannot be null-delegate when opening session",
                        GeckoSession.ProgressDelegate.class, not(isIn(mNullDelegates)));
-            mCallRecordHandler = (method, args) -> {
-                Log.e(LOGTAG, "method: " + method);
-                final boolean matching = DEFAULT_DELEGATES.contains(
-                        method.getDeclaringClass()) && session.equals(args[0]);
-                if (matching && sOnPageStop.equals(method)) {
-                    mCallRecordHandler = null;
+            mCallRecordHandler = new CallRecordHandler() {
+                private boolean mIsAboutBlank = !lookForAboutBlank;
+
+                @Override
+                public boolean handleCall(final Method method, final Object[] args) {
+                    final boolean matching = DEFAULT_DELEGATES.contains(
+                            method.getDeclaringClass()) && session.equals(args[0]);
+                    if (matching && sOnPageStart.equals(method)) {
+                        mIsAboutBlank = "about:blank".equals(args[1]);
+                    } else if (matching && mIsAboutBlank && sOnPageStop.equals(method)) {
+                        mCallRecordHandler = null;
+                    }
+                    return matching;
                 }
-                return matching;
             };
 
-            UiThreadUtils.waitForCondition(() -> mCallRecordHandler == null,
-                    env.getDefaultTimeoutMillis());
+            do {
+                UiThreadUtils.loopUntilIdle(env.getDefaultTimeoutMillis());
+            } while (mCallRecordHandler != null);
+
         } finally {
             mCallRecordHandler = null;
         }
-
-        attachDevTools(session);
     }
 
     
 
 
     public void performTestEndCheck() {
+        if (sCachedSession != null && mIgnoreCrash) {
+            
+            while (sCachedSession.isOpen()) {
+                UiThreadUtils.loopUntilIdle(mTimeoutMillis);
+            }
+        }
+
         mWaitScopeDelegates.clearAndAssert();
         mTestScopeDelegates.clearAndAssert();
+
+        if (sCachedSession != null && mReuseSession) {
+            assertThat("Cached session should be open",
+                       sCachedSession.isOpen(), equalTo(true));
+        }
     }
 
     protected void cleanupSession(final GeckoSession session) {
@@ -1326,7 +1365,7 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
-    protected void cleanupStatement() {
+    protected void cleanupStatement() throws Throwable {
         mWaitScopeDelegates.clear();
         mTestScopeDelegates.clear();
 
@@ -1334,7 +1373,12 @@ public class GeckoSessionTestRule implements TestRule {
             cleanupSession(session);
         }
 
-        cleanupSession(mMainSession);
+        if (mMainSession.isOpen() && mMainSession.equals(sCachedSession)) {
+            
+            sCachedRDPTab.getPromises().detach();
+        } else {
+            cleanupSession(mMainSession);
+        }
 
         if (mIgnoreCrash) {
             deleteCrashDumps();
@@ -1370,41 +1414,21 @@ public class GeckoSessionTestRule implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 final AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
-
-                mInstrumentation.runOnMainSync(() -> {
-                    try {
-                        getRuntime();
-
-                        long timeout = env.getDefaultTimeoutMillis() + System.currentTimeMillis();
-                        while (!GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-                            if (System.currentTimeMillis() > timeout) {
-                                throw new TimeoutException("Could not startup runtime after "
-                                        + env.getDefaultTimeoutMillis() + ".ms");
-                            }
-                            Log.e(LOGTAG, "GeckoThread not ready, sleeping 1000ms.");
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException ex) {
-                            }
-                        }
-
-                        Log.e(LOGTAG, "====");
-                        Log.e(LOGTAG, "before prepareStatement " + description);
-                        prepareStatement(description);
-                        Log.e(LOGTAG, "after prepareStatement");
-                        base.evaluate();
-                        Log.e(LOGTAG, "after evaluate");
-                        performTestEndCheck();
-                        Log.e(LOGTAG, "after performTestEndCheck");
-                        Log.e(LOGTAG, "====");
-                    } catch (Throwable t) {
-                        Log.e(LOGTAG, "====", t);
-                        exceptionRef.set(t);
-                    } finally {
+                mInstrumentation.runOnMainSync(new Runnable() {
+                    @Override
+                    public void run() {
                         try {
-                            cleanupStatement();
+                            prepareStatement(description);
+                            base.evaluate();
+                            performTestEndCheck();
                         } catch (Throwable t) {
-                            exceptionRef.compareAndSet(null, t);
+                            exceptionRef.set(t);
+                        } finally {
+                            try {
+                                cleanupStatement();
+                            } catch (Throwable t) {
+                                exceptionRef.set(t);
+                            }
                         }
                     }
                 });
@@ -1604,11 +1628,9 @@ public class GeckoSessionTestRule implements TestRule {
         forCallbacksDuringWait(session, callback);
     }
 
-    private void waitUntilCalled(final @Nullable GeckoSession session,
-                                 final @NonNull Class<?> delegate,
-                                 final @NonNull List<MethodCall> methodCalls) {
-        ThreadUtils.assertOnUiThread();
-
+    protected void waitUntilCalled(final @Nullable GeckoSession session,
+                                   final @NonNull Class<?> delegate,
+                                   final @NonNull List<MethodCall> methodCalls) {
         if (session != null && !session.equals(mMainSession)) {
             assertThat("Session should be wrapped through wrapSession",
                        session, isIn(mSubSessions));
@@ -1655,8 +1677,15 @@ public class GeckoSessionTestRule implements TestRule {
         beforeWait();
 
         while (!calledAny || !methodCalls.isEmpty()) {
-            final int checkIndex = index;
-            UiThreadUtils.waitForCondition(() -> (checkIndex < mCallRecords.size()), mTimeoutMillis);
+            while (index >= mCallRecords.size()) {
+                UiThreadUtils.loopUntilIdle(mTimeoutMillis);
+                
+                
+                
+                if (SystemClock.uptimeMillis() - startTime > mTimeoutMillis) {
+                    break;
+                }
+            }
 
             if (SystemClock.uptimeMillis() - startTime > mTimeoutMillis) {
                 throw new UiThreadUtils.TimeoutException("Timed out after " + mTimeoutMillis + "ms");
@@ -2020,7 +2049,9 @@ public class GeckoSessionTestRule implements TestRule {
 
     private Object evaluateJS(final @NonNull Tab tab, final @NonNull String js) {
         final Actor.Reply<Object> reply = tab.getConsole().evaluateJS(js);
-        UiThreadUtils.waitForCondition(reply::hasResult, mTimeoutMillis);
+        while (!reply.hasResult()) {
+            UiThreadUtils.loopUntilIdle(mTimeoutMillis);
+        }
 
         final Object result = reply.get();
         if (result instanceof Promise) {
