@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_ObjectGroup_h
 #define vm_ObjectGroup_h
@@ -31,125 +31,125 @@ class ObjectGroupRealm;
 
 namespace gc {
 void MergeRealms(JS::Realm* source, JS::Realm* target);
-}  
+}  // namespace gc
 
-
-
-
-
+/*
+ * The NewObjectKind allows an allocation site to specify the type properties
+ * and lifetime requirements that must be fixed at allocation time.
+ */
 enum NewObjectKind {
-  
+  /* This is the default. Most objects are generic. */
   GenericObject,
 
-  
-
-
-
-
+  /*
+   * Singleton objects are treated specially by the type system. This flag
+   * ensures that the new object is automatically set up correctly as a
+   * singleton and is allocated in the tenured heap.
+   */
   SingletonObject,
 
-  
-
-
-
+  /*
+   * CrossCompartmentWrappers use the common Proxy class, but are allowed
+   * to have nursery lifetime.
+   */
   NurseryAllocatedProxy,
 
-  
-
-
-
-
+  /*
+   * Objects which will not benefit from being allocated in the nursery
+   * (e.g. because they are known to have a long lifetime) may be allocated
+   * with this kind to place them immediately into the tenured generation.
+   */
   TenuredObject
 };
 
+/*
+ * [SMDOC] Type-Inference lazy ObjectGroup
+ *
+ * Object groups which represent at most one JS object are constructed lazily.
+ * These include groups for native functions, standard classes, scripted
+ * functions defined at the top level of global/eval scripts, objects which
+ * dynamically become the prototype of some other object, and in some other
+ * cases. Typical web workloads often create many windows (and many copies of
+ * standard natives) and many scripts, with comparatively few non-singleton
+ * groups.
+ *
+ * We can recover the type information for the object from examining it,
+ * so don't normally track the possible types of its properties as it is
+ * updated. Property type sets for the object are only constructed when an
+ * analyzed script attaches constraints to it: the script is querying that
+ * property off the object or another which delegates to it, and the analysis
+ * information is sensitive to changes in the property's type. Future changes
+ * to the property (whether those uncovered by analysis or those occurring
+ * in the VM) will treat these properties like those of any other object group.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Type information about an object accessed by a script. */
 class ObjectGroup : public gc::TenuredCell {
  public:
   class Property;
 
  private:
-  
-  const JSClass* clasp_;  
+  /* Class shared by objects in this group. */
+  const JSClass* clasp_;  // set by constructor
 
-  
-  GCPtr<TaggedProto> proto_;  
+  /* Prototype shared by objects in this group. */
+  GCPtr<TaggedProto> proto_;  // set by constructor
 
-  
+  /* Realm shared by objects in this group. */
   JS::Realm* realm_;
-  ;  
+  ;  // set by constructor
 
-  
-  ObjectGroupFlags flags_;  
+  /* Flags for this group. */
+  ObjectGroupFlags flags_;  // set by constructor
 
-  
-  
+  // If non-null, holds additional information about this object, whose
+  // format is indicated by the object's addendum kind.
   void* addendum_ = nullptr;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+   * [SMDOC] Type-Inference object properties
+   *
+   * Properties of this object.
+   *
+   * The type sets in the properties of a group describe the possible values
+   * that can be read out of that property in actual JS objects. In native
+   * objects, property types account for plain data properties (those with a
+   * slot and no getter or setter hook) and dense elements. In typed objects,
+   * property types account for object and value properties and elements in the
+   * object.
+   *
+   * For accesses on these properties, the correspondence is as follows:
+   *
+   * 1. If the group has unknownProperties(), the possible properties and
+   *    value types for associated JSObjects are unknown.
+   *
+   * 2. Otherwise, for any |obj| in |group|, and any |id| which is a property
+   *    in |obj|, before obj->getProperty(id) the property in |group| for
+   *    |id| must reflect the result of the getProperty.
+   *
+   * There are several exceptions to this:
+   *
+   * 1. For properties of global JS objects which are undefined at the point
+   *    where the property was (lazily) generated, the property type set will
+   *    remain empty, and the 'undefined' type will only be added after a
+   *    subsequent assignment or deletion. After these properties have been
+   *    assigned a defined value, the only way they can become undefined
+   *    again is after such an assign or deletion.
+   *
+   * 2. Array lengths are special cased by the compiler and VM and are not
+   *    reflected in property types.
+   *
+   * 3. In typed objects, the initial values of properties (null pointers and
+   *    undefined values) are not reflected in the property types. These values
+   *    are always possible when reading the property.
+   *
+   * We establish these by using write barriers on calls to setProperty and
+   * defineProperty which are on native properties, and on any jitcode which
+   * might update the property with a new type.
+   */
   Property** propertySet = nullptr;
 
-  
+  // END OF PROPERTIES
 
  private:
   static inline uint32_t offsetOfClasp() {
@@ -175,7 +175,7 @@ class ObjectGroup : public gc::TenuredCell {
   friend class gc::GCRuntime;
   friend class gc::GCTrace;
 
-  
+  // See JSObject::offsetOfGroup() comment.
   friend class js::jit::MacroAssembler;
 
  public:
@@ -191,9 +191,9 @@ class ObjectGroup : public gc::TenuredCell {
   void setProtoUnchecked(TaggedProto proto);
 
   bool hasUncacheableProto() const {
-    
-    
-    
+    // We allow singletons to mutate their prototype after the group has
+    // been created. If true, the JIT must re-check prototype even if group
+    // has been seen before.
     MOZ_ASSERT(!hasDynamicPrototype());
     return singleton();
   }
@@ -215,23 +215,23 @@ class ObjectGroup : public gc::TenuredCell {
   JS::Realm* realm() const { return realm_; }
 
  public:
-  
+  // Kinds of addendums which can be attached to ObjectGroups.
   enum AddendumKind {
     Addendum_None,
 
-    
-    
+    // When used by interpreted function, the addendum stores the
+    // canonical JSFunction object.
     Addendum_InterpretedFunction,
 
-    
-    
+    // When used by the 'new' group when constructing an interpreted
+    // function, the addendum stores a TypeNewScript.
     Addendum_NewScript,
 
-    
-    
+    // For some plain objects, the addendum stores a
+    // PreliminaryObjectArrayWithTemplate.
     Addendum_PreliminaryObjects,
 
-    
+    // When used by typed objects, the addendum stores a TypeDescr.
     Addendum_TypeDescr
   };
 
@@ -290,8 +290,8 @@ class ObjectGroup : public gc::TenuredCell {
   inline bool hasUnanalyzedPreliminaryObjects();
 
   TypeDescr* maybeTypeDescr() {
-    
-    
+    // Note: there is no need to sweep when accessing the type descriptor
+    // of an object, as it is strongly held and immutable.
     if (addendumKind() == Addendum_TypeDescr) {
       return &typeDescr();
     }
@@ -308,8 +308,8 @@ class ObjectGroup : public gc::TenuredCell {
   }
 
   JSFunction* maybeInterpretedFunction() {
-    
-    
+    // Note: as with type descriptors, there is no need to sweep when
+    // accessing the interpreted function associated with an object.
     if (addendumKind() == Addendum_InterpretedFunction) {
       return reinterpret_cast<JSFunction*>(addendum_);
     }
@@ -322,12 +322,12 @@ class ObjectGroup : public gc::TenuredCell {
 
   class Property {
    public:
-    
-    
-    
+    // Identifier for this property, JSID_VOID for the aggregate integer
+    // index property, or JSID_EMPTY for properties holding constraints
+    // listening to changes in the group's state.
     GCPtrId id;
 
-    
+    // Possible own types for this property.
     HeapTypeSet types;
 
     explicit Property(jsid id) : id(id) {}
@@ -374,27 +374,27 @@ class ObjectGroup : public gc::TenuredCell {
   inline void setShouldPreTenure(const AutoSweepObjectGroup& sweep,
                                  JSContext* cx);
 
-  
-
-
-
+  /*
+   * Get or create a property of this object. Only call this for properties
+   * which a script accesses explicitly.
+   */
   inline HeapTypeSet* getProperty(const AutoSweepObjectGroup& sweep,
                                   JSContext* cx, JSObject* obj, jsid id);
 
-  
+  /* Get a property only if it already exists. */
   MOZ_ALWAYS_INLINE HeapTypeSet* maybeGetProperty(
       const AutoSweepObjectGroup& sweep, jsid id);
   MOZ_ALWAYS_INLINE HeapTypeSet* maybeGetPropertyDontCheckGeneration(jsid id);
 
-  
-
-
-
-
+  /*
+   * Iterate through the group's properties. getPropertyCount overapproximates
+   * in the hash case (see SET_ARRAY_SIZE in TypeInference-inl.h), and
+   * getProperty may return nullptr.
+   */
   inline unsigned getPropertyCount(const AutoSweepObjectGroup& sweep);
   inline Property* getProperty(const AutoSweepObjectGroup& sweep, unsigned i);
 
-  
+  /* Helpers */
 
   void updateNewPropertyTypes(const AutoSweepObjectGroup& sweep, JSContext* cx,
                               JSObject* obj, jsid id, HeapTypeSet* types);
@@ -452,18 +452,18 @@ class ObjectGroup : public gc::TenuredCell {
   }
 
  public:
-  
+  // Whether to make a deep cloned singleton when cloning fun.
   static bool useSingletonForClone(JSFunction* fun);
 
-  
+  // Whether to make a singleton when calling 'new' at script/pc.
   static bool useSingletonForNewObject(JSContext* cx, JSScript* script,
                                        jsbytecode* pc);
 
-  
+  // Whether to make a singleton object at an allocation site.
   static bool useSingletonForAllocationSite(JSScript* script, jsbytecode* pc,
                                             JSProtoKey key);
 
-  
+  // Static accessors for ObjectGroupRealm NewTable.
 
   static ObjectGroup* defaultNewGroup(JSContext* cx, const JSClass* clasp,
                                       TaggedProto proto,
@@ -481,40 +481,40 @@ class ObjectGroup : public gc::TenuredCell {
                                  ObjectGroup* group);
 #endif
 
-  
-  
+  // Static accessors for ObjectGroupRealm ArrayObjectTable and
+  // PlainObjectTable.
 
   enum class NewArrayKind {
-    Normal,       
-    CopyOnWrite,  
-    UnknownIndex  
+    Normal,       // Specialize array group based on its element type.
+    CopyOnWrite,  // Make an array with copy-on-write elements.
+    UnknownIndex  // Make an array with an unknown element type.
   };
 
-  
-  
+  // Create an ArrayObject with the specified elements and a group specialized
+  // for the elements.
   static ArrayObject* newArrayObject(
       JSContext* cx, const Value* vp, size_t length, NewObjectKind newKind,
       NewArrayKind arrayKind = NewArrayKind::Normal);
 
-  
-  
+  // Create a PlainObject with the specified properties and a group specialized
+  // for those properties.
   static JSObject* newPlainObject(JSContext* cx, IdValuePair* properties,
                                   size_t nproperties, NewObjectKind newKind);
 
-  
+  // Static accessors for ObjectGroupRealm AllocationSiteTable.
 
-  
-  
+  // Get a non-singleton group to use for objects created at the specified
+  // allocation site.
   static ObjectGroup* allocationSiteGroup(JSContext* cx, JSScript* script,
                                           jsbytecode* pc, JSProtoKey key,
                                           HandleObject proto = nullptr);
 
-  
+  // Get a non-singleton group to use for objects created in a JSNative call.
   static ObjectGroup* callingAllocationSiteGroup(JSContext* cx, JSProtoKey key,
                                                  HandleObject proto = nullptr);
 
-  
-  
+  // Set the group or singleton-ness of an object created for an allocation
+  // site.
   static bool setAllocationSiteObjectGroup(JSContext* cx, HandleScript script,
                                            jsbytecode* pc, HandleObject obj,
                                            bool singleton);
@@ -524,7 +524,7 @@ class ObjectGroup : public gc::TenuredCell {
                                                   jsbytecode* pc);
   static ArrayObject* getCopyOnWriteObject(JSScript* script, jsbytecode* pc);
 
-  
+  // Returns false if not found.
   static bool findAllocationSite(JSContext* cx, const ObjectGroup* group,
                                  JSScript** script, uint32_t* offset);
 
@@ -532,7 +532,7 @@ class ObjectGroup : public gc::TenuredCell {
   static ObjectGroup* defaultNewGroup(JSContext* cx, JSProtoKey key);
 };
 
-
+// Structure used to manage the groups in a realm.
 class ObjectGroupRealm {
  private:
   class NewTable;
@@ -554,11 +554,11 @@ class ObjectGroupRealm {
   class AllocationSiteTable;
 
  private:
-  
+  // Set of default 'new' or lazy groups in the realm.
   NewTable* defaultNewTable = nullptr;
   NewTable* lazyTable = nullptr;
 
-  
+  // This cache is purged on GC.
   class DefaultNewGroupCache {
     ObjectGroup* group_;
     JSObject* associated_;
@@ -577,36 +577,35 @@ class ObjectGroupRealm {
                                           JSObject* associated);
   } defaultNewGroupCache = {};
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Tables for managing groups common to the contents of large script
+  // singleton objects and JSON objects. These are vanilla ArrayObjects and
+  // PlainObjects, so we distinguish the groups of different ones by looking
+  // at the types of their properties.
+  //
+  // All singleton/JSON arrays which have the same prototype, are homogenous
+  // and of the same element type will share a group. All singleton/JSON
+  // objects which have the same shape and property types will also share a
+  // group. We don't try to collate arrays or objects with type mismatches.
   ArrayObjectTable* arrayObjectTable = nullptr;
   PlainObjectTable* plainObjectTable = nullptr;
 
-  
+  // Table for referencing types of objects keyed to an allocation site.
   AllocationSiteTable* allocationSiteTable = nullptr;
 
-  
-  
-  
-  
-  
-  
+  // A single per-realm ObjectGroup for all calls to StringSplitString.
+  // StringSplitString is always called from self-hosted code, and conceptually
+  // the return object for a string.split(string) operation should have a
+  // unified type.  Having a global group for this also allows us to remove
+  // the hash-table lookup that would be required if we allocated this group
+  // on the basis of call-site pc.
   WeakHeapPtrObjectGroup stringSplitStringGroup = {};
 
-  
+  // END OF PROPERTIES
 
  private:
   friend class ObjectGroup;
 
   struct AllocationSiteKey;
-  friend struct MovableCellHasher<AllocationSiteKey>;
 
  public:
   struct NewEntry;
@@ -677,6 +676,6 @@ bool CombineArrayElementTypes(JSContext* cx, JSObject* newObj,
 bool CombinePlainObjectPropertyTypes(JSContext* cx, JSObject* newObj,
                                      const Value* compare, size_t ncompare);
 
-}  
+}  // namespace js
 
-#endif 
+#endif /* vm_ObjectGroup_h */
