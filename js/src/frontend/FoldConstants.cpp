@@ -694,15 +694,16 @@ static bool FoldUnaryArithmetic(JSContext* cx, FullParseHandler* handler,
   return true;
 }
 
-static bool FoldAndOr(JSContext* cx, ParseNode** nodePtr) {
+static bool FoldAndOrCoalesce(JSContext* cx, ParseNode** nodePtr) {
   ListNode* node = &(*nodePtr)->as<ListNode>();
 
   MOZ_ASSERT(node->isKind(ParseNodeKind::AndExpr) ||
              node->isKind(ParseNodeKind::CoalesceExpr) ||
              node->isKind(ParseNodeKind::OrExpr));
 
-  bool isOrNode = node->isKind(ParseNodeKind::OrExpr) ||
-                  node->isKind(ParseNodeKind::CoalesceExpr);
+  bool isOrNode = node->isKind(ParseNodeKind::OrExpr);
+  bool isAndNode = node->isKind(ParseNodeKind::AndExpr);
+  bool isCoalesceNode = node->isKind(ParseNodeKind::CoalesceExpr);
   ParseNode** elem = node->unsafeHeadReference();
   do {
     Truthiness t = Boolish(*elem);
@@ -715,11 +716,18 @@ static bool FoldAndOr(JSContext* cx, ParseNode** nodePtr) {
       continue;
     }
 
+    bool isTruthyCoalesceNode =
+        isCoalesceNode && !((*elem)->isKind(ParseNodeKind::NullExpr) ||
+                            (*elem)->isKind(ParseNodeKind::RawUndefinedExpr));
+    bool canShortCircuit = (isOrNode && t == Truthy) ||
+                           (isAndNode && t == Falsy) || isTruthyCoalesceNode;
+
     
     
     
     
-    if ((t == Truthy) == isOrNode) {
+    
+    if (canShortCircuit) {
       for (ParseNode* next = (*elem)->pn_next; next; next = next->pn_next) {
         node->unsafeDecrementCount();
       }
@@ -730,8 +738,6 @@ static bool FoldAndOr(JSContext* cx, ParseNode** nodePtr) {
       elem = &(*elem)->pn_next;
       break;
     }
-
-    MOZ_ASSERT((t == Truthy) == !isOrNode);
 
     
     
@@ -1349,11 +1355,15 @@ class FoldVisitor : public RewritingParseNodeVisitor<FoldVisitor> {
   bool visitAndExpr(ParseNode*& pn) {
     
     
-    return Base::visitAndExpr(pn) && FoldAndOr(cx_, &pn);
+    return Base::visitAndExpr(pn) && FoldAndOrCoalesce(cx_, &pn);
   }
 
   bool visitOrExpr(ParseNode*& pn) {
-    return Base::visitOrExpr(pn) && FoldAndOr(cx_, &pn);
+    return Base::visitOrExpr(pn) && FoldAndOrCoalesce(cx_, &pn);
+  }
+
+  bool visitCoalesceExpr(ParseNode*& pn) {
+    return Base::visitCoalesceExpr(pn) && FoldAndOrCoalesce(cx_, &pn);
   }
 
   bool visitConditionalExpr(ParseNode*& pn) {
