@@ -568,7 +568,6 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
     ProxyCreated(aChildDoc, Interfaces::DOCUMENT | Interfaces::HYPERTEXT);
   }
 
-#if defined(XP_WIN)
   if (aChildDoc->IsTopLevelInContentProcess()) {
     
     
@@ -577,6 +576,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
     dom::BrowserBridgeParent* bridge =
         embeddedBrowser->GetBrowserBridgeParent();
     if (bridge) {
+#if defined(XP_WIN)
       
       
       
@@ -605,6 +605,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
         Unused << aChildDoc->SendEmulatedWindow(
             reinterpret_cast<uintptr_t>(mEmulatedWindowHandle), nullptr);
       }
+#endif  
       
       
       
@@ -613,7 +614,6 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
       Unused << RecvEvent(aParentID, nsIAccessibleEvent::EVENT_REORDER);
     }
   }
-#endif  
 
   return IPC_OK();
 }
