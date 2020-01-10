@@ -122,6 +122,7 @@ this.VideoControlsWidget = class {
 
 
 
+
   static shouldShowPictureInPictureToggle(prefs, someVideo) {
     if (
       prefs["media.videocontrols.picture-in-picture.video-toggle.always-show"]
@@ -143,6 +144,15 @@ this.VideoControlsWidget = class {
     }
 
     if (!someVideo.mozHasAudio) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    if (someVideo.srcObject) {
       return false;
     }
 
