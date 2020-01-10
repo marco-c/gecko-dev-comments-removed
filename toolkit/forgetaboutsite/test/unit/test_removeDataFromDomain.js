@@ -406,6 +406,8 @@ async function test_push_cleared() {
   const { PushService } = serviceExports;
   const userAgentID = "bd744428-f125-436a-b6d0-dd0c9845837f";
   const channelID = "0ef2ad4a-6c49-41ad-af6e-95d2425276bf";
+  Services.prefs.setBoolPref("browser.cache.offline.storage.enable", true);
+  Services.prefs.setBoolPref("browser.cache.offline.enable", true);
 
   let db = PushServiceWebSocket.newPushDB();
 
@@ -555,18 +557,10 @@ var tests = [
 
   
   test_storage_cleared,
+
+  
+  test_cache_cleared,
 ];
-
-
-
-
-
-if (
-  Services.prefs.getBoolPref("browser.cache.offline.enable") &&
-  Services.prefs.getBoolPref("browser.cache.offline.storage.enable")
-) {
-  tests.push(test_cache_cleared);
-}
 
 function run_test() {
   for (let i = 0; i < tests.length; i++) {
