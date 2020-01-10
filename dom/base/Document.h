@@ -2339,7 +2339,7 @@ class Document : public nsINode,
   
 
 
-  virtual nsISupports* GetContainer() const;
+  nsISupports* GetContainer() const;
 
   
 
