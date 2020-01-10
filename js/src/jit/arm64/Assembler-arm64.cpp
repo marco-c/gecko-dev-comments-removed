@@ -8,6 +8,7 @@
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/Maybe.h"
 
 #include "jsutil.h"
 
@@ -611,6 +612,8 @@ void Assembler::TraceJumpRelocations(JSTracer* trc, JitCode* code,
 
 void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
                                      CompactBufferReader& reader) {
+  mozilla::Maybe<AutoWritableJitCode> awjc;
+
   uint8_t* buffer = code->raw();
 
   while (reader.more()) {
@@ -632,10 +635,11 @@ void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
     if (literal >> JSVAL_TAG_SHIFT) {
       
       Value v = Value::fromRawBits(literal);
-      TraceManuallyBarrieredEdge(trc, &v, "ion-masm-value");
+      TraceManuallyBarrieredEdge(trc, &v, "jit-masm-value");
       if (*literalAddr != v.asRawBits()) {
-        
-        
+        if (awjc.isNothing()) {
+          awjc.emplace(code);
+        }
         *literalAddr = v.asRawBits();
       }
       continue;
@@ -643,8 +647,15 @@ void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
 
     
     
-    TraceManuallyBarrieredGenericPointerEdge(
-        trc, reinterpret_cast<gc::Cell**>(literalAddr), "ion-masm-ptr");
+    gc::Cell* cell = reinterpret_cast<gc::Cell*>(literal);
+    MOZ_ASSERT(gc::IsCellPointerValid(cell));
+    TraceManuallyBarrieredGenericPointerEdge(trc, &cell, "jit-masm-ptr");
+    if (uintptr_t(cell) != literal) {
+      if (awjc.isNothing()) {
+        awjc.emplace(code);
+      }
+      *literalAddr = uintptr_t(cell);
+    }
   }
 }
 
