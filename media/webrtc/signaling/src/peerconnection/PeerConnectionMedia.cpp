@@ -70,8 +70,8 @@ PeerConnectionMedia::PeerConnectionMedia(PeerConnectionImpl* parent)
       mParentName(parent->GetName()),
       mMainThread(mParent->GetMainThread()),
       mSTSThread(mParent->GetSTSThread()),
-      mProxyResolveCompleted(false),
-      mProxyConfig(nullptr),
+      mWaitingOnProxyLookup(false),
+      mForceProxy(false),
       mStunAddrsRequest(nullptr),
       mLocalAddrsCompleted(false),
       mTargetForDefaultLocalAddressLookupIsSet(false),
@@ -108,13 +108,22 @@ static net::ProxyConfigLookupChild* CreateActor(PeerConnectionMedia* aSelf) {
 nsresult PeerConnectionMedia::InitProxy() {
   
   
-  bool disable =
-      Preferences::GetBool("media.peerconnection.disable_http_proxy", false);
-  if (disable) {
-    mProxyResolveCompleted = true;
+  mForceProxy =
+      Preferences::GetBool("media.peerconnection.ice.proxy_only", false);
+  if (mForceProxy) {
+    
     return NS_OK;
   }
 
+  mWaitingOnProxyLookup = Preferences::GetBool(
+      "media.peerconnection.ice.proxy_only_if_behind_proxy", false);
+  if (!mWaitingOnProxyLookup) {
+    
+    return NS_OK;
+  }
+
+  
+  
   if (XRE_IsContentProcess()) {
     if (NS_WARN_IF(!net::gNeckoChild)) {
       return NS_ERROR_FAILURE;
@@ -141,7 +150,9 @@ nsresult PeerConnectionMedia::InitProxy() {
 
 nsresult PeerConnectionMedia::Init() {
   nsresult rv = InitProxy();
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   InitLocalAddrs();
@@ -415,14 +426,14 @@ nsresult PeerConnectionMedia::SetTargetForDefaultLocalAddressLookup() {
 
 void PeerConnectionMedia::EnsureIceGathering(bool aDefaultRouteOnly,
                                              bool aObfuscateHostAddresses) {
-  if (mProxyConfig) {
+  auto proxyConfig = GetProxyConfig();
+  if (proxyConfig) {
     
     
     
     
     
-    mTransportHandler->SetProxyConfig(std::move(*mProxyConfig));
-    mProxyConfig.reset();
+    mTransportHandler->SetProxyConfig(std::move(*proxyConfig));
   }
 
   if (!mTargetForDefaultLocalAddressLookupIsSet) {
@@ -759,24 +770,30 @@ void PeerConnectionMedia::ProxySettingReceived(bool aProxied) {
     
     return;
   }
-
-  if (aProxied) {
-    SetProxy();
-  }
-
-  mProxyResolveCompleted = true;
+  mWaitingOnProxyLookup = false;
+  mForceProxy = aProxied;
   FlushIceCtxOperationQueueIfReady();
 }
 
-void PeerConnectionMedia::SetProxy() {
-  CSFLogInfo(LOGTAG, "%s: Had proxyinfo", __FUNCTION__);
+std::unique_ptr<NrSocketProxyConfig> PeerConnectionMedia::GetProxyConfig()
+    const {
   MOZ_ASSERT(NS_IsMainThread());
+
+  NrSocketProxyConfig::ProxyPolicy proxyPolicy =
+      NrSocketProxyConfig::kEnableProxy;
+
+  if (mForceProxy) {
+    proxyPolicy = NrSocketProxyConfig::kForceProxy;
+  } else if (Preferences::GetBool("media.peerconnection.disable_http_proxy",
+                                  false)) {
+    proxyPolicy = NrSocketProxyConfig::kDisableProxy;
+  }
 
   nsCString alpn = NS_LITERAL_CSTRING("webrtc,c-webrtc");
   auto browserChild = BrowserChild::GetFrom(GetWindow());
   if (!browserChild) {
     
-    return;
+    return nullptr;
   }
   TabId id = browserChild->GetTabId();
   nsCOMPtr<nsILoadInfo> loadInfo = new net::LoadInfo(
@@ -785,7 +802,8 @@ void PeerConnectionMedia::SetProxy() {
   Maybe<net::LoadInfoArgs> loadInfoArgs;
   MOZ_ALWAYS_SUCCEEDS(
       mozilla::ipc::LoadInfoToLoadInfoArgs(loadInfo, &loadInfoArgs));
-  mProxyConfig.reset(new NrSocketProxyConfig(id, alpn, *loadInfoArgs));
+  return std::unique_ptr<NrSocketProxyConfig>(
+      new NrSocketProxyConfig(id, alpn, *loadInfoArgs, proxyPolicy));
 }
 
 }  

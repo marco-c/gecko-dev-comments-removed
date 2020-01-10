@@ -163,8 +163,6 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   RefPtr<NrIceCtx> mIceCtx;
   RefPtr<NrIceResolver> mDNSResolver;
   std::map<std::string, Transport> mTransports;
-  bool mProxyOnlyIfBehindProxy = false;
-  bool mProxyOnly = false;
   bool mObfuscateHostAddresses = false;
 
   
@@ -430,11 +428,6 @@ nsresult MediaTransportHandlerSTS::CreateIceCtx(
                                               __func__);
         }
 
-        mProxyOnlyIfBehindProxy = Preferences::GetBool(
-            "media.peerconnection.ice.proxy_only_if_behind_proxy", false);
-        mProxyOnly =
-            Preferences::GetBool("media.peerconnection.ice.proxy_only", false);
-
         mIceCtx->SignalGatheringStateChange.connect(
             this, &MediaTransportHandlerSTS::OnGatheringStateChange);
         mIceCtx->SignalConnectionStateChange.connect(
@@ -657,17 +650,13 @@ void MediaTransportHandlerSTS::StartIceGathering(
   mInitPromise->Then(
       mStsThread, __func__,
       [=, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
-        if (mIceCtx->GetProxyConfig() && mProxyOnlyIfBehindProxy) {
-          mProxyOnly = true;
-        }
-
         mObfuscateHostAddresses = aObfuscateHostAddresses;
 
         
         
         
         
-        mIceCtx->SetCtxFlags(aDefaultRouteOnly, mProxyOnly);
+        mIceCtx->SetCtxFlags(aDefaultRouteOnly);
 
         if (aStunAddrs.Length()) {
           mIceCtx->SetStunAddrs(aStunAddrs);
@@ -675,8 +664,7 @@ void MediaTransportHandlerSTS::StartIceGathering(
 
         
         if (!mIceCtx->GetStreams().empty()) {
-          mIceCtx->StartGathering(aDefaultRouteOnly, mProxyOnly,
-                                  aObfuscateHostAddresses);
+          mIceCtx->StartGathering(aDefaultRouteOnly, aObfuscateHostAddresses);
           return;
         }
 

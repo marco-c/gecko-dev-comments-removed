@@ -140,7 +140,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
  private:
   void InitLocalAddrs();  
   nsresult InitProxy();
-  void SetProxy();
+  std::unique_ptr<NrSocketProxyConfig> GetProxyConfig() const;
 
   class StunAddrsHandler : public net::StunAddrsListener {
    public:
@@ -186,7 +186,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                           const CandidateInfo& aCandidateInfo);
 
   bool IsIceCtxReady() const {
-    return mProxyResolveCompleted && mLocalAddrsCompleted;
+    return !mWaitingOnProxyLookup && mLocalAddrsCompleted;
   }
 
   
@@ -210,10 +210,9 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   std::vector<nsCOMPtr<nsIRunnable>> mQueuedIceCtxOperations;
 
   
-  bool mProxyResolveCompleted;
-
   
-  std::unique_ptr<NrSocketProxyConfig> mProxyConfig;
+  bool mWaitingOnProxyLookup;
+  bool mForceProxy;
 
   
   RefPtr<net::StunAddrsRequestChild> mStunAddrsRequest;
