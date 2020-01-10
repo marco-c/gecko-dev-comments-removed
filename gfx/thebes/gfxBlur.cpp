@@ -588,11 +588,7 @@ static bool ShouldStretchSurface(DrawTarget* aDT, SourceSurface* aSurface) {
   
   
   
-  
-  
-  return (!aDT->GetTransform().IsRectilinear() &&
-          aDT->GetBackendType() != BackendType::CAIRO) ||
-         (aDT->GetBackendType() == BackendType::DIRECT2D1_1);
+  return aDT->GetBackendType() != BackendType::CAIRO;
 }
 
 static void RepeatOrStretchSurface(DrawTarget* aDT, SourceSurface* aSurface,
