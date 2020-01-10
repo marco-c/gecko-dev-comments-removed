@@ -1019,6 +1019,11 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
     
     
     
+    
+    
+    
+    
+    
     genObj = GetGeneratorObjectForFrame(cx, frame);
     suspending =
         frameOk && pc &&
@@ -1089,6 +1094,13 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
         RootedValue nextValue(cx, wrappedValue);
         bool success;
         {
+          
+          
+          
+          
+          
+          
+          
           AutoSetGeneratorRunning asgr(cx, genObj);
           success = handler->onPop(cx, frameobj, nextResumeMode, &nextValue,
                                    exnStack);
@@ -2427,27 +2439,7 @@ ResumeMode Debugger::onSingleStep(JSContext* cx, MutableHandleValue vp) {
 
           
           
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          if (!genObj.isSuspended()) {
-            continue;
-          }
+          MOZ_ASSERT(genObj.isSuspended());
 
           if (!genObj.callee().isInterpretedLazy() &&
               genObj.callee().nonLazyScript() == trappingScript &&
@@ -7828,21 +7820,17 @@ void Debugger::removeFromFrameMapsAndClearBreakpointsIn(JSContext* cx,
     Debugger* dbg = Debugger::fromChildJSObject(frameobj);
     dbg->frames.remove(frame);
 
-    if (!suspending && frame.isGeneratorFrame()) {
+    
+    
+    
+    if (!suspending && frameobj->hasGenerator()) {
       
-      
-      
-      
-      auto* genObj = GetGeneratorObjectForFrame(cx, frame);
-      if (GeneratorWeakMap::Ptr p = dbg->generatorFrames.lookup(genObj)) {
-        MOZ_ASSERT(p->value() == frameobj);
-        dbg->generatorFrames.remove(p);
-
-        
-        
-        
-        frameobj->clearGenerator(fop);
-      }
+      AbstractGeneratorObject& genObj = frameobj->unwrappedGenerator();
+      GeneratorWeakMap::Ptr p = dbg->generatorFrames.lookup(&genObj);
+      MOZ_ASSERT(p);
+      MOZ_ASSERT(p->value() == frameobj);
+      dbg->generatorFrames.remove(p);
+      frameobj->clearGenerator(fop);
     }
   });
 
@@ -8955,8 +8943,9 @@ bool ScriptedOnPopHandler::onPop(JSContext* cx, HandleDebuggerFrame frame,
       referent.isFunctionFrame() && referent.callee()->isAsync() &&
       !referent.callee()->isGenerator()) {
     AutoRealm ar(cx, referent.callee());
-    if (auto* genObj = GetGeneratorObjectForFrame(cx, referent)) {
-      isAfterAwait = !genObj->isClosed() && genObj->isRunning();
+    if (frame->hasGenerator()) {
+      AbstractGeneratorObject& genObj = frame->unwrappedGenerator();
+      isAfterAwait = !genObj.isClosed() && genObj.isRunning();
     }
   }
 
