@@ -100,6 +100,20 @@ ActorPool.prototype = {
       callback(this._actors[name]);
     }
   },
+
+  
+  *poolChildren() {
+    if (!this._actors) {
+      return;
+    }
+    for (const actor of Object.values(this._actors)) {
+      
+      if (actor === this) {
+        continue;
+      }
+      yield actor;
+    }
+  },
 };
 
 exports.ActorPool = ActorPool;
