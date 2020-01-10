@@ -44,10 +44,6 @@ class WebExtensionDescriptorFront extends FrontClassWithSpec(
     }
   }
 
-  connect() {
-    return this.getTarget();
-  }
-
   
 
 
