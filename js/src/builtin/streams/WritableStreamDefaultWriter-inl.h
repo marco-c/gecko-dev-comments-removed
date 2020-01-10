@@ -11,18 +11,41 @@
 
 #include "builtin/streams/WritableStreamDefaultWriter.h"
 
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+
+#include "builtin/Promise.h"                 
 #include "builtin/streams/WritableStream.h"  
+#include "js/RootingAPI.h"                   
 #include "js/Value.h"                        
-#include "vm/JSObject.h"                     
 #include "vm/NativeObject.h"                 
 
-inline js::WritableStream* js::WritableStreamDefaultWriter::stream() const {
-  MOZ_ASSERT(hasStream());
-  return &getFixedSlot(Slot_Stream).toObject().as<WritableStream>();
+#include "vm/Compartment-inl.h"  
+
+struct JSContext;
+
+namespace js {
+
+
+
+
+inline MOZ_MUST_USE WritableStream* UnwrapStreamFromWriter(
+    JSContext* cx, JS::Handle<WritableStreamDefaultWriter*> unwrappedWriter) {
+  MOZ_ASSERT(unwrappedWriter->hasStream());
+  return UnwrapInternalSlot<WritableStream>(
+      cx, unwrappedWriter, WritableStreamDefaultWriter::Slot_Stream);
 }
 
-inline void js::WritableStreamDefaultWriter::setStream(WritableStream* stream) {
-  setFixedSlot(Slot_Stream, JS::ObjectValue(*stream));
+}  
+
+inline js::PromiseObject* js::WritableStreamDefaultWriter::closedPromise()
+    const {
+  return &getFixedSlot(Slot_ClosedPromise).toObject().as<PromiseObject>();
+}
+
+inline void js::WritableStreamDefaultWriter::setClosedPromise(
+    PromiseObject* promise) {
+  setFixedSlot(Slot_ClosedPromise, JS::ObjectValue(*promise));
 }
 
 #endif  

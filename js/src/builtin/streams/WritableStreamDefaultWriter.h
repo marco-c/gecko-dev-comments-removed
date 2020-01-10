@@ -20,6 +20,7 @@ class JSObject;
 
 namespace js {
 
+class PromiseObject;
 class WritableStream;
 
 class WritableStreamDefaultWriter : public NativeObject {
@@ -31,22 +32,31 @@ class WritableStreamDefaultWriter : public NativeObject {
 
 
   enum Slots {
+    
+
+
+
+
+
+
     Slot_ClosedPromise,
+
+    
+
+
+
+
     Slot_Stream,
+
     Slot_ReadyPromise,
     SlotCount,
   };
 
-  JSObject* closedPromise() const {
-    return &getFixedSlot(Slot_ClosedPromise).toObject();
-  }
-  void setClosedPromise(JSObject* wrappedPromise) {
-    setFixedSlot(Slot_ClosedPromise, JS::ObjectValue(*wrappedPromise));
-  }
+  inline PromiseObject* closedPromise() const;
+  inline void setClosedPromise(PromiseObject* promise);
 
   bool hasStream() const { return !getFixedSlot(Slot_Stream).isUndefined(); }
-  inline WritableStream* stream() const;
-  inline void setStream(WritableStream* stream);
+  inline void setStream(JSObject* stream);
   void clearStream() { setFixedSlot(Slot_Stream, JS::UndefinedValue()); }
 
   JSObject* readyPromise() const {

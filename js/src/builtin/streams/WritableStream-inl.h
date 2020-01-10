@@ -12,26 +12,35 @@
 #include "builtin/streams/WritableStream.h"
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
 
 #include "builtin/Promise.h"                              
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
+#include "js/RootingAPI.h"                                
 #include "js/Value.h"                                     
 
-inline js::WritableStreamDefaultWriter* js::WritableStream::writer() const {
-  MOZ_ASSERT(hasWriter());
-  return &getFixedSlot(Slot_Writer)
-              .toObject()
-              .as<WritableStreamDefaultWriter>();
+#include "vm/Compartment-inl.h"  
+
+struct JSContext;
+
+namespace js {
+
+
+
+
+
+
+
+
+
+
+inline MOZ_MUST_USE WritableStreamDefaultWriter* UnwrapWriterFromStream(
+    JSContext* cx, JS::Handle<WritableStream*> unwrappedStream) {
+  MOZ_ASSERT(unwrappedStream->hasWriter());
+  return UnwrapInternalSlot<WritableStreamDefaultWriter>(
+      cx, unwrappedStream, WritableStream::Slot_Writer);
 }
 
-inline void js::WritableStream::setWriter(WritableStreamDefaultWriter* writer) {
-  setFixedSlot(Slot_Writer, JS::ObjectValue(*writer));
-}
-
-inline void js::WritableStream::setCloseRequest(PromiseObject* closeRequest) {
-  MOZ_ASSERT(!haveCloseRequestOrInFlightCloseRequest());
-  setFixedSlot(Slot_CloseRequest, JS::ObjectValue(*closeRequest));
-  MOZ_ASSERT(!haveInFlightCloseRequest());
-}
+}  
 
 #endif  

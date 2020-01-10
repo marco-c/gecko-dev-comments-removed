@@ -47,8 +47,25 @@ class WritableStream : public NativeObject {
 
 
     Slot_Controller,
+
+    
+
+
+
+
+
     Slot_Writer,
+
     Slot_State,
+
+    
+
+
+
+
+
+
+
     Slot_StoredError,
 
     
@@ -63,6 +80,8 @@ class WritableStream : public NativeObject {
     Slot_WriteRequests,
 
     
+
+
 
 
 
@@ -213,8 +232,10 @@ class WritableStream : public NativeObject {
   }
 
   bool hasWriter() const { return !getFixedSlot(Slot_Writer).isUndefined(); }
-  inline WritableStreamDefaultWriter* writer() const;
-  inline void setWriter(WritableStreamDefaultWriter* writer);
+  void setWriter(JSObject* writer) {
+    MOZ_ASSERT(!hasWriter());
+    setFixedSlot(Slot_Writer, JS::ObjectValue(*writer));
+  }
   void clearWriter() { setFixedSlot(Slot_Writer, JS::UndefinedValue()); }
 
   JS::Value storedError() const { return getFixedSlot(Slot_StoredError); }
@@ -259,7 +280,11 @@ class WritableStream : public NativeObject {
     return JS::UndefinedValue();
   }
 
-  inline void setCloseRequest(PromiseObject* closeRequest);
+  void setCloseRequest(JSObject* closeRequest) {
+    MOZ_ASSERT(!haveCloseRequestOrInFlightCloseRequest());
+    setFixedSlot(Slot_CloseRequest, JS::ObjectValue(*closeRequest));
+    MOZ_ASSERT(!haveInFlightCloseRequest());
+  }
 
   JS::Value inFlightCloseRequest() const {
     JS::Value v = getFixedSlot(Slot_CloseRequest);

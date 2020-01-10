@@ -28,6 +28,7 @@
 #include "vm/Runtime.h"     
 
 #include "builtin/streams/HandlerFunction-inl.h"  
+#include "vm/JSContext-inl.h"                     
 #include "vm/JSObject-inl.h"  
 
 using JS::CallArgs;
@@ -259,6 +260,10 @@ MOZ_MUST_USE bool js::SetUpWritableStreamDefaultController(
 MOZ_MUST_USE bool js::SetUpWritableStreamDefaultControllerFromUnderlyingSink(
     JSContext* cx, Handle<WritableStream*> stream, Handle<Value> underlyingSink,
     double highWaterMark, Handle<Value> sizeAlgorithm) {
+  cx->check(stream);
+  cx->check(underlyingSink);
+  cx->check(sizeAlgorithm);
+
   
   MOZ_ASSERT(!underlyingSink.isUndefined());
 
@@ -386,6 +391,7 @@ MOZ_MUST_USE bool WritableStreamDefaultControllerAdvanceQueueIfNeeded(
 
 
 bool js::WritableStreamDefaultControllerGetBackpressure(
-    const WritableStreamDefaultController* controller) {
-  return WritableStreamDefaultControllerGetDesiredSize(controller) <= 0.0;
+    const WritableStreamDefaultController* unwrappedController) {
+  return WritableStreamDefaultControllerGetDesiredSize(unwrappedController) <=
+         0.0;
 }

@@ -6,7 +6,7 @@
 
 
 
-#include "builtin/streams/WritableStreamDefaultWriter.h"
+#include "builtin/streams/WritableStreamDefaultWriter-inl.h"
 
 #include "mozilla/Attributes.h"  
 
@@ -111,10 +111,13 @@ static MOZ_MUST_USE bool WritableStream_desiredSize(JSContext* cx,
   }
 
   
-  Value v = WritableStreamDefaultWriterGetDesiredSize(unwrappedWriter);
-  MOZ_ASSERT(v.isNull() || v.isNumber(),
+  if (!WritableStreamDefaultWriterGetDesiredSize(cx, unwrappedWriter,
+                                                 args.rval())) {
+    return false;
+  }
+
+  MOZ_ASSERT(args.rval().isNull() || args.rval().isNumber(),
              "expected a type that'll never require wrapping");
-  args.rval().set(v);
   return true;
 }
 

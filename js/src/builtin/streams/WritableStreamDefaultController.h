@@ -32,7 +32,13 @@ class WritableStreamDefaultController : public StreamController {
 
 
   enum Slots {
+    
+
+
+
+
     Slot_Stream = StreamController::SlotCount,
+
     Slot_UnderlyingSink,
 
     

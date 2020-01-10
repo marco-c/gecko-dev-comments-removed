@@ -22,10 +22,14 @@
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
 #include "builtin/streams/WritableStreamOperations.h"  
 #include "js/Value.h"  
+#include "vm/Compartment.h"  
+#include "vm/JSContext.h"    
 
 #include "builtin/streams/WritableStream-inl.h"  
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"  
 #include "vm/Compartment-inl.h"  
+#include "vm/JSContext-inl.h"    
+#include "vm/Realm-inl.h"        
 
 using JS::Handle;
 using JS::Int32Value;
@@ -48,7 +52,11 @@ JSObject* js::WritableStreamDefaultWriterClose(
   
   
   MOZ_ASSERT(unwrappedWriter->hasStream());
-  Rooted<WritableStream*> unwrappedStream(cx, unwrappedWriter->stream());
+  Rooted<WritableStream*> unwrappedStream(
+      cx, UnwrapStreamFromWriter(cx, unwrappedWriter));
+  if (!unwrappedStream) {
+    return PromiseRejectedWithPendingError(cx);
+  }
 
   
   
@@ -72,7 +80,15 @@ JSObject* js::WritableStreamDefaultWriterClose(
   }
 
   
-  unwrappedStream->setCloseRequest(promise);
+  {
+    AutoRealm ar(cx, unwrappedStream);
+    Rooted<JSObject*> closeRequest(cx, promise);
+    if (!cx->compartment()->wrap(cx, &closeRequest)) {
+      return nullptr;
+    }
+
+    unwrappedStream->setCloseRequest(closeRequest);
+  }
 
   
   
@@ -103,25 +119,32 @@ JSObject* js::WritableStreamDefaultWriterClose(
 
 
 
-Value js::WritableStreamDefaultWriterGetDesiredSize(
-    const WritableStreamDefaultWriter* unwrappedWriter) {
+bool js::WritableStreamDefaultWriterGetDesiredSize(
+    JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter,
+    MutableHandle<Value> size) {
   
-  const WritableStream* unwrappedStream = unwrappedWriter->stream();
+  const WritableStream* unwrappedStream =
+      UnwrapStreamFromWriter(cx, unwrappedWriter);
+  if (!unwrappedStream) {
+    return false;
+  }
 
   
   
   if (unwrappedStream->errored() || unwrappedStream->erroring()) {
-    return NullValue();
+    size.setNull();
+  }
+  
+  else if (unwrappedStream->closed()) {
+    size.setInt32(0);
+  }
+  
+  
+  
+  else {
+    size.setNumber(WritableStreamDefaultControllerGetDesiredSize(
+        unwrappedStream->controller()));
   }
 
-  
-  if (unwrappedStream->closed()) {
-    return Int32Value(0);
-  }
-
-  
-  
-  
-  return NumberValue(WritableStreamDefaultControllerGetDesiredSize(
-      unwrappedStream->controller()));
+  return true;
 }
