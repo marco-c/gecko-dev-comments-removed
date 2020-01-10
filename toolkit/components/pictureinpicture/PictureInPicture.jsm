@@ -252,9 +252,21 @@ var PictureInPicture = {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     let isRTL = Services.locale.isAppLocaleRTL;
-    let pipLeft = isRTL ? 0 : screenWidth.value - resultWidth;
-    let pipTop = screenHeight.value - resultHeight;
+    let pipLeft = isRTL
+      ? screenLeft.value
+      : screenLeft.value + screenWidth.value - resultWidth;
+    let pipTop = screenTop.value + screenHeight.value - resultHeight;
     let features =
       `${PLAYER_FEATURES},top=${pipTop},left=${pipLeft},` +
       `outerWidth=${resultWidth},outerHeight=${resultHeight}`;
