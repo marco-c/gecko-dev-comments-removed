@@ -685,15 +685,6 @@ bool ClassEmitter::emitInitDefaultConstructor(const Maybe<uint32_t>& classStart,
     }
   }
 
-  
-  
-  
-  if (nameForAnonymousClass_ == bce_->cx->names().empty) {
-    if (!emitSetEmptyClassConstructorNameForDefaultCtor()) {
-      return false;
-    }
-  }
-
   if (!initProtoAndCtor()) {
     
     return false;
@@ -702,22 +693,6 @@ bool ClassEmitter::emitInitDefaultConstructor(const Maybe<uint32_t>& classStart,
 #ifdef DEBUG
   classState_ = ClassState::InitConstructor;
 #endif
-  return true;
-}
-
-bool ClassEmitter::emitSetEmptyClassConstructorNameForDefaultCtor() {
-  uint32_t nameIndex;
-  if (!bce_->makeAtomIndex(bce_->cx->names().empty, &nameIndex)) {
-    return false;
-  }
-  if (!bce_->emitIndexOp(JSOP_STRING, nameIndex)) {
-    
-    return false;
-  }
-  if (!bce_->emit2(JSOP_SETFUNNAME, uint8_t(FunctionPrefixKind::None))) {
-    
-    return false;
-  }
   return true;
 }
 
