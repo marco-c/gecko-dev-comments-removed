@@ -45,7 +45,7 @@ const {
 const STYLE_RULE = 1;
 
 
-const SHOW_LONG_DESC_ACTION = "showlongdesc";
+const CLICK_ACTION = "click";
 
 
 
@@ -385,9 +385,8 @@ function semanticsRule(accessible) {
   }
 
   
-  
   for (let i = 0; i < accessible.actionCount; i++) {
-    if (accessible.getActionName(i) !== SHOW_LONG_DESC_ACTION) {
+    if (accessible.getActionName(i) === CLICK_ACTION) {
       return { score: FAIL, issue: MOUSE_INTERACTIVE_ONLY };
     }
   }
