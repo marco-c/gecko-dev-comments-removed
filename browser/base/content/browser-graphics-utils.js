@@ -10,6 +10,7 @@
 
 var gGfxUtils = {
   _isRecording: false,
+  _isTransactionLogging: false,
   
 
 
@@ -22,5 +23,13 @@ var gGfxUtils = {
 
   webrenderCapture() {
     window.windowUtils.wrCapture();
+  },
+
+  
+
+
+  toggleTransactionLogging() {
+    window.windowUtils.setTransactionLogging(!this._isTransactionLogging);
+    this._isTransactionLogging = !this._isTransactionLogging;
   },
 };
