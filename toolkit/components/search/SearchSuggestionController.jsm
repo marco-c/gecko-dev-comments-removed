@@ -20,6 +20,7 @@ const SEARCH_RESPONSE_SUGGESTION_JSON = "application/x-suggestions+json";
 const DEFAULT_FORM_HISTORY_PARAM = "searchbar-history";
 const HTTP_OK = 200;
 const BROWSER_SUGGEST_PREF = "browser.search.suggest.enabled";
+const BROWSER_SUGGEST_PRIVATE_PREF = "browser.search.suggest.enabled.private";
 const REMOTE_TIMEOUT_PREF = "browser.search.suggest.timeout";
 const REMOTE_TIMEOUT_DEFAULT = 500; 
 
@@ -29,21 +30,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/uuid-generator;1",
   "nsIUUIDGenerator"
 );
-
-
-
-
-
-var gRemoteSuggestionsEnabled = Services.prefs.getBoolPref(
-  BROWSER_SUGGEST_PREF
-);
-Services.prefs.addObserver(BROWSER_SUGGEST_PREF, function(
-  aSubject,
-  aTopic,
-  aData
-) {
-  gRemoteSuggestionsEnabled = Services.prefs.getBoolPref(BROWSER_SUGGEST_PREF);
-});
 
 
 
@@ -178,7 +164,8 @@ this.SearchSuggestionController.prototype = {
     
     if (
       searchTerm &&
-      gRemoteSuggestionsEnabled &&
+      this.suggestionsEnabled &&
+      (!privateMode || this.suggestionsInPrivateBrowsingEnabled) &&
       this.maxRemoteResults &&
       engine.supportsResponseType(SEARCH_RESPONSE_SUGGESTION_JSON)
     ) {
@@ -525,4 +512,24 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "remoteTimeout",
   REMOTE_TIMEOUT_PREF,
   REMOTE_TIMEOUT_DEFAULT
+);
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this.SearchSuggestionController.prototype,
+  "suggestionsEnabled",
+  BROWSER_SUGGEST_PREF,
+  true
+);
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this.SearchSuggestionController.prototype,
+  "suggestionsInPrivateBrowsingEnabled",
+  BROWSER_SUGGEST_PRIVATE_PREF,
+  false
 );
