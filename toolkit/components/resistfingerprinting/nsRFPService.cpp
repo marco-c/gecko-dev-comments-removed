@@ -16,7 +16,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
 
@@ -49,9 +48,6 @@ static mozilla::LazyLogModule gResistFingerprintingLog(
 
 #define RESIST_FINGERPRINTING_PREF "privacy.resistFingerprinting"
 #define RFP_TIMER_PREF "privacy.reduceTimerPrecision"
-#define RFP_TIMER_UNCONDITIONAL_PREF \
-  "privacy.reduceTimerPrecision.unconditional"
-#define RFP_TIMER_UNCONDITIONAL_VALUE 20
 #define RFP_TIMER_VALUE_PREF \
   "privacy.resistFingerprinting.reduceTimerPrecision.microseconds"
 #define RFP_TIMER_VALUE_DEFAULT 1000
@@ -74,8 +70,24 @@ static mozilla::LazyLogModule gResistFingerprintingLog(
 
 NS_IMPL_ISUPPORTS(nsRFPService, nsIObserver)
 
+
+
+
+
+
+
+
+
+
+
 static StaticRefPtr<nsRFPService> sRFPService;
 static bool sInitialized = false;
+Atomic<bool, Relaxed> nsRFPService::sPrivacyResistFingerprinting;
+Atomic<bool, Relaxed> nsRFPService::sPrivacyTimerPrecisionReduction;
+
+
+Atomic<uint32_t, Relaxed> sResolutionUSec;
+Atomic<bool, Relaxed> sJitter;
 static uint32_t sVideoFramesPerSec;
 static uint32_t sVideoDroppedRatio;
 static uint32_t sTargetVideoRes;
@@ -103,17 +115,15 @@ nsRFPService* nsRFPService::GetOrCreate() {
 
 
 double nsRFPService::TimerResolution() {
-  double prefValue = StaticPrefs::
-      privacy_resistFingerprinting_reduceTimerPrecision_microseconds();
   if (nsRFPService::IsResistFingerprintingEnabled()) {
-    return max(100000.0, prefValue);
+    return max(100000.0, (double)sResolutionUSec);
   }
-  return prefValue;
+  return sResolutionUSec;
 }
 
 
 bool nsRFPService::IsResistFingerprintingEnabled() {
-  return StaticPrefs::privacy_resistFingerprinting();
+  return sPrivacyResistFingerprinting;
 }
 
 
@@ -122,8 +132,7 @@ bool nsRFPService::IsTimerPrecisionReductionEnabled(TimerPrecisionType aType) {
     return IsResistFingerprintingEnabled();
   }
 
-  return (StaticPrefs::privacy_reduceTimerPrecision() ||
-          IsResistFingerprintingEnabled()) &&
+  return (sPrivacyTimerPrecisionReduction || IsResistFingerprintingEnabled()) &&
          TimerResolution() > 0;
 }
 
@@ -477,23 +486,7 @@ double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
                                              double aResolutionUSec,
                                              int64_t aContextMixin,
                                              TimerPrecisionType aType) {
-  
-  
-  
-  
-  bool unconditionalClamping = false;
-  if (!IsTimerPrecisionReductionEnabled(aType)) {
-    if (!StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {
-      return aTime;
-    } else {
-      unconditionalClamping = true;
-      aResolutionUSec = RFP_TIMER_UNCONDITIONAL_VALUE;  
-      aContextMixin = 0;  
-                          
-    }
-  }
-
-  if (aResolutionUSec <= 0) {
+  if (!IsTimerPrecisionReductionEnabled(aType) || aResolutionUSec <= 0) {
     return aTime;
   }
 
@@ -513,14 +506,13 @@ double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
   
   
   
-  const long long kFeb282008 = 1204233985000;
-  if (!unconditionalClamping && aContextMixin == 0 &&
-      aType == TimerPrecisionType::All && timeAsInt < kFeb282008) {
-    MOZ_LOG(
-        gResistFingerprintingLog, LogLevel::Error,
-        ("About to assert. aTime=%lli<%lli aContextMixin=%" PRId64 " aType=%s",
-         timeAsInt, kFeb282008, aContextMixin,
-         (aType == TimerPrecisionType::RFPOnly ? "RFPOnly" : "All")));
+  if (aContextMixin == 0 && aType == TimerPrecisionType::All &&
+      timeAsInt < 1204233985000) {
+    MOZ_LOG(gResistFingerprintingLog, LogLevel::Error,
+            ("About to assert. aTime=%lli<1204233985000 aContextMixin=%" PRId64
+             " aType=%s",
+             timeAsInt, aContextMixin,
+             (aType == TimerPrecisionType::RFPOnly ? "RFPOnly" : "All")));
     MOZ_ASSERT(
         false,
         "ReduceTimePrecisionImpl was given a relative time "
@@ -546,8 +538,7 @@ double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
       floor(double(timeAsInt) / resolutionAsInt) * resolutionAsInt;
 
   long long midpoint = 0, clampedAndJittered = clamped;
-  if (!unconditionalClamping &&
-      StaticPrefs::privacy_resistFingerprinting_reduceTimerPrecision_jitter()) {
+  if (sJitter) {
     if (!NS_FAILED(RandomMidpoint(clamped, resolutionAsInt, aContextMixin,
                                   &midpoint)) &&
         timeAsInt >= clamped + midpoint) {
@@ -558,19 +549,18 @@ double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
   
   double ret = double(clampedAndJittered) / (1000000.0 / aTimeScale);
 
-  MOZ_LOG(
-      gResistFingerprintingLog, LogLevel::Verbose,
-      ("Given: (%.*f, Scaled: %.*f, Converted: %lli), Rounding %s with (%lli, "
-       "Originally %.*f), "
-       "Intermediate: (%lli), Clamped: (%lli) Jitter: (%i Context: %" PRId64
-       " Midpoint: %lli) "
-       "Final: (%lli Converted: %.*f)",
-       DBL_DIG - 1, aTime, DBL_DIG - 1, timeScaled, timeAsInt,
-       (unconditionalClamping ? "unconditionally" : "normally"),
-       resolutionAsInt, DBL_DIG - 1, aResolutionUSec,
-       (long long)floor(double(timeAsInt) / resolutionAsInt), clamped,
-       StaticPrefs::privacy_resistFingerprinting_reduceTimerPrecision_jitter(),
-       aContextMixin, midpoint, clampedAndJittered, DBL_DIG - 1, ret));
+  bool tmp_jitter = sJitter;
+  MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
+          ("Given: (%.*f, Scaled: %.*f, Converted: %lli), Rounding with (%lli, "
+           "Originally %.*f), "
+           "Intermediate: (%lli), Clamped: (%lli) Jitter: (%i Context: %" PRId64
+           " Midpoint: %lli) "
+           "Final: (%lli Converted: %.*f)",
+           DBL_DIG - 1, aTime, DBL_DIG - 1, timeScaled, timeAsInt,
+           resolutionAsInt, DBL_DIG - 1, aResolutionUSec,
+           (long long)floor(double(timeAsInt) / resolutionAsInt), clamped,
+           tmp_jitter, aContextMixin, midpoint, clampedAndJittered, DBL_DIG - 1,
+           ret));
 
   return ret;
 }
@@ -714,9 +704,8 @@ void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
 }
 
 static const char* gCallbackPrefs[] = {
-    RESIST_FINGERPRINTING_PREF,   RFP_TIMER_PREF,
-    RFP_TIMER_UNCONDITIONAL_PREF, RFP_TIMER_VALUE_PREF,
-    RFP_JITTER_VALUE_PREF,        nullptr,
+    RESIST_FINGERPRINTING_PREF, RFP_TIMER_PREF, RFP_TIMER_VALUE_PREF,
+    RFP_JITTER_VALUE_PREF,      nullptr,
 };
 
 nsresult nsRFPService::Init() {
@@ -738,6 +727,13 @@ nsresult nsRFPService::Init() {
   Preferences::RegisterCallbacks(PREF_CHANGE_METHOD(nsRFPService::PrefChanged),
                                  gCallbackPrefs, this);
 
+  Preferences::AddAtomicBoolVarCache(&sPrivacyTimerPrecisionReduction,
+                                     RFP_TIMER_PREF, true);
+
+  Preferences::AddAtomicUintVarCache(&sResolutionUSec, RFP_TIMER_VALUE_PREF,
+                                     RFP_TIMER_VALUE_DEFAULT);
+  Preferences::AddAtomicBoolVarCache(&sJitter, RFP_JITTER_VALUE_PREF,
+                                     RFP_JITTER_VALUE_DEFAULT);
   Preferences::AddUintVarCache(&sVideoFramesPerSec,
                                RFP_SPOOFED_FRAMES_PER_SEC_PREF,
                                RFP_SPOOFED_FRAMES_PER_SEC_DEFAULT);
@@ -769,16 +765,8 @@ nsresult nsRFPService::Init() {
 void nsRFPService::UpdateTimers() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (StaticPrefs::privacy_resistFingerprinting() ||
-      StaticPrefs::privacy_reduceTimerPrecision()) {
-    JS::SetTimeResolutionUsec(
-        TimerResolution(),
-        StaticPrefs::
-            privacy_resistFingerprinting_reduceTimerPrecision_jitter());
-    JS::SetReduceMicrosecondTimePrecisionCallback(
-        nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
-  } else if (StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {
-    JS::SetTimeResolutionUsec(RFP_TIMER_UNCONDITIONAL_VALUE, false);
+  if (sPrivacyResistFingerprinting || sPrivacyTimerPrecisionReduction) {
+    JS::SetTimeResolutionUsec(TimerResolution(), sJitter);
     JS::SetReduceMicrosecondTimePrecisionCallback(
         nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
   } else if (sInitialized) {
@@ -790,10 +778,12 @@ void nsRFPService::UpdateTimers() {
 
 void nsRFPService::UpdateRFPPref() {
   MOZ_ASSERT(NS_IsMainThread());
+  sPrivacyResistFingerprinting =
+      Preferences::GetBool(RESIST_FINGERPRINTING_PREF);
 
   UpdateTimers();
 
-  if (StaticPrefs::privacy_resistFingerprinting()) {
+  if (sPrivacyResistFingerprinting) {
     PR_SetEnv("TZ=UTC");
   } else if (sInitialized) {
     
@@ -1066,7 +1056,6 @@ void nsRFPService::PrefChanged(const char* aPref) {
   nsDependentCString pref(aPref);
 
   if (pref.EqualsLiteral(RFP_TIMER_PREF) ||
-      pref.EqualsLiteral(RFP_TIMER_UNCONDITIONAL_PREF) ||
       pref.EqualsLiteral(RFP_TIMER_VALUE_PREF) ||
       pref.EqualsLiteral(RFP_JITTER_VALUE_PREF)) {
     UpdateTimers();

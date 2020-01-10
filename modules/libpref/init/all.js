@@ -1150,12 +1150,28 @@ pref("privacy.popups.maxReported", 100);
 pref("privacy.trackingprotection.origin_telemetry.enabled", true);
 #endif
 
-
 pref("privacy.firstparty.isolate",                        false);
 
 
 
 pref("privacy.firstparty.isolate.restrict_opener_access", true);
+
+
+
+
+
+pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
+
+
+pref("privacy.resistFingerprinting.jsmloglevel", "Warn");
+
+
+
+pref("privacy.reduceTimerPrecision", true);
+
+pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 1000);
+
+pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.coalesce_mouse_move",       true);
