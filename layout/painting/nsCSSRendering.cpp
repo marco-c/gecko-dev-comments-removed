@@ -4078,7 +4078,7 @@ void nsCSSRendering::PaintDecorationLine(
   }
 
   
-  nsTArray<SkScalar> intercepts;
+  AutoTArray<SkScalar, 256> intercepts;
 
   
   AutoTArray<gfxTextRun::PropertyProvider::Spacing, 64> spacing;
