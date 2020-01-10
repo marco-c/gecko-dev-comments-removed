@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assertEq(Intl.getCanonicalLocales("sgn-DE")[0], "sgn-DE");
+
+if (typeof reportCompare === "function")
+    reportCompare(true, true);
