@@ -20,6 +20,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TestUtils: "resource://testing-common/TestUtils.jsm",
 });
 
+
+
+Services.prefs.setCharPref("browser.search.region", "US");
+Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
+Services.prefs.setIntPref("browser.search.addonLoadTimeout", 0);
+
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
 
 ExtensionTestUtils.init(this);

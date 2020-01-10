@@ -36,6 +36,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 
+Services.prefs.setCharPref("browser.search.region", "US");
+Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
+Services.prefs.setIntPref("browser.search.addonLoadTimeout", 0);
+
+
 
 
 
@@ -192,6 +197,9 @@ async function addTestEngine(basename, httpServer = undefined) {
     Services.search.addEngine(dataUrl + basename, null, false);
   });
 }
+
+
+
 
 
 

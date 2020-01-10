@@ -25,6 +25,10 @@ user_pref("browser.search.region", "US");
 
 user_pref("browser.search.geoSpecificDefaults", false);
 
+
+user_pref("browser.search.addonLoadTimeout", 0);
+
+
 user_pref("browser.webapps.checkForUpdates", 0);
 
 

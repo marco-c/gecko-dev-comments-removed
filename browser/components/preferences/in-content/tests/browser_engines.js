@@ -1,5 +1,8 @@
 
 add_task(async function() {
+  
+  await Services.search.init();
+
   let prefs = await openPreferencesViaOpenPreferencesAPI("search", {
     leaveOpen: true,
   });
