@@ -1997,8 +1997,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
           mNeedToRecomputeVisibility = true;
 
           
-          
-          presShell->PingFlushPerTickTelemetry(FlushType::Style);
+          presShell->PingPerTickTelemetry(FlushType::Style);
         }
       }
     } else if (i == 2) {
@@ -2026,8 +2025,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
         mNeedToRecomputeVisibility = true;
 
         
-        
-        presShell->PingFlushPerTickTelemetry(FlushType::Layout);
+        presShell->PingPerTickTelemetry(FlushType::Layout);
       }
     }
 
