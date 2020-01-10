@@ -26,6 +26,8 @@ loader.lazyGetter(
   () => Cu.getGlobalForObject(ExtensionProcessScript).WebExtensionPolicy
 );
 
+const CHROME_ENABLED_PREF = "devtools.chrome.enabled";
+const REMOTE_ENABLED_PREF = "devtools.debugger.remote-enabled";
 const EXTENSION_STORAGE_ENABLED_PREF =
   "devtools.storage.extensionStorage.enabled";
 
@@ -45,6 +47,8 @@ const COOKIE_SAMESITE = {
   STRICT: "Strict",
   UNSET: "Unset",
 };
+
+const SAFE_HOSTS_PREFIXES_REGEX = /^(about\+|https?\+|file\+|moz-extension\+)/;
 
 
 
@@ -153,12 +157,18 @@ StorageActors.defaults = function(typeName, observationTopics) {
 
 
 
+
     get hosts() {
       const hosts = new Set();
       for (const { location } of this.storageActor.windows) {
         const host = this.getHostName(location);
 
         if (host) {
+          hosts.add(host);
+        }
+      }
+      if (this._internalHosts) {
+        for (const host of this._internalHosts) {
           hosts.add(host);
         }
       }
@@ -2201,6 +2211,21 @@ StorageActors.createActor(
     
 
 
+
+
+    async getHosts() {
+      
+      
+      
+      
+      this._internalHosts = await this.getInternalHosts();
+
+      return this.hosts;
+    },
+
+    
+
+
     async removeDatabase(host, name) {
       const win = this.storageActor.getWindowFromHost(host);
       if (!win) {
@@ -2319,7 +2344,7 @@ StorageActors.createActor(
     async preListStores() {
       this.hostVsStores = new Map();
 
-      for (const host of await this.hosts) {
+      for (const host of await this.getHosts()) {
         await this.populateStoresForHost(host);
       }
     },
@@ -2432,6 +2457,7 @@ StorageActors.createActor(
         this.removeDB = indexedDBHelpers.removeDB;
         this.removeDBRecord = indexedDBHelpers.removeDBRecord;
         this.splitNameAndStorage = indexedDBHelpers.splitNameAndStorage;
+        this.getInternalHosts = indexedDBHelpers.getInternalHosts;
         return;
       }
 
@@ -2447,6 +2473,10 @@ StorageActors.createActor(
       this.splitNameAndStorage = callParentProcessAsync.bind(
         null,
         "splitNameAndStorage"
+      );
+      this.getInternalHosts = callParentProcessAsync.bind(
+        null,
+        "getInternalHosts"
       );
       this.getDBNamesForHost = callParentProcessAsync.bind(
         null,
@@ -2583,6 +2613,34 @@ var indexedDBHelpers = {
 
 
 
+  async getInternalHosts() {
+    
+    if (
+      !Services.prefs.getBoolPref(CHROME_ENABLED_PREF) ||
+      !Services.prefs.getBoolPref(REMOTE_ENABLED_PREF)
+    ) {
+      return this.backToChild("getInternalHosts", []);
+    }
+
+    const profileDir = OS.Constants.Path.profileDir;
+    const storagePath = OS.Path.join(profileDir, "storage", "permanent");
+    const iterator = new OS.File.DirectoryIterator(storagePath);
+    const hosts = [];
+
+    await iterator.forEach(entry => {
+      if (entry.isDir && !SAFE_HOSTS_PREFIXES_REGEX.test(entry.name)) {
+        hosts.push(entry.name);
+      }
+    });
+    iterator.close();
+
+    return this.backToChild("getInternalHosts", hosts);
+  },
+
+  
+
+
+
   openWithPrincipal: function(principal, name, storage) {
     return indexedDBForStorage.openForPrincipal(principal, name, {
       storage: storage,
@@ -2712,6 +2770,9 @@ var indexedDBHelpers = {
     
     
     
+    
+    
+    
     const sqliteFiles = await this.findSqlitePathsForHost(
       storagePath,
       sanitizedHost
@@ -2725,7 +2786,7 @@ var indexedDBHelpers = {
 
       files.push({
         file: relative,
-        storage,
+        storage: storage === "permanent" ? "persistent" : storage,
       });
     }
 
@@ -2788,10 +2849,7 @@ var indexedDBHelpers = {
     const iterator = new OS.File.DirectoryIterator(storagePath);
     const typePaths = [];
     await iterator.forEach(entry => {
-      if (
-        entry.isDir &&
-        (entry.path.endsWith("/default") || entry.path.endsWith("/temporary"))
-      ) {
+      if (entry.isDir) {
         typePaths.push(entry.path);
       }
     });
@@ -3039,6 +3097,9 @@ var indexedDBHelpers = {
       case "getDBMetaData": {
         const [host, principal, name, storage] = args;
         return indexedDBHelpers.getDBMetaData(host, principal, name, storage);
+      }
+      case "getInternalHosts": {
+        return indexedDBHelpers.getInternalHosts();
       }
       case "splitNameAndStorage": {
         const [name] = args;

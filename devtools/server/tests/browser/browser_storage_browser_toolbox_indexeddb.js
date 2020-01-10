@@ -45,9 +45,9 @@ async function testInternalDBs(front) {
   const data = await front.listStores();
   const hosts = data.indexedDB.hosts;
 
-  
-  
-  
-  
-  ok(!hosts.chrome, `indexedDB hosts doesn't contain "chrome"`);
+  ok(hosts.chrome, `indexedDB hosts contains "chrome"`);
+
+  const path = `["MyDatabase (persistent)","MyObjectStore"]`;
+  const foundDB = hosts.chrome.includes(path);
+  ok(foundDB, `Host "chrome" includes ${path}`);
 }
