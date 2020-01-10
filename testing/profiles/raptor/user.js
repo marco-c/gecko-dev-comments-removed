@@ -18,6 +18,3 @@ user_pref("devtools.console.stdout.content", true);
 
 
 user_pref("browser.sessionstore.resume_from_crash", false);
-
-
-user_pref("browser.sessionstore.resume_from_crash", false);
