@@ -6,13 +6,17 @@
 "use strict";
 
 do_get_profile(); 
-const certdb  = Cc["@mozilla.org/security/x509certdb;1"]
-                  .getService(Ci.nsIX509CertDB);
+const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 function expectCT(value) {
-  return (securityInfo) => {
-    Assert.equal(securityInfo.certificateTransparencyStatus, value,
-                 "actual and expected CT status should match");
+  return securityInfo => {
+    Assert.equal(
+      securityInfo.certificateTransparencyStatus,
+      value,
+      "actual and expected CT status should match"
+    );
   };
 }
 
@@ -30,12 +34,24 @@ function run_test() {
   
   
   
-  add_connection_test("ct-valid.example.com", PRErrorCodeSuccess, null,
-    expectCT(Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT));
-  
-  add_connection_test("ct-insufficient-scts.example.com", PRErrorCodeSuccess,
+  add_connection_test(
+    "ct-valid.example.com",
+    PRErrorCodeSuccess,
     null,
-    expectCT(Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS));
+    expectCT(
+      Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT
+    )
+  );
+  
+  add_connection_test(
+    "ct-insufficient-scts.example.com",
+    PRErrorCodeSuccess,
+    null,
+    expectCT(
+      Ci.nsITransportSecurityInfo
+        .CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
+    )
+  );
 
   
   
@@ -45,8 +61,15 @@ function run_test() {
     clearSessionCache();
     run_next_test();
   });
-  add_connection_test("ct-valid.example.com", PRErrorCodeSuccess, null,
-    expectCT(Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS));
+  add_connection_test(
+    "ct-valid.example.com",
+    PRErrorCodeSuccess,
+    null,
+    expectCT(
+      Ci.nsITransportSecurityInfo
+        .CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS
+    )
+  );
 
   run_next_test();
 }

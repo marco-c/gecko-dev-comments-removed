@@ -8,12 +8,16 @@
 
 
 do_get_profile(); 
-const certdb = Cc["@mozilla.org/security/x509certdb;1"]
-                 .getService(Ci.nsIX509CertDB);
+const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 function loadCertWithTrust(certName, trustString) {
-  addCertFromFile(certdb, "test_startcom_wosign/" + certName + ".pem",
-                  trustString);
+  addCertFromFile(
+    certdb,
+    "test_startcom_wosign/" + certName + ".pem",
+    trustString
+  );
 }
 
 function certFromFile(certName) {
@@ -23,9 +27,13 @@ function certFromFile(certName) {
 function checkEndEntity(cert, expectedResult) {
   
   const VALIDATION_TIME = 1477958400;
-  return checkCertErrorGenericAtTime(certdb, cert, expectedResult,
-                                     certificateUsageSSLServer,
-                                     VALIDATION_TIME);
+  return checkCertErrorGenericAtTime(
+    certdb,
+    cert,
+    expectedResult,
+    certificateUsageSSLServer,
+    VALIDATION_TIME
+  );
 }
 
 add_task(async function() {
@@ -35,13 +43,25 @@ add_task(async function() {
   
   
   loadCertWithTrust("StartComCA", ",,");
-  await checkEndEntity(certFromFile("StartCom-before-cutoff"), PRErrorCodeSuccess);
-  await checkEndEntity(certFromFile("StartCom-after-cutoff"), SEC_ERROR_REVOKED_CERTIFICATE);
+  await checkEndEntity(
+    certFromFile("StartCom-before-cutoff"),
+    PRErrorCodeSuccess
+  );
+  await checkEndEntity(
+    certFromFile("StartCom-after-cutoff"),
+    SEC_ERROR_REVOKED_CERTIFICATE
+  );
 
   
   
   
   loadCertWithTrust("WoSignCA", ",,");
-  await checkEndEntity(certFromFile("WoSign-before-cutoff"), PRErrorCodeSuccess);
-  await checkEndEntity(certFromFile("WoSign-after-cutoff"), SEC_ERROR_REVOKED_CERTIFICATE);
+  await checkEndEntity(
+    certFromFile("WoSign-before-cutoff"),
+    PRErrorCodeSuccess
+  );
+  await checkEndEntity(
+    certFromFile("WoSign-after-cutoff"),
+    SEC_ERROR_REVOKED_CERTIFICATE
+  );
 });

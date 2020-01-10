@@ -1,8 +1,9 @@
 "use strict";
 
 do_get_profile(); 
-const certdb = Cc["@mozilla.org/security/x509certdb;1"]
-                 .getService(Ci.nsIX509CertDB);
+const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 function load_cert(name, trust) {
   let filename = "test_intermediate_basic_usage_constraints/" + name + ".pem";
@@ -14,8 +15,11 @@ function test_cert_for_usages(certChainNicks, expected_usages) {
   for (let i in certChainNicks) {
     let certNick = certChainNicks[i];
     let certPEM = readFile(
-                    do_get_file("test_intermediate_basic_usage_constraints/"
-                                + certNick + ".pem"), false);
+      do_get_file(
+        "test_intermediate_basic_usage_constraints/" + certNick + ".pem"
+      ),
+      false
+    );
     certs.push(certdb.constructX509FromBase64(pemToBase64(certPEM)));
   }
 
@@ -24,11 +28,14 @@ function test_cert_for_usages(certChainNicks, expected_usages) {
 }
 
 add_task(async function() {
-  let ee_usages = [ certificateUsageSSLClient, certificateUsageSSLServer,
-                    certificateUsageEmailSigner,
-                    certificateUsageEmailRecipient ];
-  let ca_usages = [ certificateUsageSSLCA ];
-  let eku_usages = [ certificateUsageSSLClient, certificateUsageSSLServer ];
+  let ee_usages = [
+    certificateUsageSSLClient,
+    certificateUsageSSLServer,
+    certificateUsageEmailSigner,
+    certificateUsageEmailRecipient,
+  ];
+  let ca_usages = [certificateUsageSSLCA];
+  let eku_usages = [certificateUsageSSLClient, certificateUsageSSLServer];
 
   
   let ca_name = "ca";
@@ -51,32 +58,44 @@ add_task(async function() {
   
   
   await test_cert_for_usages(["int-cA-FALSE-asserts-keyCertSign"], ee_usages);
-  await test_cert_for_usages(["ee-int-cA-FALSE-asserts-keyCertSign",
-                              "int-cA-FALSE-asserts-keyCertSign"], []);
-
+  await test_cert_for_usages(
+    ["ee-int-cA-FALSE-asserts-keyCertSign", "int-cA-FALSE-asserts-keyCertSign"],
+    []
+  );
 
   
   await test_cert_for_usages(["int-limited-depth"], ca_usages);
 
   
   
-  await test_cert_for_usages(["ee-int-limited-depth", "int-limited-depth"],
-                             ee_usages);
+  await test_cert_for_usages(
+    ["ee-int-limited-depth", "int-limited-depth"],
+    ee_usages
+  );
 
   
   
   
   
-  await test_cert_for_usages(["int-limited-depth-invalid", "int-limited-depth"],
-                             []);
-  await test_cert_for_usages(["ee-int-limited-depth-invalid",
-                              "int-limited-depth-invalid", "int-limited-depth"],
-                             []);
+  await test_cert_for_usages(
+    ["int-limited-depth-invalid", "int-limited-depth"],
+    []
+  );
+  await test_cert_for_usages(
+    [
+      "ee-int-limited-depth-invalid",
+      "int-limited-depth-invalid",
+      "int-limited-depth",
+    ],
+    []
+  );
 
   
   await test_cert_for_usages(["int-valid-ku-no-eku"], ca_usages);
-  await test_cert_for_usages(["ee-int-valid-ku-no-eku", "int-valid-ku-no-eku"],
-                             ee_usages);
+  await test_cert_for_usages(
+    ["ee-int-valid-ku-no-eku", "int-valid-ku-no-eku"],
+    ee_usages
+  );
 
   
   
@@ -88,24 +107,32 @@ add_task(async function() {
   
   
   await test_cert_for_usages(["int-no-ku-no-eku"], ca_usages);
-  await test_cert_for_usages(["ee-int-no-ku-no-eku", "int-no-ku-no-eku"],
-                             ee_usages);
+  await test_cert_for_usages(
+    ["ee-int-no-ku-no-eku", "int-no-ku-no-eku"],
+    ee_usages
+  );
 
   
   
   await test_cert_for_usages(["int-valid-ku-server-eku"], ca_usages);
-  await test_cert_for_usages(["ee-int-valid-ku-server-eku",
-                              "int-valid-ku-server-eku"], eku_usages);
+  await test_cert_for_usages(
+    ["ee-int-valid-ku-server-eku", "int-valid-ku-server-eku"],
+    eku_usages
+  );
 
   
   
   await test_cert_for_usages(["int-bad-ku-server-eku"], []);
-  await test_cert_for_usages(["ee-int-bad-ku-server-eku",
-                              "int-bad-ku-server-eku"], []);
+  await test_cert_for_usages(
+    ["ee-int-bad-ku-server-eku", "int-bad-ku-server-eku"],
+    []
+  );
 
   
   
   await test_cert_for_usages(["int-no-ku-server-eku"], ca_usages);
-  await test_cert_for_usages(["ee-int-no-ku-server-eku",
-                              "int-no-ku-server-eku"], eku_usages);
+  await test_cert_for_usages(
+    ["ee-int-no-ku-server-eku", "int-no-ku-server-eku"],
+    eku_usages
+  );
 });

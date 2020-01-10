@@ -6,141 +6,271 @@
 "use strict";
 
 do_get_profile(); 
-const certdb  = Cc["@mozilla.org/security/x509certdb;1"]
-                  .getService(Ci.nsIX509CertDB);
+const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 function load_cert(cert_name, trust_string) {
   let cert_filename = cert_name + ".pem";
-  return addCertFromFile(certdb, "test_cert_trust/" + cert_filename,
-                         trust_string);
+  return addCertFromFile(
+    certdb,
+    "test_cert_trust/" + cert_filename,
+    trust_string
+  );
 }
 
 function setup_basic_trusts(ca_cert, int_cert) {
-  certdb.setCertTrust(ca_cert, Ci.nsIX509Cert.CA_CERT,
-                      Ci.nsIX509CertDB.TRUSTED_SSL |
-                      Ci.nsIX509CertDB.TRUSTED_EMAIL);
+  certdb.setCertTrust(
+    ca_cert,
+    Ci.nsIX509Cert.CA_CERT,
+    Ci.nsIX509CertDB.TRUSTED_SSL | Ci.nsIX509CertDB.TRUSTED_EMAIL
+  );
 
   certdb.setCertTrust(int_cert, Ci.nsIX509Cert.CA_CERT, 0);
 }
 
 async function test_ca_distrust(ee_cert, cert_to_modify_trust, isRootCA) {
   
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageSSLServer);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageSSLClient);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_CA_CERT_INVALID,
-                              certificateUsageSSLCA);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageEmailSigner);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageEmailRecipient);
-
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLClient
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_CA_CERT_INVALID,
+    certificateUsageSSLCA
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageEmailSigner
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageEmailRecipient
+  );
 
   
   setCertTrust(cert_to_modify_trust, "p,p,p");
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
-                              certificateUsageSSLServer);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
-                              certificateUsageSSLClient);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_CA_CERT_INVALID,
-                              certificateUsageSSLCA);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
-                              certificateUsageEmailSigner);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
-                              certificateUsageEmailRecipient);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_UNTRUSTED_ISSUER,
+    certificateUsageSSLServer
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_UNTRUSTED_ISSUER,
+    certificateUsageSSLClient
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_CA_CERT_INVALID,
+    certificateUsageSSLCA
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_UNTRUSTED_ISSUER,
+    certificateUsageEmailSigner
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_UNTRUSTED_ISSUER,
+    certificateUsageEmailRecipient
+  );
 
   
   
   setCertTrust(cert_to_modify_trust, "T,T,T");
-  await checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
-                                                        : PRErrorCodeSuccess,
-                              certificateUsageSSLServer);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    isRootCA ? SEC_ERROR_UNKNOWN_ISSUER : PRErrorCodeSuccess,
+    certificateUsageSSLServer
+  );
 
   
-  await checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
-                                                        : PRErrorCodeSuccess,
-                              certificateUsageSSLClient);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    isRootCA ? SEC_ERROR_UNKNOWN_ISSUER : PRErrorCodeSuccess,
+    certificateUsageSSLClient
+  );
 
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_CA_CERT_INVALID,
-                              certificateUsageSSLCA);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_CA_CERT_INVALID,
+    certificateUsageSSLCA
+  );
 
-  await checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
-                                                        : PRErrorCodeSuccess,
-                              certificateUsageEmailSigner);
-  await checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
-                                                        : PRErrorCodeSuccess,
-                              certificateUsageEmailRecipient);
-
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    isRootCA ? SEC_ERROR_UNKNOWN_ISSUER : PRErrorCodeSuccess,
+    certificateUsageEmailSigner
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    isRootCA ? SEC_ERROR_UNKNOWN_ISSUER : PRErrorCodeSuccess,
+    certificateUsageEmailRecipient
+  );
 
   
   setCertTrust(cert_to_modify_trust, "p,C,C");
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
-                              certificateUsageSSLServer);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_UNTRUSTED_ISSUER,
+    certificateUsageSSLServer
+  );
 
   
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageSSLClient);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_CA_CERT_INVALID,
-                              certificateUsageSSLCA);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageEmailSigner);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageEmailRecipient);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLClient
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_CA_CERT_INVALID,
+    certificateUsageSSLCA
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageEmailSigner
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageEmailRecipient
+  );
 
   
   setCertTrust(cert_to_modify_trust, ",C,C");
-  await checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
-                                                        : PRErrorCodeSuccess,
-                              certificateUsageSSLServer);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    isRootCA ? SEC_ERROR_UNKNOWN_ISSUER : PRErrorCodeSuccess,
+    certificateUsageSSLServer
+  );
   
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageSSLClient);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_CA_CERT_INVALID,
-                              certificateUsageSSLCA);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageEmailSigner);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageEmailRecipient);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLClient
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_CA_CERT_INVALID,
+    certificateUsageSSLCA
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageEmailSigner
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageEmailRecipient
+  );
 
   
   setCertTrust(cert_to_modify_trust, "C,p,C");
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageSSLServer);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
-                              certificateUsageSSLClient);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_CA_CERT_INVALID,
-                              certificateUsageSSLCA);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
-                              certificateUsageEmailSigner);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNTRUSTED_ISSUER,
-                              certificateUsageEmailRecipient);
-
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_UNTRUSTED_ISSUER,
+    certificateUsageSSLClient
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_CA_CERT_INVALID,
+    certificateUsageSSLCA
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_UNTRUSTED_ISSUER,
+    certificateUsageEmailSigner
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_UNTRUSTED_ISSUER,
+    certificateUsageEmailRecipient
+  );
 
   
   setCertTrust(cert_to_modify_trust, "C,,C");
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageSSLServer);
-  await checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
-                                                        : PRErrorCodeSuccess,
-                              certificateUsageSSLClient);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_CA_CERT_INVALID,
-                              certificateUsageSSLCA);
-  await checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
-                                                        : PRErrorCodeSuccess,
-                              certificateUsageEmailSigner);
-  await checkCertErrorGeneric(certdb, ee_cert, isRootCA ? SEC_ERROR_UNKNOWN_ISSUER
-                                                        : PRErrorCodeSuccess,
-                              certificateUsageEmailRecipient);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    isRootCA ? SEC_ERROR_UNKNOWN_ISSUER : PRErrorCodeSuccess,
+    certificateUsageSSLClient
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    SEC_ERROR_CA_CERT_INVALID,
+    certificateUsageSSLCA
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    isRootCA ? SEC_ERROR_UNKNOWN_ISSUER : PRErrorCodeSuccess,
+    certificateUsageEmailSigner
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    isRootCA ? SEC_ERROR_UNKNOWN_ISSUER : PRErrorCodeSuccess,
+    certificateUsageEmailRecipient
+  );
 }
 
-
 add_task(async function() {
-  let certList = [
-    "ca",
-    "int",
-    "ee",
-  ];
+  let certList = ["ca", "int", "ee"];
   let loadedCerts = [];
   for (let certName of certList) {
     loadedCerts.push(load_cert(certName, ",,"));
@@ -167,12 +297,28 @@ add_task(async function() {
   
   
   setCertTrust(ee_cert, "CTu,CTu,CTu");
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageSSLServer);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageSSLClient);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageEmailSigner);
-  await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
-                              certificateUsageEmailRecipient);
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLClient
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageEmailSigner
+  );
+  await checkCertErrorGeneric(
+    certdb,
+    ee_cert,
+    PRErrorCodeSuccess,
+    certificateUsageEmailRecipient
+  );
 });

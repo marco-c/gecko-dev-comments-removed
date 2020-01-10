@@ -23,12 +23,15 @@ var gMockPrompter = {
   
   promptPassword(dialogTitle, text, password, checkMsg, checkValue) {
     this.numPrompts++;
-    if (this.numPrompts > 1) { 
+    if (this.numPrompts > 1) {
+      
       return false;
     }
-    equal(text,
-          "Please enter your master password.",
-          "password prompt text should be as expected");
+    equal(
+      text,
+      "Please enter your master password.",
+      "password prompt text should be as expected"
+    );
     equal(checkMsg, null, "checkMsg should be null");
     ok(this.passwordToTry, "passwordToTry should be non-null");
     password.value = this.passwordToTry;
@@ -46,9 +49,10 @@ var gWindowWatcher = {
 };
 
 function run_test() {
-  let windowWatcherCID =
-    MockRegistrar.register("@mozilla.org/embedcomp/window-watcher;1",
-                           gWindowWatcher);
+  let windowWatcherCID = MockRegistrar.register(
+    "@mozilla.org/embedcomp/window-watcher;1",
+    gWindowWatcher
+  );
   registerCleanupFunction(() => {
     MockRegistrar.unregister(windowWatcherCID);
   });
@@ -69,47 +73,77 @@ function run_test() {
   let cert9DBFile = do_get_file("test_sdr_upgraded_with_password/cert9.db");
   cert9DBFile.copyTo(profile, "cert9.db");
 
-  let sdr = Cc["@mozilla.org/security/sdr;1"]
-              .getService(Ci.nsISecretDecoderRing);
+  let sdr = Cc["@mozilla.org/security/sdr;1"].getService(
+    Ci.nsISecretDecoderRing
+  );
 
   let testcases = [
     
-    { ciphertext: "MDoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECGeDHwVfyFqzBBAYvqMq/kDMsrARVNdC1C8d",
-      plaintext: "password" },
+    {
+      ciphertext:
+        "MDoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECGeDHwVfyFqzBBAYvqMq/kDMsrARVNdC1C8d",
+      plaintext: "password",
+    },
     
-    { ciphertext: "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECCAzLDVmYG2/BAh3IoIsMmT8dQ==",
-      plaintext: "a" },
+    {
+      ciphertext:
+        "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECCAzLDVmYG2/BAh3IoIsMmT8dQ==",
+      plaintext: "a",
+    },
     
-    { ciphertext: "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECPN8zlZzn8FdBAiu2acpT8UHsg==",
-      plaintext: "bb" },
+    {
+      ciphertext:
+        "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECPN8zlZzn8FdBAiu2acpT8UHsg==",
+      plaintext: "bb",
+    },
     
-    { ciphertext: "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECD5px1eMKkJQBAgUPp35GlrDvQ==",
-      plaintext: "!seven!" },
+    {
+      ciphertext:
+        "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECD5px1eMKkJQBAgUPp35GlrDvQ==",
+      plaintext: "!seven!",
+    },
     
-    { ciphertext: "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECMh0hLtKDyUdBAixw9UZsMt+vA==",
-      plaintext: "sixsix" },
+    {
+      ciphertext:
+        "MDIEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECMh0hLtKDyUdBAixw9UZsMt+vA==",
+      plaintext: "sixsix",
+    },
     
-    { ciphertext: "MFoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECDRX1qi+/FX1BDATFIcIneQjvBuq3wdFxzllJt2VtUD69ACdOKAXH3eA87oHDvuHqOeCDwRy4UzoG5s=",
-      plaintext: "thisismuchlongerandsotakesupmultipleblocks" },
+    {
+      ciphertext:
+        "MFoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECDRX1qi+/FX1BDATFIcIneQjvBuq3wdFxzllJt2VtUD69ACdOKAXH3eA87oHDvuHqOeCDwRy4UzoG5s=",
+      plaintext: "thisismuchlongerandsotakesupmultipleblocks",
+    },
     
     
-    { ciphertext: "MFoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECDRX1qi+/FX1BDAbFIcIneQjvBuq3wdFxzllJt2VtUD69ACdOKAXH3eA87oHDvuHqOeCDwRy4UzoG5s=",
-      plaintext: "nnLbuwLRkhlongerandsotakesupmultipleblocks" },
+    {
+      ciphertext:
+        "MFoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECDRX1qi+/FX1BDAbFIcIneQjvBuq3wdFxzllJt2VtUD69ACdOKAXH3eA87oHDvuHqOeCDwRy4UzoG5s=",
+      plaintext: "nnLbuwLRkhlongerandsotakesupmultipleblocks",
+    },
   ];
 
   for (let testcase of testcases) {
     let decrypted = sdr.decryptString(testcase.ciphertext);
-    equal(decrypted, testcase.plaintext,
-          "decrypted ciphertext should match expected plaintext");
+    equal(
+      decrypted,
+      testcase.plaintext,
+      "decrypted ciphertext should match expected plaintext"
+    );
   }
-  equal(gMockPrompter.numPrompts, 1,
-        "Should have been prompted for a password once");
+  equal(
+    gMockPrompter.numPrompts,
+    1,
+    "Should have been prompted for a password once"
+  );
 
   
   
   
   let key3DBInProfile = do_get_profile();
   key3DBInProfile.append("key3.db");
-  ok(!key3DBInProfile.exists(),
-     "key3.db should not exist after running with key4.db with a password");
+  ok(
+    !key3DBInProfile.exists(),
+    "key3.db should not exist after running with key4.db with a password"
+  );
 }

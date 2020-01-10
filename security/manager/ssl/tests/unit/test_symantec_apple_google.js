@@ -9,15 +9,17 @@
 
 
 function shouldBeImminentlyDistrusted(aTransportSecurityInfo) {
-  let isDistrust = aTransportSecurityInfo.securityState &
-                     Ci.nsIWebProgressListener.STATE_CERT_DISTRUST_IMMINENT;
+  let isDistrust =
+    aTransportSecurityInfo.securityState &
+    Ci.nsIWebProgressListener.STATE_CERT_DISTRUST_IMMINENT;
   Assert.ok(isDistrust, "This host should be imminently distrusted");
 }
 
 do_get_profile();
 
-const certDB = Cc["@mozilla.org/security/x509certdb;1"]
-                 .getService(Ci.nsIX509CertDB);
+const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 add_tls_server_setup("SymantecSanctionsServer", "test_symantec_apple_google");
 
@@ -25,49 +27,80 @@ add_tls_server_setup("SymantecSanctionsServer", "test_symantec_apple_google");
 
 
 add_test(function() {
-  addCertFromFile(certDB, "test_symantec_apple_google/intermediate-whitelisted.pem", ",,");
-  addCertFromFile(certDB, "test_symantec_apple_google/intermediate-other.pem", ",,");
-  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-                             0b01);
+  addCertFromFile(
+    certDB,
+    "test_symantec_apple_google/intermediate-whitelisted.pem",
+    ",,"
+  );
+  addCertFromFile(
+    certDB,
+    "test_symantec_apple_google/intermediate-other.pem",
+    ",,"
+  );
+  Services.prefs.setIntPref(
+    "security.pki.distrust_ca_policy",
+     0b01
+  );
   run_next_test();
 });
 
 
-add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
-                    PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);
+add_connection_test(
+  "symantec-not-whitelisted-after-cutoff.example.com",
+  PRErrorCodeSuccess,
+  null,
+  shouldBeImminentlyDistrusted
+);
 
 
-add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
-                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
-                    null, null);
+add_connection_test(
+  "symantec-not-whitelisted-before-cutoff.example.com",
+  MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+  null,
+  null
+);
 
 
 
 add_test(function() {
   clearSessionCache();
-  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-               0b10);
+  Services.prefs.setIntPref(
+    "security.pki.distrust_ca_policy",
+     0b10
+  );
   run_next_test();
 });
 
-add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
-                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
-                    null, null);
+add_connection_test(
+  "symantec-not-whitelisted-before-cutoff.example.com",
+  MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+  null,
+  null
+);
 
-add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
-                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
-                    null, null);
+add_connection_test(
+  "symantec-not-whitelisted-after-cutoff.example.com",
+  MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+  null,
+  null
+);
 
 
 add_test(function() {
   clearSessionCache();
-  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-                             0b00);
+  Services.prefs.setIntPref(
+    "security.pki.distrust_ca_policy",
+     0b00
+  );
   run_next_test();
 });
 
-add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
-                    PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);
+add_connection_test(
+  "symantec-not-whitelisted-before-cutoff.example.com",
+  PRErrorCodeSuccess,
+  null,
+  shouldBeImminentlyDistrusted
+);
 
 add_test(function() {
   clearSessionCache();
@@ -78,53 +111,89 @@ add_test(function() {
 
 
 add_test(function() {
-  addCertFromFile(certDB, "test_symantec_apple_google/intermediate-other-crossigned.pem", ",,");
+  addCertFromFile(
+    certDB,
+    "test_symantec_apple_google/intermediate-other-crossigned.pem",
+    ",,"
+  );
   run_next_test();
 });
 
-add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
-                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
-                    null, null);
+add_connection_test(
+  "symantec-not-whitelisted-before-cutoff.example.com",
+  MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+  null,
+  null
+);
 
 
 
 add_task(async function() {
-  addCertFromFile(certDB, "test_symantec_apple_google/real-google-g2-intermediate.pem", ",,");
-  let whitelistedCert = constructCertFromFile("test_symantec_apple_google/real-googlecom.pem");
+  addCertFromFile(
+    certDB,
+    "test_symantec_apple_google/real-google-g2-intermediate.pem",
+    ",,"
+  );
+  let whitelistedCert = constructCertFromFile(
+    "test_symantec_apple_google/real-googlecom.pem"
+  );
 
   
   
   Services.prefs.setIntPref("security.OCSP.enabled", 0);
 
   
-  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-                             0b01);
+  Services.prefs.setIntPref(
+    "security.pki.distrust_ca_policy",
+     0b01
+  );
 
   
   const VALIDATION_TIME = 1518739200;
 
-  await checkCertErrorGenericAtTime(certDB, whitelistedCert, PRErrorCodeSuccess,
-                                    certificateUsageSSLServer, VALIDATION_TIME);
+  await checkCertErrorGenericAtTime(
+    certDB,
+    whitelistedCert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer,
+    VALIDATION_TIME
+  );
 
   
-  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-                             0b10);
+  Services.prefs.setIntPref(
+    "security.pki.distrust_ca_policy",
+     0b10
+  );
 
-  await checkCertErrorGenericAtTime(certDB, whitelistedCert, PRErrorCodeSuccess,
-                                    certificateUsageSSLServer, VALIDATION_TIME);
+  await checkCertErrorGenericAtTime(
+    certDB,
+    whitelistedCert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer,
+    VALIDATION_TIME
+  );
 });
 
 
 add_test(function() {
   clearSessionCache();
-  Services.prefs.setIntPref("security.pki.distrust_ca_policy",
-                             0b1111);
+  Services.prefs.setIntPref(
+    "security.pki.distrust_ca_policy",
+     0b1111
+  );
   run_next_test();
 });
 
-add_connection_test("symantec-not-whitelisted-before-cutoff.example.com",
-                    MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
-                    null, null);
+add_connection_test(
+  "symantec-not-whitelisted-before-cutoff.example.com",
+  MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED,
+  null,
+  null
+);
 
-add_connection_test("symantec-not-whitelisted-after-cutoff.example.com",
-                    PRErrorCodeSuccess, null, shouldBeImminentlyDistrusted);
+add_connection_test(
+  "symantec-not-whitelisted-after-cutoff.example.com",
+  PRErrorCodeSuccess,
+  null,
+  shouldBeImminentlyDistrusted
+);

@@ -11,32 +11,57 @@
 
 function add_read_only_cert_override(aHost, aExpectedBits, aSecurityInfo) {
   let bits =
-    (aSecurityInfo.isUntrusted ? Ci.nsICertOverrideService.ERROR_UNTRUSTED : 0) |
-    (aSecurityInfo.isDomainMismatch ? Ci.nsICertOverrideService.ERROR_MISMATCH : 0) |
-    (aSecurityInfo.isNotValidAtThisTime ? Ci.nsICertOverrideService.ERROR_TIME : 0);
+    (aSecurityInfo.isUntrusted
+      ? Ci.nsICertOverrideService.ERROR_UNTRUSTED
+      : 0) |
+    (aSecurityInfo.isDomainMismatch
+      ? Ci.nsICertOverrideService.ERROR_MISMATCH
+      : 0) |
+    (aSecurityInfo.isNotValidAtThisTime
+      ? Ci.nsICertOverrideService.ERROR_TIME
+      : 0);
 
-  Assert.equal(bits, aExpectedBits,
-               "Actual and expected override bits should match");
+  Assert.equal(
+    bits,
+    aExpectedBits,
+    "Actual and expected override bits should match"
+  );
   let cert = aSecurityInfo.serverCert;
-  let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
-                              .getService(Ci.nsICertOverrideService);
+  let certOverrideService = Cc[
+    "@mozilla.org/security/certoverride;1"
+  ].getService(Ci.nsICertOverrideService);
   
   
-  certOverrideService.rememberValidityOverride(aHost, 8443, cert, aExpectedBits,
-                                               false);
+  certOverrideService.rememberValidityOverride(
+    aHost,
+    8443,
+    cert,
+    aExpectedBits,
+    false
+  );
 }
 
 
 
 
 
-function add_read_only_cert_override_test(aHost, aExpectedBits, aExpectedError) {
-  add_connection_test(aHost, aExpectedError, null,
-                      add_read_only_cert_override.bind(this, aHost, aExpectedBits));
+function add_read_only_cert_override_test(
+  aHost,
+  aExpectedBits,
+  aExpectedError
+) {
+  add_connection_test(
+    aHost,
+    aExpectedError,
+    null,
+    add_read_only_cert_override.bind(this, aHost, aExpectedBits)
+  );
   add_connection_test(aHost, PRErrorCodeSuccess, null, aSecurityInfo => {
-    Assert.ok(aSecurityInfo.securityState &
-              Ci.nsIWebProgressListener.STATE_CERT_USER_OVERRIDDEN,
-              "Cert override flag should be set on the security state");
+    Assert.ok(
+      aSecurityInfo.securityState &
+        Ci.nsIWebProgressListener.STATE_CERT_USER_OVERRIDDEN,
+      "Cert override flag should be set on the security state"
+    );
   });
 }
 
@@ -44,9 +69,13 @@ function run_test() {
   let profile = do_get_profile();
   const KEY_DB_NAME = "key4.db";
   const CERT_DB_NAME = "cert9.db";
-  let srcKeyDBFile = do_get_file(`test_cert_overrides_read_only/${KEY_DB_NAME}`);
+  let srcKeyDBFile = do_get_file(
+    `test_cert_overrides_read_only/${KEY_DB_NAME}`
+  );
   srcKeyDBFile.copyTo(profile, KEY_DB_NAME);
-  let srcCertDBFile = do_get_file(`test_cert_overrides_read_only/${CERT_DB_NAME}`);
+  let srcCertDBFile = do_get_file(
+    `test_cert_overrides_read_only/${CERT_DB_NAME}`
+  );
   srcCertDBFile.copyTo(profile, CERT_DB_NAME);
 
   
@@ -63,7 +92,7 @@ function run_test() {
   add_tls_server_setup("BadCertServer", "bad_certs", false);
 
   let fakeOCSPResponder = new HttpServer();
-  fakeOCSPResponder.registerPrefixHandler("/", function (request, response) {
+  fakeOCSPResponder.registerPrefixHandler("/", function(request, response) {
     response.setStatusLine(request.httpVersion, 500, "Internal Server Error");
   });
   fakeOCSPResponder.start(8888);
@@ -71,19 +100,25 @@ function run_test() {
   
   
   
-  add_read_only_cert_override_test("expired.example.com",
-                         Ci.nsICertOverrideService.ERROR_TIME |
-                         Ci.nsICertOverrideService.ERROR_UNTRUSTED,
-                         SEC_ERROR_UNKNOWN_ISSUER);
-  add_read_only_cert_override_test("selfsigned.example.com",
-                         Ci.nsICertOverrideService.ERROR_UNTRUSTED,
-                         MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT);
-  add_read_only_cert_override_test("mismatch.example.com",
-                         Ci.nsICertOverrideService.ERROR_MISMATCH |
-                         Ci.nsICertOverrideService.ERROR_UNTRUSTED,
-                         SEC_ERROR_UNKNOWN_ISSUER);
+  add_read_only_cert_override_test(
+    "expired.example.com",
+    Ci.nsICertOverrideService.ERROR_TIME |
+      Ci.nsICertOverrideService.ERROR_UNTRUSTED,
+    SEC_ERROR_UNKNOWN_ISSUER
+  );
+  add_read_only_cert_override_test(
+    "selfsigned.example.com",
+    Ci.nsICertOverrideService.ERROR_UNTRUSTED,
+    MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT
+  );
+  add_read_only_cert_override_test(
+    "mismatch.example.com",
+    Ci.nsICertOverrideService.ERROR_MISMATCH |
+      Ci.nsICertOverrideService.ERROR_UNTRUSTED,
+    SEC_ERROR_UNKNOWN_ISSUER
+  );
 
-  add_test(function () {
+  add_test(function() {
     fakeOCSPResponder.stop(run_next_test);
   });
 

@@ -7,8 +7,9 @@
 
 
 do_get_profile(); 
-const gCertDB = Cc["@mozilla.org/security/x509certdb;1"]
-                  .getService(Ci.nsIX509CertDB);
+const gCertDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 const SERVER_PORT = 8888;
 
@@ -25,8 +26,13 @@ function getFailingOCSPResponder() {
 }
 
 function getOCSPResponder(expectedCertNames) {
-  return startOCSPResponder(SERVER_PORT, "www.example.com", "test_ev_certs",
-                            expectedCertNames, []);
+  return startOCSPResponder(
+    SERVER_PORT,
+    "www.example.com",
+    "test_ev_certs",
+    expectedCertNames,
+    []
+  );
 }
 
 
@@ -37,15 +43,23 @@ async function testOff() {
   
   clearOCSPCache();
   let ocspResponder = getFailingOCSPResponder();
-  await checkEVStatus(gCertDB, certFromFile("test-oid-path-ee"),
-                      certificateUsageSSLServer, false);
+  await checkEVStatus(
+    gCertDB,
+    certFromFile("test-oid-path-ee"),
+    certificateUsageSSLServer,
+    false
+  );
   await stopOCSPResponder(ocspResponder);
 
   
   clearOCSPCache();
   ocspResponder = getFailingOCSPResponder();
-  await checkCertErrorGeneric(gCertDB, certFromFile("non-ev-root-path-ee"),
-                              PRErrorCodeSuccess, certificateUsageSSLServer);
+  await checkCertErrorGeneric(
+    gCertDB,
+    certFromFile("non-ev-root-path-ee"),
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer
+  );
   await stopOCSPResponder(ocspResponder);
 }
 
@@ -57,19 +71,29 @@ async function testOn() {
   
   
   clearOCSPCache();
-  let ocspResponder =
-      getOCSPResponder(gEVExpected ? ["test-oid-path-int", "test-oid-path-ee"]
-                                   : ["test-oid-path-ee"]);
-  await checkEVStatus(gCertDB, certFromFile("test-oid-path-ee"),
-                      certificateUsageSSLServer, gEVExpected);
+  let ocspResponder = getOCSPResponder(
+    gEVExpected
+      ? ["test-oid-path-int", "test-oid-path-ee"]
+      : ["test-oid-path-ee"]
+  );
+  await checkEVStatus(
+    gCertDB,
+    certFromFile("test-oid-path-ee"),
+    certificateUsageSSLServer,
+    gEVExpected
+  );
   await stopOCSPResponder(ocspResponder);
 
   
   
   clearOCSPCache();
   ocspResponder = getOCSPResponder(["non-ev-root-path-ee"]);
-  await checkCertErrorGeneric(gCertDB, certFromFile("non-ev-root-path-ee"),
-                              PRErrorCodeSuccess, certificateUsageSSLServer);
+  await checkCertErrorGeneric(
+    gCertDB,
+    certFromFile("non-ev-root-path-ee"),
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer
+  );
   await stopOCSPResponder(ocspResponder);
 }
 
@@ -82,17 +106,25 @@ async function testEVOnly() {
   
   clearOCSPCache();
   let ocspResponder = gEVExpected
-                    ? getOCSPResponder(["test-oid-path-int", "test-oid-path-ee"])
-                    : getFailingOCSPResponder();
-  await checkEVStatus(gCertDB, certFromFile("test-oid-path-ee"),
-                      certificateUsageSSLServer, gEVExpected);
+    ? getOCSPResponder(["test-oid-path-int", "test-oid-path-ee"])
+    : getFailingOCSPResponder();
+  await checkEVStatus(
+    gCertDB,
+    certFromFile("test-oid-path-ee"),
+    certificateUsageSSLServer,
+    gEVExpected
+  );
   await stopOCSPResponder(ocspResponder);
 
   
   clearOCSPCache();
   ocspResponder = getFailingOCSPResponder();
-  await checkCertErrorGeneric(gCertDB, certFromFile("non-ev-root-path-ee"),
-                              PRErrorCodeSuccess, certificateUsageSSLServer);
+  await checkCertErrorGeneric(
+    gCertDB,
+    certFromFile("non-ev-root-path-ee"),
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer
+  );
   await stopOCSPResponder(ocspResponder);
 }
 

@@ -66,7 +66,7 @@ class OID {
       let value = bytes.shift();
       accumulator *= 128;
       if (value > 128) {
-        accumulator += (value - 128);
+        accumulator += value - 128;
       } else {
         accumulator += value;
         this._values.push(accumulator);
@@ -412,10 +412,14 @@ class AttributeTypeAndValue extends DecodedDER {
     
     
     
-    this._value.parse(contents.readTLVChoice([ DER.UTF8String,
-                                               DER.PrintableString,
-                                               DER.TeletexString,
-                                               DER.IA5String ]));
+    this._value.parse(
+      contents.readTLVChoice([
+        DER.UTF8String,
+        DER.PrintableString,
+        DER.TeletexString,
+        DER.IA5String,
+      ])
+    );
     contents.assertAtEnd();
     this._der.assertAtEnd();
   }
@@ -534,7 +538,8 @@ class Time extends DecodedDER {
     let s1 = this._validateDigit(contents.readByte());
     let s2 = this._validateDigit(contents.readByte());
     let second = s1 * 10 + s2;
-    if (second > 60) { 
+    if (second > 60) {
+      
       throw new Error(ERROR_TIME_NOT_VALID);
     }
 
@@ -545,8 +550,7 @@ class Time extends DecodedDER {
     
     
     
-    this._time = new Date(Date.UTC(year, month - 1, day, hour, minute,
-                                   second));
+    this._time = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
 
     contents.assertAtEnd();
     this._der.assertAtEnd();
@@ -586,10 +590,12 @@ class Validity extends DecodedDER {
 
   parseOverride() {
     let contents = readSEQUENCEAndMakeDER(this._der);
-    this._notBefore.parse(contents.readTLVChoice(
-      [DER.UTCTime, DER.GeneralizedTime]));
-    this._notAfter.parse(contents.readTLVChoice(
-      [DER.UTCTime, DER.GeneralizedTime]));
+    this._notBefore.parse(
+      contents.readTLVChoice([DER.UTCTime, DER.GeneralizedTime])
+    );
+    this._notAfter.parse(
+      contents.readTLVChoice([DER.UTCTime, DER.GeneralizedTime])
+    );
     contents.assertAtEnd();
     this._der.assertAtEnd();
   }

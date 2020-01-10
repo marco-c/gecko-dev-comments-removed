@@ -17,21 +17,26 @@
 const CC = Components.Constructor;
 const Cm = Components.manager;
 
-const {updateAppInfo} = ChromeUtils.import("resource://testing-common/AppInfo.jsm");
- 
-updateAppInfo();
+const { updateAppInfo } = ChromeUtils.import(
+  "resource://testing-common/AppInfo.jsm"
+); 
+ updateAppInfo();
 
 
 do_get_profile();
 
-const certdb = Cc["@mozilla.org/security/x509certdb;1"]
-                 .getService(Ci.nsIX509CertDB);
-const reporter = Cc["@mozilla.org/securityreporter;1"]
-                   .getService(Ci.nsISecurityReporter);
+const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
+const reporter = Cc["@mozilla.org/securityreporter;1"].getService(
+  Ci.nsISecurityReporter
+);
 
-
-const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
-                             "nsIBinaryInputStream", "setInputStream");
+const BinaryInputStream = CC(
+  "@mozilla.org/binaryinputstream;1",
+  "nsIBinaryInputStream",
+  "setInputStream"
+);
 
 var server;
 
@@ -40,8 +45,10 @@ var server;
 function getReportCheck(expectReport, expectedError) {
   return function sendReportWithInfo(transportSecurityInfo) {
     
-    server.registerPathHandler("/submit/sslreports",
-                              function(request, response) {
+    server.registerPathHandler("/submit/sslreports", function(
+      request,
+      response
+    ) {
       if (expectReport) {
         let report = JSON.parse(readDataFromRequest(request));
         throws(() => request.getHeader("Cookie"), /NS_ERROR_NOT_AVAILABLE/);
@@ -84,15 +91,26 @@ function run_test() {
   let port = server.identity.primaryPort;
 
   
-  Services.prefs.setCharPref("security.ssl.errorReporting.url",
-                             `http://localhost:${port}/submit/sslreports`);
+  Services.prefs.setCharPref(
+    "security.ssl.errorReporting.url",
+    `http://localhost:${port}/submit/sslreports`
+  );
   
   Services.prefs.setIntPref("security.cert_pinning.enforcement_level", 2);
 
   
-  Services.cookies.add("localhost", "/", "foo", "bar",
-                       false, false, false, Date.now() + 24000 * 60 * 60, {},
-                       Ci.nsICookie.SAMESITE_NONE);
+  Services.cookies.add(
+    "localhost",
+    "/",
+    "foo",
+    "bar",
+    false,
+    false,
+    false,
+    Date.now() + 24000 * 60 * 60,
+    {},
+    Ci.nsICookie.SAMESITE_NONE
+  );
 
   registerCleanupFunction(() => {
     Services.cookies.removeAll();
@@ -104,16 +122,18 @@ function run_test() {
   
   addCertFromFile(certdb, "bad_certs/other-test-ca.pem", "CTu,u,u");
 
-
   
   
   Services.prefs.setBoolPref("security.ssl.errorReporting.enabled", false);
-  add_connection_test("expired.example.com",
-                      SEC_ERROR_EXPIRED_CERTIFICATE, null,
-                      getReportCheck(false));
+  add_connection_test(
+    "expired.example.com",
+    SEC_ERROR_EXPIRED_CERTIFICATE,
+    null,
+    getReportCheck(false)
+  );
 
   
-  add_test(function () {
+  add_test(function() {
     Services.prefs.setBoolPref("security.ssl.errorReporting.enabled", true);
     run_next_test();
   });
@@ -121,8 +141,10 @@ function run_test() {
   
   
   add_test(function() {
-    server.registerPathHandler("/submit/sslreports",
-                               function(request, response) {
+    server.registerPathHandler("/submit/sslreports", function(
+      request,
+      response
+    ) {
       do_throw("No report should be sent");
     });
     reporter.reportTLSError(null, "example.com", -1);
@@ -131,15 +153,21 @@ function run_test() {
 
   
   
-  add_connection_test("good.include-subdomains.pinning.example.com",
-                      PRErrorCodeSuccess, null,
-                      getReportCheck(true, PRErrorCodeSuccess));
+  add_connection_test(
+    "good.include-subdomains.pinning.example.com",
+    PRErrorCodeSuccess,
+    null,
+    getReportCheck(true, PRErrorCodeSuccess)
+  );
   add_test(() => {}); 
 
   
-  add_connection_test("expired.example.com",
-                      SEC_ERROR_EXPIRED_CERTIFICATE, null,
-                      getReportCheck(true, SEC_ERROR_EXPIRED_CERTIFICATE));
+  add_connection_test(
+    "expired.example.com",
+    SEC_ERROR_EXPIRED_CERTIFICATE,
+    null,
+    getReportCheck(true, SEC_ERROR_EXPIRED_CERTIFICATE)
+  );
   add_test(() => {}); 
 
   run_next_test();

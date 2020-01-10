@@ -1,10 +1,13 @@
 
 
- 
- "use strict";
 
-Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/" +
-    "security/sandbox/test/browser_content_sandbox_utils.js", this);
+"use strict";
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/" +
+    "security/sandbox/test/browser_content_sandbox_utils.js",
+  this
+);
 
 
 
@@ -16,39 +19,47 @@ Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/" +
 
 
 function createFile(path) {
-  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let encoder = new TextEncoder();
   let array = encoder.encode("TEST FILE DUMMY DATA");
-  return OS.File.writeAtomic(path, array).then(function(value) {
-    return true;
-  }, function(reason) {
-    return false;
-  });
+  return OS.File.writeAtomic(path, array).then(
+    function(value) {
+      return true;
+    },
+    function(reason) {
+      return false;
+    }
+  );
 }
 
 
 
 
 function createSymlink(path) {
-  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   
-  return OS.File.unixSymLink("/Users", path).then(function(value) {
-    return true;
-  }, function(reason) {
-    return false;
-  });
+  return OS.File.unixSymLink("/Users", path).then(
+    function(value) {
+      return true;
+    },
+    function(reason) {
+      return false;
+    }
+  );
 }
 
 
 
 
 function deleteFile(path) {
-  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  return OS.File.remove(path, {ignoreAbsent: false}).then(function(value) {
-    return true;
-  }).catch(function(err) {
-    return false;
-  });
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  return OS.File.remove(path, { ignoreAbsent: false })
+    .then(function(value) {
+      return true;
+    })
+    .catch(function(err) {
+      return false;
+    });
 }
 
 
@@ -56,17 +67,20 @@ function deleteFile(path) {
 
 
 function readDir(path) {
-  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let numEntries = 0;
   let iterator = new OS.File.DirectoryIterator(path);
-  let promise = iterator.forEach(function (dirEntry) {
-    numEntries++;
-  }).then(function () {
-    iterator.close();
-    return {ok: true, numEntries};
-  }).catch(function () {
-    return {ok: false, numEntries};
-  });
+  let promise = iterator
+    .forEach(function(dirEntry) {
+      numEntries++;
+    })
+    .then(function() {
+      iterator.close();
+      return { ok: true, numEntries };
+    })
+    .catch(function() {
+      return { ok: false, numEntries };
+    });
   return promise;
 }
 
@@ -74,12 +88,14 @@ function readDir(path) {
 
 
 function readFile(path) {
-  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  let promise = OS.File.read(path).then(function (binaryData) {
-    return {ok: true};
-  }).catch(function (error) {
-    return {ok: false};
-  });
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  let promise = OS.File.read(path)
+    .then(function(binaryData) {
+      return { ok: true };
+    })
+    .catch(function(error) {
+      return { ok: false };
+    });
   return promise;
 }
 
@@ -87,12 +103,14 @@ function readFile(path) {
 
 
 function statPath(path) {
-  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  let promise = OS.File.stat(path).then(function (stat) {
-    return {ok: true};
-  }).catch(function (error) {
-    return {ok: false};
-  });
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  let promise = OS.File.stat(path)
+    .then(function(stat) {
+      return { ok: true };
+    })
+    .catch(function(error) {
+      return { ok: false };
+    });
   return promise;
 }
 
@@ -118,7 +136,7 @@ function isContentFileIOSandboxed(level) {
       Assert.ok(false, "Unknown OS");
   }
 
-  return (level >= fileIOSandboxMinLevel);
+  return level >= fileIOSandboxMinLevel;
 }
 
 
@@ -243,13 +261,11 @@ async function createTempFile() {
     
     
     
-    ok(!fileDeleted,
-       "deleting a file in content temp is not permitted");
+    ok(!fileDeleted, "deleting a file in content temp is not permitted");
 
     let path = fileInTempDir().path;
     let symlinkCreated = await ContentTask.spawn(browser, path, createSymlink);
-    ok(!symlinkCreated,
-       "created a symlink in content temp is not permitted");
+    ok(!symlinkCreated, "created a symlink in content temp is not permitted");
   } else {
     ok(!!fileDeleted, "deleting a file in content temp is permitted");
   }
@@ -261,16 +277,18 @@ async function testFileAccess() {
   let webBrowser = gBrowser.selectedBrowser;
 
   
-  let fileContentProcessEnabled =
-    Services.prefs.getBoolPref("browser.tabs.remote.separateFileUriProcess");
+  let fileContentProcessEnabled = Services.prefs.getBoolPref(
+    "browser.tabs.remote.separateFileUriProcess"
+  );
   ok(fileContentProcessEnabled, "separate file content process is enabled");
 
   
   let fileBrowser = undefined;
   if (fileContentProcessEnabled) {
     
-    gBrowser.selectedTab =
-      BrowserTestUtils.addTab(gBrowser, "about:blank", {preferredRemoteType: "file"});
+    gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank", {
+      preferredRemoteType: "file",
+    });
     
     fileBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
   }
@@ -287,63 +305,63 @@ async function testFileAccess() {
 
   let profileDir = GetProfileDir();
   tests.push({
-    desc:     "profile dir",                
-    ok:       false,                        
-    browser:  webBrowser,                   
-    file:     profileDir,                   
+    desc: "profile dir", 
+    ok: false, 
+    browser: webBrowser, 
+    file: profileDir, 
     minLevel: minProfileReadSandboxLevel(), 
-    func:     readDir,
+    func: readDir,
   });
   if (fileContentProcessEnabled) {
     tests.push({
-      desc:     "profile dir",
-      ok:       true,
-      browser:  fileBrowser,
-      file:     profileDir,
+      desc: "profile dir",
+      ok: true,
+      browser: fileBrowser,
+      file: profileDir,
       minLevel: 0,
-      func:     readDir,
+      func: readDir,
     });
   }
 
   let homeDir = GetHomeDir();
   tests.push({
-    desc:     "home dir",
-    ok:       false,
-    browser:  webBrowser,
-    file:     homeDir,
+    desc: "home dir",
+    ok: false,
+    browser: webBrowser,
+    file: homeDir,
     minLevel: minHomeReadSandboxLevel(),
-    func:     readDir,
+    func: readDir,
   });
   if (fileContentProcessEnabled) {
     tests.push({
-      desc:     "home dir",
-      ok:       true,
-      browser:  fileBrowser,
-      file:     homeDir,
+      desc: "home dir",
+      ok: true,
+      browser: fileBrowser,
+      file: homeDir,
       minLevel: 0,
-      func:     readDir,
+      func: readDir,
     });
   }
 
   let sysExtDevDir = GetSystemExtensionsDevDir();
   tests.push({
-    desc:     "system extensions dev dir",
-    ok:       true,
-    browser:  webBrowser,
-    file:     sysExtDevDir,
+    desc: "system extensions dev dir",
+    ok: true,
+    browser: webBrowser,
+    file: sysExtDevDir,
     minLevel: 0,
-    func:     readDir,
+    func: readDir,
   });
 
   if (isWin()) {
     let extDir = GetPerUserExtensionDir();
     tests.push({
-      desc:       "per-user extensions dir",
-      ok:         true,
-      browser:    webBrowser,
-      file:       extDir,
-      minLevel:   minHomeReadSandboxLevel(),
-      func:       readDir,
+      desc: "per-user extensions dir",
+      ok: true,
+      browser: webBrowser,
+      file: extDir,
+      minLevel: minHomeReadSandboxLevel(),
+      func: readDir,
     });
   }
 
@@ -362,12 +380,12 @@ async function testFileAccess() {
         minLevel = 0;
       }
       tests.push({
-        desc:     "home library cache temp dir",
-        ok:       shouldBeReadable,
-        browser:  webBrowser,
-        file:     homeTempDir,
+        desc: "home library cache temp dir",
+        ok: shouldBeReadable,
+        browser: webBrowser,
+        file: homeTempDir,
         minLevel,
-        func:     readDir,
+        func: readDir,
       });
     }
   }
@@ -379,25 +397,28 @@ async function testFileAccess() {
       
       
       varDir.normalize();
-      Assert.ok(varDir.path === "/private/var", "/var resolves to /private/var");
+      Assert.ok(
+        varDir.path === "/private/var",
+        "/var resolves to /private/var"
+      );
     }
 
     tests.push({
-      desc:     "/var",
-      ok:       false,
-      browser:  webBrowser,
-      file:     varDir,
+      desc: "/var",
+      ok: false,
+      browser: webBrowser,
+      file: varDir,
       minLevel: minHomeReadSandboxLevel(),
-      func:     readDir,
+      func: readDir,
     });
     if (fileContentProcessEnabled) {
       tests.push({
-        desc:     "/var",
-        ok:       true,
-        browser:  fileBrowser,
-        file:     varDir,
+        desc: "/var",
+        ok: true,
+        browser: fileBrowser,
+        file: varDir,
         minLevel: 0,
-        func:     readDir,
+        func: readDir,
       });
     }
   }
@@ -409,67 +430,69 @@ async function testFileAccess() {
     let macTempDir = GetDirFromEnvVariable("TMPDIR");
 
     macTempDir.normalize();
-    Assert.ok(macTempDir.path.startsWith("/private/var"),
-      "$TMPDIR is in /private/var");
+    Assert.ok(
+      macTempDir.path.startsWith("/private/var"),
+      "$TMPDIR is in /private/var"
+    );
 
     tests.push({
-      desc:     `$TMPDIR (${macTempDir.path})`,
-      ok:       false,
-      browser:  webBrowser,
-      file:     macTempDir,
+      desc: `$TMPDIR (${macTempDir.path})`,
+      ok: false,
+      browser: webBrowser,
+      file: macTempDir,
       minLevel: minHomeReadSandboxLevel(),
-      func:     readDir,
+      func: readDir,
     });
     if (fileContentProcessEnabled) {
       tests.push({
-        desc:     `$TMPDIR (${macTempDir.path})`,
-        ok:       true,
-        browser:  fileBrowser,
-        file:     macTempDir,
+        desc: `$TMPDIR (${macTempDir.path})`,
+        ok: true,
+        browser: fileBrowser,
+        file: macTempDir,
         minLevel: 0,
-        func:     readDir,
+        func: readDir,
       });
     }
 
     
     let volumes = GetDir("/Volumes");
     tests.push({
-      desc:     "/Volumes",
-      ok:       false,
-      browser:  webBrowser,
-      file:     volumes,
+      desc: "/Volumes",
+      ok: false,
+      browser: webBrowser,
+      file: volumes,
       minLevel: minHomeReadSandboxLevel(),
-      func:     readDir,
+      func: readDir,
     });
     
     let network = GetDir("/Network");
     tests.push({
-      desc:     "/Network",
-      ok:       false,
-      browser:  webBrowser,
-      file:     network,
+      desc: "/Network",
+      ok: false,
+      browser: webBrowser,
+      file: network,
       minLevel: minHomeReadSandboxLevel(),
-      func:     readDir,
+      func: readDir,
     });
     
     let users = GetDir("/Users");
     tests.push({
-      desc:     "/Users",
-      ok:       false,
-      browser:  webBrowser,
-      file:     users,
+      desc: "/Users",
+      ok: false,
+      browser: webBrowser,
+      file: users,
       minLevel: minHomeReadSandboxLevel(),
-      func:     readDir,
+      func: readDir,
     });
 
     
     tests.push({
-      desc:     "/Users",
-      ok:       true,
-      browser:  webBrowser,
-      file:     users,
+      desc: "/Users",
+      ok: true,
+      browser: webBrowser,
+      file: users,
       minLevel: minHomeReadSandboxLevel(),
-      func:     statPath,
+      func: statPath,
     });
 
     
@@ -479,61 +502,61 @@ async function testFileAccess() {
     
     let libraryDir = GetDir("/Library");
     tests.push({
-      desc:     "/Library",
-      ok:       true,
-      browser:  webBrowser,
-      file:     libraryDir,
+      desc: "/Library",
+      ok: true,
+      browser: webBrowser,
+      file: libraryDir,
       minLevel: minHomeReadSandboxLevel(),
-      func:     statPath,
+      func: statPath,
     });
     tests.push({
-      desc:     "/Library",
-      ok:       false,
-      browser:  webBrowser,
-      file:     libraryDir,
+      desc: "/Library",
+      ok: false,
+      browser: webBrowser,
+      file: libraryDir,
       minLevel: minHomeReadSandboxLevel(),
-      func:     readDir,
+      func: readDir,
     });
     let libraryWidgetsDir = GetDir("/Library/Widgets");
     tests.push({
-      desc:     "/Library/Widgets",
-      ok:       false,
-      browser:  webBrowser,
-      file:     libraryWidgetsDir,
+      desc: "/Library/Widgets",
+      ok: false,
+      browser: webBrowser,
+      file: libraryWidgetsDir,
       minLevel: minHomeReadSandboxLevel(),
-      func:     statPath,
+      func: statPath,
     });
 
     
     let privateDir = GetDir("/private");
     tests.push({
-      desc:     "/private",
-      ok:       true,
-      browser:  webBrowser,
-      file:     privateDir,
+      desc: "/private",
+      ok: true,
+      browser: webBrowser,
+      file: privateDir,
       minLevel: minHomeReadSandboxLevel(),
-      func:     statPath,
+      func: statPath,
     });
     let privateEtcDir = GetFile("/private/etc");
     tests.push({
-      desc:     "/private/etc",
-      ok:       false,
-      browser:  webBrowser,
-      file:     privateEtcDir,
+      desc: "/private/etc",
+      ok: false,
+      browser: webBrowser,
+      file: privateEtcDir,
       minLevel: minHomeReadSandboxLevel(),
-      func:     statPath,
+      func: statPath,
     });
   }
 
   let extensionsDir = GetProfileEntry("extensions");
   if (extensionsDir.exists() && extensionsDir.isDirectory()) {
     tests.push({
-      desc:     "extensions dir",
-      ok:       true,
-      browser:  webBrowser,
-      file:     extensionsDir,
+      desc: "extensions dir",
+      ok: true,
+      browser: webBrowser,
+      file: extensionsDir,
       minLevel: 0,
-      func:     readDir,
+      func: readDir,
     });
   } else {
     ok(false, `${extensionsDir.path} is a valid dir`);
@@ -542,12 +565,12 @@ async function testFileAccess() {
   let chromeDir = GetProfileEntry("chrome");
   if (chromeDir.exists() && chromeDir.isDirectory()) {
     tests.push({
-      desc:     "chrome dir",
-      ok:       true,
-      browser:  webBrowser,
-      file:     chromeDir,
+      desc: "chrome dir",
+      ok: true,
+      browser: webBrowser,
+      file: chromeDir,
       minLevel: 0,
-      func:     readDir,
+      func: readDir,
     });
   } else {
     ok(false, `${chromeDir.path} is valid dir`);
@@ -556,21 +579,21 @@ async function testFileAccess() {
   let cookiesFile = GetProfileEntry("cookies.sqlite");
   if (cookiesFile.exists() && !cookiesFile.isDirectory()) {
     tests.push({
-      desc:     "cookies file",
-      ok:       false,
-      browser:  webBrowser,
-      file:     cookiesFile,
+      desc: "cookies file",
+      ok: false,
+      browser: webBrowser,
+      file: cookiesFile,
       minLevel: minProfileReadSandboxLevel(),
-      func:     readFile,
+      func: readFile,
     });
     if (fileContentProcessEnabled) {
       tests.push({
-        desc:     "cookies file",
-        ok:       true,
-        browser:  fileBrowser,
-        file:     cookiesFile,
+        desc: "cookies file",
+        ok: true,
+        browser: fileBrowser,
+        file: cookiesFile,
         minLevel: 0,
-        func:     readFile,
+        func: readFile,
       });
     }
   } else {
@@ -578,7 +601,7 @@ async function testFileAccess() {
   }
 
   
-  tests = tests.filter((test) => (test.minLevel <= level));
+  tests = tests.filter(test => test.minLevel <= level);
 
   for (let test of tests) {
     let okString = test.ok ? "allowed" : "blocked";
@@ -590,12 +613,17 @@ async function testFileAccess() {
       ok(test.file.exists(), `${test.file.path} exists`);
     }
 
-    let result = await ContentTask.spawn(test.browser, test.file.path,
-        test.func);
+    let result = await ContentTask.spawn(
+      test.browser,
+      test.file.path,
+      test.func
+    );
 
-    ok(result.ok == test.ok,
-        `reading ${test.desc} from a ${processType} process ` +
-        `is ${okString} (${test.file.path})`);
+    ok(
+      result.ok == test.ok,
+      `reading ${test.desc} from a ${processType} process ` +
+        `is ${okString} (${test.file.path})`
+    );
 
     
     

@@ -8,9 +8,14 @@
 
 
 add_task(async function test_asyncReauthenticateUser() {
-  const reauthenticator = Cc["@mozilla.org/security/osreauthenticator;1"]
-                            .getService(Ci.nsIOSReauthenticator);
+  const reauthenticator = Cc[
+    "@mozilla.org/security/osreauthenticator;1"
+  ].getService(Ci.nsIOSReauthenticator);
   ok(reauthenticator, "nsIOSReauthenticator should be available");
-  ok(!await reauthenticator.asyncReauthenticateUser("this is the prompt string"),
-     "nsIOSReauthenticator.asyncReauthenticateUser always resolves to false for now");
+  ok(
+    !(await reauthenticator.asyncReauthenticateUser(
+      "this is the prompt string"
+    )),
+    "nsIOSReauthenticator.asyncReauthenticateUser always resolves to false for now"
+  );
 });

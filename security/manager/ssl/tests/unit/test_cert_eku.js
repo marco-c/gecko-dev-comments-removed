@@ -11,8 +11,9 @@
 "use strict";
 
 do_get_profile(); 
-const certdb = Cc["@mozilla.org/security/x509certdb;1"]
-                 .getService(Ci.nsIX509CertDB);
+const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 function certFromFile(certName) {
   return constructCertFromFile(`test_cert_eku/${certName}.pem`);
@@ -23,18 +24,25 @@ function loadCertWithTrust(certName, trustString) {
 }
 
 function checkEndEntity(cert, expectedResult) {
-  return checkCertErrorGeneric(certdb, cert, expectedResult,
-                               certificateUsageSSLServer);
+  return checkCertErrorGeneric(
+    certdb,
+    cert,
+    expectedResult,
+    certificateUsageSSLServer
+  );
 }
 
 function checkCertOn25August2016(cert, expectedResult) {
   
   const VALIDATION_TIME = 1472083200;
-  return checkCertErrorGenericAtTime(certdb, cert, expectedResult,
-                                     certificateUsageSSLServer,
-                                     VALIDATION_TIME);
+  return checkCertErrorGenericAtTime(
+    certdb,
+    cert,
+    expectedResult,
+    certificateUsageSSLServer,
+    VALIDATION_TIME
+  );
 }
-
 
 add_task(async function() {
   registerCleanupFunction(() => {
@@ -60,20 +68,35 @@ add_task(async function() {
   
   
   Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 0);
-  await checkEndEntity(certFromFile("ee-nsSGC"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+  await checkEndEntity(
+    certFromFile("ee-nsSGC"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
   
   Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 1);
-  await checkEndEntity(certFromFile("ee-nsSGC"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+  await checkEndEntity(
+    certFromFile("ee-nsSGC"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
   
   Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 2);
-  await checkEndEntity(certFromFile("ee-nsSGC"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+  await checkEndEntity(
+    certFromFile("ee-nsSGC"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
   
   Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 3);
-  await checkEndEntity(certFromFile("ee-nsSGC"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+  await checkEndEntity(
+    certFromFile("ee-nsSGC"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
 
   
   
-  await checkEndEntity(certFromFile("ee-SA-OCSP"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+  await checkEndEntity(
+    certFromFile("ee-SA-OCSP"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
 
   
   loadCertWithTrust("int-SA", ",,");
@@ -84,7 +107,10 @@ add_task(async function() {
   
   
   loadCertWithTrust("int-CA", ",,");
-  await checkEndEntity(certFromFile("ee-int-CA"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+  await checkEndEntity(
+    certFromFile("ee-int-CA"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
   
   loadCertWithTrust("int-SA-nsSGC", ",,");
   await checkEndEntity(certFromFile("ee-int-SA-nsSGC"), PRErrorCodeSuccess);
@@ -98,39 +124,63 @@ add_task(async function() {
   
   Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 0);
   info("Netscape Step Up policy: always accept");
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-recent"),
-                          PRErrorCodeSuccess);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-old"),
-                          PRErrorCodeSuccess);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-older"),
-                          PRErrorCodeSuccess);
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-recent"),
+    PRErrorCodeSuccess
+  );
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-old"),
+    PRErrorCodeSuccess
+  );
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-older"),
+    PRErrorCodeSuccess
+  );
   
   info("Netscape Step Up policy: accept before 23 August 2016");
   Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 1);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-recent"),
-                          SEC_ERROR_INADEQUATE_CERT_TYPE);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-old"),
-                          PRErrorCodeSuccess);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-older"),
-                          PRErrorCodeSuccess);
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-recent"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-old"),
+    PRErrorCodeSuccess
+  );
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-older"),
+    PRErrorCodeSuccess
+  );
   
   info("Netscape Step Up policy: accept before 23 August 2015");
   Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 2);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-recent"),
-                          SEC_ERROR_INADEQUATE_CERT_TYPE);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-old"),
-                          SEC_ERROR_INADEQUATE_CERT_TYPE);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-older"),
-                          PRErrorCodeSuccess);
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-recent"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-old"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-older"),
+    PRErrorCodeSuccess
+  );
   
   info("Netscape Step Up policy: never accept");
   Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 3);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-recent"),
-                          SEC_ERROR_INADEQUATE_CERT_TYPE);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-old"),
-                          SEC_ERROR_INADEQUATE_CERT_TYPE);
-  await checkCertOn25August2016(certFromFile("ee-int-nsSGC-older"),
-                          SEC_ERROR_INADEQUATE_CERT_TYPE);
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-recent"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-old"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
+  await checkCertOn25August2016(
+    certFromFile("ee-int-nsSGC-older"),
+    SEC_ERROR_INADEQUATE_CERT_TYPE
+  );
 
   
   

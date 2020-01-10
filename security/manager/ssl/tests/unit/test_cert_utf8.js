@@ -7,8 +7,9 @@
 
 do_get_profile();
 
-const gCertDB = Cc["@mozilla.org/security/x509certdb;1"]
-                  .getService(Ci.nsIX509CertDB);
+const gCertDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 function run_test() {
   const pem =
@@ -48,31 +49,49 @@ function run_test() {
   
   
   
-  notEqual(cert.ASN1Structure, null,
-           "accessing nsIX509Cert.ASN1Structure shouldn't assert");
+  notEqual(
+    cert.ASN1Structure,
+    null,
+    "accessing nsIX509Cert.ASN1Structure shouldn't assert"
+  );
 
   
   
-  let certificateToAlterFile =
-    do_get_file("test_cert_utf8/certificateToAlter.pem", false);
-  let certificateBytesToAlter =
-    atob(pemToBase64(readFile(certificateToAlterFile)));
+  let certificateToAlterFile = do_get_file(
+    "test_cert_utf8/certificateToAlter.pem",
+    false
+  );
+  let certificateBytesToAlter = atob(
+    pemToBase64(readFile(certificateToAlterFile))
+  );
   testUTF8InField("issuerName", "ISSUER CN", certificateBytesToAlter);
   testUTF8InField("issuerOrganization", "ISSUER O", certificateBytesToAlter);
-  testUTF8InField("issuerOrganizationUnit", "ISSUER OU",
-                  certificateBytesToAlter);
+  testUTF8InField(
+    "issuerOrganizationUnit",
+    "ISSUER OU",
+    certificateBytesToAlter
+  );
   testUTF8InField("issuerCommonName", "ISSUER CN", certificateBytesToAlter);
   testUTF8InField("organization", "SUBJECT O", certificateBytesToAlter);
   testUTF8InField("organizationalUnit", "SUBJECT OU", certificateBytesToAlter);
   testUTF8InField("subjectName", "SUBJECT CN", certificateBytesToAlter);
   testUTF8InField("displayName", "SUBJECT CN", certificateBytesToAlter);
   testUTF8InField("commonName", "SUBJECT CN", certificateBytesToAlter);
-  testUTF8InField("emailAddress", "SUBJECT EMAILADDRESS",
-                  certificateBytesToAlter);
-  testUTF8InField("subjectAltNames", "SUBJECT ALT DNSNAME",
-                  certificateBytesToAlter);
-  testUTF8InField("subjectAltNames", "SUBJECT ALT RFC822@NAME",
-                  certificateBytesToAlter);
+  testUTF8InField(
+    "emailAddress",
+    "SUBJECT EMAILADDRESS",
+    certificateBytesToAlter
+  );
+  testUTF8InField(
+    "subjectAltNames",
+    "SUBJECT ALT DNSNAME",
+    certificateBytesToAlter
+  );
+  testUTF8InField(
+    "subjectAltNames",
+    "SUBJECT ALT RFC822@NAME",
+    certificateBytesToAlter
+  );
 }
 
 
@@ -91,18 +110,28 @@ function testUTF8InField(field, replacementPrefix, certificateBytesToAlter) {
     replacement += "\xEB";
   }
   let bytes = certificateBytesToAlter.replace(toReplace, replacement);
-  let uniqueIssuerReplacement = "ALWAYS MAKE ME UNIQU" +
-                                String.fromCharCode(gUniqueIssuerCounter);
+  let uniqueIssuerReplacement =
+    "ALWAYS MAKE ME UNIQU" + String.fromCharCode(gUniqueIssuerCounter);
   bytes = bytes.replace("ALWAYS MAKE ME UNIQUE", uniqueIssuerReplacement);
-  ok(gUniqueIssuerCounter < 127,
-     "should have enough ASCII replacements to make a unique issuer DN");
+  ok(
+    gUniqueIssuerCounter < 127,
+    "should have enough ASCII replacements to make a unique issuer DN"
+  );
   gUniqueIssuerCounter++;
   let cert = gCertDB.constructX509(bytes);
   notEqual(cert[field], null, `accessing nsIX509Cert.${field} shouldn't fail`);
-  notEqual(cert.ASN1Structure, null,
-           "accessing nsIX509Cert.ASN1Structure shouldn't assert");
-  notEqual(cert.getEmailAddresses(), null,
-           "calling nsIX509Cert.getEmailAddresses() shouldn't assert");
-  ok(!cert.containsEmailAddress("test@test.test"),
-     "calling nsIX509Cert.containsEmailAddress() shouldn't assert");
+  notEqual(
+    cert.ASN1Structure,
+    null,
+    "accessing nsIX509Cert.ASN1Structure shouldn't assert"
+  );
+  notEqual(
+    cert.getEmailAddresses(),
+    null,
+    "calling nsIX509Cert.getEmailAddresses() shouldn't assert"
+  );
+  ok(
+    !cert.containsEmailAddress("test@test.test"),
+    "calling nsIX509Cert.containsEmailAddress() shouldn't assert"
+  );
 }

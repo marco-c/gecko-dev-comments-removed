@@ -13,8 +13,9 @@
 
 
 function run_test() {
-  let SSService = Cc["@mozilla.org/ssservice;1"]
-                    .getService(Ci.nsISiteSecurityService);
+  let SSService = Cc["@mozilla.org/ssservice;1"].getService(
+    Ci.nsISiteSecurityService
+  );
   let secInfo = new FakeTransportSecurityInfo();
   let unlikelyHost = "highlyunlikely.example.com";
   let uri = Services.io.newURI("https://" + unlikelyHost);
@@ -31,8 +32,13 @@ function run_test() {
   ok(SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 
   
-  ok(!SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, subDomainUri,
-                            0));
+  ok(
+    !SSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      subDomainUri,
+      0
+    )
+  );
 
   
   SSService.clearAll();
@@ -54,14 +60,24 @@ function run_test() {
   ok(SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 
   
-  ok(SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, subDomainUri,
-                           0));
+  ok(
+    SSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      subDomainUri,
+      0
+    )
+  );
 
   
   
-  SSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                          "max-age=0", secInfo, 0,
-                          Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
+  SSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=0",
+    secInfo,
+    0,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
 
   
   ok(!SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));

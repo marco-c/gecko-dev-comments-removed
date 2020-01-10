@@ -9,8 +9,9 @@
 "use strict";
 
 do_get_profile(); 
-const certdb = Cc["@mozilla.org/security/x509certdb;1"]
-                 .getService(Ci.nsIX509CertDB);
+const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 
 
@@ -27,9 +28,13 @@ function loadCertWithTrust(certName, trustString) {
 }
 
 function checkEndEntity(cert, expectedResult) {
-  return checkCertErrorGenericAtTime(certdb, cert, expectedResult,
-                                     certificateUsageSSLServer,
-                                     VALIDATION_TIME);
+  return checkCertErrorGenericAtTime(
+    certdb,
+    cert,
+    expectedResult,
+    certificateUsageSSLServer,
+    VALIDATION_TIME
+  );
 }
 
 add_task(async function() {
@@ -94,15 +99,33 @@ add_task(async function() {
 
   
   Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 1);
-  await checkEndEntity(certFromFile("ee-pre_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-  await checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-  await checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+  await checkEndEntity(
+    certFromFile("ee-pre_int-pre"),
+    SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+  );
+  await checkEndEntity(
+    certFromFile("ee-post_int-pre"),
+    SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+  );
+  await checkEndEntity(
+    certFromFile("ee-post_int-post"),
+    SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+  );
 
   
   Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 2);
-  await checkEndEntity(certFromFile("ee-pre_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-  await checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-  await checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+  await checkEndEntity(
+    certFromFile("ee-pre_int-pre"),
+    SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+  );
+  await checkEndEntity(
+    certFromFile("ee-post_int-pre"),
+    SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+  );
+  await checkEndEntity(
+    certFromFile("ee-post_int-post"),
+    SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+  );
 
   
   
@@ -110,10 +133,22 @@ add_task(async function() {
   Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 3);
   if (isDebugBuild) {
     let root = certFromFile("ca");
-    Services.prefs.setCharPref("security.test.built_in_root_hash", root.sha256Fingerprint);
-    await checkEndEntity(certFromFile("ee-pre_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-    await checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-    await checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+    Services.prefs.setCharPref(
+      "security.test.built_in_root_hash",
+      root.sha256Fingerprint
+    );
+    await checkEndEntity(
+      certFromFile("ee-pre_int-pre"),
+      SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+    );
+    await checkEndEntity(
+      certFromFile("ee-post_int-pre"),
+      SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+    );
+    await checkEndEntity(
+      certFromFile("ee-post_int-post"),
+      SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+    );
     Services.prefs.clearUserPref("security.test.built_in_root_hash");
   }
 
@@ -128,10 +163,19 @@ add_task(async function() {
   Services.prefs.setIntPref("security.pki.sha1_enforcement_level", 4);
   if (isDebugBuild) {
     let root = certFromFile("ca");
-    Services.prefs.setCharPref("security.test.built_in_root_hash", root.sha256Fingerprint);
+    Services.prefs.setCharPref(
+      "security.test.built_in_root_hash",
+      root.sha256Fingerprint
+    );
     await checkEndEntity(certFromFile("ee-pre_int-pre"), PRErrorCodeSuccess);
-    await checkEndEntity(certFromFile("ee-post_int-pre"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
-    await checkEndEntity(certFromFile("ee-post_int-post"), SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED);
+    await checkEndEntity(
+      certFromFile("ee-post_int-pre"),
+      SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+    );
+    await checkEndEntity(
+      certFromFile("ee-post_int-post"),
+      SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED
+    );
     Services.prefs.clearUserPref("security.test.built_in_root_hash");
   }
 

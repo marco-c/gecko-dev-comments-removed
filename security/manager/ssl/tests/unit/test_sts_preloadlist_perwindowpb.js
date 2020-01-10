@@ -1,7 +1,8 @@
 "use strict";
 
-var gSSService = Cc["@mozilla.org/ssservice;1"]
-                   .getService(Ci.nsISiteSecurityService);
+var gSSService = Cc["@mozilla.org/ssservice;1"].getService(
+  Ci.nsISiteSecurityService
+);
 
 function Observer() {}
 Observer.prototype = {
@@ -33,81 +34,161 @@ function run_test() {
 
 function test_part1() {
   
-  ok(!gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://nonexistent.example.com"), 0));
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://nonexistent.example.com"),
+      0
+    )
+  );
 
   
-  ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             Services.io.newURI("https://com"), 0));
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://com"),
+      0
+    )
+  );
 
   
-  Services.prefs.setBoolPref("network.stricttransportsecurity.preloadlist", false);
-  ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             Services.io.newURI("https://includesubdomains.preloaded.test"),
-                             0));
-  Services.prefs.setBoolPref("network.stricttransportsecurity.preloadlist", true);
-  ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            Services.io.newURI("https://includesubdomains.preloaded.test"),
-                            0));
+  Services.prefs.setBoolPref(
+    "network.stricttransportsecurity.preloadlist",
+    false
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://includesubdomains.preloaded.test"),
+      0
+    )
+  );
+  Services.prefs.setBoolPref(
+    "network.stricttransportsecurity.preloadlist",
+    true
+  );
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://includesubdomains.preloaded.test"),
+      0
+    )
+  );
 
   
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"), 0));
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"),
+      0
+    )
+  );
 
   
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://a.b.c.def.includesubdomains.preloaded.test"), 0));
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://a.b.c.def.includesubdomains.preloaded.test"),
+      0
+    )
+  );
 
   
-  ok(!gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.noincludesubdomains.preloaded.test"), 0));
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI(
+        "https://subdomain.noincludesubdomains.preloaded.test"
+      ),
+      0
+    )
+  );
 
   
-  ok(!gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://notsts.nonexistent.example.com."), 0));
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://notsts.nonexistent.example.com."),
+      0
+    )
+  );
 
   
   
   let uri = Services.io.newURI("https://includesubdomains.preloaded.test");
-  let subDomainUri =
-    Services.io.newURI("https://subdomain.includesubdomains.preloaded.test");
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=0", secInfo, 0,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
+  let subDomainUri = Services.io.newURI(
+    "https://subdomain.includesubdomains.preloaded.test"
+  );
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=0",
+    secInfo,
+    0,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
   ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
-  ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             subDomainUri, 0));
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      subDomainUri,
+      0
+    )
+  );
   
   
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=1000", secInfo, 0,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=1000",
+    secInfo,
+    0,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
   ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
   
-  ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             subDomainUri, 0));
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      subDomainUri,
+      0
+    )
+  );
   gSSService.clearAll();
 
   
   
-  uri = Services.io.newURI("https://subdomain.noincludesubdomains.preloaded.test");
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=0", secInfo, 0,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
-  ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            Services.io.newURI("https://noincludesubdomains.preloaded.test"),
-                            0));
+  uri = Services.io.newURI(
+    "https://subdomain.noincludesubdomains.preloaded.test"
+  );
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=0",
+    secInfo,
+    0,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://noincludesubdomains.preloaded.test"),
+      0
+    )
+  );
   ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 
-  uri = Services.io.newURI("https://subdomain.includesubdomains.preloaded.test");
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=0", secInfo, 0,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
+  uri = Services.io.newURI(
+    "https://subdomain.includesubdomains.preloaded.test"
+  );
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=0",
+    secInfo,
+    0,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
   
   
   
@@ -117,38 +198,73 @@ function test_part1() {
   
   
   
-  ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            Services.io.newURI("https://includesubdomains.preloaded.test"),
-                            0));
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"), 0));
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://sibling.includesubdomains.preloaded.test"), 0));
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://another.subdomain.includesubdomains.preloaded.test"),
-       0));
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://includesubdomains.preloaded.test"),
+      0
+    )
+  );
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"),
+      0
+    )
+  );
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://sibling.includesubdomains.preloaded.test"),
+      0
+    )
+  );
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI(
+        "https://another.subdomain.includesubdomains.preloaded.test"
+      ),
+      0
+    )
+  );
 
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=1000", secInfo, 0,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=1000",
+    secInfo,
+    0,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
   
   
   
   
   
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"), 0));
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://sibling.includesubdomains.preloaded.test"), 0));
-  ok(!gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://another.subdomain.includesubdomains.preloaded.test"),
-       0));
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"),
+      0
+    )
+  );
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://sibling.includesubdomains.preloaded.test"),
+      0
+    )
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI(
+        "https://another.subdomain.includesubdomains.preloaded.test"
+      ),
+      0
+    )
+  );
 
   
   
@@ -158,9 +274,14 @@ function test_part1() {
   
   uri = Services.io.newURI("https://includesubdomains2.preloaded.test");
   ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=1", secInfo, 0,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=1",
+    secInfo,
+    0,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
   do_timeout(1250, function() {
     ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
     run_next_test();
@@ -172,39 +293,96 @@ const IS_PRIVATE = Ci.nsISocketProvider.NO_PERMANENT_STORAGE;
 function test_private_browsing1() {
   gSSService.clearAll();
   let uri = Services.io.newURI("https://includesubdomains.preloaded.test");
-  let subDomainUri =
-    Services.io.newURI("https://a.b.c.subdomain.includesubdomains.preloaded.test");
+  let subDomainUri = Services.io.newURI(
+    "https://a.b.c.subdomain.includesubdomains.preloaded.test"
+  );
   
-  ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                            IS_PRIVATE));
-  ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, subDomainUri,
-                            IS_PRIVATE));
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      uri,
+      IS_PRIVATE
+    )
+  );
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      subDomainUri,
+      IS_PRIVATE
+    )
+  );
 
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=0", secInfo, IS_PRIVATE,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
-  ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                             IS_PRIVATE));
-  ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             subDomainUri, IS_PRIVATE));
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=0",
+    secInfo,
+    IS_PRIVATE,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      uri,
+      IS_PRIVATE
+    )
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      subDomainUri,
+      IS_PRIVATE
+    )
+  );
 
   
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=1000", secInfo, IS_PRIVATE,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
-  ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, IS_PRIVATE));
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=1000",
+    secInfo,
+    IS_PRIVATE,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      uri,
+      IS_PRIVATE
+    )
+  );
   
-  ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             subDomainUri, IS_PRIVATE));
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      subDomainUri,
+      IS_PRIVATE
+    )
+  );
 
   
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=0", secInfo, IS_PRIVATE,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
-  ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                             IS_PRIVATE));
-  ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             subDomainUri, IS_PRIVATE));
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=0",
+    secInfo,
+    IS_PRIVATE,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      uri,
+      IS_PRIVATE
+    )
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      subDomainUri,
+      IS_PRIVATE
+    )
+  );
 
   
   
@@ -213,14 +391,29 @@ function test_private_browsing1() {
   
   
   uri = Services.io.newURI("https://includesubdomains2.preloaded.test");
-  ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                            IS_PRIVATE));
-  gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                           "max-age=1", secInfo, IS_PRIVATE,
-                           Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST);
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      uri,
+      IS_PRIVATE
+    )
+  );
+  gSSService.processHeader(
+    Ci.nsISiteSecurityService.HEADER_HSTS,
+    uri,
+    "max-age=1",
+    secInfo,
+    IS_PRIVATE,
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+  );
   do_timeout(1250, function() {
-    ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
-                               IS_PRIVATE));
+    ok(
+      !gSSService.isSecureURI(
+        Ci.nsISiteSecurityService.HEADER_HSTS,
+        uri,
+        IS_PRIVATE
+      )
+    );
     
     Services.obs.notifyObservers(null, "last-pb-context-exited");
   });
@@ -228,19 +421,31 @@ function test_private_browsing1() {
 
 function test_private_browsing2() {
   
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://includesubdomains.preloaded.test"), 0));
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://includesubdomains.preloaded.test"),
+      0
+    )
+  );
   
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"), 0));
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"),
+      0
+    )
+  );
 
   
   
-  ok(gSSService.isSecureURI(
-       Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://includesubdomains2.preloaded.test"), 0));
+  ok(
+    gSSService.isSecureURI(
+      Ci.nsISiteSecurityService.HEADER_HSTS,
+      Services.io.newURI("https://includesubdomains2.preloaded.test"),
+      0
+    )
+  );
 
   run_next_test();
 }

@@ -8,15 +8,19 @@
 
 
 
-const {TestUtils} = ChromeUtils.import("resource://testing-common/TestUtils.jsm");
+const { TestUtils } = ChromeUtils.import(
+  "resource://testing-common/TestUtils.jsm"
+);
 
 do_get_profile(); 
-const certdb  = Cc["@mozilla.org/security/x509certdb;1"]
-                  .getService(Ci.nsIX509CertDB);
+const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
 
 function run_certutil_on_directory(directory, args) {
-  let envSvc = Cc["@mozilla.org/process/environment;1"]
-                 .getService(Ci.nsIEnvironment);
+  let envSvc = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
   let greBinDir = Services.dirsvc.get("GreBinD", Ci.nsIFile);
   envSvc.set("DYLD_LIBRARY_PATH", greBinDir.path);
   
@@ -35,24 +39,32 @@ registerCleanupFunction(() => {
   let certDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
   certDir.append("bad_certs");
   Assert.ok(certDir.exists(), "bad_certs should exist");
-  let args = [ "-D", "-n", "manually-added-missing-intermediate" ];
+  let args = ["-D", "-n", "manually-added-missing-intermediate"];
   run_certutil_on_directory(certDir.path, args);
 });
 
 function run_test() {
   add_tls_server_setup("BadCertServer", "bad_certs");
   
-  add_connection_test("ee-from-missing-intermediate.example.com",
-                      SEC_ERROR_UNKNOWN_ISSUER);
+  add_connection_test(
+    "ee-from-missing-intermediate.example.com",
+    SEC_ERROR_UNKNOWN_ISSUER
+  );
 
   
   add_test(() => {
     
     
     
-    let args = [ "-A", "-n", "manually-added-missing-intermediate", "-i",
-                 "test_missing_intermediate/missing-intermediate.der", "-t",
-                 ",," ];
+    let args = [
+      "-A",
+      "-n",
+      "manually-added-missing-intermediate",
+      "-i",
+      "test_missing_intermediate/missing-intermediate.der",
+      "-t",
+      ",,",
+    ];
     let certDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
     certDir.append("bad_certs");
     Assert.ok(certDir.exists(), "bad_certs should exist");
@@ -63,12 +75,16 @@ function run_test() {
   
   
   add_test(() => {
-    TestUtils.topicObserved("psm:intermediate-certs-cached").then(run_next_test);
+    TestUtils.topicObserved("psm:intermediate-certs-cached").then(
+      run_next_test
+    );
     run_next_test();
   });
   
-  add_connection_test("ee-from-missing-intermediate.example.com",
-                      PRErrorCodeSuccess);
+  add_connection_test(
+    "ee-from-missing-intermediate.example.com",
+    PRErrorCodeSuccess
+  );
 
   
   
@@ -78,14 +94,16 @@ function run_test() {
   
   add_test(() => {
     
-    let args = [ "-D", "-n", "Missing Intermediate" ];
+    let args = ["-D", "-n", "Missing Intermediate"];
     run_certutil_on_directory(do_get_profile().path, args);
     run_next_test();
   });
 
   
-  add_connection_test("ee-from-missing-intermediate.example.com",
-                      PRErrorCodeSuccess);
+  add_connection_test(
+    "ee-from-missing-intermediate.example.com",
+    PRErrorCodeSuccess
+  );
 
   run_next_test();
 }
