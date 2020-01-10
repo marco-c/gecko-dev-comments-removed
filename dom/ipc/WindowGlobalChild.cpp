@@ -389,9 +389,13 @@ void WindowGlobalChild::SetDocumentURI(nsIURI* aDocumentURI) {
   
   
   
+  uint64_t embedderInnerWindowID = 0;
+  if (mBrowsingContext->GetParent()) {
+    embedderInnerWindowID = mBrowsingContext->GetEmbedderInnerWindowId();
+  }
   profiler_register_page(mBrowsingContext->Id(), mInnerWindowId,
                          aDocumentURI->GetSpecOrDefault(),
-                         mBrowsingContext->GetParent() != nullptr);
+                         embedderInnerWindowID);
 #endif
   mDocumentURI = aDocumentURI;
   SendUpdateDocumentURI(aDocumentURI);
