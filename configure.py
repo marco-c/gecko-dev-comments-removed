@@ -24,6 +24,7 @@ from mozbuild.backend.configenvironment import PartialConfigEnvironment
 from mozbuild.util import (
     indented_repr,
     encode,
+    system_encoding,
 )
 import mozpack.path as mozpath
 
@@ -74,15 +75,14 @@ def config_status(config):
     
     
     logging.getLogger('moz.configure').info('Creating config.status')
-    encoding = 'mbcs' if sys.platform == 'win32' else 'utf-8'
-    with codecs.open('config.status', 'w', encoding) as fh:
+    with codecs.open('config.status', 'w', system_encoding) as fh:
         fh.write(textwrap.dedent('''\
             #!%(python)s
             # coding=%(encoding)s
             from __future__ import unicode_literals
             from mozbuild.util import encode
             encoding = '%(encoding)s'
-        ''') % {'python': config['PYTHON'], 'encoding': encoding})
+        ''') % {'python': config['PYTHON'], 'encoding': system_encoding})
         
         
         for k, v in sanitized_config.iteritems():
@@ -125,7 +125,7 @@ def config_status(config):
 
         
         
-        return config_status(args=[], **encode(sanitized_config, encoding))
+        return config_status(args=[], **encode(sanitized_config, system_encoding))
     return 0
 
 
