@@ -1547,15 +1547,8 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
     Rooted<LazyScript*> lazy(cx, fun->lazyScript());
     RootedScript script(cx, lazy->maybeScript());
 
-    
-    
-    
-    
-    
-    
-    
     bool isBinAST = lazy->scriptSource()->hasBinASTSource();
-    bool canRelazify = !lazy->hasInnerFunctions() && !lazy->hasDirectEval();
+    bool canRelazify = lazy->canRelazify();
 
     if (script) {
       

@@ -3348,6 +3348,15 @@ class LazyScript : public BaseScript {
     return &functionOrGlobal_->as<JSFunction>();
   }
 
+  bool canRelazify() const {
+    
+    
+    
+    
+    
+    return !hasInnerFunctions() && !hasDirectEval();
+  }
+
   void initScript(JSScript* script);
 
   JSScript* maybeScript() { return script_; }
