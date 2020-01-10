@@ -890,6 +890,14 @@ void BrowsingContext::DisplayLoadError(const nsAString& aURI) {
   }
 }
 
+WindowProxyHolder BrowsingContext::Window() {
+  return WindowProxyHolder(Self());
+}
+
+WindowProxyHolder BrowsingContext::GetFrames(ErrorResult& aError) {
+  return Window();
+}
+
 void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
   
   
