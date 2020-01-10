@@ -2419,6 +2419,18 @@ SearchService.prototype = {
       this._currentEngine = null;
     }
 
+    
+    
+    
+    
+    
+    if (
+      gSeparatePrivateDefault &&
+      engineToRemove == this.defaultPrivateEngine
+    ) {
+      this._currentPrivateEngine = null;
+    }
+
     if (engineToRemove._readOnly || engineToRemove.isBuiltin) {
       
       
@@ -2546,7 +2558,9 @@ SearchService.prototype = {
 
   _getEngineDefault(privateMode) {
     this._ensureInitialized();
-    const currentEngine = `_current${privateMode ? "Private" : ""}Engine`;
+    const currentEngine = privateMode
+      ? "_currentPrivateEngine"
+      : "_currentEngine";
     if (!this[currentEngine]) {
       let name = this.getGlobalAttr(privateMode ? "private" : "current");
       let engine = this.getEngineByName(name);
