@@ -215,9 +215,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       );
     }
 
-    this.traits = {
-      selectedObjectActor: true, 
-    };
+    this.traits = {};
 
     if (this.dbg.replaying && !isWorker) {
       this.dbg.onConsoleMessage = this.onReplayingMessage.bind(this);
