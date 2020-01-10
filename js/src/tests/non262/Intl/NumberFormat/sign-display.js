@@ -119,8 +119,7 @@ const testcases = [
             {value: 0.9, string: "+0.9", parts: [PlusSign("+"), Integer("0"), Decimal("."), Fraction("9")]},
             {value: -0.9, string: "-0.9", parts: [MinusSign("-"), Integer("0"), Decimal("."), Fraction("9")]},
 
-            
-            {value:  Infinity, string: "∞", parts: [Inf("∞")]},
+            {value:  Infinity, string: "+∞", parts: [PlusSign("+"), Inf("∞")]},
             {value: -Infinity, string: "-∞", parts: [MinusSign("-"), Inf("∞")]},
 
             {value:  NaN, string: "NaN", parts: [Nan("NaN")]},
