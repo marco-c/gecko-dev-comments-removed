@@ -147,11 +147,9 @@ add_task(async function test_search_handoff_on_paste() {
   await new Promise(r =>
     EventUtils.synthesizeKey("v", { accelKey: true }, win, r)
   );
-  
-  
-  if (UrlbarPrefs.get("quantumbar")) {
-    await UrlbarTestUtils.promiseSearchComplete(win);
-  }
+
+  await UrlbarTestUtils.promiseSearchComplete(win);
+
   ok(urlBarHasNormalFocus(win), "url bar has normal focused");
   is(win.gURLBar.value, "@google words", "url bar has search text");
 

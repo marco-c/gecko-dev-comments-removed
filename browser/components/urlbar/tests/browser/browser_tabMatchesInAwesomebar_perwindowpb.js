@@ -83,10 +83,7 @@ async function runTest(aSourceWindow, aDestWindow, aExpectSwitch, aCallback) {
   );
 
   
-  
-  let searchString = UrlbarPrefs.get("quantumbar")
-    ? TEST_URL
-    : TEST_URL.slice(1);
+  let searchString = TEST_URL;
   await promiseAutocompleteResultPopup(searchString, aDestWindow);
 
   info(`awesomebar popup appeared. aExpectSwitch: ${aExpectSwitch}`);

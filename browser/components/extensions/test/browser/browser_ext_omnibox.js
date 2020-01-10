@@ -266,11 +266,6 @@ add_task(async function() {
     await extension.awaitMessage("set-synchronous-set");
 
     let text = await startInputSession();
-    if (!UrlbarPrefs.get("quantumbar")) {
-      
-      
-      await waitForResult(0);
-    }
 
     extension.sendMessage(info.test);
     await extension.awaitMessage("test-ready");

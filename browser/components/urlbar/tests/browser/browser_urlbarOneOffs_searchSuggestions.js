@@ -134,10 +134,6 @@ add_task(async function test_clickAfterSuggestion_nonDefault() {
 
 
 add_task(async function test_selectOneOffThenSuggestion() {
-  if (!UrlbarPrefs.get("quantumbar")) {
-    
-    return;
-  }
   await BrowserTestUtils.withNewTab(gBrowser, async () => {
     let typedValue = "foo";
     await promiseAutocompleteResultPopup(typedValue, window, true);

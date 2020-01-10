@@ -61,10 +61,8 @@ add_task(async function mainTest() {
       EventUtils.synthesizeKey("l");
 
       
-      
-      
       await TestUtils.waitForCondition(() => {
-        return UrlbarTestUtils.getResultCount(window) >= 2;
+        return UrlbarTestUtils.getResultCount(window) == 2;
       });
 
       
@@ -102,18 +100,6 @@ add_task(async function mainTest() {
       
       let count = UrlbarTestUtils.getResultCount(window);
       for (let i = 1; i < count; i++) {
-        if (!UrlbarPrefs.get("quantumbar")) {
-          
-          
-          
-          
-          try {
-            gURLBar.controller.getFinalCompleteValueAt(i);
-          } catch (ex) {
-            info("getFinalCompleteValueAt exception: " + ex);
-            continue;
-          }
-        }
         result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
         Assert.ok(
           result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||

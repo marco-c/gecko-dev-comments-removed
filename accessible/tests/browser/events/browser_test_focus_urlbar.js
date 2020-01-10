@@ -31,19 +31,10 @@ function isEventForAutocompleteItem(event) {
 
 
 function waitForSearchFinish() {
-  if (UrlbarPrefs.get("quantumbar")) {
-    return Promise.all([
-      gURLBar.lastQueryContextPromise,
-      BrowserTestUtils.waitForCondition(() => gURLBar.view.isOpen),
-    ]);
-  }
-  return BrowserTestUtils.waitForCondition(
-    () =>
-      gURLBar.popupOpen &&
-      gURLBar.controller.searchStatus >=
-        Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH,
-    "Waiting for search to complete"
-  );
+  return Promise.all([
+    gURLBar.lastQueryContextPromise,
+    BrowserTestUtils.waitForCondition(() => gURLBar.view.isOpen),
+  ]);
 }
 
 
@@ -132,9 +123,7 @@ async function runTests() {
   EventUtils.synthesizeKey("KEY_ArrowLeft");
   await focused;
   testStates(textBox, STATE_FOCUSED);
-  if (UrlbarPrefs.get("quantumbar")) {
-    gURLBar.view.close();
-  }
+  gURLBar.view.close();
   
   
   EventUtils.synthesizeKey("KEY_ArrowRight");

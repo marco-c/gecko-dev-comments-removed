@@ -153,11 +153,6 @@ async function typeAndCheck(values) {
     }
     await UrlbarTestUtils.promiseSearchComplete(window);
     let restIsSpaces = !expectedInputValue.substring(i + 1).trim();
-    if (restIsSpaces && !UrlbarPrefs.get("quantumbar")) {
-      
-      
-      expectedInputValue = expectedInputValue.trim();
-    }
     Assert.equal(gURLBar.value, expectedInputValue);
     Assert.equal(gURLBar.selectionStart, i + 1);
     Assert.equal(gURLBar.selectionEnd, expectedInputValue.length);

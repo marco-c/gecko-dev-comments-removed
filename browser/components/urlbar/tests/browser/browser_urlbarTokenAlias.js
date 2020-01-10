@@ -269,12 +269,6 @@ add_task(async function enterAndFillAlias() {
     }
   }
 
-  if (!UrlbarPrefs.get("quantumbar")) {
-    
-    
-    index--;
-  }
-
   
   EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index });
   EventUtils.synthesizeKey("KEY_Enter");

@@ -128,10 +128,9 @@ add_task(async function() {
     );
     
     
-    let expected_tags =
-      UrlbarPrefs.get("quantumbar") && !testcase.expected.typeImageVisible
-        ? []
-        : [testcase.tagName];
+    let expected_tags = !testcase.expected.typeImageVisible
+      ? []
+      : [testcase.tagName];
     Assert.deepEqual(
       result.tags,
       expected_tags,

@@ -155,11 +155,6 @@ add_task(async function test_composition() {
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Popup should be open");
   EventUtils.synthesizeKey("I", {});
   EventUtils.synthesizeKey("n", {});
-  
-  
-  if (!UrlbarPrefs.get("quantumbar")) {
-    await UrlbarTestUtils.promiseSearchComplete(window);
-  }
   await UrlbarTestUtils.promisePopupClose(window, () => {
     EventUtils.synthesizeKey("KEY_Escape", {});
   });
