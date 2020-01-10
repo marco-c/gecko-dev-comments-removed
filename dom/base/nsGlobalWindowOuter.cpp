@@ -5852,7 +5852,8 @@ bool nsGlobalWindowOuter::GatherPostMessageData(
     JSContext* aCx, const nsAString& aTargetOrigin, BrowsingContext** aSource,
     nsAString& aOrigin, nsIURI** aTargetOriginURI,
     nsIPrincipal** aCallerPrincipal, nsGlobalWindowInner** aCallerInnerWindow,
-    nsIURI** aCallerDocumentURI, ErrorResult& aError) {
+    nsIURI** aCallerDocumentURI, Maybe<nsID>* aCallerAgentClusterId,
+    ErrorResult& aError) {
   
   
   
@@ -5936,6 +5937,12 @@ bool nsGlobalWindowOuter::GatherPostMessageData(
                              ->GetBrowsingContext());
   } else {
     *aSource = nullptr;
+  }
+
+  if (aCallerAgentClusterId && callerInnerWin &&
+      callerInnerWin->GetDocGroup()) {
+    *aCallerAgentClusterId =
+        Some(callerInnerWin->GetDocGroup()->AgentClusterId());
   }
 
   callerInnerWin.forget(aCallerInnerWindow);
@@ -6045,11 +6052,12 @@ void nsGlobalWindowOuter::PostMessageMozOuter(JSContext* aCx,
   nsCOMPtr<nsIPrincipal> callerPrincipal;
   RefPtr<nsGlobalWindowInner> callerInnerWindow;
   nsCOMPtr<nsIURI> callerDocumentURI;
-  if (!GatherPostMessageData(aCx, aTargetOrigin, getter_AddRefs(sourceBc),
-                             origin, getter_AddRefs(targetOriginURI),
-                             getter_AddRefs(callerPrincipal),
-                             getter_AddRefs(callerInnerWindow),
-                             getter_AddRefs(callerDocumentURI), aError)) {
+  Maybe<nsID> callerAgentClusterId = Nothing();
+  if (!GatherPostMessageData(
+          aCx, aTargetOrigin, getter_AddRefs(sourceBc), origin,
+          getter_AddRefs(targetOriginURI), getter_AddRefs(callerPrincipal),
+          getter_AddRefs(callerInnerWindow), getter_AddRefs(callerDocumentURI),
+          &callerAgentClusterId, aError)) {
     return;
   }
 
@@ -6064,7 +6072,8 @@ void nsGlobalWindowOuter::PostMessageMozOuter(JSContext* aCx,
   
   RefPtr<PostMessageEvent> event = new PostMessageEvent(
       sourceBc, origin, this, providedPrincipal,
-      callerInnerWindow ? callerInnerWindow->WindowID() : 0, callerDocumentURI);
+      callerInnerWindow ? callerInnerWindow->WindowID() : 0, callerDocumentURI,
+      callerAgentClusterId);
 
   JS::CloneDataPolicy clonePolicy;
   if (GetDocGroup() && callerInnerWindow &&
