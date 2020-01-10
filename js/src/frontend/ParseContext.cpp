@@ -590,13 +590,6 @@ bool ParseContext::declareFunctionArgumentsObject(
     if (sc()->bindingsAccessedDynamically()) {
       funbox->setDefinitelyNeedsArgsObj();
     }
-
-    
-    
-    
-    if (sc()->hasDebuggerStatement()) {
-      funbox->setDefinitelyNeedsArgsObj();
-    }
   }
 
   return true;

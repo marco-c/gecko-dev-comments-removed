@@ -43,7 +43,7 @@ function test(code, debugStmts, followupStmts) {
     var hits = 0;
 
     var g = newGlobal({newCompartment: true});
-    g.eval("function debugMe() { var x = 'wrong-x'; debugger; }");
+    g.eval("function debugMe() { var x = 'wrong-x'; eval(\"\"); debugger; }");
     g.capture = null;
 
     var dbg = Debugger(g);
@@ -70,16 +70,16 @@ function test(code, debugStmts, followupStmts) {
 
 for (var s of cases) {
     
-    test(s, "debugger; assertEq(x, 'ok');");
+    test(s, "eval(\"\"); debugger; assertEq(x, 'ok');");
 
     
     test(s, "debugMe(); assertEq(x, 'ok');");
 
     
-    test(s, "{ let y = 'irrelevant'; (function (z) { { let zz = y; debugger; } })(); } assertEq(x, 'ok');"),
+    test(s, "{ let y = 'irrelevant'; (function (z) { { let zz = y; eval(\"\"); debugger; } })(); } assertEq(x, 'ok');"),
 
     
     
-    test(s, "capture = {dbg: function () { debugger; }, get x() { return x; }};",
+    test(s, "capture = {dbg: function () { eval(\"\"); debugger; }, get x() { return x; }};",
             "assertEq(capture.x, VAL); capture.dbg(); assertEq(capture.x, 'ok');");
 }

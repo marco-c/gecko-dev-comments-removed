@@ -141,11 +141,6 @@ class SharedContext {
   bool bindingsAccessedDynamically_ : 1;
 
   
-  
-  
-  bool hasDebuggerStatement_ : 1;
-
-  
   bool hasDirectEval_ : 1;
 
   void computeAllowSyntax(Scope* scope);
@@ -169,7 +164,6 @@ class SharedContext {
         needsThisTDZChecks_(false),
         hasExplicitUseStrict_(false),
         bindingsAccessedDynamically_(false),
-        hasDebuggerStatement_(false),
         hasDirectEval_(false) {}
 
   
@@ -211,12 +205,10 @@ class SharedContext {
   bool bindingsAccessedDynamically() const {
     return bindingsAccessedDynamically_;
   }
-  bool hasDebuggerStatement() const { return hasDebuggerStatement_; }
   bool hasDirectEval() const { return hasDirectEval_; }
 
   void setExplicitUseStrict() { hasExplicitUseStrict_ = true; }
   void setBindingsAccessedDynamically() { bindingsAccessedDynamically_ = true; }
-  void setHasDebuggerStatement() { hasDebuggerStatement_ = true; }
   void setHasDirectEval() { hasDirectEval_ = true; }
 
   inline bool allBindingsClosedOver();
