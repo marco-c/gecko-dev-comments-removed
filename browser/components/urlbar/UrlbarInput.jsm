@@ -59,6 +59,8 @@ class UrlbarInput {
     
     
     let MozXULElement = this.window.MozXULElement;
+    
+    
     this.document.getElementById("mainPopupSet").appendChild(
       MozXULElement.parseXULToFragment(`
         <panel id="urlbar-results"
@@ -72,7 +74,8 @@ class UrlbarInput {
                rolluponmousewheel="true"
                level="parent">
           <html:div class="urlbarView-body-outer">
-            <html:div class="urlbarView-body-inner">
+            <html:div class="urlbarView-body-inner"
+                      role="combobox">
               <html:div id="urlbarView-results"
                         role="listbox"/>
             </html:div>
