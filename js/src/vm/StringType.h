@@ -1643,6 +1643,19 @@ extern bool StringIsAscii(JSLinearString* str);
 
 extern bool StringEqualsAscii(JSLinearString* str, const char* asciiBytes);
 
+
+
+
+
+extern bool StringEqualsAscii(JSLinearString* str, const char* asciiBytes,
+                              size_t length);
+
+template <size_t N>
+bool StringEqualsLiteral(JSLinearString* str, const char (&asciiBytes)[N]) {
+  MOZ_ASSERT(asciiBytes[N - 1] == '\0');
+  return StringEqualsAscii(str, asciiBytes, N - 1);
+}
+
 extern int StringFindPattern(JSLinearString* text, JSLinearString* pat,
                              size_t start);
 
