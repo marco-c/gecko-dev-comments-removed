@@ -223,14 +223,28 @@ class UrlbarProviderExtension extends UrlbarProvider {
 
 
 
-  async _notifyListener(eventName, context) {
+  pickResult(result, details) {
+    this._notifyListener("resultPicked", result.payload, details);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async _notifyListener(eventName, ...args) {
     let listener = this._eventListeners.get(eventName);
     if (!listener) {
       return undefined;
     }
     let result;
     try {
-      result = listener(context);
+      result = listener(...args);
     } catch (error) {
       Cu.reportError(error);
       return undefined;
