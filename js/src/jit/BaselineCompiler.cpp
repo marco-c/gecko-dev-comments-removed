@@ -478,9 +478,8 @@ void BaselineInterpreterCodeGen::loadScriptAtom(Register index, Register dest) {
   MOZ_ASSERT(index != dest);
   loadScript(dest);
   masm.loadPtr(Address(dest, JSScript::offsetOfScriptData()), dest);
-  masm.loadPtr(Address(dest, RuntimeScriptData::offsetOfSSD()), dest);
   masm.loadPtr(
-      BaseIndex(dest, index, ScalePointer, SharedScriptData::offsetOfAtoms()),
+      BaseIndex(dest, index, ScalePointer, RuntimeScriptData::offsetOfAtoms()),
       dest);
 }
 
@@ -1224,9 +1223,7 @@ void BaselineInterpreterCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
   
   masm.loadPtr(Address(scratch1, JSScript::offsetOfScriptData()), scratch1);
   masm.loadPtr(Address(scratch1, RuntimeScriptData::offsetOfSSD()), scratch1);
-  masm.load32(Address(scratch1, SharedScriptData::offsetOfCodeOffset()),
-              scratch2);
-  masm.addPtr(scratch2, scratch1);
+  masm.addPtr(Imm32(SharedScriptData::offsetOfCode()), scratch1);
 
   if (HasInterpreterPCReg()) {
     MOZ_ASSERT(scratch1 == InterpreterPCReg,
@@ -4876,11 +4873,9 @@ void BaselineCodeGen<Handler>::emitInterpJumpToResumeEntry(Register script,
   masm.load32(BaseIndex(script, scratch, TimesOne), resumeIndex);
 
   
-  masm.load32(Address(script, SharedScriptData::offsetOfCodeOffset()), scratch);
-  masm.addPtr(scratch, script);
-
-  
-  masm.addPtr(resumeIndex, script);
+  masm.computeEffectiveAddress(BaseIndex(script, resumeIndex, TimesOne,
+                                         SharedScriptData::offsetOfCode()),
+                               script);
   Address pcAddr(BaselineFrameReg,
                  BaselineFrame::reverseOffsetOfInterpreterPC());
   masm.storePtr(script, pcAddr);
