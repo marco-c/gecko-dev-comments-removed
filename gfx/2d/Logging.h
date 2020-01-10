@@ -22,6 +22,7 @@
 #endif
 #include "2D.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/StaticPrefs.h"
 #include "Point.h"
 #include "BaseRect.h"
 #include "Matrix.h"
@@ -51,16 +52,6 @@ inline mozilla::LogLevel PRLogLevelForLevel(int aLevel) {
   return LogLevel::Debug;
 }
 #endif
-
-class LoggingPrefs {
- public:
-  
-  
-  
-  
-  
-  static Atomic<int32_t> sGfxLogLevel;
-};
 
 
 
@@ -146,7 +137,7 @@ struct BasicLogger {
   
   
   static bool ShouldOutputMessage(int aLevel) {
-    if (LoggingPrefs::sGfxLogLevel >= aLevel) {
+    if (StaticPrefs::gfx_logging_level() >= aLevel) {
 #if defined(MOZ_WIDGET_ANDROID)
       return true;
 #else
@@ -155,7 +146,7 @@ struct BasicLogger {
         return true;
       } else
 #  endif
-          if ((LoggingPrefs::sGfxLogLevel >= LOG_DEBUG_PRLOG) ||
+          if ((StaticPrefs::gfx_logging_level() >= LOG_DEBUG_PRLOG) ||
               (aLevel < LOG_DEBUG)) {
         return true;
       }
@@ -177,8 +168,7 @@ struct BasicLogger {
     
     
     
-    
-    if (LoggingPrefs::sGfxLogLevel >= aLevel) {
+    if (StaticPrefs::gfx_logging_level() >= aLevel) {
 #if defined(MOZ_WIDGET_ANDROID)
       printf_stderr("%s%s", aString.c_str(), aNoNewline ? "" : "\n");
 #else
@@ -188,7 +178,7 @@ struct BasicLogger {
                 ("%s%s", aString.c_str(), aNoNewline ? "" : "\n"));
       } else
 #  endif
-          if ((LoggingPrefs::sGfxLogLevel >= LOG_DEBUG_PRLOG) ||
+          if ((StaticPrefs::gfx_logging_level() >= LOG_DEBUG_PRLOG) ||
               (aLevel < LOG_DEBUG)) {
         printf("%s%s", aString.c_str(), aNoNewline ? "" : "\n");
       }
