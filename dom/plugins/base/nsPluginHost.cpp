@@ -15,6 +15,7 @@
 #include "nsNPAPIPluginInstance.h"
 #include "nsPluginInstanceOwner.h"
 #include "nsObjectLoadingContent.h"
+#include "nsIEventTarget.h"
 #include "nsIHTTPHeaderListener.h"
 #include "nsIHttpHeaderVisitor.h"
 #include "nsIObserverService.h"
@@ -277,6 +278,8 @@ nsPluginHost::nsPluginHost()
     : mPluginsLoaded(false),
       mOverrideInternalTypes(false),
       mPluginsDisabled(false),
+      mDoReloadOnceFindingFinished(false),
+      mAddedFinderShutdownBlocker(false),
       mPluginEpoch(0) {
   
   
@@ -317,6 +320,9 @@ nsPluginHost::nsPluginHost()
   PLUGIN_LOG(PLUGIN_LOG_ALWAYS, ("nsPluginHost::ctor\n"));
   PR_LogFlush();
 #endif
+  
+  
+  nsPluginTag::EnsureSandboxInformation();
 
   
   
@@ -392,8 +398,19 @@ nsresult nsPluginHost::ReloadPlugins() {
 
   
   
+  if (mPendingFinder) {
+    mDoReloadOnceFindingFinished = true;
+    return NS_ERROR_PLUGINS_PLUGINSNOTCHANGED;
+  }
+
+  
+  
   
 
+  
+  
+  
+  
   
   
   
@@ -1846,6 +1863,21 @@ static void WatchRegKey(uint32_t aRoot, nsCOMPtr<nsIWindowsRegKey>& aKey) {
 }
 #endif
 
+already_AddRefed<nsIAsyncShutdownClient> GetProfileChangeTeardownPhase() {
+  nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc =
+      services::GetAsyncShutdown();
+  MOZ_ASSERT(asyncShutdownSvc);
+  if (NS_WARN_IF(!asyncShutdownSvc)) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase;
+  DebugOnly<nsresult> rv =
+      asyncShutdownSvc->GetProfileChangeTeardown(getter_AddRefs(shutdownPhase));
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  return shutdownPhase.forget();
+}
+
 nsresult nsPluginHost::LoadPlugins() {
   
   
@@ -1856,6 +1888,13 @@ nsresult nsPluginHost::LoadPlugins() {
   
   if (mPluginsLoaded) return NS_OK;
 
+  
+  
+  if (mPendingFinder) {
+    mDoReloadOnceFindingFinished = true;
+    return NS_OK;
+  }
+
   if (mPluginsDisabled) return NS_OK;
 
 #ifdef XP_WIN
@@ -1865,9 +1904,15 @@ nsresult nsPluginHost::LoadPlugins() {
 
   
   
-  RefPtr<PluginFinder> pf = new PluginFinder(mFlashOnly);
+  mPendingFinder = new PluginFinder(mFlashOnly);
+  mDoReloadOnceFindingFinished = false;
+  mAddedFinderShutdownBlocker = false;
   RefPtr<nsPluginHost> self = this;
-  nsresult rv = pf->DoFullSearch(
+  
+  
+  
+  
+  nsresult rv = mPendingFinder->DoFullSearch(
       [self](
           bool aPluginsChanged, RefPtr<nsPluginTag> aPlugins,
           const nsTArray<Pair<bool, RefPtr<nsPluginTag>>>& aBlocklistRequests) {
@@ -1882,6 +1927,7 @@ nsresult nsPluginHost::LoadPlugins() {
             self->AddPluginTag(pluginTag);
           }
           self->IncrementChromeEpoch();
+          self->SendPluginsToContent();
         }
 
         
@@ -1903,14 +1949,61 @@ nsresult nsPluginHost::LoadPlugins() {
   
   
   if (NS_FAILED(rv)) {
+    mPendingFinder = nullptr;
     if (rv == NS_ERROR_NOT_AVAILABLE) {
       return NS_OK;
     }
     return rv;
   }
-  pf->Run();
+  bool dispatched = false;
+
+  
+  
+  
+  if (mFlashOnly) {
+    
+    
+    nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase =
+        GetProfileChangeTeardownPhase();
+    if (shutdownPhase) {
+      rv =
+          shutdownPhase->AddBlocker(mPendingFinder, NS_LITERAL_STRING(__FILE__),
+                                    __LINE__, NS_LITERAL_STRING(""));
+      mAddedFinderShutdownBlocker = NS_SUCCEEDED(rv);
+    }
+
+    nsCOMPtr<nsIEventTarget> target =
+        do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
+    if (NS_SUCCEEDED(rv)) {
+      rv = target->Dispatch(mPendingFinder, nsIEventTarget::DISPATCH_NORMAL);
+      dispatched = NS_SUCCEEDED(rv);
+    }
+    
+    if (mAddedFinderShutdownBlocker && !dispatched) {
+      shutdownPhase->RemoveBlocker(mPendingFinder);
+      mAddedFinderShutdownBlocker = false;
+    }
+  }
+  if (!dispatched) {
+    mPendingFinder->Run();
+    
+    mPendingFinder = nullptr;
+  }
 
   return NS_OK;
+}
+
+void nsPluginHost::FindingFinished() {
+  if (mAddedFinderShutdownBlocker) {
+    nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase =
+        GetProfileChangeTeardownPhase();
+    shutdownPhase->RemoveBlocker(mPendingFinder);
+    mAddedFinderShutdownBlocker = false;
+  }
+  mPendingFinder = nullptr;
+  if (mDoReloadOnceFindingFinished) {
+    Unused << ReloadPlugins();
+  }
 }
 
 nsresult nsPluginHost::SetPluginsInContent(
