@@ -156,7 +156,7 @@ class Instance {
 
   
 
-  void onMovingGrowMemory(uint8_t* prevMemoryBase);
+  void onMovingGrowMemory();
   void onMovingGrowTable(const Table* theTable);
 
   
