@@ -122,6 +122,23 @@ impl From<SFilterDataKey> for SFilterDataTemplate {
     }
 }
 
+impl SFilterData {
+    pub fn is_identity(&self) -> bool {
+        self.r_func == SFilterDataComponent::Identity
+            && self.g_func == SFilterDataComponent::Identity
+            && self.b_func == SFilterDataComponent::Identity
+            && self.a_func == SFilterDataComponent::Identity
+    }
+
+    pub fn update(&self, mut request: GpuDataRequest) {
+        push_component_transfer_data(&self.r_func, &mut request);
+        push_component_transfer_data(&self.g_func, &mut request);
+        push_component_transfer_data(&self.b_func, &mut request);
+        push_component_transfer_data(&self.a_func, &mut request);
+        assert!(!self.is_identity());
+    }
+}
+
 impl SFilterDataTemplate {
     
     
@@ -131,15 +148,8 @@ impl SFilterDataTemplate {
         &mut self,
         frame_state: &mut FrameBuildingState,
     ) {
-        if let Some(mut request) = frame_state.gpu_cache.request(&mut self.gpu_cache_handle) {
-            push_component_transfer_data(&self.data.r_func, &mut request);
-            push_component_transfer_data(&self.data.g_func, &mut request);
-            push_component_transfer_data(&self.data.b_func, &mut request);
-            push_component_transfer_data(&self.data.a_func, &mut request);
-            assert!(self.data.r_func != SFilterDataComponent::Identity
-                 || self.data.g_func != SFilterDataComponent::Identity
-                 || self.data.b_func != SFilterDataComponent::Identity
-                 || self.data.a_func != SFilterDataComponent::Identity);
+        if let Some(request) = frame_state.gpu_cache.request(&mut self.gpu_cache_handle) {
+            self.data.update(request);
         }
     }
 }
