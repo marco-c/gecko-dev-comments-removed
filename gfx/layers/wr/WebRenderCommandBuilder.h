@@ -260,7 +260,6 @@ class WebRenderCommandBuilder final {
   
   
   bool mDoGrouping;
-  Maybe<nsRect> mClippedGroupBounds;
 
   
   
