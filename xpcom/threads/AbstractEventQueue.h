@@ -9,6 +9,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/Mutex.h"
 
 class nsIRunnable;
@@ -47,16 +48,23 @@ class AbstractEventQueue {
   
   
   
+  
+  
+  
   virtual void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
                         EventQueuePriority aPriority,
-                        const MutexAutoLock& aProofOfLock) = 0;
+                        const MutexAutoLock& aProofOfLock,
+                        mozilla::TimeDuration* aDelay = nullptr) = 0;
 
   
   
   
   
+  
+  
   virtual already_AddRefed<nsIRunnable> GetEvent(
-      EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock) = 0;
+      EventQueuePriority* aPriority, const MutexAutoLock& aProofOfLock,
+      mozilla::TimeDuration* aLastEventDelay = nullptr) = 0;
 
   
   virtual bool IsEmpty(const MutexAutoLock& aProofOfLock) = 0;
