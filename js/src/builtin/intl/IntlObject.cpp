@@ -836,9 +836,7 @@ bool GlobalObject::initIntlObject(JSContext* cx, Handle<GlobalObject*> global) {
   if (!CreatePluralRules(cx, intl)) {
     return false;
   }
-  RootedObject relativeTimeFmtProto(
-      cx, CreateRelativeTimeFormatPrototype(cx, intl, global));
-  if (!relativeTimeFmtProto) {
+  if (!CreateRelativeTimeFormat(cx, intl)) {
     return false;
   }
 
@@ -849,20 +847,6 @@ bool GlobalObject::initIntlObject(JSContext* cx, Handle<GlobalObject*> global) {
     return false;
   }
 
-  
-  
-
-  
-  
-  
-  
-  
-  
-  global->setReservedSlot(RELATIVE_TIME_FORMAT_PROTO,
-                          ObjectValue(*relativeTimeFmtProto));
-
-  
-  
   
   
   
