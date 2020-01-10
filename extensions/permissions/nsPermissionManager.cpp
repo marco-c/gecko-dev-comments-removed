@@ -3149,7 +3149,7 @@ nsPermissionManager::SetPermissionsWithKey(const nsACString& aPermissionKey,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  RefPtr<GenericPromise::Private> promise;
+  RefPtr<GenericNonExclusivePromise::Private> promise;
   bool foundKey =
       mPermissionKeyPromiseMap.Get(aPermissionKey, getter_AddRefs(promise));
   if (promise) {
@@ -3310,7 +3310,7 @@ bool nsPermissionManager::PermissionAvailable(nsIPrincipal* aPrincipal,
 
     
     
-    RefPtr<GenericPromise::Private> promise;
+    RefPtr<GenericNonExclusivePromise::Private> promise;
     if (!mPermissionKeyPromiseMap.Get(permissionKey, getter_AddRefs(promise)) ||
         promise) {
       
@@ -3335,17 +3335,17 @@ nsPermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
     return NS_OK;
   }
 
-  nsTArray<RefPtr<GenericPromise>> promises;
+  nsTArray<RefPtr<GenericNonExclusivePromise>> promises;
   for (auto& key : GetAllKeysForPrincipal(aPrincipal)) {
-    RefPtr<GenericPromise::Private> promise;
+    RefPtr<GenericNonExclusivePromise::Private> promise;
     if (!mPermissionKeyPromiseMap.Get(key, getter_AddRefs(promise))) {
       
       
       
       
-      promise = new GenericPromise::Private(__func__);
+      promise = new GenericNonExclusivePromise::Private(__func__);
       mPermissionKeyPromiseMap.Put(
-          key, RefPtr<GenericPromise::Private>(promise).forget());
+          key, RefPtr<GenericNonExclusivePromise::Private>(promise).forget());
     }
 
     if (promise) {
@@ -3364,7 +3364,7 @@ nsPermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
   auto* thread = SystemGroup::AbstractMainThreadFor(TaskCategory::Other);
 
   RefPtr<nsIRunnable> runnable = aRunnable;
-  GenericPromise::All(thread, promises)
+  GenericNonExclusivePromise::All(thread, promises)
       ->Then(
           thread, __func__, [runnable]() { runnable->Run(); },
           []() {
