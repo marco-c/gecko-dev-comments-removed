@@ -284,7 +284,7 @@ void nsTableRowGroupFrame::PlaceChild(
   
   FinishReflowChild(aKidFrame, aPresContext, aDesiredSize, &aKidReflowInput,
                     aWM, aKidPosition, aContainerSize,
-                    ReflowChildFlags::Default);
+                    ReflowChildFlags::ApplyRelativePositioning);
 
   nsTableFrame* tableFrame = GetTableFrame();
   if (tableFrame->IsBorderCollapse()) {
@@ -410,7 +410,6 @@ void nsTableRowGroupFrame::ReflowChildren(
       ReflowChild(kidFrame, aPresContext, desiredSize, kidReflowInput, wm,
                   kidPosition, containerSize, ReflowChildFlags::Default,
                   aStatus);
-      kidReflowInput.ApplyRelativePositioning(&kidPosition, containerSize);
 
       
       PlaceChild(aPresContext, aReflowInput, kidFrame, kidReflowInput, wm,

@@ -725,15 +725,14 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
     LogicalMargin margin = kidReflowInput.ComputedLogicalMargin();
     LogicalPoint kidPt(kidWM, margin.IStart(kidWM), margin.BStart(kidWM));
 
-    kidReflowInput.ApplyRelativePositioning(&kidPt, containerSize);
-
     
     ReflowChild(kidFrame, aPresContext, kidDesiredSize, kidReflowInput, kidWM,
                 kidPt, containerSize, ReflowChildFlags::Default, aStatus);
 
     
     FinishReflowChild(kidFrame, aPresContext, kidDesiredSize, &kidReflowInput,
-                      kidWM, kidPt, containerSize, ReflowChildFlags::Default);
+                      kidWM, kidPt, containerSize,
+                      ReflowChildFlags::ApplyRelativePositioning);
 
     if (!aStatus.IsFullyComplete()) {
       nsIFrame* nextFrame = kidFrame->GetNextInFlow();

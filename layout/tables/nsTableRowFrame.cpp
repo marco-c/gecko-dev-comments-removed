@@ -891,9 +891,11 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
       
       desiredSize.ISize(wm) = availCellISize;
 
+      ReflowChildFlags flags = ReflowChildFlags::Default;
+
       if (kidReflowInput) {
         
-        kidReflowInput->ApplyRelativePositioning(&kidPosition, containerSize);
+        flags = ReflowChildFlags::ApplyRelativePositioning;
       } else if (kidFrame->IsRelativelyPositioned()) {
         
         
@@ -914,7 +916,7 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
       
       FinishReflowChild(kidFrame, aPresContext, desiredSize,
                         kidReflowInput.ptrOr(nullptr), wm, kidPosition,
-                        containerSize, ReflowChildFlags::Default);
+                        containerSize, flags);
 
       nsTableFrame* tableFrame = GetTableFrame();
       if (tableFrame->IsBorderCollapse()) {
