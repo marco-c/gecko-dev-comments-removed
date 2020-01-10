@@ -269,13 +269,10 @@ Services.obs.addObserver(
   {
     observe(subject, topic, data) {
       assert(topic == "devtools-html-content");
-      const { uri, offset, contents } = JSON.parse(data);
+      const { uri, contents } = JSON.parse(data);
       if (gHtmlContent.has(uri)) {
         const existing = gHtmlContent.get(uri);
-        if (existing.content.length == offset) {
-          assert(!existing.complete);
-          existing.content = existing.content + contents;
-        }
+        existing.content = existing.content + contents;
       } else {
         gHtmlContent.set(uri, {
           content: contents,
@@ -292,64 +289,12 @@ Services.obs.addObserver(
 
 
 
-
-
-
-
-
-function snapshotObjectProperty([name, desc]) {
-  
-  if ("value" in desc && !convertedValueIsObject(desc.value)) {
-    return { name, desc };
-  }
-  return { name, desc: { value: "<unavailable>" } };
-}
-
-function makeObjectSnapshot(object) {
-  assert(object instanceof Debugger.Object);
-
-  
-  
-  
-  
-  return {
-    kind: "Object",
-    callable: object.callable,
-    isBoundFunction: object.isBoundFunction,
-    isArrowFunction: object.isArrowFunction,
-    isGeneratorFunction: object.isGeneratorFunction,
-    isAsyncFunction: object.isAsyncFunction,
-    class: object.class,
-    name: object.name,
-    displayName: object.displayName,
-    parameterNames: object.parameterNames,
-    isProxy: object.isProxy,
-    isExtensible: object.isExtensible(),
-    isSealed: object.isSealed(),
-    isFrozen: object.isFrozen(),
-    properties: Object.entries(getObjectProperties(object)).map(
-      snapshotObjectProperty
-    ),
-  };
-}
-
-
-
-
-
-
 const gConsoleMessages = [];
 
 
 const gNewConsoleMessages = [];
 
-function newConsoleMessage(messageType, executionPoint, contents) {
-  if (!executionPoint) {
-    executionPoint = currentScriptedExecutionPoint();
-  }
-
-  contents.messageType = messageType;
-  contents.executionPoint = executionPoint;
+function newConsoleMessage(contents) {
   gConsoleMessages.push(contents);
 
   if (gManifest.kind == "resume") {
@@ -379,11 +324,16 @@ Services.console.registerListener({
       
       
       
-      const executionPoint = gWarpTargetPoints[message.timeWarpTarget];
+      let executionPoint = gWarpTargetPoints[message.timeWarpTarget];
+      if (!executionPoint) {
+        executionPoint = currentScriptedExecutionPoint();
+      }
 
       const contents = JSON.parse(JSON.stringify(message));
       contents.stack = convertStack(message.stack);
-      newConsoleMessage("PageError", executionPoint, contents);
+      contents.executionPoint = executionPoint;
+      contents.messageType = "PageError";
+      newConsoleMessage(contents);
     }
   },
 });
@@ -396,21 +346,30 @@ Services.obs.addObserver(
     observe(message, topic, data) {
       const apiMessage = message.wrappedJSObject;
 
-      const contents = {};
+      const contents = { messageType: "ConsoleAPI" };
       for (const id in apiMessage) {
         if (id != "wrappedJSObject" && id != "arguments") {
           contents[id] = JSON.parse(JSON.stringify(apiMessage[id]));
         }
       }
 
+      contents.executionPoint = currentScriptedExecutionPoint();
+
       
       if (apiMessage.arguments) {
         contents.arguments = apiMessage.arguments.map(v => {
-          return convertValue(makeDebuggeeValue(v), { snapshot: true });
+          return convertValue(makeDebuggeeValue(v));
         });
+
+        contents.argumentsData = new PreviewedObjects();
+        contents.arguments.forEach(v =>
+          contents.argumentsData.addValue(v, true)
+        );
+
+        ClearPausedState();
       }
 
-      newConsoleMessage("ConsoleAPI", null, contents);
+      newConsoleMessage(contents);
     },
   },
   "console-api-log-event"
@@ -822,11 +781,8 @@ function getObjectId(obj) {
 }
 
 
-function convertValue(value, options) {
+function convertValue(value) {
   if (value instanceof Debugger.Object) {
-    if (options && options.snapshot) {
-      return { snapshot: makeObjectSnapshot(value) };
-    }
     return { object: getObjectId(value) };
   }
   if (
@@ -841,17 +797,13 @@ function convertValue(value, options) {
   return value;
 }
 
-function convertedValueIsObject(value) {
-  return isNonNullObject(value) && "object" in value;
-}
-
-function convertCompletionValue(value, options) {
+function convertCompletionValue(value) {
   if ("return" in value) {
-    return { return: convertValue(value.return, options) };
+    return { return: convertValue(value.return) };
   }
   if ("throw" in value) {
     return {
-      throw: convertValue(value.throw, options),
+      throw: convertValue(value.throw),
       stack: convertSavedFrameToPlainObject(value.stack),
     };
   }
@@ -1030,12 +982,16 @@ const gManifestStartHandlers = {
 
     const displayName = formatDisplayName(frame);
     const rv = frame.evalWithBindings(text, { displayName });
-    const converted = convertCompletionValue(rv, { snapshot: true });
 
-    const data = getPauseData();
-    data.paintData = RecordReplayControl.repaint();
+    const pauseData = getPauseData();
+    pauseData.paintData = RecordReplayControl.repaint();
+    ClearPausedState();
 
-    RecordReplayControl.manifestFinished({ result: converted, data });
+    const result = convertCompletionValue(rv);
+    const resultData = new PreviewedObjects();
+    resultData.addCompletionValue(result, true);
+
+    RecordReplayControl.manifestFinished({ result, resultData, pauseData });
   },
 };
 
@@ -1076,12 +1032,14 @@ function currentScriptedExecutionPoint() {
   if (!numFrames) {
     return null;
   }
-  const frame = getFrameData(numFrames - 1);
+
+  const index = numFrames - 1;
+  const frame = scriptFrameForIndex(index);
   return currentExecutionPoint({
     kind: "OnStep",
-    script: frame.script,
+    script: gScripts.getId(frame.script),
     offset: frame.offset,
-    frameIndex: frame.index,
+    frameIndex: index,
   });
 }
 
@@ -1497,6 +1455,143 @@ const OBJECT_PREVIEW_MAX_ITEMS = 10;
 
 
 
+function PreviewedObjects() {
+  this.objects = {};
+  this.environments = {};
+}
+
+PreviewedObjects.prototype = {
+  addValue(value, includeProperties) {
+    if (value && typeof value == "object" && value.object) {
+      this.addObject(value.object, includeProperties);
+    }
+  },
+
+  addObject(id, includeProperties) {
+    if (!id) {
+      return;
+    }
+
+    
+    
+    const needObject = !this.objects[id];
+    const needProperties =
+      includeProperties &&
+      (needObject || !this.objects[id].preview.enumerableOwnProperties);
+
+    if (!needObject && !needProperties) {
+      return;
+    }
+
+    const object = gPausedObjects.getObject(id);
+    assert(object instanceof Debugger.Object);
+
+    const properties = getObjectProperties(object);
+    const propertyEntries = Object.entries(properties);
+
+    if (needObject) {
+      this.objects[id] = {
+        data: getObjectData(id),
+        preview: {
+          ownPropertyNamesCount: propertyEntries.length,
+        },
+      };
+
+      const preview = this.objects[id].preview;
+
+      
+      
+      if (properties.length) {
+        preview.lengthProperty = properties.length;
+      }
+      if (properties.displayName) {
+        preview.displayNameProperty = properties.displayName;
+      }
+    }
+
+    if (needProperties) {
+      const preview = this.objects[id].preview;
+
+      
+      
+      
+      
+      const enumerableOwnProperties = Object.create(null);
+      let enumerablePropertyCount = 0;
+      for (const [name, desc] of propertyEntries) {
+        if (desc.enumerable) {
+          enumerableOwnProperties[name] = desc;
+          this.addPropertyDescriptor(desc, false);
+          if (++enumerablePropertyCount == OBJECT_PREVIEW_MAX_ITEMS) {
+            break;
+          }
+        }
+      }
+      preview.enumerableOwnProperties = enumerableOwnProperties;
+
+      
+      
+      const containerContents = getObjectContainerContents(object);
+      if (containerContents) {
+        preview.containerContents = containerContents.slice(
+          0,
+          OBJECT_PREVIEW_MAX_ITEMS
+        );
+        preview.containerContents.forEach(v => this.addContainerValue(v));
+      }
+    }
+  },
+
+  addPropertyDescriptor(desc, includeProperties) {
+    if (desc.value) {
+      this.addValue(desc.value, includeProperties);
+    }
+    if (desc.get) {
+      this.addObject(desc.get, includeProperties);
+    }
+    if (desc.set) {
+      this.addObject(desc.set, includeProperties);
+    }
+  },
+
+  addContainerValue(value) {
+    
+    if (value.length == 2) {
+      value.forEach(v => this.addValue(v));
+    } else {
+      this.addValue(value);
+    }
+  },
+
+  addCompletionValue(value, includeProperties) {
+    if ("return" in value) {
+      this.addValue(value.return, includeProperties);
+    } else if ("throw" in value) {
+      this.addValue(value.throw, includeProperties);
+    }
+  },
+
+  addEnvironment(id) {
+    if (!id || this.environments[id]) {
+      return;
+    }
+
+    const env = gPausedObjects.getObject(id);
+    assert(env instanceof Debugger.Environment);
+
+    const data = getObjectData(id);
+    const names = getEnvironmentNames(env);
+    this.environments[id] = { data, names };
+
+    names.forEach(({ value }) => this.addValue(value, true));
+
+    this.addObject(data.callee);
+    this.addEnvironment(data.parent);
+  },
+};
+
+
+
 
 
 
@@ -1514,133 +1609,11 @@ function getPauseData() {
     return {};
   }
 
-  const rv = {
-    frames: [],
-    scripts: {},
-    offsetMetadata: [],
-    objects: {},
-    environments: {},
-  };
+  const rv = new PreviewedObjects();
 
-  function addValue(value, includeProperties) {
-    if (value && typeof value == "object" && value.object) {
-      addObject(value.object, includeProperties);
-    }
-  }
-
-  function addObject(id, includeProperties) {
-    if (!id) {
-      return;
-    }
-
-    
-    
-    const needObject = !rv.objects[id];
-    const needProperties =
-      includeProperties &&
-      (needObject || !rv.objects[id].preview.enumerableOwnProperties);
-
-    if (!needObject && !needProperties) {
-      return;
-    }
-
-    const object = gPausedObjects.getObject(id);
-    assert(object instanceof Debugger.Object);
-
-    const properties = getObjectProperties(object);
-    const propertyEntries = Object.entries(properties);
-
-    if (needObject) {
-      rv.objects[id] = {
-        data: getObjectData(id),
-        preview: {
-          ownPropertyNamesCount: propertyEntries.length,
-        },
-      };
-
-      const preview = rv.objects[id].preview;
-
-      
-      
-      if (properties.length) {
-        preview.lengthProperty = properties.length;
-      }
-      if (properties.displayName) {
-        preview.displayNameProperty = properties.displayName;
-      }
-    }
-
-    if (needProperties) {
-      const preview = rv.objects[id].preview;
-
-      
-      
-      
-      
-      const enumerableOwnProperties = Object.create(null);
-      let enumerablePropertyCount = 0;
-      for (const [name, desc] of propertyEntries) {
-        if (desc.enumerable) {
-          enumerableOwnProperties[name] = desc;
-          addPropertyDescriptor(desc, false);
-          if (++enumerablePropertyCount == OBJECT_PREVIEW_MAX_ITEMS) {
-            break;
-          }
-        }
-      }
-      preview.enumerableOwnProperties = enumerableOwnProperties;
-
-      
-      
-      const containerContents = getObjectContainerContents(object);
-      if (containerContents) {
-        preview.containerContents = containerContents.slice(
-          0,
-          OBJECT_PREVIEW_MAX_ITEMS
-        );
-        preview.containerContents.forEach(v => addContainerValue(v));
-      }
-    }
-  }
-
-  function addPropertyDescriptor(desc, includeProperties) {
-    if (desc.value) {
-      addValue(desc.value, includeProperties);
-    }
-    if (desc.get) {
-      addObject(desc.get, includeProperties);
-    }
-    if (desc.set) {
-      addObject(desc.set, includeProperties);
-    }
-  }
-
-  function addContainerValue(value) {
-    
-    if (value.length == 2) {
-      value.forEach(v => addValue(v));
-    } else {
-      addValue(value);
-    }
-  }
-
-  function addEnvironment(id) {
-    if (!id || rv.environments[id]) {
-      return;
-    }
-
-    const env = gPausedObjects.getObject(id);
-    assert(env instanceof Debugger.Environment);
-
-    const data = getObjectData(id);
-    const names = getEnvironmentNames(env);
-    rv.environments[id] = { data, names };
-
-    names.forEach(({ value }) => addValue(value, true));
-
-    addObject(data.callee);
-    addEnvironment(data.parent);
-  }
+  rv.frames = [];
+  rv.scripts = {};
+  rv.offsetMetadata = [];
 
   
   function addScript(id) {
@@ -1660,14 +1633,14 @@ function getPauseData() {
       metadata: script.getOffsetMetadata(dbgFrame.offset),
     });
     addScript(frame.script);
-    addValue(frame.this, true);
+    rv.addValue(frame.this, true);
     if (frame.arguments) {
       for (const arg of frame.arguments) {
-        addValue(arg, true);
+        rv.addValue(arg, true);
       }
     }
-    addObject(frame.callee, false);
-    addEnvironment(frame.environment, true);
+    rv.addObject(frame.callee, false);
+    rv.addEnvironment(frame.environment, true);
   }
 
   return rv;
@@ -1687,11 +1660,6 @@ function divergeFromRecording() {
 }
 
 const gRequestHandlers = {
-  repaint() {
-    divergeFromRecording();
-    return RecordReplayControl.repaint();
-  },
-
   
   
   
@@ -1809,7 +1777,7 @@ const gRequestHandlers = {
     divergeFromRecording();
     const frame = scriptFrameForIndex(request.index);
     const rv = frame.eval(request.text, request.options);
-    return convertCompletionValue(rv, request.convertOptions);
+    return convertCompletionValue(rv);
   },
 
   popFrameResult(request) {
