@@ -8502,14 +8502,6 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
     return FullPrerender;
   }
 
-  
-  
-  
-  if (aBuilder->IsPaintingForWebRender()) {
-    *aDirtyRect = overflow;
-    return FullPrerender;
-  }
-
   float viewportRatioX =
       StaticPrefs::layout_animation_prerender_viewport_ratio_limit_x();
   float viewportRatioY =
