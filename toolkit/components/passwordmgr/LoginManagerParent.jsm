@@ -691,6 +691,18 @@ this.LoginManagerParent = {
       );
       return;
     }
+
+    if (!Services.logins.getLoginSavingEnabled(formOrigin)) {
+      
+      
+      
+      log(
+        "_onGeneratedPasswordFilledOrEdited: saving is disabled for:",
+        formOrigin
+      );
+      return;
+    }
+
     let framePrincipalOrigin =
       browsingContext.currentWindowGlobal.documentPrincipal.origin;
     let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(
@@ -747,14 +759,6 @@ this.LoginManagerParent = {
       );
       log("autocomplete_field telemetry event recorded");
       generatedPW.filled = true;
-    }
-
-    if (!Services.logins.getLoginSavingEnabled(formOrigin)) {
-      log(
-        "_onGeneratedPasswordFilledOrEdited: saving is disabled for:",
-        formOrigin
-      );
-      autoSaveLogin = false;
     }
 
     
