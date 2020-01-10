@@ -5395,8 +5395,9 @@ static void InitVarCachePref(StaticPrefs::UpdatePolicy aPolicy,
 static Atomic<bool> sOncePrefRead(false);
 static StaticMutex sOncePrefMutex;
 
- void StaticPrefs::MaybeInitOncePrefs() {
-  if (!XRE_IsParentProcess() || sOncePrefRead) {
+
+void StaticPrefs::MaybeInitOncePrefs() {
+  if (MOZ_LIKELY(sOncePrefRead)) {
     
     return;
   }
@@ -5676,6 +5677,10 @@ void StaticPrefs::InitStaticPrefsFromShared() {
 #include "mozilla/StaticPrefList.h"
 #undef PREF
 #undef VARCACHE_PREF
+  
+  
+  
+  sOncePrefRead = true;
 }
 
 }  
