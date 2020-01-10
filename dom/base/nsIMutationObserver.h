@@ -9,6 +9,8 @@
 
 #include "nsISupports.h"
 
+#include "mozilla/Assertions.h"
+
 class nsAttrValue;
 class nsAtom;
 class nsIContent;
@@ -49,6 +51,12 @@ struct CharacterDataChangeInfo {
 
 
   uint32_t mChangeEnd;
+
+  uint32_t LengthOfRemovedText() const {
+    MOZ_ASSERT(mChangeStart <= mChangeEnd);
+
+    return mChangeEnd - mChangeStart;
+  }
 
   
 

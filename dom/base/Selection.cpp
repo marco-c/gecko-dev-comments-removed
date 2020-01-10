@@ -2766,7 +2766,7 @@ void Selection::SelectAllChildren(nsINode& aNode, ErrorResult& aRv) {
 
   
   
-  SetStartAndEndInternal(InLimiter::eNo, RawRangeBoundary(&aNode, 0),
+  SetStartAndEndInternal(InLimiter::eNo, RawRangeBoundary(&aNode, 0u),
                          RawRangeBoundary(&aNode, aNode.GetChildCount()),
                          eDirNext, aRv);
 }

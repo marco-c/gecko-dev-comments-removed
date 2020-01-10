@@ -523,7 +523,7 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
       
       
       
-      SelectionRefPtr()->Collapse(RawRangeBoundary(cellData.mElement, 0),
+      SelectionRefPtr()->Collapse(RawRangeBoundary(cellData.mElement, 0u),
                                   ignoredError);
       NS_WARNING_ASSERTION(!ignoredError.Failed(),
                            "Failed to collapse Selection into the cell");
@@ -570,7 +570,7 @@ nsresult HTMLEditor::InsertTableColumnsWithTransaction(
     
     
     
-    SelectionRefPtr()->Collapse(RawRangeBoundary(lastCellNode, 0),
+    SelectionRefPtr()->Collapse(RawRangeBoundary(lastCellNode, 0u),
                                 ignoredError);
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
                          "Failed to collapse Selection into the cell");
