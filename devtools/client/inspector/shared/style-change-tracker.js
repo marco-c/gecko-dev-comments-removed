@@ -30,10 +30,6 @@ class InspectorStyleChangeTracker {
   }
 
   async init() {
-    if (!this.inspector) {
-      return;
-    }
-
     try {
       
       
