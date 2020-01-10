@@ -515,7 +515,7 @@ class BaselineCodeGen {
   MOZ_MUST_USE bool emitHandleCodeCoverageAtPrologue();
 
   void emitInitFrameFields(Register nonFunctionEnv);
-  void emitIsDebuggeeCheck();
+  MOZ_MUST_USE bool emitIsDebuggeeCheck();
   void emitInitializeLocals();
 
   void emitProfilerEnterFrame();
@@ -679,10 +679,10 @@ class BaselineInterpreterHandler {
   Label interpretOpWithPCReg_;
 
   
-  CodeOffset debuggeeCheckOffset_;
+  using CodeOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
+  CodeOffsetVector debugInstrumentationOffsets_;
 
   
-  using CodeOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
   CodeOffsetVector codeCoverageOffsets_;
   Label codeCoverageAtPrologueLabel_;
   Label codeCoverageAtPCLabel_;
@@ -700,6 +700,9 @@ class BaselineInterpreterHandler {
   Label* codeCoverageAtPrologueLabel() { return &codeCoverageAtPrologueLabel_; }
   Label* codeCoverageAtPCLabel() { return &codeCoverageAtPCLabel_; }
 
+  CodeOffsetVector& debugInstrumentationOffsets() {
+    return debugInstrumentationOffsets_;
+  }
   CodeOffsetVector& codeCoverageOffsets() { return codeCoverageOffsets_; }
 
   
@@ -708,10 +711,9 @@ class BaselineInterpreterHandler {
   JSScript* maybeScript() const { return nullptr; }
   JSFunction* maybeFunction() const { return nullptr; }
 
-  void setDebuggeeCheckOffset(CodeOffset offset) {
-    debuggeeCheckOffset_ = offset;
+  MOZ_MUST_USE bool addDebugInstrumentationOffset(CodeOffset offset) {
+    return debugInstrumentationOffsets_.append(offset.offset());
   }
-  CodeOffset debuggeeCheckOffset() const { return debuggeeCheckOffset_; }
 
   
   

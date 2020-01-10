@@ -658,12 +658,11 @@ class BaselineInterpreter {
   uint32_t profilerExitToggleOffset_ = 0;
 
   
-  
-  uint32_t debuggeeCheckOffset_ = 0;
+  using CodeOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
+  CodeOffsetVector debugInstrumentationOffsets_;
 
   
   
-  using CodeOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
   CodeOffsetVector debugTrapOffsets_;
 
   
@@ -678,7 +677,8 @@ class BaselineInterpreter {
   void init(JitCode* code, uint32_t interpretOpOffset,
             uint32_t interpretOpNoDebugTrapOffset,
             uint32_t profilerEnterToggleOffset,
-            uint32_t profilerExitToggleOffset, uint32_t debuggeeCheckOffset,
+            uint32_t profilerExitToggleOffset,
+            CodeOffsetVector&& debugInstrumentationOffsets,
             CodeOffsetVector&& debugTrapOffsets,
             CodeOffsetVector&& codeCoverageOffsets);
 

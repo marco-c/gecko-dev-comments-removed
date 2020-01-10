@@ -825,14 +825,15 @@ static void EmitCallFrameIsDebuggeeCheck(MacroAssembler& masm) {
 }
 
 template <>
-void BaselineCompilerCodeGen::emitIsDebuggeeCheck() {
+bool BaselineCompilerCodeGen::emitIsDebuggeeCheck() {
   if (handler.compileDebugInstrumentation()) {
     EmitCallFrameIsDebuggeeCheck(masm);
   }
+  return true;
 }
 
 template <>
-void BaselineInterpreterCodeGen::emitIsDebuggeeCheck() {
+bool BaselineInterpreterCodeGen::emitIsDebuggeeCheck() {
   
   
   
@@ -847,7 +848,7 @@ void BaselineInterpreterCodeGen::emitIsDebuggeeCheck() {
     restoreInterpreterPCReg();
   }
   masm.bind(&skipCheck);
-  handler.setDebuggeeCheckOffset(toggleOffset);
+  return handler.addDebugInstrumentationOffset(toggleOffset);
 }
 
 static void MaybeIncrementCodeCoverageCounter(MacroAssembler& masm,
@@ -4952,8 +4953,15 @@ MOZ_MUST_USE bool BaselineInterpreterCodeGen::emitDebugInstrumentation(
     const F1& ifDebuggee, const Maybe<F2>& ifNotDebuggee) {
   
   
+  
 
   Label isNotDebuggee, done;
+
+  CodeOffset toggleOffset = masm.toggledJump(&isNotDebuggee);
+  if (!handler.addDebugInstrumentationOffset(toggleOffset)) {
+    return false;
+  }
+
   masm.branchTest32(Assembler::Zero, frame.addressOfFlags(),
                     Imm32(BaselineFrame::DEBUGGEE), &isNotDebuggee);
 
@@ -5952,6 +5960,10 @@ bool BaselineInterpreterCodeGen::emitAfterYieldDebugInstrumentation(
 
   
   Label done;
+  CodeOffset toggleOffset = masm.toggledJump(&done);
+  if (!handler.addDebugInstrumentationOffset(toggleOffset)) {
+    return false;
+  }
   masm.loadPtr(AbsoluteAddress(cx->addressOfRealm()), scratch);
   masm.branchTest32(Assembler::Zero,
                     Address(scratch, Realm::offsetOfDebugModeBits()),
@@ -6761,7 +6773,9 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
 
   
   
-  emitIsDebuggeeCheck();
+  if (!emitIsDebuggeeCheck()) {
+    return false;
+  }
 
   
   
@@ -7174,7 +7188,7 @@ bool BaselineInterpreterGenerator::generate(BaselineInterpreter& interpreter) {
     interpreter.init(code, interpretOpOffset_, interpretOpNoDebugTrapOffset_,
                      profilerEnterFrameToggleOffset_.offset(),
                      profilerExitFrameToggleOffset_.offset(),
-                     handler.debuggeeCheckOffset().offset(),
+                     std::move(handler.debugInstrumentationOffsets()),
                      std::move(debugTrapOffsets_),
                      std::move(handler.codeCoverageOffsets()));
   }
