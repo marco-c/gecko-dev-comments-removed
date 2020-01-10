@@ -1348,8 +1348,6 @@ pref("network.http.referer.defaultPolicy.pbmode", 2);
 
 pref("network.http.referer.defaultPolicy.trackers.pbmode", 2);
 
-pref("network.http.referer.spoofSource", false);
-
 pref("network.http.referer.hideOnionSource", false);
 
 pref("network.http.referer.trimmingPolicy", 0);
