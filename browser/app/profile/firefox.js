@@ -1933,19 +1933,6 @@ pref("identity.fxaccounts.service.monitorLoginUrl", "https://monitor.firefox.com
 #endif
 
 
-pref("privacy.socialtracking.notification.enabled", true);
-
-pref("privacy.socialtracking.notification.session.pageload.min", 4);
-
-pref("privacy.socialtracking.notification.lastShown", "0");
-
-pref("privacy.socialtracking.notification.period.min", 172800000);
-
-pref("privacy.socialtracking.notification.counter", 0);
-
-pref("privacy.socialtracking.notification.max", 2);
-
-
 pref("devtools.webide.enabled", false);
 pref("devtools.connectpage.enabled", false);
 
