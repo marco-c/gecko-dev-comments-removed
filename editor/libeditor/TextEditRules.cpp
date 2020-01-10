@@ -287,24 +287,25 @@ EditActionResult TextEditRules::WillInsertLineBreak(int32_t aMaxLength) {
 
   CANCEL_OPERATION_AND_RETURN_EDIT_ACTION_RESULT_IF_READONLY_OF_DISABLED
 
-  
-  
-  NS_NAMED_LITERAL_STRING(inString, "\n");
-  nsAutoString outString;
-  bool didTruncate;
-  nsresult rv = TruncateInsertionIfNeeded(&inString.AsString(), &outString,
-                                          aMaxLength, &didTruncate);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditActionIgnored(rv);
-  }
-  if (didTruncate) {
-    return EditActionCanceled();
+  if (aMaxLength >= 0) {
+    nsAutoString insertionString(NS_LITERAL_STRING("\n"));
+    EditActionResult result =
+        TextEditorRef().TruncateInsertionStringForMaxLength(insertionString,
+                                                            aMaxLength);
+    if (NS_WARN_IF(result.Failed())) {
+      return result;
+    }
+    if (result.Handled()) {
+      
+      return EditActionCanceled();
+    }
   }
 
   
   if (!SelectionRefPtr()->IsCollapsed()) {
-    rv = MOZ_KnownLive(TextEditorRef())
-             .DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eStrip);
+    nsresult rv =
+        MOZ_KnownLive(TextEditorRef())
+            .DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eStrip);
     if (NS_WARN_IF(!CanHandleEditAction())) {
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -313,7 +314,8 @@ EditActionResult TextEditRules::WillInsertLineBreak(int32_t aMaxLength) {
     }
   }
 
-  rv = MOZ_KnownLive(TextEditorRef()).EnsureNoPaddingBRElementForEmptyEditor();
+  nsresult rv =
+      MOZ_KnownLive(TextEditorRef()).EnsureNoPaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return EditActionIgnored(rv);
   }
@@ -575,20 +577,21 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
   *aCancel = false;
   *aHandled = true;
 
-  
-  
-  bool truncated = false;
-  nsresult rv =
-      TruncateInsertionIfNeeded(inString, outString, aMaxLength, &truncated);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  
-  
-  if (truncated && outString->IsEmpty() &&
-      aEditSubAction != EditSubAction::eInsertTextComingFromIME) {
-    *aCancel = true;
-    return NS_OK;
+  outString->Assign(*inString);
+  if (aMaxLength >= 0) {
+    EditActionResult result =
+        TextEditorRef().TruncateInsertionStringForMaxLength(*outString,
+                                                            aMaxLength);
+    if (NS_WARN_IF(result.Failed())) {
+      return result.Rv();
+    }
+    
+    
+    if (result.Handled() && outString->IsEmpty() &&
+        aEditSubAction != EditSubAction::eInsertTextComingFromIME) {
+      *aCancel = true;
+      return NS_OK;
+    }
   }
 
   uint32_t start = 0;
@@ -605,8 +608,9 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
 
   
   if (!SelectionRefPtr()->IsCollapsed()) {
-    rv = MOZ_KnownLive(TextEditorRef())
-             .DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eStrip);
+    nsresult rv =
+        MOZ_KnownLive(TextEditorRef())
+            .DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eStrip);
     if (NS_WARN_IF(!CanHandleEditAction())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -620,7 +624,8 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
 
   TextEditorRef().MaybeDoAutoPasswordMasking();
 
-  rv = MOZ_KnownLive(TextEditorRef()).EnsureNoPaddingBRElementForEmptyEditor();
+  nsresult rv =
+      MOZ_KnownLive(TextEditorRef()).EnsureNoPaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -679,7 +684,7 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
       compositionStartPoint =
           TextEditorRef().FindBetterInsertionPoint(atStartOfSelection);
     }
-    rv =
+    nsresult rv =
         MOZ_KnownLive(TextEditorRef())
             .InsertTextWithTransaction(*doc, *outString, compositionStartPoint);
     if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -695,9 +700,10 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
     AutoTransactionsConserveSelection dontChangeMySelection(TextEditorRef());
 
     EditorRawDOMPoint pointAfterStringInserted;
-    rv = MOZ_KnownLive(TextEditorRef())
-             .InsertTextWithTransaction(*doc, *outString, atStartOfSelection,
-                                        &pointAfterStringInserted);
+    nsresult rv =
+        MOZ_KnownLive(TextEditorRef())
+            .InsertTextWithTransaction(*doc, *outString, atStartOfSelection,
+                                       &pointAfterStringInserted);
     if (NS_WARN_IF(!CanHandleEditAction())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -1151,85 +1157,58 @@ nsresult TextEditRules::CreateTrailingBRIfNeeded() {
   return NS_OK;
 }
 
-nsresult TextEditRules::TruncateInsertionIfNeeded(const nsAString* aInString,
-                                                  nsAString* aOutString,
-                                                  int32_t aMaxLength,
-                                                  bool* aTruncated) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+EditActionResult TextEditor::TruncateInsertionStringForMaxLength(
+    nsAString& aInsertionString, uint32_t aMaxLength) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (NS_WARN_IF(!aInString) || NS_WARN_IF(!aOutString)) {
-    return NS_ERROR_INVALID_ARG;
+  if (!IsPlaintextEditor() || IsIMEComposing()) {
+    return EditActionIgnored();
   }
 
-  if (!aOutString->Assign(*aInString, mozilla::fallible)) {
-    return NS_ERROR_OUT_OF_MEMORY;
+  int32_t currentLength = INT32_MAX;
+  nsresult rv = GetTextLength(&currentLength);
+  if (NS_FAILED(rv)) {
+    return EditActionResult(rv);
   }
-  if (aTruncated) {
-    *aTruncated = false;
+
+  uint32_t selectionStart, selectionEnd;
+  nsContentUtils::GetSelectionInTextControl(SelectionRefPtr(), GetRoot(),
+                                            selectionStart, selectionEnd);
+
+  TextComposition* composition = GetComposition();
+  const uint32_t kOldCompositionStringLength =
+      composition ? composition->String().Length() : 0;
+
+  const uint32_t kSelectionLength = selectionEnd - selectionStart;
+  
+  
+  
+  const uint32_t kNewLength =
+      currentLength - kSelectionLength - kOldCompositionStringLength;
+  if (kNewLength >= aMaxLength) {
+    aInsertionString.Truncate();  
+    return EditActionHandled();
   }
 
-  if (-1 != aMaxLength && IsPlaintextEditor() &&
-      !TextEditorRef().IsIMEComposing()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int32_t docLength;
-    nsresult rv = TextEditorRef().GetTextLength(&docLength);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    uint32_t start, end;
-    nsContentUtils::GetSelectionInTextControl(
-        SelectionRefPtr(), TextEditorRef().GetRoot(), start, end);
-
-    TextComposition* composition = TextEditorRef().GetComposition();
-    uint32_t oldCompStrLength =
-        composition ? composition->String().Length() : 0;
-
-    const uint32_t selectionLength = end - start;
-    const int32_t resultingDocLength =
-        docLength - selectionLength - oldCompStrLength;
-    if (resultingDocLength >= aMaxLength) {
-      
-      
-      aOutString->Truncate();
-      if (aTruncated) {
-        *aTruncated = true;
-      }
-    } else {
-      int32_t oldLength = aOutString->Length();
-      if (oldLength + resultingDocLength > aMaxLength) {
-        int32_t newLength = aMaxLength - resultingDocLength;
-        MOZ_ASSERT(newLength > 0);
-        char16_t newLastChar = aOutString->CharAt(newLength - 1);
-        char16_t removingFirstChar = aOutString->CharAt(newLength);
-        
-        if (NS_IS_HIGH_SURROGATE(newLastChar) &&
-            NS_IS_LOW_SURROGATE(removingFirstChar)) {
-          newLength--;
-        }
-        
-        
-        
-        
-        aOutString->Truncate(newLength);
-        if (aTruncated) {
-          *aTruncated = true;
-        }
-      }
-    }
+  if (aInsertionString.Length() + kNewLength <= aMaxLength) {
+    return EditActionIgnored();  
   }
-  return NS_OK;
+
+  int32_t newInsertionStringLength = aMaxLength - kNewLength;
+  MOZ_ASSERT(newInsertionStringLength > 0);
+  char16_t maybeHighSurrogate =
+      aInsertionString.CharAt(newInsertionStringLength - 1);
+  char16_t maybeLowSurrogate =
+      aInsertionString.CharAt(newInsertionStringLength);
+  
+  if (NS_IS_HIGH_SURROGATE(maybeHighSurrogate) &&
+      NS_IS_LOW_SURROGATE(maybeLowSurrogate)) {
+    newInsertionStringLength--;
+  }
+  
+  
+  aInsertionString.Truncate(newInsertionStringLength);
+  return EditActionHandled();
 }
 
 bool TextEditRules::IsPasswordEditor() const {

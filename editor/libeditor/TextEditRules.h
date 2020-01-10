@@ -238,14 +238,6 @@ class TextEditRules {
 
 
 
-  nsresult TruncateInsertionIfNeeded(const nsAString* aInString,
-                                     nsAString* aOutString, int32_t aMaxLength,
-                                     bool* aTruncated);
-
-  
-
-
-
 
 
 

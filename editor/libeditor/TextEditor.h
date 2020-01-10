@@ -575,6 +575,20 @@ class TextEditor : public EditorBase,
       uint32_t aNewLength, uint32_t aInsertedOffset, uint32_t aInsertedLength);
 
  protected:  
+  
+
+
+
+
+
+
+
+
+
+  EditActionResult TruncateInsertionStringForMaxLength(
+      nsAString& aInsertionString, uint32_t aMaxLength);
+
+ protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
   MOZ_CAN_RUN_SCRIPT
