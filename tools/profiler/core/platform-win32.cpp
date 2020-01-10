@@ -269,10 +269,6 @@ void Registers::SyncPopulate() {
 #endif
 
 #if defined(GP_PLAT_amd64_windows)
-
-#  ifndef MOZ_BASE_PROFILER
-
-
 static WindowsDllInterceptor NtDllIntercept;
 
 typedef NTSTATUS(NTAPI* LdrUnloadDll_func)(HMODULE module);
@@ -312,18 +308,4 @@ void InitializeWin64ProfilerHooks() {
                                       &patched_LdrResolveDelayLoadedAPI);
   }
 }
-
-#  else  
-
-
-
-namespace mozilla {
-namespace baseprofiler {
-MFBT_API void InitializeWin64ProfilerHooks();
-}  
-}  
-
-using mozilla::baseprofiler::InitializeWin64ProfilerHooks;
-
-#  endif  
-#endif    
+#endif  
