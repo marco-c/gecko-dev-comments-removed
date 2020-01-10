@@ -107,14 +107,21 @@ static setLcdFilterFunc setLcdFilter;
 
 extern void mozilla_AddRefSharedFTFace(void* aContext);
 extern void mozilla_ReleaseSharedFTFace(void* aContext);
-extern void mozilla_LockSharedFTFace(void* aContext);
+
+extern int mozilla_LockSharedFTFace(void* aContext, void* aOwner);
 extern void mozilla_UnlockSharedFTFace(void* aContext);
 extern FT_Error mozilla_LoadFTGlyph(FT_Face aFace, uint32_t aGlyphIndex, int32_t aFlags);
 extern void mozilla_LockFTLibrary(FT_Library aFTLibrary);
 extern void mozilla_UnlockFTLibrary(FT_Library aFTLibrary);
 
-#define CAIRO_FT_LOCK(unscaled) ((unscaled)->face_context ? mozilla_LockSharedFTFace((unscaled)->face_context) : (void)CAIRO_MUTEX_LOCK((unscaled)->mutex))
-#define CAIRO_FT_UNLOCK(unscaled) ((unscaled)->face_context ? mozilla_UnlockSharedFTFace((unscaled)->face_context) : (void)CAIRO_MUTEX_UNLOCK((unscaled)->mutex))
+#define CAIRO_FT_LOCK(unscaled)                                         \
+  ((unscaled)->face_context                                             \
+       ? (void)mozilla_LockSharedFTFace((unscaled)->face_context, NULL) \
+       : (void)CAIRO_MUTEX_LOCK((unscaled)->mutex))
+#define CAIRO_FT_UNLOCK(unscaled)                                   \
+  ((unscaled)->face_context                                         \
+       ? mozilla_UnlockSharedFTFace((unscaled)->face_context) \
+       : (void)CAIRO_MUTEX_UNLOCK((unscaled)->mutex))
 
 
 
@@ -666,7 +673,13 @@ _cairo_ft_unscaled_font_lock_face (cairo_ft_unscaled_font_t *unscaled)
     FT_Face face = NULL;
     FT_Error error;
 
-    CAIRO_FT_LOCK (unscaled);
+    if (unscaled->face_context) {
+	if (!mozilla_LockSharedFTFace(unscaled->face_context, unscaled)) {
+	    unscaled->have_scale = FALSE;
+	}
+    } else {
+	CAIRO_FT_LOCK(unscaled);
+    }
     unscaled->lock_count++;
 
     if (unscaled->face)
@@ -3354,8 +3367,7 @@ cairo_ft_scaled_font_lock_face (cairo_scaled_font_t *abstract_font)
 
 
 
-    
-    
+    CAIRO_FT_UNLOCK(scaled_font->unscaled);
 
     return face;
 }
@@ -3386,8 +3398,7 @@ cairo_ft_scaled_font_unlock_face (cairo_scaled_font_t *abstract_font)
 
 
 
-    
-    
+    CAIRO_FT_LOCK(scaled_font->unscaled);
 
     _cairo_ft_unscaled_font_unlock_face (scaled_font->unscaled);
 }
