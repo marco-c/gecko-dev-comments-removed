@@ -2730,14 +2730,7 @@ class JSScript : public js::BaseScript {
   js::LazyScript* maybeLazyScript() { return lazyScript; }
 
   
-
-
-
-
-
-
-
-  inline JSFunction* functionDelazifying() const;
+  
   JSFunction* functionNonDelazifying() const {
     if (bodyScope()->is<js::FunctionScope>()) {
       return bodyScope()->as<js::FunctionScope>().canonicalFunction();
