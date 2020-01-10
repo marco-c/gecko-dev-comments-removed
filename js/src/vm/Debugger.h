@@ -266,6 +266,7 @@ typedef mozilla::Variant<ScriptSourceObject*, WasmInstanceObject*>
 
 class Debugger : private mozilla::LinkedListElement<Debugger> {
   friend class Breakpoint;
+  friend class DebuggerFrame;
   friend class DebuggerMemory;
   friend struct JSRuntime::GlobalObjectWatchersLinkAccess<Debugger>;
   friend class SavedStacks;
@@ -1219,23 +1220,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   JSObject* wrapWasmSource(JSContext* cx,
                            Handle<WasmInstanceObject*> wasmInstance);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_MUST_USE bool addGeneratorFrame(JSContext* cx,
-                                      Handle<AbstractGeneratorObject*> genObj,
-                                      HandleDebuggerFrame frameObj);
-
  private:
   Debugger(const Debugger&) = delete;
   Debugger& operator=(const Debugger&) = delete;
@@ -1515,14 +1499,51 @@ class DebuggerFrame : public NativeObject {
   OnPopHandler* onPopHandler() const;
   void setOnPopHandler(OnPopHandler* handler);
 
-  bool setGenerator(JSContext* cx,
-                    Handle<AbstractGeneratorObject*> unwrappedGenObj);
   bool hasGenerator() const;
-  void clearGenerator(FreeOp* fop);
 
   
   
   AbstractGeneratorObject& unwrappedGenerator() const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE bool setGenerator(JSContext* cx,
+                                 Handle<AbstractGeneratorObject*> genObj);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void clearGenerator(FreeOp* fop);
+  void clearGenerator(
+      FreeOp* fop, Debugger* owner,
+      Debugger::GeneratorWeakMap::Enum* maybeGeneratorFramesEnum = nullptr);
 
   
 
@@ -1586,7 +1607,6 @@ class DebuggerFrame : public NativeObject {
   void maybeDecrementFrameScriptStepperCount(FreeOp* fop,
                                              AbstractFramePtr frame);
 
- private:
   class GeneratorInfo;
   inline GeneratorInfo* generatorInfo() const;
 };
