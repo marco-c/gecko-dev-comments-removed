@@ -44,11 +44,34 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 include!("constants_relocation.rs");
 
 macro_rules! elf_reloc {
     ($size:ident, $isize:ty) => {
         use core::fmt;
+        #[cfg(feature = "alloc")]
+        use scroll::{Pread, Pwrite, SizeWith};
         #[repr(C)]
         #[derive(Clone, Copy, PartialEq, Default)]
         #[cfg_attr(feature = "alloc", derive(Pread, Pwrite, SizeWith))]
@@ -79,24 +102,25 @@ macro_rules! elf_reloc {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let sym = r_sym(self.r_info);
                 let typ = r_type(self.r_info);
-                write!(f,
-                       "r_offset: {:x} r_typ: {} r_sym: {} r_addend: {:x}",
-                       self.r_offset,
-                       typ,
-                       sym,
-                       self.r_addend)
+                f.debug_struct("Rela")
+                    .field("r_offset", &format_args!("{:x}", self.r_offset))
+                    .field("r_info", &format_args!("{:x}", self.r_info))
+                    .field("r_addend", &format_args!("{:x}", self.r_addend))
+                    .field("r_typ", &typ)
+                    .field("r_sym", &sym)
+                    .finish()
             }
         }
         impl fmt::Debug for Rel {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 let sym = r_sym(self.r_info);
                 let typ = r_type(self.r_info);
-                write!(f,
-                       "r_offset: {:x} r_typ: {} r_sym: {}",
-                       self.r_offset,
-                       typ,
-                       sym
-                )
+                f.debug_struct("Rel")
+                    .field("r_offset", &format_args!("{:x}", self.r_offset))
+                    .field("r_info", &format_args!("{:x}", self.r_info))
+                    .field("r_typ", &typ)
+                    .field("r_sym", &sym)
+                    .finish()
             }
         }
     };
@@ -105,12 +129,12 @@ macro_rules! elf_reloc {
 macro_rules! elf_rela_std_impl { ($size:ident, $isize:ty) => {
 
     if_alloc! {
-            use elf::reloc::Reloc;
+            use crate::elf::reloc::Reloc;
 
             use core::slice;
 
             if_std! {
-                use error::Result;
+                use crate::error::Result;
 
                 use std::fs::File;
                 use std::io::{Read, Seek};
@@ -120,8 +144,8 @@ macro_rules! elf_rela_std_impl { ($size:ident, $isize:ty) => {
             impl From<Rela> for Reloc {
                 fn from(rela: Rela) -> Self {
                     Reloc {
-                        r_offset: rela.r_offset as u64,
-                        r_addend: Some(rela.r_addend as i64),
+                        r_offset: u64::from(rela.r_offset),
+                        r_addend: Some(i64::from(rela.r_addend)),
                         r_sym: r_sym(rela.r_info) as usize,
                         r_type: r_type(rela.r_info),
                     }
@@ -131,7 +155,7 @@ macro_rules! elf_rela_std_impl { ($size:ident, $isize:ty) => {
             impl From<Rel> for Reloc {
                 fn from(rel: Rel) -> Self {
                     Reloc {
-                        r_offset: rel.r_offset as u64,
+                        r_offset: u64::from(rel.r_offset),
                         r_addend: None,
                         r_sym: r_sym(rel.r_info) as usize,
                         r_type: r_type(rel.r_info),
@@ -141,7 +165,7 @@ macro_rules! elf_rela_std_impl { ($size:ident, $isize:ty) => {
 
             impl From<Reloc> for Rela {
                 fn from(rela: Reloc) -> Self {
-                    let r_info = r_info(rela.r_sym as $size, rela.r_type as $size);
+                    let r_info = r_info(rela.r_sym as $size, $size::from(rela.r_type));
                     Rela {
                         r_offset: rela.r_offset as $size,
                         r_info: r_info,
@@ -152,7 +176,7 @@ macro_rules! elf_rela_std_impl { ($size:ident, $isize:ty) => {
 
             impl From<Reloc> for Rel {
                 fn from(rel: Reloc) -> Self {
-                    let r_info = r_info(rel.r_sym as $size, rel.r_type as $size);
+                    let r_info = r_info(rel.r_sym as $size, $size::from(rel.r_type));
                     Rel {
                         r_offset: rel.r_offset as $size,
                         r_info: r_info,
@@ -186,7 +210,7 @@ macro_rules! elf_rela_std_impl { ($size:ident, $isize:ty) => {
                 let mut relocs = vec![Rela::default(); count];
                 fd.seek(Start(offset as u64))?;
                 unsafe {
-                    fd.read(plain::as_mut_bytes(&mut *relocs))?;
+                    fd.read_exact(plain::as_mut_bytes(&mut *relocs))?;
                 }
                 Ok(relocs)
             }
@@ -197,7 +221,7 @@ macro_rules! elf_rela_std_impl { ($size:ident, $isize:ty) => {
 
 pub mod reloc32 {
 
-    pub use elf::reloc::*;
+    pub use crate::elf::reloc::*;
 
     elf_reloc!(u32, i32);
 
@@ -224,7 +248,7 @@ pub mod reloc32 {
 
 
 pub mod reloc64 {
-    pub use elf::reloc::*;
+    pub use crate::elf::reloc::*;
 
     elf_reloc!(u64, i64);
 
@@ -238,7 +262,7 @@ pub mod reloc64 {
 
     #[inline(always)]
     pub fn r_type(info: u64) -> u32 {
-        (info & 0xffffffff) as u32
+        (info & 0xffff_ffff) as u32
     }
 
     #[inline(always)]
@@ -253,12 +277,13 @@ pub mod reloc64 {
 
 
 if_alloc! {
+    use scroll::{ctx, Pread};
+    use scroll::ctx::SizeWith;
     use core::fmt;
     use core::result;
-    use scroll::ctx;
-    use container::{Ctx, Container};
+    use crate::container::{Ctx, Container};
     #[cfg(feature = "endian_fd")]
-    use alloc::vec::Vec;
+    use crate::alloc::vec::Vec;
 
     #[derive(Clone, Copy, PartialEq, Default)]
     /// A unified ELF relocation structure
@@ -277,18 +302,6 @@ if_alloc! {
         pub fn size(is_rela: bool, ctx: Ctx) -> usize {
             use scroll::ctx::SizeWith;
             Reloc::size_with(&(is_rela, ctx))
-        }
-        #[cfg(feature = "endian_fd")]
-        pub fn parse(bytes: &[u8], mut offset: usize, filesz: usize, is_rela: bool, ctx: Ctx) -> ::error::Result<Vec<Reloc>> {
-            use scroll::Pread;
-            let count = filesz / Reloc::size(is_rela, ctx);
-            let mut relocs = Vec::with_capacity(count);
-            let offset = &mut offset;
-            for _ in 0..count {
-                let reloc = bytes.gread_with::<Reloc>(offset, (is_rela, ctx))?;
-                relocs.push(reloc);
-            }
-            Ok(relocs)
         }
     }
 
@@ -309,7 +322,7 @@ if_alloc! {
     }
 
     impl<'a> ctx::TryFromCtx<'a, RelocCtx> for Reloc {
-        type Error = ::error::Error;
+        type Error = crate::error::Error;
         type Size = usize;
         fn try_from_ctx(bytes: &'a [u8], (is_rela, Ctx { container, le }): RelocCtx) -> result::Result<(Self, Self::Size), Self::Error> {
             use scroll::Pread;
@@ -334,7 +347,7 @@ if_alloc! {
     }
 
     impl ctx::TryIntoCtx<RelocCtx> for Reloc {
-        type Error = ::error::Error;
+        type Error = crate::error::Error;
         type Size = usize;
         // TODO: I think this is a bad idea
         /// Writes the relocation into `bytes`
@@ -373,22 +386,140 @@ if_alloc! {
 
     impl fmt::Debug for Reloc {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            if let Some(addend) = self.r_addend {
-                write!(f,
-                    "r_offset: {:x} r_typ: {} r_sym: {} r_addend: {:x}",
-                    self.r_offset,
-                    self.r_type,
-                    self.r_sym,
-                    addend,
-                )
+            f.debug_struct("Reloc")
+                .field("r_offset", &format_args!("{:x}", self.r_offset))
+                .field("r_addend", &format_args!("{:x}", self.r_addend.unwrap_or(0)))
+                .field("r_sym", &self.r_sym)
+                .field("r_type", &self.r_type)
+                .finish()
+        }
+    }
+
+    #[derive(Default)]
+    /// An ELF section containing relocations, allowing lazy iteration over symbols.
+    pub struct RelocSection<'a> {
+        bytes: &'a [u8],
+        count: usize,
+        ctx: RelocCtx,
+        start: usize,
+        end: usize,
+    }
+
+    impl<'a> fmt::Debug for RelocSection<'a> {
+        fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+            let len = self.bytes.len();
+            fmt.debug_struct("RelocSection")
+                .field("bytes", &len)
+                .field("range", &format!("{:#x}..{:#x}", self.start, self.end))
+                .field("count", &self.count)
+                .field("Relocations", &self.to_vec())
+                .finish()
+        }
+    }
+
+    impl<'a> RelocSection<'a> {
+        #[cfg(feature = "endian_fd")]
+        /// Parse a REL or RELA section of size `filesz` from `offset`.
+        pub fn parse(bytes: &'a [u8], offset: usize, filesz: usize, is_rela: bool, ctx: Ctx) -> crate::error::Result<RelocSection<'a>> {
+            // TODO: better error message when too large (see symtab implementation)
+            let bytes = bytes.pread_with(offset, filesz)?;
+
+            Ok(RelocSection {
+                bytes: bytes,
+                count: filesz / Reloc::size(is_rela, ctx),
+                ctx: (is_rela, ctx),
+                start: offset,
+                end: offset + filesz,
+            })
+        }
+
+        /// Try to parse a single relocation from the binary, at `index`.
+        #[inline]
+        pub fn get(&self, index: usize) -> Option<Reloc> {
+            if index >= self.count {
+                None
             } else {
-                write!(f,
-                    "r_offset: {:x} r_typ: {} r_sym: {}",
-                    self.r_offset,
-                    self.r_type,
-                    self.r_sym,
-                )
+                Some(self.bytes.pread_with(index * Reloc::size_with(&self.ctx), self.ctx).unwrap())
             }
+        }
+
+        /// The number of relocations in the section.
+        #[inline]
+        pub fn len(&self) -> usize {
+            self.count
+        }
+
+        /// Returns true if section has no relocations.
+        #[inline]
+        pub fn is_empty(&self) -> bool {
+            self.count == 0
+        }
+
+        /// Iterate over all relocations.
+        pub fn iter(&self) -> RelocIterator<'a> {
+            self.into_iter()
+        }
+
+        /// Parse all relocations into a vector.
+        pub fn to_vec(&self) -> Vec<Reloc> {
+            self.iter().collect()
+        }
+    }
+
+    impl<'a, 'b> IntoIterator for &'b RelocSection<'a> {
+        type Item = <RelocIterator<'a> as Iterator>::Item;
+        type IntoIter = RelocIterator<'a>;
+
+        #[inline]
+        fn into_iter(self) -> Self::IntoIter {
+            RelocIterator {
+                bytes: self.bytes,
+                offset: 0,
+                index: 0,
+                count: self.count,
+                ctx: self.ctx,
+            }
+        }
+    }
+
+    pub struct RelocIterator<'a> {
+        bytes: &'a [u8],
+        offset: usize,
+        index: usize,
+        count: usize,
+        ctx: RelocCtx,
+    }
+
+    impl<'a> fmt::Debug for RelocIterator<'a> {
+        fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+            fmt.debug_struct("RelocIterator")
+                .field("bytes", &"<... redacted ...>")
+                .field("offset", &self.offset)
+                .field("index", &self.index)
+                .field("count", &self.count)
+                .field("ctx", &self.ctx)
+                .finish()
+        }
+    }
+
+    impl<'a> Iterator for RelocIterator<'a> {
+        type Item = Reloc;
+
+        #[inline]
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.index >= self.count {
+                None
+            } else {
+                self.index += 1;
+                Some(self.bytes.gread_with(&mut self.offset, self.ctx).unwrap())
+            }
+        }
+    }
+
+    impl<'a> ExactSizeIterator for RelocIterator<'a> {
+        #[inline]
+        fn len(&self) -> usize {
+            self.count - self.index
         }
     }
 } 

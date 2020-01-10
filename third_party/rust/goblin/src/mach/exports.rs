@@ -7,12 +7,12 @@
 
 
 use core::ops::Range;
-use scroll::{self, Pread, Uleb128};
-use error;
+use scroll::{Pread, Uleb128};
+use crate::error;
 use core::fmt::{self, Debug};
-use mach::load_command;
-use alloc::vec::Vec;
-use alloc::string::String;
+use crate::mach::load_command;
+use crate::alloc::vec::Vec;
+use crate::alloc::string::String;
 
 type Flag = u64;
 
@@ -43,8 +43,8 @@ impl SymbolKind {
             _    => SymbolKind::UnknownSymbolKind(kind),
         }
     }
-    pub fn to_str(kind: SymbolKind) -> &'static str {
-        match kind {
+    pub fn to_str(&self) -> &'static str {
+        match self {
             SymbolKind::Regular => "Regular",
             SymbolKind::Absolute => "Absolute",
             SymbolKind::ThreadLocal => "Thread_LOCAL",
@@ -84,7 +84,7 @@ impl<'a> ExportInfo<'a> {
             let address = bytes.pread::<Uleb128>(offset)?;
             Ok(Regular {
                 address: address.into(),
-                flags:   flags
+                flags
             })
         };
         let reexport = |mut offset| -> error::Result<ExportInfo<'a>> {
@@ -97,9 +97,9 @@ impl<'a> ExportInfo<'a> {
             let lib = libs[lib_ordinal as usize];
             let lib_symbol_name = if lib_symbol_name == "" { None } else { Some (lib_symbol_name)};
             Ok(Reexport {
-                lib: lib,
-                lib_symbol_name: lib_symbol_name,
-                flags: flags
+                lib,
+                lib_symbol_name,
+                flags
             })
         };
         match SymbolKind::new(flags) {
@@ -111,9 +111,9 @@ impl<'a> ExportInfo<'a> {
                     offset += stub_offset.size();
                     let resolver_offset = bytes.pread::<Uleb128>(offset)?;
                     Ok(Stub {
-                        stub_offset: stub_offset,
-                        resolver_offset: resolver_offset,
-                        flags: flags
+                        stub_offset,
+                        resolver_offset,
+                        flags
                     })
                     
                 } else {
@@ -156,7 +156,7 @@ impl<'a> Export<'a> {
             ExportInfo::Regular { address, .. } => address,
             _ => 0x0,
         };
-        Export { name: name, info: info, size: 0, offset: offset }
+        Export { name, info, size: 0, offset }
     }
 }
 
@@ -199,23 +199,23 @@ impl<'a> ExportTrie<'a> {
 
     fn walk_trie(&self, libs: &[&'a str], current_symbol: String, start: usize, exports: &mut Vec<Export<'a>>) -> error::Result<()> {
         if start < self.location.end {
-            let offset = &mut start.clone();
-            let terminal_size = Uleb128::read(&self.data, offset)?;
+            let mut offset = start;
+            let terminal_size = Uleb128::read(&self.data, &mut offset)?;
             
             
             
             if terminal_size == 0 {
-                let nbranches = Uleb128::read(&self.data, offset)? as usize;
+                let nbranches = Uleb128::read(&self.data, &mut offset)? as usize;
                 
-                let branches = self.walk_branches(nbranches, current_symbol, *offset)?;
+                let branches = self.walk_branches(nbranches, current_symbol, offset)?;
                 self.walk_nodes(libs, branches, exports)
             } else { 
-                let pos = *offset;
+                let pos = offset;
                 let children_start = &mut (pos + terminal_size as usize);
                 let nchildren = Uleb128::read(&self.data, children_start)? as usize;
-                let flags = Uleb128::read(&self.data, offset)?;
+                let flags = Uleb128::read(&self.data, &mut offset)?;
                 
-                let info = ExportInfo::parse(&self.data, libs, flags, *offset)?;
+                let info = ExportInfo::parse(&self.data, libs, flags, offset)?;
                 let export = Export::new(current_symbol.clone(), info);
                 
                 exports.push(export);
@@ -233,7 +233,7 @@ impl<'a> ExportTrie<'a> {
 
     
     pub fn exports(&self, libs: &[&'a str]) -> error::Result<Vec<Export<'a>>> {
-        let offset = self.location.start.clone();
+        let offset = self.location.start;
         let current_symbol = String::new();
         let mut exports = Vec::new();
         self.walk_trie(libs, current_symbol, offset, &mut exports)?;
@@ -245,7 +245,7 @@ impl<'a> ExportTrie<'a> {
         let start = command.export_off as usize;
         let end = (command.export_size + command.export_off) as usize;
         ExportTrie {
-            data: bytes.as_ref(),
+            data: bytes,
             location: start..end,
         }
     }
@@ -253,9 +253,10 @@ impl<'a> ExportTrie<'a> {
 
 impl<'a> Debug for ExportTrie<'a> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(fmt, "ExportTrie {{")?;
-        writeln!(fmt, "  Location: {:#x}..{:#x}", self.location.start, self.location.end)?;
-        writeln!(fmt, "}}")
+        fmt.debug_struct("ExportTrie")
+            .field("data", &"<... redacted ...>")
+            .field("location", &format_args!("{:#x}..{:#x}", self.location.start, self.location.end))
+            .finish()
     }
 }
 

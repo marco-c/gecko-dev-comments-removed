@@ -1,7 +1,5 @@
 
 
-extern crate goblin;
-
 use goblin::elf;
 use goblin::archive;
 use std::env;

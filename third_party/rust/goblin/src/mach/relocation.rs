@@ -23,7 +23,8 @@
 
 
 use core::fmt;
-use mach;
+use crate::mach;
+use scroll::{Pread, Pwrite, IOwrite, SizeWith, IOread};
 
 
 #[derive(Copy, Clone, Pread, Pwrite, IOwrite, SizeWith, IOread)]
@@ -41,41 +42,41 @@ pub const SIZEOF_RELOCATION_INFO: usize = 8;
 impl RelocationInfo {
     
     #[inline]
-    pub fn r_symbolnum(&self) -> usize {
+    pub fn r_symbolnum(self) -> usize {
         (self.r_info & 0x00ff_ffffu32) as usize
     }
     
     #[inline]
-    pub fn r_pcrel(&self) -> u8 {
+    pub fn r_pcrel(self) -> u8 {
         ((self.r_info & 0x0100_0000u32) >> 24) as u8
     }
     
     #[inline]
-    pub fn r_length(&self) -> u8 {
+    pub fn r_length(self) -> u8 {
         ((self.r_info & 0x0600_0000u32) >> 25) as u8
     }
     
     #[inline]
-    pub fn r_extern(&self) -> u8 {
+    pub fn r_extern(self) -> u8 {
         ((self.r_info & 0x0800_0000) >> 27) as u8
     }
     
     #[inline]
-    pub fn r_type(&self) -> u8 {
+    pub fn r_type(self) -> u8 {
         ((self.r_info & 0xf000_0000) >> 28) as u8
     }
     
     #[inline]
-    pub fn is_extern(&self) -> bool {
+    pub fn is_extern(self) -> bool {
         self.r_extern() == 1
     }
     
     #[inline]
-    pub fn is_pic(&self) -> bool {
+    pub fn is_pic(self) -> bool {
         self.r_pcrel() > 0
     }
     
-    pub fn to_str(&self, cputype: mach::cputype::CpuType) -> &'static str {
+    pub fn to_str(self, cputype: mach::cputype::CpuType) -> &'static str {
         reloc_to_str(self.r_type(), cputype)
     }
 }
@@ -164,9 +165,9 @@ pub const ARM64_RELOC_TLVP_LOAD_PAGEOFF12: RelocType = 9;
 pub const ARM64_RELOC_ADDEND: RelocType = 10;
 
 pub fn reloc_to_str(reloc: RelocType, cputype: mach::cputype::CpuType) -> &'static str {
-    use mach::constants::cputype::*;
+    use crate::mach::constants::cputype::*;
     match cputype {
-        CPU_TYPE_ARM64 => {
+        CPU_TYPE_ARM64 | CPU_TYPE_ARM64_32 => {
             match reloc {
                 ARM64_RELOC_UNSIGNED => "ARM64_RELOC_UNSIGNED",
                 ARM64_RELOC_SUBTRACTOR => "ARM64_RELOC_SUBTRACTOR",

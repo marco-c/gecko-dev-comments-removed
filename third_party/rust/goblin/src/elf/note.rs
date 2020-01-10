@@ -1,5 +1,11 @@
 
 
+#[cfg(feature = "log")]
+use log::debug;
+#[cfg(feature = "alloc")]
+use scroll::{Pread, Pwrite, IOread, IOwrite, SizeWith};
+
+
 
 
 
@@ -7,6 +13,7 @@
 
 
 pub const NT_GNU_ABI_TAG: u32 = 1;
+
 
 pub const ELF_NOTE_ABI: u32 = NT_GNU_ABI_TAG;
 
@@ -22,7 +29,11 @@ pub const ELF_NOTE_OS_FREEBSD: u32 = 3;
 
 
 
+
+
+
 pub const NT_GNU_HWCAP: u32 = 2;
+
 
 
 
@@ -34,6 +45,7 @@ pub const NT_GNU_GOLD_VERSION: u32 = 4;
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "alloc", derive(Pread, Pwrite, IOread, IOwrite, SizeWith))]
 #[repr(C)]
+
 
 pub struct Nhdr32 {
     
@@ -48,6 +60,7 @@ pub struct Nhdr32 {
 #[cfg_attr(feature = "alloc", derive(Pread, Pwrite, IOread, IOwrite, SizeWith))]
 #[repr(C)]
 
+
 pub struct Nhdr64 {
     
     pub n_namesz: u64,
@@ -58,10 +71,10 @@ pub struct Nhdr64 {
 }
 
 if_alloc! {
-    use error;
-    use container;
-    use scroll::{ctx, Pread};
-    use alloc::vec::Vec;
+    use crate::error;
+    use crate::container;
+    use scroll::ctx;
+    use crate::alloc::vec::Vec;
 
     /// An iterator over ELF binary notes in a note section or segment
     pub struct NoteDataIterator<'a> {
@@ -80,7 +93,7 @@ if_alloc! {
                 debug!("NoteIterator - {:#x}", self.offset);
                 match self.data.gread_with(&mut self.offset, self.ctx) {
                     Ok(res) => Some(Ok(res)),
-                    Err(e) => Some(Err(e.into()))
+                    Err(e) => Some(Err(e))
                 }
             }
         }
