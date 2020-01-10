@@ -735,6 +735,9 @@ class BackgroundCursorChild final : public PBackgroundIDBCursorChild {
 
   void HandleResponse(const nsTArray<IndexKeyCursorResponse>& aResponses);
 
+  template <typename... Args>
+  void HandleIndividualCursorResponse(Args&&... aArgs);
+
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
