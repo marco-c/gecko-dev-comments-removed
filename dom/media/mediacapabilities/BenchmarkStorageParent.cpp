@@ -81,7 +81,11 @@ IPCResult BenchmarkStorageParent::RecvPut(const nsCString& aDbName,
             }
             MovingAverage(average, window, aValue);
             int32_t newValue = PrepareStoredValue(average, window);
-            storage->Put(aDbName, aKey, newValue);
+            
+            
+            if (aResult != newValue) {
+              storage->Put(aDbName, aKey, newValue);
+            }
           },
           [](nsresult rv) {  });
 
