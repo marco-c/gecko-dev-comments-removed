@@ -84,11 +84,19 @@ class FT2FontEntry : public gfxFontEntry {
   
   
   void CheckForBrokenFont(gfxFontFamily* aFamily);
-  void CheckForBrokenFont(const nsACString& aFamilyName);
+  void CheckForBrokenFont(const nsACString& aFamilyKey);
 
   FT_MM_Var* GetMMVar() override;
 
-  void AppendToFaceList(nsCString& aFaceList, nsACString& aFamilyName);
+  
+
+
+
+
+
+
+  void AppendToFaceList(nsCString& aFaceList, const nsACString& aFamilyName,
+                        const nsACString& aPSName, const nsACString& aFullName);
 
   void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontListSizes* aSizes) const override;
@@ -173,6 +181,7 @@ class gfxFT2FontList : public gfxPlatformFontList {
 
   void InitSharedFontListForPlatform() override;
   void CollectInitData(const nsCString& aFamilyName, const FontListEntry& aFLE,
+                       const nsCString& aPSName, const nsCString& aFullName,
                        StandardFile aStdFile);
 
   
@@ -180,7 +189,10 @@ class gfxFT2FontList : public gfxPlatformFontList {
 
 
   typedef void (*CollectFunc)(const nsCString& aFamilyName,
-                              const FontListEntry& aFLE, StandardFile aStdFile);
+                              const FontListEntry& aFLE,
+                              const nsCString& aPSName,
+                              const nsCString& aFullName,
+                              StandardFile aStdFile);
 
   
 
