@@ -9808,36 +9808,6 @@ static bool HasHttpScheme(nsIURI* aURI) {
     isc->SetBaseURI(baseURI);
   }
 
-  nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadState->Csp();
-  if (csp) {
-    
-    
-    bool upgradeInsecureRequests = false;
-    csp->GetUpgradeInsecureRequests(&upgradeInsecureRequests);
-    if (upgradeInsecureRequests) {
-      
-      nsCOMPtr<nsIPrincipal> resultPrincipal;
-      aRv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
-          channel, getter_AddRefs(resultPrincipal));
-      NS_ENSURE_SUCCESS(aRv, false);
-      if (IsConsideredSameOriginForUIR(aLoadState->TriggeringPrincipal(),
-                                       resultPrincipal)) {
-        aLoadInfo->SetUpgradeInsecureRequests();
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
-    cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
-    aLoadInfo->SetCSPToInherit(cspToInherit);
-  }
-
   nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
       do_QueryInterface(channel);
   if (appCacheChannel) {
@@ -10065,6 +10035,34 @@ static bool HasHttpScheme(nsIURI* aURI) {
   if (csp) {
     nsCOMPtr<nsILoadInfo> loadInfo;
     MOZ_ALWAYS_SUCCEEDS(aChannel->GetLoadInfo(getter_AddRefs(loadInfo)));
+
+    
+    
+    bool upgradeInsecureRequests = false;
+    csp->GetUpgradeInsecureRequests(&upgradeInsecureRequests);
+    if (upgradeInsecureRequests) {
+      
+      nsCOMPtr<nsIPrincipal> resultPrincipal;
+      rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+          aChannel, getter_AddRefs(resultPrincipal));
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (IsConsideredSameOriginForUIR(aLoadState->TriggeringPrincipal(),
+                                       resultPrincipal)) {
+        static_cast<LoadInfo*>(loadInfo.get())->SetUpgradeInsecureRequests();
+      }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
+    cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
+    static_cast<LoadInfo*>(loadInfo.get())->SetCSPToInherit(cspToInherit);
+
     
     bool allowsNavigateTo = false;
     rv = csp->GetAllowsNavigateTo(aLoadState->URI(), loadInfo,
