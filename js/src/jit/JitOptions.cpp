@@ -130,7 +130,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableOptimizationLevels, false);
 
   
-  SET_DEFAULT(baselineInterpreter, false);
+  SET_DEFAULT(baselineInterpreter, true);
 
   
   SET_DEFAULT(baselineJit, true);
@@ -160,7 +160,7 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   
-  SET_DEFAULT(baselineWarmUpThreshold, 10);
+  SET_DEFAULT(baselineWarmUpThreshold, 50);
 
   
   
