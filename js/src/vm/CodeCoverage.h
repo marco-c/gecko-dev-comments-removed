@@ -36,15 +36,11 @@ class LCovSource {
 
   
   
-  void writeScript(JSScript* script);
+  void writeScript(JSScript* script, const char* scriptName);
 
   
   
   void exportInto(GenericPrinter& out);
-
- private:
-  
-  bool writeScriptName(LSprinter& out, JSScript* script);
 
  private:
   
@@ -96,6 +92,10 @@ class LCovRealm {
 
   
   LCovSource* lookupOrAdd(const char* name);
+
+  
+  
+  const char* getScriptName(JSScript* script);
 
  private:
   typedef mozilla::Vector<LCovSource*, 16, LifoAllocPolicy<Fallible>>

@@ -121,27 +121,13 @@ void LCovSource::exportInto(GenericPrinter& out) {
   maxLineHit_ = 0;
 }
 
-bool LCovSource::writeScriptName(LSprinter& out, JSScript* script) {
-  JSFunction* fun = script->function();
-  if (fun && fun->displayAtom()) {
-    return EscapedStringPrinter(out, fun->displayAtom(), 0);
-  }
-  out.printf("top-level");
-  return true;
-}
-
-void LCovSource::writeScript(JSScript* script) {
+void LCovSource::writeScript(JSScript* script, const char* scriptName) {
   if (hadOutOfMemory()) {
     return;
   }
 
   numFunctionsFound_++;
-  outFN_.printf("FN:%u,", script->lineno());
-  if (!writeScriptName(outFN_, script)) {
-    hadOOM_ = true;
-    return;
-  }
-  outFN_.put("\n", 1);
+  outFN_.printf("FN:%u,%s\n", script->lineno(), scriptName);
 
   uint64_t hits = 0;
   ScriptCounts* sc = nullptr;
@@ -150,11 +136,7 @@ void LCovSource::writeScript(JSScript* script) {
     numFunctionsHit_++;
     const PCCounts* counts =
         sc->maybeGetPCCounts(script->pcToOffset(script->main()));
-    outFNDA_.printf("FNDA:%" PRIu64 ",", counts->numExec());
-    if (!writeScriptName(outFNDA_, script)) {
-      hadOOM_ = true;
-      return;
-    }
+    outFNDA_.printf("FNDA:%" PRIu64 ",%s\n", counts->numExec(), scriptName);
     outFNDA_.put("\n", 1);
 
     
@@ -493,7 +475,14 @@ void LCovRealm::collectCodeCoverageInfo(JSScript* script, const char* name) {
   }
 
   
-  source->writeScript(script);
+  const char* scriptName = getScriptName(script);
+  if (!scriptName) {
+    outTN_.reportOutOfMemory();
+    return;
+  }
+
+  
+  source->writeScript(script, scriptName);
 
   
   if (source->hadOutOfMemory()) {
@@ -588,6 +577,20 @@ void LCovRealm::writeRealmName(JS::Realm* realm) {
   } else {
     outTN_.printf("Realm_%p%p\n", (void*)size_t('_'), realm);
   }
+}
+
+const char* LCovRealm::getScriptName(JSScript* script) {
+  JSFunction* fun = script->function();
+  if (fun && fun->displayAtom()) {
+    JSAtom* atom = fun->displayAtom();
+    size_t lenWithNull = js::PutEscapedString(nullptr, 0, atom, 0) + 1;
+    char* name = alloc_.newArray<char>(lenWithNull);
+    if (name) {
+      js::PutEscapedString(name, lenWithNull, atom, 0);
+    }
+    return name;
+  }
+  return "top-level";
 }
 
 bool gLCovIsEnabled = false;
@@ -716,6 +719,13 @@ bool InitScriptCoverage(JSContext* cx, JSScript* script) {
   }
 
   
+  const char* scriptName = lcovRealm->getScriptName(script);
+  if (!scriptName) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
   JS::Zone* zone = script->zone();
   if (!zone->scriptLCovMap) {
     zone->scriptLCovMap = cx->make_unique<ScriptLCovMap>();
@@ -725,7 +735,8 @@ bool InitScriptCoverage(JSContext* cx, JSScript* script) {
   }
 
   
-  if (!zone->scriptLCovMap->putNew(script, source)) {
+  if (!zone->scriptLCovMap->putNew(script,
+                                   mozilla::MakeTuple(source, scriptName))) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -746,9 +757,12 @@ void CollectScriptCoverage(JSScript* script) {
     return;
   }
 
-  LCovSource* source = p->value();
+  LCovSource* source;
+  const char* scriptName;
+  mozilla::Tie(source, scriptName) = p->value();
+
   if (!script->isUncompleted()) {
-    source->writeScript(script);
+    source->writeScript(script, scriptName);
   }
   map->remove(p);
 }
