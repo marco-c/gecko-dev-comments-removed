@@ -33,7 +33,6 @@ const {
   getBindingElementAndPseudo,
   getCSSStyleRules,
   l10n,
-  hasVisitedState,
   isAgentStylesheet,
   isAuthorStylesheet,
   isUserStylesheet,
@@ -724,11 +723,6 @@ CssLogic.href = function(sheet) {
 
   return href;
 };
-
-
-
-
-CssLogic.hasVisitedState = hasVisitedState;
 
 
 
