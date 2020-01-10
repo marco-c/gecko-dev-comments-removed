@@ -213,15 +213,15 @@ nsLoadGroup::Cancel(nsresult status) {
     }
 
     
+    rv = request->Cancel(status);
+
+    
     
     
     
     
     
     (void)RemoveRequest(request, nullptr, status);
-
-    
-    rv = request->Cancel(status);
 
     
     if (NS_FAILED(rv) && NS_SUCCEEDED(firstError)) firstError = rv;
