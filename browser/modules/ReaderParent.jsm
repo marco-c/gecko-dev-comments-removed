@@ -78,10 +78,6 @@ var ReaderParent = {
     let button = win.document.getElementById("reader-mode-button");
     let menuitem = win.document.getElementById("menu_readerModeItem");
     let key = win.document.getElementById("key_toggleReaderMode");
-    
-    
-    
-    
     if (browser.currentURI.spec.startsWith("about:reader")) {
       let closeText = gStringBundle.GetStringFromName("readerView.close");
 
@@ -98,7 +94,6 @@ var ReaderParent = {
 
       key.setAttribute("disabled", false);
 
-      browser.setAttribute("aria-reader", "active");
       Services.obs.notifyObservers(null, "reader-mode-available");
     } else {
       let enterText = gStringBundle.GetStringFromName("readerView.enter");
@@ -117,10 +112,7 @@ var ReaderParent = {
       key.setAttribute("disabled", !browser.isArticle);
 
       if (browser.isArticle) {
-        browser.setAttribute("aria-reader", "available");
         Services.obs.notifyObservers(null, "reader-mode-available");
-      } else {
-        browser.removeAttribute("aria-reader");
       }
     }
   },
