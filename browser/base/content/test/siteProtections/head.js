@@ -19,7 +19,13 @@ async function openProtectionsPanel(toast) {
   );
 
   
-  shieldIconContainer.focus();
+  
+  EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {
+    type: "mousemove",
+  });
+  EventUtils.synthesizeMouseAtCenter(shieldIconContainer, {
+    type: "mousemove",
+  });
 
   if (!toast) {
     EventUtils.synthesizeMouseAtCenter(shieldIconContainer, {});
@@ -28,4 +34,30 @@ async function openProtectionsPanel(toast) {
   }
 
   await popupShownPromise;
+}
+
+async function openProtectionsPanelWithKeyNav() {
+  let popupShownPromise = BrowserTestUtils.waitForEvent(
+    protectionsPopup,
+    "popupshown"
+  );
+
+  gURLBar.focus();
+
+  
+  
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+  EventUtils.synthesizeKey("KEY_Enter", {});
+
+  await popupShownPromise;
+}
+
+async function closeProtectionsPanel() {
+  let popuphiddenPromise = BrowserTestUtils.waitForEvent(
+    protectionsPopup,
+    "popuphidden"
+  );
+
+  PanelMultiView.hidePopup(protectionsPopup);
+  await popuphiddenPromise;
 }
