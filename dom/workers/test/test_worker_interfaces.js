@@ -115,6 +115,20 @@ var interfaceNamesInGlobalScope =
 
     {name: "DOMException", insecureContext: true},
 
+    {name: "DOMMatrix", insecureContext: true},
+
+    {name: "DOMMatrixReadOnly", insecureContext: true},
+
+    {name: "DOMPoint", insecureContext: true},
+
+    {name: "DOMPointReadOnly", insecureContext: true},
+
+    {name: "DOMQuad", insecureContext: true},
+
+    {name: "DOMRect", insecureContext: true},
+
+    {name: "DOMRectReadOnly", insecureContext: true},
+
     {name: "DOMRequest", insecureContext: true},
 
     {name: "DOMStringList", insecureContext: true},

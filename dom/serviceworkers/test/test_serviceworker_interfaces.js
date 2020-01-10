@@ -109,6 +109,20 @@ var interfaceNamesInGlobalScope =
 
     "DOMException",
 
+    "DOMMatrix",
+
+    "DOMMatrixReadOnly",
+
+    "DOMPoint",
+
+    "DOMPointReadOnly",
+
+    "DOMQuad",
+
+    "DOMRect",
+
+    "DOMRectReadOnly",
+
     "DOMRequest",
 
     "DOMStringList",
