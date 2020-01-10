@@ -91,6 +91,10 @@ class TextServicesDocument;
 class TypeInState;
 class WSRunObject;
 
+template <typename NodeType>
+class CreateNodeResultBase;
+typedef CreateNodeResultBase<dom::Element> CreateElementResult;
+
 namespace dom {
 class DataTransfer;
 class DragEvent;
@@ -963,6 +967,18 @@ class EditorBase : public nsIEditor,
 
   MOZ_CAN_RUN_SCRIPT nsresult InsertNodeWithTransaction(
       nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert);
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE CreateElementResult
+  InsertPaddingBRElementForEmptyLastLineWithTransaction(
+      const EditorDOMPoint& aPointToInsert);
 
   
 
@@ -2080,6 +2096,18 @@ class EditorBase : public nsIEditor,
   };
   MOZ_CAN_RUN_SCRIPT
   void NotifyEditorObservers(NotificationForEditorObservers aNotification);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT EditorDOMPoint
+  PrepareToInsertBRElement(const EditorDOMPoint& aPointToInsert);
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;

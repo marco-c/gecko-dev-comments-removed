@@ -280,18 +280,6 @@ class TextEditRules {
                                      nsAString* aOutString, int32_t aMaxLength,
                                      bool* aTruncated);
 
-  
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT CreateElementResult
-  CreatePaddingBRElementForEmptyLastLine(const EditorDOMPoint& aPointToInsert);
-
   void UndefineCaretBidiLevel();
 
   nsresult CheckBidiLevelForDeletion(const EditorRawDOMPoint& aSelectionPoint,

@@ -595,6 +595,24 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertBRElementWithTransaction(
+      const EditorDOMPoint& aPointToInsert, EDirection aSelect = eNone);
+
+  
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult DeleteSelectionWithTransaction(
       EDirection aAction, EStripWrappers aStripWrappers) override;

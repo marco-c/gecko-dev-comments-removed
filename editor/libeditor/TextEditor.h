@@ -471,24 +471,6 @@ class TextEditor : public EditorBase,
 
 
 
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertBrElementWithTransaction(
-      const EditorDOMPoint& aPointToInsert, EDirection aSelect = eNone);
-
-  
-
-
-
-
   nsresult ExtendSelectionForDelete(nsIEditor::EDirection* aAction);
 
   static void GetDefaultEditorPrefs(int32_t& aNewLineHandling,
