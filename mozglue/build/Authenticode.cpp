@@ -54,7 +54,7 @@ struct CertContextDeleter {
 struct CATAdminContextDeleter {
   typedef HCATADMIN pointer;
   void operator()(pointer aCtx) {
-    static const mozilla::DynamicallyLinkedFunctionPtr<decltype(
+    static const mozilla::StaticDynamicallyLinkedFunctionPtr<decltype(
         &::CryptCATAdminReleaseContext)>
         pCryptCATAdminReleaseContext(L"wintrust.dll",
                                      "CryptCATAdminReleaseContext");
@@ -202,7 +202,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
   
   
   if (mozilla::IsWin8OrLater()) {
-    static const mozilla::DynamicallyLinkedFunctionPtr<decltype(
+    static const mozilla::StaticDynamicallyLinkedFunctionPtr<decltype(
         &::CryptCATAdminAcquireContext2)>
         pCryptCATAdminAcquireContext2(L"wintrust.dll",
                                       "CryptCATAdminAcquireContext2");
@@ -220,7 +220,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
       return false;
     }
   } else {
-    static const mozilla::DynamicallyLinkedFunctionPtr<decltype(
+    static const mozilla::StaticDynamicallyLinkedFunctionPtr<decltype(
         &::CryptCATAdminAcquireContext)>
         pCryptCATAdminAcquireContext(L"wintrust.dll",
                                      "CryptCATAdminAcquireContext");
@@ -247,7 +247,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
   DWORD hashLen = 0;
   mozilla::UniquePtr<BYTE[]> hashBuf;
 
-  static const mozilla::DynamicallyLinkedFunctionPtr<decltype(
+  static const mozilla::StaticDynamicallyLinkedFunctionPtr<decltype(
       &::CryptCATAdminCalcHashFromFileHandle2)>
       pCryptCATAdminCalcHashFromFileHandle2(
           L"wintrust.dll", "CryptCATAdminCalcHashFromFileHandle2");
@@ -265,7 +265,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
       return false;
     }
   } else {
-    static const mozilla::DynamicallyLinkedFunctionPtr<decltype(
+    static const mozilla::StaticDynamicallyLinkedFunctionPtr<decltype(
         &::CryptCATAdminCalcHashFromFileHandle)>
         pCryptCATAdminCalcHashFromFileHandle(
             L"wintrust.dll", "CryptCATAdminCalcHashFromFileHandle");
@@ -290,7 +290,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
   
   
 
-  static const mozilla::DynamicallyLinkedFunctionPtr<decltype(
+  static const mozilla::StaticDynamicallyLinkedFunctionPtr<decltype(
       &::CryptCATAdminEnumCatalogFromHash)>
       pCryptCATAdminEnumCatalogFromHash(L"wintrust.dll",
                                         "CryptCATAdminEnumCatalogFromHash");
@@ -298,7 +298,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
     return false;
   }
 
-  static const mozilla::DynamicallyLinkedFunctionPtr<decltype(
+  static const mozilla::StaticDynamicallyLinkedFunctionPtr<decltype(
       &::CryptCATAdminReleaseCatalogContext)>
       pCryptCATAdminReleaseCatalogContext(L"wintrust.dll",
                                           "CryptCATAdminReleaseCatalogContext");
@@ -321,7 +321,7 @@ bool SignedBinary::VerifySignature(const wchar_t* aFilePath) {
 
   
 
-  static const mozilla::DynamicallyLinkedFunctionPtr<decltype(
+  static const mozilla::StaticDynamicallyLinkedFunctionPtr<decltype(
       &::CryptCATCatalogInfoFromContext)>
       pCryptCATCatalogInfoFromContext(L"wintrust.dll",
                                       "CryptCATCatalogInfoFromContext");

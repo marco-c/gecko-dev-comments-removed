@@ -59,7 +59,8 @@ void AgileReference::AssignInternal(IUnknown* aObject) {
 
 
 
-  static const DynamicallyLinkedFunctionPtr<decltype(&::RoGetAgileReference)>
+  static const StaticDynamicallyLinkedFunctionPtr<decltype(
+      &::RoGetAgileReference)>
       pRoGetAgileReference(L"ole32.dll", "RoGetAgileReference");
 
   MOZ_ASSERT(aObject);
