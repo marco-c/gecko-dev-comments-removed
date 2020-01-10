@@ -7,7 +7,7 @@
 
 
 let loadChromiumResources = Promise.resolve().then(() => {
-  if (!('MojoInterfaceInterceptor' in self)) {
+  if (!window.MojoInterfaceInterceptor) {
     
     
     return;
@@ -37,7 +37,10 @@ async function initialize_generic_sensor_tests() {
   if (typeof GenericSensorTest === 'undefined') {
     await loadChromiumResources;
   }
-  assert_true(typeof GenericSensorTest !== 'undefined');
+  assert_true(
+    typeof GenericSensorTest !== 'undefined',
+    'Mojo testing interface is not available.'
+  );
   let sensorTest = new GenericSensorTest();
   await sensorTest.initialize();
   return sensorTest;
