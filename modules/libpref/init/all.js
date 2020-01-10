@@ -3366,28 +3366,6 @@ pref("font.size.monospace.x-math", 13);
 
 
 
-
-pref("font.size.inflation.forceEnabled", false);
-
-
-
-
-
-
-
-
-
-pref("font.size.inflation.disabledInMasterProcess", false);
-
-
-
-
-
-
-
-
-
-
 pref("font.size.systemFontScale", 100);
 
 
