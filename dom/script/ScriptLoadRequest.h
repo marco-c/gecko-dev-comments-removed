@@ -12,6 +12,7 @@
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/Utf8.h"  
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
@@ -331,6 +332,11 @@ class ScriptLoadRequest
   
   
   nsresult mUnreportedPreloadError;
+
+  
+  
+  
+  TimeDuration mStreamingTime;
 };
 
 class ScriptLoadRequestList : private mozilla::LinkedList<ScriptLoadRequest> {

@@ -498,6 +498,10 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
     BytecodeCompiler& info, HandleObject environment, SharedContext* sc) {
   assertSourceParserAndScriptCreated(info);
 
+  
+  
+  info.script->scriptSource()->recordParseStarted();
+
   TokenStreamPosition startPosition(info.keepAtoms, parser->tokenStream);
 
   JSContext* cx = info.cx;
@@ -518,6 +522,10 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
     AutoGeckoProfilerEntry pseudoFrame(cx, "script emit",
                                        JS::ProfilingCategoryPair::JS_Parsing);
     if (pn) {
+      
+      
+      info.script->scriptSource()->recordEmitStarted();
+
       
       if (!parser->publishDeferredItems()) {
         return nullptr;
