@@ -78,6 +78,14 @@ class WritableStream : public NativeObject {
 
 
 
+
+
+
+
+
+
+
+
     Slot_WriteRequests,
 
     
@@ -352,9 +360,16 @@ class WritableStream : public NativeObject {
   }
 
   ListObject* writeRequests() const {
+    MOZ_ASSERT(!getFixedSlot(Slot_WriteRequests).isUndefined(),
+               "shouldn't be accessing [[writeRequests]] on a newborn and "
+               "uninitialized stream, or on a stream that's errored and no "
+               "longer has any write requests");
     return &getFixedSlot(Slot_WriteRequests).toObject().as<ListObject>();
   }
   void clearWriteRequests() {
+    
+    
+    
     MOZ_ASSERT(stateIsInitialized());
     MOZ_ASSERT(!haveInFlightWriteRequest(),
                "must clear the in-flight request flag before clearing "
