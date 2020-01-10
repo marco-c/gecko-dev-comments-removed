@@ -365,7 +365,7 @@ class VirtualenvMixin(object):
         
         
         
-        if self._is_redhat():
+        if self._is_redhat_based():
             self.warning("creating virtualenv without --always-copy "
                          "due to issues on Redhat derived distros")
         else:
