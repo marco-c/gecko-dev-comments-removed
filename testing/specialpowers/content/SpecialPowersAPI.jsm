@@ -1202,13 +1202,21 @@ class SpecialPowersAPI extends JSWindowActorChild {
       el.width = imageData.width;
       el.height = imageData.height;
 
-      let ctx = el.getContext("2d");
-      ctx.putImageData(imageData, 0, 0);
+      if (ImageData.isInstance(imageData)) {
+        let ctx = el.getContext("2d");
+        ctx.putImageData(imageData, 0, 0);
+      }
 
       return el;
     };
 
     if (Window.isInstance(content)) {
+      
+      
+      if (rect && !(rect.width && rect.height)) {
+        return toCanvas(rect);
+      }
+
       
       return toCanvas(getImageData(rect, bgcolor, options));
     }
