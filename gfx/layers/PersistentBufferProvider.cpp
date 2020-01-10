@@ -100,7 +100,10 @@ PersistentBufferProviderShared::Create(gfx::IntSize aSize,
                                        gfx::SurfaceFormat aFormat,
                                        KnowsCompositor* aKnowsCompositor) {
   if (!aKnowsCompositor ||
-      !aKnowsCompositor->GetTextureForwarder()->IPCOpen()) {
+      !aKnowsCompositor->GetTextureForwarder()->IPCOpen() ||
+      
+      
+      aKnowsCompositor->SupportsTextureDirectMapping()) {
     return nullptr;
   }
 
