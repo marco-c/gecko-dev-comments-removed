@@ -1172,11 +1172,11 @@ AbortReason MBasicBlock::setBackedge(TempAllocator& alloc, MBasicBlock* pred) {
   return AbortReason::NoAbort;
 }
 
-bool MBasicBlock::setBackedgeWasm(MBasicBlock* pred) {
+bool MBasicBlock::setBackedgeWasm(MBasicBlock* pred, size_t paramCount) {
   
   MOZ_ASSERT(hasLastIns());
   MOZ_ASSERT(pred->hasLastIns());
-  MOZ_ASSERT(stackDepth() == pred->stackDepth());
+  MOZ_ASSERT(stackDepth() + paramCount == pred->stackDepth());
 
   
   MOZ_ASSERT(kind_ == PENDING_LOOP_HEADER);
@@ -1211,8 +1211,11 @@ bool MBasicBlock::setBackedgeWasm(MBasicBlock* pred) {
     MOZ_ASSERT(phi->numOperands() == 1);
     entryDef->addInlineInput(exitDef);
 
-    MOZ_ASSERT(slot < pred->stackDepth());
-    setSlot(slot, entryDef);
+    
+    
+    if (slot < stackDepth()) {
+      setSlot(slot, entryDef);
+    }
   }
 
   

@@ -288,7 +288,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   
   MOZ_MUST_USE AbortReason setBackedge(TempAllocator& alloc,
                                        MBasicBlock* block);
-  MOZ_MUST_USE bool setBackedgeWasm(MBasicBlock* block);
+  MOZ_MUST_USE bool setBackedgeWasm(MBasicBlock* block, size_t paramCount);
 
   
   
