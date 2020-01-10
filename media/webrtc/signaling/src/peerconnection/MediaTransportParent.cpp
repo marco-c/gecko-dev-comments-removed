@@ -5,9 +5,8 @@
 #include "mozilla/dom/MediaTransportParent.h"
 #include "signaling/src/peerconnection/MediaTransportHandler.h"
 
-#include "nss.h"                
-#include "mozilla/PublicSSL.h"  
 #include "sigslot.h"
+#include "CSFLog.h"
 
 namespace mozilla {
 
@@ -17,7 +16,7 @@ class MediaTransportParent::Impl : public sigslot::has_slots<> {
  public:
   explicit Impl(MediaTransportParent* aParent)
       : mHandler(
-            MediaTransportHandler::Create(GetMainThreadSerialEventTarget())),
+            MediaTransportHandler::Create(GetCurrentThreadSerialEventTarget())),
         mParent(aParent) {
     mHandler->SignalCandidate.connect(this,
                                       &MediaTransportParent::Impl::OnCandidate);
@@ -93,9 +92,8 @@ MediaTransportParent::~MediaTransportParent() {}
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvGetIceLog(
     const nsCString& pattern, GetIceLogResolver&& aResolve) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->GetIceLog(pattern)->Then(
-      GetMainThreadSerialEventTarget(), __func__,
+      GetCurrentThreadSerialEventTarget(), __func__,
       
       
       [aResolve = std::move(aResolve)](
@@ -112,19 +110,16 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvGetIceLog(
 }
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvClearIceLog() {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->ClearIceLog();
   return ipc::IPCResult::Ok();
 }
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvEnterPrivateMode() {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->EnterPrivateMode();
   return ipc::IPCResult::Ok();
 }
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvExitPrivateMode() {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->ExitPrivateMode();
   return ipc::IPCResult::Ok();
 }
@@ -132,25 +127,6 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvExitPrivateMode() {
 mozilla::ipc::IPCResult MediaTransportParent::RecvCreateIceCtx(
     const string& name, nsTArray<RTCIceServer>&& iceServers,
     const RTCIceTransportPolicy& icePolicy) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
-  static bool nssStarted = false;
-  if (!nssStarted) {
-    if (NSS_NoDB_Init(nullptr) != SECSuccess) {
-      MOZ_CRASH();
-      return ipc::IPCResult::Fail(WrapNotNull(this), __func__,
-                                  "NSS_NoDB_Init failed");
-    }
-
-    if (NS_FAILED(mozilla::psm::InitializeCipherSuite())) {
-      MOZ_CRASH();
-      return ipc::IPCResult::Fail(WrapNotNull(this), __func__,
-                                  "InitializeCipherSuite failed");
-    }
-
-    mozilla::psm::DisableMD5();
-  }
-
-  nssStarted = true;
 
   nsresult rv = mImpl->mHandler->CreateIceCtx(name, iceServers, icePolicy);
   if (NS_FAILED(rv)) {
@@ -163,7 +139,6 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvCreateIceCtx(
 mozilla::ipc::IPCResult MediaTransportParent::RecvSetProxyServer(
     const dom::TabId& tabId, const net::LoadInfoArgs& args,
     const nsCString& alpn) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->SetProxyServer(NrSocketProxyConfig(tabId, alpn, args));
   return ipc::IPCResult::Ok();
 }
@@ -171,7 +146,6 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvSetProxyServer(
 mozilla::ipc::IPCResult MediaTransportParent::RecvEnsureProvisionalTransport(
     const string& transportId, const string& localUfrag, const string& localPwd,
     const int& componentCount) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->EnsureProvisionalTransport(transportId, localUfrag, localPwd,
                                               componentCount);
   return ipc::IPCResult::Ok();
@@ -179,7 +153,6 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvEnsureProvisionalTransport(
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvStartIceGathering(
     const bool& defaultRouteOnly, const net::NrIceStunAddrArray& stunAddrs) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->StartIceGathering(defaultRouteOnly, stunAddrs);
   return ipc::IPCResult::Ok();
 }
@@ -190,7 +163,6 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvActivateTransport(
     const string& remotePwd, nsTArray<uint8_t>&& keyDer,
     nsTArray<uint8_t>&& certDer, const int& authType, const bool& dtlsClient,
     const DtlsDigestList& digests, const bool& privacyRequested) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->ActivateTransport(
       transportId, localUfrag, localPwd, componentCount, remoteUfrag, remotePwd,
       keyDer, certDer, static_cast<SSLKEAType>(authType), dtlsClient, digests,
@@ -200,7 +172,6 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvActivateTransport(
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvRemoveTransportsExcept(
     const StringVector& transportIds) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   std::set<std::string> ids(transportIds.begin(), transportIds.end());
   mImpl->mHandler->RemoveTransportsExcept(ids);
   return ipc::IPCResult::Ok();
@@ -209,14 +180,12 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvRemoveTransportsExcept(
 mozilla::ipc::IPCResult MediaTransportParent::RecvStartIceChecks(
     const bool& isControlling, const bool& isOfferer,
     const StringVector& iceOptions) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->StartIceChecks(isControlling, isOfferer, iceOptions);
   return ipc::IPCResult::Ok();
 }
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvSendPacket(
     const string& transportId, const MediaPacket& packet) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   MediaPacket copy(packet);  
   mImpl->mHandler->SendPacket(transportId, std::move(copy));
   return ipc::IPCResult::Ok();
@@ -224,14 +193,12 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvSendPacket(
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvAddIceCandidate(
     const string& transportId, const string& candidate, const string& ufrag) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->AddIceCandidate(transportId, candidate, ufrag);
   return ipc::IPCResult::Ok();
 }
 
 mozilla::ipc::IPCResult MediaTransportParent::RecvUpdateNetworkState(
     const bool& online) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mImpl->mHandler->UpdateNetworkState(online);
   return ipc::IPCResult::Ok();
 }
@@ -239,7 +206,6 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvUpdateNetworkState(
 mozilla::ipc::IPCResult MediaTransportParent::RecvGetIceStats(
     const string& transportId, const double& now,
     const RTCStatsReportInternal& reportIn, GetIceStatsResolver&& aResolve) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   
   
   
@@ -248,7 +214,7 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvGetIceStats(
 
   mImpl->mHandler->GetIceStats(transportId, now, std::move(report))
       ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
+          GetCurrentThreadSerialEventTarget(), __func__,
           
           
           [aResolve = std::move(aResolve),
@@ -266,7 +232,6 @@ mozilla::ipc::IPCResult MediaTransportParent::RecvGetIceStats(
 }
 
 void MediaTransportParent::ActorDestroy(ActorDestroyReason aWhy) {
-  MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
 }
 
 }  

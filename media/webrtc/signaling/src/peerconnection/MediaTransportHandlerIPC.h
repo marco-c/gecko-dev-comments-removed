@@ -76,7 +76,7 @@ class MediaTransportHandlerIPC : public MediaTransportHandler {
   friend class MediaTransportChild;
 
   
-  MediaTransportChild* mChild = nullptr;
+  dom::PMediaTransportChild* mChild = nullptr;
 
   
   

@@ -26,6 +26,7 @@
 #include "mozilla/dom/EndpointForReportChild.h"
 #include "mozilla/dom/FileSystemTaskBase.h"
 #include "mozilla/dom/IPCBlobInputStreamChild.h"
+#include "mozilla/dom/PMediaTransportChild.h"
 #include "mozilla/dom/PendingIPCBlobChild.h"
 #include "mozilla/dom/TemporaryIPCBlobChild.h"
 #include "mozilla/dom/cache/ActorUtils.h"
@@ -764,6 +765,21 @@ bool BackgroundChildImpl::DeallocPEndpointForReportChild(
     PEndpointForReportChild* aActor) {
   MOZ_ASSERT(aActor);
   delete static_cast<dom::EndpointForReportChild*>(aActor);
+  return true;
+}
+
+dom::PMediaTransportChild* BackgroundChildImpl::AllocPMediaTransportChild() {
+  
+  
+  MOZ_ASSERT_UNREACHABLE(
+      "The only thing that ought to be creating a PMediaTransportChild is "
+      "MediaTransportHandlerIPC!");
+  return nullptr;
+}
+
+bool BackgroundChildImpl::DeallocPMediaTransportChild(
+    dom::PMediaTransportChild* aActor) {
+  delete aActor;
   return true;
 }
 
