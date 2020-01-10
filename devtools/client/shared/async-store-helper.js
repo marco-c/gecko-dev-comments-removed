@@ -2,12 +2,9 @@
 
 
 
+"use strict";
 
-
-import { asyncStorage } from "devtools-modules";
-
-
-
+const asyncStorage = require("devtools/shared/async-storage");
 
 
 
@@ -15,8 +12,11 @@ import { asyncStorage } from "devtools-modules";
 
 
 
-export function asyncStoreHelper(root: string, mappings: Object) {
-  let store: any = {};
+
+
+
+function asyncStoreHelper(root, mappings) {
+  let store = {};
 
   function getMappingKey(key) {
     return Array.isArray(mappings[key]) ? mappings[key][0] : mappings[key];
@@ -51,5 +51,7 @@ export function asyncStoreHelper(root: string, mappings: Object) {
     },
   });
 
-  return (store: { [$Keys<typeof mappings>]: any });
+  return store;
 }
+
+module.exports = asyncStoreHelper;

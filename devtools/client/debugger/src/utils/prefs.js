@@ -4,10 +4,9 @@
 
 
 
-import { PrefsHelper } from "devtools-modules";
+import { PrefsHelper, asyncStoreHelper } from "devtools-modules";
 import { isDevelopment } from "devtools-environment";
 import Services from "devtools-services";
-import { asyncStoreHelper } from "./asyncStoreHelper";
 
 
 
