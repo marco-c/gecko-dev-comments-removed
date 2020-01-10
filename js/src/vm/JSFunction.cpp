@@ -1564,6 +1564,7 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
       
       
       if (canRelazify) {
+        MOZ_RELEASE_ASSERT(script->maybeLazyScript() == lazy);
         script->setLazyScript(lazy);
       }
       return true;
@@ -1664,6 +1665,15 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
       
       
       script->setLazyScript(lazy);
+    } else if (lazy->isWrappedByDebugger()) {
+      
+      
+      
+      
+      
+      
+      script->setLazyScript(lazy);
+      script->setDoNotRelazify(true);
     }
 
     
