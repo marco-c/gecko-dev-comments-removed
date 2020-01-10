@@ -7717,11 +7717,10 @@ void PrepareDatastoreOp::Cleanup() {
   AssertIsOnOwningThread();
 
   if (mDatastore) {
-    MOZ_ASSERT(mDatastoreId > 0);
     MOZ_ASSERT(!mDirectoryLock);
     MOZ_ASSERT(!mConnection);
 
-    if (NS_FAILED(ResultCode())) {
+    if (NS_FAILED(ResultCode()) && mDatastoreId > 0) {
       
       
       
