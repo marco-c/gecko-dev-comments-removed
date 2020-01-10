@@ -1778,15 +1778,11 @@ class Element : public FragmentOrElement {
 
 
 
-  
-  
   virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                 const nsAttrValue* aValue,
                                 const nsAttrValue* aOldValue,
                                 nsIPrincipal* aMaybeScriptedPrincipal,
-                                bool aNotify) {
-    return NS_OK;
-  }
+                                bool aNotify);
 
   
 

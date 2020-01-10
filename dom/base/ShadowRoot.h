@@ -154,6 +154,13 @@ class ShadowRoot final : public DocumentFragment,
   void RemoveSlot(HTMLSlotElement* aSlot);
   bool HasSlots() const { return !mSlotMap.IsEmpty(); };
 
+  void PartAdded(const Element&);
+  void PartRemoved(const Element&);
+
+  const nsTArray<const Element*>& Parts() const {
+    return mParts;
+  }
+
   const RawServoAuthorStyles* GetServoStyles() const {
     return mServoStyles.get();
   }
@@ -258,6 +265,10 @@ class ShadowRoot final : public DocumentFragment,
   
   
   nsClassHashtable<nsStringHashKey, SlotArray> mSlotMap;
+
+  
+  
+  nsTArray<const Element*> mParts;
 
   bool mIsUAWidget;
 

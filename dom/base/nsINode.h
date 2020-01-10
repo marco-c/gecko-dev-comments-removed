@@ -1406,6 +1406,8 @@ class nsINode : public mozilla::dom::EventTarget {
     
     ElementHasName,
     
+    ElementHasPart,
+    
     ElementMayHaveContentEditableAttr,
     
     
@@ -1498,6 +1500,7 @@ class nsINode : public mozilla::dom::EventTarget {
   void SetMayHaveClass() { SetBoolFlag(ElementMayHaveClass); }
   bool MayHaveStyle() const { return GetBoolFlag(ElementMayHaveStyle); }
   bool HasName() const { return GetBoolFlag(ElementHasName); }
+  bool HasPartAttribute() const { return GetBoolFlag(ElementHasPart); }
   bool MayHaveContentEditableAttr() const {
     return GetBoolFlag(ElementMayHaveContentEditableAttr);
   }
@@ -1605,6 +1608,7 @@ class nsINode : public mozilla::dom::EventTarget {
   void SetMayHaveStyle() { SetBoolFlag(ElementMayHaveStyle); }
   void SetHasName() { SetBoolFlag(ElementHasName); }
   void ClearHasName() { ClearBoolFlag(ElementHasName); }
+  void SetHasPartAttribute(bool aPart) { SetBoolFlag(ElementHasPart, aPart); }
   void SetMayHaveContentEditableAttr() {
     SetBoolFlag(ElementMayHaveContentEditableAttr);
   }

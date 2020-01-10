@@ -1718,9 +1718,15 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
 
   
-  
-  if (HasID() && aContext.SubtreeRootChanges()) {
-    AddToIdTable(DoGetID());
+  if (aContext.SubtreeRootChanges()) {
+    if (HasPartAttribute()) {
+      if (ShadowRoot* shadow = GetContainingShadow()) {
+        shadow->PartAdded(*this);
+      }
+    }
+    if (HasID()) {
+      AddToIdTable(DoGetID());
+    }
   }
 
   if (MayHaveStyle() && !IsXULElement()) {
@@ -1798,24 +1804,27 @@ RemoveFromBindingManagerRunnable::Run() {
   return NS_OK;
 }
 
-static bool ShouldRemoveFromIdTableOnUnbind(const Element& aElement,
-                                            bool aNullParent) {
-  if (aElement.IsInUncomposedDoc()) {
-    return true;
-  }
-
-  if (!aElement.IsInShadowTree()) {
-    return false;
-  }
-
-  return aNullParent || !aElement.GetParent()->IsInShadowTree();
+bool WillDetachFromShadowOnUnbind(const Element& aElement, bool aNullParent) {
+  
+  
+  
+  return aElement.IsInShadowTree() &&
+         (aNullParent || !aElement.GetParent()->IsInShadowTree());
 }
 
 void Element::UnbindFromTree(bool aNullParent) {
+  const bool detachingFromShadow =
+      WillDetachFromShadowOnUnbind(*this, aNullParent);
   
   
-  if (ShouldRemoveFromIdTableOnUnbind(*this, aNullParent)) {
+  if (IsInUncomposedDoc() || detachingFromShadow) {
     RemoveFromIdTable();
+  }
+
+  if (detachingFromShadow && HasPartAttribute()) {
+    if (ShadowRoot* shadow = GetContainingShadow()) {
+      shadow->PartRemoved(*this);
+    }
   }
 
   
@@ -2602,6 +2611,28 @@ nsresult Element::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
     }
   }
 
+  return NS_OK;
+}
+
+nsresult Element::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                               const nsAttrValue* aValue,
+                               const nsAttrValue* aOldValue,
+                               nsIPrincipal* aMaybeScriptedPrincipal,
+                               bool aNotify) {
+  if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::part) {
+    bool isPart = !!aValue;
+    if (HasPartAttribute() != isPart) {
+      SetHasPartAttribute(isPart);
+      if (ShadowRoot* shadow = GetContainingShadow()) {
+        if (isPart) {
+          shadow->PartAdded(*this);
+        } else {
+          shadow->PartRemoved(*this);
+        }
+      }
+    }
+    MOZ_ASSERT(HasPartAttribute() == isPart);
+  }
   return NS_OK;
 }
 
