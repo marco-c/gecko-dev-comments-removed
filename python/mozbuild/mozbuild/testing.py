@@ -4,17 +4,19 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import cPickle as pickle
 import os
 import sys
 
-import mozpack.path as mozpath
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
-from mozpack.copier import FileCopier
-from mozpack.manifests import InstallManifest
 
 import manifestparser
-
+import mozpack.path as mozpath
+from mozpack.copier import FileCopier
+from mozpack.manifests import InstallManifest
 
 
 
