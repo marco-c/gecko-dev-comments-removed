@@ -586,6 +586,11 @@ class LoginManagerParent extends JSWindowActorParent {
       Services.logins.modifyLogin(login, propBag);
     }
 
+    
+    if (!LoginHelper.storageEnabled) {
+      return;
+    }
+
     if (!Services.logins.getLoginSavingEnabled(origin)) {
       log("(form submission ignored -- saving is disabled for:", origin, ")");
       return;

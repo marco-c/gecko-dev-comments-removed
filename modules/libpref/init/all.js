@@ -3887,6 +3887,8 @@ pref("signon.masterPasswordReprompt.timeout_ms", 900000);
 pref("signon.showAutoCompleteFooter", false);
 pref("signon.showAutoCompleteOrigins", false);
 
+pref("signon.storeSignons", true);
+
 
 pref("browser.formfill.debug",            false);
 pref("browser.formfill.enable",           true);
