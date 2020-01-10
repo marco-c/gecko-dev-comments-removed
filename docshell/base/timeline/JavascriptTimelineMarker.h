@@ -21,8 +21,8 @@ class JavascriptTimelineMarker : public TimelineMarker {
  public:
   
   
-  JavascriptTimelineMarker(const char* aReason, const char16_t* aFunctionName,
-                           const char16_t* aFileName, uint32_t aLineNumber,
+  JavascriptTimelineMarker(const char* aReason, const nsAString& aFunctionName,
+                           const nsAString& aFileName, uint32_t aLineNumber,
                            MarkerTracingType aTracingType,
                            JS::Handle<JS::Value> aAsyncStack,
                            const char* aAsyncCause)
