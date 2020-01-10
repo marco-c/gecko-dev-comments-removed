@@ -81,6 +81,7 @@ export class Popup extends Component<Props, State> {
     const target = this.props.preview.target;
     if (target) {
       target.classList.add("preview-token");
+      addHighlightToTargetSiblings(target, this.props);
     }
   }
 
@@ -88,6 +89,7 @@ export class Popup extends Component<Props, State> {
     const target = this.props.preview.target;
     if (target) {
       target.classList.remove("preview-token");
+      removeHighlightForTargetSiblings(target);
     }
   }
 
@@ -250,6 +252,59 @@ export class Popup extends Component<Props, State> {
         {this.renderPreview()}
       </Popover>
     );
+  }
+}
+
+function addHighlightToTargetSiblings(target: Element, props: Object) {
+  
+  
+  
+
+  const tokenType = target.classList.item(0);
+  const previewExpression = props.preview.expression;
+
+  if (
+    tokenType &&
+    previewExpression &&
+    target.innerHTML !== previewExpression
+  ) {
+    let nextSibling = target.nextElementSibling;
+    while (
+      nextSibling &&
+      nextSibling.className.includes(tokenType) &&
+      previewExpression.includes(nextSibling.innerHTML)
+    ) {
+      nextSibling.classList.add("preview-token");
+      nextSibling = nextSibling.nextElementSibling;
+    }
+    let previousSibling = target.previousElementSibling;
+    while (
+      previousSibling &&
+      previousSibling.className.includes(tokenType) &&
+      previewExpression.includes(previousSibling.innerHTML)
+    ) {
+      previousSibling.classList.add("preview-token");
+      previousSibling = previousSibling.previousElementSibling;
+    }
+  }
+}
+
+function removeHighlightForTargetSiblings(target: Element) {
+  
+  
+  
+  let nextSibling = target.nextElementSibling;
+  while (nextSibling && nextSibling.className.includes("preview-token")) {
+    nextSibling.classList.remove("preview-token");
+    nextSibling = nextSibling.nextElementSibling;
+  }
+  let previousSibling = target.previousElementSibling;
+  while (
+    previousSibling &&
+    previousSibling.className.includes("preview-token")
+  ) {
+    previousSibling.classList.remove("preview-token");
+    previousSibling = previousSibling.previousElementSibling;
   }
 }
 
