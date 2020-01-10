@@ -744,10 +744,16 @@ public:
   
   
   
+  
+  
+  
+  
+  
   struct AutoTemplateContext {
     AutoTemplateContext(IndexConsumer *Self)
-        : Self(Self), CurMode(Mode::GatherDependent),
-          Parent(Self->TemplateStack) {
+        : Self(Self)
+        , CurMode(Self->TemplateStack ? Self->TemplateStack->CurMode : Mode::GatherDependent)
+        , Parent(Self->TemplateStack) {
       Self->TemplateStack = this;
     }
 
@@ -776,6 +782,10 @@ public:
       if (Parent) {
         Parent->visitDependent(Loc);
       }
+    }
+
+    bool inGatherMode() {
+      return CurMode == Mode::GatherDependent;
     }
 
     
@@ -867,7 +877,9 @@ public:
 
   bool TraverseFunctionTemplateDecl(FunctionTemplateDecl *D) {
     AutoTemplateContext Atc(this);
-    Super::TraverseFunctionTemplateDecl(D);
+    if (Atc.inGatherMode()) {
+      Super::TraverseFunctionTemplateDecl(D);
+    }
 
     if (!Atc.needsAnalysis()) {
       return true;
