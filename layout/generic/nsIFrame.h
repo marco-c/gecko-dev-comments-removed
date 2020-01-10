@@ -3947,6 +3947,10 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  inline bool IsGridItem() const;
+  
+
+
 
   inline bool IsFlexOrGridItem() const;
   inline bool IsFlexOrGridContainer() const;

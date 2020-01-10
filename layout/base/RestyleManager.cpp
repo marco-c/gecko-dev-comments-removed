@@ -722,6 +722,11 @@ static bool RecomputePosition(nsIFrame* aFrame) {
 
   
   if (display->IsRelativelyPositionedStyle()) {
+    if (aFrame->IsGridItem()) {
+      
+      
+      return false;
+    }
     
     if (display->mPosition == NS_STYLE_POSITION_STICKY) {
       
