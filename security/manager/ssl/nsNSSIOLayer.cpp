@@ -111,32 +111,25 @@ extern LazyLogModule gPIPNSSLog;
 
 nsNSSSocketInfo::nsNSSSocketInfo(SharedSSLState& aState, uint32_t providerFlags,
                                  uint32_t providerTlsFlags)
-    : mFd(nullptr),
+    : CommonSocketControl(providerFlags),
+      mFd(nullptr),
       mCertVerificationState(before_cert_verification),
       mSharedState(aState),
       mForSTARTTLS(false),
       mHandshakePending(true),
       mPreliminaryHandshakeDone(false),
-      mNPNCompleted(false),
       mEarlyDataAccepted(false),
       mDenyClientCert(false),
       mFalseStartCallbackCalled(false),
       mFalseStarted(false),
       mIsFullHandshake(false),
-      mHandshakeCompleted(false),
-      mJoined(false),
-      mSentClientCert(false),
       mNotedTimeUntilReady(false),
-      mFailedVerification(false),
-      mResumed(false),
       mIsShortWritePending(false),
       mShortWritePendingByte(0),
       mShortWriteOriginalAmount(-1),
       mKEAUsed(nsISSLSocketControl::KEY_EXCHANGE_UNKNOWN),
       mKEAKeyBits(0),
-      mSSLVersionUsed(nsISSLSocketControl::SSL_VERSION_UNKNOWN),
       mMACAlgorithmUsed(nsISSLSocketControl::SSL_MAC_UNKNOWN),
-      mProviderFlags(providerFlags),
       mProviderTlsFlags(providerTlsFlags),
       mSocketCreationTimestamp(TimeStamp::Now()),
       mPlaintextBytesRead(0),
@@ -149,12 +142,6 @@ nsNSSSocketInfo::~nsNSSSocketInfo() {}
 
 NS_IMPL_ISUPPORTS_INHERITED(nsNSSSocketInfo, TransportSecurityInfo,
                             nsISSLSocketControl)
-
-NS_IMETHODIMP
-nsNSSSocketInfo::GetProviderFlags(uint32_t* aProviderFlags) {
-  *aProviderFlags = mProviderFlags;
-  return NS_OK;
-}
 
 NS_IMETHODIMP
 nsNSSSocketInfo::GetProviderTlsFlags(uint32_t* aProviderTlsFlags) {
@@ -171,12 +158,6 @@ nsNSSSocketInfo::GetKEAUsed(int16_t* aKea) {
 NS_IMETHODIMP
 nsNSSSocketInfo::GetKEAKeyBits(uint32_t* aKeyBits) {
   *aKeyBits = mKEAKeyBits;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSSocketInfo::GetSSLVersionUsed(int16_t* aSSLVersionUsed) {
-  *aSSLVersionUsed = mSSLVersionUsed;
   return NS_OK;
 }
 
@@ -203,31 +184,6 @@ nsNSSSocketInfo::GetClientCert(nsIX509Cert** aClientCert) {
 NS_IMETHODIMP
 nsNSSSocketInfo::SetClientCert(nsIX509Cert* aClientCert) {
   mClientCert = aClientCert;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSSocketInfo::GetClientCertSent(bool* arg) {
-  *arg = mSentClientCert;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSSocketInfo::GetFailedVerification(bool* arg) {
-  *arg = mFailedVerification;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSSocketInfo::GetNotificationCallbacks(nsIInterfaceRequestor** aCallbacks) {
-  nsCOMPtr<nsIInterfaceRequestor> ir(mCallbacks);
-  ir.forget(aCallbacks);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSSocketInfo::SetNotificationCallbacks(nsIInterfaceRequestor* aCallbacks) {
-  mCallbacks = aCallbacks;
   return NS_OK;
 }
 
@@ -303,14 +259,6 @@ void nsNSSSocketInfo::SetNegotiatedNPN(const char* value, uint32_t length) {
 }
 
 NS_IMETHODIMP
-nsNSSSocketInfo::GetNegotiatedNPN(nsACString& aNegotiatedNPN) {
-  if (!mNPNCompleted) return NS_ERROR_NOT_CONNECTED;
-
-  aNegotiatedNPN = mNegotiatedNPN;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsNSSSocketInfo::GetAlpnEarlySelection(nsACString& aAlpnSelected) {
   aAlpnSelected.Truncate();
 
@@ -348,14 +296,6 @@ void nsNSSSocketInfo::SetEarlyDataAccepted(bool aAccepted) {
   mEarlyDataAccepted = aAccepted;
 }
 
-NS_IMETHODIMP
-nsNSSSocketInfo::GetResumed(bool* aResumed) {
-  *aResumed = mResumed;
-  return NS_OK;
-}
-
-void nsNSSSocketInfo::SetResumed(bool aResumed) { mResumed = aResumed; }
-
 bool nsNSSSocketInfo::GetDenyClientCert() { return mDenyClientCert; }
 
 void nsNSSSocketInfo::SetDenyClientCert(bool aDenyClientCert) {
@@ -384,123 +324,6 @@ nsNSSSocketInfo::DriveHandshake() {
     return GetXPCOMFromNSSError(errorCode);
   }
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname,
-                                     bool* _retval) {
-  NS_ENSURE_ARG(_retval);
-
-  *_retval = false;
-
-  
-  
-  if (hostname.Equals(GetHostName())) {
-    *_retval = true;
-    return NS_OK;
-  }
-
-  
-  
-  if (!mHandshakeCompleted || !HasServerCert()) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  if (mHaveCertErrorBits) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  if (mSentClientCert) return NS_OK;
-
-  
-  
-
-  UniqueCERTCertificate nssCert;
-
-  nsCOMPtr<nsIX509Cert> cert;
-  if (NS_FAILED(GetServerCert(getter_AddRefs(cert)))) {
-    return NS_OK;
-  }
-  if (cert) {
-    nssCert.reset(cert->GetCert());
-  }
-
-  if (!nssCert) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
-  if (!certVerifier) {
-    return NS_OK;
-  }
-  CertVerifier::Flags flags = CertVerifier::FLAG_LOCAL_ONLY;
-  UniqueCERTCertList unusedBuiltChain;
-  mozilla::pkix::Result result = certVerifier->VerifySSLServerCert(
-      nssCert,
-      Maybe<nsTArray<uint8_t>>(),  
-      Maybe<nsTArray<uint8_t>>(),  
-      mozilla::pkix::Now(),
-      nullptr,  
-      hostname, unusedBuiltChain,
-      false,  
-      flags);
-  if (result != mozilla::pkix::Success) {
-    return NS_OK;
-  }
-
-  
-  *_retval = true;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSSocketInfo::TestJoinConnection(const nsACString& npnProtocol,
-                                    const nsACString& hostname, int32_t port,
-                                    bool* _retval) {
-  *_retval = false;
-
-  
-  if (port != GetPort()) return NS_OK;
-
-  
-  if (!mNPNCompleted || !mNegotiatedNPN.Equals(npnProtocol)) return NS_OK;
-
-  IsAcceptableForHost(hostname, _retval);  
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSSocketInfo::JoinConnection(const nsACString& npnProtocol,
-                                const nsACString& hostname, int32_t port,
-                                bool* _retval) {
-  nsresult rv = TestJoinConnection(npnProtocol, hostname, port, _retval);
-  if (NS_SUCCEEDED(rv) && *_retval) {
-    
-    mJoined = true;
-  }
-  return rv;
 }
 
 bool nsNSSSocketInfo::GetForSTARTTLS() { return mForSTARTTLS; }
