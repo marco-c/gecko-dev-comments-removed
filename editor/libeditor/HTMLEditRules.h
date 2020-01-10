@@ -1116,13 +1116,6 @@ class HTMLEditRules : public TextEditRules {
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult CacheInlineStyles(nsINode* aNode);
 
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult ReapplyCachedStyles();
-
   void ClearCachedStyles();
 
   
