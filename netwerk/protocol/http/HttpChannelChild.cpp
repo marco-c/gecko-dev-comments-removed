@@ -4060,7 +4060,16 @@ nsresult HttpChannelChild::CrossProcessRedirectFinished(nsresult aStatus) {
   if (!CanSend()) {
     return NS_BINDING_FAILED;
   }
-  Unused << SendCrossProcessRedirectDone(aStatus);
+
+  
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  MOZ_ALWAYS_SUCCEEDS(GetLoadInfo(getter_AddRefs(loadInfo)));
+  Maybe<LoadInfoArgs> loadInfoArgs;
+  MOZ_ALWAYS_SUCCEEDS(
+      mozilla::ipc::LoadInfoToLoadInfoArgs(loadInfo, &loadInfoArgs));
+  Unused << SendCrossProcessRedirectDone(aStatus, loadInfoArgs);
   return NS_OK;
 }
 
