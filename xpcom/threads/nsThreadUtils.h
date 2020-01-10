@@ -1706,11 +1706,6 @@ extern nsresult NS_DispatchToBackgroundThread(already_AddRefed<nsIRunnable> aEve
 extern nsresult NS_DispatchToBackgroundThread(nsIRunnable* aEvent,
                                               uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
 
-
-
-
-extern nsresult NS_GetBackgroundEventTarget(nsIEventTarget** aEventTarget);
-
 namespace mozilla {
 
 
