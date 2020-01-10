@@ -444,9 +444,8 @@ nsresult TextEditor::PasteTransferableAsAction(nsITransferable* aTransferable,
 
 bool TextEditor::CanPaste(int32_t aClipboardType) const {
   
-  
   RefPtr<Document> doc = GetDocument();
-  if (doc && doc->IsHTMLOrXHTML() && !nsContentUtils::IsChromeDoc(doc)) {
+  if (doc && doc->IsHTMLOrXHTML()) {
     return true;
   }
 
