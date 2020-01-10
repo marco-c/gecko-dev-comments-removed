@@ -72,9 +72,6 @@ struct StyleCache final : public PropItem {
 
 class HTMLEditRules : public TextEditRules {
  public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLEditRules, TextEditRules)
-
   HTMLEditRules();
 
   
@@ -147,7 +144,7 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT void OnModifyDocument();
 
  protected:
-  virtual ~HTMLEditRules();
+  virtual ~HTMLEditRules() = default;
 
   HTMLEditor& HTMLEditorRef() const {
     MOZ_ASSERT(mData);
@@ -1380,6 +1377,8 @@ class HTMLEditRules : public TextEditRules {
   
   
   StyleCache mCachedStyles[SIZE_STYLE_TABLE];
+
+  friend class NS_CYCLE_COLLECTION_CLASSNAME(TextEditRules);
 };
 
 }  

@@ -59,27 +59,50 @@ using namespace dom;
 
 
 
+NS_IMPL_CYCLE_COLLECTION_CLASS(TextEditRules)
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(TextEditRules)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mBogusNode)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCachedSelectionNode)
+  if (HTMLEditRules* htmlEditRules = tmp->AsHTMLEditRules()) {
+    HTMLEditRules* tmp = htmlEditRules;
+    NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocChangeRange)
+    NS_IMPL_CYCLE_COLLECTION_UNLINK(mUtilRange)
+    NS_IMPL_CYCLE_COLLECTION_UNLINK(mNewBlock)
+    NS_IMPL_CYCLE_COLLECTION_UNLINK(mRangeItem)
+  }
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(TextEditRules)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBogusNode)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedSelectionNode)
+  if (HTMLEditRules* htmlEditRules = tmp->AsHTMLEditRules()) {
+    HTMLEditRules* tmp = htmlEditRules;
+    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocChangeRange)
+    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mUtilRange)
+    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mNewBlock)
+    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRangeItem)
+  }
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(TextEditRules, AddRef)
+NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(TextEditRules, Release)
+
 TextEditRules::TextEditRules()
     : mTextEditor(nullptr),
       mData(nullptr),
-      mPasswordIMEIndex(0),
       mCachedSelectionOffset(0),
       mActionNesting(0),
       mLockRulesSniffing(false),
       mDidExplicitlySetInterline(false),
       mDeleteBidiImmediately(false),
       mIsHTMLEditRules(false),
-      mTopLevelEditSubAction(EditSubAction::eNone),
-      mLastStart(0),
-      mLastLength(0) {
+      mTopLevelEditSubAction(EditSubAction::eNone) {
   InitFields();
 }
 
 void TextEditRules::InitFields() {
   mTextEditor = nullptr;
-  mPasswordText.Truncate();
-  mPasswordIMEText.Truncate();
-  mPasswordIMEIndex = 0;
   mBogusNode = nullptr;
   mCachedSelectionNode = nullptr;
   mCachedSelectionOffset = 0;
@@ -88,18 +111,6 @@ void TextEditRules::InitFields() {
   mDidExplicitlySetInterline = false;
   mDeleteBidiImmediately = false;
   mTopLevelEditSubAction = EditSubAction::eNone;
-  mTimer = nullptr;
-  mLastStart = 0;
-  mLastLength = 0;
-}
-
-TextEditRules::~TextEditRules() {
-  
-  
-
-  if (mTimer) {
-    mTimer->Cancel();
-  }
 }
 
 HTMLEditRules* TextEditRules::AsHTMLEditRules() {
@@ -109,17 +120,6 @@ HTMLEditRules* TextEditRules::AsHTMLEditRules() {
 const HTMLEditRules* TextEditRules::AsHTMLEditRules() const {
   return mIsHTMLEditRules ? static_cast<const HTMLEditRules*>(this) : nullptr;
 }
-
-NS_IMPL_CYCLE_COLLECTION(TextEditRules, mBogusNode, mCachedSelectionNode)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TextEditRules)
-  NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
-  NS_INTERFACE_MAP_ENTRY(nsINamed)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsITimerCallback)
-NS_INTERFACE_MAP_END
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(TextEditRules)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(TextEditRules)
 
 nsresult TextEditRules::Init(TextEditor* aTextEditor) {
   if (NS_WARN_IF(!aTextEditor)) {
@@ -168,17 +168,7 @@ nsresult TextEditRules::Init(TextEditor* aTextEditor) {
   return NS_OK;
 }
 
-nsresult TextEditRules::SetInitialValue(const nsAString& aValue) {
-  if (IsPasswordEditor()) {
-    mPasswordText = aValue;
-  }
-  return NS_OK;
-}
-
 nsresult TextEditRules::DetachEditor() {
-  if (mTimer) {
-    mTimer->Cancel();
-  }
   mTextEditor = nullptr;
   return NS_OK;
 }
@@ -381,6 +371,10 @@ nsresult TextEditRules::WillInsert(bool* aCancel) {
   
   if (aCancel) {
     *aCancel = false;
+  }
+
+  if (IsPasswordEditor() && IsMaskingPassword()) {
+    TextEditorRef().MaskAllCharacters();
   }
 
   
@@ -592,18 +586,6 @@ TextEditRules::GetTextNodeAroundSelectionStartContainer() {
   return node.forget();
 }
 
-#ifdef DEBUG
-#  define ASSERT_PASSWORD_LENGTHS_EQUAL()                               \
-    if (IsPasswordEditor() && mTextEditor->GetRoot()) {                 \
-      int32_t txtLen;                                                   \
-      mTextEditor->GetTextLength(&txtLen);                              \
-      NS_ASSERTION(mPasswordText.Length() == uint32_t(txtLen),          \
-                   "password length not equal to number of asterisks"); \
-    }
-#else
-#  define ASSERT_PASSWORD_LENGTHS_EQUAL()
-#endif
-
 void TextEditRules::HandleNewLines(nsString& aString) {
   static const char16_t kLF = static_cast<char16_t>('\n');
   MOZ_ASSERT(IsEditorDataAvailable());
@@ -721,12 +703,15 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
   }
 
   uint32_t start = 0;
-  uint32_t end = 0;
-
-  
   if (IsPasswordEditor()) {
-    nsContentUtils::GetSelectionInTextControl(
-        SelectionRefPtr(), TextEditorRef().GetRoot(), start, end);
+    if (TextEditorRef().GetComposition() &&
+        !TextEditorRef().GetComposition()->String().IsEmpty()) {
+      start = TextEditorRef().GetComposition()->XPOffsetInTextNode();
+    } else {
+      uint32_t end = 0;
+      nsContentUtils::GetSelectionInTextControl(
+          SelectionRefPtr(), TextEditorRef().GetRoot(), start, end);
+    }
   }
 
   
@@ -744,14 +729,6 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
   rv = WillInsert(aCancel);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
-  }
-
-  
-  
-  
-  if (IsPasswordEditor() &&
-      aEditSubAction == EditSubAction::eInsertTextComingFromIME) {
-    RemoveIMETextFromPWBuf(start, outString);
   }
 
   
@@ -776,30 +753,6 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
     nsContentUtils::PlatformToDOMLineBreaks(tString);
     HandleNewLines(tString);
     outString->Assign(tString);
-  }
-
-  if (IsPasswordEditor()) {
-    
-    mPasswordText.Insert(*outString, start);
-
-    if (!DontEchoPassword()) {
-      nsresult rv = HideLastPasswordInputInternal();
-      mLastStart = start;
-      mLastLength = outString->Length();
-      if (mTimer) {
-        mTimer->Cancel();
-      }
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      if (!mTimer) {
-        mTimer = NS_NewTimer();
-      }
-      mTimer->InitWithCallback(this, LookAndFeel::GetPasswordMaskDelay(),
-                               nsITimer::TYPE_ONE_SHOT);
-    } else {
-      FillBufWithPWChars(outString, outString->Length());
-    }
   }
 
   
@@ -881,7 +834,18 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
           "Failed to collapse selection after inserting string");
     }
   }
-  ASSERT_PASSWORD_LENGTHS_EQUAL()
+
+  
+  if (IsPasswordEditor() && IsMaskingPassword() && !DontEchoPassword()) {
+    nsresult rv =
+        MOZ_KnownLive(TextEditorRef())
+            .SetUnmaskRangeAndNotify(start, outString->Length(),
+                                     LookAndFeel::GetPasswordMaskDelay());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
   return NS_OK;
 }
 
@@ -904,11 +868,6 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
       TextEditorRef().GetEditAction() == EditAction::eReplaceText ||
       aMaxLength != -1) {
     
-    
-    return NS_OK;
-  }
-
-  if (IsPasswordEditor() && !DontEchoPassword()) {
     
     return NS_OK;
   }
@@ -953,12 +912,10 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
     }
   }
 
+  
+  
   nsAutoString tString(*aString);
-
-  if (IsPasswordEditor()) {
-    mPasswordText.Assign(tString);
-    FillBufWithPWChars(&tString, tString.Length());
-  } else if (IsSingleLineEditor()) {
+  if (IsSingleLineEditor() && !IsPasswordEditor()) {
     HandleNewLines(tString);
   }
 
@@ -985,9 +942,6 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
       return rv;
     }
     *aHandled = true;
-
-    ASSERT_PASSWORD_LENGTHS_EQUAL();
-
     return NS_OK;
   }
 
@@ -1015,9 +969,6 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
   }
 
   *aHandled = true;
-
-  ASSERT_PASSWORD_LENGTHS_EQUAL();
-
   return NS_OK;
 }
 
@@ -1094,45 +1045,8 @@ nsresult TextEditRules::DeleteSelectionWithTransaction(
   AutoHideSelectionChanges hideSelection(SelectionRefPtr());
   nsAutoScriptBlocker scriptBlocker;
 
-  if (IsPasswordEditor()) {
-    nsresult rv = TextEditorRef().ExtendSelectionForDelete(&aCollapsedAction);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    
-    uint32_t start, end;
-    nsContentUtils::GetSelectionInTextControl(
-        SelectionRefPtr(), TextEditorRef().GetRoot(), start, end);
-
-    if (LookAndFeel::GetEchoPassword()) {
-      rv = HideLastPasswordInputInternal();
-      mLastStart = start;
-      mLastLength = 0;
-      if (mTimer) {
-        mTimer->Cancel();
-      }
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-
-    
-    if (end == start) {
-      
-      if (nsIEditor::ePrevious == aCollapsedAction && start > 0) {
-        mPasswordText.Cut(start - 1, 1);
-      }
-      
-      else if (nsIEditor::eNext == aCollapsedAction) {
-        mPasswordText.Cut(start, 1);
-      }
-      
-    }
-    
-    else {
-      mPasswordText.Cut(start, end - start);
-    }
+  if (IsPasswordEditor() && IsMaskingPassword()) {
+    TextEditorRef().MaskAllCharacters();
   } else {
     EditorRawDOMPoint selectionStartPoint(
         EditorBase::GetStartPoint(*SelectionRefPtr()));
@@ -1153,16 +1067,15 @@ nsresult TextEditRules::DeleteSelectionWithTransaction(
     if (*aCancel) {
       return NS_OK;
     }
-
-    rv = TextEditorRef().ExtendSelectionForDelete(&aCollapsedAction);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
   }
 
-  nsresult rv =
-      MOZ_KnownLive(TextEditorRef())
-          .DeleteSelectionWithTransaction(aCollapsedAction, nsIEditor::eStrip);
+  nsresult rv = TextEditorRef().ExtendSelectionForDelete(&aCollapsedAction);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = MOZ_KnownLive(TextEditorRef())
+           .DeleteSelectionWithTransaction(aCollapsedAction, nsIEditor::eStrip);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -1171,7 +1084,6 @@ nsresult TextEditRules::DeleteSelectionWithTransaction(
   }
 
   *aHandled = true;
-  ASSERT_PASSWORD_LENGTHS_EQUAL()
   return NS_OK;
 }
 
@@ -1306,16 +1218,6 @@ nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,
   *aHandled = false;
 
   if (!aOutputFormat->LowerCaseEqualsLiteral("text/plain")) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  if (IsPasswordEditor()) {
-    *aOutString = mPasswordText;
-    *aHandled = true;
     return NS_OK;
   }
 
@@ -1655,117 +1557,6 @@ nsresult TextEditRules::TruncateInsertionIfNeeded(const nsAString* aInString,
   return NS_OK;
 }
 
-void TextEditRules::ResetIMETextPWBuf() { mPasswordIMEText.Truncate(); }
-
-void TextEditRules::RemoveIMETextFromPWBuf(uint32_t& aStart,
-                                           nsAString* aIMEString) {
-  MOZ_ASSERT(aIMEString);
-
-  
-  if (mPasswordIMEText.IsEmpty()) {
-    mPasswordIMEIndex = aStart;
-  } else {
-    
-    mPasswordText.Cut(mPasswordIMEIndex, mPasswordIMEText.Length());
-    aStart = mPasswordIMEIndex;
-  }
-
-  mPasswordIMEText.Assign(*aIMEString);
-}
-
-NS_IMETHODIMP
-TextEditRules::Notify(nsITimer* aTimer) {
-  MOZ_ASSERT(mTimer);
-
-  if (NS_WARN_IF(!mTextEditor)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  
-  
-  if (!IsPasswordEditor()) {
-    return NS_OK;
-  }
-
-  RefPtr<TextEditor> textEditor(mTextEditor);
-  nsresult rv = textEditor->HideLastPasswordInput();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
-}
-
-nsresult TextEditRules::HideLastPasswordInput() {
-  MOZ_ASSERT(mTextEditor);
-  MOZ_ASSERT(IsPasswordEditor());
-
-  AutoSafeEditorData setData(*this, *mTextEditor);
-
-  nsresult rv = HideLastPasswordInputInternal();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  ASSERT_PASSWORD_LENGTHS_EQUAL();
-  mLastLength = 0;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-TextEditRules::GetName(nsACString& aName) {
-  aName.AssignLiteral("TextEditRules");
-  return NS_OK;
-}
-
-nsresult TextEditRules::HideLastPasswordInputInternal() {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  if (!mLastLength) {
-    
-    return NS_OK;
-  }
-
-  nsAutoString hiddenText;
-  FillBufWithPWChars(&hiddenText, mLastLength);
-
-  uint32_t start, end;
-  nsContentUtils::GetSelectionInTextControl(
-      SelectionRefPtr(), TextEditorRef().GetRoot(), start, end);
-
-  nsCOMPtr<nsINode> selNode = GetTextNodeAroundSelectionStartContainer();
-  if (NS_WARN_IF(!selNode)) {
-    return NS_OK;
-  }
-
-  MOZ_KnownLive(TextEditorRef())
-      .DoReplaceText(MOZ_KnownLive(*selNode->GetAsText()), mLastStart,
-                     mLastLength, hiddenText, IgnoreErrors());
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  IgnoredErrorResult ignoredError;
-  MOZ_KnownLive(SelectionRefPtr())
-      ->SetStartAndEndInLimiter(RawRangeBoundary(selNode, start),
-                                RawRangeBoundary(selNode, end), ignoredError);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  NS_WARNING_ASSERTION(!ignoredError.Failed(), "Failed to set selection");
-  return NS_OK;
-}
-
-
-void TextEditRules::FillBufWithPWChars(nsAString* aOutString, int32_t aLength) {
-  MOZ_ASSERT(aOutString);
-
-  
-  char16_t passwordChar = LookAndFeel::GetPasswordCharacter();
-
-  aOutString->Truncate();
-  for (int32_t i = 0; i < aLength; i++) {
-    aOutString->Append(passwordChar);
-  }
-}
-
 CreateElementResult TextEditRules::CreateBRInternal(
     const EditorDOMPoint& aPointToInsert, bool aCreateMozBR) {
   MOZ_ASSERT(IsEditorDataAvailable());
@@ -1806,6 +1597,11 @@ CreateElementResult TextEditRules::CreateBRInternal(
 
 bool TextEditRules::IsPasswordEditor() const {
   return mTextEditor ? mTextEditor->IsPasswordEditor() : false;
+}
+
+bool TextEditRules::IsMaskingPassword() const {
+  MOZ_ASSERT(IsPasswordEditor());
+  return mTextEditor ? mTextEditor->IsMaskingPassword() : true;
 }
 
 bool TextEditRules::IsSingleLineEditor() const {

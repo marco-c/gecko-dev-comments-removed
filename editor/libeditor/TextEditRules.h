@@ -15,9 +15,7 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIEditor.h"
-#include "nsINamed.h"
 #include "nsISupportsImpl.h"
-#include "nsITimer.h"
 #include "nsString.h"
 #include "nscore.h"
 
@@ -55,7 +53,7 @@ class Selection;
 
 
 
-class TextEditRules : public nsITimerCallback, public nsINamed {
+class TextEditRules {
  protected:
   typedef EditorBase::AutoSelectionRestorer AutoSelectionRestorer;
   typedef EditorBase::AutoTopLevelEditSubActionNotifier
@@ -70,10 +68,8 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
   template <typename T>
   using OwningNonNull = OwningNonNull<T>;
 
-  NS_DECL_NSITIMERCALLBACK
-  NS_DECL_NSINAMED
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(TextEditRules, nsITimerCallback)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(TextEditRules)
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(TextEditRules)
 
   TextEditRules();
 
@@ -82,7 +78,6 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
 
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult Init(TextEditor* aTextEditor);
-  virtual nsresult SetInitialValue(const nsAString& aValue);
   virtual nsresult DetachEditor();
   virtual nsresult BeforeEdit(EditSubAction aEditSubAction,
                               nsIEditor::EDirection aDirection);
@@ -110,11 +105,9 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
   bool DontEchoPassword() const;
 
  protected:
-  virtual ~TextEditRules();
+  virtual ~TextEditRules() = default;
 
  public:
-  void ResetIMETextPWBuf();
-
   
 
 
@@ -137,26 +130,7 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
 
   void HandleNewLines(nsString& aString);
 
-  
-
-
-
-
-
-
-
-
-
-  static void FillBufWithPWChars(nsAString* aOutString, int32_t aLength);
-
   bool HasBogusNode() { return !!mBogusNode; }
-
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult HideLastPasswordInput();
 
  protected:
   void InitFields();
@@ -304,11 +278,6 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
   
 
 
-  void RemoveIMETextFromPWBuf(uint32_t& aStart, nsAString* aIMEString);
-
-  
-
-
 
 
 
@@ -357,19 +326,12 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult HideLastPasswordInputInternal();
-
-  
-
-
-
-
 
 
   MOZ_MUST_USE nsresult CollapseSelectionToTrailingBRIfNeeded();
 
   bool IsPasswordEditor() const;
+  bool IsMaskingPassword() const;
   bool IsSingleLineEditor() const;
   bool IsPlaintextEditor() const;
   bool IsReadonly() const;
@@ -475,11 +437,6 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
   inline already_AddRefed<nsINode> GetTextNodeAroundSelectionStartContainer();
 
   
-  nsString mPasswordText;
-  
-  nsString mPasswordIMEText;
-  uint32_t mPasswordIMEIndex;
-  
   nsCOMPtr<nsIContent> mBogusNode;
   
   nsCOMPtr<nsINode> mCachedSelectionNode;
@@ -494,9 +451,6 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
   bool mIsHTMLEditRules;
   
   EditSubAction mTopLevelEditSubAction;
-  nsCOMPtr<nsITimer> mTimer;
-  uint32_t mLastStart;
-  uint32_t mLastLength;
 
   
   friend class AutoLockRulesSniffing;
