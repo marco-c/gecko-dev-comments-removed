@@ -219,7 +219,12 @@ pref("dom.inputevent.inputtype.enabled", true);
 
 #ifdef JS_BUILD_BINAST
 pref("dom.script_loader.binast_encoding.enabled", false);
-pref("dom.script_loader.binast_encoding.domain.restrict.list", "*.facebook.com,static.xx.fbcdn.net");
+
+
+
+
+
+pref("dom.script_loader.binast_encoding.domain.restrict.list", "*.facebook.com,static.xx.fbcdn.net,*.cloudflare.com,*.cloudflarestream.com,unpkg.com");
 #endif
 
 
