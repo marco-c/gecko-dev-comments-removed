@@ -966,13 +966,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   using FieldContext = BinASTTokenReaderBase::FieldContext;
   using FieldOrRootContext = BinASTTokenReaderBase::FieldOrRootContext;
   using FieldOrListContext = BinASTTokenReaderBase::FieldOrListContext;
-
-  
-  
-  class BinASTFields {
-   public:
-    explicit BinASTFields(JSContext*) {}
-  };
   using Chars = CharSlice;
 
  public:
@@ -1201,21 +1194,21 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
 
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
-      BinASTKind& tag, BinASTTokenReaderContext::BinASTFields& fields,
-      const FieldOrRootContext&, AutoTaggedTuple& guard);
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
-      BinASTKind& tag, BinASTTokenReaderContext::BinASTFields& fields,
-      const FieldOrListContext&, AutoTaggedTuple& guard);
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
-      BinASTKind& tag, BinASTTokenReaderContext::BinASTFields& fields,
-      const RootContext&, AutoTaggedTuple& guard);
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
-      BinASTKind& tag, BinASTTokenReaderContext::BinASTFields& fields,
-      const ListContext&, AutoTaggedTuple& guard);
-  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
-      BinASTKind& tag, BinASTTokenReaderContext::BinASTFields& fields,
-      const FieldContext&, AutoTaggedTuple& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
+                                               const FieldOrRootContext&,
+                                               AutoTaggedTuple& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
+                                               const FieldOrListContext&,
+                                               AutoTaggedTuple& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
+                                               const RootContext&,
+                                               AutoTaggedTuple& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
+                                               const ListContext&,
+                                               AutoTaggedTuple& guard);
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinASTKind& tag,
+                                               const FieldContext&,
+                                               AutoTaggedTuple& guard);
 
   
 
@@ -1349,20 +1342,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
     }
 
     return true;
-  }
-
-  template <size_t N>
-  static JS::Result<Ok, JS::Error&> checkFields(
-      const BinASTKind kind, const BinASTFields& actual,
-      const BinASTField (&expected)[N]) {
-    
-    return Ok();
-  }
-
-  static JS::Result<Ok, JS::Error&> checkFields0(const BinASTKind kind,
-                                                 const BinASTFields& actual) {
-    
-    return Ok();
   }
 };
 
