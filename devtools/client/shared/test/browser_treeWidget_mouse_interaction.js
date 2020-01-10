@@ -16,12 +16,12 @@ add_task(async function() {
     set: [["security.allow_unsafe_parent_loads", true]],
   });
 
-  
-  
-  await pushPref("devtools.toolbox.content-frame", false);
-
   await addTab("about:blank");
   const [host, , doc] = await createHost("bottom", TEST_URI);
+
+  
+  
+  await wait(1000);
 
   const tree = new TreeWidget(doc.querySelector("div"), {
     defaultType: "store",

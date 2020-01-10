@@ -25,11 +25,11 @@ function getTooltipContent(doc) {
 }
 
 add_task(async function() {
-  
-  
-  await pushPref("devtools.toolbox.content-frame", false);
-
   const [, , doc] = await createHost("bottom", TEST_URI);
+
+  
+  
+  await wait(1000);
 
   const box1 = doc.getElementById("box1");
   const box2 = doc.getElementById("box2");
