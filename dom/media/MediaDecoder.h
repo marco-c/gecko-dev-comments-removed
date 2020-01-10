@@ -43,6 +43,7 @@ class MediaMemoryInfo;
 class AbstractThread;
 class DOMMediaStream;
 class DecoderBenchmark;
+class ProcessedMediaTrack;
 class FrameStatistics;
 class VideoFrameContainer;
 class MediaFormatReader;
@@ -169,12 +170,20 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   
-  void AddOutputStream(DOMMediaStream* aStream, SharedDummyTrack* aDummyStream);
   
-  void RemoveOutputStream(DOMMediaStream* aStream);
-
   
-  void SetOutputStreamPrincipal(nsIPrincipal* aPrincipal);
+  
+  void SetOutputCaptured(bool aCaptured);
+  
+  
+  
+  
+  
+  void AddOutputTrack(RefPtr<ProcessedMediaTrack> aTrack);
+  
+  void RemoveOutputTrack(const RefPtr<ProcessedMediaTrack>& aTrack);
+  
+  void SetOutputTracksPrincipal(const RefPtr<nsIPrincipal>& aPrincipal);
 
   
   virtual double GetDuration();
