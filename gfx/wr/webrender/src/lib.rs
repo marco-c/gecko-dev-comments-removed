@@ -1,47 +1,47 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*!
+A GPU based renderer for the web.
 
+It serves as an experimental render backend for [Servo](https://servo.org/),
+but it can also be used as such in a standalone application.
 
+# External dependencies
+WebRender currently depends on [FreeType](https://www.freetype.org/)
 
+# Api Structure
+The main entry point to WebRender is the [`crate::Renderer`].
 
+By calling [`Renderer::new(...)`](crate::Renderer::new) you get a [`Renderer`], as well as
+a [`RenderApiSender`](api::RenderApiSender). Your [`Renderer`] is responsible to render the
+previously processed frames onto the screen.
 
+By calling [`yourRenderApiSender.create_api()`](api::RenderApiSender::create_api), you'll
+get a [`RenderApi`](api::RenderApi) instance, which is responsible for managing resources
+and documents. A worker thread is used internally to untie the workload from the application
+thread and therefore be able to make better use of multicore systems.
 
+## Frame
 
+What is referred to as a `frame`, is the current geometry on the screen.
+A new Frame is created by calling [`set_display_list()`](api::Transaction::set_display_list)
+on the [`RenderApi`](api::RenderApi). When the geometry is processed, the application will be
+informed via a [`RenderNotifier`](api::RenderNotifier), a callback which you pass to
+[`Renderer::new`].
+More information about [stacking contexts][stacking_contexts].
 
+[`set_display_list()`](api::Transaction::set_display_list) also needs to be supplied with
+[`BuiltDisplayList`](api::BuiltDisplayList)s. These are obtained by finalizing a
+[`DisplayListBuilder`](api::DisplayListBuilder). These are used to draw your geometry. But it
+doesn't only contain trivial geometry, it can also store another
+[`StackingContext`](api::StackingContext), as they're nestable.
 
+[stacking_contexts]: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context
+*/
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Cribbed from the |matches| crate, for simplicity.
 macro_rules! matches {
     ($expression:expr, $($pattern:tt)+) => {
         match $expression {
@@ -98,8 +98,6 @@ mod gamma_lut;
 mod glyph_cache;
 mod glyph_rasterizer;
 mod gpu_cache;
-#[cfg(feature = "pathfinder")]
-mod gpu_glyph_renderer;
 mod gpu_types;
 mod hit_test;
 mod image;
@@ -174,14 +172,6 @@ pub extern crate euclid;
 extern crate fxhash;
 extern crate gleam;
 extern crate num_traits;
-#[cfg(feature = "pathfinder")]
-extern crate pathfinder_font_renderer;
-#[cfg(feature = "pathfinder")]
-extern crate pathfinder_gfx_utils;
-#[cfg(feature = "pathfinder")]
-extern crate pathfinder_partitioner;
-#[cfg(feature = "pathfinder")]
-extern crate pathfinder_path_utils;
 extern crate plane_split;
 extern crate rayon;
 #[cfg(feature = "ron")]
