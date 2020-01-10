@@ -197,21 +197,12 @@ var check_use_counter_iframe = async function(
   await ContentTask.spawn(gBrowser.selectedBrowser, { file: file }, function(
     opts
   ) {
-    let wu = content.window.windowUtils;
-
     let iframe = content.document.getElementById("content");
     iframe.src = opts.file;
 
     return new Promise(resolve => {
       let listener = event => {
         event.target.removeEventListener("load", listener, true);
-
-        
-        
-        
-        wu.forceUseCounterFlush(content.document);
-        wu.forceUseCounterFlush(iframe.contentDocument);
-
         resolve();
       };
       iframe.addEventListener("load", listener, true);
@@ -219,12 +210,9 @@ var check_use_counter_iframe = async function(
   });
 
   
+  let tabClosed = BrowserTestUtils.waitForTabClosing(newTab);
   gBrowser.removeTab(newTab);
-
-  
-  
-  
-  await waitForDestroyedDocuments();
+  await tabClosed;
 
   
   let [
@@ -290,16 +278,6 @@ var check_use_counter_img = async function(file, use_counter_middlefix) {
       return new Promise(resolve => {
         let listener = event => {
           img.removeEventListener("load", listener, true);
-
-          
-          
-          
-          let wu = content.window.windowUtils;
-          wu.forceUseCounterFlush(img);
-
-          
-          wu.forceUseCounterFlush(content.document);
-
           resolve();
         };
         img.addEventListener("load", listener, true);
@@ -308,12 +286,9 @@ var check_use_counter_img = async function(file, use_counter_middlefix) {
   );
 
   
+  let tabClosed = BrowserTestUtils.waitForTabClosing(newTab);
   gBrowser.removeTab(newTab);
-
-  
-  
-  
-  await waitForDestroyedDocuments();
+  await tabClosed;
 
   
   let [
@@ -372,10 +347,6 @@ var check_use_counter_direct = async function(
     await new Promise(resolve => {
       let listener = () => {
         removeEventListener("load", listener, true);
-
-        let wu = content.window.windowUtils;
-        wu.forceUseCounterFlush(content.document);
-
         setTimeout(resolve, 0);
       };
       addEventListener("load", listener, true);
@@ -383,12 +354,9 @@ var check_use_counter_direct = async function(
   });
 
   
+  let tabClosed = BrowserTestUtils.waitForTabClosing(newTab);
   gBrowser.removeTab(newTab);
-
-  
-  
-  
-  await waitForDestroyedDocuments();
+  await tabClosed;
 
   
   let [
