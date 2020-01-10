@@ -321,8 +321,11 @@ var TelemetrySend = {
 
 
 
-  testRunPingSender(url, pingPath) {
-    TelemetrySendImpl.runPingSender(url, pingPath);
+
+
+
+  testRunPingSender(url, pingPath, observer) {
+    return TelemetrySendImpl.runPingSender(url, pingPath, observer);
   },
 };
 
@@ -1553,7 +1556,7 @@ var TelemetrySendImpl = {
     };
   },
 
-  runPingSender(url, pingPath) {
+  runPingSender(url, pingPath, observer) {
     if (AppConstants.platform === "android") {
       throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     }
@@ -1570,6 +1573,6 @@ var TelemetrySendImpl = {
     process.init(exe);
     process.startHidden = true;
     process.noShell = true;
-    process.run( false, [url, pingPath], 2);
+    process.runAsync([url, pingPath], 2, observer);
   },
 };
