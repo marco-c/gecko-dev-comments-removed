@@ -15,7 +15,7 @@ TEST_F(APZCTreeManagerTester, ScrollablePaintedLayers) {
   
   SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID);
   SetScrollableFrameMetrics(layers[2], ScrollableLayerGuid::START_SCROLL_ID);
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
 
   TestAsyncPanZoomController* nullAPZC = nullptr;
   
@@ -27,14 +27,14 @@ TEST_F(APZCTreeManagerTester, ScrollablePaintedLayers) {
   
   SetScrollableFrameMetrics(layers[1],
                             ScrollableLayerGuid::START_SCROLL_ID + 1);
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
   EXPECT_NE(ApzcOf(layers[1]), ApzcOf(layers[2]));
 
   
   
   SetScrollableFrameMetrics(layers[2],
                             ScrollableLayerGuid::START_SCROLL_ID + 1);
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
   EXPECT_EQ(ApzcOf(layers[1]), ApzcOf(layers[2]));
 }
 
@@ -42,7 +42,7 @@ TEST_F(APZCTreeManagerTester, Bug1068268) {
   CreatePotentiallyLeakingTree();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
 
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
   RefPtr<HitTestingTreeNode> root = manager->GetRootNode();
   RefPtr<HitTestingTreeNode> node2 = root->GetFirstChild()->GetFirstChild();
   RefPtr<HitTestingTreeNode> node5 = root->GetLastChild()->GetLastChild();
@@ -63,7 +63,7 @@ TEST_F(APZCTreeManagerTester, Bug1068268) {
 TEST_F(APZCTreeManagerTester, Bug1194876) {
   CreateBug1194876Tree();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
 
   uint64_t blockId;
   nsTArray<ScrollableLayerGuid> targets;
@@ -103,7 +103,7 @@ TEST_F(APZCTreeManagerTester, Bug1198900) {
   
   CreateSimpleDTCScrollingLayer();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
 
   ScreenPoint origin(100, 50);
   ScrollWheelInput swi(MillisecondsSinceStartup(mcc->Time()), mcc->Time(), 0,
@@ -124,7 +124,7 @@ TEST_F(APZCTreeManagerTester, Bug1551582) {
   
   CreateSimpleScrollingLayer();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
 
   
   ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
@@ -132,7 +132,7 @@ TEST_F(APZCTreeManagerTester, Bug1551582) {
     aMetrics.SetScrollGeneration(1);
     aMetrics.SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
   });
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
 
   
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
@@ -145,7 +145,7 @@ TEST_F(APZCTreeManagerTester, Bug1551582) {
   ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
     aMetrics.SetScrollableRect(CSSRect(0, 0, 400, 400));
   });
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
 
   
   compositedScrollOffset = apzc->GetCompositedScrollOffset();
@@ -156,7 +156,7 @@ TEST_F(APZCTreeManagerTester, Bug1557424) {
   
   CreateSimpleScrollingLayer();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
 
   
   ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
@@ -164,7 +164,7 @@ TEST_F(APZCTreeManagerTester, Bug1557424) {
     aMetrics.SetScrollGeneration(1);
     aMetrics.SetScrollOffsetUpdateType(FrameMetrics::eMainThread);
   });
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
 
   
   RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
@@ -177,7 +177,7 @@ TEST_F(APZCTreeManagerTester, Bug1557424) {
   ModifyFrameMetrics(root, [](FrameMetrics& aMetrics) {
     aMetrics.SetCompositionBounds(ParentLayerRect(0, 0, 300, 300));
   });
-  manager->UpdateHitTestingTree(root, false, LayersId{0}, 0);
+  UpdateHitTestingTree();
 
   
   compositedScrollOffset = apzc->GetCompositedScrollOffset();

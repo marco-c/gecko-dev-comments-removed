@@ -63,6 +63,12 @@ class APZCTreeManagerTester : public APZCTesterBase {
     aLayer->SetScrollMetadata(metadata);
   }
 
+  
+  void UpdateHitTestingTree(uint32_t aPaintSequenceNumber = 0) {
+    manager->UpdateHitTestingTree(root,  false,
+                                  LayersId{0}, aPaintSequenceNumber);
+  }
+
   nsTArray<RefPtr<Layer> > layers;
   RefPtr<LayerManager> lm;
   RefPtr<Layer> root;
