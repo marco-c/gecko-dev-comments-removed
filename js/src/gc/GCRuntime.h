@@ -51,14 +51,16 @@ class WeakCacheSweepIterator;
 enum IncrementalProgress { NotFinished = 0, Finished };
 
 
-
-
-
-
-template <typename... Args>
 struct SweepAction {
+  
+  struct Args {
+    GCRuntime* gc;
+    FreeOp* fop;
+    SliceBudget& budget;
+  };
+
   virtual ~SweepAction() {}
-  virtual IncrementalProgress run(Args... args) = 0;
+  virtual IncrementalProgress run(Args& state) = 0;
   virtual void assertFinished() const = 0;
   virtual bool shouldSkip() { return false; }
 };
@@ -897,8 +899,7 @@ class GCRuntime {
 
   MainThreadData<JS::Zone*> sweepGroups;
   MainThreadOrGCTaskData<JS::Zone*> currentSweepGroup;
-  MainThreadData<UniquePtr<SweepAction<GCRuntime*, FreeOp*, SliceBudget&>>>
-      sweepActions;
+  MainThreadData<UniquePtr<SweepAction>> sweepActions;
   MainThreadOrGCTaskData<JS::Zone*> sweepZone;
   MainThreadOrGCTaskData<AllocKind> sweepAllocKind;
   MainThreadData<mozilla::Maybe<AtomsTable::SweepIterator>> maybeAtomsToSweep;
