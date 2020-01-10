@@ -528,26 +528,11 @@ bool TRRService::MaybeBootstrap(const nsACString& aPossible,
   return true;
 }
 
-
-
-bool TRRService::IsTRRBlacklisted(const nsACString& aHost,
-                                  const nsACString& aOriginSuffix,
-                                  bool aPrivateBrowsing,
-                                  bool aParentsToo)  
-{
+bool TRRService::IsDomainBlacklisted(const nsACString& aHost,
+                                     const nsACString& aOriginSuffix,
+                                     bool aPrivateBrowsing) {
   
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
-
-  if (mMode == MODE_TRRONLY) {
-    return false;  
-  }
-
-  LOG(("Checking if host [%s] is blacklisted", aHost.BeginReading()));
-  
-  if (StringEndsWith(aHost, NS_LITERAL_CSTRING(".local")) ||
-      aHost.Equals(NS_LITERAL_CSTRING("localhost"))) {
-    return true;
-  }
 
   if (mExcludedDomains.GetEntry(aHost)) {
     LOG(("Host [%s] is TRR blacklisted via pref\n", aHost.BeginReading()));
@@ -562,26 +547,6 @@ bool TRRService::IsTRRBlacklisted(const nsACString& aHost,
     return true;
   }
 
-  int32_t dot = aHost.FindChar('.');
-  if ((dot == kNotFound) && aParentsToo) {
-    
-    
-    return true;
-  } else if (dot != kNotFound) {
-    
-    dot++;
-    nsDependentCSubstring domain = Substring(aHost, dot, aHost.Length() - dot);
-    nsAutoCString check(domain);
-
-    
-    if (IsTRRBlacklisted(check, aOriginSuffix, aPrivateBrowsing, false)) {
-      
-      return true;
-    }
-  }
-
-  
-  
   if (!mTRRBLStorage) {
     return false;
   }
@@ -611,6 +576,50 @@ bool TRRService::IsTRRBlacklisted(const nsACString& aHost,
     mTRRBLStorage->Remove(hashkey, aPrivateBrowsing ? DataStorage_Private
                                                     : DataStorage_Persistent);
   }
+  return false;
+}
+
+
+
+bool TRRService::IsTRRBlacklisted(const nsACString& aHost,
+                                  const nsACString& aOriginSuffix,
+                                  bool aPrivateBrowsing,
+                                  bool aParentsToo)  
+{
+  if (mMode == MODE_TRRONLY) {
+    return false;  
+  }
+
+  LOG(("Checking if host [%s] is blacklisted", aHost.BeginReading()));
+  
+  if (StringEndsWith(aHost, NS_LITERAL_CSTRING(".local")) ||
+      aHost.Equals(NS_LITERAL_CSTRING("localhost"))) {
+    return true;
+  }
+
+  int32_t dot = aHost.FindChar('.');
+  if ((dot == kNotFound) && aParentsToo) {
+    
+    
+    return true;
+  }
+
+  if (IsDomainBlacklisted(aHost, aOriginSuffix, aPrivateBrowsing)) {
+    return true;
+  }
+
+  nsDependentCSubstring domain = Substring(aHost, 0);
+  while (dot != kNotFound) {
+    dot++;
+    domain.Rebind(domain, dot, domain.Length() - dot);
+
+    if (IsDomainBlacklisted(domain, aOriginSuffix, aPrivateBrowsing)) {
+      return true;
+    }
+
+    dot = domain.FindChar('.');
+  }
+
   return false;
 }
 
