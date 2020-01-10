@@ -4133,64 +4133,11 @@ pref("toolkit.zoomManager.zoomValues", ".3,.5,.67,.8,.9,1,1.1,1.2,1.33,1.5,1.7,2
 
 
 
-
-
-pref("image.animated.decode-on-demand.threshold-kb", 20480);
-
-
-
-pref("image.animated.decode-on-demand.batch-size", 6);
-
-
-
-pref("image.animated.resume-from-last-displayed", true);
-
-
-
-
-
-
-pref("image.cache.factor2.threshold-surfaces", 4);
-
-
-
-pref("image.cache.max-rasterized-svg-threshold-kb", 204800);
-
-
-pref("image.decode-immediately.enabled", false);
-
-
-pref("image.downscale-during-decode.enabled", true);
-
-
 pref("image.http.accept", "image/webp,*/*");
 
 
 
 
-
-
-pref("image.infer-src-animation.threshold-ms", 2000);
-
-
-
-pref("image.layout_network_priority", true);
-
-
-
-
-
-
-
-pref("image.mem.discardable", true);
-
-
-
-#if defined(ANDROID)
-  pref("image.mem.animated.use_heap", true);
-#else
-  pref("image.mem.animated.use_heap", false);
-#endif
 
 
 pref("image.mem.allow_locking_in_content_processes", true);
