@@ -79,7 +79,8 @@ bool RenderCompositorEGL::BeginFrame() {
     
     
     
-    const auto* egl = gl::GLLibraryEGL::Get();
+    const auto& gle = gl::GLContextEGL::Cast(gl());
+    const auto& egl = gle->mEgl;
     
     egl->fSwapInterval(egl->Display(), 0);
   }
@@ -128,11 +129,12 @@ bool RenderCompositorEGL::MakeCurrent() {
 }
 
 void RenderCompositorEGL::DestroyEGLSurface() {
-  auto* egl = gl::GLLibraryEGL::Get();
+  const auto& gle = gl::GLContextEGL::Cast(gl());
+  const auto& egl = gle->mEgl;
 
   
   if (mEGLSurface) {
-    gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(EGL_NO_SURFACE);
+    gle->SetEGLSurfaceOverride(EGL_NO_SURFACE);
     egl->fDestroySurface(egl->Display(), mEGLSurface);
     mEGLSurface = nullptr;
   }

@@ -32,13 +32,17 @@ namespace wr {
 
 UniquePtr<RenderCompositor> RenderCompositorANGLE::Create(
     RefPtr<widget::CompositorWidget>&& aWidget) {
-  if (!RenderThread::Get()->SharedGL()) {
+  const auto& gl = RenderThread::Get()->SharedGL();
+  if (!gl) {
     gfxCriticalNote << "Failed to get shared GL context";
     return nullptr;
   }
 
+  const auto& gle = gl::GLContextEGL::Cast(gl);
+  const auto& egl = gle->mEgl;
+
   UniquePtr<RenderCompositorANGLE> compositor =
-      MakeUnique<RenderCompositorANGLE>(std::move(aWidget));
+      MakeUnique<RenderCompositorANGLE>(std::move(aWidget), egl);
   if (!compositor->Initialize()) {
     return nullptr;
   }
@@ -46,11 +50,14 @@ UniquePtr<RenderCompositor> RenderCompositorANGLE::Create(
 }
 
 RenderCompositorANGLE::RenderCompositorANGLE(
-    RefPtr<widget::CompositorWidget>&& aWidget)
+    RefPtr<widget::CompositorWidget>&& aWidget, gl::GLLibraryEGL* const egl)
     : RenderCompositor(std::move(aWidget)),
+      mEgl(egl),
       mEGLConfig(nullptr),
       mEGLSurface(nullptr),
-      mUseTripleBuffering(false) {}
+      mUseTripleBuffering(false) {
+  MOZ_ASSERT(mEgl);
+}
 
 RenderCompositorANGLE::~RenderCompositorANGLE() {
   DestroyEGLSurface();
@@ -58,20 +65,20 @@ RenderCompositorANGLE::~RenderCompositorANGLE() {
 }
 
 ID3D11Device* RenderCompositorANGLE::GetDeviceOfEGLDisplay() {
-  auto* egl = gl::GLLibraryEGL::Get();
-  MOZ_ASSERT(egl);
-  if (!egl || !egl->IsExtensionSupported(gl::GLLibraryEGL::EXT_device_query)) {
+  MOZ_ASSERT(mEgl);
+  if (!mEgl ||
+      !mEgl->IsExtensionSupported(gl::GLLibraryEGL::EXT_device_query)) {
     return nullptr;
   }
 
   
   EGLDeviceEXT eglDevice = nullptr;
-  egl->fQueryDisplayAttribEXT(egl->Display(), LOCAL_EGL_DEVICE_EXT,
-                              (EGLAttrib*)&eglDevice);
+  mEgl->fQueryDisplayAttribEXT(mEgl->Display(), LOCAL_EGL_DEVICE_EXT,
+                               (EGLAttrib*)&eglDevice);
   MOZ_ASSERT(eglDevice);
   ID3D11Device* device = nullptr;
-  egl->fQueryDeviceAttribEXT(eglDevice, LOCAL_EGL_D3D11_DEVICE_ANGLE,
-                             (EGLAttrib*)&device);
+  mEgl->fQueryDeviceAttribEXT(eglDevice, LOCAL_EGL_D3D11_DEVICE_ANGLE,
+                              (EGLAttrib*)&device);
   if (!device) {
     gfxCriticalNote << "Failed to get D3D11Device from EGLDisplay";
     return nullptr;
@@ -80,8 +87,7 @@ ID3D11Device* RenderCompositorANGLE::GetDeviceOfEGLDisplay() {
 }
 
 bool RenderCompositorANGLE::SutdownEGLLibraryIfNecessary() {
-  const RefPtr<gl::GLLibraryEGL> egl = gl::GLLibraryEGL::Get();
-  if (!egl) {
+  if (!mEgl) {
     
     return true;
   }
@@ -99,7 +105,7 @@ bool RenderCompositorANGLE::SutdownEGLLibraryIfNecessary() {
       RenderThread::Get()->RendererCount() == 0) {
     
     RenderThread::Get()->ClearSharedGL();
-    egl->Shutdown();
+    mEgl->Shutdown();
   }
   return true;
 }
@@ -225,7 +231,7 @@ bool RenderCompositorANGLE::Initialize() {
 
   
   
-  if (!gl::CreateConfig(&mEGLConfig,  32,
+  if (!gl::CreateConfig(mEgl, &mEGLConfig,  32,
                          true)) {
     gfxCriticalNote << "Failed to create EGLConfig for WebRender";
   }
@@ -425,8 +431,6 @@ bool RenderCompositorANGLE::ResizeBufferIfNeeded() {
     }
   }
 
-  auto* egl = gl::GLLibraryEGL::Get();
-
   const EGLint pbuffer_attribs[]{
       LOCAL_EGL_WIDTH,
       size.width,
@@ -438,11 +442,11 @@ bool RenderCompositorANGLE::ResizeBufferIfNeeded() {
 
   const auto buffer = reinterpret_cast<EGLClientBuffer>(backBuf.get());
 
-  const EGLSurface surface = egl->fCreatePbufferFromClientBuffer(
-      egl->Display(), LOCAL_EGL_D3D_TEXTURE_ANGLE, buffer, mEGLConfig,
+  const EGLSurface surface = mEgl->fCreatePbufferFromClientBuffer(
+      mEgl->Display(), LOCAL_EGL_D3D_TEXTURE_ANGLE, buffer, mEGLConfig,
       pbuffer_attribs);
 
-  EGLint err = egl->fGetError();
+  EGLint err = mEgl->fGetError();
   if (err != LOCAL_EGL_SUCCESS) {
     gfxCriticalError() << "Failed to create Pbuffer of back buffer error: "
                        << gfx::hexa(err) << " Size : " << size;
@@ -456,12 +460,10 @@ bool RenderCompositorANGLE::ResizeBufferIfNeeded() {
 }
 
 void RenderCompositorANGLE::DestroyEGLSurface() {
-  auto* egl = gl::GLLibraryEGL::Get();
-
   
   if (mEGLSurface) {
     gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(EGL_NO_SURFACE);
-    egl->fDestroySurface(egl->Display(), mEGLSurface);
+    mEgl->fDestroySurface(mEgl->Display(), mEGLSurface);
     mEGLSurface = nullptr;
   }
 }
