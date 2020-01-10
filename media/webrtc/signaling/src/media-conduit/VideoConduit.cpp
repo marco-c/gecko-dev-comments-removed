@@ -45,7 +45,7 @@
 #endif
 #include "WebrtcGmpVideoCodec.h"
 
-#include "MediaDataDecoderCodec.h"
+#include "MediaDataCodec.h"
 
 
 #ifdef _MSC_VER
@@ -1614,7 +1614,7 @@ std::unique_ptr<webrtc::VideoDecoder> WebrtcVideoConduit::CreateDecoder(
 #endif
 
   
-  decoder.reset(MediaDataDecoderCodec::CreateDecoder(aType));
+  decoder.reset(MediaDataCodec::CreateDecoder(aType));
   if (decoder) {
     return decoder;
   }
@@ -1684,7 +1684,7 @@ std::unique_ptr<webrtc::VideoEncoder> WebrtcVideoConduit::CreateEncoder(
 #endif
 
   if (StaticPrefs::media_webrtc_platformencoder()) {
-    encoder.reset(MediaDataDecoderCodec::CreateEncoder(aType));
+    encoder.reset(MediaDataCodec::CreateEncoder(aType));
     if (encoder) {
       return encoder;
     }

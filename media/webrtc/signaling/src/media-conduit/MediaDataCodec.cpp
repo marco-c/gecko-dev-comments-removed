@@ -2,7 +2,7 @@
 
 
 
-#include "MediaDataDecoderCodec.h"
+#include "MediaDataCodec.h"
 #include "WebrtcMediaDataDecoderCodec.h"
 #include "WebrtcMediaDataEncoderCodec.h"
 #include "WebrtcGmpVideoCodec.h"
@@ -11,7 +11,7 @@
 namespace mozilla {
 
 
-WebrtcVideoEncoder* MediaDataDecoderCodec::CreateEncoder(
+WebrtcVideoEncoder* MediaDataCodec::CreateEncoder(
     webrtc::VideoCodecType aCodecType) {
 #ifdef MOZ_APPLEMEDIA
   if (aCodecType == webrtc::VideoCodecType::kVideoCodecH264) {
@@ -22,7 +22,7 @@ WebrtcVideoEncoder* MediaDataDecoderCodec::CreateEncoder(
 }
 
 
-WebrtcVideoDecoder* MediaDataDecoderCodec::CreateDecoder(
+WebrtcVideoDecoder* MediaDataCodec::CreateDecoder(
     webrtc::VideoCodecType aCodecType) {
   switch (aCodecType) {
     case webrtc::VideoCodecType::kVideoCodecVP8:

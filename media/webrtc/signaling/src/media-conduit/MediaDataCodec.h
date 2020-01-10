@@ -2,8 +2,8 @@
 
 
 
-#ifndef MEDIA_DATA_DECODER_CODEC_H_
-#define MEDIA_DATA_DECODER_CODEC_H_
+#ifndef MEDIA_DATA_CODEC_H_
+#define MEDIA_DATA_CODEC_H_
 
 #include "MediaConduitInterface.h"
 #include "webrtc/common_types.h"
@@ -12,7 +12,7 @@ namespace mozilla {
 
 class WebrtcVideoDecoder;
 class WebrtcVideoEncoder;
-class MediaDataDecoderCodec {
+class MediaDataCodec {
  public:
   
 
