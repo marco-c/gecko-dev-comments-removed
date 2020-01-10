@@ -18,6 +18,10 @@ namespace binding_detail {
 
 
 
+
+
+
+
 struct FakeString {
   FakeString()
       : mDataFlags(nsString::DataFlags::TERMINATED),
@@ -25,14 +29,9 @@ struct FakeString {
 
   ~FakeString() {
     if (mDataFlags & nsString::DataFlags::REFCOUNTED) {
+      MOZ_ASSERT(mDataInitialized);
       nsStringBuffer::FromData(mData)->Release();
     }
-  }
-
-  void Rebind(const nsString::char_type* aData, nsString::size_type aLength) {
-    MOZ_ASSERT(mDataFlags == nsString::DataFlags::TERMINATED);
-    mData = const_cast<nsString::char_type*>(aData);
-    mLength = aLength;
   }
 
   
@@ -41,17 +40,16 @@ struct FakeString {
   void ShareOrDependUpon(const nsAString& aString) {
     RefPtr<nsStringBuffer> sharedBuffer = nsStringBuffer::FromString(aString);
     if (!sharedBuffer) {
-      Rebind(aString.Data(), aString.Length());
+      InitData(aString.BeginReading(), aString.Length());
+      if (!aString.IsTerminated()) {
+        mDataFlags &= ~nsString::DataFlags::TERMINATED;
+      }
     } else {
       AssignFromStringBuffer(sharedBuffer.forget(), aString.Length());
     }
   }
 
-  void Truncate() {
-    MOZ_ASSERT(mDataFlags == nsString::DataFlags::TERMINATED);
-    mData = nsString::char_traits::sEmptyBuffer;
-    mLength = 0;
-  }
+  void Truncate() { InitData(nsString::char_traits::sEmptyBuffer, 0); }
 
   void SetIsVoid(bool aValue) {
     MOZ_ASSERT(aValue, "We don't support SetIsVoid(false) on FakeString!");
@@ -59,17 +57,17 @@ struct FakeString {
     mDataFlags |= nsString::DataFlags::VOIDED;
   }
 
-  const nsString::char_type* Data() const { return mData; }
-
   nsString::char_type* BeginWriting() {
     MOZ_ASSERT(IsMutable());
+    MOZ_ASSERT(mDataInitialized);
     return mData;
   }
 
   nsString::size_type Length() const { return mLength; }
 
   operator mozilla::Span<const nsString::char_type>() const {
-    return mozilla::MakeSpan(Data(), Length());
+    MOZ_ASSERT(mDataInitialized);
+    return mozilla::MakeSpan(mData, Length());
   }
 
   operator mozilla::Span<nsString::char_type>() {
@@ -80,9 +78,8 @@ struct FakeString {
   bool SetLength(nsString::size_type aLength, mozilla::fallible_t const&) {
     
     if (aLength < sInlineCapacity) {
-      SetData(mInlineStorage);
-      mDataFlags =
-          nsString::DataFlags::TERMINATED | nsString::DataFlags::INLINE;
+      InitData(mInlineStorage, aLength);
+      mDataFlags |= nsString::DataFlags::INLINE;
     } else {
       RefPtr<nsStringBuffer> buf =
           nsStringBuffer::Alloc((aLength + 1) * sizeof(nsString::char_type));
@@ -90,15 +87,18 @@ struct FakeString {
         return false;
       }
 
-      AssignFromStringBuffer(buf.forget());
+      AssignFromStringBuffer(buf.forget(), aLength);
     }
-    mLength = aLength;
+
+    MOZ_ASSERT(mDataInitialized);
     mData[mLength] = char16_t(0);
     return true;
   }
 
   
   bool EnsureMutable() {
+    MOZ_ASSERT(mDataInitialized);
+
     if (IsMutable()) {
       return true;
     }
@@ -112,6 +112,11 @@ struct FakeString {
     const nsString::char_type* oldChars = mData;
 
     mDataFlags = nsString::DataFlags::TERMINATED;
+#ifdef DEBUG
+    
+    
+    mDataInitialized = false;
+#endif 
     
     
     
@@ -125,10 +130,11 @@ struct FakeString {
     return true;
   }
 
-  void AssignFromStringBuffer(already_AddRefed<nsStringBuffer>&& aBuffer,
+  void AssignFromStringBuffer(already_AddRefed<nsStringBuffer> aBuffer,
                               size_t aLength) {
-    AssignFromStringBuffer(std::move(aBuffer));
-    mLength = aLength;
+    InitData(static_cast<nsString::char_type*>(aBuffer.take()->Data()),
+             aLength);
+    mDataFlags |= nsString::DataFlags::REFCOUNTED;
   }
 
   
@@ -143,7 +149,7 @@ struct FakeString {
   
   
   void AssignLiteral(const nsString::char_type* aData, size_t aLength) {
-    Rebind(aData, aLength);
+    InitData(aData, aLength);
     mDataFlags |= nsString::DataFlags::LITERAL;
   }
 
@@ -169,18 +175,21 @@ struct FakeString {
 
   static const size_t sInlineCapacity = 64;
   nsString::char_type mInlineStorage[sInlineCapacity];
+#ifdef DEBUG
+  bool mDataInitialized = false;
+#endif 
 
   FakeString(const FakeString& other) = delete;
   void operator=(const FakeString& other) = delete;
 
-  void SetData(nsString::char_type* aData) {
+  void InitData(const nsString::char_type* aData, nsString::size_type aLength) {
     MOZ_ASSERT(mDataFlags == nsString::DataFlags::TERMINATED);
+    MOZ_ASSERT(!mDataInitialized);
     mData = const_cast<nsString::char_type*>(aData);
-  }
-  void AssignFromStringBuffer(already_AddRefed<nsStringBuffer> aBuffer) {
-    SetData(static_cast<nsString::char_type*>(aBuffer.take()->Data()));
-    mDataFlags =
-        nsString::DataFlags::REFCOUNTED | nsString::DataFlags::TERMINATED;
+    mLength = aLength;
+#ifdef DEBUG
+    mDataInitialized = true;
+#endif 
   }
 
   bool IsMutable() {
