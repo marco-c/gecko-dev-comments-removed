@@ -123,11 +123,6 @@ this.StoragePrincipalHelper = {
         await cleanupFunction();
       }
       UrlClassifierTestUtils.cleanupTestTrackers();
-
-      
-      
-      
-      forceGC();
     });
   },
 };
