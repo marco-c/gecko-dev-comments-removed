@@ -328,11 +328,11 @@ class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
  public:
   FunctionTreeHolder& getTreeHolder() { return treeHolder_; }
 
-  bool publishDeferredItems() {
+  MOZ_MUST_USE bool publishDeferredItems() {
     return publishDeferredItems(getTreeHolder().getFunctionTree());
   }
 
-  bool publishDeferredItems(FunctionTree* root) {
+  MOZ_MUST_USE bool publishDeferredItems(FunctionTree* root) {
     
     
     if (!publishDeferredFunctions(root)) {
