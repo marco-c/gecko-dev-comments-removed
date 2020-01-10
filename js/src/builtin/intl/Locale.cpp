@@ -357,14 +357,14 @@ static bool HasLikelySubtags(LikelySubtags likelySubtags,
   
   
   if (likelySubtags == LikelySubtags::Add) {
-    return !StringEqualsAscii(language, "und") && script &&
-           !StringEqualsAscii(script, "Zzzz") && region &&
-           !StringEqualsAscii(region, "ZZ");
+    return !StringEqualsLiteral(language, "und") && script &&
+           !StringEqualsLiteral(script, "Zzzz") && region &&
+           !StringEqualsLiteral(region, "ZZ");
   }
 
   
   
-  return !StringEqualsAscii(language, "und") && !script && !region;
+  return !StringEqualsLiteral(language, "und") && !script && !region;
 }
 
 

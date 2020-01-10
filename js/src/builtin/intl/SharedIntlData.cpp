@@ -404,8 +404,8 @@ bool js::intl::SharedIntlData::isUpperCaseFirst(JSContext* cx,
   
   
   bool isDefaultUpperCaseFirstLocale =
-      js::StringEqualsAscii(localeLinear, "da") ||
-      js::StringEqualsAscii(localeLinear, "mt");
+      js::StringEqualsLiteral(localeLinear, "da") ||
+      js::StringEqualsLiteral(localeLinear, "mt");
 #endif
 
 #if DEBUG || MOZ_SYSTEM_ICU
