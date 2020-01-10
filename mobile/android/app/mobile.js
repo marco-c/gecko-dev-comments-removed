@@ -786,7 +786,13 @@ pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com
 
 pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sync/1.5");
 
+#ifdef NIGHTLY_BUILD
+
+pref("dom.audiochannel.audioCompeting", false);
+#else
 pref("dom.audiochannel.audioCompeting", true);
+#endif
+
 pref("dom.audiochannel.mediaControl", true);
 pref("media.block-autoplay-until-in-foreground", false);
 
