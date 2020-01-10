@@ -620,9 +620,9 @@ var interfaceNamesInGlobalScope =
 
     {name: "MediaCapabilitiesInfo", insecureContext: true},
 
-    {name: "MediaDeviceInfo", insecureContext: false},
+    {name: "MediaDeviceInfo", insecureContext: true},
 
-    {name: "MediaDevices", insecureContext: false},
+    {name: "MediaDevices", insecureContext: true},
 
     {name: "MediaElementAudioSourceNode", insecureContext: true},
 
