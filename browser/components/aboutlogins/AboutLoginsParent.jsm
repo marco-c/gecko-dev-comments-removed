@@ -411,6 +411,7 @@ var AboutLoginsParent = {
             logins,
             syncState,
             selectedBadgeLanguages,
+            masterPasswordEnabled: LoginHelper.isMasterPasswordSet(),
           });
 
           if (BREACH_ALERTS_ENABLED) {
@@ -438,7 +439,6 @@ var AboutLoginsParent = {
             ex
           );
         }
-
         break;
       }
       case "AboutLogins:UpdateLogin": {
