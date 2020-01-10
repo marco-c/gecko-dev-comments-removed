@@ -76,6 +76,9 @@ class GfxInfoBase : public nsIGfxInfo,
   NS_IMETHOD GetTargetFrameRate(uint32_t* aTargetFrameRate) override;
 
   
+  void GetAllFeatures(dom::XPCOMInitData& xpcomInit);
+
+  
   
   
   
