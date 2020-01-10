@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 import org.mozilla.gecko.AppConstants.Versions;
@@ -233,7 +235,7 @@ public class LightweightTheme implements BundleEventListener {
         final int bitmapHeight = bitmap.getHeight();
 
         try {
-            mColor = Color.parseColor(color);
+            mColor = parseCSSColor(color);
         } catch (Exception e) {
             
             
@@ -278,6 +280,50 @@ public class LightweightTheme implements BundleEventListener {
         for (OnChangeListener listener : mListeners) {
             listener.onLightweightThemeChanged();
         }
+    }
+
+    private static @ColorInt int parseCSSColor(final String color) {
+        
+        
+        
+        if (color.startsWith("#") && color.length() == 7) {
+            return Color.parseColor(color);
+        }
+
+
+        
+        
+        
+        
+        
+        
+        Pattern rgbaPattern = Pattern.compile(
+                "rgba? *\\( *(\\d+)(?: *, *| +)(\\d+)(?: *, *| +)(\\d+)(?: *, *| +)(\\d+(?:\\.\\d+)?) *\\)");
+        Matcher rgba = rgbaPattern.matcher(color);
+        if (rgba.matches()) {
+            return Color.argb(
+                    Math.round(255 * Math.max(Math.min(Float.parseFloat(rgba.group(4)), 1), 0)),
+                    stringToColorChannel(rgba.group(1)),
+                    stringToColorChannel(rgba.group(2)),
+                    stringToColorChannel(rgba.group(3)));
+        }
+
+        
+        Pattern rgbPattern = Pattern.compile(
+                "rgb *\\( *(\\d+)(?: *, *| +)(\\d+)(?: *, *| +)(\\d+) *\\)");
+        Matcher rgb = rgbPattern.matcher(color);
+        if (rgb.matches()) {
+            return Color.rgb(
+                    stringToColorChannel(rgb.group(1)),
+                    stringToColorChannel(rgb.group(2)),
+                    stringToColorChannel(rgb.group(3)));
+        }
+
+        throw new IllegalArgumentException("Unsupported color format");
+    }
+
+    private static int stringToColorChannel(String color) {
+        return Math.max(Math.min(Integer.parseInt(color), 255), 0);
     }
 
     
