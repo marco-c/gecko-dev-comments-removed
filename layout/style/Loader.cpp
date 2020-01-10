@@ -686,8 +686,7 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
     
     if (net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
             aStatus)) {
-      Document* doc = mLoader->GetDocument();
-      if (doc) {
+      if (Document* doc = mLoader->GetDocument()) {
         for (SheetLoadData* data = this; data; data = data->mNext) {
           
           nsCOMPtr<nsIContent> content =
