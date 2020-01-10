@@ -1077,7 +1077,6 @@ function TypedArrayCompareInt(x, y) {
 
 function TypedArrayCompareBigInt(x, y) {
     
-    
     assert(typeof x === "bigint" && typeof y === "bigint",
            "x and y are not BigInts.");
 
