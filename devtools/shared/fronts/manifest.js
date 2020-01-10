@@ -1,0 +1,23 @@
+
+
+
+
+"use strict";
+
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
+const { manifestSpec } = require("devtools/shared/specs/manifest");
+
+class ManifestFront extends FrontClassWithSpec(manifestSpec) {
+  constructor(client) {
+    super(client);
+
+    
+    this.formAttributeName = "manifestActor";
+  }
+}
+
+exports.ManifestFront = ManifestFront;
+registerFront(ManifestFront);
