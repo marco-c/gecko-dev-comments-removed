@@ -416,11 +416,6 @@ namespace {
 
 
 
-#define DEFAULT_MAX_CONSECUTIVE_CALLBACKS_MILLISECONDS 4
-uint32_t gMaxConsecutiveCallbacksMilliseconds;
-
-
-
 #define DEFAULT_DISABLE_OPEN_CLICK_DELAY 0
 int32_t gDisableOpenClickDelay;
 
@@ -467,10 +462,6 @@ TimeoutManager::~TimeoutManager() {
 
 
 void TimeoutManager::Initialize() {
-  Preferences::AddUintVarCache(&gMaxConsecutiveCallbacksMilliseconds,
-                               "dom.timeout.max_consecutive_callbacks_ms",
-                               DEFAULT_MAX_CONSECUTIVE_CALLBACKS_MILLISECONDS);
-
   Preferences::AddIntVarCache(&gDisableOpenClickDelay,
                               "dom.disable_open_click_delay",
                               DEFAULT_DISABLE_OPEN_CLICK_DELAY);
@@ -682,7 +673,7 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
 
   
   uint32_t totalTimeLimitMS =
-      std::max(1u, gMaxConsecutiveCallbacksMilliseconds);
+      std::max(1u, StaticPrefs::dom_timeout_max_consecutive_callbacks_ms());
   const TimeDuration totalTimeLimit =
       TimeDuration::Min(TimeDuration::FromMilliseconds(totalTimeLimitMS),
                         TimeDuration::Max(TimeDuration(), mExecutionBudget));
