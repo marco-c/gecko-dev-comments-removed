@@ -2189,15 +2189,13 @@ HuffmanDictionary::HuffmanDictionary(JSContext* cx)
     : fields(cx), listLengths(cx) {
   
   for (size_t i = 0; i < BINAST_INTERFACE_AND_FIELD_LIMIT; ++i) {
-    HuffmanTable fieldDefaultValue(HuffmanTableUnreachable{});
-    fields.infallibleAppend(std::move(fieldDefaultValue));
+    fields.infallibleEmplaceBack(HuffmanTableUnreachable{});
   }
 
   
   
   for (size_t i = 0; i < BINAST_NUMBER_OF_LIST_TYPES; ++i) {
-    HuffmanTableListLength listLengthDefaultValue(HuffmanTableUnreachable{});
-    listLengths.infallibleAppend(std::move(listLengthDefaultValue));
+    listLengths.infallibleEmplaceBack(HuffmanTableUnreachable{});
   }
 }
 
