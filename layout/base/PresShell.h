@@ -966,7 +966,6 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  void SetIgnoreViewportScrolling(bool aIgnore);
   bool IgnoringViewportScrolling() const {
     return !!(mRenderingStateFlags &
               RenderingStateFlags::IgnoringViewportScrolling);
