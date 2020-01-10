@@ -236,14 +236,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  void MakeTransitionList(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
-                          nsTArray<bool>& aTransitionArray);
-
-  
-
-
-
-
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   InsertBRElementToEmptyListItemsAndTableCellsInRange(
       const RawRangeBoundary& aStartRef, const RawRangeBoundary& aEndRef);

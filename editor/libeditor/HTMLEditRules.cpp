@@ -6460,8 +6460,8 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
   
   
 
-  nsTArray<bool> transitionList;
-  MakeTransitionList(nodeArray, transitionList);
+  AutoTArray<bool, 64> transitionList;
+  HTMLEditor::MakeTransitionList(nodeArray, transitionList);
 
   
   
@@ -8056,20 +8056,14 @@ nsIContent* HTMLEditor::GetMostAncestorInlineElement(nsINode& aNode) const {
   return content;
 }
 
-void HTMLEditRules::MakeTransitionList(
-    nsTArray<OwningNonNull<nsINode>>& aNodeArray,
-    nsTArray<bool>& aTransitionArray) {
-  nsCOMPtr<nsINode> prevParent;
 
+void HTMLEditor::MakeTransitionList(
+    const nsTArray<OwningNonNull<nsINode>>& aNodeArray,
+    nsTArray<bool>& aTransitionArray) {
+  nsINode* prevParent = nullptr;
   aTransitionArray.EnsureLengthAtLeast(aNodeArray.Length());
   for (uint32_t i = 0; i < aNodeArray.Length(); i++) {
-    if (aNodeArray[i]->GetParentNode() != prevParent) {
-      
-      aTransitionArray[i] = true;
-    } else {
-      
-      aTransitionArray[i] = false;
-    }
+    aTransitionArray[i] = aNodeArray[i]->GetParentNode() != prevParent;
     prevParent = aNodeArray[i]->GetParentNode();
   }
 }
