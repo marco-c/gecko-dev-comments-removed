@@ -15,6 +15,24 @@
 }
 
 
+#storage-tree {
+  -moz-user-focus: normal;
+}
+
+#storage-tree:focus {
+  outline: 0;
+}
+
+
+#storage-table {
+  -moz-user-focus: normal;
+}
+
+#storage-table:focus {
+  outline: 0;
+}
+
+
 .table-widget-cell {
   min-width: unset;
 }

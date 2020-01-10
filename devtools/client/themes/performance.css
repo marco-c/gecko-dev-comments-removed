@@ -29,6 +29,15 @@
 }
 
 
+.performance-tool {
+  -moz-user-focus: normal;
+}
+
+.performance-tool:focus {
+  outline: 0;
+}
+
+
 
 
 
