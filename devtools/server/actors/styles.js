@@ -101,6 +101,8 @@ const BOLD_FONT_WEIGHT = 700;
 
 const FONT_PREVIEW_OFFSET = 4;
 
+const NS_EVENT_STATE_VISITED = 1 << 24;
+
 
 
 
@@ -720,7 +722,16 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
   _getElementRules: function(node, pseudo, inherited, options) {
-    const domRules = InspectorUtils.getCSSStyleRules(node, pseudo);
+    const includeVisitedStyle = !!(
+      InspectorUtils.getContentState(node) & NS_EVENT_STATE_VISITED
+    );
+
+    const domRules = InspectorUtils.getCSSStyleRules(
+      node,
+      pseudo,
+      includeVisitedStyle
+    );
+
     if (!domRules) {
       return [];
     }
