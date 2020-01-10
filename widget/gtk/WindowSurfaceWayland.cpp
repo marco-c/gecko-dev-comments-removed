@@ -813,10 +813,8 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
     mBufferScreenRect = lockedScreenRect;
   }
 
-  if (mWholeWindowBufferDamage || mRenderingCacheMode != CACHE_ALL) {
-    
-    mDrawToWaylandBufferDirectly = true;
-  }
+  mDrawToWaylandBufferDirectly =
+      (mWholeWindowBufferDamage || mRenderingCacheMode != CACHE_ALL);
 
   if (mDrawToWaylandBufferDirectly) {
     
@@ -826,20 +824,6 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
     RefPtr<gfx::DrawTarget> dt = LockWaylandBuffer(
          mWholeWindowBufferDamage);
     if (dt) {
-      
-      
-      
-      if (!mWholeWindowBufferDamage && mRenderingCacheMode != CACHE_NONE) {
-        uint32_t numRects = aRegion.GetNumRects();
-        if (numRects != 1) {
-          AutoTArray<IntRect, 32> rects;
-          rects.SetCapacity(numRects);
-          for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
-            rects.AppendElement(iter.Get().ToUnknownRect());
-          }
-          dt->PushDeviceSpaceClipRects(rects.Elements(), rects.Length());
-        }
-      }
       return dt.forget();
     }
   }
