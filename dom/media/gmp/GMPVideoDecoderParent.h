@@ -29,7 +29,9 @@ class GMPVideoDecoderParent final : public PGMPVideoDecoderParent,
   friend class PGMPVideoDecoderParent;
 
  public:
-  NS_INLINE_DECL_REFCOUNTING(GMPVideoDecoderParent)
+  
+  
+  NS_INLINE_DECL_REFCOUNTING(GMPVideoDecoderParent, final)
 
   explicit GMPVideoDecoderParent(GMPContentParent* aPlugin);
 

@@ -23,7 +23,9 @@ class GMPVideoEncoderChild : public PGMPVideoEncoderChild,
   friend class PGMPVideoEncoderChild;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPVideoEncoderChild);
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPVideoEncoderChild, final);
 
   explicit GMPVideoEncoderChild(GMPContentChild* aPlugin);
 

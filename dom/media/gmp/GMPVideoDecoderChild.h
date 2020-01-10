@@ -24,7 +24,9 @@ class GMPVideoDecoderChild : public PGMPVideoDecoderChild,
   friend class PGMPVideoDecoderChild;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPVideoDecoderChild);
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPVideoDecoderChild, final);
 
   explicit GMPVideoDecoderChild(GMPContentChild* aPlugin);
 
