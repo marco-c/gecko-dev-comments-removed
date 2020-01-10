@@ -559,9 +559,10 @@ nsresult nsSiteSecurityService::SetHSTSState(
   bool isPreload = (aSource == SourcePreload);
   
   
-  if (!maxage) {
-    return RemoveStateInternal(aType, hostname, flags, isPreload,
-                               aOriginAttributes);
+  
+  if (maxage == 0) {
+    return MarkHostAsNotHSTS(aType, hostname, flags, isPreload,
+                             aOriginAttributes);
   }
 
   MOZ_ASSERT(
@@ -608,28 +609,17 @@ nsresult nsSiteSecurityService::SetHSTSState(
   return NS_OK;
 }
 
-nsresult nsSiteSecurityService::RemoveStateInternal(
-    uint32_t aType, nsIURI* aURI, uint32_t aFlags,
-    const OriginAttributes& aOriginAttributes) {
-  nsAutoCString hostname;
-  GetHost(aURI, hostname);
-  return RemoveStateInternal(aType, hostname, aFlags, false, aOriginAttributes);
-}
 
-nsresult nsSiteSecurityService::RemoveStateInternal(
+
+
+
+nsresult nsSiteSecurityService::MarkHostAsNotHSTS(
     uint32_t aType, const nsAutoCString& aHost, uint32_t aFlags,
     bool aIsPreload, const OriginAttributes& aOriginAttributes) {
   
-  if (!XRE_IsParentProcess()) {
-    MOZ_CRASH(
-        "Child process: no direct access to "
-        "nsISiteSecurityService::RemoveStateInternal");
+  if (aType != nsISiteSecurityService::HEADER_HSTS) {
+    return NS_ERROR_INVALID_ARG;
   }
-
-  
-  NS_ENSURE_TRUE(aType == nsISiteSecurityService::HEADER_HSTS ||
-                     aType == nsISiteSecurityService::HEADER_HPKP,
-                 NS_ERROR_NOT_IMPLEMENTED);
   if (aIsPreload && aOriginAttributes != OriginAttributes()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -638,7 +628,6 @@ nsresult nsSiteSecurityService::RemoveStateInternal(
   mozilla::DataStorageType storageType = isPrivate
                                              ? mozilla::DataStorage_Private
                                              : mozilla::DataStorage_Persistent;
-  
   nsAutoCString storageKey;
   SetStorageKey(aHost, aType, aOriginAttributes, storageKey);
 
@@ -675,10 +664,18 @@ nsresult nsSiteSecurityService::RemoveStateInternal(
 }
 
 NS_IMETHODIMP
-nsSiteSecurityService::RemoveState(uint32_t aType, nsIURI* aURI,
-                                   uint32_t aFlags,
-                                   JS::HandleValue aOriginAttributes,
-                                   JSContext* aCx, uint8_t aArgc) {
+nsSiteSecurityService::ResetState(uint32_t aType, nsIURI* aURI, uint32_t aFlags,
+                                  JS::HandleValue aOriginAttributes,
+                                  JSContext* aCx, uint8_t aArgc) {
+  if (!XRE_IsParentProcess()) {
+    MOZ_CRASH(
+        "Child process: no direct access to "
+        "nsISiteSecurityService::ResetState");
+  }
+  if (!aURI) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
   OriginAttributes originAttributes;
   if (aArgc > 0) {
     
@@ -687,7 +684,39 @@ nsSiteSecurityService::RemoveState(uint32_t aType, nsIURI* aURI,
       return NS_ERROR_INVALID_ARG;
     }
   }
-  return RemoveStateInternal(aType, aURI, aFlags, originAttributes);
+
+  return ResetStateInternal(aType, aURI, aFlags, originAttributes);
+}
+
+
+
+
+
+
+
+nsresult nsSiteSecurityService::ResetStateInternal(
+    uint32_t aType, nsIURI* aURI, uint32_t aFlags,
+    const OriginAttributes& aOriginAttributes) {
+  if (!aURI) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  if (aType != nsISiteSecurityService::HEADER_HSTS &&
+      aType != nsISiteSecurityService::HEADER_HPKP) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  nsAutoCString hostname;
+  nsresult rv = GetHost(aURI, hostname);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  nsAutoCString storageKey;
+  SetStorageKey(hostname, aType, aOriginAttributes, storageKey);
+  bool isPrivate = aFlags & nsISocketProvider::NO_PERMANENT_STORAGE;
+  mozilla::DataStorageType storageType = isPrivate
+                                             ? mozilla::DataStorage_Private
+                                             : mozilla::DataStorage_Persistent;
+  mSiteStateStorage->Remove(storageKey, storageType);
+  return NS_OK;
 }
 
 static bool HostIsIPAddress(const nsCString& hostname) {
@@ -1063,8 +1092,11 @@ nsresult nsSiteSecurityService::ProcessPKPHeader(
   }
 
   
+  
+  
+  
   if (maxAge == 0) {
-    return RemoveStateInternal(aType, aSourceURI, aFlags, aOriginAttributes);
+    return ResetStateInternal(aType, aSourceURI, aFlags, aOriginAttributes);
   }
 
   

@@ -927,7 +927,7 @@ const SecuritySettingsCleaner = {
           if (Services.eTLD.hasRootDomain(hostname, aHost)) {
             
             let uri = Services.io.newURI("https://" + hostname);
-            sss.removeState(type, uri, 0, entry.originAttributes);
+            sss.resetState(type, uri, 0, entry.originAttributes);
           }
         }
       }
