@@ -18,8 +18,7 @@ const test = new SearchConfigTest({
         regions: ["ru", "tr", "by", "kz"],
         locales: {
           matches: ["ru", "tr", "be", "kk"],
-          
-          
+          startsWith: ["en"],
         },
       },
       {
