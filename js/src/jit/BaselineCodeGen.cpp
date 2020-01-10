@@ -6033,29 +6033,18 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
                                                       Register scratch) {
   Address baselineAddr(script, JSScript::offsetOfBaselineScript());
 
-  auto emitEnterBaseline = [&]() {
-    masm.loadPtr(baselineAddr, script);
-    masm.load32(Address(script, BaselineScript::offsetOfResumeEntriesOffset()),
-                scratch);
-    masm.addPtr(scratch, script);
-    masm.loadPtr(
-        BaseIndex(script, resumeIndex, ScaleFromElemWidth(sizeof(uintptr_t))),
-        scratch);
-    masm.jump(scratch);
-  };
-
-  if (!IsBaselineInterpreterEnabled()) {
-    
-    emitEnterBaseline();
-    return true;
-  }
-
-  
   
   Label noBaselineScript;
   masm.branchPtr(Assembler::BelowOrEqual, baselineAddr,
                  ImmPtr(BASELINE_DISABLED_SCRIPT), &noBaselineScript);
-  emitEnterBaseline();
+  masm.loadPtr(baselineAddr, script);
+  masm.load32(Address(script, BaselineScript::offsetOfResumeEntriesOffset()),
+              scratch);
+  masm.addPtr(scratch, script);
+  masm.loadPtr(
+      BaseIndex(script, resumeIndex, ScaleFromElemWidth(sizeof(uintptr_t))),
+      scratch);
+  masm.jump(scratch);
 
   masm.bind(&noBaselineScript);
 
@@ -6103,18 +6092,15 @@ bool BaselineCodeGen<Handler>::emitGeneratorResume(
   Label interpret;
   Register scratch1 = regs.takeAny();
   masm.loadPtr(Address(callee, JSFunction::offsetOfScript()), scratch1);
-  Address baselineAddr(scratch1, JSScript::offsetOfBaselineScript());
-  if (IsBaselineInterpreterEnabled()) {
-    Address jitScriptAddr(scratch1, JSScript::offsetOfJitScript());
-    masm.branchPtr(Assembler::Equal, jitScriptAddr, ImmPtr(nullptr),
-                   &interpret);
-  } else {
-    masm.branchPtr(Assembler::BelowOrEqual, baselineAddr,
-                   ImmPtr(BASELINE_DISABLED_SCRIPT), &interpret);
-  }
+  masm.branchPtr(Assembler::Equal,
+                 Address(scratch1, JSScript::offsetOfJitScript()),
+                 ImmPtr(nullptr), &interpret);
 
 #ifdef JS_TRACE_LOGGING
   if (JS::TraceLoggerSupported()) {
+    
+    MOZ_CRASH("Unimplemented Baseline Interpreter TraceLogger support");
+    Address baselineAddr(scratch1, JSScript::offsetOfBaselineScript());
     masm.loadPtr(baselineAddr, scratch1);
     if (!emitTraceLoggerResume(scratch1, regs)) {
       return false;
