@@ -7,7 +7,7 @@
 
 
 
-const injections = new Injections(AVAILABLE_INJECTIONS);
+const injections = new Injections(AVAILABLE_INJECTIONS, CUSTOM_FUNCTIONS);
 const uaOverrides = new UAOverrides(AVAILABLE_UA_OVERRIDES);
 
 const aboutCompatBroker = new AboutCompatBroker({

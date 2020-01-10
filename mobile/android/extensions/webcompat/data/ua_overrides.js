@@ -49,7 +49,7 @@ const AVAILABLE_UA_OVERRIDES = [
       blocks: [...getMatchPatternsForGoogleURL("www.google", "serviceworker")],
       permanentPref: "enable_enhanced_search",
       telemetryKey: "enhancedSearch",
-      experiment: "enhanced-search-experiment",
+      experiment: "enhanced-search",
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
@@ -76,6 +76,72 @@ const AVAILABLE_UA_OVERRIDES = [
       ],
       uaTransformer: originalUA => {
         return originalUA.replace("Gecko", "like Gecko");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1577179",
+    platform: "all",
+    domain: "supportforms.embarcadero.com",
+    bug: "1577179",
+    config: {
+      matches: ["*://supportforms.embarcadero.com/*"],
+      uaTransformer: originalUA => {
+        return (
+          UAHelpers.getPrefix(originalUA) +
+          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36"
+        );
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1577519",
+    platform: "desktop",
+    domain: "att.tv",
+    bug: "1577519",
+    config: {
+      matches: ["*://*.att.tv/*"],
+      uaTransformer: originalUA => {
+        return (
+          UAHelpers.getPrefix(originalUA) +
+          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36"
+        );
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1570108",
+    platform: "desktop",
+    domain: "steamcommunity.com",
+    bug: "1570108",
+    config: {
+      matches: ["*://steamcommunity.com/chat*"],
+      uaTransformer: originalUA => {
+        return (
+          UAHelpers.getPrefix(originalUA) +
+          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36"
+        );
       },
     },
   },
@@ -116,7 +182,11 @@ const AVAILABLE_UA_OVERRIDES = [
     domain: "tieba.baidu.com",
     bug: "945963",
     config: {
-      matches: ["*://tieba.baidu.com/*", "*://tiebac.baidu.com/*"],
+      matches: [
+        "*://tieba.baidu.com/*",
+        "*://tiebac.baidu.com/*",
+        "*://zhidao.baidu.com/*",
+      ],
       uaTransformer: originalUA => {
         return originalUA + " AppleWebKit/537.36 (KHTML, like Gecko)";
       },
@@ -339,6 +409,116 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://beeg.com/*"],
       uaTransformer: originalUA => {
         return originalUA.replace(/Firefox.+$/, "");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+    id: "bug1574522",
+    platform: "android",
+    domain: "enuri.com",
+    bug: "1574522",
+    config: {
+      matches: ["*://enuri.com/*"],
+      uaTransformer: _ => {
+        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G900M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.111 Mobile Safari/537.36";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+
+    id: "bug1574564",
+    platform: "android",
+    domain: "ceskatelevize.cz",
+    bug: "1574564",
+    config: {
+      matches: ["*://*.ceskatelevize.cz/*"],
+      uaTransformer: originalUA => {
+        return (
+          UAHelpers.getPrefix(originalUA) +
+          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.111 Mobile Safari/537.36"
+        );
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1577240",
+    platform: "android",
+    domain: "heb.com",
+    bug: "1577240",
+    config: {
+      matches: ["*://*.heb.com/*"],
+      uaTransformer: originalUA => {
+        return (
+          UAHelpers.getPrefix(originalUA) +
+          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.111 Mobile Safari/537.36"
+        );
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1577250",
+    platform: "android",
+    domain: "homebook.pl",
+    bug: "1577250",
+    config: {
+      matches: ["*://*.homebook.pl/*"],
+      uaTransformer: originalUA => {
+        return (
+          UAHelpers.getPrefix(originalUA) +
+          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.111 Mobile Safari/537.36"
+        );
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1577267",
+    platform: "android",
+    domain: "metfone.com.kh",
+    bug: "1577267",
+    config: {
+      matches: ["*://*.metfone.com.kh/*"],
+      uaTransformer: originalUA => {
+        return (
+          UAHelpers.getPrefix(originalUA) +
+          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.111 Mobile Safari/537.36"
+        );
       },
     },
   },
