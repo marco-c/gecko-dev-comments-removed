@@ -65,17 +65,8 @@ GlobalHelperThreadState* gHelperThreadState = nullptr;
 
 bool js::CreateHelperThreadsState() {
   MOZ_ASSERT(!gHelperThreadState);
-  UniquePtr<GlobalHelperThreadState> helperThreadState =
-      MakeUnique<GlobalHelperThreadState>();
-  if (!helperThreadState) {
-    return false;
-  }
-  gHelperThreadState = helperThreadState.release();
-  if (!gHelperThreadState->initializeHelperContexts()) {
-    js_delete(gHelperThreadState);
-    return false;
-  }
-  return true;
+  gHelperThreadState = js_new<GlobalHelperThreadState>();
+  return gHelperThreadState != nullptr;
 }
 
 void js::DestroyHelperThreadsState() {
@@ -444,43 +435,6 @@ struct MOZ_RAII AutoSetContextParse {
   ~AutoSetContextParse() { TlsContext.get()->setParseTask(nullptr); }
 };
 
-
-
-
-
-
-static const uint32_t kDefaultHelperStackSize = 2048 * 1024 - 2 * 4096;
-static const uint32_t kDefaultHelperStackQuota = 1800 * 1024;
-
-
-
-
-
-
-
-
-
-
-
-#if defined(MOZ_TSAN)
-static const uint32_t HELPER_STACK_SIZE = 2 * kDefaultHelperStackSize;
-static const uint32_t HELPER_STACK_QUOTA = 2 * kDefaultHelperStackQuota;
-#else
-static const uint32_t HELPER_STACK_SIZE = kDefaultHelperStackSize;
-static const uint32_t HELPER_STACK_QUOTA = kDefaultHelperStackQuota;
-#endif
-
-AutoSetHelperThreadContext::AutoSetHelperThreadContext() {
-  AutoLockHelperThreadState lock;
-  cx = HelperThreadState().getFirstUnusedContext(lock);
-  MOZ_ASSERT(cx);
-  cx->setHelperThread(lock);
-  cx->nativeStackBase = GetNativeStackBase();
-  
-  
-  JS_SetNativeStackQuota(cx, HELPER_STACK_QUOTA);
-}
-
 static const JSClass parseTaskGlobalClass = {"internal-parse-task-global",
                                              JSCLASS_GLOBAL_FLAGS,
                                              &JS::DefaultGlobalClassOps};
@@ -543,14 +497,11 @@ size_t ParseTask::sizeOfExcludingThis(
 }
 
 void ParseTask::runTask() {
-  AutoSetHelperThreadContext usesContext;
-
   JSContext* cx = TlsContext.get();
   JSRuntime* runtime = parseGlobal->runtimeFromAnyThread();
 
   AutoSetContextRuntime ascr(runtime);
   AutoSetContextParse parsetask(this);
-  gc::AutoSuppressNurseryCellAlloc noNurseryAlloc(cx);
 
   Zone* zone = parseGlobal->zoneFromAnyThread();
   zone->setHelperThreadOwnerContext(cx);
@@ -1123,6 +1074,32 @@ bool js::CurrentThreadIsParseThread() {
 }
 #endif
 
+
+
+
+
+
+static const uint32_t kDefaultHelperStackSize = 2048 * 1024 - 2 * 4096;
+static const uint32_t kDefaultHelperStackQuota = 1800 * 1024;
+
+
+
+
+
+
+
+
+
+
+
+#if defined(MOZ_TSAN)
+static const uint32_t HELPER_STACK_SIZE = 2 * kDefaultHelperStackSize;
+static const uint32_t HELPER_STACK_QUOTA = 2 * kDefaultHelperStackQuota;
+#else
+static const uint32_t HELPER_STACK_SIZE = kDefaultHelperStackSize;
+static const uint32_t HELPER_STACK_QUOTA = kDefaultHelperStackQuota;
+#endif
+
 bool GlobalHelperThreadState::ensureInitialized() {
   MOZ_ASSERT(CanUseExtraThreads());
 
@@ -1187,7 +1164,6 @@ void GlobalHelperThreadState::finish() {
   while (!freeList.empty()) {
     jit::FreeIonBuilder(freeList.popCopy());
   }
-  destroyHelperContexts(lock);
 }
 
 void GlobalHelperThreadState::finishThreads() {
@@ -1202,46 +1178,9 @@ void GlobalHelperThreadState::finishThreads() {
   threads.reset(nullptr);
 }
 
-bool GlobalHelperThreadState::initializeHelperContexts() {
-  AutoLockHelperThreadState lock;
-  for (size_t i = 0; i < threadCount; i++) {
-    UniquePtr<JSContext> cx =
-        js::MakeUnique<JSContext>(nullptr, JS::ContextOptions());
-    
-    
-    
-    cx->setHelperThread(lock);
-    if (!cx->init(ContextKind::HelperThread)) {
-      return false;
-    }
-    cx->clearHelperThread(lock);
-    if (!helperContexts_.append(cx.release())) {
-      return false;
-    }
-  }
-  return true;
-}
+void GlobalHelperThreadState::lock() { helperLock.lock(); }
 
-JSContext* GlobalHelperThreadState::getFirstUnusedContext(
-    AutoLockHelperThreadState& locked) {
-  for (auto& cx : helperContexts_) {
-    if (cx->contextAvailable(locked)) {
-      return cx;
-    }
-  }
-  MOZ_CRASH("Expected available JSContext");
-}
-
-void GlobalHelperThreadState::destroyHelperContexts(
-    AutoLockHelperThreadState& lock) {
-  while (helperContexts_.length() > 0) {
-    JSContext* cx = helperContexts_.popCopy();
-    
-    
-    cx->setHelperThread(lock);
-    js_delete(cx);
-  }
-}
+void GlobalHelperThreadState::unlock() { helperLock.unlock(); }
 
 #ifdef DEBUG
 bool GlobalHelperThreadState::isLockedByCurrentThread() const {
@@ -1359,8 +1298,8 @@ void GlobalHelperThreadState::triggerFreeUnusedMemory() {
   }
 
   AutoLockHelperThreadState lock;
-  for (auto& context : helperContexts_) {
-    context->setFreeUnusedMemory(true);
+  for (auto& thread : *threads) {
+    thread.shouldFreeUnusedMemory = true;
   }
   notifyAll(PRODUCER, lock);
 }
@@ -1768,11 +1707,11 @@ void js::GCParallelTask::runFromMainThread(JSRuntime* rt) {
 void js::GCParallelTask::runFromHelperThread(AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(isDispatched(lock));
 
+  AutoSetContextRuntime ascr(runtime());
+  gc::AutoSetThreadIsPerformingGC performingGC;
+
   {
     AutoUnlockHelperThreadState parallelSection(lock);
-    AutoSetHelperThreadContext usesContext;
-    AutoSetContextRuntime ascr(runtime());
-    gc::AutoSetThreadIsPerformingGC performingGC;
     TimeStamp timeStart = ReallyNow();
     runTask();
     duration_ = TimeSince(timeStart);
@@ -2176,6 +2115,7 @@ void HelperThread::handleIonWorkload(AutoLockHelperThreadState& locked) {
 
   {
     AutoUnlockHelperThreadState unlock(locked);
+    AutoSetContextRuntime ascr(rt);
 
     builder->runTask();
   }
@@ -2543,8 +2483,20 @@ void HelperThread::threadLoop() {
 
   ensureRegisteredWithProfiler();
 
+  JSContext cx(nullptr, JS::ContextOptions());
+  {
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    if (!cx.init(ContextKind::HelperThread)) {
+      oomUnsafe.crash("HelperThread cx.init()");
+    }
+  }
+  gc::AutoSuppressNurseryCellAlloc noNurseryAlloc(&cx);
+  JS_SetNativeStackQuota(&cx, HELPER_STACK_QUOTA);
+
   while (!terminate) {
     MOZ_ASSERT(idle());
+
+    maybeFreeUnusedMemory(&cx);
 
     
     
@@ -2578,4 +2530,15 @@ const HelperThread::TaskSpec* HelperThread::findHighestPriorityTask(
   }
 
   return nullptr;
+}
+
+void HelperThread::maybeFreeUnusedMemory(JSContext* cx) {
+  MOZ_ASSERT(idle());
+
+  cx->tempLifoAlloc().releaseAll();
+
+  if (shouldFreeUnusedMemory) {
+    cx->tempLifoAlloc().freeAll();
+    shouldFreeUnusedMemory = false;
+  }
 }

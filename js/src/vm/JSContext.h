@@ -176,33 +176,12 @@ struct JSContext : public JS::RootingContext,
 
   js::ContextData<js::FreeOp> defaultFreeOp_;
 
-  
-  js::Thread::Id currentThread_;
-
   js::ParseTask* parseTask_;
-
-  
-  
-  mozilla::Atomic<bool, mozilla::ReleaseAcquire> freeUnusedMemory;
 
  public:
   
   
   void setRuntime(JSRuntime* rt);
-
-  void setHelperThread(js::AutoLockHelperThreadState& locked);
-  void clearHelperThread(js::AutoLockHelperThreadState& locked);
-
-  bool contextAvailable(js::AutoLockHelperThreadState& locked) {
-    MOZ_ASSERT(kind_ == js::ContextKind::HelperThread);
-    return currentThread_ == js::Thread::Id();
-  }
-
-  void setFreeUnusedMemory(bool shouldFree) { freeUnusedMemory = shouldFree; }
-
-  bool shouldFreeUnusedMemory() const {
-    return kind_ == js::ContextKind::HelperThread && freeUnusedMemory;
-  }
 
   bool isMainThreadContext() const {
     return kind_ == js::ContextKind::MainThread;
@@ -491,7 +470,7 @@ struct JSContext : public JS::RootingContext,
   }
 
   
-  uintptr_t nativeStackBase;
+  const uintptr_t nativeStackBase;
 
  public:
   

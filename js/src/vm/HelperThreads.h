@@ -100,7 +100,6 @@ class GlobalHelperThreadState {
   typedef Vector<GCParallelTask*, 0, SystemAllocPolicy> GCParallelTaskVector;
   typedef Vector<PromiseHelperTask*, 0, SystemAllocPolicy>
       PromiseHelperTaskVector;
-  typedef Vector<JSContext*, 0, SystemAllocPolicy> ContextVector;
 
   
   
@@ -147,9 +146,6 @@ class GlobalHelperThreadState {
   
   GCParallelTaskVector gcParallelWorklist_;
 
-  
-  ContextVector helperContexts_;
-
   ParseTask* removeFinishedParseTask(ParseTaskKind kind,
                                      JS::OffThreadToken* token);
 
@@ -171,10 +167,8 @@ class GlobalHelperThreadState {
   void finish();
   void finishThreads();
 
-  MOZ_MUST_USE bool initializeHelperContexts();
-  JSContext* getFirstUnusedContext(AutoLockHelperThreadState& locked);
-  void destroyHelperContexts(AutoLockHelperThreadState& lock);
-
+  void lock();
+  void unlock();
 #ifdef DEBUG
   bool isLockedByCurrentThread() const;
 #endif
@@ -384,6 +378,12 @@ struct HelperThread {
   bool terminate;
 
   
+
+
+
+  bool shouldFreeUnusedMemory;
+
+  
   mozilla::Maybe<HelperTaskUnion> currentTask;
 
   bool idle() const { return currentTask.isNothing(); }
@@ -464,6 +464,8 @@ struct HelperThread {
 
     return nullptr;
   }
+
+  void maybeFreeUnusedMemory(JSContext* cx);
 
   void handleWasmWorkload(AutoLockHelperThreadState& locked,
                           wasm::CompileMode mode);
@@ -698,21 +700,6 @@ class MOZ_RAII AutoUnlockHelperThreadState : public UnlockGuard<Mutex> {
       AutoLockHelperThreadState& locked MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : Base(locked) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-  }
-};
-
-struct MOZ_RAII AutoSetHelperThreadContext {
-  JSContext* cx;
-  explicit AutoSetHelperThreadContext();
-  ~AutoSetHelperThreadContext() {
-    AutoLockHelperThreadState lock;
-    cx->tempLifoAlloc().releaseAll();
-    if (cx->shouldFreeUnusedMemory()) {
-      cx->tempLifoAlloc().freeAll();
-      cx->setFreeUnusedMemory(false);
-    }
-    cx->clearHelperThread(lock);
-    cx = nullptr;
   }
 };
 
