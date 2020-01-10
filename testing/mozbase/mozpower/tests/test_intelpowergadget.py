@@ -223,11 +223,28 @@ def test_ipg_rh_format_to_perfherder_without_cutoff(ipg_rh_obj):
     )
 
     
-    assert len(formatted_data.keys()) == 2
+    assert len(formatted_data.keys()) == 5
     assert 'utilization' in formatted_data and 'power-usage' in formatted_data
-    assert formatted_data['power-usage']['test'] == ipg_rh_obj._output_file_prefix + '-cumulative'
+
+    assert formatted_data['power-usage']['test'] == \
+        ipg_rh_obj._output_file_prefix + '-cumulative'
     assert formatted_data['utilization']['test'] == \
         ipg_rh_obj._output_file_prefix + '-utilization'
+    assert formatted_data['frequency-gpu']['test'] == \
+        ipg_rh_obj._output_file_prefix + '-frequency-gpu'
+    assert formatted_data['frequency-cpu']['test'] == \
+        ipg_rh_obj._output_file_prefix + '-frequency-cpu'
+    assert formatted_data['power-watts']['test'] == \
+        ipg_rh_obj._output_file_prefix + '-watts'
+
+    for measure in formatted_data:
+        
+        assert len(formatted_data[measure]['values']) >= 1
+
+        for valkey in formatted_data[measure]['values']:
+            
+            assert '(' not in valkey
+            assert ')' not in valkey
 
     
     utilization_vals = formatted_data['utilization']['values']
