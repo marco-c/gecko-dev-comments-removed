@@ -51,7 +51,6 @@ const { ExtensionUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AddonManager: "resource://gre/modules/AddonManager.jsm",
   BulkKeyBundle: "resource://services-sync/keys.js",
   CollectionKeyManager: "resource://services-sync/record.js",
   CommonUtils: "resource://services-common/utils.js",
@@ -782,41 +781,8 @@ class ExtensionStorageSync {
     this.listeners = new WeakMap();
   }
 
-  
-
-
-
-
-
-
-
-  async getExtensions() {
-    
-    
-    const extensions = new Set(extensionContexts.keys());
-
-    const allEnabledExtensions = await AddonManager.getAddonsByTypes([
-      "extension",
-    ]);
-
-    
-    const keysRecord = await this.cryptoCollection.getKeyRingRecord();
-
-    
-    for (const addon of allEnabledExtensions) {
-      if (this.hasSaltsFor(keysRecord, [addon.id])) {
-        const policy = WebExtensionPolicy.getByID(addon.id);
-        if (policy && policy.extension) {
-          extensions.add(policy.extension);
-        }
-      }
-    }
-
-    return extensions;
-  }
-
   async syncAll() {
-    const extensions = await this.getExtensions();
+    const extensions = extensionContexts.keys();
     const extIds = Array.from(extensions, extension => extension.id);
     log.debug(`Syncing extension settings for ${JSON.stringify(extIds)}`);
     if (extIds.length == 0) {
@@ -825,7 +791,7 @@ class ExtensionStorageSync {
     }
     await this.ensureCanSync(extIds);
     await this.checkSyncKeyRing();
-    const promises = Array.from(extensions, extension => {
+    const promises = Array.from(extensionContexts.keys(), extension => {
       return openCollection(this.cryptoCollection, extension).then(coll => {
         return this.sync(extension, coll);
       });
@@ -1330,11 +1296,11 @@ class ExtensionStorageSync {
 
   
   async clearAll() {
-    const extensions = await this.getExtensions();
+    const extensions = extensionContexts.keys();
     const extIds = Array.from(extensions, extension => extension.id);
     log.debug(`Clearing extension data for ${JSON.stringify(extIds)}`);
     if (extIds.length) {
-      const promises = Array.from(extensions, extension => {
+      const promises = Array.from(extensionContexts.keys(), extension => {
         return openCollection(this.cryptoCollection, extension).then(coll => {
           return coll.clear();
         });
