@@ -282,6 +282,8 @@ let gSiteDataSettings = {
           }
         }
       }
+    } else {
+      allowed = true;
     }
 
     
