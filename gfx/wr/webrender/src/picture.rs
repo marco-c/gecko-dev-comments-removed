@@ -182,8 +182,6 @@ pub struct PictureCacheState {
     
     pub tiles: FastHashMap<TileOffset, Tile>,
     
-    fract_offset: PictureVector2D,
-    
     spatial_nodes: FastHashMap<SpatialNodeIndex, SpatialNodeDependency>,
     
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
@@ -312,17 +310,17 @@ struct TilePreUpdateContext {
 
     
     
-    fract_changed: bool,
+    fract_offset: PictureVector2D,
 
     
     background_color: Option<ColorF>,
+
+    
+    global_screen_world_rect: WorldRect,
 }
 
 
 struct TilePostUpdateContext<'a> {
-    
-    global_screen_world_rect: WorldRect,
-
     
     backdrop: BackdropInfo,
 
@@ -513,6 +511,13 @@ pub struct Tile {
     
     pub is_valid: bool,
     
+    
+    pub is_visible: bool,
+    
+    
+    
+    fract_offset: PictureVector2D,
+    
     is_same_content: bool,
     
     
@@ -546,6 +551,8 @@ impl Tile {
             prev_descriptor: TileDescriptor::new(),
             is_same_content: false,
             is_valid: false,
+            is_visible: false,
+            fract_offset: PictureVector2D::zero(),
             id,
             is_opaque: false,
             root: TileNode::new_leaf(Vec::new()),
@@ -615,13 +622,29 @@ impl Tile {
             .expect("bug: map local tile rect");
 
         
+        self.is_visible = self.world_rect.intersects(&ctx.global_screen_world_rect);
+
+        
+        
+        
+        if !self.is_visible {
+            return;
+        }
 
         
         self.is_same_content = true;
 
         
         
-        if ctx.fract_changed || ctx.background_color != self.background_color {
+        let fract_changed = (self.fract_offset.x - ctx.fract_offset.x).abs() > 0.001 ||
+                            (self.fract_offset.y - ctx.fract_offset.y).abs() > 0.001;
+        if fract_changed {
+            self.fract_offset = ctx.fract_offset;
+        }
+
+        
+        
+        if fract_changed || ctx.background_color != self.background_color {
             self.background_color = ctx.background_color;
             self.is_same_content = false;
             self.dirty_rect = rect;
@@ -642,6 +665,12 @@ impl Tile {
         &mut self,
         info: &PrimitiveDependencyInfo,
     ) {
+        
+        
+        if !self.is_visible {
+            return;
+        }
+
         
         if !info.is_cacheable {
             self.is_same_content = false;
@@ -726,6 +755,13 @@ impl Tile {
         state: &mut TilePostUpdateState,
     ) -> bool {
         
+        
+        
+        if !self.is_visible {
+            return false;
+        }
+
+        
         let tile_is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
         let opacity_changed = tile_is_opaque != self.is_opaque;
         self.is_opaque = tile_is_opaque;
@@ -735,10 +771,6 @@ impl Tile {
 
         
         if self.current_descriptor.prims.is_empty() {
-            return false;
-        }
-
-        if !self.world_rect.intersects(&ctx.global_screen_world_rect) {
             return false;
         }
 
@@ -1253,10 +1285,6 @@ pub struct TileCacheInstance {
     
     
     
-    fract_offset: PictureVector2D,
-    
-    
-    
     
     pub shared_clips: Vec<ClipDataHandle>,
     
@@ -1297,7 +1325,6 @@ impl TileCacheInstance {
             background_color,
             backdrop: BackdropInfo::empty(),
             subpixel_mode: SubpixelMode::Allow,
-            fract_offset: PictureVector2D::zero(),
             root_transform: TransformKey::Local,
             shared_clips,
             shared_clip_chain,
@@ -1413,7 +1440,6 @@ impl TileCacheInstance {
         
         if let Some(prev_state) = frame_state.retained_tiles.caches.remove(&self.slice) {
             self.tiles.extend(prev_state.tiles);
-            self.fract_offset = prev_state.fract_offset;
             self.root_transform = prev_state.root_transform;
             self.spatial_nodes = prev_state.spatial_nodes;
             self.opacity_bindings = prev_state.opacity_bindings;
@@ -1476,14 +1502,6 @@ impl TileCacheInstance {
             ref_point.x.fract(),
             ref_point.y.fract(),
         );
-
-        
-        
-        let fract_changed = (self.fract_offset.x - fract_offset.x).abs() > 0.001 ||
-                            (self.fract_offset.y - fract_offset.y).abs() > 0.001;
-        if fract_changed {
-            self.fract_offset = fract_offset;
-        }
 
         
         
@@ -1560,8 +1578,9 @@ impl TileCacheInstance {
             local_rect: self.local_rect,
             local_clip_rect: self.local_clip_rect,
             pic_to_world_mapper,
-            fract_changed,
+            fract_offset,
             background_color: self.background_color,
+            global_screen_world_rect: frame_context.global_screen_world_rect,
         };
 
         for y in y0 .. y1 {
@@ -1591,7 +1610,21 @@ impl TileCacheInstance {
                     &ctx,
                 );
 
-                world_culling_rect = world_culling_rect.union(&tile.world_rect);
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if tile.is_visible {
+                    world_culling_rect = world_culling_rect.union(&tile.world_rect);
+                }
 
                 self.tiles.insert(key, tile);
             }
@@ -1912,7 +1945,6 @@ impl TileCacheInstance {
         }
 
         let ctx = TilePostUpdateContext {
-            global_screen_world_rect: frame_context.global_screen_world_rect,
             backdrop: self.backdrop,
             spatial_nodes: &self.spatial_nodes,
             opacity_bindings: &self.opacity_bindings,
@@ -2752,7 +2784,6 @@ impl PicturePrimitive {
                         tiles: tile_cache.tiles,
                         spatial_nodes: tile_cache.spatial_nodes,
                         opacity_bindings: tile_cache.opacity_bindings,
-                        fract_offset: tile_cache.fract_offset,
                         root_transform: tile_cache.root_transform,
                         current_tile_size: tile_cache.current_tile_size,
                     },
