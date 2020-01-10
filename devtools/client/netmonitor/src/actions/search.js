@@ -34,7 +34,7 @@ const { searchInResource } = require("../workers/search/index");
 
 
 function search(connector, query) {
-  let cancelled = false;
+  let canceled = false;
 
   
   
@@ -57,12 +57,15 @@ function search(connector, query) {
     
     const requests = getDisplayedRequests(state);
     for (const request of requests) {
-      if (cancelled) {
+      if (canceled) {
         return;
       }
 
       
       await loadResource(connector, request);
+      if (canceled) {
+        return;
+      }
 
       
       
@@ -76,7 +79,11 @@ function search(connector, query) {
   
   
   newOngoingSearch.cancel = () => {
-    cancelled = true;
+    canceled = true;
+  };
+
+  newOngoingSearch.isCanceled = () => {
+    return canceled;
   };
 
   return newOngoingSearch;
@@ -107,6 +114,7 @@ async function loadResource(connector, resource) {
 function searchResource(resource, query) {
   return async (dispatch, getState) => {
     const state = getState();
+    const ongoingSearch = getOngoingSearch(state);
 
     const modifiers = {
       caseSensitive: state.search.caseSensitive,
@@ -116,7 +124,7 @@ function searchResource(resource, query) {
     
     const result = await searchInResource(resource, query, modifiers);
 
-    if (!result.length) {
+    if (!result.length || ongoingSearch.isCanceled()) {
       return;
     }
 
@@ -151,6 +159,17 @@ function addSearchQuery(query) {
 function clearSearchResults() {
   return {
     type: CLEAR_SEARCH_RESULTS,
+  };
+}
+
+
+
+
+
+function clearSearchResultAndCancel() {
+  return (dispatch, getState) => {
+    dispatch(stopOngoingSearch());
+    dispatch(clearSearchResults());
   };
 }
 
@@ -271,4 +290,5 @@ module.exports = {
   navigate,
   setTargetSearchResult,
   toggleCaseSensitiveSearch,
+  clearSearchResultAndCancel,
 };
