@@ -1211,8 +1211,6 @@ class GeneratedFile(ContextDerived):
             '.inc',
             '.py',
             '.rs',
-            'node.stub',  
-                          
             
             
             'android_apks',
