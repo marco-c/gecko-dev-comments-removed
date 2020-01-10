@@ -1295,7 +1295,7 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
 
   
   
-  mPixelsFilled += destRect.Width() * destRect.Height();
+  mPixelsFilled += destRect.Area();
 
   
   

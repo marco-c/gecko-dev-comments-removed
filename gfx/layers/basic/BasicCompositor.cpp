@@ -646,8 +646,7 @@ void BasicCompositor::DrawGeometry(
 
     
     transformBounds = aTransform.TransformAndClipBounds(
-        aRect, Rect(offset.x, offset.y, buffer->GetSize().width,
-                    buffer->GetSize().height));
+        aRect, Rect(mRenderTarget->GetRect()));
     transformBounds.RoundOut();
 
     if (transformBounds.IsEmpty()) {
