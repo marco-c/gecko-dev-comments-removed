@@ -1187,7 +1187,21 @@ window.Audit = (function() {
           '> [' + this._label + '] ' +
           (this._description ? this._description : ''));
 
-      this._taskFunction(this, this.should.bind(this));
+      
+      
+      
+      
+      try {
+        this._taskFunction(this, this.should.bind(this));
+      } catch (e) {
+        
+        test(() => { throw e; }, `Executing "${this.label}"`);
+        if (this.state != TaskState.FINISHED) {
+          
+          
+          this.done();
+        }
+      }
     }
 
     
