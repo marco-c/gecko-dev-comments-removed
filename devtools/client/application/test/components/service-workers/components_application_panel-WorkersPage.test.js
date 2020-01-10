@@ -14,10 +14,12 @@ const {
   SINGLE_WORKER_DIFFERENT_DOMAIN_LIST,
   MULTIPLE_WORKER_LIST,
   MULTIPLE_WORKER_MIXED_DOMAINS_LIST,
-} = require("devtools/client/application/test/jest/fixtures/data/constants");
+} = require("devtools/client/application/test/components/fixtures/data/constants");
 
 
-const { setupStore } = require("devtools/client/application/test/jest/helpers");
+const {
+  setupStore,
+} = require("devtools/client/application/test/components/helpers/helpers");
 
 
 const WorkersPage = createFactory(
