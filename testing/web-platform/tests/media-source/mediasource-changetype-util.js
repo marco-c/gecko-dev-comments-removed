@@ -1,9 +1,38 @@
 
 
 function findSupportedChangeTypeTestTypes(cb) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   let CHANGE_TYPE_MEDIA_LIST = [
     {
       type: 'video/webm; codecs="vp8"',
+      relaxed_type: 'video/webm',
+      mime_subtype: 'webm',
       is_video: true,
       url: 'webm/test-v-128k-320x240-24fps-8kfr.webm',
       start_time: 0.0
@@ -12,6 +41,8 @@ function findSupportedChangeTypeTestTypes(cb) {
     },
     {
       type: 'video/webm; codecs="vp9"',
+      relaxed_type: 'video/webm',
+      mime_subtype: 'webm',
       is_video: true,
       url: 'webm/test-vp9.webm',
       start_time: 0.0
@@ -20,6 +51,8 @@ function findSupportedChangeTypeTestTypes(cb) {
     },
     {
       type: 'video/mp4; codecs="avc1.4D4001"',
+      relaxed_type: 'video/mp4',
+      mime_subtype: 'mp4',
       is_video: true,
       url: 'mp4/test-v-128k-320x240-24fps-8kfr.mp4',
       start_time: 0.083333,
@@ -27,6 +60,8 @@ function findSupportedChangeTypeTestTypes(cb) {
     },
     {
       type: 'audio/webm; codecs="vorbis"',
+      relaxed_type: 'audio/webm',
+      mime_subtype: 'webm',
       is_video: false,
       url: 'webm/test-a-128k-44100Hz-1ch.webm',
       start_time: 0.0
@@ -36,6 +71,8 @@ function findSupportedChangeTypeTestTypes(cb) {
     },
     {
       type: 'audio/mp4; codecs="mp4a.40.2"',
+      relaxed_type: 'audio/mp4',
+      mime_subtype: 'mp4',
       is_video: false,
       url: 'mp4/test-a-128k-44100Hz-1ch.mp4',
       start_time: 0.0
@@ -45,6 +82,8 @@ function findSupportedChangeTypeTestTypes(cb) {
     },
     {
       type: 'audio/mpeg',
+      relaxed_type: 'audio/mpeg',
+      mime_subtype: 'mpeg',
       is_video: false,
       url: 'mp3/sound_5.mp3',
       start_time: 0.0
@@ -77,21 +116,34 @@ function appendBuffer(test, sourceBuffer, data) {
   sourceBuffer.appendBuffer(data);
 }
 
-function trimBuffered(test, mediaElement, sourceBuffer, minimumPreviousDuration, newDuration) {
-  assert_less_than(newDuration, minimumPreviousDuration);
-  assert_less_than(minimumPreviousDuration, mediaElement.duration);
+function trimBuffered(test, mediaElement, sourceBuffer, minimumPreviousDuration, newDuration, skip_duration_prechecks) {
+  if (!skip_duration_prechecks) {
+    assert_less_than(newDuration, minimumPreviousDuration);
+    assert_less_than(minimumPreviousDuration, mediaElement.duration);
+  }
   test.expectEvent(sourceBuffer, "update");
   test.expectEvent(sourceBuffer, "updateend");
   sourceBuffer.remove(newDuration, Infinity);
 }
 
-function trimDuration(test, mediaElement, mediaSource, newDuration) {
-  assert_less_than(newDuration, mediaElement.duration);
+function trimDuration(test, mediaElement, mediaSource, newDuration, skip_duration_prechecks) {
+  if (!skip_duration_prechecks) {
+    assert_less_than(newDuration, mediaElement.duration);
+  }
   test.expectEvent(mediaElement, "durationchange");
   mediaSource.duration = newDuration;
 }
 
-function runChangeTypeTest(test, mediaElement, mediaSource, metadataA, dataA, metadataB, dataB) {
+function runChangeTypeTest(test, mediaElement, mediaSource, metadataA, typeA, dataA, metadataB, typeB, dataB,
+                           implicit_changetype, negative_test) {
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -130,8 +182,18 @@ function runChangeTypeTest(test, mediaElement, mediaSource, metadataA, dataA, me
     return { "offset": offset, "adjustedTime": adjustedTime };
   }
 
-  let sourceBuffer = mediaSource.addSourceBuffer(metadataA.type);
+  
+  let sourceBuffer = mediaSource.addSourceBuffer(typeA);
 
+  
+  
+  if (negative_test) {
+    sourceBuffer.addEventListener("error", test.step_func_done());
+  } else {
+    sourceBuffer.addEventListener("error", test.unreached_func("Unexpected event 'error'"));
+  }
+
+  
   appendBuffer(test, sourceBuffer, dataA);
   let lastStart = metadataA["start_time"];
   if (lastStart == null) {
@@ -144,7 +206,14 @@ function runChangeTypeTest(test, mediaElement, mediaSource, metadataA, dataA, me
   test.waitForExpectedEvents(() => {
     let safeOffset = findSafeOffset(0.5, metadataA, lastStart, metadataB);
     lastStart = safeOffset["adjustedTime"];
-    sourceBuffer.changeType(metadataB.type);
+    if (!implicit_changetype) {
+      try { sourceBuffer.changeType(typeB); } catch(err) {
+        if (negative_test)
+          test.done();
+        else
+          throw err;
+      }
+    }
     sourceBuffer.timestampOffset = safeOffset["offset"];
     appendBuffer(test, sourceBuffer, dataB);
   });
@@ -155,7 +224,14 @@ function runChangeTypeTest(test, mediaElement, mediaSource, metadataA, dataA, me
     assert_less_than(lastStart, 1.0);
     let safeOffset = findSafeOffset(1.0, metadataB, lastStart, metadataB);
     lastStart = safeOffset["adjustedTime"];
-    sourceBuffer.changeType(metadataB.type);
+    if (!implicit_changetype) {
+      try { sourceBuffer.changeType(typeB); } catch(err) {
+        if (negative_test)
+          test.done();
+        else
+          throw err;
+      }
+    }
     sourceBuffer.timestampOffset = safeOffset["offset"];
     appendBuffer(test, sourceBuffer, dataB);
   });
@@ -167,7 +243,14 @@ function runChangeTypeTest(test, mediaElement, mediaSource, metadataA, dataA, me
     let safeOffset = findSafeOffset(1.5, metadataB, lastStart, metadataA);
     
     
-    sourceBuffer.changeType(metadataA.type);
+    if (!implicit_changetype) {
+      try { sourceBuffer.changeType(typeA); } catch(err) {
+        if (negative_test)
+          test.done();
+        else
+          throw err;
+      }
+    }
     sourceBuffer.timestampOffset = safeOffset["offset"];
     appendBuffer(test, sourceBuffer, dataA);
   });
@@ -179,18 +262,27 @@ function runChangeTypeTest(test, mediaElement, mediaSource, metadataA, dataA, me
     
     
     let safeOffset = findSafeOffset(1.3, metadataB, lastStart, metadataA);
-    sourceBuffer.changeType(metadataA.type);
+    if (!implicit_changetype) {
+      try { sourceBuffer.changeType(typeA); } catch(err) {
+        if (negative_test)
+          test.done();
+        else
+          throw err;
+      }
+    }
     sourceBuffer.timestampOffset = safeOffset["offset"];
     appendBuffer(test, sourceBuffer, dataA);
   });
 
   
   test.waitForExpectedEvents(() => {
-    trimBuffered(test, mediaElement, sourceBuffer, 2.1, 2);
+    
+    trimBuffered(test, mediaElement, sourceBuffer, 2.1, 2, negative_test);
   });
 
   test.waitForExpectedEvents(() => {
-    trimDuration(test, mediaElement, mediaSource, 2);
+    
+    trimDuration(test, mediaElement, mediaSource, 2, negative_test);
   });
 
   test.waitForExpectedEvents(() => {
@@ -203,17 +295,56 @@ function runChangeTypeTest(test, mediaElement, mediaSource, metadataA, dataA, me
   });
 
   test.waitForExpectedEvents(() => {
-    test.done();
+    if (negative_test)
+      assert_unreached("Received 'ended' while negative testing.");
+    else
+      test.done();
   });
 }
 
-function mediaSourceChangeTypeTest(metadataA, metadataB, description) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function mediaSourceChangeTypeTest(metadataA, metadataB, description, options = {}) {
   mediasource_test((test, mediaElement, mediaSource) => {
+    let typeA = metadataA.type;
+    let typeB = metadataB.type;
+    if (options.hasOwnProperty("use_relaxed_mime_types") &&
+        options.use_relaxed_mime_types === true) {
+      typeA = metadataA.relaxed_type;
+      typeB = metadataB.relaxed_type;
+    }
+    let implicit_changetype = options.hasOwnProperty("implicit_changetype") &&
+        options.implicit_changetype === true;
+    let negative_test = options.hasOwnProperty("negative_test") &&
+        options.negative_test === true;
+
     mediaElement.pause();
-    mediaElement.addEventListener('error', test.unreached_func("Unexpected event 'error'"));
+    if (negative_test) {
+      mediaElement.addEventListener("error", test.step_func_done());
+    } else {
+      mediaElement.addEventListener("error",
+          test.unreached_func("Unexpected event 'error'"));
+    }
     MediaSourceUtil.loadBinaryData(test, metadataA.url, (dataA) => {
       MediaSourceUtil.loadBinaryData(test, metadataB.url, (dataB) => {
-        runChangeTypeTest(test, mediaElement, mediaSource, metadataA, dataA, metadataB, dataB);
+        runChangeTypeTest(
+            test, mediaElement, mediaSource,
+            metadataA, typeA, dataA, metadataB, typeB, dataB,
+            implicit_changetype, negative_test);
       });
     });
   }, description);
