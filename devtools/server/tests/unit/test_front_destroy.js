@@ -7,6 +7,12 @@
 
 "use strict";
 
+
+
+
+
+_profileInitialized = true;
+
 add_task(async function test() {
   DebuggerServer.init();
   DebuggerServer.registerAllActors();

@@ -8,7 +8,7 @@ function testScript(script) {
   
   
   
-  SimpleTest.requestLongerTimeout(2);
+  SimpleTest.requestLongerTimeout(4);
 
   
   if (!("isSWPresent" in window)) {

@@ -38,23 +38,27 @@ async function clearDownloads() {
 
 function promiseClickDownloadDialogButton(buttonAction) {
   const uri = "chrome://mozapps/content/downloads/unknownContentType.xul";
-  BrowserTestUtils.promiseAlertDialogOpen(buttonAction, uri, async win => {
-    
-    
-    
-    
-    
-    
-    
-    await TestUtils.waitForTick();
+  return BrowserTestUtils.promiseAlertDialogOpen(
+    buttonAction,
+    uri,
+    async win => {
+      
+      
+      
+      
+      
+      
+      
+      await TestUtils.waitForTick();
 
-    await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise(resolve => setTimeout(resolve, 0));
 
-    const button = win.document.documentElement.getButton(buttonAction);
-    button.disabled = false;
-    info(`clicking ${buttonAction} button`);
-    button.click();
-  });
+      const button = win.document.documentElement.getButton(buttonAction);
+      button.disabled = false;
+      info(`clicking ${buttonAction} button`);
+      button.click();
+    }
+  );
 }
 
 async function performCanceledDownload(tab, path) {
