@@ -136,6 +136,9 @@ static MOZ_MUST_USE bool DumpPCCounts(JSContext* cx, HandleScript script,
                                       Sprinter* sp) {
   MOZ_ASSERT(script->hasScriptCounts());
 
+  
+  gc::AutoSuppressGC suppress(cx);
+
 #ifdef DEBUG
   jsbytecode* pc = script->code();
   while (pc < script->codeEnd()) {
