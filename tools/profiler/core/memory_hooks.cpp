@@ -398,8 +398,9 @@ static void AllocCallback(void* aPtr, size_t aReqSize) {
       
       gBernoulli->trial(actualSize) &&
       
-      profiler_add_native_allocation_marker(ThreadIntercept::MainThreadId(),
-                                            static_cast<int64_t>(actualSize))) {
+      profiler_add_native_allocation_marker(
+          ThreadIntercept::MainThreadId(), static_cast<int64_t>(actualSize),
+          reinterpret_cast<uintptr_t>(aPtr))) {
     MOZ_ASSERT(gAllocationTracker,
                "gAllocationTracker must be properly installed for the memory "
                "hooks.");
@@ -418,7 +419,7 @@ static void FreeCallback(void* aPtr) {
 
   
   size_t unsignedSize = MallocSizeOf(aPtr);
-  int64_t signedSize = -((int64_t)unsignedSize);
+  int64_t signedSize = -(static_cast<int64_t>(unsignedSize));
   sCounter->Add(signedSize);
 
   auto threadIntercept = ThreadIntercept::MaybeGet();
@@ -442,7 +443,8 @@ static void FreeCallback(void* aPtr) {
   if (gAllocationTracker->RemoveMemoryAddressIfFound(aPtr)) {
     
     profiler_add_native_allocation_marker(ThreadIntercept::MainThreadId(),
-                                          signedSize);
+                                          signedSize,
+                                          reinterpret_cast<uintptr_t>(aPtr));
   }
 }
 
