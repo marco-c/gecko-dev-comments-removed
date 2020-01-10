@@ -461,31 +461,10 @@ struct Loader::Sheets {
   
   nsDataHashtable<SheetLoadDataHashKey, SheetLoadData*> mLoadingDatas;
 
-  nsRefPtrHashtable<nsStringHashKey, StyleSheet> mInlineSheets;
-
-
-  RefPtr<StyleSheet> LookupInline(const nsAString&);
-
   
   using CacheResult = Tuple<RefPtr<StyleSheet>, SheetState>;
   CacheResult Lookup(SheetLoadDataHashKey&, bool aSyncLoad);
-
-  size_t SizeOfIncludingThis(MallocSizeOf) const;
 };
-
-RefPtr<StyleSheet> Loader::Sheets::LookupInline(const nsAString& aBuffer) {
-  auto result = mInlineSheets.Lookup(aBuffer);
-  if (!result) {
-    return nullptr;
-  }
-  if (result.Data()->HasForcedUniqueInner()) {
-    
-    
-    result.Remove();
-    return nullptr;
-  }
-  return result.Data()->Clone(nullptr, nullptr, nullptr, nullptr);
-}
 
 static void AssertComplete(const StyleSheet& aSheet) {
   
@@ -578,39 +557,6 @@ auto Loader::Sheets::Lookup(SheetLoadDataHashKey& aKey, bool aSyncLoad)
   }
 
   return {};
-}
-
-size_t Loader::Sheets::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
-  size_t n = aMallocSizeOf(this);
-
-  n += mCompleteSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (auto iter = mCompleteSheets.ConstIter(); !iter.Done(); iter.Next()) {
-    
-    
-    
-    const StyleSheet* sheet = iter.UserData();
-    if (!sheet->GetOwnerNode() && !sheet->GetParentSheet()) {
-      n += sheet->SizeOfIncludingThis(aMallocSizeOf);
-    }
-  }
-
-  n += mInlineSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (auto iter = mInlineSheets.ConstIter(); !iter.Done(); iter.Next()) {
-    n += iter.Key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-    
-    
-    const StyleSheet* sheet = iter.UserData();
-    MOZ_ASSERT(!sheet->GetParentSheet(), "How did an @import rule end up here?");
-    if (!sheet->GetOwnerNode()) {
-      n += sheet->SizeOfIncludingThis(aMallocSizeOf);
-    }
-  }
-
-  
-  
-  
-  
-  return n;
 }
 
 
@@ -1879,7 +1825,6 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
 
   
   auto isAlternate = IsAlternateSheet(aInfo.mTitle, aInfo.mHasAlternateRel);
-  LOG(("  Sheet is alternate: %d", static_cast<int>(isAlternate)));
 
   
   
@@ -1888,71 +1833,48 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   nsIURI* originalURI = nullptr;
 
   MOZ_ASSERT(aInfo.mIntegrity.IsEmpty());
+  auto sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
+                                      SRIMetadata{});
+  sheet->SetURIs(sheetURI, originalURI, baseURI);
+  nsCOMPtr<nsIReferrerInfo> referrerInfo =
+      ReferrerInfo::CreateForInternalCSSResources(aInfo.mContent->OwnerDoc());
+  sheet->SetReferrerInfo(referrerInfo);
 
-  
-  
-  const bool isWorthCaching = aInfo.mContent->IsInShadowTree();
-  RefPtr<StyleSheet> sheet;
-  if (isWorthCaching) {
-    if (!mSheets) {
-      mSheets = MakeUnique<Sheets>();
-    }
-    sheet = mSheets->LookupInline(aBuffer);
-  }
-  const bool sheetFromCache = !!sheet;
-  if (!sheet) {
-    sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
-                                   SRIMetadata{});
-    sheet->SetURIs(sheetURI, originalURI, baseURI);
-    nsCOMPtr<nsIReferrerInfo> referrerInfo =
-        ReferrerInfo::CreateForInternalCSSResources(aInfo.mContent->OwnerDoc());
-    sheet->SetReferrerInfo(referrerInfo);
-
-    nsIPrincipal* principal = aInfo.mContent->NodePrincipal();
-    if (aInfo.mTriggeringPrincipal) {
-      
-      
-      
-      
-      principal =
-          BasePrincipal::Cast(aInfo.mTriggeringPrincipal)->PrincipalToInherit();
-    }
-
+  nsIPrincipal* principal = aInfo.mContent->NodePrincipal();
+  if (aInfo.mTriggeringPrincipal) {
     
-    sheet->SetPrincipal(principal);
+    
+    
+    
+    principal =
+        BasePrincipal::Cast(aInfo.mTriggeringPrincipal)->PrincipalToInherit();
   }
+
+  
+  sheet->SetPrincipal(principal);
+
+  LOG(("  Sheet is alternate: %d", static_cast<int>(isAlternate)));
 
   auto matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
                               isAlternate, aInfo.mIsExplicitlyEnabled);
 
   InsertSheetInTree(*sheet, aInfo.mContent);
 
-  Completed completed;
-  if (sheetFromCache) {
-    MOZ_ASSERT(sheet->IsComplete());
-    completed = Completed::Yes;
-  } else {
-    auto data = MakeRefPtr<SheetLoadData>(
-        this, aInfo.mTitle, nullptr, sheet, false, owningElement, isAlternate,
-        matched, aObserver, nullptr, aInfo.mReferrerInfo, aInfo.mContent);
-    data->mLineNumber = aLineNumber;
-    
-    
-    
-    
-    
-    NS_ConvertUTF16toUTF8 utf8(aBuffer);
-    completed = ParseSheet(utf8, *data, AllowAsyncParse::No);
-    if (completed == Completed::Yes) {
-      
-      if (isWorthCaching) {
-        mSheets->mInlineSheets.Put(aBuffer, sheet);
-      }
-    } else {
-      data->mMustNotify = true;
-    }
-  }
+  auto data = MakeRefPtr<SheetLoadData>(
+      this, aInfo.mTitle, nullptr, sheet, false, owningElement, isAlternate,
+      matched, aObserver, nullptr, aInfo.mReferrerInfo, aInfo.mContent);
+  data->mLineNumber = aLineNumber;
+  
+  
+  
+  
+  
+  NS_ConvertUTF16toUTF8 utf8(aBuffer);
+  Completed completed = ParseSheet(utf8, *data, AllowAsyncParse::No);
 
+  if (completed == Completed::No) {
+    data->mMustNotify = true;
+  }
   return LoadSheetResult{completed, isAlternate, matched};
 }
 
@@ -2475,14 +2397,26 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(Loader, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(Loader, Release)
 
-size_t Loader::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+size_t Loader::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
 
   if (mSheets) {
-    n += mSheets->SizeOfIncludingThis(aMallocSizeOf);
+    n += mSheets->mCompleteSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    for (auto iter = mSheets->mCompleteSheets.ConstIter(); !iter.Done();
+         iter.Next()) {
+      
+      
+      
+      const StyleSheet* sheet = iter.UserData();
+      n += (sheet->GetOwnerNode() || sheet->GetParentSheet())
+               ? 0
+               : sheet->SizeOfIncludingThis(aMallocSizeOf);
+    }
   }
   n += mObservers.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
+  
+  
   
   
   
