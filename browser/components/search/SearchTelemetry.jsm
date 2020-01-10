@@ -39,6 +39,25 @@ const SEARCH_AD_CLICKS_SCALAR = "browser.search.ad_clicks";
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const SEARCH_PROVIDER_INFO = {
   google: {
     regexp: /^https:\/\/www\.google\.(?:.+)\/search/,
@@ -72,6 +91,16 @@ const SEARCH_PROVIDER_INFO = {
     queryParam: "q",
     codeParam: "pc",
     codePrefixes: ["MOZ", "MZ"],
+    followonCookies: [
+      {
+        extraCodeParam: "form",
+        extraCodePrefixes: ["QBRE"],
+        host: "www.bing.com",
+        name: "SRCHS",
+        codeParam: "PC",
+        codePrefixes: ["MOZ", "MZ"],
+      },
+    ],
   },
 };
 
@@ -371,28 +400,40 @@ class TelemetryHandler {
         } else {
           type = "sap";
         }
-      } else if (provider == "bing") {
+      } else if (searchProviderInfo.followonCookies) {
         
-        let secondaryCode = queries.get("form");
-        
-        if (secondaryCode == "QBRE") {
+        for (let followonCookie of searchProviderInfo.followonCookies) {
+          if (followonCookie.extraCodeParam) {
+            let eCode = queries.get(followonCookie.extraCodeParam);
+            if (
+              !eCode ||
+              !followonCookie.extraCodePrefixes.some(p => eCode.startsWith(p))
+            ) {
+              continue;
+            }
+          }
+
+          
+          
+          
           for (let cookie of Services.cookies.getCookiesFromHost(
-            "www.bing.com",
+            followonCookie.host,
             {}
           )) {
-            if (cookie.name == "SRCHS") {
-              
-              
-              
-              if (
-                searchProviderInfo.codePrefixes.some(p =>
-                  cookie.value.startsWith("PC=" + p)
-                )
-              ) {
-                type = "sap-follow-on";
-                code = cookie.value.split("=")[1];
-                break;
-              }
+            if (cookie.name != followonCookie.name) {
+              continue;
+            }
+
+            let [cookieParam, cookieValue] = cookie.value
+              .split("=")
+              .map(p => p.trim());
+            if (
+              cookieParam == followonCookie.codeParam &&
+              followonCookie.codePrefixes.some(p => cookieValue.startsWith(p))
+            ) {
+              type = "sap-follow-on";
+              code = cookieValue;
+              break;
             }
           }
         }
