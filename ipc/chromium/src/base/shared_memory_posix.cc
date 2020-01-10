@@ -61,7 +61,7 @@ SharedMemoryHandle SharedMemory::NULLHandle() { return SharedMemoryHandle(); }
 
 
 bool SharedMemory::AppendPosixShmPrefix(std::string* str, pid_t pid) {
-#if defined(ANDROID) || defined(SHM_ANON)
+#if defined(ANDROID)
   return false;
 #else
   *str += '/';
@@ -112,10 +112,6 @@ bool SharedMemory::Create(size_t size) {
     return false;
   }
   needs_truncate = false;
-#elif defined(SHM_ANON)
-  
-  
-  fd = shm_open(SHM_ANON, O_RDWR, 0600);
 #else
   
   do {
