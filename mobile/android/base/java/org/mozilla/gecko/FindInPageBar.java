@@ -115,6 +115,9 @@ public class FindInPageBar extends LinearLayout
         mFindText.setText("");
 
         
+        mFindText.setError(null);
+
+        
         if (mFindText.isFocused()) {
           getInputMethodManager(mFindText).hideSoftInputFromWindow(mFindText.getWindowToken(), 0);
         }
