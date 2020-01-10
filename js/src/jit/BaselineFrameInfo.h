@@ -337,8 +337,6 @@ class CompilerFrameInfo : public FrameInfo {
   void storeStackValue(int32_t depth, const Address& dest,
                        const ValueOperand& scratch);
 
-  PCMappingSlotInfo::SlotLocation stackValueSlotLocation(int32_t depth);
-
 #ifdef DEBUG
   
   void assertValidState(const BytecodeInfo& info);

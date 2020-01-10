@@ -82,7 +82,6 @@ BaselineCodeGen<Handler>::BaselineCodeGen(JSContext* cx, HandlerArgs&&... args)
 BaselineCompiler::BaselineCompiler(JSContext* cx, TempAllocator& alloc,
                                    JSScript* script)
     : BaselineCodeGen(cx,  alloc, script),
-      pcMappingEntries_(),
       profilerPushToggleOffset_(),
       traceLoggerScriptTextIdOffset_() {
 #ifdef JS_CODEGEN_NONE
@@ -172,23 +171,6 @@ bool BaselineInterpreterHandler::recordCallRetAddr(JSContext* cx,
   return true;
 }
 
-bool BaselineCompiler::addPCMappingEntry(bool addIndexEntry) {
-  
-  size_t nentries = pcMappingEntries_.length();
-  uint32_t pcOffset = handler.script()->pcToOffset(handler.pc());
-  if (nentries > 0 && pcMappingEntries_[nentries - 1].pcOffset == pcOffset) {
-    return true;
-  }
-
-  PCMappingEntry entry;
-  entry.pcOffset = pcOffset;
-  entry.nativeOffset = masm.currentOffset();
-  entry.slotInfo = getStackTopSlotInfo();
-  entry.addIndexEntry = addIndexEntry;
-
-  return pcMappingEntries_.append(entry);
-}
-
 MethodStatus BaselineCompiler::compile() {
   JSScript* script = handler.script();
   JitSpew(JitSpew_BaselineScripts, "Baseline compiling script %s:%u:%u (%p)",
@@ -249,56 +231,13 @@ MethodStatus BaselineCompiler::compile() {
     return Method_Error;
   }
 
-  
-  
-  Vector<PCMappingIndexEntry> pcMappingIndexEntries(cx);
-  CompactBufferWriter pcEntries;
-  uint32_t previousOffset = 0;
-
-  for (size_t i = 0; i < pcMappingEntries_.length(); i++) {
-    PCMappingEntry& entry = pcMappingEntries_[i];
-
-    if (entry.addIndexEntry) {
-      PCMappingIndexEntry indexEntry;
-      indexEntry.pcOffset = entry.pcOffset;
-      indexEntry.nativeOffset = entry.nativeOffset;
-      indexEntry.bufferOffset = pcEntries.length();
-      if (!pcMappingIndexEntries.append(indexEntry)) {
-        ReportOutOfMemory(cx);
-        return Method_Error;
-      }
-      previousOffset = entry.nativeOffset;
-    }
-
-    
-    
-    
-    MOZ_ASSERT((entry.slotInfo.toByte() & 0x80) == 0);
-
-    if (entry.nativeOffset == previousOffset) {
-      pcEntries.writeByte(entry.slotInfo.toByte());
-    } else {
-      MOZ_ASSERT(entry.nativeOffset > previousOffset);
-      pcEntries.writeByte(0x80 | entry.slotInfo.toByte());
-      pcEntries.writeUnsigned(entry.nativeOffset - previousOffset);
-    }
-
-    previousOffset = entry.nativeOffset;
-  }
-
-  if (pcEntries.oom()) {
-    ReportOutOfMemory(cx);
-    return Method_Error;
-  }
-
   UniquePtr<BaselineScript> baselineScript(
       BaselineScript::New(
           script, warmUpCheckPrologueOffset_.offset(),
           profilerEnterFrameToggleOffset_.offset(),
           profilerExitFrameToggleOffset_.offset(),
           handler.retAddrEntries().length(), handler.osrEntries().length(),
-          debugTrapEntries_.length(), pcMappingIndexEntries.length(),
-          pcEntries.length(), script->resumeOffsets().size(),
+          debugTrapEntries_.length(), script->resumeOffsets().size(),
           traceLoggerToggleOffsets_.length()),
       JS::DeletePolicy<BaselineScript>(cx->runtime()));
   if (!baselineScript) {
@@ -312,12 +251,6 @@ MethodStatus BaselineCompiler::compile() {
           "Created BaselineScript %p (raw %p) for %s:%u:%u",
           (void*)baselineScript.get(), (void*)code->raw(), script->filename(),
           script->lineno(), script->column());
-
-  MOZ_ASSERT(pcMappingIndexEntries.length() > 0);
-  baselineScript->copyPCMappingIndexEntries(&pcMappingIndexEntries[0]);
-
-  MOZ_ASSERT(pcEntries.length() > 0);
-  baselineScript->copyPCMappingEntries(pcEntries);
 
   baselineScript->copyRetAddrEntries(handler.retAddrEntries().begin());
   baselineScript->copyOSREntries(handler.osrEntries().begin());
@@ -6833,8 +6766,6 @@ MethodStatus BaselineCompiler::emitBody() {
   JSScript* script = handler.script();
   MOZ_ASSERT(handler.pc() == script->code());
 
-  bool lastOpUnreachable = false;
-  uint32_t emittedOps = 0;
   mozilla::DebugOnly<jsbytecode*> prevpc = handler.pc();
 
   while (true) {
@@ -6852,7 +6783,6 @@ MethodStatus BaselineCompiler::emitBody() {
         break;
       }
 
-      lastOpUnreachable = true;
       prevpc = handler.pc();
       continue;
     }
@@ -6874,20 +6804,6 @@ MethodStatus BaselineCompiler::emitBody() {
     }
 
     frame.assertValidState(*info);
-
-    
-    
-    
-    
-    bool addIndexEntry = (handler.pc() == script->code() || lastOpUnreachable ||
-                          emittedOps > 100);
-    if (addIndexEntry) {
-      emittedOps = 0;
-    }
-    if (MOZ_UNLIKELY(!addPCMappingEntry(addIndexEntry))) {
-      ReportOutOfMemory(cx);
-      return Method_Error;
-    }
 
     
     
@@ -6930,8 +6846,6 @@ MethodStatus BaselineCompiler::emitBody() {
       break;
     }
 
-    emittedOps++;
-    lastOpUnreachable = false;
 #ifdef DEBUG
     prevpc = handler.pc();
 #endif

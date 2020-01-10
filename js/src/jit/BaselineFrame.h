@@ -68,11 +68,6 @@ class BaselineFrame {
   uint32_t frameSize_;
   uint32_t loReturnValue_;  
   uint32_t hiReturnValue_;
-  uint32_t overrideOffset_;  
-#if JS_BITS_PER_WORD == 32
-  
-  uint32_t padding_;
-#endif
 
  public:
   
