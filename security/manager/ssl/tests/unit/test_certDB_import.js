@@ -148,6 +148,34 @@ function testImportEmptyCertPackage() {
   );
 }
 
+function testImportEmptyUserCert() {
+  
+  let byteArray = [
+    0x30,
+    0x0f,
+    0x06,
+    0x09,
+    0x60,
+    0x86,
+    0x48,
+    0x01,
+    0x86,
+    0xf8,
+    0x42,
+    0x02,
+    0x05,
+    0xa0,
+    0x02,
+    0x30,
+    0x00,
+  ];
+  gCertDB.importUserCertificate(
+    byteArray,
+    byteArray.length,
+    gInterfaceRequestor
+  );
+}
+
 function run_test() {
   let certificateDialogsCID = MockRegistrar.register(
     "@mozilla.org/nsCertificateDialogs;1",
@@ -167,6 +195,7 @@ function run_test() {
   
   testImportCACert();
   testImportEmptyCertPackage();
+  testImportEmptyUserCert();
 
   
   let emailArray = getCertAsByteArray("test_certDB_import/emailEE.pem");
