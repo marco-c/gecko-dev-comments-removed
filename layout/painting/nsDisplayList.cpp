@@ -7023,6 +7023,19 @@ bool nsDisplayRenderRoot::CreateWebRenderCommands(
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
+
+  
+  
+  
+  RefPtr<WebRenderRenderRootData> userData =
+      aManager->CommandBuilder()
+          .CreateOrRecycleWebRenderUserData<WebRenderRenderRootData>(
+              this, aBuilder.GetRenderRoot());
+  
+  
+  
+  userData->SetUsed(true);
+
   if (!aDisplayListBuilder->GetNeedsDisplayListBuild(mRenderRoot) &&
       mBuiltWRCommands) {
     return true;
@@ -7031,10 +7044,6 @@ bool nsDisplayRenderRoot::CreateWebRenderCommands(
     nsDisplayWrapList::CreateWebRenderCommands(aBuilder, aResources, aSc,
                                                aManager, aDisplayListBuilder);
   } else {
-    RefPtr<WebRenderRenderRootData> userData =
-        aManager->CommandBuilder()
-            .CreateOrRecycleWebRenderUserData<WebRenderRenderRootData>(
-                this, aBuilder.GetRenderRoot());
     mBoundary = Some(userData->EnsureHasBoundary(mRenderRoot));
 
     WebRenderCommandBuilder::ScrollDataBoundaryWrapper wrapper(
