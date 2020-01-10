@@ -753,14 +753,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #  ifdef XGILL_PLUGIN
 #    pragma GCC diagnostic ignored "-Wignored-attributes"
 #    pragma GCC diagnostic ignored "-Wattributes"
@@ -774,9 +766,6 @@
       __attribute__((annotate("moz_can_run_script_boundary")))
 #    define MOZ_MUST_OVERRIDE __attribute__((annotate("moz_must_override")))
 #    define MOZ_STATIC_CLASS __attribute__((annotate("moz_global_class")))
-#    define MOZ_STATIC_LOCAL_CLASS                        \
-      __attribute__((annotate("moz_static_local_class"))) \
-          __attribute__((annotate("moz_trivial_dtor")))
 #    define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
 #    define MOZ_NONHEAP_CLASS __attribute__((annotate("moz_nonheap_class")))
 #    define MOZ_HEAP_CLASS __attribute__((annotate("moz_heap_class")))
@@ -847,7 +836,6 @@
 #    define MOZ_CAN_RUN_SCRIPT_BOUNDARY
 #    define MOZ_MUST_OVERRIDE
 #    define MOZ_STATIC_CLASS
-#    define MOZ_STATIC_LOCAL_CLASS
 #    define MOZ_STACK_CLASS
 #    define MOZ_NONHEAP_CLASS
 #    define MOZ_HEAP_CLASS
