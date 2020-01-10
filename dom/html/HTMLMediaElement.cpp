@@ -44,6 +44,7 @@
 #include "SVGObserverUtils.h"
 #include "TimeRanges.h"
 #include "VideoFrameContainer.h"
+#include "VideoOutput.h"
 #include "VideoStreamTrack.h"
 #include "base/basictypes.h"
 #include "jsapi.h"
@@ -374,11 +375,12 @@ class nsSourceErrorEventRunner : public nsMediaEvent {
 
 
 
-class HTMLMediaElement::VideoFrameListener
-    : public DirectMediaStreamTrackListener {
+class HTMLMediaElement::VideoFrameListener : public VideoOutput {
  public:
-  explicit VideoFrameListener(HTMLMediaElement* aElement)
-      : mElement(aElement),
+  VideoFrameListener(HTMLMediaElement* aElement,
+                     VideoFrameContainer* aContainer)
+      : VideoOutput(aContainer, aElement->AbstractMainThread()),
+        mElement(aElement),
         mMainThreadEventTarget(aElement->MainThreadEventTarget()),
         mInitialSizeFound(false) {
     MOZ_ASSERT(NS_IsMainThread());
@@ -401,6 +403,9 @@ class HTMLMediaElement::VideoFrameListener
     mElement->UpdateInitialMediaSize(aSize);
   }
 
+  
+  
+  
   void NotifyRealtimeTrackData(MediaStreamGraph* aGraph,
                                StreamTime aTrackOffset,
                                const MediaSegment& aMedia) override {
@@ -409,7 +414,7 @@ class HTMLMediaElement::VideoFrameListener
     }
 
     if (aMedia.GetType() != MediaSegment::VIDEO) {
-      MOZ_ASSERT(false, "Should only lock on to a video track");
+      MOZ_ASSERT_UNREACHABLE("Should only lock on to a video track");
       return;
     }
 
@@ -417,6 +422,7 @@ class HTMLMediaElement::VideoFrameListener
     for (VideoSegment::ConstChunkIterator c(video); !c.IsEnded(); c.Next()) {
       if (c->mFrame.GetIntrinsicSize() != gfx::IntSize(0, 0)) {
         mInitialSizeFound = true;
+
         
         
         
@@ -1752,7 +1758,7 @@ void HTMLMediaElement::AbortExistingLoads() {
 
   
   if (mVideoFrameListener) {
-    mSelectedVideoStreamTrack->RemoveDirectListener(mVideoFrameListener);
+    mSelectedVideoStreamTrack->RemoveVideoOutput(mVideoFrameListener);
     mVideoFrameListener->Forget();
     mVideoFrameListener = nullptr;
   }
@@ -2151,8 +2157,8 @@ void HTMLMediaElement::NotifyMediaTrackEnabled(MediaTrack* aTrack) {
         
         
         
-        mVideoFrameListener = new VideoFrameListener(this);
-        mSelectedVideoStreamTrack->AddDirectListener(mVideoFrameListener);
+        mVideoFrameListener = new VideoFrameListener(this, container);
+        mSelectedVideoStreamTrack->AddVideoOutput(mVideoFrameListener);
       }
     }
 
@@ -2207,7 +2213,7 @@ void HTMLMediaElement::NotifyMediaTrackDisabled(MediaTrack* aTrack) {
     if (mSrcStream) {
       MOZ_ASSERT(mSelectedVideoStreamTrack);
       if (mSelectedVideoStreamTrack && mVideoFrameListener) {
-        mSelectedVideoStreamTrack->RemoveDirectListener(mVideoFrameListener);
+        mSelectedVideoStreamTrack->RemoveVideoOutput(mVideoFrameListener);
         mVideoFrameListener->Forget();
         mVideoFrameListener = nullptr;
       }
@@ -4753,7 +4759,7 @@ void HTMLMediaElement::EndSrcMediaStreamPlayback() {
   if (mVideoFrameListener) {
     MOZ_ASSERT(mSelectedVideoStreamTrack);
     if (mSelectedVideoStreamTrack) {
-      mSelectedVideoStreamTrack->RemoveDirectListener(mVideoFrameListener);
+      mSelectedVideoStreamTrack->RemoveVideoOutput(mVideoFrameListener);
     }
     mVideoFrameListener->Forget();
   }
@@ -5944,7 +5950,7 @@ void HTMLMediaElement::UpdateInitialMediaSize(const nsIntSize& aSize) {
     return;
   }
 
-  mSelectedVideoStreamTrack->RemoveDirectListener(mVideoFrameListener);
+  mSelectedVideoStreamTrack->RemoveVideoOutput(mVideoFrameListener);
   mVideoFrameListener->Forget();
   mVideoFrameListener = nullptr;
 }
