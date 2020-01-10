@@ -1310,7 +1310,7 @@ class _ASRouter {
 
     
     AttributionCode._clearCache();
-    AttributionCode.getAttrDataAsync();
+    await AttributionCode.getAttrDataAsync();
     this._updateMessageProviders();
     await this.loadMessagesFromAllProviders();
   }

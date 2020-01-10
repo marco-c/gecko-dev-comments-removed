@@ -8,6 +8,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   DownloadsCommon: "resource:///modules/DownloadsCommon.jsm",
   DownloadsViewUI: "resource:///modules/DownloadsViewUI.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
+  NewTabUtils: "resource://gre/modules/NewTabUtils.jsm",
 });
 
 const DOWNLOAD_CHANGED_DELAY_TIME = 1000; 
@@ -82,6 +83,14 @@ this.DownloadsManager = class DownloadsManager {
                       .sort((download1, download2) => download1.endTime < download2.endTime);
 
     for (const download of downloads) {
+      
+      if (
+        download.source.url.length < 10000 &&
+        NewTabUtils.blockedLinks.isBlocked(download.source)
+      ) {
+        continue;
+      }
+
       
       if (onlyExists) {
         
