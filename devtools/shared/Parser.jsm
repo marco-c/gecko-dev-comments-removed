@@ -185,31 +185,6 @@ SyntaxTreesPool.prototype = {
 
 
 
-  getScriptInfo(atOffset) {
-    const info = { start: -1, length: -1, index: -1 };
-
-    for (const { offset, length } of this._trees) {
-      info.index++;
-      if (offset <= atOffset && offset + length >= atOffset) {
-        info.start = offset;
-        info.length = length;
-        return info;
-      }
-    }
-
-    info.index = -1;
-    return info;
-  },
-
-  
-
-
-
-
-
-
-
-
 
 
 
