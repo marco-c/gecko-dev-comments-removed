@@ -115,7 +115,7 @@ class DataStorage : public nsIObserver {
   
   
   
-  nsresult Init(const InfallibleTArray<mozilla::dom::DataStorageItem>* aItems);
+  nsresult Init(const nsTArray<mozilla::dom::DataStorageItem>* aItems);
   
   
   
@@ -139,11 +139,11 @@ class DataStorage : public nsIObserver {
       nsTArray<mozilla::dom::DataStorageEntry>& aEntries);
 
   
-  void GetAll(InfallibleTArray<DataStorageItem>* aItems);
+  void GetAll(nsTArray<DataStorageItem>* aItems);
 
   
   static void SetCachedStorageEntries(
-      const InfallibleTArray<mozilla::dom::DataStorageEntry>& aEntries);
+      const nsTArray<mozilla::dom::DataStorageEntry>& aEntries);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
@@ -207,7 +207,7 @@ class DataStorage : public nsIObserver {
                                     const MutexAutoLock& aProofOfLock);
 
   void ReadAllFromTable(DataStorageType aType,
-                        InfallibleTArray<DataStorageItem>* aItems,
+                        nsTArray<DataStorageItem>* aItems,
                         const MutexAutoLock& aProofOfLock);
 
   Mutex mMutex;  
