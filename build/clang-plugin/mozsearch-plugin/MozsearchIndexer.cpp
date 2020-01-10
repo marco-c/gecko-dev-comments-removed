@@ -153,6 +153,7 @@ class IndexConsumer : public ASTConsumer,
 private:
   CompilerInstance &CI;
   SourceManager &SM;
+  LangOptions &LO;
   std::map<FileID, std::unique_ptr<FileInfo>> FileMap;
   MangleContext *CurMangleContext;
   ASTContext *AstContext;
@@ -213,6 +214,9 @@ private:
     return getFileInfo(Loc)->Interesting;
   }
 
+  
+  
+  
   std::string locationToString(SourceLocation Loc, size_t Length = 0) {
     std::pair<FileID, unsigned> Pair = SM.getDecomposedLoc(Loc);
 
@@ -233,6 +237,8 @@ private:
     }
   }
 
+  
+  
   std::string lineRangeToString(SourceRange Range) {
     std::pair<FileID, unsigned> Begin = SM.getDecomposedLoc(Range.getBegin());
     std::pair<FileID, unsigned> End = SM.getDecomposedLoc(Range.getEnd());
@@ -248,6 +254,33 @@ private:
     }
 
     return stringFormat("%d-%d", Line1, Line2);
+  }
+
+  
+  
+  std::string fullRangeToString(SourceRange Range) {
+    std::pair<FileID, unsigned> Begin = SM.getDecomposedLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End = SM.getDecomposedLoc(Range.getEnd());
+
+    bool IsInvalid;
+    unsigned Line1 = SM.getLineNumber(Begin.first, Begin.second, &IsInvalid);
+    if (IsInvalid) {
+      return "";
+    }
+    unsigned Column1 = SM.getColumnNumber(Begin.first, Begin.second, &IsInvalid);
+    if (IsInvalid) {
+      return "";
+    }
+    unsigned Line2 = SM.getLineNumber(End.first, End.second, &IsInvalid);
+    if (IsInvalid) {
+      return "";
+    }
+    unsigned Column2 = SM.getColumnNumber(End.first, End.second, &IsInvalid);
+    if (IsInvalid) {
+      return "";
+    }
+
+    return stringFormat("%d:%d-%d:%d", Line1, Column1 - 1, Line2, Column2 - 1);
   }
 
   
@@ -416,7 +449,7 @@ private:
 
 public:
   IndexConsumer(CompilerInstance &CI)
-      : CI(CI), SM(CI.getSourceManager()), CurMangleContext(nullptr),
+      : CI(CI), SM(CI.getSourceManager()), LO(CI.getLangOpts()), CurMangleContext(nullptr),
         AstContext(nullptr), CurDeclContext(nullptr), TemplateStack(nullptr) {
     CI.getPreprocessor().addPPCallbacks(
         llvm::make_unique<PreprocessorHook>(this));
@@ -873,7 +906,8 @@ public:
                        std::string QualName, SourceLocation Loc,
                        const std::vector<std::string> &Symbols,
                        Context TokenContext = Context(), int Flags = 0,
-                       SourceRange PeekRange = SourceRange()) {
+                       SourceRange PeekRange = SourceRange(),
+                       SourceRange NestingRange = SourceRange()) {
     if (!shouldVisit(Loc)) {
       return;
     }
@@ -956,6 +990,13 @@ public:
     Fmt.add("loc", RangeStr);
     Fmt.add("source", 1);
 
+    if (NestingRange.isValid()) {
+      std::string NestingRangeStr = fullRangeToString(NestingRange);
+      if (!NestingRangeStr.empty()) {
+        Fmt.add("nestingRange", NestingRangeStr);
+      }
+    }
+
     std::string Syntax;
     if (Flags & NoCrossref) {
       Fmt.add("syntax", "");
@@ -985,13 +1026,36 @@ public:
   void visitIdentifier(const char *Kind, const char *SyntaxKind,
                        std::string QualName, SourceLocation Loc, std::string Symbol,
                        Context TokenContext = Context(), int Flags = 0,
-                       SourceRange PeekRange = SourceRange()) {
+                       SourceRange PeekRange = SourceRange(),
+                       SourceRange NestingRange = SourceRange()) {
     std::vector<std::string> V = {Symbol};
-    visitIdentifier(Kind, SyntaxKind, QualName, Loc, V, TokenContext, Flags, PeekRange);
+    visitIdentifier(Kind, SyntaxKind, QualName, Loc, V, TokenContext, Flags,
+                    PeekRange, NestingRange);
   }
 
   void normalizeLocation(SourceLocation *Loc) {
     *Loc = SM.getSpellingLoc(*Loc);
+  }
+
+  
+  
+  
+  SourceLocation findLeftBraceFromLoc(SourceLocation Loc) {
+    return Lexer::findLocationAfterToken(Loc, tok::l_brace, SM, LO, false);
+  }
+
+  
+  SourceRange getCompoundStmtRange(Stmt* D) {
+    if (!D) {
+      return SourceRange();
+    }
+
+    CompoundStmt *D2 = dyn_cast<CompoundStmt>(D);
+    if (D2) {
+      return D2->getSourceRange();
+    }
+
+    return SourceRange();
   }
 
   SourceRange getFunctionPeekRange(FunctionDecl* D) {
@@ -1054,6 +1118,8 @@ public:
     return RC->getSourceRange();
   }
 
+  
+  
   SourceRange combineRanges(SourceRange Range1, SourceRange Range2) {
     if (Range1.isInvalid()) {
       return Range2;
@@ -1081,6 +1147,10 @@ public:
     }
   }
 
+  
+  
+  
+  
   SourceRange validateRange(SourceLocation Loc, SourceRange Range) {
     std::pair<FileID, unsigned> Decomposed = SM.getDecomposedLoc(Loc);
     std::pair<FileID, unsigned> Begin = SM.getDecomposedLoc(Range.getBegin());
@@ -1121,6 +1191,9 @@ public:
     const char *Kind = "def";
     const char *PrettyKind = "?";
     SourceRange PeekRange(D->getBeginLoc(), D->getEndLoc());
+    
+    
+    SourceRange NestingRange;
     if (FunctionDecl *D2 = dyn_cast<FunctionDecl>(D)) {
       if (D2->isTemplateInstantiation()) {
         D = D2->getTemplateInstantiationPattern();
@@ -1128,12 +1201,32 @@ public:
       Kind = D2->isThisDeclarationADefinition() ? "def" : "decl";
       PrettyKind = "function";
       PeekRange = getFunctionPeekRange(D2);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (D2->isThisDeclarationADefinition() &&
+          !D2->isTemplateInstantiation()) {
+        
+        NestingRange = getCompoundStmtRange(D2->getBody());
+      }
     } else if (TagDecl *D2 = dyn_cast<TagDecl>(D)) {
       Kind = D2->isThisDeclarationADefinition() ? "def" : "decl";
       PrettyKind = "type";
 
       if (D2->isThisDeclarationADefinition() && D2->getDefinition() == D2) {
         PeekRange = getTagPeekRange(D2);
+        NestingRange = D2->getBraceRange();
       } else {
         PeekRange = SourceRange();
       }
@@ -1154,6 +1247,13 @@ public:
       Kind = "def";
       PrettyKind = "namespace";
       PeekRange = SourceRange(Loc, Loc);
+      NamespaceDecl *D2 = dyn_cast<NamespaceDecl>(D);
+      if (D2) {
+        
+        NestingRange = SourceRange(
+          findLeftBraceFromLoc(D2->isAnonymousNamespace() ? D2->getBeginLoc() : Loc),
+          D2->getRBraceLoc());
+      }
     } else if (isa<FieldDecl>(D)) {
       Kind = "def";
       PrettyKind = "field";
@@ -1167,6 +1267,7 @@ public:
     SourceRange CommentRange = getCommentRange(D);
     PeekRange = combineRanges(PeekRange, CommentRange);
     PeekRange = validateRange(Loc, PeekRange);
+    NestingRange = validateRange(Loc, NestingRange);
 
     std::vector<std::string> Symbols = {getMangledName(CurMangleContext, D)};
     if (CXXMethodDecl::classof(D)) {
@@ -1207,7 +1308,7 @@ public:
     }
 
     visitIdentifier(Kind, PrettyKind, getQualifiedName(D), Loc, Symbols,
-                    getContext(D), Flags, PeekRange);
+                    getContext(D), Flags, PeekRange, NestingRange);
 
     return true;
   }
