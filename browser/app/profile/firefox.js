@@ -1600,6 +1600,12 @@ pref("browser.contentblocking.fingerprinting.preferences.ui.enabled", true);
 
 pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior4,cm,fp");
 
+
+
+
+
+pref("browser.contentblocking.customBlockList.preferences.ui.enabled", false);
+
 pref("browser.contentblocking.reportBreakage.url", "https://tracking-protection-issues.herokuapp.com/new");
 
 

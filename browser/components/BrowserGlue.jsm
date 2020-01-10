@@ -2686,7 +2686,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 84;
+    const UI_VERSION = 85;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     let currentUIVersion;
@@ -3067,6 +3067,16 @@ BrowserGlue.prototype = {
       flashPermissions.forEach(p => Services.perms.removePermission(p));
     }
 
+    if (currentUIVersion < 85) {
+      const TRACKING_TABLE_PREF = "urlclassifier.trackingTable";
+      const CUSTOM_BLOCKING_PREF =
+        "browser.contentblocking.customBlockList.preferences.ui.enabled";
+      
+      
+      if (Services.prefs.prefHasUserValue(TRACKING_TABLE_PREF)) {
+        Services.prefs.setBoolPref(CUSTOM_BLOCKING_PREF, true);
+      }
+    }
     
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   },
