@@ -311,9 +311,10 @@ ArgumentsObject* ArgumentsObject::create(JSContext* cx, HandleFunction callee,
     data->rareData = nullptr;
 
     
-    for (unsigned i = 0; i < numArgs; i++) {
-      data->args[i].init(UndefinedValue());
-    }
+    
+    memset(data->args, 0, numArgs * sizeof(Value));
+    MOZ_ASSERT(DoubleValue(0).asRawBits() == 0x0);
+    MOZ_ASSERT_IF(numArgs > 0, data->args[0].asRawBits() == 0x0);
 
     obj->initFixedSlot(DATA_SLOT, PrivateValue(data));
     obj->initFixedSlot(CALLEE_SLOT, ObjectValue(*callee));
