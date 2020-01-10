@@ -1550,8 +1550,6 @@ pref("toolkit.telemetry.updatePing.enabled", true);
 
 pref("toolkit.telemetry.bhrPing.enabled", true);
 
-pref("toolkit.telemetry.hybridContent.enabled", true);
-
 #ifdef NIGHTLY_BUILD
   pref("toolkit.telemetry.ecosystemtelemetry.enabled", true);
 #else
