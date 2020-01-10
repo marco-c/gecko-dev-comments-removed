@@ -738,7 +738,8 @@
         this._touchY = -1;
       });
 
-      this.addEventListener("MozMousePixelScroll", event => {
+      
+      this.shadowRoot.addEventListener("MozMousePixelScroll", event => {
         if (
           !(
             this.getAttribute("allowunderflowscroll") == "true" &&
@@ -749,7 +750,8 @@
         }
       });
 
-      this.addEventListener("DOMMouseScroll", event => {
+      
+      this.shadowRoot.addEventListener("DOMMouseScroll", event => {
         if (
           !(
             this.getAttribute("allowunderflowscroll") == "true" &&
