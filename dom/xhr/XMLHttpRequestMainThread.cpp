@@ -2013,7 +2013,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
 
     
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
-        new ReferrerInfo(nullptr, true, mResponseXML->GetReferrerPolicy());
+        new ReferrerInfo(nullptr, mResponseXML->ReferrerPolicy());
     mResponseXML->SetReferrerInfo(referrerInfo);
 
     mXMLParserStreamListener = listener;

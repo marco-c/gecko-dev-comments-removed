@@ -42,7 +42,6 @@
 #include "nsStubMutationObserver.h"
 #include "nsTHashtable.h"  
 #include "nsURIHashKey.h"
-#include "mozilla/net/ReferrerPolicy.h"  
 #include "mozilla/UseCounter.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/StaticPresData.h"
@@ -478,7 +477,7 @@ class Document : public nsINode,
 
  public:
   typedef dom::ExternalResourceMap::ExternalResourceLoad ExternalResourceLoad;
-  typedef net::ReferrerPolicy ReferrerPolicyEnum;
+  typedef dom::ReferrerPolicy ReferrerPolicyEnum;
 
   
 
@@ -775,7 +774,7 @@ class Document : public nsINode,
   
 
 
-  uint32_t ReferrerPolicy() const { return GetReferrerPolicy(); }
+  ReferrerPolicyEnum ReferrerPolicy() const { return GetReferrerPolicy(); }
 
   
 
@@ -814,11 +813,11 @@ class Document : public nsINode,
 
   void UpdateReferrerInfoFromMeta(const nsAString& aMetaReferrer,
                                   bool aPreload) {
-    net::ReferrerPolicy policy =
+    ReferrerPolicyEnum policy =
         mozilla::net::ReferrerPolicyFromString(aMetaReferrer);
     
     
-    if (policy == mozilla::net::RP_Unset) {
+    if (policy == ReferrerPolicy::_empty) {
       return;
     }
 

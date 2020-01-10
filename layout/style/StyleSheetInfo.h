@@ -25,7 +25,7 @@ struct URLExtraData;
 
 
 struct StyleSheetInfo final {
-  typedef net::ReferrerPolicy ReferrerPolicy;
+  typedef dom::ReferrerPolicy ReferrerPolicy;
 
   StyleSheetInfo(CORSMode aCORSMode, const dom::SRIMetadata& aIntegrity,
                  css::SheetParsingMode aParsingMode);

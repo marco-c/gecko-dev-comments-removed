@@ -25,7 +25,6 @@
 #include "mozilla/dom/SRICheck.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/net/ReferrerPolicy.h"
 #include "mozilla/Utf8.h"  
 #include "mozilla/Vector.h"
 
@@ -311,7 +310,7 @@ class ScriptLoader final : public nsISupports {
                           const nsAString& aType, const nsAString& aCrossOrigin,
                           const nsAString& aIntegrity, bool aScriptFromHead,
                           bool aAsync, bool aDefer, bool aNoModule,
-                          const mozilla::net::ReferrerPolicy aReferrerPolicy);
+                          const ReferrerPolicy aReferrerPolicy);
 
   
 
@@ -376,11 +375,12 @@ class ScriptLoader final : public nsISupports {
 
   void EnsureModuleHooksInitialized();
 
-  ScriptLoadRequest* CreateLoadRequest(
-      ScriptKind aKind, nsIURI* aURI, nsIScriptElement* aElement,
-      nsIPrincipal* aTriggeringPrincipal, mozilla::CORSMode aCORSMode,
-      const SRIMetadata& aIntegrity,
-      mozilla::net::ReferrerPolicy aReferrerPolicy);
+  ScriptLoadRequest* CreateLoadRequest(ScriptKind aKind, nsIURI* aURI,
+                                       nsIScriptElement* aElement,
+                                       nsIPrincipal* aTriggeringPrincipal,
+                                       mozilla::CORSMode aCORSMode,
+                                       const SRIMetadata& aIntegrity,
+                                       ReferrerPolicy aReferrerPolicy);
 
   
 
@@ -408,7 +408,7 @@ class ScriptLoader final : public nsISupports {
 
 
 
-  mozilla::net::ReferrerPolicy GetReferrerPolicy(nsIScriptElement* aElement);
+  ReferrerPolicy GetReferrerPolicy(nsIScriptElement* aElement);
 
   
 

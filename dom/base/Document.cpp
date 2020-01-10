@@ -3337,7 +3337,7 @@ nsresult Document::InitReferrerInfo(nsIChannel* aChannel) {
   }
 
   
-  mozilla::net::ReferrerPolicy policy =
+  mozilla::dom::ReferrerPolicy policy =
       nsContentUtils::GetReferrerPolicyFromChannel(aChannel);
   mReferrerInfo = static_cast<dom::ReferrerInfo*>(mReferrerInfo.get())
                       ->CloneWithNewPolicy(policy);
@@ -5570,13 +5570,9 @@ already_AddRefed<nsIChannel> Document::CreateDummyChannelForCookies(
   return channel.forget();
 }
 
-mozilla::net::ReferrerPolicy Document::GetReferrerPolicy() const {
-  if (!mReferrerInfo) {
-    return mozilla::net::RP_Unset;
-  }
-
-  return static_cast<mozilla::net::ReferrerPolicy>(
-      mReferrerInfo->GetReferrerPolicy());
+ReferrerPolicy Document::GetReferrerPolicy() const {
+  return mReferrerInfo ? mReferrerInfo->ReferrerPolicy()
+                       : ReferrerPolicy::_empty;
 }
 
 void Document::GetAlinkColor(nsAString& aAlinkColor) {
@@ -11306,9 +11302,9 @@ already_AddRefed<nsIURI> Document::ResolvePreloadImage(
   return uri.forget();
 }
 
-void Document::MaybePreLoadImage(
-    nsIURI* uri, const nsAString& aCrossOriginAttr,
-    enum mozilla::net::ReferrerPolicy aReferrerPolicy, bool aIsImgSet) {
+void Document::MaybePreLoadImage(nsIURI* uri, const nsAString& aCrossOriginAttr,
+                                 enum ReferrerPolicy aReferrerPolicy,
+                                 bool aIsImgSet) {
   
   
   
@@ -11444,10 +11440,10 @@ NS_IMPL_ISUPPORTS(StubCSSLoaderObserver, nsICSSLoaderObserver)
 
 }  
 
-void Document::PreloadStyle(
-    nsIURI* uri, const Encoding* aEncoding, const nsAString& aCrossOriginAttr,
-    const enum mozilla::net::ReferrerPolicy aReferrerPolicy,
-    const nsAString& aIntegrity) {
+void Document::PreloadStyle(nsIURI* uri, const Encoding* aEncoding,
+                            const nsAString& aCrossOriginAttr,
+                            const enum ReferrerPolicy aReferrerPolicy,
+                            const nsAString& aIntegrity) {
   
   nsCOMPtr<nsICSSLoaderObserver> obs = new StubCSSLoaderObserver();
 

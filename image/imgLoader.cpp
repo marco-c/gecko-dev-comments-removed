@@ -725,14 +725,14 @@ static bool ValidateSecurityInfo(imgRequest* request, bool forcePrincipalCheck,
   
   
   
-  uint32_t referrerPolicy = RP_Unset;
+  ReferrerPolicy referrerPolicy = ReferrerPolicy::_empty;
   if (aReferrerInfo) {
-    referrerPolicy = aReferrerInfo->GetReferrerPolicy();
+    referrerPolicy = aReferrerInfo->ReferrerPolicy();
   }
 
-  uint32_t requestReferrerPolicy = RP_Unset;
+  ReferrerPolicy requestReferrerPolicy = ReferrerPolicy::_empty;
   if (request->GetReferrerInfo()) {
-    requestReferrerPolicy = request->GetReferrerInfo()->GetReferrerPolicy();
+    requestReferrerPolicy = request->GetReferrerInfo()->ReferrerPolicy();
   }
 
   if (referrerPolicy != requestReferrerPolicy) {

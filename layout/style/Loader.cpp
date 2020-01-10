@@ -1005,7 +1005,7 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
   
   mSheet->SetURIs(channelURI, originalURI, channelURI);
 
-  net::ReferrerPolicy policy =
+  ReferrerPolicy policy =
       nsContentUtils::GetReferrerPolicyFromChannel(aChannel);
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
       ReferrerInfo::CreateForExternalCSSResources(mSheet, policy);

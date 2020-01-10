@@ -10,10 +10,11 @@
 #include "nsCOMPtr.h"
 #include "nsIReferrerInfo.h"
 #include "nsISerializable.h"
-#include "mozilla/net/ReferrerPolicy.h"
+#include "nsIHttpChannel.h"
 #include "nsReadableUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/dom/ReferrerPolicyBinding.h"
 
 #define REFERRERINFOF_CONTRACTID "@mozilla.org/referrer-info;1"
 
@@ -61,10 +62,12 @@ namespace dom {
 
 class ReferrerInfo : public nsIReferrerInfo {
  public:
+  typedef enum ReferrerPolicy ReferrerPolicyEnum;
   ReferrerInfo();
 
   explicit ReferrerInfo(
-      nsIURI* aOriginalReferrer, uint32_t aPolicy = mozilla::net::RP_Unset,
+      nsIURI* aOriginalReferrer,
+      ReferrerPolicyEnum aPolicy = ReferrerPolicy::_empty,
       bool aSendReferrer = true,
       const Maybe<nsCString>& aComputedReferrer = Maybe<nsCString>());
 
@@ -72,7 +75,8 @@ class ReferrerInfo : public nsIReferrerInfo {
   already_AddRefed<nsIReferrerInfo> Clone() const;
 
   
-  already_AddRefed<nsIReferrerInfo> CloneWithNewPolicy(uint32_t aPolicy) const;
+  already_AddRefed<nsIReferrerInfo> CloneWithNewPolicy(
+      ReferrerPolicyEnum aPolicy) const;
 
   
   already_AddRefed<nsIReferrerInfo> CloneWithNewSendReferrer(
@@ -90,7 +94,7 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
   static already_AddRefed<nsIReferrerInfo> CreateFromOtherAndPolicyOverride(
-      nsIReferrerInfo* aOther, uint32_t aPolicyOverride);
+      nsIReferrerInfo* aOther, ReferrerPolicyEnum aPolicyOverride);
 
   
 
@@ -101,7 +105,7 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
   static already_AddRefed<nsIReferrerInfo> CreateFromDocumentAndPolicyOverride(
-      Document* aDoc, uint32_t aPolicyOverride);
+      Document* aDoc, ReferrerPolicyEnum aPolicyOverride);
 
   
 
@@ -121,7 +125,8 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
   static already_AddRefed<nsIReferrerInfo> CreateForExternalCSSResources(
-      StyleSheet* aExternalSheet, uint32_t aPolicy = mozilla::net::RP_Unset);
+      StyleSheet* aExternalSheet,
+      ReferrerPolicyEnum aPolicy = ReferrerPolicy::_empty);
 
   
 
@@ -166,7 +171,8 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
   static nsresult HandleSecureToInsecureReferral(nsIURI* aOriginalURI,
-                                                 nsIURI* aURI, uint32_t aPolicy,
+                                                 nsIURI* aURI,
+                                                 ReferrerPolicyEnum aPolicy,
                                                  bool& aAllowed);
 
   
@@ -194,14 +200,14 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
-  static uint32_t GetDefaultReferrerPolicy(nsIHttpChannel* aChannel = nullptr,
-                                           nsIURI* aURI = nullptr,
-                                           bool privateBrowsing = false);
+  static ReferrerPolicyEnum GetDefaultReferrerPolicy(
+      nsIHttpChannel* aChannel = nullptr, nsIURI* aURI = nullptr,
+      bool privateBrowsing = false);
 
-  
+   
 
 
-  PLDHashNumber Hash() const;
+  HashNumber Hash() const;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIREFERRERINFO
@@ -260,7 +266,7 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
-  void GetReferrerPolicyFromAtribute(nsINode* aNode, uint32_t& aPolicy) const;
+  void GetReferrerPolicyFromAtribute(nsINode* aNode, ReferrerPolicyEnum& aPolicy) const;
 
   
 
@@ -368,7 +374,7 @@ class ReferrerInfo : public nsIReferrerInfo {
 
   nsCOMPtr<nsIURI> mOriginalReferrer;
 
-  uint32_t mPolicy;
+  ReferrerPolicyEnum mPolicy;
 
   
   

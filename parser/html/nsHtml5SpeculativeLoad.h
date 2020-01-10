@@ -9,7 +9,7 @@
 #include "nsContentUtils.h"
 #include "nsHtml5DocumentMode.h"
 #include "nsHtml5String.h"
-#include "mozilla/net/ReferrerPolicy.h"
+#include "ReferrerInfo.h"
 
 class nsHtml5TreeOpExecutor;
 
@@ -301,7 +301,7 @@ class nsHtml5SpeculativeLoad {
 
 
 
-  mozilla::net::ReferrerPolicy mScriptReferrerPolicy;
+  mozilla::dom::ReferrerPolicy mScriptReferrerPolicy;
 };
 
 #endif  

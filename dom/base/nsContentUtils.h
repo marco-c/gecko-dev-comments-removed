@@ -38,7 +38,6 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/intl/LineBreaker.h"
 #include "mozilla/intl/WordBreaker.h"
-#include "mozilla/net/ReferrerPolicy.h"
 #include "mozilla/Logging.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Maybe.h"
@@ -2839,7 +2838,7 @@ class nsContentUtils {
 
 
 
-  static mozilla::net::ReferrerPolicy GetReferrerPolicyFromChannel(
+  static mozilla::dom::ReferrerPolicy GetReferrerPolicyFromChannel(
       nsIChannel* aChannel);
 
   
@@ -2849,7 +2848,7 @@ class nsContentUtils {
 
 
 
-  static mozilla::net::ReferrerPolicy GetReferrerPolicyFromHeader(
+  static mozilla::dom::ReferrerPolicy GetReferrerPolicyFromHeader(
       const nsAString& aHeader);
 
   static bool IsNonSubresourceRequest(nsIChannel* aChannel);
