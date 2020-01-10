@@ -3865,6 +3865,9 @@ bool nsCookieService::ParseAttributes(nsCString& aCookieHeader,
   }
 
   
+  aCookieHeader.Assign(Substring(cookieStart, cookieEnd));
+
+  
   
   if (StaticPrefs::network_cookie_sameSite_laxByDefault() &&
       StaticPrefs::network_cookie_sameSite_noneRequiresSecure() &&
@@ -3875,9 +3878,6 @@ bool nsCookieService::ParseAttributes(nsCString& aCookieHeader,
 
   
   aAcceptedByParser = true;
-
-  
-  aCookieHeader.Assign(Substring(cookieStart, cookieEnd));
 
   MOZ_ASSERT(nsCookie::ValidateRawSame(aCookieData));
   return newCookie;
