@@ -334,3 +334,55 @@ add_task(async function test_many_remotetab_matches() {
     ],
   });
 });
+
+add_task(async function test_maxResults() {
+  await PlacesUtils.history.clear();
+
+  let url = "http://foo.remote.com/";
+
+  
+  
+  
+  
+  
+  
+  
+  configureEngine({
+    guid_mobile: {
+      id: "mobile",
+      tabs: Array(10)
+        .fill(0)
+        .map((e, i) => ({
+          urlHistory: [`${url}${i}`],
+          title: "A title",
+          lastUsed: Date.now() - i,
+        })),
+    },
+  });
+
+  
+  
+  await check_autocomplete({
+    search: "rem",
+    searchParam: "enable-actions max-results:5",
+    checkSorting: true,
+    matches: [
+      makeSearchMatch("rem", { heuristic: true }),
+      makeRemoteTabMatch("http://foo.remote.com/0", "My Phone", {
+        title: "A title",
+      }),
+      makeRemoteTabMatch("http://foo.remote.com/1", "My Phone", {
+        title: "A title",
+      }),
+      makeRemoteTabMatch("http://foo.remote.com/2", "My Phone", {
+        title: "A title",
+      }),
+      makeRemoteTabMatch("http://foo.remote.com/3", "My Phone", {
+        title: "A title",
+      }),
+      makeRemoteTabMatch("http://foo.remote.com/4", "My Phone", {
+        title: "A title",
+      }),
+    ],
+  });
+});

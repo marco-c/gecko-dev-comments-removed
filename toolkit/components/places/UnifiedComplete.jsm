@@ -1871,7 +1871,8 @@ Search.prototype = {
       return;
     }
     let matches = await PlacesRemoteTabsAutocompleteProvider.getMatches(
-      this._originalSearchString
+      this._originalSearchString,
+      this._maxResults
     );
     for (let { url, title, icon, deviceName, lastUsed } of matches) {
       
