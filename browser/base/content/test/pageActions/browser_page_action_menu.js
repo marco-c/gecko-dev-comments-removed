@@ -714,7 +714,7 @@ add_task(async function sendToDevice_title() {
         
         gBrowser.addToMultiSelectedTabs(
           gBrowser.getTabForBrowser(otherBrowser),
-          false
+          { isLastMultiSelectChange: true }
         );
 
         
