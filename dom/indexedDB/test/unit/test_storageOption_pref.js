@@ -20,8 +20,14 @@ function* testSteps() {
   const origin = "https://example.com";
 
   
-  let uri = Services.io.newURI(origin);
-  Services.perms.add(uri, "indexedDB", Ci.nsIPermissionManager.ALLOW_ACTION);
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    origin
+  );
+  Services.perms.addFromPrincipal(
+    principal,
+    "indexedDB",
+    Ci.nsIPermissionManager.ALLOW_ACTION
+  );
 
   const objectStoreName = "Foo";
   const data = { key: 1, value: "bar" };
@@ -30,7 +36,6 @@ function* testSteps() {
   Services.prefs.setBoolPref("dom.indexedDB.storageOption.enabled", false);
 
   
-  let principal = getPrincipal(origin);
   let request = indexedDB.openForPrincipal(principal, name, {
     version,
     storage: "persistent",

@@ -60,8 +60,7 @@ add_task(async function test_windowless_UITour() {
 
   
   info("Adding UITour permission to the test page.");
-  let pageURI = Services.io.newURI(pageURL);
-  Services.perms.add(pageURI, "uitour", Services.perms.ALLOW_ACTION);
+  PermissionTestUtils.add(pageURL, "uitour", Services.perms.ALLOW_ACTION);
 
   
   await new Promise(resolve => {

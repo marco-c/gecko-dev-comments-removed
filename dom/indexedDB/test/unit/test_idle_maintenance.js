@@ -15,7 +15,11 @@ function* testSteps() {
 
   info("Setting permissions");
 
-  Services.perms.add(uri, "indexedDB", Ci.nsIPermissionManager.ALLOW_ACTION);
+  Services.perms.addFromPrincipal(
+    principal,
+    "indexedDB",
+    Ci.nsIPermissionManager.ALLOW_ACTION
+  );
 
   
   
