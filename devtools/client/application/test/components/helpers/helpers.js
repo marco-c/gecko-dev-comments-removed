@@ -14,6 +14,15 @@ function setupStore({ preloadedState } = {}) {
   return store;
 }
 
+
+
+
+
+async function flushPromises() {
+  return new Promise(resolve => resolve());
+}
+
 module.exports = {
+  flushPromises,
   setupStore,
 };
