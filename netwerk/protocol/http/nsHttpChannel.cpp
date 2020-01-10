@@ -7376,19 +7376,26 @@ nsresult nsHttpChannel::ComputeCrossOriginOpenerPolicyMismatch() {
   RefPtr<mozilla::dom::BrowsingContext> ctx;
   mLoadInfo->GetBrowsingContext(getter_AddRefs(ctx));
 
+  RefPtr<BrowsingContext> inherit = ctx->GetParent();
+  if (!inherit) {
+    inherit = ctx->GetOpener();
+  }
+
+  if (!inherit || !inherit->Top()->Canonical()->GetCurrentWindowGlobal()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   
   nsILoadInfo::CrossOriginOpenerPolicy documentPolicy = ctx->GetOpenerPolicy();
   nsILoadInfo::CrossOriginOpenerPolicy resultPolicy =
       nsILoadInfo::OPENER_POLICY_NULL;
   Unused << GetCrossOriginOpenerPolicy(documentPolicy, &resultPolicy);
 
-  if (!ctx->Canonical()->GetCurrentWindowGlobal()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   
-  nsCOMPtr<nsIPrincipal> documentOrigin =
-      ctx->Canonical()->GetCurrentWindowGlobal()->DocumentPrincipal();
+  nsCOMPtr<nsIPrincipal> documentOrigin = inherit->Top()
+                                              ->Canonical()
+                                              ->GetCurrentWindowGlobal()
+                                              ->DocumentPrincipal();
   nsCOMPtr<nsIPrincipal> resultOrigin;
 
   nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
