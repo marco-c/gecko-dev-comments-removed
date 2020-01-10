@@ -2836,16 +2836,13 @@ impl PrimitiveStore {
                 prim_data.common.may_need_repetition = false;
 
                 
+                
                 let transform = frame_context.clip_scroll_tree
-                    .get_world_transform(pic_context.surface_spatial_node_index)
-                    .inverse()
-                    .unwrap()
-                    .into_fast_transform()
-                    .pre_mul(
-                        &frame_context.clip_scroll_tree
-                            .get_world_transform(prim_instance.spatial_node_index)
-                            .into_fast_transform()
-                    );;
+                    .get_relative_transform(
+                        prim_instance.spatial_node_index,
+                        pic_context.raster_spatial_node_index,
+                    )
+                    .into_fast_transform();
                 let prim_offset = prim_instance.prim_origin.to_vector() - run.reference_frame_relative_offset;
 
                 let pic = &self.pictures[pic_context.pic_index.0];
