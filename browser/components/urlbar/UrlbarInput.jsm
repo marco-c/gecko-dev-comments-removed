@@ -2065,6 +2065,10 @@ class UrlbarInput {
     }
 
     
+    this.endLayoutExtend(true);
+
+    
+    
     if (
       this.selectionStart != 0 ||
       this.selectionEnd != this.inputField.textLength ||
