@@ -180,56 +180,6 @@ class ObjectClient extends FrontClassWithSpec(objectSpec) {
   
 
 
-  getDependentPromises() {
-    if (this._grip.class !== "Promise") {
-      console.error("getDependentPromises is only valid for promise grips.");
-      return null;
-    }
-    return super.dependentPromises();
-  }
-
-  
-
-
-  getPromiseAllocationStack() {
-    if (this._grip.class !== "Promise") {
-      console.error(
-        "getPromiseAllocationStack is only valid for promise grips."
-      );
-      return null;
-    }
-    return super.allocationStack();
-  }
-
-  
-
-
-  getPromiseFulfillmentStack() {
-    if (this._grip.class !== "Promise") {
-      console.error(
-        "getPromiseFulfillmentStack is only valid for promise grips."
-      );
-      return null;
-    }
-    return super.fulfillmentStack();
-  }
-
-  
-
-
-  getPromiseRejectionStack() {
-    if (this._grip.class !== "Promise") {
-      console.error(
-        "getPromiseRejectionStack is only valid for promise grips."
-      );
-      return null;
-    }
-    return super.rejectionStack();
-  }
-
-  
-
-
   getProxySlots() {
     if (this._grip.class !== "Proxy") {
       console.error("getProxySlots is only valid for proxy grips.");
