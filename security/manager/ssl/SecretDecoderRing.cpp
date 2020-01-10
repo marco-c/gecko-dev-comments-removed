@@ -26,8 +26,6 @@
 #include "pk11sdr.h"  
 #include "ssl.h"      
 
-static mozilla::LazyLogModule gSDRLog("sdrlog");
-
 using namespace mozilla;
 using dom::Promise;
 
@@ -70,28 +68,28 @@ void BackgroundSdrDecryptStrings(const nsTArray<nsCString>& encryptedStrings,
       do_GetService(NS_SECRETDECODERRING_CONTRACTID);
   nsTArray<nsString> plainTexts(encryptedStrings.Length());
 
+  nsresult rv = NS_ERROR_FAILURE;
   for (const auto& encryptedString : encryptedStrings) {
     nsCString plainText;
-    nsresult rv = sdrService->DecryptString(encryptedString, plainText);
+    rv = sdrService->DecryptString(encryptedString, plainText);
 
-    if (NS_FAILED(rv)) {
-      
-      
-      
-      plainTexts.AppendElement(nullptr);
-      MOZ_LOG(gSDRLog, LogLevel::Warning,
-              ("Couldn't decrypt string: %s", encryptedString.get()));
-      continue;
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      break;
     }
 
     plainTexts.AppendElement(NS_ConvertUTF8toUTF16(plainText));
   }
 
-  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
-      "BackgroundSdrDecryptStringsResolve",
-      [aPromise = std::move(aPromise), plainTexts = std::move(plainTexts)]() {
-        aPromise->MaybeResolve(plainTexts);
-      }));
+  nsCOMPtr<nsIRunnable> runnable(
+      NS_NewRunnableFunction("BackgroundSdrDecryptStringsResolve",
+                             [rv, aPromise = std::move(aPromise),
+                              plainTexts = std::move(plainTexts)]() {
+                               if (NS_FAILED(rv)) {
+                                 aPromise->MaybeReject(rv);
+                               } else {
+                                 aPromise->MaybeResolve(plainTexts);
+                               }
+                             }));
   NS_DispatchToMainThread(runnable.forget());
 }
 

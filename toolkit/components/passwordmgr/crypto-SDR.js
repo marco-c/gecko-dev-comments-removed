@@ -221,9 +221,6 @@ LoginManagerCrypto_SDR.prototype = {
 
 
 
-
-
-
   async decryptMany(cipherTexts) {
     if (!Array.isArray(cipherTexts) || !cipherTexts.length) {
       throw Components.Exception(

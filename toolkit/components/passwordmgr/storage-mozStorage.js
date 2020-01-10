@@ -443,8 +443,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-
-
   async getAllLoginsAsync() {
     let [logins, ids] = this._searchLogins({});
     if (!logins.length) {
@@ -459,29 +457,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
     let result = [];
     for (let i = 0; i < logins.length; i++) {
-      if (!usernames[i] || !passwords[i]) {
-        
-        
-        
-        
-        let login = logins[i];
-        try {
-          this._crypto.decrypt(login.username);
-          this._crypto.decrypt(login.password);
-        } catch (e) {
-          
-          
-          if (e.result == Cr.NS_ERROR_FAILURE) {
-            this.log(
-              "Could not decrypt login:",
-              login.QueryInterface(Ci.nsILoginMetaInfo).guid
-            );
-            continue;
-          }
-          throw e;
-        }
-      }
-
       logins[i].username = usernames[i];
       logins[i].password = passwords[i];
       result.push(logins[i]);
