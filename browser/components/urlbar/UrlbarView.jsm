@@ -119,6 +119,18 @@ class UrlbarView {
 
 
 
+  get visibleItemCount() {
+    return Array.reduce(this._rows.children, (sum, r) => {
+      return sum + Number(this._isRowVisible(r));
+    }, 0);
+  }
+
+  
+
+
+
+
+
 
 
 
