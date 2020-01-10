@@ -9,6 +9,14 @@ var EXPORTED_SYMBOLS = ["GeckoViewTab"];
 const { GeckoViewModule } = ChromeUtils.import(
   "resource://gre/modules/GeckoViewModule.jsm"
 );
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  EventDispatcher: "resource://gre/modules/Messaging.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 
 class Tab {
@@ -23,46 +31,135 @@ class Tab {
 }
 
 
+class BrowserAppShim {
+  constructor(window) {
+    
+    
+    const tabId = 10000 + window.windowUtils.outerWindowID;
+    this.selectedBrowser = window.browser;
+    this.selectedTab = new Tab(tabId, this.selectedBrowser);
+    this.tabs = [this.selectedTab];
+  }
+
+  closeTab(aTab) {
+    
+  }
+
+  getTabForId(aId) {
+    return this.selectedTab;
+  }
+
+  getTabForBrowser(aBrowser) {
+    return this.selectedTab;
+  }
+
+  getTabForWindow(aWindow) {
+    return this.selectedTab;
+  }
+
+  getTabForDocument(aDocument) {
+    return this.selectedTab;
+  }
+
+  getBrowserForOuterWindowID(aID) {
+    return this.selectedBrowser;
+  }
+
+  getBrowserForDocument(aDocument) {
+    return this.selectedBrowser;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async createNewTab(url, options) {
+    url = url || "about:blank";
+
+    if (!options.extensionId) {
+      throw new Error("options.extensionId missing");
+    }
+
+    const message = {
+      type: "GeckoView:WebExtension:NewTab",
+      uri: url,
+      extensionId: options.extensionId,
+    };
+
+    const sessionId = await EventDispatcher.instance.sendRequestForResult(
+      message
+    );
+
+    if (!sessionId) {
+      throw new Error("Cannot create new tab");
+    }
+
+    let window;
+    const browser = await new Promise(resolve => {
+      const handler = {
+        observe(aSubject, aTopic, aData) {
+          if (
+            aTopic === "geckoview-window-created" &&
+            aSubject.name === sessionId
+          ) {
+            Services.obs.removeObserver(handler, "geckoview-window-created");
+            window = aSubject;
+            resolve(window.browser);
+          }
+        },
+      };
+      Services.obs.addObserver(handler, "geckoview-window-created");
+    });
+
+    let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+
+    if (options.disallowInheritPrincipal) {
+      flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
+    }
+
+    browser.loadURI(url, {
+      flags,
+      triggeringPrincipal: options.triggeringPrincipal,
+    });
+
+    return BrowserAppShim.getBrowserApp(window).selectedTab;
+  }
+
+  
+  
+  get deck() {
+    return {
+      addEventListener() {},
+      removeEventListener() {},
+    };
+  }
+
+  static getBrowserApp(window) {
+    let { BrowserApp } = window;
+
+    if (!BrowserApp) {
+      BrowserApp = window.gBrowser = window.BrowserApp = new BrowserAppShim(
+        window
+      );
+    }
+
+    return BrowserApp;
+  }
+}
+
 class GeckoViewTab extends GeckoViewModule {
   onInit() {
-    
-    
-    const tabId = 10000 + this.browser.ownerGlobal.windowUtils.outerWindowID;
-    const tab = new Tab(tabId, this.browser);
-
-    this.window.gBrowser = this.window.BrowserApp = {
-      selectedBrowser: this.browser,
-      tabs: [tab],
-      selectedTab: tab,
-
-      closeTab: function(aTab) {
-        
-      },
-
-      getTabForId: function(aId) {
-        return this.selectedTab;
-      },
-
-      getTabForBrowser: function(aBrowser) {
-        return this.selectedTab;
-      },
-
-      getTabForWindow: function(aWindow) {
-        return this.selectedTab;
-      },
-
-      getTabForDocument: function(aDocument) {
-        return this.selectedTab;
-      },
-
-      getBrowserForOuterWindowID: function(aID) {
-        return this.browser;
-      },
-
-      getBrowserForDocument: function(aDocument) {
-        return this.selectedBrowser;
-      },
-    };
+    BrowserAppShim.getBrowserApp(this.window);
   }
 }
 
