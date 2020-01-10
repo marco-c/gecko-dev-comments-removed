@@ -388,6 +388,9 @@ async function checkFxABadged() {
 
 
 function checkFxAAvatar(fxaStatus) {
+  
+  document.querySelector("#appMenu-popup").hidden = false;
+
   const avatarContainers = [
     document.getElementById("fxa-menu-avatar"),
     document.getElementById("fxa-avatar-image"),

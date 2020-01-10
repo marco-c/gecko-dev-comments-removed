@@ -518,7 +518,7 @@ void Element::ClearStyleStateLocks() {
 }
 
 static bool MayNeedToLoadXBLBinding(const Element& aElement) {
-  if (!aElement.IsAnyOfXULElements(nsGkAtoms::panel, nsGkAtoms::textbox)) {
+  if (!aElement.IsAnyOfXULElements(nsGkAtoms::textbox)) {
     
     
     return false;

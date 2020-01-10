@@ -179,7 +179,7 @@ strong {
 
 
 
-.tooltip-xul-wrapper[type="arrow"] .panel-arrowcontent {
+.tooltip-xul-wrapper[type="arrow"]::part(arrowcontent) {
   margin: 0;
   padding: 0;
   background: transparent;

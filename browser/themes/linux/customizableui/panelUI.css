@@ -27,7 +27,6 @@ menuitem.subviewbutton {
 
 
 
-#pageActionFeedback > .panel-arrowcontainer > .panel-arrowcontent {
+#pageActionFeedback::part(arrowcontent) {
   box-shadow: none;
 }
-

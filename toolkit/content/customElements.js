@@ -462,6 +462,18 @@
       
 
 
+      handleEvent(event) {
+        let methodName = "on_" + event.type;
+        if (methodName in this) {
+          this[methodName](event);
+        } else {
+          throw new Error("Unrecognized event: " + event.type);
+        }
+      }
+
+      
+
+
 
 
 
@@ -761,6 +773,7 @@
       "chrome://global/content/elements/menu.js",
       "chrome://global/content/elements/menupopup.js",
       "chrome://global/content/elements/notificationbox.js",
+      "chrome://global/content/elements/panel.js",
       "chrome://global/content/elements/popupnotification.js",
       "chrome://global/content/elements/radio.js",
       "chrome://global/content/elements/richlistbox.js",

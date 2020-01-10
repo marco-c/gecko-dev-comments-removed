@@ -1,4 +1,4 @@
-.popup-notification-panel > .panel-arrowcontainer > .panel-arrowcontent {
+.popup-notification-panel::part(arrowcontent) {
   
 
 
