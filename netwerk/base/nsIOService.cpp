@@ -242,8 +242,8 @@ nsresult nsIOService::Init() {
     mRestrictedPortList.AppendElement(gBadPortList[i]);
 
   
-  Preferences::RegisterPrefixCallbacks(
-      PREF_CHANGE_METHOD(nsIOService::PrefsChanged), gCallbackPrefs, this);
+  Preferences::RegisterPrefixCallbacks(nsIOService::PrefsChanged,
+                                       gCallbackPrefs, this);
   PrefsChanged();
 
   
@@ -413,7 +413,7 @@ nsresult nsIOService::LaunchSocketProcess() {
   }
 
   Preferences::RegisterPrefixCallbacks(
-      PREF_CHANGE_METHOD(nsIOService::NotifySocketProcessPrefsChanged),
+      nsIOService::NotifySocketProcessPrefsChanged,
       gCallbackPrefsForSocketProcess, this);
 
   
@@ -437,7 +437,7 @@ void nsIOService::DestroySocketProcess() {
   }
 
   Preferences::UnregisterPrefixCallbacks(
-      PREF_CHANGE_METHOD(nsIOService::NotifySocketProcessPrefsChanged),
+      nsIOService::NotifySocketProcessPrefsChanged,
       gCallbackPrefsForSocketProcess, this);
 
   mSocketProcess->Shutdown();
@@ -446,6 +446,12 @@ void nsIOService::DestroySocketProcess() {
 
 bool nsIOService::SocketProcessReady() {
   return mSocketProcess && mSocketProcess->IsConnected();
+}
+
+
+void nsIOService::NotifySocketProcessPrefsChanged(const char* aName,
+                                                  void* aSelf) {
+  static_cast<nsIOService*>(aSelf)->NotifySocketProcessPrefsChanged(aName);
 }
 
 void nsIOService::NotifySocketProcessPrefsChanged(const char* aName) {
@@ -1251,6 +1257,11 @@ nsIOService::AllowPort(int32_t inPort, const char* scheme, bool* _retval) {
 }
 
 
+
+
+void nsIOService::PrefsChanged(const char* pref, void* self) {
+  static_cast<nsIOService*>(self)->PrefsChanged(pref);
+}
 
 void nsIOService::PrefsChanged(const char* pref) {
   

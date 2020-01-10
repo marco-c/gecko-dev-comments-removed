@@ -63,6 +63,7 @@ class nsFocusManager final : public nsIFocusManager,
   
   static void FocusWindow(nsPIDOMWindowOuter* aWindow);
 
+  static void PrefChanged(const char* aPref, void* aSelf);
   void PrefChanged(const char* aPref);
 
   

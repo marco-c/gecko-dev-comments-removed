@@ -270,12 +270,10 @@ void nsPresContext::Destroy() {
   }
 
   
-  Preferences::UnregisterPrefixCallbacks(
-      PREF_CHANGE_METHOD(nsPresContext::PreferenceChanged),
-      gPrefixCallbackPrefs, this);
-  Preferences::UnregisterCallbacks(
-      PREF_CHANGE_METHOD(nsPresContext::PreferenceChanged), gExactCallbackPrefs,
-      this);
+  Preferences::UnregisterPrefixCallbacks(nsPresContext::PreferenceChanged,
+                                         gPrefixCallbackPrefs, this);
+  Preferences::UnregisterCallbacks(nsPresContext::PreferenceChanged,
+                                   gExactCallbackPrefs, this);
 
   mRefreshDriver = nullptr;
 }
@@ -443,6 +441,11 @@ void nsPresContext::AppUnitsPerDevPixelChanged() {
   
   
   
+}
+
+
+void nsPresContext::PreferenceChanged(const char* aPrefName, void* aSelf) {
+  static_cast<nsPresContext*>(aSelf)->PreferenceChanged(aPrefName);
 }
 
 void nsPresContext::PreferenceChanged(const char* aPrefName) {
@@ -649,12 +652,10 @@ nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
   }
 
   
-  Preferences::RegisterPrefixCallbacks(
-      PREF_CHANGE_METHOD(nsPresContext::PreferenceChanged),
-      gPrefixCallbackPrefs, this);
-  Preferences::RegisterCallbacks(
-      PREF_CHANGE_METHOD(nsPresContext::PreferenceChanged), gExactCallbackPrefs,
-      this);
+  Preferences::RegisterPrefixCallbacks(nsPresContext::PreferenceChanged,
+                                       gPrefixCallbackPrefs, this);
+  Preferences::RegisterCallbacks(nsPresContext::PreferenceChanged,
+                                 gExactCallbackPrefs, this);
 
   nsresult rv = mEventManager->Init();
   NS_ENSURE_SUCCESS(rv, rv);
