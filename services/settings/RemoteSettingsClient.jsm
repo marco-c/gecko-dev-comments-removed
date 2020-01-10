@@ -235,7 +235,8 @@ class RemoteSettingsClient extends EventEmitter {
 
     if (verifySignature) {
       console.debug("Verify signature of local data");
-      const localRecords = data.map(r => kintoCollection.cleanLocalFields(r));
+      const { data: allData } = await kintoCollection.list({ order: "" });
+      const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
       const timestamp = await kintoCollection.db.getLastModified();
       const metadata = await kintoCollection.metadata();
       await this._validateCollectionSignature([],
@@ -325,10 +326,10 @@ class RemoteSettingsClient extends EventEmitter {
       if (this.verifySignature) {
         kintoCollection.hooks["incoming-changes"] = [async (payload, collection) => {
           const { changes: remoteRecords, lastModified: timestamp } = payload;
-          const { data } = await kintoCollection.list({ order: "" }); 
+          const { data } = await collection.list({ order: "" }); 
           const metadata = await collection.metadata();
           
-          const localRecords = data.map(r => kintoCollection.cleanLocalFields(r));
+          const localRecords = data.map(r => collection.cleanLocalFields(r));
           await this._validateCollectionSignature(remoteRecords,
                                                   timestamp,
                                                   metadata,
