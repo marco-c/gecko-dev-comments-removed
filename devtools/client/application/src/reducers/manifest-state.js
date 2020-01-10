@@ -21,11 +21,17 @@ function _processRawManifestIcons(rawIcons) {
   
   
   
-  
   return rawIcons.map(icon => {
     return {
-      key: icon.sizes.join(" "),
-      value: icon.src,
+      key: {
+        sizes: Array.isArray(icon.sizes) ? icon.sizes.join(" ") : icon.sizes,
+        contentType: icon.type,
+      },
+      value: {
+        src: icon.src,
+        purpose: icon.purpose.join(" "),
+      },
+      type: MANIFEST_MEMBER_VALUE_TYPES.ICON,
     };
   });
 }
