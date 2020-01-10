@@ -3,10 +3,14 @@
 
 "use strict";
 
-const { AttributionCode } = ChromeUtils.import(
+ChromeUtils.defineModuleGetter(
+  this,
+  "AttributionCode",
   "resource:///modules/AttributionCode.jsm"
 );
-const { AddonRepository } = ChromeUtils.import(
+ChromeUtils.defineModuleGetter(
+  this,
+  "AddonRepository",
   "resource://gre/modules/addons/AddonRepository.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
