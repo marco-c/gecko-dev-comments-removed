@@ -165,11 +165,13 @@ class UrlbarResult {
 
 
 
+
+
   static payloadAndSimpleHighlights(tokens, payloadInfo) {
     
     for (let [name, info] of Object.entries(payloadInfo)) {
       if (typeof info == "string") {
-        payloadInfo[name] = [info, false];
+        payloadInfo[name] = [info];
       }
     }
 
@@ -180,7 +182,10 @@ class UrlbarResult {
     ) {
       
       
-      payloadInfo.title = payloadInfo.title || ["", true];
+      payloadInfo.title = payloadInfo.title || [
+        "",
+        UrlbarUtils.HIGHLIGHT.TYPED,
+      ];
       try {
         payloadInfo.title[0] = new URL(payloadInfo.url[0]).host;
       } catch (e) {}
@@ -215,11 +220,13 @@ class UrlbarResult {
         payload[name] = val;
         return payload;
       }, {}),
-      entries.reduce((highlights, [name, [val, shouldHighlight]]) => {
-        if (shouldHighlight) {
+      entries.reduce((highlights, [name, [val, highlightType]]) => {
+        if (highlightType) {
           highlights[name] = !Array.isArray(val)
-            ? UrlbarUtils.getTokenMatches(tokens, val || "")
-            : val.map(subval => UrlbarUtils.getTokenMatches(tokens, subval));
+            ? UrlbarUtils.getTokenMatches(tokens, val || "", highlightType)
+            : val.map(subval =>
+                UrlbarUtils.getTokenMatches(tokens, subval, highlightType)
+              );
         }
         return highlights;
       }, {}),

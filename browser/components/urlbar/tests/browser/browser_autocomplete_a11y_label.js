@@ -102,9 +102,9 @@ add_task(async function searchSuggestions() {
   
   let expectedSearches = [
     "foo",
-    "foofoo",
     
-    "foo bar ",
+    "foofoo ",
+    "foo bar",
   ];
   for (let i = 0; i < length; i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);

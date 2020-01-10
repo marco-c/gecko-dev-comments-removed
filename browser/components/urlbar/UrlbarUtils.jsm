@@ -129,6 +129,13 @@ var UrlbarUtils = {
   MAX_TEXT_LENGTH: 255,
 
   
+  
+  HIGHLIGHT: {
+    TYPED: 1,
+    SUGGESTED: 2,
+  },
+
+  
 
 
 
@@ -252,19 +259,27 @@ var UrlbarUtils = {
 
 
 
-  getTokenMatches(tokens, str) {
+
+
+  getTokenMatches(tokens, str, highlightType) {
     str = str.toLocaleLowerCase();
     
     
     
-    let hits = new Array(str.length).fill(0);
+    let hits = new Array(str.length).fill(
+      highlightType == this.HIGHLIGHT.SUGGESTED ? 1 : 0
+    );
     for (let { lowerCaseValue } of tokens) {
       
       
       for (let index = 0, needle = lowerCaseValue; index >= 0 && needle; ) {
         index = str.indexOf(needle, index);
         if (index >= 0) {
-          hits.fill(1, index, index + needle.length);
+          hits.fill(
+            highlightType == this.HIGHLIGHT.SUGGESTED ? 0 : 1,
+            index,
+            index + needle.length
+          );
           index += needle.length;
         }
       }
