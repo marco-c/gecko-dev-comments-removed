@@ -61,6 +61,7 @@
 #include "ImageLayers.h"
 #include "ImageContainer.h"
 #include "nsCanvasFrame.h"
+#include "nsSubDocumentFrame.h"
 #include "StickyScrollContainer.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/AnimationUtils.h"
@@ -102,7 +103,6 @@
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
-#include "mozilla/layout/RenderFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::layers;
@@ -1286,7 +1286,7 @@ void nsDisplayListBuilder::SetGlassDisplayItem(nsDisplayItem* aItem) {
         NS_WARNING("Multiple glass backgrounds found?");
       } else
 #endif
-          if (!mHasGlassItemDuringPartial) {
+      if (!mHasGlassItemDuringPartial) {
         mHasGlassItemDuringPartial = true;
         aItem->SetIsGlassItem();
       }
@@ -1300,7 +1300,7 @@ void nsDisplayListBuilder::SetGlassDisplayItem(nsDisplayItem* aItem) {
       NS_WARNING("Multiple glass backgrounds found?");
     } else
 #endif
-        if (!mGlassDisplayItem) {
+    if (!mGlassDisplayItem) {
       mGlassDisplayItem = aItem;
       mGlassDisplayItem->SetIsGlassItem();
     }
@@ -8639,26 +8639,22 @@ void nsDisplayTransform::UpdateBounds(nsDisplayListBuilder* aBuilder) {
     return;
   }
 
-  if (mFrame->Extend3DContext()) {
-    if (!Combines3DTransformWithAncestors()) {
+  if (!Combines3DTransformWithAncestors()) {
+    if (mFrame->Extend3DContext()) {
       
       
       UpdateBoundsFor3D(aBuilder);
     } else {
       
-      mBounds = nsRect();
+      mBounds = TransformUntransformedBounds(aBuilder, GetTransform());
     }
 
     return;
   }
 
-  MOZ_ASSERT(!mFrame->Extend3DContext());
-
   
-  
-
-  
-  mBounds = TransformUntransformedBounds(aBuilder, GetTransform());
+  MOZ_ASSERT(mFrame->Combines3DTransformWithAncestors());
+  mBounds = nsRect();
 }
 
 void nsDisplayTransform::UpdateBoundsFor3D(nsDisplayListBuilder* aBuilder) {
