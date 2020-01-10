@@ -1,12 +1,12 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/*
+Coverity model file in order to avoid false-positive
+*/
 
 #define NULL (void*)0
 
@@ -48,7 +48,7 @@ static void MOZ_ReportCrash(const char* aStr, const char* aFilename,
 
 #define PR_ASSERT(expr) assert(!!(expr))
 
-
+// Kills Structurally dead code (UNREACHABLE)
 #define NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(_class)        \
   NS_IMETHODIMP_(bool)                                              \
   NS_CYCLE_COLLECTION_CLASSNAME(_class)::CanSkipThisReal(void* p) { \
@@ -60,7 +60,7 @@ int GET_JUMP_OFFSET(jsbytecode* pc) {
   return 0;
 }
 
-
+// Data sanity checkers
 #define XPT_SWAB16(data) __coverity_tainted_data_sanitize__(&data)
 
 #define XPT_SWAB32(data) __coverity_tainted_data_sanitize__(&data)
@@ -114,3 +114,23 @@ class ByteReader {
     return ptr[0] << 16 | ptr[1] << 8 | ptr[2];
   }
 };
+
+// In Bug 1248897 we've seen that Coverity thinks that json-cpp allocates
+// memmory for the strings that are used as indexes, this is wrong and this
+// model of CZString fixes this.
+namespace Json {
+class Value {
+ private:
+  class CZString {
+   private:
+    char const* cstr_;
+
+   public:
+    ~CZString() {
+      // Don't do anything since most of the time cstr_ only stores address of
+      // str
+      __coverity_escape__(static_cast<void*>(cstr_));
+    }
+  };
+};
+}  // namespace Json
