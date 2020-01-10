@@ -840,6 +840,10 @@ WebGLVertexAttrib0Status WebGLContext::WhatDoesVertexAttrib0Need() const {
     
     
     legacyAttrib0 |= (gl->Vendor() == gl::GLVendor::NVIDIA);
+
+    
+    
+    legacyAttrib0 |= !mActiveProgramLinkInfo->attribs.size();
   }
 #endif
 
