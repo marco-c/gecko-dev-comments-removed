@@ -180,12 +180,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  bool CanContainParagraph(Element& aElement) const;
-
-  
-
-
-
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertBRIfNeeded(nsINode& aNode) {
     return InsertBRIfNeededInternal(aNode, false);
   }

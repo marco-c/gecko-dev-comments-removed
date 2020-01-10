@@ -1626,10 +1626,10 @@ nsresult HTMLEditor::WillInsertText(EditSubAction aEditSubAction, bool* aCancel,
   return rv;
 }
 
-bool HTMLEditRules::CanContainParagraph(Element& aElement) const {
-  MOZ_ASSERT(IsEditorDataAvailable());
+bool HTMLEditor::CanContainParagraph(Element& aElement) const {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (HTMLEditorRef().CanContainTag(aElement, *nsGkAtoms::p)) {
+  if (CanContainTag(aElement, *nsGkAtoms::p)) {
     return true;
   }
 
@@ -1731,8 +1731,8 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
   
   
   else if (host == blockParent) {
-    insertBRElement =
-        separator == ParagraphSeparator::br || !CanContainParagraph(*host);
+    insertBRElement = separator == ParagraphSeparator::br ||
+                      !HTMLEditorRef().CanContainParagraph(*host);
   }
   
   
@@ -1746,7 +1746,7 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
     insertBRElement = true;
     for (Element* blockAncestor = blockParent; blockAncestor && insertBRElement;
          blockAncestor = HTMLEditor::GetBlockNodeParent(blockAncestor, host)) {
-      insertBRElement = !CanContainParagraph(*blockAncestor);
+      insertBRElement = !HTMLEditorRef().CanContainParagraph(*blockAncestor);
     }
   }
 
