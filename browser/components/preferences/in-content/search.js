@@ -427,13 +427,19 @@ var gSearchPane = {
           break;
         }
         case "engine-default-private": {
-          
-          
-          
-          const selectedEngine = document.getElementById("defaultPrivateEngine")
-            .selectedItem.engine;
-          if (selectedEngine.name != aEngine.name) {
-            gSearchPane.buildDefaultEngineDropDowns();
+          if (
+            this._separatePrivateDefaultEnabledPref.value &&
+            this._separatePrivateDefaultPref.value
+          ) {
+            
+            
+            
+            const selectedEngine = document.getElementById(
+              "defaultPrivateEngine"
+            ).selectedItem.engine;
+            if (selectedEngine.name != aEngine.name) {
+              gSearchPane.buildDefaultEngineDropDowns();
+            }
           }
           break;
         }
