@@ -87,6 +87,7 @@
 #include "PLDHashTable.h"
 #include "plstr.h"
 #include "prlink.h"
+#include "xpcpublic.h"
 
 #ifdef DEBUG
 #  include <map>
@@ -1691,7 +1692,8 @@ static void NotifyCallbacks(const char* aPrefName, const PrefWrapper* aPref) {
   }
 
 #ifdef DEBUG
-  if (XRE_IsParentProcess() && StaticPrefs::preferences_check_once_policy()) {
+  if (XRE_IsParentProcess() &&
+      (StaticPrefs::preferences_check_once_policy() || xpc::IsInAutomation())) {
     
     
     
