@@ -53,7 +53,6 @@
 #include "XULDocument.h"
 
 static mozilla::LazyLogModule gContentSinkLog("nsXULContentSink");
-;
 
 
 
@@ -628,12 +627,12 @@ nsresult XULContentSinkImpl::OpenRoot(const char16_t** aAttributes,
   RefPtr<nsXULPrototypeElement> element = new nsXULPrototypeElement(aNodeInfo);
 
   
-  
-  mContextStack.Push(element, mState);
-
-  
   nsresult rv = AddAttributes(aAttributes, aAttrLen, element);
   if (NS_FAILED(rv)) return rv;
+
+  
+  
+  mContextStack.Push(element, mState);
 
   mState = eInDocumentElement;
   return NS_OK;
