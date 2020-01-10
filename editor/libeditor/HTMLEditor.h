@@ -1713,6 +1713,16 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   FormatBlockContainer(nsAtom& aBlockType);
 
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
+      const EditorDOMPoint& aPointToInsert);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
