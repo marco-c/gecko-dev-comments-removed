@@ -1224,10 +1224,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void CancelDocumentFlushedResolvers();
 
   
-  
-  bool ShouldResetBrowsingContextUserGestureActivation();
-
-  
   void FireFrameLoadEvent(bool aIsTrusted);
 
  public:

@@ -280,9 +280,6 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   void NotifyResetUserGestureActivation();
 
   
-  bool GetUserGestureActivation();
-
-  
   inline JSObject* GetWindowProxy() const { return mWindowProxy; }
   
   void SetWindowProxy(JS::Handle<JSObject*> aWindowProxy) {

@@ -695,28 +695,15 @@ JSObject* BrowsingContext::ReadStructuredClone(JSContext* aCx,
 }
 
 void BrowsingContext::NotifyUserGestureActivation() {
+  SetIsActivatedByUserGesture(true);
+
   
-  
-  
-  RefPtr<BrowsingContext> topLevelBC = Top();
-  USER_ACTIVATION_LOG("Get top level browsing context 0x%08" PRIx64,
-                      topLevelBC->Id());
-  topLevelBC->SetIsActivatedByUserGesture(true);
 }
 
 void BrowsingContext::NotifyResetUserGestureActivation() {
-  
-  
-  
-  RefPtr<BrowsingContext> topLevelBC = Top();
-  USER_ACTIVATION_LOG("Get top level browsing context 0x%08" PRIx64,
-                      topLevelBC->Id());
-  topLevelBC->SetIsActivatedByUserGesture(false);
-}
+  SetIsActivatedByUserGesture(false);
 
-bool BrowsingContext::GetUserGestureActivation() {
-  RefPtr<BrowsingContext> topLevelBC = Top();
-  return topLevelBC->GetIsActivatedByUserGesture();
+  
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(BrowsingContext)
@@ -1053,7 +1040,6 @@ void BrowsingContext::StartDelayedAutoplayMediaComponents() {
 }
 
 void BrowsingContext::DidSetIsActivatedByUserGesture() {
-  MOZ_ASSERT(!mParent, "Set user activation flag on non top-level context!");
   USER_ACTIVATION_LOG(
       "Set user gesture activation %d for %s browsing context 0x%08" PRIx64,
       mIsActivatedByUserGesture, XRE_IsParentProcess() ? "Parent" : "Child",
