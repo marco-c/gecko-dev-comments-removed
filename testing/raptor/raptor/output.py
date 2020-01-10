@@ -142,10 +142,25 @@ class PerftestOutput(object):
             results_path = os.path.join(os.getcwd(), 'raptor.json')
             screenshot_path = os.path.join(os.getcwd(), 'screenshots.html')
 
+        success = True
         if self.summarized_results == {}:
+            success = False
             LOG.error("no summarized raptor results found for %s" %
                       ', '.join(test_names))
         else:
+            for suite in self.summarized_results['suites']:
+                tname = suite['name']
+                
+                
+                found = False
+                for test in test_names:
+                    if tname in test:
+                        found = True
+                        break
+                if not found:
+                    success = False
+                    LOG.error("no summarized raptor results found for %s" % tname)
+
             with open(results_path, 'w') as f:
                 for result in self.summarized_results:
                     f.write("%s\n" % result)
@@ -159,7 +174,7 @@ class PerftestOutput(object):
         
         
         if self.summarized_results == {}:
-            return False, 0
+            return success, 0
 
         
         extra_opts = self.summarized_results['suites'][0].get('extraOptions', [])
@@ -192,7 +207,7 @@ class PerftestOutput(object):
                   sort_keys=True)
         LOG.info("results can also be found locally at: %s" % results_path)
 
-        return True, total_perfdata
+        return success, total_perfdata
 
     def output_supporting_data(self, test_names):
         '''
