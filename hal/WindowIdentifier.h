@@ -66,13 +66,12 @@ class WindowIdentifier {
 
 
 
-  WindowIdentifier(const InfallibleTArray<uint64_t>& id,
-                   nsPIDOMWindowInner* window);
+  WindowIdentifier(const nsTArray<uint64_t>& id, nsPIDOMWindowInner* window);
 
   
 
 
-  typedef InfallibleTArray<uint64_t> IDArrayType;
+  typedef nsTArray<uint64_t> IDArrayType;
   const IDArrayType& AsArray() const;
 
   
