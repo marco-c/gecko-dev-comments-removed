@@ -2906,9 +2906,8 @@ Variable.prototype = extend(Scope.prototype, {
     return async function() {
       let nodeFront = this._nodeFront;
       if (!nodeFront) {
-        
         const inspectorFront = await this.toolbox.target.getFront("inspector");
-        nodeFront = await inspectorFront.walker.gripToNodeFront(
+        nodeFront = await inspectorFront.getNodeFrontFromNodeGrip(
           this._valueGrip
         );
       }
@@ -2938,10 +2937,10 @@ Variable.prototype = extend(Scope.prototype, {
     }
 
     if (!this._nodeFront) {
-      
-      const walkerFront = (await this.toolbox.target.getFront("inspector"))
-        .walker;
-      this.nodeFront = await walkerFront.gripToNodeFront(this._valueGrip);
+      const inspectorFront = await this.toolbox.target.getFront("inspector");
+      this.nodeFront = await inspectorFront.getNodeFrontFromNodeGrip(
+        this._valueGrip
+      );
     }
 
     await this.nodeFront.highlighterFront.highlight(this._nodeFront);

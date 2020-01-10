@@ -1881,8 +1881,9 @@ Inspector.prototype = {
   },
 
   async inspectNodeActor(nodeActor, inspectFromAnnotation) {
-    
-    const nodeFront = await this.walker.gripToNodeFront({ actor: nodeActor });
+    const nodeFront = await this.inspectorFront.getNodeFrontFromNodeGrip({
+      actor: nodeActor,
+    });
     if (!nodeFront) {
       console.error(
         "The object cannot be linked to the inspector, the " +
