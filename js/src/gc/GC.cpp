@@ -908,10 +908,6 @@ void Chunk::recycleArena(Arena* arena, SortedArenaList& dest,
 }
 
 void Chunk::releaseArena(JSRuntime* rt, Arena* arena, const AutoLockGC& lock) {
-  MOZ_ASSERT(arena->allocated());
-  MOZ_ASSERT(!arena->onDelayedMarkingList());
-
-  arena->release(lock);
   addArenaToFreeList(rt, arena);
   updateChunkListAfterFree(rt, lock);
 }
@@ -973,10 +969,14 @@ void Chunk::updateChunkListAfterFree(JSRuntime* rt, const AutoLockGC& lock) {
 }
 
 void GCRuntime::releaseArena(Arena* arena, const AutoLockGC& lock) {
+  MOZ_ASSERT(arena->allocated());
+  MOZ_ASSERT(!arena->onDelayedMarkingList());
+
   arena->zone->zoneSize.removeGCArena();
   if (arena->zone->wasGCStarted()) {
     stats().recordFreedArena();
   }
+  arena->release(lock);
   arena->chunk()->releaseArena(rt, arena, lock);
 }
 
@@ -3079,36 +3079,15 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
   callWeakPointerZonesCallbacks();
 }
 
-void GCRuntime::protectAndHoldArenas(Arena* arenaList) {
-  for (Arena* arena = arenaList; arena;) {
-    MOZ_ASSERT(arena->allocated());
-    Arena* next = arena->next;
-    if (!next) {
-      
-      arena->next = relocatedArenasToRelease;
-      relocatedArenasToRelease = arenaList;
-    }
-    ProtectPages(arena, ArenaSize);
-    arena = next;
-  }
-}
-
-void GCRuntime::unprotectHeldRelocatedArenas() {
-  for (Arena* arena = relocatedArenasToRelease; arena; arena = arena->next) {
-    UnprotectPages(arena, ArenaSize);
-    MOZ_ASSERT(arena->allocated());
-  }
-}
-
-void GCRuntime::releaseRelocatedArenas(Arena* arenaList) {
+void GCRuntime::clearRelocatedArenas(Arena* arenaList, JS::GCReason reason) {
   AutoLockGC lock(rt);
-  releaseRelocatedArenasWithoutUnlocking(arenaList, lock);
+  clearRelocatedArenasWithoutUnlocking(arenaList, reason, lock);
 }
 
-void GCRuntime::releaseRelocatedArenasWithoutUnlocking(Arena* arenaList,
-                                                       const AutoLockGC& lock) {
+void GCRuntime::clearRelocatedArenasWithoutUnlocking(Arena* arenaList,
+                                                     JS::GCReason reason,
+                                                     const AutoLockGC& lock) {
   
-  unsigned count = 0;
   while (arenaList) {
     Arena* arena = arenaList;
     arenaList = arenaList->next;
@@ -3123,8 +3102,55 @@ void GCRuntime::releaseRelocatedArenasWithoutUnlocking(Arena* arenaList,
                  JS_MOVED_TENURED_PATTERN, arena->getThingsSpan(),
                  MemCheckKind::MakeNoAccess);
 
-    releaseArena(arena, lock);
-    ++count;
+    arena->zone->zoneSize.removeGCArena();
+
+    
+    
+    if (!ShouldRelocateAllArenas(reason) && arena->zone->wasGCStarted()) {
+      stats().recordFreedArena();
+    }
+
+    
+    arena->release(lock);
+  }
+}
+
+void GCRuntime::protectAndHoldArenas(Arena* arenaList) {
+  for (Arena* arena = arenaList; arena;) {
+    MOZ_ASSERT(!arena->allocated());
+    Arena* next = arena->next;
+    if (!next) {
+      
+      arena->next = relocatedArenasToRelease;
+      relocatedArenasToRelease = arenaList;
+    }
+    ProtectPages(arena, ArenaSize);
+    arena = next;
+  }
+}
+
+void GCRuntime::unprotectHeldRelocatedArenas() {
+  for (Arena* arena = relocatedArenasToRelease; arena; arena = arena->next) {
+    UnprotectPages(arena, ArenaSize);
+    MOZ_ASSERT(!arena->allocated());
+  }
+}
+
+void GCRuntime::releaseRelocatedArenas(Arena* arenaList) {
+  AutoLockGC lock(rt);
+  releaseRelocatedArenasWithoutUnlocking(arenaList, lock);
+}
+
+void GCRuntime::releaseRelocatedArenasWithoutUnlocking(Arena* arenaList,
+                                                       const AutoLockGC& lock) {
+  
+  while (arenaList) {
+    Arena* arena = arenaList;
+    arenaList = arenaList->next;
+
+    
+    
+    arena->chunk()->releaseArena(rt, arena, lock);
   }
 }
 
@@ -6861,6 +6887,8 @@ IncrementalProgress GCRuntime::compactPhase(JS::GCReason reason,
       zone->changeGCState(Zone::Compact, Zone::Finished);
     } while (!relocatedZones.isEmpty());
   }
+
+  clearRelocatedArenas(relocatedArenas, reason);
 
   if (ShouldProtectRelocatedArenas(reason)) {
     protectAndHoldArenas(relocatedArenas);
