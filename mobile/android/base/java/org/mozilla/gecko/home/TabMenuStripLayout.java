@@ -123,6 +123,11 @@ class TabMenuStripLayout extends ThemedLinearLayout
     }
 
     void onPageSelected(final int position) {
+        if (selectedView != null) {
+            selectedView.setTextColor(inactiveTextColor);
+        }
+        selectedView = (TextView) getChildAt(position);
+        selectedView.setTextColor(activeTextColor);
         
         ViewTreeObserver vto = getViewTreeObserver();
         if (vto.isAlive()) {
@@ -135,12 +140,6 @@ class TabMenuStripLayout extends ThemedLinearLayout
                     }
                     
                     vto.removeOnGlobalLayoutListener(this);
-                    if (selectedView != null) {
-                        selectedView.setTextColor(inactiveTextColor);
-                    }
-
-                    selectedView = (TextView) getChildAt(position);
-                    selectedView.setTextColor(activeTextColor);
 
                     if (strip != null) {
                         boolean isLayoutRtl = ViewCompat.getLayoutDirection(selectedView) == ViewCompat.LAYOUT_DIRECTION_RTL;
