@@ -51,12 +51,29 @@ struct NormalizedInterfaceAndField {
 };
 
 
-template <typename T>
-struct HuffmanEntry {
-  HuffmanEntry(uint32_t bits, uint8_t bits_length, T&& value)
-      : bits(bits), bits_length(bits_length), value(value) {
-    MOZ_ASSERT(bits >> bits_length == 0);
+
+
+
+
+
+
+
+
+
+struct HuffmanLookup {
+  HuffmanLookup(uint32_t bits, uint8_t bitLength)
+      : bits(bits), bitLength(bitLength) {
+    MOZ_ASSERT(bitLength <= 32);
+    MOZ_ASSERT(bits >> bitLength == 0);
   }
+
+  
+  
+  uint32_t leadingBits(const uint8_t bitLength) const;
+
+  
+  
+  uint32_t bits;
 
   
   
@@ -65,8 +82,41 @@ struct HuffmanEntry {
   
   
   
-  const uint32_t bits;
-  const uint8_t bits_length;
+  
+  uint8_t bitLength;
+};
+
+
+struct HuffmanKey {
+  HuffmanKey(uint32_t bits, uint8_t bitLength)
+      : bits(bits), bitLength(bitLength) {
+    MOZ_ASSERT(bitLength <= 32);
+    MOZ_ASSERT(bits >> bitLength == 0);
+  }
+
+  
+  
+  uint32_t bits;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  uint8_t bitLength;
+};
+
+
+template <typename T>
+struct HuffmanEntry {
+  HuffmanEntry(HuffmanKey key, T&& value) : key(key), value(value) {}
+  HuffmanEntry(uint32_t bits, uint8_t bitLength, T&& value)
+      : key(bits, bitLength), value(value) {}
+
+  const HuffmanKey key;
   const T value;
 };
 
@@ -102,11 +152,23 @@ class HuffmanTableImpl {
   HuffmanTableImpl() = delete;
   HuffmanTableImpl(HuffmanTableImpl&) = delete;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
+
+  
   size_t length() const { return values.length(); }
   const HuffmanEntry<T>* begin() const { return values.begin(); }
   const HuffmanEntry<T>* end() const { return values.end(); }
 
  private:
+  
   
   
   
@@ -126,25 +188,30 @@ struct HuffmanTableUnreachable {};
 
 
 struct HuffmanTableExplicitSymbolsF64 {
+  using Contents = double;
   HuffmanTableImpl<double> impl;
   explicit HuffmanTableExplicitSymbolsF64(JSContext* cx) : impl(cx) {}
 };
 
 struct HuffmanTableExplicitSymbolsU32 {
+  using Contents = uint32_t;
   HuffmanTableImpl<uint32_t> impl;
 };
 
 struct HuffmanTableIndexedSymbolsSum {
+  using Contents = BinASTKind;
   HuffmanTableImpl<BinASTKind> impl;
   explicit HuffmanTableIndexedSymbolsSum(JSContext* cx) : impl(cx) {}
 };
 
 struct HuffmanTableIndexedSymbolsBool {
+  using Contents = bool;
   HuffmanTableImpl<bool, 2> impl;
   explicit HuffmanTableIndexedSymbolsBool(JSContext* cx) : impl(cx) {}
 };
 
 struct HuffmanTableIndexedSymbolsMaybeInterface {
+  using Contents = Nullable;
   HuffmanTableImpl<Nullable, 2> impl;
   explicit HuffmanTableIndexedSymbolsMaybeInterface(JSContext* cx) : impl(cx) {}
 
@@ -163,16 +230,19 @@ struct HuffmanTableIndexedSymbolsMaybeInterface {
 };
 
 struct HuffmanTableIndexedSymbolsStringEnum {
+  using Contents = BinASTVariant;
   HuffmanTableImpl<BinASTVariant> impl;
   explicit HuffmanTableIndexedSymbolsStringEnum(JSContext* cx) : impl(cx) {}
 };
 
 struct HuffmanTableIndexedSymbolsLiteralString {
+  using Contents = JSAtom*;
   HuffmanTableImpl<JSAtom*> impl;
   explicit HuffmanTableIndexedSymbolsLiteralString(JSContext* cx) : impl(cx) {}
 };
 
 struct HuffmanTableIndexedSymbolsOptionalLiteralString {
+  using Contents = JSAtom*;
   HuffmanTableImpl<JSAtom*> impl;
   explicit HuffmanTableIndexedSymbolsOptionalLiteralString(JSContext* cx)
       : impl(cx) {}
@@ -188,6 +258,7 @@ using HuffmanTable = mozilla::Variant<
     HuffmanTableIndexedSymbolsOptionalLiteralString>;
 
 struct HuffmanTableExplicitSymbolsListLength {
+  using Contents = uint32_t;
   HuffmanTableImpl<uint32_t> impl;
   explicit HuffmanTableExplicitSymbolsListLength(JSContext* cx) : impl(cx) {}
 };
@@ -277,7 +348,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
   ~BinASTTokenReaderContext();
 
- private:
   
   
   
@@ -289,11 +359,54 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   enum class Compression { No, Yes };
 
   
+  enum class EndOfFilePolicy {
+    
+    RaiseError,
+    
+    BestEffort
+  };
+
+ private:
+  
   
   static const size_t DECODED_BUFFER_SIZE = 128;
   uint8_t decodedBuffer_[DECODED_BUFFER_SIZE];
   size_t decodedBegin_ = 0;
   size_t decodedEnd_ = 0;
+
+  
+  
+  
+  
+  
+  
+  struct BitBuffer {
+    BitBuffer();
+
+    
+    
+    
+    
+    template <Compression Compression>
+    HuffmanLookup getHuffmanLookup();
+
+    
+    template <Compression Compression>
+    MOZ_MUST_USE JS::Result<Ok> advanceBitBuffer(
+        BinASTTokenReaderContext& owner, const uint8_t bitLength);
+
+   private:
+    
+    uint64_t bits;
+
+    
+    
+    
+    
+    
+    
+    uint64_t length;
+  } bitBuffer;
 
   
   size_t availableDecodedLength() const { return decodedEnd_ - decodedBegin_; }
@@ -318,8 +431,12 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
 
-  template <Compression compression>
-  MOZ_MUST_USE JS::Result<Ok> readBuf(uint8_t* bytes, uint32_t len);
+
+
+  template <Compression compression, EndOfFilePolicy policy>
+  MOZ_MUST_USE JS::Result<Ok> readBuf(uint8_t* bytes, uint32_t& len);
+
+  enum class FillResult { EndOfStream, Filled };
 
   
 
@@ -327,7 +444,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
 
-  MOZ_MUST_USE JS::Result<Ok> fillDecodedBuf();
+  MOZ_MUST_USE JS::Result<FillResult> fillDecodedBuf();
 
   void advanceDecodedBuffer(uint32_t count);
 
@@ -459,11 +576,28 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong(const Context&);
 
  private:
+  template <typename Table>
+  MOZ_MUST_USE JS::Result<typename Table::Contents> readFieldFromTable(
+      const Context&);
+
+  
+
+
+  MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidValue(const Context&);
+
+ private:
   
 
 
   template <Compression compression>
   MOZ_MUST_USE JS::Result<uint32_t> readVarU32();
+
+  template <EndOfFilePolicy policy>
+  MOZ_MUST_USE JS::Result<Ok> handleEndOfStream();
+
+  template <EndOfFilePolicy policy>
+  MOZ_MUST_USE JS::Result<Ok> readBufCompressedAux(uint8_t* bytes,
+                                                   uint32_t& len);
 
  private:
   
