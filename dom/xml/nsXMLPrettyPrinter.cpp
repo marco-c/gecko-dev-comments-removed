@@ -113,8 +113,8 @@ void nsXMLPrettyPrinter::MaybeUnhook(nsIContent* aContent) {
   
   
   bool isGeneratedContent =
-      !aContent ? false
-                : aContent->GetBindingParent() || aContent->IsInShadowTree();
+      aContent &&
+      (aContent->IsInNativeAnonymousSubtree() || aContent->IsInShadowTree());
 
   if (!isGeneratedContent && !mUnhookPending) {
     
