@@ -550,6 +550,27 @@ JSFlatString* JSRope::flattenInternal(JSContext* maybecx) {
       wholeCapacity = capacity;
 
       
+      
+      Nursery& nursery = runtimeFromMainThread()->gc.nursery();
+      bool inTenured = !bufferIfNursery;
+      if (!inTenured && left.isTenured()) {
+        
+        
+        if (!nursery.registerMallocedBuffer(wholeChars)) {
+          if (maybecx) {
+            ReportOutOfMemory(maybecx);
+          }
+          return nullptr;
+        }
+        
+        bufferIfNursery->putWholeCell(&left);
+      } else if (inTenured && !left.isTenured()) {
+        
+        
+        nursery.removeMallocedBuffer(wholeChars);
+      }
+
+      
 
 
 
@@ -586,19 +607,6 @@ JSFlatString* JSRope::flattenInternal(JSContext* maybecx) {
         left.setLengthAndFlags(left_len, DEPENDENT_FLAGS | LATIN1_CHARS_BIT);
       }
       left.d.s.u3.base = (JSLinearString*)this; 
-      Nursery& nursery = runtimeFromMainThread()->gc.nursery();
-      bool inTenured = !bufferIfNursery;
-      if (!inTenured && left.isTenured()) {
-        
-        
-        nursery.registerMallocedBuffer(wholeChars);
-        
-        bufferIfNursery->putWholeCell(&left);
-      } else if (inTenured && !left.isTenured()) {
-        
-        
-        nursery.removeMallocedBuffer(wholeChars);
-      }
       goto visit_right_child;
     }
   }

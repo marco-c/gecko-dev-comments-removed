@@ -306,7 +306,7 @@ class Nursery {
   
   
   
-  bool registerMallocedBuffer(void* buffer);
+  MOZ_MUST_USE bool registerMallocedBuffer(void* buffer);
 
   
   void removeMallocedBuffer(void* buffer) {
