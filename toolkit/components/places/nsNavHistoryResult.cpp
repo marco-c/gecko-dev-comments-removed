@@ -1071,6 +1071,11 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_URILess(
   if (a->IsURI() && b->IsURI()) {
     
     value = a->mURI.Compare(b->mURI.get());
+  } else if (a->IsContainer() && !b->IsContainer()) {
+    
+    return -1;
+  } else if (b->IsContainer() && !a->IsContainer()) {
+    return 1;
   } else {
     
     value = SortComparison_StringLess(NS_ConvertUTF8toUTF16(a->mTitle),

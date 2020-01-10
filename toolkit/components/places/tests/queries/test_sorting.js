@@ -313,7 +313,7 @@ tests.push({
         isFolder: true,
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 4,
-        title: "a",
+        title: "y",
         isInQuery: true,
       },
 
@@ -334,7 +334,24 @@ tests.push({
         isFolder: true,
         parentGuid: PlacesUtils.bookmarks.toolbarGuid,
         index: 6,
-        title: "a",
+        title: "y",
+        isInQuery: true,
+      },
+
+      
+      {
+        isFolder: true,
+        parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+        index: 7,
+        title: "z",
+        isInQuery: true,
+      },
+
+      
+      {
+        isSeparator: true,
+        parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+        index: 8,
         isInQuery: true,
       },
     ];
@@ -342,6 +359,8 @@ tests.push({
     this._sortedData = [
       this._unsortedData[4],
       this._unsortedData[6],
+      this._unsortedData[7],
+      this._unsortedData[8],
       this._unsortedData[2],
       this._unsortedData[0],
       this._unsortedData[1],
