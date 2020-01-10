@@ -84,7 +84,9 @@ class ScrollAnchorContainer final {
 
 
 
-  void InvalidateAnchor();
+
+  enum class ScheduleSelection { No, Yes };
+  void InvalidateAnchor(ScheduleSelection = ScheduleSelection::Yes);
 
   
 
