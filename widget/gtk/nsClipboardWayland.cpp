@@ -118,10 +118,25 @@ char* DataOffer::GetData(wl_display* aDisplay, const char* aMimeType,
   struct pollfd fds;
   fds.fd = pipe_fd[0];
   fds.events = POLLIN;
+  int pollReturn = -1;
 
+#define MAX_CLIPBOARD_POLL_ATTEMPTS 10
+  for (int i = 0; i < MAX_CLIPBOARD_POLL_ATTEMPTS; i++) {
+    pollReturn = poll(&fds, 1, kClipboardTimeout / 1000);
+    
+    
+    
+    if (pollReturn >= 0) {
+      break;
+    }
+    
+    
+    if (errno != EINTR && errno != EAGAIN) {
+      break;
+    }
+  }
   
-  int ret = poll(&fds, 1, kClipboardTimeout / 1000);
-  if (!ret || ret == -1) {
+  if (pollReturn <= 0) {
     close(pipe_fd[0]);
     return nullptr;
   }
