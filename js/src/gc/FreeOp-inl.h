@@ -12,51 +12,45 @@
 #include "gc/ZoneAllocator.h"
 #include "js/RefCounted.h"
 
-namespace js {
-
-inline void FreeOp::free_(gc::Cell* cell, void* p, size_t nbytes,
-                          MemoryUse use) {
+inline void JSFreeOp::free_(Cell* cell, void* p, size_t nbytes, MemoryUse use) {
   if (p) {
     removeCellMemory(cell, nbytes, use);
     js_free(p);
   }
 }
 
-inline void FreeOp::freeLater(gc::Cell* cell, void* p, size_t nbytes,
-                              MemoryUse use) {
+inline void JSFreeOp::freeLater(Cell* cell, void* p, size_t nbytes,
+                                MemoryUse use) {
   if (p) {
     removeCellMemory(cell, nbytes, use);
     queueForFreeLater(p);
   }
 }
 
-inline void FreeOp::queueForFreeLater(void* p) {
+inline void JSFreeOp::queueForFreeLater(void* p) {
   
   
   MOZ_ASSERT(!isDefaultFreeOp());
 
   
   
-  AutoEnterOOMUnsafeRegion oomUnsafe;
+  js::AutoEnterOOMUnsafeRegion oomUnsafe;
   if (!freeLaterList.append(p)) {
-    oomUnsafe.crash("FreeOp::freeLater");
+    oomUnsafe.crash("JSFreeOp::freeLater");
   }
 }
 
 template <class T>
-inline void FreeOp::release(gc::Cell* cell, T* p, size_t nbytes,
-                            MemoryUse use) {
+inline void JSFreeOp::release(Cell* cell, T* p, size_t nbytes, MemoryUse use) {
   if (p) {
     removeCellMemory(cell, nbytes, use);
     p->Release();
   }
 }
 
-inline void FreeOp::removeCellMemory(gc::Cell* cell, size_t nbytes,
-                                     MemoryUse use) {
+inline void JSFreeOp::removeCellMemory(Cell* cell, size_t nbytes,
+                                       MemoryUse use) {
   RemoveCellMemory(cell, nbytes, use, isCollecting());
 }
-
-}  
 
 #endif  

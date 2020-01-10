@@ -19,9 +19,9 @@
 struct JSRuntime;
 
 namespace js {
-
 namespace gc {
 class AutoSetThreadIsPerformingGC;
+}  
 }  
 
 
@@ -31,19 +31,32 @@ class AutoSetThreadIsPerformingGC;
 
 
 
-class FreeOp : public JSFreeOp {
-  Vector<void*, 0, SystemAllocPolicy> freeLaterList;
-  jit::JitPoisonRangeVector jitPoisonRanges;
+class JSFreeOp {
+  using Cell = js::gc::Cell;
+  using MemoryUse = js::MemoryUse;
+
+  JSRuntime* runtime_;
+
+  
+  
+  
+  js::Vector<void*, 0, js::SystemAllocPolicy> freeLaterList;
+
+  js::jit::JitPoisonRangeVector jitPoisonRanges;
+
   const bool isDefault;
   bool isCollecting_;
 
-  friend class gc::AutoSetThreadIsPerformingGC;
+  friend class js::gc::AutoSetThreadIsPerformingGC;
 
  public:
-  static FreeOp* get(JSFreeOp* fop) { return static_cast<FreeOp*>(fop); }
+  explicit JSFreeOp(JSRuntime* maybeRuntime, bool isDefault = false);
+  ~JSFreeOp();
 
-  explicit FreeOp(JSRuntime* maybeRuntime, bool isDefault = false);
-  ~FreeOp();
+  JSRuntime* runtime() const {
+    MOZ_ASSERT(runtime_);
+    return runtime_;
+  }
 
   bool onMainThread() const { return runtime_ != nullptr; }
 
@@ -65,7 +78,7 @@ class FreeOp : public JSFreeOp {
   
   
   
-  void free_(gc::Cell* cell, void* p, size_t nbytes, MemoryUse use);
+  void free_(Cell* cell, void* p, size_t nbytes, MemoryUse use);
 
   
   
@@ -81,9 +94,9 @@ class FreeOp : public JSFreeOp {
   
   
   
-  void freeLater(gc::Cell* cell, void* p, size_t nbytes, MemoryUse use);
+  void freeLater(Cell* cell, void* p, size_t nbytes, MemoryUse use);
 
-  bool appendJitPoisonRange(const jit::JitPoisonRange& range) {
+  bool appendJitPoisonRange(const js::jit::JitPoisonRange& range) {
     
     
     MOZ_ASSERT(!isDefaultFreeOp());
@@ -109,7 +122,7 @@ class FreeOp : public JSFreeOp {
   
   
   template <class T>
-  void delete_(gc::Cell* cell, T* p, MemoryUse use) {
+  void delete_(Cell* cell, T* p, MemoryUse use) {
     delete_(cell, p, sizeof(T), use);
   }
 
@@ -120,7 +133,7 @@ class FreeOp : public JSFreeOp {
   
   
   template <class T>
-  void delete_(gc::Cell* cell, T* p, size_t nbytes, MemoryUse use) {
+  void delete_(Cell* cell, T* p, size_t nbytes, MemoryUse use) {
     if (p) {
       p->~T();
       free_(cell, p, nbytes, use);
@@ -139,7 +152,7 @@ class FreeOp : public JSFreeOp {
   
   
   template <class T>
-  void release(gc::Cell* cell, T* p, MemoryUse use) {
+  void release(Cell* cell, T* p, MemoryUse use) {
     release(cell, p, sizeof(T), use);
   }
 
@@ -150,16 +163,18 @@ class FreeOp : public JSFreeOp {
   
   
   template <class T>
-  void release(gc::Cell* cell, T* p, size_t nbytes, MemoryUse use);
+  void release(Cell* cell, T* p, size_t nbytes, MemoryUse use);
 
   
   
-  void removeCellMemory(gc::Cell* cell, size_t nbytes, MemoryUse use);
+  void removeCellMemory(Cell* cell, size_t nbytes, MemoryUse use);
 
  private:
   void queueForFreeLater(void* p);
 };
 
+namespace js {
+using FreeOp = JSFreeOp;
 }  
 
 #endif  
