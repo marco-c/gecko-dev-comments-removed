@@ -98,6 +98,11 @@ const lazyPreferenceManagement = requireLazy(() => {
 
 
 const symbolCache = new Map();
+
+
+
+
+
 async function getSymbolsFromThisBrowser(debugName, breakpadId) {
   if (symbolCache.size === 0) {
     

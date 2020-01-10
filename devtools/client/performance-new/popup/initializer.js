@@ -17,17 +17,27 @@
 
 
 
+{
+  
+  
+  
+
+  const { BrowserLoader } = ChromeUtils.import(
+    "resource://devtools/client/shared/browser-loader.js"
+  );
+  const browserLoader = BrowserLoader({
+    baseURI: "resource://devtools/client/performance-new/popup",
+    window,
+  });
+
+  
 
 
 
-
-const { BrowserLoader } = ChromeUtils.import(
-  "resource://devtools/client/shared/browser-loader.js"
-);
-const { require } = BrowserLoader({
-  baseURI: "resource://devtools/client/performance-new/popup/",
-  window,
-});
+  const scope = this;
+  scope.require = browserLoader.require;
+  scope.loader = browserLoader.loader;
+}
 
 
 

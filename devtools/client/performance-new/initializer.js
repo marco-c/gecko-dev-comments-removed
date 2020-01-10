@@ -3,21 +3,36 @@
 
 
 
+
+
+
+
+
+
 "use strict";
 
+{
+  
+  
+  
+
+  const { BrowserLoader } = ChromeUtils.import(
+    "resource://devtools/client/shared/browser-loader.js"
+  );
+  const browserLoader = BrowserLoader({
+    baseURI: "resource://devtools/client/performance-new/",
+    window,
+  });
+
+  
 
 
 
+  const scope = this;
+  scope.require = browserLoader.require;
+  scope.loader = browserLoader.loader;
+}
 
-
-
-const { BrowserLoader } = ChromeUtils.import(
-  "resource://devtools/client/shared/browser-loader.js"
-);
-const { require, loader } = BrowserLoader({
-  baseURI: "resource://devtools/client/performance-new/",
-  window,
-});
 const Perf = require("devtools/client/performance-new/components/Perf");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const React = require("devtools/client/shared/vendor/react");
