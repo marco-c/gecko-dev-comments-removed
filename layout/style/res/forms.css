@@ -138,6 +138,7 @@ input, textarea, select, button {
   text-transform: initial;
   word-spacing: initial;
   letter-spacing: initial;
+  
 }
 
 textarea > scrollbar {
