@@ -107,6 +107,7 @@ var validGradientAndElementValues = [
   "linear-gradient(#ffff00, #ef3, rgba(10, 20, 30, 0.4))",
   "linear-gradient(rgba(10, 20, 30, 0.4), #ffff00, #ef3)",
   "linear-gradient(red, green calc(50% + 20px), blue)",
+  "linear-gradient(180deg, red, blue)",
 
   "linear-gradient(to top, red, blue)",
   "linear-gradient(to bottom, red, blue)",
@@ -4760,14 +4761,6 @@ var gCSSProperties = {
   "text-underline-offset": {
     domProp: "textUnderlineOffset",
     inherited: true,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: [ "auto" ],
-    other_values: ["0", "-14px", "25px", "100em", "-45em"],
-    invalid_values: ["13", "-25", "rubbish", ",./!@#$", "43%", "-10%"]
-  },
-  "text-decoration-width": {
-    domProp: "textDecorationWidth",
-    inherited: false,
     type: CSS_TYPE_LONGHAND,
     initial_values: [ "auto" ],
     other_values: ["0", "-14px", "25px", "100em", "-45em"],
