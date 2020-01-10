@@ -122,57 +122,57 @@ class Checker {
 
   void StartReadOp() {
     uint32_t oldState = mState++;  
-    MOZ_ASSERT(IsIdle(oldState) || IsRead(oldState));
-    MOZ_ASSERT(oldState < kReadMax);  
+    MOZ_RELEASE_ASSERT(IsIdle(oldState) || IsRead(oldState));
+    MOZ_RELEASE_ASSERT(oldState < kReadMax);  
   }
 
   void EndReadOp() {
     uint32_t oldState = mState--;  
-    MOZ_ASSERT(IsRead(oldState));
+    MOZ_RELEASE_ASSERT(IsRead(oldState));
   }
 
   void StartWriteOp() {
-    MOZ_ASSERT(IsWritable());
+    MOZ_RELEASE_ASSERT(IsWritable());
     uint32_t oldState = mState.exchange(kWrite);
-    MOZ_ASSERT(IsIdle(oldState));
+    MOZ_RELEASE_ASSERT(IsIdle(oldState));
   }
 
   void EndWriteOp() {
     
     
     
-    MOZ_ASSERT(IsWritable());
+    MOZ_RELEASE_ASSERT(IsWritable());
     uint32_t oldState = mState.exchange(kIdle);
-    MOZ_ASSERT(IsWrite(oldState));
+    MOZ_RELEASE_ASSERT(IsWrite(oldState));
   }
 
   void StartIteratorRemovalOp() {
     
     
-    MOZ_ASSERT(IsWritable());
+    MOZ_RELEASE_ASSERT(IsWritable());
     uint32_t oldState = mState.exchange(kWrite);
-    MOZ_ASSERT(IsRead1(oldState));
+    MOZ_RELEASE_ASSERT(IsRead1(oldState));
   }
 
   void EndIteratorRemovalOp() {
     
     
     
-    MOZ_ASSERT(IsWritable());
+    MOZ_RELEASE_ASSERT(IsWritable());
     uint32_t oldState = mState.exchange(kRead1);
-    MOZ_ASSERT(IsWrite(oldState));
+    MOZ_RELEASE_ASSERT(IsWrite(oldState));
   }
 
   void StartDestructorOp() {
     
     
     uint32_t oldState = mState.exchange(kWrite);
-    MOZ_ASSERT(IsIdle(oldState));
+    MOZ_RELEASE_ASSERT(IsIdle(oldState));
   }
 
   void EndDestructorOp() {
     uint32_t oldState = mState.exchange(kIdle);
-    MOZ_ASSERT(IsWrite(oldState));
+    MOZ_RELEASE_ASSERT(IsWrite(oldState));
   }
 
  private:
