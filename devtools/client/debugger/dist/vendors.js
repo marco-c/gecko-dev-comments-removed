@@ -3625,17 +3625,6 @@ function getSourceNames(source) {
       gSourceNamesStore.set(source, result);
       return result;
     }
-  } 
-  
-
-
-  if (isScratchpadScheme(sourceStr)) {
-    let result = {
-      short: sourceStr,
-      long: sourceStr
-    };
-    gSourceNamesStore.set(source, result);
-    return result;
   }
 
   const parsedUrl = parseURL(sourceStr);
@@ -3689,14 +3678,6 @@ function getSourceNames(source) {
 
 function isColonSlashSlash(location, i = 0) {
   return location.charCodeAt(++i) === CHAR_CODE_COLON && location.charCodeAt(++i) === CHAR_CODE_SLASH && location.charCodeAt(++i) === CHAR_CODE_SLASH;
-}
-
-
-
-
-
-function isScratchpadScheme(location, i = 0) {
-  return location.charCodeAt(i) === CHAR_CODE_CAP_S && location.charCodeAt(++i) === CHAR_CODE_C && location.charCodeAt(++i) === CHAR_CODE_R && location.charCodeAt(++i) === CHAR_CODE_A && location.charCodeAt(++i) === CHAR_CODE_T && location.charCodeAt(++i) === CHAR_CODE_C && location.charCodeAt(++i) === CHAR_CODE_H && location.charCodeAt(++i) === CHAR_CODE_P && location.charCodeAt(++i) === CHAR_CODE_A && location.charCodeAt(++i) === CHAR_CODE_D && location.charCodeAt(++i) === CHAR_CODE_SLASH;
 }
 
 function isDataScheme(location, i = 0) {
@@ -3812,7 +3793,6 @@ function getSourceMappedFile(source) {
 module.exports = {
   parseURL,
   getSourceNames,
-  isScratchpadScheme,
   isChromeScheme,
   isContentScheme,
   isWASM,
@@ -4194,7 +4174,7 @@ module.exports = Telemetry;
 
 
 
-const punycode = __webpack_require__(62);
+const punycode = __webpack_require__(521);
 
 
 
@@ -6334,14 +6314,7 @@ module.exports = () => {};
 
  }),
 
- 6:
- (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
-
- }),
-
- 62:
+ 521:
  (function(module, exports, __webpack_require__) {
 
 (function(module, global) {var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -6878,6 +6851,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 }(this));
 
 }.call(exports, __webpack_require__(22)(module), __webpack_require__(15)))
+
+ }),
+
+ 6:
+ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 
  }),
 
