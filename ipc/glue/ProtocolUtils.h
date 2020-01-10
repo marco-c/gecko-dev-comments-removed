@@ -321,6 +321,10 @@ class IProtocol : public HasResultCodes {
 
   
   
+  virtual void ActorAlloc() {}
+
+  
+  
   
   
   virtual void ActorDealloc() {
