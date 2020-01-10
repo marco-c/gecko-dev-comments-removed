@@ -47,6 +47,20 @@ class CertificateSection extends HTMLElement {
       this.createTabSection(this.certs[i].tabName, i, certificateTabs);
     }
     this.setAccessibilityEventListeners();
+    this.addClassForPadding();
+  }
+
+  
+  
+  
+  addClassForPadding() {
+    let items = this.shadowRoot
+      .querySelector(".embedded-scts")
+      .shadowRoot.querySelectorAll(".version");
+
+    for (let i = 0; i < items.length; i++) {
+      items[i].classList.add("padding");
+    }
   }
 
   

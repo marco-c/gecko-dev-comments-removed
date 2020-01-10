@@ -22,6 +22,12 @@ export class InfoGroup extends HTMLElement {
     let title = this.shadowRoot.querySelector(".info-group-title");
     title.textContent = this.item.sectionTitle;
 
+    
+    
+    this.classList.add(
+      this.item.sectionTitle.replace(/\s+/g, "-").toLowerCase()
+    );
+
     for (let i = 0; i < this.item.sectionItems.length; i++) {
       this.shadowRoot.append(new InfoItem(this.item.sectionItems[i]));
     }
