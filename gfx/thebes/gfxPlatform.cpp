@@ -2657,6 +2657,13 @@ static FeatureState& WebRenderHardwareQualificationStatus(
               (deviceID >= 0x9900 && deviceID < 0x9a00)) {
             
             
+            
+#if !defined(XP_WIN) && !defined(NIGHTLY_BUILD)
+            featureWebRenderQualified.Disable(
+                FeatureStatus::BlockedReleaseChannelAMD,
+                "Release channel and AMD",
+                NS_LITERAL_CSTRING("FEATURE_FAILURE_RELEASE_CHANNEL_AMD"));
+#endif  
           } else {
             featureWebRenderQualified.Disable(
                 FeatureStatus::BlockedDeviceTooOld, "Device too old",
