@@ -26,12 +26,8 @@ class RemoteWebProgressRequest final : public nsIRemoteWebProgressRequest,
       : mURI(nullptr), mOriginalURI(nullptr), mMatchedList(VoidCString()) {}
 
   RemoteWebProgressRequest(nsIURI* aURI, nsIURI* aOriginalURI,
-                           const nsACString& aMatchedList,
-                           const Maybe<uint64_t>& aMaybeElapsedLoadTimeMS)
-      : mURI(aURI),
-        mOriginalURI(aOriginalURI),
-        mMatchedList(aMatchedList),
-        mMaybeElapsedLoadTimeMS(aMaybeElapsedLoadTimeMS) {}
+                           const nsACString& aMatchedList)
+      : mURI(aURI), mOriginalURI(aOriginalURI), mMatchedList(aMatchedList) {}
 
  protected:
   ~RemoteWebProgressRequest() = default;
@@ -40,13 +36,6 @@ class RemoteWebProgressRequest final : public nsIRemoteWebProgressRequest,
   nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIURI> mOriginalURI;
   nsCString mMatchedList;
-
-  
-  
-  
-  
-  
-  Maybe<uint64_t> mMaybeElapsedLoadTimeMS;
 };
 
 }  
