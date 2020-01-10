@@ -13,6 +13,7 @@
 #include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/layers/InputAPZContext.h"
 
 using namespace mozilla::ipc;
@@ -34,9 +35,12 @@ BrowserBridgeParent::~BrowserBridgeParent() { Destroy(); }
 
 nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
                                    const nsString& aRemoteType,
-                                   CanonicalBrowsingContext* aBrowsingContext,
+                                   const WindowGlobalInit& aWindowInit,
                                    const uint32_t& aChromeFlags, TabId aTabId) {
   mIPCOpen = true;
+
+  RefPtr<CanonicalBrowsingContext> browsingContext =
+      aWindowInit.browsingContext()->Canonical();
 
   
   
@@ -60,8 +64,8 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
 
   
   
-  aBrowsingContext->Group()->EnsureSubscribed(constructorSender);
-  aBrowsingContext->SetOwnerProcessId(constructorSender->ChildID());
+  browsingContext->Group()->EnsureSubscribed(constructorSender);
+  browsingContext->SetOwnerProcessId(constructorSender->ChildID());
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   cpm->RegisterRemoteFrame(aTabId, ContentParentId(0), TabId(0),
@@ -69,8 +73,8 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
                            constructorSender->ChildID());
 
   
-  RefPtr<BrowserParent> browserParent(new BrowserParent(
-      constructorSender, aTabId, tabContext, aBrowsingContext, aChromeFlags));
+  auto browserParent = MakeRefPtr<BrowserParent>(
+      constructorSender, aTabId, tabContext, browsingContext, aChromeFlags);
   browserParent->SetBrowserBridgeParent(this);
 
   
@@ -82,11 +86,23 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
     return NS_ERROR_FAILURE;
   }
 
+  auto windowParent =
+      MakeRefPtr<WindowGlobalParent>(aWindowInit,  false);
+
+  
+  ManagedEndpoint<PWindowGlobalChild> windowChildEp =
+      browserParent->OpenPWindowGlobalEndpoint(do_AddRef(windowParent).take());
+  if (NS_WARN_IF(!windowChildEp.IsValid())) {
+    MOZ_ASSERT(false, "WindowGlobal Open Endpoint Failed");
+    return NS_ERROR_FAILURE;
+  }
+
   
   bool ok = constructorSender->SendConstructBrowser(
-      std::move(childEp), aTabId, TabId(0), tabContext.AsIPCTabContext(),
-      aBrowsingContext, aChromeFlags, constructorSender->ChildID(),
-      constructorSender->IsForBrowser(),  false);
+      std::move(childEp), std::move(windowChildEp), aTabId, TabId(0),
+      tabContext.AsIPCTabContext(), aWindowInit, aChromeFlags,
+      constructorSender->ChildID(), constructorSender->IsForBrowser(),
+       false);
   if (NS_WARN_IF(!ok)) {
     MOZ_ASSERT(false, "Browser Constructor Failed");
     return NS_ERROR_FAILURE;
@@ -96,6 +112,8 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
   mBrowserParent = browserParent.forget();
   mBrowserParent->SetOwnerElement(Manager()->GetOwnerElement());
   mBrowserParent->InitRendering();
+
+  windowParent->Init(aWindowInit);
 
   
   Unused << SendSetLayersId(mBrowserParent->GetLayersId());
@@ -114,7 +132,6 @@ BrowserParent* BrowserBridgeParent::Manager() {
 void BrowserBridgeParent::Destroy() {
   if (mBrowserParent) {
     mBrowserParent->Destroy();
-    mBrowserParent->SetBrowserBridgeParent(nullptr);
     mBrowserParent = nullptr;
   }
 }
