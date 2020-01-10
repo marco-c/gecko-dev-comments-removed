@@ -866,6 +866,15 @@ void MediaTrackGraphImpl::DeviceChanged() {
     MediaTrackGraphImpl* mGraphImpl;
   };
 
+  if (mMainThreadTrackCount == 0 && mMainThreadPortCount == 0) {
+    
+    
+    
+    
+    
+    return;
+  }
+
   
   MOZ_ASSERT(NS_IsMainThread());
   mAudioOutputLatency = 0.0;
