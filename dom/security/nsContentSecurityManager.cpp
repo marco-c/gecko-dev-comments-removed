@@ -35,6 +35,35 @@ NS_IMPL_ISUPPORTS(nsContentSecurityManager, nsIContentSecurityManager,
 static mozilla::LazyLogModule sCSMLog("CSMLog");
 
 
+
+
+static nsLiteralCString evalWhitelist[] = {
+    
+    NS_LITERAL_CSTRING("resource://testing-common/sinon-7.2.7.js"),
+    
+    NS_LITERAL_CSTRING("resource://testing-common/ajv-4.1.1.js"),
+    
+    NS_LITERAL_CSTRING("resource://testing-common/content-task.js"),
+
+    
+    
+
+    
+    NS_LITERAL_CSTRING("chrome://global/content/bindings/autocomplete.xml"),
+    
+    NS_LITERAL_CSTRING("resource://devtools/client/shared/vendor/redux.js"),
+    
+    NS_LITERAL_CSTRING(
+        "resource://devtools/client/shared/vendor/react-redux.js"),
+    
+    NS_LITERAL_CSTRING("resource://devtools/client/shared/vendor/lodash.js"),
+    
+    NS_LITERAL_CSTRING("resource://devtools/client/shared/vendor/jszip.js"),
+    
+    NS_LITERAL_CSTRING("resource://devtools/client/shared/vendor/jsol.js"),
+};
+
+
 bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
     nsIChannel* aChannel) {
   
@@ -167,36 +196,26 @@ void nsContentSecurityManager::AssertEvalNotUsingSystemPrincipal(
     return;
   }
 
-  if (Preferences::GetBool("security.allow_eval_with_system_principal")) {
+  
+  if (StaticPrefs::security_allow_eval_with_system_principal()) {
     return;
   }
 
-  static StaticAutoPtr<nsTArray<nsCString>> sUrisAllowEval;
   JS::AutoFilename scriptFilename;
   if (JS::DescribeScriptedCaller(cx, &scriptFilename)) {
-    if (!sUrisAllowEval) {
-      sUrisAllowEval = new nsTArray<nsCString>();
-      nsAutoCString urisAllowEval;
-      Preferences::GetCString("security.uris_using_eval_with_system_principal",
-                              urisAllowEval);
-      for (const nsACString& filenameString : urisAllowEval.Split(',')) {
-        sUrisAllowEval->AppendElement(filenameString);
-      }
-      ClearOnShutdown(&sUrisAllowEval);
-    }
+    nsDependentCSubstring fileName(scriptFilename.get(),
+                                   strlen(scriptFilename.get()));
 
-    nsAutoCString fileName;
-    fileName = nsAutoCString(scriptFilename.get());
+    ToLowerCase(fileName);
     
     
     int32_t fileNameIndex = fileName.FindChar(' ');
     if (fileNameIndex != -1) {
-      fileName = Substring(fileName, 0, fileNameIndex);
+      fileName.SetLength(fileNameIndex);
     }
-    ToLowerCase(fileName);
 
-    for (auto& uriEntry : *sUrisAllowEval) {
-      if (StringEndsWith(fileName, uriEntry)) {
+    for (const nsLiteralCString& whitelistEntry : evalWhitelist) {
+      if (fileName.Equals(whitelistEntry)) {
         return;
       }
     }
