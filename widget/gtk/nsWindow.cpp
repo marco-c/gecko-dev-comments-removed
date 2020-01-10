@@ -1208,6 +1208,7 @@ GtkWidget* nsWindow::ConfigureWaylandPopupWindows() {
       if (frame) {
         menuPopupFrame = do_QueryFrame(frame);
       }
+
       
       
       
@@ -1217,9 +1218,21 @@ GtkWidget* nsWindow::ConfigureWaylandPopupWindows() {
         return GTK_WIDGET(parentWidget);
       }
 
+      LOG(("...[%p] is %s\n", (void*)this,
+           menuPopupFrame->IsContextMenu() ? "context menu" : "popup"));
+
       nsWindow* parentWindow =
           static_cast<nsWindow*>(menuPopupFrame->GetParentMenuWidget());
       LOG(("...[%p] GetParentMenuWidget() = %p\n", (void*)this, parentWindow));
+
+      
+      
+      
+      
+      if (!parentWindow && !menuPopupFrame->IsContextMenu()) {
+        parentWindow =
+            get_window_for_gtk_widget(GTK_WIDGET(mToplevelParentWindow));
+      }
 
       if (!parentWindow) {
         LOG(("...[%p] using active/visible popups as a parent [%p]\n",
