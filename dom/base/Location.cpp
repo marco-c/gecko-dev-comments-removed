@@ -766,7 +766,7 @@ void Location::Reload(bool aForceget, ErrorResult& aRv) {
   }
 
   nsresult rv = nsDocShell::Cast(docShell)->Reload(reloadFlags);
-  if (rv != NS_BINDING_ABORTED) {
+  if (NS_FAILED(rv) && rv != NS_BINDING_ABORTED) {
     
     
     
