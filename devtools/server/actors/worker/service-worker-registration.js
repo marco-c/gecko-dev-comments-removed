@@ -204,6 +204,51 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
       swm.sendPushEvent(originAttributes, scope);
     },
 
+    
+
+
+    preventShutdown() {
+      if (!swm.isParentInterceptEnabled()) {
+        
+        throw new Error(
+          "ServiceWorkerRegistrationActor.preventShutdown can only be used " +
+            "in parent-intercept mode"
+        );
+      }
+
+      if (!this._registration.activeWorker) {
+        throw new Error(
+          "ServiceWorkerRegistrationActor.preventShutdown could not find " +
+            "activeWorker in parent-intercept mode"
+        );
+      }
+
+      
+      this._registration.activeWorker.attachDebugger();
+    },
+
+    
+
+
+    allowShutdown() {
+      if (!swm.isParentInterceptEnabled()) {
+        
+        throw new Error(
+          "ServiceWorkerRegistrationActor.allowShutdown can only be used " +
+            "in parent-intercept mode"
+        );
+      }
+
+      if (!this._registration.activeWorker) {
+        throw new Error(
+          "ServiceWorkerRegistrationActor.allowShutdown could not find " +
+            "activeWorker in parent-intercept mode"
+        );
+      }
+
+      this._registration.activeWorker.detachDebugger();
+    },
+
     getPushSubscription() {
       const registration = this._registration;
       let pushSubscriptionActor = this._pushSubscriptionActor;

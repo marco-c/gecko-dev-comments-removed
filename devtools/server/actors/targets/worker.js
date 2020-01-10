@@ -42,6 +42,9 @@ const WorkerTargetActor = protocol.ActorClassWithSpec(workerTargetSpec, {
       threadActor: this._threadActor,
       id: this._dbg.id,
       url: this._dbg.url,
+      traits: {
+        isParentInterceptEnabled: swm.isParentInterceptEnabled(),
+      },
       type: this._dbg.type,
     };
     if (this._dbg.type === Ci.nsIWorkerDebugger.TYPE_SERVICE) {
@@ -70,13 +73,10 @@ const WorkerTargetActor = protocol.ActorClassWithSpec(workerTargetSpec, {
     }
 
     if (!this._attached) {
-      
-      
-      if (this._dbg.type == Ci.nsIWorkerDebugger.TYPE_SERVICE) {
-        const worker = this._getServiceWorkerInfo();
-        if (worker) {
-          worker.attachDebugger();
-        }
+      const isServiceWorker =
+        this._dbg.type == Ci.nsIWorkerDebugger.TYPE_SERVICE;
+      if (isServiceWorker) {
+        this._preventServiceWorkerShutdown();
       }
       this._dbg.addListener(this);
       this._attached = true;
@@ -189,15 +189,46 @@ const WorkerTargetActor = protocol.ActorClassWithSpec(workerTargetSpec, {
       
     }
 
-    if (type == Ci.nsIWorkerDebugger.TYPE_SERVICE) {
-      const worker = this._getServiceWorkerInfo();
-      if (worker) {
-        worker.detachDebugger();
-      }
+    const isServiceWorker = type == Ci.nsIWorkerDebugger.TYPE_SERVICE;
+    if (isServiceWorker) {
+      this._allowServiceWorkerShutdown();
     }
 
     this._dbg.removeListener(this);
     this._attached = false;
+  },
+
+  
+
+
+
+
+  _preventServiceWorkerShutdown() {
+    if (swm.isParentInterceptEnabled()) {
+      
+      
+      
+      return;
+    }
+
+    const worker = this._getServiceWorkerInfo();
+    if (worker) {
+      worker.attachDebugger();
+    }
+  },
+
+  
+
+
+  _allowServiceWorkerShutdown() {
+    if (swm.isParentInterceptEnabled()) {
+      return;
+    }
+
+    const worker = this._getServiceWorkerInfo();
+    if (worker) {
+      worker.detachDebugger();
+    }
   },
 });
 
