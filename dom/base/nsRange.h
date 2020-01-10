@@ -306,6 +306,21 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   bool CanAccess(const nsINode&) const;
 
+  void AdjustNextRefsOnCharacterDataSplit(const nsIContent& aContent,
+                                          const CharacterDataChangeInfo& aInfo);
+
+  struct RangeBoundariesAndRoot {
+    RawRangeBoundary mStart;
+    RawRangeBoundary mEnd;
+    nsINode* mRoot = nullptr;
+  };
+
+  
+
+
+  RangeBoundariesAndRoot DetermineNewRangeBoundariesAndRootOnCharacterDataMerge(
+      nsIContent* aContent, const CharacterDataChangeInfo& aInfo) const;
+
  public:
   
 

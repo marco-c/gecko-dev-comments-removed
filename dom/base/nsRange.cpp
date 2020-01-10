@@ -405,11 +405,91 @@ void nsRange::UnregisterCommonAncestor(nsINode* aNode, bool aIsUnlinking) {
   }
 }
 
+void nsRange::AdjustNextRefsOnCharacterDataSplit(
+    const nsIContent& aContent, const CharacterDataChangeInfo& aInfo) {
+  
+  
+  
+  
+  
+  
+  
+  nsINode* parentNode = aContent.GetParentNode();
+  if (parentNode == mEnd.Container()) {
+    if (&aContent == mEnd.Ref()) {
+      MOZ_ASSERT(aInfo.mDetails->mNextSibling);
+      mNextEndRef = aInfo.mDetails->mNextSibling;
+    }
+  }
+
+  if (parentNode == mStart.Container()) {
+    if (&aContent == mStart.Ref()) {
+      MOZ_ASSERT(aInfo.mDetails->mNextSibling);
+      mNextStartRef = aInfo.mDetails->mNextSibling;
+    }
+  }
+}
+
+nsRange::RangeBoundariesAndRoot
+nsRange::DetermineNewRangeBoundariesAndRootOnCharacterDataMerge(
+    nsIContent* aContent, const CharacterDataChangeInfo& aInfo) const {
+  RawRangeBoundary newStart;
+  RawRangeBoundary newEnd;
+  nsINode* newRoot = nullptr;
+
+  
+  
+  nsIContent* removed = aInfo.mDetails->mNextSibling;
+  if (removed == mStart.Container()) {
+    CheckedUint32 newStartOffset{mStart.Offset()};
+    newStartOffset += aInfo.mChangeStart;
+
+    
+    
+    newStart = {aContent, newStartOffset.value()};
+    if (MOZ_UNLIKELY(removed == mRoot)) {
+      newRoot = RangeUtils::ComputeRootNode(newStart.Container());
+    }
+  }
+  if (removed == mEnd.Container()) {
+    CheckedUint32 newEndOffset{mEnd.Offset()};
+    newEndOffset += aInfo.mChangeStart;
+
+    
+    
+    newEnd = {aContent, newEndOffset.value()};
+    if (MOZ_UNLIKELY(removed == mRoot)) {
+      newRoot = {RangeUtils::ComputeRootNode(newEnd.Container())};
+    }
+  }
+  
+  
+  
+  
+  
+  
+  nsINode* parentNode = aContent->GetParentNode();
+  if (parentNode == mStart.Container() && mStart.Offset() > 0 &&
+      mStart.Offset() < parentNode->GetChildCount() &&
+      removed == mStart.GetChildAtOffset()) {
+    newStart = {aContent, aInfo.mChangeStart};
+  }
+  if (parentNode == mEnd.Container() && mEnd.Offset() > 0 &&
+      mEnd.Offset() < parentNode->GetChildCount() &&
+      removed == mEnd.GetChildAtOffset()) {
+    newEnd = {aContent, aInfo.mChangeEnd};
+  }
+
+  return {newStart, newEnd, newRoot};
+}
+
 
 
 
 void nsRange::CharacterDataChanged(nsIContent* aContent,
                                    const CharacterDataChangeInfo& aInfo) {
+  MOZ_ASSERT(aContent);
+
   
   
   if (!mIsPositioned) {
@@ -426,27 +506,7 @@ void nsRange::CharacterDataChanged(nsIContent* aContent,
 
   if (aInfo.mDetails &&
       aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eSplit) {
-    
-    
-    
-    
-    
-    
-    
-    nsINode* parentNode = aContent->GetParentNode();
-    if (parentNode == mEnd.Container()) {
-      if (aContent == mEnd.Ref()) {
-        MOZ_ASSERT(aInfo.mDetails->mNextSibling);
-        mNextEndRef = aInfo.mDetails->mNextSibling;
-      }
-    }
-
-    if (parentNode == mStart.Container()) {
-      if (aContent == mStart.Ref()) {
-        MOZ_ASSERT(aInfo.mDetails->mNextSibling);
-        mNextStartRef = aInfo.mDetails->mNextSibling;
-      }
-    }
+    AdjustNextRefsOnCharacterDataSplit(*aContent, aInfo);
   }
 
   
@@ -538,48 +598,15 @@ void nsRange::CharacterDataChanged(nsIContent* aContent,
 
   if (aInfo.mDetails &&
       aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eMerge) {
-    
-    
-    nsIContent* removed = aInfo.mDetails->mNextSibling;
-    if (removed == mStart.Container()) {
-      CheckedUint32 newStartOffset{mStart.Offset()};
-      newStartOffset += aInfo.mChangeStart;
+    MOZ_ASSERT(!newStart.IsSet());
+    MOZ_ASSERT(!newEnd.IsSet());
 
-      
-      
-      newStart = {aContent, newStartOffset.value()};
-      if (MOZ_UNLIKELY(removed == mRoot)) {
-        newRoot = RangeUtils::ComputeRootNode(newStart.Container());
-      }
-    }
-    if (removed == mEnd.Container()) {
-      CheckedUint32 newEndOffset{mEnd.Offset()};
-      newEndOffset += aInfo.mChangeStart;
+    RangeBoundariesAndRoot rangeBoundariesAndRoot =
+        DetermineNewRangeBoundariesAndRootOnCharacterDataMerge(aContent, aInfo);
 
-      
-      
-      newEnd = {aContent, newEndOffset.value()};
-      if (MOZ_UNLIKELY(removed == mRoot)) {
-        newRoot = RangeUtils::ComputeRootNode(newEnd.Container());
-      }
-    }
-    
-    
-    
-    
-    
-    
-    nsINode* parentNode = aContent->GetParentNode();
-    if (parentNode == mStart.Container() && mStart.Offset() > 0 &&
-        mStart.Offset() < parentNode->GetChildCount() &&
-        removed == mStart.GetChildAtOffset()) {
-      newStart = {aContent, aInfo.mChangeStart};
-    }
-    if (parentNode == mEnd.Container() && mEnd.Offset() > 0 &&
-        mEnd.Offset() < parentNode->GetChildCount() &&
-        removed == mEnd.GetChildAtOffset()) {
-      newEnd = {aContent, aInfo.mChangeEnd};
-    }
+    newStart = rangeBoundariesAndRoot.mStart;
+    newEnd = rangeBoundariesAndRoot.mEnd;
+    newRoot = rangeBoundariesAndRoot.mRoot;
   }
 
   if (newStart.IsSet() || newEnd.IsSet()) {
