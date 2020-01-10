@@ -369,6 +369,9 @@ function onEditorKeypress({ ed, Editor }, cm, event) {
       break;
     case KeyCodes.DOM_VK_ESCAPE:
       if (autocompleteOpts.popup.isOpen) {
+        
+        autocompleteOpts.doNotAutocomplete = true;
+        autocompleteOpts.popup.hidePopup();
         event.preventDefault();
       }
       break;
