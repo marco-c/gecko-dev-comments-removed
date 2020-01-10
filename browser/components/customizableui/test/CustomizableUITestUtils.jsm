@@ -130,16 +130,11 @@ class CustomizableUITestUtils {
     await this.window.promiseDocumentFlushed(() => {});
 
     
-    
-    
     let navbar = this.window.document.getElementById(
       CustomizableUI.AREA_NAVBAR
     );
     await TestUtils.waitForCondition(() => {
-      
-      
-      
-      return navbar.overflowable._lastOverflowCounter === 0;
+      return !navbar.overflowable.isHandlingOverflow();
     });
 
     let searchbar = this.window.document.getElementById("searchbar");

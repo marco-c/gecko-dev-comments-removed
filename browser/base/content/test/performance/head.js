@@ -276,7 +276,7 @@ function forceImmediateToolbarOverflowHandling(win) {
     
     let dwu = win.windowUtils;
     dwu.ensureDirtyRootFrame();
-    overflowableToolbar._onLazyResize();
+    overflowableToolbar._checkOverflow();
   }
 }
 

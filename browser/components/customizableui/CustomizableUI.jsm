@@ -4725,14 +4725,17 @@ const OVERFLOW_PANEL_HIDE_DELAY_MS = 500;
 
 function OverflowableToolbar(aToolbarNode) {
   this._toolbar = aToolbarNode;
+  this._target = CustomizableUI.getCustomizationTarget(this._toolbar);
+  if (this._target.parentNode != this._toolbar) {
+    throw new Error(
+      "Customization target must be a direct child of an overflowable toolbar."
+    );
+  }
   this._collapsed = new Map();
   this._enabled = true;
-  this._toolbar.addEventListener("overflow", this);
-  this._toolbar.addEventListener("underflow", this);
 
   this._toolbar.setAttribute("overflowable", "true");
   let doc = this._toolbar.ownerDocument;
-  this._target = CustomizableUI.getCustomizationTarget(this._toolbar);
   this._list = doc.getElementById(this._toolbar.getAttribute("overflowtarget"));
   this._list._customizationTarget = this._list;
 
@@ -4746,8 +4749,6 @@ function OverflowableToolbar(aToolbarNode) {
 
 OverflowableToolbar.prototype = {
   initialized: false,
-  _forceOnOverflow: false,
-  _addedListener: false,
 
   observe(aSubject, aTopic, aData) {
     if (
@@ -4779,21 +4780,13 @@ OverflowableToolbar.prototype = {
     CustomizableUIInternal.addPanelCloseListeners(this._panel);
 
     CustomizableUI.addListener(this);
-    this._addedListener = true;
 
-    
-    if (this.overflowedDuringConstruction) {
-      log.debug("Overflowed when constructed, running overflow handler now.");
-      this.onOverflow(this.overflowedDuringConstruction);
-      this.overflowedDuringConstruction = null;
-    }
+    this._checkOverflow();
 
     this.initialized = true;
   },
 
   uninit() {
-    this._toolbar.removeEventListener("overflow", this._toolbar);
-    this._toolbar.removeEventListener("underflow", this._toolbar);
     this._toolbar.removeAttribute("overflowable");
 
     if (!this.initialized) {
@@ -4813,28 +4806,11 @@ OverflowableToolbar.prototype = {
     this._chevron.removeEventListener("dragend", this);
     this._panel.removeEventListener("popuphiding", this);
     CustomizableUI.removeListener(this);
-    this._addedListener = false;
     CustomizableUIInternal.removePanelCloseListeners(this._panel);
   },
 
   handleEvent(aEvent) {
     switch (aEvent.type) {
-      case "overflow":
-        
-        if (aEvent.detail > 0 && aEvent.target == this._target) {
-          if (this.initialized) {
-            this.onOverflow(aEvent);
-          } else {
-            this.overflowedDuringConstruction = aEvent;
-          }
-        }
-        break;
-      case "underflow":
-        
-        if (aEvent.detail > 0 && aEvent.target == this._target) {
-          this.overflowedDuringConstruction = null;
-        }
-        break;
       case "aftercustomization":
         this._enable();
         break;
@@ -4915,6 +4891,13 @@ OverflowableToolbar.prototype = {
     });
   },
 
+  
+
+
+  isHandlingOverflow() {
+    return !!this._onOverflowHandle;
+  },
+
   _onClickChevron(aEvent) {
     if (this._chevron.open) {
       this._chevron.open = false;
@@ -4944,47 +4927,67 @@ OverflowableToolbar.prototype = {
   
 
 
-  _lastOverflowCounter: 0,
+
+
+  async _getOverflowInfo() {
+    let win = this._target.ownerGlobal;
+    let totalAvailWidth;
+    let targetWidth;
+    await win.promiseDocumentFlushed(() => {
+      let style = win.getComputedStyle(this._toolbar);
+      totalAvailWidth =
+        this._toolbar.clientWidth -
+        parseFloat(style.borderLeftWidth) -
+        parseFloat(style.borderRightWidth) -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight);
+      for (let child of this._toolbar.children) {
+        if (child.nodeName == "panel") {
+          
+          
+          continue;
+        }
+        style = win.getComputedStyle(child);
+        if (style.display == "none") {
+          continue;
+        }
+        totalAvailWidth -=
+          parseFloat(style.marginLeft) + parseFloat(style.marginRight);
+        if (child != this._target) {
+          totalAvailWidth -= child.clientWidth;
+        }
+      }
+      targetWidth = this._target.clientWidth;
+    });
+    log.debug(
+      `Getting overflow info: target width: ${targetWidth}; available width: ${totalAvailWidth}`
+    );
+    return [targetWidth > totalAvailWidth, totalAvailWidth];
+  },
 
   
 
 
-
-
-
-
-
-  async onOverflow(aEvent) {
+  async _onOverflow() {
     if (!this._enabled) {
       return;
     }
 
-    log.debug(`Got overflow event`);
-    let child = this._target.lastElementChild;
-
-    let thisOverflowResponse = ++this._lastOverflowCounter;
-
     let win = this._target.ownerGlobal;
-    let [scrollLeftMin, scrollLeftMax] = await win.promiseDocumentFlushed(
-      () => {
-        return [this._target.scrollLeftMin, this._target.scrollLeftMax];
-      }
-    );
-    log.debug(
-      `Overflow event layout: scrollLeft min: ${scrollLeftMin}; max: ${scrollLeftMax}`
-    );
-    if (win.closed || this._lastOverflowCounter != thisOverflowResponse) {
-      log.debug(
-        `Stop responding to overflow because we're ${thisOverflowResponse} ` +
-          `and ${this._lastOverflowCounter} is the last one.`
-      );
+    let onOverflowHandle = {};
+    this._onOverflowHandle = onOverflowHandle;
+
+    let [isOverflowing] = await this._getOverflowInfo();
+
+    
+    
+    if (win.closed || this._onOverflowHandle != onOverflowHandle) {
+      log.debug("Window closed or another overflow handler started.");
       return;
     }
 
-    while (child && scrollLeftMin != scrollLeftMax) {
-      log.debug(
-        `Try to overflow ${child.id} given ${scrollLeftMin} != ${scrollLeftMax}`
-      );
+    let child = this._target.lastElementChild;
+    while (child && isOverflowing) {
       let prevChild = child.previousElementSibling;
 
       if (child.getAttribute("overflows") != "false") {
@@ -5003,39 +5006,34 @@ OverflowableToolbar.prototype = {
         );
 
         this._list.insertBefore(child, this._list.firstElementChild);
-        if (!this._addedListener) {
-          CustomizableUI.addListener(this);
-        }
         if (!CustomizableUI.isSpecialWidget(child.id)) {
           this._toolbar.setAttribute("overflowing", "true");
         }
       }
       child = prevChild;
-      [scrollLeftMin, scrollLeftMax] = await win.promiseDocumentFlushed(() => {
-        return [this._target.scrollLeftMin, this._target.scrollLeftMax];
-      });
+      [isOverflowing] = await this._getOverflowInfo();
       
       
-      if (win.closed || this._lastOverflowCounter != thisOverflowResponse) {
-        log.debug(`Window closed or another overflow handler started.`);
+      if (win.closed || this._onOverflowHandle != onOverflowHandle) {
+        log.debug("Window closed or another overflow handler started.");
         return;
       }
     }
 
     win.UpdateUrlbarSearchSplitterState();
-    
-    this._lastOverflowCounter = 0;
+
+    this._onOverflowHandle = null;
   },
 
   _onResize(aEvent) {
     
-    if (aEvent.target != aEvent.target.ownerGlobal.top) {
+    if (aEvent.target != aEvent.currentTarget) {
       return;
     }
     log.debug("Got resize event");
     if (!this._lazyResizeHandler) {
       this._lazyResizeHandler = new DeferredTask(
-        this._onLazyResize.bind(this),
+        this._checkOverflow.bind(this),
         LAZY_RESIZE_INTERVAL_MS,
         0
       );
@@ -5055,26 +5053,41 @@ OverflowableToolbar.prototype = {
 
 
 
-  _moveItemsBackToTheirOrigin(shouldMoveAllItems, targetWidth) {
+  async _moveItemsBackToTheirOrigin(shouldMoveAllItems, totalAvailWidth) {
     log.debug(
       `Attempting to move ${shouldMoveAllItems ? "all" : "some"} items back`
     );
     let placements = gPlacements.get(this._toolbar.id);
     let win = this._target.ownerGlobal;
+    let moveItemsBackToTheirOriginHandle = {};
+    this._moveItemsBackToTheirOriginHandle = moveItemsBackToTheirOriginHandle;
+
     while (this._list.firstElementChild) {
       let child = this._list.firstElementChild;
       let minSize = this._collapsed.get(child.id);
       log.debug(`Considering moving ${child.id} back, minSize: ${minSize}`);
 
       if (!shouldMoveAllItems && minSize) {
-        if (!targetWidth) {
-          let dwu = win.windowUtils;
-          targetWidth = Math.floor(
-            dwu.getBoundsWithoutFlushing(this._target).width
-          );
+        if (!totalAvailWidth) {
+          [, totalAvailWidth] = await this._getOverflowInfo();
+
+          
+          
+          if (
+            win.closed ||
+            this._moveItemsBackToTheirOriginHandle !=
+              moveItemsBackToTheirOriginHandle
+          ) {
+            log.debug(
+              "Window closed or _moveItemsBackToTheirOrigin called again."
+            );
+            return;
+          }
         }
-        if (targetWidth <= minSize) {
-          log.debug(`Need ${minSize} but width is ${targetWidth} so bailing`);
+        if (totalAvailWidth <= minSize) {
+          log.debug(
+            `Need ${minSize} but width is ${totalAvailWidth} so bailing`
+          );
           break;
         }
       }
@@ -5122,54 +5135,47 @@ OverflowableToolbar.prototype = {
     if (collapsedWidgetIds.every(w => CustomizableUI.isSpecialWidget(w))) {
       this._toolbar.removeAttribute("overflowing");
     }
-    if (this._addedListener && !this._collapsed.size) {
-      CustomizableUI.removeListener(this);
-      this._addedListener = false;
-    }
+
+    this._moveItemsBackToTheirOriginHandle = null;
   },
 
-  async _onLazyResize() {
+  async _checkOverflow() {
     if (!this._enabled) {
       return;
     }
-    log.debug("Processing resize event");
+    log.debug("Checking overflow");
 
     let win = this._target.ownerGlobal;
-    let [min, max, targetWidth] = await win.promiseDocumentFlushed(() => {
-      return [
-        this._target.scrollLeftMin,
-        this._target.scrollLeftMax,
-        this._target.clientWidth,
-      ];
-    });
+    let [isOverflowing, totalAvailWidth] = await this._getOverflowInfo();
     if (win.closed) {
       return;
     }
-    log.debug(
-      `Got layout information after resize, scroll min: ${min}; max: ${max}`
-    );
-    if (min != max) {
-      this.onOverflow();
+
+    if (isOverflowing) {
+      this._onOverflow();
     } else {
-      this._moveItemsBackToTheirOrigin(false, targetWidth);
+      this._moveItemsBackToTheirOrigin(false, totalAvailWidth);
     }
   },
 
   _disable() {
-    this._enabled = false;
     this._moveItemsBackToTheirOrigin(true);
     if (this._lazyResizeHandler) {
       this._lazyResizeHandler.disarm();
     }
+    this._enabled = false;
   },
 
   _enable() {
     this._enabled = true;
-    this.onOverflow();
+    this._checkOverflow();
   },
 
   onWidgetBeforeDOMChange(aNode, aNextNode, aContainer) {
-    if (aContainer != this._target && aContainer != this._list) {
+    if (
+      !this._enabled ||
+      (aContainer != this._target && aContainer != this._list)
+    ) {
       return;
     }
     
@@ -5192,11 +5198,13 @@ OverflowableToolbar.prototype = {
   },
 
   onWidgetAfterDOMChange(aNode, aNextNode, aContainer) {
-    if (aContainer != this._target && aContainer != this._list) {
+    if (
+      !this._enabled ||
+      (aContainer != this._target && aContainer != this._list)
+    ) {
       return;
     }
 
-    let nowInBar = aNode.parentNode == aContainer;
     let nowOverflowed = aNode.parentNode == this._list;
     let wasOverflowed = this._collapsed.has(aNode.id);
 
@@ -5222,14 +5230,7 @@ OverflowableToolbar.prototype = {
           aNode,
           this._target
         );
-      } else if (!nowInBar) {
-        
-        
-        
-        this._moveItemsBackToTheirOrigin(true);
       }
-      
-      
     } else if (!nowOverflowed) {
       
       
@@ -5247,20 +5248,16 @@ OverflowableToolbar.prototype = {
       if (collapsedWidgetIds.every(w => CustomizableUI.isSpecialWidget(w))) {
         this._toolbar.removeAttribute("overflowing");
       }
-      if (this._addedListener && !this._collapsed.size) {
-        CustomizableUI.removeListener(this);
-        this._addedListener = false;
-      }
     } else if (aNode.previousElementSibling) {
       
       let prevId = aNode.previousElementSibling.id;
       let minSize = this._collapsed.get(prevId);
       this._collapsed.set(aNode.id, minSize);
-    } else {
-      
-      
-      this._moveItemsBackToTheirOrigin(false);
     }
+
+    
+    
+    this._checkOverflow();
   },
 
   findOverflowedInsertionPoints(aNode) {
