@@ -679,7 +679,7 @@ impl RasterSpace {
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub enum MixBlendMode {
     Normal = 0,
     Multiply = 1,
@@ -701,7 +701,7 @@ pub enum MixBlendMode {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub enum FilterPrimitiveInput {
     
     Original,
@@ -712,7 +712,7 @@ pub enum FilterPrimitiveInput {
 }
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub struct BlendPrimitive {
     pub input1: FilterPrimitiveInput,
     pub input2: FilterPrimitiveInput,
@@ -721,7 +721,7 @@ pub struct BlendPrimitive {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub enum FilterPrimitive {
     Blend(BlendPrimitive),
 }

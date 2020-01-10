@@ -3,7 +3,7 @@
 
 
 use api::{
-    ColorU, MixBlendMode,
+    ColorU, MixBlendMode, FilterPrimitive,
     PropertyBinding, PropertyBindingId,
 };
 use api::units::{Au, LayoutSize, LayoutVector2D};
@@ -44,6 +44,7 @@ pub enum PictureCompositeKey {
     LinearToSrgb,
     ComponentTransfer(ItemUid),
     Flood(ColorU),
+    SvgFilter(Vec<FilterPrimitive>),
 
     
     Multiply,
@@ -129,6 +130,9 @@ impl From<Option<PictureCompositeMode>> for PictureCompositeKey {
             }
             Some(PictureCompositeMode::ComponentTransferFilter(handle)) => {
                 PictureCompositeKey::ComponentTransfer(handle.uid())
+            }
+            Some(PictureCompositeMode::SvgFilter(filter_primitives)) => {
+                PictureCompositeKey::SvgFilter(filter_primitives)
             }
             Some(PictureCompositeMode::Blit(_)) |
             Some(PictureCompositeMode::TileCache { .. }) |
