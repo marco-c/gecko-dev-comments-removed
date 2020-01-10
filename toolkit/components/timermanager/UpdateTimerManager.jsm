@@ -342,10 +342,8 @@ TimerManager.prototype = {
   
 
 
-  registerTimer: function TM_registerTimer(id, callback, interval, skipFirst) {
-    LOG(
-      `TimerManager:registerTimer - timerID: ${id} interval: ${interval} skipFirst: ${skipFirst}`
-    );
+  registerTimer: function TM_registerTimer(id, callback, interval) {
+    LOG(`TimerManager:registerTimer - timerID: ${id} interval: ${interval}`);
     if (this._timers === null) {
       
       
@@ -372,9 +370,6 @@ TimerManager.prototype = {
       lastUpdateTime = 0;
     }
     if (lastUpdateTime == 0) {
-      if (skipFirst) {
-        lastUpdateTime = now;
-      }
       Services.prefs.setIntPref(prefLastUpdate, lastUpdateTime);
     }
     this._timers[id] = { callback, interval, lastUpdateTime };
