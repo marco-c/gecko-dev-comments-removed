@@ -22,6 +22,7 @@ class WeakMapBase;
 
 static const size_t NON_INCREMENTAL_MARK_STACK_BASE_CAPACITY = 4096;
 static const size_t INCREMENTAL_MARK_STACK_BASE_CAPACITY = 32768;
+static const size_t SMALL_MARK_STACK_BASE_CAPACITY = 256;
 
 namespace gc {
 
@@ -136,9 +137,10 @@ class MarkStack {
 
   size_t position() const { return topIndex_; }
 
-  MOZ_MUST_USE bool init(JSGCMode gcMode);
+  enum StackType { MainStack, AuxiliaryStack };
+  MOZ_MUST_USE bool init(JSGCMode gcMode, StackType which);
 
-  MOZ_MUST_USE bool setCapacityForMode(JSGCMode mode);
+  MOZ_MUST_USE bool setCapacityForMode(JSGCMode mode, StackType which);
 
   size_t maxCapacity() const { return maxCapacity_; }
   void setMaxCapacity(size_t maxCapacity);
@@ -280,6 +282,10 @@ class GCMarker : public JSTracer {
 
   
   
+  void setMainStackColor(gc::MarkColor newColor);
+
+  
+  
   
   template <typename T>
   bool isMarked(T* thingp) {
@@ -315,7 +321,10 @@ class GCMarker : public JSTracer {
 
   MOZ_MUST_USE bool markUntilBudgetExhausted(SliceBudget& budget);
 
-  void setGCMode(JSGCMode mode) { stack.setGCMode(mode); }
+  void setGCMode(JSGCMode mode) {
+    
+    mozilla::Unused << stack.setCapacityForMode(mode, gc::MarkStack::MainStack);
+  }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
@@ -377,11 +386,15 @@ class GCMarker : public JSTracer {
 
   inline void pushValueArray(JSObject* obj, HeapSlot* start, HeapSlot* end);
 
-  bool isMarkStackEmpty() { return stack.isEmpty(); }
+  bool isMarkStackEmpty() { return stack.isEmpty() && auxStack.isEmpty(); }
 
-  bool hasBlackEntries() const { return stack.position() > grayPosition; }
+  bool hasBlackEntries() const {
+    return !getStack(gc::MarkColor::Black).isEmpty();
+  }
 
-  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
+  bool hasGrayEntries() const {
+    return !getStack(gc::MarkColor::Gray).isEmpty();
+  }
 
   MOZ_MUST_USE bool restoreValueArray(
       const gc::MarkStack::SavedValueArray& array, HeapSlot** vpp,
@@ -406,13 +419,31 @@ class GCMarker : public JSTracer {
   void forEachDelayedMarkingArena(F&& f);
 
   
+
+
+
+
   gc::MarkStack stack;
 
   
-  MainThreadOrGCTaskData<size_t> grayPosition;
+
+
+
+  gc::MarkStack auxStack;
 
   
   MainThreadOrGCTaskData<gc::MarkColor> color;
+
+  MainThreadOrGCTaskData<gc::MarkColor> mainStackColor;
+
+  gc::MarkStack& getStack(gc::MarkColor which) {
+    return which == mainStackColor ? stack : auxStack;
+  }
+  const gc::MarkStack& getStack(gc::MarkColor which) const {
+    return which == mainStackColor ? stack : auxStack;
+  }
+
+  gc::MarkStack& currentStack() { return getStack(color); }
 
   
   MainThreadOrGCTaskData<js::gc::Arena*> delayedMarkingList;
