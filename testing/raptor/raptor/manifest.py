@@ -195,21 +195,19 @@ def write_test_settings_json(args, test_details, oskey):
 
     test_settings['raptor-options']['unit'] = test_details.get("unit", "ms")
 
-    test_settings['raptor-options']['lower_is_better'] = bool_from_str(
-        test_details.get("lower_is_better", "true"))
+    test_settings['raptor-options']['lower_is_better'] = test_details.get("lower_is_better", True)
 
     
     val = test_details.get('subtest_unit', test_settings['raptor-options']['unit'])
     test_settings['raptor-options']['subtest_unit'] = val
-    subtest_lower_is_better = test_details.get('subtest_lower_is_better', None)
+    subtest_lower_is_better = test_details.get('subtest_lower_is_better')
 
     if subtest_lower_is_better is None:
         
         test_settings['raptor-options']['subtest_lower_is_better'] = (
             test_settings['raptor-options']['lower_is_better'])
     else:
-        test_settings['raptor-options']['subtest_lower_is_better'] = bool_from_str(
-            subtest_lower_is_better)
+        test_settings['raptor-options']['subtest_lower_is_better'] = subtest_lower_is_better
 
     if test_details.get("alert_change_type", None) is not None:
         test_settings['raptor-options']['alert_change_type'] = test_details['alert_change_type']
@@ -416,6 +414,9 @@ def get_raptor_test_list(args, oskey):
                 next_test['measure'].remove('hero')
                 
                 del next_test['hero']
+
+        if next_test.get('lower_is_better') is not None:
+            next_test['lower_is_better'] = bool_from_str(next_test.get('lower_is_better'))
 
     
     if len(tests_to_run) != 0:
