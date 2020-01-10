@@ -50,6 +50,7 @@ const receive = (topic, p, syncCallback) => {
         }
       }
     };
+    
     const id = setTimeout(timeout, 90000);
     addObserver(observer, topic, false);
     queue.push(topic, resolve);
@@ -58,6 +59,7 @@ const receive = (topic, p, syncCallback) => {
 receive.queue = [];
 
 const openTab = uri => gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, uri);
+
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 

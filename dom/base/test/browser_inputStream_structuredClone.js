@@ -22,6 +22,7 @@ async function runTest(input, url) {
 
   is(data.inputStream.available(), input.length, "The length of the inputStream matches: " + input.length);
 
+  
   let dataBack = await ContentTask.spawn(browser, data, function(data) {
     let dataBack = {
       inputStream: data.inputStream,
@@ -34,6 +35,8 @@ async function runTest(input, url) {
 
     return dataBack;
   });
+  
+
 
   ok(dataBack.check, "The inputStream is a nsIInputStream also on content.");
   ok(data.inputStream instanceof Ci.nsIInputStream, "The original object was an inputStream");

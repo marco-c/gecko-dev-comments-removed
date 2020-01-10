@@ -20,7 +20,7 @@ async function spawnNewAndTest(recur, pids) {
         };
         Services.obs.addObserver(observer, CONTENT_CREATED);
 
-        await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function(browser) {
+        await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function() {
           
           
           

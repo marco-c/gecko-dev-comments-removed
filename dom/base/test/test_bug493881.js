@@ -26,7 +26,7 @@ function setAndTestProperty(prop, color) {
 
 
 
-for (var i = 0; i < legacyProps.length; i++) {
+for (let i = 0; i < legacyProps.length; i++) {
   initialValues[i] = setAndTestProperty(legacyProps[i], testColors[i]);
 }
 
@@ -35,13 +35,13 @@ for (var i = 0; i < legacyProps.length; i++) {
 
 addLoadEvent( function() {
   
-  for (var i = 0; i < legacyProps.length; i++) {
+  for (let i = 0; i < legacyProps.length; i++) {
     is(document[legacyProps[i]], initialValues[i], "document[" + legacyProps[i] + "] altered after body load");
   }
+
   
   
-  
-  for (i = 0; i < idPropList.length; i++) {
+  for (let i = 0; i < idPropList.length; i++) {
     var style = window.getComputedStyle(document.getElementById(idPropList[i].id));
     var color = style.getPropertyValue(idPropList[i].prop);
     idPropList[i].initialComputedColor = color;
@@ -49,21 +49,21 @@ addLoadEvent( function() {
   }
   
   
+
   
   
-  
-  for (var i = 0; i < legacyProps.length; i++) {
+  for (let i = 0; i < legacyProps.length; i++) {
     document[legacyProps[i]] = undefined;
-    is(document[legacyProps[i]], "undefined", 
+    is(document[legacyProps[i]], "undefined",
       "Unexpected value of " + legacyProps[i] + " after setting to undefined");
   }
+
   
   
-  
-  for (i = 0; i < idPropList.length; i++) {
+  for (let i = 0; i < idPropList.length; i++) {
     var style = window.getComputedStyle(document.getElementById(idPropList[i].id));
     var color = style.getPropertyValue(idPropList[i].prop);
-    is(color, "rgb(0, 239, 14)", 
+    is(color, "rgb(0, 239, 14)",
       "element's style should get result of parsing undefined as a color");
   }
 
