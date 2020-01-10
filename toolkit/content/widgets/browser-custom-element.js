@@ -1264,6 +1264,8 @@
         this.messageManager.addMessageListener("DOMTitleChanged", this);
         this.messageManager.addMessageListener("ImageDocumentLoaded", this);
 
+        
+        
         let jsm = "resource://gre/modules/RemoteWebProgress.jsm";
         let { RemoteWebProgressManager } = ChromeUtils.import(jsm, {});
 
@@ -1509,16 +1511,6 @@
           aEnabledCommands,
           aDisabledCommands
         );
-      }
-    }
-
-    updateSecurityUIForSecurityChange(aSecurityInfo, aState, aIsSecureContext) {
-      if (this.isRemoteBrowser && this.messageManager) {
-        
-        
-        
-        void this.securityUI;
-        this._securityUI._update(aSecurityInfo, aState, aIsSecureContext);
       }
     }
 
