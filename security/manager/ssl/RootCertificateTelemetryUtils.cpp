@@ -39,7 +39,11 @@ class BinaryHashSearchArrayComparator {
 
 
 
-int32_t RootCABinNumber(const SECItem* cert) {
+
+
+
+
+int32_t RootCABinNumber(const SECItem* cert, PK11SlotInfo* slot) {
   Digest digest;
 
   
@@ -68,6 +72,40 @@ int32_t RootCABinNumber(const SECItem* cert) {
   }
 
   
+  
+  UniquePK11SlotInfo softokenSlot(PK11_GetInternalKeySlot());
+  if (!softokenSlot) {
+    return ROOT_CERTIFICATE_UNKNOWN;
+  }
+  if (slot == softokenSlot.get()) {
+    return ROOT_CERTIFICATE_SOFTOKEN;
+  }
+  UniquePK11SlotInfo nssInternalSlot(PK11_GetInternalSlot());
+  UniqueSECMODModule rootsModule(SECMOD_FindModule(kRootModuleName));
+  if (!rootsModule || rootsModule->slotCount != 1) {
+    return ROOT_CERTIFICATE_UNKNOWN;
+  }
+  if (slot && slot != nssInternalSlot.get() && slot != rootsModule->slots[0]) {
+    return ROOT_CERTIFICATE_EXTERNAL_TOKEN;
+  }
+  nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
+  if (!component) {
+    return ROOT_CERTIFICATE_UNKNOWN;
+  }
+  nsTArray<nsTArray<uint8_t>> enterpriseRoots;
+  rv = component->GetEnterpriseRoots(enterpriseRoots);
+  if (NS_FAILED(rv)) {
+    return ROOT_CERTIFICATE_UNKNOWN;
+  }
+  for (const auto& enterpriseRoot : enterpriseRoots) {
+    if (enterpriseRoot.Length() == cert->len &&
+        memcmp(enterpriseRoot.Elements(), cert->data,
+               enterpriseRoot.Length()) == 0) {
+      return ROOT_CERTIFICATE_ENTERPRISE_ROOT;
+    }
+  }
+
+  
   return ROOT_CERTIFICATE_UNKNOWN;
 }
 
@@ -75,7 +113,7 @@ int32_t RootCABinNumber(const SECItem* cert) {
 
 void AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe,
                                   const CERTCertificate* cert) {
-  int32_t binId = RootCABinNumber(&cert->derCert);
+  int32_t binId = RootCABinNumber(&cert->derCert, cert->slot);
 
   if (binId != ROOT_CERTIFICATE_HASH_FAILURE) {
     Accumulate(probe, binId);

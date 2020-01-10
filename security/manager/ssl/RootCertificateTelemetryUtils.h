@@ -17,9 +17,16 @@ namespace psm {
 
 
 #define ROOT_CERTIFICATE_UNKNOWN 0
+
+#define ROOT_CERTIFICATE_SOFTOKEN 1
+
+#define ROOT_CERTIFICATE_EXTERNAL_TOKEN 2
+
+
+#define ROOT_CERTIFICATE_ENTERPRISE_ROOT 3
 #define ROOT_CERTIFICATE_HASH_FAILURE -1
 
-int32_t RootCABinNumber(const SECItem* cert);
+int32_t RootCABinNumber(const SECItem* cert, PK11SlotInfo* slot);
 
 void AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe,
                                   const CERTCertificate* cert);
