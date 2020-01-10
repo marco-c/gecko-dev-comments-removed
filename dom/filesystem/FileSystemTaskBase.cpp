@@ -139,11 +139,6 @@ void FileSystemTaskChildBase::Start() {
     return;
   }
 
-  
-  
-  
-  NS_ADDREF_THIS();
-
   if (NS_IsMainThread()) {
     nsIEventTarget* target = mGlobalObject->EventTargetFor(TaskCategory::Other);
     MOZ_ASSERT(target);
