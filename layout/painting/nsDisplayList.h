@@ -628,10 +628,6 @@ class nsDisplayListBuilder {
   bool IsBuilding() const { return mIsBuilding; }
   void SetIsBuilding(bool aIsBuilding) {
     mIsBuilding = aIsBuilding;
-    for (nsIFrame* f : mModifiedFramesDuringBuilding) {
-      f->SetFrameIsModified(false);
-    }
-    mModifiedFramesDuringBuilding.Clear();
   }
 
   bool InInvalidSubtree() const { return mInInvalidSubtree; }
@@ -767,7 +763,7 @@ class nsDisplayListBuilder {
 
   bool DisplayCaret(nsIFrame* aFrame, nsDisplayList* aList) {
     nsIFrame* frame = GetCaretFrame();
-    if (aFrame == frame) {
+    if (aFrame == frame && !IsBackgroundOnly()) {
       frame->DisplayCaret(this, aList);
       return true;
     }
@@ -777,11 +773,11 @@ class nsDisplayListBuilder {
 
 
 
-  nsIFrame* GetCaretFrame() { return CurrentPresShellState()->mCaretFrame; }
+  nsIFrame* GetCaretFrame() { return mCaretFrame; }
   
 
 
-  const nsRect& GetCaretRect() { return CurrentPresShellState()->mCaretRect; }
+  const nsRect& GetCaretRect() { return mCaretRect; }
   
 
 
@@ -1703,17 +1699,6 @@ class nsDisplayListBuilder {
     mBuildingInvisibleItems = aBuildingInvisibleItems;
   }
 
-  bool MarkFrameModifiedDuringBuilding(nsIFrame* aFrame) {
-    if (!aFrame->IsFrameModified()) {
-      mModifiedFramesDuringBuilding.AppendElement(aFrame);
-      aFrame->SetFrameIsModified(true);
-      return true;
-    }
-    return false;
-  }
-
-  void RebuildAllItemsInCurrentSubtree() { mDirtyRect = mVisibleRect; }
-
   
 
 
@@ -1832,8 +1817,6 @@ class nsDisplayListBuilder {
 #ifdef DEBUG
     mozilla::Maybe<nsAutoLayoutPhase> mAutoLayoutPhase;
 #endif
-    nsIFrame* mCaretFrame;
-    nsRect mCaretRect;
     mozilla::Maybe<OutOfFlowDisplayData> mFixedBackgroundDisplayData;
     uint32_t mFirstFrameMarkedForDisplay;
     uint32_t mFirstFrameWithOOFData;
@@ -1911,8 +1894,6 @@ class nsDisplayListBuilder {
   
   nsTHashtable<nsPtrHashKey<nsIFrame>> mAGRBudgetSet;
 
-  nsTArray<nsIFrame*> mModifiedFramesDuringBuilding;
-
   nsDataHashtable<nsPtrHashKey<RemoteBrowser>, EffectsInfo> mEffectsUpdates;
 
   
@@ -1938,6 +1919,10 @@ class nsDisplayListBuilder {
   
   
   bool mHasGlassItemDuringPartial;
+
+  nsIFrame* mCaretFrame;
+  nsRect mCaretRect;
+
   
   
   
