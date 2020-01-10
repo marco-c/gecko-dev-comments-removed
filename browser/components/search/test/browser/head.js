@@ -1,7 +1,11 @@
 
 
 
-ChromeUtils.import("resource://testing-common/CustomizableUITestUtils.jsm", this);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  CustomizableUITestUtils: "resource://testing-common/CustomizableUITestUtils.jsm",
+  SearchUtils: "resource://gre/modules/SearchUtils.jsm",
+});
+
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
 
