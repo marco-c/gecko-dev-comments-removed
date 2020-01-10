@@ -94,6 +94,15 @@ function KeyShortcuts({ window, target }) {
 
 
 KeyShortcuts.parseElectronKey = function(window, str) {
+  
+  
+  if (typeof str !== "string") {
+    console.error("Invalid key passed to parseElectronKey, stacktrace below");
+    console.trace();
+
+    return null;
+  }
+
   const modifiers = str.split("+");
   let key = modifiers.pop();
 
@@ -161,6 +170,11 @@ KeyShortcuts.parseElectronKey = function(window, str) {
 };
 
 KeyShortcuts.stringify = function(shortcut) {
+  if (shortcut === null) {
+    
+    return "";
+  }
+
   const list = [];
   if (shortcut.alt) {
     list.push("Alt");
