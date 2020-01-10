@@ -7,10 +7,13 @@ var gTests = [
     desc: "'Always Allow' disabled on third party pages",
     run: async function checkNoAlwaysOnThirdParty() {
       
-      let Perms = Services.perms;
-      let uri = Services.io.newURI("https://test1.example.com/");
-      Perms.add(uri, "microphone", Perms.ALLOW_ACTION);
-      Perms.add(uri, "camera", Perms.ALLOW_ACTION);
+      let origin = "https://test1.example.com/";
+      PermissionTestUtils.add(
+        origin,
+        "microphone",
+        Services.perms.ALLOW_ACTION
+      );
+      PermissionTestUtils.add(origin, "camera", Services.perms.ALLOW_ACTION);
 
       
       
@@ -41,8 +44,8 @@ var gTests = [
 
       
       await closeStream(false, "frame1");
-      Perms.remove(uri, "camera");
-      Perms.remove(uri, "microphone");
+      PermissionTestUtils.remove(origin, "camera");
+      PermissionTestUtils.remove(origin, "microphone");
     },
   },
 ];
