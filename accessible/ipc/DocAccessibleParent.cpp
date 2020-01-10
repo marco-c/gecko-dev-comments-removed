@@ -571,6 +571,12 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
         Unused << aChildDoc->SendEmulatedWindow(
             reinterpret_cast<uintptr_t>(mEmulatedWindowHandle), nullptr);
       }
+      
+      
+      
+      
+      
+      Unused << RecvEvent(aParentID, nsIAccessibleEvent::EVENT_REORDER);
     }
   }
 #endif  
