@@ -942,6 +942,7 @@ nsresult TextEditRules::DeleteSelectionWithTransaction(
     nsIEditor::EDirection aCollapsedAction, bool* aCancel, bool* aHandled) {
   MOZ_ASSERT(IsEditorDataAvailable());
   MOZ_ASSERT(aCancel);
+  MOZ_ASSERT(*aCancel == false);
   MOZ_ASSERT(aHandled);
 
   
@@ -968,12 +969,13 @@ nsresult TextEditRules::DeleteSelectionWithTransaction(
     }
 
     
-    nsresult rv = CheckBidiLevelForDeletion(selectionStartPoint,
-                                            aCollapsedAction, aCancel);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    EditActionResult result = TextEditorRef().SetCaretBidiLevelForDeletion(
+        selectionStartPoint, aCollapsedAction);
+    if (NS_WARN_IF(result.Failed())) {
+      return result.Rv();
     }
-    if (*aCancel) {
+    if (result.Canceled()) {
+      *aCancel = true;
       return NS_OK;
     }
   }

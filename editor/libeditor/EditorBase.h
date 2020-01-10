@@ -70,6 +70,7 @@ class CSSEditUtils;
 class DeleteNodeTransaction;
 class DeleteRangeTransaction;
 class DeleteTextTransaction;
+class EditActionResult;
 class EditAggregateTransaction;
 class EditorEventListener;
 class EditTransactionBase;
@@ -2036,6 +2037,21 @@ class EditorBase : public nsIEditor,
   void HideCaret(bool aHide);
 
  protected:  
+  
+
+
+
+
+
+
+
+
+
+  template <typename PT, typename CT>
+  EditActionResult SetCaretBidiLevelForDeletion(
+      const EditorDOMPointBase<PT, CT>& aPointAtCaret,
+      nsIEditor::EDirection aDirectionAndAmount) const;
+
   
 
 

@@ -43,9 +43,9 @@
 #include "mozilla/Preferences.h"            
 #include "mozilla/PresShell.h"              
 #include "mozilla/RangeBoundary.h"      
-#include "mozilla/dom/Selection.h"      
 #include "mozilla/Services.h"           
 #include "mozilla/ServoCSSParser.h"     
+#include "mozilla/StaticPrefs_bidi.h"   
 #include "mozilla/TextComposition.h"    
 #include "mozilla/TextInputListener.h"  
 #include "mozilla/TextServicesDocument.h"  
@@ -58,6 +58,7 @@
 #include "mozilla/dom/EventTarget.h"     
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLBRElement.h"
+#include "mozilla/dom/Selection.h"  
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/Event.h"
 #include "nsAString.h"                
@@ -123,6 +124,12 @@ using namespace widget;
 
 
 
+template EditActionResult EditorBase::SetCaretBidiLevelForDeletion(
+    const EditorDOMPoint& aPointAtCaret,
+    nsIEditor::EDirection aDirectionAndAmount) const;
+template EditActionResult EditorBase::SetCaretBidiLevelForDeletion(
+    const EditorRawDOMPoint& aPointAtCaret,
+    nsIEditor::EDirection aDirectionAndAmount) const;
 
 EditorBase::EditorBase()
     : mEditActionData(nullptr),
@@ -5209,6 +5216,62 @@ NS_IMETHODIMP EditorBase::GetAutoMaskingEnabled(bool* aResult) {
 NS_IMETHODIMP EditorBase::GetPasswordMask(nsAString& aPasswordMask) {
   aPasswordMask.Assign(TextEditor::PasswordMask());
   return NS_OK;
+}
+
+template <typename PT, typename CT>
+EditActionResult EditorBase::SetCaretBidiLevelForDeletion(
+    const EditorDOMPointBase<PT, CT>& aPointAtCaret,
+    nsIEditor::EDirection aDirectionAndAmount) const {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  nsPresContext* presContext = GetPresContext();
+  if (NS_WARN_IF(!presContext)) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+
+  if (!presContext->BidiEnabled()) {
+    return EditActionIgnored();  
+  }
+
+  if (!aPointAtCaret.GetContainerAsContent()) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+
+  
+  RefPtr<nsFrameSelection> frameSelection =
+      SelectionRefPtr()->GetFrameSelection();
+  if (NS_WARN_IF(!frameSelection)) {
+    return EditActionResult(NS_ERROR_FAILURE);
+  }
+
+  nsPrevNextBidiLevels levels = frameSelection->GetPrevNextBidiLevels(
+      aPointAtCaret.GetContainerAsContent(), aPointAtCaret.Offset(), true);
+
+  nsBidiLevel levelBefore = levels.mLevelBefore;
+  nsBidiLevel levelAfter = levels.mLevelAfter;
+
+  nsBidiLevel currentCaretLevel = frameSelection->GetCaretBidiLevel();
+
+  nsBidiLevel levelOfDeletion;
+  levelOfDeletion = (nsIEditor::eNext == aDirectionAndAmount ||
+                     nsIEditor::eNextWord == aDirectionAndAmount)
+                        ? levelAfter
+                        : levelBefore;
+
+  if (currentCaretLevel == levelOfDeletion) {
+    return EditActionIgnored();  
+  }
+
+  
+  
+  frameSelection->SetCaretBidiLevel(levelOfDeletion);
+
+  if (!StaticPrefs::bidi_edit_delete_immediately() &&
+      levelBefore != levelAfter) {
+    return EditActionCanceled();  
+  }
+
+  return EditActionIgnored();  
 }
 
 void EditorBase::UndefineCaretBidiLevel() const {
