@@ -42,7 +42,8 @@ release = u''
 
 extensions = [
     'recommonmark',
-    'sphinxarg.ext'
+    'sphinxarg.ext',
+    'sphinx.ext.autodoc'
 ]
 
 
