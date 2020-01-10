@@ -1,49 +1,49 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ContainerLayerComposite.h"
-#include <algorithm>                         
-#include "FrameMetrics.h"                    
-#include "Units.h"                           
-#include "CompositableHost.h"                
-#include "gfxEnv.h"                          
-#include "mozilla/Assertions.h"              
-#include "mozilla/RefPtr.h"                  
-#include "mozilla/StaticPrefs.h"             
-#include "mozilla/UniquePtr.h"               
-#include "mozilla/gfx/BaseRect.h"            
-#include "mozilla/gfx/Matrix.h"              
-#include "mozilla/gfx/Point.h"               
-#include "mozilla/gfx/Rect.h"                
-#include "mozilla/layers/APZSampler.h"       
-#include "mozilla/layers/Compositor.h"       
-#include "mozilla/layers/CompositorTypes.h"  
-#include "mozilla/layers/Effects.h"          
-#include "mozilla/layers/TextureHost.h"      
-#include "mozilla/layers/AsyncCompositionManager.h"  
-#include "mozilla/layers/LayerMetricsWrapper.h"      
+#include <algorithm>                         // for min
+#include "FrameMetrics.h"                    // for FrameMetrics
+#include "Units.h"                           // for LayerRect, LayerPixel, etc
+#include "CompositableHost.h"                // for CompositableHost
+#include "gfxEnv.h"                          // for gfxEnv
+#include "mozilla/Assertions.h"              // for MOZ_ASSERT, etc
+#include "mozilla/RefPtr.h"                  // for RefPtr
+#include "mozilla/StaticPrefs.h"             // for StaticPrefs
+#include "mozilla/UniquePtr.h"               // for UniquePtr
+#include "mozilla/gfx/BaseRect.h"            // for BaseRect
+#include "mozilla/gfx/Matrix.h"              // for Matrix4x4
+#include "mozilla/gfx/Point.h"               // for Point, IntPoint
+#include "mozilla/gfx/Rect.h"                // for IntRect, Rect
+#include "mozilla/layers/APZSampler.h"       // for APZSampler
+#include "mozilla/layers/Compositor.h"       // for Compositor, etc
+#include "mozilla/layers/CompositorTypes.h"  // for DiagnosticFlags::CONTAINER
+#include "mozilla/layers/Effects.h"          // for Effect, EffectChain, etc
+#include "mozilla/layers/TextureHost.h"      // for CompositingRenderTarget
+#include "mozilla/layers/AsyncCompositionManager.h"  // for ViewTransform
+#include "mozilla/layers/LayerMetricsWrapper.h"      // for LayerMetricsWrapper
 #include "mozilla/layers/LayersHelpers.h"
-#include "mozilla/mozalloc.h"  
-#include "mozilla/RefPtr.h"    
-#include "nsDebug.h"           
-#include "nsISupportsImpl.h"   
-#include "nsISupportsUtils.h"  
-#include "nsRegion.h"          
-#include "nsTArray.h"          
+#include "mozilla/mozalloc.h"  // for operator delete, etc
+#include "mozilla/RefPtr.h"    // for nsRefPtr
+#include "nsDebug.h"           // for NS_ASSERTION
+#include "nsISupportsImpl.h"   // for MOZ_COUNT_CTOR, etc
+#include "nsISupportsUtils.h"  // for NS_ADDREF, NS_RELEASE
+#include "nsRegion.h"          // for nsIntRegion
+#include "nsTArray.h"          // for AutoTArray
 #include <stack>
-#include "TextRenderer.h"  
+#include "TextRenderer.h"  // for TextRenderer
 #include <vector>
-#include "GeckoProfiler.h"  
+#include "GeckoProfiler.h"  // for GeckoProfiler
 
 #ifdef MOZ_GECKO_PROFILER
-#  include "ProfilerMarkerPayload.h"  
+#  include "ProfilerMarkerPayload.h"  // for LayerTranslationMarkerPayload
 #endif
 
 #define CULLING_LOG(...)
-
+// #define CULLING_LOG(...) printf_stderr("CULLING: " __VA_ARGS__)
 
 #define DUMP(...)                 \
   do {                            \
@@ -63,9 +63,9 @@ using namespace gfx;
 static void DrawLayerInfo(const RenderTargetIntRect& aClipRect,
                           LayerManagerComposite* aManager, Layer* aLayer) {
   if (aLayer->GetType() == Layer::LayerType::TYPE_CONTAINER) {
-    
-    
-    
+    // XXX - should figure out a way to render this, but for now this
+    // is hard to do, since it will often get superimposed over the first
+    // child of the layer, which is bad.
     return;
   }
 
@@ -89,7 +89,7 @@ static void PrintUniformityInfo(Layer* aLayer) {
     return;
   }
 
-  
+  // Don't want to print a log for smaller layers
   if (aLayer->GetLocalVisibleRegion().GetBounds().Width() < 300 ||
       aLayer->GetLocalVisibleRegion().GetBounds().Height() < 300) {
     return;
@@ -110,22 +110,22 @@ static void PrintUniformityInfo(Layer* aLayer) {
 static Maybe<gfx::Polygon> SelectLayerGeometry(
     const Maybe<gfx::Polygon>& aParentGeometry,
     const Maybe<gfx::Polygon>& aChildGeometry) {
-  
+  // Both the parent and the child layer were split.
   if (aParentGeometry && aChildGeometry) {
     return Some(aParentGeometry->ClipPolygon(*aChildGeometry));
   }
 
-  
+  // The parent layer was split.
   if (aParentGeometry) {
     return aParentGeometry;
   }
 
-  
+  // The child layer was split.
   if (aChildGeometry) {
     return aChildGeometry;
   }
 
-  
+  // No split.
   return Nothing();
 }
 
@@ -133,19 +133,19 @@ void TransformLayerGeometry(Layer* aLayer, Maybe<gfx::Polygon>& aGeometry) {
   Layer* parent = aLayer;
   gfx::Matrix4x4 transform;
 
-  
+  // Collect all parent transforms.
   while (parent != nullptr && !parent->Is3DContextLeaf()) {
     transform = transform * parent->GetLocalTransform();
     parent = parent->GetParent();
   }
 
-  
+  // Transform the geometry to the parent 3D context leaf coordinate space.
   transform = transform.ProjectTo2D();
 
   if (!transform.IsSingular()) {
     aGeometry->TransformToScreenSpace(transform.Inverse(), transform);
   } else {
-    
+    // Discard the geometry since the result might not be correct.
     aGeometry.reset();
   }
 }
@@ -157,7 +157,7 @@ static gfx::IntRect ContainerVisibleRect(ContainerT* aContainer) {
   return surfaceRect;
 }
 
-
+/* all of the per-layer prepared data we need to maintain */
 struct PreparedLayer {
   PreparedLayer(Layer* aLayer, RenderTargetIntRect aClipRect,
                 Maybe<gfx::Polygon>&& aGeometry)
@@ -168,20 +168,20 @@ struct PreparedLayer {
   Maybe<Polygon> mGeometry;
 };
 
-
+/* all of the prepared data that we need in RenderLayer() */
 struct PreparedData {
   RefPtr<CompositingRenderTarget> mTmpTarget;
   AutoTArray<PreparedLayer, 12> mLayers;
   bool mNeedsSurfaceCopy;
 };
 
-
+// ContainerPrepare is shared between RefLayer and ContainerLayer
 template <class ContainerT>
 void ContainerPrepare(ContainerT* aContainer, LayerManagerComposite* aManager,
                       const RenderTargetIntRect& aClipRect) {
-  
-  
-  
+  // We can end up calling prepare multiple times if we duplicated
+  // layers due to preserve-3d plane splitting. The results
+  // should be identical, so we only need to do it once.
   if (aContainer->mPrepared) {
     return;
   }
@@ -207,8 +207,8 @@ void ContainerPrepare(ContainerT* aContainer, LayerManagerComposite* aManager,
       continue;
     }
 
-    
-    
+    // We don't want to skip container layers because otherwise their mPrepared
+    // may be null which is not allowed.
     if (!layerToRender->GetLayer()->AsContainerLayer()) {
       if (!layerToRender->GetLayer()->IsVisible()) {
         CULLING_LOG("Sublayer %p has no effective visible region\n",
@@ -232,9 +232,9 @@ void ContainerPrepare(ContainerT* aContainer, LayerManagerComposite* aManager,
 
   CULLING_LOG("Preparing container layer %p\n", aContainer->GetLayer());
 
-  
-
-
+  /**
+   * Setup our temporary surface for rendering the contents of this container.
+   */
 
   gfx::IntRect surfaceRect = ContainerVisibleRect(aContainer);
   if (surfaceRect.IsEmpty()) {
@@ -242,8 +242,8 @@ void ContainerPrepare(ContainerT* aContainer, LayerManagerComposite* aManager,
   }
 
   bool surfaceCopyNeeded;
-  
-  
+  // DefaultComputeSupportsComponentAlphaChildren can mutate aContainer so call
+  // it unconditionally
   aContainer->DefaultComputeSupportsComponentAlphaChildren(&surfaceCopyNeeded);
   if (aContainer->UseIntermediateSurface()) {
     if (!surfaceCopyNeeded) {
@@ -257,9 +257,9 @@ void ContainerPrepare(ContainerT* aContainer, LayerManagerComposite* aManager,
       }
 
       if (!surface) {
-        
-        
-        
+        // If we don't need a copy we can render to the intermediate now to
+        // avoid unecessary render target switching. This brings a big perf
+        // boost on mobile gpus.
         surface = CreateOrRecycleTarget(aContainer, aManager);
 
         MOZ_PERFORMANCE_WARNING(
@@ -305,7 +305,7 @@ void RenderMinimap(ContainerT* aContainer, const RefPtr<APZSampler>& aSampler,
   ParentLayerPoint scrollOffset =
       aSampler->GetCurrentAsyncScrollOffset(wrapper);
 
-  
+  // Options
   const int verticalPadding = 10;
   const int horizontalPadding = 5;
   gfx::Color backgroundColor(0.3f, 0.3f, 0.3f, 0.3f);
@@ -317,7 +317,7 @@ void RenderMinimap(ContainerT* aContainer, const RefPtr<APZSampler>& aSampler,
   gfx::Color layoutPortColor(1.f, 0, 0);
   gfx::Color visualPortColor(0, 0, 1.f, 0.3f);
 
-  
+  // Rects
   ParentLayerRect compositionBounds = fm.GetCompositionBounds();
   LayerRect scrollRect = fm.GetScrollableRect() * fm.LayersPixelsPerCSSPixel();
   LayerRect visualRect =
@@ -336,14 +336,14 @@ void RenderMinimap(ContainerT* aContainer, const RefPtr<APZSampler>& aSampler,
                fm.LayersPixelsPerCSSPixel());
   }
 
-  
-  
+  // Don't render trivial minimap. They can show up from textboxes and other
+  // tiny frames.
   if (visualRect.Width() < 64 && visualRect.Height() < 64) {
     return;
   }
 
-  
-  
+  // Compute a scale with an appropriate aspect ratio
+  // We allocate up to 100px of width and the height of this layer.
   float scaleFactor;
   float scaleFactorX;
   float scaleFactorY;
@@ -373,35 +373,35 @@ void RenderMinimap(ContainerT* aContainer, const RefPtr<APZSampler>& aSampler,
       RoundedOut(aContainer->GetEffectiveTransform().TransformBounds(
           transformedScrollRect));
 
-  
+  // Render the scrollable area.
   compositor->FillRect(transformedScrollRect, backgroundColor, clipRect,
                        aContainer->GetEffectiveTransform());
   compositor->SlowDrawRect(transformedScrollRect, pageBorderColor, clipRect,
                            aContainer->GetEffectiveTransform());
 
-  
+  // Render the displayport.
   Rect r = transform.TransformBounds(dp.ToUnknownRect());
   compositor->FillRect(r, tileActiveColor, clipRect,
                        aContainer->GetEffectiveTransform());
   compositor->SlowDrawRect(r, displayPortColor, clipRect,
                            aContainer->GetEffectiveTransform());
 
-  
+  // Render the critical displayport if there is one
   if (cdp) {
     r = transform.TransformBounds(cdp->ToUnknownRect());
     compositor->SlowDrawRect(r, criticalDisplayPortColor, clipRect,
                              aContainer->GetEffectiveTransform());
   }
 
-  
-  
+  // Render the layout viewport if it exists (which is only in the root
+  // content APZC).
   if (layoutRect) {
     r = transform.TransformBounds(layoutRect->ToUnknownRect());
     compositor->SlowDrawRect(r, layoutPortColor, clipRect,
                              aContainer->GetEffectiveTransform());
   }
 
-  
+  // Render the visual viewport.
   r = transform.TransformBounds(visualRect.ToUnknownRect());
   compositor->SlowDrawRect(r, visualPortColor, clipRect,
                            aContainer->GetEffectiveTransform(), 2);
@@ -442,26 +442,26 @@ void RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
     }
 
     if (layerToRender->HasLayerBeenComposited()) {
-      
-      
-      
+      // Composer2D will compose this layer so skip GPU composition
+      // this time. The flag will be reset for the next composition phase
+      // at the beginning of LayerManagerComposite::Rener().
       gfx::IntRect clearRect = layerToRender->GetClearRect();
       if (!clearRect.IsEmpty()) {
-        
+        // Clear layer's visible rect on FrameBuffer with transparent pixels
         gfx::Rect fbRect(clearRect.X(), clearRect.Y(), clearRect.Width(),
                          clearRect.Height());
         compositor->ClearRect(fbRect);
         layerToRender->SetClearRect(gfx::IntRect(0, 0, 0, 0));
       }
     } else {
-      
-      
+      // Since we force an intermediate surface for nested 3D contexts,
+      // aGeometry and childGeometry are both in the same coordinate space.
       Maybe<gfx::Polygon> geometry =
           SelectLayerGeometry(aGeometry, childGeometry);
 
-      
-      
-      
+      // If we are dealing with a nested 3D context, we might need to transform
+      // the geometry back to the coordinate space of the current layer before
+      // rendering the layer.
       ContainerLayer* container = layer->AsContainerLayer();
       const bool isLeafLayer =
           !container || container->UseIntermediateSurface();
@@ -473,7 +473,7 @@ void RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
       layerToRender->RenderLayer(clipRect, geometry);
     }
 
-    if (StaticPrefs::layers_uniformity_info()) {
+    if (StaticPrefs::layers_uniformity_info_AtStartup()) {
       PrintUniformityInfo(layer);
     }
 
@@ -481,21 +481,21 @@ void RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
       DrawLayerInfo(preparedData.mClipRect, aManager, layer);
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // Draw a border around scrollable layers.
+    // A layer can be scrolled by multiple scroll frames. Draw a border
+    // for each.
+    // Within the list of scroll frames for a layer, the layer border for a
+    // scroll frame lower down is affected by the async transforms on scroll
+    // frames higher up, so loop from the top down, and accumulate an async
+    // transform as we go along.
     Matrix4x4 asyncTransform;
     if (sampler) {
       for (uint32_t i = layer->GetScrollMetadataCount(); i > 0; --i) {
         LayerMetricsWrapper wrapper(layer, i - 1);
         if (wrapper.GetApzc()) {
           MOZ_ASSERT(wrapper.Metrics().IsScrollable());
-          
-          
+          // Since the composition bounds are in the parent layer's coordinates,
+          // use the parent's effective transform rather than the layer's own.
           ParentLayerRect compositionBounds =
               wrapper.Metrics().GetCompositionBounds();
           aManager->GetCompositor()->DrawDiagnostics(
@@ -514,8 +514,8 @@ void RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
       }
     }
 
-    
-    
+    // invariant: our GL context should be current here, I don't think we can
+    // assert it though
   }
 }
 
@@ -584,11 +584,11 @@ void RenderIntermediate(ContainerT* aContainer, LayerManagerComposite* aManager,
   }
 
   compositor->SetRenderTarget(surface);
-  
+  // pre-render all of the layers into our temporary
   RenderLayers(aContainer, aManager,
                RenderTargetIntRect::FromUnknownRect(aClipRect), Nothing());
 
-  
+  // Unbind the current surface and rebind the previous one.
   compositor->SetRenderTarget(previousTarget);
 }
 
@@ -602,8 +602,8 @@ void ContainerRender(ContainerT* aContainer, LayerManagerComposite* aManager,
     RefPtr<CompositingRenderTarget> surface;
 
     if (aContainer->mPrepared->mNeedsSurfaceCopy) {
-      
-      
+      // we needed to copy the background so we waited until now to render the
+      // intermediate
       surface =
           CreateTemporaryTargetAndCopyFromBackground(aContainer, aManager);
       RenderIntermediate(aContainer, aManager, aClipRect, surface);
@@ -646,17 +646,17 @@ void ContainerRender(ContainerT* aContainer, LayerManagerComposite* aManager,
                  RenderTargetIntRect::FromUnknownRect(aClipRect), aGeometry);
   }
 
-  
-  
-  
-  
+  // If it is a scrollable container layer with no child layers, and one of the
+  // APZCs attached to it has a nonempty async transform, then that transform is
+  // not applied to any visible content. Display a warning box (conditioned on
+  // the FPS display being enabled).
   if (StaticPrefs::layers_acceleration_draw_fps() &&
       aContainer->IsScrollableWithoutContent()) {
     RefPtr<APZSampler> sampler =
         aManager->GetCompositor()->GetCompositorBridgeParent()->GetAPZSampler();
-    
-    
-    
+    // Since aContainer doesn't have any children we can just iterate from the
+    // top metrics on it down to the bottom using GetFirstChild and not worry
+    // about walking onto another underlying layer.
     for (LayerMetricsWrapper i(aContainer); i; i = i.GetFirstChild()) {
       if (sampler->HasUnusedAsyncTransform(i)) {
         aManager->UnusedApzTransformWarning();
@@ -676,15 +676,15 @@ ContainerLayerComposite::ContainerLayerComposite(
 ContainerLayerComposite::~ContainerLayerComposite() {
   MOZ_COUNT_DTOR(ContainerLayerComposite);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // We don't Destroy() on destruction here because this destructor
+  // can be called after remote content has crashed, and it may not be
+  // safe to free the IPC resources of our children.  Those resources
+  // are automatically cleaned up by IPDL-generated code.
+  //
+  // In the common case of normal shutdown, either
+  // LayerManagerComposite::Destroy(), a parent
+  // *ContainerLayerComposite::Destroy(), or Disconnect() will trigger
+  // cleanup of our resources.
   RemoveAllChildren();
 }
 
@@ -788,5 +788,5 @@ void RefLayerComposite::CleanupResources() {
   mPrepared = nullptr;
 }
 
-}  
-}  
+}  // namespace layers
+}  // namespace mozilla

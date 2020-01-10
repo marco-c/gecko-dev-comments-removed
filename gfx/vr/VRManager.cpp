@@ -153,7 +153,7 @@ VRManager::VRManager()
   
   
   mVRProcessEnabled =
-      StaticPrefs::dom_vr_process_enabled() && XRE_IsGPUProcess();
+      StaticPrefs::dom_vr_process_enabled_AtStartup() && XRE_IsGPUProcess();
   VRServiceHost::Init(mVRProcessEnabled);
   mServiceHost = VRServiceHost::Get();
   

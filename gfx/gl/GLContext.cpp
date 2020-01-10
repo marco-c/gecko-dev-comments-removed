@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GLContext.h"
 
@@ -38,7 +38,7 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/gfx/Logging.h"
 
-#include "OGLShaderProgram.h"  
+#include "OGLShaderProgram.h"  // for ShaderProgramType
 
 #include "mozilla/DebugOnly.h"
 
@@ -62,16 +62,16 @@ using namespace mozilla::layers;
 
 MOZ_THREAD_LOCAL(uintptr_t) GLContext::sCurrentContext;
 
-
-
+// If adding defines, don't forget to undefine symbols. See #undef block below.
+// clang-format off
 #define CORE_SYMBOL(x) { (PRFuncPtr*) &mSymbols.f##x, {{ "gl" #x }} }
 #define CORE_EXT_SYMBOL2(x,y,z) { (PRFuncPtr*) &mSymbols.f##x, {{ "gl" #x, "gl" #x #y, "gl" #x #z }} }
 #define EXT_SYMBOL2(x,y,z) { (PRFuncPtr*) &mSymbols.f##x, {{ "gl" #x #y, "gl" #x #z }} }
 #define EXT_SYMBOL3(x,y,z,w) { (PRFuncPtr*) &mSymbols.f##x, {{ "gl" #x #y, "gl" #x #z, "gl" #x #w }} }
 #define END_SYMBOLS { nullptr, {} }
+// clang-format on
 
-
-
+// should match the order of GLExtensions, and be null-terminated.
 static const char* const sExtensionNames[] = {
     "NO_EXTENSION",
     "GL_AMD_compressed_ATC_texture",
@@ -228,7 +228,7 @@ static bool ParseVersion(const std::string& versionStr,
   return true;
 }
 
-
+/*static*/
 uint8_t GLContext::ChooseDebugFlags(const CreateContextFlags createFlags) {
   uint8_t debugFlags = 0;
 
@@ -237,15 +237,15 @@ uint8_t GLContext::ChooseDebugFlags(const CreateContextFlags createFlags) {
     debugFlags |= GLContext::DebugFlagEnabled;
   }
 
-  
-  
-  
+  // Enables extra verbose output, informing of the start and finish of every GL
+  // call. Useful e.g. to record information to investigate graphics system
+  // crashes/lockups
   if (gfxEnv::GlDebugVerbose()) {
     debugFlags |= GLContext::DebugFlagTrace;
   }
 
-  
-  
+  // Aborts on GL error. Can be useful to debug quicker code that is known not
+  // to generate any GL error in principle.
   bool abortOnError = false;
 
   if (createFlags & CreateContextFlags::NO_VALIDATION) {
@@ -277,7 +277,8 @@ GLContext::GLContext(CreateContextFlags flags, const SurfaceCaps& caps,
       mDebugFlags(ChooseDebugFlags(flags)),
       mSharedContext(sharedContext),
       mCaps(caps),
-      mWorkAroundDriverBugs(StaticPrefs::gfx_work_around_driver_bugs()) {
+      mWorkAroundDriverBugs(
+          StaticPrefs::gfx_work_around_driver_bugs_AtStartup()) {
   mOwningThreadId = PlatformThread::CurrentId();
   MOZ_ALWAYS_TRUE(sCurrentContext.init());
   sCurrentContext.set(0);
@@ -299,7 +300,7 @@ GLContext::~GLContext() {
 #endif
 }
 
-
+/*static*/
 void GLContext::StaticDebugCallback(GLenum source, GLenum type, GLuint id,
                                     GLenum severity, GLsizei length,
                                     const GLchar* message,
@@ -315,8 +316,8 @@ bool GLContext::Init() {
   ScopedGfxFeatureReporter reporter("GL Context");
 
   if (!InitImpl()) {
-    
-    
+    // If initialization fails, zero the symbols to avoid hard-to-understand
+    // bugs.
     mSymbols = {};
     NS_WARNING("GLContext::InitWithPrefix failed!");
     return false;
@@ -372,7 +373,7 @@ bool GLContext::InitImpl() {
     return LoadSymbolsWithDesc(*loader, list, desc);
   };
 
-  
+  // clang-format off
     const SymLoadStruct coreSymbols[] = {
         { (PRFuncPtr*) &mSymbols.fActiveTexture, {{ "glActiveTexture", "glActiveTextureARB" }} },
         { (PRFuncPtr*) &mSymbols.fAttachShader, {{ "glAttachShader", "glAttachShaderARB" }} },
@@ -501,7 +502,7 @@ bool GLContext::InitImpl() {
 
         END_SYMBOLS
     };
-  
+  // clang-format on
 
   if (!fnLoadSymbols(coreSymbols, "GL")) return false;
 
@@ -529,7 +530,7 @@ bool GLContext::InitImpl() {
     }
   }
 
-  
+  ////////////////
 
   const std::string versionStr = (const char*)fGetString(LOCAL_GL_VERSION);
   if (versionStr.find("OpenGL ES") == 0) {
@@ -546,12 +547,12 @@ bool GLContext::InitImpl() {
   mVersion = majorVer * 100 + minorVer * 10;
   if (mVersion < 200) return false;
 
-  
+  ////
 
   const auto glslVersionStr =
       (const char*)fGetString(LOCAL_GL_SHADING_LANGUAGE_VERSION);
   if (!glslVersionStr) {
-    
+    // This happens on the Android emulators. We'll just return 100
     mShadingLanguageVersion = 100;
   } else if (ParseVersion(glslVersionStr, &majorVer, &minorVer)) {
     MOZ_ASSERT(majorVer < 10);
@@ -569,9 +570,9 @@ bool GLContext::InitImpl() {
     printf_stderr("OpenGL renderer: %s\n", fGetString(LOCAL_GL_RENDERER));
   }
 
-  
+  ////////////////
 
-  
+  // Load OpenGL ES 2.0 symbols, or desktop if we aren't using ES 2.
   if (mProfile == ContextProfile::OpenGLES) {
     const SymLoadStruct symbols[] = {CORE_SYMBOL(GetShaderPrecisionFormat),
                                      CORE_SYMBOL(ClearDepthf),
@@ -584,8 +585,8 @@ bool GLContext::InitImpl() {
         CORE_SYMBOL(ReadBuffer), CORE_SYMBOL(MapBuffer),
         CORE_SYMBOL(UnmapBuffer), CORE_SYMBOL(PointParameterf),
         CORE_SYMBOL(DrawBuffer),
-        
-        
+        // The following functions are only used by Skia/GL in desktop mode.
+        // Other parts of Gecko should avoid using these
         CORE_SYMBOL(DrawBuffers), CORE_SYMBOL(ClientActiveTexture),
         CORE_SYMBOL(DisableClientState), CORE_SYMBOL(EnableClientState),
         CORE_SYMBOL(LoadIdentity), CORE_SYMBOL(LoadMatrixf),
@@ -596,14 +597,14 @@ bool GLContext::InitImpl() {
     if (!fnLoadSymbols(symbols, "Desktop OpenGL")) return false;
   }
 
-  
+  ////////////////
 
   const char* glVendorString = (const char*)fGetString(LOCAL_GL_VENDOR);
   const char* glRendererString = (const char*)fGetString(LOCAL_GL_RENDERER);
   if (!glVendorString || !glRendererString) return false;
 
-  
-  
+  // The order of these strings must match up with the order of the enum
+  // defined in GLContext.h for vendor IDs.
   const char* vendorMatchStrings[size_t(GLVendor::Other) + 1] = {
       "Intel",   "NVIDIA",  "ATI",          "Qualcomm", "Imagination",
       "nouveau", "Vivante", "VMware, Inc.", "ARM",      "Unknown"};
@@ -616,8 +617,8 @@ bool GLContext::InitImpl() {
     }
   }
 
-  
-  
+  // The order of these strings must match up with the order of the enum
+  // defined in GLContext.h for renderer IDs.
   const char* rendererMatchStrings[size_t(GLRenderer::Other) + 1] = {
       "Adreno 200",
       "Adreno 205",
@@ -654,9 +655,9 @@ bool GLContext::InitImpl() {
     printf_stderr("mRenderer: %s\n", rendererMatchStrings[size_t(mRenderer)]);
   }
 
-  
+  ////////////////
 
-  if (mVersion >= 300) {  
+  if (mVersion >= 300) {  // Both GL3 and ES3.
     const SymLoadStruct symbols[] = {
         {(PRFuncPtr*)&mSymbols.fGetStringi, {{"glGetStringi"}}}, END_SYMBOLS};
 
@@ -688,31 +689,31 @@ bool GLContext::InitImpl() {
 
   InitFeatures();
 
-  
+  ////
 
-  
+  // Disable extensions with partial or incorrect support.
   if (WorkAroundDriverBugs()) {
     if (Renderer() == GLRenderer::AdrenoTM320) {
       MarkUnsupported(GLFeature::standard_derivatives);
     }
 
     if (Vendor() == GLVendor::Vivante) {
-      
+      // bug 958256
       MarkUnsupported(GLFeature::standard_derivatives);
     }
 
     if (Renderer() == GLRenderer::MicrosoftBasicRenderDriver) {
-      
-      
-      
+      // Bug 978966: on Microsoft's "Basic Render Driver" (software renderer)
+      // multisampling hardcodes blending with the default blendfunc, which
+      // breaks WebGL.
       MarkUnsupported(GLFeature::framebuffer_multisample);
     }
 
 #ifdef XP_MACOSX
-    
-    
-    
-    
+    // The Mac Nvidia driver, for versions up to and including 10.8,
+    // don't seem to properly support this.  See 814839
+    // this has been fixed in Mac OS X 10.9. See 907946
+    // and it also works in 10.8.3 and higher.  See 1094338.
     if (Vendor() == gl::GLVendor::NVIDIA &&
         !nsCocoaFeatures::IsAtLeastVersion(10, 8, 3)) {
       MarkUnsupported(GLFeature::depth_texture);
@@ -721,7 +722,7 @@ bool GLContext::InitImpl() {
 
     const auto versionStr = (const char*)fGetString(LOCAL_GL_VERSION);
     if (strstr(versionStr, "Mesa")) {
-      
+      // DrawElementsInstanced hangs the driver.
       MarkUnsupported(GLFeature::robust_buffer_access_behavior);
     }
   }
@@ -733,16 +734,16 @@ bool GLContext::InitImpl() {
         " being available!");
   }
 
-  
+  ////////////////////////////////////////////////////////////////////////////
 
   const auto fnLoadForFeature = [&](const SymLoadStruct* list,
                                     GLFeature feature) {
     return this->LoadFeatureSymbols(*loader, list, feature);
   };
 
-  
+  // Check for ARB_framebuffer_objects
   if (IsSupported(GLFeature::framebuffer_object)) {
-    
+    // https://www.opengl.org/registry/specs/ARB/framebuffer_object.txt
     const SymLoadStruct symbols[] = {
         CORE_SYMBOL(IsRenderbuffer),
         CORE_SYMBOL(BindRenderbuffer),
@@ -767,7 +768,7 @@ bool GLContext::InitImpl() {
   }
 
   if (!IsSupported(GLFeature::framebuffer_object)) {
-    
+    // Check for aux symbols based on extensions
     if (IsSupported(GLFeature::framebuffer_object_EXT_OES)) {
       const SymLoadStruct symbols[] = {
           CORE_EXT_SYMBOL2(IsRenderbuffer, EXT, OES),
@@ -822,7 +823,7 @@ bool GLContext::InitImpl() {
   MOZ_RELEASE_ASSERT(mSymbols.fBindFramebuffer,
                      "GFX: mSymbols.fBindFramebuffer zero or not set.");
 
-  
+  ////////////////
 
   const auto err = fGetError();
   MOZ_RELEASE_ASSERT(!IsBadCallError(err));
@@ -830,7 +831,7 @@ bool GLContext::InitImpl() {
 
   LoadMoreSymbols(*loader);
 
-  
+  ////////////////////////////////////////////////////////////////////////////
 
   raw_fGetIntegerv(LOCAL_GL_VIEWPORT, mViewportRect);
   raw_fGetIntegerv(LOCAL_GL_SCISSOR_BOX, mScissorRect);
@@ -845,33 +846,33 @@ bool GLContext::InitImpl() {
 #ifdef XP_MACOSX
     if (!nsCocoaFeatures::IsAtLeastVersion(10, 12)) {
       if (mVendor == GLVendor::Intel) {
-        
+        // see bug 737182 for 2D textures, bug 684882 for cube map textures.
         maxTexSize = 4096;
         maxCubeSize = 512;
       } else if (mVendor == GLVendor::NVIDIA) {
-        
+        // See bug 879656.  8192 fails, 8191 works.
         maxTexSize = 8191;
       }
     } else {
-      
-      
-      
-      
-      
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=1544446
+      // Mojave exposes 16k textures, but gives FRAMEBUFFER_UNSUPPORTED for any
+      // 16k*16k FB except rgba8 without depth/stencil.
+      // The max supported sizes changes based on involved formats.
+      // (RGBA32F more restrictive than RGBA16F)
       maxTexSize = 8192;
     }
 #endif
 #ifdef MOZ_X11
     if (mVendor == GLVendor::Nouveau) {
-      
+      // see bug 814716. Clamp MaxCubeMapTextureSize at 2K for Nouveau.
       maxCubeSize = 2048;
     } else if (mVendor == GLVendor::Intel) {
-      
-      
+      // Bug 1199923. Driver seems to report a larger max size than
+      // actually supported.
       maxTexSize = mMaxTextureSize / 2;
     }
-    
-    
+    // Bug 1367570. Explicitly set vertex attributes [1,3] to opaque
+    // black because Nvidia doesn't do it for us.
     if (mVendor == GLVendor::NVIDIA) {
       for (size_t i = 1; i <= 3; ++i) {
         mSymbols.fVertexAttrib4f(i, 0, 0, 0, 1);
@@ -879,8 +880,8 @@ bool GLContext::InitImpl() {
     }
 #endif
     if (Renderer() == GLRenderer::AdrenoTM420) {
-      
-      
+      // see bug 1194923. Calling glFlush before glDeleteFramebuffers
+      // prevents occasional driver crash.
       mNeedsFlushBeforeDeleteFB = true;
     }
 #ifdef MOZ_WIDGET_ANDROID
@@ -888,22 +889,22 @@ bool GLContext::InitImpl() {
          Renderer() == GLRenderer::AdrenoTM320 ||
          Renderer() == GLRenderer::AdrenoTM330) &&
         jni::GetAPIVersion() < 21) {
-      
-      
+      // Bug 1164027. Driver crashes when functions such as
+      // glTexImage2D fail due to virtual memory exhaustion.
       mTextureAllocCrashesOnMapFailure = true;
     }
 #endif
 #if MOZ_WIDGET_ANDROID
     if (Renderer() == GLRenderer::SGX540 && jni::GetAPIVersion() <= 15) {
-      
-      
-      
-      
+      // Bug 1288446. Driver sometimes crashes when uploading data to a
+      // texture if the render target has changed since the texture was
+      // rendered from. Calling glCheckFramebufferStatus after
+      // glFramebufferTexture2D prevents the crash.
       mNeedsCheckAfterAttachTextureToFb = true;
     }
 #endif
 
-    
+    // -
 
     const auto fnLimit = [&](int* const driver, const int limit) {
       if (*driver > limit) {
@@ -925,12 +926,12 @@ bool GLContext::InitImpl() {
 
   mMaxTexOrRbSize = std::min(mMaxTextureSize, mMaxRenderbufferSize);
 
-  
+  ////////////////////////////////////////////////////////////////////////////
 
-  
+  // We're ready for final setup.
   fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, 0);
 
-  
+  // TODO: Remove SurfaceCaps::any.
   if (mCaps.any) {
     mCaps.any = false;
     mCaps.color = true;
@@ -1016,7 +1017,7 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
     fnLoadForExt(symbols, APPLE_fence);
   }
 
-  
+  // clang-format off
 
     if (IsSupported(GLFeature::vertex_array_object)) {
         const SymLoadStruct coreSymbols[] = {
@@ -1094,10 +1095,10 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
         fnLoadForFeature(symbols, GLFeature::sampler_objects);
     }
 
-    
-    
-    
-    
+    // ARB_transform_feedback2/NV_transform_feedback2 is a
+    // superset of EXT_transform_feedback/NV_transform_feedback
+    // and adds glPauseTransformFeedback &
+    // glResumeTransformFeedback, which are required for WebGL2.
     if (IsSupported(GLFeature::transform_feedback2)) {
         const SymLoadStruct coreSymbols[] = {
             { (PRFuncPtr*) &mSymbols.fBindBufferBase, {{ "glBindBufferBase" }} },
@@ -1130,7 +1131,7 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
             END_SYMBOLS
         };
         if (!fnLoadFeatureByCore(coreSymbols, extSymbols, GLFeature::texture_storage)) {
-            
+            // Also mark bind_buffer_offset as unsupported.
             MarkUnsupported(GLFeature::bind_buffer_offset);
         }
     }
@@ -1344,8 +1345,8 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
     }
 
     if (IsSupported(GLFeature::uniform_buffer_object)) {
-        
-        
+        // Note: Don't query for glGetActiveUniformName because it is not
+        // supported by GL ES 3.
         const SymLoadStruct symbols[] = {
             { (PRFuncPtr*) &mSymbols.fGetUniformIndices, {{ "glGetUniformIndices" }} },
             { (PRFuncPtr*) &mSymbols.fGetActiveUniformsiv, {{ "glGetActiveUniformsiv" }} },
@@ -1439,7 +1440,7 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
         fnLoadForExt(symbols, NV_fence);
     }
 
-  
+  // clang-format on
 
   if (IsExtensionSupported(NV_texture_barrier)) {
     const SymLoadStruct symbols[] = {
@@ -1459,7 +1460,7 @@ void GLContext::LoadMoreSymbols(const SymbolLoader& loader) {
     fnLoadForExt(symbols, APPLE_framebuffer_multisample);
   }
 
-  
+  // Load developer symbols, don't fail if we can't find them.
   const SymLoadStruct devSymbols[] = {CORE_SYMBOL(GetTexImage),
                                       CORE_SYMBOL(GetTexLevelParameteriv),
                                       END_SYMBOLS};
@@ -1563,13 +1564,13 @@ void GLContext::InitExtensions() {
       GLuint count = 0;
       if (GetPotentialInteger(LOCAL_GL_NUM_EXTENSIONS, (GLint*)&count)) {
         for (GLuint i = 0; i < count; i++) {
-          
+          // This is UTF-8.
           const char* rawExt = (const char*)fGetStringi(LOCAL_GL_EXTENSIONS, i);
 
-          
-          
-          
-          
+          // We CANNOT use nsDependentCString here, because the spec doesn't
+          // guarantee that the pointers returned are different, only that their
+          // contents are. On Flame, each of these index string queries returns
+          // the same address.
           driverExtensionList.push_back(nsCString(rawExt));
         }
         return;
@@ -1596,27 +1597,27 @@ void GLContext::InitExtensions() {
 
   if (WorkAroundDriverBugs()) {
     if (Vendor() == GLVendor::Qualcomm) {
-      
-      
+      // Some Adreno drivers do not report GL_OES_EGL_sync, but they really do
+      // support it.
       MarkExtensionSupported(OES_EGL_sync);
     }
 
     if (Vendor() == GLVendor::ATI) {
-      
-      
-      
+      // ATI drivers say this extension exists, but we can't
+      // actually find the EGLImageTargetRenderbufferStorageOES
+      // extension function pointer in the drivers.
       MarkExtensionUnsupported(OES_EGL_image);
     }
 
     if (Vendor() == GLVendor::Imagination && Renderer() == GLRenderer::SGX540) {
-      
+      // Bug 980048
       MarkExtensionUnsupported(OES_EGL_sync);
     }
 
 #ifdef MOZ_WIDGET_ANDROID
     if (Vendor() == GLVendor::Imagination &&
         Renderer() == GLRenderer::SGX544MP && jni::GetAPIVersion() < 21) {
-      
+      // Bug 1026404
       MarkExtensionUnsupported(OES_EGL_image);
       MarkExtensionUnsupported(OES_EGL_image_external);
     }
@@ -1624,22 +1625,22 @@ void GLContext::InitExtensions() {
 
     if (Vendor() == GLVendor::ARM && (Renderer() == GLRenderer::Mali400MP ||
                                       Renderer() == GLRenderer::Mali450MP)) {
-      
+      // Bug 1264505
       MarkExtensionUnsupported(OES_EGL_image_external);
     }
 
     if (Renderer() == GLRenderer::AndroidEmulator) {
-      
-      
-      
+      // the Android emulator, which we use to run B2G reftests on,
+      // doesn't expose the OES_rgb8_rgba8 extension, but it seems to
+      // support it (tautologically, as it only runs on desktop GL).
       MarkExtensionSupported(OES_rgb8_rgba8);
     }
 
     if (Vendor() == GLVendor::VMware &&
         Renderer() == GLRenderer::GalliumLlvmpipe) {
-      
-      
-      
+      // The llvmpipe driver that is used on linux try servers appears to have
+      // buggy support for s3tc/dxt1 compressed textures.
+      // See Bug 975824.
       MarkExtensionUnsupported(EXT_texture_compression_s3tc);
       MarkExtensionUnsupported(EXT_texture_compression_dxt1);
       MarkExtensionUnsupported(ANGLE_texture_compression_dxt3);
@@ -1647,20 +1648,20 @@ void GLContext::InitExtensions() {
     }
 
 #ifdef XP_MACOSX
-    
-    
-    
-    
-    
+    // Bug 1009642: On OSX Mavericks (10.9), the driver for Intel HD
+    // 3000 appears to be buggy WRT updating sub-images of S3TC
+    // textures with glCompressedTexSubImage2D. Works on Intel HD 4000
+    // and Intel HD 5000/Iris that I tested.
+    // Bug 1124996: Appears to be the same on OSX Yosemite (10.10)
     if (Renderer() == GLRenderer::IntelHD3000) {
       MarkExtensionUnsupported(EXT_texture_compression_s3tc);
     }
 
-    
-    
-    
-    
-    
+    // OSX supports EXT_texture_sRGB in Legacy contexts, but not in Core
+    // contexts. Though EXT_texture_sRGB was included into GL2.1, it *excludes*
+    // the interactions with s3tc. Strictly speaking, you must advertize support
+    // for EXT_texture_sRGB in order to allow for srgb+s3tc on desktop GL. The
+    // omission of EXT_texture_sRGB in OSX Core contexts appears to be a bug.
     MarkExtensionSupported(EXT_texture_sRGB);
 #endif
   }
@@ -1681,26 +1682,26 @@ void GLContext::PlatformStartup() {
   RegisterStrongMemoryReporter(new GfxTexturesReporter());
 }
 
-
+// Common code for checking for both GL extensions and GLX extensions.
 bool GLContext::ListHasExtension(const GLubyte* extensions,
                                  const char* extension) {
-  
-  
+  // fix bug 612572 - we were crashing as we were calling this function with
+  // extensions==null
   if (extensions == nullptr || extension == nullptr) return false;
 
   const GLubyte* start;
   GLubyte* where;
   GLubyte* terminator;
 
-  
+  /* Extension names should not have spaces. */
   where = (GLubyte*)strchr(extension, ' ');
   if (where || *extension == '\0') return false;
 
-  
-
-
-
-
+  /*
+   * It takes a bit of care to be fool-proof about parsing the
+   * OpenGL extensions string. Don't be fooled by sub-strings,
+   * etc.
+   */
   start = extensions;
   for (;;) {
     where = (GLubyte*)strstr((const char*)start, extension);
@@ -1721,15 +1722,15 @@ bool GLContext::ListHasExtension(const GLubyte* extensions,
 GLFormats GLContext::ChooseGLFormats(const SurfaceCaps& caps) const {
   GLFormats formats;
 
-  
-  
-  
+  // If we're on ES2 hardware and we have an explicit request for 16 bits of
+  // color or less OR we don't support full 8-bit color, return a 4444 or 565
+  // format.
   bool bpp16 = caps.bpp16;
   if (IsGLES()) {
     if (!IsExtensionSupported(OES_rgb8_rgba8)) bpp16 = true;
   } else {
-    
-    
+    // RGB565 is uncommon on desktop, requiring ARB_ES2_compatibility.
+    // Since it's also vanishingly useless there, let's not support it.
     bpp16 = false;
   }
 
@@ -1761,7 +1762,7 @@ GLFormats GLContext::ChooseGLFormats(const SurfaceCaps& caps) const {
     }
   }
 
-  
+  // Be clear that these are 0 if unavailable.
   formats.depthStencil = 0;
   if (IsSupported(GLFeature::packed_depth_stencil)) {
     formats.depthStencil = LOCAL_GL_DEPTH24_STENCIL8;
@@ -1802,7 +1803,7 @@ void GLContext::AttachBuffersToFB(GLuint colorTex, GLuint colorRB,
   MOZ_ASSERT(!(colorTex && colorRB));
 
   ScopedBindFramebuffer autoFB(this, fb);
-  MOZ_GL_ASSERT(this, fIsFramebuffer(fb));  
+  MOZ_GL_ASSERT(this, fIsFramebuffer(fb));  // It only counts after being bound.
 
   if (colorTex) {
     MOZ_GL_ASSERT(this, fIsTexture(colorTex));
@@ -1811,7 +1812,7 @@ void GLContext::AttachBuffersToFB(GLuint colorTex, GLuint colorRB,
     fFramebufferTexture2D(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
                           target, colorTex, 0);
   } else if (colorRB) {
-    
+    // On the Android 4.3 emulator, IsRenderbuffer may return false incorrectly.
     MOZ_GL_ASSERT(this, fIsRenderbuffer(colorRB) ||
                             Renderer() == GLRenderer::AndroidEmulator);
     fFramebufferRenderbuffer(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
@@ -1881,7 +1882,7 @@ bool GLContext::AssembleOffscreenFBs(const GLuint colorMSRB,
                              LOCAL_GL_RENDERBUFFER, stencilRB);
   }
 
-  
+  // We should be all resized.  Check for framebuffer completeness.
   GLenum status;
   bool isComplete = true;
 
@@ -1925,8 +1926,8 @@ void GLContext::MarkDestroyed() {
 
   OnMarkDestroyed();
 
-  
-  
+  // Null these before they're naturally nulled after dtor, as we want GLContext
+  // to still be alive in *their* dtors.
   mScreen = nullptr;
   mBlitHelper = nullptr;
   mReadTexImageHelper = nullptr;
@@ -1935,10 +1936,10 @@ void GLContext::MarkDestroyed() {
   mSymbols = {};
 }
 
-
+// -
 
 #ifdef MOZ_GL_DEBUG
-
+/* static */
 void GLContext::AssertNotPassingStackBufferToTheGL(const void* ptr) {
   int somethingOnTheStack;
   const void* someStackPtr = &somethingOnTheStack;
@@ -1948,20 +1949,20 @@ void GLContext::AssertNotPassingStackBufferToTheGL(const void* ptr) {
       reinterpret_cast<uintptr_t>(someStackPtr) >> page_bits;
   uintptr_t pageDistance = std::abs(page - someStackPage);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Explanation for the "distance <= 1" check here as opposed to just
+  // an equality check.
+  //
+  // Here we assume that pages immediately adjacent to the someStackAddress
+  // page, are also stack pages. That allows to catch the case where the calling
+  // frame put a buffer on the stack, and we just crossed the page boundary.
+  // That is likely to happen, precisely, when using stack arrays. I hit that
+  // specifically with CompositorOGL::Initialize.
+  //
+  // In theory we could be unlucky and wrongly assert here. If that happens,
+  // it will only affect debug builds, and looking at stacks we'll be able to
+  // see that this assert is wrong and revert to the conservative and safe
+  // approach of only asserting when address and someStackAddress are
+  // on the same page.
   bool isStackAddress = pageDistance <= 1;
   MOZ_ASSERT(!isStackAddress,
              "Please don't pass stack arrays to the GL. "
@@ -2017,7 +2018,7 @@ static void RemoveNamesFromArray(GLContext* aOrigin, GLsizei aCount,
                                  nsTArray<GLContext::NamedResource>& aArray) {
   for (GLsizei j = 0; j < aCount; ++j) {
     GLuint name = aNames[j];
-    
+    // name 0 can be ignored
     if (name == 0) continue;
 
     for (uint32_t i = 0; i < aArray.Length(); ++i) {
@@ -2115,7 +2116,7 @@ void GLContext::ReportOutstandingNames() {
   ReportArrayContents("Outstanding Renderbuffers", mTrackedRenderbuffers);
 }
 
-#endif 
+#endif /* DEBUG */
 
 void GLContext::GuaranteeResolve() {
   if (mScreen) {
@@ -2139,8 +2140,8 @@ bool GLContext::CreateScreenBufferImpl(const IntSize& size,
     return false;
   }
 
-  
-  
+  // This will rebind to 0 (Screen) if needed when
+  // it falls out of scope.
   ScopedBindFramebuffer autoFB(this);
 
   mScreen = std::move(newScreen);
@@ -2158,7 +2159,7 @@ void GLContext::ForceDirtyScreen() {
   ScopedBindFramebuffer autoFB(0);
 
   BeforeGLDrawCall();
-  
+  // no-op; just pretend we did something
   AfterGLDrawCall();
 }
 
@@ -2166,7 +2167,7 @@ void GLContext::CleanDirtyScreen() {
   ScopedBindFramebuffer autoFB(0);
 
   BeforeGLReadCall();
-  
+  // no-op; we just want to make sure the Read FBO is updated if it needs to be
   AfterGLReadCall();
 }
 
@@ -2205,7 +2206,7 @@ void GLContext::FlushIfHeavyGLCallsSinceLastFlush() {
   }
 }
 
-
+/*static*/
 bool GLContext::ShouldDumpExts() { return gfxEnv::GlDumpExtensions(); }
 
 bool DoesStringMatch(const char* aString, const char* aWantedString) {
@@ -2213,20 +2214,20 @@ bool DoesStringMatch(const char* aString, const char* aWantedString) {
 
   const char* occurrence = strstr(aString, aWantedString);
 
-  
+  // aWanted not found
   if (!occurrence) return false;
 
-  
+  // aWantedString preceded by alpha character
   if (occurrence != aString && isalpha(*(occurrence - 1))) return false;
 
-  
+  // aWantedVendor followed by alpha character
   const char* afterOccurrence = occurrence + strlen(aWantedString);
   if (isalpha(*afterOccurrence)) return false;
 
   return true;
 }
 
-
+/*static*/
 bool GLContext::ShouldSpew() { return gfxEnv::GlSpew(); }
 
 void SplitByChar(const nsACString& str, const char delim,
@@ -2269,9 +2270,9 @@ bool GLContext::Readback(SharedSurface* src, gfx::DataSourceSurface* dest) {
   {
     ScopedBindFramebuffer autoFB(this);
 
-    
-    
-    
+    // We're consuming from the producer side, so which do we use?
+    // Really, we just want a read-only lock, so ConsumerAcquire is the best
+    // match.
     src->ProducerReadAcquire();
 
     if (src->mAttachType == AttachmentType::Screen) {
@@ -2333,8 +2334,8 @@ bool GLContext::Readback(SharedSurface* src, gfx::DataSourceSurface* dest) {
   return true;
 }
 
-
-
+// Do whatever tear-down is necessary after drawing to our offscreen FBO,
+// if it's bound.
 void GLContext::AfterGLDrawCall() {
   if (mScreen) {
     mScreen->AfterDrawCall();
@@ -2342,8 +2343,8 @@ void GLContext::AfterGLDrawCall() {
   mHeavyGLCallsSinceLastFlush = true;
 }
 
-
-
+// Do whatever setup is necessary to read from our offscreen FBO, if it's
+// bound.
 void GLContext::BeforeGLReadCall() {
   if (mScreen) mScreen->BeforeReadCall();
 }
@@ -2368,7 +2369,7 @@ void GLContext::fBindFramebuffer(GLenum target, GLuint framebuffer) {
       return;
 
     default:
-      
+      // Nothing we care about, likely an error.
       break;
   }
 
@@ -2379,8 +2380,8 @@ void GLContext::fCopyTexImage2D(GLenum target, GLint level,
                                 GLenum internalformat, GLint x, GLint y,
                                 GLsizei width, GLsizei height, GLint border) {
   if (!IsTextureSizeSafeToPassToDriver(target, width, height)) {
-    
-    
+    // pass wrong values to cause the GL to generate GL_INVALID_VALUE.
+    // See bug 737182 and the comment in IsTextureSizeSafeToPassToDriver.
     level = -1;
     width = -1;
     height = -1;
@@ -2403,9 +2404,9 @@ void GLContext::fCopyTexImage2D(GLenum target, GLint level,
 
 void GLContext::fGetIntegerv(GLenum pname, GLint* params) {
   switch (pname) {
-    
-    
-    
+    // LOCAL_GL_FRAMEBUFFER_BINDING is equal to
+    // LOCAL_GL_DRAW_FRAMEBUFFER_BINDING_EXT,
+    // so we don't need two cases.
     case LOCAL_GL_DRAW_FRAMEBUFFER_BINDING_EXT:
       if (mScreen) {
         *params = mScreen->GetDrawFB();
@@ -2471,8 +2472,8 @@ void GLContext::fReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
 
   AfterGLReadCall();
 
-  
-  
+  // Check if GL is giving back 1.0 alpha for
+  // RGBA reads to RGBA images from no-alpha buffers.
 #ifdef XP_MACOSX
   if (WorkAroundDriverBugs() && Vendor() == gl::GLVendor::NVIDIA &&
       format == LOCAL_GL_RGBA && type == LOCAL_GL_UNSIGNED_BYTE &&
@@ -2485,9 +2486,9 @@ void GLContext::fReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
       uint32_t* itr = (uint32_t*)pixels;
       uint32_t testPixel = *itr;
       if ((testPixel & alphaMask) != alphaMask) {
-        
+        // We need to set the alpha channel to 1.0 manually.
         uint32_t* itrEnd =
-            itr + width * height;  
+            itr + width * height;  // Stride is guaranteed to be width*4.
 
         for (; itr != itrEnd; itr++) {
           *itr |= alphaMask;
@@ -2500,20 +2501,20 @@ void GLContext::fReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
 
 void GLContext::fDeleteFramebuffers(GLsizei n, const GLuint* names) {
   if (mScreen) {
-    
-    
+    // Notify mScreen which framebuffers we're deleting.
+    // Otherwise, we will get framebuffer binding mispredictions.
     for (int i = 0; i < n; i++) {
       mScreen->DeletingFB(names[i]);
     }
   }
 
-  
+  // Avoid crash by flushing before glDeleteFramebuffers. See bug 1194923.
   if (mNeedsFlushBeforeDeleteFB) {
     fFlush();
   }
 
   if (n == 1 && *names == 0) {
-    
+    // Deleting framebuffer 0 causes hangs on the DROID. See bug 623228.
   } else {
     raw_fDeleteFramebuffers(n, names);
   }
@@ -2521,15 +2522,15 @@ void GLContext::fDeleteFramebuffers(GLsizei n, const GLuint* names) {
 }
 
 #ifdef MOZ_WIDGET_ANDROID
-
-
-
-
+/**
+ * Conservatively estimate whether there is enough available
+ * contiguous virtual address space to map a newly allocated texture.
+ */
 static bool WillTextureMapSucceed(GLsizei width, GLsizei height, GLenum format,
                                   GLenum type) {
   bool willSucceed = false;
-  
-  
+  // Some drivers leave large gaps between textures, so require
+  // there to be double the actual size of the texture available.
   size_t size = width * height * GetBytesPerTexel(format, type) * 2;
 
   void* p = mmap(nullptr, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -2540,14 +2541,14 @@ static bool WillTextureMapSucceed(GLsizei width, GLsizei height, GLenum format,
 
   return willSucceed;
 }
-#endif  
+#endif  // MOZ_WIDGET_ANDROID
 
 void GLContext::fTexImage2D(GLenum target, GLint level, GLint internalformat,
                             GLsizei width, GLsizei height, GLint border,
                             GLenum format, GLenum type, const GLvoid* pixels) {
   if (!IsTextureSizeSafeToPassToDriver(target, width, height)) {
-    
-    
+    // pass wrong values to cause the GL to generate GL_INVALID_VALUE.
+    // See bug 737182 and the comment in IsTextureSizeSafeToPassToDriver.
     level = -1;
     width = -1;
     height = -1;
@@ -2555,10 +2556,10 @@ void GLContext::fTexImage2D(GLenum target, GLint level, GLint internalformat,
   }
 #if MOZ_WIDGET_ANDROID
   if (mTextureAllocCrashesOnMapFailure) {
-    
-    
-    
-    
+    // We have no way of knowing whether this texture already has
+    // storage allocated for it, and therefore whether this check
+    // is necessary. We must therefore assume it does not and
+    // always perform the check.
     if (!WillTextureMapSucceed(width, height, internalformat, type)) {
       return;
     }
@@ -2590,9 +2591,9 @@ GLuint GLContext::GetReadFB() {
 
 GLuint GLContext::GetFB() {
   if (mScreen) {
-    
-    
-    
+    // This has a very important extra assert that checks that we're
+    // not accidentally ignoring a situation where the draw and read
+    // FBs differ.
     return mScreen->GetFB();
   }
 
@@ -2664,7 +2665,7 @@ GLuint CreateTextureForOffscreen(GLContext* aGL, const GLFormats& aFormats,
 }
 
 uint32_t GetBytesPerTexel(GLenum format, GLenum type) {
-  
+  // If there is no defined format or type, we're not taking up any memory
   if (!format || !type) {
     return 0;
   }
@@ -2719,7 +2720,7 @@ bool GLContext::MakeCurrent(bool aForce) const {
     }
     if (MOZ_LIKELY(isCurrent)) {
       MOZ_ASSERT(IsCurrentImpl() ||
-                 !MakeCurrentImpl());  
+                 !MakeCurrentImpl());  // Might have lost context.
       return true;
     }
   }
@@ -2739,13 +2740,13 @@ void GLContext::ResetSyncCallCount(const char* resetReason) const {
   mSyncGLCallCount = 0;
 }
 
-
+// -
 
 bool CheckContextLost(const GLContext* const gl) {
   return gl->CheckContextLost();
 }
 
-
+// -
 
 GLenum GLContext::GetError() const {
   if (mContextLost) return LOCAL_GL_CONTEXT_LOST;
@@ -2758,7 +2759,7 @@ GLenum GLContext::GetError() const {
     const auto ret = mSymbols.fGetError();
     if (ret == LOCAL_GL_CONTEXT_LOST) {
       OnContextLostError();
-      mTopError = ret;  
+      mTopError = ret;  // Promote to top!
     }
     return ret;
   };
@@ -2821,9 +2822,9 @@ void GLContext::OnContextLostError() const {
   mContextLost = true;
 }
 
+// --
 
-
- std::string GLContext::GLErrorToString(const GLenum err) {
+/*static*/ std::string GLContext::GLErrorToString(const GLenum err) {
   switch (err) {
     case LOCAL_GL_NO_ERROR:
       return "GL_NO_ERROR";
@@ -2851,7 +2852,7 @@ void GLContext::OnContextLostError() const {
   return hex.BeginReading();
 }
 
-
+// --
 
 void GLContext::BeforeGLCall_Debug(const char* const funcName) const {
   MOZ_ASSERT(mDebugFlags);
@@ -2867,9 +2868,9 @@ void GLContext::BeforeGLCall_Debug(const char* const funcName) const {
 void GLContext::AfterGLCall_Debug(const char* const funcName) const {
   MOZ_ASSERT(mDebugFlags);
 
-  
-  
-  
+  // calling fFinish() immediately after every GL call makes sure that if this
+  // GL command crashes, the stack trace will actually point to it. Otherwise,
+  // OpenGL being an asynchronous API, stack traces tend to be meaningless
   mSymbols.fFinish();
 
   const auto err = mDebugErrorScope->GetError();
@@ -2898,20 +2899,20 @@ void GLContext::AfterGLCall_Debug(const char* const funcName) const {
   }
 }
 
-
+/*static*/
 void GLContext::OnImplicitMakeCurrentFailure(const char* const funcName) {
   gfxCriticalError() << "Ignoring call to " << funcName << " with failed"
                      << " mImplicitMakeCurrent.";
 }
 
+// -
 
-
-
-
+// These are defined out of line so that we don't need to include
+// ISurfaceAllocator.h in SurfaceTypes.h.
 SurfaceCaps::SurfaceCaps() = default;
 SurfaceCaps::SurfaceCaps(const SurfaceCaps& other) = default;
 SurfaceCaps& SurfaceCaps::operator=(const SurfaceCaps& other) = default;
 SurfaceCaps::~SurfaceCaps() = default;
 
-} 
-} 
+} /* namespace gl */
+} /* namespace mozilla */

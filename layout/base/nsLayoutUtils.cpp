@@ -776,7 +776,7 @@ float nsLayoutUtils::GetCurrentAPZResolutionScale(PresShell* aPresShell) {
 
 static nscoord GetMaxDisplayPortSize(nsIContent* aContent,
                                      nsPresContext* aFallbackPrescontext) {
-  MOZ_ASSERT(!StaticPrefs::layers_enable_tiles(),
+  MOZ_ASSERT(!StaticPrefs::layers_enable_tiles_AtStartup(),
              "Do not clamp displayports if tiling is enabled");
 
   
@@ -913,7 +913,7 @@ static nsRect GetDisplayPortFromMarginsData(
 
   if (presShell->IsDisplayportSuppressed()) {
     alignment = ScreenSize(1, 1);
-  } else if (StaticPrefs::layers_enable_tiles()) {
+  } else if (StaticPrefs::layers_enable_tiles_AtStartup()) {
     
     
     
@@ -935,7 +935,7 @@ static nsRect GetDisplayPortFromMarginsData(
     alignment.height = 128;
   }
 
-  if (StaticPrefs::layers_enable_tiles()) {
+  if (StaticPrefs::layers_enable_tiles_AtStartup()) {
     
     screenRect.Inflate(aMarginsData->mMargins);
   } else {
@@ -1147,7 +1147,7 @@ static bool GetDisplayPortImpl(
     result = GetDisplayPortFromMarginsData(aContent, marginsData, aMultiplier);
   }
 
-  if (!StaticPrefs::layers_enable_tiles()) {
+  if (!StaticPrefs::layers_enable_tiles_AtStartup()) {
     
     
     nscoord maxSize = GetMaxDisplayPortSize(aContent, nullptr);

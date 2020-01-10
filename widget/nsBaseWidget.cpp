@@ -893,7 +893,7 @@ void nsBaseWidget::ConfigureAPZCTreeManager() {
       NewRunnableMethod<float>("layers::IAPZCTreeManager::SetDPI", mAPZC,
                                &IAPZCTreeManager::SetDPI, dpi));
 
-  if (StaticPrefs::apz_keyboard_enabled()) {
+  if (StaticPrefs::apz_keyboard_enabled_AtStartup()) {
     KeyboardMap map = nsXBLWindowKeyHandler::CollectKeyboardShortcuts();
     
     APZThreadUtils::RunOnControllerThread(NewRunnableMethod<KeyboardMap>(

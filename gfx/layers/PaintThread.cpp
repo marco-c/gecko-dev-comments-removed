@@ -48,7 +48,7 @@ void PaintThread::AddRef() {}
 
 int32_t PaintThread::CalculatePaintWorkerCount() {
   int32_t cpuCores = PR_GetNumberOfProcessors();
-  int32_t workerCount = StaticPrefs::layers_omtp_paint_workers();
+  int32_t workerCount = StaticPrefs::layers_omtp_paint_workers_AtStartup();
 
   
   

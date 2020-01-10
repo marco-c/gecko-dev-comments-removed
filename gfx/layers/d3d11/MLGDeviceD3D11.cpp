@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MLGDeviceD3D11.h"
 #include "mozilla/ArrayUtils.h"
@@ -32,7 +32,7 @@ using namespace mozilla::widget;
 using namespace mozilla::layers::mlg;
 using namespace std;
 
-
+// Defined in CompositorD3D11.cpp.
 bool CanUsePartialPresents(ID3D11Device* aDevice);
 
 static D3D11_BOX RectToBox(const gfx::IntRect& aRect);
@@ -83,7 +83,7 @@ bool MLGRenderTargetD3D11::Initialize(ID3D11Device* aDevice,
 }
 
 bool MLGRenderTargetD3D11::UpdateTexture(ID3D11Texture2D* aTexture) {
-  
+  // Save the view first, in case we can re-use it.
   RefPtr<ID3D11RenderTargetView> view = mRTView.forget();
 
   ForgetTexture();
@@ -102,7 +102,7 @@ bool MLGRenderTargetD3D11::UpdateTexture(ID3D11Texture2D* aTexture) {
   aTexture->GetDevice(getter_AddRefs(device));
 
   if (view) {
-    
+    // Check that the view matches the backing texture.
     RefPtr<ID3D11Resource> resource;
     view->GetResource(getter_AddRefs(resource));
     if (resource != aTexture) {
@@ -110,7 +110,7 @@ bool MLGRenderTargetD3D11::UpdateTexture(ID3D11Texture2D* aTexture) {
     }
   }
 
-  
+  // If we couldn't re-use a view from before, make one now.
   if (!view) {
     HRESULT hr =
         device->CreateRenderTargetView(aTexture, nullptr, getter_AddRefs(view));
@@ -237,17 +237,17 @@ bool MLGSwapChainD3D11::Initialize(CompositorWidget* aWidget) {
   if (gfxVars::UseDoubleBufferingWithCompositor() &&
       SUCCEEDED(dxgiFactory->QueryInterface(dxgiFactory2.StartAssignment())) &&
       dxgiFactory2 && XRE_IsGPUProcess()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // DXGI_SCALING_NONE is not available on Windows 7 with the Platform Update:
+    // This looks awful for things like the awesome bar and browser window
+    // resizing, so we don't use a flip buffer chain here. (Note when using
+    // EFFECT_SEQUENTIAL Windows doesn't stretch the surface when resizing).
+    //
+    // We choose not to run this on platforms earlier than Windows 10 because
+    // it appears sometimes this breaks our ability to test ASAP compositing,
+    // which breaks Talos.
+    //
+    // When the GPU process is disabled we don't have a compositor window which
+    // can lead to issues with Window re-use so we don't use this.
     DXGI_SWAP_CHAIN_DESC1 desc;
     ::ZeroMemory(&desc, sizeof(desc));
     desc.Width = 0;
@@ -295,11 +295,11 @@ bool MLGSwapChainD3D11::Initialize(CompositorWidget* aWidget) {
       return false;
     }
 
-    
+    // Try to get an IDXGISwapChain1 if we can, for partial presents.
     mSwapChain->QueryInterface(mSwapChain1.StartAssignment());
   }
 
-  
+  // We need this because we don't want DXGI to respond to Alt+Enter.
   dxgiFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_WINDOW_CHANGES);
   mWidget = aWidget;
   return true;
@@ -311,7 +311,7 @@ RefPtr<MLGRenderTarget> MLGSwapChainD3D11::AcquireBackBuffer() {
                                      getter_AddRefs(texture));
   if (hr == DXGI_ERROR_INVALID_CALL &&
       mDevice->GetDeviceRemovedReason() != S_OK) {
-    
+    // This can happen on some drivers when there's a TDR.
     mParent->HandleDeviceReset("SwapChain::GetBuffer");
     return nullptr;
   }
@@ -323,7 +323,7 @@ RefPtr<MLGRenderTarget> MLGSwapChainD3D11::AcquireBackBuffer() {
 
   if (!mRT) {
     MLGRenderTargetFlags flags = MLGRenderTargetFlags::Default;
-    if (StaticPrefs::layers_mlgpu_enable_depth_buffer()) {
+    if (StaticPrefs::layers_mlgpu_enable_depth_buffer_AtStartup()) {
       flags |= MLGRenderTargetFlags::ZBuffer;
     }
 
@@ -346,11 +346,11 @@ RefPtr<MLGRenderTarget> MLGSwapChainD3D11::AcquireBackBuffer() {
 void MLGSwapChainD3D11::UpdateBackBufferContents(ID3D11Texture2D* aBack) {
   MOZ_ASSERT(mIsDoubleBuffered);
 
-  
-  
-  
-  
-  
+  // The front region contains the newly invalid region for this frame. The
+  // back region contains that, plus the region that was only drawn into the
+  // back buffer on the previous frame. Thus by subtracting the two, we can
+  // find the region that needs to be copied from the front buffer to the
+  // back. We do this so we don't have to re-render those pixels.
   nsIntRegion frontValid;
   frontValid.Sub(mBackBufferInvalid, mFrontBufferInvalid);
   if (frontValid.IsEmpty()) {
@@ -374,7 +374,7 @@ void MLGSwapChainD3D11::UpdateBackBufferContents(ID3D11Texture2D* aBack) {
                                    &box);
   }
 
-  
+  // The back and front buffers are now in sync.
   mBackBufferInvalid = mFrontBufferInvalid;
   MOZ_ASSERT(!mBackBufferInvalid.IsEmpty());
 }
@@ -382,12 +382,12 @@ void MLGSwapChainD3D11::UpdateBackBufferContents(ID3D11Texture2D* aBack) {
 bool MLGSwapChainD3D11::ResizeBuffers(const IntSize& aSize) {
   mWidget->AsWindows()->UpdateCompositorWndSizeIfNecessary();
 
-  
+  // We have to clear all references to the old backbuffer before resizing.
   mRT = nullptr;
 
-  
-  
-  
+  // Clear the size before re-allocating. If allocation fails we want to try
+  // again, because we had to sacrifice our original backbuffer to try
+  // resizing.
   mSize = IntSize(0, 0);
 
   HRESULT hr = mSwapChain->ResizeBuffers(0, aSize.width, aSize.height,
@@ -413,7 +413,7 @@ void MLGSwapChainD3D11::Present() {
   MOZ_ASSERT(!mBackBufferInvalid.IsEmpty());
   MOZ_ASSERT(mBackBufferInvalid.GetNumRects() > 0);
 
-  
+  // See bug 1260611 comment #28 for why we do this.
   mParent->InsertPresentWaitQuery();
 
   HRESULT hr;
@@ -447,10 +447,10 @@ void MLGSwapChainD3D11::Present() {
   }
 
   if (mIsDoubleBuffered) {
-    
-    
-    
-    
+    // Both the front and back buffer invalid regions are in sync, but now the
+    // presented buffer (the front buffer) is clean, so we clear its invalid
+    // region. The back buffer that will be used next frame however is now
+    // dirty.
     MOZ_ASSERT(mFrontBufferInvalid.GetBounds() ==
                mBackBufferInvalid.GetBounds());
     mFrontBufferInvalid.SetEmpty();
@@ -459,19 +459,19 @@ void MLGSwapChainD3D11::Present() {
   }
   mLastPresentSize = mSize;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Note: this waits on the query we inserted in the previous frame,
+  // not the one we just inserted now. Example:
+  //   Insert query #1
+  //   Present #1
+  //   (first frame, no wait)
+  //   Insert query #2
+  //   Present #2
+  //   Wait for query #1.
+  //   Insert query #3
+  //   Present #3
+  //   Wait for query #2.
+  //
+  // This ensures we're done reading textures before swapping buffers.
   mParent->WaitForPreviousPresentQuery();
 }
 
@@ -488,9 +488,9 @@ void MLGSwapChainD3D11::ForcePresent() {
 
   mSwapChain->Present(0, 0);
   if (mIsDoubleBuffered) {
-    
-    
-    
+    // Make sure we present the old front buffer since we know it is completely
+    // valid. This non-vsynced present should be pretty much 'free' for a flip
+    // chain.
     mSwapChain->Present(0, 0);
   }
 
@@ -632,7 +632,7 @@ MLGTextureD3D11::MLGTextureD3D11(ID3D11Texture2D* aTexture)
   mSize.height = desc.Height;
 }
 
-
+/* static */
 RefPtr<MLGTextureD3D11> MLGTextureD3D11::Create(ID3D11Device* aDevice,
                                                 const gfx::IntSize& aSize,
                                                 gfx::SurfaceFormat aFormat,
@@ -714,7 +714,7 @@ MLGDeviceD3D11::MLGDeviceD3D11(ID3D11Device* aDevice)
     : mDevice(aDevice), mScissored(false) {}
 
 MLGDeviceD3D11::~MLGDeviceD3D11() {
-  
+  // Caller should have unlocked all textures after presenting.
   MOZ_ASSERT(mLockedTextures.IsEmpty());
   MOZ_ASSERT(mLockAttemptedTextures.IsEmpty());
 }
@@ -736,13 +736,13 @@ bool MLGDeviceD3D11::Initialize() {
   mCtx->QueryInterface((ID3D11DeviceContext1**)getter_AddRefs(mCtx1));
 
   if (mCtx1) {
-    
-    
-    
-    
-    
-    
-    
+    // Windows 7 can have Direct3D 11.1 if the platform update is installed,
+    // but according to some NVIDIA presentations it is known to be buggy.
+    // It's not clear whether that only refers to command list emulation,
+    // or whether it just has performance penalties. To be safe we only use
+    // it on Windows 8 or higher.
+    //
+    // https://docs.microsoft.com/en-us/windows-hardware/drivers/display/directx-feature-improvements-in-windows-8#buffers
     D3D11_FEATURE_DATA_D3D11_OPTIONS options;
     HRESULT hr = mDevice->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS,
                                               &options, sizeof(options));
@@ -761,7 +761,7 @@ bool MLGDeviceD3D11::Initialize() {
     }
   }
 
-  
+  // Get capabilities.
   switch (mDevice->GetFeatureLevel()) {
     case D3D_FEATURE_LEVEL_11_1:
     case D3D_FEATURE_LEVEL_11_0:
@@ -805,7 +805,7 @@ bool MLGDeviceD3D11::Initialize() {
     }
   }
 
-  
+  // Define pixel shaders.
 #define LAZY_PS(cxxName, enumName) \
   mLazyPixelShaders[PixelShaderID::enumName] = &s##cxxName;
   LAZY_PS(TexturedVertexRGB, TexturedVertexRGB);
@@ -840,7 +840,7 @@ bool MLGDeviceD3D11::Initialize() {
   LAZY_PS(DiagnosticTextPS, DiagnosticText);
 #undef LAZY_PS
 
-  
+  // Define vertex shaders.
 #define LAZY_VS(cxxName, enumName) \
   mLazyVertexShaders[VertexShaderID::enumName] = &s##cxxName;
   LAZY_VS(TexturedQuadVS, TexturedQuad);
@@ -853,7 +853,7 @@ bool MLGDeviceD3D11::Initialize() {
   LAZY_VS(DiagnosticTextVS, DiagnosticText);
 #undef LAZY_VS
 
-  
+  // Force critical shaders to initialize early.
   if (!InitPixelShader(PixelShaderID::TexturedQuadRGB) ||
       !InitPixelShader(PixelShaderID::TexturedQuadRGBA) ||
       !InitPixelShader(PixelShaderID::ColoredQuad) ||
@@ -865,7 +865,7 @@ bool MLGDeviceD3D11::Initialize() {
     return Fail("FEATURE_FAILURE_CRITICAL_SHADER_FAILURE");
   }
 
-  
+  // Common unit quad layout: vPos, vRect, vLayerIndex, vDepth
 #define BASE_UNIT_QUAD_LAYOUT                                                  \
   {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, \
    0},                                                                         \
@@ -884,7 +884,7 @@ bool MLGDeviceD3D11::Initialize() {
         D3D11_INPUT_PER_INSTANCE_DATA, 1                                       \
   }
 
-  
+  // Common unit triangle layout: vUnitPos, vPos1-3, vLayerIndex, vDepth
 #define BASE_UNIT_TRIANGLE_LAYOUT                    \
   {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,       \
    0,          0, D3D11_INPUT_PER_VERTEX_DATA,       \
@@ -921,11 +921,11 @@ bool MLGDeviceD3D11::Initialize() {
        D3D11_INPUT_PER_INSTANCE_DATA,                \
        1}
 
-  
+  // Initialize input layouts.
   {
     D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
         BASE_UNIT_QUAD_LAYOUT,
-        
+        // vTexRect
         {"TEXCOORD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
          D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1}};
     if (!InitInputLayout(inputDesc, MOZ_ARRAY_LENGTH(inputDesc),
@@ -936,7 +936,7 @@ bool MLGDeviceD3D11::Initialize() {
   {
     D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
         BASE_UNIT_QUAD_LAYOUT,
-        
+        // vColor
         {"TEXCOORD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
          D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1}};
     if (!InitInputLayout(inputDesc, MOZ_ARRAY_LENGTH(inputDesc), sColoredQuadVS,
@@ -947,7 +947,7 @@ bool MLGDeviceD3D11::Initialize() {
   {
     D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
         BASE_UNIT_TRIANGLE_LAYOUT,
-        
+        // vTexCoord1, vTexCoord2, vTexCoord3
         {"TEXCOORD", 2, DXGI_FORMAT_R32G32_FLOAT, 1,
          D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
         {"TEXCOORD", 3, DXGI_FORMAT_R32G32_FLOAT, 1,
@@ -958,7 +958,7 @@ bool MLGDeviceD3D11::Initialize() {
                          sTexturedVertexVS, VertexShaderID::TexturedVertex)) {
       return Fail("FEATURE_FAILURE_TEXTURED_INPUT_LAYOUT");
     }
-    
+    // Propagate the input layout to other vertex shaders that use the same.
     mInputLayouts[VertexShaderID::BlendVertex] =
         mInputLayouts[VertexShaderID::TexturedVertex];
   }
@@ -976,16 +976,16 @@ bool MLGDeviceD3D11::Initialize() {
 #undef BASE_UNIT_QUAD_LAYOUT
 #undef BASE_UNIT_TRIANGLE_LAYOUT
 
-  
+  // Ancillary shaders that are not used for batching.
   {
     D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
-        
+        // vPos
         {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0,
          D3D11_INPUT_PER_VERTEX_DATA, 0},
-        
+        // vRect
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_SINT, 1, 0,
          D3D11_INPUT_PER_INSTANCE_DATA, 1},
-        
+        // vDepth
         {"TEXCOORD", 1, DXGI_FORMAT_R32_SINT, 1, D3D11_APPEND_ALIGNED_ELEMENT,
          D3D11_INPUT_PER_INSTANCE_DATA, 1},
     };
@@ -996,10 +996,10 @@ bool MLGDeviceD3D11::Initialize() {
   }
   {
     D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
-        
+        // vPos
         {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0,
          D3D11_INPUT_PER_VERTEX_DATA, 0},
-        
+        // vTexCoords
         {"POSITION", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
          D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1}};
     if (!InitInputLayout(inputDesc, MOZ_ARRAY_LENGTH(inputDesc),
@@ -1009,13 +1009,13 @@ bool MLGDeviceD3D11::Initialize() {
   }
   {
     D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
-        
+        // vPos
         {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0,
          D3D11_INPUT_PER_VERTEX_DATA, 0},
-        
+        // vRect
         {"TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0,
          D3D11_INPUT_PER_INSTANCE_DATA, 1},
-        
+        // vTexCoords
         {"TEXCOORD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,
          D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
     };
@@ -1589,7 +1589,7 @@ void MLGDeviceD3D11::ClearView(MLGRenderTarget* aRT, const Color& aColor,
     rects[i] = ToD3D11Rect(aRects[i]);
   }
 
-  
+  // Batch ClearView calls since too many will crash NVIDIA drivers.
   size_t remaining = aNumRects;
   size_t cursor = 0;
   while (remaining > 0) {
@@ -1616,8 +1616,8 @@ void MLGDeviceD3D11::DrawInstanced(uint32_t aVertexCountPerInstance,
 
 void MLGDeviceD3D11::SetPSTextures(uint32_t aSlot, uint32_t aNumTextures,
                                    TextureSource* const* aTextures) {
-  
-  
+  // TextureSource guarantees that the ID3D11ShaderResourceView will be cached,
+  // so we don't hold a RefPtr here.
   StackArray<ID3D11ShaderResourceView*, 3> views(aNumTextures);
 
   for (size_t i = 0; i < aNumTextures; i++) {
@@ -1756,7 +1756,7 @@ bool MLGDeviceD3D11::Synchronize() {
 
   if (mSyncObject) {
     if (!mSyncObject->Synchronize()) {
-      
+      // It's timeout or other error. Handle the device-reset here.
       HandleDeviceReset("SyncObject");
       return false;
     }
@@ -1801,17 +1801,17 @@ void MLGDeviceD3D11::WaitForPreviousPresentQuery() {
 void MLGDeviceD3D11::Flush() { mCtx->Flush(); }
 
 void MLGDeviceD3D11::EndFrame() {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // On our Windows 8 x64 machines, we have observed a driver bug related to
+  // XXSetConstantBuffers1. It appears binding the same buffer to multiple
+  // slots, and potentially leaving slots bound for many frames (as can
+  // happen if we bind a high slot, like for blending), can consistently
+  // cause shaders to read wrong values much later. It is possible there is
+  // a driver bug related to aliasing and partial binding.
+  //
+  // Configuration: GeForce GT 610 (0x104a), Driver 9.18.13.3523, 3-4-2014,
+  // on Windows 8 x64.
+  //
+  // To alleviate this we unbind all buffers at the end of the frame.
   static ID3D11Buffer* nullBuffers[6] = {
       nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
   };
@@ -1866,9 +1866,9 @@ void MLGDeviceD3D11::CopyTexture(MLGTexture* aDest,
   MLGTextureD3D11* dest = aDest->AsD3D11();
   MLGTextureD3D11* source = aSource->AsD3D11();
 
-  
-  
-  
+  // We check both the source and destination copy regions, because
+  // CopySubresourceRegion is documented as causing a device reset if
+  // the operation is out-of-bounds. And it's not lying.
   IntRect sourceBounds(IntPoint(0, 0), aSource->GetSize());
   if (!sourceBounds.Contains(aRect)) {
     gfxWarning() << "Attempt to read out-of-bounds in CopySubresourceRegion: "
@@ -1932,8 +1932,8 @@ bool MLGDeviceD3D11::VerifyConstantBufferOffsetting() {
     return false;
   }
 
-  
-  
+  // Populate the buffer. The shader will pick R from buffer 1, G from buffer
+  // 2, and B from buffer 3.
   {
     MLGMappedResource map;
     if (!Map(buffer, MLGMapType::WRITE_DISCARD, &map)) {
@@ -1969,7 +1969,7 @@ bool MLGDeviceD3D11::VerifyConstantBufferOffsetting() {
   mCtx1->VSSetConstantBuffers1(0, 3, buffers, offsets, counts);
   mCtx->Draw(4, 0);
 
-  
+  // Kill bindings to resources.
   SetRenderTarget(nullptr);
 
   ID3D11Buffer* nulls[3] = {nullptr, nullptr, nullptr};
@@ -2011,5 +2011,5 @@ static D3D11_BOX RectToBox(const gfx::IntRect& aRect) {
   return box;
 }
 
-}  
-}  
+}  // namespace layers
+}  // namespace mozilla

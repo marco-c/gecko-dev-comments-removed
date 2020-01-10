@@ -1054,10 +1054,10 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
 
     
     
-    DoUnlockSurfaces(
-        WrapNotNull(cache),
-         !StaticPrefs::image_mem_animated_discardable(),
-        aAutoLock);
+    DoUnlockSurfaces(WrapNotNull(cache),
+                     
+                     !StaticPrefs::image_mem_animated_discardable_AtStartup(),
+                     aAutoLock);
   }
 
   already_AddRefed<ImageSurfaceCache> RemoveImage(
@@ -1378,18 +1378,18 @@ void SurfaceCache::Initialize() {
   
   
   uint32_t surfaceCacheExpirationTimeMS =
-      StaticPrefs::image_mem_surfacecache_min_expiration_ms();
+      StaticPrefs::image_mem_surfacecache_min_expiration_ms_AtStartup();
 
   
   
   
   
   uint32_t surfaceCacheDiscardFactor =
-      max(StaticPrefs::image_mem_surfacecache_discard_factor(), 1u);
+      max(StaticPrefs::image_mem_surfacecache_discard_factor_AtStartup(), 1u);
 
   
   uint64_t surfaceCacheMaxSizeKB =
-      StaticPrefs::image_mem_surfacecache_max_size_kb();
+      StaticPrefs::image_mem_surfacecache_max_size_kb_AtStartup();
 
   
   
@@ -1400,7 +1400,7 @@ void SurfaceCache::Initialize() {
   
   
   uint32_t surfaceCacheSizeFactor =
-      max(StaticPrefs::image_mem_surfacecache_size_factor(), 1u);
+      max(StaticPrefs::image_mem_surfacecache_size_factor_AtStartup(), 1u);
 
   
   uint64_t memorySize = PR_GetPhysicalMemorySize();

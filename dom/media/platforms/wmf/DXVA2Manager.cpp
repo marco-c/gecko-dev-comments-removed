@@ -680,7 +680,7 @@ D3D11DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
         gfx::SurfaceFormat::NV12);
 
     if (ImageBridgeChild::GetSingleton() &&
-        StaticPrefs::media_wmf_use_sync_texture() &&
+        StaticPrefs::media_wmf_use_sync_texture_AtStartup() &&
         mDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
       
       
@@ -695,7 +695,7 @@ D3D11DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
   } else {
     mTextureClientAllocator = new D3D11RecycleAllocator(
         aKnowsCompositor, mDevice, gfx::SurfaceFormat::NV12);
-    if (StaticPrefs::media_wmf_use_sync_texture()) {
+    if (StaticPrefs::media_wmf_use_sync_texture_AtStartup()) {
       
       
       

@@ -86,7 +86,7 @@ PRLibrary* LoadApitraceLibrary() {
   if (!path) return nullptr;
 
   
-  if (!StaticPrefs::gfx_apitrace_enabled()) {
+  if (!StaticPrefs::gfx_apitrace_enabled_AtStartup()) {
     return nullptr;
   }
 

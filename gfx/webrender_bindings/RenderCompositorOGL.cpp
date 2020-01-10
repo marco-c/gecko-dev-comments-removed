@@ -74,7 +74,7 @@ void RenderCompositorOGL::InsertFrameDoneSync() {
 #ifdef XP_MACOSX
   
   
-  if (StaticPrefs::gfx_core_animation_enabled()) {
+  if (StaticPrefs::gfx_core_animation_enabled_AtStartup()) {
     if (mThisFrameDoneSync) {
       mGL->fDeleteSync(mThisFrameDoneSync);
     }

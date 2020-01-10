@@ -4510,9 +4510,9 @@ Result<Ok, const char*> Preferences::InitInitialObjects(bool aIsStartup) {
     
     
 #  define PREF(name, cpp_type, value)
-#  define VARCACHE_PREF(policy, name, id, cpp_type, value)                 \
+#  define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value)   \
     MOZ_ASSERT(PreferencesInternalMethods::GetPref<StripAtomic<cpp_type>>( \
-                   name, value) == StaticPrefs::id(),                      \
+                   name, value) == StaticPrefs::full_id(),                 \
                "Incorrect cached value for " name);
 #  include "mozilla/StaticPrefListAll.h"
 #  undef PREF
@@ -5434,8 +5434,8 @@ void MaybeInitOncePrefs() {
 
 
 #define PREF(name, cpp_type, value)
-#define VARCACHE_PREF(policy, name, id, cpp_type, default_value) \
-  cpp_type sVarCache_##id(default_value);
+#define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, default_value) \
+  cpp_type sVarCache_##full_id(default_value);
 #include "mozilla/StaticPrefListAll.h"
 #undef PREF
 #undef VARCACHE_PREF
@@ -5467,9 +5467,9 @@ static void InitAll(bool aIsStartup) {
   if (isParent) {                    \
     SetPref_##cpp_type(name, value); \
   }
-#define VARCACHE_PREF(policy, name, id, cpp_type, value)           \
-  InitVarCachePref(UpdatePolicy::policy, NS_LITERAL_CSTRING(name), \
-                   &sVarCache_##id, value, aIsStartup, isParent);
+#define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value) \
+  InitVarCachePref(UpdatePolicy::policy, NS_LITERAL_CSTRING(name),     \
+                   &sVarCache_##full_id, value, aIsStartup, isParent);
 #include "mozilla/StaticPrefListAll.h"
 #undef PREF
 #undef VARCACHE_PREF
@@ -5496,31 +5496,32 @@ static void InitOncePrefs() {
   
 #define PREF(name, cpp_type, value)
 #ifdef DEBUG
-#  define VARCACHE_PREF(policy, name, id, cpp_type, value)                     \
+#  define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value)       \
     if (UpdatePolicy::policy == UpdatePolicy::Once) {                          \
       MOZ_ASSERT(gOnceStaticPrefsAntiFootgun);                                 \
-      sVarCache_##id = PreferencesInternalMethods::GetPref(                    \
+      sVarCache_##full_id = PreferencesInternalMethods::GetPref(               \
           name, StripAtomic<cpp_type>(value));                                 \
       auto checkPref = [&]() {                                                 \
         MOZ_ASSERT(sOncePrefRead);                                             \
-        StripAtomic<cpp_type> staticPrefValue = id();                          \
+        StripAtomic<cpp_type> staticPrefValue = full_id();                     \
         StripAtomic<cpp_type> preferenceValue =                                \
-            PreferencesInternalMethods::GetPref(GetPrefName_##id(),            \
+            PreferencesInternalMethods::GetPref(GetPrefName_##base_id(),       \
                                                 StripAtomic<cpp_type>(value)); \
-        MOZ_ASSERT(                                                            \
-            staticPrefValue == preferenceValue,                                \
-            "Preference '" name "' got modified since StaticPrefs::" #id       \
-            " got initialized. Consider using a `Live` StaticPrefs instead");  \
+        MOZ_ASSERT(staticPrefValue == preferenceValue,                         \
+                   "Preference '" name                                         \
+                   "' got modified since StaticPrefs::" #full_id               \
+                   " was initialized. Consider using an `always` mirror kind " \
+                   "instead");                                                 \
       };                                                                       \
       gOnceStaticPrefsAntiFootgun->insert(                                     \
-          std::pair<const char*, AntiFootgunCallback>(GetPrefName_##id(),      \
+          std::pair<const char*, AntiFootgunCallback>(GetPrefName_##base_id(), \
                                                       std::move(checkPref)));  \
     }
 #else
-#  define VARCACHE_PREF(policy, name, id, cpp_type, value)  \
-    if (UpdatePolicy::policy == UpdatePolicy::Once) {       \
-      sVarCache_##id = PreferencesInternalMethods::GetPref( \
-          name, StripAtomic<cpp_type>(value));              \
+#  define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value) \
+    if (UpdatePolicy::policy == UpdatePolicy::Once) {                    \
+      sVarCache_##full_id = PreferencesInternalMethods::GetPref(         \
+          name, StripAtomic<cpp_type>(value));                           \
     }
 #endif
 
@@ -5608,10 +5609,10 @@ static void RegisterOncePrefs(SharedPrefMapBuilder& aBuilder) {
   
   
 #define PREF(name, cpp_type, value)
-#define VARCACHE_PREF(policy, name, id, cpp_type, value)            \
-  if (UpdatePolicy::policy == UpdatePolicy::Once) {                 \
-    SaveOncePrefToSharedMap(aBuilder, ONCE_PREF_NAME(name),         \
-                            StripAtomic<cpp_type>(sVarCache_##id)); \
+#define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value)   \
+  if (UpdatePolicy::policy == UpdatePolicy::Once) {                      \
+    SaveOncePrefToSharedMap(aBuilder, ONCE_PREF_NAME(name),              \
+                            StripAtomic<cpp_type>(sVarCache_##full_id)); \
   }
 #include "mozilla/StaticPrefListAll.h"
 #undef PREF
@@ -5643,7 +5644,7 @@ static void InitStaticPrefsFromShared() {
   
   
 #define PREF(name, cpp_type, value)
-#define VARCACHE_PREF(policy, name, id, cpp_type, value)               \
+#define VARCACHE_PREF(policy, name, base_id, full_id, cpp_type, value) \
   {                                                                    \
     StripAtomic<cpp_type> val;                                         \
     nsresult rv;                                                       \
@@ -5654,7 +5655,7 @@ static void InitStaticPrefsFromShared() {
       rv = PreferencesInternalMethods::GetSharedPrefValue(name, &val); \
     }                                                                  \
     MOZ_DIAGNOSTIC_ALWAYS_TRUE(NS_SUCCEEDED(rv));                      \
-    StaticPrefs::sVarCache_##id = val;                                 \
+    StaticPrefs::sVarCache_##full_id = val;                            \
   }
 #include "mozilla/StaticPrefListAll.h"
 #undef PREF

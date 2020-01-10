@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/layers/MultiTiledContentClient.h"
 
@@ -67,7 +67,7 @@ ClientMultiTiledLayerBuffer::GetSurfaceDescriptorTiles() {
   for (TileClient& tile : mRetainedTiles) {
     TileDescriptor tileDesc = tile.GetTileDescriptor();
     tiles.AppendElement(tileDesc);
-    
+    // Reset the update rect
     tile.mUpdateRect = IntRect();
   }
   return SurfaceDescriptorTiles(
@@ -138,9 +138,9 @@ void ClientMultiTiledLayerBuffer::MaybeSyncTextures(
     SurfaceMode mode;
     Unused << GetContentType(&mode);
 
-    
-    
-    
+    // Pre-pass through the tiles (mirroring the filter logic below) to gather
+    // texture IDs that we need to ensure are unused by the GPU before we
+    // continue.
     if (!aPaintRegion.IsEmpty()) {
       MOZ_ASSERT(mPaintTasks.IsEmpty());
       for (size_t i = 0; i < mRetainedTiles.Length(); ++i) {
@@ -195,13 +195,13 @@ void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
   for (size_t oldIndex = 0; oldIndex < oldTileCount; oldIndex++) {
     const TileCoordIntPoint tileCoord = oldTiles.TileCoord(oldIndex);
     const size_t newIndex = newTiles.TileIndex(tileCoord);
-    
-    
+    // First, get the already existing tiles to the right place in the new
+    // array. Leave placeholders (default constructor) where there was no tile.
     if (newTiles.HasTile(tileCoord)) {
       mRetainedTiles[newIndex] = oldRetainedTiles[oldIndex];
     } else {
-      
-      
+      // release tiles that we are not going to reuse before allocating new ones
+      // to avoid allocating unnecessarily.
       oldRetainedTiles[oldIndex].DiscardBuffers();
     }
   }
@@ -233,13 +233,13 @@ void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
         gfxCriticalError() << "ValidateTile failed";
       }
 
-      
+      // Validating the tile may have required more to be painted.
       paintRegion.OrWith(tileDrawRegion);
       dirtyRegion.OrWith(tileDrawRegion);
     }
 
     if (!mPaintTiles.IsEmpty()) {
-      
+      // Create a tiled draw target
       gfx::TileSet tileset;
       for (size_t i = 0; i < mPaintTiles.Length(); ++i) {
         mPaintTiles[i].mTileOrigin -= mTilingOrigin;
@@ -254,9 +254,9 @@ void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
       }
       drawTarget->SetTransform(Matrix());
 
-      
+      // Draw into the tiled draw target
       RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(drawTarget);
-      MOZ_ASSERT(ctx);  
+      MOZ_ASSERT(ctx);  // already checked the draw target above
       ctx->SetMatrix(ctx->CurrentMatrix()
                          .PreScale(mResolution, mResolution)
                          .PreTranslate(-mTilingOrigin));
@@ -265,18 +265,19 @@ void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
                 DrawRegionClip::DRAW, nsIntRegion(), mCallbackData);
       ctx = nullptr;
 
-      
-      if (StaticPrefs::layers_tiles_edge_padding() && mResolution == 1) {
+      // Edge padding allows us to avoid resampling artifacts
+      if (StaticPrefs::layers_tiles_edge_padding_AtStartup() &&
+          mResolution == 1) {
         drawTarget->PadEdges(newValidRegion.MovedBy(-mTilingOrigin));
       }
 
-      
+      // Reset
       mPaintTiles.Clear();
       mTilingOrigin = IntPoint(std::numeric_limits<int32_t>::max(),
                                std::numeric_limits<int32_t>::max());
     }
 
-    
+    // Dispatch to the paint thread
     if (aFlags & TilePaintFlags::Async) {
       bool queuedTask = false;
 
@@ -344,13 +345,13 @@ bool ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
     return false;
   }
 
-  
-  
+  // Mark the area we need to paint in the back buffer as invalid in the
+  // front buffer as they will become out of sync.
   aTile.mInvalidFront.OrWith(tileDirtyRegion);
 
-  
-  
-  
+  // Add the backbuffer's invalid region intersected with the visible region to
+  // the dirty region we will be painting. This will be empty if we are able to
+  // copy from the front into the back.
   nsIntRegion tileInvalidRegion = aTile.mInvalidBack;
   tileInvalidRegion.AndWith(tileVisibleRegion);
 
@@ -361,13 +362,13 @@ bool ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
   tileDirtyRegion.OrWith(tileInvalidRegion);
   aDirtyRegion.OrWith(invalidRegion);
 
-  
-  
+  // Mark the region we will be painting and the region we copied from the front
+  // buffer as needing to be uploaded to the compositor
   aTile.mUpdateRect =
       tileDirtyRegion.GetBounds().Union(backBuffer->mUpdatedRect);
 
-  
-  
+  // We need to clear the dirty region of the tile before painting
+  // if we are painting non-opaque content
   if (mode != SurfaceMode::SURFACE_OPAQUE) {
     for (auto iter = tileDirtyRegion.RectIter(); !iter.Done(); iter.Next()) {
       const gfx::Rect drawRect(iter.Get().X(), iter.Get().Y(),
@@ -395,7 +396,7 @@ bool ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
   mTilingOrigin.x = std::min(mTilingOrigin.x, paintTile.mTileOrigin.x);
   mTilingOrigin.y = std::min(mTilingOrigin.y, paintTile.mTileOrigin.y);
 
-  
+  // The new buffer is now validated, remove the dirty region from it.
   aTile.mInvalidBack.SubOut(tileDirtyRegion);
 
   aTile.Flip();
@@ -403,16 +404,16 @@ bool ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * This function takes the transform stored in aTransformToCompBounds
+ * (which was generated in GetTransformToAncestorsParentLayer), and
+ * modifies it with the ViewTransform from the compositor side so that
+ * it reflects what the compositor is actually rendering. This operation
+ * basically adds in the layer's async transform.
+ * This function then returns the scroll ancestor's composition bounds,
+ * transformed into the painted layer's LayerPixel coordinates, accounting
+ * for the compositor state.
+ */
 static Maybe<LayerRect> GetCompositorSideCompositionBounds(
     const LayerMetricsWrapper& aScrollAncestor,
     const LayerToParentLayerMatrix4x4& aTransformToCompBounds,
@@ -430,20 +431,20 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
     bool aIsRepeated) {
   aRegionToPaint = aInvalidRegion;
 
-  
-  
-  
+  // If the composition bounds rect is empty, we can't make any sensible
+  // decision about how to update coherently. In this case, just update
+  // everything in one transaction.
   if (aPaintData->mCompositionBounds.IsEmpty()) {
     aPaintData->mPaintFinished = true;
     return false;
   }
 
-  
-  
-  
+  // If this is a low precision buffer, we force progressive updates. The
+  // assumption is that the contents is less important, so visual coherency
+  // is lower priority than speed.
   bool drawingLowPrecision = IsLowPrecision();
 
-  
+  // Find out if we have any non-stale content to update.
   nsIntRegion staleRegion;
   staleRegion.And(aInvalidRegion, aOldValidRegion);
 
@@ -453,9 +454,9 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
   LayerMetricsWrapper scrollAncestor;
   mPaintedLayer.GetAncestorLayers(&scrollAncestor, nullptr, nullptr);
 
-  
-  
-  
+  // Find out the current view transform to determine which tiles to draw
+  // first, and see if we should just abort this paint. Aborting is usually
+  // caused by there being an incoming, more relevant paint.
   AsyncTransform viewTransform;
   MOZ_ASSERT(mSharedFrameMetricsHelper);
 
@@ -469,9 +470,9 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
       viewTransform.mScale.scale, abortPaint);
 
   if (abortPaint) {
-    
-    
-    
+    // We ignore if front-end wants to abort if this is the first,
+    // non-low-precision paint, as in that situation, we're about to override
+    // front-end's page/viewport metrics.
     if (!aPaintData->mFirstPaint || drawingLowPrecision) {
       AUTO_PROFILER_LABEL(
           "ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion",
@@ -495,14 +496,14 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
   TILING_LOG("TILING %p: Progressive update transformed compositor bounds %s\n",
              &mPaintedLayer, Stringify(*transformedCompositionBounds).c_str());
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Compute a "coherent update rect" that we should paint all at once in a
+  // single transaction. This is to avoid rendering glitches on animated
+  // page content, and when layers change size/shape.
+  // On Fennec uploads are more expensive because we're not using gralloc, so
+  // we use a coherent update rect that is intersected with the screen at the
+  // time of issuing the draw command. This will paint faster but also
+  // potentially make the progressive paint more visible to the user while
+  // scrolling.
   IntRect coherentUpdateRect(RoundedOut(
 #ifdef MOZ_WIDGET_ANDROID
                                  transformedCompositionBounds->Intersect(
@@ -523,7 +524,7 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
     aRegionToPaint = aInvalidRegion;
   }
 
-  
+  // Prioritise tiles that are currently visible on the screen.
   bool paintingVisible = false;
   if (aRegionToPaint.Intersects(coherentUpdateRect)) {
     aRegionToPaint.And(aRegionToPaint, coherentUpdateRect);
@@ -533,8 +534,8 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
   TILING_LOG("TILING %p: Progressive update final paint region %s\n",
              &mPaintedLayer, Stringify(aRegionToPaint).c_str());
 
-  
-  
+  // Paint area that's visible and overlaps previously valid content to avoid
+  // visible glitches in animated elements, such as gifs.
   bool paintInSingleTransaction =
       paintingVisible && (drawingStale || aPaintData->mFirstPaint);
 
@@ -544,8 +545,8 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
       &mPaintedLayer, paintingVisible, drawingStale, aPaintData->mFirstPaint,
       paintInSingleTransaction);
 
-  
-  
+  // The following code decides what order to draw tiles in, based on the
+  // current scroll direction of the primary scrollable layer.
   NS_ASSERTION(!aRegionToPaint.IsEmpty(), "Unexpectedly empty paint region!");
   IntRect paintBounds = aRegionToPaint.GetBounds();
 
@@ -568,23 +569,23 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
     incY = -scaledTileSize.height;
   }
 
-  
+  // Find a tile to draw.
   IntRect tileBounds(startX, startY, scaledTileSize.width,
                      scaledTileSize.height);
   int32_t scrollDiffX =
       aPaintData->mScrollOffset.x - aPaintData->mLastScrollOffset.x;
   int32_t scrollDiffY =
       aPaintData->mScrollOffset.y - aPaintData->mLastScrollOffset.y;
-  
-  
-  
+  // This loop will always terminate, as there is at least one tile area
+  // along the first/last row/column intersecting with regionToPaint, or its
+  // bounds would have been smaller.
   while (true) {
     aRegionToPaint.And(aInvalidRegion, tileBounds);
     if (!aRegionToPaint.IsEmpty()) {
       if (mResolution != 1) {
-        
-        
-        
+        // Paint the entire tile for low-res. This is aimed to fixing low-res
+        // resampling and to avoid doing costly region accurate painting for a
+        // small area.
         aRegionToPaint = tileBounds;
       }
       break;
@@ -597,23 +598,23 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
   }
 
   if (!aRegionToPaint.Contains(aInvalidRegion)) {
-    
-    
-    
+    // The region needed to paint is larger then our progressive chunk size
+    // therefore update what we want to paint and ask for a new paint
+    // transaction.
 
-    
-    
-    
-    
-    
-    
-    
+    // If we need to draw more than one tile to maintain coherency, make
+    // sure it happens in the same transaction by requesting this work be
+    // repeated immediately.
+    // If this is unnecessary, the remaining work will be done tile-by-tile in
+    // subsequent transactions. The caller code is responsible for scheduling
+    // the subsequent transactions as long as we don't set the mPaintFinished
+    // flag to true.
     return (!drawingLowPrecision && paintInSingleTransaction);
   }
 
-  
-  
-  
+  // We're not repeating painting and we've not requested a repeat transaction,
+  // so the paint is finished. If there's still a separate low precision
+  // paint to do, it will get marked as unfinished later.
   aPaintData->mPaintFinished = true;
   return false;
 }
@@ -635,8 +636,8 @@ bool ClientMultiTiledLayerBuffer::ProgressiveUpdate(
   nsIntRegion remainingInvalidRegion = aInvalidRegion;
   nsIntRegion updatedValidRegion = aValidRegion;
   do {
-    
-    
+    // Compute the region that should be updated. Repeat as many times as
+    // is required.
     nsIntRegion regionToPaint;
     repeat =
         ComputeProgressiveUpdateRegion(remainingInvalidRegion, aOldValidRegion,
@@ -646,24 +647,24 @@ bool ClientMultiTiledLayerBuffer::ProgressiveUpdate(
         "TILING %p: Progressive update computed paint region %s repeat %d\n",
         &mPaintedLayer, Stringify(regionToPaint).c_str(), repeat);
 
-    
+    // There's no further work to be done.
     if (regionToPaint.IsEmpty()) {
       break;
     }
 
     isBufferChanged = true;
 
-    
+    // Keep track of what we're about to refresh.
     aOutDrawnRegion.OrWith(regionToPaint);
     updatedValidRegion.OrWith(regionToPaint);
 
-    
-    
-    
+    // aValidRegion may have been altered by InvalidateRegion, but we still
+    // want to display stale content until it gets progressively updated.
+    // Create a region that includes stale content.
     nsIntRegion validOrStale;
     validOrStale.Or(updatedValidRegion, aOldValidRegion);
 
-    
+    // Paint the computed region and subtract it from the invalid region.
     PaintThebes(validOrStale, regionToPaint, remainingInvalidRegion, aCallback,
                 aCallbackData, TilePaintFlags::Progressive);
     remainingInvalidRegion.SubOut(regionToPaint);
@@ -675,10 +676,10 @@ bool ClientMultiTiledLayerBuffer::ProgressiveUpdate(
   TILING_LOG("TILING %p: Progressive update final invalid region %s\n",
              &mPaintedLayer, Stringify(remainingInvalidRegion).c_str());
 
-  
-  
+  // Return false if nothing has been drawn, or give what has been drawn
+  // to the shadow layer to upload.
   return isBufferChanged;
 }
 
-}  
-}  
+}  // namespace layers
+}  // namespace mozilla

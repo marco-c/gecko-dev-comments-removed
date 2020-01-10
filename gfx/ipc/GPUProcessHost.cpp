@@ -62,7 +62,8 @@ bool GPUProcessHost::WaitForLaunch() {
     return !!mGPUChild;
   }
 
-  int32_t timeoutMs = StaticPrefs::layers_gpu_process_startup_timeout_ms();
+  int32_t timeoutMs =
+      StaticPrefs::layers_gpu_process_startup_timeout_ms_AtStartup();
 
   
   

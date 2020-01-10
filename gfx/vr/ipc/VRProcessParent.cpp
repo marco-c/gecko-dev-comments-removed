@@ -81,7 +81,8 @@ bool VRProcessParent::WaitForLaunch() {
     return !!mVRChild;
   }
 
-  int32_t timeoutMs = StaticPrefs::dom_vr_process_startup_timeout_ms();
+  int32_t timeoutMs =
+      StaticPrefs::dom_vr_process_startup_timeout_ms_AtStartup();
 
   
   
