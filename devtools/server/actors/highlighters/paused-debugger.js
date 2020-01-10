@@ -26,6 +26,8 @@ function PausedDebuggerOverlay(highlighterEnv, options = {}) {
   this.resume = options.resume;
   this.stepOver = options.stepOver;
 
+  this.lastTarget = null;
+
   this.markup = new CanvasFrameAnonymousContentHelper(
     highlighterEnv,
     this._buildMarkup.bind(this)
@@ -86,9 +88,18 @@ PausedDebuggerOverlay.prototype = {
         prefix,
       });
 
+      const stepWrapper = createNode(window, {
+        parent: toolbar,
+        attributes: {
+          id: "step-button-wrapper",
+          class: "step-button-wrapper",
+        },
+        prefix,
+      });
+
       createNode(window, {
         nodeType: "button",
-        parent: toolbar,
+        parent: stepWrapper,
         attributes: {
           id: "step-button",
           class: "step-button",
@@ -96,9 +107,18 @@ PausedDebuggerOverlay.prototype = {
         prefix,
       });
 
+      const resumeWrapper = createNode(window, {
+        parent: toolbar,
+        attributes: {
+          id: "resume-button-wrapper",
+          class: "resume-button-wrapper",
+        },
+        prefix,
+      });
+
       createNode(window, {
         nodeType: "button",
-        parent: toolbar,
+        parent: resumeWrapper,
         attributes: {
           id: "resume-button",
           class: "resume-button",
@@ -114,19 +134,57 @@ PausedDebuggerOverlay.prototype = {
     this.hide();
     this.markup.destroy();
     this.env = null;
+    this.lastTarget = null;
   },
 
   onClick(target) {
-    if (target.id == "paused-dbg-step-button") {
+    const { id } = target;
+    if (!id) {
+      return;
+    }
+
+    if (id.includes("paused-dbg-step-button")) {
       this.stepOver();
-    } else if (target.id == "paused-dbg-resume-button") {
+    } else if (id.includes("paused-dbg-resume-button")) {
       this.resume();
+    }
+  },
+
+  onMouseMove(target) {
+    
+    if (!target.id) {
+      return;
+    }
+
+    
+    if (this.lastTarget && this.lastTarget.id === target.id) {
+      return;
+    }
+
+    if (
+      target.id.includes("step-button") ||
+      target.id.includes("resume-button")
+    ) {
+      
+      const newTarget = target.parentNode.id.includes("wrapper")
+        ? target.parentNode
+        : target;
+
+      
+      if (this.lastTarget && this.lastTarget != newTarget) {
+        this.lastTarget.classList.remove("hover");
+      }
+      newTarget.classList.add("hover");
+      this.lastTarget = newTarget;
+    } else if (this.lastTarget) {
+      
+      this.lastTarget.classList.remove("hover");
     }
   },
 
   handleEvent(e) {
     switch (e.type) {
-      case "click":
+      case "mousedown":
         this.onClick(e.target);
         break;
       case "DOMMouseScroll":
@@ -136,7 +194,9 @@ PausedDebuggerOverlay.prototype = {
         
         e.preventDefault();
         break;
-      case "mouseover":
+
+      case "mousemove":
+        this.onMouseMove(e.target);
         break;
     }
   },
@@ -149,6 +209,11 @@ PausedDebuggerOverlay.prototype = {
     if (this.env.isXUL || !options.reason) {
       return false;
     }
+
+    
+    
+    const { pageListenerTarget } = this.env;
+    pageListenerTarget.addEventListener("mousemove", this);
 
     
     const root = this.getElement("root");
@@ -170,6 +235,9 @@ PausedDebuggerOverlay.prototype = {
     if (this.env.isXUL) {
       return;
     }
+
+    const { pageListenerTarget } = this.env;
+    pageListenerTarget.removeEventListener("mousemove", this);
 
     
     this.getElement("root").setAttribute("hidden", "true");
