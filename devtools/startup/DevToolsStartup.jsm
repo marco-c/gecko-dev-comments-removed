@@ -438,26 +438,6 @@ DevToolsStartup.prototype = {
         this.sendEntryPointTelemetry("CommandLine");
       }
     }
-
-    
-    
-    this.pingOnboardingTelemetry();
-  },
-
-  
-
-
-
-  pingOnboardingTelemetry() {
-    
-    const alreadyLoggedPref = "devtools.onboarding.telemetry.logged";
-    if (Services.prefs.getBoolPref(alreadyLoggedPref)) {
-      return;
-    }
-
-    const scalarId = "devtools.onboarding.is_devtools_user";
-    this.telemetry.scalarSet(scalarId, this.isDevToolsUser());
-    Services.prefs.setBoolPref(alreadyLoggedPref, true);
   },
 
   

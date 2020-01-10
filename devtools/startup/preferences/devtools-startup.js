@@ -16,8 +16,5 @@ pref("devtools.theme", "light", sticky);
 #endif
 
 
-pref("devtools.onboarding.telemetry.logged", false);
-
-
 
 pref("devtools.policy.disabled", false);
