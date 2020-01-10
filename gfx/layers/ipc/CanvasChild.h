@@ -78,6 +78,12 @@ class CanvasChild final : public PCanvasChild {
 
 
 
+  bool ShouldBeCleanedUp() const;
+
+  
+
+
+
 
 
   already_AddRefed<gfx::DrawTarget> CreateDrawTarget(
@@ -123,6 +129,7 @@ class CanvasChild final : public PCanvasChild {
   TextureType mTextureType = TextureType::Unknown;
   uint32_t mLastWriteLockCheckpoint = 0;
   uint32_t mTransactionsSinceGetDataSurface = kCacheDataSurfaceThreshold;
+  TimeStamp mLastNonEmptyTransaction = TimeStamp::NowLoRes();
   bool mIsInTransaction = false;
   bool mHasOutstandingWriteLock = false;
 };
