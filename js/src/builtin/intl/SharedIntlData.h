@@ -205,60 +205,22 @@ class SharedIntlData {
 
   bool ensureSupportedLocales(JSContext* cx);
 
-  MOZ_MUST_USE bool isSupportedLocale(JSContext* cx, const LocaleSet& locales,
+ public:
+  enum class SupportedLocaleKind {
+    Collator,
+    DateTimeFormat,
+    NumberFormat,
+    PluralRules,
+    RelativeTimeFormat
+  };
+
+  
+
+
+
+  MOZ_MUST_USE bool isSupportedLocale(JSContext* cx, SupportedLocaleKind kind,
                                       JS::Handle<JSString*> locale,
                                       bool* supported);
-
- public:
-  
-
-
-  MOZ_MUST_USE bool isCollatorSupportedLocale(JSContext* cx,
-                                              JS::Handle<JSString*> locale,
-                                              bool* supported) {
-    return isSupportedLocale(cx, collatorSupportedLocales, locale, supported);
-  }
-
-  
-
-
-  MOZ_MUST_USE bool isDateTimeFormatSupportedLocale(
-      JSContext* cx, JS::Handle<JSString*> locale, bool* supported) {
-    return isSupportedLocale(cx, dateTimeFormatSupportedLocales, locale,
-                             supported);
-  }
-
-  
-
-
-  MOZ_MUST_USE bool isNumberFormatSupportedLocale(JSContext* cx,
-                                                  JS::Handle<JSString*> locale,
-                                                  bool* supported) {
-    return isSupportedLocale(cx, numberFormatSupportedLocales, locale,
-                             supported);
-  }
-
-  
-
-
-  MOZ_MUST_USE bool isPluralRulesSupportedLocale(JSContext* cx,
-                                                 JS::Handle<JSString*> locale,
-                                                 bool* supported) {
-    
-    
-    return isSupportedLocale(cx, supportedLocales, locale, supported);
-  }
-
-  
-
-
-
-  MOZ_MUST_USE bool isRelativeTimeFormatSupportedLocale(
-      JSContext* cx, JS::Handle<JSString*> locale, bool* supported) {
-    
-    
-    return isSupportedLocale(cx, supportedLocales, locale, supported);
-  }
 
  private:
   

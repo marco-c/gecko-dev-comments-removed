@@ -41,7 +41,7 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
     var localeData = NumberFormat.localeData;
 
     
-    var r = ResolveLocale(callFunction(NumberFormat.availableLocales, NumberFormat),
+    var r = ResolveLocale("NumberFormat",
                           lazyNumberFormatData.requestedLocales,
                           lazyNumberFormatData.opt,
                           NumberFormat.relevantExtensionKeys,
@@ -632,8 +632,7 @@ function Intl_NumberFormat_supportedLocalesOf(locales ) {
     var options = arguments.length > 1 ? arguments[1] : undefined;
 
     
-    var availableLocales = callFunction(numberFormatInternalProperties.availableLocales,
-                                        numberFormatInternalProperties);
+    var availableLocales = "NumberFormat";
 
     
     var requestedLocales = CanonicalizeLocaleList(locales);

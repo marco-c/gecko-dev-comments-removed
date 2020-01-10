@@ -44,7 +44,7 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
     var localeData = PluralRules.localeData;
 
     
-    const r = ResolveLocale(callFunction(PluralRules.availableLocales, PluralRules),
+    const r = ResolveLocale("PluralRules",
                             lazyPluralRulesData.requestedLocales,
                             lazyPluralRulesData.opt,
                             PluralRules.relevantExtensionKeys,
@@ -181,8 +181,8 @@ function Intl_PluralRules_supportedLocalesOf(locales ) {
     var options = arguments.length > 1 ? arguments[1] : undefined;
 
     
-    var availableLocales = callFunction(pluralRulesInternalProperties.availableLocales,
-                                        pluralRulesInternalProperties);
+    var availableLocales = "PluralRules";
+
     
     let requestedLocales = CanonicalizeLocaleList(locales);
 

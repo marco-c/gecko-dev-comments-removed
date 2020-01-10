@@ -61,7 +61,7 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     var localeData = DateTimeFormat.localeData;
 
     
-    var r = ResolveLocale(callFunction(DateTimeFormat.availableLocales, DateTimeFormat),
+    var r = ResolveLocale("DateTimeFormat",
                           lazyDateTimeFormatData.requestedLocales,
                           lazyDateTimeFormatData.localeOpt,
                           DateTimeFormat.relevantExtensionKeys,
@@ -744,8 +744,7 @@ function Intl_DateTimeFormat_supportedLocalesOf(locales ) {
     var options = arguments.length > 1 ? arguments[1] : undefined;
 
     
-    var availableLocales = callFunction(dateTimeFormatInternalProperties.availableLocales,
-                                        dateTimeFormatInternalProperties);
+    var availableLocales = "DateTimeFormat";
 
     
     var requestedLocales = CanonicalizeLocaleList(locales);

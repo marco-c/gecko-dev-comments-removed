@@ -201,15 +201,9 @@ function DefaultLocale() {
     
     
     var locale;
-    if (BestAvailableLocaleIgnoringDefault(callFunction(collatorInternalProperties.availableLocales,
-                                                        collatorInternalProperties),
-                                           candidate) &&
-        BestAvailableLocaleIgnoringDefault(callFunction(numberFormatInternalProperties.availableLocales,
-                                                        numberFormatInternalProperties),
-                                           candidate) &&
-        BestAvailableLocaleIgnoringDefault(callFunction(dateTimeFormatInternalProperties.availableLocales,
-                                                        dateTimeFormatInternalProperties),
-                                           candidate))
+    if (BestAvailableLocaleIgnoringDefault("Collator", candidate) &&
+        BestAvailableLocaleIgnoringDefault("NumberFormat", candidate) &&
+        BestAvailableLocaleIgnoringDefault("DateTimeFormat", candidate))
     {
         locale = candidate;
     } else {
@@ -310,48 +304,6 @@ function CanonicalizeLocaleList(locales) {
     return seen;
 }
 
-function BestAvailableLocaleHelper(availableLocales, locale, considerDefaultLocale) {
-    assertIsValidAndCanonicalLanguageTag(locale, "BestAvailableLocale locale");
-    assert(startOfUnicodeExtensions(locale) < 0, "locale must contain no Unicode extensions");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    var defaultLocale;
-    if (considerDefaultLocale)
-        defaultLocale = DefaultLocale();
-
-    var candidate = locale;
-    while (true) {
-        if (availableLocales[candidate])
-            return candidate;
-
-        if (considerDefaultLocale && candidate.length <= defaultLocale.length) {
-            if (candidate === defaultLocale)
-                return candidate;
-            if (callFunction(std_String_startsWith, defaultLocale, candidate + "-"))
-                return candidate;
-        }
-
-        var pos = callFunction(std_String_lastIndexOf, candidate, "-");
-        if (pos === -1)
-            return undefined;
-
-        if (pos >= 2 && candidate[pos - 2] === "-")
-            pos -= 2;
-
-        candidate = callFunction(String_substring, candidate, 0, pos);
-    }
-}
-
 
 
 
@@ -361,7 +313,7 @@ function BestAvailableLocaleHelper(availableLocales, locale, considerDefaultLoca
 
 
 function BestAvailableLocale(availableLocales, locale) {
-    return BestAvailableLocaleHelper(availableLocales, locale, true);
+    return intl_BestAvailableLocale(availableLocales, locale, DefaultLocale());
 }
 
 
@@ -369,7 +321,7 @@ function BestAvailableLocale(availableLocales, locale) {
 
 
 function BestAvailableLocaleIgnoringDefault(availableLocales, locale) {
-    return BestAvailableLocaleHelper(availableLocales, locale, false);
+    return intl_BestAvailableLocale(availableLocales, locale, null);
 }
 
 

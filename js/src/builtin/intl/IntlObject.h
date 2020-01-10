@@ -107,6 +107,24 @@ extern MOZ_MUST_USE bool intl_GetLocaleInfo(JSContext* cx, unsigned argc,
 extern MOZ_MUST_USE bool intl_ComputeDisplayNames(JSContext* cx, unsigned argc,
                                                   JS::Value* vp);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool intl_BestAvailableLocale(JSContext* cx, unsigned argc,
+                                                  JS::Value* vp);
+
 }  
 
 #endif 

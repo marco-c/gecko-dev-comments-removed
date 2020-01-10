@@ -43,7 +43,7 @@ function resolveRelativeTimeFormatInternals(lazyRelativeTimeFormatData) {
     var RelativeTimeFormat = relativeTimeFormatInternalProperties;
 
     
-    const r = ResolveLocale(callFunction(RelativeTimeFormat.availableLocales, RelativeTimeFormat),
+    const r = ResolveLocale("RelativeTimeFormat",
                             lazyRelativeTimeFormatData.requestedLocales,
                             lazyRelativeTimeFormatData.opt,
                             RelativeTimeFormat.relevantExtensionKeys,
@@ -164,8 +164,8 @@ function Intl_RelativeTimeFormat_supportedLocalesOf(locales ) {
     var options = arguments.length > 1 ? arguments[1] : undefined;
 
     
-    var availableLocales = callFunction(relativeTimeFormatInternalProperties.availableLocales,
-                                        relativeTimeFormatInternalProperties);
+    var availableLocales = "RelativeTimeFormat";
+
     
     let requestedLocales = CanonicalizeLocaleList(locales);
 

@@ -28,7 +28,7 @@ function resolveCollatorInternals(lazyCollatorData) {
     var relevantExtensionKeys = Collator.relevantExtensionKeys;
 
     
-    var r = ResolveLocale(callFunction(Collator.availableLocales, Collator),
+    var r = ResolveLocale("Collator",
                           lazyCollatorData.requestedLocales,
                           lazyCollatorData.opt,
                           relevantExtensionKeys,
@@ -196,8 +196,7 @@ function Intl_Collator_supportedLocalesOf(locales ) {
     var options = arguments.length > 1 ? arguments[1] : undefined;
 
     
-    var availableLocales = callFunction(collatorInternalProperties.availableLocales,
-                                        collatorInternalProperties);
+    var availableLocales = "Collator";
 
     
     var requestedLocales = CanonicalizeLocaleList(locales);
@@ -237,9 +236,7 @@ function collatorActualLocale(locale) {
     
     
     
-    var availableLocales = callFunction(collatorInternalProperties.availableLocales,
-                                        collatorInternalProperties);
-    return BestAvailableLocaleIgnoringDefault(availableLocales, locale);
+    return BestAvailableLocaleIgnoringDefault("Collator", locale);
 }
 
 
