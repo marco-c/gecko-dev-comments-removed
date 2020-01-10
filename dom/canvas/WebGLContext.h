@@ -128,6 +128,7 @@ struct WebGLContextOptions {
   bool antialias = true;
   bool preserveDrawingBuffer = false;
   bool failIfMajorPerformanceCaveat = false;
+  bool xrCompatible = false;
   dom::WebGLPowerPreference powerPreference =
       dom::WebGLPowerPreference::Default;
 
@@ -559,6 +560,8 @@ class WebGLContext : public nsICanvasRenderingContextInternal,
     return mOptions.preserveDrawingBuffer;
   }
 
+  bool IsXRCompatible() const { return mXRCompatible; }
+
   bool PresentScreenBuffer(gl::GLScreenBuffer* const screen = nullptr);
 
   
@@ -763,6 +766,7 @@ class WebGLContext : public nsICanvasRenderingContextInternal,
   already_AddRefed<layers::SharedSurfaceTextureClient> GetVRFrame();
   void ClearVRFrame();
   void EnsureVRReady();
+  already_AddRefed<dom::Promise> MakeXRCompatible(ErrorResult& aRv);
 
   
 
@@ -1595,6 +1599,8 @@ class WebGLContext : public nsICanvasRenderingContextInternal,
   bool mShouldPresent;
   bool mDisableFragHighP;
   bool mVRReady;
+  
+  bool mXRCompatible;
 
   template <typename WebGLObjectType>
   void DeleteWebGLObjectsArray(nsTArray<WebGLObjectType>& array);
