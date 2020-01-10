@@ -3037,8 +3037,8 @@ extern JS_PUBLIC_API RefPtr<WasmModule> GetWasmModule(HandleObject obj);
 
 
 
-
-extern JS_PUBLIC_API MOZ_MUST_USE bool DisableWasmHugeMemory();
+extern JS_PUBLIC_API RefPtr<WasmModule> DeserializeWasmModule(
+    const uint8_t* bytecode, size_t bytecodeLength);
 
 
 

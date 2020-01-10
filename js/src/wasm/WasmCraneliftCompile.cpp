@@ -227,20 +227,7 @@ class AutoCranelift {
 
  public:
   explicit AutoCranelift(const ModuleEnvironment& env)
-      : env_(env), compiler_(nullptr) {
-#ifdef WASM_SUPPORTS_HUGE_MEMORY
-    if (env.hugeMemoryEnabled()) {
-      
-      
-      staticEnv_.staticMemoryBound = HugeIndexRange;
-      staticEnv_.memoryGuardSize = HugeOffsetGuardLimit;
-    } else {
-      staticEnv_.memoryGuardSize = OffsetGuardLimit;
-    }
-#endif
-    
-    
-  }
+      : env_(env), compiler_(nullptr) {}
   bool init() {
     compiler_ = cranelift_compiler_create(&staticEnv_, &env_);
     return !!compiler_;
@@ -260,8 +247,10 @@ CraneliftFuncCompileInput::CraneliftFuncCompileInput(
       index(func.index),
       offset_in_module(func.lineOrBytecode) {}
 
+#ifndef WASM_HUGE_MEMORY
 static_assert(offsetof(TlsData, boundsCheckLimit) == sizeof(size_t),
               "fix make_heap() in wasm2clif.rs");
+#endif
 
 CraneliftStaticEnvironment::CraneliftStaticEnvironment()
     :
@@ -291,8 +280,18 @@ CraneliftStaticEnvironment::CraneliftStaticEnvironment()
 #else
       platformIsWindows(false),
 #endif
-      staticMemoryBound(0),
-      memoryGuardSize(0),
+      staticMemoryBound(
+#ifdef WASM_HUGE_MEMORY
+          
+          
+          IndexRange
+#else
+          
+          
+          0
+#endif
+          ),
+      memoryGuardSize(OffsetGuardLimit),
       instanceTlsOffset(offsetof(TlsData, instance)),
       interruptTlsOffset(offsetof(TlsData, interrupt)),
       cxTlsOffset(offsetof(TlsData, cx)),

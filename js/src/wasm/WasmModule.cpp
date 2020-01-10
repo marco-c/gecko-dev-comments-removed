@@ -345,8 +345,7 @@ bool wasm::GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId) {
 
   uint32_t cpu = ObservedCPUFeatures();
 
-  if (!buildId->reserve(buildId->length() +
-                        12 )) {
+  if (!buildId->reserve(buildId->length() + 10 )) {
     return false;
   }
 
@@ -357,10 +356,60 @@ bool wasm::GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId) {
   }
   buildId->infallibleAppend(')');
 
-  buildId->infallibleAppend('m');
-  buildId->infallibleAppend(wasm::IsHugeMemoryEnabled() ? '+' : '-');
-
   return true;
+}
+
+RefPtr<JS::WasmModule> wasm::DeserializeModule(const uint8_t* bytecode,
+                                               size_t bytecodeLength) {
+  
+  
+  
+  if (!BaselineCanCompile() && !IonCanCompile()) {
+    return nullptr;
+  }
+
+  MutableBytes bytecodeCopy = js_new<ShareableBytes>();
+  if (!bytecodeCopy ||
+      !bytecodeCopy->bytes.initLengthUninitialized(bytecodeLength)) {
+    return nullptr;
+  }
+
+  memcpy(bytecodeCopy->bytes.begin(), bytecode, bytecodeLength);
+
+  ScriptedCaller scriptedCaller;
+  scriptedCaller.filename = nullptr;
+  scriptedCaller.line = 0;
+
+  MutableCompileArgs args = js_new<CompileArgs>(std::move(scriptedCaller));
+  if (!args) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  args->ionEnabled = IonCanCompile();
+  args->baselineEnabled = BaselineCanCompile();
+  args->sharedMemoryEnabled = true;
+
+  UniqueChars error;
+  UniqueCharsVector warnings;
+  SharedModule module = CompileBuffer(*args, *bytecodeCopy, &error, &warnings);
+  if (!module) {
+    return nullptr;
+  }
+
+  
+  return RefPtr<JS::WasmModule>(const_cast<Module*>(module.get()));
 }
 
 
@@ -796,8 +845,6 @@ bool Module::instantiateMemory(JSContext* cx,
       return false;
     }
   }
-
-  MOZ_RELEASE_ASSERT(memory->isHuge() == metadata().omitsBoundsChecks);
 
   return true;
 }
