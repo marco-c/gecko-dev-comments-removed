@@ -824,8 +824,7 @@ bool GlobalObject::initIntlObject(JSContext* cx, Handle<GlobalObject*> global) {
 
   
   
-  RootedObject collatorProto(cx, CreateCollatorPrototype(cx, intl, global));
-  if (!collatorProto) {
+  if (!CreateCollator(cx, intl)) {
     return false;
   }
   RootedObject dateTimeFormatProto(cx), dateTimeFormat(cx);
@@ -867,7 +866,6 @@ bool GlobalObject::initIntlObject(JSContext* cx, Handle<GlobalObject*> global) {
   
   
   
-  global->setReservedSlot(COLLATOR_PROTO, ObjectValue(*collatorProto));
   global->setReservedSlot(DATE_TIME_FORMAT, ObjectValue(*dateTimeFormat));
   global->setReservedSlot(DATE_TIME_FORMAT_PROTO,
                           ObjectValue(*dateTimeFormatProto));
