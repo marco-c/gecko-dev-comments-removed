@@ -592,9 +592,8 @@ class ActivePS {
         mInterval(aInterval),
         mFeatures(AdjustFeatures(aFeatures, aFilterCount)),
         
-        mProfileBuffer(
-            MakeUnique<ProfileBuffer>(CorePS::CoreBlocksRingBuffer(),
-                                      PowerOfTwo32(aCapacity.Value() * 8))),
+        mProfileBuffer(CorePS::CoreBlocksRingBuffer(),
+                       PowerOfTwo32(aCapacity.Value() * 8)),
         
         
         
@@ -729,7 +728,7 @@ class ActivePS {
 
     size_t n = aMallocSizeOf(sInstance);
 
-    n += sInstance->mProfileBuffer->SizeOfIncludingThis(aMallocSizeOf);
+    n += sInstance->mProfileBuffer.SizeOfIncludingThis(aMallocSizeOf);
 
     
     
@@ -786,7 +785,7 @@ class ActivePS {
 
   static ProfileBuffer& Buffer(PSLockRef) {
     MOZ_ASSERT(sInstance);
-    return *sInstance->mProfileBuffer;
+    return sInstance->mProfileBuffer;
   }
 
   static const Vector<LiveProfiledThreadData>& LiveProfiledThreads(PSLockRef) {
@@ -882,7 +881,7 @@ class ActivePS {
       LiveProfiledThreadData& thread = sInstance->mLiveProfiledThreads[i];
       if (thread.mRegisteredThread == aRegisteredThread) {
         thread.mProfiledThreadData->NotifyUnregistered(
-            sInstance->mProfileBuffer->BufferRangeEnd());
+            sInstance->mProfileBuffer.BufferRangeEnd());
         MOZ_RELEASE_ASSERT(sInstance->mDeadProfiledThreads.append(
             std::move(thread.mProfiledThreadData)));
         sInstance->mLiveProfiledThreads.erase(
@@ -900,7 +899,7 @@ class ActivePS {
 
   static void DiscardExpiredDeadProfiledThreads(PSLockRef) {
     MOZ_ASSERT(sInstance);
-    uint64_t bufferRangeStart = sInstance->mProfileBuffer->BufferRangeStart();
+    uint64_t bufferRangeStart = sInstance->mProfileBuffer.BufferRangeStart();
     
     sInstance->mDeadProfiledThreads.eraseIf(
         [bufferRangeStart](
@@ -920,7 +919,7 @@ class ActivePS {
     for (size_t i = 0; i < registeredPages.length(); i++) {
       RefPtr<PageInformation>& page = registeredPages[i];
       if (page->InnerWindowID() == aRegisteredInnerWindowID) {
-        page->NotifyUnregistered(sInstance->mProfileBuffer->BufferRangeEnd());
+        page->NotifyUnregistered(sInstance->mProfileBuffer.BufferRangeEnd());
         MOZ_RELEASE_ASSERT(
             sInstance->mDeadProfiledPages.append(std::move(page)));
         registeredPages.erase(&registeredPages[i--]);
@@ -930,7 +929,7 @@ class ActivePS {
 
   static void DiscardExpiredPages(PSLockRef) {
     MOZ_ASSERT(sInstance);
-    uint64_t bufferRangeStart = sInstance->mProfileBuffer->BufferRangeStart();
+    uint64_t bufferRangeStart = sInstance->mProfileBuffer.BufferRangeStart();
     
     
     sInstance->mDeadProfiledPages.eraseIf(
@@ -984,7 +983,7 @@ class ActivePS {
 
   static void ClearExpiredExitProfiles(PSLockRef) {
     MOZ_ASSERT(sInstance);
-    uint64_t bufferRangeStart = sInstance->mProfileBuffer->BufferRangeStart();
+    uint64_t bufferRangeStart = sInstance->mProfileBuffer.BufferRangeStart();
     
 #ifdef MOZ_BASE_PROFILER
     if (bufferRangeStart != 0 && sInstance->mBaseProfileThreads) {
@@ -1018,8 +1017,8 @@ class ActivePS {
 
     ClearExpiredExitProfiles(aLock);
 
-    MOZ_RELEASE_ASSERT(sInstance->mExitProfiles.append(ExitProfile{
-        aExitProfile, sInstance->mProfileBuffer->BufferRangeEnd()}));
+    MOZ_RELEASE_ASSERT(sInstance->mExitProfiles.append(
+        ExitProfile{aExitProfile, sInstance->mProfileBuffer.BufferRangeEnd()}));
   }
 
   static Vector<nsCString> MoveExitProfiles(PSLockRef aLock) {
@@ -1077,8 +1076,7 @@ class ActivePS {
   Vector<std::string> mFilters;
 
   
-  
-  const UniquePtr<ProfileBuffer> mProfileBuffer;
+  ProfileBuffer mProfileBuffer;
 
   
   
