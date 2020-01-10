@@ -1327,6 +1327,7 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   if (JSOp(*pc) == JSOP_LOOPENTRY) {
     
     
+    computeFrameSize(R0.scratchReg());
     if (!emitNextIC()) {
       return false;
     }
@@ -1336,13 +1337,12 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
     
     prepareVMCall();
 
-    pushBytecodePCArg();
     masm.PushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
 
     const RetAddrEntry::Kind kind = RetAddrEntry::Kind::WarmupCounter;
 
-    using Fn = bool (*)(JSContext*, BaselineFrame*, jsbytecode*);
-    if (!callVM<Fn, IonCompileScriptForBaseline>(kind)) {
+    using Fn = bool (*)(JSContext*, BaselineFrame*);
+    if (!callVM<Fn, IonCompileScriptForBaselineAtEntry>(kind)) {
       return false;
     }
   }
