@@ -4,9 +4,16 @@
 
 
 
-#include "win_dirent.h"
+#include "updateutils_win.h"
 #include <errno.h>
+#include <shlwapi.h>
 #include <string.h>
+
+
+
+
+
+
 
 
 
@@ -64,4 +71,57 @@ dirent* readdir(DIR* dir) {
   
   gDirEnt.d_name[direntBufferLength - 1] = '\0';
   return &gDirEnt;
+}
+
+
+
+
+
+
+
+
+BOOL PathAppendSafe(LPWSTR base, LPCWSTR extra) {
+  if (wcslen(base) + wcslen(extra) >= MAX_PATH) {
+    return FALSE;
+  }
+
+  return PathAppendW(base, extra);
+}
+
+
+
+
+
+
+
+
+
+
+BOOL GetUUIDTempFilePath(LPCWSTR basePath, LPCWSTR prefix, LPWSTR tmpPath) {
+  WCHAR filename[MAX_PATH + 1] = {L"\0"};
+  if (prefix) {
+    wcsncpy(filename, prefix, MAX_PATH);
+  }
+
+  UUID tmpFileNameUuid;
+  RPC_WSTR tmpFileNameString = nullptr;
+  if (UuidCreate(&tmpFileNameUuid) != RPC_S_OK) {
+    return FALSE;
+  }
+  if (UuidToStringW(&tmpFileNameUuid, &tmpFileNameString) != RPC_S_OK) {
+    return FALSE;
+  }
+  if (!tmpFileNameString) {
+    return FALSE;
+  }
+
+  wcsncat(filename, (LPCWSTR)tmpFileNameString, MAX_PATH);
+  RpcStringFreeW(&tmpFileNameString);
+
+  wcsncpy(tmpPath, basePath, MAX_PATH);
+  if (!PathAppendSafe(tmpPath, filename)) {
+    return FALSE;
+  }
+
+  return TRUE;
 }
