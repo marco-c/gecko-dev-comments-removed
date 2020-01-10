@@ -52,8 +52,11 @@ document.addEventListener("DOMContentLoaded", e => {
   });
 
   let createGraph = data => {
+    
+    
+    let hoursInMS12 = 12 * 60 * 60 * 1000;
     let dateInMS = data.earliestDate
-      ? new Date(data.earliestDate).getTime()
+      ? new Date(data.earliestDate).getTime() + hoursInMS12
       : Date.now();
 
     let summary = document.getElementById("graph-total-summary");
