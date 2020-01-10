@@ -1,26 +1,55 @@
-<!DOCTYPE html>
-<html>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
+
+
+
+
 setup({allow_uncaught_exception : true});
 
-// Hacky glue code to run Jest-based tests as WPT tests.
-// Only supports resolving.js.
+const exports = {};
+
 function require(name) {
-  return {
+  return Object.assign({
     'URL': URL,
     'parseFromString': parseFromString,
-    'resolve': resolve
-  };
+    'resolve': resolve,
+    'BUILT_IN_MODULE_SCHEME': 'std'
+  }, exports);
 }
 
 function expect(v) {
   return {
     toMatchURL: expected => assert_equals(v, expected),
-    toThrow: expected => assert_throws(expected(), v)
+    toThrow: expected => {
+      if (expected.test && expected.test('not yet implemented')) {
+        
+        assert_throws(TypeError(), v);
+      } else {
+        assert_throws(expected(), v);
+      }
+    },
+    toEqual: expected => {
+      if (v.localName === 'iframe') {
+        
+        
+        
+        const actualParsedImportMap = JSON.parse(
+            internals.getParsedImportMap(v.contentDocument));
+        assert_equals(
+          JSON.stringify(actualParsedImportMap,
+                         Object.keys(actualParsedImportMap).sort()),
+          JSON.stringify(expected.imports,
+                         Object.keys(expected.imports).sort())
+        );
+      } else {
+        assert_object_equals(v, expected);
+      }
+    }
   };
 }
+
+expect.toMatchURL = expected => expected;
+
+const test_harness_test = test;
+test = it;
 
 let current_message = '';
 function describe(message, f) {
@@ -38,13 +67,13 @@ function it(message, f) {
     current_message += ' / ';
   }
   current_message += message;
-  test(t => t.step_func(f)(), current_message);
+  test_harness_test(t => t.step_func(f)(), current_message);
   current_message = old;
 }
 
-// Creates a new Document (via <iframe>) and add an inline import map.
-// Currently document.write() is used to make everything synchronous, which
-// is just needed for running the existing Jest-based tests easily.
+
+
+
 function parseFromString(mapString, mapBaseURL) {
   const iframe = document.createElement('iframe');
   document.body.appendChild(iframe);
@@ -64,18 +93,10 @@ function parseFromString(mapString, mapBaseURL) {
   return iframe;
 }
 
-// URL resolution is tested using Chromium's `internals`.
-// TODO(hiroshige): Remove the Chromium-specific dependency.
+
+
 function resolve(specifier, map, baseURL) {
   return internals.resolveModuleSpecifier(specifier,
                                           baseURL,
                                           map.contentDocument);
 }
-
-</script>
-
-
-
-
-
-<script type="module" src="resources/resolving.js"></script>
