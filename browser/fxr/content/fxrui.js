@@ -6,7 +6,7 @@
 
 
 
-let homeURL = "https://webxr.today/";
+let homeURL = "https://www.mozilla.org/en-US/";
 
 let privacyPolicyURL = "https://www.mozilla.org/en-US/privacy/firefox/";
 let reportIssueURL = "https://mzl.la/fxr";
