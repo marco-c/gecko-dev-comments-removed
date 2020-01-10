@@ -9,10 +9,16 @@ package org.mozilla.geckoview;
 import android.support.annotation.AnyThread;
 import android.support.annotation.NonNull;
 
+import java.util.Arrays;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.mozglue.JNIObject;
+import org.mozilla.gecko.GeckoThread;
 
 
 
@@ -56,5 +62,99 @@ public final class RuntimeTelemetry {
         mEventDispatcher.dispatch("GeckoView:TelemetrySnapshots", msg, result);
 
         return result;
+    }
+
+    
+
+
+    public static class Metric {
+        
+
+
+        public final @NonNull String name;
+
+        
+
+
+        public final @NonNull long[] values;
+
+          Metric(final String name, final long[] values) {
+            this.name = name;
+            this.values = values;
+        }
+
+        @Override
+        public String toString() {
+            return "name: " + name + ", values: " + Arrays.toString(values);
+        }
+
+        protected Metric() {
+            this.name = null;
+            this.values = null;
+        }
+    }
+
+    
+
+
+
+
+    public interface Delegate {
+        
+
+
+
+
+        @AnyThread
+        default void onTelemetryReceived(final @NonNull Metric metric) {}
+    }
+
+    
+    
+     final static class Proxy extends JNIObject  {
+        private final Delegate mDelegate;
+
+        public Proxy(final @NonNull Delegate delegate) {
+            mDelegate = delegate;
+            
+            attach();
+        }
+
+        
+        
+        
+        
+        public void attach() {
+            if (GeckoThread.isRunning()) {
+                registerDelegateProxy(this);
+            } else {
+                GeckoThread.queueNativeCall(
+                    Proxy.class, "registerDelegateProxy",
+                    Proxy.class, this);
+            }
+        }
+
+        public @NonNull Delegate getDelegate() {
+            return mDelegate;
+        }
+
+        @WrapForJNI(dispatchTo = "gecko")
+        private static native void registerDelegateProxy(Proxy proxy);
+
+        @WrapForJNI(calledFrom = "gecko")
+         void dispatchTelemetry(
+                final String name, final long[] values) {
+            if (mDelegate == null) {
+                
+                return;
+            }
+            mDelegate.onTelemetryReceived(new Metric(name, values));
+        }
+
+        @Override 
+        protected void disposeNative() {
+            
+            throw new UnsupportedOperationException();
+        }
     }
 }

@@ -375,6 +375,21 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mGlMsaaLevel.set(level);
             return this;
         }
+
+        
+
+
+
+
+
+
+
+        public @NonNull Builder telemetryDelegate(
+                final @NonNull RuntimeTelemetry.Delegate delegate) {
+            getSettings().mTelemetryProxy = new RuntimeTelemetry.Proxy(delegate);
+            getSettings().mTelemetryEnabled.set(true);
+            return this;
+        }
     }
 
     private GeckoRuntime mRuntime;
@@ -411,6 +426,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "apz.allow_double_tap_zooming", true);
      final Pref<Integer> mGlMsaaLevel = new Pref<>(
             "gl.msaa-level", 0);
+     final Pref<Boolean> mTelemetryEnabled = new Pref<>(
+            "toolkit.telemetry.geckoview.streaming", false);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -420,6 +437,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
      int mScreenHeightOverride;
      Class<? extends Service> mCrashHandler;
      String[] mRequestedLocales;
+     RuntimeTelemetry.Proxy mTelemetryProxy;
 
     
 
@@ -471,6 +489,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         mCrashHandler = settings.mCrashHandler;
         mRequestedLocales = settings.mRequestedLocales;
         mConfigFilePath = settings.mConfigFilePath;
+        mTelemetryProxy = settings.mTelemetryProxy;
     }
 
      void commit() {
@@ -977,6 +996,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     public @NonNull GeckoRuntimeSettings setGlMsaaLevel(final int level) {
         mGlMsaaLevel.commit(level);
         return this;
+    }
+
+    public @Nullable RuntimeTelemetry.Delegate getTelemetryDelegate() {
+        return mTelemetryProxy.getDelegate();
     }
 
     @Override 
