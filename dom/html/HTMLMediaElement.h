@@ -758,7 +758,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
     ~OutputMediaStream();
 
     RefPtr<DOMMediaStream> mStream;
-    RefPtr<MediaStreamGraphImpl> mGraph;
     
     
     
