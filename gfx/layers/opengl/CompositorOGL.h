@@ -195,6 +195,8 @@ class CompositorOGL final : public Compositor {
 
   bool SupportsLayerGeometry() const override;
 
+  void NormalDrawingDone() override;
+
   void EndFrame() override;
 
   void WaitForGPU() override;
@@ -301,6 +303,8 @@ class CompositorOGL final : public Compositor {
 
   void InsertFrameDoneSync();
 
+  bool NeedToRecreateFullWindowRenderTarget() const;
+
   
   LayoutDeviceIntSize mWidgetSize;
   RefPtr<GLContext> mGLContext;
@@ -333,7 +337,15 @@ class CompositorOGL final : public Compositor {
   
   RefPtr<CompositingRenderTarget> mNativeLayersReferenceRT;
 
-  CompositingRenderTargetOGL* mWindowRenderTarget;
+  
+  
+  
+  RefPtr<CompositingRenderTargetOGL> mWindowRenderTarget;
+
+  
+  
+  
+  RefPtr<CompositingRenderTargetOGL> mFullWindowRenderTarget;
 
   
 
@@ -363,6 +375,10 @@ class CompositorOGL final : public Compositor {
 
 
   bool mFrameInProgress;
+
+  
+  
+  bool mShouldInvalidateWindow = false;
 
   
 

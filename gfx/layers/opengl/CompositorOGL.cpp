@@ -305,6 +305,7 @@ void CompositorOGL::CleanupResources() {
     mGLContext = nullptr;
     mPrograms.clear();
     mNativeLayersReferenceRT = nullptr;
+    mFullWindowRenderTarget = nullptr;
     return;
   }
 
@@ -315,6 +316,7 @@ void CompositorOGL::CleanupResources() {
   }
   mPrograms.clear();
   mNativeLayersReferenceRT = nullptr;
+  mFullWindowRenderTarget = nullptr;
 
 #ifdef MOZ_WIDGET_GTK
   
@@ -906,6 +908,7 @@ void CompositorOGL::BeginFrameForNativeLayers() {
   mGLContext->fEnable(LOCAL_GL_BLEND);
 
   mFrameInProgress = true;
+  mShouldInvalidateWindow = NeedToRecreateFullWindowRenderTarget();
 
   
   
@@ -915,6 +918,7 @@ void CompositorOGL::BeginFrameForNativeLayers() {
         CreateRenderTarget(IntRect(0, 0, 1, 1), INIT_MODE_CLEAR);
   }
   SetRenderTarget(mNativeLayersReferenceRT);
+  mWindowRenderTarget = mFullWindowRenderTarget;
 }
 
 Maybe<gfx::IntRect> CompositorOGL::BeginRenderingToNativeLayer(
@@ -928,7 +932,11 @@ Maybe<gfx::IntRect> CompositorOGL::BeginRenderingToNativeLayer(
 
   IntRect rect = aNativeLayer->GetRect();
   IntRegion layerInvalid;
-  layerInvalid.And(aInvalidRegion, rect);
+  if (mShouldInvalidateWindow) {
+    layerInvalid = rect;
+  } else {
+    layerInvalid.And(aInvalidRegion, rect);
+  }
 
   RefPtr<CompositingRenderTarget> rt =
       RenderTargetForNativeLayer(aNativeLayer, layerInvalid);
@@ -963,6 +971,55 @@ Maybe<gfx::IntRect> CompositorOGL::BeginRenderingToNativeLayer(
   }
 
   return Some(rect);
+}
+
+void CompositorOGL::NormalDrawingDone() {
+  
+  if (!mCurrentNativeLayer) {
+    return;
+  }
+
+  if (!mGLContext->IsSupported(GLFeature::framebuffer_blit)) {
+    return;
+  }
+
+  if (!ShouldRecordFrames()) {
+    
+    
+    mWindowRenderTarget = nullptr;
+    mFullWindowRenderTarget = nullptr;
+    return;
+  }
+
+  if (NeedToRecreateFullWindowRenderTarget()) {
+    
+    
+    
+    IntRect windowRect(IntPoint(0, 0),
+                       mWidget->GetClientSize().ToUnknownSize());
+    RefPtr<CompositingRenderTarget> rt =
+        CreateRenderTarget(windowRect, INIT_MODE_NONE);
+    mFullWindowRenderTarget =
+        static_cast<CompositingRenderTargetOGL*>(rt.get());
+    mWindowRenderTarget = mFullWindowRenderTarget;
+
+    
+    RefPtr<CompositingRenderTarget> previousTarget = mCurrentRenderTarget;
+    SetRenderTarget(mFullWindowRenderTarget);
+    SetRenderTarget(previousTarget);
+  }
+
+  
+  RefPtr<CompositingRenderTargetOGL> layerRT = mCurrentRenderTarget;
+  IntRect copyRect = layerRT->GetClipRect().valueOr(layerRT->GetRect());
+  IntRect sourceRect = copyRect - layerRT->GetOrigin();
+  sourceRect.y = layerRT->GetSize().height - sourceRect.YMost();
+  IntRect destRect = copyRect;
+  destRect.y = mFullWindowRenderTarget->GetSize().height - destRect.YMost();
+  GLuint sourceFBO = layerRT->GetFBO();
+  GLuint destFBO = mFullWindowRenderTarget->GetFBO();
+  mGLContext->BlitHelper()->BlitFramebufferToFramebuffer(
+      sourceFBO, destFBO, sourceRect, destRect, LOCAL_GL_NEAREST);
 }
 
 void CompositorOGL::EndRenderingToNativeLayer() {
@@ -1981,6 +2038,7 @@ void CompositorOGL::EndFrame() {
 #endif
 
   mFrameInProgress = false;
+  mShouldInvalidateWindow = false;
 
   if (mTarget) {
     CopyToTarget(mTarget, mTargetBounds.TopLeft(), Matrix());
@@ -2040,6 +2098,17 @@ void CompositorOGL::WaitForGPU() {
   }
   mPreviousFrameDoneSync = mThisFrameDoneSync;
   mThisFrameDoneSync = nullptr;
+}
+
+bool CompositorOGL::NeedToRecreateFullWindowRenderTarget() const {
+  if (!ShouldRecordFrames()) {
+    return false;
+  }
+  if (!mFullWindowRenderTarget) {
+    return true;
+  }
+  IntSize windowSize = mWidget->GetClientSize().ToUnknownSize();
+  return mFullWindowRenderTarget->GetSize() != windowSize;
 }
 
 void CompositorOGL::SetDestinationSurfaceSize(const IntSize& aSize) {
