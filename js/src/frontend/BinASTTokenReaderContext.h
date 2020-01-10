@@ -42,18 +42,19 @@ class ErrorReporter;
 
 
 struct NormalizedInterfaceAndField {
-  const BinASTInterfaceAndField identity;
+  const BinASTInterfaceAndField identity_;
   explicit NormalizedInterfaceAndField(BinASTInterfaceAndField identity)
-      : identity(identity == BinASTInterfaceAndField::
-                                 StaticMemberAssignmentTarget__Property
-                     ? BinASTInterfaceAndField::StaticMemberExpression__Property
-                     : identity) {}
+      : identity_(
+            identity == BinASTInterfaceAndField::
+                            StaticMemberAssignmentTarget__Property
+                ? BinASTInterfaceAndField::StaticMemberExpression__Property
+                : identity) {}
 };
 
 template <typename T>
 struct Split {
-  T prefix;
-  T suffix;
+  T prefix_;
+  T suffix_;
 };
 
 
@@ -69,13 +70,12 @@ struct Split {
 struct HuffmanLookup {
   HuffmanLookup(const uint32_t bits, const uint8_t bitLength)
       
-      : bits(bitLength == 0
-                 ? 0  
-                 : (bits & (uint32_t(0xFFFFFFFF) >> (32 - bitLength)))),
-        bitLength(bitLength) {
-    MOZ_ASSERT(bitLength <= 32);
-    MOZ_ASSERT_IF(bitLength != 32 ,
-                  this->bits >> bitLength == 0);
+      : bits_(bitLength == 0
+                  ? 0  
+                  : (bits & (uint32_t(0xFFFFFFFF) >> (32 - bitLength)))),
+        bitLength_(bitLength) {
+    MOZ_ASSERT(bitLength_ <= 32);
+    MOZ_ASSERT_IF(bitLength_ != 32 , bits_ >> bitLength_ == 0);
   }
 
   
@@ -107,14 +107,14 @@ struct HuffmanLookup {
   
   
   
-  const uint32_t bits;
+  const uint32_t bits_;
 
   
   
   
   
   
-  const uint8_t bitLength;
+  const uint8_t bitLength_;
 
   
   
@@ -146,14 +146,14 @@ struct HuffmanKey {
   
   
   
-  const uint32_t bits;
+  const uint32_t bits_;
 
   
   
   
   
   
-  const uint8_t bitLength;
+  const uint8_t bitLength_;
 };
 
 
@@ -169,29 +169,29 @@ struct FlatHuffmanKey {
   
   
   
-  const uint32_t representation;
+  const uint32_t representation_;
 
   
   using Lookup = FlatHuffmanKey;
   using Key = Lookup;
   static HashNumber hash(const Lookup& lookup) {
-    return mozilla::DefaultHasher<uint32_t>::hash(lookup.representation);
+    return mozilla::DefaultHasher<uint32_t>::hash(lookup.representation_);
   }
   static bool match(const Key& key, const Lookup& lookup) {
-    return mozilla::DefaultHasher<uint32_t>::match(key.representation,
-                                                   lookup.representation);
+    return mozilla::DefaultHasher<uint32_t>::match(key.representation_,
+                                                   lookup.representation_);
   }
 };
 
 
 template <typename T>
 struct HuffmanEntry {
-  HuffmanEntry(HuffmanKey key, T&& value) : key(key), value(value) {}
+  HuffmanEntry(HuffmanKey key, T&& value) : key_(key), value_(value) {}
   HuffmanEntry(uint32_t bits, uint8_t bitLength, T&& value)
-      : key(bits, bitLength), value(value) {}
+      : key_(bits, bitLength), value_(value) {}
 
-  const HuffmanKey key;
-  const T value;
+  const HuffmanKey key_;
+  const T value_;
 };
 
 
@@ -212,9 +212,9 @@ enum class Nullable {
 template <typename T, int N = HUFFMAN_TABLE_DEFAULT_INLINE_BUFFER_LENGTH>
 class NaiveHuffmanTable {
  public:
-  explicit NaiveHuffmanTable(JSContext* cx) : values(cx) {}
+  explicit NaiveHuffmanTable(JSContext* cx) : values_(cx) {}
   NaiveHuffmanTable(NaiveHuffmanTable&& other) noexcept
-      : values(std::move(other.values)) {}
+      : values_(std::move(other.values_)) {}
 
   
   JS::Result<Ok> initWithSingleValue(JSContext* cx, T&& value);
@@ -229,7 +229,7 @@ class NaiveHuffmanTable {
   JS::Result<Ok> initComplete();
 
   
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
+  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength, T&& value);
 
   NaiveHuffmanTable() = delete;
   NaiveHuffmanTable(NaiveHuffmanTable&) = delete;
@@ -248,9 +248,9 @@ class NaiveHuffmanTable {
   HuffmanEntry<const T*> lookup(HuffmanLookup lookup) const;
 
   
-  size_t length() const { return values.length(); }
-  const HuffmanEntry<T>* begin() const { return values.begin(); }
-  const HuffmanEntry<T>* end() const { return values.end(); }
+  size_t length() const { return values_.length(); }
+  const HuffmanEntry<T>* begin() const { return values_.begin(); }
+  const HuffmanEntry<T>* end() const { return values_.end(); }
 
  private:
   
@@ -258,7 +258,7 @@ class NaiveHuffmanTable {
   
   
   
-  Vector<HuffmanEntry<T>, N> values;
+  Vector<HuffmanEntry<T>, N> values_;
   friend class HuffmanPreludeReader;
 };
 
@@ -281,9 +281,9 @@ class NaiveHuffmanTable {
 template <typename T>
 class MapBasedHuffmanTable {
  public:
-  explicit MapBasedHuffmanTable(JSContext* cx) : values(cx), keys(cx) {}
+  explicit MapBasedHuffmanTable(JSContext* cx) : values_(cx), keys_(cx) {}
   MapBasedHuffmanTable(MapBasedHuffmanTable&& other) noexcept
-      : values(std::move(other.values)), keys(std::move(other.keys)) {}
+      : values_(std::move(other.values_)), keys_(std::move(other.keys_)) {}
 
   
   JS::Result<Ok> initWithSingleValue(JSContext* cx, T&& value);
@@ -296,7 +296,7 @@ class MapBasedHuffmanTable {
                            uint8_t maxBitLength);
 
   
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
+  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength, T&& value);
 
   JS::Result<Ok> initComplete();
 
@@ -314,43 +314,43 @@ class MapBasedHuffmanTable {
   HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
 
   
-  size_t length() const { return values.length(); }
+  size_t length() const { return values_.length(); }
 
   
   struct Iterator {
     Iterator(const js::HashMap<FlatHuffmanKey, T, FlatHuffmanKey>& values,
              const HuffmanKey* position)
-        : values(values), position(position) {}
-    void operator++() { ++position; }
+        : values_(values), position_(position) {}
+    void operator++() { ++position_; }
     const T* operator*() const {
-      const FlatHuffmanKey key(position);
-      if (const auto ptr = values.lookup(key)) {
+      const FlatHuffmanKey key(position_);
+      if (const auto ptr = values_.lookup(key)) {
         return &ptr->value();
       }
       MOZ_CRASH();
     }
     bool operator==(const Iterator& other) const {
-      MOZ_ASSERT(&values == &other.values);
-      return position == other.position;
+      MOZ_ASSERT(&values_ == &other.values_);
+      return position_ == other.position_;
     }
     bool operator!=(const Iterator& other) const {
-      MOZ_ASSERT(&values == &other.values);
-      return position != other.position;
+      MOZ_ASSERT(&values_ == &other.values_);
+      return position_ != other.position_;
     }
 
    private:
-    const js::HashMap<FlatHuffmanKey, T, FlatHuffmanKey>& values;
-    const HuffmanKey* position;
+    const js::HashMap<FlatHuffmanKey, T, FlatHuffmanKey>& values_;
+    const HuffmanKey* position_;
   };
-  Iterator begin() const { return Iterator(values, keys.begin()); }
-  Iterator end() const { return Iterator(values, keys.end()); }
+  Iterator begin() const { return Iterator(values_, keys_.begin()); }
+  Iterator end() const { return Iterator(values_, keys_.end()); }
 
  private:
   
-  js::HashMap<FlatHuffmanKey, T, FlatHuffmanKey> values;
+  js::HashMap<FlatHuffmanKey, T, FlatHuffmanKey> values_;
 
   
-  Vector<HuffmanKey> keys;
+  Vector<HuffmanKey> keys_;
 
   friend class HuffmanPreludeReader;
 };
@@ -381,7 +381,7 @@ class SingleEntryHuffmanTable {
     bool operator!=(const Iterator& other) const;
 
    private:
-    const T* position;
+    const T* position_;
   };
   Iterator begin() const { return Iterator(&value_); }
   Iterator end() const { return Iterator(nullptr); }
@@ -476,7 +476,7 @@ class SingleLookupHuffmanTable {
   static const uint8_t MAX_BIT_LENGTH = sizeof(InternalIndex) * 8;
 
   explicit SingleLookupHuffmanTable(JSContext* cx)
-      : values(cx), saturated(cx), largestBitLength(-1) {}
+      : values_(cx), saturated_(cx), largestBitLength_(-1) {}
   SingleLookupHuffmanTable(SingleLookupHuffmanTable&& other) = default;
 
   
@@ -489,7 +489,7 @@ class SingleLookupHuffmanTable {
   JS::Result<Ok> initComplete();
 
   
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
+  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength, T&& value);
 
   SingleLookupHuffmanTable() = delete;
   SingleLookupHuffmanTable(SingleLookupHuffmanTable&) = delete;
@@ -508,7 +508,7 @@ class SingleLookupHuffmanTable {
   HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
 
   
-  size_t length() const { return values.length(); }
+  size_t length() const { return values_.length(); }
 
   
   struct Iterator {
@@ -519,10 +519,10 @@ class SingleLookupHuffmanTable {
     bool operator!=(const Iterator& other) const;
 
    private:
-    const HuffmanEntry<T>* position;
+    const HuffmanEntry<T>* position_;
   };
-  Iterator begin() const { return Iterator(values.begin()); }
-  Iterator end() const { return Iterator(values.end()); }
+  Iterator begin() const { return Iterator(values_.begin()); }
+  Iterator end() const { return Iterator(values_.end()); }
 
  private:
   
@@ -530,20 +530,20 @@ class SingleLookupHuffmanTable {
   
   
   
-  Vector<HuffmanEntry<T>> values;
+  Vector<HuffmanEntry<T>> values_;
 
   
   
   
   
   
-  Vector<InternalIndex> saturated;
+  Vector<InternalIndex> saturated_;
 
   
   
   
   
-  uint8_t largestBitLength;
+  uint8_t largestBitLength_;
 
   friend class HuffmanPreludeReader;
 };
@@ -674,7 +674,7 @@ class MultiLookupHuffmanTable {
       PrefixBitLength + Subtable::MAX_BIT_LENGTH;
 
   explicit MultiLookupHuffmanTable(JSContext* cx)
-      : cx_(cx), values(cx), subTables(cx), largestBitLength(-1) {}
+      : cx_(cx), values_(cx), subTables_(cx), largestBitLength_(-1) {}
   MultiLookupHuffmanTable(MultiLookupHuffmanTable&& other) = default;
 
   
@@ -687,7 +687,7 @@ class MultiLookupHuffmanTable {
   JS::Result<Ok> initComplete();
 
   
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
+  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength, T&& value);
 
   MultiLookupHuffmanTable() = delete;
   MultiLookupHuffmanTable(MultiLookupHuffmanTable&) = delete;
@@ -706,7 +706,7 @@ class MultiLookupHuffmanTable {
   HuffmanEntry<const T*> lookup(HuffmanLookup key) const;
 
   
-  size_t length() const { return values.length(); }
+  size_t length() const { return values_.length(); }
 
   
   struct Iterator {
@@ -717,10 +717,10 @@ class MultiLookupHuffmanTable {
     bool operator!=(const Iterator& other) const;
 
    private:
-    const HuffmanEntry<T>* position;
+    const HuffmanEntry<T>* position_;
   };
-  Iterator begin() const { return Iterator(values.begin()); }
-  Iterator end() const { return Iterator(values.end()); }
+  Iterator begin() const { return Iterator(values_.begin()); }
+  Iterator end() const { return Iterator(values_.end()); }
 
  public:
   
@@ -739,7 +739,7 @@ class MultiLookupHuffmanTable {
   
   
   
-  Vector<HuffmanEntry<T>> values;
+  Vector<HuffmanEntry<T>> values_;
 
   
   
@@ -748,13 +748,13 @@ class MultiLookupHuffmanTable {
   
   
   
-  Vector<Subtable> subTables;
+  Vector<Subtable> subTables_;
 
   
   
   
   
-  uint8_t largestBitLength;
+  uint8_t largestBitLength_;
 
   friend class HuffmanPreludeReader;
 };
@@ -796,7 +796,7 @@ struct GenericHuffmanTable {
                            uint8_t maxBitLength);
 
   
-  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bits_length, T&& value);
+  JS::Result<Ok> addSymbol(uint32_t bits, uint8_t bitLength, T&& value);
 
   JS::Result<Ok> initComplete();
 
@@ -820,7 +820,7 @@ struct GenericHuffmanTable {
                      typename SingleLookupHuffmanTable<T>::Iterator,
                      typename TwoLookupsHuffmanTable<T>::Iterator,
                      typename ThreeLookupsHuffmanTable<T>::Iterator>
-        implementation;
+        implementation_;
   };
 
   
@@ -844,7 +844,7 @@ struct GenericHuffmanTable {
   mozilla::Variant<SingleEntryHuffmanTable<T>, SingleLookupHuffmanTable<T>,
                    TwoLookupsHuffmanTable<T>, ThreeLookupsHuffmanTable<T>,
                    HuffmanTableUnreachable>
-      implementation;
+      implementation_;
 };
 
 
@@ -900,7 +900,7 @@ struct HuffmanTableIndexedSymbolsMaybeInterface
       return false;
     }
     
-    return begin()->value == BinASTKind::_Null;
+    return begin()->value_ == BinASTKind::_Null;
   }
 };
 
@@ -966,7 +966,7 @@ class HuffmanDictionary {
   
   
   
-  mozilla::Array<HuffmanTableValue, BINAST_INTERFACE_AND_FIELD_LIMIT> fields;
+  mozilla::Array<HuffmanTableValue, BINAST_INTERFACE_AND_FIELD_LIMIT> fields_;
 
   
   
@@ -975,7 +975,7 @@ class HuffmanDictionary {
   
   
   mozilla::Array<HuffmanTableListLength, BINAST_NUMBER_OF_LIST_TYPES>
-      listLengths;
+      listLengths_;
 };
 
 
@@ -1077,7 +1077,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
     
     
     
-    uint64_t bits;
+    uint64_t bits_;
 
     
     
@@ -1089,7 +1089,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
     
     
     
-    uint8_t bitLength;
+    uint8_t bitLength_;
   } bitBuffer;
 
   
@@ -1332,7 +1332,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   MetadataOwnership metadataOwned_ = MetadataOwnership::Owned;
   BinASTSourceMetadata* metadata_;
 
-  class HuffmanDictionary dictionary;
+  class HuffmanDictionary dictionary_;
 
   const uint8_t* posBeforeTree_;
 
