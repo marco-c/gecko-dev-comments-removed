@@ -455,10 +455,21 @@ NS_IMETHODIMP
 StreamFilterParent::OnStartRequest(nsIRequest* aRequest) {
   AssertIsMainThread();
 
+  
+  
+  
+  
+  
+  
   if (aRequest != mChannel) {
-    RefPtr<net::DocumentChannelChild> docChild = do_QueryObject(mChannel);
-    if (docChild && docChild->GetRedirectChain().IsEmpty()) {
-      mChannel = do_QueryInterface(aRequest);
+    nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+    nsCOMPtr<nsILoadInfo> loadInfo = channel ? channel->LoadInfo() : nullptr;
+
+    if (loadInfo && loadInfo->RedirectChain().IsEmpty()) {
+      MOZ_DIAGNOSTIC_ASSERT(
+          !loadInfo->RedirectChainIncludingInternalRedirects().IsEmpty(),
+          "We should be performing an internal redirect.");
+      mChannel = channel;
     } else {
       mDisconnected = true;
 
