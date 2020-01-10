@@ -192,7 +192,6 @@ HTMLEditRules::HTMLEditRules()
       mInitialized(false),
       mListenerEnabled(false),
       mReturnInEmptyLIKillsList(false),
-      mDidDeleteSelection(false),
       mDidExplicitlySetInterline(false),
       mDidRangedDelete(false),
       mDidEmptyParentBlocksRemoved(false),
@@ -206,7 +205,6 @@ void HTMLEditRules::InitFields() {
   mHTMLEditor = nullptr;
   mDocChangeRange = nullptr;
   mReturnInEmptyLIKillsList = true;
-  mDidDeleteSelection = false;
   mDidExplicitlySetInterline = false;
   mDidRangedDelete = false;
   mDidEmptyParentBlocksRemoved = false;
@@ -358,9 +356,6 @@ nsresult HTMLEditRules::BeforeEdit() {
 
   
   HTMLEditorRef().RangeUpdaterRef().RegisterRangeItem(mRangeItem);
-
-  
-  mDidDeleteSelection = false;
 
   
   if (mDocChangeRange) {
@@ -1348,7 +1343,7 @@ nsresult HTMLEditRules::WillInsert(bool* aCancel) {
     }
   }
 
-  if (mDidDeleteSelection) {
+  if (HTMLEditorRef().TopLevelEditSubActionDataRef().mDidDeleteSelection) {
     switch (HTMLEditorRef().GetTopLevelEditSubAction()) {
       case EditSubAction::eInsertText:
       case EditSubAction::eInsertTextComingFromIME:
@@ -2332,7 +2327,7 @@ nsresult HTMLEditRules::WillDeleteSelection(
 
   
   
-  mDidDeleteSelection = true;
+  HTMLEditorRef().TopLevelEditSubActionDataRef().mDidDeleteSelection = true;
 
   
   

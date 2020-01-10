@@ -603,6 +603,26 @@ class EditorBase : public nsIEditor,
   void ReinitializeSelection(Element& aElement);
 
  protected:  
+  class AutoEditActionDataSetter;
+
+  
+
+
+
+  struct MOZ_STACK_CLASS TopLevelEditSubActionData final {
+    friend class AutoEditActionDataSetter;
+
+    
+    bool mDidDeleteSelection;
+
+   private:
+    void Clear() { mDidDeleteSelection = false; }
+
+    TopLevelEditSubActionData() = default;
+    TopLevelEditSubActionData(const TopLevelEditSubActionData& aOther) = delete;
+  };
+
+ protected:  
   
 
 
@@ -687,6 +707,7 @@ class EditorBase : public nsIEditor,
     void SetTopLevelEditSubAction(EditSubAction aEditSubAction,
                                   EDirection aDirection = eNone) {
       mTopLevelEditSubAction = aEditSubAction;
+      TopLevelEditSubActionDataRef().Clear();
       switch (mTopLevelEditSubAction) {
         case EditSubAction::eInsertNode:
         case EditSubAction::eCreateNode:
@@ -754,6 +775,15 @@ class EditorBase : public nsIEditor,
       return mDirectionOfTopLevelEditSubAction;
     }
 
+    const TopLevelEditSubActionData& TopLevelEditSubActionDataRef() const {
+      return mParentData ? mParentData->TopLevelEditSubActionDataRef()
+                         : mTopLevelEditSubActionData;
+    }
+    TopLevelEditSubActionData& TopLevelEditSubActionDataRef() {
+      return mParentData ? mParentData->TopLevelEditSubActionDataRef()
+                         : mTopLevelEditSubActionData;
+    }
+
     SelectionState& SavedSelectionRef() {
       return mParentData ? mParentData->SavedSelectionRef() : mSavedSelection;
     }
@@ -802,8 +832,19 @@ class EditorBase : public nsIEditor,
     
     EditorDOMPoint mSpellCheckRestartPoint;
 
+    
+    
+    
+    TopLevelEditSubActionData mTopLevelEditSubActionData;
+
     EditAction mEditAction;
+
+    
+    
+    
+    
     EditSubAction mTopLevelEditSubAction;
+
     EDirection mDirectionOfTopLevelEditSubAction;
 
     AutoEditActionDataSetter() = delete;
@@ -929,6 +970,15 @@ class EditorBase : public nsIEditor,
   const EditorDOMPoint& GetSpellCheckRestartPoint() const {
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->GetSpellCheckRestartPoint();
+  }
+
+  const TopLevelEditSubActionData& TopLevelEditSubActionDataRef() const {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return mEditActionData->TopLevelEditSubActionDataRef();
+  }
+  TopLevelEditSubActionData& TopLevelEditSubActionDataRef() {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return mEditActionData->TopLevelEditSubActionDataRef();
   }
 
   
