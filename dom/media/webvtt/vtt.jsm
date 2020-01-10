@@ -1098,6 +1098,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
   
   var lastDisplayedCueNums = 0;
 
+  const DIV_COMPUTING_STATE = {
+    REUSE : 0,
+    REUSE_AND_CLEAR : 1,
+    COMPUTE_AND_CLEAR : 2
+  };
+
   
   
   
@@ -1126,31 +1132,43 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     }
 
     
-    
-    
-    function shouldCompute(cues) {
-      if (lastDisplayedCueNums != cues.length) {
-        return true;
-      }
 
+
+
+
+
+
+
+
+
+
+
+
+
+    function getDIVComputingState(cues) {
       if (overlay.lastControlBarShownStatus != controlBarShown) {
-        return true;
+        return DIV_COMPUTING_STATE.COMPUTE_AND_CLEAR;
       }
 
       for (let i = 0; i < cues.length; i++) {
         if (cues[i].hasBeenReset || !cues[i].displayState) {
-          return true;
+          return DIV_COMPUTING_STATE.COMPUTE_AND_CLEAR;
         }
       }
-      return false;
+
+      if (lastDisplayedCueNums != cues.length) {
+        return DIV_COMPUTING_STATE.REUSE_AND_CLEAR;
+      }
+      return DIV_COMPUTING_STATE.REUSE;
     }
 
-    
-    if (!shouldCompute(cues)) {
-      LOG(`Abort processing because no need to compute cues' display state.`);
+    const divState = getDIVComputingState(cues);
+    overlay.lastControlBarShownStatus = controlBarShown;
+
+    if (divState == DIV_COMPUTING_STATE.REUSE) {
+      LOG(`reuse current cue's display state and abort processing`);
       return;
     }
-    overlay.lastControlBarShownStatus = controlBarShown;
 
     clearAllCuesDiv(overlay);
     let rootOfCues = window.document.createElement("div");
