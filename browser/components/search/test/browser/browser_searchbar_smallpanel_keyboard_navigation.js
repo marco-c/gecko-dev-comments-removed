@@ -136,7 +136,7 @@ add_task(async function test_arrows() {
 add_task(async function test_tab() {
   is(
     Services.focus.focusedElement,
-    textbox.inputField,
+    textbox,
     "the search bar should be focused"
   ); 
 
@@ -171,7 +171,7 @@ add_task(async function test_tab() {
   
   isnot(
     Services.focus.focusedElement,
-    textbox.inputField,
+    textbox,
     "the search bar no longer be focused"
   );
 });
@@ -225,7 +225,7 @@ add_task(async function test_shift_tab() {
   
   isnot(
     Services.focus.focusedElement,
-    textbox.inputField,
+    textbox,
     "the search bar no longer be focused"
   );
 });

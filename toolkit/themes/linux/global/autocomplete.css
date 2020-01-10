@@ -11,7 +11,11 @@
 
 
 
-textbox[nomatch="true"][highlightnonmatches="true"] {
+html|input[is="autocomplete-input"] {
+  margin: 2px 4px; 
+}
+
+html|input[nomatch="true"][highlightnonmatches="true"] {
   color: red;
 }
 
