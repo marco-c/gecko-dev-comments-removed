@@ -83,15 +83,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   void UpdateMediaAction(MediaControlActions aAction);
 
-  
-  
-  bool ValidateTransaction(const Transaction& aTransaction,
-                           ContentParent* aSource);
-
-  void SetFieldEpochsForChild(ContentParent* aChild,
-                              const FieldEpochs& aEpochs);
-  const FieldEpochs& GetFieldEpochsForChild(ContentParent* aChild);
-
  protected:
   void Traverse(nsCycleCollectionTraversalCallback& cb);
   void Unlink();
@@ -113,10 +104,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   nsTHashtable<nsRefPtrHashKey<WindowGlobalParent>> mWindowGlobals;
   RefPtr<WindowGlobalParent> mCurrentWindowGlobal;
   RefPtr<WindowGlobalParent> mEmbedderWindowGlobal;
-
-  
-  
-  nsDataHashtable<nsUint64HashKey, FieldEpochs> mChildFieldEpochs;
 };
 
 }  
