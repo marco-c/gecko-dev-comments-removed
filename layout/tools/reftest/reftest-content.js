@@ -300,7 +300,11 @@ function setupViewport(contentRootElement) {
         windowUtils().setVisualViewportSize(sw, sh);
     }
 
-    
+    var res = attrOrDefault(contentRootElement, "reftest-resolution", 1);
+    if (res !== 1) {
+        LogInfo("Setting resolution to " + res);
+        windowUtils().setResolutionAndScaleTo(res);
+    }
 
     
 }
