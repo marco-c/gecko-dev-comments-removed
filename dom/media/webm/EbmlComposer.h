@@ -15,13 +15,14 @@ namespace mozilla {
 
 class EbmlComposer {
  public:
-  EbmlComposer();
+  EbmlComposer() = default;
   
+
+
 
 
   void SetVideoConfig(uint32_t aWidth, uint32_t aHeight, uint32_t aDisplayWidth,
                       uint32_t aDisplayHeight);
-
   void SetAudioConfig(uint32_t aSampleFreq, uint32_t aChannels);
   
 
@@ -30,6 +31,7 @@ class EbmlComposer {
     mCodecPrivateData.AppendElements(aBufs);
   }
   
+
 
 
   void GenerateHeader();
@@ -47,37 +49,41 @@ class EbmlComposer {
 
  private:
   
-  void FinishMetadata();
-  
   void FinishCluster();
   
-  nsTArray<nsTArray<uint8_t> > mClusterBuffs;
   
-  nsTArray<nsTArray<uint8_t> > mClusterCanFlushBuffs;
+  
+  
+  nsTArray<nsTArray<uint8_t> > mClusters;
+  
+  nsTArray<nsTArray<uint8_t> > mFinishedClusters;
 
   
-  enum { FLUSH_NONE = 0, FLUSH_METADATA = 1 << 0, FLUSH_CLUSTER = 1 << 1 };
-  uint32_t mFlushState;
+  bool mMetadataFinished = false;
   
-  uint32_t mClusterHeaderIndex;
+  bool mWritingCluster = false;
   
-  uint64_t mClusterLengthLoc;
+  size_t mClusterHeaderIndex = 0;
+  
+  uint64_t mClusterLengthLoc = 0;
   
   nsTArray<uint8_t> mCodecPrivateData;
   
-  uint64_t mCodecDelay;
+  uint64_t mCodecDelay = 0;
 
   
-  uint64_t mClusterTimecode;
+  uint64_t mClusterTimecode = 0;
 
   
-  int mWidth;
-  int mHeight;
-  int mDisplayWidth;
-  int mDisplayHeight;
+  int mWidth = 0;
+  int mHeight = 0;
+  int mDisplayWidth = 0;
+  int mDisplayHeight = 0;
+  bool mHasVideo = false;
   
-  float mSampleFreq;
-  int mChannels;
+  float mSampleFreq = 0;
+  int mChannels = 0;
+  bool mHasAudio = false;
 };
 
 }  

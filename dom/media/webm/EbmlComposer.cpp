@@ -19,7 +19,12 @@ static const unsigned long TIME_CODE_SCALE = 1000000;
 
 static const int32_t DEFAULT_HEADER_SIZE = 1024;
 
+static const int32_t FLUSH_AUDIO_ONLY_AFTER_MS = 1000;
+
 void EbmlComposer::GenerateHeader() {
+  MOZ_RELEASE_ASSERT(!mMetadataFinished);
+  MOZ_RELEASE_ASSERT(mHasAudio || mHasVideo);
+
   
   EbmlGlobal ebml;
   
@@ -70,25 +75,14 @@ void EbmlComposer::GenerateHeader() {
   }
   MOZ_ASSERT(ebml.offset <= DEFAULT_HEADER_SIZE + mCodecPrivateData.Length(),
              "write more data > EBML_BUFFER_SIZE");
-  auto block = mClusterBuffs.AppendElement();
+  auto block = mFinishedClusters.AppendElement();
   block->SetLength(ebml.offset);
   memcpy(block->Elements(), ebml.buf, ebml.offset);
-  mFlushState |= FLUSH_METADATA;
-}
-
-void EbmlComposer::FinishMetadata() {
-  if (mFlushState & FLUSH_METADATA) {
-    
-    
-    mClusterCanFlushBuffs.AppendElement()->SwapElements(mClusterBuffs[0]);
-    mFlushState &= ~FLUSH_METADATA;
-  }
+  mMetadataFinished = true;
 }
 
 void EbmlComposer::FinishCluster() {
-  FinishMetadata();
-  if (!(mFlushState & FLUSH_CLUSTER)) {
-    
+  if (!mWritingCluster) {
     return;
   }
 
@@ -97,71 +91,85 @@ void EbmlComposer::FinishCluster() {
   EbmlLoc ebmlLoc;
   ebmlLoc.offset = mClusterLengthLoc;
   ebml.offset = 0;
-  for (uint32_t i = mClusterHeaderIndex; i < mClusterBuffs.Length(); i++) {
-    ebml.offset += mClusterBuffs[i].Length();
+  for (uint32_t i = mClusterHeaderIndex; i < mClusters.Length(); i++) {
+    ebml.offset += mClusters[i].Length();
   }
-  ebml.buf = mClusterBuffs[mClusterHeaderIndex].Elements();
+  ebml.buf = mClusters[mClusterHeaderIndex].Elements();
   Ebml_EndSubElement(&ebml, &ebmlLoc);
   
   
-  for (uint32_t i = mClusterHeaderIndex; i < mClusterBuffs.Length(); i++) {
-    mClusterCanFlushBuffs.AppendElement()->SwapElements(mClusterBuffs[i]);
+  for (uint32_t i = mClusterHeaderIndex; i < mClusters.Length(); i++) {
+    mFinishedClusters.AppendElement()->SwapElements(mClusters[i]);
   }
 
   mClusterHeaderIndex = 0;
   mClusterLengthLoc = 0;
-  mClusterBuffs.Clear();
-  mFlushState &= ~FLUSH_CLUSTER;
+  mClusters.Clear();
+  mWritingCluster = false;
 }
 
 void EbmlComposer::WriteSimpleBlock(EncodedFrame* aFrame) {
+  MOZ_RELEASE_ASSERT(mMetadataFinished);
+
   EbmlGlobal ebml;
   ebml.offset = 0;
 
   auto frameType = aFrame->GetFrameType();
-  bool flush = false;
-  bool isVP8IFrame = (frameType == EncodedFrame::FrameType::VP8_I_FRAME);
+  const bool isVP8IFrame = (frameType == EncodedFrame::FrameType::VP8_I_FRAME);
+  const bool isVP8PFrame = (frameType == EncodedFrame::FrameType::VP8_P_FRAME);
+  const bool isOpus = (frameType == EncodedFrame::FrameType::OPUS_AUDIO_FRAME);
   if (isVP8IFrame) {
+    MOZ_ASSERT(mHasVideo);
     FinishCluster();
-    flush = true;
-  } else {
-    
-    int64_t timeCode =
-        (aFrame->GetTimeStamp() / ((int)PR_USEC_PER_MSEC) - mClusterTimecode) +
-        (mCodecDelay / PR_NSEC_PER_MSEC);
-    if (timeCode < SHRT_MIN || timeCode > SHRT_MAX) {
-      
-      
-      FinishCluster();
-      flush = true;
-    }
   }
 
-  auto block = mClusterBuffs.AppendElement();
-  block->SetLength(aFrame->GetFrameData().Length() + DEFAULT_HEADER_SIZE);
-  ebml.buf = block->Elements();
-
-  if (flush) {
-    EbmlLoc ebmlLoc;
-    Ebml_StartSubElement(&ebml, &ebmlLoc, Cluster);
-    MOZ_ASSERT(mClusterBuffs.Length() > 0);
+  if (isVP8PFrame && !mWritingCluster) {
     
-    mClusterHeaderIndex = mClusterBuffs.Length() - 1;
-    mClusterLengthLoc = ebmlLoc.offset;
-    
-    mClusterTimecode = aFrame->GetTimeStamp() / PR_USEC_PER_MSEC;
-    Ebml_SerializeUnsigned(&ebml, Timecode, mClusterTimecode);
-    mFlushState |= FLUSH_CLUSTER;
+    return;
   }
 
-  bool isOpus = (frameType == EncodedFrame::FrameType::OPUS_AUDIO_FRAME);
-  
   int64_t timeCode =
       aFrame->GetTimeStamp() / ((int)PR_USEC_PER_MSEC) - mClusterTimecode;
   if (isOpus) {
     timeCode += mCodecDelay / PR_NSEC_PER_MSEC;
   }
-  MOZ_ASSERT(timeCode >= SHRT_MIN && timeCode <= SHRT_MAX);
+
+  if (!mHasVideo && timeCode >= FLUSH_AUDIO_ONLY_AFTER_MS) {
+    MOZ_ASSERT(mHasAudio);
+    MOZ_ASSERT(isOpus);
+    
+    
+    FinishCluster();
+  } else if (timeCode < SHRT_MIN || timeCode > SHRT_MAX) {
+    
+    FinishCluster();
+  }
+
+  auto block = mClusters.AppendElement();
+  block->SetLength(aFrame->GetFrameData().Length() + DEFAULT_HEADER_SIZE);
+  ebml.buf = block->Elements();
+
+  if (!mWritingCluster) {
+    EbmlLoc ebmlLoc;
+    Ebml_StartSubElement(&ebml, &ebmlLoc, Cluster);
+    MOZ_ASSERT(mClusters.Length() > 0);
+    
+    mClusterHeaderIndex = mClusters.Length() - 1;
+    mClusterLengthLoc = ebmlLoc.offset;
+    
+    mClusterTimecode = aFrame->GetTimeStamp() / PR_USEC_PER_MSEC;
+    Ebml_SerializeUnsigned(&ebml, Timecode, mClusterTimecode);
+
+    
+    timeCode =
+        aFrame->GetTimeStamp() / ((int)PR_USEC_PER_MSEC) - mClusterTimecode;
+    if (isOpus) {
+      timeCode += mCodecDelay / PR_NSEC_PER_MSEC;
+    }
+
+    mWritingCluster = true;
+  }
+
   writeSimpleBlock(&ebml, isOpus ? 0x2 : 0x1, static_cast<short>(timeCode),
                    isVP8IFrame, 0, 0,
                    (unsigned char*)aFrame->GetFrameData().Elements(),
@@ -175,6 +183,7 @@ void EbmlComposer::WriteSimpleBlock(EncodedFrame* aFrame) {
 void EbmlComposer::SetVideoConfig(uint32_t aWidth, uint32_t aHeight,
                                   uint32_t aDisplayWidth,
                                   uint32_t aDisplayHeight) {
+  MOZ_RELEASE_ASSERT(!mMetadataFinished);
   MOZ_ASSERT(aWidth > 0, "Width should > 0");
   MOZ_ASSERT(aHeight > 0, "Height should > 0");
   MOZ_ASSERT(aDisplayWidth > 0, "DisplayWidth should > 0");
@@ -183,42 +192,31 @@ void EbmlComposer::SetVideoConfig(uint32_t aWidth, uint32_t aHeight,
   mHeight = aHeight;
   mDisplayWidth = aDisplayWidth;
   mDisplayHeight = aDisplayHeight;
+  mHasVideo = true;
 }
 
 void EbmlComposer::SetAudioConfig(uint32_t aSampleFreq, uint32_t aChannels) {
+  MOZ_RELEASE_ASSERT(!mMetadataFinished);
   MOZ_ASSERT(aSampleFreq > 0, "SampleFreq should > 0");
   MOZ_ASSERT(aChannels > 0, "Channels should > 0");
   mSampleFreq = aSampleFreq;
   mChannels = aChannels;
+  mHasAudio = true;
 }
 
 void EbmlComposer::ExtractBuffer(nsTArray<nsTArray<uint8_t> >* aDestBufs,
                                  uint32_t aFlag) {
-  if ((aFlag & ContainerWriter::FLUSH_NEEDED) ||
-      (aFlag & ContainerWriter::GET_HEADER)) {
-    FinishMetadata();
+  if (!mMetadataFinished) {
+    return;
   }
   if (aFlag & ContainerWriter::FLUSH_NEEDED) {
     FinishCluster();
   }
   
-  for (uint32_t i = 0; i < mClusterCanFlushBuffs.Length(); i++) {
-    aDestBufs->AppendElement()->SwapElements(mClusterCanFlushBuffs[i]);
+  for (uint32_t i = 0; i < mFinishedClusters.Length(); i++) {
+    aDestBufs->AppendElement()->SwapElements(mFinishedClusters[i]);
   }
-  mClusterCanFlushBuffs.Clear();
+  mFinishedClusters.Clear();
 }
-
-EbmlComposer::EbmlComposer()
-    : mFlushState(FLUSH_NONE),
-      mClusterHeaderIndex(0),
-      mClusterLengthLoc(0),
-      mCodecDelay(0),
-      mClusterTimecode(0),
-      mWidth(0),
-      mHeight(0),
-      mDisplayWidth(0),
-      mDisplayHeight(0),
-      mSampleFreq(0),
-      mChannels(0) {}
 
 }  
