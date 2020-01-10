@@ -57,6 +57,14 @@ using mozilla::loader::PScriptCacheChild;
 bool IsDevelopmentBuild();
 #endif 
 
+#if defined(XP_MACOSX)
+
+
+
+nsresult GetRepoDir(nsIFile** aRepoDir);
+nsresult GetObjDir(nsIFile** aObjDir);
+#endif 
+
 namespace ipc {
 class URIParams;
 }  
