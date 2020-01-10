@@ -863,175 +863,198 @@ ListItemElementSelectionState::ListItemElementSelectionState(
   }
 }
 
-nsresult HTMLEditRules::GetAlignment(bool* aMixed,
-                                     nsIHTMLEditor::EAlignment* aAlign) {
-  MOZ_ASSERT(aMixed && aAlign);
+AlignStateAtSelection::AlignStateAtSelection(HTMLEditor& aHTMLEditor,
+                                             ErrorResult& aRv) {
+  MOZ_ASSERT(!aRv.Failed());
 
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
+  if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
+    aRv = EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+    return;
   }
 
-  AutoSafeEditorData setData(*this, *mHTMLEditor);
-
   
   
   
-  
-  
-
-  
-
-  
-  *aMixed = false;
-  *aAlign = nsIHTMLEditor::eLeft;
-
-  
-  if (NS_WARN_IF(!HTMLEditorRef().GetRoot())) {
-    return NS_ERROR_FAILURE;
+  EditorBase::AutoEditActionDataSetter editActionData(aHTMLEditor,
+                                                      EditAction::eNotEditing);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    aRv = EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+    return;
   }
-  OwningNonNull<Element> root = *HTMLEditorRef().GetRoot();
 
-  int32_t rootOffset =
-      root->GetParentNode() ? root->GetParentNode()->ComputeIndexOf(root) : -1;
+  
+  
+  
+  
+  
 
-  nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
+  
+  
+
+  if (NS_WARN_IF(!aHTMLEditor.GetRoot())) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  OwningNonNull<Element> bodyOrDocumentElement = *aHTMLEditor.GetRoot();
+  EditorRawDOMPoint atBodyOrDocumentElement(bodyOrDocumentElement);
+
+  nsRange* firstRange = aHTMLEditor.SelectionRefPtr()->GetRangeAt(0);
   if (NS_WARN_IF(!firstRange)) {
-    return NS_ERROR_FAILURE;
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
   }
   EditorRawDOMPoint atStartOfSelection(firstRange->StartRef());
   if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
-    return NS_ERROR_FAILURE;
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
   }
   MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
+  nsIContent* editTargetContent = nullptr;
   
-  nsCOMPtr<nsINode> nodeToExamine;
-  if (SelectionRefPtr()->IsCollapsed() ||
-      atStartOfSelection.GetContainerAsText()) {
-    
-    
-    
-    nodeToExamine = atStartOfSelection.GetContainer();
-    if (NS_WARN_IF(!nodeToExamine)) {
-      return NS_ERROR_FAILURE;
+  if (aHTMLEditor.SelectionRefPtr()->IsCollapsed() ||
+      atStartOfSelection.IsInTextNode()) {
+    editTargetContent = atStartOfSelection.GetContainerAsContent();
+    if (NS_WARN_IF(!editTargetContent)) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
     }
-  } else if (atStartOfSelection.IsContainerHTMLElement(nsGkAtoms::html) &&
-             atStartOfSelection.Offset() == static_cast<uint32_t>(rootOffset)) {
-    
-    nodeToExamine = HTMLEditorRef().GetNextEditableNode(atStartOfSelection);
-    if (NS_WARN_IF(!nodeToExamine)) {
-      return NS_ERROR_FAILURE;
+  }
+  
+  
+  
+  
+  
+  else if (atStartOfSelection.IsContainerHTMLElement(nsGkAtoms::html) &&
+           atBodyOrDocumentElement.IsSet() &&
+           atStartOfSelection.Offset() == atBodyOrDocumentElement.Offset()) {
+    editTargetContent = aHTMLEditor.GetNextEditableNode(atStartOfSelection);
+    if (NS_WARN_IF(!editTargetContent)) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
     }
-  } else {
+  }
+  
+  
+  
+  
+  else {
     AutoTArray<RefPtr<nsRange>, 4> arrayOfRanges;
-    HTMLEditorRef().GetSelectionRangesExtendedToHardLineStartAndEnd(
+    aHTMLEditor.GetSelectionRangesExtendedToHardLineStartAndEnd(
         arrayOfRanges, EditSubAction::eSetOrClearAlignment);
 
-    
-    nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-    nsresult rv = HTMLEditorRef().CollectEditTargetNodes(
+    AutoTArray<OwningNonNull<nsINode>, 64> arrayOfNodes;
+    nsresult rv = aHTMLEditor.CollectEditTargetNodes(
         arrayOfRanges, arrayOfNodes, EditSubAction::eSetOrClearAlignment,
         HTMLEditor::CollectNonEditableNodes::Yes);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(arrayOfNodes.IsEmpty()) ||
+        NS_WARN_IF(!arrayOfNodes[0]->IsContent())) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
     }
-    nodeToExamine = arrayOfNodes.SafeElementAt(0);
-    if (NS_WARN_IF(!nodeToExamine)) {
-      return NS_ERROR_FAILURE;
-    }
+    editTargetContent = arrayOfNodes[0]->AsContent();
   }
 
-  RefPtr<Element> blockParent = HTMLEditorRef().GetBlock(*nodeToExamine);
-  if (NS_WARN_IF(!blockParent)) {
-    return NS_ERROR_FAILURE;
+  Element* blockElementAtEditTarget = HTMLEditor::GetBlock(*editTargetContent);
+  if (NS_WARN_IF(!blockElementAtEditTarget)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
   }
 
-  if (HTMLEditorRef().IsCSSEnabled() &&
-      CSSEditUtils::IsCSSEditableProperty(blockParent, nullptr,
+  if (aHTMLEditor.IsCSSEnabled() &&
+      CSSEditUtils::IsCSSEditableProperty(blockElementAtEditTarget, nullptr,
                                           nsGkAtoms::align)) {
     
     nsAutoString value;
     
     CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSet(
-        blockParent, nullptr, nsGkAtoms::align, value, CSSEditUtils::eComputed);
+        blockElementAtEditTarget, nullptr, nsGkAtoms::align, value,
+        CSSEditUtils::eComputed);
     if (value.EqualsLiteral("center") || value.EqualsLiteral("-moz-center") ||
         value.EqualsLiteral("auto auto")) {
-      *aAlign = nsIHTMLEditor::eCenter;
-      return NS_OK;
+      mFirstAlign = nsIHTMLEditor::eCenter;
+      return;
     }
     if (value.EqualsLiteral("right") || value.EqualsLiteral("-moz-right") ||
         value.EqualsLiteral("auto 0px")) {
-      *aAlign = nsIHTMLEditor::eRight;
-      return NS_OK;
+      mFirstAlign = nsIHTMLEditor::eRight;
+      return;
     }
     if (value.EqualsLiteral("justify")) {
-      *aAlign = nsIHTMLEditor::eJustify;
-      return NS_OK;
+      mFirstAlign = nsIHTMLEditor::eJustify;
+      return;
     }
-    *aAlign = nsIHTMLEditor::eLeft;
-    return NS_OK;
+    
+    mFirstAlign = nsIHTMLEditor::eLeft;
+    return;
   }
 
-  
-  bool isFirstNodeToExamine = true;
-  for (; nodeToExamine; nodeToExamine = nodeToExamine->GetParentNode()) {
-    if (!isFirstNodeToExamine &&
-        nodeToExamine->IsHTMLElement(nsGkAtoms::table)) {
-      
-      
-      
-      return NS_OK;
+  for (nsINode* containerNode = editTargetContent; containerNode;
+       containerNode = containerNode->GetParentNode()) {
+    
+    
+    
+    if (containerNode != editTargetContent &&
+        containerNode->IsHTMLElement(nsGkAtoms::table)) {
+      return;
     }
 
-    if (CSSEditUtils::IsCSSEditableProperty(nodeToExamine, nullptr,
+    if (CSSEditUtils::IsCSSEditableProperty(containerNode, nullptr,
                                             nsGkAtoms::align)) {
       nsAutoString value;
-      CSSEditUtils::GetSpecifiedProperty(*nodeToExamine, *nsGkAtoms::textAlign,
+      CSSEditUtils::GetSpecifiedProperty(*containerNode, *nsGkAtoms::textAlign,
                                          value);
       if (!value.IsEmpty()) {
         if (value.EqualsLiteral("center")) {
-          *aAlign = nsIHTMLEditor::eCenter;
-          return NS_OK;
+          mFirstAlign = nsIHTMLEditor::eCenter;
+          return;
         }
         if (value.EqualsLiteral("right")) {
-          *aAlign = nsIHTMLEditor::eRight;
-          return NS_OK;
+          mFirstAlign = nsIHTMLEditor::eRight;
+          return;
         }
         if (value.EqualsLiteral("justify")) {
-          *aAlign = nsIHTMLEditor::eJustify;
-          return NS_OK;
+          mFirstAlign = nsIHTMLEditor::eJustify;
+          return;
         }
         if (value.EqualsLiteral("left")) {
-          *aAlign = nsIHTMLEditor::eLeft;
-          return NS_OK;
+          mFirstAlign = nsIHTMLEditor::eLeft;
+          return;
         }
         
         
       }
     }
 
-    if (HTMLEditUtils::SupportsAlignAttr(*nodeToExamine)) {
-      
-      nsAutoString typeAttrVal;
-      nodeToExamine->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::align,
-                                          typeAttrVal);
-      ToLowerCase(typeAttrVal);
-      if (!typeAttrVal.IsEmpty()) {
-        if (typeAttrVal.EqualsLiteral("center")) {
-          *aAlign = nsIHTMLEditor::eCenter;
-        } else if (typeAttrVal.EqualsLiteral("right")) {
-          *aAlign = nsIHTMLEditor::eRight;
-        } else if (typeAttrVal.EqualsLiteral("justify")) {
-          *aAlign = nsIHTMLEditor::eJustify;
-        } else {
-          *aAlign = nsIHTMLEditor::eLeft;
-        }
-        return NS_OK;
-      }
+    if (!HTMLEditUtils::SupportsAlignAttr(*containerNode)) {
+      continue;
     }
-    isFirstNodeToExamine = false;
+
+    nsAutoString alignAttributeValue;
+    containerNode->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::align,
+                                        alignAttributeValue);
+    if (alignAttributeValue.IsEmpty()) {
+      continue;
+    }
+
+    if (alignAttributeValue.LowerCaseEqualsASCII("center")) {
+      mFirstAlign = nsIHTMLEditor::eCenter;
+      return;
+    }
+    if (alignAttributeValue.LowerCaseEqualsASCII("right")) {
+      mFirstAlign = nsIHTMLEditor::eRight;
+      return;
+    }
+    
+    if (alignAttributeValue.LowerCaseEqualsASCII("justify")) {
+      mFirstAlign = nsIHTMLEditor::eJustify;
+      return;
+    }
+    
+    mFirstAlign = nsIHTMLEditor::eLeft;
+    return;
   }
-  return NS_OK;
 }
 
 static nsStaticAtom& MarginPropertyAtomForIndent(nsINode& aNode) {
