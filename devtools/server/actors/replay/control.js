@@ -1956,6 +1956,10 @@ const gControl = {
     return gPausePoint;
   },
 
+  findFrameSteps(point) {
+    return findFrameSteps(point);
+  },
+
   
   childIsRecording() {
     return gActiveChild && gActiveChild.recording;
