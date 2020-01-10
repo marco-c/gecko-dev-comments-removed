@@ -740,11 +740,6 @@ impl<'de> Deserialize<'de> for BuiltDisplayList {
             data.extend(temp.drain(..));
         }
 
-        
-        
-        
-        ensure_red_zone::<di::DisplayItem>(&mut data);
-
         Ok(BuiltDisplayList {
             data,
             descriptor: BuiltDisplayListDescriptor {
