@@ -1885,11 +1885,13 @@ static void RelocateArena(Arena* arena, SliceBudget& sliceBudget) {
 #endif
 }
 
+#ifdef DEBUG
 static inline bool CanProtectArenas() {
   
   
   return SystemPageSize() <= ArenaSize;
 }
+#endif
 
 static inline bool ShouldProtectRelocatedArenas(JS::GCReason reason) {
   
