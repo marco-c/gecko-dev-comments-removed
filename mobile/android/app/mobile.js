@@ -134,6 +134,7 @@ pref("urlclassifier.downloadAllowTable", "");
 pref("urlclassifier.downloadBlockTable", "");
 
 
+pref("layout.reflow.synthMouseMove", false); 
 pref("layout.css.report_errors", false);
 
 
