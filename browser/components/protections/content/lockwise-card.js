@@ -30,9 +30,8 @@ export default class LockwiseCard {
       
       this.buildContent(data);
 
-      
-      const lockwiseCard = this.doc.querySelector(".lockwise-card.hidden");
-      lockwiseCard.classList.remove("hidden");
+      const lockwiseUI = document.querySelector(".card.lockwise-card.loading");
+      lockwiseUI.classList.remove("loading");
     });
   }
 
@@ -76,6 +75,11 @@ export default class LockwiseCard {
 
 
   renderContentForLoggedInUser(container, storedLogins, syncedDevices) {
+    const lockwiseCardBody = this.doc.querySelector(
+      ".card.lockwise-card .card-body"
+    );
+    lockwiseCardBody.classList.remove("hidden");
+
     
     const numberOfLoginsBlock = container.querySelector(
       ".number-of-logins.block"
