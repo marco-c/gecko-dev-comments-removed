@@ -283,6 +283,13 @@ pref("devtools.webconsole.sidebarToggle", false);
 pref("devtools.webconsole.jsterm.codeMirror", true);
 
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.webconsole.features.editor", true);
+#else
+pref("devtools.webconsole.features.editor", false);
+#endif
+
+
 pref("devtools.webconsole.input.editor", false);
 
 
