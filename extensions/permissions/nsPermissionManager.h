@@ -77,8 +77,6 @@ class nsPermissionManager final : public nsIPermissionManager,
     static PermissionKey* CreateFromPrincipal(nsIPrincipal* aPrincipal,
                                               nsresult& aResult);
     static PermissionKey* CreateFromURI(nsIURI* aURI, nsresult& aResult);
-    static PermissionKey* CreateFromOriginNoSuffix(
-        const nsACString& aOriginNoSuffix);
 
     explicit PermissionKey(const nsACString& aOrigin)
         : mOrigin(aOrigin), mHashCode(mozilla::HashString(aOrigin)) {}
@@ -327,9 +325,8 @@ class nsPermissionManager final : public nsIPermissionManager,
 
   PermissionHashKey* GetPermissionHashKey(nsIPrincipal* aPrincipal,
                                           uint32_t aType, bool aExactHostMatch);
-  PermissionHashKey* GetPermissionHashKey(nsIURI* aURI,
-                                          const nsACString& aOriginNoSuffix,
-                                          uint32_t aType, bool aExactHostMatch);
+  PermissionHashKey* GetPermissionHashKey(nsIURI* aURI, uint32_t aType,
+                                          bool aExactHostMatch);
 
   
   
@@ -436,8 +433,8 @@ class nsPermissionManager final : public nsIPermissionManager,
     }
 
     return CommonTestPermissionInternal(
-        aPrincipal, nullptr, EmptyCString(), preparationResult.as<int32_t>(),
-        aType, aPermission, aExactHostMatch, aIncludingSession);
+        aPrincipal, nullptr, preparationResult.as<int32_t>(), aType,
+        aPermission, aExactHostMatch, aIncludingSession);
   }
   
   nsresult CommonTestPermission(nsIURI* aURI, int32_t aTypeIndex,
@@ -453,14 +450,16 @@ class nsPermissionManager final : public nsIPermissionManager,
     }
 
     return CommonTestPermissionInternal(
-        nullptr, aURI, EmptyCString(), preparationResult.as<int32_t>(), aType,
-        aPermission, aExactHostMatch, aIncludingSession);
+        nullptr, aURI, preparationResult.as<int32_t>(), aType, aPermission,
+        aExactHostMatch, aIncludingSession);
   }
   
-  nsresult CommonTestPermissionInternal(
-      nsIPrincipal* aPrincipal, nsIURI* aURI, const nsACString& aOriginNoSuffix,
-      int32_t aTypeIndex, const nsACString& aType, uint32_t* aPermission,
-      bool aExactHostMatch, bool aIncludingSession);
+  nsresult CommonTestPermissionInternal(nsIPrincipal* aPrincipal, nsIURI* aURI,
+                                        int32_t aTypeIndex,
+                                        const nsACString& aType,
+                                        uint32_t* aPermission,
+                                        bool aExactHostMatch,
+                                        bool aIncludingSession);
 
   nsresult OpenDatabase(nsIFile* permissionsFile);
   nsresult InitDB(bool aRemoveFile);
