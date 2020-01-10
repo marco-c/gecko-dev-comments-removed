@@ -228,13 +228,8 @@ class ChangesView {
   
 
 
-  async destroy() {
+  destroy() {
     this.store.dispatch(resetChanges());
-
-    
-    const changesFront = await this.changesFrontPromise;
-    changesFront.off("add-change", this.onAddChange);
-    changesFront.off("clear-changes", this.onClearChanges);
 
     this.document = null;
     this.inspector = null;
