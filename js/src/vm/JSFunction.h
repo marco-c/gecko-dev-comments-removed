@@ -299,10 +299,10 @@ class JSFunction : public js::NativeObject {
   
   
   
-  
-  
-  
   bool hasScript() const { return flags() & INTERPRETED; }
+  bool hasLazyScript() const {
+    return isInterpretedLazy() && !isSelfHostedOrIntrinsic();
+  }
 
   
   bool isArrow() const { return kind() == Arrow; }
@@ -594,7 +594,7 @@ class JSFunction : public js::NativeObject {
     if (hasScript()) {
       return nonLazyScript()->functionNonDelazifying();
     }
-    if (isInterpretedLazy() && !isSelfHostedBuiltin()) {
+    if (hasLazyScript()) {
       return lazyScript()->functionNonDelazifying();
     }
     return nullptr;
@@ -620,12 +620,11 @@ class JSFunction : public js::NativeObject {
                         uint16_t* length);
 
   js::LazyScript* lazyScript() const {
-    MOZ_ASSERT(isInterpretedLazy() && u.scripted.s.lazy_);
+    MOZ_ASSERT(hasLazyScript() && u.scripted.s.lazy_);
     return u.scripted.s.lazy_;
   }
-
-  js::LazyScript* lazyScriptOrNull() const {
-    MOZ_ASSERT(isInterpretedLazy());
+  js::LazyScript* maybeLazyScript() const {
+    MOZ_ASSERT(hasLazyScript());
     return u.scripted.s.lazy_;
   }
 
@@ -636,8 +635,8 @@ class JSFunction : public js::NativeObject {
     if (hasScript()) {
       return nonLazyScript()->generatorKind();
     }
-    if (js::LazyScript* lazy = lazyScriptOrNull()) {
-      return lazy->generatorKind();
+    if (hasLazyScript()) {
+      return lazyScript()->generatorKind();
     }
     MOZ_ASSERT(isSelfHostedBuiltin());
     return js::GeneratorKind::NotGenerator;
@@ -654,8 +653,8 @@ class JSFunction : public js::NativeObject {
     if (hasScript()) {
       return nonLazyScript()->asyncKind();
     }
-    if (js::LazyScript* lazy = lazyScriptOrNull()) {
-      return lazy->asyncKind();
+    if (hasLazyScript()) {
+      return lazyScript()->asyncKind();
     }
     MOZ_ASSERT(isSelfHostedBuiltin());
     return js::FunctionAsyncKind::SyncFunction;
@@ -677,9 +676,9 @@ class JSFunction : public js::NativeObject {
 
   void setUnlazifiedScript(JSScript* script) {
     MOZ_ASSERT(isInterpretedLazy());
-    if (lazyScriptOrNull()) {
+    if (hasLazyScript()) {
       
-      js::LazyScript::writeBarrierPre(lazyScriptOrNull());
+      js::LazyScript::writeBarrierPre(lazyScript());
       if (!lazyScript()->maybeScript()) {
         lazyScript()->initScript(script);
       }
