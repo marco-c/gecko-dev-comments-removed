@@ -1370,7 +1370,7 @@ pref("security.insecure_connection_icon.enabled", true);
 pref("security.insecure_connection_icon.pbmode.enabled", true);
 
 
-pref("security.secure_connection_icon_color_gray", false);
+pref("security.secure_connection_icon_color_gray", true);
 
 
 pref("security.identityblock.show_extended_validation", false);
