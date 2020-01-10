@@ -1,0 +1,8 @@
+const Events = {
+  B: {
+    
+    foo: 'foo',
+  },
+};
+
+module.exports = {Events};
