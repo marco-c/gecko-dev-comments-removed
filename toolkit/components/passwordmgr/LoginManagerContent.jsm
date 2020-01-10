@@ -1008,7 +1008,7 @@ this.LoginManagerContent = {
     } else if (acInputField.hasBeenTypePassword) {
       
       
-      this._disableAutomaticPasswordFieldUnmasking(acInputField);
+      this._stopTreatingAsGeneratedPasswordField(acInputField);
       this._highlightFilledField(acInputField);
     }
   },
@@ -1535,8 +1535,12 @@ this.LoginManagerContent = {
     if (passwordField.value) {
       return;
     }
+    this._stopTreatingAsGeneratedPasswordField(passwordField);
+  },
 
-    log("_maybeStopTreatingAsGeneratedPasswordField: Stopping");
+  _stopTreatingAsGeneratedPasswordField(passwordField) {
+    log("_stopTreatingAsGeneratedPasswordField");
+
     
     for (let eventType of ["blur", "change", "focus", "input"]) {
       passwordField.removeEventListener(eventType, observer, {
@@ -1632,18 +1636,6 @@ this.LoginManagerContent = {
       return;
     }
     editor.mask();
-  },
-
-  _disableAutomaticPasswordFieldUnmasking(passwordField) {
-    passwordField.removeEventListener("blur", observer, {
-      capture: true,
-      mozSystemGroup: true,
-    });
-    passwordField.removeEventListener("focus", observer, {
-      capture: true,
-      mozSystemGroup: true,
-    });
-    this._togglePasswordFieldMasking(passwordField, false);
   },
 
   
@@ -2013,7 +2005,7 @@ this.LoginManagerContent = {
       if (passwordField.value != selectedLogin.password) {
         
         
-        this._disableAutomaticPasswordFieldUnmasking(passwordField);
+        this._stopTreatingAsGeneratedPasswordField(passwordField);
         passwordField.setUserInput(selectedLogin.password);
         let autoFilledLogin = {
           guid: selectedLogin.QueryInterface(Ci.nsILoginMetaInfo).guid,
