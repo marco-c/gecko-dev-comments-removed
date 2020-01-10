@@ -765,12 +765,16 @@ Toolbox.prototype = {
 
       
       
-      
-      await this.target.reconfigure({
-        options: {
-          restoreFocus: true,
-        },
-      });
+      if (this.hostType !== Toolbox.HostType.PAGE) {
+        
+        
+        
+        await this.target.reconfigure({
+          options: {
+            restoreFocus: true,
+          },
+        });
+      }
 
       
       
