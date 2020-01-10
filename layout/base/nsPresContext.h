@@ -369,21 +369,26 @@ class nsPresContext : public nsISupports,
 
 
 
-  void SetVisibleArea(const nsRect& r) {
-    if (!r.IsEqualEdges(mVisibleArea)) {
-      mVisibleArea = r;
-      
-      if (!IsPaginated()) {
-        MediaFeatureValuesChanged(
-            {mozilla::MediaFeatureChangeReason::ViewportChange});
-      }
-    }
+  void SetVisibleArea(const nsRect& r);
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT
+  void SetDynamicToolbarMaxHeight(mozilla::ScreenIntCoord aHeight);
+
+  mozilla::ScreenIntCoord GetDynamicToolbarMaxHeight() const {
+    MOZ_ASSERT(IsRootContentDocumentCrossProcess());
+    return mDynamicToolbarMaxHeight;
   }
 
   
 
 
-  void SetDynamicToolbarMaxHeight(mozilla::ScreenIntCoord aHeight);
+  bool HasDynamicToolbar() const {
+    MOZ_ASSERT(IsRootContentDocumentCrossProcess());
+    return mDynamicToolbarMaxHeight > 0;
+  }
 
   
 
@@ -1116,6 +1121,10 @@ class nsPresContext : public nsISupports,
 
   
   
+  void AdjustSizeForViewportUnits();
+
+  
+  
   
 
   nsPresContextType mType;
@@ -1173,6 +1182,10 @@ class nsPresContext : public nsISupports,
   mozilla::UniquePtr<gfxMissingFontRecorder> mMissingFonts;
 
   nsRect mVisibleArea;
+  
+  
+  
+  nsSize mSizeForViewportUnits;
   
   mozilla::ScreenIntCoord mDynamicToolbarMaxHeight;
   nsSize mPageSize;

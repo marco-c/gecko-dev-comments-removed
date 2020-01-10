@@ -87,6 +87,7 @@
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceTiming.h"
 #include "mozilla/layers/APZThreadUtils.h"
+#include "MobileViewportManager.h"
 
 
 #include "imgIContainer.h"
@@ -421,6 +422,12 @@ void nsPresContext::AppUnitsPerDevPixelChanged() {
                              MediaFeatureChangeReason::ResolutionChange});
 
   mCurAppUnitsPerDevPixel = mDeviceContext->AppUnitsPerDevPixel();
+
+  
+  
+  if (IsRootContentDocumentCrossProcess()) {
+    AdjustSizeForViewportUnits();
+  }
 
   
   
@@ -2466,6 +2473,21 @@ void nsPresContext::FlushFontFeatureValues() {
   }
 }
 
+void nsPresContext::SetVisibleArea(const nsRect& r) {
+  if (!r.IsEqualEdges(mVisibleArea)) {
+    mVisibleArea = r;
+    mSizeForViewportUnits = mVisibleArea.Size();
+    if (IsRootContentDocumentCrossProcess()) {
+      AdjustSizeForViewportUnits();
+    }
+    
+    if (!IsPaginated()) {
+      MediaFeatureValuesChanged(
+          {mozilla::MediaFeatureChangeReason::ViewportChange});
+    }
+  }
+}
+
 void nsPresContext::SetDynamicToolbarMaxHeight(ScreenIntCoord aHeight) {
   MOZ_ASSERT(IsRootContentDocumentCrossProcess());
 
@@ -2473,6 +2495,44 @@ void nsPresContext::SetDynamicToolbarMaxHeight(ScreenIntCoord aHeight) {
     return;
   }
   mDynamicToolbarMaxHeight = aHeight;
+
+  AdjustSizeForViewportUnits();
+
+  if (RefPtr<mozilla::PresShell> presShell = mPresShell) {
+    
+    
+    
+    
+    
+    
+    nscoord currentWidth, currentHeight;
+    presShell->GetViewManager()->GetWindowDimensions(&currentWidth,
+                                                     &currentHeight);
+    presShell->ResizeReflow(currentWidth, currentHeight,
+                            ResizeReflowOptions::NoOption);
+  }
+}
+
+void nsPresContext::AdjustSizeForViewportUnits() {
+  MOZ_ASSERT(IsRootContentDocumentCrossProcess());
+  if (mVisibleArea.height == NS_UNCONSTRAINEDSIZE) {
+    
+    
+    
+    return;
+  }
+
+  if (MOZ_UNLIKELY(mVisibleArea.height +
+                       NSIntPixelsToAppUnits(mDynamicToolbarMaxHeight,
+                                             mCurAppUnitsPerDevPixel) >
+                   nscoord_MAX)) {
+    MOZ_ASSERT_UNREACHABLE("The dynamic toolbar max height is probably wrong");
+    return;
+  }
+
+  mSizeForViewportUnits.height =
+      mVisibleArea.height +
+      NSIntPixelsToAppUnits(mDynamicToolbarMaxHeight, mCurAppUnitsPerDevPixel);
 }
 
 #ifdef DEBUG

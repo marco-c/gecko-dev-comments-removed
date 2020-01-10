@@ -460,6 +460,9 @@ ScreenIntSize MobileViewportManager::GetCompositionSize(
     return ScreenIntSize();
   }
 
+  
+  
+  
   ScreenIntSize compositionSize(aDisplaySize);
   ScreenMargin scrollbars =
       mContext->ScrollbarAreaToExcludeFromCompositionBounds()
