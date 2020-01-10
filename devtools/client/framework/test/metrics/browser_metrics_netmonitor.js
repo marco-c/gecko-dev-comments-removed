@@ -14,11 +14,17 @@ const TEST_URL =
 
 add_task(async function() {
   const toolbox = await openNewTabAndToolbox(TEST_URL, "netmonitor");
-  const panel = toolbox.getCurrentPanel();
+  const toolboxBrowserLoader = toolbox.win.getBrowserLoaderForWindow();
 
   
+  const panel = toolbox.getCurrentPanel();
   const netmonitorLoader = panel.panelWin.getBrowserLoaderForWindow();
-  const loaders = [loader.loader, netmonitorLoader.loader];
+
+  const loaders = [
+    loader.loader,
+    toolboxBrowserLoader.loader,
+    netmonitorLoader.loader,
+  ];
 
   
   
