@@ -106,6 +106,12 @@ var UITour = {
       {
         query: aDocument => {
           
+          let fxAFooter = aDocument.getElementById("appMenu-fxa-status");
+          if (fxAFooter.getAttribute("fxastatus")) {
+            return aDocument.getElementById("appMenu-fxa-avatar");
+          }
+
+          
           let statusButton = aDocument.getElementById("appMenu-fxa-label");
           return statusButton.icon;
         },
