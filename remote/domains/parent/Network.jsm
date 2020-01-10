@@ -75,6 +75,16 @@ class Network extends Domain {
     this.enabled = false;
   }
 
+  
+
+
+
+
+  setUserAgentOverride(options) {
+    const { id } = this.session;
+    this.session.execute(id, "Emulation", "setUserAgentOverride", options);
+  }
+
   _onRequest(eventName, httpChannel, data) {
     const topFrame = getLoadContext(httpChannel).topFrameElement;
     const request = {
