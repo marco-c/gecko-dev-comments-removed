@@ -17,7 +17,6 @@
 #include "gmp-video-decode.h"
 #include "gmp-video-encode.h"
 #include "GMPPlatform.h"
-#include "GMPProcessParent.h"
 #include "mozilla/Algorithm.h"
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/ProcessChild.h"
@@ -561,22 +560,16 @@ mozilla::ipc::IPCResult GMPChild::AnswerStartPlugin(const nsString& aAdapter) {
     return IPC_FAIL(this, "Can't sandbox GMP.");
   }
 #endif
-
   bool isChromium = aAdapter.EqualsLiteral("chromium");
-
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+#if defined(MOZ_SANDBOX) && defined(XP_MACOSX)
   
   
-  if (!IsMacSandboxStarted()) {
-    
-    
-    
-    if (!SetMacSandboxInfo(isChromium )) {
-      NS_WARNING("Failed to set Mac GMP sandbox info");
-      delete platformAPI;
-      return IPC_FAIL(
-          this, nsPrintfCString("Failed to set Mac GMP sandbox info.").get());
-    }
+  
+  if (!SetMacSandboxInfo(isChromium )) {
+    NS_WARNING("Failed to set Mac GMP sandbox info");
+    delete platformAPI;
+    return IPC_FAIL(
+        this, nsPrintfCString("Failed to set Mac GMP sandbox info.").get());
   }
 #endif
 

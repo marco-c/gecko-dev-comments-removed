@@ -32,28 +32,6 @@ class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
   bool CanShutdown() override { return true; }
   const std::string& GetPluginFilePath() { return mGMPPath; }
 
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-  
-  static void InitStaticMainThread();
-
-  
-  
-  
-  
-  
-  
-  bool IsMacSandboxLaunchEnabled() override;
-
-  
-  
-  
-  
-  void SetRequiresWindowServer(bool aRequiresWindowServer);
-
-  
-  static MacSandboxType GetMacSandboxType() { return MacSandboxType_GMP; };
-#endif
-
   using mozilla::ipc::GeckoChildProcessHost::GetChannel;
   using mozilla::ipc::GeckoChildProcessHost::GetChildProcessHandle;
 
@@ -64,36 +42,6 @@ class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
 
   std::string mGMPPath;
   nsCOMPtr<nsIRunnable> mDeletedCallback;
-
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-  
-  
-  
-  static bool sLaunchWithMacSandbox;
-
-  
-  static bool sMacSandboxGMPLogging;
-
-  
-  bool FillMacSandboxInfo(MacSandboxInfo& aInfo) override;
-
-  
-  
-  
-  
-  
-  
-  static nsresult NormalizePath(const char* aPath, nsACString& aNormalizedPath);
-
-  
-  
-  bool mRequiresWindowServer;
-
-#  if defined(DEBUG)
-  
-  static bool sIsMainThreadInitDone;
-#  endif
-#endif
 
   DISALLOW_COPY_AND_ASSIGN(GMPProcessParent);
 };

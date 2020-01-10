@@ -1067,8 +1067,6 @@ pref("security.sandbox.content.mac.earlyinit", true);
 
 pref("security.sandbox.rdd.mac.earlyinit", true);
 
-pref("security.sandbox.gmp.mac.earlyinit", true);
-
 
 
 
