@@ -5,6 +5,7 @@
 "use strict";
 
 const TEST_URI =
+  
   "https://example.com/" + "browser/dom/tests/browser/position.html";
 
 add_task(async function testDismissHanger() {

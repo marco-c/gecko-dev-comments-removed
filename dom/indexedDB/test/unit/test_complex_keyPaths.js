@@ -117,8 +117,8 @@ function* testSteps() {
           JSON.stringify(info.keyPath),
           "correct keyPath property" + test
         );
-        
         ok(
+          
           objectStore.keyPath === objectStore.keyPath,
           "object identity should be preserved"
         );
@@ -221,8 +221,8 @@ function* testSteps() {
           JSON.stringify(info.keyPath),
           "index has correct keyPath property" + test
         );
-        
         ok(
+          
           index.keyPath === index.keyPath,
           "object identity should be preserved"
         );

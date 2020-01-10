@@ -44,6 +44,7 @@ addMessageListener("chrome-message", function(m) {
 });
 
 addMessageListener("speed-test-start", function(m) {
+  
   while (sendSyncMessage("speed-test")[0].message != "done") {}
 });
 

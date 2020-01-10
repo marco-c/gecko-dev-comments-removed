@@ -6,6 +6,7 @@
 "use strict";
 
 const TEST_URI =
+  
   "http://example.com/" + "browser/dom/tests/browser/geo_leak_test.html";
 
 const BASE_GEO_URL =
