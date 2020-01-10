@@ -81,7 +81,7 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
 
   
   
-  static void sweepZone(JS::Zone* zone);
+  static void traceWeakEdgesInZone(JS::Zone* zone, JSTracer* trc);
 
   
   static void traceAllMappings(WeakMapTracer* tracer);
@@ -106,7 +106,7 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   virtual void trace(JSTracer* tracer) = 0;
   virtual bool findSweepGroupEdges() = 0;
-  virtual void sweep() = 0;
+  virtual void traceWeak(JSTracer* trc) = 0;
   virtual void traceMappings(WeakMapTracer* tracer) = 0;
   virtual void clearAndCompact() = 0;
 
@@ -251,7 +251,7 @@ class WeakMap
     return true;
   }
 
-  void sweep() override;
+  void traceWeak(JSTracer* trc) override;
 
   void clearAndCompact() override {
     Base::clear();

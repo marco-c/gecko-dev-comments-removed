@@ -224,7 +224,8 @@ void js::CheckTracedThing(JSTracer* trc, T* thing) {
 
   if (!IsTracerKind(trc, JS::CallbackTracer::TracerKind::Moving) &&
       !IsTracerKind(trc, JS::CallbackTracer::TracerKind::GrayBuffering) &&
-      !IsTracerKind(trc, JS::CallbackTracer::TracerKind::ClearEdges)) {
+      !IsTracerKind(trc, JS::CallbackTracer::TracerKind::ClearEdges) &&
+      !IsTracerKind(trc, JS::CallbackTracer::TracerKind::Sweeping)) {
     MOZ_ASSERT(CurrentThreadCanAccessZone(zone));
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
   }
@@ -3448,9 +3449,12 @@ inline bool SweepingTracer::sweepEdge(T** thingp) {
     return true;
   }
 
+  
+  
+  
+  
+  
   TenuredCell& tenured = thing->asTenured();
-  MOZ_ASSERT(tenured.zoneFromAnyThread()->isGCSweeping(),
-             "Should be called during Sweeping.");
   if (!tenured.isMarkedAny()) {
     *thingp = nullptr;
     return false;
