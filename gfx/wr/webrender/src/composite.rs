@@ -59,16 +59,64 @@ pub struct CompositeTile {
 }
 
 
+
+pub enum CompositorConfig {
+    
+    Draw {
+        
+        
+        
+        
+        max_partial_present_rects: usize,
+    },
+    
+    
+    
+    Native {
+        
+        
+        
+        max_update_rects: usize,
+        
+        compositor: Box<dyn Compositor>,
+    }
+}
+
+impl Default for CompositorConfig {
+    
+    fn default() -> Self {
+        CompositorConfig::Draw {
+            max_partial_present_rects: 0,
+        }
+    }
+}
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum CompositeMode {
+pub enum CompositorKind {
     
-    Draw,
+    Draw {
+        
+        max_partial_present_rects: usize,
+    },
     
+    Native {
+        
+        max_update_rects: usize,
+    },
+}
+
+impl Default for CompositorKind {
     
-    
-    Native,
+    fn default() -> Self {
+        CompositorKind::Draw {
+            max_partial_present_rects: 0,
+        }
+    }
 }
 
 
@@ -90,13 +138,13 @@ pub struct CompositeState {
     
     pub native_surface_updates: Vec<NativeSurfaceOperation>,
     
-    pub composite_mode: CompositeMode,
+    pub compositor_kind: CompositorKind,
 }
 
 impl CompositeState {
     
     
-    pub fn new(composite_mode: CompositeMode) -> Self {
+    pub fn new(compositor_kind: CompositorKind) -> Self {
         CompositeState {
             opaque_tiles: Vec::new(),
             alpha_tiles: Vec::new(),
@@ -104,7 +152,7 @@ impl CompositeState {
             z_generator: ZBufferIdGenerator::new(0),
             dirty_rects_are_valid: true,
             native_surface_updates: Vec::new(),
-            composite_mode,
+            compositor_kind,
         }
     }
 
@@ -115,8 +163,6 @@ impl CompositeState {
         id: NativeSurfaceId,
         size: DeviceIntSize,
     ) -> SurfaceTextureDescriptor {
-        debug_assert_eq!(self.composite_mode, CompositeMode::Native);
-
         self.native_surface_updates.push(
             NativeSurfaceOperation {
                 id,
@@ -138,8 +184,6 @@ impl CompositeState {
         &mut self,
         id: NativeSurfaceId,
     ) {
-        debug_assert_eq!(self.composite_mode, CompositeMode::Native);
-
         self.native_surface_updates.push(
             NativeSurfaceOperation {
                 id,

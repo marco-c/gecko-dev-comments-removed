@@ -68,7 +68,7 @@ use crate::clip::{ClipStore, ClipChainInstance, ClipDataHandle, ClipChainId};
 use crate::clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX,
     ClipScrollTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace, CoordinateSystemId
 };
-use crate::composite::{CompositeMode, CompositeState, NativeSurfaceId};
+use crate::composite::{CompositorKind, CompositeState, NativeSurfaceId};
 use crate::debug_colors;
 use euclid::{vec3, Point2D, Scale, Size2D, Vector2D, Rect};
 use euclid::approxeq::ApproxEq;
@@ -743,11 +743,18 @@ impl Tile {
         
         
         
+        let (supports_dirty_rects, supports_simple_prims) = match state.composite_state.compositor_kind {
+            CompositorKind::Draw { .. } => {
+                (true, true)
+            }
+            CompositorKind::Native { max_update_rects, .. } => {
+                (max_update_rects > 0, false)
+            }
+        };
+
         
         
-        
-        
-        if state.composite_state.composite_mode == CompositeMode::Draw {
+        if supports_dirty_rects {
             
             
             
@@ -773,7 +780,7 @@ impl Tile {
         let is_simple_prim =
             self.current_descriptor.prims.len() == 1 &&
             self.is_opaque &&
-            state.composite_state.composite_mode == CompositeMode::Draw;
+            supports_simple_prims;
 
         
         let surface = if is_simple_prim {
@@ -804,15 +811,15 @@ impl Tile {
                     
                     
                     
-                    let descriptor = match state.composite_state.composite_mode {
-                        CompositeMode::Draw => {
+                    let descriptor = match state.composite_state.compositor_kind {
+                        CompositorKind::Draw { .. } => {
                             
                             
                             SurfaceTextureDescriptor::TextureCache {
                                 handle: TextureCacheHandle::invalid(),
                             }
                         }
-                        CompositeMode::Native => {
+                        CompositorKind::Native { .. } => {
                             
                             
                             state.composite_state.create_surface(
@@ -4657,7 +4664,7 @@ impl CompositeState {
         
         
         
-        if let CompositeMode::Native = self.composite_mode {
+        if let CompositorKind::Native { .. } = self.compositor_kind {
             for tile in tiles_iter {
                 
                 
