@@ -317,6 +317,28 @@ class Key {
   static JSObject* DecodeBinary(const unsigned char*& aPos,
                                 const unsigned char* aEnd, JSContext* aCx);
 
+  
+  
+  
+  
+  
+  template <typename T>
+  static uint32_t CalcDecodedStringySize(
+      const unsigned char* aBegin, const unsigned char* aEnd,
+      const unsigned char** aOutEncodedSectionEnd);
+
+  template <typename T>
+  static void DecodeAsStringy(const unsigned char* aEncodedSectionBegin,
+                              const unsigned char* aEncodedSectionEnd,
+                              uint32_t aDecodedLength, T* aOut);
+
+  template <unsigned char TypeMask, typename T, typename AcquireBuffer,
+            typename AcquireEmpty>
+  static void DecodeStringy(const unsigned char*& aPos,
+                            const unsigned char* aEnd,
+                            const AcquireBuffer& acquireBuffer,
+                            const AcquireEmpty& acquireEmpty);
+
   IDBResult<void, IDBSpecialValue::Invalid> EncodeJSValInternal(
       JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset,
       uint16_t aRecursionDepth, ErrorResult& aRv);
