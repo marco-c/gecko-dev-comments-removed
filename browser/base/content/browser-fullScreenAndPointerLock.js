@@ -511,7 +511,10 @@ var FullScreen = {
     
     
     
-    gXPInstallObserver.removeAllNotifications(aBrowser);
+    if (gXPInstallObserver.removeAllNotifications(aBrowser)) {
+      
+      gXPInstallObserver.logWarningFullScreenInstallBlocked();
+    }
 
     PopupNotifications.panel.addEventListener(
       "popupshowing",

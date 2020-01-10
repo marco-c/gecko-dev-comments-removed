@@ -438,12 +438,40 @@ var gXPInstallObserver = {
   ],
 
   
+
+
+
+
+
   removeAllNotifications(browser) {
     let notifications = this.NOTIFICATION_IDS.map(id =>
       PopupNotifications.getNotification(id, browser)
     ).filter(notification => notification != null);
 
     PopupNotifications.remove(notifications, true);
+
+    return notifications.length > 0;
+  },
+
+  logWarningFullScreenInstallBlocked() {
+    
+    let consoleMsg = Cc["@mozilla.org/scripterror;1"].createInstance(
+      Ci.nsIScriptError
+    );
+    let message = gBrowserBundle.GetStringFromName(
+      "addonInstallFullScreenBlocked"
+    );
+    consoleMsg.initWithWindowID(
+      message,
+      gBrowser.currentURI.spec,
+      null,
+      0,
+      0,
+      Ci.nsIScriptError.warningFlag,
+      "FullScreen",
+      gBrowser.selectedBrowser.innerWindowID
+    );
+    Services.console.logMessage(consoleMsg);
   },
 
   observe(aSubject, aTopic, aData) {
@@ -515,6 +543,11 @@ var gXPInstallObserver = {
           secondaryActions,
           options
         );
+        break;
+      }
+      case "addon-install-fullscreen-blocked": {
+        
+        this.logWarningFullScreenInstallBlocked();
         break;
       }
       case "addon-install-origin-blocked": {
