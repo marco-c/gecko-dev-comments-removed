@@ -50,6 +50,33 @@ var gProtectionsHandler = {
     }).catch(Cu.reportError);
   },
 
+  onPopupShown(event) {
+    if (event.target == this._protectionsPopup) {
+      window.addEventListener("focus", this, true);
+    }
+  },
+
+  onPopupHidden(event) {
+    if (event.target == this._protectionsPopup) {
+      window.removeEventListener("focus", this, true);
+      this._protectionsPopup.removeAttribute("open");
+    }
+  },
+
+  handleEvent(event) {
+    let elem = document.activeElement;
+    let position = elem.compareDocumentPosition(this._protectionsPopup);
+
+    if (!(position & (Node.DOCUMENT_POSITION_CONTAINS |
+                      Node.DOCUMENT_POSITION_CONTAINED_BY)) &&
+        !this._protectionsPopup.hasAttribute("noautohide")) {
+      
+      
+      
+      PanelMultiView.hidePopup(this._protectionsPopup);
+    }
+  },
+
   refreshProtectionsPopup() {
     
     this._protectionsPopupTPSwitch.toggleAttribute("enabled",
@@ -61,6 +88,11 @@ var gProtectionsHandler = {
     this._protectionsPopupMainViewHeaderLabel.textContent =
       
       `Tracking Protections for ${host}`;
+
+    let currentlyEnabled =
+      !this._protectionsPopup.hasAttribute("hasException");
+
+    this._protectionsPopupTPSwitch.toggleAttribute("enabled", currentlyEnabled);
   },
 
   async onTPSwitchCommand(event) {
