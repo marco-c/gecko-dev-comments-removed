@@ -13,8 +13,6 @@
 
 namespace js {
 
-class GlobalObject;
-
 
 
 
@@ -110,8 +108,6 @@ bool ProxySetProperty(JSContext* cx, HandleObject proxy, HandleId id,
 
 bool ProxySetPropertyByValue(JSContext* cx, HandleObject proxy,
                              HandleValue idVal, HandleValue val, bool strict);
-
-extern JSObject* InitProxyClass(JSContext* cx, Handle<GlobalObject*> global);
 
 } 
 
