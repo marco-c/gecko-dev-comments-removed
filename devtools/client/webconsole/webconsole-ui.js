@@ -150,13 +150,14 @@ class WebConsoleUI {
       toolbox.off("select", this._onChangeSplitConsoleState);
     }
 
-    this.window = this.hud = this.wrapper = null;
-
     for (const proxy of this.getAllProxies()) {
       proxy.disconnect();
     }
     this.proxy = null;
     this.additionalProxies = null;
+
+    
+    this.window = this.hud = this.wrapper = null;
   }
 
   
@@ -257,12 +258,7 @@ class WebConsoleUI {
 
 
   async _initConnection() {
-    this.proxy = new WebConsoleConnectionProxy(
-      this,
-      this.hud.target,
-      this.isBrowserConsole,
-      this.fissionSupport
-    );
+    this.proxy = new WebConsoleConnectionProxy(this, this.hud.target);
 
     if (
       this.fissionSupport &&
@@ -291,12 +287,7 @@ class WebConsoleUI {
         }
 
         this.additionalProxies.push(
-          new WebConsoleConnectionProxy(
-            this,
-            targetFront,
-            this.isBrowserConsole,
-            this.fissionSupport
-          )
+          new WebConsoleConnectionProxy(this, targetFront)
         );
       }
     }
