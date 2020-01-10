@@ -38,7 +38,6 @@
 #include "mozilla/mozalloc.h"     
 #include "mozilla/Preferences.h"  
 #include "mozilla/StaticPrefs.h"  
-#include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/EventStateManager.h"  
 #include "mozilla/webrender/WebRenderAPI.h"
