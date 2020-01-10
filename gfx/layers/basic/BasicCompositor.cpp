@@ -315,12 +315,7 @@ BasicCompositor::CreateRenderTargetForWindow(
     MOZ_ASSERT(target != mDrawTarget);
     rt = new BasicCompositingRenderTarget(target, rect);
   } else {
-    IntRect windowRect = rect;
-    
-    if (windowRect.Size() != mDrawTarget->GetSize()) {
-      windowRect.ExpandToEnclose(IntPoint(0, 0));
-    }
-    rt = new BasicCompositingRenderTarget(mDrawTarget, windowRect);
+    rt = new BasicCompositingRenderTarget(mDrawTarget, mDrawTargetBounds);
   }
 
   rt->mDrawTarget->SetTransform(Matrix::Translation(-rt->GetOrigin()));
@@ -933,6 +928,7 @@ void BasicCompositor::BeginFrame(
     
     
     mDrawTarget = mTarget;
+    mDrawTargetBounds = mTargetBounds;
     bufferMode = BufferMode::BUFFER_NONE;
   } else {
     
@@ -945,6 +941,18 @@ void BasicCompositor::BeginFrame(
     if (mInvalidRect.IsEmpty()) {
       mWidget->EndRemoteDrawingInRegion(mDrawTarget, mInvalidRegion);
       return;
+    }
+
+    
+    
+    
+    
+    IntSize dtSize = mDrawTarget->GetSize();
+    if (bufferMode == BufferMode::BUFFER_NONE &&
+        dtSize == mInvalidRect.Size().ToUnknownSize()) {
+      mDrawTargetBounds = mInvalidRect.ToUnknownRect();
+    } else {
+      mDrawTargetBounds = IntRect(IntPoint(0, 0), dtSize);
     }
   }
 
@@ -1061,7 +1069,7 @@ void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
     
     RefPtr<SourceSurface> source = mWidget->EndBackBufferDrawing();
     IntPoint srcOffset = mRenderTarget->GetOrigin();
-    IntPoint dstOffset = mTarget ? mTargetBounds.TopLeft() : IntPoint();
+    IntPoint dstOffset = mDrawTargetBounds.TopLeft();
 
     
     

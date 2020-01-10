@@ -184,6 +184,9 @@ class BasicCompositor : public Compositor {
   
   RefPtr<gfx::DrawTarget> mDrawTarget;
   
+  gfx::IntRect mDrawTargetBounds;
+
+  
   RefPtr<BasicCompositingRenderTarget> mRenderTarget;
 
   LayoutDeviceIntRect mInvalidRect;
