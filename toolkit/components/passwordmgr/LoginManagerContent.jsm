@@ -178,7 +178,8 @@ const observer = {
           );
           LoginManagerContent.onFieldAutoComplete(focusedInput, details.guid);
         } else if (style == "generatedPassword") {
-          LoginManagerContent._generatedPasswordFilled(focusedInput);
+          LoginManagerContent._highlightFilledField(focusedInput);
+          LoginManagerContent._generatedPasswordFilledOrEdited(focusedInput);
         }
         break;
       }
@@ -196,6 +197,12 @@ const observer = {
     }
 
     switch (aEvent.type) {
+      
+      case "change": {
+        LoginManagerContent._generatedPasswordFilledOrEdited(aEvent.target);
+        break;
+      }
+
       case "keydown": {
         if (
           aEvent.keyCode == aEvent.DOM_VK_TAB ||
@@ -419,7 +426,7 @@ this.LoginManagerContent = {
           msg.data.inputElementIdentifier
         );
         if (inputElement) {
-          this._generatedPasswordFilled(inputElement);
+          this._generatedPasswordFilledOrEdited(inputElement);
         } else {
           log("Could not resolve inputElementIdentifier to a living element.");
         }
@@ -1500,15 +1507,18 @@ this.LoginManagerContent = {
 
 
 
-  _generatedPasswordFilled(passwordField) {
-    log("_generatedPasswordFilled", passwordField);
+  _generatedPasswordFilledOrEdited(passwordField) {
+    log("_generatedPasswordFilledOrEdited", passwordField);
     let win = passwordField.ownerGlobal;
 
     this._highlightFilledField(passwordField);
 
+    
+    passwordField.addEventListener("change", observer, true);
+
     if (PrivateBrowsingUtils.isContentWindowPrivate(win)) {
       log(
-        "_generatedPasswordFilled: not automatically saving the password in private browsing mode"
+        "_generatedPasswordFilledOrEdited: not automatically saving the password in private browsing mode"
       );
       return;
     }
@@ -1532,12 +1542,13 @@ this.LoginManagerContent = {
     }
     let messageManager = win.docShell.messageManager;
     messageManager.sendAsyncMessage(
-      "PasswordManager:onGeneratedPasswordFilled",
+      "PasswordManager:onGeneratedPasswordFilledOrEdited",
       {
         browsingContextId: win.docShell.browsingContext.id,
         formActionOrigin,
-        username: (usernameField && usernameField.value) || "",
         openerTopWindowID,
+        password: passwordField.value,
+        username: (usernameField && usernameField.value) || "",
       }
     );
   },
