@@ -1329,7 +1329,11 @@ var PanelView = class extends AssociatedToNode {
     let header = this.node.firstElementChild;
     if (header && header.classList.contains("panel-header")) {
       if (value) {
-        header.querySelector("label").setAttribute("value", value);
+        
+        
+        header
+          .querySelector(".panel-header > label")
+          .setAttribute("value", value);
       } else {
         header.remove();
       }
