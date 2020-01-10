@@ -1235,16 +1235,16 @@ IPCResult BrowserParent::RecvIndexedDBPermissionRequest(
   return IPC_OK();
 }
 
-IPCResult BrowserParent::RecvPWindowGlobalConstructor(
-    PWindowGlobalParent* aActor, const WindowGlobalInit& aInit) {
-  static_cast<WindowGlobalParent*>(aActor)->Init(aInit);
-  return IPC_OK();
-}
-
-PWindowGlobalParent* BrowserParent::AllocPWindowGlobalParent(
+IPCResult BrowserParent::RecvNewWindowGlobal(
+    ManagedEndpoint<PWindowGlobalParent>&& aEndpoint,
     const WindowGlobalInit& aInit) {
   
-  return do_AddRef(new WindowGlobalParent(aInit,  false)).take();
+  auto wgp = MakeRefPtr<WindowGlobalParent>(aInit,  false);
+
+  
+  BindPWindowGlobalEndpoint(std::move(aEndpoint), do_AddRef(wgp).take());
+  wgp->Init(aInit);
+  return IPC_OK();
 }
 
 bool BrowserParent::DeallocPWindowGlobalParent(PWindowGlobalParent* aActor) {
