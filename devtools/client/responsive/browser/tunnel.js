@@ -448,17 +448,12 @@ MessageManagerTunnel.prototype = {
     "InPermitUnload",
     "PermitUnload",
     
-    "Browser:Reload",
     "PageStyle:Disable",
     "PageStyle:Switch",
-    "Forms:MouseOut",
-    "Forms:MouseOver",
     
     "SessionStore:flush",
     "SessionStore:restoreHistory",
     "SessionStore:restoreTabContent",
-    
-    "FullZoom",
   ],
 
   INNER_TO_OUTER_MESSAGES: [
@@ -477,8 +472,6 @@ MessageManagerTunnel.prototype = {
     "InPermitUnload",
     "PermitUnload",
     
-    "contextmenu",
-    
     "SessionStore:update",
     
     "browser-test-utils:loadEvent",
@@ -488,34 +481,22 @@ MessageManagerTunnel.prototype = {
     
     "Autoscroll:",
     
-    "ContextMenu:",
-    
     "debug:",
     
-    "Findbar:",
-    
     "Finder:",
-    
-    "InlineSpellChecker:",
     
     "MessageChannel:",
     
     "PageInfo:",
     
     "Printing:",
-    
-    "ViewSource:",
   ],
 
   INNER_TO_OUTER_MESSAGE_PREFIXES: [
     
     "Autoscroll:",
     
-    "ContextMenu:",
-    
     "debug:",
-    
-    "Findbar:",
     
     "Finder:",
     
@@ -524,8 +505,6 @@ MessageManagerTunnel.prototype = {
     "PageInfo:",
     
     "Printing:",
-    
-    "ViewSource:",
   ],
 
   OUTER_TO_INNER_FRAME_SCRIPTS: [
