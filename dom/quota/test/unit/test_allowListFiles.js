@@ -12,15 +12,16 @@
 
 async function testSteps()
 {
-  const whiteListFiles = [
+  const allowListFiles = [
     ".dot-file",
     "desktop.ini",
     "Desktop.ini",
-    "Thumbs.db"
+    "Thumbs.db",
+    "thumbs.db"
   ];
 
-  for (let whiteListFile of whiteListFiles) {
-    info("Testing " + whiteListFile + " in the repository");
+  for (let allowListFile of allowListFiles) {
+    info("Testing " + allowListFile + " in the repository");
 
     info("Creating unknown file");
 
@@ -28,7 +29,7 @@ async function testSteps()
       let dirPath =
         dir == "persistenceType dir" ? "storage/default/"
                                      : "storage/default/http+++example.com/";
-        let file = getRelativeFile(dirPath + whiteListFile);
+        let file = getRelativeFile(dirPath + allowListFile);
         file.create(Ci.nsIFile.NORMAL_FILE_TYPE, parseInt("0644", 8));
     }
 
