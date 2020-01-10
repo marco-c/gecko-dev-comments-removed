@@ -17,6 +17,11 @@ ChromeUtils.defineModuleGetter(
   "PanelMultiView",
   "resource:///modules/PanelMultiView.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "ToolbarPanelHub",
+  "resource://activity-stream/lib/ToolbarPanelHub.jsm"
+);
 
 
 
@@ -45,6 +50,7 @@ const PanelUI = {
       overflowFixedList: "widget-overflow-fixed-list",
       overflowPanel: "widget-overflow",
       navbar: "nav-bar",
+      whatsNewPanel: "PanelUI-whatsNew",
     };
   },
 
@@ -186,6 +192,7 @@ const PanelUI = {
     this.menuButton.removeEventListener("keypress", this);
     CustomizableUI.removeListener(this);
     this.libraryView.removeEventListener("ViewShowing", this);
+    this.whatsNewPanel.removeEventListener("ViewShowing", this);
   },
 
   
@@ -314,6 +321,8 @@ const PanelUI = {
       case "ViewShowing":
         if (aEvent.target == this.libraryView) {
           this.onLibraryViewShowing(aEvent.target).catch(Cu.reportError);
+        } else if (aEvent.target == this.whatsNewPanel) {
+          this.onWhatsNewPanelShowing();
         }
         break;
     }
@@ -423,6 +432,7 @@ const PanelUI = {
     }
 
     this.ensureLibraryInitialized(viewNode);
+    this.ensureWhatsNewInitialized(viewNode);
 
     let container = aAnchor.closest("panelmultiview");
     if (container) {
@@ -634,6 +644,31 @@ const PanelUI = {
         {}
       ),
     });
+  },
+
+  
+
+
+
+
+  ensureWhatsNewInitialized(panelView) {
+    if (panelView != this.whatsNewPanel || panelView._initialized) {
+      return;
+    }
+
+    panelView._initialized = true;
+    panelView.addEventListener("ViewShowing", this);
+  },
+
+  
+
+
+  onWhatsNewPanelShowing() {
+    ToolbarPanelHub.renderMessages(
+      window,
+      document,
+      "PanelUI-whatsNew-message-container"
+    );
   },
 
   
