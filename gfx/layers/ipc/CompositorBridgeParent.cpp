@@ -2259,7 +2259,7 @@ static CompositorBridgeParent::LayerTreeState* GetStateForRoot(
   
   
   
-  if (state) {
+  if (state && state->mParent) {
     LayersId rootLayersId = state->mParent->RootLayerTreeId();
     itr = sIndirectLayerTrees.find(rootLayersId);
     state = (sIndirectLayerTrees.end() != itr) ? &itr->second : nullptr;
