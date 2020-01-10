@@ -103,6 +103,7 @@ const startupPhases = {
     {
       
       path: "UAppData:profiles.ini",
+      ignoreIfUnused: true,
       condition: MAC,
       stat: 1,
       read: 1,
