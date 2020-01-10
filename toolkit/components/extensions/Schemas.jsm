@@ -1063,6 +1063,10 @@ const FORMATS = {
   contentSecurityPolicy(string, context) {
     let error = contentPolicyService.validateAddonCSP(string);
     if (error != null) {
+      
+      
+      
+      context.logError(`Error processing ${context.currentTarget}: ${error}`);
       throw new SyntaxError(error);
     }
     return string;
