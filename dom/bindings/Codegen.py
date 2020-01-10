@@ -3048,7 +3048,7 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
 
     properties should be a PropertyArrays instance.
     """
-    def __init__(self, descriptor, properties, haveUnscopables):
+    def __init__(self, descriptor, properties, haveUnscopables, haveLegacyWindowAliases):
         args = [Argument('JSContext*', 'aCx'),
                 Argument('JS::Handle<JSObject*>', 'aGlobal'),
                 Argument('ProtoAndIfaceCache&', 'aProtoAndIfaceCache'),
@@ -3056,6 +3056,7 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
         CGAbstractMethod.__init__(self, descriptor, 'CreateInterfaceObjects', 'void', args)
         self.properties = properties
         self.haveUnscopables = haveUnscopables
+        self.haveLegacyWindowAliases = haveLegacyWindowAliases
 
     def definition_body(self):
         (protoGetter, protoHandleGetter) = InterfacePrototypeObjectProtoGetter(self.descriptor)
@@ -3184,7 +3185,8 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
                                         ${chromeProperties},
                                         ${name}, aDefineOnGlobal,
                                         ${unscopableNames},
-                                        ${isGlobal});
+                                        ${isGlobal},
+                                        ${legacyWindowAliases});
             """,
             protoClass=protoClass,
             parentProto=parentProto,
@@ -3199,7 +3201,8 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
             chromeProperties=chromeProperties,
             name='"' + self.descriptor.interface.identifier.name + '"' if needInterfaceObject else "nullptr",
             unscopableNames="unscopableNames" if self.haveUnscopables else "nullptr",
-            isGlobal=toStringBool(isGlobal))
+            isGlobal=toStringBool(isGlobal),
+            legacyWindowAliases="legacyWindowAliases" if self.haveLegacyWindowAliases else "nullptr")
 
         
         
@@ -13359,10 +13362,20 @@ class CGDescriptor(CGThing):
                                           [CGGeneric("nullptr")], ",\n")),
                         CGGeneric("};\n")], "\n"))
 
+        legacyWindowAliases = descriptor.interface.legacyWindowAliases
+        haveLegacyWindowAliases = len(legacyWindowAliases) != 0
+        if haveLegacyWindowAliases:
+            cgThings.append(
+                CGList([CGGeneric("static const char* const legacyWindowAliases[] = {"),
+                        CGIndenter(CGList([CGGeneric('"%s"' % name) for
+                                           name in legacyWindowAliases] +
+                                          [CGGeneric("nullptr")], ",\n")),
+                        CGGeneric("};\n")], "\n"))
+
         
         
         cgThings.append(CGCreateInterfaceObjectsMethod(descriptor, properties,
-                                                       haveUnscopables))
+                                                       haveUnscopables, haveLegacyWindowAliases))
 
         
         
@@ -14328,6 +14341,7 @@ def getGlobalNames(config):
     for desc in config.getDescriptors(registersGlobalNamesOnWindow=True):
         names.append((desc.name, desc))
         names.extend((n.identifier.name, desc) for n in desc.interface.namedConstructors)
+        names.extend((n, desc) for n in desc.interface.legacyWindowAliases)
     return names
 
 class CGGlobalNames(CGGeneric):
