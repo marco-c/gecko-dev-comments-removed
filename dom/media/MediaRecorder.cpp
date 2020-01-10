@@ -321,32 +321,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
     }
   };
 
-  
-  class DispatchEventRunnable : public Runnable {
-   public:
-    explicit DispatchEventRunnable(Session* aSession,
-                                   const nsAString& aEventName)
-        : Runnable("dom::MediaRecorder::Session::DispatchEventRunnable"),
-          mSession(aSession),
-          mEventName(aEventName) {}
-
-    NS_IMETHOD Run() override {
-      LOG(LogLevel::Debug,
-          ("Session.DispatchEventRunnable s=(%p) e=(%s)", mSession.get(),
-           NS_ConvertUTF16toUTF8(mEventName).get()));
-      MOZ_ASSERT(NS_IsMainThread());
-
-      NS_ENSURE_TRUE(mSession->mRecorder, NS_OK);
-      mSession->mRecorder->DispatchSimpleEvent(mEventName);
-
-      return NS_OK;
-    }
-
-   private:
-    RefPtr<Session> mSession;
-    nsString mEventName;
-  };
-
   class EncoderListener : public MediaEncoderListener {
    public:
     EncoderListener(TaskQueue* aEncoderThread, Session* aSession)
@@ -536,32 +510,32 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
     }
   }
 
-  nsresult Pause() {
+  void Pause() {
     LOG(LogLevel::Debug, ("Session.Pause"));
     MOZ_ASSERT(NS_IsMainThread());
-
-    if (!mEncoder) {
-      return NS_ERROR_FAILURE;
+    MOZ_ASSERT_IF(mRunningState.isOk(),
+                  mRunningState.unwrap() != RunningState::Idling);
+    if (mRunningState.isErr() ||
+        mRunningState.unwrap() == RunningState::Stopping ||
+        mRunningState.unwrap() == RunningState::Stopped) {
+      return;
     }
-
+    MOZ_ASSERT(mEncoder);
     mEncoder->Suspend();
-    NS_DispatchToMainThread(
-        new DispatchEventRunnable(this, NS_LITERAL_STRING("pause")));
-    return NS_OK;
   }
 
-  nsresult Resume() {
+  void Resume() {
     LOG(LogLevel::Debug, ("Session.Resume"));
     MOZ_ASSERT(NS_IsMainThread());
-
-    if (!mEncoder) {
-      return NS_ERROR_FAILURE;
+    MOZ_ASSERT_IF(mRunningState.isOk(),
+                  mRunningState.unwrap() != RunningState::Idling);
+    if (mRunningState.isErr() ||
+        mRunningState.unwrap() == RunningState::Stopping ||
+        mRunningState.unwrap() == RunningState::Stopped) {
+      return;
     }
-
+    MOZ_ASSERT(mEncoder);
     mEncoder->Resume();
-    NS_DispatchToMainThread(
-        new DispatchEventRunnable(this, NS_LITERAL_STRING("resume")));
-    return NS_OK;
   }
 
   void RequestData() {
@@ -1293,63 +1267,128 @@ void MediaRecorder::Start(const Optional<uint32_t>& aTimeslice,
 void MediaRecorder::Stop(ErrorResult& aResult) {
   LOG(LogLevel::Debug, ("MediaRecorder.Stop %p", this));
   MediaRecorderReporter::RemoveMediaRecorder(this);
+
+  
+  
+
+  
+  
+
+  
   if (mState == RecordingState::Inactive) {
     return;
   }
+
+  
   Inactivate();
+
+  
+  
+  
+  
+  
+  
   MOZ_ASSERT(mSessions.Length() > 0);
   mSessions.LastElement()->Stop();
+
+  
 }
 
 void MediaRecorder::Pause(ErrorResult& aResult) {
   LOG(LogLevel::Debug, ("MediaRecorder.Pause %p", this));
+
+  
+  
+
+  
+  
   if (mState == RecordingState::Inactive) {
     aResult.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
+  
   if (mState == RecordingState::Paused) {
     return;
   }
 
-  MOZ_ASSERT(mSessions.Length() > 0);
-  nsresult rv = mSessions.LastElement()->Pause();
-  if (NS_FAILED(rv)) {
-    NotifyError(rv);
-    return;
-  }
-
+  
+  
   mState = RecordingState::Paused;
+  MOZ_ASSERT(!mSessions.IsEmpty());
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "MediaRecorder::Pause", [session = mSessions.LastElement(),
+                               recorder = RefPtr<MediaRecorder>(this)] {
+        
+        
+        session->Pause();
+
+        
+        
+        recorder->DispatchSimpleEvent(NS_LITERAL_STRING("pause"));
+      }));
+
+  
 }
 
 void MediaRecorder::Resume(ErrorResult& aResult) {
   LOG(LogLevel::Debug, ("MediaRecorder.Resume %p", this));
+
+  
+  
+
+  
+  
   if (mState == RecordingState::Inactive) {
     aResult.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
+  
   if (mState == RecordingState::Recording) {
     return;
   }
 
-  MOZ_ASSERT(mSessions.Length() > 0);
-  nsresult rv = mSessions.LastElement()->Resume();
-  if (NS_FAILED(rv)) {
-    NotifyError(rv);
-    return;
-  }
-
+  
+  
   mState = RecordingState::Recording;
+  MOZ_ASSERT(!mSessions.IsEmpty());
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "MediaRecorder::Resume", [session = mSessions.LastElement(),
+                                recorder = RefPtr<MediaRecorder>(this)] {
+        
+        session->Resume();
+
+        
+        
+        recorder->DispatchSimpleEvent(NS_LITERAL_STRING("resume"));
+      }));
+
+  
 }
 
 void MediaRecorder::RequestData(ErrorResult& aResult) {
+  LOG(LogLevel::Debug, ("MediaRecorder.RequestData %p", this));
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
   if (mState == RecordingState::Inactive) {
     aResult.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
   MOZ_ASSERT(mSessions.Length() > 0);
   mSessions.LastElement()->RequestData();
+
+  
 }
 
 JSObject* MediaRecorder::WrapObject(JSContext* aCx,
