@@ -4150,15 +4150,22 @@ class BaseCompiler final : public BaseCompilerInterface {
 
   void popBlockResults(ResultType type, StackHeight stackBase,
                        ContinuationKind kind) {
-    if (type.empty()) {
-      return;
+    if (!type.empty()) {
+      ABIResultIter iter(type);
+      popRegisterResults(iter);
+      if (!iter.done()) {
+        popStackResults(iter, stackBase);
+        
+        
+        
+        return;
+      }
     }
-
-    ABIResultIter iter(type);
-    popRegisterResults(iter);
-    if (!iter.done()) {
-      popStackResults(iter, stackBase);
-    } else if (kind == ContinuationKind::Jump) {
+    
+    
+    
+    
+    if (kind == ContinuationKind::Jump) {
       fr.popStackBeforeBranch(stackBase, type);
     }
   }
