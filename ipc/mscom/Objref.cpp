@@ -16,6 +16,10 @@
 #include <objidl.h>
 #include <winnt.h>
 
+
+static const GUID CLSID_AggStdMarshal = {
+    0x27, 0x0, 0x8, {0xC0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x46}};
+
 namespace {
 
 #pragma pack(push, 1)
@@ -320,7 +324,9 @@ uint32_t GetOBJREFSize(NotNull<IStream*> aStream) {
       return 0;
     }
 
-    if (clsid != CLSID_StdMarshal) {
+    if (clsid != CLSID_StdMarshal && clsid != CLSID_AggStdMarshal) {
+      
+      
       
       
       return 0;
