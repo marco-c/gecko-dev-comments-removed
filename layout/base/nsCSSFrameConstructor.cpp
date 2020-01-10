@@ -11358,9 +11358,14 @@ bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
   
   
   
-  if (aFrame->IsDetailsFrame()) {
+  if (auto* details =
+          HTMLDetailsElement::FromNodeOrNull(aFrame->GetContent())) {
+    MOZ_ASSERT(aFrame->IsDetailsFrame() || aFrame->IsLineFrame() ||
+                   aFrame->IsLetterFrame(),
+               "We should be here for a DetailsFrame, or an nsFirstLineFrame "
+               "or nsFirstLetterFrame child inside the DetailsFrame!");
     TRACE("Details / Summary");
-    RecreateFramesForContent(aFrame->GetContent(), InsertionKind::Async);
+    RecreateFramesForContent(details, InsertionKind::Async);
     return true;
   }
 
