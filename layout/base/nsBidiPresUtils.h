@@ -25,7 +25,6 @@ class nsFontMetrics;
 class nsIFrame;
 class nsBlockFrame;
 class nsPresContext;
-class nsBlockInFlowLineIterator;
 struct nsSize;
 template <class T>
 class nsTHashtable;
@@ -418,8 +417,7 @@ class nsBidiPresUtils {
 
 
 
-  static void TraverseFrames(nsBlockInFlowLineIterator* aLineIter,
-                             nsIFrame* aCurrentFrame, BidiParagraphData* aBpd);
+  static void TraverseFrames(nsIFrame* aCurrentFrame, BidiParagraphData* aBpd);
 
   
 

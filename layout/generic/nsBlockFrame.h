@@ -998,6 +998,9 @@ class nsBlockInFlowLineIterator {
   nsBlockInFlowLineIterator(nsBlockFrame* aFrame, nsIFrame* aFindFrame,
                             bool* aFoundValidLine);
 
+  
+  nsBlockInFlowLineIterator() : mFrame(nullptr) {}
+
   LineIterator GetLine() { return mLine; }
   bool IsLastLineInList();
   nsBlockFrame* GetContainer() { return mFrame; }
@@ -1025,14 +1028,12 @@ class nsBlockInFlowLineIterator {
 
   bool Prev();
 
- private:
-  friend class nsBlockFrame;
-  friend class nsBidiPresUtils;
   
   
   nsBlockInFlowLineIterator(nsBlockFrame* aFrame, LineIterator aLine,
                             bool aInOverflow);
 
+ private:
   nsBlockFrame* mFrame;
   LineIterator mLine;
   nsLineList* mLineList;  
