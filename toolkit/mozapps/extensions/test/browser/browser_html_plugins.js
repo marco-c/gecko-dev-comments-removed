@@ -55,8 +55,7 @@ add_task(async function testAskToActivate() {
   let panelItems = card.querySelectorAll("panel-item:not([hidden])");
   let actions = Array.from(panelItems).map(item => item.getAttribute("action"));
   Assert.deepEqual(actions, [
-    "ask-to-activate", "always-activate", "never-activate", "preferences",
-    "expand",
+    "ask-to-activate", "never-activate", "preferences", "expand",
   ], "The panel items are for a plugin");
 
   checkItems(panelItems, "ask-to-activate");
@@ -67,16 +66,7 @@ add_task(async function testAskToActivate() {
 
   
   let updated = BrowserTestUtils.waitForEvent(card, "update");
-  panelItems[1].click();
-  await updated;
-  checkItems(panelItems, "always-activate");
-  ok(flash.userDisabled != AddonManager.STATE_ASK_TO_ACTIVATE,
-     "Flash isn't ask-to-activate");
-  ok(flash.isActive, "Flash is still active");
-
-  
-  updated = BrowserTestUtils.waitForEvent(card, "update");
-  panelItems[2].click();
+  card.querySelector("panel-item[action*=never]").click();
   await updated;
   checkItems(panelItems, "never-activate");
   ok(flash.userDisabled, `Flash is not userDisabled... for some reason`);
@@ -84,7 +74,7 @@ add_task(async function testAskToActivate() {
 
   
   updated = BrowserTestUtils.waitForEvent(card, "update");
-  panelItems[0].click();
+  card.querySelector("panel-item[action*=ask]").click();
   await updated;
   checkItems(panelItems, "ask-to-activate");
   is(flash.userDisabled, AddonManager.STATE_ASK_TO_ACTIVATE,
@@ -96,28 +86,19 @@ add_task(async function testAskToActivate() {
   card.querySelector("[action=expand]").click();
   await loaded;
 
-  
   card = doc.querySelector("addon-card");
   panelItems = card.querySelectorAll("panel-item");
   checkItems(panelItems, "ask-to-activate");
-  updated = BrowserTestUtils.waitForEvent(card, "update");
-  panelItems[1].click();
-  await updated;
-  checkItems(panelItems, "always-activate");
 
   await closeView(win);
 
   assertAboutAddonsTelemetryEvents([
     ["addonsManager", "view", "aboutAddons", "list", {type: "plugin"}],
     ["addonsManager", "action", "aboutAddons", null,
-     {type: "plugin", addonId, view: "list", action: "enable"}],
-    ["addonsManager", "action", "aboutAddons", null,
      {type: "plugin", addonId, view: "list", action: "disable"}],
     
     ["addonsManager", "view", "aboutAddons", "detail",
      {type: "plugin", addonId}],
-    ["addonsManager", "action", "aboutAddons", null,
-     {type: "plugin", addonId, view: "detail", action: "enable"}],
   ]);
 });
 

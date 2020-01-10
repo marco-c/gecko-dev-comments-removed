@@ -128,6 +128,10 @@ var gPluginHandler = {
 
 
 
+
+
+
+
   _updatePluginPermission(aBrowser, aPluginInfo, aNewState) {
     let permission;
     let expireType;
@@ -150,16 +154,6 @@ var gPluginHandler = {
         notification.options.extraAttr = "active";
         break;
 
-      case "allowalways":
-        permission = Ci.nsIPermissionManager.ALLOW_ACTION;
-        expireType = Ci.nsIPermissionManager.EXPIRE_TIME;
-        expireTime = Date.now() +
-          Services.prefs.getIntPref(this.PREF_PERSISTENT_DAYS) * 24 * 60 * 60 * 1000;
-        histogram.add(1);
-        aPluginInfo.fallbackType = Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE;
-        notification.options.extraAttr = "active";
-        break;
-
       case "block":
         permission = Ci.nsIPermissionManager.PROMPT_ACTION;
         expireType = Ci.nsIPermissionManager.EXPIRE_NEVER;
@@ -177,15 +171,6 @@ var gPluginHandler = {
             
             aPluginInfo.fallbackType = Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY_QUIET;
         }
-        notification.options.extraAttr = "inactive";
-        break;
-
-      case "blockalways":
-        permission = Ci.nsIObjectLoadingContent.PLUGIN_PERMISSION_PROMPT_ACTION_QUIET;
-        expireType = Ci.nsIPermissionManager.EXPIRE_NEVER;
-        expireTime = 0;
-        histogram.add(3);
-        aPluginInfo.fallbackType = Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY_QUIET;
         notification.options.extraAttr = "inactive";
         break;
 
@@ -309,12 +294,10 @@ var gPluginHandler = {
 
       let weakBrowser = Cu.getWeakReference(browser);
       let mainAction = {
-        callback: ({checkboxChecked}) => {
+        callback: () => {
           let browserRef = weakBrowser.get();
           if (browserRef) {
-            if (checkboxChecked) {
-              this._updatePluginPermission(browserRef, pluginInfo, "allowalways");
-            } else if (pluginInfo.fallbackType == Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE) {
+            if (pluginInfo.fallbackType == Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE) {
               this._updatePluginPermission(browserRef, pluginInfo, "continue");
             } else {
               this._updatePluginPermission(browserRef, pluginInfo, "allownow");
@@ -328,16 +311,11 @@ var gPluginHandler = {
 
       let secondaryActions = null;
       if (!isWindowPrivate) {
-        options.checkbox = {
-          label: gNavigatorBundle.getString("flashActivate.remember"),
-        };
         secondaryActions = [{
-          callback: ({checkboxChecked}) => {
+          callback: () => {
             let browserRef = weakBrowser.get();
             if (browserRef) {
-              if (checkboxChecked) {
-                this._updatePluginPermission(browserRef, pluginInfo, "blockalways");
-              } else if (pluginInfo.fallbackType == Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE) {
+              if (pluginInfo.fallbackType == Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE) {
                 this._updatePluginPermission(browserRef, pluginInfo, "block");
               } else {
                 this._updatePluginPermission(browserRef, pluginInfo, "continueblocking");
