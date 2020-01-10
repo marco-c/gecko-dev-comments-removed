@@ -501,7 +501,7 @@ static void SetAnimatable(nsCSSPropertyID aProperty,
       break;
     }
     case eCSSProperty_transform: {
-      aAnimatable = InfallibleTArray<TransformFunction>();
+      aAnimatable = nsTArray<TransformFunction>();
       AddTransformFunctions(aAnimationValue.GetTransformProperty(), aRefBox,
                             aAnimatable.get_ArrayOfTransformFunction());
       break;
@@ -7006,7 +7006,6 @@ bool nsDisplayRenderRoot::CreateWebRenderCommands(
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-
   
   
   
@@ -7055,8 +7054,8 @@ bool nsDisplayRenderRoot::CreateWebRenderCommands(
         nullptr, nullptr, nullptr, builder, params,
         LayoutDeviceRect(scOrigin, LayoutDeviceSize()));
 
-    nsDisplayWrapList::CreateWebRenderCommands(builder, resources, sc,
-                                               aManager, aDisplayListBuilder);
+    nsDisplayWrapList::CreateWebRenderCommands(builder, resources, sc, aManager,
+                                               aDisplayListBuilder);
   }
   mBuiltWRCommands = true;
   return true;

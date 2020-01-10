@@ -86,7 +86,7 @@ class AnimationCollection
   
   nsAtom* mElementProperty;
 
-  InfallibleTArray<RefPtr<AnimationType>> mAnimations;
+  nsTArray<RefPtr<AnimationType>> mAnimations;
 
  private:
   static nsAtom* GetPropertyAtomForPseudoType(PseudoStyleType aPseudoType);
