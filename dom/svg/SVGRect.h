@@ -7,10 +7,8 @@
 #ifndef mozilla_dom_SVGRect_h
 #define mozilla_dom_SVGRect_h
 
-#include "mozilla/dom/SVGIRect.h"
+#include "mozilla/dom/SVGElement.h"
 #include "mozilla/gfx/Rect.h"
-#include "nsCOMPtr.h"
-#include "SVGElement.h"
 
 
 
@@ -18,50 +16,71 @@
 namespace mozilla {
 namespace dom {
 
-class SVGRect final : public SVGIRect {
+class SVGSVGElement;
+
+class SVGRect final : public nsISupports, public nsWrapperCache {
  public:
-  explicit SVGRect(nsIContent* aParent, float x = 0.0f, float y = 0.0f,
-                   float w = 0.0f, float h = 0.0f);
+  typedef enum { BaseValue, AnimValue, CreatedValue } RectType;
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(SVGRect)
 
   
-  float X() const final { return mX; }
 
-  void SetX(float aX, ErrorResult& aRv) final { mX = aX; }
 
-  float Y() const final { return mY; }
+  SVGRect(SVGAnimatedViewBox* aVal, SVGElement* aSVGElement, RectType aType)
+      : mVal(aVal), mParent(aSVGElement), mType(aType) {
+    MOZ_ASSERT(mParent);
+    MOZ_ASSERT(mType == BaseValue || mType == AnimValue);
+  }
 
-  void SetY(float aY, ErrorResult& aRv) final { mY = aY; }
+  
 
-  float Width() const final { return mWidth; }
 
-  void SetWidth(float aWidth, ErrorResult& aRv) final { mWidth = aWidth; }
 
-  float Height() const final { return mHeight; }
+  explicit SVGRect(SVGSVGElement* aSVGElement);
 
-  void SetHeight(float aHeight, ErrorResult& aRv) final { mHeight = aHeight; }
+  
 
-  virtual nsIContent* GetParentObject() const override { return mParent; }
 
- protected:
-  ~SVGRect() = default;
+  SVGRect(nsIContent* aParent, const gfx::Rect& aRect)
+      : mVal(nullptr), mRect(aRect), mParent(aParent), mType(CreatedValue) {
+    MOZ_ASSERT(mParent);
+  }
 
-  nsCOMPtr<nsIContent> mParent;
-  float mX, mY, mWidth, mHeight;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
+
+  float X();
+  float Y();
+  float Width();
+  float Height();
+
+  void SetX(float aX, mozilla::ErrorResult& aRv);
+  void SetY(float aY, mozilla::ErrorResult& aRv);
+  void SetWidth(float aWidth, mozilla::ErrorResult& aRv);
+  void SetHeight(float aHeight, mozilla::ErrorResult& aRv);
+
+  nsIContent* GetParentObject() const {
+    MOZ_ASSERT(mParent);
+    return mParent;
+  }
+
+ private:
+  virtual ~SVGRect();
+
+  
+  
+  SVGAnimatedViewBox* mVal;  
+  gfx::Rect mRect;
+
+  
+  
+  RefPtr<nsIContent> mParent;
+  const RectType mType;
 };
 
 }  
 }  
-
-already_AddRefed<mozilla::dom::SVGRect> NS_NewSVGRect(nsIContent* aParent,
-                                                      float x = 0.0f,
-                                                      float y = 0.0f,
-                                                      float width = 0.0f,
-                                                      float height = 0.0f);
-
-already_AddRefed<mozilla::dom::SVGRect> NS_NewSVGRect(
-    nsIContent* aParent, const mozilla::gfx::Rect& rect);
 
 #endif  
