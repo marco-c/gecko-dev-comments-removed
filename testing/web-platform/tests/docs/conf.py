@@ -61,6 +61,11 @@ master_doc = 'index'
 
 
 
+nitpick_ignore = [('py:class', 'Callable'), ('py:obj', 'None')]
+
+
+
+
 
 
 language = None
@@ -71,10 +76,7 @@ language = None
 exclude_patterns = [
     '_build',
     'Thumbs.db',
-    '.DS_Store',
-    'tools/.tox',
-    'tools/third_party',
-    '_venv'
+    '.DS_Store'
 ]
 
 
