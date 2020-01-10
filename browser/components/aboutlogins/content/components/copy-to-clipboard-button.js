@@ -2,9 +2,9 @@
 
 
 
+import ReflectedFluentElement from "chrome://browser/content/aboutlogins/components/reflected-fluent-element.js";
 
-
-class CopyToClipboardButton extends ReflectedFluentElement {
+export default class CopyToClipboardButton extends ReflectedFluentElement {
   static get BUTTON_RESET_TIMEOUT() {
     return 5000;
   }

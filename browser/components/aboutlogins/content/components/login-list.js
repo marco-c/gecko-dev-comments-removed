@@ -2,9 +2,10 @@
 
 
 
+import LoginListItem from "chrome://browser/content/aboutlogins/components/login-list-item.js";
+import ReflectedFluentElement from "chrome://browser/content/aboutlogins/components/reflected-fluent-element.js";
 
-
-class LoginList extends ReflectedFluentElement {
+export default class LoginList extends ReflectedFluentElement {
   constructor() {
     super();
     this._logins = [];

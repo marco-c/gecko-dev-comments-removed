@@ -16,6 +16,7 @@ const kESModuleList = new Set([
   /browser\/res\/payments\/(components|containers|mixins)\/.*\.js$/,
   /browser\/res\/payments\/paymentRequest\.js$/,
   /browser\/res\/payments\/PaymentsStore\.js$/,
+  /browser\/aboutlogins\/components\/.*\.js$/,
 ]);
 
 
