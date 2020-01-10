@@ -37,7 +37,7 @@ void WebRtcSpl_FilterMAFastQ12(const int16_t* in_ptr,
 
         for (j = 0; j < B_length; j++)
         {
-          o += B[j] * in_ptr[i - j];
+          o += B[j] * in_ptr[(ptrdiff_t)i - (ptrdiff_t)j];
         }
 
         

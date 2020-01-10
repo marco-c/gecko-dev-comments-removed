@@ -42,8 +42,8 @@ int WebRtcSpl_DownsampleFastC(const int16_t* data_in,
     out_s32 = 2048;  
 
     for (j = 0; j < coefficients_length; j++) {
-      rtc_MsanCheckInitialized(&data_in[i - j], sizeof(data_in[0]), 1);
-      out_s32 += coefficients[j] * data_in[i - j];  
+      rtc_MsanCheckInitialized(&data_in[(ptrdiff_t)i - (ptrdiff_t)j],sizeof(data_in[0]), 1);
+      out_s32 += coefficients[j] * data_in[(ptrdiff_t)i - (ptrdiff_t)j];  
     }
 
     out_s32 >>= 12;  
