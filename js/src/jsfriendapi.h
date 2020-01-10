@@ -1109,7 +1109,11 @@ JS_FRIEND_API JSString* GetPCCountScriptContents(JSContext* cx, size_t script);
 
 
 
-JS_FRIEND_API char* GetCodeCoverageSummary(JSContext* cx, size_t* length);
+
+JS_FRIEND_API JS::UniqueChars GetCodeCoverageSummary(JSContext* cx,
+                                                     size_t* length);
+JS_FRIEND_API JS::UniqueChars GetCodeCoverageSummaryAll(JSContext* cx,
+                                                        size_t* length);
 
 typedef bool (*DOMInstanceClassHasProtoAtDepth)(const JSClass* instanceClass,
                                                 uint32_t protoID,
