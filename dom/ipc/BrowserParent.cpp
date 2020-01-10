@@ -2582,8 +2582,23 @@ bool BrowserParent::GetWebProgressListener(
   MOZ_ASSERT(aOutManager);
   MOZ_ASSERT(aOutListener);
 
-  nsCOMPtr<nsIBrowser> browser =
-      mFrameElement ? mFrameElement->AsBrowser() : nullptr;
+  nsCOMPtr<nsIBrowser> browser;
+  RefPtr<Element> currentElement = mFrameElement;
+
+  
+  
+  while (currentElement) {
+    browser = currentElement->AsBrowser();
+    if (browser) {
+      break;
+    }
+
+    BrowsingContext* browsingContext =
+        currentElement->OwnerDoc()->GetBrowsingContext();
+    currentElement =
+        browsingContext ? browsingContext->GetEmbedderElement() : nullptr;
+  }
+
   if (!browser) {
     return false;
   }
