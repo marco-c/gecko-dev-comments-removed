@@ -1356,6 +1356,43 @@ void JSContext::setRuntime(JSRuntime* rt) {
   runtime_ = rt;
 }
 
+void JSContext::setPendingException(HandleValue v, HandleSavedFrame stack) {
+#if defined(NIGHTLY_BUILD)
+  do {
+    
+    
+    
+    if (this->runtime()->errorInterception.isExecuting) {
+      break;
+    }
+
+    
+    if (!this->runtime()->errorInterception.interceptor) {
+      break;
+    }
+
+    
+    
+    this->runtime()->errorInterception.isExecuting = true;
+
+    
+    const mozilla::DebugOnly<bool> wasExceptionPending =
+        this->isExceptionPending();
+    this->runtime()->errorInterception.interceptor->interceptError(this, v);
+    MOZ_ASSERT(wasExceptionPending == this->isExceptionPending());
+
+    this->runtime()->errorInterception.isExecuting = false;
+  } while (false);
+#endif  
+
+  
+  this->overRecursed_ = false;
+  this->throwing = true;
+  this->unwrappedException() = v;
+  this->unwrappedExceptionStack() = stack;
+  check(v);
+}
+
 static const size_t MAX_REPORTED_STACK_DEPTH = 1u << 7;
 
 void JSContext::setPendingExceptionAndCaptureStack(HandleValue value) {
