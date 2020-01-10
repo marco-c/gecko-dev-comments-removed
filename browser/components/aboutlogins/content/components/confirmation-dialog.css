@@ -1,4 +1,8 @@
-.overlay {
+
+
+
+
+ .overlay {
   position: fixed;
   z-index: 1;
   top: 0;
@@ -72,6 +76,7 @@
 
 .buttons {
   display: flex;
+  justify-content: space-between;
 }
 
 .buttons.macosx > .confirm-button {
