@@ -77,7 +77,7 @@ StackTraceCollector.prototype = {
   observe(subject, topic, data) {
     let channel, id;
     try {
-      channel = subject.QueryInterface(Ci.nsIHttpChannel);
+      channel = subject.QueryInterface(Ci.nsIIdentChannel);
       id = channel.channelId;
     } catch (e1) {
       
