@@ -285,28 +285,6 @@ var SitePermissions = {
 
 
 
-
-  getAllByURI(uri) {
-    if (!(uri instanceof Ci.nsIURI)) {
-      throw new Error("uri parameter should be an nsIURI");
-    }
-
-    let principal = uri
-      ? Services.scriptSecurityManager.createContentPrincipal(uri, {})
-      : null;
-    return this.getAllByPrincipal(principal);
-  },
-
-  
-
-
-
-
-
-
-
-
-
   getAllByPrincipal(principal) {
     let result = [];
     if (!this.isSupportedPrincipal(principal)) {
@@ -399,21 +377,6 @@ var SitePermissions = {
       state,
       label: this.getPermissionLabel(id),
     }));
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  isSupportedURI(uri) {
-    return uri && ["http", "https", "moz-extension"].includes(uri.scheme);
   },
 
   
@@ -545,37 +508,6 @@ var SitePermissions = {
     let key = "permissions.default." + permissionID;
     return Services.prefs.setIntPref(key, state);
   },
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  get(uri, permissionID, browser) {
-    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI))) {
-      throw new Error(
-        "uri parameter should be an nsIURI or a browser parameter is needed"
-      );
-    }
-
-    let principal = uri
-      ? Services.scriptSecurityManager.createContentPrincipal(uri, {})
-      : null;
-    return this.getForPrincipal(principal, permissionID, browser);
-  },
 
   
 
@@ -640,38 +572,6 @@ var SitePermissions = {
     }
 
     return result;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  set(uri, permissionID, state, scope = this.SCOPE_PERSISTENT, browser = null) {
-    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI))) {
-      throw new Error(
-        "uri parameter should be an nsIURI or a browser parameter is needed"
-      );
-    }
-
-    let principal = uri
-      ? Services.scriptSecurityManager.createContentPrincipal(uri, {})
-      : null;
-    return this.setForPrincipal(principal, permissionID, state, scope, browser);
   },
 
   
@@ -765,32 +665,6 @@ var SitePermissions = {
         perms_scope
       );
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  remove(uri, permissionID, browser) {
-    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI))) {
-      throw new Error(
-        "uri parameter should be an nsIURI or a browser parameter is needed"
-      );
-    }
-
-    let principal = uri
-      ? Services.scriptSecurityManager.createContentPrincipal(uri, {})
-      : null;
-    return this.removeFromPrincipal(principal, permissionID, browser);
   },
 
   
