@@ -1,18 +1,9 @@
-<!doctype html>
-<html>
-  <head>
-    <title>XMLHttpRequest: abort() during DONE</title>
-    <script src="/resources/testharness.js"></script>
-    <script src="/resources/testharnessreport.js"></script>
-    <link rel="help" href="https://xhr.spec.whatwg.org/#the-abort()-method" data-tested-assertations="following-sibling::ol/li[4] following-sibling::ol/li[5]" />
-  </head>
-  <body>
-    <div id="log"></div>
-    <script>
+
+
       async_test(test => {
         var client = new XMLHttpRequest(),
             result = [],
-            expected = [1, 4] // open() -> 1, send() -> 4
+            expected = [1, 4] 
         client.onreadystatechange = test.step_func(function() {
           result.push(client.readyState)
         })
@@ -35,7 +26,7 @@
       async_test(test => {
         var client = new XMLHttpRequest(),
             result = [],
-            expected = [1, 4] // open() -> 1, send() -> 4
+            expected = [1, 4] 
         client.onreadystatechange = test.step_func(function() {
           result.push(client.readyState);
           if (client.readyState === 4) {
@@ -79,12 +70,9 @@
             test.step_timeout(function() {
               assert_array_equals(result, expected)
               test.done();
-            }, 100); // wait a bit in case XHR timeout causes spurious event
+            }, 100); 
           }
         })
         client.open("GET", "resources/well-formed.xml")
         client.send(null)
       }, document.title + " (async)")
-    </script>
-  </body>
-</html>
