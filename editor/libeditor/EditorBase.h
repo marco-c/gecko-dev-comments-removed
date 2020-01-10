@@ -1660,6 +1660,15 @@ class EditorBase : public nsIEditor,
   
 
 
+
+  static bool IsPaddingBRElementForEmptyLastLine(const nsINode& aNode) {
+    const dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(&aNode);
+    return brElement && brElement->IsPaddingForEmptyLastLine();
+  }
+
+  
+
+
   uint32_t CountEditableChildren(nsINode* aNode);
 
   

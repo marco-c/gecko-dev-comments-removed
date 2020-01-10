@@ -490,13 +490,11 @@ nsresult ContentEventHandler::QueryContentRect(
 
 static bool IsContentBR(nsIContent* aContent) {
   HTMLBRElement* brElement = HTMLBRElement::FromNode(aContent);
-  return brElement &&
-         !brElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                 nsGkAtoms::moz, eIgnoreCase) &&
+  return brElement && !brElement->IsPaddingForEmptyLastLine() &&
          !brElement->IsPaddingForEmptyEditor();
 }
 
-static bool IsMozBR(nsIContent* aContent) {
+static bool IsPaddingBR(nsIContent* aContent) {
   return aContent->IsHTMLElement(nsGkAtoms::br) && !IsContentBR(aContent);
 }
 
@@ -1484,7 +1482,7 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(
     
     
     if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
-        IsMozBR(node->AsContent())) {
+        IsPaddingBR(node->AsContent())) {
       nodePosition.Set(node, 0);
     }
   }
@@ -1571,7 +1569,7 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange) {
     }
 
     if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
-        IsMozBR(node->AsContent())) {
+        IsPaddingBR(node->AsContent())) {
       nodePosition.Set(node, 0);
       break;
     }
@@ -1623,7 +1621,7 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame) {
   
   
   MOZ_ASSERT(ShouldBreakLineBefore(aFrame->GetContent(), mRootContent) ||
-             IsMozBR(aFrame->GetContent()));
+             IsPaddingBR(aFrame->GetContent()));
 
   nsIFrame* frameForFontMetrics = aFrame;
 
@@ -1883,7 +1881,7 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
     
     
     else if (ShouldBreakLineBefore(firstContent, mRootContent) ||
-             IsMozBR(firstContent)) {
+             IsPaddingBR(firstContent)) {
       nsRect brRect;
       
       

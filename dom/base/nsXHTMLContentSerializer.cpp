@@ -208,8 +208,6 @@ bool nsXHTMLContentSerializer::SerializeAttributes(
     PushNameSpaceDecl(aTagPrefix, aTagNamespaceURI, aOriginalElement);
   }
 
-  NS_NAMED_LITERAL_STRING(_mozStr, "_moz");
-
   count = aElement->GetAttrCount();
 
   
@@ -252,15 +250,6 @@ bool nsXHTMLContentSerializer::SerializeAttributes(
     bool isJS = false;
 
     if (kNameSpaceID_XHTML == contentNamespaceID) {
-      
-      
-      
-      
-      if (namespaceID == kNameSpaceID_None && aTagName == nsGkAtoms::br &&
-          attrName == nsGkAtoms::type && StringBeginsWith(valueStr, _mozStr)) {
-        continue;
-      }
-
       if (mIsCopying && mIsFirstChildOfOL && (aTagName == nsGkAtoms::li) &&
           (attrName == nsGkAtoms::value)) {
         

@@ -1244,6 +1244,7 @@ nsresult HTMLEditRules::WillInsert(bool* aCancel) {
   
   
   
+  
   if (!SelectionRefPtr()->IsCollapsed()) {
     return NS_OK;
   }
@@ -1264,12 +1265,13 @@ nsresult HTMLEditRules::WillInsert(bool* aCancel) {
   
   nsCOMPtr<nsIContent> priorNode =
       HTMLEditorRef().GetPreviousEditableHTMLNode(atStartOfSelection);
-  if (priorNode && TextEditUtils::IsMozBR(priorNode)) {
+  if (priorNode && EditorBase::IsPaddingBRElementForEmptyLastLine(*priorNode)) {
     RefPtr<Element> block1 =
         HTMLEditorRef().GetBlock(*atStartOfSelection.GetContainer());
     RefPtr<Element> block2 = HTMLEditorRef().GetBlockNodeParent(priorNode);
 
     if (block1 && block1 == block2) {
+      
       
       
       
@@ -4651,8 +4653,8 @@ nsresult HTMLEditRules::DidMakeBasicBlock() {
   if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
     return NS_ERROR_FAILURE;
   }
-  nsresult rv =
-      InsertMozBRIfNeeded(MOZ_KnownLive(*atStartOfSelection.Container()));
+  nsresult rv = InsertPaddingBRElementForEmptyLastLineIfNeeded(
+      MOZ_KnownLive(*atStartOfSelection.Container()));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -6145,9 +6147,11 @@ nsresult HTMLEditRules::AlignContentsAtSelection(const nsAString& aAlignType) {
       return rv;
     }
     
-    CreateElementResult createMozBrResult = CreateMozBR(EditorDOMPoint(div, 0));
-    if (NS_WARN_IF(createMozBrResult.Failed())) {
-      return createMozBrResult.Rv();
+    
+    CreateElementResult createPaddingBRResult =
+        CreatePaddingBRElementForEmptyLastLine(EditorDOMPoint(div, 0));
+    if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+      return createPaddingBRResult.Rv();
     }
     EditorRawDOMPoint atStartOfDiv(div, 0);
     
@@ -7827,6 +7831,7 @@ nsresult HTMLEditRules::ReturnInHeader(Element& aHeader, nsINode& aNode,
                        "Failed to split aHeader");
 
   
+  
   nsCOMPtr<nsIContent> prevItem = HTMLEditorRef().GetPriorHTMLSibling(&aHeader);
   if (prevItem) {
     MOZ_DIAGNOSTIC_ASSERT(HTMLEditUtils::IsHeader(*prevItem));
@@ -7836,10 +7841,10 @@ nsresult HTMLEditRules::ReturnInHeader(Element& aHeader, nsINode& aNode,
       return rv;
     }
     if (isEmptyNode) {
-      CreateElementResult createMozBrResult =
-          CreateMozBR(EditorDOMPoint(prevItem, 0));
-      if (NS_WARN_IF(createMozBrResult.Failed())) {
-        return createMozBrResult.Rv();
+      CreateElementResult createPaddingBRResult =
+          CreatePaddingBRElementForEmptyLastLine(EditorDOMPoint(prevItem, 0));
+      if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+        return createPaddingBRResult.Rv();
       }
     }
   }
@@ -8030,7 +8035,7 @@ EditActionResult HTMLEditRules::ReturnInParagraph(Element& aParentDivOrP) {
       brContent = HTMLEditorRef().GetPriorHTMLSibling(
           atStartOfSelection.GetContainer());
       if (!brContent || !HTMLEditorRef().IsVisibleBRElement(brContent) ||
-          TextEditUtils::HasMozAttr(brContent)) {
+          EditorBase::IsPaddingBRElementForEmptyLastLine(*brContent)) {
         pointToInsertBR.Set(atStartOfSelection.GetContainer());
         brContent = nullptr;
       }
@@ -8040,7 +8045,7 @@ EditActionResult HTMLEditRules::ReturnInParagraph(Element& aParentDivOrP) {
       brContent =
           HTMLEditorRef().GetNextHTMLSibling(atStartOfSelection.GetContainer());
       if (!brContent || !HTMLEditorRef().IsVisibleBRElement(brContent) ||
-          TextEditUtils::HasMozAttr(brContent)) {
+          EditorBase::IsPaddingBRElementForEmptyLastLine(*brContent)) {
         pointToInsertBR.Set(atStartOfSelection.GetContainer());
         DebugOnly<bool> advanced = pointToInsertBR.AdvanceOffset();
         NS_WARNING_ASSERTION(advanced,
@@ -8078,11 +8083,11 @@ EditActionResult HTMLEditRules::ReturnInParagraph(Element& aParentDivOrP) {
     nsCOMPtr<nsIContent> nearNode;
     nearNode = HTMLEditorRef().GetPreviousEditableHTMLNode(atStartOfSelection);
     if (!nearNode || !HTMLEditorRef().IsVisibleBRElement(nearNode) ||
-        TextEditUtils::HasMozAttr(nearNode)) {
+        EditorBase::IsPaddingBRElementForEmptyLastLine(*nearNode)) {
       
       nearNode = HTMLEditorRef().GetNextEditableHTMLNode(atStartOfSelection);
       if (!nearNode || !HTMLEditorRef().IsVisibleBRElement(nearNode) ||
-          TextEditUtils::HasMozAttr(nearNode)) {
+          EditorBase::IsPaddingBRElementForEmptyLastLine(*nearNode)) {
         pointToInsertBR = atStartOfSelection;
         splitAfterNewBR = true;
       }
@@ -8367,10 +8372,10 @@ nsresult HTMLEditRules::ReturnInListItem(Element& aListItem, nsINode& aNode,
       return rv;
     }
     if (isEmptyNode) {
-      CreateElementResult createMozBrResult =
-          CreateMozBR(EditorDOMPoint(prevItem, 0));
-      if (NS_WARN_IF(createMozBrResult.Failed())) {
-        return createMozBrResult.Rv();
+      CreateElementResult createPaddingBRResult =
+          CreatePaddingBRElementForEmptyLastLine(EditorDOMPoint(prevItem, 0));
+      if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+        return createPaddingBRResult.Rv();
       }
     } else {
       rv = HTMLEditorRef().IsEmptyNode(&aListItem, &isEmptyNode, true);
@@ -9257,11 +9262,10 @@ HTMLEditRules::InsertBRElementToEmptyListItemsAndTableCellsInChangedRange() {
     
     EditorDOMPoint endOfNode;
     endOfNode.SetToEndOf(node);
-    
-    
-    CreateElementResult createMozBrResult = CreateMozBR(endOfNode);
-    if (NS_WARN_IF(createMozBrResult.Failed())) {
-      return createMozBrResult.Rv();
+    CreateElementResult createPaddingBRResult =
+        CreatePaddingBRElementForEmptyLastLine(endOfNode);
+    if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+      return createPaddingBRResult.Rv();
     }
   }
   return NS_OK;
@@ -9466,9 +9470,10 @@ nsresult HTMLEditRules::AdjustSelection(nsIEditor::EDirection aAction) {
       }
 
       
-      CreateElementResult createMozBrResult = CreateMozBR(point);
-      if (NS_WARN_IF(createMozBrResult.Failed())) {
-        return createMozBrResult.Rv();
+      CreateElementResult createPaddingBRResult =
+          CreatePaddingBRElementForEmptyLastLine(point);
+      if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+        return createPaddingBRResult.Rv();
       }
       return NS_OK;
     }
@@ -9479,6 +9484,7 @@ nsresult HTMLEditRules::AdjustSelection(nsIEditor::EDirection aAction) {
     return NS_OK;  
   }
 
+  
   
   
   
@@ -9496,11 +9502,13 @@ nsresult HTMLEditRules::AdjustSelection(nsIEditor::EDirection aAction) {
           
           
           
-          CreateElementResult createMozBrResult = CreateMozBR(point);
-          if (NS_WARN_IF(createMozBrResult.Failed())) {
-            return createMozBrResult.Rv();
+          CreateElementResult createPaddingBRResult =
+              CreatePaddingBRElementForEmptyLastLine(point);
+          if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+            return createPaddingBRResult.Rv();
           }
-          point.Set(createMozBrResult.GetNewNode());
+          point.Set(createPaddingBRResult.GetNewNode());
+          
           
           ErrorResult error;
           SelectionRefPtr()->SetInterlinePosition(true, error);
@@ -9522,7 +9530,9 @@ nsresult HTMLEditRules::AdjustSelection(nsIEditor::EDirection aAction) {
         } else {
           nsCOMPtr<nsIContent> nextNode =
               HTMLEditorRef().GetNextEditableHTMLNodeInBlock(*nearNode);
-          if (nextNode && TextEditUtils::IsMozBR(nextNode)) {
+          if (nextNode &&
+              EditorBase::IsPaddingBRElementForEmptyLastLine(*nextNode)) {
+            
             
             
             IgnoredErrorResult ignoredError;
@@ -10157,7 +10167,7 @@ nsresult HTMLEditRules::UpdateDocChangeRange(nsRange* aRange) {
 }
 
 nsresult HTMLEditRules::InsertBRIfNeededInternal(nsINode& aNode,
-                                                 bool aInsertMozBR) {
+                                                 bool aForPadding) {
   MOZ_ASSERT(IsEditorDataAvailable());
 
   if (!IsBlockNode(aNode)) {
@@ -10174,8 +10184,9 @@ nsresult HTMLEditRules::InsertBRIfNeededInternal(nsINode& aNode,
   }
 
   CreateElementResult createBrResult =
-      !aInsertMozBR ? CreateBR(EditorDOMPoint(&aNode, 0))
-                    : CreateMozBR(EditorDOMPoint(&aNode, 0));
+      !aForPadding
+          ? CreateBR(EditorDOMPoint(&aNode, 0))
+          : CreatePaddingBRElementForEmptyLastLine(EditorDOMPoint(&aNode, 0));
   if (NS_WARN_IF(createBrResult.Failed())) {
     return createBrResult.Rv();
   }

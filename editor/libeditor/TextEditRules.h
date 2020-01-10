@@ -308,8 +308,9 @@ class TextEditRules {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT CreateElementResult
-  CreateMozBR(const EditorDOMPoint& aPointToInsert) {
+  CreatePaddingBRElementForEmptyLastLine(const EditorDOMPoint& aPointToInsert) {
     CreateElementResult ret = CreateBRInternal(aPointToInsert, true);
 #ifdef DEBUG
     
@@ -327,6 +328,7 @@ class TextEditRules {
                                      bool* aCancel);
 
   
+
 
 
 
@@ -357,8 +359,9 @@ class TextEditRules {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT CreateElementResult
-  CreateBRInternal(const EditorDOMPoint& aPointToInsert, bool aCreateMozBR);
+  CreateBRInternal(const EditorDOMPoint& aPointToInsert, bool aForPadding);
 
  protected:
   

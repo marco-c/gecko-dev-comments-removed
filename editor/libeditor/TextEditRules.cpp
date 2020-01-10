@@ -504,6 +504,7 @@ nsresult TextEditRules::CollapseSelectionToTrailingBRIfNeeded() {
   
   
   
+  
   if (!IsPlaintextEditor()) {
     return NS_OK;
   }
@@ -518,6 +519,7 @@ nsresult TextEditRules::CollapseSelectionToTrailingBRIfNeeded() {
     }
   }
 
+  
   
   
   EditorRawDOMPoint selectionStartPoint(
@@ -542,7 +544,7 @@ nsresult TextEditRules::CollapseSelectionToTrailingBRIfNeeded() {
   }
 
   nsINode* nextNode = selectionStartPoint.GetContainer()->GetNextSibling();
-  if (!nextNode || !TextEditUtils::IsMozBR(nextNode)) {
+  if (!nextNode || !EditorBase::IsPaddingBRElementForEmptyLastLine(*nextNode)) {
     return NS_OK;
   }
 
@@ -908,10 +910,11 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
     }
     if (EditorBase::IsTextNode(firstChild)) {
       if (!firstChild->GetNextSibling() ||
-          !TextEditUtils::IsMozBR(firstChild->GetNextSibling())) {
+          !EditorBase::IsPaddingBRElementForEmptyLastLine(
+              *firstChild->GetNextSibling())) {
         return NS_OK;
       }
-    } else if (!TextEditUtils::IsMozBR(firstChild)) {
+    } else if (!EditorBase::IsPaddingBRElementForEmptyLastLine(*firstChild)) {
       return NS_OK;
     }
   }
@@ -1285,7 +1288,9 @@ nsresult TextEditRules::WillOutputText(const nsAString* aOutputFormat,
   bool isTextarea = !isInput;
   if (NS_WARN_IF(isInput && firstChildExceptText) ||
       NS_WARN_IF(isTextarea && !firstChildExceptText) ||
-      NS_WARN_IF(isTextarea && !TextEditUtils::IsMozBR(firstChildExceptText) &&
+      NS_WARN_IF(isTextarea &&
+                 !EditorBase::IsPaddingBRElementForEmptyLastLine(
+                     *firstChildExceptText) &&
                  !firstChildExceptText->IsXULElement(nsGkAtoms::scrollbar))) {
     return NS_OK;
   }
@@ -1330,18 +1335,15 @@ nsresult TextEditRules::RemoveRedundantTrailingBR() {
 
   RefPtr<HTMLBRElement> brElement =
       HTMLBRElement::FromNodeOrNull(rootElement->GetFirstChild());
-  if (!brElement || !TextEditUtils::IsMozBR(brElement)) {
+  if (!brElement ||
+      !EditorBase::IsPaddingBRElementForEmptyLastLine(*brElement)) {
     return NS_OK;
   }
 
   
   
-  brElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::type, true);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-
   mPaddingBRElementForEmptyEditor = std::move(brElement);
+  mPaddingBRElementForEmptyEditor->UnsetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
   mPaddingBRElementForEmptyEditor->SetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
 
   return NS_OK;
@@ -1372,9 +1374,10 @@ nsresult TextEditRules::CreateTrailingBRIfNeeded() {
     AutoTransactionsConserveSelection dontChangeMySelection(TextEditorRef());
     EditorDOMPoint endOfRoot;
     endOfRoot.SetToEndOf(rootElement);
-    CreateElementResult createMozBrResult = CreateMozBR(endOfRoot);
-    if (NS_WARN_IF(createMozBrResult.Failed())) {
-      return createMozBrResult.Rv();
+    CreateElementResult createPaddingBRResult =
+        CreatePaddingBRElementForEmptyLastLine(endOfRoot);
+    if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+      return createPaddingBRResult.Rv();
     }
     return NS_OK;
   }
@@ -1388,11 +1391,8 @@ nsresult TextEditRules::CreateTrailingBRIfNeeded() {
 
   
   brElement->UnsetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
-  brElement->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
-                     NS_LITERAL_STRING("_moz"), true);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
+  brElement->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
+
   return NS_OK;
 }
 
@@ -1556,7 +1556,7 @@ nsresult TextEditRules::TruncateInsertionIfNeeded(const nsAString* aInString,
 }
 
 CreateElementResult TextEditRules::CreateBRInternal(
-    const EditorDOMPoint& aPointToInsert, bool aCreateMozBR) {
+    const EditorDOMPoint& aPointToInsert, bool aForPadding) {
   MOZ_ASSERT(IsEditorDataAvailable());
 
   if (NS_WARN_IF(!aPointToInsert.IsSet())) {
@@ -1573,22 +1573,8 @@ CreateElementResult TextEditRules::CreateBRInternal(
     return CreateElementResult(NS_ERROR_FAILURE);
   }
 
-  
-  if (!aCreateMozBR) {
-    return CreateElementResult(brElement.forget());
-  }
-
-  
-  nsresult rv = MOZ_KnownLive(TextEditorRef())
-                    .SetAttributeWithTransaction(*brElement, *nsGkAtoms::type,
-                                                 NS_LITERAL_STRING("_moz"));
-  
-  
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
-  }
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return CreateElementResult(NS_ERROR_FAILURE);
+  if (aForPadding) {
+    brElement->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
   }
   return CreateElementResult(brElement.forget());
 }

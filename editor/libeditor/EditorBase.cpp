@@ -2523,6 +2523,7 @@ EditorRawDOMPoint EditorBase::FindBetterInsertionPoint(
     
     
     
+    
     if (!aPoint.IsStartOfContainer()) {
       if (AsHTMLEditor()) {
         
@@ -2554,7 +2555,7 @@ EditorRawDOMPoint EditorBase::FindBetterInsertionPoint(
   
   
   
-  if (TextEditUtils::IsMozBR(aPoint.GetContainer()) &&
+  if (EditorBase::IsPaddingBRElementForEmptyLastLine(*aPoint.GetContainer()) &&
       aPoint.IsStartOfContainer()) {
     nsIContent* previousSibling = aPoint.GetContainer()->GetPreviousSibling();
     if (previousSibling && previousSibling->IsText()) {
