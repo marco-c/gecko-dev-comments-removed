@@ -66,18 +66,20 @@ var HarUtils = {
 
 
   saveToFile: function(file, jsonString, compress) {
-    const openFlags = OPEN_FLAGS.WRONLY | OPEN_FLAGS.CREATE_FILE |
-      OPEN_FLAGS.TRUNCATE;
+    const openFlags =
+      OPEN_FLAGS.WRONLY | OPEN_FLAGS.CREATE_FILE | OPEN_FLAGS.TRUNCATE;
 
     try {
-      const foStream = Cc["@mozilla.org/network/file-output-stream;1"]
-        .createInstance(Ci.nsIFileOutputStream);
+      const foStream = Cc[
+        "@mozilla.org/network/file-output-stream;1"
+      ].createInstance(Ci.nsIFileOutputStream);
 
       const permFlags = parseInt("0666", 8);
       foStream.init(file, openFlags, permFlags, 0);
 
-      const convertor = Cc["@mozilla.org/intl/converter-output-stream;1"]
-        .createInstance(Ci.nsIConverterOutputStream);
+      const convertor = Cc[
+        "@mozilla.org/intl/converter-output-stream;1"
+      ].createInstance(Ci.nsIConverterOutputStream);
       convertor.init(foStream, "UTF-8");
 
       
@@ -109,11 +111,12 @@ var HarUtils = {
 
     try {
       
-      file.moveTo(null, "temp" + (new Date()).getTime() + "temphar");
+      file.moveTo(null, "temp" + new Date().getTime() + "temphar");
 
       
-      const zipFile = Cc["@mozilla.org/file/local;1"]
-        .createInstance(Ci.nsIFile);
+      const zipFile = Cc["@mozilla.org/file/local;1"].createInstance(
+        Ci.nsIFile
+      );
       zipFile.initWithPath(originalFilePath);
 
       
@@ -124,8 +127,12 @@ var HarUtils = {
 
       const zip = new ZipWriter();
       zip.open(zipFile, openFlags);
-      zip.addEntryFile(fileName, Ci.nsIZipWriter.COMPRESSION_DEFAULT,
-        file, false);
+      zip.addEntryFile(
+        fileName,
+        Ci.nsIZipWriter.COMPRESSION_DEFAULT,
+        file,
+        false
+      );
       zip.close();
 
       

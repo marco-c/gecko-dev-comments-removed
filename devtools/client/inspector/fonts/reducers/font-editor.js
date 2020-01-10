@@ -42,7 +42,6 @@ const INITIAL_STATE = {
 };
 
 const reducers = {
-
   
   [APPLY_FONT_VARIATION_INSTANCE](state, { name, values }) {
     const newState = { ...state };
@@ -90,7 +89,10 @@ const reducers = {
     
     
     const weight = properties["font-weight"];
-    if (axes.wght === undefined && parseFloat(weight).toString() === weight.toString()) {
+    if (
+      axes.wght === undefined &&
+      parseFloat(weight).toString() === weight.toString()
+    ) {
       axes.wght = parseFloat(weight);
     }
 
@@ -116,7 +118,6 @@ const reducers = {
   [UPDATE_WARNING_MESSAGE](state, { warning }) {
     return { ...state, warning };
   },
-
 };
 
 module.exports = function(state = INITIAL_STATE, action) {

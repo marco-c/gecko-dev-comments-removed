@@ -2,7 +2,7 @@
 
 
 
-const {HUDService} = require("devtools/client/webconsole/hudservice");
+const { HUDService } = require("devtools/client/webconsole/hudservice");
 
 function test() {
   waitForExplicitFinish();
@@ -12,8 +12,10 @@ function test() {
     openScratchpad(runTests);
   });
 
-  BrowserTestUtils.loadURI(gBrowser, "data:text/html;charset=utf8,test Scratchpad." +
-                   "openErrorConsole()");
+  BrowserTestUtils.loadURI(
+    gBrowser,
+    "data:text/html;charset=utf8,test Scratchpad." + "openErrorConsole()"
+  );
 }
 
 function runTests() {

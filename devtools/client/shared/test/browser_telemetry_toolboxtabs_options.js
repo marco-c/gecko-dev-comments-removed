@@ -3,7 +3,8 @@
 
 "use strict";
 
-const TEST_URI = "data:text/html;charset=utf-8," +
+const TEST_URI =
+  "data:text/html;charset=utf-8," +
   "<p>browser_telemetry_toolboxtabs_options.js</p>";
 
 
@@ -23,6 +24,11 @@ add_task(async function() {
 function checkResults() {
   
   
-  checkTelemetry("DEVTOOLS_OPTIONS_OPENED_COUNT", "", {0: 2, 1: 0}, "array");
-  checkTelemetry("DEVTOOLS_OPTIONS_TIME_ACTIVE_SECONDS", "", null, "hasentries");
+  checkTelemetry("DEVTOOLS_OPTIONS_OPENED_COUNT", "", { 0: 2, 1: 0 }, "array");
+  checkTelemetry(
+    "DEVTOOLS_OPTIONS_TIME_ACTIVE_SECONDS",
+    "",
+    null,
+    "hasentries"
+  );
 }

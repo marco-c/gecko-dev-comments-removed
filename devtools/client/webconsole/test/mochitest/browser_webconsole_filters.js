@@ -7,8 +7,9 @@
 
 "use strict";
 
-const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/mochitest/test-console-filters.html";
+const TEST_URI =
+  "http://example.com/browser/devtools/client/webconsole/" +
+  "test/mochitest/test-console-filters.html";
 
 add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);
@@ -28,8 +29,10 @@ add_task(async function() {
 
   
   
-  ok(findMessages(hud, "").length == 5,
-    "Messages of all levels shown when filters are on.");
+  ok(
+    findMessages(hud, "").length == 5,
+    "Messages of all levels shown when filters are on."
+  );
 
   
   await setFilterState(hud, {
@@ -55,10 +58,14 @@ async function testFilterPersistence() {
   });
   ok(filterBar, "Filter bar ui setting is persisted.");
   
-  ok(!filterIsEnabled(filterBar.querySelector(".error")),
-    "Filter button setting is persisted");
-  ok(findMessages(hud, "").length == 4,
-    "testFilterPersistence: Messages of all levels shown when filters are on.");
+  ok(
+    !filterIsEnabled(filterBar.querySelector(".error")),
+    "Filter button setting is persisted"
+  );
+  ok(
+    findMessages(hud, "").length == 4,
+    "testFilterPersistence: Messages of all levels shown when filters are on."
+  );
 
   await resetFilters(hud);
 }

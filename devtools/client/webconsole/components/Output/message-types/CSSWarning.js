@@ -6,15 +6,24 @@
 
 "use strict";
 
-const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const {
+  Component,
+  createFactory,
+} = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { l10n } = require("devtools/client/webconsole/utils/messages");
 const actions = require("devtools/client/webconsole/actions/index");
 
-const Message = createFactory(require("devtools/client/webconsole/components/Output/Message"));
+const Message = createFactory(
+  require("devtools/client/webconsole/components/Output/Message")
+);
 
-loader.lazyRequireGetter(this, "GripMessageBody", "devtools/client/webconsole/components/Output/GripMessageBody");
+loader.lazyRequireGetter(
+  this,
+  "GripMessageBody",
+  "devtools/client/webconsole/components/Output/GripMessageBody"
+);
 
 
 
@@ -57,16 +66,9 @@ class CSSWarning extends Component {
   }
 
   onToggle(messageId) {
-    const {
-      dispatch,
-      message,
-      payload,
-      open,
-    } = this.props;
+    const { dispatch, message, payload, open } = this.props;
 
-    const {
-      cssSelectors,
-    } = message;
+    const { cssSelectors } = message;
 
     if (open) {
       dispatch(actions.messageClose(messageId));
@@ -114,25 +116,33 @@ class CSSWarning extends Component {
     let messageBody;
     if (typeof messageText === "string") {
       messageBody = messageText;
-    } else if (typeof messageText === "object" && messageText.type === "longString") {
+    } else if (
+      typeof messageText === "object" &&
+      messageText.type === "longString"
+    ) {
       messageBody = `${message.messageText.initial}…`;
     }
 
     
     
-    const attachment = (open && payload !== undefined) && dom.div(
-      { className: "devtools-monospace" },
+    const attachment =
+      open &&
+      payload !== undefined &&
       dom.div(
-        { className: "elements-label"},
-        l10n.getFormatStr("webconsole.cssWarningElements.label", [cssSelectors])
-      ),
-      GripMessageBody({
-        dispatch,
-        escapeWhitespace: false,
-        grip: payload,
-        serviceContainer,
-      })
-    );
+        { className: "devtools-monospace" },
+        dom.div(
+          { className: "elements-label" },
+          l10n.getFormatStr("webconsole.cssWarningElements.label", [
+            cssSelectors,
+          ])
+        ),
+        GripMessageBody({
+          dispatch,
+          escapeWhitespace: false,
+          grip: payload,
+          serviceContainer,
+        })
+      );
 
     return Message({
       attachment,

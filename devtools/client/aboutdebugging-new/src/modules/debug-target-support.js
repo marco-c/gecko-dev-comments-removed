@@ -10,12 +10,18 @@ const Services = require("Services");
 
 
 function isProcessDebuggingSupported() {
-  return Services.prefs.getBoolPref(PREFERENCES.PROCESS_DEBUGGING_ENABLED, false);
+  return Services.prefs.getBoolPref(
+    PREFERENCES.PROCESS_DEBUGGING_ENABLED,
+    false
+  );
 }
 
 
 function isLocalTabDebuggingSupported() {
-  return Services.prefs.getBoolPref(PREFERENCES.LOCAL_TAB_DEBUGGING_ENABLED, false);
+  return Services.prefs.getBoolPref(
+    PREFERENCES.LOCAL_TAB_DEBUGGING_ENABLED,
+    false
+  );
 }
 
 
@@ -33,12 +39,15 @@ const ALL_DEBUG_TARGET_PANES = [
   DEBUG_TARGET_PANE.SERVICE_WORKER,
   DEBUG_TARGET_PANE.SHARED_WORKER,
   DEBUG_TARGET_PANE.TAB,
-  ...(isTemporaryExtensionSupported() ? [DEBUG_TARGET_PANE.TEMPORARY_EXTENSION] : []),
+  ...(isTemporaryExtensionSupported()
+    ? [DEBUG_TARGET_PANE.TEMPORARY_EXTENSION]
+    : []),
 ];
 
 
-const REMOTE_DEBUG_TARGET_PANES = ALL_DEBUG_TARGET_PANES.filter(p =>
-  p !== DEBUG_TARGET_PANE.TEMPORARY_EXTENSION);
+const REMOTE_DEBUG_TARGET_PANES = ALL_DEBUG_TARGET_PANES.filter(
+  p => p !== DEBUG_TARGET_PANE.TEMPORARY_EXTENSION
+);
 
 const THIS_FIREFOX_DEBUG_TARGET_PANES = ALL_DEBUG_TARGET_PANES
   
@@ -59,6 +68,8 @@ const SUPPORTED_TARGET_PANE_BY_RUNTIME = {
 
 
 function isSupportedDebugTargetPane(runtimeType, debugTargetPaneKey) {
-  return SUPPORTED_TARGET_PANE_BY_RUNTIME[runtimeType].includes(debugTargetPaneKey);
+  return SUPPORTED_TARGET_PANE_BY_RUNTIME[runtimeType].includes(
+    debugTargetPaneKey
+  );
 }
 exports.isSupportedDebugTargetPane = isSupportedDebugTargetPane;

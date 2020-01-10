@@ -4,9 +4,9 @@
 "use strict";
 const { combineReducers } = require("devtools/client/shared/vendor/redux");
 
-const { recordingState: {
-  NOT_YET_KNOWN,
-}} = require("devtools/client/performance-new/utils");
+const {
+  recordingState: { NOT_YET_KNOWN },
+} = require("devtools/client/performance-new/utils");
 
 
 

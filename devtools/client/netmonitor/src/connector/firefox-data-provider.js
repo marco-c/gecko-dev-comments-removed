@@ -25,7 +25,7 @@ class FirefoxDataProvider {
 
 
 
-  constructor({webConsoleClient, actions, owner}) {
+  constructor({ webConsoleClient, actions, owner }) {
     
     this.webConsoleClient = webConsoleClient;
     this.actions = actions || {};
@@ -89,26 +89,30 @@ class FirefoxDataProvider {
     });
 
     if (this.actionsEnabled && this.actions.addRequest) {
-      await this.actions.addRequest(id, {
-        
-        startedMillis: Date.parse(startedDateTime),
-        method,
-        url,
-        isXHR,
-        cause,
+      await this.actions.addRequest(
+        id,
+        {
+          
+          startedMillis: Date.parse(startedDateTime),
+          method,
+          url,
+          isXHR,
+          cause,
 
-        
-        
-        
-        stacktrace: cause.stacktrace,
+          
+          
+          
+          stacktrace: cause.stacktrace,
 
-        fromCache,
-        fromServiceWorker,
-        isThirdPartyTrackingResource,
-        referrerPolicy,
-        blockedReason,
-        channelId,
-      }, true);
+          fromCache,
+          fromServiceWorker,
+          isThirdPartyTrackingResource,
+          referrerPolicy,
+          blockedReason,
+          channelId,
+        },
+        true
+      );
     }
 
     this.emit(EVENTS.REQUEST_ADDED, id);
@@ -150,7 +154,8 @@ class FirefoxDataProvider {
       this.fetchResponseCache(responseCache),
     ]);
 
-    const payload = Object.assign({},
+    const payload = Object.assign(
+      {},
       data,
       responseContentObj,
       requestHeadersObj,
@@ -158,7 +163,7 @@ class FirefoxDataProvider {
       postDataObj,
       requestCookiesObj,
       responseCookiesObj,
-      responseCacheObj,
+      responseCacheObj
     );
 
     if (this.actionsEnabled && this.actions.updateRequest) {
@@ -181,7 +186,11 @@ class FirefoxDataProvider {
 
   async fetchRequestHeaders(requestHeaders) {
     const payload = {};
-    if (requestHeaders && requestHeaders.headers && requestHeaders.headers.length) {
+    if (
+      requestHeaders &&
+      requestHeaders.headers &&
+      requestHeaders.headers.length
+    ) {
       const headers = await fetchHeaders(requestHeaders, this.getLongString);
       if (headers) {
         payload.requestHeaders = headers;
@@ -192,7 +201,11 @@ class FirefoxDataProvider {
 
   async fetchResponseHeaders(responseHeaders) {
     const payload = {};
-    if (responseHeaders && responseHeaders.headers && responseHeaders.headers.length) {
+    if (
+      responseHeaders &&
+      responseHeaders.headers &&
+      responseHeaders.headers.length
+    ) {
       const headers = await fetchHeaders(responseHeaders, this.getLongString);
       if (headers) {
         payload.responseHeaders = headers;
@@ -228,14 +241,17 @@ class FirefoxDataProvider {
     if (requestCookies) {
       const reqCookies = [];
       
-      const cookies = requestCookies.cookies ?
-        requestCookies.cookies : requestCookies;
+      const cookies = requestCookies.cookies
+        ? requestCookies.cookies
+        : requestCookies;
       
       if (typeof cookies[Symbol.iterator] === "function") {
         for (const cookie of cookies) {
-          reqCookies.push(Object.assign({}, cookie, {
-            value: await this.getLongString(cookie.value),
-          }));
+          reqCookies.push(
+            Object.assign({}, cookie, {
+              value: await this.getLongString(cookie.value),
+            })
+          );
         }
         if (reqCookies.length) {
           payload.requestCookies = reqCookies;
@@ -250,14 +266,17 @@ class FirefoxDataProvider {
     if (responseCookies) {
       const resCookies = [];
       
-      const cookies = responseCookies.cookies ?
-        responseCookies.cookies : responseCookies;
+      const cookies = responseCookies.cookies
+        ? responseCookies.cookies
+        : responseCookies;
       
       if (typeof cookies[Symbol.iterator] === "function") {
         for (const cookie of cookies) {
-          resCookies.push(Object.assign({}, cookie, {
-            value: await this.getLongString(cookie.value),
-          }));
+          resCookies.push(
+            Object.assign({}, cookie, {
+              value: await this.getLongString(cookie.value),
+            })
+          );
         }
         if (resCookies.length) {
           payload.responseCookies = resCookies;
@@ -337,10 +356,7 @@ class FirefoxDataProvider {
       fromCache,
       fromServiceWorker,
       isXHR,
-      request: {
-        method,
-        url,
-      },
+      request: { method, url },
       startedDateTime,
       isThirdPartyTrackingResource,
       referrerPolicy,
@@ -429,8 +445,7 @@ class FirefoxDataProvider {
 
 
 
-  async onWebSocketOpened(httpChannelId, effectiveURI, protocols, extensions) {
-  }
+  async onWebSocketOpened(httpChannelId, effectiveURI, protocols, extensions) {}
 
   
 
@@ -439,8 +454,7 @@ class FirefoxDataProvider {
 
 
 
-  async onWebSocketClosed(wasClean, code, reason) {
-  }
+  async onWebSocketClosed(wasClean, code, reason) {}
 
   
 
@@ -532,18 +546,22 @@ class FirefoxDataProvider {
       return promise;
     }
     
-    promise = this._requestData(actor, method).then(async (payload) => {
+    promise = this._requestData(actor, method).then(async payload => {
       
       
       this.lazyRequestData.delete(key);
 
       if (this.actionsEnabled && this.actions.updateRequest) {
-        await this.actions.updateRequest(actor, {
-          ...payload,
-          
-          
-          [`${method}Available`]: false,
-        }, true);
+        await this.actions.updateRequest(
+          actor,
+          {
+            ...payload,
+            
+            
+            [`${method}Available`]: false,
+          },
+          true
+        );
       }
 
       return payload;
@@ -569,12 +587,17 @@ class FirefoxDataProvider {
 
   async _requestData(actor, method) {
     
-    const clientMethodName = `get${method.charAt(0).toUpperCase()}${method.slice(1)}`;
+    const clientMethodName = `get${method
+      .charAt(0)
+      .toUpperCase()}${method.slice(1)}`;
     
-    const callbackMethodName = `on${method.charAt(0).toUpperCase()}${method.slice(1)}`;
+    const callbackMethodName = `on${method
+      .charAt(0)
+      .toUpperCase()}${method.slice(1)}`;
     
-    const updatingEventName =
-      `UPDATING_${method.replace(/([A-Z])/g, "_$1").toUpperCase()}`;
+    const updatingEventName = `UPDATING_${method
+      .replace(/([A-Z])/g, "_$1")
+      .toUpperCase()}`;
 
     
     this.emit(EVENTS[updatingEventName], actor);
@@ -584,16 +607,25 @@ class FirefoxDataProvider {
       if (typeof this.webConsoleClient[clientMethodName] === "function") {
         
         
-        this.webConsoleClient[clientMethodName](actor.replace("-clone", ""), (res) => {
-          if (res.error) {
-            reject(
-              new Error(`Error while calling method ${clientMethodName}: ${res.message}`)
-            );
+        this.webConsoleClient[clientMethodName](
+          actor.replace("-clone", ""),
+          res => {
+            if (res.error) {
+              reject(
+                new Error(
+                  `Error while calling method ${clientMethodName}: ${
+                    res.message
+                  }`
+                )
+              );
+            }
+            resolve(res);
           }
-          resolve(res);
-        });
+        );
       } else {
-        reject(new Error(`Error: No such client method '${clientMethodName}'!`));
+        reject(
+          new Error(`Error: No such client method '${clientMethodName}'!`)
+        );
       }
     });
 

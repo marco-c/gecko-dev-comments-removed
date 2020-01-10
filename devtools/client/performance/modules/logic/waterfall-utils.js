@@ -7,7 +7,9 @@
 
 
 
-const { MarkerBlueprintUtils } = require("devtools/client/performance/modules/marker-blueprint-utils");
+const {
+  MarkerBlueprintUtils,
+} = require("devtools/client/performance/modules/marker-blueprint-utils");
 
 
 
@@ -46,7 +48,8 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
     const blueprint = MarkerBlueprintUtils.getBlueprintFor(curr);
 
     const nestable = "nestable" in blueprint ? blueprint.nestable : true;
-    const collapsible = "collapsible" in blueprint ? blueprint.collapsible : true;
+    const collapsible =
+      "collapsible" in blueprint ? blueprint.collapsible : true;
 
     let finalized = false;
 
@@ -76,10 +79,12 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
       
       
       
-      if (nestable &&
-          curr.start >= parentNode.start &&
-          curr.end <= parentNode.end &&
-          curr.processType == parentNode.processType) {
+      if (
+        nestable &&
+        curr.start >= parentNode.start &&
+        curr.end <= parentNode.end &&
+        curr.processType == parentNode.processType
+      ) {
         pushNode(parentNode, curr);
         finalized = true;
         break;
@@ -125,7 +130,8 @@ function createParentNodeFactory(root) {
       
       
       if (lastParent.end == void 0) {
-        lastParent.end = lastParent.submarkers[lastParent.submarkers.length - 1].end;
+        lastParent.end =
+          lastParent.submarkers[lastParent.submarkers.length - 1].end;
       }
 
       
@@ -141,9 +147,8 @@ function createParentNodeFactory(root) {
     
 
 
-    getCurrentParentNode: () => parentMarkers.length
-      ? parentMarkers[parentMarkers.length - 1]
-      : null,
+    getCurrentParentNode: () =>
+      parentMarkers.length ? parentMarkers[parentMarkers.length - 1] : null,
 
     
 

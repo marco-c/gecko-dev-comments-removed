@@ -45,7 +45,12 @@ class TimingPath extends PureComponent {
     }
 
     if (state.duration === Infinity) {
-      this.renderInfinityDuration(pathList, state, mainIterationStartTime, helper);
+      this.renderInfinityDuration(
+        pathList,
+        state,
+        mainIterationStartTime,
+        helper
+      );
       return pathList;
     }
 
@@ -54,48 +59,83 @@ class TimingPath extends PureComponent {
     
     
     const firstSectionCount =
-      iterationStart % 1 === 0 ? 0 : Math.min(1 - iterationStart % 1, iterationCount);
+      iterationStart % 1 === 0
+        ? 0
+        : Math.min(1 - (iterationStart % 1), iterationCount);
 
     if (firstSectionCount) {
-      this.renderFirstIteration(pathList, state,
-                                mainIterationStartTime, firstSectionCount, helper);
+      this.renderFirstIteration(
+        pathList,
+        state,
+        mainIterationStartTime,
+        firstSectionCount,
+        helper
+      );
     }
 
     if (iterationCount === Infinity) {
       
       
-      this.renderInfinity(pathList, state,
-                          mainIterationStartTime, firstSectionCount, helper);
+      this.renderInfinity(
+        pathList,
+        state,
+        mainIterationStartTime,
+        firstSectionCount,
+        helper
+      );
     } else {
       
 
       
       if (state.fill === "both" || state.fill === "forwards") {
-        this.renderForwardsFill(pathList, state,
-                                mainIterationStartTime, iterationCount, helper);
+        this.renderForwardsFill(
+          pathList,
+          state,
+          mainIterationStartTime,
+          iterationCount,
+          helper
+        );
       }
 
       
       
       
       const middleSectionCount = Math.floor(iterationCount - firstSectionCount);
-      this.renderMiddleIterations(pathList, state, mainIterationStartTime,
-                                  firstSectionCount, middleSectionCount, helper);
+      this.renderMiddleIterations(
+        pathList,
+        state,
+        mainIterationStartTime,
+        firstSectionCount,
+        middleSectionCount,
+        helper
+      );
 
       
       
       
-      const lastSectionCount = iterationCount - middleSectionCount - firstSectionCount;
+      const lastSectionCount =
+        iterationCount - middleSectionCount - firstSectionCount;
       if (lastSectionCount) {
-        this.renderLastIteration(pathList, state, mainIterationStartTime,
-                                 firstSectionCount, middleSectionCount,
-                                 lastSectionCount, helper);
+        this.renderLastIteration(
+          pathList,
+          state,
+          mainIterationStartTime,
+          firstSectionCount,
+          middleSectionCount,
+          lastSectionCount,
+          helper
+        );
       }
 
       
       if (state.endDelay > 0) {
-        this.renderEndDelay(pathList, state,
-                            mainIterationStartTime, iterationCount, helper);
+        this.renderEndDelay(
+          pathList,
+          state,
+          mainIterationStartTime,
+          iterationCount,
+          helper
+        );
       }
     }
     return pathList;
@@ -116,12 +156,10 @@ class TimingPath extends PureComponent {
     const endSegment = { x: state.delay, y: startSegment.y };
     const segments = [startSegment, endSegment];
     pathList.push(
-      dom.path(
-        {
-          className: "animation-delay-path",
-          d: helper.toPathString(segments),
-        }
-      )
+      dom.path({
+        className: "animation-delay-path",
+        d: helper.toPathString(segments),
+      })
     );
   }
 
@@ -140,18 +178,21 @@ class TimingPath extends PureComponent {
 
 
 
-  renderFirstIteration(pathList, state, mainIterationStartTime,
-                       firstSectionCount, helper) {
+  renderFirstIteration(
+    pathList,
+    state,
+    mainIterationStartTime,
+    firstSectionCount,
+    helper
+  ) {
     const startTime = mainIterationStartTime;
     const endTime = startTime + firstSectionCount * state.duration;
     const segments = helper.createPathSegments(startTime, endTime);
     pathList.push(
-      dom.path(
-        {
-          className: "animation-iteration-path",
-          d: helper.toPathString(segments),
-        }
-      )
+      dom.path({
+        className: "animation-iteration-path",
+        d: helper.toPathString(segments),
+      })
     );
   }
 
@@ -171,8 +212,14 @@ class TimingPath extends PureComponent {
 
 
 
-  renderMiddleIterations(pathList, state, mainIterationStartTime,
-                         firstSectionCount, middleSectionCount, helper) {
+  renderMiddleIterations(
+    pathList,
+    state,
+    mainIterationStartTime,
+    firstSectionCount,
+    middleSectionCount,
+    helper
+  ) {
     const offset = mainIterationStartTime + firstSectionCount * state.duration;
     for (let i = 0; i < middleSectionCount; i++) {
       
@@ -180,12 +227,10 @@ class TimingPath extends PureComponent {
       const endTime = startTime + state.duration;
       const segments = helper.createPathSegments(startTime, endTime);
       pathList.push(
-        dom.path(
-          {
-            className: "animation-iteration-path",
-            d: helper.toPathString(segments),
-          }
-        )
+        dom.path({
+          className: "animation-iteration-path",
+          d: helper.toPathString(segments),
+        })
       );
     }
   }
@@ -209,19 +254,25 @@ class TimingPath extends PureComponent {
 
 
 
-  renderLastIteration(pathList, state, mainIterationStartTime, firstSectionCount,
-                      middleSectionCount, lastSectionCount, helper) {
-    const startTime = mainIterationStartTime
-                    + (firstSectionCount + middleSectionCount) * state.duration;
+  renderLastIteration(
+    pathList,
+    state,
+    mainIterationStartTime,
+    firstSectionCount,
+    middleSectionCount,
+    lastSectionCount,
+    helper
+  ) {
+    const startTime =
+      mainIterationStartTime +
+      (firstSectionCount + middleSectionCount) * state.duration;
     const endTime = startTime + lastSectionCount * state.duration;
     const segments = helper.createPathSegments(startTime, endTime);
     pathList.push(
-      dom.path(
-        {
-          className: "animation-iteration-path",
-          d: helper.toPathString(segments),
-        }
-      )
+      dom.path({
+        className: "animation-iteration-path",
+        d: helper.toPathString(segments),
+      })
     );
   }
 
@@ -239,30 +290,41 @@ class TimingPath extends PureComponent {
 
 
 
-  renderInfinity(pathList, state, mainIterationStartTime, firstSectionCount, helper) {
+  renderInfinity(
+    pathList,
+    state,
+    mainIterationStartTime,
+    firstSectionCount,
+    helper
+  ) {
     
     
     let uncappedInfinityIterationCount =
-      (helper.totalDuration - firstSectionCount * state.duration) / state.duration;
+      (helper.totalDuration - firstSectionCount * state.duration) /
+      state.duration;
     
     
-    uncappedInfinityIterationCount =
-      parseFloat(uncappedInfinityIterationCount.toPrecision(6));
-    const infinityIterationCount = Math.min(MAX_INFINITE_ANIMATIONS_ITERATIONS,
-                                            Math.ceil(uncappedInfinityIterationCount));
+    uncappedInfinityIterationCount = parseFloat(
+      uncappedInfinityIterationCount.toPrecision(6)
+    );
+    const infinityIterationCount = Math.min(
+      MAX_INFINITE_ANIMATIONS_ITERATIONS,
+      Math.ceil(uncappedInfinityIterationCount)
+    );
 
     
     const firstStartTime =
       mainIterationStartTime + firstSectionCount * state.duration;
     const firstEndTime = firstStartTime + state.duration;
-    const firstSegments = helper.createPathSegments(firstStartTime, firstEndTime);
+    const firstSegments = helper.createPathSegments(
+      firstStartTime,
+      firstEndTime
+    );
     pathList.push(
-      dom.path(
-        {
-          className: "animation-iteration-path",
-          d: helper.toPathString(firstSegments),
-        }
-      )
+      dom.path({
+        className: "animation-iteration-path",
+        d: helper.toPathString(firstSegments),
+      })
     );
 
     
@@ -282,12 +344,10 @@ class TimingPath extends PureComponent {
         });
       }
       pathList.push(
-        dom.path(
-          {
-            className: "animation-iteration-path infinity",
-            d: helper.toPathString(segments),
-          }
-        )
+        dom.path({
+          className: "animation-iteration-path infinity",
+          d: helper.toPathString(segments),
+        })
       );
     }
   }
@@ -309,12 +369,10 @@ class TimingPath extends PureComponent {
     const endSegment = { x: helper.totalDuration, y: startSegment.y };
     const segments = [startSegment, endSegment];
     pathList.push(
-      dom.path(
-        {
-          className: "animation-iteration-path infinity-duration",
-          d: helper.toPathString(segments),
-        }
-      )
+      dom.path({
+        className: "animation-iteration-path infinity-duration",
+        d: helper.toPathString(segments),
+      })
     );
   }
 
@@ -332,17 +390,21 @@ class TimingPath extends PureComponent {
 
 
 
-  renderEndDelay(pathList, state, mainIterationStartTime, iterationCount, helper) {
+  renderEndDelay(
+    pathList,
+    state,
+    mainIterationStartTime,
+    iterationCount,
+    helper
+  ) {
     const startTime = mainIterationStartTime + iterationCount * state.duration;
     const startSegment = helper.getSegment(startTime);
     const endSegment = { x: startTime + state.endDelay, y: startSegment.y };
     pathList.push(
-      dom.path(
-        {
-          className: "animation-enddelay-path",
-          d: helper.toPathString([startSegment, endSegment]),
-        }
-      )
+      dom.path({
+        className: "animation-enddelay-path",
+        d: helper.toPathString([startSegment, endSegment]),
+      })
     );
   }
 
@@ -361,18 +423,24 @@ class TimingPath extends PureComponent {
 
 
 
-  renderForwardsFill(pathList, state, mainIterationStartTime, iterationCount, helper) {
-    const startTime = mainIterationStartTime + iterationCount * state.duration
-                    + (state.endDelay > 0 ? state.endDelay : 0);
+  renderForwardsFill(
+    pathList,
+    state,
+    mainIterationStartTime,
+    iterationCount,
+    helper
+  ) {
+    const startTime =
+      mainIterationStartTime +
+      iterationCount * state.duration +
+      (state.endDelay > 0 ? state.endDelay : 0);
     const startSegment = helper.getSegment(startTime);
     const endSegment = { x: helper.totalDuration, y: startSegment.y };
     pathList.push(
-      dom.path(
-        {
-          className: "animation-fill-forwards-path",
-          d: helper.toPathString([startSegment, endSegment]),
-        }
-      )
+      dom.path({
+        className: "animation-fill-forwards-path",
+        d: helper.toPathString([startSegment, endSegment]),
+      })
     );
   }
 }

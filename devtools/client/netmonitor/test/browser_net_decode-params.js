@@ -18,22 +18,30 @@ add_task(async function() {
   await performRequests(monitor, tab, 1);
 
   
-  wait = waitUntil(() =>
-    document.querySelectorAll(".tabpanel-summary-label")[0]);
-  EventUtils.sendMouseEvent({ type: "mousedown" },
-  document.querySelectorAll(".request-list-item")[0]);
+  wait = waitUntil(
+    () => document.querySelectorAll(".tabpanel-summary-label")[0]
+  );
+  EventUtils.sendMouseEvent(
+    { type: "mousedown" },
+    document.querySelectorAll(".request-list-item")[0]
+  );
   await wait;
 
-  EventUtils.sendMouseEvent({ type: "click" },
-    document.querySelector("#params-tab"));
+  EventUtils.sendMouseEvent(
+    { type: "click" },
+    document.querySelector("#params-tab")
+  );
 
   
   
   
   const keyValue = document.querySelectorAll(".treeTable .treeRow")[1];
 
-  is(keyValue.innerText,
-  "file\tfoo # bar", "'+' in params in correctly decoded.");
+  is(
+    keyValue.innerText,
+    "file\tfoo # bar",
+    "'+' in params in correctly decoded."
+  );
 
   return teardown(monitor);
 });

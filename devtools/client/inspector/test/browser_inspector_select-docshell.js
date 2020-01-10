@@ -7,20 +7,22 @@
 
 
 
-const FrameURL = "data:text/html;charset=UTF-8," +
-                 encodeURI("<div id=\"frame\">frame</div>");
-const URL = "data:text/html;charset=UTF-8," +
-            encodeURI('<iframe src="' + FrameURL +
-                      '"></iframe><div id="top">top</div>');
+const FrameURL =
+  "data:text/html;charset=UTF-8," + encodeURI('<div id="frame">frame</div>');
+const URL =
+  "data:text/html;charset=UTF-8," +
+  encodeURI('<iframe src="' + FrameURL + '"></iframe><div id="top">top</div>');
 
 add_task(async function() {
   Services.prefs.setBoolPref("devtools.command-button-frames.enabled", true);
 
-  const {inspector, toolbox, testActor} = await openInspectorForURL(URL);
+  const { inspector, toolbox, testActor } = await openInspectorForURL(URL);
 
   
-  ok((await testActor.hasNode("#top")),
-     "We have the test node on the top level document");
+  ok(
+    await testActor.hasNode("#top"),
+    "We have the test node on the top level document"
+  );
 
   assertMarkupViewIsLoaded(inspector);
 
@@ -36,17 +38,25 @@ add_task(async function() {
 
   
   const menuList = toolbox.doc.getElementById("toolbox-frame-menu");
-  const frames = Array.prototype.slice.call(menuList.querySelectorAll(".command"));
+  const frames = Array.prototype.slice.call(
+    menuList.querySelectorAll(".command")
+  );
   is(frames.length, 2, "We have both frames in the menu");
 
   frames.sort(function(a, b) {
     return a.children[0].innerHTML.localeCompare(b.children[0].innerHTML);
   });
 
-  is(frames[0].querySelector(".label").textContent, FrameURL,
-     "Got top level document in the list");
-  is(frames[1].querySelector(".label").textContent, URL,
-     "Got iframe document in the list");
+  is(
+    frames[0].querySelector(".label").textContent,
+    FrameURL,
+    "Got top level document in the list"
+  );
+  is(
+    frames[1].querySelector(".label").textContent,
+    URL,
+    "Got iframe document in the list"
+  );
 
   
   const willNavigate = toolbox.target.once("will-navigate").then(() => {
@@ -67,10 +77,14 @@ add_task(async function() {
   info("Navigation to the iframe is done, the inspector should be back up");
 
   
-  ok(!(await testActor.hasNode("iframe")),
-    "We not longer have access to the top frame elements");
-  ok((await testActor.hasNode("#frame")),
-    "But now have direct access to the iframe elements");
+  ok(
+    !(await testActor.hasNode("iframe")),
+    "We not longer have access to the top frame elements"
+  );
+  ok(
+    await testActor.hasNode("#frame"),
+    "But now have direct access to the iframe elements"
+  );
 
   
   assertMarkupViewIsLoaded(inspector);
@@ -87,6 +101,9 @@ function assertMarkupViewIsLoaded(inspector) {
 
 function assertMarkupViewIsEmpty(inspector) {
   const markupFrame = inspector._markupFrame;
-  is(markupFrame.contentDocument.getElementById("root").childNodes.length, 0,
-    "The markup-view is unloaded");
+  is(
+    markupFrame.contentDocument.getElementById("root").childNodes.length,
+    0,
+    "The markup-view is unloaded"
+  );
 }

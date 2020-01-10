@@ -8,7 +8,10 @@
 "use strict";
 
 
-const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const {
+  Component,
+  createFactory,
+} = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
@@ -37,24 +40,21 @@ class MainFrame extends Component {
 
 
   render() {
-    const {
-      filter,
-      object,
-    } = this.props;
+    const { filter, object } = this.props;
 
-    return (
-      div({className: "mainFrame"},
-        MainToolbar({
-          dispatch: this.props.dispatch,
-          object: this.props.object,
-        }),
-        div({className: "treeTableBox devtools-monospace"},
-          DomTree({
-            filter,
-            object,
-            openLink: url => DomProvider.openLink(url),
-          })
-        )
+    return div(
+      { className: "mainFrame" },
+      MainToolbar({
+        dispatch: this.props.dispatch,
+        object: this.props.object,
+      }),
+      div(
+        { className: "treeTableBox devtools-monospace" },
+        DomTree({
+          filter,
+          object,
+          openLink: url => DomProvider.openLink(url),
+        })
       )
     );
   }
@@ -62,7 +62,7 @@ class MainFrame extends Component {
 
 
 
-const mapStateToProps = (state) => {
+const mapStateToProps = state => {
   return {
     filter: state.filter,
   };

@@ -7,10 +7,11 @@
 
 
 
-const TEST_URI = "data:text/html;charset=utf-8,Web Console test for " +
-                 "bug 595934 - message categories coverage.";
-const TESTS_PATH = "http://example.com/browser/devtools/client/webconsole/" +
-                   "test/mochitest/";
+const TEST_URI =
+  "data:text/html;charset=utf-8,Web Console test for " +
+  "bug 595934 - message categories coverage.";
+const TESTS_PATH =
+  "http://example.com/browser/devtools/client/webconsole/" + "test/mochitest/";
 const TESTS = [
   {
     
@@ -22,7 +23,7 @@ const TESTS = [
     
     file: "test-message-categories-imagemap.html",
     category: "Layout: ImageMap",
-    matchString: "shape=\"rect\"",
+    matchString: 'shape="rect"',
   },
   {
     
@@ -103,7 +104,7 @@ add_task(async function() {
 });
 
 async function runTest(test, hud) {
-  const {file, category, matchString, onload, skipInE10s} = test;
+  const { file, category, matchString, onload, skipInE10s } = test;
 
   if (skipInE10s && Services.appinfo.browserTabsRemoteAutostart) {
     return;

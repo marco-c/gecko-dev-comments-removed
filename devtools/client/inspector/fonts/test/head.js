@@ -1,4 +1,4 @@
- 
+
 
 
 
@@ -10,7 +10,8 @@
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/inspector/test/head.js",
-  this);
+  this
+);
 
 Services.prefs.setCharPref("devtools.inspector.activeSidebar", "fontinspector");
 registerCleanupFunction(() => {
@@ -40,7 +41,7 @@ selectNode = async function(node, inspector, reason) {
 
 var openFontInspectorForURL = async function(url) {
   const tab = await addTab(url);
-  const {toolbox, inspector, testActor } = await openInspector();
+  const { toolbox, inspector, testActor } = await openInspector();
 
   
   
@@ -108,7 +109,9 @@ function getUsedFontsEls_obsolete(viewDoc) {
 
 
 function getUsedFontsEls(viewDoc) {
-  return viewDoc.querySelectorAll("#font-editor .font-control-used-fonts .font-name");
+  return viewDoc.querySelectorAll(
+    "#font-editor .font-control-used-fonts .font-name"
+  );
 }
 
 
@@ -118,7 +121,9 @@ function getUsedFontsEls(viewDoc) {
 
 
 function getUsedFontGroupsEls(viewDoc) {
-  return viewDoc.querySelectorAll("#font-editor .font-control-used-fonts .font-group");
+  return viewDoc.querySelectorAll(
+    "#font-editor .font-control-used-fonts .font-group"
+  );
 }
 
 
@@ -144,7 +149,9 @@ async function expandAccordion(accordion) {
   }
 
   const onExpanded = BrowserTestUtils.waitForCondition(
-    isExpanded, "Waiting for other fonts section");
+    isExpanded,
+    "Waiting for other fonts section"
+  );
   accordion.querySelector(".theme-twisty").click();
   await onExpanded;
 }
@@ -225,11 +232,13 @@ function getPropertyValue(viewDoc, name) {
   const selector = `#font-editor .font-value-input[name=${name}]`;
   return {
     
-    value: viewDoc.querySelector(selector) &&
-           parseFloat(viewDoc.querySelector(selector).value),
+    value:
+      viewDoc.querySelector(selector) &&
+      parseFloat(viewDoc.querySelector(selector).value),
     
-    unit: viewDoc.querySelector(selector + ` ~ .font-value-select`) &&
-          viewDoc.querySelector(selector + ` ~ .font-value-select`).value,
+    unit:
+      viewDoc.querySelector(selector + ` ~ .font-value-select`) &&
+      viewDoc.querySelector(selector + ` ~ .font-value-select`).value,
   };
 }
 

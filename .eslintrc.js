@@ -44,14 +44,6 @@ module.exports = {
   ],
   "overrides": [{
       "files": [
-        "devtools/**",
-      ],
-      "rules": {
-        
-        "curly": "off"
-      }
-    }, {
-      "files": [
         "*.html",
         "*.xhtml",
         "*.xul",

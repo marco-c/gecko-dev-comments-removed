@@ -5,8 +5,8 @@
 
 "use strict";
 
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-const {KeyCodes} = require("devtools/client/shared/keycodes");
+const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+const { KeyCodes } = require("devtools/client/shared/keycodes");
 
 this.EXPORTED_SYMBOLS = ["SplitView"];
 
@@ -38,7 +38,7 @@ this.SplitView = function SplitView(aRoot) {
   this._mql = aRoot.ownerDocument.defaultView.matchMedia(LANDSCAPE_MEDIA_QUERY);
 
   
-  this._nav.addEventListener("keydown", (aEvent) => {
+  this._nav.addEventListener("keydown", aEvent => {
     function getFocusedItemWithin(nav) {
       let node = nav.ownerDocument.activeElement;
       while (node && node.parentNode != nav) {
@@ -48,27 +48,37 @@ this.SplitView = function SplitView(aRoot) {
     }
 
     
-    if (aEvent.target.ownerDocument != this._nav.ownerDocument ||
-        aEvent.target.tagName == "input" ||
-        aEvent.target.tagName == "textbox" ||
-        aEvent.target.tagName == "textarea" ||
-        aEvent.target.classList.contains("textbox")) {
+    if (
+      aEvent.target.ownerDocument != this._nav.ownerDocument ||
+      aEvent.target.tagName == "input" ||
+      aEvent.target.tagName == "textbox" ||
+      aEvent.target.tagName == "textarea" ||
+      aEvent.target.classList.contains("textbox")
+    ) {
       return false;
     }
 
     
     let newFocusOrdinal;
-    if (aEvent.keyCode == KeyCodes.DOM_VK_PAGE_UP ||
-        aEvent.keyCode == KeyCodes.DOM_VK_HOME) {
+    if (
+      aEvent.keyCode == KeyCodes.DOM_VK_PAGE_UP ||
+      aEvent.keyCode == KeyCodes.DOM_VK_HOME
+    ) {
       newFocusOrdinal = 0;
-    } else if (aEvent.keyCode == KeyCodes.DOM_VK_PAGE_DOWN ||
-               aEvent.keyCode == KeyCodes.DOM_VK_END) {
+    } else if (
+      aEvent.keyCode == KeyCodes.DOM_VK_PAGE_DOWN ||
+      aEvent.keyCode == KeyCodes.DOM_VK_END
+    ) {
       newFocusOrdinal = this._nav.childNodes.length - 1;
     } else if (aEvent.keyCode == KeyCodes.DOM_VK_UP) {
-      newFocusOrdinal = getFocusedItemWithin(this._nav).getAttribute("data-ordinal");
+      newFocusOrdinal = getFocusedItemWithin(this._nav).getAttribute(
+        "data-ordinal"
+      );
       newFocusOrdinal--;
     } else if (aEvent.keyCode == KeyCodes.DOM_VK_DOWN) {
-      newFocusOrdinal = getFocusedItemWithin(this._nav).getAttribute("data-ordinal");
+      newFocusOrdinal = getFocusedItemWithin(this._nav).getAttribute(
+        "data-ordinal"
+      );
       newFocusOrdinal++;
     }
     if (newFocusOrdinal !== undefined) {
@@ -163,7 +173,9 @@ SplitView.prototype = {
 
 
 
-  getSummaryElementByOrdinal: function SEC_getSummaryElementByOrdinal(aOrdinal) {
+  getSummaryElementByOrdinal: function SEC_getSummaryElementByOrdinal(
+    aOrdinal
+  ) {
     return this._nav.querySelector("* > li[data-ordinal='" + aOrdinal + "']");
   },
 
@@ -200,7 +212,7 @@ SplitView.prototype = {
 
     this._nav.appendChild(aSummary);
 
-    aSummary.addEventListener("click", (aEvent) => {
+    aSummary.addEventListener("click", aEvent => {
       aEvent.stopPropagation();
       this.activeSummary = aSummary;
     });
@@ -234,7 +246,8 @@ SplitView.prototype = {
 
     summary = summary.cloneNode(true);
     summary.id = "";
-    if (aOptions.ordinal !== undefined) { 
+    if (aOptions.ordinal !== undefined) {
+      
       summary.style.MozBoxOrdinalGroup = aOptions.ordinal;
       summary.setAttribute("data-ordinal", aOptions.ordinal);
     }
@@ -242,7 +255,7 @@ SplitView.prototype = {
     details.id = "";
 
     this.appendItem(summary, details, aOptions);
-    return {summary: summary, details: details};
+    return { summary: summary, details: details };
   },
 
   

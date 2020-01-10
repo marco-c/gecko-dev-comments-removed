@@ -6,7 +6,12 @@
 
 const Services = require("Services");
 
-loader.lazyRequireGetter(this, "HarAutomation", "devtools/client/netmonitor/src/har/har-automation", true);
+loader.lazyRequireGetter(
+  this,
+  "HarAutomation",
+  "devtools/client/netmonitor/src/har/har-automation",
+  true
+);
 
 
 
@@ -37,7 +42,8 @@ ToolboxOverlay.prototype = {
 
   onInit: function() {
     const autoExport = Services.prefs.getBoolPref(
-      "devtools.netmonitor.har.enableAutoExportToFile");
+      "devtools.netmonitor.har.enableAutoExportToFile"
+    );
 
     if (!autoExport) {
       return;

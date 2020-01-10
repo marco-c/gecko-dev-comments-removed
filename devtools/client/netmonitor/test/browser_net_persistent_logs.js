@@ -25,26 +25,41 @@ add_task(async function() {
   
   
   
-  await waitUntil(() => document.querySelectorAll(".request-list-item").length === 2);
-  is(document.querySelectorAll(".request-list-item").length, 2,
-    "The request list should have two items at this point.");
+  await waitUntil(
+    () => document.querySelectorAll(".request-list-item").length === 2
+  );
+  is(
+    document.querySelectorAll(".request-list-item").length,
+    2,
+    "The request list should have two items at this point."
+  );
 
   await reloadAndWait();
 
-  await waitUntil(() => document.querySelectorAll(".request-list-item").length === 2);
+  await waitUntil(
+    () => document.querySelectorAll(".request-list-item").length === 2
+  );
   
-  is(document.querySelectorAll(".request-list-item").length, 2,
-    "The request list should still have two items at this point.");
+  is(
+    document.querySelectorAll(".request-list-item").length,
+    2,
+    "The request list should still have two items at this point."
+  );
 
   
   Services.prefs.setBoolPref("devtools.netmonitor.persistlog", true);
 
   await reloadAndWait();
 
-  await waitUntil(() => document.querySelectorAll(".request-list-item").length === 4);
+  await waitUntil(
+    () => document.querySelectorAll(".request-list-item").length === 4
+  );
   
-  is(document.querySelectorAll(".request-list-item").length, 4,
-    "The request list should now have four items at this point.");
+  is(
+    document.querySelectorAll(".request-list-item").length,
+    4,
+    "The request list should now have four items at this point."
+  );
 
   Services.prefs.setBoolPref("devtools.netmonitor.persistlog", false);
   return teardown(monitor);

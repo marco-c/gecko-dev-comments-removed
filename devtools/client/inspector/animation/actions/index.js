@@ -6,27 +6,28 @@
 
 const { createEnum } = require("devtools/client/shared/enum");
 
-createEnum([
+createEnum(
+  [
+    
+    "UPDATE_ANIMATIONS",
 
-  
-  "UPDATE_ANIMATIONS",
+    
+    "UPDATE_DETAIL_VISIBILITY",
 
-  
-  "UPDATE_DETAIL_VISIBILITY",
+    
+    "UPDATE_ELEMENT_PICKER_ENABLED",
 
-  
-  "UPDATE_ELEMENT_PICKER_ENABLED",
+    
+    "UPDATE_HIGHLIGHTED_NODE",
 
-  
-  "UPDATE_HIGHLIGHTED_NODE",
+    
+    "UPDATE_PLAYBACK_RATES",
 
-  
-  "UPDATE_PLAYBACK_RATES",
+    
+    "UPDATE_SELECTED_ANIMATION",
 
-  
-  "UPDATE_SELECTED_ANIMATION",
-
-  
-  "UPDATE_SIDEBAR_SIZE",
-
-], module.exports);
+    
+    "UPDATE_SIDEBAR_SIZE",
+  ],
+  module.exports
+);

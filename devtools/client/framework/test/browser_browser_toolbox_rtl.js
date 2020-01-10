@@ -4,7 +4,9 @@
 
 
 
-const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
 PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
 
 
@@ -23,11 +25,18 @@ add_task(async function() {
     }, "browser-toolbox-inspector-dir");
   });
 
-  const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
-  env.set("MOZ_TOOLBOX_TEST_SCRIPT", "new function() {(" + testScript + ")();}");
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  env.set(
+    "MOZ_TOOLBOX_TEST_SCRIPT",
+    "new function() {(" + testScript + ")();}"
+  );
   registerCleanupFunction(() => env.set("MOZ_TOOLBOX_TEST_SCRIPT", ""));
 
-  const { BrowserToolboxProcess } = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm");
+  const { BrowserToolboxProcess } = ChromeUtils.import(
+    "resource://devtools/client/framework/ToolboxProcess.jsm"
+  );
 
   let closePromise;
   await new Promise(onRun => {
@@ -40,11 +49,19 @@ add_task(async function() {
 
   const inspectorPanelDirection = await onCustomMessage;
   info("Received the custom message");
-  is(inspectorPanelDirection, "rtl", "Inspector panel has the expected direction");
+  is(
+    inspectorPanelDirection,
+    "rtl",
+    "Inspector panel has the expected direction"
+  );
 
   await closePromise;
   info("Browser toolbox process just closed");
-  is(BrowserToolboxProcess.getBrowserToolboxSessionState(), false, "No session state after closing");
+  is(
+    BrowserToolboxProcess.getBrowserToolboxSessionState(),
+    false,
+    "No session state after closing"
+  );
 });
 
 
@@ -57,8 +74,7 @@ async function testScript() {
 
   
   const webconsole = await toolbox.selectTool("webconsole");
-  const js =
-    `Services.obs.notifyObservers(null, "browser-toolbox-inspector-dir", "${dir}");`;
+  const js = `Services.obs.notifyObservers(null, "browser-toolbox-inspector-dir", "${dir}");`;
   await webconsole.hud.jsterm.execute(js);
 
   

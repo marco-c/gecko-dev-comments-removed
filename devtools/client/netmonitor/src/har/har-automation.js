@@ -16,8 +16,7 @@ const prefDomain = "devtools.netmonitor.har.";
 
 
 const trace = {
-  log: function(...args) {
-  },
+  log: function(...args) {},
 };
 
 
@@ -112,8 +111,9 @@ HarAutomation.prototype = {
   },
 
   autoExport: function() {
-    const autoExport = Services.prefs.getBoolPref(prefDomain +
-      "enableAutoExportToFile");
+    const autoExport = Services.prefs.getBoolPref(
+      prefDomain + "enableAutoExportToFile"
+    );
 
     if (!autoExport) {
       return Promise.resolve();
@@ -135,8 +135,9 @@ HarAutomation.prototype = {
 
   triggerExport: function(data) {
     if (!data.fileName) {
-      data.fileName = Services.prefs.getCharPref(prefDomain +
-        "defaultFileName");
+      data.fileName = Services.prefs.getCharPref(
+        prefDomain + "defaultFileName"
+      );
     }
 
     return this.executeExport(data);
@@ -255,11 +256,15 @@ TabWatcher.prototype = {
 
 
 function getDefaultTargetFile(options) {
-  const path = options.defaultLogDir ||
+  const path =
+    options.defaultLogDir ||
     Services.prefs.getCharPref("devtools.netmonitor.har.defaultLogDir");
   const folder = HarUtils.getLocalDirectory(path);
-  const fileName = HarUtils.getHarFileName(options.defaultFileName,
-    options.jsonp, options.compress);
+  const fileName = HarUtils.getHarFileName(
+    options.defaultFileName,
+    options.jsonp,
+    options.compress
+  );
 
   folder.append(fileName);
   folder.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, parseInt("0666", 8));

@@ -4,26 +4,32 @@
 "use strict";
 
 const selectors = require("devtools/client/performance-new/store/selectors");
-const { recordingState: {
-  AVAILABLE_TO_RECORD,
-  REQUEST_TO_START_RECORDING,
-  REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER,
-  REQUEST_TO_STOP_PROFILER,
-}} = require("devtools/client/performance-new/utils");
+const {
+  recordingState: {
+    AVAILABLE_TO_RECORD,
+    REQUEST_TO_START_RECORDING,
+    REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER,
+    REQUEST_TO_STOP_PROFILER,
+  },
+} = require("devtools/client/performance-new/utils");
 const { OS } = require("resource://gre/modules/osfile.jsm");
-const { ProfilerGetSymbols } = require("resource://gre/modules/ProfilerGetSymbols.jsm");
+const {
+  ProfilerGetSymbols,
+} = require("resource://gre/modules/ProfilerGetSymbols.jsm");
 
 
 
 
 
 
-const changeRecordingState = exports.changeRecordingState =
-  (state, options = { didRecordingUnexpectedlyStopped: false }) => ({
-    type: "CHANGE_RECORDING_STATE",
-    state,
-    didRecordingUnexpectedlyStopped: options.didRecordingUnexpectedlyStopped,
-  });
+const changeRecordingState = (exports.changeRecordingState = (
+  state,
+  options = { didRecordingUnexpectedlyStopped: false }
+) => ({
+  type: "CHANGE_RECORDING_STATE",
+  state,
+  didRecordingUnexpectedlyStopped: options.didRecordingUnexpectedlyStopped,
+}));
 
 
 
@@ -46,11 +52,13 @@ function _dispatchAndUpdatePreferences(action) {
     if (typeof action !== "object") {
       throw new Error(
         "This function assumes that the dispatched action is a simple object and " +
-        "synchronous."
+          "synchronous."
       );
     }
     dispatch(action);
-    const setRecordingPreferences = selectors.getSetRecordingPreferencesFn(getState());
+    const setRecordingPreferences = selectors.getSetRecordingPreferencesFn(
+      getState()
+    );
     const recordingSettings = selectors.getRecordingSettings(getState());
     setRecordingPreferences(recordingSettings);
   };
@@ -60,46 +68,51 @@ function _dispatchAndUpdatePreferences(action) {
 
 
 
-exports.changeInterval = interval => _dispatchAndUpdatePreferences({
-  type: "CHANGE_INTERVAL",
-  interval,
-});
+exports.changeInterval = interval =>
+  _dispatchAndUpdatePreferences({
+    type: "CHANGE_INTERVAL",
+    interval,
+  });
 
 
 
 
 
-exports.changeEntries = entries => _dispatchAndUpdatePreferences({
-  type: "CHANGE_ENTRIES",
-  entries,
-});
+exports.changeEntries = entries =>
+  _dispatchAndUpdatePreferences({
+    type: "CHANGE_ENTRIES",
+    entries,
+  });
 
 
 
 
 
-exports.changeFeatures = features => _dispatchAndUpdatePreferences({
-  type: "CHANGE_FEATURES",
-  features,
-});
+exports.changeFeatures = features =>
+  _dispatchAndUpdatePreferences({
+    type: "CHANGE_FEATURES",
+    features,
+  });
 
 
 
 
 
-exports.changeThreads = threads => _dispatchAndUpdatePreferences({
-  type: "CHANGE_THREADS",
-  threads,
-});
+exports.changeThreads = threads =>
+  _dispatchAndUpdatePreferences({
+    type: "CHANGE_THREADS",
+    threads,
+  });
 
 
 
 
 
-exports.changeObjdirs = objdirs => _dispatchAndUpdatePreferences({
-  type: "CHANGE_OBJDIRS",
-  objdirs,
-});
+exports.changeObjdirs = objdirs =>
+  _dispatchAndUpdatePreferences({
+    type: "CHANGE_OBJDIRS",
+    objdirs,
+  });
 
 
 
@@ -172,8 +185,10 @@ function createLibraryMap(profile) {
 }
 
 async function getSymbolTableFromDebuggee(perfFront, path, breakpadId) {
-  const [addresses, index, buffer] =
-    await perfFront.getSymbolTable(path, breakpadId);
+  const [addresses, index, buffer] = await perfFront.getSymbolTable(
+    path,
+    breakpadId
+  );
   
   
   return [
@@ -253,7 +268,7 @@ exports.getProfileAndStopProfiler = () => {
 
     const libraryGetter = createLibraryMap(profile);
     async function getSymbolTable(debugName, breakpadId) {
-      const {name, path, debugPath} = libraryGetter(debugName, breakpadId);
+      const { name, path, debugPath } = libraryGetter(debugName, breakpadId);
       if (await doesFileExistAtPath(path)) {
         
         

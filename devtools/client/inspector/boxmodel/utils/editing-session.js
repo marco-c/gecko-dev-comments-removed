@@ -18,7 +18,7 @@
 
 
 
-function EditingSession({inspector, doc, elementRules}) {
+function EditingSession({ inspector, doc, elementRules }) {
   this._doc = doc;
   this._inspector = inspector;
   this._rules = elementRules;
@@ -111,12 +111,15 @@ EditingSession.prototype = {
       
       
       const modifications = this._rules[0].startModifyingProperties(
-        this._inspector.cssProperties);
+        this._inspector.cssProperties
+      );
 
       
       if (!this._modifications.has(property.name)) {
-        this._modifications.set(property.name,
-          this.getPropertyFromRule(this._rules[0], property.name));
+        this._modifications.set(
+          property.name,
+          this.getPropertyFromRule(this._rules[0], property.name)
+        );
       }
 
       
@@ -146,7 +149,8 @@ EditingSession.prototype = {
     
     for (const [property, value] of this._modifications) {
       const modifications = this._rules[0].startModifyingProperties(
-        this._inspector.cssProperties);
+        this._inspector.cssProperties
+      );
 
       
       let index = this.getPropertyIndex(property);

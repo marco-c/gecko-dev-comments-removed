@@ -20,9 +20,9 @@
 
 
 
-async function showTooltip(tooltip, anchor, {position, x, y} = {}) {
+async function showTooltip(tooltip, anchor, { position, x, y } = {}) {
   const onShown = tooltip.once("shown");
-  tooltip.show(anchor, {position, x, y});
+  tooltip.show(anchor, { position, x, y });
   await onShown;
   return waitForReflow(tooltip);
 }
@@ -51,7 +51,7 @@ async function hideTooltip(tooltip) {
 
 
 function waitForReflow(tooltip) {
-  const {doc} = tooltip;
+  const { doc } = tooltip;
   return new Promise(resolve => {
     doc.documentElement.offsetWidth;
     doc.defaultView.requestAnimationFrame(resolve);
@@ -72,8 +72,11 @@ function waitForReflow(tooltip) {
 
 
 
-function checkTooltipGeometry(tooltip, anchor,
-    {position, leftAligned = true, height, width} = {}) {
+function checkTooltipGeometry(
+  tooltip,
+  anchor,
+  { position, leftAligned = true, height, width } = {}
+) {
   info("Check the tooltip geometry matches expected position and dimensions");
   const tooltipRect = tooltip.container.getBoundingClientRect();
   const anchorRect = anchor.getBoundingClientRect();
@@ -87,8 +90,11 @@ function checkTooltipGeometry(tooltip, anchor,
   }
 
   if (leftAligned) {
-    is(tooltipRect.left, anchorRect.left,
-      "Tooltip left-aligned with the anchor");
+    is(
+      tooltipRect.left,
+      anchorRect.left,
+      "Tooltip left-aligned with the anchor"
+    );
   }
 
   is(tooltipRect.height, height, "Tooltip has the expected height");

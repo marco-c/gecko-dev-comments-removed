@@ -7,7 +7,10 @@
 "use strict";
 
 const Services = require("Services");
-const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const {
+  Component,
+  createFactory,
+} = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
@@ -22,7 +25,9 @@ loader.lazyGetter(this, "SearchBox", function() {
   return createFactory(require("devtools/client/shared/components/SearchBox"));
 });
 loader.lazyGetter(this, "TreeRow", function() {
-  return createFactory(require("devtools/client/shared/components/tree/TreeRow"));
+  return createFactory(
+    require("devtools/client/shared/components/tree/TreeRow")
+  );
 });
 loader.lazyGetter(this, "SourceEditor", function() {
   return createFactory(require("./SourceEditor"));
@@ -117,39 +122,37 @@ class PropertiesView extends Component {
     
     
     let responseTextComponent = SourceEditor(value);
-    const limit = Services.prefs.getIntPref("devtools.netmonitor.response.ui.limit");
+    const limit = Services.prefs.getIntPref(
+      "devtools.netmonitor.response.ui.limit"
+    );
     if (value && value.text && value.text.length > limit) {
-      responseTextComponent =
-        div({className: "responseTextContainer"},
-          pre({}, value.text)
-        );
+      responseTextComponent = div(
+        { className: "responseTextContainer" },
+        pre({}, value.text)
+      );
     }
 
     
     if (level === 1 && name === EDITOR_CONFIG_ID) {
-      return (
-        tr({ key: EDITOR_CONFIG_ID, className: "editor-row-container" },
-          td({ colSpan: 2 },
-            responseTextComponent
-          )
-        )
+      return tr(
+        { key: EDITOR_CONFIG_ID, className: "editor-row-container" },
+        td({ colSpan: 2 }, responseTextComponent)
       );
     }
 
     
     if (level === 1 && name === HTML_PREVIEW_ID) {
-      return (
-        tr({ key: HTML_PREVIEW_ID, className: "response-preview-container" },
-          td({ colSpan: 2 },
-            HTMLPreview(value)
-          )
-        )
+      return tr(
+        { key: HTML_PREVIEW_ID, className: "response-preview-container" },
+        td({ colSpan: 2 }, HTMLPreview(value))
       );
     }
 
     
-    if ((path.includes(EDITOR_CONFIG_ID) || path.includes(HTML_PREVIEW_ID))
-      && level >= 1) {
+    if (
+      (path.includes(EDITOR_CONFIG_ID) || path.includes(HTML_PREVIEW_ID)) &&
+      level >= 1
+    ) {
       return null;
     }
 
@@ -165,7 +168,7 @@ class PropertiesView extends Component {
     this.selectRow(evt.currentTarget);
 
     
-    if (typeof (object) === "object") {
+    if (typeof object === "object") {
       if (!this.contextMenu) {
         this.contextMenu = new PropertiesViewContextMenu({});
       }
@@ -181,28 +184,39 @@ class PropertiesView extends Component {
     
     
     
-    if (member.level === 0 && member.type === "object" ||
-      (typeof member.value === "object" && member.value && member.value.value)) {
+    if (
+      (member.level === 0 && member.type === "object") ||
+      (typeof member.value === "object" && member.value && member.value.value)
+    ) {
       return null;
     }
 
-    return Rep(Object.assign(props, {
-      
-      
-      member: Object.assign({}, member, { open: false }),
-      mode: MODE.TINY,
-      cropLimit: this.props.cropLimit,
-      noGrip: true,
-    }));
+    return Rep(
+      Object.assign(props, {
+        
+        
+        member: Object.assign({}, member, { open: false }),
+        mode: MODE.TINY,
+        cropLimit: this.props.cropLimit,
+        noGrip: true,
+      })
+    );
   }
 
   sectionIsSearchable(object, section) {
-    return !(object[section][EDITOR_CONFIG_ID] || object[section][HTML_PREVIEW_ID]);
+    return !(
+      object[section][EDITOR_CONFIG_ID] || object[section][HTML_PREVIEW_ID]
+    );
   }
 
   shouldRenderSearchBox(object) {
-    return this.props.enableFilter && object && Object.keys(object)
-      .filter((section) => this.sectionIsSearchable(object, section)).length > 0;
+    return (
+      this.props.enableFilter &&
+      object &&
+      Object.keys(object).filter(section =>
+        this.sectionIsSearchable(object, section)
+      ).length > 0
+    );
   }
 
   updateFilterText(filterText) {
@@ -225,42 +239,45 @@ class PropertiesView extends Component {
       provider,
     } = this.props;
 
-    return (
-      div({ className: "properties-view" },
-        this.shouldRenderSearchBox(object) &&
-          div({ className: "devtools-toolbar devtools-input-toolbar" },
-            SearchBox({
-              delay: FILTER_SEARCH_DELAY,
-              type: "filter",
-              onChange: this.updateFilterText,
-              placeholder: filterPlaceHolder,
-            }),
-          ),
-        div({ className: "tree-container" },
-          TreeView({
-            object,
-            provider,
-            columns: [{
+    return div(
+      { className: "properties-view" },
+      this.shouldRenderSearchBox(object) &&
+        div(
+          { className: "devtools-toolbar devtools-input-toolbar" },
+          SearchBox({
+            delay: FILTER_SEARCH_DELAY,
+            type: "filter",
+            onChange: this.updateFilterText,
+            placeholder: filterPlaceHolder,
+          })
+        ),
+      div(
+        { className: "tree-container" },
+        TreeView({
+          object,
+          provider,
+          columns: [
+            {
               id: "value",
               width: "100%",
-            }],
-            decorator: decorator || {
-              getRowClass: (rowObject) => this.getRowClass(rowObject, sectionNames),
             },
-            enableInput,
-            expandableStrings,
-            useQuotes: false,
-            expandedNodes: TreeViewClass.getExpandedNodes(
-              object,
-              {maxLevel: AUTO_EXPAND_MAX_LEVEL, maxNodes: AUTO_EXPAND_MAX_NODES}
-            ),
-            onFilter: (props) => this.onFilter(props, sectionNames),
-            renderRow: renderRow || this.renderRowWithExtras,
-            renderValue: renderValue || this.renderValueWithRep,
-            openLink,
-            onContextMenuRow: this.onContextMenuRow,
+          ],
+          decorator: decorator || {
+            getRowClass: rowObject => this.getRowClass(rowObject, sectionNames),
+          },
+          enableInput,
+          expandableStrings,
+          useQuotes: false,
+          expandedNodes: TreeViewClass.getExpandedNodes(object, {
+            maxLevel: AUTO_EXPAND_MAX_LEVEL,
+            maxNodes: AUTO_EXPAND_MAX_NODES,
           }),
-        ),
+          onFilter: props => this.onFilter(props, sectionNames),
+          renderRow: renderRow || this.renderRowWithExtras,
+          renderValue: renderValue || this.renderValueWithRep,
+          openLink,
+          onContextMenuRow: this.onContextMenuRow,
+        })
       )
     );
   }

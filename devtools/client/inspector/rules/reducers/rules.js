@@ -24,7 +24,9 @@ const INITIAL_RULES = {
   isPrintSimulationHidden: false,
   
   
-  isSourceLinkEnabled: Services.prefs.getBoolPref("devtools.styleeditor.enabled"),
+  isSourceLinkEnabled: Services.prefs.getBoolPref(
+    "devtools.styleeditor.enabled"
+  ),
   
   rules: [],
 };
@@ -83,7 +85,8 @@ function getRuleState(rule) {
   return {
     
     declarations: rule.declarations.map(declaration =>
-      getDeclarationState(declaration, rule.domRule.actorID)),
+      getDeclarationState(declaration, rule.domRule.actorID)
+    ),
     
     id: rule.domRule.actorID,
     
@@ -106,7 +109,6 @@ function getRuleState(rule) {
 }
 
 const reducers = {
-
   [UPDATE_ADD_RULE_ENABLED](rules, { enabled }) {
     return {
       ...rules,
@@ -162,7 +164,6 @@ const reducers = {
       }),
     };
   },
-
 };
 
 module.exports = function(rules = INITIAL_RULES, action) {

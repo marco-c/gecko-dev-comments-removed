@@ -12,7 +12,7 @@ add_task(async function() {
   info("Starting test... ");
 
   
-  const QUOTE = Services.appinfo.OS == "WINNT" ? "\"" : "'";
+  const QUOTE = Services.appinfo.OS == "WINNT" ? '"' : "'";
 
   
   function quote(str) {
@@ -25,12 +25,8 @@ add_task(async function() {
   }
 
   
-  const SIMPLE_BASE = [
-    "curl " + quote(SIMPLE_SJS),
-  ];
-  const SLOW_BASE = [
-    "curl " + quote(SLOW_SJS),
-  ];
+  const SIMPLE_BASE = ["curl " + quote(SIMPLE_SJS)];
+  const SLOW_BASE = ["curl " + quote(SLOW_SJS)];
   const BASE_RESULT = [
     "--compressed",
     header("User-Agent: " + navigator.userAgent),
@@ -45,9 +41,7 @@ add_task(async function() {
     header("Cache-Control: no-cache"),
   ];
 
-  const COOKIE_PARTIAL_RESULT = [
-    header("Cookie: bob=true; tom=cool"),
-  ];
+  const COOKIE_PARTIAL_RESULT = [header("Cookie: bob=true; tom=cool")];
 
   const POST_PAYLOAD = "Plaintext value as a payload";
   const POST_PARTIAL_RESULT = [
@@ -55,22 +49,14 @@ add_task(async function() {
     header("Content-Type: text/plain;charset=UTF-8"),
   ];
 
-  const HEAD_PARTIAL_RESULT = [
-    "-I",
-  ];
+  const HEAD_PARTIAL_RESULT = ["-I"];
 
   
   await performRequest("GET");
-  await testClipboardContent([
-    ...SIMPLE_BASE,
-    ...BASE_RESULT,
-  ]);
+  await testClipboardContent([...SIMPLE_BASE, ...BASE_RESULT]);
   
   await selectIndexAndWaitForSourceEditor(monitor, 0);
-  await testClipboardContent([
-    ...SIMPLE_BASE,
-    ...BASE_RESULT,
-  ]);
+  await testClipboardContent([...SIMPLE_BASE, ...BASE_RESULT]);
 
   
   await performRequest("GET");
@@ -114,13 +100,17 @@ add_task(async function() {
 
   async function performRequest(method, payload) {
     const waitRequest = waitForNetworkEvents(monitor, 1);
-    await ContentTask.spawn(tab.linkedBrowser, {
-      url: SIMPLE_SJS,
-      method_: method,
-      payload_: payload,
-    }, async function({url, method_, payload_}) {
-      content.wrappedJSObject.performRequest(url, method_, payload_);
-    });
+    await ContentTask.spawn(
+      tab.linkedBrowser,
+      {
+        url: SIMPLE_SJS,
+        method_: method,
+        payload_: payload,
+      },
+      async function({ url, method_, payload_ }) {
+        content.wrappedJSObject.performRequest(url, method_, payload_);
+      }
+    );
     await waitRequest;
   }
 
@@ -129,41 +119,53 @@ add_task(async function() {
 
     const items = document.querySelectorAll(".request-list-item");
     EventUtils.sendMouseEvent({ type: "mousedown" }, items[items.length - 1]);
-    EventUtils.sendMouseEvent({ type: "contextmenu" },
-      document.querySelectorAll(".request-list-item")[0]);
+    EventUtils.sendMouseEvent(
+      { type: "contextmenu" },
+      document.querySelectorAll(".request-list-item")[0]
+    );
 
     
-    const copyUrlParamsNode = getContextMenuItem(monitor,
-      "request-list-context-copy-as-curl");
-    is(!!copyUrlParamsNode, true,
-      "The \"Copy as cURL\" context menu item should not be hidden.");
+    const copyUrlParamsNode = getContextMenuItem(
+      monitor,
+      "request-list-context-copy-as-curl"
+    );
+    is(
+      !!copyUrlParamsNode,
+      true,
+      'The "Copy as cURL" context menu item should not be hidden.'
+    );
 
-    await waitForClipboardPromise(function setup() {
-      copyUrlParamsNode.click();
-    }, function validate(result) {
-      if (typeof result !== "string") {
-        return false;
+    await waitForClipboardPromise(
+      function setup() {
+        copyUrlParamsNode.click();
+      },
+      function validate(result) {
+        if (typeof result !== "string") {
+          return false;
+        }
+
+        
+        
+        
+
+        
+        
+        
+        const matchRe = /[-A-Za-z1-9]+(?: ([\"'])(?:\\\1|.)*?\1)?/g;
+
+        const actual = result.match(matchRe);
+        
+        if (!actual || expectedResult[0] != actual[0]) {
+          return false;
+        }
+
+        
+        return (
+          expectedResult.length === actual.length &&
+          expectedResult.every(param => actual.includes(param))
+        );
       }
-
-      
-      
-      
-
-      
-      
-      
-      const matchRe = /[-A-Za-z1-9]+(?: ([\"'])(?:\\\1|.)*?\1)?/g;
-
-      const actual = result.match(matchRe);
-      
-      if (!actual || expectedResult[0] != actual[0]) {
-        return false;
-      }
-
-      
-      return expectedResult.length === actual.length &&
-        expectedResult.every(param => actual.includes(param));
-    });
+    );
 
     info("Clipboard contains a cURL command for item " + (items.length - 1));
   }

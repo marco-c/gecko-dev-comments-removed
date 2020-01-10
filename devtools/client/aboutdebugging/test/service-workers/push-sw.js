@@ -22,9 +22,11 @@ self.addEventListener("install", function(event) {
 
 
 self.addEventListener("activate", function(event) {
-  event.waitUntil(self.clients.claim().then(function() {
-    return postMessage("sw-claimed");
-  }));
+  event.waitUntil(
+    self.clients.claim().then(function() {
+      return postMessage("sw-claimed");
+    })
+  );
 });
 
 

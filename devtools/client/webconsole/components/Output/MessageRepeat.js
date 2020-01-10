@@ -4,7 +4,6 @@
 
 
 
-
 "use strict";
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
@@ -21,10 +20,16 @@ MessageRepeat.propTypes = {
 
 function MessageRepeat(props) {
   const { repeat } = props;
-  return dom.span({
-    className: "message-repeats",
-    title: PluralForm.get(repeat, messageRepeatsTooltip).replace("#1", repeat),
-  }, repeat);
+  return dom.span(
+    {
+      className: "message-repeats",
+      title: PluralForm.get(repeat, messageRepeatsTooltip).replace(
+        "#1",
+        repeat
+      ),
+    },
+    repeat
+  );
 }
 
 module.exports = MessageRepeat;

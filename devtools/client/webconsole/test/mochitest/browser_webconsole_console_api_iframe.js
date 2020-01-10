@@ -7,8 +7,9 @@
 
 
 
-const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/mochitest/test-console-api-iframe.html";
+const TEST_URI =
+  "http://example.com/browser/devtools/client/webconsole/" +
+  "test/mochitest/test-console-api-iframe.html";
 
 add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);

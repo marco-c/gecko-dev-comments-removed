@@ -49,7 +49,9 @@ function getSourceHash(source) {
 function getRuleHash(ruleData) {
   const { selectors = [], ancestors = [], ruleIndex } = ruleData;
   const atRules = ancestors.reduce((acc, rule) => {
-    acc += `${rule.typeName} ${(rule.conditionText || rule.name || rule.keyText)}`;
+    acc += `${rule.typeName} ${rule.conditionText ||
+      rule.name ||
+      rule.keyText}`;
     return acc;
   }, "");
 

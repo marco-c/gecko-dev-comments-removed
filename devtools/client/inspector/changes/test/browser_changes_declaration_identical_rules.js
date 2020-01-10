@@ -50,8 +50,24 @@ add_task(async function() {
   
   
   
-  is(removeDecl[0].property, "font-size", "Correct property name for second declaration");
-  is(removeDecl[0].value, "1em", "Correct property value for second declaration");
-  is(removeDecl[1].property, "color", "Correct property name for first declaration");
-  is(removeDecl[1].value, "red", "Correct property value for first declaration");
+  is(
+    removeDecl[0].property,
+    "font-size",
+    "Correct property name for second declaration"
+  );
+  is(
+    removeDecl[0].value,
+    "1em",
+    "Correct property value for second declaration"
+  );
+  is(
+    removeDecl[1].property,
+    "color",
+    "Correct property name for first declaration"
+  );
+  is(
+    removeDecl[1].value,
+    "red",
+    "Correct property value for first declaration"
+  );
 });

@@ -49,7 +49,7 @@ OptionsView.prototype = {
     
     
     this.mutationObserver = new MutationObserver(this._onOptionChange);
-    const observerConfig = { attributes: true, attributeFilter: ["checked"]};
+    const observerConfig = { attributes: true, attributeFilter: ["checked"] };
 
     
     for (const $el of this.$$("menuitem", this.menupopup)) {

@@ -64,9 +64,10 @@ add_task(async function() {
   
   
   const lastSeason = SEASONS[SEASONS.length - 1];
-  await waitFor(() =>
-    findMessage(hud, lastSeason.english) &&
-    findMessage(hud, lastSeason.chinese)
+  await waitFor(
+    () =>
+      findMessage(hud, lastSeason.english) &&
+      findMessage(hud, lastSeason.chinese)
   );
 
   
@@ -75,58 +76,76 @@ add_task(async function() {
   
   
   let visibleLogs = getVisibleLogs(hud);
-  is(visibleLogs.length, SEASONS.length * 2 + 1,
-       "the total number of all the logs before starting filtering");
+  is(
+    visibleLogs.length,
+    SEASONS.length * 2 + 1,
+    "the total number of all the logs before starting filtering"
+  );
   checkLogContent(visibleLogs[0], HTML_CONSOLE_OUTPUT, HTML_FILENAME);
   for (let i = 0; i < SEASONS.length; i++) {
     checkLogContent(visibleLogs[i + 1], SEASONS[i].english, JS_ASCII_FILENAME);
   }
   for (let i = 0; i < SEASONS.length; i++) {
-    checkLogContent(visibleLogs[i + 1 + SEASONS.length], SEASONS[i].chinese,
-                    JS_UNICODE_FILENAME);
+    checkLogContent(
+      visibleLogs[i + 1 + SEASONS.length],
+      SEASONS[i].chinese,
+      JS_UNICODE_FILENAME
+    );
   }
   
   
-  await setFilterState(hud, {text: ""});
+  await setFilterState(hud, { text: "" });
   is(getClearButton(hud).hidden, true, "Clear button is hidden");
-  await setFilterState(hud, {text: JS_ASCII_FILENAME});
+  await setFilterState(hud, { text: JS_ASCII_FILENAME });
   is(getClearButton(hud).hidden, false, "Clear button is visible");
 
   
   
-  await setFilterState(hud, {text: JS_ASCII_FILENAME});
+  await setFilterState(hud, { text: JS_ASCII_FILENAME });
   visibleLogs = getVisibleLogs(hud);
-  is(visibleLogs.length, SEASONS.length,
-       `the number of all the logs containing ${JS_ASCII_FILENAME}`);
+  is(
+    visibleLogs.length,
+    SEASONS.length,
+    `the number of all the logs containing ${JS_ASCII_FILENAME}`
+  );
   for (let i = 0; i < SEASONS.length; i++) {
     checkLogContent(visibleLogs[i], SEASONS[i].english, JS_ASCII_FILENAME);
   }
 
   
   for (const curSeason of SEASONS) {
-    await setFilterState(hud, {text: curSeason.english});
+    await setFilterState(hud, { text: curSeason.english });
     visibleLogs = getVisibleLogs(hud);
-    is(visibleLogs.length, 1,
-         `the number of all the logs containing ${curSeason.english}`);
+    is(
+      visibleLogs.length,
+      1,
+      `the number of all the logs containing ${curSeason.english}`
+    );
     checkLogContent(visibleLogs[0], curSeason.english, JS_ASCII_FILENAME);
   }
 
   
   
-  await setFilterState(hud, {text: JS_UNICODE_FILENAME});
+  await setFilterState(hud, { text: JS_UNICODE_FILENAME });
   visibleLogs = getVisibleLogs(hud);
-  is(visibleLogs.length, SEASONS.length,
-       `the number of all the logs containing ${JS_UNICODE_FILENAME}`);
+  is(
+    visibleLogs.length,
+    SEASONS.length,
+    `the number of all the logs containing ${JS_UNICODE_FILENAME}`
+  );
   for (let i = 0; i < SEASONS.length; i++) {
     checkLogContent(visibleLogs[i], SEASONS[i].chinese, JS_UNICODE_FILENAME);
   }
 
   
   for (const curSeason of SEASONS) {
-    await setFilterState(hud, {text: curSeason.chinese});
+    await setFilterState(hud, { text: curSeason.chinese });
     visibleLogs = getVisibleLogs(hud);
-    is(visibleLogs.length, 1,
-         `the number of all the logs containing ${curSeason.chinese}`);
+    is(
+      visibleLogs.length,
+      1,
+      `the number of all the logs containing ${curSeason.chinese}`
+    );
     checkLogContent(visibleLogs[0], curSeason.chinese, JS_UNICODE_FILENAME);
   }
 
@@ -135,10 +154,13 @@ add_task(async function() {
   
   
   
-  await setFilterState(hud, {text: SEASON.english});
+  await setFilterState(hud, { text: SEASON.english });
   visibleLogs = getVisibleLogs(hud);
-  is(visibleLogs.length, SEASONS.length + 1,
-       `the number of all the logs containing ${SEASON.english}`);
+  is(
+    visibleLogs.length,
+    SEASONS.length + 1,
+    `the number of all the logs containing ${SEASON.english}`
+  );
   checkLogContent(visibleLogs[0], HTML_CONSOLE_OUTPUT, HTML_FILENAME);
   for (let i = 0; i < SEASONS.length; i++) {
     checkLogContent(visibleLogs[i + 1], SEASONS[i].english, JS_ASCII_FILENAME);
@@ -147,22 +169,25 @@ add_task(async function() {
   
   
   
-  await setFilterState(hud, {text: SEASON.chinese});
+  await setFilterState(hud, { text: SEASON.chinese });
   visibleLogs = getVisibleLogs(hud);
-  is(visibleLogs.length, SEASONS.length,
-       `the number of all the logs containing ${SEASON.chinese}`);
+  is(
+    visibleLogs.length,
+    SEASONS.length,
+    `the number of all the logs containing ${SEASON.chinese}`
+  );
   for (let i = 0; i < SEASONS.length; i++) {
     checkLogContent(visibleLogs[i], SEASONS[i].chinese, JS_UNICODE_FILENAME);
   }
 
   
   
-  await setFilterState(hud, {text: ""});
+  await setFilterState(hud, { text: "" });
   checkAllMessagesAreVisible(hud);
 
   
   
-  await setFilterState(hud, {text: JS_ASCII_FILENAME});
+  await setFilterState(hud, { text: JS_ASCII_FILENAME });
 
   info("Click the input clear button");
   clickClearButton(hud);
@@ -178,41 +203,45 @@ function createServerAndGetTestUrl() {
   httpServer.registerContentType("html", "text/html");
   httpServer.registerContentType("js", "application/javascript");
 
-  httpServer.registerPathHandler("/" + HTML_FILENAME,
-    function(request, response) {
-      response.setStatusLine(request.httpVersion, 200, "OK");
-      response.write(HTML_CONTENT);
+  httpServer.registerPathHandler("/" + HTML_FILENAME, function(
+    request,
+    response
+  ) {
+    response.setStatusLine(request.httpVersion, 200, "OK");
+    response.write(HTML_CONTENT);
+  });
+  httpServer.registerPathHandler("/" + JS_ASCII_FILENAME, function(
+    request,
+    response
+  ) {
+    response.setStatusLine(request.httpVersion, 200, "OK");
+    response.setHeader("Content-Type", "application/javascript", false);
+    let content = "";
+    for (const curSeason of SEASONS) {
+      content += `console.log("${curSeason.english}");`;
     }
-  );
-  httpServer.registerPathHandler("/" + JS_ASCII_FILENAME,
-    function(request, response) {
-      response.setStatusLine(request.httpVersion, 200, "OK");
-      response.setHeader("Content-Type", "application/javascript", false);
-      let content = "";
-      for (const curSeason of SEASONS) {
-        content += `console.log("${curSeason.english}");`;
-      }
-      response.write(content);
+    response.write(content);
+  });
+  httpServer.registerPathHandler("/" + ENCODED_JS_UNICODE_FILENAME, function(
+    request,
+    response
+  ) {
+    response.setStatusLine(request.httpVersion, 200, "OK");
+    response.setHeader("Content-Type", "application/javascript", false);
+    let content = "";
+    for (const curSeason of SEASONS) {
+      content += `console.log("${curSeason.escapedChinese}");`;
     }
-  );
-  httpServer.registerPathHandler("/" + ENCODED_JS_UNICODE_FILENAME,
-    function(request, response) {
-      response.setStatusLine(request.httpVersion, 200, "OK");
-      response.setHeader("Content-Type", "application/javascript", false);
-      let content = "";
-      for (const curSeason of SEASONS) {
-        content += `console.log("${curSeason.escapedChinese}");`;
-      }
-      response.write(content);
-    }
-  );
+    response.write(content);
+  });
   const port = httpServer.identity.primaryPort;
   return `http://localhost:${port}/${HTML_FILENAME}`;
 }
 
 function getClearButton(hud) {
-  return hud.ui.outputNode
-    .querySelector(".devtools-searchbox .devtools-searchinput-clear");
+  return hud.ui.outputNode.querySelector(
+    ".devtools-searchbox .devtools-searchinput-clear"
+  );
 }
 
 function clickClearButton(hud) {
@@ -226,15 +255,21 @@ function getVisibleLogs(hud) {
 
 function checkAllMessagesAreVisible(hud) {
   const visibleLogs = getVisibleLogs(hud);
-  is(visibleLogs.length, SEASONS.length * 2 + 1,
-       "the total number of all the logs after clearing filtering");
+  is(
+    visibleLogs.length,
+    SEASONS.length * 2 + 1,
+    "the total number of all the logs after clearing filtering"
+  );
   checkLogContent(visibleLogs[0], HTML_CONSOLE_OUTPUT, HTML_FILENAME);
   for (let i = 0; i < SEASONS.length; i++) {
     checkLogContent(visibleLogs[i + 1], SEASONS[i].english, JS_ASCII_FILENAME);
   }
   for (let i = 0; i < SEASONS.length; i++) {
-    checkLogContent(visibleLogs[i + 1 + SEASONS.length], SEASONS[i].chinese,
-                    JS_UNICODE_FILENAME);
+    checkLogContent(
+      visibleLogs[i + 1 + SEASONS.length],
+      SEASONS[i].chinese,
+      JS_UNICODE_FILENAME
+    );
   }
 }
 

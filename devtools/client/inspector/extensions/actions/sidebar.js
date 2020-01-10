@@ -12,7 +12,6 @@ const {
 } = require("./index");
 
 module.exports = {
-
   
 
 
@@ -56,5 +55,4 @@ module.exports = {
       sidebarId,
     };
   },
-
 };

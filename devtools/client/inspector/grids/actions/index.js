@@ -6,24 +6,25 @@
 
 const { createEnum } = require("devtools/client/shared/enum");
 
-createEnum([
+createEnum(
+  [
+    
+    "UPDATE_GRID_COLOR",
 
-  
-  "UPDATE_GRID_COLOR",
+    
+    "UPDATE_GRID_HIGHLIGHTED",
 
-  
-  "UPDATE_GRID_HIGHLIGHTED",
+    
+    "UPDATE_GRIDS",
 
-  
-  "UPDATE_GRIDS",
+    
+    "UPDATE_SHOW_GRID_AREAS",
 
-  
-  "UPDATE_SHOW_GRID_AREAS",
+    
+    "UPDATE_SHOW_GRID_LINE_NUMBERS",
 
-  
-  "UPDATE_SHOW_GRID_LINE_NUMBERS",
-
-  
-  "UPDATE_SHOW_INFINITE_LINES",
-
-], module.exports);
+    
+    "UPDATE_SHOW_INFINITE_LINES",
+  ],
+  module.exports
+);

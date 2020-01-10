@@ -17,10 +17,10 @@
 
 
 
-function flashElementOn(backgroundElt, {
-  foregroundElt = backgroundElt,
-  backgroundClass = "theme-bg-contrast",
-} = {}) {
+function flashElementOn(
+  backgroundElt,
+  { foregroundElt = backgroundElt, backgroundClass = "theme-bg-contrast" } = {}
+) {
   if (!backgroundElt || !foregroundElt) {
     return;
   }
@@ -51,10 +51,10 @@ function flashElementOn(backgroundElt, {
 
 
 
-function flashElementOff(backgroundElt, {
-  foregroundElt = backgroundElt,
-  backgroundClass = "theme-bg-contrast",
-} = {}) {
+function flashElementOff(
+  backgroundElt,
+  { foregroundElt = backgroundElt, backgroundClass = "theme-bg-contrast" } = {}
+) {
   if (!backgroundElt || !foregroundElt) {
     return;
   }
@@ -103,13 +103,14 @@ function parseAttributeValues(attr, doc) {
   
   
   
-  const el = parseAndGetNode("<svg " + attr + "></svg>") ||
-           parseAndGetNode("<svg " + attr + "\"></svg>") ||
-           parseAndGetNode("<svg " + attr + "'></svg>");
+  const el =
+    parseAndGetNode("<svg " + attr + "></svg>") ||
+    parseAndGetNode("<svg " + attr + '"></svg>') ||
+    parseAndGetNode("<svg " + attr + "'></svg>");
 
   const div = doc.createElement("div");
   const attributes = [];
-  for (const {name, value} of el.attributes) {
+  for (const { name, value } of el.attributes) {
     
     
     try {

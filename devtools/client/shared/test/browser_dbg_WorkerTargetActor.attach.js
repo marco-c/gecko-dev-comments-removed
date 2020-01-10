@@ -12,7 +12,8 @@
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/helper_workers.js",
-  this);
+  this
+);
 
 var MAX_TOTAL_VIEWERS = "browser.sessionhistory.max_total_viewers";
 

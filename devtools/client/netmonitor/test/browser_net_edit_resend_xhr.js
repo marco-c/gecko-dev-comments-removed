@@ -23,8 +23,9 @@ add_task(async function() {
   EventUtils.sendMouseEvent({ type: "mousedown" }, xhrRequest);
 
   
-  const { getSelectedRequest }
-  = windowRequire("devtools/client/netmonitor/src/selectors/index");
+  const { getSelectedRequest } = windowRequire(
+    "devtools/client/netmonitor/src/selectors/index"
+  );
   const original = getSelectedRequest(store.getState());
 
   
@@ -44,8 +45,10 @@ add_task(async function() {
   const cloned = getSelectedRequest(store.getState());
 
   
-  ok(original.cause.type === cloned.cause.type,
-  "Both requests retain the same cause type");
+  ok(
+    original.cause.type === cloned.cause.type,
+    "Both requests retain the same cause type"
+  );
 
   return teardown(monitor);
 });

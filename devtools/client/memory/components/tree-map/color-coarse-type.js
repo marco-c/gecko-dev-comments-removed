@@ -8,7 +8,7 @@
 
 
 
-const TYPES = [ "objects", "other", "strings", "scripts", "domNode" ];
+const TYPES = ["objects", "other", "strings", "scripts", "domNode"];
 
 
 const TYPE_FACTOR = TYPES.length * 3;

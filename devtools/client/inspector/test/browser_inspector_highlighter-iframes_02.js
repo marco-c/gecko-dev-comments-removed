@@ -8,15 +8,16 @@
 
 
 
-const TEST_URI = "data:text/html;charset=utf-8," +
-  "<div id=\"outer\"></div>" +
+const TEST_URI =
+  "data:text/html;charset=utf-8," +
+  '<div id="outer"></div>' +
   "<iframe style='margin:100px' src='data:text/html," +
-  "<div id=\"inner\">Look I am here!</div>'>";
+  '<div id="inner">Look I am here!</div>\'>';
 
 add_task(async function() {
   info("Enable command-button-frames preference setting");
   Services.prefs.setBoolPref("devtools.command-button-frames.enabled", true);
-  const {inspector, toolbox, testActor} = await openInspectorForURL(TEST_URI);
+  const { inspector, toolbox, testActor } = await openInspectorForURL(TEST_URI);
 
   info("Switch to the iframe context.");
   await switchToFrameContext(1, toolbox, inspector);

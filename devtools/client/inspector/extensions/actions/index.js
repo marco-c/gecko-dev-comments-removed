@@ -6,18 +6,19 @@
 
 const { createEnum } = require("devtools/client/shared/enum");
 
-createEnum([
+createEnum(
+  [
+    
+    "EXTENSION_SIDEBAR_OBJECT_TREEVIEW_UPDATE",
 
-  
-  "EXTENSION_SIDEBAR_OBJECT_TREEVIEW_UPDATE",
+    
+    "EXTENSION_SIDEBAR_OBJECT_GRIP_VIEW_UPDATE",
 
-  
-  "EXTENSION_SIDEBAR_OBJECT_GRIP_VIEW_UPDATE",
+    
+    "EXTENSION_SIDEBAR_PAGE_UPDATE",
 
-  
-  "EXTENSION_SIDEBAR_PAGE_UPDATE",
-
-  
-  "EXTENSION_SIDEBAR_REMOVE",
-
-], module.exports);
+    
+    "EXTENSION_SIDEBAR_REMOVE",
+  ],
+  module.exports
+);

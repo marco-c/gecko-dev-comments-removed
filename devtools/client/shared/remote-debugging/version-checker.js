@@ -5,7 +5,7 @@
 "use strict";
 
 const Services = require("Services");
-const {AppConstants} = require("resource://gre/modules/AppConstants.jsm");
+const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -51,11 +51,11 @@ function computeMinMaxVersion(localVersion) {
     
     
     
-    minVersion: (localMajorVersion - 2) + ".0a1",
+    minVersion: localMajorVersion - 2 + ".0a1",
     
     
     
-    maxVersion: (localMajorVersion + 1) + ".0a1",
+    maxVersion: localMajorVersion + 1 + ".0a1",
   };
 }
 

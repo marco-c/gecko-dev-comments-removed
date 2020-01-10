@@ -52,7 +52,7 @@ function findOptimalTimeInterval(minTimeInterval) {
 
 
 function hasAnimationIterationCountInfinite(animations) {
-  return animations.some(({state}) => !state.iterationCount);
+  return animations.some(({ state }) => !state.iterationCount);
 }
 
 
@@ -62,7 +62,7 @@ function hasAnimationIterationCountInfinite(animations) {
 
 
 function hasRunningAnimation(animations) {
-  return animations.some(({state}) => state.playState === "running");
+  return animations.some(({ state }) => state.playState === "running");
 }
 
 exports.findOptimalTimeInterval = findOptimalTimeInterval;

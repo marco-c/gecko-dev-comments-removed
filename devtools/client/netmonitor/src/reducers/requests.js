@@ -92,14 +92,15 @@ function requestsReducer(state = Requests(), action) {
         ...request,
         ...processNetworkUpdates(action.data, request),
       };
-      const requestEndTime = request.startedMillis +
+      const requestEndTime =
+        request.startedMillis +
         (request.eventTimings ? request.eventTimings.totalTime : 0);
 
       return {
         ...state,
         requests: mapSet(state.requests, action.id, request),
-        lastEndedMillis: requestEndTime > lastEndedMillis ?
-          requestEndTime : lastEndedMillis,
+        lastEndedMillis:
+          requestEndTime > lastEndedMillis ? requestEndTime : lastEndedMillis,
       };
     }
 
@@ -152,7 +153,7 @@ function requestsReducer(state = Requests(), action) {
       
       
       
-      return closeCustomRequest({...state, preselectedId: action.id});
+      return closeCustomRequest({ ...state, preselectedId: action.id });
     }
 
     
@@ -237,8 +238,10 @@ function closeCustomRequest(state) {
   return {
     ...state,
     
-    [(removedRequest && removedRequest.isCustom)
-      && "requests"]: mapDelete(requests, selectedId),
+    [removedRequest && removedRequest.isCustom && "requests"]: mapDelete(
+      requests,
+      selectedId
+    ),
     preselectedId: hasPreselectedId ? null : preselectedId,
     selectedId: hasPreselectedId ? preselectedId : null,
   };

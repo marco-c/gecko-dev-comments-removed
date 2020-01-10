@@ -29,88 +29,109 @@ const TEST_URI = `<html>
 
 
 
-const tests = [{
-  desc: "Expand first and second tree nodes.",
-  setup: async ({ doc }) => {
-    await toggleRow(doc, 0);
-    await toggleRow(doc, 1);
+const tests = [
+  {
+    desc: "Expand first and second tree nodes.",
+    setup: async ({ doc }) => {
+      await toggleRow(doc, 0);
+      await toggleRow(doc, 1);
+    },
+    expected: {
+      tree: [
+        {
+          role: "document",
+          name: `"Accessibility Panel Test"`,
+          level: 1,
+        },
+        {
+          role: "heading",
+          name: `"Top level header"`,
+          level: 2,
+        },
+        {
+          role: "text leaf",
+          name: `"Top level header "contrast`,
+          badges: ["contrast"],
+          level: 3,
+        },
+        {
+          role: "heading",
+          name: `"Second level header"`,
+          level: 2,
+        },
+      ],
+    },
   },
-  expected: {
-    tree: [{
-      role: "document",
-      name: `"Accessibility Panel Test"`,
-      level: 1,
-    }, {
-      role: "heading",
-      name: `"Top level header"`,
-      level: 2,
-    }, {
-      role: "text leaf",
-      name: `"Top level header "contrast`,
-      badges: [ "contrast" ],
-      level: 3,
-    }, {
-      role: "heading",
-      name: `"Second level header"`,
-      level: 2,
-    }],
+  {
+    desc: "Click on the contrast filter.",
+    setup: async ({ doc }) => {
+      await toggleFilter(doc, 0);
+    },
+    expected: {
+      tree: [
+        {
+          role: "text leaf",
+          name: `"Top level header "contrast`,
+          badges: ["contrast"],
+          level: 1,
+        },
+        {
+          role: "text leaf",
+          name: `"Second level header "contrast`,
+          badges: ["contrast"],
+          selected: true,
+          level: 1,
+        },
+      ],
+    },
   },
-}, {
-  desc: "Click on the contrast filter.",
-  setup: async ({ doc }) => {
-    await toggleFilter(doc, 0);
+  {
+    desc: "Click on the contrast filter again.",
+    setup: async ({ doc }) => {
+      await toggleFilter(doc, 0);
+    },
+    expected: {
+      tree: [
+        {
+          role: "document",
+          name: `"Accessibility Panel Test"`,
+          level: 1,
+        },
+        {
+          role: "heading",
+          name: `"Top level header"`,
+          level: 2,
+        },
+        {
+          role: "text leaf",
+          name: `"Top level header "contrast`,
+          badges: ["contrast"],
+          level: 3,
+        },
+        {
+          role: "heading",
+          name: `"Second level header"`,
+          level: 2,
+        },
+        {
+          role: "text leaf",
+          name: `"Second level header "contrast`,
+          badges: ["contrast"],
+          selected: true,
+          level: 3,
+        },
+      ],
+    },
   },
-  expected: {
-    tree: [{
-      role: "text leaf",
-      name: `"Top level header "contrast`,
-      badges: [ "contrast" ],
-      level: 1,
-    }, {
-      role: "text leaf",
-      name: `"Second level header "contrast`,
-      badges: [ "contrast" ],
-      selected: true,
-      level: 1,
-    }],
-  },
-}, {
-  desc: "Click on the contrast filter again.",
-  setup: async ({ doc }) => {
-    await toggleFilter(doc, 0);
-  },
-  expected: {
-    tree: [{
-      role: "document",
-      name: `"Accessibility Panel Test"`,
-      level: 1,
-    }, {
-      role: "heading",
-      name: `"Top level header"`,
-      level: 2,
-    }, {
-      role: "text leaf",
-      name: `"Top level header "contrast`,
-      badges: [ "contrast" ],
-      level: 3,
-    }, {
-      role: "heading",
-      name: `"Second level header"`,
-      level: 2,
-    }, {
-      role: "text leaf",
-      name: `"Second level header "contrast`,
-      badges: [ "contrast" ],
-      selected: true,
-      level: 3,
-    }],
-  },
-}];
+];
 
 
 
 
 
 
-addA11yPanelTestsTask(tests, TEST_URI,
-  "Test Accessibility panel tree with contrast badge present.");
+addA11yPanelTestsTask(
+  tests,
+  TEST_URI,
+  "Test Accessibility panel tree with contrast badge present."
+);

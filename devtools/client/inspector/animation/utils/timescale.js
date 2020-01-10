@@ -55,7 +55,10 @@ class TimeScale {
         
         resultZeroPositionTime = zeroPositionTime;
       } else {
-        resultZeroPositionTime = Math.max(resultZeroPositionTime, zeroPositionTime);
+        resultZeroPositionTime = Math.max(
+          resultZeroPositionTime,
+          zeroPositionTime
+        );
       }
 
       resultMaxEndTime = Math.max(resultMaxEndTime, endTime);
@@ -79,8 +82,7 @@ class TimeScale {
 
 
   distanceToRelativeTime(distance) {
-    return (this.getDuration() * distance / 100)
-           - this.zeroPositionTime;
+    return (this.getDuration() * distance) / 100 - this.zeroPositionTime;
   }
 
   
@@ -92,7 +94,7 @@ class TimeScale {
 
   formatTime(time) {
     
-    if (Math.abs(time) < (1 / 1000)) {
+    if (Math.abs(time) < 1 / 1000) {
       time = 0.0;
     }
 
@@ -132,9 +134,9 @@ class TimeScale {
 
 
   getEndTime({ state }) {
-    return state.iterationCount ?
-             state.delay + state.duration * state.iterationCount + state.endDelay :
-             Infinity;
+    return state.iterationCount
+      ? state.delay + state.duration * state.iterationCount + state.endDelay
+      : Infinity;
   }
 }
 

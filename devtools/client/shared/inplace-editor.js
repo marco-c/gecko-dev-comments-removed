@@ -25,11 +25,16 @@
 
 const Services = require("Services");
 const focusManager = Services.focus;
-const {KeyCodes} = require("devtools/client/shared/keycodes");
+const { KeyCodes } = require("devtools/client/shared/keycodes");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { findMostRelevantCssPropertyIndex } = require("./suggestion-picker");
 
-loader.lazyRequireGetter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm", true);
+loader.lazyRequireGetter(
+  this,
+  "AppConstants",
+  "resource://gre/modules/AppConstants.jsm",
+  true
+);
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const CONTENT_TYPES = {
@@ -51,13 +56,27 @@ const isWordChar = function(str) {
   return str && WORD_REGEXP.test(str);
 };
 
-const GRID_PROPERTY_NAMES = ["grid-area", "grid-row", "grid-row-start",
-                             "grid-row-end", "grid-column", "grid-column-start",
-                             "grid-column-end"];
-const GRID_ROW_PROPERTY_NAMES = ["grid-area", "grid-row", "grid-row-start",
-                                 "grid-row-end"];
-const GRID_COL_PROPERTY_NAMES = ["grid-area", "grid-column", "grid-column-start",
-                                 "grid-column-end"];
+const GRID_PROPERTY_NAMES = [
+  "grid-area",
+  "grid-row",
+  "grid-row-start",
+  "grid-row-end",
+  "grid-column",
+  "grid-column-start",
+  "grid-column-end",
+];
+const GRID_ROW_PROPERTY_NAMES = [
+  "grid-area",
+  "grid-row",
+  "grid-row-start",
+  "grid-row-end",
+];
+const GRID_COL_PROPERTY_NAMES = [
+  "grid-area",
+  "grid-column",
+  "grid-column-start",
+  "grid-column-end",
+];
 
 
 
@@ -183,11 +202,15 @@ function editableItem(options, callback) {
 
   
   
-  element.addEventListener("keypress", function(evt) {
-    if (isKeyIn(evt.keyCode, "RETURN") || isKeyIn(evt.charCode, "SPACE")) {
-      callback(element);
-    }
-  }, true);
+  element.addEventListener(
+    "keypress",
+    function(evt) {
+      if (isKeyIn(evt.keyCode, "RETURN") || isKeyIn(evt.charCode, "SPACE")) {
+        callback(element);
+      }
+    },
+    true
+  );
 
   
   
@@ -255,18 +278,18 @@ function InplaceEditor(options, event) {
     this.maxWidth = this.maxWidth();
   }
 
-  this.trimOutput = options.trimOutput === undefined
-                    ? true
-                    : !!options.trimOutput;
+  this.trimOutput =
+    options.trimOutput === undefined ? true : !!options.trimOutput;
   this.stopOnShiftTab = !!options.stopOnShiftTab;
   this.stopOnTab = !!options.stopOnTab;
   this.stopOnReturn = !!options.stopOnReturn;
   this.contentType = options.contentType || CONTENT_TYPES.PLAIN_TEXT;
   this.property = options.property;
   this.popup = options.popup;
-  this.preserveTextStyles = options.preserveTextStyles === undefined
-                          ? false
-                          : !!options.preserveTextStyles;
+  this.preserveTextStyles =
+    options.preserveTextStyles === undefined
+      ? false
+      : !!options.preserveTextStyles;
 
   this._onBlur = this._onBlur.bind(this);
   this._onWindowBlur = this._onWindowBlur.bind(this);
@@ -337,15 +360,16 @@ exports.InplaceEditor = InplaceEditor;
 InplaceEditor.CONTENT_TYPES = CONTENT_TYPES;
 
 InplaceEditor.prototype = {
-
   get currentInputValue() {
     const val = this.trimOutput ? this.input.value.trim() : this.input.value;
     return val;
   },
 
   _createInput: function() {
-    this.input =
-      this.doc.createElementNS(HTML_NS, this.multiline ? "textarea" : "input");
+    this.input = this.doc.createElementNS(
+      HTML_NS,
+      this.multiline ? "textarea" : "input"
+    );
     this.input.inplaceEditor = this;
 
     if (this.multiline) {
@@ -411,8 +435,10 @@ InplaceEditor.prototype = {
     
     
     
-    this._measurement =
-      this.doc.createElementNS(HTML_NS, this.multiline ? "pre" : "span");
+    this._measurement = this.doc.createElementNS(
+      HTML_NS,
+      this.multiline ? "pre" : "span"
+    );
     this._measurement.className = "autosizer";
     this.elt.parentNode.appendChild(this._measurement);
     const style = this._measurement.style;
@@ -499,7 +525,7 @@ InplaceEditor.prototype = {
     return { width, height };
   },
 
-   
+  
 
 
 
@@ -511,8 +537,12 @@ InplaceEditor.prototype = {
     const selectionStart = this.input.selectionStart;
     const selectionEnd = this.input.selectionEnd;
 
-    const newValue = this._incrementCSSValue(value, increment, selectionStart,
-                                           selectionEnd);
+    const newValue = this._incrementCSSValue(
+      value,
+      increment,
+      selectionStart,
+      selectionEnd
+    );
 
     if (!newValue) {
       return false;
@@ -551,7 +581,8 @@ InplaceEditor.prototype = {
     const postRawValue = range ? value.substr(range.end) : "";
     let info;
 
-    let incrementedValue = null, selection;
+    let incrementedValue = null,
+      selection;
     if (type === "num") {
       if (rawValue == "0") {
         info = {};
@@ -566,8 +597,12 @@ InplaceEditor.prototype = {
     } else if (type === "hex") {
       const exprOffset = selStart - range.start;
       const exprOffsetEnd = selEnd - range.start;
-      const newValue = this._incHexColor(rawValue, increment, exprOffset,
-                                       exprOffsetEnd);
+      const newValue = this._incHexColor(
+        rawValue,
+        increment,
+        exprOffset,
+        exprOffsetEnd
+      );
       if (newValue) {
         incrementedValue = newValue.value;
         selection = newValue.selection;
@@ -575,7 +610,8 @@ InplaceEditor.prototype = {
     } else {
       if (type === "rgb" || type === "hsl") {
         info = {};
-        const part = value.substring(range.start, selStart).split(",").length - 1;
+        const part =
+          value.substring(range.start, selStart).split(",").length - 1;
         if (part === 3) {
           
           info.minValue = 0;
@@ -595,8 +631,13 @@ InplaceEditor.prototype = {
           }
         }
       }
-      return this._incrementGenericValue(value, increment, selStart, selEnd,
-                                         info);
+      return this._incrementGenericValue(
+        value,
+        increment,
+        selStart,
+        selEnd,
+        info
+      );
     }
 
     if (incrementedValue === null) {
@@ -662,8 +703,7 @@ InplaceEditor.prototype = {
     let m;
 
     
-    while ((m = reSplitCSS.exec(value)) &&
-          (m.index + m[0].length < offset)) {
+    while ((m = reSplitCSS.exec(value)) && m.index + m[0].length < offset) {
       value = value.substr(m.index + m[0].length);
       start += m.index + m[0].length;
       offset -= m.index + m[0].length;
@@ -714,8 +754,10 @@ InplaceEditor.prototype = {
     
     let start, end;
     
-    if (/^-?[0-9.]/.test(value.substring(offset, offsetEnd)) &&
-      !(/\d/.test(value.charAt(offset - 1) + value.charAt(offsetEnd)))) {
+    if (
+      /^-?[0-9.]/.test(value.substring(offset, offsetEnd)) &&
+      !/\d/.test(value.charAt(offset - 1) + value.charAt(offsetEnd))
+    ) {
       
       
       
@@ -725,18 +767,20 @@ InplaceEditor.prototype = {
       
       
       const pattern = "[" + (info ? "0-9." : "0-9") + "]*";
-      const before = new RegExp(pattern + "$")
-        .exec(value.substr(0, offset))[0].length;
-      const after = new RegExp("^" + pattern)
-        .exec(value.substr(offset))[0].length;
+      const before = new RegExp(pattern + "$").exec(value.substr(0, offset))[0]
+        .length;
+      const after = new RegExp("^" + pattern).exec(value.substr(offset))[0]
+        .length;
 
       start = offset - before;
       end = offset + after;
 
       
       
-      if (value.charAt(start - 1) === "-" &&
-         (start - 1 === 0 || /[ (:,='"]/.test(value.charAt(start - 2)))) {
+      if (
+        value.charAt(start - 1) === "-" &&
+        (start - 1 === 0 || /[ (:,='"]/.test(value.charAt(start - 2)))
+      ) {
         --start;
       }
     }
@@ -839,19 +883,28 @@ InplaceEditor.prototype = {
 
     
     if (rawValue.length === 3) {
-      rawValue = rawValue.charAt(0) + rawValue.charAt(0) +
-                 rawValue.charAt(1) + rawValue.charAt(1) +
-                 rawValue.charAt(2) + rawValue.charAt(2);
+      rawValue =
+        rawValue.charAt(0) +
+        rawValue.charAt(0) +
+        rawValue.charAt(1) +
+        rawValue.charAt(1) +
+        rawValue.charAt(2) +
+        rawValue.charAt(2);
       offset *= 2;
       offsetEnd *= 2;
     }
 
     
     if (rawValue.length === 4) {
-      rawValue = rawValue.charAt(0) + rawValue.charAt(0) +
-                 rawValue.charAt(1) + rawValue.charAt(1) +
-                 rawValue.charAt(2) + rawValue.charAt(2) +
-                 rawValue.charAt(3) + rawValue.charAt(3);
+      rawValue =
+        rawValue.charAt(0) +
+        rawValue.charAt(0) +
+        rawValue.charAt(1) +
+        rawValue.charAt(1) +
+        rawValue.charAt(2) +
+        rawValue.charAt(2) +
+        rawValue.charAt(3) +
+        rawValue.charAt(3);
       offset *= 2;
       offsetEnd *= 2;
     }
@@ -875,13 +928,13 @@ InplaceEditor.prototype = {
 
     
     if (increment > -1 && increment < 1) {
-      increment = (increment < 0 ? -1 : 1);
+      increment = increment < 0 ? -1 : 1;
     }
     if (Math.abs(increment) === 10) {
-      increment = (increment < 0 ? -16 : 16);
+      increment = increment < 0 ? -16 : 16;
     }
 
-    const isUpper = (rawValue.toUpperCase() === rawValue);
+    const isUpper = rawValue.toUpperCase() === rawValue;
 
     for (let pos = offset; pos < offsetEnd; pos += 2) {
       
@@ -921,8 +974,10 @@ InplaceEditor.prototype = {
 
   _cycleCSSSuggestion: function(reverse, noSelect) {
     
-    const {label, preLabel} = this.popup.selectedItem ||
-                            {label: "", preLabel: ""};
+    const { label, preLabel } = this.popup.selectedItem || {
+      label: "",
+      preLabel: "",
+    };
     if (reverse) {
       this.popup.selectPreviousItem();
     } else {
@@ -936,8 +991,10 @@ InplaceEditor.prototype = {
     if (input.selectionStart < input.selectionEnd) {
       pre = input.value.slice(0, input.selectionStart);
     } else {
-      pre = input.value.slice(0, input.selectionStart - label.length +
-                              preLabel.length);
+      pre = input.value.slice(
+        0,
+        input.selectionStart - label.length + preLabel.length
+      );
     }
 
     const post = input.value.slice(input.selectionEnd, input.value.length);
@@ -948,8 +1005,10 @@ InplaceEditor.prototype = {
     if (!noSelect) {
       input.setSelectionRange(pre.length, pre.length + toComplete.length);
     } else {
-      input.setSelectionRange(pre.length + toComplete.length,
-                              pre.length + toComplete.length);
+      input.setSelectionRange(
+        pre.length + toComplete.length,
+        pre.length + toComplete.length
+      );
     }
 
     this._updateSize();
@@ -992,8 +1051,12 @@ InplaceEditor.prototype = {
 
 
   _onBlur: function(event) {
-    if (event && this.popup && this.popup.isOpen &&
-      this.popup.selectedIndex >= 0) {
+    if (
+      event &&
+      this.popup &&
+      this.popup.isOpen &&
+      this.popup.selectedIndex >= 0
+    ) {
       this._acceptPopupSuggestion();
     } else {
       this._apply();
@@ -1009,13 +1072,19 @@ InplaceEditor.prototype = {
 
 
   _getGridNamesBeforeCompletion: async function(getGridLineNames) {
-    if (getGridLineNames && this.property &&
-        GRID_PROPERTY_NAMES.includes(this.property.name)) {
+    if (
+      getGridLineNames &&
+      this.property &&
+      GRID_PROPERTY_NAMES.includes(this.property.name)
+    ) {
       this.gridLineNames = await getGridLineNames();
     }
 
-    if (this.contentType == CONTENT_TYPES.CSS_VALUE && this.input &&
-        this.input.value == "") {
+    if (
+      this.contentType == CONTENT_TYPES.CSS_VALUE &&
+      this.input &&
+      this.input.value == ""
+    ) {
       this._maybeSuggestCompletion(false);
     }
   },
@@ -1032,9 +1101,11 @@ InplaceEditor.prototype = {
     let label, preLabel;
 
     if (this._selectedIndex === undefined) {
-      ({label, preLabel} = this.popup.getItemAtIndex(this.popup.selectedIndex));
+      ({ label, preLabel } = this.popup.getItemAtIndex(
+        this.popup.selectedIndex
+      ));
     } else {
-      ({label, preLabel} = this.popup.getItemAtIndex(this._selectedIndex));
+      ({ label, preLabel } = this.popup.getItemAtIndex(this._selectedIndex));
     }
 
     const input = this.input;
@@ -1046,26 +1117,32 @@ InplaceEditor.prototype = {
     
     
     
-    if (input.selectionStart < input.selectionEnd ||
-        this.contentType !== CONTENT_TYPES.CSS_MIXED) {
+    if (
+      input.selectionStart < input.selectionEnd ||
+      this.contentType !== CONTENT_TYPES.CSS_MIXED
+    ) {
       pre = input.value.slice(0, input.selectionStart);
     } else {
-      pre = input.value.slice(0, input.selectionStart - label.length +
-                              preLabel.length);
+      pre = input.value.slice(
+        0,
+        input.selectionStart - label.length + preLabel.length
+      );
     }
     const post = input.value.slice(input.selectionEnd, input.value.length);
     const item = this.popup.selectedItem;
     this._selectedIndex = this.popup.selectedIndex;
     const toComplete = item.label.slice(item.preLabel.length);
     input.value = pre + toComplete + post;
-    input.setSelectionRange(pre.length + toComplete.length,
-                            pre.length + toComplete.length);
+    input.setSelectionRange(
+      pre.length + toComplete.length,
+      pre.length + toComplete.length
+    );
     this._updateSize();
     
     
     const onPopupHidden = () => {
       this.popup.off("popup-closed", onPopupHidden);
-      this.doc.defaultView.setTimeout(()=> {
+      this.doc.defaultView.setTimeout(() => {
         input.focus();
         this.emit("after-suggest");
       }, 0);
@@ -1088,8 +1165,8 @@ InplaceEditor.prototype = {
     
     this._pressedKey = event.key;
 
-    const multilineNavigation = !this._isSingleLine() &&
-      isKeyIn(key, "UP", "DOWN", "LEFT", "RIGHT");
+    const multilineNavigation =
+      !this._isSingleLine() && isKeyIn(key, "UP", "DOWN", "LEFT", "RIGHT");
     const isPlainText = this.contentType == CONTENT_TYPES.PLAIN_TEXT;
     const isPopupOpen = this.popup && this.popup.isOpen;
 
@@ -1120,8 +1197,13 @@ InplaceEditor.prototype = {
       if (isPopupOpen) {
         this._hideAutocompletePopup();
       }
-    } else if (!cycling && !multilineNavigation &&
-      !event.metaKey && !event.altKey && !event.ctrlKey) {
+    } else if (
+      !cycling &&
+      !multilineNavigation &&
+      !event.metaKey &&
+      !event.altKey &&
+      !event.ctrlKey
+    ) {
       this._maybeSuggestCompletion(true);
     }
 
@@ -1129,13 +1211,16 @@ InplaceEditor.prototype = {
       prevent = false;
     } else if (
       this._advanceChars(event.charCode, input.value, input.selectionStart) ||
-      isKeyIn(key, "RETURN", "TAB")) {
+      isKeyIn(key, "RETURN", "TAB")
+    ) {
       prevent = true;
 
       let direction;
-      if ((this.stopOnReturn && isKeyIn(key, "RETURN")) ||
-          (this.stopOnTab && !event.shiftKey && isKeyIn(key, "TAB")) ||
-          (this.stopOnShiftTab && event.shiftKey && isKeyIn(key, "TAB"))) {
+      if (
+        (this.stopOnReturn && isKeyIn(key, "RETURN")) ||
+        (this.stopOnTab && !event.shiftKey && isKeyIn(key, "TAB")) ||
+        (this.stopOnShiftTab && event.shiftKey && isKeyIn(key, "TAB"))
+      ) {
         direction = null;
       } else if (event.shiftKey && isKeyIn(key, "TAB")) {
         direction = FOCUS_BACKWARD;
@@ -1147,8 +1232,10 @@ InplaceEditor.prototype = {
       this._preventSuggestions = true;
       
       
-      if (this.contentType == CONTENT_TYPES.CSS_PROPERTY &&
-          direction == FOCUS_FORWARD) {
+      if (
+        this.contentType == CONTENT_TYPES.CSS_PROPERTY &&
+        direction == FOCUS_FORWARD
+      ) {
         this._preventSuggestions = false;
       }
 
@@ -1250,7 +1337,7 @@ InplaceEditor.prototype = {
 
 
   _getIncrement: function(event) {
-    const getSmallIncrementKey = (evt) => {
+    const getSmallIncrementKey = evt => {
       if (AppConstants.platform === "macosx") {
         return evt.altKey;
       }
@@ -1365,8 +1452,10 @@ InplaceEditor.prototype = {
       }
       
       
-      if (input.selectionStart == input.selectionEnd &&
-          input.selectionStart < input.value.length) {
+      if (
+        input.selectionStart == input.selectionEnd &&
+        input.selectionStart < input.value.length
+      ) {
         const nextChar = input.value.slice(input.selectionStart)[0];
         
         
@@ -1397,18 +1486,24 @@ InplaceEditor.prototype = {
         if (varMatch && varMatch.length == 2) {
           startCheckQuery = varMatch[1];
           list = this._getCSSVariableNames();
-          postLabelValues = list.map(varName => this._getCSSVariableValue(varName));
+          postLabelValues = list.map(varName =>
+            this._getCSSVariableValue(varName)
+          );
         } else {
-          list = ["!important",
-                  ...this._getCSSValuesForPropertyName(this.property.name)];
+          list = [
+            "!important",
+            ...this._getCSSValuesForPropertyName(this.property.name),
+          ];
         }
 
         if (query == "") {
           
           list.splice(0, 1);
         }
-      } else if (this.contentType == CONTENT_TYPES.CSS_MIXED &&
-                 /^\s*style\s*=/.test(query)) {
+      } else if (
+        this.contentType == CONTENT_TYPES.CSS_MIXED &&
+        /^\s*style\s*=/.test(query)
+      ) {
         
         const styleValue = query.replace(/^\s*style\s*=\s*/, "");
         
@@ -1423,10 +1518,13 @@ InplaceEditor.prototype = {
         if (match && match.length >= 2) {
           if (match[1] == ":") {
             
-            const propertyName =
-              query.match(/[;"'=]\s*([^"';:= ]+)\s*:\s*[^"';:=]*$/)[1];
-            list = ["!important;",
-                    ...this._getCSSValuesForPropertyName(propertyName)];
+            const propertyName = query.match(
+              /[;"'=]\s*([^"';:= ]+)\s*:\s*[^"';:=]*$/
+            )[1];
+            list = [
+              "!important;",
+              ...this._getCSSValuesForPropertyName(propertyName),
+            ];
             const matchLastQuery = /([^\s,.\/]+$)/.exec(match[2] || "");
             if (matchLastQuery) {
               startCheckQuery = matchLastQuery[0];
@@ -1498,10 +1596,14 @@ InplaceEditor.prototype = {
       
       if (autoInsert && finalList[index]) {
         const item = finalList[index].label;
-        input.value = query + item.slice(startCheckQuery.length) +
-                      input.value.slice(query.length);
-        input.setSelectionRange(query.length, query.length + item.length -
-                                              startCheckQuery.length);
+        input.value =
+          query +
+          item.slice(startCheckQuery.length) +
+          input.value.slice(query.length);
+        input.setSelectionRange(
+          query.length,
+          query.length + item.length - startCheckQuery.length
+        );
         this._updateSize();
       }
 
@@ -1536,7 +1638,10 @@ InplaceEditor.prototype = {
 
   _autocloseParenthesis: function() {
     
-    const parts = this._splitStringAt(this.input.value, this.input.selectionStart);
+    const parts = this._splitStringAt(
+      this.input.value,
+      this.input.selectionStart
+    );
 
     
     const nextChar = parts[1][0];
@@ -1614,7 +1719,9 @@ InplaceEditor.prototype = {
     }
     
     
-    return gridLineList.concat(this.cssProperties.getValues(propertyName)).sort();
+    return gridLineList
+      .concat(this.cssProperties.getValues(propertyName))
+      .sort();
   },
 
   

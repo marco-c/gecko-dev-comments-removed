@@ -4,12 +4,9 @@
 
 "use strict";
 
-const {
-  UPDATE_FONTS,
-} = require("./index");
+const { UPDATE_FONTS } = require("./index");
 
 module.exports = {
-
   
 
 
@@ -19,5 +16,4 @@ module.exports = {
       allFonts,
     };
   },
-
 };

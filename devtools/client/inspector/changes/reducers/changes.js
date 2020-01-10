@@ -6,10 +6,7 @@
 
 const { getSourceHash, getRuleHash } = require("../utils/changes-utils");
 
-const {
-  RESET_CHANGES,
-  TRACK_CHANGE,
-} = require("../actions/index");
+const { RESET_CHANGES, TRACK_CHANGE } = require("../actions/index");
 
 
 
@@ -68,54 +65,59 @@ function createRule(ruleData, rules) {
   
   const ruleAncestry = [...ruleData.ancestors, { ...ruleData }];
 
-  return ruleAncestry
-    .map((rule, index) => {
-      
-      rule.ancestors = ruleAncestry.slice(0, index);
-      
-      
-      if (!rule.selectors || !rule.selectors.length) {
-        rule.selectors =
-          [`${rule.typeName} ${(rule.conditionText || rule.name || rule.keyText)}`];
-      }
+  return (
+    ruleAncestry
+      .map((rule, index) => {
+        
+        rule.ancestors = ruleAncestry.slice(0, index);
+        
+        
+        if (!rule.selectors || !rule.selectors.length) {
+          rule.selectors = [
+            `${rule.typeName} ${rule.conditionText ||
+              rule.name ||
+              rule.keyText}`,
+          ];
+        }
 
+        
+        
+        return rule.id || getRuleHash(rule);
+      })
       
-      
-      return rule.id || getRuleHash(rule);
-    })
-    
-    .map((ruleId, index, array) => {
-      const { selectors } = ruleAncestry[index];
-      const prevRuleId = array[index - 1];
-      const nextRuleId = array[index + 1];
+      .map((ruleId, index, array) => {
+        const { selectors } = ruleAncestry[index];
+        const prevRuleId = array[index - 1];
+        const nextRuleId = array[index + 1];
 
-      
-      if (!rules[ruleId]) {
-        rules[ruleId] = {
-          ruleId,
-          isNew: false,
-          selectors,
-          add: [],
-          remove: [],
-          children: [],
-          parent: null,
-        };
-      }
+        
+        if (!rules[ruleId]) {
+          rules[ruleId] = {
+            ruleId,
+            isNew: false,
+            selectors,
+            add: [],
+            remove: [],
+            children: [],
+            parent: null,
+          };
+        }
 
-      
-      if (nextRuleId && !rules[ruleId].children.includes(nextRuleId)) {
-        rules[ruleId].children.push(nextRuleId);
-      }
+        
+        if (nextRuleId && !rules[ruleId].children.includes(nextRuleId)) {
+          rules[ruleId].children.push(nextRuleId);
+        }
 
-      
-      if (prevRuleId) {
-        rules[ruleId].parent = prevRuleId;
-      }
+        
+        if (prevRuleId) {
+          rules[ruleId].parent = prevRuleId;
+        }
 
-      return rules[ruleId];
-    })
-    
-    .pop();
+        return rules[ruleId];
+      })
+      
+      .pop()
+  );
 }
 
 function removeRule(ruleId, rules) {
@@ -123,9 +125,11 @@ function removeRule(ruleId, rules) {
 
   
   if (rule.parent && rules[rule.parent]) {
-    rules[rule.parent].children = rules[rule.parent].children.filter(childRuleId => {
-      return childRuleId !== ruleId;
-    });
+    rules[rule.parent].children = rules[rule.parent].children.filter(
+      childRuleId => {
+        return childRuleId !== ruleId;
+      }
+    );
 
     
     if (!rules[rule.parent].children.length) {
@@ -173,7 +177,6 @@ function removeRule(ruleId, rules) {
 const INITIAL_STATE = {};
 
 const reducers = {
-
   
 
 
@@ -226,7 +229,10 @@ const reducers = {
     
     const rule = rules[ruleId]
       ? rules[ruleId]
-      : createRule({id: change.id, selectors: [selector], ancestors, ruleIndex}, rules);
+      : createRule(
+          { id: change.id, selectors: [selector], ancestors, ruleIndex },
+          rules
+        );
 
     
     if (change.type === "rule-add") {
@@ -252,18 +258,22 @@ const reducers = {
         
         
         const addIndex = rule.add.findIndex(addDecl => {
-          return addDecl.index === decl.index &&
-                 addDecl.property === decl.property &&
-                 addDecl.value === decl.value;
+          return (
+            addDecl.index === decl.index &&
+            addDecl.property === decl.property &&
+            addDecl.value === decl.value
+          );
         });
 
         
         
         
         const removeIndex = rule.remove.findIndex(removeDecl => {
-          return removeDecl.index === decl.index &&
-                 removeDecl.property === decl.property &&
-                 removeDecl.value === decl.value;
+          return (
+            removeDecl.index === decl.index &&
+            removeDecl.property === decl.property &&
+            removeDecl.value === decl.value
+          );
         });
 
         
@@ -282,21 +292,21 @@ const reducers = {
         
         
         if (change.type === "declaration-remove") {
-          rule.add = rule.add.map((addDecl => {
+          rule.add = rule.add.map(addDecl => {
             if (addDecl.index > decl.index) {
               addDecl.index--;
             }
 
             return addDecl;
-          }));
+          });
 
-          rule.remove = rule.remove.map((removeDecl => {
+          rule.remove = rule.remove.map(removeDecl => {
             if (removeDecl.index > decl.index) {
               removeDecl.index--;
             }
 
             return removeDecl;
-          }));
+          });
         }
       }
     }
@@ -306,16 +316,19 @@ const reducers = {
         
         
         const removeIndex = rule.remove.findIndex(removeDecl => {
-          return removeDecl.index === decl.index &&
-                 removeDecl.value === decl.value &&
-                 removeDecl.property === decl.property;
+          return (
+            removeDecl.index === decl.index &&
+            removeDecl.value === decl.value &&
+            removeDecl.property === decl.property
+          );
         });
 
         
         
         const addIndex = rule.add.findIndex(addDecl => {
-          return addDecl.index === decl.index &&
-                 addDecl.property === decl.property;
+          return (
+            addDecl.index === decl.index && addDecl.property === decl.property
+          );
         });
 
         if (rule.remove[removeIndex]) {
@@ -335,8 +348,13 @@ const reducers = {
     
     
     
-    if (!rule.add.length && !rule.remove.length && rule.selectors.length === 1 &&
-        !change.type.startsWith("selector-") && !rule.isNew) {
+    if (
+      !rule.add.length &&
+      !rule.remove.length &&
+      rule.selectors.length === 1 &&
+      !change.type.startsWith("selector-") &&
+      !rule.isNew
+    ) {
       removeRule(ruleId, rules);
       source.rules = { ...rules };
     } else {
@@ -357,7 +375,6 @@ const reducers = {
   [RESET_CHANGES](state) {
     return INITIAL_STATE;
   },
-
 };
 
 module.exports = function(state = INITIAL_STATE, action) {

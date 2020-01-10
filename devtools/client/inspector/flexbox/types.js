@@ -9,8 +9,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 
-const flexItemProperties = exports.flexItemProperties = {
-
+const flexItemProperties = (exports.flexItemProperties = {
   
   "flex-basis": PropTypes.string,
 
@@ -30,18 +29,16 @@ const flexItemProperties = exports.flexItemProperties = {
   "max-width": PropTypes.string,
 
   
-  "height": PropTypes.string,
+  height: PropTypes.string,
 
   
-  "width": PropTypes.string,
-
-};
-
+  width: PropTypes.string,
+});
 
 
 
-const flexItemSizing = exports.flexItemSizing = {
 
+const flexItemSizing = (exports.flexItemSizing = {
   
   crossMaxSize: PropTypes.number,
 
@@ -61,14 +58,12 @@ const flexItemSizing = exports.flexItemSizing = {
 
   
   mainMinSize: PropTypes.number,
-
-};
-
+});
 
 
 
-const flexItem = exports.flexItem = {
 
+const flexItem = (exports.flexItem = {
   
   actorID: PropTypes.string,
 
@@ -83,14 +78,12 @@ const flexItem = exports.flexItem = {
 
   
   properties: PropTypes.shape(flexItemProperties),
-
-};
-
+});
 
 
 
-const flexContainerProperties = exports.flexContainerProperties = {
 
+const flexContainerProperties = (exports.flexContainerProperties = {
   
   "align-content": PropTypes.string,
 
@@ -105,14 +98,12 @@ const flexContainerProperties = exports.flexContainerProperties = {
 
   
   "justify-content": PropTypes.string,
-
-};
-
+});
 
 
 
-const flexContainer = exports.flexContainer = {
 
+const flexContainer = (exports.flexContainer = {
   
   actorID: PropTypes.string,
 
@@ -133,14 +124,12 @@ const flexContainer = exports.flexContainer = {
 
   
   properties: PropTypes.shape(flexContainerProperties),
-
-};
+});
 
 
 
 
 exports.flexbox = {
-
   
   color: PropTypes.string,
 
@@ -153,5 +142,4 @@ exports.flexbox = {
 
   
   highlighted: PropTypes.bool,
-
 };

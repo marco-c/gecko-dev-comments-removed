@@ -4,7 +4,10 @@
 
 "use strict";
 
-const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
+const {
+  createFactory,
+  PureComponent,
+} = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
@@ -89,14 +92,25 @@ class FontEditor extends PureComponent {
     });
 
     const topFontsList = renderedFontGroups.slice(0, MAX_FONTS);
-    const moreFontsList = renderedFontGroups.slice(MAX_FONTS, renderedFontGroups.length);
+    const moreFontsList = renderedFontGroups.slice(
+      MAX_FONTS,
+      renderedFontGroups.length
+    );
 
     const moreFonts = !moreFontsList.length
       ? null
-      : dom.details({},
-          dom.summary({},
-            dom.span({ className: "label-open" }, getStr("fontinspector.showMore")),
-            dom.span({ className: "label-close" }, getStr("fontinspector.showLess"))
+      : dom.details(
+          {},
+          dom.summary(
+            {},
+            dom.span(
+              { className: "label-open" },
+              getStr("fontinspector.showMore")
+            ),
+            dom.span(
+              { className: "label-close" },
+              getStr("fontinspector.showLess")
+            )
           ),
           moreFontsList
         );
@@ -139,52 +153,68 @@ class FontEditor extends PureComponent {
         {
           className: "font-family-name",
         },
-        family),
+        family
+      ),
       group
     );
   }
 
   renderFontSize(value) {
-    return value !== null && FontSize({
-      key: `${this.props.fontEditor.id}:font-size`,
-      disabled: this.props.fontEditor.disabled,
-      onChange: this.props.onPropertyChange,
-      value,
-    });
+    return (
+      value !== null &&
+      FontSize({
+        key: `${this.props.fontEditor.id}:font-size`,
+        disabled: this.props.fontEditor.disabled,
+        onChange: this.props.onPropertyChange,
+        value,
+      })
+    );
   }
 
   renderLineHeight(value) {
-    return value !== null && LineHeight({
-      key: `${this.props.fontEditor.id}:line-height`,
-      disabled: this.props.fontEditor.disabled,
-      onChange: this.props.onPropertyChange,
-      value,
-    });
+    return (
+      value !== null &&
+      LineHeight({
+        key: `${this.props.fontEditor.id}:line-height`,
+        disabled: this.props.fontEditor.disabled,
+        onChange: this.props.onPropertyChange,
+        value,
+      })
+    );
   }
 
   renderLetterSpacing(value) {
-    return value !== null && LetterSpacing({
-      key: `${this.props.fontEditor.id}:letter-spacing`,
-      disabled: this.props.fontEditor.disabled,
-      onChange: this.props.onPropertyChange,
-      value,
-    });
+    return (
+      value !== null &&
+      LetterSpacing({
+        key: `${this.props.fontEditor.id}:letter-spacing`,
+        disabled: this.props.fontEditor.disabled,
+        onChange: this.props.onPropertyChange,
+        value,
+      })
+    );
   }
 
   renderFontStyle(value) {
-    return value && FontStyle({
-      onChange: this.props.onPropertyChange,
-      disabled: this.props.fontEditor.disabled,
-      value,
-    });
+    return (
+      value &&
+      FontStyle({
+        onChange: this.props.onPropertyChange,
+        disabled: this.props.fontEditor.disabled,
+        value,
+      })
+    );
   }
 
   renderFontWeight(value) {
-    return value !== null && FontWeight({
-      onChange: this.props.onPropertyChange,
-      disabled: this.props.fontEditor.disabled,
-      value,
-    });
+    return (
+      value !== null &&
+      FontWeight({
+        onChange: this.props.onPropertyChange,
+        disabled: this.props.fontEditor.disabled,
+        value,
+      })
+    );
   }
 
   
@@ -207,7 +237,7 @@ class FontEditor extends PureComponent {
       name: getStr("fontinspector.customInstanceName"),
       values: this.props.fontEditor.customInstanceValues,
     };
-    fontInstances = [ ...fontInstances, customInstance ];
+    fontInstances = [...fontInstances, customInstance];
 
     
     const instanceOptions = fontInstances.map(instance =>
@@ -225,9 +255,12 @@ class FontEditor extends PureComponent {
       {
         className: "font-control-input font-value-select",
         value: selectedInstance.name || customInstance.name,
-        onChange: (e) => {
-          const instance = fontInstances.find(inst => e.target.value === inst.name);
-          instance && this.props.onInstanceChange(instance.name, instance.values);
+        onChange: e => {
+          const instance = fontInstances.find(
+            inst => e.target.value === inst.name
+          );
+          instance &&
+            this.props.onInstanceChange(instance.name, instance.values);
         },
       },
       instanceOptions
@@ -267,14 +300,18 @@ class FontEditor extends PureComponent {
     
     const font = fonts[0];
     const hasFontAxes = font && font.variationAxes;
-    const hasFontInstances = font && font.variationInstances
-      && font.variationInstances.length > 0;
-    const hasSlantOrItalicAxis = hasFontAxes && font.variationAxes.find(axis => {
-      return axis.tag === "slnt" || axis.tag === "ital";
-    });
-    const hasWeightAxis = hasFontAxes && font.variationAxes.find(axis => {
-      return axis.tag === "wght";
-    });
+    const hasFontInstances =
+      font && font.variationInstances && font.variationInstances.length > 0;
+    const hasSlantOrItalicAxis =
+      hasFontAxes &&
+      font.variationAxes.find(axis => {
+        return axis.tag === "slnt" || axis.tag === "ital";
+      });
+    const hasWeightAxis =
+      hasFontAxes &&
+      font.variationAxes.find(axis => {
+        return axis.tag === "wght";
+      });
 
     
     if (!font) {
@@ -288,7 +325,8 @@ class FontEditor extends PureComponent {
       
       this.renderUsedFonts(fonts),
       
-      hasFontInstances && this.renderInstances(font.variationInstances, instance),
+      hasFontInstances &&
+        this.renderInstances(font.variationInstances, instance),
       
       this.renderFontSize(properties["font-size"]),
       

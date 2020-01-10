@@ -19,11 +19,9 @@ class FlexItemSizingOutline extends PureComponent {
   }
 
   renderBasisOutline(mainBaseSize) {
-    return (
-      dom.div({
-        className: "flex-outline-basis" + (!mainBaseSize ? " zero-basis" : ""),
-      })
-    );
+    return dom.div({
+      className: "flex-outline-basis" + (!mainBaseSize ? " zero-basis" : ""),
+    });
   }
 
   renderDeltaOutline(mainDeltaSize) {
@@ -31,31 +29,27 @@ class FlexItemSizingOutline extends PureComponent {
       return null;
     }
 
-    return (
-      dom.div({
-        className: "flex-outline-delta",
-      })
-    );
+    return dom.div({
+      className: "flex-outline-delta",
+    });
   }
 
   renderFinalOutline(isClamped) {
-    return dom.div({ className: "flex-outline-final" + (isClamped ? " clamped" : "") });
+    return dom.div({
+      className: "flex-outline-final" + (isClamped ? " clamped" : ""),
+    });
   }
 
   renderPoint(className, label = className) {
-    return (
-      dom.div({
-        key: className,
-        className: `flex-outline-point ${className}`,
-        "data-label": label,
-      })
-    );
+    return dom.div({
+      key: className,
+      className: `flex-outline-point ${className}`,
+      "data-label": label,
+    });
   }
 
   render() {
-    const {
-      flexItemSizing,
-    } = this.props.flexItem;
+    const { flexItemSizing } = this.props.flexItem;
     const {
       mainAxisDirection,
       mainBaseSize,
@@ -69,9 +63,9 @@ class FlexItemSizingOutline extends PureComponent {
     let mainFinalSize = mainBaseSize + mainDeltaSize;
     mainFinalSize = Math.max(mainFinalSize, mainMinSize);
     mainFinalSize =
-      mainMaxSize === null ?
-        mainFinalSize :
-        Math.min(mainFinalSize, mainMaxSize);
+      mainMaxSize === null
+        ? mainFinalSize
+        : Math.min(mainFinalSize, mainMaxSize);
 
     
     if (!mainFinalSize && !mainBaseSize && !mainDeltaSize) {
@@ -117,8 +111,14 @@ class FlexItemSizingOutline extends PureComponent {
     
     
     
-    const offsetBy = sizes.reduce((acc, curr) => curr.size < acc ? curr.size : acc, 0);
-    sizes = sizes.map(entry => ({ size: entry.size - offsetBy, name: entry.name }));
+    const offsetBy = sizes.reduce(
+      (acc, curr) => (curr.size < acc ? curr.size : acc),
+      0
+    );
+    sizes = sizes.map(entry => ({
+      size: entry.size - offsetBy,
+      name: entry.name,
+    }));
 
     let gridTemplateColumns = "[";
     let accumulatedSize = 0;
@@ -138,29 +138,31 @@ class FlexItemSizingOutline extends PureComponent {
     
     const renderedBaseAndFinalPoints = [];
     if (mainFinalSize === mainBaseSize) {
-      renderedBaseAndFinalPoints.push(this.renderPoint("basisfinal", "basis/final"));
+      renderedBaseAndFinalPoints.push(
+        this.renderPoint("basisfinal", "basis/final")
+      );
     } else {
       renderedBaseAndFinalPoints.push(this.renderPoint("basis"));
       renderedBaseAndFinalPoints.push(this.renderPoint("final"));
     }
 
-    return (
-      dom.div({ className: "flex-outline-container" },
-        dom.div(
-          {
-            className: `flex-outline ${mainAxisDirection}` +
-                       (mainDeltaSize > 0 ? " growing" : " shrinking"),
-            style: {
-              gridTemplateColumns,
-            },
+    return dom.div(
+      { className: "flex-outline-container" },
+      dom.div(
+        {
+          className:
+            `flex-outline ${mainAxisDirection}` +
+            (mainDeltaSize > 0 ? " growing" : " shrinking"),
+          style: {
+            gridTemplateColumns,
           },
-          renderedBaseAndFinalPoints,
-          showMin ? this.renderPoint("min") : null,
-          showMax ? this.renderPoint("max") : null,
-          this.renderBasisOutline(mainBaseSize),
-          this.renderDeltaOutline(mainDeltaSize),
-          this.renderFinalOutline(clampState !== "unclamped")
-        )
+        },
+        renderedBaseAndFinalPoints,
+        showMin ? this.renderPoint("min") : null,
+        showMax ? this.renderPoint("max") : null,
+        this.renderBasisOutline(mainBaseSize),
+        this.renderDeltaOutline(mainDeltaSize),
+        this.renderFinalOutline(clampState !== "unclamped")
       )
     );
   }

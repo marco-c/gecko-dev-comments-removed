@@ -7,9 +7,14 @@
 
 
 const REQUESTS = [
-  { url: "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=Sample" },
-  { url: "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=Sample" +
-         "&cookies=1" },
+  {
+    url: "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=Sample",
+  },
+  {
+    url:
+      "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=Sample" +
+      "&cookies=1",
+  },
   { url: "sjs_content-type-test-server.sjs?fmt=css&text=sample" },
   { url: "sjs_content-type-test-server.sjs?fmt=js&text=sample" },
   { url: "sjs_content-type-test-server.sjs?fmt=font" },
@@ -23,11 +28,9 @@ const REQUESTS = [
 function testAutocompleteContents(expected, document) {
   expected.forEach(function(item, i) {
     is(
-      document
-        .querySelector(
-          `.devtools-autocomplete-listbox .autocomplete-item:nth-child(${i + 1})`
-        )
-        .textContent,
+      document.querySelector(
+        `.devtools-autocomplete-listbox .autocomplete-item:nth-child(${i + 1})`
+      ).textContent,
       item,
       `${expected[i]} found`
     );
@@ -51,59 +54,86 @@ add_task(async function() {
   await waitNetwork;
 
   EventUtils.synthesizeMouseAtCenter(
-    document.querySelector(".devtools-filterinput"), {}, document.defaultView);
+    document.querySelector(".devtools-filterinput"),
+    {},
+    document.defaultView
+  );
   
-  ok(!document.querySelector(".devtools-autocomplete-popup"),
-    "Autocomplete Popup still hidden");
+  ok(
+    !document.querySelector(".devtools-autocomplete-popup"),
+    "Autocomplete Popup still hidden"
+  );
 
   document.querySelector(".devtools-filterinput").focus();
 
   
   EventUtils.sendString("2");
-  ok(document.querySelector(".devtools-autocomplete-popup"),
-    "Autocomplete Popup Created");
-  testAutocompleteContents([
-    "status-code:200",
-    "status-code:201",
-    "status-code:202",
-    "status-code:203",
-    "status-code:204",
-    "status-code:205",
-    "status-code:206",
-  ], document);
+  ok(
+    document.querySelector(".devtools-autocomplete-popup"),
+    "Autocomplete Popup Created"
+  );
+  testAutocompleteContents(
+    [
+      "status-code:200",
+      "status-code:201",
+      "status-code:202",
+      "status-code:203",
+      "status-code:204",
+      "status-code:205",
+      "status-code:206",
+    ],
+    document
+  );
   EventUtils.synthesizeKey("KEY_Enter");
-  is(document.querySelector(".devtools-filterinput").value,
-    "status-code:200", "Value correctly set after Enter");
-  ok(!document.querySelector(".devtools-autocomplete-popup"),
-    "Autocomplete Popup hidden after keyboard Enter key");
+  is(
+    document.querySelector(".devtools-filterinput").value,
+    "status-code:200",
+    "Value correctly set after Enter"
+  );
+  ok(
+    !document.querySelector(".devtools-autocomplete-popup"),
+    "Autocomplete Popup hidden after keyboard Enter key"
+  );
 
   
   
   EventUtils.sendString(" s");
-  ok(document.querySelector(".devtools-autocomplete-popup"),
-    "Autocomplete Popup Created");
-  testAutocompleteContents([
-    "scheme:",
-    "set-cookie-domain:",
-    "set-cookie-name:",
-    "set-cookie-value:",
-    "size:",
-    "status-code:",
-  ], document);
+  ok(
+    document.querySelector(".devtools-autocomplete-popup"),
+    "Autocomplete Popup Created"
+  );
+  testAutocompleteContents(
+    [
+      "scheme:",
+      "set-cookie-domain:",
+      "set-cookie-name:",
+      "set-cookie-value:",
+      "size:",
+      "status-code:",
+    ],
+    document
+  );
 
   EventUtils.sendString("c");
   testAutocompleteContents(["scheme:"], document);
   EventUtils.synthesizeKey("KEY_Tab");
   
-  ok(document.querySelector(".devtools-autocomplete-popup"),
-    "Autocomplete Popup alive with content values");
+  ok(
+    document.querySelector(".devtools-autocomplete-popup"),
+    "Autocomplete Popup alive with content values"
+  );
   testAutocompleteContents(["scheme:http"], document);
 
   EventUtils.synthesizeKey("KEY_Enter");
-  is(document.querySelector(".devtools-filterinput").value,
-    "status-code:200 scheme:http", "Value correctly set after Enter");
-  ok(!document.querySelector(".devtools-autocomplete-popup"),
-    "Autocomplete Popup hidden after keyboard Enter key");
+  is(
+    document.querySelector(".devtools-filterinput").value,
+    "status-code:200 scheme:http",
+    "Value correctly set after Enter"
+  );
+  ok(
+    !document.querySelector(".devtools-autocomplete-popup"),
+    "Autocomplete Popup hidden after keyboard Enter key"
+  );
 
   
   
@@ -115,9 +145,11 @@ add_task(async function() {
   EventUtils.synthesizeKey("KEY_Enter");
   
   EventUtils.synthesizeKey("KEY_Enter");
-  is(document.querySelector(".devtools-filterinput").value,
+  is(
+    document.querySelector(".devtools-filterinput").value,
     "status-code:200 scheme:http protocol:HTTP/1.1",
-    "Tokenized click generates correct value in input box");
+    "Tokenized click generates correct value in input box"
+  );
 
   
   EventUtils.sendString(" status-code:");
@@ -125,43 +157,50 @@ add_task(async function() {
 
   
   EventUtils.sendString("304");
-  ok(!document.querySelector(".devtools-autocomplete-popup"),
-    "Typing the exact value closes autocomplete");
+  ok(
+    !document.querySelector(".devtools-autocomplete-popup"),
+    "Typing the exact value closes autocomplete"
+  );
 
   
   EventUtils.sendString(" mime-type:text");
-  testAutocompleteContents([
-    "mime-type:text/css",
-    "mime-type:text/html",
-    "mime-type:text/plain",
-  ], document);
+  testAutocompleteContents(
+    ["mime-type:text/css", "mime-type:text/html", "mime-type:text/plain"],
+    document
+  );
 
   
   EventUtils.sendString(" -");
-  testAutocompleteContents([
-    "-cause:",
-    "-domain:",
-    "-has-response-header:",
-    "-is:",
-    "-larger-than:",
-    "-method:",
-    "-mime-type:",
-    "-protocol:",
-    "-regexp:",
-    "-remote-ip:",
-    "-scheme:",
-    "-set-cookie-domain:",
-    "-set-cookie-name:",
-    "-set-cookie-value:",
-    "-size:",
-    "-status-code:",
-    "-transferred-larger-than:",
-    "-transferred:",
-  ], document);
+  testAutocompleteContents(
+    [
+      "-cause:",
+      "-domain:",
+      "-has-response-header:",
+      "-is:",
+      "-larger-than:",
+      "-method:",
+      "-mime-type:",
+      "-protocol:",
+      "-regexp:",
+      "-remote-ip:",
+      "-scheme:",
+      "-set-cookie-domain:",
+      "-set-cookie-name:",
+      "-set-cookie-value:",
+      "-size:",
+      "-status-code:",
+      "-transferred-larger-than:",
+      "-transferred:",
+    ],
+    document
+  );
 
   
   EventUtils.sendString("is:");
-  testAutocompleteContents(["-is:cached", "-is:from-cache", "-is:running"], document);
+  testAutocompleteContents(
+    ["-is:cached", "-is:from-cache", "-is:running"],
+    document
+  );
 
   await teardown(monitor);
 });

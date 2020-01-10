@@ -6,18 +6,19 @@
 
 const { createEnum } = require("devtools/client/shared/enum");
 
-createEnum([
+createEnum(
+  [
+    
+    "CLEAR_FLEXBOX",
 
-  
-  "CLEAR_FLEXBOX",
+    
+    "UPDATE_FLEXBOX",
 
-  
-  "UPDATE_FLEXBOX",
+    
+    "UPDATE_FLEXBOX_COLOR",
 
-  
-  "UPDATE_FLEXBOX_COLOR",
-
-  
-  "UPDATE_FLEXBOX_HIGHLIGHTED",
-
-], module.exports);
+    
+    "UPDATE_FLEXBOX_HIGHLIGHTED",
+  ],
+  module.exports
+);

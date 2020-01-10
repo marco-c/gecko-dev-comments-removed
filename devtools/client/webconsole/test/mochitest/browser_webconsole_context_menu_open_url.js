@@ -8,8 +8,9 @@
 
 "use strict";
 
-const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/mochitest/test-console.html";
+const TEST_URI =
+  "http://example.com/browser/devtools/client/webconsole/" +
+  "test/mochitest/test-console.html";
 
 add_task(async function() {
   
@@ -67,10 +68,16 @@ add_task(async function() {
 
 
 function listenToTabLoad() {
-  return new Promise((resolve) => {
-    gBrowser.tabContainer.addEventListener("TabOpen", function(evt) {
-      const newTab = evt.target;
-      BrowserTestUtils.browserLoaded(newTab.linkedBrowser).then(() => resolve(newTab));
-    }, {capture: true, once: true});
+  return new Promise(resolve => {
+    gBrowser.tabContainer.addEventListener(
+      "TabOpen",
+      function(evt) {
+        const newTab = evt.target;
+        BrowserTestUtils.browserLoaded(newTab.linkedBrowser).then(() =>
+          resolve(newTab)
+        );
+      },
+      { capture: true, once: true }
+    );
   });
 }

@@ -7,8 +7,7 @@
 
 "use strict";
 
-const TEST_URI =
-`data:text/html;charset=utf8,
+const TEST_URI = `data:text/html;charset=utf8,
 <title>browser_console_nsiconsolemessage.js</title>
 <p>hello world<p>
 nsIConsoleMessages ftw!`;
@@ -42,10 +41,14 @@ add_task(async function() {
   
   
   text = hud.outputNode.textContent;
-  ok(!text.includes("cachedBrowserConsoleMessage"),
-    "cached nsIConsoleMessages are not displayed");
-  ok(!text.includes("liveBrowserConsoleMessage"),
-    "nsIConsoleMessages are not displayed");
+  ok(
+    !text.includes("cachedBrowserConsoleMessage"),
+    "cached nsIConsoleMessages are not displayed"
+  );
+  ok(
+    !text.includes("liveBrowserConsoleMessage"),
+    "nsIConsoleMessages are not displayed"
+  );
 
   await closeConsole();
 
@@ -57,7 +60,9 @@ add_task(async function() {
   Services.console.logStringMessage("liveBrowserConsoleMessage2");
   await waitFor(() => findMessage(hud, "liveBrowserConsoleMessage2"));
 
-  const msg = await waitFor(() => findMessage(hud, "liveBrowserConsoleMessage"));
+  const msg = await waitFor(() =>
+    findMessage(hud, "liveBrowserConsoleMessage")
+  );
   ok(msg, "message element for liveBrowserConsoleMessage (nsIConsoleMessage)");
 
   
@@ -66,9 +71,15 @@ add_task(async function() {
   });
 
   
-  await waitFor(() => findMessages(hud, "cachedBrowserConsoleMessage").length === 0);
-  await waitFor(() => findMessages(hud, "liveBrowserConsoleMessage").length === 0);
-  await waitFor(() => findMessages(hud, "liveBrowserConsoleMessage2").length === 0);
+  await waitFor(
+    () => findMessages(hud, "cachedBrowserConsoleMessage").length === 0
+  );
+  await waitFor(
+    () => findMessages(hud, "liveBrowserConsoleMessage").length === 0
+  );
+  await waitFor(
+    () => findMessages(hud, "liveBrowserConsoleMessage2").length === 0
+  );
 
   resetFilters(hud);
 });

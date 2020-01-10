@@ -5,8 +5,7 @@
 
 "use strict";
 
-const TEST_URI =
-  `data:text/html;charset=utf-8,Web Console test top-level await when debugger paused`;
+const TEST_URI = `data:text/html;charset=utf-8,Web Console test top-level await when debugger paused`;
 
 add_task(async function() {
   
@@ -24,7 +23,7 @@ async function performTests() {
   
   await pushPref("devtools.toolbox.splitconsoleEnabled", false);
   const hud = await openNewTabAndConsole(TEST_URI);
-  const {jsterm} = hud;
+  const { jsterm } = hud;
 
   const pauseExpression = `(() => {
     var foo = ["bar"];
@@ -48,7 +47,11 @@ async function performTests() {
     setTimeout(() => res(["res", ...foo]), 1000);
   })`;
 
-  const onAwaitResultMessage = waitForMessage(hud, `[ "res", "bar" ]`, ".message.result");
+  const onAwaitResultMessage = waitForMessage(
+    hud,
+    `[ "res", "bar" ]`,
+    ".message.result"
+  );
   jsterm.execute(awaitExpression);
   
   
@@ -62,7 +65,9 @@ async function performTests() {
   await resume(dbg);
 
   await onAwaitResultMessage;
-  const messages = hud.ui.outputNode.querySelectorAll(".message.result .message-body");
+  const messages = hud.ui.outputNode.querySelectorAll(
+    ".message.result .message-body"
+  );
   const messagesText = Array.from(messages).map(n => n.textContent);
   const expectedMessages = [
     
@@ -72,6 +77,9 @@ async function performTests() {
     
     `Array [ "res", "bar" ]`,
   ];
-  is(JSON.stringify(messagesText, null, 2), JSON.stringify(expectedMessages, null, 2),
-    "The output contains the the expected messages, in the expected order");
+  is(
+    JSON.stringify(messagesText, null, 2),
+    JSON.stringify(expectedMessages, null, 2),
+    "The output contains the the expected messages, in the expected order"
+  );
 }

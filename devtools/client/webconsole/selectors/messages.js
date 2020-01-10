@@ -5,8 +5,18 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "getWarningGroupType", "devtools/client/webconsole/utils/messages", true);
-loader.lazyRequireGetter(this, "getParentWarningGroupMessageId", "devtools/client/webconsole/utils/messages", true);
+loader.lazyRequireGetter(
+  this,
+  "getWarningGroupType",
+  "devtools/client/webconsole/utils/messages",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "getParentWarningGroupMessageId",
+  "devtools/client/webconsole/utils/messages",
+  true
+);
 
 function getAllMessagesById(state) {
   return state.messages.messagesById;

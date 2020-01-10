@@ -5,8 +5,10 @@
 
 "use strict";
 
-const {LocalizationHelper} = require("devtools/shared/l10n");
-const L10N = new LocalizationHelper("devtools/client/locales/sourceeditor.properties");
+const { LocalizationHelper } = require("devtools/shared/l10n");
+const L10N = new LocalizationHelper(
+  "devtools/client/locales/sourceeditor.properties"
+);
 
 const { OS } = Services.appinfo;
 
@@ -15,8 +17,10 @@ const FIND_KEY = L10N.getStr("find.key");
 const FINDNEXT_KEY = L10N.getStr("findNext.key");
 const FINDPREV_KEY = L10N.getStr("findPrev.key");
 
-const REPLACE_KEY = OS == "Darwin" ? L10N.getStr("replaceAllMac.key")
-                                   : L10N.getStr("replaceAll.key");
+const REPLACE_KEY =
+  OS == "Darwin"
+    ? L10N.getStr("replaceAllMac.key")
+    : L10N.getStr("replaceAll.key");
 
 
 
@@ -26,13 +30,18 @@ const REPLACE_KEY = OS == "Darwin" ? L10N.getStr("replaceAllMac.key")
 
 
 
-const dispatchAndWaitForFocus = (target) => new Promise((resolve) => {
-  target.addEventListener("focus", function() {
-    resolve(target);
-  }, {once: true});
+const dispatchAndWaitForFocus = target =>
+  new Promise(resolve => {
+    target.addEventListener(
+      "focus",
+      function() {
+        resolve(target);
+      },
+      { once: true }
+    );
 
-  target.dispatchEvent(new UIEvent("focus"));
-});
+    target.dispatchEvent(new UIEvent("focus"));
+  });
 
 function openSearchBox(ed) {
   const edDoc = ed.container.contentDocument;
@@ -66,8 +75,11 @@ function testFindAgain(ed, inputLine, expectCursor, isFindPrev = false) {
     synthesizeKeyShortcut(FINDNEXT_KEY, edWin);
   }
 
-  ch(ed.getCursor(), expectCursor,
-    "find: " + inputLine + " expects cursor: " + expectCursor.toSource());
+  ch(
+    ed.getCursor(),
+    expectCursor,
+    "find: " + inputLine + " expects cursor: " + expectCursor.toSource()
+  );
 }
 
 const testSearchBoxTextIsSelected = async function(ed) {
@@ -97,8 +109,10 @@ const testSearchBoxTextIsSelected = async function(ed) {
 
   let { selectionStart, selectionEnd, value } = input;
 
-  ok(selectionStart === 0 && selectionEnd === value.length,
-    "search box's text is selected when re-opened");
+  ok(
+    selectionStart === 0 && selectionEnd === value.length,
+    "search box's text is selected when re-opened"
+  );
 
   
   input.setSelectionRange(0, 0);
@@ -107,8 +121,10 @@ const testSearchBoxTextIsSelected = async function(ed) {
 
   ({ selectionStart, selectionEnd } = input);
 
-  ok(selectionStart === 0 && selectionEnd === value.length,
-    "search box's text is selected when find key is pressed");
+  ok(
+    selectionStart === 0 && selectionEnd === value.length,
+    "search box's text is selected when find key is pressed"
+  );
 
   
   EventUtils.synthesizeKey("VK_ESCAPE", {}, edWin);
@@ -139,15 +155,19 @@ const testReplaceBoxTextIsSelected = async function(ed) {
 
   let { selectionStart, selectionEnd, value } = input;
 
-  ok(!(selectionStart === 0 && selectionEnd === value.length),
-    "Text in dialog box is not selected");
+  ok(
+    !(selectionStart === 0 && selectionEnd === value.length),
+    "Text in dialog box is not selected"
+  );
 
   synthesizeKeyShortcut(REPLACE_KEY, edWin);
 
   ({ selectionStart, selectionEnd } = input);
 
-  ok(selectionStart === 0 && selectionEnd === value.length,
-    "dialog box's text is selected when replace key is pressed");
+  ok(
+    selectionStart === 0 && selectionEnd === value.length,
+    "dialog box's text is selected when replace key is pressed"
+  );
 
   
   EventUtils.synthesizeKey("VK_ESCAPE", {}, edWin);
@@ -156,13 +176,15 @@ const testReplaceBoxTextIsSelected = async function(ed) {
 add_task(async function() {
   const { ed, win } = await setup();
 
-  ed.setText([
-    "// line 1",
-    "//  line 2",
-    "//   line 3",
-    "//    line 4",
-    "//     line 5",
-  ].join("\n"));
+  ed.setText(
+    [
+      "// line 1",
+      "//  line 2",
+      "//   line 3",
+      "//    line 4",
+      "//     line 5",
+    ].join("\n")
+  );
 
   await promiseWaitForFocus();
 
@@ -171,36 +193,19 @@ add_task(async function() {
   const testVectors = [
     
     
-    ["line",
-     {line: 0, ch: 7}],
-    ["line",
-     {line: 1, ch: 8}],
-    ["line",
-     {line: 2, ch: 9}],
-    ["line",
-     {line: 3, ch: 10}],
-    ["line",
-     {line: 4, ch: 11}],
-    ["ne 3",
-     {line: 2, ch: 11}],
-    ["line 1",
-     {line: 0, ch: 9}],
+    ["line", { line: 0, ch: 7 }],
+    ["line", { line: 1, ch: 8 }],
+    ["line", { line: 2, ch: 9 }],
+    ["line", { line: 3, ch: 10 }],
+    ["line", { line: 4, ch: 11 }],
+    ["ne 3", { line: 2, ch: 11 }],
+    ["line 1", { line: 0, ch: 9 }],
     
-    ["line",
-     {line: 4, ch: 11},
-     true],
-    ["line",
-     {line: 3, ch: 10},
-     true],
-    ["line",
-     {line: 2, ch: 9},
-     true],
-    ["line",
-     {line: 1, ch: 8},
-     true],
-    ["line",
-     {line: 0, ch: 7},
-     true],
+    ["line", { line: 4, ch: 11 }, true],
+    ["line", { line: 3, ch: 10 }, true],
+    ["line", { line: 2, ch: 9 }, true],
+    ["line", { line: 1, ch: 8 }, true],
+    ["line", { line: 0, ch: 7 }, true],
   ];
 
   for (const v of testVectors) {

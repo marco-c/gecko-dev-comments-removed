@@ -9,10 +9,30 @@
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 
-loader.lazyRequireGetter(this, "focusableSelector", "devtools/client/shared/focus", true);
-loader.lazyRequireGetter(this, "TooltipToggle", "devtools/client/shared/widgets/tooltip/TooltipToggle", true);
-loader.lazyRequireGetter(this, "getCurrentZoom", "devtools/shared/layout/utils", true);
-loader.lazyRequireGetter(this, "listenOnce", "devtools/shared/async-utils", true);
+loader.lazyRequireGetter(
+  this,
+  "focusableSelector",
+  "devtools/client/shared/focus",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "TooltipToggle",
+  "devtools/client/shared/widgets/tooltip/TooltipToggle",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "getCurrentZoom",
+  "devtools/shared/layout/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "listenOnce",
+  "devtools/shared/async-utils",
+  true
+);
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -33,35 +53,35 @@ const TYPE = {
 module.exports.TYPE = TYPE;
 
 const ARROW_WIDTH = {
-  "normal": 0,
-  "arrow": 32,
+  normal: 0,
+  arrow: 32,
   
   
   
-  "doorhanger": 24,
+  doorhanger: 24,
 };
 
 const ARROW_OFFSET = {
-  "normal": 0,
+  normal: 0,
   
-  "arrow": 20,
+  arrow: 20,
   
   
-  "doorhanger": 8,
+  doorhanger: 8,
 };
 
 const EXTRA_HEIGHT = {
-  "normal": 0,
+  normal: 0,
   
-  "arrow": 13,
+  arrow: 13,
   
-  "doorhanger": 9,
+  doorhanger: 9,
 };
 
 const EXTRA_BORDER = {
-  "normal": 0,
-  "arrow": -0.5,
-  "doorhanger": 0,
+  normal: 0,
+  arrow: -0.5,
+  doorhanger: 0,
 };
 
 
@@ -93,9 +113,9 @@ const calculateVerticalPosition = (
   pos,
   offset
 ) => {
-  const {TOP, BOTTOM} = POSITION;
+  const { TOP, BOTTOM } = POSITION;
 
-  let {top: anchorTop, height: anchorHeight} = anchorRect;
+  let { top: anchorTop, height: anchorHeight } = anchorRect;
 
   
   anchorTop -= viewportRect.top;
@@ -121,12 +141,15 @@ const calculateVerticalPosition = (
   height = Math.floor(height);
 
   
-  let top = pos === TOP ? anchorTop - height - offset : anchorTop + anchorHeight + offset;
+  let top =
+    pos === TOP
+      ? anchorTop - height - offset
+      : anchorTop + anchorHeight + offset;
 
   
   top += viewportRect.top;
 
-  return {top, height, computedPosition: pos};
+  return { top, height, computedPosition: pos };
 };
 
 
@@ -260,16 +283,16 @@ const getRelativeRect = function(node, relativeTo) {
   
   
   if (!node.getBoxQuads) {
-    const {top, left, width, height} = node.getBoundingClientRect();
+    const { top, left, width, height } = node.getBoundingClientRect();
     const right = left + width;
     const bottom = top + height;
-    return {top, right, bottom, left, width, height};
+    return { top, right, bottom, left, width, height };
   }
 
   
-  const {width, height} = node.getBoundingClientRect();
+  const { width, height } = node.getBoundingClientRect();
 
-  const quadBounds = node.getBoxQuads({relativeTo})[0].getBounds();
+  const quadBounds = node.getBoxQuads({ relativeTo })[0].getBounds();
   const top = quadBounds.top;
   const left = quadBounds.left;
 
@@ -277,7 +300,7 @@ const getRelativeRect = function(node, relativeTo) {
   const right = left + width;
   const bottom = top + height;
 
-  return {top, right, bottom, left, width, height};
+  return { top, right, bottom, left, width, height };
 };
 
 
@@ -301,13 +324,16 @@ const getRelativeRect = function(node, relativeTo) {
 
 
 
-function HTMLTooltip(toolboxDoc, {
+function HTMLTooltip(
+  toolboxDoc,
+  {
     id = "",
     className = "",
     type = "normal",
     consumeOutsideClicks = true,
     useXulWrapper = false,
-  } = {}) {
+  } = {}
+) {
   EventEmitter.decorate(this);
 
   this.doc = toolboxDoc;
@@ -405,7 +431,7 @@ HTMLTooltip.prototype = {
 
 
 
-  setContentSize: function({width = "auto", height = "auto"} = {}) {
+  setContentSize: function({ width = "auto", height = "auto" } = {}) {
     this.preferredWidth = width;
     this.preferredHeight = height;
   },
@@ -482,7 +508,7 @@ HTMLTooltip.prototype = {
     }
   },
 
-  _updateContainerBounds(anchor, {position, x = 0, y = 0} = {}) {
+  _updateContainerBounds(anchor, { position, x = 0, y = 0 } = {}) {
     
     let anchorRect = getRelativeRect(anchor, this.doc);
     if (this.useXulWrapper) {
@@ -525,7 +551,7 @@ HTMLTooltip.prototype = {
       }
     }
 
-    const {left, width, arrowLeft} = calculateHorizontalPosition(
+    const { left, width, arrowLeft } = calculateHorizontalPosition(
       anchorRect,
       viewportRect,
       windowRect,
@@ -572,14 +598,17 @@ HTMLTooltip.prototype = {
       preferredHeight += verticalMargin;
     } else {
       const themeHeight =
-        EXTRA_HEIGHT[this.type] +
-        verticalMargin +
-        2 * EXTRA_BORDER[this.type];
+        EXTRA_HEIGHT[this.type] + verticalMargin + 2 * EXTRA_BORDER[this.type];
       preferredHeight = this.preferredHeight + themeHeight;
     }
 
-    const {top, height, computedPosition} =
-      calculateVerticalPosition(anchorRect, viewportRect, preferredHeight, position, y);
+    const { top, height, computedPosition } = calculateVerticalPosition(
+      anchorRect,
+      viewportRect,
+      preferredHeight,
+      position,
+      y
+    );
 
     this._position = computedPosition;
     const isTop = computedPosition === POSITION.TOP;
@@ -588,8 +617,10 @@ HTMLTooltip.prototype = {
 
     
     
-    this.container.classList.toggle("tooltip-flexible-height",
-      this.preferredHeight === Infinity);
+    this.container.classList.toggle(
+      "tooltip-flexible-height",
+      this.preferredHeight === Infinity
+    );
 
     this.container.style.height = height + "px";
 
@@ -686,8 +717,7 @@ HTMLTooltip.prototype = {
         viewportRect.width += diffWidth;
       }
     } else {
-      viewportRect = windowRect =
-        this.doc.documentElement.getBoundingClientRect();
+      viewportRect = windowRect = this.doc.documentElement.getBoundingClientRect();
     }
 
     return { viewportRect, windowRect };
@@ -935,7 +965,10 @@ HTMLTooltip.prototype = {
   },
 
   _showXulWrapperAt: function(left, top) {
-    this.xulPanelWrapper.addEventListener("popuphidden", this._onXulPanelHidden);
+    this.xulPanelWrapper.addEventListener(
+      "popuphidden",
+      this._onXulPanelHidden
+    );
     const onPanelShown = listenOnce(this.xulPanelWrapper, "popupshown");
     const zoom = getCurrentZoom(this.xulPanelWrapper);
     this.xulPanelWrapper.openPopupAtScreen(left * zoom, top * zoom, false);
@@ -948,7 +981,10 @@ HTMLTooltip.prototype = {
   },
 
   _hideXulWrapper: function() {
-    this.xulPanelWrapper.removeEventListener("popuphidden", this._onXulPanelHidden);
+    this.xulPanelWrapper.removeEventListener(
+      "popuphidden",
+      this._onXulPanelHidden
+    );
 
     if (this.xulPanelWrapper.state === "closed") {
       
@@ -965,11 +1001,18 @@ HTMLTooltip.prototype = {
 
 
 
-  _convertToScreenRect: function({left, top, width, height}) {
+  _convertToScreenRect: function({ left, top, width, height }) {
     
     
     left += this.doc.defaultView.mozInnerScreenX;
     top += this.doc.defaultView.mozInnerScreenY;
-    return {top, right: left + width, bottom: top + height, left, width, height};
+    return {
+      top,
+      right: left + width,
+      bottom: top + height,
+      left,
+      width,
+      height,
+    };
   },
 };

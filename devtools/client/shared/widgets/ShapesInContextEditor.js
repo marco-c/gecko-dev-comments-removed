@@ -70,7 +70,7 @@ class ShapesInContextEditor {
     }
 
     const textProp = this.rule.textProps[this.textPropIndex];
-    return (textProp && textProp.name === this.textPropName) ? textProp : null;
+    return textProp && textProp.name === this.textPropName ? textProp : null;
   }
 
   
@@ -79,8 +79,10 @@ class ShapesInContextEditor {
 
 
   async onRuleViewChanged() {
-    if (this.textProperty &&
-      (!this.textProperty.enabled || this.textProperty.overridden)) {
+    if (
+      this.textProperty &&
+      (!this.textProperty.enabled || this.textProperty.overridden)
+    ) {
       await this.hide();
     }
   }
@@ -95,7 +97,7 @@ class ShapesInContextEditor {
 
   async toggle(node, options, prop) {
     
-    if ((node == this.highlighterTargetNode) && (this.mode === options.mode)) {
+    if (node == this.highlighterTargetNode && this.mode === options.mode) {
       if (!options.transformMode) {
         await this.hide();
         return;
@@ -106,7 +108,7 @@ class ShapesInContextEditor {
 
     
     
-    if ((node == this.highlighterTargetNode) && (this.mode !== options.mode)) {
+    if (node == this.highlighterTargetNode && this.mode !== options.mode) {
       await this.hide();
     }
 
@@ -247,7 +249,9 @@ class ShapesInContextEditor {
 
     const pointSelector = ".ruleview-shape-point";
     
-    for (const node of shapeValueEl.querySelectorAll(`${pointSelector}.active`)) {
+    for (const node of shapeValueEl.querySelectorAll(
+      `${pointSelector}.active`
+    )) {
       node.classList.remove("active");
     }
 
@@ -256,7 +260,9 @@ class ShapesInContextEditor {
       return;
     }
 
-    const point = (data.point.includes(",")) ? data.point.split(",")[0] : data.point;
+    const point = data.point.includes(",")
+      ? data.point.split(",")[0]
+      : data.point;
 
     
 
@@ -265,9 +271,9 @@ class ShapesInContextEditor {
 
 
     const INSET_POINT_TYPES = ["top", "right", "bottom", "left"];
-    const selector = INSET_POINT_TYPES.includes(point) ?
-                  `${pointSelector}.${point}` :
-                  `${pointSelector}[data-point='${point}']`;
+    const selector = INSET_POINT_TYPES.includes(point)
+      ? `${pointSelector}.${point}`
+      : `${pointSelector}[data-point='${point}']`;
 
     for (const node of shapeValueEl.querySelectorAll(selector)) {
       node.classList.add("active");

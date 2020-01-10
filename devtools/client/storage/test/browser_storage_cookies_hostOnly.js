@@ -6,8 +6,9 @@
 
 
 
-SpecialPowers.pushPrefEnv({"set": [["security.allow_eval_with_system_principal",
-                                    true]]});
+SpecialPowers.pushPrefEnv({
+  set: [["security.allow_eval_with_system_principal", true]],
+});
 
 add_task(async function() {
   await openTabAndSetupStorage(MAIN_DOMAIN + "storage-complex-values.html");
@@ -26,4 +27,3 @@ add_task(async function() {
 
   await finishTests();
 });
-

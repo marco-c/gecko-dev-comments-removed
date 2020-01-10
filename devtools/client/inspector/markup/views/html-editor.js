@@ -38,8 +38,7 @@ function HTMLEditor(htmlDocument) {
 
   EventEmitter.decorate(this);
 
-  this.doc.defaultView.addEventListener("resize",
-    this.refresh, true);
+  this.doc.defaultView.addEventListener("resize", this.refresh, true);
 
   const config = {
     mode: Editor.modes.html,
@@ -62,7 +61,6 @@ function HTMLEditor(htmlDocument) {
 }
 
 HTMLEditor.prototype = {
-
   
 
 
@@ -159,8 +157,7 @@ HTMLEditor.prototype = {
 
 
   destroy: function() {
-    this.doc.defaultView.removeEventListener("resize",
-      this.refresh, true);
+    this.doc.defaultView.removeEventListener("resize", this.refresh, true);
     this.container.removeEventListener("click", this.hide);
     this.editorInner.removeEventListener("click", stopPropagation);
 

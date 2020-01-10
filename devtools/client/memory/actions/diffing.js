@@ -32,11 +32,15 @@ exports.toggleDiffing = function() {
 
 
 
-const selectSnapshotForDiffing = exports.selectSnapshotForDiffing = function(snapshot) {
-  assert(snapshotIsDiffable(snapshot),
-         "To select a snapshot for diffing, it must be diffable");
+const selectSnapshotForDiffing = (exports.selectSnapshotForDiffing = function(
+  snapshot
+) {
+  assert(
+    snapshotIsDiffable(snapshot),
+    "To select a snapshot for diffing, it must be diffable"
+  );
   return { type: actions.SELECT_SNAPSHOT_FOR_DIFFING, snapshot };
-};
+});
 
 
 
@@ -45,12 +49,20 @@ const selectSnapshotForDiffing = exports.selectSnapshotForDiffing = function(sna
 
 
 
-const takeCensusDiff = exports.takeCensusDiff = function(heapWorker, first, second) {
+const takeCensusDiff = (exports.takeCensusDiff = function(
+  heapWorker,
+  first,
+  second
+) {
   return async function(dispatch, getState) {
-    assert(snapshotIsDiffable(first),
-           `First snapshot must be in a diffable state, found ${first.state}`);
-    assert(snapshotIsDiffable(second),
-           `Second snapshot must be in a diffable state, found ${second.state}`);
+    assert(
+      snapshotIsDiffable(first),
+      `First snapshot must be in a diffable state, found ${first.state}`
+    );
+    assert(
+      snapshotIsDiffable(second),
+      `Second snapshot must be in a diffable state, found ${second.state}`
+    );
 
     let report, parentMap;
     let display = getState().censusDisplay;
@@ -61,9 +73,11 @@ const takeCensusDiff = exports.takeCensusDiff = function(heapWorker, first, seco
     }
 
     do {
-      if (!getState().diffing
-          || getState().diffing.firstSnapshotId !== first.id
-          || getState().diffing.secondSnapshotId !== second.id) {
+      if (
+        !getState().diffing ||
+        getState().diffing.firstSnapshotId !== first.id ||
+        getState().diffing.secondSnapshotId !== second.id
+      ) {
         
         
         
@@ -92,15 +106,17 @@ const takeCensusDiff = exports.takeCensusDiff = function(heapWorker, first, seco
           first.path,
           second.path,
           { breakdown: display.breakdown },
-          opts));
+          opts
+        ));
       } catch (error) {
         reportException("actions/diffing/takeCensusDiff", error);
         dispatch({ type: actions.DIFFING_ERROR, error });
         return;
       }
-    }
-    while (filter !== getState().filter
-           || display !== getState().censusDisplay);
+    } while (
+      filter !== getState().filter ||
+      display !== getState().censusDisplay
+    );
 
     dispatch({
       type: actions.TAKE_CENSUS_DIFF_END,
@@ -112,7 +128,7 @@ const takeCensusDiff = exports.takeCensusDiff = function(heapWorker, first, seco
       display,
     });
   };
-};
+});
 
 
 
@@ -121,14 +137,13 @@ const takeCensusDiff = exports.takeCensusDiff = function(heapWorker, first, seco
 
 
 
-const refreshDiffing = exports.refreshDiffing = function(heapWorker) {
+const refreshDiffing = (exports.refreshDiffing = function(heapWorker) {
   return function(dispatch, getState) {
     if (getState().diffing.secondSnapshotId === null) {
       return;
     }
 
-    assert(getState().diffing.firstSnapshotId,
-           "Should have first snapshot id");
+    assert(getState().diffing.firstSnapshotId, "Should have first snapshot id");
 
     if (getState().diffing.state === diffingState.TAKING_DIFF) {
       
@@ -142,7 +157,7 @@ const refreshDiffing = exports.refreshDiffing = function(heapWorker) {
     const second = getSnapshot(getState(), secondSnapshotId);
     dispatch(takeCensusDiff(heapWorker, first, second));
   };
-};
+});
 
 
 
@@ -153,8 +168,10 @@ const refreshDiffing = exports.refreshDiffing = function(heapWorker) {
 
 exports.selectSnapshotForDiffingAndRefresh = function(heapWorker, snapshot) {
   return async function(dispatch, getState) {
-    assert(getState().diffing,
-           "If we are selecting for diffing, we must be in diffing mode");
+    assert(
+      getState().diffing,
+      "If we are selecting for diffing, we must be in diffing mode"
+    );
     dispatch(selectSnapshotForDiffing(snapshot));
     await dispatch(refreshDiffing(heapWorker));
   };

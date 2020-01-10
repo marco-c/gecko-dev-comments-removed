@@ -9,21 +9,23 @@
 
 
 add_task(async function() {
-  const dbg = await attachRecordingDebugger(
-    "doc_rr_basic.html",
-    { waitForRecording: true }
-  );
+  const dbg = await attachRecordingDebugger("doc_rr_basic.html", {
+    waitForRecording: true,
+  });
 
-  const {tab, toolbox, threadClient, target} = dbg;
+  const { tab, toolbox, threadClient, target } = dbg;
   const console = await getDebuggerSplitConsole(dbg);
   const hud = console.hud;
 
-  const bp1 = await setBreakpoint(threadClient, "doc_rr_basic.html", 21,
-                                  { logValue: `"Logpoint Number " + number` });
-  const bp2 = await setBreakpoint(threadClient, "doc_rr_basic.html", 6,
-                                  { logValue: `"Logpoint Beginning"` });
-  const bp3 = await setBreakpoint(threadClient, "doc_rr_basic.html", 8,
-                                  { logValue: `"Logpoint Ending"` });
+  const bp1 = await setBreakpoint(threadClient, "doc_rr_basic.html", 21, {
+    logValue: `"Logpoint Number " + number`,
+  });
+  const bp2 = await setBreakpoint(threadClient, "doc_rr_basic.html", 6, {
+    logValue: `"Logpoint Beginning"`,
+  });
+  const bp3 = await setBreakpoint(threadClient, "doc_rr_basic.html", 8, {
+    logValue: `"Logpoint Ending"`,
+  });
 
   const messages = await waitForMessageCount(hud, "Logpoint", 12);
   ok(messages[0].textContent.includes("Beginning"));

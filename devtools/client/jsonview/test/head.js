@@ -9,7 +9,9 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/test/head.js", this);
+  "chrome://mochitests/content/browser/devtools/client/framework/test/head.js",
+  this
+);
 
 const JSON_VIEW_PREF = "devtools.jsonview.enabled";
 
@@ -45,10 +47,10 @@ registerCleanupFunction(() => {
 
 
 
-async function addJsonViewTab(url, {
-  appReadyState = "complete",
-  docReadyState = "complete",
-} = {}) {
+async function addJsonViewTab(
+  url,
+  { appReadyState = "complete", docReadyState = "complete" } = {}
+) {
   info("Adding a new JSON tab with URL: '" + url + "'");
   const tabAdded = BrowserTestUtils.waitForNewTab(gBrowser, url);
   const tabLoaded = addTab(url);
@@ -60,57 +62,74 @@ async function addJsonViewTab(url, {
   const rootDir = getRootDirectory(gTestPath);
 
   
-  const error = tabLoaded.then(() => ContentTask.spawn(browser, null, function() {
-    return new Promise((resolve, reject) => {
-      const {requirejs} = content.wrappedJSObject;
-      if (requirejs) {
-        requirejs.onError = err => {
-          info(err);
-          ok(false, "RequireJS error");
-          reject(err);
-        };
-      }
-    });
-  }));
+  const error = tabLoaded.then(() =>
+    ContentTask.spawn(browser, null, function() {
+      return new Promise((resolve, reject) => {
+        const { requirejs } = content.wrappedJSObject;
+        if (requirejs) {
+          requirejs.onError = err => {
+            info(err);
+            ok(false, "RequireJS error");
+            reject(err);
+          };
+        }
+      });
+    })
+  );
 
-  const data = {rootDir, appReadyState, docReadyState};
+  const data = { rootDir, appReadyState, docReadyState };
   
-  await Promise.race([error, ContentTask.spawn(browser, data, async function(data) {
-    
-    const {JSONView} = content.wrappedJSObject;
-    if (!JSONView) {
-      throw new Error("The JSON Viewer did not load.");
-    }
+  await Promise.race([
+    error,
+    ContentTask.spawn(browser, data, async function(data) {
+      
+      const { JSONView } = content.wrappedJSObject;
+      if (!JSONView) {
+        throw new Error("The JSON Viewer did not load.");
+      }
 
-    
-    const frameScriptUrl = data.rootDir + "doc_frame_script.js";
-    Services.scriptloader.loadSubScript(frameScriptUrl, {}, "UTF-8");
+      
+      const frameScriptUrl = data.rootDir + "doc_frame_script.js";
+      Services.scriptloader.loadSubScript(frameScriptUrl, {}, "UTF-8");
 
-    const docReadyStates = ["loading", "interactive", "complete"];
-    const docReadyIndex = docReadyStates.indexOf(data.docReadyState);
-    const appReadyStates = ["uninitialized", ...docReadyStates];
-    const appReadyIndex = appReadyStates.indexOf(data.appReadyState);
-    if (docReadyIndex < 0 || appReadyIndex < 0) {
-      throw new Error("Invalid app or doc readyState parameter.");
-    }
+      const docReadyStates = ["loading", "interactive", "complete"];
+      const docReadyIndex = docReadyStates.indexOf(data.docReadyState);
+      const appReadyStates = ["uninitialized", ...docReadyStates];
+      const appReadyIndex = appReadyStates.indexOf(data.appReadyState);
+      if (docReadyIndex < 0 || appReadyIndex < 0) {
+        throw new Error("Invalid app or doc readyState parameter.");
+      }
 
-    
-    const {document} = content;
-    while (docReadyStates.indexOf(document.readyState) < docReadyIndex) {
-      info(`DocReadyState is "${document.readyState}". Await "${data.docReadyState}"`);
-      await new Promise(resolve => {
-        document.addEventListener("readystatechange", resolve, {once: true});
-      });
-    }
+      
+      const { document } = content;
+      while (docReadyStates.indexOf(document.readyState) < docReadyIndex) {
+        info(
+          `DocReadyState is "${document.readyState}". Await "${
+            data.docReadyState
+          }"`
+        );
+        await new Promise(resolve => {
+          document.addEventListener("readystatechange", resolve, {
+            once: true,
+          });
+        });
+      }
 
-    
-    while (appReadyStates.indexOf(JSONView.readyState) < appReadyIndex) {
-      info(`AppReadyState is "${JSONView.readyState}". Await "${data.appReadyState}"`);
-      await new Promise(resolve => {
-        content.addEventListener("AppReadyStateChange", resolve, {once: true});
-      });
-    }
-  })]);
+      
+      while (appReadyStates.indexOf(JSONView.readyState) < appReadyIndex) {
+        info(
+          `AppReadyState is "${JSONView.readyState}". Await "${
+            data.appReadyState
+          }"`
+        );
+        await new Promise(resolve => {
+          content.addEventListener("AppReadyStateChange", resolve, {
+            once: true,
+          });
+        });
+      }
+    }),
+  ]);
 
   return tab;
 }
@@ -143,10 +162,11 @@ function getElementCount(selector) {
     selector: selector,
   };
 
-  return executeInContent("Test:JsonView:GetElementCount", data)
-  .then(result => {
-    return result.count;
-  });
+  return executeInContent("Test:JsonView:GetElementCount", data).then(
+    result => {
+      return result.count;
+    }
+  );
 }
 
 function getElementText(selector) {
@@ -156,8 +176,7 @@ function getElementText(selector) {
     selector: selector,
   };
 
-  return executeInContent("Test:JsonView:GetElementText", data)
-  .then(result => {
+  return executeInContent("Test:JsonView:GetElementText", data).then(result => {
     return result.text;
   });
 }
@@ -165,9 +184,10 @@ function getElementText(selector) {
 function getElementAttr(selector, attr) {
   info("Get attribute '" + attr + "' for element '" + selector + "'");
 
-  const data = {selector, attr};
-  return executeInContent("Test:JsonView:GetElementAttr", data)
-  .then(result => result.text);
+  const data = { selector, attr };
+  return executeInContent("Test:JsonView:GetElementAttr", data).then(
+    result => result.text
+  );
 }
 
 function focusElement(selector) {

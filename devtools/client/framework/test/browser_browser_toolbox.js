@@ -4,7 +4,9 @@
 
 
 
-const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
 PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
 
 
@@ -24,16 +26,21 @@ add_task(async function() {
 
   
   
-  const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
   
   const testScript = function() {
-    toolbox.selectTool("webconsole")
+    toolbox
+      .selectTool("webconsole")
       .then(console => {
         
         const hasCloseButton = !!toolbox.doc.getElementById("toolbox-close");
         const { jsterm } = console.hud;
-        const js = "Services.obs.notifyObservers(null, 'browser-toolbox-console-works', " +
-            hasCloseButton + ");";
+        const js =
+          "Services.obs.notifyObservers(null, 'browser-toolbox-console-works', " +
+          hasCloseButton +
+          ");";
         return jsterm.execute(js);
       })
       .then(() => toolbox.destroy());
@@ -43,8 +50,14 @@ add_task(async function() {
     env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
   });
 
-  const { BrowserToolboxProcess } = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm");
-  is(BrowserToolboxProcess.getBrowserToolboxSessionState(), false, "No session state initially");
+  const { BrowserToolboxProcess } = ChromeUtils.import(
+    "resource://devtools/client/framework/ToolboxProcess.jsm"
+  );
+  is(
+    BrowserToolboxProcess.getBrowserToolboxSessionState(),
+    false,
+    "No session state initially"
+  );
 
   let closePromise;
   await new Promise(onRun => {
@@ -54,7 +67,11 @@ add_task(async function() {
     });
   });
   ok(true, "Browser toolbox started\n");
-  is(BrowserToolboxProcess.getBrowserToolboxSessionState(), true, "Has session state");
+  is(
+    BrowserToolboxProcess.getBrowserToolboxSessionState(),
+    true,
+    "Has session state"
+  );
 
   const hasCloseButton = await onCustomMessage;
   ok(true, "Received the custom message");
@@ -62,5 +79,9 @@ add_task(async function() {
 
   await closePromise;
   ok(true, "Browser toolbox process just closed");
-  is(BrowserToolboxProcess.getBrowserToolboxSessionState(), false, "No session state after closing");
+  is(
+    BrowserToolboxProcess.getBrowserToolboxSessionState(),
+    false,
+    "No session state after closing"
+  );
 });

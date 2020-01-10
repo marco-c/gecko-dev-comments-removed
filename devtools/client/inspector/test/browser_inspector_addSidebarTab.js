@@ -3,8 +3,8 @@
 
 "use strict";
 
-const TEST_URI = "data:text/html;charset=UTF-8," +
-  "<h1>browser_inspector_addtabbar.js</h1>";
+const TEST_URI =
+  "data:text/html;charset=UTF-8," + "<h1>browser_inspector_addtabbar.js</h1>";
 
 const CONTENT_TEXT = "Hello World!";
 
@@ -24,11 +24,7 @@ add_task(async function() {
   
   class myTabPanel extends Component {
     render() {
-      return (
-        div({className: "my-tab-panel"},
-          CONTENT_TEXT
-        )
-      );
+      return div({ className: "my-tab-panel" }, CONTENT_TEXT);
     }
   }
   let tabPanel = createFactory(myTabPanel);
@@ -36,28 +32,33 @@ add_task(async function() {
   
   
   inspector.addSidebarTab("myPanel", "My Panel", tabPanel, true);
-  is(inspector.sidebar.getCurrentTabID(), "myPanel",
-     "My Panel is selected by default");
+  is(
+    inspector.sidebar.getCurrentTabID(),
+    "myPanel",
+    "My Panel is selected by default"
+  );
 
   
   class myTabPanel2 extends Component {
     render() {
-      return (
-        div({className: "my-tab-panel2"},
-          "Another Content"
-        )
-      );
+      return div({ className: "my-tab-panel2" }, "Another Content");
     }
   }
   tabPanel = createFactory(myTabPanel2);
 
   
   inspector.addSidebarTab("myPanel", "My Panel", tabPanel, false);
-  is(inspector.sidebar.getCurrentTabID(), "myPanel",
-     "My Panel is selected by default");
+  is(
+    inspector.sidebar.getCurrentTabID(),
+    "myPanel",
+    "My Panel is selected by default"
+  );
 
   
   const tabPanelNode = inspector.panelDoc.querySelector(".my-tab-panel");
-  is(tabPanelNode.textContent, CONTENT_TEXT,
-    "Side panel content has been rendered.");
+  is(
+    tabPanelNode.textContent,
+    CONTENT_TEXT,
+    "Side panel content has been rendered."
+  );
 });

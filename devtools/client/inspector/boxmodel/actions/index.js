@@ -6,15 +6,16 @@
 
 const { createEnum } = require("devtools/client/shared/enum");
 
-createEnum([
+createEnum(
+  [
+    
+    "UPDATE_GEOMETRY_EDITOR_ENABLED",
 
-  
-  "UPDATE_GEOMETRY_EDITOR_ENABLED",
+    
+    "UPDATE_LAYOUT",
 
-  
-  "UPDATE_LAYOUT",
-
-  
-  "UPDATE_OFFSET_PARENT",
-
-], module.exports);
+    
+    "UPDATE_OFFSET_PARENT",
+  ],
+  module.exports
+);

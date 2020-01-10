@@ -5,7 +5,9 @@
 
 
 
-const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
 PromiseTestUtils.whitelistRejectionsGlobally(/Component not initialized/);
 
 
@@ -31,10 +33,16 @@ add_task(async function() {
   info("Clicking stack-trace tab and waiting for stack-trace panel to open");
   const waitForTab = waitForDOM(document, "#stack-trace-tab");
   
-  EventUtils.sendMouseEvent({ type: "mousedown" },
-    document.querySelector(".request-list-item"));
+  EventUtils.sendMouseEvent(
+    { type: "mousedown" },
+    document.querySelector(".request-list-item")
+  );
   await waitForTab;
-  const waitForPanel = waitForDOM(document, "#stack-trace-panel .frame-link", 5);
+  const waitForPanel = waitForDOM(
+    document,
+    "#stack-trace-panel .frame-link",
+    5
+  );
   
   document.getElementById("stack-trace-tab").click();
   await waitForPanel;

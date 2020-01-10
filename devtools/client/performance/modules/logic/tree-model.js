@@ -3,7 +3,9 @@
 
 "use strict";
 
-const { JITOptimizations } = require("devtools/client/performance/modules/logic/jit");
+const {
+  JITOptimizations,
+} = require("devtools/client/performance/modules/logic/jit");
 const FrameUtils = require("devtools/client/performance/modules/logic/frame-utils");
 
 
@@ -75,10 +77,21 @@ ThreadNode.prototype = {
 
 
 
-  _buildInverted: function buildInverted(samples, stackTable, frameTable, stringTable,
-                                         options) {
-    function getOrAddFrameNode(calls, isLeaf, frameKey, inflatedFrame, isMetaCategory,
-                               leafTable) {
+  _buildInverted: function buildInverted(
+    samples,
+    stackTable,
+    frameTable,
+    stringTable,
+    options
+  ) {
+    function getOrAddFrameNode(
+      calls,
+      isLeaf,
+      frameKey,
+      inflatedFrame,
+      isMetaCategory,
+      leafTable
+    ) {
       
       let frameNode;
 
@@ -159,7 +172,7 @@ ThreadNode.prototype = {
       let calls = this.calls;
       let prevCalls = this.calls;
       let prevFrameKey;
-      let isLeaf = mutableFrameKeyOptions.isLeaf = true;
+      let isLeaf = (mutableFrameKeyOptions.isLeaf = true);
       const skipRoot = options.invertTree;
 
       
@@ -207,8 +220,12 @@ ThreadNode.prototype = {
         }
 
         
-        const inflatedFrame = getOrAddInflatedFrame(inflatedFrameCache, frameIndex,
-                                                  frameTable, stringTable);
+        const inflatedFrame = getOrAddInflatedFrame(
+          inflatedFrameCache,
+          frameIndex,
+          frameTable,
+          stringTable
+        );
 
         
         mutableFrameKeyOptions.isRoot = stackIndex === null;
@@ -226,14 +243,22 @@ ThreadNode.prototype = {
           calls = prevCalls;
         }
 
-        const frameNode = getOrAddFrameNode(calls, isLeaf, frameKey, inflatedFrame,
-                                          mutableFrameKeyOptions.isMetaCategoryOut,
-                                          leafTable);
+        const frameNode = getOrAddFrameNode(
+          calls,
+          isLeaf,
+          frameKey,
+          inflatedFrame,
+          mutableFrameKeyOptions.isMetaCategoryOut,
+          leafTable
+        );
         if (isLeaf) {
           frameNode.youngestFrameSamples++;
-          frameNode._addOptimizations(inflatedFrame.optimizations,
-                                      inflatedFrame.implementation, sampleTime,
-                                      stringTable);
+          frameNode._addOptimizations(
+            inflatedFrame.optimizations,
+            inflatedFrame.implementation,
+            sampleTime,
+            stringTable
+          );
 
           if (byteSize) {
             frameNode.youngestFrameByteSize += byteSize;
@@ -334,8 +359,12 @@ ThreadNode.prototype = {
           let uninvertedCalls = rootCalls;
           for (let level = entry.level; level > 0; level--) {
             const callee = spine[level];
-            uninvertedCalls = mergeOrAddFrameNode(uninvertedCalls, callee.node,
-                                                  samplesDelta, byteSizeDelta);
+            uninvertedCalls = mergeOrAddFrameNode(
+              uninvertedCalls,
+              callee.node,
+              samplesDelta,
+              byteSizeDelta
+            );
           }
         }
       }
@@ -403,7 +432,11 @@ ThreadNode.prototype = {
 
 
 
-function FrameNode(frameKey, { location, line, category, isContent }, isMetaCategory) {
+function FrameNode(
+  frameKey,
+  { location, line, category, isContent },
+  isMetaCategory
+) {
   this.key = frameKey;
   this.location = location;
   this.line = line;

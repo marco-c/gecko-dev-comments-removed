@@ -9,7 +9,7 @@
 const TEST_URL = URL_ROOT + "doc_inspector_remove-iframe-during-load.html";
 
 add_task(async function() {
-  const {inspector, testActor} = await openInspectorForURL("about:blank");
+  const { inspector, testActor } = await openInspectorForURL("about:blank");
   await selectNode("body", inspector);
 
   
@@ -21,28 +21,38 @@ add_task(async function() {
   
   
   
-  ok(!(await testActor.hasNode("iframe")),
-     "Iframes added by the content page should have been removed");
+  ok(
+    !(await testActor.hasNode("iframe")),
+    "Iframes added by the content page should have been removed"
+  );
 
   
   info("Creating and removing an iframe.");
   const onMarkupLoaded = inspector.once("markuploaded");
-  testActor.eval("new " + function() {
-    const iframe = document.createElement("iframe");
-    document.body.appendChild(iframe);
-    iframe.remove();
-  });
+  testActor.eval(
+    "new " +
+      function() {
+        const iframe = document.createElement("iframe");
+        document.body.appendChild(iframe);
+        iframe.remove();
+      }
+  );
 
-  ok(!(await testActor.hasNode("iframe")),
-     "The after-load iframe should have been removed.");
+  ok(
+    !(await testActor.hasNode("iframe")),
+    "The after-load iframe should have been removed."
+  );
 
   info("Waiting for markup-view to load.");
   await onMarkupLoaded;
 
   
   ok(!(await testActor.hasNode("iframe")), "Iframe has been removed.");
-  is((await testActor.getProperty("#yay", "textContent")), "load",
-     "Load event fired.");
+  is(
+    await testActor.getProperty("#yay", "textContent"),
+    "load",
+    "Load event fired."
+  );
 
   await selectNode("#yay", inspector);
 });

@@ -1,4 +1,4 @@
- 
+
 
 
 
@@ -13,12 +13,14 @@
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/inspector/rules/test/head.js",
-  this);
+  this
+);
 
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/shared-redux-head.js",
-  this);
+  this
+);
 
 
 Services.prefs.setBoolPref("devtools.inspector.three-pane-enabled", true);

@@ -4,7 +4,10 @@
 "use strict";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-real-usb.js", this);
+Services.scriptloader.loadSubScript(
+  CHROME_URL_ROOT + "helper-real-usb.js",
+  this
+);
 
 
 
@@ -20,9 +23,11 @@ add_task(async function() {
     const { deviceName, shortName } = sidebarInfo;
     await waitUntil(() => findSidebarItemByText(deviceName, document));
     const usbRuntimeSidebarItem = findSidebarItemByText(deviceName, document);
-    ok(usbRuntimeSidebarItem.textContent.includes(shortName),
-       "The device name and short name of the usb runtime are visible in sidebar item " +
-       `[${usbRuntimeSidebarItem.textContent}]`);
+    ok(
+      usbRuntimeSidebarItem.textContent.includes(shortName),
+      "The device name and short name of the usb runtime are visible in sidebar item " +
+        `[${usbRuntimeSidebarItem.textContent}]`
+    );
   }
 
   await removeTab(tab);

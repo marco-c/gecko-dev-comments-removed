@@ -12,9 +12,13 @@
 
 
 function enableRuntimeClientFactoryMock(mock) {
-  const { setMockedModule } = require("devtools/client/shared/browser-loader-mocks");
-  setMockedModule(mock,
-    "devtools/client/aboutdebugging-new/src/modules/runtime-client-factory");
+  const {
+    setMockedModule,
+  } = require("devtools/client/shared/browser-loader-mocks");
+  setMockedModule(
+    mock,
+    "devtools/client/aboutdebugging-new/src/modules/runtime-client-factory"
+  );
 }
 
 
@@ -22,9 +26,12 @@ function enableRuntimeClientFactoryMock(mock) {
 
 
 function disableRuntimeClientFactoryMock() {
-  const { removeMockedModule } = require("devtools/client/shared/browser-loader-mocks");
+  const {
+    removeMockedModule,
+  } = require("devtools/client/shared/browser-loader-mocks");
   removeMockedModule(
-    "devtools/client/aboutdebugging-new/src/modules/runtime-client-factory");
+    "devtools/client/aboutdebugging-new/src/modules/runtime-client-factory"
+  );
 }
 
 

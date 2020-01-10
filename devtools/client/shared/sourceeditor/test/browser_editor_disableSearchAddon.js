@@ -6,11 +6,15 @@
 
 
 const isMacOS = Services.appinfo.OS === "Darwin";
-const {LocalizationHelper} = require("devtools/shared/l10n");
-const L10N = new LocalizationHelper("devtools/client/locales/sourceeditor.properties");
+const { LocalizationHelper } = require("devtools/shared/l10n");
+const L10N = new LocalizationHelper(
+  "devtools/client/locales/sourceeditor.properties"
+);
 
 const FIND_KEY = L10N.getStr("find.key");
-const REPLACE_KEY = L10N.getStr(isMacOS ? "replaceAllMac.key" : "replaceAll.key");
+const REPLACE_KEY = L10N.getStr(
+  isMacOS ? "replaceAllMac.key" : "replaceAll.key"
+);
 
 add_task(async function() {
   const { ed, win } = await setup({

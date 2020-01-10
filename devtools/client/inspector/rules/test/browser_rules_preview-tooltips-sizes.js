@@ -8,13 +8,15 @@
 
 
 
-const BASE_64_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr" +
+const BASE_64_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr" +
   "0AAAAUElEQVRYR+3UsQkAQAhD0TjJ7T+Wk3gbxMIizbcVITwwJWlkZtptpXp+v94TAAEE4gLTvgfOf770RB" +
   "EAAQTiAvEiIgACCMQF4kVEAAQQSAt8xsyeAW6R8eIAAAAASUVORK5CYII=";
 
 add_task(async function() {
-  await addTab("data:text/html;charset=utf-8," +
-    encodeURIComponent(`
+  await addTab(
+    "data:text/html;charset=utf-8," +
+      encodeURIComponent(`
       <style>
         html {
           /* Using a long variable name to ensure preview tooltip for variable will be */
@@ -28,20 +30,29 @@ add_task(async function() {
         }
       </style>
       <div id="target">inspect me</div>
-    `));
-  const {inspector, view} = await openRuleView();
+    `)
+  );
+  const { inspector, view } = await openRuleView();
   await selectNode("#target", inspector);
 
   
   const colorPropertySpan = getRuleViewProperty(view, "div", "color").valueSpan;
-  const colorVariableElement = colorPropertySpan.querySelector(".ruleview-variable");
+  const colorVariableElement = colorPropertySpan.querySelector(
+    ".ruleview-variable"
+  );
 
   
-  const backgroundPropertySpan = getRuleViewProperty(view, "div", "background").valueSpan;
-  const backgroundUrlElement = backgroundPropertySpan.querySelector(".theme-link");
+  const backgroundPropertySpan = getRuleViewProperty(view, "div", "background")
+    .valueSpan;
+  const backgroundUrlElement = backgroundPropertySpan.querySelector(
+    ".theme-link"
+  );
 
   info("Show preview tooltip for CSS variable");
-  let previewTooltip = await assertShowPreviewTooltip(view, colorVariableElement);
+  let previewTooltip = await assertShowPreviewTooltip(
+    view,
+    colorVariableElement
+  );
   
   let tooltipRect = previewTooltip.panel.getBoundingClientRect();
   const originalHeight = tooltipRect.height;
@@ -53,17 +64,37 @@ add_task(async function() {
   previewTooltip = await assertShowPreviewTooltip(view, backgroundUrlElement);
   
   tooltipRect = previewTooltip.panel.getBoundingClientRect();
-  info(`Image preview dimensions: ${tooltipRect.width} x ${tooltipRect.height}`);
-  ok(tooltipRect.height > originalHeight, "Tooltip is taller for image preview");
-  ok(tooltipRect.width < originalWidth, "Tooltip is narrower for image preview");
+  info(
+    `Image preview dimensions: ${tooltipRect.width} x ${tooltipRect.height}`
+  );
+  ok(
+    tooltipRect.height > originalHeight,
+    "Tooltip is taller for image preview"
+  );
+  ok(
+    tooltipRect.width < originalWidth,
+    "Tooltip is narrower for image preview"
+  );
   await assertTooltipHiddenOnMouseOut(previewTooltip, colorVariableElement);
 
   info("Show preview tooltip for CSS variable again");
   previewTooltip = await assertShowPreviewTooltip(view, colorVariableElement);
   
   tooltipRect = previewTooltip.panel.getBoundingClientRect();
-  info(`CSS variable tooltip dimensions: ${tooltipRect.width} x ${tooltipRect.height}`);
-  is(tooltipRect.height, originalHeight, "Tooltip has the same height as the original");
-  is(tooltipRect.width, originalWidth, "Tooltip has the same width as the original");
+  info(
+    `CSS variable tooltip dimensions: ${tooltipRect.width} x ${
+      tooltipRect.height
+    }`
+  );
+  is(
+    tooltipRect.height,
+    originalHeight,
+    "Tooltip has the same height as the original"
+  );
+  is(
+    tooltipRect.width,
+    originalWidth,
+    "Tooltip has the same width as the original"
+  );
   await assertTooltipHiddenOnMouseOut(previewTooltip, colorVariableElement);
 });

@@ -10,11 +10,11 @@ module.exports = function(content) {
   
   const res = content.replace(
     /loader.lazyRequireGetter\(this,\s*"([^"]+)",[^"]*"([^"]+)", true\);/g,
-    "let { $1 } = require(\"$2\")"
+    'let { $1 } = require("$2")'
   );
   
   return res.replace(
     /loader.lazyRequireGetter\(this,\s*"([^"]+)",[^"]*"([^"]+)"(, false)?\);/g,
-    "let $1 = require(\"$2\")"
+    'let $1 = require("$2")'
   );
 };

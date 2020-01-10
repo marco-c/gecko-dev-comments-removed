@@ -28,7 +28,8 @@ const ControllerEvents = {
 
   
   
-  BACKEND_FAILED_AFTER_RECORDING_START: "Performance:BackendFailedRecordingStart",
+  BACKEND_FAILED_AFTER_RECORDING_START:
+    "Performance:BackendFailedRecordingStart",
 
   
   BACKEND_READY_AFTER_RECORDING_START: "Performance:BackendReadyRecordingStart",
@@ -72,7 +73,8 @@ const ViewEvents = {
 
   
   
-  UI_RECORDING_PROFILER_STATUS_RENDERED: "Performance:UI:RecordingProfilerStatusRendered",
+  UI_RECORDING_PROFILER_STATUS_RENDERED:
+    "Performance:UI:RecordingProfilerStatusRendered",
 
   
   UI_RECORDING_SELECTED: "Performance:UI:RecordingSelected",

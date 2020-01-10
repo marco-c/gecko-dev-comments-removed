@@ -5,8 +5,12 @@
 "use strict";
 
 loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
-loader.lazyRequireGetter(this, "DebuggerClient",
-  "devtools/shared/client/debugger-client", true);
+loader.lazyRequireGetter(
+  this,
+  "DebuggerClient",
+  "devtools/shared/client/debugger-client",
+  true
+);
 
 const targets = new WeakMap();
 
@@ -14,7 +18,6 @@ const targets = new WeakMap();
 
 
 exports.TargetFactory = {
-
   
 
 

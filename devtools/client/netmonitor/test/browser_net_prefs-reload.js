@@ -9,8 +9,9 @@
 
 add_task(async function() {
   let { monitor } = await initNetMonitor(SIMPLE_URL);
-  const Actions = monitor.panelWin
-    .windowRequire("devtools/client/netmonitor/src/actions/index");
+  const Actions = monitor.panelWin.windowRequire(
+    "devtools/client/netmonitor/src/actions/index"
+  );
   info("Starting test... ");
 
   
@@ -21,8 +22,9 @@ add_task(async function() {
   
   
   const getDoc = () => monitor.panelWin.document;
-  const getPrefs = () => monitor.panelWin
-    .windowRequire("devtools/client/netmonitor/src/utils/prefs").Prefs;
+  const getPrefs = () =>
+    monitor.panelWin.windowRequire("devtools/client/netmonitor/src/utils/prefs")
+      .Prefs;
   const getStore = () => monitor.panelWin.store;
   const getState = () => getStore().getState();
 
@@ -32,30 +34,37 @@ add_task(async function() {
       newValue: ["html", "css"],
       
       
-      validateValue: () => Object.entries(getState().filters.requestFilterTypes)
-        .filter(([type, check]) => check)
-        .map(([type, check]) => type),
+      validateValue: () =>
+        Object.entries(getState().filters.requestFilterTypes)
+          .filter(([type, check]) => check)
+          .map(([type, check]) => type),
       
       
-      modifyFrontend: (value) => value.forEach(e =>
-        getStore().dispatch(Actions.toggleRequestFilterType(e))),
+      modifyFrontend: value =>
+        value.forEach(e =>
+          getStore().dispatch(Actions.toggleRequestFilterType(e))
+        ),
     },
     networkDetailsWidth: {
       newValue: ~~(Math.random() * 200 + 100),
       validateValue: () =>
-        getDoc().querySelector(".monitor-panel .split-box .controlled").clientWidth,
-      modifyFrontend: function(value) {
         getDoc().querySelector(".monitor-panel .split-box .controlled")
-                .style.width = `${value}px`;
+          .clientWidth,
+      modifyFrontend: function(value) {
+        getDoc().querySelector(
+          ".monitor-panel .split-box .controlled"
+        ).style.width = `${value}px`;
       },
     },
     networkDetailsHeight: {
       newValue: ~~(Math.random() * 300 + 100),
       validateValue: () =>
-        getDoc().querySelector(".monitor-panel .split-box .controlled").clientHeight,
-      modifyFrontend: function(value) {
         getDoc().querySelector(".monitor-panel .split-box .controlled")
-                .style.height = `${value}px`;
+          .clientHeight,
+      modifyFrontend: function(value) {
+        getDoc().querySelector(
+          ".monitor-panel .split-box .controlled"
+        ).style.height = `${value}px`;
       },
     },
     
@@ -82,8 +91,10 @@ add_task(async function() {
     info("Validating current pref values to the UI elements.");
 
     for (const name in prefsToCheck) {
-      if ((isVerticalSplitter && name === "networkDetailsHeight") ||
-          (!isVerticalSplitter && name === "networkDetailsWidth")) {
+      if (
+        (isVerticalSplitter && name === "networkDetailsHeight") ||
+        (!isVerticalSplitter && name === "networkDetailsWidth")
+      ) {
         continue;
       }
 
@@ -91,10 +102,16 @@ add_task(async function() {
       const firstValue = prefsToCheck[name].firstValue;
       const validateValue = prefsToCheck[name].validateValue;
 
-      is(firstValue.toSource(), currentValue.toSource(),
-        "Pref " + name + " should be equal to first value: " + currentValue);
-      is(validateValue().toSource(), currentValue.toSource(),
-        "Pref " + name + " should validate: " + currentValue);
+      is(
+        firstValue.toSource(),
+        currentValue.toSource(),
+        "Pref " + name + " should be equal to first value: " + currentValue
+      );
+      is(
+        validateValue().toSource(),
+        currentValue.toSource(),
+        "Pref " + name + " should validate: " + currentValue
+      );
     }
   }
 
@@ -102,8 +119,10 @@ add_task(async function() {
     info("Modifying UI elements to the specified new values.");
 
     for (const name in prefsToCheck) {
-      if ((isVerticalSplitter && name === "networkDetailsHeight") ||
-          (!isVerticalSplitter && name === "networkDetailsWidth")) {
+      if (
+        (isVerticalSplitter && name === "networkDetailsHeight") ||
+        (!isVerticalSplitter && name === "networkDetailsWidth")
+      ) {
         continue;
       }
 
@@ -116,12 +135,27 @@ add_task(async function() {
       modFrontend(newValue);
       info("Modified UI element affecting " + name + " to: " + newValue);
 
-      is(firstValue.toSource(), currentValue.toSource(),
-        "Pref " + name + " should still be equal to first value: " + currentValue);
-      isnot(newValue.toSource(), currentValue.toSource(),
-        "Pref " + name + " should't yet be equal to second value: " + currentValue);
-      is(validateValue().toSource(), newValue.toSource(),
-        "The UI element affecting " + name + " should validate: " + newValue);
+      is(
+        firstValue.toSource(),
+        currentValue.toSource(),
+        "Pref " +
+          name +
+          " should still be equal to first value: " +
+          currentValue
+      );
+      isnot(
+        newValue.toSource(),
+        currentValue.toSource(),
+        "Pref " +
+          name +
+          " should't yet be equal to second value: " +
+          currentValue
+      );
+      is(
+        validateValue().toSource(),
+        newValue.toSource(),
+        "The UI element affecting " + name + " should validate: " + newValue
+      );
     }
   }
 
@@ -129,8 +163,10 @@ add_task(async function() {
     info("Invalidating old pref values to the modified UI elements.");
 
     for (const name in prefsToCheck) {
-      if ((isVerticalSplitter && name === "networkDetailsHeight") ||
-          (!isVerticalSplitter && name === "networkDetailsWidth")) {
+      if (
+        (isVerticalSplitter && name === "networkDetailsHeight") ||
+        (!isVerticalSplitter && name === "networkDetailsWidth")
+      ) {
         continue;
       }
 
@@ -139,12 +175,21 @@ add_task(async function() {
       const newValue = prefsToCheck[name].newValue;
       const validateValue = prefsToCheck[name].validateValue;
 
-      isnot(firstValue.toSource(), currentValue.toSource(),
-        "Pref " + name + " should't be equal to first value: " + currentValue);
-      is(newValue.toSource(), currentValue.toSource(),
-        "Pref " + name + " should now be equal to second value: " + currentValue);
-      is(validateValue().toSource(), newValue.toSource(),
-        "The UI element affecting " + name + " should validate: " + newValue);
+      isnot(
+        firstValue.toSource(),
+        currentValue.toSource(),
+        "Pref " + name + " should't be equal to first value: " + currentValue
+      );
+      is(
+        newValue.toSource(),
+        currentValue.toSource(),
+        "Pref " + name + " should now be equal to second value: " + currentValue
+      );
+      is(
+        validateValue().toSource(),
+        newValue.toSource(),
+        "The UI element affecting " + name + " should validate: " + newValue
+      );
     }
   }
 
@@ -152,8 +197,10 @@ add_task(async function() {
     info("Resetting UI elements to the cached initial pref values.");
 
     for (const name in prefsToCheck) {
-      if ((isVerticalSplitter && name === "networkDetailsHeight") ||
-          (!isVerticalSplitter && name === "networkDetailsWidth")) {
+      if (
+        (isVerticalSplitter && name === "networkDetailsHeight") ||
+        (!isVerticalSplitter && name === "networkDetailsWidth")
+      ) {
         continue;
       }
 
@@ -166,12 +213,27 @@ add_task(async function() {
       modFrontend(firstValue);
       info("Modified UI element affecting " + name + " to: " + firstValue);
 
-      isnot(firstValue.toSource(), currentValue.toSource(),
-        "Pref " + name + " should't yet be equal to first value: " + currentValue);
-      is(newValue.toSource(), currentValue.toSource(),
-        "Pref " + name + " should still be equal to second value: " + currentValue);
-      is(validateValue().toSource(), firstValue.toSource(),
-        "The UI element affecting " + name + " should validate: " + firstValue);
+      isnot(
+        firstValue.toSource(),
+        currentValue.toSource(),
+        "Pref " +
+          name +
+          " should't yet be equal to first value: " +
+          currentValue
+      );
+      is(
+        newValue.toSource(),
+        currentValue.toSource(),
+        "Pref " +
+          name +
+          " should still be equal to second value: " +
+          currentValue
+      );
+      is(
+        validateValue().toSource(),
+        firstValue.toSource(),
+        "The UI element affecting " + name + " should validate: " + firstValue
+      );
     }
   }
 

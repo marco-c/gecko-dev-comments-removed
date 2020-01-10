@@ -9,7 +9,9 @@
 
 
 
-const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
 PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
 
 
@@ -17,9 +19,11 @@ requestLongerTimeout(4);
 
 const { fetch } = require("devtools/shared/DevToolsUtils");
 
-const debuggerHeadURL = CHROME_URL_ROOT + "../../debugger/test/mochitest/head.js";
+const debuggerHeadURL =
+  CHROME_URL_ROOT + "../../debugger/test/mochitest/head.js";
 const helpersURL = CHROME_URL_ROOT + "../../debugger/test/mochitest/helpers.js";
-const helpersContextURL = CHROME_URL_ROOT + "../../debugger/test/mochitest/helpers/context.js";
+const helpersContextURL =
+  CHROME_URL_ROOT + "../../debugger/test/mochitest/helpers/context.js";
 const testScriptURL = CHROME_URL_ROOT + "test_browser_toolbox_debugger.js";
 
 add_task(async function runTest() {
@@ -37,26 +41,36 @@ add_task(async function runTest() {
   
   
   const testUrl = `http://mozilla.org/browser-toolbox-test-${id}.js`;
-  Cu.evalInSandbox("(" + function() {
-    this.plop = function plop() {
-      return 1;
-    };
-  } + ").call(this)", s, "1.8", testUrl, 0);
+  Cu.evalInSandbox(
+    "(" +
+      function() {
+        this.plop = function plop() {
+          return 1;
+        };
+      } +
+      ").call(this)",
+    s,
+    "1.8",
+    testUrl,
+    0
+  );
 
   
   const interval = setInterval(s.plop, 1000);
 
   
   
-  const env = Cc["@mozilla.org/process/environment;1"]
-              .getService(Ci.nsIEnvironment);
+  const env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
   
   
   
-  const testHead = (function() {
+  const testHead = function() {
     const info = msg => dump(msg + "\n");
     const is = (a, b, description) => {
-      let msg = "'" + JSON.stringify(a) + "' is equal to '" + JSON.stringify(b) + "'";
+      let msg =
+        "'" + JSON.stringify(a) + "' is equal to '" + JSON.stringify(b) + "'";
       if (description) {
         msg += " - " + description;
       }
@@ -86,13 +100,19 @@ add_task(async function runTest() {
 
     const registerCleanupFunction = () => {};
 
-    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-    const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+    const { require } = ChromeUtils.import(
+      "resource://devtools/shared/Loader.jsm"
+    );
+    const { Services } = ChromeUtils.import(
+      "resource://gre/modules/Services.jsm"
+    );
 
     
     
     
-    const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+    const { setTimeout } = ChromeUtils.import(
+      "resource://gre/modules/Timer.jsm"
+    );
     function waitUntil(predicate, interval = 10) {
       if (predicate()) {
         return Promise.resolve(true);
@@ -105,7 +125,9 @@ add_task(async function runTest() {
         }, interval);
       });
     }
-  }).toSource().replace(/^\(function\(\) \{|\}\)$/g, "");
+  }
+    .toSource()
+    .replace(/^\(function\(\) \{|\}\)$/g, "");
   
   
   
@@ -120,13 +142,22 @@ add_task(async function runTest() {
 
   
   
-  debuggerHead = debuggerHead.replace(/Services.scriptloader.loadSubScript[^\)]*\);/g, "");
+  debuggerHead = debuggerHead.replace(
+    /Services.scriptloader.loadSubScript[^\)]*\);/g,
+    ""
+  );
 
   
   
   const testScript = (await fetch(testScriptURL)).content;
   const source =
-    "try { let testUrl = \"" + testUrl + "\";" + testHead + debuggerHead + testScript + "} catch (e) {" +
+    'try { let testUrl = "' +
+    testUrl +
+    '";' +
+    testHead +
+    debuggerHead +
+    testScript +
+    "} catch (e) {" +
     "  dump('Exception: '+ e + ' at ' + e.fileName + ':' + " +
     "       e.lineNumber + '\\nStack: ' + e.stack + '\\n');" +
     "}";
@@ -135,7 +166,9 @@ add_task(async function runTest() {
     env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
   });
 
-  const { BrowserToolboxProcess } = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm");
+  const { BrowserToolboxProcess } = ChromeUtils.import(
+    "resource://devtools/client/framework/ToolboxProcess.jsm"
+  );
   
   
   let closePromise;

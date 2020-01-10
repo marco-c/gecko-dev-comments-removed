@@ -8,8 +8,9 @@
 
 
 
-const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/mochitest/test-reopen-closed-tab.html";
+const TEST_URI =
+  "http://example.com/browser/devtools/client/webconsole/" +
+  "test/mochitest/test-reopen-closed-tab.html";
 
 add_task(async function() {
   

@@ -18,7 +18,9 @@ function errorLoggingMiddleware() {
         
         
         console.error(`[ACTION FAILED] ${action.type}: ${error}`);
-        console.error(`[ACTION FAILED] ${action.type} should dispatch the error object!`);
+        console.error(
+          `[ACTION FAILED] ${action.type} should dispatch the error object!`
+        );
       }
 
       if (error.stack) {

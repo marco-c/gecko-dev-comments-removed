@@ -12,9 +12,12 @@
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/test-actor-registry.js",
-  this);
+  this
+);
 
-var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/inplace-editor");
+var {
+  getInplaceEditorForSpan: inplaceEditor,
+} = require("devtools/client/shared/inplace-editor");
 
 
 
@@ -27,8 +30,11 @@ var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/i
 var openInspector = async function(hostType) {
   info("Opening the inspector");
 
-  const toolbox = await openToolboxForTab(gBrowser.selectedTab, "inspector",
-                                        hostType);
+  const toolbox = await openToolboxForTab(
+    gBrowser.selectedTab,
+    "inspector",
+    hostType
+  );
   const inspector = toolbox.getPanel("inspector");
 
   if (inspector._updateProgress) {
@@ -39,7 +45,7 @@ var openInspector = async function(hostType) {
   await registerTestActor(toolbox.target.client);
   const testActor = await getTestActor(toolbox);
 
-  return {toolbox, inspector, testActor};
+  return { toolbox, inspector, testActor };
 };
 
 
@@ -52,7 +58,7 @@ var openInspector = async function(hostType) {
 
 
 var openInspectorSidebarTab = async function(id) {
-  const {toolbox, inspector, testActor} = await openInspector();
+  const { toolbox, inspector, testActor } = await openInspector();
 
   info("Selecting the " + id + " sidebar");
 
@@ -149,7 +155,7 @@ function openLayoutView() {
   return openInspectorSidebarTab("layoutview").then(data => {
     
     
-    function mockHighlighter({highlighter}) {
+    function mockHighlighter({ highlighter }) {
       highlighter.showBoxModel = function() {
         return promise.resolve();
       };
@@ -225,7 +231,7 @@ function selectLayoutView(inspector) {
 
 
 
-function getNodeFront(selector, {walker}) {
+function getNodeFront(selector, { walker }) {
   if (selector._form) {
     return selector;
   }
@@ -242,7 +248,12 @@ function getNodeFront(selector, {walker}) {
 
 
 
-var selectNode = async function(selector, inspector, reason = "test", isSlotted) {
+var selectNode = async function(
+  selector,
+  inspector,
+  reason = "test",
+  isSlotted
+) {
   info("Selecting the node for '" + selector + "'");
   const nodeFront = await getNodeFront(selector, inspector);
   const updated = inspector.once("inspector-updated");
@@ -273,7 +284,7 @@ function manualDebounce() {
   }
 
   debounce.flush = function() {
-    calls.forEach(({func, scope, args}) => func.apply(scope, args));
+    calls.forEach(({ func, scope, args }) => func.apply(scope, args));
     calls = [];
   };
 
@@ -319,8 +330,12 @@ function waitForContentMessage(name) {
 
 
 
-function executeInContent(name, data = {}, objects = {},
-                          expectResponse = true) {
+function executeInContent(
+  name,
+  data = {},
+  objects = {},
+  expectResponse = true
+) {
   info("Sending message " + name + " to content");
   const mm = gBrowser.selectedBrowser.messageManager;
 
@@ -344,10 +359,11 @@ function executeInContent(name, data = {}, objects = {},
 
 
 async function getComputedStyleProperty(selector, pseudo, propName) {
-  return executeInContent("Test:GetComputedStylePropertyValue",
-    {selector,
-     pseudo,
-     name: propName});
+  return executeInContent("Test:GetComputedStylePropertyValue", {
+    selector,
+    pseudo,
+    name: propName,
+  });
 }
 
 
@@ -366,11 +382,12 @@ async function getComputedStyleProperty(selector, pseudo, propName) {
 
 
 async function waitForComputedStyleProperty(selector, pseudo, name, expected) {
-  return executeInContent("Test:WaitForComputedStylePropertyValue",
-    {selector,
-     pseudo,
-     expected,
-     name});
+  return executeInContent("Test:WaitForComputedStylePropertyValue", {
+    selector,
+    pseudo,
+    expected,
+    name,
+  });
 }
 
 
@@ -379,8 +396,13 @@ async function waitForComputedStyleProperty(selector, pseudo, name, expected) {
 
 
 
-var focusEditableField = async function(ruleView, editable, xOffset = 1,
-    yOffset = 1, options = {}) {
+var focusEditableField = async function(
+  ruleView,
+  editable,
+  xOffset = 1,
+  yOffset = 1,
+  options = {}
+) {
   const onFocus = once(editable.parentNode, "focus", true);
   info("Clicking on editable field to turn to edit mode");
   if (options.type === undefined) {
@@ -390,14 +412,29 @@ var focusEditableField = async function(ruleView, editable, xOffset = 1,
     
     
     options.type = "mousedown";
-    EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
-      editable.ownerGlobal);
+    EventUtils.synthesizeMouse(
+      editable,
+      xOffset,
+      yOffset,
+      options,
+      editable.ownerGlobal
+    );
     options.type = "mouseup";
-    EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
-      editable.ownerGlobal);
+    EventUtils.synthesizeMouse(
+      editable,
+      xOffset,
+      yOffset,
+      options,
+      editable.ownerGlobal
+    );
   } else {
-    EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
-      editable.ownerGlobal);
+    EventUtils.synthesizeMouse(
+      editable,
+      xOffset,
+      yOffset,
+      options,
+      editable.ownerGlobal
+    );
   }
   await onFocus;
 
@@ -425,8 +462,9 @@ function getRuleViewRule(view, selectorText, index = 0) {
   let rule;
   let pos = 0;
   for (const r of view.styleDocument.querySelectorAll(".ruleview-rule")) {
-    const selector = r.querySelector(".ruleview-selectorcontainer, " +
-                                   ".ruleview-selector-matched");
+    const selector = r.querySelector(
+      ".ruleview-selectorcontainer, " + ".ruleview-selector-matched"
+    );
     if (selector && selector.textContent === selectorText) {
       if (index == pos) {
         rule = r;
@@ -462,7 +500,7 @@ function getRuleViewProperty(view, selectorText, propertyName) {
       const valueSpan = p.querySelector(".ruleview-propertyvalue");
 
       if (nameSpan.textContent === propertyName) {
-        prop = {nameSpan: nameSpan, valueSpan: valueSpan};
+        prop = { nameSpan: nameSpan, valueSpan: valueSpan };
         break;
       }
     }
@@ -483,8 +521,8 @@ function getRuleViewProperty(view, selectorText, propertyName) {
 
 
 function getRuleViewPropertyValue(view, selectorText, propertyName) {
-  return getRuleViewProperty(view, selectorText, propertyName)
-    .valueSpan.textContent;
+  return getRuleViewProperty(view, selectorText, propertyName).valueSpan
+    .textContent;
 }
 
 
@@ -515,8 +553,11 @@ function getRuleViewSelector(view, selectorText) {
 
 
 
-var getRuleViewSelectorHighlighterIcon = async function(view,
-    selectorText, index = 0) {
+var getRuleViewSelectorHighlighterIcon = async function(
+  view,
+  selectorText,
+  index = 0
+) {
   const rule = getRuleViewRule(view, selectorText, index);
 
   const editor = rule._ruleEditor;
@@ -568,11 +609,16 @@ var focusNewRuleViewProperty = async function(ruleEditor) {
 
   
   ruleEditor.closeBrace.scrollIntoView(false);
-  const editor = await focusEditableField(ruleEditor.ruleView,
-    ruleEditor.closeBrace);
+  const editor = await focusEditableField(
+    ruleEditor.ruleView,
+    ruleEditor.closeBrace
+  );
 
-  is(inplaceEditor(ruleEditor.newPropSpan), editor,
-    "Focused editor is the new property editor.");
+  is(
+    inplaceEditor(ruleEditor.newPropSpan),
+    editor,
+    "Focused editor is the new property editor."
+  );
 
   return editor;
 };
@@ -599,8 +645,11 @@ var createNewRuleViewProperty = async function(ruleEditor, inputValue) {
 
   info("Submitting the new value and waiting for value field focus");
   const onFocus = once(ruleEditor.element, "focus", true);
-  EventUtils.synthesizeKey("VK_RETURN", {},
-    ruleEditor.element.ownerDocument.defaultView);
+  EventUtils.synthesizeKey(
+    "VK_RETURN",
+    {},
+    ruleEditor.element.ownerDocument.defaultView
+  );
   await onFocus;
 };
 
@@ -615,7 +664,7 @@ var createNewRuleViewProperty = async function(ruleEditor, inputValue) {
 
 
 var setSearchFilter = async function(view, searchValue) {
-  info("Setting filter text to \"" + searchValue + "\"");
+  info('Setting filter text to "' + searchValue + '"');
 
   const searchField = view.searchField;
   searchField.focus();
@@ -632,12 +681,15 @@ var setSearchFilter = async function(view, searchValue) {
 
 
 function buildContextMenuItems(menu) {
-  const allItems = [].concat.apply([], menu.items.map(function addItem(item) {
-    if (item.submenu) {
-      return addItem(item.submenu.items);
-    }
-    return item;
-  }));
+  const allItems = [].concat.apply(
+    [],
+    menu.items.map(function addItem(item) {
+      if (item.submenu) {
+        return addItem(item.submenu.items);
+      }
+      return item;
+    })
+  );
 
   return allItems;
 }
@@ -649,7 +701,7 @@ function buildContextMenuItems(menu) {
 
 
 function openStyleContextMenuAndGetAllItems(view, target) {
-  const menu = view.contextMenu._openMenu({target: target});
+  const menu = view.contextMenu._openMenu({ target: target });
   return buildContextMenuItems(menu);
 }
 

@@ -43,7 +43,10 @@ class FluentL10n {
     
     
     
-    return this._reactLocalization.getString.apply(this._reactLocalization, arguments);
+    return this._reactLocalization.getString.apply(
+      this._reactLocalization,
+      arguments
+    );
   }
 }
 

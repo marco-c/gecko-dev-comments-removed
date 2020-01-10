@@ -7,8 +7,10 @@
 
 
 
-var netMonitorHead = "chrome://mochitests/content/browser/devtools/client/netmonitor/test/head.js";
+var netMonitorHead =
+  "chrome://mochitests/content/browser/devtools/client/netmonitor/test/head.js";
 Services.scriptloader.loadSubScript(netMonitorHead, this);
 
 
-const HAR_EXAMPLE_URL = "http://example.com/browser/devtools/client/netmonitor/src/har/test/";
+const HAR_EXAMPLE_URL =
+  "http://example.com/browser/devtools/client/netmonitor/src/har/test/";

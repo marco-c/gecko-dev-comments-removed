@@ -16,7 +16,7 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const STRINGS_URI = "devtools/client/locales/filterwidget.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
 
-const {cssTokenizer} = require("devtools/shared/css/parsing-utils");
+const { cssTokenizer } = require("devtools/shared/css/parsing-utils");
 
 const asyncStorage = require("devtools/shared/async-storage");
 
@@ -37,59 +37,59 @@ const LIST_ITEM_HEIGHT = 32;
 
 const filterList = [
   {
-    "name": "blur",
-    "range": [0, Infinity],
-    "type": "length",
+    name: "blur",
+    range: [0, Infinity],
+    type: "length",
   },
   {
-    "name": "brightness",
-    "range": [0, Infinity],
-    "type": "percentage",
+    name: "brightness",
+    range: [0, Infinity],
+    type: "percentage",
   },
   {
-    "name": "contrast",
-    "range": [0, Infinity],
-    "type": "percentage",
+    name: "contrast",
+    range: [0, Infinity],
+    type: "percentage",
   },
   {
-    "name": "drop-shadow",
-    "placeholder": L10N.getStr("dropShadowPlaceholder"),
-    "type": "string",
+    name: "drop-shadow",
+    placeholder: L10N.getStr("dropShadowPlaceholder"),
+    type: "string",
   },
   {
-    "name": "grayscale",
-    "range": [0, 100],
-    "type": "percentage",
+    name: "grayscale",
+    range: [0, 100],
+    type: "percentage",
   },
   {
-    "name": "hue-rotate",
-    "range": [0, Infinity],
-    "type": "angle",
+    name: "hue-rotate",
+    range: [0, Infinity],
+    type: "angle",
   },
   {
-    "name": "invert",
-    "range": [0, 100],
-    "type": "percentage",
+    name: "invert",
+    range: [0, 100],
+    type: "percentage",
   },
   {
-    "name": "opacity",
-    "range": [0, 100],
-    "type": "percentage",
+    name: "opacity",
+    range: [0, 100],
+    type: "percentage",
   },
   {
-    "name": "saturate",
-    "range": [0, Infinity],
-    "type": "percentage",
+    name: "saturate",
+    range: [0, Infinity],
+    type: "percentage",
   },
   {
-    "name": "sepia",
-    "range": [0, 100],
-    "type": "percentage",
+    name: "sepia",
+    range: [0, 100],
+    type: "percentage",
   },
   {
-    "name": "url",
-    "placeholder": "example.svg#c1",
-    "type": "string",
+    name: "url",
+    placeholder: "example.svg#c1",
+    type: "string",
   },
 ];
 
@@ -189,7 +189,9 @@ CSSFilterEditorWidget.prototype = {
 
     const filterListPlaceholder = this.doc.createElementNS(XHTML_NS, "option");
     filterListPlaceholder.setAttribute("value", "");
-    filterListPlaceholder.textContent = L10N.getStr("filterListSelectPlaceholder");
+    filterListPlaceholder.textContent = L10N.getStr(
+      "filterListSelectPlaceholder"
+    );
     this.filterSelect.appendChild(filterListPlaceholder);
 
     const addFilter = this.doc.createElementNS(XHTML_NS, "button");
@@ -218,7 +220,10 @@ CSSFilterEditorWidget.prototype = {
     this.addPresetInput = this.doc.createElementNS(XHTML_NS, "input");
     this.addPresetInput.setAttribute("value", "");
     this.addPresetInput.classList.add("devtools-textinput");
-    this.addPresetInput.setAttribute("placeholder", L10N.getStr("newPresetPlaceholder"));
+    this.addPresetInput.setAttribute(
+      "placeholder",
+      L10N.getStr("newPresetPlaceholder")
+    );
     presetListFooter.appendChild(this.addPresetInput);
 
     this.addPresetButton = this.doc.createElementNS(XHTML_NS, "button");
@@ -359,8 +364,10 @@ CSSFilterEditorWidget.prototype = {
   },
 
   _keyDown: function(e) {
-    if (e.target.tagName.toLowerCase() !== "input" ||
-       (e.keyCode !== 40 && e.keyCode !== 38)) {
+    if (
+      e.target.tagName.toLowerCase() !== "input" ||
+      (e.keyCode !== 40 && e.keyCode !== 38)
+    ) {
       return;
     }
     const input = e.target;
@@ -403,7 +410,7 @@ CSSFilterEditorWidget.prototype = {
         return;
       }
 
-      let {start, end, value} = num;
+      let { start, end, value } = num;
 
       const split = input.value.split("");
       let computed = fixFloat(value + direction * multiplier);
@@ -411,9 +418,8 @@ CSSFilterEditorWidget.prototype = {
       if (dotIndex > -1) {
         computed = computed.slice(0, -2);
 
-        selectionStart = selectionStart > start + dotIndex ?
-                                          start + dotIndex :
-                                          selectionStart;
+        selectionStart =
+          selectionStart > start + dotIndex ? start + dotIndex : selectionStart;
       }
       split.splice(start, end - start, computed);
 
@@ -447,14 +453,16 @@ CSSFilterEditorWidget.prototype = {
       filterEl.classList.add("dragging");
 
       this.el.classList.add("dragging");
-    
+      
     } else if (e.target.classList.contains("devtools-draglabel")) {
       const label = e.target;
       const input = filterEl.querySelector("input");
       const index = this._getFilterElementIndex(filterEl);
 
       this._dragging = {
-        index, label, input,
+        index,
+        label,
+        input,
         startX: e.pageX,
       };
 
@@ -529,8 +537,8 @@ CSSFilterEditorWidget.prototype = {
     swapArrayIndices(this.filters, index, destination);
 
     
-    const target = change > 0 ? children[destination + 1]
-                              : children[destination];
+    const target =
+      change > 0 ? children[destination + 1] : children[destination];
     if (target) {
       this.filterList.insertBefore(filterEl, target);
     } else {
@@ -609,8 +617,7 @@ CSSFilterEditorWidget.prototype = {
       if (el.classList.contains("remove-button")) {
         
         presets.splice(id, 1);
-        this.setPresets(presets).then(this.renderPresets,
-                                      console.error);
+        this.setPresets(presets).then(this.renderPresets, console.error);
       } else {
         
         const p = presets[id];
@@ -643,11 +650,10 @@ CSSFilterEditorWidget.prototype = {
       if (index > -1) {
         presets[index].value = value;
       } else {
-        presets.push({name, value});
+        presets.push({ name, value });
       }
 
-      this.setPresets(presets).then(this.renderPresets,
-                                    console.error);
+      this.setPresets(presets).then(this.renderPresets, console.error);
     }, console.error);
   },
 
@@ -665,7 +671,7 @@ CSSFilterEditorWidget.prototype = {
 
   render: function() {
     if (!this.filters.length) {
-  
+      
       this.filterList.innerHTML = `<p> ${L10N.getStr("emptyFilterList")} <br />
                                  ${L10N.getStr("addUsingList")} </p>`;
       this.emit("render");
@@ -725,8 +731,9 @@ CSSFilterEditorWidget.prototype = {
       this.filterList.appendChild(el);
     }
 
-    const lastInput =
-        this.filterList.querySelector(".filter:last-of-type input");
+    const lastInput = this.filterList.querySelector(
+      ".filter:last-of-type input"
+    );
     if (lastInput) {
       lastInput.focus();
       if (lastInput.type === "text") {
@@ -747,7 +754,7 @@ CSSFilterEditorWidget.prototype = {
       }
 
       if (!presets || !presets.length) {
-      
+        
         this.presetList.innerHTML = `<p>${L10N.getStr("emptyPresetList")}</p>`;
         this.emit("render");
         return;
@@ -806,7 +813,7 @@ CSSFilterEditorWidget.prototype = {
       return;
     }
 
-    for (let {name, value, quote} of tokenizeFilterValue(cssValue)) {
+    for (let { name, value, quote } of tokenizeFilterValue(cssValue)) {
       
       
       if (name !== "url") {
@@ -849,9 +856,10 @@ CSSFilterEditorWidget.prototype = {
     if (value === null) {
       
       
-      const unitLabel = typeof UNIT_MAPPING[def.type] === "undefined" ?
-                               UNIT_MAPPING[DEFAULT_FILTER_TYPE] :
-                               UNIT_MAPPING[def.type];
+      const unitLabel =
+        typeof UNIT_MAPPING[def.type] === "undefined"
+          ? UNIT_MAPPING[DEFAULT_FILTER_TYPE]
+          : UNIT_MAPPING[def.type];
 
       
       if (!unitLabel) {
@@ -862,13 +870,11 @@ CSSFilterEditorWidget.prototype = {
 
       if (name === "url") {
         
-        quote = "\"";
+        quote = '"';
       }
     }
 
-    let unit = def.type === "string"
-               ? ""
-               : (/[a-zA-Z%]+/.exec(value) || [])[0];
+    let unit = def.type === "string" ? "" : (/[a-zA-Z%]+/.exec(value) || [])[0];
 
     if (def.type !== "string") {
       value = parseFloat(value);
@@ -887,7 +893,7 @@ CSSFilterEditorWidget.prototype = {
       }
     }
 
-    const index = this.filters.push({value, unit, name, quote}) - 1;
+    const index = this.filters.push({ value, unit, name, quote }) - 1;
     if (!noEvent) {
       this.emit("updated", this.getCssValue());
     }
@@ -917,8 +923,8 @@ CSSFilterEditorWidget.prototype = {
     
     if (filter.quote === "'") {
       return "'" + filter.value.replace(/\'/g, "\\'") + "'";
-    } else if (filter.quote === "\"") {
-      return "\"" + filter.value.replace(/\"/g, "\\\"") + "\"";
+    } else if (filter.quote === '"') {
+      return '"' + filter.value.replace(/\"/g, '\\"') + '"';
     }
 
     
@@ -944,9 +950,15 @@ CSSFilterEditorWidget.prototype = {
 
 
   getCssValue: function() {
-    return this.filters.map((filter, i) => {
-      return `${filter.name}(${this.getValueAt(i)})`;
-    }).join(" ") || this._specialValue || "none";
+    return (
+      this.filters
+        .map((filter, i) => {
+          return `${filter.name}(${this.getValueAt(i)})`;
+        })
+        .join(" ") ||
+      this._specialValue ||
+      "none"
+    );
   },
 
   
@@ -991,7 +1003,8 @@ CSSFilterEditorWidget.prototype = {
   },
 
   setPresets: function(presets) {
-    return asyncStorage.setItem("cssFilterPresets", presets)
+    return asyncStorage
+      .setItem("cssFilterPresets", presets)
       .catch(console.error);
   },
 };
@@ -1044,10 +1057,13 @@ function tokenizeFilterValue(css) {
           depth = 1;
         } else if (token.tokenType === "url" || token.tokenType === "bad_url") {
           
-          const originalText = css.substring(token.startOffset, token.endOffset);
+          const originalText = css.substring(
+            token.startOffset,
+            token.endOffset
+          );
           const [, quote] = /^url\([ \t\r\n\f]*(["']?)/i.exec(originalText);
 
-          filters.push({name: "url", value: token.text.trim(), quote: quote});
+          filters.push({ name: "url", value: token.text.trim(), quote: quote });
           
           
         }
@@ -1057,14 +1073,16 @@ function tokenizeFilterValue(css) {
         if (token.tokenType === "symbol" && token.text === ")") {
           --depth;
           if (depth === 0) {
-            filters.push({name: name, value: contents.trim()});
+            filters.push({ name: name, value: contents.trim() });
             state = "initial";
             break;
           }
         }
         contents += css.substring(token.startOffset, token.endOffset);
-        if (token.tokenType === "function" ||
-            (token.tokenType === "symbol" && token.text === "(")) {
+        if (
+          token.tokenType === "function" ||
+          (token.tokenType === "symbol" && token.text === "(")
+        ) {
           ++depth;
         }
         break;

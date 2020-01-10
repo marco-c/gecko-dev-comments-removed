@@ -58,9 +58,13 @@ class BrowserConsole extends WebConsole {
 
     
     
-    window.addEventListener("unload", () => {
-      this.destroy();
-    }, {once: true});
+    window.addEventListener(
+      "unload",
+      () => {
+        this.destroy();
+      },
+      { once: true }
+    );
 
     
     

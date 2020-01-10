@@ -2,11 +2,13 @@
 
 
 
- 
+
 
 "use strict";
 
-const { BrowserLoader } = ChromeUtils.import("resource://devtools/client/shared/browser-loader.js");
+const { BrowserLoader } = ChromeUtils.import(
+  "resource://devtools/client/shared/browser-loader.js"
+);
 
 this.WebConsoleWrapper = function(parentNode, webConsoleUI, toolbox, document) {
   

@@ -9,14 +9,18 @@
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/inspector/test/head.js",
-  this);
+  this
+);
 
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/shared-redux-head.js",
-  this);
+  this
+);
 
-var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/inplace-editor");
+var {
+  getInplaceEditorForSpan: inplaceEditor,
+} = require("devtools/client/shared/inplace-editor");
 var clipboard = require("devtools/shared/platform/clipboard");
 
 
@@ -71,7 +75,7 @@ function reloadPage(inspector, testActor) {
 
 
 
-function getContainerForNodeFront(nodeFront, {markup}) {
+function getContainerForNodeFront(nodeFront, { markup }) {
   return markup.getContainer(nodeFront);
 }
 
@@ -84,8 +88,11 @@ function getContainerForNodeFront(nodeFront, {markup}) {
 
 
 
-var getContainerForSelector =
-async function(selector, inspector, expectFailure = false) {
+var getContainerForSelector = async function(
+  selector,
+  inspector,
+  expectFailure = false
+) {
   info("Getting the markup-container for node " + selector);
   const nodeFront = await getNodeFront(selector, inspector);
   const container = getContainerForNodeFront(nodeFront, inspector);
@@ -121,7 +128,7 @@ async function getFirstChildNodeValue(selector, testActor) {
 
 
 
-function waitForChildrenUpdated({markup}) {
+function waitForChildrenUpdated({ markup }) {
   info("Waiting for queued children updates to be handled");
   return new Promise(resolve => {
     markup._waitForChildren().then(() => {
@@ -145,12 +152,18 @@ var clickContainer = async function(selector, inspector) {
   const container = getContainerForNodeFront(nodeFront, inspector);
 
   const updated = container.selected
-                ? promise.resolve()
-                : inspector.once("inspector-updated");
-  EventUtils.synthesizeMouseAtCenter(container.tagLine, {type: "mousedown"},
-    inspector.markup.doc.defaultView);
-  EventUtils.synthesizeMouseAtCenter(container.tagLine, {type: "mouseup"},
-    inspector.markup.doc.defaultView);
+    ? promise.resolve()
+    : inspector.once("inspector-updated");
+  EventUtils.synthesizeMouseAtCenter(
+    container.tagLine,
+    { type: "mousedown" },
+    inspector.markup.doc.defaultView
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    container.tagLine,
+    { type: "mouseup" },
+    inspector.markup.doc.defaultView
+  );
   return updated;
 };
 
@@ -205,16 +218,22 @@ var addNewAttributes = async function(selector, text, inspector) {
 
 
 var assertAttributes = async function(selector, expected, testActor) {
-  const {attributes: actual} = await testActor.getNodeInfo(selector);
+  const { attributes: actual } = await testActor.getNodeInfo(selector);
 
-  is(actual.length, Object.keys(expected).length,
-    "The node " + selector + " has the expected number of attributes.");
+  is(
+    actual.length,
+    Object.keys(expected).length,
+    "The node " + selector + " has the expected number of attributes."
+  );
   for (const attr in expected) {
-    const foundAttr = actual.find(({name}) => name === attr);
+    const foundAttr = actual.find(({ name }) => name === attr);
     const foundValue = foundAttr ? foundAttr.value : undefined;
     ok(foundAttr, "The node " + selector + " has the attribute " + attr);
-    is(foundValue, expected[attr],
-      "The node " + selector + " has the correct " + attr + " attribute value");
+    is(
+      foundValue,
+      expected[attr],
+      "The node " + selector + " has the correct " + attr + " attribute value"
+    );
   }
 };
 
@@ -274,7 +293,7 @@ function getSelectorSearchBox(inspector) {
 
 
 function searchUsingSelectorSearch(selector, inspector) {
-  info("Entering \"" + selector + "\" into the selector-search input field");
+  info('Entering "' + selector + '" into the selector-search input field');
   const field = getSelectorSearchBox(inspector);
   field.focus();
   field.value = selector;
@@ -290,7 +309,11 @@ function searchUsingSelectorSearch(selector, inspector) {
 
 
 
-var isEditingMenuDisabled = async function(nodeFront, inspector, assert = true) {
+var isEditingMenuDisabled = async function(
+  nodeFront,
+  inspector,
+  assert = true
+) {
   
   clipboard.copyString("<p>test</p>");
 
@@ -298,8 +321,12 @@ var isEditingMenuDisabled = async function(nodeFront, inspector, assert = true) 
   const allMenuItems = openContextMenuAndGetAllItems(inspector);
 
   const deleteMenuItem = allMenuItems.find(i => i.id === "node-menu-delete");
-  const editHTMLMenuItem = allMenuItems.find(i => i.id === "node-menu-edithtml");
-  const pasteHTMLMenuItem = allMenuItems.find(i => i.id === "node-menu-pasteouterhtml");
+  const editHTMLMenuItem = allMenuItems.find(
+    i => i.id === "node-menu-edithtml"
+  );
+  const pasteHTMLMenuItem = allMenuItems.find(
+    i => i.id === "node-menu-pasteouterhtml"
+  );
 
   if (assert) {
     ok(deleteMenuItem.disabled, "Delete menu item is disabled");
@@ -307,9 +334,11 @@ var isEditingMenuDisabled = async function(nodeFront, inspector, assert = true) 
     ok(pasteHTMLMenuItem.disabled, "Paste HTML menu item is disabled");
   }
 
-  return deleteMenuItem.disabled &&
-         editHTMLMenuItem.disabled &&
-         pasteHTMLMenuItem.disabled;
+  return (
+    deleteMenuItem.disabled &&
+    editHTMLMenuItem.disabled &&
+    pasteHTMLMenuItem.disabled
+  );
 };
 
 
@@ -329,8 +358,12 @@ var isEditingMenuEnabled = async function(nodeFront, inspector, assert = true) {
   const allMenuItems = openContextMenuAndGetAllItems(inspector);
 
   const deleteMenuItem = allMenuItems.find(i => i.id === "node-menu-delete");
-  const editHTMLMenuItem = allMenuItems.find(i => i.id === "node-menu-edithtml");
-  const pasteHTMLMenuItem = allMenuItems.find(i => i.id === "node-menu-pasteouterhtml");
+  const editHTMLMenuItem = allMenuItems.find(
+    i => i.id === "node-menu-edithtml"
+  );
+  const pasteHTMLMenuItem = allMenuItems.find(
+    i => i.id === "node-menu-pasteouterhtml"
+  );
 
   if (assert) {
     ok(!deleteMenuItem.disabled, "Delete menu item is enabled");
@@ -338,9 +371,11 @@ var isEditingMenuEnabled = async function(nodeFront, inspector, assert = true) {
     ok(!pasteHTMLMenuItem.disabled, "Paste HTML menu item is enabled");
   }
 
-  return !deleteMenuItem.disabled &&
-         !editHTMLMenuItem.disabled &&
-         !pasteHTMLMenuItem.disabled;
+  return (
+    !deleteMenuItem.disabled &&
+    !editHTMLMenuItem.disabled &&
+    !pasteHTMLMenuItem.disabled
+  );
 };
 
 
@@ -377,10 +412,7 @@ async function awaitWithTimeout(promise, ms) {
     }, ms);
   });
 
-  return Promise.race([
-    promise,
-    timeout,
-  ]);
+  return Promise.race([promise, timeout]);
 }
 
 
@@ -400,11 +432,9 @@ function collapseSelectionAndTab(inspector) {
 
 function collapseSelectionAndShiftTab(inspector) {
   
-  EventUtils.synthesizeKey("VK_TAB", { shiftKey: true },
-    inspector.panelWin);
+  EventUtils.synthesizeKey("VK_TAB", { shiftKey: true }, inspector.panelWin);
   
-  EventUtils.synthesizeKey("VK_TAB", { shiftKey: true },
-    inspector.panelWin);
+  EventUtils.synthesizeKey("VK_TAB", { shiftKey: true }, inspector.panelWin);
 }
 
 
@@ -437,8 +467,10 @@ function checkFocusedAttribute(attrName, editMode) {
 
 
 var getAttributesFromEditor = async function(selector, inspector) {
-  const nodeList = (await getContainerForSelector(selector, inspector))
-    .tagLine.querySelectorAll("[data-attr]");
+  const nodeList = (await getContainerForSelector(
+    selector,
+    inspector
+  )).tagLine.querySelectorAll("[data-attr]");
 
   return [...nodeList].map(node => node.getAttribute("data-attr"));
 };
@@ -452,10 +484,16 @@ var getAttributesFromEditor = async function(selector, inspector) {
 
 
 
-async function simulateNodeDrag(inspector, selector, xOffset = 10, yOffset = 10) {
-  const container = typeof selector === "string"
-                  ? await getContainerForSelector(selector, inspector)
-                  : selector;
+async function simulateNodeDrag(
+  inspector,
+  selector,
+  xOffset = 10,
+  yOffset = 10
+) {
+  const container =
+    typeof selector === "string"
+      ? await getContainerForSelector(selector, inspector)
+      : selector;
   const rect = container.tagLine.getBoundingClientRect();
   const scrollX = inspector.markup.doc.documentElement.scrollLeft;
   const scrollY = inspector.markup.doc.documentElement.scrollTop;
@@ -492,9 +530,10 @@ async function simulateNodeDrag(inspector, selector, xOffset = 10, yOffset = 10)
 
 async function simulateNodeDrop(inspector, selector) {
   info("Simulate mouseUp on element " + selector);
-  const container = typeof selector === "string"
-                  ? await getContainerForSelector(selector, inspector)
-                  : selector;
+  const container =
+    typeof selector === "string"
+      ? await getContainerForSelector(selector, inspector)
+      : selector;
   container.onMouseUp();
   inspector.markup._onMouseUp();
 }
@@ -554,10 +593,21 @@ async function waitForScrollStop(doc) {
 
 
 
-async function checkDeleteAndSelection(inspector, key,
-                                       {selector, focusedSelector, pseudo}) {
-  info("Test deleting node " + selector + " with " + key + ", " +
-       "expecting " + focusedSelector + " to be focused");
+async function checkDeleteAndSelection(
+  inspector,
+  key,
+  { selector, focusedSelector, pseudo }
+) {
+  info(
+    "Test deleting node " +
+      selector +
+      " with " +
+      key +
+      ", " +
+      "expecting " +
+      focusedSelector +
+      " to be focused"
+  );
 
   info("Select node " + selector + " and make sure it is focused");
   await selectNode(selector, inspector);
@@ -573,12 +623,15 @@ async function checkDeleteAndSelection(inspector, key,
     
     focusedSelector = focusedSelector + "::" + pseudo;
     
-    const {nodes} = await inspector.walker.children(nodeFront);
+    const { nodes } = await inspector.walker.children(nodeFront);
     nodeFront = pseudo === "before" ? nodes[0] : nodes[nodes.length - 1];
   }
 
-  is(inspector.selection.nodeFront, nodeFront,
-     focusedSelector + " is selected after deletion");
+  is(
+    inspector.selection.nodeFront,
+    nodeFront,
+    focusedSelector + " is selected after deletion"
+  );
 
   info("Check that the node was really removed");
   let node = await getNodeFront(selector, inspector);
@@ -595,8 +648,10 @@ async function checkDeleteAndSelection(inspector, key,
 
 function assertContainerSlotted(container) {
   ok(container.isSlotted(), "Container is a slotted container");
-  ok(container.elt.querySelector(".reveal-link"),
-     "Slotted container has a reveal link element");
+  ok(
+    container.elt.querySelector(".reveal-link"),
+    "Slotted container has a reveal link element"
+  );
 }
 
 
@@ -605,7 +660,10 @@ function assertContainerSlotted(container) {
 
 function assertContainerHasText(container, expectedText) {
   const textContent = container.elt.textContent;
-  ok(textContent.includes(expectedText), "Container has expected text: " + expectedText);
+  ok(
+    textContent.includes(expectedText),
+    "Container has expected text: " + expectedText
+  );
 }
 
 
@@ -631,7 +689,7 @@ function assertContainerHasText(container, expectedText) {
 
 
 async function assertMarkupViewAsTree(tree, selector, inspector) {
-  const {markup} = inspector;
+  const { markup } = inspector;
 
   info(`Find and expand the shadow DOM host matching selector ${selector}.`);
   const rootFront = await getNodeFront(selector, inspector);
@@ -643,7 +701,7 @@ async function assertMarkupViewAsTree(tree, selector, inspector) {
 }
 
 async function _checkMarkupViewNode(treeNode, container, inspector) {
-  const {node, children, path} = treeNode;
+  const { node, children, path } = treeNode;
   info("Checking [" + path + "]");
   info("Checking node: " + node);
 
@@ -651,8 +709,7 @@ async function _checkMarkupViewNode(treeNode, container, inspector) {
   const slotted = node.includes("!slotted");
 
   
-  const nodeText = node.replace("!slotted", "")
-                       .replace("!ignore-children", "");
+  const nodeText = node.replace("!slotted", "").replace("!ignore-children", "");
 
   assertContainerHasText(container, nodeText);
 
@@ -675,8 +732,11 @@ async function _checkMarkupViewNode(treeNode, container, inspector) {
   }
 
   const containers = container.getChildContainers();
-  is(containers.length, children.length,
-     "Node [" + path + "] has the expected number of children");
+  is(
+    containers.length,
+    children.length,
+    "Node [" + path + "] has the expected number of children"
+  );
   for (let i = 0; i < children.length; i++) {
     await _checkMarkupViewNode(children[i], containers[i], inspector);
   }
@@ -764,7 +824,7 @@ async function clickOnRevealLink(inspector, container) {
   const win = inspector.markup.doc.defaultView;
 
   
-  EventUtils.synthesizeMouseAtCenter(tagline, {type: "mouseover"}, win);
+  EventUtils.synthesizeMouseAtCenter(tagline, { type: "mouseover" }, win);
   EventUtils.synthesizeMouseAtCenter(revealLink, {}, win);
 
   await onSelection;

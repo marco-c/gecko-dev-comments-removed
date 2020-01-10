@@ -4,7 +4,10 @@
 "use strict";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-collapsibilities.js", this);
+Services.scriptloader.loadSubScript(
+  CHROME_URL_ROOT + "helper-collapsibilities.js",
+  this
+);
 
 
 
@@ -28,6 +31,10 @@ add_task(async function() {
   await waitUntil(() => document.querySelector(".app") === null);
 
   for (const { pref } of TARGET_PANES) {
-    is(Services.prefs.getBoolPref(pref), true, `${ pref } preference should be true`);
+    is(
+      Services.prefs.getBoolPref(pref),
+      true,
+      `${pref} preference should be true`
+    );
   }
 });

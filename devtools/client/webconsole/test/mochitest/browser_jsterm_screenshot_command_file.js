@@ -5,10 +5,12 @@
 
 "use strict";
 
-const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/mochitest/test_jsterm_screenshot_command.html";
+const TEST_URI =
+  "http://example.com/browser/devtools/client/webconsole/" +
+  "test/mochitest/test_jsterm_screenshot_command.html";
 
-const FileUtils = (ChromeUtils.import("resource://gre/modules/FileUtils.jsm", {})).FileUtils;
+const FileUtils = ChromeUtils.import("resource://gre/modules/FileUtils.jsm", {})
+  .FileUtils;
 
 
 const dpr = "--dpr 1";
@@ -33,7 +35,7 @@ async function performTests() {
 
 async function testFile(hud) {
   
-  const file = FileUtils.getFile("TmpD", [ "TestScreenshotFile.png" ]);
+  const file = FileUtils.getFile("TmpD", ["TestScreenshotFile.png"]);
   const command = `:screenshot ${file.path} ${dpr}`;
   const onMessage = waitForMessage(hud, `Saved to ${file.path}`);
   hud.jsterm.execute(command);
@@ -45,4 +47,3 @@ async function testFile(hud) {
     file.remove(false);
   }
 }
-

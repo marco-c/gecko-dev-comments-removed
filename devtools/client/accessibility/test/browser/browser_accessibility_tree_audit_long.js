@@ -5,8 +5,9 @@
 
 
 
-const header = "<h1 style=\"color:rgba(255,0,0,0.1); " +
-               "background-color:rgba(255,255,255,1);\">header</h1>";
+const header =
+  '<h1 style="color:rgba(255,0,0,0.1); ' +
+  'background-color:rgba(255,255,255,1);">header</h1>';
 
 const TEST_URI = `<html>
   <head>
@@ -29,7 +30,7 @@ const headingRow = {
 const textLeafRow = {
   role: "text leaf",
   name: `"header"contrast`,
-  badges: [ "contrast" ],
+  badges: ["contrast"],
 };
 const audit = new Array(20).fill(textLeafRow);
 
@@ -54,42 +55,50 @@ for (let i = 0; i < 20; i++) {
 
 
 
-const tests = [{
-  desc: "Check initial state.",
-  expected: {
-    tree: [{ ...docRow, selected: true }],
+const tests = [
+  {
+    desc: "Check initial state.",
+    expected: {
+      tree: [{ ...docRow, selected: true }],
+    },
   },
-}, {
-  desc: "Run an audit from a11y panel toolbar by activating a filter.",
-  setup: async ({ doc }) => {
-    await toggleFilter(doc, 0);
+  {
+    desc: "Run an audit from a11y panel toolbar by activating a filter.",
+    setup: async ({ doc }) => {
+      await toggleFilter(doc, 0);
+    },
+    expected: {
+      tree: auditInitial,
+    },
   },
-  expected: {
-    tree: auditInitial,
+  {
+    desc: "Select a row that is guaranteed to have to be scrolled into view.",
+    setup: async ({ doc }) => {
+      selectRow(doc, 0);
+      EventUtils.synthesizeKey("VK_END", {}, doc.defaultView);
+    },
+    expected: {
+      tree: auditSecondLastSelected,
+    },
   },
-}, {
-  desc: "Select a row that is guaranteed to have to be scrolled into view.",
-  setup: async ({ doc }) => {
-    selectRow(doc, 0);
-    EventUtils.synthesizeKey("VK_END", {}, doc.defaultView);
+  {
+    desc: "Click on the filter again.",
+    setup: async ({ doc }) => {
+      await toggleFilter(doc, 0);
+    },
+    expected: {
+      tree: resetAfterAudit,
+    },
   },
-  expected: {
-    tree: auditSecondLastSelected,
-  },
-}, {
-  desc: "Click on the filter again.",
-  setup: async ({ doc }) => {
-    await toggleFilter(doc, 0);
-  },
-  expected: {
-    tree: resetAfterAudit,
-  },
-}];
+];
 
 
 
 
 
 
-addA11yPanelTestsTask(tests, TEST_URI,
-  "Test Accessibility panel tree with persistent selected row.");
+addA11yPanelTestsTask(
+  tests,
+  TEST_URI,
+  "Test Accessibility panel tree with persistent selected row."
+);

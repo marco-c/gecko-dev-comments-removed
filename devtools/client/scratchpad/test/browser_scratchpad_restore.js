@@ -41,52 +41,67 @@ function testRestore() {
     },
   ];
 
-  asyncMap(states, function(state, done) {
-    
-    openScratchpad(done, {state: state, noFocus: true});
-  }, function(wins) {
-    
-    ScratchpadManager.saveOpenWindows();
-
-    
-    const session = ScratchpadManager.getSessionState();
-
-    
-    wins.forEach(function(win) {
-      win.close();
-    });
-
-    
-    ScratchpadManager.saveOpenWindows();
-
-    
-    const restoredWins = ScratchpadManager.restoreSession(session);
-
-    is(restoredWins.length, 3, "Three scratchad windows restored");
-
-    asyncMap(restoredWins, function(restoredWin, done) {
-      openScratchpad(function(aWin) {
-        const state = aWin.Scratchpad.getState();
-        aWin.close();
-        done(state);
-      }, {window: restoredWin, noFocus: true});
-    }, function(restoredStates) {
+  asyncMap(
+    states,
+    function(state, done) {
       
-      ok(statesMatch(restoredStates, states),
-        "All scratchpad window states restored correctly");
+      openScratchpad(done, { state: state, noFocus: true });
+    },
+    function(wins) {
+      
+      ScratchpadManager.saveOpenWindows();
 
       
-      finish();
-    });
-  });
+      const session = ScratchpadManager.getSessionState();
+
+      
+      wins.forEach(function(win) {
+        win.close();
+      });
+
+      
+      ScratchpadManager.saveOpenWindows();
+
+      
+      const restoredWins = ScratchpadManager.restoreSession(session);
+
+      is(restoredWins.length, 3, "Three scratchad windows restored");
+
+      asyncMap(
+        restoredWins,
+        function(restoredWin, done) {
+          openScratchpad(
+            function(aWin) {
+              const state = aWin.Scratchpad.getState();
+              aWin.close();
+              done(state);
+            },
+            { window: restoredWin, noFocus: true }
+          );
+        },
+        function(restoredStates) {
+          
+          ok(
+            statesMatch(restoredStates, states),
+            "All scratchpad window states restored correctly"
+          );
+
+          
+          finish();
+        }
+      );
+    }
+  );
 }
 
 function statesMatch(restoredStates, states) {
   return states.every(function(state) {
     return restoredStates.some(function(restoredState) {
-      return state.filename == restoredState.filename
-        && state.text == restoredState.text
-        && state.executionContext == restoredState.executionContext;
+      return (
+        state.filename == restoredState.filename &&
+        state.text == restoredState.text &&
+        state.executionContext == restoredState.executionContext
+      );
     });
   });
 }

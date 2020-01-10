@@ -27,10 +27,12 @@ function isCss({ mimeType }) {
 }
 
 function isJs({ mimeType }) {
-  return mimeType && (
-    mimeType.includes("/ecmascript") ||
-    mimeType.includes("/javascript") ||
-    mimeType.includes("/x-javascript"));
+  return (
+    mimeType &&
+    (mimeType.includes("/ecmascript") ||
+      mimeType.includes("/javascript") ||
+      mimeType.includes("/x-javascript"))
+  );
 }
 
 function isXHR(item) {
@@ -40,13 +42,13 @@ function isXHR(item) {
 
 function isFont({ url, mimeType }) {
   
-  return (mimeType && (
-      mimeType.includes("font/") ||
-      mimeType.includes("/font"))) ||
+  return (
+    (mimeType && (mimeType.includes("font/") || mimeType.includes("/font"))) ||
     url.includes(".eot") ||
     url.includes(".ttf") ||
     url.includes(".otf") ||
-    url.includes(".woff");
+    url.includes(".woff")
+  );
 }
 
 function isImage({ mimeType }) {
@@ -55,12 +57,14 @@ function isImage({ mimeType }) {
 
 function isMedia({ mimeType }) {
   
-  return mimeType && (
-    mimeType.includes("audio/") ||
-    mimeType.includes("video/") ||
-    mimeType.includes("model/") ||
-    mimeType === "application/vnd.apple.mpegurl" ||
-    mimeType === "application/x-mpegurl");
+  return (
+    mimeType &&
+    (mimeType.includes("audio/") ||
+      mimeType.includes("video/") ||
+      mimeType.includes("model/") ||
+      mimeType === "application/vnd.apple.mpegurl" ||
+      mimeType === "application/x-mpegurl")
+  );
 }
 
 function isWS({ requestHeaders, responseHeaders, cause }) {
@@ -76,16 +80,19 @@ function isWS({ requestHeaders, responseHeaders, cause }) {
 
   
   let upgradeHeader = requestHeaders.headers.find(header => {
-    return (header.name.toLowerCase() == "upgrade");
+    return header.name.toLowerCase() == "upgrade";
   });
 
   
   
   
-  if (!upgradeHeader && responseHeaders &&
-      Array.isArray(responseHeaders.headers)) {
+  if (
+    !upgradeHeader &&
+    responseHeaders &&
+    Array.isArray(responseHeaders.headers)
+  ) {
     upgradeHeader = responseHeaders.headers.find(header => {
-      return (header.name.toLowerCase() == "upgrade");
+      return header.name.toLowerCase() == "upgrade";
     });
   }
 

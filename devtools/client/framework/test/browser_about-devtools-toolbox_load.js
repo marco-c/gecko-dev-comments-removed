@@ -17,7 +17,10 @@ add_task(async function() {
   await assertErrorIsShown(document);
   await removeTab(tab);
   
-  ({ document, tab } = await openAboutToolbox({ type: "tab", remoteId: "13371337" }));
+  ({ document, tab } = await openAboutToolbox({
+    type: "tab",
+    remoteId: "13371337",
+  }));
   await assertErrorIsShown(document);
   await removeTab(tab);
 

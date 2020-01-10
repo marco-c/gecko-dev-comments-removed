@@ -3,7 +3,8 @@
 
 
 
-const TEST_URL = "data:text/html,test for dynamically registering and unregistering tools";
+const TEST_URL =
+  "data:text/html,test for dynamically registering and unregistering tools";
 
 var toolbox;
 

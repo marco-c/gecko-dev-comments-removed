@@ -5,7 +5,6 @@
 "use strict";
 
 module.exports = {
-
   
 
 
@@ -17,5 +16,4 @@ module.exports = {
     }
     return target;
   },
-
 };

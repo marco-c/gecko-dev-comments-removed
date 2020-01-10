@@ -26,8 +26,7 @@ const THEME_PREF = "devtools.theme";
 
 function getThemeFile(name) {
   
-  const selector = THEME_SELECTOR_STRINGS[name] ||
-                 THEME_SELECTOR_STRINGS.light;
+  const selector = THEME_SELECTOR_STRINGS[name] || THEME_SELECTOR_STRINGS.light;
 
   
   
@@ -46,9 +45,9 @@ function getThemeFile(name) {
 
 
 
-const getTheme = exports.getTheme = () => {
+const getTheme = (exports.getTheme = () => {
   return Services.prefs.getCharPref(THEME_PREF);
-};
+});
 
 
 
@@ -57,7 +56,7 @@ const getTheme = exports.getTheme = () => {
 
 
 
-const getColor = exports.getColor = (type, theme) => {
+const getColor = (exports.getColor = (type, theme) => {
   const themeName = theme || getTheme();
   let themeFile = getThemeFile(themeName);
   let match = themeFile.match(new RegExp("--theme-" + type + ": (.*);"));
@@ -72,26 +71,26 @@ const getColor = exports.getColor = (type, theme) => {
 
   
   return match ? match[1] : null;
-};
+});
 
 
 
 
-const setTheme = exports.setTheme = (newTheme) => {
+const setTheme = (exports.setTheme = newTheme => {
   Services.prefs.setCharPref(THEME_PREF, newTheme);
-};
+});
 
 
 
 
-const addThemeObserver = exports.addThemeObserver = observer => {
+const addThemeObserver = (exports.addThemeObserver = observer => {
   Services.prefs.addObserver(THEME_PREF, observer);
-};
+});
 
 
 
 
-const removeThemeObserver = exports.removeThemeObserver = observer => {
+const removeThemeObserver = (exports.removeThemeObserver = observer => {
   Services.prefs.removeObserver(THEME_PREF, observer);
-};
+});
 

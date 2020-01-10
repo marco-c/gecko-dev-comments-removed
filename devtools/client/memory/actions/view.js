@@ -13,8 +13,8 @@ const refresh = require("./refresh");
 
 
 
-const changeView = exports.changeView = function (view) {
-  return function (dispatch, getState) {
+const changeView = (exports.changeView = function(view) {
+  return function(dispatch, getState) {
     dispatch({
       type: actions.CHANGE_VIEW,
       newViewState: view,
@@ -22,14 +22,14 @@ const changeView = exports.changeView = function (view) {
       oldSelected: findSelectedSnapshot(getState()),
     });
   };
-};
+});
 
 
 
 
 
-const popView = exports.popView = function () {
-  return function (dispatch, getState) {
+const popView = (exports.popView = function() {
+  return function(dispatch, getState) {
     const { previous } = getState().view;
     assert(previous);
     dispatch({
@@ -37,7 +37,7 @@ const popView = exports.popView = function () {
       previousView: previous,
     });
   };
-};
+});
 
 
 
@@ -46,10 +46,10 @@ const popView = exports.popView = function () {
 
 
 
-exports.changeViewAndRefresh = function (view, heapWorker) {
-  return function* (dispatch, getState) {
+exports.changeViewAndRefresh = function(view, heapWorker) {
+  return async function(dispatch, getState) {
     dispatch(changeView(view));
-    yield dispatch(refresh.refresh(heapWorker));
+    await dispatch(refresh.refresh(heapWorker));
   };
 };
 
@@ -59,9 +59,9 @@ exports.changeViewAndRefresh = function (view, heapWorker) {
 
 
 
-exports.popViewAndRefresh = function (heapWorker) {
-  return function* (dispatch, getState) {
+exports.popViewAndRefresh = function(heapWorker) {
+  return async function(dispatch, getState) {
     dispatch(popView());
-    yield dispatch(refresh.refresh(heapWorker));
+    await dispatch(refresh.refresh(heapWorker));
   };
 };

@@ -17,7 +17,7 @@ const TEST_URI = `
 
 add_task(async function() {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
-  const {inspector, view} = await openRuleView();
+  const { inspector, view } = await openRuleView();
   await selectNode("#testid", inspector);
 
   info("Get the color property editor");
@@ -42,11 +42,18 @@ add_task(async function() {
   await onMutation;
 
   is(ruleEditor.rule.textProps[0].name, "background-color");
-  await waitForComputedStyleProperty("#testid", null, "background-color",
-    "rgb(255, 0, 0)");
+  await waitForComputedStyleProperty(
+    "#testid",
+    null,
+    "background-color",
+    "rgb(255, 0, 0)"
+  );
 
-  is((await getComputedStyleProperty("#testid", null, "color")),
-    "rgb(255, 255, 255)", "color is white");
+  is(
+    await getComputedStyleProperty("#testid", null, "color"),
+    "rgb(255, 255, 255)",
+    "color is white"
+  );
 
   
   
@@ -54,4 +61,3 @@ add_task(async function() {
   EventUtils.synthesizeKey("KEY_Escape");
   await onRuleViewChanged;
 });
-

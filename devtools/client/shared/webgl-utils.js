@@ -21,8 +21,9 @@ function isWebGLSupportedByGFX() {
     const opengl = gfxInfo.FEATURE_WEBGL_OPENGL;
 
     
-    supported = gfxInfo.getFeatureStatus(angle) === gfxInfo.FEATURE_STATUS_OK ||
-                gfxInfo.getFeatureStatus(opengl) === gfxInfo.FEATURE_STATUS_OK;
+    supported =
+      gfxInfo.getFeatureStatus(angle) === gfxInfo.FEATURE_STATUS_OK ||
+      gfxInfo.getFeatureStatus(opengl) === gfxInfo.FEATURE_STATUS_OK;
   } catch (e) {
     return false;
   }
@@ -47,8 +48,8 @@ function createCanvas(doc) {
 function isWebGLSupported(doc) {
   const supported =
     !isWebGLForceEnabled() &&
-     isWebGLSupportedByGFX() &&
-     create3DContext(createCanvas(doc));
+    isWebGLSupportedByGFX() &&
+    create3DContext(createCanvas(doc));
 
   return supported;
 }

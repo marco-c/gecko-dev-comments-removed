@@ -4,34 +4,42 @@
 
 "use strict";
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-window.addEventListener("load", function() {
-  
-  const inputs = document.querySelectorAll("[data-pref]");
-  for (const i of inputs) {
-    const pref = i.dataset.pref;
-    Services.prefs.addObserver(pref, FillForm);
-    i.addEventListener("change", SaveForm);
-  }
+window.addEventListener(
+  "load",
+  function() {
+    
+    const inputs = document.querySelectorAll("[data-pref]");
+    for (const i of inputs) {
+      const pref = i.dataset.pref;
+      Services.prefs.addObserver(pref, FillForm);
+      i.addEventListener("change", SaveForm);
+    }
 
-  
-  document.querySelector("#close").onclick = CloseUI;
-  document.querySelector("#restore").onclick = RestoreDefaults;
-  document.querySelector("#manageComponents").onclick = ShowAddons;
+    
+    document.querySelector("#close").onclick = CloseUI;
+    document.querySelector("#restore").onclick = RestoreDefaults;
+    document.querySelector("#manageComponents").onclick = ShowAddons;
 
-  
-  FillForm();
-}, {capture: true, once: true});
+    
+    FillForm();
+  },
+  { capture: true, once: true }
+);
 
-window.addEventListener("unload", function() {
-  const inputs = document.querySelectorAll("[data-pref]");
-  for (const i of inputs) {
-    const pref = i.dataset.pref;
-    i.removeEventListener("change", SaveForm);
-    Services.prefs.removeObserver(pref, FillForm);
-  }
-}, {capture: true, once: true});
+window.addEventListener(
+  "unload",
+  function() {
+    const inputs = document.querySelectorAll("[data-pref]");
+    for (const i of inputs) {
+      const pref = i.dataset.pref;
+      i.removeEventListener("change", SaveForm);
+      Services.prefs.removeObserver(pref, FillForm);
+    }
+  },
+  { capture: true, once: true }
+);
 
 function CloseUI() {
   window.parent.UI.openProject();

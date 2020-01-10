@@ -27,8 +27,10 @@ add_task(async function() {
 
   dispatch(takeSnapshotAndCensus(front, heapWorker));
   dispatch(takeSnapshotAndCensus(front, heapWorker));
-  await waitUntilCensusState(store, s => s.treeMap,
-                             [treeMapState.SAVED, treeMapState.SAVED]);
+  await waitUntilCensusState(store, s => s.treeMap, [
+    treeMapState.SAVED,
+    treeMapState.SAVED,
+  ]);
 
   ok(getState().snapshots[1].selected, "The second snapshot is selected");
 
@@ -36,9 +38,12 @@ add_task(async function() {
   dispatch(changeView(viewState.DOMINATOR_TREE));
 
   
-  await waitUntilState(store, state =>
-    state.snapshots[1].dominatorTree &&
-    state.snapshots[1].dominatorTree.state === dominatorTreeState.LOADED);
+  await waitUntilState(
+    store,
+    state =>
+      state.snapshots[1].dominatorTree &&
+      state.snapshots[1].dominatorTree.state === dominatorTreeState.LOADED
+  );
   ok(true, "The second snapshot's dominator tree was fetched");
 
   
@@ -46,9 +51,12 @@ add_task(async function() {
 
   
   
-  await waitUntilState(store, state =>
-    state.snapshots[0].dominatorTree &&
-    state.snapshots[0].dominatorTree.state === dominatorTreeState.LOADED);
+  await waitUntilState(
+    store,
+    state =>
+      state.snapshots[0].dominatorTree &&
+      state.snapshots[0].dominatorTree.state === dominatorTreeState.LOADED
+  );
   ok(true, "The first snapshot's dominator tree was fetched");
 
   heapWorker.destroy();

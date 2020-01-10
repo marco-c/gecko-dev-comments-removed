@@ -8,11 +8,11 @@
 
 
 
-const TEST_PAGE = "data:text/html;charset=utf-8," +
-                  "<p id=\"one\">one</p><p id=\"two\">two</p>";
+const TEST_PAGE =
+  "data:text/html;charset=utf-8," + '<p id="one">one</p><p id="two">two</p>';
 
 add_task(async function() {
-  const {inspector} = await openInspectorForURL(TEST_PAGE);
+  const { inspector } = await openInspectorForURL(TEST_PAGE);
 
   info("Making sure the markup-view frame is focused");
   inspector.markup._frame.focus();

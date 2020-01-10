@@ -4,10 +4,15 @@
 
 "use strict";
 
-const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
+const {
+  createFactory,
+  PureComponent,
+} = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
-const Accordion = createFactory(require("devtools/client/inspector/layout/components/Accordion"));
+const Accordion = createFactory(
+  require("devtools/client/inspector/layout/components/Accordion")
+);
 
 
 const reps = require("devtools/client/shared/components/reps/reps-old");
@@ -33,11 +38,7 @@ class ObjectValueGripView extends PureComponent {
   }
 
   render() {
-    const {
-      objectValueGrip,
-      serviceContainer,
-      rootTitle,
-    } = this.props;
+    const { objectValueGrip, serviceContainer, rootTitle } = this.props;
 
     const objectInspectorProps = {
       autoExpandDepth: 1,
@@ -45,12 +46,16 @@ class ObjectValueGripView extends PureComponent {
       
       
       disabledFocus: true,
-      roots: [{
-        path: objectValueGrip && objectValueGrip.actor || JSON.stringify(objectValueGrip),
-        contents: {
-          value: objectValueGrip,
+      roots: [
+        {
+          path:
+            (objectValueGrip && objectValueGrip.actor) ||
+            JSON.stringify(objectValueGrip),
+          contents: {
+            value: objectValueGrip,
+          },
         },
-      }],
+      ],
       createObjectClient: serviceContainer.createObjectClient,
       releaseActor: serviceContainer.releaseActor,
       

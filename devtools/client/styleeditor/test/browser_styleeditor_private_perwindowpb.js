@@ -7,12 +7,15 @@
 
 
 
-const TEST_URL = "http://" + TEST_HOST + "/browser/devtools/client/" +
+const TEST_URL =
+  "http://" +
+  TEST_HOST +
+  "/browser/devtools/client/" +
   "styleeditor/test/test_private.html";
 
 add_task(async function() {
   info("Opening a new private window");
-  const win = OpenBrowserWindow({private: true});
+  const win = OpenBrowserWindow({ private: true });
   await waitForDelayedStartupFinished(win);
 
   info("Clearing the browser cache");
@@ -60,11 +63,15 @@ function checkDiskCacheFor(host) {
     };
     function Visitor() {}
 
-    const storage =
-      Services.cache2.diskCacheStorage(Services.loadContextInfo.default, false);
-    storage.asyncVisitStorage(new Visitor(),
+    const storage = Services.cache2.diskCacheStorage(
+      Services.loadContextInfo.default,
+      false
+    );
+    storage.asyncVisitStorage(
+      new Visitor(),
       
-      true);
+      true
+    );
   });
 }
 

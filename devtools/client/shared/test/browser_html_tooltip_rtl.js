@@ -12,7 +12,9 @@
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const TEST_URI = CHROME_URL_ROOT + "doc_html_tooltip_rtl.xul";
 
-const {HTMLTooltip} = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
+const {
+  HTMLTooltip,
+} = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
 loadHelperScript("helper_html_tooltip.js");
 
 const TOOLBOX_WIDTH = 500;
@@ -22,16 +24,16 @@ const TOOLTIP_HEIGHT = 30;
 add_task(async function() {
   await pushPref("devtools.toolbox.sidebar.width", TOOLBOX_WIDTH);
 
-  const [,, doc] = await createHost("right", TEST_URI);
+  const [, , doc] = await createHost("right", TEST_URI);
 
   info("Test the positioning of tooltips in RTL and LTR directions");
 
-  const tooltip = new HTMLTooltip(doc, {useXulWrapper: false});
+  const tooltip = new HTMLTooltip(doc, { useXulWrapper: false });
   const div = doc.createElementNS(HTML_NS, "div");
   div.textContent = "tooltip";
   div.style.cssText = "box-sizing: border-box; border: 1px solid black";
   tooltip.panel.appendChild(div);
-  tooltip.setContentSize({width: TOOLTIP_WIDTH, height: TOOLTIP_HEIGHT});
+  tooltip.setContentSize({ width: TOOLTIP_WIDTH, height: TOOLTIP_HEIGHT });
 
   await testRtlAnchors(doc, tooltip);
   await testLtrAnchors(doc, tooltip);
@@ -62,7 +64,7 @@ async function testRtlAnchors(doc, tooltip) {
   const box2 = doc.getElementById("box2");
 
   info("Display the tooltip on box1.");
-  await showTooltip(tooltip, box1, {position: "bottom"});
+  await showTooltip(tooltip, box1, { position: "bottom" });
 
   let panelRect = tooltip.container.getBoundingClientRect();
   let anchorRect = box1.getBoundingClientRect();
@@ -70,23 +72,43 @@ async function testRtlAnchors(doc, tooltip) {
   
   
   is(panelRect.left, 0, "Tooltip is aligned with left edge of the toolbox");
-  is(panelRect.top, anchorRect.bottom, "Tooltip aligned with the anchor bottom edge");
-  is(panelRect.height, TOOLTIP_HEIGHT, "Tooltip height is at 100px as expected");
+  is(
+    panelRect.top,
+    anchorRect.bottom,
+    "Tooltip aligned with the anchor bottom edge"
+  );
+  is(
+    panelRect.height,
+    TOOLTIP_HEIGHT,
+    "Tooltip height is at 100px as expected"
+  );
 
   info("Display the tooltip on box2.");
-  await showTooltip(tooltip, box2, {position: "bottom"});
+  await showTooltip(tooltip, box2, { position: "bottom" });
 
   panelRect = tooltip.container.getBoundingClientRect();
   anchorRect = box2.getBoundingClientRect();
 
   
-  is(panelRect.right, anchorRect.right, "Tooltip is aligned with right edge of anchor");
-  is(panelRect.top, anchorRect.bottom, "Tooltip aligned with the anchor bottom edge");
-  is(panelRect.height, TOOLTIP_HEIGHT, "Tooltip height is at 100px as expected");
+  is(
+    panelRect.right,
+    anchorRect.right,
+    "Tooltip is aligned with right edge of anchor"
+  );
+  is(
+    panelRect.top,
+    anchorRect.bottom,
+    "Tooltip aligned with the anchor bottom edge"
+  );
+  is(
+    panelRect.height,
+    TOOLTIP_HEIGHT,
+    "Tooltip height is at 100px as expected"
+  );
 }
 
 async function testLtrAnchors(doc, tooltip) {
-    
+  
 
 
 
@@ -105,33 +127,59 @@ async function testLtrAnchors(doc, tooltip) {
   const box4 = doc.getElementById("box4");
 
   info("Display the tooltip on box3.");
-  await showTooltip(tooltip, box3, {position: "bottom"});
+  await showTooltip(tooltip, box3, { position: "bottom" });
 
   let panelRect = tooltip.container.getBoundingClientRect();
   let anchorRect = box3.getBoundingClientRect();
 
   
-  is(panelRect.left, anchorRect.left, "Tooltip is aligned with left edge of anchor");
-  is(panelRect.top, anchorRect.bottom, "Tooltip aligned with the anchor bottom edge");
-  is(panelRect.height, TOOLTIP_HEIGHT, "Tooltip height is at 100px as expected");
+  is(
+    panelRect.left,
+    anchorRect.left,
+    "Tooltip is aligned with left edge of anchor"
+  );
+  is(
+    panelRect.top,
+    anchorRect.bottom,
+    "Tooltip aligned with the anchor bottom edge"
+  );
+  is(
+    panelRect.height,
+    TOOLTIP_HEIGHT,
+    "Tooltip height is at 100px as expected"
+  );
 
   info("Display the tooltip on box4.");
-  await showTooltip(tooltip, box4, {position: "bottom"});
+  await showTooltip(tooltip, box4, { position: "bottom" });
 
   panelRect = tooltip.container.getBoundingClientRect();
   anchorRect = box4.getBoundingClientRect();
 
   
   
-  is(panelRect.right, TOOLBOX_WIDTH, "Tooltip is aligned with right edge of toolbox");
-  is(panelRect.top, anchorRect.bottom, "Tooltip aligned with the anchor bottom edge");
-  is(panelRect.height, TOOLTIP_HEIGHT, "Tooltip height is at 100px as expected");
+  is(
+    panelRect.right,
+    TOOLBOX_WIDTH,
+    "Tooltip is aligned with right edge of toolbox"
+  );
+  is(
+    panelRect.top,
+    anchorRect.bottom,
+    "Tooltip aligned with the anchor bottom edge"
+  );
+  is(
+    panelRect.height,
+    TOOLTIP_HEIGHT,
+    "Tooltip height is at 100px as expected"
+  );
 }
 
 async function testRtlArrow(doc) {
   
-  const arrowTooltip =
-    new HTMLTooltip(doc, { type: "arrow", useXulWrapper: false });
+  const arrowTooltip = new HTMLTooltip(doc, {
+    type: "arrow",
+    useXulWrapper: false,
+  });
   const div = doc.createElementNS(HTML_NS, "div");
   div.textContent = "tooltip";
   div.style.cssText = "box-sizing: border-box; border: 1px solid black";
@@ -156,14 +204,20 @@ async function testRtlArrow(doc) {
 
   
   
-  ok(arrowRect.right < panelRect.right, "Right edge of the arrow " +
-     `(${arrowRect.right}) is less than the right edge of the panel ` +
-     `(${panelRect.right})`);
+  ok(
+    arrowRect.right < panelRect.right,
+    "Right edge of the arrow " +
+      `(${arrowRect.right}) is less than the right edge of the panel ` +
+      `(${panelRect.right})`
+  );
   const rightMargin = panelRect.right - arrowRect.right;
   const leftMargin = arrowRect.left - panelRect.right;
-  ok(rightMargin > leftMargin, "Arrow should be closer to the right side of " +
-     ` the panel (margin: ${rightMargin}) than the left side ` +
-     ` (margin: ${leftMargin})`);
+  ok(
+    rightMargin > leftMargin,
+    "Arrow should be closer to the right side of " +
+      ` the panel (margin: ${rightMargin}) than the left side ` +
+      ` (margin: ${leftMargin})`
+  );
 
   await hideTooltip(arrowTooltip);
   arrowTooltip.destroy();

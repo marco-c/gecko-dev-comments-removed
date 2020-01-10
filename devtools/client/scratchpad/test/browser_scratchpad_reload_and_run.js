@@ -17,7 +17,7 @@ add_task(async function test() {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, url);
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
-  await new Promise((resolve) => openScratchpad(resolve));
+  await new Promise(resolve => openScratchpad(resolve));
   await runTests();
 
   Services.prefs.clearUserPref(DEVTOOLS_CHROME_ENABLED);
@@ -30,15 +30,20 @@ async function runTests() {
   
   
 
-  const reloadAndRun = gScratchpadWindow.document
-    .getElementById("sp-cmd-reloadAndRun");
+  const reloadAndRun = gScratchpadWindow.document.getElementById(
+    "sp-cmd-reloadAndRun"
+  );
   ok(reloadAndRun, "Reload And Run command exists");
-  ok(!reloadAndRun.hasAttribute("disabled"),
-      "Reload And Run command is enabled");
+  ok(
+    !reloadAndRun.hasAttribute("disabled"),
+    "Reload And Run command is enabled"
+  );
 
   sp.setBrowserContext();
-  ok(reloadAndRun.hasAttribute("disabled"),
-      "Reload And Run command is disabled in the browser context.");
+  ok(
+    reloadAndRun.hasAttribute("disabled"),
+    "Reload And Run command is disabled in the browser context."
+  );
 
   
   
@@ -51,8 +56,10 @@ async function runTests() {
 
   const browser = gBrowser.selectedBrowser;
   await ContentTask.spawn(browser, null, function() {
-    ok(content.document.body.innerHTML !== "Modified text",
-      "Before reloading, HTML is intact.");
+    ok(
+      content.document.body.innerHTML !== "Modified text",
+      "Before reloading, HTML is intact."
+    );
   });
 
   const reloaded = BrowserTestUtils.browserLoaded(browser);
@@ -63,12 +70,14 @@ async function runTests() {
     
     
     if (!content.wrappedJSObject.evt) {
-      await new Promise((resolve) => {
-        content.addEventListener("foo", resolve, {once: true});
+      await new Promise(resolve => {
+        content.addEventListener("foo", resolve, { once: true });
       });
     }
-    is(content.document.body.innerHTML, "Modified text",
-      "After reloading, HTML is different.");
+    is(
+      content.document.body.innerHTML,
+      "Modified text",
+      "After reloading, HTML is different."
+    );
   });
 }
-

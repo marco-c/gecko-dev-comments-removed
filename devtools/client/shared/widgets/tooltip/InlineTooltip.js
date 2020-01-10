@@ -56,7 +56,10 @@ InlineTooltip.prototype = {
 
 
   isVisible() {
-    return typeof this.panel.parentNode !== "undefined" && this.panel.parentNode !== null;
+    return (
+      typeof this.panel.parentNode !== "undefined" &&
+      this.panel.parentNode !== null
+    );
   },
 
   

@@ -8,12 +8,11 @@
 
 
 add_task(async function() {
-  const dbg = await attachRecordingDebugger(
-    "doc_rr_error.html",
-    { waitForRecording: true }
-  );
+  const dbg = await attachRecordingDebugger("doc_rr_error.html", {
+    waitForRecording: true,
+  });
 
-  const {tab, toolbox, threadClient, target} = dbg;
+  const { tab, toolbox, threadClient, target } = dbg;
   const console = await getDebuggerSplitConsole(dbg);
   const hud = console.hud;
 

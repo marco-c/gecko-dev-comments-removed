@@ -20,13 +20,15 @@ add_task(async () => {
   await performRequests(monitor, tab, 2);
 
   
-  await waitUntil(() => document.querySelectorAll(".request-list-item").length == 2);
+  await waitUntil(
+    () => document.querySelectorAll(".request-list-item").length == 2
+  );
 
   info("Select the inspector");
   await toolbox.selectTool("inspector");
 
   info("Wait for Net panel to be hidden");
-  await waitUntil(() => (document.visibilityState == "hidden"));
+  await waitUntil(() => document.visibilityState == "hidden");
 
   
   await performRequests(monitor, tab, 2);
@@ -34,15 +36,20 @@ add_task(async () => {
   
   
   
-  is(document.querySelectorAll(".request-list-item").length, 2,
-    "There should be expected number of requests");
+  is(
+    document.querySelectorAll(".request-list-item").length,
+    2,
+    "There should be expected number of requests"
+  );
 
   info("Select the Net panel again");
   await toolbox.selectTool("netmonitor");
 
   
   
-  await waitUntil(() => document.querySelectorAll(".request-list-item").length == 4);
+  await waitUntil(
+    () => document.querySelectorAll(".request-list-item").length == 4
+  );
 
   return teardown(monitor);
 });

@@ -35,14 +35,16 @@ module.exports = TabStore = function(connection) {
 };
 
 TabStore.prototype = {
-
   destroy: function() {
     if (this._connection) {
       
       
       
       this._connection.off(Connection.Events.DESTROYED, this.destroy);
-      this._connection.off(Connection.Events.STATUS_CHANGED, this._onStatusChanged);
+      this._connection.off(
+        Connection.Events.STATUS_CHANGED,
+        this._onStatusChanged
+      );
       _knownTabStores.delete(this._connection);
       this._connection = null;
     }
@@ -57,21 +59,26 @@ TabStore.prototype = {
   _onStatusChanged: function() {
     if (this._connection.status == Connection.Status.CONNECTED) {
       
-      this._connection.client.mainRoot.on("tabListChanged",
-                                          this._onTabListChanged);
+      this._connection.client.mainRoot.on(
+        "tabListChanged",
+        this._onTabListChanged
+      );
       this.listTabs();
     } else {
       if (this._connection.client) {
-        this._connection.client.mainRoot.off("tabListChanged",
-                                             this._onTabListChanged);
+        this._connection.client.mainRoot.off(
+          "tabListChanged",
+          this._onTabListChanged
+        );
       }
       this._resetStore();
     }
   },
 
   _onTabListChanged: function() {
-    this.listTabs().then(() => this.emit("tab-list"))
-                   .catch(console.error);
+    this.listTabs()
+      .then(() => this.emit("tab-list"))
+      .catch(console.error);
   },
 
   _onTabNavigated: function(e, { from, title, url }) {
@@ -89,21 +96,25 @@ TabStore.prototype = {
     }
 
     return new Promise((resolve, reject) => {
-      this._connection.client.mainRoot.listTabs().then(tabs => {
-        
-        
-        tabs = tabs.map(tab => tab.targetForm);
-        const tabsChanged = JSON.stringify(this.tabs) !== JSON.stringify(tabs);
-        this.tabs = tabs;
-        this._checkSelectedTab();
-        if (tabsChanged) {
-          this.emit("tab-list");
+      this._connection.client.mainRoot.listTabs().then(
+        tabs => {
+          
+          
+          tabs = tabs.map(tab => tab.targetForm);
+          const tabsChanged =
+            JSON.stringify(this.tabs) !== JSON.stringify(tabs);
+          this.tabs = tabs;
+          this._checkSelectedTab();
+          if (tabsChanged) {
+            this.emit("tab-list");
+          }
+          resolve(tabs);
+        },
+        error => {
+          this._connection.disconnect();
+          reject(error);
         }
-        resolve(tabs);
-      }, error => {
-        this._connection.disconnect();
-        reject(error);
-      });
+      );
     });
   },
 
@@ -163,5 +174,4 @@ TabStore.prototype = {
     });
     return this._selectedTabTargetPromise;
   },
-
 };

@@ -20,18 +20,20 @@ exports.classes = {
 
 
 
-const declaration = exports.declaration = {
+const declaration = (exports.declaration = {
   
-  computedProperties: PropTypes.arrayOf(PropTypes.shape({
-    
-    isOverridden: PropTypes.bool,
-    
-    name: PropTypes.string,
-    
-    priority: PropTypes.string,
-    
-    value: PropTypes.string,
-  })),
+  computedProperties: PropTypes.arrayOf(
+    PropTypes.shape({
+      
+      isOverridden: PropTypes.bool,
+      
+      name: PropTypes.string,
+      
+      priority: PropTypes.string,
+      
+      value: PropTypes.string,
+    })
+  ),
 
   
   id: PropTypes.string,
@@ -67,7 +69,7 @@ const declaration = exports.declaration = {
 
   
   value: PropTypes.string,
-};
+});
 
 
 
@@ -109,7 +111,7 @@ exports.pseudoClasses = {
 
 
 
-const selector = exports.selector = {
+const selector = (exports.selector = {
   
   getUniqueSelector: PropTypes.func,
   
@@ -118,7 +120,7 @@ const selector = exports.selector = {
   selectorText: PropTypes.string,
   
   selectors: PropTypes.arrayOf(PropTypes.string),
-};
+});
 
 
 

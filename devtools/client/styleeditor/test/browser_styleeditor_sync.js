@@ -63,10 +63,13 @@ add_task(async function() {
 
   
   
-  const textContent = await ContentTask.spawn(gBrowser.selectedBrowser, null,
+  const textContent = await ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    null,
     async function() {
       return content.document.querySelector("style").textContent;
-    });
+    }
+  );
 
   isnot(textContent, expectedText, "changes not written back to style node");
 });

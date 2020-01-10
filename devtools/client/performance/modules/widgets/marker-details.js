@@ -8,7 +8,9 @@
 
 
 const EventEmitter = require("devtools/shared/event-emitter");
-const { MarkerDOMUtils } = require("devtools/client/performance/modules/marker-dom-utils");
+const {
+  MarkerDOMUtils,
+} = require("devtools/client/performance/modules/marker-dom-utils");
 
 
 
@@ -94,23 +96,34 @@ MarkerDetails.prototype = {
     const elements = [];
     elements.push(MarkerDOMUtils.buildTitle(this._document, marker));
     elements.push(MarkerDOMUtils.buildDuration(this._document, marker));
-    MarkerDOMUtils.buildFields(this._document, marker).forEach(f => elements.push(f));
-    MarkerDOMUtils.buildCustom(this._document, marker, options)
-                  .forEach(f => elements.push(f));
+    MarkerDOMUtils.buildFields(this._document, marker).forEach(f =>
+      elements.push(f)
+    );
+    MarkerDOMUtils.buildCustom(this._document, marker, options).forEach(f =>
+      elements.push(f)
+    );
 
     
     
     if (marker.stack) {
       const type = marker.endStack ? "startStack" : "stack";
-      elements.push(MarkerDOMUtils.buildStackTrace(this._document, {
-        frameIndex: marker.stack, frames, type,
-      }));
+      elements.push(
+        MarkerDOMUtils.buildStackTrace(this._document, {
+          frameIndex: marker.stack,
+          frames,
+          type,
+        })
+      );
     }
     if (marker.endStack) {
       const type = "endStack";
-      elements.push(MarkerDOMUtils.buildStackTrace(this._document, {
-        frameIndex: marker.endStack, frames, type,
-      }));
+      elements.push(
+        MarkerDOMUtils.buildStackTrace(this._document, {
+          frameIndex: marker.endStack,
+          frames,
+          type,
+        })
+      );
     }
 
     elements.forEach(el => this._parent.appendChild(el));

@@ -6,10 +6,13 @@
 (function(exports) {
   const CC = Components.Constructor;
 
-  const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+  const { require } = ChromeUtils.import(
+    "resource://devtools/shared/Loader.jsm"
+  );
   const { fetch } = require("devtools/shared/DevToolsUtils");
 
-  const TEST_URL_ROOT = "http://example.com/browser/devtools/client/shared/test/";
+  const TEST_URL_ROOT =
+    "http://example.com/browser/devtools/client/shared/test/";
   const ACTOR_URL = TEST_URL_ROOT + "test-actor.js";
 
   
@@ -23,7 +26,10 @@
       constructor: "TestActor",
       prefix: "testActor",
     };
-    const testActorFront = await registryFront.registerActor(ACTOR_URL, options);
+    const testActorFront = await registryFront.registerActor(
+      ACTOR_URL,
+      options
+    );
     return testActorFront;
   };
 
@@ -41,8 +47,7 @@
   
   
   const getUpdatedForm = function(client, tab) {
-    return client.mainRoot.getTab({tab: tab})
-                 .then(front => front.targetForm);
+    return client.mainRoot.getTab({ tab: tab }).then(front => front.targetForm);
   };
 
   
@@ -55,7 +60,9 @@
   
   exports.getTestActorWithoutToolbox = async function(tab) {
     const { DebuggerServer } = require("devtools/server/main");
-    const { DebuggerClient } = require("devtools/shared/client/debugger-client");
+    const {
+      DebuggerClient,
+    } = require("devtools/shared/client/debugger-client");
 
     
     
@@ -68,7 +75,7 @@
     
     
     
-    await client.mainRoot.getTab({tab});
+    await client.mainRoot.getTab({ tab });
 
     
     await exports.registerTestActor(client);

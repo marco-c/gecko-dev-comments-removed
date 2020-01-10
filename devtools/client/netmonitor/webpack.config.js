@@ -47,10 +47,7 @@ const webpackConfig = {
   },
 
   resolveLoader: {
-    modules: [
-      "node_modules",
-      path.resolve("../shared/webpack"),
-    ],
+    modules: ["node_modules", path.resolve("../shared/webpack")],
   },
 
   output: {
@@ -68,10 +65,13 @@ const webpackConfig = {
       "node_modules",
     ],
     alias: {
-      "Services": "devtools-modules/src/Services",
-      "react": path.join(__dirname, "node_modules/react"),
+      Services: "devtools-modules/src/Services",
+      react: path.join(__dirname, "node_modules/react"),
 
-      "devtools/client/framework/devtools": path.join(__dirname, "../../client/shared/webpack/shims/framework-devtools-shim"),
+      "devtools/client/framework/devtools": path.join(
+        __dirname,
+        "../../client/shared/webpack/shims/framework-devtools-shim"
+      ),
       "devtools/client/framework/menu": "devtools-modules/src/menu",
 
       "devtools/client/shared/components/menu/utils": "devtools-contextmenu",
@@ -83,22 +83,40 @@ const webpackConfig = {
       "devtools/client/shared/vendor/reselect": "reselect",
       "devtools/client/shared/vendor/jszip": "jszip",
 
-      "devtools/client/shared/sourceeditor/editor": "devtools-source-editor/src/source-editor",
+      "devtools/client/shared/sourceeditor/editor":
+        "devtools-source-editor/src/source-editor",
 
-      "devtools/shared/event-emitter": "devtools-modules/src/utils/event-emitter",
-      "devtools/shared/platform/clipboard": path.join(__dirname, "../../client/shared/webpack/shims/platform-clipboard-stub"),
-      "devtools/client/netmonitor/src/utils/firefox/open-request-in-tab": path.join(__dirname, "src/utils/open-request-in-tab"),
-      "devtools/client/shared/unicode-url": "./node_modules/devtools-modules/src/unicode-url",
+      "devtools/shared/event-emitter":
+        "devtools-modules/src/utils/event-emitter",
+      "devtools/shared/platform/clipboard": path.join(
+        __dirname,
+        "../../client/shared/webpack/shims/platform-clipboard-stub"
+      ),
+      "devtools/client/netmonitor/src/utils/firefox/open-request-in-tab": path.join(
+        __dirname,
+        "src/utils/open-request-in-tab"
+      ),
+      "devtools/client/shared/unicode-url":
+        "./node_modules/devtools-modules/src/unicode-url",
 
       
-      "devtools/client/locales": path.join(__dirname, "../../client/locales/en-US"),
-      "devtools/shared/locales": path.join(__dirname, "../../shared/locales/en-US"),
-      "devtools/startup/locales": path.join(__dirname, "../../shared/locales/en-US"),
+      "devtools/client/locales": path.join(
+        __dirname,
+        "../../client/locales/en-US"
+      ),
+      "devtools/shared/locales": path.join(
+        __dirname,
+        "../../shared/locales/en-US"
+      ),
+      "devtools/startup/locales": path.join(
+        __dirname,
+        "../../shared/locales/en-US"
+      ),
       "toolkit/locales": path.join(__dirname, "../../../toolkit/locales/en-US"),
 
       
       
-      "devtools": path.join(__dirname, "../../"),
+      devtools: path.join(__dirname, "../../"),
     },
   },
 };
@@ -106,29 +124,36 @@ const webpackConfig = {
 const mappings = [
   [
     /chrome:\/\/devtools\/skin/,
-    (result) => {
-      result.request = result.request
-        .replace("./chrome://devtools/skin", path.join(__dirname, "../themes"));
+    result => {
+      result.request = result.request.replace(
+        "./chrome://devtools/skin",
+        path.join(__dirname, "../themes")
+      );
     },
   ],
   [
     /chrome:\/\/devtools\/content/,
-    (result) => {
-      result.request = result.request
-        .replace("./chrome://devtools/content", path.join(__dirname, ".."));
+    result => {
+      result.request = result.request.replace(
+        "./chrome://devtools/content",
+        path.join(__dirname, "..")
+      );
     },
   ],
   [
     /resource:\/\/devtools/,
-    (result) => {
-      result.request = result.request
-        .replace("./resource://devtools/client", path.join(__dirname, ".."));
+    result => {
+      result.request = result.request.replace(
+        "./resource://devtools/client",
+        path.join(__dirname, "..")
+      );
     },
   ],
 ];
 
-webpackConfig.plugins = mappings.map(([regex, res]) =>
-  new NormalModuleReplacementPlugin(regex, res));
+webpackConfig.plugins = mappings.map(
+  ([regex, res]) => new NormalModuleReplacementPlugin(regex, res)
+);
 
 const basePath = path.join(__dirname, "../../").replace(/\\/g, "\\\\");
 const baseName = path.basename(__dirname);
@@ -141,7 +166,9 @@ const config = toolboxConfig(webpackConfig, getConfig(), {
 
 
 
-config.module.rules = config.module.rules.filter((rule) => !["svg-inline-loader"].includes(rule.loader));
+config.module.rules = config.module.rules.filter(
+  rule => !["svg-inline-loader"].includes(rule.loader)
+);
 
 
 

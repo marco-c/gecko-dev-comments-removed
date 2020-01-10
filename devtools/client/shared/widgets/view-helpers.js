@@ -5,8 +5,8 @@
 
 "use strict";
 
-const {Cu} = require("chrome");
-const {KeyCodes} = require("devtools/client/shared/keycodes");
+const { Cu } = require("chrome");
+const { KeyCodes } = require("devtools/client/shared/keycodes");
 
 const PANE_APPEARANCE_DELAY = 50;
 
@@ -26,8 +26,10 @@ var namedTimeoutsStore = new Map();
 const setNamedTimeout = function setNamedTimeout(id, wait, callback) {
   clearNamedTimeout(id);
 
-  namedTimeoutsStore.set(id, setTimeout(() =>
-    namedTimeoutsStore.delete(id) && callback(), wait));
+  namedTimeoutsStore.set(
+    id,
+    setTimeout(() => namedTimeoutsStore.delete(id) && callback(), wait)
+  );
 };
 exports.setNamedTimeout = setNamedTimeout;
 
@@ -86,10 +88,8 @@ exports.ViewHelpers = {
 
 
   delegateWidgetAttributeMethods: function(widget, node) {
-    widget.getAttribute =
-      widget.getAttribute || node.getAttribute.bind(node);
-    widget.setAttribute =
-      widget.setAttribute || node.setAttribute.bind(node);
+    widget.getAttribute = widget.getAttribute || node.getAttribute.bind(node);
+    widget.setAttribute = widget.setAttribute || node.setAttribute.bind(node);
     widget.removeAttribute =
       widget.removeAttribute || node.removeAttribute.bind(node);
   },
@@ -127,9 +127,11 @@ exports.ViewHelpers = {
 
 
   isNode: function(object) {
-    return object instanceof Node ||
-           object instanceof Element ||
-           Cu.getClassName(object) == "DocumentFragment";
+    return (
+      object instanceof Node ||
+      object instanceof Element ||
+      Cu.getClassName(object) == "DocumentFragment"
+    );
   },
 
   
@@ -160,8 +162,10 @@ exports.ViewHelpers = {
 
 
   isSpaceOrReturn: function(event) {
-    return event.keyCode === KeyCodes.DOM_VK_SPACE ||
-          event.keyCode === KeyCodes.DOM_VK_RETURN;
+    return (
+      event.keyCode === KeyCodes.DOM_VK_SPACE ||
+      event.keyCode === KeyCodes.DOM_VK_RETURN
+    );
   },
 
   
@@ -234,18 +238,22 @@ exports.ViewHelpers = {
           once: true,
         };
 
-        pane.addEventListener("transitionend", () => {
-          
-          
-          pane.removeAttribute("animated");
+        pane.addEventListener(
+          "transitionend",
+          () => {
+            
+            
+            pane.removeAttribute("animated");
 
-          if (!flags.visible) {
-            pane.classList.add("pane-collapsed");
-          }
-          if (flags.callback) {
-            flags.callback();
-          }
-        }, options);
+            if (!flags.visible) {
+              pane.classList.add("pane-collapsed");
+            }
+            if (flags.callback) {
+              flags.callback();
+            }
+          },
+          options
+        );
       } else {
         if (!flags.visible) {
           pane.classList.add("pane-collapsed");
@@ -261,8 +269,10 @@ exports.ViewHelpers = {
     
     
     if (flags.delayed) {
-      pane.ownerDocument.defaultView.setTimeout(doToggle,
-                                                PANE_APPEARANCE_DELAY);
+      pane.ownerDocument.defaultView.setTimeout(
+        doToggle,
+        PANE_APPEARANCE_DELAY
+      );
     } else {
       doToggle();
     }
@@ -403,12 +413,16 @@ Item.prototype = {
 
 
   stringify: function() {
-    return JSON.stringify({
-      value: this._value,
-      target: this._target + "",
-      prebuiltNode: this._prebuiltNode + "",
-      attachment: this.attachment,
-    }, null, 2);
+    return JSON.stringify(
+      {
+        value: this._value,
+        target: this._target + "",
+        prebuiltNode: this._prebuiltNode + "",
+        attachment: this.attachment,
+      },
+      null,
+      2
+    );
   },
 
   _value: "",
@@ -417,4 +431,3 @@ Item.prototype = {
   finalize: null,
   attachment: null,
 };
-

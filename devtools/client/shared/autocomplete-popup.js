@@ -7,7 +7,12 @@
 
 const EventEmitter = require("devtools/shared/event-emitter");
 
-loader.lazyRequireGetter(this, "HTMLTooltip", "devtools/client/shared/widgets/tooltip/HTMLTooltip", true);
+loader.lazyRequireGetter(
+  this,
+  "HTMLTooltip",
+  "devtools/client/shared/widgets/tooltip/HTMLTooltip",
+  true
+);
 loader.lazyRequireGetter(this, "colorUtils", "devtools/shared/css/color", true);
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -98,7 +103,8 @@ AutocompletePopup.prototype = {
     this._tooltip = new HTMLTooltip(this._document);
     this._tooltip.panel.classList.add(
       "devtools-autocomplete-popup",
-      "devtools-monospace");
+      "devtools-monospace"
+    );
     
     this._tooltip.panel.setAttribute("role", "presentation");
     this._tooltip.panel.appendChild(this.list);
@@ -173,9 +179,7 @@ AutocompletePopup.prototype = {
 
 
   selectItemAtIndex: function(index, options = {}) {
-    const {
-      preventSelectCallback,
-    } = options;
+    const { preventSelectCallback } = options;
 
     if (!Number.isInteger(index)) {
       
@@ -201,7 +205,12 @@ AutocompletePopup.prototype = {
     }
     this.selectedIndex = index;
 
-    if (this.isOpen && item && this.onSelectCallback && !preventSelectCallback) {
+    if (
+      this.isOpen &&
+      item &&
+      this.onSelectCallback &&
+      !preventSelectCallback
+    ) {
       
       this.onSelectCallback(item);
     }
@@ -312,7 +321,7 @@ AutocompletePopup.prototype = {
       this.elements.set(item, listItem);
       fragment.appendChild(listItem);
 
-      let {label, postLabel, count} = item;
+      let { label, postLabel, count } = item;
       if (count) {
         label += count + "";
       }
@@ -323,24 +332,24 @@ AutocompletePopup.prototype = {
       maxLabelLength = Math.max(label.length, maxLabelLength);
     });
 
-    this.list.style.width = (maxLabelLength + 3) + "ch";
+    this.list.style.width = maxLabelLength + 3 + "ch";
     this.list.appendChild(fragment);
 
     this.selectItemAtIndex(selectedIndex, options);
   },
 
   _scrollElementIntoViewIfNeeded: function(element) {
-    const quads = element.getBoxQuads({relativeTo: this.tooltip.panel});
+    const quads = element.getBoxQuads({ relativeTo: this.tooltip.panel });
     if (!quads || !quads[0]) {
       return;
     }
 
-    const {top, height} = quads[0].getBounds();
+    const { top, height } = quads[0].getBounds();
     const containerHeight = this.tooltip.panel.getBoundingClientRect().height;
     if (top < 0) {
       
       element.scrollIntoView(true);
-    } else if ((top + height) > containerHeight) {
+    } else if (top + height > containerHeight) {
       
       element.scrollIntoView(false);
     }
@@ -394,7 +403,10 @@ AutocompletePopup.prototype = {
 
     
     const anchorDoc = this._activeElement.ownerDocument;
-    if (!this._listClone.parentNode || this._listClone.ownerDocument !== anchorDoc) {
+    if (
+      !this._listClone.parentNode ||
+      this._listClone.ownerDocument !== anchorDoc
+    ) {
       anchorDoc.documentElement.appendChild(this._listClone);
     }
 
@@ -503,7 +515,7 @@ AutocompletePopup.prototype = {
 
 
   selectNextItem: function() {
-    if (this.selectedIndex < (this.items.length - 1)) {
+    if (this.selectedIndex < this.items.length - 1) {
       this.selectItemAtIndex(this.selectedIndex + 1);
     } else {
       this.selectItemAtIndex(0);
@@ -562,7 +574,7 @@ AutocompletePopup.prototype = {
 
   _isValidColor: function(color) {
     const colorObj = new colorUtils.CssColor(color);
-    return (colorObj.valid && (!colorObj.specialValue));
+    return colorObj.valid && !colorObj.specialValue;
   },
 
   

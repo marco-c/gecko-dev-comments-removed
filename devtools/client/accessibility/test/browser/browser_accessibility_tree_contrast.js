@@ -24,30 +24,39 @@ const TEST_URI = `<html>
 
 
 
-const tests = [{
-  desc: "Expand first and second tree nodes.",
-  setup: async ({ doc }) => {
-    await toggleRow(doc, 0);
-    await toggleRow(doc, 1);
+const tests = [
+  {
+    desc: "Expand first and second tree nodes.",
+    setup: async ({ doc }) => {
+      await toggleRow(doc, 0);
+      await toggleRow(doc, 1);
+    },
+    expected: {
+      tree: [
+        {
+          role: "document",
+          name: `"Accessibility Panel Test"`,
+        },
+        {
+          role: "heading",
+          name: `"Top level header"`,
+        },
+        {
+          role: "text leaf",
+          name: `"Top level header "contrast`,
+          badges: ["contrast"],
+        },
+      ],
+    },
   },
-  expected: {
-    tree: [{
-      role: "document",
-      name: `"Accessibility Panel Test"`,
-    }, {
-      role: "heading",
-      name: `"Top level header"`,
-    }, {
-      role: "text leaf",
-      name: `"Top level header "contrast`,
-      badges: [ "contrast" ],
-    }],
-  },
-}];
+];
 
 
 
 
 
-addA11yPanelTestsTask(tests, TEST_URI,
-  "Test Accessibility panel tree with contrast badge.");
+addA11yPanelTestsTask(
+  tests,
+  TEST_URI,
+  "Test Accessibility panel tree with contrast badge."
+);

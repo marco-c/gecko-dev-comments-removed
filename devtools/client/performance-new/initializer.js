@@ -6,7 +6,10 @@
 
 
 const BrowserLoaderModule = {};
-ChromeUtils.import("resource://devtools/client/shared/browser-loader.js", BrowserLoaderModule);
+ChromeUtils.import(
+  "resource://devtools/client/shared/browser-loader.js",
+  BrowserLoaderModule
+);
 const { require } = BrowserLoaderModule.BrowserLoader({
   baseURI: "resource://devtools/client/performance-new/",
   window,
@@ -36,31 +39,30 @@ async function gInit(perfFront, preferenceFront) {
 
   
   
-  store.dispatch(actions.initializeStore({
-    perfFront,
-    receiveProfile,
-    
-    
-    
-    
-    recordingSettingsFromPreferences: await getRecordingPreferences(
-      preferenceFront,
-      selectors.getRecordingSettings(store.getState())
-    ),
-    
-    
-    setRecordingPreferences: () => setRecordingPreferences(
-      preferenceFront,
-      selectors.getRecordingSettings(store.getState())
-    ),
-  }));
+  store.dispatch(
+    actions.initializeStore({
+      perfFront,
+      receiveProfile,
+      
+      
+      
+      
+      recordingSettingsFromPreferences: await getRecordingPreferences(
+        preferenceFront,
+        selectors.getRecordingSettings(store.getState())
+      ),
+      
+      
+      setRecordingPreferences: () =>
+        setRecordingPreferences(
+          preferenceFront,
+          selectors.getRecordingSettings(store.getState())
+        ),
+    })
+  );
 
   ReactDOM.render(
-    React.createElement(
-      Provider,
-      { store },
-      React.createElement(Perf)
-    ),
+    React.createElement(Provider, { store }, React.createElement(Perf)),
     document.querySelector("#root")
   );
 }

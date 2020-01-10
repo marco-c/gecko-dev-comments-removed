@@ -9,16 +9,26 @@
 
 const Services = require("Services");
 const flags = require("devtools/shared/flags");
-const { createRef, PureComponent } = require("devtools/client/shared/vendor/react");
+const {
+  createRef,
+  PureComponent,
+} = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { button } = dom;
-const { HTMLTooltip } = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
+const {
+  HTMLTooltip,
+} = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
 const { focusableSelector } = require("devtools/client/shared/focus");
 
 const isMacOS = Services.appinfo.OS === "Darwin";
 
-loader.lazyRequireGetter(this, "createPortal", "devtools/client/shared/vendor/react-dom", true);
+loader.lazyRequireGetter(
+  this,
+  "createPortal",
+  "devtools/client/shared/vendor/react-dom",
+  true
+);
 
 
 const omit = (obj, fields) => {
@@ -92,11 +102,15 @@ class MenuButton extends PureComponent {
     if (!this.state.isMenuInitialized) {
       
       for (const event of ["focus", "mousemove"]) {
-        this.buttonRef.current.addEventListener(event, () => {
-          if (!this.state.isMenuInitialized) {
-            this.setState({ isMenuInitialized: true });
-          }
-        }, { once: true });
+        this.buttonRef.current.addEventListener(
+          event,
+          () => {
+            if (!this.state.isMenuInitialized) {
+              this.setState({ isMenuInitialized: true });
+            }
+          },
+          { once: true }
+        );
       }
     }
   }
@@ -225,8 +239,12 @@ class MenuButton extends PureComponent {
       
       
       
-      if (anchorRect.x <= clientX && clientX <= anchorRect.x + anchorRect.width &&
-          anchorRect.y <= clientY && clientY <= anchorRect.y + anchorRect.height) {
+      if (
+        anchorRect.x <= clientX &&
+        clientX <= anchorRect.x + anchorRect.width &&
+        anchorRect.y <= clientY &&
+        clientY <= anchorRect.y + anchorRect.height
+      ) {
         this.ignoreNextClick = true;
       }
     };
@@ -256,9 +274,7 @@ class MenuButton extends PureComponent {
       if (this.buttonRef.current) {
         this.buttonRef.current.style.pointerEvents = "auto";
       }
-      this.state.win.removeEventListener("touchstart",
-                                         this.onTouchStart,
-                                         true);
+      this.state.win.removeEventListener("touchstart", this.onTouchStart, true);
     }, 0);
 
     this.state.win.addEventListener("touchstart", this.onTouchStart, true);
@@ -293,8 +309,10 @@ class MenuButton extends PureComponent {
         
         
         
-        if (!this.state.expanded &&
-            !Services.prefs.getBoolPref("ui.popup.disable_autohide", false)) {
+        if (
+          !this.state.expanded &&
+          !Services.prefs.getBoolPref("ui.popup.disable_autohide", false)
+        ) {
           this.buttonRef.current.style.pointerEvents = "none";
         }
         await this.toggleMenu(e.target);
@@ -309,14 +327,16 @@ class MenuButton extends PureComponent {
           this.forceUpdate();
         }
       }
-    
-    
-    
-    
-    
-    } else if (this.state.expanded &&
-               !e.defaultPrevented &&
-               e.target.matches(focusableSelector)) {
+      
+      
+      
+      
+      
+    } else if (
+      this.state.expanded &&
+      !e.defaultPrevented &&
+      e.target.matches(focusableSelector)
+    ) {
       this.hideMenu();
     }
   }
@@ -352,7 +372,7 @@ class MenuButton extends PureComponent {
         }
         break;
       case "t":
-        if (isMacOS && e.metaKey || !isMacOS && e.ctrlKey) {
+        if ((isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey)) {
           
           
           

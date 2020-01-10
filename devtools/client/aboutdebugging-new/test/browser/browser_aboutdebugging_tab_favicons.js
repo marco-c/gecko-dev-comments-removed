@@ -10,14 +10,16 @@
 
 
 
-const TAB_URL = "https://example.com/browser/devtools/client/aboutdebugging-new/" +
-                "test/browser/test-tab-favicons.html";
+const TAB_URL =
+  "https://example.com/browser/devtools/client/aboutdebugging-new/" +
+  "test/browser/test-tab-favicons.html";
 
 
-const EXPECTED_FAVICON = "data:image/png;base64," +
-    "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAATklEQVRYhe3SIQ4AI" +
-    "BADwf7/04elBAtrVlSduGnSTDJ7cuT1PQJwwO+Hl7sAGAA07gjAAfgIBeAAoH" +
-    "FHAA7ARygABwCNOwJwAD5CATRgAYXh+kypw86nAAAAAElFTkSuQmCC";
+const EXPECTED_FAVICON =
+  "data:image/png;base64," +
+  "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAATklEQVRYhe3SIQ4AI" +
+  "BADwf7/04elBAtrVlSduGnSTDJ7cuT1PQJwwO+Hl7sAGAA07gjAAfgIBeAAoH" +
+  "FHAA7ARygABwCNOwJwAD5CATRgAYXh+kypw86nAAAAAElFTkSuQmCC";
 
 add_task(async function() {
   const faviconTab = await addTab(TAB_URL, { background: true });
@@ -26,14 +28,19 @@ add_task(async function() {
 
   await waitUntil(() => findDebugTargetByText("Favicon tab", document));
   const faviconTabTarget = findDebugTargetByText("Favicon tab", document);
-  const faviconTabIcon = faviconTabTarget.querySelector(".qa-debug-target-item-icon");
+  const faviconTabIcon = faviconTabTarget.querySelector(
+    ".qa-debug-target-item-icon"
+  );
 
   
   
   
   
-  is(faviconTabIcon.src, EXPECTED_FAVICON,
-    "The debug target item for the tab shows the favicon of the tab");
+  is(
+    faviconTabIcon.src,
+    EXPECTED_FAVICON,
+    "The debug target item for the tab shows the favicon of the tab"
+  );
 
   await removeTab(tab);
   await removeTab(faviconTab);

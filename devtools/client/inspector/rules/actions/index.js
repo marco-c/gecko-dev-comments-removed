@@ -6,41 +6,42 @@
 
 const { createEnum } = require("devtools/client/shared/enum");
 
-createEnum([
+createEnum(
+  [
+    
+    
+    "DISABLE_ALL_PSEUDO_CLASSES",
 
-  
-  
-  "DISABLE_ALL_PSEUDO_CLASSES",
+    
+    
+    "SET_PSEUDO_CLASSES",
 
-  
-  
-  "SET_PSEUDO_CLASSES",
+    
+    "TOGGLE_PSEUDO_CLASS",
 
-  
-  "TOGGLE_PSEUDO_CLASS",
+    
+    "UPDATE_ADD_RULE_ENABLED",
 
-  
-  "UPDATE_ADD_RULE_ENABLED",
+    
+    "UPDATE_CLASSES",
 
-  
-  "UPDATE_CLASSES",
+    
+    "UPDATE_CLASS_PANEL_EXPANDED",
 
-  
-  "UPDATE_CLASS_PANEL_EXPANDED",
+    
+    "UPDATE_HIGHLIGHTED_SELECTOR",
 
-  
-  "UPDATE_HIGHLIGHTED_SELECTOR",
+    
+    "UPDATE_PRINT_SIMULATION_HIDDEN",
 
-  
-  "UPDATE_PRINT_SIMULATION_HIDDEN",
+    
+    "UPDATE_RULES",
 
-  
-  "UPDATE_RULES",
+    
+    "UPDATE_SOURCE_LINK_ENABLED",
 
-  
-  "UPDATE_SOURCE_LINK_ENABLED",
-
-  
-  "UPDATE_SOURCE_LINK",
-
-], module.exports);
+    
+    "UPDATE_SOURCE_LINK",
+  ],
+  module.exports
+);

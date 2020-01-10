@@ -5,7 +5,12 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "getTabPrefs", "devtools/shared/indentation", true);
+loader.lazyRequireGetter(
+  this,
+  "getTabPrefs",
+  "devtools/shared/indentation",
+  true
+);
 
 const { getSourceForDisplay } = require("../utils/changes-utils");
 
@@ -30,7 +35,10 @@ const { getSourceForDisplay } = require("../utils/changes-utils");
 
 function getChangesTree(state, filter = {}) {
   
-  const { sourceIds: sourceIdsFilter = [], ruleIds: rulesIdsFilter = [] } = filter;
+  const {
+    sourceIds: sourceIdsFilter = [],
+    ruleIds: rulesIdsFilter = [],
+  } = filter;
   
 
 
@@ -53,7 +61,8 @@ function getChangesTree(state, filter = {}) {
     return {
       ...rule,
       children: rule.children.map(childRuleId =>
-          expandRuleChildren(childRuleId, rules[childRuleId], rules, visitedRules)),
+        expandRuleChildren(childRuleId, rules[childRuleId], rules, visitedRules)
+      ),
     };
   }
 
@@ -92,7 +101,12 @@ function getChangesTree(state, filter = {}) {
             
             
             
-            const expandedRule = expandRuleChildren(ruleId, rule, rules, visitedRules);
+            const expandedRule = expandRuleChildren(
+              ruleId,
+              rule,
+              rules,
+              visitedRules
+            );
             if (expandedRule !== null) {
               rulesObj[ruleId] = expandedRule;
             }
@@ -122,38 +136,40 @@ function getChangesTree(state, filter = {}) {
 
 
 
- 
- 
- 
- 
- 
- 
- 
- 
 
- 
- 
- 
- 
- 
- 
- 
- 
 
- 
- 
- 
- 
- 
- 
- 
- 
- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getChangesStylesheet(state, filter) {
   const changeTree = getChangesTree(state, filter);
   
   const { indentUnit, indentWithTabs } = getTabPrefs();
-  const indentChar = indentWithTabs ? "\t".repeat(indentUnit) : " ".repeat(indentUnit);
+  const indentChar = indentWithTabs
+    ? "\t".repeat(indentUnit)
+    : " ".repeat(indentUnit);
 
   
 
@@ -178,8 +194,9 @@ function getChangesStylesheet(state, filter) {
         selectorText = `${indent}${selectors[0]}`;
         break;
       default:
-        selectorText = `${indent}/* ${selectors[0]} { */\n` +
-                       `${indent}${selectors[selectors.length - 1]}`;
+        selectorText =
+          `${indent}/* ${selectors[0]} { */\n` +
+          `${indent}${selectors[selectors.length - 1]}`;
     }
 
     return selectorText;
@@ -222,19 +239,22 @@ function getChangesStylesheet(state, filter) {
   }
 
   
-  return Object.entries(changeTree).reduce((stylesheetText, [sourceId, source]) => {
-    const { href, rules } = source;
-    
-    stylesheetText += `\n/* ${getSourceForDisplay(source)} | ${href} */\n`;
-    
-    stylesheetText += Object.entries(rules).reduce((str, [ruleId, rule]) => {
+  return Object.entries(changeTree).reduce(
+    (stylesheetText, [sourceId, source]) => {
+      const { href, rules } = source;
       
-      str += writeRule(ruleId, rule, 0) + "\n";
-      return str;
-    }, "");
+      stylesheetText += `\n/* ${getSourceForDisplay(source)} | ${href} */\n`;
+      
+      stylesheetText += Object.entries(rules).reduce((str, [ruleId, rule]) => {
+        
+        str += writeRule(ruleId, rule, 0) + "\n";
+        return str;
+      }, "");
 
-    return stylesheetText;
-  }, "");
+      return stylesheetText;
+    },
+    ""
+  );
 }
 
 module.exports = {

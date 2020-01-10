@@ -14,24 +14,32 @@ add_task(async function() {
   const { document: doc } = flexboxInspector;
 
   
-  let onFlexItemOutlineRendered = waitForDOM(doc,
-    ".flex-outline-container .flex-outline");
+  let onFlexItemOutlineRendered = waitForDOM(
+    doc,
+    ".flex-outline-container .flex-outline"
+  );
   await selectNode(".container .item", inspector);
   let [flexOutline] = await onFlexItemOutlineRendered;
 
-  ok(flexOutline.classList.contains("horizontal-lr"),
-    "The flex outline has the horizontal-lr class");
+  ok(
+    flexOutline.classList.contains("horizontal-lr"),
+    "The flex outline has the horizontal-lr class"
+  );
 
   
   let bounds = flexOutline.getBoxQuads()[0].getBounds();
   ok(bounds.width > bounds.height, "The outline looks like a row");
 
   
-  onFlexItemOutlineRendered = waitForDOM(doc,
-    ".flex-outline-container .flex-outline");
+  onFlexItemOutlineRendered = waitForDOM(
+    doc,
+    ".flex-outline-container .flex-outline"
+  );
   await selectNode(".container.column .item", inspector);
   await waitUntil(() => {
-    flexOutline = doc.querySelector(".flex-outline-container .flex-outline.vertical-tb");
+    flexOutline = doc.querySelector(
+      ".flex-outline-container .flex-outline.vertical-tb"
+    );
     return flexOutline;
   });
   ok(true, "The flex outline has the vertical-tb class");

@@ -28,8 +28,7 @@ const store = createStore(combineReducers(reducers));
 
 
 function DomView(localStore) {
-  addEventListener("devtools/chrome/message",
-    this.onMessage.bind(this), true);
+  addEventListener("devtools/chrome/message", this.onMessage.bind(this), true);
 
   
   this.store = localStore;
@@ -43,9 +42,13 @@ DomView.prototype = {
     });
 
     
-    const provider = React.createElement(Provider, {
-      store: this.store,
-    }, mainFrame);
+    const provider = React.createElement(
+      Provider,
+      {
+        store: this.store,
+      },
+      mainFrame
+    );
 
     this.mainFrame = ReactDOM.render(provider, content);
   },

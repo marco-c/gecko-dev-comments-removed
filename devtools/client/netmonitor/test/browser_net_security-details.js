@@ -25,10 +25,13 @@ add_task(async function() {
   await wait;
 
   store.dispatch(Actions.toggleNetworkDetails());
-  EventUtils.sendMouseEvent({ type: "click" },
-    document.querySelector("#security-tab"));
-  await waitUntil(() => document.querySelector(
-    "#security-panel .security-info-value"));
+  EventUtils.sendMouseEvent(
+    { type: "click" },
+    document.querySelector("#security-tab")
+  );
+  await waitUntil(() =>
+    document.querySelector("#security-panel .security-info-value")
+  );
 
   const tabpanel = document.querySelector("#security-panel");
   const textboxes = tabpanel.querySelectorAll(".security-info-value");
@@ -46,9 +49,11 @@ add_task(async function() {
   ok(suite.startsWith("TLS_"), "The suite " + suite + " seems valid.");
 
   
-  is(tabpanel.querySelectorAll(".treeLabel.objectLabel")[1].textContent,
-     "Host example.com:",
-     "Label has the expected value.");
+  is(
+    tabpanel.querySelectorAll(".treeLabel.objectLabel")[1].textContent,
+    "Host example.com:",
+    "Label has the expected value."
+  );
   
   ok(textboxes[2].textContent !== "", "Label value is not empty.");
   ok(textboxes[3].textContent !== "", "Label value is not empty.");
@@ -57,14 +62,32 @@ add_task(async function() {
 
   
   is(textboxes[6].textContent, "example.com", "Label has the expected value.");
-  is(textboxes[7].textContent, "<Not Available>", "Label has the expected value.");
-  is(textboxes[8].textContent, "<Not Available>", "Label has the expected value.");
+  is(
+    textboxes[7].textContent,
+    "<Not Available>",
+    "Label has the expected value."
+  );
+  is(
+    textboxes[8].textContent,
+    "<Not Available>",
+    "Label has the expected value."
+  );
 
-  is(textboxes[9].textContent, "Temporary Certificate Authority",
-     "Label has the expected value.");
-  is(textboxes[10].textContent, "Mozilla Testing", "Label has the expected value.");
-  is(textboxes[11].textContent, "Profile Guided Optimization",
-    "Label has the expected value.");
+  is(
+    textboxes[9].textContent,
+    "Temporary Certificate Authority",
+    "Label has the expected value."
+  );
+  is(
+    textboxes[10].textContent,
+    "Mozilla Testing",
+    "Label has the expected value."
+  );
+  is(
+    textboxes[11].textContent,
+    "Profile Guided Optimization",
+    "Label has the expected value."
+  );
 
   
   

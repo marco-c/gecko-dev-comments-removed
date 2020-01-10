@@ -11,11 +11,11 @@ const { refresh } = require("./refresh");
 
 
 
-exports.setLabelDisplayAndRefresh = function (heapWorker, display) {
-  return function* (dispatch, getState) {
+exports.setLabelDisplayAndRefresh = function(heapWorker, display) {
+  return async function(dispatch, getState) {
     
     dispatch(setLabelDisplay(display));
-    yield dispatch(refresh(heapWorker));
+    await dispatch(refresh(heapWorker));
   };
 };
 
@@ -24,16 +24,18 @@ exports.setLabelDisplayAndRefresh = function (heapWorker, display) {
 
 
 
-const setLabelDisplay = exports.setLabelDisplay = function (display) {
-  assert(typeof display === "object"
-         && display
-         && display.breakdown
-         && display.breakdown.by,
-    "Breakdowns must be an object with a \`by\` property, attempted to set: " +
-  uneval(display));
+const setLabelDisplay = (exports.setLabelDisplay = function(display) {
+  assert(
+    typeof display === "object" &&
+      display &&
+      display.breakdown &&
+      display.breakdown.by,
+    "Breakdowns must be an object with a `by` property, attempted to set: " +
+      uneval(display)
+  );
 
   return {
     type: actions.SET_LABEL_DISPLAY,
     display,
   };
-};
+});

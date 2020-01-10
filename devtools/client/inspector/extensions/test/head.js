@@ -11,11 +11,13 @@
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/inspector/test/head.js",
-  this);
+  this
+);
 
 
 
 
 Services.scriptloader.loadSubScript(
   new URL("head_devtools_inspector_sidebar.js", gTestPath).href,
-  this);
+  this
+);

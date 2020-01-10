@@ -203,7 +203,7 @@ function withCommonPathPrefixRemoved(pathArray) {
     if (!otherSplitPaths.every(sp => sp.winDrive === winDrive)) {
       return pathArray;
     }
-  } else if (otherSplitPaths.some(sp => ("winDrive" in sp))) {
+  } else if (otherSplitPaths.some(sp => "winDrive" in sp)) {
     
     return pathArray;
   }
@@ -230,7 +230,9 @@ function withCommonPathPrefixRemoved(pathArray) {
     
     return pathArray;
   }
-  return splitPaths.map(sp => OS.Path.join(...sp.components.slice(prefix.length)));
+  return splitPaths.map(sp =>
+    OS.Path.join(...sp.components.slice(prefix.length))
+  );
 }
 
 module.exports = {

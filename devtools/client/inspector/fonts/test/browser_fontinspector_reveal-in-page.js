@@ -29,17 +29,36 @@ add_task(async function() {
 
     
     const nameEl = fontEls[i];
-    let onEvents = waitForNSelectionEvents(tab, expectedSelectionChangeEvents[i]);
-    EventUtils.synthesizeMouse(nameEl, 2, 2, {type: "mouseover"}, viewDoc.defaultView);
+    let onEvents = waitForNSelectionEvents(
+      tab,
+      expectedSelectionChangeEvents[i]
+    );
+    EventUtils.synthesizeMouse(
+      nameEl,
+      2,
+      2,
+      { type: "mouseover" },
+      viewDoc.defaultView
+    );
     await onEvents;
 
-    ok(true,
-      `${expectedSelectionChangeEvents[i]} selectionchange events detected on mouseover`);
+    ok(
+      true,
+      `${
+        expectedSelectionChangeEvents[i]
+      } selectionchange events detected on mouseover`
+    );
 
     
     const otherEl = viewDoc.querySelector("body");
     onEvents = waitForNSelectionEvents(tab, 1);
-    EventUtils.synthesizeMouse(otherEl, 2, 2, {type: "mouseover"}, viewDoc.defaultView);
+    EventUtils.synthesizeMouse(
+      otherEl,
+      2,
+      2,
+      { type: "mouseover" },
+      viewDoc.defaultView
+    );
     await onEvents;
 
     ok(true, "1 selectionchange events detected on mouseout");

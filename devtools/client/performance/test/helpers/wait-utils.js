@@ -6,7 +6,10 @@
 
 const { CC } = require("chrome");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { once, observeOnce } = require("devtools/client/performance/test/helpers/event-utils");
+const {
+  once,
+  observeOnce,
+} = require("devtools/client/performance/test/helpers/event-utils");
 
 
 
@@ -56,5 +59,7 @@ exports.waitForMozAfterPaint = function(window) {
 
 
 exports.waitForDelayedStartupFinished = function(window) {
-  return observeOnce("browser-delayed-startup-finished", { expectedSubject: window });
+  return observeOnce("browser-delayed-startup-finished", {
+    expectedSubject: window,
+  });
 };

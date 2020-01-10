@@ -4,9 +4,7 @@
 
 "use strict";
 
-const {
-  TELEMETRY_RECORD,
-} = require("../constants");
+const { TELEMETRY_RECORD } = require("../constants");
 
 
 

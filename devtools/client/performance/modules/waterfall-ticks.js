@@ -22,9 +22,9 @@ function drawWaterfallBackground(doc, dataScale, waterfallWidth) {
   const ctx = canvas.getContext("2d");
 
   
-  const canvasWidth = canvas.width = waterfallWidth;
+  const canvasWidth = (canvas.width = waterfallWidth);
   
-  const canvasHeight = canvas.height = 1;
+  const canvasHeight = (canvas.height = 1);
 
   
   const imageData = ctx.createImageData(canvasWidth, canvasHeight);
@@ -69,7 +69,11 @@ function drawWaterfallBackground(doc, dataScale, waterfallWidth) {
 
 
 
-function findOptimalTickInterval({ ticksMultiple, ticksSpacingMin, dataScale }) {
+function findOptimalTickInterval({
+  ticksMultiple,
+  ticksSpacingMin,
+  dataScale,
+}) {
   let timingStep = ticksMultiple;
   const maxIters = FIND_OPTIMAL_TICK_INTERVAL_MAX_ITERS;
   let numIters = 0;

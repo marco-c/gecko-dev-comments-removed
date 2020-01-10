@@ -20,10 +20,7 @@ const TEST_DATA = [
       {
         type: "click",
         filename: "webpack:///events_original.js:7",
-        attributes: [
-          "Bubbling",
-          "DOM2",
-        ],
+        attributes: ["Bubbling", "DOM2"],
         handler: `function clickme() {
   console.log("clickme");
 }`,
@@ -36,7 +33,9 @@ add_task(async function() {
   
   
   
-  const {toolbox, inspector, testActor} = await openInspectorForURL(INITIAL_URL);
+  const { toolbox, inspector, testActor } = await openInspectorForURL(
+    INITIAL_URL
+  );
 
   
   

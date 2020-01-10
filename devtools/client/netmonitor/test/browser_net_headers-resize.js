@@ -49,7 +49,9 @@ add_task(async function() {
   
   
   info("Resize waterfall & check changed prefs...");
-  const waterfallHeader = document.querySelector(`#requests-list-waterfall-header-box`);
+  const waterfallHeader = document.querySelector(
+    `#requests-list-waterfall-header-box`
+  );
   
   const oldColumnsData = JSON.parse(
     Services.prefs.getCharPref("devtools.netmonitor.columnsData")
@@ -74,8 +76,15 @@ add_task(async function() {
   
   
   info("Hide all but 2 columns - size & waterfall and check resizing...");
-  await hideMoreColumns(monitor,
-    ["status", "method", "domain", "file", "cause", "type", "transferred"]);
+  await hideMoreColumns(monitor, [
+    "status",
+    "method",
+    "domain",
+    "file",
+    "cause",
+    "type",
+    "transferred",
+  ]);
 
   resizeWaterfallColumn(waterfallHeader, 50, parentWidth);
   
@@ -96,7 +105,9 @@ add_task(async function() {
   await showMoreColumns(monitor, ["domain", "file"]);
   await hideMoreColumns(monitor, ["contentSize", "waterfall"]);
 
-  const domainHeader = document.querySelector(`#requests-list-domain-header-box`);
+  const domainHeader = document.querySelector(
+    `#requests-list-domain-header-box`
+  );
   resizeColumn(domainHeader, 50, parentWidth);
 
   
@@ -129,29 +140,62 @@ async function showMoreColumns(monitor, arr) {
 }
 
 function resizeColumn(columnHeader, newPercent, parentWidth) {
-  const newWidthInPixels = newPercent * parentWidth / 100;
+  const newWidthInPixels = (newPercent * parentWidth) / 100;
   const win = columnHeader.ownerDocument.defaultView;
   const mouseDown = columnHeader.getBoundingClientRect().width;
   const mouseMove = newWidthInPixels;
 
-  EventUtils.synthesizeMouse(columnHeader, mouseDown, 1, { type: "mousedown" }, win);
-  EventUtils.synthesizeMouse(columnHeader, mouseMove, 1, { type: "mousemove" }, win);
-  EventUtils.synthesizeMouse(columnHeader, mouseMove, 1, { type: "mouseup" }, win);
+  EventUtils.synthesizeMouse(
+    columnHeader,
+    mouseDown,
+    1,
+    { type: "mousedown" },
+    win
+  );
+  EventUtils.synthesizeMouse(
+    columnHeader,
+    mouseMove,
+    1,
+    { type: "mousemove" },
+    win
+  );
+  EventUtils.synthesizeMouse(
+    columnHeader,
+    mouseMove,
+    1,
+    { type: "mouseup" },
+    win
+  );
 }
 
 function resizeWaterfallColumn(columnHeader, newPercent, parentWidth) {
-  const newWidthInPixels = newPercent * parentWidth / 100;
+  const newWidthInPixels = (newPercent * parentWidth) / 100;
   const win = columnHeader.ownerDocument.defaultView;
   const mouseDown = columnHeader.getBoundingClientRect().left;
   const mouseMove =
     mouseDown + (columnHeader.getBoundingClientRect().width - newWidthInPixels);
 
   EventUtils.synthesizeMouse(
-    columnHeader.parentElement, mouseDown, 1, { type: "mousedown" }, win);
+    columnHeader.parentElement,
+    mouseDown,
+    1,
+    { type: "mousedown" },
+    win
+  );
   EventUtils.synthesizeMouse(
-    columnHeader.parentElement, mouseMove, 1, { type: "mousemove" }, win);
+    columnHeader.parentElement,
+    mouseMove,
+    1,
+    { type: "mousemove" },
+    win
+  );
   EventUtils.synthesizeMouse(
-    columnHeader.parentElement, mouseMove, 1, { type: "mouseup" }, win);
+    columnHeader.parentElement,
+    mouseMove,
+    1,
+    { type: "mouseup" },
+    win
+  );
 }
 
 function checkColumnsData(columnsData, column, expectedWidth) {
@@ -186,13 +230,19 @@ function checkAllColumnsChanged(columnsData, oldColumnsData, visibleColumns) {
 
       
       if (oldWaterfallWidth > newWaterfallWidth) {
-        is(oldWidth < newWidth, true,
-          "Column " + column + " has changed width correctly.");
+        is(
+          oldWidth < newWidth,
+          true,
+          "Column " + column + " has changed width correctly."
+        );
       }
       
       if (oldWaterfallWidth < newWaterfallWidth) {
-        is(oldWidth > newWidth, true,
-          "Column " + column + " has changed width correctly.");
+        is(
+          oldWidth > newWidth,
+          true,
+          "Column " + column + " has changed width correctly."
+        );
       }
     }
   });

@@ -6,35 +6,37 @@
 
 const { createEnum } = require("devtools/client/shared/enum");
 
-createEnum([
-  
-  "RESET_EDITOR",
+createEnum(
+  [
+    
+    "RESET_EDITOR",
 
-  
-  "SET_FONT_EDITOR_DISABLED",
+    
+    "SET_FONT_EDITOR_DISABLED",
 
-  
-  "APPLY_FONT_VARIATION_INSTANCE",
+    
+    "APPLY_FONT_VARIATION_INSTANCE",
 
-  
-  "UPDATE_CUSTOM_INSTANCE",
+    
+    "UPDATE_CUSTOM_INSTANCE",
 
-  
-  "UPDATE_AXIS_VALUE",
+    
+    "UPDATE_AXIS_VALUE",
 
-  
-  "UPDATE_EDITOR_STATE",
+    
+    "UPDATE_EDITOR_STATE",
 
-  
-  "UPDATE_FONTS",
+    
+    "UPDATE_FONTS",
 
-  
-  "UPDATE_PREVIEW_TEXT",
+    
+    "UPDATE_PREVIEW_TEXT",
 
-  
-  "UPDATE_PROPERTY_VALUE",
+    
+    "UPDATE_PROPERTY_VALUE",
 
-  
-  "UPDATE_WARNING_MESSAGE",
-
-], module.exports);
+    
+    "UPDATE_WARNING_MESSAGE",
+  ],
+  module.exports
+);

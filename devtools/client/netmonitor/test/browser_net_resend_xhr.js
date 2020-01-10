@@ -22,8 +22,9 @@ add_task(async function() {
   EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequest);
 
   
-  const { getSelectedRequest }
-  = windowRequire("devtools/client/netmonitor/src/selectors/index");
+  const { getSelectedRequest } = windowRequire(
+    "devtools/client/netmonitor/src/selectors/index"
+  );
   const originalRequest = getSelectedRequest(store.getState());
 
   
@@ -34,8 +35,7 @@ add_task(async function() {
   const selectedRequest = getSelectedRequest(store.getState());
 
   
-  ok(originalRequest.url === selectedRequest.url,
-  "Both requests are the same");
+  ok(originalRequest.url === selectedRequest.url, "Both requests are the same");
 
   return teardown(monitor);
 });

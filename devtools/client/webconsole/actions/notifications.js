@@ -14,7 +14,14 @@ const {
 
 
 
-function appendNotification(label, value, image, priority, buttons = [], eventCallback) {
+function appendNotification(
+  label,
+  value,
+  image,
+  priority,
+  buttons = [],
+  eventCallback
+) {
   return {
     type: APPEND_NOTIFICATION,
     label,

@@ -36,8 +36,8 @@ const TEST_DATA = [
         #shadow-root
         ::marker
         ::before`,
-
-  }, {
+  },
+  {
     
     
     title: "::before after ::marker, non-empty node",
@@ -69,7 +69,8 @@ const TEST_DATA = [
         ::marker
         ::before
         class="light-dom"`,
-  }, {
+  },
+  {
     
     title: "just ::marker, no ::before",
     url: `data:text/html;charset=utf-8,
@@ -95,17 +96,21 @@ const TEST_DATA = [
   },
 ];
 
-for (const {url, tree, title} of TEST_DATA) {
+for (const { url, tree, title } of TEST_DATA) {
   
   add_task(async function() {
     info(`Testing: [${title}] in OPEN mode`);
-    const {inspector, tab} = await openInspectorForURL(url.replace(/#MODE#/g, "open"));
+    const { inspector, tab } = await openInspectorForURL(
+      url.replace(/#MODE#/g, "open")
+    );
     await assertMarkupViewAsTree(tree, "test-component", inspector);
     await removeTab(tab);
   });
   add_task(async function() {
     info(`Testing: [${title}] in CLOSED mode`);
-    const {inspector, tab} = await openInspectorForURL(url.replace(/#MODE#/g, "closed"));
+    const { inspector, tab } = await openInspectorForURL(
+      url.replace(/#MODE#/g, "closed")
+    );
     await assertMarkupViewAsTree(tree, "test-component", inspector);
     await removeTab(tab);
   });

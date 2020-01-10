@@ -9,8 +9,7 @@ const { Property } = require("./reducers/grips");
 
 
 
-function DomDecorator() {
-}
+function DomDecorator() {}
 
 
 
@@ -42,8 +41,7 @@ DomDecorator.prototype = {
 
 
 
-  getValueRep: function(value, colId) {
-  },
+  getValueRep: function(value, colId) {},
 };
 
 

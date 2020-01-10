@@ -31,8 +31,9 @@ RootContainer.prototype = {
 
 
   getChildContainers: function() {
-    return [...this.children.children].filter(node => node.container)
-                                      .map(node => node.container);
+    return [...this.children.children]
+      .filter(node => node.container)
+      .map(node => node.container);
   },
 
   

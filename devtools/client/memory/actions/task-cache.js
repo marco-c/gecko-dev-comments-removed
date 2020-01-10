@@ -10,7 +10,7 @@ const { assert } = require("devtools/shared/DevToolsUtils");
 
 
 
-const TaskCache = module.exports = class TaskCache {
+const TaskCache = (module.exports = class TaskCache {
   constructor() {
     this._cache = new Map();
   }
@@ -33,8 +33,7 @@ const TaskCache = module.exports = class TaskCache {
 
 
   put(key, promise) {
-    assert(!this._cache.has(key),
-           "We should not override extant entries");
+    assert(!this._cache.has(key), "We should not override extant entries");
 
     this._cache.set(key, promise);
   }
@@ -45,12 +44,14 @@ const TaskCache = module.exports = class TaskCache {
 
 
   remove(key) {
-    assert(this._cache.has(key),
-           `Should have an extant entry for key = ${key}`);
+    assert(
+      this._cache.has(key),
+      `Should have an extant entry for key = ${key}`
+    );
 
     this._cache.delete(key);
   }
-};
+});
 
 
 
@@ -61,11 +62,11 @@ const TaskCache = module.exports = class TaskCache {
 
 
 
-TaskCache.declareCacheableTask = function ({ getCacheKey, task }) {
+TaskCache.declareCacheableTask = function({ getCacheKey, task }) {
   const cache = new TaskCache();
 
-  return function (...args) {
-    return function* (dispatch, getState) {
+  return function(...args) {
+    return async function(dispatch, getState) {
       const key = getCacheKey(...args);
 
       const extantResult = cache.get(key);
@@ -76,24 +77,29 @@ TaskCache.declareCacheableTask = function ({ getCacheKey, task }) {
       
       
       let resolve;
-      cache.put(key, new Promise(r => {
-        resolve = r;
-      }));
+      cache.put(
+        key,
+        new Promise(r => {
+          resolve = r;
+        })
+      );
 
-      resolve(dispatch(function* () {
-        try {
-          args.push(() => cache.remove(key), dispatch, getState);
-          return yield* task(...args);
-        } catch (error) {
-          
-          if (cache.get(key)) {
-            cache.remove(key);
+      resolve(
+        dispatch(async function() {
+          try {
+            args.push(() => cache.remove(key), dispatch, getState);
+            return await task(...args);
+          } catch (error) {
+            
+            if (cache.get(key)) {
+              cache.remove(key);
+            }
+            throw error;
           }
-          throw error;
-        }
-      }));
+        })
+      );
 
-      return yield cache.get(key);
+      return cache.get(key);
     };
   };
 };

@@ -34,15 +34,18 @@ class PanelMenuEntry extends Component {
     
     
     const className = "category" + (selected ? " selected" : "");
-    return dom.button({
-      "aria-selected": selected,
-      "aria-controls": id + "-panel",
-      className,
-      onClick: this.onClick,
-      tabIndex: "0",
-      role: "tab" },
-    dom.img({ className: "category-icon", src: icon, role: "presentation" }),
-    dom.div({ className: "category-name" }, name));
+    return dom.button(
+      {
+        "aria-selected": selected,
+        "aria-controls": id + "-panel",
+        className,
+        onClick: this.onClick,
+        tabIndex: "0",
+        role: "tab",
+      },
+      dom.img({ className: "category-icon", src: icon, role: "presentation" }),
+      dom.div({ className: "category-name" }, name)
+    );
   }
 }
 

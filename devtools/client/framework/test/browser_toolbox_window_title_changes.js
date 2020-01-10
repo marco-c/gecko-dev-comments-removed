@@ -5,7 +5,7 @@
 
 requestLongerTimeout(5);
 
-var {Toolbox} = require("devtools/client/framework/toolbox");
+var { Toolbox } = require("devtools/client/framework/toolbox");
 
 function test() {
   const URL_1 = "data:text/plain;charset=UTF-8,abcde";
@@ -24,22 +24,24 @@ function test() {
 
   addTab(URL_1).then(async function() {
     let target = await TargetFactory.forTab(gBrowser.selectedTab);
-    gDevTools.showToolbox(target, null, Toolbox.HostType.BOTTOM)
+    gDevTools
+      .showToolbox(target, null, Toolbox.HostType.BOTTOM)
       .then(function(aToolbox) {
         toolbox = aToolbox;
       })
       .then(() => toolbox.selectTool(TOOL_ID_1))
 
-    
+      
       .then(() => {
         
         
-        return toolbox.switchHost(Toolbox.HostType.WINDOW)
+        return toolbox
+          .switchHost(Toolbox.HostType.WINDOW)
           .then(() => waitForTitleChange(toolbox));
       })
       .then(checkTitle.bind(null, NAME_1, URL_1, "toolbox undocked"))
 
-    
+      
       .then(async () => {
         const onTitleChanged = waitForTitleChange(toolbox);
         panel = await toolbox.selectTool(TOOL_ID_2);
@@ -47,7 +49,7 @@ function test() {
       })
       .then(checkTitle.bind(null, NAME_1, URL_1, "tool changed"))
 
-    
+      
       .then(async function() {
         const onTitleChanged = waitForTitleChange(toolbox);
         const waitForReloaded = panel.once("reloaded");
@@ -57,7 +59,7 @@ function test() {
       })
       .then(checkTitle.bind(null, NAME_2, URL_2, "url changed"))
 
-    
+      
       .then(async () => {
         const onTitleChanged = waitForTitleChange(toolbox);
         const waitForReloaded = panel.once("reloaded");
@@ -67,17 +69,22 @@ function test() {
       })
       .then(checkTitle.bind(null, NAME_3, URL_3, "url changed"))
 
-    
-    
+      
+      
       .then(function() {
         
         
         executeSoon(function() {
-          toolbox.destroy()
+          toolbox
+            .destroy()
             .then(async function() {
               
               target = await TargetFactory.forTab(gBrowser.selectedTab);
-              return gDevTools.showToolbox(target, null, Toolbox.HostType.WINDOW);
+              return gDevTools.showToolbox(
+                target,
+                null,
+                Toolbox.HostType.WINDOW
+              );
             })
             .then(function(aToolbox) {
               toolbox = aToolbox;
@@ -87,8 +94,14 @@ function test() {
               toolbox.selectTool(TOOL_ID_1);
               return onTitleChanged;
             })
-            .then(checkTitle.bind(null, NAME_3, URL_3,
-                                  "toolbox destroyed and recreated"))
+            .then(
+              checkTitle.bind(
+                null,
+                NAME_3,
+                URL_3,
+                "toolbox destroyed and recreated"
+              )
+            )
 
             
             .then(() => toolbox.destroy())

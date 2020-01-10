@@ -7,9 +7,9 @@
 
 
 
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-const {advanceValidate} = require("devtools/client/inspector/shared/utils");
-const {KeyCodes} = require("devtools/client/shared/keycodes");
+const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+const { advanceValidate } = require("devtools/client/inspector/shared/utils");
+const { KeyCodes } = require("devtools/client/shared/keycodes");
 
 
 
@@ -17,8 +17,11 @@ const sampleInput = '\\symbol "string" url(somewhere)';
 
 function testInsertion(where, result, testName) {
   info(testName);
-  equal(advanceValidate(KeyCodes.DOM_VK_SEMICOLON, sampleInput, where),
-        result, "testing advanceValidate at " + where);
+  equal(
+    advanceValidate(KeyCodes.DOM_VK_SEMICOLON, sampleInput, where),
+    result,
+    "testing advanceValidate at " + where
+  );
 }
 
 function run_test() {

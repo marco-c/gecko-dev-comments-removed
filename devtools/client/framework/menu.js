@@ -95,7 +95,7 @@ Menu.prototype.popup = function(screenX, screenY, doc) {
   
   
   
-  let popup = popupset.querySelector("menupopup[menu-api=\"true\"]");
+  let popup = popupset.querySelector('menupopup[menu-api="true"]');
   if (popup) {
     popup.hidePopup();
   }
@@ -116,7 +116,7 @@ Menu.prototype.popup = function(screenX, screenY, doc) {
   win.addEventListener("unload", onWindowUnload);
 
   
-  popup.addEventListener("popuphidden", (e) => {
+  popup.addEventListener("popuphidden", e => {
     if (e.target === popup) {
       win.removeEventListener("unload", onWindowUnload);
       popup.remove();
@@ -124,7 +124,7 @@ Menu.prototype.popup = function(screenX, screenY, doc) {
     }
   });
 
-  popup.addEventListener("popupshown", (e) => {
+  popup.addEventListener("popupshown", e => {
     if (e.target === popup) {
       this.emit("open");
     }

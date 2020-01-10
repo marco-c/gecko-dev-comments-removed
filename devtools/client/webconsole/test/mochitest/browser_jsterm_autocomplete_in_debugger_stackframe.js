@@ -40,7 +40,10 @@ async function performTests() {
   const newItemsLabels = getPopupLabels(popup);
   ok(newItemsLabels.length > 0, "'document.title.' gave a list of suggestions");
   ok(newItemsLabels.includes("substr"), `results do contain "substr"`);
-  ok(newItemsLabels.includes("toLowerCase"), `results do contain "toLowerCase"`);
+  ok(
+    newItemsLabels.includes("toLowerCase"),
+    `results do contain "toLowerCase"`
+  );
   ok(newItemsLabels.includes("strike"), `results do contain "strike"`);
 
   
@@ -110,7 +113,10 @@ async function performTests() {
 
   
   await jstermComplete("foo2Obj.prop1.");
-  ok(getPopupLabels(popup).includes("prop11"), `"foo2Obj.prop1" returns "prop11"`);
+  ok(
+    getPopupLabels(popup).includes("prop11"),
+    `"foo2Obj.prop1" returns "prop11"`
+  );
 
   
   await jstermComplete("foo2Obj.prop1.prop11.");

@@ -33,7 +33,8 @@ function getElementText(el) {
 
   
   const selection = win.getSelection();
-  const currentSelectedRange = !selection.isCollapsed && selection.getRangeAt(0);
+  const currentSelectedRange =
+    !selection.isCollapsed && selection.getRangeAt(0);
   selection.removeAllRanges();
 
   

@@ -4,7 +4,10 @@
 "use strict";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-telemetry.js", this);
+Services.scriptloader.loadSubScript(
+  CHROME_URL_ROOT + "helper-telemetry.js",
+  this
+);
 
 const NETWORK_RUNTIME = {
   host: "localhost:1234",
@@ -31,37 +34,48 @@ add_task(async function testNetworkRuntimeUpdates() {
   
   
   const networkRuntimeExtras = {
-    "connection_type": "network",
-    "device_name": "",
-    "runtime_name": "",
+    connection_type: "network",
+    device_name: "",
+    runtime_name: "",
   };
 
   
-  const connectedNetworkRuntimeExtras = Object.assign({}, networkRuntimeExtras, {
-    "runtime_name": NETWORK_RUNTIME.name,
-  });
+  const connectedNetworkRuntimeExtras = Object.assign(
+    {},
+    networkRuntimeExtras,
+    {
+      runtime_name: NETWORK_RUNTIME.name,
+    }
+  );
 
   
   
-  checkTelemetryEvents([
-    { method: "runtime_added", extras: networkRuntimeExtras },
-  ], sessionId);
+  checkTelemetryEvents(
+    [{ method: "runtime_added", extras: networkRuntimeExtras }],
+    sessionId
+  );
 
   await connectToRuntime(NETWORK_RUNTIME.host, document);
-  checkTelemetryEvents([
-    { method: "runtime_connected", extras: connectedNetworkRuntimeExtras },
-    { method: "connection_attempt", extras: { status: "start" } },
-    { method: "connection_attempt", extras: { status: "success" } },
-  ], sessionId);
+  checkTelemetryEvents(
+    [
+      { method: "runtime_connected", extras: connectedNetworkRuntimeExtras },
+      { method: "connection_attempt", extras: { status: "start" } },
+      { method: "connection_attempt", extras: { status: "success" } },
+    ],
+    sessionId
+  );
 
   info("Remove network runtime");
   mocks.removeRuntime(NETWORK_RUNTIME.host);
   await waitUntil(() => !findSidebarItemByText(NETWORK_RUNTIME.host, document));
   
-  checkTelemetryEvents([
-    { method: "runtime_disconnected", extras: connectedNetworkRuntimeExtras },
-    { method: "runtime_removed", extras: networkRuntimeExtras },
-  ], sessionId);
+  checkTelemetryEvents(
+    [
+      { method: "runtime_disconnected", extras: connectedNetworkRuntimeExtras },
+      { method: "runtime_removed", extras: networkRuntimeExtras },
+    ],
+    sessionId
+  );
 
   await removeTab(tab);
 });

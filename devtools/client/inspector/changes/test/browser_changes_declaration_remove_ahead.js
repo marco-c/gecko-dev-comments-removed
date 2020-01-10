@@ -49,6 +49,10 @@ add_task(async function() {
   is(removeDecl.length, 2, "Two declarations tracked as removed");
   is(addDecl.length, 1, "One declaration tracked as added");
   
-  is(addDecl[0].property, "display", "Added declaration has updated property name");
+  is(
+    addDecl[0].property,
+    "display",
+    "Added declaration has updated property name"
+  );
   is(addDecl[0].value, "flex", "Added declaration has updated property value");
 });

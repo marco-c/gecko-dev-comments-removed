@@ -6,8 +6,9 @@
 
 
 
-const { RUNTIME_PREFERENCE } =
-  require("devtools/client/aboutdebugging-new/src/constants");
+const {
+  RUNTIME_PREFERENCE,
+} = require("devtools/client/aboutdebugging-new/src/constants");
 
 
 
@@ -90,12 +91,14 @@ function createClientMock() {
     setPreference: function(prefName, value) {
       this._preferences[prefName] = value;
     },
-    getPerformancePanelUrl: () => "data:text/html;charset=UTF-8,fake_profiler_page",
+    getPerformancePanelUrl: () =>
+      "data:text/html;charset=UTF-8,fake_profiler_page",
     loadPerformanceProfiler: () => {},
     
     checkVersionCompatibility: () => {
-      const { COMPATIBILITY_STATUS } =
-        require("devtools/client/shared/remote-debugging/version-checker");
+      const {
+        COMPATIBILITY_STATUS,
+      } = require("devtools/client/shared/remote-debugging/version-checker");
       return { status: COMPATIBILITY_STATUS.COMPATIBLE };
     },
   };
@@ -117,7 +120,7 @@ function createThisFirefoxClientMock() {
   };
 
   const mockThisFirefoxClient = createClientMock();
-  mockThisFirefoxClient.listTabs = () => ([mockAboutDebuggingTab]);
+  mockThisFirefoxClient.listTabs = () => [mockAboutDebuggingTab];
   mockThisFirefoxClient.getDeviceDescription = () => mockThisFirefoxDescription;
 
   return mockThisFirefoxClient;

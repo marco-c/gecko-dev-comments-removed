@@ -4,7 +4,7 @@
 
 
 
-var {TargetFactory} = require("devtools/client/framework/target");
+var { TargetFactory } = require("devtools/client/framework/target");
 
 add_task(async function() {
   
@@ -24,7 +24,10 @@ add_task(async function() {
   
   info("Test existence of menu bar of scratchpad panel.");
   await new Promise(resolve => {
-    SpecialPowers.pushPrefEnv({"set": [["devtools.scratchpad.enabled", true]]}, resolve);
+    SpecialPowers.pushPrefEnv(
+      { set: [["devtools.scratchpad.enabled", true]] },
+      resolve
+    );
   });
 
   info("Open devtools on the Scratchpad.");

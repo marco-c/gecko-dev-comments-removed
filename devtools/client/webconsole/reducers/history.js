@@ -67,7 +67,7 @@ function history(state = getInitialState(), action, prefsState) {
 
 function appendToHistory(state, prefsState, expression) {
   
-  state = {...state};
+  state = { ...state };
   state.entries = [...state.entries];
 
   
@@ -120,7 +120,7 @@ function updateHistoryPosition(state, direction, expression) {
     }
 
     
-    state = {...state};
+    state = { ...state };
 
     
     
@@ -174,13 +174,16 @@ function reverseSearchInputChange(state, searchString) {
 
   searchString = searchString.toLocaleLowerCase();
   const matchingEntries = state.entries.filter(entry =>
-    entry.toLocaleLowerCase().includes(searchString));
+    entry.toLocaleLowerCase().includes(searchString)
+  );
   
   
   
   
   const uniqueEntries = new Set(matchingEntries.reverse());
-  const currentReverseSearchResults = Array.from(new Set(uniqueEntries)).reverse();
+  const currentReverseSearchResults = Array.from(
+    new Set(uniqueEntries)
+  ).reverse();
 
   return {
     ...state,

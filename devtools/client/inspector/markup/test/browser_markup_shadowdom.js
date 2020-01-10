@@ -54,8 +54,8 @@ const TEST_DATA = [
         class="no-slot-class"
           no-slot-text
           inner`,
-
-  }, {
+  },
+  {
     
     
     title: "shadow root without direct children",
@@ -76,8 +76,8 @@ const TEST_DATA = [
         #shadow-root
           slot
             fallback-content`,
-
-  }, {
+  },
+  {
     
     title: "nested components",
     url: `data:text/html;charset=utf-8,
@@ -129,8 +129,8 @@ const TEST_DATA = [
         third-component
           #shadow-root
             div`,
-
-  }, {
+  },
+  {
     
     
     title: "pseudo elements",
@@ -173,8 +173,8 @@ const TEST_DATA = [
         ::before
         class="light-dom"
         ::after`,
-
-  }, {
+  },
+  {
     
     title: "empty components",
     url: `data:text/html;charset=utf-8,
@@ -193,7 +193,8 @@ const TEST_DATA = [
     tree: `
       test-component
         #shadow-root`,
-  }, {
+  },
+  {
     
     title: "shadow host with inline-text-child",
     url: `data:text/html;charset=utf-8,
@@ -230,7 +231,8 @@ const TEST_DATA = [
           #shadow-root
             short-text-inside
           short-text-outside`,
-  }, {
+  },
+  {
     
     title: "nested components without slot",
     url: `data:text/html;charset=utf-8,
@@ -267,17 +269,21 @@ const TEST_DATA = [
   },
 ];
 
-for (const {url, tree, title} of TEST_DATA) {
+for (const { url, tree, title } of TEST_DATA) {
   
   add_task(async function() {
     info(`Testing: [${title}] in OPEN mode`);
-    const {inspector, tab} = await openInspectorForURL(url.replace(/#MODE#/g, "open"));
+    const { inspector, tab } = await openInspectorForURL(
+      url.replace(/#MODE#/g, "open")
+    );
     await assertMarkupViewAsTree(tree, "test-component", inspector);
     await removeTab(tab);
   });
   add_task(async function() {
     info(`Testing: [${title}] in CLOSED mode`);
-    const {inspector, tab} = await openInspectorForURL(url.replace(/#MODE#/g, "closed"));
+    const { inspector, tab } = await openInspectorForURL(
+      url.replace(/#MODE#/g, "closed")
+    );
     await assertMarkupViewAsTree(tree, "test-component", inspector);
     await removeTab(tab);
   });

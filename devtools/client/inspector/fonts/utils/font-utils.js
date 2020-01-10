@@ -72,24 +72,22 @@ module.exports = {
 
     
     
-    axes = string
-      .split(",")
-      .reduce((acc, pair) => {
-        
-        pair = pair.split(/["']/).filter(part => part.trim() !== "");
-        
-        if (pair.length === 0) {
-          return acc;
-        }
-
-        const tag = pair[0];
-        const value = pair[1].trim();
-        
-        if (tag.length === 4) {
-          acc[tag] = parseFloat(value);
-        }
+    axes = string.split(",").reduce((acc, pair) => {
+      
+      pair = pair.split(/["']/).filter(part => part.trim() !== "");
+      
+      if (pair.length === 0) {
         return acc;
-      }, {});
+      }
+
+      const tag = pair[0];
+      const value = pair[1].trim();
+      
+      if (tag.length === 4) {
+        acc[tag] = parseFloat(value);
+      }
+      return acc;
+    }, {});
 
     return axes;
   },

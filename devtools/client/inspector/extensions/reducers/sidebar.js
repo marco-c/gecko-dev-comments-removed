@@ -14,8 +14,7 @@ const {
 const INITIAL_SIDEBAR = {};
 
 const reducers = {
-
-  [EXTENSION_SIDEBAR_OBJECT_TREEVIEW_UPDATE](sidebar, {sidebarId, object}) {
+  [EXTENSION_SIDEBAR_OBJECT_TREEVIEW_UPDATE](sidebar, { sidebarId, object }) {
     
     
     return Object.assign({}, sidebar, {
@@ -27,7 +26,8 @@ const reducers = {
   },
 
   [EXTENSION_SIDEBAR_OBJECT_GRIP_VIEW_UPDATE](
-    sidebar, {sidebarId, objectValueGrip, rootTitle}
+    sidebar,
+    { sidebarId, objectValueGrip, rootTitle }
   ) {
     
     
@@ -40,7 +40,7 @@ const reducers = {
     });
   },
 
-  [EXTENSION_SIDEBAR_PAGE_UPDATE](sidebar, {sidebarId, iframeURL}) {
+  [EXTENSION_SIDEBAR_PAGE_UPDATE](sidebar, { sidebarId, iframeURL }) {
     
     
     return Object.assign({}, sidebar, {
@@ -51,12 +51,11 @@ const reducers = {
     });
   },
 
-  [EXTENSION_SIDEBAR_REMOVE](sidebar, {sidebarId}) {
+  [EXTENSION_SIDEBAR_REMOVE](sidebar, { sidebarId }) {
     
     delete sidebar[sidebarId];
     return Object.assign({}, sidebar);
   },
-
 };
 
 module.exports = function(sidebar = INITIAL_SIDEBAR, action) {

@@ -25,11 +25,16 @@ add_task(async function() {
   const browser = gBrowser.selectedBrowser;
 
   
-  await waitForClipboardPromise(function setup() {
-    BrowserTestUtils.synthesizeMouseAtCenter(
-      ".headersPanelBox .toolbar button.copy",
-      {}, browser);
-  }, function validator(value) {
-    return value.indexOf("application/json") > 0;
-  });
+  await waitForClipboardPromise(
+    function setup() {
+      BrowserTestUtils.synthesizeMouseAtCenter(
+        ".headersPanelBox .toolbar button.copy",
+        {},
+        browser
+      );
+    },
+    function validator(value) {
+      return value.indexOf("application/json") > 0;
+    }
+  );
 });

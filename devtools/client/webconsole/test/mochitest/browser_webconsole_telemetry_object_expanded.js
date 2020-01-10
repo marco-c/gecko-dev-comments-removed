@@ -59,10 +59,11 @@ function getObjectExpandedEventsExtra() {
   
   const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
 
-  const events = snapshot.parent.filter(event =>
-    event[1] === "devtools.main" &&
-    event[2] === "object_expanded" &&
-    event[3] === "webconsole"
+  const events = snapshot.parent.filter(
+    event =>
+      event[1] === "devtools.main" &&
+      event[2] === "object_expanded" &&
+      event[3] === "webconsole"
   );
 
   
