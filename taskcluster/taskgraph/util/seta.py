@@ -8,17 +8,16 @@ import json
 import logging
 import requests
 from collections import defaultdict
-
-import attr
 from redo import retry
 from requests import exceptions
-
-from taskgraph.optimize import OptimizationStrategy, register_strategy
+import attr
 
 logger = logging.getLogger(__name__)
 
 
 SETA_PROJECTS = ['mozilla-inbound', 'autoland']
+PROJECT_SCHEDULE_ALL_EVERY_PUSHES = {'mozilla-inbound': 5, 'autoland': 5}
+PROJECT_SCHEDULE_ALL_EVERY_MINUTES = {'mozilla-inbound': 60, 'autoland': 60}
 SETA_HIGH_PRIORITY = 1
 SETA_LOW_PRIORITY = 5
 
@@ -167,10 +166,10 @@ class SETA(object):
 
         return low_value_tasks
 
-    def minutes_between_pushes(self, project, cur_push_id, cur_push_date, time_interval):
+    def minutes_between_pushes(self, project, cur_push_id, cur_push_date):
         
         
-        min_between_pushes = time_interval
+        min_between_pushes = PROJECT_SCHEDULE_ALL_EVERY_MINUTES.get(project, 60)
         prev_push_id = cur_push_id - 1
 
         
@@ -233,14 +232,14 @@ class SETA(object):
 
         return min_between_pushes
 
-    def is_low_value_task(self, label, project, pushlog_id, push_date,
-                          push_interval, time_interval):
+    def is_low_value_task(self, label, project, pushlog_id, push_date):
         
         if project not in SETA_PROJECTS:
             return False
 
+        schedule_all_every = PROJECT_SCHEDULE_ALL_EVERY_PUSHES.get(project, 5)
         
-        if int(pushlog_id) % push_interval == 0:
+        if int(pushlog_id) % schedule_all_every == 0:
             return False
 
         
@@ -248,8 +247,7 @@ class SETA(object):
         if self.minutes_between_pushes(
                 project,
                 int(pushlog_id),
-                int(push_date),
-                time_interval) >= time_interval:
+                int(push_date)) >= PROJECT_SCHEDULE_ALL_EVERY_MINUTES.get(project, 60):
             return False
 
         
@@ -261,28 +259,3 @@ class SETA(object):
 
 
 is_low_value_task = SETA().is_low_value_task
-
-
-@register_strategy('seta', args=(5, 60))
-@register_strategy('seta_10_120', args=(10, 120))
-class SkipLowValue(OptimizationStrategy):
-
-    def __init__(self, push_interval, time_interval):
-        self.push_interval = push_interval
-        self.time_interval = time_interval
-
-    def should_remove_task(self, task, params, _):
-        label = task.label
-
-        
-        
-        if is_low_value_task(label,
-                             params.get('project'),
-                             params.get('pushlog_id'),
-                             params.get('pushdate'),
-                             self.push_interval,
-                             self.time_interval):
-            
-            return True
-        else:
-            return False
