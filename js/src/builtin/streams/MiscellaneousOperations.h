@@ -14,9 +14,9 @@
 #include "js/CallArgs.h"    
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
+#include "vm/JSObject.h"    
 
 struct JSContext;
-class JSObject;
 
 namespace js {
 
@@ -88,6 +88,11 @@ extern MOZ_MUST_USE bool ValidateAndNormalizeHighWaterMark(
 
 extern MOZ_MUST_USE bool MakeSizeAlgorithmFromSizeFunction(
     JSContext* cx, JS::Handle<JS::Value> size);
+
+template <class T>
+inline bool IsMaybeWrapped(const JS::Handle<JS::Value> v) {
+  return v.isObject() && v.toObject().canUnwrapAs<T>();
+}
 
 }  
 

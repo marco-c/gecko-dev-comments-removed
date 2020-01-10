@@ -33,16 +33,6 @@
 
 using namespace js;
 
-template <class T>
-bool Is(const HandleValue v) {
-  return v.isObject() && v.toObject().is<T>();
-}
-
-template <class T>
-bool IsMaybeWrapped(const HandleValue v) {
-  return v.isObject() && v.toObject().canUnwrapAs<T>();
-}
-
 JS::ReadableStreamMode ReadableStream::mode() const {
   ReadableStreamController* controller = this->controller();
   if (controller->is<ReadableStreamDefaultController>()) {
