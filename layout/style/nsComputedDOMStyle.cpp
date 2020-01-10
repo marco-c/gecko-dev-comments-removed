@@ -199,7 +199,7 @@ struct ComputedStyleMap {
 
   
   
-#include "nsComputedDOMStyleGenerated.cpp"
+#include "nsComputedDOMStyleGenerated.inc"
 
   
 
