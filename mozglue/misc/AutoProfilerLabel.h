@@ -25,12 +25,12 @@
 
 
 
-class ProfilingStack;
-
 namespace mozilla {
 
-typedef ProfilingStack* (*ProfilerLabelEnter)(const char*, const char*, void*);
-typedef void (*ProfilerLabelExit)(ProfilingStack*);
+
+typedef void* (*ProfilerLabelEnter)(const char* aLabel,
+                                    const char* aDynamicString, void* aSp);
+typedef void (*ProfilerLabelExit)(void* EntryContext);
 
 
 MFBT_API void RegisterProfilerLabelEnterExit(ProfilerLabelEnter aEnter,
@@ -48,7 +48,7 @@ class MOZ_RAII AutoProfilerLabel {
 
  private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-  ProfilingStack* mProfilingStack;
+  void* mEntryContext;
 };
 
 #endif
