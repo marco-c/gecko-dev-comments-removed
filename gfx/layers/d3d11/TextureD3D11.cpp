@@ -448,7 +448,9 @@ D3D11TextureData* D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat,
   }
 
   newDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-  if (!NS_IsMainThread() || !!(aFlags & ALLOC_FOR_OUT_OF_BAND_CONTENT)) {
+  
+  if (gfxVars::UseWebRender() || !NS_IsMainThread() ||
+      !!(aFlags & ALLOC_FOR_OUT_OF_BAND_CONTENT)) {
     
     if (!(aFlags & ALLOC_MANUAL_SYNCHRONIZATION)) {
       newDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;

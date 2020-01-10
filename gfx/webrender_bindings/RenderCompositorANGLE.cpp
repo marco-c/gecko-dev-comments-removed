@@ -246,6 +246,7 @@ bool RenderCompositorANGLE::Initialize() {
   
   dxgiFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_WINDOW_CHANGES);
 
+  
   mSyncObject = layers::SyncObjectHost::CreateSyncObjectHost(mDevice);
   if (!mSyncObject->Init()) {
     
@@ -402,13 +403,6 @@ bool RenderCompositorANGLE::BeginFrame() {
     return false;
   }
 
-  if (mSyncObject) {
-    if (!mSyncObject->Synchronize( true)) {
-      
-      RenderThread::Get()->HandleDeviceReset("SyncObject",  true);
-      return false;
-    }
-  }
   return true;
 }
 

@@ -227,15 +227,6 @@ bool WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags) {
     refreshStart = mTransactionStart;
   }
 
-  
-  
-  if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
-    if (WrBridge()->GetSyncObject() &&
-        WrBridge()->GetSyncObject()->IsSyncObjectValid()) {
-      WrBridge()->GetSyncObject()->Synchronize();
-    }
-  }
-
   GetCompositorBridgeChild()->EndCanvasTransaction();
 
   AutoTArray<RenderRootUpdates, wr::kRenderRootCount> renderRootUpdates;
@@ -410,15 +401,6 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   for (auto renderRoot : wr::kRenderRoots) {
     if (resourceUpdates.HasSubQueue(renderRoot)) {
       WrBridge()->RemoveExpiredFontKeys(resourceUpdates.SubQueue(renderRoot));
-    }
-  }
-
-  
-  
-  if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
-    if (WrBridge()->GetSyncObject() &&
-        WrBridge()->GetSyncObject()->IsSyncObjectValid()) {
-      WrBridge()->GetSyncObject()->Synchronize();
     }
   }
 
