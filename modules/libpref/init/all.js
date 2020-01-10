@@ -3179,6 +3179,10 @@ pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
 
 
 
+pref("browser.tabs.remote.enforceRemoteTypeRestrictions", false);
+
+
+
 
 pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
 

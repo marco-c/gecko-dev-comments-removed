@@ -492,6 +492,9 @@ pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 
 
 pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
+
+
+pref("browser.tabs.remote.enforceRemoteTypeRestrictions", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
