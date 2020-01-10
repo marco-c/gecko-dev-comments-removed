@@ -20,22 +20,13 @@ pub type SVGPaint = generic::SVGPaint<Color, ComputedUrl>;
 
 pub type SVGPaintKind = generic::SVGPaintKind<Color, ComputedUrl>;
 
-impl Default for SVGPaint {
-    fn default() -> Self {
-        SVGPaint {
-            kind: generic::SVGPaintKind::None,
-            fallback: None,
-        }
-    }
-}
-
 impl SVGPaint {
     
     pub fn black() -> Self {
         let rgba = RGBA::from_floats(0., 0., 0., 1.).into();
         SVGPaint {
             kind: generic::SVGPaintKind::Color(rgba),
-            fallback: None,
+            fallback: generic::SVGPaintFallback::Unset,
         }
     }
 }

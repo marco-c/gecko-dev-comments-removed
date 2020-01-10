@@ -342,8 +342,6 @@ impl Parse for GreaterThanOrEqualToOneNumber {
 
 
 
-
-
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum NumberOrPercentage {
