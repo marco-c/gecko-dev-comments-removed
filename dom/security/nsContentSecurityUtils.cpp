@@ -13,7 +13,7 @@
 
 #include "mozilla/dom/Document.h"
 
-#if defined(DEBUG) && !defined(ANDROID)
+#if defined(DEBUG)
 
 void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   
@@ -65,16 +65,19 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   
   
   static nsLiteralCString sAllowedAboutPagesWithNoCSP[] = {
-      
-      NS_LITERAL_CSTRING("about:blank"),
-      
-      NS_LITERAL_CSTRING("about:srcdoc"),
-      
-      NS_LITERAL_CSTRING("about:sync-log"),
-      
-      NS_LITERAL_CSTRING("about:printpreview"),
-      
-      NS_LITERAL_CSTRING("about:downloads"),
+    
+    NS_LITERAL_CSTRING("about:blank"),
+    
+    NS_LITERAL_CSTRING("about:srcdoc"),
+    
+    NS_LITERAL_CSTRING("about:sync-log"),
+    
+    NS_LITERAL_CSTRING("about:printpreview"),
+    
+    NS_LITERAL_CSTRING("about:downloads"),
+#  if defined(ANDROID)
+    NS_LITERAL_CSTRING("about:config"),
+#  endif
   };
 
   for (const nsLiteralCString& allowlistEntry : sAllowedAboutPagesWithNoCSP) {

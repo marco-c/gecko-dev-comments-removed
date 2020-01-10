@@ -7188,7 +7188,7 @@ void Document::EndLoad() {
   bool turnOnEditing =
       mParser && (HasFlag(NODE_IS_EDITABLE) || mContentEditableCount > 0);
 
-#if defined(DEBUG) && !defined(ANDROID)
+#if defined(DEBUG)
   
   if (!mParserAborted) {
     nsContentSecurityUtils::AssertAboutPageHasCSP(this);
