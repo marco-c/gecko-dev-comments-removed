@@ -496,12 +496,6 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
                                         method='pip', optional=True)
         self.register_virtualenv_module('jsonschema==2.5.1',
                                         method='pip')
-        
-        
-        
-        
-        self.register_virtualenv_module('functools32==3.2.3-2',
-                                        method='pip')
         self._resource_monitor = None
 
         
