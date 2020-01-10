@@ -285,6 +285,9 @@ class BaselineCodeGen {
 
   NonAssertingLabel postBarrierSlot_;
 
+  
+  NonAssertingLabel bailoutPrologue_;
+
   CodeOffset profilerEnterFrameToggleOffset_;
   CodeOffset profilerExitFrameToggleOffset_;
 

@@ -203,10 +203,6 @@ struct BaselineScript final {
 
   
   
-  uint32_t bailoutPrologueOffset_;
-
-  
-  
   uint32_t warmUpCheckPrologueOffset_;
 
   
@@ -264,24 +260,19 @@ struct BaselineScript final {
 
   
   
-  BaselineScript(uint32_t bailoutPrologueOffset,
-                 uint32_t warmUpCheckPrologueOffset,
+  BaselineScript(uint32_t warmUpCheckPrologueOffset,
                  uint32_t profilerEnterToggleOffset,
                  uint32_t profilerExitToggleOffset)
-      : bailoutPrologueOffset_(bailoutPrologueOffset),
-        warmUpCheckPrologueOffset_(warmUpCheckPrologueOffset),
+      : warmUpCheckPrologueOffset_(warmUpCheckPrologueOffset),
         profilerEnterToggleOffset_(profilerEnterToggleOffset),
         profilerExitToggleOffset_(profilerExitToggleOffset) {}
 
  public:
-  static BaselineScript* New(JSScript* jsscript, uint32_t bailoutPrologueOffset,
-                             uint32_t warmUpCheckPrologueOffset,
-                             uint32_t profilerEnterToggleOffset,
-                             uint32_t profilerExitToggleOffset,
-                             size_t retAddrEntries,
-                             size_t pcMappingIndexEntries, size_t pcMappingSize,
-                             size_t resumeEntries,
-                             size_t traceLoggerToggleOffsetEntries);
+  static BaselineScript* New(
+      JSScript* jsscript, uint32_t warmUpCheckPrologueOffset,
+      uint32_t profilerEnterToggleOffset, uint32_t profilerExitToggleOffset,
+      size_t retAddrEntries, size_t pcMappingIndexEntries, size_t pcMappingSize,
+      size_t resumeEntries, size_t traceLoggerToggleOffsetEntries);
 
   static void Trace(JSTracer* trc, BaselineScript* script);
   static void Destroy(FreeOp* fop, BaselineScript* script);
@@ -300,9 +291,6 @@ struct BaselineScript final {
     return flags_ & HAS_DEBUG_INSTRUMENTATION;
   }
 
-  uint8_t* bailoutPrologueEntryAddr() const {
-    return method_->raw() + bailoutPrologueOffset_;
-  }
   uint8_t* warmUpCheckPrologueAddr() const {
     return method_->raw() + warmUpCheckPrologueOffset_;
   }
@@ -479,26 +467,14 @@ struct BaselineBailoutInfo {
   uint8_t* copyStackBottom;
 
   
-  
-  
-  uint32_t setR0;
-  Value valueR0;
-  uint32_t setR1;
-  Value valueR1;
-
-  
   void* resumeFramePtr;
 
   
   void* resumeAddr;
 
   
-  jsbytecode* resumePC;
-
-  
   
   jsbytecode* monitorPC;
-  Value monitorValue;
 
   
   jsbytecode* tryPC;
@@ -553,6 +529,10 @@ class BaselineInterpreter {
   uint32_t interpretOpNoDebugTrapOffset_ = 0;
 
   
+  
+  uint32_t bailoutPrologueOffset_ = 0;
+
+  
   uint32_t profilerEnterToggleOffset_ = 0;
   uint32_t profilerExitToggleOffset_ = 0;
 
@@ -587,7 +567,7 @@ class BaselineInterpreter {
 
   void init(JitCode* code, uint32_t interpretOpOffset,
             uint32_t interpretOpNoDebugTrapOffset,
-            uint32_t profilerEnterToggleOffset,
+            uint32_t bailoutPrologueOffset, uint32_t profilerEnterToggleOffset,
             uint32_t profilerExitToggleOffset,
             CodeOffsetVector&& debugInstrumentationOffsets,
             CodeOffsetVector&& debugTrapOffsets,
@@ -605,6 +585,9 @@ class BaselineInterpreter {
   }
   uint8_t* retAddrForDebugAfterYieldCallVM() const {
     return codeAtOffset(callVMOffsets_.debugAfterYieldOffset);
+  }
+  uint8_t* bailoutPrologueEntryAddr() const {
+    return codeAtOffset(bailoutPrologueOffset_);
   }
 
   uint8_t* retAddrForIC(JSOp op) const;

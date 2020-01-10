@@ -1571,8 +1571,6 @@ void MacroAssembler::generateBailoutTail(Register scratch,
     enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
 
     
-    pushValue(Address(bailoutInfo, offsetof(BaselineBailoutInfo, valueR0)));
-    pushValue(Address(bailoutInfo, offsetof(BaselineBailoutInfo, valueR1)));
     push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeFramePtr)));
     push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
 
@@ -1585,15 +1583,11 @@ void MacroAssembler::generateBailoutTail(Register scratch,
 
     
     AllocatableGeneralRegisterSet enterRegs(GeneralRegisterSet::All());
-    enterRegs.take(R0);
-    enterRegs.take(R1);
     enterRegs.take(BaselineFrameReg);
     Register jitcodeReg = enterRegs.takeAny();
 
     pop(jitcodeReg);
     pop(BaselineFrameReg);
-    popValue(R1);
-    popValue(R0);
 
     
     addToStackPtr(Imm32(ExitFrameLayout::SizeWithFooter()));

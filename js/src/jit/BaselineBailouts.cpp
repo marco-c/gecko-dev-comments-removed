@@ -129,15 +129,9 @@ struct BaselineStackBuilder {
     header_->incomingStack = reinterpret_cast<uint8_t*>(frame_);
     header_->copyStackTop = buffer_ + bufferTotal_;
     header_->copyStackBottom = header_->copyStackTop;
-    header_->setR0 = 0;
-    header_->valueR0 = UndefinedValue();
-    header_->setR1 = 0;
-    header_->valueR1 = UndefinedValue();
     header_->resumeFramePtr = nullptr;
     header_->resumeAddr = nullptr;
-    header_->resumePC = nullptr;
     header_->monitorPC = nullptr;
-    header_->monitorValue = UndefinedValue();
     header_->tryPC = nullptr;
     header_->faultPC = nullptr;
     header_->numFrames = 0;
@@ -287,36 +281,13 @@ struct BaselineStackBuilder {
     return result;
   }
 
-  void popValueInto(PCMappingSlotInfo::SlotLocation loc) {
-    MOZ_ASSERT(PCMappingSlotInfo::ValidSlotLocation(loc));
-    switch (loc) {
-      case PCMappingSlotInfo::SlotInR0:
-        header_->setR0 = 1;
-        header_->valueR0 = popValue();
-        break;
-      case PCMappingSlotInfo::SlotInR1:
-        header_->setR1 = 1;
-        header_->valueR1 = popValue();
-        break;
-      default:
-        MOZ_ASSERT(loc == PCMappingSlotInfo::SlotIgnore);
-        popValue();
-        break;
-    }
-  }
-
   void setResumeFramePtr(void* resumeFramePtr) {
     header_->resumeFramePtr = resumeFramePtr;
   }
 
   void setResumeAddr(void* resumeAddr) { header_->resumeAddr = resumeAddr; }
 
-  void setResumePC(jsbytecode* pc) { header_->resumePC = pc; }
-
-  void setMonitorPCAndValue(jsbytecode* pc, Value val) {
-    header_->monitorPC = pc;
-    header_->monitorValue = val;
-  }
+  void setMonitorPC(jsbytecode* pc) { header_->monitorPC = pc; }
 
   template <typename T>
   BufferPointer<T> pointerAtStackOffset(size_t offset) {
@@ -694,7 +665,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   BufferPointer<BaselineFrame> blFrame =
       builder.pointerAtStackOffset<BaselineFrame>(0);
 
-  uint32_t flags = 0;
+  uint32_t flags = BaselineFrame::RUNNING_IN_INTERPRETER;
 
   
   
@@ -1057,7 +1028,6 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   
   
-  
   if (!isPrologueBailout && !resumeAfter) {
     jsbytecode* skippedLoopEntry = nullptr;
     jsbytecode* fasterPc = pc;
@@ -1077,7 +1047,6 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   }
 
   const uint32_t pcOff = script->pcToOffset(pc);
-  BaselineScript* baselineScript = script->baselineScript();
   JitScript* jitScript = script->jitScript();
 
 #ifdef DEBUG
@@ -1128,6 +1097,9 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
           BailoutKindString(bailoutKind));
 #endif
 
+  const BaselineInterpreter& baselineInterp =
+      cx->runtime()->jitRuntime()->baselineInterpreter();
+
   
   
   if (!iter.moreFrames() || catchingException) {
@@ -1141,76 +1113,33 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
       
       if ((CodeSpec[op].format & JOF_TYPESET) &&
           !propagatingIonExceptionForDebugMode) {
-        builder.setMonitorPCAndValue(pc, blFrame->topStackValue());
+        builder.setMonitorPC(pc);
       }
       pc = GetNextPc(pc);
     }
 
-    builder.setResumePC(pc);
     builder.setResumeFramePtr(prevFramePtr);
 
-    
-    
-    
-    
-    
-    PCMappingSlotInfo slotInfo;
-    uint8_t* nativeCodeForPC;
-
-    if (propagatingIonExceptionForDebugMode) {
-      
+    uint8_t* resumeAddr;
+    if (isPrologueBailout) {
+      JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
+      MOZ_ASSERT(pc == script->code());
+      blFrame->setInterpreterFieldsForPrologueBailout(script);
+      resumeAddr = baselineInterp.bailoutPrologueEntryAddr();
+    } else if (propagatingIonExceptionForDebugMode) {
       
       
       
       
       jsbytecode* throwPC = script->offsetToPC(iter.pcOffset());
-      builder.setResumePC(throwPC);
-
-      
-      
-      PCMappingSlotInfo unused;
-      nativeCodeForPC =
-          baselineScript->nativeCodeForPC(script, throwPC, &unused);
+      blFrame->setInterpreterFields(script, throwPC);
+      resumeAddr = baselineInterp.interpretOpAddr().value;
     } else {
-      nativeCodeForPC = baselineScript->nativeCodeForPC(script, pc, &slotInfo);
+      blFrame->setInterpreterFields(script, pc);
+      resumeAddr = baselineInterp.interpretOpAddr().value;
     }
-    MOZ_ASSERT(nativeCodeForPC);
-
-    unsigned numUnsynced = slotInfo.numUnsynced();
-
-    MOZ_ASSERT(numUnsynced <= 2);
-    PCMappingSlotInfo::SlotLocation loc1, loc2;
-    if (numUnsynced > 0) {
-      loc1 = slotInfo.topSlotLocation();
-      JitSpew(JitSpew_BaselineBailouts,
-              "      Popping top stack value into %d.", (int)loc1);
-      builder.popValueInto(loc1);
-    }
-    if (numUnsynced > 1) {
-      loc2 = slotInfo.nextSlotLocation();
-      JitSpew(JitSpew_BaselineBailouts,
-              "      Popping next stack value into %d.", (int)loc2);
-      MOZ_ASSERT_IF(loc1 != PCMappingSlotInfo::SlotIgnore, loc1 != loc2);
-      builder.popValueInto(loc2);
-    }
-
-    
-    
-    frameSize -= sizeof(Value) * numUnsynced;
-    blFrame->setFrameSize(frameSize);
-    JitSpew(JitSpew_BaselineBailouts, "      Adjusted framesize -= %d: %d",
-            int(sizeof(Value) * numUnsynced), int(frameSize));
-
-    uint8_t* opReturnAddr;
-    if (isPrologueBailout) {
-      MOZ_ASSERT(numUnsynced == 0);
-      opReturnAddr = baselineScript->bailoutPrologueEntryAddr();
-      JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
-    } else {
-      opReturnAddr = nativeCodeForPC;
-    }
-    builder.setResumeAddr(opReturnAddr);
-    JitSpew(JitSpew_BaselineBailouts, "      Set resumeAddr=%p", opReturnAddr);
+    builder.setResumeAddr(resumeAddr);
+    JitSpew(JitSpew_BaselineBailouts, "      Set resumeAddr=%p", resumeAddr);
 
     if (cx->runtime()->geckoProfiler().enabled()) {
       
@@ -1235,6 +1164,10 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   }
 
   
+
+  blFrame->setInterpreterFields(script, pc);
+
+  
   size_t baselineFrameDescr = MakeFrameDescriptor(
       (uint32_t)builder.framePushed(), FrameType::BaselineJS,
       BaselineStubFrameLayout::Size());
@@ -1247,10 +1180,8 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   ICEntry& icEntry = jitScript->icEntryFromPCOffset(pcOff);
   MOZ_ASSERT(IsInlinableFallback(icEntry.fallbackStub()));
 
-  RetAddrEntry& retAddrEntry =
-      baselineScript->retAddrEntryFromPCOffset(pcOff, RetAddrEntry::Kind::IC);
-  if (!builder.writePtr(baselineScript->returnAddressForEntry(retAddrEntry),
-                        "ReturnAddr")) {
+  uint8_t* retAddr = baselineInterp.retAddrForIC(JSOp(*pc));
+  if (!builder.writePtr(retAddr, "ReturnAddr")) {
     return false;
   }
 
@@ -1906,12 +1837,7 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
 
   JitSpew(JitSpew_BaselineBailouts, "  Done restoring frames");
 
-  
-  
-  
-  
   BaselineFrame* topFrame = GetTopBaselineFrame(cx);
-  topFrame->setOverridePc(bailoutInfo->resumePC);
 
   jsbytecode* faultPC = bailoutInfo->faultPC;
   jsbytecode* tryPC = bailoutInfo->tryPC;
@@ -1923,7 +1849,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
   uint8_t* incomingStack = bailoutInfo->incomingStack;
 
   jsbytecode* monitorPC = bailoutInfo->monitorPC;
-  RootedValue monitorValue(cx, bailoutInfo->monitorValue);
 
   
   
@@ -1956,7 +1881,7 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
   
   if (monitorPC) {
     MOZ_ASSERT(CodeSpec[*monitorPC].format & JOF_TYPESET);
-    MOZ_ASSERT(GetNextPc(monitorPC) == topFrame->overridePc());
+    MOZ_ASSERT(GetNextPc(monitorPC) == topFrame->interpreterPC());
 
     RootedScript script(cx, topFrame->script());
     uint32_t monitorOffset = script->pcToOffset(monitorPC);
@@ -1968,8 +1893,8 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
     
     if (fallbackStub->isMonitoredFallback()) {
       ICMonitoredFallbackStub* stub = fallbackStub->toMonitoredFallbackStub();
-      if (!TypeMonitorResult(cx, stub, topFrame, script, monitorPC,
-                             monitorValue)) {
+      RootedValue val(cx, topFrame->topStackValue());
+      if (!TypeMonitorResult(cx, stub, topFrame, script, monitorPC, val)) {
         return false;
       }
     }
@@ -2164,8 +2089,5 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo) {
   }
 
   CheckFrequentBailouts(cx, outerScript, bailoutKind);
-
-  
-  topFrame->clearOverridePc();
   return true;
 }

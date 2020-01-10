@@ -292,8 +292,7 @@ MethodStatus BaselineCompiler::compile() {
   }
 
   UniquePtr<BaselineScript> baselineScript(
-      BaselineScript::New(script, bailoutPrologueOffset_.offset(),
-                          warmUpCheckPrologueOffset_.offset(),
+      BaselineScript::New(script, warmUpCheckPrologueOffset_.offset(),
                           profilerEnterFrameToggleOffset_.offset(),
                           profilerExitFrameToggleOffset_.offset(),
                           handler.retAddrEntries().length(),
@@ -6809,7 +6808,7 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
 #endif
 
   
-  bailoutPrologueOffset_ = CodeOffset(masm.currentOffset());
+  masm.bind(&bailoutPrologue_);
 
   frame.assertSyncedStack();
 
@@ -7090,6 +7089,11 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
   masm.jump(&interpretOpAfterDebugTrap);
 
   
+  bailoutPrologueOffset_ = CodeOffset(masm.currentOffset());
+  restoreInterpreterPCReg();
+  masm.jump(&bailoutPrologue_);
+
+  
   Label invalidOp;
   masm.bind(&invalidOp);
   masm.assumeUnreachable("Invalid op");
@@ -7220,6 +7224,7 @@ bool BaselineInterpreterGenerator::generate(BaselineInterpreter& interpreter) {
 
     interpreter.init(
         code, interpretOpOffset_, interpretOpNoDebugTrapOffset_,
+        bailoutPrologueOffset_.offset(),
         profilerEnterFrameToggleOffset_.offset(),
         profilerExitFrameToggleOffset_.offset(),
         std::move(handler.debugInstrumentationOffsets()),
