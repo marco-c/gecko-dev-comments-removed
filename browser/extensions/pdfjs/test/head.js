@@ -3,21 +3,15 @@ async function waitForPdfJS(browser, url) {
     set: [["pdfjs.eventBusDispatchToDOM", true]],
   });
   
-  return ContentTask.spawn(browser, url, async function(contentUrl) {
-    await new Promise(resolve => {
-      
-      
-      addEventListener(
-        "documentloaded",
-        function listener() {
-          removeEventListener("documentloaded", listener, false);
-          resolve();
-        },
-        false,
-        true
-      );
-
-      content.location = contentUrl;
-    });
+  let loadPromise = BrowserTestUtils.waitForContentEvent(
+    browser,
+    "documentloaded",
+    false,
+    null,
+    true
+  );
+  await SpecialPowers.spawn(browser, [url], contentUrl => {
+    content.location = contentUrl;
   });
+  return loadPromise;
 }
