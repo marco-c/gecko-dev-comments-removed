@@ -178,9 +178,15 @@ TrackingDBService.prototype = {
   identifyType(events) {
     let result = null;
     let isTracker = false;
+    let isSocialTracker = false;
     for (let [state, blocked] of events) {
       if (state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT) {
         isTracker = true;
+      }
+      if (
+        state & Ci.nsIWebProgressListener.STATE_LOADED_SOCIALTRACKING_CONTENT
+      ) {
+        isSocialTracker = true;
       }
       if (blocked) {
         if (
@@ -189,9 +195,10 @@ TrackingDBService.prototype = {
           result = Ci.nsITrackingDBService.FINGERPRINTERS_ID;
         } else if (
           
+          
           social_enabled &&
-          (state &
-            Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_SOCIALTRACKER ||
+          ((isSocialTracker &&
+            state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER) ||
             state &
               Ci.nsIWebProgressListener.STATE_BLOCKED_SOCIALTRACKING_CONTENT)
         ) {
@@ -205,8 +212,7 @@ TrackingDBService.prototype = {
         } else if (
           
           
-          state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER ||
-          state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_SOCIALTRACKER
+          state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER
         ) {
           result = Ci.nsITrackingDBService.TRACKING_COOKIES_ID;
         } else if (

@@ -1168,14 +1168,6 @@ class Document : public nsINode,
   
 
 
-  bool GetHasSocialTrackingCookiesBlocked() {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_SOCIALTRACKER);
-  }
-
-  
-
-
   bool GetHasForeignCookiesBlocked() {
     return mContentBlockingLog.HasBlockedAnyOfType(
         nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN);
@@ -1252,19 +1244,6 @@ class Document : public nsINode,
     RecordContentBlockingLog(
         aOriginBlocked, nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
         aHasTrackingCookiesBlocked, aReason, aTrackingFullHashes);
-  }
-
-  
-
-
-  void SetHasSocialTrackingCookiesBlocked(
-      bool aHasSocialTrackingCookiesBlocked, const nsACString& aOriginBlocked,
-      const Maybe<AntiTrackingCommon::StorageAccessGrantedReason>& aReason,
-      const nsTArray<nsCString>& aTrackingFullHashes) {
-    RecordContentBlockingLog(
-        aOriginBlocked,
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_SOCIALTRACKER,
-        aHasSocialTrackingCookiesBlocked, aReason, aTrackingFullHashes);
   }
 
   
