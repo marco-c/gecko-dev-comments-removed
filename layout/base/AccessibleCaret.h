@@ -169,6 +169,9 @@ class AccessibleCaret {
   void RemoveCaretElement(dom::Document*);
 
   
+  void ClearCachedData();
+
+  
   
   static nsPoint CaretElementPosition(const nsRect& aRect) {
     return aRect.TopLeft() + nsPoint(aRect.width / 2, 0);
@@ -198,6 +201,10 @@ class AccessibleCaret {
 
   
   nsRect mImaginaryCaretRect;
+
+  
+  
+  nsRect mImaginaryCaretRectInContainerFrame;
 
   
   float mZoomLevel = 0.0f;
