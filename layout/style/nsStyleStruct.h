@@ -54,13 +54,18 @@ namespace mozilla {
 
 using Position = StylePosition;
 
+template <>
+inline bool StylePosition::HasPercent() const {
+  return horizontal.HasPercent() || vertical.HasPercent();
+}
+
 
 
 
 
 template <>
 inline bool StylePosition::DependsOnPositioningAreaSize() const {
-  return horizontal.HasPercent() || vertical.HasPercent();
+  return HasPercent();
 }
 
 template <>

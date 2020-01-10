@@ -642,6 +642,17 @@ inline bool StyleTrackBreadth::HasPercent() const {
   return IsBreadth() && AsBreadth().HasPercent();
 }
 
+
+template <>
+bool StyleTransform::HasPercent() const;
+
+template <>
+inline bool StyleTransformOrigin::HasPercent() const {
+  
+  
+  return horizontal.HasPercent() || vertical.HasPercent();
+}
+
 }  
 
 #endif
