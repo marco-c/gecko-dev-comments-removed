@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#include "nsFxrCommandLineHandler.h"
+#include "nsICommandLine.h"
+#include "nsString.h"
+
+NS_IMPL_ISUPPORTS(nsFxrCommandLineHandler, nsICommandLineHandler)
+
+NS_IMETHODIMP
+nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFxrCommandLineHandler::GetHelpInfo(nsACString& aResult) {
+  
+  return NS_OK;
+}
