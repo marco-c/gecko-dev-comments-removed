@@ -52,7 +52,8 @@ def browser_kwargs(test_type, run_info_data, config, **kwargs):
             "timeout_multiplier": get_timeout_multiplier(test_type,
                                                          run_info_data,
                                                          **kwargs),
-            "leak_check": kwargs["leak_check"],
+            
+            "leak_check": False,
             "stylo_threads": kwargs["stylo_threads"],
             "chaos_mode_flags": kwargs["chaos_mode_flags"],
             "config": config,
@@ -145,13 +146,7 @@ class FirefoxAndroidBrowser(FirefoxBrowser):
                 with open(os.path.join(font_dir, "Ahem.ttf"), "wb") as dest:
                     dest.write(src.read())
 
-        if self.leak_check and kwargs.get("check_leaks", True):
-            self.leak_report_file = os.path.join(self.profile.profile, "runtests_leaks.log")
-            if os.path.exists(self.leak_report_file):
-                os.remove(self.leak_report_file)
-            env["XPCOM_MEM_BLOAT_LOG"] = self.leak_report_file
-        else:
-            self.leak_report_file = None
+        self.leak_report_file = None
 
         if self.ca_certificate_path is not None:
             self.setup_ssl()
