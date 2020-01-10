@@ -43,7 +43,8 @@ release = u''
 extensions = [
     'recommonmark',
     'sphinxarg.ext',
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx'
 ]
 
 
@@ -191,3 +192,6 @@ epub_title = project
 
 
 epub_exclude_files = ['search.html']
+
+intersphinx_mapping = {'python': ('https://docs.python.org/2/', None),
+                       'mozilla': ('https://firefox-source-docs.mozilla.org/', None)}
