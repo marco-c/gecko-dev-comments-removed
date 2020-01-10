@@ -272,7 +272,7 @@ class GCRuntime {
   
   bool triggerZoneGC(Zone* zone, JS::GCReason reason, size_t usedBytes,
                      size_t thresholdBytes);
-  void maybeGC(Zone* zone);
+  void maybeGC();
   bool checkEagerAllocTrigger(const HeapSize& size,
                               const ZoneThreshold& threshold);
   
