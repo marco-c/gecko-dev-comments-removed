@@ -9,15 +9,5 @@
 
 
 
-var { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ContentMetaHandler: "resource:///modules/ContentMetaHandler.jsm",
-});
-
-ContentMetaHandler.init(this);
-
 
 void content;
