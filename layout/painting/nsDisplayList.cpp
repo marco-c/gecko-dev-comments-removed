@@ -478,7 +478,7 @@ static void SetAnimatable(nsCSSPropertyID aProperty,
       
       
       nscolor foreground =
-          aFrame->Style()->GetVisitedDependentColor(&nsStyleText::mColor);
+          aFrame->Style()->GetVisitedDependentColor(&nsStyleColor::mColor);
       aAnimatable = aAnimationValue.GetColor(foreground);
       break;
     }
@@ -1231,6 +1231,7 @@ void nsDisplayListBuilder::EndFrame() {
   mFrameToAnimatedGeometryRootMap.Clear();
   mAGRBudgetSet.Clear();
   mActiveScrolledRoots.Clear();
+  mEffectsUpdates.Clear();
   FreeClipChains();
   FreeTemporaryItems();
   nsCSSRendering::EndFrameTreesLocked();
@@ -10265,8 +10266,12 @@ bool nsDisplaySVGWrapper::CreateWebRenderCommands(
     const StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  return nsDisplayWrapList::CreateWebRenderCommands(
-      aBuilder, aResources, aSc, aManager, aDisplayListBuilder);
+  if (StaticPrefs::WebRenderBlobInvalidation()) {
+    return nsDisplayWrapList::CreateWebRenderCommands(
+        aBuilder, aResources, aSc, aManager, aDisplayListBuilder);
+  }
+
+  return false;
 }
 
 nsDisplayForeignObject::nsDisplayForeignObject(nsDisplayListBuilder* aBuilder,
@@ -10322,10 +10327,14 @@ bool nsDisplayForeignObject::CreateWebRenderCommands(
     const StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  AutoRestore<bool> restoreDoGrouping(aManager->CommandBuilder().mDoGrouping);
-  aManager->CommandBuilder().mDoGrouping = false;
-  return nsDisplayWrapList::CreateWebRenderCommands(
-      aBuilder, aResources, aSc, aManager, aDisplayListBuilder);
+  if (StaticPrefs::WebRenderBlobInvalidation()) {
+    AutoRestore<bool> restoreDoGrouping(aManager->CommandBuilder().mDoGrouping);
+    aManager->CommandBuilder().mDoGrouping = false;
+    return nsDisplayWrapList::CreateWebRenderCommands(
+        aBuilder, aResources, aSc, aManager, aDisplayListBuilder);
+  } else {
+    return false;
+  }
 }
 
 void nsDisplayListCollection::SerializeWithCorrectZOrder(
