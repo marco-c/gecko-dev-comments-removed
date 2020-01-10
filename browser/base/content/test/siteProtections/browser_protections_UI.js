@@ -17,3 +17,26 @@ add_task(async function testToggleSwitch() {
   Services.perms.remove(ContentBlocking._baseURIForChannelClassifier, "trackingprotection");
   BrowserTestUtils.removeTab(tab);
 });
+
+
+
+
+add_task(async function testSettingsButton() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com");
+  await openProtectionsPanel();
+
+  let popuphiddenPromise = BrowserTestUtils.waitForEvent(protectionsPopup, "popuphidden");
+  let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, "about:preferences#privacy");
+  gProtectionsHandler._protectionPopupSettingsButton.click();
+
+  
+  await popuphiddenPromise;
+  
+  let newTab = await newTabPromise;
+
+  ok(true, "about:preferences has been opened successfully");
+
+  BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(tab);
+});
