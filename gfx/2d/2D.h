@@ -378,6 +378,12 @@ class SourceSurface : public external::AtomicRefCounted<SourceSurface> {
   virtual already_AddRefed<DataSourceSurface> GetDataSurface() = 0;
 
   
+  virtual already_AddRefed<SourceSurface> GetUnderlyingSurface() {
+    RefPtr<SourceSurface> surface = this;
+    return surface.forget();
+  }
+
+  
 
 
   virtual void* GetNativeSurface(NativeSurfaceType aType) { return nullptr; }
