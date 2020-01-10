@@ -4350,15 +4350,6 @@ VARCACHE_PREF(
   AtomicFloat, 1.0f
 )
 
-
-
-VARCACHE_PREF(
-  Live,
-  "layout.css.simple-moz-gradient.enabled",
-  layout_css_simple_moz_gradient_enabled,
-  bool, true
-)
-
 #ifdef NIGHTLY_BUILD
 # define PREF_VALUE true
 #else

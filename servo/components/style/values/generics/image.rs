@@ -39,9 +39,9 @@ pub enum Image<Gradient, MozImageRect, ImageUrl> {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
-pub struct Gradient<LineDirection, Length, LengthPercentage, Position, Color, Angle> {
+pub struct Gradient<LineDirection, Length, LengthPercentage, Position, Color> {
     
-    pub kind: GradientKind<LineDirection, Length, LengthPercentage, Position, Angle>,
+    pub kind: GradientKind<LineDirection, Length, LengthPercentage, Position>,
     
     pub items: Vec<GradientItem<Color, LengthPercentage>>,
     
@@ -63,15 +63,11 @@ pub enum CompatMode {
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
-pub enum GradientKind<LineDirection, Length, LengthPercentage, Position, Angle> {
+pub enum GradientKind<LineDirection, Length, LengthPercentage, Position> {
     
     Linear(LineDirection),
     
-    Radial(
-        EndingShape<Length, LengthPercentage>,
-        Position,
-        Option<Angle>,
-    ),
+    Radial(EndingShape<Length, LengthPercentage>, Position),
 }
 
 
@@ -268,14 +264,13 @@ where
     }
 }
 
-impl<D, L, LoP, P, C, A> ToCss for Gradient<D, L, LoP, P, C, A>
+impl<D, L, LoP, P, C> ToCss for Gradient<D, L, LoP, P, C>
 where
     D: LineDirection,
     L: ToCss,
     LoP: ToCss,
     P: ToCss,
     C: ToCss,
-    A: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -300,7 +295,7 @@ where
                 direction.to_css(dest, self.compat_mode)?;
                 false
             },
-            GradientKind::Radial(ref shape, ref position, ref angle) => {
+            GradientKind::Radial(ref shape, ref position) => {
                 let omit_shape = match *shape {
                     EndingShape::Ellipse(Ellipse::Extent(ShapeExtent::Cover)) |
                     EndingShape::Ellipse(Ellipse::Extent(ShapeExtent::FarthestCorner)) => true,
@@ -315,10 +310,6 @@ where
                     position.to_css(dest)?;
                 } else {
                     position.to_css(dest)?;
-                    if let Some(ref a) = *angle {
-                        dest.write_str(" ")?;
-                        a.to_css(dest)?;
-                    }
                     if !omit_shape {
                         dest.write_str(", ")?;
                         shape.to_css(dest)?;
@@ -338,7 +329,7 @@ where
     }
 }
 
-impl<D, L, LoP, P, A> GradientKind<D, L, LoP, P, A> {
+impl<D, L, LoP, P> GradientKind<D, L, LoP, P> {
     fn label(&self) -> &str {
         match *self {
             GradientKind::Linear(..) => "linear",
