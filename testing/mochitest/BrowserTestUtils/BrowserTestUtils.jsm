@@ -2121,6 +2121,90 @@ var BrowserTestUtils = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  contentTopicObserved(aBrowsingContext, aTopic, aCount = 1, aFilterFn = null) {
+    return this.sendQuery(aBrowsingContext, "BrowserTestUtils:ObserveTopic", {
+      topic: aTopic,
+      count: aCount,
+      filterFunctionSource: aFilterFn ? aFilterFn.toSource() : null,
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  startObservingTopics(aBrowsingContext, aTopics) {
+    return this.sendQuery(
+      aBrowsingContext,
+      "BrowserTestUtils:StartObservingTopics",
+      {
+        topics: aTopics,
+      }
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+  stopObservingTopics(aBrowsingContext, aTopics) {
+    return this.sendQuery(
+      aBrowsingContext,
+      "BrowserTestUtils:StopObservingTopics",
+      {
+        topics: aTopics,
+      }
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
   async sendAsyncMessage(aBrowsingContext, aMessageName, aMessageData) {
     if (!aBrowsingContext.currentWindowGlobal) {
       await this.waitForCondition(() => aBrowsingContext.currentWindowGlobal);
