@@ -84,6 +84,7 @@ module.exports = {
     "fetch-options",
     "mozilla",
     "no-unsanitized",
+    "prettier",
   ],
 
   
@@ -340,6 +341,9 @@ module.exports = {
 
     
     "padded-blocks": ["error", "never"],
+
+    
+    "prettier/prettier": "error",
 
     
     
