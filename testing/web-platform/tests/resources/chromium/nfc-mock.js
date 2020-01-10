@@ -175,6 +175,7 @@ var WebNFCTest = (() => {
       this.client_ = null;
       this.watchers_ = [];
       this.reading_messages_ = [];
+      this.operations_suspended_ = false;
     }
 
     
@@ -192,7 +193,10 @@ var WebNFCTest = (() => {
 
       return new Promise(resolve => {
         this.pending_promise_func_ = resolve;
-        if (options.timeout && options.timeout !== Infinity &&
+        
+        if (this.operations_suspended_) {
+          
+        } else if (options.timeout && options.timeout !== Infinity &&
             !this.push_completed_) {
           
           if (this.push_should_timeout_) {
@@ -227,10 +231,13 @@ var WebNFCTest = (() => {
 
       this.watchers_.push({id: id, options: options});
       
-      for (let message of this.reading_messages_) {
-        if (matchesWatchOptions(message, options)) {
-          this.client_.onWatch(
-              [id], fake_tag_serial_number, toMojoNDEFMessage(message));
+      if(!this.operations_suspended_) {
+        
+        for (let message of this.reading_messages_) {
+          if (matchesWatchOptions(message, options)) {
+            this.client_.onWatch(
+                [id], fake_tag_serial_number, toMojoNDEFMessage(message));
+          }
         }
       }
 
@@ -290,6 +297,7 @@ var WebNFCTest = (() => {
       this.push_completed_ = true;
       this.watchers_ = [];
       this.reading_messages_ = [];
+      this.operations_suspended_ = false;
       this.cancelPendingPushOperation();
       this.bindingSet_.closeAllBindings();
       this.interceptor_.stop();
@@ -312,6 +320,8 @@ var WebNFCTest = (() => {
     setReadingMessage(message) {
       this.reading_messages_.push(message);
       
+      if(this.operations_suspended_) return;
+      
       if(this.push_options_ && this.push_options_.ignoreRead)
         return;
       
@@ -326,6 +336,31 @@ var WebNFCTest = (() => {
 
     setPushShouldTimeout(result) {
       this.push_should_timeout_ = result;
+    }
+
+    
+    
+    suspendNFCOperations() {
+      this.operations_suspended_ = true;
+    }
+
+    
+    resumeNFCOperations() {
+      this.operations_suspended_ = false;
+      
+      for (let watcher of this.watchers_) {
+        for (let message of this.reading_messages_) {
+          if (matchesWatchOptions(message, watcher.options)) {
+            this.client_.onWatch(
+                [watcher.id], fake_tag_serial_number,
+                toMojoNDEFMessage(message));
+          }
+        }
+      }
+      
+      if (this.pending_promise_func_) {
+        this.pending_promise_func_(createNFCError(null));
+      }
     }
   }
 
