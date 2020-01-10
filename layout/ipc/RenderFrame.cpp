@@ -223,14 +223,13 @@ already_AddRefed<Layer> nsDisplayRemote::BuildLayer(
   if (!layer) {
     layer = aManager->CreateRefLayer();
   }
-
-  if (!layer) {
+  if (!layer || !layer->AsRefLayer()) {
     
     
     return nullptr;
   }
+  RefLayer* refLayer = layer->AsRefLayer();
 
-  static_cast<RefLayer*>(layer.get())->SetReferentId(mLayersId);
   LayoutDeviceIntPoint offset = GetContentRectLayerOffset(Frame(), aBuilder);
   
   
@@ -240,11 +239,9 @@ already_AddRefed<Layer> nsDisplayRemote::BuildLayer(
   
   
   m.PreScale(aContainerParameters.mXScale, aContainerParameters.mYScale, 1.0);
-  layer->SetBaseTransform(m);
-
-  if (layer->AsRefLayer()) {
-    layer->AsRefLayer()->SetEventRegionsOverride(mEventRegionsOverride);
-  }
+  refLayer->SetBaseTransform(m);
+  refLayer->SetEventRegionsOverride(mEventRegionsOverride);
+  refLayer->SetReferentId(mLayersId);
 
   return layer.forget();
 }
