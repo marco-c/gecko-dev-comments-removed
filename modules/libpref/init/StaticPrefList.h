@@ -4284,6 +4284,14 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "layout.css.individual-transform.enabled",
+  IndividualTransform,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
   "layout.css.line-height-moz-block-height.content.enabled",
   layout_css_line_height_moz_block_height_content_enabled,
   bool, false
