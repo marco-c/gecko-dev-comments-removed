@@ -808,6 +808,20 @@ public:
 
 
 
+
+
+
+
+
+  inline bool is_single_byte() const
+  {
+    return encoding_is_single_byte(this);
+  }
+
+  
+
+
+
   inline gsl::not_null<const Encoding*> output_encoding() const
   {
     return gsl::not_null<const Encoding*>(encoding_output_encoding(this));

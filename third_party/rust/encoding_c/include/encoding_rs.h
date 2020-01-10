@@ -142,6 +142,19 @@ bool encoding_is_ascii_compatible(ENCODING_RS_ENCODING const* encoding);
 
 
 
+
+
+
+
+
+bool encoding_is_single_byte(ENCODING_RS_ENCODING const* encoding);
+
+
+
+
+
+
+
 ENCODING_RS_ENCODING const* encoding_output_encoding(ENCODING_RS_ENCODING const* encoding);
 
 

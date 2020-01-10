@@ -7,7 +7,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/encoding_c/0.9.0")]
+#![doc(html_root_url = "https://docs.rs/encoding_c/0.9.1")]
 
 
 
@@ -409,6 +409,22 @@ pub unsafe extern "C" fn encoding_can_encode_everything(encoding: *const Encodin
 #[no_mangle]
 pub unsafe extern "C" fn encoding_is_ascii_compatible(encoding: *const Encoding) -> bool {
     (*encoding).is_ascii_compatible()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn encoding_is_single_byte(encoding: *const Encoding) -> bool {
+    (*encoding).is_single_byte()
 }
 
 
