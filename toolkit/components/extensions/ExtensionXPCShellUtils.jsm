@@ -906,11 +906,10 @@ var ExtensionTestUtils = {
       );
     });
 
-    
-    
-    
-    
-    Services.prefs.setStringPref("services.settings.default_bucket", "foo");
+    Services.prefs.setStringPref(
+      "services.settings.server",
+      "http://localhost:7777/remote-settings-dummy/v1"
+    );
   },
 
   addonManagerStarted: false,
