@@ -416,6 +416,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   MediaStreamTrack(
       nsPIDOMWindowInner* aWindow, MediaStream* aInputStream, TrackID aTrackID,
       MediaStreamTrackSource* aSource,
+      MediaStreamTrackState aReadyState = MediaStreamTrackState::Live,
       const MediaTrackConstraints& aConstraints = MediaTrackConstraints());
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -618,7 +619,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
   
   
-  RefPtr<MediaStream> mInputStream;
+  const RefPtr<MediaStream> mInputStream;
   
   
   RefPtr<ProcessedMediaStream> mStream;
