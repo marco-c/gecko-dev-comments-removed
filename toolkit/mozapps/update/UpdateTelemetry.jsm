@@ -646,6 +646,18 @@ var AUSTLMY = {
 
 
 
+  pingFixUpdateDirectoryPermissionsAttempted: function UT_PFUDPA() {
+    try {
+      Services.telemetry.scalarSet("update.fix_permissions_attempted", true);
+    } catch (e) {
+      Cu.reportError(e);
+    }
+  },
+
+  
+
+
+
 
 
 
