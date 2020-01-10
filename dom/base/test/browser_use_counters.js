@@ -70,6 +70,12 @@ add_task(async function() {
   );
 
   
+  await check_use_counter_iframe(
+    "file_use_counter_style.html",
+    "CSS_PROPERTY_WebkitPaddingStart"
+  );
+
+  
   
   
   
