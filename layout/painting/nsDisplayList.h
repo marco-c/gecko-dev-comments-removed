@@ -1699,13 +1699,6 @@ class nsDisplayListBuilder {
     mBuildingInvisibleItems = aBuildingInvisibleItems;
   }
 
-  void SetBuildingExtraPagesForPageNum(uint8_t aPageNum) {
-    mBuildingExtraPagesForPageNum = aPageNum;
-  }
-  uint8_t GetBuildingExtraPagesForPageNum() const {
-    return mBuildingExtraPagesForPageNum;
-  }
-
   
 
 
@@ -1896,8 +1889,6 @@ class nsDisplayListBuilder {
   nsDataHashtable<nsPtrHashKey<nsIFrame>, FrameWillChangeBudget>
       mWillChangeBudgetSet;
 
-  uint8_t mBuildingExtraPagesForPageNum;
-
   
   uint32_t mUsedAGRBudget;
   
@@ -2074,7 +2065,6 @@ MOZ_ALWAYS_INLINE T* MakeDisplayItem(nsDisplayListBuilder* aBuilder, F* aFrame,
   }
 
   item->SetPerFrameKey(item->CalculatePerFrameKey());
-  item->SetExtraPageForPageNum(aBuilder->GetBuildingExtraPagesForPageNum());
 
   nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
   if (paintedItem) {
@@ -2087,7 +2077,8 @@ MOZ_ALWAYS_INLINE T* MakeDisplayItem(nsDisplayListBuilder* aBuilder, F* aFrame,
   }
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  if (aBuilder->IsRetainingDisplayList() && aBuilder->IsBuilding()) {
+  if (aBuilder->IsRetainingDisplayList() && !aBuilder->IsInPageSequence() &&
+      aBuilder->IsBuilding()) {
     AssertUniqueItem(item);
   }
 
@@ -2233,8 +2224,7 @@ class nsDisplayItemBase : public nsDisplayItemLink {
     
     
     
-    return (static_cast<uint32_t>(mExtraPageForPageNum) << (TYPE_BITS + (sizeof(mKey) * 8))) |
-           (static_cast<uint32_t>(mKey) << TYPE_BITS) |
+    return (static_cast<uint32_t>(mKey) << TYPE_BITS) |
            static_cast<uint32_t>(mType);
   }
 
@@ -2341,7 +2331,6 @@ class nsDisplayItemBase : public nsDisplayItemLink {
       : mFrame(aOther.mFrame),
         mItemFlags(aOther.mItemFlags),
         mType(aOther.mType),
-        mExtraPageForPageNum(aOther.mExtraPageForPageNum),
         mKey(aOther.mKey) {
     MOZ_COUNT_CTOR(nsDisplayItemBase);
   }
@@ -2355,15 +2344,6 @@ class nsDisplayItemBase : public nsDisplayItemLink {
 
   void SetType(const DisplayItemType aType) { mType = aType; }
   void SetPerFrameKey(const uint16_t aKey) { mKey = aKey; }
-
-  
-  
-  
-  
-  
-  void SetExtraPageForPageNum(const uint8_t aPageNum) {
-    mExtraPageForPageNum = aPageNum;
-  }
 
   void SetDeletedFrame();
 
@@ -2383,7 +2363,6 @@ class nsDisplayItemBase : public nsDisplayItemLink {
 
   mozilla::EnumSet<ItemBaseFlag, uint8_t> mItemFlags;  
   DisplayItemType mType;                               
-  uint8_t mExtraPageForPageNum = 0;                    
   uint16_t mKey;                                       
   OldListIndex mOldListIndex;                          
   uintptr_t mOldList = 0;                              
