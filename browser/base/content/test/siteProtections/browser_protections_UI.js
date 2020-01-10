@@ -253,6 +253,12 @@ add_task(async function testToggleSwitchFlow() {
   gProtectionsHandler._protectionsPopupTPSwitch.click();
 
   
+  ok(
+    gProtectionsHandler.iconBox.hasAttribute("hasException"),
+    "The tracking protection icon state has been changed to disabled."
+  );
+
+  
   await popuphiddenPromise;
   await browserLoadedPromise;
   await popupShownPromise;
@@ -291,6 +297,12 @@ add_task(async function testToggleSwitchFlow() {
   );
   browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   gProtectionsHandler._protectionsPopupTPSwitch.click();
+
+  
+  ok(
+    !gProtectionsHandler.iconBox.hasAttribute("hasException"),
+    "The tracking protection icon state has been changed to enabled."
+  );
 
   
   await popuphiddenPromise;
