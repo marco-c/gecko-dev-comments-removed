@@ -85,14 +85,11 @@ class ThumbnailHelper final
     
     
     nsCOMPtr<nsIURI> uri;
-    bool isHttps = false;
-
-    if (NS_FAILED(channel->GetURI(getter_AddRefs(uri))) || !uri ||
-        NS_FAILED(uri->SchemeIs("https", &isHttps))) {
+    if (NS_FAILED(channel->GetURI(getter_AddRefs(uri))) || !uri) {
       return false;
     }
 
-    if (!isHttps ||
+    if (!uri->SchemeIs("https") ||
         Preferences::GetBool("browser.cache.disk_cache_ssl", false)) {
       
       
