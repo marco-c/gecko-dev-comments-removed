@@ -544,6 +544,9 @@ class Script {
       scripts = await scripts;
     }
 
+    
+    await cssPromise;
+
     let result;
 
     const { extension } = context;
@@ -575,7 +578,6 @@ class Script {
       );
     }
 
-    await cssPromise;
     return result;
   }
 
