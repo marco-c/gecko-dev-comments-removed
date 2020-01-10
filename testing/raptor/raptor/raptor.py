@@ -62,7 +62,7 @@ from performance_tuning import tune_performance
 from power import init_android_power_test, finish_android_power_test
 from results import RaptorResultsHandler
 from utils import view_gecko_profile, write_yml_file
-from cpu import generate_android_cpu_profile
+from cpu import start_android_cpu_profiler
 
 LOG = RaptorLogger(component='raptor-main')
 
@@ -114,7 +114,7 @@ either Raptor or browsertime."""
             'memory_test': memory_test,
             'cpu_test': cpu_test,
             'is_release_build': is_release_build,
-            'enable_control_server_wait': memory_test,
+            'enable_control_server_wait': memory_test or cpu_test,
             'e10s': e10s,
             'enable_webrender': enable_webrender,
         }
@@ -439,6 +439,7 @@ class Raptor(Perftest):
     def __init__(self, *args, **kwargs):
         self.raptor_webext = None
         self.control_server = None
+        self.cpu_profiler = None
 
         super(Raptor, self).__init__(*args, **kwargs)
 
@@ -505,6 +506,9 @@ class Raptor(Perftest):
                 if response == 'webext_shutdownBrowser':
                     if self.config['memory_test']:
                         generate_android_memory_profile(self, test['name'])
+                    if self.cpu_profiler:
+                        self.cpu_profiler.generate_android_cpu_profile(test['name'])
+
                     self.control_server_wait_continue()
             time.sleep(1)
             
@@ -1200,11 +1204,11 @@ class RaptorAndroid(Raptor):
             self.launch_firefox_android_app(test['name'])
 
             
-            if self.config['cpu_test']:
-                generate_android_cpu_profile(self, test['name'])
-
-            
             self.control_server._finished = False
+
+            if self.config['cpu_test']:
+                
+                self.cpu_profiler = start_android_cpu_profiler(self)
 
             self.wait_for_test_finish(test, timeout)
 
@@ -1244,11 +1248,11 @@ class RaptorAndroid(Raptor):
         self.launch_firefox_android_app(test['name'])
 
         
-        if self.config['cpu_test']:
-            generate_android_cpu_profile(self, test['name'])
-
-        
         self.control_server._finished = False
+
+        if self.config['cpu_test']:
+            
+            self.cpu_profiler = start_android_cpu_profiler(self)
 
         self.wait_for_test_finish(test, timeout)
 
