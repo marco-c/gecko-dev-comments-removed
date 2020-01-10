@@ -66,6 +66,8 @@ class ServiceWorkerRegistrationFront extends FrontClassWithSpec(
   form(form) {
     this.actorID = form.actor;
     this._form = form;
+    
+    this.traits = form.traits || {};
   }
 }
 

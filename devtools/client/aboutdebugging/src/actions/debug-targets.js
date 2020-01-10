@@ -143,13 +143,6 @@ function installTemporaryExtension() {
 function pushServiceWorker(id, registrationFront) {
   return async (_, getState) => {
     try {
-      const clientWrapper = getCurrentClient(getState().runtimes);
-      const deviceFront = await clientWrapper.getFront("device");
-
-      
-      
-      const { isParentInterceptEnabled } = await deviceFront.getDescription();
-
       
 
 
@@ -160,9 +153,11 @@ function pushServiceWorker(id, registrationFront) {
 
 
 
+      const { isParentInterceptEnabled } = registrationFront.traits;
       if (registrationFront.push && isParentInterceptEnabled) {
         await registrationFront.push();
       } else {
+        const clientWrapper = getCurrentClient(getState().runtimes);
         const workerActor = await clientWrapper.getServiceWorkerFront({ id });
         await workerActor.push();
       }
