@@ -1690,6 +1690,13 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   
   nsresult rv;
+  if (ShadowRoot* shadowRoot = GetShadowRoot()) {
+    rv = shadowRoot->Bind();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  
   {
     BindContext::NestingLevel level(aContext, *this);
     for (nsIContent* child = GetFirstChild(); child;
@@ -1721,12 +1728,6 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
     
     
     static_cast<nsStyledElement*>(this)->ReparseStyleAttribute(false, false);
-  }
-
-  
-  if (ShadowRoot* shadowRoot = GetShadowRoot()) {
-    rv = shadowRoot->Bind();
-    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
