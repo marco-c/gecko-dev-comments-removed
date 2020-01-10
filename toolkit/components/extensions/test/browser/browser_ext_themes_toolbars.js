@@ -13,8 +13,6 @@ add_task(async function test_support_toolbar_property() {
           frame: ACCENT_COLOR,
           tab_background_text: TEXT_COLOR,
           toolbar: TOOLBAR_COLOR,
-          
-          
           toolbar_text: TOOLBAR_TEXT_COLOR,
         },
       },
