@@ -98,7 +98,11 @@ class ScriptErrorRunnable final : public mozilla::Runnable {
 
     nsCOMPtr<nsIScriptError> scriptError =
         do_CreateInstance(NS_SCRIPTERROR_CONTRACTID);
-    MOZ_ASSERT(scriptError);
+    
+    
+    if (!scriptError) {
+      return;
+    }
 
     if (aInnerWindowID) {
       MOZ_ALWAYS_SUCCEEDS(scriptError->InitWithWindowID(
