@@ -80,7 +80,7 @@ bool GLXLibrary::EnsureInitialized() {
     
     
     const char* libGLfilename = "libGL.so.1";
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__) || defined(__NetBSD__)
     libGLfilename = "libGL.so";
 #endif
 
