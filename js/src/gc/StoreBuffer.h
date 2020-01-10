@@ -504,8 +504,6 @@ class StoreBuffer {
 class ArenaCellSet {
   friend class StoreBuffer;
 
-  using ArenaCellBits = BitArray<MaxArenaCellIndex>;
-
   
   Arena* arena;
 
@@ -513,7 +511,7 @@ class ArenaCellSet {
   ArenaCellSet* next;
 
   
-  ArenaCellBits bits;
+  BitArray<MaxArenaCellIndex> bits;
 
 #ifdef DEBUG
   
@@ -533,10 +531,6 @@ class ArenaCellSet {
   }
 
  public:
-  using WordT = ArenaCellBits::WordT;
-  const size_t BitsPerWord = ArenaCellBits::bitsPerElement;
-  const size_t NumWords = ArenaCellBits::numSlots;
-
   ArenaCellSet(Arena* arena, ArenaCellSet* next);
 
   bool hasCell(const TenuredCell* cell) const {
@@ -552,8 +546,6 @@ class ArenaCellSet {
   void putCell(size_t cellIndex);
 
   void check() const;
-
-  WordT getWord(size_t wordIndex) const { return bits.getWord(wordIndex); }
 
   
   
