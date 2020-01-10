@@ -27,15 +27,6 @@
   box-sizing: border-box;
 }
 
-:root {
-  text-rendering: optimizeLegibility;
-  -moz-control-character-visibility: visible;
-}
-
-:root:-moz-locale-dir(rtl) {
-  direction: rtl;
-}
-
 
 [hidden="true"] {
   display: none;
