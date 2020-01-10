@@ -207,7 +207,7 @@ ComputedStyle* nsPlaceholderFrame::GetParentComputedStyleForOutOfFlow(
       mContent ? mContent->GetFlattenedTreeParentElement() : nullptr;
   if (parentElement && Servo_Element_IsDisplayContents(parentElement)) {
     RefPtr<ComputedStyle> style =
-        PresShell()->StyleSet()->ResolveServoStyle(*parentElement);
+        ServoStyleSet::ResolveServoStyle(*parentElement);
     *aProviderFrame = nullptr;
     
     

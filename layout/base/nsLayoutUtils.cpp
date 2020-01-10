@@ -4107,7 +4107,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
   presShell->EndPaint();
   builder->Check();
 
-  if (StaticPrefs::gfx_logging_painted_pixel_count_enabled()) {
+  if (StaticPrefs::GfxLoggingPaintedPixelCountEnabled()) {
     LogPaintedPixelCount(layerManager, paintStart);
   }
 
@@ -10008,7 +10008,7 @@ bool nsLayoutUtils::ShouldHandleMetaViewport(const Document* aDocument) {
                  nsIDocShell::META_VIEWPORT_OVERRIDE_NONE);
       
       
-      return StaticPrefs::dom_meta_viewport_enabled();
+      return StaticPrefs::MetaViewportEnabled();
   }
 }
 
@@ -10044,12 +10044,12 @@ ComputedStyle* nsLayoutUtils::StyleForScrollbar(nsIFrame* aScrollbarPart) {
   
   
   
-  nsPresContext* pc = aScrollbarPart->PresContext();
-  MOZ_ASSERT(content == pc->Document()->GetRootElement(),
-             "Root element is the only case for this fallback "
-             "path to be triggered");
+  MOZ_ASSERT(
+      content == aScrollbarPart->PresContext()->Document()->GetRootElement(),
+      "Root element is the only case for this fallback "
+      "path to be triggered");
   RefPtr<ComputedStyle> style =
-      pc->StyleSet()->ResolveServoStyle(*content->AsElement());
+      ServoStyleSet::ResolveServoStyle(*content->AsElement());
   
   
   return style.get();
