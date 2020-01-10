@@ -503,29 +503,9 @@ const hasBindingParent = node => !!getBindingParent(node);
 
 
 const isNativeAnonymous = node =>
-  hasBindingParent(node) && !(isXBLAnonymous(node) || isShadowAnonymous(node));
+  hasBindingParent(node) && !isShadowAnonymous(node);
 
 exports.isNativeAnonymous = isNativeAnonymous;
-
-
-
-
-
-
-
-
-
-
-function isXBLAnonymous(node) {
-  const parent = getBindingParent(node);
-  if (!parent) {
-    return false;
-  }
-
-  const anonNodes = [...(node.ownerDocument.getAnonymousNodes(parent) || [])];
-  return anonNodes.indexOf(node) > -1;
-}
-exports.isXBLAnonymous = isXBLAnonymous;
 
 
 

@@ -19,20 +19,12 @@ loader.lazyRequireGetter(
   "nodeFilterConstants",
   "devtools/shared/dom-node-filter-constants"
 );
-
 loader.lazyRequireGetter(
   this,
   "isNativeAnonymous",
   "devtools/shared/layout/utils",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "isXBLAnonymous",
-  "devtools/shared/layout/utils",
-  true
-);
-
 loader.lazyRequireGetter(
   this,
   "CssLogic",
@@ -168,10 +160,7 @@ function standardTreeWalkerFilter(node) {
   
   
   
-  if (
-    !isInXULDocument(node) &&
-    (isXBLAnonymous(node) || isNativeAnonymous(node))
-  ) {
+  if (!isInXULDocument(node) && isNativeAnonymous(node)) {
     return nodeFilterConstants.FILTER_SKIP;
   }
 
