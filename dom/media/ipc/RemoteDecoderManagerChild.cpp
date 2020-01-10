@@ -138,7 +138,7 @@ AbstractThread* RemoteDecoderManagerChild::GetManagerAbstractThread() {
 PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
     const RemoteDecoderInfoIPDL& ,
     const CreateDecoderParams::OptionSet& aOptions,
-    const layers::TextureFactoryIdentifier& aIdentifier, bool* aSuccess,
+    const Maybe<layers::TextureFactoryIdentifier>& aIdentifier, bool* aSuccess,
     nsCString* , nsCString* ,
     nsCString* ) {
   
