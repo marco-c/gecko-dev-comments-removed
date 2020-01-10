@@ -451,14 +451,6 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
 
 
-  virtual gfx::ColorRange GetColorRange() const {
-    return gfx::ColorRange::LIMITED;
-  }
-
-  
-
-
-
 
 
   virtual void PrepareTextureSource(CompositableTextureSourceRef& aTexture) {}
@@ -771,8 +763,6 @@ class BufferTextureHost : public TextureHost {
   gfx::YUVColorSpace GetYUVColorSpace() const override;
 
   gfx::ColorDepth GetColorDepth() const override;
-
-  gfx::ColorRange GetColorRange() const override;
 
   gfx::IntSize GetSize() const override { return mSize; }
 

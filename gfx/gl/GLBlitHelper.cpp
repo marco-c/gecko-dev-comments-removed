@@ -1008,7 +1008,7 @@ bool GLBlitHelper::BlitImage(layers::MacIOSurfaceImage* const srcImage,
       return false;
   }
 
-  if (pixelFormat == kCVPixelFormatType_422YpCbCr8) {
+  if (pixelFormat == '2vuy') {
     fragBody = kFragBody_CrYCb;
     
     
