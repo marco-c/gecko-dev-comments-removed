@@ -3602,6 +3602,13 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
                              availSize.ConvertTo(frame->GetWritingMode(), wm),
                              cbSize);
 
+    if (aLine->MovedFragments()) {
+      
+      
+      
+      blockReflowInput->mFlags.mMovedBlockFragments = true;
+    }
+
     nsFloatManager::SavedState floatManagerState;
     nsReflowStatus frameReflowStatus;
     do {

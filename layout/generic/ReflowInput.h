@@ -297,6 +297,17 @@ struct SizeComputationInput {
     
     
     bool mApplyLineClamp : 1;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool mMovedBlockFragments : 1;
   };
 
 #ifdef DEBUG
