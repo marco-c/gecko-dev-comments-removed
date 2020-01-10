@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_DllBlocklistInit_h
-#define mozilla_DllBlocklistInit_h
+#ifndef mozilla_DllBlocklistWin_h
+#define mozilla_DllBlocklistWin_h
 
 #include <windows.h>
 

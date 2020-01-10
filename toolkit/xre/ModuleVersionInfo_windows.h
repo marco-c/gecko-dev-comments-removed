@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_ModuleVersionInfo_h
-#define mozilla_ModuleVersionInfo_h
+#ifndef mozilla_ModuleVersionInfo_windows_h
+#define mozilla_ModuleVersionInfo_windows_h
 
 #include <windows.h>
 #include "nsString.h"
