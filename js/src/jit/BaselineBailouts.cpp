@@ -288,6 +288,10 @@ struct BaselineStackBuilder {
 
   void setMonitorPC(jsbytecode* pc) { header_->monitorPC = pc; }
 
+  void setFrameSizeOfInnerMostFrame(uint32_t size) {
+    header_->frameSizeOfInnerMostFrame = size;
+  }
+
   template <typename T>
   BufferPointer<T> pointerAtStackOffset(size_t offset) {
     if (offset < bufferUsed_) {
@@ -1115,6 +1119,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   if (!iter.moreFrames() || catchingException) {
     builder.setResumeFramePtr(prevFramePtr);
+    builder.setFrameSizeOfInnerMostFrame(frameSize);
 
     
     
