@@ -83,22 +83,8 @@ class GridItem extends PureComponent {
     this.props.onSetGridOverlayColor(this.props.grid.nodeFront, color);
   }
 
-  onGridCheckboxClick(e) {
-    
-    const originalTarget =
-      e.nativeEvent && e.nativeEvent.explicitOriginalTarget;
-    if (
-      originalTarget &&
-      originalTarget.namespaceURI === "http://www.w3.org/2000/svg"
-    ) {
-      
-      
-      e.preventDefault();
-      return;
-    }
-
+  onGridCheckboxClick() {
     const { grid, onToggleGridHighlighter } = this.props;
-
     onToggleGridHighlighter(grid.nodeFront);
   }
 
@@ -164,8 +150,11 @@ class GridItem extends PureComponent {
             onDOMNodeMouseOut: () => onHideBoxModelHighlighter(),
             onDOMNodeMouseOver: () =>
               onShowBoxModelHighlighterForNode(grid.nodeFront),
-            onInspectIconClick: () =>
-              this.onGridInspectIconClick(grid.nodeFront),
+            onInspectIconClick: (_, e) => {
+              
+              e.stopPropagation();
+              this.onGridInspectIconClick(grid.nodeFront);
+            },
           })
         ),
         dom.div({
