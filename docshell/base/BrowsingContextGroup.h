@@ -113,6 +113,8 @@ class BrowsingContextGroup final : public nsWrapperCache {
 
   ~BrowsingContextGroup();
 
+  void UnsubscribeAllContentParents();
+
   
   
   

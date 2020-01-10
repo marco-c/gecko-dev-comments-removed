@@ -29,6 +29,18 @@ void BrowsingContextGroup::Register(BrowsingContext* aBrowsingContext) {
 void BrowsingContextGroup::Unregister(BrowsingContext* aBrowsingContext) {
   MOZ_DIAGNOSTIC_ASSERT(aBrowsingContext);
   mContexts.RemoveEntry(aBrowsingContext);
+
+  if (mContexts.IsEmpty()) {
+    
+    
+    UnsubscribeAllContentParents();
+    if (XRE_IsContentProcess()) {
+      ContentChild::GetSingleton()->ReleaseBrowsingContextGroup(this);
+      
+      
+      
+    }
+  }
 }
 
 void BrowsingContextGroup::Subscribe(ContentParent* aOriginProcess) {
@@ -101,10 +113,15 @@ bool BrowsingContextGroup::EvictCachedContext(BrowsingContext* aContext) {
 }
 
 BrowsingContextGroup::~BrowsingContextGroup() {
+  UnsubscribeAllContentParents();
+}
+
+void BrowsingContextGroup::UnsubscribeAllContentParents() {
   for (auto iter = mSubscribers.Iter(); !iter.Done(); iter.Next()) {
     nsRefPtrHashKey<ContentParent>* entry = iter.Get();
     entry->GetKey()->OnBrowsingContextGroupUnsubscribe(this);
   }
+  mSubscribers.Clear();
 }
 
 nsISupports* BrowsingContextGroup::GetParentObject() const {
