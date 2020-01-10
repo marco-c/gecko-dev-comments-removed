@@ -7,6 +7,7 @@
 #include "nsScriptSecurityManager.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StoragePrincipalHelper.h"
 
@@ -416,8 +417,24 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     csp = win->GetCsp();
   }
 
-  
-  if (!csp) return true;
+  nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
+  if (!csp) {
+    if (!StaticPrefs::extensions_content_script_csp_enabled()) {
+      return true;
+    }
+    
+    
+    auto* basePrin = BasePrincipal::Cast(subjectPrincipal);
+    
+    
+    if (basePrin->ContentScriptAddonPolicy()) {
+      basePrin->As<ExpandedPrincipal>()->GetCsp(getter_AddRefs(csp));
+    }
+    
+    if (!csp) {
+      return true;
+    }
+  }
 
   nsCOMPtr<nsICSPEventListener> cspEventListener;
   if (!NS_IsMainThread()) {
@@ -436,7 +453,6 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
   
   
   nsAutoJSString scriptSample;
-  nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
   if (reportViolation || subjectPrincipal->IsSystemPrincipal() ||
       XRE_IsE10sParentProcess()) {
     JS::Rooted<JSString*> jsString(cx, JS::ToString(cx, aValue));
