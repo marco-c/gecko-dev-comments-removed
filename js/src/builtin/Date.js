@@ -2,6 +2,7 @@
 
 
 
+#if ENABLE_INTL_API
 
 
 
@@ -166,3 +167,4 @@ function Date_toLocaleTimeString() {
     
     return intl_FormatDateTime(dateTimeFormat, x,  false);
 }
+#endif  // ENABLE_INTL_API

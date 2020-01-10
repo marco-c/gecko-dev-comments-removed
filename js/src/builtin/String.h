@@ -56,9 +56,7 @@ extern bool str_charCodeAt(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool str_endsWith(JSContext* cx, unsigned argc, Value* vp);
 
-
-
-
+#if ENABLE_INTL_API
 
 
 
@@ -74,11 +72,9 @@ extern MOZ_MUST_USE bool intl_toLocaleLowerCase(JSContext* cx, unsigned argc,
 
 
 
-
-
-
 extern MOZ_MUST_USE bool intl_toLocaleUpperCase(JSContext* cx, unsigned argc,
                                                 Value* vp);
+#endif
 
 ArrayObject* StringSplitString(JSContext* cx, Handle<ObjectGroup*> group,
                                HandleString str, HandleString sep,

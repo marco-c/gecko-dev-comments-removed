@@ -2604,6 +2604,7 @@ MOZ_ALWAYS_INLINE JSObject* ToWindowProxyIfWindow(JSObject* obj) {
 
 extern JS_FRIEND_API JSObject* ToWindowIfWindowProxy(JSObject* obj);
 
+#if ENABLE_INTL_API
 
 
 
@@ -2622,6 +2623,7 @@ extern bool AddMozDateTimeFormatConstructor(JSContext* cx,
 
 
 extern bool AddLocaleConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
+#endif  
 
 class MOZ_STACK_CLASS JS_FRIEND_API AutoAssertNoContentJS {
  public:

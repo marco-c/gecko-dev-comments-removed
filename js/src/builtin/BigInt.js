@@ -2,6 +2,7 @@
 
 
 
+#if ENABLE_INTL_API
 
 
 
@@ -32,3 +33,4 @@ function BigInt_toLocaleString() {
     
     return intl_FormatNumber(numberFormat, x,  false);
 }
+#endif  // ENABLE_INTL_API
