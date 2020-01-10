@@ -287,7 +287,7 @@ pref("devtools.webconsole.input.editor", false);
 pref("devtools.performance.new-panel-enabled", false);
 
 
-pref("devtools.webconsole.groupWarningMessages", false);
+pref("devtools.webconsole.groupWarningMessages", true);
 
 
 pref("devtools.browserconsole.contentMessages", false);
