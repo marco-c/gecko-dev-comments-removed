@@ -193,6 +193,12 @@ self.IdlArray = function()
     this["implements"] = {};
     this["includes"] = {};
     this["inheritance"] = {};
+
+    
+
+
+
+    this.skipped = new Map();
 };
 
 IdlArray.prototype.add_idls = function(raw_idls, options)
@@ -244,22 +250,41 @@ IdlArray.prototype.add_dependency_idls = function(raw_idls, options)
         all_deps.add(k);
         this.includes[k].forEach(v => all_deps.add(v));
     });
-    this.partials.map(p => p.name).forEach(v => all_deps.add(v));
+    this.partials.forEach(p => all_deps.add(p.name));
+
     
-    for (const obj of [this.members, this.partials]) {
-        const tested = Object.values(obj).filter(m => !m.untested && m.members);
-        for (const parsed of tested) {
-            for (const attr of Object.values(parsed.members).filter(m => !m.untested && m.type === 'attribute')) {
-                all_deps.add(attr.idlType.idlType);
+    const attrDeps = parsedIdls => {
+        return parsedIdls.reduce((deps, parsed) => {
+            if (parsed.members) {
+                for (const attr of Object.values(parsed.members).filter(m => m.type === 'attribute')) {
+                    let attrType = attr.idlType;
+                    
+                    if (attrType.generic) {
+                        deps.add(attrType.generic);
+                        attrType = attrType.idlType;
+                    }
+                    deps.add(attrType.idlType);
+                }
             }
-        }
-    }
+            if (parsed.base in this.members) {
+                attrDeps([this.members[parsed.base]]).forEach(dep => deps.add(dep));
+            }
+            return deps;
+        }, new Set());
+    };
+
+    const testedMembers = Object.values(this.members).filter(m => !m.untested && m.members);
+    attrDeps(testedMembers).forEach(dep => all_deps.add(dep));
+
+    const testedPartials = this.partials.filter(m => !m.untested && m.members);
+    attrDeps(testedPartials).forEach(dep => all_deps.add(dep));
+
 
     if (options && options.except && options.only) {
         throw new IdlHarnessError("The only and except options can't be used together.");
     }
 
-    const should_skip = name => {
+    const defined_or_untested = name => {
         
         
         
@@ -269,8 +294,6 @@ IdlArray.prototype.add_dependency_idls = function(raw_idls, options)
             || this.is_excluded_by_options(name, options);
     }
     
-    
-    const skipped = new Map();
     const process = function(parsed) {
         var deps = [];
         if (parsed.name) {
@@ -284,13 +307,15 @@ IdlArray.prototype.add_dependency_idls = function(raw_idls, options)
         }
 
         deps = deps.filter(function(name) {
-            if (!name || should_skip(name) || !all_deps.has(name)) {
+            if (!name
+                || name === parsed.name && defined_or_untested(name)
+                || !all_deps.has(name)) {
                 
                 
                 if (name && !(name in this.members)) {
-                    skipped.has(name)
-                        ? skipped.get(name).push(parsed)
-                        : skipped.set(name, [parsed]);
+                    this.skipped.has(name)
+                        ? this.skipped.get(name).push(parsed)
+                        : this.skipped.set(name, [parsed]);
                 }
                 return false;
             }
@@ -328,9 +353,9 @@ IdlArray.prototype.add_dependency_idls = function(raw_idls, options)
             }
 
             for (const deferred of follow_up) {
-                if (skipped.has(deferred)) {
-                    const next = skipped.get(deferred);
-                    skipped.delete(deferred);
+                if (this.skipped.has(deferred)) {
+                    const next = this.skipped.get(deferred);
+                    this.skipped.delete(deferred);
                     next.forEach(process);
                 }
             }
