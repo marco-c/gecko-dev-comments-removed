@@ -109,7 +109,7 @@ async function assertOwnershipTrees(walker) {
 
 function checkMissing({ client }, actorID) {
   return new Promise(resolve => {
-    const front = client.getActor(actorID);
+    const front = client.getFrontByID(actorID);
     ok(
       !front,
       "Front shouldn't be accessible from the client for actorID: " + actorID

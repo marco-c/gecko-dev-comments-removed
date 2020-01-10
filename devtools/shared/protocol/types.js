@@ -314,7 +314,8 @@ types.addActorType = function(name) {
       
       
       const actorID = typeof v === "string" ? v : v.actor;
-      let front = ctx.conn.getActor(actorID);
+      
+      let front = ctx.conn.getFrontByID(actorID);
       if (!front) {
         
         

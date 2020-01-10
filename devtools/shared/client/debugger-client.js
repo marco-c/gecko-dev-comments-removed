@@ -588,7 +588,7 @@ DebuggerClient.prototype = {
 
     
     
-    const front = this.getActor(packet.from);
+    const front = this.getFrontByID(packet.from);
     if (front) {
       front.onPacket(packet);
       return;
@@ -635,7 +635,7 @@ DebuggerClient.prototype = {
   
   
   sendToDeprecatedThreadClient(packet) {
-    const deprecatedThreadClient = this.getActor(packet.from);
+    const deprecatedThreadClient = this.getFrontByID(packet.from);
     if (deprecatedThreadClient && packet.type) {
       const type = packet.type;
       if (deprecatedThreadClient.events.includes(type)) {
@@ -923,7 +923,13 @@ DebuggerClient.prototype = {
   removeActorPool: function(pool) {
     this._pools.delete(pool);
   },
-  getActor: function(actorID) {
+
+  
+
+
+
+
+  getFrontByID: function(actorID) {
     const pool = this.poolFor(actorID);
     return pool ? pool.get(actorID) : null;
   },

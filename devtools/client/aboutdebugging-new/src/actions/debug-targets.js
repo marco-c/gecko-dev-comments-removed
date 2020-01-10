@@ -59,7 +59,7 @@ function isCachedActorNeeded(runtime, type, id) {
   
   return (
     type === DEBUG_TARGETS.WORKER &&
-    runtime.runtimeDetails.clientWrapper.client.getActor(id)
+    runtime.runtimeDetails.clientWrapper.client.getFrontByID(id)
   );
 }
 

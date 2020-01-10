@@ -22,7 +22,7 @@ add_task(async function() {
   });
   
   
-  thisFirefoxClient.client.getActor = id => null;
+  thisFirefoxClient.client.getFrontByID = id => null;
   thisFirefoxClient.client.mainRoot = {
     getWorker: id => {
       return id === testWorker.id ? testWorker : null;
