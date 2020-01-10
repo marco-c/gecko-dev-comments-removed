@@ -47,11 +47,9 @@ class gfxFontFeatureValueSet final {
     nsTArray<ValueList> valuelist;
   };
 
-  
-  bool GetFontFeatureValuesFor(const nsACString& aFamily,
-                               uint32_t aVariantProperty,
-                               nsAtom* aName,
-                               nsTArray<uint32_t>& aValues);
+  mozilla::Span<const uint32_t> GetFontFeatureValuesFor(
+      const nsACString& aFamily, uint32_t aVariantProperty,
+      nsAtom* aName) const;
 
   
   
