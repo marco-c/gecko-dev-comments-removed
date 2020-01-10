@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -38,12 +38,13 @@ GRAPH_QUANTILE_CACHE = os.path.join(get_state_dir(
 TASK_DURATION_TAG_FILE = os.path.join(get_state_dir(
     srcdir=True), 'cache', 'task_duration_tag.json')
 
-
-
+# Some tasks show up in the target task set, but are either special cases
+# or uncommon enough that they should only be selectable with --full.
 TARGET_TASK_FILTERS = (
     '.*-ccov\/.*',
     'windows10-aarch64/opt.*',
-    'android-hw.*'
+    'android-hw.*',
+    '.*android-geckoview-docs.*',
 )
 
 
@@ -150,12 +151,12 @@ def download_task_history_data():
     try:
         r = requests.get(TASK_DURATION_URL, stream=True)
     except requests.exceptions.RequestException as exc:
-        
+        # This is fine, the durations just won't be in the preview window.
         print("Error fetching task duration cache from {}: {}".format(TASK_DURATION_URL, exc))
         return
 
-    
-    
+    # The data retrieved from google storage is a newline-separated
+    # list of json entries, which Python's json module can't parse.
     duration_data = list()
     for line in r.content.splitlines():
         duration_data.append(json.loads(line))
@@ -166,7 +167,7 @@ def download_task_history_data():
     try:
         r = requests.get(GRAPH_QUANTILES_URL, stream=True)
     except requests.exceptions.RequestException as exc:
-        
+        # This is fine, the percentile just won't be in the preview window.
         print("Error fetching task group percentiles from {}: {}".format(GRAPH_QUANTILES_URL, exc))
         return
 
@@ -277,11 +278,11 @@ def should_force_fzf_update(fzf_bin):
         print(FZF_VERSION_FAILED)
         sys.exit(1)
 
-    
+    # Some fzf versions have extra, e.g 0.18.0 (ff95134)
     fzf_version = fzf_version.split()[0]
 
-    
-    
+    # 0.18.0 introduced FZF_PREVIEW_COLUMNS as an env variable
+    # in preview subprocesses, which is a feature we use.
     if StrictVersion(fzf_version) < StrictVersion('0.18.0'):
         print("fzf version is old, forcing update.")
         return True
@@ -455,7 +456,7 @@ def run(update=False, query=None, intersect_query=None, try_config=None, full=Fa
     if save_query:
         return queries
 
-    
+    # build commit message
     msg = "Fuzzy"
     args = ["query={}".format(q) for q in queries]
     if test_paths:
