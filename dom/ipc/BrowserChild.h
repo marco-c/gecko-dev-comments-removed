@@ -307,6 +307,7 @@ class BrowserChild final : public BrowserChildBase,
   mozilla::ipc::IPCResult RecvResumeLoad(const uint64_t& aPendingSwitchID,
                                          const ShowInfo& aInfo);
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvShow(const ScreenIntSize& aSize,
                                    const ShowInfo& aInfo,
                                    const bool& aParentIsActive,
@@ -474,21 +475,23 @@ class BrowserChild final : public BrowserChildBase,
 
   void NotifyPainted();
 
-  virtual mozilla::ipc::IPCResult RecvUpdateEffects(
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual mozilla::ipc::IPCResult RecvUpdateEffects(
       const EffectsInfo& aEffects);
 
   void RequestEditCommands(nsIWidget::NativeKeyBindingsType aType,
                            const WidgetKeyboardEvent& aEvent,
                            nsTArray<CommandInt>& aCommands);
 
+  bool IsVisible();
+
   
 
 
 
 
-  void MakeVisible();
+  MOZ_CAN_RUN_SCRIPT void UpdateVisibility(bool aForceRepaint);
+  MOZ_CAN_RUN_SCRIPT void MakeVisible(bool aForceRepaint);
   void MakeHidden();
-  bool IsVisible();
 
   ContentChild* Manager() const { return mManager; }
 
@@ -925,6 +928,9 @@ class BrowserChild final : public BrowserChildBase,
   bool mCoalesceMouseMoveEvents;
 
   bool mShouldSendWebProgressEventsToParent;
+
+  
+  bool mRenderLayers;
 
   
   
