@@ -61,17 +61,11 @@ class WindowObserver {
   
 
   async onOpenWindow(xulWindow) {
-    const window = xulWindow
-      .QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIDOMWindow);
-    await this.onOpenDOMWindow(window);
+    await this.onOpenDOMWindow(xulWindow.docShell.domWindow);
   }
 
   onCloseWindow(xulWindow) {
-    const window = xulWindow
-      .QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIDOMWindow);
-    this.emit("close", window);
+    this.emit("close", xulWindow.docShell.domWindow);
   }
 
   
@@ -115,7 +109,7 @@ class TabObserver {
 
     
     for (const window of Services.wm.getEnumerator("navigator:browser")) {
-      this.onWindowClose(window);
+      this.onWindowClose("close", window);
     }
   }
 
@@ -130,6 +124,7 @@ class TabObserver {
   
 
   async onWindowOpen(eventName, window) {
+    
     if (!window.gBrowser) {
       return;
     }
@@ -147,8 +142,22 @@ class TabObserver {
     window.addEventListener("TabClose", this.onTabClose);
   }
 
-  onWindowClose(window) {
+  onWindowClose(eventName, window) {
     
+    if (!window.gBrowser) {
+      return;
+    }
+
+    for (const tab of window.gBrowser.tabs) {
+      
+      if (!tab.linkedBrowser) {
+        continue;
+      }
+
+      
+      
+      this.onTabClose({ target: tab });
+    }
 
     window.removeEventListener("TabOpen", this.onTabOpen);
     window.removeEventListener("TabClose", this.onTabClose);
