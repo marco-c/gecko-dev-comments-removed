@@ -3256,41 +3256,44 @@ class TypeConstraintClearDefiniteGetterSetter : public TypeConstraint {
   Compartment* maybeCompartment() override { return group->compartment(); }
 };
 
-bool js::AddClearDefiniteGetterSetterForPrototypeChain(JSContext* cx,
-                                                       ObjectGroup* group,
-                                                       HandleId id) {
+bool js::AddClearDefiniteGetterSetterForPrototypeChain(
+    JSContext* cx, DPAConstraintInfo& constraintInfo, ObjectGroup* group,
+    HandleId id, bool* added) {
   
 
 
 
 
+
+  *added = false;
+
   RootedObject proto(cx, group->proto().toObjectOrNull());
   while (proto) {
     if (!proto->hasStaticPrototype()) {
-      return false;
+      return true;
     }
     ObjectGroup* protoGroup = JSObject::getGroup(cx, proto);
     if (!protoGroup) {
-      cx->recoverFromOutOfMemory();
       return false;
     }
     AutoSweepObjectGroup sweep(protoGroup);
     if (protoGroup->unknownProperties(sweep)) {
-      return false;
+      return true;
     }
     HeapTypeSet* protoTypes = protoGroup->getProperty(sweep, cx, proto, id);
-    if (!protoTypes || protoTypes->nonDataProperty() ||
-        protoTypes->nonWritableProperty()) {
+    if (!protoTypes) {
       return false;
     }
-    if (!protoTypes->addConstraint(
-            cx,
-            cx->typeLifoAlloc().new_<TypeConstraintClearDefiniteGetterSetter>(
-                group))) {
+    if (protoTypes->nonDataProperty() || protoTypes->nonWritableProperty()) {
+      return true;
+    }
+    if (!constraintInfo.addProtoConstraint(proto, id)) {
       return false;
     }
     proto = proto->staticPrototype();
   }
+
+  *added = true;
   return true;
 }
 
@@ -3727,6 +3730,44 @@ static bool ChangeObjectFixedSlotCount(JSContext* cx, PlainObject* obj,
   return true;
 }
 
+bool DPAConstraintInfo::finishConstraints(JSContext* cx, ObjectGroup* group) {
+  for (const ProtoConstraint& constraint : protoConstraints_) {
+    ObjectGroup* protoGroup = constraint.proto->group();
+
+    
+    
+
+    AutoSweepObjectGroup sweep(protoGroup);
+    bool unknownProperties = protoGroup->unknownProperties(sweep);
+    MOZ_RELEASE_ASSERT(!unknownProperties);
+
+    HeapTypeSet* protoTypes =
+        protoGroup->getProperty(sweep, cx, constraint.proto, constraint.id);
+    MOZ_RELEASE_ASSERT(protoTypes);
+
+    MOZ_ASSERT(!protoTypes->nonDataProperty());
+    MOZ_ASSERT(!protoTypes->nonWritableProperty());
+
+    if (!protoTypes->addConstraint(
+            cx,
+            cx->typeLifoAlloc().new_<TypeConstraintClearDefiniteGetterSetter>(
+                group))) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+  }
+
+  for (const InliningConstraint& constraint : inliningConstraints_) {
+    if (!AddClearDefiniteFunctionUsesInScript(cx, group, constraint.caller,
+                                              constraint.callee)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool TypeNewScript::maybeAnalyze(JSContext* cx, ObjectGroup* group,
                                  bool* regenerate, bool force) {
   
@@ -3845,10 +3886,12 @@ bool TypeNewScript::maybeAnalyze(JSContext* cx, ObjectGroup* group,
 
   Vector<TypeNewScriptInitializer> initializerVector(cx);
 
+  DPAConstraintInfo constraintInfo(cx);
+
   RootedPlainObject templateRoot(cx, templateObject());
   RootedFunction fun(cx, function());
-  if (!jit::AnalyzeNewScriptDefiniteProperties(cx, fun, group, templateRoot,
-                                               &initializerVector)) {
+  if (!jit::AnalyzeNewScriptDefiniteProperties(
+          cx, constraintInfo, fun, group, templateRoot, &initializerVector)) {
     return false;
   }
 
@@ -3916,6 +3959,11 @@ bool TypeNewScript::maybeAnalyze(JSContext* cx, ObjectGroup* group,
     
     
     
+
+    if (!constraintInfo.finishConstraints(cx, group)) {
+      return false;
+    }
+
     group->addDefiniteProperties(cx, templateObject()->lastProperty());
 
     destroyNewScript.release();
@@ -3936,6 +3984,13 @@ bool TypeNewScript::maybeAnalyze(JSContext* cx, ObjectGroup* group,
   ObjectGroup* initialGroup = ObjectGroupRealm::makeGroup(
       cx, group->realm(), group->clasp(), protoRoot, initialFlags);
   if (!initialGroup) {
+    return false;
+  }
+
+  
+  
+  
+  if (!constraintInfo.finishConstraints(cx, initialGroup)) {
     return false;
   }
 
