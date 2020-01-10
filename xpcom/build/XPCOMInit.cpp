@@ -743,15 +743,22 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
       
       
       
+      
+      
 #if defined(DEBUG) && !defined(ANDROID)
-      if (!getenv("MOZ_IGNORE_NSS_SHUTDOWN_LEAKS")) {
+      if (!getenv("MOZ_IGNORE_NSS_SHUTDOWN_LEAKS") &&
+          !getenv("XPCOM_MEM_BLOAT_LOG")) {
         MOZ_CRASH("NSS_Shutdown failed");
       } else {
+#  ifdef NS_BUILD_REFCNT_LOGGING
+        
+        NS_LogCtor((void*)0x100, "NSSShutdownFailed", 100);
+#  endif  
         NS_WARNING("NSS_Shutdown failed");
       }
 #else
       NS_WARNING("NSS_Shutdown failed");
-#endif
+#endif  
     }
   }
 
