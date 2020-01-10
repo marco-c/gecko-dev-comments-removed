@@ -24,12 +24,12 @@ ProcessActorList.prototype = {
   getList: function() {
     const processes = [];
     for (let i = 0; i < ppmm.childCount; i++) {
+      const mm = ppmm.getChildAt(i);
       processes.push({
         
         
-        id: i,
-        
-        parent: i == 0,
+        id: mm.isInProcess ? 0 : mm.osPid,
+        parent: mm.isInProcess,
         
         tabCount: undefined,
       });

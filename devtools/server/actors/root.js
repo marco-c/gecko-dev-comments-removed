@@ -606,13 +606,6 @@ RootActor.prototype = {
     
     const id = request.id || 0;
 
-    const mm = Services.ppmm.getChildAt(id);
-    if (!mm) {
-      return {
-        error: "noProcess",
-        message: "There is no process with id '" + id + "'.",
-      };
-    }
     this._processDescriptorActorPool =
       this._processDescriptorActorPool || new Pool(this.conn);
 
