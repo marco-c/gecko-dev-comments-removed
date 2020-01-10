@@ -1320,6 +1320,39 @@ class HTMLEditor final : public TextEditor,
       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
       EditSubAction aEditSubAction) const;
 
+  
+
+
+
+
+
+  enum class ScanDirection { Backward, Forward };
+  static EditorDOMPoint GetWhiteSpaceEndPoint(const RangeBoundary& aPoint,
+                                              ScanDirection aScanDirection);
+
+  
+
+
+
+
+
+
+
+  EditorDOMPoint GetCurrentHardLineStartPoint(const RangeBoundary& aPoint,
+                                              EditSubAction aEditSubAction);
+
+  
+
+
+
+
+
+
+
+
+
+  EditorDOMPoint GetCurrentHardLineEndPoint(const RangeBoundary& aPoint);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

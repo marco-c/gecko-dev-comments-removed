@@ -6862,117 +6862,122 @@ nsresult HTMLEditRules::NormalizeSelection() {
   return error.StealNSResult();
 }
 
-EditorDOMPoint HTMLEditRules::GetPromotedPoint(
-    RulesEndpoint aWhere, nsINode& aNode, int32_t aOffset,
-    EditSubAction aEditSubAction) const {
-  MOZ_ASSERT(IsEditorDataAvailable());
 
-  
-  
-  if (aEditSubAction == EditSubAction::eInsertText ||
-      aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-      aEditSubAction == EditSubAction::eInsertLineBreak ||
-      aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
-      aEditSubAction == EditSubAction::eDeleteText) {
-    bool isSpace, isNBSP;
-    nsCOMPtr<nsIContent> content =
-        aNode.IsContent() ? aNode.AsContent() : nullptr;
-    nsCOMPtr<nsIContent> temp;
-    int32_t newOffset = aOffset;
-    
-    
-    
-    
-    while (content) {
-      int32_t offset;
-      if (aWhere == kStart) {
-        HTMLEditorRef().IsPrevCharInNodeWhitespace(
-            content, newOffset, &isSpace, &isNBSP, getter_AddRefs(temp),
-            &offset);
-      } else {
-        HTMLEditorRef().IsNextCharInNodeWhitespace(
-            content, newOffset, &isSpace, &isNBSP, getter_AddRefs(temp),
-            &offset);
-      }
-      if (isSpace || isNBSP) {
-        content = temp;
-        newOffset = offset;
-      } else {
-        break;
-      }
-    }
-
-    return EditorDOMPoint(content, newOffset);
+EditorDOMPoint HTMLEditor::GetWhiteSpaceEndPoint(const RangeBoundary& aPoint,
+                                                 ScanDirection aScanDirection) {
+  if (NS_WARN_IF(!aPoint.IsSet()) ||
+      NS_WARN_IF(!aPoint.Container()->IsContent())) {
+    return EditorDOMPoint();
   }
 
-  EditorDOMPoint point(&aNode, aOffset);
-
-  
-  
-  if (aWhere == kStart) {
-    
-    if (point.IsInTextNode()) {
-      if (!point.GetContainer()->GetParentNode()) {
-        
-        return point;
-      }
-      point.Set(point.GetContainer());
+  bool isSpace = false, isNBSP = false;
+  nsIContent* newContent = aPoint.Container()->AsContent();
+  int32_t newOffset = aPoint.Offset();
+  while (newContent) {
+    int32_t offset = -1;
+    nsCOMPtr<nsIContent> content;
+    if (aScanDirection == ScanDirection::Backward) {
+      HTMLEditor::IsPrevCharInNodeWhitespace(newContent, newOffset, &isSpace,
+                                             &isNBSP, getter_AddRefs(content),
+                                             &offset);
+    } else {
+      HTMLEditor::IsNextCharInNodeWhitespace(newContent, newOffset, &isSpace,
+                                             &isNBSP, getter_AddRefs(content),
+                                             &offset);
     }
-
-    
-    
-    nsCOMPtr<nsINode> priorNode =
-        HTMLEditorRef().GetPreviousEditableHTMLNodeInBlock(point);
-
-    while (priorNode && priorNode->GetParentNode() &&
-           !HTMLEditorRef().IsVisibleBRElement(priorNode) &&
-           !HTMLEditor::NodeIsBlockStatic(*priorNode)) {
-      point.Set(priorNode);
-      priorNode = HTMLEditorRef().GetPreviousEditableHTMLNodeInBlock(point);
+    if (!isSpace && !isNBSP) {
+      break;
     }
+    newContent = content;
+    newOffset = offset;
+  }
+  return EditorDOMPoint(newContent, newOffset);
+}
 
-    
-    
-    
-    nsCOMPtr<nsIContent> nearNode =
-        HTMLEditorRef().GetPreviousEditableHTMLNodeInBlock(point);
-    while (!nearNode && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
-           point.GetContainer()->GetParentNode()) {
-      
-      
-      
-      
-      if (aEditSubAction == EditSubAction::eOutdent &&
-          point.IsContainerHTMLElement(nsGkAtoms::blockquote)) {
-        break;
-      }
-
-      
-      
-      
-      
-      bool blockLevelAction =
-          aEditSubAction == EditSubAction::eIndent ||
-          aEditSubAction == EditSubAction::eOutdent ||
-          aEditSubAction == EditSubAction::eSetOrClearAlignment ||
-          aEditSubAction == EditSubAction::eCreateOrRemoveBlock;
-      if (!HTMLEditorRef().IsDescendantOfEditorRoot(
-              point.GetContainer()->GetParentNode()) &&
-          (blockLevelAction ||
-           !HTMLEditorRef().IsDescendantOfEditorRoot(point.GetContainer()))) {
-        break;
-      }
-
-      point.Set(point.GetContainer());
-      nearNode = HTMLEditorRef().GetPreviousEditableHTMLNodeInBlock(point);
-    }
-    return point;
+EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
+    const RangeBoundary& aPoint, EditSubAction aEditSubAction) {
+  if (NS_WARN_IF(!aPoint.IsSet())) {
+    return EditorDOMPoint();
   }
 
+  EditorDOMPoint point(aPoint);
   
   
   if (point.IsInTextNode()) {
     if (!point.GetContainer()->GetParentNode()) {
+      
+      
+      return point;
+    }
+    point.Set(point.GetContainer());
+  }
+
+  
+  
+  
+  for (nsIContent* previousEditableContent =
+           GetPreviousEditableHTMLNodeInBlock(point);
+       previousEditableContent && previousEditableContent->GetParentNode() &&
+       !IsVisibleBRElement(previousEditableContent) &&
+       !HTMLEditor::NodeIsBlockStatic(*previousEditableContent);
+       previousEditableContent = GetPreviousEditableHTMLNodeInBlock(point)) {
+    point.Set(previousEditableContent);
+    
+  }
+
+  
+  
+  
+  
+  for (nsIContent* nearContent = GetPreviousEditableHTMLNodeInBlock(point);
+       !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
+       point.GetContainer()->GetParentNode();
+       nearContent = GetPreviousEditableHTMLNodeInBlock(point)) {
+    
+    
+    
+    
+    
+    
+    
+    if (aEditSubAction == EditSubAction::eOutdent &&
+        point.IsContainerHTMLElement(nsGkAtoms::blockquote)) {
+      break;
+    }
+
+    
+    
+    
+    
+    
+    
+    bool blockLevelAction =
+        aEditSubAction == EditSubAction::eIndent ||
+        aEditSubAction == EditSubAction::eOutdent ||
+        aEditSubAction == EditSubAction::eSetOrClearAlignment ||
+        aEditSubAction == EditSubAction::eCreateOrRemoveBlock;
+    if (!IsDescendantOfEditorRoot(point.GetContainer()->GetParentNode()) &&
+        (blockLevelAction || !IsDescendantOfEditorRoot(point.GetContainer()))) {
+      break;
+    }
+
+    point.Set(point.GetContainer());
+  }
+  return point;
+}
+
+EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
+    const RangeBoundary& aPoint) {
+  if (NS_WARN_IF(!aPoint.IsSet())) {
+    return EditorDOMPoint();
+  }
+
+  EditorDOMPoint point(aPoint);
+  
+  
+  if (point.IsInTextNode()) {
+    if (!point.GetContainer()->GetParentNode()) {
+      
       
       return point;
     }
@@ -6997,49 +7002,53 @@ EditorDOMPoint HTMLEditRules::GetPromotedPoint(
   
   
   
-  nsCOMPtr<nsIContent> nextNode =
-      HTMLEditorRef().GetNextEditableHTMLNodeInBlock(point);
-
-  while (nextNode && !HTMLEditor::NodeIsBlockStatic(*nextNode) &&
-         nextNode->GetParentNode()) {
-    point.Set(nextNode);
+  for (nsIContent* nextEditableContent = GetNextEditableHTMLNodeInBlock(point);
+       nextEditableContent &&
+       !HTMLEditor::NodeIsBlockStatic(*nextEditableContent) &&
+       nextEditableContent->GetParent();
+       nextEditableContent = GetNextEditableHTMLNodeInBlock(point)) {
+    point.Set(nextEditableContent);
     if (NS_WARN_IF(!point.AdvanceOffset())) {
       break;
     }
-    if (HTMLEditorRef().IsVisibleBRElement(nextNode)) {
+    if (IsVisibleBRElement(nextEditableContent)) {
       break;
     }
 
     
-    if (EditorBase::IsPreformatted(nextNode) &&
-        EditorBase::IsTextNode(nextNode)) {
-      nsAutoString tempString;
-      nextNode->GetAsText()->GetData(tempString);
-      int32_t newlinePos = tempString.FindChar(nsCRT::LF);
+    if (EditorBase::IsPreformatted(nextEditableContent) &&
+        EditorBase::IsTextNode(nextEditableContent)) {
+      nsAutoString textContent;
+      nextEditableContent->GetAsText()->GetData(textContent);
+      int32_t newlinePos = textContent.FindChar(nsCRT::LF);
       if (newlinePos >= 0) {
-        if (static_cast<uint32_t>(newlinePos) + 1 == tempString.Length()) {
+        if (static_cast<uint32_t>(newlinePos) + 1 == textContent.Length()) {
           
           break;
         }
-        return EditorDOMPoint(nextNode, newlinePos + 1);
+        return EditorDOMPoint(nextEditableContent, newlinePos + 1);
       }
     }
-    nextNode = HTMLEditorRef().GetNextEditableHTMLNodeInBlock(point);
   }
 
   
   
   
-  nsCOMPtr<nsIContent> nearNode =
-      HTMLEditorRef().GetNextEditableHTMLNodeInBlock(point);
-  while (!nearNode && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
-         point.GetContainer()->GetParentNode()) {
+  
+  for (nsIContent* nearContent = GetNextEditableHTMLNodeInBlock(point);
+       !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
+       point.GetContainer()->GetParentNode();
+       nearContent = GetNextEditableHTMLNodeInBlock(point)) {
     
     
     
-    if (!HTMLEditorRef().IsDescendantOfEditorRoot(point.GetContainer()) &&
-        !HTMLEditorRef().IsDescendantOfEditorRoot(
-            point.GetContainer()->GetParentNode())) {
+    
+    
+    
+    
+    
+    if (!IsDescendantOfEditorRoot(point.GetContainer()) &&
+        !IsDescendantOfEditorRoot(point.GetContainer()->GetParentNode())) {
       break;
     }
 
@@ -7047,7 +7056,6 @@ EditorDOMPoint HTMLEditRules::GetPromotedPoint(
     if (NS_WARN_IF(!point.AdvanceOffset())) {
       break;
     }
-    nearNode = HTMLEditorRef().GetNextEditableHTMLNodeInBlock(point);
   }
   return point;
 }
@@ -7093,6 +7101,8 @@ void HTMLEditRules::PromoteRange(nsRange& aRange,
   
   
   
+  
+  
   if (startNode == endNode && startOffset == endOffset) {
     RefPtr<Element> block = HTMLEditorRef().GetBlock(*startNode);
     if (block) {
@@ -7114,44 +7124,81 @@ void HTMLEditRules::PromoteRange(nsRange& aRange,
     }
   }
 
-  if (aEditSubAction == EditSubAction::eInsertText ||
-      aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-      aEditSubAction == EditSubAction::eInsertLineBreak ||
-      aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
-      aEditSubAction == EditSubAction::eDeleteText) {
-    if (!startNode->IsContent() || !endNode->IsContent()) {
+  switch (aEditSubAction) {
+    case EditSubAction::eInsertText:
+    case EditSubAction::eInsertTextComingFromIME:
+    case EditSubAction::eInsertLineBreak:
+    case EditSubAction::eInsertParagraphSeparator:
+    case EditSubAction::eDeleteText: {
+      if (!startNode->IsContent() || !endNode->IsContent()) {
+        return;
+      }
       
       
-      return;
+      
+      
+      
+      
+      
+      
+      
+      EditorDOMPoint startPoint = HTMLEditor::GetWhiteSpaceEndPoint(
+          RangeBoundary(startNode, startOffset),
+          HTMLEditor::ScanDirection::Backward);
+      if (!HTMLEditorRef().IsDescendantOfEditorRoot(
+              EditorBase::GetNodeAtRangeOffsetPoint(startPoint))) {
+        return;
+      }
+      EditorDOMPoint endPoint =
+          HTMLEditor::GetWhiteSpaceEndPoint(RangeBoundary(endNode, endOffset),
+                                            HTMLEditor::ScanDirection::Forward);
+      EditorRawDOMPoint lastRawPoint(endPoint);
+      lastRawPoint.RewindOffset();
+      if (!HTMLEditorRef().IsDescendantOfEditorRoot(
+              EditorBase::GetNodeAtRangeOffsetPoint(lastRawPoint))) {
+        return;
+      }
+      DebugOnly<nsresult> rvIgnored = aRange.SetStartAndEnd(
+          startPoint.ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
+      MOZ_ASSERT(NS_SUCCEEDED(rvIgnored));
+      break;
+    }
+    default: {
+      
+      
+      
+
+      
+      
+      
+      
+
+      EditorDOMPoint startPoint = HTMLEditorRef().GetCurrentHardLineStartPoint(
+          RangeBoundary(startNode, startOffset), aEditSubAction);
+      
+      
+      
+      if (!HTMLEditorRef().IsDescendantOfEditorRoot(
+              EditorBase::GetNodeAtRangeOffsetPoint(startPoint))) {
+        return;
+      }
+      EditorDOMPoint endPoint = HTMLEditorRef().GetCurrentHardLineEndPoint(
+          RangeBoundary(endNode, endOffset));
+      EditorRawDOMPoint lastRawPoint(endPoint);
+      lastRawPoint.RewindOffset();
+      
+      
+      
+      if (!HTMLEditorRef().IsDescendantOfEditorRoot(
+              EditorBase::GetNodeAtRangeOffsetPoint(lastRawPoint))) {
+        return;
+      }
+      DebugOnly<nsresult> rvIgnored = aRange.SetStartAndEnd(
+          startPoint.ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
+      MOZ_ASSERT(NS_SUCCEEDED(rvIgnored));
+      break;
     }
   }
-
-  
-  
-  
-
-  
-  
-  
-  
-  EditorDOMPoint startPoint =
-      GetPromotedPoint(kStart, *startNode, startOffset, aEditSubAction);
-  if (!HTMLEditorRef().IsDescendantOfEditorRoot(
-          EditorBase::GetNodeAtRangeOffsetPoint(startPoint))) {
-    return;
-  }
-  EditorDOMPoint endPoint =
-      GetPromotedPoint(kEnd, *endNode, endOffset, aEditSubAction);
-  EditorRawDOMPoint lastRawPoint(endPoint);
-  lastRawPoint.RewindOffset();
-  if (!HTMLEditorRef().IsDescendantOfEditorRoot(
-          EditorBase::GetNodeAtRangeOffsetPoint(lastRawPoint))) {
-    return;
-  }
-
-  DebugOnly<nsresult> rv = aRange.SetStartAndEnd(
-      startPoint.ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
 class UniqueFunctor final : public BoolDomIterFunctor {
@@ -7196,7 +7243,6 @@ nsresult HTMLEditor::SplitInlinesAndCollectEditTargetNodes(
 
 nsresult HTMLEditor::SplitTextNodesAtRangeEnd(
     nsTArray<RefPtr<nsRange>>& aArrayOfRanges) {
-  
   
   
   for (RefPtr<nsRange>& range : aArrayOfRanges) {

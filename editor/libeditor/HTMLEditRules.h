@@ -118,8 +118,6 @@ class HTMLEditRules : public TextEditRules {
     return mData->HTMLEditorRef();
   }
 
-  enum RulesEndpoint { kStart, kEnd };
-
   
 
 
@@ -787,14 +785,6 @@ class HTMLEditRules : public TextEditRules {
 
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult NormalizeSelection();
-
-  
-
-
-
-  EditorDOMPoint GetPromotedPoint(RulesEndpoint aWhere, nsINode& aNode,
-                                  int32_t aOffset,
-                                  EditSubAction aEditSubAction) const;
 
   
 
