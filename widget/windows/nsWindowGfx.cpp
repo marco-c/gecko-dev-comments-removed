@@ -418,6 +418,28 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   return result;
 }
 
+
+
+
+void nsWindow::CreateCompositor() {
+  
+  nsWindowBase::CreateCompositor();
+
+  if (mRequestFxrOutputPending) {
+    GetRemoteRenderer()->SendRequestFxrOutput();
+  }
+}
+
+void nsWindow::RequestFxrOutput() {
+  if (GetRemoteRenderer() != nullptr) {
+    MOZ_CRASH("RequestFxrOutput should happen before Compositor is created.");
+  } else {
+    
+    
+    mRequestFxrOutputPending = true;
+  }
+}
+
 LayoutDeviceIntSize nsWindowGfx::GetIconMetrics(IconSizeType aSizeType) {
   int32_t width = ::GetSystemMetrics(sIconMetrics[aSizeType].xMetric);
   int32_t height = ::GetSystemMetrics(sIconMetrics[aSizeType].yMetric);

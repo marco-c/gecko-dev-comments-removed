@@ -533,6 +533,9 @@ class nsWindow final : public nsWindowBase {
   already_AddRefed<SourceSurface> GetFallbackScrollSnapshot(
       const RECT& aRequiredClip);
 
+  void CreateCompositor() override;
+  void RequestFxrOutput();
+
  protected:
   nsCOMPtr<nsIWidget> mParent;
   nsIntSize mLastSize;
@@ -692,6 +695,10 @@ class nsWindow final : public nsWindowBase {
   WinPointerEvents mPointerEvents;
 
   ScreenPoint mLastPanGestureFocus;
+
+  
+  
+  bool mRequestFxrOutputPending;
 };
 
 #endif  

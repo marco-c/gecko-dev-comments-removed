@@ -13,6 +13,7 @@
 #include "nsWindow.h"
 #include "VsyncDispatcher.h"
 #include "WinCompositorWindowThread.h"
+#include "VRShMem.h"
 
 #include <ddraw.h>
 
@@ -335,6 +336,35 @@ void WinCompositorWidget::UpdateCompositorWndSizeIfNecessary() {
     return;
   }
   mLastCompositorWndSize = size;
+}
+
+
+
+
+void WinCompositorWidget::RequestFxrOutput() {
+  mozilla::gfx::VRShMem shmem(nullptr, true );
+  if (shmem.JoinShMem()) {
+    mozilla::gfx::VRWindowState windowState = {0};
+    shmem.PullWindowState(windowState);
+
+    
+    MOZ_ASSERT(windowState.hwndFx != 0);
+    MOZ_ASSERT(windowState.textureFx == nullptr);
+
+    windowState.textureFx = (HANDLE)0xFFFFFFFF;
+
+    shmem.PushWindowState(windowState);
+    shmem.LeaveShMem();
+
+    
+    HANDLE hSignal = ::OpenEventA(EVENT_ALL_ACCESS,       
+                                  FALSE,                  
+                                  windowState.signalName  
+    );
+
+    ::SetEvent(hSignal);
+    ::CloseHandle(hSignal);
+  }
 }
 
 }  

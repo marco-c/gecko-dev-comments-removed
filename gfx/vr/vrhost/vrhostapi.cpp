@@ -120,6 +120,8 @@ DWORD StartFirefoxThreadProc(_In_ LPVOID lpParameter) {
 
 
 
+
+
 void CreateVRWindow(char* firefoxFolderPath, char* firefoxProfilePath,
                     uint32_t dxgiAdapterID, uint32_t widthHost,
                     uint32_t heightHost, uint32_t* windowId, void** hTex,

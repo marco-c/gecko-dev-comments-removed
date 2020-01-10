@@ -22,10 +22,38 @@
 #include "nsCOMPtr.h"
 
 #include "windows.h"
+#include "WinUtils.h"
 
 #include "VRShMem.h"
 
 NS_IMPL_ISUPPORTS(nsFxrCommandLineHandler, nsICommandLineHandler)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 NS_IMETHODIMP
 nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
@@ -66,18 +94,11 @@ nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
       windowState.hwndFx = (uint64_t)hwndWidget;
 
       shmem.PushWindowState(windowState);
-
-      
-      HANDLE hSignal = ::OpenEventA(EVENT_ALL_ACCESS,       
-                                    FALSE,                  
-                                    windowState.signalName  
-      );
-
-      ::SetEvent(hSignal);
-
       shmem.LeaveShMem();
 
-      ::CloseHandle(hSignal);
+      
+      
+      newWidget->RequestFxrOutput();
     } else {
       MOZ_CRASH("failed to start with --fxr");
     }

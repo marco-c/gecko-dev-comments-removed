@@ -534,6 +534,15 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvPause() {
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult CompositorBridgeParent::RecvRequestFxrOutput() {
+#ifdef XP_WIN
+  
+  mWidget->AsWindows()->RequestFxrOutput();
+#endif
+
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvResume() {
   ResumeComposition();
   return IPC_OK();
