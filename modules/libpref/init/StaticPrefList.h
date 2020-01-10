@@ -4009,25 +4009,21 @@ VARCACHE_PREF(
   RelaxedAtomicBool, true
 )
 
-#ifdef MOZ_GFX_OPTIMIZE_MOBILE
-
-
-VARCACHE_PREF(
-  Skip,
-  "layers.componentalpha.enabled",
-   layers_componentalpha_enabled,
-  bool, false
-)
-#else
-
-
 VARCACHE_PREF(
   Once,
   "layers.componentalpha.enabled",
-   layers_componentalpha_enabled,
-  bool, true
-)
+   layers_componentalpha_enabled_do_not_use_directly,
+  bool,
+  
+  
+  
+  
+#ifdef MOZ_GFX_OPTIMIZE_MOBILE
+  false
+#else
+  true
 #endif
+)
 
 VARCACHE_PREF(
   Once,

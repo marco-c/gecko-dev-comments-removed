@@ -392,6 +392,12 @@ class LayerManager : public FrameRecorder {
 
 
 
+  static bool LayersComponentAlphaEnabled();
+
+  
+
+
+
 
   virtual bool AreComponentAlphaLayersEnabled();
 

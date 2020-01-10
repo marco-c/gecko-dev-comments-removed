@@ -138,8 +138,18 @@ already_AddRefed<ImageContainer> LayerManager::CreateImageContainer(
   return container.forget();
 }
 
+bool LayerManager::LayersComponentAlphaEnabled() {
+  
+  
+#ifdef MOZ_GFX_OPTIMIZE_MOBILE
+  return false;
+#else
+  return StaticPrefs::layers_componentalpha_enabled_do_not_use_directly();
+#endif
+}
+
 bool LayerManager::AreComponentAlphaLayersEnabled() {
-  return StaticPrefs::layers_componentalpha_enabled();
+  return LayerManager::LayersComponentAlphaEnabled();
 }
 
 
@@ -2323,6 +2333,11 @@ void RecordCompositionPayloadsPresented(
       if (payload.mType == CompositionPayloadType::eKeyPress) {
         Telemetry::AccumulateTimeDelta(
             mozilla::Telemetry::KEYPRESS_PRESENT_LATENCY, payload.mTimeStamp,
+            presented);
+      }
+      if (payload.mType == CompositionPayloadType::eAPZScroll) {
+        Telemetry::AccumulateTimeDelta(
+            mozilla::Telemetry::SCROLL_PRESENT_LATENCY, payload.mTimeStamp,
             presented);
       }
     }
