@@ -631,11 +631,7 @@ function createHighlightButton(highlighterName, id) {
     isChecked(toolbox) {
       
       
-      
-      
-      
-      
-      const inspectorFront = toolbox.target._inspector;
+      const inspectorFront = toolbox.target.getCachedFront("inspector");
       if (!inspectorFront) {
         
         

@@ -154,10 +154,7 @@ exports.menuitems = [
       const window = event.target.ownerDocument.defaultView;
       const target = await TargetFactory.forTab(window.gBrowser.selectedTab);
       await target.attach();
-      
-      
-      
-      const inspectorFront = await target.getInspector();
+      const inspectorFront = await target.getFront("inspector");
       inspectorFront.pickColorFromPage({ copyOnSelect: true, fromMenu: true });
     },
     checkbox: true,
