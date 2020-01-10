@@ -202,6 +202,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  void SeekAborted() final;
+
+  
+  
   
   void DownloadSuspended() final;
 
@@ -699,17 +703,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() override;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  void AsyncResolveSeekDOMPromiseIfExists() override;
-  void AsyncRejectSeekDOMPromiseIfExists() override;
-
   nsISerialEventTarget* MainThreadEventTarget() {
     return mMainThreadEventTarget;
   }
@@ -1185,8 +1178,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   
-  already_AddRefed<Promise> Seek(double aTime, SeekTarget::Type aSeekType,
-                                 ErrorResult& aRv);
+  void Seek(double aTime, SeekTarget::Type aSeekType, ErrorResult& aRv);
 
   
   void UpdateAudioChannelPlayingState(bool aForcePlaying = false);
