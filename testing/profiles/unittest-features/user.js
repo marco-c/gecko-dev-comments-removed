@@ -35,3 +35,7 @@ user_pref("extensions.formautofill.available", "on");
 user_pref("layout.css.clip-path-path.enabled", true);
 
 user_pref("dom.visualviewport.enabled", true);
+
+
+
+user_pref("plugin.load_flash_only", false);
