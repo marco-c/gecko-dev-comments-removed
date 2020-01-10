@@ -791,12 +791,9 @@ def findTestMediaDevices(log):
 
     
     gst01 = spawn.find_executable("gst-launch-0.1")
-    gst010 = spawn.find_executable("gst-launch-0.10")
     gst10 = spawn.find_executable("gst-launch-1.0")
     if gst01:
         gst = gst01
-    if gst010:
-        gst = gst010
     else:
         gst = gst10
     subprocess.check_call([gst, 'videotestsrc',
@@ -804,29 +801,22 @@ def findTestMediaDevices(log):
                            'v4l2sink', 'device=%s' % device])
     info['video'] = name
 
-    if platform.linux_distribution()[0] == 'debian':
-        
-        
-        pass
-    else:
-        
-        pactl = spawn.find_executable("pactl")
+    pactl = spawn.find_executable("pactl")
 
-        def null_sink_loaded():
-            o = subprocess.check_output(
-                [pactl, 'list', 'short', 'modules'])
-            return filter(lambda x: 'module-null-sink' in x, o.splitlines())
+    
+    def null_sink_loaded():
+        o = subprocess.check_output(
+            [pactl, 'list', 'short', 'modules'])
+        return filter(lambda x: 'module-null-sink' in x, o.splitlines())
 
-        if not null_sink_loaded():
-            subprocess.check_call([
-                pactl,
-                'load-module',
-                'module-null-sink'
-            ])
+    if not null_sink_loaded():
+        
+        subprocess.check_call([pactl, 'load-module',
+                               'module-null-sink'])
 
-        if not null_sink_loaded():
-            log.error('Couldn\'t load module-null-sink')
-            return None
+    if not null_sink_loaded():
+        log.error('Couldn\'t load module-null-sink')
+        return None
 
     
     info['audio'] = 'Monitor of Null Output'
