@@ -17,8 +17,8 @@ var CustomizationHandler = {
       case "customizationstarting":
         this._customizationStarting();
         break;
-      case "customizationending":
-        this._customizationEnding(aEvent.detail);
+      case "aftercustomization":
+        this._afterCustomization();
         break;
     }
   },
@@ -44,18 +44,14 @@ var CustomizationHandler = {
     gURLBarHandler.customizeStart();
   },
 
-  _customizationEnding(aDetails) {
+  _afterCustomization() {
     
-    if (aDetails.changed && AppConstants.platform != "macosx") {
+    if (AppConstants.platform != "macosx") {
       updateEditUIVisibility();
     }
 
     PlacesToolbarHelper.customizeDone();
 
-    UpdateUrlbarSearchSplitterState();
-
-    
-    URLBarSetURI();
     XULBrowserWindow.asyncUpdateUI();
 
     
@@ -68,7 +64,10 @@ var CustomizationHandler = {
 
     gBrowser.selectedBrowser.focus();
 
+    
     gURLBarHandler.customizeEnd();
+    URLBarSetURI();
+    UpdateUrlbarSearchSplitterState();
   },
 };
 
