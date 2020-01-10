@@ -686,6 +686,8 @@ void LCovRuntime::writeLCovResult(LCovRealm& realm) {
 
 bool InitScriptCoverage(JSContext* cx, JSScript* script) {
   MOZ_ASSERT(IsLCovEnabled());
+  MOZ_ASSERT(!script->isUncompleted(),
+             "Only initialize coverage data for fully initialized scripts.");
 
   
   
