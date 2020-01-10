@@ -427,11 +427,12 @@ void jit::FinishOffThreadBuilder(JSRuntime* runtime, IonBuilder* builder,
                                  const AutoLockHelperThreadState& locked) {
   MOZ_ASSERT(runtime);
 
+  JSScript* script = builder->script();
+
   
-  if (builder->script()->baselineScript()->hasPendingIonBuilder() &&
-      builder->script()->baselineScript()->pendingIonBuilder() == builder) {
-    builder->script()->baselineScript()->removePendingIonBuilder(
-        runtime, builder->script());
+  if (script->baselineScript()->hasPendingIonBuilder() &&
+      script->baselineScript()->pendingIonBuilder() == builder) {
+    script->baselineScript()->removePendingIonBuilder(runtime, script);
   }
 
   
@@ -441,17 +442,17 @@ void jit::FinishOffThreadBuilder(JSRuntime* runtime, IonBuilder* builder,
 
   
   
-  if (builder->script()->hasIonScript()) {
-    builder->script()->ionScript()->clearRecompiling();
+  if (script->hasIonScript()) {
+    script->ionScript()->clearRecompiling();
   }
 
   
-  if (builder->script()->isIonCompilingOffThread()) {
-    builder->script()->clearIsIonCompilingOffThread(runtime);
+  if (script->isIonCompilingOffThread()) {
+    script->jitScript()->clearIsIonCompilingOffThread(script);
 
     AbortReasonOr<Ok> status = builder->getOffThreadStatus();
     if (status.isErr() && status.unwrapErr() == AbortReason::Disable) {
-      builder->script()->disableIon(runtime);
+      script->disableIon();
     }
   }
 
@@ -1941,7 +1942,7 @@ static AbortReason IonCompile(JSContext* cx, JSScript* script,
     }
 
     if (!recompile) {
-      builderScript->setIsIonCompilingOffThread(cx->runtime());
+      builderScript->jitScript()->setIsIonCompilingOffThread(builderScript);
     }
 
     
@@ -2668,7 +2669,7 @@ void jit::InvalidateAll(JSFreeOp* fop, Zone* zone) {
 
 static void ClearIonScriptAfterInvalidation(JSContext* cx, JSScript* script,
                                             bool resetUses) {
-  script->clearIonScript(cx->defaultFreeOp());
+  script->jitScript()->clearIonScript(cx->defaultFreeOp(), script);
 
   
   
@@ -2814,7 +2815,7 @@ void jit::FinishInvalidation(JSFreeOp* fop, JSScript* script) {
 
   
   IonScript* ion = script->ionScript();
-  script->clearIonScript(fop);
+  script->jitScript()->clearIonScript(fop, script);
 
   
   
@@ -2833,7 +2834,7 @@ void jit::ForbidCompilation(JSContext* cx, JSScript* script) {
     Invalidate(cx, script, false);
   }
 
-  script->disableIon(cx->runtime());
+  script->disableIon();
 }
 
 AutoFlushICache* JSContext::autoFlushICache() const { return autoFlushICache_; }
@@ -3002,21 +3003,23 @@ size_t jit::SizeOfIonData(JSScript* script,
 }
 
 void jit::DestroyJitScripts(JSFreeOp* fop, JSScript* script) {
+  if (!script->hasJitScript()) {
+    return;
+  }
+
   if (script->hasIonScript()) {
     IonScript* ion = script->ionScript();
-    script->clearIonScript(fop);
+    script->jitScript()->clearIonScript(fop, script);
     jit::IonScript::Destroy(fop, ion);
   }
 
   if (script->hasBaselineScript()) {
     BaselineScript* baseline = script->baselineScript();
-    script->clearBaselineScript(fop);
+    script->jitScript()->clearBaselineScript(fop, script);
     jit::BaselineScript::Destroy(fop, baseline);
   }
 
-  if (script->hasJitScript()) {
-    script->releaseJitScript(fop);
-  }
+  script->releaseJitScript(fop);
 }
 
 void jit::TraceJitScripts(JSTracer* trc, JSScript* script) {

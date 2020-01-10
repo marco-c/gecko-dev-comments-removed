@@ -34,6 +34,7 @@
 #include "gc/GC-inl.h"         
 #include "gc/Marking-inl.h"    
 #include "vm/JSContext-inl.h"  
+#include "vm/JSScript-inl.h"   
 #include "vm/Realm-inl.h"      
 
 namespace js {

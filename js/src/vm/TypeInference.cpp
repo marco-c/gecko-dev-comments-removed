@@ -2690,13 +2690,14 @@ void TypeZone::addPendingRecompile(JSContext* cx, JSScript* script) {
   
   script->resetWarmUpCounterToDelayIonCompilation();
 
-  if (script->hasIonScript()) {
-    addPendingRecompile(
-        cx, RecompileInfo(script, script->ionScript()->compilationId()));
-  }
-
-  
   if (JitScript* jitScript = script->jitScript()) {
+    
+    if (jitScript->hasIonScript()) {
+      addPendingRecompile(
+          cx, RecompileInfo(script, jitScript->ionScript()->compilationId()));
+    }
+
+    
     AutoSweepJitScript sweep(script);
     RecompileInfoVector* inlinedCompilations =
         jitScript->maybeInlinedCompilations(sweep);

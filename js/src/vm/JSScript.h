@@ -61,11 +61,6 @@ struct IonScriptCounts;
 class JitScript;
 }  
 
-#define ION_DISABLED_SCRIPT ((js::jit::IonScript*)0x1)
-#define ION_COMPILING_SCRIPT ((js::jit::IonScript*)0x2)
-
-#define BASELINE_DISABLED_SCRIPT ((js::jit::BaselineScript*)0x1)
-
 class AutoSweepJitScript;
 class GCParallelTask;
 class LazyScript;
@@ -2290,15 +2285,6 @@ class JSScript : public js::BaseScript {
   js::jit::JitScript* jitScript_ = nullptr;
 
   
-
-
-
-  js::jit::IonScript* ion = nullptr;
-
-  
-  js::jit::BaselineScript* baseline = nullptr;
-
-  
   js::LazyScript* lazyScript = nullptr;
 
   
@@ -2606,103 +2592,7 @@ class JSScript : public js::BaseScript {
     return offsetof(JSScript, jitScript_);
   }
 
- private:
-  
-  
-  void setIonScriptImpl(JSFreeOp* fop, js::jit::IonScript* ionScript);
-  void setIonScriptImpl(JSRuntime* rt, js::jit::IonScript* ionScript);
-
- public:
-  
-  bool hasIonScript() const {
-    bool res = ion && ion != ION_DISABLED_SCRIPT && ion != ION_COMPILING_SCRIPT;
-    MOZ_ASSERT_IF(res, baseline);
-    return res;
-  }
-  js::jit::IonScript* ionScript() const {
-    MOZ_ASSERT(hasIonScript());
-    return ion;
-  }
-  void setIonScript(JSRuntime* rt, js::jit::IonScript* ionScript) {
-    MOZ_ASSERT(!hasIonScript());
-    setIonScriptImpl(rt, ionScript);
-    MOZ_ASSERT(hasIonScript());
-  }
-  void clearIonScript(JSFreeOp* fop) {
-    MOZ_ASSERT(hasIonScript());
-    setIonScriptImpl(fop, nullptr);
-  }
-
-  
-  bool canIonCompile() const {
-    bool disabled = hasFlag(MutableFlags::IonDisabled);
-    MOZ_ASSERT_IF(disabled, ion == ION_DISABLED_SCRIPT);
-    return !disabled;
-  }
-  void disableIon(JSRuntime* rt) {
-    setFlag(MutableFlags::IonDisabled);
-    setIonScriptImpl(rt, ION_DISABLED_SCRIPT);
-  }
-
-  
-  bool isIonCompilingOffThread() const { return ion == ION_COMPILING_SCRIPT; }
-  void setIsIonCompilingOffThread(JSRuntime* rt) {
-    MOZ_ASSERT(!ion);
-    setIonScriptImpl(rt, ION_COMPILING_SCRIPT);
-  }
-  void clearIsIonCompilingOffThread(JSRuntime* rt) {
-    MOZ_ASSERT(isIonCompilingOffThread());
-    setIonScriptImpl(rt, nullptr);
-  }
-
- private:
-  
-  
-  void setBaselineScriptImpl(JSRuntime* rt,
-                             js::jit::BaselineScript* baselineScript);
-  void setBaselineScriptImpl(JSFreeOp* fop,
-                             js::jit::BaselineScript* baselineScript);
-
- public:
-  
-  bool hasBaselineScript() const {
-    bool res = baseline && baseline != BASELINE_DISABLED_SCRIPT;
-    MOZ_ASSERT_IF(!res, !hasIonScript());
-    return res;
-  }
-  js::jit::BaselineScript* baselineScript() const {
-    MOZ_ASSERT(hasBaselineScript());
-    return baseline;
-  }
-  void setBaselineScript(JSRuntime* rt,
-                         js::jit::BaselineScript* baselineScript) {
-    MOZ_ASSERT(!hasBaselineScript());
-    setBaselineScriptImpl(rt, baselineScript);
-    MOZ_ASSERT(hasBaselineScript());
-  }
-  void clearBaselineScript(JSFreeOp* fop) {
-    MOZ_ASSERT(hasBaselineScript());
-    setBaselineScriptImpl(fop, nullptr);
-  }
-
-  
-  bool canBaselineCompile() const {
-    bool disabled = hasFlag(MutableFlags::BaselineDisabled);
-    MOZ_ASSERT_IF(disabled, baseline == BASELINE_DISABLED_SCRIPT);
-    return !disabled;
-  }
-  void disableBaselineCompile(JSRuntime* rt) {
-    MOZ_ASSERT(!hasBaselineScript());
-    setFlag(MutableFlags::BaselineDisabled);
-    setBaselineScriptImpl(rt, BASELINE_DISABLED_SCRIPT);
-  }
-
   void updateJitCodeRaw(JSRuntime* rt);
-
-  static size_t offsetOfBaselineScript() {
-    return offsetof(JSScript, baseline);
-  }
-  static size_t offsetOfIonScript() { return offsetof(JSScript, ion); }
 
   
   
@@ -2713,7 +2603,6 @@ class JSScript : public js::BaseScript {
            !doNotRelazify() && !hasCallSiteObj();
   }
   bool isRelazifiable() const {
-    MOZ_ASSERT_IF(hasBaselineScript() || hasIonScript(), jitScript_);
     return isRelazifiableIgnoringJitCode() && !jitScript_;
   }
   void setLazyScript(js::LazyScript* lazy) { lazyScript = lazy; }
@@ -2813,6 +2702,19 @@ class JSScript : public js::BaseScript {
 
   void maybeReleaseJitScript(JSFreeOp* fop);
   void releaseJitScript(JSFreeOp* fop);
+
+  inline bool hasBaselineScript() const;
+  inline bool hasIonScript() const;
+
+  inline js::jit::BaselineScript* baselineScript() const;
+  inline js::jit::IonScript* ionScript() const;
+
+  inline bool isIonCompilingOffThread() const;
+  inline bool canIonCompile() const;
+  inline void disableIon();
+
+  inline bool canBaselineCompile() const;
+  inline void disableBaselineCompile();
 
   inline js::GlobalObject& global() const;
   inline bool hasGlobal(const js::GlobalObject* global) const;

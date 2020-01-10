@@ -364,12 +364,18 @@ void Zone::discardJitCode(JSFreeOp* fop,
 
   for (auto script = cellIterUnsafe<JSScript>(); !script.done();
        script.next()) {
+    jit::JitScript* jitScript = script->jitScript();
+    if (!jitScript) {
+      continue;
+    }
+
     jit::FinishInvalidation(fop, script);
 
     
-    if (discardBaselineCode && script->hasBaselineScript() &&
-        !script->jitScript()->active()) {
-      jit::FinishDiscardBaselineScript(fop, script);
+    if (discardBaselineCode) {
+      if (jitScript->hasBaselineScript() && !jitScript->active()) {
+        jit::FinishDiscardBaselineScript(fop, script);
+      }
     }
 
     
@@ -382,26 +388,28 @@ void Zone::discardJitCode(JSFreeOp* fop,
     
     if (discardJitScripts) {
       script->maybeReleaseJitScript(fop);
-    }
-
-    if (jit::JitScript* jitScript = script->jitScript()) {
-      
-      
-      if (discardBaselineCode) {
-        jitScript->purgeOptimizedStubs(script);
-
-        
-        
-        jitScript->clearIonCompiledOrInlined();
+      jitScript = script->jitScript();
+      if (!jitScript) {
+        continue;
       }
-
-      
-      
-      jitScript->clearControlFlowGraph();
-
-      
-      jitScript->resetActive();
     }
+
+    
+    
+    if (discardBaselineCode) {
+      jitScript->purgeOptimizedStubs(script);
+
+      
+      
+      jitScript->clearIonCompiledOrInlined();
+    }
+
+    
+    
+    jitScript->clearControlFlowGraph();
+
+    
+    jitScript->resetActive();
   }
 
   
