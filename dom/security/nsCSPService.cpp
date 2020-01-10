@@ -255,24 +255,6 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
   
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit = loadInfo->GetCspToInherit();
-  if (cspToInherit) {
-    bool allowsNavigateTo = false;
-    rv = cspToInherit->GetAllowsNavigateTo(newUri, loadInfo,
-                                           true,  
-                                           false, 
-                                           &allowsNavigateTo);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (!allowsNavigateTo) {
-      oldChannel->Cancel(NS_ERROR_CSP_NAVIGATE_TO_VIOLATION);
-      return NS_OK;
-    }
-  }
-
-  
-  
-  
   
   
   nsContentPolicyType policyType = loadInfo->InternalContentPolicyType();
