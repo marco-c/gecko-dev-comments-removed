@@ -11632,7 +11632,9 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
       return true;
     }
 
-    return false;
+    
+    
+    
   }
 
   
