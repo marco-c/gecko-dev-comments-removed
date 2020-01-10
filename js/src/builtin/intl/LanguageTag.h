@@ -65,7 +65,6 @@ bool IsStructurallyValidVariantTag(const mozilla::Range<const char>& variant);
 
 
 
-
 bool IsStructurallyValidUnicodeExtensionTag(
     const mozilla::Range<const char>& extension);
 
@@ -486,10 +485,15 @@ class MOZ_STACK_CLASS LanguageTagParser final {
     return chars(cx, tok.index(), tok.length());
   }
 
-  Token nextToken();
-
   JS::UniqueChars extension(JSContext* cx, const Token& start,
-                            const Token& end) const;
+                            const Token& end) const {
+    MOZ_ASSERT(start.index() < end.index());
+
+    size_t length = end.index() - 1 - start.index();
+    return chars(cx, start.index(), length);
+  }
+
+  Token nextToken();
 
   
   
