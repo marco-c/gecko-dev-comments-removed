@@ -109,8 +109,7 @@ add_task(async function testContentBlockingMessage() {
   ]);
 
   info("Re-disable the warningGroup feature pref");
-  await toggleWarningGroupPreference(hud);
-  console.log("toggle successful");
+  await toggleWarningGroupPreference(hud, false);
   warningGroupMessage1 = await waitFor(() =>
     findMessage(hud, CONTENT_BLOCKING_GROUP_LABEL)
   );
@@ -140,7 +139,7 @@ add_task(async function testContentBlockingMessage() {
   await waitFor(() => findMessage(hud, "Navigated to"));
 
   info("Disable the warningGroup feature pref again");
-  await toggleWarningGroupPreference(hud);
+  await toggleWarningGroupPreference(hud, false);
 
   info("Add one warning message and one simple message");
   await waitFor(() => findMessage(hud, `${BLOCKED_URL}?4`));
@@ -164,7 +163,7 @@ add_task(async function testContentBlockingMessage() {
   info(
     "Enable the warningGroup feature pref to check that the group is still expanded"
   );
-  await toggleWarningGroupPreference(hud);
+  await toggleWarningGroupPreference(hud, false);
   await waitFor(() => findMessage(hud, CONTENT_BLOCKING_GROUP_LABEL));
 
   checkConsoleOutputForWarningGroup(hud, [
@@ -207,7 +206,7 @@ add_task(async function testContentBlockingMessage() {
   info(
     "Disable the warningGroup pref and check all warning messages are visible"
   );
-  await toggleWarningGroupPreference(hud);
+  await toggleWarningGroupPreference(hud, false);
   await waitFor(() => findMessage(hud, `${BLOCKED_URL}?6`));
 
   checkConsoleOutputForWarningGroup(hud, [
@@ -261,18 +260,39 @@ function waitForBadgeNumber(message, expectedNumber) {
   );
 }
 
-async function toggleWarningGroupPreference(hud) {
+
+
+
+
+
+
+
+async function toggleWarningGroupPreference(hud, fromUI = true) {
+  if (!fromUI) {
+    await pushPref(
+      WARNING_GROUP_PREF,
+      !Services.prefs.getBoolPref(WARNING_GROUP_PREF)
+    );
+    return;
+  }
+
   info("Open the settings panel");
   const observer = new PrefObserver("");
+  const toolbox = hud.toolbox;
+  const { panelDoc, panelWin } = await toolbox.selectTool("options");
 
   info("Change warning preference");
   const prefChanged = observer.once(WARNING_GROUP_PREF, () => {});
+  const checkbox = panelDoc.getElementById("webconsole-warning-groups");
 
-  await toggleConsoleSetting(
-    hud,
-    ".webconsole-console-settings-menu-item-warning-groups"
-  );
+  
+  checkbox.scrollIntoView();
+  executeSoon(() => EventUtils.synthesizeMouseAtCenter(checkbox, {}, panelWin));
 
   await prefChanged;
   observer.destroy();
+
+  
+  info("Go back to console");
+  await toolbox.selectTool("webconsole");
 }

@@ -23,19 +23,18 @@ add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
-  await toggleConsoleSetting(
-    hud,
-    ".webconsole-console-settings-menu-item-persistentLogs"
+  const logPersistToggle = await waitFor(() =>
+    hud.ui.window.document.querySelector(".filter-checkbox")
   );
+
+  
+  logPersistToggle.click();
   await waitUntil(
     () => hud.ui.wrapper.getStore().getState().ui.persistLogs === true
   );
 
   
-  await toggleConsoleSetting(
-    hud,
-    ".webconsole-console-settings-menu-item-persistentLogs"
-  );
+  logPersistToggle.click();
   await waitUntil(
     () => hud.ui.wrapper.getStore().getState().ui.persistLogs === false
   );

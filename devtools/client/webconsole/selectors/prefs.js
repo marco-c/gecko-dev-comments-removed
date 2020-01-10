@@ -3,15 +3,8 @@
 
 "use strict";
 
-function getAllPrefs(state) {
-  return state.prefs;
-}
-
 function getLogLimit(state) {
   return state.prefs.logLimit;
 }
 
-module.exports = {
-  getAllPrefs,
-  getLogLimit,
-};
+exports.getLogLimit = getLogLimit;
