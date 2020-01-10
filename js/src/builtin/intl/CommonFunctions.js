@@ -572,6 +572,82 @@ function parseLanguageTag(locale) {
 
 
 
+function parseStandaloneLanguage(language) {
+    
+    var length = language.length;
+    if (length < 2 || length === 4 || length > 8 || !IsASCIIAlphaString(language)) {
+        
+        
+        
+        return null;
+    }
+
+    return callFunction(std_String_toLowerCase, language);
+}
+
+
+
+
+
+function parseStandaloneScript(script) {
+    
+    if (script.length !== 4 || !IsASCIIAlphaString(script)) {
+        return null;
+    }
+
+    
+    
+    return callFunction(std_String_toUpperCase, script[0]) +
+           callFunction(std_String_toLowerCase, Substring(script, 1, script.length - 1));
+}
+
+
+
+
+
+function parseStandaloneRegion(region) {
+    
+    var length = region.length;
+    if ((length !== 2 || !IsASCIIAlphaString(region)) &&
+        (length !== 3 || !IsASCIIDigitString(region)))
+    {
+        return null;
+    }
+
+    
+    return callFunction(std_String_toUpperCase, region);
+}
+
+
+
+
+
+
+function parseStandaloneUnicodeExtensionType(type) {
+    
+    var ts = new BCP47TokenStream(type);
+    NEXT_TOKEN_OR_RETURN_NULL(ts);
+
+    
+    
+    
+    
+    
+    
+    do {
+        if (ts.tokenLength < 3 || ts.tokenLength > 8)
+            return null;
+
+        NEXT_TOKEN_OR_RETURN_NULL(ts);
+    } while (ts.token !== NONE);
+
+    return ts.localeLowercase;
+}
+
+
+
+
+
 function TransformExtensionComponents(extension) {
     assert(typeof extension === "string", "extension is a String value");
     assert(callFunction(std_String_startsWith, extension, "t-"),
@@ -807,7 +883,7 @@ function CanonicalizeLanguageTagObject(localeObj) {
             
             if (ext[0] === "u") {
                 var {attributes, keywords} = UnicodeExtensionComponents(ext);
-                extensions[i] = CanonicalizeUnicodeExtension(attributes, keywords);
+                extensions[i] = CanonicalizeUnicodeExtension(attributes, keywords, false);
             }
 
             
@@ -934,7 +1010,7 @@ function UnicodeExtensionComponents(extension) {
 
 
 
-function CanonicalizeUnicodeExtension(attributes, keywords) {
+function CanonicalizeUnicodeExtension(attributes, keywords, canonicalForm) {
     assert(attributes.length > 0 || keywords.length > 0,
            "unexpected empty Unicode locale extension components");
 
@@ -969,13 +1045,41 @@ function CanonicalizeUnicodeExtension(attributes, keywords) {
 
     
     for (var i = 0; i < attributes.length; i++) {
+        var attribute = attributes[i];
+        assert(attribute === callFunction(std_String_toLowerCase, attribute),
+               "Attributes are already canonicalized to lower case");
+
+        
+        if (canonicalForm && i > 0 && attributes[i - 1] === attribute) {
+            continue;
+        }
+
         extension += "-" + attributes[i];
     }
 
     
     for (var i = 0; i < keywords.length; i++) {
         var {key, value} = keywords[i];
+        assert(key === callFunction(std_String_toLowerCase, key) &&
+               value === callFunction(std_String_toLowerCase, value),
+               "Keywords are already canonicalized to lower case");
+
+
+        
+        if (canonicalForm && i > 0 && keywords[i - 1].key === key) {
+            continue;
+        }
+
         extension += "-" + key;
+
+        if (canonicalForm &&
+            hasOwn(key, deprecatedUnicodeExtensionTypes) &&
+            hasOwn(value, deprecatedUnicodeExtensionTypes[key]))
+        {
+            value = deprecatedUnicodeExtensionTypes[key][value];
+            assert(value === callFunction(std_String_toLowerCase, value),
+                   "Preferred keyword value is already in lower case");
+        }
 
         
         if (value !== "" && value !== "true")
@@ -1127,6 +1231,20 @@ function IsASCIIAlphaString(s) {
     for (var i = 0; i < s.length; i++) {
         var c = callFunction(std_String_charCodeAt, s, i);
         if (!((0x41 <= c && c <= 0x5A) || (0x61 <= c && c <= 0x7A)))
+            return false;
+    }
+    return true;
+}
+
+
+
+
+function IsASCIIDigitString(s) {
+    assert(typeof s === "string", "IsASCIIDigitString");
+
+    for (var i = 0; i < s.length; i++) {
+        var c = callFunction(std_String_charCodeAt, s, i);
+        if (!(0x30 <= c && c <= 0x39))
             return false;
     }
     return true;
@@ -1325,6 +1443,10 @@ function CanonicalizeLocaleList(locales) {
     if (typeof locales === "string")
         return [ValidateAndCanonicalizeLanguageTag(locales)];
 
+    var unboxedLocale = callFunction(unboxLocaleOrNull, locales);
+    if (unboxedLocale !== null)
+        return [StringFromLanguageTagObject(unboxedLocale.locale)]
+
     
     var seen = [];
 
@@ -1349,10 +1471,10 @@ function CanonicalizeLocaleList(locales) {
                 ThrowTypeError(JSMSG_INVALID_LOCALES_ELEMENT);
 
             
-            var tag = ToString(kValue);
-
-            
-            tag = ValidateAndCanonicalizeLanguageTag(tag);
+            var unboxedLocale = callFunction(unboxLocaleOrNull, kValue);
+            var tag = unboxedLocale !== null
+                      ? StringFromLanguageTagObject(unboxedLocale.locale)
+                      : ValidateAndCanonicalizeLanguageTag(ToString(kValue));
 
             
             if (callFunction(ArrayIndexOf, seen, tag) === -1)
