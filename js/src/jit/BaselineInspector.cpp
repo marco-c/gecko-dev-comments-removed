@@ -76,7 +76,7 @@ static bool GetCacheIRReceiverForNativeReadSlot(ICCacheIR_Monitored* stub,
   CacheIRReader reader(stub->stubInfo());
 
   ObjOperandId objId = ObjOperandId(0);
-  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+  if (!reader.matchOp(CacheOp::GuardToObject, objId)) {
     return false;
   }
 
@@ -102,7 +102,7 @@ static bool GetCacheIRReceiverForNativeSetSlot(ICCacheIR_Updated* stub,
   CacheIRReader reader(stub->stubInfo());
 
   ObjOperandId objId = ObjOperandId(0);
-  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+  if (!reader.matchOp(CacheOp::GuardToObject, objId)) {
     return false;
   }
 
@@ -241,10 +241,10 @@ bool BaselineInspector::dimorphicStub(jsbytecode* pc, ICStub** pfirst,
 static void SkipBinaryGuards(CacheIRReader& reader) {
   while (true) {
     
-    if (reader.matchOp(CacheOp::GuardIsInt32) ||
+    if (reader.matchOp(CacheOp::GuardToInt32) ||
         reader.matchOp(CacheOp::GuardType) ||
         reader.matchOp(CacheOp::TruncateDoubleToUInt32) ||
-        reader.matchOp(CacheOp::GuardIsBoolean)) {
+        reader.matchOp(CacheOp::GuardToBoolean)) {
       reader.skip();  
       reader.skip();  
       continue;
@@ -252,8 +252,8 @@ static void SkipBinaryGuards(CacheIRReader& reader) {
 
     
     if (reader.matchOp(CacheOp::GuardIsNumber) ||
-        reader.matchOp(CacheOp::GuardIsString) ||
-        reader.matchOp(CacheOp::GuardIsObject)) {
+        reader.matchOp(CacheOp::GuardToString) ||
+        reader.matchOp(CacheOp::GuardToObject)) {
       reader.skip();  
       continue;
     }
@@ -357,13 +357,13 @@ static bool GuardType(CacheIRReader& reader,
 
   switch (op) {
     
-    case CacheOp::GuardIsString:
+    case CacheOp::GuardToString:
       guardType[guardOperand] = MIRType::String;
       break;
-    case CacheOp::GuardIsSymbol:
+    case CacheOp::GuardToSymbol:
       guardType[guardOperand] = MIRType::Symbol;
       break;
-    case CacheOp::GuardIsBigInt:
+    case CacheOp::GuardToBigInt:
       guardType[guardOperand] = MIRType::BigInt;
       break;
     case CacheOp::GuardIsNumber:
@@ -373,12 +373,12 @@ static bool GuardType(CacheIRReader& reader,
       guardType[guardOperand] = MIRType::Undefined;
       break;
     
-    case CacheOp::GuardIsInt32:
+    case CacheOp::GuardToInt32:
       guardType[guardOperand] = MIRType::Int32;
       
       reader.skip();
       break;
-    case CacheOp::GuardIsBoolean:
+    case CacheOp::GuardToBoolean:
       guardType[guardOperand] = MIRType::Boolean;
       
       reader.skip();
@@ -948,7 +948,7 @@ static bool GuardSpecificAtomOrSymbol(CacheIRReader& reader, ICStub* stub,
                                       ValOperandId keyId, jsid id) {
   
   if (JSID_IS_ATOM(id)) {
-    if (!reader.matchOp(CacheOp::GuardIsString, keyId)) {
+    if (!reader.matchOp(CacheOp::GuardToString, keyId)) {
       return false;
     }
     if (!reader.matchOp(CacheOp::GuardSpecificAtom, keyId)) {
@@ -961,7 +961,7 @@ static bool GuardSpecificAtomOrSymbol(CacheIRReader& reader, ICStub* stub,
     }
   } else {
     MOZ_ASSERT(JSID_IS_SYMBOL(id));
-    if (!reader.matchOp(CacheOp::GuardIsSymbol, keyId)) {
+    if (!reader.matchOp(CacheOp::GuardToSymbol, keyId)) {
       return false;
     }
     if (!reader.matchOp(CacheOp::GuardSpecificSymbol, keyId)) {
@@ -1016,7 +1016,7 @@ static bool AddCacheIRGetPropFunction(
   CacheIRReader reader(stub->stubInfo());
 
   ObjOperandId objId = ObjOperandId(0);
-  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+  if (!reader.matchOp(CacheOp::GuardToObject, objId)) {
     return AddCacheIRGlobalGetter(stub, innerized, holder, holderShape,
                                   commonGetter, globalShape, isOwnProperty,
                                   receivers, script);
@@ -1192,7 +1192,7 @@ static JSFunction* GetMegamorphicGetterSetterFunction(
   CacheIRReader reader(stubInfo);
 
   ObjOperandId objId = ObjOperandId(0);
-  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+  if (!reader.matchOp(CacheOp::GuardToObject, objId)) {
     return nullptr;
   }
 
@@ -1291,7 +1291,7 @@ static bool AddCacheIRSetPropFunction(
   CacheIRReader reader(stub->stubInfo());
 
   ObjOperandId objId = ObjOperandId(0);
-  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+  if (!reader.matchOp(CacheOp::GuardToObject, objId)) {
     return false;
   }
 
@@ -1421,7 +1421,7 @@ static bool GetCacheIRReceiverForProtoReadSlot(ICCacheIR_Monitored* stub,
   CacheIRReader reader(stub->stubInfo());
 
   ObjOperandId objId = ObjOperandId(0);
-  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+  if (!reader.matchOp(CacheOp::GuardToObject, objId)) {
     return false;
   }
 
@@ -1512,10 +1512,10 @@ bool BaselineInspector::maybeInfoForProtoReadSlot(jsbytecode* pc,
 static MIRType GetCacheIRExpectedInputType(ICCacheIR_Monitored* stub) {
   CacheIRReader reader(stub->stubInfo());
 
-  if (reader.matchOp(CacheOp::GuardIsObject, ValOperandId(0))) {
+  if (reader.matchOp(CacheOp::GuardToObject, ValOperandId(0))) {
     return MIRType::Object;
   }
-  if (reader.matchOp(CacheOp::GuardIsString, ValOperandId(0))) {
+  if (reader.matchOp(CacheOp::GuardToString, ValOperandId(0))) {
     return MIRType::String;
   }
   if (reader.matchOp(CacheOp::GuardIsNumber, ValOperandId(0))) {
@@ -1583,7 +1583,7 @@ bool BaselineInspector::instanceOfData(jsbytecode* pc, Shape** shape,
   ObjOperandId rhsId = ObjOperandId(1);
   ObjOperandId resId = ObjOperandId(2);
 
-  if (!reader.matchOp(CacheOp::GuardIsObject, rhsId)) {
+  if (!reader.matchOp(CacheOp::GuardToObject, rhsId)) {
     return false;
   }
 
