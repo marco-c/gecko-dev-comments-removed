@@ -343,21 +343,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nscoord GetNondisappearingScrollbarWidth(nsBoxLayoutState* aState,
                                            mozilla::WritingMode aVerticalWM);
   bool IsPhysicalLTR() const {
-    WritingMode wm = GetFrameForDir()->GetWritingMode();
+    WritingMode wm = mOuter->GetWritingMode();
     return wm.IsVertical() ? wm.IsVerticalLR() : wm.IsBidiLTR();
   }
-  bool IsBidiLTR() const {
-    nsIFrame* frame = GetFrameForDir();
-    return frame->StyleVisibility()->mDirection == NS_STYLE_DIRECTION_LTR;
-  }
+  bool IsBidiLTR() const { return mOuter->GetWritingMode().IsBidiLTR(); }
 
  private:
-  nsIFrame* GetFrameForDir() const;  
-                                     
-  
-  
-  
-  
   
   
   nsIFrame* GetFrameForStyle() const;

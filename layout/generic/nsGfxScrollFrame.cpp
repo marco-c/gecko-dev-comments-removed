@@ -5447,35 +5447,6 @@ void ScrollFrameHelper::PostOverflowEvent() {
   rpc->AddWillPaintObserver(mAsyncScrollPortEvent.get());
 }
 
-nsIFrame* ScrollFrameHelper::GetFrameForDir() const {
-  nsIFrame* frame = mOuter;
-  
-  if (mIsRoot) {
-    
-    
-    nsPresContext* presContext = mOuter->PresContext();
-    Document* document = presContext->Document();
-    Element* root = document->GetRootElement();
-
-    
-    if (document->IsHTMLOrXHTML()) {
-      Element* bodyElement = document->GetBodyElement();
-      if (bodyElement) {
-        root = bodyElement;  
-      }
-    }
-
-    if (root) {
-      nsIFrame* rootsFrame = root->GetPrimaryFrame();
-      if (rootsFrame) {
-        frame = rootsFrame;
-      }
-    }
-  }
-
-  return frame;
-}
-
 nsIFrame* ScrollFrameHelper::GetFrameForStyle() const {
   nsIFrame* styleFrame = nullptr;
   if (mIsRoot) {
@@ -6952,7 +6923,7 @@ layers::ScrollSnapInfo ScrollFrameHelper::ComputeScrollSnapInfo(
     return result;
   }
 
-  WritingMode writingMode = GetFrameForDir()->GetWritingMode();
+  WritingMode writingMode = mOuter->GetWritingMode();
   result.InitializeScrollSnapStrictness(writingMode, disp);
 
   nsRect snapport = GetScrollPortRect();
