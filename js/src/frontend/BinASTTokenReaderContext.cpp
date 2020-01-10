@@ -476,7 +476,7 @@ class HuffmanPreludeReader {
       table = {mozilla::VariantType<HuffmanTableInitializing>{}};
 
       
-      MOZ_TRY((readTable<HuffmanTableValue, List>(table, list)));
+      MOZ_TRY((readTable<List>(table, list)));
     }
 
     
@@ -816,14 +816,14 @@ class HuffmanPreludeReader {
   template <typename Entry>
   MOZ_MUST_USE JS::Result<Ok> readTable(Entry entry) {
     auto& table = dictionary_.tableForField(entry.identity_);
-    return readTable<HuffmanTableValue, Entry>(table, entry);
+    return readTable<Entry>(table, entry);
   }
 
   
   
   
-  template <typename HuffmanTable, typename Entry>
-  MOZ_MUST_USE JS::Result<Ok> readTable(HuffmanTable& table, Entry entry) {
+  template <typename Entry>
+  MOZ_MUST_USE JS::Result<Ok> readTable(HuffmanTableValue& table, Entry entry) {
     if (MOZ_UNLIKELY(!table.template is<HuffmanTableInitializing>())) {
       
       
