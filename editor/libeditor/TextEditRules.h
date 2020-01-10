@@ -131,10 +131,6 @@ class TextEditRules {
 
   void HandleNewLines(nsString& aString);
 
-  bool HasPaddingBRElementForEmptyEditor() const {
-    return !!mPaddingBRElementForEmptyEditor;
-  }
-
  protected:
   void InitFields();
 
@@ -388,9 +384,6 @@ class TextEditRules {
 
   inline already_AddRefed<nsINode> GetTextNodeAroundSelectionStartContainer();
 
-  
-  
-  RefPtr<dom::HTMLBRElement> mPaddingBRElementForEmptyEditor;
   
   nsCOMPtr<nsINode> mCachedSelectionNode;
   

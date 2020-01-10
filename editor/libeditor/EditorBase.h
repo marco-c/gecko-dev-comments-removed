@@ -100,6 +100,7 @@ class DataTransfer;
 class DragEvent;
 class Element;
 class EventTarget;
+class HTMLBRElement;
 }  
 
 namespace widget {
@@ -2296,6 +2297,11 @@ class EditorBase : public nsIEditor,
   RefPtr<TransactionManager> mTransactionManager;
   
   RefPtr<Element> mRootElement;
+
+  
+  
+  RefPtr<dom::HTMLBRElement> mPaddingBRElementForEmptyEditor;
+
   
   nsCOMPtr<dom::EventTarget> mEventTarget;
   RefPtr<EditorEventListener> mEventListener;

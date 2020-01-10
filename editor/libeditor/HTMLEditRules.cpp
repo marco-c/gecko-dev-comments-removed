@@ -806,7 +806,7 @@ nsresult HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
 }
 
 bool HTMLEditRules::DocumentIsEmpty() const {
-  return !!mPaddingBRElementForEmptyEditor;
+  return !!HTMLEditorRef().mPaddingBRElementForEmptyEditor;
 }
 
 nsresult HTMLEditRules::GetListState(bool* aMixed, bool* aOL, bool* aUL,
@@ -1648,12 +1648,12 @@ nsresult HTMLEditRules::WillLoadHTML() {
 
   
   
-  if (mPaddingBRElementForEmptyEditor) {
+  if (HTMLEditorRef().mPaddingBRElementForEmptyEditor) {
     
     
     
     RefPtr<HTMLBRElement> paddingBRElement(
-        std::move(mPaddingBRElementForEmptyEditor));
+        std::move(HTMLEditorRef().mPaddingBRElementForEmptyEditor));
     DebugOnly<nsresult> rv = MOZ_KnownLive(HTMLEditorRef())
                                  .DeleteNodeWithTransaction(*paddingBRElement);
     if (NS_WARN_IF(!CanHandleEditAction())) {
@@ -2292,7 +2292,7 @@ nsresult HTMLEditRules::WillDeleteSelection(
 
   
   
-  if (mPaddingBRElementForEmptyEditor) {
+  if (HTMLEditorRef().mPaddingBRElementForEmptyEditor) {
     *aCancel = true;
     return NS_OK;
   }
@@ -11132,12 +11132,12 @@ void HTMLEditRules::OnModifyDocument() {
 
   
   
-  if (mPaddingBRElementForEmptyEditor) {
+  if (HTMLEditorRef().mPaddingBRElementForEmptyEditor) {
     
     
     
     RefPtr<HTMLBRElement> paddingBRElement(
-        std::move(mPaddingBRElementForEmptyEditor));
+        std::move(HTMLEditorRef().mPaddingBRElementForEmptyEditor));
     DebugOnly<nsresult> rv = MOZ_KnownLive(HTMLEditorRef())
                                  .DeleteNodeWithTransaction(*paddingBRElement);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
