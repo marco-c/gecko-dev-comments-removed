@@ -114,7 +114,7 @@ inline ClippedTime TimeClip(double time) {
 
 
 inline Value TimeValue(ClippedTime time) {
-  return DoubleValue(CanonicalizeNaN(time.toDouble()));
+  return CanonicalizedDoubleValue(time.toDouble());
 }
 
 

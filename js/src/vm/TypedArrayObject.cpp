@@ -1977,7 +1977,7 @@ bool TypedArrayObjectTemplate<float>::getElementPure(TypedArrayObject* tarray,
 
 
 
-  *vp = DoubleValue(CanonicalizeNaN(dval));
+  *vp = JS::CanonicalizedDoubleValue(dval);
   return true;
 }
 
@@ -1994,7 +1994,7 @@ bool TypedArrayObjectTemplate<double>::getElementPure(TypedArrayObject* tarray,
 
 
 
-  *vp = DoubleValue(CanonicalizeNaN(val));
+  *vp = JS::CanonicalizedDoubleValue(val);
   return true;
 }
 
