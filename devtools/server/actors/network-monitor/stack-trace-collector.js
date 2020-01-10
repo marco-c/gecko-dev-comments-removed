@@ -35,6 +35,7 @@ function StackTraceCollector(filters, netmonitors) {
 StackTraceCollector.prototype = {
   init() {
     Services.obs.addObserver(this, "http-on-opening-request");
+    Services.obs.addObserver(this, "document-on-opening-request");
     Services.obs.addObserver(this, "network-monitor-alternate-stack");
     ChannelEventSinkFactory.getService().registerCollector(this);
     this.onGetStack = this.onGetStack.bind(this);
@@ -48,6 +49,7 @@ StackTraceCollector.prototype = {
 
   destroy() {
     Services.obs.removeObserver(this, "http-on-opening-request");
+    Services.obs.removeObserver(this, "document-on-opening-request");
     Services.obs.removeObserver(this, "network-monitor-alternate-stack");
     ChannelEventSinkFactory.getService().unregisterCollector(this);
     for (const { messageManager } of this.netmonitors) {
@@ -77,22 +79,30 @@ StackTraceCollector.prototype = {
   observe(subject, topic, data) {
     let channel, id;
     try {
-      channel = subject.QueryInterface(Ci.nsIIdentChannel);
+      
+      
+      
+      channel = subject.QueryInterface(Ci.nsIHttpChannel);
       id = channel.channelId;
     } catch (e1) {
-      
-      
-      
-      
-      
       try {
-        channel = subject.QueryInterface(Ci.nsIWebSocketChannel);
+        channel = subject.QueryInterface(Ci.nsIIdentChannel);
+        id = channel.channelId;
       } catch (e2) {
         
         
-        return;
+        
+        
+        
+        try {
+          channel = subject.QueryInterface(Ci.nsIWebSocketChannel);
+        } catch (e3) {
+          
+          
+          return;
+        }
+        id = channel.URI.spec;
       }
-      id = channel.URI.spec;
     }
 
     if (!matchRequest(channel, this.filters)) {
@@ -101,7 +111,8 @@ StackTraceCollector.prototype = {
 
     const stacktrace = [];
     switch (topic) {
-      case "http-on-opening-request": {
+      case "http-on-opening-request":
+      case "document-on-opening-request": {
         
         
         
