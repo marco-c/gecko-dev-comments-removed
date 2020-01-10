@@ -56,12 +56,6 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
           "default": False,
           "help": "Tries to enable the WebRender compositor.",
           }],
-        [["--disable-webrender"],
-         {"action": "store_true",
-          "dest": "disable_webrender",
-          "default": False,
-          "help": "Force-disables the WebRender compositor.",
-          }],
         [["--base"],
          {"action": "store_true",
           "dest": "test_about_blank",
@@ -260,13 +254,13 @@ class AWSY(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
         
         env['STYLO_FORCE_ENABLED'] = '1'
 
+        
+        
+        
         if self.config['enable_webrender']:
             env['MOZ_WEBRENDER'] = '1'
             env['MOZ_ACCELERATED'] = '1'
-
-        
-        
-        if self.config['disable_webrender']:
+        else:
             env['MOZ_WEBRENDER'] = '0'
 
         env['MOZ_UPLOAD_DIR'] = dirs['abs_blob_upload_dir']
