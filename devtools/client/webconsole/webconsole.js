@@ -280,18 +280,6 @@ class WebConsole {
 
 
 
-  lookupConsoleClient(thread) {
-    const toolbox = gDevTools.getToolbox(this.target);
-    const panel = toolbox.getPanel("jsdebugger");
-    return panel.lookupConsoleClient(thread);
-  }
-
-  
-
-
-
-
-
 
 
 
