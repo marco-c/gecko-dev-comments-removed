@@ -3,8 +3,6 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "DOMLocalization",
-  "resource://gre/modules/DOMLocalization.jsm");
 ChromeUtils.defineModuleGetter(this, "FxAccounts",
   "resource://gre/modules/FxAccounts.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
