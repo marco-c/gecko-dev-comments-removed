@@ -3,7 +3,7 @@
 
 "use strict";
 
-const networkLocationsModule = require("devtools/client/aboutdebugging-new/src/modules/network-locations.js");
+const networkLocationsModule = require("devtools/client/aboutdebugging/src/modules/network-locations.js");
 
 
 

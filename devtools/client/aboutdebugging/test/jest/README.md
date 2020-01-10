@@ -1,4 +1,4 @@
-# Jest Tests for devtools/client/aboutdebugging-new
+# Jest Tests for devtools/client/aboutdebugging
 
 ## About
 
@@ -8,7 +8,7 @@ DevTools React components can be tested using [jest](https://jestjs.io/). Jest a
 
 We use yarn for dependency management. To run the tests locally:
 ```
-  cd devtools/client/shared/aboutdebugging-new/test/jest
+  cd devtools/client/shared/aboutdebugging/test/jest
   yarn && yarn test
 ```
 

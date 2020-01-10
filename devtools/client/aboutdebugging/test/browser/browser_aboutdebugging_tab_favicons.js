@@ -11,7 +11,7 @@
 
 
 const TAB_URL =
-  "https://example.com/browser/devtools/client/aboutdebugging-new/" +
+  "https://example.com/browser/devtools/client/aboutdebugging/" +
   "test/browser/test-tab-favicons.html";
 
 

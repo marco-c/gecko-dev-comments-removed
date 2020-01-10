@@ -10,7 +10,7 @@
 
 const {
   RUNTIME_PREFERENCE,
-} = require("devtools/client/aboutdebugging-new/src/constants");
+} = require("devtools/client/aboutdebugging/src/constants");
 
 
 

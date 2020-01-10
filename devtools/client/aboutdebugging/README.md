@@ -8,12 +8,12 @@ To try out about:debugging, type `about:debugging` in the Firefox URL bar.
 ## Technical overview
 
 The about:debugging-new UI is built using React and Redux. The various React/Redux files should be organized as follows:
-- devtools/client/aboutdebugging-new/src/actions
-- devtools/client/aboutdebugging-new/src/components
-- devtools/client/aboutdebugging-new/src/middleware
-- devtools/client/aboutdebugging-new/src/reducers
+- devtools/client/aboutdebugging/src/actions
+- devtools/client/aboutdebugging/src/components
+- devtools/client/aboutdebugging/src/middleware
+- devtools/client/aboutdebugging/src/reducers
 
-The folder `devtools/client/aboutdebugging-new/src/modules` contains various helpers and classes that are not related to React/Redux. For instance modules/usb-runtimes.js provides an abstraction layer to enable USB runtimes scanning, to list USB runtimes etc...
+The folder `devtools/client/aboutdebugging/src/modules` contains various helpers and classes that are not related to React/Redux. For instance modules/usb-runtimes.js provides an abstraction layer to enable USB runtimes scanning, to list USB runtimes etc...
 
 ### Firefox Component Registration
 about:debugging-new is an "about" page registered via a component manifest that is located in `/devtools/startup/aboutdebugging.manifest`. The component registration code is at `/devtools/startup/aboutdebugging-registration.js`.
@@ -39,7 +39,7 @@ They should never use any of the lifecycle methods that will be deprecated in Re
 When it comes to updating the state, components should do it via an action if the result of this action is something that should be preserved when reloading the UI.
 
 ### Middlewares
-We use several middlewares in the application. The middlewares are required in the create-store module `devtools/client/aboutdebugging-new/src/create-store.js`.
+We use several middlewares in the application. The middlewares are required in the create-store module `devtools/client/aboutdebugging/src/create-store.js`.
 
 #### thunk
 This is a shared middleware used by other DevTools modules that allows to dispatch actions and allows to create multiple asynchronous actions.
@@ -69,12 +69,12 @@ Holds the current list of runtimes known by the application as well as the curre
 Holds all the debug targets (ie tabs, addons, workers etc...) for the currently monitored runtime. There is at most one monitored runtime at a given time.
 
 ### Constants
-Constants can be found at `devtools/client/aboutdebugging-new/src/constants.js`. It contains all the actions available in about:debugging as well as several other "packages" of constants used in the application.
+Constants can be found at `devtools/client/aboutdebugging/src/constants.js`. It contains all the actions available in about:debugging as well as several other "packages" of constants used in the application.
 
-If a constant (string, number, etc...) is only used in a single module it can be defined as a `const` in this module. However as soon as the constant is shared by several modules, it should move to `devtools/client/aboutdebugging-new/src/constants.js`.
+If a constant (string, number, etc...) is only used in a single module it can be defined as a `const` in this module. However as soon as the constant is shared by several modules, it should move to `devtools/client/aboutdebugging/src/constants.js`.
 
 ### Types
-Types can be found at `devtools/client/aboutdebugging-new/src/types.js`. They serve both as documentation as well as validation. We do not aim at having types for every single element of the state, but only for complex objects.
+Types can be found at `devtools/client/aboutdebugging/src/types.js`. They serve both as documentation as well as validation. We do not aim at having types for every single element of the state, but only for complex objects.
 
 ## Contact
 If you have any questions about the code, features, planning, the active team is:

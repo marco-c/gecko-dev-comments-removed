@@ -73,7 +73,7 @@ function setupThisFirefoxMock() {
   runtimeClientFactoryMock.createClientForRuntime = runtime => {
     const {
       RUNTIMES,
-    } = require("devtools/client/aboutdebugging-new/src/constants");
+    } = require("devtools/client/aboutdebugging/src/constants");
     if (runtime.id === RUNTIMES.THIS_FIREFOX) {
       return thisFirefoxClient;
     }
