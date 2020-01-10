@@ -55,7 +55,7 @@ export async function onConnect(connection: any, actions: Object) {
   
   actions.addEventListenerBreakpoints([]).catch(e => console.error(e));
 
-  const { traits } = tabTarget;
+  const traits = tabTarget.traits;
   await actions.connect(
     tabTarget.url,
     threadFront.actor,
