@@ -8,6 +8,14 @@
 
 
 
+
+
+
+
+
+
+
+
 const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/client/shared/browser-loader.js"
 );

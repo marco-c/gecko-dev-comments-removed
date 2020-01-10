@@ -5,6 +5,13 @@
 
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
+
+
+
+
+
+
+
 class PerformancePanel {
   constructor(iframeWindow, toolbox) {
     this.panelWin = iframeWindow;

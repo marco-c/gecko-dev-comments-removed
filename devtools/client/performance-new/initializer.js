@@ -32,6 +32,12 @@ const {
 
 
 
+
+
+
+
+
+
 async function gInit(perfFront, preferenceFront) {
   const store = createStore(reducers);
 
