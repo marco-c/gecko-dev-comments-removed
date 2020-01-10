@@ -3704,9 +3704,6 @@ static AstMemOrTableCopy* ParseMemOrTableCopy(WasmParseContext& c,
   
   
   
-  
-  
-  
 
   AstRef targetMemOrTable = AstRef(0);
   bool requireSource = false;
@@ -6615,8 +6612,8 @@ static bool EncodeMemOrTableCopy(Encoder& e, AstMemOrTableCopy& s) {
   return EncodeExpr(e, s.dest()) && EncodeExpr(e, s.src()) &&
          EncodeExpr(e, s.len()) &&
          e.writeOp(s.isMem() ? MiscOp::MemCopy : MiscOp::TableCopy) &&
-         e.writeVarU32(s.isMem() ? 0 : s.srcTable().index()) &&
-         e.writeVarU32(s.isMem() ? 0 : s.destTable().index());
+         e.writeVarU32(s.isMem() ? 0 : s.destTable().index()) &&
+         e.writeVarU32(s.isMem() ? 0 : s.srcTable().index());
 }
 
 static bool EncodeDataOrElemDrop(Encoder& e, AstDataOrElemDrop& s) {

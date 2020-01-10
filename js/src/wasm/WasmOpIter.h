@@ -1960,11 +1960,10 @@ inline bool OpIter<Policy>::readMemOrTableCopy(bool isMem,
   MOZ_ASSERT(dstMemOrTableIndex != srcMemOrTableIndex);
 
   
-  
-  if (!readMemOrTableIndex(isMem, srcMemOrTableIndex)) {
+  if (!readMemOrTableIndex(isMem, dstMemOrTableIndex)) {
     return false;
   }
-  if (!readMemOrTableIndex(isMem, dstMemOrTableIndex)) {
+  if (!readMemOrTableIndex(isMem, srcMemOrTableIndex)) {
     return false;
   }
 
