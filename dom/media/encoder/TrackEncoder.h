@@ -81,6 +81,11 @@ class TrackEncoder {
 
 
 
+
+
+
+
+
   virtual nsresult GetEncodedTrack(nsTArray<RefPtr<EncodedFrame>>& aData) = 0;
 
   
