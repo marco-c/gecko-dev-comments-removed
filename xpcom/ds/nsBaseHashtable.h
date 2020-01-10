@@ -75,6 +75,12 @@ class nsBaseHashtable
 
 
 
+  bool IsEmpty() const { return nsTHashtable<EntryType>::IsEmpty(); }
+
+  
+
+
+
 
 
 
@@ -286,7 +292,7 @@ class nsBaseHashtable
     }
 
     template <class F>
-    UserDataType OrInsert(F func) {
+    DataType& OrInsert(F func) {
       MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
       MOZ_ASSERT(mEntry);
       if (!mExistingEntry) {
