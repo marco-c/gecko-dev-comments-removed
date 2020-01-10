@@ -4545,6 +4545,20 @@ static bool SetJitCompilerOption(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
+  
+  
+  
+  
+  if (opt == JSJITCOMPILER_BASELINE_INTERPRETER_ENABLE &&
+      bool(number) != jit::IsBaselineInterpreterEnabled()) {
+    JS_ReportErrorASCII(cx,
+                        "Enabling or disabling the Baseline Interpreter at "
+                        "runtime is not supported.");
+    return false;
+  }
+
+  
+  
   if ((opt == JSJITCOMPILER_BASELINE_ENABLE ||
        opt == JSJITCOMPILER_ION_ENABLE) &&
       number == 0) {
