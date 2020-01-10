@@ -573,6 +573,40 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
   }
 
   
+  
+  
+  nsIFrame::ContentOffsets offsets =
+      ptFrame->GetContentOffsetsFromPoint(ptInFrame, nsIFrame::SKIP_HIDDEN);
+  if (offsets.content) {
+    RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
+    if (frameSelection) {
+      int32_t offset;
+      nsIFrame* theFrame = frameSelection->GetFrameForNodeOffset(
+          offsets.content, offsets.offset, offsets.associate, &offset);
+      if (theFrame && theFrame != ptFrame) {
+        SetSelectionDragState(true);
+        frameSelection->HandleClick(offsets.content, offsets.StartOffset(),
+                                    offsets.EndOffset(), false, false,
+                                    offsets.associate);
+        SetSelectionDragState(false);
+        ClearMaintainedSelection();
+
+        if (StaticPrefs::
+                layout_accessiblecaret_caret_shown_when_long_tapping_on_empty_content()) {
+          mFirstCaret->SetAppearance(Appearance::Normal);
+        }
+
+        UpdateCarets();
+        ProvideHapticFeedback();
+        DispatchCaretStateChangedEvent(
+            CaretChangedReason::Longpressonemptycontent);
+
+        return NS_OK;
+      }
+    }
+  }
+
+  
   nsresult rv = SelectWord(ptFrame, ptInFrame);
   UpdateCarets();
   ProvideHapticFeedback();
