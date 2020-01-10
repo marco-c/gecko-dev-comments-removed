@@ -34,6 +34,7 @@
 #include "VideoUtils.h"
 #include "GraphRunner.h"
 #include "Tracing.h"
+#include "UnderrunHandler.h"
 
 #include "webaudio/blink/DenormalDisabler.h"
 #include "webaudio/blink/HRTFDatabaseLoader.h"
@@ -1296,6 +1297,10 @@ bool MediaTrackGraphImpl::OneIteration(GraphTime aStateEnd) {
 
 bool MediaTrackGraphImpl::OneIterationImpl(GraphTime aStateEnd) {
   TRACE_AUDIO_CALLBACK();
+
+  if (SoftRealTimeLimitReached()) {
+    DemoteThreadFromRealTime();
+  }
 
   
   
