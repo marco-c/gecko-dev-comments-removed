@@ -61,7 +61,12 @@ bool MessageEventRunnable::DispatchDOMEvent(JSContext* aCx,
         MarkerTracingType::START);
   }
 
-  Read(parent, aCx, &messageData, rv);
+  JS::CloneDataPolicy cloneDataPolicy;
+  
+  
+  
+  cloneDataPolicy.allowSharedMemory();
+  Read(parent, aCx, &messageData, cloneDataPolicy, rv);
 
   if (isTimelineRecording) {
     end = MakeUnique<WorkerTimelineMarker>(
