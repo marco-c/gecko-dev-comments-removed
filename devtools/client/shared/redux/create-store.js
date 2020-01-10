@@ -9,6 +9,7 @@ const {
   applyMiddleware,
 } = require("devtools/client/shared/vendor/redux");
 const { thunk } = require("./middleware/thunk");
+const { thunkWithOptions } = require("./middleware/thunk-with-options");
 const { waitUntilService } = require("./middleware/wait-service");
 const { task } = require("./middleware/task");
 const { promise } = require("./middleware/promise");
@@ -38,9 +39,15 @@ loader.lazyRequireGetter(
 
 
 
+
+
 const createStoreWithMiddleware = (opts = {}) => {
-  const middleware = [
-    task,
+  const middleware = [];
+  if (!opts.disableTask) {
+    middleware.push(task);
+  }
+  middleware.push(
+    opts.thunkOptions ? thunkWithOptions.bind(null, opts.thunkOptions) : thunk,
     thunk,
     promise,
 
@@ -48,8 +55,8 @@ const createStoreWithMiddleware = (opts = {}) => {
     
     
     
-    waitUntilService,
-  ];
+    waitUntilService
+  );
 
   if (opts.history) {
     middleware.push(history(opts.history));
@@ -68,7 +75,12 @@ const createStoreWithMiddleware = (opts = {}) => {
 
 module.exports = (
   reducers,
-  { shouldLog = false, initialState = undefined } = {}
+  {
+    shouldLog = false,
+    initialState = undefined,
+    thunkOptions,
+    disableTask = false,
+  } = {}
 ) => {
   const reducer =
     typeof reducers === "function" ? reducers : combineReducers(reducers);
@@ -82,8 +94,10 @@ module.exports = (
   }
 
   const store = createStoreWithMiddleware({
+    disableTask,
     log: flags.testing && shouldLog,
     history: historyEntries,
+    thunkOptions,
   })(reducer, initialState);
 
   if (history) {

@@ -7,8 +7,17 @@
 const createStore = require("devtools/client/shared/redux/create-store");
 const reducers = require("devtools/client/inspector/reducers");
 
-module.exports = () =>
+module.exports = services =>
   createStore(reducers, {
+    disableTask: true,
     
     shouldLog: true,
+    thunkOptions: {
+      
+      client: {
+        createObjectClient: services && services.createObjectClient,
+        createLongStringClient: services && services.createLongStringClient,
+        releaseActor: services && services.releaseActor,
+      },
+    },
   });
