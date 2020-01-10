@@ -24,6 +24,7 @@ const {
 } = require("./actions/pseudo-classes");
 const {
   updateAddRuleEnabled,
+  updateColorSchemeSimulationHidden,
   updateHighlightedSelector,
   updatePrintSimulationHidden,
   updateRules,
@@ -66,6 +67,12 @@ loader.lazyRequireGetter(
   "devtools/client/shared/inplace-editor",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "COLOR_SCHEMES",
+  "devtools/client/inspector/rules/constants",
+  true
+);
 
 const PREF_UA_STYLES = "devtools.inspector.showUserAgentStyles";
 
@@ -93,6 +100,9 @@ class RulesView {
     );
     this.onToggleDeclaration = this.onToggleDeclaration.bind(this);
     this.onTogglePrintSimulation = this.onTogglePrintSimulation.bind(this);
+    this.onToggleColorSchemeSimulation = this.onToggleColorSchemeSimulation.bind(
+      this
+    );
     this.onTogglePseudoClass = this.onTogglePseudoClass.bind(this);
     this.onToolChanged = this.onToolChanged.bind(this);
     this.onToggleSelectorHighlighter = this.onToggleSelectorHighlighter.bind(
@@ -129,6 +139,7 @@ class RulesView {
       onOpenSourceLink: this.onOpenSourceLink,
       onSetClassState: this.onSetClassState,
       onToggleClassPanelExpanded: this.onToggleClassPanelExpanded,
+      onToggleColorSchemeSimulation: this.onToggleColorSchemeSimulation,
       onToggleDeclaration: this.onToggleDeclaration,
       onTogglePrintSimulation: this.onTogglePrintSimulation,
       onTogglePseudoClass: this.onTogglePseudoClass,
@@ -139,7 +150,7 @@ class RulesView {
       showSelectorEditor: this.showSelectorEditor,
     });
 
-    this.initPrintSimulation();
+    this.initSimulationFeatures();
 
     const provider = createElement(
       Provider,
@@ -156,18 +167,33 @@ class RulesView {
     this.provider = provider;
   }
 
-  async initPrintSimulation() {
-    const target = this.inspector.currentTarget;
+  async initSimulationFeatures() {
+    
+    
+    
+    this.emulationFront = await this.currentTarget.getFront("emulation");
 
-    
-    
-    
-    this.emulationFront = await target.getFront("emulation");
-
-    if (!target.chrome) {
+    if (!this.currentTarget.chrome) {
       this.store.dispatch(updatePrintSimulationHidden(false));
     } else {
       this.store.dispatch(updatePrintSimulationHidden(true));
+    }
+
+    
+    
+    
+    if (
+      Services.prefs.getBoolPref(
+        "devtools.inspector.color-scheme-simulation.enabled"
+      ) &&
+      (await this.currentTarget.actorHasMethod(
+        "emulation",
+        "getEmulatedColorScheme"
+      ))
+    ) {
+      this.store.dispatch(updateColorSchemeSimulationHidden(false));
+    } else {
+      this.store.dispatch(updateColorSchemeSimulationHidden(true));
     }
   }
 
@@ -245,6 +271,16 @@ class RulesView {
 
     return this._classList;
   }
+
+  
+
+
+
+
+  get currentTarget() {
+    return this.inspector.currentTarget;
+  }
+
   
 
 
@@ -370,15 +406,12 @@ class RulesView {
 
   async onOpenSourceLink(ruleId) {
     const rule = this.elementStyle.getRule(ruleId);
-    if (
-      !rule ||
-      !Tools.styleEditor.isTargetSupported(this.inspector.currentTarget)
-    ) {
+    if (!rule || !Tools.styleEditor.isTargetSupported(this.currentTarget)) {
       return;
     }
 
     const toolbox = await gDevTools.showToolbox(
-      this.inspector.currentTarget,
+      this.currentTarget,
       "styleeditor"
     );
     const styleEditor = toolbox.getCurrentPanel();
@@ -451,6 +484,17 @@ class RulesView {
     this.telemetry.recordEvent("edit_rule", "ruleview", null, {
       session_id: this.toolbox.sessionId,
     });
+  }
+
+  
+
+
+  async onToggleColorSchemeSimulation() {
+    const currentState = await this.emulationFront.getEmulatedColorScheme();
+    const index = COLOR_SCHEMES.indexOf(currentState);
+    const nextState = COLOR_SCHEMES[(index + 1) % COLOR_SCHEMES.length];
+    await this.emulationFront.setEmulatedColorScheme(nextState);
+    await this.updateElementStyle();
   }
 
   

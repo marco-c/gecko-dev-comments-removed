@@ -2017,6 +2017,8 @@ pref("devtools.inspector.compatibility.enabled", false);
 
 pref("devtools.inspector.use-new-box-model-highlighter", false);
 
+pref("devtools.inspector.color-scheme-simulation.enabled", false);
+
 
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
 pref("devtools.gridinspector.gridOutlineMaxRows", 50);

@@ -8,3 +8,6 @@
 
 
 exports.ELEMENT_STYLE = 100;
+
+
+exports.COLOR_SCHEMES = [null, "dark", "light", "no-preference"];

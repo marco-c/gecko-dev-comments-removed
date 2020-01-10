@@ -52,6 +52,7 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
       this.stopPrintMediaSimulation();
     }
 
+    this.setEmulatedColorScheme();
     this.clearDPPXOverride();
     this.clearNetworkThrottling();
     this.clearTouchEventsOverride();
@@ -153,6 +154,48 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
 
     return false;
   },
+
+  
+
+  
+
+
+  getEmulatedColorScheme() {
+    return this._emulatedColorScheme;
+  },
+
+  
+
+
+
+  setEmulatedColorScheme(scheme = null) {
+    if (this._emulatedColorScheme === scheme) {
+      return;
+    }
+
+    let internalColorScheme;
+    switch (scheme) {
+      case "light":
+        internalColorScheme = Ci.nsIContentViewer.PREFERS_COLOR_SCHEME_LIGHT;
+        break;
+      case "dark":
+        internalColorScheme = Ci.nsIContentViewer.PREFERS_COLOR_SCHEME_DARK;
+        break;
+      case "no-preference":
+        internalColorScheme =
+          Ci.nsIContentViewer.PREFERS_COLOR_SCHEME_NO_PREFERENCE;
+        break;
+      default:
+        internalColorScheme = Ci.nsIContentViewer.PREFERS_COLOR_SCHEME_NONE;
+    }
+
+    this._emulatedColorScheme = scheme;
+    this.docShell.contentViewer.emulatePrefersColorScheme(internalColorScheme);
+  },
+
+  
+  
+  _emulatedColorScheme: null,
 
   
 
