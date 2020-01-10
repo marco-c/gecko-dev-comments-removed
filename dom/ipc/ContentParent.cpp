@@ -1217,16 +1217,35 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
       return nullptr;
     }
 
+    nsCOMPtr<nsIPrincipal> initialPrincipal =
+        NullPrincipal::Create(aContext.OriginAttributesRef());
+    WindowGlobalInit windowInit = WindowGlobalActor::AboutBlankInitializer(
+        aBrowsingContext, initialPrincipal);
+
+    auto windowParent =
+        MakeRefPtr<WindowGlobalParent>(windowInit,  false);
+
+    
+    
+    ManagedEndpoint<PWindowGlobalChild> windowEp =
+        browserParent->OpenPWindowGlobalEndpoint(
+            do_AddRef(windowParent).take());
+    if (NS_WARN_IF(!windowEp.IsValid())) {
+      return nullptr;
+    }
+
     
     bool ok = constructorSender->SendConstructBrowser(
-        std::move(childEp), tabId,
+        std::move(childEp), std::move(windowEp), tabId,
         aSameTabGroupAs ? aSameTabGroupAs->GetTabId() : TabId(0),
-        aContext.AsIPCTabContext(), aBrowsingContext, chromeFlags,
+        aContext.AsIPCTabContext(), windowInit, chromeFlags,
         constructorSender->ChildID(), constructorSender->IsForBrowser(),
          true);
     if (NS_WARN_IF(!ok)) {
       return nullptr;
     }
+
+    windowParent->Init(windowInit);
 
     if (remoteType.EqualsLiteral(LARGE_ALLOCATION_REMOTE_TYPE)) {
       
