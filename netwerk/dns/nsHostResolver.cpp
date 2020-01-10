@@ -1657,7 +1657,6 @@ void nsHostResolver::AddToEvictionQ(nsHostRecord* rec) {
 
 
 
-
 nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
     nsHostRecord* rec, nsresult status, AddrInfo* aNewRRSet, bool pb,
     const nsACString& aOriginsuffix) {
@@ -1727,6 +1726,11 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
       MOZ_ASSERT(addrRec->mFirstTRR && !newRRSet);
 
       if (addrRec->mDidCallbacks) {
+        return LOOKUP_OK;
+      }
+
+      if (gTRRService && gTRRService->WaitForAllResponses()) {
+        LOG(("CompleteLookup: waiting for all responses!\n"));
         return LOOKUP_OK;
       }
 

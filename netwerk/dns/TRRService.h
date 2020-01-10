@@ -36,6 +36,7 @@ class TRRService : public nsIObserver,
   bool UseGET() { return mUseGET; }
   bool EarlyAAAA() { return mEarlyAAAA; }
   bool CheckIPv6Connectivity() { return mCheckIPv6Connectivity; }
+  bool WaitForAllResponses() { return mWaitForAllResponses; }
   bool DisableIPv6() { return mDisableIPv6; }
   bool DisableECS() { return mDisableECS; }
   nsresult GetURI(nsCString& result);
@@ -87,7 +88,8 @@ class TRRService : public nsIObserver,
   Atomic<bool, Relaxed> mUseGET;  
   Atomic<bool, Relaxed> mEarlyAAAA;  
   Atomic<bool, Relaxed> mCheckIPv6Connectivity;  
-  Atomic<bool, Relaxed> mDisableIPv6;            
+  Atomic<bool, Relaxed> mWaitForAllResponses;  
+  Atomic<bool, Relaxed> mDisableIPv6;          
   Atomic<bool, Relaxed> mDisableECS;  
   Atomic<uint32_t, Relaxed>
       mDisableAfterFails;  
