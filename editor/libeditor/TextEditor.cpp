@@ -1980,10 +1980,7 @@ nsresult TextEditor::InsertWithQuotationsAsSubAction(
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
       *this, EditSubAction::eInsertText, nsIEditor::eNext);
 
-  
-  
-  
-  EditSubActionInfo subActionInfo(EditSubAction::eInsertElement);
+  EditSubActionInfo subActionInfo(EditSubAction::eInsertQuotedText);
   bool cancel, handled;
   rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1993,11 +1990,9 @@ nsresult TextEditor::InsertWithQuotationsAsSubAction(
     return NS_OK;  
   }
   MOZ_ASSERT(!handled, "WillDoAction() shouldn't handle in this case");
-  if (!handled) {
-    rv = InsertTextAsSubAction(quotedStuff);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+  rv = InsertTextAsSubAction(quotedStuff);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
   
   return NS_OK;

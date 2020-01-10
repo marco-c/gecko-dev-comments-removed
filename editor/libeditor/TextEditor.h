@@ -479,6 +479,15 @@ class TextEditor : public EditorBase,
   
 
 
+  void MaybeDoAutoPasswordMasking() {
+    if (IsPasswordEditor() && IsMaskingPassword()) {
+      MaskAllCharacters();
+    }
+  }
+
+  
+
+
 
 
 

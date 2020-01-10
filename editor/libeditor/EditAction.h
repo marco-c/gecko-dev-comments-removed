@@ -450,6 +450,9 @@ enum class EditSubAction : int32_t {
   eInsertQuotation,
 
   
+  eInsertQuotedText,
+
+  
   ePasteHTMLContent,
 
   

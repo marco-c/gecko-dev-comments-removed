@@ -329,10 +329,22 @@ nsresult TextEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
     case EditSubAction::eComputeTextToOutput:
       return WillOutputText(aInfo.outputFormat, aInfo.outString, aInfo.flags,
                             aCancel, aHandled);
+    case EditSubAction::eInsertQuotedText: {
+      CANCEL_OPERATION_IF_READONLY_OR_DISABLED
+
+      
+      
+      TextEditorRef().MaybeDoAutoPasswordMasking();
+
+      nsresult rv = MOZ_KnownLive(TextEditorRef())
+                        .EnsureNoPaddingBRElementForEmptyEditor();
+      NS_WARNING_ASSERTION(NS_FAILED(rv),
+                           "Failed to remove padding <br> element");
+      return rv;
+    }
     case EditSubAction::eInsertElement:
-      
-      
-      return WillInsert(aCancel);
+      MOZ_ASSERT_UNREACHABLE("This path should've been dead code");
+      return NS_ERROR_UNEXPECTED;
     default:
       return NS_ERROR_FAILURE;
   }
@@ -372,45 +384,6 @@ bool TextEditRules::DocumentIsEmpty() const {
   return retVal;
 }
 
-nsresult TextEditRules::WillInsert(bool* aCancel) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  if (IsReadonly() || IsDisabled()) {
-    if (aCancel) {
-      *aCancel = true;
-    }
-    return NS_OK;
-  }
-
-  
-  if (aCancel) {
-    *aCancel = false;
-  }
-
-  if (IsPasswordEditor() && IsMaskingPassword()) {
-    TextEditorRef().MaskAllCharacters();
-  }
-
-  
-  if (!TextEditorRef().mPaddingBRElementForEmptyEditor) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  RefPtr<HTMLBRElement> paddingBRElement(
-      std::move(TextEditorRef().mPaddingBRElementForEmptyEditor));
-  DebugOnly<nsresult> rv = MOZ_KnownLive(TextEditorRef())
-                               .DeleteNodeWithTransaction(*paddingBRElement);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "Failed to remove the padding <br> element");
-  return NS_OK;
-}
-
 EditActionResult TextEditRules::WillInsertLineBreak(int32_t aMaxLength) {
   MOZ_ASSERT(IsEditorDataAvailable());
   MOZ_ASSERT(!IsSingleLineEditor());
@@ -443,7 +416,7 @@ EditActionResult TextEditRules::WillInsertLineBreak(int32_t aMaxLength) {
     }
   }
 
-  rv = WillInsert();
+  rv = MOZ_KnownLive(TextEditorRef()).EnsureNoPaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return EditActionIgnored(rv);
   }
@@ -745,7 +718,12 @@ nsresult TextEditRules::WillInsertText(EditSubAction aEditSubAction,
     }
   }
 
-  rv = WillInsert(aCancel);
+  
+  CANCEL_OPERATION_IF_READONLY_OR_DISABLED
+
+  TextEditorRef().MaybeDoAutoPasswordMasking();
+
+  rv = MOZ_KnownLive(TextEditorRef()).EnsureNoPaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -877,6 +855,7 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
   MOZ_ASSERT(aString);
   MOZ_ASSERT(aString->FindChar(static_cast<char16_t>('\r')) == kNotFound);
 
+  
   CANCEL_OPERATION_IF_READONLY_OR_DISABLED
 
   *aHandled = false;
@@ -891,7 +870,10 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
     return NS_OK;
   }
 
-  nsresult rv = WillInsert(aCancel);
+  TextEditorRef().MaybeDoAutoPasswordMasking();
+
+  nsresult rv =
+      MOZ_KnownLive(TextEditorRef()).EnsureNoPaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
