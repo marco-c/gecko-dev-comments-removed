@@ -16,6 +16,8 @@
 
 
 
+#  define NOTHROW_MALLOC_DECL(name, return_type, ...) \
+    MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__) noexcept(true);
 #  define MALLOC_DECL(name, return_type, ...) \
     MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
 #  include "malloc_decls.h"

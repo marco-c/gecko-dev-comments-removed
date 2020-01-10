@@ -34,18 +34,31 @@
 #endif
 
 #ifdef MALLOC_DECL
+
+
+
+
+
+#  if defined(ANDROID) || defined(XP_DARWIN)
+#    undef NOTHROW_MALLOC_DECL
+#    define NOTHROW_MALLOC_DECL MALLOC_DECL
+
+#  elif !defined(NOTHROW_MALLOC_DECL)
+#    define NOTHROW_MALLOC_DECL MALLOC_DECL
+#  endif
+
 #  if MALLOC_FUNCS & MALLOC_FUNCS_MALLOC_BASE
 MALLOC_DECL(malloc, void*, size_t)
 MALLOC_DECL(calloc, void*, size_t, size_t)
 MALLOC_DECL(realloc, void*, void*, size_t)
-MALLOC_DECL(free, void, void*)
-MALLOC_DECL(memalign, void*, size_t, size_t)
+NOTHROW_MALLOC_DECL(free, void, void*)
+NOTHROW_MALLOC_DECL(memalign, void*, size_t, size_t)
 #  endif
 #  if MALLOC_FUNCS & MALLOC_FUNCS_MALLOC_EXTRA
-MALLOC_DECL(posix_memalign, int, void**, size_t, size_t)
-MALLOC_DECL(aligned_alloc, void*, size_t, size_t)
-MALLOC_DECL(valloc, void*, size_t)
-MALLOC_DECL(malloc_usable_size, size_t, usable_ptr_t)
+NOTHROW_MALLOC_DECL(posix_memalign, int, void**, size_t, size_t)
+NOTHROW_MALLOC_DECL(aligned_alloc, void*, size_t, size_t)
+NOTHROW_MALLOC_DECL(valloc, void*, size_t)
+NOTHROW_MALLOC_DECL(malloc_usable_size, size_t, usable_ptr_t)
 MALLOC_DECL(malloc_good_size, size_t, size_t)
 #  endif
 #  if MALLOC_FUNCS & MALLOC_FUNCS_JEMALLOC
@@ -122,5 +135,6 @@ MALLOC_DECL(moz_arena_memalign, void*, arena_id_t, size_t, size_t)
 
 #endif  
 
+#undef NOTHROW_MALLOC_DECL
 #undef MALLOC_DECL
 #undef MALLOC_FUNCS
