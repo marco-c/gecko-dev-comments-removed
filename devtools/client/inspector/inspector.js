@@ -68,9 +68,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(this, "ObjectFront", "devtools/shared/fronts/object");
 
-
-
-
 loader.lazyImporter(
   this,
   "DeferredTask",

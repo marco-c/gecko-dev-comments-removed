@@ -85,14 +85,6 @@ module.exports = {
   }, {
     
     "files": [
-      "server/**",
-    ],
-    "rules": {
-      "mozilla/reject-some-requires": ["error", "^(resource\://)?devtools/client"],
-    }
-  }, {
-    
-    "files": [
       "**"
     ],
     "excludedFiles": [

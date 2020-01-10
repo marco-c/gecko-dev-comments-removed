@@ -8,8 +8,6 @@ const { Ci, Cu } = require("chrome");
 
 
 if (!isWorker) {
-  
-  
   loader.lazyImporter(
     this,
     "VariablesView",
@@ -630,6 +628,7 @@ WebConsoleCommands._registerOriginal("pprint", function(owner, object) {
   for (const name in obj) {
     const desc = WebConsoleUtils.getPropertyDescriptor(obj, name) || {};
     if (desc.get || desc.set) {
+      
       const getGrip = VariablesView.getGrip(desc.get);
       const setGrip = VariablesView.getGrip(desc.set);
       const getString = VariablesView.getString(getGrip);
