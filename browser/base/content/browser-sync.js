@@ -1171,6 +1171,30 @@ var gSync = {
 
   
   
+  
+  async disconnect({ confirm = true, disconnectAccount = true } = {}) {
+    if (confirm) {
+      let args = { disconnectAccount, confirmed: false };
+      window.openDialog(
+        "chrome://browser/content/fxaDisconnect.xul",
+        "_blank",
+        "chrome,modal,centerscreen,resizable=no",
+        args
+      );
+      if (!args.confirmed) {
+        return false;
+      }
+    }
+    await Weave.Service.promiseInitialized;
+    await Weave.Service.startOver();
+    if (disconnectAccount) {
+      await fxAccounts.signOut();
+    }
+    return true;
+  },
+
+  
+  
   doSync() {
     if (!UIState.isReady()) {
       return;
