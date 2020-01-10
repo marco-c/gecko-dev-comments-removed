@@ -291,39 +291,6 @@ add_task(async function test_context_menu_open_management() {
 
 
 
-
-
-
-async function openPasswordContextMenu(browser, passwordInput, assertCallback = null) {
-  let contextMenuShownPromise = BrowserTestUtils.waitForEvent(CONTEXT_MENU, "popupshown");
-
-  
-  
-  
-  let eventDetails = {type: "mousedown", button: 2};
-  await BrowserTestUtils.synthesizeMouseAtCenter(passwordInput, eventDetails, browser);
-  
-  eventDetails = {type: "contextmenu", button: 2};
-  await BrowserTestUtils.synthesizeMouseAtCenter(passwordInput, eventDetails, browser);
-
-  await contextMenuShownPromise;
-
-  if (assertCallback) {
-    let shouldContinue = await assertCallback();
-    if (!shouldContinue) {
-      return;
-    }
-  }
-
-  
-  let popupShownPromise = BrowserTestUtils.waitForCondition(() => POPUP_HEADER.open);
-  EventUtils.synthesizeMouseAtCenter(POPUP_HEADER, {});
-  await popupShownPromise;
-}
-
-
-
-
 async function assertContextMenuFill(browser, formId, usernameFieldId, passwordFieldId, loginIndex) {
   let popupMenu = document.getElementById("fill-login-popup");
   let unchangedSelector = `[description="${formId}"] input:not(#${passwordFieldId})`;

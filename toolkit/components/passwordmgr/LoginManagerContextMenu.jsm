@@ -13,6 +13,9 @@ ChromeUtils.defineModuleGetter(this, "LoginHelper",
                                "resource://gre/modules/LoginHelper.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginManagerParent",
                                "resource://gre/modules/LoginManagerParent.jsm");
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  return LoginHelper.createLogger("LoginManagerContextMenu");
+});
 
 
 
@@ -78,6 +81,29 @@ this.LoginManagerContextMenu = {
     while (loginItems.item(0)) {
       loginItems.item(0).remove();
     }
+  },
+
+  async fillGeneratedPassword(inputElementIdentifier, documentURI, browser) {
+    let password = LoginManagerParent.getGeneratedPassword(inputElementIdentifier.browsingContextId);
+    let origin = LoginHelper.getLoginOrigin(documentURI.spec);
+    log.debug("fillGeneratedPassword into:", inputElementIdentifier, origin);
+
+    let recipes = [];
+    let formHost;
+    try {
+      formHost = documentURI.hostPort;
+      let recipeManager = await LoginManagerParent.recipeParentPromise;
+      recipes = recipeManager.getRecipesForHost(formHost);
+    } catch (ex) {
+      
+      log.debug("Couldnt get recipes for formHost:", formHost, ex);
+    }
+    browser.messageManager.sendAsyncMessage("PasswordManager:fillGeneratedPassword", {
+      password,
+      origin,
+      inputElementIdentifier,
+      recipes,
+    });
   },
 
   

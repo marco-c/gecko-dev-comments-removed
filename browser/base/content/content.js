@@ -32,6 +32,10 @@ addMessageListener("PasswordManager:fillForm", function(message) {
   
   LoginManagerContent.receiveMessage(message, content);
 });
+addMessageListener("PasswordManager:fillGeneratedPassword", function(message) {
+  
+  LoginManagerContent.receiveMessage(message, content);
+});
 
 function shouldIgnoreLoginManagerEvent(event) {
   
