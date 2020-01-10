@@ -9,6 +9,21 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { PrivateBrowsingUtils } = ChromeUtils.import(
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
+const { SessionStore } = ChromeUtils.import(
+  "resource:///modules/sessionstore/SessionStore.jsm"
+);
+const { HomePage } = ChromeUtils.import("resource:///modules/HomePage.jsm");
+
+const PREF_SSL_IMPACT_ROOTS = ["security.tls.version.", "security.ssl3."];
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "BrowserUtils",
+  "resource://gre/modules/BrowserUtils.jsm"
+);
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -17,7 +32,46 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsISerializationHelper"
 );
 
+class CaptivePortalObserver {
+  constructor(actor) {
+    this.actor = actor;
+    Services.obs.addObserver(this, "captive-portal-login-abort");
+    Services.obs.addObserver(this, "captive-portal-login-success");
+  }
+
+  stop() {
+    Services.obs.removeObserver(this, "captive-portal-login-abort");
+    Services.obs.removeObserver(this, "captive-portal-login-success");
+  }
+
+  observe(aSubject, aTopic, aData) {
+    switch (aTopic) {
+      case "captive-portal-login-abort":
+      case "captive-portal-login-success":
+        
+        
+        this.actor.sendAsyncMessage("AboutNetErrorCaptivePortalFreed");
+        break;
+    }
+  }
+}
+
 class NetErrorParent extends JSWindowActorParent {
+  constructor() {
+    super();
+    this.captivePortalObserver = new CaptivePortalObserver(this);
+  }
+
+  willDestroy() {
+    if (this.captivePortalObserver) {
+      this.captivePortalObserver.stop();
+    }
+  }
+
+  get browser() {
+    return this.browsingContext.top.embedderElement;
+  }
+
   getSecurityInfo(securityInfoAsString) {
     if (!securityInfoAsString) {
       return null;
@@ -31,21 +85,257 @@ class NetErrorParent extends JSWindowActorParent {
     return securityInfo;
   }
 
+  hasChangedCertPrefs() {
+    let prefSSLImpact = PREF_SSL_IMPACT_ROOTS.reduce((prefs, root) => {
+      return prefs.concat(Services.prefs.getChildList(root));
+    }, []);
+    for (let prefName of prefSSLImpact) {
+      if (Services.prefs.prefHasUserValue(prefName)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  async addCertException(bcID, browser, location) {
+    let securityInfo = await BrowsingContext.get(
+      bcID
+    ).currentWindowGlobal.getSecurityInfo();
+    securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+
+    let overrideService = Cc["@mozilla.org/security/certoverride;1"].getService(
+      Ci.nsICertOverrideService
+    );
+    let flags = 0;
+    if (securityInfo.isUntrusted) {
+      flags |= overrideService.ERROR_UNTRUSTED;
+    }
+    if (securityInfo.isDomainMismatch) {
+      flags |= overrideService.ERROR_MISMATCH;
+    }
+    if (securityInfo.isNotValidAtThisTime) {
+      flags |= overrideService.ERROR_TIME;
+    }
+
+    let uri = Services.uriFixup.createFixupURI(location, 0);
+    let permanentOverride =
+      !PrivateBrowsingUtils.isBrowserPrivate(browser) &&
+      Services.prefs.getBoolPref("security.certerrors.permanentOverride");
+    let cert = securityInfo.serverCert;
+    overrideService.rememberValidityOverride(
+      uri.asciiHost,
+      uri.port,
+      cert,
+      flags,
+      !permanentOverride
+    );
+    browser.reload();
+  }
+
+  async reportTLSError(bcID, host, port) {
+    let securityInfo = await BrowsingContext.get(
+      bcID
+    ).currentWindowGlobal.getSecurityInfo();
+    securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+
+    let errorReporter = Cc["@mozilla.org/securityreporter;1"].getService(
+      Ci.nsISecurityReporter
+    );
+    errorReporter.reportTLSError(securityInfo, host, port);
+  }
+
+  
+
+
+
+  getDefaultHomePage(win) {
+    let url = win.BROWSER_NEW_TAB_URL;
+    if (PrivateBrowsingUtils.isWindowPrivate(win)) {
+      return url;
+    }
+    url = HomePage.getDefault();
+    
+    if (url.includes("|")) {
+      url = url.split("|")[0];
+    }
+    return url;
+  }
+
+  
+
+
+
+
+
+
+
+  goBackFromErrorPage(win) {
+    if (!win.gBrowser) {
+      return;
+    }
+
+    let state = JSON.parse(SessionStore.getTabState(win.gBrowser.selectedTab));
+    if (state.index == 1) {
+      
+      
+      win.gBrowser.loadURI(this.getDefaultHomePage(win), {
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      });
+    } else {
+      win.gBrowser.goBack();
+    }
+  }
+
+  
+
+
+
+  primeMitm(browser) {
+    
+    
+    if (Services.prefs.getStringPref("security.pki.mitm_canary_issuer", null)) {
+      return;
+    }
+
+    let url = Services.prefs.getStringPref(
+      "security.certerrors.mitm.priming.endpoint"
+    );
+    let request = new XMLHttpRequest({ mozAnon: true });
+    request.open("HEAD", url);
+    request.channel.loadFlags |= Ci.nsIRequest.LOAD_BYPASS_CACHE;
+    request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
+
+    request.addEventListener("error", event => {
+      
+      if (!browser.documentURI.spec.startsWith("about:certerror")) {
+        return;
+      }
+
+      let secInfo = request.channel.securityInfo.QueryInterface(
+        Ci.nsITransportSecurityInfo
+      );
+      if (secInfo.errorCodeString != "SEC_ERROR_UNKNOWN_ISSUER") {
+        return;
+      }
+
+      
+      
+      if (secInfo.serverCert && secInfo.serverCert.issuerName) {
+        
+        
+        Services.prefs.setStringPref(
+          "security.pki.mitm_canary_issuer",
+          secInfo.serverCert.issuerName
+        );
+
+        
+        
+        if (
+          Services.prefs.getBoolPref(
+            "security.certerrors.mitm.auto_enable_enterprise_roots"
+          )
+        ) {
+          if (
+            !Services.prefs.getBoolPref("security.enterprise_roots.enabled")
+          ) {
+            
+            BrowserUtils.promiseObserved("psm:enterprise-certs-imported").then(
+              () => {
+                if (browser.documentURI.spec.startsWith("about:certerror")) {
+                  browser.reload();
+                }
+              }
+            );
+
+            Services.prefs.setBoolPref(
+              "security.enterprise_roots.enabled",
+              true
+            );
+            
+            Services.prefs.setBoolPref(
+              "security.enterprise_roots.auto-enabled",
+              true
+            );
+          }
+        } else {
+          
+          browser.reload();
+        }
+      }
+    });
+
+    request.send(null);
+  }
+
   receiveMessage(message) {
     switch (message.name) {
+      case "AddCertException":
+        this.addCertException(
+          this.browsingContext.id,
+          this.browser,
+          message.data.location
+        );
+        break;
+      case "Browser:EnableOnlineMode":
+        
+        Services.io.offline = false;
+        this.browser.reload();
+        break;
+      case "Browser:OpenCaptivePortalPage":
+        Services.obs.notifyObservers(null, "ensure-captive-portal-tab");
+        break;
+      case "Browser:PrimeMitm":
+        this.primeMitm(this.browser);
+        break;
+      case "Browser:ResetEnterpriseRootsPref":
+        Services.prefs.clearUserPref("security.enterprise_roots.enabled");
+        Services.prefs.clearUserPref("security.enterprise_roots.auto-enabled");
+        break;
+      case "Browser:ResetSSLPreferences":
+        let prefSSLImpact = PREF_SSL_IMPACT_ROOTS.reduce((prefs, root) => {
+          return prefs.concat(Services.prefs.getChildList(root));
+        }, []);
+        for (let prefName of prefSSLImpact) {
+          Services.prefs.clearUserPref(prefName);
+        }
+        this.browser.reload();
+        break;
+      case "Browser:SSLErrorGoBack":
+        this.goBackFromErrorPage(this.browser.ownerGlobal);
+        break;
+      case "Browser:SSLErrorReportTelemetry":
+        let reportStatus = message.data.reportStatus;
+        Services.telemetry
+          .getHistogramById("TLS_ERROR_REPORT_UI")
+          .add(reportStatus);
+        break;
+      case "GetChangedCertPrefs":
+        let hasChangedCertPrefs = this.hasChangedCertPrefs();
+        this.sendAsyncMessage("HasChangedCertPrefs", {
+          hasChangedCertPrefs,
+        });
+        break;
+      case "ReportTLSError":
+        this.reportTLSError(
+          this.browsingContext.id,
+          message.data.host,
+          message.data.port
+        );
+        break;
+
       case "Browser:CertExceptionError":
         switch (message.data.elementId) {
           case "viewCertificate": {
-            let browser = this.browsingContext.top.embedderElement;
-            if (!browser) {
-              break;
-            }
+            let window = this.browser.ownerGlobal;
 
-            let window = browser.ownerGlobal;
-
-            let securityInfo = this.getSecurityInfo(message.data.securityInfoAsString);
+            let securityInfo = this.getSecurityInfo(
+              message.data.securityInfoAsString
+            );
             let cert = securityInfo.serverCert;
-            if (Services.prefs.getBoolPref("security.aboutcertificate.enabled")) {
+            if (
+              Services.prefs.getBoolPref("security.aboutcertificate.enabled")
+            ) {
               let certChain = securityInfo.failedCertChain;
               let certs = certChain.map(elem =>
                 encodeURIComponent(elem.getBase64DERString())
