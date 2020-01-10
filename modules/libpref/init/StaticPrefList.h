@@ -6923,6 +6923,22 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "privacy.trackingprotection.enabled",
+   privacy_trackingprotection_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
+  Live,
+  "privacy.trackingprotection.pbmode.enabled",
+   privacy_trackingprotection_pbmode_enabled,
+  bool, true
+)
+
+
+VARCACHE_PREF(
+  Live,
   "privacy.trackingprotection.annotate_channels",
   privacy_trackingprotection_annotate_channels,
   bool, true
