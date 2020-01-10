@@ -620,6 +620,54 @@ class MemoryCounter {
 
 
 
+
+
+class HeapSize {
+  
+
+
+
+  HeapSize* const parent_;
+
+  
+
+
+
+
+
+
+  mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      gcBytes_;
+
+ public:
+  explicit HeapSize(HeapSize* parent) : parent_(parent), gcBytes_(0) {}
+
+  size_t gcBytes() const { return gcBytes_; }
+
+  void addGCArena() {
+    gcBytes_ += ArenaSize;
+    if (parent_) {
+      parent_->addGCArena();
+    }
+  }
+  void removeGCArena() {
+    MOZ_ASSERT(gcBytes_ >= ArenaSize);
+    gcBytes_ -= ArenaSize;
+    if (parent_) {
+      parent_->removeGCArena();
+    }
+  }
+
+  
+  void adopt(HeapSize& other) {
+    gcBytes_ += other.gcBytes_;
+    other.gcBytes_ = 0;
+  }
+};
+
+
+
 class ZoneHeapThreshold {
   
   GCLockData<float> gcHeapGrowthFactor_;
