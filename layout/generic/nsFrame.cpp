@@ -2615,7 +2615,7 @@ Maybe<nsRect> nsIFrame::GetClipPropClipRect(const nsStyleDisplay* aDisp,
 
 
 
-static bool ApplyOverflowClipping(
+static void ApplyOverflowClipping(
     nsDisplayListBuilder* aBuilder, const nsIFrame* aFrame,
     const nsStyleDisplay* aDisp,
     DisplayListClipState::AutoClipMultiple& aClipState) {
@@ -2624,9 +2624,8 @@ static bool ApplyOverflowClipping(
   
   
   
-  if (!nsFrame::ShouldApplyOverflowClipping(aFrame, aDisp)) {
-    return false;
-  }
+  MOZ_ASSERT(nsFrame::ShouldApplyOverflowClipping(aFrame, aDisp));
+
   nsRect clipRect;
   bool haveRadii = false;
   nscoord radii[8];
@@ -2655,7 +2654,6 @@ static bool ApplyOverflowClipping(
   haveRadii = aFrame->GetBoxBorderRadii(radii, bp, false);
   aClipState.ClipContainingBlockDescendantsExtra(clipRect,
                                                  haveRadii ? radii : nullptr);
-  return true;
 }
 
 #ifdef DEBUG
@@ -3902,13 +3900,23 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
   }
 
   nsIFrame* child = aChild;
+  const nsStyleDisplay* ourDisp = StyleDisplay();
+
+  nsIFrame* parent = child->GetParent();
+  const nsStyleDisplay* parentDisp =
+      parent == this ? ourDisp : parent->StyleDisplay();
+  const bool shouldApplyOverflowClip =
+      nsFrame::ShouldApplyOverflowClipping(parent, parentDisp);
 
   const bool isPaintingToWindow = aBuilder->IsPaintingToWindow();
   const bool doingShortcut =
       isPaintingToWindow &&
       (child->GetStateBits() & NS_FRAME_SIMPLE_DISPLAYLIST) &&
       
-      !(child->MayHaveTransformAnimation() || child->MayHaveOpacityAnimation());
+      
+      
+      !(shouldApplyOverflowClip || child->MayHaveTransformAnimation() ||
+       child->MayHaveOpacityAnimation());
 
   if (aBuilder->IsForPainting()) {
     aBuilder->ClearWillChangeBudgetStatus(child);
@@ -4012,8 +4020,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     
     pseudoStackingContext = true;
   }
-
-  const nsStyleDisplay* ourDisp = StyleDisplay();
   
   
   if (IsThemed(ourDisp) &&
@@ -4090,11 +4096,12 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
   
   
   
-  nsIFrame* parent = child->GetParent();
-  const nsStyleDisplay* parentDisp =
-      parent == this ? ourDisp : parent->StyleDisplay();
-  if (ApplyOverflowClipping(aBuilder, parent, parentDisp, clipState)) {
-    awayFromCommonPath = true;
+  
+  
+  
+  
+  if (shouldApplyOverflowClip) {
+    ApplyOverflowClipping(aBuilder, parent, parentDisp, clipState);
   }
 
   nsDisplayList list;
