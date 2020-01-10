@@ -189,16 +189,6 @@ function TargetMixin(parentClass) {
 
     
     
-    onFront(typeName, callback) {
-      const front = this.fronts.get(typeName);
-      if (front) {
-        return callback(front);
-      }
-      return this.on(typeName, callback);
-    }
-
-    
-    
     async getFront(typeName) {
       let front = this.fronts.get(typeName);
       
@@ -212,7 +202,6 @@ function TargetMixin(parentClass) {
       this.fronts.set(typeName, front);
       
       front = await front;
-      this.emit(typeName, front);
       this.fronts.set(typeName, front);
       return front;
     }

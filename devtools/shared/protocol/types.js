@@ -525,7 +525,11 @@ function getFront(client, typeName, form, target = null) {
   
   
   
-  instance.manage(instance);
+  if (!target) {
+    instance.manage(instance);
+  } else {
+    target.manage(instance);
+  }
 
   if (typeof instance.initialize == "function") {
     return instance.initialize().then(() => instance);
