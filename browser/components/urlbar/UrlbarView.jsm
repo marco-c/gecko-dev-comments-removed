@@ -217,7 +217,9 @@ class UrlbarView {
         });
       } else {
         
-        this._selectItem(null);
+        this._selectItem(null, {
+          updateInput: false,
+        });
       }
       
       
