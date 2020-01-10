@@ -824,3 +824,42 @@ add_task(async function testPermissions() {
   info("Check permissions for add-on without permission messages");
   await runTest("addon2@mochi.test");
 });
+
+
+
+
+add_task(async function testGoBackButton() {
+  
+  Services.prefs.setCharPref(PREF_UI_LASTCATEGORY, "addons://list/extension");
+
+  let id = "addon1@mochi.test";
+  let win = await loadInitialView("extension");
+  let doc = win.document;
+  let backButton = win.managerWindow.document.getElementById("go-back");
+
+  let loadDetailView = () => {
+    let loaded = waitForViewLoad(win);
+    getAddonCard(doc, id).querySelector("[action=expand]").click();
+    return loaded;
+  };
+
+  let checkBackButtonState = () => {
+    is_element_visible(backButton, "Back button is visible on the detail page");
+    ok(!backButton.disabled, "Back button is enabled");
+  };
+
+  
+  await loadDetailView();
+  checkBackButtonState();
+
+  
+  
+  let loaded = waitForViewLoad(win);
+  backButton.click();
+  await loaded;
+
+  await loadDetailView();
+  checkBackButtonState();
+
+  await closeView(win);
+});
