@@ -480,10 +480,10 @@ DEFINE_GLOBAL(size_t) gChunkNumPages = kChunkSize >> gPageSize2Pow;
 
 DEFINE_GLOBAL(size_t)
 gChunkHeaderNumPages =
-    ((sizeof(arena_chunk_t) + sizeof(arena_chunk_map_t) * (gChunkNumPages - 1) +
-      gPageSizeMask) &
-     ~gPageSizeMask) >>
-    gPageSize2Pow;
+    1 + (((sizeof(arena_chunk_t) +
+           sizeof(arena_chunk_map_t) * (gChunkNumPages - 1) + gPageSizeMask) &
+          ~gPageSizeMask) >>
+         gPageSize2Pow);
 
 
 DEFINE_GLOBAL(size_t)
@@ -2300,31 +2300,40 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, bool aZeroed) {
   aChunk->ndirty = 0;
 
   
-#ifdef MALLOC_DECOMMIT
   arena_run_t* run = (arena_run_t*)(uintptr_t(aChunk) +
                                     (gChunkHeaderNumPages << gPageSize2Pow));
-#endif
 
-  for (i = 0; i < gChunkHeaderNumPages; i++) {
+  
+  for (i = 0; i < gChunkHeaderNumPages - 1; i++) {
     aChunk->map[i].bits = 0;
   }
-  aChunk->map[i].bits = gMaxLargeClass | flags;
-  for (i++; i < gChunkNumPages - 2; i++) {
+  
+  aChunk->map[i++].bits = CHUNK_MAP_DECOMMITTED;
+
+  
+  aChunk->map[i++].bits = gMaxLargeClass | flags;
+  for (; i < gChunkNumPages - 2; i++) {
     aChunk->map[i].bits = flags;
   }
   aChunk->map[gChunkNumPages - 2].bits = gMaxLargeClass | flags;
+
   
   aChunk->map[gChunkNumPages - 1].bits = CHUNK_MAP_DECOMMITTED;
 
 #ifdef MALLOC_DECOMMIT
   
   
-  pages_decommit(run, gMaxLargeClass + gPageSize);
+  
+  pages_decommit((void*)(uintptr_t(run) - gPageSize),
+                 gMaxLargeClass + 2 * gPageSize);
 #else
+  
+  pages_decommit((void*)(uintptr_t(run) - gPageSize), gPageSize);
   
   pages_decommit((void*)(uintptr_t(aChunk) + kChunkSize - gPageSize),
                  gPageSize);
 #endif
+
   mStats.committed += gChunkHeaderNumPages;
 
   
