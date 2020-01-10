@@ -12,7 +12,10 @@
 
 
 
-const { DebuggerServer } = require("devtools/server/debugger-server");
+const {
+  connectToFrame,
+} = require("devtools/server/connectors/frame-connector");
+
 loader.lazyImporter(
   this,
   "PlacesUtils",
@@ -59,11 +62,7 @@ FrameTargetActorProxy.prototype = {
 
     await this._unzombifyIfNeeded();
 
-    const connect = DebuggerServer.connectToFrame(
-      this._conn,
-      this._browser,
-      onDestroy
-    );
+    const connect = connectToFrame(this._conn, this._browser, onDestroy);
     const form = await connect;
 
     this._form = form;
