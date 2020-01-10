@@ -22,11 +22,17 @@ ChromeUtils.defineModuleGetter(
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
 const ATTR_CODE_MAX_LENGTH = 200;
-const ATTR_CODE_KEYS_REGEX = /^source|medium|campaign|content$/;
 const ATTR_CODE_VALUE_REGEX = /[a-zA-Z0-9_%\\-\\.\\(\\)]*/;
 const ATTR_CODE_FIELD_SEPARATOR = "%26"; 
 const ATTR_CODE_KEY_VALUE_SEPARATOR = "%3D"; 
-const ATTR_CODE_KEYS = ["source", "medium", "campaign", "content"];
+const ATTR_CODE_KEYS = [
+  "source",
+  "medium",
+  "campaign",
+  "content",
+  "experiment",
+  "variation",
+];
 
 let gCachedAttrData = null;
 
@@ -42,33 +48,33 @@ function getAttributionFile() {
   return file;
 }
 
-
-
-
-
-
-function parseAttributionCode(code) {
-  if (code.length > ATTR_CODE_MAX_LENGTH) {
-    return {};
-  }
-
-  let isValid = true;
-  let parsed = {};
-  for (let param of code.split(ATTR_CODE_FIELD_SEPARATOR)) {
-    let [key, value] = param.split(ATTR_CODE_KEY_VALUE_SEPARATOR, 2);
-    if (key && ATTR_CODE_KEYS_REGEX.test(key)) {
-      if (value && ATTR_CODE_VALUE_REGEX.test(value)) {
-        parsed[key] = value;
-      }
-    } else {
-      isValid = false;
-      break;
-    }
-  }
-  return isValid ? parsed : {};
-}
-
 var AttributionCode = {
+  
+
+
+
+
+  parseAttributionCode(code) {
+    if (code.length > ATTR_CODE_MAX_LENGTH) {
+      return {};
+    }
+
+    let isValid = true;
+    let parsed = {};
+    for (let param of code.split(ATTR_CODE_FIELD_SEPARATOR)) {
+      let [key, value] = param.split(ATTR_CODE_KEY_VALUE_SEPARATOR, 2);
+      if (key && ATTR_CODE_KEYS.includes(key)) {
+        if (value && ATTR_CODE_VALUE_REGEX.test(value)) {
+          parsed[key] = value;
+        }
+      } else {
+        isValid = false;
+        break;
+      }
+    }
+    return isValid ? parsed : {};
+  },
+
   
 
 
@@ -91,7 +97,7 @@ var AttributionCode = {
           let bytes = await OS.File.read(getAttributionFile().path);
           let decoder = new TextDecoder();
           let code = decoder.decode(bytes);
-          gCachedAttrData = parseAttributionCode(code);
+          gCachedAttrData = this.parseAttributionCode(code);
         } catch (ex) {
           
           
@@ -109,7 +115,7 @@ var AttributionCode = {
           for (let key of ATTR_CODE_KEYS) {
             
             
-            for (let paramKey of [`utm_${key}`, key]) {
+            for (let paramKey of [`utm_${key}`, `funnel_${key}`, key]) {
               if (params.has(paramKey)) {
                 let value = params.get(paramKey);
                 if (value && ATTR_CODE_VALUE_REGEX.test(value)) {
