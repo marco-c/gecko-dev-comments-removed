@@ -1238,13 +1238,7 @@ JS::Result<HuffmanLookup> BinASTTokenReaderContext::BitBuffer::getHuffmanLookup(
     
 
     
-    mozilla::Array<uint8_t, 8> bytes;
-    
-    uint64_t* newBits = reinterpret_cast<uint64_t*>(bytes.begin());
-    static_assert(sizeof(bytes) == sizeof(*newBits),
-                  "Expecting bytes array to match size of *newBits");
-    *newBits = 0;
-
+    uint8_t bytes[8] = {};
     
     uint32_t bytesInBits =
         (this->bitLength + BIT_BUFFER_READ_UNIT - 1) / BIT_BUFFER_READ_UNIT;
@@ -1255,39 +1249,38 @@ JS::Result<HuffmanLookup> BinASTTokenReaderContext::BitBuffer::getHuffmanLookup(
     
     
     MOZ_TRY((owner.readBuf<Compression::No, EndOfFilePolicy::BestEffort>(
-        bytes.begin(), readLen)));
-#if MOZ_LITTLE_ENDIAN
+        bytes, readLen)));
     
-    *newBits = (((*newBits & 0x00000000000000ffULL) << 56) |
-                ((*newBits & 0x000000000000ff00ULL) << 40) |
-                ((*newBits & 0x0000000000ff0000ULL) << 24) |
-                ((*newBits & 0x00000000ff000000ULL) << 8) |
-                ((*newBits & 0x000000ff00000000ULL) >> 8) |
-                ((*newBits & 0x0000ff0000000000ULL) >> 24) |
-                ((*newBits & 0x00ff000000000000ULL) >> 40) |
-                ((*newBits & 0xff00000000000000ULL) >> 56));
-#endif
-    
-    
+    uint64_t newBits = (static_cast<uint64_t>(bytes[0]) << 56) |
+                       (static_cast<uint64_t>(bytes[1]) << 48) |
+                       (static_cast<uint64_t>(bytes[2]) << 40) |
+                       (static_cast<uint64_t>(bytes[3]) << 32) |
+                       (static_cast<uint64_t>(bytes[4]) << 24) |
+                       (static_cast<uint64_t>(bytes[5]) << 16) |
+                       (static_cast<uint64_t>(bytes[6]) << 8) |
+                       static_cast<uint64_t>(bytes[7]);
+    static_assert(sizeof(bytes) == sizeof(newBits),
+                  "Expecting bytes array to match size of newBits");
     
     
-    
-
-    
-    *newBits >>= (BIT_BUFFER_READ_UNIT * (sizeof(bytes) - readLen));
     
     
 
     
+    newBits >>= (BIT_BUFFER_READ_UNIT * (sizeof(bytes) - readLen));
     
-    *newBits = ((*newBits >> 1) & 0x5555555555555555) |
-               ((*newBits & 0x5555555555555555) << 1);
     
-    *newBits = ((*newBits >> 2) & 0x3333333333333333) |
-               ((*newBits & 0x3333333333333333) << 2);
+
     
-    *newBits = ((*newBits >> 4) & 0x0F0F0F0F0F0F0F0F) |
-               ((*newBits & 0x0F0F0F0F0F0F0F0F) << 4);
+    
+    newBits = ((newBits >> 1) & 0x5555555555555555) |
+              ((newBits & 0x5555555555555555) << 1);
+    
+    newBits = ((newBits >> 2) & 0x3333333333333333) |
+              ((newBits & 0x3333333333333333) << 2);
+    
+    newBits = ((newBits >> 4) & 0x0F0F0F0F0F0F0F0F) |
+              ((newBits & 0x0F0F0F0F0F0F0F0F) << 4);
     
     
 
@@ -1299,11 +1292,11 @@ JS::Result<HuffmanLookup> BinASTTokenReaderContext::BitBuffer::getHuffmanLookup(
       this->bits <<= (BIT_BUFFER_READ_UNIT * readLen);
       
       
-      this->bits += *newBits;
+      this->bits += newBits;
     }
     
     else {
-      this->bits = *newBits;
+      this->bits = newBits;
     }
     
     if (this->bitLength <= MAX_PREFIX_BIT_LENGTH) {
