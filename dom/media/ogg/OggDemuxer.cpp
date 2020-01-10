@@ -1257,6 +1257,10 @@ RefPtr<MediaRawData> OggTrackDemuxer::NextSample() {
   
   
   data->mTime += totalDuration;
+  if (!data->mTime.IsValid()) {
+    return nullptr;
+  }
+
   return data;
 }
 
