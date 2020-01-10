@@ -111,9 +111,6 @@
 #define PREF_CHUNK_SIZE "dom.quotaManager.temporaryStorage.chunkSize"
 
 
-#define PREF_TESTING_FEATURES "dom.quotaManager.testing"
-
-
 #define PROFILE_BEFORE_CHANGE_QM_OBSERVER_ID "profile-before-change-qm"
 
 #define KB *1024ULL
@@ -1570,8 +1567,6 @@ static const uint32_t kDefaultChunkSizeKB = 10 * 1024;
 Atomic<int32_t, Relaxed> gFixedLimitKB(kDefaultFixedLimitKB);
 Atomic<uint32_t, Relaxed> gChunkSizeKB(kDefaultChunkSizeKB);
 
-Atomic<bool> gTestingEnabled(false);
-
 class StorageOperationBase {
  protected:
   struct OriginProps;
@@ -2352,9 +2347,6 @@ void InitializeQuotaManager() {
                                     kDefaultFixedLimitKB);
   Preferences::AddAtomicUintVarCache(&gChunkSizeKB, PREF_CHUNK_SIZE,
                                      kDefaultChunkSizeKB);
-
-  Preferences::AddAtomicBoolVarCache(&gTestingEnabled, PREF_TESTING_FEATURES,
-                                     false);
 
 #ifdef DEBUG
   gQuotaManagerInitialized = true;
