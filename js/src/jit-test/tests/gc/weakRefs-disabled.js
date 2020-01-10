@@ -1,0 +1,3 @@
+
+assertEq('WeakRef' in this, false);
+assertEq('FinalizationGroup' in this, false);

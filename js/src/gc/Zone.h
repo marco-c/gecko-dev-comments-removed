@@ -48,6 +48,9 @@ class ZoneAllCellIter;
 template <typename T>
 class ZoneCellIter;
 
+
+using FinalizationRecordVector = GCVector<HeapPtrObject, 1, ZoneAllocPolicy>;
+
 }  
 
 using StringWrapperMap =
@@ -629,6 +632,18 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   uint32_t detachedTypedObjects = 0;
 
  private:
+  
+  
+  
+  using FinalizationRecordMap =
+      GCHashMap<js::HeapPtrObject, js::gc::FinalizationRecordVector,
+                js::MovableCellHasher<js::HeapPtrObject>, js::ZoneAllocPolicy>;
+  js::ZoneOrGCTaskData<FinalizationRecordMap> finalizationRecordMap_;
+
+  FinalizationRecordMap& finalizationRecordMap() {
+    return finalizationRecordMap_.ref();
+  }
+
   js::ZoneOrGCTaskData<js::jit::JitZone*> jitZone_;
 
   js::MainThreadData<bool> gcScheduled_;
