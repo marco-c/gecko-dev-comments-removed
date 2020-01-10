@@ -6830,28 +6830,28 @@ static void DrawTextRun(const gfxTextRun* aTextRun,
         return;
       }
       params.drawMode |= DrawMode::GLYPH_STROKE;
-      if (StaticPrefs::layout_css_paint_order_enabled()) {
-        
-        
-        uint32_t paintOrder = aFrame->StyleSVG()->mPaintOrder;
-        if (paintOrder != NS_STYLE_PAINT_ORDER_NORMAL) {
-          while (paintOrder) {
-            uint32_t component =
-                paintOrder & ((1 << NS_STYLE_PAINT_ORDER_BITWIDTH) - 1);
-            switch (component) {
-              case NS_STYLE_PAINT_ORDER_FILL:
-                
-                paintOrder = 0;
-                break;
-              case NS_STYLE_PAINT_ORDER_STROKE:
-                params.drawMode |= DrawMode::GLYPH_STROKE_UNDERNEATH;
-                paintOrder = 0;
-                break;
-            }
-            paintOrder >>= NS_STYLE_PAINT_ORDER_BITWIDTH;
+
+      
+      
+      uint32_t paintOrder = aFrame->StyleSVG()->mPaintOrder;
+      if (paintOrder != NS_STYLE_PAINT_ORDER_NORMAL) {
+        while (paintOrder) {
+          uint32_t component =
+              paintOrder & ((1 << NS_STYLE_PAINT_ORDER_BITWIDTH) - 1);
+          switch (component) {
+            case NS_STYLE_PAINT_ORDER_FILL:
+              
+              paintOrder = 0;
+              break;
+            case NS_STYLE_PAINT_ORDER_STROKE:
+              params.drawMode |= DrawMode::GLYPH_STROKE_UNDERNEATH;
+              paintOrder = 0;
+              break;
           }
+          paintOrder >>= NS_STYLE_PAINT_ORDER_BITWIDTH;
         }
       }
+
       
       
       StrokeOptions strokeOpts(aParams.textStrokeWidth, JoinStyle::ROUND);
