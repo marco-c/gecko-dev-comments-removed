@@ -31,6 +31,10 @@ function URLFetcher(url, timeout) {
   xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
   
   xhr.channel.loadFlags |= Ci.nsIRequest.LOAD_DISABLE_TRR;
+
+  
+  xhr.channel.QueryInterface(Ci.nsIHttpChannel).redirectionLimit = 0;
+
   
   
   
@@ -51,6 +55,10 @@ function URLFetcher(url, timeout) {
         self.onsuccess(xhr.responseText);
       } else if (xhr.status) {
         self.onredirectorerror(xhr.status);
+      } else if (xhr.channel.status == Cr.NS_ERROR_REDIRECT_LOOP) {
+        
+        
+        self.onredirectorerror(300);
       }
     }
   };
@@ -329,7 +337,7 @@ CaptivePortalDetector.prototype = {
   },
 
   _mayRetry: function _mayRetry() {
-    if (this._runningRequest.retryCount++ < this._maxRetryCount) {
+    if (this._runningRequest && this._runningRequest.retryCount++ < this._maxRetryCount) {
       debug("retry-Detection: " + this._runningRequest.retryCount + "/" + this._maxRetryCount);
       this._startDetection();
     } else {
