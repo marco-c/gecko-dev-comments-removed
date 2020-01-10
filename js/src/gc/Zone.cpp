@@ -333,12 +333,6 @@ void Zone::discardJitCode(FreeOp* fop,
 
     
     
-    if (script->hasBaselineScript()) {
-      script->baselineScript()->setControlFlowGraph(nullptr);
-    }
-
-    
-    
     
     if (discardJitScripts) {
       script->maybeReleaseJitScript();
@@ -354,6 +348,10 @@ void Zone::discardJitCode(FreeOp* fop,
         
         jitScript->clearIonCompiledOrInlined();
       }
+
+      
+      
+      jitScript->clearControlFlowGraph();
 
       
       jitScript->resetActive();

@@ -23,7 +23,6 @@ namespace jit {
 
 class ICEntry;
 class ICStub;
-class ControlFlowGraph;
 class ReturnAddressEntry;
 
 class PCMappingSlotInfo {
@@ -204,11 +203,6 @@ struct BaselineScript final {
 
   
   
-  
-  HeapPtr<EnvironmentObject*> templateEnv_ = nullptr;
-
-  
-  
   uint32_t bailoutPrologueOffset_;
 
   
@@ -252,35 +246,14 @@ struct BaselineScript final {
   
   uint32_t allocBytes_ = 0;
 
-  
-  
-  
-  uint16_t inlinedBytecodeLength_ = 0;
-
-  
-  
-  
-  
-  
-  uint8_t maxInliningDepth_ = UINT8_MAX;
-
  public:
   enum Flag {
     
     
-    MODIFIES_ARGUMENTS = 1 << 0,
+    HAS_DEBUG_INSTRUMENTATION = 1 << 0,
 
     
-    
-    HAS_DEBUG_INSTRUMENTATION = 1 << 1,
-
-    
-    PROFILER_INSTRUMENTATION_ON = 1 << 2,
-
-    
-    
-    
-    USES_ENVIRONMENT_CHAIN = 1 << 3,
+    PROFILER_INSTRUMENTATION_ON = 1 << 1,
   };
 
  private:
@@ -288,8 +261,6 @@ struct BaselineScript final {
 
   
   IonBuilder* pendingBuilder_ = nullptr;
-
-  ControlFlowGraph* controlFlowGraph_ = nullptr;
 
   
   
@@ -324,16 +295,10 @@ struct BaselineScript final {
     *data += mallocSizeOf(this);
   }
 
-  void setModifiesArguments() { flags_ |= MODIFIES_ARGUMENTS; }
-  bool modifiesArguments() { return flags_ & MODIFIES_ARGUMENTS; }
-
   void setHasDebugInstrumentation() { flags_ |= HAS_DEBUG_INSTRUMENTATION; }
   bool hasDebugInstrumentation() const {
     return flags_ & HAS_DEBUG_INSTRUMENTATION;
   }
-
-  void setUsesEnvironmentChain() { flags_ |= USES_ENVIRONMENT_CHAIN; }
-  bool usesEnvironmentChain() const { return flags_ & USES_ENVIRONMENT_CHAIN; }
 
   uint8_t* bailoutPrologueEntryAddr() const {
     return method_->raw() + bailoutPrologueOffset_;
@@ -361,12 +326,6 @@ struct BaselineScript final {
   void setMethod(JitCode* code) {
     MOZ_ASSERT(!method_);
     method_ = code;
-  }
-
-  EnvironmentObject* templateEnvironment() const { return templateEnv_; }
-  void setTemplateEnvironment(EnvironmentObject* templateEnv) {
-    MOZ_ASSERT(!templateEnv_);
-    templateEnv_ = templateEnv;
   }
 
   bool containsCodeAddress(uint8_t* addr) const {
@@ -448,21 +407,6 @@ struct BaselineScript final {
 
   static void writeBarrierPre(Zone* zone, BaselineScript* script);
 
-  uint8_t maxInliningDepth() const { return maxInliningDepth_; }
-  void setMaxInliningDepth(uint32_t depth) {
-    MOZ_ASSERT(depth <= UINT8_MAX);
-    maxInliningDepth_ = depth;
-  }
-  void resetMaxInliningDepth() { maxInliningDepth_ = UINT8_MAX; }
-
-  uint16_t inlinedBytecodeLength() const { return inlinedBytecodeLength_; }
-  void setInlinedBytecodeLength(uint32_t len) {
-    if (len > UINT16_MAX) {
-      len = UINT16_MAX;
-    }
-    inlinedBytecodeLength_ = len;
-  }
-
   bool hasPendingIonBuilder() const { return !!pendingBuilder_; }
 
   js::jit::IonBuilder* pendingIonBuilder() {
@@ -487,12 +431,6 @@ struct BaselineScript final {
     if (script->maybeIonScript() == ION_PENDING_SCRIPT) {
       script->setIonScript(rt, nullptr);
     }
-  }
-
-  const ControlFlowGraph* controlFlowGraph() const { return controlFlowGraph_; }
-
-  void setControlFlowGraph(ControlFlowGraph* controlFlowGraph) {
-    controlFlowGraph_ = controlFlowGraph;
   }
 
   size_t allocBytes() const { return allocBytes_; }

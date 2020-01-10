@@ -16,6 +16,8 @@ class JSScript;
 namespace js {
 namespace jit {
 
+class ControlFlowGraph;
+
 
 
 struct DependentWasmImport {
@@ -24,6 +26,13 @@ struct DependentWasmImport {
 
   DependentWasmImport(wasm::Instance& instance, size_t importIndex)
       : instance(&instance), importIndex(importIndex) {}
+};
+
+
+
+struct IonBytecodeInfo {
+  bool usesEnvironmentChain = false;
+  bool modifiesArguments = false;
 };
 
 
@@ -109,6 +118,43 @@ class alignas(uintptr_t) JitScript final {
   const char* profileString_ = nullptr;
 
   
+  
+  
+  struct CachedIonData {
+    
+    
+    
+    HeapPtr<EnvironmentObject*> templateEnv = nullptr;
+
+    
+    
+    ControlFlowGraph* controlFlowGraph = nullptr;
+
+    
+    
+    
+    uint16_t inlinedBytecodeLength = 0;
+
+    
+    
+    
+    
+    
+    uint8_t maxInliningDepth = UINT8_MAX;
+
+    
+    IonBytecodeInfo bytecodeInfo = {};
+
+    CachedIonData(EnvironmentObject* templateEnv, IonBytecodeInfo bytecodeInfo);
+
+    CachedIonData(const CachedIonData&) = delete;
+    void operator=(const CachedIonData&) = delete;
+
+    void trace(JSTracer* trc);
+  };
+  js::UniquePtr<CachedIonData> cachedIonData_;
+
+  
   uint32_t typeSetOffset_ = 0;
 
   
@@ -156,6 +202,17 @@ class alignas(uintptr_t) JitScript final {
     flags_.typesGeneration = generation;
   }
 
+  bool hasCachedIonData() const { return !!cachedIonData_; }
+
+  CachedIonData& cachedIonData() {
+    MOZ_ASSERT(hasCachedIonData());
+    return *cachedIonData_.get();
+  }
+  const CachedIonData& cachedIonData() const {
+    MOZ_ASSERT(hasCachedIonData());
+    return *cachedIonData_.get();
+  }
+
  public:
   JitScript(JSScript* script, uint32_t typeSetOffset,
             uint32_t bytecodeTypeMapOffset, uint32_t allocBytes,
@@ -171,6 +228,8 @@ class alignas(uintptr_t) JitScript final {
 
   MOZ_MUST_USE bool initICEntriesAndBytecodeTypeMap(JSContext* cx,
                                                     JSScript* script);
+
+  MOZ_MUST_USE bool ensureHasCachedIonData(JSContext* cx, HandleScript script);
 
   bool hasFreezeConstraints(const js::AutoSweepJitScript& sweep) const {
     MOZ_ASSERT(sweep.jitScript() == this);
@@ -354,6 +413,50 @@ class alignas(uintptr_t) JitScript final {
   void unlinkDependentWasmImports();
 
   size_t allocBytes() const { return allocBytes_; }
+
+  EnvironmentObject* templateEnvironment() const {
+    return cachedIonData().templateEnv;
+  }
+
+  const ControlFlowGraph* controlFlowGraph() const {
+    return cachedIonData().controlFlowGraph;
+  }
+  void setControlFlowGraph(ControlFlowGraph* controlFlowGraph) {
+    MOZ_ASSERT(controlFlowGraph);
+    cachedIonData().controlFlowGraph = controlFlowGraph;
+  }
+  void clearControlFlowGraph() {
+    if (hasCachedIonData()) {
+      cachedIonData().controlFlowGraph = nullptr;
+    }
+  }
+
+  bool modifiesArguments() const {
+    return cachedIonData().bytecodeInfo.modifiesArguments;
+  }
+  bool usesEnvironmentChain() const {
+    return cachedIonData().bytecodeInfo.usesEnvironmentChain;
+  }
+
+  uint8_t maxInliningDepth() const {
+    return hasCachedIonData() ? cachedIonData().maxInliningDepth : UINT8_MAX;
+  }
+  void resetMaxInliningDepth() { cachedIonData().maxInliningDepth = UINT8_MAX; }
+
+  void setMaxInliningDepth(uint32_t depth) {
+    MOZ_ASSERT(depth <= UINT8_MAX);
+    cachedIonData().maxInliningDepth = depth;
+  }
+
+  uint16_t inlinedBytecodeLength() const {
+    return hasCachedIonData() ? cachedIonData().inlinedBytecodeLength : 0;
+  }
+  void setInlinedBytecodeLength(uint32_t len) {
+    if (len > UINT16_MAX) {
+      len = UINT16_MAX;
+    }
+    cachedIonData().inlinedBytecodeLength = len;
+  }
 };
 
 

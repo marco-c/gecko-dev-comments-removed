@@ -37,7 +37,6 @@ class BytecodeAnalysis {
   JSScript* script_;
   Vector<BytecodeInfo, 0, JitAllocPolicy> infos_;
 
-  bool usesEnvironmentChain_;
   bool hasTryFinally_;
 
  public:
@@ -57,10 +56,13 @@ class BytecodeAnalysis {
     return nullptr;
   }
 
-  bool usesEnvironmentChain() const { return usesEnvironmentChain_; }
-
   bool hasTryFinally() const { return hasTryFinally_; }
 };
+
+
+
+struct IonBytecodeInfo;
+IonBytecodeInfo AnalyzeBytecodeForIon(JSContext* cx, JSScript* script);
 
 }  
 }  

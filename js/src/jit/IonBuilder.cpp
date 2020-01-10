@@ -766,6 +766,14 @@ AbortReasonOr<Ok> IonBuilder::init() {
     return abort(AbortReason::Alloc);
   }
 
+  {
+    JSContext* cx = TlsContext.get();
+    RootedScript rootedScript(cx, script());
+    if (!rootedScript->jitScript()->ensureHasCachedIonData(cx, rootedScript)) {
+      return abort(AbortReason::Error);
+    }
+  }
+
   if (inlineCallInfo_) {
     
     
@@ -793,8 +801,8 @@ AbortReasonOr<Ok> IonBuilder::build() {
   
   
   
-  if (script()->hasBaselineScript() && isHighestOptimizationLevel()) {
-    script()->baselineScript()->resetMaxInliningDepth();
+  if (isHighestOptimizationLevel()) {
+    script()->jitScript()->resetMaxInliningDepth();
   }
 
   MBasicBlock* entry;
@@ -926,10 +934,9 @@ AbortReasonOr<Ok> IonBuilder::build() {
 
   MOZ_TRY(traverseBytecode());
 
-  if (isHighestOptimizationLevel() && script_->hasBaselineScript() &&
-      inlinedBytecodeLength_ >
-          script_->baselineScript()->inlinedBytecodeLength()) {
-    script_->baselineScript()->setInlinedBytecodeLength(inlinedBytecodeLength_);
+  if (isHighestOptimizationLevel() &&
+      inlinedBytecodeLength_ > script_->jitScript()->inlinedBytecodeLength()) {
+    script_->jitScript()->setInlinedBytecodeLength(inlinedBytecodeLength_);
   }
 
   MOZ_TRY(maybeAddOsrTypeBarriers());
@@ -1210,7 +1217,7 @@ AbortReasonOr<Ok> IonBuilder::initParameters() {
   for (uint32_t i = 0; i < info().nargs(); i++) {
     TemporaryTypeSet* types = &argTypes[i];
     if (types->empty() && baselineFrame_ &&
-        !script_->baselineScript()->modifiesArguments()) {
+        !script_->jitScript()->modifiesArguments()) {
       TypeSet::Type type = baselineFrame_->argTypes[i];
       if (type.isSingletonUnchecked()) {
         checkNurseryObject(type.singleton());
@@ -1246,12 +1253,7 @@ void IonBuilder::initLocals() {
 }
 
 bool IonBuilder::usesEnvironmentChain() {
-  
-  
-  if (info().analysisMode() == Analysis_ArgumentsUsage) {
-    return true;
-  }
-  return script()->baselineScript()->usesEnvironmentChain();
+  return script()->jitScript()->usesEnvironmentChain();
 }
 
 AbortReasonOr<Ok> IonBuilder::initEnvironmentChain(MDefinition* callee) {
@@ -1506,9 +1508,8 @@ enum class CFGState : uint32_t { Alloc = 0, Abort = 1, Success = 2 };
 static CFGState GetOrCreateControlFlowGraph(TempAllocator& tempAlloc,
                                             JSScript* script,
                                             const ControlFlowGraph** cfgOut) {
-  if (script->hasBaselineScript() &&
-      script->baselineScript()->controlFlowGraph()) {
-    *cfgOut = script->baselineScript()->controlFlowGraph();
+  if (script->jitScript()->controlFlowGraph()) {
+    *cfgOut = script->jitScript()->controlFlowGraph();
     return CFGState::Success;
   }
 
@@ -1521,16 +1522,11 @@ static CFGState GetOrCreateControlFlowGraph(TempAllocator& tempAlloc,
   }
 
   
-  TempAllocator* graphAlloc = nullptr;
-  if (script->hasBaselineScript()) {
-    LifoAlloc& lifoAlloc = script->zone()->jitZone()->cfgSpace()->lifoAlloc();
-    LifoAlloc::AutoFallibleScope fallibleAllocator(&lifoAlloc);
-    graphAlloc = lifoAlloc.new_<TempAllocator>(&lifoAlloc);
-    if (!graphAlloc) {
-      return CFGState::Alloc;
-    }
-  } else {
-    graphAlloc = &tempAlloc;
+  LifoAlloc& lifoAlloc = script->zone()->jitZone()->cfgSpace()->lifoAlloc();
+  LifoAlloc::AutoFallibleScope fallibleAllocator(&lifoAlloc);
+  TempAllocator* graphAlloc = lifoAlloc.new_<TempAllocator>(&lifoAlloc);
+  if (!graphAlloc) {
+    return CFGState::Alloc;
   }
 
   ControlFlowGraph* cfg = cfgenerator.getGraph(*graphAlloc);
@@ -1538,10 +1534,8 @@ static CFGState GetOrCreateControlFlowGraph(TempAllocator& tempAlloc,
     return CFGState::Alloc;
   }
 
-  if (script->hasBaselineScript()) {
-    MOZ_ASSERT(!script->baselineScript()->controlFlowGraph());
-    script->baselineScript()->setControlFlowGraph(cfg);
-  }
+  MOZ_ASSERT(!script->jitScript()->controlFlowGraph());
+  script->jitScript()->setControlFlowGraph(cfg);
 
   if (JitSpewEnabled(JitSpew_CFG)) {
     JitSpew(JitSpew_CFG, "Generating graph for %s:%u:%u", script->filename(),
@@ -1573,8 +1567,7 @@ static CFGState GetOrCreateControlFlowGraph(TempAllocator& tempAlloc,
 
 AbortReasonOr<Ok> IonBuilder::traverseBytecode() {
   CFGState state = GetOrCreateControlFlowGraph(alloc(), info().script(), &cfg);
-  MOZ_ASSERT_IF(cfg && info().script()->hasBaselineScript(),
-                info().script()->baselineScript()->controlFlowGraph() == cfg);
+  MOZ_ASSERT_IF(cfg, info().script()->jitScript()->controlFlowGraph() == cfg);
   if (state == CFGState::Alloc) {
     return abort(AbortReason::Alloc);
   }
@@ -4365,7 +4358,7 @@ IonBuilder::InliningDecision IonBuilder::makeInliningDecision(
   
   
   uint32_t inlinedBytecodeLength =
-      targetScript->baselineScript()->inlinedBytecodeLength();
+      targetScript->jitScript()->inlinedBytecodeLength();
   if (inlinedBytecodeLength >
       optimizationInfo().inlineMaxCalleeInlinedBytecodeLength()) {
     trackOptimizationOutcome(
@@ -4403,8 +4396,7 @@ IonBuilder::InliningDecision IonBuilder::makeInliningDecision(
     }
   }
 
-  BaselineScript* outerBaseline =
-      outermostBuilder()->script()->baselineScript();
+  JitScript* outerJitScript = outermostBuilder()->script()->jitScript();
   if (inliningDepth_ >= maxInlineDepth) {
     
     
@@ -4412,7 +4404,7 @@ IonBuilder::InliningDecision IonBuilder::makeInliningDecision(
     
     
     if (isHighestOptimizationLevel()) {
-      outerBaseline->setMaxInliningDepth(0);
+      outerJitScript->setMaxInliningDepth(0);
     }
 
     trackOptimizationOutcome(TrackedOutcome::CantInlineExceededDepth);
@@ -4440,7 +4432,7 @@ IonBuilder::InliningDecision IonBuilder::makeInliningDecision(
   
   
   if (isHighestOptimizationLevel() && targetScript->hasLoops() &&
-      inliningDepth_ >= targetScript->baselineScript()->maxInliningDepth()) {
+      inliningDepth_ >= targetScript->jitScript()->maxInliningDepth()) {
     trackOptimizationOutcome(TrackedOutcome::CantInlineExceededDepth);
     return DontInline(targetScript,
                       "Vetoed: exceeding allowed script inline depth");
@@ -4449,9 +4441,9 @@ IonBuilder::InliningDecision IonBuilder::makeInliningDecision(
   
   MOZ_ASSERT(maxInlineDepth > inliningDepth_);
   uint32_t scriptInlineDepth = maxInlineDepth - inliningDepth_ - 1;
-  if (scriptInlineDepth < outerBaseline->maxInliningDepth() &&
+  if (scriptInlineDepth < outerJitScript->maxInliningDepth() &&
       isHighestOptimizationLevel()) {
-    outerBaseline->setMaxInliningDepth(scriptInlineDepth);
+    outerJitScript->setMaxInliningDepth(scriptInlineDepth);
   }
 
   
@@ -9153,7 +9145,7 @@ AbortReasonOr<Ok> IonBuilder::getElemTryArguments(bool* emitted,
   index = addBoundsCheck(index, length);
 
   
-  bool modifiesArgs = script()->baselineScript()->modifiesArguments();
+  bool modifiesArgs = script()->jitScript()->modifiesArguments();
   MGetFrameArgument* load =
       MGetFrameArgument::New(alloc(), index, modifiesArgs);
   current->add(load);
@@ -12701,8 +12693,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_setarg(uint32_t arg) {
   
   
   
-  MOZ_ASSERT_IF(script()->hasBaselineScript(),
-                script()->baselineScript()->modifiesArguments());
+  MOZ_ASSERT(script()->jitScript()->modifiesArguments());
   MDefinition* val = current->peek(-1);
 
   
