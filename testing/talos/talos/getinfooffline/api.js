@@ -1,0 +1,17 @@
+
+
+
+
+
+
+"use strict";
+
+
+
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+this.getinfooffline = class extends ExtensionAPI {
+  onStartup() {
+    Services.io.offline = true;
+  }
+};
