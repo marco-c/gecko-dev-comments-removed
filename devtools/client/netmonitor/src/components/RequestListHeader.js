@@ -4,7 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const {
   createRef,
   Component,
@@ -37,11 +36,6 @@ const Draggable = createFactory(
 );
 
 const { div, button } = dom;
-
-
-const RESIZE_COLUMNS = Services.prefs.getBoolPref(
-  "devtools.netmonitor.features.resizeColumns"
-);
 
 
 
@@ -545,14 +539,12 @@ class RequestListHeader extends Component {
     };
 
     
-    const draggable = RESIZE_COLUMNS
-      ? Draggable({
-          className: "column-resizer ",
-          onStart: () => this.onStartMove(),
-          onStop: () => this.onStopMove(),
-          onMove: x => this.onMove(name, x),
-        })
-      : undefined;
+    const draggable = Draggable({
+      className: "column-resizer ",
+      onStart: () => this.onStartMove(),
+      onStop: () => this.onStopMove(),
+      onMove: x => this.onMove(name, x),
+    });
 
     return dom.td(
       {

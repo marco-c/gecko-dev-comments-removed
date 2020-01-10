@@ -154,10 +154,6 @@ Services.prefs.setCharPref(
 
 Services.prefs.setIntPref("devtools.netmonitor.response.ui.limit", 1024 * 105);
 
-
-
-Services.prefs.setBoolPref("devtools.netmonitor.features.resizeColumns", true);
-
 registerCleanupFunction(() => {
   info("finish() was called, cleaning up...");
 
@@ -167,7 +163,6 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.netmonitor.columnsData");
   Services.prefs.clearUserPref("devtools.netmonitor.response.ui.limit");
   Services.prefs.clearUserPref("devtools.netmonitor.visibleColumns");
-  Services.prefs.clearUserPref("devtools.netmonitor.features.resizeColumns");
   Services.cookies.removeAll();
 });
 

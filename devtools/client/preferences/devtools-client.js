@@ -172,9 +172,6 @@ pref("devtools.netmonitor.columnsData",
 pref("devtools.netmonitor.ws.payload-preview-width", 550);
 pref("devtools.netmonitor.ws.payload-preview-height", 450);
 
-
-pref("devtools.netmonitor.features.resizeColumns", true);
-
 pref("devtools.netmonitor.response.ui.limit", 10240);
 
 
