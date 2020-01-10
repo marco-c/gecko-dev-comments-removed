@@ -95,7 +95,7 @@ class UniqueScriptOSREntryIter {
 };
 
 static bool CollectJitStackScripts(JSContext* cx,
-                                   const Debugger::ExecutionObservableSet& obs,
+                                   const DebugAPI::ExecutionObservableSet& obs,
                                    const ActivationIterator& activation,
                                    DebugModeOSREntryVector& entries) {
   for (OnlyJSJitFrameIter iter(activation); !iter.done(); ++iter) {
@@ -166,7 +166,7 @@ static bool CollectJitStackScripts(JSContext* cx,
 }
 
 static bool CollectInterpreterStackScripts(
-    JSContext* cx, const Debugger::ExecutionObservableSet& obs,
+    JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
     const ActivationIterator& activation, DebugModeOSREntryVector& entries) {
   
   
@@ -233,7 +233,7 @@ static void SpewPatchBaselineFrameFromExceptionHandler(
 }
 
 static void PatchBaselineFramesForDebugMode(
-    JSContext* cx, const Debugger::ExecutionObservableSet& obs,
+    JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
     const ActivationIterator& activation, DebugModeOSREntryVector& entries,
     size_t* start) {
   
@@ -437,7 +437,7 @@ static void PatchBaselineFramesForDebugMode(
 }
 
 static void SkipInterpreterFrameEntries(
-    const Debugger::ExecutionObservableSet& obs,
+    const DebugAPI::ExecutionObservableSet& obs,
     const ActivationIterator& activation, size_t* start) {
   size_t entryIndex = *start;
 
@@ -453,7 +453,7 @@ static void SkipInterpreterFrameEntries(
 }
 
 static bool RecompileBaselineScriptForDebugMode(
-    JSContext* cx, JSScript* script, Debugger::IsObserving observing) {
+    JSContext* cx, JSScript* script, bool observing) {
   BaselineScript* oldBaselineScript = script->baselineScript();
 
   
@@ -534,8 +534,8 @@ static void UndoRecompileBaselineScriptsForDebugMode(
 }
 
 bool jit::RecompileOnStackBaselineScriptsForDebugMode(
-    JSContext* cx, const Debugger::ExecutionObservableSet& obs,
-    Debugger::IsObserving observing) {
+    JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
+    bool observing) {
   
   
   Vector<DebugModeOSREntry> entries(cx);
@@ -566,7 +566,7 @@ bool jit::RecompileOnStackBaselineScriptsForDebugMode(
       return false;
     }
   } else {
-    typedef Debugger::ExecutionObservableSet::ZoneRange ZoneRange;
+    typedef DebugAPI::ExecutionObservableSet::ZoneRange ZoneRange;
     for (ZoneRange r = obs.zones()->all(); !r.empty(); r.popFront()) {
       if (!InvalidateScriptsInZone(cx, r.front(), entries)) {
         return false;

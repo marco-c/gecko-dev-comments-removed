@@ -14,6 +14,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Vector.h"
 
+#include "debugger/DebugAPI.h"
 #include "ds/TraceableFifo.h"
 #include "gc/Barrier.h"
 #include "gc/WeakMap.h"
@@ -27,8 +28,6 @@
 #include "js/Wrapper.h"
 #include "proxy/DeadObjectProxy.h"
 #include "vm/GeneratorObject.h"
-#include "vm/GlobalObject.h"
-#include "vm/JSContext.h"
 #include "vm/Realm.h"
 #include "vm/SavedStacks.h"
 #include "vm/Stack.h"
@@ -42,62 +41,13 @@
 
 namespace js {
 
-class AbstractGeneratorObject;
 class Breakpoint;
 class DebuggerFrame;
 class DebuggerScript;
 class DebuggerMemory;
-class PromiseObject;
 class ScriptedOnStepHandler;
 class ScriptedOnPopHandler;
 class WasmInstanceObject;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum class ResumeMode {
-  
-
-
-
-
-  Continue,
-
-  
-
-
-
-
-  Throw,
-
-  
-
-
-
-
-
-  Terminate,
-
-  
-
-
-
-
-  Return,
-};
 
 
 
@@ -374,29 +324,6 @@ class DebuggerWeakMap
 
 class LeaveDebuggeeNoExecute;
 
-
-
-
-
-
-
-class AutoSuppressDebuggeeNoExecuteChecks {
-  EnterDebuggeeNoExecute** stack_;
-  EnterDebuggeeNoExecute* prev_;
-
- public:
-  explicit AutoSuppressDebuggeeNoExecuteChecks(JSContext* cx) {
-    stack_ = &cx->noExecuteDebuggerTop.ref();
-    prev_ = *stack_;
-    *stack_ = nullptr;
-  }
-
-  ~AutoSuppressDebuggeeNoExecuteChecks() {
-    MOZ_ASSERT(!*stack_);
-    *stack_ = prev_;
-  }
-};
-
 class MOZ_RAII EvalOptions {
   JS::UniqueChars filename_;
   unsigned lineno_ = 1;
@@ -452,6 +379,7 @@ typedef mozilla::Variant<ScriptSourceObject*, WasmInstanceObject*>
     DebuggerSourceReferent;
 
 class Debugger : private mozilla::LinkedListElement<Debugger> {
+  friend class DebugAPI;
   friend class Breakpoint;
   friend class DebuggerFrame;
   friend class DebuggerMemory;
@@ -494,20 +422,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
     JSSLOT_DEBUG_HOOK_STOP = JSSLOT_DEBUG_HOOK_START + HookCount,
     JSSLOT_DEBUG_MEMORY_INSTANCE = JSSLOT_DEBUG_HOOK_STOP,
     JSSLOT_DEBUG_COUNT
-  };
-
-  class ExecutionObservableSet {
-   public:
-    typedef HashSet<Zone*>::Range ZoneRange;
-
-    virtual Zone* singleZone() const { return nullptr; }
-    virtual JSScript* singleScriptForZoneInvalidation() const {
-      return nullptr;
-    }
-    virtual const HashSet<Zone*>* zones() const { return nullptr; }
-
-    virtual bool shouldRecompileOrInvalidate(JSScript* script) const = 0;
-    virtual bool shouldMarkAsDebuggee(FrameIter& iter) const = 0;
   };
 
   
@@ -571,12 +485,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 #ifdef DEBUG
   static void assertThingIsNotGray(Debugger* dbg) { return; }
 #endif
-  
-
-
-
-  static bool isObservedByDebuggerTrackingAllocations(
-      const GlobalObject& debuggee);
 
  private:
   GCPtrNativeObject object; 
@@ -927,12 +835,14 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
                                                        AbstractFramePtr frame,
                                                        bool suspending = false);
   static bool updateExecutionObservabilityOfFrames(
-      JSContext* cx, const ExecutionObservableSet& obs, IsObserving observing);
+      JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
+      IsObserving observing);
   static bool updateExecutionObservabilityOfScripts(
-      JSContext* cx, const ExecutionObservableSet& obs, IsObserving observing);
-  static bool updateExecutionObservability(JSContext* cx,
-                                           ExecutionObservableSet& obs,
-                                           IsObserving observing);
+      JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
+      IsObserving observing);
+  static bool updateExecutionObservability(
+      JSContext* cx, DebugAPI::ExecutionObservableSet& obs,
+      IsObserving observing);
 
   template <typename FrameFn >
   static void forEachDebuggerFrame(AbstractFramePtr frame, FrameFn fn);
@@ -947,9 +857,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
       AbstractFramePtr frame, MutableHandle<DebuggerFrameVector> frames);
 
  public:
-  static MOZ_MUST_USE bool ensureExecutionObservabilityOfOsrFrame(
-      JSContext* cx, AbstractFramePtr osrSourceFrame);
-
   
   static MOZ_MUST_USE bool ensureExecutionObservabilityOfScript(
       JSContext* cx, JSScript* script);
@@ -976,36 +883,13 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   MOZ_MUST_USE bool updateObservesAllExecutionOnDebuggees(
       JSContext* cx, IsObserving observing);
-  MOZ_MUST_USE bool updateObservesCoverageOnDebuggees(JSContext* cx,
-                                                      IsObserving observing);
+  MOZ_MUST_USE bool updateObservesCoverageOnDebuggees(
+      JSContext* cx, IsObserving observing);
   void updateObservesAsmJSOnDebuggees(IsObserving observing);
 
   JSObject* getHook(Hook hook) const;
   bool hasAnyLiveHooks(JSRuntime* rt) const;
 
-  static MOZ_MUST_USE bool slowPathCheckNoExecute(JSContext* cx,
-                                                  HandleScript script);
-  static ResumeMode slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame);
-  static ResumeMode slowPathOnResumeFrame(JSContext* cx,
-                                          AbstractFramePtr frame);
-  static MOZ_MUST_USE bool slowPathOnLeaveFrame(JSContext* cx,
-                                                AbstractFramePtr frame,
-                                                jsbytecode* pc, bool ok);
-  static MOZ_MUST_USE bool slowPathOnNewGenerator(
-      JSContext* cx, AbstractFramePtr frame,
-      Handle<AbstractGeneratorObject*> genObj);
-  static ResumeMode slowPathOnDebuggerStatement(JSContext* cx,
-                                                AbstractFramePtr frame);
-  static ResumeMode slowPathOnExceptionUnwind(JSContext* cx,
-                                              AbstractFramePtr frame);
-  static void slowPathOnNewScript(JSContext* cx, HandleScript script);
-  static void slowPathOnNewWasmInstance(
-      JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
-  static void slowPathOnNewGlobalObject(JSContext* cx,
-                                        Handle<GlobalObject*> global);
-  static MOZ_MUST_USE bool slowPathOnLogAllocationSite(
-      JSContext* cx, HandleObject obj, HandleSavedFrame frame,
-      mozilla::TimeStamp when, GlobalObject::DebuggerVector& dbgs);
   static void slowPathPromiseHook(JSContext* cx, Hook hook,
                                   Handle<PromiseObject*> promise);
 
@@ -1100,148 +984,13 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   WeakGlobalObjectSet::Range allDebuggees() const { return debuggees.all(); }
 
-  
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static void traceIncomingCrossCompartmentEdges(JSTracer* tracer);
-  static MOZ_MUST_USE bool markIteratively(GCMarker* marker);
-  static void traceAllForMovingGC(JSTracer* trc);
-  static void sweepAll(FreeOp* fop);
   static void detachAllDebuggersFromGlobal(FreeOp* fop, GlobalObject* global);
-  static MOZ_MUST_USE bool findSweepGroupEdges(JSRuntime* rt);
 #ifdef DEBUG
   static bool isDebuggerCrossCompartmentEdge(JSObject* obj,
                                              const js::gc::Cell* cell);
 #endif
 
-  
-  static inline MOZ_MUST_USE bool checkNoExecute(JSContext* cx,
-                                                 HandleScript script);
-
-  
-
-
-
-
-  static inline ResumeMode onEnterFrame(JSContext* cx, AbstractFramePtr frame);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static inline ResumeMode onResumeFrame(JSContext* cx, AbstractFramePtr frame);
-
-  
-
-
-
-
-
-
-
-  static inline ResumeMode onDebuggerStatement(JSContext* cx,
-                                               AbstractFramePtr frame);
-
-  
-
-
-
-  static inline ResumeMode onExceptionUnwind(JSContext* cx,
-                                             AbstractFramePtr frame);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static inline MOZ_MUST_USE bool onLeaveFrame(JSContext* cx,
-                                               AbstractFramePtr frame,
-                                               jsbytecode* pc, bool ok);
-
-  
-
-
-
-
-
-  static inline MOZ_MUST_USE bool onNewGenerator(
-      JSContext* cx, AbstractFramePtr frame,
-      Handle<AbstractGeneratorObject*> genObj);
-
-  static inline void onNewScript(JSContext* cx, HandleScript script);
-  static inline void onNewWasmInstance(
-      JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
-  static inline void onNewGlobalObject(JSContext* cx,
-                                       Handle<GlobalObject*> global);
-  static inline MOZ_MUST_USE bool onLogAllocationSite(JSContext* cx,
-                                                      JSObject* obj,
-                                                      HandleSavedFrame frame,
-                                                      mozilla::TimeStamp when);
-  static ResumeMode onTrap(JSContext* cx, MutableHandleValue vp);
-  static ResumeMode onSingleStep(JSContext* cx, MutableHandleValue vp);
-  static MOZ_MUST_USE bool handleBaselineOsr(JSContext* cx,
-                                             InterpreterFrame* from,
-                                             jit::BaselineFrame* to);
-  static MOZ_MUST_USE bool handleIonBailout(JSContext* cx,
-                                            jit::RematerializedFrame* from,
-                                            jit::BaselineFrame* to);
-  static void handleUnrecoverableIonBailoutError(
-      JSContext* cx, jit::RematerializedFrame* frame);
-  static void propagateForcedReturn(JSContext* cx, AbstractFramePtr frame,
-                                    HandleValue rval);
   static bool hasLiveHook(GlobalObject* global, Hook which);
-  static bool inFrameMaps(AbstractFramePtr frame);
-
-  
-  
-  static inline void onNewPromise(JSContext* cx,
-                                  Handle<PromiseObject*> promise);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  static inline void onPromiseSettled(JSContext* cx,
-                                      Handle<PromiseObject*> promise);
 
   
 
@@ -1494,6 +1243,7 @@ class BreakpointSite {
 
 
 class Breakpoint {
+  friend class DebugAPI;
   friend class Debugger;
   friend class BreakpointSite;
 
@@ -1613,45 +1363,6 @@ bool Debugger::observesNewGlobalObject() const {
 bool Debugger::observesGlobal(GlobalObject* global) const {
   WeakHeapPtr<GlobalObject*> debuggee(global);
   return debuggees.has(debuggee);
-}
-
- void Debugger::onNewScript(JSContext* cx, HandleScript script) {
-  
-  
-  MOZ_ASSERT_IF(!script->realm()->creationOptions().invisibleToDebugger() &&
-                    !script->selfHosted(),
-                script->realm()->firedOnNewGlobalObject);
-
-  
-  if (script->hideScriptFromDebugger()) {
-    return;
-  }
-
-  if (script->realm()->isDebuggee()) {
-    slowPathOnNewScript(cx, script);
-  }
-}
-
- void Debugger::onNewGlobalObject(JSContext* cx,
-                                              Handle<GlobalObject*> global) {
-  MOZ_ASSERT(!global->realm()->firedOnNewGlobalObject);
-#ifdef DEBUG
-  global->realm()->firedOnNewGlobalObject = true;
-#endif
-  if (!cx->runtime()->onNewGlobalObjectWatchers().isEmpty()) {
-    Debugger::slowPathOnNewGlobalObject(cx, global);
-  }
-}
-
- bool Debugger::onLogAllocationSite(JSContext* cx, JSObject* obj,
-                                                HandleSavedFrame frame,
-                                                mozilla::TimeStamp when) {
-  GlobalObject::DebuggerVector* dbgs = cx->global()->getDebuggers();
-  if (!dbgs || dbgs->empty()) {
-    return true;
-  }
-  RootedObject hobj(cx, obj);
-  return Debugger::slowPathOnLogAllocationSite(cx, hobj, frame, when, *dbgs);
 }
 
 MOZ_MUST_USE bool ReportObjectRequired(JSContext* cx);

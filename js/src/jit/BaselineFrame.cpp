@@ -6,7 +6,7 @@
 
 #include "jit/BaselineFrame-inl.h"
 
-#include "debugger/Debugger.h"
+#include "debugger/DebugAPI.h"
 #include "jit/BaselineJIT.h"
 #include "jit/Ion.h"
 #include "vm/EnvironmentObject.h"
@@ -158,7 +158,7 @@ bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
   if (fp->isDebuggee()) {
     
     
-    if (!Debugger::handleBaselineOsr(cx, fp, this)) {
+    if (!DebugAPI::handleBaselineOsr(cx, fp, this)) {
       return false;
     }
     setIsDebuggee();

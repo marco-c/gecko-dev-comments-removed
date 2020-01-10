@@ -71,7 +71,7 @@
 #include "builtin/Promise.h"
 #include "builtin/RegExp.h"
 #include "builtin/TestingFunctions.h"
-#include "debugger/Debugger.h"
+#include "debugger/DebugAPI.h"
 #if defined(JS_BUILD_BINAST)
 #  include "frontend/BinASTParser.h"
 #endif  
@@ -3984,8 +3984,6 @@ static bool ShellBuildId(JS::BuildIdCharVector* buildId);
 
 static void WorkerMain(WorkerInput* input) {
   MOZ_ASSERT(input->parentRuntime);
-
-  auto mutexShutdown = mozilla::MakeScopeExit([] { Mutex::ShutDown(); });
 
   JSContext* cx = JS_NewContext(8L * 1024L * 1024L, 2L * 1024L * 1024L,
                                 input->parentRuntime);

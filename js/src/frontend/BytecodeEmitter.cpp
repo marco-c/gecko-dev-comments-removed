@@ -25,7 +25,6 @@
 #include "jstypes.h"  
 #include "jsutil.h"   
 
-#include "debugger/Debugger.h"                   
 #include "ds/Nestable.h"                         
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/CallOrNewEmitter.h"           
@@ -64,6 +63,7 @@
 #include "vm/Opcodes.h"   
 #include "wasm/AsmJS.h"   
 
+#include "debugger/DebugAPI-inl.h" 
 #include "vm/JSObject-inl.h"  
 
 using namespace js;
@@ -110,7 +110,8 @@ BytecodeEmitter::BytecodeEmitter(
 
   if (sc->isFunctionBox()) {
     
-    bytecodeSection().setNumICEntries(sc->asFunctionBox()->nargs() + 1);
+    bytecodeSection().setNumICEntries(sc->asFunctionBox()->function()->nargs() +
+                                      1);
   }
 }
 
@@ -1597,7 +1598,7 @@ void BytecodeEmitter::tellDebuggerAboutCompiledScript(JSContext* cx) {
   
   
   if (emitterMode != LazyFunction && !parent) {
-    Debugger::onNewScript(cx, script);
+    DebugAPI::onNewScript(cx, script);
   }
 }
 

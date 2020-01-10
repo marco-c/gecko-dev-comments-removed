@@ -16,7 +16,7 @@
 #include "jsfriendapi.h"
 
 #include "builtin/ModuleObject.h"
-#include "debugger/Debugger.h"
+#include "debugger/DebugAPI.h"
 #include "gc/GCInternals.h"
 #include "gc/Policy.h"
 #include "jit/IonCode.h"
@@ -25,6 +25,7 @@
 #include "vm/ArrayObject.h"
 #include "vm/BigIntType.h"
 #include "vm/EnvironmentObject.h"
+#include "vm/GeneratorObject.h"
 #include "vm/RegExpShared.h"
 #include "vm/Scope.h"
 #include "vm/Shape.h"
@@ -973,7 +974,9 @@ void LazyScript::traceChildren(JSTracer* trc) {
     TraceNullableEdge(trc, &script_, "script");
   }
 
-  TraceEdge(trc, &function_, "function");
+  if (function_) {
+    TraceEdge(trc, &function_, "function");
+  }
 
   if (enclosingLazyScriptOrScope_) {
     TraceGenericPointerRoot(
@@ -1007,7 +1010,9 @@ inline void js::GCMarker::eagerlyMarkChildren(LazyScript* thing) {
 
   
 
-  traverseEdge(thing, static_cast<JSObject*>(thing->function_));
+  if (thing->function_) {
+    traverseEdge(thing, static_cast<JSObject*>(thing->function_));
+  }
 
   if (thing->enclosingLazyScriptOrScope_) {
     TraceManuallyBarrieredGenericPointerEdge(
