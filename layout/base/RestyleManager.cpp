@@ -3387,6 +3387,10 @@ void RestyleManager::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
   } else if (aElement->IsAttributeMapped(aAttribute)) {
     
     restyleHint |= StyleRestyleHint_RESTYLE_SELF;
+  } else if (aElement->IsInShadowTree() && aAttribute == nsGkAtoms::part) {
+    
+    
+    restyleHint |= StyleRestyleHint_RESTYLE_SELF;
   }
 
   if (nsIFrame* primaryFrame = aElement->GetPrimaryFrame()) {
