@@ -764,13 +764,14 @@ MFBT_API void profiler_set_process_name(const std::string& aProcessName);
 
 
 MFBT_API UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0,
-                                                bool aIsShuttingDown = false);
+                                                bool aIsShuttingDown = false,
+                                                bool aOnlyThreads = false);
 
 
 
 MFBT_API bool profiler_stream_json_for_this_process(
     SpliceableJSONWriter& aWriter, double aSinceTime = 0,
-    bool aIsShuttingDown = false);
+    bool aIsShuttingDown = false, bool aOnlyThreads = false);
 
 
 

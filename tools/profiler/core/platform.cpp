@@ -855,11 +855,29 @@ class ActivePS {
   static void ClearExpiredExitProfiles(PSLockRef) {
     uint64_t bufferRangeStart = sInstance->mBuffer->mRangeStart;
     
+#ifdef MOZ_BASE_PROFILER
+    if (bufferRangeStart != 0 && sInstance->mBaseProfileThreads) {
+      sInstance->mBaseProfileThreads.reset();
+    }
+#endif
     sInstance->mExitProfiles.eraseIf(
         [bufferRangeStart](const ExitProfile& aExitProfile) {
           return aExitProfile.mBufferPositionAtGatherTime < bufferRangeStart;
         });
   }
+
+#ifdef MOZ_BASE_PROFILER
+  static void AddBaseProfileThreads(PSLockRef aLock,
+                                    UniquePtr<char[]> aBaseProfileThreads) {
+    sInstance->mBaseProfileThreads = std::move(aBaseProfileThreads);
+  }
+
+  static UniquePtr<char[]> MoveBaseProfileThreads(PSLockRef aLock) {
+    ClearExpiredExitProfiles(aLock);
+
+    return std::move(sInstance->mBaseProfileThreads);
+  }
+#endif
 
   static void AddExitProfile(PSLockRef aLock, const nsCString& aExitProfile) {
     ClearExpiredExitProfiles(aLock);
@@ -953,6 +971,11 @@ class ActivePS {
   
   
   bool mWasPaused;
+#endif
+
+#ifdef MOZ_BASE_PROFILER
+  
+  UniquePtr<char[]> mBaseProfileThreads;
 #endif
 
   struct ExitProfile {
@@ -2116,6 +2139,14 @@ static void locked_profiler_stream_json_for_this_process(
                                     ActivePS::FeatureJSTracer(aLock));
 
       java::GeckoJavaSampler::Unpause();
+    }
+#endif
+
+#ifdef MOZ_BASE_PROFILER
+    UniquePtr<char[]> baseProfileThreads =
+        ActivePS::MoveBaseProfileThreads(aLock);
+    if (baseProfileThreads) {
+      aWriter.Splice(baseProfileThreads.get());
     }
 #endif
   }
@@ -3328,6 +3359,36 @@ static void locked_profiler_start(PSLockRef aLock, uint32_t aCapacity,
 
   ActivePS::Create(aLock, capacity, interval, aFeatures, aFilters, aFilterCount,
                    duration);
+
+  
+  MOZ_ASSERT(ActivePS::Exists(aLock));
+
+#ifdef MOZ_BASE_PROFILER
+  if (baseprofiler::profiler_is_active()) {
+    
+    
+    
+    
+    UniquePtr<char[]> baseprofile = baseprofiler::profiler_get_profile(
+         0,  false,
+         true);
+
+    
+    
+    
+    
+    
+    
+    baseprofiler::profiler_stop();
+
+    if (baseprofile && baseprofile.get()[0] != '\0') {
+      
+      
+      
+      ActivePS::AddBaseProfileThreads(aLock, std::move(baseprofile));
+    }
+  }
+#endif
 
   
   int tid = profiler_current_thread_id();
