@@ -255,12 +255,8 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
     const uint32_t& aRedirectFlags, const Maybe<uint32_t>& aContentDisposition,
     const Maybe<nsString>& aContentDispositionFilename,
     RedirectToRealChannelResolver&& aResolve) {
-  nsCOMPtr<nsILoadInfo> originalLoadInfo;
   RefPtr<dom::Document> loadingDocument;
-  GetLoadInfo(getter_AddRefs(originalLoadInfo));
-  if (originalLoadInfo) {
-    originalLoadInfo->GetLoadingDocument(getter_AddRefs(loadingDocument));
-  }
+  mLoadInfo->GetLoadingDocument(getter_AddRefs(loadingDocument));
 
   nsCOMPtr<nsILoadInfo> loadInfo;
   nsresult rv = LoadInfoArgsToLoadInfo(aLoadInfo, loadingDocument,
@@ -404,11 +400,18 @@ DocumentChannelChild::OnRedirectVerifyCallback(nsresult aStatusCode) {
 }
 
 IPCResult DocumentChannelChild::RecvConfirmRedirect(
-    nsIURI* aNewUri, ConfirmRedirectResolver&& aResolve) {
+    const LoadInfoArgs& aLoadInfo, nsIURI* aNewUri,
+    ConfirmRedirectResolver&& aResolve) {
   
   
   
   
+  RefPtr<dom::Document> loadingDocument;
+  mLoadInfo->GetLoadingDocument(getter_AddRefs(loadingDocument));
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  MOZ_ALWAYS_SUCCEEDS(LoadInfoArgsToLoadInfo(Some(aLoadInfo), loadingDocument,
+                                             getter_AddRefs(loadInfo)));
+
   nsCOMPtr<nsIURI> originalUri;
   nsresult rv = GetOriginalURI(getter_AddRefs(originalUri));
   if (NS_FAILED(rv)) {
@@ -418,7 +421,7 @@ IPCResult DocumentChannelChild::RecvConfirmRedirect(
   }
 
   Maybe<nsresult> cancelCode;
-  rv = CSPService::ConsultCSPForRedirect(originalUri, aNewUri, mLoadInfo,
+  rv = CSPService::ConsultCSPForRedirect(originalUri, aNewUri, loadInfo,
                                          cancelCode);
   aResolve(Tuple<const nsresult&, const Maybe<nsresult>&>(rv, cancelCode));
   return IPC_OK();
