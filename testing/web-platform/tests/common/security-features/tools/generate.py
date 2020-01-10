@@ -58,11 +58,6 @@ def dump_test_parameters(selection):
 
 
 def generate_selection(config, selection, spec, test_html_template_basename):
-    
-    if 'referrer_policy' in spec:
-        
-        selection['referrer_policy'] = spec['referrer_policy']
-
     test_parameters = dump_test_parameters(selection)
     
     indent = "\n" + " " * 8
