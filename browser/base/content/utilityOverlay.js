@@ -529,7 +529,7 @@ function openLinkIn(url, where, params) {
          (doGetProtocolFlags(uriObj) & URI_INHERITS_SECURITY_CONTEXT))) {
       
       
-      targetBrowser.createAboutBlankContentViewer(aPrincipal);
+      targetBrowser.createAboutBlankContentViewer(aPrincipal, aStoragePrincipal);
     }
 
     

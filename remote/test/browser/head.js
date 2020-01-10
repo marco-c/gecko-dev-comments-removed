@@ -40,7 +40,7 @@ function createTestDocument() {
   
   
   const system = Services.scriptSecurityManager.getSystemPrincipal();
-  webNavigation.createAboutBlankContentViewer(system);
+  webNavigation.createAboutBlankContentViewer(system, system);
 
   registerCleanupFunction(() => browser.close());
   return webNavigation.document;
