@@ -99,6 +99,39 @@ MOZ_MUST_USE bool js::WritableStreamDealWithRejection(
     JSContext* cx, Handle<WritableStream*> unwrappedStream,
     Handle<Value> error) {
   
+  
+  if (unwrappedStream->writable()) {
+    
+    
+    return WritableStreamStartErroring(cx, unwrappedStream, error);
+  }
+
+  
+  MOZ_ASSERT(unwrappedStream->erroring());
+
+  
+  return WritableStreamFinishErroring(cx, unwrappedStream);
+}
+
+
+
+
+
+MOZ_MUST_USE bool js::WritableStreamStartErroring(
+    JSContext* cx, Handle<WritableStream*> unwrappedStream,
+    Handle<Value> reason) {
+  
+  JS_ReportErrorASCII(cx, "epic fail");
+  return false;
+}
+
+
+
+
+
+MOZ_MUST_USE bool js::WritableStreamFinishErroring(
+    JSContext* cx, Handle<WritableStream*> unwrappedStream) {
+  
   JS_ReportErrorASCII(cx, "epic fail");
   return false;
 }
