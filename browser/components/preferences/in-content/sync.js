@@ -114,6 +114,13 @@ var gSyncPane = {
       );
     });
 
+    FxAccounts.config
+      .promiseConnectDeviceURI(this._getEntryPoint())
+      .then(connectURI => {
+        document
+          .getElementById("connect-another-device")
+          .setAttribute("href", connectURI);
+      });
     
     for (let platform of ["android", "ios"]) {
       let url =
