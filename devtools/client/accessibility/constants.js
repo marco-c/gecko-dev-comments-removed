@@ -38,6 +38,7 @@ exports.AUDIT_PROGRESS = "AUDIT_PROGRESS";
 
 
 exports.FILTERS = {
+  ALL: "ALL",
   [AUDIT_TYPE.CONTRAST]: "CONTRAST",
 };
 

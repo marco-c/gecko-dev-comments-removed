@@ -37,9 +37,10 @@ const tests = [{
       name: `"Accessibility Panel Test"`,
       selected: true,
     }],
+    toolbar: [false, false],
   },
 }, {
-  desc: "Run an audit from a11y panel toolbar by activating a filter.",
+  desc: "Run an audit (all) from a11y panel toolbar by activating a filter.",
   setup: async ({ doc }) => {
     await toggleFilter(doc, 0);
   },
@@ -54,6 +55,7 @@ const tests = [{
       name: `"Second level header "contrast`,
       badges: [ "contrast" ],
     }],
+    toolbar: [true, true],
   },
 }, {
   desc: "Click on the filter again.",
@@ -80,6 +82,7 @@ const tests = [{
       name: `"Second level header "contrast`,
       badges: [ "contrast" ],
     }],
+    toolbar: [false, false],
   },
 }];
 
@@ -88,4 +91,4 @@ const tests = [{
 
 
 addA11yPanelTestsTask(tests, TEST_URI,
-  "Test Accessibility panel tree with contrast filter audit activation.");
+  "Test Accessibility panel tree with 'all' filter audit activation.");

@@ -387,6 +387,23 @@ async function checkSidebarState(store, expectedState) {
 
 
 
+async function checkToolbarState(doc, expected) {
+  info("Checking toolbar state.");
+  const hasExpectedStructure = await BrowserTestUtils.waitForCondition(() =>
+    [...doc.querySelectorAll("button.toggle-button.badge")].every((filter, i) =>
+      expected[i] === filter.classList.contains("checked")),
+      "Wait for the right toolbar state.");
+
+  ok(hasExpectedStructure, "Toolbar state is correct.");
+}
+
+
+
+
+
+
+
+
 async function focusAccessibleProperties(doc) {
   const tree = doc.querySelector(".tree");
   if (doc.activeElement !== tree) {
@@ -514,13 +531,17 @@ async function runA11yPanelTests(tests, env) {
       await setup(env);
     }
 
-    const { tree, sidebar, audit } = expected;
+    const { tree, sidebar, audit, toolbar } = expected;
     if (tree) {
       await checkTreeState(env.doc, tree);
     }
 
     if (sidebar) {
       await checkSidebarState(env.store, sidebar);
+    }
+
+    if (toolbar) {
+      await checkToolbarState(env.doc, toolbar);
     }
 
     if (typeof audit !== "undefined") {
