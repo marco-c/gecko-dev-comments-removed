@@ -17,9 +17,6 @@ MOZ_THREAD_LOCAL(js::Mutex*) js::Mutex::HeldMutexStack;
 
 bool js::Mutex::Init() { return HeldMutexStack.init(); }
 
-
-void js::Mutex::ShutDown() { MOZ_ASSERT(HeldMutexStack.get() == nullptr); }
-
 void js::Mutex::lock() {
   preLockChecks();
   impl_.lock();
