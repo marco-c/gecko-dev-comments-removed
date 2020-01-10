@@ -4010,10 +4010,12 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
   
   
   
+  
   bool allowStyleCaching =
       StaticPrefs::layout_css_cached_scrollbar_styles_enabled() &&
       aParentFrame->StyleVisibility()->mVisible ==
           NS_STYLE_VISIBILITY_VISIBLE &&
+      aParentFrame->StyleUI()->mPointerEvents == NS_STYLE_POINTER_EVENTS_AUTO &&
       mPresShell->GetPresContext()->Medium() == nsGkAtoms::screen;
 
   

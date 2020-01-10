@@ -47,6 +47,7 @@ scrollcorner, resizer, scrollbar, scrollbarbutton, slider {
 
   all: initial;
   visibility: inherit;
+  pointer-events: inherit;
 
   
   -moz-list-reversed: initial;
