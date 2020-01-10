@@ -2407,6 +2407,11 @@ class Document : public nsINode,
 
 
   bool LoadedFromPrototype() const { return mPrototypeDocument; }
+  
+
+
+
+  nsXULPrototypeDocument* GetPrototype() const { return mPrototypeDocument; }
 
   bool IsTopLevelContentDocument() const { return mIsTopLevelContentDocument; }
   void SetIsTopLevelContentDocument(bool aIsTopLevelContentDocument) {
