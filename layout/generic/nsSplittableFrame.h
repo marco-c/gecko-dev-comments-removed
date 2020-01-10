@@ -54,11 +54,8 @@ class nsSplittableFrame : public nsFrame {
 #endif
 
   
-  nsIFrame* GetPrevInFlow() const;
-  nsIFrame* GetNextInFlow() const;
-
-  nsIFrame* GetPrevInFlowVirtual() const final { return GetPrevInFlow(); }
-  nsIFrame* GetNextInFlowVirtual() const final { return GetNextInFlow(); }
+  nsIFrame* GetPrevInFlow() const final;
+  nsIFrame* GetNextInFlow() const final;
 
   
   void SetPrevInFlow(nsIFrame*) final;
