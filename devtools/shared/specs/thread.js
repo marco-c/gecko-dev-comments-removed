@@ -154,6 +154,13 @@ const threadSpec = generateActorSpec({
         ignoreCaughtExceptions: Arg(1, "string"),
       },
     },
+
+    
+    debuggerRequests: {
+      response: {
+        value: RetVal("array:json"),
+      },
+    },
   },
 });
 

@@ -1033,6 +1033,13 @@ let gPausePoint = null;
 
 const gDebuggerRequests = [];
 
+function addDebuggerRequest(request) {
+  gDebuggerRequests.push({
+    request,
+    stack: Error().stack,
+  });
+}
+
 function setPauseState(mode, point, child) {
   assert(mode);
   const idString = child ? ` #${child.id}` : "";
@@ -1077,7 +1084,7 @@ function sendActiveChildToPausePoint() {
           gActiveChild.sendManifest({
             contents: {
               kind: "batchDebuggerRequest",
-              requests: gDebuggerRequests,
+              requests: gDebuggerRequests.map(r => r.request),
             },
             onFinished(finishData) {
               assert(!finishData || !finishData.restoredCheckpoint);
@@ -1823,7 +1830,7 @@ const gControl = {
       gActiveChild.divergedFromRecording = true;
     }
 
-    gDebuggerRequests.push(request);
+    addDebuggerRequest(request);
     return data.response;
   },
 
@@ -1860,6 +1867,10 @@ const gControl = {
   unscannedRegions,
   cachedPoints,
 
+  debuggerRequests() {
+    return gDebuggerRequests;
+  },
+
   getPauseData() {
     
     
@@ -1868,7 +1879,7 @@ const gControl = {
       if (data) {
         
         
-        gDebuggerRequests.push({ type: "pauseData" });
+        addDebuggerRequest({ type: "pauseData" });
         return data;
       }
     }
