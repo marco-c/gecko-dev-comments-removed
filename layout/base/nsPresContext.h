@@ -950,7 +950,25 @@ class nsPresContext : public nsISupports,
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
+  
+
+
+
   bool IsRootContentDocument() const;
+
+  
+
+
+
+
+  bool IsRootContentDocumentInProcess() const;
+
+  
+
+
+
+
+  bool IsRootContentDocumentCrossProcess() const;
 
   bool HadNonBlankPaint() const { return mHadNonBlankPaint; }
   bool HadContentfulPaint() const { return mHadContentfulPaint; }
