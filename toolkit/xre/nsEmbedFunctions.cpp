@@ -203,7 +203,7 @@ nsresult XRE_InitEmbedding2(nsIFile* aLibXULDirectory, nsIFile* aAppDirectory,
   
   
 
-  nsAppStartupNotifier::NotifyObservers(APPSTARTUP_TOPIC);
+  nsAppStartupNotifier::NotifyObservers(APPSTARTUP_CATEGORY);
 
   return NS_OK;
 }

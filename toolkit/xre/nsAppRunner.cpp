@@ -4184,7 +4184,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       flagFile, &cachesOK, &isDowngrade, lastVersion);
 
   MOZ_RELEASE_ASSERT(!cachesOK || versionOK,
-               "Caches cannot be good if the version has changed.");
+                     "Caches cannot be good if the version has changed.");
 
 #ifdef MOZ_BLOCK_PROFILE_DOWNGRADE
   
@@ -4452,7 +4452,7 @@ nsresult XREMain::XRE_mainRun() {
   
   mDirProvider.InitializeUserPrefs();
 
-  nsAppStartupNotifier::NotifyObservers(APPSTARTUP_TOPIC);
+  nsAppStartupNotifier::NotifyObservers(APPSTARTUP_CATEGORY);
 
   nsCOMPtr<nsIAppStartup> appStartup(components::AppStartup::Service());
   NS_ENSURE_TRUE(appStartup, NS_ERROR_FAILURE);
