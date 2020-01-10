@@ -280,7 +280,7 @@ def ensure_android_packages(sdkmanager_tool, packages=None, no_interactive=False
 
     
     
-    yes = '\n'.join(['y']*100)
+    yes = '\n'.join(['y']*100).encode("UTF-8")
     proc = subprocess.Popen(args,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT,
