@@ -582,8 +582,7 @@ void IDBTransaction::AbortInternal(const nsresult aAbortCode,
   RefPtr<DOMException> error = aError;
 
   const bool isVersionChange = mMode == VERSION_CHANGE;
-  const bool isInvalidated = mDatabase->IsInvalidated();
-  bool needToSendAbort = mReadyState == INITIAL;
+  const bool needToSendAbort = mReadyState == INITIAL;
 
   mAbortCode = aAbortCode;
   mReadyState = DONE;
@@ -593,7 +592,7 @@ void IDBTransaction::AbortInternal(const nsresult aAbortCode,
     
     
     
-    if (!isInvalidated) {
+    if (!mDatabase->IsInvalidated()) {
       mDatabase->RevertToPreviousState();
     }
 
@@ -607,6 +606,8 @@ void IDBTransaction::AbortInternal(const nsresult aAbortCode,
         mDatabase->Spec()->objectStores();
 
     if (specArray.IsEmpty()) {
+      
+      
       mObjectStores.Clear();
       mDeletedObjectStores.Clear();
     } else {
@@ -846,7 +847,7 @@ DOMException* IDBTransaction::GetError() const {
 already_AddRefed<DOMStringList> IDBTransaction::ObjectStoreNames() const {
   AssertIsOnOwningThread();
 
-  if (mMode == IDBTransaction::VERSION_CHANGE) {
+  if (mMode == VERSION_CHANGE) {
     return mDatabase->ObjectStoreNames();
   }
 
