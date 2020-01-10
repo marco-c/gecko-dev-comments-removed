@@ -106,7 +106,6 @@ class AbstractThread;
 class AudioSegment;
 class DecodedStream;
 class DOMMediaStream;
-class OutputStreamManager;
 class ReaderProxy;
 class TaskQueue;
 
@@ -185,19 +184,6 @@ class MediaDecoderStateMachine
 
   RefPtr<GenericPromise> RequestDebugInfo(
       dom::MediaDecoderStateMachineDebugInfo& aInfo);
-
-  void SetOutputStreamPrincipal(nsIPrincipal* aPrincipal);
-  
-  void EnsureOutputStreamManager(SharedDummyTrack* aDummyStream);
-  
-  
-  void EnsureOutputStreamManagerHasTracks(const MediaInfo& aLoadedInfo);
-  
-  
-  void AddOutputStream(DOMMediaStream* aStream);
-  
-  
-  void RemoveOutputStream(DOMMediaStream* aStream);
 
   
   RefPtr<MediaDecoder::SeekPromise> InvokeSeek(const SeekTarget& aTarget);
@@ -316,11 +302,6 @@ class MediaDecoderStateMachine
   
   void InitializationTask(MediaDecoder* aDecoder);
 
-  
-  
-  void SetAudioCaptured(bool aCaptured,
-                        OutputStreamManager* aManager = nullptr);
-
   RefPtr<MediaDecoder::SeekPromise> Seek(const SeekTarget& aTarget);
 
   RefPtr<ShutdownPromise> Shutdown();
@@ -394,6 +375,9 @@ class MediaDecoderStateMachine
   void SetPlaybackRate(double aPlaybackRate);
   void PreservesPitchChanged();
   void LoopingChanged();
+  void UpdateOutputCaptured();
+  void OutputTracksChanged();
+  void OutputPrincipalChanged();
 
   MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
   MediaQueue<VideoData>& VideoQueue() { return mVideoQueue; }
@@ -440,8 +424,7 @@ class MediaDecoderStateMachine
 
   
   
-  already_AddRefed<MediaSink> CreateMediaSink(
-      bool aAudioCaptured, OutputStreamManager* aManager = nullptr);
+  already_AddRefed<MediaSink> CreateMediaSink(bool aOutputCaptured);
 
   
   
@@ -627,11 +610,6 @@ class MediaDecoderStateMachine
   bool mIsLiveStream = false;
 
   
-  
-  
-  bool mAudioCaptured;
-
-  
   bool mAudioCompleted = false;
 
   
@@ -671,13 +649,6 @@ class MediaDecoderStateMachine
 
   
   DelayedScheduler mVideoDecodeSuspendTimer;
-
-  
-  
-  RefPtr<OutputStreamManager> mOutputStreamManager;
-
-  
-  nsCOMPtr<nsIPrincipal> mOutputStreamPrincipal;
 
   
   VideoDecodeMode mVideoDecodeMode;
@@ -735,6 +706,19 @@ class MediaDecoderStateMachine
 
   
   
+  Mirror<bool> mOutputCaptured;
+
+  
+  Mirror<nsTArray<RefPtr<ProcessedMediaTrack>>> mOutputTracks;
+
+  
+  Mirror<PrincipalHandle> mOutputPrincipal;
+
+  Canonical<nsTArray<RefPtr<ProcessedMediaTrack>>> mCanonicalOutputTracks;
+  Canonical<PrincipalHandle> mCanonicalOutputPrincipal;
+
+  
+  
   Canonical<media::NullableTimeUnit> mDuration;
 
   
@@ -751,6 +735,13 @@ class MediaDecoderStateMachine
  public:
   AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() const;
 
+  AbstractCanonical<nsTArray<RefPtr<ProcessedMediaTrack>>>*
+  CanonicalOutputTracks() {
+    return &mCanonicalOutputTracks;
+  }
+  AbstractCanonical<PrincipalHandle>* CanonicalOutputPrincipal() {
+    return &mCanonicalOutputPrincipal;
+  }
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDuration() {
     return &mDuration;
   }

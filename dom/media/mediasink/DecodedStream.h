@@ -22,9 +22,9 @@
 namespace mozilla {
 
 class DecodedStreamData;
+class MediaDecoderStateMachine;
 class AudioData;
 class VideoData;
-class OutputStreamManager;
 struct PlaybackInfoInit;
 class ProcessedMediaTrack;
 class TimeStamp;
@@ -36,10 +36,10 @@ class DecodedStream : public MediaSink {
   using MediaSink::PlaybackParams;
 
  public:
-  DecodedStream(AbstractThread* aOwnerThread, AbstractThread* aMainThread,
+  DecodedStream(MediaDecoderStateMachine* aStateMachine,
+                nsTArray<RefPtr<ProcessedMediaTrack>> aOutputTracks,
                 MediaQueue<AudioData>& aAudioQueue,
-                MediaQueue<VideoData>& aVideoQueue,
-                OutputStreamManager* aOutputStreamManager);
+                MediaQueue<VideoData>& aVideoQueue);
 
   
   const PlaybackParams& GetPlaybackParams() const override;
@@ -88,14 +88,6 @@ class DecodedStream : public MediaSink {
 
   const RefPtr<AbstractThread> mOwnerThread;
 
-  const RefPtr<AbstractThread> mAbstractMainThread;
-
-  
-
-
-  
-  const RefPtr<OutputStreamManager> mOutputStreamManager;
-
   
 
 
@@ -106,6 +98,7 @@ class DecodedStream : public MediaSink {
 
   Watchable<bool> mPlaying;
   Mirror<PrincipalHandle> mPrincipalHandle;
+  const nsTArray<RefPtr<ProcessedMediaTrack>> mOutputTracks;
 
   PlaybackParams mParams;
 

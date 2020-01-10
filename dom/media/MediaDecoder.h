@@ -49,7 +49,6 @@ class VideoFrameContainer;
 class MediaFormatReader;
 class MediaDecoderStateMachine;
 struct MediaPlaybackEvent;
-struct SharedDummyTrack;
 
 enum class Visibility : uint8_t;
 
@@ -617,6 +616,16 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
+  Canonical<bool> mOutputCaptured;
+
+  
+  Canonical<nsTArray<RefPtr<ProcessedMediaTrack>>> mOutputTracks;
+
+  
+  Canonical<PrincipalHandle> mOutputPrincipal;
+
+  
+  
   Maybe<double> mExplicitDuration;
 
   
@@ -647,6 +656,16 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
     return &mPreservesPitch;
   }
   AbstractCanonical<bool>* CanonicalLooping() { return &mLooping; }
+  AbstractCanonical<bool>* CanonicalOutputCaptured() {
+    return &mOutputCaptured;
+  }
+  AbstractCanonical<nsTArray<RefPtr<ProcessedMediaTrack>>>*
+  CanonicalOutputTracks() {
+    return &mOutputTracks;
+  }
+  AbstractCanonical<PrincipalHandle>* CanonicalOutputPrincipal() {
+    return &mOutputPrincipal;
+  }
   AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
 
  private:
