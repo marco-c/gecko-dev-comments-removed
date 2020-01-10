@@ -279,7 +279,7 @@ if (!isDevtools) {
   }
 }
 
-if (!AppConstants.NIGHTLY_BUILD) {
+if (!AppConstants.NIGHTLY_BUILD && !isDevtools) {
   
   whitelist.add("chrome://browser/skin/toggle.svg");
 }
