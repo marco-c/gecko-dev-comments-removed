@@ -534,16 +534,6 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       innerHeight: win.innerHeight,
     };
   },
-
-  
-
-
-
-
-
-  setMutationBreakpoints(bps) {
-    this.walker.setMutationBreakpoints(this, bps);
-  },
 });
 
 
