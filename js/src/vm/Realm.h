@@ -894,6 +894,7 @@ class MOZ_RAII AutoAllocInAtomsZone {
 
 
 
+
 class MOZ_RAII AutoMaybeLeaveAtomsZone {
   JSContext* const cx_;
   bool wasInAtomsZone_;
