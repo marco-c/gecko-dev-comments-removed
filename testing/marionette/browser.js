@@ -339,11 +339,7 @@ browser.Context = class {
         let startup = waitForObserverTopic("browser-delayed-startup-finished",
             subject => subject == win);
 
-        
-        
-        
-        win.setTimeout(() => win.focus(), 0);
-
+        win.focus();
         await Promise.all([activated, focused, startup]);
 
         
