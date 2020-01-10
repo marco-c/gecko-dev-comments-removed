@@ -1106,7 +1106,6 @@ class nsContentUtils {
 
 
 
-
   enum PropertiesFile {
     eCSS_PROPERTIES,
     eXBL_PROPERTIES,
@@ -1127,7 +1126,7 @@ class nsContentUtils {
   static nsresult ReportToConsole(
       uint32_t aErrorFlags, const nsACString& aCategory,
       const Document* aDocument, PropertiesFile aFile, const char* aMessageName,
-      const char16_t** aParams = nullptr, uint32_t aParamsLength = 0,
+      const nsTArray<nsString>& aParams = nsTArray<nsString>(),
       nsIURI* aURI = nullptr, const nsString& aSourceLine = EmptyString(),
       uint32_t aLineNumber = 0, uint32_t aColumnNumber = 0);
 
@@ -1203,22 +1202,21 @@ class nsContentUtils {
   
   static bool IsURIInPrefList(nsIURI* aURI, const char* aPrefName);
 
- private:
   
 
 
 
-  static nsresult FormatLocalizedString(PropertiesFile aFile, const char* aKey,
-                                        const char16_t** aParams,
-                                        uint32_t aParamsLength,
-                                        nsAString& aResult);
 
- public:
-  template <uint32_t N>
-  static nsresult FormatLocalizedString(PropertiesFile aFile, const char* aKey,
-                                        const char16_t* (&aParams)[N],
-                                        nsAString& aResult) {
-    return FormatLocalizedString(aFile, aKey, aParams, N, aResult);
+
+  template <typename... T>
+  static nsresult FormatLocalizedString(nsAString& aResult,
+                                        PropertiesFile aFile, const char* aKey,
+                                        const T&... aParams) {
+    static_assert(sizeof...(aParams) != 0, "Use GetLocalizedString()");
+    AutoTArray<nsString, sizeof...(aParams)> params = {
+        aParams...,
+    };
+    return FormatLocalizedString(aFile, aKey, params, aResult);
   }
 
   

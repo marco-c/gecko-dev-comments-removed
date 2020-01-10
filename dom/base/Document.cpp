@@ -2702,7 +2702,8 @@ static void WarnIfSandboxIneffective(nsIDocShell* aDocShell,
     nsContentUtils::ReportToConsole(
         nsIScriptError::warningFlag, NS_LITERAL_CSTRING("Iframe Sandbox"),
         parentDocument, nsContentUtils::eSECURITY_PROPERTIES,
-        "BothAllowScriptsAndSameOriginPresent", nullptr, 0, iframeUri);
+        "BothAllowScriptsAndSameOriginPresent", nsTArray<nsString>(),
+        iframeUri);
   }
 }
 
@@ -8909,8 +8910,7 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
       
       nsContentUtils::ReportToConsole(
           nsIScriptError::warningFlag, NS_LITERAL_CSTRING("DOM Events"), this,
-          nsContentUtils::eDOM_PROPERTIES, "DocumentWriteIgnored", nullptr, 0,
-          mDocumentURI);
+          nsContentUtils::eDOM_PROPERTIES, "DocumentWriteIgnored");
       return;
     }
     
@@ -8927,8 +8927,7 @@ void Document::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
       
       nsContentUtils::ReportToConsole(
           nsIScriptError::warningFlag, NS_LITERAL_CSTRING("DOM Events"), this,
-          nsContentUtils::eDOM_PROPERTIES, "DocumentWriteIgnored", nullptr, 0,
-          mDocumentURI);
+          nsContentUtils::eDOM_PROPERTIES, "DocumentWriteIgnored");
       return;
     }
 
@@ -11980,10 +11979,9 @@ bool Document::HasWarnedAbout(DocumentWarnings aWarning) const {
   return mDocWarningWarnedAbout[aWarning];
 }
 
-void Document::WarnOnceAbout(DocumentWarnings aWarning,
-                             bool asError ,
-                             const char16_t** aParams ,
-                             uint32_t aParamsLength ) const {
+void Document::WarnOnceAbout(
+    DocumentWarnings aWarning, bool asError ,
+    const nsTArray<nsString>& aParams ) const {
   MOZ_ASSERT(NS_IsMainThread());
   if (HasWarnedAbout(aWarning)) {
     return;
@@ -11993,8 +11991,7 @@ void Document::WarnOnceAbout(DocumentWarnings aWarning,
       asError ? nsIScriptError::errorFlag : nsIScriptError::warningFlag;
   nsContentUtils::ReportToConsole(flags, NS_LITERAL_CSTRING("DOM Core"), this,
                                   nsContentUtils::eDOM_PROPERTIES,
-                                  kDocumentWarnings[aWarning], aParams,
-                                  aParamsLength);
+                                  kDocumentWarnings[aWarning], aParams);
 }
 
 mozilla::dom::ImageTracker* Document::ImageTracker() {

@@ -171,16 +171,13 @@ nsresult nsXBLContentSink::ReportUnexpectedElement(nsAtom* aElementName,
   
   
   mState = eXBL_Error;
-  nsAutoString elementName;
-  aElementName->ToString(elementName);
-
-  const char16_t* params[] = {elementName.get()};
+  AutoTArray<nsString, 1> params;
+  aElementName->ToString(*params.AppendElement());
 
   return nsContentUtils::ReportToConsole(
       nsIScriptError::errorFlag, NS_LITERAL_CSTRING("XBL Content Sink"),
       mDocument, nsContentUtils::eXBL_PROPERTIES, "UnexpectedElement", params,
-      ArrayLength(params), nullptr, EmptyString() ,
-      aLineNumber);
+      nullptr, EmptyString() , aLineNumber);
 }
 
 void nsXBLContentSink::AddMember(nsXBLProtoImplMember* aMember) {
@@ -482,8 +479,8 @@ nsresult nsXBLContentSink::ConstructBinding(uint32_t aLineNumber) {
   } else {
     nsContentUtils::ReportToConsole(
         nsIScriptError::errorFlag, NS_LITERAL_CSTRING("XBL Content Sink"),
-        nullptr, nsContentUtils::eXBL_PROPERTIES, "MissingIdAttr", nullptr, 0,
-        mDocumentURI, EmptyString(), aLineNumber);
+        nullptr, nsContentUtils::eXBL_PROPERTIES, "MissingIdAttr",
+        nsTArray<nsString>(), mDocumentURI, EmptyString(), aLineNumber);
   }
 
   return rv;
@@ -567,7 +564,8 @@ void nsXBLContentSink::ConstructHandler(const char16_t** aAtts,
     nsContentUtils::ReportToConsole(
         nsIScriptError::errorFlag, NS_LITERAL_CSTRING("XBL Content Sink"),
         mDocument, nsContentUtils::eXBL_PROPERTIES, "CommandNotInChrome",
-        nullptr, 0, nullptr, EmptyString() , aLineNumber);
+        nsTArray<nsString>(), nullptr, EmptyString() ,
+        aLineNumber);
     return;  
   }
 

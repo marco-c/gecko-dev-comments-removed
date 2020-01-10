@@ -790,15 +790,15 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void ReportLoadError(const char* aMsg, const char16_t** aParams = nullptr,
-                       uint32_t aParamCount = 0);
+  void ReportLoadError(const char* aMsg, const nsTArray<nsString>& aParams =
+                                             nsTArray<nsString>());
 
   
 
 
-  void ReportToConsole(uint32_t aErrorFlags, const char* aMsg,
-                       const char16_t** aParams = nullptr,
-                       uint32_t aParamCount = 0) const;
+  void ReportToConsole(
+      uint32_t aErrorFlags, const char* aMsg,
+      const nsTArray<nsString>& aParams = nsTArray<nsString>()) const;
 
   
 

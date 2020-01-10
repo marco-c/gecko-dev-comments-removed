@@ -235,9 +235,9 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
 
 
 
-  nsresult ReportErrorToConsole(const char* aErrorMsgId,
-                                const char16_t** aParams = nullptr,
-                                uint32_t aParamCount = 0);
+  nsresult ReportErrorToConsole(
+      const char* aErrorMsgId,
+      const nsTArray<nsString>& aParams = nsTArray<nsString>());
 
   
   
