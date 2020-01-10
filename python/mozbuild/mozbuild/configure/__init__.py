@@ -19,6 +19,7 @@ from functools import wraps
 from mozbuild.configure.options import (
     CommandLineHelper,
     ConflictingOptionError,
+    HELP_OPTIONS_CATEGORY,
     InvalidOptionError,
     Option,
     OptionValue,
@@ -343,6 +344,9 @@ class ConfigureSandbox(dict):
         assert isinstance(config, dict)
         self._config = config
 
+        
+        self._template_depth = 0
+
         logging.addLevelName(TRACE, 'TRACE')
         if logger is None:
             logger = moz_logger = logging.getLogger('moz.configure')
@@ -388,8 +392,8 @@ class ConfigureSandbox(dict):
         self.log_impl = ReadOnlyNamespace(**log_namespace)
 
         self._help = None
-        self._help_option = self.option_impl('--help',
-                                             help='print this message')
+        self._help_option = self.option_impl(
+            '--help', help='print this message', category=HELP_OPTIONS_CATEGORY)
         self._seen.add(self._help_option)
 
         self._always = DependsFunction(self, lambda: True, [])
@@ -676,6 +680,12 @@ class ConfigureSandbox(dict):
         args = [self._resolve(arg) for arg in args]
         kwargs = {k: self._resolve(v) for k, v in six.iteritems(kwargs)
                   if k != 'when'}
+        
+        
+        
+        
+        
+        kwargs['define_depth'] = self._template_depth * 3
         option = Option(*args, **kwargs)
         if when:
             self._conditions[option] = when
@@ -798,7 +808,9 @@ class ConfigureSandbox(dict):
                 args = [maybe_prepare_function(arg) for arg in args]
                 kwargs = {k: maybe_prepare_function(v)
                           for k, v in kwargs.items()}
+                self._template_depth += 1
                 ret = template(*args, **kwargs)
+                self._template_depth -= 1
                 if isfunction(ret):
                     
                     
