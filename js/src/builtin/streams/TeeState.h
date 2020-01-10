@@ -14,7 +14,7 @@
 #include <stdint.h>  
 
 #include "builtin/Promise.h"  
-#include "builtin/Stream.h"   
+#include "builtin/streams/ReadableStreamController.h"  
 #include "js/Class.h"         
 #include "js/Value.h"         
 #include "vm/NativeObject.h"  

@@ -14,7 +14,7 @@
 
 #include "jsapi.h"  
 
-#include "builtin/Stream.h"   
+#include "builtin/streams/ReadableStreamController.h"  
 #include "js/Class.h"         
 #include "js/Conversions.h"   
 #include "js/RootingAPI.h"    
