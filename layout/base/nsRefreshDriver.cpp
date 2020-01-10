@@ -1723,6 +1723,11 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
         
         
         
+        
+        timeStamp = nsRFPService::ReduceTimePrecisionAsMSecs(timeStamp, 0, TimerPrecisionType::RFPOnly);
+        
+        
+        
         MOZ_KnownLive(callback.mCallback)->Call(timeStamp);
       }
     }
