@@ -10,6 +10,7 @@
 #include "mozilla/Maybe.h"
 
 #include "jit/CacheIR.h"
+#include "jit/SharedICRegisters.h"
 
 namespace js {
 namespace jit {
@@ -658,6 +659,11 @@ class FailurePath {
   SpilledRegisterVector spilledRegs_;
   NonAssertingLabel label_;
   uint32_t stackPushed_;
+#ifdef DEBUG
+  
+  
+  bool hasAutoScratchFloatRegister_ = false;
+#endif
 
  public:
   FailurePath() = default;
@@ -668,7 +674,11 @@ class FailurePath {
         label_(other.label_),
         stackPushed_(other.stackPushed_) {}
 
-  Label* label() { return &label_; }
+  Label* labelUnchecked() { return &label_; }
+  Label* label() {
+    MOZ_ASSERT(!hasAutoScratchFloatRegister_);
+    return labelUnchecked();
+  }
 
   void setStackPushed(uint32_t i) { stackPushed_ = i; }
   uint32_t stackPushed() const { return stackPushed_; }
@@ -688,6 +698,20 @@ class FailurePath {
   
   
   bool canShareFailurePath(const FailurePath& other) const;
+
+  void setHasAutoScratchFloatRegister() {
+#ifdef DEBUG
+    MOZ_ASSERT(!hasAutoScratchFloatRegister_);
+    hasAutoScratchFloatRegister_ = true;
+#endif
+  }
+
+  void clearHasAutoScratchFloatRegister() {
+#ifdef DEBUG
+    MOZ_ASSERT(hasAutoScratchFloatRegister_);
+    hasAutoScratchFloatRegister_ = false;
+#endif
+  }
 };
 
 
@@ -716,6 +740,7 @@ class MOZ_RAII CacheIRCompiler {
   friend class AutoStubFrame;
   friend class AutoSaveLiveRegisters;
   friend class AutoCallVM;
+  friend class AutoScratchFloatRegister;
 
   enum class Mode { Baseline, Ion };
 
@@ -1074,6 +1099,35 @@ class MOZ_RAII AutoCallVM {
   void prepare();
 
   ~AutoCallVM();
+};
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoScratchFloatRegister {
+  Label failurePopReg_{};
+  CacheIRCompiler* compiler_;
+  FailurePath* failure_;
+
+  AutoScratchFloatRegister(const AutoScratchFloatRegister&) = delete;
+  void operator=(const AutoScratchFloatRegister&) = delete;
+
+ public:
+  explicit AutoScratchFloatRegister(CacheIRCompiler* compiler)
+      : AutoScratchFloatRegister(compiler, nullptr) {}
+
+  AutoScratchFloatRegister(CacheIRCompiler* compiler, FailurePath* failure);
+
+  ~AutoScratchFloatRegister();
+
+  Label* failure();
+
+  FloatRegister get() const { return FloatReg0; }
+  operator FloatRegister() const { return FloatReg0; }
 };
 
 
