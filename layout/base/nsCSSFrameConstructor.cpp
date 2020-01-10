@@ -8392,7 +8392,7 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
         
         
         
-        inFlowFrame->GetProperty(nsIFrame::HasColumnSpanSiblings()) ||
+        inFlowFrame->HasColumnSpanSiblings() ||
         
         
         
@@ -10788,7 +10788,7 @@ void nsCSSFrameConstructor::FinishBuildingColumns(
   nsFrameList finalList;
   while (aColumnContentSiblings.NotEmpty()) {
     
-    prevColumnSet->SetProperty(nsIFrame::HasColumnSpanSiblings(), true);
+    prevColumnSet->SetHasColumnSpanSiblings(true);
 
     nsIFrame* f = aColumnContentSiblings.RemoveFirstChild();
     if (f->IsColumnSpan()) {
@@ -10849,8 +10849,7 @@ nsFrameList nsCSSFrameConstructor::CreateColumnSpanSiblings(
                "Must have the child starting with column-span!");
 
     
-    lastNonColumnSpanWrapper->SetProperty(nsIFrame::HasColumnSpanSiblings(),
-                                          true);
+    lastNonColumnSpanWrapper->SetHasColumnSpanSiblings(true);
 
     
     

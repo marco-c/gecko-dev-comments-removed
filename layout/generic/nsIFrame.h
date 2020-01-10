@@ -602,6 +602,7 @@ class nsIFrame : public nsQueryFrame {
         mAllDescendantsAreInvisible(false),
         mHasBSizeChange(false),
         mInScrollAnchorChain(false),
+        mHasColumnSpanSiblings(false),
         mDescendantMayDependOnItsStaticPosition(false) {
     MOZ_ASSERT(mComputedStyle);
     MOZ_ASSERT(mPresContext);
@@ -1252,13 +1253,6 @@ class nsIFrame : public nsQueryFrame {
 
   NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(PlaceholderFrameProperty,
                                          nsPlaceholderFrame)
-
-  
-  
-  
-  
-  
-  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(HasColumnSpanSiblings, bool)
 
   mozilla::FrameBidiData GetBidiData() const {
     bool exists;
@@ -4195,10 +4189,14 @@ class nsIFrame : public nsQueryFrame {
     mHasBSizeChange = aHasBSizeChange;
   }
 
+  bool HasColumnSpanSiblings() const { return mHasColumnSpanSiblings; }
+  void SetHasColumnSpanSiblings(bool aHasColumnSpanSiblings) {
+    mHasColumnSpanSiblings = aHasColumnSpanSiblings;
+  }
+
   bool DescendantMayDependOnItsStaticPosition() const {
     return mDescendantMayDependOnItsStaticPosition;
   }
-
   void SetDescendantMayDependOnItsStaticPosition(bool aValue) {
     mDescendantMayDependOnItsStaticPosition = aValue;
   }
@@ -4428,6 +4426,20 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool mInScrollAnchorChain : 1;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool mHasColumnSpanSiblings : 1;
 
   
 
