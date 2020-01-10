@@ -27,6 +27,7 @@ class nsINode;
 class nsIPrincipal;
 struct nsLayoutStylesheetCacheShm;
 struct RawServoSharedMemoryBuilder;
+class nsIReferrerInfo;
 
 namespace mozilla {
 
@@ -89,7 +90,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
  public:
   StyleSheet(css::SheetParsingMode aParsingMode, CORSMode aCORSMode,
-             net::ReferrerPolicy aReferrerPolicy,
              const dom::SRIMetadata& aIntegrity);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -305,12 +305,13 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   CORSMode GetCORSMode() const { return Inner().mCORSMode; }
 
   
-  void SetReferrerPolicy(net::ReferrerPolicy aReferrerPolicy);
+  nsIReferrerInfo* GetReferrerInfo() const { return Inner().mReferrerInfo; }
 
   
-  net::ReferrerPolicy GetReferrerPolicy() const {
-    return Inner().mReferrerPolicy;
+  void SetReferrerInfo(nsIReferrerInfo* aReferrerInfo) {
+    Inner().mReferrerInfo = aReferrerInfo;
   }
+
   
   void GetIntegrity(dom::SRIMetadata& aResult) const {
     aResult = Inner().mIntegrity;

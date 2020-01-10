@@ -9,10 +9,10 @@
 
 #include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/SRIMetadata.h"
-#include "mozilla/net/ReferrerPolicy.h"
 #include "mozilla/CORSMode.h"
 
 #include "nsIURI.h"
+#include "nsIReferrerInfo.h"
 
 class nsIPrincipal;
 struct nsLayoutStylesheetCacheShm;
@@ -27,8 +27,7 @@ struct URLExtraData;
 struct StyleSheetInfo final {
   typedef net::ReferrerPolicy ReferrerPolicy;
 
-  StyleSheetInfo(CORSMode aCORSMode, ReferrerPolicy aReferrerPolicy,
-                 const dom::SRIMetadata& aIntegrity,
+  StyleSheetInfo(CORSMode aCORSMode, const dom::SRIMetadata& aIntegrity,
                  css::SheetParsingMode aParsingMode);
 
   
@@ -52,7 +51,7 @@ struct StyleSheetInfo final {
   CORSMode mCORSMode;
   
   
-  ReferrerPolicy mReferrerPolicy;
+  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
   dom::SRIMetadata mIntegrity;
 
   
