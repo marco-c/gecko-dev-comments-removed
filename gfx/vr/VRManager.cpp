@@ -308,6 +308,7 @@ void VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure) {
     
     
     self->StopTasks();
+    self->mState = VRManagerState::Idle;
   }
 }
 
