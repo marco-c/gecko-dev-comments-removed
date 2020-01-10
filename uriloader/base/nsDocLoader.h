@@ -123,12 +123,26 @@ class nsDocLoader : public nsIDocumentLoader,
 
   void SetDocumentOpenedButNotLoaded() { mDocumentOpenedButNotLoaded = true; }
 
+  bool TreatAsBackgroundLoad();
+
+  void SetFakeOnLoadDispatched(){ mHasFakeOnLoadDispatched = true; };
+
+  bool HasFakeOnLoadDispatched(){ return mHasFakeOnLoadDispatched; };
+
+  void ResetToFirstLoad() {
+    mHasFakeOnLoadDispatched = false;
+    mIsReadyToHandlePostMessage = false;
+    mTreatAsBackgroundLoad = false;
+  };
+
  protected:
   virtual ~nsDocLoader();
 
   virtual MOZ_MUST_USE nsresult SetDocLoaderParent(nsDocLoader* aLoader);
 
   bool IsBusy();
+
+  void SetBackgroundLoadIframe();
 
   void Destroy();
   virtual void DestroyChildren();
@@ -203,6 +217,12 @@ class nsDocLoader : public nsIDocumentLoader,
     DocLoaderIsEmpty(true);
   }
 
+  
+  
+  
+  
+  
+  void DocLoaderIsEmpty(bool aFlushLayout);
  protected:
   struct nsStatusInfo : public mozilla::LinkedListElement<nsStatusInfo> {
     nsString mStatusMessage;
@@ -297,7 +317,12 @@ class nsDocLoader : public nsIDocumentLoader,
 
   bool mIsFlushingLayout;
 
+  bool mTreatAsBackgroundLoad;
+
  private:
+  bool mHasFakeOnLoadDispatched;
+
+  bool mIsReadyToHandlePostMessage;
   
 
 
@@ -314,13 +339,6 @@ class nsDocLoader : public nsIDocumentLoader,
   
   
   nsCOMArray<nsIDocumentLoader> mChildrenInOnload;
-
-  
-  
-  
-  
-  
-  void DocLoaderIsEmpty(bool aFlushLayout);
 
   int64_t GetMaxTotalProgress();
 

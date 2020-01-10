@@ -2429,6 +2429,15 @@ void nsGlobalWindowOuter::DetachFromDocShell() {
   
   
 
+  if (mDoc && DocGroup::TryToLoadIframesInBackground()) {
+    DocGroup* docGroup = GetDocGroup();
+    RefPtr<nsIDocShell> docShell = GetDocShell();
+    RefPtr<nsDocShell> dShell = nsDocShell::Cast(docShell);
+    if (dShell){
+      docGroup->TryFlushIframePostMessages(dShell->GetOuterWindowID());
+    }
+  }
+
   
   
   
@@ -6064,14 +6073,40 @@ void nsGlobalWindowOuter::PostMessageMozOuter(JSContext* aCx,
     return;
   }
 
-  if (StaticPrefs::dom_separate_event_queue_for_post_message_enabled()) {
-    if (mDoc) {
-      Document* doc = mDoc->GetTopLevelContentDocument();
-      if (doc && doc->GetReadyStateEnum() < Document::READYSTATE_COMPLETE) {
-        
-        
-        mozilla::dom::TabGroup* tabGroup = TabGroup();
-        aError = tabGroup->QueuePostMessageEvent(event.forget());
+
+  if (mDoc &&
+      StaticPrefs::dom_separate_event_queue_for_post_message_enabled() &&
+      !DocGroup::TryToLoadIframesInBackground()) {
+    Document* doc = mDoc->GetTopLevelContentDocument();
+    if (doc && doc->GetReadyStateEnum() < Document::READYSTATE_COMPLETE) {
+      
+      
+      mozilla::dom::TabGroup* tabGroup = TabGroup();
+      aError = tabGroup->QueuePostMessageEvent(event.forget());
+      return;
+    }
+  }
+
+  if (mDoc && DocGroup::TryToLoadIframesInBackground()) {
+
+    RefPtr<nsIDocShell> docShell = GetDocShell();
+    RefPtr<nsDocShell> dShell = nsDocShell::Cast(docShell);
+
+    
+    
+    if (dShell) {
+      if (!dShell->TreatAsBackgroundLoad()) {
+        Document* doc = mDoc->GetTopLevelContentDocument();
+        if (doc && doc->GetReadyStateEnum() < Document::READYSTATE_COMPLETE) {
+          
+          
+          mozilla::dom::TabGroup* tabGroup = TabGroup();
+          aError = tabGroup->QueuePostMessageEvent(event.forget());
+          return;
+        }
+      } else if (mDoc->GetReadyStateEnum() < Document::READYSTATE_COMPLETE) {
+        mozilla::dom::DocGroup* docGroup = GetDocGroup();
+        aError = docGroup->QueueIframePostMessages(event.forget(), dShell->GetOuterWindowID());
         return;
       }
     }

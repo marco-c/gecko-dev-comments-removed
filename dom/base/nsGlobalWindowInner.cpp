@@ -1937,12 +1937,20 @@ void nsGlobalWindowInner::FireFrameLoadEvent(bool aIsTrusted) {
     event.mFlags.mBubbles = false;
     event.mFlags.mCancelable = false;
 
-    
-    
-    
-    
-    
-    EventDispatcher::Dispatch(element, nullptr, &event, nullptr, &status);
+    if (mozilla::dom::DocGroup::TryToLoadIframesInBackground()) {
+      nsDocShell* ds = nsDocShell::Cast(GetDocShell());
+
+      if (ds && !ds->HasFakeOnLoadDispatched()) {
+        EventDispatcher::Dispatch(element, nullptr, &event, nullptr, &status);
+      }
+    } else {
+      
+      
+      
+      
+      
+      EventDispatcher::Dispatch(element, nullptr, &event, nullptr, &status);
+    }
     return;
   }
 

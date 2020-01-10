@@ -270,6 +270,16 @@ class nsDocShell final : public nsDocLoader,
                          LOCATION_CHANGE_SAME_DOCUMENT);
   }
 
+  
+  
+  
+  void TriggerParentCheckDocShellIsEmpty() {
+    RefPtr<nsDocShell> parent = GetParentDocshell();
+    if (parent) {
+      parent->DocLoaderIsEmpty(true);
+    }
+  }
+
   nsresult HistoryEntryRemoved(int32_t aIndex);
 
   

@@ -675,6 +675,15 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  Live,
+  "dom.cross_origin_iframes_loaded_in_background",
+   dom_cross_origin_iframes_loaded_in_background,
+  bool, false
+)
+
+
+
 
 
 PREF("browser.active_color", String, "")
