@@ -86,6 +86,49 @@ const lazyReceiveProfile = requireLazy(() => {
 
 
 
+
+const symbolCache = new Map();
+async function getSymbolsFromThisBrowser(debugName, breakpadId) {
+  if (symbolCache.size === 0) {
+    
+    for (const lib of Services.profiler.sharedLibraries) {
+      symbolCache.set(`${lib.debugName}/${lib.breakpadId}`, {
+        path: lib.path,
+        debugPath: lib.debugPath,
+      });
+    }
+  }
+
+  const cachedLibInfo = symbolCache.get(`${debugName}/${breakpadId}`);
+  if (!cachedLibInfo) {
+    throw new Error(
+      `The library ${debugName} ${breakpadId} is not in the ` +
+        "Services.profiler.sharedLibraries list, so the local path for it is not known " +
+        "and symbols for it can not be obtained. This usually happens if a content " +
+        "process uses a library that's not used in the parent process - " +
+        "Services.profiler.sharedLibraries only knows about libraries in the " +
+        "parent process."
+    );
+  }
+
+  const { path, debugPath } = cachedLibInfo;
+  const { OS } = lazyOS();
+  if (!OS.Path.split(path).absolute) {
+    throw new Error(
+      "Services.profiler.sharedLibraries did not contain an absolute path for " +
+        `the library ${debugName} ${breakpadId}, so symbols for this library can not ` +
+        "be obtained."
+    );
+  }
+
+  const { ProfilerGetSymbols } = lazyProfilerGetSymbols();
+
+  return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
+}
+
+
+
+
 async function captureProfile() {
   if (!Services.profiler.IsActive()) {
     
@@ -104,48 +147,8 @@ async function captureProfile() {
       }
     );
 
-  
-  const _symbolCache = new Map();
-
   const receiveProfile = lazyReceiveProfile();
-
-  receiveProfile(profile, async function getSymbols(debugName, breakpadId) {
-    if (_symbolCache.size === 0) {
-      
-      for (const lib of Services.profiler.sharedLibraries) {
-        _symbolCache.set(`${lib.debugName}/${lib.breakpadId}`, {
-          path: lib.path,
-          debugPath: lib.debugPath,
-        });
-      }
-    }
-
-    const cachedLibInfo = _symbolCache.get(`${debugName}/${breakpadId}`);
-    if (!cachedLibInfo) {
-      throw new Error(
-        `The library ${debugName} ${breakpadId} is not in the ` +
-          "Services.profiler.sharedLibraries list, so the local path for it is not known " +
-          "and symbols for it can not be obtained. This usually happens if a content " +
-          "process uses a library that's not used in the parent process - " +
-          "Services.profiler.sharedLibraries only knows about libraries in the " +
-          "parent process."
-      );
-    }
-
-    const { path, debugPath } = cachedLibInfo;
-    const { OS } = lazyOS();
-    if (!OS.Path.split(path).absolute) {
-      throw new Error(
-        "Services.profiler.sharedLibraries did not contain an absolute path for " +
-          `the library ${debugName} ${breakpadId}, so symbols for this library can not ` +
-          "be obtained."
-      );
-    }
-
-    const { ProfilerGetSymbols } = lazyProfilerGetSymbols();
-
-    return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
-  });
+  receiveProfile(profile, getSymbolsFromThisBrowser);
 
   Services.profiler.StopProfiler();
 }
@@ -346,6 +349,7 @@ var EXPORTED_SYMBOLS = [
   "restartProfiler",
   "toggleProfiler",
   "platform",
+  "getSymbolsFromThisBrowser",
   "getDefaultRecordingSettings",
   "getRecordingPreferencesFromBrowser",
   "setRecordingPreferencesOnBrowser",
