@@ -41,7 +41,7 @@ for (var i = 0; i < lhs_prefix.length; i++) {
 
 
 
-            assertEq(e.message, "invalid assignment left-hand side");
+            assertEq(e.message, "cannot assign to function call");
         }
     }
 }
@@ -71,7 +71,7 @@ try {
     eval("delete (foo('x') = 42);");
     assertEq(0, -4);
 } catch (e) {
-    assertEq(e.message, "invalid assignment left-hand side");
+    assertEq(e.message, "cannot assign to function call");
 }
 assertEq(fooArg, 'x');
 

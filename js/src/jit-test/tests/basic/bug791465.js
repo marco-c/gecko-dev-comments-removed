@@ -66,10 +66,10 @@ var assignment_ops = [
   "*=", "/=", "%=",
 ];
 
-var invalid_strict_funs_referror = assignment_ops.map(op => ("'use strict'\n " + op + " 'not'"));
+var invalid_strict_funs_syntax_error = assignment_ops.map(op => ("'use strict'\n " + op + " 'not'"));
 
 
 
-for (var f of invalid_strict_funs_referror) {
-  assertThrowsInstanceOf(function() { Function(f) }, ReferenceError);
+for (var f of invalid_strict_funs_syntax_error) {
+  assertThrowsInstanceOf(function() { Function(f) }, SyntaxError);
 }
