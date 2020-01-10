@@ -483,7 +483,15 @@ class SharedPrefMap {
   
   
   
-  Pref begin() const { return UncheckedGetValueAt(0); }
+  Pref begin() const {
+    for (uint32_t aIndex = 0; aIndex < Count(); aIndex++) {
+      Pref pref = UncheckedGetValueAt(aIndex);
+      if (!pref.IsSkippedByIteration()) {
+        return pref;
+      }
+    }
+    return end();
+  }
   Pref end() const { return UncheckedGetValueAt(Count()); }
 
   
