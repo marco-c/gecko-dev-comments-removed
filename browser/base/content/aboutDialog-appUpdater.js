@@ -264,10 +264,10 @@ appUpdater.prototype =
     
 
 
-    onCheckComplete(aRequest, aUpdates, aUpdateCount) {
+    onCheckComplete(aRequest, aUpdates) {
       gAppUpdater.isChecking = false;
       gAppUpdater.update = gAppUpdater.aus.
-                           selectUpdate(aUpdates, aUpdates.length);
+                           selectUpdate(aUpdates);
       if (!gAppUpdater.update) {
         gAppUpdater.selectPanel("noUpdatesFound");
         return;
