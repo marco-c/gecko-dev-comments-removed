@@ -192,11 +192,13 @@ function testTableStruct(
         
         var rowExtent = table.getRowExtentAt(rowIdx, colIdx);
         let idx;
+        
         for (
           idx = rowIdx + 1;
           idx < rowCount && aCellsArray[idx][colIdx] & kRowSpanned;
           idx++
         ) {}
+        
 
         var expectedRowExtent = idx - rowIdx;
         is(
@@ -212,11 +214,13 @@ function testTableStruct(
 
         
         var colExtent = table.getColumnExtentAt(rowIdx, colIdx);
+        
         for (
           idx = colIdx + 1;
           idx < colsCount && aCellsArray[rowIdx][idx] & kColSpanned;
           idx++
         ) {}
+        
 
         var expectedColExtent = idx - colIdx;
         is(

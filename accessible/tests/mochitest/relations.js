@@ -98,6 +98,7 @@ function testRelation(aIdentifier, aRelType, aRelatedIdentifiers) {
   
   for (let relatedAcc of actualTargets.enumerate(Ci.nsIAccessible)) {
     let idx;
+    
     for (idx = 0; idx < targets.length && relatedAcc != targets[idx]; idx++) {}
 
     if (idx == targets.length) {
