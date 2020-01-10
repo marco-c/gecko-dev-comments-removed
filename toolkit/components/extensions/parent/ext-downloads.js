@@ -774,8 +774,14 @@ this.downloads = class extends ExtensionAPI {
               const source = {
                 url: options.url,
                 isPrivate: options.incognito,
-                allowHttpStatus,
               };
+
+              
+              
+              
+              if (!options.allowHttpErrors) {
+                source.allowHttpStatus = allowHttpStatus;
+              }
 
               if (options.method || options.headers || options.body) {
                 source.adjustChannel = adjustChannel;
