@@ -530,20 +530,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-
-
-  enum class Lists { no, yes };
-  enum class Tables { no, yes };
-  void GetInnerContent(nsINode& aNode,
-                       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-                       int32_t* aIndex, Lists aLists = Lists::yes,
-                       Tables aTables = Tables::yes) const;
-
-  
-
-
-
-
   Element* IsInListItem(nsINode* aNode);
 
   nsAtom& DefaultParagraphSeparator();
