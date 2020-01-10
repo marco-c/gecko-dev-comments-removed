@@ -1540,16 +1540,14 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
   MOZ_ASSERT(!lazy->maybeScript(), "Script is already compiled!");
   MOZ_ASSERT(lazy->functionNonDelazifying() == fun);
 
-  bool isBinAST = lazy->scriptSource()->hasBinASTSource();
-  bool canRelazify = lazy->canRelazify();
+  ScriptSource* ss = lazy->scriptSource();
+  size_t sourceStart = lazy->sourceStart();
+  size_t sourceLength = lazy->sourceEnd() - lazy->sourceStart();
 
-  size_t lazyLength = lazy->sourceEnd() - lazy->sourceStart();
-  if (isBinAST) {
+  if (ss->hasBinASTSource()) {
 #if defined(JS_BUILD_BINAST)
     if (!frontend::CompileLazyBinASTFunction(
-            cx, lazy,
-            lazy->scriptSource()->binASTSource() + lazy->sourceStart(),
-            lazyLength)) {
+            cx, lazy, ss->binASTSource() + sourceStart, sourceLength)) {
       MOZ_ASSERT(fun->isInterpretedLazy());
       MOZ_ASSERT(fun->lazyScript() == lazy);
       MOZ_ASSERT(!lazy->hasScript());
@@ -1559,20 +1557,20 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
     MOZ_CRASH("Trying to delazify BinAST function in non-BinAST build");
 #endif 
   } else {
-    MOZ_ASSERT(lazy->scriptSource()->hasSourceText());
+    MOZ_ASSERT(ss->hasSourceText());
 
     
     UncompressedSourceCache::AutoHoldEntry holder;
 
-    if (lazy->scriptSource()->hasSourceType<Utf8Unit>()) {
+    if (ss->hasSourceType<Utf8Unit>()) {
       
-      ScriptSource::PinnedUnits<Utf8Unit> units(
-          cx, lazy->scriptSource(), holder, lazy->sourceStart(), lazyLength);
+      ScriptSource::PinnedUnits<Utf8Unit> units(cx, ss, holder, sourceStart,
+                                                sourceLength);
       if (!units.get()) {
         return false;
       }
 
-      if (!frontend::CompileLazyFunction(cx, lazy, units.get(), lazyLength)) {
+      if (!frontend::CompileLazyFunction(cx, lazy, units.get(), sourceLength)) {
         
         
         MOZ_ASSERT(fun->isInterpretedLazy());
@@ -1581,16 +1579,16 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
         return false;
       }
     } else {
-      MOZ_ASSERT(lazy->scriptSource()->hasSourceType<char16_t>());
+      MOZ_ASSERT(ss->hasSourceType<char16_t>());
 
       
-      ScriptSource::PinnedUnits<char16_t> units(
-          cx, lazy->scriptSource(), holder, lazy->sourceStart(), lazyLength);
+      ScriptSource::PinnedUnits<char16_t> units(cx, ss, holder, sourceStart,
+                                                sourceLength);
       if (!units.get()) {
         return false;
       }
 
-      if (!frontend::CompileLazyFunction(cx, lazy, units.get(), lazyLength)) {
+      if (!frontend::CompileLazyFunction(cx, lazy, units.get(), sourceLength)) {
         
         
         MOZ_ASSERT(fun->isInterpretedLazy());
@@ -1609,12 +1607,7 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
     lazy->initScript(script);
   }
 
-  
-  if (canRelazify) {
-    
-    
-    MOZ_ASSERT(lazy->column() == script->column());
-
+  if (lazy->canRelazify()) {
     
     
     
@@ -1631,9 +1624,9 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
   }
 
   
-  if (script->scriptSource()->hasEncoder()) {
-    RootedScriptSourceObject sourceObject(cx, lazy->sourceObject());
-    if (!script->scriptSource()->xdrEncodeFunction(cx, fun, sourceObject)) {
+  if (ss->hasEncoder()) {
+    RootedScriptSourceObject sourceObject(cx, script->sourceObject());
+    if (!ss->xdrEncodeFunction(cx, fun, sourceObject)) {
       return false;
     }
   }
@@ -1655,15 +1648,13 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
     Rooted<LazyScript*> lazy(cx, fun->lazyScript());
     RootedScript script(cx, lazy->maybeScript());
 
-    bool canRelazify = lazy->canRelazify();
-
     if (script) {
       
       
       fun->setUnlazifiedScript(script);
       
       
-      if (canRelazify) {
+      if (lazy->canRelazify()) {
         MOZ_RELEASE_ASSERT(script->maybeLazyScript() == lazy);
         script->setLazyScript(lazy);
       }
@@ -1671,7 +1662,6 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
     }
 
     if (fun != lazy->functionNonDelazifying()) {
-      
       
       
       
