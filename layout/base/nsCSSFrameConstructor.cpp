@@ -6692,7 +6692,7 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
-  if (WipeInsertionParent(parentFrame, aFirstNewContent, nullptr)) {
+  if (WipeInsertionParent(parentFrame)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -7093,7 +7093,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
-  if (WipeInsertionParent(insertion.mParentFrame, aStartChild, aEndChild)) {
+  if (WipeInsertionParent(insertion.mParentFrame)) {
     LAYOUT_PHASE_TEMP_REENTER();
     return;
   }
@@ -11209,33 +11209,12 @@ static bool IsSafeToAppendToIBSplitInline(nsIFrame* aParentFrame,
   return true;
 }
 
-bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame,
-                                                nsIContent* aStartChild,
-                                                nsIContent* aEndChild) {
+bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
 #define TRACE(reason)                                                \
   PROFILER_TRACING("Layout", "WipeInsertionParent: " reason, LAYOUT, \
                    TRACING_EVENT)
 
-  MOZ_ASSERT(aStartChild, "Must always pass aStartChild!");
-
   const LayoutFrameType frameType = aFrame->Type();
-
-  if (aFrame->GetContent() == mDocument->GetRootElement()) {
-    
-    
-    
-    
-    nsIContent* bodyElement = mDocument->GetBodyElement();
-    for (nsIContent* child = aStartChild; child != aEndChild;
-         child = child->GetNextSibling()) {
-      if (child == bodyElement) {
-        TRACE("Root");
-        RecreateFramesForContent(mDocument->GetRootElement(),
-                                 InsertionKind::Async);
-        return true;
-      }
-    }
-  }
 
   
   
@@ -11303,6 +11282,29 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
 
   
   
+
+  if (aFrame->GetContent() == mDocument->GetRootElement()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsIContent* bodyElement = mDocument->GetBodyElement();
+    for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
+      const WritingMode bodyWM(iter.item().mComputedStyle);
+      if (iter.item().mContent == bodyElement &&
+          bodyWM != aFrame->GetWritingMode()) {
+        TRACE("Root");
+        RecreateFramesForContent(mDocument->GetRootElement(),
+                                 InsertionKind::Async);
+        return true;
+      }
+    }
+  }
 
   
   
