@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, DebugCommand, DocumentId, ExternalImageData, ExternalImageId, PrimitiveFlags};
+use api::{ColorF, DebugCommand, DocumentId, ExternalImageData, ExternalImageId};
 use api::{ImageFormat, ItemTag, NotificationRequest, Shadow, FilterOp, MAX_BLUR_RADIUS};
 use api::units::*;
 use api;
@@ -554,7 +554,7 @@ pub struct LayoutPrimitiveInfo {
     
     pub rect: LayoutRect,
     pub clip_rect: LayoutRect,
-    pub flags: PrimitiveFlags,
+    pub is_backface_visible: bool,
     pub hit_info: Option<ItemTag>,
 }
 
@@ -563,7 +563,7 @@ impl LayoutPrimitiveInfo {
         Self {
             rect,
             clip_rect,
-            flags: PrimitiveFlags::default(),
+            is_backface_visible: true,
             hit_info: None,
         }
     }

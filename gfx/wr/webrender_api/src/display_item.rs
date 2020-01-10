@@ -33,22 +33,6 @@ pub const MAX_BLUR_RADIUS: f32 = 300.;
 
 pub type ItemTag = (u64, u16);
 
-bitflags! {
-    #[derive(Deserialize, MallocSizeOf, Serialize, PeekPoke)]
-    pub struct PrimitiveFlags: u8 {
-        /// The CSS backface-visibility property (yes, it can be really granular)
-        const IS_BACKFACE_VISIBLE = 1 << 0;
-        /// If set, this primitive represents part of a scroll bar
-        const IS_SCROLL_BAR = 1 << 1;
-    }
-}
-
-impl Default for PrimitiveFlags {
-    fn default() -> Self {
-        PrimitiveFlags::IS_BACKFACE_VISIBLE
-    }
-}
-
 
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
@@ -66,21 +50,18 @@ pub struct CommonItemProperties {
     
     pub hit_info: Option<ItemTag>,
     
-    pub flags: PrimitiveFlags,
+    pub is_backface_visible: bool,
 }
 
 impl CommonItemProperties {
     
-    pub fn new(
-        clip_rect: LayoutRect,
-        space_and_clip: SpaceAndClipInfo,
-    ) -> Self {
+    pub fn new(clip_rect: LayoutRect, space_and_clip: SpaceAndClipInfo) -> Self {
         Self {
             clip_rect,
             spatial_id: space_and_clip.spatial_id,
             clip_id: space_and_clip.clip_id,
             hit_info: None,
-            flags: PrimitiveFlags::default(),
+            is_backface_visible: true,
         }
     }
 }
