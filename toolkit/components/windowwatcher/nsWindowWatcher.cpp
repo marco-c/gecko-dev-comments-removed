@@ -812,6 +812,14 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
         if (NS_SUCCEEDED(rv) && newBC) {
           nsCOMPtr<nsIDocShell> newDocShell = newBC->GetDocShell();
+          if (windowIsNew && newDocShell) {
+            
+            
+            
+            
+            nsCOMPtr<nsIWebNavigation> webNav = do_QueryInterface(newDocShell);
+            webNav->Stop(nsIWebNavigation::STOP_NETWORK);
+          }
 
           
           

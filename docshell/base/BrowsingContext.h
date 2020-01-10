@@ -12,7 +12,6 @@
 #include "mozilla/Tuple.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/dom/LocationBase.h"
 #include "mozilla/dom/UserActivation.h"
 #include "nsCOMPtr.h"
@@ -186,13 +185,7 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
   
   
   
-  nsresult LoadURI(BrowsingContext* aAccessor, nsDocShellLoadState* aLoadState,
-                   bool aSetNavigating = false);
-
-  void LoadURI(const nsAString& aURI, const LoadURIOptions& aOptions,
-               ErrorResult& aError);
-
-  void DisplayLoadError(const nsAString& aURI);
+  nsresult LoadURI(BrowsingContext* aAccessor, nsDocShellLoadState* aLoadState);
 
   
   

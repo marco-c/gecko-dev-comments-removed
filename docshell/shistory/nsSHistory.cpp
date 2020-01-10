@@ -1482,5 +1482,5 @@ nsresult nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
   loadState->SetCsp(csp);
 
   
-  return aFrameDS->LoadURI(loadState, false);
+  return aFrameDS->LoadURI(loadState);
 }

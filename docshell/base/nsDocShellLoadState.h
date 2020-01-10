@@ -41,11 +41,6 @@ class nsDocShellLoadState final {
   static nsresult CreateFromPendingChannel(nsIChildChannel* aPendingChannel,
                                            nsDocShellLoadState** aResult);
 
-  static nsresult CreateFromLoadURIOptions(
-      nsISupports* aConsumer, nsIURIFixup* aURIFixup, const nsAString& aURI,
-      const mozilla::dom::LoadURIOptions& aLoadURIOptions,
-      nsDocShellLoadState** aResult);
-
   
 
   nsIReferrerInfo* GetReferrerInfo() const;
@@ -197,20 +192,6 @@ class nsDocShellLoadState final {
     return mPendingRedirectedChannel;
   }
 
-  void SetOriginalURIString(const nsCString& aOriginalURI) {
-    mOriginalURIString.emplace(aOriginalURI);
-  }
-  const Maybe<nsCString>& GetOriginalURIString() const {
-    return mOriginalURIString;
-  }
-
-  void SetCancelContentJSEpoch(int32_t aCancelEpoch) {
-    mCancelContentJSEpoch.emplace(aCancelEpoch);
-  }
-  const Maybe<int32_t>& GetCancelContentJSEpoch() const {
-    return mCancelContentJSEpoch;
-  }
-
   
   
   
@@ -357,15 +338,6 @@ class nsDocShellLoadState final {
   
   
   nsCOMPtr<nsIChildChannel> mPendingRedirectedChannel;
-
-  
-  
-  
-  Maybe<nsCString> mOriginalURIString;
-
-  
-  
-  Maybe<int32_t> mCancelContentJSEpoch;
 };
 
 #endif 
