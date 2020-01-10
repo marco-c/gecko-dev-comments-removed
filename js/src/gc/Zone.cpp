@@ -315,9 +315,9 @@ void Zone::checkStringWrappersAfterMovingGC() {
 }
 #endif
 
-void Zone::traceWeakMaps(JSTracer* trc) {
+void Zone::sweepWeakMaps() {
   
-  WeakMapBase::traceWeakEdgesInZone(this, trc);
+  WeakMapBase::sweepZone(this);
 }
 
 void Zone::discardJitCode(JSFreeOp* fop,

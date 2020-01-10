@@ -195,16 +195,8 @@ inline void TraceManuallyBarrieredEdge(JSTracer* trc, T* thingp,
 
 
 template <typename T>
-inline bool TraceManuallyBarrieredWeakEdge(JSTracer* trc, T* thingp,
-                                           const char* name) {
+inline bool TraceWeakEdge(JSTracer* trc, T* thingp, const char* name) {
   return gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
-}
-
-template <typename T>
-inline bool TraceWeakEdge(JSTracer* trc, BarrieredBase<T>* thingp,
-                          const char* name) {
-  return gc::TraceEdgeInternal(
-      trc, gc::ConvertToBase(thingp->unsafeUnbarrieredForTracing()), name);
 }
 
 
