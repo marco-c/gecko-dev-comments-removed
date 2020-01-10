@@ -133,6 +133,15 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(baselineInterpreter, false);
 
   
+  SET_DEFAULT(baselineJit, true);
+
+  
+  SET_DEFAULT(ion, true);
+
+  
+  SET_DEFAULT(nativeRegExp, true);
+
+  
   SET_DEFAULT(forceInlineCaches, false);
 
   
