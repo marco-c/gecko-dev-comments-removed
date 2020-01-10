@@ -45,8 +45,7 @@ class ContentProcessManager final {
   
 
 
-  void UnregisterRemoteFrame(const ContentParentId& aChildCpId,
-                             const TabId& aChildTabId);
+  void UnregisterRemoteFrame(const TabId& aChildTabId);
 
   
 
