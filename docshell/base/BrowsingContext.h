@@ -271,8 +271,7 @@ class BrowsingContext : public nsISupports,
   
   
   
-  BrowsingContext* FindWithName(const nsAString& aName,
-                                BrowsingContext& aRequestingContext);
+  BrowsingContext* FindWithName(const nsAString& aName);
 
   
   
