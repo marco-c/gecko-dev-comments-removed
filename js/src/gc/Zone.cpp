@@ -6,6 +6,8 @@
 
 #include "gc/Zone-inl.h"
 
+#include "jsutil.h"
+
 #include "gc/FreeOp.h"
 #include "gc/Policy.h"
 #include "gc/PublicIterators.h"
@@ -77,7 +79,8 @@ void js::ZoneAllocator::updateGCThresholds(GCRuntime& gc,
   threshold.updateAfterGC(zoneSize.retainedBytes(), invocationKind, gc.tunables,
                           gc.schedulingState, lock);
   gcMallocThreshold.updateAfterGC(gcMallocBytes.retainedBytes(),
-                                  gc.tunables.maxMallocBytes(), lock);
+                                  gc.tunables.mallocThresholdBase(),
+                                  gc.tunables.mallocGrowthFactor(), lock);
 }
 
 js::gc::TriggerKind js::ZoneAllocator::shouldTriggerGCForTooMuchMalloc() {

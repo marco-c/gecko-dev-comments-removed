@@ -475,6 +475,20 @@ class GCSchedulingTunables {
 
   MainThreadData<mozilla::TimeDuration> minLastDitchGCPeriod_;
 
+  
+
+
+
+
+  MainThreadOrGCTaskData<size_t> mallocThresholdBase_;
+
+  
+
+
+
+
+  MainThreadOrGCTaskData<float> mallocGrowthFactor_;
+
  public:
   GCSchedulingTunables();
 
@@ -524,6 +538,9 @@ class GCSchedulingTunables {
   mozilla::TimeDuration minLastDitchGCPeriod() const {
     return minLastDitchGCPeriod_;
   }
+
+  size_t mallocThresholdBase() const { return mallocThresholdBase_; }
+  float mallocGrowthFactor() const { return mallocGrowthFactor_; }
 
   MOZ_MUST_USE bool setParameter(JSGCParamKey key, uint32_t value,
                                  const AutoLockGC& lock);
@@ -729,7 +746,7 @@ class ZoneHeapThreshold : public ZoneThreshold {
 
 class ZoneMallocThreshold : public ZoneThreshold {
  public:
-  void updateAfterGC(size_t lastBytes, size_t baseBytes,
+  void updateAfterGC(size_t lastBytes, size_t baseBytes, float growthFactor,
                      const AutoLockGC& lock);
 
  private:

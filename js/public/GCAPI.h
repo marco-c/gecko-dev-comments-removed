@@ -351,6 +351,20 @@ typedef enum JSGCParamKey {
 
 
   JSGC_NURSERY_BYTES = 34,
+
+  
+
+
+
+
+  JSGC_MALLOC_THRESHOLD_BASE = 35,
+
+  
+
+
+
+
+  JSGC_MALLOC_GROWTH_FACTOR = 36,
 } JSGCParamKey;
 
 

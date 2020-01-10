@@ -139,7 +139,9 @@ class ZoneAllocator : public JS::shadow::Zone,
   
   void maybeMallocTriggerZoneGC() {
     JSRuntime* rt = runtimeFromAnyThread();
-    if (gcMallocBytes.gcBytes() >= gcMallocThreshold.gcTriggerBytes() &&
+    float factor = rt->gc.tunables.allocThresholdFactor();
+    size_t threshold = gcMallocThreshold.gcTriggerBytes() * factor;
+    if (gcMallocBytes.gcBytes() >= threshold &&
         rt->heapState() == JS::HeapState::Idle) {
       gc::MaybeMallocTriggerZoneGC(rt, this);
     }
