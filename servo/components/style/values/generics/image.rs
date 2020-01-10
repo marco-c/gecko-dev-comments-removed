@@ -82,7 +82,12 @@ pub struct GenericGradient<
     Color,
 > {
     
-    pub kind: GenericGradientKind<LineDirection, NonNegativeLength, NonNegativeLengthPercentage, Position>,
+    pub kind: GenericGradientKind<
+        LineDirection,
+        NonNegativeLength,
+        NonNegativeLengthPercentage,
+        Position,
+    >,
     
     pub items: crate::OwnedSlice<GenericGradientItem<Color, LengthPercentage>>,
     
@@ -108,11 +113,19 @@ pub enum GradientCompatMode {
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 #[repr(C, u8)]
-pub enum GenericGradientKind<LineDirection, NonNegativeLength, NonNegativeLengthPercentage, Position> {
+pub enum GenericGradientKind<
+    LineDirection,
+    NonNegativeLength,
+    NonNegativeLengthPercentage,
+    Position,
+> {
     
     Linear(LineDirection),
     
-    Radial(GenericEndingShape<NonNegativeLength, NonNegativeLengthPercentage>, Position),
+    Radial(
+        GenericEndingShape<NonNegativeLength, NonNegativeLengthPercentage>,
+        Position,
+    ),
 }
 
 pub use self::GenericGradientKind as GradientKind;

@@ -124,11 +124,7 @@ impl LengthPercentage {
     
     #[inline]
     pub fn new(length: Length, percentage: Option<Percentage>) -> Self {
-        Self::with_clamping_mode(
-            length,
-            percentage,
-            AllowedNumericType::All,
-        )
+        Self::with_clamping_mode(length, percentage, AllowedNumericType::All)
     }
 
     
@@ -384,11 +380,7 @@ impl LengthPercentage {
                 );
             }
 
-            return Self::with_clamping_mode(
-                self.length,
-                Some(p),
-                AllowedNumericType::NonNegative,
-            )
+            return Self::with_clamping_mode(self.length, Some(p), AllowedNumericType::NonNegative);
         }
 
         Self::with_clamping_mode(
