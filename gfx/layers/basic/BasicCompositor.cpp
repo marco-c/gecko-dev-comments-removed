@@ -243,16 +243,15 @@ void BasicCompositingRenderTarget::BindRenderTarget() {
   }
 }
 
-void BasicCompositor::DetachWidget() {
-  if (mWidget) {
-    if (mIsPendingEndRemoteDrawing) {
-      
-      TryToEndRemoteDrawing( true);
-      MOZ_ASSERT(!mIsPendingEndRemoteDrawing);
-    }
-    mWidget->CleanupRemoteDrawing();
+void BasicCompositor::Destroy() {
+  if (mIsPendingEndRemoteDrawing) {
+    
+    TryToEndRemoteDrawing( true);
+    MOZ_ASSERT(!mIsPendingEndRemoteDrawing);
   }
-  Compositor::DetachWidget();
+  mWidget->CleanupRemoteDrawing();
+
+  Compositor::Destroy();
 }
 
 TextureFactoryIdentifier BasicCompositor::GetTextureFactoryIdentifier() {
