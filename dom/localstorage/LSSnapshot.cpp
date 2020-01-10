@@ -23,8 +23,7 @@ const uint32_t kSnapshotTimeoutMs = 20000;
 
 
 
-class SnapshotWriteOptimizer final
-    : public LSWriteOptimizer<LSValue> {
+class SnapshotWriteOptimizer final : public LSWriteOptimizer<LSValue> {
  public:
   void Enumerate(nsTArray<LSWriteInfo>& aWriteInfos);
 };
