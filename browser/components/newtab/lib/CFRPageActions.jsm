@@ -70,6 +70,10 @@ class PageAction {
   constructor(win, dispatchToASRouter) {
     this.window = win;
     this.urlbar = win.document.getElementById("urlbar");
+    
+    
+    
+    this.urlbarinput = win.document.getElementById("urlbar-input");
     this.container = win.document.getElementById(
       "contextual-feature-recommendation"
     );
@@ -189,7 +193,7 @@ class PageAction {
     this.container.addEventListener("click", this._showPopupOnClick);
     
     
-    this.urlbar.addEventListener("focus", this._collapse);
+    this.urlbarinput.addEventListener("focus", this._collapse);
 
     if (shouldExpand) {
       this._clearScheduledStateChanges();
