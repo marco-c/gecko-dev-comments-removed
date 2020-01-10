@@ -2,25 +2,14 @@
 
 
 
-groupbox {
-  display: -moz-groupbox;
-  -moz-appearance: groupbox;
+fieldset {
+  border: 0.5px groove ThreeDLightShadow;
   margin: 6px 3px;
 }
 
 .groupbox-body {
   
   margin: 3px 3px 6px;
-}
-
-caption {
-  -moz-box-pack: start;
-  margin: -8px 6px 0;
-}
-
-caption > label {
-  background-color: -moz-field;
-  padding: 0 2px;
 }
 
 .portrait-page {
