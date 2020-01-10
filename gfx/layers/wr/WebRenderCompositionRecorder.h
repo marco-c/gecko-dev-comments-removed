@@ -33,8 +33,6 @@ class WebRenderCompositionRecorder final : public CompositionRecorder {
   explicit WebRenderCompositionRecorder(TimeStamp aRecordingStart,
                                         wr::PipelineId aRootPipelineId)
       : CompositionRecorder(aRecordingStart),
-        mMutex("CompositionRecorder"),
-        mFinishedRecording(false),
         mRootPipelineId(aRootPipelineId) {}
 
   WebRenderCompositionRecorder() = delete;
@@ -52,20 +50,6 @@ class WebRenderCompositionRecorder final : public CompositionRecorder {
 
 
 
-  void RecordFrame(RecordedFrame* aFrame) override;
-
-  
-
-
-
-
-
-
-
-
-  void WriteCollectedFrames() override;
-
-  
 
 
 
@@ -75,40 +59,14 @@ class WebRenderCompositionRecorder final : public CompositionRecorder {
 
 
 
-
-
-
-
-
-  bool MaybeRecordFrame(wr::Renderer* aRenderer,
+  void MaybeRecordFrame(wr::Renderer* aRenderer,
                         wr::WebRenderPipelineInfo* aFrameEpochs);
 
-  
-
-
-
-
-
-
-
-
-
-
-  bool ForceFinishRecording();
-
- protected:
-  ~WebRenderCompositionRecorder() = default;
-
+ private:
   
 
 
   bool DidPaintContent(wr::WebRenderPipelineInfo* aFrameEpochs);
-
- private:
-  Mutex mMutex;
-
-  
-  bool mFinishedRecording;
 
   
   

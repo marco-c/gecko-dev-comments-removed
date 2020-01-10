@@ -2621,12 +2621,10 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvBeginRecording(
 
   if (mLayerManager) {
     mLayerManager->SetCompositionRecorder(
-        MakeAndAddRef<CompositionRecorder>(aRecordingStart));
+        MakeUnique<CompositionRecorder>(aRecordingStart));
   } else if (mWrBridge) {
-    RefPtr<WebRenderCompositionRecorder> recorder =
-        new WebRenderCompositionRecorder(aRecordingStart,
-                                         mWrBridge->PipelineId());
-    mWrBridge->SetCompositionRecorder(std::move(recorder));
+    mWrBridge->SetCompositionRecorder(MakeUnique<WebRenderCompositionRecorder>(
+        aRecordingStart, mWrBridge->PipelineId()));
   }
 
   mHaveCompositionRecorder = true;
@@ -2645,9 +2643,6 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvEndRecording(
   if (mLayerManager) {
     mLayerManager->WriteCollectedFrames();
   } else if (mWrBridge) {
-    
-    
-    
     mWrBridge->WriteCollectedFrames();
   }
 

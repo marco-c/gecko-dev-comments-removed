@@ -45,39 +45,12 @@ class RendererRecordedFrame final : public layers::RecordedFrame {
   wr::RecordedFrameHandle mHandle;
 };
 
-void WebRenderCompositionRecorder::RecordFrame(RecordedFrame* aFrame) {
-  MOZ_CRASH(
-      "WebRenderCompositionRecorder::RecordFrame should not be called; call "
-      "MaybeRecordFrame instead.");
-}
-
-bool WebRenderCompositionRecorder::MaybeRecordFrame(
+void WebRenderCompositionRecorder::MaybeRecordFrame(
     wr::Renderer* aRenderer, wr::WebRenderPipelineInfo* aFrameEpochs) {
   MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
 
-  if (!aRenderer || !aFrameEpochs) {
-    return false;
-  }
-
-  if (!mMutex.TryLock()) {
-    
-    
-    
-    
-    
-    
-
-    return false;
-  }
-
-  auto unlockGuard = MakeScopeExit([&]() { mMutex.Unlock(); });
-
-  if (mFinishedRecording) {
-    return true;
-  }
-
-  if (!DidPaintContent(aFrameEpochs)) {
-    return false;
+  if (!aRenderer || !aFrameEpochs || !DidPaintContent(aFrameEpochs)) {
+    return;
   }
 
   wr::RecordedFrameHandle handle{0};
@@ -88,34 +61,8 @@ bool WebRenderCompositionRecorder::MaybeRecordFrame(
     RefPtr<RecordedFrame> frame =
         new RendererRecordedFrame(TimeStamp::Now(), aRenderer, handle, size);
 
-    CompositionRecorder::RecordFrame(frame);
+    RecordFrame(frame);
   }
-
-  return false;
-}
-
-void WebRenderCompositionRecorder::WriteCollectedFrames() {
-  MutexAutoLock guard(mMutex);
-
-  MOZ_RELEASE_ASSERT(
-      !mFinishedRecording,
-      "WebRenderCompositionRecorder: Attempting to write frames from invalid "
-      "state.");
-
-  CompositionRecorder::WriteCollectedFrames();
-
-  mFinishedRecording = true;
-}
-
-bool WebRenderCompositionRecorder::ForceFinishRecording() {
-  MutexAutoLock guard(mMutex);
-
-  bool wasRecording = !mFinishedRecording;
-  mFinishedRecording = true;
-
-  ClearCollectedFrames();
-
-  return wasRecording;
 }
 
 bool WebRenderCompositionRecorder::DidPaintContent(

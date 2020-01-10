@@ -238,38 +238,20 @@ size_t RenderThread::RendererCount() {
 
 void RenderThread::SetCompositionRecorderForWindow(
     wr::WindowId aWindowId,
-    RefPtr<layers::WebRenderCompositionRecorder>&& aCompositionRecorder) {
+    UniquePtr<layers::WebRenderCompositionRecorder> aCompositionRecorder) {
   MOZ_ASSERT(IsInRenderThread());
   MOZ_ASSERT(GetRenderer(aWindowId));
-
-  auto it = mCompositionRecorders.find(aWindowId);
-  if (it != mCompositionRecorders.end() && it->second->ForceFinishRecording()) {
-    
-    
-    
-    
-    
-    
-    
-    if (RendererOGL* renderer = GetRenderer(aWindowId)) {
-      wr_renderer_release_composition_recorder_structures(
-          renderer->GetRenderer());
-    }
-  }
-
-  
-  
-  
-  
-  
-  
+  MOZ_ASSERT(mCompositionRecorders.find(aWindowId) ==
+             mCompositionRecorders.end());
 
   mCompositionRecorders[aWindowId] = std::move(aCompositionRecorder);
 }
 
 void RenderThread::WriteCollectedFramesForWindow(wr::WindowId aWindowId) {
   MOZ_ASSERT(IsInRenderThread());
-  MOZ_ASSERT(GetRenderer(aWindowId));
+
+  RendererOGL* renderer = GetRenderer(aWindowId);
+  MOZ_ASSERT(renderer);
 
   auto it = mCompositionRecorders.find(aWindowId);
   MOZ_DIAGNOSTIC_ASSERT(
@@ -277,6 +259,11 @@ void RenderThread::WriteCollectedFramesForWindow(wr::WindowId aWindowId) {
       "Attempted to write frames from a window that was not recording.");
   if (it != mCompositionRecorders.end()) {
     it->second->WriteCollectedFrames();
+
+    if (renderer) {
+      wr_renderer_release_composition_recorder_structures(
+          renderer->GetRenderer());
+    }
 
     mCompositionRecorders.erase(it);
   }
@@ -445,15 +432,7 @@ void RenderThread::UpdateAndRender(
   if (rendered) {
     auto recorderIt = mCompositionRecorders.find(aWindowId);
     if (recorderIt != mCompositionRecorders.end()) {
-      bool shouldRelease = recorderIt->second->MaybeRecordFrame(
-          renderer->GetRenderer(), info.get());
-
-      if (shouldRelease) {
-        mCompositionRecorders.erase(recorderIt);
-
-        wr_renderer_release_composition_recorder_structures(
-            renderer->GetRenderer());
-      }
+      recorderIt->second->MaybeRecordFrame(renderer->GetRenderer(), info.get());
     }
   }
 

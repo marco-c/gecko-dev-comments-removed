@@ -50,24 +50,20 @@ class RecordedFrame {
 
 
 class CompositionRecorder {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositionRecorder)
-
  public:
   explicit CompositionRecorder(TimeStamp aRecordingStart);
 
   
 
 
-  virtual void RecordFrame(RecordedFrame* aFrame);
+  void RecordFrame(RecordedFrame* aFrame);
 
   
 
 
-  virtual void WriteCollectedFrames();
+  void WriteCollectedFrames();
 
  protected:
-  virtual ~CompositionRecorder() = default;
-
   void ClearCollectedFrames();
 
  private:
