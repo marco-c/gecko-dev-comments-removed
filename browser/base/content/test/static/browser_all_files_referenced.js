@@ -193,8 +193,6 @@ var whitelist = [
   
   { file: "resource://gre/modules/Promise.jsm" },
   
-  { file: "resource://gre/modules/ZipUtils.jsm" },
-  
   
   
   {
