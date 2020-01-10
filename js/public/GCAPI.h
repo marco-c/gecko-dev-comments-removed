@@ -86,14 +86,6 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_MAX_MALLOC_BYTES = 1,
-
-  
-
-
-
-
-
 
 
 

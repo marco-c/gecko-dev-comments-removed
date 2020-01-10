@@ -94,12 +94,6 @@ JSFlatString* StringBuffer::finishStringInternal(JSContext* cx) {
     return nullptr;
   }
 
-  
-
-
-
-  cx->updateMallocCounter(sizeof(CharT) * len);
-
   return str;
 }
 

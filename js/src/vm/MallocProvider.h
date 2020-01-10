@@ -206,6 +206,10 @@ struct MallocProvider {
 
  private:
   Client* client() { return static_cast<Client*>(this); }
+
+  
+  
+  void updateMallocCounter(size_t nbytes) {}
 };
 
 } 

@@ -323,8 +323,6 @@ namespace gc {
 
 struct Cell;
 
-enum TriggerKind { NoTrigger = 0, IncrementalTrigger, NonIncrementalTrigger };
-
 
 
 
@@ -336,13 +334,6 @@ class GCSchedulingTunables {
 
 
   UnprotectedData<size_t> gcMaxBytes_;
-
-  
-
-
-
-
-  UnprotectedData<size_t> maxMallocBytes_;
 
   
 
@@ -493,7 +484,6 @@ class GCSchedulingTunables {
   GCSchedulingTunables();
 
   size_t gcMaxBytes() const { return gcMaxBytes_; }
-  size_t maxMallocBytes() const { return maxMallocBytes_; }
   size_t gcMinNurseryBytes() const { return gcMinNurseryBytes_; }
   size_t gcMaxNurseryBytes() const { return gcMaxNurseryBytes_; }
   size_t gcZoneAllocThresholdBase() const { return gcZoneAllocThresholdBase_; }
@@ -546,8 +536,6 @@ class GCSchedulingTunables {
                                  const AutoLockGC& lock);
   void resetParameter(JSGCParamKey key, const AutoLockGC& lock);
 
-  void setMaxMallocBytes(size_t value);
-
  private:
   void setHighFrequencyLowLimit(size_t value);
   void setHighFrequencyHighLimit(size_t value);
@@ -579,60 +567,6 @@ class GCSchedulingState {
         tunables.isDynamicHeapGrowthEnabled() && !lastGCTime.IsNull() &&
         lastGCTime + tunables.highFrequencyThreshold() > currentTime;
   }
-};
-
-class MemoryCounter {
-  
-  
-  mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      bytes_;
-
-  
-  size_t maxBytes_;
-
-  
-  MainThreadData<size_t> bytesAtStartOfGC_;
-
-  
-  mozilla::Atomic<TriggerKind, mozilla::ReleaseAcquire,
-                  mozilla::recordreplay::Behavior::DontPreserve>
-      triggered_;
-
- public:
-  MemoryCounter();
-
-  size_t bytes() const { return bytes_; }
-  size_t maxBytes() const { return maxBytes_; }
-  TriggerKind triggered() const { return triggered_; }
-
-  void setMax(size_t newMax, const AutoLockGC& lock);
-
-  void update(size_t bytes) { bytes_ += bytes; }
-
-  void adopt(MemoryCounter& other);
-
-  TriggerKind shouldTriggerGC(const GCSchedulingTunables& tunables) const {
-    if (MOZ_LIKELY(bytes_ < maxBytes_ * tunables.allocThresholdFactor())) {
-      return NoTrigger;
-    }
-
-    if (bytes_ < maxBytes_) {
-      return IncrementalTrigger;
-    }
-
-    return NonIncrementalTrigger;
-  }
-
-  bool shouldResetIncrementalGC(const GCSchedulingTunables& tunables) const {
-    return bytes_ > maxBytes_ * tunables.allocThresholdFactorAvoidInterrupt();
-  }
-
-  void recordTrigger(TriggerKind trigger);
-
-  void updateOnGCStart();
-  void updateOnGCEnd(const GCSchedulingTunables& tunables,
-                     const AutoLockGC& lock);
 };
 
 
