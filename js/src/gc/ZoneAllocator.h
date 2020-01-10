@@ -43,21 +43,14 @@ class ZoneAllocator : public JS::shadow::Zone,
                                    void* reallocPtr = nullptr);
   void reportAllocationOverflow() const;
 
-  void setGCMaxMallocBytes(size_t value, const js::AutoLockGC& lock) {
-    gcMallocCounter.setMax(value, lock);
-  }
-  void updateMallocCounter(size_t nbytes) {
-    updateMemoryCounter(gcMallocCounter, nbytes);
-  }
+  void updateMallocCounter(size_t nbytes) {}
+
   void adoptMallocBytes(ZoneAllocator* other) {
-    gcMallocCounter.adopt(other->gcMallocCounter);
     gcMallocBytes.adopt(other->gcMallocBytes);
 #ifdef DEBUG
     gcMallocTracker.adopt(other->gcMallocTracker);
 #endif
   }
-  size_t GCMaxMallocBytes() const { return gcMallocCounter.maxBytes(); }
-  size_t GCMallocBytes() const { return gcMallocCounter.bytes(); }
 
   void updateJitCodeMallocBytes(size_t nbytes) {
     updateMemoryCounter(jitCodeCounter, nbytes);
@@ -175,13 +168,6 @@ class ZoneAllocator : public JS::shadow::Zone,
   
   js::MainThreadData<size_t> gcDelayBytes;
 
- private:
-  
-  
-  
-  js::gc::MemoryCounter gcMallocCounter;
-
- public:
   
   
   js::gc::HeapSize gcMallocBytes;
