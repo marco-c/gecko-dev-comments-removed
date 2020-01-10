@@ -102,14 +102,15 @@ class GCParallelTask : public RunnableTask {
     return ThreadType::THREAD_TYPE_GCPARALLEL;
   }
 
+  bool isNotStarted(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::NotStarted;
+  }
+
  private:
   void assertNotStarted() const {
     
     
     MOZ_ASSERT(state_ == State::NotStarted);
-  }
-  bool isNotStarted(const AutoLockHelperThreadState& lock) const {
-    return state_ == State::NotStarted;
   }
   bool isDispatched(const AutoLockHelperThreadState& lock) const {
     return state_ == State::Dispatched;
