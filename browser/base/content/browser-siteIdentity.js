@@ -1000,12 +1000,6 @@ var gIdentityHandler = {
 
 
   handleIdentityButtonEvent(event) {
-    
-    if (this._protectionsPanelEnabled && event.altKey) {
-      gProtectionsHandler.handleProtectionsButtonEvent(event);
-      return;
-    }
-
     event.stopPropagation();
 
     if (
@@ -1076,6 +1070,11 @@ var gIdentityHandler = {
 
     
     this._identityBox.setAttribute("open", "true");
+
+    
+    if (gProtectionsHandler._protectionsPopup.state != "closed") {
+      PanelMultiView.hidePopup(gProtectionsHandler._protectionsPopup);
+    }
 
     
     PanelMultiView.openPopup(this._identityPopup, this._identityIcon, {

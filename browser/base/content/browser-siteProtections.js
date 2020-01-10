@@ -1575,9 +1575,14 @@ var gProtectionsHandler = {
     gProtectionsHandler.toggleBreakageLink();
 
     
+    if (gIdentityHandler._identityPopup.state != "closed") {
+      PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
+    }
+
+    
     PanelMultiView.openPopup(
       this._protectionsPopup,
-      gIdentityHandler._identityIcon,
+      gIdentityHandler._trackingProtectionIconContainer,
       {
         position: "bottomcenter topleft",
         triggerEvent: event,
