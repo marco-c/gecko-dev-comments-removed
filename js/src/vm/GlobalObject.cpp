@@ -25,6 +25,7 @@
 #include "builtin/streams/ReadableStream.h"      
 #include "builtin/streams/ReadableStreamController.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
+#include "builtin/streams/WritableStream.h"        
 #include "builtin/Symbol.h"
 #include "builtin/TypedObject.h"
 #include "builtin/WeakMapObject.h"
@@ -107,6 +108,12 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
     case JSProto_ByteLengthQueuingStrategy:
     case JSProto_CountQueuingStrategy:
       return !cx->realm()->creationOptions().getStreamsEnabled();
+
+    case JSProto_WritableStream: {
+      const auto& realmOptions = cx->realm()->creationOptions();
+      return !realmOptions.getStreamsEnabled() ||
+             !realmOptions.getWritableStreamsEnabled();
+    }
 
     
     case JSProto_Atomics:
