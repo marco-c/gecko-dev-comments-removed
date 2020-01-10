@@ -94,6 +94,11 @@ class DocumentChannelParent : public nsIInterfaceRequestor,
 
   virtual void ActorDestroy(ActorDestroyReason why) override;
 
+  
+  
+  
+  void CancelChildForProcessSwitch();
+
  private:
   virtual ~DocumentChannelParent() = default;
 

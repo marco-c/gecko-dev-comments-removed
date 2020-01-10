@@ -7723,11 +7723,9 @@ nsresult nsDocShell::RestoreFromHistory() {
   
   mContentViewer = nullptr;
 
-  if (!mSkipBrowsingContextDetachOnDestroy) {
-    
-    
-    mBrowsingContext->CacheChildren();
-  }
+  
+  
+  mBrowsingContext->CacheChildren();
 
   
   
