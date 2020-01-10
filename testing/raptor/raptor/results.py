@@ -33,10 +33,17 @@ class PerftestResultsHandler(object):
         self.page_timeout_list = []
         self.images = []
         self.supporting_data = None
+        self.browser_version = None
+        self.browser_name = None
 
     @abstractmethod
     def add(self, new_result_json):
         raise NotImplementedError()
+
+    def add_browser_meta(self, browser_name, browser_version):
+        
+        self.browser_name = browser_name
+        self.browser_version = browser_version
 
     def add_image(self, screenshot, test_name, page_cycle):
         
@@ -172,6 +179,7 @@ class RaptorResultsHandler(PerftestResultsHandler):
         
         LOG.info("summarizing raptor test results")
         output = RaptorOutput(self.results, self.supporting_data, test_config['subtest_alert_on'])
+        output.set_browser_meta(self.browser_name, self.browser_version)
         output.summarize(test_names)
         
         
@@ -563,7 +571,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
         output = BrowsertimeOutput(self.results,
                                    self.supporting_data,
                                    test_config['subtest_alert_on'])
-
+        output.set_browser_meta(self.browser_name, self.browser_version)
         output.summarize(test_names)
         success, out_perfdata = output.output(test_names)
 
