@@ -103,20 +103,6 @@ static gfxRect AppUnitsToFloatCSSPixels(const gfxRect& aRect,
 
 
 
-
-
-
-
-static void ScaleAround(gfxRect& aRect, const gfxPoint& aPoint, double aScale) {
-  aRect.x = aPoint.x - aScale * (aPoint.x - aRect.x);
-  aRect.y = aPoint.y - aScale * (aPoint.y - aRect.y);
-  aRect.width *= aScale;
-  aRect.height *= aScale;
-}
-
-
-
-
 static bool Inside(const gfxRect& aRect, const gfxPoint& aPoint) {
   return aPoint.x >= aRect.x && aPoint.x < aRect.XMost() &&
          aPoint.y >= aRect.y && aPoint.y < aRect.YMost();
@@ -906,13 +892,7 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
       aContext);
 
   
-  
-  ScaleAround(
-      fill,
-      textRun->IsVertical()
-          ? gfxPoint(nsPresContext::AppUnitsToFloatCSSPixels(baseline), 0.0)
-          : gfxPoint(0.0, nsPresContext::AppUnitsToFloatCSSPixels(baseline)),
-      1.0 / mFontSizeScaleFactor);
+  fill.Scale(1.0 / mFontSizeScaleFactor);
 
   
   if (aFlags & eIncludeFill) {
