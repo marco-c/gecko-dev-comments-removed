@@ -492,26 +492,19 @@ void gfxTextRun::DrawPartialLigature(gfxFont* aFont, Range aRange,
 
 
 
-static bool HasSyntheticBoldOrColor(const gfxTextRun* aRun,
-                                    gfxTextRun::Range aRange) {
-  gfxTextRun::GlyphRunIterator iter(aRun, aRange);
-  while (iter.NextRun()) {
-    gfxFont* font = iter.GetGlyphRun()->mFont;
-    if (font) {
-      if (font->IsSyntheticBold()) {
-        return true;
-      }
-      gfxFontEntry* fe = font->GetFontEntry();
-      if (fe->TryGetSVGData(font) || fe->TryGetColorGlyphs()) {
-        return true;
-      }
-#if defined(XP_MACOSX)  
-      if (fe->HasFontTable(TRUETYPE_TAG('s', 'b', 'i', 'x'))) {
-        return true;
-      }
-#endif
-    }
+static bool HasSyntheticBoldOrColor(gfxFont* aFont) {
+  if (aFont->IsSyntheticBold()) {
+    return true;
   }
+  gfxFontEntry* fe = aFont->GetFontEntry();
+  if (fe->TryGetSVGData(aFont) || fe->TryGetColorGlyphs()) {
+    return true;
+  }
+#if defined(XP_MACOSX)  
+  if (fe->HasFontTable(TRUETYPE_TAG('s', 'b', 'i', 'x'))) {
+    return true;
+  }
+#endif
   return false;
 }
 
@@ -579,27 +572,10 @@ void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
   
   BufferAlphaColor syntheticBoldBuffer(aParams.context);
   Color currentColor;
-  bool needToRestore = false;
-
-  if (aParams.drawMode & DrawMode::GLYPH_FILL &&
+  bool mayNeedBuffering =
+      aParams.drawMode & DrawMode::GLYPH_FILL &&
       aParams.context->HasNonOpaqueNonTransparentColor(currentColor) &&
-      HasSyntheticBoldOrColor(this, aRange) &&
-      !aParams.context->GetTextDrawer()) {
-    needToRestore = true;
-    
-    
-    gfxTextRun::Metrics metrics =
-        MeasureText(aRange, gfxFont::LOOSE_INK_EXTENTS,
-                    aParams.context->GetDrawTarget(), aParams.provider);
-    if (IsRightToLeft()) {
-      metrics.mBoundingBox.MoveBy(
-          gfxPoint(aPt.x - metrics.mAdvanceWidth, aPt.y));
-    } else {
-      metrics.mBoundingBox.MoveBy(gfxPoint(aPt.x, aPt.y));
-    }
-    syntheticBoldBuffer.PushSolidColor(metrics.mBoundingBox, currentColor,
-                                       GetAppUnitsPerDevUnit());
-  }
+      !aParams.context->GetTextDrawer();
 
   
   
@@ -625,9 +601,27 @@ void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
 
   while (iter.NextRun()) {
     gfxFont* font = iter.GetGlyphRun()->mFont;
-    uint32_t start = iter.GetStringStart();
-    uint32_t end = iter.GetStringEnd();
-    Range ligatureRange(start, end);
+    Range runRange(iter.GetStringStart(), iter.GetStringEnd());
+
+    bool needToRestore = false;
+    if (mayNeedBuffering && HasSyntheticBoldOrColor(font)) {
+      needToRestore = true;
+      
+      
+      gfxTextRun::Metrics metrics =
+          MeasureText(runRange, gfxFont::LOOSE_INK_EXTENTS,
+                      aParams.context->GetDrawTarget(), aParams.provider);
+      if (IsRightToLeft()) {
+        metrics.mBoundingBox.MoveBy(
+            gfxPoint(aPt.x - metrics.mAdvanceWidth, aPt.y));
+      } else {
+        metrics.mBoundingBox.MoveBy(gfxPoint(aPt.x, aPt.y));
+      }
+      syntheticBoldBuffer.PushSolidColor(metrics.mBoundingBox, currentColor,
+                                         GetAppUnitsPerDevUnit());
+    }
+
+    Range ligatureRange(runRange);
     ShrinkToLigatureBoundaries(&ligatureRange);
 
     bool drawPartial =
@@ -636,8 +630,8 @@ void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
     gfx::Point origPt = aPt;
 
     if (drawPartial) {
-      DrawPartialLigature(font, Range(start, ligatureRange.start), &aPt,
-                          aParams.provider, params,
+      DrawPartialLigature(font, Range(runRange.start, ligatureRange.start),
+                          &aPt, aParams.provider, params,
                           iter.GetGlyphRun()->mOrientation);
     }
 
@@ -645,7 +639,7 @@ void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
                params, iter.GetGlyphRun()->mOrientation);
 
     if (drawPartial) {
-      DrawPartialLigature(font, Range(ligatureRange.end, end), &aPt,
+      DrawPartialLigature(font, Range(ligatureRange.end, runRange.end), &aPt,
                           aParams.provider, params,
                           iter.GetGlyphRun()->mOrientation);
     }
@@ -655,11 +649,11 @@ void gfxTextRun::Draw(Range aRange, gfx::Point aPt,
     } else {
       advance += (aPt.x - origPt.x) * params.direction;
     }
-  }
 
-  
-  if (needToRestore) {
-    syntheticBoldBuffer.PopAlpha();
+    
+    if (needToRestore) {
+      syntheticBoldBuffer.PopAlpha();
+    }
   }
 
   if (aParams.advanceWidth) {
