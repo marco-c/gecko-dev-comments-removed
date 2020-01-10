@@ -1952,16 +1952,33 @@ nsresult ServiceWorkerPrivate::GetDebugger(nsIWorkerDebugger** aResult) {
 nsresult ServiceWorkerPrivate::AttachDebugger() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (mInner) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
   
   
   
   if (!mDebuggerCount) {
-    nsresult rv = SpawnWorkerIfNeeded(AttachEvent);
+    nsresult rv = mInner ? mInner->SpawnWorkerIfNeeded()
+                         : SpawnWorkerIfNeeded(AttachEvent);
     NS_ENSURE_SUCCESS(rv, rv);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    if (mInner) {
+      RenewKeepAliveToken(AttachEvent);
+    }
 
     mIdleWorkerTimer->Cancel();
   }
@@ -1973,10 +1990,6 @@ nsresult ServiceWorkerPrivate::AttachDebugger() {
 
 nsresult ServiceWorkerPrivate::DetachDebugger() {
   MOZ_ASSERT(NS_IsMainThread());
-
-  if (mInner) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
 
   if (!mDebuggerCount) {
     return NS_ERROR_UNEXPECTED;

@@ -128,6 +128,24 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
     },
 
     start() {
+      if (swm.isParentInterceptEnabled()) {
+        const { activeWorker } = this._registration;
+
+        
+        if (activeWorker) {
+          
+          
+          
+          
+          
+          
+          activeWorker.attachDebugger();
+          activeWorker.detachDebugger();
+        }
+
+        return { type: "started" };
+      }
+
       if (!_serviceWorkerProcessScriptLoaded) {
         Services.ppmm.loadProcessScript(
           "resource://devtools/server/actors/worker/service-worker-process.js",
