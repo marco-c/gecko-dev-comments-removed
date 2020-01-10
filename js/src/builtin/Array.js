@@ -16,7 +16,7 @@ function ArrayIndexOf(searchElement) {
         return -1;
 
     
-    var n = arguments.length > 1 ? ToInteger(arguments[1]) + 0 : 0;
+    var n = arguments.length > 1 ? ToIntegerPositiveZero(arguments[1]) : 0;
 
     
     if (n >= len)
@@ -60,7 +60,7 @@ function ArrayLastIndexOf(searchElement) {
         return -1;
 
     
-    var n = arguments.length > 1 ? ToInteger(arguments[1]) + 0 : len - 1;
+    var n = arguments.length > 1 ? ToIntegerPositiveZero(arguments[1]) : len - 1;
 
     
     var k;
@@ -483,14 +483,14 @@ function ArrayCopyWithin(target, start, end = undefined) {
     var len = ToLength(O.length);
 
     
-    var relativeTarget = ToInteger(target);
+    var relativeTarget = ToIntegerPositiveZero(target);
 
     
     var to = relativeTarget < 0 ? std_Math_max(len + relativeTarget, 0)
                                 : std_Math_min(relativeTarget, len);
 
     
-    var relativeStart = ToInteger(start);
+    var relativeStart = ToIntegerPositiveZero(start);
 
     
     var from = relativeStart < 0 ? std_Math_max(len + relativeStart, 0)
@@ -498,7 +498,7 @@ function ArrayCopyWithin(target, start, end = undefined) {
 
     
     var relativeEnd = end === undefined ? len
-                                        : ToInteger(end);
+                                        : ToIntegerPositiveZero(end);
 
     
     var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0)
@@ -552,7 +552,7 @@ function ArrayFill(value, start = 0, end = undefined) {
     var len = ToLength(O.length);
 
     
-    var relativeStart = ToInteger(start);
+    var relativeStart = ToIntegerPositiveZero(start);
 
     
     var k = relativeStart < 0
@@ -560,7 +560,7 @@ function ArrayFill(value, start = 0, end = undefined) {
             : std_Math_min(relativeStart, len);
 
     
-    var relativeEnd = end === undefined ? len : ToInteger(end);
+    var relativeEnd = end === undefined ? len : ToIntegerPositiveZero(end);
 
     
     var final = relativeEnd < 0
@@ -590,7 +590,7 @@ function ArrayIncludes(searchElement, fromIndex = 0) {
         return false;
 
     
-    var n = ToInteger(fromIndex);
+    var n = ToIntegerPositiveZero(fromIndex);
 
     
     var k;
@@ -1075,7 +1075,7 @@ function ArrayFlat() {
 
     
     if (arguments.length > 0 && arguments[0] !== undefined)
-        depthNum = ToInteger(arguments[0]);
+        depthNum = ToIntegerPositiveZero(arguments[0]);
 
     
     var A = ArraySpeciesCreate(O, 0);

@@ -78,9 +78,8 @@ function RequireObjectCoercible(v) {
 
 function ToLength(v) {
     
-    v = ToInteger(v);
+    v = ToIntegerPositiveZero(v);
 
-    
     
     
     v = std_Math_max(v, 0);

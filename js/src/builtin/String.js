@@ -352,10 +352,10 @@ function String_substring(start, end) {
     var len = str.length;
 
     
-    var intStart = ToInteger(start);
+    var intStart = ToIntegerPositiveZero(start);
 
     
-    var intEnd = (end === undefined) ? len : ToInteger(end);
+    var intEnd = (end === undefined) ? len : ToIntegerPositiveZero(end);
 
     
     var finalStart = std_Math_min(std_Math_max(intStart, 0), len);
@@ -388,13 +388,13 @@ function String_substr(start, length) {
     var str = ToString(this);
 
     
-    var intStart = ToInteger(start);
+    var intStart = ToIntegerPositiveZero(start);
 
     
     var size = str.length;
     
     
-    var end = (length === undefined) ? size : ToInteger(length);
+    var end = (length === undefined) ? size : ToIntegerPositiveZero(length);
 
     
     if (intStart < 0)
@@ -425,10 +425,10 @@ function String_slice(start, end) {
     var len = str.length;
 
     
-    var intStart = ToInteger(start);
+    var intStart = ToIntegerPositiveZero(start);
 
     
-    var intEnd = (end === undefined) ? len : ToInteger(end);
+    var intEnd = (end === undefined) ? len : ToIntegerPositiveZero(end);
 
     
     var from = (intStart < 0) ? std_Math_max(len + intStart, 0) : std_Math_min(intStart, len);
@@ -454,7 +454,7 @@ function String_codePointAt(pos) {
     var S = ToString(this);
 
     
-    var position = ToInteger(pos);
+    var position = ToIntegerPositiveZero(pos);
 
     
     var size = S.length;
@@ -485,7 +485,7 @@ function String_repeat(count) {
     var S = ToString(this);
 
     
-    var n = ToInteger(count);
+    var n = ToIntegerPositiveZero(count);
 
     
     if (n < 0)
