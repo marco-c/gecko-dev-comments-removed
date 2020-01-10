@@ -52,7 +52,10 @@ class MozillaBuildBootstrapper(BaseBootstrapper):
         pass
 
     def upgrade_mercurial(self, current):
-        self.pip_install('mercurial')
+        
+        
+        
+        self.pip_install('mercurial', '--only-binary', 'mercurial')
 
     def upgrade_python(self, current):
         pass
