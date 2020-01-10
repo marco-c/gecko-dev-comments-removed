@@ -236,6 +236,17 @@ static uint32_t StartupExtraDefaultFeatures() {
 }
 
 
+static constexpr bool FeaturesImplyStackSampling(uint32_t aFeatures) {
+  
+  
+  
+  
+  
+  return aFeatures & (ProfilerFeature::JS | ProfilerFeature::Leaf |
+                      ProfilerFeature::StackWalk);
+}
+
+
 
 
 
@@ -566,9 +577,7 @@ class ActivePS {
         mSamplerThread(NewSamplerThread(aLock, mGeneration, aInterval)),
         mInterposeObserver(ProfilerFeature::HasMainThreadIO(aFeatures)
                                ? new ProfilerIOInterposeObserver()
-                               : nullptr)
-#undef HAS_FEATURE
-        ,
+                               : nullptr),
         mIsPaused(false)
 #if defined(GP_OS_linux)
         ,
@@ -2389,7 +2398,7 @@ static void PrintUsageThenExit(int aExitCode) {
       "  MOZ_PROFILER_STARTUP_ENTRIES (or its default value), and no\n"
       "  additional time duration restriction will be applied.\n"
       "\n"
-      "  MOZ_PROFILER_STARTUP_INTERVAL=<1..1000>\n"
+      "  MOZ_PROFILER_STARTUP_INTERVAL=<1..%d>\n"
       "  If MOZ_PROFILER_STARTUP is set, specifies the sample interval,\n"
       "  measured in milliseconds, when the profiler is first started.\n"
       "  If unset, the platform default is used.\n"
@@ -2410,7 +2419,8 @@ static void PrintUsageThenExit(int aExitCode) {
       unsigned(PROFILER_DEFAULT_ENTRIES.Value()),
       unsigned(PROFILER_DEFAULT_STARTUP_ENTRIES.Value()),
       unsigned(PROFILER_DEFAULT_ENTRIES.Value() * 8),
-      unsigned(PROFILER_DEFAULT_STARTUP_ENTRIES.Value() * 8));
+      unsigned(PROFILER_DEFAULT_STARTUP_ENTRIES.Value() * 8),
+      PROFILER_MAX_INTERVAL);
 
 #define PRINT_FEATURE(n_, str_, Name_, desc_)                                  \
   printf("    %c %5u: \"%s\" (%s)\n", FeatureCategory(ProfilerFeature::Name_), \
@@ -2575,6 +2585,16 @@ void SamplerThread::Run() {
 
   
   
+  const bool stackSamplingRequired = []() {
+    PSAutoLock lock(gPSMutex);
+    if (!ActivePS::Exists(lock)) {
+      return false;
+    }
+    return FeaturesImplyStackSampling(ActivePS::Features(lock));
+  }();
+
+  
+  
   
   
   BlocksRingBuffer localBlocksRingBuffer(
@@ -2612,9 +2632,6 @@ void SamplerThread::Run() {
       TimeStamp expiredMarkersCleaned = TimeStamp::NowUnfuzzed();
 
       if (!ActivePS::IsPaused(lock)) {
-        const Vector<LiveProfiledThreadData>& liveThreads =
-            ActivePS::LiveProfiledThreads(lock);
-
         TimeDuration delta = sampleStart - CorePS::ProcessStartTime();
         ProfileBuffer& buffer = ActivePS::Buffer(lock);
 
@@ -2639,91 +2656,98 @@ void SamplerThread::Run() {
         }
         TimeStamp countersSampled = TimeStamp::NowUnfuzzed();
 
-        for (auto& thread : liveThreads) {
-          RegisteredThread* registeredThread = thread.mRegisteredThread;
-          ProfiledThreadData* profiledThreadData =
-              thread.mProfiledThreadData.get();
-          RefPtr<ThreadInfo> info = registeredThread->Info();
+        if (stackSamplingRequired) {
+          const Vector<LiveProfiledThreadData>& liveThreads =
+              ActivePS::LiveProfiledThreads(lock);
 
-          
-          
-          
-          if (registeredThread->RacyRegisteredThread()
-                  .CanDuplicateLastSampleDueToSleep()) {
-            bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
-                info->ThreadId(), CorePS::ProcessStartTime(),
-                profiledThreadData->LastSample());
-            if (dup_ok) {
-              continue;
+          for (auto& thread : liveThreads) {
+            RegisteredThread* registeredThread = thread.mRegisteredThread;
+            ProfiledThreadData* profiledThreadData =
+                thread.mProfiledThreadData.get();
+            RefPtr<ThreadInfo> info = registeredThread->Info();
+
+            
+            
+            
+            if (registeredThread->RacyRegisteredThread()
+                    .CanDuplicateLastSampleDueToSleep()) {
+              bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
+                  info->ThreadId(), CorePS::ProcessStartTime(),
+                  profiledThreadData->LastSample());
+              if (dup_ok) {
+                continue;
+              }
             }
+
+            ThreadResponsiveness* resp =
+                profiledThreadData->GetThreadResponsiveness();
+            if (resp) {
+              resp->Update();
+            }
+
+            AUTO_PROFILER_STATS(gecko_SamplerThread_Run_DoPeriodicSample);
+
+            TimeStamp now = TimeStamp::NowUnfuzzed();
+
+            
+            
+            
+            uint64_t samplePos =
+                buffer.AddThreadIdEntry(registeredThread->Info()->ThreadId());
+            profiledThreadData->LastSample() = Some(samplePos);
+
+            
+            
+            TimeDuration delta = now - CorePS::ProcessStartTime();
+            buffer.AddEntry(ProfileBufferEntry::TimeBeforeCompactStack(
+                delta.ToMilliseconds()));
+
+            
+            
+            mSampler.SuspendAndSampleAndResumeThread(
+                lock, *registeredThread, [&](const Registers& aRegs) {
+                  DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
+                                   now, aRegs, samplePos, localProfileBuffer);
+                });
+
+            
+            
+            
+            
+            
+            
+            auto state = localBlocksRingBuffer.GetState();
+            if (NS_WARN_IF(state.mClearedBlockCount !=
+                           previousState.mClearedBlockCount)) {
+              LOG("Stack sample too big for local storage, needed %u bytes",
+                  unsigned(state.mRangeEnd.ConvertToU64() -
+                           previousState.mRangeEnd.ConvertToU64()));
+              
+              
+              CorePS::CoreBlocksRingBuffer().PutObjects(
+                  ProfileBufferEntry::Kind::CompactStack,
+                  UniquePtr<BlocksRingBuffer>(nullptr));
+            } else if (state.mRangeEnd.ConvertToU64() -
+                           previousState.mRangeEnd.ConvertToU64() >=
+                       CorePS::CoreBlocksRingBuffer().BufferLength()->Value()) {
+              LOG("Stack sample too big for profiler storage, needed %u bytes",
+                  unsigned(state.mRangeEnd.ConvertToU64() -
+                           previousState.mRangeEnd.ConvertToU64()));
+              
+              
+              CorePS::CoreBlocksRingBuffer().PutObjects(
+                  ProfileBufferEntry::Kind::CompactStack,
+                  UniquePtr<BlocksRingBuffer>(nullptr));
+            } else {
+              CorePS::CoreBlocksRingBuffer().PutObjects(
+                  ProfileBufferEntry::Kind::CompactStack,
+                  localBlocksRingBuffer);
+            }
+
+            
+            localBlocksRingBuffer.Clear();
+            previousState = localBlocksRingBuffer.GetState();
           }
-
-          ThreadResponsiveness* resp =
-              profiledThreadData->GetThreadResponsiveness();
-          if (resp) {
-            resp->Update();
-          }
-
-          AUTO_PROFILER_STATS(gecko_SamplerThread_Run_DoPeriodicSample);
-
-          TimeStamp now = TimeStamp::NowUnfuzzed();
-
-          
-          
-          
-          uint64_t samplePos =
-              buffer.AddThreadIdEntry(registeredThread->Info()->ThreadId());
-          profiledThreadData->LastSample() = Some(samplePos);
-
-          
-          
-          TimeDuration delta = now - CorePS::ProcessStartTime();
-          buffer.AddEntry(ProfileBufferEntry::TimeBeforeCompactStack(
-              delta.ToMilliseconds()));
-
-          
-          mSampler.SuspendAndSampleAndResumeThread(
-              lock, *registeredThread, [&](const Registers& aRegs) {
-                DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
-                                 now, aRegs, samplePos, localProfileBuffer);
-              });
-
-          
-          
-          
-          
-          
-          
-          auto state = localBlocksRingBuffer.GetState();
-          if (NS_WARN_IF(state.mClearedBlockCount !=
-                         previousState.mClearedBlockCount)) {
-            LOG("Stack sample too big for local storage, needed %u bytes",
-                unsigned(state.mRangeEnd.ConvertToU64() -
-                         previousState.mRangeEnd.ConvertToU64()));
-            
-            
-            CorePS::CoreBlocksRingBuffer().PutObjects(
-                ProfileBufferEntry::Kind::CompactStack,
-                UniquePtr<BlocksRingBuffer>(nullptr));
-          } else if (state.mRangeEnd.ConvertToU64() -
-                         previousState.mRangeEnd.ConvertToU64() >=
-                     CorePS::CoreBlocksRingBuffer().BufferLength()->Value()) {
-            LOG("Stack sample too big for profiler storage, needed %u bytes",
-                unsigned(state.mRangeEnd.ConvertToU64() -
-                         previousState.mRangeEnd.ConvertToU64()));
-            
-            
-            CorePS::CoreBlocksRingBuffer().PutObjects(
-                ProfileBufferEntry::Kind::CompactStack,
-                UniquePtr<BlocksRingBuffer>(nullptr));
-          } else {
-            CorePS::CoreBlocksRingBuffer().PutObjects(
-                ProfileBufferEntry::Kind::CompactStack, localBlocksRingBuffer);
-          }
-
-          
-          localBlocksRingBuffer.Clear();
-          previousState = localBlocksRingBuffer.GetState();
         }
 
 #if defined(USE_LUL_STACKWALK)
@@ -3109,7 +3133,7 @@ void profiler_init(void* aStackTop) {
     if (startupInterval && startupInterval[0] != '\0') {
       errno = 0;
       interval = PR_strtod(startupInterval, nullptr);
-      if (errno == 0 && interval > 0.0 && interval <= 1000.0) {
+      if (errno == 0 && interval > 0.0 && interval <= PROFILER_MAX_INTERVAL) {
         LOG("- MOZ_PROFILER_STARTUP_INTERVAL = %f", interval);
       } else {
         LOG("- MOZ_PROFILER_STARTUP_INTERVAL not a valid float: %s",
