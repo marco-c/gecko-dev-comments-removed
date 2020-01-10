@@ -134,10 +134,6 @@ class FilterBar extends Component {
     return false;
   }
 
-  componentWillUnmount() {
-    this.resizeObserver.disconnect();
-  }
-
   
 
 
@@ -148,6 +144,14 @@ class FilterBar extends Component {
 
   maybeUpdateLayout() {
     const { dispatch, displayMode } = this.props;
+
+    
+    
+    
+    if (!this.wrapperNode || !this.wrapperNode.isConnected) {
+      this.resizeObserver.disconnect();
+      return;
+    }
 
     const filterInput = this.wrapperNode.querySelector(".devtools-searchbox");
     const { width: filterInputWidth } = filterInput.getBoundingClientRect();
