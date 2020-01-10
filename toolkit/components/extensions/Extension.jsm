@@ -147,6 +147,7 @@ const CHILD_SHUTDOWN_TIMEOUT_MS = 8000;
 
 
 const PRIVILEGED_PERMS = new Set([
+  "activityLog",
   "mozillaAddons",
   "geckoViewAddons",
   "telemetry",
