@@ -92,6 +92,19 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 class TelemetryHandler {
   constructor() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     this._browserInfoByUrl = new Map();
     this._initialized = false;
     this.__searchProviderInfo = null;
@@ -195,10 +208,12 @@ class TelemetryHandler {
       let item = this._browserInfoByUrl.get(url);
       if (item) {
         item.browsers.add(browser);
+        item.count++;
       } else {
         this._browserInfoByUrl.set(url, {
-          browser: new WeakSet([browser]),
+          browsers: new WeakSet([browser]),
           info,
+          count: 1,
         });
       }
     }
@@ -212,9 +227,12 @@ class TelemetryHandler {
 
   stopTrackingBrowser(browser) {
     for (let [url, item] of this._browserInfoByUrl) {
-      item.browser.delete(browser);
+      if (item.browsers.has(browser)) {
+        item.browsers.delete(browser);
+        item.count--;
+      }
 
-      if (!item.browser.length) {
+      if (!item.count) {
         this._browserInfoByUrl.delete(url);
       }
     }
