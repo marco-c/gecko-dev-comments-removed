@@ -35,6 +35,13 @@ class FlexboxFront extends FrontClassWithSpec(flexboxSpec) {
   
 
 
+  get walkerFront() {
+    return this.parentFront.walkerFront;
+  }
+
+  
+
+
   get properties() {
     return this._form.properties;
   }
@@ -62,6 +69,13 @@ class FlexItemFront extends FrontClassWithSpec(flexItemSpec) {
     }
 
     return this.conn.getFrontByID(this._form.nodeActorID);
+  }
+
+  
+
+
+  get walkerFront() {
+    return this.parentFront.walkerFront;
   }
 
   
