@@ -160,6 +160,27 @@ static int32_t UTCToLocalStandardOffsetSeconds() {
 bool js::DateTimeInfo::internalUpdateTimeZoneAdjustment(
     ResetTimeZoneMode mode) {
   
+  if (localTZAStatus_ == LocalTimeZoneAdjustmentStatus::NeedsUpdate) {
+    return true;
+  }
+
+  
+  
+  
+  
+  if (mode == ResetTimeZoneMode::ResetEvenIfOffsetUnchanged) {
+    localTZAStatus_ = LocalTimeZoneAdjustmentStatus::NeedsUpdate;
+    return true;
+  }
+
+  
+  return resetTimeZoneAdjustment(mode);
+}
+
+bool js::DateTimeInfo::resetTimeZoneAdjustment(ResetTimeZoneMode mode) {
+  localTZAStatus_ = LocalTimeZoneAdjustmentStatus::Valid;
+
+  
 
 
 
@@ -195,8 +216,7 @@ bool js::DateTimeInfo::internalUpdateTimeZoneAdjustment(
 }
 
 js::DateTimeInfo::DateTimeInfo() {
-  internalUpdateTimeZoneAdjustment(
-      ResetTimeZoneMode::ResetEvenIfOffsetUnchaged);
+  localTZAStatus_ = LocalTimeZoneAdjustmentStatus::NeedsUpdate;
 }
 
 js::DateTimeInfo::~DateTimeInfo() = default;
@@ -543,7 +563,7 @@ void js::ResetTimeZoneInternal(ResetTimeZoneMode mode) {
 }
 
 JS_PUBLIC_API void JS::ResetTimeZone() {
-  js::ResetTimeZoneInternal(js::ResetTimeZoneMode::ResetEvenIfOffsetUnchaged);
+  js::ResetTimeZoneInternal(js::ResetTimeZoneMode::ResetEvenIfOffsetUnchanged);
 }
 
 #if defined(XP_WIN)

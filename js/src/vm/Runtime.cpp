@@ -225,6 +225,8 @@ bool JSRuntime::init(JSContext* cx, uint32_t maxbytes,
     return false;
   }
 
+  
+  
   js::ResetTimeZoneInternal(ResetTimeZoneMode::DontResetIfOffsetUnchanged);
 
   if (!parentRuntime) {
