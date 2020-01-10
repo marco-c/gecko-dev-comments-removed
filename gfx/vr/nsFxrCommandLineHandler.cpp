@@ -4,54 +4,20 @@
 
 
 
-#ifndef XP_WIN
-#  error "nsFxrCommandLineHandler currently only supported on Windows"
-#endif
-
 #include "nsFxrCommandLineHandler.h"
-
 #include "nsICommandLine.h"
-#include "nsIWindowWatcher.h"
-#include "mozIDOMWindow.h"
-#include "nsServiceManagerUtils.h"
 #include "nsString.h"
-#include "nsArray.h"
-#include "nsCOMPtr.h"
-
-#include "windows.h"
 
 NS_IMPL_ISUPPORTS(nsFxrCommandLineHandler, nsICommandLineHandler)
 
 NS_IMETHODIMP
 nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
-  bool handleFlagRetVal = false;
-  nsresult result =
-      aCmdLine->HandleFlag(NS_LITERAL_STRING("fxr"), false, &handleFlagRetVal);
-  if (result == NS_OK && handleFlagRetVal) {
-    aCmdLine->SetPreventDefault(true);
-
-    nsCOMPtr<nsIWindowWatcher> wwatch =
-        do_GetService(NS_WINDOWWATCHER_CONTRACTID);
-    NS_ENSURE_TRUE(wwatch, NS_ERROR_FAILURE);
-
-    nsCOMPtr<mozIDOMWindowProxy> newWindow;
-    result = wwatch->OpenWindow(nullptr,                            
-                                "chrome://fxr/content/fxrui.html",  
-                                "_blank",                           
-                                "chrome,dialog=no,all",             
-                                nullptr,  
-                                getter_AddRefs(newWindow));
-
-    MOZ_ASSERT(result == NS_OK);
-  }
-
+  
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsFxrCommandLineHandler::GetHelpInfo(nsACString& aResult) {
-  aResult.AssignLiteral(
-      "  --fxr Creates a new window for Firefox Reality on Desktop when "
-      "available\n");
+  
   return NS_OK;
 }
