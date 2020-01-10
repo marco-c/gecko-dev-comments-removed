@@ -2313,8 +2313,7 @@ class Document : public nsINode,
   
   
   
-  void SetReadyStateInternal(ReadyState rs,
-                             bool updateTimingInformation = true);
+  void SetReadyStateInternal(ReadyState, bool aUpdateTimingInformation = true);
   ReadyState GetReadyStateEnum() { return mReadyState; }
 
   void SetAncestorLoading(bool aAncestorIsLoading);

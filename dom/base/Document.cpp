@@ -11214,56 +11214,57 @@ void Document::NotifyLoading(const bool& aCurrentParentIsLoading,
   }
 }
 
-void Document::SetReadyStateInternal(ReadyState rs,
-                                     bool updateTimingInformation) {
-  if (rs == READYSTATE_UNINITIALIZED) {
+void Document::SetReadyStateInternal(ReadyState aReadyState,
+                                     bool aUpdateTimingInformation) {
+  if (aReadyState == READYSTATE_UNINITIALIZED) {
     
     
     
-    mReadyState = rs;
+    mReadyState = aReadyState;
     return;
   }
 
   if (IsTopLevelContentDocument()) {
-    if (rs == READYSTATE_LOADING) {
+    if (aReadyState == READYSTATE_LOADING) {
       AddToplevelLoadingDocument(this);
-    } else if (rs == READYSTATE_COMPLETE) {
+    } else if (aReadyState == READYSTATE_COMPLETE) {
       RemoveToplevelLoadingDocument(this);
     }
   }
 
-  if (updateTimingInformation && READYSTATE_LOADING == rs) {
-    mLoadingTimeStamp = mozilla::TimeStamp::Now();
+  if (aUpdateTimingInformation && READYSTATE_LOADING == aReadyState) {
+    mLoadingTimeStamp = TimeStamp::Now();
   }
-  NotifyLoading(mAncestorIsLoading, mAncestorIsLoading, mReadyState, rs);
-  mReadyState = rs;
-  if (updateTimingInformation && mTiming) {
-    switch (rs) {
+  NotifyLoading(mAncestorIsLoading, mAncestorIsLoading, mReadyState,
+                aReadyState);
+  mReadyState = aReadyState;
+  if (aUpdateTimingInformation && mTiming) {
+    switch (aReadyState) {
       case READYSTATE_LOADING:
-        mTiming->NotifyDOMLoading(Document::GetDocumentURI());
+        mTiming->NotifyDOMLoading(GetDocumentURI());
         break;
       case READYSTATE_INTERACTIVE:
-        mTiming->NotifyDOMInteractive(Document::GetDocumentURI());
+        mTiming->NotifyDOMInteractive(GetDocumentURI());
         break;
       case READYSTATE_COMPLETE:
-        mTiming->NotifyDOMComplete(Document::GetDocumentURI());
+        mTiming->NotifyDOMComplete(GetDocumentURI());
         break;
       default:
-        NS_WARNING("Unexpected ReadyState value");
+        MOZ_ASSERT_UNREACHABLE("Unexpected ReadyState value");
         break;
     }
   }
   
 
-  if (READYSTATE_INTERACTIVE == rs) {
+  if (READYSTATE_INTERACTIVE == aReadyState) {
     if (!mXULPersist && nsContentUtils::IsSystemPrincipal(NodePrincipal())) {
       mXULPersist = new XULPersist(this);
       mXULPersist->Init();
     }
   }
 
-  if (updateTimingInformation) {
-    RecordNavigationTiming(rs);
+  if (aUpdateTimingInformation) {
+    RecordNavigationTiming(aReadyState);
   }
 
   RefPtr<AsyncEventDispatcher> asyncDispatcher =
