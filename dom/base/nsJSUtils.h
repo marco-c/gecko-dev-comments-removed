@@ -109,6 +109,12 @@ class nsJSUtils {
     bool mScriptUsed;
 #endif
 
+   private:
+    
+    template <typename Unit>
+    nsresult InternalCompile(JS::CompileOptions& aCompileOptions,
+                             JS::SourceText<Unit>& aSrcBuf);
+
    public:
     
     
@@ -153,6 +159,8 @@ class nsJSUtils {
     
     nsresult Compile(JS::CompileOptions& aCompileOptions,
                      JS::SourceText<char16_t>& aSrcBuf);
+    nsresult Compile(JS::CompileOptions& aCompileOptions,
+                     JS::SourceText<mozilla::Utf8Unit>& aSrcBuf);
 
     
     nsresult Compile(JS::CompileOptions& aCompileOptions,
