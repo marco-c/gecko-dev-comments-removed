@@ -8,12 +8,15 @@
 #define gc_WeakMap_inl_h
 
 #include "gc/WeakMap.h"
+#include "gc/PublicIterators.h"
 
 #include "gc/Zone.h"
 #include "js/TraceKind.h"
 #include "vm/JSContext.h"
 
 namespace js {
+namespace gc {
+namespace detail {
 
 template <typename T>
 static T extractUnbarriered(const WriteBarriered<T>& v) {
@@ -25,17 +28,44 @@ static T* extractUnbarriered(T* v) {
   return v;
 }
 
-inline  JSObject* WeakMapBase::getDelegate(JSObject* key) {
-  return UncheckedUnwrapWithoutExpose(key);
+template <typename T>
+static JS::Zone* GetZone(T t) {
+  return t->zone();
 }
 
-inline  JSObject* WeakMapBase::getDelegate(JSScript* script) {
+static JS::Zone* GetZone(js::HeapPtr<JS::Value>& t) {
+  if (!t.isGCThing()) {
+    return nullptr;
+  }
+  return t.toGCThing()->asTenured().zone();
+}
+
+
+
+static MOZ_MAYBE_UNUSED JSObject* GetDelegateHelper(gc::Cell* key) {
   return nullptr;
 }
 
-inline  JSObject* WeakMapBase::getDelegate(LazyScript* script) {
-  return nullptr;
+static JSObject* GetDelegateHelper(JSObject* key) {
+  JSObject* delegate = UncheckedUnwrapWithoutExpose(key);
+  return (key == delegate) ? nullptr : delegate;
 }
+
+} 
+} 
+
+
+
+
+template <typename T>
+inline  JSObject* WeakMapBase::getDelegate(const T& key) {
+  using namespace gc::detail;
+  return GetDelegateHelper(extractUnbarriered(key));
+}
+
+template <>
+inline  JSObject* WeakMapBase::getDelegate(gc::Cell* const&) =
+    delete;
 
 template <class K, class V>
 WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
@@ -52,10 +82,24 @@ WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
 
   zone()->gcWeakMapList().insertFront(this);
   if (zone()->wasGCStarted()) {
-    marked = true;
-    markColor = gc::MarkColor::Black;
+    markColor = CellColor::Black;
   }
 }
+
+namespace gc {
+
+
+
+struct AutoSetValueColor : gc::AutoSetMarkColor {
+  AutoSetValueColor(GCMarker& marker, CellColor mapColor, CellColor keyColor)
+      : gc::AutoSetMarkColor(
+            marker, mapColor == keyColor ? mapColor : CellColor::Gray) {}
+};
+
+}  
+
+
+
 
 
 
@@ -67,22 +111,34 @@ WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
 template <class K, class V>
 void WeakMap<K, V>::markEntry(GCMarker* marker, gc::Cell* markedCell,
                               gc::Cell* origKey) {
-  MOZ_ASSERT(marked);
+  using namespace gc::detail;
 
   Ptr p = Base::lookup(static_cast<Lookup>(origKey));
+  
+  
+  
+  
+  
   MOZ_ASSERT(p.found());
 
   K key(p->key());
   MOZ_ASSERT((markedCell == extractUnbarriered(key)) ||
              (markedCell == getDelegate(key)));
-  if (marker->isMarked(&key)) {
-    TraceEdge(marker, &p->value(), "ephemeron value");
-  } else if (keyNeedsMark(marker, key)) {
-    TraceEdge(marker, &p->value(), "WeakMap ephemeron value");
+
+  CellColor delegateColor = getDelegateColor(key);
+  if (IsMarked(delegateColor) && key->zone()->isGCMarking()) {
+    gc::AutoSetMarkColor autoColor(*marker, delegateColor);
     TraceEdge(marker, &key, "proxy-preserved WeakMap ephemeron key");
-    MOZ_ASSERT(key == p->key());  
+    MOZ_ASSERT(key == p->key(), "no moving GC");
   }
-  key.unsafeSet(nullptr);  
+  CellColor keyColor = getCellColor(key);
+  if (IsMarked(keyColor)) {
+    JS::Zone* valueZone = GetZone(p->value());
+    if (valueZone && valueZone->isGCMarking()) {
+      gc::AutoSetValueColor autoColor(*marker, markColor, keyColor);
+      TraceEdge(marker, &p->value(), "WeakMap ephemeron value");
+    }
+  }
 }
 
 template <class K, class V>
@@ -98,13 +154,12 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
     
     
     
-    if (marked && markColor == gc::MarkColor::Black &&
+    if (markColor == CellColor::Black &&
         marker->markColor() == gc::MarkColor::Gray) {
       return;
     }
 
-    marked = true;
-    markColor = marker->markColor();
+    markColor = GetCellColor(marker->markColor());
     (void)markEntries(marker);
     return;
   }
@@ -131,8 +186,7 @@ template <class K, class V>
  void WeakMap<K, V>::addWeakEntry(
     GCMarker* marker, gc::Cell* key, const gc::WeakMarkable& markable) {
   Zone* zone = key->asTenured().zone();
-  auto& weakKeys =
-      gc::IsInsideNursery(key) ? zone->gcNurseryWeakKeys() : zone->gcWeakKeys();
+  auto& weakKeys = zone->gcWeakKeys(key);
   auto p = weakKeys.get(key);
   if (p) {
     gc::WeakEntryVector& weakEntries = p->value;
@@ -150,39 +204,45 @@ template <class K, class V>
 
 template <class K, class V>
 bool WeakMap<K, V>::markEntries(GCMarker* marker) {
-  MOZ_ASSERT(marked);
-  if (marker->markColor() == gc::MarkColor::Black &&
-      markColor == gc::MarkColor::Gray) {
-    return false;
-  }
-
+  MOZ_ASSERT(IsMarked(markColor));
   bool markedAny = false;
 
   for (Enum e(*this); !e.empty(); e.popFront()) {
     
-    bool keyIsMarked = marker->isMarked(&e.front().mutableKey());
-    if (!keyIsMarked && keyNeedsMark(marker, e.front().key())) {
+    CellColor keyColor = getCellColor(e.front().key().get());
+    CellColor delegateColor = getDelegateColor(e.front().key());
+    if (IsMarked(delegateColor) && keyColor < delegateColor) {
+      gc::AutoSetMarkColor autoColor(*marker, delegateColor);
       TraceEdge(marker, &e.front().mutableKey(),
                 "proxy-preserved WeakMap entry key");
-      keyIsMarked = true;
       markedAny = true;
+      keyColor = delegateColor;
     }
 
-    if (keyIsMarked) {
+    if (IsMarked(keyColor)) {
+      gc::AutoSetValueColor autoColor(*marker, markColor, keyColor);
       if (!marker->isMarked(&e.front().value())) {
         TraceEdge(marker, &e.front().value(), "WeakMap entry value");
         markedAny = true;
       }
-    } else if (marker->isWeakMarkingTracer()) {
+    }
+
+    
+    
+    
+    
+    if (keyColor < markColor) {
+      MOZ_ASSERT(marker->weakMapAction() == ExpandWeakMaps);
       
       
       
       
-      gc::Cell* weakKey = extractUnbarriered(e.front().key());
+      gc::Cell* weakKey = gc::detail::extractUnbarriered(e.front().key());
       gc::WeakMarkable markable(this, weakKey);
-      addWeakEntry(marker, weakKey, markable);
       if (JSObject* delegate = getDelegate(e.front().key())) {
         addWeakEntry(marker, delegate, markable);
+      } else {
+        addWeakEntry(marker, weakKey, markable);
       }
     }
   }
@@ -191,25 +251,33 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
 }
 
 template <class K, class V>
-inline bool WeakMap<K, V>::keyNeedsMark(GCMarker* marker, JSObject* key) const {
+void WeakMap<K, V>::postSeverDelegate(GCMarker* marker, gc::Cell* key,
+                                      Compartment* comp) {
+  if (IsMarked(markColor)) {
+    
+    
+    gc::WeakMarkable markable(this, key);
+    addWeakEntry(marker, key, markable);
+  }
+}
+
+template <class K, class V>
+inline WeakMapBase::CellColor WeakMap<K, V>::getDelegateColor(
+    JSObject* key) const {
   JSObject* delegate = getDelegate(key);
-  
-
-
-
-  return delegate && marker->isMarkedUnbarriered(&delegate);
+  return delegate ? getCellColor(delegate) : CellColor::White;
 }
 
 template <class K, class V>
-inline bool WeakMap<K, V>::keyNeedsMark(GCMarker* marker,
-                                        JSScript* script) const {
-  return false;
+inline WeakMapBase::CellColor WeakMap<K, V>::getDelegateColor(
+    JSScript* script) const {
+  return CellColor::White;
 }
 
 template <class K, class V>
-inline bool WeakMap<K, V>::keyNeedsMark(GCMarker* marker,
-                                        LazyScript* script) const {
-  return false;
+inline WeakMapBase::CellColor WeakMap<K, V>::getDelegateColor(
+    LazyScript* script) const {
+  return CellColor::White;
 }
 
 template <class K, class V>

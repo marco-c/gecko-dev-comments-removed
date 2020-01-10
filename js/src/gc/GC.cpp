@@ -4604,7 +4604,7 @@ void GCRuntime::markWeakReferences(gcstats::PhaseKind phase) {
 
   for (;;) {
     bool markedAny = false;
-    if (!marker.isWeakMarkingTracer()) {
+    if (!marker.isWeakMarking()) {
       for (ZoneIterT zone(rt); !zone.done(); zone.next()) {
         markedAny |= WeakMapBase::markZoneIteratively(zone, &marker);
       }
@@ -4733,7 +4733,7 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
 
 
-  WeakMapSet markedWeakMaps;
+  WeakMapColors markedWeakMaps;
 
   
 

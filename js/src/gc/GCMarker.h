@@ -225,6 +225,26 @@ class MarkStackIter {
 
 } 
 
+enum MarkingState : uint8_t {
+  
+  NotActive,
+
+  
+  
+  
+  RegularMarking,
+
+  
+  
+  
+  
+  WeakMarking,
+
+  
+  
+  IterativeMarking
+};
+
 class GCMarker : public JSTracer {
  public:
   explicit GCMarker(JSRuntime* rt);
@@ -292,10 +312,20 @@ class GCMarker : public JSTracer {
   void leaveWeakMarkingMode();
   void abortLinearWeakMarking() {
     leaveWeakMarkingMode();
-    linearWeakMarkingDisabled_ = true;
+    state = MarkingState::IterativeMarking;
   }
 
   void delayMarkingChildren(gc::Cell* cell);
+
+  
+  void forgetWeakKey(js::gc::WeakKeyTable& weakKeys, WeakMapBase* map,
+                     gc::Cell* keyOrDelegate, gc::Cell* keyToRemove);
+
+  
+  void forgetWeakMap(WeakMapBase* map, Zone* zone);
+
+  
+  void severWeakDelegate(JSObject* key, JSObject* delegate);
 
   bool isDrained() { return isMarkStackEmpty() && !delayedMarkingList; }
 
@@ -333,6 +363,8 @@ class GCMarker : public JSTracer {
 
   template <typename T>
   void markImplicitEdges(T* oldThing);
+
+  bool isWeakMarking() const { return state == MarkingState::WeakMarking; }
 
  private:
 #ifdef DEBUG
@@ -424,20 +456,14 @@ class GCMarker : public JSTracer {
   MainThreadData<bool> delayedMarkingWorkAdded;
 
   
-
-
-
-  MainThreadData<bool> linearWeakMarkingDisabled_;
+  size_t markCount;
 
   
-  size_t markCount;
+  MainThreadData<MarkingState> state;
 
 #ifdef DEBUG
   
   MainThreadData<size_t> markLaterArenas;
-
-  
-  MainThreadData<bool> started;
 
   
   mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
@@ -483,6 +509,11 @@ class MOZ_RAII AutoSetMarkColor {
   AutoSetMarkColor(GCMarker& marker, MarkColor newColor)
       : marker_(marker), initialColor_(marker.markColor()) {
     marker_.setMarkColor(newColor);
+  }
+
+  AutoSetMarkColor(GCMarker& marker, CellColor newColor)
+      : AutoSetMarkColor(marker, GetMarkColor(newColor)) {
+    MOZ_ASSERT(newColor != CellColor::White);
   }
 
   ~AutoSetMarkColor() { marker_.setMarkColor(initialColor_); }
