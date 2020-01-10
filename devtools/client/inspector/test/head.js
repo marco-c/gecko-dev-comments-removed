@@ -74,11 +74,9 @@ var navigateTo = async function(inspector, url) {
 
 
 var startPicker = async function(toolbox, skipFocus) {
-  const inspectorFront = await toolbox.target.getFront("inspector");
-
   info("Start the element picker");
   toolbox.win.focus();
-  await inspectorFront.nodePicker.start();
+  await toolbox.nodePicker.start();
   if (!skipFocus) {
     
     
@@ -131,9 +129,7 @@ function pickElement(inspector, testActor, selector, x, y) {
 
 function hoverElement(inspector, testActor, selector, x, y) {
   info("Waiting for element " + selector + " to be hovered");
-  const onHovered = inspector.inspectorFront.nodePicker.once(
-    "picker-node-hovered"
-  );
+  const onHovered = inspector.toolbox.nodePicker.once("picker-node-hovered");
   testActor.synthesizeMouse({ selector, x, y, options: { type: "mousemove" } });
   return onHovered;
 }

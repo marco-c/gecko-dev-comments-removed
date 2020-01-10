@@ -239,7 +239,7 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
       .add(true);
 
     
-    inspectorFront.nodePicker.cancel();
+    toolbox.nodePicker.cancel();
 
     
     

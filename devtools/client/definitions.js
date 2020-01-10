@@ -163,9 +163,8 @@ Tools.inspector = {
   
   
   preventRaisingOnKey: true,
-  onkey: async function(panel, toolbox) {
-    const inspectorFront = await toolbox.target.getFront("inspector");
-    inspectorFront.nodePicker.togglePicker();
+  onkey: function(panel, toolbox) {
+    toolbox.nodePicker.togglePicker();
   },
 
   isTargetSupported: function(target) {
