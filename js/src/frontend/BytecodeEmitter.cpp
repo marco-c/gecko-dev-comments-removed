@@ -3007,10 +3007,6 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
     }
 
     
-    if (!emit1(JSOP_EXCEPTION)) {
-      
-      return false;
-    }
     if (!emit1(JSOP_POP)) {
       
       return false;
@@ -4588,11 +4584,6 @@ bool BytecodeEmitter::emitCallSiteObject(CallSiteNode* callSiteObj) {
 bool BytecodeEmitter::emitCatch(BinaryNode* catchClause) {
   
   MOZ_ASSERT(innermostNestableControl->is<TryFinallyControl>());
-
-  
-  if (!emit1(JSOP_EXCEPTION)) {
-    return false;
-  }
 
   ParseNode* param = catchClause->left();
   if (!param) {
@@ -6315,12 +6306,9 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
 
-  MOZ_ASSERT(bytecodeSection().stackDepth() == startDepth);
+  
+  MOZ_ASSERT(bytecodeSection().stackDepth() == startDepth + 1);
 
-  if (!emit1(JSOP_EXCEPTION)) {
-    
-    return false;
-  }
   if (!emitDupAt(2)) {
     
     return false;

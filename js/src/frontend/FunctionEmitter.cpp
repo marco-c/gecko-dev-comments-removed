@@ -503,13 +503,10 @@ bool FunctionScriptEmitter::emitAsyncFunctionRejectPrologue() {
 
 bool FunctionScriptEmitter::emitAsyncFunctionRejectEpilogue() {
   if (!rejectTryCatch_->emitCatch()) {
-    return false;
-  }
-
-  if (!bce_->emit1(JSOP_EXCEPTION)) {
     
     return false;
   }
+
   if (!bce_->emitGetDotGeneratorInInnermostScope()) {
     
     return false;
