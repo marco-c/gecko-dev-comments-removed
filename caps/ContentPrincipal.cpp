@@ -143,8 +143,10 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
   
   
   
-  if (origin->SchemeIs("about") ||
-      (origin->SchemeIs("moz-safe-about") &&
+  bool isBehaved;
+  if ((NS_SUCCEEDED(origin->SchemeIs("about", &isBehaved)) && isBehaved) ||
+      (NS_SUCCEEDED(origin->SchemeIs("moz-safe-about", &isBehaved)) &&
+       isBehaved &&
        
        
        
@@ -196,7 +198,10 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
 
   
   nsAutoCString hostPort;
-  if (!origin->SchemeIs("chrome")) {
+  bool isChrome = false;
+  rv = origin->SchemeIs("chrome", &isChrome);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!isChrome) {
     rv = origin->GetAsciiHostPort(hostPort);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -403,7 +408,8 @@ static nsresult GetSpecialBaseDomain(const nsCOMPtr<nsIURI>& aURI,
     return aURI->GetSpec(aBaseDomain);
   }
 
-  if (aURI->SchemeIs("indexeddb")) {
+  bool isBehaved;
+  if (NS_SUCCEEDED(aURI->SchemeIs("indexeddb", &isBehaved)) && isBehaved) {
     *aHandled = true;
     return aURI->GetSpec(aBaseDomain);
   }
@@ -514,7 +520,8 @@ WebExtensionPolicy* ContentPrincipal::AddonPolicy() {
   if (!mAddon.isSome()) {
     NS_ENSURE_TRUE(mURI, nullptr);
 
-    if (mURI->SchemeIs("moz-extension")) {
+    bool isMozExt;
+    if (NS_SUCCEEDED(mURI->SchemeIs("moz-extension", &isMozExt)) && isMozExt) {
       mAddon.emplace(EPS().GetByURL(mURI.get()));
     } else {
       mAddon.emplace(nullptr);
@@ -547,7 +554,8 @@ ContentPrincipal::Read(nsIObjectInputStream* aStream) {
   principalURI = do_QueryInterface(supports);
   
   
-  if (principalURI->SchemeIs("about")) {
+  bool isAbout = false;
+  if (NS_SUCCEEDED(principalURI->SchemeIs("about", &isAbout)) && isAbout) {
     nsAutoCString spec;
     principalURI->GetSpec(spec);
     NS_ENSURE_SUCCESS(NS_NewURI(getter_AddRefs(principalURI), spec),
@@ -669,7 +677,10 @@ already_AddRefed<BasePrincipal> ContentPrincipal::FromProperties(
         {
           
           
-          if (principalURI->SchemeIs("about")) {
+          bool isAbout =
+              NS_SUCCEEDED(principalURI->SchemeIs("about", &isAbout)) &&
+              isAbout;
+          if (isAbout) {
             nsAutoCString spec;
             principalURI->GetSpec(spec);
             if (NS_FAILED(NS_NewURI(getter_AddRefs(principalURI), spec))) {
