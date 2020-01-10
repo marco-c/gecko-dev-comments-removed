@@ -732,7 +732,6 @@ var complexRegionMappings = {
 
 function updateLocaleIdMappings(tag) {
     assert(IsObject(tag), "tag is an object");
-    assert(!hasOwn("grandfathered", tag), "tag is not a grandfathered tag");
 
     
     var language = tag.language;
@@ -1135,3 +1134,76 @@ function updateLocaleIdMappings(tag) {
     }
 }
 
+
+
+
+
+function updateGrandfatheredMappings(tag) {
+    assert(IsObject(tag), "tag is an object");
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (tag.script !== undefined ||
+        tag.region !== undefined ||
+        tag.variants.length !== 1 ||
+        tag.extensions.length !== 0 ||
+        tag.privateuse !== undefined)
+    {
+        return;
+    }
+
+    
+    if (tag.language === "art" && tag.variants[0] === "lojban") {
+        tag.language = "jbo";
+        tag.variants.length = 0;
+    }
+
+    
+    else if (tag.language === "cel" && tag.variants[0] === "gaulish") {
+        tag.language = "xtg";
+        tag.variants.length = 0;
+        tag.privateuse = "x-cel-gaulish";
+    }
+
+    
+    else if (tag.language === "zh" && tag.variants[0] === "guoyu") {
+        tag.language = "zh";
+        tag.variants.length = 0;
+    }
+
+    
+    else if (tag.language === "zh" && tag.variants[0] === "hakka") {
+        tag.language = "hak";
+        tag.variants.length = 0;
+    }
+
+    
+    else if (tag.language === "zh" && tag.variants[0] === "xiang") {
+        tag.language = "hsn";
+        tag.variants.length = 0;
+    }
+}
