@@ -580,15 +580,15 @@ void JitRuntime::SweepJitcodeGlobalTable(JSRuntime* rt) {
   }
 }
 
-void JitRealm::sweep(JS::Realm* realm) {
+void JitRealm::traceWeak(JSTracer* trc, JS::Realm* realm) {
   
   MOZ_ASSERT(!HasOffThreadIonCompile(realm));
 
   stubCodes_->sweep();
 
   for (WeakHeapPtrJitCode& stub : stubs_) {
-    if (stub && IsAboutToBeFinalized(&stub)) {
-      stub.set(nullptr);
+    if (stub) {
+      TraceWeakEdge(trc, &stub, "JitRealm::stubs_");
     }
   }
 }
