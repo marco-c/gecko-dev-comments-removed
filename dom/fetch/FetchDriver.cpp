@@ -1348,25 +1348,18 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   
   if (httpChannel) {
-    nsCOMPtr<nsIURI> computedReferrer;
+    nsAutoString computedReferrerSpec;
     nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo();
     if (referrerInfo) {
       mRequest->SetReferrerPolicy(
           static_cast<net::ReferrerPolicy>(referrerInfo->GetReferrerPolicy()));
-      computedReferrer = referrerInfo->GetComputedReferrer();
+      Unused << referrerInfo->GetComputedReferrerSpec(computedReferrerSpec);
     }
 
     
     
     
-    if (computedReferrer) {
-      nsAutoCString spec;
-      rv = computedReferrer->GetSpec(spec);
-      NS_ENSURE_SUCCESS(rv, rv);
-      mRequest->SetReferrer(NS_ConvertUTF8toUTF16(spec));
-    } else {
-      mRequest->SetReferrer(EmptyString());
-    }
+    mRequest->SetReferrer(computedReferrerSpec);
   }
 
   aCallback->OnRedirectVerifyCallback(NS_OK);

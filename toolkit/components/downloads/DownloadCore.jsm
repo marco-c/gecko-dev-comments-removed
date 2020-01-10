@@ -30,6 +30,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   DownloadHistory: "resource://gre/modules/DownloadHistory.jsm",
+  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   OS: "resource://gre/modules/osfile.jsm",
@@ -1309,7 +1310,7 @@ this.DownloadSource.prototype = {
 
 
 
-  referrer: null,
+  referrerInfo: null,
 
   
 
@@ -1340,7 +1341,7 @@ this.DownloadSource.prototype = {
     }
 
     
-    if (!this.isPrivate && !this.referrer && !this._unknownProperties) {
+    if (!this.isPrivate && !this.referrerInfo && !this._unknownProperties) {
       return this.url;
     }
 
@@ -1348,16 +1349,19 @@ this.DownloadSource.prototype = {
     if (this.isPrivate) {
       serializable.isPrivate = true;
     }
-    if (this.referrer) {
-      serializable.referrer = this.referrer;
+
+    if (this.referrerInfo && isString(this.referrerInfo)) {
+      serializable.referrerInfo = this.referrerInfo;
+    } else if (this.referrerInfo) {
+      serializable.referrerInfo = E10SUtils.serializeReferrerInfo(
+        this.referrerInfo
+      );
     }
 
     serializeUnknownProperties(this, serializable);
     return serializable;
   },
 };
-
-
 
 
 
@@ -1400,8 +1404,16 @@ this.DownloadSource.fromSerializable = function(aSerializable) {
     if ("isPrivate" in aSerializable) {
       source.isPrivate = aSerializable.isPrivate;
     }
-    if ("referrer" in aSerializable) {
-      source.referrer = aSerializable.referrer;
+    if ("referrerInfo" in aSerializable) {
+      
+      
+      if (aSerializable.referrerInfo instanceof Ci.nsIReferrerInfo) {
+        source.referrerInfo = aSerializable.referrerInfo;
+      } else {
+        source.referrerInfo = E10SUtils.deserializeReferrerInfo(
+          aSerializable.referrerInfo
+        );
+      }
     }
     if ("adjustChannel" in aSerializable) {
       source.adjustChannel = aSerializable.adjustChannel;
@@ -1411,7 +1423,9 @@ this.DownloadSource.fromSerializable = function(aSerializable) {
       source,
       aSerializable,
       property =>
-        property != "url" && property != "isPrivate" && property != "referrer"
+        property != "url" &&
+        property != "isPrivate" &&
+        property != "referrerInfo"
     );
   }
 
@@ -2007,21 +2021,13 @@ this.DownloadCopySaver.prototype = {
       if (channel instanceof Ci.nsIPrivateBrowsingChannel) {
         channel.setPrivate(download.source.isPrivate);
       }
-      if (channel instanceof Ci.nsIHttpChannel && download.source.referrer) {
+      if (
+        channel instanceof Ci.nsIHttpChannel &&
+        download.source.referrerInfo
+      ) {
+        channel.referrerInfo = download.source.referrerInfo;
         
-        
-        
-        
-        let ReferrerInfo = Components.Constructor(
-          "@mozilla.org/referrer-info;1",
-          "nsIReferrerInfo",
-          "init"
-        );
-        channel.referrerInfo = new ReferrerInfo(
-          Ci.nsIHttpChannel.REFERRER_POLICY_UNSAFE_URL,
-          true,
-          NetUtil.newURI(download.source.referrer)
-        );
+        download.source.referrerInfo = channel.referrerInfo;
       }
 
       
@@ -2505,10 +2511,7 @@ this.DownloadLegacySaver.prototype = {
 
     
     if (aRequest instanceof Ci.nsIHttpChannel) {
-      let referrerInfo = aRequest.referrerInfo;
-      if (referrerInfo && referrerInfo.originalReferrer) {
-        this.download.source.referrer = referrerInfo.originalReferrer.spec;
-      }
+      this.download.source.referrerInfo = aRequest.referrerInfo;
     }
 
     this.addToHistory();

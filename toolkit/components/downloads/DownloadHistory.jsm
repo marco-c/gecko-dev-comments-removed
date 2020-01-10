@@ -272,7 +272,9 @@ var DownloadCache = {
           
           date: download.startTime,
           transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
-          referrer: download.source.referrer,
+          referrer: download.source.referrerInfo
+            ? download.source.referrerInfo.originalReferrer
+            : null,
         },
       ],
     });

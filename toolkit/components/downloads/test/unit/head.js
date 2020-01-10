@@ -61,6 +61,12 @@ ChromeUtils.defineModuleGetter(
   "Services",
   "resource://gre/modules/Services.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "E10SUtils",
+  "resource://gre/modules/E10SUtils.jsm"
+);
+
 ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(
   this,
@@ -108,6 +114,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "gMIMEService",
   "@mozilla.org/mime;1",
   "nsIMIMEService"
+);
+
+const ReferrerInfo = Components.Constructor(
+  "@mozilla.org/referrer-info;1",
+  "nsIReferrerInfo",
+  "init"
 );
 
 const TEST_TARGET_FILE_NAME = "test-download.txt";
@@ -384,10 +396,7 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
           .catch(do_report_unexpected_exception);
 
         let isPrivate = aOptions && aOptions.isPrivate;
-        let referrer =
-          aOptions && aOptions.referrer
-            ? NetUtil.newURI(aOptions.referrer)
-            : null;
+        let referrerInfo = aOptions ? aOptions.referrerInfo : null;
         
         
         transfer.init(
@@ -401,15 +410,6 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
           isPrivate
         );
         persist.progressListener = transfer;
-
-        let referrerInfo = Cc["@mozilla.org/referrer-info;1"].createInstance(
-          Ci.nsIReferrerInfo
-        );
-        referrerInfo.init(
-          Ci.nsIHttpChannel.REFERRER_POLICY_UNSAFE_URL,
-          true,
-          referrer
-        );
 
         
         persist.savePrivacyAwareURI(
@@ -734,6 +734,28 @@ function registerInterruptibleHandler(aPath, aFirstPartFn, aSecondPartFn) {
 
 function isValidDate(aDate) {
   return aDate && aDate.getTime && !isNaN(aDate.getTime());
+}
+
+
+
+
+
+
+
+function checkEqualReferrerInfos(aActualInfo, aExpectedInfo) {
+  Assert.equal(
+    !!aExpectedInfo.originalReferrer,
+    !!aActualInfo.originalReferrer
+  );
+  if (aExpectedInfo.originalReferrer && aActualInfo.originalReferrer) {
+    Assert.equal(
+      aExpectedInfo.originalReferrer.spec,
+      aActualInfo.originalReferrer.spec
+    );
+  }
+
+  Assert.equal(aExpectedInfo.sendReferrer, aActualInfo.sendReferrer);
+  Assert.equal(aExpectedInfo.referrerPolicy, aActualInfo.referrerPolicy);
 }
 
 
