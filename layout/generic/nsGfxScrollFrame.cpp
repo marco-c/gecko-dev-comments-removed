@@ -2752,8 +2752,11 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   
   
   
+  
+  
+  
   bool suppressScrollOriginChange = false;
-  if (aPt == curPos) {
+  if (presContext->PresShell()->GetIsViewportOverridden() && aPt == curPos) {
     suppressScrollOriginChange = true;
   }
 
