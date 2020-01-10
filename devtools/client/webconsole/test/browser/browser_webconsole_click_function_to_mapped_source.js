@@ -3,6 +3,9 @@
 
 
 
+
+
+
 "use strict";
 
 requestLongerTimeout(5);
@@ -10,9 +13,9 @@ requestLongerTimeout(5);
 const TEST_URI =
   "http://example.com/browser/devtools/client/webconsole/" +
   "test/browser/" +
-  "test-click-function-to-source.html";
+  "test-click-function-to-mapped-source.html";
 
-const TEST_SCRIPT_URI =
+const TEST_ORIGINAL_URI =
   "http://example.com/browser/devtools/client/webconsole/" +
   "test/browser/" +
   "test-click-function-to-source.js";
@@ -37,10 +40,15 @@ add_task(async function() {
   await toolbox.getPanelWhenReady("jsdebugger");
 
   const dbg = createDebuggerContext(toolbox);
-  await waitForSelectedSource(dbg, TEST_SCRIPT_URI);
+  await waitForSelectedSource(dbg, TEST_ORIGINAL_URI);
+  await waitForSelectedLocation(dbg, 9);
 
   const pendingLocation = dbg.selectors.getPendingSelectedLocation();
-  const { line, column } = pendingLocation;
+  const { url, line, column } = pendingLocation;
+
+  is(url, TEST_ORIGINAL_URI, "Debugger is open at the expected file");
   is(line, 9, "Debugger is open at the expected line");
-  is(column, 12, "Debugger is open at the expected column");
+  
+  
+  is(column, 9, "Debugger is open at the expected column");
 });
