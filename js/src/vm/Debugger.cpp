@@ -1010,12 +1010,18 @@ class MOZ_RAII AutoSetGeneratorRunning {
 
 bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
                                     jsbytecode* pc, bool frameOk) {
+  MOZ_ASSERT_IF(!frame.isWasmDebugFrame(), pc);
+
   mozilla::DebugOnly<Handle<GlobalObject*>> debuggeeGlobal = cx->global();
 
   
   bool suspending = false;
   Rooted<AbstractGeneratorObject*> genObj(cx);
   if (frame.isGeneratorFrame()) {
+    
+    
+    MOZ_ASSERT(!frame.isWasmDebugFrame());
+
     
     
     
@@ -1026,7 +1032,7 @@ bool Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
     
     genObj = GetGeneratorObjectForFrame(cx, frame);
     suspending =
-        frameOk && pc &&
+        frameOk &&
         (*pc == JSOP_INITIALYIELD || *pc == JSOP_YIELD || *pc == JSOP_AWAIT) &&
         !genObj->isClosed();
   }
