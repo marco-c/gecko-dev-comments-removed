@@ -566,18 +566,6 @@ const startupPhases = {
       condition: WIN,
       stat: 1,
     },
-    {
-      
-      path: "GreD:omni.ja",
-      condition: WIN,
-      stat: 1,
-    },
-    {
-      
-      path: "XCurProcD:omni.ja",
-      condition: WIN,
-      stat: 2,
-    },
   ],
 
   
