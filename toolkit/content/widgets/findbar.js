@@ -201,9 +201,9 @@
       
       
       if (this.getAttribute("browserid")) {
-        
         setTimeout(
           function(aSelf) {
+            
             aSelf.browser = aSelf.browser;
           },
           0,

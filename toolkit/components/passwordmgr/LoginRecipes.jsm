@@ -349,8 +349,8 @@ this.LoginRecipesContent = {
       return null;
     }
     
-    
     if (
+      
       !(field instanceof aParent.ownerDocument.defaultView.HTMLInputElement)
     ) {
       log.warn("Login field isn't an <input> so ignoring it:", aSelector);

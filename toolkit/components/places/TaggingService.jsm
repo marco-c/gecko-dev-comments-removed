@@ -544,6 +544,7 @@ TagAutoCompleteSearch.prototype = {
         yield false;
       }.bind(this)();
 
+      
       while (gen.next().value) {}
       this.notifyResult(result, count, listener, false);
     })();

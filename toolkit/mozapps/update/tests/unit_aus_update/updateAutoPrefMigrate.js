@@ -50,7 +50,7 @@ async function run_test() {
   Assert.equal(
     configValue,
     true,
-    "getAppUpdateAutoEnabled should have " + "returned the default value (true)"
+    "getAppUpdateAutoEnabled should have returned the default value (true)"
   );
 
   
@@ -63,7 +63,7 @@ async function run_test() {
   configFile.remove(false);
   Assert.ok(
     !configFile.exists(),
-    "App update config file should have been " + "removed"
+    "App update config file should have been removed"
   );
   await verifyPref(configFile, true);
 

@@ -229,6 +229,7 @@ async function promiseAddonInstall(amoServer, extensionData) {
     {
       
       
+      
       source: "disco",
     },
     "The installed add-on should have the expected telemetry info"

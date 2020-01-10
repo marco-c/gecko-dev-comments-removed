@@ -688,6 +688,7 @@ class PanelList extends HTMLElement {
           this.focusHasChanged = true;
           
           
+          
         } else if (!e.target || e.target.closest("panel-list") != this) {
           this.hide();
           
@@ -935,9 +936,9 @@ customElements.define("content-select-dropdown", ContentSelectDropdown);
 
 class ProxyContextMenu extends HTMLElement {
   openPopupAtScreen(...args) {
-    const parentContextMenuPopup = windowRoot.ownerGlobal.document.getElementById(
-      "contentAreaContextMenu"
-    );
+    
+    const parentContextMenuPopup =
+      windowRoot.ownerGlobal.document.getElementById("contentAreaContextMenu");
     return parentContextMenuPopup.openPopupAtScreen(...args);
   }
 }
@@ -1116,8 +1117,10 @@ class InlineOptionsBrowser extends HTMLElement {
 
       mm.sendAsyncMessage("Extension:InitBrowser", browserOptions);
 
+      
       browser.loadURI(optionsURL, {
-        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
       });
     });
   }
@@ -1598,6 +1601,7 @@ class AddonCard extends HTMLElement {
           this.updateInstall.install().then(
             () => {
               
+              
               this.sendEvent("update-installed");
             },
             () => {
@@ -1612,10 +1616,12 @@ class AddonCard extends HTMLElement {
           break;
         case "contribute":
           this.recordActionEvent("contribute");
+          
           windowRoot.ownerGlobal.openUILinkIn(addon.contributionURL, "tab", {
-            triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
-              {}
-            ),
+            triggeringPrincipal:
+              Services.scriptSecurityManager.createNullPrincipal(
+                {}
+              ),
           });
           break;
         case "preferences":

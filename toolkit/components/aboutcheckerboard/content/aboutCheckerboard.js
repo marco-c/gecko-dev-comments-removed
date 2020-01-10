@@ -111,6 +111,7 @@ function loadData() {
     var tokens = lines[i].split(/\s+/);
     var j = 0;
     
+    
     while (j < tokens.length && tokens[j++] != "RENDERTRACE") {} 
     if (j >= tokens.length - 2) {
       log("Error parsing line: " + lines[i]);

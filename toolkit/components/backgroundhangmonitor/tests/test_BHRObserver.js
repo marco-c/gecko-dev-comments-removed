@@ -67,11 +67,13 @@ add_task(async function test_BHRObserver() {
 
   executeSoon(() => {
     let startTime = Date.now();
+    
     while (Date.now() - startTime < 10000) {}
   });
 
   executeSoon(() => {
     let startTime = Date.now();
+    
     while (Date.now() - startTime < 1000) {}
   });
 

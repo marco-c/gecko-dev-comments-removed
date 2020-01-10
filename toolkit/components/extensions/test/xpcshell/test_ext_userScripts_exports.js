@@ -184,8 +184,8 @@ add_task(async function test_apiScript_exports_simple_sync_method() {
 
     
     
+    
     Array.prototype.includes = () => {
-      
       throw new Error("Unexpected prototype leakage");
     };
     const arrayParam = new Array(1, 2, 3); 

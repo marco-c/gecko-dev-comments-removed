@@ -2309,7 +2309,7 @@ function shouldRunServiceTest() {
     }
 
     logTestInfo(
-      "this test can only run on the buildbot build system at this " + "time"
+      "this test can only run on the buildbot build system at this time"
     );
     return false;
   }
@@ -3279,6 +3279,7 @@ function checkUpdateLogContents(
     
     
     let re = new RegExp(
+      
       "([^\n]* 7/7text1[^\n]*)\n" + "([^\n]* 7/7text0[^\n]*)\n",
       "g"
     );
@@ -4677,9 +4678,7 @@ function resetEnvironment() {
   }
 
   if (AppConstants.platform == "win" && gAddedEnvXRENoWindowsCrashDialog) {
-    debugDump(
-      "removing the XRE_NO_WINDOWS_CRASH_DIALOG environment " + "variable"
-    );
+    debugDump("removing the XRE_NO_WINDOWS_CRASH_DIALOG environment variable");
     gEnv.set("XRE_NO_WINDOWS_CRASH_DIALOG", "");
   }
 

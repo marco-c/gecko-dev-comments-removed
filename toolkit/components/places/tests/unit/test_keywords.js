@@ -326,6 +326,7 @@ add_task(async function test_addBookmarkAndKeyword() {
   await PlacesUtils.bookmarks.remove(bookmark.guid);
   
   
+  
   while (await foreign_count("http://example.com/")) {}
   
   
@@ -404,6 +405,7 @@ add_task(async function test_addBookmarkToURIHavingKeyword() {
 
   observer = expectBookmarkNotifications();
   await PlacesUtils.bookmarks.remove(bookmark.guid);
+  
   
   
   while (await foreign_count("http://example.com/")) {}
@@ -514,6 +516,7 @@ add_task(async function test_sameKeywordDifferentURL() {
   await PlacesUtils.bookmarks.remove(bookmark1);
   await PlacesUtils.bookmarks.remove(bookmark2);
   Assert.equal(await foreign_count("http://example1.com/"), fc1); 
+  
   while (await foreign_count("http://example2.com/")) {} 
 
   await check_no_orphans();
@@ -583,6 +586,7 @@ add_task(async function test_sameURIDifferentKeyword() {
 
   
   await PlacesUtils.bookmarks.remove(bookmark);
+  
   while (await foreign_count("http://example.com/")) {}
   await check_keyword(false, "http://example.com/", "keyword");
   await check_keyword(false, "http://example.com/", "keyword2");

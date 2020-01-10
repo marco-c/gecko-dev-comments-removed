@@ -131,7 +131,7 @@ function tablesCallbackWithSub(tables) {
   );
 
   
-  var data = "n:1000\n" + "i:test-phish-simple\n" + "sd:3\n";
+  var data = "n:1000\ni:test-phish-simple\nsd:3\n";
 
   doSimpleUpdate(data, expireSubSuccess, testFailure);
 }

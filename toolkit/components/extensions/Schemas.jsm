@@ -2253,7 +2253,7 @@ class FunctionType extends Type {
 
       if (isAsync && schema.returns) {
         throw new Error(
-          "Internal error: Async functions must not " + "have return values."
+          "Internal error: Async functions must not have return values."
         );
       }
       if (
@@ -2679,8 +2679,8 @@ FunctionEntry = class FunctionEntry extends CallEntry {
 
 
 
+
 Event = class Event extends CallEntry {
-  
   static parseSchema(root, event, path) {
     let extraParameters = Array.from(event.extraParameters || [], param => ({
       type: root.parseSchema(param, path, ["name", "optional", "default"]),

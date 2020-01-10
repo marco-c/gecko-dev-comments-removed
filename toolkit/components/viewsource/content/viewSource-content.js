@@ -504,6 +504,7 @@ var ViewSourceContent = {
   findLocation(pre, lineNumber, node, offset, interlinePosition, result) {
     if (node && !pre) {
       
+      
       for (pre = node; pre.nodeName != "PRE"; pre = pre.parentNode) {}
     }
 

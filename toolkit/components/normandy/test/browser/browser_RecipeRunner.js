@@ -643,8 +643,8 @@ decorate_task(
 decorate_task(
   withStub(RecipeRunner, "loadRecipes"),
   async function testRunCanRunOnlyOnce(loadRecipesStub) {
-    
     loadRecipesStub.returns(
+      
       new Promise(resolve => setTimeout(() => resolve([]), 10))
     );
 

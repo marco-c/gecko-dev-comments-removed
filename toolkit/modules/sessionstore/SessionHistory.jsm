@@ -436,6 +436,7 @@ var SessionHistoryInternal = {
       
       var id = idMap[entry.ID] || 0;
       if (!id) {
+        
         for (id = Date.now(); id in idMap.used; id++) {}
         idMap[entry.ID] = id;
         idMap.used[id] = true;
