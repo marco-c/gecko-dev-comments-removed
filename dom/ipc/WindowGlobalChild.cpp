@@ -8,7 +8,6 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/ipc/InProcessChild.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
@@ -18,6 +17,7 @@
 #include "mozilla/dom/WindowGlobalActorsBinding.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/ipc/InProcessChild.h"
+#include "mozilla/ipc/InProcessParent.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsFrameLoaderOwner.h"
@@ -92,20 +92,32 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
 
   
   if (XRE_IsParentProcess()) {
-    InProcessChild* ipc = InProcessChild::Singleton();
-    if (!ipc) {
+    InProcessChild* ipChild = InProcessChild::Singleton();
+    InProcessParent* ipParent = InProcessParent::Singleton();
+    if (!ipChild || !ipParent) {
       return nullptr;
     }
 
     
-    ipc->SendPWindowGlobalConstructor(do_AddRef(wgc).take(), init);
+    ManagedEndpoint<PWindowGlobalParent> endpoint =
+        ipChild->OpenPWindowGlobalEndpoint(do_AddRef(wgc).take());
+
+    auto wgp = MakeRefPtr<WindowGlobalParent>(init,  true);
+
+    
+    ipParent->BindPWindowGlobalEndpoint(std::move(endpoint),
+                                        do_AddRef(wgp).take());
+    wgp->Init(init);
   } else {
     RefPtr<BrowserChild> browserChild =
         BrowserChild::GetFrom(static_cast<mozIDOMWindow*>(aWindow));
     MOZ_ASSERT(browserChild);
 
     
-    browserChild->SendPWindowGlobalConstructor(do_AddRef(wgc).take(), init);
+    ManagedEndpoint<PWindowGlobalParent> endpoint =
+        browserChild->OpenPWindowGlobalEndpoint(do_AddRef(wgc).take());
+
+    browserChild->SendNewWindowGlobal(std::move(endpoint), init);
   }
 
   
