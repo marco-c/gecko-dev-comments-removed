@@ -42,7 +42,6 @@ let px = number => number.toFixed(2) + "px";
 
 
 
-
 class UrlbarInput {
   
 
@@ -356,7 +355,6 @@ class UrlbarInput {
   }
 
   
-
 
 
 
