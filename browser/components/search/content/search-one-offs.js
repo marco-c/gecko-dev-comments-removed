@@ -114,11 +114,9 @@ class SearchOneOffs {
     this.contextMenuPopup.addEventListener("popupshowing", listener);
     this.contextMenuPopup.addEventListener("popuphiding", listener);
     this.contextMenuPopup.addEventListener("popupshown", aEvent => {
-      this._ignoreMouseEvents = true;
       aEvent.stopPropagation();
     });
     this.contextMenuPopup.addEventListener("popuphidden", aEvent => {
-      this._ignoreMouseEvents = false;
       aEvent.stopPropagation();
     });
 
@@ -303,7 +301,15 @@ class SearchOneOffs {
       val.setAttribute("selected", "true");
     }
     this._selectedButton = val;
-    this._updateStateForButton(null);
+
+    if (this.textbox) {
+      if (val) {
+        this.textbox.setAttribute("aria-activedescendant", val.id);
+      } else {
+        this.textbox.removeAttribute("aria-activedescendant");
+      }
+    }
+
     if (val && !val.engine) {
       
       
@@ -647,29 +653,6 @@ class SearchOneOffs {
   _buttonForEngine(engine) {
     let id = this._buttonIDForEngine(engine);
     return document.getElementById(id);
-  }
-
-  
-
-
-
-
-
-
-  _updateStateForButton(mousedOverButton) {
-    let button = mousedOverButton;
-
-    
-    
-    button = button || this.selectedButton;
-
-    if (this.textbox) {
-      if (!button) {
-        this.textbox.removeAttribute("aria-activedescendant");
-      } else {
-        this.textbox.setAttribute("aria-activedescendant", button.id);
-      }
-    }
   }
 
   getSelectableButtons(aIncludeNonEngineButtons) {
@@ -1080,29 +1063,8 @@ class SearchOneOffs {
         target.classList.contains("addengine-item")) ||
       target.classList.contains("addengine-menu-button")
     ) {
-      let menuButton = this.querySelector(".addengine-menu-button");
-      this._updateStateForButton(menuButton);
       this._addEngineMenuShouldBeOpen = true;
       this._resetAddEngineMenuTimeout();
-      return;
-    }
-
-    if (target.localName != "button") {
-      return;
-    }
-
-    
-    if (this._ignoreMouseEvents) {
-      return;
-    }
-
-    let isOneOff = target.classList.contains("searchbar-engine-one-off-item");
-    if (
-      isOneOff ||
-      target.classList.contains("addengine-item") ||
-      target.classList.contains("search-setting-button")
-    ) {
-      this._updateStateForButton(target);
     }
   }
 
@@ -1115,22 +1077,9 @@ class SearchOneOffs {
         target.classList.contains("addengine-item")) ||
       target.classList.contains("addengine-menu-button")
     ) {
-      this._updateStateForButton(null);
       this._addEngineMenuShouldBeOpen = false;
       this._resetAddEngineMenuTimeout();
-      return;
     }
-
-    if (target.localName != "button") {
-      return;
-    }
-
-    
-    if (this._ignoreMouseEvents) {
-      return;
-    }
-
-    this._updateStateForButton(null);
   }
 
   _on_click(event) {
