@@ -52,6 +52,10 @@ AudioNodeStream::~AudioNodeStream() {
   MOZ_COUNT_DTOR(AudioNodeStream);
 }
 
+void AudioNodeStream::NotifyForcedShutdown() {
+  mEngine->NotifyForcedShutdown();
+}
+
 void AudioNodeStream::DestroyImpl() {
   
   mInputChunks.Clear();

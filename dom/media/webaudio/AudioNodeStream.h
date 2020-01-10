@@ -175,6 +175,7 @@ class AudioNodeStream : public ProcessedMediaStream {
   class AdvanceAndResumeMessage;
   class CheckForInactiveMessage;
 
+  void NotifyForcedShutdown() override;
   void DestroyImpl() override;
 
   
@@ -201,7 +202,7 @@ class AudioNodeStream : public ProcessedMediaStream {
   void DecrementActiveInputCount();
 
   
-  nsAutoPtr<AudioNodeEngine> mEngine;
+  const nsAutoPtr<AudioNodeEngine> mEngine;
   
   
   OutputChunks mInputChunks;

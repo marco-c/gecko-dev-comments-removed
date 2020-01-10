@@ -333,6 +333,10 @@ class AudioNodeEngine {
   
   virtual bool IsActive() const { return false; }
 
+  
+  
+  virtual void NotifyForcedShutdown() {}
+
   bool HasNode() const {
     MOZ_ASSERT(NS_IsMainThread());
     return !!mNode;

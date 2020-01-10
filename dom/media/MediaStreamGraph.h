@@ -513,6 +513,10 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
  protected:
   
   
+  virtual void NotifyForcedShutdown() {}
+
+  
+  
   virtual void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime,
                                                      GraphTime aBlockedTime) {
     mTracksStartTime += aBlockedTime;
