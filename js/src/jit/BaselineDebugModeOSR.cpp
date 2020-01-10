@@ -115,7 +115,7 @@ static bool CollectJitStackScripts(JSContext* cx,
         } else {
           
           uint8_t* retAddr = frame.resumePCinCurrentFrame();
-          RetAddrEntry& retAddrEntry =
+          const RetAddrEntry& retAddrEntry =
               script->baselineScript()->retAddrEntryFromReturnAddress(retAddr);
           if (!entries.append(DebugModeOSREntry(script, retAddrEntry))) {
             return false;
@@ -294,7 +294,7 @@ static void PatchBaselineFramesForDebugMode(
             
             
             
-            RetAddrEntry* retAddrEntry = nullptr;
+            const RetAddrEntry* retAddrEntry = nullptr;
             switch (kind) {
               case RetAddrEntry::Kind::IC:
               case RetAddrEntry::Kind::CallVM:

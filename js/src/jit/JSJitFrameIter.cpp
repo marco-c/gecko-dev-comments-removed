@@ -132,7 +132,7 @@ void JSJitFrameIter::baselineScriptAndPc(JSScript** scriptRes,
   
   
   uint8_t* retAddr = resumePCinCurrentFrame();
-  RetAddrEntry& entry =
+  const RetAddrEntry& entry =
       script->baselineScript()->retAddrEntryFromReturnAddress(retAddr);
   *pcRes = entry.pc(script);
 }
