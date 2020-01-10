@@ -366,6 +366,11 @@ class XPCShellTestThread(Thread):
             return None
 
         pluginsDir = mkdtemp(prefix='xpc-plugins-', dir=self._rootTempDir)
+        retries = 0
+        while not os.path.isdir(pluginsDir) and retries < 5:
+            self.log.info("plugins temp directory %s missing; waiting..." % pluginsDir)
+            time.sleep(1)
+            retries += 1
         
         
         
