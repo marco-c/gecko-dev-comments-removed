@@ -587,10 +587,31 @@ class PathSink : public RefCounted<PathSink> {
   
   virtual void Arc(const Point& aOrigin, float aRadius, float aStartAngle,
                    float aEndAngle, bool aAntiClockwise = false) = 0;
+
+  virtual Point CurrentPoint() const {
+    return mCurrentPoint;
+  }
+
+  virtual Point BeginPoint() const {
+    return mBeginPoint;
+  }
+
+  virtual void SetCurrentPoint(const Point& aPoint) {
+    mCurrentPoint = aPoint;
+  }
+
+  virtual void SetBeginPoint(const Point& aPoint) {
+    mBeginPoint = aPoint;
+  }
+
+protected:
   
 
 
-  virtual Point CurrentPoint() const = 0;
+  Point mCurrentPoint;
+
+  
+  Point mBeginPoint;
 };
 
 class PathBuilder;
