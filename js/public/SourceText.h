@@ -193,7 +193,25 @@ class SourceText final {
 
 
   MOZ_MUST_USE bool init(JSContext* cx,
-                         js::UniquePtr<CharT[], JS::FreePolicy> data,
+                         js::UniquePtr<Unit[], JS::FreePolicy> data,
+                         size_t dataLength) {
+    return init(cx, data.release(), dataLength, SourceOwnership::TakeOwnership);
+  }
+
+  
+
+
+
+
+
+
+
+
+  template <typename Char, typename = typename std::enable_if<
+                               std::is_same<Char, CharT>::value &&
+                               !std::is_same<Char, Unit>::value>::type>
+  MOZ_MUST_USE bool init(JSContext* cx,
+                         js::UniquePtr<Char[], JS::FreePolicy> data,
                          size_t dataLength) {
     return init(cx, data.release(), dataLength, SourceOwnership::TakeOwnership);
   }
