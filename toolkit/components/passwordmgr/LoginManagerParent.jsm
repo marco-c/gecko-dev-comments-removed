@@ -663,6 +663,7 @@ this.LoginManagerParent = {
   _onGeneratedPasswordFilled({
     browsingContextId,
     formActionOrigin,
+    username = "",
     openerTopWindowID,
   }) {
     let browsingContext = BrowsingContext.get(browsingContextId);
@@ -677,7 +678,6 @@ this.LoginManagerParent = {
       );
       return;
     }
-
     let framePrincipalOrigin =
       browsingContext.currentWindowGlobal.documentPrincipal.origin;
     let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(
@@ -687,7 +687,7 @@ this.LoginManagerParent = {
     let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
       Ci.nsILoginInfo
     );
-    formLogin.init(formOrigin, formActionOrigin, null, "", password);
+    formLogin.init(formOrigin, formActionOrigin, null, username, password);
     let shouldSaveLogin = true;
 
     
