@@ -674,14 +674,11 @@ nsresult nsExternalHelperAppService::DoContentContentProcessHelper(
   
   
   
-  mozilla::dom::PExternalHelperAppChild* pc =
-      child->SendPExternalHelperAppConstructor(
-          uriParams, loadInfoArgs, nsCString(aMimeContentType), disp,
-          contentDisposition, fileName, aForceSave, contentLength,
-          wasFileChannel, referrerParams,
-          mozilla::dom::BrowserChild::GetFrom(window));
-  ExternalHelperAppChild* childListener =
-      static_cast<ExternalHelperAppChild*>(pc);
+  RefPtr<ExternalHelperAppChild> childListener = new ExternalHelperAppChild();
+  MOZ_ALWAYS_TRUE(child->SendPExternalHelperAppConstructor(
+      childListener, uriParams, loadInfoArgs, nsCString(aMimeContentType), disp,
+      contentDisposition, fileName, aForceSave, contentLength, wasFileChannel,
+      referrerParams, mozilla::dom::BrowserChild::GetFrom(window)));
 
   NS_ADDREF(*aStreamListener = childListener);
 
