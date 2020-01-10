@@ -7,6 +7,7 @@
 #define TRANSFRMX_XPATHRESULTCOMPARATOR_H
 
 #include "mozilla/Attributes.h"
+#include "mozilla/UniquePtr.h"
 #include "txCore.h"
 #include "nsCOMPtr.h"
 #include "nsICollation.h"
@@ -59,17 +60,13 @@ class txResultStringComparator : public txXPathResultComparator {
     StringValue();
     ~StringValue();
 
-    nsresult initCaseKeyBuffer(nsICollation* aCollation);
+    nsresult initCaseKey(nsICollation* aCollation);
 
-    uint8_t* mKey;
-    union {
-      nsString* mCaseKeyString;
-      uint8_t* mCaseKeyBuffer;
-    };
+    nsTArray<uint8_t> mKey;
     
     
-    
-    uint32_t mLength, mCaseKeyLength;
+    mozilla::UniquePtr<nsString> mCaseKeyString;
+    nsTArray<uint8_t> mCaseKey;
   };
 };
 
