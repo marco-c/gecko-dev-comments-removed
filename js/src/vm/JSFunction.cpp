@@ -1596,12 +1596,7 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
   }
 
   RootedScript script(cx, fun->nonLazyScript());
-
-  
-  
-  if (!lazy->maybeScript()) {
-    lazy->initScript(script);
-  }
+  MOZ_ASSERT(lazy->maybeScript() == script);
 
   if (lazy->canRelazify()) {
     
