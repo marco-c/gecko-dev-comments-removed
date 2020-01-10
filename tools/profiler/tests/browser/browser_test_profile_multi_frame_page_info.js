@@ -2,6 +2,13 @@
 
 
 
+if (Services.prefs.getBoolPref("fission.autostart")) {
+  
+  
+  
+  requestLongerTimeout(2);
+}
+
 add_task(async function test_profile_multi_frame_page_info() {
   
   SimpleTest.requestCompleteLog();
