@@ -105,29 +105,26 @@ function getTargets(CDP) {
 
 
 
-async function setup() {
-  return setupForURL(toDataURL(""));
-}
+async function setupTestForUri(uri) {
+  
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, uri);
 
-
-
-
-
-
-async function setupForURL(url) {
-  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
-
+  
   await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
+
+  
   const CDP = await getCDP();
 
+  
   const client = await CDP({
     target(list) {
       
-      return list.find(target => target.url == url);
+      return list.find(target => {
+        return target.url == uri;
+      });
     },
   });
-  info("CDP client instantiated");
-
+  ok(true, "CDP client has been instantiated");
   return { client, tab };
 }
 
