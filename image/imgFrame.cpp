@@ -355,10 +355,12 @@ nsresult imgFrame::InitForDecoderRecycle(const AnimationParams& aAnimParams) {
   return NS_OK;
 }
 
-nsresult imgFrame::InitWithDrawable(
-    gfxDrawable* aDrawable, const nsIntSize& aSize, const SurfaceFormat aFormat,
-    SamplingFilter aSamplingFilter, uint32_t aImageFlags,
-    gfx::BackendType aBackend) {
+nsresult imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
+                                    const nsIntSize& aSize,
+                                    const SurfaceFormat aFormat,
+                                    SamplingFilter aSamplingFilter,
+                                    uint32_t aImageFlags,
+                                    gfx::BackendType aBackend) {
   
   
   if (!SurfaceCache::IsLegalSize(aSize)) {
