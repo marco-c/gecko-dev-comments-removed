@@ -96,9 +96,9 @@ Please restart bootstrap and create that directory when prompted.
 '''
 
 STYLE_NODEJS_REQUIRES_CLONE = '''
-Installing Stylo and NodeJS packages requires a checkout of mozilla-central.
-Once you have such a checkout, please re-run `./mach bootstrap` from the
-checkout directory.
+Installing Stylo and NodeJS packages requires a checkout of mozilla-central
+(or mozilla-unified). Once you have such a checkout, please re-run
+`./mach bootstrap` from the checkout directory.
 '''
 
 FINISHED = '''
@@ -128,7 +128,8 @@ Would you like to run a configuration wizard to ensure Mercurial is
 optimally configured?'''
 
 CONFIGURE_GIT = '''
-Mozilla recommends using git-cinnabar to work with mozilla-central.
+Mozilla recommends using git-cinnabar to work with mozilla-central (or
+mozilla-unified).
 
 Would you like to run a few configuration steps to ensure Git is
 optimally configured?'''
