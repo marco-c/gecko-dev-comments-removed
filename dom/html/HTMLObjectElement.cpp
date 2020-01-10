@@ -276,17 +276,6 @@ nsresult HTMLObjectElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
   return NS_OK;
 }
 
-bool HTMLObjectElement::IsFocusableForTabIndex() {
-  Document* doc = GetComposedDoc();
-  if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
-    return false;
-  }
-
-  return IsEditableRoot() ||
-         ((Type() == eType_Document || Type() == eType_FakePlugin) &&
-          nsContentUtils::IsSubDocumentTabbable(this));
-}
-
 bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
                                         int32_t* aTabIndex) {
   
@@ -294,38 +283,45 @@ bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   Document* doc = GetComposedDoc();
   if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
     if (aTabIndex) {
-      *aTabIndex = TabIndex();
+      *aTabIndex = -1;
     }
 
     *aIsFocusable = false;
-
     return false;
   }
 
+  const nsAttrValue* attrVal = mAttrs.GetAttr(nsGkAtoms::tabindex);
+  bool isFocusable = attrVal && attrVal->Type() == nsAttrValue::eInteger;
+
   
   
-  if (Type() == eType_Plugin || IsEditableRoot() ||
-      ((Type() == eType_Document || Type() == eType_FakePlugin) &&
-       nsContentUtils::IsSubDocumentTabbable(this))) {
-    
-    
+  if (Type() == eType_Plugin) {
     if (aTabIndex) {
-      *aTabIndex = TabIndex();
+      *aTabIndex = isFocusable ? attrVal->GetIntegerValue() : -1;
     }
 
     *aIsFocusable = true;
-
     return false;
   }
 
   
   
-  const nsAttrValue* attrVal = mAttrs.GetAttr(nsGkAtoms::tabindex);
+  if (IsEditableRoot() ||
+      ((Type() == eType_Document || Type() == eType_FakePlugin) &&
+       nsContentUtils::IsSubDocumentTabbable(this))) {
+    if (aTabIndex) {
+      *aTabIndex = isFocusable ? attrVal->GetIntegerValue() : 0;
+    }
 
-  *aIsFocusable = attrVal && attrVal->Type() == nsAttrValue::eInteger;
+    *aIsFocusable = true;
+    return false;
+  }
 
-  if (aTabIndex && *aIsFocusable) {
+  
+  
+  if (aTabIndex && isFocusable) {
     *aTabIndex = attrVal->GetIntegerValue();
+    *aIsFocusable = true;
   }
 
   return false;
@@ -372,9 +368,7 @@ HTMLObjectElement::SubmitNamesValues(HTMLFormSubmission* aFormSubmission) {
   return aFormSubmission->AddNameValuePair(name, value);
 }
 
-int32_t HTMLObjectElement::TabIndexDefault() {
-  return IsFocusableForTabIndex() ? 0 : -1;
-}
+int32_t HTMLObjectElement::TabIndexDefault() { return 0; }
 
 Nullable<WindowProxyHolder> HTMLObjectElement::GetContentWindow(
     nsIPrincipal& aSubjectPrincipal) {

@@ -198,12 +198,6 @@ class HTMLObjectElement final : public nsGenericHTMLFormElement,
                                           bool aNotify) override;
 
  private:
-  
-
-
-
-  bool IsFocusableForTabIndex();
-
   nsContentPolicyType GetContentPolicyType() const override {
     return nsIContentPolicy::TYPE_INTERNAL_OBJECT;
   }
