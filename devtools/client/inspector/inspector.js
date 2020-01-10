@@ -160,10 +160,6 @@ function Inspector(toolbox) {
   this.reflowTracker = new ReflowTracker(this._target);
   this.styleChangeTracker = new InspectorStyleChangeTracker(this);
 
-  
-  
-  this.previousURL = this.target.url;
-
   this._clearSearchResultsLabel = this._clearSearchResultsLabel.bind(this);
   this._handleRejectionIfNotDestroyed = this._handleRejectionIfNotDestroyed.bind(
     this
@@ -188,12 +184,12 @@ function Inspector(toolbox) {
   this.onSidebarToggle = this.onSidebarToggle.bind(this);
   this.handleThreadPaused = this.handleThreadPaused.bind(this);
   this.handleThreadResumed = this.handleThreadResumed.bind(this);
-
-  this._target.on("will-navigate", this._onBeforeNavigate);
 }
 
 Inspector.prototype = {
   
+
+
 
 
   async init() {
@@ -201,16 +197,18 @@ Inspector.prototype = {
     localizeMarkup(this.panelDoc);
 
     
-    if (this._target.isReplayEnabled()) {
+    if (this.target.isReplayEnabled()) {
       let dbg = this._toolbox.getPanel("jsdebugger");
       if (!dbg) {
         dbg = await this._toolbox.loadTool("jsdebugger");
       }
       this._replayResumed = !dbg.isPaused();
 
-      this._target.threadFront.on("paused", this.handleThreadPaused);
-      this._target.threadFront.on("resumed", this.handleThreadResumed);
+      this.target.threadFront.on("paused", this.handleThreadPaused);
+      this.target.threadFront.on("resumed", this.handleThreadResumed);
     }
+
+    this.target.on("will-navigate", this._onBeforeNavigate);
 
     await Promise.all([
       this._getCssProperties(),
@@ -219,6 +217,10 @@ Inspector.prototype = {
       this._getAccessibilityFront(),
       this._getChangesFront(),
     ]);
+
+    
+    
+    this.previousURL = this.target.url;
 
     return this._deferredOpen();
   },
