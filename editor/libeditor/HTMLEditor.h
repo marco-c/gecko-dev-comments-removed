@@ -1015,9 +1015,26 @@ class HTMLEditor final : public TextEditor,
   SplitAncestorStyledInlineElementsAt(const EditorDOMPoint& aPointToSplit,
                                       nsAtom* aProperty, nsAtom* aAttribute);
 
-  nsIContent* GetPriorHTMLSibling(nsINode* aNode);
+  
 
-  nsIContent* GetNextHTMLSibling(nsINode* aNode);
+
+
+
+  enum class SkipWhitespace { Yes, No };
+  nsIContent* GetPriorHTMLSibling(nsINode* aNode, SkipWhitespace = SkipWhitespace::No);
+
+  
+
+
+
+
+  nsIContent* GetNextHTMLSibling(nsINode* aNode, SkipWhitespace = SkipWhitespace::No);
+
+  
+  static bool SkippableWhitespace(nsINode* aNode, SkipWhitespace aSkipWS) {
+    return aSkipWS == SkipWhitespace::Yes &&
+      aNode->IsText() && aNode->AsText()->TextIsOnlyWhitespace();
+  }
 
   
 

@@ -4983,7 +4983,8 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   
   
-  if (nsIContent* nextEditableSibling = GetNextHTMLSibling(aCurNode)) {
+  if (nsIContent* nextEditableSibling =
+          GetNextHTMLSibling(aCurNode, SkipWhitespace::Yes)) {
     if (HTMLEditUtils::IsList(nextEditableSibling) &&
         aCurPoint.GetContainer()->NodeInfo()->NameAtom() ==
             nextEditableSibling->NodeInfo()->NameAtom() &&
@@ -5005,7 +5006,7 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   
   if (nsCOMPtr<nsIContent> previousEditableSibling =
-          GetPriorHTMLSibling(aCurNode)) {
+          GetPriorHTMLSibling(aCurNode, SkipWhitespace::Yes)) {
     if (HTMLEditUtils::IsList(previousEditableSibling) &&
         aCurPoint.GetContainer()->NodeInfo()->NameAtom() ==
             previousEditableSibling->NodeInfo()->NameAtom() &&
@@ -5026,7 +5027,7 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   
   nsIContent* previousEditableSibling =
-      *aCurList ? GetPriorHTMLSibling(aCurNode) : nullptr;
+      *aCurList ? GetPriorHTMLSibling(aCurNode, SkipWhitespace::Yes) : nullptr;
   if (!*aCurList ||
       (previousEditableSibling && previousEditableSibling != *aCurList)) {
     nsAtom* containerName =
