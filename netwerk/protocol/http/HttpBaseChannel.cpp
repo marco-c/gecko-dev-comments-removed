@@ -4463,7 +4463,7 @@ nsILoadInfo::CrossOriginOpenerPolicy CreateCrossOriginOpenerPolicy(
 
 
 
-NS_IMETHODIMP HttpBaseChannel::ComputeCrossOriginOpenerPolicy(
+NS_IMETHODIMP HttpBaseChannel::GetCrossOriginOpenerPolicy(
     nsILoadInfo::CrossOriginOpenerPolicy aInitiatorPolicy,
     nsILoadInfo::CrossOriginOpenerPolicy* aOutPolicy) {
   MOZ_ASSERT(aOutPolicy);
