@@ -7842,7 +7842,7 @@ nsresult nsDocShell::RestoreFromHistory() {
     
     AddChild(childItem);
 
-    contexts.AppendElement(nsDocShell::Cast(childShell)->GetBrowsingContext());
+    contexts.AppendElement(childShell->GetBrowsingContext());
 
     childShell->SetAllowPlugins(allowPlugins);
     childShell->SetAllowJavascript(allowJavascript);
@@ -7861,7 +7861,7 @@ nsresult nsDocShell::RestoreFromHistory() {
   }
 
   if (!contexts.IsEmpty()) {
-    GetBrowsingContext()->RestoreChildren(std::move(contexts));
+    mBrowsingContext->RestoreChildren(std::move(contexts));
   }
 
   
@@ -13552,10 +13552,12 @@ nsDocShell::GetColorMatrix(nsTArray<float>& aMatrix) {
 bool nsDocShell::IsForceReloading() { return IsForceReloadType(mLoadType); }
 
 NS_IMETHODIMP
-nsDocShell::GetBrowsingContext(BrowsingContext** aBrowsingContext) {
+nsDocShell::GetBrowsingContextXPCOM(BrowsingContext** aBrowsingContext) {
   *aBrowsingContext = do_AddRef(mBrowsingContext).take();
   return NS_OK;
 }
+
+BrowsingContext* nsDocShell::GetBrowsingContext() { return mBrowsingContext; }
 
 bool nsDocShell::GetIsAttemptingToNavigate() {
   

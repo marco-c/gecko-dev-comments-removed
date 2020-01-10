@@ -449,9 +449,6 @@ class nsDocShell final : public nsDocLoader,
   
   bool IsForceReloading();
 
-  mozilla::dom::BrowsingContext* GetBrowsingContext() const {
-    return mBrowsingContext;
-  }
   mozilla::dom::BrowsingContext* GetWindowProxy() {
     EnsureScriptEnvironment();
     return mBrowsingContext;
