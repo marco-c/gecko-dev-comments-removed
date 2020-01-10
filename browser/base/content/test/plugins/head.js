@@ -164,13 +164,10 @@ function promiseForPluginInfo(aId, aBrowser) {
 }
 
 
-
 function promisePlayObject(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
   return ContentTask.spawn(browser, aId, async function(contentId) {
-    let plugin = content.document.getElementById(contentId);
-    let objLoadingContent = plugin.QueryInterface(Ci.nsIObjectLoadingContent);
-    objLoadingContent.playPlugin();
+    content.document.getElementById(contentId).playPlugin();
   });
 }
 

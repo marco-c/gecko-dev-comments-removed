@@ -61,7 +61,6 @@ function preparePlugin(browser, pluginFallbackState) {
     contentPluginFallbackState
   ) {
     let plugin = content.document.getElementById("plugin");
-    plugin.QueryInterface(Ci.nsIObjectLoadingContent);
     
     
     
@@ -164,7 +163,6 @@ add_task(async function testChromeHearsPluginCrashFirst() {
     
     
     let plugin = content.document.getElementById("plugin");
-    plugin.QueryInterface(Ci.nsIObjectLoadingContent);
     let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
       "submitStatus"
     );
@@ -251,7 +249,6 @@ add_task(async function testContentHearsCrashFirst() {
     
     
     let plugin = content.document.getElementById("plugin");
-    plugin.QueryInterface(Ci.nsIObjectLoadingContent);
     let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
       "submitStatus"
     );
@@ -276,7 +273,6 @@ add_task(async function testContentHearsCrashFirst() {
 
   await ContentTask.spawn(browser, null, function() {
     let plugin = content.document.getElementById("plugin");
-    plugin.QueryInterface(Ci.nsIObjectLoadingContent);
     let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
       "submitStatus"
     );
@@ -295,7 +291,6 @@ add_task(async function testContentHearsCrashFirst() {
     
     
     let plugin = content.document.getElementById("plugin");
-    plugin.QueryInterface(Ci.nsIObjectLoadingContent);
     let statusDiv = plugin.openOrClosedShadowRoot.getElementById(
       "submitStatus"
     );
