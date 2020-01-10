@@ -79,6 +79,14 @@ class GeckoViewConnection {
   get dispatcher() {
     if (this.sender.envType === "addon_child") {
       
+      
+      const dispatcher = GeckoViewUtils.getDispatcherForWindow(this.target.ownerGlobal);
+      if (dispatcher) {
+        return dispatcher;
+      }
+
+      
+      
       return EventDispatcher.instance;
     } else if (this.sender.envType === "content_child"
         && this.allowContentMessaging) {

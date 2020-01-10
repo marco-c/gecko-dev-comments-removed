@@ -73,12 +73,7 @@ import java.util.Map;
         if ("content_child".equals(envType)) {
             environmentType = WebExtension.MessageSender.ENV_TYPE_CONTENT_SCRIPT;
         } else if ("addon_child".equals(envType)) {
-            if (session != null) {
-                
-                
-                
-                return null;
-            }
+            
             environmentType = WebExtension.MessageSender.ENV_TYPE_EXTENSION;
         } else {
             environmentType = WebExtension.MessageSender.ENV_TYPE_UNKNOWN;
