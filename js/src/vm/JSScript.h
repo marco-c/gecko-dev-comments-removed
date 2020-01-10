@@ -649,7 +649,7 @@ class ScriptSource {
   
   
   
-  uint32_t introductionOffset_ = 0;
+  mozilla::Maybe<uint32_t> introductionOffset_;
 
   
   
@@ -661,7 +661,6 @@ class ScriptSource {
 
   
   bool containsAsmJS_ = false;
-  bool hasIntroductionOffset_ = false;
 
   
   
@@ -1131,16 +1130,12 @@ class ScriptSource {
 
   bool mutedErrors() const { return mutedErrors_; }
 
-  bool hasIntroductionOffset() const { return hasIntroductionOffset_; }
-  uint32_t introductionOffset() const {
-    MOZ_ASSERT(hasIntroductionOffset());
-    return introductionOffset_;
-  }
+  bool hasIntroductionOffset() const { return introductionOffset_.isSome(); }
+  uint32_t introductionOffset() const { return introductionOffset_.value(); }
   void setIntroductionOffset(uint32_t offset) {
     MOZ_ASSERT(!hasIntroductionOffset());
     MOZ_ASSERT(offset <= (uint32_t)INT32_MAX);
-    introductionOffset_ = offset;
-    hasIntroductionOffset_ = true;
+    introductionOffset_.emplace(offset);
   }
 
   bool containsAsmJS() const { return containsAsmJS_; }
