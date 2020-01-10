@@ -618,7 +618,8 @@ nsresult HTMLEditRules::AfterEditInner() {
     
     if (!HTMLEditorRef()
              .TopLevelEditSubActionDataRef()
-             .mDidDeleteEmptyParentBlocks) {
+             .mDidDeleteEmptyParentBlocks &&
+        SelectionRefPtr()->IsCollapsed()) {
       switch (HTMLEditorRef().GetTopLevelEditSubAction()) {
         case EditSubAction::eInsertText:
         case EditSubAction::eInsertTextComingFromIME:
@@ -627,8 +628,13 @@ nsresult HTMLEditRules::AfterEditInner() {
         case EditSubAction::eInsertParagraphSeparator:
         case EditSubAction::ePasteHTMLContent:
         case EditSubAction::eInsertHTMLSource:
-          rv = AdjustSelection(
-              HTMLEditorRef().GetDirectionOfTopLevelEditSubAction());
+          
+          
+          
+          
+          rv = MOZ_KnownLive(HTMLEditorRef())
+                   .AdjustCaretPositionAndEnsurePaddingBRElement(
+                       HTMLEditorRef().GetDirectionOfTopLevelEditSubAction());
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
@@ -9708,25 +9714,18 @@ void HTMLEditRules::CheckInterlinePosition() {
   }
 }
 
-nsresult HTMLEditRules::AdjustSelection(nsIEditor::EDirection aAction) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
+    nsIEditor::EDirection aDirectionAndAmount) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(SelectionRefPtr()->IsCollapsed());
 
-  
-  
-  
-  if (!SelectionRefPtr()->IsCollapsed()) {
-    return NS_OK;
-  }
-
-  
   EditorDOMPoint point(EditorBase::GetStartPoint(*SelectionRefPtr()));
   if (NS_WARN_IF(!point.IsSet())) {
     return NS_ERROR_FAILURE;
   }
 
   
-  while (!HTMLEditorRef().IsEditable(point.GetContainer())) {
-    
+  while (!IsEditable(point.GetContainer())) {
     point.Set(point.GetContainer());
     if (NS_WARN_IF(!point.IsSet())) {
       return NS_ERROR_FAILURE;
@@ -9735,43 +9734,42 @@ nsresult HTMLEditRules::AdjustSelection(nsIEditor::EDirection aAction) {
 
   
   
-  RefPtr<Element> theblock = HTMLEditorRef().GetBlock(*point.GetContainer());
-
-  if (theblock && HTMLEditorRef().IsEditable(theblock)) {
-    bool isEmptyNode;
-    nsresult rv =
-        HTMLEditorRef().IsEmptyNode(theblock, &isEmptyNode, false, false);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    
-    if (isEmptyNode &&
-        HTMLEditorRef().CanContainTag(*point.GetContainer(), *nsGkAtoms::br)) {
-      Element* rootElement = HTMLEditorRef().GetRoot();
-      if (NS_WARN_IF(!rootElement)) {
-        return NS_ERROR_FAILURE;
+  if (RefPtr<Element> blockElement = GetBlock(*point.GetContainer())) {
+    if (IsEditable(blockElement)) {
+      bool isEmptyNode;
+      nsresult rv = IsEmptyNode(blockElement, &isEmptyNode, false, false);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
       }
-      if (point.GetContainer() == rootElement) {
-        
-        
-        
+      if (isEmptyNode && CanContainTag(*point.GetContainer(), *nsGkAtoms::br)) {
+        Element* bodyOrDocumentElement = GetRoot();
+        if (NS_WARN_IF(!bodyOrDocumentElement)) {
+          return NS_ERROR_FAILURE;
+        }
+        if (point.GetContainer() == bodyOrDocumentElement) {
+          
+          
+          
+          
+          
+          
+          
+          return NS_OK;
+        }
+        CreateElementResult createPaddingBRResult =
+            InsertPaddingBRElementForEmptyLastLineWithTransaction(point);
+        if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+          return createPaddingBRResult.Rv();
+        }
         return NS_OK;
       }
-
-      
-      CreateElementResult createPaddingBRResult =
-          MOZ_KnownLive(HTMLEditorRef())
-              .InsertPaddingBRElementForEmptyLastLineWithTransaction(point);
-      if (NS_WARN_IF(createPaddingBRResult.Failed())) {
-        return createPaddingBRResult.Rv();
-      }
-      return NS_OK;
     }
   }
 
   
+  
   if (point.IsInTextNode()) {
-    return NS_OK;  
+    return NS_OK;
   }
 
   
@@ -9780,96 +9778,107 @@ nsresult HTMLEditRules::AdjustSelection(nsIEditor::EDirection aAction) {
   
   
 
-  nsCOMPtr<nsIContent> nearNode =
-      HTMLEditorRef().GetPreviousEditableHTMLNode(point);
-  if (nearNode) {
+  if (nsCOMPtr<nsIContent> previousEditableContent =
+          GetPreviousEditableHTMLNode(point)) {
+    RefPtr<Element> blockElementAtCaret = GetBlock(*point.GetContainer());
+    RefPtr<Element> blockElementParentAtPreviousEditableContent =
+        GetBlockNodeParent(previousEditableContent);
     
-    RefPtr<Element> block = HTMLEditorRef().GetBlock(*point.GetContainer());
-    RefPtr<Element> nearBlock = HTMLEditorRef().GetBlockNodeParent(nearNode);
-    if (block && block == nearBlock) {
-      if (nearNode && TextEditUtils::IsBreak(nearNode)) {
-        if (!HTMLEditorRef().IsVisibleBRElement(nearNode)) {
+    
+    if (blockElementAtCaret &&
+        blockElementAtCaret == blockElementParentAtPreviousEditableContent &&
+        previousEditableContent &&
+        TextEditUtils::IsBreak(previousEditableContent)) {
+      
+      
+      if (!IsVisibleBRElement(previousEditableContent)) {
+        CreateElementResult createPaddingBRResult =
+            InsertPaddingBRElementForEmptyLastLineWithTransaction(point);
+        if (NS_WARN_IF(createPaddingBRResult.Failed())) {
+          return createPaddingBRResult.Rv();
+        }
+        point.Set(createPaddingBRResult.GetNewNode());
+        
+        
+        IgnoredErrorResult ignoredError;
+        SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        NS_WARNING_ASSERTION(!ignoredError.Failed(),
+                             "Failed to set interline position");
+        ErrorResult error;
+        SelectionRefPtr()->Collapse(point, error);
+        if (NS_WARN_IF(Destroyed())) {
+          error.SuppressException();
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
+        }
+      }
+      
+      
+      else if (nsIContent* nextEditableContentInBlock =
+                   GetNextEditableHTMLNodeInBlock(*previousEditableContent)) {
+        if (EditorBase::IsPaddingBRElementForEmptyLastLine(
+                *nextEditableContentInBlock)) {
           
           
-          
-          CreateElementResult createPaddingBRResult =
-              MOZ_KnownLive(HTMLEditorRef())
-                  .InsertPaddingBRElementForEmptyLastLineWithTransaction(point);
-          if (NS_WARN_IF(createPaddingBRResult.Failed())) {
-            return createPaddingBRResult.Rv();
-          }
-          point.Set(createPaddingBRResult.GetNewNode());
-          
-          
-          ErrorResult error;
-          SelectionRefPtr()->SetInterlinePosition(true, error);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            error.SuppressException();
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          NS_WARNING_ASSERTION(!error.Failed(),
+          IgnoredErrorResult ignoredError;
+          SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
+          NS_WARNING_ASSERTION(!ignoredError.Failed(),
                                "Failed to set interline position");
-          error = NS_OK;
-          SelectionRefPtr()->Collapse(point, error);
-          if (NS_WARN_IF(!CanHandleEditAction())) {
-            error.SuppressException();
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          if (NS_WARN_IF(error.Failed())) {
-            return error.StealNSResult();
-          }
-        } else {
-          nsCOMPtr<nsIContent> nextNode =
-              HTMLEditorRef().GetNextEditableHTMLNodeInBlock(*nearNode);
-          if (nextNode &&
-              EditorBase::IsPaddingBRElementForEmptyLastLine(*nextNode)) {
-            
-            
-            
-            IgnoredErrorResult ignoredError;
-            SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
-            NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                                 "Failed to set interline position");
-          }
         }
       }
     }
   }
 
   
-  nearNode = HTMLEditorRef().GetPreviousEditableHTMLNodeInBlock(point);
-  if (nearNode &&
-      (TextEditUtils::IsBreak(nearNode) || EditorBase::IsTextNode(nearNode) ||
-       HTMLEditUtils::IsImage(nearNode) ||
-       nearNode->IsHTMLElement(nsGkAtoms::hr))) {
-    
-    return NS_OK;
+  
+  if (nsIContent* previousEditableContentInBlock =
+          GetPreviousEditableHTMLNodeInBlock(point)) {
+    if (TextEditUtils::IsBreak(previousEditableContentInBlock) ||
+        EditorBase::IsTextNode(previousEditableContentInBlock) ||
+        HTMLEditUtils::IsImage(previousEditableContentInBlock) ||
+        previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::hr)) {
+      return NS_OK;
+    }
   }
-  nearNode = HTMLEditorRef().GetNextEditableHTMLNodeInBlock(point);
-  if (nearNode &&
-      (TextEditUtils::IsBreak(nearNode) || EditorBase::IsTextNode(nearNode) ||
-       nearNode->IsAnyOfHTMLElements(nsGkAtoms::img, nsGkAtoms::hr))) {
-    return NS_OK;  
+  
+  
+  if (nsIContent* nextEditableContentInBlock =
+          GetNextEditableHTMLNodeInBlock(point)) {
+    if (TextEditUtils::IsBreak(nextEditableContentInBlock) ||
+        EditorBase::IsTextNode(nextEditableContentInBlock) ||
+        nextEditableContentInBlock->IsAnyOfHTMLElements(nsGkAtoms::img,
+                                                        nsGkAtoms::hr)) {
+      return NS_OK;
+    }
   }
 
   
+
   
-  nearNode = HTMLEditorRef().FindNearEditableContent(point, aAction);
-  if (!nearNode) {
+  nsIContent* nearEditableContent =
+      FindNearEditableContent(point, aDirectionAndAmount);
+  if (!nearEditableContent) {
     return NS_OK;
   }
 
-  EditorDOMPoint pt = HTMLEditorRef().GetGoodCaretPointFor(*nearNode, aAction);
+  EditorDOMPoint pointToPutCaret =
+      GetGoodCaretPointFor(*nearEditableContent, aDirectionAndAmount);
+  if (NS_WARN_IF(!pointToPutCaret.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
   ErrorResult error;
-  SelectionRefPtr()->Collapse(pt, error);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  SelectionRefPtr()->Collapse(pointToPutCaret, error);
+  if (NS_WARN_IF(Destroyed())) {
     error.SuppressException();
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+  return error.StealNSResult();
 }
 
 template <typename PT, typename CT>
