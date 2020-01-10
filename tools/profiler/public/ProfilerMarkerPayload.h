@@ -12,6 +12,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/net/TimingStruct.h"
 
@@ -147,6 +148,35 @@ class DOMEventMarkerPayload : public TracingMarkerPayload {
  private:
   mozilla::TimeStamp mTimeStamp;
   nsString mEventType;
+};
+
+class PrefMarkerPayload : public ProfilerMarkerPayload {
+ public:
+  PrefMarkerPayload(const char* aPrefName,
+                    const mozilla::Maybe<mozilla::PrefValueKind>& aPrefKind,
+                    const mozilla::Maybe<mozilla::PrefType>& aPrefType,
+                    const nsCString& aPrefValue,
+                    const mozilla::TimeStamp& aPrefAccessTime)
+      : ProfilerMarkerPayload(aPrefAccessTime, aPrefAccessTime),
+        mPrefAccessTime(aPrefAccessTime),
+        mPrefName(aPrefName),
+        mPrefKind(aPrefKind),
+        mPrefType(aPrefType),
+        mPrefValue(aPrefValue) {}
+
+  DECL_STREAM_PAYLOAD
+
+ private:
+  mozilla::TimeStamp mPrefAccessTime;
+  nsCString mPrefName;
+  
+  
+  
+  mozilla::Maybe<mozilla::PrefValueKind> mPrefKind;
+  
+  
+  mozilla::Maybe<mozilla::PrefType> mPrefType;
+  nsCString mPrefValue;
 };
 
 class UserTimingMarkerPayload : public ProfilerMarkerPayload {
