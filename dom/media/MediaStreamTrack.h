@@ -308,7 +308,7 @@ class MediaStreamTrackSource : public nsISupports {
   }
 
   
-  nsCOMPtr<nsIPrincipal> mPrincipal;
+  RefPtr<nsIPrincipal> mPrincipal;
 
   
   nsTArray<WeakPtr<Sink>> mSinks;

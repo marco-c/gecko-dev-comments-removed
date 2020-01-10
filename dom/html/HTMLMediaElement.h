@@ -113,6 +113,26 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   typedef mozilla::MediaDecoderOwner MediaDecoderOwner;
   typedef mozilla::MetadataTags MetadataTags;
 
+  
+  
+  
+  
+  struct OutputMediaStream {
+    OutputMediaStream(RefPtr<DOMMediaStream> aStream, bool aCapturingAudioOnly,
+                      bool aFinishWhenEnded);
+    ~OutputMediaStream();
+
+    RefPtr<DOMMediaStream> mStream;
+    const bool mCapturingAudioOnly;
+    const bool mFinishWhenEnded;
+    
+    
+    nsCOMPtr<nsIURI> mFinishWhenEndedLoadingSrc;
+    
+    
+    RefPtr<DOMMediaStream> mFinishWhenEndedAttrStream;
+  };
+
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(HTMLMediaElement)
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
 
@@ -725,36 +745,16 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   class AudioChannelAgentCallback;
   class ChannelLoader;
   class ErrorSink;
+  class MediaElementTrackSource;
   class MediaLoadListener;
   class MediaStreamRenderer;
   class MediaStreamTrackListener;
   class FirstFrameListener;
   class ShutdownObserver;
-  class StreamCaptureTrackSource;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
 
   void SetDecoder(MediaDecoder* aDecoder);
-
-  
-  
-  struct OutputMediaStream {
-    OutputMediaStream();
-    ~OutputMediaStream();
-
-    RefPtr<DOMMediaStream> mStream;
-    
-    
-    
-    RefPtr<SharedDummyTrack> mGraphKeepAliveDummyStream;
-    bool mFinishWhenEnded;
-    bool mCapturingAudioOnly;
-    bool mCapturingDecoder;
-    bool mCapturingMediaStream;
-
-    
-    nsTArray<Pair<nsString, RefPtr<MediaStreamTrackSource>>> mTracks;
-  };
 
   void PlayInternal(bool aHandlingUserInput);
 
@@ -854,6 +854,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
+  void GetAllEnabledMediaTracks(nsTArray<RefPtr<MediaTrack>>& aTracks);
+
+  
+
 
 
 
@@ -864,14 +868,17 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void AddCaptureMediaTrackToOutputStream(dom::MediaTrack* aTrack,
-                                          OutputMediaStream& aOutputStream,
-                                          bool aAsyncAddtrack = true);
+
+  enum class AddTrackMode { ASYNC, SYNC };
+  void AddOutputTrackSourceToOutputStream(
+      MediaElementTrackSource* aSource, OutputMediaStream& aOutputStream,
+      AddTrackMode aMode = AddTrackMode::ASYNC);
 
   
 
 
-  void DiscardFinishWhenEndedOutputStreams();
+
+  void UpdateOutputTrackSources();
 
   
 
@@ -885,8 +892,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
   already_AddRefed<DOMMediaStream> CaptureStreamInternal(
-      StreamCaptureBehavior aBehavior, StreamCaptureType aType,
-      MediaTrackGraph* aGraph);
+      StreamCaptureBehavior aFinishBehavior,
+      StreamCaptureType aStreamCaptureType, MediaTrackGraph* aGraph);
 
   
 
@@ -1362,6 +1369,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  
+  nsRefPtrHashtable<nsStringHashKey, MediaElementTrackSource>
+      mOutputTrackSources;
+
+  
+  
   RefPtr<FirstFrameListener> mFirstFrameListener;
   
   RefPtr<VideoStreamTrack> mSelectedVideoStreamTrack;
@@ -1560,6 +1573,14 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mAllowCasting = false;
   
   bool mIsCasting = false;
+
+  
+  
+  
+  
+  
+  
+  Watchable<RefPtr<SharedDummyTrack>> mTracksCaptured;
 
   
   bool mAudioCaptured = false;
