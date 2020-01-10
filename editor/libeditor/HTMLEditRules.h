@@ -395,15 +395,6 @@ class HTMLEditRules : public TextEditRules {
   OutdentPartOfBlock(Element& aBlockElement, nsIContent& aStartOfOutdent,
                      nsIContent& aEndOutdent, bool aIsBlockIndentedWithCSS);
 
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult ExpandSelectionForDeletion();
-
   void GetDefinitionListItemTypes(Element* aElement, bool* aDT,
                                   bool* aDD) const;
   MOZ_CAN_RUN_SCRIPT
