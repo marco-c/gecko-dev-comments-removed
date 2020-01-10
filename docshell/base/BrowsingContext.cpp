@@ -476,11 +476,14 @@ void BrowsingContext::GetChildren(Children& aChildren) {
 
 
 
-BrowsingContext* BrowsingContext::FindWithName(const nsAString& aName) {
+BrowsingContext* BrowsingContext::FindWithName(
+    const nsAString& aName, bool aUseEntryGlobalForAccessCheck) {
   RefPtr<BrowsingContext> requestingContext = this;
-  if (nsCOMPtr<nsIDocShell> caller = do_GetInterface(GetEntryGlobal())) {
-    if (caller->GetBrowsingContext()) {
-      requestingContext = caller->GetBrowsingContext();
+  if (aUseEntryGlobalForAccessCheck) {
+    if (nsCOMPtr<nsIDocShell> caller = do_GetInterface(GetEntryGlobal())) {
+      if (caller->GetBrowsingContext()) {
+        requestingContext = caller->GetBrowsingContext();
+      }
     }
   }
 

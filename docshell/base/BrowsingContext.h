@@ -271,7 +271,8 @@ class BrowsingContext : public nsISupports,
   
   
   
-  BrowsingContext* FindWithName(const nsAString& aName);
+  BrowsingContext* FindWithName(const nsAString& aName,
+                                bool aUseEntryGlobalForAccessCheck = true);
 
   
   
