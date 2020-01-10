@@ -7,11 +7,10 @@
 #ifndef mozilla_dom_EffectsInfo_h
 #define mozilla_dom_EffectsInfo_h
 
+#include "nsRect.h"
+
 namespace mozilla {
 namespace dom {
-
-
-
 
 
 
@@ -21,22 +20,33 @@ namespace dom {
 class EffectsInfo {
  public:
   EffectsInfo() { *this = EffectsInfo::FullyHidden(); }
-  static EffectsInfo FullyVisible() { return EffectsInfo{true}; }
-  static EffectsInfo FullyHidden() { return EffectsInfo{false}; }
+
+  static EffectsInfo VisibleWithinRect(const nsRect& aVisibleRect,
+                                       float aScaleX, float aScaleY) {
+    return EffectsInfo{aVisibleRect, aScaleX, aScaleY};
+  }
+  static EffectsInfo FullyHidden() { return EffectsInfo{nsRect(), 1.0f, 1.0f}; }
 
   bool operator==(const EffectsInfo& aOther) {
-    return mVisible == aOther.mVisible;
+    return mVisibleRect == aOther.mVisibleRect && mScaleX == aOther.mScaleX &&
+           mScaleY == aOther.mScaleY;
   }
   bool operator!=(const EffectsInfo& aOther) { return !(*this == aOther); }
 
-  
-  bool mVisible;
-  
+  bool IsVisible() const { return !mVisibleRect.IsEmpty(); }
 
-
+  
+  
+  nsRect mVisibleRect;
+  
+  
+  float mScaleX;
+  float mScaleY;
+  
 
  private:
-  explicit EffectsInfo(bool aVisible) : mVisible(aVisible) {}
+  EffectsInfo(const nsRect& aVisibleRect, float aScaleX, float aScaleY)
+      : mVisibleRect(aVisibleRect), mScaleX(aScaleX), mScaleY(aScaleY) {}
 };
 
 }  

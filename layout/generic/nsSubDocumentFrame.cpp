@@ -14,6 +14,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLFrameElement.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -1405,7 +1406,19 @@ already_AddRefed<mozilla::layers::Layer> nsDisplayRemote::BuildLayer(
   if (RefPtr<RemoteBrowser> remoteBrowser =
           GetFrameLoader()->GetRemoteBrowser()) {
     
-    aBuilder->AddEffectUpdate(remoteBrowser, EffectsInfo::FullyVisible());
+    
+    nsRect visibleRect;
+    if (aContainerParameters.mItemVisibleRect) {
+      visibleRect = *aContainerParameters.mItemVisibleRect - ToReferenceFrame();
+    } else {
+      visibleRect = mFrame->GetContentRectRelativeToSelf();
+    }
+
+    
+    aBuilder->AddEffectUpdate(remoteBrowser,
+                              EffectsInfo::VisibleWithinRect(
+                                  visibleRect, aContainerParameters.mXScale,
+                                  aContainerParameters.mYScale));
     
     
   }
@@ -1465,8 +1478,10 @@ bool nsDisplayRemote::CreateWebRenderCommands(
   if (RefPtr<RemoteBrowser> remoteBrowser =
           GetFrameLoader()->GetRemoteBrowser()) {
     
-    aDisplayListBuilder->AddEffectUpdate(remoteBrowser,
-                                         EffectsInfo::FullyVisible());
+    
+    aDisplayListBuilder->AddEffectUpdate(
+        remoteBrowser, EffectsInfo::VisibleWithinRect(
+                           mFrame->GetContentRectRelativeToSelf(), 1.0f, 1.0f));
 
     
     

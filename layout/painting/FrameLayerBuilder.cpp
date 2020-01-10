@@ -4657,6 +4657,7 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
       transformNode = transformNode->Parent();
     }
 
+    nsRect itemVisibleRectAu = itemContent;
     if (transformNode) {
       
       MOZ_ASSERT(transformNode);
@@ -4818,6 +4819,15 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
       ContainerLayerParameters params = mParameters;
       params.mBackgroundColor = uniformColor;
       params.mLayerCreationHint = GetLayerCreationHint(itemAGR);
+      if (!transformNode) {
+        params.mItemVisibleRect = &itemVisibleRectAu;
+      } else {
+        
+        
+        
+        
+        params.mItemVisibleRect = nullptr;
+      }
       params.mScrollMetadataASR =
           ActiveScrolledRoot::IsAncestor(scrollMetadataASR,
                                          mContainerScrollMetadataASR)
