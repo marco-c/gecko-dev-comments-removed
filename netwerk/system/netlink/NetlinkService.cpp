@@ -609,8 +609,6 @@ void NetlinkService::OnNetlinkMessage(int aNetlinkSocket) {
     switch (nlh->nlmsg_type) {
       case NLMSG_DONE: 
 
-        MOZ_ASSERT(
-            isResponse);  
         if (isResponse) {
           RemovePendingMsg();
         }
