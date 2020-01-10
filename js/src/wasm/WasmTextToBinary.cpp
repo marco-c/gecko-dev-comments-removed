@@ -4452,6 +4452,18 @@ static AstTypeDef* ParseTypeDef(WasmParseContext& c) {
   return type;
 }
 
+static bool MaybeParseOwnerIndex(WasmParseContext& c) {
+  if (c.ts.peek().kind() == WasmToken::Index) {
+    WasmToken elemIndex = c.ts.get();
+    if (elemIndex.index()) {
+      c.ts.generateError(elemIndex, "can't handle non-default memory/table yet",
+                         c.error);
+      return false;
+    }
+  }
+  return true;
+}
+
 static AstExpr* ParseInitializerConstExpression(WasmParseContext& c) {
   bool need_rparen = false;
 
@@ -4477,12 +4489,7 @@ static AstExpr* ParseInitializerExpression(WasmParseContext& c) {
     return nullptr;
   }
 
-  AstExpr* initExpr;
-  if (c.ts.getIf(WasmToken::Offset)) {
-    initExpr = ParseInitializerConstExpression(c);
-  } else {
-    initExpr = ParseExprInsideParens(c);
-  }
+  AstExpr* initExpr = ParseExprInsideParens(c);
   if (!initExpr) {
     return nullptr;
   }
@@ -4495,30 +4502,16 @@ static AstExpr* ParseInitializerExpression(WasmParseContext& c) {
 }
 
 static AstDataSegment* ParseDataSegment(WasmParseContext& c) {
-  
-  
-  
-  
-  
-
-  WasmToken elemIndex;
-  bool haveMemIndex = c.ts.getIf(WasmToken::Index, &elemIndex);
-  if (haveMemIndex && elemIndex.index()) {
-    c.ts.generateError(elemIndex, "can't handle non-default memory", c.error);
+  if (!MaybeParseOwnerIndex(c)) {
     return nullptr;
   }
 
   AstExpr* offsetIfActive = nullptr;
-  if (c.ts.peek().kind() == WasmToken::OpenParen) {
+  if (!c.ts.getIf(WasmToken::Passive)) {
     offsetIfActive = ParseInitializerExpression(c);
     if (!offsetIfActive) {
       return nullptr;
     }
-  } else if (haveMemIndex) {
-    c.ts.generateError(c.ts.peek(),
-                       "data segment with memory index must have offset",
-                       c.error);
-    return nullptr;
   }
 
   AstNameVector fragments(c.lifo);
@@ -4536,7 +4529,7 @@ static AstDataSegment* ParseDataSegment(WasmParseContext& c) {
 static bool ParseDataCount(WasmParseContext& c, AstModule* module) {
   WasmToken token;
   if (!c.ts.getIf(WasmToken::Index, &token)) {
-    c.ts.generateError(token, "literal data segment count required", c.error);
+    c.ts.generateError(token, "Literal data segment count required", c.error);
     return false;
   }
 
@@ -5053,141 +5046,55 @@ static bool ParseTable(WasmParseContext& c, WasmToken token,
   return segment && module->append(segment);
 }
 
-static bool TryParseFuncOrFuncRef(WasmParseContext& c, bool* isFunc) {
-  if (c.ts.getIf(WasmToken::Func)) {
-    *isFunc = true;
-    return true;
-  }
-
-  WasmToken token = c.ts.peek();
-  if (token.kind() == WasmToken::ValueType &&
-      token.valueType() == ValType::FuncRef) {
-    c.ts.get();
-    *isFunc = false;
-    return true;
-  }
-
-  return false;
-}
-
 static AstElemSegment* ParseElemSegment(WasmParseContext& c) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
   
 
   AstRef targetTable = AstRef(0);
-  AstExpr* offsetIfActive = nullptr;
-  bool haveTableref = false;
+  bool hasTableName = c.ts.getIfRef(&targetTable);
+
   AstElemSegmentKind kind;
+  AstExpr* offsetIfActive = nullptr;
 
-  if (c.ts.peek().kind() == WasmToken::OpenParen) {
-    WasmToken lparen = c.ts.get();
-    if (c.ts.getIf(WasmToken::Table)) {
-      if (!c.ts.matchRef(&targetTable, c.error)) {
-        return nullptr;
-      }
-      if (!c.ts.match(WasmToken::CloseParen, c.error)) {
-        return nullptr;
-      }
-      haveTableref = true;
-    } else {
-      c.ts.unget(lparen);
-    }
-  } else if (c.ts.getIfRef(&targetTable)) {
-    haveTableref = true;
-  }
-
-  
-  
-
-  bool nakedFnrefs = false;
-  if (haveTableref) {
-    if ((offsetIfActive = ParseInitializerExpression(c)) == nullptr) {
-      c.ts.generateError(
-          c.ts.peek(),
-          "elem segment with table reference must have offset expression",
-          c.error);
-      return nullptr;
-    }
-    if (!TryParseFuncOrFuncRef(c, &nakedFnrefs)) {
-      c.ts.generateError(c.ts.peek(),
-                         "'func' or 'funcref' required for elem segment",
-                         c.error);
-      return nullptr;
-    }
-    kind = AstElemSegmentKind::Active;
+  if (c.ts.getIf(WasmToken::Passive)) {
+    kind = AstElemSegmentKind::Passive;
   } else if (c.ts.getIf(WasmToken::Declared)) {
     kind = AstElemSegmentKind::Declared;
-    nakedFnrefs = true;
-  } else if (TryParseFuncOrFuncRef(c, &nakedFnrefs)) {
-    
-    kind = AstElemSegmentKind::Passive;
   } else {
-    if ((offsetIfActive = ParseInitializerExpression(c)) == nullptr) {
-      c.ts.generateError(c.ts.peek(),
-                         "elem segment for table 0 must have offset expression",
-                         c.error);
+    kind = AstElemSegmentKind::Active;
+    offsetIfActive = ParseInitializerExpression(c);
+    if (!offsetIfActive) {
       return nullptr;
     }
-    
-    nakedFnrefs = true;
-    kind = AstElemSegmentKind::Active;
+  }
+
+  if (hasTableName && kind != AstElemSegmentKind::Active) {
+    c.ts.generateError(c.ts.peek(),
+                       "passive or declared segment must not have a table",
+                       c.error);
+    return nullptr;
   }
 
   AstElemVector elems(c.lifo);
 
-  if (nakedFnrefs) {
+  for (;;) {
     AstRef elemRef;
-    while (c.ts.getIfRef(&elemRef)) {
+    if (c.ts.getIfRef(&elemRef)) {
       if (!elems.append(AstElem(elemRef))) {
         return nullptr;
       }
+      continue;
     }
-  } else {
-    AstRef elemRef;
-    WasmToken openParen;
-    while (c.ts.getIf(WasmToken::OpenParen, &openParen)) {
-      if (c.ts.getIf(WasmToken::RefFunc)) {
-        if (!c.ts.matchRef(&elemRef, c.error)) {
-          return nullptr;
-        }
-        if (!elems.append(AstElem(elemRef))) {
-          return nullptr;
-        }
-      } else if (c.ts.getIf(WasmToken::RefNull)) {
-        if (!elems.append(AstElem(AstNullValue()))) {
-          return nullptr;
-        }
-      } else {
-        c.ts.generateError(c.ts.peek(),
-                           "ref.func or ref.null required in element segment",
-                           c.error);
+    if (kind != AstElemSegmentKind::Declared &&
+        c.ts.getIf(WasmToken::RefNull)) {
+      if (!elems.append(AstElem(AstNullValue()))) {
         return nullptr;
       }
-      if (!c.ts.match(WasmToken::CloseParen, c.error)) {
-        return nullptr;
-      }
+      continue;
     }
+    break;
   }
 
   return new (c.lifo)
@@ -7329,7 +7236,7 @@ static bool EncodeDataInitializerKind(Encoder& e, uint32_t index,
     
     
     if (index) {
-      if (!e.writeVarU32(uint32_t(DataSegmentKind::ActiveWithMemoryIndex)) ||
+      if (!e.writeVarU32(uint32_t(DataSegmentKind::ActiveWithIndex)) ||
           !e.writeVarU32(index)) {
         return false;
       }
@@ -7440,9 +7347,8 @@ static bool EncodeElemSegment(Encoder& e, AstElemSegment& segment) {
   ElemSegmentKind kind;
   switch (segment.kind()) {
     case AstElemSegmentKind::Active: {
-      kind = segment.targetTable().index()
-                 ? ElemSegmentKind::ActiveWithTableIndex
-                 : ElemSegmentKind::Active;
+      kind = segment.targetTable().index() ? ElemSegmentKind::ActiveWithIndex
+                                           : ElemSegmentKind::Active;
       break;
     }
     case AstElemSegmentKind::Passive: {
@@ -7463,14 +7369,14 @@ static bool EncodeElemSegment(Encoder& e, AstElemSegment& segment) {
   }
 
   
-  if (kind == ElemSegmentKind::ActiveWithTableIndex &&
+  if (kind == ElemSegmentKind::ActiveWithIndex &&
       !e.writeVarU32(segment.targetTable().index())) {
     return false;
   }
 
-  
   if (kind == ElemSegmentKind::Active ||
-      kind == ElemSegmentKind::ActiveWithTableIndex) {
+      kind == ElemSegmentKind::ActiveWithIndex) {
+    
     if (!EncodeExpr(e, *segment.offsetIfActive())) {
       return false;
     }
@@ -7481,9 +7387,8 @@ static bool EncodeElemSegment(Encoder& e, AstElemSegment& segment) {
 
   
   
-  
-  
   if (kind != ElemSegmentKind::Active) {
+    
     if (payload == ElemSegmentPayload::ElemExpression &&
         !e.writeFixedU8(uint8_t(TypeCode::FuncRef))) {
       return false;
@@ -7494,12 +7399,10 @@ static bool EncodeElemSegment(Encoder& e, AstElemSegment& segment) {
     }
   }
 
-  
   if (!e.writeVarU32(segment.elems().length())) {
     return false;
   }
 
-  
   for (const AstElem& elem : segment.elems()) {
     if (elem.is<AstRef>()) {
       const AstRef& ref = elem.as<AstRef>();
