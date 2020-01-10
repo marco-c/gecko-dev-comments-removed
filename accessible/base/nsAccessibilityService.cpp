@@ -1022,7 +1022,10 @@ Accessible* nsAccessibilityService::CreateAccessible(nsINode* aNode,
 
     if (!isARIATablePart || frame->AccessibleType() == eHTMLTableCellType ||
         frame->AccessibleType() == eHTMLTableRowType ||
-        frame->AccessibleType() == eHTMLTableType) {
+        frame->AccessibleType() == eHTMLTableType ||
+        
+        
+        frame->AccessibleType() == eOuterDocType) {
       
       
       const HTMLMarkupMapInfo* markupMap =
