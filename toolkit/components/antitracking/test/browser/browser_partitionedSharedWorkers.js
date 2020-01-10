@@ -57,6 +57,7 @@ PartitionedStorageHelper.runPartitioningTest(
 
   
   async (win, value) => {
+    win.sh = new win.SharedWorker("partitionedSharedWorker.js");
     win.sh.port.postMessage({what: "put", value});
     return true;
   },
