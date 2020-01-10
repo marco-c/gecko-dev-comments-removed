@@ -19,6 +19,7 @@ const actionTypes = {
   UPDATE_WORKERS: "UPDATE_WORKERS",
 };
 
+
 const PAGE_TYPES = {
   MANIFEST: "manifest",
   SERVICE_WORKERS: "service-workers",

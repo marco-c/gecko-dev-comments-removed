@@ -17,7 +17,6 @@ add_task(async function() {
   const { panel, toolbox } = await openNewTabAndApplicationPanel(TAB_URL);
   const doc = panel.panelWin.document;
 
-  
   selectPage(panel, "service-workers");
 
   

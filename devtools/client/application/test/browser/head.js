@@ -82,11 +82,13 @@ async function waitForWorkerRegistration(swTab) {
   );
 }
 
-
-
-
 function selectPage(panel, page) {
+  
+
+
+
   info(`Selecting application page: ${page}`);
-  const actions = panel.panelWin.Application.actions;
-  actions.updateSelectedPage(page);
+  const doc = panel.panelWin.document;
+  const navItem = doc.querySelector(`.js-sidebar-${page}`);
+  navItem.click();
 }
