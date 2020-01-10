@@ -47,28 +47,20 @@ RayReferenceData::RayReferenceData(const nsIFrame* aFrame) {
 }
 
 static already_AddRefed<gfx::Path> BuildPath(
-    const Span<const StylePathCommand>& aPath) {
-  
-  
-  
-  
-  RefPtr<gfx::DrawTarget> drawTarget =
-      gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-  RefPtr<gfx::PathBuilder> builder =
-      drawTarget->CreatePathBuilder(gfx::FillRule::FILL_WINDING);
-
-  return SVGPathData::BuildPath(aPath, builder, NS_STYLE_STROKE_LINECAP_BUTT,
-                                0.0);
+    const Span<const StylePathCommand>& aPath, gfx::PathBuilder* aPathBuilder) {
+  return SVGPathData::BuildPath(aPath, aPathBuilder,
+                                NS_STYLE_STROKE_LINECAP_BUTT, 0.0);
 }
 
 
-OffsetPathData OffsetPathData::Path(const StyleSVGPathData& aPath) {
+OffsetPathData OffsetPathData::Path(const StyleSVGPathData& aPath,
+                                    gfx::PathBuilder* aPathBuilder) {
   const auto& path = aPath._0.AsSpan();
 
   
   
   
-  RefPtr<gfx::Path> gfxPath = BuildPath(path);
+  RefPtr<gfx::Path> gfxPath = BuildPath(path, aPathBuilder);
   return OffsetPathData(gfxPath, !path.empty() && path.rbegin()->IsClosePath());
 }
 
@@ -463,8 +455,17 @@ Maybe<MotionPathData> MotionPathUtils::ResolveMotionPath(
 static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
   const StyleOffsetPath& path = aFrame->StyleDisplay()->mOffsetPath;
   switch (path.tag) {
-    case StyleOffsetPath::Tag::Path:
-      return OffsetPathData::Path(path.AsPath());
+    case StyleOffsetPath::Tag::Path: {
+      
+      
+      
+      
+      RefPtr<gfx::DrawTarget> drawTarget =
+          gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+      RefPtr<gfx::PathBuilder> builder =
+          drawTarget->CreatePathBuilder(gfx::FillRule::FILL_WINDING);
+      return OffsetPathData::Path(path.AsPath(), builder);
+    }
     case StyleOffsetPath::Tag::Ray:
       return OffsetPathData::Ray(path.AsRay(), RayReferenceData(aFrame));
     case StyleOffsetPath::Tag::None:
