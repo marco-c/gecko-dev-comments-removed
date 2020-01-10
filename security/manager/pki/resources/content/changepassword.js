@@ -33,9 +33,9 @@ function process() {
   
   
   if ((token.needsLogin() && token.needsUserInit) || !token.needsLogin()) {
-    oldpwbox.setAttribute("hidden", "true");
+    oldpwbox.hidden = true;
     msgBox.setAttribute("value", bundle.getString("password_not_set"));
-    msgBox.setAttribute("hidden", "false");
+    msgBox.hidden = false;
 
     if (!token.needsLogin()) {
       oldpwbox.setAttribute("inited", "empty");
@@ -47,8 +47,8 @@ function process() {
     document.getElementById("pw1").focus();
   } else {
     
-    oldpwbox.setAttribute("hidden", "false");
-    msgBox.setAttribute("hidden", "true");
+    oldpwbox.hidden = false;
+    msgBox.hidden = true;
     oldpwbox.setAttribute("inited", "false");
     oldpwbox.focus();
   }
