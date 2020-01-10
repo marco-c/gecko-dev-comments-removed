@@ -374,7 +374,7 @@ impl<'a> From<&'a LayoutToWorldTransform> for FontTransform {
 
 
 
-pub const FONT_SIZE_LIMIT: f64 = 512.0;
+pub const FONT_SIZE_LIMIT: f64 = 320.0;
 
 
 
