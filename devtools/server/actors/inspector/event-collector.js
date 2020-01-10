@@ -304,15 +304,22 @@ class MainEventCollector {
   }
 
   isChromeHandler(handler) {
-    const handlerPrincipal = Cu.getObjectPrincipal(handler);
+    try {
+      const handlerPrincipal = Cu.getObjectPrincipal(handler);
 
-    
-    
-    
-    
-    return (
-      handlerPrincipal.isSystemPrincipal || handlerPrincipal.isExpandedPrincipal
-    );
+      
+      
+      
+      
+      return (
+        handlerPrincipal.isSystemPrincipal ||
+        handlerPrincipal.isExpandedPrincipal
+      );
+    } catch (e) {
+      
+      
+      return false;
+    }
   }
 }
 
