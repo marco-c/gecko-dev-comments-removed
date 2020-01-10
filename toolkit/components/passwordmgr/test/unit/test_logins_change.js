@@ -27,15 +27,15 @@ function checkLoginInvalid(aLoginInfo, aExpectedError) {
   LoginTestUtils.checkLogins([]);
 
   
-  let testLogin = TestData.formLogin({ hostname: "http://modify.example.com" });
+  let testLogin = TestData.formLogin({ origin: "http://modify.example.com" });
   Services.logins.addLogin(testLogin);
 
   
   Assert.throws(() => Services.logins.modifyLogin(testLogin, aLoginInfo),
                 aExpectedError);
   Assert.throws(() => Services.logins.modifyLogin(testLogin, newPropertyBag({
-    hostname: aLoginInfo.hostname,
-    formSubmitURL: aLoginInfo.formSubmitURL,
+    origin: aLoginInfo.origin,
+    formActionOrigin: aLoginInfo.formActionOrigin,
     httpRealm: aLoginInfo.httpRealm,
     username: aLoginInfo.username,
     password: aLoginInfo.password,
@@ -105,14 +105,14 @@ add_task(function test_addLogin_removeLogin() {
 
 
 
-add_task(function test_invalid_httpRealm_formSubmitURL() {
+add_task(function test_invalid_httpRealm_formActionOrigin() {
   
-  checkLoginInvalid(TestData.formLogin({ formSubmitURL: null }),
-                    /without a httpRealm or formSubmitURL/);
+  checkLoginInvalid(TestData.formLogin({ formActionOrigin: null }),
+                    /without a httpRealm or formActionOrigin/);
 
   
   checkLoginInvalid(TestData.authLogin({ httpRealm: "" }),
-                    /without a httpRealm or formSubmitURL/);
+                    /without a httpRealm or formActionOrigin/);
 
   
   
@@ -120,31 +120,31 @@ add_task(function test_invalid_httpRealm_formSubmitURL() {
   
 
   
-  checkLoginInvalid(TestData.formLogin({ formSubmitURL: "", httpRealm: "" }),
-                    /both a httpRealm and formSubmitURL/);
+  checkLoginInvalid(TestData.formLogin({ formActionOrigin: "", httpRealm: "" }),
+                    /both a httpRealm and formActionOrigin/);
 
   
   checkLoginInvalid(TestData.formLogin({ httpRealm: "The HTTP Realm" }),
-                    /both a httpRealm and formSubmitURL/);
+                    /both a httpRealm and formActionOrigin/);
 
   
   checkLoginInvalid(TestData.formLogin({ httpRealm: "" }),
-                    /both a httpRealm and formSubmitURL/);
+                    /both a httpRealm and formActionOrigin/);
 
   
-  checkLoginInvalid(TestData.authLogin({ formSubmitURL: "" }),
-                    /both a httpRealm and formSubmitURL/);
+  checkLoginInvalid(TestData.authLogin({ formActionOrigin: "" }),
+                    /both a httpRealm and formActionOrigin/);
 });
 
 
 
 
 add_task(function test_missing_properties() {
-  checkLoginInvalid(TestData.formLogin({ hostname: null }),
-                    /null or empty hostname/);
+  checkLoginInvalid(TestData.formLogin({ origin: null }),
+                    /null or empty origin/);
 
-  checkLoginInvalid(TestData.formLogin({ hostname: "" }),
-                    /null or empty hostname/);
+  checkLoginInvalid(TestData.formLogin({ origin: "" }),
+                    /null or empty origin/);
 
   checkLoginInvalid(TestData.formLogin({ username: null }),
                     /null username/);
@@ -161,9 +161,9 @@ add_task(function test_missing_properties() {
 
 add_task(function test_invalid_characters() {
   let loginList = [
-    TestData.authLogin({ hostname: "http://null\0X.example.com" }),
+    TestData.authLogin({ origin: "http://null\0X.example.com" }),
     TestData.authLogin({ httpRealm: "realm\0" }),
-    TestData.formLogin({ formSubmitURL: "http://null\0X.example.com" }),
+    TestData.formLogin({ formActionOrigin: "http://null\0X.example.com" }),
     TestData.formLogin({ usernameField: "field\0_null" }),
     TestData.formLogin({ usernameField: ".\0" }), 
     TestData.formLogin({ passwordField: "field\0_null" }),
@@ -253,8 +253,8 @@ add_task(function test_modifyLogin_nsIProperyBag() {
   });
   let differentLoginInfo = TestData.authLogin();
   let differentLoginProperties = newPropertyBag({
-    hostname: differentLoginInfo.hostname,
-    formSubmitURL: differentLoginInfo.formSubmitURL,
+    origin: differentLoginInfo.origin,
+    formActionOrigin: differentLoginInfo.formActionOrigin,
     httpRealm: differentLoginInfo.httpRealm,
     username: differentLoginInfo.username,
     password: differentLoginInfo.password,
@@ -318,15 +318,15 @@ add_task(function test_deduplicate_logins() {
       results: 13,
     },
     {
-      keyset: ["hostname", "username"],
+      keyset: ["origin", "username"],
       results: 17,
     },
     {
-      keyset: ["hostname", "username", "password"],
+      keyset: ["origin", "username", "password"],
       results: 18,
     },
     {
-      keyset: ["hostname", "username", "password", "formSubmitURL"],
+      keyset: ["origin", "username", "password", "formActionOrigin"],
       results: 23,
     },
   ];
@@ -352,7 +352,7 @@ add_task(function test_deduplicate_keeps_most_recent() {
   
   let logins = [
     TestData.formLogin({timeLastUsed: Date.UTC(2004, 11, 4, 0, 0, 0)}),
-    TestData.formLogin({formSubmitURL: "http://example.com", timeLastUsed: Date.UTC(2015, 11, 4, 0, 0, 0)}),
+    TestData.formLogin({formActionOrigin: "http://example.com", timeLastUsed: Date.UTC(2015, 11, 4, 0, 0, 0)}),
   ];
 
   

@@ -22,7 +22,7 @@ const gLooksLikeUUIDRegex = /^\{\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\}$/;
 
 
 function retrieveLoginMatching(aLoginInfo) {
-  let logins = Services.logins.findLogins(aLoginInfo.hostname, "", "");
+  let logins = Services.logins.findLogins(aLoginInfo.origin, "", "");
   Assert.equal(logins.length, 1);
   return logins[0].QueryInterface(Ci.nsILoginMetaInfo);
 }
@@ -72,7 +72,7 @@ add_task(function test_initialize() {
 
   gLoginInfo1 = TestData.formLogin();
   gLoginInfo2 = TestData.formLogin({
-    hostname: "http://other.example.com",
+    origin: "http://other.example.com",
     guid: gUUIDGenerator.generateUUID().toString(),
     timeCreated: baseTimeMs,
     timeLastUsed: baseTimeMs + 2,
@@ -128,7 +128,7 @@ add_task(function test_addLogin_metainfo() {
 
 add_task(function test_addLogin_metainfo_duplicate() {
   let loginInfo = TestData.formLogin({
-    hostname: "http://duplicate.example.com",
+    origin: "http://duplicate.example.com",
     guid: gLoginMetaInfo2.guid,
   });
   Assert.throws(() => Services.logins.addLogin(loginInfo),

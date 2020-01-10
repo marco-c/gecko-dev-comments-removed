@@ -42,20 +42,20 @@
 
 
 add_task(function test_addLogin_wildcard() {
-  let loginInfo = TestData.formLogin({ hostname: "http://any.example.com",
-                                       formSubmitURL: "" });
+  let loginInfo = TestData.formLogin({ origin: "http://any.example.com",
+                                       formActionOrigin: "" });
   Services.logins.addLogin(loginInfo);
 
   
-  loginInfo = TestData.formLogin({ hostname: "http://any.example.com" });
+  loginInfo = TestData.formLogin({ origin: "http://any.example.com" });
   Assert.throws(() => Services.logins.addLogin(loginInfo), /already exists/);
 
   
-  loginInfo = TestData.authLogin({ hostname: "http://any.example.com" });
+  loginInfo = TestData.authLogin({ origin: "http://any.example.com" });
   Services.logins.addLogin(loginInfo);
 
   
-  loginInfo = TestData.formLogin({ hostname: "http://other.example.com" });
+  loginInfo = TestData.formLogin({ origin: "http://other.example.com" });
   Services.logins.addLogin(loginInfo);
 });
 
@@ -66,7 +66,7 @@ add_task(function test_addLogin_wildcard() {
 
 add_task(function test_search_all_wildcard() {
   
-  let matchData = newPropertyBag({ formSubmitURL: "http://www.example.com" });
+  let matchData = newPropertyBag({ formActionOrigin: "http://www.example.com" });
   Assert.equal(Services.logins.searchLogins(matchData).length, 2);
 
   Assert.equal(Services.logins.findLogins("", "http://www.example.com",
@@ -76,7 +76,7 @@ add_task(function test_search_all_wildcard() {
                                            null), 2);
 
   
-  matchData.setProperty("hostname", "http://any.example.com");
+  matchData.setProperty("origin", "http://any.example.com");
   Assert.equal(Services.logins.searchLogins(matchData).length, 1);
 
   Assert.equal(Services.logins.findLogins("http://any.example.com",
@@ -93,9 +93,9 @@ add_task(function test_search_all_wildcard() {
 
 
 add_task(function test_searchLogins_wildcard() {
-  let logins = Services.logins.searchLogins(newPropertyBag({ formSubmitURL: "" }));
+  let logins = Services.logins.searchLogins(newPropertyBag({ formActionOrigin: "" }));
 
-  let loginInfo = TestData.formLogin({ hostname: "http://any.example.com",
-                                       formSubmitURL: "" });
+  let loginInfo = TestData.formLogin({ origin: "http://any.example.com",
+                                       formActionOrigin: "" });
   LoginTestUtils.assertLoginListsEqual(logins, [loginInfo]);
 });

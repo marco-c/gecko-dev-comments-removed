@@ -18,8 +18,8 @@ function waitForDialog() {
 
 add_task(async function test_mpAutocompleteTimeout() {
   let login = LoginTestUtils.testData.formLogin({
-    hostname: "https://example.com",
-    formSubmitURL: "https://example.com",
+    origin: "https://example.com",
+    formActionOrigin: "https://example.com",
     username: "username",
     password: "password",
   });

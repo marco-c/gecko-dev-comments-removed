@@ -20,11 +20,11 @@ add_task(function test_addLogin_invalid_characters_legacy() {
   
   for (let testValue of ["http://newline\n.example.com",
                          "http://carriagereturn.example.com\r"]) {
-    let loginInfo = TestData.formLogin({ hostname: testValue });
+    let loginInfo = TestData.formLogin({ origin: testValue });
     Assert.throws(() => Services.logins.addLogin(loginInfo),
                   /login values can't contain newlines/);
 
-    loginInfo = TestData.formLogin({ formSubmitURL: testValue });
+    loginInfo = TestData.formLogin({ formActionOrigin: testValue });
     Assert.throws(() => Services.logins.addLogin(loginInfo),
                   /login values can't contain newlines/);
 
@@ -49,24 +49,24 @@ add_task(function test_addLogin_invalid_characters_legacy() {
   Assert.throws(() => Services.logins.addLogin(loginInfo),
                 /login values can't be periods/);
 
-  loginInfo = TestData.formLogin({ formSubmitURL: "." });
+  loginInfo = TestData.formLogin({ formActionOrigin: "." });
   Assert.throws(() => Services.logins.addLogin(loginInfo),
                 /login values can't be periods/);
 
   
-  loginInfo = TestData.formLogin({ hostname: "http://parens (.example.com" });
+  loginInfo = TestData.formLogin({ origin: "http://parens (.example.com" });
   Assert.throws(() => Services.logins.addLogin(loginInfo),
-                /bad parens in hostname/);
+                /bad parens in origin/);
 });
 
 
 
 
 add_task(function test_setLoginSavingEnabled_invalid_characters_legacy() {
-  for (let hostname of ["http://newline\n.example.com",
-                        "http://carriagereturn.example.com\r",
-                        "."]) {
-    Assert.throws(() => Services.logins.setLoginSavingEnabled(hostname, false),
-                  /Invalid hostname/);
+  for (let origin of ["http://newline\n.example.com",
+                      "http://carriagereturn.example.com\r",
+                      "."]) {
+    Assert.throws(() => Services.logins.setLoginSavingEnabled(origin, false),
+                  /Invalid origin/);
   }
 });

@@ -7,7 +7,7 @@
 "use strict";
 
 
-const TEST_HOSTNAME = "https://example.com";
+const TEST_ORIGIN = "https://example.com";
 const MULTIPLE_FORMS_PAGE_PATH = "/browser/toolkit/components/passwordmgr/test/browser/multiple_forms.html";
 
 const CONTEXT_MENU = document.getElementById("contentAreaContextMenu");
@@ -36,7 +36,7 @@ add_task(async function test_context_menu_populate_password_noSchemeUpgrades() {
   Services.prefs.setBoolPref("signon.schemeUpgrades", false);
   await BrowserTestUtils.withNewTab({
     gBrowser,
-    url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
+    url: TEST_ORIGIN + MULTIPLE_FORMS_PAGE_PATH,
   }, async function(browser) {
     await openPasswordContextMenu(browser, "#test-password-1");
 
@@ -56,7 +56,7 @@ add_task(async function test_context_menu_populate_password_schemeUpgrades() {
   Services.prefs.setBoolPref("signon.schemeUpgrades", true);
   await BrowserTestUtils.withNewTab({
     gBrowser,
-    url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
+    url: TEST_ORIGIN + MULTIPLE_FORMS_PAGE_PATH,
   }, async function(browser) {
     await openPasswordContextMenu(browser, "#test-password-1");
 
@@ -76,7 +76,7 @@ add_task(async function test_context_menu_populate_username_with_password_noSche
   Services.prefs.setBoolPref("signon.schemeUpgrades", false);
   await BrowserTestUtils.withNewTab({
     gBrowser,
-    url: TEST_HOSTNAME + "/browser/toolkit/components/" +
+    url: TEST_ORIGIN + "/browser/toolkit/components/" +
          "passwordmgr/test/browser/multiple_forms.html",
   }, async function(browser) {
     await openPasswordContextMenu(browser, "#test-username-2");
@@ -96,7 +96,7 @@ add_task(async function test_context_menu_populate_username_with_password_scheme
   Services.prefs.setBoolPref("signon.schemeUpgrades", true);
   await BrowserTestUtils.withNewTab({
     gBrowser,
-    url: TEST_HOSTNAME + "/browser/toolkit/components/" +
+    url: TEST_ORIGIN + "/browser/toolkit/components/" +
          "passwordmgr/test/browser/multiple_forms.html",
   }, async function(browser) {
     await openPasswordContextMenu(browser, "#test-username-2");
@@ -117,7 +117,7 @@ add_task(async function test_context_menu_password_fill() {
   Services.prefs.setBoolPref("signon.schemeUpgrades", true);
   await BrowserTestUtils.withNewTab({
     gBrowser,
-    url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
+    url: TEST_ORIGIN + MULTIPLE_FORMS_PAGE_PATH,
   }, async function(browser) {
     let formDescriptions = await ContentTask.spawn(browser, {}, async function() {
       let forms = Array.from(content.document.getElementsByClassName("test-form"));
@@ -181,7 +181,7 @@ add_task(async function test_context_menu_username_login_fill() {
   Services.prefs.setBoolPref("signon.schemeUpgrades", true);
   await BrowserTestUtils.withNewTab({
     gBrowser,
-    url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
+    url: TEST_ORIGIN + MULTIPLE_FORMS_PAGE_PATH,
   }, async function(browser) {
     let formDescriptions = await ContentTask.spawn(browser, {}, async function() {
       let forms = Array.from(content.document.getElementsByClassName("test-form"));
@@ -270,7 +270,7 @@ add_task(async function test_context_menu_open_management() {
   Services.prefs.setBoolPref("signon.schemeUpgrades", false);
   await BrowserTestUtils.withNewTab({
     gBrowser,
-    url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
+    url: TEST_ORIGIN + MULTIPLE_FORMS_PAGE_PATH,
   }, async function(browser) {
     await openPasswordContextMenu(browser, "#test-password-1");
 
@@ -401,7 +401,7 @@ async function assertContextMenuFill(browser, formId, usernameFieldId, passwordF
 
 function checkMenu(contextMenu, expectedCount) {
   let logins = loginList().filter(login => {
-    return LoginHelper.isOriginMatching(login.hostname, TEST_HOSTNAME, {
+    return LoginHelper.isOriginMatching(login.origin, TEST_ORIGIN, {
       schemeUpgrades: Services.prefs.getBoolPref("signon.schemeUpgrades"),
     });
   });
@@ -430,33 +430,33 @@ function getLoginFromUsername(username) {
 function loginList() {
   return [
     LoginTestUtils.testData.formLogin({
-      hostname: "https://example.com",
-      formSubmitURL: "https://example.com",
+      origin: "https://example.com",
+      formActionOrigin: "https://example.com",
       username: "username",
       password: "password",
     }),
     
     LoginTestUtils.testData.formLogin({
-      hostname: "http://example.com",
-      formSubmitURL: "http://example.com",
+      origin: "http://example.com",
+      formActionOrigin: "http://example.com",
       username: "username",
       password: "password",
     }),
     LoginTestUtils.testData.formLogin({
-      hostname: "http://example.com",
-      formSubmitURL: "http://example.com",
+      origin: "http://example.com",
+      formActionOrigin: "http://example.com",
       username: "username1",
       password: "password1",
     }),
     LoginTestUtils.testData.formLogin({
-      hostname: "https://example.com",
-      formSubmitURL: "https://example.com",
+      origin: "https://example.com",
+      formActionOrigin: "https://example.com",
       username: "username2",
       password: "password2",
     }),
     LoginTestUtils.testData.formLogin({
-      hostname: "http://example.org",
-      formSubmitURL: "http://example.org",
+      origin: "http://example.org",
+      formActionOrigin: "http://example.org",
       username: "username-cross-origin",
       password: "password-cross-origin",
     }),
