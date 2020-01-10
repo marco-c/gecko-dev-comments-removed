@@ -141,7 +141,7 @@ IPCResult ClientSourceParent::RecvInheritController(
   
   
   
-  if (!ServiceWorkerParentInterceptEnabled()) {
+  if (ServiceWorkerParentInterceptEnabled()) {
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
         "ClientSourceParent::RecvInheritController",
         [clientInfo = mClientInfo, controller = mController.ref()]() {
