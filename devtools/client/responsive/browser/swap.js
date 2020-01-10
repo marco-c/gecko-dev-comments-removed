@@ -455,8 +455,8 @@ function addXULBrowserDecorations(browser) {
   
   
   
-  if (browser._remoteWebNavigationImpl == undefined) {
-    browser._remoteWebNavigationImpl = {
+  if (browser._remoteWebNavigation == undefined) {
+    browser._remoteWebNavigation = {
       swapBrowser() {},
     };
   }

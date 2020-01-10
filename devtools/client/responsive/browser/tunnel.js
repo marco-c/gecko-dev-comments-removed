@@ -111,8 +111,8 @@ function tunnelToInnerBrowser(outer, inner) {
         inner._imageDocument = outer._imageDocument;
         inner._isSyntheticDocument = outer._isSyntheticDocument;
         inner._innerWindowID = outer._innerWindowID;
-        inner._remoteWebNavigationImpl._currentURI =
-          outer._remoteWebNavigationImpl._currentURI;
+        inner._remoteWebNavigation._currentURI =
+          outer._remoteWebNavigation._currentURI;
       }
     },
 
@@ -229,9 +229,8 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       const webNavigation = new BrowserElementWebNavigation(inner);
-      webNavigation.copyStateFrom(inner._remoteWebNavigationImpl);
+      webNavigation.copyStateFrom(inner._remoteWebNavigation);
       outer._remoteWebNavigation = webNavigation;
-      outer._remoteWebNavigationImpl = webNavigation;
 
       
       
