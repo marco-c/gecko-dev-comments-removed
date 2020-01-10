@@ -13,15 +13,26 @@
 #include "jsapi.h"  
 
 #include "builtin/streams/ClassSpecMacro.h"  
+#include "builtin/streams/MiscellaneousOperations.h"  
+#include "js/CallArgs.h"                              
 #include "js/Class.h"                        
 #include "js/PropertySpec.h"  
 #include "js/RootingAPI.h"    
 #include "js/Value.h"         
+#include "vm/Compartment.h"   
+#include "vm/JSContext.h"     
 
+#include "vm/Compartment-inl.h"  
+
+using JS::CallArgs;
+using JS::CallArgsFromVp;
 using JS::Handle;
+using JS::Rooted;
 using JS::Value;
 
 using js::ClassSpec;
+using js::ReturnPromiseRejectedWithPendingError;
+using js::UnwrapAndTypeCheckThis;
 using js::WritableStreamDefaultWriter;
 
 
@@ -44,8 +55,34 @@ bool WritableStreamDefaultWriter::constructor(JSContext* cx, unsigned argc,
   return false;
 }
 
+
+
+
+static MOZ_MUST_USE bool WritableStream_closed(JSContext* cx, unsigned argc,
+                                               Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  Rooted<WritableStreamDefaultWriter*> unwrappedWriter(
+      cx, UnwrapAndTypeCheckThis<WritableStreamDefaultWriter>(cx, args,
+                                                              "get closed"));
+  if (!unwrappedWriter) {
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  }
+
+  
+  Rooted<JSObject*> closedPromise(cx, unwrappedWriter->closedPromise());
+  if (!cx->compartment()->wrap(cx, &closedPromise)) {
+    return false;
+  }
+
+  args.rval().setObject(*closedPromise);
+  return true;
+}
+
 static const JSPropertySpec WritableStreamDefaultWriter_properties[] = {
-    JS_PS_END};
+    JS_PSG("closed", WritableStream_closed, 0), JS_PS_END};
 
 static const JSFunctionSpec WritableStreamDefaultWriter_methods[] = {JS_FS_END};
 
