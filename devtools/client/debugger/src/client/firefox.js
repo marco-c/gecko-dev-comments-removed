@@ -56,7 +56,6 @@ export async function onConnect(connection: any, actions: Object) {
   
   
   
-  const sourceInfo = await clientCommands.fetchSources();
   const traits = tabTarget.traits;
   await actions.connect(
     tabTarget.url,
@@ -64,7 +63,10 @@ export async function onConnect(connection: any, actions: Object) {
     traits && traits.canRewind,
     tabTarget.isWebExtension
   );
-  await actions.newGeneratedSources(sourceInfo);
+
+  const fetched = clientCommands
+    .fetchSources()
+    .then(sources => actions.newGeneratedSources(sources));
 
   
   
@@ -72,6 +74,8 @@ export async function onConnect(connection: any, actions: Object) {
   if (pausedPacket) {
     clientEvents.paused(threadClient, pausedPacket);
   }
+
+  return fetched;
 }
 
 export { createObjectClient, clientCommands, clientEvents };
