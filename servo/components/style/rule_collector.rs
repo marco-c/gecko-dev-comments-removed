@@ -79,7 +79,6 @@ where
     rules: &'a mut ApplicableDeclarationList,
     context: &'a mut MatchingContext<'b, E::Impl>,
     flags_setter: &'a mut F,
-    shadow_cascade_order: ShadowCascadeOrder,
     matches_user_and_author_rules: bool,
     matches_document_author_rules: bool,
 }
@@ -132,7 +131,6 @@ where
             context,
             flags_setter,
             rules,
-            shadow_cascade_order: 0,
             matches_user_and_author_rules,
             matches_document_author_rules: matches_user_and_author_rules,
         }
@@ -142,7 +140,7 @@ where
         let cascade_level = match origin {
             Origin::UserAgent => CascadeLevel::UANormal,
             Origin::User => CascadeLevel::UserNormal,
-            Origin::Author => CascadeLevel::SameTreeAuthorNormal,
+            Origin::Author => CascadeLevel::same_tree_author_normal(),
         };
 
         let cascade_data = self.stylist.cascade_data().borrow_for_origin(origin);
@@ -198,7 +196,6 @@ where
     ) {
         debug_assert!(shadow_host.shadow_root().is_some());
         self.collect_rules_internal(Some(shadow_host), map, cascade_level);
-        self.shadow_cascade_order += 1;
     }
 
     #[inline]
@@ -212,7 +209,6 @@ where
         let rule_hash_target = self.rule_hash_target;
         let rules = &mut self.rules;
         let flags_setter = &mut self.flags_setter;
-        let shadow_cascade_order = self.shadow_cascade_order;
         let start = rules.len();
         self.context.with_shadow_host(shadow_host, |context| {
             map.get_all_matching_rules(
@@ -222,16 +218,18 @@ where
                 context,
                 flags_setter,
                 cascade_level,
-                shadow_cascade_order,
             );
         });
         sort_rules_from(rules, start);
     }
 
     
-    fn collect_slotted_rules(&mut self) {
+    
+    fn collect_host_and_slotted_rules(&mut self) {
         let mut slots = SmallVec::<[_; 3]>::new();
         let mut current = self.rule_hash_target.assigned_slot();
+        let mut shadow_cascade_order = ShadowCascadeOrder::for_outermost_shadow_tree();
+
         while let Some(slot) = current {
             debug_assert!(
                 self.matches_user_and_author_rules,
@@ -239,11 +237,16 @@ where
             );
             slots.push(slot);
             current = slot.assigned_slot();
+            shadow_cascade_order.dec();
         }
+
+        self.collect_host_rules(shadow_cascade_order);
 
         
         
         for slot in slots.iter().rev() {
+            shadow_cascade_order.inc();
+
             let shadow = slot.containing_shadow().unwrap();
             let data = match shadow.style_data() {
                 Some(d) => d,
@@ -253,10 +256,11 @@ where
                 Some(r) => r,
                 None => continue,
             };
+
             self.collect_rules_in_shadow_tree(
                 shadow.host(),
                 slotted_rules,
-                CascadeLevel::InnerShadowNormal,
+                CascadeLevel::AuthorNormal { shadow_cascade_order },
             );
         }
     }
@@ -277,12 +281,12 @@ where
         let cascade_data = containing_shadow.style_data();
         let host = containing_shadow.host();
         if let Some(map) = cascade_data.and_then(|data| data.normal_rules(self.pseudo_element)) {
-            self.collect_rules_in_shadow_tree(host, map, CascadeLevel::SameTreeAuthorNormal);
+            self.collect_rules_in_shadow_tree(host, map, CascadeLevel::same_tree_author_normal());
         }
     }
 
     
-    fn collect_host_rules(&mut self) {
+    fn collect_host_rules(&mut self, shadow_cascade_order: ShadowCascadeOrder) {
         let shadow = match self.rule_hash_target.shadow_root() {
             Some(s) => s,
             None => return,
@@ -307,7 +311,7 @@ where
         self.collect_rules_in_shadow_tree(
             rule_hash_target,
             host_rules,
-            CascadeLevel::InnerShadowNormal,
+            CascadeLevel::AuthorNormal { shadow_cascade_order },
         );
     }
 
@@ -344,19 +348,16 @@ where
 
         
         
-        
-        
-        
-        
-        
+        let shadow_cascade_order = ShadowCascadeOrder::for_innermost_containing_tree();
         if let Some(part_rules) = part_rules {
             let containing_host = containing_shadow.map(|s| s.host());
             let element = self.element;
             let rule_hash_target = self.rule_hash_target;
             let rules = &mut self.rules;
             let flags_setter = &mut self.flags_setter;
-            let shadow_cascade_order = self.shadow_cascade_order;
-            let cascade_level = CascadeLevel::SameTreeAuthorNormal;
+            let cascade_level = CascadeLevel::AuthorNormal {
+                shadow_cascade_order,
+            };
             let start = rules.len();
             self.context.with_shadow_host(containing_host, |context| {
                 rule_hash_target.each_part(|p| {
@@ -368,7 +369,6 @@ where
                             context,
                             flags_setter,
                             cascade_level,
-                            shadow_cascade_order,
                         );
                     }
                 });
@@ -382,7 +382,7 @@ where
             self.rules
                 .push(ApplicableDeclarationBlock::from_declarations(
                     sa.clone_arc(),
-                    CascadeLevel::StyleAttributeNormal,
+                    CascadeLevel::same_tree_author_normal(),
                 ));
         }
     }
@@ -433,12 +433,11 @@ where
         if self.stylist.author_styles_enabled() == AuthorStylesEnabled::No {
             return;
         }
-        self.collect_host_rules();
-        self.collect_slotted_rules();
+        self.collect_host_and_slotted_rules();
         self.collect_normal_rules_from_containing_shadow_tree();
         self.collect_document_author_rules();
-        self.collect_part_rules();
         self.collect_style_attribute();
+        self.collect_part_rules();
         self.collect_animation_rules();
     }
 }

@@ -175,6 +175,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_color_swatch(&self) -> bool {
+        false
+    }
+
+    
+    #[inline]
     pub fn is_eager(&self) -> bool {
         self.cascade_type() == PseudoElementCascadeType::Eager
     }

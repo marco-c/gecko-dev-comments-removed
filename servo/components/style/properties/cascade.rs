@@ -346,16 +346,10 @@ fn should_ignore_declaration_when_ignoring_document_colors(
         return false;
     }
 
-    let is_style_attribute = matches!(
-        cascade_level,
-        CascadeLevel::StyleAttributeNormal | CascadeLevel::StyleAttributeImportant
-    );
-
     
     
     
-    
-    if pseudo.is_some() && is_style_attribute {
+    if pseudo.map_or(false, |p| p.is_color_swatch()) && longhand_id == LonghandId::BackgroundColor {
         return false;
     }
 

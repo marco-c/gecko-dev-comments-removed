@@ -142,6 +142,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_color_swatch(&self) -> bool {
+        *self == PseudoElement::MozColorSwatch
+    }
+
+    
+    #[inline]
     pub fn is_lazy(&self) -> bool {
         !self.is_eager() && !self.is_precomputed()
     }
