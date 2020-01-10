@@ -336,16 +336,17 @@ class MOZ_RAII AutoTransactionSender {
 
 struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
   StackingContextParams()
-      : WrStackingContextParams{WrStackingContextClip::None(),
-                                nullptr,
-                                nullptr,
-                                wr::TransformStyle::Flat,
-                                wr::WrReferenceFrameKind::Transform,
-                                nullptr,
-                                 true,
-                                 false,
-                                wr::MixBlendMode::Normal,
-                                 false} {}
+      : WrStackingContextParams{
+            WrStackingContextClip::None(),
+            nullptr,
+            nullptr,
+            wr::TransformStyle::Flat,
+            wr::WrReferenceFrameKind::Transform,
+            nullptr,
+             wr::PrimitiveFlags_IS_BACKFACE_VISIBLE,
+             false,
+            wr::MixBlendMode::Normal,
+             false} {}
 
   void SetPreserve3D(bool aPreserve) {
     transform_style =
