@@ -7850,7 +7850,7 @@ void GCRuntime::mergeRealms(Realm* source, Realm* target) {
   
   
   Zone* sourceZone = source->zone();
-  MOZ_ASSERT(!sourceZone->scriptNameMap);
+  MOZ_ASSERT(!sourceZone->scriptLCovMap);
   MOZ_ASSERT(!sourceZone->scriptCountsMap);
   MOZ_ASSERT(!sourceZone->debugScriptMap);
 #ifdef MOZ_VTUNE

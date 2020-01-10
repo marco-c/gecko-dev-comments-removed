@@ -699,23 +699,31 @@ bool InitScriptCoverage(JSContext* cx, JSScript* script) {
     return true;
   }
 
-  UniqueChars name = DuplicateString(filename);
-  if (!name) {
+  
+  LCovRealm* lcovRealm = script->realm()->lcovRealm();
+  if (!lcovRealm) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  LCovSource* source = lcovRealm->lookupOrAdd(filename);
+  if (!source) {
     ReportOutOfMemory(cx);
     return false;
   }
 
   
   JS::Zone* zone = script->zone();
-  if (!zone->scriptNameMap) {
-    zone->scriptNameMap = cx->make_unique<ScriptNameMap>();
+  if (!zone->scriptLCovMap) {
+    zone->scriptLCovMap = cx->make_unique<ScriptLCovMap>();
   }
-  if (!zone->scriptNameMap) {
+  if (!zone->scriptLCovMap) {
     return false;
   }
 
   
-  if (!zone->scriptNameMap->putNew(script, std::move(name))) {
+  if (!zone->scriptLCovMap->putNew(script, source)) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -726,7 +734,7 @@ bool InitScriptCoverage(JSContext* cx, JSScript* script) {
 void CollectScriptCoverage(JSScript* script) {
   MOZ_ASSERT(IsLCovEnabled());
 
-  ScriptNameMap* map = script->zone()->scriptNameMap.get();
+  ScriptLCovMap* map = script->zone()->scriptLCovMap.get();
   if (!map) {
     return;
   }
@@ -736,7 +744,8 @@ void CollectScriptCoverage(JSScript* script) {
     return;
   }
 
-  script->realm()->collectCodeCoverageInfo(script, p->value().get());
+  LCovSource* source = p->value();
+  source->writeScript(script);
   map->remove(p);
 }
 

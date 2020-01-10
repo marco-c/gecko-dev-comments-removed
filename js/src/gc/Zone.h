@@ -656,7 +656,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   
   js::UniquePtr<js::ScriptCountsMap> scriptCountsMap;
-  js::UniquePtr<js::ScriptNameMap> scriptNameMap;
+  js::UniquePtr<js::ScriptLCovMap> scriptLCovMap;
   js::UniquePtr<js::DebugScriptMap> debugScriptMap;
 #ifdef MOZ_VTUNE
   js::UniquePtr<js::ScriptVTuneIdMap> scriptVTuneIdMap;
@@ -665,7 +665,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void traceScriptTableRoots(JSTracer* trc);
 
   void clearScriptCounts(Realm* realm);
-  void clearScriptNames(Realm* realm);
+  void clearScriptLCov(Realm* realm);
 
 #ifdef JSGC_HASH_TABLE_CHECKS
   void checkScriptMapsAfterMovingGC();

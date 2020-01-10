@@ -88,6 +88,8 @@ class LCovRealm {
   
   void exportInto(GenericPrinter& out, bool* isEmpty) const;
 
+  friend bool InitScriptCoverage(JSContext* cx, JSScript* script);
+
  private:
   
   void writeRealmName(JS::Realm* realm);
