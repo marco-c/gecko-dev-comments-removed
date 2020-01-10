@@ -313,6 +313,26 @@ void BrowsingContext::Detach(bool aFromIPC) {
   }
 }
 
+void BrowsingContext::PrepareForProcessChange() {
+  MOZ_LOG(GetLog(), LogLevel::Debug,
+          ("%s: Preparing 0x%08" PRIx64 " for a process change",
+           XRE_IsParentProcess() ? "Parent" : "Child", Id()));
+
+  MOZ_ASSERT(mIsInProcess, "Must currently be an in-process frame");
+  MOZ_ASSERT(!mClosed, "We're already closed?");
+
+  mIsInProcess = false;
+
+  
+  
+  mWindowProxy = nullptr;
+
+  
+  
+  
+  mDocShell = nullptr;
+}
+
 void BrowsingContext::CacheChildren(bool aFromIPC) {
   MOZ_LOG(GetLog(), LogLevel::Debug,
           ("%s: Caching children of 0x%08" PRIx64 "",
