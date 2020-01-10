@@ -501,7 +501,7 @@ MARKUPMAP(
     0)
 
 MARKUPMAP(
-    tfoot,
+    thead,
     [](Element* aElement, Accessible* aContext) -> Accessible* {
       
       if (aElement->GetPrimaryFrame() &&
