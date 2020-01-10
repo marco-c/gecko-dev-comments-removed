@@ -992,6 +992,10 @@ void BasicCompositor::BeginFrame(
       mFullWindowRenderTarget =
           new BasicCompositingRenderTarget(drawTarget, rect);
     }
+  } else if (mFullWindowRenderTarget) {
+    
+    
+    mFullWindowRenderTarget = nullptr;
   }
 
   gfxUtils::ClipToRegion(mRenderTarget->mDrawTarget,
@@ -1034,12 +1038,6 @@ void BasicCompositor::EndFrame() {
   mRenderTarget->mDrawTarget->SetTransform(gfx::Matrix());
 
   TryToEndRemoteDrawing();
-
-  
-  
-  if (mFullWindowRenderTarget && !ShouldRecordFrames()) {
-    mFullWindowRenderTarget = nullptr;
-  }
 }
 
 void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
