@@ -112,7 +112,10 @@ class GCData {
 const MAX_GC_KEYS = 24;
 const MAX_SLICES = 4;
 const MAX_SLICE_KEYS = 12;
-const MAX_PHASES = 65;
+
+
+
+const MAX_PHASES = 73;
 const LOGGER_NAME = "Toolkit.Telemetry";
 
 function limitProperties(name, obj, count, log) {
