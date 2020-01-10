@@ -520,9 +520,17 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     
     
     
+    
     const rootFrontSelectors = await nodeFront.getAllSelectors();
-    const walkerDepth = rootFrontSelectors.length - 1;
-    nodeSelectors.splice(0, walkerDepth);
+    for (let i = 0; i < rootFrontSelectors.length - 1; i++) {
+      if (rootFrontSelectors[i] !== nodeSelectors[i]) {
+        return null;
+      }
+    }
+
+    
+    
+    nodeSelectors.splice(0, rootFrontSelectors.length - 1);
 
     return querySelectors(nodeFront);
   }
