@@ -443,16 +443,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
 
 
-
-
-
-  nsresult FixAndDecayFrecency();
-
-  
-
-
-
-
   void LoadPrefs();
 
   
