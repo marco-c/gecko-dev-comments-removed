@@ -1,0 +1,13 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  prefs: {
+    getBoolPref: (pref, defaultValue) => {
+      return pref === "devtools.testing" ? true : !!defaultValue;
+    },
+  },
+};
