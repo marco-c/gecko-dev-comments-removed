@@ -17,6 +17,7 @@ function onMessageReceived(event) {
       }
 
     
+
     
     case "perf":
       if (event.data == "perf") {

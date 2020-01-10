@@ -22,6 +22,7 @@ function onMessageReceived(event) {
       }
 
     
+
     
     case "perf":
       if (callMasterFrame) {

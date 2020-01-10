@@ -53,7 +53,6 @@ class SpecialPowersParent extends SpecialPowersAPIParent {
               },
               type: permission.type,
             };
-          
           default:
             this._self.sendAsyncMessage("specialpowers-" + aTopic, msg);
         }

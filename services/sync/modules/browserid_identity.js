@@ -271,8 +271,8 @@ this.BrowserIDManager.prototype = {
           this._log.info("The user is not verified");
           break;
         }
+        
       }
-      
       
       case fxAccountsCommon.ONVERIFIED_NOTIFICATION: {
         this._log.info("The user became verified");

@@ -1840,7 +1840,6 @@
             }
             
           }
-          
           case "keypress":
           case "keyup": {
             

@@ -64,7 +64,6 @@ class PreferenceRollbackAction extends BaseAction {
           { reason: "rollback" }
         );
         TelemetryEnvironment.setExperimentInactive(rolloutSlug);
-        break;
       }
       case PreferenceRollouts.STATE_ROLLED_BACK: {
         

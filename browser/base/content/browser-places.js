@@ -156,6 +156,7 @@ var StarUI = {
         }
         this._isComposing = true;
       
+      
       case "input":
       
       

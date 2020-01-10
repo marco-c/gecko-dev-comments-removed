@@ -1171,7 +1171,6 @@ BrowserElementChild.prototype = {
           case Cr.NS_BINDING_ABORTED:
           
           
-          
           case Cr.NS_ERROR_PARSED_DATA_CACHED:
             return;
 
