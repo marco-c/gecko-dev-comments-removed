@@ -101,3 +101,31 @@ function storeHeapDigitsNegative() {
   assertEq(xs[1][0], BigInt.asUintN(64, value));
 }
 storeHeapDigitsNegative();
+
+
+function storeFirstHeapDigits() {
+  var value = 2n ** 64n;
+
+  for (var i = 0; i < 100; ++i) {
+    var ta = xs[i & 1];
+    ta[0] = value;
+  }
+
+  assertEq(xs[0][0], BigInt.asIntN(64, value));
+  assertEq(xs[1][0], BigInt.asUintN(64, value));
+}
+storeFirstHeapDigits();
+
+
+function storeFirstHeapDigitsNegative() {
+  var value = -(2n ** 64n);
+
+  for (var i = 0; i < 100; ++i) {
+    var ta = xs[i & 1];
+    ta[0] = value;
+  }
+
+  assertEq(xs[0][0], BigInt.asIntN(64, value));
+  assertEq(xs[1][0], BigInt.asUintN(64, value));
+}
+storeFirstHeapDigitsNegative();

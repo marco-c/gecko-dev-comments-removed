@@ -1463,9 +1463,10 @@ void MacroAssembler::loadBigIntDigits(Register bigInt, Register digits) {
 
   
   
-  test32LoadPtr(Assembler::NonZero, Address(bigInt, BigInt::offsetOfLength()),
-                Imm32(int32_t(BigInt::nonInlineDigitsLengthMask())),
-                Address(bigInt, BigInt::offsetOfHeapDigits()), digits);
+  cmp32LoadPtr(Assembler::GreaterThan,
+               Address(bigInt, BigInt::offsetOfLength()),
+               Imm32(int32_t(BigInt::inlineDigitsLength())),
+               Address(bigInt, BigInt::offsetOfHeapDigits()), digits);
 }
 
 void MacroAssembler::loadBigInt64(Register bigInt, Register64 dest) {
