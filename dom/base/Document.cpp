@@ -4328,17 +4328,19 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
   
   
   RefPtr<TextEditor> maybeHTMLEditor;
-  if (commandData.IsCutOrCopyCommand()) {
-    
-    
-    
-    
-    
-    maybeHTMLEditor = nsContentUtils::GetActiveEditor(GetPresContext());
-  } else {
-    maybeHTMLEditor = nsContentUtils::GetHTMLEditor(GetPresContext());
-    if (!maybeHTMLEditor) {
-      maybeHTMLEditor = nsContentUtils::GetActiveEditor(GetPresContext());
+  if (nsPresContext* presContext = GetPresContext()) {
+    if (commandData.IsCutOrCopyCommand()) {
+      
+      
+      
+      
+      
+      maybeHTMLEditor = nsContentUtils::GetActiveEditor(presContext);
+    } else {
+      maybeHTMLEditor = nsContentUtils::GetHTMLEditor(presContext);
+      if (!maybeHTMLEditor) {
+        maybeHTMLEditor = nsContentUtils::GetActiveEditor(presContext);
+      }
     }
   }
 
