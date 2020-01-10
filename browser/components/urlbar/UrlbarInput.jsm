@@ -104,6 +104,7 @@ class UrlbarInput {
     this._textValueOnLastSearch = "";
     this._resultForCurrentValue = null;
     this._suppressStartQuery = false;
+    this._suppressPrimaryAdjustment = false;
     this._untrimmedValue = "";
 
     
@@ -118,7 +119,6 @@ class UrlbarInput {
       "setAttribute",
       "removeAttribute",
       "toggleAttribute",
-      "select",
     ];
     const READ_ONLY_PROPERTIES = ["inputField", "editor"];
     const READ_WRITE_PROPERTIES = [
@@ -306,6 +306,14 @@ class UrlbarInput {
 
   blur() {
     this.inputField.blur();
+  }
+
+  select() {
+    
+    
+    this._suppressPrimaryAdjustment = true;
+    this.inputField.select();
+    this._suppressPrimaryAdjustment = false;
   }
 
   
@@ -1551,7 +1559,22 @@ class UrlbarInput {
   }
 
   _on_select(event) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (
+      
+      
+      
+      this._suppressPrimaryAdjustment ||
+      
+      
       !this.window.windowUtils.isHandlingUserInput ||
       !Services.clipboard.supportsSelectionClipboard()
     ) {
