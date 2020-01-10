@@ -57,6 +57,10 @@ class TabTarget extends Target {
     return this.browser.ownerGlobal;
   }
 
+  get tab() {
+    return this.window.gBrowser.getTabForBrowser(this.browser);
+  }
+
   
 
 
