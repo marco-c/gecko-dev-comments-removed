@@ -107,6 +107,11 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
 
   uint32_t contentType = aLoadInfo->InternalContentPolicyType();
   nsCOMPtr<nsISupports> requestContext = aLoadInfo->GetLoadingContext();
+  nsCOMPtr<nsIURI> requestOrigin;
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->LoadingPrincipal();
+  if (loadingPrincipal) {
+    loadingPrincipal->GetURI(getter_AddRefs(requestOrigin));
+  }
 
   nsCOMPtr<nsICSPEventListener> cspEventListener;
   nsresult rv =
@@ -144,8 +149,8 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
     if (preloadCsp) {
       
       rv = preloadCsp->ShouldLoad(
-          contentType, cspEventListener, aContentLocation, requestContext,
-          aMimeTypeGuess,
+          contentType, cspEventListener, aContentLocation, requestOrigin,
+          requestContext, aMimeTypeGuess,
           nullptr,  
           aLoadInfo->GetSendCSPViolationEvents(), cspNonce, aDecision);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -170,7 +175,7 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   if (csp) {
     
     rv = csp->ShouldLoad(contentType, cspEventListener, aContentLocation,
-                         requestContext, aMimeTypeGuess,
+                         requestOrigin, requestContext, aMimeTypeGuess,
                          nullptr,  
                          aLoadInfo->GetSendCSPViolationEvents(), cspNonce,
                          aDecision);
@@ -337,6 +342,7 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
           policyType,  
           cspEventListener,
           aNewURI,         
+          nullptr,         
           requestContext,  
           EmptyCString(),  
           aOriginalURI,    
@@ -360,6 +366,7 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
     csp->ShouldLoad(policyType,  
                     cspEventListener,
                     aNewURI,         
+                    nullptr,         
                     requestContext,  
                     EmptyCString(),  
                     aOriginalURI,    
