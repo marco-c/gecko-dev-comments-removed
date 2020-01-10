@@ -3101,7 +3101,7 @@ void profiler_init(void* aStackTop) {
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
   
   
-  mozilla::profiler::install_memory_counter(true);
+  mozilla::profiler::install_memory_hooks();
 #endif
 
   
@@ -3598,7 +3598,7 @@ void profiler_start(PowerOfTwo32 aCapacity, double aInterval,
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
   
   
-  mozilla::profiler::install_memory_counter(true);
+  mozilla::profiler::install_memory_hooks();
 #endif
 
   
@@ -3646,13 +3646,6 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
     }
   }
 
-#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  
-  
-  
-  mozilla::profiler::install_memory_counter(true);
-#endif
-
   
   
   if (samplerThread) {
@@ -3674,10 +3667,6 @@ static MOZ_MUST_USE SamplerThread* locked_profiler_stop(PSLockRef aLock) {
 
   
   RacyFeatures::SetInactive();
-
-#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  mozilla::profiler::install_memory_counter(false);
-#endif
 
 #if defined(GP_OS_android)
   if (ActivePS::FeatureJava(aLock)) {
@@ -3717,6 +3706,12 @@ static MOZ_MUST_USE SamplerThread* locked_profiler_stop(PSLockRef aLock) {
     }
   }
 
+#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
+  if (ActivePS::FeatureNativeAllocations(aLock)) {
+    mozilla::profiler::disable_native_allocations();
+  }
+#endif
+
   
   
   
@@ -3730,6 +3725,12 @@ void profiler_stop() {
   LOG("profiler_stop");
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
+
+#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
+  
+  
+  mozilla::profiler::remove_memory_hooks();
+#endif
 
   SamplerThread* samplerThread;
   {

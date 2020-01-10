@@ -37,7 +37,16 @@
 #  include <android/log.h>
 #endif
 
-static mozilla::UniquePtr<ProfilerCounterTotal> sCounter;
+
+
+
+
+
+
+
+
+
+static ProfilerCounterTotal* sCounter;
 
 namespace mozilla {
 namespace profiler {
@@ -196,17 +205,19 @@ namespace profiler {
 
 
 
-void install_memory_counter(bool aInstall) {
-  if (aInstall) {
-    if (!sCounter) {
-      sCounter = MakeUnique<ProfilerCounterTotal>("malloc", "Memory",
-                                                  "Amount of allocated memory");
-    }
-    jemalloc_replace_dynamic(replace_init);
-  } else {
-    jemalloc_replace_dynamic(nullptr);
+void install_memory_hooks() {
+  if (!sCounter) {
+    sCounter = new ProfilerCounterTotal("malloc", "Memory",
+                                        "Amount of allocated memory");
   }
+  jemalloc_replace_dynamic(replace_init);
 }
+
+
+
+
+
+void remove_memory_hooks() { jemalloc_replace_dynamic(nullptr); }
 
 }  
 }  
