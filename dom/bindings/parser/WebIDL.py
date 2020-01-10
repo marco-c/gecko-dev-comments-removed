@@ -1084,18 +1084,11 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                     "Can't have both a constructor and [Global]",
                     [self.location, ctor.location])
 
-            assert(len(ctor._exposureGlobalNames) == 0 or
-                   ctor._exposureGlobalNames == self._exposureGlobalNames)
+            assert(ctor._exposureGlobalNames == self._exposureGlobalNames)
             ctor._exposureGlobalNames.update(self._exposureGlobalNames)
-            if ctor in self.members:
-                
-                self.members.remove(ctor)
-            else:
-                
-                
-                
-                
-                ctor.finish(scope)
+            
+            
+            self.members.remove(ctor)
 
         for ctor in self.namedConstructors:
             if self.globalNames:
@@ -1653,30 +1646,17 @@ class IDLInterface(IDLInterfaceOrNamespace):
                                       [attr.location])
 
                 self._noInterfaceObject = True
-            elif identifier == "NamedConstructor" or identifier == "HTMLConstructor":
-                if identifier == "NamedConstructor" and not attr.hasValue():
+            elif identifier == "NamedConstructor":
+                if not attr.hasValue():
                     raise WebIDLError("NamedConstructor must either take an identifier or take a named argument list",
                                       [attr.location])
 
-                if identifier == "HTMLConstructor":
-                    if not attr.noArguments():
-                        raise WebIDLError(str(identifier) + " must take no arguments",
-                                          [attr.location])
 
                 args = attr.args() if attr.hasArgs() else []
 
                 retType = IDLWrapperType(self.location, self)
 
-                if identifier == "HTMLConstructor":
-                    name = "constructor"
-                    allowForbidden = True
-                else:
-                    name = attr.value()
-                    allowForbidden = False
-
-                method = IDLConstructor(
-                    attr.location, args, name,
-                    htmlConstructor=(identifier == "HTMLConstructor"))
+                method = IDLConstructor(attr.location, args, attr.value())
                 method.reallyInit(self)
 
                 
@@ -1684,29 +1664,27 @@ class IDLInterface(IDLInterfaceOrNamespace):
                 method.addExtendedAttributes(
                     [IDLExtendedAttribute(self.location, ("Throws",))])
 
-                if identifier == "HTMLConstructor":
-                    method.resolve(self)
-                else:
-                    
-                    
-                    
-                    
-                    method.resolve(self.parentScope)
+                
+                
+                
+                
+                method.resolve(self.parentScope)
 
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    newMethod = self.parentScope.lookupIdentifier(method.identifier)
-                    if newMethod == method:
-                        self.namedConstructors.append(method)
-                    elif newMethod not in self.namedConstructors:
-                        raise WebIDLError("NamedConstructor conflicts with a NamedConstructor of a different interface",
-                                          [method.location, newMethod.location])
+                
+                
+                
+                
+                
+                
+                
+                
+                newMethod = self.parentScope.lookupIdentifier(method.identifier)
+                if newMethod == method:
+                    self.namedConstructors.append(method)
+                elif newMethod not in self.namedConstructors:
+                    raise WebIDLError("NamedConstructor conflicts with a "
+                                      "NamedConstructor of a different interface",
+                                      [method.location, newMethod.location])
             elif (identifier == "ExceptionClass"):
                 if not attr.noArguments():
                     raise WebIDLError("[ExceptionClass] must take no arguments",
@@ -4879,7 +4857,7 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
                  static=False, getter=False, setter=False,
                  deleter=False, specialType=NamedOrIndexed.Neither,
                  legacycaller=False, stringifier=False,
-                 maplikeOrSetlikeOrIterable=None, htmlConstructor=False):
+                 maplikeOrSetlikeOrIterable=None):
         
         IDLInterfaceMember.__init__(self, location, identifier,
                                     IDLInterfaceMember.Tags.Method)
@@ -4905,10 +4883,7 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
         self._stringifier = stringifier
         assert maplikeOrSetlikeOrIterable is None or isinstance(maplikeOrSetlikeOrIterable, IDLMaplikeOrSetlikeOrIterableBase)
         self.maplikeOrSetlikeOrIterable = maplikeOrSetlikeOrIterable
-        assert isinstance(htmlConstructor, bool)
-        
-        assert not htmlConstructor or identifier.name == "constructor"
-        self._htmlConstructor = htmlConstructor
+        self._htmlConstructor = False
         self._specialType = specialType
         self._unforgeable = False
         self.dependsOn = "Everything"
@@ -5403,14 +5378,13 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
 
 
 class IDLConstructor(IDLMethod):
-    def __init__(self, location, args, name, htmlConstructor=False):
+    def __init__(self, location, args, name):
         
         
         
         self._initLocation = location
         self._initArgs = args
         self._initName = name
-        self._htmlConstructor = htmlConstructor
         self._inited = False
         self._initExtendedAttrs = []
 
@@ -5427,6 +5401,18 @@ class IDLConstructor(IDLMethod):
             identifier == "SecureContext" or
             identifier == "Throws"):
             IDLMethod.handleExtendedAttribute(self, attr)
+        elif identifier == "HTMLConstructor":
+            if not attr.noArguments():
+                raise WebIDLError("[HTMLConstructor] must take no arguments",
+                                  [attr.location])
+            
+            assert(self.identifier.name == "constructor")
+
+            if any(len(sig[1]) != 0 for sig in self.signatures()):
+                raise WebIDLError("[HTMLConstructor] must not be applied to a "
+                                  "constructor operation that has arguments.",
+                                  [attr.location])
+            self._htmlConstructor = True
         else:
             raise WebIDLError("Unknown extended attribute %s on method" % identifier,
                               [attr.location])
@@ -5437,7 +5423,7 @@ class IDLConstructor(IDLMethod):
         identifier = IDLUnresolvedIdentifier(location, name, allowForbidden=True)
         retType = IDLWrapperType(parentInterface.location, parentInterface)
         IDLMethod.__init__(self, location, identifier, retType, self._initArgs,
-                           static=True, htmlConstructor=self._htmlConstructor)
+                           static=True)
         self._inited = True;
         
         self.addExtendedAttributes(self._initExtendedAttrs)
