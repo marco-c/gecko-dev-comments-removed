@@ -2177,6 +2177,7 @@ var gProtectionsHandler = {
     
     this._protectionsPopupTPSwitchBreakageLink.hidden =
       ContentBlockingAllowList.includes(gBrowser.selectedBrowser) ||
+      !this._protectionsPopup.hasAttribute("blocking") ||
       !this._protectionsPopupTPSwitch.hasAttribute("enabled");
   },
 
