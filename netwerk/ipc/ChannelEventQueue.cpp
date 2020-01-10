@@ -75,7 +75,7 @@ void ChannelEventQueue::FlushQueue() {
       
       
       Suspend();
-      PrependEvent(std::move(event));
+      PrependEvent(event);
 
       needResumeOnOtherThread = true;
       {
