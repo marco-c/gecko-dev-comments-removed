@@ -411,12 +411,8 @@ this.tabs = class extends ExtensionAPI {
             nativeTab.browser.loadURI(url, options);
           }
 
-          if (updateProperties.active !== null) {
-            if (updateProperties.active) {
-              BrowserApp.selectTab(nativeTab);
-            } else {
-              
-            }
+          if (updateProperties.active) {
+            BrowserApp.selectTab(nativeTab);
           }
           
 
