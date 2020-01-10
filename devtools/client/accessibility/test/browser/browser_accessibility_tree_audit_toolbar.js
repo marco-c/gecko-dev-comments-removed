@@ -45,8 +45,8 @@ const tests = [
   },
   {
     desc: "Run an audit (all) from a11y panel toolbar by activating a filter.",
-    setup: async ({ doc }) => {
-      await toggleMenuItem(doc, 0, 1);
+    setup: async ({ doc, toolbox }) => {
+      await toggleMenuItem(doc, toolbox.doc, TREE_FILTERS_MENU_ID, 1);
     },
     expected: {
       tree: [
@@ -67,8 +67,8 @@ const tests = [
   },
   {
     desc: "Click on the filter again.",
-    setup: async ({ doc }) => {
-      await toggleMenuItem(doc, 0, 1);
+    setup: async ({ doc, toolbox }) => {
+      await toggleMenuItem(doc, toolbox.doc, TREE_FILTERS_MENU_ID, 1);
     },
     expected: {
       tree: [

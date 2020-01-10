@@ -8,6 +8,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -37,6 +39,13 @@ const {
 Services.prefs.setBoolPref("devtools.accessibility.enabled", true);
 
 const SIMULATION_MENU_BUTTON_ID = "#simulation-menu-button";
+const TREE_FILTERS_MENU_ID = "accessibility-tree-filters-menu";
+const PREFS_MENU_ID = "accessibility-tree-filters-prefs-menu";
+
+const MENU_INDEXES = {
+  [TREE_FILTERS_MENU_ID]: 0,
+  [PREFS_MENU_ID]: 1,
+};
 
 
 
@@ -603,25 +612,32 @@ async function toggleRow(doc, rowNumber) {
 
 
 
-async function toggleMenuItem(doc, menuButtonIndex, menuItemIndex) {
-  const win = doc.defaultView;
+
+
+async function toggleMenuItem(doc, toolboxDoc, menuId, menuItemIndex) {
+  const toolboxWin = toolboxDoc.defaultView;
+  const panelWin = doc.defaultView;
+
   const menuButton = doc.querySelectorAll(".toolbar-menu-button")[
-    menuButtonIndex
+    MENU_INDEXES[menuId]
   ];
-  const menuItem = doc
-    .querySelectorAll(".tooltip-container")
-    [menuButtonIndex].querySelectorAll(".command")[menuItemIndex];
+  ok(menuButton, "Expected menu button");
+
+  const menuEl = toolboxDoc.getElementById(menuId);
+  const menuItem = menuEl.querySelectorAll(".command")[menuItemIndex];
+  ok(menuItem, "Expected menu item");
+
   const expected =
     menuItem.getAttribute("aria-checked") === "true" ? null : "true";
 
   
-  EventUtils.synthesizeMouseAtCenter(menuButton, {}, win);
+  EventUtils.synthesizeMouseAtCenter(menuButton, {}, panelWin);
   await BrowserTestUtils.waitForCondition(
     () => !!menuItem.offsetParent,
     "Menu item is visible."
   );
 
-  EventUtils.synthesizeMouseAtCenter(menuItem, {}, win);
+  EventUtils.synthesizeMouseAtCenter(menuItem, {}, toolboxWin);
   await BrowserTestUtils.waitForCondition(
     () => expected === menuItem.getAttribute("aria-checked"),
     "Menu item updated."
