@@ -602,9 +602,7 @@
                        class="hidevscroll-scrollbar scrollbar-topmost"
                        ></scrollbar>
           </hbox>
-          <box class="tree-input-wrapper" left="0" top="0" hidden="true">
-            <html:input class="tree-input" type="text"/>
-          </box>
+          <html:input class="tree-input" type="text" hidden="true"/>
         </stack>
         <hbox class="hidehscroll-box">
           <scrollbar orient="horizontal" flex="1" increment="16" class="scrollbar-topmost" ></scrollbar>
@@ -1304,11 +1302,6 @@
 
       var input = this.inputField;
 
-      
-      
-      
-      var inputWrapper = this.shadowRoot.querySelector(".tree-input-wrapper");
-
       this.ensureCellIsVisible(row, column);
 
       
@@ -1318,9 +1311,9 @@
       var cellRect = this.getCoordsForCellItem(row, column, "cell");
 
       
-      var style = window.getComputedStyle(inputWrapper);
+      var style = window.getComputedStyle(input);
       var topadj = parseInt(style.borderTopWidth) + parseInt(style.paddingTop);
-      inputWrapper.top = textRect.y - topadj;
+      input.style.top = `${textRect.y - topadj}px`;
 
       
       
@@ -1333,14 +1326,13 @@
         widthdiff = textRect.x - cellRect.x;
       }
 
-      inputWrapper.left = left;
-      inputWrapper.height =
-        textRect.height +
+      input.style.left = `${left}px`;
+      input.style.height = `${textRect.height +
         topadj +
         parseInt(style.borderBottomWidth) +
-        parseInt(style.paddingBottom);
-      inputWrapper.width = cellRect.width - widthdiff;
-      inputWrapper.hidden = false;
+        parseInt(style.paddingBottom)}px`;
+      input.style.width = `${cellRect.width - widthdiff}px`;
+      input.hidden = false;
 
       input.value = this.view.getCellText(row, column);
 
@@ -1371,8 +1363,7 @@
         var value = input.value;
         this.view.setCellText(editingRow, editingColumn, value);
       }
-      var inputWrapper = this.shadowRoot.querySelector(".tree-input-wrapper");
-      inputWrapper.hidden = true;
+      input.hidden = true;
       input.value = "";
       this.removeAttribute("editing");
     }

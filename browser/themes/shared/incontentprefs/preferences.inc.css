@@ -21,6 +21,19 @@
   -moz-user-select: text;
 }
 
+
+
+
+
+
+
+
+
+#preferences-stack,
+#preferences-stack > * {
+  min-height: 0;
+}
+
 .main-content {
   padding-top: 0;
 }
