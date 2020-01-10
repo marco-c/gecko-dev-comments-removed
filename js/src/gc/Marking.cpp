@@ -2586,7 +2586,8 @@ void GCMarker::enterWeakMarkingMode() {
     gc::WeakKeyTable::Range r = zone->gcWeakKeys().all();
     while (!r.empty()) {
       gc::Cell* key = r.front().key;
-      if (key->isMarkedAny()) {
+      gc::CellColor keyColor = GetCellColor(key);
+      if (IsMarked(keyColor)) {
         MOZ_ASSERT(key == r.front().key);
         auto& markables = r.front().value;
         r.popFront();  
@@ -2598,9 +2599,17 @@ void GCMarker::enterWeakMarkingMode() {
           
           v.weakmap->markEntry(this, key, v.key);
         }
-        markables.erase(markables.begin(), end < markables.length()
-                                               ? &markables[end]
-                                               : markables.end());
+
+        if (keyColor == gc::CellColor::Black) {
+          
+          
+          if (end == markables.length()) {
+            bool found;
+            zone->gcWeakKeys().remove(key, &found);
+          } else {
+            markables.erase(markables.begin(), &markables[end]);
+          }
+        }
       } else {
         r.popFront();
       }
