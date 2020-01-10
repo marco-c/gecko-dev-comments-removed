@@ -321,6 +321,11 @@ module.exports = {
     
     "no-restricted-modules": "off",
     
+    "no-restricted-properties": ["error", {
+      "property": "setupInParent",
+      "message": "avoid child/parent communication with setupInParent"
+    }],
+    
     
     "no-return-assign": "error",
     

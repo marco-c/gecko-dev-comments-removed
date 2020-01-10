@@ -28,6 +28,7 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
 
     if (DebuggerServer.isInChildProcess) {
       this._msgName = `debug:${this.conn.prefix}accessibility`;
+      
       this.conn.setupInParent({
         module: "devtools/server/actors/accessibility/accessibility-parent",
         setupParent: "setupParentProcess",

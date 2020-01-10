@@ -12,6 +12,7 @@ exports.callParent = function() {
   
   for (const id in DebuggerServer._connections) {
     const conn = DebuggerServer._connections[id];
+    
     conn.setupInParent({
       module: "chrome://mochitests/content/chrome/devtools/server/tests/mochitest/setup-in-parent.js",
       setupParent: "setupParent",
