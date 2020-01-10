@@ -1311,6 +1311,9 @@ impl<'a> DisplayListFlattener<'a> {
                     parent_space,
                 );
             }
+            DisplayItem::BackdropFilter(ref info) => {
+                unimplemented!();
+            }
 
             
             DisplayItem::SetGradientStops |

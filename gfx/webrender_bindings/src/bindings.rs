@@ -2085,6 +2085,9 @@ pub struct WrStackingContextParams {
     
     pub cache_tiles: bool,
     pub mix_blend_mode: MixBlendMode,
+    
+    
+    pub is_backdrop_root: bool,
 }
 
 #[no_mangle]
@@ -2206,7 +2209,8 @@ pub extern "C" fn wr_dp_push_stacking_context(
                                 &r_filter_datas,
                                 &[],
                                 glyph_raster_space,
-                                params.cache_tiles);
+                                params.cache_tiles,
+                                params.is_backdrop_root);
 
     result
 }

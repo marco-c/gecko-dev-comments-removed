@@ -105,6 +105,7 @@ pub enum DisplayItem {
     RadialGradient(RadialGradientDisplayItem),
     Image(ImageDisplayItem),
     YuvImage(YuvImageDisplayItem),
+    BackdropFilter(BackdropFilterDisplayItem),
 
     
     Clip(ClipDisplayItem),
@@ -148,6 +149,7 @@ pub enum DebugDisplayItem {
     RadialGradient(RadialGradientDisplayItem),
     Image(ImageDisplayItem),
     YuvImage(YuvImageDisplayItem),
+    BackdropFilter(BackdropFilterDisplayItem),
 
     Clip(ClipDisplayItem, Vec<ComplexClipRegion>),
     ClipChain(ClipChainItem, Vec<ClipId>),
@@ -611,6 +613,13 @@ pub struct RadialGradientDisplayItem {
     pub tile_spacing: LayoutSize,
 }
 
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
+pub struct BackdropFilterDisplayItem {
+    pub common: CommonItemProperties,
+}
+
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ReferenceFrameDisplayListItem {
     pub origin: LayoutPoint,
@@ -652,7 +661,10 @@ pub struct StackingContext {
     pub raster_space: RasterSpace,
     
     pub cache_tiles: bool,
-} 
+    
+    pub is_backdrop_root: bool,
+}
+
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize, PeekPoke)]
@@ -1364,6 +1376,7 @@ impl DisplayItem {
             DisplayItem::StickyFrame(..) => "sticky_frame",
             DisplayItem::Text(..) => "text",
             DisplayItem::YuvImage(..) => "yuv_image",
+            DisplayItem::BackdropFilter(..) => "backdrop_filter",
         }
     }
 }
