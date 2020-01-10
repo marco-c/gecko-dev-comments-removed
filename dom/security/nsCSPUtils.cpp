@@ -316,7 +316,6 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
       return nsIContentSecurityPolicy::NO_DIRECTIVE;
 
     
-    
     default:
       MOZ_ASSERT(false, "Can not map nsContentPolicyType to CSPDirective");
   }
@@ -1472,31 +1471,6 @@ bool nsCSPPolicy::hasDirective(CSPDirective aDir) const {
     }
   }
   return false;
-}
-
-bool nsCSPPolicy::allowsNavigateTo(nsIURI* aURI, bool aWasRedirected,
-                                   bool aEnforceWhitelist) const {
-  bool allowsNavigateTo = true;
-
-  for (unsigned long i = 0; i < mDirectives.Length(); i++) {
-    if (mDirectives[i]->equals(
-            nsIContentSecurityPolicy::NAVIGATE_TO_DIRECTIVE)) {
-      
-      
-      if (!aEnforceWhitelist &&
-          mDirectives[i]->allows(CSP_UNSAFE_ALLOW_REDIRECTS, EmptyString(),
-                                 false)) {
-        return true;
-      }
-      
-      if (!mDirectives[i]->permits(aURI, EmptyString(), aWasRedirected, false,
-                                   false, false)) {
-        allowsNavigateTo = false;
-      }
-    }
-  }
-
-  return allowsNavigateTo;
 }
 
 
