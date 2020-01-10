@@ -187,11 +187,6 @@ struct ComputedStyleMap {
     nsCSSPropertyID mProperty;
     ComputeMethod mGetter;
 
-    bool IsLayoutFlushNeeded() const {
-      return nsCSSProps::PropHasFlags(mProperty,
-                                      CSSPropFlags::GetCSNeedsLayoutFlush);
-    }
-
     bool IsEnabled() const {
       return nsCSSProps::IsEnabled(mProperty, CSSEnabledState::ForAllContent);
     }
@@ -387,7 +382,7 @@ void nsComputedDOMStyle::SetCssText(const nsAString& aCssText,
 uint32_t nsComputedDOMStyle::Length() {
   
   
-  UpdateCurrentStyleSources(false);
+  UpdateCurrentStyleSources(eCSSPropertyExtra_variable);
   if (!mComputedStyle) {
     return 0;
   }
@@ -417,8 +412,7 @@ nsComputedDOMStyle::GetPropertyValue(const nsAString& aPropertyName,
     }
   }
 
-  const bool layoutFlushIsNeeded = entry && entry->IsLayoutFlushNeeded();
-  UpdateCurrentStyleSources(layoutFlushIsNeeded);
+  UpdateCurrentStyleSources(prop);
   if (!mComputedStyle) {
     return NS_OK;
   }
@@ -437,10 +431,12 @@ nsComputedDOMStyle::GetPropertyValue(const nsAString& aPropertyName,
     MOZ_ASSERT(entry);
     MOZ_ASSERT(entry->mGetter == &nsComputedDOMStyle::DummyGetter);
 
+    DebugOnly<nsCSSPropertyID> logicalProp = prop;
+
     prop = Servo_ResolveLogicalProperty(prop, mComputedStyle);
     entry = GetComputedStyleMap()->FindEntryForProperty(prop);
 
-    MOZ_ASSERT(layoutFlushIsNeeded == entry->IsLayoutFlushNeeded(),
+    MOZ_ASSERT(NeedsToFlushLayout(logicalProp) == NeedsToFlushLayout(prop),
                "Logical and physical property don't agree on whether layout is "
                "needed");
   }
@@ -706,7 +702,7 @@ void nsComputedDOMStyle::GetCSSImageURLs(const nsAString& aPropertyName,
     return;
   }
 
-  UpdateCurrentStyleSources(false);
+  UpdateCurrentStyleSources(prop);
 
   if (!mComputedStyle) {
     return;
@@ -802,6 +798,30 @@ static nsIFrame* StyleFrame(nsIFrame* aOuterFrame) {
   return inner;
 }
 
+bool nsComputedDOMStyle::NeedsToFlushLayout(nsCSSPropertyID aPropID) const {
+  MOZ_ASSERT(aPropID != eCSSProperty_UNKNOWN);
+  
+  
+  return aPropID != eCSSPropertyExtra_variable &&
+         nsCSSProps::PropHasFlags(aPropID, CSSPropFlags::GetCSNeedsLayoutFlush);
+}
+
+void nsComputedDOMStyle::Flush(Document& aDocument, FlushType aFlushType) {
+  MOZ_ASSERT(mElement->IsInComposedDoc());
+
+#ifdef DEBUG
+  {
+    nsCOMPtr<Document> document = do_QueryReferent(mDocumentWeak);
+    MOZ_ASSERT(document == &aDocument);
+  }
+#endif
+
+  aDocument.FlushPendingNotifications(aFlushType);
+  if (MOZ_UNLIKELY(&aDocument != mElement->OwnerDoc())) {
+    mElement->OwnerDoc()->FlushPendingNotifications(aFlushType);
+  }
+}
+
 nsIFrame* nsComputedDOMStyle::GetOuterFrame() const {
   if (!mPseudo) {
     return mElement->GetPrimaryFrame();
@@ -821,7 +841,7 @@ nsIFrame* nsComputedDOMStyle::GetOuterFrame() const {
   return pseudo ? pseudo->GetPrimaryFrame() : nullptr;
 }
 
-void nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush) {
+void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
   nsCOMPtr<Document> document = do_QueryReferent(mDocumentWeak);
   if (!document) {
     ClearComputedStyle();
@@ -830,39 +850,32 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush) {
 
   
   
+  
+  
+  
   if (!mElement->IsInComposedDoc()) {
     ClearComputedStyle();
     return;
   }
 
-  
-  
-  
-  
-
-  
-  const bool needsToFlush = aNeedsLayoutFlush || NeedsToFlushStyle();
-  if (needsToFlush) {
+  bool didFlush = false;
+  if (NeedsToFlushStyle()) {
+    didFlush = true;
     
     
-    
-    
-    document->FlushPendingNotifications(aNeedsLayoutFlush ? FlushType::Layout
-                                                          : FlushType::Style);
+    Flush(*document, FlushType::Frames);
   }
 
+  if (NeedsToFlushLayout(aPropID)) {
+    didFlush = true;
+    Flush(*document, FlushType::Layout);
 #ifdef DEBUG
-  mFlushedPendingReflows = aNeedsLayoutFlush;
+    mFlushedPendingReflows = true;
 #endif
-
-  RefPtr<PresShell> presShellForContent =
-      nsContentUtils::GetPresShellForContent(mElement);
-  if (presShellForContent && presShellForContent->GetDocument() != document) {
-    presShellForContent->GetDocument()->FlushPendingNotifications(
-        FlushType::Style);
-    if (presShellForContent->IsDestroying()) {
-      presShellForContent = nullptr;
-    }
+  } else {
+#ifdef DEBUG
+    mFlushedPendingReflows = false;
+#endif
   }
 
   mPresShell = document->GetPresShell();
@@ -883,21 +896,14 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush) {
   uint64_t currentGeneration =
       mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration();
 
-  if (mComputedStyle) {
+  if (mComputedStyle &&
+      mComputedStyleGeneration == currentGeneration &&
+      mPresShellId == mPresShell->GetPresShellId()) {
     
-    
-    
-    
-    
-    if (mComputedStyleGeneration == currentGeneration &&
-        mPresShellId == mPresShell->GetPresShellId() &&
-        mElement->IsInComposedDoc()) {
-      
-      return;
-    }
-    
-    mComputedStyle = nullptr;
+    return;
   }
+
+  mComputedStyle = nullptr;
 
   
   
@@ -913,10 +919,11 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush) {
   }
 
   if (!mComputedStyle || MustReresolveStyle(mComputedStyle)) {
+    PresShell* presShellForContent = mElement->OwnerDoc()->GetPresShell();
     
     RefPtr<ComputedStyle> resolvedComputedStyle = DoGetComputedStyleNoFlush(
         mElement, mPseudo,
-        presShellForContent ? presShellForContent.get() : mPresShell,
+        presShellForContent ? presShellForContent : mPresShell,
         mStyleType);
     if (!resolvedComputedStyle) {
       ClearComputedStyle();
@@ -927,7 +934,7 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush) {
     
     
     NS_ASSERTION(
-        !needsToFlush ||
+        !didFlush ||
             currentGeneration ==
                 mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration(),
         "why should we have flushed style again?");
@@ -997,7 +1004,7 @@ void nsComputedDOMStyle::IndexedGetter(uint32_t aIndex, bool& aFound,
 
   
   
-  UpdateCurrentStyleSources(false);
+  UpdateCurrentStyleSources(eCSSPropertyExtra_variable);
   if (!mComputedStyle) {
     aFound = false;
     return;

@@ -140,7 +140,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   nsMargin GetAdjustedValuesForBoxSizing();
 
   
-  void UpdateCurrentStyleSources(bool aNeedsLayoutFlush);
+  void UpdateCurrentStyleSources(nsCSSPropertyID);
   void ClearCurrentStyleSources();
 
   
@@ -340,6 +340,12 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   
   
   bool NeedsToFlushStyle() const;
+  
+  
+  bool NeedsToFlushLayout(nsCSSPropertyID) const;
+  
+  
+  void Flush(Document&, mozilla::FlushType);
   nsIFrame* GetOuterFrame() const;
 
   static ComputedStyleMap* GetComputedStyleMap();
