@@ -2,12 +2,12 @@
 
 
 
-#ifndef mozilla_dom_MediaKeySystemAccessManager_h
-#define mozilla_dom_MediaKeySystemAccessManager_h
+#ifndef DOM_MEDIA_MEDIAKEYSYSTEMACCESSMANAGER_H_
+#define DOM_MEDIA_MEDIAKEYSYSTEMACCESSMANAGER_H_
 
 #include "mozilla/dom/MediaKeySystemAccess.h"
-#include "nsIObserver.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIObserver.h"
 #include "nsISupportsImpl.h"
 #include "nsITimer.h"
 
@@ -157,4 +157,4 @@ class MediaKeySystemAccessManager final : public nsIObserver {
 }  
 }  
 
-#endif
+#endif  
