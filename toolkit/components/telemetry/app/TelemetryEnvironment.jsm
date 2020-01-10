@@ -555,9 +555,15 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-  async init() {
-    AddonManager.beforeShutdown.addBlocker("EnvironmentAddonBuilder",
-      () => this._shutdownBlocker());
+  init() {
+    
+    
+    try {
+      AddonManager.shutdown.addBlocker("EnvironmentAddonBuilder",
+        () => this._shutdownBlocker());
+    } catch (err) {
+      return Promise.reject(err);
+    }
 
     this._pendingTask = (async () => {
       try {

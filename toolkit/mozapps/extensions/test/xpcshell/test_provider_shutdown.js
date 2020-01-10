@@ -72,9 +72,9 @@ add_task(async function blockRepoShutdown() {
   await mockProvider.shutdownPromise;
   
   let status = fetchState();
-  equal(findInStatus(status[1], "Mock provider"), "(none)");
-  equal(status[2].name, "AddonRepository: async shutdown");
-  equal(status[2].state, "pending");
+  equal(findInStatus(status[0], "Mock provider"), "(none)");
+  equal(status[1].name, "AddonRepository: async shutdown");
+  equal(status[1].state, "pending");
   
   mockProvider.doneResolve();
 
@@ -82,10 +82,10 @@ add_task(async function blockRepoShutdown() {
   await mockRepo.shutdownPromise;
   
   status = fetchState();
-  equal(status[1].name, "AddonManager: Waiting for providers to shut down.");
-  equal(status[1].state, "Complete");
-  equal(status[2].name, "AddonRepository: async shutdown");
-  equal(status[2].state, "in progress");
+  equal(status[0].name, "AddonManager: Waiting for providers to shut down.");
+  equal(status[0].state, "Complete");
+  equal(status[1].name, "AddonRepository: async shutdown");
+  equal(status[1].state, "in progress");
 
   
   mockRepo.doneResolve();
