@@ -228,6 +228,12 @@ void WindowGlobalChild::Destroy() {
   }
 }
 
+mozilla::ipc::IPCResult WindowGlobalChild::RecvLoadURIInChild(
+    nsDocShellLoadState* aLoadState) {
+  mWindowGlobal->GetDocShell()->LoadURI(aLoadState);
+  return IPC_OK();
+}
+
 static nsresult ChangeFrameRemoteness(WindowGlobalChild* aWgc,
                                       BrowsingContext* aBc,
                                       const nsString& aRemoteType,
@@ -310,16 +316,15 @@ IPCResult WindowGlobalChild::RecvChangeFrameRemoteness(
 
 mozilla::ipc::IPCResult WindowGlobalChild::RecvDrawSnapshot(
     const Maybe<IntRect>& aRect, const float& aScale,
-    const nscolor& aBackgroundColor, const uint32_t& aFlags,
-    DrawSnapshotResolver&& aResolve) {
+    const nscolor& aBackgroundColor, DrawSnapshotResolver&& aResolve) {
   nsCOMPtr<nsIDocShell> docShell = BrowsingContext()->GetDocShell();
   if (!docShell) {
     aResolve(gfx::PaintFragment{});
     return IPC_OK();
   }
 
-  aResolve(gfx::PaintFragment::Record(docShell, aRect, aScale, aBackgroundColor,
-                                      (gfx::CrossProcessPaintFlags)aFlags));
+  aResolve(
+      gfx::PaintFragment::Record(docShell, aRect, aScale, aBackgroundColor));
   return IPC_OK();
 }
 

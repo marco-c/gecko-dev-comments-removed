@@ -173,6 +173,38 @@ bool WindowGlobalParent::IsProcessRoot() {
   return ContentParentId() != embedder->ContentParentId();
 }
 
+mozilla::ipc::IPCResult WindowGlobalParent::RecvLoadURI(
+    dom::BrowsingContext* aTargetBC,
+    nsDocShellLoadState* aLoadState) {
+  if (!aTargetBC || aTargetBC->IsDiscarded()) {
+    MOZ_LOG(
+        BrowsingContext::GetLog(), LogLevel::Debug,
+        ("ParentIPC: Trying to send a message with dead or detached context"));
+    return IPC_OK();
+  }
+
+  
+  
+
+  if (aTargetBC->Group() != BrowsingContext()->Group()) {
+    return IPC_FAIL(this, "Illegal cross-group BrowsingContext load");
+  }
+
+  
+  
+
+  WindowGlobalParent* wgp = aTargetBC->Canonical()->GetCurrentWindowGlobal();
+  if (!wgp) {
+    MOZ_LOG(
+        BrowsingContext::GetLog(), LogLevel::Debug,
+        ("ParentIPC: Target BrowsingContext has no WindowGlobalParent"));
+    return IPC_OK();
+  }
+
+  Unused << wgp->SendLoadURIInChild(aLoadState);
+  return IPC_OK();
+}
+
 IPCResult WindowGlobalParent::RecvUpdateDocumentURI(nsIURI* aURI) {
   
   
@@ -363,7 +395,6 @@ already_AddRefed<mozilla::dom::Promise> WindowGlobalParent::DrawSnapshot(
   }
 
   if (!gfx::CrossProcessPaint::Start(this, aRect, (float)aScale, color,
-                                     gfx::CrossProcessPaintFlags::None,
                                      promise)) {
     aRv = NS_ERROR_FAILURE;
     return nullptr;
@@ -374,9 +405,8 @@ already_AddRefed<mozilla::dom::Promise> WindowGlobalParent::DrawSnapshot(
 void WindowGlobalParent::DrawSnapshotInternal(gfx::CrossProcessPaint* aPaint,
                                               const Maybe<IntRect>& aRect,
                                               float aScale,
-                                              nscolor aBackgroundColor,
-                                              uint32_t aFlags) {
-  auto promise = SendDrawSnapshot(aRect, aScale, aBackgroundColor, aFlags);
+                                              nscolor aBackgroundColor) {
+  auto promise = SendDrawSnapshot(aRect, aScale, aBackgroundColor);
 
   RefPtr<gfx::CrossProcessPaint> paint(aPaint);
   RefPtr<WindowGlobalParent> wgp(this);

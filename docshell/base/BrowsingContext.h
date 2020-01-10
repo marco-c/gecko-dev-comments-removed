@@ -20,6 +20,7 @@
 #include "nsWrapperCache.h"
 #include "nsILoadInfo.h"
 
+class nsDocShellLoadState;
 class nsGlobalWindowOuter;
 class nsIPrincipal;
 class nsOuterWindowProxy;
@@ -178,6 +179,11 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
 
   
   void RestoreChildren(Children&& aChildren, bool aFromIPC = false);
+
+  
+  
+  
+  void LoadURI(BrowsingContext* aAccessor, nsDocShellLoadState* aLoadState);
 
   
   
