@@ -132,6 +132,20 @@ void TLSFilterTransaction::Close(nsresult aReason) {
   mTransaction->Close(aReason);
   mTransaction = nullptr;
 
+  if (!gHttpHandler->Bug1563695()) {
+    RefPtr<NullHttpTransaction> baseTrans(do_QueryReferent(mWeakTrans));
+    SpdyConnectTransaction* trans =
+        baseTrans ? baseTrans->QuerySpdyConnectTransaction() : nullptr;
+
+    LOG(("TLSFilterTransaction::Close %p aReason=%" PRIx32 " trans=%p\n", this,
+         static_cast<uint32_t>(aReason), trans));
+
+    if (trans) {
+      trans->Close(aReason);
+      trans = nullptr;
+    }
+  }
+
   if (gHttpHandler->Bug1563538()) {
     if (NS_FAILED(aReason)) {
       mCloseReason = aReason;
@@ -369,8 +383,28 @@ nsresult TLSFilterTransaction::WriteSegmentsAgain(nsAHttpSegmentWriter* aWriter,
   bool againBeforeWriteSegmentsCall = *again;
 
   mSegmentWriter = aWriter;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   nsresult rv =
-      mTransaction->WriteSegmentsAgain(this, aCount, outCountWritten, again);
+      gHttpHandler->Bug1562315()
+          ? mTransaction->WriteSegmentsAgain(this, aCount, outCountWritten,
+                                             again)
+          : mTransaction->WriteSegments(this, aCount, outCountWritten);
+
   if (NS_SUCCEEDED(rv) && !(*outCountWritten)) {
     if (NS_FAILED(mFilterReadCode)) {
       
@@ -380,6 +414,7 @@ nsresult TLSFilterTransaction::WriteSegmentsAgain(nsAHttpSegmentWriter* aWriter,
       }
     }
     if (againBeforeWriteSegmentsCall && !*again) {
+      
       LOG(
           ("TLSFilterTransaction %p called trans->WriteSegments which dropped "
            "the 'again' flag",

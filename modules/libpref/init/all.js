@@ -2131,6 +2131,9 @@ pref("network.http.tailing.total-max", 45000);
 
 
 pref("network.http.spdy.bug1563538", true);
+pref("network.http.spdy.bug1563695", true);
+pref("network.http.spdy.bug1562315", true);
+pref("network.http.spdy.bug1556491", true);
 
 pref("permissions.default.image",           1); 
 
