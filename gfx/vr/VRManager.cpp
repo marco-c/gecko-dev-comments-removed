@@ -1002,7 +1002,11 @@ void VRManager::PullState(
           if (!aWaitCondition || aWaitCondition()) {
             return;
           }
-        }  
+        } else if (!aWaitCondition) {
+          
+          
+          return;
+        }
         
         YieldThread();
 #  if defined(XP_WIN)
