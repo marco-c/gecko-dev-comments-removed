@@ -64,7 +64,7 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   
 
-  void ResolutionUpdated();
+  void ResolutionUpdated(mozilla::ResolutionChangeOrigin aOrigin);
 
   
 
