@@ -142,6 +142,9 @@ def test_environment(xrePath, env=None, crashreporter=True, debugger=False,
     env.setdefault('R_LOG_VERBOSE', '1')
 
     
+    env.setdefault('NSS_MAX_MP_PBE_ITERATION_COUNT', '10')
+
+    
     asan = bool(mozinfo.info.get("asan"))
     if asan:
         try:
