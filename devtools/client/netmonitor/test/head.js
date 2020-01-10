@@ -750,27 +750,6 @@ function waitFor(subject, eventName) {
 
 
 
-
-
-
-function waitForDispatch(store, type) {
-  return new Promise(resolve => {
-    store.dispatch({
-      type: "@@service/waitUntil",
-      predicate: action => action.type === type,
-      run: (dispatch, getState, action) => {
-        resolve(action);
-      },
-    });
-  });
-}
-
-
-
-
-
-
-
 function testFilterButtons(monitor, filterType) {
   const doc = monitor.panelWin.document;
   const target = doc.querySelector(
