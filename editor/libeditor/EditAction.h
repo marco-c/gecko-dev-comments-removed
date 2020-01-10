@@ -437,6 +437,11 @@ enum class EditSubAction : int32_t {
   eCreateOrRemoveBlock,
 
   
+  
+  
+  eMergeBlockContents,
+
+  
   eRemoveList,
 
   

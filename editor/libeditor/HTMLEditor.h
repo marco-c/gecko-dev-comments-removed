@@ -1328,7 +1328,7 @@ class HTMLEditor final : public TextEditor,
       nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
       EditSubAction aEditSubAction,
-      CollectNonEditableNodes aCollectNonEditableNodes) const;
+      CollectNonEditableNodes aCollectNonEditableNodes);
 
   
 

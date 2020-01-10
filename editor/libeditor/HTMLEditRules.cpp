@@ -86,6 +86,7 @@ static bool IsStyleCachePreservingSubAction(EditSubAction aEditSubAction) {
     case EditSubAction::eOutdent:
     case EditSubAction::eSetOrClearAlignment:
     case EditSubAction::eCreateOrRemoveBlock:
+    case EditSubAction::eMergeBlockContents:
     case EditSubAction::eRemoveList:
     case EditSubAction::eCreateOrChangeDefinitionList:
     case EditSubAction::eInsertElement:
@@ -895,10 +896,6 @@ nsresult HTMLEditRules::GetListState(bool* aMixed, bool* aOL, bool* aUL,
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  rv = GetListActionNodes(arrayOfNodes);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
 
   
   for (const auto& curNode : arrayOfNodes) {
@@ -951,10 +948,6 @@ nsresult HTMLEditRules::GetListItemState(bool* aMixed, bool* aLI, bool* aDT,
   nsresult rv = HTMLEditorRef().CollectEditTargetNodesInExtendedSelectionRanges(
       arrayOfNodes, EditSubAction::eCreateOrChangeList,
       HTMLEditor::CollectNonEditableNodes::No);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  rv = GetListActionNodes(arrayOfNodes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -3734,7 +3727,7 @@ EditActionResult HTMLEditRules::MoveBlock(Element& aLeftBlock,
   nsresult rv = MOZ_KnownLive(HTMLEditorRef())
                     .SplitInlinesAndCollectEditTargetNodesInOneHardLine(
                         EditorDOMPoint(&aRightBlock, aRightOffset),
-                        arrayOfNodes, EditSubAction::eCreateOrChangeList,
+                        arrayOfNodes, EditSubAction::eMergeBlockContents,
                         HTMLEditor::CollectNonEditableNodes::Yes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return EditActionIgnored(rv);
@@ -4018,18 +4011,12 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
   if (parentListElement) {
     arrayOfNodes.AppendElement(OwningNonNull<nsINode>(*parentListElement));
   } else {
-    {
-      AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
-      nsresult rv =
-          MOZ_KnownLive(HTMLEditorRef())
-              .SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
-                  arrayOfNodes, EditSubAction::eCreateOrChangeList,
-                  HTMLEditor::CollectNonEditableNodes::No);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-    nsresult rv = GetListActionNodes(arrayOfNodes);
+    AutoTransactionsConserveSelection dontChangeMySelection(HTMLEditorRef());
+    nsresult rv =
+        MOZ_KnownLive(HTMLEditorRef())
+            .SplitInlinesAndCollectEditTargetNodesInExtendedSelectionRanges(
+                arrayOfNodes, EditSubAction::eCreateOrChangeList,
+                HTMLEditor::CollectNonEditableNodes::No);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -4479,10 +4466,6 @@ nsresult HTMLEditRules::WillRemoveList(bool* aCancel, bool* aHandled) {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-  }
-  rv = GetListActionNodes(arrayOfNodes);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
   }
 
   
@@ -7521,7 +7504,7 @@ nsresult HTMLEditor::CollectEditTargetNodes(
     nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
     nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
     EditSubAction aEditSubAction,
-    CollectNonEditableNodes aCollectNonEditableNodes) const {
+    CollectNonEditableNodes aCollectNonEditableNodes) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   
@@ -7572,6 +7555,48 @@ nsresult HTMLEditor::CollectEditTargetNodes(
         }
       }
       break;
+    case EditSubAction::eCreateOrChangeList: {
+      for (size_t i = aOutArrayOfNodes.Length(); i > 0; i--) {
+        
+        
+        
+        
+        
+        OwningNonNull<nsINode> node = aOutArrayOfNodes[i - 1];
+        if (HTMLEditUtils::IsTableElementButNotTable(node)) {
+          
+          aOutArrayOfNodes.RemoveElementAt(i - 1);
+          CollectChildren(node, aOutArrayOfNodes, i - 1,
+                          CollectListChildren::No, CollectTableChildren::Yes,
+                          CollectNonEditableNodes::Yes);
+        }
+      }
+      
+      
+      
+      if (aOutArrayOfNodes.Length() != 1) {
+        break;
+      }
+      Element* deepestDivBlockquoteOrListElement =
+          GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
+              aOutArrayOfNodes[0]);
+      if (!deepestDivBlockquoteOrListElement) {
+        break;
+      }
+      if (deepestDivBlockquoteOrListElement->IsAnyOfHTMLElements(
+              nsGkAtoms::div, nsGkAtoms::blockquote)) {
+        aOutArrayOfNodes.Clear();
+        
+        
+        CollectChildren(*deepestDivBlockquoteOrListElement, aOutArrayOfNodes, 0,
+                        CollectListChildren::No, CollectTableChildren::No,
+                        CollectNonEditableNodes::Yes);
+        break;
+      }
+      aOutArrayOfNodes.ReplaceElementAt(
+          0, OwningNonNull<nsINode>(*deepestDivBlockquoteOrListElement));
+      break;
+    }
     case EditSubAction::eOutdent:
     case EditSubAction::eIndent:
     case EditSubAction::eSetPositionToAbsolute:
@@ -7612,6 +7637,7 @@ nsresult HTMLEditor::MaybeSplitElementsAtEveryBRElement(
   
   switch (aEditSubAction) {
     case EditSubAction::eCreateOrRemoveBlock:
+    case EditSubAction::eMergeBlockContents:
     case EditSubAction::eCreateOrChangeList:
     case EditSubAction::eSetOrClearAlignment:
     case EditSubAction::eSetPositionToAbsolute:
@@ -7652,58 +7678,6 @@ Element* HTMLEditor::GetParentListElementAtSelection() const {
     }
   }
   return nullptr;
-}
-
-nsresult HTMLEditRules::GetListActionNodes(
-    nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes) const {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  
-  for (int32_t i = aOutArrayOfNodes.Length() - 1; i >= 0; i--) {
-    OwningNonNull<nsINode> testNode = aOutArrayOfNodes[i];
-
-    
-    
-    if (HTMLEditUtils::IsTableElementButNotTable(testNode)) {
-      
-      
-      aOutArrayOfNodes.RemoveElementAt(i);
-      HTMLEditorRef().CollectChildren(*testNode, aOutArrayOfNodes, i,
-                                      HTMLEditor::CollectListChildren::No,
-                                      HTMLEditor::CollectTableChildren::Yes,
-                                      HTMLEditor::CollectNonEditableNodes::Yes);
-    }
-  }
-
-  
-  
-  if (aOutArrayOfNodes.Length() != 1) {
-    return NS_OK;
-  }
-
-  Element* deepestDivBlockquoteOrListElement =
-      HTMLEditorRef().GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
-          aOutArrayOfNodes[0]);
-  if (!deepestDivBlockquoteOrListElement) {
-    return NS_OK;
-  }
-
-  if (deepestDivBlockquoteOrListElement->IsAnyOfHTMLElements(
-          nsGkAtoms::div, nsGkAtoms::blockquote)) {
-    aOutArrayOfNodes.Clear();
-    
-    
-    HTMLEditorRef().CollectChildren(*deepestDivBlockquoteOrListElement,
-                                    aOutArrayOfNodes, 0,
-                                    HTMLEditor::CollectListChildren::No,
-                                    HTMLEditor::CollectTableChildren::No,
-                                    HTMLEditor::CollectNonEditableNodes::Yes);
-    return NS_OK;
-  }
-
-  aOutArrayOfNodes.ReplaceElementAt(
-      0, OwningNonNull<nsINode>(*deepestDivBlockquoteOrListElement));
-  return NS_OK;
 }
 
 Element* HTMLEditor::GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
