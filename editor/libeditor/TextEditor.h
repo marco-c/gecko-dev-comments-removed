@@ -588,6 +588,13 @@ class TextEditor : public EditorBase,
   EditActionResult TruncateInsertionStringForMaxLength(
       nsAString& aInsertionString, uint32_t aMaxLength);
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  InsertLineFeedCharacterAtSelection();
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
@@ -642,7 +649,7 @@ class TextEditor : public EditorBase,
 
 
 
-  nsresult InsertLineBreakAsSubAction();
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertLineBreakAsSubAction();
 
   
 
