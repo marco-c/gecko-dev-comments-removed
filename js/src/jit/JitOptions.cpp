@@ -160,7 +160,7 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   
-  SET_DEFAULT(baselineJitWarmUpThreshold, 50);
+  SET_DEFAULT(baselineJitWarmUpThreshold, 100);
 
   
   

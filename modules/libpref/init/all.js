@@ -1215,7 +1215,7 @@ pref("javascript.options.blinterp",         true);
 pref("javascript.options.blinterp.threshold", 10);
 pref("javascript.options.baselinejit",      true);
 
-pref("javascript.options.baselinejit.threshold", 50);
+pref("javascript.options.baselinejit.threshold", 100);
 pref("javascript.options.ion",              true);
 
 pref("javascript.options.ion.threshold",    1000);
