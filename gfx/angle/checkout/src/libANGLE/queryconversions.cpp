@@ -69,14 +69,9 @@ NativeT CastQueryValueToInt(GLenum pname, QueryT value)
 
 }  
 
-
-
-
-
-GLint CastMaskValue(const Context *context, GLuint value)
+GLint CastMaskValue(GLuint value)
 {
-    return (context->getClientVersion() >= Version(3, 1) ? static_cast<GLint>(value)
-                                                         : clampCast<GLint>(value));
+    return clampCast<GLint>(value);
 }
 
 template <typename QueryT, typename InternalT>

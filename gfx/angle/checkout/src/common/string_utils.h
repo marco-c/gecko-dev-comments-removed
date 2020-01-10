@@ -41,11 +41,13 @@ void SplitStringAlongWhitespace(const std::string &input, std::vector<std::strin
 
 std::string TrimString(const std::string &input, const std::string &trimChars);
 
+
+std::string GetPrefix(const std::string &input, size_t offset, const char *delimiter);
+std::string GetPrefix(const std::string &input, size_t offset, char delimiter);
+
 bool HexStringToUInt(const std::string &input, unsigned int *uintOut);
 
 bool ReadFileToString(const std::string &path, std::string *stringOut);
-
-Optional<std::vector<wchar_t>> WidenString(size_t length, const char *cString);
 
 
 

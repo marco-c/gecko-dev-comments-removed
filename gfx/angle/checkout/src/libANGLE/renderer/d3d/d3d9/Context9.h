@@ -65,6 +65,12 @@ class Context9 : public ContextD3D
     std::vector<PathImpl *> createPaths(GLsizei) override;
 
     
+    MemoryObjectImpl *createMemoryObject() override;
+
+    
+    SemaphoreImpl *createSemaphore() override;
+
+    
     angle::Result flush(const gl::Context *context) override;
     angle::Result finish(const gl::Context *context) override;
 
@@ -106,7 +112,7 @@ class Context9 : public ContextD3D
                                        const void *indirect) override;
 
     
-    GLenum getResetStatus() override;
+    gl::GraphicsResetStatus getResetStatus() override;
 
     
     std::string getVendorString() const override;

@@ -14,6 +14,11 @@
 #include "libANGLE/ImageIndex.h"
 #include "libANGLE/Observer.h"
 
+namespace gl
+{
+class Context;
+}  
+
 namespace rx
 {
 class FramebufferAttachmentRenderTarget;

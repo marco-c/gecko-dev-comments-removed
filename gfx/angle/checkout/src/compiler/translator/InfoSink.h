@@ -41,7 +41,7 @@ class TInfoSinkBase
     template <typename T>
     TInfoSinkBase &operator<<(const T &t)
     {
-        TPersistStringStream stream;
+        TPersistStringStream stream = sh::InitializeStream<TPersistStringStream>();
         stream << t;
         sink.append(stream.str());
         return *this;
@@ -79,7 +79,7 @@ class TInfoSinkBase
         
         
         
-        TPersistStringStream stream;
+        TPersistStringStream stream = sh::InitializeStream<TPersistStringStream>();
         if (fractionalPart(f) == 0.0f)
         {
             stream.precision(1);

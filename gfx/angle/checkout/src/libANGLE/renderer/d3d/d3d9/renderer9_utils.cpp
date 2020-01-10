@@ -16,8 +16,8 @@
 #include "libANGLE/renderer/d3d/d3d9/RenderTarget9.h"
 #include "libANGLE/renderer/d3d/d3d9/formatutils9.h"
 #include "libANGLE/renderer/driver_utils.h"
+#include "platform/FeaturesD3D.h"
 #include "platform/Platform.h"
-#include "platform/WorkaroundsD3D.h"
 
 #include "third_party/systeminfo/SystemInfo.h"
 
@@ -659,6 +659,10 @@ void GenerateCaps(IDirect3D9 *d3d9,
     extensions->mapBufferRange    = false;
 
     
+    
+    extensions->depthTextureOES = false;
+
+    
     extensions->textureRG = false;
 
     D3DADAPTER_IDENTIFIER9 adapterId = {};
@@ -673,7 +677,8 @@ void GenerateCaps(IDirect3D9 *d3d9,
         
         if (IsAMD(adapterId.VendorId))
         {
-            extensions->depthTextures = false;
+            extensions->depthTextureANGLE = false;
+            extensions->depthTextureOES   = false;
         }
     }
     else
@@ -710,7 +715,11 @@ void GenerateCaps(IDirect3D9 *d3d9,
     extensions->robustBufferAccessBehavior = false;
     extensions->blendMinMax                = true;
     
-    extensions->floatBlend             = false;
+    
+    
+    
+    
+    extensions->floatBlend             = true;
     extensions->framebufferBlit        = true;
     extensions->framebufferMultisample = true;
     extensions->instancedArraysANGLE   = deviceCaps.PixelShaderVersion >= D3DPS_VERSION(3, 0);
@@ -752,6 +761,9 @@ void GenerateCaps(IDirect3D9 *d3d9,
     
     
     limitations->noFlexibleVaryingPacking = true;
+
+    
+    limitations->noVertexAttributeAliasing = true;
 }
 
 }  
@@ -791,21 +803,21 @@ void MakeValidSize(bool isImage,
     *levelOffset = upsampleCount;
 }
 
-angle::WorkaroundsD3D GenerateWorkarounds()
+void InitializeFeatures(angle::FeaturesD3D *features)
 {
-    angle::WorkaroundsD3D workarounds;
-    workarounds.mrtPerfWorkaround                = true;
-    workarounds.setDataFasterThanImageUpload     = false;
-    workarounds.useInstancedPointSpriteEmulation = false;
+    features->mrtPerfWorkaround.enabled                = true;
+    features->setDataFasterThanImageUpload.enabled     = false;
+    features->useInstancedPointSpriteEmulation.enabled = false;
 
     
-    workarounds.expandIntegerPowExpressions = true;
+    features->expandIntegerPowExpressions.enabled = true;
+
+    
+    features->allowClearForRobustResourceInit.enabled = false;
 
     
     auto *platform = ANGLEPlatformCurrent();
-    platform->overrideWorkaroundsD3D(platform, &workarounds);
-
-    return workarounds;
+    platform->overrideWorkaroundsD3D(platform, features);
 }
 
 }  

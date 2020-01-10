@@ -86,11 +86,23 @@ class FramebufferImpl : angle::NonCopyable
                                             size_t index,
                                             GLfloat *xy) const = 0;
 
+    
+    
+    
+    
+    virtual bool shouldSyncStateBeforeCheckStatus() const;
+
     const gl::FramebufferState &getState() const { return mState; }
 
   protected:
     const gl::FramebufferState &mState;
 };
+
+inline bool FramebufferImpl::shouldSyncStateBeforeCheckStatus() const
+{
+    return false;
+}
+
 }  
 
 #endif  

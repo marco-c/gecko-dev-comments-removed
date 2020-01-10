@@ -69,12 +69,16 @@ static constexpr StaticMangledName kMangledNameInstance =
 
 
 
+
+
+
+
 template <TBasicType basicType,
           TPrecision precision,
           TQualifier qualifier,
           unsigned char primarySize,
           unsigned char secondarySize>
-static constexpr TType kInstance =
+static constexpr TType instance =
     TType(basicType,
           precision,
           qualifier,
@@ -97,7 +101,7 @@ constexpr const TType *Get()
 {
     static_assert(1 <= primarySize && primarySize <= 4, "primarySize out of bounds");
     static_assert(1 <= secondarySize && secondarySize <= 4, "secondarySize out of bounds");
-    return &Helpers::kInstance<basicType, precision, qualifier, primarySize, secondarySize>;
+    return &Helpers::instance<basicType, precision, qualifier, primarySize, secondarySize>;
 }
 
 
