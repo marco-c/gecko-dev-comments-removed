@@ -523,6 +523,11 @@ class TenuredHeap : public js::HeapBase<T, TenuredHeap<T>> {
   uintptr_t bits;
 };
 
+static MOZ_ALWAYS_INLINE bool ObjectIsMarkedGray(
+    const JS::TenuredHeap<JSObject*>& obj) {
+  return ObjectIsMarkedGray(obj.unbarrieredGetPtr());
+}
+
 
 
 
