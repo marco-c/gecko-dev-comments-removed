@@ -3,6 +3,7 @@
 
 
 import { InfoItem } from "./info-item.js";
+import { normalizeToKebabCase } from "../utils.js";
 
 export class InfoGroup extends HTMLElement {
   constructor(item) {
@@ -24,9 +25,7 @@ export class InfoGroup extends HTMLElement {
 
     
     
-    this.classList.add(
-      this.item.sectionTitle.replace(/\s+/g, "-").toLowerCase()
-    );
+    this.classList.add(normalizeToKebabCase(this.item.sectionTitle));
 
     for (let i = 0; i < this.item.sectionItems.length; i++) {
       this.shadowRoot.append(new InfoItem(this.item.sectionItems[i]));
