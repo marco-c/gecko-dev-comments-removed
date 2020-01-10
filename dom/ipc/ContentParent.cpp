@@ -702,8 +702,7 @@ uint32_t ContentParent::GetPoolSize(const nsAString& aContentProcessType) {
   return *sBrowserContentParents->LookupOrAdd(aContentProcessType);
 }
 
-
-uint32_t ContentParent::GetMaxProcessCount(
+const nsDependentSubstring RemoteTypePrefix(
     const nsAString& aContentProcessType) {
   
   
@@ -711,8 +710,15 @@ uint32_t ContentParent::GetMaxProcessCount(
   if (equalIdx == kNotFound) {
     equalIdx = aContentProcessType.Length();
   }
+  return StringHead(aContentProcessType, equalIdx);
+}
+
+
+uint32_t ContentParent::GetMaxProcessCount(
+    const nsAString& aContentProcessType) {
+  
   const nsDependentSubstring processTypePrefix =
-      StringHead(aContentProcessType, equalIdx);
+    RemoteTypePrefix(aContentProcessType);
 
   
   if (processTypePrefix.EqualsLiteral("web")) {

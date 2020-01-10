@@ -1752,8 +1752,10 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
       CrashReporter::Annotation::ContentSandboxCapabilities,
       static_cast<int>(SandboxInfo::Get().AsInteger()));
 #  endif 
+  
+  auto remoteTypePrefix = RemoteTypePrefix(GetRemoteType());
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RemoteType,
-                                     NS_ConvertUTF16toUTF8(GetRemoteType()));
+                                     NS_ConvertUTF16toUTF8(remoteTypePrefix));
 #endif 
 
   return IPC_OK();
@@ -2771,6 +2773,8 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
 
   return IPC_OK();
 }
+
+
 
 const nsAString& ContentChild::GetRemoteType() const { return mRemoteType; }
 

@@ -415,6 +415,8 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvRemoteType(const nsString& aRemoteType);
 
+  
+  
   const nsAString& GetRemoteType() const;
 
   mozilla::ipc::IPCResult RecvInitServiceWorkers(
