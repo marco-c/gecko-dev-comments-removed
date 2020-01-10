@@ -1024,7 +1024,10 @@ class ActivePS {
     uint64_t bufferRangeStart = sInstance->mProfileBuffer.BufferRangeStart();
     
 #ifdef MOZ_BASE_PROFILER
-    if (bufferRangeStart != 0 && sInstance->mBaseProfileThreads) {
+    
+    
+    
+    if (bufferRangeStart > 1 && sInstance->mBaseProfileThreads) {
       sInstance->mBaseProfileThreads.reset();
     }
 #endif
