@@ -17,17 +17,26 @@ export default class ConfirmationDialog extends HTMLElement {
     document.l10n.connectRoot(shadowRoot);
     shadowRoot.appendChild(template.content.cloneNode(true));
 
+    this._buttons = this.shadowRoot.querySelector(".buttons");
     this._cancelButton = this.shadowRoot.querySelector(".cancel-button");
     this._confirmButton = this.shadowRoot.querySelector(".confirm-button");
     this._dismissButton = this.shadowRoot.querySelector(".dismiss-button");
     this._message = this.shadowRoot.querySelector(".message");
     this._overlay = this.shadowRoot.querySelector(".overlay");
     this._title = this.shadowRoot.querySelector(".title");
+
+    this._buttons.classList.toggle("macosx", navigator.platform == "MacIntel");
   }
 
   handleEvent(event) {
     switch (event.type) {
       case "keydown":
+        if (event.repeat) {
+          
+          
+          event.preventDefault();
+          return;
+        }
         if (event.key === "Escape" && !event.defaultPrevented) {
           this.onCancel();
         }
@@ -92,7 +101,8 @@ export default class ConfirmationDialog extends HTMLElement {
 
     
     
-    this._cancelButton.focus();
+    
+    this._confirmButton.focus();
 
     this._promise = new Promise((resolve, reject) => {
       this._resolve = resolve;
