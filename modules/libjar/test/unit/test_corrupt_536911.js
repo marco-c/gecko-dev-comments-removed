@@ -15,8 +15,9 @@ function run_test() {
   
   var file = do_get_file("data/test_corrupt.zip");
 
-  var zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].
-                  createInstance(Ci.nsIZipReader);
+  var zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(
+    Ci.nsIZipReader
+  );
   zipreader.open(file);
   
   
@@ -29,4 +30,3 @@ function run_test() {
   }
   Assert.ok(failed);
 }
-

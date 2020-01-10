@@ -2,15 +2,18 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 
 function run_test() {
   var file = do_get_file("data/test_bug658093.zip");
   var spec = "jar:" + Services.io.newFileURI(file).spec + "!/0000";
-  var channel = NetUtil.newChannel({uri: spec, loadUsingSystemPrincipal: true});
+  var channel = NetUtil.newChannel({
+    uri: spec,
+    loadUsingSystemPrincipal: true,
+  });
   var failed = false;
   try {
     channel.open();

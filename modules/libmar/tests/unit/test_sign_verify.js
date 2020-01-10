@@ -10,8 +10,9 @@ function run_test() {
 
   function signMAR(inMAR, outMAR, certs, wantSuccess, useShortHandCmdLine) {
     
-    let process = Cc["@mozilla.org/process/util;1"].
-                  createInstance(Ci.nsIProcess);
+    let process = Cc["@mozilla.org/process/util;1"].createInstance(
+      Ci.nsIProcess
+    );
     let signmarBin = do_get_file("signmar" + BIN_SUFFIX);
 
     
@@ -58,8 +59,9 @@ function run_test() {
 
   function extractMARSignature(inMAR, sigIndex, extractedSig, wantSuccess) {
     
-    let process = Cc["@mozilla.org/process/util;1"].
-                  createInstance(Ci.nsIProcess);
+    let process = Cc["@mozilla.org/process/util;1"].createInstance(
+      Ci.nsIProcess
+    );
     let signmarBin = do_get_file("signmar" + BIN_SUFFIX);
 
     
@@ -99,8 +101,9 @@ function run_test() {
 
   function importMARSignature(inMAR, sigIndex, sigFile, outMAR, wantSuccess) {
     
-    let process = Cc["@mozilla.org/process/util;1"].
-                  createInstance(Ci.nsIProcess);
+    let process = Cc["@mozilla.org/process/util;1"].createInstance(
+      Ci.nsIProcess
+    );
     let signmarBin = do_get_file("signmar" + BIN_SUFFIX);
 
     
@@ -135,8 +138,9 @@ function run_test() {
 
   function verifyMAR(signedMAR, wantSuccess, certs, useShortHandCmdLine) {
     
-    let process = Cc["@mozilla.org/process/util;1"].
-                  createInstance(Ci.nsIProcess);
+    let process = Cc["@mozilla.org/process/util;1"].createInstance(
+      Ci.nsIProcess
+    );
     let signmarBin = do_get_file("signmar" + BIN_SUFFIX);
 
     
@@ -200,8 +204,9 @@ function run_test() {
 
   function stripMARSignature(signedMAR, outMAR, wantSuccess) {
     
-    let process = Cc["@mozilla.org/process/util;1"].
-                  createInstance(Ci.nsIProcess);
+    let process = Cc["@mozilla.org/process/util;1"].createInstance(
+      Ci.nsIProcess
+    );
     let signmarBin = do_get_file("signmar" + BIN_SUFFIX);
 
     
@@ -281,8 +286,13 @@ function run_test() {
         outMAR.remove(false);
       }
       Assert.ok(!outMAR.exists());
-      signMAR(inMAR, outMAR, ["mycert", "mycert2", "mycert3"],
-              wantSuccess, true);
+      signMAR(
+        inMAR,
+        outMAR,
+        ["mycert", "mycert2", "mycert3"],
+        wantSuccess,
+        true
+      );
       Assert.ok(outMAR.exists());
       let outMARData = getBinaryFileData(outMAR);
       let refMAR = do_get_file("data/multiple_signed_pib.mar");
@@ -566,8 +576,7 @@ function run_test() {
       Assert.ok(!extractedSig.exists());
     },
     
-    cleanup_per_test: function _cleanup_per_test() {
-    },
+    cleanup_per_test: function _cleanup_per_test() {},
   };
 
   cleanup();

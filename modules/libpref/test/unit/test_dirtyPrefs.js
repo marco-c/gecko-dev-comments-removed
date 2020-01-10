@@ -5,9 +5,9 @@
 
 
 const PREF_INVALID = 0;
-const PREF_BOOL    = 128;
-const PREF_INT     = 64;
-const PREF_STRING  = 32;
+const PREF_BOOL = 128;
+const PREF_INT = 64;
+const PREF_STRING = 32;
 
 function run_test() {
   const ps = Services.prefs;
@@ -57,7 +57,7 @@ function run_test() {
   
   do_check_throws(function() {
     userBranch.setCharPref("DirtyTest.existing.bool", "boo");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
   Assert.ok(!ps.dirty);
 
   

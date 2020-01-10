@@ -13,7 +13,12 @@ function AddToZip(zipWriter, path, file) {
   }
 
   
-  zipWriter.addEntryFile(currentPath, Ci.nsIZipWriter.COMPRESSION_DEFAULT, file, false);
+  zipWriter.addEntryFile(
+    currentPath,
+    Ci.nsIZipWriter.COMPRESSION_DEFAULT,
+    file,
+    false
+  );
 
   
   if (file.isDirectory()) {
@@ -32,4 +37,3 @@ function RecursivelyZipDirectory(bundle) {
   AddToZip(zipW, "", bundle);
   zipW.close();
 }
-

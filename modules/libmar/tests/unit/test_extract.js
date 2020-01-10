@@ -93,8 +93,11 @@ function run_test() {
     },
     
     test_multiple_file: function _test_multiple_file() {
-      return extract_and_compare("multiple_file.mar",
-                          ["0_sized_file", "1_byte_file", "binary_data_file"]);
+      return extract_and_compare("multiple_file.mar", [
+        "0_sized_file",
+        "1_byte_file",
+        "binary_data_file",
+      ]);
     },
     
     test_collision_same_offset: function test_collision_same_offset() {

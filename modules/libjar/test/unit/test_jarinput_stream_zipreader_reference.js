@@ -17,8 +17,9 @@ function run_test() {
   
   var file = do_get_file("data/test_bug333423.zip");
 
-  var zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].
-    createInstance(Ci.nsIZipReader);
+  var zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(
+    Ci.nsIZipReader
+  );
   zipreader.open(file);
   
   function check_archive_crc() {
@@ -27,12 +28,15 @@ function run_test() {
   }
   Assert.ok(check_archive_crc());
   zipreader.findEntries(null);
-  var stream = wrapInputStream(zipreader.getInputStream("modules/libjar/test/Makefile.in"));
-  var dirstream = wrapInputStream(zipreader.getInputStream("modules/libjar/test/"));
+  var stream = wrapInputStream(
+    zipreader.getInputStream("modules/libjar/test/Makefile.in")
+  );
+  var dirstream = wrapInputStream(
+    zipreader.getInputStream("modules/libjar/test/")
+  );
   zipreader.close();
   zipreader = null;
   Cu.forceGC();
   Assert.ok(stream.read(1024).length > 0);
   Assert.ok(dirstream.read(100).length > 0);
 }
-

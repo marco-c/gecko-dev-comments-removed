@@ -83,8 +83,11 @@ function run_test() {
     },
     
     test_multiple_file: function _test_multiple_file() {
-      return run_one_test("multiple_file.mar",
-                          ["0_sized_file", "1_byte_file", "binary_data_file"]);
+      return run_one_test("multiple_file.mar", [
+        "0_sized_file",
+        "1_byte_file",
+        "binary_data_file",
+      ]);
     },
     
     
