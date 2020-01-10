@@ -78,7 +78,7 @@ Endpoint.prototype = Object.create(Duplex.prototype, { constructor: { value: End
 
 
 
-var CLIENT_PRELUDE = new Buffer('PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n');
+var CLIENT_PRELUDE = Buffer.from('PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n');
 
 
 Endpoint.prototype._writePrelude = function _writePrelude() {

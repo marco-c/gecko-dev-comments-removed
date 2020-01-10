@@ -345,7 +345,7 @@ Stream.prototype._send = function _send() {
 
 
 
-var emptyBuffer = new Buffer(0);
+var emptyBuffer = Buffer.alloc(0);
 Stream.prototype._finishing = function _finishing() {
   var endFrame = {
     type: 'DATA',

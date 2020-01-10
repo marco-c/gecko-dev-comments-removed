@@ -64,7 +64,7 @@ var newTransform = function (frame, encoding, done) {
     
     emptyFrame = {};
     emptyFrame.type = 'DATA';
-    emptyFrame.data = new Buffer(0);
+    emptyFrame.data = Buffer.alloc(0);
     emptyFrame.flags = [];
     emptyFrame.stream = frame.stream;
     var buffers = [];
@@ -168,7 +168,7 @@ var originalCompressHeaders = Compressor.prototype.compress;
 
 function insertSoftIllegalHpack(headers) {
   var originalCompressed = originalCompressHeaders.apply(this, headers);
-  var illegalLiteral = new Buffer([
+  var illegalLiteral = Buffer.from([
       0x00, 
       0x08, 
       0x3a, 0x69, 0x6c, 0x6c, 0x65, 0x67, 0x61, 0x6c, 
@@ -177,7 +177,7 @@ function insertSoftIllegalHpack(headers) {
       0x52, 0x45, 0x41, 0x4c, 0x4c, 0x59, 0x20, 0x4e, 0x4f, 0x54, 0x20, 0x4c, 0x45, 0x47, 0x41, 0x4c
   ]);
   var newBufferLength = originalCompressed.length + illegalLiteral.length;
-  var concatenated = new Buffer(newBufferLength);
+  var concatenated = Buffer.alloc(newBufferLength);
   originalCompressed.copy(concatenated, 0);
   illegalLiteral.copy(concatenated, originalCompressed.length);
   return concatenated;
@@ -193,7 +193,7 @@ function insertHardIllegalHpack(headers) {
   
   illegalIndexed[0] |= 0x80;
   var newBufferLength = originalCompressed.length + illegalIndexed.length;
-  var concatenated = new Buffer(newBufferLength);
+  var concatenated = Buffer.alloc(newBufferLength);
   originalCompressed.copy(concatenated, 0);
   illegalIndexed.copy(concatenated, originalCompressed.length);
   return concatenated;
@@ -365,7 +365,7 @@ function handleRequest(req, res) {
       'content-encoding' : 'br',
       'X-Connection-Http2': 'yes'
     });
-    push3.end(new Buffer([0x8b, 0x00, 0x80, 0x33, 0x0a, 0x03])); 
+    push3.end(Buffer.from([0x8b, 0x00, 0x80, 0x33, 0x0a, 0x03])); 
 
     content = '0';
   }
@@ -545,12 +545,12 @@ function handleRequest(req, res) {
     var content;
     if(0 == cname_confirm) {
       
-      content = new Buffer("00000100000100010000000005636E616D65076578616D706C6503636F6D0000050001C00C0005000100000037002012706F696E74696E672D656C73657768657265076578616D706C6503636F6D00", "hex");
+      content = Buffer.from("00000100000100010000000005636E616D65076578616D706C6503636F6D0000050001C00C0005000100000037002012706F696E74696E672D656C73657768657265076578616D706C6503636F6D00", "hex");
       cname_confirm++;
     }
     else {
       
-      content = new Buffer("00000100000100010000000012706F696E74696E672D656C73657768657265076578616D706C6503636F6D0000010001C00C0001000100000037000463584D42", "hex");
+      content = Buffer.from("00000100000100010000000012706F696E74696E672D656C73657768657265076578616D706C6503636F6D0000010001C00C0001000100000037000463584D42", "hex");
     }
     res.setHeader('Content-Type', 'application/dns-message');
     res.setHeader('Content-Length', content.length);
@@ -587,7 +587,7 @@ function handleRequest(req, res) {
 
     if (u.query["push"]) {
       
-      var pcontent= new Buffer("0000010000010001000000000470757368076578616D706C6503636F6D00001C0001C00C001C000100000037001020180000000000000000000000002018", "hex");
+      var pcontent= Buffer.from("0000010000010001000000000470757368076578616D706C6503636F6D00001C0001C00C001C000100000037001020180000000000000000000000002018", "hex");
       push = res.push({
         hostname: 'foo.example.com:' + serverPort,
         port: serverPort,
@@ -606,7 +606,7 @@ function handleRequest(req, res) {
       push.end(pcontent);
     }
 
-    let payload = new Buffer("");
+    let payload = Buffer.from("");
 
     function emitResponse(response, requestPayload) {
       let packet = dnsPacket.decode(requestPayload);
@@ -716,7 +716,7 @@ function handleRequest(req, res) {
     
     var content;
 
-    content = new Buffer("0000" +
+    content = Buffer.from("0000" +
                          "0100" +
                          "0001" + 
                          "0002" + 
@@ -757,7 +757,7 @@ function handleRequest(req, res) {
   }
   
   else if (u.pathname === "/esni-dns") {
-    content = new Buffer("0000" +
+    content = Buffer.from("0000" +
                          "8180" +
                          "0001" + 
                          "0001" + 
@@ -784,10 +784,10 @@ function handleRequest(req, res) {
   
   else if (u.pathname === "/esni-dns-push") {
     
-    var content= new Buffer("0000010000010001000000000A5F65736E695F70757368076578616D706C6503636F6D0000010001C00C000100010000003700047F000001", "hex");
+    var content= Buffer.from("0000010000010001000000000A5F65736E695F70757368076578616D706C6503636F6D0000010001C00C000100010000003700047F000001", "hex");
 
     
-    var pcontent= new Buffer("0000818000010001000000000A5F65736E695F70757368076578616D706C6503636F6D0000100001C00C001000010000003700212062586B67646D39705932556761584D6762586B676347467A63336476636D513D", "hex");
+    var pcontent= Buffer.from("0000818000010001000000000A5F65736E695F70757368076578616D706C6503636F6D0000100001C00C001000010000003700212062586B67646D39705932556761584D6762586B676347467A63336476636D513D", "hex");
 
     push = res.push({
       hostname: 'foo.example.com:' + serverPort,
