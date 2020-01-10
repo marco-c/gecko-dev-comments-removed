@@ -5841,7 +5841,7 @@ AttachDecision CompareIRGenerator::tryAttachPrimitiveUndefined(
 
   
   
-  auto isPrimitive = [](HandleValue& x) {
+  auto isPrimitive = [](HandleValue x) {
     return x.isString() || x.isSymbol() || x.isBoolean() || x.isNumber() ||
            x.isBigInt();
   };
@@ -5949,6 +5949,61 @@ AttachDecision CompareIRGenerator::tryAttachStringNumber(ValOperandId lhsId,
   return AttachDecision::Attach;
 }
 
+AttachDecision CompareIRGenerator::tryAttachPrimitiveSymbol(
+    ValOperandId lhsId, ValOperandId rhsId) {
+  MOZ_ASSERT(IsEqualityOp(op_));
+
+  
+  
+  auto isPrimitive = [](HandleValue x) {
+    return x.isString() || x.isBoolean() || x.isNumber() || x.isBigInt();
+  };
+
+  
+  if (!(lhsVal_.isSymbol() && isPrimitive(rhsVal_)) &&
+      !(rhsVal_.isSymbol() && isPrimitive(lhsVal_))) {
+    return AttachDecision::NoAction;
+  }
+
+  auto guardPrimitive = [&](HandleValue v, ValOperandId id) {
+    MOZ_ASSERT(isPrimitive(v));
+    if (v.isNumber()) {
+      writer.guardIsNumber(id);
+      return;
+    }
+    switch (v.extractNonDoubleType()) {
+      case JSVAL_TYPE_STRING:
+        writer.guardToString(id);
+        return;
+      case JSVAL_TYPE_BOOLEAN:
+        writer.guardToBoolean(id);
+        return;
+      case JSVAL_TYPE_BIGINT:
+        writer.guardToBigInt(id);
+        return;
+      default:
+        MOZ_CRASH("unexpected type");
+        return;
+    }
+  };
+
+  if (lhsVal_.isSymbol()) {
+    writer.guardToSymbol(lhsId);
+    guardPrimitive(rhsVal_, rhsId);
+  } else {
+    guardPrimitive(lhsVal_, lhsId);
+    writer.guardToSymbol(rhsId);
+  }
+
+  
+  
+  writer.loadBooleanResult(op_ == JSOP_NE || op_ == JSOP_STRICTNE);
+  writer.returnFromIC();
+
+  trackAttached("PrimitiveSymbol");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CompareIRGenerator::tryAttachStub() {
   MOZ_ASSERT(cacheKind_ == CacheKind::Compare);
   MOZ_ASSERT(IsEqualityOp(op_) || IsRelationalOp(op_));
@@ -5964,7 +6019,6 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
   ValOperandId lhsId(writer.setInputOperandId(lhsIndex));
   ValOperandId rhsId(writer.setInputOperandId(rhsIndex));
 
-  
   
   
   
@@ -5992,6 +6046,8 @@ AttachDecision CompareIRGenerator::tryAttachStub() {
     TRY_ATTACH(tryAttachPrimitiveUndefined(lhsId, rhsId));
 
     TRY_ATTACH(tryAttachNullUndefined(lhsId, rhsId));
+
+    TRY_ATTACH(tryAttachPrimitiveSymbol(lhsId, rhsId));
   }
 
   
