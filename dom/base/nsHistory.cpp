@@ -11,11 +11,9 @@
 #include "nsPIDOMWindow.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
-#include "nsPresContext.h"
 #include "nsIDocShell.h"
 #include "nsIWebNavigation.h"
 #include "nsIURI.h"
-#include "nsIInterfaceRequestorUtils.h"
 #include "nsReadableUtils.h"
 #include "nsContentUtils.h"
 #include "nsISHistory.h"
@@ -148,46 +146,15 @@ void nsHistory::Go(int32_t aDelta, ErrorResult& aRv) {
   }
 
   if (!aDelta) {
-    nsCOMPtr<nsPIDOMWindowOuter> window;
-    if (nsIDocShell* docShell = GetDocShell()) {
-      window = docShell->GetWindow();
-    }
-
-    if (StaticPrefs::dom_block_reload_from_resize_event_handler() && window &&
-        window->IsHandlingResizeEvent()) {
-      
-      
-      
-      
-      
-      
-      
-
-      nsCOMPtr<Document> doc = window->GetExtantDoc();
-
-      nsPresContext* pcx;
-      if (doc && (pcx = doc->GetPresContext())) {
-        pcx->RebuildAllStyleData(NS_STYLE_HINT_REFLOW,
-                                 RestyleHint::RestyleSubtree());
-      }
-
-      return;
-    }
-
     
     
     
-    RefPtr<Location> location = window ? window->GetLocation() : nullptr;
-
-    if (location) {
-      nsresult rv = location->Reload(false);
-
-      if (NS_FAILED(rv)) {
-        aRv.Throw(NS_ERROR_FAILURE);
-      }
-
-      return;
+    RefPtr<Location> location = win->Location();
+    nsresult rv = location->Reload(false);
+    if (NS_FAILED(rv)) {
+      aRv.Throw(NS_ERROR_FAILURE);
     }
+    return;
   }
 
   RefPtr<ChildSHistory> session_history = GetSessionHistory();

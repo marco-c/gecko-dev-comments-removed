@@ -8,7 +8,6 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsIScriptContext.h"
-#include "nsIDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsIWebNavigation.h"
 #include "nsIURIFixup.h"
@@ -25,6 +24,7 @@
 #include "nsITextToSubURI.h"
 #include "nsJSUtils.h"
 #include "nsContentUtils.h"
+#include "nsDocShell.h"
 #include "nsGlobalWindow.h"
 #include "mozilla/Likely.h"
 #include "nsCycleCollectionParticipant.h"
@@ -733,33 +733,31 @@ void Location::SetSearch(const nsAString& aSearch,
 
 nsresult Location::Reload(bool aForceget) {
   nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell));
-  nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(docShell));
-  nsCOMPtr<nsPIDOMWindowOuter> window =
-      docShell ? docShell->GetWindow() : nullptr;
-
-  if (StaticPrefs::dom_block_reload_from_resize_event_handler() && window &&
-      window->IsHandlingResizeEvent()) {
-    
-    
-    
-    
-    
-    
-
-    nsCOMPtr<Document> doc = window->GetExtantDoc();
-
-    nsPresContext* pcx;
-    if (doc && (pcx = doc->GetPresContext())) {
-      pcx->RebuildAllStyleData(NS_STYLE_HINT_REFLOW,
-                               RestyleHint::RestyleSubtree());
-    }
-
-    return NS_OK;
-  }
-
-  if (!webNav) {
+  if (!docShell) {
     return NS_ERROR_FAILURE;
   }
+
+  if (StaticPrefs::dom_block_reload_from_resize_event_handler()) {
+    nsCOMPtr<nsPIDOMWindowOuter> window = docShell->GetWindow();
+    if (window && window->IsHandlingResizeEvent()) {
+      
+      
+      
+      
+      
+      
+      RefPtr<Document> doc = window->GetExtantDoc();
+
+      nsPresContext* pcx;
+      if (doc && (pcx = doc->GetPresContext())) {
+        pcx->RebuildAllStyleData(NS_STYLE_HINT_REFLOW,
+                                 RestyleHint::RestyleSubtree());
+      }
+
+      return NS_OK;
+    }
+  }
+
 
   uint32_t reloadFlags = nsIWebNavigation::LOAD_FLAGS_NONE;
 
@@ -768,7 +766,7 @@ nsresult Location::Reload(bool aForceget) {
                   nsIWebNavigation::LOAD_FLAGS_BYPASS_PROXY;
   }
 
-  nsresult rv = webNav->Reload(reloadFlags);
+  nsresult rv = nsDocShell::Cast(docShell)->Reload(reloadFlags);
   if (rv == NS_BINDING_ABORTED) {
     
     
