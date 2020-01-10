@@ -44,6 +44,16 @@ TRANSFORMS = [
             'defaults/pref/channel-prefs.js',
             'Contents/Resources/defaults/pref/channel-prefs.js',
         ],
+        'channel_prefix': ['aurora', 'beta', 'release', 'esr'],
+        'side': 'target',
+        'deletion': '//',
+    },
+    {
+        
+        'files': [
+            'defaults/pref/channel-prefs.js',
+            'Contents/Resources/defaults/pref/channel-prefs.js',
+        ],
         'channel_prefix': ['beta'],
         'side': 'target',
         'substitution': [
