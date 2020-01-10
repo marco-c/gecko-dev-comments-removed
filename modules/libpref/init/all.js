@@ -205,10 +205,6 @@ pref("security.remote_settings.crlite_filters.signer", "onecrl.content-signature
 
 pref("general.useragent.compatMode.firefox", false);
 
-
-
-pref("general.useragent.site_specific_overrides", true);
-
 pref("general.config.obscure_value", 13); 
 
 pref("general.warnOnAboutConfig", true);

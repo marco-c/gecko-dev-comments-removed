@@ -444,9 +444,6 @@ nsresult nsHttpChannel::PrepareToConnect() {
   
   CallOnModifyRequestObservers();
 
-  SetLoadGroupUserAgentOverride();
-
-  
   if (mCanceled) {
     return mStatus;
   }
@@ -512,7 +509,6 @@ void nsHttpChannel::HandleOnBeforeConnect() {
 nsresult nsHttpChannel::OnBeforeConnect() {
   nsresult rv;
 
-  
   
   if (mCanceled) {
     return mStatus;
@@ -6197,8 +6193,6 @@ nsHttpChannel::CancelByURLClassifier(nsresult aErrorCode) {
   
   CallOnModifyRequestObservers();
 
-  SetLoadGroupUserAgentOverride();
-
   
   if (mCanceled) {
     return mStatus;
@@ -9640,48 +9634,6 @@ void nsHttpChannel::MaybeWarnAboutAppCache() {
   GetCallback(warner);
   if (warner) {
     warner->IssueWarning(Document::eAppCache, false);
-  }
-}
-
-void nsHttpChannel::SetLoadGroupUserAgentOverride() {
-  nsCOMPtr<nsIURI> uri;
-  GetURI(getter_AddRefs(uri));
-  nsAutoCString uriScheme;
-  if (uri) {
-    uri->GetScheme(uriScheme);
-  }
-
-  
-  if (uriScheme.EqualsLiteral("file")) {
-    gHttpHandler->OnUserAgentRequest(this);
-    return;
-  }
-
-  nsIRequestContextService* rcsvc = gHttpHandler->GetRequestContextService();
-  nsCOMPtr<nsIRequestContext> rc;
-  if (rcsvc) {
-    rcsvc->GetRequestContext(mRequestContextID, getter_AddRefs(rc));
-  }
-
-  nsAutoCString ua;
-  if (nsContentUtils::IsNonSubresourceRequest(this)) {
-    gHttpHandler->OnUserAgentRequest(this);
-    if (rc) {
-      GetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua);
-      rc->SetUserAgentOverride(ua);
-    }
-  } else {
-    GetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua);
-    
-    
-    if (ua.IsEmpty()) {
-      if (rc) {
-        SetRequestHeader(NS_LITERAL_CSTRING("User-Agent"),
-                         rc->GetUserAgentOverride(), false);
-      } else {
-        gHttpHandler->OnUserAgentRequest(this);
-      }
-    }
   }
 }
 
