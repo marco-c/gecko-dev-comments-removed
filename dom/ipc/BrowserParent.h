@@ -161,6 +161,9 @@ class BrowserParent final : public PBrowserParent,
 
   nsIXULBrowserWindow* GetXULBrowserWindow();
 
+  static uint32_t GetMaxTouchPoints(Element* aElement);
+  uint32_t GetMaxTouchPoints() { return GetMaxTouchPoints(mFrameElement); }
+
   
 
 
