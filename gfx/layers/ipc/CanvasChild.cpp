@@ -200,6 +200,11 @@ void CanvasChild::EndTransaction() {
 }
 
 bool CanvasChild::ShouldBeCleanedUp() const {
+  
+  if (!mRecorder->IsEmpty()) {
+    return false;
+  }
+
   static const TimeDuration kCleanUpCanvasThreshold =
       TimeDuration::FromSeconds(10);
   return TimeStamp::NowLoRes() - mLastNonEmptyTransaction >
