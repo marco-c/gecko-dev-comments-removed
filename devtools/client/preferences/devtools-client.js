@@ -19,6 +19,11 @@ pref("devtools.toolbox.splitconsoleHeight", 100);
 pref("devtools.toolbox.tabsOrder", "");
 
 
+
+
+pref("devtools.browsertoolbox.fission", false);
+
+
 pref("devtools.command-button-pick.enabled", true);
 pref("devtools.command-button-frames.enabled", true);
 pref("devtools.command-button-splitconsole.enabled", true);
@@ -248,9 +253,6 @@ pref("devtools.webconsole.filter.netxhr", false);
 
 
 pref("devtools.webconsole.input.autocomplete",true);
-
-
-pref("devtools.browserconsole.fission", false);
 
 
 pref("devtools.browserconsole.filter.error", true);
