@@ -37,6 +37,11 @@ class AudioParam final : public nsWrapperCache, public AudioParamTimeline {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
+  float Value() {
+    return AudioParamTimeline::GetValueAtTime<double>(
+        GetParentObject()->CurrentTime());
+  }
+
   
   
   AudioParam* SetValueCurveAtTime(const nsTArray<float>& aValues,

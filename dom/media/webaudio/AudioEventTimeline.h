@@ -223,11 +223,6 @@ class AudioEventTimeline {
     return mValue;
   }
 
-  float Value() const {
-    
-    return mValue;
-  }
-
   void SetValue(float aValue) {
     
     if (mEvents.IsEmpty()) {
