@@ -1,0 +1,7 @@
+onerror = function(a, b, c, d) {
+  return false; 
+}
+function x() {
+  y();
+}
+x();
