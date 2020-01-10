@@ -9,8 +9,6 @@
 
 var EXPORTED_SYMBOLS = ["WebChannel", "WebChannelBroker"];
 
-const ERRNO_MISSING_PRINCIPAL = 1;
-const ERRNO_NO_SUCH_CHANNEL = 2;
 const ERRNO_UNKNOWN_ERROR = 999;
 const ERROR_UNKNOWN = "UNKNOWN_ERROR";
 
@@ -34,15 +32,6 @@ var WebChannelBroker = Object.create({
     } else {
       Cu.reportError("Failed to register the channel. Channel already exists.");
     }
-
-    
-    if (!this._messageListenerAttached) {
-      this._messageListenerAttached = true;
-      this._manager.addMessageListener(
-        "WebChannelMessageToChrome",
-        this._listener.bind(this)
-      );
-    }
   },
 
   
@@ -62,109 +51,27 @@ var WebChannelBroker = Object.create({
   
 
 
-
-
-  _listener(event) {
-    let data = event.data;
-    let sendingContext = {
-      browser: event.target,
-      eventTarget: event.objects.eventTarget,
-      principal: event.principal,
-    };
-    
-    if (typeof data == "string") {
-      try {
-        data = JSON.parse(data);
-      } catch (e) {
-        Cu.reportError("Failed to parse WebChannel data as a JSON object");
-        return;
-      }
-    }
-
-    if (data && data.id) {
-      if (!event.principal) {
-        this._sendErrorEventToContent(
-          data.id,
-          sendingContext,
-          ERRNO_MISSING_PRINCIPAL,
-          "Message principal missing"
-        );
-      } else {
-        let validChannelFound = false;
-        data.message = data.message || {};
-
-        for (var channel of this._channelMap.keys()) {
-          if (
-            channel.id === data.id &&
-            channel._originCheckCallback(event.principal)
-          ) {
-            validChannelFound = true;
-            channel.deliver(data, sendingContext);
-          }
-        }
-
-        
-        if (!validChannelFound) {
-          this._sendErrorEventToContent(
-            data.id,
-            sendingContext,
-            ERRNO_NO_SUCH_CHANNEL,
-            "No Such Channel"
-          );
-        }
-      }
-    } else {
-      Cu.reportError("WebChannel channel id missing");
-    }
-  },
-  
-
-
-  _manager: Services.mm,
-  
-
-
-  _messageListenerAttached: false,
-  
-
-
   _channelMap: new Map(),
+
   
 
 
 
 
+  tryToDeliver(data, sendingContext) {
+    let validChannelFound = false;
+    data.message = data.message || {};
 
-
-
-
-
-  _sendErrorEventToContent(id, sendingContext, errorNo, errorMsg) {
-    let {
-      browser: targetBrowser,
-      eventTarget,
-      principal: targetPrincipal,
-    } = sendingContext;
-
-    errorMsg = errorMsg || "Web Channel Broker error";
-
-    if (targetBrowser && targetBrowser.messageManager) {
-      targetBrowser.messageManager.sendAsyncMessage(
-        "WebChannelMessageToContent",
-        {
-          id,
-          message: {
-            errno: errorNo,
-            error: errorMsg,
-          },
-        },
-        { eventTarget },
-        targetPrincipal
-      );
-    } else {
-      Cu.reportError("Failed to send a WebChannel error. Target invalid.");
+    for (var channel of this._channelMap.keys()) {
+      if (
+        channel.id === data.id &&
+        channel._originCheckCallback(sendingContext.principal)
+      ) {
+        validChannelFound = true;
+        channel.deliver(data, sendingContext);
+      }
     }
-    Cu.reportError(id.toString() + " error message. " + errorMsg);
+    return validChannelFound;
   },
 });
 
@@ -307,18 +214,24 @@ this.WebChannel.prototype = {
 
 
   send(message, target) {
-    let { browser, principal, eventTarget } = target;
+    let { browsingContext, principal, eventTarget } = target;
 
-    if (message && browser && browser.messageManager && principal) {
-      browser.messageManager.sendAsyncMessage(
-        "WebChannelMessageToContent",
-        {
+    if (message && browsingContext && principal) {
+      let { currentWindowGlobal } = browsingContext;
+      if (!currentWindowGlobal) {
+        Cu.reportError(
+          "Failed to send a WebChannel message. No currentWindowGlobal."
+        );
+        return;
+      }
+      currentWindowGlobal
+        .getActor("WebChannel")
+        .sendAsyncMessage("WebChannelMessageToContent", {
           id: this.id,
           message,
-        },
-        { eventTarget },
-        principal
-      );
+          eventTarget,
+          principal,
+        });
     } else if (!message) {
       Cu.reportError("Failed to send a WebChannel message. Message not set.");
     } else {
@@ -327,6 +240,7 @@ this.WebChannel.prototype = {
   },
 
   
+
 
 
 

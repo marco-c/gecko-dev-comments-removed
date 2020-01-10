@@ -221,7 +221,9 @@ this.FxAccountsWebChannel.prototype = {
           case COMMAND_LOADED:
             
             
-            let mm = sendingContext.browser.docShell.messageManager;
+            
+            let { docShell } = sendingContext.browsingContext;
+            let mm = docShell.messageManager;
             mm.sendAsyncMessage(COMMAND_LOADED);
             break;
 
@@ -276,10 +278,11 @@ this.FxAccountsWebChannel.prototype = {
                       "relinkVerify.message",
                       [data.email]
                     );
+                    let browser =
+                      sendingContext.browsingContext &&
+                      sendingContext.browsingContext.top.embedderElement;
                     new Prompt({
-                      window:
-                        sendingContext.browser &&
-                        sendingContext.browser.ownerGlobal,
+                      window: browser && browser.ownerGlobal,
                       title: strings.GetStringFromName("relinkVerify.title"),
                       message: message,
                       buttons: [

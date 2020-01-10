@@ -8,27 +8,31 @@
 var EXPORTED_SYMBOLS = ["WebChannelChild"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { ActorChild } = ChromeUtils.import(
-  "resource://gre/modules/ActorChild.jsm"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
-
-function getMessageManager(event) {
-  let window = Cu.getGlobalForObject(event.target);
-
-  return window.docShell.messageManager;
-}
+const { ContentDOMReference } = ChromeUtils.import(
+  "resource://gre/modules/ContentDOMReference.jsm"
+);
 
 
 
 
 const URL_WHITELIST_PREF = "webchannel.allowObject.urlWhitelist";
 
+let _cachedWhitelist = null;
 
+const CACHED_PREFS = {};
+XPCOMUtils.defineLazyPreferenceGetter(
+  CACHED_PREFS,
+  "URL_WHITELIST",
+  URL_WHITELIST_PREF,
+  "",
+  
+  () => (_cachedWhitelist = null)
+);
 
-let _cachedWhitelist = [];
-let _lastWhitelistValue = "";
-
-class WebChannelChild extends ActorChild {
+class WebChannelChild extends JSWindowActorChild {
   handleEvent(event) {
     if (event.type === "WebChannelMessageToChrome") {
       return this._onMessageToChrome(event);
@@ -44,9 +48,8 @@ class WebChannelChild extends ActorChild {
   }
 
   _getWhitelistedPrincipals() {
-    let whitelist = Services.prefs.getCharPref(URL_WHITELIST_PREF);
-    if (whitelist != _lastWhitelistValue) {
-      let urls = whitelist.split(/\s+/);
+    if (!_cachedWhitelist) {
+      let urls = CACHED_PREFS.URL_WHITELIST.split(/\s+/);
       _cachedWhitelist = urls.map(origin =>
         Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin)
       );
@@ -77,26 +80,36 @@ class WebChannelChild extends ActorChild {
         }
       }
 
-      let mm = getMessageManager(e);
-
-      mm.sendAsyncMessage(
-        "WebChannelMessageToChrome",
-        e.detail,
-        { eventTarget: e.target },
-        principal
-      );
+      let eventTarget =
+        e.target instanceof Ci.nsIDOMWindow
+          ? null
+          : ContentDOMReference.get(e.target);
+      this.sendAsyncMessage("WebChannelMessageToChrome", {
+        contentData: e.detail,
+        eventTarget,
+        principal,
+      });
     } else {
       Cu.reportError("WebChannel message failed. No message detail.");
     }
   }
 
   _onMessageToContent(msg) {
-    if (msg.data) {
+    if (msg.data && this.contentWindow) {
       
       
       
       
-      let eventTarget = msg.objects.eventTarget || msg.target.content;
+      let { eventTarget, principal } = msg.data;
+      if (!eventTarget) {
+        eventTarget = this.contentWindow;
+      } else {
+        eventTarget = ContentDOMReference.resolve(eventTarget);
+      }
+      if (!eventTarget) {
+        Cu.reportError("WebChannel message failed. No target.");
+        return;
+      }
 
       
       let targetPrincipal =
@@ -104,14 +117,8 @@ class WebChannelChild extends ActorChild {
           ? eventTarget.document.nodePrincipal
           : eventTarget.nodePrincipal;
 
-      if (msg.principal.subsumes(targetPrincipal)) {
-        
-        
-        let targetWindow =
-          eventTarget instanceof Ci.nsIDOMWindow
-            ? eventTarget
-            : eventTarget.ownerGlobal;
-
+      if (principal.subsumes(targetPrincipal)) {
+        let targetWindow = this.contentWindow;
         eventTarget.dispatchEvent(
           new targetWindow.CustomEvent("WebChannelMessageToContent", {
             detail: Cu.cloneInto(
