@@ -450,7 +450,7 @@ function grayKeyMap() {
 
   
   
-  schedulegc(vals);
+  schedulezone(vals);
 
   startgc(100000);
   

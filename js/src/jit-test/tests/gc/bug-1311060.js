@@ -1,2 +1,2 @@
 
-evalInWorker(`schedulegc("s1");`);
+evalInWorker(`schedulezone("s1");`);

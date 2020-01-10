@@ -30,7 +30,7 @@ assertEq(getMarks()[0], "gray");
 
 
 
-schedulegc(this);
+schedulezone(this);
 startgc(1);
 assertEq(getMarks()[0], "unmarked");
 g.eval(`grayRoot()`); 
@@ -44,7 +44,7 @@ assertEq(getMarks()[0], "gray");
 
 
 gczeal(25); 
-schedulegc(this);
+schedulezone(this);
 startgc(1);
 assertEq(getMarks()[0], "gray");
 g.eval(`grayRoot()`); 
