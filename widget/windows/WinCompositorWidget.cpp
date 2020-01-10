@@ -334,17 +334,6 @@ void WinCompositorWidget::UpdateCompositorWndSizeIfNecessary() {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  HWND realParent = ::GetParent(mCompositorWnds.mCompositorWnd);
-  if (realParent != mWnd) {
-    return;
-  }
-
   LayoutDeviceIntSize size = GetClientSize();
   if (mLastCompositorWndSize == size) {
     return;
@@ -353,7 +342,7 @@ void WinCompositorWidget::UpdateCompositorWndSizeIfNecessary() {
   
   if (!::SetWindowPos(mCompositorWnds.mCompositorWnd, nullptr, 0, 0, size.width,
                       size.height,
-                      SWP_NOACTIVATE | SWP_NOCOPYBITS |
+                      SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOCOPYBITS |
                           SWP_NOOWNERZORDER | SWP_NOZORDER)) {
     return;
   }
