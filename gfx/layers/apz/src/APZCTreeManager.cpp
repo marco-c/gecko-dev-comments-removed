@@ -3367,12 +3367,6 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
 
   
   
-  bool scrollbarSubjectToResolution =
-      aMetrics.IsRootContent() &&
-      StaticPrefs::layout_scroll_root_frame_containers();
-
-  
-  
   
   
   AsyncTransformComponentMatrix scrollbarTransform;
@@ -3417,16 +3411,6 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
         thumbOriginDelta * effectiveZoom;
     yTranslation -= thumbOriginDeltaPL;
 
-    if (scrollbarSubjectToResolution) {
-      
-      
-      
-      
-      
-      
-      yTranslation *= aMetrics.GetPresShellResolution();
-    }
-
     scrollbarTransform.PostScale(1.f, yScale, 1.f);
     scrollbarTransform.PostTranslate(0, yTranslation, 0);
   }
@@ -3452,10 +3436,6 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
         thumbOriginDelta * effectiveZoom;
     xTranslation -= thumbOriginDeltaPL;
 
-    if (scrollbarSubjectToResolution) {
-      xTranslation *= aMetrics.GetPresShellResolution();
-    }
-
     scrollbarTransform.PostScale(xScale, 1.f, 1.f);
     scrollbarTransform.PostTranslate(xTranslation, 0, 0);
   }
@@ -3464,17 +3444,6 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
       aCurrentTransform * scrollbarTransform;
 
   AsyncTransformComponentMatrix compensation;
-  
-  
-  
-  
-  
-  if (scrollbarSubjectToResolution) {
-    compensation = AsyncTransformComponentMatrix::Scaling(
-                       aMetrics.GetPresShellResolution(),
-                       aMetrics.GetPresShellResolution(), 1.0f)
-                       .Inverse();
-  }
   
   
   

@@ -85,21 +85,6 @@ static LayerToParentLayerMatrix4x4 GetTransformToAncestorsParentLayer(
        ancestorParent ? iter != ancestorParent : iter.IsValid();
        iter = iter.GetParent()) {
     transform = transform * iter.GetTransform();
-
-    if (StaticPrefs::layout_scroll_root_frame_containers()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      float presShellResolution = iter.GetPresShellResolution();
-      transform.PostScale(presShellResolution, presShellResolution, 1.0f);
-    }
   }
   return ViewAs<LayerToParentLayerMatrix4x4>(transform);
 }

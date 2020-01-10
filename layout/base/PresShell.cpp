@@ -5052,13 +5052,6 @@ void PresShell::AddCanvasBackgroundColorItem(
   
   bool forceUnscrolledItem =
       nsLayoutUtils::UsesAsyncScrolling(aFrame) && NS_GET_A(bgcolor) == 255;
-  if ((aFlags & AddCanvasBackgroundColorFlags::AddForSubDocument) &&
-      StaticPrefs::layout_scroll_root_frame_containers()) {
-    
-    
-    
-    forceUnscrolledItem = false;
-  }
 
   if (!addedScrollingBackgroundColor || forceUnscrolledItem) {
     aList->AppendNewToBottom<nsDisplaySolidColor>(aBuilder, aFrame, aBounds,

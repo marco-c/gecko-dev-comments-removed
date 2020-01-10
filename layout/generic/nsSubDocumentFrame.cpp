@@ -399,7 +399,6 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   nsRect visible;
   nsRect dirty;
-  bool haveDisplayPort = false;
   bool ignoreViewportScrolling = false;
   nsIFrame* savedIgnoreScrollFrame = nullptr;
   if (subdocRootFrame) {
@@ -417,14 +416,10 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       
       nsRect copyOfDirty = dirty;
       nsRect copyOfVisible = visible;
-      haveDisplayPort = rootScrollableFrame->DecideScrollableLayer(
-          aBuilder, &copyOfVisible, &copyOfDirty,
-           true);
-
-      if (!StaticPrefs::layout_scroll_root_frame_containers() ||
-          !aBuilder->IsPaintingToWindow()) {
-        haveDisplayPort = false;
-      }
+      
+      rootScrollableFrame->DecideScrollableLayer(aBuilder, &copyOfVisible,
+                                                 &copyOfDirty,
+                                                  true);
 
       ignoreViewportScrolling = presShell->IgnoringViewportScrolling();
       if (ignoreViewportScrolling) {
@@ -448,7 +443,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       subdocRootFrame && (presShell->GetResolution() != 1.0);
   bool constructZoomItem = subdocRootFrame && parentAPD != subdocAPD;
   bool needsOwnLayer = false;
-  if (constructResolutionItem || constructZoomItem || haveDisplayPort ||
+  if (constructResolutionItem || constructZoomItem ||
       presContext->IsRootContentDocument() ||
       (sf && sf->IsScrollingActive(aBuilder))) {
     needsOwnLayer = true;
@@ -571,31 +566,6 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (layerItem) {
     childItems.AppendToTop(layerItem);
     layerItem->SetShouldFlattenAway(!needsOwnLayer);
-  }
-
-  
-  
-  
-  
-  if (!aBuilder->IsForEventDelivery() &&
-      StaticPrefs::layout_scroll_root_frame_containers() &&
-      !nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
-    nsRect bounds =
-        GetContentRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
-
-    
-    
-    
-    nsDisplayListBuilder::AutoBuildingDisplayList building(aBuilder, this,
-                                                           visible, dirty);
-    
-    
-    
-    AddCanvasBackgroundColorFlags flags =
-        AddCanvasBackgroundColorFlags::ForceDraw |
-        AddCanvasBackgroundColorFlags::AppendUnscrolledOnly;
-    presShell->AddCanvasBackgroundColorItem(aBuilder, &childItems, this, bounds,
-                                            NS_RGBA(0, 0, 0, 0), flags);
   }
 
   if (aBuilder->IsForFrameVisibility()) {

@@ -896,7 +896,6 @@ struct ScrollMetadata {
         mHasScrollgrab(false),
         mIsLayersIdRoot(false),
         mIsAutoDirRootContentRTL(false),
-        mUsesContainerScrolling(false),
         mForceDisableApz(false),
         mResolutionUpdated(false),
         mOverscrollBehavior() {}
@@ -912,7 +911,6 @@ struct ScrollMetadata {
            mHasScrollgrab == aOther.mHasScrollgrab &&
            mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
            mIsAutoDirRootContentRTL == aOther.mIsAutoDirRootContentRTL &&
-           mUsesContainerScrolling == aOther.mUsesContainerScrolling &&
            mForceDisableApz == aOther.mForceDisableApz &&
            mResolutionUpdated == aOther.mResolutionUpdated &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
@@ -987,10 +985,6 @@ struct ScrollMetadata {
     mIsAutoDirRootContentRTL = aValue;
   }
   bool IsAutoDirRootContentRTL() const { return mIsAutoDirRootContentRTL; }
-  void SetUsesContainerScrolling(bool aValue) {
-    mUsesContainerScrolling = aValue;
-  }
-  bool UsesContainerScrolling() const { return mUsesContainerScrolling; }
   void SetForceDisableApz(bool aForceDisable) {
     mForceDisableApz = aForceDisable;
   }
@@ -1064,10 +1058,6 @@ struct ScrollMetadata {
   
   
   bool mIsAutoDirRootContentRTL : 1;
-
-  
-  
-  bool mUsesContainerScrolling : 1;
 
   
   

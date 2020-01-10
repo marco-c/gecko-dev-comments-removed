@@ -1209,17 +1209,6 @@ bool nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
       GetHighResolutionDisplayPort(aContent, &newDisplayPort);
   MOZ_ASSERT(hasDisplayPort);
 
-  if (StaticPrefs::layout_scroll_root_frame_containers()) {
-    nsIFrame* rootScrollFrame = aPresShell->GetRootScrollFrame();
-    if (rootScrollFrame && aContent == rootScrollFrame->GetContent() &&
-        nsLayoutUtils::UsesAsyncScrolling(rootScrollFrame)) {
-      
-      
-      
-      aPresShell->SetIgnoreViewportScrolling(true);
-    }
-  }
-
   InvalidateForDisplayPortChange(aContent, hadDisplayPort, oldDisplayPort,
                                  newDisplayPort, aRepaintMode);
 
@@ -9005,9 +8994,6 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
               aScrollFrame->GetParent()));
     }
 
-    metadata.SetUsesContainerScrolling(
-        scrollableFrame->UsesContainerScrolling());
-
     metadata.SetSnapInfo(scrollableFrame->GetScrollSnapInfo());
 
     ScrollStyles scrollStyles = scrollableFrame->GetScrollStyles();
@@ -9232,14 +9218,12 @@ Maybe<ScrollMetadata> nsLayoutUtils::GetRootMetadata(
   
   
   
-  bool addMetrics = StaticPrefs::layout_scroll_root_frame_containers() ||
-                    (XRE_IsParentProcess() && !presShell->GetRootScrollFrame());
+  bool addMetrics = XRE_IsParentProcess() && !presShell->GetRootScrollFrame();
 
   
   
   bool ensureMetricsForRootId =
       nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
-      !StaticPrefs::layout_scroll_root_frame_containers() &&
       aBuilder->IsPaintingToWindow() && !presContext->GetParentPresContext();
 
   nsIContent* content = nullptr;

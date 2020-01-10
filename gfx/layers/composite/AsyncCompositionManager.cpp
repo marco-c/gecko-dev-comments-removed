@@ -1119,18 +1119,14 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
 #endif
 
             
-            
-            
-            if (!scrollMetadata.UsesContainerScrolling()) {
-              MOZ_ASSERT(asyncTransform.Is2D());
-              if (clipParts.mFixedClip) {
-                *clipParts.mFixedClip =
-                    TransformBy(asyncTransform, *clipParts.mFixedClip);
-              }
-              if (clipParts.mScrolledClip) {
-                *clipParts.mScrolledClip =
-                    TransformBy(asyncTransform, *clipParts.mScrolledClip);
-              }
+            MOZ_ASSERT(asyncTransform.Is2D());
+            if (clipParts.mFixedClip) {
+              *clipParts.mFixedClip =
+                  TransformBy(asyncTransform, *clipParts.mFixedClip);
+            }
+            if (clipParts.mScrolledClip) {
+              *clipParts.mScrolledClip =
+                  TransformBy(asyncTransform, *clipParts.mScrolledClip);
             }
             
             

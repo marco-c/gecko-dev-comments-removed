@@ -3455,17 +3455,6 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
 
     {
-      nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
-          aBuilder);
-      if (aBuilder->IsPaintingToWindow() &&
-          StaticPrefs::layout_scroll_root_frame_containers() && mIsRoot) {
-        asrSetter.EnterScrollFrame(sf);
-        if (isRcdRsf) {
-          aBuilder->SetActiveScrolledRootForRootScrollframe(
-              aBuilder->CurrentActiveScrolledRoot());
-        }
-      }
-
       nsDisplayListBuilder::AutoBuildingDisplayList building(
           aBuilder, mOuter, visibleRect, dirtyRect);
 
@@ -3501,14 +3490,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       couldBuildLayer = true;
     } else {
       couldBuildLayer =
-          nsLayoutUtils::AsyncPanZoomEnabled(mOuter) && WantAsyncScroll() &&
-          
-          
-          
-          
-          (!(StaticPrefs::layout_scroll_root_frame_containers() && mIsRoot) ||
-           (aBuilder->RootReferenceFrame()->PresContext() !=
-            mOuter->PresContext()));
+          nsLayoutUtils::AsyncPanZoomEnabled(mOuter) && WantAsyncScroll();
     }
   }
 
@@ -3596,8 +3578,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   bool haveRadii = mOuter->GetPaddingBoxBorderRadii(radii);
   if (mIsRoot) {
     clipRect.SizeTo(nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
-    if ((StaticPrefs::layout_scroll_root_frame_containers() ||
-         !aBuilder->IsPaintingToWindow()) &&
+    if (!aBuilder->IsPaintingToWindow() &&
         mOuter->PresContext()->IsRootContentDocument()) {
       double res = mOuter->PresShell()->GetResolution();
       clipRect.width = NSToCoordRound(clipRect.width / res);
@@ -3733,10 +3714,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     if (aBuilder->IsPaintingToWindow()) {
       mIsScrollParent = idSetter.ShouldForceLayerForScrollParent();
     }
-    if (idSetter.ShouldForceLayerForScrollParent() &&
-        !StaticPrefs::layout_scroll_root_frame_containers()) {
-      
-      
+    if (idSetter.ShouldForceLayerForScrollParent()) {
       
       
       
@@ -4042,9 +4020,6 @@ bool ScrollFrameHelper::DecideScrollableLayer(
     aBuilder->RecomputeCurrentAnimatedGeometryRoot();
   }
 
-  mIsScrollableLayerInRootContainer =
-      StaticPrefs::layout_scroll_root_frame_containers() &&
-      mWillBuildScrollableLayer && mIsRoot;
   return mWillBuildScrollableLayer;
 }
 
@@ -4089,9 +4064,7 @@ void ScrollFrameHelper::ClipLayerToDisplayPort(
   
   if (!nsLayoutUtils::UsesAsyncScrolling(mOuter)) {
     Maybe<nsRect> parentLayerClip;
-    
-    if (aClip && (!StaticPrefs::layout_scroll_root_frame_containers() ||
-                  mAddClipRectToLayer)) {
+    if (aClip) {
       parentLayerClip = Some(aClip->GetClipRect());
     }
 
@@ -6999,13 +6972,6 @@ bool ScrollFrameHelper::GetSnapPointForDestination(
   if (snapPoint) {
     aDestination = snapPoint.ref();
     return true;
-  }
-  return false;
-}
-
-bool ScrollFrameHelper::UsesContainerScrolling() const {
-  if (StaticPrefs::layout_scroll_root_frame_containers()) {
-    return mIsRoot;
   }
   return false;
 }

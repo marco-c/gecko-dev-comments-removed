@@ -473,11 +473,6 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
-  virtual bool UsesContainerScrolling() const = 0;
-
-  
-
-
 
 
 

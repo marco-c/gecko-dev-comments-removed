@@ -754,16 +754,6 @@ mozilla::ipc::IPCResult LayerTransactionParent::RecvGetTransform(
     transform.PostTranslate(-scaledOrigin.x, -scaledOrigin.y, -scaledOrigin.z);
   }
 
-  
-  
-  
-  
-  if (StaticPrefs::layout_scroll_root_frame_containers() &&
-      !layer->HasScrollableFrameMetrics() && layer->GetParent() &&
-      layer->GetParent()->HasRootScrollableFrameMetrics()) {
-    transform *= layer->GetParent()->AsHostLayer()->GetShadowBaseTransform();
-  }
-
   *aTransform = Some(transform);
 
   return IPC_OK();

@@ -541,16 +541,6 @@ bool Layer::HasScrollableFrameMetrics() const {
   return false;
 }
 
-bool Layer::HasRootScrollableFrameMetrics() const {
-  for (uint32_t i = 0; i < GetScrollMetadataCount(); i++) {
-    if (GetFrameMetrics(i).IsScrollable() &&
-        GetFrameMetrics(i).IsRootContent()) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool Layer::IsScrollableWithoutContent() const {
   
   return AsContainerLayer() && HasScrollableFrameMetrics() && !GetFirstChild();
