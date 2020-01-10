@@ -59,8 +59,8 @@ function checkError(code, nonstrictErr, strictErr)
 
 
 
-checkError("var a, b; ([a, b]) = [1, 2];", ReferenceError, ReferenceError);
-checkError("var a, b; ({a, b}) = { a: 1, b: 2 };", ReferenceError, ReferenceError);
+checkError("var a, b; ([a, b]) = [1, 2];", SyntaxError, SyntaxError);
+checkError("var a, b; ({a, b}) = { a: 1, b: 2 };", SyntaxError, SyntaxError);
 
 
 
@@ -122,12 +122,8 @@ if (classesEnabled())
   checkError("var a, b; var obj = { x() { [(super[8 + {}] = 'motel')] = [1]; } };", SyntaxError, SyntaxError); 
 }
 
-
-
-
-
-checkError("var a, b; [f() = 'ohai', b] = [1, 2];", SyntaxError, ReferenceError);
-checkError("var a, b; [(f()) = 'kthxbai', b] = [1, 2];", SyntaxError, ReferenceError);
+checkError("var a, b; [f() = 'ohai', b] = [1, 2];", SyntaxError, SyntaxError);
+checkError("var a, b; [(f()) = 'kthxbai', b] = [1, 2];", SyntaxError, SyntaxError);
 
 Function("var a, b; ({ a: (a), b} = { a: 1, b: 2 });")();
 Function("var a, b; ({ a: (a) = 5, b} = { a: 1, b: 2 });")();
