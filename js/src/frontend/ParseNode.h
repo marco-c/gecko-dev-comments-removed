@@ -211,10 +211,13 @@ class BigIntBox;
 
 
 enum class ParseNodeKind : uint16_t {
+  
+  LastUnused = 1000,
 #define EMIT_ENUM(name, _type) name,
   FOR_EACH_PARSE_NODE_KIND(EMIT_ENUM)
 #undef EMIT_ENUM
-      Limit, 
+      Limit,
+  Start = LastUnused + 1,
   BinOpFirst = ParseNodeKind::PipelineExpr,
   BinOpLast = ParseNodeKind::PowExpr,
   AssignmentStart = ParseNodeKind::AssignExpr,
@@ -622,6 +625,7 @@ class ParseNode {
         pn_rhs_anon_fun(false),
         pn_pos(0, 0),
         pn_next(nullptr) {
+    MOZ_ASSERT(ParseNodeKind::Start <= kind);
     MOZ_ASSERT(kind < ParseNodeKind::Limit);
   }
 
@@ -631,16 +635,22 @@ class ParseNode {
         pn_rhs_anon_fun(false),
         pn_pos(pos),
         pn_next(nullptr) {
+    MOZ_ASSERT(ParseNodeKind::Start <= kind);
     MOZ_ASSERT(kind < ParseNodeKind::Limit);
   }
 
   ParseNodeKind getKind() const {
+    MOZ_ASSERT(ParseNodeKind::Start <= pn_type);
     MOZ_ASSERT(pn_type < ParseNodeKind::Limit);
     return pn_type;
   }
   bool isKind(ParseNodeKind kind) const { return getKind() == kind; }
 
  protected:
+  size_t getKindAsIndex() const {
+    return size_t(getKind()) - size_t(ParseNodeKind::Start);
+  }
+
   
   
   
@@ -655,10 +665,11 @@ class ParseNode {
   };
 
   
+  
   static const TypeCode typeCodeTable[];
 
  public:
-  TypeCode typeCode() const { return typeCodeTable[size_t(getKind())]; }
+  TypeCode typeCode() const { return typeCodeTable[getKindAsIndex()]; }
 
   bool isBinaryOperation() const {
     ParseNodeKind kind = getKind();

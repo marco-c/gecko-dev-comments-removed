@@ -1497,7 +1497,8 @@ restart:
     case ParseNodeKind::PropertyNameExpr:  
       MOZ_CRASH("handled by parent nodes");
 
-    case ParseNodeKind::Limit:  
+    case ParseNodeKind::LastUnused:
+    case ParseNodeKind::Limit:
       MOZ_CRASH("invalid node kind");
   }
 
