@@ -111,8 +111,8 @@ function createUrlRecord(url) {
   return createRecord('url', 'text/plain', url);
 }
 
-function createNFCPushOptions(target, timeout, ignoreRead, compatibility) {
-  return { target, timeout, ignoreRead, compatibility};
+function createNFCPushOptions(target, timeout, ignoreRead) {
+  return {target, timeout, ignoreRead};
 }
 
 
@@ -178,7 +178,7 @@ function testNFCScanOptions(message, scanOptions, unmatchedScanOptions, desc) {
     const reader2 = new NFCReader();
     const controller = new AbortController();
 
-    mockNFC.setReadingMessage(message, scanOptions.compatibility);
+    mockNFC.setReadingMessage(message);
 
     
     reader1.onreading = t.unreached_func("reading event should not be fired.");
@@ -198,8 +198,8 @@ function testNFCScanOptions(message, scanOptions, unmatchedScanOptions, desc) {
   }, desc);
 }
 
-function testReadingMultiMessages(message, scanOptions, unmatchedMessage,
-    unmatchedCompatibility, desc) {
+function testReadingMultiMessages(
+    message, scanOptions, unmatchedMessage, desc) {
   nfc_test(async (t, mockNFC) => {
     const reader = new NFCReader();
     const controller = new AbortController();
@@ -214,7 +214,7 @@ function testReadingMultiMessages(message, scanOptions, unmatchedMessage,
     reader.scan(scanOptions);
 
     
-    mockNFC.setReadingMessage(unmatchedMessage, unmatchedCompatibility);
+    mockNFC.setReadingMessage(unmatchedMessage);
     mockNFC.setReadingMessage(message);
 
     await promise;
