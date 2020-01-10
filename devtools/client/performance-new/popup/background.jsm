@@ -13,9 +13,7 @@
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const Loader = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-
-const { loader } = Loader;
+const { loader } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 
 
 

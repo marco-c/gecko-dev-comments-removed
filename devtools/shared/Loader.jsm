@@ -133,6 +133,18 @@ DevToolsLoader.prototype = {
 
 
 
+
+  lazyRequireGetter: function() {
+    if (!this._provider) {
+      this._loadProvider();
+    }
+    return this.lazyRequireGetter.apply(this, arguments);
+  },
+
+  
+
+
+
   isLoaderPluginId: function(id) {
     return id.startsWith("raw!");
   },
