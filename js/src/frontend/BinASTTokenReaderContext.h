@@ -206,6 +206,15 @@ struct HuffmanTableUnreachable {};
 
 
 
+
+
+
+
+struct HuffmanTableInitializing {};
+
+
+
+
 struct HuffmanTableExplicitSymbolsF64 {
   using Contents = double;
   HuffmanTableImpl<double> impl;
@@ -270,9 +279,10 @@ struct HuffmanTableIndexedSymbolsOptionalLiteralString {
 
 using HuffmanTable = mozilla::Variant<
     HuffmanTableUnreachable,  
-    HuffmanTableExplicitSymbolsF64, HuffmanTableExplicitSymbolsU32,
-    HuffmanTableIndexedSymbolsSum, HuffmanTableIndexedSymbolsMaybeInterface,
-    HuffmanTableIndexedSymbolsBool, HuffmanTableIndexedSymbolsStringEnum,
+    HuffmanTableInitializing, HuffmanTableExplicitSymbolsF64,
+    HuffmanTableExplicitSymbolsU32, HuffmanTableIndexedSymbolsSum,
+    HuffmanTableIndexedSymbolsMaybeInterface, HuffmanTableIndexedSymbolsBool,
+    HuffmanTableIndexedSymbolsStringEnum,
     HuffmanTableIndexedSymbolsLiteralString,
     HuffmanTableIndexedSymbolsOptionalLiteralString>;
 
@@ -285,6 +295,7 @@ struct HuffmanTableExplicitSymbolsListLength {
 
 using HuffmanTableListLength =
     mozilla::Variant<HuffmanTableUnreachable,  
+                     HuffmanTableInitializing,
                      HuffmanTableExplicitSymbolsListLength>;
 
 
@@ -583,6 +594,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
   MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong(const Context&);
+  MOZ_MUST_USE JS::Result<uint32_t> readUnpackedLong();
 
  private:
   template <typename Table>
@@ -593,6 +605,11 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
 
   MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidValue(const Context&);
+
+  
+
+
+  MOZ_MUST_USE ErrorResult<JS::Error&> raiseNotInPrelude(const Context&);
 
  private:
   
