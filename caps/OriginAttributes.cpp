@@ -74,6 +74,13 @@ void OriginAttributes::SetFirstPartyDomain(const bool aIsTopLevelDocument,
     }
   }
 
+  
+  
+  
+  if (scheme.EqualsLiteral("moz-extension")) {
+    return;
+  }
+
   nsCOMPtr<nsIPrincipal> blobPrincipal;
   if (aURI && dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
                   aURI, getter_AddRefs(blobPrincipal))) {
