@@ -22,9 +22,6 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 const ContentProcessConnector = {
   
-  _contentProcessServerStartupScriptLoaded: false,
-
-  
 
 
 
@@ -36,8 +33,6 @@ const ContentProcessConnector = {
       mm.addMessageListener("debug:content-process-actor", function listener(
         msg
       ) {
-        
-        
         mm.removeMessageListener("debug:content-process-actor", listener);
 
         
@@ -58,13 +53,15 @@ const ContentProcessConnector = {
       });
 
       
-      if (!this._contentProcessServerStartupScriptLoaded) {
+      const isContentProcessServerStartupScripLoaded = Services.ppmm
+        .getDelayedProcessScripts()
+        .some(([uri]) => uri === CONTENT_PROCESS_SERVER_STARTUP_SCRIPT);
+      if (!isContentProcessServerStartupScripLoaded) {
         
         Services.ppmm.loadProcessScript(
           CONTENT_PROCESS_SERVER_STARTUP_SCRIPT,
           true
         );
-        this._contentProcessServerStartupScriptLoaded = true;
       }
 
       
