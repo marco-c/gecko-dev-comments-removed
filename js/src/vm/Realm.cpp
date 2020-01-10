@@ -613,6 +613,11 @@ void Realm::clearTables() {
   varNames_.clear();
 }
 
+
+
+
+bool Realm::isRecordingAllocations() { return !!allocationMetadataBuilder_; }
+
 void Realm::setAllocationMetadataBuilder(
     const js::AllocationMetadataBuilder* builder) {
   
@@ -623,6 +628,8 @@ void Realm::setAllocationMetadataBuilder(
 }
 
 void Realm::forgetAllocationMetadataBuilder() {
+  MOZ_ASSERT(allocationMetadataBuilder_);
+
   
   
   
