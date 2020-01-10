@@ -2189,9 +2189,12 @@ class EventManager {
 
 
 
+
+
+
   static _initPersistentListeners(extension) {
     if (extension.persistentListeners) {
-      return;
+      return false;
     }
 
     let listeners = new DefaultMap(() => new DefaultMap(() => new Map()));
@@ -2199,9 +2202,10 @@ class EventManager {
 
     let { persistentListeners } = extension.startupData;
     if (!persistentListeners) {
-      return;
+      return false;
     }
 
+    let found = false;
     for (let [module, entry] of Object.entries(persistentListeners)) {
       for (let [event, paramlists] of Object.entries(entry)) {
         for (let paramlist of paramlists) {
@@ -2210,9 +2214,11 @@ class EventManager {
             .get(module)
             .get(event)
             .set(key, { params: paramlist });
+          found = true;
         }
       }
     }
+    return found;
   }
 
   
@@ -2239,16 +2245,29 @@ class EventManager {
   
   
   static primeListeners(extension) {
-    EventManager._initPersistentListeners(extension);
+    if (!EventManager._initPersistentListeners(extension)) {
+      return;
+    }
+
+    let bgStartupPromise = new Promise(resolve => {
+      function resolveBgPromise(type) {
+        extension.off("startup", resolveBgPromise);
+        extension.off("background-page-aborted", resolveBgPromise);
+        extension.off("shutdown", resolveBgPromise);
+        resolve();
+      }
+      extension.on("startup", resolveBgPromise);
+      extension.on("background-page-aborted", resolveBgPromise);
+      extension.on("shutdown", resolveBgPromise);
+    });
 
     for (let [module, moduleEntry] of extension.persistentListeners) {
       let api = extension.apiManager.getAPI(module, extension, "addon_parent");
       for (let [event, eventEntry] of moduleEntry) {
         for (let listener of eventEntry.values()) {
-          let primed = { pendingEvents: [], cleared: false };
+          let primed = { pendingEvents: [] };
           listener.primed = primed;
 
-          let bgStartupPromise = new Promise(r => extension.once("startup", r));
           let wakeup = () => {
             extension.emit("background-page-event");
             return bgStartupPromise;
@@ -2256,8 +2275,8 @@ class EventManager {
 
           let fireEvent = (...args) =>
             new Promise((resolve, reject) => {
-              if (primed.cleared) {
-                reject(new Error("listener not re-registered"));
+              if (!listener.primed) {
+                reject(new Error("primed listener not re-registered"));
                 return;
               }
               primed.pendingEvents.push({ args, resolve, reject });
@@ -2311,6 +2330,7 @@ class EventManager {
           if (!primed) {
             continue;
           }
+          listener.primed = null;
 
           for (let evt of primed.pendingEvents) {
             evt.reject(new Error("listener not re-registered"));
@@ -2320,7 +2340,6 @@ class EventManager {
             EventManager.clearPersistentListener(extension, module, event, key);
           }
           primed.unregister();
-          primed.cleared = true;
         }
       }
     }
