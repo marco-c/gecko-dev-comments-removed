@@ -3065,15 +3065,6 @@ void gfxPlatform::InitWebRenderConfig() {
         gfxConfig::IsEnabled(Feature::WEBRENDER));
   }
 
-#ifdef MOZ_WIDGET_ANDROID
-  if (jni::IsFennec()) {
-    featureWebRender.ForceDisable(
-        FeatureStatus::Unavailable,
-        "WebRender not ready for use on non-e10s Android",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_ANDROID"));
-  }
-#endif
-
   
   
   if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {

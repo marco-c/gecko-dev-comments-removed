@@ -50,8 +50,13 @@ class CompositorOGL;
 
 
 
-class AndroidDynamicToolbarAnimator {
+class AndroidDynamicToolbarAnimator final {
  public:
+  
+  
+  
+  static bool IsEnabled() { return false; }
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AndroidDynamicToolbarAnimator);
   explicit AndroidDynamicToolbarAnimator(APZCTreeManager* aApz);
   void Initialize(LayersId aRootLayerTreeId);

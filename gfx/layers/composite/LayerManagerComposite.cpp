@@ -1272,9 +1272,9 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
         &widgetContext, LayoutDeviceIntRect::FromUnknownRect(bounds));
 
 #if defined(MOZ_WIDGET_ANDROID)
-    
-    
-    if (jni::IsFennec()) {
+    if (AndroidDynamicToolbarAnimator::IsEnabled()) {
+      
+      
       RenderToolbar();
     }
     HandlePixelsTarget();
@@ -1448,11 +1448,11 @@ void LayerManagerComposite::RenderToPresentationSurface() {
 
 ScreenCoord LayerManagerComposite::GetContentShiftForToolbar() {
   ScreenCoord result(0.0f);
-  
-  
-  if (!jni::IsFennec()) {
+
+  if (!AndroidDynamicToolbarAnimator::IsEnabled()) {
     return result;
   }
+
   
   
   if (mTarget) {
