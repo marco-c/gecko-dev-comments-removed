@@ -78,12 +78,22 @@ class NurseryDecommitTask : public GCParallelTaskHelper<NurseryDecommitTask> {
   explicit NurseryDecommitTask(JSRuntime* rt) : GCParallelTaskHelper(rt) {}
 
   void queueChunk(NurseryChunk* chunk, const AutoLockHelperThreadState& lock);
+
+  
+  
+  void queueRange(size_t newCapacity, NurseryChunk& chunk,
+                  const AutoLockHelperThreadState& lock);
+
   void run();
   void decommitChunk(gc::Chunk* chunk);
+  void decommitRange(AutoLockHelperThreadState& lock);
 
  private:
   
   MainThreadOrGCTaskData<gc::Chunk*> queue;
+
+  MainThreadOrGCTaskData<NurseryChunk*> partialChunk;
+  MainThreadOrGCTaskData<size_t> partialCapacity;
 
   gc::Chunk* popChunk(const AutoLockHelperThreadState& lock);
 };
