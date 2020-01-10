@@ -3411,8 +3411,9 @@ XDRResult ScriptSource::XDR(XDRState<mode>* xdr,
 
 
 
-char* js::FormatIntroducedFilename(JSContext* cx, const char* filename,
-                                   unsigned lineno, const char* introducer) {
+UniqueChars js::FormatIntroducedFilename(JSContext* cx, const char* filename,
+                                         unsigned lineno,
+                                         const char* introducer) {
   
   
   
@@ -3425,13 +3426,13 @@ char* js::FormatIntroducedFilename(JSContext* cx, const char* filename,
   size_t introducerLen = strlen(introducer);
   size_t len = filenameLen + 6  + linenoLen +
                3  + introducerLen + 1 ;
-  char* formatted = cx->pod_malloc<char>(len);
+  UniqueChars formatted(cx->pod_malloc<char>(len));
   if (!formatted) {
     return nullptr;
   }
 
   mozilla::DebugOnly<size_t> checkLen = snprintf(
-      formatted, len, "%s line %s > %s", filename, linenoBuf, introducer);
+      formatted.get(), len, "%s line %s > %s", filename, linenoBuf, introducer);
   MOZ_ASSERT(checkLen == len - 1);
 
   return formatted;
@@ -3454,12 +3455,11 @@ bool ScriptSource::initFromOptions(JSContext* cx,
     MOZ_ASSERT(options.introductionType != nullptr);
     const char* filename =
         options.filename() ? options.filename() : "<unknown>";
-    char* formatted = FormatIntroducedFilename(
+    filename_ = FormatIntroducedFilename(
         cx, filename, options.introductionLineno, options.introductionType);
-    if (!formatted) {
+    if (!filename_) {
       return false;
     }
-    filename_.reset(formatted);
   } else if (options.filename()) {
     if (!setFilename(cx, options.filename())) {
       return false;
