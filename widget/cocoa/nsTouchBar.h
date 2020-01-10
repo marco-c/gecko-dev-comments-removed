@@ -131,14 +131,33 @@ using namespace mozilla::dom;
 
 
 
-- (void)updateItem:(TouchBarInput*)aInput;
+
+- (bool)updateItem:(TouchBarInput*)aInput;
+
+
+
+
+
+- (bool)maybeUpdatePopoverChild:(TouchBarInput*)aInput;
+
+
+
+
+
+- (void)replaceMappedLayoutItem:(TouchBarInput*)aItem;
 
 
 
 
 - (void)updateButton:(NSButton*)aButton input:(TouchBarInput*)aInput;
 - (void)updateMainButton:(NSButton*)aMainButton input:(TouchBarInput*)aInput;
+- (void)updatePopover:(NSPopoverTouchBarItem*)aPopoverItem input:(TouchBarInput*)aInput;
 - (NSTouchBarItem*)makeShareScrubberForIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
+
+
+
+
+- (void)showPopover:(TouchBarInput*)aPopover showing:(bool)aShowing;
 
 
 
