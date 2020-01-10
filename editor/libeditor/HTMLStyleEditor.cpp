@@ -1581,50 +1581,50 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
         return rv;
       }
 
-      if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
-          startOfRange.IsInTextNode()) {
-        
-        
-        if (!CSSEditUtils::IsCSSEditableProperty(startOfRange.GetContainer(),
-                                                 aProperty, aAttribute)) {
-          continue;
-        }
-        
-        
-        if (!CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
-                startOfRange.GetContainer(), aProperty, aAttribute,
-                EmptyString(), CSSEditUtils::eComputed)) {
-          continue;
-        }
-        
-        
-        
-        
-        if (!CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
-          continue;
-        }
-        SetInlinePropertyOnTextNode(
-            MOZ_KnownLive(*startOfRange.GetContainerAsText()),
-            startOfRange.Offset(), endOfRange.Offset(), *aProperty, aAttribute,
-            NS_LITERAL_STRING("-moz-editor-invert-value"));
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        continue;
-      }
-
       
       AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
-      ContentSubtreeIterator subtreeIter;
-      if (NS_SUCCEEDED(subtreeIter.Init(range))) {
-        for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
-          nsCOMPtr<nsINode> node = subtreeIter.GetCurrentNode();
-          if (NS_WARN_IF(!node)) {
-            return NS_ERROR_FAILURE;
+      if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
+          startOfRange.IsInTextNode()) {
+        if (!IsEditable(startOfRange.GetContainer())) {
+          continue;
+        }
+        arrayOfContents.AppendElement(*startOfRange.GetContainerAsText());
+      } else if (startOfRange.IsInTextNode() && endOfRange.IsInTextNode() &&
+                 startOfRange.GetContainer()->GetNextSibling() ==
+                     endOfRange.GetContainer()) {
+        if (IsEditable(startOfRange.GetContainer())) {
+          arrayOfContents.AppendElement(*startOfRange.GetContainerAsText());
+        }
+        if (IsEditable(endOfRange.GetContainer())) {
+          arrayOfContents.AppendElement(*endOfRange.GetContainerAsText());
+        }
+        if (arrayOfContents.IsEmpty()) {
+          continue;
+        }
+      } else {
+        
+        if (startOfRange.IsInTextNode() && !startOfRange.IsStartOfContainer() &&
+            IsEditable(startOfRange.GetContainer())) {
+          arrayOfContents.AppendElement(*startOfRange.GetContainerAsText());
+        }
+        
+        ContentSubtreeIterator subtreeIter;
+        if (NS_SUCCEEDED(subtreeIter.Init(range))) {
+          for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
+            nsCOMPtr<nsINode> node = subtreeIter.GetCurrentNode();
+            if (NS_WARN_IF(!node)) {
+              return NS_ERROR_FAILURE;
+            }
+            if (node->IsContent() && IsEditable(node)) {
+              arrayOfContents.AppendElement(*node->AsContent());
+            }
           }
-          if (node->IsContent() && IsEditable(node)) {
-            arrayOfContents.AppendElement(*node->AsContent());
-          }
+        }
+        
+        if (startOfRange.GetContainer() != endOfRange.GetContainer() &&
+            endOfRange.IsInTextNode() && !endOfRange.IsEndOfContainer() &&
+            IsEditable(endOfRange.GetContainer())) {
+          arrayOfContents.AppendElement(*endOfRange.GetContainerAsText());
         }
       }
 
@@ -1655,14 +1655,37 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
         if (!CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
           continue;
         }
-        DebugOnly<nsresult> rvIgnored = SetInlinePropertyOnNode(
-            content, *aProperty, aAttribute,
+        if (!content->IsText()) {
+          DebugOnly<nsresult> rvIgnored = SetInlinePropertyOnNode(
+              content, *aProperty, aAttribute,
+              NS_LITERAL_STRING("-moz-editor-invert-value"));
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
+          NS_WARNING_ASSERTION(NS_FAILED(rvIgnored),
+                               "SetInlinePropertyOnNode() failed, but ignored");
+          continue;
+        }
+        
+        
+        
+        
+        
+        uint32_t startOffset =
+            content == startOfRange.GetContainer() ? startOfRange.Offset() : 0;
+        uint32_t endOffset = content == endOfRange.GetContainer()
+                                 ? endOfRange.Offset()
+                                 : content->Length();
+        nsresult rv = SetInlinePropertyOnTextNode(
+            MOZ_KnownLive(*content->AsText()), startOffset, endOffset,
+            *aProperty, aAttribute,
             NS_LITERAL_STRING("-moz-editor-invert-value"));
         if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
-        NS_WARNING_ASSERTION(NS_FAILED(rvIgnored),
-                             "SetInlinePropertyOnNode() failed, but ignored");
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     }
   }
