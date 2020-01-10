@@ -19,7 +19,11 @@ async function testSteps()
     
     
     
-    "storage/default/https+++example.com/asmjs/"
+    "storage/default/https+++example.com/asmjs/",
+    "storage/default/about+home+1",
+    "storage/default/about+home+1+q",
+    
+    "storage/default/about+reader+url=https%3A%2F%2Fexample.com",
   ];
   const obsoleteFilePath =
     "storage/default/https+++example.com/idb/UUID123.tmp";

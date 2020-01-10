@@ -14,6 +14,7 @@ async function testSteps()
     "https://example.com",
     
     "about:home",
+    "about:reader",
     
     "https://[::]",
     "https://[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]",
