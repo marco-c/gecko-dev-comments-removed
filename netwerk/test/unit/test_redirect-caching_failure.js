@@ -1,5 +1,14 @@
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
+
+
+
+
+
+
+
+
+
 XPCOMUtils.defineLazyGetter(this, "URL", function() {
   return "http://localhost:" + httpServer.identity.primaryPort;
 });
@@ -16,29 +25,31 @@ function make_channel(url, callback, ctx) {
   return NetUtil.newChannel({ uri: url, loadUsingSystemPrincipal: true });
 }
 
+var serverRequestCount = 0;
+
 function redirectHandler(metadata, response) {
+  ++serverRequestCount;
   response.setStatusLine(metadata.httpVersion, 301, "Moved");
-  response.setHeader(
-    "Location",
-    "httpx://localhost:" + httpServer.identity.primaryPort + "/content",
-    false
-  );
+  response.setHeader("Location", "http://non-existent.tld:65400", false);
   response.setHeader("Cache-control", "max-age=1000", false);
 }
 
-function makeSureNotInCache(request, buffer) {
-  Assert.equal(request.status, Cr.NS_ERROR_UNKNOWN_PROTOCOL);
+function firstTimeThrough(request) {
+  Assert.equal(request.status, Cr.NS_ERROR_UNKNOWN_HOST);
+  Assert.equal(serverRequestCount, 1);
 
-  
-  
+  Services.prefs.setCharPref("network.security.ports.banned", "65400");
+
   var chan = make_channel(randomURI);
-  chan.loadFlags |= Ci.nsIRequest.LOAD_ONLY_FROM_CACHE;
+  chan.loadFlags |= Ci.nsIRequest.LOAD_FROM_CACHE;
   chan.asyncOpen(new ChannelListener(finish_test, null, CL_EXPECT_FAILURE));
 }
 
 function finish_test(request, buffer) {
-  Assert.equal(request.status, Cr.NS_ERROR_UNKNOWN_PROTOCOL);
+  Assert.equal(request.status, Cr.NS_ERROR_PORT_ACCESS_NOT_ALLOWED);
+  Assert.equal(serverRequestCount, 1);
   Assert.equal(buffer, "");
+
   httpServer.stop(do_test_finished);
 }
 
@@ -49,7 +60,7 @@ function run_test() {
 
   var chan = make_channel(randomURI);
   chan.asyncOpen(
-    new ChannelListener(makeSureNotInCache, null, CL_EXPECT_FAILURE)
+    new ChannelListener(firstTimeThrough, null, CL_EXPECT_FAILURE)
   );
   do_test_pending();
 }
