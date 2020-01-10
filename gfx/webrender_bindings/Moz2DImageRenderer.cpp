@@ -364,12 +364,27 @@ static bool Moz2DRenderCallback(const Range<const uint8_t> aBlob,
     return false;
   }
 
-  auto origin = gfx::IntPoint(0, 0);
+  
+  
+  size_t footerSize = sizeof(size_t) + sizeof(IntPoint);
+  MOZ_RELEASE_ASSERT(aBlob.length() >= footerSize);
+  size_t indexOffset =
+      ConvertFromBytes<size_t>(aBlob.end().get() - footerSize);
+  IntPoint recordingOrigin =
+      ConvertFromBytes<IntPoint>(aBlob.end().get() - footerSize + sizeof(size_t));
+  
+  
+
+  MOZ_RELEASE_ASSERT(indexOffset <= aBlob.length() - footerSize);
+  Reader reader(aBlob.begin().get() + indexOffset,
+                aBlob.length() - footerSize - indexOffset);
+
+  IntPoint origin;
   if (aTileOffset) {
-    origin =
+    origin +=
         gfx::IntPoint(aTileOffset->x * *aTileSize, aTileOffset->y * *aTileSize);
-    dt = gfx::Factory::CreateOffsetDrawTarget(dt, origin);
   }
+  dt = gfx::Factory::CreateOffsetDrawTarget(dt, recordingOrigin + origin);
 
   auto bounds = gfx::IntRect(origin, aSize);
 
@@ -381,15 +396,6 @@ static bool Moz2DRenderCallback(const Range<const uint8_t> aBlob,
         IntRect(aDirtyRect->origin.x, aDirtyRect->origin.y,
                 aDirtyRect->size.width, aDirtyRect->size.height));
   }
-
-  
-  
-  MOZ_RELEASE_ASSERT(aBlob.length() >= sizeof(size_t));
-  size_t indexOffset =
-      ConvertFromBytes<size_t>(aBlob.end().get() - sizeof(size_t));
-  MOZ_RELEASE_ASSERT(indexOffset <= aBlob.length() - sizeof(size_t));
-  Reader reader(aBlob.begin().get() + indexOffset,
-                aBlob.length() - sizeof(size_t) - indexOffset);
 
   bool ret = true;
   size_t offset = 0;
