@@ -4,6 +4,7 @@
 
 
 
+
 function maxMagnitudeTests(isNegative)
 {
   var sign = isNegative ? -1 : +1;
