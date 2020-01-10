@@ -176,7 +176,7 @@ const startupPhases = {
   "before becoming idle": [
     { 
       name: "PCompositorBridge::Msg_NotifyChildCreated",
-      condition: !WIN,
+      ignoreIfUnused: true,
       maxCount: 1,
     },
     {
@@ -201,6 +201,12 @@ const startupPhases = {
       name: "PCompositorBridge::Msg_Initialize",
       condition: WIN && WEBRENDER,
       ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
+      name: "PCompositorBridge::Msg_MapAndNotifyChildCreated",
+      condition: WIN,
+      ignoreIfUnused: true,
       maxCount: 1,
     },
   ],
