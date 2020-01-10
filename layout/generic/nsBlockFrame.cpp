@@ -7428,7 +7428,9 @@ void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
       aFinalSize.BSize(wm) <= aReflowInput.AvailableBSize()) {
     
     
+    
     aStatus->SetOverflowIncomplete();
+    return;
   }
 
   if (aStatus->IsComplete()) {
@@ -7451,6 +7453,10 @@ void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
   }
 
   if (aStatus->IsIncomplete()) {
+    MOZ_ASSERT(aFinalSize.BSize(wm) > aReflowInput.AvailableBSize(),
+               "We should be overflow incomplete and should've returned "
+               "in early if-branch!");
+
     
     
     
@@ -7461,6 +7467,9 @@ void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
     aFinalSize.BSize(wm) =
         std::min(aFinalSize.BSize(wm),
                  aBorderPadding.BStart(wm) + computedBSizeLeftOver);
+    
+    
+    
     
     
     
