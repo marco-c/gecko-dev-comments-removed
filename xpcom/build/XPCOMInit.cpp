@@ -249,7 +249,8 @@ static bool sInitializedJS = false;
 
 EXPORT_XPCOM_API(nsresult)
 NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
-             nsIDirectoryServiceProvider* aAppFileLocationProvider) {
+             nsIDirectoryServiceProvider* aAppFileLocationProvider,
+             bool aInitJSContext) {
   static bool sInitialized = false;
   if (sInitialized) {
     return NS_ERROR_FAILURE;
@@ -460,7 +461,6 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   
   SharedThreadPool::InitStatics();
 
-  mozilla::ScriptPreloader::GetSingleton();
   mozilla::scache::StartupCache::GetSingleton();
   mozilla::AvailableMemoryTracker::Init();
 
@@ -483,6 +483,10 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   sMainHangMonitor = new mozilla::BackgroundHangMonitor(
       loop->thread_name().c_str(), loop->transient_hang_timeout(),
       loop->permanent_hang_timeout());
+
+  if (aInitJSContext) {
+    xpc::InitializeJSContext();
+  }
 
   return NS_OK;
 }
