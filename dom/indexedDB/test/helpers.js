@@ -485,6 +485,8 @@ function workerScript() {
     },
   };
 
+  
+  
   self.compareKeys = function(_k1_, _k2_) {
     let t = typeof _k1_;
     if (t != typeof _k2_) {
