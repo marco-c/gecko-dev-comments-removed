@@ -236,7 +236,7 @@ class CompositorWidget {
 
   virtual already_AddRefed<gfx::DrawTarget> GetBackBufferDrawTarget(
       gfx::DrawTarget* aScreenTarget, const LayoutDeviceIntRect& aRect,
-      const LayoutDeviceIntRect& aClearRect);
+      bool* aOutIsCleared);
 
   
 
