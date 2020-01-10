@@ -520,6 +520,10 @@ static const dom::ConstantSpec gLibcProperties[] = {
     
     {"OSFILE_SIZEOF_POSIX_SPAWN_FILE_ACTIONS_T",
      JS::Int32Value(sizeof(posix_spawn_file_actions_t))},
+
+    
+    {"OSFILE_SIZEOF_POSIX_SPAWNATTR_T",
+     JS::Int32Value(sizeof(posix_spawnattr_t))},
 #  endif  
 
     
