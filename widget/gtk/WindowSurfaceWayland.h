@@ -175,6 +175,21 @@ class WindowSurfaceWayland : public WindowSurface {
   void FrameCallbackHandler();
   void DelayedCommitHandler();
 
+  
+  typedef enum {
+    
+    
+    CACHE_ALL = 0,
+    
+    
+    
+    CACHE_MISSING = 1,
+    
+    
+    
+    CACHE_NONE = 2
+  } RenderingCacheMode;
+
  private:
   WindowBackBuffer* CreateWaylandBuffer(int aWidth, int aHeight);
   WindowBackBuffer* GetWaylandBufferToDraw(bool aCanSwitchBuffer);
@@ -215,6 +230,7 @@ class WindowSurfaceWayland : public WindowSurface {
   bool mBufferNeedsClear;
   bool mIsMainThread;
   bool mNeedScaleFactorUpdate;
+  RenderingCacheMode mRenderingCacheMode;
 
   static bool UseDMABufBackend();
   static bool mUseDMABufInitialized;

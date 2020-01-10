@@ -504,6 +504,8 @@ WindowSurfaceWayland::WindowSurfaceWayland(nsWindow* aWindow)
       mIsMainThread(NS_IsMainThread()),
       mNeedScaleFactorUpdate(true) {
   for (int i = 0; i < BACK_BUFFER_NUM; i++) mBackupBuffer[i] = nullptr;
+  mRenderingCacheMode = static_cast<RenderingCacheMode>(
+      mWaylandDisplay->GetRenderingCacheModePref());
 }
 
 WindowSurfaceWayland::~WindowSurfaceWayland() {
@@ -810,10 +812,12 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
     mBufferScreenRect = lockedScreenRect;
   }
 
-  if (mWholeWindowBufferDamage) {
+  if (mWholeWindowBufferDamage || mRenderingCacheMode != CACHE_ALL) {
     
     mDrawToWaylandBufferDirectly = true;
+  }
 
+  if (mDrawToWaylandBufferDirectly) {
     
     
     mDelayedImageCommits.Clear();
@@ -821,8 +825,27 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
     RefPtr<gfx::DrawTarget> dt = LockWaylandBuffer(
          mWholeWindowBufferDamage);
     if (dt) {
+      
+      
+      
+      if (!mWholeWindowBufferDamage && mRenderingCacheMode != CACHE_NONE) {
+        uint32_t numRects = aRegion.GetNumRects();
+        if (numRects != 1) {
+          AutoTArray<IntRect, 32> rects;
+          rects.SetCapacity(numRects);
+          for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
+            rects.AppendElement(iter.Get().ToUnknownRect());
+          }
+          dt->PushDeviceSpaceClipRects(rects.Elements(), rects.Length());
+        }
+      }
       return dt.forget();
     }
+  }
+
+  
+  if (mRenderingCacheMode == CACHE_NONE) {
+    return nullptr;
   }
 
   

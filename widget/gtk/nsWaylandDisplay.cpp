@@ -13,10 +13,15 @@ namespace widget {
 #define GBMLIB_NAME "libgbm.so.1"
 #define DRMLIB_NAME "libdrm.so.2"
 
+#define DMABUF_PREF "widget.wayland_dmabuf_backend.enabled"
+
+#define CACHE_MODE_PREF "widget.wayland_cache_mode"
+
 bool nsWaylandDisplay::mIsDMABufEnabled = false;
 
 int nsWaylandDisplay::mIsDMABufPrefState = -1;
 bool nsWaylandDisplay::mIsDMABufConfigured = false;
+int nsWaylandDisplay::mRenderingCacheModePref = -1;
 
 wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay) {
   if (!aGdkDisplay) {
@@ -319,12 +324,13 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
   if (NS_IsMainThread()) {
     
     
-    
-    
     if (mIsDMABufPrefState == -1) {
-      mIsDMABufPrefState =
-          Preferences::GetBool("widget.wayland_dmabuf_backend.enabled", false);
+      mIsDMABufPrefState = Preferences::GetBool(DMABUF_PREF, false);
     }
+    if (mRenderingCacheModePref == -1) {
+      mRenderingCacheModePref = Preferences::GetInt(CACHE_MODE_PREF, 0);
+    }
+
     
     mEventQueue = nullptr;
     wl_display_roundtrip(mDisplay);
