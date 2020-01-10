@@ -17,9 +17,6 @@
 #include FT_ADVANCES_H
 #include FT_MULTIPLE_MASTERS_H
 
-#ifndef FT_LOAD_COLOR
-#  define FT_LOAD_COLOR (1L << 20)
-#endif
 #ifndef FT_FACE_FLAG_COLOR
 #  define FT_FACE_FLAG_COLOR (1L << 14)
 #endif
@@ -28,33 +25,19 @@ using namespace mozilla::gfx;
 
 gfxFT2FontBase::gfxFT2FontBase(
     const RefPtr<UnscaledFontFreeType>& aUnscaledFont,
-    cairo_scaled_font_t* aScaledFont,
-    RefPtr<mozilla::gfx::SharedFTFace>&& aFTFace, gfxFontEntry* aFontEntry,
-    const gfxFontStyle* aFontStyle, int aLoadFlags, bool aEmbolden)
+    cairo_scaled_font_t* aScaledFont, gfxFontEntry* aFontEntry,
+    const gfxFontStyle* aFontStyle)
     : gfxFont(aUnscaledFont, aFontEntry, aFontStyle, kAntialiasDefault,
               aScaledFont),
-      mFTFace(std::move(aFTFace)),
-      mSpaceGlyph(0),
-      mFTLoadFlags(aLoadFlags | FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH |
-                   FT_LOAD_COLOR),
-      mEmbolden(aEmbolden) {
+      mSpaceGlyph(0) {
+  mEmbolden = aFontStyle->NeedsSyntheticBold(aFontEntry);
+
   cairo_scaled_font_reference(mScaledFont);
+
+  InitMetrics();
 }
 
 gfxFT2FontBase::~gfxFT2FontBase() { cairo_scaled_font_destroy(mScaledFont); }
-
-FT_Face gfxFT2FontBase::LockFTFace() {
-  if (!mFTFace->Lock(this)) {
-    FT_Set_Transform(mFTFace->GetFace(), nullptr, nullptr);
-
-    gfxFloat size = std::max(GetAdjustedSize(), 1.0);
-    FT_Set_Char_Size(mFTFace->GetFace(), FT_F26Dot6(size * 64.0 + 0.5),
-                     FT_F26Dot6(size * 64.0 + 0.5), 0, 0);
-  }
-  return mFTFace->GetFace();
-}
-
-void gfxFT2FontBase::UnlockFTFace() { mFTFace->Unlock(); }
 
 uint32_t gfxFT2FontBase::GetGlyph(uint32_t aCharCode) {
   
@@ -114,6 +97,22 @@ uint32_t gfxFT2FontBase::GetGlyph(uint32_t aCharCode) {
   return slot->mGlyphIndex;
 }
 
+void gfxFT2FontBase::GetGlyphExtents(uint32_t aGlyph,
+                                     cairo_text_extents_t* aExtents) {
+  MOZ_ASSERT(aExtents != nullptr, "aExtents must not be NULL");
+
+  cairo_glyph_t glyphs[1];
+  glyphs[0].index = aGlyph;
+  glyphs[0].x = 0.0;
+  glyphs[0].y = 0.0;
+  
+  
+  
+  
+  
+  cairo_scaled_font_glyph_extents(GetCairoScaledFont(), glyphs, 1, aExtents);
+}
+
 
 static inline FT_Long ScaleRoundDesignUnits(FT_Short aDesignMetric,
                                             FT_Fixed aScale) {
@@ -143,18 +142,13 @@ static void SnapLineToPixels(gfxFloat& aOffset, gfxFloat& aSize) {
 
 
 
-uint32_t gfxFT2FontBase::GetCharExtents(char aChar, gfxFloat* aWidth,
-                                        gfxFloat* aHeight) {
+uint32_t gfxFT2FontBase::GetCharExtents(char aChar,
+                                        cairo_text_extents_t* aExtents) {
   FT_UInt gid = GetGlyph(aChar);
-  int32_t width;
-  int32_t height;
-  if (gid && GetFTGlyphExtents(gid, &width, &height)) {
-    *aWidth = FLOAT_FROM_16_16(width);
-    *aHeight = FLOAT_FROM_26_6(height);
-    return gid;
-  } else {
-    return 0;
+  if (gid) {
+    GetGlyphExtents(gid, aExtents);
   }
+  return gid;
 }
 
 
@@ -165,13 +159,16 @@ uint32_t gfxFT2FontBase::GetCharExtents(char aChar, gfxFloat* aWidth,
 
 uint32_t gfxFT2FontBase::GetCharWidth(char aChar, gfxFloat* aWidth) {
   FT_UInt gid = GetGlyph(aChar);
-  int32_t width;
-  if (gid && GetFTGlyphExtents(gid, &width)) {
+  if (gid) {
+    int32_t width;
+    if (!GetFTGlyphAdvance(gid, &width)) {
+      cairo_text_extents_t extents;
+      GetGlyphExtents(gid, &extents);
+      width = NS_lround(0x10000 * extents.x_advance);
+    }
     *aWidth = FLOAT_FROM_16_16(width);
-    return gid;
-  } else {
-    return 0;
   }
+  return gid;
 }
 
 void gfxFT2FontBase::InitMetrics() {
@@ -186,7 +183,7 @@ void gfxFT2FontBase::InitMetrics() {
 
   
   
-  FT_Face face = LockFTFace();
+  FT_Face face = cairo_ft_scaled_font_lock_face(GetCairoScaledFont());
 
   if (MOZ_UNLIKELY(!face)) {
     
@@ -214,6 +211,30 @@ void gfxFT2FontBase::InitMetrics() {
 
     SanitizeMetrics(&mMetrics, false);
     return;
+  }
+
+  if (face->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
+    
+    AutoTArray<gfxFontVariation, 8> settings;
+    mFontEntry->GetVariationsForStyle(settings, mStyle);
+    SetupVarCoords(mFontEntry->GetMMVar(), settings, &mCoords);
+    if (!mCoords.IsEmpty()) {
+#if MOZ_TREE_FREETYPE
+      FT_Set_Var_Design_Coordinates(face, mCoords.Length(), mCoords.Elements());
+#else
+      typedef FT_Error (*SetCoordsFunc)(FT_Face, FT_UInt, FT_Fixed*);
+      static SetCoordsFunc setCoords;
+      static bool firstTime = true;
+      if (firstTime) {
+        firstTime = false;
+        setCoords =
+            (SetCoordsFunc)dlsym(RTLD_DEFAULT, "FT_Set_Var_Design_Coordinates");
+      }
+      if (setCoords) {
+        (*setCoords)(face, mCoords.Length(), mCoords.Elements());
+      }
+#endif
+    }
   }
 
   const FT_Size_Metrics& ftMetrics = face->size->metrics;
@@ -361,7 +382,7 @@ void gfxFT2FontBase::InitMetrics() {
 
   
   
-  UnlockFTFace();
+  cairo_ft_scaled_font_unlock_face(GetCairoScaledFont());
 
   gfxFloat width;
   mSpaceGlyph = GetCharWidth(' ', &width);
@@ -381,15 +402,14 @@ void gfxFT2FontBase::InitMetrics() {
   
   
   
-  gfxFloat xWidth;
-  gfxFloat xHeight;
-  if (GetCharExtents('x', &xWidth, &xHeight) && xHeight < 0.0) {
-    mMetrics.xHeight = -xHeight;
-    mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, xWidth);
+  cairo_text_extents_t extents;
+  if (GetCharExtents('x', &extents) && extents.y_bearing < 0.0) {
+    mMetrics.xHeight = -extents.y_bearing;
+    mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, extents.x_advance);
   }
 
-  if (GetCharExtents('H', &xWidth, &xHeight) && xHeight < 0.0) {
-    mMetrics.capHeight = -xHeight;
+  if (GetCharExtents('H', &extents) && extents.y_bearing < 0.0) {
+    mMetrics.capHeight = -extents.y_bearing;
   }
 
   mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, mMetrics.zeroWidth);
@@ -466,27 +486,7 @@ uint32_t gfxFT2FontBase::GetGlyph(uint32_t unicode,
   return GetGlyph(unicode);
 }
 
-FT_Fixed gfxFT2FontBase::GetEmboldenAdvance(FT_Face aFace, FT_Fixed aAdvance) {
-  
-  
-  if (!mEmbolden || !aAdvance) {
-    return 0;
-  }
-  
-  
-  FT_Fixed strength =
-      FT_MulFix(aFace->units_per_EM, aFace->size->metrics.y_scale) / 24;
-  if (aFace->glyph->format == FT_GLYPH_FORMAT_BITMAP) {
-    strength &= -64;
-    if (!strength) {
-      strength = 64;
-    }
-  }
-  return strength << 10;
-}
-
-bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
-                                       int32_t* aHeight) {
+bool gfxFT2FontBase::GetFTGlyphAdvance(uint16_t aGID, int32_t* aAdvance) {
   gfxFT2LockedFace face(this);
   MOZ_ASSERT(face.get());
   if (!face.get()) {
@@ -495,7 +495,23 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
     return false;
   }
 
-  FT_Error ftError = Factory::LoadFTGlyph(face.get(), aGID, mFTLoadFlags);
+  
+  
+  
+  
+  if (!(face.get()->face_flags & FT_FACE_FLAG_SCALABLE) ||
+      !(face.get()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS)) {
+    return false;
+  }
+
+  bool hinting = gfxPlatform::GetPlatform()->FontHintingEnabled();
+  int32_t flags =
+      hinting ? FT_LOAD_ADVANCE_ONLY
+              : FT_LOAD_ADVANCE_ONLY | FT_LOAD_NO_AUTOHINT | FT_LOAD_NO_HINTING;
+  if (face.get()->face_flags & FT_FACE_FLAG_TRICKY) {
+    flags &= ~FT_LOAD_NO_AUTOHINT;
+  }
+  FT_Error ftError = Factory::LoadFTGlyph(face.get(), aGID, flags);
   if (ftError != FT_Err_Ok) {
     
     
@@ -503,31 +519,27 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
     return false;
   }
 
-  bool hintMetrics = ShouldHintMetrics();
+  
+  
+  
+  FT_Fixed advance = face.get()->glyph->linearHoriAdvance;
 
   
   
-  
-  FT_Fixed advance;
-  if (face.get()->glyph->format == FT_GLYPH_FORMAT_OUTLINE &&
-      (!hintMetrics || FT_HAS_MULTIPLE_MASTERS(face.get()))) {
-    advance = face.get()->glyph->linearHoriAdvance;
-  } else {
-    advance = face.get()->glyph->advance.x << 10;  
+  if (mEmbolden && advance > 0) {
+    
+    
+    FT_Fixed strength =
+        1024 *
+        FT_MulFix(face.get()->units_per_EM, face.get()->size->metrics.y_scale) /
+        24;
+    advance += strength;
   }
-  advance += GetEmboldenAdvance(face.get(), advance);
-  if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
-    advance = (advance + 0x8000) & 0xffff0000u;
-  }
-  *aAdvance = advance;
 
-  if (aHeight) {
-    FT_F26Dot6 height = -face.get()->glyph->metrics.horiBearingY;
-    if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
-      height &= -64;
-    }
-    *aHeight = height;
-  }
+  
+  
+  *aAdvance = (advance + 0x8000) & 0xffff0000u;
+
   return true;
 }
 
@@ -542,12 +554,51 @@ int32_t gfxFT2FontBase::GetGlyphWidth(uint16_t aGID) {
     return width;
   }
 
-  if (!GetFTGlyphExtents(aGID, &width)) {
-    width = 0;
+  if (!GetFTGlyphAdvance(aGID, &width)) {
+    cairo_text_extents_t extents;
+    GetGlyphExtents(aGID, &extents);
+    width = NS_lround(0x10000 * extents.x_advance);
   }
   mGlyphWidths->Put(aGID, width);
 
   return width;
+}
+
+bool gfxFT2FontBase::SetupCairoFont(DrawTarget* aDrawTarget) {
+  
+  
+  
+  
+  
+  
+  cairo_scaled_font_t* cairoFont = GetCairoScaledFont();
+
+  if (cairo_scaled_font_status(cairoFont) != CAIRO_STATUS_SUCCESS) {
+    
+    
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  cairo_set_scaled_font(gfxFont::RefCairo(aDrawTarget), cairoFont);
+  return true;
 }
 
 
@@ -556,52 +607,22 @@ int32_t gfxFT2FontBase::GetGlyphWidth(uint16_t aGID) {
 
 void gfxFT2FontBase::SetupVarCoords(
     FT_MM_Var* aMMVar, const nsTArray<gfxFontVariation>& aVariations,
-    FT_Face aFTFace) {
+    nsTArray<FT_Fixed>* aCoords) {
+  aCoords->TruncateLength(0);
   if (!aMMVar) {
     return;
   }
 
-  nsTArray<FT_Fixed> coords;
   for (unsigned i = 0; i < aMMVar->num_axis; ++i) {
-    coords.AppendElement(aMMVar->axis[i].def);
+    aCoords->AppendElement(aMMVar->axis[i].def);
     for (const auto& v : aVariations) {
       if (aMMVar->axis[i].tag == v.mTag) {
         FT_Fixed val = v.mValue * 0x10000;
         val = std::min(val, aMMVar->axis[i].maximum);
         val = std::max(val, aMMVar->axis[i].minimum);
-        coords[i] = val;
+        (*aCoords)[i] = val;
         break;
       }
     }
   }
-
-  if (!coords.IsEmpty()) {
-#if MOZ_TREE_FREETYPE
-    FT_Set_Var_Design_Coordinates(aFTFace, coords.Length(), coords.Elements());
-#else
-    typedef FT_Error (*SetCoordsFunc)(FT_Face, FT_UInt, FT_Fixed*);
-    static SetCoordsFunc setCoords;
-    static bool firstTime = true;
-    if (firstTime) {
-      firstTime = false;
-      setCoords =
-          (SetCoordsFunc)dlsym(RTLD_DEFAULT, "FT_Set_Var_Design_Coordinates");
-    }
-    if (setCoords) {
-      (*setCoords)(aFTFace, coords.Length(), coords.Elements());
-    }
-#endif
-  }
-}
-
-already_AddRefed<SharedFTFace> FTUserFontData::CloneFace(int aFaceIndex) {
-  RefPtr<SharedFTFace> face = Factory::NewSharedFTFaceFromData(
-      nullptr, mFontData, mLength, aFaceIndex, this);
-  if (!face ||
-      (FT_Select_Charmap(face->GetFace(), FT_ENCODING_UNICODE) != FT_Err_Ok &&
-       FT_Select_Charmap(face->GetFace(), FT_ENCODING_MS_SYMBOL) !=
-           FT_Err_Ok)) {
-    return nullptr;
-  }
-  return face.forget();
 }
