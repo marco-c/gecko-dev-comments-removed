@@ -5,8 +5,7 @@
 
 
 #include "mozilla/mscom/ProcessRuntimeShared.h"
-
-#include "mozilla/glue/WinUtils.h"
+#include "MozglueUtils.h"
 
 
 

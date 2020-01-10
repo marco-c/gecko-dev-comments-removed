@@ -4,7 +4,7 @@
 
 
 
-#include "ModuleVersionInfo.h"
+#include "ModuleVersionInfo_windows.h"
 
 #include "mozilla/UniquePtr.h"
 
