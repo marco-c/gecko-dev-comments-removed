@@ -4040,6 +4040,10 @@ class Document : public nsINode,
   void InitializeLocalization(nsTArray<nsString>& aResourceIds);
 
   
+  
+  void SetCssUseCounterBits();
+
+  
   bool ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
                                          const nsAString& aHeightString,
                                          bool aIsAutoScale);
