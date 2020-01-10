@@ -3333,7 +3333,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
   
   bool applyBStartMargin = (frame->StyleBorder()->mBoxDecorationBreak ==
                                 StyleBoxDecorationBreak::Clone ||
-                            !frame->GetPrevInFlow()) &&
+                            !frame->GetPrevContinuation()) &&
                            ShouldApplyBStartMargin(aState, aLine, frame);
   if (applyBStartMargin) {
     

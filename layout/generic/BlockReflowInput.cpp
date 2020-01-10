@@ -17,6 +17,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "TextOverflow.h"
 
 #ifdef DEBUG
@@ -76,7 +77,20 @@ BlockReflowInput::BlockReflowInput(const ReflowInput& aReflowInput,
   mContainerSize.height =
       aReflowInput.ComputedHeight() + mBorderPadding.TopBottom(wm);
 
-  if ((aBStartMarginRoot && !logicalSkipSides.BStart()) ||
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool isFirstColumnContentInMulticolLine =
+      StaticPrefs::layout_css_column_span_enabled() &&
+      aFrame->Style()->GetPseudoType() == PseudoStyleType::columnContent &&
+      !aFrame->GetPrevInFlow();
+  if ((aBStartMarginRoot &&
+       (!logicalSkipSides.BStart() || isFirstColumnContentInMulticolLine)) ||
       0 != mBorderPadding.BStart(wm)) {
     mFlags.mIsBStartMarginRoot = true;
     mFlags.mShouldApplyBStartMargin = true;
