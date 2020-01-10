@@ -2737,10 +2737,12 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT nsresult OnDocumentModified();
 
  protected:  
-  virtual void OnStartToHandleTopLevelEditSubAction(
-      EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
-  MOZ_CAN_RUN_SCRIPT
-  virtual void OnEndHandlingTopLevelEditSubAction() override;
+  MOZ_CAN_RUN_SCRIPT virtual void OnStartToHandleTopLevelEditSubAction(
+      EditSubAction aTopLevelEditSubAction,
+      nsIEditor::EDirection aDirectionOfTopLevelEditSubAction,
+      ErrorResult& aRv) override;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult OnEndHandlingTopLevelEditSubAction()
+      override;
 
  protected:  
   virtual ~HTMLEditor();

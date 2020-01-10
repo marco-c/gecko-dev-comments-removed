@@ -2088,15 +2088,16 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual void OnStartToHandleTopLevelEditSubAction(
-      EditSubAction aEditSubAction, nsIEditor::EDirection aDirection);
+  MOZ_CAN_RUN_SCRIPT virtual void OnStartToHandleTopLevelEditSubAction(
+      EditSubAction aTopLevelEditSubAction,
+      nsIEditor::EDirection aDirectionOfTopLevelEditSubAction,
+      ErrorResult& aRv);
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual void OnEndHandlingTopLevelEditSubAction();
+  MOZ_CAN_RUN_SCRIPT virtual nsresult OnEndHandlingTopLevelEditSubAction();
 
   
 
@@ -2486,9 +2487,10 @@ class EditorBase : public nsIEditor,
 
   class MOZ_RAII AutoEditSubActionNotifier final {
    public:
-    AutoEditSubActionNotifier(
+    MOZ_CAN_RUN_SCRIPT AutoEditSubActionNotifier(
         EditorBase& aEditorBase, EditSubAction aEditSubAction,
-        nsIEditor::EDirection aDirection MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+        nsIEditor::EDirection aDirection,
+        ErrorResult& aRv MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
         : mEditorBase(aEditorBase), mIsTopLevel(true) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
       
@@ -2496,16 +2498,16 @@ class EditorBase : public nsIEditor,
       
       
       if (!mEditorBase.GetTopLevelEditSubAction()) {
-        mEditorBase.OnStartToHandleTopLevelEditSubAction(aEditSubAction,
-                                                         aDirection);
+        MOZ_KnownLive(mEditorBase)
+            .OnStartToHandleTopLevelEditSubAction(aEditSubAction, aDirection,
+                                                  aRv);
       } else {
         mIsTopLevel = false;
       }
       mEditorBase.OnStartToHandleEditSubAction();
     }
 
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY
-    ~AutoEditSubActionNotifier() {
+    MOZ_CAN_RUN_SCRIPT ~AutoEditSubActionNotifier() {
       mEditorBase.OnEndHandlingEditSubAction();
       if (mIsTopLevel) {
         MOZ_KnownLive(mEditorBase).OnEndHandlingTopLevelEditSubAction();
