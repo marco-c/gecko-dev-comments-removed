@@ -7573,9 +7573,71 @@ bool BytecodeEmitter::emitLeftAssociative(ListNode* node) {
   return true;
 }
 
+bool BytecodeEmitter::emitNullCoalesce(ListNode* node) {
+  MOZ_ASSERT(node->isKind(ParseNodeKind::CoalesceExpr));
+
+  
+
+
+
+
+
+
+
+  TDZCheckCache tdzCache(this);
+
+  JumpList jump;
+  
+  for (ParseNode* expr = node->head();; expr = expr->pn_next) {
+    if (!emitTree(expr)) {
+      
+      return false;
+    }
+
+    
+    
+    if (!expr->pn_next) {
+      break;
+    }
+
+    if (!emitPushNotUndefinedOrNull()) {
+      
+      return false;
+    }
+
+    
+    
+    
+    
+    if (!emit1(JSOP_NOT)) {
+      
+      return false;
+    }
+
+    
+    if(!this->newSrcNote(SRC_IF)) {
+      return false;
+    }
+
+    if (!emitJump(JSOP_IFEQ, &jump)) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOP_POP)) {
+      return false;
+    }
+  }
+
+  if (!emitJumpTargetAndPatch(jump)) {
+    return false;
+  }
+
+  return true;
+}
+
 bool BytecodeEmitter::emitLogical(ListNode* node) {
   MOZ_ASSERT(node->isKind(ParseNodeKind::OrExpr) ||
-             node->isKind(ParseNodeKind::CoalesceExpr) ||
              node->isKind(ParseNodeKind::AndExpr));
 
   
@@ -7592,13 +7654,12 @@ bool BytecodeEmitter::emitLogical(ListNode* node) {
 
   
   ParseNode* expr = node->head();
+
   if (!emitTree(expr)) {
     return false;
   }
-  JSOp op = (node->isKind(ParseNodeKind::OrExpr) ||
-             node->isKind(ParseNodeKind::CoalesceExpr))
-                ? JSOP_OR
-                : JSOP_AND;
+
+  JSOp op = node->isKind(ParseNodeKind::OrExpr) ? JSOP_OR : JSOP_AND;
   JumpList jump;
   if (!emitJump(op, &jump)) {
     return false;
@@ -9249,6 +9310,11 @@ bool BytecodeEmitter::emitTree(
       break;
 
     case ParseNodeKind::CoalesceExpr:
+      if (!emitNullCoalesce(&pn->as<ListNode>())) {
+        return false;
+      }
+      break;
+
     case ParseNodeKind::OrExpr:
     case ParseNodeKind::AndExpr:
       if (!emitLogical(&pn->as<ListNode>())) {
