@@ -2383,12 +2383,53 @@
         return duplicates;
     };
 
+    function code_unit_str(char) {
+        return 'U+' + char.charCodeAt(0).toString(16);
+    }
+
+    function sanitize_unpaired_surrogates(str) {
+        return str.replace(/([\ud800-\udbff])(?![\udc00-\udfff])/g,
+                           function(_, unpaired)
+                           {
+                               return code_unit_str(unpaired);
+                           })
+                  
+                  
+                  
+                  .replace(/(^|[^\ud800-\udbff])([\udc00-\udfff])/g,
+                           function(_, previous, unpaired) {
+                              if (/[\udc00-\udfff]/.test(previous)) {
+                                  previous = code_unit_str(previous);
+                              }
+
+                              return previous + code_unit_str(unpaired);
+                           });
+    }
+
+    function sanitize_all_unpaired_surrogates(tests) {
+        forEach (tests,
+                 function (test)
+                 {
+                     var sanitized = sanitize_unpaired_surrogates(test.name);
+
+                     if (test.name !== sanitized) {
+                         test.name = sanitized;
+                         delete test._structured_clone;
+                     }
+                 });
+    }
+
     Tests.prototype.notify_complete = function() {
         var this_obj = this;
         var duplicates;
 
         if (this.status.status === null) {
             duplicates = this.find_duplicates();
+
+            
+            
+            
+            sanitize_all_unpaired_surrogates(this.tests);
 
             
             
