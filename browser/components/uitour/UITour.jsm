@@ -709,11 +709,6 @@ var UITour = {
         }
         break;
       }
-
-      case "showProtectionReport": {
-        this.showProtectionReport(window, browser);
-        break;
-      }
     }
 
     
@@ -1550,17 +1545,6 @@ var UITour = {
   showNewTab(aWindow, aBrowser) {
     aWindow.gURLBar.focus();
     let url = "about:newtab";
-    aWindow.openLinkIn(url, "current", {
-      targetBrowser: aBrowser,
-      triggeringPrincipal: Services.scriptSecurityManager.createContentPrincipal(
-        Services.io.newURI(url),
-        {}
-      ),
-    });
-  },
-
-  showProtectionReport(aWindow, aBrowser) {
-    let url = "about:protections";
     aWindow.openLinkIn(url, "current", {
       targetBrowser: aBrowser,
       triggeringPrincipal: Services.scriptSecurityManager.createContentPrincipal(
