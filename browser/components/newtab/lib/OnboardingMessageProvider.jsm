@@ -2,7 +2,6 @@
 
 
 "use strict";
-const {Localization} = ChromeUtils.import("resource://gre/modules/Localization.jsm");
 const {FxAccountsConfig} = ChromeUtils.import("resource://gre/modules/FxAccountsConfig.jsm");
 const {AttributionCode} = ChromeUtils.import("resource:///modules/AttributionCode.jsm");
 const {AddonRepository} = ChromeUtils.import("resource://gre/modules/addons/AddonRepository.jsm");
