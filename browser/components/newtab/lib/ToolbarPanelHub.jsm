@@ -69,6 +69,24 @@ class _ToolbarPanelHub {
   }
 
   
+  _onPanelHidden(win) {
+    const panelContainer = win.document.getElementById(
+      "customizationui-widget-panel"
+    );
+    
+    
+    const removeToolbarButton = () => {
+      EveryWindow.unregisterCallback(TOOLBAR_BUTTON_ID);
+    };
+    if (!panelContainer) {
+      return;
+    }
+    panelContainer.addEventListener("popuphidden", removeToolbarButton, {
+      once: true,
+    });
+  }
+
+  
   async renderMessages(win, doc, containerId) {
     const messages = (await this._getMessages({
       template: "whatsnew_panel_message",
@@ -97,6 +115,7 @@ class _ToolbarPanelHub {
     }
 
     
+    this._onPanelHidden(win);
   }
 
   _createMessageElements(win, doc, content, previousDate) {
