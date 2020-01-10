@@ -3290,63 +3290,44 @@ nsresult nsGlobalWindowOuter::GetControllers(nsIControllers** aResult) {
   FORWARD_TO_INNER(GetControllers, (aResult), NS_ERROR_UNEXPECTED);
 }
 
-nsPIDOMWindowOuter* nsGlobalWindowOuter::GetSanitizedOpener(
-    nsPIDOMWindowOuter* aOpener) {
-  if (!aOpener) {
-    return nullptr;
-  }
-
-  nsGlobalWindowOuter* win = nsGlobalWindowOuter::Cast(aOpener);
-
-  
-  if (win->IsChromeWindow()) {
+already_AddRefed<BrowsingContext>
+nsGlobalWindowOuter::GetOpenerBrowsingContext() {
+  RefPtr<BrowsingContext> opener = GetBrowsingContext()->GetOpener();
+  MOZ_DIAGNOSTIC_ASSERT(!opener ||
+                        opener->Group() == GetBrowsingContext()->Group());
+  if (!opener || opener->Group() != GetBrowsingContext()->Group()) {
     return nullptr;
   }
 
   
-  
-  
-  nsCOMPtr<nsIDocShell> openerDocShell = aOpener->GetDocShell();
-
-  if (openerDocShell) {
-    nsCOMPtr<nsIDocShellTreeItem> openerRootItem;
-    openerDocShell->GetInProcessRootTreeItem(getter_AddRefs(openerRootItem));
-    nsCOMPtr<nsIDocShell> openerRootDocShell(do_QueryInterface(openerRootItem));
-    if (openerRootDocShell) {
-      nsIDocShell::AppType appType = openerRootDocShell->GetAppType();
-      if (appType != nsIDocShell::APP_TYPE_MAIL) {
-        return aOpener;
-      }
+  if (nsContentUtils::LegacyIsCallerChromeOrNativeCode() &&
+      GetPrincipal() == nsContentUtils::GetSystemPrincipal()) {
+    auto* openerWin = nsGlobalWindowOuter::Cast(opener->GetDOMWindow());
+    if (!openerWin ||
+        openerWin->GetPrincipal() != nsContentUtils::GetSystemPrincipal()) {
+      return nullptr;
     }
   }
 
+  return opener.forget();
+}
+
+nsPIDOMWindowOuter* nsGlobalWindowOuter::GetSameProcessOpener() {
+  if (RefPtr<BrowsingContext> opener = GetOpenerBrowsingContext()) {
+    return opener->GetDOMWindow();
+  }
   return nullptr;
 }
 
-nsPIDOMWindowOuter* nsGlobalWindowOuter::GetOpenerWindowOuter() {
-  nsCOMPtr<nsPIDOMWindowOuter> opener = do_QueryReferent(mOpener);
-
-  if (!opener) {
-    return nullptr;
+Nullable<WindowProxyHolder> nsGlobalWindowOuter::GetOpenerWindowOuter() {
+  if (RefPtr<BrowsingContext> opener = GetOpenerBrowsingContext()) {
+    return WindowProxyHolder(opener.forget());
   }
-
-  
-  if (nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
-    
-    if (GetPrincipal() == nsContentUtils::GetSystemPrincipal() &&
-        nsGlobalWindowOuter::Cast(opener)->GetPrincipal() !=
-            nsContentUtils::GetSystemPrincipal()) {
-      return nullptr;
-    }
-    return opener;
-  }
-
-  return GetSanitizedOpener(opener);
+  return nullptr;
 }
 
-already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetOpener() {
-  nsCOMPtr<nsPIDOMWindowOuter> opener = GetOpenerWindowOuter();
-  return opener.forget();
+Nullable<WindowProxyHolder> nsGlobalWindowOuter::GetOpener() {
+  return GetOpenerWindowOuter();
 }
 
 void nsGlobalWindowOuter::GetStatusOuter(nsAString& aStatus) {
@@ -4962,13 +4943,15 @@ void nsGlobalWindowOuter::FocusOuter() {
 
   nsCOMPtr<nsPIDOMWindowInner> caller = do_QueryInterface(GetEntryGlobal());
   nsPIDOMWindowOuter* callerOuter = caller ? caller->GetOuterWindow() : nullptr;
-  nsCOMPtr<nsPIDOMWindowOuter> opener = GetOpener();
+  BrowsingContext* callerBC =
+      callerOuter ? callerOuter->GetBrowsingContext() : nullptr;
+  RefPtr<BrowsingContext> openerBC = GetOpenerBrowsingContext();
 
   
   
   
   bool canFocus = CanSetProperty("dom.disable_window_flip") ||
-                  (opener == callerOuter &&
+                  (openerBC == callerBC &&
                    RevisePopupAbuseLevel(PopupBlocker::GetPopupControlState()) <
                        PopupBlocker::openBlocked);
 
@@ -7774,8 +7757,8 @@ mozilla::dom::TabGroup* nsGlobalWindowOuter::TabGroupOuter() {
     
     
     
-    nsCOMPtr<nsPIDOMWindowOuter> piOpener = do_QueryReferent(mOpener);
-    nsPIDOMWindowOuter* opener = GetSanitizedOpener(piOpener);
+    RefPtr<BrowsingContext> openerBC = GetBrowsingContext()->GetOpener();
+    nsPIDOMWindowOuter* opener = openerBC ? openerBC->GetDOMWindow() : nullptr;
     nsPIDOMWindowOuter* parent = GetInProcessScriptableParentOrNull();
     MOZ_ASSERT(!parent || !opener,
                "Only one of parent and opener may be provided");
@@ -7813,9 +7796,11 @@ mozilla::dom::TabGroup* nsGlobalWindowOuter::TabGroupOuter() {
       
       RefPtr<nsPIDOMWindowOuter> parent = GetInProcessScriptableParentOrNull();
       MOZ_ASSERT_IF(parent, parent->TabGroup() == mTabGroup);
-      nsCOMPtr<nsPIDOMWindowOuter> piOpener = do_QueryReferent(mOpener);
-      nsPIDOMWindowOuter* opener = GetSanitizedOpener(piOpener);
-      MOZ_ASSERT_IF(opener && nsGlobalWindowOuter::Cast(opener) != this,
+
+      RefPtr<BrowsingContext> openerBC = GetBrowsingContext()->GetOpener();
+      nsPIDOMWindowOuter* opener =
+          openerBC ? openerBC->GetDOMWindow() : nullptr;
+      MOZ_ASSERT_IF(opener && Cast(opener) != this,
                     opener->TabGroup() == mTabGroup);
     }
     mIsValidatingTabGroup = false;
