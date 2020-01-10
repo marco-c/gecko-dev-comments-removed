@@ -145,24 +145,15 @@ class DNSListener {
   }
 }
 
-Cu.importGlobalProperties(["fetch"]);
-
 add_task(async function test0_nodeExecute() {
   
   
   
-
-  let env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
+  equal(
+    await NodeServer.execute(`"hello"`),
+    "hello",
+    "Check that moz-http2.js is running"
   );
-  let execPort = env.get("MOZNODE_EXEC_PORT");
-  await fetch(`http://127.0.0.1:${execPort}/test`)
-    .then(response => {
-      ok(true, "NodeServer is working");
-    })
-    .catch(e => {
-      ok(false, `There was an error ${e}`);
-    });
 });
 
 
