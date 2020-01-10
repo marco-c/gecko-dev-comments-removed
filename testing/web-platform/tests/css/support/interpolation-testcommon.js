@@ -11,8 +11,8 @@ function test_interpolation(settings, expectations) {
   }
 
   test(function(){
-    assert_true(CSS.supports(settings.property, settings.from), 'Value "' + settings.from + '" is supported by ' + settings.property);
-    assert_true(CSS.supports(settings.property, settings.to), 'Value "' + settings.to + '" is supported by ' + settings.property);
+    assert_true(CSS.supports(settings.property, settings.from), 'From value "' + settings.from + '" is supported by ' + settings.property);
+    assert_true(CSS.supports(settings.property, settings.to), 'To value "' + settings.to + '" is supported by ' + settings.property);
   }, '"' + settings.from + '" and "' + settings.to + '" are valid ' + settings.property + ' values');
 
   for (var i = 0; i < expectations.length; ++i) {
@@ -22,7 +22,7 @@ function test_interpolation(settings, expectations) {
     var targetId = 'target' + i;
     var referenceId = 'reference' + i;
     test(function(){
-      assert_true(CSS.supports(settings.property, expectation), 'Value "' + expectation + '" is supported by ' + settings.property);
+      assert_true(CSS.supports(settings.property, expectation), 'Expectation value "' + expectation + '" is supported by ' + settings.property);
 
       var stylesheet = document.createElement('style');
       stylesheet.textContent =
@@ -55,10 +55,10 @@ function test_interpolation(settings, expectations) {
 }
 
 function test_no_interpolation(settings) {
-  var expectatFrom = [-1, 0, 0.125].map(function (progress) {
+  var expectatFrom = [-1, 0, 0.4].map(function (progress) {
     return {at: progress, expect: settings.from};
   });
-  var expectatTo = [0.875, 1, 2].map(function (progress) {
+  var expectatTo = [0.6, 1, 2].map(function (progress) {
     return {at: progress, expect: settings.to};
   });
 
