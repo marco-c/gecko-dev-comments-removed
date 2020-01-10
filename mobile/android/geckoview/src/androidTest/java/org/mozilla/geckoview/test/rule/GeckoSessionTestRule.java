@@ -9,7 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONTokener;
 import org.mozilla.gecko.GeckoThread;
-import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.GeckoDisplay;
@@ -23,10 +22,6 @@ import org.mozilla.geckoview.test.util.HttpBin;
 import org.mozilla.geckoview.test.util.RuntimeCreator;
 import org.mozilla.geckoview.test.util.Environment;
 import org.mozilla.geckoview.test.util.UiThreadUtils;
-import org.mozilla.geckoview.test.rdp.Actor;
-import org.mozilla.geckoview.test.rdp.Promise;
-import org.mozilla.geckoview.test.rdp.RDPConnection;
-import org.mozilla.geckoview.test.rdp.Tab;
 import org.mozilla.geckoview.test.util.Callbacks;
 
 import static org.hamcrest.Matchers.*;
@@ -45,7 +40,6 @@ import org.junit.runners.model.Statement;
 import android.app.Instrumentation;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
-import android.net.LocalSocketAddress;
 import android.os.Parcel;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
@@ -161,15 +155,6 @@ public class GeckoSessionTestRule implements TestRule {
         @interface List {
             NullDelegate[] value();
         }
-    }
-
-    
-
-
-    @Target({ElementType.METHOD, ElementType.TYPE})
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface WithDevToolsAPI {
-        boolean value() default true;
     }
 
     
@@ -362,56 +347,6 @@ public class GeckoSessionTestRule implements TestRule {
 
         public Object getReason() {
             return mReason;
-        }
-    }
-
-    public static class PromiseWrapper {
-        private final Promise mPromise;
-        private final long mTimeoutMillis;
-
-         PromiseWrapper(final @NonNull Promise promise, final long timeoutMillis) {
-            mPromise = promise;
-            mTimeoutMillis = timeoutMillis;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            return (o instanceof PromiseWrapper) && mPromise.equals(((PromiseWrapper) o).mPromise);
-        }
-
-        @Override
-        public int hashCode() {
-            return mPromise.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return mPromise.toString();
-        }
-
-        
-
-
-
-
-        public boolean isPending() {
-            return mPromise.isPending();
-        }
-
-        
-
-
-
-
-
-        public Object getValue() {
-            UiThreadUtils.waitForCondition(() -> !mPromise.isPending(), mTimeoutMillis);
-
-            if (mPromise.isRejected()) {
-                throw new RejectedPromiseException(mPromise.getReason());
-            }
-
-            return mPromise.getValue();
         }
     }
 
@@ -798,8 +733,6 @@ public class GeckoSessionTestRule implements TestRule {
 
     private static final Set<Class<?>> DEFAULT_DELEGATES = getDefaultDelegates();
 
-    private static RDPConnection sRDPConnection;
-
     public final Environment env = new Environment();
 
     protected final Instrumentation mInstrumentation =
@@ -825,9 +758,6 @@ public class GeckoSessionTestRule implements TestRule {
     protected Surface mDisplaySurface;
     protected GeckoDisplay mDisplay;
     protected boolean mClosedSession;
-    protected boolean mWithDevTools;
-    protected Map<GeckoSession, Tab> mRDPTabs;
-    protected Tab mRDPChromeProcess;
     protected boolean mIgnoreCrash;
 
     public GeckoSessionTestRule() {
@@ -1020,8 +950,6 @@ public class GeckoSessionTestRule implements TestRule {
                 mDisplaySize = new Point(displaySize.width(), displaySize.height());
             } else if (ClosedSessionAtStart.class.equals(annotation.annotationType())) {
                 mClosedSession = ((ClosedSessionAtStart) annotation).value();
-            } else if (WithDevToolsAPI.class.equals(annotation.annotationType())) {
-                mWithDevTools = ((WithDevToolsAPI) annotation).value();
             } else if (IgnoreCrash.class.equals(annotation.annotationType())) {
                 mIgnoreCrash = ((IgnoreCrash) annotation).value();
             }
@@ -1044,7 +972,6 @@ public class GeckoSessionTestRule implements TestRule {
         mTimeoutMillis = env.getDefaultTimeoutMillis();
         mNullDelegates = new HashSet<>();
         mClosedSession = false;
-        mWithDevTools = false;
         mIgnoreCrash = false;
 
         applyAnnotations(Arrays.asList(description.getTestClass().getAnnotations()), settings);
@@ -1229,29 +1156,6 @@ public class GeckoSessionTestRule implements TestRule {
         } finally {
             mCallRecordHandler = null;
         }
-
-        attachDevTools(session);
-    }
-
-    private void attachDevTools(final GeckoSession session) {
-        if (!mWithDevTools) {
-            return;
-        }
-
-        if (sRDPConnection == null) {
-            final String packageName = InstrumentationRegistry.getTargetContext()
-                    .getPackageName();
-            final LocalSocketAddress address = new LocalSocketAddress(
-                    packageName + "/firefox-debugger-socket",
-                    LocalSocketAddress.Namespace.ABSTRACT);
-            sRDPConnection = new RDPConnection(address);
-            sRDPConnection.setTimeout(mTimeoutMillis);
-        }
-        if (mRDPTabs == null) {
-            mRDPTabs = new HashMap<>();
-        }
-        final Tab tab = sRDPConnection.getMostRecentTab();
-        mRDPTabs.put(session, tab);
     }
 
     private void waitForOpenSession(final GeckoSession session) {
@@ -1279,8 +1183,6 @@ public class GeckoSessionTestRule implements TestRule {
         } finally {
             mCallRecordHandler = null;
         }
-
-        attachDevTools(session);
     }
 
     
@@ -1292,15 +1194,6 @@ public class GeckoSessionTestRule implements TestRule {
     }
 
     protected void cleanupSession(final GeckoSession session) {
-        final Tab tab = (mRDPTabs != null) ? mRDPTabs.get(session) : null;
-        if (tab != null) {
-            if (session.isOpen()) {
-                tab.getPromises().detach();
-                tab.detach();
-            }
-
-            mRDPTabs.remove(session);
-        }
         if (session.isOpen()) {
             session.close();
         }
@@ -1351,8 +1244,6 @@ public class GeckoSessionTestRule implements TestRule {
         mLastWaitStart = 0;
         mLastWaitEnd = 0;
         mTimeoutMillis = 0;
-        mRDPTabs = null;
-        mRDPChromeProcess = null;
     }
 
     @Override
@@ -1946,13 +1837,13 @@ public class GeckoSessionTestRule implements TestRule {
         protected ExtensionPromise(final UUID uuid, final GeckoSession session, final String js) {
             mUuid = uuid;
             mSession = session;
-            evaluateExtJS(
+            evaluateJS(
                     session, "this['" + uuid + "'] = " + js + "; true"
             );
         }
 
         public Object getValue() {
-            return evaluateExtJS(mSession, "this['" + mUuid + "']");
+            return evaluateJS(mSession, "this['" + mUuid + "']");
         }
     }
 
@@ -1961,7 +1852,7 @@ public class GeckoSessionTestRule implements TestRule {
         return new ExtensionPromise(UUID.randomUUID(), session, js);
     }
 
-    public Object evaluateExtJS(final @NonNull GeckoSession session, final @NonNull String js) {
+    public Object evaluateJS(final @NonNull GeckoSession session, final @NonNull String js) {
         
         UiThreadUtils.waitForCondition(() -> mPorts.containsKey(session),
                 env.getDefaultTimeoutMillis());
@@ -2108,114 +1999,16 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
-
-    public Object evaluateJS(final @NonNull GeckoSession session, final @NonNull String js) {
-        assertThat("Must enable RDP using @WithDevToolsAPI",
-                   mWithDevTools, equalTo(true));
-
-        final Tab tab = mRDPTabs.get(session);
-        assertThat("Session should have tab object", tab, notNullValue());
-        return evaluateJS(tab, js);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    public Object evaluateChromeJS(final @NonNull String js) {
-        assertThat("Must enable RDP using @WithDevToolsAPI",
-                   mWithDevTools, equalTo(true));
-        ensureChromeProcess();
-        return evaluateJS(mRDPChromeProcess, js);
-    }
-
-    private void ensureChromeProcess() {
-        if (mRDPChromeProcess == null) {
-            mRDPChromeProcess = sRDPConnection.getChromeProcess();
-            assertThat("Should have chrome process object",
-                       mRDPChromeProcess, notNullValue());
-        }
-    }
-
-    private Object evaluateJS(final @NonNull Tab tab, final @NonNull String js) {
-        final Actor.Reply<Object> reply = tab.getConsole().evaluateJS(js);
-        UiThreadUtils.waitForCondition(reply::hasResult, mTimeoutMillis);
-
-        final Object result = reply.get();
-        if (result instanceof Promise) {
-            
-            
-            
-            final String tag = String.valueOf(result.hashCode());
-            tab.getConsole().evaluateJS("$_.tag = " + JSONObject.quote(tag) + ", $_");
-
-            final Promise[] promises = tab.getPromises().listPromises();
-            for (final Promise promise : promises) {
-                if (tag.equals(promise.getProperty("tag"))) {
-                    return new PromiseWrapper(promise, mTimeoutMillis);
-                }
-            }
-            throw new AssertionError("Cannot find Promise");
-        }
-        return result;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
     public @Nullable Object waitForJS(final @NonNull GeckoSession session, final @NonNull String js) {
         try {
             beforeWait();
-            return evaluateExtJS(session, js);
+            return evaluateJS(session, js);
         } finally {
             afterWait(mCallRecords.size());
         }
     }
 
     
-
-
-
-
-
-
-
-
-
-
-    public @Nullable Object waitForChromeJS(final @NonNull String js) {
-        try {
-            beforeWait();
-            return resolvePromise(evaluateChromeJS(js));
-        } finally {
-            afterWait(mCallRecords.size());
-        }
-    }
-
-    private @Nullable Object resolvePromise(final @Nullable Object result) {
-        if (result instanceof PromiseWrapper) {
-            return ((PromiseWrapper) result).getValue();
-        }
-        return result;
-    }
-
-    
-
 
 
 
@@ -2251,6 +2044,21 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
+    public List<String> getRequestedLocales() {
+        try {
+            JSONArray locales = (JSONArray) webExtensionApiCall("GetRequestedLocales", null);
+            List<String> result = new ArrayList<>();
+
+            for (int i = 0; i < locales.length(); i++) {
+                result.add(locales.getString(i));
+            }
+
+            return result;
+        } catch (JSONException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     private Object webExtensionApiCall(final String apiName, JSONObject args) throws JSONException {
         
         UiThreadUtils.waitForCondition(() -> RuntimeCreator.backgroundPort() != null,
@@ -2274,7 +2082,6 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
-
     public void setPrefsUntilTestEnd(final @NonNull Map<String, ?> prefs) {
         mTestScopeDelegates.setPrefs(prefs);
     }
@@ -2286,21 +2093,8 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
-
     public void setPrefsDuringNextWait(final @NonNull Map<String, ?> prefs) {
         mWaitScopeDelegates.setPrefs(prefs);
-    }
-
-    
-
-
-
-    public void forceGarbageCollection() {
-        assertThat("Must enable RDP using @WithDevToolsAPI",
-                   mWithDevTools, equalTo(true));
-        ensureChromeProcess();
-        mRDPChromeProcess.getMemory().forceCycleCollection();
-        mRDPChromeProcess.getMemory().forceGarbageCollection();
     }
 
     
