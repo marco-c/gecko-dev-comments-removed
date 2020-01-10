@@ -303,24 +303,16 @@ XPCOMUtils.defineLazyGetter(this, "gURLBar", () => gURLBarHandler.urlbar);
 
 
 var gURLBarHandler = {
-  toggleQuantumBarAttribute() {
-    this.textbox = document.getElementById("urlbar");
-    this.textbox.setAttribute("quantumbar", this.quantumbar);
-  },
-
   
 
 
   get urlbar() {
     if (!this._urlbar) {
-      if (this.quantumbar) {
-        this._urlbar = new UrlbarInput({ textbox: this.textbox });
-        if (this._lastValue) {
-          this._urlbar.value = this._lastValue;
-          delete this._lastValue;
-        }
-      } else {
-        this._urlbar = this.textbox;
+      let textbox = document.getElementById("urlbar");
+      this._urlbar = new UrlbarInput({ textbox });
+      if (this._lastValue) {
+        this._urlbar.value = this._lastValue;
+        delete this._lastValue;
       }
       gBrowser.tabContainer.addEventListener("TabSelect", this._urlbar);
     }
@@ -330,30 +322,8 @@ var gURLBarHandler = {
   
 
 
-
-
-
-  formatValue() {
-    if (this.quantumbar) {
-      this.urlbar.formatValue();
-    } else if (typeof this.textbox.formatValue == "function") {
-      this.textbox.formatValue();
-    }
-  },
-
-  
-
-
-  handlePrefChange() {
-    this._updateBinding();
-    this._reset();
-  },
-
-  
-
-
   customizeStart() {
-    if (this._urlbar && this._urlbar.constructor.name == "UrlbarInput") {
+    if (this._urlbar) {
       this._urlbar.removeCopyCutController();
     }
   },
@@ -368,40 +338,16 @@ var gURLBarHandler = {
   
 
 
-  _updateBinding() {
-    let quantumbarApplied = this.textbox.getAttribute("quantumbar") == "true";
-    if (quantumbarApplied != this.quantumbar) {
-      let placeholder = document.createXULElement("toolbarpaletteitem");
-      let parent = this.textbox.parentNode;
-      parent.replaceChild(placeholder, this.textbox);
-      this.textbox.setAttribute("quantumbar", this.quantumbar);
-      parent.replaceChild(this.textbox, placeholder);
-    }
-  },
-
-  
-
-
   _reset() {
     if (this._urlbar) {
       gBrowser.tabContainer.removeEventListener("TabSelect", this._urlbar);
-      if (this._urlbar.constructor.name == "UrlbarInput") {
-        this._lastValue = this._urlbar.value;
-        this._urlbar.uninit();
-      }
+      this._lastValue = this._urlbar.value;
+      this._urlbar.uninit();
       delete this._urlbar;
       gURLBar = this.urlbar;
     }
   },
 };
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  gURLBarHandler,
-  "quantumbar",
-  "browser.urlbar.quantumbar",
-  false,
-  gURLBarHandler.handlePrefChange.bind(gURLBarHandler)
-);
 
 XPCOMUtils.defineLazyGetter(this, "ReferrerInfo", () =>
   Components.Constructor(
@@ -1675,7 +1621,8 @@ var gBrowserInit = {
 
   onBeforeInitialXULLayout() {
     
-    gURLBarHandler.toggleQuantumBarAttribute();
+    let urlbar = document.getElementById("urlbar");
+    urlbar.setAttribute("quantumbar", true);
 
     
     if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
@@ -5838,7 +5785,7 @@ var XULBrowserWindow = {
 
     
     
-    gURLBarHandler.formatValue();
+    gURLBar.formatValue();
 
     try {
       uri = Services.uriFixup.createExposableURI(uri);
