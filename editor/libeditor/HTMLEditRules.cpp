@@ -1064,142 +1064,185 @@ static nsStaticAtom& MarginPropertyAtomForIndent(nsINode& aNode) {
                                         : *nsGkAtoms::marginLeft;
 }
 
-nsresult HTMLEditRules::GetParagraphState(bool* aMixed, nsAString& outFormat) {
-  if (NS_WARN_IF(!aMixed)) {
-    return NS_ERROR_INVALID_ARG;
+ParagraphStateAtSelection::ParagraphStateAtSelection(HTMLEditor& aHTMLEditor,
+                                                     ErrorResult& aRv) {
+  if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
+    aRv = EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+    return;
   }
 
-  if (NS_WARN_IF(!CanHandleEditAction())) {
-    return NS_ERROR_EDITOR_DESTROYED;
+  
+  
+  
+  EditorBase::AutoEditActionDataSetter editActionData(aHTMLEditor,
+                                                      EditAction::eNotEditing);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    aRv = EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+    return;
   }
 
-  
-  
-  *aMixed = true;
-  outFormat.Truncate(0);
-
-  AutoSafeEditorData setData(*this, *mHTMLEditor);
-
-  bool bMixed = false;
-  
-  nsAutoString formatStr(NS_LITERAL_STRING("x"));
-
-  nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  nsresult rv = GetParagraphFormatNodes(arrayOfNodes);
+  AutoTArray<OwningNonNull<nsINode>, 64> arrayOfNodes;
+  nsresult rv =
+      CollectEditableFormatNodesInSelection(aHTMLEditor, arrayOfNodes);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+    aRv.Throw(rv);
+    return;
   }
 
   
   
   
   for (int32_t i = arrayOfNodes.Length() - 1; i >= 0; i--) {
-    auto& curNode = arrayOfNodes[i];
+    auto& node = arrayOfNodes[i];
     nsAutoString format;
-    
-    if (HTMLEditor::NodeIsBlockStatic(curNode) &&
-        !HTMLEditUtils::IsFormatNode(curNode)) {
+    if (HTMLEditor::NodeIsBlockStatic(node) &&
+        !HTMLEditUtils::IsFormatNode(node)) {
       
-      rv = AppendInnerFormatNodes(arrayOfNodes, curNode);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+      
+      
+      
+      
+      
+      ParagraphStateAtSelection::AppendDescendantFormatNodesAndFirstInlineNode(
+          arrayOfNodes, *node->AsElement());
     }
   }
 
   
   
   if (arrayOfNodes.IsEmpty()) {
-    EditorRawDOMPoint atCaret(EditorBase::GetStartPoint(*SelectionRefPtr()));
+    EditorRawDOMPoint atCaret(
+        EditorBase::GetStartPoint(*aHTMLEditor.SelectionRefPtr()));
     if (NS_WARN_IF(!atCaret.IsSet())) {
-      return NS_ERROR_FAILURE;
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
     }
     arrayOfNodes.AppendElement(*atCaret.GetContainer());
   }
 
-  
-  Element* rootElement = HTMLEditorRef().GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
-    return NS_ERROR_FAILURE;
+  Element* bodyOrDocumentElement = aHTMLEditor.GetRoot();
+  if (NS_WARN_IF(!bodyOrDocumentElement)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
   }
 
-  
-  for (auto& curNode : Reversed(arrayOfNodes)) {
-    nsAutoString format;
+  for (auto& node : Reversed(arrayOfNodes)) {
+    nsAtom* paragraphStateOfNode = nsGkAtoms::_empty;
+    if (HTMLEditUtils::IsFormatNode(node)) {
+      MOZ_ASSERT(node->NodeInfo()->NameAtom());
+      paragraphStateOfNode = node->NodeInfo()->NameAtom();
+    }
     
-    if (HTMLEditUtils::IsFormatNode(curNode)) {
-      GetFormatString(curNode, format);
-    } else if (HTMLEditor::NodeIsBlockStatic(curNode)) {
-      
-      
-      
-      
+    
+    else if (HTMLEditor::NodeIsBlockStatic(node)) {
       continue;
-    } else {
-      nsINode* node = curNode->GetParentNode();
-      while (node) {
-        if (node == rootElement) {
-          format.Truncate(0);
-          break;
-        } else if (HTMLEditUtils::IsFormatNode(node)) {
-          GetFormatString(node, format);
+    }
+    
+    else {
+      for (nsINode* parentNode = node->GetParentNode(); parentNode;
+           parentNode = parentNode->GetParentNode()) {
+        
+        
+        if (parentNode == bodyOrDocumentElement) {
           break;
         }
-        
-        node = node->GetParentNode();
+        if (HTMLEditUtils::IsFormatNode(parentNode)) {
+          MOZ_ASSERT(parentNode->NodeInfo()->NameAtom());
+          paragraphStateOfNode = parentNode->NodeInfo()->NameAtom();
+          break;
+        }
       }
     }
 
     
-    if (formatStr.EqualsLiteral("x")) {
-      formatStr = format;
+    if (!mFirstParagraphState) {
+      mFirstParagraphState = paragraphStateOfNode;
+      continue;
     }
     
-    else if (format != formatStr) {
-      bMixed = true;
+    if (mFirstParagraphState != paragraphStateOfNode) {
+      mIsMixed = true;
       break;
     }
   }
-
-  *aMixed = bMixed;
-  outFormat = formatStr;
-  return NS_OK;
 }
 
-nsresult HTMLEditRules::AppendInnerFormatNodes(
-    nsTArray<OwningNonNull<nsINode>>& aArray, nsINode* aNode) {
-  MOZ_ASSERT(aNode);
+
+void ParagraphStateAtSelection::AppendDescendantFormatNodesAndFirstInlineNode(
+    nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+    Element& aNonFormatBlockElement) {
+  MOZ_ASSERT(HTMLEditor::NodeIsBlockStatic(aNonFormatBlockElement));
+  MOZ_ASSERT(!HTMLEditUtils::IsFormatNode(&aNonFormatBlockElement));
 
   
   
   
   
   bool foundInline = false;
-  for (nsIContent* child = aNode->GetFirstChild(); child;
-       child = child->GetNextSibling()) {
-    bool isBlock = HTMLEditor::NodeIsBlockStatic(*child);
-    bool isFormat = HTMLEditUtils::IsFormatNode(child);
+  for (nsIContent* childContent = aNonFormatBlockElement.GetFirstChild();
+       childContent; childContent = childContent->GetNextSibling()) {
+    bool isBlock = HTMLEditor::NodeIsBlockStatic(*childContent);
+    bool isFormat = HTMLEditUtils::IsFormatNode(childContent);
+    
+    
     if (isBlock && !isFormat) {
-      
-      AppendInnerFormatNodes(aArray, child);
-    } else if (isFormat) {
-      aArray.AppendElement(*child);
-    } else if (!foundInline) {
-      
+      ParagraphStateAtSelection::AppendDescendantFormatNodesAndFirstInlineNode(
+          aArrayOfNodes, *childContent->AsElement());
+      continue;
+    }
+
+    
+    if (isFormat) {
+      aArrayOfNodes.AppendElement(*childContent);
+      continue;
+    }
+
+    MOZ_ASSERT(!isBlock);
+
+    
+    
+    
+    
+    
+    if (!foundInline) {
       foundInline = true;
-      aArray.AppendElement(*child);
+      aArrayOfNodes.AppendElement(*childContent);
+      continue;
     }
   }
-  return NS_OK;
 }
 
-nsresult HTMLEditRules::GetFormatString(nsINode* aNode, nsAString& outFormat) {
-  NS_ENSURE_TRUE(aNode, NS_ERROR_NULL_POINTER);
 
-  if (HTMLEditUtils::IsFormatNode(aNode)) {
-    aNode->NodeInfo()->NameAtom()->ToString(outFormat);
-  } else {
-    outFormat.Truncate();
+nsresult ParagraphStateAtSelection::CollectEditableFormatNodesInSelection(
+    HTMLEditor& aHTMLEditor, nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes) {
+  nsresult rv = aHTMLEditor.CollectEditTargetNodesInExtendedSelectionRanges(
+      aArrayOfNodes, EditSubAction::eCreateOrRemoveBlock,
+      HTMLEditor::CollectNonEditableNodes::Yes);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  for (int32_t i = aArrayOfNodes.Length() - 1; i >= 0; i--) {
+    OwningNonNull<nsINode> node = aArrayOfNodes[i];
+
+    
+    if (!aHTMLEditor.IsEditable(node)) {
+      aArrayOfNodes.RemoveElementAt(i);
+      continue;
+    }
+
+    
+    
+    
+    if (HTMLEditUtils::IsTableElement(node) || HTMLEditUtils::IsList(node) ||
+        HTMLEditUtils::IsListItem(node)) {
+      aArrayOfNodes.RemoveElementAt(i);
+      aHTMLEditor.CollectChildren(node, aArrayOfNodes, i,
+                                  HTMLEditor::CollectListChildren::Yes,
+                                  HTMLEditor::CollectTableChildren::Yes,
+                                  HTMLEditor::CollectNonEditableNodes::Yes);
+    }
   }
   return NS_OK;
 }
@@ -7960,43 +8003,6 @@ Element* HTMLEditor::GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
     parentElement = content->AsElement();
   }
   return parentElement;
-}
-
-nsresult HTMLEditRules::GetParagraphFormatNodes(
-    nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes) {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  nsresult rv = HTMLEditorRef().CollectEditTargetNodesInExtendedSelectionRanges(
-      outArrayOfNodes, EditSubAction::eCreateOrRemoveBlock,
-      HTMLEditor::CollectNonEditableNodes::Yes);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  for (int32_t i = outArrayOfNodes.Length() - 1; i >= 0; i--) {
-    OwningNonNull<nsINode> testNode = outArrayOfNodes[i];
-
-    
-    if (!HTMLEditorRef().IsEditable(testNode)) {
-      outArrayOfNodes.RemoveElementAt(i);
-      continue;
-    }
-
-    
-    
-    
-    if (HTMLEditUtils::IsTableElement(testNode) ||
-        HTMLEditUtils::IsList(testNode) ||
-        HTMLEditUtils::IsListItem(testNode)) {
-      outArrayOfNodes.RemoveElementAt(i);
-      HTMLEditorRef().CollectChildren(testNode, outArrayOfNodes, i,
-                                      HTMLEditor::CollectListChildren::Yes,
-                                      HTMLEditor::CollectTableChildren::Yes,
-                                      HTMLEditor::CollectNonEditableNodes::Yes);
-    }
-  }
-  return NS_OK;
 }
 
 nsresult HTMLEditor::SplitParentInlineElementsAtRangeEdges(

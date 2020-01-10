@@ -48,6 +48,7 @@ class EmptyEditableFunctor;
 class ListElementSelectionState;
 class ListItemElementSelectionState;
 class MoveNodeResult;
+class ParagraphStateAtSelection;
 class ResizerSelectionListener;
 class SplitRangeOffFromNodeResult;
 class WSRunObject;
@@ -4370,6 +4371,7 @@ class HTMLEditor final : public TextEditor,
   friend class HTMLEditRules;
   friend class ListElementSelectionState;
   friend class ListItemElementSelectionState;
+  friend class ParagraphStateAtSelection;
   friend class SlurpBlobEventListener;
   friend class TextEditor;
   friend class WSRunObject;
@@ -4439,6 +4441,63 @@ class MOZ_STACK_CLASS AlignStateAtSelection final {
 
  private:
   nsIHTMLEditor::EAlignment mFirstAlign = nsIHTMLEditor::eLeft;
+};
+
+
+
+
+class MOZ_STACK_CLASS ParagraphStateAtSelection final {
+ public:
+  ParagraphStateAtSelection() = delete;
+  ParagraphStateAtSelection(HTMLEditor& aHTMLEditor, ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+
+
+  nsAtom* GetFirstParagraphStateAtSelection() const {
+    return mFirstParagraphState;
+  }
+
+  
+
+
+
+  bool IsMixed() const { return mIsMixed; }
+
+ private:
+  
+
+
+
+
+
+
+
+
+
+
+  static void AppendDescendantFormatNodesAndFirstInlineNode(
+      nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes,
+      Element& aNonFormatBlockElement);
+
+  
+
+
+
+
+
+
+  static nsresult CollectEditableFormatNodesInSelection(
+      HTMLEditor& aHTMLEditor, nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes);
+
+  RefPtr<nsAtom> mFirstParagraphState;
+  bool mIsMixed = false;
 };
 
 }  
