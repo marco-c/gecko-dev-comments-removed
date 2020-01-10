@@ -1105,14 +1105,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
   },
 
-  paint: function(point) {
-    this.dbg.replayPaint(point);
-  },
-
-  paintCurrentPoint: function() {
-    this.dbg.replayPaintCurrentPoint();
-  },
-
   
 
 
@@ -1850,7 +1842,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
           recording,
           executionPoint,
           unscannedRegions,
-          cachedPoints
+          cachedPoints,
         });
       }
     }, 100);
