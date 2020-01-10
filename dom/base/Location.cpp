@@ -737,7 +737,8 @@ nsresult Location::Reload(bool aForceget) {
   nsCOMPtr<nsPIDOMWindowOuter> window =
       docShell ? docShell->GetWindow() : nullptr;
 
-  if (window && window->IsHandlingResizeEvent()) {
+  if (StaticPrefs::dom_block_reload_from_resize_event_handler() && window &&
+      window->IsHandlingResizeEvent()) {
     
     
     

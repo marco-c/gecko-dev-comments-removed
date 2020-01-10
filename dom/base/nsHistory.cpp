@@ -153,7 +153,8 @@ void nsHistory::Go(int32_t aDelta, ErrorResult& aRv) {
       window = docShell->GetWindow();
     }
 
-    if (window && window->IsHandlingResizeEvent()) {
+    if (StaticPrefs::dom_block_reload_from_resize_event_handler() && window &&
+        window->IsHandlingResizeEvent()) {
       
       
       
