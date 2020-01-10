@@ -127,13 +127,15 @@ var gProtectionsHandler = {
 
     this._TPSwitchCommanding = true;
 
-    let currentlyEnabled =
-      !this._protectionsPopup.hasAttribute("hasException");
+    
+    
+    let newExceptionState =
+      this._protectionsPopup.toggleAttribute("hasException");
+    this._protectionsPopupTPSwitch.toggleAttribute("enabled", !newExceptionState);
 
-    this._protectionsPopupTPSwitch.toggleAttribute("enabled", !currentlyEnabled);
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    if (currentlyEnabled) {
+    if (newExceptionState) {
       ContentBlocking.disableForCurrentPage();
       gIdentityHandler.recordClick("unblock");
     } else {
