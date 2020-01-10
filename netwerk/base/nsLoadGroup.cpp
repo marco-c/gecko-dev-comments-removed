@@ -194,14 +194,18 @@ nsLoadGroup::Cancel(nsresult status) {
   mIsCanceling = true;
 
   nsresult firstError = NS_OK;
-
   while (count > 0) {
-    nsCOMPtr<nsIRequest> request = dont_AddRef(requests.ElementAt(--count));
+    nsCOMPtr<nsIRequest> request = requests.ElementAt(--count);
 
     NS_ASSERTION(request, "NULL request found in list.");
 
     if (!mRequests.Search(request)) {
       
+      
+      
+      nsCOMPtr<nsIRequest> request = dont_AddRef(requests.ElementAt(count));
+      requests.ElementAt(count) = nullptr;
+
       continue;
     }
 
@@ -215,16 +219,15 @@ nsLoadGroup::Cancel(nsresult status) {
     
     rv = request->Cancel(status);
 
-    
-    
-    
-    
-    
-    
-    (void)RemoveRequest(request, nullptr, status);
+    (void)RemoveRequestFromHashtable(request, status);
 
     
     if (NS_FAILED(rv) && NS_SUCCEEDED(firstError)) firstError = rv;
+  }
+
+  for (count = requests.Length(); count > 0;) {
+    nsCOMPtr<nsIRequest> request = dont_AddRef(requests.ElementAt(--count));
+    (void)NotifyRemovalObservers(request, status);
   }
 
   if (mRequestContext) {
@@ -478,6 +481,20 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
 NS_IMETHODIMP
 nsLoadGroup::RemoveRequest(nsIRequest* request, nsISupports* ctxt,
                            nsresult aStatus) {
+  
+  
+  nsCOMPtr<nsIRequest> kungFuDeathGrip(request);
+
+  nsresult rv = RemoveRequestFromHashtable(request, aStatus);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  return NotifyRemovalObservers(request, aStatus);
+}
+
+nsresult nsLoadGroup::RemoveRequestFromHashtable(nsIRequest* request,
+                                                 nsresult aStatus) {
   NS_ENSURE_ARG_POINTER(request);
   nsresult rv;
 
@@ -489,11 +506,6 @@ nsLoadGroup::RemoveRequest(nsIRequest* request, nsISupports* ctxt,
          this, request, nameStr.get(), static_cast<uint32_t>(aStatus),
          mRequests.EntryCount() - 1));
   }
-
-  
-  
-
-  nsCOMPtr<nsIRequest> kungFuDeathGrip(request);
 
   
   
@@ -546,11 +558,17 @@ nsLoadGroup::RemoveRequest(nsIRequest* request, nsISupports* ctxt,
     TelemetryReport();
   }
 
+  return NS_OK;
+}
+
+nsresult nsLoadGroup::NotifyRemovalObservers(nsIRequest* request,
+                                             nsresult aStatus) {
+  NS_ENSURE_ARG_POINTER(request);
   
   if (mPriority != 0) RescheduleRequest(request, -mPriority);
 
   nsLoadFlags flags;
-  rv = request->GetLoadFlags(&flags);
+  nsresult rv = request->GetLoadFlags(&flags);
   if (NS_FAILED(rv)) return rv;
 
   if (!(flags & nsIRequest::LOAD_BACKGROUND)) {
