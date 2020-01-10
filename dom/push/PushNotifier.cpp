@@ -101,6 +101,8 @@ nsresult PushNotifier::Dispatch(PushDispatcher& aDispatcher) {
       for (uint32_t i = 0; i < contentActors.Length(); ++i) {
         
         
+        
+        
         if (!contentActors[i]->GetRemoteType().EqualsLiteral(
                 DEFAULT_REMOTE_TYPE)) {
           continue;
