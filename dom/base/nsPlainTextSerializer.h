@@ -249,10 +249,18 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   bool mHasWrittenCiteBlockquote;
 
-  int32_t mIndent;
-  
-  
-  nsString mInIndentString;
+  struct Indentation {
+    
+    
+    int32_t mWidth = 0;
+
+    
+    
+    nsString mHeader;
+  };
+
+  Indentation mIndentation;
+
   int32_t mCiteQuoteLevel;
   int32_t mFloatingLines;  
 

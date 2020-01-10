@@ -146,7 +146,6 @@ nsPlainTextSerializer::nsPlainTextSerializer()
       kSpace(NS_LITERAL_STRING(" "))  
 {
   mHeadLevel = 0;
-  mIndent = 0;
   mCiteQuoteLevel = 0;
   mHasWrittenCiteBlockquote = false;
   mSpanLevel = 0;
@@ -640,7 +639,7 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
     
     EnsureVerticalSpace(mULCount + mOLStackIndex == 0 ? 1 : 0);
     
-    mIndent += kIndentSizeList;
+    mIndentation.mWidth += kIndentSizeList;
     mULCount++;
   } else if (aTag == nsGkAtoms::ol) {
     EnsureVerticalSpace(mULCount + mOLStackIndex == 0 ? 1 : 0);
@@ -659,7 +658,7 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
     } else {
       mOLStackIndex++;
     }
-    mIndent += kIndentSizeList;  
+    mIndentation.mWidth += kIndentSizeList;  
   } else if (aTag == nsGkAtoms::li &&
              mSettings.HasFlag(nsIDocumentEncoder::OutputFormatted)) {
     if (mTagStackIndex > 1 && IsInOL()) {
@@ -671,28 +670,28 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
           if (NS_SUCCEEDED(rv)) mOLStack[mOLStackIndex - 1] = valueAttrVal;
         }
         
-        mInIndentString.AppendInt(mOLStack[mOLStackIndex - 1]++, 10);
+        mIndentation.mHeader.AppendInt(mOLStack[mOLStackIndex - 1]++, 10);
       } else {
-        mInIndentString.Append(char16_t('#'));
+        mIndentation.mHeader.Append(char16_t('#'));
       }
 
-      mInIndentString.Append(char16_t('.'));
+      mIndentation.mHeader.Append(char16_t('.'));
 
     } else {
       static const char bulletCharArray[] = "*o+#";
       uint32_t index = mULCount > 0 ? (mULCount - 1) : 3;
       char bulletChar = bulletCharArray[index % 4];
-      mInIndentString.Append(char16_t(bulletChar));
+      mIndentation.mHeader.Append(char16_t(bulletChar));
     }
 
-    mInIndentString.Append(char16_t(' '));
+    mIndentation.mHeader.Append(char16_t(' '));
   } else if (aTag == nsGkAtoms::dl) {
     EnsureVerticalSpace(1);
   } else if (aTag == nsGkAtoms::dt) {
     EnsureVerticalSpace(0);
   } else if (aTag == nsGkAtoms::dd) {
     EnsureVerticalSpace(0);
-    mIndent += kIndentSizeDD;
+    mIndentation.mWidth += kIndentSizeDD;
   } else if (aTag == nsGkAtoms::span) {
     ++mSpanLevel;
   } else if (aTag == nsGkAtoms::blockquote) {
@@ -703,7 +702,7 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
       mCiteQuoteLevel++;
     } else {
       EnsureVerticalSpace(1);
-      mIndent += kTabSize;  
+      mIndentation.mWidth += kTabSize;  
     }
   } else if (aTag == nsGkAtoms::q) {
     Write(NS_LITERAL_STRING("\""));
@@ -731,7 +730,7 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
       aTag == nsGkAtoms::h4 || aTag == nsGkAtoms::h5 || aTag == nsGkAtoms::h6) {
     EnsureVerticalSpace(2);
     if (mSettings.GetHeaderStrategy() == 2) {  
-      mIndent += kIndentSizeHeaders;
+      mIndentation.mWidth += kIndentSizeHeaders;
       
       int32_t level = HeaderLevel(aTag);
       
@@ -752,10 +751,10 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
       leadup.Append(char16_t(' '));
       Write(leadup);
     } else if (mSettings.GetHeaderStrategy() == 1) {  
-      mIndent += kIndentSizeHeaders;
+      mIndentation.mWidth += kIndentSizeHeaders;
       for (int32_t i = HeaderLevel(aTag); i > 1; i--) {
         
-        mIndent += kIndentIncrementHeaders;
+        mIndentation.mWidth += kIndentIncrementHeaders;
       }
     }
   } else if (aTag == nsGkAtoms::a && !currentNodeIsConverted) {
@@ -872,14 +871,14 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
     mLineBreakDue = true;
   } else if (aTag == nsGkAtoms::ul) {
     FlushLine();
-    mIndent -= kIndentSizeList;
+    mIndentation.mWidth -= kIndentSizeList;
     if (--mULCount + mOLStackIndex == 0) {
       mFloatingLines = 1;
       mLineBreakDue = true;
     }
   } else if (aTag == nsGkAtoms::ol) {
     FlushLine();  
-    mIndent -= kIndentSizeList;
+    mIndentation.mWidth -= kIndentSizeList;
     NS_ASSERTION(mOLStackIndex, "Wrong OLStack level!");
     mOLStackIndex--;
     if (mULCount + mOLStackIndex == 0) {
@@ -891,7 +890,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
     mLineBreakDue = true;
   } else if (aTag == nsGkAtoms::dd) {
     FlushLine();
-    mIndent -= kIndentSizeDD;
+    mIndentation.mWidth -= kIndentSizeDD;
   } else if (aTag == nsGkAtoms::span) {
     NS_ASSERTION(mSpanLevel, "Span level will be negative!");
     --mSpanLevel;
@@ -910,7 +909,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
       mFloatingLines = 0;
       mHasWrittenCiteBlockquote = true;
     } else {
-      mIndent -= kTabSize;
+      mIndentation.mWidth -= kTabSize;
       mFloatingLines = 1;
     }
     mLineBreakDue = true;
@@ -944,12 +943,12 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
   if (aTag == nsGkAtoms::h1 || aTag == nsGkAtoms::h2 || aTag == nsGkAtoms::h3 ||
       aTag == nsGkAtoms::h4 || aTag == nsGkAtoms::h5 || aTag == nsGkAtoms::h6) {
     if (mSettings.GetHeaderStrategy()) { 
-      mIndent -= kIndentSizeHeaders;
+      mIndentation.mWidth -= kIndentSizeHeaders;
     }
     if (mSettings.GetHeaderStrategy() == 1 ) {
       for (int32_t i = HeaderLevel(aTag); i > 1; i--) {
         
-        mIndent -= kIndentIncrementHeaders;
+        mIndentation.mWidth -= kIndentIncrementHeaders;
       }
     }
     EnsureVerticalSpace(1);
@@ -1115,7 +1114,7 @@ void nsPlainTextSerializer::EnsureVerticalSpace(int32_t noOfRows) {
   
   
   
-  if (noOfRows >= 0 && !mInIndentString.IsEmpty()) {
+  if (noOfRows >= 0 && !mIndentation.mHeader.IsEmpty()) {
     EndLine(false);
     mInWhitespace = true;
   }
@@ -1168,7 +1167,7 @@ static bool IsSpaceStuffable(const char16_t* s) {
 void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
                                       int32_t aLineFragmentLength) {
   const uint32_t prefixwidth =
-      (mCiteQuoteLevel > 0 ? mCiteQuoteLevel + 1 : 0) + mIndent;
+      (mCiteQuoteLevel > 0 ? mCiteQuoteLevel + 1 : 0) + mIndentation.mWidth;
 
   if (mLineBreakDue) EnsureVerticalSpace(mFloatingLines);
 
@@ -1368,7 +1367,7 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
 
   if (aSoftlinebreak &&
       mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed) &&
-      (mIndent == 0)) {
+      (mIndentation.mWidth == 0)) {
     
     
     
@@ -1386,7 +1385,8 @@ void nsPlainTextSerializer::EndLine(bool aSoftlinebreak, bool aBreakBySpace) {
     mEmptyLines = 0;
   } else {
     
-    if (!mCurrentLineContent.mValue.IsEmpty() || !mInIndentString.IsEmpty()) {
+    if (!mCurrentLineContent.mValue.IsEmpty() ||
+        !mIndentation.mHeader.IsEmpty()) {
       mEmptyLines = -1;
     }
 
@@ -1442,9 +1442,9 @@ void nsPlainTextSerializer::OutputQuotesAndIndent(
   }
 
   
-  int32_t indentwidth = mIndent - mInIndentString.Length();
+  int32_t indentwidth = mIndentation.mWidth - mIndentation.mHeader.Length();
   if (indentwidth > 0 &&
-      (!mCurrentLineContent.mValue.IsEmpty() || !mInIndentString.IsEmpty())
+      (!mCurrentLineContent.mValue.IsEmpty() || !mIndentation.mHeader.IsEmpty())
       
   ) {
     nsAutoString spaces;
@@ -1452,9 +1452,9 @@ void nsPlainTextSerializer::OutputQuotesAndIndent(
     stringToOutput += spaces;
   }
 
-  if (!mInIndentString.IsEmpty()) {
-    stringToOutput += mInIndentString;
-    mInIndentString.Truncate();
+  if (!mIndentation.mHeader.IsEmpty()) {
+    stringToOutput += mIndentation.mHeader;
+    mIndentation.mHeader.Truncate();
   }
 
   if (stripTrailingSpaces) {
