@@ -117,6 +117,9 @@ void nsRubyFrame::Reflow(nsPresContext* aPresContext,
   WritingMode frameWM = aReflowInput.GetWritingMode();
   WritingMode lineWM = aReflowInput.mLineLayout->GetWritingMode();
   LogicalMargin borderPadding = aReflowInput.ComputedLogicalBorderPadding();
+  nsLayoutUtils::SetBSizeFromFontMetrics(this, aDesiredSize, borderPadding,
+                                         lineWM, frameWM);
+
   nscoord startEdge = 0;
   const bool boxDecorationBreakClone =
       StyleBorder()->mBoxDecorationBreak == StyleBoxDecorationBreak::Clone;
@@ -131,7 +134,8 @@ void nsRubyFrame::Reflow(nsPresContext* aPresContext,
                                       availableISize, &mBaseline);
 
   for (RubySegmentEnumerator e(this); !e.AtEnd(); e.Next()) {
-    ReflowSegment(aPresContext, aReflowInput, e.GetBaseContainer(), aStatus);
+    ReflowSegment(aPresContext, aReflowInput, aDesiredSize.BlockStartAscent(),
+                  aDesiredSize.BSize(lineWM), e.GetBaseContainer(), aStatus);
 
     if (aStatus.IsInlineBreak()) {
       
@@ -148,7 +152,8 @@ void nsRubyFrame::Reflow(nsPresContext* aPresContext,
       
       break;
     }
-    ReflowSegment(aPresContext, aReflowInput, baseContainer, aStatus);
+    ReflowSegment(aPresContext, aReflowInput, aDesiredSize.BlockStartAscent(),
+                  aDesiredSize.BSize(lineWM), baseContainer, aStatus);
   }
   
   MOZ_ASSERT(!aStatus.IsOverflowIncomplete());
@@ -165,13 +170,11 @@ void nsRubyFrame::Reflow(nsPresContext* aPresContext,
   if (nsRubyBaseContainerFrame* rbc = FindRubyBaseContainerAncestor(this)) {
     rbc->UpdateDescendantLeadings(mLeadings);
   }
-
-  nsLayoutUtils::SetBSizeFromFontMetrics(this, aDesiredSize, borderPadding,
-                                         lineWM, frameWM);
 }
 
 void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
                                 const ReflowInput& aReflowInput,
+                                nscoord aBlockStartAscent, nscoord aBlockSize,
                                 nsRubyBaseContainerFrame* aBaseContainer,
                                 nsReflowStatus& aStatus) {
   WritingMode lineWM = aReflowInput.mLineLayout->GetWritingMode();
@@ -270,7 +273,8 @@ void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
   
   
   
-  baseRect.BStart(lineWM) = 0;
+  
+  baseRect.BStart(lineWM) = aBlockStartAscent - baseMetrics.BlockStartAscent();
   
   LogicalRect offsetRect = baseRect;
   RubyBlockLeadings descLeadings = aBaseContainer->GetDescendantLeadings();
@@ -357,8 +361,11 @@ void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
   }
 
   
-  nscoord startLeading = baseRect.BStart(lineWM) - offsetRect.BStart(lineWM);
-  nscoord endLeading = offsetRect.BEnd(lineWM) - baseRect.BEnd(lineWM);
+  
+  
+  
+  nscoord startLeading = -offsetRect.BStart(lineWM);
+  nscoord endLeading = offsetRect.BEnd(lineWM) - aBlockSize;
   
   NS_WARNING_ASSERTION(startLeading >= 0 && endLeading >= 0,
                        "Leadings should be non-negative (because adding "
