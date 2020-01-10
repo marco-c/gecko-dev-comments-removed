@@ -1,7 +1,3 @@
-
-
-
-
  (function(modules) { 
  	
  	var installedModules = {};
@@ -105,6 +101,9 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(14);
  var react_dom__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_6__);
  var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(53);
+
+
+
 
 
 
@@ -465,7 +464,7 @@ function SetPref(name, value, importContext = globalImportContext) {
 
 function WebExtEvent(type, data, importContext = globalImportContext) {
   if (!data || !data.source) {
-    throw new Error("WebExtEvent actions should include a property \"source\", the id of the webextension that should receive the event.");
+    throw new Error('WebExtEvent actions should include a property "source", the id of the webextension that should receive the event.');
   }
 
   const action = {
@@ -572,6 +571,9 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(47);
  var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(36);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -770,6 +772,9 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 
 
 
+
+
+
 const Row = props => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("tr", _extends({
   className: "message-item"
 }, props), props.children);
@@ -796,7 +801,7 @@ function relativeTime(timestamp) {
 }
 
 const LAYOUT_VARIANTS = {
-  "basic": "Basic default layout (on by default in nightly)",
+  basic: "Basic default layout (on by default in nightly)",
   "dev-test-all": "A little bit of everything. Good layout for testing all components",
   "dev-test-feeds": "Stress testing for slow feeds"
 };
@@ -955,7 +960,7 @@ class DiscoveryStreamAdmin extends react__WEBPACK_IMPORTED_MODULE_4___default.a.
       type: "checkbox",
       checked: config.enabled,
       onChange: this.onEnableToggle
-    }), " enabled "), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h3", null, "Endpoint variant"), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", null, "You can also change this manually by changing this pref: ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("code", null, "browser.newtabpage.activity-stream.discoverystream.config")), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("table", {
+    }), " ", "enabled", " "), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h3", null, "Endpoint variant"), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", null, "You can also change this manually by changing this pref:", " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("code", null, "browser.newtabpage.activity-stream.discoverystream.config")), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("table", {
       style: config.enabled ? null : {
         opacity: 0.5
       }
@@ -1410,7 +1415,7 @@ class ASRouterAdminInner extends react__WEBPACK_IMPORTED_MODULE_4___default.a.Pu
       rows: "10",
       cols: "60",
       placeholder: "Evaluate JEXL expressions and mock parameters by changing their values below"
-    })), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", null, "Status: ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", {
+    })), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", null, "Status:", " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", {
       ref: "evaluationStatus"
     }, success ? "✅" : "❌", ", Result: ", result))), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("td", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
       className: "ASRouterButton secondary",
@@ -1504,7 +1509,7 @@ class ASRouterAdminInner extends react__WEBPACK_IMPORTED_MODULE_4___default.a.Pu
   }
 
   renderAttributionParamers() {
-    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h2", null, " Attribution Parameters "), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", null, " This forces the browser to set some attribution parameters, useful for testing the Return To AMO feature. Clicking on 'Force Attribution', with the default values in each field, will demo the Return To AMO flow with the addon called 'Iridium for Youtube'. If you wish to try different attribution parameters, enter them in the text boxes. If you wish to try a different addon with the Return To AMO flow, make sure the 'content' text box has the addon GUID, then click 'Force Attribution'."), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("table", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("tr", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("td", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("b", null, " Source ")), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("td", null, " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("input", {
+    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h2", null, " Attribution Parameters "), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", null, " ", "This forces the browser to set some attribution parameters, useful for testing the Return To AMO feature. Clicking on 'Force Attribution', with the default values in each field, will demo the Return To AMO flow with the addon called 'Iridium for Youtube'. If you wish to try different attribution parameters, enter them in the text boxes. If you wish to try a different addon with the Return To AMO flow, make sure the 'content' text box has the addon GUID, then click 'Force Attribution'."), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("table", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("tr", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("td", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("b", null, " Source ")), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("td", null, " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("input", {
       type: "text",
       name: "source",
       placeholder: "addons.mozilla.org",
@@ -1525,7 +1530,7 @@ class ASRouterAdminInner extends react__WEBPACK_IMPORTED_MODULE_4___default.a.Pu
     }), " ")), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("tr", null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("td", null, " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
       className: "ASRouterButton primary button",
       onClick: this.setAttribution
-    }, " Force Attribution "), " "))));
+    }, " ", "Force Attribution", " "), " "))));
   }
 
   renderErrorMessage({
@@ -1575,7 +1580,7 @@ class ASRouterAdminInner extends react__WEBPACK_IMPORTED_MODULE_4___default.a.Pu
         return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_4___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h2", null, "Targeting Utilities"), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
           className: "button",
           onClick: this.expireCache
-        }, "Expire Cache"), " (This expires the cache in ASR Targeting for bookmarks and top sites)", this.renderTargetingParameters(), this.renderAttributionParamers());
+        }, "Expire Cache"), " ", "(This expires the cache in ASR Targeting for bookmarks and top sites)", this.renderTargetingParameters(), this.renderAttributionParamers());
 
       case "pocket":
         return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_4___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h2", null, "Pocket"), this.renderPocketStories());
@@ -1591,7 +1596,7 @@ class ASRouterAdminInner extends react__WEBPACK_IMPORTED_MODULE_4___default.a.Pu
         return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_4___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h2", null, "ASRouter Errors"), this.renderErrors());
 
       default:
-        return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_4___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h2", null, "Message Providers ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
+        return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_4___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("h2", null, "Message Providers", " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
           title: "Restore all provider settings that ship with Firefox",
           className: "button",
           onClick: this.resetPref
@@ -1620,7 +1625,7 @@ class ASRouterAdminInner extends react__WEBPACK_IMPORTED_MODULE_4___default.a.Pu
       className: "helpLink"
     }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", {
       className: "icon icon-small-spacer icon-info"
-    }), " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", null, "Need help using these tools? Check out our ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("a", {
+    }), " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", null, "Need help using these tools? Check out our", " ", react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("a", {
       target: "blank",
       href: "https://github.com/mozilla/activity-stream/blob/master/content-src/asrouter/docs/debugging-docs.md"
     }, "documentation"))), this.getSection()));
@@ -1727,6 +1732,9 @@ __webpack_require__.r(__webpack_exports__);
  var _templates_StartupOverlay_StartupOverlay__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(23);
  var _templates_Trailhead_Trailhead__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(25);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -2076,7 +2084,7 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_7___default.a.Pur
   }
 
   renderSnippets() {
-    if (this.state.bundle.template === "onboarding" || this.state.message.template === "fxa_overlay" || this.state.message.template === "return_to_amo_overlay" || this.state.message.template === "trailhead") {
+    if (this.state.bundle.template === "onboarding" || ["fxa_overlay", "return_to_amo_overlay", "trailhead", "whatsnew_panel_message"].includes(this.state.message.template)) {
       return null;
     }
 
@@ -2132,7 +2140,7 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_7___default.a.Pur
       global.document.body.classList.add("amo");
       return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(fluent_react__WEBPACK_IMPORTED_MODULE_4__["LocalizationProvider"], {
         bundles: Object(_rich_text_strings__WEBPACK_IMPORTED_MODULE_2__["generateBundles"])({
-          "amo_html": message.content.text
+          amo_html: message.content.text
         })
       }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_templates_ReturnToAMO_ReturnToAMO__WEBPACK_IMPORTED_MODULE_9__["ReturnToAMO"], _extends({}, message, {
         UISurface: "NEWTAB_OVERLAY",
@@ -2220,6 +2228,10 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7);
  var redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(redux__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
+
 
 
 
@@ -2382,6 +2394,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 
+
+
+
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
 
@@ -2467,31 +2482,34 @@ module.exports = PropTypes;
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "IS_NEWTAB", function() { return IS_NEWTAB; });
  __webpack_require__.d(__webpack_exports__, "NEWTAB_DARK_THEME", function() { return NEWTAB_DARK_THEME; });
+
+
+
 const IS_NEWTAB = global.document && global.document.documentURI === "about:newtab";
 const NEWTAB_DARK_THEME = {
-  "ntp_background": {
-    "r": 42,
-    "g": 42,
-    "b": 46,
-    "a": 1
+  ntp_background: {
+    r: 42,
+    g: 42,
+    b: 46,
+    a: 1
   },
-  "ntp_text": {
-    "r": 249,
-    "g": 249,
-    "b": 250,
-    "a": 1
+  ntp_text: {
+    r: 249,
+    g: 249,
+    b: 250,
+    a: 1
   },
-  "sidebar": {
-    "r": 56,
-    "g": 56,
-    "b": 61,
-    "a": 1
+  sidebar: {
+    r: 56,
+    g: 56,
+    b: 61,
+    a: 1
   },
-  "sidebar_text": {
-    "r": 249,
-    "g": 249,
-    "b": 250,
-    "a": 1
+  sidebar_text: {
+    r: 249,
+    g: 249,
+    b: 250,
+    a: 1
   }
 };
 }.call(this, __webpack_require__(1)))
@@ -2508,6 +2526,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -2601,6 +2622,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 
+
+
+
 class ModalOverlayWrapper extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -2685,6 +2709,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _components_RichText_RichText__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(16);
+
+
+
 
  
 
@@ -2782,6 +2809,9 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 
 
 
+
+
+
  
 
 const ALLOWED_TAGS = {
@@ -2844,6 +2874,9 @@ function RichText(props) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "safeURI", function() { return safeURI; });
+
+
+
 function safeURI(url) {
   if (!url) {
     return "";
@@ -2904,6 +2937,9 @@ __webpack_require__.r(__webpack_exports__);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
 
 
 
@@ -3207,6 +3243,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -3625,6 +3664,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 
+
+
+
 class SimpleHashRouter extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -3674,6 +3716,9 @@ __webpack_require__.r(__webpack_exports__);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
 
 
 
@@ -3774,6 +3819,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 
+
+
+
 class ContextMenu extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -3838,18 +3886,11 @@ class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureC
     super(props);
     this.onClick = this.onClick.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
-    this.focusFirst = this.focusFirst.bind(this);
   }
 
   onClick() {
     this.props.hideContext();
     this.props.option.onClick();
-  }
-
-  focusFirst(button) {
-    if (button) {
-      button.focus();
-    }
   } 
 
 
@@ -3912,8 +3953,7 @@ class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureC
       className: option.disabled ? "disabled" : "",
       tabIndex: "0",
       onClick: this.onClick,
-      onKeyDown: this.onKeyDown,
-      ref: option.first ? this.focusFirst : null
+      onKeyDown: this.onKeyDown
     }, option.icon && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
       className: `icon icon-spacer icon-${option.icon}`
     }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
@@ -3935,6 +3975,9 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
 
 
 const VISIBLE = "visible";
@@ -4162,6 +4205,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
  var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(34);
  var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(35);
+
+
+
 
 
 
@@ -4460,6 +4506,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
 
+
+
+
 class ErrorBoundaryFallback extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -4543,6 +4592,9 @@ __webpack_require__.r(__webpack_exports__);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
+
+
+
 function A11yLinkButton(props) {
   
   let className = "a11y-link-button";
@@ -4567,6 +4619,9 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "FluentOrText", function() { return FluentOrText; });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+
 
 
 
@@ -4614,6 +4669,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
  var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(35);
+
+
+
 
 
 
@@ -4690,6 +4748,9 @@ const SectionMenu = _SectionMenu;
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "SectionMenuOptions", function() { return SectionMenuOptions; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+
+
+
 
 
 
@@ -4833,6 +4894,9 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(42);
  var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(43);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -5196,6 +5260,10 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+
 const ScreenshotUtils = {
   isBlob(isLocal, image) {
     return !!(image && image.path && (!isLocal && image.data || isLocal && image.url));
@@ -5253,6 +5321,9 @@ __webpack_require__.r(__webpack_exports__);
  var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
 
 
  
@@ -5429,6 +5500,9 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "perfService", function() { return perfService; });
 
 
+
+
+
 if (typeof ChromeUtils !== "undefined") {
   
   
@@ -5558,6 +5632,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 
+
+
+
 class MoreRecommendations extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
   render() {
     const {
@@ -5589,6 +5666,9 @@ __webpack_require__.r(__webpack_exports__);
  var react_redux__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_0__);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
 
 
 class _PocketLoggedInCta extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
@@ -5627,6 +5707,9 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "Topics", function() { return Topics; });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+
 
 class Topic extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
   render() {
@@ -5694,6 +5777,9 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 
 
 
+
+
+
 function topSiteIconType(link) {
   if (link.customScreenshotURL) {
     return "custom_screenshot";
@@ -5731,12 +5817,12 @@ function countTopSitesIconsTypes(topSites) {
   };
 
   return topSites.reduce(countTopSitesTypes, {
-    "custom_screenshot": 0,
-    "screenshot_with_icon": 0,
-    "screenshot": 0,
-    "tippytop": 0,
-    "rich_icon": 0,
-    "no_image": 0
+    custom_screenshot: 0,
+    screenshot_with_icon: 0,
+    screenshot: 0,
+    tippytop: 0,
+    rich_icon: 0,
+    no_image: 0
   });
 }
 
@@ -5893,6 +5979,9 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS", function() { return TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS; });
  __webpack_require__.d(__webpack_exports__, "MIN_RICH_FAVICON_SIZE", function() { return MIN_RICH_FAVICON_SIZE; });
  __webpack_require__.d(__webpack_exports__, "MIN_CORNER_FAVICON_SIZE", function() { return MIN_CORNER_FAVICON_SIZE; });
+
+
+
 const TOP_SITES_SOURCE = "TOP_SITES";
 const TOP_SITES_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", "DeleteUrl"]; 
 
@@ -5914,6 +6003,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
  var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(44);
+
+
+
 
 
 
@@ -6108,6 +6200,9 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(37);
  var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(53);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -6758,6 +6853,10 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+
 class _Search extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -6932,6 +7031,9 @@ __webpack_require__.r(__webpack_exports__);
  var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
 
 
+
+
+
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
 class DetectUserSessionStart {
@@ -7017,6 +7119,9 @@ var external_React_default = __webpack_require__.n(external_React_);
 
 var external_ReactDOM_ = __webpack_require__(14);
 var external_ReactDOM_default = __webpack_require__.n(external_ReactDOM_);
+
+
+
 
 
 
@@ -7146,6 +7251,9 @@ var LinkMenu = __webpack_require__(56);
 
 
 
+
+
+
 class DSLinkMenu_DSLinkMenu extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -7242,6 +7350,9 @@ var ImpressionStats = __webpack_require__(29);
 
 
 
+
+
+
 class SafeAnchor_SafeAnchor extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -7315,6 +7426,9 @@ class SafeAnchor_SafeAnchor extends external_React_default.a.PureComponent {
   }
 
 }
+
+
+
 
 
 
@@ -7407,6 +7521,9 @@ const PlaceholderDSCard = props => external_React_default.a.createElement(DSCard
 
 
 
+
+
+
 class DSEmptyState_DSEmptyState extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -7491,6 +7608,9 @@ class DSEmptyState_DSEmptyState extends external_React_default.a.PureComponent {
 
 
 
+
+
+
 class CardGrid_CardGrid extends external_React_default.a.PureComponent {
   renderCards() {
     const recs = this.props.data.recommendations.slice(0, this.props.items);
@@ -7570,6 +7690,9 @@ var external_ReactRedux_ = __webpack_require__(24);
 
 
 
+
+
+
 class DSMessage_DSMessage extends external_React_default.a.PureComponent {
   render() {
     return external_React_default.a.createElement("div", {
@@ -7590,6 +7713,9 @@ class DSMessage_DSMessage extends external_React_default.a.PureComponent {
   }
 
 }
+
+
+
 
 
 
@@ -7769,6 +7895,9 @@ const List = Object(external_ReactRedux_["connect"])(state => ({
 
 
 
+
+
+
 class Hero_Hero extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -7933,6 +8062,9 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 
 
 
+
+
+
 class Highlights_Highlights extends external_React_default.a.PureComponent {
   render() {
     const section = this.props.Sections.find(s => s.id === "highlights");
@@ -7954,6 +8086,9 @@ const Highlights = Object(external_ReactRedux_["connect"])(state => ({
 }))(Highlights_Highlights);
 
 
+
+
+
 class HorizontalRule_HorizontalRule extends external_React_default.a.PureComponent {
   render() {
     return external_React_default.a.createElement("hr", {
@@ -7962,6 +8097,9 @@ class HorizontalRule_HorizontalRule extends external_React_default.a.PureCompone
   }
 
 }
+
+
+
 
 
 
@@ -8001,6 +8139,9 @@ class Navigation_Navigation extends external_React_default.a.PureComponent {
 }
 
 
+
+
+
 class SectionTitle_SectionTitle extends external_React_default.a.PureComponent {
   render() {
     const {
@@ -8019,6 +8160,9 @@ class SectionTitle_SectionTitle extends external_React_default.a.PureComponent {
   }
 
 }
+
+
+
 
 const selectLayoutRender = (state, prefs, rickRollCache) => {
   const {
@@ -8091,7 +8235,7 @@ const selectLayoutRender = (state, prefs, rickRollCache) => {
 
     for (let i = 0; i < items; i++) {
       data.recommendations.push({
-        "placeholder": true
+        placeholder: true
       });
     }
 
@@ -8224,6 +8368,9 @@ var TopSites = __webpack_require__(43);
 
 
 
+
+
+
 class TopSites_TopSites extends external_React_default.a.PureComponent {
   render() {
     const header = this.props.header || {};
@@ -8243,6 +8390,9 @@ const TopSites_TopSites_TopSites = Object(external_ReactRedux_["connect"])(state
  __webpack_require__.d(__webpack_exports__, "isAllowedCSS", function() { return isAllowedCSS; });
  __webpack_require__.d(__webpack_exports__, "_DiscoveryStreamBase", function() { return DiscoveryStreamBase_DiscoveryStreamBase; });
  __webpack_require__.d(__webpack_exports__, "DiscoveryStreamBase", function() { return DiscoveryStreamBase; });
+
+
+
 
 
 
@@ -9353,6 +9503,9 @@ var EOYSnippet_schema = __webpack_require__(18);
 
 
 
+
+
+
 const ALLOWED_STYLE_TAGS = ["color", "backgroundColor"];
 const Button = props => {
   const style = {}; 
@@ -9376,6 +9529,9 @@ const Button = props => {
 };
 
 
+
+
+
 const ConditionalWrapper = ({
   condition,
   wrap,
@@ -9389,6 +9545,9 @@ var template_utils = __webpack_require__(17);
 
 
 var SimpleSnippet_schema = __webpack_require__(19);
+
+
+
 
 
 
@@ -9499,6 +9658,9 @@ class SnippetBase_SnippetBase extends external_React_default.a.PureComponent {
 }
 
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -9697,6 +9859,9 @@ function EOYSnippet_extends() { EOYSnippet_extends = Object.assign || function (
 
 
 
+
+
+
 class EOYSnippet_EOYSnippetBase extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -9840,6 +10005,9 @@ var FXASignupSnippet_schema = __webpack_require__(20);
 
 
 function SubmitFormSnippet_extends() { SubmitFormSnippet_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return SubmitFormSnippet_extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -10150,6 +10318,9 @@ function FXASignupSnippet_extends() { FXASignupSnippet_extends = Object.assign |
 
 
 
+
+
+
 const FXASignupSnippet = props => {
   const userAgent = window.navigator.userAgent.match(/Firefox\/([0-9]+)\./);
   const firefox_version = userAgent ? parseInt(userAgent[1], 10) : 0;
@@ -10186,6 +10357,9 @@ function NewsletterSnippet_extends() { NewsletterSnippet_extends = Object.assign
 
 
 
+
+
+
 const NewsletterSnippet = props => {
   const extendedContent = {
     scene1_button_label: NewsletterSnippet_schema.properties.scene1_button_label.default,
@@ -10208,6 +10382,10 @@ const NewsletterSnippet = props => {
     form_method: "POST"
   }));
 };
+
+
+
+
 
 
 
@@ -10255,6 +10433,9 @@ var SendToDeviceSnippet_schema = __webpack_require__(22);
 
 
 function SendToDeviceSnippet_extends() { SendToDeviceSnippet_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return SendToDeviceSnippet_extends.apply(this, arguments); }
+
+
+
 
 
 
@@ -10326,6 +10507,9 @@ function SimpleBelowSearchSnippet_extends() { SimpleBelowSearchSnippet_extends =
 
 
 
+
+
+
 const SimpleBelowSearchSnippet_DEFAULT_ICON_PATH = "chrome://branding/content/icon64.png"; 
 
 const SimpleBelowSearchSnippet_ICON_ALT_TEXT = "";
@@ -10372,6 +10556,9 @@ class SimpleBelowSearchSnippet_SimpleBelowSearchSnippet extends external_React_d
 }
 
  __webpack_require__.d(__webpack_exports__, "SnippetsTemplates", function() { return SnippetsTemplates; });
+
+
+
 
 
 
@@ -11771,14 +11958,17 @@ function ftl(strings) {
 
 
 
+
+
+
 const RICH_TEXT_CONFIG = {
-  "text": ["text", "scene1_text"],
-  "success_text": "success_text",
-  "error_text": "error_text",
-  "scene2_text": "scene2_text",
-  "amo_html": "amo_html",
-  "privacy_html": "scene2_privacy_html",
-  "disclaimer_html": "scene2_disclaimer_html"
+  text: ["text", "scene1_text"],
+  success_text: "success_text",
+  error_text: "error_text",
+  scene2_text: "scene2_text",
+  amo_html: "amo_html",
+  privacy_html: "scene2_privacy_html",
+  disclaimer_html: "scene2_disclaimer_html"
 };
 const RICH_TEXT_KEYS = Object.keys(RICH_TEXT_CONFIG);
 
@@ -11814,6 +12004,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 var Actions = __webpack_require__(2);
+
+
+
 
 
 class Dedupe {
@@ -12664,6 +12857,9 @@ __webpack_require__.r(__webpack_exports__);
 var Actions = __webpack_require__(2);
 
 
+
+
+
 const cardContextTypes = {
   history: {
     fluentID: "newtab-label-visited",
@@ -12703,6 +12899,9 @@ var screenshot_utils = __webpack_require__(37);
  __webpack_require__.d(__webpack_exports__, "_Card", function() { return Card_Card; });
  __webpack_require__.d(__webpack_exports__, "Card", function() { return Card; });
  __webpack_require__.d(__webpack_exports__, "PlaceholderCard", function() { return PlaceholderCard; });
+
+
+
 
 
 
@@ -13055,6 +13254,9 @@ var TopSitesConstants = __webpack_require__(44);
 
 
 
+
+
+
 class TopSiteFormInput_TopSiteFormInput extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -13173,6 +13375,9 @@ var TopSite = __webpack_require__(46);
 
 
 
+
+
+
 class TopSiteForm_TopSiteForm extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -13200,7 +13405,7 @@ class TopSiteForm_TopSiteForm extends external_React_default.a.PureComponent {
 
   onLabelChange(event) {
     this.setState({
-      "label": event.target.value
+      label: event.target.value
     });
   }
 
@@ -13471,6 +13676,9 @@ var external_ReactRedux_ = __webpack_require__(24);
 
 
 var ContextMenu = __webpack_require__(28);
+
+
+
 
 
 
@@ -13754,6 +13962,9 @@ var external_React_default = __webpack_require__.n(external_React_);
 
  __webpack_require__.d(__webpack_exports__, "_LinkMenu", function() { return LinkMenu_LinkMenu; });
  __webpack_require__.d(__webpack_exports__, "LinkMenu", function() { return LinkMenu; });
+
+
+
 
 
 

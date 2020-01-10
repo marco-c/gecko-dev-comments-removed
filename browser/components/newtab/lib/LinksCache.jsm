@@ -83,45 +83,50 @@ this.LinksCache = class LinksCache {
       this.lastUpdate = now;
 
       
-      this.cache = new Promise(async resolve => {
-        
-        const toMigrate = new Map();
-        for (const oldLink of await this.cache) {
-          if (oldLink) {
-            toMigrate.set(oldLink.url, oldLink);
-          }
-        }
-
-        
-        resolve(
-          (await this.linkGetter(options)).map(link => {
-            
-            if (!link) {
-              return link;
-            }
-
-            
-            const newLink = Object.assign({}, link);
-            const oldLink = toMigrate.get(newLink.url);
+      
+      this.cache = new Promise(async (resolve, reject) => {
+        try {
+          
+          const toMigrate = new Map();
+          for (const oldLink of await this.cache) {
             if (oldLink) {
-              for (const property of this.migrateProperties) {
-                const oldValue = oldLink[property];
-                if (oldValue !== undefined) {
-                  newLink[property] = oldValue;
-                }
-              }
-            } else {
-              
-              newLink.__sharedCache = {};
+              toMigrate.set(oldLink.url, oldLink);
             }
-            
-            newLink.__sharedCache.updateLink = (property, value) => {
-              newLink[property] = value;
-            };
+          }
 
-            return newLink;
-          })
-        );
+          
+          resolve(
+            (await this.linkGetter(options)).map(link => {
+              
+              if (!link) {
+                return link;
+              }
+
+              
+              const newLink = Object.assign({}, link);
+              const oldLink = toMigrate.get(newLink.url);
+              if (oldLink) {
+                for (const property of this.migrateProperties) {
+                  const oldValue = oldLink[property];
+                  if (oldValue !== undefined) {
+                    newLink[property] = oldValue;
+                  }
+                }
+              } else {
+                
+                newLink.__sharedCache = {};
+              }
+              
+              newLink.__sharedCache.updateLink = (property, value) => {
+                newLink[property] = value;
+              };
+
+              return newLink;
+            })
+          );
+        } catch (error) {
+          reject(error);
+        }
       });
     }
 

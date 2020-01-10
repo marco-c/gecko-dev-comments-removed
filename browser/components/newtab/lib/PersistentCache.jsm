@@ -57,18 +57,25 @@ this.PersistentCache = class PersistentCache {
   _load() {
     return (
       this._cache ||
-      (this._cache = new Promise(async resolve => {
-        let file;
-        let data = {};
-        const filepath = OS.Path.join(
-          OS.Constants.Path.localProfileDir,
-          this._filename
-        );
+      
+      (this._cache = new Promise(async (resolve, reject) => {
+        let filepath;
+        try {
+          filepath = OS.Path.join(
+            OS.Constants.Path.localProfileDir,
+            this._filename
+          );
+        } catch (error) {
+          reject(error);
+          return;
+        }
 
+        let file;
         try {
           file = await fetch(`file://${filepath}`);
         } catch (error) {} 
 
+        let data = {};
         if (file) {
           try {
             data = await file.json();
