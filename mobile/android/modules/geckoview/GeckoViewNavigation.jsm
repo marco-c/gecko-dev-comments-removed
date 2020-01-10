@@ -105,7 +105,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         this.browser.gotoIndex(aData.index);
         break;
       case "GeckoView:LoadUri":
-        const { uri, referrer, flags } = aData;
+        const { uri, referrerUri, referrerSessionId, flags } = aData;
 
         let navFlags = 0;
 
@@ -138,34 +138,72 @@ class GeckoViewNavigation extends GeckoViewModule {
           this.moduleManager.updateRemoteTypeForURI(uri);
         }
 
-        let parsedUri;
-        let triggeringPrincipal;
-        try {
-          parsedUri = Services.io.newURI(uri);
-          if (
-            parsedUri.schemeIs("about") ||
-            parsedUri.schemeIs("data") ||
-            parsedUri.schemeIs("file") ||
-            parsedUri.schemeIs("resource") ||
-            parsedUri.schemeIs("moz-extension")
-          ) {
-            
-            triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
-              parsedUri,
-              {}
-            );
-          }
-        } catch (ignored) {}
+        let triggeringPrincipal, referrerInfo, csp;
+        if (referrerSessionId) {
+          const referrerWindow = Services.ww.getWindowByName(
+            referrerSessionId,
+            this.window
+          );
+          triggeringPrincipal = referrerWindow.browser.contentPrincipal;
+          csp = referrerWindow.browser.csp;
+
+          const referrerPolicy = referrerWindow.browser.referrerInfo
+            ? referrerWindow.browser.referrerInfo.referrerPolicy
+            : Ci.nsIHttpChannel.REFERRER_POLICY_UNSET;
+
+          referrerInfo = new ReferrerInfo(
+            referrerPolicy,
+            true,
+            referrerWindow.browser.documentURI
+          );
+        } else {
+          try {
+            const parsedUri = Services.io.newURI(uri);
+            if (
+              parsedUri.schemeIs("about") ||
+              parsedUri.schemeIs("data") ||
+              parsedUri.schemeIs("file") ||
+              parsedUri.schemeIs("resource") ||
+              parsedUri.schemeIs("moz-extension")
+            ) {
+              
+              triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
+                parsedUri,
+                {}
+              );
+            }
+          } catch (ignored) {}
+
+          referrerInfo = createReferrerInfo(referrerUri);
+        }
+
         if (!triggeringPrincipal) {
           triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal(
             {}
           );
         }
 
-        this.browser.loadURI(parsedUri ? parsedUri.spec : uri, {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        this.browser.loadURI(uri, {
           flags: navFlags,
-          referrerInfo: createReferrerInfo(referrer),
+          referrerInfo,
           triggeringPrincipal,
+          csp,
         });
         break;
       case "GeckoView:Reload":
