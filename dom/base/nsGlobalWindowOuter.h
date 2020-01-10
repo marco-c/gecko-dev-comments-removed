@@ -1007,12 +1007,15 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
 
 
+
+
+
   static bool GatherPostMessageData(
       JSContext* aCx, const nsAString& aTargetOrigin,
       mozilla::dom::BrowsingContext** aSource, nsAString& aOrigin,
       nsIURI** aTargetOriginURI, nsIPrincipal** aCallerPrincipal,
       nsGlobalWindowInner** aCallerInnerWindow, nsIURI** aCallerDocumentURI,
-      mozilla::ErrorResult& aError);
+      Maybe<nsID>* aCallerAgentClusterId, mozilla::ErrorResult& aError);
 
   
   
