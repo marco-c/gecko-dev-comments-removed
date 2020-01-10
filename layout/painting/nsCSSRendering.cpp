@@ -3877,7 +3877,10 @@ static sk_sp<const SkTextBlob> CreateTextBlob(
   
   uint32_t len =
       CountAllGlyphs(aTextRun, aCompressedGlyph, aStringStart, aStringEnd);
-  MOZ_ASSERT(len > 0, "there must be at least one glyph for skip ink");
+  if (len <= 0) {
+    return nullptr;
+  }
+
   SkTextBlobBuilder builder;
   const SkTextBlobBuilder::RunBuffer& run = builder.allocRunPos(aFont, len);
 
@@ -4115,6 +4118,10 @@ void nsCSSRendering::PaintDecorationLine(
         CreateTextBlob(textRun, characterGlyphs, font, spacing.Elements(),
                        iter.GetStringStart(), iter.GetStringEnd(),
                        (float)appUnitsPerDevPixel, textPos, spacingOffset);
+
+    if (!textBlob) {
+      continue;
+    }
 
     if (textRun->UseCenterBaseline()) {
       
