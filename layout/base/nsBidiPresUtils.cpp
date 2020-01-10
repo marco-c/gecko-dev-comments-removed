@@ -307,6 +307,8 @@ struct MOZ_STACK_CLASS BidiParagraphData {
 
   static bool IsFrameInCurrentLine(nsBlockInFlowLineIterator* aLineIter,
                                    nsIFrame* aPrevFrame, nsIFrame* aFrame) {
+    MOZ_ASSERT(!aPrevFrame || aLineIter->GetLine()->Contains(aPrevFrame),
+               "aPrevFrame must be in aLineIter's current line");
     nsIFrame* endFrame = aLineIter->IsLastLineInList()
                              ? nullptr
                              : aLineIter->GetLine().next()->mFirstChild;
@@ -886,6 +888,33 @@ nsresult nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd) {
                                          contentOffset + fragmentLength);
           frame = nextBidi;
           contentOffset = runEnd;
+
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          aBpd->mPrevFrame = nullptr;
         }  
         else {
           if (contentOffset + fragmentLength == contentTextLength) {
@@ -971,6 +1000,11 @@ nsresult nsBidiPresUtils::ResolveParagraph(BidiParagraphData* aBpd) {
           }
           if (parent && IsBidiSplittable(parent)) {
             SplitInlineAncestors(parent, child);
+
+            
+            
+            
+            aBpd->mPrevFrame = nullptr;
           }
         }
       } else if (frame != NS_BIDI_CONTROL_FRAME) {
