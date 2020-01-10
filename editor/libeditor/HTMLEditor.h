@@ -2958,13 +2958,12 @@ class HTMLEditor final : public TextEditor,
   
 
 
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult IndentAsSubAction();
+
+  
 
 
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  nsresult IndentOrOutdentAsSubAction(EditSubAction aEditSubAction);
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult OutdentAsSubAction();
 
   MOZ_CAN_RUN_SCRIPT
   nsresult LoadHTML(const nsAString& aInputString);
