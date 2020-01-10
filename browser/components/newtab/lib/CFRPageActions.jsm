@@ -47,6 +47,8 @@ const CATEGORY_ICONS = {
 
 
 const RS_DOWNLOADED_FILE_SUBDIR = "settings/main/ms-language-packs";
+const USE_REMOTE_L10N_PREF =
+  "browser.newtabpage.activity-stream.asrouter.useRemoteL10n";
 
 
 
@@ -125,7 +127,19 @@ class PageAction {
 
 
 
+
+
   _createDOML10n() {
+    const ftlResourceIDs = [
+      "browser/newtab/asrouter.ftl",
+      "browser/branding/brandings.ftl",
+      "browser/branding/sync-brand.ftl",
+      "branding/brand.ftl",
+    ];
+    if (!Services.prefs.getBoolPref(USE_REMOTE_L10N_PREF, true)) {
+      return new DOMLocalization(ftlResourceIDs);
+    }
+
     async function* generateBundles(resourceIds) {
       const appLocale = Services.locale.appLocaleAsBCP47;
       const appLocales = Services.locale.appLocalesAsBCP47;
@@ -155,15 +169,11 @@ class PageAction {
       }
     }
 
-    return new DOMLocalization(
-      [
-        "browser/newtab/asrouter.ftl",
-        "browser/branding/brandings.ftl",
-        "browser/branding/sync-brand.ftl",
-        "branding/brand.ftl",
-      ],
-      generateBundles
-    );
+    return new DOMLocalization(ftlResourceIDs, generateBundles);
+  }
+
+  reloadL10n() {
+    this._l10n = this._createDOML10n();
   }
 
   async showAddressBarNotifier(recommendation, shouldExpand = false) {
@@ -933,6 +943,18 @@ const CFRPageActions = {
     RecommendationMap = new WeakMap();
     this.PageActionMap = PageActionMap;
     this.RecommendationMap = RecommendationMap;
+  },
+
+  
+
+
+  reloadL10n() {
+    for (const win of Services.wm.getEnumerator("navigator:browser")) {
+      if (win.closed || !PageActionMap.has(win)) {
+        continue;
+      }
+      PageActionMap.get(win).reloadL10n();
+    }
   },
 };
 

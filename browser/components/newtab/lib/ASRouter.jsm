@@ -106,6 +106,9 @@ const RS_DOWNLOAD_MAX_RETRIES = 2;
 
 const TOPIC_INTL_LOCALE_CHANGED = "intl:app-locales-changed";
 
+const USE_REMOTE_L10N_PREF =
+  "browser.newtabpage.activity-stream.asrouter.useRemoteL10n";
+
 
 
 
@@ -759,6 +762,14 @@ class _ASRouter {
     await this._maybeUpdateL10nAttachment();
   }
 
+  observe(aSubject, aTopic, aPrefName) {
+    switch (aPrefName) {
+      case USE_REMOTE_L10N_PREF:
+        CFRPageActions.reloadL10n();
+        break;
+    }
+  }
+
   
 
 
@@ -833,6 +844,7 @@ class _ASRouter {
     );
 
     Services.obs.addObserver(this._onLocaleChanged, TOPIC_INTL_LOCALE_CHANGED);
+    Services.prefs.addObserver(USE_REMOTE_L10N_PREF, this);
     
     this._finishInitializing();
   }
@@ -864,6 +876,7 @@ class _ASRouter {
       this._onLocaleChanged,
       TOPIC_INTL_LOCALE_CHANGED
     );
+    Services.prefs.removeObserver(USE_REMOTE_L10N_PREF, this);
     
     CFRPageActions.clearRecommendations();
     this._resetInitialization();
