@@ -35,7 +35,6 @@ import org.mozilla.gecko.GeckoScreenOrientation;
 import org.mozilla.gecko.GeckoSystemStateListener;
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.PrefsHelper;
-import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.ContextUtils;
 import org.mozilla.gecko.util.DebugConfig;
@@ -157,28 +156,16 @@ public final class GeckoRuntime implements Parcelable {
         return sDefaultRuntime;
     }
 
-    private static GeckoRuntime sRuntime;
     private GeckoRuntimeSettings mSettings;
     private Delegate mDelegate;
-    private WebNotificationDelegate mNotificationDelegate;
     private RuntimeTelemetry mTelemetry;
     private final WebExtensionEventDispatcher mWebExtensionDispatcher;
     private StorageController mStorageController;
     private final WebExtensionController mWebExtensionController;
 
-    private GeckoRuntime() {
+    public GeckoRuntime() {
         mWebExtensionDispatcher = new WebExtensionEventDispatcher();
         mWebExtensionController = new WebExtensionController(this, mWebExtensionDispatcher);
-        if (sRuntime != null) {
-            throw new IllegalStateException("Only one GeckoRuntime instance is allowed");
-        }
-        sRuntime = this;
-    }
-
-    @WrapForJNI
-    @UiThread
-    private @Nullable static GeckoRuntime getInstance() {
-        return sRuntime;
     }
 
     
@@ -514,47 +501,6 @@ public final class GeckoRuntime implements Parcelable {
     @UiThread
     public @Nullable Delegate getDelegate() {
         return mDelegate;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void setWebNotificationDelegate(final @Nullable WebNotificationDelegate delegate) {
-        mNotificationDelegate = delegate;
-    }
-
-    
-
-
-
-
-    @WrapForJNI
-    @UiThread
-    public @Nullable WebNotificationDelegate getWebNotificationDelegate() {
-        return mNotificationDelegate;
-    }
-
-    @WrapForJNI
-    @UiThread
-    private void notifyOnShow(final WebNotification notification) {
-        ThreadUtils.getUiHandler().post(() -> {
-            if (mNotificationDelegate != null) {
-                mNotificationDelegate.onShowNotification(notification);
-            }
-        });
-    }
-
-    @WrapForJNI
-    @UiThread
-    private void notifyOnClose(final WebNotification notification) {
-        ThreadUtils.getUiHandler().post(() -> {
-            if (mNotificationDelegate != null) {
-                mNotificationDelegate.onCloseNotification(notification);
-            }
-        });
     }
 
     @AnyThread
