@@ -321,14 +321,9 @@ void Zone::discardJitCode(FreeOp* fop,
     jit::FinishInvalidation(fop, script);
 
     
-    if (discardBaselineCode && script->hasBaselineScript()) {
-      if (script->jitScript()->active()) {
-        
-        
-        script->baselineScript()->clearIonCompiledOrInlined();
-      } else {
-        jit::FinishDiscardBaselineScript(fop, script);
-      }
+    if (discardBaselineCode && script->hasBaselineScript() &&
+        !script->jitScript()->active()) {
+      jit::FinishDiscardBaselineScript(fop, script);
     }
 
     
@@ -354,6 +349,10 @@ void Zone::discardJitCode(FreeOp* fop,
       
       if (discardBaselineCode) {
         jitScript->purgeOptimizedStubs(script);
+
+        
+        
+        jitScript->clearIonCompiledOrInlined();
       }
 
       

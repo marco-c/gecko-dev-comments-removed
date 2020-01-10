@@ -267,27 +267,20 @@ struct BaselineScript final {
  public:
   enum Flag {
     
+    
+    MODIFIES_ARGUMENTS = 1 << 0,
 
     
     
-    MODIFIES_ARGUMENTS = 1 << 2,
+    HAS_DEBUG_INSTRUMENTATION = 1 << 1,
 
     
-    
-    HAS_DEBUG_INSTRUMENTATION = 1 << 3,
-
-    
-    
-    
-    ION_COMPILED_OR_INLINED = 1 << 4,
-
-    
-    PROFILER_INSTRUMENTATION_ON = 1 << 5,
+    PROFILER_INSTRUMENTATION_ON = 1 << 2,
 
     
     
     
-    USES_ENVIRONMENT_CHAIN = 1 << 6,
+    USES_ENVIRONMENT_CHAIN = 1 << 3,
   };
 
  private:
@@ -338,10 +331,6 @@ struct BaselineScript final {
   bool hasDebugInstrumentation() const {
     return flags_ & HAS_DEBUG_INSTRUMENTATION;
   }
-
-  void setIonCompiledOrInlined() { flags_ |= ION_COMPILED_OR_INLINED; }
-  void clearIonCompiledOrInlined() { flags_ &= ~ION_COMPILED_OR_INLINED; }
-  bool ionCompiledOrInlined() const { return flags_ & ION_COMPILED_OR_INLINED; }
 
   void setUsesEnvironmentChain() { flags_ |= USES_ENVIRONMENT_CHAIN; }
   bool usesEnvironmentChain() const { return flags_ & USES_ENVIRONMENT_CHAIN; }

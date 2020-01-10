@@ -132,6 +132,11 @@ class alignas(uintptr_t) JitScript final {
 
     
     bool hasFreezeConstraints : 1;
+
+    
+    
+    
+    bool ionCompiledOrInlined : 1;
   };
   Flags flags_ = {};  
 
@@ -178,6 +183,10 @@ class alignas(uintptr_t) JitScript final {
 
   inline bool typesNeedsSweep(Zone* zone) const;
   void sweepTypes(const js::AutoSweepJitScript& sweep, Zone* zone);
+
+  void setIonCompiledOrInlined() { flags_.ionCompiledOrInlined = true; }
+  void clearIonCompiledOrInlined() { flags_.ionCompiledOrInlined = false; }
+  bool ionCompiledOrInlined() const { return flags_.ionCompiledOrInlined; }
 
   RecompileInfoVector& inlinedCompilations(
       const js::AutoSweepJitScript& sweep) {
