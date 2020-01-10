@@ -596,8 +596,12 @@ void CodeGenerator::visitDivI(LDivI* ins) {
 
   
   if (mir->canTruncateRemainder()) {
+#ifdef MIPSR6
+    masm.as_div(dest, lhs, rhs);
+#else
     masm.as_div(lhs, rhs);
     masm.as_mflo(dest);
+#endif
   } else {
     MOZ_ASSERT(mir->fallible());
 
@@ -726,9 +730,12 @@ void CodeGenerator::visitModI(LModI* ins) {
     }
     masm.bind(&notNegative);
   }
-
+#ifdef MIPSR6
+  masm.as_mod(dest, lhs, rhs);
+#else
   masm.as_div(lhs, rhs);
   masm.as_mfhi(dest);
+#endif
 
   
   if (mir->canBeNegativeDividend()) {
@@ -2278,8 +2285,12 @@ void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
     }
   }
 
+#ifdef MIPSR6
+  masm.as_modu(output, lhs, rhs);
+#else
   masm.as_divu(lhs, rhs);
   masm.as_mfhi(output);
+#endif
 
   
   if (ins->mir()->isDiv()) {
@@ -2287,7 +2298,11 @@ void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
       bailoutCmp32(Assembler::NonZero, output, output, ins->snapshot());
     }
     
+#ifdef MIPSR6
+    masm.as_divu(output, lhs, rhs);
+#else
     masm.as_mflo(output);
+#endif
   }
 
   if (!ins->mir()->isTruncated()) {
