@@ -991,10 +991,8 @@ nsresult TextEditor::SetTextAsAction(const nsAString& aString,
 
   AutoPlaceholderBatch treatAsOneTransaction(*this);
   nsresult rv = SetTextAsSubAction(aString);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetTextAsSubAction() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 nsresult TextEditor::ReplaceTextAsAction(const nsAString& aString,
@@ -1019,10 +1017,8 @@ nsresult TextEditor::ReplaceTextAsAction(const nsAString& aString,
 
   if (!aReplaceRange) {
     nsresult rv = SetTextAsSubAction(aString);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditorBase::ToGenericNSResult(rv);
-    }
-    return NS_OK;
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetTextAsSubAction() failed");
+    return EditorBase::ToGenericNSResult(rv);
   }
 
   if (NS_WARN_IF(aString.IsEmpty() && aReplaceRange->Collapsed())) {
@@ -1062,26 +1058,18 @@ nsresult TextEditor::SetTextAsSubAction(const nsAString& aString) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  
-  RefPtr<TextEditRules> rules(mRules);
-
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eSetText, nsIEditor::eNext);
 
-  EditSubActionInfo subActionInfo(EditSubAction::eSetText);
-  subActionInfo.inString = &aString;
-  subActionInfo.maxLength = mMaxTextLength;
+  if (IsPlaintextEditor() && !IsIMEComposing() && !IsUndoRedoEnabled() &&
+      GetEditAction() != EditAction::eReplaceText && mMaxTextLength < 0) {
+    EditActionResult result = SetTextWithoutTransaction(aString);
+    if (NS_WARN_IF(result.Failed()) || result.Canceled() || result.Handled()) {
+      return result.Rv();
+    }
+  }
 
-  bool cancel;
-  bool handled;
-  nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  if (cancel) {
-    return NS_OK;
-  }
-  if (!handled) {
+  {
     
     
     
@@ -1094,29 +1082,32 @@ nsresult TextEditor::SetTextAsSubAction(const nsAString& aString) {
 
     
     
-    if (rules->DocumentIsEmpty()) {
+    
+    
+    
+    nsresult rv;
+    if (mRules && mRules->DocumentIsEmpty()) {
       rv = SelectionRefPtr()->Collapse(rootElement, 0);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "Failed to move caret to start of the editor root element");
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "Selection::Collapse() failed, but ignored");
     } else {
       ErrorResult error;
       SelectionRefPtr()->SelectAllChildren(*rootElement, error);
       NS_WARNING_ASSERTION(
           !error.Failed(),
-          "Failed to select all children of the editor root element");
+          "Selection::SelectAllChildren() failed, but ignored");
       rv = error.StealNSResult();
     }
     if (NS_SUCCEEDED(rv)) {
-      rv = ReplaceSelectionAsSubAction(aString);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "Failed to replace selection with new string");
+      DebugOnly<nsresult> rvIgnored = ReplaceSelectionAsSubAction(aString);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                           "ReplaceSelectionAsSubAction() failed, but ignored");
     }
   }
+
   
-  rv = rules->DidDoAction(subActionInfo, rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
   }
   return NS_OK;
 }
