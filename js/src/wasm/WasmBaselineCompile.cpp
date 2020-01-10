@@ -6713,7 +6713,6 @@ class BaseCompiler final : public BaseCompilerInterface {
   MOZ_MUST_USE bool emitSetOrTeeLocal(uint32_t slot);
 
   void endBlock(ExprType type);
-  void endLoop(ExprType type);
   void endIfThen();
   void endIfThenElse(ExprType type);
 
@@ -8182,28 +8181,6 @@ bool BaseCompiler::emitLoop() {
   return true;
 }
 
-void BaseCompiler::endLoop(ExprType type) {
-  Control& block = controlItem();
-
-  Maybe<AnyReg> r;
-  if (!deadCode_) {
-    r = popJoinRegUnlessVoid(type);
-    
-    
-  }
-
-  fr.popStackOnBlockExit(block.stackHeight, deadCode_);
-  popValueStackTo(block.stackSize);
-
-  
-  
-
-  
-  if (!deadCode_) {
-    pushJoinRegUnlessVoid(r);
-  }
-}
-
 
 
 
@@ -8370,7 +8347,8 @@ bool BaseCompiler::emitEnd() {
       endBlock(type);
       break;
     case LabelKind::Loop:
-      endLoop(type);
+      
+      
       break;
     case LabelKind::Then:
       endIfThen();
