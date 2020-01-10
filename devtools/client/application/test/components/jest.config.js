@@ -9,11 +9,10 @@ module.exports = {
   verbose: true,
   moduleNameMapper: {
     
-    "^../utils/l10n": `${__dirname}/fixtures/l10n`,
     "^devtools/client/shared/link": `${__dirname}/fixtures/stub`,
-    "^devtools/shared/plural-form": `${__dirname}/fixtures/plural-form`,
     "^chrome": `${__dirname}/fixtures/Chrome`,
     "^Services": `${__dirname}/fixtures/Services`,
+    "^devtools/client/shared/fluent-l10n/fluent-l10n$": `${__dirname}/fixtures/fluent-l10n`,
     "^devtools/client/shared/unicode-url": `${__dirname}/fixtures/unicode-url`,
     
     "^devtools\\/(.*)": `${__dirname}/../../../../$1`,
