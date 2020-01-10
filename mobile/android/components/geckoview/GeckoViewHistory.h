@@ -28,24 +28,18 @@ struct VisitedURI {
   bool mVisited = false;
 };
 
-class GeckoViewHistory final : public mozilla::BaseHistory,
-                               public nsITimerCallback,
-                               public nsINamed {
+class GeckoViewHistory final : public mozilla::BaseHistory {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSITIMERCALLBACK
-  NS_DECL_NSINAMED
 
   
   NS_IMETHOD VisitURI(nsIWidget*, nsIURI*, nsIURI* aLastVisitedURI,
                       uint32_t aFlags) final;
   NS_IMETHOD SetURITitle(nsIURI*, const nsAString&) final;
 
-  
-  mozilla::Result<mozilla::Ok, nsresult> StartVisitedQuery(nsIURI*) final;
-  void CancelVisitedQueryIfPossible(nsIURI*) final;
-
   static already_AddRefed<GeckoViewHistory> GetSingleton();
+
+  void StartPendingVisitedQueries(const PendingVisitedQueries&) final;
 
   GeckoViewHistory();
 
@@ -56,22 +50,10 @@ class GeckoViewHistory final : public mozilla::BaseHistory,
  private:
   virtual ~GeckoViewHistory();
 
-  void QueryVisitedStateInContentProcess();
-  void QueryVisitedStateInParentProcess();
+  void QueryVisitedStateInContentProcess(const PendingVisitedQueries&);
+  void QueryVisitedStateInParentProcess(const PendingVisitedQueries&);
 
   static mozilla::StaticRefPtr<GeckoViewHistory> sHistory;
-
-  
-  
-  nsTHashtable<nsURIHashKey> mNewURIs;
-
-  nsCOMPtr<nsITimer> mQueryVisitedStateTimer;
-
-  
-  
-  
-  
-  bool mQueryVisitedStateTimerPending = false;
 };
 
 #endif

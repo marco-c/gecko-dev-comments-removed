@@ -60,10 +60,7 @@ class History final : public BaseHistory,
   NS_IMETHOD SetURITitle(nsIURI*, const nsAString&) final;
 
   
-  Result<Ok, nsresult> StartVisitedQuery(nsIURI*) final;
-  void CancelVisitedQueryIfPossible(nsIURI*) final {
-    
-  }
+  void StartPendingVisitedQueries(const PendingVisitedQueries&) final;
 
   History();
 

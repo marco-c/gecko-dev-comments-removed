@@ -23,14 +23,6 @@ class BaseHistory : public IHistory {
 
   BaseHistory() : mTrackedURIs(kTrackedUrisInitialSize) {}
 
-  
-  
-  virtual Result<Ok, nsresult> StartVisitedQuery(nsIURI*) = 0;
-
-  
-  
-  virtual void CancelVisitedQueryIfPossible(nsIURI*) = 0;
-
   using ObserverArray = nsTObserverArray<dom::Link*>;
   struct ObservingLinks {
     ObserverArray mLinks;
@@ -41,12 +33,24 @@ class BaseHistory : public IHistory {
     }
   };
 
+  using PendingVisitedQueries = nsTHashtable<nsURIHashKey>;
+
+  
+  
+  virtual void StartPendingVisitedQueries(const PendingVisitedQueries&) = 0;
+
  private:
   
 
 
 
   void NotifyVisitedForDocument(nsIURI*, dom::Document*, VisitedStatus);
+
+  void ScheduleVisitedQuery(nsIURI*);
+
+  
+  
+  void CancelVisitedQueryIfPossible(nsIURI*);
 
   
 
@@ -58,6 +62,13 @@ class BaseHistory : public IHistory {
   
   
   nsDataHashtable<nsURIHashKey, ObservingLinks> mTrackedURIs;
+
+ private:
+  
+  PendingVisitedQueries mPendingQueries;
+  
+  
+  bool mStartPendingVisitedQueriesScheduled = false;
 };
 
 }  
