@@ -14,12 +14,7 @@ ChromeUtils.defineModuleGetter(this, "AboutNewTab",
                                "resource:///modules/AboutNewTab.jsm");
 
 const TOPIC_APP_QUIT = "quit-application-granted";
-const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
 const TOPIC_CONTENT_DOCUMENT_INTERACTIVE = "content-document-interactive";
-
-
-
-const ACTIVITY_STREAM_BCP47 = "en-US".split(" ");
 
 const ABOUT_URL = "about:newtab";
 const BASE_URL = "resource://activity-stream/";
@@ -35,7 +30,6 @@ const PREF_ACTIVITY_STREAM_DEBUG = "browser.newtabpage.activity-stream.debug";
 
 function AboutNewTabService() {
   Services.obs.addObserver(this, TOPIC_APP_QUIT);
-  Services.obs.addObserver(this, TOPIC_LOCALES_CHANGE);
   Services.prefs.addObserver(PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS, this);
   if (!IS_RELEASE_OR_BETA) {
     Services.prefs.addObserver(PREF_ACTIVITY_STREAM_DEBUG, this);
@@ -88,7 +82,6 @@ AboutNewTabService.prototype = {
 
   _newTabURL: ABOUT_URL,
   _activityStreamEnabled: false,
-  _activityStreamPath: "",
   _activityStreamDebug: false,
   _privilegedAboutContentProcess: false,
   _overridden: false,
@@ -105,11 +98,9 @@ AboutNewTabService.prototype = {
       case "nsPref:changed":
         if (data === PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS) {
           this._privilegedAboutContentProcess = Services.prefs.getBoolPref(PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS);
-          this.updatePrerenderedPath();
           this.notifyChange();
         } else if (!IS_RELEASE_OR_BETA && data === PREF_ACTIVITY_STREAM_DEBUG) {
           this._activityStreamDebug = Services.prefs.getBoolPref(PREF_ACTIVITY_STREAM_DEBUG, false);
-          this.updatePrerenderedPath();
           this.notifyChange();
         }
         break;
@@ -147,7 +138,6 @@ AboutNewTabService.prototype = {
             `${BASE_URL}vendor/prop-types.js`,
             `${BASE_URL}vendor/redux.js`,
             `${BASE_URL}vendor/react-redux.js`,
-            `${BASE_URL}prerendered/${this.activityStreamLocale}/activity-stream-strings.js`,
             `${BASE_URL}data/content/activity-stream.bundle.js`,
           ];
 
@@ -173,10 +163,6 @@ AboutNewTabService.prototype = {
         } else if (IS_PRIVILEGED_PROCESS) {
           Services.obs.removeObserver(this, TOPIC_CONTENT_DOCUMENT_INTERACTIVE);
         }
-        break;
-      case TOPIC_LOCALES_CHANGE:
-        this.updatePrerenderedPath();
-        this.notifyChange();
         break;
     }
   },
@@ -209,19 +195,8 @@ AboutNewTabService.prototype = {
     if (!IS_RELEASE_OR_BETA) {
       this._activityStreamDebug = Services.prefs.getBoolPref(PREF_ACTIVITY_STREAM_DEBUG, false);
     }
-    this.updatePrerenderedPath();
     this._newtabURL = ABOUT_URL;
     return true;
-  },
-
-  
-
-
-  updatePrerenderedPath() {
-    
-    
-    this._activityStreamPath = `${this._activityStreamDebug &&
-      !this._privilegedAboutContentProcess ? "static" : this.activityStreamLocale}/`;
   },
 
   
@@ -234,9 +209,9 @@ AboutNewTabService.prototype = {
     
     
     
+    
     return [
       "resource://activity-stream/prerendered/",
-      this._activityStreamPath,
       "activity-stream",
       
       this._activityStreamDebug && !this._privilegedAboutContentProcess ? "-debug" : "",
@@ -286,21 +261,6 @@ AboutNewTabService.prototype = {
     return this._activityStreamDebug;
   },
 
-  get activityStreamLocale() {
-    
-    return Services.locale.negotiateLanguages(
-      
-      
-      Services.locale.appLocalesAsBCP47.map(l => l.replace(/^(ja-JP-mac)$/, "$1os")),
-      ACTIVITY_STREAM_BCP47,
-      
-      "en-US",
-      Services.locale.langNegStrategyLookup
-    
-    
-    )[0].replace(/^(ja-JP-mac)os$/, "$1");
-  },
-
   resetNewTabURL() {
     this._overridden = false;
     this._newTabURL = ABOUT_URL;
@@ -327,7 +287,6 @@ AboutNewTabService.prototype = {
       return;
     }
     Services.obs.removeObserver(this, TOPIC_APP_QUIT);
-    Services.obs.removeObserver(this, TOPIC_LOCALES_CHANGE);
     Services.prefs.removeObserver(PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS, this);
     if (!IS_RELEASE_OR_BETA) {
       Services.prefs.removeObserver(PREF_ACTIVITY_STREAM_DEBUG, this);
