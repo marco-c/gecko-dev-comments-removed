@@ -839,12 +839,6 @@ class WebkitBenchmark(PageloaderTest):
 
 
 @register_test()
-class speedometer(WebkitBenchmark):
-    
-    tpmanifest = '${talos}/tests/speedometer/speedometer.manifest'
-
-
-@register_test()
 class stylebench(WebkitBenchmark):
     
     tpmanifest = '${talos}/tests/stylebench/stylebench.manifest'
