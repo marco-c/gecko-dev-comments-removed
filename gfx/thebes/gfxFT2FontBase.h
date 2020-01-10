@@ -48,7 +48,7 @@ class gfxFT2FontBase : public gfxFont {
   
   
   bool GetFTGlyphExtents(uint16_t aGID, int32_t* aWidth,
-                         gfxRect* aBounds = nullptr);
+                         mozilla::gfx::IntRect* aBounds = nullptr);
 
  protected:
   void InitMetrics();
@@ -70,7 +70,50 @@ class gfxFT2FontBase : public gfxFont {
   
   nsTArray<FT_Fixed> mCoords;
 
-  mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey, int32_t>> mGlyphWidths;
+  
+  
+  
+  struct GlyphMetrics {
+    
+    
+    enum { INVALID = INT16_MIN, OVERFLOW = INT16_MAX };
+
+    GlyphMetrics() : mAdvance(0), mX(INVALID), mY(0), mWidth(0), mHeight(0) {}
+
+    bool HasValidBounds() const { return mX != INVALID; }
+    bool HasCachedBounds() const { return mX != OVERFLOW; }
+
+    
+    
+    
+    void SetBounds(const mozilla::gfx::IntRect& aBounds) {
+      if (aBounds.x > INT16_MIN && aBounds.x < INT16_MAX &&
+          aBounds.y > INT16_MIN && aBounds.y < INT16_MAX &&
+          aBounds.width <= UINT16_MAX && aBounds.height <= UINT16_MAX) {
+        mX = aBounds.x;
+        mY = aBounds.y;
+        mWidth = aBounds.width;
+        mHeight = aBounds.height;
+      } else {
+        mX = OVERFLOW;
+      }
+    }
+
+    mozilla::gfx::IntRect GetBounds() const {
+      return mozilla::gfx::IntRect(mX, mY, mWidth, mHeight);
+    }
+
+    int32_t mAdvance;
+    int16_t mX;
+    int16_t mY;
+    uint16_t mWidth;
+    uint16_t mHeight;
+  };
+
+  const GlyphMetrics& GetCachedGlyphMetrics(uint16_t aGID);
+
+  mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey, GlyphMetrics>>
+      mGlyphMetrics;
 };
 
 
