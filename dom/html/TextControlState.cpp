@@ -1136,10 +1136,14 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     }
   }
 
-  ~AutoTextControlHandlingState() {
+  MOZ_CAN_RUN_SCRIPT ~AutoTextControlHandlingState() {
     mTextControlState.mHandlingState = mParent;
     if (!mParent && mTextControlStateDestroyed) {
       mTextControlState.DeleteOrCacheForReuse();
+    }
+    if (!mTextControlStateDestroyed && mPreareEditorLater) {
+      MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+      mTextControlState.PrepareEditor();
     }
   }
 
@@ -1148,6 +1152,20 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     if (mParent) {
       mParent->OnDestroyTextControlState();
     }
+  }
+
+  void PrepareEditorLater() {
+    MOZ_ASSERT(IsHandling(TextControlAction::SetValue));
+    MOZ_ASSERT(!IsHandling(TextControlAction::PrepareEditor));
+    
+    AutoTextControlHandlingState* settingValue = nullptr;
+    for (AutoTextControlHandlingState* handlingSomething = this;
+         handlingSomething; handlingSomething = handlingSomething->mParent) {
+      if (handlingSomething->Is(TextControlAction::SetValue)) {
+        settingValue = handlingSomething;
+      }
+    }
+    settingValue->mPreareEditorLater = true;
   }
 
   
@@ -1309,6 +1327,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   TextControlAction const mTextControlAction;
   bool mTextControlStateDestroyed = false;
   bool mEditActionHandled = false;
+  bool mPreareEditorLater = false;
 };
 
 
@@ -1607,10 +1626,16 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
 
   AutoHideSelectionChanges hideSelectionChanges(GetConstFrameSelection());
 
-  
-  if (mHandlingState &&
-      mHandlingState->IsHandling(TextControlAction::PrepareEditor)) {
-    return NS_ERROR_NOT_INITIALIZED;
+  if (mHandlingState) {
+    
+    if (mHandlingState->IsHandling(TextControlAction::PrepareEditor)) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+    
+    if (mHandlingState->IsHandling(TextControlAction::SetValue)) {
+      mHandlingState->PrepareEditorLater();
+      return NS_ERROR_NOT_INITIALIZED;
+    }
   }
   AutoTextControlHandlingState preparingEditor(
       *this, TextControlAction::PrepareEditor);
@@ -2611,13 +2636,6 @@ bool TextControlState::SetValue(const nsAString& aValue,
   }
 
   if (mTextEditor && mBoundFrame) {
-    
-    
-    
-    
-    
-    nsAutoScriptBlocker scriptBlocker;
-
     AutoWeakFrame weakFrame(mBoundFrame);
 
     if (!SetValueWithTextEditor(handlingSetValue)) {
