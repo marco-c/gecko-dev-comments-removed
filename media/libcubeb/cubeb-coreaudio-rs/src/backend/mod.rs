@@ -2396,6 +2396,25 @@ unsafe impl Sync for AudioUnitContext {}
 
 
 
+
+
+
+#[derive(Debug)]
+struct StreamDevice {
+    aggregate_device: AggregateDevice,
+}
+
+impl Default for StreamDevice {
+    fn default() -> Self {
+        Self {
+            aggregate_device: AggregateDevice::default(),
+        }
+    }
+}
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 struct AudioUnitStream<'ctx> {
@@ -2454,7 +2473,7 @@ struct AudioUnitStream<'ctx> {
     input_alive_listener: Option<device_property_listener>,
     input_source_listener: Option<device_property_listener>,
     output_source_listener: Option<device_property_listener>,
-    aggregate_device: AggregateDevice,
+    stream_device: Mutex<StreamDevice>,
 }
 
 impl<'ctx> AudioUnitStream<'ctx> {
@@ -2516,7 +2535,7 @@ impl<'ctx> AudioUnitStream<'ctx> {
             input_alive_listener: None,
             input_source_listener: None,
             output_source_listener: None,
-            aggregate_device: AggregateDevice::default(),
+            stream_device: Mutex::new(StreamDevice::default()),
         }
     }
 
@@ -3324,7 +3343,8 @@ impl<'ctx> AudioUnitStream<'ctx> {
                     out_dev_info.id = device.get_device_id();
                     in_dev_info.flags = device_flags::DEV_INPUT;
                     out_dev_info.flags = device_flags::DEV_OUTPUT;
-                    self.aggregate_device = device;
+                    let mut stream_device = self.stream_device.lock().unwrap();
+                    stream_device.aggregate_device = device;
                 }
                 Err(status) => {
                     cubeb_log!(
@@ -3495,7 +3515,10 @@ impl<'ctx> AudioUnitStream<'ctx> {
         self.resampler.reset(ptr::null_mut());
         self.mixer.reset(ptr::null_mut());
 
-        self.aggregate_device = AggregateDevice::default();
+        {
+            let mut stream_device = self.stream_device.lock().unwrap();
+            stream_device.aggregate_device = AggregateDevice::default();
+        }
     }
 
     fn destroy_internal(&mut self) {
