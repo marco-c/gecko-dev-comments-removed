@@ -2,12 +2,11 @@
 
 from __future__ import print_function
 from lxml import etree
-from utils.misc import downloadWithProgressBar
+from utils.misc import downloadWithProgressBar, UnicodeXMLURL
 from utils import mathfont
-import json
 
 
-unicodeXML = downloadWithProgressBar("http://www.w3.org/2003/entities/2007xml/unicode.xml")
+unicodeXML = downloadWithProgressBar(UnicodeXMLURL)
 
 
 xsltTransform = etree.XSLT(etree.XML('''\
@@ -63,6 +62,8 @@ mathvariantTransforms["auto"] = mathvariantTransforms["italic"]
 
 
 for mathvariant in mathvariantTransforms:
+    if mathvariant == "auto":
+        continue
     font = mathfont.create("mathvariant-%s" % mathvariant)
     for baseChar in mathvariantTransforms[mathvariant]:
         if baseChar not in font:
