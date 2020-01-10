@@ -869,9 +869,7 @@ var gIdentityHandler = {
 
   handleIdentityButtonEvent(event) {
     
-    
-    if (this._protectionsPanelEnabled &&
-        event.originalTarget.id == "tracking-protection-icon-animatable-image") {
+    if (this._protectionsPanelEnabled && event.metaKey) {
       gProtectionsHandler.handleProtectionsButtonEvent(event);
       return;
     }

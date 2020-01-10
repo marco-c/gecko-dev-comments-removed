@@ -39,7 +39,7 @@ var gProtectionsHandler = {
     this.refreshProtectionsPopup();
 
     
-    PanelMultiView.openPopup(this._protectionsPopup, this._protectionsIconBox, {
+    PanelMultiView.openPopup(this._protectionsPopup, gIdentityHandler._identityIcon, {
       position: "bottomcenter topleft",
       triggerEvent: event,
     }).catch(Cu.reportError);
