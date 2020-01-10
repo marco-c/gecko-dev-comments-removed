@@ -354,7 +354,7 @@ class Loader final {
   
   
   
-  MediaMatched PrepareSheet(StyleSheet* aSheet, const nsAString& aTitle,
+  MediaMatched PrepareSheet(StyleSheet&, const nsAString& aTitle,
                             const nsAString& aMediaString, dom::MediaList*,
                             IsAlternate, IsExplicitlyEnabled);
 
