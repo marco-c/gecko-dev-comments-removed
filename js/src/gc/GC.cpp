@@ -1339,7 +1339,7 @@ bool GCRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes) {
       setMarkStackLimit(atoi(size), lock);
     }
 
-    if (!nursery().init(maxNurseryBytes, lock)) {
+    if (!nursery().init(lock)) {
       return false;
     }
 
@@ -2139,8 +2139,8 @@ void ZoneHeapThreshold::updateAfterGC(size_t lastBytes,
                                       const AutoLockGC& lock) {
   float growthFactor =
       computeZoneHeapGrowthFactorForHeapSize(lastBytes, tunables, state);
-  gcTriggerBytes_ = computeZoneTriggerBytes(growthFactor, lastBytes, gckind,
-                                            tunables, lock);
+  gcTriggerBytes_ =
+      computeZoneTriggerBytes(growthFactor, lastBytes, gckind, tunables, lock);
 }
 
 
@@ -8232,13 +8232,6 @@ void GCRuntime::mergeRealms(Realm* source, Realm* target) {
 
   
   
-
-  for (auto script = source->zone()->cellIterUnsafe<JSScript>(); !script.done();
-       script.next()) {
-    MOZ_ASSERT(script->realm() == source);
-    script->realm_ = target;
-    MOZ_ASSERT(!script->jitScript());
-  }
 
   GlobalObject* global = target->maybeGlobal();
   MOZ_ASSERT(global);
