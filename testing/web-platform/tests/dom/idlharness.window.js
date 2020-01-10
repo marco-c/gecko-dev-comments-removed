@@ -42,6 +42,11 @@ idl_test(
       NodeList: ['document.querySelectorAll("script")'],
       HTMLCollection: ['document.body.children'],
       DOMTokenList: ['document.body.classList'],
+      XPathEvaluator: ['new XPathEvaluator()'],
+      XPathExpression: ['document.createExpression("//*")'],
+      
+      
+      XPathResult: ['document.evaluate("//*", document.body)'],
     });
   }
 );
