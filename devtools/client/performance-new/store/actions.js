@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const selectors = require("devtools/client/performance-new/store/selectors");
