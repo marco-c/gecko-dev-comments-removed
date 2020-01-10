@@ -1731,7 +1731,11 @@ var PanelView = class extends AssociatedToNode {
         }
       
       case "Tab": {
-        if (isContextMenuOpen()) {
+        if (
+          isContextMenuOpen() ||
+          
+          (focus && focus.localName == "menulist" && focus.open)
+        ) {
           break;
         }
         stop();
