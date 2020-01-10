@@ -7849,32 +7849,13 @@ void GCRuntime::mergeRealms(Realm* source, Realm* target) {
 
   
   
-  
   Zone* sourceZone = source->zone();
-  Zone* targetZone = target->zone();
-  MOZ_ASSERT(sourceZone != targetZone);
-  if (sourceZone->scriptNameMap) {
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-
-    if (!targetZone->scriptNameMap) {
-      targetZone->scriptNameMap = cx->make_unique<ScriptNameMap>();
-
-      if (!targetZone->scriptNameMap) {
-        oomUnsafe.crash("Failed to create a script name map.");
-      }
-    }
-
-    for (auto i = sourceZone->scriptNameMap->modIter(); !i.done(); i.next()) {
-      JSScript* key = i.get().key();
-      if (key->realm() == source) {
-        auto value = std::move(i.get().value());
-        if (!targetZone->scriptNameMap->putNew(key, std::move(value))) {
-          oomUnsafe.crash("Failed to add an entry in the script name map.");
-        }
-        i.remove();
-      }
-    }
-  }
+  MOZ_ASSERT(!sourceZone->scriptNameMap);
+  MOZ_ASSERT(!sourceZone->scriptCountsMap);
+  MOZ_ASSERT(!sourceZone->debugScriptMap);
+#ifdef MOZ_VTUNE
+  MOZ_ASSERT(!sourceZone->scriptVTuneIdMap);
+#endif
 
   
   

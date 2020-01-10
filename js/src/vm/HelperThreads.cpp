@@ -1885,6 +1885,43 @@ UniquePtr<ParseTask> GlobalHelperThreadState::finishParseTaskCommon(
     return nullptr;
   }
 
+  
+  if (coverage::IsLCovEnabled()) {
+    Rooted<GCVector<JSScript*>> workList(cx, GCVector<JSScript*>(cx));
+
+    if (!workList.appendAll(parseTask->scripts)) {
+      return nullptr;
+    }
+
+    RootedScript elem(cx);
+    while (!workList.empty()) {
+      elem = workList.popCopy();
+
+      
+      if (!elem->initScriptName(cx)) {
+        return nullptr;
+      }
+
+      
+      for (JS::GCCellPtr gcThing : elem->gcthings()) {
+        if (!gcThing.is<JSObject>()) {
+          continue;
+        }
+        JSObject* obj = &gcThing.as<JSObject>();
+        if (!obj->is<JSFunction>()) {
+          continue;
+        }
+        JSFunction* fun = &obj->as<JSFunction>();
+        if (!fun->hasScript()) {
+          continue;
+        }
+        if (!workList.append(fun->nonLazyScript())) {
+          return nullptr;
+        }
+      }
+    }
+  }
+
   return std::move(parseTask.get());
 }
 

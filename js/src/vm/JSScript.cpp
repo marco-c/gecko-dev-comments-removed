@@ -3953,6 +3953,13 @@ uint32_t JSScript::vtuneMethodID() {
 bool JSScript::initScriptName(JSContext* cx) {
   MOZ_ASSERT(!hasScriptName());
 
+  
+  
+  
+  if (cx->isHelperThreadContext()) {
+    return true;
+  }
+
   if (!filename()) {
     return true;
   }
