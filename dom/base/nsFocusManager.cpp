@@ -682,6 +682,9 @@ nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow) {
   
   
   if (XRE_IsParentProcess()) {
+    
+    
+    BrowserParent::PopFocusAll();
     ActivateOrDeactivate(window, true);
   }
 
