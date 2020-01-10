@@ -1331,9 +1331,9 @@ var PanelView = class extends AssociatedToNode {
       if (value) {
         
         
-        header
-          .querySelector(".panel-header > label")
-          .setAttribute("value", value);
+        header.querySelector(
+          ".panel-header > label > span"
+        ).textContent = value;
       } else {
         header.remove();
       }
@@ -1364,7 +1364,9 @@ var PanelView = class extends AssociatedToNode {
     });
 
     let label = this.document.createXULElement("label");
-    label.setAttribute("value", value);
+    let span = this.document.createElement("span");
+    span.textContent = value;
+    label.appendChild(span);
 
     header.append(backButton, label);
     this.node.prepend(header);
