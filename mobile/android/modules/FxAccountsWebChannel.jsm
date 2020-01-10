@@ -311,6 +311,15 @@ this.FxAccountsWebChannel.prototype = {
             Accounts.getFirefoxAccount()
               .then(account => {
                 if (!account) {
+                  
+                  
+                  
+                  if ("offeredSyncEngines" in data) {
+                    data.action = "signup";
+                  } else {
+                    data.action = "signin";
+                  }
+
                   return Accounts.createFirefoxAccountFromJSON(data).then(
                     success => {
                       if (!success) {
@@ -326,6 +335,10 @@ this.FxAccountsWebChannel.prototype = {
                     }
                   );
                 }
+
+                
+                data.action = "reconnect";
+
                 return Accounts.updateFirefoxAccountFromJSON(data).then(
                   success => {
                     if (!success) {
@@ -367,6 +380,10 @@ this.FxAccountsWebChannel.prototype = {
                     "Can't change password of non-existent Firefox Account!"
                   );
                 }
+
+                
+                data.action = "passwordChange";
+
                 return Accounts.updateFirefoxAccountFromJSON(data);
               })
               .then(success => {
