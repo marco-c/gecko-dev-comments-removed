@@ -337,6 +337,9 @@ class BaselineCodeGen {
   
   void loadScript(Register dest);
 
+  void saveInterpreterPCReg();
+  void restoreInterpreterPCReg();
+
   
   void subtractScriptSlotsSize(Register reg, Register scratch);
 
@@ -667,7 +670,16 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
 
 class BaselineInterpreterHandler {
   InterpreterFrameInfo frame_;
+
+  
+  
   Label interpretOp_;
+
+  
+  
+  Label interpretOpWithPCReg_;
+
+  
   CodeOffset debuggeeCheckOffset_;
 
   
@@ -684,6 +696,8 @@ class BaselineInterpreterHandler {
   InterpreterFrameInfo& frame() { return frame_; }
 
   Label* interpretOpLabel() { return &interpretOp_; }
+  Label* interpretOpWithPCRegLabel() { return &interpretOpWithPCReg_; }
+
   Label* codeCoverageAtPrologueLabel() { return &codeCoverageAtPrologueLabel_; }
   Label* codeCoverageAtPCLabel() { return &codeCoverageAtPCLabel_; }
 
@@ -731,6 +745,9 @@ class BaselineInterpreterGenerator final : private BaselineInterpreterCodeGen {
 
   
   uint32_t interpretOpOffset_ = 0;
+
+  
+  uint32_t interpretOpNoDebugTrapOffset_ = 0;
 
  public:
   explicit BaselineInterpreterGenerator(JSContext* cx);

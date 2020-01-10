@@ -130,6 +130,9 @@ static constexpr Register OsrFrameReg = edx;
 static constexpr Register PreBarrierReg = edx;
 
 
+static constexpr Register InterpreterPCReg = InvalidReg;
+
+
 static constexpr Register RegExpMatcherRegExpReg = CallTempReg0;
 static constexpr Register RegExpMatcherStringReg = CallTempReg1;
 static constexpr Register RegExpMatcherLastIndexReg = CallTempReg2;
