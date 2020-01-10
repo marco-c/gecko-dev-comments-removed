@@ -754,7 +754,7 @@ bool nsDefaultURIFixup::PossiblyHostPortUrl(const nsACString& aUrl) {
   while (iter != iterEnd && digitCount <= 5) {
     if (IsAsciiDigit(*iter)) {
       digitCount++;
-    } else if (*iter == '/') {
+    } else if (*iter == '/' || *iter == '?' || *iter == '#') {
       break;
     } else {
       
