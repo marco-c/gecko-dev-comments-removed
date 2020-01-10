@@ -116,8 +116,7 @@ function testTableFill(type, obj) {
   
 
   
-  assertErrorMessage(() => ins.exports.fill1(11, null, 0),
-                     RangeError, /table index out of bounds/);
+  assertEq(ins.exports.fill1(11, null, 0), undefined);
 
   
   assertErrorMessage(() => ins.exports.fill1(11, null, 1),

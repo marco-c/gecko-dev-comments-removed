@@ -551,7 +551,6 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
 }
 
 
-
 {
     let inst = wasmEvalText(
     `(module
@@ -573,8 +572,7 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
        )
      )`
     );
-    assertErrorMessage(() => inst.exports.testfn(),
-                       WebAssembly.RuntimeError, /index out of bounds/);
+    inst.exports.testfn();
 }
 
 
@@ -754,8 +752,7 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
        )
      )`
     );
-    assertErrorMessage(() => inst.exports.testfn(),
-                       WebAssembly.RuntimeError, /index out of bounds/);
+    inst.exports.testfn();
 }
 
 
@@ -781,8 +778,7 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
        )
      )`
     );
-    assertErrorMessage(() => inst.exports.testfn(),
-                       WebAssembly.RuntimeError, /index out of bounds/);
+    inst.exports.testfn();
 }
 
 

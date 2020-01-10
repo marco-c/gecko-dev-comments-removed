@@ -221,9 +221,9 @@ mem_test("",
          "(memory.init 1 (i32.const 1234) (i32.const 4) (i32.const 0))");
 
 
+
 mem_test("",
-         "(memory.init 1 (i32.const 1234) (i32.const 5) (i32.const 0))",
-         WebAssembly.RuntimeError, /index out of bounds/);
+         "(memory.init 1 (i32.const 1234) (i32.const 5) (i32.const 0))");
 
 
 
@@ -231,9 +231,9 @@ mem_test("",
          "(memory.init 1 (i32.const 0x10000) (i32.const 2) (i32.const 0))");
 
 
+
 mem_test("",
-         "(memory.init 1 (i32.const 0x10001) (i32.const 2) (i32.const 0))",
-         WebAssembly.RuntimeError, /index out of bounds/);
+         "(memory.init 1 (i32.const 0x10001) (i32.const 2) (i32.const 0))");
 
 
 mem_test("data.drop 1 (i32.const 42)", "",
@@ -348,19 +348,18 @@ tab_test("",
          "(table.init 1 (i32.const 12) (i32.const 4) (i32.const 0))");
 
 
-tab_test("",
-         "(table.init 1 (i32.const 12) (i32.const 5) (i32.const 0))",
-         WebAssembly.RuntimeError, /index out of bounds/);
 
+tab_test("",
+         "(table.init 1 (i32.const 12) (i32.const 5) (i32.const 0))");
 
 
 tab_test("",
          "(table.init 1 (i32.const 30) (i32.const 2) (i32.const 0))");
 
 
+
 tab_test("",
-         "(table.init 1 (i32.const 31) (i32.const 2) (i32.const 0))",
-         WebAssembly.RuntimeError, /index out of bounds/);
+         "(table.init 1 (i32.const 31) (i32.const 2) (i32.const 0))");
 
 
 tab_test("elem.drop 1 (i32.const 42)", "",
@@ -429,15 +428,12 @@ tab_test_nofail(
     "");
 
 
-
 tab_test("(table.copy (i32.const 30) (i32.const 15) (i32.const 0))",
          "");
 
 
 tab_test("(table.copy (i32.const 31) (i32.const 15) (i32.const 0))",
-         "",
-         WebAssembly.RuntimeError, /index out of bounds/);
-
+         "");
 
 
 tab_test("(table.copy (i32.const 15) (i32.const 30) (i32.const 0))",
@@ -445,5 +441,4 @@ tab_test("(table.copy (i32.const 15) (i32.const 30) (i32.const 0))",
 
 
 tab_test("(table.copy (i32.const 15) (i32.const 31) (i32.const 0))",
-         "",
-         WebAssembly.RuntimeError, /index out of bounds/);
+         "");
