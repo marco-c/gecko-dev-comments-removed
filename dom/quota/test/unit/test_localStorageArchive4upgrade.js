@@ -32,6 +32,13 @@ async function testSteps() {
     return Services.domStorageManager.createStorage(null, principal, principal, "");
   }
 
+  info("Setting pref");
+
+  
+  
+  
+  Services.prefs.setBoolPref("dom.storage.client_validation", false);
+
   info("Clearing");
 
   let request = clear();

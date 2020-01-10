@@ -53,11 +53,18 @@ function returnToEventLoop() {
 
 function enableTesting() {
   Services.prefs.setBoolPref("dom.storage.testing", true);
+
+  
+  
+  
+  Services.prefs.setBoolPref("dom.storage.client_validation", false);
+
   Services.prefs.setBoolPref("dom.quotaManager.testing", true);
 }
 
 function resetTesting() {
   Services.prefs.clearUserPref("dom.quotaManager.testing");
+  Services.prefs.clearUserPref("dom.storage.client_validation");
   Services.prefs.clearUserPref("dom.storage.testing");
 }
 
