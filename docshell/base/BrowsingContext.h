@@ -265,6 +265,8 @@ class BrowsingContext : public nsISupports,
 
   uint32_t SandboxFlags() { return mSandboxFlags; }
 
+  bool InRDMPane() { return mInRDMPane; }
+
   
   
   
