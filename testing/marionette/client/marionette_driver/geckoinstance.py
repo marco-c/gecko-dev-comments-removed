@@ -564,6 +564,9 @@ class DesktopInstance(GeckoInstance):
         "toolkit.cosmeticAnimations.enabled": False,
 
         
+        "browser.tabs.unloadOnLowMemory": False,
+
+        
         "browser.tabs.warnOnClose": False,
         
         "browser.tabs.warnOnCloseOtherTabs": False,
