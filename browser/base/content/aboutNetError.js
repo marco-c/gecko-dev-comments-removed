@@ -259,7 +259,7 @@ function initPage() {
     document.getElementById("netErrorButtonContainer").style.display = "none";
   }
 
-  if (err == "cspBlocked" || err == "xfoBlocked") {
+  if (err == "cspBlocked") {
     
     
     document.getElementById("netErrorButtonContainer").style.display = "none";

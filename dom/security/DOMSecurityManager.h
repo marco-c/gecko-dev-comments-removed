@@ -8,7 +8,6 @@
 #define mozilla_dom_DOMSecurityManager_h
 
 #include "nsIObserver.h"
-#include "nsIContentSecurityPolicy.h"
 
 class DOMSecurityManager final : public nsIObserver {
  public:
@@ -24,12 +23,7 @@ class DOMSecurityManager final : public nsIObserver {
   
   
   
-  nsresult ParseCSPAndEnforceFrameAncestorCheck(
-      nsIChannel* aChannel, nsIContentSecurityPolicy** aOutCSP);
-
-  
-  nsresult EnforeXFrameOptionsCheck(nsIChannel* aChannel,
-                                    nsIContentSecurityPolicy* aCsp);
+  nsresult ParseCSPAndEnforceFrameAncestorCheck(nsIChannel* aChannel);
 
   static void Shutdown();
 };
