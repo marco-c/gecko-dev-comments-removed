@@ -87,11 +87,7 @@ class TestMemoryUsage(AwsyTestCase):
         self._urls = urls
 
         
-        
-        
         self._extra_opts = ["tp6"]
-        if TestMemoryUsage.ENABLE_FISSION:
-            self._extra_opts.append("fission-enabled")
 
         
         tp6_pageset_manifest = os.path.join(AWSY_PATH, 'tp6-pageset.manifest')
