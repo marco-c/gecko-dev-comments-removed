@@ -4,6 +4,15 @@
 
 %include ../../../shared/in-content/common.inc.css
 
+@supports -moz-bool-pref("browser.in-content.dark-mode") {
+@media (prefers-color-scheme: dark) {
+  
+  :root {
+    scrollbar-color: initial;
+  }
+}
+}
+
 xul|tab[visuallyselected] {
   
 
