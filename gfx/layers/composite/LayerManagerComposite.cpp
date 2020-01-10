@@ -914,9 +914,7 @@ void LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
   LayerScopeAutoFrame frame(PR_Now());
 
   
-  if (StaticPrefs::LayersDump()) {
-    this->Dump( true);
-  }
+  
 
   
   if (LayerScope::CheckSendable()) {
