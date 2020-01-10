@@ -1679,15 +1679,13 @@ CanvasRenderingContext2D::GetSurfaceSnapshot(gfxAlphaType* aOutAlphaType) {
     }
   }
 
+  
+  
+  
   RefPtr<SourceSurface> snapshot = mBufferProvider->BorrowSnapshot();
-  if (!snapshot) {
-    return nullptr;
-  }
-
-  RefPtr<DataSourceSurface> dataSurface = snapshot->GetDataSurface();
+  RefPtr<SourceSurface> retSurface = snapshot;
   mBufferProvider->ReturnSnapshot(snapshot.forget());
-
-  return dataSurface.forget();
+  return retSurface.forget();
 }
 
 SurfaceFormat CanvasRenderingContext2D::GetSurfaceFormat() const {
