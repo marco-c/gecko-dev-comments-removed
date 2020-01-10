@@ -1113,6 +1113,13 @@ void MediaPipelineTransmit::PipelineListener::
       gMediaPipelineLog, LogLevel::Info,
       ("MediaPipeline::NotifyDirectListenerUninstalled() listener=%p", this));
 
+  if (mConduit->type() == MediaSessionConduit::VIDEO) {
+    
+    
+    MOZ_ASSERT(mConverter);
+    mConverter->SetTrackEnabled(true);
+  }
+
   mDirectConnect = false;
 }
 
