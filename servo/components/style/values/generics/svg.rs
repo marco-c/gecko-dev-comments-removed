@@ -171,13 +171,16 @@ pub enum SVGLength<L> {
     ToResolvedValue,
     ToShmem,
 )]
-pub enum SVGStrokeDashArray<L> {
+#[repr(C, u8)]
+pub enum GenericSVGStrokeDashArray<L> {
     
     #[css(comma)]
-    Values(#[css(if_empty = "none", iterable)] Vec<L>),
+    Values(#[css(if_empty = "none", iterable)] crate::OwnedSlice<L>),
     
     ContextValue,
 }
+
+pub use self::GenericSVGStrokeDashArray as SVGStrokeDashArray;
 
 
 
@@ -197,7 +200,8 @@ pub enum SVGStrokeDashArray<L> {
     ToResolvedValue,
     ToShmem,
 )]
-pub enum SVGOpacity<OpacityType> {
+#[repr(C, u8)]
+pub enum GenericSVGOpacity<OpacityType> {
     
     Opacity(OpacityType),
     
@@ -207,3 +211,5 @@ pub enum SVGOpacity<OpacityType> {
     #[animation(error)]
     ContextStrokeOpacity,
 }
+
+pub use self::GenericSVGOpacity as SVGOpacity;

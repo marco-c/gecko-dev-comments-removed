@@ -62,16 +62,16 @@ impl SVGWidth {
 }
 
 
-pub type SVGStrokeDashArray = generic::SVGStrokeDashArray<NonNegativeLengthPercentage>;
+pub type SVGStrokeDashArray = generic::GenericSVGStrokeDashArray<NonNegativeLengthPercentage>;
 
 impl Default for SVGStrokeDashArray {
     fn default() -> Self {
-        generic::SVGStrokeDashArray::Values(vec![])
+        generic::SVGStrokeDashArray::Values(Default::default())
     }
 }
 
 
-pub type SVGOpacity = generic::SVGOpacity<Opacity>;
+pub type SVGOpacity = generic::GenericSVGOpacity<Opacity>;
 
 impl Default for SVGOpacity {
     fn default() -> Self {
