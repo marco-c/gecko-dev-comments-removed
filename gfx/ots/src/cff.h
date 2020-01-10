@@ -11,22 +11,28 @@
 #include <string>
 #include <vector>
 
+#undef major // glibc defines major!
+
 namespace ots {
 
 struct CFFIndex {
   CFFIndex()
       : count(0), off_size(0), offset_to_next(0) {}
-  uint16_t count;
+  uint32_t count;
   uint8_t off_size;
   std::vector<uint32_t> offsets;
   uint32_t offset_to_next;
 };
 
+typedef std::map<uint32_t, uint16_t> CFFFDSelect;
+
 class OpenTypeCFF : public Table {
  public:
   explicit OpenTypeCFF(Font *font, uint32_t tag)
       : Table(font, tag, tag),
+        major(0),
         font_dict_length(0),
+        charstrings_index(NULL),
         local_subrs(NULL),
         m_data(NULL),
         m_length(0) {
@@ -38,19 +44,44 @@ class OpenTypeCFF : public Table {
   bool Serialize(OTSStream *out);
 
   
+  uint8_t major;
+
+  
   std::string name;
 
   
   size_t font_dict_length;
   
-  std::map<uint16_t, uint8_t> fd_select;
+  CFFFDSelect fd_select;
 
   
-  std::vector<CFFIndex *> char_strings_array;
+  CFFIndex* charstrings_index;
   
   std::vector<CFFIndex *> local_subrs_per_font;
   
   CFFIndex *local_subrs;
+
+  
+  std::vector<uint16_t> region_index_count;
+
+ protected:
+  bool ValidateFDSelect(uint16_t num_glyphs);
+
+ private:
+  const uint8_t *m_data;
+  size_t m_length;
+};
+
+class OpenTypeCFF2 : public OpenTypeCFF {
+ public:
+  explicit OpenTypeCFF2(Font *font, uint32_t tag)
+      : OpenTypeCFF(font, tag),
+        m_data(NULL),
+        m_length(0) {
+  }
+
+  bool Parse(const uint8_t *data, size_t length);
+  bool Serialize(OTSStream *out);
 
  private:
   const uint8_t *m_data;

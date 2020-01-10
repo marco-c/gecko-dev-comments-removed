@@ -13,6 +13,8 @@
 
 namespace ots {
 
+const size_t kMaxCFF1ArgumentStack = 48;
+const size_t kMaxCFF2ArgumentStack = 513;
 
 
 
@@ -34,17 +36,15 @@ namespace ots {
 
 
 
-bool ValidateType2CharStringIndex(
-    Font *font,
-    const CFFIndex &char_strings_index,
+
+bool ValidateCFFCharStrings(
+    OpenTypeCFF& cff,
     const CFFIndex &global_subrs_index,
-    const std::map<uint16_t, uint8_t> &fd_select,
-    const std::vector<CFFIndex *> &local_subrs_per_font,
-    const CFFIndex *local_subrs,
     Buffer *cff_table);
 
 
-enum Type2CharStringOperator {
+
+enum CharStringOperator {
   kHStem = 1,
   kVStem = 3,
   kVMoveTo = 4,
@@ -55,6 +55,8 @@ enum Type2CharStringOperator {
   kCallSubr = 10,
   kReturn = 11,
   kEndChar = 14,
+  kVSIndex = 15,
+  kBlend = 16,
   kHStemHm = 18,
   kHintMask = 19,
   kCntrMask = 20,
