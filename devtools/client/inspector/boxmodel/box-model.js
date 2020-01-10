@@ -193,18 +193,11 @@ BoxModel.prototype = {
         isPositionEditable,
       });
 
-      const actorCanGetOffSetParent = await nodeFront.targetFront.actorHasMethod(
-        "domwalker",
-        "getOffsetParent"
+      
+      const offsetParent = await inspectorFront.walker.getOffsetParent(
+        nodeFront
       );
-
-      if (actorCanGetOffSetParent) {
-        
-        const offsetParent = await inspectorFront.walker.getOffsetParent(
-          nodeFront
-        );
-        this.store.dispatch(updateOffsetParent(offsetParent));
-      }
+      this.store.dispatch(updateOffsetParent(offsetParent));
 
       
       
