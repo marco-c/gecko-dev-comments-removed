@@ -61,11 +61,6 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual nsresult BeforeEdit() override;
   MOZ_CAN_RUN_SCRIPT virtual nsresult AfterEdit() override;
 
-  
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult DocumentModified();
-
   MOZ_CAN_RUN_SCRIPT
   nsresult GetListState(bool* aMixed, bool* aOL, bool* aUL, bool* aDL);
   MOZ_CAN_RUN_SCRIPT
@@ -90,12 +85,6 @@ class HTMLEditRules : public TextEditRules {
   MOZ_CAN_RUN_SCRIPT
   nsresult GetParagraphFormatNodes(
       nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT void DocumentModifiedWorker();
 
  protected:
   HTMLEditor* mHTMLEditor;
