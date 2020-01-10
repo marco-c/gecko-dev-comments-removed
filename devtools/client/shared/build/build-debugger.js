@@ -106,6 +106,15 @@ function updateDevtoolsModulesImport(path, t) {
   }
 }
 
+function shouldLazyLoad(value) {
+  return (
+    !value.includes("vendors") &&
+    !value.includes("codemirror/") &&
+    !value.endsWith(".properties") &&
+    !value.startsWith("devtools/")
+  );
+}
+
 
 
 
@@ -193,7 +202,55 @@ function transformMC({ types: t }) {
           !value.endsWith("index") &&
           !(value.startsWith("devtools") || mappingValues.includes(value))
         ) {
-          path.replaceWith(t.stringLiteral(`${value}/index`));
+          value = `${value}/index`;
+          path.replaceWith(t.stringLiteral(value));
+        }
+
+        if (shouldLazyLoad(value)) {
+          const requireCall = path.parentPath;
+          const declarator = requireCall.parentPath;
+          const declaration = declarator.parentPath;
+
+          
+          
+          if (declarator.type !== "VariableDeclarator") {
+            return;
+          }
+
+          
+          
+          if (value.startsWith(".")) {
+            
+            
+            let newValue = _path.join(_path.dirname(filePath), value);
+
+            
+            
+            if (!newValue.startsWith("devtools")) {
+              newValue = newValue.match(/^(.*?)(devtools.*)/)[2];
+            }
+
+            
+            
+            newValue = newValue.replace(/\\/g, "/");
+
+            value = newValue;
+          }
+
+          
+          const lazyRequire = t.callExpression(
+            t.memberExpression(
+              t.identifier("loader"),
+              t.identifier("lazyRequireGetter")
+            ),
+            [
+              t.thisExpression(),
+              t.stringLiteral(declarator.node.id.name || ""),
+              t.stringLiteral(value),
+            ]
+          );
+
+          declaration.replaceWith(lazyRequire);
         }
       },
     },
