@@ -87,6 +87,7 @@
 #  include "mozilla/Attributes.h"
 #  include "mozilla/GuardObjects.h"
 #  include "mozilla/Maybe.h"
+#  include "mozilla/PowerOfTwo.h"
 #  include "mozilla/Sprintf.h"
 #  include "mozilla/ThreadLocal.h"
 #  include "mozilla/TimeStamp.h"
@@ -229,20 +230,20 @@ MFBT_API bool IsThreadBeingProfiled();
 
 
 
-static constexpr uint32_t BASE_PROFILER_DEFAULT_ENTRIES =
+static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-    1u << 20;  
+    MakePowerOfTwo32<1u << 20>();  
 #  else
-    1u << 17;  // 131'072
+    MakePowerOfTwo32<1u << 17>();  // 131'072
 #  endif
 
 
 
-static constexpr uint32_t BASE_PROFILER_DEFAULT_STARTUP_ENTRIES =
+static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-    1u << 22;  
+    MakePowerOfTwo32<1u << 22>();  
 #  else
-    1u << 17;  // 131'072
+    MakePowerOfTwo32<1u << 17>();  // 131'072
 #  endif
 
 #  define BASE_PROFILER_DEFAULT_DURATION 20
@@ -278,7 +279,7 @@ MFBT_API void profiler_shutdown();
 
 
 
-MFBT_API void profiler_start(uint32_t aCapacity, double aInterval,
+MFBT_API void profiler_start(PowerOfTwo32 aCapacity, double aInterval,
                              uint32_t aFeatures, const char** aFilters,
                              uint32_t aFilterCount,
                              const Maybe<double>& aDuration = Nothing());
@@ -293,7 +294,7 @@ MFBT_API void profiler_stop();
 
 
 MFBT_API void profiler_ensure_started(
-    uint32_t aCapacity, double aInterval, uint32_t aFeatures,
+    PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
     const char** aFilters, uint32_t aFilterCount,
     const Maybe<double>& aDuration = Nothing());
 
@@ -714,8 +715,8 @@ class MOZ_RAII AutoProfilerTextMarker {
 
   ~AutoProfilerTextMarker() {
     profiler_add_text_marker(mMarkerName, mText, mCategoryPair, mStartTime,
-                             TimeStamp::NowUnfuzzed(), mDocShellId, mDocShellHistoryId,
-                             std::move(mCause));
+                             TimeStamp::NowUnfuzzed(), mDocShellId,
+                             mDocShellHistoryId, std::move(mCause));
   }
 
  protected:
