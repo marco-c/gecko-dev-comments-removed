@@ -163,10 +163,7 @@ async function _getIntPref(preferenceFront, prefName, defaultValue) {
 
 
 
-async function getRecordingPreferencesFromDebuggee(
-  preferenceFront,
-  defaultSettings = {}
-) {
+async function getRecordingPreferences(preferenceFront, defaultSettings = {}) {
   const [entries, interval, features, threads, objdirs] = await Promise.all([
     _getIntPref(
       preferenceFront,
@@ -205,7 +202,7 @@ async function getRecordingPreferencesFromDebuggee(
 
 
 
-async function setRecordingPreferencesOnDebuggee(preferenceFront, settings) {
+async function setRecordingPreferences(preferenceFront, settings) {
   await Promise.all([
     preferenceFront.setIntPref(
       `devtools.performance.recording.entries`,
@@ -230,6 +227,6 @@ async function setRecordingPreferencesOnDebuggee(preferenceFront, settings) {
 
 module.exports = {
   receiveProfile,
-  getRecordingPreferencesFromDebuggee,
-  setRecordingPreferencesOnDebuggee,
+  getRecordingPreferences,
+  setRecordingPreferences,
 };

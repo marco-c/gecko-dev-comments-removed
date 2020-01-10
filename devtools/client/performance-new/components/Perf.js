@@ -52,7 +52,6 @@ class Perf extends PureComponent {
       perfFront: PropTypes.object.isRequired,
       recordingState: PropTypes.string.isRequired,
       isSupportedPlatform: PropTypes.bool,
-      isPopup: PropTypes.bool,
 
       
       changeRecordingState: PropTypes.func.isRequired,
@@ -73,7 +72,7 @@ class Perf extends PureComponent {
   }
 
   componentDidMount() {
-    const { perfFront, reportProfilerReady, isPopup } = this.props;
+    const { perfFront, reportProfilerReady } = this.props;
 
     
     Promise.all([
@@ -93,23 +92,11 @@ class Perf extends PureComponent {
       if (recordingState === NOT_YET_KNOWN && isSupportedPlatform) {
         if (isLockedForPrivateBrowsing) {
           recordingState = LOCKED_BY_PRIVATE_BROWSING;
-        } else if (isActive) {
-          
-          
-          recordingState = isPopup ? RECORDING : OTHER_IS_RECORDING;
         } else {
-          recordingState = AVAILABLE_TO_RECORD;
+          recordingState = isActive ? OTHER_IS_RECORDING : AVAILABLE_TO_RECORD;
         }
       }
       reportProfilerReady(isSupportedPlatform, recordingState);
-
-      
-      
-      
-      
-      if (window.gReportReady) {
-        window.gReportReady();
-      }
     });
 
     
@@ -147,7 +134,7 @@ class Perf extends PureComponent {
   }
 
   handleProfilerStarting() {
-    const { changeRecordingState, recordingState, isPopup } = this.props;
+    const { changeRecordingState, recordingState } = this.props;
     switch (recordingState) {
       case NOT_YET_KNOWN:
       
@@ -158,15 +145,10 @@ class Perf extends PureComponent {
       
       
       case REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER:
-        if (isPopup) {
-          
-          
-          changeRecordingState(RECORDING);
-        } else {
-          
-          
-          changeRecordingState(OTHER_IS_RECORDING);
-        }
+        
+        
+
+        changeRecordingState(OTHER_IS_RECORDING);
         break;
 
       case REQUEST_TO_START_RECORDING:
@@ -257,20 +239,18 @@ class Perf extends PureComponent {
   }
 
   render() {
-    const { isSupportedPlatform, isPopup } = this.props;
+    const { isSupportedPlatform } = this.props;
 
     if (isSupportedPlatform === null) {
       
       return null;
     }
 
-    const additionalClassName = isPopup ? "perf-popup" : "perf-devtools";
-
     return div(
-      { className: `perf ${additionalClassName}` },
+      { className: "perf" },
       RecordingButton(),
       Settings(),
-      isPopup ? null : Description()
+      Description()
     );
   }
 }
@@ -280,7 +260,6 @@ function mapStateToProps(state) {
     perfFront: selectors.getPerfFront(state),
     recordingState: selectors.getRecordingState(state),
     isSupportedPlatform: selectors.getIsSupportedPlatform(state),
-    isPopup: selectors.getIsPopup(state),
   };
 }
 

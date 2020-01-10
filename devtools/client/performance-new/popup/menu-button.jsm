@@ -110,8 +110,7 @@ function initialize() {
     tooltiptext: "profiler-button.tooltiptext",
     onViewShowing: event => {
       const iframe = getIframeFromEvent(event);
-      iframe.src =
-        "chrome://devtools/content/performance-new/popup/popup.xhtml";
+      iframe.src = "chrome://devtools/content/performance-new/popup/popup.html";
 
       
       iframe.contentWindow.gClosePopup = () => {
@@ -122,20 +121,6 @@ function initialize() {
       iframe.contentWindow.gResizePopup = height => {
         iframe.style.height = `${Math.min(600, height)}px`;
       };
-
-      
-      
-      event.detail.addBlocker(
-        new Promise(resolve => {
-          iframe.contentWindow.gReportReady = () => {
-            
-            
-            delete iframe.contentWindow.gReportReady;
-            
-            resolve();
-          };
-        })
-      );
     },
     onViewHiding(event) {
       const iframe = getIframeFromEvent(event);

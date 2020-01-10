@@ -5,54 +5,183 @@
 
 const protocol = require("devtools/shared/protocol");
 const { ActorClassWithSpec, Actor } = protocol;
-const { actorBridgeWithSpec } = require("devtools/server/actors/common");
 const { perfSpec } = require("devtools/shared/specs/perf");
-const {
-  ActorReadyGeckoProfilerInterface,
-} = require("devtools/server/performance-new/gecko-profiler-interface");
+const { Ci } = require("chrome");
+const Services = require("Services");
+
+loader.lazyImporter(
+  this,
+  "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
 
 
-
-
-
-
-function _bridgeEvents(actor, names) {
-  for (const name of names) {
-    actor.bridge.on(name, (...args) => actor.emit(name, ...args));
-  }
-}
+const IS_SUPPORTED_PLATFORM = "nsIProfiler" in Ci;
 
 
 
 
 exports.PerfActor = ActorClassWithSpec(perfSpec, {
-  initialize: function(conn, targetActor) {
+  initialize(conn) {
     Actor.prototype.initialize.call(this, conn);
-    
-    
-    this.bridge = new ActorReadyGeckoProfilerInterface();
 
-    _bridgeEvents(this, [
-      "profile-locked-by-private-browsing",
-      "profile-unlocked-from-private-browsing",
-      "profiler-started",
-      "profiler-stopped",
-    ]);
+    
+    if (IS_SUPPORTED_PLATFORM) {
+      this._observer = {
+        observe: this._observe.bind(this),
+      };
+      Services.obs.addObserver(this._observer, "profiler-started");
+      Services.obs.addObserver(this._observer, "profiler-stopped");
+      Services.obs.addObserver(
+        this._observer,
+        "chrome-document-global-created"
+      );
+      Services.obs.addObserver(this._observer, "last-pb-context-exited");
+    }
   },
 
-  destroy: function(conn) {
-    Actor.prototype.destroy.call(this, conn);
-    this.bridge.destroy();
+  destroy() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return;
+    }
+    Services.obs.removeObserver(this._observer, "profiler-started");
+    Services.obs.removeObserver(this._observer, "profiler-stopped");
+    Services.obs.removeObserver(
+      this._observer,
+      "chrome-document-global-created"
+    );
+    Services.obs.removeObserver(this._observer, "last-pb-context-exited");
+    Actor.prototype.destroy.call(this);
+  },
+
+  startProfiler(options) {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return false;
+    }
+
+    
+    
+    const settings = {
+      entries: options.entries || 1000000,
+      
+      
+      duration: options.duration || 0,
+      interval: options.interval || 1,
+      features: options.features || [
+        "js",
+        "stackwalk",
+        "responsiveness",
+        "threads",
+        "leaf",
+      ],
+      threads: options.threads || ["GeckoMain", "Compositor"],
+    };
+
+    try {
+      
+      Services.profiler.StartProfiler(
+        settings.entries,
+        settings.interval,
+        settings.features,
+        settings.threads,
+        settings.duration
+      );
+    } catch (e) {
+      
+      return false;
+    }
+
+    return true;
+  },
+
+  stopProfilerAndDiscardProfile() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return;
+    }
+    Services.profiler.StopProfiler();
+  },
+
+  async getSymbolTable(debugPath, breakpadId) {
+    const [addr, index, buffer] = await Services.profiler.getSymbolTable(
+      debugPath,
+      breakpadId
+    );
+    
+    
+    
+    return [Array.from(addr), Array.from(index), Array.from(buffer)];
+  },
+
+  async getProfileAndStopProfiler() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return null;
+    }
+
+    let profile;
+    try {
+      
+      profile = await Services.profiler.getProfileDataAsync();
+
+      
+      Services.profiler.StopProfiler();
+    } catch (e) {
+      
+      return null;
+    }
+
+    
+    
+    if (Object.keys(profile).length === 0) {
+      return null;
+    }
+    return profile;
+  },
+
+  isActive() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return false;
+    }
+    return Services.profiler.IsActive();
+  },
+
+  isSupportedPlatform() {
+    return IS_SUPPORTED_PLATFORM;
+  },
+
+  isLockedForPrivateBrowsing() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return false;
+    }
+    return !Services.profiler.CanProfile();
   },
 
   
-  startProfiler: actorBridgeWithSpec("startProfiler"),
-  stopProfilerAndDiscardProfile: actorBridgeWithSpec(
-    "stopProfilerAndDiscardProfile"
-  ),
-  getSymbolTable: actorBridgeWithSpec("getSymbolTable"),
-  getProfileAndStopProfiler: actorBridgeWithSpec("getProfileAndStopProfiler"),
-  isActive: actorBridgeWithSpec("isActive"),
-  isSupportedPlatform: actorBridgeWithSpec("isSupportedPlatform"),
-  isLockedForPrivateBrowsing: actorBridgeWithSpec("isLockedForPrivateBrowsing"),
+
+
+
+  _observe(subject, topic, _data) {
+    switch (topic) {
+      case "chrome-document-global-created":
+        if (PrivateBrowsingUtils.isWindowPrivate(subject)) {
+          this.emit("profile-locked-by-private-browsing");
+        }
+        break;
+      case "last-pb-context-exited":
+        this.emit("profile-unlocked-from-private-browsing");
+        break;
+      case "profiler-started":
+        const param = subject.QueryInterface(Ci.nsIProfilerStartParams);
+        this.emit(
+          topic,
+          param.entries,
+          param.interval,
+          param.features,
+          param.duration
+        );
+        break;
+      case "profiler-stopped":
+        this.emit(topic);
+        break;
+    }
+  },
 });
