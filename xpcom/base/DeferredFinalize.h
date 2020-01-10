@@ -27,20 +27,6 @@ void DeferredFinalize(DeferredFinalizeAppendFunction aAppendFunc,
 
 void DeferredFinalize(nsISupports* aSupports);
 
-
-
-
-
-
-
-
-
-
-
-void RecordReplayRegisterDeferredFinalizeThing(
-    DeferredFinalizeAppendFunction aAppendFunc, DeferredFinalizeFunction aFunc,
-    void* aThing);
-
 }  
 
 #endif  

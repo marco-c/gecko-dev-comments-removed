@@ -28,8 +28,6 @@ XPCWrappedNativeProto::XPCWrappedNativeProto(
 #ifdef DEBUG
   gDEBUG_LiveProtoCount++;
 #endif
-
-  RecordReplayRegisterDeferredFinalizeThing(nullptr, nullptr, mClassInfo);
 }
 
 XPCWrappedNativeProto::~XPCWrappedNativeProto() {
@@ -57,6 +55,10 @@ bool XPCWrappedNativeProto::Init(JSContext* cx, nsIXPCScriptable* scriptable) {
   bool success = !!mJSProtoObject;
   if (success) {
     JS_SetPrivate(mJSProtoObject, this);
+
+    
+    
+    recordreplay::HoldJSObject(mJSProtoObject);
   }
 
   return success;

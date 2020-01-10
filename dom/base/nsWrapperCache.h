@@ -84,10 +84,6 @@ static_assert(sizeof(void*) == 4, "Only support 32-bit and 64-bit");
 
 
 
-
-
-
-
 class nsWrapperCache {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_WRAPPERCACHE_IID)
@@ -102,10 +98,6 @@ class nsWrapperCache {
   {
   }
   ~nsWrapperCache() {
-    
-    if (mozilla::recordreplay::IsReplaying()) {
-      mozilla::recordreplay::SetWeakPointerJSRoot(this, nullptr);
-    }
     
     
     
@@ -145,23 +137,6 @@ class nsWrapperCache {
 
 
   JSObject* GetWrapperMaybeDead() const {
-    
-    
-    
-    
-    if (mozilla::recordreplay::IsRecordingOrReplaying() &&
-        !mozilla::recordreplay::AreThreadEventsDisallowed() &&
-        !mozilla::recordreplay::HasDivergedFromRecording()) {
-      bool success = mozilla::recordreplay::RecordReplayValue(!!mWrapper);
-      if (mozilla::recordreplay::IsReplaying()) {
-        if (success) {
-          MOZ_RELEASE_ASSERT(mWrapper);
-        } else {
-          const_cast<nsWrapperCache*>(this)->ClearWrapper();
-        }
-      }
-    }
-
     return mWrapper;
   }
 

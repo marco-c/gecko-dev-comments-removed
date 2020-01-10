@@ -55,16 +55,7 @@ namespace recordreplay {
       _Macro(CallbacksFinished)                                           \
                                                                           \
       /* Restoring a data pointer used in a callback (see Callback.h). */ \
-      _Macro(RestoreCallbackData)                                         \
-                                                                          \
-      /* Called RegisterTrigger. */                                       \
-      _Macro(RegisterTrigger)                                             \
-                                                                          \
-      /* Executed a trigger within a call to ExecuteTriggers. */          \
-      _Macro(ExecuteTrigger)                                              \
-                                                                          \
-      /* Finished executing triggers within a call to ExecuteTriggers. */ \
-      _Macro(ExecuteTriggersFinished)
+      _Macro(RestoreCallbackData)
 
 
 

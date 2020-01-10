@@ -1358,13 +1358,6 @@ void CycleCollectedJSRuntime::FinalizeDeferredThings(
     }
   }
 
-  
-  
-  
-  if (recordreplay::IsRecordingOrReplaying()) {
-    recordreplay::ExecuteTriggers();
-  }
-
   if (mDeferredFinalizerTable.Count() == 0) {
     return;
   }

@@ -189,52 +189,9 @@ static inline void MovePLDHashTableContents(const PLDHashTableOps* aFirstOps,
 
 
 
-MFBT_API void SetWeakPointerJSRoot(const void* aPtr, JSObject* aJSObj);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-MFBT_API void RegisterTrigger(void* aObj,
-                              const std::function<void()>& aCallback);
-MFBT_API void UnregisterTrigger(void* aObj);
-MFBT_API void ActivateTrigger(void* aObj);
-MFBT_API void ExecuteTriggers();
+static inline void HoldJSObject(JSObject* aJSObj);
 
 
 
@@ -419,15 +376,8 @@ MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(MovePLDHashTableContents,
                                     (aFirstOps, aSecondOps))
 MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(InvalidateRecording, (const char* aWhy),
                                     (aWhy))
-MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(
-    RegisterWeakPointer,
-    (const void* aPtr, const std::function<void(bool)>& aCallback),
-    (aPtr, aCallback))
-MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(UnregisterWeakPointer, (const void* aPtr),
-                                    (aPtr))
-MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(WeakPointerAccess,
-                                    (const void* aPtr, bool aSuccess),
-                                    (aPtr, aSuccess))
+MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(HoldJSObject, (JSObject* aObject),
+                                    (aObject))
 MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(RecordReplayAssertBytes,
                                     (const void* aData, size_t aSize),
                                     (aData, aSize))
