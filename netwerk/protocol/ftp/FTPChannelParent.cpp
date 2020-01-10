@@ -658,7 +658,6 @@ nsresult FTPChannelParent::ResumeForDiversion() {
   if (mSuspendedForDiversion) {
     nsresult rv = ResumeChannelInternalIfPossible();
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      FailDiversion(NS_ERROR_UNEXPECTED);
       return rv;
     }
     mSuspendedForDiversion = false;
@@ -667,7 +666,6 @@ nsresult FTPChannelParent::ResumeForDiversion() {
   
   
   if (NS_WARN_IF(NS_FAILED(Delete()))) {
-    FailDiversion(NS_ERROR_UNEXPECTED);
     return NS_ERROR_UNEXPECTED;
   }
   return NS_OK;
