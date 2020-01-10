@@ -16,19 +16,25 @@ async function checkOpensOnFocus(win = window) {
   Assert.ok(win.gURLBar.dropmarker.hidden, "The dropmarker should be hidden");
   win.gURLBar.blur();
   Assert.ok(win.gURLBar.dropmarker.hidden, "The dropmarker should be hidden");
+
   
   await UrlbarTestUtils.promisePopupOpen(win, () => {
     win.document.getElementById("Browser:OpenLocation").doCommand();
   });
-  win.gURLBar.blur();
+  await UrlbarTestUtils.promisePopupClose(win, () => {
+    win.gURLBar.blur();
+  });
+
   
   await UrlbarTestUtils.promisePopupOpen(win, () => {
     EventUtils.synthesizeMouseAtCenter(win.gURLBar.inputField, {});
   });
-  win.gURLBar.blur();
+  await UrlbarTestUtils.promisePopupClose(win, () => {
+    win.gURLBar.blur();
+  });
 }
 
-function checkDoesNotOpenOnFocus(win = window) {
+async function checkDoesNotOpenOnFocus(win = window) {
   Assert.ok(
     !win.gURLBar.openViewOnFocusForCurrentTab,
     "openViewOnFocusForCurrentTab should be false"
@@ -40,12 +46,20 @@ function checkDoesNotOpenOnFocus(win = window) {
   Assert.ok(win.gURLBar.dropmarker.hidden, "The dropmarker should be hidden");
   win.gURLBar.blur();
   Assert.ok(win.gURLBar.dropmarker.hidden, "The dropmarker should be hidden");
+
   
   win.document.getElementById("Browser:OpenLocation").doCommand();
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
   Assert.ok(!win.gURLBar.view.isOpen, "check urlbar panel is not open");
   win.gURLBar.blur();
+
   
   EventUtils.synthesizeMouseAtCenter(win.gURLBar.inputField, {});
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
   Assert.ok(!win.gURLBar.view.isOpen, "check urlbar panel is not open");
   win.gURLBar.blur();
 }
@@ -81,8 +95,13 @@ add_task(async function newtabAndHome() {
       { gBrowser, url, waitForLoad: false },
       async browser => {
         
+        await TestUtils.waitForCondition(
+          () => window.gBrowser.currentURI.spec == url,
+          "Ensure we're on the expected page"
+        );
         
-        checkDoesNotOpenOnFocus();
+        
+        await checkDoesNotOpenOnFocus();
         
         await BrowserTestUtils.withNewTab(
           { gBrowser, url: "http://example.com/" },
@@ -95,7 +114,7 @@ add_task(async function newtabAndHome() {
               gBrowser,
               gBrowser.getTabForBrowser(browser)
             );
-            checkDoesNotOpenOnFocus();
+            await checkDoesNotOpenOnFocus();
             
             await BrowserTestUtils.switchTab(
               gBrowser,
@@ -106,7 +125,7 @@ add_task(async function newtabAndHome() {
         );
         
         
-        checkDoesNotOpenOnFocus();
+        await checkDoesNotOpenOnFocus();
         
         
         await BrowserTestUtils.loadURI(
@@ -124,6 +143,6 @@ add_task(async function privateWindow() {
   let privateWin = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
   });
-  checkDoesNotOpenOnFocus(privateWin);
+  await checkDoesNotOpenOnFocus(privateWin);
   await BrowserTestUtils.closeWindow(privateWin);
 });
