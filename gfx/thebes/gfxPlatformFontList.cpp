@@ -966,13 +966,35 @@ bool gfxPlatformFontList::FindAndAddFamilies(
     
     
     
-    if (!mOtherFamilyNamesInitialized && !IsAscii(aFamily)) {
-      InitOtherFamilyNames(
-          !(aFlags & FindFamiliesFlags::eForceOtherFamilyNamesLoading));
-      family = SharedFontList()->FindFamily(key);
-      if (family) {
-        aOutput->AppendElement(FamilyAndGeneric(family, aGeneric));
-        return true;
+    if (!mOtherFamilyNamesInitialized) {
+      bool triggerLoading = true;
+      bool mayDefer =
+          !(aFlags & FindFamiliesFlags::eForceOtherFamilyNamesLoading);
+      if (IsAscii(key)) {
+        
+        
+        
+        const char* data = key.BeginReading();
+        int32_t index = key.Length();
+        while (--index > 0) {
+          if (data[index] == ' ') {
+            break;
+          }
+        }
+        nsAutoCString base(Substring(key, 0, index));
+        if (index > 0 && SharedFontList()->FindFamily(base)) {
+          mayDefer = false;
+        } else {
+          triggerLoading = false;
+        }
+      }
+      if (triggerLoading) {
+        InitOtherFamilyNames(mayDefer);
+        family = SharedFontList()->FindFamily(key);
+        if (family) {
+          aOutput->AppendElement(FamilyAndGeneric(family, aGeneric));
+          return true;
+        }
       }
       if (!family && !mOtherFamilyNamesInitialized &&
           !(aFlags & FindFamiliesFlags::eNoAddToNamesMissedWhenSearching)) {
