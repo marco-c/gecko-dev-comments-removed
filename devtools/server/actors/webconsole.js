@@ -415,7 +415,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
   },
 
   hasNativeConsoleAPI: function(window) {
-    if (isWorker) {
+    if (isWorker || !(window instanceof Ci.nsIDOMWindow)) {
       
       return true;
     }
