@@ -1319,6 +1319,8 @@ pref("trailhead.firstrun.branches", "join-privacy");
 
 pref("browser.messaging-system.whatsNewPanel.enabled", false);
 
+pref("browser.messaging-system.fxatoolbarbadge.enabled", true);
+
 
 pref("full-screen-api.enabled", true);
 
