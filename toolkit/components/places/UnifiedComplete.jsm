@@ -2390,9 +2390,8 @@ Search.prototype = {
   },
 
   _addFilteredQueryMatch(row) {
-    let match = {};
-    match.placeId = row.getResultByIndex(QUERYINDEX_PLACEID);
-    let escapedURL = row.getResultByIndex(QUERYINDEX_URL);
+    let placeId = row.getResultByIndex(QUERYINDEX_PLACEID);
+    let url = row.getResultByIndex(QUERYINDEX_URL);
     let openPageCount = row.getResultByIndex(QUERYINDEX_SWITCHTAB) || 0;
     let historyTitle = row.getResultByIndex(QUERYINDEX_TITLE) || "";
     let bookmarked = row.getResultByIndex(QUERYINDEX_BOOKMARKED);
@@ -2402,69 +2401,38 @@ Search.prototype = {
     let tags = row.getResultByIndex(QUERYINDEX_TAGS) || "";
     let frecency = row.getResultByIndex(QUERYINDEX_FRECENCY);
 
-    
-    
-    let url = escapedURL;
-    let action = null;
+    let match = {
+      placeId,
+      value: url,
+      comment: bookmarkTitle || historyTitle,
+      icon: iconHelper(url),
+      frecency: frecency || FRECENCY_DEFAULT,
+    };
+
     if (
       this._enableActions &&
       openPageCount > 0 &&
       this.hasBehavior("openpage")
     ) {
-      url = PlacesUtils.mozActionURI("switchtab", { url: escapedURL });
-      action = "switchtab";
-      if (frecency == null) {
-        frecency = FRECENCY_DEFAULT;
-      }
-    }
-
-    
-    let title = bookmarkTitle || historyTitle;
-
-    
-    
-    let showTags = !!tags && !action;
-
-    
-    
-    if (
+      
+      match.value = PlacesUtils.mozActionURI("switchtab", { url: match.value });
+      match.style = "action switchtab";
+    } else if (
       this.hasBehavior("history") &&
       !this.hasBehavior("bookmark") &&
-      !showTags
+      !tags
     ) {
-      showTags = false;
+      
+      
       match.style = "favicon";
-    }
-
-    
-    if (showTags) {
-      title += UrlbarUtils.TITLE_TAGS_SEPARATOR + tags;
-    }
-
-    
-    
-    
-    if (!match.style) {
+    } else if (tags) {
       
+      match.comment += UrlbarUtils.TITLE_TAGS_SEPARATOR + tags;
       
-      
-      if (showTags) {
-        
-        
-        match.style = this.hasBehavior("bookmark") ? "bookmark-tag" : "tag";
-      } else if (bookmarked) {
-        match.style = "bookmark";
-      }
+      match.style = this.hasBehavior("bookmark") ? "bookmark-tag" : "tag";
+    } else if (bookmarked) {
+      match.style = "bookmark";
     }
-
-    if (action) {
-      match.style = "action " + action;
-    }
-
-    match.value = url;
-    match.comment = title;
-    match.icon = iconHelper(escapedURL);
-    match.frecency = frecency;
 
     this._addMatch(match);
   },

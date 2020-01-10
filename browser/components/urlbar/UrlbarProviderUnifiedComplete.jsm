@@ -386,32 +386,44 @@ function makeUrlbarResult(tokens, info) {
   let source;
   let tags = [];
   let comment = info.comment;
+
   
   
   
   if (info.style.includes("bookmark")) {
     source = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
-    if (info.style.includes("tag")) {
-      
-      [comment, tags] = info.comment.split(UrlbarUtils.TITLE_TAGS_SEPARATOR);
-      
-      
-      tags = tags
-        .split(",")
-        .map(t => t.trim())
-        .filter(tag => {
-          let lowerCaseTag = tag.toLocaleLowerCase();
-          return tokens.some(token =>
-            lowerCaseTag.includes(token.lowerCaseValue)
-          );
-        })
-        .sort();
-    }
   } else if (info.style.includes("preloaded-top-sites")) {
     source = UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL;
   } else {
     source = UrlbarUtils.RESULT_SOURCE.HISTORY;
   }
+
+  
+  
+  if (info.style.includes("tag")) {
+    [comment, tags] = info.comment.split(UrlbarUtils.TITLE_TAGS_SEPARATOR);
+
+    
+    
+    
+    if (source != UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
+      tags = "";
+    }
+
+    
+    
+    tags = tags
+      .split(",")
+      .map(t => t.trim())
+      .filter(tag => {
+        let lowerCaseTag = tag.toLocaleLowerCase();
+        return tokens.some(token =>
+          lowerCaseTag.includes(token.lowerCaseValue)
+        );
+      })
+      .sort();
+  }
+
   return new UrlbarResult(
     UrlbarUtils.RESULT_TYPE.URL,
     source,
