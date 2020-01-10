@@ -15,6 +15,11 @@ add_task(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [["security.allow_unsafe_parent_loads", true]],
   });
+
+  
+  
+  await pushPref("devtools.toolbox.content-frame", false);
+
   await addTab("about:blank");
   const [host, win, doc] = await createHost("bottom", TEST_URI);
 
