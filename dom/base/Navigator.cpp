@@ -1480,22 +1480,43 @@ already_AddRefed<Promise> Navigator::GetVRDisplays(ErrorResult& aRv) {
     return nullptr;
   }
 
-  nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
-  win->NotifyVREventListenerAdded();
-
   RefPtr<Promise> p = Promise::Create(mWindow->AsGlobal(), aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
 
-  
-  
-  if (!VRDisplay::RefreshVRDisplays(win->WindowID())) {
-    p->MaybeReject(NS_ERROR_FAILURE);
-    return p.forget();
-  }
+  RefPtr<Navigator> self(this);
+  RefPtr<BrowserChild> browser(BrowserChild::GetFrom(mWindow));
+  int browserID = browser->ChromeOuterWindowID();
 
-  mVRGetDisplaysPromises.AppendElement(p);
+  browser->SendIsWindowSupportingWebVR(browserID)->Then(
+      GetCurrentThreadSerialEventTarget(), __func__,
+      [self, p](bool isSupportedLambda) {
+        if (isSupportedLambda) {
+          nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(self->mWindow);
+          win->NotifyVREventListenerAdded();
+          
+          
+          
+          if (!VRDisplay::RefreshVRDisplays(win->WindowID())) {
+            
+            p->MaybeReject(NS_ERROR_FAILURE);
+          } else {
+            
+
+            self->mVRGetDisplaysPromises.AppendElement(p);
+          }
+        } else {
+          
+          
+          nsTArray<RefPtr<VRDisplay>> vrDisplaysEmpty;
+          p->MaybeResolve(vrDisplaysEmpty);
+        }
+      },
+      [](const mozilla::ipc::ResponseRejectReason) {
+        MOZ_CRASH("Failed to make IPC call to IsWindowSupportingWebVR");
+      });
+
   return p.forget();
 }
 
