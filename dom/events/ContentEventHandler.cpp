@@ -991,8 +991,7 @@ nsresult ContentEventHandler::ExpandToClusterBoundary(nsIContent* aContent,
   
   const nsTextFragment* text = &aContent->AsText()->TextFragment();
   NS_ENSURE_TRUE(text, NS_ERROR_FAILURE);
-  if (NS_IS_LOW_SURROGATE(text->CharAt(*aXPOffset)) &&
-      NS_IS_HIGH_SURROGATE(text->CharAt(*aXPOffset - 1))) {
+  if (text->IsLowSurrogateFollowingHighSurrogateAt(*aXPOffset)) {
     *aXPOffset += aForward ? 1 : -1;
   }
   return NS_OK;

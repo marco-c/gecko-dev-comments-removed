@@ -547,8 +547,6 @@ class nsContentUtils {
 
 
   static bool IsFirstLetterPunctuation(uint32_t aChar);
-  static bool IsFirstLetterPunctuationAt(const nsTextFragment* aFrag,
-                                         uint32_t aOffset);
 
   
 

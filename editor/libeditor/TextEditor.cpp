@@ -500,8 +500,8 @@ nsresult TextEditor::ExtendSelectionForDelete(nsIEditor::EDirection* aAction) {
           const nsTextFragment* data =
               &insertionPoint.GetContainerAsText()->TextFragment();
           uint32_t offset = insertionPoint.Offset();
-          if ((offset > 1 && NS_IS_LOW_SURROGATE(data->CharAt(offset - 1)) &&
-               NS_IS_HIGH_SURROGATE(data->CharAt(offset - 2))) ||
+          if ((offset > 1 &&
+               data->IsLowSurrogateFollowingHighSurrogateAt(offset - 1)) ||
               (offset > 0 &&
                gfxFontUtils::IsVarSelector(data->CharAt(offset - 1)))) {
             nsresult rv = selCont->CharacterExtendForBackspace();
@@ -2188,8 +2188,7 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     
     
     const nsTextFragment* textFragment = text->GetText();
-    if (aStart > 0 && NS_IS_LOW_SURROGATE(textFragment->CharAt(aStart)) &&
-        NS_IS_HIGH_SURROGATE(textFragment->CharAt(aStart - 1))) {
+    if (textFragment->IsLowSurrogateFollowingHighSurrogateAt(aStart)) {
       mUnmaskedStart = aStart - 1;
       
       if (aLength > 0) {
@@ -2202,11 +2201,8 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     
     
     
-    if (mUnmaskedLength > 0 && mUnmaskedStart + mUnmaskedLength < valueLength &&
-        NS_IS_HIGH_SURROGATE(
-            textFragment->CharAt(mUnmaskedStart + mUnmaskedLength - 1)) &&
-        NS_IS_LOW_SURROGATE(
-            textFragment->CharAt(mUnmaskedStart + mUnmaskedLength))) {
+    if (UnmaskedEnd() < valueLength &&
+        textFragment->IsLowSurrogateFollowingHighSurrogateAt(UnmaskedEnd())) {
       ++mUnmaskedLength;
     }
     
