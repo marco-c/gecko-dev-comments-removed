@@ -24,6 +24,12 @@ let gCloseReasons = new WeakMap();
 
 
 
+let gNextWindowID = 0;
+
+
+
+
+
 
 var PictureInPicture = {
   
@@ -133,7 +139,9 @@ var PictureInPicture = {
     
     let tab = parentWin.gBrowser.getTabForBrowser(browser);
     tab.setAttribute("pictureinpicture", true);
-    win.setupPlayer(browser, videoData);
+
+    win.setupPlayer(gNextWindowID.toString(), browser, videoData);
+    gNextWindowID++;
   },
 
   
