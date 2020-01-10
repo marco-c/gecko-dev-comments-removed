@@ -13,6 +13,8 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_mousewheel.h"
+#include "mozilla/StaticPrefs_test.h"
 #include "mozilla/dom/WheelEventBinding.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
@@ -223,7 +225,7 @@ void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
     return;
   }
 
-  if (OutOfTime(sTime, GetTimeoutTime())) {
+  if (OutOfTime(sTime, StaticPrefs::mousewheel_transaction_timeout())) {
     
     
     
@@ -235,7 +237,8 @@ void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
   switch (aEvent->mMessage) {
     case eWheel:
       if (sMouseMoved != 0 &&
-          OutOfTime(sMouseMoved, GetIgnoreMoveDelayTime())) {
+          OutOfTime(sMouseMoved,
+                    StaticPrefs::mousewheel_transaction_ignoremovedelay())) {
         
         
         EndTransaction();
@@ -260,7 +263,9 @@ void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
         
         
         
-        if (!sMouseMoved && OutOfTime(sTime, GetIgnoreMoveDelayTime())) {
+        if (!sMouseMoved &&
+            OutOfTime(sTime,
+                      StaticPrefs::mousewheel_transaction_ignoremovedelay())) {
           sMouseMoved = PR_IntervalToMilliseconds(PR_IntervalNow());
         }
       }
@@ -290,7 +295,7 @@ void WheelTransaction::Shutdown() { NS_IF_RELEASE(sTimer); }
 void WheelTransaction::OnFailToScrollTarget() {
   MOZ_ASSERT(sTargetFrame, "We don't have mouse scrolling transaction");
 
-  if (Prefs::sTestMouseScroll) {
+  if (StaticPrefs::test_mousescroll()) {
     
     nsContentUtils::DispatchTrustedEvent(
         sTargetFrame->GetContent()->OwnerDoc(), sTargetFrame->GetContent(),
@@ -317,7 +322,7 @@ void WheelTransaction::OnTimeout(nsITimer* aTimer, void* aClosure) {
   
   MayEndTransaction();
 
-  if (Prefs::sTestMouseScroll) {
+  if (StaticPrefs::test_mousescroll()) {
     
     nsContentUtils::DispatchTrustedEvent(
         frame->GetContent()->OwnerDoc(), frame->GetContent(),
@@ -336,8 +341,8 @@ void WheelTransaction::SetTimeout() {
   }
   sTimer->Cancel();
   DebugOnly<nsresult> rv = sTimer->InitWithNamedFuncCallback(
-      OnTimeout, nullptr, GetTimeoutTime(), nsITimer::TYPE_ONE_SHOT,
-      "WheelTransaction::SetTimeout");
+      OnTimeout, nullptr, StaticPrefs::mousewheel_transaction_timeout(),
+      nsITimer::TYPE_ONE_SHOT, "WheelTransaction::SetTimeout");
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "nsITimer::InitWithFuncCallback failed");
 }
@@ -364,9 +369,9 @@ DeltaValues WheelTransaction::AccelerateWheelDelta(
   }
 
   
-  int32_t start = GetAccelerationStart();
+  int32_t start = StaticPrefs::mousewheel_acceleration_start();
   if (start >= 0 && sScrollSeriesCounter >= start) {
-    int32_t factor = GetAccelerationFactor();
+    int32_t factor = StaticPrefs::mousewheel_acceleration_factor();
     if (factor > 0) {
       result.deltaX = ComputeAcceleratedWheelDelta(result.deltaX, factor);
       result.deltaY = ComputeAcceleratedWheelDelta(result.deltaY, factor);
@@ -515,33 +520,6 @@ void ScrollbarsForWheel::DeactivateAllTemporarilyActivatedScrollTargets() {
       }
       *scrollTarget = nullptr;
     }
-  }
-}
-
-
-
-
-
-int32_t WheelTransaction::Prefs::sMouseWheelAccelerationStart = -1;
-int32_t WheelTransaction::Prefs::sMouseWheelAccelerationFactor = -1;
-uint32_t WheelTransaction::Prefs::sMouseWheelTransactionTimeout = 1500;
-uint32_t WheelTransaction::Prefs::sMouseWheelTransactionIgnoreMoveDelay = 100;
-bool WheelTransaction::Prefs::sTestMouseScroll = false;
-
-
-void WheelTransaction::Prefs::InitializeStatics() {
-  static bool sIsInitialized = false;
-  if (!sIsInitialized) {
-    Preferences::AddIntVarCache(&sMouseWheelAccelerationStart,
-                                "mousewheel.acceleration.start", -1);
-    Preferences::AddIntVarCache(&sMouseWheelAccelerationFactor,
-                                "mousewheel.acceleration.factor", -1);
-    Preferences::AddUintVarCache(&sMouseWheelTransactionTimeout,
-                                 "mousewheel.transaction.timeout", 1500);
-    Preferences::AddUintVarCache(&sMouseWheelTransactionIgnoreMoveDelay,
-                                 "mousewheel.transaction.ignoremovedelay", 100);
-    Preferences::AddBoolVarCache(&sTestMouseScroll, "test.mousescroll", false);
-    sIsInitialized = true;
   }
 }
 
