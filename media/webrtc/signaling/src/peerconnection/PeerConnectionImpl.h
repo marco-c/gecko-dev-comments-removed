@@ -626,6 +626,9 @@ class PeerConnectionImpl final
   mozilla::TimeStamp mIceStartTime;
   
   mozilla::TimeStamp mStartTime;
+  
+  
+  bool mIceFinished = false;
 
   bool mHaveConfiguredCodecs;
 
