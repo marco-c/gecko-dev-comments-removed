@@ -2,8 +2,6 @@
 
 "use strict";
 
-PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
-
 const { MockRegistrar } = ChromeUtils.import(
   "resource://testing-common/MockRegistrar.jsm"
 );

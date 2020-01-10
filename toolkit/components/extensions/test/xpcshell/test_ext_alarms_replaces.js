@@ -2,9 +2,6 @@
 
 "use strict";
 
-
-PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
-
 add_task(async function test_duplicate_alarm_name_replaces_alarm() {
   function backgroundScript() {
     let count = 0;

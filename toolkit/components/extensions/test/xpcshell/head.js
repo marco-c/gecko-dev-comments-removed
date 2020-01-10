@@ -37,6 +37,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Schemas: "resource://gre/modules/Schemas.jsm",
 });
 
+PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
+
 
 
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
