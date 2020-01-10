@@ -4356,9 +4356,9 @@ public class GeckoSession implements Parcelable {
 
         class MediaSource {
             @Retention(RetentionPolicy.SOURCE)
-            @IntDef({SOURCE_CAMERA, SOURCE_SCREEN, SOURCE_APPLICATION,
-                     SOURCE_WINDOW, SOURCE_BROWSER, SOURCE_MICROPHONE,
-                     SOURCE_AUDIOCAPTURE, SOURCE_OTHER})
+            @IntDef({SOURCE_CAMERA, SOURCE_SCREEN,
+                     SOURCE_MICROPHONE, SOURCE_AUDIOCAPTURE,
+                     SOURCE_OTHER})
              @interface Source {}
 
             
@@ -4374,32 +4374,17 @@ public class GeckoSession implements Parcelable {
             
 
 
-            public static final int SOURCE_APPLICATION = 2;
+            public static final int SOURCE_MICROPHONE = 2;
 
             
 
 
-            public static final int SOURCE_WINDOW = 3;
+            public static final int SOURCE_AUDIOCAPTURE = 3;
 
             
 
 
-            public static final int SOURCE_BROWSER = 4;
-
-            
-
-
-            public static final int SOURCE_MICROPHONE = 5;
-
-            
-
-
-            public static final int SOURCE_AUDIOCAPTURE = 6;
-
-            
-
-
-            public static final int SOURCE_OTHER = 7;
+            public static final int SOURCE_OTHER = 4;
 
             @Retention(RetentionPolicy.SOURCE)
             @IntDef({TYPE_VIDEO, TYPE_AUDIO})
@@ -4450,19 +4435,13 @@ public class GeckoSession implements Parcelable {
                 
                 if ("camera".equals(src)) {
                     return SOURCE_CAMERA;
-                } else if ("screen".equals(src)) {
+                } else if ("screen".equals(src) || "window".equals(src) || "browser".equals(src)) {
                     return SOURCE_SCREEN;
-                } else if ("application".equals(src)) {
-                    return SOURCE_APPLICATION;
-                } else if ("window".equals(src)) {
-                    return SOURCE_WINDOW;
-                } else if ("browser".equals(src)) {
-                    return SOURCE_BROWSER;
                 } else if ("microphone".equals(src)) {
                     return SOURCE_MICROPHONE;
                 } else if ("audioCapture".equals(src)) {
                     return SOURCE_AUDIOCAPTURE;
-                } else if ("other".equals(src)) {
+                } else if ("other".equals(src) || "application".equals(src)) {
                     return SOURCE_OTHER;
                 } else {
                     throw new IllegalArgumentException("String: " + src + " is not a valid media source string");
