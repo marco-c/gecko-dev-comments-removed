@@ -278,8 +278,7 @@ class TestSource(object):
 
     @abstractmethod
     
-    
-    def make_queue(cls, tests, **kwargs):
+    def make_queue(cls, tests, **kwargs):  
         pass
 
     @classmethod
