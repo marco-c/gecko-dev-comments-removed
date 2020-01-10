@@ -11,7 +11,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 exports.boxModel = {
   
-  geometryEditorEnabled: PropTypes.boolean,
+  geometryEditorEnabled: PropTypes.bool,
 
   
   layout: PropTypes.object,
