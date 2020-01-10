@@ -1801,8 +1801,18 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
         
         
         if (eventContent->IsText() && eventContent->HasFlag(NS_MAYBE_MASKED)) {
-          StopTrackingDragGesture();
-          return;
+          
+          
+          
+          
+          
+          TextEditor* textEditor =
+              nsContentUtils::GetTextEditorFromAnonymousNodeWithoutCreation(
+                  eventContent);
+          if (!textEditor || !textEditor->IsCopyToClipboardAllowed()) {
+            StopTrackingDragGesture();
+            return;
+          }
         }
         DetermineDragTargetAndDefaultData(
             window, eventContent, dataTransfer, getter_AddRefs(selection),
