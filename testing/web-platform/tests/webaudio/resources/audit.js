@@ -51,6 +51,12 @@ window.Audit = (function() {
     }, message);
   }
 
+  function _logException(message, exception) {
+    test(function() {
+      throw exception;
+    }, message);
+  }
+
   function _throwException(message) {
     throw new Error(message);
   }
@@ -1191,11 +1197,12 @@ window.Audit = (function() {
       
       
       
+      let testName = `Executing "${this.label}"`;
       try {
         this._taskFunction(this, this.should.bind(this));
+        _logPassed(testName);
       } catch (e) {
-        
-        test(() => { throw e; }, `Executing "${this.label}"`);
+        _logException(testName, e);
         if (this.state != TaskState.FINISHED) {
           
           
