@@ -125,14 +125,52 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
       policyDeliveries: [delivery]
     };
 
+    let currentURL = location.toString();
     const expectedReferrer =
-      referrerUrlResolver[scenario.referrer_url](location.toString());
+      referrerUrlResolver[scenario.referrer_url](currentURL);
 
     
     promise_test(_ => {
+      return invokeRequest(subresource, [])
+        .then(result => checkResult(expectedReferrer, result));
+    }, testDescription);
+
+    
+    
+    if (scenario.referrer_url == "stripped-referrer") {
+      promise_test(_ => {
+        history.pushState(null, null, "/");
+        history.replaceState(null, null, "A".repeat(4096 - location.href.length - 1));
+        const expectedReferrer = location.href;
+        
+        subresource.url += "&-1";
         return invokeRequest(subresource, [])
-          .then(result => checkResult(expectedReferrer, result));
-      }, testDescription);
+          .then(result => checkResult(location.href, result))
+          .finally(_ => history.back());
+      }, "`Referer` header with length < 4k is not stripped to an origin.");
+
+      promise_test(_ => {
+        history.pushState(null, null, "/");
+        history.replaceState(null, null, "A".repeat(4096 - location.href.length));
+        const expectedReferrer = location.href;
+        
+        subresource.url += "&0";
+        return invokeRequest(subresource, [])
+          .then(result => checkResult(expectedReferrer, result))
+          .finally(_ => history.back());
+      }, "`Referer` header with length == 4k is not stripped to an origin.");
+
+      promise_test(_ => {
+        const originString = referrerUrlResolver["origin"](currentURL);
+        history.pushState(null, null, "/");
+        history.replaceState(null, null, "A".repeat(4096 - location.href.length + 1));
+        
+        subresource.url += "&+1";
+        return invokeRequest(subresource, [])
+          .then(result => checkResult(originString, result))
+          .finally(_ => history.back());
+      }, "`Referer` header with length > 4k is stripped to an origin.");
+    }
 
     
     
