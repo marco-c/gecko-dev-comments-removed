@@ -155,46 +155,37 @@ function load(loader, module) {
     },
   };
 
-  let sandbox;
-  if (loader.useSharedGlobalSandbox) {
-    
-    
-    sandbox = new loader.sharedGlobalSandbox.Object();
-    descriptors.lazyRequire = {
-      configurable: true,
-      value: lazyRequire.bind(sandbox),
-    };
-    descriptors.lazyRequireModule = {
-      configurable: true,
-      value: lazyRequireModule.bind(sandbox),
-    };
+  
+  
+  const sandbox = new loader.sharedGlobalSandbox.Object();
+  descriptors.lazyRequire = {
+    configurable: true,
+    value: lazyRequire.bind(sandbox),
+  };
+  descriptors.lazyRequireModule = {
+    configurable: true,
+    value: lazyRequireModule.bind(sandbox),
+  };
 
-    if ("console" in globals) {
-      descriptors.console = {
-        configurable: true,
-        get() {
-          return globals.console;
-        },
-      };
-    }
-    const define = Object.getOwnPropertyDescriptor(globals, "define");
-    if (define && define.value) {
-      descriptors.define = define;
-    }
-    if ("DOMParser" in globals) {
-      descriptors.DOMParser = Object.getOwnPropertyDescriptor(
-        globals,
-        "DOMParser"
-      );
-    }
-    Object.defineProperties(sandbox, descriptors);
-  } else {
-    sandbox = Sandbox({
-      name: module.uri,
-      prototype: Object.create(globals, descriptors),
-      invisibleToDebugger: loader.invisibleToDebugger,
-    });
+  if ("console" in globals) {
+    descriptors.console = {
+      configurable: true,
+      get() {
+        return globals.console;
+      },
+    };
   }
+  const define = Object.getOwnPropertyDescriptor(globals, "define");
+  if (define && define.value) {
+    descriptors.define = define;
+  }
+  if ("DOMParser" in globals) {
+    descriptors.DOMParser = Object.getOwnPropertyDescriptor(
+      globals,
+      "DOMParser"
+    );
+  }
+  Object.defineProperties(sandbox, descriptors);
   sandboxes[module.uri] = sandbox;
 
   const originalExports = module.exports;
@@ -562,10 +553,8 @@ function unload(loader, reason) {
 
 
 
-
-
 function Loader(options) {
-  let { paths, sharedGlobal, globals } = options;
+  let { paths, globals } = options;
   if (!globals) {
     globals = {};
   }
@@ -648,7 +637,6 @@ function Loader(options) {
     mappingCache: { enumerable: false, value: new Map() },
     
     modules: { enumerable: false, value: modules },
-    useSharedGlobalSandbox: { enumerable: false, value: !!sharedGlobal },
     sharedGlobalSandbox: { enumerable: false, value: sharedGlobalSandbox },
     
     sandboxes: { enumerable: false, value: {} },
