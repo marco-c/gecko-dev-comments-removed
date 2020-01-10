@@ -619,7 +619,7 @@ function String_toLocaleLowerCase() {
         requestedLocale = undefined;
     } else if (typeof locales === "string") {
         
-        requestedLocale = ValidateAndCanonicalizeLanguageTag(locales);
+        requestedLocale = intl_ValidateAndCanonicalizeLanguageTag(locales, false);
     } else {
         
         var requestedLocales = CanonicalizeLocaleList(locales);
@@ -660,7 +660,7 @@ function String_toLocaleUpperCase() {
         requestedLocale = undefined;
     } else if (typeof locales === "string") {
         
-        requestedLocale = ValidateAndCanonicalizeLanguageTag(locales);
+        requestedLocale = intl_ValidateAndCanonicalizeLanguageTag(locales, false);
     } else {
         
         var requestedLocales = CanonicalizeLocaleList(locales);
