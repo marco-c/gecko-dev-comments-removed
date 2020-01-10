@@ -4100,11 +4100,7 @@ void nsCSSRendering::PaintDecorationLine(
 
   while (iter.NextRun()) {
     if (iter.GetGlyphRun()->mOrientation ==
-            mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT ||
-        iter.GetGlyphRun()->mIsCJK) {
-      
-      
-      
+        mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT) {
       
       
       
