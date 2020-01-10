@@ -9,7 +9,6 @@
 
 
 
-
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const TEST_URI = CHROME_URL_ROOT + "doc_html_tooltip_doorhanger-01.xul";
 
@@ -44,37 +43,48 @@ async function runTests(doc) {
   div.style.height = "35px";
   tooltip.panel.appendChild(div);
 
-  const anchors = [...doc.querySelectorAll(".anchor")];
-  for (const anchor of anchors) {
-    const hangDirection =
-      (useXulWrapper && anchor.getAttribute("data-hang-xul")) ||
-      anchor.getAttribute("data-hang");
+  const docBounds = doc.documentElement.getBoundingClientRect();
 
+  const elements = [...doc.querySelectorAll(".anchor")];
+  for (const el of elements) {
     info("Display the tooltip on an anchor.");
-    await showTooltip(tooltip, anchor);
+    await showTooltip(tooltip, el);
 
     const arrow = tooltip.arrow;
     ok(arrow, "Tooltip has an arrow");
 
     
+    const anchorBounds = el.getBoxQuads({ relativeTo: doc })[0].getBounds();
     const panelBounds = tooltip.panel
       .getBoxQuads({ relativeTo: doc })[0]
       .getBounds();
     const arrowBounds = arrow.getBoxQuads({ relativeTo: doc })[0].getBounds();
-    const panelBoundsCentre = (panelBounds.left + panelBounds.right) / 2;
-    const arrowCentre = (arrowBounds.left + arrowBounds.right) / 2;
 
-    if (hangDirection === "left") {
-      ok(
-        arrowCentre > panelBoundsCentre,
-        `tooltip hangs to the left for ${anchor.id}`
-      );
-    } else {
-      ok(
-        arrowCentre < panelBoundsCentre,
-        `tooltip hangs to the right for ${anchor.id}`
-      );
-    }
+    
+    const center = bounds => bounds.left + bounds.width / 2;
+    const anchorSide =
+      center(anchorBounds) < center(docBounds) ? "left" : "right";
+
+    
+    
+    
+    
+    const panelDirection =
+      center(arrowBounds) - panelBounds.left <
+      panelBounds.right - center(arrowBounds)
+        ? "right"
+        : "left";
+
+    const params =
+      `document: ${docBounds.left}<->${docBounds.right}, ` +
+      `anchor: ${anchorBounds.left}<->${anchorBounds.right}, ` +
+      `panel: ${panelBounds.left}<->${panelBounds.right}, ` +
+      `anchor side: ${anchorSide}, ` +
+      `panel direction: ${panelDirection}`;
+    ok(
+      anchorSide !== panelDirection,
+      `Doorhanger hangs towards center (${params})`
+    );
 
     await hideTooltip(tooltip);
   }
