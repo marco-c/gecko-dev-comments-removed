@@ -2113,7 +2113,15 @@ BrowserGlue.prototype = {
 
     
     Services.tm.idleDispatchToMainThread(() => {
-      PushService.wrappedJSObject.ensureReady();
+      try {
+        PushService.wrappedJSObject.ensureReady();
+      } catch (ex) {
+        
+        
+        if (ex.result != Cr.NS_ERROR_NOT_AVAILABLE) {
+          throw ex;
+        }
+      }
     });
 
     Services.tm.idleDispatchToMainThread(() => {
