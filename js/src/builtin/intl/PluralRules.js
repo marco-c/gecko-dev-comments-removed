@@ -58,8 +58,12 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
 
     
     internalProps.minimumIntegerDigits = lazyPluralRulesData.minimumIntegerDigits;
-    internalProps.minimumFractionDigits = lazyPluralRulesData.minimumFractionDigits;
-    internalProps.maximumFractionDigits = lazyPluralRulesData.maximumFractionDigits;
+
+    if ("minimumFractionDigits" in lazyPluralRulesData) {
+        assert("maximumFractionDigits" in lazyPluralRulesData, "min/max frac digits mismatch");
+        internalProps.minimumFractionDigits = lazyPluralRulesData.minimumFractionDigits;
+        internalProps.maximumFractionDigits = lazyPluralRulesData.maximumFractionDigits;
+    }
 
     if ("minimumSignificantDigits" in lazyPluralRulesData) {
         assert("maximumSignificantDigits" in lazyPluralRulesData, "min/max sig digits mismatch");
@@ -107,6 +111,8 @@ function InitializePluralRules(pluralRules, locales, options) {
     assert(IsObject(pluralRules), "InitializePluralRules called with non-object");
     assert(GuardToPluralRules(pluralRules) !== null, "InitializePluralRules called with non-PluralRules");
 
+    
+    
     
     
     
@@ -233,9 +239,17 @@ function Intl_PluralRules_resolvedOptions() {
         locale: internals.locale,
         type: internals.type,
         minimumIntegerDigits: internals.minimumIntegerDigits,
-        minimumFractionDigits: internals.minimumFractionDigits,
-        maximumFractionDigits: internals.maximumFractionDigits,
     };
+
+    
+    assert(hasOwn("minimumFractionDigits", internals) ===
+           hasOwn("maximumFractionDigits", internals),
+           "minimumFractionDigits is present iff maximumFractionDigits is present");
+
+    if (hasOwn("minimumFractionDigits", internals)) {
+        _DefineDataProperty(result, "minimumFractionDigits", internals.minimumFractionDigits);
+        _DefineDataProperty(result, "maximumFractionDigits", internals.maximumFractionDigits);
+    }
 
     
     assert(hasOwn("minimumSignificantDigits", internals) ===

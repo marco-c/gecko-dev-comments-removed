@@ -64,8 +64,14 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
 
     
     internalProps.minimumIntegerDigits = lazyNumberFormatData.minimumIntegerDigits;
-    internalProps.minimumFractionDigits = lazyNumberFormatData.minimumFractionDigits;
-    internalProps.maximumFractionDigits = lazyNumberFormatData.maximumFractionDigits;
+
+    if ("minimumFractionDigits" in lazyNumberFormatData) {
+        
+        
+        assert("maximumFractionDigits" in lazyNumberFormatData, "min/max frac digits mismatch");
+        internalProps.minimumFractionDigits = lazyNumberFormatData.minimumFractionDigits;
+        internalProps.maximumFractionDigits = lazyNumberFormatData.maximumFractionDigits;
+    }
 
     if ("minimumSignificantDigits" in lazyNumberFormatData) {
         
@@ -135,25 +141,62 @@ function SetNumberFormatDigitOptions(lazyData, options, mnfdDefault, mxfdDefault
 
     
     const mnid = GetNumberOption(options, "minimumIntegerDigits", 1, 21, 1);
-    const mnfd = GetNumberOption(options, "minimumFractionDigits", 0, 20, mnfdDefault);
-    const mxfdActualDefault = std_Math_max(mnfd, mxfdDefault);
-    const mxfd = GetNumberOption(options, "maximumFractionDigits", mnfd, 20, mxfdActualDefault);
-
-    
+    let mnfd = options.minimumFractionDigits;
+    let mxfd = options.maximumFractionDigits;
     let mnsd = options.minimumSignificantDigits;
     let mxsd = options.maximumSignificantDigits;
 
     
     lazyData.minimumIntegerDigits = mnid;
-    lazyData.minimumFractionDigits = mnfd;
-    lazyData.maximumFractionDigits = mxfd;
 
     
     if (mnsd !== undefined || mxsd !== undefined) {
+        
+
+        
         mnsd = DefaultNumberOption(mnsd, 1, 21, 1);
+
+        
         mxsd = DefaultNumberOption(mxsd, mnsd, 21, 21);
+
+        
         lazyData.minimumSignificantDigits = mnsd;
+
+        
         lazyData.maximumSignificantDigits = mxsd;
+    }
+
+    
+    else if (mnfd !== undefined || mxfd !== undefined) {
+        
+
+        
+        mnfd = DefaultNumberOption(mnfd, 0, 20, mnfdDefault);
+
+        
+        const mxfdActualDefault = std_Math_max(mnfd, mxfdDefault);
+
+        
+        mxfd = DefaultNumberOption(mxfd, mnfd, 20, mxfdActualDefault);
+
+        
+        lazyData.minimumFractionDigits = mnfd;
+
+        
+        lazyData.maximumFractionDigits = mxfd;
+    }
+
+    
+
+    
+    else {
+        
+
+        
+        lazyData.minimumFractionDigits = mnfdDefault;
+
+        
+        lazyData.maximumFractionDigits = mxfdDefault;
     }
 }
 
@@ -204,6 +247,8 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     assert(IsObject(numberFormat), "InitializeNumberFormat called with non-object");
     assert(GuardToNumberFormat(numberFormat) !== null, "InitializeNumberFormat called with non-NumberFormat");
 
+    
+    
     
     
     
@@ -503,8 +548,16 @@ function Intl_NumberFormat_resolvedOptions() {
     }
 
     _DefineDataProperty(result, "minimumIntegerDigits", internals.minimumIntegerDigits);
-    _DefineDataProperty(result, "minimumFractionDigits", internals.minimumFractionDigits);
-    _DefineDataProperty(result, "maximumFractionDigits", internals.maximumFractionDigits);
+
+    
+    assert(hasOwn("minimumFractionDigits", internals) ===
+           hasOwn("maximumFractionDigits", internals),
+           "minimumFractionDigits is present iff maximumFractionDigits is present");
+
+    if (hasOwn("minimumFractionDigits", internals)) {
+        _DefineDataProperty(result, "minimumFractionDigits", internals.minimumFractionDigits);
+        _DefineDataProperty(result, "maximumFractionDigits", internals.maximumFractionDigits);
+    }
 
     
     assert(hasOwn("minimumSignificantDigits", internals) ===
