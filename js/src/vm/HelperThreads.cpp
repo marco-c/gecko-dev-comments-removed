@@ -1652,7 +1652,7 @@ void js::GCParallelTask::startOrRunIfIdle(AutoLockHelperThreadState& lock) {
   
   joinWithLockHeld(lock);
 
-  if (!startWithLockHeld(lock)) {
+  if (!(CanUseExtraThreads() && startWithLockHeld(lock))) {
     AutoUnlockHelperThreadState unlock(lock);
     runFromMainThread(runtime());
   }
