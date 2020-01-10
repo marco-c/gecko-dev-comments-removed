@@ -523,6 +523,13 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       case __NR_mprotect:
         return Allow();
 
+#if !defined(MOZ_MEMORY)
+        
+        
+      case __NR_brk:
+        return Allow();
+#endif
+
         
       case __NR_madvise: {
         Arg<int> advice(2);
