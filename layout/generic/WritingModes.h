@@ -179,18 +179,22 @@ class WritingMode {
 
 
   InlineDir GetInlineDir() const {
-    return InlineDir(mWritingMode & eInlineMask);
+    return InlineDir(mWritingMode.bits & eInlineMask);
   }
 
   
 
 
-  BlockDir GetBlockDir() const { return BlockDir(mWritingMode & eBlockMask); }
+  BlockDir GetBlockDir() const {
+    return BlockDir(mWritingMode.bits & eBlockMask);
+  }
 
   
 
 
-  BidiDir GetBidiDir() const { return BidiDir(mWritingMode & eBidiMask); }
+  BidiDir GetBidiDir() const {
+    return BidiDir((mWritingMode & StyleWritingMode_RTL).bits);
+  }
 
   
 
@@ -198,7 +202,9 @@ class WritingMode {
 
 
 
-  bool IsInlineReversed() const { return !!(mWritingMode & eInlineFlowMask); }
+  bool IsInlineReversed() const {
+    return !!(mWritingMode & StyleWritingMode_INLINE_REVERSED);
+  }
 
   
 
@@ -219,13 +225,17 @@ class WritingMode {
 
 
 
-  bool IsVertical() const { return !!(mWritingMode & eOrientationMask); }
+  bool IsVertical() const {
+    return !!(mWritingMode & StyleWritingMode_VERTICAL);
+  }
 
   
 
 
 
-  bool IsLineInverted() const { return !!(mWritingMode & eLineOrientMask); }
+  bool IsLineInverted() const {
+    return !!(mWritingMode & StyleWritingMode_LINE_INVERTED);
+  }
 
   
 
@@ -245,12 +255,14 @@ class WritingMode {
 
 
 
-  bool IsSideways() const { return !!(mWritingMode & eSidewaysMask); }
+  bool IsSideways() const {
+    return !!(mWritingMode & StyleWritingMode_SIDEWAYS);
+  }
 
 #ifdef DEBUG  
               
   WritingMode IgnoreSideways() const {
-    return WritingMode(mWritingMode & ~eSidewaysMask);
+    return WritingMode(mWritingMode.bits & ~StyleWritingMode_SIDEWAYS.bits);
   }
 #endif
 
@@ -287,7 +299,7 @@ class WritingMode {
     
     
     
-    const auto wm = static_cast<uint8_t>(mWritingMode & eOrientationMask);
+    const auto wm = (mWritingMode & StyleWritingMode_VERTICAL).bits;
     return PhysicalAxisForLogicalAxis(wm, aAxis);
   }
 
@@ -347,10 +359,13 @@ class WritingMode {
     
     
     
-    static_assert(eOrientationMask == 0x01 && eInlineFlowMask == 0x02 &&
-                      eBlockFlowMask == 0x04 && eLineOrientMask == 0x08,
-                  "unexpected mask values");
-    int index = mWritingMode & 0x0F;
+    
+    MOZ_ASSERT(StyleWritingMode_VERTICAL.bits == 0x01 &&
+                   StyleWritingMode_INLINE_REVERSED.bits == 0x02 &&
+                   StyleWritingMode_VERTICAL_LR.bits == 0x04 &&
+                   StyleWritingMode_LINE_INVERTED.bits == 0x08,
+               "unexpected mask values");
+    int index = mWritingMode.bits & 0x0F;
     return kLogicalInlineSides[index][aEdge];
   }
 
@@ -360,11 +375,12 @@ class WritingMode {
 
   mozilla::Side PhysicalSide(LogicalSide aSide) const {
     if (IsBlock(aSide)) {
-      static_assert(eOrientationMask == 0x01 && eBlockFlowMask == 0x04,
-                    "unexpected mask values");
-      const auto wm =
-          static_cast<uint8_t>(((mWritingMode & eBlockFlowMask) >> 1) |
-                               (mWritingMode & eOrientationMask));
+      MOZ_ASSERT(StyleWritingMode_VERTICAL.bits == 0x01 &&
+                     StyleWritingMode_VERTICAL_LR.bits == 0x04,
+                 "unexpected mask values");
+      const auto wm = static_cast<uint8_t>(
+          ((mWritingMode & StyleWritingMode_VERTICAL_LR).bits >> 1) |
+          (mWritingMode & StyleWritingMode_VERTICAL).bits);
       return PhysicalSideForBlockAxis(wm, GetEdge(aSide));
     }
 
@@ -421,10 +437,12 @@ class WritingMode {
     };
     
 
-    static_assert(eOrientationMask == 0x01 && eInlineFlowMask == 0x02 &&
-                      eBlockFlowMask == 0x04 && eLineOrientMask == 0x08,
-                  "unexpected mask values");
-    int index = mWritingMode & 0x0F;
+    MOZ_ASSERT(StyleWritingMode_VERTICAL.bits == 0x01 &&
+                   StyleWritingMode_INLINE_REVERSED.bits == 0x02 &&
+                   StyleWritingMode_VERTICAL_LR.bits == 0x04 &&
+                   StyleWritingMode_LINE_INVERTED.bits == 0x08,
+               "unexpected mask values");
+    int index = mWritingMode.bits & 0x0F;
     return kPhysicalToLogicalSides[index][aSide];
   }
 
@@ -445,67 +463,16 @@ class WritingMode {
 
 
 
-  WritingMode() : mWritingMode(0) {}
+  WritingMode() : mWritingMode{0} {}
 
   
 
 
   explicit WritingMode(const ComputedStyle* aComputedStyle) {
     NS_ASSERTION(aComputedStyle, "we need an ComputedStyle here");
-    InitFromStyleVisibility(aComputedStyle->StyleVisibility());
+    mWritingMode = aComputedStyle->WritingMode();
   }
 
-  explicit WritingMode(const nsStyleVisibility* aStyleVisibility) {
-    NS_ASSERTION(aStyleVisibility, "we need an nsStyleVisibility here");
-    InitFromStyleVisibility(aStyleVisibility);
-  }
-
- private:
-  void InitFromStyleVisibility(const nsStyleVisibility* aStyleVisibility) {
-    switch (aStyleVisibility->mWritingMode) {
-      case NS_STYLE_WRITING_MODE_HORIZONTAL_TB:
-        mWritingMode = 0;
-        break;
-
-      case NS_STYLE_WRITING_MODE_VERTICAL_LR: {
-        mWritingMode = eBlockFlowMask | eLineOrientMask | eOrientationMask;
-        uint8_t textOrientation = aStyleVisibility->mTextOrientation;
-        if (textOrientation == NS_STYLE_TEXT_ORIENTATION_SIDEWAYS) {
-          mWritingMode |= eSidewaysMask;
-        }
-        break;
-      }
-
-      case NS_STYLE_WRITING_MODE_VERTICAL_RL: {
-        mWritingMode = eOrientationMask;
-        uint8_t textOrientation = aStyleVisibility->mTextOrientation;
-        if (textOrientation == NS_STYLE_TEXT_ORIENTATION_SIDEWAYS) {
-          mWritingMode |= eSidewaysMask;
-        }
-        break;
-      }
-
-      case NS_STYLE_WRITING_MODE_SIDEWAYS_LR:
-        mWritingMode =
-            eBlockFlowMask | eInlineFlowMask | eOrientationMask | eSidewaysMask;
-        break;
-
-      case NS_STYLE_WRITING_MODE_SIDEWAYS_RL:
-        mWritingMode = eOrientationMask | eSidewaysMask;
-        break;
-
-      default:
-        MOZ_ASSERT_UNREACHABLE("unknown writing mode!");
-        mWritingMode = 0;
-        break;
-    }
-
-    if (NS_STYLE_DIRECTION_RTL == aStyleVisibility->mDirection) {
-      mWritingMode ^= eInlineFlowMask | eBidiMask;
-    }
-  }
-
- public:
   
 
 
@@ -526,7 +493,7 @@ class WritingMode {
 
   void SetDirectionFromBidiLevel(uint8_t level) {
     if (IS_LEVEL_RTL(level) == IsBidiLTR()) {
-      mWritingMode ^= eBidiMask | eInlineFlowMask;
+      mWritingMode ^= StyleWritingMode_RTL | StyleWritingMode_INLINE_REVERSED;
     }
   }
 
@@ -575,7 +542,7 @@ class WritingMode {
     return myStartSide == otherWMStartSide;
   }
 
-  uint8_t GetBits() const { return mWritingMode; }
+  uint8_t GetBits() const { return mWritingMode.bits; }
 
   const char* DebugString() const {
     return IsVertical()
@@ -610,34 +577,14 @@ class WritingMode {
 
 
 
-  explicit WritingMode(uint8_t aValue) : mWritingMode(aValue) {}
+  explicit WritingMode(uint8_t aValue) : mWritingMode{aValue} {}
 
-  uint8_t mWritingMode;
+  StyleWritingMode mWritingMode;
 
   enum Masks {
     
-    eOrientationMask = 0x01,  
-    eInlineFlowMask = 0x02,   
-                              
-    eBlockFlowMask = 0x04,    
-                              
-    eLineOrientMask = 0x08,   
-    eBidiMask = 0x10,         
-
-    
-    
-    
-
-    eSidewaysMask = 0x20,  
-                           
-                           
-                           
-                           
-                           
-
-    
-    eInlineMask = 0x03,
-    eBlockMask = 0x05
+    eInlineMask = 0x03,  
+    eBlockMask = 0x05,   
   };
 };
 

@@ -1356,7 +1356,8 @@ nsChangeHint nsStylePosition::CalcDifference(
   
   
   
-  bool isVertical = WritingMode(&aOldStyleVisibility).IsVertical();
+  bool isVertical =
+      aOldStyleVisibility.mWritingMode != NS_STYLE_WRITING_MODE_HORIZONTAL_TB;
   if (isVertical ? widthChanged : heightChanged) {
     hint |= nsChangeHint_ReflowHintsForBSizeChange;
   }

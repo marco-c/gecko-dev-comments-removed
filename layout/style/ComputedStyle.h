@@ -16,6 +16,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PseudoStyleType.h"
 #include "mozilla/ServoComputedData.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/ServoUtils.h"
 #include "nsCSSAnonBoxes.h"
@@ -284,6 +285,8 @@ class ComputedStyle {
   
   
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const;
+
+  StyleWritingMode WritingMode() const { return {mSource.WritingMode().mBits}; }
 
  protected:
   
