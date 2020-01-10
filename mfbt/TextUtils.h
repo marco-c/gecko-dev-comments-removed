@@ -13,6 +13,14 @@
 #include "mozilla/Latin1.h"
 #include "mozilla/TypeTraits.h"
 
+#ifdef MOZ_HAS_JSRUST
+
+extern "C" {
+
+size_t encoding_ascii_valid_up_to(uint8_t const* buffer, size_t buffer_len);
+}
+#endif
+
 namespace mozilla {
 
 
@@ -107,6 +115,15 @@ constexpr bool IsAsciiNullTerminated(const Char* aChar) {
 }
 
 #if MOZ_HAS_JSRUST()
+
+
+
+
+inline size_t AsciiValidUpTo(mozilla::Span<const char> aString) {
+  return encoding_ascii_valid_up_to(
+      reinterpret_cast<const uint8_t*>(aString.Elements()), aString.Length());
+}
+
 
 
 

@@ -8,6 +8,7 @@
 #define js_CharacterEncoding_h
 
 #include "mozilla/Range.h"
+#include "mozilla/Span.h"
 
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
@@ -300,10 +301,8 @@ JS_PUBLIC_API size_t GetDeflatedUTF8StringLength(JSFlatString* s);
 
 
 
-JS_PUBLIC_API void DeflateStringToUTF8Buffer(JSFlatString* src,
-                                             mozilla::RangedPtr<char> dst,
-                                             size_t* dstlenp = nullptr,
-                                             size_t* numcharsp = nullptr);
+JS_PUBLIC_API size_t DeflateStringToUTF8Buffer(JSFlatString* src,
+                                               mozilla::Span<char> dst);
 
 
 
