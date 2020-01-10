@@ -275,10 +275,8 @@ class VRDisplay final : public DOMEventTargetHelper, public nsIObserver {
   VRDisplayCapabilities* Capabilities();
   VRStageParameters* GetStageParameters();
 
-  uint32_t DisplayId() const { return mDisplayId; }
-  void GetDisplayName(nsAString& aDisplayName) const {
-    aDisplayName = mDisplayName;
-  }
+  uint32_t DisplayId() const;
+  void GetDisplayName(nsAString& aDisplayName) const;
   
   
   
@@ -338,9 +336,6 @@ class VRDisplay final : public DOMEventTargetHelper, public nsIObserver {
   void UpdateFrameInfo();
 
   RefPtr<gfx::VRDisplayClient> mClient;
-
-  uint32_t mDisplayId;
-  nsString mDisplayName;
 
   RefPtr<VRDisplayCapabilities> mCapabilities;
   RefPtr<VRStageParameters> mStageParameters;
