@@ -2,10 +2,6 @@
 
 
 
-
-
-
-
 #filter substitution
 
 #include mobile.js
@@ -25,9 +21,9 @@ pref("toolkit.telemetry.eventping.enabled", false);
 pref("geckoview.console.enabled", false);
 
 #ifdef RELEASE_OR_BETA
-  pref("geckoview.logging", "Warn");
+pref("geckoview.logging", "Warn");
 #else
-  pref("geckoview.logging", "Debug");
+pref("geckoview.logging", "Debug");
 #endif
 
 
