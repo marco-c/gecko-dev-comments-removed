@@ -549,12 +549,15 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
       }
     }
 
-    if (content.IsEmpty()) {
-      content = aContentOfPseudoScript;
+    
+    
+    if (!content.IsEmpty() || !aContentOfPseudoScript.IsEmpty()) {
+      if (content.IsEmpty()) {
+        content = aContentOfPseudoScript;
+      }
+      allowed =
+          mPolicies[i]->allows(aContentType, CSP_HASH, content, aParserCreated);
     }
-
-    allowed =
-        mPolicies[i]->allows(aContentType, CSP_HASH, content, aParserCreated);
 
     if (!allowed) {
       
