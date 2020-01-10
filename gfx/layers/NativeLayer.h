@@ -90,10 +90,6 @@ class NativeLayer {
 
   
   
-  virtual void InvalidateRegionThroughoutSwapchain(
-      const gfx::IntRegion& aRegion) = 0;
-
-  
   
   
   
@@ -103,7 +99,7 @@ class NativeLayer {
   
   
   virtual RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(
-      gfx::BackendType aBackendType) = 0;
+      const gfx::IntRegion& aUpdateRegion, gfx::BackendType aBackendType) = 0;
 
   
   
@@ -131,7 +127,9 @@ class NativeLayer {
   
   
   
-  virtual Maybe<GLuint> NextSurfaceAsFramebuffer(bool aNeedsDepth) = 0;
+  
+  virtual Maybe<GLuint> NextSurfaceAsFramebuffer(
+      const gfx::IntRegion& aUpdateRegion, bool aNeedsDepth) = 0;
 
   
   
