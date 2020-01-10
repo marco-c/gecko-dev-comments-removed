@@ -115,6 +115,10 @@ namespace dmd {
 struct DMDFuncs;
 }  
 
+namespace phc {
+class AddrInfo;
+}  
+
 
 
 struct DebugFdRegistry {
@@ -126,7 +130,7 @@ struct DebugFdRegistry {
 }  
 
 struct ReplaceMallocBridge {
-  ReplaceMallocBridge() : mVersion(3) {}
+  ReplaceMallocBridge() : mVersion(4) {}
 
   
   virtual mozilla::dmd::DMDFuncs* GetDMDFuncs() { return nullptr; }
@@ -155,6 +159,28 @@ struct ReplaceMallocBridge {
       const malloc_hook_table_t* aHookTable) {
     return nullptr;
   }
+
+  
+  
+  
+  
+  virtual bool IsPHCAllocation(const void*, mozilla::phc::AddrInfo*) {
+    return false;
+  }
+
+  
+  
+  
+  virtual void DisablePHCOnCurrentThread() {}
+
+  
+  
+  virtual void ReenablePHCOnCurrentThread() {}
+
+  
+  
+  
+  virtual bool IsPHCEnabledOnCurrentThread() { return false; }
 
 #  ifndef REPLACE_MALLOC_IMPL
   
@@ -198,6 +224,30 @@ struct ReplaceMalloc {
     auto singleton = ReplaceMallocBridge::Get( 3);
     return singleton ? singleton->RegisterHook(aName, aTable, aHookTable)
                      : nullptr;
+  }
+
+  static bool IsPHCAllocation(const void* aPtr, mozilla::phc::AddrInfo* aOut) {
+    auto singleton = ReplaceMallocBridge::Get( 4);
+    return singleton ? singleton->IsPHCAllocation(aPtr, aOut) : false;
+  }
+
+  static void DisablePHCOnCurrentThread() {
+    auto singleton = ReplaceMallocBridge::Get( 4);
+    if (singleton) {
+      singleton->DisablePHCOnCurrentThread();
+    }
+  }
+
+  static void ReenablePHCOnCurrentThread() {
+    auto singleton = ReplaceMallocBridge::Get( 4);
+    if (singleton) {
+      singleton->ReenablePHCOnCurrentThread();
+    }
+  }
+
+  static bool IsPHCEnabledOnCurrentThread() {
+    auto singleton = ReplaceMallocBridge::Get( 4);
+    return singleton ? singleton->IsPHCEnabledOnCurrentThread() : false;
   }
 };
 #  endif

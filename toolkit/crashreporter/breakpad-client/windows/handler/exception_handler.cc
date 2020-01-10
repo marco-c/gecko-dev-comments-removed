@@ -824,7 +824,7 @@ bool ExceptionHandler::WriteMinidumpForChild(HANDLE child,
 
   if (callback) {
     success = callback(handler.dump_path_c_, handler.next_minidump_id_c_,
-                       callback_context, NULL, NULL, success);
+                       callback_context, NULL, NULL, nullptr, success);
   }
 
   return success;
@@ -840,7 +840,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
   
   
   
-  if (filter_ && !filter_(callback_context_, exinfo, assertion)) {
+  if (filter_ && !filter_(callback_context_, exinfo, nullptr, assertion)) {
     return false;
   }
 
@@ -861,7 +861,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
     
     
     success = callback_(dump_path_c_, next_minidump_id_c_, callback_context_,
-                        exinfo, assertion, success);
+                        exinfo, assertion, nullptr, success);
   }
 
   return success;

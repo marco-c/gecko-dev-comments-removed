@@ -343,7 +343,7 @@ bool ExceptionHandler::WriteMinidumpForChild(mach_port_t child,
 
   if (callback) {
     return callback(dump_path.c_str(), dump_id.c_str(),
-                    callback_context, result);
+                    callback_context, nullptr, result);
   }
   return result;
 }
@@ -377,7 +377,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
     if (exception_type && exception_code) {
       
       
-      if (filter_ && !filter_(callback_context_))
+      if (filter_ && !filter_(callback_context_, nullptr))
         return false;
       result = crash_generation_client_->RequestDumpForException(
           exception_type,
@@ -402,7 +402,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
       if (exception_type && exception_code) {
         
         
-        if (filter_ && !filter_(callback_context_))
+        if (filter_ && !filter_(callback_context_, nullptr))
           return false;
 
         md.SetExceptionInformation(exception_type, exception_code,
@@ -418,7 +418,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
       
       
       if (callback_(dump_path_c_, next_minidump_id_c_, callback_context_,
-                    result)) {
+                    nullptr, result)) {
         if (exit_after_write)
           _exit(exception_type);
       }

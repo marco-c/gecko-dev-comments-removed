@@ -12,6 +12,10 @@
 #  include <windows.h>
 #endif
 
+#ifdef MOZ_PHC
+#  include "replace_malloc_bridge.h"
+#endif
+
 
 
 
@@ -77,6 +81,8 @@ const int16_t CRASH_X64CFI_SAVE_XMM128 = 17;
 const int16_t CRASH_X64CFI_SAVE_XMM128_FAR = 18;
 const int16_t CRASH_X64CFI_EPILOG = 19;
 const int16_t CRASH_X64CFI_EOF = 20;
+const int16_t CRASH_PHC_USE_AFTER_FREE = 21;
+const int16_t CRASH_PHC_DOUBLE_FREE = 22;
 
 #if XP_WIN && HAVE_64BIT_BUILD && defined(_M_X64) && !defined(__MINGW32__)
 
@@ -117,6 +123,21 @@ void MOZ_NEVER_INLINE ReserveStack() {
 }
 
 #endif  
+
+#ifdef MOZ_PHC
+char* GetPHCAllocation(size_t aSize) {
+  
+  for (int i = 0; i < 2000000; i++) {
+    char* p = (char*)malloc(aSize);
+    if (ReplaceMalloc::IsPHCAllocation(p, nullptr)) {
+      return p;
+    }
+    free(p);
+  }
+  
+  MOZ_CRASH("failed to get a PHC allocation");
+}
+#endif
 
 extern "C" NS_EXPORT void Crash(int16_t how) {
   switch (how) {
@@ -170,6 +191,22 @@ extern "C" NS_EXPORT void Crash(int16_t how) {
       break;
     }
 #endif  
+#ifdef MOZ_PHC
+    case CRASH_PHC_USE_AFTER_FREE: {
+      
+      char* p = GetPHCAllocation(32);
+      free(p);
+      *p = 0;
+      
+    }
+    case CRASH_PHC_DOUBLE_FREE: {
+      
+      char* p = GetPHCAllocation(64);
+      free(p);
+      free(p);
+      
+    }
+#endif
     default:
       break;
   }

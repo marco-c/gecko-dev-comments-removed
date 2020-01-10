@@ -44,6 +44,12 @@
 #include "common/using_std_string.h"
 #include "google_breakpad/common/minidump_format.h"
 
+#ifdef MOZ_PHC
+#include "PHC.h"
+#else
+namespace mozilla { namespace phc { class AddrInfo {}; } }
+#endif
+
 namespace google_breakpad {
 
 
@@ -82,7 +88,8 @@ class ExceptionHandler {
   
   
   
-  typedef bool (*FilterCallback)(void *context);
+  typedef bool (*FilterCallback)(void *context,
+                                 const mozilla::phc::AddrInfo* addr_info);
 
   
   
@@ -102,6 +109,7 @@ class ExceptionHandler {
   
   typedef bool (*MinidumpCallback)(const MinidumpDescriptor& descriptor,
                                    void* context,
+                                   const mozilla::phc::AddrInfo* addr_info,
                                    bool succeeded);
 
   
@@ -234,7 +242,8 @@ class ExceptionHandler {
   static void RestoreHandlersLocked();
 
   void PreresolveSymbols();
-  bool GenerateDump(CrashContext *context);
+  bool GenerateDump(CrashContext *context,
+                    const mozilla::phc::AddrInfo* addr_info);
   void SendContinueSignalToChild();
   void WaitForContinueSignal();
 

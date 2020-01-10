@@ -75,6 +75,12 @@
 #include "common/scoped_ptr.h"
 #include "google_breakpad/common/minidump_format.h"
 
+#ifdef MOZ_PHC
+#include "PHC.h"
+#else
+namespace mozilla { namespace phc { class AddrInfo {}; } }
+#endif
+
 namespace google_breakpad {
 
 using std::vector;
@@ -94,6 +100,7 @@ class ExceptionHandler {
   
   
   typedef bool (*FilterCallback)(void* context, EXCEPTION_POINTERS* exinfo,
+                                 const mozilla::phc::AddrInfo* addr_info,
                                  MDRawAssertionInfo* assertion);
 
   
@@ -125,6 +132,7 @@ class ExceptionHandler {
                                    void* context,
                                    EXCEPTION_POINTERS* exinfo,
                                    MDRawAssertionInfo* assertion,
+                                   const mozilla::phc::AddrInfo* addr_info,
                                    bool succeeded);
 
   

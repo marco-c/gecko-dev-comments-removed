@@ -48,6 +48,12 @@
 #include "mac/crash_generation/crash_generation_client.h"
 #endif
 
+#ifdef MOZ_PHC
+#include "PHC.h"
+#else
+namespace mozilla { namespace phc { class AddrInfo {}; } }
+#endif
+
 namespace google_breakpad {
 
 using std::string;
@@ -75,7 +81,8 @@ class ExceptionHandler {
   
   
   
-  typedef bool (*FilterCallback)(void *context);
+  typedef bool (*FilterCallback)(void *context,
+                                 const mozilla::phc::AddrInfo* addr_info);
 
   
   
@@ -87,7 +94,9 @@ class ExceptionHandler {
   
   typedef bool (*MinidumpCallback)(const char *dump_dir,
                                    const char *minidump_id,
-                                   void *context, bool succeeded);
+                                   void *context,
+                                   const mozilla::phc::AddrInfo* addr_info,
+                                   bool succeeded);
 
   
   
