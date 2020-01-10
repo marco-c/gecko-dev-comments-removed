@@ -39,9 +39,10 @@ function installAddonEngine(name = "engine-addon") {
 function installDistributionEngine() {
   const XRE_APP_DISTRIBUTION_DIR = "XREAppDist";
 
-  const profD = do_get_profile().QueryInterface(Ci.nsIFile);
-
-  let dir = profD.clone();
+  
+  
+  
+  let dir = do_get_tempdir();
   dir.append("distribution");
   dir.create(dir.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
   let distDir = dir.clone();
