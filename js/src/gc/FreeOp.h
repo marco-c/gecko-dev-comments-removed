@@ -22,7 +22,7 @@ namespace js {
 
 namespace gc {
 class AutoSetThreadIsPerformingGC;
-} 
+}  
 
 
 

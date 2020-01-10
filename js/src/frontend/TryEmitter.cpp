@@ -311,8 +311,7 @@ bool TryEmitter::instrumentEntryPoint() {
   
   
   
-  if (bce_->sc->isFunctionBox() &&
-      bce_->sc->asFunctionBox()->isAsync()) {
+  if (bce_->sc->isFunctionBox() && bce_->sc->asFunctionBox()->isAsync()) {
     return bce_->emitInstrumentation(InstrumentationKind::Entry);
   }
   return true;

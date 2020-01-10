@@ -406,7 +406,6 @@ void DebuggerFrame::clearGenerator(
     return;
   }
 
-
   
   
   GeneratorInfo* info = generatorInfo();

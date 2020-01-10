@@ -580,8 +580,8 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
     }
 
     atom = fun->displayAtom();
-    flagsword =
-        (fun->nargs() << 16) | (fun->flags().toRaw() & ~FunctionFlags::NO_XDR_FLAGS);
+    flagsword = (fun->nargs() << 16) |
+                (fun->flags().toRaw() & ~FunctionFlags::NO_XDR_FLAGS);
 
     
     

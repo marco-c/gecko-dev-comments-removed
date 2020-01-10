@@ -147,8 +147,8 @@ void DebugScript::destroyBreakpointSite(FreeOp* fop, JSScript* script,
 }
 
 
-void DebugScript::clearBreakpointsIn(FreeOp* fop, Realm* realm,
-                                     Debugger* dbg, JSObject* handler) {
+void DebugScript::clearBreakpointsIn(FreeOp* fop, Realm* realm, Debugger* dbg,
+                                     JSObject* handler) {
   for (auto script = realm->zone()->cellIter<JSScript>(); !script.done();
        script.next()) {
     if (script->realm() == realm && script->hasDebugScript()) {
@@ -184,7 +184,7 @@ void DebugScript::clearBreakpointsIn(FreeOp* fop, JSScript* script,
 uint32_t DebugScript::getStepperCount(JSScript* script) {
   return script->hasDebugScript() ? get(script)->stepperCount : 0;
 }
-#endif 
+#endif  
 
 
 bool DebugScript::incrementStepperCount(JSContext* cx, JSScript* script) {
@@ -293,7 +293,7 @@ void DebugAPI::checkDebugScriptAfterMovingGC(DebugScript* ds) {
     }
   }
 }
-#endif 
+#endif  
 
 
 void DebugAPI::sweepBreakpointsSlow(FreeOp* fop, JSScript* script) {
@@ -315,10 +315,10 @@ void DebugAPI::sweepBreakpointsSlow(FreeOp* fop, JSScript* script) {
       
       
       
-      MOZ_ASSERT_IF(script->zone()->isGCSweeping() &&
-                    dbgobj->zone()->isCollecting(),
-                    dbgobj->zone()->isGCSweeping() ||
-                        (!scriptGone && dbgobj->asTenured().isMarkedAny()));
+      MOZ_ASSERT_IF(
+          script->zone()->isGCSweeping() && dbgobj->zone()->isCollecting(),
+          dbgobj->zone()->isGCSweeping() ||
+              (!scriptGone && dbgobj->asTenured().isMarkedAny()));
 
       bool dying = scriptGone || IsAboutToBeFinalized(&dbgobj);
       MOZ_ASSERT_IF(!dying, !IsAboutToBeFinalized(&bp->getHandlerRef()));
@@ -340,4 +340,4 @@ bool DebugAPI::hasBreakpointsAtSlow(JSScript* script, jsbytecode* pc) {
   return site && site->enabledCount > 0;
 }
 
-} 
+}  

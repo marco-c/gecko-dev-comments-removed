@@ -589,7 +589,8 @@ void AtomsTable::mergeAtomsAddedWhileSweeping(Partition& part) {
   js_delete(newAtoms);
 }
 
-bool AtomsTable::traceWeakIncrementally(JSTracer* trc, SweepIterator& atomsToSweep,
+bool AtomsTable::traceWeakIncrementally(JSTracer* trc,
+                                        SweepIterator& atomsToSweep,
                                         SliceBudget& budget) {
   
   while (!atomsToSweep.empty()) {

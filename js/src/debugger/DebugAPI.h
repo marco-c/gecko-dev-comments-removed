@@ -341,8 +341,7 @@ class DebugAPI {
 
 
 
-  static bool getScriptInstrumentationId(JSContext* cx,
-                                         HandleObject dbgObject,
+  static bool getScriptInstrumentationId(JSContext* cx, HandleObject dbgObject,
                                          HandleScript script,
                                          MutableHandleValue rval);
 
