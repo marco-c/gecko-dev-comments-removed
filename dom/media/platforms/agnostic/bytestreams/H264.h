@@ -469,6 +469,8 @@ class H264 {
 
   static bool DecodeSPSFromExtraData(const mozilla::MediaByteBuffer* aExtraData,
                                      SPSData& aDest);
+  
+  static bool DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest);
 
   
   
@@ -489,6 +491,11 @@ class H264 {
   static already_AddRefed<mozilla::MediaByteBuffer> CreateExtraData(
       uint8_t aProfile, uint8_t aConstraints, uint8_t aLevel,
       const gfx::IntSize& aSize);
+  static void WriteExtraData(mozilla::MediaByteBuffer* aDestExtraData,
+                             const uint8_t aProfile, const uint8_t aConstraints,
+                             const uint8_t aLevel,
+                             const Span<const uint8_t> aSPS,
+                             const Span<const uint8_t> aPPS);
 
  private:
   friend class SPSNAL;
@@ -500,8 +507,6 @@ class H264 {
       const uint8_t* aNAL, size_t aLength);
   static already_AddRefed<mozilla::MediaByteBuffer> EncodeNALUnit(
       const uint8_t* aNAL, size_t aLength);
-  
-  static bool DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest);
   static bool vui_parameters(mozilla::BitReader& aBr, SPSData& aDest);
   
   static void hrd_parameters(mozilla::BitReader& aBr);
