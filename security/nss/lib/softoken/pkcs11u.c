@@ -1813,7 +1813,6 @@ sftk_NewSession(CK_SLOT_ID slotID, CK_NOTIFY notify, CK_VOID_PTR pApplication,
         return NULL;
 
     session->next = session->prev = NULL;
-    session->refCount = 1;
     session->enc_context = NULL;
     session->hash_context = NULL;
     session->sign_context = NULL;
@@ -1837,11 +1836,10 @@ sftk_NewSession(CK_SLOT_ID slotID, CK_NOTIFY notify, CK_VOID_PTR pApplication,
 }
 
 
-static void
+void
 sftk_DestroySession(SFTKSession *session)
 {
     SFTKObjectList *op, *next;
-    PORT_Assert(session->refCount == 0);
 
     
     
@@ -1885,8 +1883,6 @@ sftk_SessionFromHandle(CK_SESSION_HANDLE handle)
 
     PZ_Lock(lock);
     sftkqueue_find(session, handle, slot->head, slot->sessHashSize);
-    if (session)
-        session->refCount++;
     PZ_Unlock(lock);
 
     return (session);
@@ -1895,21 +1891,12 @@ sftk_SessionFromHandle(CK_SESSION_HANDLE handle)
 
 
 
+
+
 void
 sftk_FreeSession(SFTKSession *session)
 {
-    PRBool destroy = PR_FALSE;
-    SFTKSlot *slot = sftk_SlotFromSession(session);
-    PZLock *lock = SFTK_SESSION_LOCK(slot, session->handle);
-
-    PZ_Lock(lock);
-    if (session->refCount == 1)
-        destroy = PR_TRUE;
-    session->refCount--;
-    PZ_Unlock(lock);
-
-    if (destroy)
-        sftk_DestroySession(session);
+    return;
 }
 
 void
