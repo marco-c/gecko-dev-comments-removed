@@ -152,7 +152,12 @@ enum DwarfForm {
   DW_FORM_ref_sig8 = 0x20,
   
   DW_FORM_GNU_addr_index = 0x1f01,
-  DW_FORM_GNU_str_index = 0x1f02
+  DW_FORM_GNU_str_index = 0x1f02,
+
+  
+  
+  DW_FORM_GNU_ref_alt = 0x1f20,
+  DW_FORM_GNU_strp_alt = 0x1f21,
 };
 
 
