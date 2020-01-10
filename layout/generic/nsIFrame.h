@@ -3743,7 +3743,7 @@ class nsIFrame : public nsQueryFrame {
       nsBoxLayoutState& aBoxLayoutState) = 0;
 
   
-  uint32_t GetXULOrdinal();
+  int32_t GetXULOrdinal();
 
   virtual nscoord GetXULFlex() = 0;
   virtual nscoord GetXULBoxAscent(nsBoxLayoutState& aBoxLayoutState) = 0;
