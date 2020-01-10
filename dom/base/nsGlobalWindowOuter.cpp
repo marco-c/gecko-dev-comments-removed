@@ -2458,7 +2458,7 @@ void nsGlobalWindowOuter::SetDocShell(nsDocShell* aDocShell) {
   SetIsBackgroundInternal(!docShellActive);
 }
 
-void nsGlobalWindowOuter::DetachFromDocShell(bool aIsBeingDiscarded) {
+void nsGlobalWindowOuter::DetachFromDocShell() {
   
   
   
@@ -2518,14 +2518,6 @@ void nsGlobalWindowOuter::DetachFromDocShell(bool aIsBeingDiscarded) {
                             ? nullptr
                             : GetWrapperPreserveColor());
     mContext = nullptr;
-  }
-
-  if (aIsBeingDiscarded) {
-    
-    
-    if (GetCurrentInnerWindow()) {
-      GetCurrentInnerWindowInternal()->SetWasCurrentInnerWindow();
-    }
   }
 
   mDocShell = nullptr;
