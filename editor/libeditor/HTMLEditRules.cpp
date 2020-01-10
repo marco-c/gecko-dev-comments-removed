@@ -3709,8 +3709,10 @@ EditActionResult HTMLEditRules::TryToJoinBlocksWithTransaction(
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
     }
     if (pt.IsSet() && mergeLists) {
-      CreateElementResult convertListTypeResult = ConvertListType(
-          *rightBlock, MOZ_KnownLive(*existingList), *nsGkAtoms::li);
+      CreateElementResult convertListTypeResult =
+          MOZ_KnownLive(HTMLEditorRef())
+              .ChangeListElementType(*rightBlock, MOZ_KnownLive(*existingList),
+                                     *nsGkAtoms::li);
       if (NS_WARN_IF(convertListTypeResult.Rv() == NS_ERROR_EDITOR_DESTROYED)) {
         return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -4215,8 +4217,10 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
-        CreateElementResult convertListTypeResult = ConvertListType(
-            MOZ_KnownLive(*curNode->AsElement()), aListType, aItemType);
+        CreateElementResult convertListTypeResult =
+            MOZ_KnownLive(HTMLEditorRef())
+                .ChangeListElementType(MOZ_KnownLive(*curNode->AsElement()),
+                                       aListType, aItemType);
         if (NS_WARN_IF(convertListTypeResult.Failed())) {
           return convertListTypeResult.Rv();
         }
@@ -4232,8 +4236,10 @@ nsresult HTMLEditRules::MakeList(nsAtom& aListType, bool aEntireList,
         newBlock = convertListTypeResult.forget();
       } else {
         
-        CreateElementResult convertListTypeResult = ConvertListType(
-            MOZ_KnownLive(*curNode->AsElement()), aListType, aItemType);
+        CreateElementResult convertListTypeResult =
+            MOZ_KnownLive(HTMLEditorRef())
+                .ChangeListElementType(MOZ_KnownLive(*curNode->AsElement()),
+                                       aListType, aItemType);
         if (NS_WARN_IF(convertListTypeResult.Failed())) {
           return convertListTypeResult.Rv();
         }
@@ -5911,39 +5917,44 @@ SplitRangeOffFromNodeResult HTMLEditRules::OutdentPartOfBlock(
   return splitResult;
 }
 
-CreateElementResult HTMLEditRules::ConvertListType(Element& aListElement,
-                                                   nsAtom& aNewListTag,
-                                                   nsAtom& aNewListItemTag) {
-  MOZ_ASSERT(IsEditorDataAvailable());
+CreateElementResult HTMLEditor::ChangeListElementType(Element& aListElement,
+                                                      nsAtom& aNewListTag,
+                                                      nsAtom& aNewListItemTag) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
 
-  nsCOMPtr<nsINode> child = aListElement.GetFirstChild();
-  while (child) {
-    if (child->IsElement()) {
-      Element* element = child->AsElement();
-      if (HTMLEditUtils::IsListItem(element) &&
-          !element->IsHTMLElement(&aNewListItemTag)) {
-        child = MOZ_KnownLive(HTMLEditorRef())
-                    .ReplaceContainerWithTransaction(MOZ_KnownLive(*element),
-                                                     aNewListItemTag);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
-          return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
-        }
-        if (NS_WARN_IF(!child)) {
-          return CreateElementResult(NS_ERROR_FAILURE);
-        }
-      } else if (HTMLEditUtils::IsList(element) &&
-                 !element->IsHTMLElement(&aNewListTag)) {
-        
-        
-        CreateElementResult convertListTypeResult = ConvertListType(
-            MOZ_KnownLive(*child->AsElement()), aNewListTag, aNewListItemTag);
-        if (NS_WARN_IF(convertListTypeResult.Failed())) {
-          return convertListTypeResult;
-        }
-        child = convertListTypeResult.forget();
-      }
+  for (nsIContent* childContent = aListElement.GetFirstChild(); childContent;
+       childContent = childContent->GetNextSibling()) {
+    if (!childContent->IsElement()) {
+      continue;
     }
-    child = child->GetNextSibling();
+    if (HTMLEditUtils::IsListItem(childContent->AsElement()) &&
+        !childContent->IsHTMLElement(&aNewListItemTag)) {
+      OwningNonNull<Element> listItemElement = *childContent->AsElement();
+      RefPtr<Element> newListItemElement =
+          ReplaceContainerWithTransaction(listItemElement, aNewListItemTag);
+      if (NS_WARN_IF(Destroyed())) {
+        return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_WARN_IF(!newListItemElement)) {
+        return CreateElementResult(NS_ERROR_FAILURE);
+      }
+      childContent = newListItemElement;
+      continue;
+    }
+    if (HTMLEditUtils::IsList(childContent->AsElement()) &&
+        !childContent->IsHTMLElement(&aNewListTag)) {
+      
+      
+      
+      OwningNonNull<Element> listElement = *childContent->AsElement();
+      CreateElementResult convertListTypeResult =
+          ChangeListElementType(listElement, aNewListTag, aNewListItemTag);
+      if (NS_WARN_IF(convertListTypeResult.Failed())) {
+        return convertListTypeResult;
+      }
+      childContent = convertListTypeResult.GetNewNode();
+      continue;
+    }
   }
 
   if (aListElement.IsHTMLElement(&aNewListTag)) {
@@ -5951,9 +5962,8 @@ CreateElementResult HTMLEditRules::ConvertListType(Element& aListElement,
   }
 
   RefPtr<Element> listElement =
-      MOZ_KnownLive(HTMLEditorRef())
-          .ReplaceContainerWithTransaction(aListElement, aNewListTag);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+      ReplaceContainerWithTransaction(aListElement, aNewListTag);
+  if (NS_WARN_IF(Destroyed())) {
     return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
   }
   NS_WARNING_ASSERTION(listElement != nullptr, "Failed to create list element");

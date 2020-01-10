@@ -1867,6 +1867,23 @@ class HTMLEditor final : public TextEditor,
 
   static bool NodesInDifferentTableElements(nsINode& aNode1, nsINode& aNode2);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE CreateElementResult ChangeListElementType(
+      Element& aListElement, nsAtom& aListType, nsAtom& aItemType);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

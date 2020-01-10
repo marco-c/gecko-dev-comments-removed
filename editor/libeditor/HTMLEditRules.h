@@ -534,25 +534,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE CreateElementResult ConvertListType(Element& aListElement,
-                                                   nsAtom& aListType,
-                                                   nsAtom& aItemType);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
