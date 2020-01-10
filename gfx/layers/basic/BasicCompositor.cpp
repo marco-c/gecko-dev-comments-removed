@@ -251,7 +251,7 @@ void BasicCompositingRenderTarget::BindRenderTarget() {
 void BasicCompositor::Destroy() {
   if (mIsPendingEndRemoteDrawing) {
     
-    TryToEndRemoteDrawing( true);
+    EndRemoteDrawing();
     MOZ_ASSERT(!mIsPendingEndRemoteDrawing);
   }
   mWidget->CleanupRemoteDrawing();
@@ -892,7 +892,7 @@ Maybe<gfx::IntRect> BasicCompositor::BeginFrame(
     NativeLayer* aNativeLayer) {
   if (mIsPendingEndRemoteDrawing) {
     
-    TryToEndRemoteDrawing( true);
+    EndRemoteDrawing();
     MOZ_ASSERT(!mIsPendingEndRemoteDrawing);
   }
 
@@ -1048,15 +1048,13 @@ void BasicCompositor::EndFrame() {
   }
 }
 
-void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
+void BasicCompositor::TryToEndRemoteDrawing() {
   if (mIsDestroyed || !mRenderTarget) {
     return;
   }
 
-  MOZ_ASSERT_IF(mTarget, aForceToEnd);
-
   
-  if (!aForceToEnd && NeedsToDeferEndRemoteDrawing()) {
+  if (NeedsToDeferEndRemoteDrawing()) {
     mIsPendingEndRemoteDrawing = true;
 
     const uint32_t retryMs = 2;
@@ -1065,6 +1063,13 @@ void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
         NS_NewRunnableFunction("layers::BasicCompositor::TryToEndRemoteDrawing",
                                [self]() { self->TryToEndRemoteDrawing(); });
     MessageLoop::current()->PostDelayedTask(runnable.forget(), retryMs);
+  } else {
+    EndRemoteDrawing();
+  }
+}
+
+void BasicCompositor::EndRemoteDrawing() {
+  if (mIsDestroyed || !mRenderTarget) {
     return;
   }
 
@@ -1138,9 +1143,7 @@ bool BasicCompositor::NeedsToDeferEndRemoteDrawing() {
   return mWidget->NeedsToDeferEndRemoteDrawing();
 }
 
-void BasicCompositor::FinishPendingComposite() {
-  TryToEndRemoteDrawing( true);
-}
+void BasicCompositor::FinishPendingComposite() { EndRemoteDrawing(); }
 
 bool BasicCompositor::NeedToRecreateFullWindowRenderTarget() const {
   if (!ShouldRecordFrames()) {
