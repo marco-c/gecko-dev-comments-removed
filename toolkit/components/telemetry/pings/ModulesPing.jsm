@@ -63,13 +63,15 @@ var TelemetryModules = Object.freeze({
     }
 
     
+    let interval = Preferences.get(
+      MODULES_PING_INTERVAL_PREFERENCE,
+      MODULES_PING_INTERVAL_SECONDS
+    );
     gUpdateTimerManager.registerTimer(
       "telemetry_modules_ping",
       this,
-      Preferences.get(
-        MODULES_PING_INTERVAL_PREFERENCE,
-        MODULES_PING_INTERVAL_SECONDS
-      )
+      interval,
+      interval != 0 
     );
   },
 
