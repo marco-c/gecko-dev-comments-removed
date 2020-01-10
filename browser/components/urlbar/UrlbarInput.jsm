@@ -487,7 +487,7 @@ class UrlbarInput {
     };
 
     let selIndex = this.view.selectedIndex;
-    if (!result.payload.isKeywordOffer) {
+    if (!result.payload.keywordOffer) {
       this.view.close();
     }
 
@@ -544,7 +544,7 @@ class UrlbarInput {
         return;
       }
       case UrlbarUtils.RESULT_TYPE.SEARCH: {
-        if (result.payload.isKeywordOffer) {
+        if (result.payload.keywordOffer) {
           
           
           

@@ -140,6 +140,17 @@ var UrlbarUtils = {
   
   
   
+  KEYWORD_OFFER: {
+    NONE: 0,
+    SHOW: 1,
+    HIDE: 2,
+  },
+
+  
+  
+  
+  
+  
   
   TITLE_TAGS_SEPARATOR: "\x1F",
 
