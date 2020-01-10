@@ -1,95 +1,87 @@
 
-const kCurrentDirectory = ".";
+const kCurrentDirectory = '.';
 
 
-const kParentDirectory = "..";
+const kParentDirectory = '..';
 
 
 let kPathSeparators;
-if (navigator.userAgent.includes("Windows NT")) {
-    
-    kPathSeparators = ['/', '\\' ];
+if (navigator.userAgent.includes('Windows NT')) {
+  
+  kPathSeparators = ['/', '\\'];
 } else {
-    kPathSeparators = [ '/' ];
-}
-
-async function cleanupSandboxedFileSystem() {
-    const dir = await FileSystemDirectoryHandle.getSystemDirectory({ type: 'sandbox' });
-    for await (let entry of dir.getEntries())
-        dir.removeEntry(entry.name, { recursive: entry.isDirectory });
+  kPathSeparators = ['/'];
 }
 
 async function getFileSize(handle) {
-    const file = await handle.getFile();
-    return file.size;
+  const file = await handle.getFile();
+  return file.size;
 }
 
 async function getFileContents(handle) {
-    const file = await handle.getFile();
-    return new Response(file).text();
+  const file = await handle.getFile();
+  return new Response(file).text();
 }
 
 async function getDirectoryEntryCount(handle) {
-    let result = 0;
-    for await (let entry of handle.getEntries()) {
-        result++;
-    }
-    return result;
+  let result = 0;
+  for await (let entry of handle.getEntries()) {
+    result++;
+  }
+  return result;
 }
 
 async function getSortedDirectoryEntries(handle) {
-    let result = [];
-    for await (let entry of handle.getEntries()) {
-        if (entry.isDirectory)
-            result.push(entry.name + '/');
-        else
-            result.push(entry.name);
-    }
-    result.sort();
-    return result;
+  let result = [];
+  for await (let entry of handle.getEntries()) {
+    if (entry.isDirectory)
+      result.push(entry.name + '/');
+    else
+      result.push(entry.name);
+  }
+  result.sort();
+  return result;
 }
 
 async function createDirectory(test, name, parent) {
-  const parent_dir_handle = parent ? parent :
-      await FileSystemDirectoryHandle.getSystemDirectory({ type: 'sandbox' });
-
-  const new_dir_handle = await parent_dir_handle.getDirectory(name, { create: true });
+  const new_dir_handle = await parent.getDirectory(name, {create: true});
   test.add_cleanup(async () => {
-        try {
-            await parent_dir_handle.removeEntry(name, { recursive: true });
-        } catch (e) {
-            
-            
-        }
+    try {
+      await parent.removeEntry(name, {recursive: true});
+    } catch (e) {
+      
+      
+    }
   });
   return new_dir_handle;
 }
 
 async function createEmptyFile(test, name, parent) {
-    const dir = parent ? parent : await FileSystemDirectoryHandle.getSystemDirectory({ type: 'sandbox' });
-    const handle = await dir.getFile(name, { create: true });
-    test.add_cleanup(async () => {
-        try {
-            await dir.removeEntry(name);
-        } catch (e) {
-            
-        }
-    });
-    
-    assert_equals(await getFileSize(handle), 0);
-    return handle;
+  const handle = await parent.getFile(name, {create: true});
+  test.add_cleanup(async () => {
+    try {
+      await parent.removeEntry(name);
+    } catch (e) {
+      
+      
+    }
+  });
+  
+  assert_equals(await getFileSize(handle), 0);
+  return handle;
 }
 
 async function createFileWithContents(test, name, contents, parent) {
-    const handle = await createEmptyFile(test, name, parent);
-    const writer = await handle.createWriter();
-    await writer.write(0, new Blob([contents]));
-    await writer.close();
-    return handle;
+  const handle = await createEmptyFile(test, name, parent);
+  const writer = await handle.createWriter();
+  await writer.write(0, new Blob([contents]));
+  await writer.close();
+  return handle;
 }
 
 function garbageCollect() {
-    
-    
-    if (self.gc) self.gc();
+  
+  
+  if (self.gc)
+    self.gc();
 };
