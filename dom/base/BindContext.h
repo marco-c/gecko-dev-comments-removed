@@ -33,15 +33,11 @@ struct MOZ_STACK_CLASS BindContext final {
   Element* GetBindingParent() const { return mBindingParent; }
 
   
-  
-  
-  
   explicit BindContext(nsINode& aParentNode)
       : mDoc(*aParentNode.OwnerDoc()),
         mSubtreeRootChanges(true),
         mBindingParent(aParentNode.IsContent()
-                           ? static_cast<Element*>(
-                                 aParentNode.AsContent()->GetBindingParent())
+                           ? aParentNode.AsContent()->GetBindingParent()
                            : nullptr) {}
 
   

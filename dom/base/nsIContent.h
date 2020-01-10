@@ -186,28 +186,18 @@ class nsIContent : public nsINode {
 
   nsIContent* FindFirstNonChromeOnlyAccessContent() const;
 
+#ifdef DEBUG
+  void AssertAnonymousSubtreeRelatedInvariants() const;
+#endif
+
   
 
 
 
   bool IsRootOfAnonymousSubtree() const {
-    NS_ASSERTION(!IsRootOfNativeAnonymousSubtree() ||
-                     (GetParent() && GetBindingParent() == GetParent()),
-                 "root of native anonymous subtree must have parent equal "
-                 "to binding parent");
-    NS_ASSERTION(!GetParent() ||
-                     ((GetBindingParent() == GetParent()) ==
-                      HasFlag(NODE_IS_ANONYMOUS_ROOT)) ||
-                     
-                     
-                     
-                     
-                     
-                     (GetBindingParent() &&
-                      (GetBindingParent() == GetParent()->GetBindingParent()) ==
-                          HasFlag(NODE_IS_ANONYMOUS_ROOT)),
-                 "For nodes with parent, flag and GetBindingParent() check "
-                 "should match");
+#ifdef DEBUG
+    AssertAnonymousSubtreeRelatedInvariants();
+#endif
     return HasFlag(NODE_IS_ANONYMOUS_ROOT);
   }
 
@@ -401,7 +391,7 @@ class nsIContent : public nsINode {
 
 
 
-  virtual nsIContent* GetBindingParent() const {
+  virtual mozilla::dom::Element* GetBindingParent() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
     return slots ? slots->mBindingParent.get() : nullptr;
   }
@@ -738,8 +728,7 @@ class nsIContent : public nsINode {
 
 
 
-
-    nsCOMPtr<nsIContent> mBindingParent;
+    RefPtr<mozilla::dom::Element> mBindingParent;
 
     
 
