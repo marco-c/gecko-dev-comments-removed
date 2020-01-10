@@ -123,7 +123,7 @@ add_task(async function test_popup_url() {
   );
 
   
-  UrlbarTestUtils.setSelectedIndex(window, 1);
+  UrlbarTestUtils.setSelectedRowIndex(window, 1);
   let actionResult = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   let urlResult = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
   let resultCS = window.getComputedStyle(urlResult.element.row);
@@ -142,7 +142,7 @@ add_task(async function test_popup_url() {
 
   
   
-  UrlbarTestUtils.setSelectedIndex(window, 2);
+  UrlbarTestUtils.setSelectedRowIndex(window, 2);
 
   Assert.equal(
     window.getComputedStyle(urlResult.element.url).color,

@@ -104,20 +104,20 @@ add_task(async function viewContainsStaleRows() {
   
   
   for (let i = 1; i < maxResults; i++) {
-    Assert.equal(UrlbarTestUtils.getSelectedIndex(window), i);
+    Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), i);
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     Assert.equal(result.element.row.result.uiIndex, i);
     EventUtils.synthesizeKey("KEY_ArrowDown");
   }
 
   
-  Assert.equal(UrlbarTestUtils.getSelectedIndex(window), -1);
+  Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), -1);
   Assert.equal(gURLBar.view.oneOffSearchButtons.selectedButtonIndex, 0);
 
   
   for (let i = maxResults - 1; i >= 0; i--) {
     EventUtils.synthesizeKey("KEY_ArrowUp");
-    Assert.equal(UrlbarTestUtils.getSelectedIndex(window), i);
+    Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), i);
   }
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
@@ -271,18 +271,18 @@ add_task(async function staleReplacedWithFresh() {
   
   
   for (let i = 1; i < maxResults; i++) {
-    Assert.equal(UrlbarTestUtils.getSelectedIndex(window), i);
+    Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), i);
     EventUtils.synthesizeKey("KEY_ArrowDown");
   }
 
   
-  Assert.equal(UrlbarTestUtils.getSelectedIndex(window), -1);
+  Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), -1);
   Assert.equal(gURLBar.view.oneOffSearchButtons.selectedButtonIndex, 0);
 
   
   for (let i = maxResults - 1; i >= 0; i--) {
     EventUtils.synthesizeKey("KEY_ArrowUp");
-    Assert.equal(UrlbarTestUtils.getSelectedIndex(window), i);
+    Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), i);
   }
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
