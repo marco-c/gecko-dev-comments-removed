@@ -6633,7 +6633,10 @@ function promptRemoveExtension(addon) {
   let checkboxMessage = null;
 
   
-  if (gHtmlAboutAddonsEnabled && gAddonAbuseReportEnabled) {
+  
+  
+  if (gHtmlAboutAddonsEnabled && gAddonAbuseReportEnabled &&
+      ["extension", "theme"].includes(addon.type)) {
     checkboxMessage = getFormattedString("webext.remove.abuseReportCheckbox.message", [
       document.getElementById("bundle_brand").getString("vendorShortName"),
     ]);
