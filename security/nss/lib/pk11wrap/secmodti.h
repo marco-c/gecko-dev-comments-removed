@@ -111,6 +111,8 @@ struct PK11SlotInfoStr {
     CK_TOKEN_INFO tokenInfo;
     
     char mechanismBits[256];
+    CK_PROFILE_ID *profileList;
+    int profileCount;
 };
 
 

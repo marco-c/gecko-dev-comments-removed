@@ -638,6 +638,11 @@ PK11_ExtractKeyValue(PK11SymKey *symKey)
 {
     SECStatus rv;
 
+    if (symKey == NULL) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
     if (symKey->data.data != NULL) {
         if (symKey->size == 0) {
             symKey->size = symKey->data.len;
