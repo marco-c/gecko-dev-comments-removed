@@ -170,7 +170,7 @@ class UrlbarResult {
   static payloadAndSimpleHighlights(tokens, payloadInfo) {
     
     for (let [name, info] of Object.entries(payloadInfo)) {
-      if (typeof info == "string") {
+      if (!Array.isArray(info)) {
         payloadInfo[name] = [info];
       }
     }
