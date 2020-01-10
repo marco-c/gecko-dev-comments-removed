@@ -620,7 +620,7 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
   
   mDefaultVertexArray = WebGLVertexArray::Create(this);
   mDefaultVertexArray->BindVertexArray();
-  mDefaultVertexArray->mAttribs.SetLength(mGLMaxVertexAttribs);
+  mDefaultVertexArray->mAttribs.resize(mGLMaxVertexAttribs);
 
   mPixelStore_FlipY = false;
   mPixelStore_PremultiplyAlpha = false;

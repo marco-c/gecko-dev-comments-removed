@@ -75,11 +75,4 @@ class WebGLVertexAttribData final {
 
 }  
 
-inline void ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback& callback,
-    mozilla::WebGLVertexAttribData& field, const char* name,
-    uint32_t flags = 0) {
-  CycleCollectionNoteChild(callback, field.mBuf.get(), name, flags);
-}
-
 #endif  
