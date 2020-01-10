@@ -169,7 +169,7 @@ function testSharedTypedArrayMethods() {
 
 function testClone1() {
     var sab1 = b;
-    var blob = serialize(sab1, []);
+    var blob = serialize(sab1, [], {SharedArrayBuffer: 'allow'});
     var sab2 = deserialize(blob);
     if (typeof sharedAddress != "undefined")
 	assertEq(sharedAddress(sab1), sharedAddress(sab2));
@@ -178,7 +178,7 @@ function testClone1() {
 function testClone2() {
     var sab = b;
     var ia1 = new Int32Array(sab);
-    var blob = serialize(ia1, []);
+    var blob = serialize(ia1, [], {SharedArrayBuffer: 'allow'});
     var ia2 = deserialize(blob);
     assertEq(ia1.length, ia2.length);
     assertEq(ia1.buffer instanceof SharedArrayBuffer, true);
@@ -199,6 +199,9 @@ function testNoClone() {
     assertThrowsInstanceOf(() => serialize(b, [], {SharedArrayBuffer: 'deny'}), TypeError);
 
     
+    assertThrowsInstanceOf(() => serialize(b), TypeError);
+
+    
     assertEq(typeof serialize(b, [], {SharedArrayBuffer: 'allow'}), "object");
 }
 
@@ -206,7 +209,7 @@ function testRedundantTransfer() {
     
     assertThrowsInstanceOf(() => {
 	var sab1 = b;
-	var blob = serialize(sab1, [sab1]);
+	var blob = serialize(sab1, [sab1], {SharedArrayBuffer: 'allow'});
     }, TypeError);
 }
 

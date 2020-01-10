@@ -28,7 +28,7 @@ if (sharedArrayRawBufferCount() == 0) {
 assertEq(sharedArrayRawBufferCount(), 1+k);
 
 
-var y = serialize(sab)
+var y = serialize(sab, [], {SharedArrayBuffer: 'allow'})
 
 
 assertEq(sharedArrayRawBufferCount(), 1+k);
