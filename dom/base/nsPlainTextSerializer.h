@@ -198,6 +198,16 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
   Settings mSettings;
 
+  struct Indentation {
+    
+    
+    int32_t mWidth = 0;
+
+    
+    
+    nsString mHeader;
+  };
+
   
   class CurrentLineContent {
    public:
@@ -210,7 +220,16 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     uint32_t mWidth = 0;
   };
 
-  CurrentLineContent mCurrentLineContent;
+  struct CurrentLine {
+    Indentation mIndentation;
+
+    
+    int32_t mCiteQuoteLevel = 0;
+
+    CurrentLineContent mContent;
+  };
+
+  CurrentLine mCurrentLine;
 
   class OutputManager {
    public:
@@ -246,19 +265,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   bool mHasWrittenCiteBlockquote;
 
-  struct Indentation {
-    
-    
-    int32_t mWidth = 0;
-
-    
-    
-    nsString mHeader;
-  };
-
-  Indentation mIndentation;
-
-  int32_t mCiteQuoteLevel;
   int32_t mFloatingLines;  
 
   
