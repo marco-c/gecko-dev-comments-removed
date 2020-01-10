@@ -32,8 +32,9 @@ module.exports = async function() {
   const { jsterm } = hud;
 
   
-  await waitFor(() =>
-    hud.ui.outputNode.querySelectorAll(".message").length >= LOGS_NUMBER);
+  await waitFor(
+    () => hud.ui.outputNode.querySelectorAll(".message").length >= LOGS_NUMBER
+  );
 
   jsterm.focus();
 
@@ -55,8 +56,9 @@ module.exports = async function() {
   await onPopupClosed;
 
   
-  const onMessagesCleared = waitFor(() =>
-    hud.ui.outputNode.querySelectorAll(".message").length === 0);
+  const onMessagesCleared = waitFor(
+    () => hud.ui.outputNode.querySelectorAll(".message").length === 0
+  );
   hud.ui.clearOutput();
   await onMessagesCleared;
 

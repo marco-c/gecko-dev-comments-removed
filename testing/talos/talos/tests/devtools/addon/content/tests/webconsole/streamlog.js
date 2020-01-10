@@ -4,8 +4,14 @@
 
 "use strict";
 
-const { openToolbox, closeToolbox, logTestResult, testSetup,
-        testTeardown, SIMPLE_URL } = require("../head");
+const {
+  openToolbox,
+  closeToolbox,
+  logTestResult,
+  testSetup,
+  testTeardown,
+  SIMPLE_URL,
+} = require("../head");
 
 
 
@@ -19,8 +25,10 @@ module.exports = async function() {
 
   
   
-  messageManager.loadFrameScript("data:,(" + encodeURIComponent(
-    `function () {
+  messageManager.loadFrameScript(
+    "data:,(" +
+      encodeURIComponent(
+        `function () {
       let count = 0;
       let startTime = content.performance.now();
       function log() {
@@ -40,10 +48,13 @@ module.exports = async function() {
       }
       log();
     }`
-  ) + ")()", true);
+      ) +
+      ")()",
+    true
+  );
 
   let avgTime = await new Promise(resolve => {
-    messageManager.addMessageListener("done", (e) => {
+    messageManager.addMessageListener("done", e => {
       resolve(e.data);
     });
   });

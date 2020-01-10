@@ -4,13 +4,20 @@
 
 "use strict";
 
-const { openToolboxAndLog, closeToolboxAndLog, testSetup,
-        testTeardown, PAGES_BASE_URL } = require("../head");
+const {
+  openToolboxAndLog,
+  closeToolboxAndLog,
+  testSetup,
+  testTeardown,
+  PAGES_BASE_URL,
+} = require("../head");
 const { reloadConsoleAndLog } = require("./webconsole-helpers");
 
 module.exports = async function() {
   
-  let sync = 250, stream = 250, async = 250;
+  let sync = 250,
+    stream = 250,
+    async = 250;
   let params = `?sync=${sync}&stream=${stream}&async=${async}`;
   let url = PAGES_BASE_URL + "custom/console/index.html" + params;
 

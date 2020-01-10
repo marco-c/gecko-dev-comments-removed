@@ -1,7 +1,8 @@
 setExpectedFailuresForSelfTest(3);
 
 
-let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {}).Promise;
+let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {})
+  .Promise;
 
 function test() {
   Promise.reject(new Error("Promise rejection."));

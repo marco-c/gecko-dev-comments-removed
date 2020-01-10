@@ -17,7 +17,9 @@ function receiveMessage(event) {
 function sendResult(_type, _value) {
   
   raptorLog(`sending result back to runner: ${_type} ${_value}`);
-  chrome.runtime.sendMessage({"type": _type, "value": _value}, function(response) {
+  chrome.runtime.sendMessage({ type: _type, value: _value }, function(
+    response
+  ) {
     raptorLog(response.text);
   });
 }

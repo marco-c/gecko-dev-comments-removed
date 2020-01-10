@@ -12,19 +12,17 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "Assert",
-];
+var EXPORTED_SYMBOLS = ["Assert"];
 
-const {ObjectUtils} = ChromeUtils.import("resource://gre/modules/ObjectUtils.jsm");
+const { ObjectUtils } = ChromeUtils.import(
+  "resource://gre/modules/ObjectUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(this, "Promise",
-                               "resource://gre/modules/Promise.jsm");
-
-
-
-
-
+ChromeUtils.defineModuleGetter(
+  this,
+  "Promise",
+  "resource://gre/modules/Promise.jsm"
+);
 
 
 
@@ -33,12 +31,19 @@ ChromeUtils.defineModuleGetter(this, "Promise",
 
 
 
-var Assert = this.Assert = function(reporterFunc, isDefault) {
-  if (reporterFunc)
+
+
+
+
+
+var Assert = (this.Assert = function(reporterFunc, isDefault) {
+  if (reporterFunc) {
     this.setReporter(reporterFunc);
-  if (isDefault)
+  }
+  if (isDefault) {
     Assert.setReporter(reporterFunc);
-};
+  }
+});
 
 
 Object.setPrototypeOf(Assert, Assert.prototype);
@@ -66,7 +71,7 @@ function truncate(text, newLength = kTruncateLength) {
   if (typeof text == "string") {
     return text.length < newLength ? text : text.slice(0, newLength);
   }
-    return text;
+  return text;
 }
 
 function getMessage(error, prefix = "") {
@@ -86,8 +91,13 @@ function getMessage(error, prefix = "") {
   let message = prefix;
   if (error.operator) {
     let truncateLength = error.truncate ? kTruncateLength : Infinity;
-    message += (prefix ? " - " : "") + truncate(actual, truncateLength) + " " +
-               error.operator + " " + truncate(expected, truncateLength);
+    message +=
+      (prefix ? " - " : "") +
+      truncate(actual, truncateLength) +
+      " " +
+      error.operator +
+      " " +
+      truncate(expected, truncateLength);
   }
   return message;
 }
@@ -191,11 +201,21 @@ proto.setReporter = function(reporterFunc) {
 
 
 
-proto.report = function(failed, actual, expected, message, operator, truncate = true) {
+proto.report = function(
+  failed,
+  actual,
+  expected,
+  message,
+  operator,
+  truncate = true
+) {
   
   
   if (message !== undefined && message !== null && typeof message != "string") {
-    this.ok(false, `Expected a string or undefined for the error message to Assert.*, got ${typeof message}`);
+    this.ok(
+      false,
+      `Expected a string or undefined for the error message to Assert.*, got ${typeof message}`
+    );
   }
   let err = new Assert.AssertionError({
     message,
@@ -228,7 +248,13 @@ proto.report = function(failed, actual, expected, message, operator, truncate = 
 
 proto.ok = function(value, message) {
   if (arguments.length > 2) {
-    this.report(true, false, true, "Too many arguments passed to `Assert.ok()`", "==");
+    this.report(
+      true,
+      false,
+      true,
+      "Too many arguments passed to `Assert.ok()`",
+      "=="
+    );
   } else {
     this.report(!value, value, true, message, "==");
   }
@@ -281,7 +307,14 @@ proto.notEqual = function notEqual(actual, expected, message) {
 
 
 proto.deepEqual = function deepEqual(actual, expected, message) {
-  this.report(!ObjectUtils.deepEqual(actual, expected), actual, expected, message, "deepEqual", false);
+  this.report(
+    !ObjectUtils.deepEqual(actual, expected),
+    actual,
+    expected,
+    message,
+    "deepEqual",
+    false
+  );
 };
 
 
@@ -296,7 +329,14 @@ proto.deepEqual = function deepEqual(actual, expected, message) {
 
 
 proto.notDeepEqual = function notDeepEqual(actual, expected, message) {
-  this.report(ObjectUtils.deepEqual(actual, expected), actual, expected, message, "notDeepEqual", false);
+  this.report(
+    ObjectUtils.deepEqual(actual, expected),
+    actual,
+    expected,
+    message,
+    "notDeepEqual",
+    false
+  );
 };
 
 
@@ -331,14 +371,21 @@ proto.notStrictEqual = function notStrictEqual(actual, expected, message) {
 
 function checkExpectedArgument(instance, funcName, expected) {
   if (!expected) {
-    instance.ok(false, `Error: The 'expected' argument was not supplied to Assert.${funcName}()`);
+    instance.ok(
+      false,
+      `Error: The 'expected' argument was not supplied to Assert.${funcName}()`
+    );
   }
 
-  if (!instanceOf(expected, "RegExp") &&
-      typeof expected !== "function" &&
-      typeof expected !== "object") {
-    instance.ok(false,
-      `Error: The 'expected' argument to Assert.${funcName}() must be a RegExp, function or an object`);
+  if (
+    !instanceOf(expected, "RegExp") &&
+    typeof expected !== "function" &&
+    typeof expected !== "object"
+  ) {
+    instance.ok(
+      false,
+      `Error: The 'expected' argument to Assert.${funcName}() must be a RegExp, function or an object`
+    );
   }
 }
 
@@ -349,10 +396,12 @@ function expectedException(actual, expected) {
 
   if (instanceOf(expected, "RegExp")) {
     return expected.test(actual);
-  
-  
-  } else if (!(typeof expected === "function" && !expected.prototype) &&
-             actual instanceof expected) {
+    
+    
+  } else if (
+    !(typeof expected === "function" && !expected.prototype) &&
+    actual instanceof expected
+  ) {
     return true;
   } else if (expected.call({}, actual) === true) {
     return true;
@@ -393,14 +442,15 @@ proto.throws = function(block, expected, message) {
     actual = e;
   }
 
-  message = (expected.name ? " (" + expected.name + ")." : ".") +
-            (message ? " " + message : ".");
+  message =
+    (expected.name ? " (" + expected.name + ")." : ".") +
+    (message ? " " + message : ".");
 
   if (!actual) {
     this.report(true, actual, expected, "Missing expected exception" + message);
   }
 
-  if ((actual && !expectedException(actual, expected))) {
+  if (actual && !expectedException(actual, expected)) {
     throw actual;
   }
 
@@ -421,17 +471,25 @@ proto.throws = function(block, expected, message) {
 proto.rejects = function(promise, expected, message) {
   checkExpectedArgument(this, "rejects", expected);
   return new Promise((resolve, reject) => {
-    return promise.then(
-      () => this.report(true, null, expected, "Missing expected exception " + message),
-      err => {
-        if (!expectedException(err, expected)) {
-          reject(err);
-          return;
+    return promise
+      .then(
+        () =>
+          this.report(
+            true,
+            null,
+            expected,
+            "Missing expected exception " + message
+          ),
+        err => {
+          if (!expectedException(err, expected)) {
+            reject(err);
+            return;
+          }
+          this.report(false, err, expected, message);
+          resolve();
         }
-        this.report(false, err, expected, message);
-        resolve();
-      }
-    ).catch(reject);
+      )
+      .catch(reject);
   });
 };
 

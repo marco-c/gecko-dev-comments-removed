@@ -1,5 +1,6 @@
 
-let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {}).Promise;
+let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {})
+  .Promise;
 
 ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
 PromiseTestUtils.whitelistRejectionsGlobally(/Whitelisted rejection./);

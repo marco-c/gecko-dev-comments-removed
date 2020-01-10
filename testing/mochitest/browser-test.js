@@ -9,16 +9,34 @@ var gTimeoutSeconds = 45;
 var gConfig;
 var gSaveInstrumentationData = null;
 
-var {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "AddonManager",
-  "resource://gre/modules/AddonManager.jsm");
-ChromeUtils.defineModuleGetter(this, "ContentSearch",
-  "resource:///modules/ContentSearch.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "AddonManager",
+  "resource://gre/modules/AddonManager.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "ContentSearch",
+  "resource:///modules/ContentSearch.jsm"
+);
 
-const SIMPLETEST_OVERRIDES =
-  ["ok", "record", "is", "isnot", "todo", "todo_is", "todo_isnot", "info", "expectAssertions", "requestCompleteLog"];
+const SIMPLETEST_OVERRIDES = [
+  "ok",
+  "record",
+  "is",
+  "isnot",
+  "todo",
+  "todo_is",
+  "todo_isnot",
+  "info",
+  "expectAssertions",
+  "requestCompleteLog",
+];
 
 setTimeout(testInit, 0);
 
@@ -52,7 +70,7 @@ var TabDestroyObserver = {
       return Promise.resolve();
     }
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this.promiseResolver = resolve;
     });
   },
@@ -63,20 +81,28 @@ function testInit() {
   if (gConfig.testRoot == "browser") {
     
     var prefs = Services.prefs;
-    if (prefs.prefHasUserValue("testing.browserTestHarness.running"))
+    if (prefs.prefHasUserValue("testing.browserTestHarness.running")) {
       return;
+    }
 
     prefs.setBoolPref("testing.browserTestHarness.running", true);
 
-    if (prefs.prefHasUserValue("testing.browserTestHarness.timeout"))
+    if (prefs.prefHasUserValue("testing.browserTestHarness.timeout")) {
       gTimeoutSeconds = prefs.getIntPref("testing.browserTestHarness.timeout");
+    }
 
-    var sstring = Cc["@mozilla.org/supports-string;1"].
-                  createInstance(Ci.nsISupportsString);
+    var sstring = Cc["@mozilla.org/supports-string;1"].createInstance(
+      Ci.nsISupportsString
+    );
     sstring.data = location.search;
 
-    Services.ww.openWindow(window, "chrome://mochikit/content/browser-harness.xul", "browserTest",
-                           "chrome,centerscreen,dialog=no,resizable,titlebar,toolbar=no,width=800,height=600", sstring);
+    Services.ww.openWindow(
+      window,
+      "chrome://mochikit/content/browser-harness.xul",
+      "browserTest",
+      "chrome,centerscreen,dialog=no,resizable,titlebar,toolbar=no,width=800,height=600",
+      sstring
+    );
   } else {
     
     let messageHandler = function(m) {
@@ -87,15 +113,15 @@ function testInit() {
       
       
       
-      var webNav = content.window.docShell
-                          .QueryInterface(Ci.nsIWebNavigation);
+      var webNav = content.window.docShell.QueryInterface(Ci.nsIWebNavigation);
       let loadURIOptions = {
         triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       };
       webNav.loadURI(url, loadURIOptions);
     };
 
-    var listener = 'data:,function doLoad(e) { var data=e.detail&&e.detail.data;removeEventListener("contentEvent", function (e) { doLoad(e); }, false, true);sendAsyncMessage("chromeEvent", {"data":data}); };addEventListener("contentEvent", function (e) { doLoad(e); }, false, true);';
+    var listener =
+      'data:,function doLoad(e) { var data=e.detail&&e.detail.data;removeEventListener("contentEvent", function (e) { doLoad(e); }, false, true);sendAsyncMessage("chromeEvent", {"data":data}); };addEventListener("contentEvent", function (e) { doLoad(e); }, false, true);';
     
     messageManager.addMessageListener("chromeEvent", messageHandler);
     
@@ -111,17 +137,23 @@ function testInit() {
       prefs.setIntPref("dom.ipc.keepProcessesAlive.web", processCount);
     }
 
-    Services.mm.loadFrameScript("chrome://mochikit/content/shutdown-leaks-collector.js", true);
+    Services.mm.loadFrameScript(
+      "chrome://mochikit/content/shutdown-leaks-collector.js",
+      true
+    );
   } else {
     
     ChromeUtils.import("chrome://mochikit/content/ShutdownLeaksCollector.jsm");
   }
 
-  Services.mm.loadFrameScript("chrome://mochikit/content/tests/SimpleTest/AsyncUtilsContent.js", true);
+  Services.mm.loadFrameScript(
+    "chrome://mochikit/content/tests/SimpleTest/AsyncUtilsContent.js",
+    true
+  );
 
-  var testSuite = Cc["@mozilla.org/process/environment;1"].
-                    getService(Ci.nsIEnvironment).
-                    get("TEST_SUITE");
+  var testSuite = Cc["@mozilla.org/process/environment;1"]
+    .getService(Ci.nsIEnvironment)
+    .get("TEST_SUITE");
   if (testSuite == "browser-chrome-instrumentation") {
     takeInstrumentation();
   }
@@ -133,8 +165,9 @@ function takeInstrumentation() {
   };
 
   function pad(str, length) {
-    if (str.length >= length)
+    if (str.length >= length) {
       return str;
+    }
 
     return str + " ".repeat(length - str.length);
   }
@@ -171,7 +204,10 @@ function takeInstrumentation() {
       if (!localNameMap.has(element.localName)) {
         localNameMap.set(element.localName, 1);
       } else {
-        localNameMap.set(element.localName, localNameMap.get(element.localName) + 1);
+        localNameMap.set(
+          element.localName,
+          localNameMap.get(element.localName) + 1
+        );
       }
     }
 
@@ -204,13 +240,16 @@ function takeInstrumentation() {
 
   
   function saveData() {
-    let path = Cc["@mozilla.org/process/environment;1"].
-               getService(Ci.nsIEnvironment).
-               get("MOZ_UPLOAD_DIR");
+    let path = Cc["@mozilla.org/process/environment;1"]
+      .getService(Ci.nsIEnvironment)
+      .get("MOZ_UPLOAD_DIR");
     let encoder = new TextEncoder();
 
     let instrumentPath = OS.Path.join(path, "xulinstrument.txt");
-    OS.File.writeAtomic(instrumentPath, encoder.encode(JSON.stringify(instrumentData, null, 2)));
+    OS.File.writeAtomic(
+      instrumentPath,
+      encoder.encode(JSON.stringify(instrumentData, null, 2))
+    );
 
     let summaryPath = OS.Path.join(path, "xulsummary.txt");
     OS.File.writeAtomic(summaryPath, encoder.encode(getSummaryText()));
@@ -219,7 +258,7 @@ function takeInstrumentation() {
   
   function* elementPath(element) {
     yield element;
-    while ((element = element.parentNode) && (element instanceof Element)) {
+    while ((element = element.parentNode) && element instanceof Element) {
       yield element;
     }
   }
@@ -232,20 +271,25 @@ function takeInstrumentation() {
     return {
       namespaceURI: element.namespaceURI,
       localName: element.localName,
-      binding: (binding && binding != "none") ? binding : null,
+      binding: binding && binding != "none" ? binding : null,
     };
   }
 
   
   function immediateSelector(element) {
-    if (element.localName == "notificationbox" &&
-        element.parentNode &&
-        element.parentNode.id == "tabbrowser-tabpanels") {
+    if (
+      element.localName == "notificationbox" &&
+      element.parentNode &&
+      element.parentNode.id == "tabbrowser-tabpanels"
+    ) {
       
       return element.localName;
     }
 
-    if (element.localName == "tab" && element.classList.contains("tabbrowser-tab")) {
+    if (
+      element.localName == "tab" &&
+      element.classList.contains("tabbrowser-tab")
+    ) {
       
       return element.localName;
     }
@@ -271,7 +315,10 @@ function takeInstrumentation() {
 
   
   function elementSelector(element) {
-    return Array.from(elementPath(element)).reverse().map(immediateSelector).join(" > ");
+    return Array.from(elementPath(element))
+      .reverse()
+      .map(immediateSelector)
+      .join(" > ");
   }
 
   
@@ -281,8 +328,9 @@ function takeInstrumentation() {
 
   
   function* elementDescendants(element) {
-    let walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"].
-                 createInstance(Ci.inIDeepTreeWalker);
+    let walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"].createInstance(
+      Ci.inIDeepTreeWalker
+    );
     walker.showAnonymousContent = true;
     walker.showSubDocuments = false;
     walker.showDocumentsAsNodes = false;
@@ -335,7 +383,7 @@ function takeInstrumentation() {
   }
   
   function observeWindow(win) {
-    let observer = new MutationObserver((mutations) => {
+    let observer = new MutationObserver(mutations => {
       mutations.forEach(handleMutation);
     });
 
@@ -344,9 +392,13 @@ function takeInstrumentation() {
       subtree: true,
     });
 
-    win.addEventListener("unload", () => {
-      observer.takeRecords().forEach(handleMutation);
-    }, { once: true });
+    win.addEventListener(
+      "unload",
+      () => {
+        observer.takeRecords().forEach(handleMutation);
+      },
+      { once: true }
+    );
   }
 
   scanWindow(window);
@@ -358,14 +410,18 @@ function takeInstrumentation() {
       return;
     }
 
-    win.addEventListener("load", () => {
-      if (win.location.href != AppConstants.BROWSER_CHROME_URL) {
-        return;
-      }
+    win.addEventListener(
+      "load",
+      () => {
+        if (win.location.href != AppConstants.BROWSER_CHROME_URL) {
+          return;
+        }
 
-      scanWindow(win);
-      observeWindow(win);
-    }, { once: true });
+        scanWindow(win);
+        observeWindow(win);
+      },
+      { once: true }
+    );
   });
 }
 
@@ -380,7 +436,10 @@ function Tester(aTests, structuredLogger, aCallback) {
 
   this._scriptLoader = Services.scriptloader;
   this.EventUtils = {};
-  this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", this.EventUtils);
+  this._scriptLoader.loadSubScript(
+    "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
+    this.EventUtils
+  );
 
   
   
@@ -393,34 +452,73 @@ function Tester(aTests, structuredLogger, aCallback) {
   Cu.permitCPOWsInScope(this.cpowSandbox);
 
   this.cpowEventUtils = new this.cpowSandbox.Object();
-  this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", this.cpowEventUtils);
+  this._scriptLoader.loadSubScript(
+    "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
+    this.cpowEventUtils
+  );
 
   var simpleTestScope = {};
-  this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/ChromePowers.js", simpleTestScope);
-  this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/SimpleTest.js", simpleTestScope);
-  this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/MemoryStats.js", simpleTestScope);
-  this._scriptLoader.loadSubScript("chrome://mochikit/content/chrome-harness.js", simpleTestScope);
+  this._scriptLoader.loadSubScript(
+    "chrome://mochikit/content/tests/SimpleTest/ChromePowers.js",
+    simpleTestScope
+  );
+  this._scriptLoader.loadSubScript(
+    "chrome://mochikit/content/tests/SimpleTest/SimpleTest.js",
+    simpleTestScope
+  );
+  this._scriptLoader.loadSubScript(
+    "chrome://mochikit/content/tests/SimpleTest/MemoryStats.js",
+    simpleTestScope
+  );
+  this._scriptLoader.loadSubScript(
+    "chrome://mochikit/content/chrome-harness.js",
+    simpleTestScope
+  );
   this.SimpleTest = simpleTestScope.SimpleTest;
 
   var extensionUtilsScope = {
-    registerCleanupFunction: (fn) => {
+    registerCleanupFunction: fn => {
       this.currentTest.scope.registerCleanupFunction(fn);
     },
   };
   extensionUtilsScope.SimpleTest = this.SimpleTest;
-  this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/ExtensionTestUtils.js", extensionUtilsScope);
+  this._scriptLoader.loadSubScript(
+    "chrome://mochikit/content/tests/SimpleTest/ExtensionTestUtils.js",
+    extensionUtilsScope
+  );
   this.ExtensionTestUtils = extensionUtilsScope.ExtensionTestUtils;
 
   this.SimpleTest.harnessParameters = gConfig;
 
   this.MemoryStats = simpleTestScope.MemoryStats;
-  this.ContentTask = ChromeUtils.import("resource://testing-common/ContentTask.jsm", null).ContentTask;
-  this.BrowserTestUtils = ChromeUtils.import("resource://testing-common/BrowserTestUtils.jsm", null).BrowserTestUtils;
-  this.TestUtils = ChromeUtils.import("resource://testing-common/TestUtils.jsm", null).TestUtils;
-  this.Promise = ChromeUtils.import("resource://gre/modules/Promise.jsm", null).Promise;
-  this.PromiseTestUtils = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", null).PromiseTestUtils;
-  this.Assert = ChromeUtils.import("resource://testing-common/Assert.jsm", null).Assert;
-  this.PerTestCoverageUtils = ChromeUtils.import("resource://testing-common/PerTestCoverageUtils.jsm", null).PerTestCoverageUtils;
+  this.ContentTask = ChromeUtils.import(
+    "resource://testing-common/ContentTask.jsm",
+    null
+  ).ContentTask;
+  this.BrowserTestUtils = ChromeUtils.import(
+    "resource://testing-common/BrowserTestUtils.jsm",
+    null
+  ).BrowserTestUtils;
+  this.TestUtils = ChromeUtils.import(
+    "resource://testing-common/TestUtils.jsm",
+    null
+  ).TestUtils;
+  this.Promise = ChromeUtils.import(
+    "resource://gre/modules/Promise.jsm",
+    null
+  ).Promise;
+  this.PromiseTestUtils = ChromeUtils.import(
+    "resource://testing-common/PromiseTestUtils.jsm",
+    null
+  ).PromiseTestUtils;
+  this.Assert = ChromeUtils.import(
+    "resource://testing-common/Assert.jsm",
+    null
+  ).Assert;
+  this.PerTestCoverageUtils = ChromeUtils.import(
+    "resource://testing-common/PerTestCoverageUtils.jsm",
+    null
+  ).PerTestCoverageUtils;
 
   this.PromiseTestUtils.init();
 
@@ -431,7 +529,10 @@ function Tester(aTests, structuredLogger, aCallback) {
 
   this._coverageCollector = null;
 
-  const XPCOMUtilsMod = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null);
+  const XPCOMUtilsMod = ChromeUtils.import(
+    "resource://gre/modules/XPCOMUtils.jsm",
+    null
+  );
 
   
   XPCOMUtilsMod.Services = Object.create(Services, {
@@ -445,14 +546,21 @@ function Tester(aTests, structuredLogger, aCallback) {
             return this._scriptLoader.loadSubScript(url, obj);
           } finally {
             for (let property of Object.keys(window)) {
-              if (!before.includes(property) && !this._globalProperties.includes(property)) {
+              if (
+                !before.includes(property) &&
+                !this._globalProperties.includes(property)
+              ) {
                 this._globalProperties.push(property);
-                this.SimpleTest.info("Global property added while loading " + url + ": " + property);
+                this.SimpleTest.info(
+                  "Global property added while loading " + url + ": " + property
+                );
               }
             }
           }
         },
-        loadSubScriptWithOptions: this._scriptLoader.loadSubScriptWithOptions.bind(this._scriptLoader),
+        loadSubScriptWithOptions: this._scriptLoader.loadSubScriptWithOptions.bind(
+          this._scriptLoader
+        ),
       },
     },
   });
@@ -476,25 +584,30 @@ Tester.prototype = {
     return this.tests[this.currentTestIndex];
   },
   get done() {
-    return (this.currentTestIndex == this.tests.length - 1) && (this.repeat <= 0);
+    return this.currentTestIndex == this.tests.length - 1 && this.repeat <= 0;
   },
 
   start: function Tester_start() {
     TabDestroyObserver.init();
 
     
-    if (!gConfig)
+    if (!gConfig) {
       gConfig = readConfig();
+    }
 
-    if (gConfig.runUntilFailure)
+    if (gConfig.runUntilFailure) {
       this.runUntilFailure = true;
+    }
 
-    if (gConfig.repeat)
+    if (gConfig.repeat) {
       this.repeat = gConfig.repeat;
+    }
 
     if (gConfig.jscovDirPrefix) {
       let coveragePath = gConfig.jscovDirPrefix;
-      let {CoverageCollector} = ChromeUtils.import("resource://testing-common/CoverageUtils.jsm");
+      let { CoverageCollector } = ChromeUtils.import(
+        "resource://testing-common/CoverageUtils.jsm"
+      );
       this._coverageCollector = new CoverageCollector(coveragePath);
     }
 
@@ -502,12 +615,16 @@ Tester.prototype = {
     Services.console.registerListener(this);
     this._globalProperties = Object.keys(window);
     this._globalPropertyWhitelist = [
-      "navigator", "constructor", "top",
+      "navigator",
+      "constructor",
+      "top",
       "Application",
-      "__SS_tabsToRestore", "__SSi",
+      "__SS_tabsToRestore",
+      "__SSi",
       "webConsoleCommandController",
       
-      "MailMigrator", "SearchIntegration",
+      "MailMigrator",
+      "SearchIntegration",
     ];
 
     this.PerTestCoverageUtils.beforeTestSync();
@@ -523,7 +640,9 @@ Tester.prototype = {
 
   async waitForWindowsReady() {
     await this.setupDefaultTheme();
-    await new Promise(resolve => this.waitForGraphicsTestWindowToBeGone(resolve));
+    await new Promise(resolve =>
+      this.waitForGraphicsTestWindowToBeGone(resolve)
+    );
     await this.promiseMainWindowReady();
   },
 
@@ -542,8 +661,12 @@ Tester.prototype = {
 
   waitForGraphicsTestWindowToBeGone(aCallback) {
     for (let win of Services.wm.getEnumerator(null)) {
-      if (win != window && !win.closed &&
-          win.document.documentURI == "chrome://gfxsanity/content/sanityparent.html") {
+      if (
+        win != window &&
+        !win.closed &&
+        win.document.documentURI ==
+          "chrome://gfxsanity/content/sanityparent.html"
+      ) {
         this.BrowserTestUtils.domWindowClosed(win).then(aCallback);
         return;
       }
@@ -555,9 +678,11 @@ Tester.prototype = {
   waitForWindowsState: function Tester_waitForWindowsState(aCallback) {
     let timedOut = this.currentTest && this.currentTest.timedOut;
     
-    let baseMsg = timedOut ? "Found a {elt} after previous test timed out"
-                           : this.currentTest ? "Found an unexpected {elt} at the end of test run"
-                                              : "Found an unexpected {elt}";
+    let baseMsg = timedOut
+      ? "Found a {elt} after previous test timed out"
+      : this.currentTest
+      ? "Found an unexpected {elt} at the end of test run"
+      : "Found an unexpected {elt}";
 
     
     if (this.currentTest && window.gBrowser && gBrowser.tabs.length > 1) {
@@ -566,11 +691,15 @@ Tester.prototype = {
         if (!lastTab.closing) {
           
           
-          this.currentTest.addResult(new testResult({
-            name: baseMsg.replace("{elt}", "tab") + ": " +
-              lastTab.linkedBrowser.currentURI.spec,
-            allowFailure: this.currentTest.allowFailure,
-          }));
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                baseMsg.replace("{elt}", "tab") +
+                ": " +
+                lastTab.linkedBrowser.currentURI.spec,
+              allowFailure: this.currentTest.allowFailure,
+            })
+          );
         }
         gBrowser.removeTab(lastTab);
       }
@@ -590,27 +719,36 @@ Tester.prototype = {
     this.structuredLogger.info("checking window state");
     for (let win of Services.wm.getEnumerator(null)) {
       let type = win.document.documentElement.getAttribute("windowtype");
-      if (win != window && !win.closed &&
-          win.document.documentElement.getAttribute("id") != "browserTestHarness" &&
-          type != "devtools:webconsole") {
+      if (
+        win != window &&
+        !win.closed &&
+        win.document.documentElement.getAttribute("id") !=
+          "browserTestHarness" &&
+        type != "devtools:webconsole"
+      ) {
         switch (type) {
-        case "navigator:browser":
-          type = "browser window";
-          break;
-        case "mail:3pane":
-          type = "mail window";
-          break;
-        case null:
-          type = "unknown window with document URI: " + win.document.documentURI +
-                 " and title: " + win.document.title;
-          break;
+          case "navigator:browser":
+            type = "browser window";
+            break;
+          case "mail:3pane":
+            type = "mail window";
+            break;
+          case null:
+            type =
+              "unknown window with document URI: " +
+              win.document.documentURI +
+              " and title: " +
+              win.document.title;
+            break;
         }
         let msg = baseMsg.replace("{elt}", type);
         if (this.currentTest) {
-          this.currentTest.addResult(new testResult({
-            name: msg,
-            allowFailure: this.currentTest.allowFailure,
-          }));
+          this.currentTest.addResult(
+            new testResult({
+              name: msg,
+              allowFailure: this.currentTest.allowFailure,
+            })
+          );
         } else {
           this.failuresFromInitialWindowState++;
           this.structuredLogger.error("browser-test.js | " + msg);
@@ -652,7 +790,9 @@ Tester.prototype = {
       this.structuredLogger.info("Todo:    " + todoCount);
       this.structuredLogger.info("Mode:    " + e10sMode);
     } else {
-      this.structuredLogger.error("browser-test.js | No tests to run. Did you pass invalid test_paths?");
+      this.structuredLogger.error(
+        "browser-test.js | No tests to run. Did you pass invalid test_paths?"
+      );
     }
     this.structuredLogger.info("*** End BrowserChrome Test Results ***");
 
@@ -680,15 +820,19 @@ Tester.prototype = {
 
   onConsoleMessage: function Tester_onConsoleMessage(aConsoleMessage) {
     
-    if (!aConsoleMessage.message)
+    if (!aConsoleMessage.message) {
       return;
+    }
 
     try {
       var msg = "Console message: " + aConsoleMessage.message;
-      if (this.currentTest)
+      if (this.currentTest) {
         this.currentTest.addResult(new testMessage(msg));
-      else
-        this.structuredLogger.info("TEST-INFO | (browser-test.js) | " + msg.replace(/\n$/, "") + "\n");
+      } else {
+        this.structuredLogger.info(
+          "TEST-INFO | (browser-test.js) | " + msg.replace(/\n$/, "") + "\n"
+        );
+      }
     } catch (ex) {
       
       
@@ -714,38 +858,50 @@ Tester.prototype = {
             this.SimpleTest.ok(false, "Cleanup function returned a generator");
           }
         } catch (ex) {
-          this.currentTest.addResult(new testResult({
-            name: "Cleanup function threw an exception",
-            ex,
-            allowFailure: this.currentTest.allowFailure,
-          }));
+          this.currentTest.addResult(
+            new testResult({
+              name: "Cleanup function threw an exception",
+              ex,
+              allowFailure: this.currentTest.allowFailure,
+            })
+          );
         }
       }
 
-      if (this.currentTest.passCount === 0 &&
-          this.currentTest.failCount === 0 &&
-          this.currentTest.todoCount === 0) {
-        this.currentTest.addResult(new testResult({
-          name: "This test contains no passes, no fails and no todos. Maybe" +
-                " it threw a silent exception? Make sure you use" +
-                " waitForExplicitFinish() if you need it.",
-        }));
+      if (
+        this.currentTest.passCount === 0 &&
+        this.currentTest.failCount === 0 &&
+        this.currentTest.todoCount === 0
+      ) {
+        this.currentTest.addResult(
+          new testResult({
+            name:
+              "This test contains no passes, no fails and no todos. Maybe" +
+              " it threw a silent exception? Make sure you use" +
+              " waitForExplicitFinish() if you need it.",
+          })
+        );
       }
 
       let winUtils = window.windowUtils;
       if (winUtils.isTestControllingRefreshes) {
-        this.currentTest.addResult(new testResult({
-          name: "test left refresh driver under test control",
-        }));
+        this.currentTest.addResult(
+          new testResult({
+            name: "test left refresh driver under test control",
+          })
+        );
         winUtils.restoreNormalRefresh();
       }
 
       if (this.SimpleTest.isExpectingUncaughtException()) {
-        this.currentTest.addResult(new testResult({
-          name: "expectUncaughtException was called but no uncaught" +
-                " exception was detected!",
-          allowFailure: this.currentTest.allowFailure,
-        }));
+        this.currentTest.addResult(
+          new testResult({
+            name:
+              "expectUncaughtException was called but no uncaught" +
+              " exception was detected!",
+            allowFailure: this.currentTest.allowFailure,
+          })
+        );
       }
 
       this.PromiseTestUtils.ensureDOMPromiseRejectionsProcessed();
@@ -763,10 +919,12 @@ Tester.prototype = {
         if (!this._globalProperties.includes(prop)) {
           this._globalProperties.push(prop);
           if (!this._globalPropertyWhitelist.includes(prop)) {
-            this.currentTest.addResult(new testResult({
-              name: "test left unexpected property on window: " + prop,
-              allowFailure: this.currentTest.allowFailure,
-            }));
+            this.currentTest.addResult(
+              new testResult({
+                name: "test left unexpected property on window: " + prop,
+                allowFailure: this.currentTest.allowFailure,
+              })
+            );
           }
         }
       }, this);
@@ -803,11 +961,14 @@ Tester.prototype = {
 
       
       if (this.currentTest.unexpectedTimeouts && !this.currentTest.timedOut) {
-        this.currentTest.addResult(new testResult({
-          name: "This test exceeded the timeout threshold. It should be" +
-                " rewritten or split up. If that's not possible, use" +
-                " requestLongerTimeout(N), but only as a last resort.",
-        }));
+        this.currentTest.addResult(
+          new testResult({
+            name:
+              "This test exceeded the timeout threshold. It should be" +
+              " rewritten or split up. If that's not possible, use" +
+              " requestLongerTimeout(N), but only as a last resort.",
+          })
+        );
       }
 
       
@@ -823,70 +984,105 @@ Tester.prototype = {
         let min = testScope.__expectedMinAsserts;
         if (numAsserts > max) {
           
-          this.currentTest.addResult(new testResult({
-            name: "Assertion count " + numAsserts +
-                  " is greater than expected range " +
-                  min + "-" + max + " assertions.",
-            pass: true, 
-            todo: true,
-            allowFailure: this.currentTest.allowFailure,
-          }));
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                "Assertion count " +
+                numAsserts +
+                " is greater than expected range " +
+                min +
+                "-" +
+                max +
+                " assertions.",
+              pass: true, 
+              todo: true,
+              allowFailure: this.currentTest.allowFailure,
+            })
+          );
         } else if (numAsserts < min) {
           
-          this.currentTest.addResult(new testResult({
-            name: "Assertion count " + numAsserts +
-                  " is less than expected range " +
-                  min + "-" + max + " assertions.",
-            todo: true,
-            allowFailure: this.currentTest.allowFailure,
-          }));
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                "Assertion count " +
+                numAsserts +
+                " is less than expected range " +
+                min +
+                "-" +
+                max +
+                " assertions.",
+              todo: true,
+              allowFailure: this.currentTest.allowFailure,
+            })
+          );
         } else if (numAsserts > 0) {
           
-          this.currentTest.addResult(new testResult({
-            name: "Assertion count " + numAsserts +
-                  " is within expected range " +
-                  min + "-" + max + " assertions.",
-            pass: true,
-            todo: true,
-            allowFailure: this.currentTest.allowFailure,
-          }));
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                "Assertion count " +
+                numAsserts +
+                " is within expected range " +
+                min +
+                "-" +
+                max +
+                " assertions.",
+              pass: true,
+              todo: true,
+              allowFailure: this.currentTest.allowFailure,
+            })
+          );
         }
       }
 
       if (this.currentTest.allowFailure) {
         if (this.currentTest.expectedAllowedFailureCount) {
-          this.currentTest.addResult(new testResult({
-            name: "Expected " +
-                  this.currentTest.expectedAllowedFailureCount +
-                  " failures in this file, got " +
-                  this.currentTest.allowedFailureCount + ".",
-            pass: this.currentTest.expectedAllowedFailureCount ==
-                  this.currentTest.allowedFailureCount,
-          }));
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                "Expected " +
+                this.currentTest.expectedAllowedFailureCount +
+                " failures in this file, got " +
+                this.currentTest.allowedFailureCount +
+                ".",
+              pass:
+                this.currentTest.expectedAllowedFailureCount ==
+                this.currentTest.allowedFailureCount,
+            })
+          );
         } else if (this.currentTest.allowedFailureCount == 0) {
-          this.currentTest.addResult(new testResult({
-            name: "We expect at least one assertion to fail because this" +
-                  " test file is marked as fail-if in the manifest.",
-            todo: true,
-          }));
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                "We expect at least one assertion to fail because this" +
+                " test file is marked as fail-if in the manifest.",
+              todo: true,
+            })
+          );
         }
       }
 
       
-      if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
-        this.MemoryStats.dump(this.currentTestIndex,
-                              this.currentTest.path,
-                              gConfig.dumpOutputDirectory,
-                              gConfig.dumpAboutMemoryAfterTest,
-                              gConfig.dumpDMDAfterTest);
+      if (
+        Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT
+      ) {
+        this.MemoryStats.dump(
+          this.currentTestIndex,
+          this.currentTest.path,
+          gConfig.dumpOutputDirectory,
+          gConfig.dumpAboutMemoryAfterTest,
+          gConfig.dumpDMDAfterTest
+        );
       }
 
       
       let time = Date.now() - this.lastStartTime;
-      this.structuredLogger.testEnd(this.currentTest.path,
-                                           "OK",
-                                           undefined,
-                                           "finished in " + time + "ms");
+      this.structuredLogger.testEnd(
+        this.currentTest.path,
+        "OK",
+        undefined,
+        "finished in " + time + "ms"
+      );
       this.currentTest.setDuration(time);
 
       if (this.runUntilFailure && this.currentTest.failCount > 0) {
@@ -931,8 +1127,9 @@ Tester.prototype = {
           }
 
           
-          let {BackgroundPageThumbs} =
-            ChromeUtils.import("resource://gre/modules/BackgroundPageThumbs.jsm");
+          let { BackgroundPageThumbs } = ChromeUtils.import(
+            "resource://gre/modules/BackgroundPageThumbs.jsm"
+          );
           BackgroundPageThumbs._destroy();
 
           if (window.gBrowser) {
@@ -958,22 +1155,31 @@ Tester.prototype = {
           });
         };
 
-
-        let {AsyncShutdown} =
-          ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
+        let { AsyncShutdown } = ChromeUtils.import(
+          "resource://gre/modules/AsyncShutdown.jsm"
+        );
 
         let barrier = new AsyncShutdown.Barrier(
-          "ShutdownLeaks: Wait for cleanup to be finished before checking for leaks");
-        Services.obs.notifyObservers({wrappedJSObject: barrier},
-          "shutdown-leaks-before-check");
+          "ShutdownLeaks: Wait for cleanup to be finished before checking for leaks"
+        );
+        Services.obs.notifyObservers(
+          { wrappedJSObject: barrier },
+          "shutdown-leaks-before-check"
+        );
 
-        barrier.client.addBlocker("ShutdownLeaks: Wait for tabs to finish closing",
-                                  TabDestroyObserver.wait());
+        barrier.client.addBlocker(
+          "ShutdownLeaks: Wait for tabs to finish closing",
+          TabDestroyObserver.wait()
+        );
 
         barrier.wait().then(() => {
           
           
-          Services.obs.notifyObservers(null, "memory-pressure", "heap-minimize");
+          Services.obs.notifyObservers(
+            null,
+            "memory-pressure",
+            "heap-minimize"
+          );
 
           Services.ppmm.broadcastAsyncMessage("browser-test:collect-request");
 
@@ -997,8 +1203,9 @@ Tester.prototype = {
         this.execTest();
       } else {
         this.currentTestIndex++;
-        if (gConfig.repeat)
+        if (gConfig.repeat) {
           this.repeat = gConfig.repeat;
+        }
         this.execTest();
       }
     });
@@ -1010,12 +1217,18 @@ Tester.prototype = {
     this.SimpleTest.reset();
 
     
-    let currentScope = this.currentTest.scope = new testScope(this, this.currentTest, this.currentTest.expected);
+    let currentScope = (this.currentTest.scope = new testScope(
+      this,
+      this.currentTest,
+      this.currentTest.expected
+    ));
     let currentTest = this.currentTest;
 
     
-    let {scope} = this.currentTest;
-    scope.EventUtils = this.currentTest.usesUnsafeCPOWs ? this.cpowEventUtils : this.EventUtils;
+    let { scope } = this.currentTest;
+    scope.EventUtils = this.currentTest.usesUnsafeCPOWs
+      ? this.cpowEventUtils
+      : this.EventUtils;
     scope.SimpleTest = this.SimpleTest;
     scope.gTestPath = this.currentTest.path;
     scope.ContentTask = this.ContentTask;
@@ -1024,17 +1237,23 @@ Tester.prototype = {
     scope.ExtensionTestUtils = this.ExtensionTestUtils;
     
     scope.Assert = new this.Assert(function(err, message, stack) {
-      currentTest.addResult(new testResult(err ? {
-        name: err.message,
-        ex: err.stack,
-        stack: err.stack,
-        allowFailure: currentTest.allowFailure,
-      } : {
-        name: message,
-        pass: true,
-        stack,
-        allowFailure: currentTest.allowFailure,
-      }));
+      currentTest.addResult(
+        new testResult(
+          err
+            ? {
+                name: err.message,
+                ex: err.stack,
+                stack: err.stack,
+                allowFailure: currentTest.allowFailure,
+              }
+            : {
+                name: message,
+                pass: true,
+                stack,
+                allowFailure: currentTest.allowFailure,
+              }
+        )
+      );
     }, true);
 
     this.ContentTask.setTestScope(currentScope);
@@ -1053,12 +1272,19 @@ Tester.prototype = {
 
     
     try {
-      this._scriptLoader.loadSubScript("chrome://mochikit/content/chrome-harness.js", scope);
-    } catch (ex) {  }
+      this._scriptLoader.loadSubScript(
+        "chrome://mochikit/content/chrome-harness.js",
+        scope
+      );
+    } catch (ex) {
+      
+    }
 
     
-    var currentTestDirPath =
-      this.currentTest.path.substr(0, this.currentTest.path.lastIndexOf("/"));
+    var currentTestDirPath = this.currentTest.path.substr(
+      0,
+      this.currentTest.path.lastIndexOf("/")
+    );
     var headPath = currentTestDirPath + "/head.js";
     try {
       this._scriptLoader.loadSubScript(headPath, scope);
@@ -1071,10 +1297,12 @@ Tester.prototype = {
       const containsHeadPath = ex.toString().includes(headPath);
 
       if (!isImportError || !containsHeadPath) {
-       this.currentTest.addResult(new testResult({
-         name: "head.js import threw an exception",
-         ex,
-       }));
+        this.currentTest.addResult(
+          new testResult({
+            name: "head.js import threw an exception",
+            ex,
+          })
+        );
       }
     }
 
@@ -1086,14 +1314,16 @@ Tester.prototype = {
       if (this.currentTest.scope.__tasks) {
         
         if ("test" in this.currentTest.scope) {
-          throw new Error("Cannot run both a add_task test and a normal test at the same time.");
+          throw new Error(
+            "Cannot run both a add_task test and a normal test at the same time."
+          );
         }
         let PromiseTestUtils = this.PromiseTestUtils;
 
         
         
         
-        let skipTask = (task) => {
+        let skipTask = task => {
           let logger = this.structuredLogger;
           logger.deactivateBuffering();
           logger.testStatus(this.currentTest.path, task.name, "SKIP");
@@ -1104,7 +1334,10 @@ Tester.prototype = {
         (async function() {
           let task;
           while ((task = this.__tasks.shift())) {
-            if (task.__skipMe || (this.__runOnlyThisTask && task != this.__runOnlyThisTask)) {
+            if (
+              task.__skipMe ||
+              (this.__runOnlyThisTask && task != this.__runOnlyThisTask)
+            ) {
               skipTask(task);
               continue;
             }
@@ -1116,42 +1349,53 @@ Tester.prototype = {
               }
             } catch (ex) {
               if (currentTest.timedOut) {
-                currentTest.addResult(new testResult({
-                  name: "Uncaught exception received from previously timed out test",
-                  pass: false,
-                  ex,
-                  stack: (typeof ex == "object" && "stack" in ex) ? ex.stack : null,
-                  allowFailure: currentTest.allowFailure,
-                }));
+                currentTest.addResult(
+                  new testResult({
+                    name:
+                      "Uncaught exception received from previously timed out test",
+                    pass: false,
+                    ex,
+                    stack:
+                      typeof ex == "object" && "stack" in ex ? ex.stack : null,
+                    allowFailure: currentTest.allowFailure,
+                  })
+                );
                 
                 return;
               }
-                currentTest.addResult(new testResult({
+              currentTest.addResult(
+                new testResult({
                   name: "Uncaught exception",
                   pass: this.SimpleTest.isExpectingUncaughtException(),
                   ex,
-                  stack: (typeof ex == "object" && "stack" in ex) ? ex.stack : null,
+                  stack:
+                    typeof ex == "object" && "stack" in ex ? ex.stack : null,
                   allowFailure: currentTest.allowFailure,
-                }));
+                })
+              );
             }
             PromiseTestUtils.assertNoUncaughtRejections();
             this.SimpleTest.info("Leaving test " + task.name);
           }
           this.finish();
-        }).call(currentScope);
+        }.call(currentScope));
       } else if (typeof scope.test == "function") {
         scope.test();
       } else {
-        throw new Error("This test didn't call add_task, nor did it define a generatorTest() function, nor did it define a test() function, so we don't know how to run it.");
+        throw new Error(
+          "This test didn't call add_task, nor did it define a generatorTest() function, nor did it define a test() function, so we don't know how to run it."
+        );
       }
     } catch (ex) {
       if (!this.SimpleTest.isIgnoringAllUncaughtExceptions()) {
-        this.currentTest.addResult(new testResult({
-          name: "Exception thrown",
-          pass: this.SimpleTest.isExpectingUncaughtException(),
-          ex,
-          allowFailure: this.currentTest.allowFailure,
-        }));
+        this.currentTest.addResult(
+          new testResult({
+            name: "Exception thrown",
+            pass: this.SimpleTest.isExpectingUncaughtException(),
+            ex,
+            allowFailure: this.currentTest.allowFailure,
+          })
+        );
         this.SimpleTest.expectUncaughtException(false);
       } else {
         this.currentTest.addResult(new testMessage("Exception thrown: " + ex));
@@ -1167,47 +1411,64 @@ Tester.prototype = {
       var self = this;
       var timeoutExpires = Date.now() + gTimeoutSeconds * 1000;
       var waitUntilAtLeast = timeoutExpires - 1000;
-      this.currentTest.scope.__waitTimer =
-        this.SimpleTest._originalSetTimeout.apply(window, [function timeoutFn() {
-        
-        
-        
-        if (Date.now() < waitUntilAtLeast) {
-          self.currentTest.scope.__waitTimer =
-            setTimeout(timeoutFn, timeoutExpires - Date.now());
-          return;
-        }
+      this.currentTest.scope.__waitTimer = this.SimpleTest._originalSetTimeout.apply(
+        window,
+        [
+          function timeoutFn() {
+            
+            
+            
+            if (Date.now() < waitUntilAtLeast) {
+              self.currentTest.scope.__waitTimer = setTimeout(
+                timeoutFn,
+                timeoutExpires - Date.now()
+              );
+              return;
+            }
 
-        if (--self.currentTest.scope.__timeoutFactor > 0) {
-          
-          self.currentTest.scope.info(
-            "Longer timeout required, waiting longer...  Remaining timeouts: " +
-            self.currentTest.scope.__timeoutFactor);
-          self.currentTest.scope.__waitTimer =
-            setTimeout(timeoutFn, gTimeoutSeconds * 1000);
-          return;
-        }
+            if (--self.currentTest.scope.__timeoutFactor > 0) {
+              
+              self.currentTest.scope.info(
+                "Longer timeout required, waiting longer...  Remaining timeouts: " +
+                  self.currentTest.scope.__timeoutFactor
+              );
+              self.currentTest.scope.__waitTimer = setTimeout(
+                timeoutFn,
+                gTimeoutSeconds * 1000
+              );
+              return;
+            }
 
-        
-        
-        
-        
-        
-        
-        
-        const MAX_UNEXPECTED_TIMEOUTS = 10;
-        if (Date.now() - self.currentTest.lastOutputTime < (gTimeoutSeconds / 2) * 1000 &&
-            ++self.currentTest.unexpectedTimeouts <= MAX_UNEXPECTED_TIMEOUTS) {
-            self.currentTest.scope.__waitTimer =
-              setTimeout(timeoutFn, gTimeoutSeconds * 1000);
-          return;
-        }
+            
+            
+            
+            
+            
+            
+            
+            const MAX_UNEXPECTED_TIMEOUTS = 10;
+            if (
+              Date.now() - self.currentTest.lastOutputTime <
+                (gTimeoutSeconds / 2) * 1000 &&
+              ++self.currentTest.unexpectedTimeouts <= MAX_UNEXPECTED_TIMEOUTS
+            ) {
+              self.currentTest.scope.__waitTimer = setTimeout(
+                timeoutFn,
+                gTimeoutSeconds * 1000
+              );
+              return;
+            }
 
-        self.currentTest.addResult(new testResult({ name: "Test timed out" }));
-        self.currentTest.timedOut = true;
-        self.currentTest.scope.__waitTimer = null;
-        self.nextTest();
-      }, gTimeoutSeconds * 1000]);
+            self.currentTest.addResult(
+              new testResult({ name: "Test timed out" })
+            );
+            self.currentTest.timedOut = true;
+            self.currentTest.scope.__waitTimer = null;
+            self.nextTest();
+          },
+          gTimeoutSeconds * 1000,
+        ]
+      );
     }
   },
 
@@ -1271,7 +1532,11 @@ function testResult({ name, pass, todo, ex, stack, allowFailure }) {
     let normalized;
     if (stack instanceof Ci.nsIStackFrame) {
       let frames = [];
-      for (let frame = stack; frame; frame = frame.asyncCaller || frame.caller) {
+      for (
+        let frame = stack;
+        frame;
+        frame = frame.asyncCaller || frame.caller
+      ) {
         let msg = `${frame.filename}:${frame.name}:${frame.lineNumber}`;
         frames.push(frame.asyncCause ? `${frame.asyncCause}*${msg}` : msg);
       }
@@ -1312,34 +1577,61 @@ function testScope(aTester, aTest, expected) {
     }
   };
   this.record = function test_record(condition, name, ex, stack) {
-    aTest.addResult(new testResult({
-      name, pass: condition, ex,
-      stack: stack || Components.stack.caller,
-      allowFailure: aTest.allowFailure,
-    }));
+    aTest.addResult(
+      new testResult({
+        name,
+        pass: condition,
+        ex,
+        stack: stack || Components.stack.caller,
+        allowFailure: aTest.allowFailure,
+      })
+    );
   };
   this.is = function test_is(a, b, name) {
-    self.record(a == b, name, "Got " + a + ", expected " + b, false,
-            Components.stack.caller);
+    self.record(
+      a == b,
+      name,
+      "Got " + a + ", expected " + b,
+      false,
+      Components.stack.caller
+    );
   };
   this.isnot = function test_isnot(a, b, name) {
-    self.record(a != b, name, "Didn't expect " + a + ", but got it", false,
-            Components.stack.caller);
+    self.record(
+      a != b,
+      name,
+      "Didn't expect " + a + ", but got it",
+      false,
+      Components.stack.caller
+    );
   };
   this.todo = function test_todo(condition, name, ex, stack) {
-    aTest.addResult(new testResult({
-      name, pass: !condition, todo: true, ex,
-      stack: stack || Components.stack.caller,
-      allowFailure: aTest.allowFailure,
-    }));
+    aTest.addResult(
+      new testResult({
+        name,
+        pass: !condition,
+        todo: true,
+        ex,
+        stack: stack || Components.stack.caller,
+        allowFailure: aTest.allowFailure,
+      })
+    );
   };
   this.todo_is = function test_todo_is(a, b, name) {
-    self.todo(a == b, name, "Got " + a + ", expected " + b,
-              Components.stack.caller);
+    self.todo(
+      a == b,
+      name,
+      "Got " + a + ", expected " + b,
+      Components.stack.caller
+    );
   };
   this.todo_isnot = function test_todo_isnot(a, b, name) {
-    self.todo(a != b, name, "Didn't expect " + a + ", but got it",
-              Components.stack.caller);
+    self.todo(
+      a != b,
+      name,
+      "Didn't expect " + a + ", but got it",
+      Components.stack.caller
+    );
   };
   this.info = function test_info(name) {
     aTest.addResult(new testMessage(name));
@@ -1357,15 +1649,27 @@ function testScope(aTester, aTest, expected) {
     self.__done = false;
   };
 
-  this.waitForFocus = function test_waitForFocus(callback, targetWindow, expectBlankPage) {
+  this.waitForFocus = function test_waitForFocus(
+    callback,
+    targetWindow,
+    expectBlankPage
+  ) {
     self.SimpleTest.waitForFocus(callback, targetWindow, expectBlankPage);
   };
 
-  this.waitForClipboard = function test_waitForClipboard(expected, setup, success, failure, flavor) {
+  this.waitForClipboard = function test_waitForClipboard(
+    expected,
+    setup,
+    success,
+    failure,
+    flavor
+  ) {
     self.SimpleTest.waitForClipboard(expected, setup, success, failure, flavor);
   };
 
-  this.registerCleanupFunction = function test_registerCleanupFunction(aFunction) {
+  this.registerCleanupFunction = function test_registerCleanupFunction(
+    aFunction
+  ) {
     self.__cleanupFunctions.push(aFunction);
   };
 
@@ -1377,29 +1681,39 @@ function testScope(aTester, aTest, expected) {
     self.SimpleTest.copyToProfile(filename);
   };
 
-  this.expectUncaughtException = function test_expectUncaughtException(aExpecting) {
+  this.expectUncaughtException = function test_expectUncaughtException(
+    aExpecting
+  ) {
     self.SimpleTest.expectUncaughtException(aExpecting);
   };
 
-  this.ignoreAllUncaughtExceptions = function test_ignoreAllUncaughtExceptions(aIgnoring) {
+  this.ignoreAllUncaughtExceptions = function test_ignoreAllUncaughtExceptions(
+    aIgnoring
+  ) {
     self.SimpleTest.ignoreAllUncaughtExceptions(aIgnoring);
   };
 
   this.expectAssertions = function test_expectAssertions(aMin, aMax) {
     let min = aMin;
     let max = aMax;
-    if (typeof(max) == "undefined") {
+    if (typeof max == "undefined") {
       max = min;
     }
-    if (typeof(min) != "number" || typeof(max) != "number" ||
-        min < 0 || max < min) {
+    if (
+      typeof min != "number" ||
+      typeof max != "number" ||
+      min < 0 ||
+      max < min
+    ) {
       throw new Error("bad parameter to expectAssertions");
     }
     self.__expectedMinAsserts = min;
     self.__expectedMaxAsserts = max;
   };
 
-  this.setExpectedFailuresForSelfTest = function test_setExpectedFailuresForSelfTest(expectedAllowedFailureCount) {
+  this.setExpectedFailuresForSelfTest = function test_setExpectedFailuresForSelfTest(
+    expectedAllowedFailureCount
+  ) {
     aTest.allowFailure = true;
     aTest.expectedAllowedFailureCount = expectedAllowedFailureCount;
   };
@@ -1440,8 +1754,8 @@ function testScope(aTester, aTest, expected) {
 
 function decorateTaskFn(fn) {
   fn = fn.bind(this);
-  fn.skip = () => fn.__skipMe = true;
-  fn.only = () => this.__runOnlyThisTask = fn;
+  fn.skip = () => (fn.__skipMe = true);
+  fn.only = () => (this.__runOnlyThisTask = fn);
   return fn;
 }
 
@@ -1482,7 +1796,7 @@ testScope.prototype = {
           get: () => {
             return this[prop];
           },
-          set: (value) => {
+          set: value => {
             this[prop] = value;
           },
         });
@@ -1534,7 +1848,8 @@ testScope.prototype = {
   },
 
   destroy: function test_destroy() {
-    for (let prop in this)
+    for (let prop in this) {
       delete this[prop];
+    }
   },
 };

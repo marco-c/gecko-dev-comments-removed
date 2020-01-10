@@ -20,10 +20,11 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
   
   
   var href = win.location.href;
-  var testBaseName = href.split("/tp5n/")[1]
-                  || href.split("/").pop()
-                  || href.split("/").splice(-2, 1)[0]
-                  || "REALLY_WEIRD_URI";
+  var testBaseName =
+    href.split("/tp5n/")[1] ||
+    href.split("/").pop() ||
+    href.split("/").splice(-2, 1)[0] ||
+    "REALLY_WEIRD_URI";
 
   
   
@@ -35,9 +36,13 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
       let win = opt_custom_window || window;
       let replyEvent = "TalosPowers:ParentExec:ReplyEvent:" + this.replyId++;
       if (callback) {
-        win.addEventListener(replyEvent, function(e) {
-          callback(e.detail);
-        }, {once: true});
+        win.addEventListener(
+          replyEvent,
+          function(e) {
+            callback(e.detail);
+          },
+          { once: true }
+        );
       }
       win.dispatchEvent(
         new win.CustomEvent("TalosPowers:ParentExec:QueryEvent", {
@@ -116,34 +121,64 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
 
   function P_MozAfterPaint() {
     return new Promise(function(resolve) {
-      win.addEventListener("MozAfterPaint", () => resolve(), { once: true});
+      win.addEventListener("MozAfterPaint", () => resolve(), { once: true });
     });
   }
 
   function myNow() {
-    return (win.performance && win.performance.now) ?
-            win.performance.now() :
-            Date.now(); 
+    return win.performance && win.performance.now
+      ? win.performance.now()
+      : Date.now(); 
   }
 
   var isWindow = target.self === target;
 
-  var getPos =       isWindow ? function() { return target.pageYOffset; }
-                              : function() { return target.scrollTop; };
+  var getPos = isWindow
+    ? function() {
+        return target.pageYOffset;
+      }
+    : function() {
+        return target.scrollTop;
+      };
 
-  var gotoTop =      isWindow ? function() { target.scroll(0, 0); ensureScroll(); }
-                              : function() { target.scrollTop = 0; ensureScroll(); };
+  var gotoTop = isWindow
+    ? function() {
+        target.scroll(0, 0);
+        ensureScroll();
+      }
+    : function() {
+        target.scrollTop = 0;
+        ensureScroll();
+      };
 
-  var doScrollTick = isWindow ? function() { target.scrollBy(0, stepSize); ensureScroll(); }
-                              : function() { target.scrollTop += stepSize; ensureScroll(); };
+  var doScrollTick = isWindow
+    ? function() {
+        target.scrollBy(0, stepSize);
+        ensureScroll();
+      }
+    : function() {
+        target.scrollTop += stepSize;
+        ensureScroll();
+      };
 
-  var setSmooth =    isWindow ? function() { target.document.scrollingElement.style.scrollBehavior = "smooth"; }
-                              : function() { target.style.scrollBehavior = "smooth"; };
+  var setSmooth = isWindow
+    ? function() {
+        target.document.scrollingElement.style.scrollBehavior = "smooth";
+      }
+    : function() {
+        target.style.scrollBehavior = "smooth";
+      };
 
-  var gotoBottom =   isWindow ? function() { target.scrollTo(0, target.scrollMaxY); }
-                              : function() { target.scrollTop = target.scrollHeight; };
+  var gotoBottom = isWindow
+    ? function() {
+        target.scrollTo(0, target.scrollMaxY);
+      }
+    : function() {
+        target.scrollTop = target.scrollHeight;
+      };
 
-  function ensureScroll() { 
+  function ensureScroll() {
+    
     if (!this.dummyEnsureScroll) {
       this.dummyEnsureScroll = 1;
     }
@@ -170,9 +205,12 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
         doScrollTick();
 
         
-        if ((getPos() == lastScrollPos) || (opt_numSteps && (durations.length >= (opt_numSteps + 2)))) {
+        if (
+          getPos() == lastScrollPos ||
+          (opt_numSteps && durations.length >= opt_numSteps + 2)
+        ) {
           let profilerPaused = Promise.resolve();
-          if (typeof(TalosContentProfiler) !== "undefined") {
+          if (typeof TalosContentProfiler !== "undefined") {
             profilerPaused = TalosContentProfiler.pause(testBaseName, true);
           }
 
@@ -185,13 +223,15 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
             durations.pop(); 
             durations.pop(); 
 
-            if (win.talosDebug)
-              win.talosDebug.displayData = true; 
+            if (win.talosDebug) {
+              win.talosDebug.displayData = true;
+            } 
 
             
             var sum = 0;
-            for (var i = 0; i < durations.length; i++)
+            for (var i = 0; i < durations.length; i++) {
               sum += Number(durations[i]);
+            }
 
             
             result.values.push(durations.length ? sum / durations.length : 0);
@@ -205,7 +245,7 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
         P_MozAfterPaint().then(tick);
       }
 
-      if (typeof(TalosContentProfiler) !== "undefined") {
+      if (typeof TalosContentProfiler !== "undefined") {
         TalosContentProfiler.resume(testBaseName, true).then(() => {
           rAF(tick);
         });
@@ -236,10 +276,11 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
       setTimeout(function() {
         stopFrameTimeRecording(handle, function(intervals) {
           function average(arr) {
-              var sum = 0;
-              for (var i = 0; i < arr.length; i++)
-                sum += arr[i];
-              return arr.length ? sum / arr.length : 0;
+            var sum = 0;
+            for (var i = 0; i < arr.length; i++) {
+              sum += arr[i];
+            }
+            return arr.length ? sum / arr.length : 0;
           }
 
           
@@ -255,23 +296,28 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps) {
   }
 
   P_setupReportFn()
-  .then(FP_wait(260))
-  .then(gotoTop)
-  .then(P_rAF)
-  .then(P_syncScrollTest)
-  .then(gotoTop)
-  .then(FP_wait(260))
-  .then(P_testAPZScroll)
-  .then(function() {
-    report(result.values.join(","), 0, result.names.join(","));
-  });
+    .then(FP_wait(260))
+    .then(gotoTop)
+    .then(P_rAF)
+    .then(P_syncScrollTest)
+    .then(gotoTop)
+    .then(FP_wait(260))
+    .then(P_testAPZScroll)
+    .then(function() {
+      report(result.values.join(","), 0, result.names.join(","));
+    });
 }
 
 
 try {
   function handleMessageFromChrome(message) {
     var payload = message.data.details;
-    testScroll(payload.target, payload.stepSize, "PageLoader:RecordTime", payload.opt_numSteps);
+    testScroll(
+      payload.target,
+      payload.stepSize,
+      "PageLoader:RecordTime",
+      payload.opt_numSteps
+    );
   }
 
   addMessageListener("PageLoader:ScrollTest", handleMessageFromChrome);

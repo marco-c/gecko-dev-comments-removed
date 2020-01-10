@@ -2,33 +2,35 @@
 
 
 
-
 function _contentHeroHandler(isload) {
   var obs = null;
   var el = content.window.document.querySelector("[elementtiming]");
   if (el) {
     function callback(entries, observer) {
       entries.forEach(entry => {
-        sendAsyncMessage("PageLoader:LoadEvent",
-                         {"time": Date.now(), 
-                          "name": "tphero"});
+        sendAsyncMessage("PageLoader:LoadEvent", {
+          time: Date.now(), 
+          name: "tphero",
+        });
         obs.disconnect();
       });
     }
     
-    var options = {root: null, rootMargin: "0px", threshold: [1]};
+    var options = { root: null, rootMargin: "0px", threshold: [1] };
     try {
       obs = new content.window.IntersectionObserver(callback, options);
       obs.observe(el);
     } catch (err) {
-      sendAsyncMessage("PageLoader:Error", {"msg": err.message});
+      sendAsyncMessage("PageLoader:Error", { msg: err.message });
     }
   } else if (isload) {
     
-    setTimeout(function() { _contentHeroHandler(false); }, 5000);
+    setTimeout(function() {
+      _contentHeroHandler(false);
+    }, 5000);
   } else {
     var err = "Could not find a tag with an elmenttiming attr on the page";
-    sendAsyncMessage("PageLoader:Error", {"msg": err});
+    sendAsyncMessage("PageLoader:Error", { msg: err });
   }
   return obs;
 }
@@ -37,4 +39,8 @@ function _contentHeroLoadHandler() {
   _contentHeroHandler(true);
 }
 
-addEventListener("load", contentLoadHandlerCallback(_contentHeroLoadHandler), true); 
+addEventListener(
+  "load",
+  contentLoadHandlerCallback(_contentHeroLoadHandler),
+  true
+); 

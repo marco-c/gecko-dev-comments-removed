@@ -4,8 +4,8 @@
 
 
 
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-var {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 
@@ -32,9 +32,9 @@ function getChromeURI(url) {
 
 function getResolvedURI(url) {
   var chromeURI = getChromeURI(url);
-  var resolvedURI = Cc["@mozilla.org/chrome/chrome-registry;1"].
-                    getService(Ci.nsIChromeRegistry).
-                    convertChromeURL(chromeURI);
+  var resolvedURI = Cc["@mozilla.org/chrome/chrome-registry;1"]
+    .getService(Ci.nsIChromeRegistry)
+    .convertChromeURL(chromeURI);
 
   try {
     resolvedURI = resolvedURI.QueryInterface(Ci.nsIJARURI);
@@ -53,8 +53,9 @@ function getResolvedURI(url) {
 
 
 function getChromeDir(resolvedURI) {
-  var fileHandler = Cc["@mozilla.org/network/protocol;1?name=file"].
-                    getService(Ci.nsIFileProtocolHandler);
+  var fileHandler = Cc["@mozilla.org/network/protocol;1?name=file"].getService(
+    Ci.nsIFileProtocolHandler
+  );
   var chromeDir = fileHandler.getFileFromURLSpec(resolvedURI.spec);
   return chromeDir.parent.QueryInterface(Ci.nsIFile);
 }
@@ -112,11 +113,13 @@ function extractJarToTmp(jar) {
   
   tmpdir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, parseInt("0777", 8));
 
-  var zReader = Cc["@mozilla.org/libjar/zip-reader;1"].
-                  createInstance(Ci.nsIZipReader);
+  var zReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(
+    Ci.nsIZipReader
+  );
 
-  var fileHandler = Cc["@mozilla.org/network/protocol;1?name=file"].
-                    getService(Ci.nsIFileProtocolHandler);
+  var fileHandler = Cc["@mozilla.org/network/protocol;1?name=file"].getService(
+    Ci.nsIFileProtocolHandler
+  );
 
   var fileName = fileHandler.getFileFromURLSpec(jar.JARFile.spec);
   zReader.open(fileName);
@@ -163,7 +166,7 @@ function getTestFilePath(path) {
   
   
   
-  var baseURI = typeof(gTestPath) == "string" ? gTestPath : window.location.href;
+  var baseURI = typeof gTestPath == "string" ? gTestPath : window.location.href;
   var parentURI = getResolvedURI(getRootDirectory(baseURI));
   var file;
   if (parentURI.JARFile) {
@@ -171,19 +174,19 @@ function getTestFilePath(path) {
     file = extractJarToTmp(parentURI);
   } else {
     
-    var fileHandler = Cc["@mozilla.org/network/protocol;1?name=file"].
-                      getService(Ci.nsIFileProtocolHandler);
+    var fileHandler = Cc[
+      "@mozilla.org/network/protocol;1?name=file"
+    ].getService(Ci.nsIFileProtocolHandler);
     file = fileHandler.getFileFromURLSpec(parentURI.spec);
   }
   
-  path.split("/")
-      .forEach(function(p) {
-        if (p == "..") {
-          file = file.parent;
-        } else if (p != ".") {
-          file.append(p);
-        }
-      });
+  path.split("/").forEach(function(p) {
+    if (p == "..") {
+      file = file.parent;
+    } else if (p != ".") {
+      file.append(p);
+    }
+  });
   return file.path;
 }
 
@@ -199,8 +202,7 @@ function buildRelativePath(jarentryname, destdir, basepath) {
 
   var parts = jarentryname.split("/");
 
-  var targetFile = Cc["@mozilla.org/file/local;1"]
-                   .createInstance(Ci.nsIFile);
+  var targetFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
   targetFile.initWithFile(destdir);
 
   for (var i = baseParts.length; i < parts.length; i++) {
@@ -216,14 +218,19 @@ function readConfig(filename) {
   var configFile = Services.dirsvc.get("ProfD", Ci.nsIFile);
   configFile.append(filename);
 
-  if (!configFile.exists())
+  if (!configFile.exists()) {
     return {};
+  }
 
-  var fileInStream = Cc["@mozilla.org/network/file-input-stream;1"].
-                     createInstance(Ci.nsIFileInputStream);
+  var fileInStream = Cc[
+    "@mozilla.org/network/file-input-stream;1"
+  ].createInstance(Ci.nsIFileInputStream);
   fileInStream.init(configFile, -1, 0, 0);
 
-  var str = NetUtil.readInputStreamToString(fileInStream, fileInStream.available());
+  var str = NetUtil.readInputStreamToString(
+    fileInStream,
+    fileInStream.available()
+  );
   fileInStream.close();
   return JSON.parse(str);
 }
@@ -248,5 +255,9 @@ function getTestList(params, callback) {
     }
   }
   params = config;
-  getTestManifest("http://mochi.test:8888/" + params.manifestFile, params, callback);
+  getTestManifest(
+    "http://mochi.test:8888/" + params.manifestFile,
+    params,
+    callback
+  );
 }

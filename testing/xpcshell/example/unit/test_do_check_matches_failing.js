@@ -2,11 +2,11 @@
 
 
 function run_test() {
-  Assert.deepEqual({x: 1}, {}); 
-  Assert.deepEqual({x: 1}, {x: 2}); 
-  Assert.deepEqual({x: undefined}, {});
+  Assert.deepEqual({ x: 1 }, {}); 
+  Assert.deepEqual({ x: 1 }, { x: 2 }); 
+  Assert.deepEqual({ x: undefined }, {});
 
   
   Assert.deepEqual([3, 4, 5], [3, 5, 5]); 
-  Assert.deepEqual([3, 4, 5], [3, 4, 5, 6]);
+  Assert.deepEqual([3, 4, 5], [3, 4, 5, 6]); 
 }

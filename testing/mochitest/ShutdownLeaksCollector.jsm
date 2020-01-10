@@ -2,8 +2,8 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 var EXPORTED_SYMBOLS = ["ContentCollector"];
 
@@ -14,11 +14,11 @@ var EXPORTED_SYMBOLS = ["ContentCollector"];
 
 var ContentCollector = {
   init() {
-      let processType = Services.appinfo.processType;
-      if (processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
-        
-        return;
-      }
+    let processType = Services.appinfo.processType;
+    if (processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
+      
+      return;
+    }
 
     Services.cpmm.addMessageListener("browser-test:collect-request", this);
   },
@@ -59,6 +59,5 @@ var ContentCollector = {
 
     Services.cpmm.removeMessageListener("browser-test:collect-request", this);
   },
-
 };
 ContentCollector.init();

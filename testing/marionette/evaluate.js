@@ -4,19 +4,21 @@
 
 "use strict";
 
-const {clearTimeout, setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { clearTimeout, setTimeout } = ChromeUtils.import(
+  "resource://gre/modules/Timer.jsm"
+);
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-const {assert} = ChromeUtils.import("chrome://marionette/content/assert.js");
-const {
-  element,
-  WebElement,
-} = ChromeUtils.import("chrome://marionette/content/element.js");
-const {
-  JavaScriptError,
-  ScriptTimeoutError,
-} = ChromeUtils.import("chrome://marionette/content/error.js");
-const {Log} = ChromeUtils.import("chrome://marionette/content/log.js");
+const { assert } = ChromeUtils.import("chrome://marionette/content/assert.js");
+const { element, WebElement } = ChromeUtils.import(
+  "chrome://marionette/content/element.js"
+);
+const { JavaScriptError, ScriptTimeoutError } = ChromeUtils.import(
+  "chrome://marionette/content/error.js"
+);
+const { Log } = ChromeUtils.import("chrome://marionette/content/log.js");
 
 XPCOMUtils.defineLazyGetter(this, "log", Log.get);
 
@@ -84,13 +86,17 @@ this.evaluate = {};
 
 
 
-evaluate.sandbox = function(sb, script, args = [],
-    {
-      async = false,
-      file = "dummy file",
-      line = 0,
-      timeout = DEFAULT_TIMEOUT,
-    } = {}) {
+evaluate.sandbox = function(
+  sb,
+  script,
+  args = [],
+  {
+    async = false,
+    file = "dummy file",
+    line = 0,
+    timeout = DEFAULT_TIMEOUT,
+  } = {}
+) {
   let unloadHandler;
 
   
@@ -121,7 +127,9 @@ evaluate.sandbox = function(sb, script, args = [],
     }).apply(null, ${ARGUMENTS})`;
 
     unloadHandler = sandbox.cloneInto(
-        () => reject(new JavaScriptError("Document was unloaded")), sb);
+      () => reject(new JavaScriptError("Document was unloaded")),
+      sb
+    );
     sb.window.onunload = unloadHandler;
 
     let promises = [
@@ -132,28 +140,33 @@ evaluate.sandbox = function(sb, script, args = [],
     
     
     
-    Promise.race(promises).then(value => {
-      if (!async) {
-        resolve(value);
+    Promise.race(promises).then(
+      value => {
+        if (!async) {
+          resolve(value);
+        }
+      },
+      err => {
+        reject(err);
       }
-    }, err => {
-      reject(err);
-    });
+    );
   });
 
   
   
   
-  return Promise.race([promise, timeoutPromise]).catch(err => {
-    
-    if (err instanceof ScriptTimeoutError) {
-      throw err;
-    }
-    throw new JavaScriptError(err);
-  }).finally(() => {
-    clearTimeout(scriptTimeoutID);
-    sb.window.removeEventListener("unload", unloadHandler);
-  });
+  return Promise.race([promise, timeoutPromise])
+    .catch(err => {
+      
+      if (err instanceof ScriptTimeoutError) {
+        throw err;
+      }
+      throw new JavaScriptError(err);
+    })
+    .finally(() => {
+      clearTimeout(scriptTimeoutID);
+      sb.window.removeEventListener("unload", unloadHandler);
+    });
 };
 
 
@@ -192,11 +205,11 @@ evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
       if (obj === null) {
         return obj;
 
-      
+        
       } else if (Array.isArray(obj)) {
         return obj.map(e => evaluate.fromJSON(e, seenEls, win));
 
-      
+        
       } else if (WebElement.isReference(obj)) {
         let webEl = WebElement.fromJSON(obj);
         if (seenEls) {
@@ -255,26 +268,28 @@ evaluate.toJSON = function(obj, seenEls) {
   if (t == "[object Undefined]" || t == "[object Null]") {
     return null;
 
-  
-  } else if (t == "[object Boolean]" ||
-      t == "[object Number]" ||
-      t == "[object String]") {
+    
+  } else if (
+    t == "[object Boolean]" ||
+    t == "[object Number]" ||
+    t == "[object String]"
+  ) {
     return obj;
 
-  
+    
   } else if (element.isCollection(obj)) {
     assert.acyclic(obj);
     return [...obj].map(el => evaluate.toJSON(el, seenEls));
 
-  
+    
   } else if (WebElement.isReference(obj)) {
     return obj;
 
-  
+    
   } else if (element.isElement(obj)) {
     return seenEls.add(obj);
 
-  
+    
   } else if (typeof obj.toJSON == "function") {
     let unsafeJSON = obj.toJSON();
     return evaluate.toJSON(unsafeJSON, seenEls);
@@ -318,17 +333,19 @@ evaluate.isCyclic = function(value, stack = []) {
   if (t == "[object Undefined]" || t == "[object Null]") {
     return false;
 
-  
-  } else if (t == "[object Boolean]" ||
-      t == "[object Number]" ||
-      t == "[object String]") {
+    
+  } else if (
+    t == "[object Boolean]" ||
+    t == "[object Number]" ||
+    t == "[object String]"
+  ) {
     return false;
 
-  
+    
   } else if (element.isElement(value)) {
     return false;
 
-  
+    
   } else if (element.isCollection(value)) {
     if (stack.includes(value)) {
       return true;
@@ -397,7 +414,7 @@ this.sandbox = {};
 
 
 sandbox.cloneInto = function(obj, sb) {
-  return Cu.cloneInto(obj, sb, {cloneFunctions: true, wrapReflectors: true});
+  return Cu.cloneInto(obj, sb, { cloneFunctions: true, wrapReflectors: true });
 };
 
 
@@ -442,13 +459,16 @@ sandbox.augment = function(sb, adapter) {
 
 sandbox.create = function(win, principal = null, opts = {}) {
   let p = principal || win;
-  opts = Object.assign({
-    sameZoneAs: win,
-    sandboxPrototype: win,
-    wantComponents: true,
-    wantXrays: true,
-    wantGlobalProperties: ["ChromeUtils"],
-  }, opts);
+  opts = Object.assign(
+    {
+      sameZoneAs: win,
+      sandboxPrototype: win,
+      wantComponents: true,
+      wantXrays: true,
+      wantGlobalProperties: ["ChromeUtils"],
+    },
+    opts
+  );
   return new Cu.Sandbox(p, opts);
 };
 
@@ -472,8 +492,9 @@ sandbox.createMutable = function(win) {
 };
 
 sandbox.createSystemPrincipal = function(win) {
-  let principal = Cc["@mozilla.org/systemprincipal;1"]
-      .createInstance(Ci.nsIPrincipal);
+  let principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(
+    Ci.nsIPrincipal
+  );
   return sandbox.create(win, principal);
 };
 

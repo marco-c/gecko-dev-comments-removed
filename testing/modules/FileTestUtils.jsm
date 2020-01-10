@@ -8,9 +8,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "FileTestUtils",
-];
+var EXPORTED_SYMBOLS = ["FileTestUtils"];
 
 ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm", this);
 ChromeUtils.import("resource://gre/modules/DownloadPaths.jsm", this);
@@ -91,8 +89,10 @@ var FileTestUtils = {
       
       
       
-      if (!(ex instanceof OS.File.Error) ||
-          !(ex.becauseNoSuchFile || ex.becauseAccessDenied)) {
+      if (
+        !(ex instanceof OS.File.Error) ||
+        !(ex.becauseNoSuchFile || ex.becauseAccessDenied)
+      ) {
         throw ex;
       }
     }
@@ -103,7 +103,9 @@ var FileTestUtils = {
 
 
 
-XPCOMUtils.defineLazyGetter(FileTestUtils, "_globalTemporaryDirectory",
+XPCOMUtils.defineLazyGetter(
+  FileTestUtils,
+  "_globalTemporaryDirectory",
   function() {
     
     
@@ -112,7 +114,8 @@ XPCOMUtils.defineLazyGetter(FileTestUtils, "_globalTemporaryDirectory",
     let randomNumber = Math.floor(Math.random() * 1000000);
     let dir = FileUtils.getFile("TmpD", ["testdir-" + randomNumber]);
     dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-    AsyncShutdown.profileBeforeChange.addBlocker("Removing test files",
+    AsyncShutdown.profileBeforeChange.addBlocker(
+      "Removing test files",
       async () => {
         
         for (let path of gPathsToRemove) {
@@ -126,13 +129,16 @@ XPCOMUtils.defineLazyGetter(FileTestUtils, "_globalTemporaryDirectory",
         
         let iterator = new OS.File.DirectoryIterator(dir.path);
         try {
-          await iterator.forEach(entry => this.tolerantRemove(entry.path,
-                                                              entry.isDir));
+          await iterator.forEach(entry =>
+            this.tolerantRemove(entry.path, entry.isDir)
+          );
         } finally {
           iterator.close();
         }
         
         await OS.File.removeEmptyDir(dir.path);
-      });
+      }
+    );
     return dir;
-  });
+  }
+);

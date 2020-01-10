@@ -2,7 +2,7 @@
 
 
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -16,46 +16,52 @@ const LF_CID = "@mozilla.org/file/local;1";
 
 
 
-const PR_READ_ONLY    = 0x01; 
-const PR_WRITE_ONLY   = 0x02; 
-const PR_READ_WRITE   = 0x04; 
+const PR_READ_ONLY = 0x01; 
+const PR_WRITE_ONLY = 0x02; 
+const PR_READ_WRITE = 0x04; 
 
 
 
-const PR_CREATE_FILE  = 0x08;
+const PR_CREATE_FILE = 0x08;
 
 
-const PR_APPEND       = 0x10;
+const PR_APPEND = 0x10;
 
 
-const PR_TRUNCATE     = 0x20;
-
-
-
-const PR_SYNC         = 0x40;
+const PR_TRUNCATE = 0x20;
 
 
 
-const PR_EXCL         = 0x80;
+const PR_SYNC = 0x40;
+
+
+
+const PR_EXCL = 0x80;
 
 
 
 var MozillaFileLogger = {};
 
-
 MozillaFileLogger.init = function(path) {
   MozillaFileLogger._file = Cc[LF_CID].createInstance(Ci.nsIFile);
   MozillaFileLogger._file.initWithPath(path);
-  MozillaFileLogger._foStream = Cc[FOSTREAM_CID].createInstance(Ci.nsIFileOutputStream);
-  MozillaFileLogger._foStream.init(this._file, PR_WRITE_ONLY | PR_CREATE_FILE | PR_APPEND,
-                                   0o664, 0);
+  MozillaFileLogger._foStream = Cc[FOSTREAM_CID].createInstance(
+    Ci.nsIFileOutputStream
+  );
+  MozillaFileLogger._foStream.init(
+    this._file,
+    PR_WRITE_ONLY | PR_CREATE_FILE | PR_APPEND,
+    0o664,
+    0
+  );
 };
 
 MozillaFileLogger.getLogCallback = function() {
   return function(msg) {
     var data = msg.num + " " + msg.level + " " + msg.info.join(" ") + "\n";
-    if (MozillaFileLogger._foStream)
+    if (MozillaFileLogger._foStream) {
       MozillaFileLogger._foStream.write(data, data.length);
+    }
 
     if (data.includes("SimpleTest FINISH")) {
       MozillaFileLogger.close();
@@ -66,14 +72,16 @@ MozillaFileLogger.getLogCallback = function() {
 
 MozillaFileLogger.log = function(msg) {
   try {
-    if (MozillaFileLogger._foStream)
+    if (MozillaFileLogger._foStream) {
       MozillaFileLogger._foStream.write(msg, msg.length);
+    }
   } catch (ex) {}
 };
 
 MozillaFileLogger.close = function() {
-  if (MozillaFileLogger._foStream)
+  if (MozillaFileLogger._foStream) {
     MozillaFileLogger._foStream.close();
+  }
 
   MozillaFileLogger._foStream = null;
   MozillaFileLogger._file = null;
