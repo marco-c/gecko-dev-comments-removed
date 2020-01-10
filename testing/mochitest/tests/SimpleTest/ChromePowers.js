@@ -2,7 +2,8 @@
 
 
 
-ChromeUtils.import("resource://specialpowers/SpecialPowersAPI.jsm", this);
+const {SpecialPowersAPI, bindDOMWindowUtils} = ChromeUtils.import("resource://specialpowers/SpecialPowersAPI.jsm");
+const {SpecialPowersAPIParent} = ChromeUtils.import("resource://specialpowers/SpecialPowersAPIParent.jsm");
 
 class ChromePowers extends SpecialPowersAPI {
   constructor(window) {
@@ -14,30 +15,43 @@ class ChromePowers extends SpecialPowersAPI {
 
     this.DOMWindowUtils = bindDOMWindowUtils(window);
 
-    this.spObserver = new SpecialPowersObserverAPI();
-    this.spObserver._sendReply = this._sendReply.bind(this);
+    this.parentActor = new SpecialPowersAPIParent();
+    this.parentActor.sendAsyncMessage = this.sendReply.bind(this);
+
     this.listeners = new Map();
   }
 
   toString() { return "[ChromePowers]"; }
   sanityCheck() { return "foo"; }
 
-  _sendReply(aOrigMsg, aType, aMsg) {
-    var msg = {'name':aType, 'json': aMsg, 'data': aMsg};
+  get contentWindow() {
+    return window;
+  }
+
+  get document() {
+    return window.document;
+  }
+
+  get docShell() {
+    return window.docShell;
+  }
+
+  sendReply(aType, aMsg) {
+    var msg = {name: aType, json: aMsg, data: aMsg};
     if (!this.listeners.has(aType)) {
       throw new Error(`No listener for ${aType}`);
     }
     this.listeners.get(aType)(msg);
   }
 
-  _sendSyncMessage(aType, aMsg) {
-    var msg = {'name':aType, 'json': aMsg, 'data': aMsg};
-    return [this._receiveMessage(msg)];
+  sendAsyncMessage(aType, aMsg) {
+    var msg = {name: aType, json: aMsg, data: aMsg};
+    this.receiveMessage(msg);
   }
 
-  _sendAsyncMessage(aType, aMsg) {
-    var msg = {'name':aType, 'json': aMsg, 'data': aMsg};
-    this._receiveMessage(msg);
+  async sendQuery(aType, aMsg) {
+    var msg = {name: aType, json: aMsg, data: aMsg};
+    return this.receiveMessage(msg);
   }
 
   _addMessageListener(aType, aCallback) {
@@ -58,7 +72,7 @@ class ChromePowers extends SpecialPowersAPI {
     this._sendSyncMessage("SPProcessCrashService", { op: "unregister-observer" });
   }
 
-  _receiveMessage(aMessage) {
+  receiveMessage(aMessage) {
     switch (aMessage.name) {
       case "SpecialPowers.Quit":
         let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"].getService(Ci.nsIAppStartup);
@@ -68,16 +82,12 @@ class ChromePowers extends SpecialPowersAPI {
         if (aMessage.json.op == "register-observer" || aMessage.json.op == "unregister-observer") {
           
           break;
-        } else if (aMessage.type == "crash-observed") {
-          for (let e of msg.dumpIDs) {
-            this._encounteredCrashDumpFiles.push(e.id + "." + e.extension);
-          }
         }
       default:
         
-        return this.spObserver._receiveMessageAPI(aMessage);
+        return this.parentActor.receiveMessage(aMessage);
     }
-    return undefined;		
+    return undefined;
   }
 
   quit() {
@@ -103,7 +113,7 @@ class ChromePowers extends SpecialPowersAPI {
 if (window.parent.SpecialPowers && !window.SpecialPowers) {
   window.SpecialPowers = window.parent.SpecialPowers;
 } else {
-  ChromeUtils.import("resource://specialpowers/SpecialPowersObserverAPI.jsm", this);
+  ChromeUtils.import("resource://specialpowers/SpecialPowersAPIParent.jsm", this);
 
   window.SpecialPowers = new ChromePowers(window);
 }
