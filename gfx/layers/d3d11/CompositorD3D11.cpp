@@ -1094,13 +1094,19 @@ void CompositorD3D11::DrawGeometry(const Geometry& aGeometry,
   }
 }
 
+Maybe<IntRect> CompositorD3D11::BeginFrameForWindow(
+    const nsIntRegion& aInvalidRegion, const Maybe<IntRect>& aClipRect,
+    const IntRect& aRenderBounds, const nsIntRegion& aOpaqueRegion,
+    NativeLayer* aNativeLayer) {
+  MOZ_RELEASE_ASSERT(!aNativeLayer, "Unexpected native layer on this platform");
+
+  return BeginFrame(aInvalidRegion, aClipRect, aRenderBounds, aOpaqueRegion);
+}
+
 Maybe<IntRect> CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
                                            const Maybe<IntRect>& aClipRect,
                                            const IntRect& aRenderBounds,
-                                           const nsIntRegion& aOpaqueRegion,
-                                           NativeLayer* aNativeLayer) {
-  MOZ_RELEASE_ASSERT(!aNativeLayer, "Unexpected native layer on this platform");
-
+                                           const nsIntRegion& aOpaqueRegion) {
   
   
   

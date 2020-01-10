@@ -123,11 +123,11 @@ class BasicCompositor : public Compositor {
 
   void ClearRect(const gfx::Rect& aRect) override;
 
-  Maybe<gfx::IntRect> BeginFrame(const nsIntRegion& aInvalidRegion,
-                                 const Maybe<gfx::IntRect>& aClipRect,
-                                 const gfx::IntRect& aRenderBounds,
-                                 const nsIntRegion& aOpaqueRegion,
-                                 NativeLayer* aNativeLayer) override;
+  Maybe<gfx::IntRect> BeginFrameForWindow(const nsIntRegion& aInvalidRegion,
+                                          const Maybe<gfx::IntRect>& aClipRect,
+                                          const gfx::IntRect& aRenderBounds,
+                                          const nsIntRegion& aOpaqueRegion,
+                                          NativeLayer* aNativeLayer) override;
   void NormalDrawingDone() override;
   void EndFrame() override;
 
@@ -195,11 +195,13 @@ class BasicCompositor : public Compositor {
   
   
   
+  
   RefPtr<gfx::DrawTarget> mFrontBuffer;
 
   
   RefPtr<BasicCompositingRenderTarget> mRenderTarget;
 
+  
   
   
   
