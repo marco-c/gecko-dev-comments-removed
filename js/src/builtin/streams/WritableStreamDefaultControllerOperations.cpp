@@ -704,14 +704,61 @@ static MOZ_MUST_USE JSObject* PerformCloseAlgorithm(
   return PromiseCall(cx, closeMethod, underlyingSink);
 }
 
+
+
 static MOZ_MUST_USE JSObject* PerformWriteAlgorithm(
     JSContext* cx, Handle<WritableStreamDefaultController*> unwrappedController,
     Handle<Value> chunk) {
   cx->check(chunk);
 
   
-  JS_ReportErrorASCII(cx, "boo");
-  return nullptr;
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  if (unwrappedController->writeMethod().isUndefined()) {
+    return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+  }
+
+  
+
+  
+  MOZ_ASSERT(IsCallable(unwrappedController->writeMethod()));
+
+  
+  
+  
+  
+  
+  Rooted<Value> writeMethod(cx, unwrappedController->writeMethod());
+  if (!cx->compartment()->wrap(cx, &writeMethod)) {
+    return nullptr;
+  }
+
+  Rooted<Value> underlyingSink(cx, unwrappedController->underlyingSink());
+  if (!cx->compartment()->wrap(cx, &underlyingSink)) {
+    return nullptr;
+  }
+
+  Rooted<Value> controller(cx, ObjectValue(*unwrappedController));
+  if (!cx->compartment()->wrap(cx, &controller)) {
+    return nullptr;
+  }
+
+  return PromiseCall(cx, writeMethod, underlyingSink, chunk, controller);
 }
 
 
