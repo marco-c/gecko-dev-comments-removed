@@ -45,7 +45,9 @@ add_task(async function() {
     ]);
   });
 
+  ExtensionTestUtils.failOnSchemaWarnings(false);
   await extension.startup();
+  ExtensionTestUtils.failOnSchemaWarnings(true);
 
   
   for (let i = 0; i < 3; i++) {
