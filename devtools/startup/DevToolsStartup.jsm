@@ -167,6 +167,12 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     },
     
     {
+      toolId: "jsdebugger",
+      shortcut: KeyShortcutsBundle.GetStringFromName("jsdebugger.commandkey"),
+      modifiers,
+    },
+    
+    {
       toolId: "netmonitor",
       shortcut: KeyShortcutsBundle.GetStringFromName("netmonitor.commandkey"),
       modifiers,
