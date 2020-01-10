@@ -104,6 +104,9 @@ var whitelist = [
   { file: "resource://gre/res/fonts/mathfontUnicode.properties" },
 
   
+  { file: "chrome://global/content/win.xul" },
+
+  
   {
     file:
       "resource://gre/chrome/en-US/locale/en-US/global-platform/mac/accessible.properties",
