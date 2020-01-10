@@ -20,6 +20,7 @@
 #include "nsCocoaUtils.h"
 #include "gfxQuartzSurface.h"
 #include "GLContextTypes.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/Mutex.h"
 #include "nsRegion.h"
 #include "mozilla/MouseEvents.h"
@@ -563,6 +564,24 @@ class nsChildView final : public nsBaseWidget {
   nsresult SetPrefersReducedMotionOverrideForTest(bool aValue) override;
   nsresult ResetPrefersReducedMotionOverrideForTest() override;
 
+  
+  
+  
+  
+  
+  
+  void SuspendAsyncCATransactions();
+
+  
+  
+  void MaybeScheduleUnsuspendAsyncCATransactions();
+
+  
+  
+  
+  
+  void UnsuspendAsyncCATransactions();
+
  protected:
   virtual ~nsChildView();
 
@@ -690,6 +709,24 @@ class nsChildView final : public nsBaseWidget {
   
   
   RefPtr<mozilla::gfx::DrawTarget> mBackingSurface;
+
+  
+  
+  
+  struct WidgetCompositingState {
+    
+    
+    
+    bool mAsyncCATransactionsSuspended = false;
+
+    
+    
+    
+    bool mNativeLayerChangesPending = false;
+  };
+  mozilla::DataMutex<WidgetCompositingState> mCompositingState;
+
+  RefPtr<mozilla::CancelableRunnable> mUnsuspendAsyncCATransactionsRunnable;
 
   
   
