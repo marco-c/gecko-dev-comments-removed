@@ -4,24 +4,42 @@
 
 
 
+
 'use strict';
 
 idl_test(
   ['shape-detection-api'],
   ['dom', 'geometry'],
   async idl_array => {
-    let faceDetectionTest, barcodeDetectionTest;
+    idl_array.add_objects({
+      FaceDetector: ['faceDetector'],
+      DetectedFace: ['detectedFace'],
+      BarcodeDetector: ['barcodeDetector'],
+      DetectedBarcode: ['detectedBarcode']
+    });
+
+    let faceDetectionTest;
     try {
       faceDetectionTest =
           await initialize_detection_tests("FaceDetectionTest");
-      barcodeDetectionTest =
-          await initialize_detection_tests("BarcodeDetectionTest");
       const img = createTestImage();
       const theImageBitmap = await createImageBitmap(img);
 
       self.faceDetector = new FaceDetector();
       const faceDetectionResult = await faceDetector.detect(theImageBitmap);
       self.detectedFace = faceDetectionResult[0];
+    } catch (e) {
+      
+    } finally {
+      faceDetectionTest && faceDetectionTest.reset();
+    }
+
+    let barcodeDetectionTest;
+    try {
+      barcodeDetectionTest =
+          await initialize_detection_tests("BarcodeDetectionTest");
+      const img = createTestImage();
+      const theImageBitmap = await createImageBitmap(img);
 
       self.barcodeDetector = new BarcodeDetector();
       const barcodeDetectionResult =
@@ -30,16 +48,8 @@ idl_test(
     } catch (e) {
       
     } finally {
-      faceDetectionTest.reset();
-      barcodeDetectionTest.reset();
+      barcodeDetectionTest && barcodeDetectionTest.reset();
     }
-
-    idl_array.add_objects({
-      FaceDetector: ['faceDetector'],
-      DetectedFace: ['detectedFace'],
-      BarcodeDetector: ['barcodeDetector'],
-      DetectedBarcode: ['detectedBarcode']
-    });
   }
 );
 
