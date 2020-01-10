@@ -104,6 +104,12 @@ bool AndroidDecoderModule::SupportsMimeType(const nsACString& aMimeType) {
     return false;
   }
 
+  if (aMimeType.EqualsLiteral("audio/mpeg") &&
+      StaticPrefs::media_ffvpx_mp3_enabled()) {
+    
+    return false;
+  }
+
   return java::HardwareCodecCapabilityUtils::FindDecoderCodecInfoForMimeType(
       TranslateMimeType(aMimeType));
 }
