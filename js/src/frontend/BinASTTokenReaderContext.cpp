@@ -1275,9 +1275,7 @@ BinASTTokenReaderContext::AutoList::AutoList(BinASTTokenReaderContext& reader)
 
 void BinASTTokenReaderContext::AutoList::init() { AutoBase::init(); }
 
-JS::Result<Ok> BinASTTokenReaderContext::AutoList::done() {
-  return reader_.raiseError("Not Yet Implemented");
-}
+JS::Result<Ok> BinASTTokenReaderContext::AutoList::done() { return Ok(); }
 
 
 
