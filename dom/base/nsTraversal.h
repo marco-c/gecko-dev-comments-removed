@@ -37,7 +37,10 @@ class nsTraversal {
 
 
 
-  int16_t TestNode(nsINode* aNode, mozilla::ErrorResult& aResult);
+
+
+  int16_t TestNode(nsINode* aNode, mozilla::ErrorResult& aResult,
+                   nsCOMPtr<nsINode>* aUnskippedNode = nullptr);
 };
 
 #endif
