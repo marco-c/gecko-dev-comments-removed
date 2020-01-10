@@ -2029,6 +2029,10 @@ void HTMLMediaElement::AbortExistingLoads() {
 
   
   
+  ClearResumeDelayedMediaPlaybackAgentIfNeeded();
+
+  
+  
   AddRemoveSelfReference();
 
   mIsRunningSelectResource = false;
@@ -3060,6 +3064,9 @@ void HTMLMediaElement::Pause(ErrorResult& aRv) {
     mAudioChannelWrapper->NotifyPlayStateChanged();
   }
 
+  
+  ClearResumeDelayedMediaPlaybackAgentIfNeeded();
+
   if (!oldPaused) {
     FireTimeUpdate(false);
     DispatchAsyncEvent(NS_LITERAL_STRING("pause"));
@@ -3745,6 +3752,11 @@ HTMLMediaElement::~HTMLMediaElement() {
     mAudioChannelWrapper = nullptr;
   }
 
+  if (mResumeDelayedPlaybackAgent) {
+    mResumePlaybackRequest.DisconnectIfExists();
+    mResumeDelayedPlaybackAgent = nullptr;
+  }
+
   WakeLockRelease();
   ReportPlayedTimeAfterBlockedTelemetry();
 
@@ -3777,10 +3789,6 @@ void HTMLMediaElement::SetPlayedOrSeeked(bool aValue) {
 }
 
 void HTMLMediaElement::NotifyXPCOMShutdown() { ShutdownDecoder(); }
-
-bool HTMLMediaElement::AudioChannelAgentDelayingPlayback() {
-  return mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked();
-}
 
 void HTMLMediaElement::UpdateHadAudibleAutoplayState() {
   
@@ -3831,15 +3839,15 @@ already_AddRefed<Promise> HTMLMediaElement::Play(ErrorResult& aRv) {
   
   
 
-  if (AudioChannelAgentDelayingPlayback()) {
-    
-    
-    
-    
-    
-    
-    LOG(LogLevel::Debug, ("%p Play() call delayed by AudioChannelAgent", this));
+  
+  
+  if (MediaPlaybackDelayPolicy::ShouldDelayPlayback(this)) {
+    CreateResumeDelayedMediaPlaybackAgentIfNeeded();
+    LOG(LogLevel::Debug, ("%p delay Play() call", this));
     MaybeDoLoad();
+    
+    
+    
     mPendingPlayPromises.AppendElement(promise);
     return promise.forget();
   }
@@ -5801,6 +5809,12 @@ bool HTMLMediaElement::CanActivateAutoplay() {
     return false;
   }
 
+  if (MediaPlaybackDelayPolicy::ShouldDelayPlayback(this)) {
+    CreateResumeDelayedMediaPlaybackAgentIfNeeded();
+    LOG(LogLevel::Debug, ("%p delay playing from autoplay", this));
+    return false;
+  }
+
   if (mAudioChannelWrapper) {
     
     
@@ -6154,6 +6168,8 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement,
         mDecoder->Suspend();
       }
       mEventDeliveryPaused = aSuspendEvents;
+      
+      ClearResumeDelayedMediaPlaybackAgentIfNeeded();
     } else {
       if (!mPaused) {
         mCurrentLoadPlayTime.Start();
@@ -7054,10 +7070,8 @@ bool HTMLMediaElement::ShouldElementBePaused() {
 void HTMLMediaElement::SetMediaInfo(const MediaInfo& aInfo) {
   const bool oldHasAudio = mMediaInfo.HasAudio();
   mMediaInfo = aInfo;
-  if (aInfo.HasAudio() != oldHasAudio) {
-    UpdateAudioChannelPlayingState();
-    NotifyAudioPlaybackChanged(
-        AudioChannelService::AudibleChangedReasons::eDataAudibleChanged);
+  if ((aInfo.HasAudio() != oldHasAudio) && mResumeDelayedPlaybackAgent) {
+    mResumeDelayedPlaybackAgent->UpdateAudibleState(GetAudibleState());
   }
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->AudioCaptureStreamChangeIfNeeded();
@@ -7447,6 +7461,44 @@ void HTMLMediaElement::NotifyTextTrackModeChanged() {
                                  mTextTrackManager->TimeMarchesOn();
                                }
                              }));
+}
+
+void HTMLMediaElement::CreateResumeDelayedMediaPlaybackAgentIfNeeded() {
+  if (mResumeDelayedPlaybackAgent) {
+    return;
+  }
+  mResumeDelayedPlaybackAgent =
+      MediaPlaybackDelayPolicy::CreateResumeDelayedPlaybackAgent(
+          this, GetAudibleState());
+  if (!mResumeDelayedPlaybackAgent) {
+    LOG(LogLevel::Debug,
+        ("%p Failed to create a delayed playback agant", this));
+    return;
+  }
+  mResumeDelayedPlaybackAgent->GetResumePromise()
+      ->Then(
+          mAbstractMainThread, __func__,
+          [self = RefPtr<HTMLMediaElement>(this)]() {
+            LOG(LogLevel::Debug, ("%p Resume delayed Play() call", self.get()));
+            IgnoredErrorResult dummy;
+            RefPtr<Promise> toBeIgnored = self->Play(dummy);
+            self->mResumePlaybackRequest.Complete();
+            self->mResumeDelayedPlaybackAgent = nullptr;
+          },
+          [self = RefPtr<HTMLMediaElement>(this)]() {
+            LOG(LogLevel::Debug,
+                ("%p Can not resume delayed Play() call", self.get()));
+            self->mResumePlaybackRequest.Complete();
+            self->mResumeDelayedPlaybackAgent = nullptr;
+          })
+      ->Track(mResumePlaybackRequest);
+}
+
+void HTMLMediaElement::ClearResumeDelayedMediaPlaybackAgentIfNeeded() {
+  if (mResumeDelayedPlaybackAgent) {
+    mResumePlaybackRequest.DisconnectIfExists();
+    mResumeDelayedPlaybackAgent = nullptr;
+  }
 }
 
 }  

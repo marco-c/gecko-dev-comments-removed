@@ -12,6 +12,7 @@
 #include "MediaEventSource.h"
 #include "SeekTarget.h"
 #include "MediaDecoderOwner.h"
+#include "MediaPlaybackDelayPolicy.h"
 #include "MediaPromiseDefs.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIObserver.h"
@@ -1267,11 +1268,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   
-  bool AudioChannelAgentDelayingPlayback();
-
-  
-  
-  
   void UpdateAudioTrackSilenceRange(bool aAudible);
 
   
@@ -1839,6 +1835,16 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   bool mShowPoster;
+
+  
+  
+  
+  
+  void CreateResumeDelayedMediaPlaybackAgentIfNeeded();
+  void ClearResumeDelayedMediaPlaybackAgentIfNeeded();
+  RefPtr<ResumeDelayedPlaybackAgent> mResumeDelayedPlaybackAgent;
+  MozPromiseRequestHolder<ResumeDelayedPlaybackAgent::ResumePromise>
+      mResumePlaybackRequest;
 };
 
 
