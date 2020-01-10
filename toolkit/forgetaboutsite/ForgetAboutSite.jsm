@@ -10,14 +10,55 @@ var EXPORTED_SYMBOLS = ["ForgetAboutSite"];
 
 var ForgetAboutSite = {
   async removeDataFromDomain(aDomain) {
-    let errorCount = await new Promise(resolve => {
-      Services.clearData.deleteDataFromHost(
-        aDomain,
-        true ,
-        Ci.nsIClearDataService.CLEAR_FORGET_ABOUT_SITE,
-        errorCode => resolve(bitCounting(errorCode))
-      );
-    });
+    let promises = [
+      new Promise(resolve =>
+        Services.clearData.deleteDataFromHost(
+          aDomain,
+          true ,
+          Ci.nsIClearDataService.CLEAR_FORGET_ABOUT_SITE,
+          errorCode => resolve(bitCounting(errorCode))
+        )
+      ),
+    ];
+
+    try {
+      let baseDomain = Services.eTLD.getBaseDomainFromHost(aDomain);
+
+      let enumerator = Services.cookies.enumerator;
+      let hosts = new Set();
+      for (let cookie of enumerator) {
+        if (Services.eTLD.hasRootDomain(cookie.rawHost, baseDomain)) {
+          hosts.add(cookie.rawHost);
+        }
+      }
+
+      for (let host of hosts) {
+        promises.push(
+          new Promise(resolve =>
+            Services.clearData.deleteDataFromHost(
+              host,
+              true ,
+              Ci.nsIClearDataService.CLEAR_COOKIES,
+              errorCode => resolve(bitCounting(errorCode))
+            )
+          )
+        );
+      }
+    } catch (e) {
+      
+      
+      
+      
+      
+      if (
+        e.result != Cr.NS_ERROR_HOST_IS_IP_ADDRESS &&
+        e.result != Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS
+      ) {
+        throw e;
+      }
+    }
+
+    let errorCount = (await Promise.all(promises)).reduce((a, b) => a + b);
 
     if (errorCount !== 0) {
       throw new Error(
