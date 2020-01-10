@@ -1673,7 +1673,13 @@ EditActionResult HTMLEditRules::WillInsertParagraphSeparator() {
   
   
   if (IsMailEditor()) {
-    EditActionResult result = SplitMailCites();
+    EditorDOMPoint pointToSplit(EditorBase::GetStartPoint(*SelectionRefPtr()));
+    if (NS_WARN_IF(!pointToSplit.IsSet())) {
+      return EditActionIgnored(NS_ERROR_FAILURE);
+    }
+
+    EditActionResult result =
+        MOZ_KnownLive(HTMLEditorRef()).SplitMailCiteElements(pointToSplit);
     if (NS_WARN_IF(result.Failed())) {
       return result;
     }
@@ -2039,20 +2045,19 @@ nsresult HTMLEditRules::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
   return NS_OK;
 }
 
-EditActionResult HTMLEditRules::SplitMailCites() {
-  MOZ_ASSERT(IsEditorDataAvailable());
+EditActionResult HTMLEditor::SplitMailCiteElements(
+    const EditorDOMPoint& aPointToSplit) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(aPointToSplit.IsSet());
 
-  EditorDOMPoint pointToSplit(EditorBase::GetStartPoint(*SelectionRefPtr()));
-  if (NS_WARN_IF(!pointToSplit.IsSet())) {
-    return EditActionIgnored(NS_ERROR_FAILURE);
-  }
-
-  RefPtr<Element> citeNode = HTMLEditorRef().GetMostAncestorMailCiteElement(
-      *pointToSplit.GetContainer());
+  RefPtr<Element> citeNode =
+      GetMostAncestorMailCiteElement(*aPointToSplit.GetContainer());
   if (!citeNode) {
     return EditActionIgnored();
   }
 
+  EditorDOMPoint pointToSplit(aPointToSplit);
+
   
   
   
@@ -2062,7 +2067,7 @@ EditActionResult HTMLEditRules::SplitMailCites() {
   
   
   
-  WSRunObject wsObj(&HTMLEditorRef(), pointToSplit);
+  WSRunObject wsObj(this, pointToSplit);
   nsCOMPtr<nsINode> visNode;
   WSType wsType;
   wsObj.NextVisibleNode(pointToSplit, address_of(visNode), nullptr, &wsType);
@@ -2080,12 +2085,9 @@ EditActionResult HTMLEditRules::SplitMailCites() {
     return EditActionIgnored(NS_ERROR_FAILURE);
   }
 
-  SplitNodeResult splitCiteNodeResult =
-      MOZ_KnownLive(HTMLEditorRef())
-          .SplitNodeDeepWithTransaction(
-              *citeNode, pointToSplit,
-              SplitAtEdges::eDoNotCreateEmptyContainer);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  SplitNodeResult splitCiteNodeResult = SplitNodeDeepWithTransaction(
+      *citeNode, pointToSplit, SplitAtEdges::eDoNotCreateEmptyContainer);
+  if (NS_WARN_IF(Destroyed())) {
     return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
   }
   if (NS_WARN_IF(splitCiteNodeResult.Failed())) {
@@ -2113,9 +2115,8 @@ EditActionResult HTMLEditRules::SplitMailCites() {
       EditorDOMPoint endOfPreviousNodeOfSplitPoint;
       endOfPreviousNodeOfSplitPoint.SetToEndOf(previousNodeOfSplitPoint);
       RefPtr<Element> invisibleBrElement =
-          MOZ_KnownLive(HTMLEditorRef())
-              .InsertBRElementWithTransaction(endOfPreviousNodeOfSplitPoint);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+          InsertBRElementWithTransaction(endOfPreviousNodeOfSplitPoint);
+      if (NS_WARN_IF(Destroyed())) {
         return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
       }
       NS_WARNING_ASSERTION(invisibleBrElement,
@@ -2128,9 +2129,8 @@ EditActionResult HTMLEditRules::SplitMailCites() {
   
   EditorDOMPoint pointToInsertBrNode(splitCiteNodeResult.SplitPoint());
   RefPtr<Element> brElement =
-      MOZ_KnownLive(HTMLEditorRef())
-          .InsertBRElementWithTransaction(pointToInsertBrNode);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+      InsertBRElementWithTransaction(pointToInsertBrNode);
+  if (NS_WARN_IF(Destroyed())) {
     return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
   }
   if (NS_WARN_IF(!brElement)) {
@@ -2147,7 +2147,7 @@ EditActionResult HTMLEditRules::SplitMailCites() {
   NS_WARNING_ASSERTION(!error.Failed(), "Failed to set interline position");
   error = NS_OK;
   SelectionRefPtr()->Collapse(atBrNode, error);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  if (NS_WARN_IF(Destroyed())) {
     error.SuppressException();
     return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
   }
@@ -2164,7 +2164,7 @@ EditActionResult HTMLEditRules::SplitMailCites() {
     EditorDOMPoint pointToCreateNewBrNode(atBrNode.GetContainer(),
                                           atBrNode.Offset());
 
-    WSRunObject wsObj(&HTMLEditorRef(), pointToCreateNewBrNode);
+    WSRunObject wsObj(this, pointToCreateNewBrNode);
     WSType wsType;
     wsObj.PriorVisibleNode(pointToCreateNewBrNode, nullptr, nullptr, &wsType);
     if (wsType == WSType::normalWS || wsType == WSType::text ||
@@ -2173,15 +2173,14 @@ EditActionResult HTMLEditRules::SplitMailCites() {
       DebugOnly<bool> advanced = pointAfterNewBrNode.AdvanceOffset();
       NS_WARNING_ASSERTION(advanced,
                            "Failed to advance offset after the <br> node");
-      WSRunObject wsObjAfterBR(&HTMLEditorRef(), pointAfterNewBrNode);
+      WSRunObject wsObjAfterBR(this, pointAfterNewBrNode);
       wsObjAfterBR.NextVisibleNode(pointAfterNewBrNode, &wsType);
       if (wsType == WSType::normalWS || wsType == WSType::text ||
           wsType == WSType::special ||
           
           wsType == WSType::thisBlock) {
-        brElement = MOZ_KnownLive(HTMLEditorRef())
-                        .InsertBRElementWithTransaction(pointToCreateNewBrNode);
-        if (NS_WARN_IF(!CanHandleEditAction())) {
+        brElement = InsertBRElementWithTransaction(pointToCreateNewBrNode);
+        if (NS_WARN_IF(Destroyed())) {
           return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
         }
         if (NS_WARN_IF(!brElement)) {
@@ -2197,16 +2196,14 @@ EditActionResult HTMLEditRules::SplitMailCites() {
   
   bool bEmptyCite = false;
   if (previousNodeOfSplitPoint) {
-    nsresult rv = HTMLEditorRef().IsEmptyNode(previousNodeOfSplitPoint,
-                                              &bEmptyCite, true, false);
+    nsresult rv =
+        IsEmptyNode(previousNodeOfSplitPoint, &bEmptyCite, true, false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditActionIgnored(rv);
     }
     if (bEmptyCite) {
-      rv = MOZ_KnownLive(HTMLEditorRef())
-               .DeleteNodeWithTransaction(
-                   MOZ_KnownLive(*previousNodeOfSplitPoint));
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      rv = DeleteNodeWithTransaction(MOZ_KnownLive(*previousNodeOfSplitPoint));
+      if (NS_WARN_IF(Destroyed())) {
         return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2216,14 +2213,13 @@ EditActionResult HTMLEditRules::SplitMailCites() {
   }
 
   if (citeNode) {
-    nsresult rv =
-        HTMLEditorRef().IsEmptyNode(citeNode, &bEmptyCite, true, false);
+    nsresult rv = IsEmptyNode(citeNode, &bEmptyCite, true, false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return EditActionIgnored(rv);
     }
     if (bEmptyCite) {
-      rv = MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*citeNode);
-      if (NS_WARN_IF(!CanHandleEditAction())) {
+      rv = DeleteNodeWithTransaction(*citeNode);
+      if (NS_WARN_IF(Destroyed())) {
         return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
