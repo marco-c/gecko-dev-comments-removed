@@ -511,6 +511,24 @@
         Type.void_t.out_ptr
       );
 
+      if (OS.Constants.Sys.Name == "Darwin") {
+        
+        
+        libc.declareLazyFFI(
+          SysFile,
+          "getxattr",
+          "getxattr",
+          ctypes.default_abi,
+           Type.int,
+          Type.path,
+          Type.cstring,
+          Type.void_t.out_ptr,
+          Type.size_t,
+          Type.uint32_t,
+          Type.int
+        );
+      }
+
       libc.declareLazyFFI(
         SysFile,
         "fdatasync",
@@ -694,6 +712,7 @@
 
       if (OS.Constants.Sys.Name == "Darwin") {
         
+        
         libc.declareLazyFFI(
           SysFile,
           "removexattr",
@@ -724,6 +743,24 @@
          Type.int,
         Type.path
       );
+
+      if (OS.Constants.Sys.Name == "Darwin") {
+        
+        
+        libc.declareLazyFFI(
+          SysFile,
+          "setxattr",
+          "setxattr",
+          ctypes.default_abi,
+           Type.negativeone_or_nothing,
+          Type.path,
+          Type.cstring,
+          Type.void_t.in_ptr,
+          Type.size_t,
+          Type.uint32_t,
+          Type.int
+        );
+      }
 
       libc.declareLazyFFI(
         SysFile,
