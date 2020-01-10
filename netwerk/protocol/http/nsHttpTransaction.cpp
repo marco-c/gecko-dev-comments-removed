@@ -1035,8 +1035,10 @@ void nsHttpTransaction::Close(nsresult reason) {
   
   
   bool connReused = false;
+  bool isHttp2 = false;
   if (mConnection) {
     connReused = mConnection->IsReused();
+    isHttp2 = mConnection->Version() >= HttpVersion::v2_0;
   }
   mConnected = false;
   mTunnelProvider = nullptr;
@@ -1110,6 +1112,12 @@ void nsHttpTransaction::Close(nsresult reason) {
 
       if (NS_SUCCEEDED(Restart())) return;
     }
+  }
+
+  if (!mResponseIsComplete && NS_SUCCEEDED(reason) && isHttp2) {
+    
+    
+    mResponseIsComplete = true;
   }
 
   if ((mChunkedDecoder || (mContentLength >= int64_t(0))) &&
