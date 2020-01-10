@@ -19,9 +19,6 @@
         
         let DOMUtils = window.windowUtils;
         let textboxRect = DOMUtils.getBoundsWithoutFlushing(this.mInput);
-        let inputRect = DOMUtils.getBoundsWithoutFlushing(
-          this.mInput.inputField
-        );
 
         
         let minWidth = Math.max(
@@ -29,12 +26,6 @@
           this.oneOffButtons.buttonWidth * 3
         );
         this.style.minWidth = Math.round(minWidth) + "px";
-        
-        
-        this.style.marginLeft = textboxRect.left - inputRect.left + "px";
-        
-        
-        this.style.marginRight = inputRect.right - textboxRect.right + "px";
 
         
         
