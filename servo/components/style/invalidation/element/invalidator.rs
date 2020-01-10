@@ -455,11 +455,6 @@ where
 
         let mut sibling_invalidations = InvalidationVector::new();
         for child in parent.dom_children() {
-            
-            
-            
-            
-            
             let child = match child.as_element() {
                 Some(e) => e,
                 None => continue,
@@ -572,13 +567,6 @@ where
         
         if let Some(root) = self.element.shadow_root() {
             any_descendant |= self.invalidate_dom_descendants_of(root.as_node(), invalidations);
-        }
-
-        
-        
-        
-        if let Some(anon_content) = self.element.xbl_binding_anonymous_content() {
-            any_descendant |= self.invalidate_dom_descendants_of(anon_content, invalidations);
         }
 
         if let Some(marker) = self.element.marker_pseudo_element() {

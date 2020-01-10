@@ -777,14 +777,6 @@ pub trait TElement:
     }
 
     
-    
-    
-    
-    fn xbl_binding_anonymous_content(&self) -> Option<Self::ConcreteNode> {
-        None
-    }
-
-    
     fn shadow_root(&self) -> Option<<Self::ConcreteNode as TNode>::ConcreteShadowRoot>;
 
     

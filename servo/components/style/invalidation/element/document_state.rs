@@ -31,9 +31,6 @@ impl Default for InvalidationMatchingData {
 
 
 pub struct DocumentStateInvalidationProcessor<'a, E: TElement, I> {
-    
-    
-    
     rules: I,
     matching_context: MatchingContext<'a, E::Impl>,
     document_states_changed: DocumentState,
