@@ -81,12 +81,6 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
     return 0;
   }
 
-  
-  nsIRequest::TRRMode TRRMode();
-  
-  
-  nsIRequest::TRRMode EffectiveTRRMode();
-
  protected:
   friend class nsHostResolver;
 
@@ -557,6 +551,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   PRTime mCreationTime;
   mozilla::TimeDuration mLongIdleTimeout;
   mozilla::TimeDuration mShortIdleTimeout;
+  bool mSkipTRRWhenParentalControlEnabled;
 
   RefPtr<nsIThreadPool> mResolverThreads;
   RefPtr<mozilla::net::NetworkConnectivityService> mNCS;

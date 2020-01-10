@@ -172,9 +172,7 @@ nsresult TRR::SendHTTPRequest() {
     return NS_ERROR_FAILURE;
   }
 
-  if (((mType == TRRTYPE_A) || (mType == TRRTYPE_AAAA)) &&
-      mRec->EffectiveTRRMode() != nsIRequest::TRR_ONLY_MODE) {
-    
+  if ((mType == TRRTYPE_A) || (mType == TRRTYPE_AAAA)) {
     
     MOZ_ASSERT(mRec);
 
@@ -254,10 +252,6 @@ nsresult TRR::SendHTTPRequest() {
   if (!httpChannel) {
     return NS_ERROR_UNEXPECTED;
   }
-
-  
-  rv = httpChannel->SetTRRMode(nsIRequest::TRR_DISABLED_MODE);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   rv = httpChannel->SetRequestHeader(
       NS_LITERAL_CSTRING("Accept"),
