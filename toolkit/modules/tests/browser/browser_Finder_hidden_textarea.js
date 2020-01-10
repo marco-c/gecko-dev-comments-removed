@@ -44,7 +44,7 @@ add_task(async function test_bug1174036() {
 
       
       promiseFind = waitForFind();
-      finder.findAgain(false, false, false);
+      finder.findAgain("e", false, false, false);
       findResult = await promiseFind;
       is(
         findResult.result,
@@ -55,7 +55,7 @@ add_task(async function test_bug1174036() {
 
       
       promiseFind = waitForFind();
-      finder.findAgain(false, false, false);
+      finder.findAgain("e", false, false, false);
       findResult = await promiseFind;
       is(
         findResult.result,
