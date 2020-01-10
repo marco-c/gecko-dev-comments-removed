@@ -457,8 +457,20 @@ class InactivePropertyHelper {
   
 
 
+  get hasCssLayout() {
+    return !this.isSvg && !this.isMathMl;
+  }
+
+  
+
+
   get nonReplacedInlineBox() {
-    return this.nonReplaced && this.style && this.style.display === "inline";
+    return (
+      this.hasCssLayout &&
+      this.nonReplaced &&
+      this.style &&
+      this.style.display === "inline"
+    );
   }
 
   
@@ -521,6 +533,20 @@ class InactivePropertyHelper {
 
   get nodeName() {
     return this.node.nodeName ? this.node.nodeName.toLowerCase() : null;
+  }
+
+  
+
+
+  get isMathMl() {
+    return this.node.namespaceURI === "http://www.w3.org/1998/Math/MathML";
+  }
+
+  
+
+
+  get isSvg() {
+    return this.node.namespaceURI === "http://www.w3.org/2000/svg";
   }
 
   
