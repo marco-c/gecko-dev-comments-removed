@@ -114,7 +114,7 @@ input[type="url"][readOnly]:hover:active {
 .detail-row-contents {
   display: flex;
   align-items: end;
-  flex-basis: calc(100% - 360px); 
+  flex-basis: 340px; 
   max-width: 100%;
 }
 
