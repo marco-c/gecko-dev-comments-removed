@@ -2900,27 +2900,20 @@ void GCRuntime::maybeAllocTriggerZoneGC(Zone* zone, size_t nbytes) {
 
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
 
-  size_t usedBytes =
-      zone->gcHeapSize.bytes();  
-  size_t thresholdBytes = zone->gcHeapThreshold.bytes();
-  if (usedBytes < thresholdBytes) {
+  TriggerResult trigger = checkHeapThreshold(
+      zone->gcHeapSize, zone->gcHeapThreshold, zone->isCollecting());
+
+  if (trigger.kind == TriggerKind::None) {
     return;
   }
 
-  size_t niThreshold = thresholdBytes * tunables.nonIncrementalFactor();
-  if (usedBytes >= niThreshold) {
-    
-    
-    triggerZoneGC(zone, JS::GCReason::ALLOC_TRIGGER, usedBytes, niThreshold);
+  if (trigger.kind == TriggerKind::NonIncremental) {
+    triggerZoneGC(zone, JS::GCReason::ALLOC_TRIGGER, trigger.usedBytes,
+                  trigger.thresholdBytes);
     return;
   }
 
-  
-  
-  if (isIncrementalGCInProgress() && !zone->isCollecting() &&
-      usedBytes < thresholdBytes * tunables.avoidInterruptFactor()) {
-    return;
-  }
+  MOZ_ASSERT(trigger.kind == TriggerKind::Incremental);
 
   
   
@@ -2935,13 +2928,12 @@ void GCRuntime::maybeAllocTriggerZoneGC(Zone* zone, size_t nbytes) {
     
     
     
-    triggerZoneGC(zone, JS::GCReason::INCREMENTAL_ALLOC_TRIGGER, usedBytes,
-                  thresholdBytes);
+    triggerZoneGC(zone, JS::GCReason::INCREMENTAL_ALLOC_TRIGGER,
+                  trigger.usedBytes, trigger.thresholdBytes);
 
     
     
     zone->gcDelayBytes = tunables.zoneAllocDelayBytes();
-    return;
   }
 }
 
@@ -2978,38 +2970,51 @@ bool GCRuntime::maybeMallocTriggerZoneGC(Zone* zone, const HeapSize& heap,
     return false;
   }
 
-  size_t usedBytes = heap.bytes();
-  size_t thresholdBytes = threshold.bytes();
-  if (usedBytes < thresholdBytes) {
+  TriggerResult trigger =
+      checkHeapThreshold(heap, threshold, zone->isCollecting());
+  if (trigger.kind == TriggerKind::None) {
     return false;
+  }
+
+  if (trigger.kind == TriggerKind::Incremental && zone->wasGCStarted()) {
+    
+    
+    
+    MOZ_ASSERT(isIncrementalGCInProgress());
+    return false;
+  }
+
+  
+  
+  triggerZoneGC(zone, reason, trigger.usedBytes, trigger.thresholdBytes);
+  return true;
+}
+
+TriggerResult GCRuntime::checkHeapThreshold(const HeapSize& heapSize,
+                                            const HeapThreshold& heapThreshold,
+                                            bool isCollecting) {
+  size_t usedBytes = heapSize.bytes();
+  size_t thresholdBytes = heapThreshold.bytes();
+  if (usedBytes < thresholdBytes) {
+    return TriggerResult{TriggerKind::None, 0, 0};
   }
 
   size_t niThreshold = thresholdBytes * tunables.nonIncrementalFactor();
   if (usedBytes >= thresholdBytes * niThreshold) {
     
     
-    triggerZoneGC(zone, reason, usedBytes, niThreshold);
-    return true;
+    return TriggerResult{TriggerKind::NonIncremental, usedBytes, niThreshold};
   }
 
   
   
-  if (isIncrementalGCInProgress() && !zone->isCollecting() &&
+  if (isIncrementalGCInProgress() && !isCollecting &&
       usedBytes < thresholdBytes * tunables.avoidInterruptFactor()) {
-    return false;
+    return TriggerResult{TriggerKind::None, 0, 0};
   }
 
   
-  
-  
-  if (zone->wasGCStarted()) {
-    MOZ_ASSERT(isIncrementalGCInProgress());
-    return false;
-  }
-
-  
-  triggerZoneGC(zone, reason, usedBytes, thresholdBytes);
-  return true;
+  return TriggerResult{TriggerKind::Incremental, usedBytes, thresholdBytes};
 }
 
 bool GCRuntime::triggerZoneGC(Zone* zone, JS::GCReason reason, size_t used,

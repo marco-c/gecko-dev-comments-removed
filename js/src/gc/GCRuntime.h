@@ -520,6 +520,10 @@ class GCRuntime {
  private:
   enum IncrementalResult { ResetIncremental = 0, Ok };
 
+  TriggerResult checkHeapThreshold(const HeapSize& heapSize,
+                                   const HeapThreshold& heapThreshold,
+                                   bool isCollecting);
+
   
   void deleteEmptyZone(Zone* zone);
 
