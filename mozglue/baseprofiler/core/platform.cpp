@@ -1622,9 +1622,16 @@ static void locked_profiler_stream_json_for_this_process(
 
   AUTO_PROFILER_STATS(base_locked_profiler_stream_json_for_this_process);
 
-  double collectionStart = profiler_time();
+  const double collectionStartMs = profiler_time();
 
   ProfileBuffer& buffer = ActivePS::Buffer(aLock);
+
+  
+  Maybe<double> durationS = ActivePS::Duration(aLock);
+  if (durationS.isSome()) {
+    const double durationStartMs = collectionStartMs - *durationS * 1000;
+    buffer.DiscardSamplesBeforeTime(durationStartMs);
+  }
 
   if (!aOnlyThreads) {
     
@@ -1672,15 +1679,15 @@ static void locked_profiler_stream_json_for_this_process(
     aWriter.EndArray();
   }
 
-  double collectionEnd = profiler_time();
+  const double collectionEndMs = profiler_time();
 
   
   
   
   
   
-  buffer.AddEntry(ProfileBufferEntry::CollectionStart(collectionStart));
-  buffer.AddEntry(ProfileBufferEntry::CollectionEnd(collectionEnd));
+  buffer.AddEntry(ProfileBufferEntry::CollectionStart(collectionStartMs));
+  buffer.AddEntry(ProfileBufferEntry::CollectionEnd(collectionEndMs));
 }
 
 bool profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter,
@@ -2092,14 +2099,6 @@ void SamplerThread::Run() {
                                     expiredMarkersCleaned - lockAcquired,
                                     countersSampled - expiredMarkersCleaned,
                                     threadsSampled - countersSampled);
-      }
-
-      Maybe<double> duration = ActivePS::Duration(lock);
-      if (duration) {
-        ActivePS::Buffer(lock).DiscardSamplesBeforeTime(
-            (TimeStamp::NowUnfuzzed() - TimeDuration::FromSeconds(*duration) -
-             CorePS::ProcessStartTime())
-                .ToMilliseconds());
       }
     }
     
