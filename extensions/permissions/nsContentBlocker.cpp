@@ -319,14 +319,10 @@ nsresult nsContentBlocker::TestPermission(nsIURI* aCurrentURI,
       
       if (!aFirstURI) return NS_OK;
 
-      bool trustedSource = false;
-      rv = aFirstURI->SchemeIs("chrome", &trustedSource);
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (!trustedSource) {
-        rv = aFirstURI->SchemeIs("resource", &trustedSource);
-        NS_ENSURE_SUCCESS(rv, rv);
+      
+      if (aFirstURI->SchemeIs("chrome") || aFirstURI->SchemeIs("resource")) {
+        return NS_OK;
       }
-      if (trustedSource) return NS_OK;
 
       
       
