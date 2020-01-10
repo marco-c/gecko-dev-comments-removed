@@ -370,25 +370,6 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
     const GlobalObject& aGlobal, AudioContext& aAudioContext,
     const nsAString& aName, const AudioWorkletNodeOptions& aOptions,
     ErrorResult& aRv) {
-  if (aOptions.mNumberOfInputs == 0 && aOptions.mNumberOfOutputs == 0) {
-    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return nullptr;
-  }
-
-  if (aOptions.mOutputChannelCount.WasPassed()) {
-    if (aOptions.mOutputChannelCount.Value().Length() !=
-        aOptions.mNumberOfOutputs) {
-      aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
-      return nullptr;
-    }
-
-    for (uint32_t channelCount : aOptions.mOutputChannelCount.Value()) {
-      if (channelCount == 0 || channelCount > WebAudioUtils::MaxChannelCount) {
-        aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-        return nullptr;
-      }
-    }
-  }
   
 
 
@@ -402,6 +383,44 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
   }
 
   
+  RefPtr<AudioWorkletNode> audioWorkletNode =
+      new AudioWorkletNode(&aAudioContext, aName, aOptions);
+  audioWorkletNode->Initialize(aOptions, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+
+  
+
+
+  if (aOptions.mNumberOfInputs == 0 && aOptions.mNumberOfOutputs == 0) {
+    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return nullptr;
+  }
+
+  if (aOptions.mOutputChannelCount.WasPassed()) {
+    
+
+
+
+
+    for (uint32_t channelCount : aOptions.mOutputChannelCount.Value()) {
+      if (channelCount == 0 || channelCount > WebAudioUtils::MaxChannelCount) {
+        aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+        return nullptr;
+      }
+    }
+    
+
+
+
+    if (aOptions.mOutputChannelCount.Value().Length() !=
+        aOptions.mNumberOfOutputs) {
+      aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
+      return nullptr;
+    }
+  }
+  
   if (aOptions.mNumberOfInputs > UINT16_MAX) {
     aRv.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>(
         NS_LITERAL_STRING("numberOfInputs"));
@@ -410,14 +429,6 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
   if (aOptions.mNumberOfOutputs > UINT16_MAX) {
     aRv.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>(
         NS_LITERAL_STRING("numberOfOutputs"));
-    return nullptr;
-  }
-
-  RefPtr<AudioWorkletNode> audioWorkletNode =
-      new AudioWorkletNode(&aAudioContext, aName, aOptions);
-
-  audioWorkletNode->Initialize(aOptions, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
 
@@ -431,13 +442,17 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
     return nullptr;
   }
   
+
+
+
   
-  UniquePtr<StructuredCloneHolder> optionsSerialization =
+  
+  UniquePtr<StructuredCloneHolder> serializedOptions =
       MakeUnique<StructuredCloneHolder>(
           StructuredCloneHolder::CloningSupported,
           StructuredCloneHolder::TransferringNotSupported,
           JS::StructuredCloneScope::SameProcessDifferentThread);
-  optionsSerialization->Write(cx, optionsVal, aRv);
+  serializedOptions->Write(cx, optionsVal, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -452,6 +467,8 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
 
 
 
+
+
   Worklet* worklet = aAudioContext.GetAudioWorklet(aRv);
   MOZ_ASSERT(worklet, "Worklet already existed and so getter shouldn't fail.");
   auto workletImpl = static_cast<AudioWorkletImpl*>(worklet->Impl());
@@ -461,7 +478,7 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
       
       [track = audioWorkletNode->mTrack,
        workletImpl = RefPtr<AudioWorkletImpl>(workletImpl),
-       name = nsString(aName), options = std::move(optionsSerialization)]()
+       name = nsString(aName), options = std::move(serializedOptions)]()
           MOZ_CAN_RUN_SCRIPT_BOUNDARY {
             auto engine = static_cast<WorkletNodeEngine*>(track->Engine());
             engine->ConstructProcessor(workletImpl, name,
