@@ -76,6 +76,9 @@ def context(params):
         return [{'worker-implementation': 'docker-worker'}]
     else:
         return [{'worker-implementation': 'docker-worker', 'kind': 'test'}]
+    
+    
+    
 
 
 @register_callback_action(
