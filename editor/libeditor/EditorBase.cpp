@@ -52,6 +52,7 @@
 #include "mozilla/dom/AbstractRange.h"   
 #include "mozilla/dom/CharacterData.h"   
 #include "mozilla/dom/DataTransfer.h"    
+#include "mozilla/InternalMutationEvent.h"  
 #include "mozilla/dom/Element.h"         
 #include "mozilla/dom/EventTarget.h"     
 #include "mozilla/dom/HTMLBodyElement.h"
@@ -2832,6 +2833,46 @@ nsresult EditorBase::InsertTextWithTransaction(
   return NS_OK;
 }
 
+static bool TextFragmentBeginsWithStringAtOffset(
+    const nsTextFragment& aTextFragment, const int32_t aOffset,
+    const nsAString& aString) {
+  const uint32_t stringLength = aString.Length();
+
+  if (aOffset + stringLength > aTextFragment.GetLength()) {
+    return false;
+  }
+
+  if (aTextFragment.Is2b()) {
+    return aString.Equals(aTextFragment.Get2b() + aOffset);
+  }
+
+  return aString.EqualsLatin1(aTextFragment.Get1b() + aOffset, stringLength);
+}
+
+namespace {
+struct AdjustedInsertionRange {
+  EditorRawDOMPoint mBegin;
+  EditorRawDOMPoint mEnd;
+};
+}  
+
+static AdjustedInsertionRange AdjustTextInsertionRange(
+    Text& aTextNode, const int32_t aInsertionOffset,
+    const nsAString& aInsertedString) {
+  if (TextFragmentBeginsWithStringAtOffset(aTextNode.TextFragment(),
+                                           aInsertionOffset, aInsertedString)) {
+    EditorRawDOMPoint begin{&aTextNode, aInsertionOffset};
+    EditorRawDOMPoint end{
+        &aTextNode,
+        static_cast<int32_t>(aInsertionOffset + aInsertedString.Length())};
+    return {begin, end};
+  }
+
+  const EditorRawDOMPoint begin{&aTextNode, 0};
+  const EditorRawDOMPoint end{&aTextNode,
+                              static_cast<int32_t>(aTextNode.TextLength())};
+  return {begin, end};
+}
 nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
     const nsAString& aStringToInsert, Text& aTextNode, int32_t aOffset,
     bool aSuppressIME) {
@@ -2867,15 +2908,30 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
   EndUpdateViewBatch();
 
   if (AsHTMLEditor() && insertedTextNode) {
-    TopLevelEditSubActionDataRef().DidInsertText(
-        *this, EditorRawDOMPoint(insertedTextNode, insertedOffset),
-        aStringToInsert);
+    
+    
+    
+    if (!MaybeHasMutationEventListeners(
+            NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED)) {
+      const EditorRawDOMPoint begin{insertedTextNode, insertedOffset};
+      const EditorRawDOMPoint end{
+          insertedTextNode,
+          static_cast<int32_t>(insertedOffset + aStringToInsert.Length())};
+      TopLevelEditSubActionDataRef().DidInsertText(*this, begin, end);
+    } else if (insertedTextNode->IsInComposedDoc()) {
+      AdjustedInsertionRange adjustedRange = AdjustTextInsertionRange(
+          *insertedTextNode, insertedOffset, aStringToInsert);
+      TopLevelEditSubActionDataRef().DidInsertText(*this, adjustedRange.mBegin,
+                                                   adjustedRange.mEnd);
+    }
   }
 
   
   if (!mActionListeners.IsEmpty()) {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
+      
+      
       listener->DidInsertText(insertedTextNode, insertedOffset, aStringToInsert,
                               rv);
     }
@@ -5729,8 +5785,8 @@ void EditorBase::TopLevelEditSubActionData::DidJoinContents(
 }
 
 void EditorBase::TopLevelEditSubActionData::DidInsertText(
-    EditorBase& aEditorBase, const EditorRawDOMPoint& aInsertionPoint,
-    const nsAString& aString) {
+    EditorBase& aEditorBase, const EditorRawDOMPoint& aInsertionBegin,
+    const EditorRawDOMPoint& aInsertionEnd) {
   MOZ_ASSERT(aEditorBase.AsHTMLEditor());
 
   if (!aEditorBase.mInitSucceeded || aEditorBase.Destroyed()) {
@@ -5742,9 +5798,7 @@ void EditorBase::TopLevelEditSubActionData::DidInsertText(
   }
 
   DebugOnly<nsresult> rvIgnored = AddRangeToChangedRange(
-      *aEditorBase.AsHTMLEditor(), aInsertionPoint,
-      EditorRawDOMPoint(aInsertionPoint.GetContainer(),
-                        aInsertionPoint.Offset() + aString.Length()));
+      *aEditorBase.AsHTMLEditor(), aInsertionBegin, aInsertionEnd);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "TopLevelEditSubActionData::AddRangeToChangedRange() "
                        "failed, but ignored");
