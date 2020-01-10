@@ -3697,13 +3697,7 @@
         }, false);
 
         addEventListener("unhandledrejection", function(e) {
-            var reason;
-            if (e.reason) {
-                reason  = e.reason.message ? e.reason.message : e.reason;
-            } else {
-                reason = e;
-            }
-            var message = "Unhandled rejection: " + reason;
+            var message = "Unhandled rejection: " + e.reason.message;
             
             error_handler(message);
         }, false);
