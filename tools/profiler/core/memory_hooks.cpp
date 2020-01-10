@@ -124,7 +124,9 @@ class ThreadIntercept {
 
   
   
-  static bool IsBlocked_() { return tlsIsBlocked.get(); }
+  static bool IsBlocked_() {
+    return tlsIsBlocked.get() || profiler_could_be_locked_on_current_thread();
+  }
 
  public:
   static void Init() { tlsIsBlocked.infallibleInit(); }
