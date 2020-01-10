@@ -131,6 +131,7 @@ try_task_config_schema = Schema({
     Optional('templates'): {basestring: object},
     Optional('disable-pgo'): bool,
     Optional('browsertime'): bool,
+    Optional('gecko-profile'): bool,
     
     Optional('visual-metrics-jobs'): visual_metrics_jobs_schema,
     Optional(
