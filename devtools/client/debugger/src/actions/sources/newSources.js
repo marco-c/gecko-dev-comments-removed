@@ -25,7 +25,6 @@ import { selectLocation, setBreakableLines } from "../sources";
 import {
   getRawSourceURL,
   isPrettyURL,
-  isOriginal,
   isUrlExtension,
   isInlineScript,
 } from "../../utils/source";
@@ -34,6 +33,7 @@ import {
   getSource,
   getSourceFromId,
   hasSourceActor,
+  getSourceByActorId,
   getPendingSelectedLocation,
   getPendingBreakpointsForSource,
   getContext,
@@ -46,7 +46,6 @@ import { validateNavigateContext, ContextError } from "../../utils/context";
 
 import type {
   Source,
-  SourceId,
   Context,
   OriginalSourceData,
   GeneratedSourceData,
@@ -54,15 +53,17 @@ import type {
 } from "../../types";
 import type { Action, ThunkArgs } from "../types";
 
-function loadSourceMaps(cx: Context, sources: Source[]) {
+function loadSourceMaps(cx: Context, sources: SourceActor[]) {
   return async function({
     dispatch,
     sourceMaps,
   }: ThunkArgs): Promise<?(Promise<Source>[])> {
     try {
       const sourceList = await Promise.all(
-        sources.map(async ({ id }) => {
-          const originalSources = await dispatch(loadSourceMap(cx, id));
+        sources.map(async sourceActor => {
+          const originalSources = await dispatch(
+            loadSourceMap(cx, sourceActor)
+          );
           sourceQueue.queueSources(
             originalSources.map(data => ({
               type: "original",
@@ -74,13 +75,6 @@ function loadSourceMaps(cx: Context, sources: Source[]) {
       );
 
       await sourceQueue.flush();
-
-      
-      
-      
-      for (const source of sources) {
-        dispatch(checkPendingBreakpoints(cx, source.id));
-      }
 
       return flatten(sourceList);
     } catch (error) {
@@ -95,20 +89,13 @@ function loadSourceMaps(cx: Context, sources: Source[]) {
 
 
 
-function loadSourceMap(cx: Context, sourceId: SourceId) {
+function loadSourceMap(cx: Context, sourceActor: SourceActor) {
   return async function({
     dispatch,
     getState,
     sourceMaps,
   }: ThunkArgs): Promise<OriginalSourceData[]> {
-    const source = getSource(getState(), sourceId);
-
-    if (
-      !prefs.clientSourceMapsEnabled ||
-      !source ||
-      isOriginal(source) ||
-      !source.sourceMapURL
-    ) {
+    if (!prefs.clientSourceMapsEnabled || !sourceActor.sourceMapURL) {
       return [];
     }
 
@@ -116,21 +103,29 @@ function loadSourceMap(cx: Context, sourceId: SourceId) {
     try {
       
       
-      let url = source.url;
-      if (!source.url && typeof source.introductionUrl === "string") {
+      let url = sourceActor.url || "";
+      if (!sourceActor.url && typeof sourceActor.introductionUrl === "string") {
         
         
         
         
         
-        url = source.introductionUrl;
+        url = sourceActor.introductionUrl;
       }
-      data = await sourceMaps.getOriginalURLs({
-        id: source.id,
-        url,
-        sourceMapURL: source.sourceMapURL || "",
-        isWasm: source.isWasm,
-      });
+
+      
+      
+      const source = getSourceByActorId(getState(), sourceActor.id);
+      if (source) {
+        data = await sourceMaps.getOriginalURLs({
+          
+          
+          id: source.id,
+          url,
+          sourceMapURL: sourceActor.sourceMapURL || "",
+          isWasm: sourceActor.introductionType === "wasm",
+        });
+      }
     } catch (e) {
       console.error(e);
     }
@@ -139,9 +134,9 @@ function loadSourceMap(cx: Context, sourceId: SourceId) {
       
       dispatch(
         ({
-          type: "CLEAR_SOURCE_MAP_URL",
+          type: "CLEAR_SOURCE_ACTOR_MAP_URL",
           cx,
-          sourceId,
+          id: sourceActor.id,
         }: Action)
       );
       return [];
@@ -273,6 +268,10 @@ export function newOriginalSources(sourceInfo: Array<OriginalSourceData>) {
 
     await dispatch(checkNewSources(cx, sources));
 
+    for (const source of sources) {
+      dispatch(checkPendingBreakpoints(cx, source.id));
+    }
+
     return sources;
   };
 }
@@ -299,19 +298,18 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
       const newId = id || makeSourceId(source);
 
       if (!getSource(getState(), newId) && !newSourcesObj[newId]) {
-        newSourcesObj[newId] = ({
+        newSourcesObj[newId] = {
           id: newId,
           url: source.url,
           relativeUrl: source.url,
           isPrettyPrinted: false,
           extensionName: source.extensionName,
-          sourceMapURL: source.sourceMapURL,
           introductionUrl: source.introductionUrl,
           introductionType: source.introductionType,
           isBlackBoxed: false,
           isWasm: !!supportsWasm && source.introductionType === "wasm",
           isExtension: (source.url && isUrlExtension(source.url)) || false,
-        }: any);
+        };
       }
 
       const actorId = stringToSourceActorId(source.actor);
@@ -357,6 +355,17 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
     }
     await dispatch(checkNewSources(cx, newSources));
 
+    (async () => {
+      await dispatch(loadSourceMaps(cx, newSourceActors));
+
+      
+      
+      
+      for (const source of newSources) {
+        dispatch(checkPendingBreakpoints(cx, source.id));
+      }
+    })();
+
     return resultIds.map(id => getSourceFromId(getState(), id));
   };
 }
@@ -374,7 +383,6 @@ function checkNewSources(cx, sources: Source[]) {
     }
 
     dispatch(restoreBlackBoxedSources(cx, sources));
-    dispatch(loadSourceMaps(cx, sources));
 
     return sources;
   };
