@@ -25,6 +25,7 @@
 #include "mozilla/SHA1.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Telemetry.h"
+#include "../../base/IPv6Utils.h"
 
 
 #define EINTR_RETRY(x) MOZ_TEMP_FAILURE_RETRY(x)
@@ -94,7 +95,7 @@ nsNotifyAddrListener::GetLinkType(uint32_t* aLinkType) {
 
 
 
-void nsNotifyAddrListener::calculateNetworkId(void) {
+static bool ipv4NetworkId(SHA1Sum* sha1) {
   const char* kProcRoute = "/proc/net/route"; 
   const char* kProcArp = "/proc/net/arp";
   bool found = false;
@@ -148,28 +149,7 @@ void nsNotifyAddrListener::calculateNetworkId(void) {
               if (gw == searchip) {
                 LOG(("networkid: MAC %s\n", hw));
                 nsAutoCString mac(hw);
-                
-                
-                nsAutoCString addition("local-rubbish");
-                nsAutoCString output;
-                SHA1Sum sha1;
-                nsCString combined(mac + addition);
-                sha1.update(combined.get(), combined.Length());
-                uint8_t digest[SHA1Sum::kHashSize];
-                sha1.finish(digest);
-                nsCString newString(reinterpret_cast<char*>(digest),
-                                    SHA1Sum::kHashSize);
-                nsresult rv = Base64Encode(newString, output);
-                MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
-                LOG(("networkid: id %s\n", output.get()));
-                if (mNetworkId != output) {
-                  
-                  Telemetry::Accumulate(Telemetry::NETWORK_ID, 1);
-                  mNetworkId = output;
-                } else {
-                  
-                  Telemetry::Accumulate(Telemetry::NETWORK_ID, 2);
-                }
+                sha1->update(mac.get(), mac.Length());
                 found = true;
                 break;
               }
@@ -180,7 +160,124 @@ void nsNotifyAddrListener::calculateNetworkId(void) {
       } 
     }   
   }     
-  if (!found) {
+  return found;
+}
+
+
+
+static bool ipv6NetworkId(SHA1Sum* sha1) {
+  bool found = false;
+  FILE* ifs = fopen("/proc/net/if_inet6", "r");
+  if (ifs) {
+    char buffer[512];
+    char ip6[40];
+    int devnum;
+    int preflen;
+    int scope;
+    int flags;
+    char name[40];
+
+    char* l = fgets(buffer, sizeof(buffer), ifs);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    while (l) {
+      memset(ip6, 0, sizeof(ip6));
+      if (6 == sscanf(buffer, "%32[0-9a-f] %02x %02x %02x %02x %31s", ip6,
+                      &devnum, &preflen, &scope, &flags, name)) {
+        unsigned char id6[16];
+        memset(id6, 0, sizeof(id6));
+
+        for (int i = 0; i < 16; i++) {
+          char buf[3];
+          buf[0] = ip6[i * 2];
+          buf[1] = ip6[i * 2 + 1];
+          buf[2] = 0;
+          
+          id6[i] = (unsigned char)strtol(buf, nullptr, 16);
+        }
+
+        if (net::utils::ipv6_scope(id6) == IPV6_SCOPE_GLOBAL) {
+          unsigned char prefix[16];
+          memset(prefix, 0, sizeof(prefix));
+          uint8_t maskit[] = {0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe};
+          int bits = preflen;
+          for (int i = 0; i < 16; i++) {
+            uint8_t mask = (bits >= 8) ? 0xff : maskit[bits];
+            prefix[i] = id6[i] & mask;
+            bits -= 8;
+            if (bits <= 0) {
+              break;
+            }
+          }
+          
+          
+          
+          sha1->update(prefix, 16);
+          sha1->update(&preflen, sizeof(preflen));
+          found = true;
+          LOG(("networkid: found global IPv6 address %s/%d\n", ip6, preflen));
+        }
+      }
+      l = fgets(buffer, sizeof(buffer), ifs);
+    }
+    fclose(ifs);
+  }
+  return found;
+}
+
+
+
+void nsNotifyAddrListener::calculateNetworkId(void) {
+  SHA1Sum sha1;
+  bool found4 = ipv4NetworkId(&sha1);
+  bool found6 = ipv6NetworkId(&sha1);
+
+  if (found4 || found6) {
+    
+    
+    nsAutoCString addition("local-rubbish");
+    nsAutoCString output;
+    sha1.update(addition.get(), addition.Length());
+    uint8_t digest[SHA1Sum::kHashSize];
+    sha1.finish(digest);
+    nsAutoCString newString(reinterpret_cast<char*>(digest),
+                            SHA1Sum::kHashSize);
+    nsresult rv = Base64Encode(newString, output);
+    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
+    LOG(("networkid: id %s\n", output.get()));
+    if (mNetworkId != output) {
+      
+      if (found4 && !found6) {
+        Telemetry::Accumulate(Telemetry::NETWORK_ID, 1);  
+      } else if (!found4 && found6) {
+        Telemetry::Accumulate(Telemetry::NETWORK_ID, 3);  
+      } else {
+        Telemetry::Accumulate(Telemetry::NETWORK_ID, 4);  
+      }
+      mNetworkId = output;
+    } else {
+      
+      Telemetry::Accumulate(Telemetry::NETWORK_ID, 2);
+    }
+  } else {
     
     Telemetry::Accumulate(Telemetry::NETWORK_ID, 0);
   }
