@@ -164,7 +164,8 @@ pref("app.update.service.enabled", true);
 
 #ifdef XP_WIN
 
-pref("app.update.BITS.enabled", false);
+
+pref("app.update.BITS.enabled", true);
 #endif
 
 
