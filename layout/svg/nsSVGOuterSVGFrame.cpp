@@ -130,14 +130,22 @@ void nsSVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
       nsIFrame* embeddingFrame;
       if (IsRootOfReplacedElementSubDoc(&embeddingFrame) && embeddingFrame) {
-        if (MOZ_UNLIKELY(!embeddingFrame->HasAllStateBits(NS_FRAME_IS_DIRTY)) &&
-            DependsOnIntrinsicSize(embeddingFrame)) {
-          
-          
-          
-          
-          embeddingFrame->PresShell()->FrameNeedsReflow(
-              embeddingFrame, IntrinsicDirty::StyleChange, NS_FRAME_IS_DIRTY);
+        if (MOZ_UNLIKELY(!embeddingFrame->HasAllStateBits(NS_FRAME_IS_DIRTY))) {
+          bool dependsOnIntrinsicSize = DependsOnIntrinsicSize(embeddingFrame);
+          if (dependsOnIntrinsicSize ||
+              embeddingFrame->StylePosition()->mObjectFit !=
+                  NS_STYLE_OBJECT_FIT_FILL) {
+            
+            
+            
+            
+            
+            auto dirtyHint = dependsOnIntrinsicSize
+                                 ? IntrinsicDirty::StyleChange
+                                 : IntrinsicDirty::Resize;
+            embeddingFrame->PresShell()->FrameNeedsReflow(
+                embeddingFrame, dirtyHint, NS_FRAME_IS_DIRTY);
+          }
         }
       }
     }
@@ -697,13 +705,19 @@ nsresult nsSVGOuterSVGFrame::AttributeChanged(int32_t aNameSpaceID,
 
       nsIFrame* embeddingFrame;
       if (IsRootOfReplacedElementSubDoc(&embeddingFrame) && embeddingFrame) {
-        if (DependsOnIntrinsicSize(embeddingFrame)) {
+        bool dependsOnIntrinsicSize = DependsOnIntrinsicSize(embeddingFrame);
+        if (dependsOnIntrinsicSize ||
+            embeddingFrame->StylePosition()->mObjectFit !=
+                NS_STYLE_OBJECT_FIT_FILL) {
           
           
+          
+          
+          auto dirtyHint = dependsOnIntrinsicSize ? IntrinsicDirty::StyleChange
+                                                  : IntrinsicDirty::Resize;
           embeddingFrame->PresShell()->FrameNeedsReflow(
-              embeddingFrame, IntrinsicDirty::StyleChange, NS_FRAME_IS_DIRTY);
-        }
-        
+              embeddingFrame, dirtyHint, NS_FRAME_IS_DIRTY);
+        }  
       } else {
         
         
