@@ -7,7 +7,7 @@
 
 
 
-#if defined(__AVX2__) && !defined(__MINGW32__)
+#if defined(__AVX2__)
 
 #include <immintrin.h>
 #include <stdint.h>
