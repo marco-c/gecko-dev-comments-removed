@@ -152,10 +152,14 @@ private:
     return Success;
   }
 
-  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
+  Result CheckRevocation(EndEntityOrCA, const CertID&, Time,
+                         Time validityBeginning, Duration,
                           const Input*,  const Input*)
                          override
   {
+    
+    
+    EXPECT_EQ(TimeFromEpochInSeconds(oneDayBeforeNow), validityBeginning);
     return Success;
   }
 
@@ -301,10 +305,14 @@ public:
     return Success;
   }
 
-  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
+  Result CheckRevocation(EndEntityOrCA, const CertID&, Time,
+                         Time validityBeginning, Duration,
                           const Input*,  const Input*)
                          override
   {
+    
+    
+    EXPECT_EQ(TimeFromEpochInSeconds(oneDayBeforeNow), validityBeginning);
     return Success;
   }
 
@@ -321,7 +329,7 @@ public:
   {
   }
 
-  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
+  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Time, Duration,
                           const Input*,  const Input*)
                          override
   {
@@ -442,10 +450,14 @@ public:
     return Success;
   }
 
-  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
+  Result CheckRevocation(EndEntityOrCA, const CertID&, Time,
+                         Time validityBeginning, Duration,
                           const Input*,  const Input*)
                          override
   {
+    
+    
+    EXPECT_EQ(TimeFromEpochInSeconds(oneDayBeforeNow), validityBeginning);
     return Success;
   }
 
@@ -665,10 +677,14 @@ private:
     return Success;
   }
 
-  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
+  Result CheckRevocation(EndEntityOrCA, const CertID&, Time,
+                         Time validityBeginning, Duration,
                           const Input*,
                           const Input*) override
   {
+    
+    
+    EXPECT_EQ(TimeFromEpochInSeconds(oneDayBeforeNow), validityBeginning);
     return Success;
   }
 
@@ -723,7 +739,7 @@ class RevokedEndEntityTrustDomain final : public MultiplePathTrustDomain
 {
 public:
   Result CheckRevocation(EndEntityOrCA endEntityOrCA, const CertID&, Time,
-                         Duration,  const Input*,
+                         Time, Duration,  const Input*,
                           const Input*) override
   {
     if (endEntityOrCA == EndEntityOrCA::MustBeEndEntity) {
@@ -828,10 +844,14 @@ private:
     return Success;
   }
 
-  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
+  Result CheckRevocation(EndEntityOrCA, const CertID&, Time,
+                         Time validityBeginning, Duration,
                           const Input*,  const Input*)
                          override
   {
+    
+    
+    EXPECT_EQ(TimeFromEpochInSeconds(oneDayBeforeNow), validityBeginning);
     return Success;
   }
 
