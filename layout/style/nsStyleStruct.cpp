@@ -2842,6 +2842,16 @@ static inline nsChangeHint CompareMotionValues(
   return result;
 }
 
+static bool ScrollbarGenerationChanged(const nsStyleDisplay& aOld,
+                                       const nsStyleDisplay& aNew) {
+  auto changed = [](StyleOverflow aOld, StyleOverflow aNew) {
+    return aOld != aNew &&
+           (aOld == StyleOverflow::Hidden || aNew == StyleOverflow::Hidden);
+  };
+  return changed(aOld.mOverflowX, aNew.mOverflowX) ||
+         changed(aOld.mOverflowY, aNew.mOverflowY);
+}
+
 nsChangeHint nsStyleDisplay::CalcDifference(
     const nsStyleDisplay& aNewData, const nsStylePosition& aOldPosition) const {
   nsChangeHint hint = nsChangeHint(0);
@@ -2874,10 +2884,43 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   }
 
   if (mOverflowX != aNewData.mOverflowX || mOverflowY != aNewData.mOverflowY) {
-    hint |= nsChangeHint_ScrollbarChange;
+    const bool isScrollable = IsScrollableOverflow();
+    if (isScrollable != aNewData.IsScrollableOverflow()) {
+      
+      
+      hint |= nsChangeHint_ScrollbarChange;
+    } else if (isScrollable) {
+      if (ScrollbarGenerationChanged(*this, aNewData)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        hint |= nsChangeHint_ScrollbarChange;
+      } else {
+        
+        
+        
+        hint |= nsChangeHint_ReflowHintsForScrollbarChange;
+      }
+    } else {
+      
+      
+      
+      hint |= nsChangeHint_RepaintFrame;
+    }
   }
 
   
+
+
+
 
 
 

@@ -412,6 +412,20 @@ static_assert(!(nsChangeHint_Hints_AlwaysHandledForDescendants &
 
 
 
+
+
+
+
+#define nsChangeHint_ReflowHintsForScrollbarChange      \
+  nsChangeHint(nsChangeHint_ReflowHintsForBSizeChange | \
+               nsChangeHint_ReflowHintsForISizeChange)
+
+
+
+
+
+
+
 #define nsChangeHint_ReflowHintsForFloatAreaChange        \
   nsChangeHint(nsChangeHint_AllReflowHints &              \
                ~(nsChangeHint_ClearDescendantIntrinsics | \
