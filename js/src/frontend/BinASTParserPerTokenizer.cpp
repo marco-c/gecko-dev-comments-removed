@@ -197,7 +197,7 @@ JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::parseLazyFunction(
 
   
   
-  const auto context = Context(RootContext());
+  const auto context = FieldOrRootContext(RootContext());
   MOZ_TRY(
       (asFinalParser()->*parseFunc)(func->nargs(), &params, &tmpBody, context));
 

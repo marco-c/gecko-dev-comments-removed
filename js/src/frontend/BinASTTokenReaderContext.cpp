@@ -1525,23 +1525,35 @@ BinASTTokenReaderContext::readSkippableSubTree(const FieldContext&) {
 
 JS::Result<Ok> BinASTTokenReaderContext::enterTaggedTuple(
     BinASTKind& tag, BinASTTokenReaderContext::BinASTFields&,
-    const Context& context, AutoTaggedTuple& guard) {
+    const FieldOrRootContext& context, AutoTaggedTuple& guard) {
   return context.match(
+      [this, &tag](const BinASTTokenReaderBase::FieldContext& asFieldContext)
+          -> JS::Result<Ok> {
+        
+        MOZ_TRY_VAR(tag, readTagFromTable(asFieldContext.position));
+        return Ok();
+      },
       [&tag](const BinASTTokenReaderBase::RootContext&) -> JS::Result<Ok> {
         
         tag = BinASTKind::Script;
+        return Ok();
+      });
+}
+
+JS::Result<Ok> BinASTTokenReaderContext::enterTaggedTuple(
+    BinASTKind& tag, BinASTTokenReaderContext::BinASTFields&,
+    const FieldOrListContext& context, AutoTaggedTuple& guard) {
+  return context.match(
+      [this, &tag](const BinASTTokenReaderBase::FieldContext& asFieldContext)
+          -> JS::Result<Ok> {
+        
+        MOZ_TRY_VAR(tag, readTagFromTable(asFieldContext.position));
         return Ok();
       },
       [this, &tag](const BinASTTokenReaderBase::ListContext& asListContext)
           -> JS::Result<Ok> {
         
         MOZ_TRY_VAR(tag, readTagFromTable(asListContext.position));
-        return Ok();
-      },
-      [this, &tag](const BinASTTokenReaderBase::FieldContext& asFieldContext)
-          -> JS::Result<Ok> {
-        
-        MOZ_TRY_VAR(tag, readTagFromTable(asFieldContext.position));
         return Ok();
       });
 }
