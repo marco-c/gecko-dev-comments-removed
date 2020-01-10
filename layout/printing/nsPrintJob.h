@@ -121,42 +121,19 @@ class nsPrintJob final : public nsIObserver,
   already_AddRefed<nsIPrintSettings> GetCurrentPrintSettings();
 
   
+  void SetIsPrinting(bool aIsPrinting);
+  bool GetIsPrinting() { return mIsDoingPrinting; }
+  void SetIsPrintPreview(bool aIsPrintPreview);
+  bool GetIsPrintPreview() { return mIsDoingPrintPreview; }
+  bool GetIsCreatingPrintPreview() { return mIsCreatingPrintPreview; }
+
+  
   
   enum eDocTitleDefault { eDocTitleDefBlank, eDocTitleDefURLDoc };
 
-  void Destroy();
-  void DestroyPrintingData();
-
   nsresult GetSeqFrameAndCountPages(nsIFrame*& aSeqFrame, int32_t& aCount);
 
-  
-  
-  
-  nsresult DocumentReadyForPrinting();
-  nsresult GetSelectionDocument(nsIDeviceContextSpec* aDevSpec,
-                                mozilla::dom::Document** aNewDoc);
-
-  nsresult SetupToPrintContent();
-  nsresult EnablePOsForPrinting();
-  nsPrintObject* FindSmallestSTF();
-
-  bool PrintDocContent(const mozilla::UniquePtr<nsPrintObject>& aPO,
-                       nsresult& aStatus);
-  nsresult DoPrint(const mozilla::UniquePtr<nsPrintObject>& aPO);
-
-  void SetPrintPO(nsPrintObject* aPO, bool aPrint);
-
   void TurnScriptingOn(bool aDoTurnOn);
-  bool CheckDocumentForPPCaching();
-
-  
-
-
-
-
-  void SuppressPrintPreviewUserEvents();
-
-  
 
   
 
@@ -168,7 +145,48 @@ class nsPrintJob final : public nsIObserver,
   bool PrintPage(nsPrintObject* aPOect, bool& aInRange);
   bool DonePrintingPages(nsPrintObject* aPO, nsresult aResult);
 
+  nsresult CleanupOnFailure(nsresult aResult, bool aIsPrinting);
   
+  
+  nsresult FinishPrintPreview();
+  void FirePrintingErrorEvent(nsresult aPrintError);
+  bool CheckBeforeDestroy() const { return mPrt && mPrt->mPreparingForPrint; }
+
+  mozilla::PresShell* GetPrintPreviewPresShell() {
+    return mPrtPreview->mPrintObject->mPresShell;
+  }
+
+  float GetPrintPreviewScale() {
+    return mPrtPreview->mPrintObject->mPresContext->GetPrintPreviewScale();
+  }
+
+  nsresult Cancel();
+  void Destroy();
+  void DestroyPrintingData();
+
+ private:
+  nsPrintJob& operator=(const nsPrintJob& aOther) = delete;
+
+  ~nsPrintJob();
+
+  nsresult DocumentReadyForPrinting();
+  nsresult SetupToPrintContent();
+  nsresult EnablePOsForPrinting();
+  nsPrintObject* FindSmallestSTF();
+
+  bool PrintDocContent(const mozilla::UniquePtr<nsPrintObject>& aPO,
+                       nsresult& aStatus);
+  nsresult DoPrint(const mozilla::UniquePtr<nsPrintObject>& aPO);
+
+  void SetPrintPO(nsPrintObject* aPO, bool aPrint);
+
+  
+
+
+
+
+  void SuppressPrintPreviewUserEvents();
+
   nsresult ReflowDocList(const mozilla::UniquePtr<nsPrintObject>& aPO,
                          bool aSetPixelScale);
 
@@ -177,10 +195,6 @@ class nsPrintJob final : public nsIObserver,
 
   void CalcNumPrintablePages(int32_t& aNumPages);
   void ShowPrintProgress(bool aIsForPrinting, bool& aDoNotify);
-  nsresult CleanupOnFailure(nsresult aResult, bool aIsPrinting);
-  
-  
-  nsresult FinishPrintPreview();
   void SetURLAndTitleOnProgressParams(
       const mozilla::UniquePtr<nsPrintObject>& aPO,
       nsIPrintProgressParams* aParams);
@@ -188,10 +202,6 @@ class nsPrintJob final : public nsIObserver,
 
   bool IsThereARangeSelection(nsPIDOMWindowOuter* aDOMWin);
 
-  void FirePrintingErrorEvent(nsresult aPrintError);
-  
-
-  
   nsresult StartPagePrintTimer(const mozilla::UniquePtr<nsPrintObject>& aPO);
 
   bool IsWindowsInOurSubTree(nsPIDOMWindowOuter* aDOMWindow) const;
@@ -205,30 +215,6 @@ class nsPrintJob final : public nsIObserver,
   void GetDisplayTitleAndURL(const mozilla::UniquePtr<nsPrintObject>& aPO,
                              nsAString& aTitle, nsAString& aURLStr,
                              eDocTitleDefault aDefType);
-
-  bool CheckBeforeDestroy() const { return mPrt && mPrt->mPreparingForPrint; }
-
-  nsresult Cancel();
-
-  mozilla::PresShell* GetPrintPreviewPresShell() {
-    return mPrtPreview->mPrintObject->mPresShell;
-  }
-
-  float GetPrintPreviewScale() {
-    return mPrtPreview->mPrintObject->mPresContext->GetPrintPreviewScale();
-  }
-
-  
-  void SetIsPrinting(bool aIsPrinting);
-  bool GetIsPrinting() { return mIsDoingPrinting; }
-  void SetIsPrintPreview(bool aIsPrintPreview);
-  bool GetIsPrintPreview() { return mIsDoingPrintPreview; }
-  bool GetIsCreatingPrintPreview() { return mIsCreatingPrintPreview; }
-
- private:
-  nsPrintJob& operator=(const nsPrintJob& aOther) = delete;
-
-  ~nsPrintJob();
 
   nsresult CommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
                        nsIWebProgressListener* aWebProgressListener,
