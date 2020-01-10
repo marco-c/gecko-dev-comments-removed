@@ -947,21 +947,8 @@ class PictureInPictureChild extends ActorChild {
     }
 
     let doc = this.content.document;
-    
-    
-    
-    
-    let playerVideo = originatingVideo.cloneNode();
-    playerVideo.pause();
-    playerVideo.removeAttribute("controls");
+    let playerVideo = doc.createElement("video");
 
-    
-    
-    playerVideo.muted = true;
-
-    
-    
-    playerVideo.setAttribute("style", "");
     doc.body.style.overflow = "hidden";
     doc.body.style.margin = "0";
 
