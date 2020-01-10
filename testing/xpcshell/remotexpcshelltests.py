@@ -473,7 +473,7 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         
         
         
-        self.initDir(self.remoteScriptsDir)
+        self.device.rm(self.remoteScriptsDir, recursive=True, force=True, timeout=None, root=True)
         self.device.push(self.xpcDir, self.remoteScriptsDir, timeout=600)
         self.device.chmod(self.remoteScriptsDir, recursive=True, root=True)
 
