@@ -12,6 +12,7 @@
 #include "nsBidiUtils.h"
 #include "nsHashKeys.h"
 #include "nsCoord.h"
+#include "nsTArray.h"
 
 #ifdef DrawText
 #  undef DrawText
@@ -71,7 +72,47 @@ struct nsFrameContinuationState : public nsVoidPtrHashKey {
 
 
 
-typedef nsTHashtable<nsFrameContinuationState> nsContinuationStates;
+struct nsContinuationStates {
+  static constexpr size_t kArrayMax = 32;
+
+  
+  
+  
+  bool mUseTable = false;
+  AutoTArray<nsFrameContinuationState, kArrayMax> mValues;
+  nsTHashtable<nsFrameContinuationState> mTable;
+
+  void Insert(nsIFrame* aFrame) {
+    if (MOZ_UNLIKELY(mUseTable)) {
+      mTable.PutEntry(aFrame);
+      return;
+    }
+    if (MOZ_LIKELY(mValues.Length() < kArrayMax)) {
+      mValues.AppendElement(aFrame);
+      return;
+    }
+    for (const auto& entry : mValues) {
+      mTable.PutEntry(entry.GetKey());
+    }
+    mTable.PutEntry(aFrame);
+    mValues.Clear();
+    mUseTable = true;
+  }
+
+  nsFrameContinuationState* Get(nsIFrame* aFrame) {
+    MOZ_ASSERT(mValues.IsEmpty() != mTable.IsEmpty(),
+               "expect entries to either be in mValues or in mTable");
+    if (mUseTable) {
+      return mTable.GetEntry(aFrame);
+    }
+    for (size_t i = 0, len = mValues.Length(); i != len; ++i) {
+      if (mValues[i].GetKey() == aFrame) {
+        return &mValues[i];
+      }
+    }
+    return nullptr;
+  }
+};
 
 
 
@@ -409,7 +450,7 @@ class nsBidiPresUtils {
 
 
   static nscoord RepositionRubyFrame(
-      nsIFrame* aFrame, const nsContinuationStates* aContinuationStates,
+      nsIFrame* aFrame, nsContinuationStates* aContinuationStates,
       const mozilla::WritingMode aContainerWM,
       const mozilla::LogicalMargin& aBorderPadding);
 
@@ -430,11 +471,12 @@ class nsBidiPresUtils {
 
 
 
-  static nscoord RepositionFrame(
-      nsIFrame* aFrame, bool aIsEvenLevel, nscoord aStartOrEnd,
-      const nsContinuationStates* aContinuationStates,
-      mozilla::WritingMode aContainerWM, bool aContainerReverseOrder,
-      const nsSize& aContainerSize);
+  static nscoord RepositionFrame(nsIFrame* aFrame, bool aIsEvenLevel,
+                                 nscoord aStartOrEnd,
+                                 nsContinuationStates* aContinuationStates,
+                                 mozilla::WritingMode aContainerWM,
+                                 bool aContainerReverseOrder,
+                                 const nsSize& aContainerSize);
 
   
 
@@ -473,7 +515,7 @@ class nsBidiPresUtils {
 
 
   static void IsFirstOrLast(nsIFrame* aFrame,
-                            const nsContinuationStates* aContinuationStates,
+                            nsContinuationStates* aContinuationStates,
                             bool aSpanInLineOrder ,
                             bool& aIsFirst , bool& aIsLast );
 

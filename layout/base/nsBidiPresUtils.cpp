@@ -1356,10 +1356,11 @@ nsBidiLevel nsBidiPresUtils::GetFrameBaseLevel(nsIFrame* aFrame) {
   return firstLeaf->GetBaseLevel();
 }
 
-void nsBidiPresUtils::IsFirstOrLast(
-    nsIFrame* aFrame, const nsContinuationStates* aContinuationStates,
-    bool aSpanDirMatchesLineDir, bool& aIsFirst ,
-    bool& aIsLast ) {
+void nsBidiPresUtils::IsFirstOrLast(nsIFrame* aFrame,
+                                    nsContinuationStates* aContinuationStates,
+                                    bool aSpanDirMatchesLineDir,
+                                    bool& aIsFirst ,
+                                    bool& aIsLast ) {
   
 
 
@@ -1372,7 +1373,7 @@ void nsBidiPresUtils::IsFirstOrLast(
 
 
   bool firstInLineOrder, lastInLineOrder;
-  nsFrameContinuationState* frameState = aContinuationStates->GetEntry(aFrame);
+  nsFrameContinuationState* frameState = aContinuationStates->Get(aFrame);
   nsFrameContinuationState* firstFrameState;
 
   if (!frameState->mFirstVisualFrame) {
@@ -1390,7 +1391,7 @@ void nsBidiPresUtils::IsFirstOrLast(
 
     
     for (frame = aFrame->GetPrevContinuation();
-         frame && (contState = aContinuationStates->GetEntry(frame));
+         frame && (contState = aContinuationStates->Get(frame));
          frame = frame->GetPrevContinuation()) {
       frameState->mFrameCount++;
       contState->mFirstVisualFrame = aFrame;
@@ -1399,7 +1400,7 @@ void nsBidiPresUtils::IsFirstOrLast(
 
     
     for (frame = aFrame->GetNextContinuation();
-         frame && (contState = aContinuationStates->GetEntry(frame));
+         frame && (contState = aContinuationStates->Get(frame));
          frame = frame->GetNextContinuation()) {
       frameState->mFrameCount++;
       contState->mFirstVisualFrame = aFrame;
@@ -1411,8 +1412,7 @@ void nsBidiPresUtils::IsFirstOrLast(
   } else {
     
     firstInLineOrder = false;
-    firstFrameState =
-        aContinuationStates->GetEntry(frameState->mFirstVisualFrame);
+    firstFrameState = aContinuationStates->Get(frameState->mFirstVisualFrame);
   }
 
   lastInLineOrder = (firstFrameState->mFrameCount == 1);
@@ -1507,7 +1507,7 @@ void nsBidiPresUtils::RepositionRubyContentFrame(
 
 
 nscoord nsBidiPresUtils::RepositionRubyFrame(
-    nsIFrame* aFrame, const nsContinuationStates* aContinuationStates,
+    nsIFrame* aFrame, nsContinuationStates* aContinuationStates,
     const WritingMode aContainerWM, const LogicalMargin& aBorderPadding) {
   LayoutFrameType frameType = aFrame->Type();
   MOZ_ASSERT(RubyUtils::IsRubyBox(frameType));
@@ -1570,7 +1570,7 @@ nscoord nsBidiPresUtils::RepositionRubyFrame(
 
 nscoord nsBidiPresUtils::RepositionFrame(
     nsIFrame* aFrame, bool aIsEvenLevel, nscoord aStartOrEnd,
-    const nsContinuationStates* aContinuationStates, WritingMode aContainerWM,
+    nsContinuationStates* aContinuationStates, WritingMode aContainerWM,
     bool aContainerReverseDir, const nsSize& aContainerSize) {
   nscoord lineSize =
       aContainerWM.IsVertical() ? aContainerSize.height : aContainerSize.width;
@@ -1671,7 +1671,7 @@ nscoord nsBidiPresUtils::RepositionFrame(
 
 void nsBidiPresUtils::InitContinuationStates(
     nsIFrame* aFrame, nsContinuationStates* aContinuationStates) {
-  aContinuationStates->PutEntry(aFrame);
+  aContinuationStates->Insert(aFrame);
   if (!IsBidiLeaf(aFrame) || RubyUtils::IsRubyBox(aFrame->Type())) {
     
     for (nsIFrame* frame : aFrame->PrincipalChildList()) {
