@@ -257,7 +257,7 @@
   unicode-bidi: inherit;
   text-overflow: inherit;
   
-  display: inherit;
+  display: block;
   
 
   max-block-size: 100%;
