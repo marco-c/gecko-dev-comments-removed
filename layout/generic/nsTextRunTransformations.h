@@ -38,6 +38,7 @@ struct nsTransformedCharStyle final {
   uint8_t mMathVariant;
   bool mExplicitLanguage;
   bool mForceNonFullWidth = false;
+  bool mMaskPassword = false;
 
  private:
   ~nsTransformedCharStyle() {}
@@ -93,6 +94,12 @@ class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
                               mozilla::gfx::DrawTarget* aRefDrawTarget,
                               gfxMissingFontRecorder* aMFR) override;
 
+  
+  
+  
+  
+  
+  
   
   
   

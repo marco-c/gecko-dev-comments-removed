@@ -173,6 +173,17 @@ input > .preview-div {
   white-space: pre;
 }
 
+input[type=password] > .anonymous-div,
+input[type=password] > .preview-div {
+  
+
+
+
+
+
+  unicode-bidi: bidi-override;
+}
+
 textarea > .anonymous-div {
   scroll-behavior: inherit;
   overscroll-behavior: inherit;

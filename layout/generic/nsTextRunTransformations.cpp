@@ -7,6 +7,7 @@
 #include "nsTextRunTransformations.h"
 
 #include "mozilla/ComputedStyleInlines.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
 
@@ -278,6 +279,7 @@ bool nsCaseTransformTextRunFactory::TransformString(
 
   uint32_t length = aString.Length();
   const char16_t* str = aString.BeginReading();
+  const char16_t kPasswordMask = LookAndFeel::GetPasswordCharacter();
 
   bool mergeNeeded = false;
 
@@ -334,6 +336,7 @@ bool nsCaseTransformTextRunFactory::TransformString(
       }
     }
 
+    bool maskPassword = charStyle && charStyle->mMaskPassword;
     int extraChars = 0;
     const mozilla::unicode::MultiCharMapping* mcm;
     bool inhibitBreakBefore = false;  
@@ -341,415 +344,429 @@ bool nsCaseTransformTextRunFactory::TransformString(
     if (NS_IS_HIGH_SURROGATE(ch) && i < length - 1 &&
         NS_IS_LOW_SURROGATE(str[i + 1])) {
       ch = SURROGATE_TO_UCS4(ch, str[i + 1]);
+      
+      
+      if (maskPassword &&
+          !aTextRun->mStyles[aOffsetInTextRun + 1]->mMaskPassword) {
+        maskPassword = false;
+      }
     }
 
-    switch (style.case_) {
-      case StyleTextTransformCase::None:
-        break;
+    
+    if (!maskPassword) {
+      switch (style.case_) {
+        case StyleTextTransformCase::None:
+          break;
 
-      case StyleTextTransformCase::Lowercase:
-        if (languageSpecificCasing == eLSCB_Turkish) {
-          if (ch == 'I') {
-            ch = LATIN_SMALL_LETTER_DOTLESS_I;
-            prevIsLetter = true;
-            sigmaIndex = uint32_t(-1);
-            break;
-          }
-          if (ch == LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE) {
-            ch = 'i';
-            prevIsLetter = true;
-            sigmaIndex = uint32_t(-1);
-            break;
-          }
-        }
-
-        if (languageSpecificCasing == eLSCB_Lithuanian) {
-          
-          
-
-
-
-
-
-
-
-
-
-
-
-          
-          if (ch == 'I' || ch == 'J' || ch == 0x012E) {
-            ch = ToLowerCase(ch);
-            prevIsLetter = true;
-            seenSoftDotted = true;
-            sigmaIndex = uint32_t(-1);
-            break;
-          }
-          if (ch == 0x00CC) {
-            aConvertedString.Append('i');
-            aConvertedString.Append(0x0307);
-            extraChars += 2;
-            ch = 0x0300;
-            prevIsLetter = true;
-            seenSoftDotted = false;
-            sigmaIndex = uint32_t(-1);
-            break;
-          }
-          if (ch == 0x00CD) {
-            aConvertedString.Append('i');
-            aConvertedString.Append(0x0307);
-            extraChars += 2;
-            ch = 0x0301;
-            prevIsLetter = true;
-            seenSoftDotted = false;
-            sigmaIndex = uint32_t(-1);
-            break;
-          }
-          if (ch == 0x0128) {
-            aConvertedString.Append('i');
-            aConvertedString.Append(0x0307);
-            extraChars += 2;
-            ch = 0x0303;
-            prevIsLetter = true;
-            seenSoftDotted = false;
-            sigmaIndex = uint32_t(-1);
-            break;
-          }
-        }
-
-        cat = mozilla::unicode::GetGenCategory(ch);
-
-        if (languageSpecificCasing == eLSCB_Irish &&
-            cat == nsUGenCategory::kLetter) {
-          
-          if (!prevIsLetter && (ch == 'n' || ch == 't')) {
-            ntPrefix = true;
-          } else {
-            if (ntPrefix && mozilla::IrishCasing::IsUpperVowel(ch)) {
-              aConvertedString.Append('-');
-              ++extraChars;
+        case StyleTextTransformCase::Lowercase:
+          if (languageSpecificCasing == eLSCB_Turkish) {
+            if (ch == 'I') {
+              ch = LATIN_SMALL_LETTER_DOTLESS_I;
+              prevIsLetter = true;
+              sigmaIndex = uint32_t(-1);
+              break;
             }
+            if (ch == LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE) {
+              ch = 'i';
+              prevIsLetter = true;
+              sigmaIndex = uint32_t(-1);
+              break;
+            }
+          }
+
+          if (languageSpecificCasing == eLSCB_Lithuanian) {
+            
+            
+
+
+
+
+
+
+
+
+
+
+
+            
+            if (ch == 'I' || ch == 'J' || ch == 0x012E) {
+              ch = ToLowerCase(ch);
+              prevIsLetter = true;
+              seenSoftDotted = true;
+              sigmaIndex = uint32_t(-1);
+              break;
+            }
+            if (ch == 0x00CC) {
+              aConvertedString.Append('i');
+              aConvertedString.Append(0x0307);
+              extraChars += 2;
+              ch = 0x0300;
+              prevIsLetter = true;
+              seenSoftDotted = false;
+              sigmaIndex = uint32_t(-1);
+              break;
+            }
+            if (ch == 0x00CD) {
+              aConvertedString.Append('i');
+              aConvertedString.Append(0x0307);
+              extraChars += 2;
+              ch = 0x0301;
+              prevIsLetter = true;
+              seenSoftDotted = false;
+              sigmaIndex = uint32_t(-1);
+              break;
+            }
+            if (ch == 0x0128) {
+              aConvertedString.Append('i');
+              aConvertedString.Append(0x0307);
+              extraChars += 2;
+              ch = 0x0303;
+              prevIsLetter = true;
+              seenSoftDotted = false;
+              sigmaIndex = uint32_t(-1);
+              break;
+            }
+          }
+
+          cat = mozilla::unicode::GetGenCategory(ch);
+
+          if (languageSpecificCasing == eLSCB_Irish &&
+              cat == nsUGenCategory::kLetter) {
+            
+            if (!prevIsLetter && (ch == 'n' || ch == 't')) {
+              ntPrefix = true;
+            } else {
+              if (ntPrefix && mozilla::IrishCasing::IsUpperVowel(ch)) {
+                aConvertedString.Append('-');
+                ++extraChars;
+              }
+              ntPrefix = false;
+            }
+          } else {
             ntPrefix = false;
           }
-        } else {
-          ntPrefix = false;
-        }
 
-        if (seenSoftDotted && cat == nsUGenCategory::kMark) {
-          
-          if (ch == 0x0300 || ch == 0x0301 || ch == 0x0303) {
-            aConvertedString.Append(0x0307);
-            ++extraChars;
+          if (seenSoftDotted && cat == nsUGenCategory::kMark) {
+            
+            if (ch == 0x0300 || ch == 0x0301 || ch == 0x0303) {
+              aConvertedString.Append(0x0307);
+              ++extraChars;
+            }
           }
-        }
-        seenSoftDotted = false;
+          seenSoftDotted = false;
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
 
-        
-        
-        
-        if (sigmaIndex != uint32_t(-1)) {
-          if (cat == nsUGenCategory::kLetter) {
-            aConvertedString.SetCharAt(GREEK_SMALL_LETTER_SIGMA, sigmaIndex);
+          
+          
+          
+          if (sigmaIndex != uint32_t(-1)) {
+            if (cat == nsUGenCategory::kLetter) {
+              aConvertedString.SetCharAt(GREEK_SMALL_LETTER_SIGMA, sigmaIndex);
+            }
           }
-        }
 
-        if (ch == GREEK_CAPITAL_LETTER_SIGMA) {
-          
-          
-          
-          if (prevIsLetter) {
-            ch = GREEK_SMALL_LETTER_FINAL_SIGMA;
-            sigmaIndex = aConvertedString.Length();
-          } else {
+          if (ch == GREEK_CAPITAL_LETTER_SIGMA) {
             
             
-            ch = GREEK_SMALL_LETTER_SIGMA;
+            
+            if (prevIsLetter) {
+              ch = GREEK_SMALL_LETTER_FINAL_SIGMA;
+              sigmaIndex = aConvertedString.Length();
+            } else {
+              
+              
+              ch = GREEK_SMALL_LETTER_SIGMA;
+              sigmaIndex = uint32_t(-1);
+            }
+            prevIsLetter = true;
+            break;
+          }
+
+          
+          
+          
+          if (cat != nsUGenCategory::kMark) {
+            prevIsLetter = (cat == nsUGenCategory::kLetter);
             sigmaIndex = uint32_t(-1);
           }
-          prevIsLetter = true;
-          break;
-        }
 
-        
-        
-        
-        if (cat != nsUGenCategory::kMark) {
-          prevIsLetter = (cat == nsUGenCategory::kLetter);
-          sigmaIndex = uint32_t(-1);
-        }
-
-        mcm = mozilla::unicode::SpecialLower(ch);
-        if (mcm) {
-          int j = 0;
-          while (j < 2 && mcm->mMappedChars[j + 1]) {
-            aConvertedString.Append(mcm->mMappedChars[j]);
-            ++extraChars;
-            ++j;
-          }
-          ch = mcm->mMappedChars[j];
-          break;
-        }
-
-        ch = ToLowerCase(ch);
-        break;
-
-      case StyleTextTransformCase::Uppercase:
-        if (languageSpecificCasing == eLSCB_Turkish && ch == 'i') {
-          ch = LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE;
-          break;
-        }
-
-        if (languageSpecificCasing == eLSCB_Greek) {
-          bool markEta;
-          bool updateEta;
-          ch = mozilla::GreekCasing::UpperCase(ch, greekState, markEta,
-                                               updateEta);
-          if (markEta) {
-            greekMark = aConvertedString.Length();
-          } else if (updateEta) {
-            
-            
-            MOZ_ASSERT(aConvertedString.Length() > 0 &&
-                           greekMark < aConvertedString.Length(),
-                       "bad greekMark!");
-            aConvertedString.SetCharAt(kGreekUpperEta, greekMark);
-            greekMark = uint32_t(-1);
-          }
-          break;
-        }
-
-        if (languageSpecificCasing == eLSCB_Lithuanian) {
-          
-
-
-
-
-          if (ch == 'i' || ch == 'j' || ch == 0x012F) {
-            seenSoftDotted = true;
-            ch = ToTitleCase(ch);
+          mcm = mozilla::unicode::SpecialLower(ch);
+          if (mcm) {
+            int j = 0;
+            while (j < 2 && mcm->mMappedChars[j + 1]) {
+              aConvertedString.Append(mcm->mMappedChars[j]);
+              ++extraChars;
+              ++j;
+            }
+            ch = mcm->mMappedChars[j];
             break;
           }
-          if (seenSoftDotted) {
-            seenSoftDotted = false;
-            if (ch == 0x0307) {
-              ch = uint32_t(-1);
-              break;
-            }
-          }
-        }
 
-        if (languageSpecificCasing == eLSCB_Irish) {
-          bool mark;
-          uint8_t action;
-          ch = mozilla::IrishCasing::UpperCase(ch, irishState, mark, action);
-          if (mark) {
-            irishMark = aConvertedString.Length();
-            irishMarkSrc = i;
-            break;
-          } else if (action) {
-            nsString& str = aConvertedString;  
-            switch (action) {
-              case 1:
-                
-                NS_ASSERTION(str.Length() > 0 && irishMark < str.Length(),
-                             "bad irishMark!");
-                str.SetCharAt(ToLowerCase(str[irishMark]), irishMark);
-                irishMark = uint32_t(-1);
-                irishMarkSrc = uint32_t(-1);
-                break;
-              case 2:
-                
-                NS_ASSERTION(str.Length() >= 2 && irishMark == str.Length() - 2,
-                             "bad irishMark!");
-                str.SetCharAt(ToLowerCase(str[irishMark]), irishMark);
-                str.SetCharAt(ToLowerCase(str[irishMark + 1]), irishMark + 1);
-                irishMark = uint32_t(-1);
-                irishMarkSrc = uint32_t(-1);
-                break;
-              case 3:
-                
-                
-                NS_ASSERTION(str.Length() >= 2 && irishMark == str.Length() - 2,
-                             "bad irishMark!");
-                MOZ_ASSERT(
-                    irishMark != uint32_t(-1) && irishMarkSrc != uint32_t(-1),
-                    "failed to set irishMarks");
-                str.Replace(irishMark, 2, ToLowerCase(str[irishMark]));
-                aDeletedCharsArray[irishMarkSrc + 1] = true;
-                
-                
-                aCharsToMergeArray.SetLength(aCharsToMergeArray.Length() - 1);
-                if (auxiliaryOutputArrays) {
-                  aStyleArray->SetLength(aStyleArray->Length() - 1);
-                  aCanBreakBeforeArray->SetLength(
-                      aCanBreakBeforeArray->Length() - 1);
-                  inhibitBreakBefore = true;
-                }
-                mergeNeeded = true;
-                irishMark = uint32_t(-1);
-                irishMarkSrc = uint32_t(-1);
-                break;
-            }
-            
-            
-            
-            break;
-          }
-          
-          
-        }
-
-        mcm = mozilla::unicode::SpecialUpper(ch);
-        if (mcm) {
-          int j = 0;
-          while (j < 2 && mcm->mMappedChars[j + 1]) {
-            aConvertedString.Append(mcm->mMappedChars[j]);
-            ++extraChars;
-            ++j;
-          }
-          ch = mcm->mMappedChars[j];
+          ch = ToLowerCase(ch);
           break;
-        }
 
-        
-        
-        
-        
-        
-        if (ch < 0x10D0 || ch > 0x10FF) {
-          ch = ToUpperCase(ch);
-        }
-        break;
-
-      case StyleTextTransformCase::Capitalize:
-        if (aTextRun) {
-          if (capitalizeDutchIJ && ch == 'j') {
-            ch = 'J';
-            capitalizeDutchIJ = false;
+        case StyleTextTransformCase::Uppercase:
+          if (languageSpecificCasing == eLSCB_Turkish && ch == 'i') {
+            ch = LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE;
             break;
           }
-          capitalizeDutchIJ = false;
-          if (aOffsetInTextRun < aTextRun->mCapitalize.Length() &&
-              aTextRun->mCapitalize[aOffsetInTextRun]) {
-            if (languageSpecificCasing == eLSCB_Turkish && ch == 'i') {
-              ch = LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE;
-              break;
-            }
-            if (languageSpecificCasing == eLSCB_Dutch && ch == 'i') {
-              ch = 'I';
-              capitalizeDutchIJ = true;
-              break;
-            }
-            if (languageSpecificCasing == eLSCB_Lithuanian) {
+
+          if (languageSpecificCasing == eLSCB_Greek) {
+            bool markEta;
+            bool updateEta;
+            ch = mozilla::GreekCasing::UpperCase(ch, greekState, markEta,
+                                                 updateEta);
+            if (markEta) {
+              greekMark = aConvertedString.Length();
+            } else if (updateEta) {
               
+              
+              MOZ_ASSERT(aConvertedString.Length() > 0 &&
+                             greekMark < aConvertedString.Length(),
+                         "bad greekMark!");
+              aConvertedString.SetCharAt(kGreekUpperEta, greekMark);
+              greekMark = uint32_t(-1);
+            }
+            break;
+          }
+
+          if (languageSpecificCasing == eLSCB_Lithuanian) {
+            
 
 
 
 
-              if (ch == 'i' || ch == 'j' || ch == 0x012F) {
-                seenSoftDotted = true;
-                ch = ToTitleCase(ch);
+            if (ch == 'i' || ch == 'j' || ch == 0x012F) {
+              seenSoftDotted = true;
+              ch = ToTitleCase(ch);
+              break;
+            }
+            if (seenSoftDotted) {
+              seenSoftDotted = false;
+              if (ch == 0x0307) {
+                ch = uint32_t(-1);
                 break;
               }
-              if (seenSoftDotted) {
-                seenSoftDotted = false;
-                if (ch == 0x0307) {
-                  ch = uint32_t(-1);
+            }
+          }
+
+          if (languageSpecificCasing == eLSCB_Irish) {
+            bool mark;
+            uint8_t action;
+            ch = mozilla::IrishCasing::UpperCase(ch, irishState, mark, action);
+            if (mark) {
+              irishMark = aConvertedString.Length();
+              irishMarkSrc = i;
+              break;
+            } else if (action) {
+              nsString& str = aConvertedString;  
+              switch (action) {
+                case 1:
+                  
+                  NS_ASSERTION(str.Length() > 0 && irishMark < str.Length(),
+                               "bad irishMark!");
+                  str.SetCharAt(ToLowerCase(str[irishMark]), irishMark);
+                  irishMark = uint32_t(-1);
+                  irishMarkSrc = uint32_t(-1);
+                  break;
+                case 2:
+                  
+                  
+                  NS_ASSERTION(
+                      str.Length() >= 2 && irishMark == str.Length() - 2,
+                      "bad irishMark!");
+                  str.SetCharAt(ToLowerCase(str[irishMark]), irishMark);
+                  str.SetCharAt(ToLowerCase(str[irishMark + 1]), irishMark + 1);
+                  irishMark = uint32_t(-1);
+                  irishMarkSrc = uint32_t(-1);
+                  break;
+                case 3:
+                  
+                  
+                  NS_ASSERTION(
+                      str.Length() >= 2 && irishMark == str.Length() - 2,
+                      "bad irishMark!");
+                  MOZ_ASSERT(
+                      irishMark != uint32_t(-1) && irishMarkSrc != uint32_t(-1),
+                      "failed to set irishMarks");
+                  str.Replace(irishMark, 2, ToLowerCase(str[irishMark]));
+                  aDeletedCharsArray[irishMarkSrc + 1] = true;
+                  
+                  
+                  aCharsToMergeArray.SetLength(aCharsToMergeArray.Length() - 1);
+                  if (auxiliaryOutputArrays) {
+                    aStyleArray->SetLength(aStyleArray->Length() - 1);
+                    aCanBreakBeforeArray->SetLength(
+                        aCanBreakBeforeArray->Length() - 1);
+                    inhibitBreakBefore = true;
+                  }
+                  mergeNeeded = true;
+                  irishMark = uint32_t(-1);
+                  irishMarkSrc = uint32_t(-1);
+                  break;
+              }
+              
+              
+              
+              
+              break;
+            }
+            
+            
+          }
+
+          mcm = mozilla::unicode::SpecialUpper(ch);
+          if (mcm) {
+            int j = 0;
+            while (j < 2 && mcm->mMappedChars[j + 1]) {
+              aConvertedString.Append(mcm->mMappedChars[j]);
+              ++extraChars;
+              ++j;
+            }
+            ch = mcm->mMappedChars[j];
+            break;
+          }
+
+          
+          
+          
+          
+          
+          if (ch < 0x10D0 || ch > 0x10FF) {
+            ch = ToUpperCase(ch);
+          }
+          break;
+
+        case StyleTextTransformCase::Capitalize:
+          if (aTextRun) {
+            if (capitalizeDutchIJ && ch == 'j') {
+              ch = 'J';
+              capitalizeDutchIJ = false;
+              break;
+            }
+            capitalizeDutchIJ = false;
+            if (aOffsetInTextRun < aTextRun->mCapitalize.Length() &&
+                aTextRun->mCapitalize[aOffsetInTextRun]) {
+              if (languageSpecificCasing == eLSCB_Turkish && ch == 'i') {
+                ch = LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE;
+                break;
+              }
+              if (languageSpecificCasing == eLSCB_Dutch && ch == 'i') {
+                ch = 'I';
+                capitalizeDutchIJ = true;
+                break;
+              }
+              if (languageSpecificCasing == eLSCB_Lithuanian) {
+                
+
+
+
+
+                if (ch == 'i' || ch == 'j' || ch == 0x012F) {
+                  seenSoftDotted = true;
+                  ch = ToTitleCase(ch);
                   break;
                 }
+                if (seenSoftDotted) {
+                  seenSoftDotted = false;
+                  if (ch == 0x0307) {
+                    ch = uint32_t(-1);
+                    break;
+                  }
+                }
               }
-            }
 
-            mcm = mozilla::unicode::SpecialTitle(ch);
-            if (mcm) {
-              int j = 0;
-              while (j < 2 && mcm->mMappedChars[j + 1]) {
-                aConvertedString.Append(mcm->mMappedChars[j]);
-                ++extraChars;
-                ++j;
+              mcm = mozilla::unicode::SpecialTitle(ch);
+              if (mcm) {
+                int j = 0;
+                while (j < 2 && mcm->mMappedChars[j + 1]) {
+                  aConvertedString.Append(mcm->mMappedChars[j]);
+                  ++extraChars;
+                  ++j;
+                }
+                ch = mcm->mMappedChars[j];
+                break;
               }
-              ch = mcm->mMappedChars[j];
-              break;
-            }
 
-            ch = ToTitleCase(ch);
+              ch = ToTitleCase(ch);
+            }
+          }
+          break;
+
+        default:
+          MOZ_ASSERT_UNREACHABLE("all cases should be handled");
+          break;
+      }
+
+      if (!aCaseTransformsOnly) {
+        if (!forceNonFullWidth &&
+            (style.other_ & StyleTextTransformOther_FULL_WIDTH)) {
+          ch = mozilla::unicode::GetFullWidth(ch);
+        }
+
+        if (style.other_ & StyleTextTransformOther_FULL_SIZE_KANA) {
+          
+          static const uint16_t kSmallKanas[] = {
+              
+              0x3041, 0x3043, 0x3045, 0x3047, 0x3049, 0x3063, 0x3083, 0x3085, 0x3087,
+              
+              0x308E, 0x3095, 0x3096,
+              
+              0x30A1, 0x30A3, 0x30A5, 0x30A7, 0x30A9, 0x30C3, 0x30E3, 0x30E5, 0x30E7,
+              
+              0x30EE, 0x30F5, 0x30F6, 0x31F0, 0x31F1, 0x31F2, 0x31F3, 0x31F4, 0x31F5,
+              
+              0x31F6, 0x31F7, 0x31F8, 0x31F9, 0x31FA, 0x31FB, 0x31FC, 0x31FD, 0x31FE,
+              
+              0x31FF,
+              
+              0xFF67, 0xFF68, 0xFF69, 0xFF6A, 0xFF6B, 0xFF6C, 0xFF6D, 0xFF6E, 0xFF6F};
+          static const uint16_t kFullSizeKanas[] = {
+              
+              0x3042, 0x3044, 0x3046, 0x3048, 0x304A, 0x3064, 0x3084, 0x3086, 0x3088,
+              
+              0x308F, 0x304B, 0x3051,
+              
+              0x30A2, 0x30A4, 0x30A6, 0x30A8, 0x30AA, 0x30C4, 0x30E4, 0x30E6, 0x30E8,
+              
+              0x30EF, 0x30AB, 0x30B1, 0x30AF, 0x30B7, 0x30B9, 0x30C8, 0x30CC, 0x30CF,
+              
+              0x30D2, 0x30D5, 0x30D8, 0x30DB, 0x30E0, 0x30E9, 0x30EA, 0x30EB, 0x30EC,
+              
+              0x30ED,
+              
+              0xFF71, 0xFF72, 0xFF73, 0xFF74, 0xFF75, 0xFF94, 0xFF95, 0xFF96, 0xFF82};
+          
+
+          size_t index;
+          const uint16_t len = MOZ_ARRAY_LENGTH(kSmallKanas);
+          if (mozilla::BinarySearch(kSmallKanas, 0, len, ch, &index)) {
+            ch = kFullSizeKanas[index];
           }
         }
-        break;
-
-      default:
-        MOZ_ASSERT_UNREACHABLE("all cases should be handled");
-        break;
-    }
-
-    if (!aCaseTransformsOnly) {
-      if (!forceNonFullWidth &&
-          (style.other_ & StyleTextTransformOther_FULL_WIDTH)) {
-        ch = mozilla::unicode::GetFullWidth(ch);
       }
 
-      if (style.other_ & StyleTextTransformOther_FULL_SIZE_KANA) {
-        
-        static const uint16_t kSmallKanas[] = {
-            
-            0x3041, 0x3043, 0x3045, 0x3047, 0x3049, 0x3063, 0x3083, 0x3085, 0x3087,
-            
-            0x308E, 0x3095, 0x3096,
-            
-            0x30A1, 0x30A3, 0x30A5, 0x30A7, 0x30A9, 0x30C3, 0x30E3, 0x30E5, 0x30E7,
-            
-            0x30EE, 0x30F5, 0x30F6, 0x31F0, 0x31F1, 0x31F2, 0x31F3, 0x31F4, 0x31F5,
-            
-            0x31F6, 0x31F7, 0x31F8, 0x31F9, 0x31FA, 0x31FB, 0x31FC, 0x31FD, 0x31FE,
-            
-            0x31FF,
-            
-            0xFF67, 0xFF68, 0xFF69, 0xFF6A, 0xFF6B, 0xFF6C, 0xFF6D, 0xFF6E, 0xFF6F};
-        static const uint16_t kFullSizeKanas[] = {
-            
-            0x3042, 0x3044, 0x3046, 0x3048, 0x304A, 0x3064, 0x3084, 0x3086, 0x3088,
-            
-            0x308F, 0x304B, 0x3051,
-            
-            0x30A2, 0x30A4, 0x30A6, 0x30A8, 0x30AA, 0x30C4, 0x30E4, 0x30E6, 0x30E8,
-            
-            0x30EF, 0x30AB, 0x30B1, 0x30AF, 0x30B7, 0x30B9, 0x30C8, 0x30CC, 0x30CF,
-            
-            0x30D2, 0x30D5, 0x30D8, 0x30DB, 0x30E0, 0x30E9, 0x30EA, 0x30EB, 0x30EC,
-            
-            0x30ED,
-            
-            0xFF71, 0xFF72, 0xFF73, 0xFF74, 0xFF75, 0xFF94, 0xFF95, 0xFF96, 0xFF82};
-        
-
-        size_t index;
-        const uint16_t len = MOZ_ARRAY_LENGTH(kSmallKanas);
-        if (mozilla::BinarySearch(kSmallKanas, 0, len, ch, &index)) {
-          ch = kFullSizeKanas[index];
-        }
+      if (forceNonFullWidth) {
+        ch = mozilla::unicode::GetFullWidthInverse(ch);
       }
-    }
-
-    if (forceNonFullWidth) {
-      ch = mozilla::unicode::GetFullWidthInverse(ch);
     }
 
     if (ch == uint32_t(-1)) {
@@ -767,16 +784,21 @@ bool nsCaseTransformTextRunFactory::TransformString(
       }
 
       if (IS_IN_BMP(ch)) {
-        aConvertedString.Append(ch);
+        aConvertedString.Append(maskPassword ? kPasswordMask : ch);
       } else {
-        aConvertedString.Append(H_SURROGATE(ch));
-        aConvertedString.Append(L_SURROGATE(ch));
-        i++;
-        aOffsetInTextRun++;
-        aDeletedCharsArray.AppendElement(
-            true);  
-                    
+        if (maskPassword) {
+          aConvertedString.Append(kPasswordMask);
+          
+          aConvertedString.Append(kPasswordMask);
+        } else {
+          aConvertedString.Append(H_SURROGATE(ch));
+          aConvertedString.Append(L_SURROGATE(ch));
+        }
         ++extraChars;
+        ++i;
+        ++aOffsetInTextRun;
+        
+        aDeletedCharsArray.AppendElement(true);
       }
 
       while (extraChars-- > 0) {
