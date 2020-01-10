@@ -34,8 +34,8 @@ var regularGrandfatheredWithExtlangLike = [
 
 var regularGrandfatheredWithVariantLike = {
     "art-lojban": "jbo",
-    "cel-gaulish": "cel-gaulish",
-    "zh-guoyu": "cmn",
+    "cel-gaulish": "xtg-x-cel-gaulish",
+    "zh-guoyu": "zh",
     "zh-hakka": "hak",
     "zh-xiang": "hsn",
 };
