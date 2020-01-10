@@ -437,10 +437,6 @@ XULListitemAccessible::XULListitemAccessible(nsIContent* aContent,
   mIsCheckbox = mContent->AsElement()->AttrValueIs(
       kNameSpaceID_None, nsGkAtoms::type, nsGkAtoms::checkbox, eCaseMatters);
   mType = eXULListItemType;
-
-  
-  
-  mStateFlags &= ~eNoXBLKids;
 }
 
 XULListitemAccessible::~XULListitemAccessible() {}

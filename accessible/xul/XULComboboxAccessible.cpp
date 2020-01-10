@@ -30,13 +30,6 @@ XULComboboxAccessible::XULComboboxAccessible(nsIContent* aContent,
     mGenericTypes |= eAutoComplete;
   else
     mGenericTypes |= eCombobox;
-
-  
-  
-  
-  if (!mContent->NodeInfo()->Equals(nsGkAtoms::textbox, kNameSpaceID_XUL)) {
-    mStateFlags |= eNoXBLKids;
-  }
 }
 
 role XULComboboxAccessible::NativeRole() const {

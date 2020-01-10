@@ -930,12 +930,6 @@ class Accessible : public nsISupports {
 
 
 
-  bool NoXBLKids() const { return mStateFlags & eNoXBLKids; }
-
-  
-
-
-
   bool KidsFromDOM() const { return !(mStateFlags & eNoKidsFromDOM); }
 
   
@@ -1037,11 +1031,10 @@ class Accessible : public nsISupports {
     eKidsMutating = 1 << 6,      
     eIgnoreDOMUIEvent = 1 << 7,  
     eRelocated = 1 << 8,         
-    eNoXBLKids = 1 << 9,         
-    eNoKidsFromDOM = 1 << 10,    
-    eHasTextKids = 1 << 11,      
+    eNoKidsFromDOM = 1 << 9,    
+    eHasTextKids = 1 << 10,      
 
-    eLastStateFlag = eNoKidsFromDOM
+    eLastStateFlag = eHasTextKids
   };
 
   
@@ -1145,7 +1138,7 @@ class Accessible : public nsISupports {
   nsTArray<Accessible*> mChildren;
   int32_t mIndexInParent;
 
-  static const uint8_t kStateFlagsBits = 12;
+  static const uint8_t kStateFlagsBits = 11;
   static const uint8_t kContextFlagsBits = 2;
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 16;
