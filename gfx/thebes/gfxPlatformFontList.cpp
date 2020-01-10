@@ -417,8 +417,14 @@ nsresult gfxPlatformFontList::InitFontList() {
   
   
   mCodepointsWithNoFonts.reset();
-  mCodepointsWithNoFonts.SetRange(0, 0x1f);     
-  mCodepointsWithNoFonts.SetRange(0x7f, 0x9f);  
+  mCodepointsWithNoFonts.SetRange(0, 0x1f);            
+  mCodepointsWithNoFonts.SetRange(0x7f, 0x9f);         
+  mCodepointsWithNoFonts.SetRange(0xE000, 0xF8FF);     
+  mCodepointsWithNoFonts.SetRange(0xF0000, 0x10FFFD);  
+  mCodepointsWithNoFonts.SetRange(0xfdd0, 0xfdef);     
+  for (unsigned i = 0; i <= 0x100000; i += 0x10000) {
+    mCodepointsWithNoFonts.SetRange(i + 0xfffe, i + 0xffff);  
+  }
 
   sPlatformFontList = this;
 
@@ -709,12 +715,10 @@ void gfxPlatformFontList::GetFontFamilyList(
 gfxFontEntry* gfxPlatformFontList::SystemFindFontForChar(
     uint32_t aCh, uint32_t aNextCh, Script aRunScript,
     const gfxFontStyle* aStyle) {
-  gfxFontEntry* fontEntry = nullptr;
+  MOZ_ASSERT(!mCodepointsWithNoFonts.test(aCh),
+             "don't call for codepoints already known to be unsupported");
 
-  
-  if (mCodepointsWithNoFonts.test(aCh)) {
-    return nullptr;
-  }
+  gfxFontEntry* fontEntry = nullptr;
 
   
   
