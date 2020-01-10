@@ -200,51 +200,9 @@ var FxAccountsConfig = {
   },
 
   async ensureConfigured() {
-    await this.tryPrefsMigration();
     let isSignedIn = !!(await this.getSignedInUser());
     if (!isSignedIn) {
       await this.fetchConfigURLs();
-    }
-  },
-
-  
-  
-  
-  
-  async tryPrefsMigration() {
-    
-    
-    if (
-      !Services.prefs.prefHasUserValue("identity.fxaccounts.remote.signin.uri")
-    ) {
-      return;
-    }
-
-    if (Services.prefs.prefHasUserValue("identity.fxaccounts.autoconfig.uri")) {
-      await this.fetchConfigURLs();
-    } else {
-      
-      const signinURI = Services.prefs.getCharPref(
-        "identity.fxaccounts.remote.signin.uri"
-      );
-      Services.prefs.setCharPref(
-        "identity.fxaccounts.remote.root",
-        signinURI.slice(0, signinURI.lastIndexOf("/signin")) + "/"
-      );
-    }
-
-    const migratedPrefs = [
-      "identity.fxaccounts.remote.webchannel.uri",
-      "identity.fxaccounts.settings.uri",
-      "identity.fxaccounts.settings.devices.uri",
-      "identity.fxaccounts.remote.signup.uri",
-      "identity.fxaccounts.remote.signin.uri",
-      "identity.fxaccounts.remote.email.uri",
-      "identity.fxaccounts.remote.connectdevice.uri",
-      "identity.fxaccounts.remote.force_auth.uri",
-    ];
-    for (const pref of migratedPrefs) {
-      Services.prefs.clearUserPref(pref);
     }
   },
 
