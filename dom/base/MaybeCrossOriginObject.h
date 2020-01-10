@@ -203,11 +203,15 @@ class MaybeCrossOriginObject : public Base,
   
 
 
-
-
   bool getPrototypeIfOrdinary(JSContext* cx, JS::Handle<JSObject*> proxy,
                               bool* isOrdinary,
                               JS::MutableHandle<JSObject*> protop) const final;
+
+  
+
+
+  bool setImmutablePrototype(JSContext* cx, JS::Handle<JSObject*> proxy,
+                             bool* succeeded) const final;
 
   
 
