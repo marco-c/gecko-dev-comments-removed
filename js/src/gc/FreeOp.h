@@ -51,6 +51,10 @@ class FreeOp : public JSFreeOp {
   void free_(void* p) { js_free(p); }
 
   
+  
+  
+  
+  
   void free_(gc::Cell* cell, void* p, size_t nbytes, MemoryUse use);
 
   
@@ -84,11 +88,18 @@ class FreeOp : public JSFreeOp {
 
   
   
+  
+  
+  
+  
   template <class T>
   void delete_(gc::Cell* cell, T* p, MemoryUse use) {
     delete_(cell, p, sizeof(T), use);
   }
 
+  
+  
+  
   
   
   
