@@ -133,7 +133,7 @@ class AntiTrackingCommon final {
       int aAllowMode);
 
   
-  static nsresult IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
+  static nsresult IsOnContentBlockingAllowList(nsIPrincipal* aTopWinPrincipal,
                                                bool aIsPrivateBrowsing,
                                                bool& aIsAllowListed);
 
