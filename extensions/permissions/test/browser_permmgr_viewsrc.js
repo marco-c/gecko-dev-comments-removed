@@ -1,8 +1,11 @@
 add_task(async function() {
   
   
-  Services.perms.add(
-    Services.io.newURI("http://example.com"),
+  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+    "http://example.com"
+  );
+  Services.perms.addFromPrincipal(
+    principal,
     "viewsourceTestingPerm",
     Services.perms.ALLOW_ACTION
   );
@@ -14,12 +17,9 @@ add_task(async function() {
      false,
      true
   );
-  await ContentTask.spawn(tab.linkedBrowser, null, async function() {
+  await ContentTask.spawn(tab.linkedBrowser, principal, async function(p) {
     is(
-      Services.perms.testPermission(
-        Services.io.newURI("http://example.com"),
-        "viewsourceTestingPerm"
-      ),
+      Services.perms.testPermissionFromPrincipal(p, "viewsourceTestingPerm"),
       Services.perms.ALLOW_ACTION
     );
   });
