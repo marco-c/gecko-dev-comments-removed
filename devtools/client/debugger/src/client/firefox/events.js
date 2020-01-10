@@ -16,10 +16,6 @@ import type {
 import { createPause, prepareSourcePayload } from "./create";
 import sourceQueue from "../../utils/source-queue";
 import { recordEvent } from "../../utils/telemetry";
-import { features } from "../../utils/prefs";
-const {
-  WorkersListener,
-} = require("devtools/client/shared/workers-listener.js");
 
 const CALL_STACK_PAGE_SIZE = 1000;
 
@@ -49,21 +45,9 @@ function setupEvents(dependencies: Dependencies) {
   debuggerClient.mainRoot.on("processListChanged", () =>
     threadListChanged("contentProcess")
   );
-
-  
-  
-  if (features.windowlessServiceWorkers) {
-    const workersListener = new WorkersListener(debuggerClient.mainRoot);
-    workersListener.addListener(() => threadListChanged("worker"));
-  }
 }
 
 async function paused(threadFront: ThreadFront, packet: PausedPacket) {
-  
-  
-  
-  await actions.ensureHasThread(threadFront.actor);
-
   
   
   
