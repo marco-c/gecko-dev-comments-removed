@@ -182,9 +182,20 @@ class AutoCompleteChild extends JSWindowActorChild {
     
     
     
-    return Services.cpmm.sendSyncMessage("FormAutoComplete:GetSelectedIndex", {
-      browsingContext: this.browsingContext,
-    });
+    let selectedIndexResult = Services.cpmm.sendSyncMessage(
+      "FormAutoComplete:GetSelectedIndex",
+      {
+        browsingContext: this.browsingContext,
+      }
+    );
+
+    if (
+      selectedIndexResult.length != 1 ||
+      !Number.isInteger(selectedIndexResult[0])
+    ) {
+      throw new Error("Invalid autocomplete selectedIndex");
+    }
+    return selectedIndexResult[0];
   }
 
   get popupOpen() {
