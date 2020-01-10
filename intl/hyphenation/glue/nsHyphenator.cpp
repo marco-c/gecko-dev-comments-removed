@@ -4,94 +4,34 @@
 
 
 #include "nsHyphenator.h"
-
-#include "mozilla/Telemetry.h"
 #include "nsIFile.h"
-#include "nsIFileURL.h"
-#include "nsIJARURI.h"
-#include "nsIURI.h"
-#include "nsNetUtil.h"
-#include "nsUnicodeProperties.h"
 #include "nsUTF8Utils.h"
+#include "nsUnicodeProperties.h"
+#include "nsIURI.h"
+#include "mozilla/Telemetry.h"
 
-#include "mapped_hyph.h"
-
-static const void* GetItemPtrFromJarURI(nsIJARURI* aJAR, uint32_t* aLength) {
-  
-  
-  nsCOMPtr<nsIURI> jarFile;
-  if (NS_FAILED(aJAR->GetJARFile(getter_AddRefs(jarFile)))) {
-    return nullptr;
-  }
-  nsCOMPtr<nsIFileURL> fileUrl = do_QueryInterface(jarFile);
-  if (!fileUrl) {
-    return nullptr;
-  }
-  nsCOMPtr<nsIFile> file;
-  fileUrl->GetFile(getter_AddRefs(file));
-  if (!file) {
-    return nullptr;
-  }
-  RefPtr<nsZipArchive> archive = mozilla::Omnijar::GetReader(file);
-  if (archive) {
-    nsCString path;
-    aJAR->GetJAREntry(path);
-    nsZipItem* item = archive->GetItem(path.get());
-    if (item && item->Compression() == 0 && item->Size() > 0) {
-      
-      
-      const uint8_t* data = archive->GetData(item);
-      if (data) {
-        *aLength = item->Size();
-        return data;
-      }
-    }
-  }
-  return nullptr;
-}
+#include "hyphen.h"
 
 nsHyphenator::nsHyphenator(nsIURI* aURI, bool aHyphenateCapitalized)
-    : mDict(nullptr),
-      mDictSize(0),
-      mHyphenateCapitalized(aHyphenateCapitalized) {
+    : mDict(nullptr), mHyphenateCapitalized(aHyphenateCapitalized) {
+  nsCString uriSpec;
+  nsresult rv = aURI->GetSpec(uriSpec);
+  if (NS_FAILED(rv)) {
+    return;
+  }
   Telemetry::AutoTimer<Telemetry::HYPHENATION_LOAD_TIME> telemetry;
-
-  nsCOMPtr<nsIJARURI> jar = do_QueryInterface(aURI);
-  if (jar) {
-    
-    
-    mDict = GetItemPtrFromJarURI(jar, &mDictSize);
-    
-    if (!mDict || !mDictSize ||
-        !mapped_hyph_is_valid_hyphenator(static_cast<const uint8_t*>(mDict),
-                                         mDictSize)) {
-      MOZ_ASSERT_UNREACHABLE("invalid packaged hyphenation resource?");
-      mDict = nullptr;
-      mDictSize = 0;
-    }
-    return;
+  mDict = hnj_hyphen_load(uriSpec.get());
+#ifdef DEBUG
+  if (mDict) {
+    printf("loaded hyphenation patterns from %s\n", uriSpec.get());
   }
-
-  if (mozilla::net::SchemeIsFile(aURI)) {
-    
-    
-    
-    
-    nsAutoCString path;
-    aURI->GetFilePath(path);
-    mDict = mapped_hyph_load_dictionary(path.get());
-    MOZ_ASSERT(mDict, "failed to load hyphenation resource from file");
-    return;
-  }
-
-  if (!mDict) {
-    MOZ_ASSERT_UNREACHABLE("invalid hyphenation resource?");
-  }
+#endif
 }
 
 nsHyphenator::~nsHyphenator() {
-  if (mDict && mDictSize == 0) {
-    mapped_hyph_free_dictionary((HyphDic*)mDict);
+  if (mDict != nullptr) {
+    hnj_hyphen_free((HyphenDict*)mDict);
+    mDict = nullptr;
   }
 }
 
@@ -147,8 +87,9 @@ void nsHyphenator::HyphenateWord(const nsAString& aString, uint32_t aStart,
   
   
   nsAutoCString utf8;
-  const char16_t* cur = aString.BeginReading() + aStart;
-  const char16_t* end = aString.BeginReading() + aLimit;
+  const char16_t* const begin = aString.BeginReading();
+  const char16_t* cur = begin + aStart;
+  const char16_t* end = begin + aLimit;
   bool firstLetter = true;
   while (cur < end) {
     uint32_t ch = *cur++;
@@ -157,10 +98,10 @@ void nsHyphenator::HyphenateWord(const nsAString& aString, uint32_t aStart,
       if (cur < end && NS_IS_LOW_SURROGATE(*cur)) {
         ch = SURROGATE_TO_UCS4(ch, *cur++);
       } else {
-        return;  
+        ch = 0xfffd;  
       }
     } else if (NS_IS_LOW_SURROGATE(ch)) {
-      return;  
+      ch = 0xfffd;  
     }
 
     
@@ -170,11 +111,15 @@ void nsHyphenator::HyphenateWord(const nsAString& aString, uint32_t aStart,
     ch = ToLowerCase(ch);
 
     if (ch != origCh) {
-      
-      
-      
-      
-      if (!mHyphenateCapitalized || !firstLetter) {
+      if (firstLetter) {
+        
+        
+        if (!mHyphenateCapitalized) {
+          return;
+        }
+      } else {
+        
+        
         return;
       }
     }
@@ -197,43 +142,31 @@ void nsHyphenator::HyphenateWord(const nsAString& aString, uint32_t aStart,
     }
   }
 
-  AutoTArray<uint8_t, 200> hyphenValues;
-  hyphenValues.SetLength(utf8.Length());
-  int32_t result;
-  if (mDictSize > 0) {
-    result = mapped_hyph_find_hyphen_values_raw(
-        static_cast<const uint8_t*>(mDict), mDictSize, utf8.BeginReading(),
-        utf8.Length(), hyphenValues.Elements(), hyphenValues.Length());
-  } else {
-    result = mapped_hyph_find_hyphen_values_dic(
-        static_cast<const HyphDic*>(mDict), utf8.BeginReading(), utf8.Length(),
-        hyphenValues.Elements(), hyphenValues.Length());
-  }
-  if (result > 0) {
+  AutoTArray<char, 200> utf8hyphens;
+  utf8hyphens.SetLength(utf8.Length() + 5);
+  char** rep = nullptr;
+  int* pos = nullptr;
+  int* cut = nullptr;
+  int err = hnj_hyphen_hyphenate2((HyphenDict*)mDict, utf8.BeginReading(),
+                                  utf8.Length(), utf8hyphens.Elements(),
+                                  nullptr, &rep, &pos, &cut);
+  if (!err) {
     
     
-    uint32_t utf16index = 0;
-    for (uint32_t utf8index = 0; utf8index < utf8.Length();) {
-      
-      
-      
-      const uint8_t leadByte = utf8[utf8index];
-      if (leadByte < 0x80) {
-        utf8index += 1;
-      } else if (leadByte < 0xE0) {
-        utf8index += 2;
-      } else if (leadByte < 0xF0) {
-        utf8index += 3;
-      } else {
-        utf8index += 4;
+    
+    
+    const char* hyphPtr = utf8hyphens.Elements();
+    const char16_t* cur = begin + aStart;
+    const char16_t* end = begin + aLimit;
+    while (cur < end) {
+      if (*hyphPtr & 0x01) {
+        aHyphens[cur - begin] = true;
       }
-      
-      
-      
-      utf16index += leadByte >= 0xF0 ? 2 : 1;
-      if (utf16index > 0 && (hyphenValues[utf8index - 1] & 0x01)) {
-        aHyphens[aStart + utf16index - 1] = true;
+      cur++;
+      if (cur < end && NS_IS_SURROGATE_PAIR(*(cur - 1), *cur)) {
+        cur++;
       }
+      hyphPtr++;
     }
   }
 }
