@@ -224,6 +224,7 @@ class SharedIntlData {
   enum class SupportedLocaleKind {
     Collator,
     DateTimeFormat,
+    ListFormat,
     NumberFormat,
     PluralRules,
     RelativeTimeFormat

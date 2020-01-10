@@ -2608,6 +2608,10 @@ extern bool AddMozDateTimeFormatConstructor(JSContext* cx,
 
 
 extern bool AddLocaleConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
+
+
+
+extern bool AddListFormatConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
 #endif  
 
 class MOZ_STACK_CLASS JS_FRIEND_API AutoAssertNoContentJS {
