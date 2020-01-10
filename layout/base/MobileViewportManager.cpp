@@ -184,13 +184,13 @@ CSSToScreenScale MobileViewportManager::ClampZoom(
 CSSToScreenScale MobileViewportManager::ScaleZoomWithDisplayWidth(
     const CSSToScreenScale& aZoom, const float& aDisplayWidthChangeRatio,
     const CSSSize& aNewViewport, const CSSSize& aOldViewport) {
-  float inverseCssWidthChangeRatio =
-      (aNewViewport.width == 0) ? 1.0f
-                                : aOldViewport.width / aNewViewport.width;
-  CSSToScreenScale newZoom(aZoom.scale * aDisplayWidthChangeRatio *
-                           inverseCssWidthChangeRatio);
-  MVM_LOG("%p: Old zoom was %f, changed by %f * %f to %f\n", this, aZoom.scale,
-          aDisplayWidthChangeRatio, inverseCssWidthChangeRatio, newZoom.scale);
+  float cssViewportChangeRatio = (aOldViewport.width == 0)
+                                     ? 1.0f
+                                     : aNewViewport.width / aOldViewport.width;
+  CSSToScreenScale newZoom(aZoom.scale * aDisplayWidthChangeRatio /
+                           cssViewportChangeRatio);
+  MVM_LOG("%p: Old zoom was %f, changed by %f/%f to %f\n", this, aZoom.scale,
+          aDisplayWidthChangeRatio, cssViewportChangeRatio, newZoom.scale);
   return newZoom;
 }
 
@@ -298,11 +298,6 @@ void MobileViewportManager::UpdateResolution(
         
         
         
-        
-
-        
-        
-        
 
         
         
@@ -334,12 +329,14 @@ void MobileViewportManager::UpdateResolution(
         
         
         
-
-        
         
 
         
         
+
+        
+        
+        
         
         
         
@@ -350,12 +347,13 @@ void MobileViewportManager::UpdateResolution(
         
 
         
+        
+        float numerator = clamped(d, a, b);
         float denominator = clamped(c, a, b);
 
-        float adjustedRatio = d / denominator;
-        CSSToScreenScale adjustedZoom = ScaleZoomWithDisplayWidth(
-            zoom, adjustedRatio, viewportSize, mMobileViewportSize);
-        newZoom = Some(ClampZoom(adjustedZoom, aViewportInfo));
+        float adjustedRatio = numerator / denominator;
+        newZoom = Some(ScaleZoomWithDisplayWidth(
+            zoom, adjustedRatio, viewportSize, mMobileViewportSize));
       }
     }
   } else {  
