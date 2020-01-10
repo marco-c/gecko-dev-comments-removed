@@ -69,13 +69,13 @@ function saveURL(
   aFilePickerTitleKey,
   aShouldBypassCache,
   aSkipPrompt,
-  aReferrer,
+  aReferrerInfo,
   aSourceDocument,
   aIsContentWindowPrivate,
   aPrincipal
 ) {
   forbidCPOW(aURL, "saveURL", "aURL");
-  forbidCPOW(aReferrer, "saveURL", "aReferrer");
+  forbidCPOW(aReferrerInfo, "saveURL", "aReferrerInfo");
   
 
   internalSave(
@@ -87,7 +87,7 @@ function saveURL(
     aShouldBypassCache,
     aFilePickerTitleKey,
     null,
-    aReferrer,
+    aReferrerInfo,
     aSourceDocument,
     aSkipPrompt,
     null,
@@ -133,14 +133,13 @@ const nsISupportsCString = Ci.nsISupportsCString;
 
 
 
-
 function saveImageURL(
   aURL,
   aFileName,
   aFilePickerTitleKey,
   aShouldBypassCache,
   aSkipPrompt,
-  aReferrer,
+  aReferrerInfo,
   aDoc,
   aContentType,
   aContentDisp,
@@ -148,7 +147,7 @@ function saveImageURL(
   aPrincipal
 ) {
   forbidCPOW(aURL, "saveImageURL", "aURL");
-  forbidCPOW(aReferrer, "saveImageURL", "aReferrer");
+  forbidCPOW(aReferrerInfo, "saveImageURL", "aReferrerInfo");
 
   if (aDoc && aIsContentWindowPrivate == undefined) {
     if (Cu.isCrossProcessWrapper(aDoc)) {
@@ -209,7 +208,7 @@ function saveImageURL(
     aShouldBypassCache,
     aFilePickerTitleKey,
     null,
-    aReferrer,
+    aReferrerInfo,
     aDoc,
     aSkipPrompt,
     null,
@@ -322,7 +321,7 @@ function saveDocument(aDocument, aSkipPrompt) {
     false,
     null,
     null,
-    aDocument.referrer ? makeURI(aDocument.referrer) : null,
+    aDocument.referrerInfo,
     aDocument,
     aSkipPrompt,
     cacheKey
@@ -434,8 +433,6 @@ XPCOMUtils.defineConstant(this, "kSaveAsType_Text", kSaveAsType_Text);
 
 
 
-
-
 function internalSave(
   aURL,
   aDocument,
@@ -445,7 +442,7 @@ function internalSave(
   aShouldBypassCache,
   aFilePickerTitleKey,
   aChosenData,
-  aReferrer,
+  aReferrerInfo,
   aInitiatingDocument,
   aSkipPrompt,
   aCacheKey,
@@ -453,7 +450,7 @@ function internalSave(
   aPrincipal
 ) {
   forbidCPOW(aURL, "internalSave", "aURL");
-  forbidCPOW(aReferrer, "internalSave", "aReferrer");
+  forbidCPOW(aReferrerInfo, "internalSave", "aReferrerInfo");
   forbidCPOW(aCacheKey, "internalSave", "aCacheKey");
   
 
@@ -503,7 +500,7 @@ function internalSave(
     };
 
     
-    let relatedURI = aReferrer || sourceURI;
+    let relatedURI = aReferrerInfo ? aReferrerInfo.orginalReferrer : sourceURI;
 
     promiseTargetFile(fpParams, aSkipPrompt, relatedURI)
       .then(aDialogAccepted => {
@@ -554,7 +551,7 @@ function internalSave(
     var persistArgs = {
       sourceURI,
       sourcePrincipal,
-      sourceReferrer: aReferrer,
+      sourceReferrerInfo: aReferrerInfo,
       sourceDocument: useSaveDocument ? aDocument : null,
       targetContentType: saveAsType == kSaveAsType_Text ? "text/plain" : null,
       targetFile: file,
@@ -670,8 +667,7 @@ function internalPersist(persistArgs) {
       persistArgs.sourceURI,
       persistArgs.sourcePrincipal,
       persistArgs.sourceCacheKey,
-      persistArgs.sourceReferrer,
-      Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
+      persistArgs.sourceReferrerInfo,
       persistArgs.sourcePostData,
       null,
       targetFileURL,

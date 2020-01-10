@@ -47,9 +47,10 @@ function saveToFile(data, filename) {
   
   filename = filename.replace(/\.png$|$/i, ".png");
 
+  
   chromeWindow.saveURL(data, filename, null,
                         true, true,
-                        chromeDocument.documentURIObject, chromeDocument);
+                        null, chromeDocument);
 }
 
 function simulateCameraEffects(node) {
