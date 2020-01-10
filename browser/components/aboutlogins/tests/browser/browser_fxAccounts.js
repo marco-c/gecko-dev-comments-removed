@@ -52,6 +52,11 @@ add_task(async function test_login_syncing_disabled() {
     set: [["services.sync.engine.passwords", false]],
   });
   Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(
+      "signon.management.page.showPasswordSyncNotification"
+    );
+  });
 
   let browser = gBrowser.selectedBrowser;
   await ContentTask.spawn(browser, null, async () => {
@@ -77,13 +82,26 @@ add_task(async function test_login_syncing_disabled() {
   ok(notification, "enable-password-sync notification should be visible");
 
   let buttons = notification.querySelectorAll(".notification-button");
-  is(buttons.length, 1, "Should have one button.");
+  is(buttons.length, 2, "Should have two buttons.");
 
   
   
   
 
-  await SpecialPowers.popPrefEnv();
+  let neverAskAgainButton = buttons[1];
+  ok(
+    Services.prefs.getBoolPref(
+      "signon.management.page.showPasswordSyncNotification"
+    ),
+    "the pref to show the notification should be set to true"
+  );
+  neverAskAgainButton.click();
+  ok(
+    !Services.prefs.getBoolPref(
+      "signon.management.page.showPasswordSyncNotification"
+    ),
+    "the pref to show the notification should be set to false after clicking the 'never ask' button"
+  );
 
   await BrowserTestUtils.waitForCondition(
     () =>
@@ -92,7 +110,9 @@ add_task(async function test_login_syncing_disabled() {
         .getNotificationWithValue("enable-password-sync"),
     "waiting for enable-password-sync notification to get dismissed"
   );
-  ok(true, "notification is dismissed after the pref is reverted");
+  ok(true, "notification is dismissed after the 'never ask' button is clicked");
+
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_login_syncing_enabled() {
