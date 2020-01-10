@@ -184,9 +184,20 @@ var gBackgroundTab,
 var gTestPage =
   "/browser/browser/base/content/test/general/alltabslistener.html";
 const kBasePage =
-  "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
+  "http://mochi.test:8888/browser/browser/base/content/test/general/dummy_page.html";
 var gNextTest;
 var gUsingDocumentChannel;
+
+function setExpectationForCrossDomainFrontBrowserLoad() {
+  
+  
+  
+  if (gFissionBrowser) {
+    gFrontNotifications = ["onSecurityChange"].concat(gAllNotifications);
+  } else {
+    gFrontNotifications = gAllNotifications;
+  }
+}
 
 async function test() {
   waitForExplicitFinish();
@@ -207,6 +218,7 @@ async function test() {
     "onSecurityChange",
     "onStateChange",
   ];
+
   
   
   if (gUsingDocumentChannel) {
@@ -243,13 +255,13 @@ function startTest1() {
   gBrowser.addProgressListener(gFrontProgressListener);
   gBrowser.addTabsProgressListener(gAllProgressListener);
 
-  gFrontNotifications = gAllNotifications;
+  setExpectationForCrossDomainFrontBrowserLoad();
   runTest(gForegroundBrowser, "http://example.org" + gTestPage, startTest2);
 }
 
 function startTest2() {
   info("\nTest 2");
-  gFrontNotifications = gAllNotifications;
+  setExpectationForCrossDomainFrontBrowserLoad();
   runTest(gForegroundBrowser, "https://example.com" + gTestPage, startTest3);
 }
 
@@ -278,7 +290,7 @@ function startTest5() {
   gBrowser.selectedTab = gForegroundTab;
   gBrowser.addProgressListener(gFrontProgressListener);
 
-  gFrontNotifications = gAllNotifications;
+  setExpectationForCrossDomainFrontBrowserLoad();
   runTest(gForegroundBrowser, "http://example.org" + gTestPage, startTest6);
 }
 
