@@ -10,15 +10,11 @@ const {
 } = require("devtools/client/framework/reducers/dom-mutation-breakpoints");
 
 exports.registerWalkerListeners = registerWalkerListeners;
-function registerWalkerListeners(toolbox) {
-  const { walker } = toolbox;
-
-  walker.on("mutations", mutations =>
-    handleWalkerMutations(mutations, toolbox)
-  );
+function registerWalkerListeners(store, walker) {
+  walker.on("mutations", mutations => handleWalkerMutations(mutations, store));
 }
 
-function handleWalkerMutations(mutations, toolbox) {
+function handleWalkerMutations(mutations, store) {
   
   
   
@@ -27,7 +23,7 @@ function handleWalkerMutations(mutations, toolbox) {
     mutation => mutation.type === "mutationBreakpoint"
   );
   if (mutationItems.length > 0) {
-    toolbox.store.dispatch(updateBreakpointsForMutations(mutationItems));
+    store.dispatch(updateBreakpointsForMutations(mutationItems));
   }
 }
 

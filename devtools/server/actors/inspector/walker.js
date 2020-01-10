@@ -2660,7 +2660,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-
   getNodeFromActor: function(actorID, path) {
     const actor = this.conn.getActor(actorID);
     if (!actor) {

@@ -822,7 +822,11 @@ DevTools.prototype = {
       null,
       startTime
     );
-    const nodeFront = await this.findNodeFront(toolbox.walker, nodeSelectors);
+    const inspectorFront = await toolbox.target.getFront("inspector");
+    const nodeFront = await this.findNodeFront(
+      inspectorFront.walker,
+      nodeSelectors
+    );
     
     
     const a11yPanel = toolbox.getCurrentPanel();

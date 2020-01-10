@@ -2904,12 +2904,13 @@ Variable.prototype = extend(Scope.prototype, {
     event && event.stopPropagation();
 
     return async function() {
-      await this.toolbox.initInspector();
-
       let nodeFront = this._nodeFront;
       if (!nodeFront) {
         
-        nodeFront = await this.toolbox.walker.gripToNodeFront(this._valueGrip);
+        const inspectorFront = await this.toolbox.target.getFront("inspector");
+        nodeFront = await inspectorFront.walker.gripToNodeFront(
+          this._valueGrip
+        );
       }
 
       if (nodeFront) {

@@ -37,15 +37,6 @@ const { select, highlight } = require("./actions/accessibles");
 
 
 
-async function getDOMWalker() {
-  return (await gToolbox.target.getFront("inspector")).walker;
-}
-
-
-
-
-
-
 function AccessibilityView(localStore) {
   addEventListener("devtools/chrome/message", this.onMessage.bind(this), true);
   this.store = localStore;
@@ -80,7 +71,6 @@ AccessibilityView.prototype = {
       accessibility,
       accessibilityWalker: walker,
       fluentBundles,
-      getDOMWalker,
     });
     
     const provider = createElement(Provider, { store: this.store }, mainFrame);
@@ -108,8 +98,7 @@ AccessibilityView.prototype = {
     
     
     if (!accessible || accessible.indexInParent < 0) {
-      const domWalker = await getDOMWalker();
-      const { nodes: children } = await domWalker.children(node);
+      const { nodes: children } = await node.walkerFront.children(node);
       for (const child of children) {
         if (child.nodeType === nodeConstants.TEXT_NODE) {
           accessible = await walker.getAccessibleFor(child);
