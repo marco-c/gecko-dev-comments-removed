@@ -2739,17 +2739,12 @@ void BrowserParent::PushFocus(BrowserParent* aBrowserParent) {
   }
   if (!aBrowserParent->GetBrowserBridgeParent()) {
     
-    if (!sFocusStack->IsEmpty()) {
-      
-      
-      
-      
-      
-      LOGBROWSERFOCUS(
-          ("PushFocus for top-level Web content needs to clear the stack %p",
-           aBrowserParent));
-      PopFocus(sFocusStack->ElementAt(0));
-    }
+    
+    
+    
+    
+    
+    PopFocusAll();
     MOZ_ASSERT(sFocusStack->IsEmpty());
   } else {
     
@@ -2809,6 +2804,16 @@ void BrowserParent::PopFocus(BrowserParent* aBrowserParent) {
     BrowserParent* focused = GetFocused();
     LOGBROWSERFOCUS(("PopFocus changed focus to %p", focused));
     IMEStateManager::OnFocusMovedBetweenBrowsers(popped, focused);
+  }
+}
+
+
+void BrowserParent::PopFocusAll() {
+  if (!sFocusStack->IsEmpty()) {
+    LOGBROWSERFOCUS(("PopFocusAll pops items"));
+    PopFocus(sFocusStack->ElementAt(0));
+  } else {
+    LOGBROWSERFOCUS(("PopFocusAll does nothing"));
   }
 }
 
