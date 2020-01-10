@@ -726,7 +726,9 @@ impl Tile {
         state: &mut TilePostUpdateState,
     ) -> bool {
         
-        self.is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
+        let tile_is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
+        let opacity_changed = tile_is_opaque != self.is_opaque;
+        self.is_opaque = tile_is_opaque;
 
         
         self.update_content_validity(ctx, state);
@@ -803,8 +805,34 @@ impl Tile {
             
             
             match self.surface.take() {
-                Some(old_surface @ TileSurface::Texture { .. }) => {
-                    old_surface
+                Some(TileSurface::Texture { descriptor, visibility_mask }) => {
+                    
+                    
+                    
+                    
+                    
+                    
+                    if opacity_changed {
+                        if let SurfaceTextureDescriptor::NativeSurface { id, size } = descriptor {
+                            
+                            
+                            self.dirty_rect = self.rect;
+                            self.is_valid = false;
+
+                            state.composite_state.destroy_surface(id);
+                            state.composite_state.create_surface(
+                                id,
+                                size,
+                                self.is_opaque,
+                            );
+                        }
+                    }
+
+                    
+                    TileSurface::Texture {
+                        descriptor,
+                        visibility_mask,
+                    }
                 }
                 Some(TileSurface::Color { .. }) | Some(TileSurface::Clear) | None => {
                     
@@ -825,6 +853,7 @@ impl Tile {
                             state.composite_state.create_surface(
                                 NativeSurfaceId(self.id.0 as u64),
                                 ctx.current_tile_size,
+                                self.is_opaque,
                             )
                         }
                     };
