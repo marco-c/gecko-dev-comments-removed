@@ -1,0 +1,16 @@
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['layout-instability'],
+  ['performance-timeline'],
+  idl_array => {
+    idl_array.add_objects({
+      
+    });
+  }
+);
