@@ -23,23 +23,29 @@ void DrawEventRecorderPrivate::StoreExternalSurfaceRecording(
 void DrawEventRecorderPrivate::StoreSourceSurfaceRecording(
     SourceSurface* aSurface, const char* aReason) {
   RefPtr<DataSourceSurface> dataSurf = aSurface->GetDataSurface();
-  if (dataSurf) {
-    DataSourceSurface::ScopedMap map(dataSurf, DataSourceSurface::READ);
-    RecordEvent(RecordedSourceSurfaceCreation(
-        aSurface, map.GetData(), map.GetStride(), dataSurf->GetSize(),
-        dataSurf->GetFormat()));
+  IntSize surfaceSize = aSurface->GetSize();
+  if (!dataSurf || !Factory::AllowedSurfaceSize(surfaceSize)) {
+    gfxWarning() << "Recording failed to record SourceSurface for " << aReason;
+
+    
+    if (!Factory::AllowedSurfaceSize(surfaceSize)) {
+      surfaceSize.width = std::min(surfaceSize.width, kReasonableSurfaceSize);
+      surfaceSize.height = std::min(surfaceSize.height, kReasonableSurfaceSize);
+    }
+
+    
+    int32_t stride = surfaceSize.width * BytesPerPixel(aSurface->GetFormat());
+    UniquePtr<uint8_t[]> sourceData(new uint8_t[stride * surfaceSize.height]());
+    RecordEvent(RecordedSourceSurfaceCreation(aSurface, sourceData.get(),
+                                              stride, surfaceSize,
+                                              aSurface->GetFormat()));
     return;
   }
 
-  gfxWarning() << "Recording failed to record SourceSurface for " << aReason;
-  
-  int32_t stride =
-      aSurface->GetSize().width * BytesPerPixel(aSurface->GetFormat());
-  UniquePtr<uint8_t[]> sourceData(
-      new uint8_t[stride * aSurface->GetSize().height]());
-  RecordEvent(RecordedSourceSurfaceCreation(aSurface, sourceData.get(), stride,
-                                            aSurface->GetSize(),
-                                            aSurface->GetFormat()));
+  DataSourceSurface::ScopedMap map(dataSurf, DataSourceSurface::READ);
+  RecordEvent(RecordedSourceSurfaceCreation(
+      aSurface, map.GetData(), map.GetStride(), dataSurf->GetSize(),
+      dataSurf->GetFormat()));
 }
 
 void DrawEventRecorderFile::RecordEvent(const RecordedEvent& aEvent) {

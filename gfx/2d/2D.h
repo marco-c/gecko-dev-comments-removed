@@ -320,6 +320,8 @@ class SurfacePattern : public Pattern {
 class StoredPattern;
 class DrawTargetCaptureImpl;
 
+static const int32_t kReasonableSurfaceSize = 8192;
+
 
 
 
@@ -1597,7 +1599,7 @@ struct Config {
 
   Config()
       : mLogForwarder(nullptr),
-        mMaxTextureSize(8192),
+        mMaxTextureSize(kReasonableSurfaceSize),
         mMaxAllocSize(52000000) {}
 };
 
