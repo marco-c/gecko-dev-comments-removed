@@ -16,6 +16,7 @@
 #include "gfxSkipChars.h"
 #include "gfxPlatform.h"
 #include "gfxPlatformFontList.h"
+#include "gfxUserFontSet.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
 #include "nsPoint.h"
@@ -34,8 +35,6 @@
 
 class gfxContext;
 class gfxFontGroup;
-class gfxUserFontEntry;
-class gfxUserFontSet;
 class nsAtom;
 class nsLanguageAtomService;
 class gfxMissingFontRecorder;
@@ -1213,6 +1212,17 @@ class gfxFontGroup final : public gfxTextRunFactory {
     bool CheckForFallbackFaces() const { return mCheckForFallbackFaces; }
     void SetCheckForFallbackFaces() { mCheckForFallbackFaces = true; }
 
+    
+    
+    bool IsLoadingFor(uint32_t aCh) {
+      if (!IsLoading()) {
+        return false;
+      }
+      MOZ_ASSERT(IsUserFontContainer());
+      return static_cast<gfxUserFontEntry*>(FontEntry())
+          ->CharacterInUnicodeRange(aCh);
+    }
+
     void SetFont(gfxFont* aFont) {
       NS_ASSERTION(aFont, "font pointer must not be null");
       NS_ADDREF(aFont);
@@ -1311,11 +1321,18 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   
   
-  gfxFont* GetFontAt(int32_t i, uint32_t aCh = 0x20);
+  
+  
+  
+  
+  gfxFont* GetFontAt(int32_t i, uint32_t aCh, bool* aLoading);
 
   
   
-  bool FontLoadingForFamily(const FamilyFace& aFamily, uint32_t aCh) const;
+  gfxFont* GetFontAt(int32_t i, uint32_t aCh = 0x20) {
+    bool loading = false;
+    return GetFontAt(i, aCh, &loading);
+  }
 
   
   gfxFont* GetDefaultFont();
