@@ -425,6 +425,43 @@ var PictureInPicture = {
     
     
     
+
+    if (isPlayerWindow) {
+      
+      
+      
+      
+      
+      let prevWidth = windowOrPlayer.innerWidth;
+      let prevHeight = windowOrPlayer.innerHeight;
+      let distanceLeft = windowOrPlayer.screenX;
+      let distanceRight =
+        screenWidth.value - windowOrPlayer.screenX - prevWidth;
+      let distanceTop = windowOrPlayer.screenY;
+      let distanceBottom =
+        screenHeight.value - windowOrPlayer.screenY - prevHeight;
+
+      let left = windowOrPlayer.screenX;
+      let top = windowOrPlayer.screenY;
+
+      if (distanceRight < distanceLeft) {
+        
+        
+        left += prevWidth - width;
+      }
+
+      if (distanceBottom < distanceTop) {
+        
+        
+        top += prevHeight - height;
+      }
+
+      return { top, left, width, height };
+    }
+
+    
+    
+    
     
     
     
@@ -452,8 +489,9 @@ var PictureInPicture = {
       return;
     }
 
-    let { width, height } = this.fitToScreen(win, videoData);
+    let { top, left, width, height } = this.fitToScreen(win, videoData);
     win.resizeTo(width, height);
+    win.moveTo(left, top);
   },
 
   openToggleContextMenu(window, data) {
