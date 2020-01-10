@@ -3319,35 +3319,8 @@ CORSMode Element::AttrValueToCORSMode(const nsAttrValue* aValue) {
   return CORSMode(aValue->GetEnumValue());
 }
 
-
-
-
-
-
-
-
-static const char* GetFullscreenError(CallerType aCallerType,
-                                      Document* aDocument) {
-  MOZ_ASSERT(aDocument);
-
-  if (!StaticPrefs::full_screen_api_allow_trusted_requests_only() ||
-      aCallerType == CallerType::System) {
-    return nullptr;
-  }
-
-  if (!aDocument->HasValidTransientUserGestureActivation()) {
-    return "FullscreenDeniedNotInputDriven";
-  }
-
-  
-  
-  if (StaticPrefs::full_screen_api_mouse_event_allow_left_button_only() &&
-      (EventStateManager::sCurrentMouseBtn == MouseButton::eMiddle ||
-       EventStateManager::sCurrentMouseBtn == MouseButton::eRight)) {
-    return "FullscreenDeniedMouseEventOnlyLeftBtn";
-  }
-
-  return nullptr;
+static const char* GetFullscreenError(CallerType aCallerType) {
+  return nsContentUtils::CheckRequestFullscreenAllowed(aCallerType);
 }
 
 already_AddRefed<Promise> Element::RequestFullscreen(CallerType aCallerType,
@@ -3368,7 +3341,7 @@ already_AddRefed<Promise> Element::RequestFullscreen(CallerType aCallerType,
   
   
   
-  if (const char* error = GetFullscreenError(aCallerType, OwnerDoc())) {
+  if (const char* error = GetFullscreenError(aCallerType)) {
     request->Reject(error);
   } else {
     OwnerDoc()->AsyncRequestFullscreen(std::move(request));

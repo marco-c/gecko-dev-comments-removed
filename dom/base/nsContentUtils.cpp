@@ -553,6 +553,12 @@ class nsContentUtils::UserInteractionObserver final
 };
 
 
+TimeDuration nsContentUtils::HandlingUserInputTimeout() {
+  return TimeDuration::FromMilliseconds(
+      StaticPrefs::dom_event_handling_user_input_time_limit());
+}
+
+
 nsresult nsContentUtils::Init() {
   if (sInitialized) {
     NS_WARNING("Init() called twice");
@@ -6397,6 +6403,38 @@ bool nsContentUtils::ChannelShouldInheritPrincipal(
          !aLoadingPrincipal->IsSystemPrincipal());
   }
   return inherit;
+}
+
+
+const char* nsContentUtils::CheckRequestFullscreenAllowed(
+    CallerType aCallerType) {
+  if (!StaticPrefs::full_screen_api_allow_trusted_requests_only() ||
+      aCallerType == CallerType::System) {
+    return nullptr;
+  }
+
+  if (!UserActivation::IsHandlingUserInput()) {
+    return "FullscreenDeniedNotInputDriven";
+  }
+
+  
+  
+  
+  TimeDuration timeout = HandlingUserInputTimeout();
+  if (timeout > TimeDuration(nullptr) &&
+      (TimeStamp::Now() - UserActivation::GetHandlingInputStart()) > timeout) {
+    return "FullscreenDeniedNotInputDriven";
+  }
+
+  
+  
+  if (StaticPrefs::full_screen_api_mouse_event_allow_left_button_only() &&
+      (EventStateManager::sCurrentMouseBtn == MouseButton::eMiddle ||
+       EventStateManager::sCurrentMouseBtn == MouseButton::eRight)) {
+    return "FullscreenDeniedMouseEventOnlyLeftBtn";
+  }
+
+  return nullptr;
 }
 
 

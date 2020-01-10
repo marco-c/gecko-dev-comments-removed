@@ -2305,6 +2305,16 @@ class nsContentUtils {
 
 
 
+
+
+  static const char* CheckRequestFullscreenAllowed(
+      mozilla::dom::CallerType aCallerType);
+
+  
+
+
+
+
   static bool IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal);
 
   
@@ -2362,6 +2372,13 @@ class nsContentUtils {
 
 
   static bool IsInPointerLockContext(nsPIDOMWindowOuter* aWin);
+
+  
+
+
+
+
+  static TimeDuration HandlingUserInputTimeout();
 
   static void GetShiftText(nsAString& text);
   static void GetControlText(nsAString& text);
