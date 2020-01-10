@@ -117,6 +117,20 @@ JSObject* js::WritableStreamDefaultWriterClose(
 
 
 
+MOZ_MUST_USE bool js::WritableStreamDefaultWriterEnsureClosedPromiseRejected(
+    JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter,
+    Handle<Value> error) {
+  cx->check(error);
+
+  
+  JS_ReportErrorASCII(cx, "epic fail");
+  return false;
+}
+
+
+
+
+
 MOZ_MUST_USE bool js::WritableStreamDefaultWriterEnsureReadyPromiseRejected(
     JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter,
     Handle<Value> error) {
@@ -158,6 +172,66 @@ bool js::WritableStreamDefaultWriterGetDesiredSize(
         unwrappedStream->controller()));
   }
 
+  return true;
+}
+
+
+
+
+
+bool js::WritableStreamDefaultWriterRelease(
+    JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter) {
+  
+  
+  MOZ_ASSERT(unwrappedWriter->hasStream());
+  Rooted<WritableStream*> unwrappedStream(
+      cx, UnwrapStreamFromWriter(cx, unwrappedWriter));
+  if (!unwrappedStream) {
+    return false;
+  }
+
+  
+#ifdef DEBUG
+  {
+    WritableStreamDefaultWriter* unwrappedStreamWriter =
+        UnwrapWriterFromStream(cx, unwrappedStream);
+    if (!unwrappedStreamWriter) {
+      return false;
+    }
+
+    MOZ_ASSERT(unwrappedStreamWriter == unwrappedWriter);
+  }
+#endif
+
+  
+  Rooted<Value> releasedError(cx);
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_WRITABLESTREAM_CANT_RELEASE_ALREADY_CLOSED);
+  if (!cx->isExceptionPending() || !cx->getPendingException(&releasedError)) {
+    return false;
+  }
+
+  
+  
+  
+  if (!WritableStreamDefaultWriterEnsureReadyPromiseRejected(
+          cx, unwrappedWriter, releasedError)) {
+    return false;
+  }
+
+  
+  
+  
+  if (!WritableStreamDefaultWriterEnsureClosedPromiseRejected(
+          cx, unwrappedWriter, releasedError)) {
+    return false;
+  }
+
+  
+  unwrappedStream->clearWriter();
+
+  
+  unwrappedWriter->clearStream();
   return true;
 }
 
