@@ -133,6 +133,8 @@ class Output(object):
             elif test.type == "benchmark":
                 if 'assorted-dom' in test.measurements:
                     subtests, vals = self.parseAssortedDomOutput(test)
+                elif 'ares6' in test.measurements:
+                    subtests, vals = self.parseAresSixOutput(test)
                 elif 'motionmark' in test.measurements:
                     subtests, vals = self.parseMotionmarkOutput(test)
                 elif 'speedometer' in test.measurements:
@@ -407,6 +409,109 @@ class Output(object):
         names.sort(reverse=True)
         for name in names:
             _subtests[name]['value'] = filters.median(_subtests[name]['replicates'])
+            subtests.append(_subtests[name])
+            vals.append([_subtests[name]['value'], name])
+
+        return subtests, vals
+
+    def parseAresSixOutput(self, test):
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        _subtests = {}
+        data = test.measurements['ares6']
+        for page_cycle in data:
+            for sub, replicates in page_cycle[0].iteritems():
+                
+                if sub not in _subtests.keys():
+                    
+                    _subtests[sub] = {'unit': test.subtest_unit,
+                                      'alertThreshold': float(test.alert_threshold),
+                                      'lowerIsBetter': test.subtest_lower_is_better,
+                                      'name': sub,
+                                      'replicates': []}
+                _subtests[sub]['replicates'].extend([round(x, 3) for x in replicates])
+
+        vals = []
+        subtests = []
+        names = _subtests.keys()
+        names.sort(reverse=True)
+        for name in names:
+            _subtests[name]['value'] = filters.mean(_subtests[name]['replicates'])
             subtests.append(_subtests[name])
             vals.append([_subtests[name]['value'], name])
 

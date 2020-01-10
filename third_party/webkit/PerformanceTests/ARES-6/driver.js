@@ -159,6 +159,8 @@ class Driver {
                     this.readyTrigger();
                     if (typeof tpRecordTime !== "undefined")
                         tpRecordTime(this._values.join(','), 0, this._names.join(','));
+
+                    this.sendResultsToRaptor();
                 } else
                     print("Success! Benchmark is now finished.");
                 return;
@@ -216,5 +218,37 @@ class Driver {
             this._statusCell.innerHTML = "Running Tests... " + ( this._startIterations - this._numIterations ) + "/" + this._startIterations;
         }
         
+    }
+
+    sendResultsToRaptor()
+    {
+        
+        var allNames = this._names;
+        
+        var allValues = this._values;
+        
+        var measuredValuesByFullName = {};
+        for (var i = 0, len = allNames.length; i < len; i++) {
+            if (measuredValuesByFullName[allNames[i]] === undefined) {
+                measuredValuesByFullName[allNames[i]] = [];
+            }
+        }
+
+        allNames.map(function(name, index) {
+            
+            
+            
+            measuredValuesByFullName[name].push(allValues[index]);
+        });
+
+        
+        delete measuredValuesByFullName.geomean;
+
+        if (location.search === '?raptor') {
+            var _data = ['raptor-benchmark', 'ares6', measuredValuesByFullName];
+            console.log('ares6 source is about to post results to the raptor webext');
+            window.postMessage(_data, '*');
+        }
+
     }
 }
