@@ -66,6 +66,12 @@
 
 namespace mozilla {
 
+
+
+
+
+const char kTruncationIndicator = '$';
+
 ThreadStackHelper::ThreadStackHelper()
     : mStackToFill(nullptr),
       mMaxStackSize(16),
@@ -246,11 +252,41 @@ const char* GetPathAfterComponent(const char* filename,
 
 }  
 
+bool ThreadStackHelper::MaybeAppendDynamicStackFrame(Span<const char> aBuf) {
+  mDesiredBufferSize += aBuf.Length() + 1;
+
+  if (mStackToFill->stack().Capacity() > mStackToFill->stack().Length() &&
+      (mStackToFill->strbuffer().Capacity() -
+       mStackToFill->strbuffer().Length()) > aBuf.Length() + 1) {
+    
+    mDesiredStackSize += 1;
+    uint32_t start = mStackToFill->strbuffer().Length();
+    mStackToFill->strbuffer().AppendElements(aBuf.Elements(), aBuf.Length());
+    mStackToFill->strbuffer().AppendElement('\0');
+    mStackToFill->stack().AppendElement(HangEntryBufOffset(start));
+    return true;
+  }
+  return false;
+}
+
 void ThreadStackHelper::CollectProfilingStackFrame(
     const js::ProfilingStackFrame& aFrame) {
   
+  
   if (!aFrame.isJsFrame()) {
     const char* frameLabel = aFrame.label();
+    if (aFrame.isNonsensitive() && aFrame.dynamicString()) {
+      const char* dynamicString = aFrame.dynamicString();
+      char buffer[128];
+      size_t len = SprintfLiteral(buffer, "%s %s", frameLabel, dynamicString);
+      if (len > sizeof(buffer)) {
+        buffer[sizeof(buffer) - 1] = kTruncationIndicator;
+        len = sizeof(buffer);
+      }
+      if (MaybeAppendDynamicStackFrame(MakeSpan(buffer, len))) {
+        return;
+      }
+    }
 
     
     
@@ -324,20 +360,12 @@ void ThreadStackHelper::CollectProfilingStackFrame(
 
   char buffer[128];  
   size_t len = SprintfLiteral(buffer, "%s:%u", basename, lineno);
-  if (len < sizeof(buffer)) {
-    mDesiredBufferSize += len + 1;
-
-    if (mStackToFill->stack().Capacity() > mStackToFill->stack().Length() &&
-        (mStackToFill->strbuffer().Capacity() -
-         mStackToFill->strbuffer().Length()) > len + 1) {
-      
-      mDesiredStackSize += 1;
-      uint32_t start = mStackToFill->strbuffer().Length();
-      mStackToFill->strbuffer().AppendElements(buffer, len);
-      mStackToFill->strbuffer().AppendElement('\0');
-      mStackToFill->stack().AppendElement(HangEntryBufOffset(start));
-      return;
-    }
+  if (len > sizeof(buffer)) {
+    buffer[sizeof(buffer) - 1] = kTruncationIndicator;
+    len = sizeof(buffer);
+  }
+  if (MaybeAppendDynamicStackFrame(MakeSpan(buffer, len))) {
+    return;
   }
 
   TryAppendFrame(HangEntryChromeScript());
