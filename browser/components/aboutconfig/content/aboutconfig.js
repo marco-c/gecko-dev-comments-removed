@@ -351,7 +351,9 @@ class PrefRow {
     gPrefInEdit = this;
     this.editing = true;
     this.refreshElement();
+    
     this.inputField.focus();
+    this.inputField.select();
   }
 
   save() {
