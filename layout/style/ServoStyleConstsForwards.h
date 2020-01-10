@@ -115,6 +115,44 @@ class Document;
 
 
 
+
+template <typename T>
+struct StyleBox {
+  explicit StyleBox(UniquePtr<T> aPtr) : mRaw(aPtr.release()) {
+    MOZ_DIAGNOSTIC_ASSERT(mRaw);
+  }
+
+  StyleBox(const StyleBox& aOther) : StyleBox(MakeUnique<T>(*aOther)) {}
+  ~StyleBox() {
+    MOZ_DIAGNOSTIC_ASSERT(mRaw);
+    delete mRaw;
+  }
+
+  const T* operator->() const {
+    MOZ_DIAGNOSTIC_ASSERT(mRaw);
+    return mRaw;
+  }
+
+  const T& operator*() const {
+    MOZ_DIAGNOSTIC_ASSERT(mRaw);
+    return *mRaw;
+  }
+
+  bool operator==(const StyleBox<T>& aOther) const {
+    return *(*this) == *aOther;
+  }
+
+  bool operator!=(const StyleBox<T>& aOther) const {
+    return *this != *aOther;
+  }
+
+ private:
+  T* mRaw;
+};
+
+
+
+
 using StyleLoader = css::Loader;
 using StyleLoaderReusableStyleSheets = css::LoaderReusableStyleSheets;
 using StyleCallerType = dom::CallerType;
