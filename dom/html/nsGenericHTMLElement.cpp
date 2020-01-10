@@ -1235,6 +1235,9 @@ static void MapDimensionAttributeInto(MappedDeclarations& aDecls,
   if (aValue.Type() == nsAttrValue::ePercent) {
     return aDecls.SetPercentValue(aProp, aValue.GetPercentValue());
   }
+  if (aValue.Type() == nsAttrValue::eDoubleValue) {
+    return aDecls.SetPixelValue(aProp, aValue.GetDoubleValue());
+  }
 }
 
 void nsGenericHTMLElement::MapImageMarginAttributeInto(
@@ -1302,12 +1305,23 @@ void nsGenericHTMLElement::MapImageSizeAttributesInto(
   
   
   if (StaticPrefs::layout_css_width_and_height_map_to_aspect_ratio_enabled() &&
-      width && width->Type() == nsAttrValue::eInteger && height &&
-      height->Type() == nsAttrValue::eInteger) {
-    int32_t w = width->GetIntegerValue();
-    int32_t h = height->GetIntegerValue();
-    if (w != 0 && h != 0) {
-      aDecls.SetNumberValue(eCSSProperty_aspect_ratio, float(w) / float(h));
+      width && height) {
+    Maybe<double> w;
+    if (width->Type() == nsAttrValue::eInteger) {
+      w.emplace(width->GetIntegerValue());
+    } else if (width->Type() == nsAttrValue::eDoubleValue) {
+      w.emplace(width->GetDoubleValue());
+    }
+
+    Maybe<double> h;
+    if (height->Type() == nsAttrValue::eInteger) {
+      h.emplace(height->GetIntegerValue());
+    } else if (height->Type() == nsAttrValue::eDoubleValue) {
+      h.emplace(height->GetDoubleValue());
+    }
+
+    if (w && h && *w != 0 && *h != 0) {
+      aDecls.SetNumberValue(eCSSProperty_aspect_ratio, *w / *h);
     }
   }
 }
@@ -1416,6 +1430,10 @@ uint32_t nsGenericHTMLElement::GetDimensionAttrAsUnsignedInt(
     
     
     return uint32_t(attrVal->GetPercentValue() * 100.0f);
+  }
+
+  if (attrVal->Type() == nsAttrValue::eDoubleValue) {
+    return uint32_t(attrVal->GetDoubleValue());
   }
 
   return aDefault;
