@@ -20,14 +20,31 @@ add_task(async function() {
   const {Target} = client;
   ok("Target" in client, "Target domain is available");
 
-  const targetCreatedForAlreadyOpenedTab = Target.targetCreated();
+  const onTargetsCreated = new Promise(resolve => {
+    let gotTabTarget = false, gotMainTarget = false;
+    const unsubscribe = Target.targetCreated(event => {
+      if (event.targetInfo.type == "page" &&
+        event.targetInfo.url == gBrowser.selectedBrowser.currentURI.spec) {
+        info("Got the current tab target");
+        gotTabTarget = true;
+      }
+      if (event.targetInfo.type == "browser") {
+        info("Got the browser target");
+        gotMainTarget = true;
+      }
+      if (gotTabTarget && gotMainTarget) {
+        unsubscribe();
+        resolve();
+      }
+    });
+  });
 
   
   Target.setDiscoverTargets({ discover: true });
 
   
   
-  await targetCreatedForAlreadyOpenedTab;
+  await onTargetsCreated;
 
   
   const targetCreated = Target.targetCreated();
