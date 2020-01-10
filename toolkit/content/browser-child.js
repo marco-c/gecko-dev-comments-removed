@@ -16,10 +16,15 @@ const { WebProgressChild } = ChromeUtils.import(
 
 this.WebProgress = new WebProgressChild(this);
 
-docShell
-  .QueryInterface(Ci.nsIInterfaceRequestor)
-  .getInterface(Ci.nsIBrowserChild)
-  .beginSendingWebProgressEventsToParent();
+try {
+  docShell
+    .QueryInterface(Ci.nsIInterfaceRequestor)
+    .getInterface(Ci.nsIBrowserChild)
+    .beginSendingWebProgressEventsToParent();
+} catch (e) {
+  
+  
+}
 
 
 
