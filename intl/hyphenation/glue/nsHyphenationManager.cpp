@@ -37,8 +37,7 @@ static const char kMemoryPressureNotification[] = "memory-pressure";
 static const char kParentShuttingDownNotification[] = "profile-before-change";
 static const char kChildShuttingDownNotification[] = "content-child-shutdown";
 
-class HyphenReporter final : public nsIMemoryReporter,
-                             public CountingAllocatorBase<HyphenReporter> {
+class HyphenReporter final : public nsIMemoryReporter {
  private:
   ~HyphenReporter() = default;
 
@@ -47,14 +46,19 @@ class HyphenReporter final : public nsIMemoryReporter,
 
   
   static uint32_t MemoryAllocatedInKB() {
-    return (MemoryAllocated() + 1023) / 1024;
+    size_t total = 0;
+    if (nsHyphenationManager::Instance()) {
+      total = nsHyphenationManager::Instance()->SizeOfIncludingThis(
+          moz_malloc_size_of);
+    }
+    return (total + 1023) / 1024;
   }
 
   NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
                             nsISupports* aData, bool aAnonymize) override {
-    size_t total = MemoryAllocated();
+    size_t total = 0;
     if (nsHyphenationManager::Instance()) {
-      total += nsHyphenationManager::Instance()->SizeOfIncludingThis(
+      total = nsHyphenationManager::Instance()->SizeOfIncludingThis(
           moz_malloc_size_of);
     }
     MOZ_COLLECT_REPORT("explicit/hyphenation", KIND_HEAP, UNITS_BYTES, total,
@@ -64,30 +68,6 @@ class HyphenReporter final : public nsIMemoryReporter,
 };
 
 NS_IMPL_ISUPPORTS(HyphenReporter, nsIMemoryReporter)
-
-template <>
-CountingAllocatorBase<HyphenReporter>::AmountType
-    CountingAllocatorBase<HyphenReporter>::sAmount(0);
-
-
-
-
-
-extern "C" {
-void* hnj_malloc(size_t aSize);
-void* hnj_realloc(void* aPtr, size_t aSize);
-void hnj_free(void* aPtr);
-};
-
-void* hnj_malloc(size_t aSize) {
-  return HyphenReporter::InfallibleCountingMalloc(aSize);
-}
-
-void* hnj_realloc(void* aPtr, size_t aSize) {
-  return HyphenReporter::InfallibleCountingRealloc(aPtr, aSize);
-}
-
-void hnj_free(void* aPtr) { HyphenReporter::CountingFree(aPtr); }
 
 nsHyphenationManager* nsHyphenationManager::sInstance = nullptr;
 
@@ -257,7 +237,7 @@ void nsHyphenationManager::LoadPatternListFromOmnijar(Omnijar::Type aType) {
   }
 
   nsZipFind* find;
-  zip->FindInit("hyphenation/hyph_*.dic", &find);
+  zip->FindInit("hyphenation/hyph_*.hyf", &find);
   if (!find) {
     return;
   }
@@ -323,7 +303,7 @@ void nsHyphenationManager::LoadPatternListFromDir(nsIFile* aDir) {
     file->GetLeafName(dictName);
     NS_ConvertUTF16toUTF8 locale(dictName);
     ToLowerCase(locale);
-    if (!StringEndsWith(locale, NS_LITERAL_CSTRING(".dic"))) {
+    if (!StringEndsWith(locale, NS_LITERAL_CSTRING(".hyf"))) {
       continue;
     }
     if (StringBeginsWith(locale, NS_LITERAL_CSTRING("hyph_"))) {
@@ -383,9 +363,6 @@ size_t nsHyphenationManager::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
   
 
   result += mHyphenators.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (auto i = mHyphenators.ConstIter(); !i.Done(); i.Next()) {
-    result += aMallocSizeOf(i.Data().get());
-  }
 
   return result;
 }
