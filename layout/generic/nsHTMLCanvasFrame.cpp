@@ -163,7 +163,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
         
         
 
-        wr::LayoutRect r = wr::ToRoundedLayoutRect(bounds);
+        wr::LayoutRect r = wr::ToLayoutRect(bounds);
         aBuilder.PushIFrame(r, !BackfaceIsHidden(), data->GetPipelineId().ref(),
                              false);
 
