@@ -116,7 +116,30 @@ enum {
   
   
   
-  NODE_IS_ANONYMOUS_ROOT = NODE_FLAG_BIT(2),
+  
+  NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE = NODE_FLAG_BIT(2),
+
+  
+  
+  
+  
+  NODE_IS_NATIVE_ANONYMOUS_ROOT = NODE_FLAG_BIT(3),
+
+  NODE_IS_EDITABLE = NODE_FLAG_BIT(4),
+
+  
+  NODE_IS_IN_SHADOW_TREE = NODE_FLAG_BIT(5),
+
+  
+  NODE_HAS_EMPTY_SELECTOR = NODE_FLAG_BIT(6),
+
+  
+  
+  NODE_HAS_SLOW_SELECTOR = NODE_FLAG_BIT(7),
+
+  
+  
+  NODE_HAS_EDGE_CHILD_SELECTOR = NODE_FLAG_BIT(8),
 
   
   
@@ -124,38 +147,8 @@ enum {
   
   
   
-  NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE = NODE_FLAG_BIT(3),
-
   
-  
-  
-  
-  NODE_IS_NATIVE_ANONYMOUS_ROOT = NODE_FLAG_BIT(4),
-
-  NODE_IS_EDITABLE = NODE_FLAG_BIT(5),
-
-  
-  NODE_IS_IN_SHADOW_TREE = NODE_FLAG_BIT(6),
-
-  
-  NODE_HAS_EMPTY_SELECTOR = NODE_FLAG_BIT(7),
-
-  
-  
-  NODE_HAS_SLOW_SELECTOR = NODE_FLAG_BIT(8),
-
-  
-  
-  NODE_HAS_EDGE_CHILD_SELECTOR = NODE_FLAG_BIT(9),
-
-  
-  
-  
-  
-  
-  
-  
-  NODE_HAS_SLOW_SELECTOR_LATER_SIBLINGS = NODE_FLAG_BIT(10),
+  NODE_HAS_SLOW_SELECTOR_LATER_SIBLINGS = NODE_FLAG_BIT(9),
 
   NODE_ALL_SELECTOR_FLAGS = NODE_HAS_EMPTY_SELECTOR | NODE_HAS_SLOW_SELECTOR |
                             NODE_HAS_EDGE_CHILD_SELECTOR |
@@ -163,28 +156,28 @@ enum {
 
   
   
-  NODE_NEEDS_FRAME = NODE_FLAG_BIT(11),
+  NODE_NEEDS_FRAME = NODE_FLAG_BIT(10),
 
   
   
   
-  NODE_DESCENDANTS_NEED_FRAMES = NODE_FLAG_BIT(12),
+  NODE_DESCENDANTS_NEED_FRAMES = NODE_FLAG_BIT(11),
 
   
-  NODE_HAS_ACCESSKEY = NODE_FLAG_BIT(13),
+  NODE_HAS_ACCESSKEY = NODE_FLAG_BIT(12),
 
   
-  NODE_HAS_DIRECTION_RTL = NODE_FLAG_BIT(14),
+  NODE_HAS_DIRECTION_RTL = NODE_FLAG_BIT(13),
 
   
-  NODE_HAS_DIRECTION_LTR = NODE_FLAG_BIT(15),
+  NODE_HAS_DIRECTION_LTR = NODE_FLAG_BIT(14),
 
   NODE_ALL_DIRECTION_FLAGS = NODE_HAS_DIRECTION_LTR | NODE_HAS_DIRECTION_RTL,
 
-  NODE_HAS_BEEN_IN_UA_WIDGET = NODE_FLAG_BIT(16),
+  NODE_HAS_BEEN_IN_UA_WIDGET = NODE_FLAG_BIT(15),
 
   
-  NODE_TYPE_SPECIFIC_BITS_OFFSET = 17
+  NODE_TYPE_SPECIFIC_BITS_OFFSET = 16
 };
 
 
@@ -1212,19 +1205,18 @@ class nsINode : public mozilla::dom::EventTarget {
   void SetFlags(FlagsType aFlagsToSet) {
     NS_ASSERTION(
         !(aFlagsToSet &
-          (NODE_IS_ANONYMOUS_ROOT | NODE_IS_NATIVE_ANONYMOUS_ROOT |
-           NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE | NODE_DESCENDANTS_NEED_FRAMES |
-           NODE_NEEDS_FRAME | NODE_HAS_BEEN_IN_UA_WIDGET)) ||
+          (NODE_IS_NATIVE_ANONYMOUS_ROOT | NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
+           NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME |
+           NODE_HAS_BEEN_IN_UA_WIDGET)) ||
             IsContent(),
         "Flag only permitted on nsIContent nodes");
     nsWrapperCache::SetFlags(aFlagsToSet);
   }
 
   void UnsetFlags(FlagsType aFlagsToUnset) {
-    NS_ASSERTION(
-        !(aFlagsToUnset & (NODE_IS_ANONYMOUS_ROOT | NODE_HAS_BEEN_IN_UA_WIDGET |
-                           NODE_IS_NATIVE_ANONYMOUS_ROOT)),
-        "Trying to unset write-only flags");
+    NS_ASSERTION(!(aFlagsToUnset & (NODE_HAS_BEEN_IN_UA_WIDGET |
+                                    NODE_IS_NATIVE_ANONYMOUS_ROOT)),
+                 "Trying to unset write-only flags");
     nsWrapperCache::UnsetFlags(aFlagsToUnset);
   }
 
@@ -1344,10 +1336,9 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   bool IsRootOfNativeAnonymousSubtree() const {
-    NS_ASSERTION(!HasFlag(NODE_IS_NATIVE_ANONYMOUS_ROOT) ||
-                     (HasFlag(NODE_IS_ANONYMOUS_ROOT) &&
-                      HasFlag(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE)),
-                 "Some flags seem to be missing!");
+    NS_ASSERTION(
+        !HasFlag(NODE_IS_NATIVE_ANONYMOUS_ROOT) || IsInNativeAnonymousSubtree(),
+        "Some flags seem to be missing!");
     return HasFlag(NODE_IS_NATIVE_ANONYMOUS_ROOT);
   }
 

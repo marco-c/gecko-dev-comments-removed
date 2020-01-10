@@ -175,7 +175,7 @@ class nsIContent : public nsINode {
 
 
   void SetIsNativeAnonymousRoot() {
-    SetFlags(NODE_IS_ANONYMOUS_ROOT | NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
+    SetFlags(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
              NODE_IS_NATIVE_ANONYMOUS_ROOT);
   }
 
@@ -189,8 +189,10 @@ class nsIContent : public nsINode {
 
 
 
+
+
   bool IsRootOfAnonymousSubtree() const {
-    return HasFlag(NODE_IS_ANONYMOUS_ROOT);
+    return IsRootOfNativeAnonymousSubtree();
   }
 
   
