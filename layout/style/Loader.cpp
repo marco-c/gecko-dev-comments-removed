@@ -450,8 +450,7 @@ bool LoaderReusableStyleSheets::FindReusableStyleSheet(
 
 
 struct Loader::Sheets {
-  nsBaseHashtable<SheetLoadDataHashKey, RefPtr<StyleSheet>, StyleSheet*>
-      mCompleteSheets;
+  nsRefPtrHashtable<SheetLoadDataHashKey, StyleSheet> mCompleteSheets;
   
   nsDataHashtable<SheetLoadDataHashKey, SheetLoadData*> mLoadingDatas;
   nsDataHashtable<SheetLoadDataHashKey, SheetLoadData*> mPendingDatas;
