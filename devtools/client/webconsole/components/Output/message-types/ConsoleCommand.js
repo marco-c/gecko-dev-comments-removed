@@ -36,11 +36,13 @@ function ConsoleCommand(props) {
     maybeScrollToBottom,
   } = props;
 
-  const { indent, source, type, level, messageText, timeStamp } = message;
+  const { indent, source, type, level, timeStamp } = message;
+  const messageText = trimCode(message.messageText);
 
   
   
   const messageBody = createElement("syntax-highlighted", null, messageText);
+
   return Message({
     source,
     type,
@@ -57,3 +59,21 @@ function ConsoleCommand(props) {
 }
 
 module.exports = ConsoleCommand;
+
+
+
+
+function trimCode(input) {
+  if (typeof input !== "string") {
+    return input;
+  }
+
+  
+  if (input.trim().includes("\n") === false) {
+    return input.trim();
+  }
+
+  
+  
+  return input.replace(/^\s*\n/, "").trimEnd();
+}
