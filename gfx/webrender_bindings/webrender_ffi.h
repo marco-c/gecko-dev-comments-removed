@@ -51,7 +51,8 @@ bool gecko_profiler_thread_is_being_profiled();
   macro(radial_grad);                      \
   macro(picture);                          \
   macro(text_run);                         \
-  macro(filterdata);
+  macro(filterdata);                       \
+  macro(backdrop);
 
 
 namespace mozilla {

@@ -331,7 +331,20 @@ impl RenderTaskGraph {
                     continue;
                 }
 
-                if child_pass_index % 2 != pass_index % 2 {
+                
+                
+                
+                
+                
+                
+                
+                let task_is_picture = if let RenderTaskKind::Picture(..) = self.tasks[task_index].kind {
+                    true
+                } else {
+                    false
+                };
+
+                if child_pass_index % 2 != pass_index % 2 || task_is_picture {
                     
                     
                     self.tasks[child_task_index].mark_for_saving();
@@ -2169,7 +2182,8 @@ pub fn dump_render_tasks_as_svg(
             let tx = rect.x + rect.w / 2.0;
             let ty = rect.y + 10.0;
 
-            let label = text(tx, ty, task.kind.as_str());
+            let saved = if task.saved_index.is_some() { " (Saved)" } else { "" };
+            let label = text(tx, ty, format!("{}{}", task.kind.as_str(), saved));
             let size = text(tx, ty + 12.0, format!("{}", task.location.size()));
 
             nodes[task_index] = Some(Node { rect, label, size });
