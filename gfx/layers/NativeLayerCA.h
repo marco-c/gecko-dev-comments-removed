@@ -96,19 +96,12 @@ class NativeLayerCA : public NativeLayer {
   
   void SetRect(const gfx::IntRect& aRect) override;
   gfx::IntRect GetRect() override;
-
-  
-  
-  
-  
-  
-  
-  
-  gfx::IntRegion CurrentSurfaceInvalidRegion();
-
-  
-  
-  void InvalidateRegionThroughoutSwapchain(const gfx::IntRegion& aRegion);
+  void InvalidateRegionThroughoutSwapchain(
+      const gfx::IntRegion& aRegion) override;
+  gfx::IntRegion CurrentSurfaceInvalidRegion() override;
+  void NotifySurfaceReady() override;
+  void SetSurfaceIsFlipped(bool aIsFlipped) override;
+  bool SurfaceIsFlipped() override;
 
   
   
@@ -119,13 +112,6 @@ class NativeLayerCA : public NativeLayer {
   
   
   CFTypeRefPtr<IOSurfaceRef> NextSurface();
-
-  
-  
-  
-  
-  
-  void NotifySurfaceReady();
 
   
   
@@ -144,11 +130,6 @@ class NativeLayerCA : public NativeLayer {
   
   void SetSurfaceRegistry(RefPtr<IOSurfaceRegistry> aSurfaceRegistry);
   RefPtr<IOSurfaceRegistry> GetSurfaceRegistry();
-
-  
-  
-  void SetSurfaceIsFlipped(bool aIsFlipped);
-  bool SurfaceIsFlipped();
 
   
   

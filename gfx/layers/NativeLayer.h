@@ -67,6 +67,30 @@ class NativeLayer {
   virtual void SetOpaqueRegion(const gfx::IntRegion& aRegion) = 0;
   virtual gfx::IntRegion OpaqueRegion() = 0;
 
+  
+  
+  virtual void SetSurfaceIsFlipped(bool aIsFlipped) = 0;
+  virtual bool SurfaceIsFlipped() = 0;
+
+  
+  
+  virtual void InvalidateRegionThroughoutSwapchain(
+      const gfx::IntRegion& aRegion) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual gfx::IntRegion CurrentSurfaceInvalidRegion() = 0;
+
+  
+  
+  
+  virtual void NotifySurfaceReady() = 0;
+
  protected:
   virtual ~NativeLayer() {}
 };
