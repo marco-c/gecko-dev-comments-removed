@@ -170,7 +170,9 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
     }
   }
 
-  if (aURI) {
+  
+  
+  if (aURI && !NS_IsAboutBlank(aURI)) {
     
     nsresult rv = IsThirdPartyInternal(bottomDomain, aURI, &result);
     if (NS_FAILED(rv)) return rv;
