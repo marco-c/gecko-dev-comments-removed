@@ -88,7 +88,7 @@ module.exports = {
       "server/**",
     ],
     "rules": {
-      "mozilla/reject-some-requires": ["error", "^devtools/client"],
+      "mozilla/reject-some-requires": ["error", "^(resource\://)?devtools/client"],
     }
   }, {
     
