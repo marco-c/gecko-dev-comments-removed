@@ -196,9 +196,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
-
-  void UpdateHitTestingTree(LayersId aRootLayerTreeId, Layer* aRoot,
+  void UpdateHitTestingTree(Layer* aRoot,
                             bool aIsFirstPaint, LayersId aOriginatingLayersId,
                             uint32_t aPaintSequenceNumber);
 
@@ -208,8 +206,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void UpdateHitTestingTree(LayersId aRootLayerTreeId,
-                            const WebRenderScrollDataWrapper& aScrollWrapper,
+  void UpdateHitTestingTree(const WebRenderScrollDataWrapper& aScrollWrapper,
                             bool aIsFirstPaint, WRRootId aOriginatingWrRootId,
                             uint32_t aPaintSequenceNumber);
 
@@ -507,7 +504,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void CollectTransformsForChromeMainThread(LayersId aRootLayerTreeId);
+  void CollectTransformsForChromeMainThread();
 
   
 
@@ -641,8 +638,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   
   template <class ScrollNode>
-  void UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
-                                const ScrollNode& aRoot, bool aIsFirstPaint,
+  void UpdateHitTestingTreeImpl(const ScrollNode& aRoot, bool aIsFirstPaint,
                                 WRRootId aOriginatingWrRootId,
                                 uint32_t aPaintSequenceNumber);
 
