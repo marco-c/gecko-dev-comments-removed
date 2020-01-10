@@ -24,10 +24,9 @@ async function getNodeFront(gripOrFront, toolbox) {
   if ("actorID" in gripOrFront) {
     return new Promise(resolve => resolve(gripOrFront));
   }
-  
-  
-  const walkerFront = (await toolbox.target.getFront("inspector")).walker;
-  return walkerFront.gripToNodeFront(gripOrFront);
+
+  const inspectorFront = await toolbox.target.getFront("inspector");
+  return inspectorFront.getNodeFrontFromNodeGrip(gripOrFront);
 }
 
 DebuggerPanel.prototype = {
