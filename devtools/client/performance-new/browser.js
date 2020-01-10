@@ -442,7 +442,7 @@ async function getSymbolTableFromLocalBinary(objdirs, filename, breakpadId) {
 
 
 
-function createMultiModalGetSymbolTableFn(profile, objdirs, perfFront) {
+function createMultiModalGetSymbolTableFn(profile, getObjdirs, perfFront) {
   const libraryGetter = createLibraryMap(profile);
 
   return async function getSymbolTable(debugName, breakpadId) {
@@ -473,6 +473,7 @@ function createMultiModalGetSymbolTableFn(profile, objdirs, perfFront) {
       
       
       
+      const objdirs = getObjdirs();
       return await getSymbolTableFromLocalBinary(objdirs, name, breakpadId);
     } catch (e) {
       
