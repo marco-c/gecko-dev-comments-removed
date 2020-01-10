@@ -79,9 +79,8 @@ const kAboutPageRegistrationContentScript =
 
 
 
-
-function registerActors() {
-  ChromeUtils.registerWindowActor("BrowserTestUtils", {
+function registerActor() {
+  let actorOptions = {
     parent: {
       moduleURI: "resource://testing-common/BrowserTestUtilsParent.jsm",
     },
@@ -94,12 +93,16 @@ function registerActors() {
     },
     allFrames: true,
     includeChrome: true,
-  });
+  };
+  ChromeUtils.registerWindowActor("BrowserTestUtils", actorOptions);
+}
 
-  ChromeUtils.registerWindowActor("ContentEventListener", {
+function registerContentEventListenerActor() {
+  let actorOptions = {
     parent: {
       moduleURI: "resource://testing-common/ContentEventListenerParent.jsm",
     },
+
     child: {
       moduleURI: "resource://testing-common/ContentEventListenerChild.jsm",
       events: {
@@ -109,10 +112,11 @@ function registerActors() {
       },
     },
     allFrames: true,
-  });
+  };
+  ChromeUtils.registerWindowActor("ContentEventListener", actorOptions);
 }
 
-registerActors();
+registerActor();
 
 var BrowserTestUtils = {
   
@@ -522,6 +526,8 @@ var BrowserTestUtils = {
   _contentEventListenerSharedState: new Map(),
 
   _contentEventListeners: new Map(),
+
+  _contentEventListenerActorRegistered: false,
 
   
 
@@ -1160,28 +1166,51 @@ var BrowserTestUtils = {
 
 
 
-
-
-
   waitForContentEvent(
     browser,
     eventName,
     capture = false,
     checkFn,
-    wantUntrusted = false
+    wantsUntrusted = false
   ) {
-    return new Promise(resolve => {
-      let removeEventListener = this.addContentEventListener(
-        browser,
-        eventName,
-        () => {
-          removeEventListener();
-          resolve();
-        },
-        { capture, wantUntrusted },
-        checkFn
-      );
+    let parameters = {
+      eventName,
+      capture,
+      checkFnSource: checkFn ? checkFn.toSource() : null,
+      wantsUntrusted,
+    };
+    
+    return ContentTask.spawn(browser, parameters, function({
+      eventName,
+      capture,
+      checkFnSource,
+      wantsUntrusted,
+    }) {
+      let checkFn;
+      if (checkFnSource) {
+        checkFn = eval(`(() => (${checkFnSource}))()`);
+      }
+      return new Promise((resolve, reject) => {
+        addEventListener(
+          eventName,
+          function listener(event) {
+            let completion = resolve;
+            try {
+              if (checkFn && !checkFn(event)) {
+                return;
+              }
+            } catch (e) {
+              completion = () => reject(e);
+            }
+            removeEventListener(eventName, listener, capture);
+            completion();
+          },
+          capture,
+          wantsUntrusted
+        );
+      });
     });
+    
   },
 
   
@@ -1229,6 +1258,10 @@ var BrowserTestUtils = {
 
 
 
+
+
+
+
   addContentEventListener(
     browser,
     eventName,
@@ -1238,10 +1271,7 @@ var BrowserTestUtils = {
   ) {
     let id = gListenerId++;
     let contentEventListeners = this._contentEventListeners;
-    contentEventListeners.set(id, {
-      listener,
-      browsingContext: browser.browsingContext,
-    });
+    contentEventListeners.set(id, { listener, browser });
 
     let eventListenerState = this._contentEventListenerSharedState;
     eventListenerState.set(id, {
@@ -1255,6 +1285,35 @@ var BrowserTestUtils = {
       eventListenerState
     );
     Services.ppmm.sharedData.flush();
+
+    if (!this._contentEventListenerActorRegistered) {
+      this._contentEventListenerActorRegistered = true;
+      registerContentEventListenerActor();
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let contextsToVisit = [browser.browsingContext];
+      while (contextsToVisit.length) {
+        let currentContext = contextsToVisit.pop();
+        let global = currentContext.currentWindowGlobal;
+        if (!global) {
+          continue;
+        }
+        let actor = browser.browsingContext.currentWindowGlobal.getActor(
+          "ContentEventListener"
+        );
+        actor.sendAsyncMessage("ContentEventListener:LateCreate");
+        contextsToVisit.push(...currentContext.getChildren());
+      }
+    }
 
     let unregisterFunction = function() {
       if (!eventListenerState.has(id)) {
@@ -1276,12 +1335,12 @@ var BrowserTestUtils = {
 
 
 
-  _receivedContentEventListener(listenerId, browsingContext) {
+  _receivedContentEventListener(listenerId, browser) {
     let listenerData = this._contentEventListeners.get(listenerId);
     if (!listenerData) {
       return;
     }
-    if (listenerData.browsingContext != browsingContext) {
+    if (listenerData.browser != browser) {
       return;
     }
     listenerData.listener();

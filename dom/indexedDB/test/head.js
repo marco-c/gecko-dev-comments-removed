@@ -85,6 +85,7 @@ function waitForMessage(aMessage, browser) {
   checkFn.toSource = function() {
     return `function checkFn(event) {
       let message = ${aMessage.toSource()};
+      is(event.data, message, "Received: " + message);
       if (event.data == message) {
         return true;
       }
@@ -100,12 +101,7 @@ function waitForMessage(aMessage, browser) {
      true,
     checkFn,
      true
-  ).then(() => {
-    
-    
-    
-    ok(true, "Received message: " + aMessage);
-  });
+  );
 }
 
 function dispatchEvent(eventName) {
