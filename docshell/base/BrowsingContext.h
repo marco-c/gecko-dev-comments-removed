@@ -358,7 +358,9 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
     
     
     
-    void Commit(BrowsingContext* aOwner);
+    
+    
+    nsresult Commit(BrowsingContext* aOwner);
 
     
     
