@@ -63,12 +63,7 @@ static const gc::AllocKind ITERATOR_FINALIZE_KIND =
 
 void NativeIterator::trace(JSTracer* trc) {
   TraceNullableEdge(trc, &objectBeingIterated_, "objectBeingIterated_");
-
-  
-  
-  if (iterObj_) {
-    TraceManuallyBarrieredEdge(trc, &iterObj_, "iterObj");
-  }
+  TraceNullableEdge(trc, &iterObj_, "iterObj");
 
   
   

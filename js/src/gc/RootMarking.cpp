@@ -477,6 +477,10 @@ void js::gc::GCRuntime::finishRoots() {
     r->finishRoots();
   }
 
+#ifdef JS_GC_ZEAL
+  clearSelectedForMarking();
+#endif
+
   
   
   ClearEdgesTracer trc(rt);

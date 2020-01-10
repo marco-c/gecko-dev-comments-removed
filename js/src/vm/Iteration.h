@@ -29,7 +29,7 @@ struct NativeIterator {
   GCPtrObject objectBeingIterated_ = {};
 
   
-  JSObject* iterObj_ = nullptr;
+  GCPtrObject iterObj_ = {};
 
   
   
