@@ -523,10 +523,6 @@ static const dom::ConstantSpec gLibcProperties[] = {
 #  endif  
 
     
-    {"OSFILE_SIZEOF_POSIX_SPAWNATTR_T",
-     JS::Int32Value(sizeof(posix_spawnattr_t))},
-
-    
     
     {"OSFILE_SIZEOF_DIRENT", JS::Int32Value(sizeof(dirent))},
 
