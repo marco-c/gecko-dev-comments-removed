@@ -23,6 +23,8 @@ public class WebExtensionController {
 
 
 
+
+
         @UiThread
         @Nullable
         default GeckoResult<GeckoSession> onNewTab(@Nullable WebExtension source, @Nullable String uri) {

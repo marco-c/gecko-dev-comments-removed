@@ -3465,6 +3465,8 @@ public class GeckoSession implements Parcelable {
 
 
 
+
+
         @UiThread
         default @Nullable GeckoResult<GeckoSession> onNewSession(@NonNull GeckoSession session,
                                                                  @NonNull String uri) {

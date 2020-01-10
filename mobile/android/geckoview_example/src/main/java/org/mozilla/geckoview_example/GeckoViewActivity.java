@@ -1050,6 +1050,8 @@ public class GeckoViewActivity extends AppCompatActivity {
         public GeckoResult<GeckoSession> onNewSession(final GeckoSession session, final String uri) {
             final TabSession newSession = createSession();
             mToolbarView.updateTabCount();
+            
+            
             return GeckoResult.fromValue(newSession);
         }
 
