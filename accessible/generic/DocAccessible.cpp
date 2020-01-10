@@ -1222,9 +1222,12 @@ Accessible* DocAccessible::GetAccessibleOrDescendant(nsINode* aNode) const {
   }
 
   if (acc) {
-    uint32_t childCnt = acc->ChildCount();
+    
+    
+    
+    uint32_t childCnt = acc->mChildren.Length();
     for (uint32_t idx = 0; idx < childCnt; idx++) {
-      Accessible* child = acc->GetChildAt(idx);
+      Accessible* child = acc->mChildren.ElementAt(idx);
       for (nsIContent* elm = child->GetContent();
            elm && elm != acc->GetContent();
            elm = elm->GetFlattenedTreeParent()) {
