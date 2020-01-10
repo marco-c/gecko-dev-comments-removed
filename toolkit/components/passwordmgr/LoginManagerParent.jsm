@@ -391,11 +391,15 @@ this.LoginManagerParent = {
     
     let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(framePrincipalOrigin);
     if (generatedPW) {
-      return generatedPW;
+      return generatedPW.value;
     }
-    generatedPW = PasswordGenerator.generatePassword();
+
+    generatedPW = {
+      value: PasswordGenerator.generatePassword(),
+      filled: false,
+    };
     this._generatedPasswordsByPrincipalOrigin.set(framePrincipalOrigin, generatedPW);
-    return generatedPW;
+    return generatedPW.value;
   },
 
   onFormSubmit(browser, {
@@ -580,6 +584,16 @@ this.LoginManagerParent = {
       return;
     }
 
+    let framePrincipalOrigin = browsingContext.currentWindowGlobal.documentPrincipal.origin;
+    let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(framePrincipalOrigin);
+    
+    if (!generatedPW.filled) {
+      
+      Services.telemetry.recordEvent("pwmgr", "autocomplete_field", "generatedpassword");
+      log("autocomplete_field telemetry event recorded");
+      generatedPW.filled = true;
+    }
+
     if (!Services.logins.getLoginSavingEnabled(formOrigin)) {
       log("_onGeneratedPasswordFilled: saving is disabled for:", formOrigin);
       return;
@@ -599,7 +613,7 @@ this.LoginManagerParent = {
       return;
     }
 
-    let password = this.getGeneratedPassword(browsingContextId);
+    let password = generatedPW.value;
     let formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
     formLogin.init(formOrigin, formActionOrigin, null, "", password);
     Services.logins.addLogin(formLogin);
