@@ -348,6 +348,7 @@ bool nsCaseTransformTextRunFactory::TransformString(
       
       
       
+      
       if (maskPassword &&
           !aTextRun->mStyles[aOffsetInTextRun + 1]->mMaskPassword) {
         maskPassword = false;

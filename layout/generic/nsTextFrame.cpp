@@ -7937,6 +7937,7 @@ ClusterIterator::ClusterIterator(nsTextFrame* aTextFrame, int32_t aPosition,
         
         
         
+        
         if (transformedTextRun->mStyles[skippedOffset]->mMaskPassword &&
             transformedTextRun->mStyles[skippedOffset + 1]->mMaskPassword) {
           maskedText.Append(kPasswordMask);
