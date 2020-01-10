@@ -1,8 +1,12 @@
-use std::os::raw::c_void;
+
+
+
+use core::ffi::c_void;
 
 #[inline(always)]
 pub fn trace(_cb: &mut FnMut(&super::Frame) -> bool) {}
 
+#[derive(Clone)]
 pub struct Frame;
 
 impl Frame {

@@ -1,0 +1,16 @@
+
+
+
+
+
+use handle::{Handle};
+
+pub struct NamedPipe(Handle);
+impl NamedPipe {
+    
+}
+pub enum Access {
+    Inbound,
+    Outbound,
+    Duplex,
+}
