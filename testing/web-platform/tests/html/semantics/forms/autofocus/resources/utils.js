@@ -6,6 +6,19 @@ function waitForEvent(target, type, options) {
   });
 }
 
+function waitForAnimationFrame(w) {
+  let targetWindow = w || window;
+  return new Promise((resolve, reject) => {
+    targetWindow.requestAnimationFrame(resolve);
+  });
+}
+
+function waitForEvent(target, type, options) {
+  return new Promise((resolve, reject) => {
+    target.addEventListener(type, resolve, options);
+  });
+}
+
 function waitForLoad(target) {
   return waitForEvent(target, 'load');
 }
@@ -21,7 +34,9 @@ function timeOut(test, ms) {
 
 
 
-async function waitUntilStableAutofocusState(test) {
+async function waitUntilStableAutofocusState(w) {
+  let targetWindow = w || window;
   
-  await timeOut(test, 100);
+  await waitForAnimationFrame(targetWindow);
+  await waitForAnimationFrame(targetWindow);
 }
