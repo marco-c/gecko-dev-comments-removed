@@ -5,6 +5,7 @@
 
 package org.mozilla.geckoview.test.rule;
 
+import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.GeckoDisplay;
 import org.mozilla.geckoview.GeckoResult;
@@ -266,17 +267,6 @@ public class GeckoSessionTestRule implements TestRule {
 
         Key key();
         String value();
-    }
-
-    
-
-
-
-
-    @Target({ElementType.METHOD, ElementType.TYPE})
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface ReuseSession {
-        boolean value() default true;
     }
 
     
@@ -826,8 +816,6 @@ public class GeckoSessionTestRule implements TestRule {
     private static final Set<Class<?>> DEFAULT_DELEGATES = getDefaultDelegates();
 
     private static RDPConnection sRDPConnection;
-    protected static GeckoSession sCachedSession;
-    protected static Tab sCachedRDPTab;
 
     public final Environment env = new Environment();
 
@@ -857,7 +845,6 @@ public class GeckoSessionTestRule implements TestRule {
     protected boolean mWithDevTools;
     protected Map<GeckoSession, Tab> mRDPTabs;
     protected Tab mRDPChromeProcess;
-    protected boolean mReuseSession;
     protected boolean mIgnoreCrash;
 
     public GeckoSessionTestRule() {
@@ -1052,8 +1039,6 @@ public class GeckoSessionTestRule implements TestRule {
                 mClosedSession = ((ClosedSessionAtStart) annotation).value();
             } else if (WithDevToolsAPI.class.equals(annotation.annotationType())) {
                 mWithDevTools = ((WithDevToolsAPI) annotation).value();
-            } else if (ReuseSession.class.equals(annotation.annotationType())) {
-                mReuseSession = ((ReuseSession) annotation).value();
             } else if (IgnoreCrash.class.equals(annotation.annotationType())) {
                 mIgnoreCrash = ((IgnoreCrash) annotation).value();
             }
@@ -1077,7 +1062,6 @@ public class GeckoSessionTestRule implements TestRule {
         mNullDelegates = new HashSet<>();
         mClosedSession = false;
         mWithDevTools = false;
-        mReuseSession = true;
         mIgnoreCrash = false;
 
         applyAnnotations(Arrays.asList(description.getTestClass().getAnnotations()), settings);
@@ -1115,8 +1099,9 @@ public class GeckoSessionTestRule implements TestRule {
                         !DEFAULT_DELEGATES.contains(method.getDeclaringClass());
 
                 if (!ignore) {
-                    assertThat("Callbacks must be on UI thread",
-                               Looper.myLooper(), equalTo(Looper.getMainLooper()));
+                    if (!isExternalDelegate) {
+                        ThreadUtils.assertOnUiThread();
+                    }
 
                     final GeckoSession session;
                     if (isExternalDelegate) {
@@ -1203,16 +1188,8 @@ public class GeckoSessionTestRule implements TestRule {
                                                 classes, recorder);
         mAllDelegates = new HashSet<>(DEFAULT_DELEGATES);
 
-        if (sCachedSession != null && !sCachedSession.isOpen()) {
-            sCachedSession = null;
-        }
-
         final boolean useDefaultSession = !mClosedSession && mDefaultSettings.equals(settings);
-        if (useDefaultSession && mReuseSession && sCachedSession != null) {
-            mMainSession = sCachedSession;
-        } else {
-            mMainSession = new GeckoSession(settings);
-        }
+        mMainSession = new GeckoSession(settings);
         prepareSession(mMainSession);
 
         if (mDisplaySize != null) {
@@ -1223,21 +1200,7 @@ public class GeckoSessionTestRule implements TestRule {
             mDisplay.surfaceChanged(mDisplaySurface, mDisplaySize.x, mDisplaySize.y);
         }
 
-        if (useDefaultSession && mReuseSession) {
-            if (sCachedSession == null) {
-                
-                final boolean withDevTools = mWithDevTools;
-                mWithDevTools = true; 
-                openSession(mMainSession);
-                sCachedSession = mMainSession;
-                sCachedRDPTab = mRDPTabs.get(mMainSession);
-                mWithDevTools = withDevTools;
-            } else {
-                
-                mMainSession.loadUri("about:blank");
-                waitForOpenSession(mMainSession);
-            }
-        } else if (!mClosedSession) {
+        if (!mClosedSession) {
             openSession(mMainSession);
         }
     }
@@ -1275,8 +1238,7 @@ public class GeckoSessionTestRule implements TestRule {
             if (mRDPTabs == null) {
                 mRDPTabs = new HashMap<>();
             }
-            final Tab tab = session.equals(sCachedSession) ? sCachedRDPTab
-                                                           : sRDPConnection.getMostRecentTab();
+            final Tab tab = sRDPConnection.getMostRecentTab();
             mRDPTabs.put(session, tab);
         }
     }
@@ -1286,24 +1248,16 @@ public class GeckoSessionTestRule implements TestRule {
         
         
 
-        
-        
-        final boolean lookForAboutBlank = session.equals(sCachedSession);
-
         try {
             
             assertThat("ProgressDelegate cannot be null-delegate when opening session",
                        GeckoSession.ProgressDelegate.class, not(isIn(mNullDelegates)));
             mCallRecordHandler = new CallRecordHandler() {
-                private boolean mIsAboutBlank = !lookForAboutBlank;
-
                 @Override
                 public boolean handleCall(final Method method, final Object[] args) {
                     final boolean matching = DEFAULT_DELEGATES.contains(
                             method.getDeclaringClass()) && session.equals(args[0]);
-                    if (matching && sOnPageStart.equals(method)) {
-                        mIsAboutBlank = "about:blank".equals(args[1]);
-                    } else if (matching && mIsAboutBlank && sOnPageStop.equals(method)) {
+                    if (matching && sOnPageStop.equals(method)) {
                         mCallRecordHandler = null;
                     }
                     return matching;
@@ -1323,20 +1277,8 @@ public class GeckoSessionTestRule implements TestRule {
 
 
     public void performTestEndCheck() {
-        if (sCachedSession != null && mIgnoreCrash) {
-            
-            while (sCachedSession.isOpen()) {
-                UiThreadUtils.loopUntilIdle(mTimeoutMillis);
-            }
-        }
-
         mWaitScopeDelegates.clearAndAssert();
         mTestScopeDelegates.clearAndAssert();
-
-        if (sCachedSession != null && mReuseSession) {
-            assertThat("Cached session should be open",
-                       sCachedSession.isOpen(), equalTo(true));
-        }
     }
 
     protected void cleanupSession(final GeckoSession session) {
@@ -1373,12 +1315,7 @@ public class GeckoSessionTestRule implements TestRule {
             cleanupSession(session);
         }
 
-        if (mMainSession.isOpen() && mMainSession.equals(sCachedSession)) {
-            
-            sCachedRDPTab.getPromises().detach();
-        } else {
-            cleanupSession(mMainSession);
-        }
+        cleanupSession(mMainSession);
 
         if (mIgnoreCrash) {
             deleteCrashDumps();
