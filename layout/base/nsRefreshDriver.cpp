@@ -1710,7 +1710,10 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
           
           
           
-          timeStamp = nsRFPService::ReduceTimePrecisionAsMSecs(timeStamp, 0, TimerPrecisionType::RFPOnly);
+          if (!perf->IsSystemPrincipal()) {
+            timeStamp = nsRFPService::ReduceTimePrecisionAsMSecs(
+                timeStamp, 0, TimerPrecisionType::RFPOnly);
+          }
         }
         
       }
@@ -2134,7 +2137,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
 #if defined(MOZ_WIDGET_ANDROID)
     gfx::VRManager* vrm = gfx::VRManager::Get();
     skipPaint = vrm->IsPresenting();
-#endif 
+#endif  
     if (!skipPaint) {
       PaintTelemetry::AutoRecordPaint record;
       vm->ProcessPendingUpdates();
