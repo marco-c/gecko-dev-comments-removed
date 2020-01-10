@@ -133,6 +133,22 @@ struct FakeString {
 
   
   
+  
+  template <int N>
+  void AssignLiteral(const nsString::char_type (&aData)[N]) {
+    AssignLiteral(aData, N - 1);
+  }
+
+  
+  
+  
+  void AssignLiteral(const nsString::char_type* aData, size_t aLength) {
+    Rebind(aData, aLength);
+    mDataFlags |= nsString::DataFlags::LITERAL;
+  }
+
+  
+  
   const nsAString* ToAStringPtr() const {
     return reinterpret_cast<const nsString*>(this);
   }
@@ -208,12 +224,6 @@ inline void AssignFromStringBuffer(
     nsStringBuffer* aBuffer, size_t aLength,
     mozilla::dom::binding_detail::FakeString& aDest) {
   aDest.AssignFromStringBuffer(do_AddRef(aBuffer), aLength);
-}
-
-inline void AssignFromLiteralChars(
-    const char16_t* aChars, size_t aLength,
-    mozilla::dom::binding_detail::FakeString& aDest) {
-  aDest.Rebind(aChars, aLength);
 }
 
 #endif 
