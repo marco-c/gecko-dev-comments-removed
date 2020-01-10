@@ -560,6 +560,7 @@ function mainThreadFetch(
       ).loadGroup;
     }
 
+    
     const onResponse = (stream, status, request) => {
       if (!components.isSuccessCode(status)) {
         reject(new Error(`Failed to fetch ${url}. Code ${status}.`));
@@ -625,9 +626,21 @@ function mainThreadFetch(
         }
         const unicodeSource = NetworkHelper.convertToUnicode(source, charset);
 
+        
+        let sourceMapURL;
+        try {
+          sourceMapURL = request.getResponseHeader("SourceMap");
+        } catch (e) {}
+        if (!sourceMapURL) {
+          try {
+            sourceMapURL = request.getResponseHeader("X-SourceMap");
+          } catch (e) {}
+        }
+
         resolve({
           content: unicodeSource,
           contentType: request.contentType,
+          sourceMapURL,
         });
       } catch (ex) {
         const uri = request.originalURI;

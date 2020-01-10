@@ -252,7 +252,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       return toResolvedContent(padding + this._source.text);
     }
 
-    const result = await this.sources.htmlFileContents(
+    const result = await this.sources.urlContents(
       this.url,
        false,
        this.isInlineSource
@@ -294,7 +294,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     
     
     
-    const fileContents = this.sources.htmlFileContents(
+    const fileContents = this.sources.urlContents(
       this.url,
        true,
        this.isInlineSource
@@ -404,7 +404,13 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
         scripts.push(script);
         script.getChildScripts().forEach(addScripts);
       }
-      addScripts(this._source.reparse());
+      try {
+        addScripts(this._source.reparse());
+      } catch (e) {
+        
+        
+        
+      }
     }
 
     const positions = [];
