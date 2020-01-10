@@ -38,3 +38,8 @@ impl Into<Value> for BuildInfo {
         Value::String(BuildInfo::version().to_string())
     }
 }
+
+
+pub fn build_info() -> BuildInfo {
+    BuildInfo {}
+}
