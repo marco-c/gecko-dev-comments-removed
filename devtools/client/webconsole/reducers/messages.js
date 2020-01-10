@@ -70,6 +70,8 @@ const {
   processNetworkUpdates,
 } = require("devtools/client/netmonitor/src/utils/request-utils");
 
+const maxNumber = 100000;
+
 const MessageState = overrides =>
   Object.freeze(
     Object.assign(
@@ -1477,19 +1479,47 @@ function ensureExecutionPoint(state, newMessage) {
 
   
   
+  
   let point = { checkpoint: 0, progress: 0 },
     messageCount = 1;
-  if (state.visibleMessages.length) {
+  if (state.pausedExecutionPoint) {
+    point = state.pausedExecutionPoint;
+    const lastMessage = getLastMessageWithPoint(state, point);
+    if (lastMessage.lastExecutionPoint) {
+      messageCount = lastMessage.lastExecutionPoint.messageCount + 1;
+    }
+  } else if (state.visibleMessages.length) {
     const lastId = state.visibleMessages[state.visibleMessages.length - 1];
     const lastMessage = state.messagesById.get(lastId);
     if (lastMessage.executionPoint) {
+      
+      
+      
       point = lastMessage.executionPoint;
+      messageCount = maxNumber + 1;
     } else {
       point = lastMessage.lastExecutionPoint.point;
       messageCount = lastMessage.lastExecutionPoint.messageCount + 1;
     }
   }
+
   newMessage.lastExecutionPoint = { point, messageCount };
+}
+
+function getLastMessageWithPoint(state, point) {
+  
+  
+  const filteredMessageId = state.visibleMessages.filter(function(p) {
+    const currentMessage = state.messagesById.get(p);
+    if (currentMessage.executionPoint) {
+      return false;
+    }
+
+    return point.progress === currentMessage.lastExecutionPoint.point.progress;
+  });
+
+  const lastMessageId = filteredMessageId[filteredMessageId.length - 1];
+  return state.messagesById.get(lastMessageId) || {};
 }
 
 function messageExecutionPoint(state, id) {
@@ -1538,8 +1568,21 @@ function maybeSortVisibleMessages(
       
       
       
-      const countA = messageCountSinceLastExecutionPoint(state, a);
-      const countB = messageCountSinceLastExecutionPoint(state, b);
+      let countA = messageCountSinceLastExecutionPoint(state, a);
+      let countB = messageCountSinceLastExecutionPoint(state, b);
+
+      
+      
+      
+      
+      if (pointA.progress === pointB.progress) {
+        if (!countA) {
+          countA = maxNumber;
+        } else if (!countB) {
+          countB = maxNumber;
+        }
+      }
+
       return countA > countB;
     });
   }
