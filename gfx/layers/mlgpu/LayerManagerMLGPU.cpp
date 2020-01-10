@@ -313,6 +313,12 @@ void LayerManagerMLGPU::Composite() {
   if (!mSwapChain->ApplyNewInvalidRegion(std::move(mInvalidRegion),
                                          diagnosticRect)) {
     mProfilerScreenshotGrabber.NotifyEmptyFrame();
+
+    
+    
+    
+    mPayload.Clear();
+
     return;
   }
 

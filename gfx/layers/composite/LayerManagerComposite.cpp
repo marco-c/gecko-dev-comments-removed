@@ -592,6 +592,12 @@ void LayerManagerComposite::UpdateAndRender() {
     
     mClonedLayerTreeProperties = LayerProperties::CloneFrom(GetRoot());
     mProfilerScreenshotGrabber.NotifyEmptyFrame();
+
+    
+    
+    
+    mPayload.Clear();
+
     return;
   }
 
@@ -987,6 +993,12 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
   if (actualBounds.IsEmpty()) {
     mProfilerScreenshotGrabber.NotifyEmptyFrame();
     mCompositor->GetWidget()->PostRender(&widgetContext);
+
+    
+    
+    
+    mPayload.Clear();
+
     return true;
   }
 
