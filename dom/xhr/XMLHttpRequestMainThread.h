@@ -436,7 +436,7 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   void BlobStoreCompleted(MutableBlobStorage* aBlobStorage, BlobImpl* aBlobImpl,
                           nsresult aResult) override;
 
-  void LocalFileToBlobCompleted(Blob* aBlob);
+  void LocalFileToBlobCompleted(BlobImpl* aBlobImpl);
 
  protected:
   nsresult DetectCharset();
@@ -597,9 +597,12 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
 
   XMLHttpRequestResponseType mResponseType;
 
+  RefPtr<BlobImpl> mResponseBlobImpl;
+
   
   
   RefPtr<Blob> mResponseBlob;
+
   
   RefPtr<MutableBlobStorage> mBlobStorage;
 
