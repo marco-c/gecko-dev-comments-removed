@@ -1426,12 +1426,15 @@ int16_t PluginInstanceParent::NPP_HandleEvent(void* event) {
         
         
         
-        wchar_t szClass[26];
-        HWND hwnd = GetForegroundWindow();
-        if (hwnd && hwnd != mPluginHWND &&
-            GetClassNameW(hwnd, szClass, sizeof(szClass) / sizeof(char16_t)) &&
-            !wcscmp(szClass, kFlashFullscreenClass)) {
-          return 0;
+        
+        if (mPluginHWND) {
+          wchar_t szClass[26];
+          HWND hwnd = GetForegroundWindow();
+          if (hwnd && hwnd != mPluginHWND &&
+              GetClassNameW(hwnd, szClass, sizeof(szClass) / sizeof(char16_t)) &&
+              !wcscmp(szClass, kFlashFullscreenClass)) {
+            return 0;
+          }
         }
       } break;
 
