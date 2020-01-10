@@ -115,6 +115,9 @@ class alignas(uintptr_t) JitScript final {
   
   uint32_t bytecodeTypeMapHint_ = 0;
 
+  
+  uint32_t allocBytes_ = 0;
+
   struct Flags {
     
     
@@ -147,7 +150,7 @@ class alignas(uintptr_t) JitScript final {
 
  public:
   JitScript(JSScript* script, uint32_t typeSetOffset,
-            uint32_t bytecodeTypeMapOffset);
+            uint32_t bytecodeTypeMapOffset, uint32_t allocBytes);
 
 #ifdef DEBUG
   ~JitScript() {
@@ -327,6 +330,8 @@ class alignas(uintptr_t) JitScript final {
                                            uint32_t idx);
   void removeDependentWasmImport(wasm::Instance& instance, uint32_t idx);
   void unlinkDependentWasmImports();
+
+  size_t allocBytes() const { return allocBytes_; }
 };
 
 
