@@ -46,13 +46,6 @@ extern JSObject* ValueToCallable(JSContext* cx, HandleValue v,
                                  MaybeConstruct construct = NO_CONSTRUCT);
 
 
-enum class CallReason {
-  Call,
-  Getter,
-  Setter
-};
-
-
 
 
 
@@ -61,8 +54,7 @@ enum class CallReason {
 
 
 extern bool InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
-                                    MaybeConstruct construct,
-                                    CallReason reason = CallReason::Call);
+                                    MaybeConstruct construct);
 
 
 
@@ -84,8 +76,7 @@ extern bool CallSetter(JSContext* cx, HandleValue thisv, HandleValue setter,
 
 
 extern bool Call(JSContext* cx, HandleValue fval, HandleValue thisv,
-                 const AnyInvokeArgs& args, MutableHandleValue rval,
-                 CallReason reason = CallReason::Call);
+                 const AnyInvokeArgs& args, MutableHandleValue rval);
 
 inline bool Call(JSContext* cx, HandleValue fval, HandleValue thisv,
                  MutableHandleValue rval) {

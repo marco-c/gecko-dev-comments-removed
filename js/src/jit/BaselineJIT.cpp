@@ -359,12 +359,6 @@ MethodStatus jit::CanEnterBaselineInterpreterAtBranch(JSContext* cx,
     return Method_CantCompile;
   }
 
-  
-  
-  if (cx->insideDebuggerEvaluationWithOnNativeCallHook) {
-    return Method_CantCompile;
-  }
-
   return CanEnterBaselineInterpreter(cx, fp->script());
 }
 

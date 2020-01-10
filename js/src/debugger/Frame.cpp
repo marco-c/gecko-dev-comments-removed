@@ -914,11 +914,6 @@ Result<Completion> js::DebuggerGenericEval(
   }
 
   
-  
-  AutoNoteDebuggerEvaluationWithOnNativeCallHook noteEvaluation(
-      cx, dbg->observesNativeCalls() ? dbg : nullptr);
-
-  
   LeaveDebuggeeNoExecute nnx(cx);
   RootedValue rval(cx);
   AbstractFramePtr frame = iter ? iter->abstractFramePtr() : NullFramePtr();
@@ -1096,16 +1091,16 @@ void DebuggerFrame::trace(JSTracer* trc) {
 }
 
 
-DebuggerFrame* DebuggerFrame::check(JSContext* cx, HandleValue thisv,
-                                    bool checkLive) {
-  JSObject* thisobj = RequireObject(cx, thisv);
+DebuggerFrame* DebuggerFrame::checkThis(JSContext* cx, const CallArgs& args,
+                                        const char* fnname, bool checkLive) {
+  JSObject* thisobj = RequireObject(cx, args.thisv());
   if (!thisobj) {
     return nullptr;
   }
   if (thisobj->getClass() != &class_) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_INCOMPATIBLE_PROTO, "Debugger.Frame",
-                              "method", thisobj->getClass()->name);
+                              fnname, thisobj->getClass()->name);
     return nullptr;
   }
 
@@ -1119,7 +1114,7 @@ DebuggerFrame* DebuggerFrame::check(JSContext* cx, HandleValue thisv,
       frame->getReservedSlot(OWNER_SLOT).isUndefined()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_INCOMPATIBLE_PROTO, "Debugger.Frame",
-                              "method", "prototype object");
+                              fnname, "prototype object");
     return nullptr;
   }
 
@@ -1132,60 +1127,27 @@ DebuggerFrame* DebuggerFrame::check(JSContext* cx, HandleValue thisv,
   return frame;
 }
 
-struct MOZ_STACK_CLASS DebuggerFrame::CallData {
-  JSContext* cx;
-  const CallArgs& args;
 
-  HandleDebuggerFrame frame;
 
-  CallData(JSContext* cx, const CallArgs& args, HandleDebuggerFrame frame)
-      : cx(cx), args(args), frame(frame) {}
 
-  bool argumentsGetter();
-  bool calleeGetter();
-  bool constructingGetter();
-  bool environmentGetter();
-  bool generatorGetter();
-  bool liveGetter();
-  bool offsetGetter();
-  bool olderGetter();
-  bool getScript();
-  bool thisGetter();
-  bool typeGetter();
-  bool implementationGetter();
-  bool onStepGetter();
-  bool onStepSetter();
-  bool onPopGetter();
-  bool onPopSetter();
-  bool evalMethod();
-  bool evalWithBindingsMethod();
 
-  using Method = bool (CallData::*)();
 
-  template <Method MyMethod>
-  static bool ToNative(JSContext* cx, unsigned argc, Value* vp);
-};
 
-template <DebuggerFrame::CallData::Method MyMethod>
+#define THIS_DEBUGGER_FRAME(cx, argc, vp, fnname, args, frame)                 \
+  CallArgs args = CallArgsFromVp(argc, vp);                                    \
+  RootedDebuggerFrame frame(cx,                                                \
+                            DebuggerFrame::checkThis(cx, args, fnname, true)); \
+  if (!frame) return false;
 
-bool DebuggerFrame::CallData::ToNative(JSContext* cx, unsigned argc,
-                                       Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
+#define THIS_FRAME(cx, argc, vp, fnname, args, thisobj, iter, frame) \
+  THIS_DEBUGGER_FRAME(cx, argc, vp, fnname, args, thisobj);          \
+  FrameIter iter(*thisobj->frameIterData());                         \
+  AbstractFramePtr frame = iter.abstractFramePtr()
 
-  
-  bool checkLive = MyMethod != &CallData::liveGetter;
 
-  RootedDebuggerFrame frame(cx, DebuggerFrame::check(cx, args.thisv(),
-                                                     checkLive));
-  if (!frame) {
-    return false;
-  }
+bool DebuggerFrame::typeGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get type", args, frame);
 
-  CallData data(cx, args, frame);
-  return (data.*MyMethod)();
-}
-
-bool DebuggerFrame::CallData::typeGetter() {
   DebuggerFrameType type = DebuggerFrame::getType(frame);
 
   JSString* str;
@@ -1213,7 +1175,11 @@ bool DebuggerFrame::CallData::typeGetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::implementationGetter() {
+
+bool DebuggerFrame::implementationGetter(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get implementation", args, frame);
+
   DebuggerFrameImplementation implementation =
       DebuggerFrame::getImplementation(frame);
 
@@ -1244,7 +1210,10 @@ bool DebuggerFrame::CallData::implementationGetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::environmentGetter() {
+
+bool DebuggerFrame::environmentGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get environment", args, frame);
+
   RootedDebuggerEnvironment result(cx);
   if (!DebuggerFrame::getEnvironment(cx, frame, &result)) {
     return false;
@@ -1254,7 +1223,10 @@ bool DebuggerFrame::CallData::environmentGetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::calleeGetter() {
+
+bool DebuggerFrame::calleeGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get callee", args, frame);
+
   RootedDebuggerObject result(cx);
   if (!DebuggerFrame::getCallee(cx, frame, &result)) {
     return false;
@@ -1264,12 +1236,19 @@ bool DebuggerFrame::CallData::calleeGetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::generatorGetter() {
+
+bool DebuggerFrame::generatorGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get callee", args, frame);
+
   args.rval().setBoolean(DebuggerFrame::getIsGenerator(frame));
   return true;
 }
 
-bool DebuggerFrame::CallData::constructingGetter() {
+
+bool DebuggerFrame::constructingGetter(JSContext* cx, unsigned argc,
+                                       Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get callee", args, frame);
+
   bool result;
   if (!DebuggerFrame::getIsConstructing(cx, frame, result)) {
     return false;
@@ -1279,11 +1258,17 @@ bool DebuggerFrame::CallData::constructingGetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::thisGetter() {
+
+bool DebuggerFrame::thisGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get this", args, frame);
+
   return DebuggerFrame::getThis(cx, frame, args.rval());
 }
 
-bool DebuggerFrame::CallData::olderGetter() {
+
+bool DebuggerFrame::olderGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get older", args, frame);
+
   RootedDebuggerFrame result(cx);
   if (!DebuggerFrame::getOlder(cx, frame, &result)) {
     return false;
@@ -1311,15 +1296,11 @@ static bool DebuggerArguments_getArg(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  RootedValue framev(cx,
+  
+  
+  args.setThis(
       argsobj->as<NativeObject>().getReservedSlot(JSSLOT_DEBUGARGUMENTS_FRAME));
-  RootedDebuggerFrame thisobj(cx, DebuggerFrame::check(cx, framev, true));
-  if (!thisobj) {
-    return false;
-  }
-
-  FrameIter frameIter(*thisobj->frameIterData());
-  AbstractFramePtr frame = frameIter.abstractFramePtr();
+  THIS_FRAME(cx, argc, vp, "get argument", ca2, thisobj, frameIter, frame);
 
   
   MOZ_ASSERT(!frame.isWasmDebugFrame(), "a wasm frame args");
@@ -1406,7 +1387,10 @@ DebuggerArguments* DebuggerArguments::create(JSContext* cx, HandleObject proto,
   return obj;
 }
 
-bool DebuggerFrame::CallData::argumentsGetter() {
+
+bool DebuggerFrame::argumentsGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get arguments", args, frame);
+
   RootedDebuggerArguments result(cx);
   if (!DebuggerFrame::getArguments(cx, frame, &result)) {
     return false;
@@ -1416,20 +1400,20 @@ bool DebuggerFrame::CallData::argumentsGetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::getScript() {
-  FrameIter iter(*frame->frameIterData());
-  AbstractFramePtr framePtr = iter.abstractFramePtr();
-  Debugger* debug = Debugger::fromChildJSObject(frame);
+
+bool DebuggerFrame::getScript(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_FRAME(cx, argc, vp, "get script", args, thisobj, frameIter, frame);
+  Debugger* debug = Debugger::fromChildJSObject(thisobj);
 
   RootedDebuggerScript scriptObject(cx);
-  if (framePtr.isWasmDebugFrame()) {
-    RootedWasmInstanceObject instance(cx, framePtr.wasmInstance()->object());
+  if (frame.isWasmDebugFrame()) {
+    RootedWasmInstanceObject instance(cx, frame.wasmInstance()->object());
     scriptObject = debug->wrapWasmScript(cx, instance);
     if (!scriptObject) {
       return false;
     }
   } else {
-    RootedScript script(cx, framePtr.script());
+    RootedScript script(cx, frame.script());
     scriptObject = debug->wrapScript(cx, script);
     if (!scriptObject) {
       return false;
@@ -1441,7 +1425,10 @@ bool DebuggerFrame::CallData::getScript() {
   return true;
 }
 
-bool DebuggerFrame::CallData::offsetGetter() {
+
+bool DebuggerFrame::offsetGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get offset", args, frame);
+
   size_t result;
   if (!DebuggerFrame::getOffset(cx, frame, result)) {
     return false;
@@ -1451,7 +1438,14 @@ bool DebuggerFrame::CallData::offsetGetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::liveGetter() {
+
+bool DebuggerFrame::liveGetter(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedDebuggerFrame frame(cx, checkThis(cx, args, "get live", false));
+  if (!frame) {
+    return false;
+  }
+
   args.rval().setBoolean(frame->isLive());
   return true;
 }
@@ -1460,7 +1454,10 @@ static bool IsValidHook(const Value& v) {
   return v.isUndefined() || (v.isObject() && v.toObject().isCallable());
 }
 
-bool DebuggerFrame::CallData::onStepGetter() {
+
+bool DebuggerFrame::onStepGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get onStep", args, frame);
+
   OnStepHandler* handler = frame->onStepHandler();
   RootedValue value(
       cx, handler ? ObjectOrNullValue(handler->object()) : UndefinedValue());
@@ -1469,7 +1466,9 @@ bool DebuggerFrame::CallData::onStepGetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::onStepSetter() {
+
+bool DebuggerFrame::onStepSetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "set onStep", args, frame);
   if (!args.requireAtLeast(cx, "Debugger.Frame.set onStep", 1)) {
     return false;
   }
@@ -1498,7 +1497,10 @@ bool DebuggerFrame::CallData::onStepSetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::onPopGetter() {
+
+bool DebuggerFrame::onPopGetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "get onPop", args, frame);
+
   OnPopHandler* handler = frame->onPopHandler();
   RootedValue value(
       cx, handler ? ObjectValue(*handler->object()) : UndefinedValue());
@@ -1507,7 +1509,9 @@ bool DebuggerFrame::CallData::onPopGetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::onPopSetter() {
+
+bool DebuggerFrame::onPopSetter(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "set onPop", args, frame);
   if (!args.requireAtLeast(cx, "Debugger.Frame.set onPop", 1)) {
     return false;
   }
@@ -1531,7 +1535,9 @@ bool DebuggerFrame::CallData::onPopSetter() {
   return true;
 }
 
-bool DebuggerFrame::CallData::evalMethod() {
+
+bool DebuggerFrame::evalMethod(JSContext* cx, unsigned argc, Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "eval", args, frame);
   if (!args.requireAtLeast(cx, "Debugger.Frame.prototype.eval", 1)) {
     return false;
   }
@@ -1554,7 +1560,10 @@ bool DebuggerFrame::CallData::evalMethod() {
   return comp.get().buildCompletionValue(cx, frame->owner(), args.rval());
 }
 
-bool DebuggerFrame::CallData::evalWithBindingsMethod() {
+
+bool DebuggerFrame::evalWithBindingsMethod(JSContext* cx, unsigned argc,
+                                           Value* vp) {
+  THIS_DEBUGGER_FRAME(cx, argc, vp, "evalWithBindings", args, frame);
   if (!args.requireAtLeast(cx, "Debugger.Frame.prototype.evalWithBindings",
                            2)) {
     return false;
@@ -1591,25 +1600,26 @@ bool DebuggerFrame::construct(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 const JSPropertySpec DebuggerFrame::properties_[] = {
-    JS_DEBUG_PSG("arguments", argumentsGetter),
-    JS_DEBUG_PSG("callee", calleeGetter),
-    JS_DEBUG_PSG("constructing", constructingGetter),
-    JS_DEBUG_PSG("environment", environmentGetter),
-    JS_DEBUG_PSG("generator", generatorGetter),
-    JS_DEBUG_PSG("live", liveGetter),
-    JS_DEBUG_PSG("offset", offsetGetter),
-    JS_DEBUG_PSG("older", olderGetter),
-    JS_DEBUG_PSG("script", getScript),
-    JS_DEBUG_PSG("this", thisGetter),
-    JS_DEBUG_PSG("type", typeGetter),
-    JS_DEBUG_PSG("implementation", implementationGetter),
-    JS_DEBUG_PSGS("onStep", onStepGetter, onStepSetter),
-    JS_DEBUG_PSGS("onPop", onPopGetter, onPopSetter),
+    JS_PSG("arguments", DebuggerFrame::argumentsGetter, 0),
+    JS_PSG("callee", DebuggerFrame::calleeGetter, 0),
+    JS_PSG("constructing", DebuggerFrame::constructingGetter, 0),
+    JS_PSG("environment", DebuggerFrame::environmentGetter, 0),
+    JS_PSG("generator", DebuggerFrame::generatorGetter, 0),
+    JS_PSG("live", DebuggerFrame::liveGetter, 0),
+    JS_PSG("offset", DebuggerFrame::offsetGetter, 0),
+    JS_PSG("older", DebuggerFrame::olderGetter, 0),
+    JS_PSG("script", DebuggerFrame::getScript, 0),
+    JS_PSG("this", DebuggerFrame::thisGetter, 0),
+    JS_PSG("type", DebuggerFrame::typeGetter, 0),
+    JS_PSG("implementation", DebuggerFrame::implementationGetter, 0),
+    JS_PSGS("onStep", DebuggerFrame::onStepGetter, DebuggerFrame::onStepSetter,
+            0),
+    JS_PSGS("onPop", DebuggerFrame::onPopGetter, DebuggerFrame::onPopSetter, 0),
     JS_PS_END};
 
 const JSFunctionSpec DebuggerFrame::methods_[] = {
-    JS_DEBUG_FN("eval", evalMethod, 1),
-    JS_DEBUG_FN("evalWithBindings", evalWithBindingsMethod, 1),
+    JS_FN("eval", DebuggerFrame::evalMethod, 1, 0),
+    JS_FN("evalWithBindings", DebuggerFrame::evalWithBindingsMethod, 1, 0),
     JS_FS_END};
 
 JSObject* js::IdVectorToArray(JSContext* cx, Handle<IdVector> ids) {

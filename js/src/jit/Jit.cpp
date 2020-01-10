@@ -138,12 +138,6 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
     return EnterJitStatus::NotEntered;
   }
 
-  
-  
-  if (cx->insideDebuggerEvaluationWithOnNativeCallHook) {
-    return EnterJitStatus::NotEntered;
-  }
-
   JSScript* script = state.script();
 
   uint8_t* code = script->jitCodeRaw();
