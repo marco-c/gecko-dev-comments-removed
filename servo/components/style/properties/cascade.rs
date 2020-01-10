@@ -374,6 +374,7 @@ fn should_ignore_declaration_when_ignoring_document_colors(
             
             
             
+            #[cfg(feature = "gecko")]
             PropertyDeclaration::BackgroundImage(..) => return !static_prefs::pref!("browser.display.permit_backplate"),
             _ => return true,
         };

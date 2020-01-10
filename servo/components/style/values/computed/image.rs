@@ -40,6 +40,9 @@ pub type Gradient = generic::GenericGradient<
 >;
 
 
+pub type EndingShape = generic::GenericEndingShape<NonNegativeLength, NonNegativeLengthPercentage>;
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToResolvedValue)]
 #[repr(C, u8)]
 pub enum LineDirection {
