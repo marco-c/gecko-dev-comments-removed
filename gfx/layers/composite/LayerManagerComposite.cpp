@@ -1022,13 +1022,6 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
                                             ScreenPoint(0.0f, offset));
 #endif
 
-  RefPtr<CompositingRenderTarget> previousTarget;
-  if (haveLayerEffects) {
-    previousTarget = PushGroupForLayerEffects();
-  } else {
-    mTwoPassTmpTarget = nullptr;
-  }
-
   
   {
     Diagnostics::Record record(mRenderStartTime);
@@ -1037,33 +1030,36 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
       mDiagnostics->RecordPrepareTime(record.Duration());
     }
   }
-  
+
   {
     Diagnostics::Record record;
+    RefPtr<CompositingRenderTarget> previousTarget;
+    if (haveLayerEffects) {
+      previousTarget = PushGroupForLayerEffects();
+    } else {
+      mTwoPassTmpTarget = nullptr;
+    }
+
+    
     RootLayer()->RenderLayer(clipRect, Nothing());
+
+    if (mTwoPassTmpTarget) {
+      MOZ_ASSERT(haveLayerEffects);
+      PopGroupForLayerEffects(previousTarget, clipRect, grayscaleVal, invertVal,
+                              contrastVal);
+    }
+    if (!mRegionToClear.IsEmpty()) {
+      for (auto iter = mRegionToClear.RectIter(); !iter.Done(); iter.Next()) {
+        mCompositor->ClearRect(Rect(iter.Get()));
+      }
+    }
+    mCompositor->NormalDrawingDone();
     if (record.Recording()) {
       mDiagnostics->RecordCompositeTime(record.Duration());
     }
   }
+
   RootLayer()->Cleanup();
-
-  if (!mRegionToClear.IsEmpty()) {
-    for (auto iter = mRegionToClear.RectIter(); !iter.Done(); iter.Next()) {
-      mCompositor->ClearRect(Rect(iter.Get()));
-    }
-  }
-
-  if (mTwoPassTmpTarget) {
-    MOZ_ASSERT(haveLayerEffects);
-    PopGroupForLayerEffects(previousTarget, clipRect, grayscaleVal, invertVal,
-                            contrastVal);
-  }
-
-  
-  mCompositor->GetWidget()->DrawWindowOverlay(
-      &widgetContext, LayoutDeviceIntRect::FromUnknownRect(bounds));
-
-  mCompositor->NormalDrawingDone();
 
   mProfilerScreenshotGrabber.MaybeGrabScreenshot(mCompositor);
 
@@ -1080,6 +1076,10 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
       }
     }
   }
+
+  
+  mCompositor->GetWidget()->DrawWindowOverlay(
+      &widgetContext, LayoutDeviceIntRect::FromUnknownRect(bounds));
 
 #if defined(MOZ_WIDGET_ANDROID)
   
