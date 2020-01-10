@@ -94,6 +94,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
+
         public @NonNull Builder contextId(final @Nullable String value) {
             mSettings.setContextId(value);
             return this;

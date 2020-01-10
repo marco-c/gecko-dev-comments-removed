@@ -183,19 +183,13 @@ class MachCommands(MachCommandBase):
                 root = tree.getroot()
 
                 
-                print('TinderboxPrint: report<br/><a href="{}/{}/index.html">HTML {} report</a>, visit "Inspect Task" link for details'.format(root_url, report, report))  
-
-                
                 failed = root.findall('testcase/error') or root.findall('testcase/failure')
                 if failed:
                     print(
                         'TEST-UNEXPECTED-FAIL | android-test | There were failing tests. See the reports at: {}/{}/index.html'.format(root_url, report))  
 
-                print('SUITE-START | android-test | {} {}'.format(report, root.get('name')))
-
                 for testcase in root.findall('testcase'):
                     name = testcase.get('name')
-                    print('TEST-START | {}'.format(name))
 
                     
                     
@@ -205,22 +199,11 @@ class MachCommands(MachCommandBase):
                     error_count = 0
                     for unexpected in itertools.chain(testcase.findall('error'),
                                                       testcase.findall('failure')):
+                        print('TEST-START | {}'.format(name))
                         for line in ET.tostring(unexpected).strip().splitlines():
                             print('TEST-UNEXPECTED-FAIL | {} | {}'.format(name, line))
                         error_count += 1
                         ret |= 1
-
-                    
-                    
-                    
-                    for skipped in testcase.findall('skipped'):
-                        for line in ET.tostring(skipped).strip().splitlines():
-                            print('TEST-INFO | {} | {}'.format(name, line))
-
-                    if not error_count:
-                        print('TEST-PASS | {}'.format(name))
-
-                print('SUITE-END | android-test | {} {}'.format(report, root.get('name')))
 
         if not found_reports:
             print('TEST-UNEXPECTED-FAIL | android-test | No reports found under {}'.format(gradledir))  

@@ -5,6 +5,7 @@
 package org.mozilla.gecko.db;
 
 import android.content.ContentProviderClient;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
@@ -16,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowContentResolver;
 
 import static org.junit.Assert.*;
@@ -38,7 +40,7 @@ public class BrowserProviderHistoryTest extends BrowserProviderHistoryVisitsTest
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        final ShadowContentResolver cr = new ShadowContentResolver();
+        final ContentResolver cr = RuntimeEnvironment.application.getContentResolver();
 
         thumbnailClient = cr.acquireContentProviderClient(BrowserContract.Thumbnails.CONTENT_URI);
         thumbnailTestUri = testUri(BrowserContract.Thumbnails.CONTENT_URI);
@@ -151,7 +153,6 @@ public class BrowserProviderHistoryTest extends BrowserProviderHistoryVisitsTest
     }
 
     
-
 
 
 
