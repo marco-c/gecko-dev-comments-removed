@@ -28,6 +28,7 @@ add_task(async function() {
     
     let promiseLoad = BrowserTestUtils.browserLoaded(fileBrowser, false,
                                                      TEST_HTTP_POST);
+    
     await ContentTask.spawn(fileBrowser, [TEST_HTTP_POST, filePaths],
                                          ([actionUri, filePaths]) => {
       Cu.importGlobalProperties(["File"]);
@@ -69,6 +70,7 @@ add_task(async function() {
         form.submit();
       });
     });
+    
 
     let href = await promiseLoad;
     is(href, TEST_HTTP_POST,
