@@ -485,11 +485,6 @@ function setEmptyPrefWatchlist() {
 
 if (runningInParent) {
   
-  Services.prefs.setCharPref("browser.search.region", "US");
-  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
-  Services.prefs.setIntPref("browser.search.addonLoadTimeout", 0);
-
-  
   Services.prefs.setCharPref("toolkit.telemetry.log.level", "Trace");
   
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.ArchiveEnabled, true);

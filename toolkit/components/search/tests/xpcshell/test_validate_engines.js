@@ -9,9 +9,10 @@
 
 Cu.importGlobalProperties(["fetch"]);
 
-const { SearchUtils, SearchExtensionLoader } = ChromeUtils.import(
-  "resource://gre/modules/SearchUtils.jsm"
+const { SearchService } = ChromeUtils.import(
+  "resource://gre/modules/SearchService.jsm"
 );
+const LIST_JSON_URL = "resource://search-extensions/list.json";
 
 function traverse(obj, fun) {
   for (var i in obj) {
@@ -22,10 +23,10 @@ function traverse(obj, fun) {
   }
 }
 
-add_task(async function setup() {
-  
-  
-  let engines = await fetch(SearchUtils.LIST_JSON_URL).then(req => req.json());
+const ss = new SearchService();
+
+add_task(async function test_validate_engines() {
+  let engines = await fetch(LIST_JSON_URL).then(req => req.json());
 
   let visibleDefaultEngines = new Set();
   traverse(engines, (key, val) => {
@@ -39,41 +40,8 @@ add_task(async function setup() {
       visibleDefaultEngines: Array.from(visibleDefaultEngines),
     },
   };
-  SearchUtils.LIST_JSON_URL =
-    "data:application/json," + JSON.stringify(listjson);
+  ss._listJSONURL = "data:application/json," + JSON.stringify(listjson);
 
-  
-  
-  SearchExtensionLoader._strict = true;
   await AddonTestUtils.promiseStartupManager();
-});
-
-add_task(async function test_validate_engines() {
-  
-  await Services.search
-    .init()
-    .then(() => {
-      ok(true, "all engines parsed and loaded");
-    })
-    .catch(() => {
-      ok(false, "an engine failed to parse and load");
-    });
-});
-
-add_task(async function test_install_timeout_failure() {
-  
-  
-  
-  
-  Services.prefs.setIntPref("browser.search.addonLoadTimeout", 1);
-  removeCacheFile();
-  Services.search.reset();
-  await Services.search
-    .init()
-    .then(() => {
-      ok(false, "search init did not time out");
-    })
-    .catch(error => {
-      equal(Cr.NS_ERROR_FAILURE, error, "search init timed out");
-    });
+  await ss.init();
 });
