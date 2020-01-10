@@ -4,9 +4,11 @@
 
 
 #include "GMPTimerParent.h"
-#include "nsComponentManagerUtils.h"
+
+#include "GMPLog.h"
 #include "mozilla/Unused.h"
 #include "nsAutoPtr.h"
+#include "nsComponentManagerUtils.h"
 
 namespace mozilla {
 
