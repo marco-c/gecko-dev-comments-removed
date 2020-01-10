@@ -82,14 +82,6 @@ add_task(async function testTempPermissionSubframes() {
 
     
     await ContentTask.spawn(browser, uri.host, async function(host0) {
-      
-      
-      if (content.SpecialPowers.useRemoteSubframes) {
-        for (let i = 0; i < 800; i++) {
-          await new Promise(resolve => content.setTimeout(resolve, 0));
-        }
-      }
-
       let frame = content.document.getElementById("frame");
 
       await content.SpecialPowers.spawn(frame, [host0], async function(host) {
