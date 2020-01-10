@@ -14,7 +14,7 @@
 #include "jsfriendapi.h"  
 
 #include "builtin/Promise.h"  
-#include "builtin/Stream.h"   
+#include "builtin/Stream.h"  
 #include "builtin/streams/ReadableStream.h"  
 #include "builtin/streams/ReadableStreamController.h"  
 #include "builtin/streams/ReadableStreamInternals.h"  

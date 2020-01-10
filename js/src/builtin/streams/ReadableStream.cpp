@@ -17,6 +17,7 @@
 #include "builtin/Array.h"                   
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
+#include "builtin/streams/ReadableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamOperations.h"  
 #include "builtin/streams/ReadableStreamReader.h"  

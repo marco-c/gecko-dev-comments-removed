@@ -15,8 +15,9 @@
 
 #include "builtin/Array.h"  
 #include "builtin/Promise.h"  
-#include "builtin/Stream.h"  
 #include "builtin/streams/ReadableStream.h"        
+#include "builtin/streams/ReadableStreamController.h"  
+#include "builtin/streams/ReadableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "builtin/streams/TeeState.h"              
