@@ -4,12 +4,16 @@
 
 
 
+#include <stdint.h>
+
 namespace mozilla {
 namespace dom {
 
 void StartGamepadMonitoring() {}
 
 void StopGamepadMonitoring() {}
+
+void SetGamepadLightIndicatorColor(uint32_t, uint32_t, uint8_t, uint8_t, uint8_t) {}
 
 }  
 }  
