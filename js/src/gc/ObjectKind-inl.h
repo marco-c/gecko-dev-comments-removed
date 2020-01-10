@@ -17,27 +17,6 @@
 namespace js {
 namespace gc {
 
-static inline bool CanBeFinalizedInBackground(AllocKind kind,
-                                              const JSClass* clasp) {
-  MOZ_ASSERT(IsObjectAllocKind(kind));
-  
-
-
-
-
-
-
-  return (
-      !IsBackgroundFinalized(kind) &&
-      (!clasp->hasFinalize() || (clasp->flags & JSCLASS_BACKGROUND_FINALIZE)));
-}
-
-static inline AllocKind GetBackgroundAllocKind(AllocKind kind) {
-  MOZ_ASSERT(!IsBackgroundFinalized(kind));
-  MOZ_ASSERT(IsObjectAllocKind(kind));
-  return AllocKind(size_t(kind) + 1);
-}
-
 
 const size_t SLOTS_TO_THING_KIND_LIMIT = 17;
 
@@ -154,6 +133,40 @@ static inline size_t GetGCKindSlots(AllocKind thingKind, const JSClass* clasp) {
 
 static inline size_t GetGCKindBytes(AllocKind thingKind) {
   return sizeof(JSObject_Slots0) + GetGCKindSlots(thingKind) * sizeof(Value);
+}
+
+static inline bool CanChangeToBackgroundAllocKind(AllocKind kind,
+                                                  const JSClass* clasp) {
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(IsObjectAllocKind(kind));
+
+  if (IsBackgroundFinalized(kind)) {
+    return false;  
+  }
+
+  return !clasp->hasFinalize() || (clasp->flags & JSCLASS_BACKGROUND_FINALIZE);
+}
+
+static inline AllocKind ForegroundToBackgroundAllocKind(AllocKind fgKind) {
+  MOZ_ASSERT(IsObjectAllocKind(fgKind));
+  MOZ_ASSERT(IsForegroundFinalized(fgKind));
+
+  
+  
+  
+  AllocKind bgKind = AllocKind(size_t(fgKind) + 1);
+
+  MOZ_ASSERT(IsObjectAllocKind(bgKind));
+  MOZ_ASSERT(IsBackgroundFinalized(bgKind));
+  MOZ_ASSERT(GetGCKindSlots(bgKind) == GetGCKindSlots(fgKind));
+
+  return bgKind;
 }
 
 }  
