@@ -405,7 +405,7 @@ class JSFunction : public js::NativeObject {
 
     
     
-    MOZ_ASSERT_IF(nonLazyScript()->funHasExtensibleScope() ||
+    MOZ_ASSERT_IF(baseScript()->funHasExtensibleScope() ||
                       baseScript()->needsHomeObject() ||
                       nonLazyScript()->isDerivedClassConstructor() ||
                       isGenerator() || isAsync(),
