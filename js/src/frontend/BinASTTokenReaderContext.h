@@ -95,7 +95,10 @@ struct HuffmanLookup {
   
   
   
-  Split<HuffmanLookup> split(const uint8_t prefixBitLength) const;
+  
+  
+  
+  Split<HuffmanLookup> split(const uint8_t prefixLength) const;
 
   
   
@@ -631,16 +634,7 @@ class MultiLookupHuffmanTable {
       PrefixBitLength + Subtable::MAX_BIT_LENGTH;
 
   explicit MultiLookupHuffmanTable(JSContext* cx)
-      : cx_(cx),
-        values(cx),
-        subTables(cx),
-        largestBitLength(-1)
-#ifdef DEBUG
-        ,
-        control(cx)
-#endif  
-  {
-  }
+      : cx_(cx), values(cx), subTables(cx), largestBitLength(-1) {}
   MultiLookupHuffmanTable(MultiLookupHuffmanTable&& other) = default;
 
   
@@ -718,10 +712,6 @@ class MultiLookupHuffmanTable {
   
   
   uint8_t largestBitLength;
-
-#ifdef DEBUG
-  MapBasedHuffmanTable<T> control;
-#endif  
 
   friend class HuffmanPreludeReader;
 };
