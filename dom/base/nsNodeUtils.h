@@ -7,7 +7,6 @@
 #ifndef nsNodeUtils_h___
 #define nsNodeUtils_h___
 
-#include "mozilla/Maybe.h"
 #include "nsIContent.h"  
 #include "nsIMutationObserver.h"  
 #include "mozilla/dom/Document.h"
@@ -133,14 +132,6 @@ class nsNodeUtils {
                                               ParentChainChanged, (aContent));
     }
   }
-
-  
-
-
-
-
-  static mozilla::Maybe<mozilla::NonOwningAnimationTarget>
-  GetTargetForAnimation(const mozilla::dom::Animation* aAnimation);
 
   
 
