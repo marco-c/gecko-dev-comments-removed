@@ -369,7 +369,7 @@ export function getMode(
 
   
   
-  if (url && url.match(/\.marko$/i)) {
+  if (url && url.match(/\.marko|\.es6$/i)) {
     return { name: "javascript" };
   }
 
