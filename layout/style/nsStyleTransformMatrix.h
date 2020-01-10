@@ -182,6 +182,14 @@ mozilla::gfx::Matrix4x4 ReadTransforms(
 
 mozilla::CSSPoint Convert2DPosition(const mozilla::LengthPercentage& aX,
                                     const mozilla::LengthPercentage& aY,
+                                    const mozilla::CSSSize& aSize);
+
+
+
+
+
+mozilla::CSSPoint Convert2DPosition(const mozilla::LengthPercentage& aX,
+                                    const mozilla::LengthPercentage& aY,
                                     TransformReferenceBox& aRefBox);
 
 
