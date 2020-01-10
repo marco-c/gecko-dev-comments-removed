@@ -190,9 +190,11 @@ double TextTrackCue::ComputedPosition() {
   
   if (!mPositionIsAutoKeyword) {
     return mPosition;
-  } else if (mAlign == AlignSetting::Left) {
+  }
+  if (ComputedPositionAlign() == PositionAlignSetting::Line_left) {
     return 0.0;
-  } else if (mAlign == AlignSetting::Right) {
+  }
+  if (ComputedPositionAlign() == PositionAlignSetting::Line_right) {
     return 100.0;
   }
   return 50.0;
