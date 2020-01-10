@@ -182,6 +182,11 @@ var UrlbarTestUtils = {
     return urlbar.panel;
   },
 
+  getDropMarker(win) {
+    let urlbar = getUrlbarAbstraction(win);
+    return urlbar.dropMarker;
+  },
+
   
 
 
@@ -341,6 +346,11 @@ class UrlbarAbstraction {
 
   get panel() {
     return this.quantumbar ? this.urlbar.panel : this.urlbar.popup;
+  }
+
+  get dropMarker() {
+    return this.window.document.getAnonymousElementByAttribute(
+      this.urlbar.textbox, "anonid", "historydropmarker");
   }
 
   get oneOffSearchButtons() {
