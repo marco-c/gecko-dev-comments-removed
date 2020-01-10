@@ -175,7 +175,7 @@ class BlocksRingBuffer {
   ~BlocksRingBuffer() {
 #ifdef DEBUG
     
-    baseprofiler::detail::BPAutoLock lock(mMutex);
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
 #endif  
     DestroyAllEntries();
   }
@@ -187,7 +187,7 @@ class BlocksRingBuffer {
   
   
   Pair<uint64_t, uint64_t> GetPushedAndClearedCounts() const {
-    baseprofiler::detail::BPAutoLock lock(mMutex);
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     return {mPushedBlockCount, mClearedBlockCount};
   }
 
@@ -416,7 +416,7 @@ class BlocksRingBuffer {
   
   template <typename Callback>
   auto Read(Callback&& aCallback) const {
-    baseprofiler::detail::BPAutoLock lock(mMutex);
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     return std::forward<Callback>(aCallback)(Reader(*this));
   }
 
@@ -436,7 +436,7 @@ class BlocksRingBuffer {
   
   template <typename Callback>
   auto ReadAt(BlockIndex aBlockIndex, Callback&& aCallback) const {
-    baseprofiler::detail::BPAutoLock lock(mMutex);
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     MOZ_ASSERT(aBlockIndex <= mNextWriteIndex);
     Maybe<EntryReader> maybeReader;
     if (aBlockIndex >= mFirstReadIndex && aBlockIndex < mNextWriteIndex) {
@@ -659,7 +659,7 @@ class BlocksRingBuffer {
     
     
     
-    baseprofiler::detail::BPAutoLock lock(mMutex);
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     return std::forward<Callback>(aCallback)(EntryReserver(*this));
   }
 
@@ -690,7 +690,7 @@ class BlocksRingBuffer {
   
   
   void Clear() {
-    baseprofiler::detail::BPAutoLock lock(mMutex);
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     ClearAllEntries();
   }
 
@@ -698,7 +698,7 @@ class BlocksRingBuffer {
   
   
   void ClearBefore(BlockIndex aBlockIndex) {
-    baseprofiler::detail::BPAutoLock lock(mMutex);
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     
     MOZ_ASSERT(aBlockIndex <= mNextWriteIndex);
     if (aBlockIndex <= mFirstReadIndex) {
@@ -739,7 +739,7 @@ class BlocksRingBuffer {
 
 #ifdef DEBUG
   void Dump() const {
-    baseprofiler::detail::BPAutoLock lock(mMutex);
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     using ULL = unsigned long long;
     printf("start=%llu (%llu) end=%llu (%llu) - ", ULL(Index(mFirstReadIndex)),
            ULL(Index(mFirstReadIndex) & (BufferLength().Value() - 1)),
