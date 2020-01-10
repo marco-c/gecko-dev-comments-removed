@@ -1207,7 +1207,6 @@ void js::Nursery::sweep(JSTracer* trc) {
 }
 
 void js::Nursery::clear() {
-#if defined(JS_GC_ZEAL) || defined(JS_CRASH_DIAGNOSTICS)
   
   unsigned firstClearChunk;
   if (runtime()->hasZealMode(ZealMode::GenerationalGC)) {
@@ -1231,7 +1230,6 @@ void js::Nursery::clear() {
         .poisonAfterEvict(position() - chunk(currentChunk_).start());
   }
   MOZ_ASSERT(maxChunkCount() > 0);
-#endif
 
   
 
