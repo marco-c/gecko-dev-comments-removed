@@ -27,6 +27,7 @@
 #include "nsIIDNService.h"
 #include "nsCRT.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
+#include "mozilla/plugins/PluginTypes.h"
 
 #ifdef XP_WIN
 #  include <minwindef.h>
@@ -35,9 +36,10 @@
 
 namespace mozilla {
 namespace plugins {
-class FakePluginTag;
-class PluginTag;
 class BlocklistPromiseHandler;
+}  
+namespace dom {
+class ContentParent;
 }  
 }  
 
@@ -206,7 +208,8 @@ class nsPluginHost final : public nsIPluginHost,
                              const nsTArray<nsCString>& sites,
                              nsTArray<nsCString>& result, bool firstMatchOnly);
 
-  nsresult SendPluginsToContent();
+  nsresult UpdateCachedSerializablePluginList();
+  nsresult SendPluginsToContent(mozilla::dom::ContentParent* parent);
   nsresult SetPluginsInContent(
       uint32_t aPluginEpoch, nsTArray<mozilla::plugins::PluginTag>& aPlugins,
       nsTArray<mozilla::plugins::FakePluginTag>& aFakePlugins);
@@ -270,6 +273,8 @@ class nsPluginHost final : public nsIPluginHost,
   nsresult FindStoppedPluginForURL(nsIURI* aURL,
                                    nsIPluginInstanceOwner* aOwner);
 
+  nsresult BroadcastPluginsToContent();
+
   
   
   enum nsRegisterType {
@@ -317,6 +322,9 @@ class nsPluginHost final : public nsIPluginHost,
   RefPtr<nsPluginTag> mPlugins;
 
   nsTArray<RefPtr<nsFakePluginTag>> mFakePlugins;
+
+  AutoTArray<mozilla::plugins::PluginTag, 1> mSerializablePlugins;
+  nsTArray<mozilla::plugins::FakePluginTag> mSerializableFakePlugins;
 
   bool mPluginsLoaded;
 

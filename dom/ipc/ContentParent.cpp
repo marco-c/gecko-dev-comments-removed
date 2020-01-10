@@ -2729,7 +2729,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   
   
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
-  pluginHost->SendPluginsToContent();
+  pluginHost->SendPluginsToContent(this);
   MaybeEnableRemoteInputEventQueue();
 
   return true;
