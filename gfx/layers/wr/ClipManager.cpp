@@ -283,8 +283,9 @@ Maybe<wr::WrSpaceAndClip> ClipManager::DefineScrollLayers(
 
   LayoutDeviceRect contentRect =
       metrics.GetExpandedScrollableRect() * metrics.GetDevPixelsPerCSSPixel();
-  LayoutDeviceRect clipBounds = LayoutDeviceRect::FromUnknownRect(
-      metrics.GetCompositionBounds().ToUnknownRect());
+  LayoutDeviceRect clipBounds =
+      metrics.GetCompositionBounds() /
+      LayoutDeviceToParentLayerScale(metrics.GetPresShellResolution());
   
   
   
