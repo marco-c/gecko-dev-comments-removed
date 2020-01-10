@@ -71,7 +71,7 @@ bool js::CreateHelperThreadsState() {
     return false;
   }
   gHelperThreadState = helperThreadState.release();
-  if (!gHelperThreadState->initializeHelperContexts()) {
+  if (!gHelperThreadState->ensureContextListForThreadCount()) {
     js_delete(gHelperThreadState);
     return false;
   }
@@ -106,12 +106,17 @@ static size_t ThreadCountForCPUCount(size_t cpuCount) {
   return Max<size_t>(cpuCount, 2);
 }
 
-void js::SetFakeCPUCount(size_t count) {
+bool js::SetFakeCPUCount(size_t count) {
   
   MOZ_ASSERT(!HelperThreadState().threads);
 
   HelperThreadState().cpuCount = count;
   HelperThreadState().threadCount = ThreadCountForCPUCount(count);
+
+  if (!HelperThreadState().ensureContextListForThreadCount()) {
+    return false;
+  }
+  return true;
 }
 
 void JS::SetProfilingThreadCallbacks(
@@ -1202,9 +1207,16 @@ void GlobalHelperThreadState::finishThreads() {
   threads.reset(nullptr);
 }
 
-bool GlobalHelperThreadState::initializeHelperContexts() {
+bool GlobalHelperThreadState::ensureContextListForThreadCount() {
+  if (helperContexts_.length() >= threadCount) {
+    return true;
+  }
   AutoLockHelperThreadState lock;
-  for (size_t i = 0; i < threadCount; i++) {
+
+  
+  
+  
+  while (helperContexts_.length() < threadCount) {
     UniquePtr<JSContext> cx =
         js::MakeUnique<JSContext>(nullptr, JS::ContextOptions());
     
