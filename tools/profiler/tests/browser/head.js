@@ -3,13 +3,15 @@ const { BrowserTestUtils } = ChromeUtils.import("resource://testing-common/Brows
 
 const BASE_URL = "http://example.com/browser/tools/profiler/tests/browser/";
 
-function startProfiler() {
-  const settings = {
-    entries: 1000000, 
-    interval: 1, 
-    features: ["threads"],
-    threads: ["GeckoMain"],
-  };
+const defaultSettings = {
+  entries: 1000000, 
+  interval: 1, 
+  features: ["threads"],
+  threads: ["GeckoMain"],
+};
+
+function startProfiler(callersSettings) {
+  const settings = Object.assign({}, defaultSettings, callersSettings);
   Services.profiler.StartProfiler(
     settings.entries,
     settings.interval,
@@ -17,4 +19,38 @@ function startProfiler() {
     settings.threads,
     settings.duration
   );
+}
+
+
+
+
+
+
+
+
+
+function wait(time) {
+  return new Promise(resolve => {
+    
+    setTimeout(resolve, time);
+  });
+}
+
+
+
+
+
+
+
+
+function getPayloadsOfType(thread, type) {
+  const {markers} = thread;
+  const results = [];
+  for (const markerTuple of markers.data) {
+    const payload = markerTuple[markers.schema.data];
+    if (payload && payload.type === type) {
+      results.push(payload);
+    }
+  }
+  return results;
 }
