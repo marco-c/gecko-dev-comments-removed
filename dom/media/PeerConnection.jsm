@@ -397,7 +397,7 @@ class RTCPeerConnection {
     this._canTrickle = null;
 
     
-    this._iceGatheringState = this._iceConnectionState = "new";
+    this._iceConnectionState = "new";
 
     this._hasStunServer = this._hasTurnServer = false;
     this._iceGatheredRelayCandidates = false;
@@ -1571,7 +1571,7 @@ class RTCPeerConnection {
   get idpLoginUrl() { return this._localIdp.idpLoginUrl; }
   get id() { return this._impl.id; }
   set id(s) { this._impl.id = s; }
-  get iceGatheringState() { return this._iceGatheringState; }
+  get iceGatheringState() { return this._pc.iceGatheringState; }
   get iceConnectionState() { return this._iceConnectionState; }
 
   get signalingState() {
@@ -1583,8 +1583,7 @@ class RTCPeerConnection {
     return this._impl.signalingState;
   }
 
-  changeIceGatheringState(state) {
-    this._iceGatheringState = state;
+  handleIceGatheringStateChange() {
     _globalPCList.notifyLifecycleObservers(this, "icegatheringstatechange");
     this.dispatchEvent(new this._win.Event("icegatheringstatechange"));
     if (this.iceGatheringState === "complete") {
@@ -1857,29 +1856,6 @@ class PeerConnectionObserver {
     pc.changeIceConnectionState(iceConnectionState);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  handleIceGatheringStateChange(gatheringState) {
-    let pc = this._dompc;
-    if (pc.iceGatheringState === gatheringState) {
-      return;
-    }
-    pc.changeIceGatheringState(gatheringState);
-  }
-
   onStateChange(state) {
     if (!this._dompc) {
       return;
@@ -1903,7 +1879,7 @@ class PeerConnectionObserver {
         break;
 
       case "IceGatheringState":
-        this.handleIceGatheringStateChange(this._dompc._pc.iceGatheringState);
+        this._dompc.handleIceGatheringStateChange();
         break;
 
       default:
