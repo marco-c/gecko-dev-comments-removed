@@ -182,7 +182,7 @@ var AboutProtectionsHandler = {
 
   async getMonitorData() {
     let monitorData = {};
-    let potentiallyBreachedLogins = 0;
+    let potentiallyBreachedLogins = null;
     const hasFxa = await fxAccounts.accountStatus();
 
     if (hasFxa) {
@@ -215,10 +215,13 @@ var AboutProtectionsHandler = {
       }
 
       
-      const logins = await LoginHelper.getAllUserFacingLogins();
-      potentiallyBreachedLogins = await LoginHelper.getBreachesForLogins(
-        logins
-      );
+      
+      if (!LoginHelper.isMasterPasswordSet()) {
+        const logins = await LoginHelper.getAllUserFacingLogins();
+        potentiallyBreachedLogins = await LoginHelper.getBreachesForLogins(
+          logins
+        );
+      }
     } else {
       
       monitorData = {
@@ -228,7 +231,9 @@ var AboutProtectionsHandler = {
 
     return {
       ...monitorData,
-      potentiallyBreachedLogins: potentiallyBreachedLogins.size,
+      potentiallyBreachedLogins: potentiallyBreachedLogins
+        ? potentiallyBreachedLogins.size
+        : 0,
       error: !!monitorData.errorMessage,
     };
   },
