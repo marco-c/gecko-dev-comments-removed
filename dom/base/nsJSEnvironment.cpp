@@ -1906,6 +1906,11 @@ void nsJSContext::RunNextCollectorTimer(JS::GCReason aReason,
   }
 
   if (sGCTimer) {
+    if (aReason == JS::GCReason::DOM_WINDOW_UTILS) {
+      
+      
+      sNeedsFullGC = true;
+    }
     GCTimerFired(nullptr, reinterpret_cast<void*>(aReason));
     return;
   }
