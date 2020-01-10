@@ -529,7 +529,7 @@ class NotifyManyVisitsObservers : public Runnable {
     }
 
     if (aNow - aPlace.visitTime < RECENTLY_VISITED_URIS_MAX_AGE) {
-      mHistory->AppendToRecentlyVisitedURIs(aURI);
+      mHistory->AppendToRecentlyVisitedURIs(aURI, aPlace.hidden);
     }
     mHistory->NotifyVisited(aURI);
 
@@ -1978,7 +1978,7 @@ void History::Shutdown() {
   }
 }
 
-void History::AppendToRecentlyVisitedURIs(nsIURI* aURI) {
+void History::AppendToRecentlyVisitedURIs(nsIURI* aURI, bool aHidden) {
   
   RecentURIKey* entry = mRecentlyVisitedURIs.GetEntry(aURI);
   if (!entry) {
@@ -1986,6 +1986,7 @@ void History::AppendToRecentlyVisitedURIs(nsIURI* aURI) {
   }
   if (entry) {
     entry->time = PR_Now();
+    entry->hidden = aHidden;
   }
 
   
@@ -1995,13 +1996,6 @@ void History::AppendToRecentlyVisitedURIs(nsIURI* aURI) {
       iter.Remove();
     }
   }
-}
-
-inline bool History::IsRecentlyVisitedURI(nsIURI* aURI) {
-  RecentURIKey* entry = mRecentlyVisitedURIs.GetEntry(aURI);
-  
-  
-  return entry && (PR_Now() - entry->time) < RECENTLY_VISITED_URIS_MAX_AGE;
 }
 
 
@@ -2042,16 +2036,10 @@ History::VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
     return NS_OK;
   }
 
-  
   bool reload = false;
   if (aLastVisitedURI) {
     rv = aURI->Equals(aLastVisitedURI, &reload);
     NS_ENSURE_SUCCESS(rv, rv);
-    if (reload && IsRecentlyVisitedURI(aURI)) {
-      
-      AppendToRecentlyVisitedURIs(aURI);
-      return NS_OK;
-    }
   }
 
   nsTArray<VisitData> placeArray(1);
@@ -2108,6 +2096,26 @@ History::VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
   
   if (aFlags & IHistory::UNRECOVERABLE_ERROR) {
     place.shouldUpdateFrecency = false;
+  }
+
+  
+  if (reload) {
+    RecentURIKey* entry = mRecentlyVisitedURIs.GetEntry(aURI);
+    
+    
+    if (entry && (PR_Now() - entry->time) < RECENTLY_VISITED_URIS_MAX_AGE) {
+      bool wasHidden = entry->hidden;
+      
+      
+      AppendToRecentlyVisitedURIs(aURI, place.hidden);
+      
+      
+      
+      if (!wasHidden || place.hidden) {
+        
+        return NS_OK;
+      }
+    }
   }
 
   

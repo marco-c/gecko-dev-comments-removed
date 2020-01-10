@@ -139,7 +139,9 @@ class History final : public IHistory,
 
 
 
-  void AppendToRecentlyVisitedURIs(nsIURI* aURI);
+
+
+  void AppendToRecentlyVisitedURIs(nsIURI* aURI, bool aHidden);
 
   void NotifyVisitedParent(const nsTArray<mozilla::ipc::URIParams>& aURIs);
 
@@ -230,13 +232,9 @@ class History final : public IHistory,
       MOZ_ASSERT_UNREACHABLE("Do not call me!");
     }
     MOZ_INIT_OUTSIDE_CTOR PRTime time;
+    MOZ_INIT_OUTSIDE_CTOR bool hidden;
   };
   nsTHashtable<RecentURIKey> mRecentlyVisitedURIs;
-  
-
-
-
-  bool IsRecentlyVisitedURI(nsIURI* aURI);
 };
 
 }  
