@@ -94,7 +94,7 @@ var gTranslationExceptions = {
 
     
     this._sites = [];
-    for (let perm of Services.perms.enumerator) {
+    for (let perm of Services.perms.all) {
       if (
         perm.type == kPermissionType &&
         perm.capability == Services.perms.DENY_ACTION

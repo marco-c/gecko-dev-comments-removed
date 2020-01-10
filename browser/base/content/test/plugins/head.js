@@ -201,9 +201,7 @@ function promiseReloadPlugin(aId, aBrowser) {
 
 
 function clearAllPluginPermissions() {
-  let perms = Services.perms.enumerator;
-  while (perms.hasMoreElements()) {
-    let perm = perms.getNext();
+  for (let perm of Services.perms.all) {
     if (perm.type.startsWith("plugin")) {
       info(
         "removing permission:" + perm.principal.origin + " " + perm.type + "\n"
