@@ -132,7 +132,7 @@ function testToggleToolboxButtons() {
 
   
   is(
-    checkNodes.length + 2,
+    checkNodes.length + 1,
     toolbox.toolbarButtons.length,
     "All of the buttons are toggleable."
   );
