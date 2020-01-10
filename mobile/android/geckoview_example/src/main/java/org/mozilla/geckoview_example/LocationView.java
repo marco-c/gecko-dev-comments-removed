@@ -1,6 +1,9 @@
-package org.mozilla.geckoview_example;
 
-import org.mozilla.geckoview.GeckoSession;
+
+
+
+
+package org.mozilla.geckoview_example;
 
 import android.content.Context;
 import android.support.v7.widget.AppCompatEditText;
