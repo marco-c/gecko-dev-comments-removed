@@ -15,7 +15,7 @@ var freeGlobal = typeof global == 'object' && global && global.Object === Object
 var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
 
 
-var root = freeGlobal || freeSelf || Function('return this')();
+var root = freeGlobal || freeSelf || globalThis;
 
 
 var Symbol = root.Symbol;
