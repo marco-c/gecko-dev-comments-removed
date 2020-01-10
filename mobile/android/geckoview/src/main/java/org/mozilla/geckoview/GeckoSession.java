@@ -1528,7 +1528,7 @@ public class GeckoSession implements Parcelable {
             mTextInput.onWindowChanged(mWindow);
         }
         if ((change == WINDOW_CLOSE || change == WINDOW_TRANSFER_OUT) && !inProgress) {
-            getAutofillSupport().clearAutoFill();
+            getAutofillSupport().clearAutofill();
         }
     }
 
@@ -5589,34 +5589,34 @@ public class GeckoSession implements Parcelable {
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({
-            AutofillDelegate.AUTO_FILL_NOTIFY_STARTED,
-            AutofillDelegate.AUTO_FILL_NOTIFY_COMMITTED,
-            AutofillDelegate.AUTO_FILL_NOTIFY_CANCELED,
-            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_ADDED,
-            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_REMOVED,
-            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_UPDATED,
-            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_ENTERED,
-            AutofillDelegate.AUTO_FILL_NOTIFY_VIEW_EXITED})
+            AutofillDelegate.AUTOFILL_NOTIFY_STARTED,
+            AutofillDelegate.AUTOFILL_NOTIFY_COMMITTED,
+            AutofillDelegate.AUTOFILL_NOTIFY_CANCELED,
+            AutofillDelegate.AUTOFILL_NOTIFY_VIEW_ADDED,
+            AutofillDelegate.AUTOFILL_NOTIFY_VIEW_REMOVED,
+            AutofillDelegate.AUTOFILL_NOTIFY_VIEW_UPDATED,
+            AutofillDelegate.AUTOFILL_NOTIFY_VIEW_ENTERED,
+            AutofillDelegate.AUTOFILL_NOTIFY_VIEW_EXITED})
      @interface AutofillNotification {}
 
     public interface AutofillDelegate {
 
         
-        int AUTO_FILL_NOTIFY_STARTED = 0;
+        int AUTOFILL_NOTIFY_STARTED = 0;
         
-        int AUTO_FILL_NOTIFY_COMMITTED = 1;
+        int AUTOFILL_NOTIFY_COMMITTED = 1;
         
-        int AUTO_FILL_NOTIFY_CANCELED = 2;
+        int AUTOFILL_NOTIFY_CANCELED = 2;
         
-        int AUTO_FILL_NOTIFY_VIEW_ADDED = 3;
+        int AUTOFILL_NOTIFY_VIEW_ADDED = 3;
         
-        int AUTO_FILL_NOTIFY_VIEW_REMOVED = 4;
+        int AUTOFILL_NOTIFY_VIEW_REMOVED = 4;
         
-        int AUTO_FILL_NOTIFY_VIEW_UPDATED = 5;
+        int AUTOFILL_NOTIFY_VIEW_UPDATED = 5;
         
-        int AUTO_FILL_NOTIFY_VIEW_ENTERED = 6;
+        int AUTOFILL_NOTIFY_VIEW_ENTERED = 6;
         
-        int AUTO_FILL_NOTIFY_VIEW_EXITED = 7;
+        int AUTOFILL_NOTIFY_VIEW_EXITED = 7;
 
         
 
