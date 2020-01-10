@@ -701,7 +701,8 @@ void MemoryTracker::checkEmptyOnDestroy() {
 inline bool MemoryTracker::allowMultipleAssociations(MemoryUse use) const {
   
   
-  return use == MemoryUse::RegExpSharedBytecode;
+  return use == MemoryUse::RegExpSharedBytecode ||
+         use == MemoryUse::BreakpointSite;
 }
 
 void MemoryTracker::trackMemory(Cell* cell, size_t nbytes, MemoryUse use) {
