@@ -2,6 +2,9 @@
 
 
 
+
+
+
 export const BASE_PARAMS = {
   utm_source: "activity-stream",
   utm_campaign: "firstrun",

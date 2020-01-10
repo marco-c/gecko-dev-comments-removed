@@ -63,6 +63,12 @@ this.PrefsFeed = class PrefsFeed {
     );
 
     
+    values.appUpdateChannel = Services.prefs.getStringPref(
+      "app.update.channel",
+      ""
+    );
+
+    
     
     let searchTopSiteExperimentPrefValue = Services.prefs.getBoolPref(
       "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts"
