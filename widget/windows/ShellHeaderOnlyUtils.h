@@ -128,6 +128,12 @@ inline LauncherVoidResult ShellExecuteByExplorer(const _bstr_t& aPath,
 
   
   
+  
+  hr = ::CoAllowSetForegroundWindow(shellDisp, nullptr);
+  MOZ_ASSERT(SUCCEEDED(hr));
+
+  
+  
 #if defined(ShellExecute)
 #  define MOZ_REDEFINE_SHELLEXECUTE
 #  undef ShellExecute
