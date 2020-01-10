@@ -40,6 +40,18 @@ class WritableStreamDefaultWriter : public NativeObject {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     Slot_ClosedPromise,
 
     
@@ -64,8 +76,12 @@ class WritableStreamDefaultWriter : public NativeObject {
     SlotCount,
   };
 
-  inline PromiseObject* closedPromise() const;
-  inline void setClosedPromise(PromiseObject* promise);
+  JSObject* closedPromise() const {
+    return &getFixedSlot(Slot_ClosedPromise).toObject();
+  }
+  void setClosedPromise(JSObject* wrappedPromise) {
+    setFixedSlot(Slot_ClosedPromise, JS::ObjectValue(*wrappedPromise));
+  }
 
   bool hasStream() const { return !getFixedSlot(Slot_Stream).isUndefined(); }
   inline void setStream(JSObject* stream);
