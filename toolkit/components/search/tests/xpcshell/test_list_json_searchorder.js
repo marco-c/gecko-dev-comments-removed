@@ -29,17 +29,39 @@ add_task(async function test_searchOrderJSON_no_separate_private() {
     false
   );
 
-  await checkOrder([
-    
-    "Test search engine",
-    
-    "engine-resourceicon",
-    "engine-chromeicon",
-    
-    "engine-pref",
-    "engine-rel-searchform-purpose",
-    "Test search engine (Reordered)",
-  ]);
+  
+  
+  
+  if (
+    Services.prefs.getBoolPref(
+      SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
+      false
+    )
+  ) {
+    await checkOrder([
+      
+      "Test search engine",
+      "engine-pref",
+      
+      "engine-resourceicon",
+      "engine-chromeicon",
+      
+      "engine-rel-searchform-purpose",
+      "Test search engine (Reordered)",
+    ]);
+  } else {
+    await checkOrder([
+      
+      "Test search engine",
+      
+      "engine-resourceicon",
+      "engine-chromeicon",
+      
+      "engine-pref",
+      "engine-rel-searchform-purpose",
+      "Test search engine (Reordered)",
+    ]);
+  }
 });
 
 add_task(async function test_searchOrderJSON_separate_private() {
