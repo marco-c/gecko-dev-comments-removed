@@ -1454,6 +1454,21 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+  inline nscoord SynthesizeBaselineBOffsetFromContentBox(
+      mozilla::WritingMode aWM, BaselineSharingGroup aGroup) const;
+
+  
+
+
+
+
+
+
+
+
+
   inline nscoord BaselineBOffset(mozilla::WritingMode aWM,
                                  BaselineSharingGroup aBaselineGroup,
                                  AlignmentContext aAlignmentContext) const;

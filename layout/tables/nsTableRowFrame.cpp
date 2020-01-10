@@ -392,33 +392,13 @@ nscoord nsTableRowFrame::GetRowBaseline(WritingMode aWM) {
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   nscoord ascent = 0;
-  nsSize containerSize = GetSize();
   for (nsIFrame* childFrame : mFrames) {
-    if (childFrame->IsTableCellFrame()) {
-      nsIFrame* firstKid = childFrame->PrincipalChildList().FirstChild();
-      ascent = std::max(
-          ascent,
-          LogicalRect(aWM, firstKid->GetNormalRect(), containerSize).BEnd(aWM));
-    }
+    MOZ_ASSERT(childFrame->IsTableCellFrame());
+    nscoord s = childFrame->SynthesizeBaselineBOffsetFromContentBox(
+        aWM, BaselineSharingGroup::First);
+    ascent = std::max(ascent, s);
   }
   return ascent;
 }

@@ -129,6 +129,33 @@ nscoord nsIFrame::SynthesizeBaselineBOffsetFromBorderBox(
   return MOZ_LIKELY(aWM.IsAlphabeticalBaseline()) ? 0 : borderBoxCenter;
 }
 
+nscoord nsIFrame::SynthesizeBaselineBOffsetFromContentBox(
+    mozilla::WritingMode aWM, BaselineSharingGroup aGroup) const {
+  MOZ_ASSERT(!aWM.IsOrthogonalTo(GetWritingMode()));
+  auto bp = GetLogicalUsedBorderAndPadding(aWM);
+  bp.ApplySkipSides(GetLogicalSkipSides());
+
+  if (MOZ_UNLIKELY(aWM.IsCentralBaseline())) {
+    nscoord contentBoxBSize = BSize(aWM) - bp.BStartEnd(aWM);
+    if (aGroup == BaselineSharingGroup::First) {
+      return contentBoxBSize / 2 + bp.BStart(aWM);
+    }
+    
+    nscoord halfContentBoxBSize = (contentBoxBSize / 2) + (contentBoxBSize % 2);
+    return halfContentBoxBSize + bp.BEnd(aWM);
+  }
+  if (aGroup == BaselineSharingGroup::First) {
+    
+    
+    return MOZ_UNLIKELY(aWM.IsLineInverted()) ? bp.BStart(aWM)
+                                              : BSize(aWM) - bp.BEnd(aWM);
+  }
+  
+  
+  return MOZ_UNLIKELY(aWM.IsLineInverted()) ? BSize(aWM) - bp.BStart(aWM)
+                                            : bp.BEnd(aWM);
+}
+
 nscoord nsIFrame::BaselineBOffset(mozilla::WritingMode aWM,
                                   BaselineSharingGroup aBaselineGroup,
                                   AlignmentContext aAlignmentContext) const {
@@ -140,7 +167,9 @@ nscoord nsIFrame::BaselineBOffset(mozilla::WritingMode aWM,
   if (aAlignmentContext == AlignmentContext::Inline) {
     return SynthesizeBaselineBOffsetFromMarginBox(aWM, aBaselineGroup);
   }
-  
+  if (aAlignmentContext == AlignmentContext::Table) {
+    return SynthesizeBaselineBOffsetFromContentBox(aWM, aBaselineGroup);
+  }
   return SynthesizeBaselineBOffsetFromBorderBox(aWM, aBaselineGroup);
 }
 

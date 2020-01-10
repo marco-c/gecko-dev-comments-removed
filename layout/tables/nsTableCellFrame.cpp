@@ -571,11 +571,15 @@ void nsTableCellFrame::BlockDirAlignChild(WritingMode aWM, nscoord aMaxAscent) {
   nscoord kidBStart = 0;
   switch (GetVerticalAlign()) {
     case StyleVerticalAlignKeyword::Baseline:
+      if (!GetContentEmpty()) {
+        
+        
+        kidBStart = bStartInset + aMaxAscent - GetCellBaseline();
+        break;
+      }
       
       
-      kidBStart = bStartInset + aMaxAscent - GetCellBaseline();
-      break;
-
+      MOZ_FALLTHROUGH;
     case StyleVerticalAlignKeyword::Top:
       
       kidBStart = bStartInset;
