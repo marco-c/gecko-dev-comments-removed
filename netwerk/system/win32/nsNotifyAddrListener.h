@@ -93,6 +93,9 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
 
   
   mozilla::TimeStamp mChangeTime;
+
+  
+  mozilla::TimeStamp mNetworkChangeTime;
 };
 
 #endif 

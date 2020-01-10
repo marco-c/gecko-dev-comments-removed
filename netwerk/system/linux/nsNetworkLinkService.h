@@ -11,6 +11,7 @@
 #include "../netlink/NetlinkService.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/TimeStamp.h"
 
 class nsNetworkLinkService : public nsINetworkLinkService,
                              public nsIObserver,
@@ -40,6 +41,9 @@ class nsNetworkLinkService : public nsINetworkLinkService,
   mozilla::Atomic<bool, mozilla::Relaxed> mStatusIsKnown;
 
   RefPtr<mozilla::net::NetlinkService> mNetlinkSvc;
+
+  
+  mozilla::TimeStamp mNetworkChangeTime;
 };
 
 #endif 

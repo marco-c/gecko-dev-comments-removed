@@ -8,6 +8,7 @@
 #include "nsINetworkLinkService.h"
 #include "nsIObserver.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/TimeStamp.h"
 
 #include <SystemConfiguration/SCNetworkReachability.h>
 #include <SystemConfiguration/SystemConfiguration.h>
@@ -46,6 +47,9 @@ class nsNetworkLinkService : public nsINetworkLinkService, public nsIObserver {
 
   mozilla::Mutex mMutex;
   nsCString mNetworkId;
+
+  
+  mozilla::TimeStamp mNetworkChangeTime;
 };
 
 #endif 
