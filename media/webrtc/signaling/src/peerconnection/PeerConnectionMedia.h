@@ -127,22 +127,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   nsPIDOMWindowInner* GetWindow() const;
 
   void AlpnNegotiated_s(const std::string& aAlpn);
-  static void AlpnNegotiated_m(const std::string& aParentHandle,
-                               const std::string& aAlpn);
-
-  
-  sigslot::signal1<mozilla::dom::RTCIceGatheringState>
-      SignalIceGatheringStateChange;
-  sigslot::signal1<mozilla::dom::RTCIceConnectionState>
-      SignalIceConnectionStateChange;
-  
-  
-  sigslot::signal3<const std::string&, const std::string&, const std::string&>
-      SignalCandidate;
-  
-  sigslot::signal5<const std::string&, uint16_t, const std::string&, uint16_t,
-                   const std::string&>
-      SignalUpdateDefaultCandidate;
+  void AlpnNegotiated_m(const std::string& aAlpn);
 
   
   RefPtr<WebRtcCallWrapper> mCall;
