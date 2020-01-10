@@ -248,16 +248,8 @@ TalosPowersService.prototype = {
     
     
     let topWin = BrowserWindowTracker.getTopWindow();
-    if (topWin &&
-        topWin.gBrowserInit &&
-        !topWin.gBrowserInit.idleTasksFinished) {
-      await new Promise(resolve => {
-        let obs = (subject, topic, data) => {
-          Services.obs.removeObserver(obs, "browser-idle-startup-tasks-finished");
-          resolve();
-        };
-        Services.obs.addObserver(obs, "browser-idle-startup-tasks-finished");
-      });
+    if (topWin && topWin.gBrowserInit) {
+      await topWin.gBrowserInit.idleTasksFinishedPromise;
     }
 
     for (let domWindow of Services.wm.getEnumerator(null)) {
