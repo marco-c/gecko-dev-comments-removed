@@ -33,13 +33,6 @@ function openContextMenu(aMessage) {
   let spellInfo = data.spellInfo;
   let frameReferrerInfo = data.frameReferrerInfo;
 
-  
-  
-  
-  
-  
-  data.context.targetAsCPOW = aMessage.objects.targetAsCPOW;
-
   if (spellInfo) {
     spellInfo.target = aMessage.target.messageManager;
   }
@@ -220,7 +213,7 @@ nsContextMenu.prototype = {
     this.onVideo             = context.onVideo;
 
     this.target = context.target;
-    this.targetAsCPOW = context.targetAsCPOW;
+    this.targetIdentifier = context.targetIdentifier;
 
     this.principal = context.principal;
     this.frameOuterWindowID = context.frameOuterWindowID;
@@ -730,7 +723,9 @@ nsContextMenu.prototype = {
       return;
     }
     let documentURI = gContextMenuContentData.documentURIObject;
-    let fragment = LoginManagerContextMenu.addLoginsToMenu(this.targetAsCPOW, this.browser, documentURI);
+    let fragment = LoginManagerContextMenu.addLoginsToMenu(this.targetIdentifier,
+                                                           this.browser,
+                                                           documentURI);
 
     this.showItem("fill-login-no-logins", !fragment);
 
