@@ -1,15 +1,17 @@
 
 
+function run_test() {
+  
+  Assert.throws(
+    () => {
+      var chan = NetUtil.newChannel({
+        uri: "http://localhost:80000/",
+        loadUsingSystemPrincipal: true,
+      });
+    },
+    /NS_ERROR_MALFORMED_URI/,
+    "invalid port"
+  );
 
-function run_test()
-{
-    
-    Assert.throws(() => {
-        var chan = NetUtil.newChannel({
-          uri: "http://localhost:80000/",
-          loadUsingSystemPrincipal: true
-        });
-    }, /NS_ERROR_MALFORMED_URI/, "invalid port");
-
-    do_test_finished();
+  do_test_finished();
 }

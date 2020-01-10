@@ -24,8 +24,10 @@ add_task(async function run_test1() {
 
   srv.registerPathHandler("/http/1.0-request", http10Request);
   srv.registerPathHandler("/http/1.1-good-host", http11goodHost);
-  srv.registerPathHandler("/http/1.1-good-host-wacky-port",
-                          http11goodHostWackyPort);
+  srv.registerPathHandler(
+    "/http/1.1-good-host-wacky-port",
+    http11goodHostWackyPort
+  );
   srv.registerPathHandler("/http/1.1-ip-host", http11ipHost);
 
   srv.start(FAKE_PORT_ONE);
@@ -180,12 +182,13 @@ add_task(async function run_test_3() {
 
   
   
-  await new Promise(resolve => runRawTests(tests, resolve, (idx) => dump(`running test no ${idx}`)));
+  await new Promise(resolve =>
+    runRawTests(tests, resolve, idx => dump(`running test no ${idx}`))
+  );
 
   
   await new Promise(resolve => srv.stop(resolve));
 });
-
 
 
 
@@ -239,7 +242,6 @@ function check400(aData) {
 
 
 
-
 const HTTP_400_LEADER = "HTTP/1.1 400 ";
 const HTTP_400_LEADER_LENGTH = HTTP_400_LEADER.length;
 
@@ -252,8 +254,7 @@ function http10Request(request, response) {
   writeDetails(request, response);
   response.setStatusLine("1.0", 200, "TEST PASSED");
 }
-data = "GET /http/1.0-request HTTP/1.0\r\n" +
-       "\r\n";
+data = "GET /http/1.0-request HTTP/1.0\r\n" + "\r\n";
 function check10(aData) {
   let iter = LineIterator(aData);
 
@@ -263,16 +264,15 @@ function check10(aData) {
   skipHeaders(iter);
 
   
-  let body =
-    [
-     "Method:  GET",
-     "Path:    /http/1.0-request",
-     "Query:   ",
-     "Version: 1.0",
-     "Scheme:  http",
-     "Host:    localhost",
-     "Port:    4444",
-    ];
+  let body = [
+    "Method:  GET",
+    "Path:    /http/1.0-request",
+    "Query:   ",
+    "Version: 1.0",
+    "Scheme:  http",
+    "Host:    localhost",
+    "Port:    4444",
+  ];
 
   expectLines(iter, body);
 }
@@ -281,66 +281,58 @@ tests.push(test);
 
 
 
-
-data = "GET /http/1.1-request HTTP/1.1\r\n" +
-       "\r\n";
+data = "GET /http/1.1-request HTTP/1.1\r\n" + "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET /http/1.1-request HTTP/1.1\r\n" +
-       "Host: not-localhost\r\n" +
-       "\r\n";
+data =
+  "GET /http/1.1-request HTTP/1.1\r\n" + "Host: not-localhost\r\n" + "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET /http/1.1-request HTTP/1.1\r\n" +
-       "Host: not-localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET /http/1.1-request HTTP/1.1\r\n" +
+  "Host: not-localhost:4444\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET /http/1.1-request HTTP/1.1\r\n" +
-       "Host: 127.0.0.1\r\n" +
-       "\r\n";
+data = "GET /http/1.1-request HTTP/1.1\r\n" + "Host: 127.0.0.1\r\n" + "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET http://127.0.0.1/http/1.1-request HTTP/1.1\r\n" +
-       "Host: 127.0.0.1\r\n" +
-       "\r\n";
+data =
+  "GET http://127.0.0.1/http/1.1-request HTTP/1.1\r\n" +
+  "Host: 127.0.0.1\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET http://localhost:31337/http/1.1-request HTTP/1.1\r\n" +
-       "Host: localhost:31337\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost:31337/http/1.1-request HTTP/1.1\r\n" +
+  "Host: localhost:31337\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET https://localhost:4444/http/1.1-request HTTP/1.1\r\n" +
-       "Host: localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET https://localhost:4444/http/1.1-request HTTP/1.1\r\n" +
+  "Host: localhost:4444\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
-
 
 
 
@@ -348,9 +340,8 @@ function http11goodHost(request, response) {
   writeDetails(request, response);
   response.setStatusLine("1.1", 200, "TEST PASSED");
 }
-data = "GET /http/1.1-good-host HTTP/1.1\r\n" +
-       "Host: localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET /http/1.1-good-host HTTP/1.1\r\n" + "Host: localhost:4444\r\n" + "\r\n";
 function check11goodHost(aData) {
   let iter = LineIterator(aData);
 
@@ -360,16 +351,15 @@ function check11goodHost(aData) {
   skipHeaders(iter);
 
   
-  let body =
-    [
-     "Method:  GET",
-     "Path:    /http/1.1-good-host",
-     "Query:   ",
-     "Version: 1.1",
-     "Scheme:  http",
-     "Host:    localhost",
-     "Port:    4444",
-    ];
+  let body = [
+    "Method:  GET",
+    "Path:    /http/1.1-good-host",
+    "Query:   ",
+    "Version: 1.1",
+    "Scheme:  http",
+    "Host:    localhost",
+    "Port:    4444",
+  ];
 
   expectLines(iter, body);
 }
@@ -378,14 +368,12 @@ tests.push(test);
 
 
 
-
 function http11ipHost(request, response) {
   writeDetails(request, response);
   response.setStatusLine("1.1", 200, "TEST PASSED");
 }
-data = "GET /http/1.1-ip-host HTTP/1.1\r\n" +
-       "Host: 127.0.0.1:4444\r\n" +
-       "\r\n";
+data =
+  "GET /http/1.1-ip-host HTTP/1.1\r\n" + "Host: 127.0.0.1:4444\r\n" + "\r\n";
 function check11ipHost(aData) {
   let iter = LineIterator(aData);
 
@@ -395,16 +383,15 @@ function check11ipHost(aData) {
   skipHeaders(iter);
 
   
-  let body =
-    [
-     "Method:  GET",
-     "Path:    /http/1.1-ip-host",
-     "Query:   ",
-     "Version: 1.1",
-     "Scheme:  http",
-     "Host:    127.0.0.1",
-     "Port:    4444",
-    ];
+  let body = [
+    "Method:  GET",
+    "Path:    /http/1.1-ip-host",
+    "Query:   ",
+    "Version: 1.1",
+    "Scheme:  http",
+    "Host:    127.0.0.1",
+    "Port:    4444",
+  ];
 
   expectLines(iter, body);
 }
@@ -415,10 +402,10 @@ tests.push(test);
 
 
 
-
-data = "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
-       "Host: localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
+  "Host: localhost:4444\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check11goodHost);
 tests.push(test);
 
@@ -426,10 +413,10 @@ tests.push(test);
 
 
 
-
-data = "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
-       "Host: localhost:1234\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
+  "Host: localhost:1234\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check11goodHost);
 tests.push(test);
 
@@ -437,10 +424,10 @@ tests.push(test);
 
 
 
-
-data = "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
-       "Host: not-localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
+  "Host: not-localhost:4444\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check11goodHost);
 tests.push(test);
 
@@ -448,10 +435,10 @@ tests.push(test);
 
 
 
-
-data = "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
-       "Host: yippity-skippity\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
+  "Host: yippity-skippity\r\n" +
+  "\r\n";
 function checkInaccurate(aData) {
   check11goodHost(aData);
 
@@ -465,10 +452,10 @@ tests.push(test);
 
 
 
-
-data = "GET /http/1.0-request HTTP/1.0\r\n" +
-       "Host: not-localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET /http/1.0-request HTTP/1.0\r\n" +
+  "Host: not-localhost:4444\r\n" +
+  "\r\n";
 function check10ip(aData) {
   let iter = LineIterator(aData);
 
@@ -478,16 +465,15 @@ function check10ip(aData) {
   skipHeaders(iter);
 
   
-  let body =
-    [
-     "Method:  GET",
-     "Path:    /http/1.0-request",
-     "Query:   ",
-     "Version: 1.0",
-     "Scheme:  http",
-     "Host:    127.0.0.1",
-     "Port:    4444",
-    ];
+  let body = [
+    "Method:  GET",
+    "Path:    /http/1.0-request",
+    "Query:   ",
+    "Version: 1.0",
+    "Scheme:  http",
+    "Host:    127.0.0.1",
+    "Port:    4444",
+  ];
 
   expectLines(iter, body);
 }
@@ -496,14 +482,14 @@ tests.push(test);
 
 
 
-
 function http11goodHostWackyPort(request, response) {
   writeDetails(request, response);
   response.setStatusLine("1.1", 200, "TEST PASSED");
 }
-data = "GET /http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
-       "Host: localhost\r\n" +
-       "\r\n";
+data =
+  "GET /http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
+  "Host: localhost\r\n" +
+  "\r\n";
 function check11goodHostWackyPort(aData) {
   let iter = LineIterator(aData);
 
@@ -513,16 +499,15 @@ function check11goodHostWackyPort(aData) {
   skipHeaders(iter);
 
   
-  let body =
-    [
-     "Method:  GET",
-     "Path:    /http/1.1-good-host-wacky-port",
-     "Query:   ",
-     "Version: 1.1",
-     "Scheme:  http",
-     "Host:    localhost",
-     "Port:    80",
-    ];
+  let body = [
+    "Method:  GET",
+    "Path:    /http/1.1-good-host-wacky-port",
+    "Query:   ",
+    "Version: 1.1",
+    "Scheme:  http",
+    "Host:    localhost",
+    "Port:    80",
+  ];
 
   expectLines(iter, body);
 }
@@ -531,90 +516,87 @@ tests.push(test);
 
 
 
-
-data = "GET /http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
-       "Host: localhost:\r\n" +
-       "\r\n";
+data =
+  "GET /http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
+  "Host: localhost:\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check11goodHostWackyPort);
 tests.push(test);
 
 
 
-
-data = "GET http://localhost/http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
-       "Host: localhost\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost/http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
+  "Host: localhost\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check11goodHostWackyPort);
 tests.push(test);
 
 
 
-
-data = "GET http://localhost:/http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
-       "Host: localhost\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost:/http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
+  "Host: localhost\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check11goodHostWackyPort);
 tests.push(test);
 
 
 
-
-data = "GET http://localhost:80/http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
-       "Host: who-cares\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost:80/http/1.1-good-host-wacky-port HTTP/1.1\r\n" +
+  "Host: who-cares\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check11goodHostWackyPort);
 tests.push(test);
 
 
 
-
-data = "GET is-this-the-real-life-is-this-just-fantasy HTTP/1.1\r\n" +
-       "Host: localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET is-this-the-real-life-is-this-just-fantasy HTTP/1.1\r\n" +
+  "Host: localhost:4444\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET /http/1.1-request HTTP/1.1\r\n" +
-       "Host: la la la\r\n" +
-       "\r\n";
+data = "GET /http/1.1-request HTTP/1.1\r\n" + "Host: la la la\r\n" + "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
-       "Host: la la la\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost:4444/http/1.1-good-host HTTP/1.1\r\n" +
+  "Host: la la la\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check11goodHost);
 tests.push(test);
 
 
 
-
-data = "GET http://localhost:4444/http/1.1-request HTTP/1.0\r\n" +
-       "Host: localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET http://localhost:4444/http/1.1-request HTTP/1.0\r\n" +
+  "Host: localhost:4444\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET http://not-localhost:4444/http/1.1-request HTTP/1.1\r\n" +
-       "Host: not-localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET http://not-localhost:4444/http/1.1-request HTTP/1.1\r\n" +
+  "Host: not-localhost:4444\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);
 
 
 
-
-data = "GET http://not-localhost:4444/http/1.1-request HTTP/1.1\r\n" +
-       "Host: localhost:4444\r\n" +
-       "\r\n";
+data =
+  "GET http://not-localhost:4444/http/1.1-request HTTP/1.1\r\n" +
+  "Host: localhost:4444\r\n" +
+  "\r\n";
 test = new RawTest("localhost", PORT, data, check400);
 tests.push(test);

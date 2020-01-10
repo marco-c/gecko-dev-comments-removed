@@ -1,31 +1,39 @@
-function run_test()
-{
+function run_test() {
   do_get_profile();
 
   var lci = Services.loadContextInfo.default;
 
   
-  asyncOpenCacheEntry("http://a/", "pin", Ci.nsICacheStorage.OPEN_TRUNCATE, lci,
-    new OpenCallback(NEW|WAITFORWRITE, "a1m", "a1d", function(entry) {
-
+  asyncOpenCacheEntry(
+    "http://a/",
+    "pin",
+    Ci.nsICacheStorage.OPEN_TRUNCATE,
+    lci,
+    new OpenCallback(NEW | WAITFORWRITE, "a1m", "a1d", function(entry) {
       
       var diskStorage = getCacheStorage("disk", lci);
       diskStorage.asyncEvictStorage(null);
 
       
-      asyncOpenCacheEntry("http://a/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, lci,
+      asyncOpenCacheEntry(
+        "http://a/",
+        "disk",
+        Ci.nsICacheStorage.OPEN_NORMALLY,
+        lci,
         new OpenCallback(NORMAL, "a1m", "a1d", function(entry) {
-
           
           var pinningStorage = getCacheStorage("pin", lci);
           pinningStorage.asyncEvictStorage(null);
 
-          asyncOpenCacheEntry("http://a/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, lci,
+          asyncOpenCacheEntry(
+            "http://a/",
+            "disk",
+            Ci.nsICacheStorage.OPEN_NORMALLY,
+            lci,
             new OpenCallback(NEW, "", "", function(entry) {
               finish_cache2_test();
             })
           );
-
         })
       );
     })

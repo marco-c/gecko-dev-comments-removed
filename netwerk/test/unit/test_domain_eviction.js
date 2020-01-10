@@ -6,19 +6,16 @@
 
 var test_generator = do_run_test();
 
-function run_test()
-{
+function run_test() {
   do_test_pending();
   do_run_generator(test_generator);
 }
 
-function continue_test()
-{
+function continue_test() {
   do_run_generator(test_generator);
 }
 
-function* do_run_test()
-{
+function* do_run_test() {
   
   
   Services.prefs.setIntPref("network.cookie.quotaPerHost", 49);
@@ -60,24 +57,48 @@ function* do_run_test()
   Assert.equal(countCookies("horse.radish", "horse.radish"), 50);
 
   for (let cookie of Services.cookiemgr.enumerator) {
-    if (cookie.host == "horse.radish")
+    if (cookie.host == "horse.radish") {
       do_throw("cookies not evicted by lastAccessed order");
+    }
   }
 
   
   let shortExpiry = Math.floor(Date.now() / 1000 + 2);
   setCookies("captchart.com", 49, futureExpiry);
-  Services.cookiemgr.add("captchart.com", "", "test100", "eviction",
-    false, false, false, shortExpiry, {}, Ci.nsICookie.SAMESITE_NONE);
+  Services.cookiemgr.add(
+    "captchart.com",
+    "",
+    "test100",
+    "eviction",
+    false,
+    false,
+    false,
+    shortExpiry,
+    {},
+    Ci.nsICookie.SAMESITE_NONE
+  );
   do_timeout(2100, continue_test);
   yield;
 
   Assert.equal(countCookies("captchart.com", "captchart.com"), 50);
-  Services.cookiemgr.add("captchart.com", "", "test200", "eviction",
-    false, false, false, futureExpiry, {}, Ci.nsICookie.SAMESITE_NONE);
+  Services.cookiemgr.add(
+    "captchart.com",
+    "",
+    "test200",
+    "eviction",
+    false,
+    false,
+    false,
+    futureExpiry,
+    {},
+    Ci.nsICookie.SAMESITE_NONE
+  );
   Assert.equal(countCookies("captchart.com", "captchart.com"), 50);
 
-  for (let cookie of Services.cookiemgr.getCookiesFromHost("captchart.com", {})) {
+  for (let cookie of Services.cookiemgr.getCookiesFromHost(
+    "captchart.com",
+    {}
+  )) {
     Assert.ok(cookie.expiry == futureExpiry);
   }
 
@@ -85,12 +106,21 @@ function* do_run_test()
 }
 
 
-function
-setCookies(aHost, aNumber, aExpiry)
-{
-  for (let i = 0; i < aNumber; ++i)
-    Services.cookiemgr.add(aHost, "", "test" + i, "eviction",
-      false, false, false, aExpiry, {}, Ci.nsICookie.SAMESITE_NONE);
+function setCookies(aHost, aNumber, aExpiry) {
+  for (let i = 0; i < aNumber; ++i) {
+    Services.cookiemgr.add(
+      aHost,
+      "",
+      "test" + i,
+      "eviction",
+      false,
+      false,
+      false,
+      aExpiry,
+      {},
+      Ci.nsICookie.SAMESITE_NONE
+    );
+  }
 }
 
 
@@ -99,27 +129,32 @@ setCookies(aHost, aNumber, aExpiry)
 
 
 
-function
-countCookies(aBaseDomain, aHost)
-{
+function countCookies(aBaseDomain, aHost) {
   
   
   let cookies = [];
   for (let cookie of Services.cookiemgr.enumerator) {
-    if (cookie.host.length >= aBaseDomain.length &&
-        cookie.host.slice(cookie.host.length - aBaseDomain.length) == aBaseDomain)
+    if (
+      cookie.host.length >= aBaseDomain.length &&
+      cookie.host.slice(cookie.host.length - aBaseDomain.length) == aBaseDomain
+    ) {
       cookies.push(cookie);
+    }
   }
 
   
   let result = cookies.length;
-  Assert.equal(Services.cookiemgr.countCookiesFromHost(aBaseDomain),
-    cookies.length);
+  Assert.equal(
+    Services.cookiemgr.countCookiesFromHost(aBaseDomain),
+    cookies.length
+  );
   Assert.equal(Services.cookiemgr.countCookiesFromHost(aHost), cookies.length);
 
   for (let cookie of Services.cookiemgr.getCookiesFromHost(aHost, {})) {
-    if (cookie.host.length >= aBaseDomain.length &&
-        cookie.host.slice(cookie.host.length - aBaseDomain.length) == aBaseDomain) {
+    if (
+      cookie.host.length >= aBaseDomain.length &&
+      cookie.host.slice(cookie.host.length - aBaseDomain.length) == aBaseDomain
+    ) {
       let found = false;
       for (let i = 0; i < cookies.length; ++i) {
         if (cookies[i].host == cookie.host && cookies[i].name == cookie.name) {
@@ -129,11 +164,13 @@ countCookies(aBaseDomain, aHost)
         }
       }
 
-      if (!found)
+      if (!found) {
         do_throw("cookie " + cookie.name + " not found in master enumerator");
-
+      }
     } else {
-      do_throw("cookie host " + cookie.host + " not within domain " + aBaseDomain);
+      do_throw(
+        "cookie host " + cookie.host + " not within domain " + aBaseDomain
+      );
     }
   }
 
@@ -141,4 +178,3 @@ countCookies(aBaseDomain, aHost)
 
   return result;
 }
-

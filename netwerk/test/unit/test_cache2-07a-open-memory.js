@@ -1,43 +1,74 @@
-function run_test()
-{
+function run_test() {
   do_get_profile();
 
   
 
-  asyncOpenCacheEntry("http://mem-first/", "memory", Ci.nsICacheStorage.OPEN_NORMALLY, null,
+  asyncOpenCacheEntry(
+    "http://mem-first/",
+    "memory",
+    Ci.nsICacheStorage.OPEN_NORMALLY,
+    null,
     new OpenCallback(NEW, "mem1-meta", "mem1-data", function(entryM1) {
       Assert.ok(!entryM1.persistent);
-      asyncOpenCacheEntry("http://mem-first/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
+      asyncOpenCacheEntry(
+        "http://mem-first/",
+        "disk",
+        Ci.nsICacheStorage.OPEN_NORMALLY,
+        null,
         new OpenCallback(NORMAL, "mem1-meta", "mem1-data", function(entryM2) {
           Assert.ok(!entryM1.persistent);
           Assert.ok(!entryM2.persistent);
 
           
 
-          asyncOpenCacheEntry("http://disk-first/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
+          asyncOpenCacheEntry(
+            "http://disk-first/",
+            "disk",
+            Ci.nsICacheStorage.OPEN_NORMALLY,
+            null,
             
             
             
-            new OpenCallback(NEW|WAITFORWRITE, "disk1-meta", "disk1-data", function(entryD1) {
-              Assert.ok(entryD1.persistent);
-              
-              asyncOpenCacheEntry("http://disk-first/", "memory", Ci.nsICacheStorage.OPEN_NORMALLY, null,
+            new OpenCallback(
+              NEW | WAITFORWRITE,
+              "disk1-meta",
+              "disk1-data",
+              function(entryD1) {
+                Assert.ok(entryD1.persistent);
                 
-                new OpenCallback(NEW, "mem2-meta", "mem2-data", function(entryD2) {
-                  Assert.ok(entryD1.persistent);
-                  Assert.ok(!entryD2.persistent);
+                asyncOpenCacheEntry(
+                  "http://disk-first/",
+                  "memory",
+                  Ci.nsICacheStorage.OPEN_NORMALLY,
+                  null,
                   
-                  asyncOpenCacheEntry("http://disk-first/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
-                    new OpenCallback(NORMAL, "mem2-meta", "mem2-data", function(entryD3) {
-                      Assert.ok(entryD1.persistent);
-                      Assert.ok(!entryD2.persistent);
-                      Assert.ok(!entryD3.persistent);
-                      finish_cache2_test();
-                    })
-                  );
-                })
-              );
-            })
+                  new OpenCallback(NEW, "mem2-meta", "mem2-data", function(
+                    entryD2
+                  ) {
+                    Assert.ok(entryD1.persistent);
+                    Assert.ok(!entryD2.persistent);
+                    
+                    asyncOpenCacheEntry(
+                      "http://disk-first/",
+                      "disk",
+                      Ci.nsICacheStorage.OPEN_NORMALLY,
+                      null,
+                      new OpenCallback(
+                        NORMAL,
+                        "mem2-meta",
+                        "mem2-data",
+                        function(entryD3) {
+                          Assert.ok(entryD1.persistent);
+                          Assert.ok(!entryD2.persistent);
+                          Assert.ok(!entryD3.persistent);
+                          finish_cache2_test();
+                        }
+                      )
+                    );
+                  })
+                );
+              }
+            )
           );
         })
       );

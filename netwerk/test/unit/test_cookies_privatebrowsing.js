@@ -18,8 +18,10 @@ function finish_test() {
 }
 
 function make_channel(url) {
-  return NetUtil.newChannel({uri: url, loadUsingSystemPrincipal: true})
-                .QueryInterface(Ci.nsIHttpChannel);
+  return NetUtil.newChannel({
+    uri: url,
+    loadUsingSystemPrincipal: true,
+  }).QueryInterface(Ci.nsIHttpChannel);
 }
 
 function* do_run_test() {
@@ -27,7 +29,10 @@ function* do_run_test() {
   let profile = do_get_profile();
 
   
-  Services.prefs.setBoolPref("network.cookieSettings.unblocked_for_testing", true);
+  Services.prefs.setBoolPref(
+    "network.cookieSettings.unblocked_for_testing",
+    true
+  );
 
   
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);

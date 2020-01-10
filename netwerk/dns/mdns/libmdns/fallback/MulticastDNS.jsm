@@ -8,33 +8,56 @@
 
 var EXPORTED_SYMBOLS = ["MulticastDNS"];
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {clearTimeout, setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { clearTimeout, setTimeout } = ChromeUtils.import(
+  "resource://gre/modules/Timer.jsm"
+);
 
-const {DNSPacket} = ChromeUtils.import("resource://gre/modules/DNSPacket.jsm");
-const {DNSRecord} = ChromeUtils.import("resource://gre/modules/DNSRecord.jsm");
-const {DNSResourceRecord} = ChromeUtils.import("resource://gre/modules/DNSResourceRecord.jsm");
-const {DNS_AUTHORITATIVE_ANSWER_CODES, DNS_CLASS_CODES, DNS_QUERY_RESPONSE_CODES, DNS_RECORD_TYPES} = ChromeUtils.import("resource://gre/modules/DNSTypes.jsm");
+const { DNSPacket } = ChromeUtils.import(
+  "resource://gre/modules/DNSPacket.jsm"
+);
+const { DNSRecord } = ChromeUtils.import(
+  "resource://gre/modules/DNSRecord.jsm"
+);
+const { DNSResourceRecord } = ChromeUtils.import(
+  "resource://gre/modules/DNSResourceRecord.jsm"
+);
+const {
+  DNS_AUTHORITATIVE_ANSWER_CODES,
+  DNS_CLASS_CODES,
+  DNS_QUERY_RESPONSE_CODES,
+  DNS_RECORD_TYPES,
+} = ChromeUtils.import("resource://gre/modules/DNSTypes.jsm");
 
 const NS_NETWORK_LINK_TOPIC = "network:link-status-changed";
 
-let networkInfoService  = Cc["@mozilla.org/network-info-service;1"]
-                            .createInstance(Ci.nsINetworkInfoService);
+let networkInfoService = Cc[
+  "@mozilla.org/network-info-service;1"
+].createInstance(Ci.nsINetworkInfoService);
 
 const DEBUG = true;
 
 const MDNS_MULTICAST_GROUP = "224.0.0.251";
-const MDNS_PORT            = 5353;
-const DEFAULT_TTL          = 120;
+const MDNS_PORT = 5353;
+const DEFAULT_TTL = 120;
 
 function debug(msg) {
   dump("MulticastDNS: " + msg + "\n");
 }
 
 function ServiceKey(svc) {
-  return "" + svc.serviceType.length + "/" + svc.serviceType + "|" +
-              svc.serviceName.length + "/" + svc.serviceName + "|" +
-              svc.port;
+  return (
+    "" +
+    svc.serviceType.length +
+    "/" +
+    svc.serviceType +
+    "|" +
+    svc.serviceName.length +
+    "/" +
+    svc.serviceName +
+    "|" +
+    svc.port
+  );
 }
 
 function TryGet(obj, name) {
@@ -77,9 +100,11 @@ class PublishedService {
   }
 
   equals(svc) {
-    return (this.port == svc.port) &&
-           (this.serviceName == svc.serviceName) &&
-           (this.serviceType == svc.serviceType);
+    return (
+      this.port == svc.port &&
+      this.serviceName == svc.serviceName &&
+      this.serviceType == svc.serviceType
+    );
   }
 
   generateKey() {
@@ -87,7 +112,7 @@ class PublishedService {
   }
 
   ptrMatch(name) {
-    return name == (this.serviceType + "." + this.domainName);
+    return name == this.serviceType + "." + this.domainName;
   }
 
   clearAdvertiseTimer() {
@@ -101,17 +126,23 @@ class PublishedService {
 
 class MulticastDNS {
   constructor() {
-    this._listeners       = new Map();
-    this._sockets         = new Map();
-    this._services        = new Map();
-    this._discovered      = new Map();
-    this._querySocket     = undefined;
+    this._listeners = new Map();
+    this._sockets = new Map();
+    this._services = new Map();
+    this._discovered = new Map();
+    this._querySocket = undefined;
     this._broadcastReceiverSocket = undefined;
-    this._broadcastTimer  = undefined;
+    this._broadcastTimer = undefined;
 
     this._networkLinkObserver = {
       observe: (subject, topic, data) => {
-        DEBUG && debug(NS_NETWORK_LINK_TOPIC + "(" + data + "); Clearing list of previously discovered services");
+        DEBUG &&
+          debug(
+            NS_NETWORK_LINK_TOPIC +
+              "(" +
+              data +
+              "); Clearing list of previously discovered services"
+          );
         this._discovered.clear();
       },
     };
@@ -124,7 +155,10 @@ class MulticastDNS {
 
     if (!this._isNetworkLinkObserverAttached) {
       DEBUG && debug("Attaching observer " + NS_NETWORK_LINK_TOPIC);
-      Services.obs.addObserver(this._networkLinkObserver, NS_NETWORK_LINK_TOPIC);
+      Services.obs.addObserver(
+        this._networkLinkObserver,
+        NS_NETWORK_LINK_TOPIC
+      );
       this._isNetworkLinkObserverAttached = true;
     }
   }
@@ -137,7 +171,10 @@ class MulticastDNS {
 
       this._networkLinkObserverTimeout = setTimeout(() => {
         DEBUG && debug("Detaching observer " + NS_NETWORK_LINK_TOPIC);
-        Services.obs.removeObserver(this._networkLinkObserver, NS_NETWORK_LINK_TOPIC);
+        Services.obs.removeObserver(
+          this._networkLinkObserver,
+          NS_NETWORK_LINK_TOPIC
+        );
         this._isNetworkLinkObserverAttached = false;
         this._networkLinkObserverTimeout = null;
       }, 5000);
@@ -199,22 +236,32 @@ class MulticastDNS {
     try {
       publishedService = new PublishedService(aServiceInfo);
     } catch (e) {
-      DEBUG && debug("Error constructing PublishedService: " + e + " - " + e.stack);
-      setTimeout(() => aListener.onRegistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE));
+      DEBUG &&
+        debug("Error constructing PublishedService: " + e + " - " + e.stack);
+      setTimeout(() =>
+        aListener.onRegistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE)
+      );
       return;
     }
 
     
     if (this._services.get(publishedService.key)) {
-      setTimeout(() => aListener.onRegistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE));
+      setTimeout(() =>
+        aListener.onRegistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE)
+      );
       return;
     }
 
     
     
-    this._getSockets().then((sockets) => {
-      if (publishedService.address != "0.0.0.0" && !sockets.get(publishedService.address)) {
-        setTimeout(() => aListener.onRegistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE));
+    this._getSockets().then(sockets => {
+      if (
+        publishedService.address != "0.0.0.0" &&
+        !sockets.get(publishedService.address)
+      ) {
+        setTimeout(() =>
+          aListener.onRegistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE)
+        );
         return;
       }
 
@@ -237,13 +284,17 @@ class MulticastDNS {
     try {
       serviceKey = ServiceKey(aServiceInfo);
     } catch (e) {
-      setTimeout(() => aListener.onUnregistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE));
+      setTimeout(() =>
+        aListener.onUnregistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE)
+      );
       return;
     }
 
     let publishedService = this._services.get(serviceKey);
     if (!publishedService) {
-      setTimeout(() => aListener.onUnregistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE));
+      setTimeout(() =>
+        aListener.onUnregistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE)
+      );
       return;
     }
 
@@ -252,7 +303,9 @@ class MulticastDNS {
 
     
     if (!this._services.delete(serviceKey)) {
-      setTimeout(() => aListener.onUnregistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE));
+      setTimeout(() =>
+        aListener.onUnregistrationFailed(aServiceInfo, Cr.NS_ERROR_FAILURE)
+      );
       return;
     }
 
@@ -268,8 +321,15 @@ class MulticastDNS {
   _respondToQuery(serviceKey, message) {
     let address = message.fromAddr.address;
     let port = message.fromAddr.port;
-    DEBUG && debug("_respondToQuery(): key=" + serviceKey + ", fromAddr="
-                        + address + ":" + port);
+    DEBUG &&
+      debug(
+        "_respondToQuery(): key=" +
+          serviceKey +
+          ", fromAddr=" +
+          address +
+          ":" +
+          port
+      );
 
     let publishedService = this._services.get(serviceKey);
     if (!publishedService) {
@@ -277,15 +337,20 @@ class MulticastDNS {
       return;
     }
 
-    DEBUG && debug("_respondToQuery(): key=" + serviceKey + ": SENDING RESPONSE");
-    this._advertiseServiceHelper(publishedService, {address, port});
+    DEBUG &&
+      debug("_respondToQuery(): key=" + serviceKey + ": SENDING RESPONSE");
+    this._advertiseServiceHelper(publishedService, { address, port });
   }
 
   _advertiseService(serviceKey, firstAdv) {
     DEBUG && debug("_advertiseService(): key=" + serviceKey);
     let publishedService = this._services.get(serviceKey);
     if (!publishedService) {
-      debug("_advertiseService Could not find service to advertise (key=" + serviceKey + ")");
+      debug(
+        "_advertiseService Could not find service to advertise (key=" +
+          serviceKey +
+          ")"
+      );
       return;
     }
 
@@ -307,10 +372,10 @@ class MulticastDNS {
 
   _advertiseServiceHelper(svc, target) {
     if (!target) {
-      target = {address: MDNS_MULTICAST_GROUP, port: MDNS_PORT};
+      target = { address: MDNS_MULTICAST_GROUP, port: MDNS_PORT };
     }
 
-    return this._getSockets().then((sockets) => {
+    return this._getSockets().then(sockets => {
       sockets.forEach((socket, address) => {
         if (svc.address == "0.0.0.0" || address == svc.address) {
           let packet = this._makeServicePacket(svc, [address]);
@@ -318,8 +383,10 @@ class MulticastDNS {
           try {
             socket.send(target.address, target.port, data);
           } catch (err) {
-            DEBUG && debug("Failed to send packet to "
-                            + target.address + ":" + target.port);
+            DEBUG &&
+              debug(
+                "Failed to send packet to " + target.address + ":" + target.port
+              );
           }
         }
       });
@@ -355,14 +422,14 @@ class MulticastDNS {
       let msSinceAdv = now - publishedService.lastAdvertised;
 
       
-      if (msSinceAdv > (DEFAULT_TTL * 1000 * 0.9)) {
+      if (msSinceAdv > DEFAULT_TTL * 1000 * 0.9) {
         bcastServices.push(publishedService);
         continue;
       }
 
       
       
-      let nextAdvWait = (DEFAULT_TTL * 1000 * 0.95) - msSinceAdv;
+      let nextAdvWait = DEFAULT_TTL * 1000 * 0.95 - msSinceAdv;
       if (nextBcastWait === undefined || nextBcastWait > nextAdvWait) {
         nextBcastWait = nextAdvWait;
       }
@@ -370,13 +437,21 @@ class MulticastDNS {
 
     
     for (let svc of bcastServices) {
-        svc.advertiseTimer = setTimeout(() => this._advertiseService(svc.key));
+      svc.advertiseTimer = setTimeout(() => this._advertiseService(svc.key));
     }
 
     
     if (nextBcastWait !== undefined) {
-      DEBUG && debug("_checkStartBroadcastTimer(): Scheduling next check in " + nextBcastWait + "ms");
-      this._broadcastTimer = setTimeout(() => this._checkStartBroadcastTimer(), nextBcastWait);
+      DEBUG &&
+        debug(
+          "_checkStartBroadcastTimer(): Scheduling next check in " +
+            nextBcastWait +
+            "ms"
+        );
+      this._broadcastTimer = setTimeout(
+        () => this._checkStartBroadcastTimer(),
+        nextBcastWait
+      );
     }
   }
 
@@ -386,12 +461,15 @@ class MulticastDNS {
     packet.setFlag("QR", DNS_QUERY_RESPONSE_CODES.QUERY);
 
     
-    packet.addRecord("QD", new DNSRecord({
-      name,
-      recordType: DNS_RECORD_TYPES.PTR,
-      classCode: DNS_CLASS_CODES.IN,
-      cacheFlush: true,
-    }));
+    packet.addRecord(
+      "QD",
+      new DNSRecord({
+        name,
+        recordType: DNS_RECORD_TYPES.PTR,
+        classCode: DNS_CLASS_CODES.IN,
+        cacheFlush: true,
+      })
+    );
 
     let data = packet.serialize();
 
@@ -400,7 +478,7 @@ class MulticastDNS {
     
     this._getBroadcastReceiverSocket();
 
-    this._getQuerySocket().then((querySocket) => {
+    this._getQuerySocket().then(querySocket => {
       DEBUG && debug('sending query on query socket ("' + name + '")');
       querySocket.send(MDNS_MULTICAST_GROUP, MDNS_PORT, data);
     });
@@ -408,7 +486,8 @@ class MulticastDNS {
     
     
     setTimeout(() => {
-      DEBUG && debug('announcing previously discovered services ("' + name + '")');
+      DEBUG &&
+        debug('announcing previously discovered services ("' + name + '")');
       let { serviceType } = _parseServiceDomainName(name);
 
       this._clearExpiredDiscoveries();
@@ -419,7 +498,7 @@ class MulticastDNS {
         }
 
         let listeners = this._listeners.get(serviceInfo.serviceType) || [];
-        listeners.forEach((listener) => {
+        listeners.forEach(listener => {
           listener.onServiceFound(serviceInfo);
         });
       });
@@ -435,16 +514,20 @@ class MulticastDNS {
   }
 
   _handleQueryPacket(packet, message) {
-    packet.getRecords(["QD"]).forEach((record) => {
+    packet.getRecords(["QD"]).forEach(record => {
       
-      if (record.classCode !== DNS_CLASS_CODES.IN &&
-          record.classCode !== DNS_CLASS_CODES.ANY) {
+      if (
+        record.classCode !== DNS_CLASS_CODES.IN &&
+        record.classCode !== DNS_CLASS_CODES.ANY
+      ) {
         return;
       }
 
       
-      if (record.recordType !== DNS_RECORD_TYPES.PTR &&
-          record.recordType !== DNS_RECORD_TYPES.ANY) {
+      if (
+        record.recordType !== DNS_RECORD_TYPES.PTR &&
+        record.recordType !== DNS_RECORD_TYPES.ANY
+      ) {
         return;
       }
 
@@ -465,46 +548,59 @@ class MulticastDNS {
     let host = service.host || _hostname;
 
     
-    let serviceDomainName = service.serviceName + "." + service.serviceType + ".local";
+    let serviceDomainName =
+      service.serviceName + "." + service.serviceType + ".local";
 
     
-    packet.addRecord("AN", new DNSResourceRecord({
-      name: service.serviceType + ".local", 
-      recordType: DNS_RECORD_TYPES.PTR,
-      data: serviceDomainName,
-    }));
+    packet.addRecord(
+      "AN",
+      new DNSResourceRecord({
+        name: service.serviceType + ".local", 
+        recordType: DNS_RECORD_TYPES.PTR,
+        data: serviceDomainName,
+      })
+    );
 
     
-    packet.addRecord("AR", new DNSResourceRecord({
-      name: serviceDomainName,
-      recordType: DNS_RECORD_TYPES.SRV,
-      classCode: DNS_CLASS_CODES.IN,
-      cacheFlush: true,
-      data: {
-        priority: 0,
-        weight: 0,
-        port: service.port,
-        target: host, 
-      },
-    }));
+    packet.addRecord(
+      "AR",
+      new DNSResourceRecord({
+        name: serviceDomainName,
+        recordType: DNS_RECORD_TYPES.SRV,
+        classCode: DNS_CLASS_CODES.IN,
+        cacheFlush: true,
+        data: {
+          priority: 0,
+          weight: 0,
+          port: service.port,
+          target: host, 
+        },
+      })
+    );
 
     
     for (let address of addresses) {
-        packet.addRecord("AR", new DNSResourceRecord({
+      packet.addRecord(
+        "AR",
+        new DNSResourceRecord({
           name: host,
           recordType: DNS_RECORD_TYPES.A,
           data: address,
-        }));
+        })
+      );
     }
 
     
-    packet.addRecord("AR", new DNSResourceRecord({
-      name: serviceDomainName,
-      recordType: DNS_RECORD_TYPES.TXT,
-      classCode: DNS_CLASS_CODES.IN,
-      cacheFlush: true,
-      data: service.serviceAttrs || {},
-    }));
+    packet.addRecord(
+      "AR",
+      new DNSResourceRecord({
+        name: serviceDomainName,
+        recordType: DNS_RECORD_TYPES.TXT,
+        classCode: DNS_CLASS_CODES.IN,
+        cacheFlush: true,
+        data: service.serviceAttrs || {},
+      })
+    );
 
     return packet;
   }
@@ -518,7 +614,7 @@ class MulticastDNS {
     let ptrRecords = packet.getRecords(["AN", "AR"], DNS_RECORD_TYPES.PTR);
     let aRecords = packet.getRecords(["AN", "AR"], DNS_RECORD_TYPES.A);
 
-    srvRecords.forEach((record) => {
+    srvRecords.forEach(record => {
       let data = record.data || {};
 
       services[record.name] = {
@@ -528,7 +624,7 @@ class MulticastDNS {
       };
     });
 
-    txtRecords.forEach((record) => {
+    txtRecords.forEach(record => {
       if (!services[record.name]) {
         return;
       }
@@ -536,24 +632,26 @@ class MulticastDNS {
       services[record.name].attributes = record.data;
     });
 
-    aRecords.forEach((record) => {
+    aRecords.forEach(record => {
       if (IsIpv4Address(record.data)) {
         hosts[record.name] = record.data;
       }
     });
 
-    ptrRecords.forEach((record) => {
+    ptrRecords.forEach(record => {
       let name = record.data;
       if (!services[name]) {
         return;
       }
 
-      let {host, port} = services[name];
+      let { host, port } = services[name];
       if (!host || !port) {
         return;
       }
 
-      let { serviceName, serviceType, domainName } = _parseServiceDomainName(name);
+      let { serviceName, serviceType, domainName } = _parseServiceDomainName(
+        name
+      );
       if (!serviceName || !serviceType || !domainName) {
         return;
       }
@@ -579,12 +677,17 @@ class MulticastDNS {
   }
 
   _onServiceFound(serviceInfo, ttl = 0) {
-    let expireTime = Date.now() + (ttl * 1000);
-    let key = serviceInfo.serviceName + "." +
-              serviceInfo.serviceType + "." +
-              serviceInfo.domainName + " @" +
-              serviceInfo.address + ":" +
-              serviceInfo.port;
+    let expireTime = Date.now() + ttl * 1000;
+    let key =
+      serviceInfo.serviceName +
+      "." +
+      serviceInfo.serviceType +
+      "." +
+      serviceInfo.domainName +
+      " @" +
+      serviceInfo.address +
+      ":" +
+      serviceInfo.port;
 
     
     
@@ -599,7 +702,7 @@ class MulticastDNS {
     });
 
     let listeners = this._listeners.get(serviceInfo.serviceType) || [];
-    listeners.forEach((listener) => {
+    listeners.forEach(listener => {
       listener.onServiceFound(serviceInfo);
     });
 
@@ -636,10 +739,15 @@ class MulticastDNS {
   _getBroadcastReceiverSocket() {
     return new Promise((resolve, reject) => {
       if (!this._broadcastReceiverSocket) {
-        this._broadcastReceiverSocket = _openSocket("0.0.0.0", MDNS_PORT, {
-          onPacketReceived: this._onPacketReceived.bind(this),
-          onStopListening: this._onStopListening.bind(this),
-        },  "0.0.0.0");
+        this._broadcastReceiverSocket = _openSocket(
+          "0.0.0.0",
+          MDNS_PORT,
+          {
+            onPacketReceived: this._onPacketReceived.bind(this),
+            onStopListening: this._onStopListening.bind(this),
+          },
+           "0.0.0.0"
+        );
       }
       resolve(this._broadcastReceiverSocket);
     });
@@ -656,14 +764,14 @@ class MulticastDNS {
 
 
   _getSockets() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (this._sockets.size > 0) {
         resolve(this._sockets);
         return;
       }
 
       Promise.all([getAddresses(), getHostname()]).then(() => {
-        _addresses.forEach((address) => {
+        _addresses.forEach(address => {
           let socket = _openSocket(address, MDNS_PORT, null);
           this._sockets.set(address, socket);
         });
@@ -675,17 +783,20 @@ class MulticastDNS {
 
   _checkCloseSockets() {
     
-    if (this._sockets.size == 0)
+    if (this._sockets.size == 0) {
       return;
+    }
 
     
-    if (this._listeners.size > 0)
+    if (this._listeners.size > 0) {
       return;
+    }
 
     
     
-    if (this._services.size > 0)
+    if (this._services.size > 0) {
       return;
+    }
 
     this._closeSockets();
   }
@@ -757,10 +868,12 @@ function getAddresses() {
 
     networkInfoService.listNetworkAddresses({
       onListedNetworkAddresses(aAddressArray) {
-        _addresses = aAddressArray.filter((address) => {
-          return !address.includes("%p2p") && 
-                 !address.includes(":") && 
-                 address != "127.0.0.1"; 
+        _addresses = aAddressArray.filter(address => {
+          return (
+            !address.includes("%p2p") && 
+            !address.includes(":") && 
+            address != "127.0.0.1"
+          ); 
         });
 
         DEBUG && debug("getAddresses(): " + _addresses);
@@ -781,7 +894,7 @@ let _hostname;
 
 
 function getHostname() {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (_hostname) {
       resolve(_hostname);
       return;
@@ -848,8 +961,15 @@ function _propertyBagToObject(propBag) {
 
 
 function _openSocket(addr, port, handler, multicastInterface) {
-  let socket = Cc["@mozilla.org/network/udp-socket;1"].createInstance(Ci.nsIUDPSocket);
-  socket.init2(addr, port, Services.scriptSecurityManager.getSystemPrincipal(), true);
+  let socket = Cc["@mozilla.org/network/udp-socket;1"].createInstance(
+    Ci.nsIUDPSocket
+  );
+  socket.init2(
+    addr,
+    port,
+    Services.scriptSecurityManager.getSystemPrincipal(),
+    true
+  );
 
   if (handler) {
     socket.asyncListen({

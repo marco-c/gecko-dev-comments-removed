@@ -15,13 +15,13 @@
 
 
 
-var firstTest = 1;   
-var lastTest = 4;    
+var firstTest = 1; 
+var lastTest = 4; 
 
 
 
 
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 XPCOMUtils.defineLazyGetter(this, "URL", function() {
   return "http://localhost:" + httpserver.identity.primaryPort;
@@ -33,68 +33,64 @@ var nextTest = firstTest;
 var test_flags = new Array();
 var testPathBase = "/test_headers";
 
-function run_test()
-{
+function run_test() {
   httpserver.start(-1);
 
   do_test_pending();
   run_test_number(nextTest);
 }
 
-function runNextTest()
-{
+function runNextTest() {
   if (nextTest == lastTest) {
     endTests();
     return;
   }
   nextTest++;
   
-  if (this["handler" + nextTest] == undefined)
+  if (this["handler" + nextTest] == undefined) {
     do_throw("handler" + nextTest + " undefined!");
-  if (this["completeTest" + nextTest] == undefined)
+  }
+  if (this["completeTest" + nextTest] == undefined) {
     do_throw("completeTest" + nextTest + " undefined!");
-  
+  }
+
   run_test_number(nextTest);
 }
 
-function run_test_number(num)
-{
+function run_test_number(num) {
   testPath = testPathBase + num;
   httpserver.registerPathHandler(testPath, this["handler" + num]);
 
   var channel = setupChannel(testPath);
-  flags = test_flags[num];   
-  channel.asyncOpen(new ChannelListener(this["completeTest" + num],
-                                         channel, flags));
+  flags = test_flags[num]; 
+  channel.asyncOpen(
+    new ChannelListener(this["completeTest" + num], channel, flags)
+  );
 }
 
-function setupChannel(url)
-{
+function setupChannel(url) {
   var chan = NetUtil.newChannel({
     uri: URL + url,
-    loadUsingSystemPrincipal: true
+    loadUsingSystemPrincipal: true,
   });
   var httpChan = chan.QueryInterface(Ci.nsIHttpChannel);
   return httpChan;
 }
 
-function endTests()
-{
+function endTests() {
   httpserver.stop(do_test_finished);
 }
 
 
 
-function handler1(metadata, response)
-{
+function handler1(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.setHeader("Content-Disposition", "attachment; filename=foo");
   response.setHeader("Content-Type", "text/plain", false);
   var body = "foo";
 }
 
-function completeTest1(request, data, ctx)
-{
+function completeTest1(request, data, ctx) {
   try {
     var chan = request.QueryInterface(Ci.nsIChannel);
     Assert.equal(chan.contentDisposition, chan.DISPOSITION_ATTACHMENT);
@@ -103,13 +99,12 @@ function completeTest1(request, data, ctx)
   } catch (ex) {
     do_throw("error parsing Content-Disposition: " + ex);
   }
-  runNextTest();  
+  runNextTest();
 }
 
 
 
-function handler2(metadata, response)
-{
+function handler2(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.setHeader("Content-Type", "text/plain", false);
   response.setHeader("Content-Disposition", "attachment");
@@ -117,25 +112,23 @@ function handler2(metadata, response)
   response.bodyOutputStream.write(body, body.length);
 }
 
-function completeTest2(request, data, ctx)
-{
+function completeTest2(request, data, ctx) {
   try {
     var chan = request.QueryInterface(Ci.nsIChannel);
     Assert.equal(chan.contentDisposition, chan.DISPOSITION_ATTACHMENT);
     Assert.equal(chan.contentDispositionHeader, "attachment");
 
-    filename = chan.contentDispositionFilename;  
+    filename = chan.contentDispositionFilename; 
     do_throw("Should have failed getting Content-Disposition filename");
   } catch (ex) {
-    info("correctly ate exception");    
+    info("correctly ate exception");
   }
-  runNextTest();  
+  runNextTest();
 }
 
 
 
-function handler3(metadata, response)
-{
+function handler3(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.setHeader("Content-Type", "text/plain", false);
   response.setHeader("Content-Disposition", "attachment; filename=");
@@ -143,25 +136,23 @@ function handler3(metadata, response)
   response.bodyOutputStream.write(body, body.length);
 }
 
-function completeTest3(request, data, ctx)
-{
+function completeTest3(request, data, ctx) {
   try {
     var chan = request.QueryInterface(Ci.nsIChannel);
     Assert.equal(chan.contentDisposition, chan.DISPOSITION_ATTACHMENT);
     Assert.equal(chan.contentDispositionHeader, "attachment; filename=");
 
-    filename = chan.contentDispositionFilename;  
+    filename = chan.contentDispositionFilename; 
     do_throw("Should have failed getting Content-Disposition filename");
   } catch (ex) {
-    info("correctly ate exception");    
+    info("correctly ate exception");
   }
-  runNextTest();  
+  runNextTest();
 }
 
 
 
-function handler4(metadata, response)
-{
+function handler4(metadata, response) {
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.setHeader("Content-Type", "text/plain", false);
   response.setHeader("Content-Disposition", "inline");
@@ -169,17 +160,16 @@ function handler4(metadata, response)
   response.bodyOutputStream.write(body, body.length);
 }
 
-function completeTest4(request, data, ctx)
-{
+function completeTest4(request, data, ctx) {
   try {
     var chan = request.QueryInterface(Ci.nsIChannel);
     Assert.equal(chan.contentDisposition, chan.DISPOSITION_INLINE);
     Assert.equal(chan.contentDispositionHeader, "inline");
 
-    filename = chan.contentDispositionFilename;  
+    filename = chan.contentDispositionFilename; 
     do_throw("Should have failed getting Content-Disposition filename");
   } catch (ex) {
-    info("correctly ate exception");    
+    info("correctly ate exception");
   }
   runNextTest();
 }

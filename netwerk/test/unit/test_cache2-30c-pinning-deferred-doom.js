@@ -21,34 +21,43 @@
 
 const kENTRYCOUNT = 10;
 
-function log_(msg) { if (true) dump(">>>>>>>>>>>>> " + msg + "\n"); }
+function log_(msg) {
+  if (true) {
+    dump(">>>>>>>>>>>>> " + msg + "\n");
+  }
+}
 
-function run_test()
-{
+function run_test() {
   do_get_profile();
 
   var lci = Services.loadContextInfo.default;
   var testingInterface = get_cache_service().QueryInterface(Ci.nsICacheTesting);
   Assert.ok(testingInterface);
 
-  var mc = new MultipleCallbacks(1, function() {
-    
-
-    mc = new MultipleCallbacks(1, finish_cache2_test);
-    
-    
-    
-    gc();
-    gc();
-    executeSoon(() => {
-      gc();
-      gc();
-      log_("purging");
-
+  var mc = new MultipleCallbacks(
+    1,
+    function() {
       
-      get_cache_service().purgeFromMemory(Ci.nsICacheStorageService.PURGE_EVERYTHING); 
-    });
-  }, true);
+
+      mc = new MultipleCallbacks(1, finish_cache2_test);
+      
+      
+      
+      gc();
+      gc();
+      executeSoon(() => {
+        gc();
+        gc();
+        log_("purging");
+
+        
+        get_cache_service().purgeFromMemory(
+          Ci.nsICacheStorageService.PURGE_EVERYTHING
+        ); 
+      });
+    },
+    true
+  );
 
   
 
@@ -58,73 +67,120 @@ function run_test()
 
     
     mc.add();
-    asyncOpenCacheEntry("http://pinned" + i + "/", "pin", Ci.nsICacheStorage.OPEN_TRUNCATE, lci,
-      new OpenCallback(NEW|WAITFORWRITE, "m" + i, "p" + i, function(entry) { mc.fired(); }));
+    asyncOpenCacheEntry(
+      "http://pinned" + i + "/",
+      "pin",
+      Ci.nsICacheStorage.OPEN_TRUNCATE,
+      lci,
+      new OpenCallback(NEW | WAITFORWRITE, "m" + i, "p" + i, function(entry) {
+        mc.fired();
+      })
+    );
 
     mc.add();
-    asyncOpenCacheEntry("http://common" + i + "/", "disk", Ci.nsICacheStorage.OPEN_TRUNCATE, lci,
-      new OpenCallback(NEW|WAITFORWRITE, "m" + i, "d" + i, function(entry) { mc.fired(); }));
+    asyncOpenCacheEntry(
+      "http://common" + i + "/",
+      "disk",
+      Ci.nsICacheStorage.OPEN_TRUNCATE,
+      lci,
+      new OpenCallback(NEW | WAITFORWRITE, "m" + i, "d" + i, function(entry) {
+        mc.fired();
+      })
+    );
   }
 
   mc.fired(); 
 
-  var os = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
-  os.addObserver({
-    observe(subject, topic, data)
+  var os = Cc["@mozilla.org/observer-service;1"].getService(
+    Ci.nsIObserverService
+  );
+  os.addObserver(
     {
-      
+      observe(subject, topic, data) {
+        
 
-      log_("after purge, second set of opens");
-      
-      
-      testingInterface.suspendCacheIOThread(3);
-
-      
-      
-      for (i = 0; i < kENTRYCOUNT; ++i) {
-        mc.add();
-        asyncOpenCacheEntry("http://pinned" + i + "/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, lci,
-          new OpenCallback(NORMAL, "m" + i, "p" + i, function(entry) { mc.fired(); }));
+        log_("after purge, second set of opens");
+        
+        
+        testingInterface.suspendCacheIOThread(3);
 
         
         
+        for (i = 0; i < kENTRYCOUNT; ++i) {
+          mc.add();
+          asyncOpenCacheEntry(
+            "http://pinned" + i + "/",
+            "disk",
+            Ci.nsICacheStorage.OPEN_NORMALLY,
+            lci,
+            new OpenCallback(NORMAL, "m" + i, "p" + i, function(entry) {
+              mc.fired();
+            })
+          );
+
+          
+          
+          
+          
+          
+          
+          
+          
+          mc.add();
+          asyncOpenCacheEntry(
+            "http://common" + i + "/",
+            "disk",
+            Ci.nsICacheStorage.OPEN_NORMALLY,
+            lci,
+            new OpenCallback(MAYBE_NEW | DOOMED, "m" + i, "d" + i, function(
+              entry
+            ) {
+              mc.fired();
+            })
+          );
+        }
+
+        log_("clearing");
+        
+        get_cache_service().clear();
+        log_("cleared");
+
         
         
+        testingInterface.resumeCacheIOThread();
+
+        log_("third set of opens");
         
         
-        
-        
-        mc.add();
-        asyncOpenCacheEntry("http://common" + i + "/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, lci,
-          new OpenCallback(MAYBE_NEW|DOOMED, "m" + i, "d" + i, function(entry) { mc.fired(); }));
-      }
+        for (i = 0; i < kENTRYCOUNT; ++i) {
+          mc.add();
+          asyncOpenCacheEntry(
+            "http://pinned" + i + "/",
+            "disk",
+            Ci.nsICacheStorage.OPEN_NORMALLY,
+            lci,
+            new OpenCallback(NORMAL, "m" + i, "p" + i, function(entry) {
+              mc.fired();
+            })
+          );
 
-      log_("clearing");
-      
-      get_cache_service().clear();
-      log_("cleared");
+          mc.add();
+          asyncOpenCacheEntry(
+            "http://common" + i + "/",
+            "disk",
+            Ci.nsICacheStorage.OPEN_NORMALLY,
+            lci,
+            new OpenCallback(NEW, "m2" + i, "d2" + i, function(entry) {
+              mc.fired();
+            })
+          );
+        }
 
-      
-      
-      testingInterface.resumeCacheIOThread();
-
-      log_("third set of opens");
-      
-      
-      for (i = 0; i < kENTRYCOUNT; ++i) {
-        mc.add();
-        asyncOpenCacheEntry("http://pinned" + i + "/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, lci,
-          new OpenCallback(NORMAL, "m" + i, "p" + i, function(entry) { mc.fired(); }));
-
-        mc.add();
-        asyncOpenCacheEntry("http://common" + i + "/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, lci,
-          new OpenCallback(NEW, "m2" + i, "d2" + i, function(entry) { mc.fired(); }));
-      }
-
-      mc.fired(); 
-    }
-  }, "cacheservice:purge-memory-pools");
-
+        mc.fired(); 
+      },
+    },
+    "cacheservice:purge-memory-pools"
+  );
 
   do_test_pending();
 }

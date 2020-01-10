@@ -1,4 +1,4 @@
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 const VALUE_HDR_NAME = "X-HTTP-VALUE-HEADER";
 const VARY_HDR_NAME = "X-HTTP-VARY-HEADER";
@@ -9,17 +9,17 @@ var httpserver = null;
 function make_channel(flags, vary, value) {
   var chan = NetUtil.newChannel({
     uri: "http://localhost:" + httpserver.identity.primaryPort + "/bug633743",
-    loadUsingSystemPrincipal: true
+    loadUsingSystemPrincipal: true,
   }).QueryInterface(Ci.nsIHttpChannel);
   return chan.QueryInterface(Ci.nsIHttpChannel);
 }
 
 function Test(flags, varyHdr, sendValue, expectValue, cacheHdr) {
-    this._flags = flags;
-    this._varyHdr = varyHdr;
-    this._sendVal = sendValue;
-    this._expectVal = expectValue;
-    this._cacheHdr = cacheHdr;
+  this._flags = flags;
+  this._varyHdr = varyHdr;
+  this._sendVal = sendValue;
+  this._expectVal = expectValue;
+  this._cacheHdr = cacheHdr;
 }
 
 Test.prototype = {
@@ -30,9 +30,12 @@ Test.prototype = {
   _expectVal: null,
   _cacheHdr: null,
 
-  QueryInterface: ChromeUtils.generateQI(["nsIStreamListener", "nsIRequestObserver"]),
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIStreamListener",
+    "nsIRequestObserver",
+  ]),
 
-  onStartRequest(request) { },
+  onStartRequest(request) {},
 
   onDataAvailable(request, stream, offset, count) {
     this._buffer = this._buffer.concat(read_stream(stream, count));
@@ -48,89 +51,100 @@ Test.prototype = {
     channel.loadFlags = this._flags;
     channel.setRequestHeader(VALUE_HDR_NAME, this._sendVal, false);
     channel.setRequestHeader(VARY_HDR_NAME, this._varyHdr, false);
-    if (this._cacheHdr)
-        channel.setRequestHeader(CACHECTRL_HDR_NAME, this._cacheHdr, false);
+    if (this._cacheHdr) {
+      channel.setRequestHeader(CACHECTRL_HDR_NAME, this._cacheHdr, false);
+    }
 
     channel.asyncOpen(this);
-  }
+  },
 };
 
 var gTests = [
+  
+  new Test(
+    Ci.nsIRequest.LOAD_NORMAL,
+    "entity-initial", 
+    "request1", 
+    "request1" 
+  ),
+  
+  new Test(
+    Ci.nsIRequest.LOAD_NORMAL,
+    "entity-initial", 
+    "fresh value with LOAD_NORMAL", 
+    "request1" 
+  ),
+  
+  new Test(
+    Ci.nsIRequest.LOAD_FROM_CACHE,
+    "entity-initial", 
+    "fresh value with LOAD_FROM_CACHE", 
+    "request1" 
+  ),
+  
+  new Test(
+    Ci.nsIRequest.LOAD_FROM_CACHE,
+    "entity-l-f-c", 
+    "request2", 
+    "request2" 
+  ),
+  
+  new Test(
+    Ci.nsIRequest.LOAD_NORMAL,
+    "entity-l-f-c", 
+    "fresh value with LOAD_NORMAL", 
+    "request2" 
+  ),
 
-  new Test(Ci.nsIRequest.LOAD_NORMAL,
-          "entity-initial", 
-          "request1", 
-          "request1"  
-          ),
+  
+  new Test(
+    Ci.nsIRequest.VALIDATE_NEVER,
+    "entity-v-n", 
+    "request3", 
+    "request3" 
+  ),
+  
+  new Test(
+    Ci.nsIRequest.LOAD_NORMAL,
+    "entity-v-n", 
+    "fresh value with LOAD_NORMAL", 
+    "request3" 
+  ),
 
-  new Test(Ci.nsIRequest.LOAD_NORMAL,
-          "entity-initial", 
-          "fresh value with LOAD_NORMAL",  
-          "request1"  
-          ),
+  
+  new Test(
+    Ci.nsIRequest.LOAD_NORMAL,
+    "entity-2", 
+    "request4", 
+    "request4", 
+    "no-store" 
+  ),
+  
+  new Test(
+    Ci.nsIRequest.VALIDATE_NEVER,
+    "entity-2-v-n", 
+    "request5", 
+    "request5" 
+  ),
 
-  new Test(Ci.nsIRequest.LOAD_FROM_CACHE,
-          "entity-initial", 
-          "fresh value with LOAD_FROM_CACHE",  
-          "request1"  
-          ),
+  
+  new Test(
+    Ci.nsIRequest.LOAD_NORMAL,
+    "entity-3", 
+    "request6", 
+    "request6", 
+    "no-cache" 
+  ),
+  
+  new Test(
+    Ci.nsIRequest.VALIDATE_ALWAYS,
+    "entity-3-v-a", 
+    "request7", 
+    "request7" 
+  ),
+];
 
-  new Test(Ci.nsIRequest.LOAD_FROM_CACHE,
-          "entity-l-f-c", 
-          "request2", 
-          "request2"  
-          ),
-
-  new Test(Ci.nsIRequest.LOAD_NORMAL,
-          "entity-l-f-c", 
-          "fresh value with LOAD_NORMAL",  
-          "request2"  
-          ),
-
-
-  new Test(Ci.nsIRequest.VALIDATE_NEVER,
-          "entity-v-n", 
-          "request3",  
-          "request3"  
-          ),
-
-  new Test(Ci.nsIRequest.LOAD_NORMAL,
-          "entity-v-n", 
-          "fresh value with LOAD_NORMAL",  
-          "request3"  
-          ),
-
-
-  new Test(Ci.nsIRequest.LOAD_NORMAL,
-          "entity-2",
-          "request4",  
-          "request4",  
-          "no-store"   
-          ),
-
-  new Test(Ci.nsIRequest.VALIDATE_NEVER,
-          "entity-2-v-n",
-          "request5",  
-          "request5"  
-          ),
-
-
-  new Test(Ci.nsIRequest.LOAD_NORMAL,
-          "entity-3",
-          "request6",  
-          "request6",  
-          "no-cache"   
-          ),
-
-  new Test(Ci.nsIRequest.VALIDATE_ALWAYS,
-          "entity-3-v-a",
-          "request7",  
-          "request7"  
-          ),
-  ];
-
-function run_next_test()
-{
+function run_next_test() {
   if (gTests.length == 0) {
     httpserver.stop(do_test_finished);
     return;
@@ -141,7 +155,6 @@ function run_next_test()
 }
 
 function handler(metadata, response) {
-
   
   Assert.ok(!metadata.hasHeader("If-Modified-Since"));
 
@@ -149,13 +162,13 @@ function handler(metadata, response) {
   var hdr = "default value";
   try {
     hdr = metadata.getHeader(VALUE_HDR_NAME);
-  } catch(ex) { }
+  } catch (ex) {}
 
   
   var cctrlVal = "max-age=10000";
   try {
-      cctrlVal = metadata.getHeader(CACHECTRL_HDR_NAME);
-  } catch(ex) { }
+    cctrlVal = metadata.getHeader(CACHECTRL_HDR_NAME);
+  } catch (ex) {}
 
   response.setStatusLine(metadata.httpVersion, 200, "OK");
   response.setHeader("Content-Type", "text/plain", false);
@@ -166,7 +179,6 @@ function handler(metadata, response) {
 }
 
 function run_test() {
-
   
   evict_cache_entries();
 

@@ -1,4 +1,4 @@
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var h2Port;
 var prefs;
@@ -16,14 +16,16 @@ var otherServer;
 
 var h2FooRoute; 
 var h2BarRoute; 
-var h2Route;    
+var h2Route; 
 var httpFooOrigin; 
 var httpsFooOrigin; 
 var httpBarOrigin; 
 var httpsBarOrigin; 
 
 function run_test() {
-  var env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
+  var env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
   h2Port = env.get("MOZHTTP2_PORT");
   Assert.notEqual(h2Port, null);
   Assert.notEqual(h2Port, "");
@@ -41,26 +43,38 @@ function run_test() {
   prefs.setBoolPref("network.http.spdy.enabled.http2", true);
   prefs.setBoolPref("network.http.altsvc.enabled", true);
   prefs.setBoolPref("network.http.altsvc.oe", true);
-  prefs.setCharPref("network.dns.localDomains", "foo.example.com, bar.example.com");
+  prefs.setCharPref(
+    "network.dns.localDomains",
+    "foo.example.com, bar.example.com"
+  );
 
   
   
   
   
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"]
-                  .getService(Ci.nsIX509CertDB);
+  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
   addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 
   h1Foo = new HttpServer();
   h1Foo.registerPathHandler("/altsvc-test", h1Server);
   h1Foo.registerPathHandler("/.well-known/http-opportunistic", h1ServerWK);
   h1Foo.start(-1);
-  h1Foo.identity.setPrimary("http", "foo.example.com", h1Foo.identity.primaryPort);
+  h1Foo.identity.setPrimary(
+    "http",
+    "foo.example.com",
+    h1Foo.identity.primaryPort
+  );
 
   h1Bar = new HttpServer();
   h1Bar.registerPathHandler("/altsvc-test", h1Server);
   h1Bar.start(-1);
-  h1Bar.identity.setPrimary("http", "bar.example.com", h1Bar.identity.primaryPort);
+  h1Bar.identity.setPrimary(
+    "http",
+    "bar.example.com",
+    h1Bar.identity.primaryPort
+  );
 
   h2FooRoute = "foo.example.com:" + h2Port;
   h2BarRoute = "bar.example.com:" + h2Port;
@@ -70,10 +84,20 @@ function run_test() {
   httpsFooOrigin = "https://" + h2FooRoute + "/";
   httpBarOrigin = "http://bar.example.com:" + h1Bar.identity.primaryPort + "/";
   httpsBarOrigin = "https://" + h2BarRoute + "/";
-  dump ("http foo - " + httpFooOrigin + "\n" +
-        "https foo - " + httpsFooOrigin + "\n" +
-        "http bar - " + httpBarOrigin + "\n" +
-        "https bar - " + httpsBarOrigin + "\n");
+  dump(
+    "http foo - " +
+      httpFooOrigin +
+      "\n" +
+      "https foo - " +
+      httpsFooOrigin +
+      "\n" +
+      "http bar - " +
+      httpBarOrigin +
+      "\n" +
+      "https bar - " +
+      httpsBarOrigin +
+      "\n"
+  );
 
   doTest1();
 }
@@ -121,7 +145,7 @@ function resetPrefs() {
 function makeChan(origin) {
   return NetUtil.newChannel({
     uri: origin + "altsvc-test",
-    loadUsingSystemPrincipal: true
+    loadUsingSystemPrincipal: true,
   }).QueryInterface(Ci.nsIHttpChannel);
 }
 
@@ -141,7 +165,9 @@ Listener.prototype = {
 
     if (expectPass) {
       if (!Components.isSuccessCode(request.status)) {
-        do_throw("Channel should have a success code! (" + request.status + ")");
+        do_throw(
+          "Channel should have a success code! (" + request.status + ")"
+        );
       }
       Assert.equal(request.responseStatus, 200);
     } else {
@@ -175,18 +201,17 @@ Listener.prototype = {
       Assert.equal(routed, xaltsvc); 
       nextTest();
     } else {
-      dump ("poll later for alt svc mapping\n");
+      dump("poll later for alt svc mapping\n");
       do_test_pending();
       loadWithoutClearingMappings = true;
       do_timeout(500, doTest);
     }
 
     do_test_finished();
-  }
+  },
 };
 
-function testsDone()
-{
+function testsDone() {
   dump("testDone\n");
   resetPrefs();
   do_test_pending();
@@ -197,8 +222,7 @@ function testsDone()
   h1Bar.stop(do_test_finished);
 }
 
-function doTest()
-{
+function doTest() {
   dump("execute doTest " + origin + "\n");
   var chan = makeChan(origin);
   var listener = new Listener();
@@ -208,8 +232,9 @@ function doTest()
   if (loadWithoutClearingMappings) {
     chan.loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
   } else {
-    chan.loadFlags = Ci.nsIRequest.LOAD_FRESH_CONNECTION |
-                     Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
+    chan.loadFlags =
+      Ci.nsIRequest.LOAD_FRESH_CONNECTION |
+      Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
   }
   loadWithoutClearingMappings = false;
   chan.loadInfo.originAttributes = originAttributes;
@@ -223,10 +248,9 @@ function doTest()
 
 
 
-    
 
-function doTest1()
-{
+
+function doTest1() {
   dump("doTest1()\n");
   origin = httpFooOrigin;
   xaltsvc = h2Route;
@@ -237,8 +261,7 @@ function doTest1()
 }
 
 
-function doTest2()
-{
+function doTest2() {
   dump("doTest2()\n");
   origin = httpFooOrigin;
   xaltsvc = h2FooRoute;
@@ -249,8 +272,7 @@ function doTest2()
 
 
 
-function doTest3()
-{
+function doTest3() {
   dump("doTest3()\n");
   origin = httpFooOrigin;
   xaltsvc = h2BarRoute;
@@ -260,11 +282,10 @@ function doTest3()
 }
 
 
-function doTest4()
-{
+function doTest4() {
   dump("doTest4()\n");
   origin = httpsBarOrigin;
-  xaltsvc = '';
+  xaltsvc = "";
   expectPass = false;
   nextTest = doTest5;
   do_test_pending();
@@ -272,11 +293,10 @@ function doTest4()
 }
 
 
-function doTest5()
-{
+function doTest5() {
   dump("doTest5()\n");
   origin = httpsFooOrigin;
-  xaltsvc = 'NA';
+  xaltsvc = "NA";
   expectPass = true;
   nextTest = doTest6;
   do_test_pending();
@@ -284,8 +304,7 @@ function doTest5()
 }
 
 
-function doTest6()
-{
+function doTest6() {
   dump("doTest6()\n");
   origin = httpsFooOrigin;
   xaltsvc = h2BarRoute;
@@ -295,11 +314,10 @@ function doTest6()
 }
 
 
-function doTest7()
-{
+function doTest7() {
   dump("doTest7()\n");
   origin = httpsBarOrigin;
-  xaltsvc = '';
+  xaltsvc = "";
   expectPass = false;
   nextTest = doTest8;
   do_test_pending();
@@ -310,8 +328,7 @@ function doTest7()
 
 
 
-function doTest8()
-{
+function doTest8() {
   dump("doTest8()\n");
   origin = httpBarOrigin;
   xaltsvc = h2BarRoute;
@@ -323,8 +340,7 @@ function doTest8()
 }
 
 
-function doTest9()
-{
+function doTest9() {
   dump("doTest9()\n");
   origin = httpBarOrigin;
   xaltsvc = h2Route;
@@ -337,11 +353,10 @@ function doTest9()
 }
 
 
-function doTest10()
-{
+function doTest10() {
   dump("doTest10()\n");
   origin = httpsBarOrigin;
-  xaltsvc = '';
+  xaltsvc = "";
   expectPass = false;
   nextTest = doTest11;
   do_test_pending();
@@ -351,8 +366,7 @@ function doTest10()
 
 
 
-function doTest11()
-{
+function doTest11() {
   dump("doTest11()\n");
   origin = httpBarOrigin;
   xaltsvc = h2FooRoute;
@@ -365,8 +379,7 @@ function doTest11()
 
 
 
-function doTest12()
-{
+function doTest12() {
   dump("doTest12()\n");
   origin = httpFooOrigin;
   xaltsvc = h2Route;
@@ -381,11 +394,10 @@ function doTest12()
 }
 
 
-function doTest13()
-{
+function doTest13() {
   dump("doTest13()\n");
   origin = httpFooOrigin;
-  xaltsvc = 'NA';
+  xaltsvc = "NA";
   originAttributes = {
     userContextId: 2,
     firstPartyDomain: "a.com",
@@ -397,11 +409,10 @@ function doTest13()
 }
 
 
-function doTest14()
-{
+function doTest14() {
   dump("doTest14()\n");
   origin = httpFooOrigin;
-  xaltsvc = 'NA';
+  xaltsvc = "NA";
   originAttributes = {
     userContextId: 1,
     firstPartyDomain: "b.com",
@@ -413,11 +424,10 @@ function doTest14()
 }
 
 
-function doTest15()
-{
+function doTest15() {
   dump("doTest15()\n");
   origin = httpFooOrigin;
-  xaltsvc = 'NA';
+  xaltsvc = "NA";
   originAttributes = {
     userContextId: 1,
     firstPartyDomain: "a.com",
@@ -431,15 +441,19 @@ function doTest15()
 }
 
 
-function doTest16()
-{
+function doTest16() {
   dump("doTest16()\n");
   origin = httpFooOrigin;
   nextTest = testsDone;
-  otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(Ci.nsIServerSocket);
+  otherServer = Cc["@mozilla.org/network/server-socket;1"].createInstance(
+    Ci.nsIServerSocket
+  );
   otherServer.init(-1, true, -1);
   xaltsvc = "localhost:" + otherServer.port;
-  Services.prefs.setCharPref("network.security.ports.banned", "" + otherServer.port);
+  Services.prefs.setCharPref(
+    "network.security.ports.banned",
+    "" + otherServer.port
+  );
   dump("Blocked port: " + otherServer.port);
   waitFor = 500;
   otherServer.asyncListen({

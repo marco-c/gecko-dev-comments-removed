@@ -24,7 +24,10 @@ function* do_run_test() {
   let profile = do_get_profile();
 
   
-  Services.prefs.setBoolPref("network.cookieSettings.unblocked_for_testing", true);
+  Services.prefs.setBoolPref(
+    "network.cookieSettings.unblocked_for_testing",
+    true
+  );
 
   
   
@@ -32,8 +35,14 @@ function* do_run_test() {
   var spec2 = "http://bar.com/bar.html";
   var uri1 = NetUtil.newURI(spec1);
   var uri2 = NetUtil.newURI(spec2);
-  var channel1 = NetUtil.newChannel({uri: uri1, loadUsingSystemPrincipal: true});
-  var channel2 = NetUtil.newChannel({uri: uri2, loadUsingSystemPrincipal: true});
+  var channel1 = NetUtil.newChannel({
+    uri: uri1,
+    loadUsingSystemPrincipal: true,
+  });
+  var channel2 = NetUtil.newChannel({
+    uri: uri2,
+    loadUsingSystemPrincipal: true,
+  });
 
   
   

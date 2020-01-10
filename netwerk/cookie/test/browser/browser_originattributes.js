@@ -14,7 +14,7 @@ let cm = Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager);
 
 async function openTabInUserContext(uri, userContextId) {
   
-  let tab = BrowserTestUtils.addTab(gBrowser, uri, {userContextId});
+  let tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
 
   
   gBrowser.selectedTab = tab;
@@ -24,15 +24,16 @@ async function openTabInUserContext(uri, userContextId) {
   
   await BrowserTestUtils.browserLoaded(browser);
 
-  return {tab, browser};
+  return { tab, browser };
 }
 
 add_task(async function setup() {
   
   await new Promise(resolve => {
-    SpecialPowers.pushPrefEnv({"set": [
-      ["privacy.userContext.enabled", true]
-    ]}, resolve);
+    SpecialPowers.pushPrefEnv(
+      { set: [["privacy.userContext.enabled", true]] },
+      resolve
+    );
   });
 });
 
@@ -41,15 +42,17 @@ add_task(async function test() {
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    let {tab, browser} = await openTabInUserContext(TEST_URL, userContextId);
+    let { tab, browser } = await openTabInUserContext(TEST_URL, userContextId);
 
-    await ContentTask.spawn(browser,
-        {names: COOKIE_NAMES, value: USER_CONTEXTS[userContextId]},
-        function(opts) {
-          for (let name of opts.names) {
-            content.document.cookie = name + "=" + opts.value;
-          }
-        });
+    await ContentTask.spawn(
+      browser,
+      { names: COOKIE_NAMES, value: USER_CONTEXTS[userContextId] },
+      function(opts) {
+        for (let name of opts.names) {
+          content.document.cookie = name + "=" + opts.value;
+        }
+      }
+    );
 
     
     gBrowser.removeTab(tab);
@@ -59,7 +62,7 @@ add_task(async function test() {
   await checkCookies(expectedValues, "before removal");
 
   
-  cm.removeCookiesWithOriginAttributes(JSON.stringify({userContextId: 1}));
+  cm.removeCookiesWithOriginAttributes(JSON.stringify({ userContextId: 1 }));
 
   expectedValues[1] = undefined;
   await checkCookies(expectedValues, "after removal");
@@ -72,18 +75,25 @@ async function checkCookies(expectedValues, time) {
 
     let expectedValue = expectedValues[userContextId];
     for (let name of COOKIE_NAMES) {
-      is(cookiesFromTitle[name], expectedValue,
-          `User context ${userContextId}: ${name} should be correct from title ${time}`);
-      is(cookiesFromManager[name], expectedValue,
-          `User context ${userContextId}: ${name} should be correct from manager ${time}`);
+      is(
+        cookiesFromTitle[name],
+        expectedValue,
+        `User context ${userContextId}: ${name} should be correct from title ${time}`
+      );
+      is(
+        cookiesFromManager[name],
+        expectedValue,
+        `User context ${userContextId}: ${name} should be correct from manager ${time}`
+      );
     }
-
   }
 }
 
 function getCookiesFromManager(userContextId) {
   let cookies = {};
-  let enumerator = cm.getCookiesWithOriginAttributes(JSON.stringify({userContextId}));
+  let enumerator = cm.getCookiesWithOriginAttributes(
+    JSON.stringify({ userContextId })
+  );
   for (let cookie of enumerator) {
     cookies[cookie.name] = cookie.value;
   }
@@ -91,7 +101,7 @@ function getCookiesFromManager(userContextId) {
 }
 
 async function getCookiesFromJS(userContextId) {
-  let {tab, browser} = await openTabInUserContext(TEST_URL, userContextId);
+  let { tab, browser } = await openTabInUserContext(TEST_URL, userContextId);
 
   
   let cookieString = await ContentTask.spawn(browser, null, function() {

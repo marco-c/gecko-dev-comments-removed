@@ -34,17 +34,22 @@ function run_test() {
 
 
 
-
-function checkStatusLine(channel, httpMaxVer, httpMinVer, httpCode, statusText) {
+function checkStatusLine(
+  channel,
+  httpMaxVer,
+  httpMinVer,
+  httpCode,
+  statusText
+) {
   Assert.equal(channel.responseStatus, httpCode);
   Assert.equal(channel.responseStatusText, statusText);
 
-  var respMaj = {}, respMin = {};
+  var respMaj = {},
+    respMin = {};
   channel.getResponseVersion(respMaj, respMin);
   Assert.equal(respMaj.value, httpMaxVer);
   Assert.equal(respMin.value, httpMinVer);
 }
-
 
 
 
@@ -64,16 +69,13 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 });
 
 
-
-function noSetstatusline(metadata, response) {
-}
+function noSetstatusline(metadata, response) {}
 function startNoSetStatusLine(ch) {
   checkStatusLine(ch, 1, 1, 200, "OK");
 }
 function stop(ch, status, data) {
   Assert.ok(Components.isSuccessCode(status));
 }
-
 
 
 function http1_0(metadata, response) {
@@ -84,14 +86,12 @@ function startHttp1_0(ch) {
 }
 
 
-
 function http1_1(metadata, response) {
   response.setStatusLine("1.1", 200, "OK");
 }
 function startHttp1_1(ch) {
   checkStatusLine(ch, 1, 1, 200, "OK");
 }
-
 
 
 function invalidVersion(metadata, response) {
@@ -107,7 +107,6 @@ function startPassedTrue(ch) {
 }
 
 
-
 function invalidStatus(metadata, response) {
   try {
     response.setStatusLine("1.0", 1000, "FAILED");
@@ -115,7 +114,6 @@ function invalidStatus(metadata, response) {
     response.setHeader("Passed", "true", false);
   }
 }
-
 
 
 function invalidDescription(metadata, response) {
@@ -127,14 +125,12 @@ function invalidDescription(metadata, response) {
 }
 
 
-
 function crazyCode(metadata, response) {
   response.setStatusLine("1.1", 617, "Crazy");
 }
 function startCrazy(ch) {
   checkStatusLine(ch, 1, 1, 617, "Crazy");
 }
-
 
 
 function nullVersion(metadata, response) {

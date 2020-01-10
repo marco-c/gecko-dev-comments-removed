@@ -11,7 +11,9 @@
 var testpath = "/bug672448";
 
 function run_test() {
-  let intlPrefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService).getBranch("intl.");
+  let intlPrefs = Cc["@mozilla.org/preferences-service;1"]
+    .getService(Ci.nsIPrefService)
+    .getBranch("intl.");
 
   
   let oldPref = intlPrefs.getCharPref("accept_languages");
@@ -53,8 +55,10 @@ function test_accepted_languages() {
 
     try {
       
-      [unused, acceptedLanguage, qualityValue] = acceptedLanguages[i].trim().match(/^([a-z0-9_-]*?)(?:;q=(1(?:\.0{0,3})?|0(?:\.[0-9]{0,3})))?$/i);
-    } catch(e) {
+      [unused, acceptedLanguage, qualityValue] = acceptedLanguages[i]
+        .trim()
+        .match(/^([a-z0-9_-]*?)(?:;q=(1(?:\.0{0,3})?|0(?:\.[0-9]{0,3})))?$/i);
+    } catch (e) {
       do_throw("Invalid language tag or quality value: " + e);
     }
 
@@ -78,16 +82,18 @@ function test_accepted_languages() {
       }
 
       
-      Assert.equal(parseFloat(qualityValue).toFixed(decimalPlaces), (1.0 - ((1 / acceptedLanguagesLength) * i)).toFixed(decimalPlaces));
+      Assert.equal(
+        parseFloat(qualityValue).toFixed(decimalPlaces),
+        (1.0 - (1 / acceptedLanguagesLength) * i).toFixed(decimalPlaces)
+      );
     }
   }
 }
 
 function setupChannel(path) {
-
-  let chan = NetUtil.newChannel ({
+  let chan = NetUtil.newChannel({
     uri: "http://localhost:4444" + path,
-    loadUsingSystemPrincipal: true
+    loadUsingSystemPrincipal: true,
   });
 
   chan.QueryInterface(Ci.nsIHttpChannel);

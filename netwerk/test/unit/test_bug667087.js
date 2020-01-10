@@ -8,7 +8,18 @@ function run_test() {
 
   
   
-  cm.add("a", "/", "foo", "bar", false, false, true, expiry, {}, Ci.nsICookie.SAMESITE_NONE);
+  cm.add(
+    "a",
+    "/",
+    "foo",
+    "bar",
+    false,
+    false,
+    true,
+    expiry,
+    {},
+    Ci.nsICookie.SAMESITE_NONE
+  );
   Assert.equal(cm.countCookiesFromHost("a"), 1);
   Assert.equal(cs.getCookieString(NetUtil.newURI("http://a"), null), "foo=bar");
 }

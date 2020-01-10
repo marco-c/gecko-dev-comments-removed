@@ -1,21 +1,33 @@
-function run_test()
-{
+function run_test() {
   do_get_profile();
 
   
-  asyncOpenCacheEntry("http://no-data/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
-    new OpenCallback(NEW|METAONLY|DONTSETVALID|WAITFORWRITE, "meta", "", function(entry) {
-      
-      executeSoon(() => {
-        Cu.forceGC(); 
+  asyncOpenCacheEntry(
+    "http://no-data/",
+    "disk",
+    Ci.nsICacheStorage.OPEN_NORMALLY,
+    null,
+    new OpenCallback(
+      NEW | METAONLY | DONTSETVALID | WAITFORWRITE,
+      "meta",
+      "",
+      function(entry) {
+        
+        executeSoon(() => {
+          Cu.forceGC(); 
 
-        asyncOpenCacheEntry("http://no-data/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
-          new OpenCallback(NORMAL, "meta", "", function(entry) {
-            finish_cache2_test();
-          })
-        );
-      });
-    })
+          asyncOpenCacheEntry(
+            "http://no-data/",
+            "disk",
+            Ci.nsICacheStorage.OPEN_NORMALLY,
+            null,
+            new OpenCallback(NORMAL, "meta", "", function(entry) {
+              finish_cache2_test();
+            })
+          );
+        });
+      }
+    )
   );
 
   do_test_pending();

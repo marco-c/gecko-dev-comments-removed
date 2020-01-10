@@ -5,7 +5,7 @@
 
 var test_generator = do_run_test();
 
-var CMAX = 1000;    
+var CMAX = 1000; 
 
 function run_test() {
   do_test_pending();
@@ -120,4 +120,3 @@ function* do_run_test() {
 
   finish_test();
 }
-

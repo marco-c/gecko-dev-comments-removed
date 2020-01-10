@@ -1,10 +1,12 @@
 function run_test() {
-  var ioService = Cc["@mozilla.org/network/io-service;1"]
-                    .getService(Ci.nsIIOService);
+  var ioService = Cc["@mozilla.org/network/io-service;1"].getService(
+    Ci.nsIIOService
+  );
 
   try {
-    var linkService = Cc["@mozilla.org/network/network-link-service;1"]
-                        .getService(Ci.nsINetworkLinkService);
+    var linkService = Cc[
+      "@mozilla.org/network/network-link-service;1"
+    ].getService(Ci.nsINetworkLinkService);
 
     
     Assert.notEqual(ioService.offline, linkService.isLinkUp);

@@ -1,27 +1,35 @@
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
-var cacheFlushObserver = { observe() {
-  cacheFlushObserver = null;
-  do_send_remote_message('flushed');
-}};
+var cacheFlushObserver = {
+  observe() {
+    cacheFlushObserver = null;
+    do_send_remote_message("flushed");
+  },
+};
 
 
 var URL = null;
 
 
-var cacheFlushObserver2 = { observe() {
-  cacheFlushObserver2 = null;
-  openAltChannel();
-}};
+var cacheFlushObserver2 = {
+  observe() {
+    cacheFlushObserver2 = null;
+    openAltChannel();
+  },
+};
 
 function run_test() {
   do_get_profile();
-  do_await_remote_message('flush').then(() => {
-    Services.cache2.QueryInterface(Ci.nsICacheTesting).flush(cacheFlushObserver);
+  do_await_remote_message("flush").then(() => {
+    Services.cache2
+      .QueryInterface(Ci.nsICacheTesting)
+      .flush(cacheFlushObserver);
   });
 
-  do_await_remote_message('done').then(() => { sendCommand("URL;", load_channel); });
+  do_await_remote_message("done").then(() => {
+    sendCommand("URL;", load_channel);
+  });
 
   run_test_in_child("../unit/test_alt-data_cross_process.js");
 }
@@ -36,11 +44,10 @@ function load_channel(url) {
 }
 
 function make_channel(url, callback, ctx) {
-  return NetUtil.newChannel({uri: url, loadUsingSystemPrincipal: true});
+  return NetUtil.newChannel({ uri: url, loadUsingSystemPrincipal: true });
 }
 
-function readTextData(request, buffer)
-{
+function readTextData(request, buffer) {
   var cc = request.QueryInterface(Ci.nsICacheInfoChannel);
   
   
@@ -50,12 +57,17 @@ function readTextData(request, buffer)
   
   var altContent = "altContentParentGenerated";
   executeSoon(() => {
-    var os = cc.openAlternativeOutputStream("text/parent-binary", altContent.length);
+    var os = cc.openAlternativeOutputStream(
+      "text/parent-binary",
+      altContent.length
+    );
     os.write(altContent, altContent.length);
     os.close();
 
     executeSoon(() => {
-      Services.cache2.QueryInterface(Ci.nsICacheTesting).flush(cacheFlushObserver2);
+      Services.cache2
+        .QueryInterface(Ci.nsICacheTesting)
+        .flush(cacheFlushObserver2);
     });
   });
 }
@@ -67,8 +79,7 @@ function openAltChannel() {
   chan.asyncOpen(new ChannelListener(readAltData, null));
 }
 
-function readAltData(request, buffer)
-{
+function readAltData(request, buffer) {
   var cc = request.QueryInterface(Ci.nsICacheInfoChannel);
 
   
@@ -76,5 +87,5 @@ function readAltData(request, buffer)
   Assert.equal(cc.alternativeDataType, "text/parent-binary");
 
   
-  do_send_remote_message('finish');
+  do_send_remote_message("finish");
 }

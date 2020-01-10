@@ -4,8 +4,10 @@
 
 
 
-const ROOT_URL = getRootDirectory(gTestPath).replace("chrome://mochitests/content/",
-                                                     "https://example.com/");
+const ROOT_URL = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content/",
+  "https://example.com/"
+);
 const TEST_URL = "about:license";
 const TEST_URL2 = ROOT_URL + "ioactivity.html";
 
@@ -15,34 +17,32 @@ var gotSqlite = false;
 var gotEmptyData = false;
 
 function processResults(results) {
-    for (let data of results) {
-        console.log(data.location);
-        gotEmptyData = data.rx == 0 && data.tx == 0 && !gotEmptyData
-        gotSocket = data.location.startsWith("socket://127.0.0.1:") || gotSocket;
-        gotFile = data.location.endsWith("aboutLicense.css") || gotFile;
-        gotSqlite = data.location.endsWith("places.sqlite") || gotSqlite;
-    }
-};
+  for (let data of results) {
+    console.log(data.location);
+    gotEmptyData = data.rx == 0 && data.tx == 0 && !gotEmptyData;
+    gotSocket = data.location.startsWith("socket://127.0.0.1:") || gotSocket;
+    gotFile = data.location.endsWith("aboutLicense.css") || gotFile;
+    gotSqlite = data.location.endsWith("places.sqlite") || gotSqlite;
+  }
+}
 
 add_task(async function testRequestIOActivity() {
-    await SpecialPowers.pushPrefEnv({
-      "set": [
-        ["io.activity.enabled", true],
-      ]
-    });
-    waitForExplicitFinish();
-    Services.obs.notifyObservers(null, "profile-initial-state");
+  await SpecialPowers.pushPrefEnv({
+    set: [["io.activity.enabled", true]],
+  });
+  waitForExplicitFinish();
+  Services.obs.notifyObservers(null, "profile-initial-state");
 
-    await BrowserTestUtils.withNewTab(TEST_URL, async function(browser) {
-      await BrowserTestUtils.withNewTab(TEST_URL2, async function(browser) {
-        let results = await ChromeUtils.requestIOActivity();
-        processResults(results);
+  await BrowserTestUtils.withNewTab(TEST_URL, async function(browser) {
+    await BrowserTestUtils.withNewTab(TEST_URL2, async function(browser) {
+      let results = await ChromeUtils.requestIOActivity();
+      processResults(results);
 
-        ok(gotSocket, "A socket was used");
-        
-        
-        ok(gotSqlite, "A sqlite DB was used");
-        ok(!gotEmptyData, "Every I/O event had data");
-      });
+      ok(gotSocket, "A socket was used");
+      
+      
+      ok(gotSqlite, "A sqlite DB was used");
+      ok(!gotEmptyData, "Every I/O event had data");
     });
+  });
 });

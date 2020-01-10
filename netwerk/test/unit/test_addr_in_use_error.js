@@ -4,12 +4,13 @@
 
 var CC = Components.Constructor;
 
-const ServerSocket = CC("@mozilla.org/network/server-socket;1",
-                        "nsIServerSocket",
-                        "init");
+const ServerSocket = CC(
+  "@mozilla.org/network/server-socket;1",
+  "nsIServerSocket",
+  "init"
+);
 
-function testAddrInUse()
-{
+function testAddrInUse() {
   
   
   if (mozinfo.os == "win") {
@@ -22,11 +23,12 @@ function testAddrInUse()
   Assert.ok(listener instanceof Ci.nsIServerSocket);
 
   
-  do_check_throws_nsIException(() => ServerSocket(listener.port, true, -1),
-                               "NS_ERROR_SOCKET_ADDRESS_IN_USE");
+  do_check_throws_nsIException(
+    () => ServerSocket(listener.port, true, -1),
+    "NS_ERROR_SOCKET_ADDRESS_IN_USE"
+  );
 }
 
-function run_test()
-{
+function run_test() {
   testAddrInUse();
 }

@@ -1,17 +1,28 @@
-function run_test()
-{
+function run_test() {
   do_get_profile();
 
   
   
   
-  asyncOpenCacheEntry("http://nv/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
-    new OpenCallback(NEW|DOOMED, "v1m", "v1d", function(entry) {
+  asyncOpenCacheEntry(
+    "http://nv/",
+    "disk",
+    Ci.nsICacheStorage.OPEN_NORMALLY,
+    null,
+    new OpenCallback(NEW | DOOMED, "v1m", "v1d", function(entry) {
       
-      asyncOpenCacheEntry("http://nv/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
-        new OpenCallback(NOTVALID|RECREATE, "v2m", "v2d", function(entry) {
+      asyncOpenCacheEntry(
+        "http://nv/",
+        "disk",
+        Ci.nsICacheStorage.OPEN_NORMALLY,
+        null,
+        new OpenCallback(NOTVALID | RECREATE, "v2m", "v2d", function(entry) {
           
-          asyncOpenCacheEntry("http://nv/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
+          asyncOpenCacheEntry(
+            "http://nv/",
+            "disk",
+            Ci.nsICacheStorage.OPEN_NORMALLY,
+            null,
             new OpenCallback(NORMAL, "v2m", "v2d", function(entry) {
               finish_cache2_test();
             })

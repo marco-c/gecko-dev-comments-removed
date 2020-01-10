@@ -1,5 +1,5 @@
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
-var {Services} = ChromeUtils.import('resource://gre/modules/Services.jsm');
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var httpserver = new HttpServer();
 httpserver.start(-1);
@@ -22,13 +22,16 @@ function make_channel(url, flags, usePrivateBrowsing) {
   var securityFlags = Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
 
   var uri = Services.io.newURI(url);
-  var principal = Services.scriptSecurityManager.createCodebasePrincipal(uri,
-    { privateBrowsingId : usePrivateBrowsing ? 1 : 0 });
+  var principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {
+    privateBrowsingId: usePrivateBrowsing ? 1 : 0,
+  });
 
-  var req = NetUtil.newChannel({uri,
-                                loadingPrincipal: principal,
-                                securityFlags,
-                                contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER});
+  var req = NetUtil.newChannel({
+    uri,
+    loadingPrincipal: principal,
+    securityFlags,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+  });
 
   req.loadFlags = flags;
   if (usePrivateBrowsing) {
@@ -37,8 +40,14 @@ function make_channel(url, flags, usePrivateBrowsing) {
   return req;
 }
 
-function Test(path, flags, expectSuccess, readFromCache, hitServer, 
-              usePrivateBrowsing ) {
+function Test(
+  path,
+  flags,
+  expectSuccess,
+  readFromCache,
+  hitServer,
+  usePrivateBrowsing 
+) {
   this.path = path;
   this.flags = flags;
   this.expectSuccess = expectSuccess;
@@ -56,7 +65,10 @@ Test.prototype = {
   _buffer: "",
   _isFromCache: false,
 
-  QueryInterface: ChromeUtils.generateQI(["nsIStreamListener", "nsIRequestObserver"]),
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIStreamListener",
+    "nsIRequestObserver",
+  ]),
 
   onStartRequest(request) {
     var cachingChannel = request.QueryInterface(Ci.nsICacheInfoChannel);
@@ -76,113 +88,173 @@ Test.prototype = {
   },
 
   run() {
-    dump("Running:" +
-         "\n  " + this.path +
-         "\n  " + this.flags +
-         "\n  " + this.expectSuccess +
-         "\n  " + this.readFromCache +
-         "\n  " + this.hitServer + "\n");
+    dump(
+      "Running:" +
+        "\n  " +
+        this.path +
+        "\n  " +
+        this.flags +
+        "\n  " +
+        this.expectSuccess +
+        "\n  " +
+        this.readFromCache +
+        "\n  " +
+        this.hitServer +
+        "\n"
+    );
     gHitServer = false;
     var channel = make_channel(this.path, this.flags, this.usePrivateBrowsing);
     channel.asyncOpen(this);
-  }
+  },
 };
 
 var gHitServer = false;
 
 var gTests = [
+  new Test(
+    httpBase + shortexpPath,
+    0,
+    true, 
+    false, 
+    true, 
+    true
+  ), 
+  new Test(
+    httpBase + shortexpPath,
+    0,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + shortexpPath,
+    0,
+    true, 
+    true, 
+    true
+  ), 
+  new Test(
+    httpBase + shortexpPath,
+    Ci.nsIRequest.LOAD_BYPASS_CACHE,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + shortexpPath,
+    Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE,
+    false, 
+    false, 
+    false
+  ), 
+  new Test(
+    httpBase + shortexpPath,
+    Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE | Ci.nsIRequest.VALIDATE_NEVER,
+    true, 
+    true, 
+    false
+  ), 
+  new Test(
+    httpBase + shortexpPath,
+    Ci.nsIRequest.LOAD_FROM_CACHE,
+    true, 
+    true, 
+    false
+  ), 
 
-  new Test(httpBase + shortexpPath, 0,
-           true,   
-           false,  
-           true,   
-           true),  
-  new Test(httpBase + shortexpPath, 0,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + shortexpPath, 0,
-           true,   
-           true,   
-           true),  
-  new Test(httpBase + shortexpPath, Ci.nsIRequest.LOAD_BYPASS_CACHE,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + shortexpPath, Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE,
-           false,  
-           false,  
-           false), 
-  new Test(httpBase + shortexpPath,
-           Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE |
-           Ci.nsIRequest.VALIDATE_NEVER,
-           true,   
-           true,   
-           false), 
-  new Test(httpBase + shortexpPath, Ci.nsIRequest.LOAD_FROM_CACHE,
-           true,   
-           true,   
-           false), 
+  new Test(
+    httpBase + longexpPath,
+    0,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + longexpPath,
+    0,
+    true, 
+    true, 
+    false
+  ), 
+  new Test(
+    httpBase + longexpPath,
+    Ci.nsIRequest.LOAD_BYPASS_CACHE,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + longexpPath,
+    Ci.nsIRequest.VALIDATE_ALWAYS,
+    true, 
+    true, 
+    true
+  ), 
+  new Test(
+    httpBase + longexpPath,
+    Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE,
+    true, 
+    true, 
+    false
+  ), 
+  new Test(
+    httpBase + longexpPath,
+    Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE | Ci.nsIRequest.VALIDATE_NEVER,
+    true, 
+    true, 
+    false
+  ), 
+  new Test(
+    httpBase + longexpPath,
+    Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE | Ci.nsIRequest.VALIDATE_ALWAYS,
+    false, 
+    false, 
+    false
+  ), 
+  new Test(
+    httpBase + longexpPath,
+    Ci.nsIRequest.LOAD_FROM_CACHE,
+    true, 
+    true, 
+    false
+  ), 
 
-  new Test(httpBase + longexpPath, 0,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + longexpPath, 0,
-           true,   
-           true,   
-           false), 
-  new Test(httpBase + longexpPath, Ci.nsIRequest.LOAD_BYPASS_CACHE,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + longexpPath,
-           Ci.nsIRequest.VALIDATE_ALWAYS,
-           true,   
-           true,   
-           true),  
-  new Test(httpBase + longexpPath, Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE,
-           true,   
-           true,   
-           false), 
-  new Test(httpBase + longexpPath,
-           Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE |
-           Ci.nsIRequest.VALIDATE_NEVER,
-           true,   
-           true,   
-           false), 
-  new Test(httpBase + longexpPath,
-           Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE |
-           Ci.nsIRequest.VALIDATE_ALWAYS,
-           false,  
-           false,  
-           false), 
-  new Test(httpBase + longexpPath, Ci.nsIRequest.LOAD_FROM_CACHE,
-           true,   
-           true,   
-           false), 
+  new Test(
+    httpBase + longexp2Path,
+    0,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + longexp2Path,
+    0,
+    true, 
+    true, 
+    false
+  ), 
 
-  new Test(httpBase + longexp2Path, 0,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + longexp2Path, 0,
-           true,   
-           true,   
-           false), 
-
-  new Test(httpBase + nocachePath, 0,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + nocachePath, 0,
-           true,   
-           true,   
-           true),  
-  new Test(httpBase + nocachePath, Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE,
-           false,  
-           false,  
-           false), 
+  new Test(
+    httpBase + nocachePath,
+    0,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + nocachePath,
+    0,
+    true, 
+    true, 
+    true
+  ), 
+  new Test(
+    httpBase + nocachePath,
+    Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE,
+    false, 
+    false, 
+    false
+  ), 
 
   
   
@@ -195,12 +267,13 @@ var gTests = [
 
   
   
-  new Test(httpBase + nocachePath,
-           Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE |
-           Ci.nsIRequest.VALIDATE_NEVER,
-           true,   
-           true,   
-           false), 
+  new Test(
+    httpBase + nocachePath,
+    Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE | Ci.nsIRequest.VALIDATE_NEVER,
+    true, 
+    true, 
+    false
+  ), 
 
   
   
@@ -215,52 +288,76 @@ var gTests = [
 
 
 
-  new Test(httpBase + nostorePath, 0,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + nostorePath, 0,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + nostorePath, Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE,
-           false,  
-           false,  
-           false), 
-  new Test(httpBase + nostorePath, Ci.nsIRequest.LOAD_FROM_CACHE,
-           true,   
-           true,   
-           false), 
+  new Test(
+    httpBase + nostorePath,
+    0,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + nostorePath,
+    0,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + nostorePath,
+    Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE,
+    false, 
+    false, 
+    false
+  ), 
+  new Test(
+    httpBase + nostorePath,
+    Ci.nsIRequest.LOAD_FROM_CACHE,
+    true, 
+    true, 
+    false
+  ), 
   
   
-  new Test(httpBase + nostorePath,
-           Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE |
-           Ci.nsIRequest.VALIDATE_NEVER,
-           false,  
-           false,  
-           false), 
+  new Test(
+    httpBase + nostorePath,
+    Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE | Ci.nsIRequest.VALIDATE_NEVER,
+    false, 
+    false, 
+    false
+  ), 
 
-  new Test(httpBase + test410Path, 0,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + test410Path, 0,
-           true,   
-           true,   
-           false), 
+  new Test(
+    httpBase + test410Path,
+    0,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + test410Path,
+    0,
+    true, 
+    true, 
+    false
+  ), 
 
-  new Test(httpBase + test404Path, 0,
-           true,   
-           false,  
-           true),  
-  new Test(httpBase + test404Path, 0,
-           true,   
-           false,  
-           true)   
+  new Test(
+    httpBase + test404Path,
+    0,
+    true, 
+    false, 
+    true
+  ), 
+  new Test(
+    httpBase + test404Path,
+    0,
+    true, 
+    false, 
+    true
+  ), 
 ];
 
-function run_next_test()
-{
+function run_next_test() {
   if (gTests.length == 0) {
     httpserver.stop(do_test_finished);
     return;
@@ -274,7 +371,7 @@ function handler(httpStatus, metadata, response) {
   gHitServer = true;
   try {
     var etag = metadata.getHeader("If-None-Match");
-  } catch(ex) {
+  } catch (ex) {
     var etag = "";
   }
   if (etag == "testtag") {

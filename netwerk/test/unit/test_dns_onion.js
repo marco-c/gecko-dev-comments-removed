@@ -1,10 +1,14 @@
 var dns = Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService);
-var threadManager = Cc["@mozilla.org/thread-manager;1"].getService(Ci.nsIThreadManager);
+var threadManager = Cc["@mozilla.org/thread-manager;1"].getService(
+  Ci.nsIThreadManager
+);
 var mainThread = threadManager.currentThread;
 
 var onionPref;
 var localdomainPref;
-var prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
+var prefs = Cc["@mozilla.org/preferences-service;1"].getService(
+  Ci.nsIPrefBranch
+);
 
 
 var listenerBlock = {
@@ -12,7 +16,7 @@ var listenerBlock = {
     Assert.ok(!Components.isSuccessCode(inStatus));
     do_test_dontBlock();
   },
-  QueryInterface: ChromeUtils.generateQI(["nsIDNSListener"])
+  QueryInterface: ChromeUtils.generateQI(["nsIDNSListener"]),
 };
 
 
@@ -22,22 +26,32 @@ var listenerDontBlock = {
     Assert.ok(answer == "127.0.0.1" || answer == "::1");
     all_done();
   },
-  QueryInterface: ChromeUtils.generateQI(["nsIDNSListener"])
+  QueryInterface: ChromeUtils.generateQI(["nsIDNSListener"]),
 };
 
 const defaultOriginAttributes = {};
 
 function do_test_dontBlock() {
   prefs.setBoolPref("network.dns.blockDotOnion", false);
-  dns.asyncResolve("private.onion", 0, listenerDontBlock,
-                   mainThread, defaultOriginAttributes);
+  dns.asyncResolve(
+    "private.onion",
+    0,
+    listenerDontBlock,
+    mainThread,
+    defaultOriginAttributes
+  );
 }
 
 function do_test_block() {
   prefs.setBoolPref("network.dns.blockDotOnion", true);
   try {
-    dns.asyncResolve("private.onion", 0, listenerBlock,
-                     mainThread, defaultOriginAttributes);
+    dns.asyncResolve(
+      "private.onion",
+      0,
+      listenerBlock,
+      mainThread,
+      defaultOriginAttributes
+    );
   } catch (e) {
     
     Assert.ok(true);
@@ -59,4 +73,3 @@ function run_test() {
   do_test_block();
   do_test_pending();
 }
-

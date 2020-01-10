@@ -3,5 +3,5 @@
 
 
 function run_test() {
- run_test_in_child("../unit/test_redirect_canceled.js");
+  run_test_in_child("../unit/test_redirect_canceled.js");
 }

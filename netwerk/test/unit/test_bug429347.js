@@ -1,38 +1,73 @@
 function run_test() {
-  var ios = Cc["@mozilla.org/network/io-service;1"].
-    getService(Ci.nsIIOService);
+  var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
 
   var uri1 = ios.newURI("http://example.com#bar");
   var uri2 = ios.newURI("http://example.com/#bar");
   Assert.ok(uri1.equals(uri2));
 
-  uri1 = uri1.mutate().setSpec("http://example.com?bar").finalize();
-  uri2 = uri2.mutate().setSpec("http://example.com/?bar").finalize();
+  uri1 = uri1
+    .mutate()
+    .setSpec("http://example.com?bar")
+    .finalize();
+  uri2 = uri2
+    .mutate()
+    .setSpec("http://example.com/?bar")
+    .finalize();
   Assert.ok(uri1.equals(uri2));
 
   
   
   
-  uri1 = uri1.mutate().setSpec("http://example.com;bar").finalize();
-  uri2 = uri2.mutate().setSpec("http://example.com/;bar").finalize();
+  uri1 = uri1
+    .mutate()
+    .setSpec("http://example.com;bar")
+    .finalize();
+  uri2 = uri2
+    .mutate()
+    .setSpec("http://example.com/;bar")
+    .finalize();
   Assert.ok(!uri1.equals(uri2));
 
-  uri1 = uri1.mutate().setSpec("http://example.com#").finalize();
-  uri2 = uri2.mutate().setSpec("http://example.com/#").finalize();
+  uri1 = uri1
+    .mutate()
+    .setSpec("http://example.com#")
+    .finalize();
+  uri2 = uri2
+    .mutate()
+    .setSpec("http://example.com/#")
+    .finalize();
   Assert.ok(uri1.equals(uri2));
 
-  uri1 = uri1.mutate().setSpec("http://example.com?").finalize();
-  uri2 = uri2.mutate().setSpec("http://example.com/?").finalize();
+  uri1 = uri1
+    .mutate()
+    .setSpec("http://example.com?")
+    .finalize();
+  uri2 = uri2
+    .mutate()
+    .setSpec("http://example.com/?")
+    .finalize();
   Assert.ok(uri1.equals(uri2));
 
   
   
   
-  uri1 = uri1.mutate().setSpec("http://example.com;").finalize();
-  uri2 = uri2.mutate().setSpec("http://example.com/;").finalize();
+  uri1 = uri1
+    .mutate()
+    .setSpec("http://example.com;")
+    .finalize();
+  uri2 = uri2
+    .mutate()
+    .setSpec("http://example.com/;")
+    .finalize();
   Assert.ok(!uri1.equals(uri2));
 
-  uri1 = uri1.mutate().setSpec("http://example.com").finalize();
-  uri2 = uri2.mutate().setSpec("http://example.com/").finalize();
+  uri1 = uri1
+    .mutate()
+    .setSpec("http://example.com")
+    .finalize();
+  uri2 = uri2
+    .mutate()
+    .setSpec("http://example.com/")
+    .finalize();
   Assert.ok(uri1.equals(uri2));
 }

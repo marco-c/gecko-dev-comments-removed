@@ -1,8 +1,10 @@
 var CC = Components.Constructor;
 
-const ServerSocket = CC("@mozilla.org/network/server-socket;1",
-                        "nsIServerSocket",
-                        "init");
+const ServerSocket = CC(
+  "@mozilla.org/network/server-socket;1",
+  "nsIServerSocket",
+  "init"
+);
 
 
 
@@ -25,17 +27,19 @@ function TestServer() {
   
   this.listener = ServerSocket(-1, true, -1);
   this.port = this.listener.port;
-  info('server: listening on ' + this.port);
+  info("server: listening on " + this.port);
   this.listener.asyncListen(this);
 }
 
 TestServer.prototype = {
   onSocketAccepted(socket, trans) {
-    info('server: got client connection');
+    info("server: got client connection");
 
     
     if (this.input !== null) {
-      try { socket.close(); } catch(ignore) {}
+      try {
+        socket.close();
+      } catch (ignore) {}
       do_throw("Test written to handle one connection at a time.");
     }
 
@@ -46,7 +50,7 @@ TestServer.prototype = {
       this.peerAddr = trans.getScriptablePeerAddr();
 
       this.acceptCallback();
-    } catch(e) {
+    } catch (e) {
       
 
 
@@ -54,35 +58,42 @@ TestServer.prototype = {
     }
 
     this.reset();
-  } ,
-  
-  onStopListening(socket) {} ,
+  },
+
+  onStopListening(socket) {},
 
   
 
 
   reset() {
-    if (this.input)
-      try { this.input.close(); } catch(ignore) {}
-    if (this.output)
-      try { this.output.close(); } catch(ignore) {}
+    if (this.input) {
+      try {
+        this.input.close();
+      } catch (ignore) {}
+    }
+    if (this.output) {
+      try {
+        this.output.close();
+      } catch (ignore) {}
+    }
 
     this.input = null;
     this.output = null;
     this.acceptCallback = null;
     this.selfAddr = null;
     this.peerAddr = null;
-  } ,
+  },
 
   
 
 
   stop() {
     this.reset();
-    try { this.listener.close(); } catch(ignore) {}
-  }
+    try {
+      this.listener.close();
+    } catch (ignore) {}
+  },
 };
-
 
 
 
@@ -95,10 +106,9 @@ function checkAddrEqual(lhs, rhs) {
     Assert.equal(lhs.address, rhs.address);
     Assert.equal(lhs.port, rhs.port);
   }
-  
+
   
 }
-
 
 
 
@@ -115,7 +125,7 @@ var serv;
 
 
 
-var connectTimeout = 5*1000;
+var connectTimeout = 5 * 1000;
 
 
 
@@ -130,13 +140,13 @@ var testDataStore = null;
 
 function testIpv4() {
   testDataStore = {
-    transport : null ,
-    ouput : null
-  }
+    transport: null,
+    ouput: null,
+  };
 
   serv.acceptCallback = function() {
     
-    serv.timeoutCallback = function(){};
+    serv.timeoutCallback = function() {};
 
     var selfAddr = testDataStore.transport.getScriptableSelfAddr();
     var peerAddr = testDataStore.transport.getScriptablePeerAddr();
@@ -166,12 +176,21 @@ function testIpv4() {
 
 
 
-  testDataStore.transport = sts.createTransport([], '127.0.0.1', serv.port, null);
+  testDataStore.transport = sts.createTransport(
+    [],
+    "127.0.0.1",
+    serv.port,
+    null
+  );
   
 
 
 
-  testDataStore.output = testDataStore.transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING,0,0);
+  testDataStore.output = testDataStore.transport.openOutputStream(
+    Ci.nsITransport.OPEN_BLOCKING,
+    0,
+    0
+  );
 
   
 
@@ -183,17 +202,19 @@ function testIpv4() {
 
 
 
-
 function run_test() {
-  sts = Cc["@mozilla.org/network/socket-transport-service;1"]
-            .getService(Ci.nsISocketTransportService);
+  sts = Cc["@mozilla.org/network/socket-transport-service;1"].getService(
+    Ci.nsISocketTransportService
+  );
   serv = new TestServer();
 
-  registerCleanupFunction(function(){ serv.stop(); });
+  registerCleanupFunction(function() {
+    serv.stop();
+  });
 
   add_test(testIpv4);
   
   
-    
+
   run_next_test();
 }

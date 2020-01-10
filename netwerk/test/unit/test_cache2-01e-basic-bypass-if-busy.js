@@ -1,14 +1,21 @@
-function run_test()
-{
+function run_test() {
   do_get_profile();
 
   
-  asyncOpenCacheEntry("http://a/", "disk", Ci.nsICacheStorage.OPEN_NORMALLY, null,
-    new OpenCallback(NEW|DONTFILL, "a1m", "a1d", function(entry) {
+  asyncOpenCacheEntry(
+    "http://a/",
+    "disk",
+    Ci.nsICacheStorage.OPEN_NORMALLY,
+    null,
+    new OpenCallback(NEW | DONTFILL, "a1m", "a1d", function(entry) {
       var bypassed = false;
 
       
-      asyncOpenCacheEntry("http://a/", "disk", Ci.nsICacheStorage.OPEN_BYPASS_IF_BUSY, null,
+      asyncOpenCacheEntry(
+        "http://a/",
+        "disk",
+        Ci.nsICacheStorage.OPEN_BYPASS_IF_BUSY,
+        null,
         new OpenCallback(NOTFOUND, "", "", function(entry) {
           Assert.ok(!bypassed);
           bypassed = true;

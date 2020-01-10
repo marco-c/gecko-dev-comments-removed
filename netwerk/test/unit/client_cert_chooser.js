@@ -3,11 +3,13 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 var Prompter = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
-  alert() {} 
+  alert() {}, 
 };
 
 function WindowWatcherService() {}
@@ -17,9 +19,7 @@ WindowWatcherService.prototype = {
 
   getNewPrompter() {
     return Prompter;
-  }
+  },
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([
-  WindowWatcherService
-]);
+this.NSGetFactory = XPCOMUtils.generateNSGetFactory([WindowWatcherService]);

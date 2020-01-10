@@ -28,7 +28,9 @@ function run_test() {
   function done() {
     do_test_pending();
     destroyTestDirectory();
-    srv.stop(function() { do_test_finished(); });
+    srv.stop(function() {
+      do_test_finished();
+    });
   }
 
   runHttpTests(tests, done);
@@ -82,7 +84,6 @@ function destroyTestDirectory() {
 
 
 
-
 function hiddenDataCheck(bytes, uri, path) {
   var data = String.fromCharCode.apply(null, bytes);
 
@@ -115,8 +116,10 @@ function hiddenDataCheck(bytes, uri, path) {
   var top = Services.io.newURI(uri);
 
   
-  var dirEntries = [{name: "file.txt", isDirectory: false},
-                    {name: "SHOULD_SEE_THIS.txt^", isDirectory: false}];
+  var dirEntries = [
+    { name: "file.txt", isDirectory: false },
+    { name: "SHOULD_SEE_THIS.txt^", isDirectory: false },
+  ];
 
   for (var i = 0; i < items.length; i++) {
     var link = items[i].childNodes[0];
@@ -202,8 +205,10 @@ function makeFile(name, isDirectory, parentDir, lst) {
   try {
     file.append(name);
     file.create(type, 0o755);
-    lst.push({name, isDirectory});
-  } catch (e) {  }
+    lst.push({ name, isDirectory });
+  } catch (e) {
+    
+  }
 }
 
 
@@ -214,7 +219,12 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
   return [
     new Test(BASE_URL, null, start, stopRootDirectory),
     new Test(BASE_URL + "foo/", null, start, stopFooDirectory),
-    new Test(BASE_URL + "bar/folder^/", null, start, stopTrailingCaretDirectory),
+    new Test(
+      BASE_URL + "bar/folder^/",
+      null,
+      start,
+      stopTrailingCaretDirectory
+    ),
   ];
 });
 

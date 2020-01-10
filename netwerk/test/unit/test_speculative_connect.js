@@ -5,9 +5,11 @@
 
 
 var CC = Components.Constructor;
-const ServerSocket = CC("@mozilla.org/network/server-socket;1",
-                        "nsIServerSocket",
-                        "init");
+const ServerSocket = CC(
+  "@mozilla.org/network/server-socket;1",
+  "nsIServerSocket",
+  "init"
+);
 var serv;
 var ios;
 
@@ -19,37 +21,47 @@ var ios;
 
 
 
-var localIPv4Literals =
-    [ 
-      "10.0.0.1", "10.10.10.10", "10.255.255.255",         
-      "172.16.0.1", "172.23.172.12", "172.31.255.255",     
-      "192.168.0.1", "192.168.192.168", "192.168.255.255", 
-      
-      "169.254.0.1", "169.254.192.154", "169.254.255.255"  
-    ];
-var localIPv6Literals =
-    [ 
-      "fc00::1", "fdfe:dcba:9876:abcd:ef01:2345:6789:abcd",
-      "fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
-      
-      "fe80::1", "fe80::abcd:ef01:2345:6789",
-      "febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
-    ];
+var localIPv4Literals = [
+  
+  "10.0.0.1",
+  "10.10.10.10",
+  "10.255.255.255", 
+  "172.16.0.1",
+  "172.23.172.12",
+  "172.31.255.255", 
+  "192.168.0.1",
+  "192.168.192.168",
+  "192.168.255.255", 
+  
+  "169.254.0.1",
+  "169.254.192.154",
+  "169.254.255.255", 
+];
+var localIPv6Literals = [
+  
+  "fc00::1",
+  "fdfe:dcba:9876:abcd:ef01:2345:6789:abcd",
+  "fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+  
+  "fe80::1",
+  "fe80::abcd:ef01:2345:6789",
+  "febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+];
 var localIPLiterals = localIPv4Literals.concat(localIPv6Literals);
 
 
 
-var testList =
-    [ test_speculative_connect,
-      test_hostnames_resolving_to_local_addresses,
-      test_proxies_with_local_addresses
-    ];
+var testList = [
+  test_speculative_connect,
+  test_hostnames_resolving_to_local_addresses,
+  test_proxies_with_local_addresses,
+];
 
-var testDescription =
-    [ "Expect pass with localhost",
-      "Expect failure with resolved local IPs",
-      "Expect failure for proxies with local IPs"
-    ];
+var testDescription = [
+  "Expect pass with localhost",
+  "Expect failure with resolved local IPs",
+  "Expect failure for proxies with local IPs",
+];
 
 var testIdx = 0;
 var hostIdx = 0;
@@ -58,21 +70,22 @@ var hostIdx = 0;
 
 
 
-
 function TestServer() {
-    this.listener = ServerSocket(-1, true, -1);
-    this.listener.asyncListen(this);
+  this.listener = ServerSocket(-1, true, -1);
+  this.listener.asyncListen(this);
 }
 
 TestServer.prototype = {
-    QueryInterface: ChromeUtils.generateQI(["nsIServerSocket"]),
-    onSocketAccepted(socket, trans) {
-        try { this.listener.close(); } catch(e) {}
-        Assert.ok(true);
-        next_test();
-    },
+  QueryInterface: ChromeUtils.generateQI(["nsIServerSocket"]),
+  onSocketAccepted(socket, trans) {
+    try {
+      this.listener.close();
+    } catch (e) {}
+    Assert.ok(true);
+    next_test();
+  },
 
-    onStopListening(socket) {}
+  onStopListening(socket) {},
 };
 
 
@@ -81,48 +94,50 @@ TestServer.prototype = {
 
 
 function TestFailedStreamCallback(transport, hostname, next) {
-    this.transport = transport;
-    this.hostname = hostname;
-    this.next = next;
-    this.dummyContent = "G";
+  this.transport = transport;
+  this.hostname = hostname;
+  this.next = next;
+  this.dummyContent = "G";
 }
 
 TestFailedStreamCallback.prototype = {
-    QueryInterface: ChromeUtils.generateQI(["nsIInputStreamCallback", "nsIOutputStreamCallback"]),
-    processException(e) {
-        do_check_instanceof(e, Ci.nsIException);
-        
-        Assert.equal(e.result, Cr.NS_ERROR_CONNECTION_REFUSED);
-        this.transport.close(Cr.NS_BINDING_ABORTED);
-        return true;
-    },
-    onOutputStreamReady(outstream) {
-        info("outputstream handler.");
-        Assert.notEqual(typeof(outstream), undefined);
-        try {
-            outstream.write(this.dummyContent, this.dummyContent.length);
-        } catch (e) {
-            this.processException(e);
-            this.next();
-            return;
-        }
-        info("no exception on write. Wait for read.");
-    },
-    onInputStreamReady(instream) {
-        info("inputstream handler.");
-        Assert.notEqual(typeof(instream), undefined);
-        try {
-            instream.available();
-        } catch (e) {
-            this.processException(e);
-            this.next();
-            return;
-        }
-        do_throw("Speculative Connect should have failed for " +
-                 this.hostname);
-        this.transport.close(Cr.NS_BINDING_ABORTED);
-        this.next();
-    },
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIInputStreamCallback",
+    "nsIOutputStreamCallback",
+  ]),
+  processException(e) {
+    do_check_instanceof(e, Ci.nsIException);
+    
+    Assert.equal(e.result, Cr.NS_ERROR_CONNECTION_REFUSED);
+    this.transport.close(Cr.NS_BINDING_ABORTED);
+    return true;
+  },
+  onOutputStreamReady(outstream) {
+    info("outputstream handler.");
+    Assert.notEqual(typeof outstream, undefined);
+    try {
+      outstream.write(this.dummyContent, this.dummyContent.length);
+    } catch (e) {
+      this.processException(e);
+      this.next();
+      return;
+    }
+    info("no exception on write. Wait for read.");
+  },
+  onInputStreamReady(instream) {
+    info("inputstream handler.");
+    Assert.notEqual(typeof instream, undefined);
+    try {
+      instream.available();
+    } catch (e) {
+      this.processException(e);
+      this.next();
+      return;
+    }
+    do_throw("Speculative Connect should have failed for " + this.hostname);
+    this.transport.close(Cr.NS_BINDING_ABORTED);
+    this.next();
+  },
 };
 
 
@@ -131,14 +146,18 @@ TestFailedStreamCallback.prototype = {
 
 
 function test_speculative_connect() {
-    serv = new TestServer();
-    var ssm = Cc["@mozilla.org/scriptsecuritymanager;1"]
-                .getService(Ci.nsIScriptSecurityManager);
-    var URI = ios.newURI("http://localhost:" + serv.listener.port + "/just/a/test");
-    var principal = ssm.createCodebasePrincipal(URI, {});
+  serv = new TestServer();
+  var ssm = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(
+    Ci.nsIScriptSecurityManager
+  );
+  var URI = ios.newURI(
+    "http://localhost:" + serv.listener.port + "/just/a/test"
+  );
+  var principal = ssm.createCodebasePrincipal(URI, {});
 
-    ios.QueryInterface(Ci.nsISpeculativeConnect)
-       .speculativeConnect(URI, principal, null);
+  ios
+    .QueryInterface(Ci.nsISpeculativeConnect)
+    .speculativeConnect(URI, principal, null);
 }
 
 
@@ -158,41 +177,49 @@ function test_speculative_connect() {
 
 
 function test_hostnames_resolving_to_addresses(host, next) {
-    info(host);
-    var sts = Cc["@mozilla.org/network/socket-transport-service;1"]
-              .getService(Ci.nsISocketTransportService);
-    Assert.notEqual(typeof(sts), undefined);
-    var transport = sts.createTransport([], host, 80, null);
-    Assert.notEqual(typeof(transport), undefined);
+  info(host);
+  var sts = Cc["@mozilla.org/network/socket-transport-service;1"].getService(
+    Ci.nsISocketTransportService
+  );
+  Assert.notEqual(typeof sts, undefined);
+  var transport = sts.createTransport([], host, 80, null);
+  Assert.notEqual(typeof transport, undefined);
 
-    transport.connectionFlags = Ci.nsISocketTransport.DISABLE_RFC1918;
-    transport.setTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT, 1);
-    transport.setTimeout(Ci.nsISocketTransport.TIMEOUT_READ_WRITE, 1);
-    Assert.equal(1, transport.getTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT));
+  transport.connectionFlags = Ci.nsISocketTransport.DISABLE_RFC1918;
+  transport.setTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT, 1);
+  transport.setTimeout(Ci.nsISocketTransport.TIMEOUT_READ_WRITE, 1);
+  Assert.equal(1, transport.getTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT));
 
-    var outStream = transport.openOutputStream(Ci.nsITransport.OPEN_UNBUFFERED,0,0);
-    var inStream  = transport.openInputStream(0,0,0);
-    Assert.notEqual(typeof(outStream), undefined);
-    Assert.notEqual(typeof(inStream), undefined);
+  var outStream = transport.openOutputStream(
+    Ci.nsITransport.OPEN_UNBUFFERED,
+    0,
+    0
+  );
+  var inStream = transport.openInputStream(0, 0, 0);
+  Assert.notEqual(typeof outStream, undefined);
+  Assert.notEqual(typeof inStream, undefined);
 
-    var callback = new TestFailedStreamCallback(transport, host, next);
-    Assert.notEqual(typeof(callback), undefined);
+  var callback = new TestFailedStreamCallback(transport, host, next);
+  Assert.notEqual(typeof callback, undefined);
 
-    
-    
-    
-    var gThreadManager = Cc["@mozilla.org/thread-manager;1"]
-    .getService(Ci.nsIThreadManager);
-    var mainThread = gThreadManager.currentThread;
+  
+  
+  
+  var gThreadManager = Cc["@mozilla.org/thread-manager;1"].getService(
+    Ci.nsIThreadManager
+  );
+  var mainThread = gThreadManager.currentThread;
 
-    try {
-        outStream.QueryInterface(Ci.nsIAsyncOutputStream)
-            .asyncWait(callback, 0, 0, mainThread);
-        inStream.QueryInterface(Ci.nsIAsyncInputStream)
-            .asyncWait(callback, 0, 0, mainThread);
-    } catch (e) {
-        do_throw("asyncWait should not fail!");
-    }
+  try {
+    outStream
+      .QueryInterface(Ci.nsIAsyncOutputStream)
+      .asyncWait(callback, 0, 0, mainThread);
+    inStream
+      .QueryInterface(Ci.nsIAsyncInputStream)
+      .asyncWait(callback, 0, 0, mainThread);
+  } catch (e) {
+    do_throw("asyncWait should not fail!");
+  }
 }
 
 
@@ -208,15 +235,15 @@ function test_hostnames_resolving_to_addresses(host, next) {
 
 
 function test_hostnames_resolving_to_local_addresses() {
-    if (hostIdx >= localIPLiterals.length) {
-        
-        next_test();
-        return;
-    }
-    var host = localIPLiterals[hostIdx++];
+  if (hostIdx >= localIPLiterals.length) {
     
-    var next = test_hostnames_resolving_to_local_addresses;
-    test_hostnames_resolving_to_addresses(host, next);
+    next_test();
+    return;
+  }
+  var host = localIPLiterals[hostIdx++];
+  
+  var next = test_hostnames_resolving_to_local_addresses;
+  test_hostnames_resolving_to_addresses(host, next);
 }
 
 
@@ -226,49 +253,56 @@ function test_hostnames_resolving_to_local_addresses() {
 
 
 function test_proxies(proxyHost, next) {
-    info("Proxy: " + proxyHost);
-    var sts = Cc["@mozilla.org/network/socket-transport-service;1"]
-              .getService(Ci.nsISocketTransportService);
-    Assert.notEqual(typeof(sts), undefined);
-    var pps = Cc["@mozilla.org/network/protocol-proxy-service;1"]
-              .getService();
-    Assert.notEqual(typeof(pps), undefined);
+  info("Proxy: " + proxyHost);
+  var sts = Cc["@mozilla.org/network/socket-transport-service;1"].getService(
+    Ci.nsISocketTransportService
+  );
+  Assert.notEqual(typeof sts, undefined);
+  var pps = Cc["@mozilla.org/network/protocol-proxy-service;1"].getService();
+  Assert.notEqual(typeof pps, undefined);
 
-    var proxyInfo = pps.newProxyInfo("http", proxyHost, 8080, "", "", 0, 1, null);
-    Assert.notEqual(typeof(proxyInfo), undefined);
+  var proxyInfo = pps.newProxyInfo("http", proxyHost, 8080, "", "", 0, 1, null);
+  Assert.notEqual(typeof proxyInfo, undefined);
 
-    var transport = sts.createTransport([], "dummyHost", 80, proxyInfo);
-    Assert.notEqual(typeof(transport), undefined);
+  var transport = sts.createTransport([], "dummyHost", 80, proxyInfo);
+  Assert.notEqual(typeof transport, undefined);
 
-    transport.connectionFlags = Ci.nsISocketTransport.DISABLE_RFC1918;
+  transport.connectionFlags = Ci.nsISocketTransport.DISABLE_RFC1918;
 
-    transport.setTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT, 1);
-    Assert.equal(1, transport.getTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT));
-    transport.setTimeout(Ci.nsISocketTransport.TIMEOUT_READ_WRITE, 1);
+  transport.setTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT, 1);
+  Assert.equal(1, transport.getTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT));
+  transport.setTimeout(Ci.nsISocketTransport.TIMEOUT_READ_WRITE, 1);
 
-    var outStream = transport.openOutputStream(Ci.nsITransport.OPEN_UNBUFFERED,0,0);
-    var inStream  = transport.openInputStream(0,0,0);
-    Assert.notEqual(typeof(outStream), undefined);
-    Assert.notEqual(typeof(inStream), undefined);
+  var outStream = transport.openOutputStream(
+    Ci.nsITransport.OPEN_UNBUFFERED,
+    0,
+    0
+  );
+  var inStream = transport.openInputStream(0, 0, 0);
+  Assert.notEqual(typeof outStream, undefined);
+  Assert.notEqual(typeof inStream, undefined);
 
-    var callback = new TestFailedStreamCallback(transport, proxyHost, next);
-    Assert.notEqual(typeof(callback), undefined);
+  var callback = new TestFailedStreamCallback(transport, proxyHost, next);
+  Assert.notEqual(typeof callback, undefined);
 
-    
-    
-    
-    var gThreadManager = Cc["@mozilla.org/thread-manager;1"]
-    .getService(Ci.nsIThreadManager);
-    var mainThread = gThreadManager.currentThread;
+  
+  
+  
+  var gThreadManager = Cc["@mozilla.org/thread-manager;1"].getService(
+    Ci.nsIThreadManager
+  );
+  var mainThread = gThreadManager.currentThread;
 
-    try {
-        outStream.QueryInterface(Ci.nsIAsyncOutputStream)
-            .asyncWait(callback, 0, 0, mainThread);
-        inStream.QueryInterface(Ci.nsIAsyncInputStream)
-            .asyncWait(callback, 0, 0, mainThread);
-    } catch (e) {
-        do_throw("asyncWait should not fail!");
-    }
+  try {
+    outStream
+      .QueryInterface(Ci.nsIAsyncOutputStream)
+      .asyncWait(callback, 0, 0, mainThread);
+    inStream
+      .QueryInterface(Ci.nsIAsyncInputStream)
+      .asyncWait(callback, 0, 0, mainThread);
+  } catch (e) {
+    do_throw("asyncWait should not fail!");
+  }
 }
 
 
@@ -284,15 +318,15 @@ function test_proxies(proxyHost, next) {
 
 
 function test_proxies_with_local_addresses() {
-    if (hostIdx >= localIPLiterals.length) {
-        
-        next_test();
-        return;
-    }
-    var host = localIPLiterals[hostIdx++];
+  if (hostIdx >= localIPLiterals.length) {
     
-    var next = test_proxies_with_local_addresses;
-    test_proxies(host, next);
+    next_test();
+    return;
+  }
+  var host = localIPLiterals[hostIdx++];
+  
+  var next = test_proxies_with_local_addresses;
+  test_proxies(host, next);
 }
 
 
@@ -301,15 +335,15 @@ function test_proxies_with_local_addresses() {
 
 
 function next_test() {
-    if (testIdx >= testList.length) {
-        
-        do_test_finished();
-        return;
-    }
-    info("SpeculativeConnect: " + testDescription[testIdx]);
-    hostIdx = 0;
+  if (testIdx >= testList.length) {
     
-    testList[testIdx++]();
+    do_test_finished();
+    return;
+  }
+  info("SpeculativeConnect: " + testDescription[testIdx]);
+  hostIdx = 0;
+  
+  testList[testIdx++]();
 }
 
 
@@ -317,15 +351,13 @@ function next_test() {
 
 
 function run_test() {
-    ios = Cc["@mozilla.org/network/io-service;1"]
-        .getService(Ci.nsIIOService);
+  ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
 
-    Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
-    registerCleanupFunction(() => {
-      Services.prefs.clearUserPref("network.http.speculative-parallel-limit");
-    });
+  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("network.http.speculative-parallel-limit");
+  });
 
-    do_test_pending();
-    next_test();
+  do_test_pending();
+  next_test();
 }
-

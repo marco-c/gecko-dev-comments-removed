@@ -20,52 +20,60 @@ const TEST_TOP_PAGE = TEST_DOMAIN + TEST_PATH + "file_empty.html";
 this.CookiePolicyHelper = {
   runTest(testName, config) {
     
-    this._createTest(testName,
-                     config.cookieJarAccessAllowed,
-                     config.cookieJarAccessDenied,
-                     config.prefs,
-                     {
-                       fromBehavior: BEHAVIOR_ACCEPT,
-                       toBehavior: BEHAVIOR_REJECT,
-                       fromPermission: PERM_DEFAULT,
-                       toPermission: PERM_DEFAULT,
-                     });
+    this._createTest(
+      testName,
+      config.cookieJarAccessAllowed,
+      config.cookieJarAccessDenied,
+      config.prefs,
+      {
+        fromBehavior: BEHAVIOR_ACCEPT,
+        toBehavior: BEHAVIOR_REJECT,
+        fromPermission: PERM_DEFAULT,
+        toPermission: PERM_DEFAULT,
+      }
+    );
 
     
-    this._createTest(testName,
-                     config.cookieJarAccessDenied,
-                     config.cookieJarAccessAllowed,
-                     config.prefs,
-                     {
-                       fromBehavior: BEHAVIOR_REJECT,
-                       toBehavior: BEHAVIOR_ACCEPT,
-                       fromPermission: PERM_DEFAULT,
-                       toPermission: PERM_DEFAULT,
-                     });
+    this._createTest(
+      testName,
+      config.cookieJarAccessDenied,
+      config.cookieJarAccessAllowed,
+      config.prefs,
+      {
+        fromBehavior: BEHAVIOR_REJECT,
+        toBehavior: BEHAVIOR_ACCEPT,
+        fromPermission: PERM_DEFAULT,
+        toPermission: PERM_DEFAULT,
+      }
+    );
 
     
-    this._createTest(testName,
-                     config.cookieJarAccessAllowed,
-                     config.cookieJarAccessDenied,
-                     config.prefs,
-                     {
-                       fromBehavior: BEHAVIOR_REJECT,
-                       toBehavior: BEHAVIOR_REJECT,
-                       fromPermission: PERM_ALLOW,
-                       toPermission: PERM_DEFAULT,
-                     });
+    this._createTest(
+      testName,
+      config.cookieJarAccessAllowed,
+      config.cookieJarAccessDenied,
+      config.prefs,
+      {
+        fromBehavior: BEHAVIOR_REJECT,
+        toBehavior: BEHAVIOR_REJECT,
+        fromPermission: PERM_ALLOW,
+        toPermission: PERM_DEFAULT,
+      }
+    );
 
     
-    this._createTest(testName,
-                     config.cookieJarAccessDenied,
-                     config.cookieJarAccessAllowed,
-                     config.prefs,
-                     {
-                       fromBehavior: BEHAVIOR_ACCEPT,
-                       toBehavior: BEHAVIOR_ACCEPT,
-                       fromPermission: PERM_DENY,
-                       toPermission: PERM_DEFAULT,
-                     });
+    this._createTest(
+      testName,
+      config.cookieJarAccessDenied,
+      config.cookieJarAccessAllowed,
+      config.prefs,
+      {
+        fromBehavior: BEHAVIOR_ACCEPT,
+        toBehavior: BEHAVIOR_ACCEPT,
+        fromPermission: PERM_DENY,
+        toPermission: PERM_DEFAULT,
+      }
+    );
   },
 
   _createTest(testName, goodCb, badCb, prefs, config) {
@@ -75,16 +83,16 @@ this.CookiePolicyHelper = {
       await SpecialPowers.flushPrefEnv();
 
       if (prefs) {
-        await SpecialPowers.pushPrefEnv({"set": prefs });
+        await SpecialPowers.pushPrefEnv({ set: prefs });
       }
 
       let uri = Services.io.newURI(TEST_DOMAIN);
 
       
       Services.perms.add(uri, "cookie", config.fromPermission);
-      await SpecialPowers.pushPrefEnv({"set": [
-        ["network.cookie.cookieBehavior", config.fromBehavior],
-      ]});
+      await SpecialPowers.pushPrefEnv({
+        set: [["network.cookie.cookieBehavior", config.fromBehavior]],
+      });
 
       
       let tab = BrowserTestUtils.addTab(gBrowser, TEST_TOP_PAGE);
@@ -94,10 +102,9 @@ this.CookiePolicyHelper = {
       await BrowserTestUtils.browserLoaded(browser);
 
       
-      await ContentTask.spawn(browser, { url: TEST_TOP_PAGE },
-                              async obj => {
+      await ContentTask.spawn(browser, { url: TEST_TOP_PAGE }, async obj => {
         return new content.Promise(resolve => {
-          let ifr = content.document.createElement('iframe');
+          let ifr = content.document.createElement("iframe");
           ifr.setAttribute("id", "iframe");
           ifr.src = obj.url;
           ifr.onload = resolve;
@@ -106,36 +113,50 @@ this.CookiePolicyHelper = {
       });
 
       
-      info("Executing the test after setting the cookie behavior to " + config.fromBehavior + " and permission to " + config.fromPermission);
-      await ContentTask.spawn(browser,
-                              { callback: goodCb.toString() },
-                              async obj => {
-        let runnableStr = `(() => {return (${obj.callback});})();`;
-        let runnable = eval(runnableStr); 
-        await runnable(content);
+      info(
+        "Executing the test after setting the cookie behavior to " +
+          config.fromBehavior +
+          " and permission to " +
+          config.fromPermission
+      );
+      await ContentTask.spawn(
+        browser,
+        { callback: goodCb.toString() },
+        async obj => {
+          let runnableStr = `(() => {return (${obj.callback});})();`;
+          let runnable = eval(runnableStr); 
+          await runnable(content);
 
-        let ifr = content.document.getElementById("iframe");
-        await runnable(ifr.contentWindow);
-      });
+          let ifr = content.document.getElementById("iframe");
+          await runnable(ifr.contentWindow);
+        }
+      );
 
       
       Services.perms.add(uri, "cookie", config.toPermission);
-      await SpecialPowers.pushPrefEnv({"set": [
-        ["network.cookie.cookieBehavior", config.toBehavior],
-      ]});
+      await SpecialPowers.pushPrefEnv({
+        set: [["network.cookie.cookieBehavior", config.toBehavior]],
+      });
 
       
-      info("Executing the test after setting the cookie behavior to " + config.toBehavior + " and permission to " + config.toPermission);
-      await ContentTask.spawn(browser,
-                              { callback: goodCb.toString() },
-                              async obj => {
-        let runnableStr = `(() => {return (${obj.callback});})();`;
-        let runnable = eval(runnableStr); 
-        await runnable(content);
+      info(
+        "Executing the test after setting the cookie behavior to " +
+          config.toBehavior +
+          " and permission to " +
+          config.toPermission
+      );
+      await ContentTask.spawn(
+        browser,
+        { callback: goodCb.toString() },
+        async obj => {
+          let runnableStr = `(() => {return (${obj.callback});})();`;
+          let runnable = eval(runnableStr); 
+          await runnable(content);
 
-        let ifr = content.document.getElementById("iframe");
-        await runnable(ifr.contentWindow);
-      });
+          let ifr = content.document.getElementById("iframe");
+          await runnable(ifr.contentWindow);
+        }
+      );
 
       
       BrowserTestUtils.removeTab(tab);
@@ -149,20 +170,25 @@ this.CookiePolicyHelper = {
 
       
       info("Executing the test in a new tab");
-      await ContentTask.spawn(browser,
-                              { callback: badCb.toString() },
-                              async obj => {
-        let runnableStr = `(() => {return (${obj.callback});})();`;
-        let runnable = eval(runnableStr); 
-        await runnable(content);
-      });
+      await ContentTask.spawn(
+        browser,
+        { callback: badCb.toString() },
+        async obj => {
+          let runnableStr = `(() => {return (${obj.callback});})();`;
+          let runnable = eval(runnableStr); 
+          await runnable(content);
+        }
+      );
 
       
       BrowserTestUtils.removeTab(tab);
 
       
       await new Promise(resolve => {
-        Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
+        Services.clearData.deleteData(
+          Ci.nsIClearDataService.CLEAR_ALL,
+          resolve
+        );
       });
     });
   },

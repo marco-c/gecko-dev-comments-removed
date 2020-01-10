@@ -1,4 +1,4 @@
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var httpserver = new HttpServer();
 httpserver.start(-1);
@@ -15,13 +15,11 @@ var resource_fresh_100_url = base_url + resource_fresh_100;
 
 var hit_server = false;
 
-
-function make_channel(url, cache_control)
-{
+function make_channel(url, cache_control) {
   
   hit_server = false;
 
-  var req = NetUtil.newChannel({uri: url, loadUsingSystemPrincipal: true});
+  var req = NetUtil.newChannel({ uri: url, loadUsingSystemPrincipal: true });
   req.QueryInterface(Ci.nsIHttpChannel);
   if (cache_control) {
     req.setRequestHeader("Cache-control", cache_control, false);
@@ -31,13 +29,11 @@ function make_channel(url, cache_control)
 }
 
 function make_uri(url) {
-  var ios = Cc["@mozilla.org/network/io-service;1"].
-            getService(Ci.nsIIOService);
+  var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
   return ios.newURI(url);
 }
 
-function resource_age_100_handler(metadata, response)
-{
+function resource_age_100_handler(metadata, response) {
   hit_server = true;
 
   response.setStatusLine(metadata.httpVersion, 200, "OK");
@@ -50,8 +46,7 @@ function resource_age_100_handler(metadata, response)
   response.bodyOutputStream.write(body, body.length);
 }
 
-function resource_stale_100_handler(metadata, response)
-{
+function resource_stale_100_handler(metadata, response) {
   hit_server = true;
 
   response.setStatusLine(metadata.httpVersion, 200, "OK");
@@ -65,8 +60,7 @@ function resource_stale_100_handler(metadata, response)
   response.bodyOutputStream.write(body, body.length);
 }
 
-function resource_fresh_100_handler(metadata, response)
-{
+function resource_fresh_100_handler(metadata, response) {
   hit_server = true;
 
   response.setStatusLine(metadata.httpVersion, 200, "OK");
@@ -79,9 +73,7 @@ function resource_fresh_100_handler(metadata, response)
   response.bodyOutputStream.write(body, body.length);
 }
 
-
-function run_test()
-{
+function run_test() {
   do_get_profile();
 
   do_test_pending();
@@ -89,8 +81,14 @@ function run_test()
   Services.prefs.setBoolPref("network.http.rcwn.enabled", false);
 
   httpserver.registerPathHandler(resource_age_100, resource_age_100_handler);
-  httpserver.registerPathHandler(resource_stale_100, resource_stale_100_handler);
-  httpserver.registerPathHandler(resource_fresh_100, resource_fresh_100_handler);
+  httpserver.registerPathHandler(
+    resource_stale_100,
+    resource_stale_100_handler
+  );
+  httpserver.registerPathHandler(
+    resource_fresh_100,
+    resource_fresh_100_handler
+  );
   cache = getCacheStorage("disk");
 
   wait_for_cache_index(run_next_test);
@@ -104,46 +102,54 @@ function run_test()
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url, "no-store");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(!cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(!cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(!hit_server);
-    Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(!hit_server);
+      Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_age_100_url, "no-store");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 
@@ -152,23 +158,27 @@ add_test(() => {
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(!hit_server);
-    Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(!hit_server);
+      Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url, "no-cache");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 
@@ -177,48 +187,56 @@ add_test(() => {
 add_test(() => {
   
   var ch = make_channel(resource_age_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(!hit_server);
-    Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(!hit_server);
+      Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_age_100_url, "max-age=10");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_age_100_url, "max-age=10, max-stale=99999");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(!hit_server);
-    Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(!hit_server);
+      Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_age_100_url, "max-age=1000");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(!hit_server);
-    Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(!hit_server);
+      Assert.ok(cache.exists(make_uri(resource_age_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 
@@ -227,59 +245,69 @@ add_test(() => {
 add_test(() => {
   
   var ch = make_channel(resource_stale_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
 
-    
-    do_timeout(1500, run_next_test);
-  }, null));
+      
+      do_timeout(1500, run_next_test);
+    }, null)
+  );
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_stale_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
 
-    do_timeout(1500, run_next_test);
-  }, null));
+      do_timeout(1500, run_next_test);
+    }, null)
+  );
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_stale_100_url, "max-stale");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(!hit_server);
-    Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(!hit_server);
+      Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
 
-    do_timeout(1500, run_next_test);
-  }, null));
+      do_timeout(1500, run_next_test);
+    }, null)
+  );
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_stale_100_url, "max-stale=1000");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(!hit_server);
-    Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(!hit_server);
+      Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
 
-    do_timeout(1500, run_next_test);
-  }, null));
+      do_timeout(1500, run_next_test);
+    }, null)
+  );
 });
 
 add_test(() => {
   
   
   var ch = make_channel(resource_stale_100_url, "max-stale=10");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_stale_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 
@@ -288,45 +316,53 @@ add_test(() => {
 add_test(() => {
   
   var ch = make_channel(resource_fresh_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_fresh_100_url);
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(!hit_server);
-    Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(!hit_server);
+      Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_fresh_100_url, "min-fresh=10");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(!hit_server);
-    Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(!hit_server);
+      Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   
   var ch = make_channel(resource_fresh_100_url, "min-fresh=1000");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 
@@ -334,23 +370,30 @@ add_test(() => {
 
 
 add_test(() => {
-  var ch = make_channel(resource_fresh_100_url, "unknown1,unknown2 = \"a,b\",  min-fresh = 1000 ");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
+  var ch = make_channel(
+    resource_fresh_100_url,
+    'unknown1,unknown2 = "a,b",  min-fresh = 1000 '
+  );
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 add_test(() => {
   var ch = make_channel(resource_fresh_100_url, "no-cache = , min-fresh = 10");
-  ch.asyncOpen(new ChannelListener(function(request, data) {
-    Assert.ok(hit_server);
-    Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
+  ch.asyncOpen(
+    new ChannelListener(function(request, data) {
+      Assert.ok(hit_server);
+      Assert.ok(cache.exists(make_uri(resource_fresh_100_url), ""));
 
-    run_next_test();
-  }, null));
+      run_next_test();
+    }, null)
+  );
 });
 
 
@@ -365,17 +408,38 @@ add_test(() => {
 
 
 function date_string_from_now(delta_secs) {
-    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
-                  'Sep', 'Oct', 'Nov', 'Dec'];
-    var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-    var d = new Date();
-    d.setTime(d.getTime() + delta_secs * 1000);
-    return days[d.getUTCDay()] + ", " +
-           d.getUTCDate() + " " +
-           months[d.getUTCMonth()] + " " +
-           d.getUTCFullYear() + " " +
-           d.getUTCHours() + ":" +
-           d.getUTCMinutes() + ":" +
-           d.getUTCSeconds() + " UTC";
+  var d = new Date();
+  d.setTime(d.getTime() + delta_secs * 1000);
+  return (
+    days[d.getUTCDay()] +
+    ", " +
+    d.getUTCDate() +
+    " " +
+    months[d.getUTCMonth()] +
+    " " +
+    d.getUTCFullYear() +
+    " " +
+    d.getUTCHours() +
+    ":" +
+    d.getUTCMinutes() +
+    ":" +
+    d.getUTCSeconds() +
+    " UTC"
+  );
 }

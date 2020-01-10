@@ -9,7 +9,7 @@
 
 
 
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var notification = "http-on-modify-request";
 
@@ -29,7 +29,7 @@ function authHandler(metadata, response) {
     }
     Assert.ok(noAuthHeader);
   }
-    
+  
   else if (!metadata.hasHeader("Authorization")) {
     response.setStatusLine(metadata.httpVersion, 401, "Unauthorized");
     response.setHeader("WWW-Authenticate", 'Basic realm="secret"', false);
@@ -43,11 +43,15 @@ function RequestObserver() {
 RequestObserver.prototype = {
   register() {
     info("Registering " + notification);
-    Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService).
-      addObserver(this, notification, true);
+    Cc["@mozilla.org/observer-service;1"]
+      .getService(Ci.nsIObserverService)
+      .addObserver(this, notification, true);
   },
 
-  QueryInterface: ChromeUtils.generateQI(["nsIObserver", "nsISupportsWeakReference"]),
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIObserver",
+    "nsISupportsWeakReference",
+  ]),
 
   observe(subject, topic, data) {
     if (topic == notification) {
@@ -66,8 +70,8 @@ RequestObserver.prototype = {
       
       subject.setRequestHeader("Authorization", null, false);
     }
-  }
-}
+  },
+};
 
 var listener = {
   onStartRequest: function test_onStartR(request) {},
@@ -77,7 +81,7 @@ var listener = {
   },
 
   onStopRequest: function test_onStopR(request, status) {
-    if (current_test < (tests.length - 1)) {
+    if (current_test < tests.length - 1) {
       current_test++;
       tests[current_test]();
     } else {
@@ -85,12 +89,14 @@ var listener = {
       httpServer.stop(do_test_finished);
     }
     do_test_finished();
-  }
+  },
 };
 
 function makeChan(url) {
-  return NetUtil.newChannel({uri: url, loadUsingSystemPrincipal: true})
-                .QueryInterface(Ci.nsIHttpChannel);
+  return NetUtil.newChannel({
+    uri: url,
+    loadUsingSystemPrincipal: true,
+  }).QueryInterface(Ci.nsIHttpChannel);
 }
 
 var tests = [startAuthHeaderTest, removeAuthHeaderTest];

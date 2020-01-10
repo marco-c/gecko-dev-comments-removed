@@ -1,7 +1,8 @@
 "use strict";
 
-
-const dns = Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService);
+const dns = Cc["@mozilla.org/network/dns-service;1"].getService(
+  Ci.nsIDNSService
+);
 const mainThread = Services.tm.currentThread;
 
 const defaultOriginAttributes = {};
@@ -10,7 +11,9 @@ let h2Port = null;
 add_task(function setup() {
   dump("start!\n");
 
-  let env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
   h2Port = env.get("MOZHTTP2_PORT");
   Assert.notEqual(h2Port, null);
   Assert.notEqual(h2Port, "");
@@ -24,7 +27,10 @@ add_task(function setup() {
   Services.prefs.setCharPref("network.trr.bootstrapAddress", "127.0.0.1");
 
   
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh`
+  );
   
   Services.prefs.setBoolPref("network.dns.native-is-localhost", true);
 
@@ -38,8 +44,9 @@ add_task(function setup() {
 
   
   
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"]
-      .getService(Ci.nsIX509CertDB);
+  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
   addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 });
 
@@ -71,8 +78,16 @@ class DNSListener {
     this.name = name;
     this.expectedAnswer = expectedAnswer;
     this.expectedSuccess = expectedSuccess;
-    this.promise = new Promise(resolve => { this.resolve = resolve; });
-    this.request = dns.asyncResolve(name, 0, this, mainThread, defaultOriginAttributes);
+    this.promise = new Promise(resolve => {
+      this.resolve = resolve;
+    });
+    this.request = dns.asyncResolve(
+      name,
+      0,
+      this,
+      mainThread,
+      defaultOriginAttributes
+    );
   }
 
   onLookupComplete(inRequest, inRecord, inStatus) {
@@ -92,8 +107,7 @@ class DNSListener {
   }
 
   QueryInterface(aIID) {
-    if (aIID.equals(Ci.nsIDNSListener) ||
-        aIID.equals(Ci.nsISupports)) {
+    if (aIID.equals(Ci.nsIDNSListener) || aIID.equals(Ci.nsISupports)) {
       return this;
     }
     throw Cr.NS_ERROR_NO_INTERFACE;
@@ -106,11 +120,13 @@ class DNSListener {
 }
 
 
-
 add_task(async function test1() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 2); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
 
   await new DNSListener("bar.example.com", "2.2.2.2");
 });
@@ -119,7 +135,10 @@ add_task(async function test1() {
 add_task(async function test1b() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`
+  );
   Services.prefs.clearUserPref("network.trr.bootstrapAddress");
   Services.prefs.setCharPref("network.dns.localDomains", "foo.example.com");
 
@@ -133,7 +152,10 @@ add_task(async function test1b() {
 add_task(async function test2() {
   
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/404`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/404`
+  );
 
   await new DNSListener("bar.example.com", "3.3.3.3");
 });
@@ -142,7 +164,10 @@ add_task(async function test2() {
 add_task(async function test3() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=4.4.4.4&auth=true`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=4.4.4.4&auth=true`
+  );
   Services.prefs.setCharPref("network.trr.credentials", "user:password");
 
   await new DNSListener("bar.example.com", "4.4.4.4");
@@ -152,18 +177,31 @@ add_task(async function test3() {
 add_task(async function test4() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=4.4.4.4&auth=true`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=4.4.4.4&auth=true`
+  );
   Services.prefs.setCharPref("network.trr.credentials", "evil:person");
 
-  let [, , inStatus] = await new DNSListener("wrong.example.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  let [, , inStatus] = await new DNSListener(
+    "wrong.example.com",
+    undefined,
+    false
+  );
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
 });
 
 
 add_task(async function test5() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=5.5.5.5&push=true`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=5.5.5.5&push=true`
+  );
 
   await new DNSListener("first.example.com", "5.5.5.5");
 });
@@ -172,7 +210,10 @@ add_task(async function test5b() {
   
   
   
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/404`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/404`
+  );
   dump("test5b - resolve push.example.now please\n");
 
   await new DNSListener("push.example.com", "2018::2018");
@@ -180,40 +221,57 @@ add_task(async function test5b() {
 
 
 add_task(async function test6() {
-
   Services.prefs.setBoolPref("network.trr.wait-for-A-and-AAAA", true);
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", true); 
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020&delayIPv4=100`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020&delayIPv4=100`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2020");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", false); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030&delayIPv4=100`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030&delayIPv4=100`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2030");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", true); 
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020&delayIPv6=100`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020&delayIPv6=100`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2020");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", false); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030&delayIPv6=100`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030&delayIPv6=100`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2030");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", true); 
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2020");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", false); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2030");
 
   Services.prefs.setBoolPref("network.trr.wait-for-A-and-AAAA", false);
@@ -221,34 +279,52 @@ add_task(async function test6() {
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020&delayIPv4=100`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020&delayIPv4=100`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2020");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", false);
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030&delayIPv4=100`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030&delayIPv4=100`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2030");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020&delayIPv6=100`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020&delayIPv6=100`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2020");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", false);
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030&delayIPv6=100`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030&delayIPv6=100`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2030");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2020`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2020");
 
   dns.clearCache(true);
   Services.prefs.setBoolPref("network.trr.early-AAAA", false);
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2020:2020::2030`
+  );
   await new DNSListener("aaaa.example.com", "2020:2020::2030");
 
   Services.prefs.clearUserPref("network.trr.early-AAAA");
@@ -259,16 +335,29 @@ add_task(async function test6() {
 add_task(async function test7() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=192.168.0.1`);
-  let [, , inStatus] = await new DNSListener("rfc1918.example.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=192.168.0.1`
+  );
+  let [, , inStatus] = await new DNSListener(
+    "rfc1918.example.com",
+    undefined,
+    false
+  );
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
 });
 
 
 add_task(async function test8() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=192.168.0.1`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=192.168.0.1`
+  );
   Services.prefs.setBoolPref("network.trr.allow-rfc1918", true);
   await new DNSListener("rfc1918.example.com", "192.168.0.1");
 });
@@ -278,7 +367,10 @@ add_task(async function test8() {
 add_task(async function test8b() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh{?dns}`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh{?dns}`
+  );
   Services.prefs.clearUserPref("network.trr.allow-rfc1918");
   Services.prefs.setBoolPref("network.trr.useGET", true);
   Services.prefs.setBoolPref("network.trr.disable-ECS", true);
@@ -289,7 +381,10 @@ add_task(async function test8b() {
 add_task(async function test9() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh`
+  );
   Services.prefs.clearUserPref("network.trr.allow-rfc1918");
   Services.prefs.setBoolPref("network.trr.useGET", true);
   Services.prefs.setBoolPref("network.trr.disable-ECS", false);
@@ -302,12 +397,25 @@ add_task(async function test10() {
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.clearUserPref("network.trr.useGET");
   Services.prefs.clearUserPref("network.trr.disable-ECS");
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=1::ffff`);
-  Services.prefs.setCharPref("network.trr.confirmationNS", "confirm.example.com");
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=1::ffff`
+  );
+  Services.prefs.setCharPref(
+    "network.trr.confirmationNS",
+    "confirm.example.com"
+  );
 
   try {
-    let [, , inStatus] = await new DNSListener("wrong.example.com", undefined, false);
-    Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+    let [, , inStatus] = await new DNSListener(
+      "wrong.example.com",
+      undefined,
+      false
+    );
+    Assert.ok(
+      !Components.isSuccessCode(inStatus),
+      `${inStatus} should be an error code`
+    );
   } catch (e) {
     await new Promise(resolve => do_timeout(200, resolve));
   }
@@ -321,7 +429,11 @@ add_task(async function test10() {
   while (test_loops > 0) {
     print(`loops remaining: ${test_loops}\n`);
     try {
-      let [, inRecord, inStatus] = await new DNSListener(`10b-${test_loops}.example.com`, undefined, false);
+      let [, inRecord, inStatus] = await new DNSListener(
+        `10b-${test_loops}.example.com`,
+        undefined,
+        false
+      );
       if (inRecord) {
         Assert.equal(inStatus, Cr.NS_OK);
         let answer = inRecord.getNextAddrAsString();
@@ -343,17 +455,30 @@ add_task(async function test11() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/dns-750ms`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/dns-750ms`
+  );
   Services.prefs.setIntPref("network.trr.request-timeout", 10);
-  let [, , inStatus] = await new DNSListener("test11.example.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  let [, , inStatus] = await new DNSListener(
+    "test11.example.com",
+    undefined,
+    false
+  );
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
 });
 
 
 add_task(async function test12() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 2); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=none`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=none`
+  );
   Services.prefs.clearUserPref("network.trr.request-timeout");
   await new DNSListener("confirm.example.com", "127.0.0.1");
 });
@@ -362,7 +487,10 @@ add_task(async function test12() {
 add_task(async function test13() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 2); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/404`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/404`
+  );
   await new DNSListener("test13.example.com", "127.0.0.1");
 });
 
@@ -370,11 +498,17 @@ add_task(async function test13() {
 add_task(async function test14() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 4); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/404`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/404`
+  );
   await new DNSListener("test14.example.com", "127.0.0.1");
 
   Services.prefs.setIntPref("network.trr.mode", 4); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
   await new DNSListener("bar.example.com", "127.0.0.1");
 });
 
@@ -382,12 +516,18 @@ add_task(async function test14() {
 add_task(async function test15() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 4); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/dns-750ms`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/dns-750ms`
+  );
   Services.prefs.setIntPref("network.trr.request-timeout", 10);
   await new DNSListener("test15.example.com", "127.0.0.1");
 
   Services.prefs.setIntPref("network.trr.mode", 4); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
   await new DNSListener("bar.example.com", "127.0.0.1");
 });
 
@@ -395,7 +535,10 @@ add_task(async function test15() {
 add_task(async function test16() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 2); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/dns-750ms`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/dns-750ms`
+  );
   Services.prefs.setIntPref("network.trr.request-timeout", 10);
   await new DNSListener("test16.example.com", "127.0.0.1");
 });
@@ -404,7 +547,10 @@ add_task(async function test16() {
 add_task(async function test17() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/dns-cname`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/dns-cname`
+  );
   Services.prefs.clearUserPref("network.trr.request-timeout");
   await new DNSListener("cname.example.com", "99.88.77.66");
 });
@@ -413,20 +559,36 @@ add_task(async function test17() {
 add_task(async function test18() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`);
-  let [, , inStatus] = await new DNSListener("test18.example.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`
+  );
+  let [, , inStatus] = await new DNSListener(
+    "test18.example.com",
+    undefined,
+    false
+  );
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
 });
 
 
 add_task(async function test19() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 1); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`
+  );
   await new DNSListener("test19.example.com", "127.0.0.1");
 
   Services.prefs.setIntPref("network.trr.mode", 1); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
   await new DNSListener("bar.example.com", "127.0.0.1");
 });
 
@@ -434,7 +596,10 @@ add_task(async function test19() {
 add_task(async function test20() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 2); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`
+  );
   await new DNSListener("test20.example.com", "127.0.0.1");
 });
 
@@ -442,11 +607,17 @@ add_task(async function test20() {
 add_task(async function test21() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 4); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=none&cnameloop=true`
+  );
   await new DNSListener("test21.example.com", "127.0.0.1");
 
   Services.prefs.setIntPref("network.trr.mode", 4); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
   await new DNSListener("bar.example.com", "127.0.0.1");
 });
 
@@ -455,16 +626,29 @@ add_task(async function test21() {
 add_task(async function test22() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?hostname=bar.example.com`);
-  let [, , inStatus] = await new DNSListener("mismatch.example.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?hostname=bar.example.com`
+  );
+  let [, , inStatus] = await new DNSListener(
+    "mismatch.example.com",
+    undefined,
+    false
+  );
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
 });
 
 
 add_task(async function test23() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/dns-cname-a`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/dns-cname-a`
+  );
   await new DNSListener("cname-a.example.com", "9.8.7.6");
 });
 
@@ -473,7 +657,10 @@ add_task(async function test24() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 2); 
   Services.prefs.setCharPref("network.trr.excluded-domains", "");
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`
+  );
   await new DNSListener("bar.example.com", "192.192.192.192");
 });
 
@@ -497,7 +684,10 @@ add_task(async function test25() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref("network.trr.excluded-domains", "");
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`
+  );
 
   await new DNSListener("localhost", "192.192.192.192", true);
 });
@@ -507,7 +697,10 @@ add_task(async function test25b() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref("network.trr.excluded-domains", "localhost");
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`
+  );
 
   await new DNSListener("localhost", "127.0.0.1");
 });
@@ -517,7 +710,10 @@ add_task(async function test25c() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref("network.trr.excluded-domains", "localhost,local");
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`
+  );
 
   await new DNSListener("test.local", "127.0.0.1");
 });
@@ -526,8 +722,14 @@ add_task(async function test25c() {
 add_task(async function test25d() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
-  Services.prefs.setCharPref("network.trr.excluded-domains", "localhost,local,other");
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`);
+  Services.prefs.setCharPref(
+    "network.trr.excluded-domains",
+    "localhost,local,other"
+  );
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=192.192.192.192`
+  );
 
   await new DNSListener("domain.other", "127.0.0.1");
 });
@@ -543,7 +745,10 @@ add_task(async function test_connection_closed() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref("network.trr.excluded-domains", "");
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`
+  );
   
   Services.prefs.clearUserPref("network.dns.localDomains");
   Services.prefs.setCharPref("network.trr.bootstrapAddress", "127.0.0.1");
@@ -552,7 +757,10 @@ add_task(async function test_connection_closed() {
 
   
   let [, , inStatus] = await new DNSListener("closeme.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
   await new DNSListener("bar2.example.com", "2.2.2.2");
 });
 
@@ -560,7 +768,10 @@ add_task(async function test_connection_closed_no_bootstrap() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref("network.trr.excluded-domains", "localhost,local");
-  Services.prefs.setCharPref("network.trr.uri", `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=3.3.3.3`
+  );
   Services.prefs.setCharPref("network.dns.localDomains", "foo.example.com");
   Services.prefs.clearUserPref("network.trr.bootstrapAddress");
 
@@ -568,7 +779,10 @@ add_task(async function test_connection_closed_no_bootstrap() {
 
   
   let [, , inStatus] = await new DNSListener("closeme.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
   await new DNSListener("bar2.example.com", "3.3.3.3");
 });
 
@@ -576,7 +790,10 @@ add_task(async function test_connection_closed_no_bootstrap_localhost() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref("network.trr.excluded-domains", "localhost");
-  Services.prefs.setCharPref("network.trr.uri", `https://localhost:${h2Port}/doh?responseIP=3.3.3.3`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://localhost:${h2Port}/doh?responseIP=3.3.3.3`
+  );
   Services.prefs.clearUserPref("network.dns.localDomains");
   Services.prefs.clearUserPref("network.trr.bootstrapAddress");
 
@@ -584,7 +801,10 @@ add_task(async function test_connection_closed_no_bootstrap_localhost() {
 
   
   let [, , inStatus] = await new DNSListener("closeme.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
   await new DNSListener("bar2.example.com", "3.3.3.3");
 });
 
@@ -595,7 +815,10 @@ add_task(async function test_connection_closed_no_bootstrap_no_excluded() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref("network.trr.excluded-domains", "");
-  Services.prefs.setCharPref("network.trr.uri", `https://localhost:${h2Port}/doh?responseIP=3.3.3.3`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://localhost:${h2Port}/doh?responseIP=3.3.3.3`
+  );
   Services.prefs.clearUserPref("network.dns.localDomains");
   Services.prefs.clearUserPref("network.trr.bootstrapAddress");
 
@@ -603,9 +826,15 @@ add_task(async function test_connection_closed_no_bootstrap_no_excluded() {
 
   
   let [, , inStatus] = await new DNSListener("closeme.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
   [, , inStatus] = await new DNSListener("bar2.example.com", undefined, false);
-  Assert.ok(!Components.isSuccessCode(inStatus), `${inStatus} should be an error code`);
+  Assert.ok(
+    !Components.isSuccessCode(inStatus),
+    `${inStatus} should be an error code`
+  );
 });
 
 add_task(async function test_connection_closed_trr_first() {
@@ -614,7 +843,10 @@ add_task(async function test_connection_closed_trr_first() {
   
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 2); 
-  Services.prefs.setCharPref("network.trr.uri", `https://localhost:${h2Port}/doh?responseIP=9.9.9.9`);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://localhost:${h2Port}/doh?responseIP=9.9.9.9`
+  );
   Services.prefs.setCharPref("network.dns.localDomains", "closeme.com");
   Services.prefs.clearUserPref("network.trr.bootstrapAddress");
 

@@ -5,19 +5,16 @@
 
 var test_generator = do_run_test();
 
-function run_test()
-{
+function run_test() {
   do_test_pending();
   do_run_generator(test_generator);
 }
 
-function continue_test()
-{
+function continue_test() {
   do_run_generator(test_generator);
 }
 
-function repeat_test()
-{
+function repeat_test() {
   
   
   
@@ -41,20 +38,17 @@ var gShortExpiry = 2;
 
 
 
-function get_purge_delay()
-{
+function get_purge_delay() {
   return gPurgeAge * 1100 + 100;
 }
 
 
 
-function get_expiry_delay()
-{
+function get_expiry_delay() {
   return gShortExpiry * 1000 + 100;
 }
 
-function* do_run_test()
-{
+function* do_run_test() {
   
   let profile = do_get_profile();
 
@@ -191,18 +185,28 @@ function* do_run_test()
 
 
 
-function set_cookies(begin, end, expiry)
-{
+function set_cookies(begin, end, expiry) {
   Assert.ok(begin != end);
 
   let beginTime;
   for (let i = begin; i < end; ++i) {
     let host = "eviction." + i + ".tests";
-    Services.cookiemgr.add(host, "", "test", "eviction", false, false, false,
-      expiry, {}, Ci.nsICookie.SAMESITE_NONE);
+    Services.cookiemgr.add(
+      host,
+      "",
+      "test",
+      "eviction",
+      false,
+      false,
+      false,
+      expiry,
+      {},
+      Ci.nsICookie.SAMESITE_NONE
+    );
 
-    if (i == begin)
+    if (i == begin) {
       beginTime = get_creationTime(i);
+    }
   }
 
   let endTime = get_creationTime(end - 1);
@@ -216,8 +220,7 @@ function set_cookies(begin, end, expiry)
   return true;
 }
 
-function get_creationTime(i)
-{
+function get_creationTime(i) {
   let host = "eviction." + i + ".tests";
   let enumerator = Services.cookiemgr.getCookiesFromHost(host, {});
   Assert.ok(enumerator.hasMoreElements());
@@ -238,7 +241,9 @@ function check_remaining_cookies(aNumberTotal, aNumberOld, aNumberToExpect) {
     if (aNumberTotal != aNumberToExpect) {
       
       var hostNumber = new Number(cookie.rawHost.split(".")[1]);
-      if (hostNumber < (aNumberOld - aNumberToExpect)) break;
+      if (hostNumber < aNumberOld - aNumberToExpect) {
+        break;
+      }
     }
   }
 

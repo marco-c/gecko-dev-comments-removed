@@ -22,7 +22,6 @@ function run_test() {
 
 
 
-
 function pathHandler(request, response) {
   response.setHeader("Cache-Control", "no-cache", false);
 
@@ -47,8 +46,11 @@ function pathHandler(request, response) {
 
 XPCOMUtils.defineLazyGetter(this, "tests", function() {
   return [
-    new Test("http://localhost:" + srv.identity.primaryPort + "/path-handler",
-             null, check),
+    new Test(
+      "http://localhost:" + srv.identity.primaryPort + "/path-handler",
+      null,
+      check
+    ),
   ];
 });
 

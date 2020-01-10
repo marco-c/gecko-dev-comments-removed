@@ -50,7 +50,7 @@ var DEBUG_TIMESTAMP = false;
 
 var gGlobalObject = Cu.getGlobalForObject(this);
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -65,7 +65,13 @@ function NS_ASSERT(cond, msg) {
     dumpn("###!!! Stack follows:");
 
     var stack = new Error().stack.split(/\n/);
-    dumpn(stack.map(function(val) { return "###!!!   " + val; }).join("\n"));
+    dumpn(
+      stack
+        .map(function(val) {
+          return "###!!!   " + val;
+        })
+        .join("\n")
+    );
 
     throw Components.Exception("", Cr.NS_ERROR_ABORT);
   }
@@ -76,8 +82,7 @@ function HttpError(code, description) {
   this.code = code;
   this.description = description;
 }
-HttpError.prototype =
-{
+HttpError.prototype = {
   toString() {
     return this.code + " " + this.description;
   },
@@ -114,22 +119,23 @@ var HTTP_505 = new HttpError(505, "HTTP Version Not Supported");
 
 function array2obj(arr) {
   var obj = {};
-  for (var i = 0; i < arr.length; i++)
+  for (var i = 0; i < arr.length; i++) {
     obj[arr[i]] = arr[i];
+  }
   return obj;
 }
 
 
 function range(x, y) {
   var arr = [];
-  for (var i = x; i <= y; i++)
+  for (var i = x; i <= y; i++) {
     arr.push(i);
+  }
   return arr;
 }
 
 
 const HTTP_ERROR_CODES = array2obj(range(400, 417).concat(range(500, 505)));
-
 
 
 
@@ -159,17 +165,19 @@ function dumpn(str) {
   if (DEBUG) {
     var prefix = "HTTPD-INFO | ";
     if (DEBUG_TIMESTAMP) {
-      if (firstStamp === 0)
+      if (firstStamp === 0) {
         firstStamp = Date.now();
+      }
 
       var elapsed = Date.now() - firstStamp; 
       var min = Math.floor(elapsed / 60000);
       var sec = (elapsed % 60000) / 1000;
 
-      if (sec < 10)
+      if (sec < 10) {
         prefix += min + ":0" + sec.toFixed(3) + " | ";
-      else
+      } else {
         prefix += min + ":" + sec.toFixed(3) + " | ";
+      }
     }
 
     dump(prefix + str + "\n");
@@ -184,7 +192,6 @@ function dumpStack() {
 }
 
 
-
 var gThreadManager = null;
 
 
@@ -192,36 +199,52 @@ var gThreadManager = null;
 
 
 
-const ServerSocket = CC("@mozilla.org/network/server-socket;1",
-                        "nsIServerSocket",
-                        "init");
-const ServerSocketIPv6 = CC("@mozilla.org/network/server-socket;1",
-                            "nsIServerSocket",
-                            "initIPv6");
-const ScriptableInputStream = CC("@mozilla.org/scriptableinputstream;1",
-                                 "nsIScriptableInputStream",
-                                 "init");
-const Pipe = CC("@mozilla.org/pipe;1",
-                "nsIPipe",
-                "init");
-const FileInputStream = CC("@mozilla.org/network/file-input-stream;1",
-                           "nsIFileInputStream",
-                           "init");
-const ConverterInputStream = CC("@mozilla.org/intl/converter-input-stream;1",
-                                "nsIConverterInputStream",
-                                "init");
-const WritablePropertyBag = CC("@mozilla.org/hash-property-bag;1",
-                               "nsIWritablePropertyBag2");
-const SupportsString = CC("@mozilla.org/supports-string;1",
-                          "nsISupportsString");
+const ServerSocket = CC(
+  "@mozilla.org/network/server-socket;1",
+  "nsIServerSocket",
+  "init"
+);
+const ServerSocketIPv6 = CC(
+  "@mozilla.org/network/server-socket;1",
+  "nsIServerSocket",
+  "initIPv6"
+);
+const ScriptableInputStream = CC(
+  "@mozilla.org/scriptableinputstream;1",
+  "nsIScriptableInputStream",
+  "init"
+);
+const Pipe = CC("@mozilla.org/pipe;1", "nsIPipe", "init");
+const FileInputStream = CC(
+  "@mozilla.org/network/file-input-stream;1",
+  "nsIFileInputStream",
+  "init"
+);
+const ConverterInputStream = CC(
+  "@mozilla.org/intl/converter-input-stream;1",
+  "nsIConverterInputStream",
+  "init"
+);
+const WritablePropertyBag = CC(
+  "@mozilla.org/hash-property-bag;1",
+  "nsIWritablePropertyBag2"
+);
+const SupportsString = CC(
+  "@mozilla.org/supports-string;1",
+  "nsISupportsString"
+);
 
 
-var BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
-                           "nsIBinaryInputStream",
-                           "setInputStream");
-var BinaryOutputStream = CC("@mozilla.org/binaryoutputstream;1",
-                            "nsIBinaryOutputStream",
-                            "setOutputStream");
+var BinaryInputStream = CC(
+  "@mozilla.org/binaryinputstream;1",
+  "nsIBinaryInputStream",
+  "setInputStream"
+);
+var BinaryOutputStream = CC(
+  "@mozilla.org/binaryoutputstream;1",
+  "nsIBinaryOutputStream",
+  "setOutputStream"
+);
 
 
 
@@ -246,8 +269,20 @@ function toDateString(date) {
   
 
   const wkdayStrings = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthStrings = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthStrings = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
   
 
@@ -260,15 +295,15 @@ function toDateString(date) {
 
   function toTime(date) {
     var hrs = date.getUTCHours();
-    var rv  = (hrs < 10) ? "0" + hrs : hrs;
+    var rv = hrs < 10 ? "0" + hrs : hrs;
 
     var mins = date.getUTCMinutes();
     rv += ":";
-    rv += (mins < 10) ? "0" + mins : mins;
+    rv += mins < 10 ? "0" + mins : mins;
 
     var secs = date.getUTCSeconds();
     rv += ":";
-    rv += (secs < 10) ? "0" + secs : secs;
+    rv += secs < 10 ? "0" + secs : secs;
 
     return rv;
   }
@@ -287,7 +322,7 @@ function toDateString(date) {
     var month = date.getUTCMonth();
     var year = date.getUTCFullYear();
 
-    var rv = (day < 10) ? "0" + day : day;
+    var rv = day < 10 ? "0" + day : day;
     rv += " " + monthStrings[month];
     rv += " " + year;
 
@@ -309,14 +344,17 @@ function toDateString(date) {
 
 function printObj(o, showMembers) {
   var s = "******************************\n";
-  s +=    "o = {\n";
+  s += "o = {\n";
   for (var i in o) {
-    if (typeof(i) != "string" ||
-        (showMembers || (i.length > 0 && i[0] != "_")))
+    if (
+      typeof i != "string" ||
+      (showMembers || (i.length > 0 && i[0] != "_"))
+    ) {
       s += "      " + i + ": " + o[i] + ",\n";
+    }
   }
-  s +=    "    };\n";
-  s +=    "******************************";
+  s += "    };\n";
+  s += "******************************";
   dumpn(s);
 }
 
@@ -324,8 +362,9 @@ function printObj(o, showMembers) {
 
 
 function nsHttpServer() {
-  if (!gThreadManager)
+  if (!gThreadManager) {
     gThreadManager = Cc["@mozilla.org/thread-manager;1"].getService();
+  }
 
   
   this._port = undefined;
@@ -363,8 +402,7 @@ function nsHttpServer() {
 
   this._connections = {};
 }
-nsHttpServer.prototype =
-{
+nsHttpServer.prototype = {
   
 
   
@@ -385,8 +423,9 @@ nsHttpServer.prototype =
     const SEGMENT_SIZE = 8192;
     const SEGMENT_COUNT = 1024;
     try {
-      var input = trans.openInputStream(0, SEGMENT_SIZE, SEGMENT_COUNT)
-                       .QueryInterface(Ci.nsIAsyncInputStream);
+      var input = trans
+        .openInputStream(0, SEGMENT_SIZE, SEGMENT_COUNT)
+        .QueryInterface(Ci.nsIAsyncInputStream);
       var output = trans.openOutputStream(0, 0, 0);
     } catch (e) {
       dumpn("*** error opening transport streams: " + e);
@@ -397,8 +436,15 @@ nsHttpServer.prototype =
     var connectionNumber = ++this._connectionGen;
 
     try {
-      var conn = new Connection(input, output, this, socket.port, trans.port,
-                                connectionNumber, trans);
+      var conn = new Connection(
+        input,
+        output,
+        this,
+        socket.port,
+        trans.port,
+        connectionNumber,
+        trans
+      );
       var reader = new RequestReader(conn);
 
       
@@ -447,15 +493,16 @@ nsHttpServer.prototype =
       
       
       var self = this;
-      var stopEvent =
-        {
-          run() {
-            dumpn("*** _notifyStopped async callback");
-            self._notifyStopped();
-          },
-        };
-      gThreadManager.currentThread
-                    .dispatch(stopEvent, Ci.nsIThread.DISPATCH_NORMAL);
+      var stopEvent = {
+        run() {
+          dumpn("*** _notifyStopped async callback");
+          self._notifyStopped();
+        },
+      };
+      gThreadManager.currentThread.dispatch(
+        stopEvent,
+        Ci.nsIThread.DISPATCH_NORMAL
+      );
     }
   },
 
@@ -469,8 +516,9 @@ nsHttpServer.prototype =
   },
 
   _start(port, host) {
-    if (this._socket)
+    if (this._socket) {
       throw Components.Exception("", Cr.NS_ERROR_ALREADY_INITIALIZED);
+    }
 
     this._port = port;
     this._doQuit = this._socketClosed = false;
@@ -482,14 +530,24 @@ nsHttpServer.prototype =
     
     
     
-    var maxConnections = 5 + Math.max(
-      Services.prefs.getIntPref("network.http.max-persistent-connections-per-server"),
-      Services.prefs.getIntPref("network.http.max-persistent-connections-per-proxy"));
+    var maxConnections =
+      5 +
+      Math.max(
+        Services.prefs.getIntPref(
+          "network.http.max-persistent-connections-per-server"
+        ),
+        Services.prefs.getIntPref(
+          "network.http.max-persistent-connections-per-proxy"
+        )
+      );
 
     try {
       var loopback = true;
-      if (this._host != "127.0.0.1" && this._host != "localhost" &&
-          this._host != "[::1]") {
+      if (
+        this._host != "127.0.0.1" &&
+        this._host != "localhost" &&
+        this._host != "[::1]"
+      ) {
         loopback = false;
       }
 
@@ -502,19 +560,26 @@ nsHttpServer.prototype =
       for (var i = 100; i; i--) {
         var temp = null;
         if (this._host.includes(":")) {
-          temp = new ServerSocketIPv6(this._port,
-                                      loopback, 
-                                      maxConnections);
+          temp = new ServerSocketIPv6(
+            this._port,
+            loopback, 
+            maxConnections
+          );
         } else {
-          temp = new ServerSocket(this._port,
-                                  loopback, 
-                                  maxConnections);
+          temp = new ServerSocket(
+            this._port,
+            loopback, 
+            maxConnections
+          );
         }
 
         var allowed = Services.io.allowPort(temp.port, "http");
         if (!allowed) {
-          dumpn(">>>Warning: obtained ServerSocket listens on a blocked " +
-                "port: " + temp.port);
+          dumpn(
+            ">>>Warning: obtained ServerSocket listens on a blocked " +
+              "port: " +
+              temp.port
+          );
         }
 
         if (!allowed && this._port == -1) {
@@ -528,15 +593,22 @@ nsHttpServer.prototype =
       }
 
       if (!socket) {
-        throw new Error("No socket server available. Are there no available ports?");
+        throw new Error(
+          "No socket server available. Are there no available ports?"
+        );
       }
 
       socket.asyncListen(this);
       this._port = socket.port;
       this._identity._initialize(socket.port, host, true);
       this._socket = socket;
-      dumpn(">>> listening on port " + socket.port + ", " + maxConnections +
-            " pending connections");
+      dumpn(
+        ">>> listening on port " +
+          socket.port +
+          ", " +
+          maxConnections +
+          " pending connections"
+      );
     } catch (e) {
       dump("\n!!! could not start server on port " + port + ": " + e + "\n\n");
       throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
@@ -547,8 +619,9 @@ nsHttpServer.prototype =
   
   
   stop(callback) {
-    if (!this._socket)
+    if (!this._socket) {
       throw Components.Exception("", Cr.NS_ERROR_UNEXPECTED);
+    }
 
     
     let returnValue = undefined;
@@ -558,9 +631,12 @@ nsHttpServer.prototype =
       });
     }
 
-    this._stopCallback = typeof callback === "function"
-                       ? callback
-                       : function() { callback.onStopped(); };
+    this._stopCallback =
+      typeof callback === "function"
+        ? callback
+        : function() {
+            callback.onStopped();
+          };
 
     dumpn(">>> stopping listening on port " + this._socket.port);
     this._socket.close();
@@ -581,8 +657,9 @@ nsHttpServer.prototype =
   
   
   registerFile(path, file) {
-    if (file && (!file.exists() || file.isDirectory()))
+    if (file && (!file.exists() || file.isDirectory())) {
       throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
+    }
 
     this._handler.registerFile(path, file);
   },
@@ -592,11 +669,13 @@ nsHttpServer.prototype =
   
   registerDirectory(path, directory) {
     
-    if (path.charAt(0) != "/" ||
-        path.charAt(path.length - 1) != "/" ||
-        (directory &&
-         (!directory.exists() || !directory.isDirectory())))
+    if (
+      path.charAt(0) != "/" ||
+      path.charAt(path.length - 1) != "/" ||
+      (directory && (!directory.exists() || !directory.isDirectory()))
+    ) {
       throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
+    }
 
     
     
@@ -696,14 +775,15 @@ nsHttpServer.prototype =
     return this;
   },
 
-
   
 
   
   
   
-  QueryInterface: ChromeUtils.generateQI(["nsIHttpServer", "nsIServerSocketListener"]),
-
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIHttpServer",
+    "nsIServerSocketListener",
+  ]),
 
   
 
@@ -727,8 +807,9 @@ nsHttpServer.prototype =
     
     
     
-    for (var n in this._connections)
+    for (var n in this._connections) {
       return true;
+    }
     return false;
   },
 
@@ -762,17 +843,23 @@ nsHttpServer.prototype =
 
 
   _connectionClosed(connection) {
-    NS_ASSERT(connection.number in this._connections,
-              "closing a connection " + this + " that we never added to the " +
-              "set of open connections?");
-    NS_ASSERT(this._connections[connection.number] === connection,
-              "connection number mismatch?  " +
-              this._connections[connection.number]);
+    NS_ASSERT(
+      connection.number in this._connections,
+      "closing a connection " +
+        this +
+        " that we never added to the " +
+        "set of open connections?"
+    );
+    NS_ASSERT(
+      this._connections[connection.number] === connection,
+      "connection number mismatch?  " + this._connections[connection.number]
+    );
     delete this._connections[connection.number];
 
     
-    if (!this._hasOpenConnections() && this._socketClosed)
+    if (!this._hasOpenConnections() && this._socketClosed) {
       this._notifyStopped();
+    }
     
     
     
@@ -801,18 +888,18 @@ var HttpServer = nsHttpServer;
 
 
 
-const HOST_REGEX =
-  new RegExp("^(?:" +
-               
-               "(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)*" +
-               
-               "[a-z](?:[a-z0-9-]*[a-z0-9])?" +
-             "|" +
-               
-               "\\d+\\.\\d+\\.\\d+\\.\\d+" +
-             ")$",
-             "i");
-
+const HOST_REGEX = new RegExp(
+  "^(?:" +
+    
+    "(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)*" +
+    
+    "[a-z](?:[a-z0-9-]*[a-z0-9])?" +
+    "|" +
+    
+    "\\d+\\.\\d+\\.\\d+\\.\\d+" +
+    ")$",
+  "i"
+);
 
 
 
@@ -855,18 +942,18 @@ function ServerIdentity() {
 
 
 
-  this._locations = { "xlocalhost": {} };
+  this._locations = { xlocalhost: {} };
 }
-ServerIdentity.prototype =
-{
+ServerIdentity.prototype = {
   
 
   
   
   
   get primaryScheme() {
-    if (this._primaryPort === -1)
+    if (this._primaryPort === -1) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_INITIALIZED);
+    }
     return this._primaryScheme;
   },
 
@@ -874,8 +961,9 @@ ServerIdentity.prototype =
   
   
   get primaryHost() {
-    if (this._primaryPort === -1)
+    if (this._primaryPort === -1) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_INITIALIZED);
+    }
     return this._primaryHost;
   },
 
@@ -883,8 +971,9 @@ ServerIdentity.prototype =
   
   
   get primaryPort() {
-    if (this._primaryPort === -1)
+    if (this._primaryPort === -1) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_INITIALIZED);
+    }
     return this._primaryPort;
   },
 
@@ -895,8 +984,9 @@ ServerIdentity.prototype =
     this._validate(scheme, host, port);
 
     var entry = this._locations["x" + host];
-    if (!entry)
+    if (!entry) {
       this._locations["x" + host] = entry = {};
+    }
 
     entry[port] = scheme;
   },
@@ -908,16 +998,19 @@ ServerIdentity.prototype =
     this._validate(scheme, host, port);
 
     var entry = this._locations["x" + host];
-    if (!entry)
+    if (!entry) {
       return false;
+    }
 
     var present = port in entry;
     delete entry[port];
 
-    if (this._primaryScheme == scheme &&
-        this._primaryHost == host &&
-        this._primaryPort == port &&
-        this._defaultPort !== -1) {
+    if (
+      this._primaryScheme == scheme &&
+      this._primaryHost == host &&
+      this._primaryPort == port &&
+      this._defaultPort !== -1
+    ) {
       
       
       this._primaryPort = -1;
@@ -933,8 +1026,10 @@ ServerIdentity.prototype =
   has(scheme, host, port) {
     this._validate(scheme, host, port);
 
-    return "x" + host in this._locations &&
-           scheme === this._locations["x" + host][port];
+    return (
+      "x" + host in this._locations &&
+      scheme === this._locations["x" + host][port]
+    );
   },
 
   
@@ -944,8 +1039,9 @@ ServerIdentity.prototype =
     this._validate("http", host, port);
 
     var entry = this._locations["x" + host];
-    if (!entry)
+    if (!entry) {
       return "";
+    }
 
     return entry[port] || "";
   },
@@ -963,14 +1059,12 @@ ServerIdentity.prototype =
     this._primaryPort = port;
   },
 
-
   
 
   
   
   
   QueryInterface: ChromeUtils.generateQI(["nsIHttpServerIdentity"]),
-
 
   
 
@@ -980,10 +1074,11 @@ ServerIdentity.prototype =
 
   _initialize(port, host, addSecondaryDefault) {
     this._host = host;
-    if (this._primaryPort !== -1)
+    if (this._primaryPort !== -1) {
       this.add("http", host, port);
-    else
+    } else {
       this.setPrimary("http", "localhost", port);
+    }
     this._defaultPort = port;
 
     
@@ -1009,9 +1104,11 @@ ServerIdentity.prototype =
 
     
     
-    if (this._primaryScheme == "http" &&
-        this._primaryHost == this._host &&
-        this._primaryPort == this._defaultPort) {
+    if (
+      this._primaryScheme == "http" &&
+      this._primaryHost == this._host &&
+      this._primaryPort == this._defaultPort
+    ) {
       
       
       var port = this._defaultPort;
@@ -1066,9 +1163,15 @@ ServerIdentity.prototype =
 
 
 
-
-function Connection(input, output, server, port, outgoingPort, number,
-                    transport) {
+function Connection(
+  input,
+  output,
+  server,
+  port,
+  outgoingPort,
+  number,
+  transport
+) {
   dumpn("*** opening new connection " + number + " on port " + outgoingPort);
 
   
@@ -1109,15 +1212,16 @@ function Connection(input, output, server, port, outgoingPort, number,
   
   this._requestStarted = false;
 }
-Connection.prototype =
-{
+Connection.prototype = {
   
   close() {
-    if (this._closed)
-        return;
+    if (this._closed) {
+      return;
+    }
 
-    dumpn("*** closing connection " + this.number +
-          " on port " + this._outgoingPort);
+    dumpn(
+      "*** closing connection " + this.number + " on port " + this._outgoingPort
+    );
 
     this.input.close();
     this.output.close();
@@ -1127,8 +1231,11 @@ Connection.prototype =
     server._connectionClosed(this);
 
     
-    if (server._doQuit)
-      server.stop(function() {  });
+    if (server._doQuit) {
+      server.stop(function() {
+        
+      });
+    }
   },
 
   
@@ -1167,9 +1274,14 @@ Connection.prototype =
 
   
   toString() {
-    return "<Connection(" + this.number +
-           (this.request ? ", " + this.request.path : "") + "): " +
-           (this._closed ? "closed" : "open") + ">";
+    return (
+      "<Connection(" +
+      this.number +
+      (this.request ? ", " + this.request.path : "") +
+      "): " +
+      (this._closed ? "closed" : "open") +
+      ">"
+    );
   },
 
   requestStarted() {
@@ -1178,20 +1290,15 @@ Connection.prototype =
 };
 
 
-
-
 function readBytes(inputStream, count) {
   return new BinaryInputStream(inputStream).readByteArray(count);
 }
 
 
-
-
 const READER_IN_REQUEST_LINE = 0;
-const READER_IN_HEADERS      = 1;
-const READER_IN_BODY         = 2;
-const READER_FINISHED        = 3;
-
+const READER_IN_HEADERS = 1;
+const READER_IN_BODY = 2;
+const READER_FINISHED = 3;
 
 
 
@@ -1245,8 +1352,7 @@ function RequestReader(connection) {
 
   this._lastHeaderName = this._lastHeaderValue = undefined;
 }
-RequestReader.prototype =
-{
+RequestReader.prototype = {
   
 
   
@@ -1258,31 +1364,42 @@ RequestReader.prototype =
 
 
   onInputStreamReady(input) {
-    dumpn("*** onInputStreamReady(input=" + input + ") on thread " +
-          gThreadManager.currentThread + " (main is " +
-          gThreadManager.mainThread + ")");
+    dumpn(
+      "*** onInputStreamReady(input=" +
+        input +
+        ") on thread " +
+        gThreadManager.currentThread +
+        " (main is " +
+        gThreadManager.mainThread +
+        ")"
+    );
     dumpn("*** this._state == " + this._state);
 
     
     
     var data = this._data;
-    if (!data)
+    if (!data) {
       return;
+    }
 
     try {
       data.appendBytes(readBytes(input, input.available()));
     } catch (e) {
       if (streamClosed(e)) {
-        dumpn("*** WARNING: unexpected error when reading from socket; will " +
-              "be treated as if the input stream had been closed");
+        dumpn(
+          "*** WARNING: unexpected error when reading from socket; will " +
+            "be treated as if the input stream had been closed"
+        );
         dumpn("*** WARNING: actual error was: " + e);
       }
 
       
       
       
-      dumpn("*** onInputStreamReady called on a closed input, destroying " +
-            "connection");
+      dumpn(
+        "*** onInputStreamReady called on a closed input, destroying " +
+          "connection"
+      );
       this._connection.close();
       return;
     }
@@ -1293,28 +1410,30 @@ RequestReader.prototype =
         break;
 
       case READER_IN_REQUEST_LINE:
-        if (!this._processRequestLine())
+        if (!this._processRequestLine()) {
           break;
-        
+        }
+      
 
       case READER_IN_HEADERS:
-        if (!this._processHeaders())
+        if (!this._processHeaders()) {
           break;
-        
+        }
+      
 
       case READER_IN_BODY:
         this._processBody();
     }
 
-    if (this._state != READER_FINISHED)
+    if (this._state != READER_FINISHED) {
       input.asyncWait(this, 0, 0, gThreadManager.currentThread);
+    }
   },
 
   
   
   
   QueryInterface: ChromeUtils.generateQI(["nsIInputStreamCallback"]),
-
 
   
 
@@ -1332,12 +1451,14 @@ RequestReader.prototype =
     var data = this._data;
     var line = {};
     var readSuccess;
-    while ((readSuccess = data.readLine(line)) && line.value == "")
+    while ((readSuccess = data.readLine(line)) && line.value == "") {
       dumpn("*** ignoring beginning blank line...");
+    }
 
     
-    if (!readSuccess)
+    if (!readSuccess) {
       return false;
+    }
 
     
     try {
@@ -1374,8 +1495,8 @@ RequestReader.prototype =
         
         
         this._contentLength = request.hasHeader("Content-Length")
-                            ? parseInt(request.getHeader("Content-Length"), 10)
-                            : 0;
+          ? parseInt(request.getHeader("Content-Length"), 10)
+          : 0;
         dumpn("_processHeaders, Content-length=" + this._contentLength);
 
         this._state = READER_IN_BODY;
@@ -1403,8 +1524,14 @@ RequestReader.prototype =
       if (this._contentLength > 0) {
         var data = this._data.purge();
         var count = Math.min(data.length, this._contentLength);
-        dumpn("*** loading data=" + data + " len=" + data.length +
-              " excess=" + (data.length - count));
+        dumpn(
+          "*** loading data=" +
+            data +
+            " len=" +
+            data.length +
+            " excess=" +
+            (data.length - count)
+        );
 
         var bos = new BinaryOutputStream(this._metadata._bodyOutputStream);
         bos.writeByteArray(data, count);
@@ -1470,9 +1597,16 @@ RequestReader.prototype =
         
         
         
-        if ((!HOST_REGEX.test(host) && host != "[::1]") || !/^\d*$/.test(port)) {
-          dumpn("*** malformed hostname (" + hostPort + ") in Host " +
-                "header, 400 time");
+        if (
+          (!HOST_REGEX.test(host) && host != "[::1]") ||
+          !/^\d*$/.test(port)
+        ) {
+          dumpn(
+            "*** malformed hostname (" +
+              hostPort +
+              ") in Host " +
+              "header, 400 time"
+          );
           throw HTTP_400;
         }
 
@@ -1485,8 +1619,12 @@ RequestReader.prototype =
 
         var scheme = identity.getScheme(host, port);
         if (!scheme) {
-          dumpn("*** unrecognized hostname (" + hostPort + ") in Host " +
-                "header, 400 time");
+          dumpn(
+            "*** unrecognized hostname (" +
+              hostPort +
+              ") in Host " +
+              "header, 400 time"
+          );
           throw HTTP_400;
         }
 
@@ -1495,16 +1633,20 @@ RequestReader.prototype =
         metadata._port = port;
       }
     } else {
-      NS_ASSERT(metadata._host === undefined,
-                "HTTP/1.0 doesn't allow absolute paths in the request line!");
+      NS_ASSERT(
+        metadata._host === undefined,
+        "HTTP/1.0 doesn't allow absolute paths in the request line!"
+      );
 
       metadata._scheme = identity.primaryScheme;
       metadata._host = identity.primaryHost;
       metadata._port = identity.primaryPort;
     }
 
-    NS_ASSERT(identity.has(metadata._scheme, metadata._host, metadata._port),
-              "must have a location we recognize by now!");
+    NS_ASSERT(
+      identity.has(metadata._scheme, metadata._host, metadata._port),
+      "must have a location we recognize by now!"
+    );
   },
 
   
@@ -1524,8 +1666,11 @@ RequestReader.prototype =
     if (e instanceof HttpError) {
       var code = e.code;
     } else {
-      dumpn("!!! UNEXPECTED ERROR: " + e +
-            (e.lineNumber ? ", line " + e.lineNumber : ""));
+      dumpn(
+        "!!! UNEXPECTED ERROR: " +
+          e +
+          (e.lineNumber ? ", line " + e.lineNumber : "")
+      );
 
       
       code = 500;
@@ -1554,7 +1699,6 @@ RequestReader.prototype =
 
     this._connection.process(this._metadata);
   },
-
 
   
 
@@ -1592,13 +1736,13 @@ RequestReader.prototype =
     
     try {
       metadata._httpVersion = new nsHttpVersion(match[1]);
-      if (!metadata._httpVersion.atLeast(nsHttpVersion.HTTP_1_0))
+      if (!metadata._httpVersion.atLeast(nsHttpVersion.HTTP_1_0)) {
         throw new Error("unsupported HTTP version");
+      }
     } catch (e) {
       
       throw HTTP_501;
     }
-
 
     var fullPath = request[1];
 
@@ -1643,7 +1787,10 @@ RequestReader.prototype =
         throw HTTP_400;
       }
 
-      if (!serverIdentity.has(scheme, host, port) || fullPath.charAt(0) != "/") {
+      if (
+        !serverIdentity.has(scheme, host, port) ||
+        fullPath.charAt(0) != "/"
+      ) {
         dumpn("*** serverIdentity unknown or path does not start with '/'");
         throw HTTP_400;
       }
@@ -1687,10 +1834,12 @@ RequestReader.prototype =
     while (true) {
       dumpn("*** Last name: '" + lastName + "'");
       dumpn("*** Last val: '" + lastVal + "'");
-      NS_ASSERT(!((lastVal === undefined) ^ (lastName === undefined)),
-                lastName === undefined ?
-                  "lastVal without lastName?  lastVal: '" + lastVal + "'" :
-                  "lastName without lastVal?  lastName: '" + lastName + "'");
+      NS_ASSERT(
+        !((lastVal === undefined) ^ (lastName === undefined)),
+        lastName === undefined
+          ? "lastVal without lastName?  lastVal: '" + lastVal + "'"
+          : "lastName without lastVal?  lastName: '" + lastName + "'"
+      );
 
       if (!data.readLine(line)) {
         
@@ -1756,8 +1905,8 @@ RequestReader.prototype =
 };
 
 
-
-const CR = 0x0D, LF = 0x0A;
+const CR = 0x0d,
+  LF = 0x0a;
 
 
 
@@ -1775,12 +1924,12 @@ const CR = 0x0D, LF = 0x0A;
 
 function findCRLF(array, start) {
   for (var i = array.indexOf(CR, start); i >= 0; i = array.indexOf(CR, i + 1)) {
-    if (array[i + 1] == LF)
+    if (array[i + 1] == LF) {
       return i;
+    }
   }
   return -1;
 }
-
 
 
 
@@ -1793,8 +1942,7 @@ function LineData() {
   
   this._start = 0;
 }
-LineData.prototype =
-{
+LineData.prototype = {
   
 
 
@@ -1837,8 +1985,9 @@ LineData.prototype =
       
       
       
-      if (data.length > 0 && data[data.length - 1] === CR)
+      if (data.length > 0 && data[data.length - 1] === CR) {
         --this._start;
+      }
 
       return false;
     }
@@ -1879,12 +2028,11 @@ LineData.prototype =
 
 
 
-
-
 function createHandlerFunc(handler) {
-  return function(metadata, response) { handler.handle(metadata, response); };
+  return function(metadata, response) {
+    handler.handle(metadata, response);
+  };
 }
-
 
 
 
@@ -1901,12 +2049,17 @@ function defaultIndexHandler(metadata, response) {
   
   
 
-  var body = "<html>\
+  var body =
+    "<html>\
                 <head>\
-                  <title>" + path + "</title>\
+                  <title>" +
+    path +
+    "</title>\
                 </head>\
                 <body>\
-                  <h1>" + path + '</h1>\
+                  <h1>" +
+    path +
+    '</h1>\
                   <ol style="list-style-type: none">';
 
   var directory = metadata.getProperty("directory");
@@ -1917,10 +2070,13 @@ function defaultIndexHandler(metadata, response) {
   while (files.hasMoreElements()) {
     var f = files.nextFile;
     let name = f.leafName;
-    if (!f.isHidden() &&
-        (name.charAt(name.length - 1) != HIDDEN_CHAR ||
-         name.charAt(name.length - 2) == HIDDEN_CHAR))
+    if (
+      !f.isHidden() &&
+      (name.charAt(name.length - 1) != HIDDEN_CHAR ||
+        name.charAt(name.length - 2) == HIDDEN_CHAR)
+    ) {
       fileList.push(f);
+    }
   }
 
   fileList.sort(fileSort);
@@ -1929,21 +2085,29 @@ function defaultIndexHandler(metadata, response) {
     var file = fileList[i];
     try {
       let name = file.leafName;
-      if (name.charAt(name.length - 1) == HIDDEN_CHAR)
+      if (name.charAt(name.length - 1) == HIDDEN_CHAR) {
         name = name.substring(0, name.length - 1);
+      }
       var sep = file.isDirectory() ? "/" : "";
 
       
       
-      var item = '<li><a href="' + encodeURIComponent(name) + sep + '">' +
-                   htmlEscape(name) + sep +
-                 "</a></li>";
+      var item =
+        '<li><a href="' +
+        encodeURIComponent(name) +
+        sep +
+        '">' +
+        htmlEscape(name) +
+        sep +
+        "</a></li>";
 
       body += item;
-    } catch (e) {  }
+    } catch (e) {
+      
+    }
   }
 
-  body    += "    </ol>\
+  body += "    </ol>\
                 </body>\
               </html>";
 
@@ -1954,14 +2118,18 @@ function defaultIndexHandler(metadata, response) {
 
 
 function fileSort(a, b) {
-  var dira = a.isDirectory(), dirb = b.isDirectory();
+  var dira = a.isDirectory(),
+    dirb = b.isDirectory();
 
-  if (dira && !dirb)
+  if (dira && !dirb) {
     return -1;
-  if (dirb && !dira)
+  }
+  if (dirb && !dira) {
     return 1;
+  }
 
-  var namea = a.leafName.toLowerCase(), nameb = b.leafName.toLowerCase();
+  var namea = a.leafName.toLowerCase(),
+    nameb = b.leafName.toLowerCase();
   return nameb > namea ? -1 : 1;
 }
 
@@ -1977,16 +2145,17 @@ function fileSort(a, b) {
 
 
 
-
 function toInternalPath(path, encoded) {
-  if (encoded)
+  if (encoded) {
     path = decodeURI(path);
+  }
 
   var comps = path.split("/");
   for (var i = 0, sz = comps.length; i < sz; i++) {
     var comp = comps[i];
-    if (comp.charAt(comp.length - 1) == HIDDEN_CHAR)
+    if (comp.charAt(comp.length - 1) == HIDDEN_CHAR) {
       comps[i] = comp + HIDDEN_CHAR;
+    }
   }
   return comps.join("/");
 }
@@ -2008,29 +2177,35 @@ const PERMS_READONLY = (4 << 6) | (4 << 3) | 4;
 
 function maybeAddHeaders(file, metadata, response) {
   var name = file.leafName;
-  if (name.charAt(name.length - 1) == HIDDEN_CHAR)
+  if (name.charAt(name.length - 1) == HIDDEN_CHAR) {
     name = name.substring(0, name.length - 1);
+  }
 
   var headerFile = file.parent;
   headerFile.append(name + HEADERS_SUFFIX);
 
-  if (!headerFile.exists())
+  if (!headerFile.exists()) {
     return;
+  }
 
   const PR_RDONLY = 0x01;
-  var fis = new FileInputStream(headerFile, PR_RDONLY, PERMS_READONLY,
-                                Ci.nsIFileInputStream.CLOSE_ON_EOF);
+  var fis = new FileInputStream(
+    headerFile,
+    PR_RDONLY,
+    PERMS_READONLY,
+    Ci.nsIFileInputStream.CLOSE_ON_EOF
+  );
 
   try {
     var lis = new ConverterInputStream(fis, "UTF-8", 1024, 0x0);
     lis.QueryInterface(Ci.nsIUnicharLineInputStream);
 
-    var line = {value: ""};
+    var line = { value: "" };
     var more = lis.readLine(line);
 
-    if (!more && line.value == "")
+    if (!more && line.value == "") {
       return;
-
+    }
 
     
 
@@ -2047,7 +2222,11 @@ function maybeAddHeaders(file, metadata, response) {
         description = status.substring(space + 1, status.length);
       }
 
-      response.setStatusLine(metadata.httpVersion, parseInt(code, 10), description);
+      response.setStatusLine(
+        metadata.httpVersion,
+        parseInt(code, 10),
+        description
+      );
 
       line.value = "";
       more = lis.readLine(line);
@@ -2058,9 +2237,11 @@ function maybeAddHeaders(file, metadata, response) {
       var header = line.value;
       var colon = header.indexOf(":");
 
-      response.setHeader(header.substring(0, colon),
-                         header.substring(colon + 1, header.length),
-                         false); 
+      response.setHeader(
+        header.substring(0, colon),
+        header.substring(colon + 1, header.length),
+        false
+      ); 
 
       line.value = "";
       more = lis.readLine(line);
@@ -2072,7 +2253,6 @@ function maybeAddHeaders(file, metadata, response) {
     fis.close();
   }
 }
-
 
 
 
@@ -2150,8 +2330,7 @@ function ServerHandler(server) {
   
   this._objectState = {};
 }
-ServerHandler.prototype =
-{
+ServerHandler.prototype = {
   
 
   
@@ -2180,8 +2359,10 @@ ServerHandler.prototype =
         } else {
           var longestPrefix = "";
           for (let prefix in this._overridePrefixes) {
-            if (prefix.length > longestPrefix.length &&
-                path.substr(0, prefix.length) == prefix) {
+            if (
+              prefix.length > longestPrefix.length &&
+              path.substr(0, prefix.length) == prefix
+            ) {
               longestPrefix = prefix;
             }
           }
@@ -2202,16 +2383,18 @@ ServerHandler.prototype =
           dumpn("*** unexpected error: e == " + e);
           throw HTTP_500;
         }
-        if (e.code !== 404)
+        if (e.code !== 404) {
           throw e;
+        }
 
         dumpn("*** default: " + (path in this._defaultPaths));
 
         response = new Response(connection);
-        if (path in this._defaultPaths)
+        if (path in this._defaultPaths) {
           this._defaultPaths[path](request, response);
-        else
+        } else {
           throw HTTP_404;
+        }
       }
     } catch (e) {
       if (response.partiallySent()) {
@@ -2222,20 +2405,28 @@ ServerHandler.prototype =
       var errorCode = "internal";
 
       try {
-        if (!(e instanceof HttpError))
+        if (!(e instanceof HttpError)) {
           throw e;
+        }
 
         errorCode = e.code;
         dumpn("*** errorCode == " + errorCode);
 
         response = new Response(connection);
-        if (e.customErrorHandling)
+        if (e.customErrorHandling) {
           e.customErrorHandling(response);
+        }
         this._handleError(errorCode, request, response);
         return;
       } catch (e2) {
-        dumpn("*** error handling " + errorCode + " error: " +
-              "e2 == " + e2 + ", shutting down server");
+        dumpn(
+          "*** error handling " +
+            errorCode +
+            " error: " +
+            "e2 == " +
+            e2 +
+            ", shutting down server"
+        );
 
         connection.server._requestQuit();
         response.abort(e2);
@@ -2260,14 +2451,14 @@ ServerHandler.prototype =
     file = file.clone();
 
     var self = this;
-    this._overridePaths[path] =
-      function(request, response) {
-        if (!file.exists())
-          throw HTTP_404;
+    this._overridePaths[path] = function(request, response) {
+      if (!file.exists()) {
+        throw HTTP_404;
+      }
 
-        response.setStatusLine(request.httpVersion, 200, "OK");
-        self._writeFileResponse(request, file, response, 0, file.fileSize);
-      };
+      response.setStatusLine(request.httpVersion, 200, "OK");
+      self._writeFileResponse(request, file, response, 0, file.fileSize);
+    };
   },
 
   
@@ -2275,8 +2466,9 @@ ServerHandler.prototype =
   
   registerPathHandler(path, handler) {
     
-    if (path.charAt(0) != "/" && path != "CONNECT")
+    if (path.charAt(0) != "/" && path != "CONNECT") {
       throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
+    }
 
     this._handlerToField(handler, this._overridePaths, path);
   },
@@ -2286,8 +2478,9 @@ ServerHandler.prototype =
   
   registerPrefixHandler(path, handler) {
     
-    if (path.charAt(0) != "/" || path.charAt(path.length - 1) != "/")
+    if (path.charAt(0) != "/" || path.charAt(path.length - 1) != "/") {
       throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
+    }
 
     this._handlerToField(handler, this._overridePrefixes, path);
   },
@@ -2304,8 +2497,9 @@ ServerHandler.prototype =
 
     
     
-    if (key.charAt(0) == "/")
+    if (key.charAt(0) == "/") {
       throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
+    }
 
     key = toInternalPath(key, false);
 
@@ -2322,9 +2516,14 @@ ServerHandler.prototype =
   
   
   registerErrorHandler(err, handler) {
-    if (!(err in HTTP_ERROR_CODES))
-      dumpn("*** WARNING: registering non-HTTP/1.1 error code " +
-            "(" + err + ") handler -- was this intentional?");
+    if (!(err in HTTP_ERROR_CODES)) {
+      dumpn(
+        "*** WARNING: registering non-HTTP/1.1 error code " +
+          "(" +
+          err +
+          ") handler -- was this intentional?"
+      );
+    }
 
     this._handlerToField(handler, this._overrideErrors, err);
   },
@@ -2333,10 +2532,11 @@ ServerHandler.prototype =
   
   
   setIndexHandler(handler) {
-    if (!handler)
+    if (!handler) {
       handler = defaultIndexHandler;
-    else if (typeof(handler) != "function")
+    } else if (typeof handler != "function") {
       handler = createHandlerFunc(handler);
+    }
 
     this._indexHandler = handler;
   },
@@ -2345,10 +2545,11 @@ ServerHandler.prototype =
   
   
   registerContentType(ext, type) {
-    if (!type)
+    if (!type) {
       delete this._mimeMappings[ext];
-    else
+    } else {
       this._mimeMappings[ext] = headerUtils.normalizeFieldValue(type);
+    }
   },
 
   
@@ -2365,12 +2566,13 @@ ServerHandler.prototype =
 
   _handlerToField(handler, dict, key) {
     
-    if (typeof(handler) == "function")
+    if (typeof handler == "function") {
       dict[key] = handler;
-    else if (handler)
+    } else if (handler) {
       dict[key] = createHandlerFunc(handler);
-    else
+    } else {
       delete dict[key];
+    }
   },
 
   
@@ -2411,27 +2613,40 @@ ServerHandler.prototype =
     }
 
     
-    if (!file.exists())
+    if (!file.exists()) {
       throw HTTP_404;
+    }
 
     var start, end;
-    if (metadata._httpVersion.atLeast(nsHttpVersion.HTTP_1_1) &&
-        metadata.hasHeader("Range") &&
-        this._getTypeFromFile(file) !== SJS_TYPE) {
-      var rangeMatch = metadata.getHeader("Range").match(/^bytes=(\d+)?-(\d+)?$/);
+    if (
+      metadata._httpVersion.atLeast(nsHttpVersion.HTTP_1_1) &&
+      metadata.hasHeader("Range") &&
+      this._getTypeFromFile(file) !== SJS_TYPE
+    ) {
+      var rangeMatch = metadata
+        .getHeader("Range")
+        .match(/^bytes=(\d+)?-(\d+)?$/);
       if (!rangeMatch) {
-        dumpn("*** Range header bogosity: '" + metadata.getHeader("Range") + "'");
+        dumpn(
+          "*** Range header bogosity: '" + metadata.getHeader("Range") + "'"
+        );
         throw HTTP_400;
       }
 
-      if (rangeMatch[1] !== undefined)
+      if (rangeMatch[1] !== undefined) {
         start = parseInt(rangeMatch[1], 10);
+      }
 
-      if (rangeMatch[2] !== undefined)
+      if (rangeMatch[2] !== undefined) {
         end = parseInt(rangeMatch[2], 10);
+      }
 
       if (start === undefined && end === undefined) {
-        dumpn("*** More Range header bogosity: '" + metadata.getHeader("Range") + "'");
+        dumpn(
+          "*** More Range header bogosity: '" +
+            metadata.getHeader("Range") +
+            "'"
+        );
         throw HTTP_400;
       }
 
@@ -2439,12 +2654,13 @@ ServerHandler.prototype =
       
       if (start === undefined) {
         start = Math.max(0, file.fileSize - end);
-        end   = file.fileSize - 1;
+        end = file.fileSize - 1;
       }
 
       
-      if (end === undefined || end >= file.fileSize)
+      if (end === undefined || end >= file.fileSize) {
         end = file.fileSize - 1;
+      }
 
       if (start !== undefined && start >= file.fileSize) {
         var HTTP_416 = new HttpError(416, "Requested Range Not Satisfiable");
@@ -2469,8 +2685,17 @@ ServerHandler.prototype =
     }
 
     
-    dumpn("*** handling '" + path + "' as mapping to " + file.path + " from " +
-          start + " to " + end + " inclusive");
+    dumpn(
+      "*** handling '" +
+        path +
+        "' as mapping to " +
+        file.path +
+        " from " +
+        start +
+        " to " +
+        end +
+        " inclusive"
+    );
     this._writeFileResponse(metadata, file, response, start, end - start + 1);
   },
 
@@ -2494,8 +2719,12 @@ ServerHandler.prototype =
 
     var type = this._getTypeFromFile(file);
     if (type === SJS_TYPE) {
-      let fis = new FileInputStream(file, PR_RDONLY, PERMS_READONLY,
-                                    Ci.nsIFileInputStream.CLOSE_ON_EOF);
+      let fis = new FileInputStream(
+        file,
+        PR_RDONLY,
+        PERMS_READONLY,
+        Ci.nsIFileInputStream.CLOSE_ON_EOF
+      );
 
       try {
         var s = Cu.Sandbox(gGlobalObject);
@@ -2549,11 +2778,17 @@ ServerHandler.prototype =
         try {
           s.handleRequest(metadata, response);
         } catch (e) {
-          dump("*** error running SJS at " + file.path + ": " +
-               e + " on line " +
-               (e instanceof Error
-               ? e.lineNumber + " in httpd.js"
-               : (e.lineNumber - line)) + "\n");
+          dump(
+            "*** error running SJS at " +
+              file.path +
+              ": " +
+              e +
+              " on line " +
+              (e instanceof Error
+                ? e.lineNumber + " in httpd.js"
+                : e.lineNumber - line) +
+              "\n"
+          );
           throw HTTP_500;
         }
       } finally {
@@ -2561,20 +2796,28 @@ ServerHandler.prototype =
       }
     } else {
       try {
-        response.setHeader("Last-Modified",
-                           toDateString(file.lastModifiedTime),
-                           false);
-      } catch (e) {  }
+        response.setHeader(
+          "Last-Modified",
+          toDateString(file.lastModifiedTime),
+          false
+        );
+      } catch (e) {
+        
+      }
 
       response.setHeader("Content-Type", type, false);
       maybeAddHeaders(file, metadata, response);
       response.setHeader("Content-Length", "" + count, false);
 
-      let fis = new FileInputStream(file, PR_RDONLY, PERMS_READONLY,
-                                    Ci.nsIFileInputStream.CLOSE_ON_EOF);
+      let fis = new FileInputStream(
+        file,
+        PR_RDONLY,
+        PERMS_READONLY,
+        Ci.nsIFileInputStream.CLOSE_ON_EOF
+      );
 
       offset = offset || 0;
-      count  = count || file.fileSize;
+      count = count || file.fileSize;
       NS_ASSERT(offset === 0 || offset < file.fileSize, "bad offset");
       NS_ASSERT(count >= 0, "bad count");
       NS_ASSERT(offset + count <= file.fileSize, "bad total data size");
@@ -2583,10 +2826,11 @@ ServerHandler.prototype =
         if (offset !== 0) {
           
           
-          if (fis instanceof Ci.nsISeekableStream)
+          if (fis instanceof Ci.nsISeekableStream) {
             fis.seek(Ci.nsISeekableStream.NS_SEEK_SET, offset);
-          else
+          } else {
             new ScriptableInputStream(fis).read(offset);
+          }
         }
       } catch (e) {
         fis.close();
@@ -2594,41 +2838,46 @@ ServerHandler.prototype =
       }
 
       let writeMore = function() {
-        gThreadManager.currentThread
-                      .dispatch(writeData, Ci.nsIThread.DISPATCH_NORMAL);
+        gThreadManager.currentThread.dispatch(
+          writeData,
+          Ci.nsIThread.DISPATCH_NORMAL
+        );
       };
 
       var input = new BinaryInputStream(fis);
       var output = new BinaryOutputStream(response.bodyOutputStream);
-      var writeData =
-        {
-          run() {
-            var chunkSize = Math.min(65536, count);
-            count -= chunkSize;
-            NS_ASSERT(count >= 0, "underflow");
+      var writeData = {
+        run() {
+          var chunkSize = Math.min(65536, count);
+          count -= chunkSize;
+          NS_ASSERT(count >= 0, "underflow");
 
-            try {
-              var data = input.readByteArray(chunkSize);
-              NS_ASSERT(data.length === chunkSize,
-                        "incorrect data returned?  got " + data.length +
-                        ", expected " + chunkSize);
-              output.writeByteArray(data, data.length);
-              if (count === 0) {
-                fis.close();
-                response.finish();
-              } else {
-                writeMore();
-              }
-            } catch (e) {
-              try {
-                fis.close();
-              } finally {
-                response.finish();
-              }
-              throw e;
+          try {
+            var data = input.readByteArray(chunkSize);
+            NS_ASSERT(
+              data.length === chunkSize,
+              "incorrect data returned?  got " +
+                data.length +
+                ", expected " +
+                chunkSize
+            );
+            output.writeByteArray(data, data.length);
+            if (count === 0) {
+              fis.close();
+              response.finish();
+            } else {
+              writeMore();
             }
-          },
-        };
+          } catch (e) {
+            try {
+              fis.close();
+            } finally {
+              response.finish();
+            }
+            throw e;
+          }
+        },
+      };
 
       writeMore();
 
@@ -2650,8 +2899,9 @@ ServerHandler.prototype =
 
   _getState(path, k) {
     var state = this._state;
-    if (path in state && k in state[path])
+    if (path in state && k in state[path]) {
       return state[path][k];
+    }
     return "";
   },
 
@@ -2667,11 +2917,13 @@ ServerHandler.prototype =
 
 
   _setState(path, k, v) {
-    if (typeof v !== "string")
+    if (typeof v !== "string") {
       throw new Error("non-string value passed");
+    }
     var state = this._state;
-    if (!(path in state))
+    if (!(path in state)) {
       state[path] = {};
+    }
     state[path][k] = v;
   },
 
@@ -2686,8 +2938,9 @@ ServerHandler.prototype =
 
   _getSharedState(k) {
     var state = this._sharedState;
-    if (k in state)
+    if (k in state) {
       return state[k];
+    }
     return "";
   },
 
@@ -2701,8 +2954,9 @@ ServerHandler.prototype =
 
 
   _setSharedState(k, v) {
-    if (typeof v !== "string")
+    if (typeof v !== "string") {
       throw new Error("non-string value passed");
+    }
     this._sharedState[k] = v;
   },
 
@@ -2716,8 +2970,9 @@ ServerHandler.prototype =
 
 
   _getObjectState(k) {
-    if (typeof k !== "string")
+    if (typeof k !== "string") {
       throw new Error("non-string key passed");
+    }
     return this._objectState[k] || null;
   },
 
@@ -2731,13 +2986,17 @@ ServerHandler.prototype =
 
 
   _setObjectState(k, v) {
-    if (typeof k !== "string")
+    if (typeof k !== "string") {
       throw new Error("non-string key passed");
-    if (typeof v !== "object")
+    }
+    if (typeof v !== "object") {
       throw new Error("non-object value passed");
+    }
     if (v && !("QueryInterface" in v)) {
-      throw new Error("must pass an nsISupports; use wrappedJSObject to ease " +
-                      "pain when using the server from JS");
+      throw new Error(
+        "must pass an nsISupports; use wrappedJSObject to ease " +
+          "pain when using the server from JS"
+      );
     }
 
     this._objectState[k] = v;
@@ -2760,12 +3019,13 @@ ServerHandler.prototype =
       var dot = name.lastIndexOf(".");
       if (dot > 0) {
         var ext = name.slice(dot + 1);
-        if (ext in this._mimeMappings)
+        if (ext in this._mimeMappings) {
           return this._mimeMappings[ext];
+        }
       }
       return Cc["@mozilla.org/uriloader/external-helper-app-service;1"]
-               .getService(Ci.nsIMIMEService)
-               .getTypeFromFile(file);
+        .getService(Ci.nsIMIMEService)
+        .getTypeFromFile(file);
     } catch (e) {
       return "application/octet-stream";
     }
@@ -2808,29 +3068,33 @@ ServerHandler.prototype =
         
         
         
-        if (tmp == path.substring(1) &&
-            tmp.length != 0 &&
-            tmp.charAt(tmp.length - 1) != "/")
+        if (
+          tmp == path.substring(1) &&
+          tmp.length != 0 &&
+          tmp.charAt(tmp.length - 1) != "/"
+        ) {
           file = null;
-        else
+        } else {
           break;
+        }
       }
 
       
-      if (tmp == "")
+      if (tmp == "") {
         break;
+      }
 
       tmp = tmp.substring(0, tmp.lastIndexOf("/"));
     }
 
     
-    if (!file)
+    if (!file) {
       throw HTTP_404;
-
+    }
 
     
     var parentFolder = file.parent;
-    var dirIsRoot = (parentFolder == null);
+    var dirIsRoot = parentFolder == null;
 
     
     
@@ -2842,15 +3106,17 @@ ServerHandler.prototype =
     for (var i = 0, sz = comps.length; i < sz; i++) {
       var comp = comps[i];
 
-      if (comp == "..")
+      if (comp == "..") {
         file = file.parent;
-      else if (comp == "." || comp == "")
+      } else if (comp == "." || comp == "") {
         continue;
-      else
+      } else {
         file.append(comp);
+      }
 
-      if (!dirIsRoot && file.equals(parentFolder))
+      if (!dirIsRoot && file.equals(parentFolder)) {
         throw HTTP_403;
+      }
     }
 
     return file;
@@ -2891,14 +3157,16 @@ ServerHandler.prototype =
 
 
   _handleError(errorCode, metadata, response) {
-    if (!metadata)
+    if (!metadata) {
       throw Components.Exception("", Cr.NS_ERROR_NULL_POINTER);
+    }
 
     var errorX00 = errorCode - (errorCode % 100);
 
     try {
-      if (!(errorCode in HTTP_ERROR_CODES))
+      if (!(errorCode in HTTP_ERROR_CODES)) {
         dumpn("*** WARNING: requested invalid error: " + errorCode);
+      }
 
       
       
@@ -2907,10 +3175,11 @@ ServerHandler.prototype =
 
       
       try {
-        if (errorCode in this._overrideErrors)
+        if (errorCode in this._overrideErrors) {
           this._overrideErrors[errorCode](metadata, response);
-        else
+        } else {
           this._defaultErrors[errorCode](metadata, response);
+        }
       } catch (e) {
         if (response.partiallySent()) {
           response.abort(e);
@@ -2918,18 +3187,26 @@ ServerHandler.prototype =
         }
 
         
-        if (errorX00 == errorCode)
+        if (errorX00 == errorCode) {
           throw HTTP_500;
+        }
 
-        dumpn("*** error in handling for error code " + errorCode + ", " +
-              "falling back to " + errorX00 + "...");
+        dumpn(
+          "*** error in handling for error code " +
+            errorCode +
+            ", " +
+            "falling back to " +
+            errorX00 +
+            "..."
+        );
         response = new Response(response._connection);
-        if (errorX00 in this._overrideErrors)
+        if (errorX00 in this._overrideErrors) {
           this._overrideErrors[errorX00](metadata, response);
-        else if (errorX00 in this._defaultErrors)
+        } else if (errorX00 in this._defaultErrors) {
           this._defaultErrors[errorX00](metadata, response);
-        else
+        } else {
           throw HTTP_500;
+        }
       }
     } catch (e) {
       if (response.partiallySent()) {
@@ -2938,15 +3215,20 @@ ServerHandler.prototype =
       }
 
       
-      dumpn("*** error in handling for error code " + errorX00 + ", falling " +
-            "back to 500...");
+      dumpn(
+        "*** error in handling for error code " +
+          errorX00 +
+          ", falling " +
+          "back to 500..."
+      );
 
       try {
         response = new Response(response._connection);
-        if (500 in this._overrideErrors)
+        if (500 in this._overrideErrors) {
           this._overrideErrors[500](metadata, response);
-        else
+        } else {
           this._defaultErrors[500](metadata, response);
+        }
       } catch (e2) {
         dumpn("*** multiple errors in default error handlers!");
         dumpn("*** e == " + e + ", e2 == " + e2);
@@ -2963,8 +3245,7 @@ ServerHandler.prototype =
   
 
 
-  _defaultErrors:
-  {
+  _defaultErrors: {
     400(metadata, response) {
       
       response.setStatusLine("1.1", 400, "Bad Request");
@@ -2977,7 +3258,8 @@ ServerHandler.prototype =
       response.setStatusLine(metadata.httpVersion, 403, "Forbidden");
       response.setHeader("Content-Type", "text/html;charset=utf-8", false);
 
-      var body = "<html>\
+      var body =
+        "<html>\
                     <head><title>403 Forbidden</title></head>\
                     <body>\
                       <h1>403 Forbidden</h1>\
@@ -2989,26 +3271,30 @@ ServerHandler.prototype =
       response.setStatusLine(metadata.httpVersion, 404, "Not Found");
       response.setHeader("Content-Type", "text/html;charset=utf-8", false);
 
-      var body = "<html>\
+      var body =
+        "<html>\
                     <head><title>404 Not Found</title></head>\
                     <body>\
                       <h1>404 Not Found</h1>\
                       <p>\
                         <span style='font-family: monospace;'>" +
-                          htmlEscape(metadata.path) +
-                       "</span> was not found.\
+        htmlEscape(metadata.path) +
+        "</span> was not found.\
                       </p>\
                     </body>\
                   </html>";
       response.bodyOutputStream.write(body, body.length);
     },
     416(metadata, response) {
-      response.setStatusLine(metadata.httpVersion,
-                            416,
-                            "Requested Range Not Satisfiable");
+      response.setStatusLine(
+        metadata.httpVersion,
+        416,
+        "Requested Range Not Satisfiable"
+      );
       response.setHeader("Content-Type", "text/html;charset=utf-8", false);
 
-      var body = "<html>\
+      var body =
+        "<html>\
                    <head>\
                     <title>416 Requested Range Not Satisfiable</title></head>\
                     <body>\
@@ -3021,12 +3307,15 @@ ServerHandler.prototype =
       response.bodyOutputStream.write(body, body.length);
     },
     500(metadata, response) {
-      response.setStatusLine(metadata.httpVersion,
-                             500,
-                             "Internal Server Error");
+      response.setStatusLine(
+        metadata.httpVersion,
+        500,
+        "Internal Server Error"
+      );
       response.setHeader("Content-Type", "text/html;charset=utf-8", false);
 
-      var body = "<html>\
+      var body =
+        "<html>\
                     <head><title>500 Internal Server Error</title></head>\
                     <body>\
                       <h1>500 Internal Server Error</h1>\
@@ -3040,7 +3329,8 @@ ServerHandler.prototype =
       response.setStatusLine(metadata.httpVersion, 501, "Not Implemented");
       response.setHeader("Content-Type", "text/html;charset=utf-8", false);
 
-      var body = "<html>\
+      var body =
+        "<html>\
                     <head><title>501 Not Implemented</title></head>\
                     <body>\
                       <h1>501 Not Implemented</h1>\
@@ -3053,7 +3343,8 @@ ServerHandler.prototype =
       response.setStatusLine("1.1", 505, "HTTP Version Not Supported");
       response.setHeader("Content-Type", "text/html;charset=utf-8", false);
 
-      var body = "<html>\
+      var body =
+        "<html>\
                     <head><title>505 HTTP Version Not Supported</title></head>\
                     <body>\
                       <h1>505 HTTP Version Not Supported</h1>\
@@ -3068,13 +3359,13 @@ ServerHandler.prototype =
   
 
 
-  _defaultPaths:
-  {
+  _defaultPaths: {
     "/": function(metadata, response) {
       response.setStatusLine(metadata.httpVersion, 200, "OK");
       response.setHeader("Content-Type", "text/html;charset=utf-8", false);
 
-      var body = "<html>\
+      var body =
+        "<html>\
                     <head><title>httpd.js</title></head>\
                     <body>\
                       <h1>httpd.js</h1>\
@@ -3091,22 +3382,28 @@ ServerHandler.prototype =
       response.setStatusLine(metadata.httpVersion, 200, "OK");
       response.setHeader("Content-Type", "text/plain;charset=utf-8", false);
 
-      var body = "Request-URI: " +
-                 metadata.scheme + "://" + metadata.host + ":" + metadata.port +
-                 metadata.path + "\n\n";
+      var body =
+        "Request-URI: " +
+        metadata.scheme +
+        "://" +
+        metadata.host +
+        ":" +
+        metadata.port +
+        metadata.path +
+        "\n\n";
       body += "Request (semantically equivalent, slightly reformatted):\n\n";
       body += metadata.method + " " + metadata.path;
 
-      if (metadata.queryString)
-        body +=  "?" + metadata.queryString;
+      if (metadata.queryString) {
+        body += "?" + metadata.queryString;
+      }
 
       body += " HTTP/" + metadata.httpVersion + "\r\n";
 
       var headEnum = metadata.headers;
       while (headEnum.hasMoreElements()) {
-        var fieldName = headEnum.getNext()
-                                .QueryInterface(Ci.nsISupportsString)
-                                .data;
+        var fieldName = headEnum.getNext().QueryInterface(Ci.nsISupportsString)
+          .data;
         body += fieldName + ": " + metadata.getHeader(fieldName) + "\r\n";
       }
 
@@ -3118,13 +3415,11 @@ ServerHandler.prototype =
 
 
 
-
 function FileMap() {
   
   this._map = {};
 }
-FileMap.prototype =
-{
+FileMap.prototype = {
   
 
   
@@ -3137,10 +3432,11 @@ FileMap.prototype =
 
 
   put(key, value) {
-    if (value)
+    if (value) {
       this._map[key] = value.clone();
-    else
+    } else {
       delete this._map[key];
+    }
   },
 
   
@@ -3167,28 +3463,138 @@ FileMap.prototype =
 
 
 
+const IS_TOKEN_ARRAY = [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0, 
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0, 
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0, 
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0, 
 
-const IS_TOKEN_ARRAY =
-  [0, 0, 0, 0, 0, 0, 0, 0, 
-   0, 0, 0, 0, 0, 0, 0, 0, 
-   0, 0, 0, 0, 0, 0, 0, 0, 
-   0, 0, 0, 0, 0, 0, 0, 0, 
+  0,
+  1,
+  0,
+  1,
+  1,
+  1,
+  1,
+  1, 
+  0,
+  0,
+  1,
+  1,
+  0,
+  1,
+  1,
+  0, 
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1, 
+  1,
+  1,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0, 
 
-   0, 1, 0, 1, 1, 1, 1, 1, 
-   0, 0, 1, 1, 0, 1, 1, 0, 
-   1, 1, 1, 1, 1, 1, 1, 1, 
-   1, 1, 0, 0, 0, 0, 0, 0, 
+  0,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1, 
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1, 
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1, 
+  1,
+  1,
+  1,
+  0,
+  0,
+  0,
+  1,
+  1, 
 
-   0, 1, 1, 1, 1, 1, 1, 1, 
-   1, 1, 1, 1, 1, 1, 1, 1, 
-   1, 1, 1, 1, 1, 1, 1, 1, 
-   1, 1, 1, 0, 0, 0, 1, 1, 
-
-   1, 1, 1, 1, 1, 1, 1, 1, 
-   1, 1, 1, 1, 1, 1, 1, 1, 
-   1, 1, 1, 1, 1, 1, 1, 1, 
-   1, 1, 1, 0, 1, 0, 1]; 
-
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1, 
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1, 
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1, 
+  1,
+  1,
+  1,
+  0,
+  1,
+  0,
+  1,
+]; 
 
 
 
@@ -3199,7 +3605,7 @@ const IS_TOKEN_ARRAY =
 
 
 function isCTL(code) {
-  return (code >= 0 && code <= 31) || (code == 127);
+  return (code >= 0 && code <= 31) || code == 127;
 }
 
 
@@ -3287,24 +3693,30 @@ function Response(connection) {
 
   this._powerSeized = false;
 }
-Response.prototype =
-{
+Response.prototype = {
   
 
   
   
   
   get bodyOutputStream() {
-    if (this._finished)
+    if (this._finished) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
+    }
 
     if (!this._bodyOutputStream) {
-      var pipe = new Pipe(true, false, Response.SEGMENT_SIZE, PR_UINT32_MAX,
-                          null);
+      var pipe = new Pipe(
+        true,
+        false,
+        Response.SEGMENT_SIZE,
+        PR_UINT32_MAX,
+        null
+      );
       this._bodyOutputStream = pipe.outputStream;
       this._bodyInputStream = pipe.inputStream;
-      if (this._processAsync || this._powerSeized)
+      if (this._processAsync || this._powerSeized) {
         this._startAsyncProcessor();
+      }
     }
 
     return this._bodyOutputStream;
@@ -3314,8 +3726,9 @@ Response.prototype =
   
   
   write(data) {
-    if (this._finished)
+    if (this._finished) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
+    }
 
     var dataAsString = String(data);
     this.bodyOutputStream.write(dataAsString, dataAsString.length);
@@ -3325,22 +3738,25 @@ Response.prototype =
   
   
   setStatusLine(httpVersion, code, description) {
-    if (!this._headers || this._finished || this._powerSeized)
+    if (!this._headers || this._finished || this._powerSeized) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
+    }
     this._ensureAlive();
 
-    if (!(code >= 0 && code < 1000))
+    if (!(code >= 0 && code < 1000)) {
       throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
+    }
 
     try {
       var httpVer;
       
-      if (!httpVersion || httpVersion == "1.1")
+      if (!httpVersion || httpVersion == "1.1") {
         httpVer = nsHttpVersion.HTTP_1_1;
-      else if (httpVersion == "1.0")
+      } else if (httpVersion == "1.0") {
         httpVer = nsHttpVersion.HTTP_1_0;
-      else
+      } else {
         httpVer = new nsHttpVersion(httpVersion);
+      }
     } catch (e) {
       throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
     }
@@ -3350,11 +3766,14 @@ Response.prototype =
     
     
     
-    if (!description)
+    if (!description) {
       description = "";
-    for (var i = 0; i < description.length; i++)
-      if (isCTL(description.charCodeAt(i)) && description.charAt(i) != "\t")
+    }
+    for (var i = 0; i < description.length; i++) {
+      if (isCTL(description.charCodeAt(i)) && description.charAt(i) != "\t") {
         throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
+      }
+    }
 
     
     this._httpDescription = description;
@@ -3366,16 +3785,18 @@ Response.prototype =
   
   
   setHeader(name, value, merge) {
-    if (!this._headers || this._finished || this._powerSeized)
+    if (!this._headers || this._finished || this._powerSeized) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
+    }
     this._ensureAlive();
 
     this._headers.setHeader(name, value, merge);
   },
 
   setHeaderNoCheck(name, value) {
-    if (!this._headers || this._finished || this._powerSeized)
+    if (!this._headers || this._finished || this._powerSeized) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
+    }
     this._ensureAlive();
 
     this._headers.setHeaderNoCheck(name, value);
@@ -3385,12 +3806,15 @@ Response.prototype =
   
   
   processAsync() {
-    if (this._finished)
+    if (this._finished) {
       throw Components.Exception("", Cr.NS_ERROR_UNEXPECTED);
-    if (this._powerSeized)
+    }
+    if (this._powerSeized) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
-    if (this._processAsync)
+    }
+    if (this._processAsync) {
       return;
+    }
     this._ensureAlive();
 
     dumpn("*** processing connection " + this._connection.number + " async");
@@ -3409,60 +3833,72 @@ Response.prototype =
 
 
 
-    if (this._bodyOutputStream && !this._asyncCopier)
+    if (this._bodyOutputStream && !this._asyncCopier) {
       this._startAsyncProcessor();
+    }
   },
 
   
   
   
   seizePower() {
-    if (this._processAsync)
+    if (this._processAsync) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
-    if (this._finished)
+    }
+    if (this._finished) {
       throw Components.Exception("", Cr.NS_ERROR_UNEXPECTED);
-    if (this._powerSeized)
+    }
+    if (this._powerSeized) {
       return;
+    }
     this._ensureAlive();
 
-    dumpn("*** forcefully seizing power over connection " +
-          this._connection.number + "...");
+    dumpn(
+      "*** forcefully seizing power over connection " +
+        this._connection.number +
+        "..."
+    );
 
     
     
     
     
-    if (this._asyncCopier)
+    if (this._asyncCopier) {
       this._asyncCopier.cancel(Cr.NS_BINDING_ABORTED);
+    }
     this._asyncCopier = null;
     if (this._bodyOutputStream) {
       var input = new BinaryInputStream(this._bodyInputStream);
       var avail;
-      while ((avail = input.available()) > 0)
+      while ((avail = input.available()) > 0) {
         input.readByteArray(avail);
+      }
     }
 
     this._powerSeized = true;
-    if (this._bodyOutputStream)
+    if (this._bodyOutputStream) {
       this._startAsyncProcessor();
+    }
   },
 
   
   
   
   finish() {
-    if (!this._processAsync && !this._powerSeized)
+    if (!this._processAsync && !this._powerSeized) {
       throw Components.Exception("", Cr.NS_ERROR_UNEXPECTED);
-    if (this._finished)
+    }
+    if (this._finished) {
       return;
+    }
 
     dumpn("*** finishing connection " + this._connection.number);
     this._startAsyncProcessor(); 
-    if (this._bodyOutputStream)
+    if (this._bodyOutputStream) {
       this._bodyOutputStream.close();
+    }
     this._finished = true;
   },
-
 
   
 
@@ -3470,7 +3906,6 @@ Response.prototype =
   
   
   QueryInterface: ChromeUtils.generateQI(["nsIHttpResponse"]),
-
 
   
 
@@ -3489,9 +3924,10 @@ Response.prototype =
   get httpCode() {
     this._ensureAlive();
 
-    var codeString = (this._httpCode < 10 ? "0" : "") +
-                     (this._httpCode < 100 ? "0" : "") +
-                     this._httpCode;
+    var codeString =
+      (this._httpCode < 10 ? "0" : "") +
+      (this._httpCode < 100 ? "0" : "") +
+      this._httpCode;
     return codeString;
   },
 
@@ -3544,8 +3980,10 @@ Response.prototype =
   complete() {
     dumpn("*** complete()");
     if (this._processAsync || this._powerSeized) {
-      NS_ASSERT(this._processAsync ^ this._powerSeized,
-                "can't both send async and relinquish power");
+      NS_ASSERT(
+        this._processAsync ^ this._powerSeized,
+        "can't both send async and relinquish power"
+      );
       return;
     }
 
@@ -3554,8 +3992,9 @@ Response.prototype =
     this._startAsyncProcessor();
 
     
-    if (this._bodyOutputStream)
+    if (this._bodyOutputStream) {
       this._bodyOutputStream.close();
+    }
   },
 
   
@@ -3599,12 +4038,15 @@ Response.prototype =
       
       
       
-      gThreadManager.currentThread.dispatch({
-        run() {
-          dumpn("*** canceling copy asynchronously...");
-          copier.cancel(Cr.NS_ERROR_UNEXPECTED);
+      gThreadManager.currentThread.dispatch(
+        {
+          run() {
+            dumpn("*** canceling copy asynchronously...");
+            copier.cancel(Cr.NS_ERROR_UNEXPECTED);
+          },
         },
-      }, Ci.nsIThread.DISPATCH_NORMAL);
+        Ci.nsIThread.DISPATCH_NORMAL
+      );
     } else {
       this.end();
     }
@@ -3618,8 +4060,9 @@ Response.prototype =
     NS_ASSERT(!this._ended, "ending this response twice?!?!");
 
     this._connection.close();
-    if (this._bodyOutputStream)
+    if (this._bodyOutputStream) {
       this._bodyOutputStream.close();
+    }
 
     this._finished = true;
     this._ended = true;
@@ -3669,17 +4112,23 @@ Response.prototype =
     NS_ASSERT(!this._powerSeized);
 
     
-    var statusLine = "HTTP/" + this.httpVersion + " " +
-                     this.httpCode + " " +
-                     this.httpDescription + "\r\n";
+    var statusLine =
+      "HTTP/" +
+      this.httpVersion +
+      " " +
+      this.httpCode +
+      " " +
+      this.httpDescription +
+      "\r\n";
 
     
 
     var headers = this._headers;
     headers.setHeader("Connection", "close", false);
     headers.setHeader("Server", "httpd.js", false);
-    if (!headers.hasHeader("Date"))
+    if (!headers.hasHeader("Date")) {
       headers.setHeader("Date", toDateString(Date.now()), false);
+    }
 
     
     
@@ -3697,7 +4146,6 @@ Response.prototype =
       headers.setHeader("Content-Length", "" + avail, false);
     }
 
-
     
     dumpn("*** header post-processing completed, sending response head...");
 
@@ -3707,12 +4155,12 @@ Response.prototype =
     
     var headEnum = headers.enumerator;
     while (headEnum.hasMoreElements()) {
-      var fieldName = headEnum.getNext()
-                              .QueryInterface(Ci.nsISupportsString)
-                              .data;
+      var fieldName = headEnum.getNext().QueryInterface(Ci.nsISupportsString)
+        .data;
       var values = headers.getHeaderValues(fieldName);
-      for (var i = 0, sz = values.length; i < sz; i++)
+      for (var i = 0, sz = values.length; i < sz; i++) {
         preambleData.push(fieldName + ": " + values[i] + "\r\n");
+      }
     }
 
     
@@ -3724,33 +4172,40 @@ Response.prototype =
     responseHeadPipe.outputStream.write(preamble, preamble.length);
 
     var response = this;
-    var copyObserver =
-      {
-        onStartRequest(request) {
-          dumpn("*** preamble copying started");
-        },
+    var copyObserver = {
+      onStartRequest(request) {
+        dumpn("*** preamble copying started");
+      },
 
-        onStopRequest(request, statusCode) {
-          dumpn("*** preamble copying complete " +
-                "[status=0x" + statusCode.toString(16) + "]");
+      onStopRequest(request, statusCode) {
+        dumpn(
+          "*** preamble copying complete " +
+            "[status=0x" +
+            statusCode.toString(16) +
+            "]"
+        );
 
-          if (!Components.isSuccessCode(statusCode)) {
-            dumpn("!!! header copying problems: non-success statusCode, " +
-                  "ending response");
+        if (!Components.isSuccessCode(statusCode)) {
+          dumpn(
+            "!!! header copying problems: non-success statusCode, " +
+              "ending response"
+          );
 
-            response.end();
-          } else {
-            response._sendBody();
-          }
-        },
+          response.end();
+        } else {
+          response._sendBody();
+        }
+      },
 
-        QueryInterface: ChromeUtils.generateQI(["nsIRequestObserver"]),
-      };
+      QueryInterface: ChromeUtils.generateQI(["nsIRequestObserver"]),
+    };
 
-    this._asyncCopier =
-      new WriteThroughCopier(responseHeadPipe.inputStream,
-                             this._connection.output,
-                             copyObserver, null);
+    this._asyncCopier = new WriteThroughCopier(
+      responseHeadPipe.inputStream,
+      this._connection.output,
+      copyObserver,
+      null
+    );
 
     responseHeadPipe.outputStream.close();
 
@@ -3775,32 +4230,35 @@ Response.prototype =
     }
 
     var response = this;
-    var copyObserver =
-      {
-        onStartRequest(request) {
-          dumpn("*** onStartRequest");
-        },
+    var copyObserver = {
+      onStartRequest(request) {
+        dumpn("*** onStartRequest");
+      },
 
-        onStopRequest(request, statusCode) {
-          dumpn("*** onStopRequest [status=0x" + statusCode.toString(16) + "]");
+      onStopRequest(request, statusCode) {
+        dumpn("*** onStopRequest [status=0x" + statusCode.toString(16) + "]");
 
-          if (statusCode === Cr.NS_BINDING_ABORTED) {
-            dumpn("*** terminating copy observer without ending the response");
-          } else {
-            if (!Components.isSuccessCode(statusCode))
-              dumpn("*** WARNING: non-success statusCode in onStopRequest");
-
-            response.end();
+        if (statusCode === Cr.NS_BINDING_ABORTED) {
+          dumpn("*** terminating copy observer without ending the response");
+        } else {
+          if (!Components.isSuccessCode(statusCode)) {
+            dumpn("*** WARNING: non-success statusCode in onStopRequest");
           }
-        },
 
-        QueryInterface: ChromeUtils.generateQI(["nsIRequestObserver"]),
-      };
+          response.end();
+        }
+      },
+
+      QueryInterface: ChromeUtils.generateQI(["nsIRequestObserver"]),
+    };
 
     dumpn("*** starting async copier of body data...");
-    this._asyncCopier =
-      new WriteThroughCopier(this._bodyInputStream, this._connection.output,
-                            copyObserver, null);
+    this._asyncCopier = new WriteThroughCopier(
+      this._bodyInputStream,
+      this._connection.output,
+      copyObserver,
+      null
+    );
   },
 
   
@@ -3822,14 +4280,18 @@ function notImplemented() {
 
 
 function streamClosed(e) {
-  return e === Cr.NS_BASE_STREAM_CLOSED ||
-         (typeof e === "object" && e.result === Cr.NS_BASE_STREAM_CLOSED);
+  return (
+    e === Cr.NS_BASE_STREAM_CLOSED ||
+    (typeof e === "object" && e.result === Cr.NS_BASE_STREAM_CLOSED)
+  );
 }
 
 
 function wouldBlock(e) {
-  return e === Cr.NS_BASE_STREAM_WOULD_BLOCK ||
-         (typeof e === "object" && e.result === Cr.NS_BASE_STREAM_WOULD_BLOCK);
+  return (
+    e === Cr.NS_BASE_STREAM_WOULD_BLOCK ||
+    (typeof e === "object" && e.result === Cr.NS_BASE_STREAM_WOULD_BLOCK)
+  );
 }
 
 
@@ -3848,8 +4310,9 @@ function wouldBlock(e) {
 
 
 function WriteThroughCopier(source, sink, observer, context) {
-  if (!source || !sink || !observer)
+  if (!source || !sink || !observer) {
     throw Components.Exception("", Cr.NS_ERROR_NULL_POINTER);
+  }
 
   
   this._source = source;
@@ -3894,18 +4357,23 @@ function WriteThroughCopier(source, sink, observer, context) {
     this._waitToReadData();
     this._waitForSinkClosure();
   } catch (e) {
-    dumpn("!!! error starting copy: " + e +
-          ("lineNumber" in e ? ", line " + e.lineNumber : ""));
+    dumpn(
+      "!!! error starting copy: " +
+        e +
+        ("lineNumber" in e ? ", line " + e.lineNumber : "")
+    );
     dumpn(e.stack);
     this.cancel(Cr.NS_ERROR_UNEXPECTED);
   }
 }
-WriteThroughCopier.prototype =
-{
+WriteThroughCopier.prototype = {
   
 
-  QueryInterface: ChromeUtils.generateQI(["nsIInputStreamCallback", "nsIOutputStreamCallback", "nsIRequest"]),
-
+  QueryInterface: ChromeUtils.generateQI([
+    "nsIInputStreamCallback",
+    "nsIOutputStreamCallback",
+    "nsIRequest",
+  ]),
 
   
 
@@ -3917,8 +4385,9 @@ WriteThroughCopier.prototype =
 
 
   onInputStreamReady(input) {
-    if (this._source === null)
+    if (this._source === null) {
       return;
+    }
 
     dumpn("*** onInputStreamReady");
 
@@ -3944,7 +4413,8 @@ WriteThroughCopier.prototype =
     
     
 
-    var bytesWanted = 0, bytesConsumed = -1;
+    var bytesWanted = 0,
+      bytesConsumed = -1;
     try {
       input = new BinaryInputStream(input);
 
@@ -3961,8 +4431,9 @@ WriteThroughCopier.prototype =
 
       
       
-      if (bytesWanted === 0)
+      if (bytesWanted === 0) {
         throw Components.Exception("", Cr.NS_BASE_STREAM_CLOSED);
+      }
     } catch (e) {
       let rv;
       if (streamClosed(e)) {
@@ -3981,8 +4452,10 @@ WriteThroughCopier.prototype =
 
     NS_ASSERT(bytesConsumed > 0);
     NS_ASSERT(pendingData.length > 0, "no pending data somehow?");
-    NS_ASSERT(pendingData[pendingData.length - 1].length > 0,
-              "buffered zero bytes of data?");
+    NS_ASSERT(
+      pendingData[pendingData.length - 1].length > 0,
+      "buffered zero bytes of data?"
+    );
 
     NS_ASSERT(this._source !== null);
 
@@ -4001,11 +4474,15 @@ WriteThroughCopier.prototype =
     
     
     try {
-      if (pendingData.length === 1)
+      if (pendingData.length === 1) {
         this._waitToWriteData();
+      }
     } catch (e) {
-      dumpn("!!! error waiting to write data just read, swallowing and " +
-            "writing only what we already have: " + e);
+      dumpn(
+        "!!! error waiting to write data just read, swallowing and " +
+          "writing only what we already have: " +
+          e
+      );
       this._doneWritingToSink(Cr.NS_ERROR_UNEXPECTED);
       return;
     }
@@ -4020,7 +4497,6 @@ WriteThroughCopier.prototype =
     }
   },
 
-
   
 
   
@@ -4032,8 +4508,9 @@ WriteThroughCopier.prototype =
 
 
   onOutputStreamReady(output) {
-    if (this._sink === null)
+    if (this._sink === null) {
       return;
+    }
 
     dumpn("*** onOutputStreamReady");
 
@@ -4050,7 +4527,6 @@ WriteThroughCopier.prototype =
       this._doneWritingToSink(Cr.NS_ERROR_UNEXPECTED);
       return;
     }
-
 
     NS_ASSERT(pendingData[0].length > 0, "queued up an empty quantum?");
 
@@ -4077,26 +4553,32 @@ WriteThroughCopier.prototype =
       
       
       var bytesWritten = output.write(quantum, quantum.length);
-      if (bytesWritten === quantum.length)
+      if (bytesWritten === quantum.length) {
         pendingData.shift();
-      else
+      } else {
         pendingData[0] = quantum.substring(bytesWritten);
+      }
 
       dumpn("*** wrote " + bytesWritten + " bytes of data");
     } catch (e) {
       if (wouldBlock(e)) {
-        NS_ASSERT(pendingData.length > 0,
-                  "stream-blocking exception with no data to write?");
-        NS_ASSERT(pendingData[0].length > 0,
-                  "stream-blocking exception with empty quantum?");
+        NS_ASSERT(
+          pendingData.length > 0,
+          "stream-blocking exception with no data to write?"
+        );
+        NS_ASSERT(
+          pendingData[0].length > 0,
+          "stream-blocking exception with empty quantum?"
+        );
         this._waitToWriteData();
         return;
       }
 
-      if (streamClosed(e))
+      if (streamClosed(e)) {
         dumpn("!!! output stream prematurely closed, signaling error...");
-      else
+      } else {
         dumpn("!!! unknown error: " + e + ", quantum=" + quantum);
+      }
 
       this._doneWritingToSink(Cr.NS_ERROR_UNEXPECTED);
       return;
@@ -4125,7 +4607,7 @@ WriteThroughCopier.prototype =
 
 
 
-       this._waitForSinkClosure();
+      this._waitForSinkClosure();
     } else {
       
 
@@ -4136,7 +4618,6 @@ WriteThroughCopier.prototype =
       this._cancelOrDispatchCancelCallback(Cr.NS_OK);
     }
   },
-
 
   
 
@@ -4179,7 +4660,6 @@ WriteThroughCopier.prototype =
     this._doneReadingSource(status);
   },
 
-
   
 
   
@@ -4194,10 +4674,11 @@ WriteThroughCopier.prototype =
     dumpn("*** _doneReadingSource(0x" + e.toString(16) + ")");
 
     this._finishSource(e);
-    if (this._pendingData.length === 0)
+    if (this._pendingData.length === 0) {
       this._sink = null;
-    else
+    } else {
       NS_ASSERT(this._sink !== null, "null output?");
+    }
 
     
     
@@ -4246,21 +4727,23 @@ WriteThroughCopier.prototype =
     }
 
     var self = this;
-    var event =
-      {
-        run() {
-          dumpn("*** onStopRequest async callback");
+    var event = {
+      run() {
+        dumpn("*** onStopRequest async callback");
 
-          self._completed = true;
-          try {
-            self._observer.onStopRequest(self, self.status);
-          } catch (e) {
-            NS_ASSERT(false,
-                      "how are we throwing an exception here?  we control " +
-                      "all the callers!  " + e);
-          }
-        },
-      };
+        self._completed = true;
+        try {
+          self._observer.onStopRequest(self, self.status);
+        } catch (e) {
+          NS_ASSERT(
+            false,
+            "how are we throwing an exception here?  we control " +
+              "all the callers!  " +
+              e
+          );
+        }
+      },
+    };
 
     gThreadManager.currentThread.dispatch(event, Ci.nsIThread.DISPATCH_NORMAL);
   },
@@ -4270,8 +4753,12 @@ WriteThroughCopier.prototype =
 
   _waitToReadData() {
     dumpn("*** _waitToReadData");
-    this._source.asyncWait(this, 0, Response.SEGMENT_SIZE,
-                           gThreadManager.mainThread);
+    this._source.asyncWait(
+      this,
+      0,
+      Response.SEGMENT_SIZE,
+      gThreadManager.mainThread
+    );
   },
 
   
@@ -4284,8 +4771,12 @@ WriteThroughCopier.prototype =
     NS_ASSERT(pendingData.length > 0, "no pending data to write?");
     NS_ASSERT(pendingData[0].length > 0, "buffered an empty write?");
 
-    this._sink.asyncWait(this, 0, pendingData[0].length,
-                         gThreadManager.mainThread);
+    this._sink.asyncWait(
+      this,
+      0,
+      pendingData[0].length,
+      gThreadManager.mainThread
+    );
   },
 
   
@@ -4302,8 +4793,12 @@ WriteThroughCopier.prototype =
   _waitForSinkClosure() {
     dumpn("*** _waitForSinkClosure");
 
-    this._sink.asyncWait(this, Ci.nsIAsyncOutputStream.WAIT_CLOSURE_ONLY, 0,
-                         gThreadManager.mainThread);
+    this._sink.asyncWait(
+      this,
+      Ci.nsIAsyncOutputStream.WAIT_CLOSURE_ONLY,
+      0,
+      gThreadManager.mainThread
+    );
   },
 
   
@@ -4326,9 +4821,7 @@ WriteThroughCopier.prototype =
 
 
 
-
-const headerUtils =
-{
+const headerUtils = {
   
 
 
@@ -4393,11 +4886,12 @@ const headerUtils =
 
     
     dumpn("*** Normalized value: '" + val + "'");
-    for (var i = 0, len = val.length; i < len; i++)
+    for (var i = 0, len = val.length; i < len; i++) {
       if (isCTL(val.charCodeAt(i))) {
         dump("*** Char " + i + " has charcode " + val.charCodeAt(i));
         throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
       }
+    }
 
     
     
@@ -4415,13 +4909,12 @@ const headerUtils =
 
 
 
-
-
 function htmlEscape(str) {
   
   var s = "";
-  for (var i = 0; i < str.length; i++)
+  for (var i = 0; i < str.length; i++) {
     s += "&#" + str.charCodeAt(i) + ";";
+  }
   return s;
 }
 
@@ -4434,11 +4927,11 @@ function htmlEscape(str) {
 
 
 
-
 function nsHttpVersion(versionString) {
   var matches = /^(\d+)\.(\d+)$/.exec(versionString);
-  if (!matches)
+  if (!matches) {
     throw new Error("Not a valid HTTP version!");
+  }
 
   
   this.major = parseInt(matches[1], 10);
@@ -4446,12 +4939,16 @@ function nsHttpVersion(versionString) {
   
   this.minor = parseInt(matches[2], 10);
 
-  if (isNaN(this.major) || isNaN(this.minor) ||
-      this.major < 0 || this.minor < 0)
+  if (
+    isNaN(this.major) ||
+    isNaN(this.minor) ||
+    this.major < 0 ||
+    this.minor < 0
+  ) {
     throw new Error("Not a valid HTTP version!");
+  }
 }
-nsHttpVersion.prototype =
-{
+nsHttpVersion.prototype = {
   
 
 
@@ -4468,21 +4965,20 @@ nsHttpVersion.prototype =
 
 
   equals(otherVersion) {
-    return this.major == otherVersion.major &&
-           this.minor == otherVersion.minor;
+    return this.major == otherVersion.major && this.minor == otherVersion.minor;
   },
 
   
   atLeast(otherVersion) {
-    return this.major > otherVersion.major ||
-           (this.major == otherVersion.major &&
-            this.minor >= otherVersion.minor);
+    return (
+      this.major > otherVersion.major ||
+      (this.major == otherVersion.major && this.minor >= otherVersion.minor)
+    );
   },
 };
 
 nsHttpVersion.HTTP_1_0 = new nsHttpVersion("1.0");
 nsHttpVersion.HTTP_1_1 = new nsHttpVersion("1.1");
-
 
 
 
@@ -4508,8 +5004,7 @@ function nsHttpHeaders() {
 
   this._headers = {};
 }
-nsHttpHeaders.prototype =
-{
+nsHttpHeaders.prototype = {
   
 
 
@@ -4528,14 +5023,18 @@ nsHttpHeaders.prototype =
     
     
     if (merge && name in this._headers) {
-      if (name === "www-authenticate" ||
-          name === "proxy-authenticate" ||
-          name === "set-cookie") {
+      if (
+        name === "www-authenticate" ||
+        name === "proxy-authenticate" ||
+        name === "set-cookie"
+      ) {
         this._headers[name].push(value);
       } else {
         this._headers[name][0] += "," + value;
-        NS_ASSERT(this._headers[name].length === 1,
-            "how'd a non-special header have multiple values?");
+        NS_ASSERT(
+          this._headers[name].length === 1,
+          "how'd a non-special header have multiple values?"
+        );
       }
     } else {
       this._headers[name] = [value];
@@ -4590,8 +5089,9 @@ nsHttpHeaders.prototype =
   getHeaderValues(fieldName) {
     var name = headerUtils.normalizeFieldName(fieldName);
 
-    if (name in this._headers)
+    if (name in this._headers) {
       return this._headers[name];
+    }
     throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
   },
 
@@ -4608,7 +5108,7 @@ nsHttpHeaders.prototype =
 
   hasHeader(fieldName) {
     var name = headerUtils.normalizeFieldName(fieldName);
-    return (name in this._headers);
+    return name in this._headers;
   },
 
   
@@ -4635,19 +5135,18 @@ nsHttpHeaders.prototype =
 
 
 
-
 function nsSimpleEnumerator(items) {
   this._items = items;
   this._nextIndex = 0;
 }
-nsSimpleEnumerator.prototype =
-{
+nsSimpleEnumerator.prototype = {
   hasMoreElements() {
     return this._nextIndex < this._items.length;
   },
   getNext() {
-    if (!this.hasMoreElements())
+    if (!this.hasMoreElements()) {
       throw Components.Exception("", Cr.NS_ERROR_NOT_AVAILABLE);
+    }
 
     return this._items[this._nextIndex++];
   },
@@ -4656,7 +5155,6 @@ nsSimpleEnumerator.prototype =
   },
   QueryInterface: ChromeUtils.generateQI(["nsISimpleEnumerator"]),
 };
-
 
 
 
@@ -4703,8 +5201,7 @@ function Request(port) {
 
   this._bag = null;
 }
-Request.prototype =
-{
+Request.prototype = {
   
 
   
@@ -4804,7 +5301,6 @@ Request.prototype =
     return this._bag.getProperty(name);
   },
 
-
   
 
   
@@ -4812,13 +5308,13 @@ Request.prototype =
   
   QueryInterface: ChromeUtils.generateQI(["nsIHttpRequest"]),
 
-
   
 
   
   _ensurePropertyBag() {
-    if (!this._bag)
+    if (!this._bag) {
       this._bag = new WritablePropertyBag();
+    }
   },
 };
 
@@ -4851,8 +5347,7 @@ Request.prototype =
 
 function server(port, basePath) {
   if (basePath) {
-    var lp = Cc["@mozilla.org/file/local;1"]
-               .createInstance(Ci.nsIFile);
+    var lp = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
     lp.initWithPath(basePath);
   }
 
@@ -4860,19 +5355,22 @@ function server(port, basePath) {
   DEBUG = true;
 
   var srv = new nsHttpServer();
-  if (lp)
+  if (lp) {
     srv.registerDirectory("/", lp);
+  }
   srv.registerContentType("sjs", SJS_TYPE);
   srv.identity.setPrimary("http", "localhost", port);
   srv.start(port);
 
   var thread = gThreadManager.currentThread;
-  while (!srv.isStopped())
+  while (!srv.isStopped()) {
     thread.processNextEvent(true);
+  }
 
   
-  while (thread.hasPendingEvents())
+  while (thread.hasPendingEvents()) {
     thread.processNextEvent(true);
+  }
 
   DEBUG = false;
 }

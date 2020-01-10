@@ -1,24 +1,31 @@
-var ioService = Cc["@mozilla.org/network/io-service;1"]
-                .getService(Ci.nsIIOService);
-var resProt = ioService.getProtocolHandler("resource")
-              .QueryInterface(Ci.nsIResProtocolHandler);
+var ioService = Cc["@mozilla.org/network/io-service;1"].getService(
+  Ci.nsIIOService
+);
+var resProt = ioService
+  .getProtocolHandler("resource")
+  .QueryInterface(Ci.nsIResProtocolHandler);
 
 function run_test() {
-    
-    let greModulesURI = ioService.newURI("resource://gre/modules/");
-    resProt.setSubstitution("my-gre-modules", greModulesURI);
+  
+  let greModulesURI = ioService.newURI("resource://gre/modules/");
+  resProt.setSubstitution("my-gre-modules", greModulesURI);
 
-    
-    
-    let greFileSpec = ioService.newURI("modules/", null,
-                                       resProt.getSubstitution("gre")).spec;
-    let aliasURI = resProt.getSubstitution("my-gre-modules");
-    Assert.equal(aliasURI.spec, greFileSpec);
+  
+  
+  let greFileSpec = ioService.newURI(
+    "modules/",
+    null,
+    resProt.getSubstitution("gre")
+  ).spec;
+  let aliasURI = resProt.getSubstitution("my-gre-modules");
+  Assert.equal(aliasURI.spec, greFileSpec);
 
-    
-    
-    let greNetUtilURI = ioService.newURI("resource://gre/modules/NetUtil.jsm");
-    let myNetUtilURI = ioService.newURI("resource://my-gre-modules/NetUtil.jsm");
-    Assert.equal(resProt.resolveURI(greNetUtilURI),
-                 resProt.resolveURI(myNetUtilURI));
+  
+  
+  let greNetUtilURI = ioService.newURI("resource://gre/modules/NetUtil.jsm");
+  let myNetUtilURI = ioService.newURI("resource://my-gre-modules/NetUtil.jsm");
+  Assert.equal(
+    resProt.resolveURI(greNetUtilURI),
+    resProt.resolveURI(myNetUtilURI)
+  );
 }

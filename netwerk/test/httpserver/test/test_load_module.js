@@ -5,7 +5,9 @@
 
 
 function run_test() {
-  const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+  const { HttpServer } = ChromeUtils.import(
+    "resource://testing-common/httpd.js"
+  );
 
   let server = new HttpServer();
   server.start(-1);

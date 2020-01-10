@@ -3,147 +3,184 @@
 
 
 
-const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 do_get_profile();
 
-const prefService = Cc["@mozilla.org/preferences-service;1"]
-                       .getService(Ci.nsIPrefBranch);
+const prefService = Cc["@mozilla.org/preferences-service;1"].getService(
+  Ci.nsIPrefBranch
+);
 
 const httpserver = new HttpServer();
 
 
 function repeatToLargerThan1K(data) {
-    while(data.length <= 1024)
-        data += data;
-    return data;
+  while (data.length <= 1024) {
+    data += data;
+  }
+  return data;
 }
 
 function setupChannel(suffix, value) {
-    var chan = NetUtil.newChannel({
-        uri: "http://localhost:" + httpserver.identity.primaryPort + suffix,
-        loadUsingSystemPrincipal: true
-    });
-    var httpChan = chan.QueryInterface(Ci.nsIHttpChannel);
-    httpChan.setRequestHeader("x-request", value, false);
-    
-    return httpChan;
+  var chan = NetUtil.newChannel({
+    uri: "http://localhost:" + httpserver.identity.primaryPort + suffix,
+    loadUsingSystemPrincipal: true,
+  });
+  var httpChan = chan.QueryInterface(Ci.nsIHttpChannel);
+  httpChan.setRequestHeader("x-request", value, false);
+
+  return httpChan;
 }
 
 var tests = [
-             new InitializeCacheDevices(true, false), 
-             new TestCacheEntrySize(
-                 function() { prefService.setIntPref("browser.cache.memory.max_entry_size", 1); },
-                              "012345", "9876543210", "012345"), 
-             new TestCacheEntrySize(
-                 function() { prefService.setIntPref("browser.cache.memory.max_entry_size", 1); },
-                              "0123456789a", "9876543210", "9876543210"), 
-             new TestCacheEntrySize(
-                 function() { prefService.setIntPref("browser.cache.memory.max_entry_size", -1); },
-                              "0123456789a", "9876543210", "0123456789a"), 
+  new InitializeCacheDevices(true, false), 
+  new TestCacheEntrySize(
+    function() {
+      prefService.setIntPref("browser.cache.memory.max_entry_size", 1);
+    },
+    "012345",
+    "9876543210",
+    "012345"
+  ), 
+  new TestCacheEntrySize(
+    function() {
+      prefService.setIntPref("browser.cache.memory.max_entry_size", 1);
+    },
+    "0123456789a",
+    "9876543210",
+    "9876543210"
+  ), 
+  new TestCacheEntrySize(
+    function() {
+      prefService.setIntPref("browser.cache.memory.max_entry_size", -1);
+    },
+    "0123456789a",
+    "9876543210",
+    "0123456789a"
+  ), 
 
-             new InitializeCacheDevices(false, true), 
-             new TestCacheEntrySize(
-                 function() { prefService.setIntPref("browser.cache.disk.max_entry_size", 1); },
-                              "012345", "9876543210", "012345"), 
-             new TestCacheEntrySize(
-                 function() { prefService.setIntPref("browser.cache.disk.max_entry_size", 1); },
-                              "0123456789a", "9876543210", "9876543210"), 
-             new TestCacheEntrySize(
-                 function() { prefService.setIntPref("browser.cache.disk.max_entry_size", -1); },
-                              "0123456789a", "9876543210", "0123456789a"), 
-            ];
+  new InitializeCacheDevices(false, true), 
+  new TestCacheEntrySize(
+    function() {
+      prefService.setIntPref("browser.cache.disk.max_entry_size", 1);
+    },
+    "012345",
+    "9876543210",
+    "012345"
+  ), 
+  new TestCacheEntrySize(
+    function() {
+      prefService.setIntPref("browser.cache.disk.max_entry_size", 1);
+    },
+    "0123456789a",
+    "9876543210",
+    "9876543210"
+  ), 
+  new TestCacheEntrySize(
+    function() {
+      prefService.setIntPref("browser.cache.disk.max_entry_size", -1);
+    },
+    "0123456789a",
+    "9876543210",
+    "0123456789a"
+  ), 
+];
 
 function nextTest() {
-    
-    
-    syncWithCacheIOThread(function() {
-        get_cache_service().clear();
-        syncWithCacheIOThread(runNextTest);
-    });
+  
+  
+  syncWithCacheIOThread(function() {
+    get_cache_service().clear();
+    syncWithCacheIOThread(runNextTest);
+  });
 }
 
 function runNextTest() {
-    var aTest = tests.shift();
-    if (!aTest) {
-        httpserver.stop(do_test_finished);
-        return;
-    }
-    executeSoon(function() { aTest.start(); } );
+  var aTest = tests.shift();
+  if (!aTest) {
+    httpserver.stop(do_test_finished);
+    return;
+  }
+  executeSoon(function() {
+    aTest.start();
+  });
 }
 
 
 function InitializeCacheDevices(memDevice, diskDevice) {
-    this.start = function() {
-        prefService.setBoolPref("browser.cache.memory.enable", memDevice);
-        if (memDevice) {
-            cap = prefService.getIntPref("browser.cache.memory.capacity", 0);
-            if (cap == 0) {
-                prefService.setIntPref("browser.cache.memory.capacity", 1024);
-            }
-        }
-        prefService.setBoolPref("browser.cache.disk.enable", diskDevice);
-        if (diskDevice) {
-            cap = prefService.getIntPref("browser.cache.disk.capacity", 0);
-            if (cap == 0) {
-                prefService.setIntPref("browser.cache.disk.capacity", 1024);
-            }
-        }
-        var channel = setupChannel("/bug650995", "Initial value");
-        channel.asyncOpen(new ChannelListener(nextTest, null));
+  this.start = function() {
+    prefService.setBoolPref("browser.cache.memory.enable", memDevice);
+    if (memDevice) {
+      cap = prefService.getIntPref("browser.cache.memory.capacity", 0);
+      if (cap == 0) {
+        prefService.setIntPref("browser.cache.memory.capacity", 1024);
+      }
     }
+    prefService.setBoolPref("browser.cache.disk.enable", diskDevice);
+    if (diskDevice) {
+      cap = prefService.getIntPref("browser.cache.disk.capacity", 0);
+      if (cap == 0) {
+        prefService.setIntPref("browser.cache.disk.capacity", 1024);
+      }
+    }
+    var channel = setupChannel("/bug650995", "Initial value");
+    channel.asyncOpen(new ChannelListener(nextTest, null));
+  };
 }
 
-function TestCacheEntrySize(setSizeFunc, firstRequest, secondRequest, secondExpectedReply) {
+function TestCacheEntrySize(
+  setSizeFunc,
+  firstRequest,
+  secondRequest,
+  secondExpectedReply
+) {
+  
+  
+  
+  if (firstRequest.length > 10) {
+    firstRequest = repeatToLargerThan1K(firstRequest);
+  }
+  if (secondExpectedReply.length > 10) {
+    secondExpectedReply = repeatToLargerThan1K(secondExpectedReply);
+  }
 
-    
-    
-    
-    if (firstRequest.length > 10)
-        firstRequest = repeatToLargerThan1K(firstRequest);
-    if (secondExpectedReply.length > 10)
-        secondExpectedReply = repeatToLargerThan1K(secondExpectedReply);
-
-    this.start = function() {
-        setSizeFunc();
-        var channel = setupChannel("/bug650995", firstRequest);
-        channel.asyncOpen(new ChannelListener(this.initialLoad, this));
-    },
-
-    this.initialLoad = function(request, data, ctx) {
-        Assert.equal(firstRequest, data);
-        var channel = setupChannel("/bug650995", secondRequest);
-        executeSoon(function() {
-            channel.asyncOpen(new ChannelListener(ctx.testAndTriggerNext, ctx));
-            });
-    },
-
-    this.testAndTriggerNext = function(request, data, ctx) {
-        Assert.equal(secondExpectedReply, data);
-        executeSoon(nextTest);
-    }
+  (this.start = function() {
+    setSizeFunc();
+    var channel = setupChannel("/bug650995", firstRequest);
+    channel.asyncOpen(new ChannelListener(this.initialLoad, this));
+  }),
+    (this.initialLoad = function(request, data, ctx) {
+      Assert.equal(firstRequest, data);
+      var channel = setupChannel("/bug650995", secondRequest);
+      executeSoon(function() {
+        channel.asyncOpen(new ChannelListener(ctx.testAndTriggerNext, ctx));
+      });
+    }),
+    (this.testAndTriggerNext = function(request, data, ctx) {
+      Assert.equal(secondExpectedReply, data);
+      executeSoon(nextTest);
+    });
 }
 
-function run_test()
-{
-    httpserver.registerPathHandler("/bug650995", handler);
-    httpserver.start(-1);
+function run_test() {
+  httpserver.registerPathHandler("/bug650995", handler);
+  httpserver.start(-1);
 
-    prefService.setBoolPref("browser.cache.offline.enable", false);
-    prefService.setBoolPref("network.http.rcwn.enabled", false);
+  prefService.setBoolPref("browser.cache.offline.enable", false);
+  prefService.setBoolPref("network.http.rcwn.enabled", false);
 
-    nextTest();
-    do_test_pending();
+  nextTest();
+  do_test_pending();
 }
 
 function handler(metadata, response) {
-    var body = "BOOM!";
-    try {
-        body = metadata.getHeader("x-request");
-    } catch(e) {}
+  var body = "BOOM!";
+  try {
+    body = metadata.getHeader("x-request");
+  } catch (e) {}
 
-    response.setStatusLine(metadata.httpVersion, 200, "Ok");
-    response.setHeader("Content-Type", "text/plain", false);
-    response.setHeader("Cache-Control", "max-age=3600", false);
-    response.bodyOutputStream.write(body, body.length);
+  response.setStatusLine(metadata.httpVersion, 200, "Ok");
+  response.setHeader("Content-Type", "text/plain", false);
+  response.setHeader("Cache-Control", "max-age=3600", false);
+  response.bodyOutputStream.write(body, body.length);
 }
