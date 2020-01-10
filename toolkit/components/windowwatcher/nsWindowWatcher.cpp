@@ -603,7 +603,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       parentTreeOwner;  
   nsCOMPtr<nsIDocShellTreeItem> newDocShellItem;  
 
-  nsCOMPtr<nsPIDOMWindowOuter> parent =
+  nsCOMPtr<nsPIDOMWindowOuter> parentWindow =
       aParent ? nsPIDOMWindowOuter::From(aParent) : nullptr;
 
   NS_ENSURE_ARG_POINTER(aResult);
@@ -614,7 +614,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     return NS_ERROR_FAILURE;
   }
 
-  GetWindowTreeOwner(parent, getter_AddRefs(parentTreeOwner));
+  GetWindowTreeOwner(parentWindow, getter_AddRefs(parentTreeOwner));
 
   
   
@@ -643,15 +643,16 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   
-  nsCOMPtr<nsPIDOMWindowOuter> foundWindow =
-      SafeGetWindowByName(name, aForceNoOpener, aParent);
-  GetWindowTreeItem(foundWindow, getter_AddRefs(newDocShellItem));
+  RefPtr<BrowsingContext> foundContext = GetBrowsingContextByName(
+      name, aForceNoOpener,
+      parentWindow ? parentWindow->GetBrowsingContext() : nullptr);
+  if (foundContext) {
+    newDocShellItem = foundContext->GetDocShell();
+  }
 
   
   
   
-  nsCOMPtr<nsPIDOMWindowOuter> parentWindow =
-      aParent ? nsPIDOMWindowOuter::From(aParent) : nullptr;
   nsCOMPtr<nsIDocShell> parentDocShell;
   if (parentWindow) {
     parentDocShell = parentWindow->GetDocShell();
@@ -1957,9 +1958,17 @@ already_AddRefed<nsIDocShellTreeItem> nsWindowWatcher::GetCallerTreeItem(
   return callerItem.forget();
 }
 
-nsPIDOMWindowOuter* nsWindowWatcher::SafeGetWindowByName(
+BrowsingContext* nsWindowWatcher::GetCallerBrowsingContext(
+    BrowsingContext* aParentItem) {
+  if (nsCOMPtr<nsIDocShell> caller = do_GetInterface(GetEntryGlobal())) {
+    return caller->GetBrowsingContext();
+  }
+  return aParentItem;
+}
+
+already_AddRefed<BrowsingContext> nsWindowWatcher::GetBrowsingContextByName(
     const nsAString& aName, bool aForceNoOpener,
-    mozIDOMWindowProxy* aCurrentWindow) {
+    BrowsingContext* aCurrentContext) {
   if (aName.IsEmpty()) {
     return nullptr;
   }
@@ -1973,16 +1982,11 @@ nsPIDOMWindowOuter* nsWindowWatcher::SafeGetWindowByName(
     }
   }
 
-  nsCOMPtr<nsIDocShellTreeItem> startItem;
-  GetWindowTreeItem(aCurrentWindow, getter_AddRefs(startItem));
+  RefPtr<BrowsingContext> caller = GetCallerBrowsingContext(aCurrentContext);
 
-  nsCOMPtr<nsIDocShellTreeItem> callerItem = GetCallerTreeItem(startItem);
-
-  nsCOMPtr<nsIDocShellTreeItem> foundItem;
-  if (startItem) {
-    startItem->FindItemWithName(aName, nullptr, callerItem,
-                                 false,
-                                getter_AddRefs(foundItem));
+  RefPtr<BrowsingContext> foundContext;
+  if (aCurrentContext) {
+    foundContext = aCurrentContext->FindWithName(aName, *caller);
   } else {
     if (aName.LowerCaseEqualsLiteral("_blank") ||
         aName.LowerCaseEqualsLiteral("_top") ||
@@ -1993,11 +1997,16 @@ nsPIDOMWindowOuter* nsWindowWatcher::SafeGetWindowByName(
 
     
     
+    nsCOMPtr<nsIDocShellTreeItem> foundItem;
     Unused << TabGroup::GetChromeTabGroup()->FindItemWithName(
-        aName, nullptr, callerItem, getter_AddRefs(foundItem));
+        aName, nullptr, caller ? caller->GetDocShell() : nullptr,
+        getter_AddRefs(foundItem));
+    if (foundItem) {
+      foundContext = foundItem->GetBrowsingContext();
+    }
   }
 
-  return foundItem ? foundItem->GetWindow() : nullptr;
+  return foundContext.forget();
 }
 
 
