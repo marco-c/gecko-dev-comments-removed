@@ -679,6 +679,26 @@ add_task(async function test24c() {
 });
 
 
+add_task(async function test24d() {
+  dns.clearCache(true);
+  Services.prefs.setCharPref(
+    "network.trr.excluded-domains",
+    "foo.test.com, bar.example.com"
+  );
+  await new DNSListener("bar.example.com", "127.0.0.1");
+});
+
+
+add_task(async function test24e() {
+  dns.clearCache(true);
+  Services.prefs.setCharPref(
+    "network.trr.excluded-domains",
+    "bar.example.com, foo.test.com"
+  );
+  await new DNSListener("bar.example.com", "127.0.0.1");
+});
+
+
 
 add_task(async function test25() {
   dns.clearCache(true);
