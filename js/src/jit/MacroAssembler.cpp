@@ -1571,87 +1571,34 @@ void MacroAssembler::generateBailoutTail(Register scratch,
     enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
 
     
-    Label noMonitor;
-    Label done;
-    branchPtr(Assembler::Equal,
-              Address(bailoutInfo, offsetof(BaselineBailoutInfo, monitorStub)),
-              ImmPtr(nullptr), &noMonitor);
+    pushValue(Address(bailoutInfo, offsetof(BaselineBailoutInfo, valueR0)));
+    pushValue(Address(bailoutInfo, offsetof(BaselineBailoutInfo, valueR1)));
+    push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeFramePtr)));
+    push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
 
     
-    
-    
-    {
-      
-      pushValue(Address(bailoutInfo, offsetof(BaselineBailoutInfo, valueR0)));
-      push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeFramePtr)));
-      push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
-      push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, monitorStub)));
-
-      
-      setupUnalignedABICall(temp);
-      passABIArg(bailoutInfo);
-      callWithABI(JS_FUNC_TO_DATA_PTR(void*, FinishBailoutToBaseline),
-                  MoveOp::GENERAL,
-                  CheckUnsafeCallWithABI::DontCheckHasExitFrame);
-      branchIfFalseBool(ReturnReg, exceptionLabel());
-
-      
-      AllocatableGeneralRegisterSet enterMonRegs(GeneralRegisterSet::All());
-      enterMonRegs.take(R0);
-      enterMonRegs.take(ICStubReg);
-      enterMonRegs.take(BaselineFrameReg);
-      enterMonRegs.takeUnchecked(ICTailCallReg);
-
-      pop(ICStubReg);
-      pop(ICTailCallReg);
-      pop(BaselineFrameReg);
-      popValue(R0);
-
-      
-      addToStackPtr(Imm32(ExitFrameLayout::SizeWithFooter()));
-
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-      push(ICTailCallReg);
-#endif
-      jump(Address(ICStubReg, ICStub::offsetOfStubCode()));
-    }
+    setupUnalignedABICall(temp);
+    passABIArg(bailoutInfo);
+    callWithABI(JS_FUNC_TO_DATA_PTR(void*, FinishBailoutToBaseline),
+                MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
+    branchIfFalseBool(ReturnReg, exceptionLabel());
 
     
+    AllocatableGeneralRegisterSet enterRegs(GeneralRegisterSet::All());
+    enterRegs.take(R0);
+    enterRegs.take(R1);
+    enterRegs.take(BaselineFrameReg);
+    Register jitcodeReg = enterRegs.takeAny();
+
+    pop(jitcodeReg);
+    pop(BaselineFrameReg);
+    popValue(R1);
+    popValue(R0);
+
     
-    
-    bind(&noMonitor);
-    {
-      
-      pushValue(Address(bailoutInfo, offsetof(BaselineBailoutInfo, valueR0)));
-      pushValue(Address(bailoutInfo, offsetof(BaselineBailoutInfo, valueR1)));
-      push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeFramePtr)));
-      push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
+    addToStackPtr(Imm32(ExitFrameLayout::SizeWithFooter()));
 
-      
-      setupUnalignedABICall(temp);
-      passABIArg(bailoutInfo);
-      callWithABI(JS_FUNC_TO_DATA_PTR(void*, FinishBailoutToBaseline),
-                  MoveOp::GENERAL,
-                  CheckUnsafeCallWithABI::DontCheckHasExitFrame);
-      branchIfFalseBool(ReturnReg, exceptionLabel());
-
-      
-      AllocatableGeneralRegisterSet enterRegs(GeneralRegisterSet::All());
-      enterRegs.take(R0);
-      enterRegs.take(R1);
-      enterRegs.take(BaselineFrameReg);
-      Register jitcodeReg = enterRegs.takeAny();
-
-      pop(jitcodeReg);
-      pop(BaselineFrameReg);
-      popValue(R1);
-      popValue(R0);
-
-      
-      addToStackPtr(Imm32(ExitFrameLayout::SizeWithFooter()));
-
-      jump(jitcodeReg);
-    }
+    jump(jitcodeReg);
   }
 }
 

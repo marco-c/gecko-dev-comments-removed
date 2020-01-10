@@ -3165,7 +3165,7 @@ bool BaselineCodeGen<Handler>::emit_JSOP_GETELEM_SUPER() {
     return false;
   }
 
-  frame.pop();  
+  frame.pop();
   frame.push(R0);
   return true;
 }

@@ -496,16 +496,13 @@ struct BaselineBailoutInfo {
   jsbytecode* resumePC;
 
   
-  jsbytecode* tryPC;
-  jsbytecode* faultPC;
+  
+  jsbytecode* monitorPC;
+  Value monitorValue;
 
   
-  
-  
-  
-  
-  
-  ICStub* monitorStub;
+  jsbytecode* tryPC;
+  jsbytecode* faultPC;
 
   
   uint32_t numFrames;
