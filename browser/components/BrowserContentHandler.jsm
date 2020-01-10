@@ -1065,19 +1065,6 @@ nsDefaultCommandLineHandler.prototype = {
       if (win) {
         win.close();
       }
-      
-      
-      
-      
-      
-      
-      
-      Services.tm.idleDispatchToMainThread(() => {
-        win = Services.wm.getMostRecentWindow(null);
-        if (!win) {
-          Services.startup.quit(Services.startup.eForceQuit);
-        }
-      }, 1);
     }
   },
 

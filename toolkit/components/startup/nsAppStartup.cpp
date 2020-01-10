@@ -277,6 +277,11 @@ nsAppStartup::Run(void) {
     if (NS_FAILED(rv)) return rv;
   }
 
+  
+  
+  
+  Quit(eForceQuit);
+
   nsresult retval = NS_OK;
   if (mRestart) {
     retval = NS_SUCCESS_RESTART_APP;
