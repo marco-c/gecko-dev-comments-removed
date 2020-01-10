@@ -103,7 +103,25 @@ add_task(async function setup() {
       
       return;
     }
+    if (
+      msg.errorMessage.includes("Error detecting Chrome profiles") ||
+      msg.errorMessage.includes(
+        "Library/Application Support/Chromium/Local State (No such file or directory)"
+      ) ||
+      msg.errorMessage.includes(
+        "Library/Application Support/Google/Chrome/Local State (No such file or directory)"
+      )
+    ) {
+      
+      
+      return;
+    }
     if (msg.errorMessage.includes("Can't find profile directory.")) {
+      
+      return;
+    }
+    if (msg.errorMessage.includes("Error reading typed URL history")) {
+      
       
       return;
     }
