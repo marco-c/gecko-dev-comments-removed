@@ -710,6 +710,37 @@ nsNSSSocketInfo::SetEsniTxt(const nsACString& aEsniTxt) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsNSSSocketInfo::GetPeerId(nsACString& aResult) {
+  if (!mPeerId.IsEmpty()) {
+    aResult.Assign(mPeerId);
+    return NS_OK;
+  }
+
+  if (mProviderFlags &
+      nsISocketProvider::ANONYMOUS_CONNECT) {  
+    mPeerId.AppendLiteral("anon:");
+  }
+  if (mProviderFlags & nsISocketProvider::NO_PERMANENT_STORAGE) {
+    mPeerId.AppendLiteral("private:");
+  }
+  if (mProviderFlags & nsISocketProvider::BE_CONSERVATIVE) {
+    mPeerId.AppendLiteral("beConservative:");
+  }
+
+  mPeerId.AppendPrintf("tlsflags0x%08x:", mProviderTlsFlags);
+
+  mPeerId.Append(GetHostName());
+  mPeerId.Append(':');
+  mPeerId.AppendInt(GetPort());
+  nsAutoCString suffix;
+  GetOriginAttributes().CreateSuffix(suffix);
+  mPeerId.Append(suffix);
+
+  aResult.Assign(mPeerId);
+  return NS_OK;
+}
+
 #if defined(DEBUG_SSL_VERBOSE) && defined(DUMP_BUFFER)
 
 
@@ -2116,30 +2147,13 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
 
   
   
-  uint32_t flags = infoObject->GetProviderFlags();
   nsAutoCString peerId;
-  if (flags & nsISocketProvider::ANONYMOUS_CONNECT) {  
-    peerId.AppendLiteral("anon:");
-  }
-  if (flags & nsISocketProvider::NO_PERMANENT_STORAGE) {
-    peerId.AppendLiteral("private:");
-  }
-  if (flags & nsISocketProvider::BE_CONSERVATIVE) {
-    peerId.AppendLiteral("beConservative:");
-  }
-
-  peerId.AppendPrintf("tlsflags0x%08x:", infoObject->GetProviderTlsFlags());
-
-  peerId.Append(host);
-  peerId.Append(':');
-  peerId.AppendInt(port);
-  nsAutoCString suffix;
-  infoObject->GetOriginAttributes().CreateSuffix(suffix);
-  peerId.Append(suffix);
+  infoObject->GetPeerId(peerId);
   if (SECSuccess != SSL_SetSockPeerID(fd, peerId.get())) {
     return NS_ERROR_FAILURE;
   }
 
+  uint32_t flags = infoObject->GetProviderFlags();
   if (flags & nsISocketProvider::NO_PERMANENT_STORAGE) {
     if (SECSuccess != SSL_OptionSet(fd, SSL_ENABLE_SESSION_TICKETS, false) ||
         SECSuccess != SSL_OptionSet(fd, SSL_NO_CACHE, true)) {
