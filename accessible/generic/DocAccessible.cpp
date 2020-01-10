@@ -1308,6 +1308,7 @@ void DocAccessible::ContentInserted(nsIContent* aStartChildNode,
 }
 
 bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
+  bool insert = false;
   
   
   Accessible* acc = GetAccessible(aRoot);
@@ -1349,7 +1350,19 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     
     if (aRoot->GetPrimaryFrame() || nsCoreUtils::IsDisplayContents(aRoot)) {
-      return true;
+      
+      
+      if (!GetAccessibleOrDescendant(aRoot)) {
+        return true;
+      }
+
+      
+      
+      
+      
+      
+      
+      insert = true;
     }
   }
 
@@ -1368,11 +1381,7 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     }
   }
 
-  
-  
-  MOZ_ASSERT(acc || (!aRoot->GetPrimaryFrame() &&
-                     !nsCoreUtils::IsDisplayContents(aRoot)));
-  return false;
+  return insert;
 }
 
 void DocAccessible::RecreateAccessible(nsIContent* aContent) {
