@@ -1205,7 +1205,7 @@ impl StrongRuleNode {
     
     
     pub unsafe fn has_children_for_testing(&self) -> bool {
-        self.get().children.read().is_empty()
+        !self.get().children.read().is_empty()
     }
 
     unsafe fn pop_from_free_list(&self) -> Option<WeakRuleNode> {
