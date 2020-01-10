@@ -148,11 +148,11 @@ typedef void *  PRCounterHandle;
 #define PR_CREATE_COUNTER(handle,qName,rName,description)
 #endif
 
-NSPR_API(PRCounterHandle) 
-	PR_CreateCounter( 
-		const char *qName, 
-    	const char *rName, 
-        const char *description 
+NSPR_API(PRCounterHandle)
+PR_CreateCounter(
+    const char *qName,
+    const char *rName,
+    const char *description
 );
 
 
@@ -178,9 +178,9 @@ NSPR_API(PRCounterHandle)
 #define PR_DESTROY_COUNTER(handle)
 #endif
 
-NSPR_API(void) 
-	PR_DestroyCounter( 
-		PRCounterHandle handle 
+NSPR_API(void)
+PR_DestroyCounter(
+    PRCounterHandle handle
 );
 
 
@@ -211,10 +211,10 @@ NSPR_API(void)
 #define PR_GET_COUNTER_HANDLE_FROM_NAME(handle,qName,rName)
 #endif
 
-NSPR_API(PRCounterHandle) 
-	PR_GetCounterHandleFromName( 
-    	const char *qName, 
-    	const char *rName 
+NSPR_API(PRCounterHandle)
+PR_GetCounterHandleFromName(
+    const char *qName,
+    const char *rName
 );
 
 
@@ -244,12 +244,12 @@ NSPR_API(PRCounterHandle)
 #define PR_GET_COUNTER_NAME_FROM_HANDLE(handle,qName,rName,description )
 #endif
 
-NSPR_API(void) 
-	PR_GetCounterNameFromHandle( 
-    	PRCounterHandle handle,  
-	    const char **qName, 
-	    const char **rName, 
-		const char **description 
+NSPR_API(void)
+PR_GetCounterNameFromHandle(
+    PRCounterHandle handle,
+    const char **qName,
+    const char **rName,
+    const char **description
 );
 
 
@@ -275,9 +275,9 @@ NSPR_API(void)
 #define PR_INCREMENT_COUNTER(handle)
 #endif
 
-NSPR_API(void) 
-	PR_IncrementCounter( 
-		PRCounterHandle handle
+NSPR_API(void)
+PR_IncrementCounter(
+    PRCounterHandle handle
 );
 
 
@@ -304,9 +304,9 @@ NSPR_API(void)
 #define PR_DECREMENT_COUNTER(handle)
 #endif
 
-NSPR_API(void) 
-	PR_DecrementCounter( 
-		PRCounterHandle handle
+NSPR_API(void)
+PR_DecrementCounter(
+    PRCounterHandle handle
 );
 
 
@@ -333,10 +333,10 @@ NSPR_API(void)
 #define PR_ADD_TO_COUNTER(handle,value)
 #endif
 
-NSPR_API(void) 
-	PR_AddToCounter( 
-    	PRCounterHandle handle, 
-	    PRUint32 value 
+NSPR_API(void)
+PR_AddToCounter(
+    PRCounterHandle handle,
+    PRUint32 value
 );
 
 
@@ -367,10 +367,10 @@ NSPR_API(void)
 #define PR_SUBTRACT_FROM_COUNTER(handle,value)
 #endif
 
-NSPR_API(void) 
-	PR_SubtractFromCounter( 
-    	PRCounterHandle handle, 
-	    PRUint32 value 
+NSPR_API(void)
+PR_SubtractFromCounter(
+    PRCounterHandle handle,
+    PRUint32 value
 );
 
 
@@ -397,9 +397,9 @@ NSPR_API(void)
 #define PR_GET_COUNTER(counter,handle) 0
 #endif
 
-NSPR_API(PRUint32) 
-	PR_GetCounter( 
-		PRCounterHandle handle 
+NSPR_API(PRUint32)
+PR_GetCounter(
+    PRCounterHandle handle
 );
 
 
@@ -428,10 +428,10 @@ NSPR_API(PRUint32)
 #define PR_SET_COUNTER(handle,value)
 #endif
 
-NSPR_API(void) 
-	PR_SetCounter( 
-		PRCounterHandle handle, 
-		PRUint32 value 
+NSPR_API(void)
+PR_SetCounter(
+    PRCounterHandle handle,
+    PRUint32 value
 );
 
 
@@ -471,9 +471,9 @@ NSPR_API(void)
 #define PR_FIND_NEXT_COUNTER_QNAME(next,handle) NULL
 #endif
 
-NSPR_API(PRCounterHandle) 
-	PR_FindNextCounterQname( 
-        PRCounterHandle handle
+NSPR_API(PRCounterHandle)
+PR_FindNextCounterQname(
+    PRCounterHandle handle
 );
 
 
@@ -514,10 +514,10 @@ NSPR_API(PRCounterHandle)
 #define PR_FIND_NEXT_COUNTER_RNAME(next,rhandle,qhandle)
 #endif
 
-NSPR_API(PRCounterHandle) 
-	PR_FindNextCounterRname( 
-        PRCounterHandle rhandle,
-        PRCounterHandle qhandle
+NSPR_API(PRCounterHandle)
+PR_FindNextCounterRname(
+    PRCounterHandle rhandle,
+    PRCounterHandle qhandle
 );
 
 PR_END_EXTERN_C

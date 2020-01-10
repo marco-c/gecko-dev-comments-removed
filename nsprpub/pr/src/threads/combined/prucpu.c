@@ -41,8 +41,9 @@ void  _PR_InitCPUs()
 {
     PRThread *me = _PR_MD_CURRENT_THREAD();
 
-    if (_native_threads_only)
+    if (_native_threads_only) {
         return;
+    }
 
     _pr_cpuID = 0;
     _MD_NEW_LOCK( &_pr_cpuLock);
@@ -119,13 +120,14 @@ static _PRCPUQueue *_PR_CreateCPUQueue(void)
     PRInt32 index;
     _PRCPUQueue *cpuQueue;
     cpuQueue = PR_NEWZAP(_PRCPUQueue);
- 
+
     _MD_NEW_LOCK( &cpuQueue->runQLock );
     _MD_NEW_LOCK( &cpuQueue->sleepQLock );
     _MD_NEW_LOCK( &cpuQueue->miscQLock );
 
-    for (index = 0; index < PR_ARRAY_SIZE(cpuQueue->runQ); index++)
+    for (index = 0; index < PR_ARRAY_SIZE(cpuQueue->runQ); index++) {
         PR_INIT_CLIST( &(cpuQueue->runQ[index]) );
+    }
     PR_INIT_CLIST( &(cpuQueue->sleepQ) );
     PR_INIT_CLIST( &(cpuQueue->pauseQ) );
     PR_INIT_CLIST( &(cpuQueue->suspendQ) );
@@ -210,15 +212,16 @@ static PRStatus _PR_StartCPU(_PRCPU *cpu, PRThread *thread)
         
         PR_DELETE(cpu);
         return PR_FAILURE;
-    } 
+    }
     PR_ASSERT(cpu->idle_thread->cpu == cpu);
 
     cpu->idle_thread->no_sched = 0;
 
     cpu->thread = thread;
 
-    if (_pr_cpu_affinity_mask)
+    if (_pr_cpu_affinity_mask) {
         PR_SetThreadAffinityMask(thread, _pr_cpu_affinity_mask);
+    }
 
     
     _PR_CPU_LIST_LOCK();
@@ -273,8 +276,10 @@ static void _PR_RunCPU(void *arg)
 
     while(1) {
         PRInt32 is;
-        if (!_PR_IS_NATIVE_THREAD(me)) _PR_INTSOFF(is);
-	    _PR_MD_START_INTERRUPTS();
+        if (!_PR_IS_NATIVE_THREAD(me)) {
+            _PR_INTSOFF(is);
+        }
+        _PR_MD_START_INTERRUPTS();
         _PR_MD_SWITCH_CONTEXT(me);
     }
 }
@@ -289,13 +294,18 @@ static void PR_CALLBACK _PR_CPU_Idle(void *_cpu)
 
     me->cpu = cpu;
     cpu->idle_thread = me;
-    if (_MD_LAST_THREAD())
+    if (_MD_LAST_THREAD()) {
         _MD_LAST_THREAD()->no_sched = 0;
-    if (!_PR_IS_NATIVE_THREAD(me)) _PR_MD_SET_INTSOFF(0);
+    }
+    if (!_PR_IS_NATIVE_THREAD(me)) {
+        _PR_MD_SET_INTSOFF(0);
+    }
     while(1) {
         PRInt32 is;
         PRIntervalTime timeout;
-        if (!_PR_IS_NATIVE_THREAD(me)) _PR_INTSOFF(is);
+        if (!_PR_IS_NATIVE_THREAD(me)) {
+            _PR_INTSOFF(is);
+        }
 
         _PR_RUNQ_LOCK(cpu);
 #if !defined(_PR_LOCAL_THREADS_ONLY) && !defined(_PR_GLOBAL_THREADS_ONLY)
@@ -345,14 +355,16 @@ static void PR_CALLBACK _PR_CPU_Idle(void *_cpu)
 #endif 
 #endif
 
-		_PR_ClockInterrupt();
+        _PR_ClockInterrupt();
 
-		
+        
 
 
-		me->state = _PR_RUNNABLE;
-		_PR_MD_SWITCH_CONTEXT(me);
-		if (!_PR_IS_NATIVE_THREAD(me)) _PR_FAST_INTSON(is);
+        me->state = _PR_RUNNABLE;
+        _PR_MD_SWITCH_CONTEXT(me);
+        if (!_PR_IS_NATIVE_THREAD(me)) {
+            _PR_FAST_INTSON(is);
+        }
     }
 }
 #endif 
@@ -370,36 +382,43 @@ PR_IMPLEMENT(void) PR_SetConcurrency(PRUintn numCPUs)
     PRThread *thr;
 
 
-    if (!_pr_initialized) _PR_ImplicitInitialization();
+    if (!_pr_initialized) {
+        _PR_ImplicitInitialization();
+    }
 
-	if (_native_threads_only)
-		return;
-    
+    if (_native_threads_only) {
+        return;
+    }
+
     _PR_CPU_LIST_LOCK();
     if (_pr_numCPU < numCPUs) {
         newCPU = numCPUs - _pr_numCPU;
         _pr_numCPU = numCPUs;
-    } else newCPU = 0;
+    } else {
+        newCPU = 0;
+    }
     _PR_CPU_LIST_UNLOCK();
 
     for (; newCPU; newCPU--) {
         cpu = _PR_CreateCPU();
         thr = _PR_CreateThread(PR_SYSTEM_THREAD,
-                              _PR_RunCPU,
-                              cpu,
-                              PR_PRIORITY_NORMAL,
-                              PR_GLOBAL_THREAD,
-                              PR_UNJOINABLE_THREAD,
-                              0,
-                              _PR_IDLE_THREAD);
+                               _PR_RunCPU,
+                               cpu,
+                               PR_PRIORITY_NORMAL,
+                               PR_GLOBAL_THREAD,
+                               PR_UNJOINABLE_THREAD,
+                               0,
+                               _PR_IDLE_THREAD);
     }
 #endif
 }
 
 PR_IMPLEMENT(_PRCPU *) _PR_GetPrimordialCPU(void)
 {
-    if (_pr_primordialCPU)
+    if (_pr_primordialCPU) {
         return _pr_primordialCPU;
-    else
+    }
+    else {
         return _PR_MD_CURRENT_CPU();
+    }
 }

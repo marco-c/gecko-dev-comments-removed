@@ -39,8 +39,8 @@ PR_BEGIN_EXTERN_C
 
 
 NSPR_API(PRThread*) PR_AttachThread(PRThreadType type,
-                                     PRThreadPriority priority,
-				     PRThreadStack *stack);
+                                    PRThreadPriority priority,
+                                    PRThreadStack *stack);
 
 
 
@@ -120,20 +120,20 @@ NSPR_API(void) PR_SetThreadRecycleMode(PRUint32 flag);
 
 
 NSPR_API(PRThread*) PR_CreateThreadGCAble(PRThreadType type,
-				     void (*start)(void *arg),
-				     void *arg,
-				     PRThreadPriority priority,
-				     PRThreadScope scope,
-				     PRThreadState state,
-				     PRUint32 stackSize);
+        void (*start)(void *arg),
+        void *arg,
+        PRThreadPriority priority,
+        PRThreadScope scope,
+        PRThreadState state,
+        PRUint32 stackSize);
 
 
 
 
 
 NSPR_API(PRThread*) PR_AttachThreadGCAble(PRThreadType type,
-					PRThreadPriority priority,
-					PRThreadStack *stack);
+        PRThreadPriority priority,
+        PRThreadStack *stack);
 
 
 
@@ -204,9 +204,9 @@ NSPR_API(PRStatus) PR_EnumerateThreads(PREnumerator func, void *arg);
 
 
 
-typedef PRStatus 
+typedef PRStatus
 (PR_CALLBACK *PRScanStackFun)(PRThread* t,
-			      void** baseAddr, PRUword count, void* closure);
+                              void** baseAddr, PRUword count, void* closure);
 
 
 
@@ -294,7 +294,7 @@ NSPR_API(void) PR_OS2_UnsetFloatExcpHandler(EXCEPTIONREGISTRATIONRECORD* e);
 #endif 
 
 
-#define PR_InMonitor(m)		(PR_GetMonitorEntryCount(m) > 0)
+#define PR_InMonitor(m)     (PR_GetMonitorEntryCount(m) > 0)
 
 
 

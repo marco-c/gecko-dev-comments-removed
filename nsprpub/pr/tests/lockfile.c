@@ -64,8 +64,8 @@ static PRIntervalTime NonContentiousLock(PRInt32 loops)
         _lockfile = PR_Open(LOCKFILE, PR_CREATE_FILE|PR_RDWR, 0666);
         if (!_lockfile) {
             if (debug_mode) printf(
-                "could not create lockfile: %d [%d]\n",
-                PR_GetError(), PR_GetOSError());
+                    "could not create lockfile: %d [%d]\n",
+                    PR_GetError(), PR_GetOSError());
             return PR_INTERVAL_NO_TIMEOUT;
         }
         PR_LockFile(_lockfile);
@@ -84,8 +84,8 @@ static void PR_CALLBACK LockContender(void *arg)
         _lockfile = PR_Open(LOCKFILE, PR_CREATE_FILE|PR_RDWR, 0666);
         if (!_lockfile) {
             if (debug_mode) printf(
-                "could not create lockfile: %d [%d]\n",
-                PR_GetError(), PR_GetOSError());
+                    "could not create lockfile: %d [%d]\n",
+                    PR_GetError(), PR_GetOSError());
             break;
         }
         PR_LockFile(_lockfile);
@@ -112,8 +112,8 @@ static PRIntervalTime ContentiousLock(PRInt32 loops)
     contention.ml = PR_NewLock();
     contention.interval = contention_interval;
     thread = PR_CreateThread(
-        PR_USER_THREAD, LockContender, &contention,
-        PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
+                 PR_USER_THREAD, LockContender, &contention,
+                 PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
     PR_ASSERT(thread != NULL);
 
     overhead = PR_IntervalNow() - timein;
@@ -136,7 +136,7 @@ static PRIntervalTime ContentiousLock(PRInt32 loops)
 static PRIntervalTime Test(
     const char* msg, PRIntervalTime (*test)(PRInt32 loops),
     PRInt32 loops, PRIntervalTime overhead)
-{ 
+{
     
 
 
@@ -146,7 +146,7 @@ static PRIntervalTime Test(
 
 
     PRFloat64 elapsed;
-    PRIntervalTime accountable, duration;    
+    PRIntervalTime accountable, duration;
     PRUintn spaces = strlen(msg);
     PRIntervalTime timeout, timein = PR_IntervalNow();
     PRIntervalTime predicted = test(loops);
@@ -155,12 +155,20 @@ static PRIntervalTime Test(
     accountable = duration - predicted;
     accountable -= overhead;
     elapsed = (PRFloat64)PR_IntervalToMicroseconds(accountable);
-    if (debug_mode) printf("%s:", msg);
-    while (spaces++ < 50) if (debug_mode) printf(" ");
+    if (debug_mode) {
+        printf("%s:", msg);
+    }
+    while (spaces++ < 50) if (debug_mode) {
+            printf(" ");
+        }
     if ((PRInt32)accountable < 0) {
-        if (debug_mode) printf("*****.** usecs/iteration\n");
+        if (debug_mode) {
+            printf("*****.** usecs/iteration\n");
+        }
     } else {
-        if (debug_mode) printf("%8.2f usecs/iteration\n", elapsed/loops);
+        if (debug_mode) {
+            printf("%8.2f usecs/iteration\n", elapsed/loops);
+        }
     }
     return duration;
 }  
@@ -171,59 +179,77 @@ int main(int argc,  char **argv)
     PRUint32 cpu, cpus = 2;
     PRInt32 loops = 100;
 
-	
-	
+
+    
 
 
 
 
 
-	PLOptStatus os;
-	PLOptState *opt = PL_CreateOptState(argc, argv, "d:");
-	while (PL_OPT_EOL != (os = PL_GetNextOpt(opt)))
+    PLOptStatus os;
+    PLOptState *opt = PL_CreateOptState(argc, argv, "d:");
+    while (PL_OPT_EOL != (os = PL_GetNextOpt(opt)))
     {
-		if (PL_OPT_BAD == os) continue;
+        if (PL_OPT_BAD == os) {
+            continue;
+        }
         switch (opt->option)
         {
-        case 'd':  
-			debug_mode = 1;
-            break;
-         default:
-            break;
+            case 'd':  
+                debug_mode = 1;
+                break;
+            default:
+                break;
         }
     }
-	PL_DestroyOptState(opt);
+    PL_DestroyOptState(opt);
 
- 
-	
+    
+
     PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
     PR_STDIO_INIT();
 
-    if (argc > 1) loops = atoi(argv[1]);
-    if (loops == 0) loops = 100;
-    if (debug_mode) printf("Lock: Using %d loops\n", loops);
+    if (argc > 1) {
+        loops = atoi(argv[1]);
+    }
+    if (loops == 0) {
+        loops = 100;
+    }
+    if (debug_mode) {
+        printf("Lock: Using %d loops\n", loops);
+    }
 
     cpus = (argc < 3) ? 2 : atoi(argv[2]);
-    if (cpus == 0) cpus = 2;
-    if (debug_mode) printf("Lock: Using %d cpu(s)\n", cpus);
+    if (cpus == 0) {
+        cpus = 2;
+    }
+    if (debug_mode) {
+        printf("Lock: Using %d cpu(s)\n", cpus);
+    }
 
 
     for (cpu = 1; cpu <= cpus; ++cpu)
     {
-        if (debug_mode) printf("\nLockFile: Using %d CPU(s)\n", cpu);
+        if (debug_mode) {
+            printf("\nLockFile: Using %d CPU(s)\n", cpu);
+        }
         PR_SetConcurrency(cpu);
-        
+
         duration = Test("LockFile non-contentious locking/unlocking", NonContentiousLock, loops, 0);
         (void)Test("LockFile contentious locking/unlocking", ContentiousLock, loops, duration);
     }
 
     PR_Delete(LOCKFILE);  
 
-    if (debug_mode) printf("%s: test %s\n", "Lock(mutex) test", ((failed_already) ? "failed" : "passed"));
-	if(failed_already)	
-		return 1;
-	else
-		return 0;
+    if (debug_mode) {
+        printf("%s: test %s\n", "Lock(mutex) test", ((failed_already) ? "failed" : "passed"));
+    }
+    if(failed_already) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }  
 
 

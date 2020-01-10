@@ -30,8 +30,9 @@ static void Help(void)
 static void Dull(void *arg)
 {
     PR_Sleep(PR_SecondsToInterval(dally));
-    if (verbose && force)
+    if (verbose && force) {
         PR_fprintf(err, "If you see this, the test failed\n");
+    }
 }  
 
 static PRIntn PR_CALLBACK RealMain(PRIntn argc, char **argv)
@@ -43,38 +44,42 @@ static PRIntn PR_CALLBACK RealMain(PRIntn argc, char **argv)
 
     while (PL_OPT_EOL != (os = PL_GetNextOpt(opt)))
     {
-        if (PL_OPT_BAD == os) continue;
+        if (PL_OPT_BAD == os) {
+            continue;
+        }
         switch (opt->option)
         {
-        case 'd':  
-            verbose = PR_TRUE;
-            break;
-        case 'x':  
-            force = PR_TRUE;
-            break;
-        case 't':  
-            dally = atoi(opt->value);
-            break;
-        case 'h':  
-        default:
-            Help();  
-            return 2;  
+            case 'd':  
+                verbose = PR_TRUE;
+                break;
+            case 'x':  
+                force = PR_TRUE;
+                break;
+            case 't':  
+                dally = atoi(opt->value);
+                break;
+            case 'h':  
+            default:
+                Help();  
+                return 2;  
         }
     }
     PL_DestroyOptState(opt);
 
-    if (0 == dally) dally = 10;
+    if (0 == dally) {
+        dally = 10;
+    }
 
-	
+    
 
-
-    (void)PR_CreateThread(
-        PR_USER_THREAD, Dull, NULL, PR_PRIORITY_NORMAL,
-			  PR_LOCAL_THREAD, PR_UNJOINABLE_THREAD, 0);
 
     (void)PR_CreateThread(
         PR_USER_THREAD, Dull, NULL, PR_PRIORITY_NORMAL,
-			  PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
+        PR_LOCAL_THREAD, PR_UNJOINABLE_THREAD, 0);
+
+    (void)PR_CreateThread(
+        PR_USER_THREAD, Dull, NULL, PR_PRIORITY_NORMAL,
+        PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
 
     if (verbose)
         PR_fprintf(
@@ -91,14 +96,14 @@ static PRIntn PR_CALLBACK RealMain(PRIntn argc, char **argv)
         }
     }
     return 0;
-        
+
 }
 
 
 int main(int argc, char **argv)
 {
     PRIntn rv;
-    
+
     PR_STDIO_INIT();
     rv = PR_Initialize(RealMain, argc, argv, 0);
     return rv;

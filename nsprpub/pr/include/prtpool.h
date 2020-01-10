@@ -32,7 +32,7 @@ typedef void (PR_CALLBACK *PRJobFn) (void *arg);
 
 NSPR_API(PRThreadPool *)
 PR_CreateThreadPool(PRInt32 initial_threads, PRInt32 max_threads,
-                          PRUint32 stacksize);
+                    PRUint32 stacksize);
 
 
 NSPR_API(PRJob *)
@@ -41,27 +41,27 @@ PR_QueueJob(PRThreadPool *tpool, PRJobFn fn, void *arg, PRBool joinable);
 
 NSPR_API(PRJob *)
 PR_QueueJob_Read(PRThreadPool *tpool, PRJobIoDesc *iod,
-							PRJobFn fn, void * arg, PRBool joinable);
+                 PRJobFn fn, void * arg, PRBool joinable);
 
 
 NSPR_API(PRJob *)
 PR_QueueJob_Write(PRThreadPool *tpool, PRJobIoDesc *iod,
-								PRJobFn fn, void * arg, PRBool joinable);
+                  PRJobFn fn, void * arg, PRBool joinable);
 
 
 NSPR_API(PRJob *)
 PR_QueueJob_Accept(PRThreadPool *tpool, PRJobIoDesc *iod,
-									PRJobFn fn, void * arg, PRBool joinable);
+                   PRJobFn fn, void * arg, PRBool joinable);
 
 
 NSPR_API(PRJob *)
 PR_QueueJob_Connect(PRThreadPool *tpool, PRJobIoDesc *iod,
-			const PRNetAddr *addr, PRJobFn fn, void * arg, PRBool joinable);
+                    const PRNetAddr *addr, PRJobFn fn, void * arg, PRBool joinable);
 
 
 NSPR_API(PRJob *)
 PR_QueueJob_Timer(PRThreadPool *tpool, PRIntervalTime timeout,
-								PRJobFn fn, void * arg, PRBool joinable);
+                  PRJobFn fn, void * arg, PRBool joinable);
 
 NSPR_API(PRStatus)
 PR_CancelJob(PRJob *job);

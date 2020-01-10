@@ -52,92 +52,96 @@ int main(int argc, char **argv)
     char buf[128];
     PRInt32 retVal;
 
-	
+    
 
 
 
 
 
-	PLOptStatus os;
-	PLOptState *opt = PL_CreateOptState(argc, argv, "d:");
-	while (PL_OPT_EOL != (os = PL_GetNextOpt(opt)))
+    PLOptStatus os;
+    PLOptState *opt = PL_CreateOptState(argc, argv, "d:");
+    while (PL_OPT_EOL != (os = PL_GetNextOpt(opt)))
     {
-		if (PL_OPT_BAD == os) continue;
+        if (PL_OPT_BAD == os) {
+            continue;
+        }
         switch (opt->option)
         {
-        case 'd':  
-			debug_mode = 1;
-            break;
-         default:
-            break;
+            case 'd':  
+                debug_mode = 1;
+                break;
+            default:
+                break;
         }
     }
-	PL_DestroyOptState(opt);
+    PL_DestroyOptState(opt);
 
- 
-	
+    
+
     PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
     PR_STDIO_INIT();
 
     if (debug_mode) {
-		printf("This program tests PR_Select with sockets.  Timeout \n");
-		printf("operations are tested.\n\n");
-	}
+        printf("This program tests PR_Select with sockets.  Timeout \n");
+        printf("operations are tested.\n\n");
+    }
 
     
     if ((listenSock1 = PR_NewTCPSocket()) == NULL) {
-	fprintf(stderr, "Can't create a new TCP socket\n");
-	failed_already=1;
-	goto exit_now;
+        fprintf(stderr, "Can't create a new TCP socket\n");
+        failed_already=1;
+        goto exit_now;
     }
     addr.inet.family = PR_AF_INET;
     addr.inet.ip = PR_htonl(PR_INADDR_ANY);
     addr.inet.port = PR_htons(0);
     if (PR_Bind(listenSock1, &addr) == PR_FAILURE) {
-	fprintf(stderr, "Can't bind socket\n");
-	failed_already=1;
-	goto exit_now;
+        fprintf(stderr, "Can't bind socket\n");
+        failed_already=1;
+        goto exit_now;
     }
     if (PR_GetSockName(listenSock1, &addr) == PR_FAILURE) {
-	fprintf(stderr, "PR_GetSockName failed\n");
-	failed_already=1;
-	goto exit_now;
+        fprintf(stderr, "PR_GetSockName failed\n");
+        failed_already=1;
+        goto exit_now;
     }
     listenPort1 = PR_ntohs(addr.inet.port);
     if (PR_Listen(listenSock1, 5) == PR_FAILURE) {
-	fprintf(stderr, "Can't listen on a socket\n");
-	failed_already=1;
-	goto exit_now;
+        fprintf(stderr, "Can't listen on a socket\n");
+        failed_already=1;
+        goto exit_now;
     }
 
     if ((listenSock2  = PR_NewTCPSocket()) == NULL) {
-	fprintf(stderr, "Can't create a new TCP socket\n");
-	failed_already=1;
-	goto exit_now;
+        fprintf(stderr, "Can't create a new TCP socket\n");
+        failed_already=1;
+        goto exit_now;
     }
     addr.inet.family = PR_AF_INET;
     addr.inet.ip = PR_htonl(PR_INADDR_ANY);
     addr.inet.port = PR_htons(0);
     if (PR_Bind(listenSock2, &addr) == PR_FAILURE) {
-	fprintf(stderr, "Can't bind socket\n");
-	failed_already=1;
-	goto exit_now;
+        fprintf(stderr, "Can't bind socket\n");
+        failed_already=1;
+        goto exit_now;
     }
     if (PR_GetSockName(listenSock2, &addr) == PR_FAILURE) {
-	fprintf(stderr, "PR_GetSockName failed\n");
-	failed_already=1;
-	goto exit_now;
+        fprintf(stderr, "PR_GetSockName failed\n");
+        failed_already=1;
+        goto exit_now;
     }
     listenPort2 = PR_ntohs(addr.inet.port);
     if (PR_Listen(listenSock2, 5) == PR_FAILURE) {
-	fprintf(stderr, "Can't listen on a socket\n");
-	failed_already=1;
-	goto exit_now;
+        fprintf(stderr, "Can't listen on a socket\n");
+        failed_already=1;
+        goto exit_now;
     }
     PR_snprintf(buf, sizeof(buf),
-	    "The server thread is listening on ports %hu and %hu\n\n",
-	    listenPort1, listenPort2);
-    if (debug_mode) printf("%s", buf);
+                "The server thread is listening on ports %hu and %hu\n\n",
+                listenPort1, listenPort2);
+    if (debug_mode) {
+        printf("%s", buf);
+    }
 
     
     PR_FD_ZERO(&readFdSet);
@@ -145,28 +149,34 @@ int main(int argc, char **argv)
     PR_FD_SET(listenSock2, &readFdSet);
 
     
-    if (debug_mode) printf("PR_Select should time out in 5 seconds\n");
-    retVal = PR_Select(0 , &readFdSet, NULL, NULL,
-	    PR_SecondsToInterval(5));
-    if (retVal != 0) {
-	PR_snprintf(buf, sizeof(buf),
-		"PR_Select should time out and return 0, but it returns %ld\n",
-		retVal);
-	fprintf(stderr, "%s", buf);
-	if (retVal == -1) {
-	    fprintf(stderr, "Error %d, oserror %d\n", PR_GetError(),
-		    PR_GetOSError());
-			failed_already=1;
-	}
-	goto exit_now;
+    if (debug_mode) {
+        printf("PR_Select should time out in 5 seconds\n");
     }
-    if (debug_mode) printf("PR_Select timed out.  Test passed.\n\n");
+    retVal = PR_Select(0 , &readFdSet, NULL, NULL,
+                       PR_SecondsToInterval(5));
+    if (retVal != 0) {
+        PR_snprintf(buf, sizeof(buf),
+                    "PR_Select should time out and return 0, but it returns %ld\n",
+                    retVal);
+        fprintf(stderr, "%s", buf);
+        if (retVal == -1) {
+            fprintf(stderr, "Error %d, oserror %d\n", PR_GetError(),
+                    PR_GetOSError());
+            failed_already=1;
+        }
+        goto exit_now;
+    }
+    if (debug_mode) {
+        printf("PR_Select timed out.  Test passed.\n\n");
+    }
 
     PR_Cleanup();
 
 exit_now:
-	if(failed_already)	
-		return 1;
-	else
-		return 0;
+    if(failed_already) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }

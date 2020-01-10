@@ -27,16 +27,20 @@ int main(int argc, char **argv)
     char *ptr = NULL;
 
     
-    if (foo)
+    if (foo) {
         PR_DELETE(ptr);
-    else
+    }
+    else {
         Noop();
+    }
 
     
-    if (foo)
+    if (foo) {
         PR_FREEIF(ptr);
-    else
+    }
+    else {
         Fail();
+    }
 
     printf("PASS\n");
     return 0;

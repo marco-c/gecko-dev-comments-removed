@@ -153,7 +153,7 @@ NSPR_API(PRAlarmID*) PR_SetAlarm(
 
 
 NSPR_API(PRStatus) PR_ResetAlarm(
-	PRAlarmID *id, PRIntervalTime period, PRUint32 rate);
+    PRAlarmID *id, PRIntervalTime period, PRUint32 rate);
 
 PR_END_EXTERN_C
 

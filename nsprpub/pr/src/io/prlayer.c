@@ -21,8 +21,12 @@ static PRStatus _PR_DestroyIOLayer(PRFileDesc *stack);
 void PR_CALLBACK pl_FDDestructor(PRFileDesc *fd)
 {
     PR_ASSERT(fd != NULL);
-    if (NULL != fd->lower) fd->lower->higher = fd->higher;
-    if (NULL != fd->higher) fd->higher->lower = fd->lower;
+    if (NULL != fd->lower) {
+        fd->lower->higher = fd->higher;
+    }
+    if (NULL != fd->higher) {
+        fd->higher->lower = fd->lower;
+    }
     PR_DELETE(fd);
 }
 
@@ -32,42 +36,42 @@ void PR_CALLBACK pl_FDDestructor(PRFileDesc *fd)
 static PRStatus PR_CALLBACK pl_TopClose (PRFileDesc *fd)
 {
     PRFileDesc *top, *lower;
-	PRStatus rv;
+    PRStatus rv;
 
     PR_ASSERT(fd != NULL);
     PR_ASSERT(fd->lower != NULL);
     PR_ASSERT(fd->secret == NULL);
     PR_ASSERT(fd->methods->file_type == PR_DESC_LAYERED);
 
-	if (PR_IO_LAYER_HEAD == fd->identity) {
-		
+    if (PR_IO_LAYER_HEAD == fd->identity) {
+        
 
 
 
-		rv = fd->lower->methods->close(fd->lower);
-		_PR_DestroyIOLayer(fd);
-		return rv;
-	}
-	if ((fd->higher) && (PR_IO_LAYER_HEAD == fd->higher->identity)) {
-		
+        rv = fd->lower->methods->close(fd->lower);
+        _PR_DestroyIOLayer(fd);
+        return rv;
+    }
+    if ((fd->higher) && (PR_IO_LAYER_HEAD == fd->higher->identity)) {
+        
 
 
-		lower = fd->lower;
-		
+        lower = fd->lower;
+        
 
 
-    	top = PR_PopIOLayer(fd->higher, PR_TOP_IO_LAYER);
-		top->dtor(top);
-		
+        top = PR_PopIOLayer(fd->higher, PR_TOP_IO_LAYER);
+        top->dtor(top);
+        
 
 
-		return (lower->methods->close(lower));
-	} else {
-		
-    	top = PR_PopIOLayer(fd, PR_TOP_IO_LAYER);
-		top->dtor(top);
-		return (fd->methods->close)(fd);
-	}
+        return (lower->methods->close(lower));
+    } else {
+        
+        top = PR_PopIOLayer(fd, PR_TOP_IO_LAYER);
+        top->dtor(top);
+        return (fd->methods->close)(fd);
+    }
 }
 
 static PRInt32 PR_CALLBACK pl_DefRead (PRFileDesc *fd, void *buf, PRInt32 amount)
@@ -146,7 +150,7 @@ static PRStatus PR_CALLBACK pl_DefFileInfo64 (PRFileDesc *fd, PRFileInfo64 *info
 }
 
 static PRInt32 PR_CALLBACK pl_DefWritev (PRFileDesc *fd, const PRIOVec *iov,
-    PRInt32 size, PRIntervalTime timeout)
+        PRInt32 size, PRIntervalTime timeout)
 {
     PR_ASSERT(fd != NULL);
     PR_ASSERT(fd->lower != NULL);
@@ -178,15 +182,16 @@ static PRFileDesc* PR_CALLBACK pl_TopAccept (
     PRStatus rv;
     PRFileDesc *newfd, *layer = fd;
     PRFileDesc *newstack;
-	PRBool newstyle_stack = PR_FALSE;
+    PRBool newstyle_stack = PR_FALSE;
 
     PR_ASSERT(fd != NULL);
     PR_ASSERT(fd->lower != NULL);
 
-	
-	while (NULL != layer->higher)
-		layer = layer->higher;
-	newstyle_stack = (PR_IO_LAYER_HEAD == layer->identity) ? PR_TRUE : PR_FALSE;
+    
+    while (NULL != layer->higher) {
+        layer = layer->higher;
+    }
+    newstyle_stack = (PR_IO_LAYER_HEAD == layer->identity) ? PR_TRUE : PR_FALSE;
     newstack = PR_NEW(PRFileDesc);
     if (NULL == newstack)
     {
@@ -246,7 +251,7 @@ static PRInt32 PR_CALLBACK pl_DefRecv (
     PR_ASSERT(fd->lower != NULL);
 
     return (fd->lower->methods->recv)(
-        fd->lower, buf, amount, flags, timeout);
+               fd->lower, buf, amount, flags, timeout);
 }
 
 static PRInt32 PR_CALLBACK pl_DefSend (
@@ -267,7 +272,7 @@ static PRInt32 PR_CALLBACK pl_DefRecvfrom (
     PR_ASSERT(fd->lower != NULL);
 
     return (fd->lower->methods->recvfrom)(
-        fd->lower, buf, amount, flags, addr, timeout);
+               fd->lower, buf, amount, flags, addr, timeout);
 }
 
 static PRInt32 PR_CALLBACK pl_DefSendto (
@@ -278,7 +283,7 @@ static PRInt32 PR_CALLBACK pl_DefSendto (
     PR_ASSERT(fd->lower != NULL);
 
     return (fd->lower->methods->sendto)(
-        fd->lower, buf, amount, flags, addr, timeout);
+               fd->lower, buf, amount, flags, addr, timeout);
 }
 
 static PRInt16 PR_CALLBACK pl_DefPoll (
@@ -298,15 +303,16 @@ static PRInt32 PR_CALLBACK pl_DefAcceptread (
     PRStatus rv;
     PRFileDesc *newstack;
     PRFileDesc *layer = sd;
-	PRBool newstyle_stack = PR_FALSE;
+    PRBool newstyle_stack = PR_FALSE;
 
     PR_ASSERT(sd != NULL);
     PR_ASSERT(sd->lower != NULL);
 
-	
-	while (NULL != layer->higher)
-		layer = layer->higher;
-	newstyle_stack = (PR_IO_LAYER_HEAD == layer->identity) ? PR_TRUE : PR_FALSE;
+    
+    while (NULL != layer->higher) {
+        layer = layer->higher;
+    }
+    newstyle_stack = (PR_IO_LAYER_HEAD == layer->identity) ? PR_TRUE : PR_FALSE;
     newstack = PR_NEW(PRFileDesc);
     if (NULL == newstack)
     {
@@ -316,18 +322,18 @@ static PRInt32 PR_CALLBACK pl_DefAcceptread (
     *newstack = *sd;  
 
     nbytes = sd->lower->methods->acceptread(
-        sd->lower, nd, raddr, buf, amount, t);
+                 sd->lower, nd, raddr, buf, amount, t);
     if (-1 == nbytes)
     {
         PR_DELETE(newstack);
         return nbytes;
     }
     if (newstyle_stack) {
-		newstack->lower = *nd;
-		(*nd)->higher = newstack;
-		*nd = newstack;
-		return nbytes;
-	}
+        newstack->lower = *nd;
+        (*nd)->higher = newstack;
+        *nd = newstack;
+        return nbytes;
+    }
     
     rv = PR_PushIOLayer(*nd, PR_TOP_IO_LAYER, newstack);
     PR_ASSERT(PR_SUCCESS == rv);
@@ -342,7 +348,7 @@ static PRInt32 PR_CALLBACK pl_DefTransmitfile (
     PR_ASSERT(sd->lower != NULL);
 
     return sd->lower->methods->transmitfile(
-        sd->lower, fd, headers, hlen, flags, t);
+               sd->lower, fd, headers, hlen, flags, t);
 }
 
 static PRStatus PR_CALLBACK pl_DefGetsockname (PRFileDesc *fd, PRNetAddr *addr)
@@ -380,14 +386,14 @@ static PRStatus PR_CALLBACK pl_DefSetsocketoption (
 }
 
 static PRInt32 PR_CALLBACK pl_DefSendfile (
-	PRFileDesc *sd, PRSendFileData *sfd,
-	PRTransmitFileFlags flags, PRIntervalTime timeout)
+    PRFileDesc *sd, PRSendFileData *sfd,
+    PRTransmitFileFlags flags, PRIntervalTime timeout)
 {
     PR_ASSERT(sd != NULL);
     PR_ASSERT(sd->lower != NULL);
 
     return sd->lower->methods->sendfile(
-        sd->lower, sfd, flags, timeout);
+               sd->lower, sfd, flags, timeout);
 }
 
 
@@ -440,13 +446,15 @@ PR_IMPLEMENT(PRFileDesc*) PR_CreateIOLayerStub(
 {
     PRFileDesc *fd = NULL;
     PR_ASSERT((PR_NSPR_IO_LAYER != ident) && (PR_TOP_IO_LAYER != ident));
-    if ((PR_NSPR_IO_LAYER == ident) || (PR_TOP_IO_LAYER == ident))
+    if ((PR_NSPR_IO_LAYER == ident) || (PR_TOP_IO_LAYER == ident)) {
         PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
+    }
     else
     {
         fd = PR_NEWZAP(PRFileDesc);
-        if (NULL == fd)
+        if (NULL == fd) {
             PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
+        }
         else
         {
             fd->methods = methods;
@@ -469,19 +477,20 @@ PR_IMPLEMENT(PRFileDesc*) PR_CreateIOLayer(PRFileDesc *top)
 {
     PRFileDesc *fd = NULL;
 
-	fd = PR_NEWZAP(PRFileDesc);
-	if (NULL == fd)
-		PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
-	else
-	{
-		fd->methods = &pl_methods;
-		fd->dtor = pl_FDDestructor;
-		fd->identity = PR_IO_LAYER_HEAD;
-		fd->higher = NULL;
-		fd->lower = top;
-		top->higher = fd;
-		top->lower = NULL;
-	}
+    fd = PR_NEWZAP(PRFileDesc);
+    if (NULL == fd) {
+        PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
+    }
+    else
+    {
+        fd->methods = &pl_methods;
+        fd->dtor = pl_FDDestructor;
+        fd->identity = PR_IO_LAYER_HEAD;
+        fd->higher = NULL;
+        fd->lower = top;
+        top->higher = fd;
+        top->lower = NULL;
+    }
     return fd;
 }  
 
@@ -492,8 +501,9 @@ PR_IMPLEMENT(PRFileDesc*) PR_CreateIOLayer(PRFileDesc *top)
 
 static PRStatus _PR_DestroyIOLayer(PRFileDesc *stack)
 {
-    if (NULL == stack)
+    if (NULL == stack) {
         return PR_FAILURE;
+    }
 
     PR_DELETE(stack);
     return PR_SUCCESS;
@@ -516,20 +526,20 @@ PR_IMPLEMENT(PRStatus) PR_PushIOLayer(
 
     if (stack == insert)
     {
-		
-			
-		PRFileDesc copy = *stack;
-		*stack = *fd;
-		*fd = copy;
-		fd->higher = stack;
-		if (fd->lower)
-		{
-			PR_ASSERT(fd->lower->higher == stack);
-			fd->lower->higher = fd;
-		}
-		stack->lower = fd;
-		stack->higher = NULL;
-	} else {
+        
+        
+        PRFileDesc copy = *stack;
+        *stack = *fd;
+        *fd = copy;
+        fd->higher = stack;
+        if (fd->lower)
+        {
+            PR_ASSERT(fd->lower->higher == stack);
+            fd->lower->higher = fd;
+        }
+        stack->lower = fd;
+        stack->higher = NULL;
+    } else {
         
 
 
@@ -559,7 +569,7 @@ PR_IMPLEMENT(PRFileDesc*) PR_PopIOLayer(PRFileDesc *stack, PRDescIdentity id)
 
     if (extract == stack) {
         
-		
+        
         PRFileDesc copy = *stack;
         extract = stack->lower;
         *stack = *extract;
@@ -569,16 +579,16 @@ PR_IMPLEMENT(PRFileDesc*) PR_PopIOLayer(PRFileDesc *stack, PRDescIdentity id)
             PR_ASSERT(stack->lower->higher == extract);
             stack->lower->higher = stack;
         }
-	} else if ((PR_IO_LAYER_HEAD == stack->identity) &&
-					(extract == stack->lower) && (extract->lower == NULL)) {
-			
+    } else if ((PR_IO_LAYER_HEAD == stack->identity) &&
+               (extract == stack->lower) && (extract->lower == NULL)) {
+        
 
 
 
-			stack->lower = NULL;
-			_PR_DestroyIOLayer(stack);
-	} else {
-		
+        stack->lower = NULL;
+        _PR_DestroyIOLayer(stack);
+    } else {
+        
         extract->lower->higher = extract->higher;
         extract->higher->lower = extract->lower;
     }
@@ -602,7 +612,9 @@ PR_IMPLEMENT(PRDescIdentity) PR_GetUniqueIdentity(const char *layer_name)
     PRDescIdentity identity, length;
     char **names = NULL, *name = NULL, **old = NULL;
 
-    if (!_pr_initialized) _PR_ImplicitInitialization();
+    if (!_pr_initialized) {
+        _PR_ImplicitInitialization();
+    }
 
     PR_ASSERT((PRDescIdentity)0x7fff > identity_cache.ident);
 
@@ -634,7 +646,9 @@ retry:
         names = (char**)PR_CALLOC(length * sizeof(char*));
         if (NULL == names)
         {
-            if (NULL != name) PR_DELETE(name);
+            if (NULL != name) {
+                PR_DELETE(name);
+            }
             PR_SetError(PR_OUT_OF_MEMORY_ERROR, 0);
             return PR_INVALID_IO_LAYER;
         }
@@ -664,7 +678,9 @@ retry:
         else
         {
             PR_Unlock(identity_cache.ml);
-            if (NULL != names) PR_DELETE(names);
+            if (NULL != names) {
+                PR_DELETE(names);
+            }
             goto retry;
         }
     }
@@ -676,8 +692,12 @@ retry:
     PR_ASSERT(identity_cache.ident < identity_cache.length);
     PR_Unlock(identity_cache.ml);
 
-    if (NULL != old) PR_DELETE(old);
-    if (NULL != names) PR_DELETE(names);
+    if (NULL != old) {
+        PR_DELETE(old);
+    }
+    if (NULL != names) {
+        PR_DELETE(names);
+    }
 
     return identity;
 }  
@@ -685,13 +705,15 @@ retry:
 PR_IMPLEMENT(const char*) PR_GetNameForIdentity(PRDescIdentity ident)
 {
     const char *rv = NULL;
-    if (!_pr_initialized) _PR_ImplicitInitialization();
+    if (!_pr_initialized) {
+        _PR_ImplicitInitialization();
+    }
 
     if ((PR_TOP_IO_LAYER != ident) && (ident >= 0)) {
-      PR_Lock(identity_cache.ml);
-      PR_ASSERT(ident <= identity_cache.ident);
-      rv = (ident > identity_cache.ident) ? NULL : identity_cache.name[ident];
-      PR_Unlock(identity_cache.ml);
+        PR_Lock(identity_cache.ml);
+        PR_ASSERT(ident <= identity_cache.ident);
+        rv = (ident > identity_cache.ident) ? NULL : identity_cache.name[ident];
+        PR_Unlock(identity_cache.ml);
     }
 
     return rv;
@@ -701,9 +723,9 @@ PR_IMPLEMENT(PRDescIdentity) PR_GetLayersIdentity(PRFileDesc* fd)
 {
     PR_ASSERT(NULL != fd);
     if (PR_IO_LAYER_HEAD == fd->identity) {
-    	PR_ASSERT(NULL != fd->lower);
-    	return fd->lower->identity;
-	}
+        PR_ASSERT(NULL != fd->lower);
+        return fd->lower->identity;
+    }
     return fd->identity;
 }  
 
@@ -712,19 +734,23 @@ PR_IMPLEMENT(PRFileDesc*) PR_GetIdentitiesLayer(PRFileDesc* fd, PRDescIdentity i
     PRFileDesc *layer = fd;
 
     if (PR_TOP_IO_LAYER == id) {
-      if (PR_IO_LAYER_HEAD == fd->identity) {
-          return fd->lower;
-      }
-      return fd;
-	}
+        if (PR_IO_LAYER_HEAD == fd->identity) {
+            return fd->lower;
+        }
+        return fd;
+    }
 
     for (layer = fd; layer != NULL; layer = layer->lower)
     {
-        if (id == layer->identity) return layer;
+        if (id == layer->identity) {
+            return layer;
+        }
     }
     for (layer = fd; layer != NULL; layer = layer->higher)
     {
-        if (id == layer->identity) return layer;
+        if (id == layer->identity) {
+            return layer;
+        }
     }
     return NULL;
 }  
@@ -748,8 +774,9 @@ void _PR_CleanupLayerCache(void)
     {
         PRDescIdentity ident;
 
-        for (ident = 0; ident <= identity_cache.ident; ident++)
+        for (ident = 0; ident <= identity_cache.ident; ident++) {
             PR_DELETE(identity_cache.name[ident]);
+        }
 
         PR_DELETE(identity_cache.name);
     }

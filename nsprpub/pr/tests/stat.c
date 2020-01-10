@@ -35,9 +35,9 @@ static void statPRStat(void)
 {
     PRFileInfo finfo;
     PRInt32 index = count;
- 
-    for (;index--;) {
-         PR_GetFileInfo(filename, &finfo);
+
+    for (; index--;) {
+        PR_GetFileInfo(filename, &finfo);
     }
 }
 
@@ -45,8 +45,8 @@ static void statStat(void)
 {
     struct stat finfo;
     PRInt32 index = count;
- 
-    for (;index--;) {
+
+    for (; index--;) {
         stat(filename, &finfo);
     }
 }
@@ -75,9 +75,9 @@ int main(int argc, char **argv)
     PR_STDIO_INIT();
 
     if (argc > 1) {
-	count = atoi(argv[1]);
+        count = atoi(argv[1]);
     } else {
-	count = DEFAULT_COUNT;
+        count = DEFAULT_COUNT;
     }
 
     Measure(statPRStat, "time to call PR_GetFileInfo()");

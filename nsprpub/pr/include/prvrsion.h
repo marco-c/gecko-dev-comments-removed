@@ -31,20 +31,20 @@ typedef struct {
 
 
 
-    PRInt32    version; 
-  
+    PRInt32    version;
+
     
     PRInt64         buildTime;      
     char *          buildTimeString;
-  
+
     PRUint8   vMajor;               
     PRUint8   vMinor;               
     PRUint8   vPatch;               
-  
+
     PRBool          beta;           
     PRBool          debug;          
     PRBool          special;        
-  
+
     char *          filename;       
     char *          description;    
     char *          security;       

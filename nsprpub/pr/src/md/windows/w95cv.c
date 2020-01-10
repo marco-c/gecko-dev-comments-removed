@@ -16,7 +16,7 @@
 
 
 
- 
+
 #include "primpl.h"
 
 
@@ -30,7 +30,7 @@ static void
 AddThreadToCVWaitQueueInternal(PRThread *thred, struct _MDCVar *cv)
 {
     PR_ASSERT((cv->waitTail != NULL && cv->waitHead != NULL)
-            || (cv->waitTail == NULL && cv->waitHead == NULL));
+              || (cv->waitTail == NULL && cv->waitHead == NULL));
     cv->nwait += 1;
     thred->md.inCVWaitQueue = PR_TRUE;
     thred->md.next = NULL;
@@ -87,7 +87,7 @@ md_UnlockAndPostNotifies(
             _MDCVar *cv = notified->cv[index].cv;
             PRThread *thred;
             int i;
-            
+
             
             if (cv->waitHead == NULL) {
                 notified->cv[index].notifyHead = NULL;
@@ -134,7 +134,7 @@ md_UnlockAndPostNotifies(
     }
 
     
-        LeaveCriticalSection(&lock->mutex);
+    LeaveCriticalSection(&lock->mutex);
 
     notified = &post;  
     do {
@@ -156,7 +156,9 @@ md_UnlockAndPostNotifies(
         }
         prev = notified;
         notified = notified->link;
-        if (&post != prev) PR_DELETE(prev);
+        if (&post != prev) {
+            PR_DELETE(prev);
+        }
     } while (NULL != notified);
 }
 
@@ -166,7 +168,7 @@ md_UnlockAndPostNotifies(
 
 
 static void md_PostNotifyToCvar(_MDCVar *cvar, _MDLock *lock,
-        PRBool broadcast)
+                                PRBool broadcast)
 {
     PRIntn index = 0;
     _MDNotified *notified = &lock->notified;
@@ -183,7 +185,9 @@ static void md_PostNotifyToCvar(_MDCVar *cvar, _MDLock *lock,
             }
         }
         
-        if (notified->length < _MD_CV_NOTIFIED_LENGTH) break;
+        if (notified->length < _MD_CV_NOTIFIED_LENGTH) {
+            break;
+        }
 
         
         if (NULL == notified->link) {
@@ -207,7 +211,7 @@ static void md_PostNotifyToCvar(_MDCVar *cvar, _MDLock *lock,
 
 
 
-PRInt32 
+PRInt32
 _PR_MD_NEW_CV(_MDCVar *cv)
 {
     cv->magic = _MD_MAGIC_CV;
@@ -216,7 +220,7 @@ _PR_MD_NEW_CV(_MDCVar *cv)
 
 
     return 0;
-} 
+}
 
 void _PR_MD_FREE_CV(_MDCVar *cv)
 {
@@ -232,7 +236,7 @@ void _PR_MD_WAIT_CV(_MDCVar *cv, _MDLock *lock, PRIntervalTime timeout )
     PRThread *thred = _PR_MD_CURRENT_THREAD();
     DWORD rv;
     DWORD msecs = (timeout == PR_INTERVAL_NO_TIMEOUT) ?
-            INFINITE : PR_IntervalToMilliseconds(timeout);
+                  INFINITE : PR_IntervalToMilliseconds(timeout);
 
     
 
@@ -256,7 +260,7 @@ void _PR_MD_WAIT_CV(_MDCVar *cv, _MDLock *lock, PRIntervalTime timeout )
     if (rv == WAIT_TIMEOUT) {
         if (thred->md.inCVWaitQueue) {
             PR_ASSERT((cv->waitTail != NULL && cv->waitHead != NULL)
-                    || (cv->waitTail == NULL && cv->waitHead == NULL));
+                      || (cv->waitTail == NULL && cv->waitHead == NULL));
             cv->nwait -= 1;
             thred->md.inCVWaitQueue = PR_FALSE;
             if (cv->waitHead == thred) {
@@ -325,7 +329,7 @@ void _PR_MD_INIT_LOCKS(void)
     PR_ASSERT(hKernel32);
     PR_ASSERT(!sInitializeCriticalSectionEx);
     sInitializeCriticalSectionEx = (INITIALIZECRITICALSECTIONEX)
-            GetProcAddress(hKernel32, "InitializeCriticalSectionEx");
+                                   GetProcAddress(hKernel32, "InitializeCriticalSectionEx");
 }
 
 

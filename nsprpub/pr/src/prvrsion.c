@@ -68,9 +68,9 @@ PRVersionDescription VERSION_DESC_NAME =
 
 
 static char rcsid[] = "$Header: NSPR " PR_VERSION _DEBUG_STRING
-        "  " _BUILD_STRING " $";
+                      "  " _BUILD_STRING " $";
 static char sccsid[] = "@(#)NSPR " PR_VERSION _DEBUG_STRING
-        "  " _BUILD_STRING;
+                       "  " _BUILD_STRING;
 
 #endif 
 
@@ -84,7 +84,7 @@ PR_IMPLEMENT(const PRVersionDescription*) libVersionPoint(void)
     
 
 
- 
+
     const char *dummy;
 
     dummy = rcsid;

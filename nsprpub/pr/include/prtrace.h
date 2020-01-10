@@ -95,7 +95,7 @@ typedef struct PRTraceEntry
 typedef enum PRTraceOption
 {
     PRTraceBufSize,
-    PRTraceEnable,              
+    PRTraceEnable,
     PRTraceDisable,
     PRTraceSuspend,
     PRTraceResume,
@@ -174,10 +174,10 @@ typedef enum PRTraceOption
 #endif
 
 NSPR_API(PRTraceHandle)
-	PR_CreateTrace( 
-    	const char *qName,          
-	    const char *rName,          
-	    const char *description     
+PR_CreateTrace(
+    const char *qName,          
+    const char *rName,          
+    const char *description     
 );
 
 
@@ -207,9 +207,9 @@ NSPR_API(PRTraceHandle)
 #define PR_DESTROY_TRACE(handle)
 #endif
 
-NSPR_API(void) 
-	PR_DestroyTrace( 
-		PRTraceHandle handle    
+NSPR_API(void)
+PR_DestroyTrace(
+    PRTraceHandle handle    
 );
 
 
@@ -248,17 +248,17 @@ NSPR_API(void)
 #define PR_TRACE(handle,ud0,ud1,ud2,ud3,ud4,ud5,ud6,ud7)
 #endif
 
-NSPR_API(void) 
-	PR_Trace( 
-    	PRTraceHandle handle,       
-	    PRUint32    userData0,      
-	    PRUint32    userData1,      
-	    PRUint32    userData2,      
-	    PRUint32    userData3,      
-	    PRUint32    userData4,      
-	    PRUint32    userData5,      
-	    PRUint32    userData6,      
-	    PRUint32    userData7       
+NSPR_API(void)
+PR_Trace(
+    PRTraceHandle handle,       
+    PRUint32    userData0,      
+    PRUint32    userData1,      
+    PRUint32    userData2,      
+    PRUint32    userData3,      
+    PRUint32    userData4,      
+    PRUint32    userData5,      
+    PRUint32    userData6,      
+    PRUint32    userData7       
 );
 
 
@@ -335,10 +335,10 @@ NSPR_API(void)
 #define PR_SET_TRACE_OPTION(command,value)
 #endif
 
-NSPR_API(void) 
-	PR_SetTraceOption( 
-	    PRTraceOption command,  
-	    void *value             
+NSPR_API(void)
+PR_SetTraceOption(
+    PRTraceOption command,  
+    void *value             
 );
 
 
@@ -373,10 +373,10 @@ NSPR_API(void)
 #define PR_GET_TRACE_OPTION(command,value)
 #endif
 
-NSPR_API(void) 
-	PR_GetTraceOption( 
-    	PRTraceOption command,  
-	    void *value             
+NSPR_API(void)
+PR_GetTraceOption(
+    PRTraceOption command,  
+    void *value             
 );
 
 
@@ -409,10 +409,10 @@ NSPR_API(void)
 #define PR_GET_TRACE_HANDLE_FROM_NAME(handle,qName,rName)
 #endif
 
-NSPR_API(PRTraceHandle) 
-	PR_GetTraceHandleFromName( 
-    	const char *qName,      
-        const char *rName       
+NSPR_API(PRTraceHandle)
+PR_GetTraceHandleFromName(
+    const char *qName,      
+    const char *rName       
 );
 
 
@@ -441,12 +441,12 @@ NSPR_API(PRTraceHandle)
 #define PR_GET_TRACE_NAME_FROM_HANDLE(handle,qName,rName,description)
 #endif
 
-NSPR_API(void) 
-	PR_GetTraceNameFromHandle( 
-    	PRTraceHandle handle,       
-	    const char **qName,         
-	    const char **rName,         
-    	const char **description    
+NSPR_API(void)
+PR_GetTraceNameFromHandle(
+    PRTraceHandle handle,       
+    const char **qName,         
+    const char **rName,         
+    const char **description    
 );
 
 
@@ -483,9 +483,9 @@ NSPR_API(void)
 #define PR_FIND_NEXT_TRACE_QNAME(next,handle)
 #endif
 
-NSPR_API(PRTraceHandle) 
-	PR_FindNextTraceQname( 
-        PRTraceHandle handle
+NSPR_API(PRTraceHandle)
+PR_FindNextTraceQname(
+    PRTraceHandle handle
 );
 
 
@@ -525,10 +525,10 @@ NSPR_API(PRTraceHandle)
 #define PR_FIND_NEXT_TRACE_RNAME(next,rhandle,qhandle)
 #endif
 
-NSPR_API(PRTraceHandle) 
-	PR_FindNextTraceRname( 
-        PRTraceHandle rhandle,
-        PRTraceHandle qhandle
+NSPR_API(PRTraceHandle)
+PR_FindNextTraceRname(
+    PRTraceHandle rhandle,
+    PRTraceHandle qhandle
 );
 
 
@@ -576,14 +576,14 @@ NSPR_API(PRTraceHandle)
 
 #if defined (DEBUG) || defined (FORCE_NSPR_TRACE)
 #define PR_RECORD_TRACE_ENTRIES()\
-	PR_RecordTraceEntries()
+    PR_RecordTraceEntries()
 #else
 #define PR_RECORD_TRACE_ENTRIES()
 #endif
-    
+
 NSPR_API(void)
-	PR_RecordTraceEntries(
-        void 
+PR_RecordTraceEntries(
+    void
 );
 
 
@@ -634,10 +634,10 @@ NSPR_API(void)
 #endif
 
 NSPR_API(PRIntn)
-    PR_GetTraceEntries(
-        PRTraceEntry    *buffer,    
-        PRInt32         count,      
-        PRInt32         *found      
+PR_GetTraceEntries(
+    PRTraceEntry    *buffer,    
+    PRInt32         count,      
+    PRInt32         *found      
 );
 
 PR_END_EXTERN_C

@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 {
     PLOptStatus os;
     PRBool cleanup = PR_FALSE;
-	PRThreadScope type = PR_LOCAL_THREAD;
+    PRThreadScope type = PR_LOCAL_THREAD;
     PRFileDesc *err = PR_GetSpecialFD(PR_StandardError);
     PLOptState *opt = PL_CreateOptState(argc, argv, "Ghs:S:t:cC:");
     PRIntn concurrency = 1, child_sleep = 10, main_sleep = 5, threads = 1;
@@ -44,55 +44,59 @@ int main(int argc, char **argv)
     PR_STDIO_INIT();
     while (PL_OPT_EOL != (os = PL_GetNextOpt(opt)))
     {
-        if (PL_OPT_BAD == os) continue;
+        if (PL_OPT_BAD == os) {
+            continue;
+        }
         switch (opt->option)
         {
-        case 'c':  
-            cleanup = PR_TRUE;
-            break;
-        case 'G':  
-            type = PR_GLOBAL_THREAD;
-            break;
-        case 's':  
-            child_sleep = atoi(opt->value);
-            break;
-        case 'S':  
-            main_sleep = atoi(opt->value);
-            break;
-        case 'C':  
-            concurrency = atoi(opt->value);
-            break;
-        case 't':  
-            threads = atoi(opt->value);
-            break;
-        case 'h':  
-            Help();  
-            return 2;  
-            break;
-         default:
-            break;
+            case 'c':  
+                cleanup = PR_TRUE;
+                break;
+            case 'G':  
+                type = PR_GLOBAL_THREAD;
+                break;
+            case 's':  
+                child_sleep = atoi(opt->value);
+                break;
+            case 'S':  
+                main_sleep = atoi(opt->value);
+                break;
+            case 'C':  
+                concurrency = atoi(opt->value);
+                break;
+            case 't':  
+                threads = atoi(opt->value);
+                break;
+            case 'h':  
+                Help();  
+                return 2;  
+                break;
+            default:
+                break;
         }
     }
     PL_DestroyOptState(opt);
 
     PR_fprintf(err, "Cleanup settings\n");
     PR_fprintf(err, "\tThread type: %s\n",
-        (PR_LOCAL_THREAD == type) ? "LOCAL" : "GLOBAL");
+               (PR_LOCAL_THREAD == type) ? "LOCAL" : "GLOBAL");
     PR_fprintf(err, "\tConcurrency: %d\n", concurrency);
     PR_fprintf(err, "\tNumber of threads: %d\n", threads);
     PR_fprintf(err, "\tThread sleep: %d\n", child_sleep);
-    PR_fprintf(err, "\tMain sleep: %d\n", main_sleep); 
-    PR_fprintf(err, "\tCleanup will %sbe called\n\n", (cleanup) ? "" : "NOT "); 
+    PR_fprintf(err, "\tMain sleep: %d\n", main_sleep);
+    PR_fprintf(err, "\tCleanup will %sbe called\n\n", (cleanup) ? "" : "NOT ");
 
     PR_SetConcurrency(concurrency);
 
-	while (threads-- > 0)
-		(void)PR_CreateThread(
-        	PR_USER_THREAD, Thread, (void*)child_sleep, PR_PRIORITY_NORMAL,
-       		type, PR_UNJOINABLE_THREAD, 0);
+    while (threads-- > 0)
+        (void)PR_CreateThread(
+            PR_USER_THREAD, Thread, (void*)child_sleep, PR_PRIORITY_NORMAL,
+            type, PR_UNJOINABLE_THREAD, 0);
     PR_Sleep(PR_SecondsToInterval(main_sleep));
 
-    if (cleanup) PR_Cleanup();
+    if (cleanup) {
+        PR_Cleanup();
+    }
 
     PR_fprintf(err, "main() exiting\n");
     return 0;

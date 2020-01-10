@@ -18,7 +18,7 @@
 
 void _PR_InitLocks(void)
 {
-	_PR_MD_INIT_LOCKS();
+    _PR_MD_INIT_LOCKS();
 }
 
 
@@ -33,7 +33,7 @@ void _PR_IntsOn(_PRCPU *cpu)
 
     PR_ASSERT(cpu);   
     PR_ASSERT(_PR_MD_GET_INTSOFF() > 0);
-	me = _PR_MD_CURRENT_THREAD();
+    me = _PR_MD_CURRENT_THREAD();
     PR_ASSERT(!(me->flags & _PR_IDLE_THREAD));
 
     
@@ -69,15 +69,15 @@ void _PR_IntsOn(_PRCPU *cpu)
     if (cpu->u.missed[3] != 0) {
         _PRCPU *cpu;
 
-		_PR_THREAD_LOCK(me);
+        _PR_THREAD_LOCK(me);
         me->state = _PR_RUNNABLE;
         pri = me->priority;
 
         cpu = me->cpu;
-		_PR_RUNQ_LOCK(cpu);
+        _PR_RUNQ_LOCK(cpu);
         _PR_ADD_RUNQ(me, cpu, pri);
-		_PR_RUNQ_UNLOCK(cpu);
-		_PR_THREAD_UNLOCK(me);
+        _PR_RUNQ_UNLOCK(cpu);
+        _PR_THREAD_UNLOCK(me);
         _PR_MD_SWITCH_CONTEXT(me);
     }
 }
@@ -99,7 +99,7 @@ void _PR_UnblockLockWaiter(PRLock *lock)
         
         t = _PR_THREAD_CONDQ_PTR(q);
 
-		
+        
 
 
 
@@ -113,12 +113,12 @@ void _PR_UnblockLockWaiter(PRLock *lock)
         }
 
         
-	    PR_ASSERT(t->state == _PR_LOCK_WAIT);
-	    PR_ASSERT(t->wait.lock == lock);
+        PR_ASSERT(t->state == _PR_LOCK_WAIT);
+        PR_ASSERT(t->wait.lock == lock);
         t->wait.lock = 0;
         PR_REMOVE_LINK(&t->waitQLinks);         
 
-		
+        
 
 
 
@@ -130,7 +130,7 @@ void _PR_UnblockLockWaiter(PRLock *lock)
 
 
 
-		
+
         if ( !_PR_IS_NATIVE_THREAD(t) ) {
 
             t->state = _PR_RUNNABLE;
@@ -156,7 +156,9 @@ PR_IMPLEMENT(PRLock*) PR_NewLock(void)
 {
     PRLock *lock;
 
-    if (!_pr_initialized) _PR_ImplicitInitialization();
+    if (!_pr_initialized) {
+        _PR_ImplicitInitialization();
+    }
 
     lock = PR_NEWZAP(PRLock);
     if (lock) {
@@ -206,25 +208,26 @@ PR_IMPLEMENT(void) PR_Lock(PRLock *lock)
     PRThread *t;
     PRCList *q;
 
-    PR_ASSERT(me != suspendAllThread); 
+    PR_ASSERT(me != suspendAllThread);
     PR_ASSERT(!(me->flags & _PR_IDLE_THREAD));
     PR_ASSERT(lock != NULL);
-#ifdef _PR_GLOBAL_THREADS_ONLY 
+#ifdef _PR_GLOBAL_THREADS_ONLY
     _PR_MD_LOCK(&lock->ilock);
     PR_ASSERT(lock->owner == 0);
     lock->owner = me;
     return;
 #else  
 
-	if (_native_threads_only) {
-		_PR_MD_LOCK(&lock->ilock);
-		PR_ASSERT(lock->owner == 0);
-		lock->owner = me;
-		return;
-	}
+    if (_native_threads_only) {
+        _PR_MD_LOCK(&lock->ilock);
+        PR_ASSERT(lock->owner == 0);
+        lock->owner = me;
+        return;
+    }
 
-    if (!_PR_IS_NATIVE_THREAD(me))
-    	_PR_INTSOFF(is);
+    if (!_PR_IS_NATIVE_THREAD(me)) {
+        _PR_INTSOFF(is);
+    }
 
     PR_ASSERT(_PR_IS_NATIVE_THREAD(me) || _PR_MD_GET_INTSOFF() != 0);
 
@@ -234,11 +237,12 @@ retry:
         
         lock->owner = me;
         lock->priority = me->priority;
-		
+        
         PR_APPEND_LINK(&lock->links, &me->lockList);
         _PR_LOCK_UNLOCK(lock);
-    	if (!_PR_IS_NATIVE_THREAD(me))
-        	_PR_FAST_INTSON(is);
+        if (!_PR_IS_NATIVE_THREAD(me)) {
+            _PR_FAST_INTSON(is);
+        }
         return;
     }
 
@@ -265,27 +269,27 @@ retry:
 
     q = lock->waitQ.next;
     if (q == &lock->waitQ || _PR_THREAD_CONDQ_PTR(q)->priority ==
-      	_PR_THREAD_CONDQ_PTR(lock->waitQ.prev)->priority) {
-		
+        _PR_THREAD_CONDQ_PTR(lock->waitQ.prev)->priority) {
+        
 
 
 
-		q = &lock->waitQ;
+        q = &lock->waitQ;
     } else {
-		
-		
-		while (q != &lock->waitQ) {
-			t = _PR_THREAD_CONDQ_PTR(lock->waitQ.next);
-			if (me->priority > t->priority) {
-				
-				break;
-			}
-			q = q->next;
-		}
-	}
+        
+        
+        while (q != &lock->waitQ) {
+            t = _PR_THREAD_CONDQ_PTR(lock->waitQ.next);
+            if (me->priority > t->priority) {
+                
+                break;
+            }
+            q = q->next;
+        }
+    }
     PR_INSERT_BEFORE(&me->waitQLinks, q);
 
-	
+    
 
 
 
@@ -300,7 +304,7 @@ retry:
     _PR_LOCK_UNLOCK(lock);
 
     _PR_MD_WAIT(me, PR_INTERVAL_NO_TIMEOUT);
-	goto retry;
+    goto retry;
 
 #endif  
 }
@@ -317,29 +321,30 @@ PR_IMPLEMENT(PRStatus) PR_Unlock(PRLock *lock)
 
     PR_ASSERT(lock != NULL);
     PR_ASSERT(lock->owner == me);
-    PR_ASSERT(me != suspendAllThread); 
+    PR_ASSERT(me != suspendAllThread);
     PR_ASSERT(!(me->flags & _PR_IDLE_THREAD));
     if (lock->owner != me) {
         return PR_FAILURE;
     }
 
-#ifdef _PR_GLOBAL_THREADS_ONLY 
+#ifdef _PR_GLOBAL_THREADS_ONLY
     lock->owner = 0;
     _PR_MD_UNLOCK(&lock->ilock);
     return PR_SUCCESS;
 #else  
 
-	if (_native_threads_only) {
-		lock->owner = 0;
-		_PR_MD_UNLOCK(&lock->ilock);
-		return PR_SUCCESS;
-	}
+    if (_native_threads_only) {
+        lock->owner = 0;
+        _PR_MD_UNLOCK(&lock->ilock);
+        return PR_SUCCESS;
+    }
 
-    if (!_PR_IS_NATIVE_THREAD(me))
-    	_PR_INTSOFF(is);
+    if (!_PR_IS_NATIVE_THREAD(me)) {
+        _PR_INTSOFF(is);
+    }
     _PR_LOCK_LOCK(lock);
 
-	
+    
     PR_REMOVE_LINK(&lock->links);
     pri = lock->priority;
     boost = lock->boostPriority;
@@ -365,13 +370,15 @@ PR_IMPLEMENT(PRStatus) PR_Unlock(PRLock *lock)
 
     
     q = lock->waitQ.next;
-    if (q != &lock->waitQ)
+    if (q != &lock->waitQ) {
         _PR_UnblockLockWaiter(lock);
+    }
     lock->boostPriority = PR_PRIORITY_LOW;
     lock->owner = 0;
     _PR_LOCK_UNLOCK(lock);
-    if (!_PR_IS_NATIVE_THREAD(me))
-    	_PR_INTSON(is);
+    if (!_PR_IS_NATIVE_THREAD(me)) {
+        _PR_INTSON(is);
+    }
     return PR_SUCCESS;
 #endif  
 }
@@ -397,7 +404,7 @@ PR_IMPLEMENT(PRBool) PR_TestAndLock(PRLock *lock)
     PRBool rv = PR_FALSE;
     PRIntn is;
 
-#ifdef _PR_GLOBAL_THREADS_ONLY 
+#ifdef _PR_GLOBAL_THREADS_ONLY
     is = _PR_MD_TEST_AND_LOCK(&lock->ilock);
     if (is == 0) {
         lock->owner = me;
@@ -407,32 +414,34 @@ PR_IMPLEMENT(PRBool) PR_TestAndLock(PRLock *lock)
 #else  
 
 #ifndef _PR_LOCAL_THREADS_ONLY
-	if (_native_threads_only) {
-		is = _PR_MD_TEST_AND_LOCK(&lock->ilock);
-		if (is == 0) {
-			lock->owner = me;
-			return PR_TRUE;
-		}
-    	return PR_FALSE;
-	}
+    if (_native_threads_only) {
+        is = _PR_MD_TEST_AND_LOCK(&lock->ilock);
+        if (is == 0) {
+            lock->owner = me;
+            return PR_TRUE;
+        }
+        return PR_FALSE;
+    }
 #endif
 
-    if (!_PR_IS_NATIVE_THREAD(me))
-    	_PR_INTSOFF(is);
+    if (!_PR_IS_NATIVE_THREAD(me)) {
+        _PR_INTSOFF(is);
+    }
 
     _PR_LOCK_LOCK(lock);
     if (lock->owner == 0) {
         
         lock->owner = me;
         lock->priority = me->priority;
-		
+        
         PR_APPEND_LINK(&lock->links, &me->lockList);
         rv = PR_TRUE;
     }
     _PR_LOCK_UNLOCK(lock);
 
-    if (!_PR_IS_NATIVE_THREAD(me))
-    	_PR_INTSON(is);
+    if (!_PR_IS_NATIVE_THREAD(me)) {
+        _PR_INTSON(is);
+    }
     return rv;
 #endif  
 }
@@ -443,4 +452,6 @@ PR_IMPLEMENT(PRBool) PR_TestAndLock(PRLock *lock)
 
 
 PR_IMPLEMENT(PRStatus) PRP_TryLock(PRLock *lock)
-    { return (PR_TestAndLock(lock)) ? PR_SUCCESS : PR_FAILURE; }
+{
+    return (PR_TestAndLock(lock)) ? PR_SUCCESS : PR_FAILURE;
+}

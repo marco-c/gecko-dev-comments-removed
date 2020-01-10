@@ -194,10 +194,10 @@ struct PRErrorCallbackTablePrivate;
 
 
 typedef const char *
-PRErrorCallbackLookupFn(PRErrorCode code, PRLanguageCode language, 
-		   const struct PRErrorTable *table,
-		   struct PRErrorCallbackPrivate *cb_private,
-		   struct PRErrorCallbackTablePrivate *table_private);
+PRErrorCallbackLookupFn(PRErrorCode code, PRLanguageCode language,
+                        const struct PRErrorTable *table,
+                        struct PRErrorCallbackPrivate *cb_private,
+                        struct PRErrorCallbackTablePrivate *table_private);
 
 
 
@@ -211,7 +211,7 @@ PRErrorCallbackLookupFn(PRErrorCode code, PRLanguageCode language,
 
 typedef struct PRErrorCallbackTablePrivate *
 PRErrorCallbackNewTableFn(const struct PRErrorTable *table,
-			struct PRErrorCallbackPrivate *cb_private);
+                          struct PRErrorCallbackPrivate *cb_private);
 
 
 
@@ -228,7 +228,7 @@ PRErrorCallbackNewTableFn(const struct PRErrorTable *table,
 
 
 NSPR_API(const char *) PR_ErrorToString(PRErrorCode code,
-    PRLanguageCode language);
+                                        PRLanguageCode language);
 
 
 
@@ -285,9 +285,9 @@ NSPR_API(PRErrorCode) PR_ErrorInstallTable(const struct PRErrorTable *table);
 
 
 NSPR_API(void) PR_ErrorInstallCallback(const char * const * languages,
-			      PRErrorCallbackLookupFn *lookup, 
-			      PRErrorCallbackNewTableFn *newtable,
-			      struct PRErrorCallbackPrivate *cb_private);
+                                       PRErrorCallbackLookupFn *lookup,
+                                       PRErrorCallbackNewTableFn *newtable,
+                                       struct PRErrorCallbackPrivate *cb_private);
 
 PR_END_EXTERN_C
 

@@ -81,7 +81,7 @@ private:
 
 
     PRSize StuffFunction(void*, const char*, PRSize);
-        
+
 };  
 
 

@@ -61,7 +61,7 @@ NSPR_API(void) PRP_DestroyNakedCondVar(PRCondVar *cvar);
 
 
 NSPR_API(PRStatus) PRP_NakedWait(
-	PRCondVar *cvar, PRLock *lock, PRIntervalTime timeout);
+    PRCondVar *cvar, PRLock *lock, PRIntervalTime timeout);
 
 
 

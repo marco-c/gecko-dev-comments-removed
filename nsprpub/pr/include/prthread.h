@@ -103,12 +103,12 @@ typedef enum PRThreadPriority
 
 
 NSPR_API(PRThread*) PR_CreateThread(PRThreadType type,
-                     void (PR_CALLBACK *start)(void *arg),
-                     void *arg,
-                     PRThreadPriority priority,
-                     PRThreadScope scope,
-                     PRThreadState state,
-                     PRUint32 stackSize);
+                                    void (PR_CALLBACK *start)(void *arg),
+                                    void *arg,
+                                    PRThreadPriority priority,
+                                    PRThreadScope scope,
+                                    PRThreadState state,
+                                    PRUint32 stackSize);
 
 
 

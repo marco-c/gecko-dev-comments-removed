@@ -149,8 +149,8 @@ static PRIntervalTime ContentiousLock(PRUint32 loops)
     contention->ml = PR_NewLock();
     contention->interval = contention_interval;
     thread = PR_CreateThread(
-        PR_USER_THREAD, LockContender, contention,
-        PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
+                 PR_USER_THREAD, LockContender, contention,
+                 PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
     PR_ASSERT(thread != NULL);
 
     overhead = PR_IntervalNow() - timein;
@@ -211,12 +211,18 @@ static PRIntervalTime NonContentiousMonitor(PRUint32 loops)
 static void PR_CALLBACK TryEntry(void *arg)
 {
     PRMonitor *ml = (PRMonitor*)arg;
-    if (debug_mode) PR_fprintf(std_err, "Reentrant thread created\n");
+    if (debug_mode) {
+        PR_fprintf(std_err, "Reentrant thread created\n");
+    }
     PR_EnterMonitor(ml);
     PR_ASSERT_CURRENT_THREAD_IN_MONITOR(ml);
-    if (debug_mode) PR_fprintf(std_err, "Reentrant thread acquired monitor\n");
+    if (debug_mode) {
+        PR_fprintf(std_err, "Reentrant thread acquired monitor\n");
+    }
     PR_ExitMonitor(ml);
-    if (debug_mode) PR_fprintf(std_err, "Reentrant thread released monitor\n");
+    if (debug_mode) {
+        PR_fprintf(std_err, "Reentrant thread released monitor\n");
+    }
 }  
 
 static PRIntervalTime ReentrantMonitor(PRUint32 loops)
@@ -224,32 +230,40 @@ static PRIntervalTime ReentrantMonitor(PRUint32 loops)
     PRStatus status;
     PRThread *thread;
     PRMonitor *ml = PR_NewMonitor();
-    if (debug_mode) PR_fprintf(std_err, "\nMonitor created for reentrant test\n");
+    if (debug_mode) {
+        PR_fprintf(std_err, "\nMonitor created for reentrant test\n");
+    }
 
     PR_EnterMonitor(ml);
     PR_ASSERT_CURRENT_THREAD_IN_MONITOR(ml);
     PR_EnterMonitor(ml);
     PR_ASSERT_CURRENT_THREAD_IN_MONITOR(ml);
-    if (debug_mode) PR_fprintf(std_err, "Monitor acquired twice\n");
+    if (debug_mode) {
+        PR_fprintf(std_err, "Monitor acquired twice\n");
+    }
 
     thread = PR_CreateThread(
-        PR_USER_THREAD, TryEntry, ml,
-        PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
+                 PR_USER_THREAD, TryEntry, ml,
+                 PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
     PR_ASSERT(thread != NULL);
     PR_Sleep(PR_SecondsToInterval(1));
     PR_ASSERT_CURRENT_THREAD_IN_MONITOR(ml);
 
     PR_ExitMonitor(ml);
     PR_ASSERT_CURRENT_THREAD_IN_MONITOR(ml);
-    if (debug_mode) PR_fprintf(std_err, "Monitor released first time\n");
+    if (debug_mode) {
+        PR_fprintf(std_err, "Monitor released first time\n");
+    }
 
     PR_ExitMonitor(ml);
-    if (debug_mode) PR_fprintf(std_err, "Monitor released second time\n");
+    if (debug_mode) {
+        PR_fprintf(std_err, "Monitor released second time\n");
+    }
 
     status = PR_JoinThread(thread);
-    if (debug_mode) PR_fprintf(std_err, 
-        "Reentrant thread joined %s\n",
-        (status == PR_SUCCESS) ? "successfully" : "in error");
+    if (debug_mode) PR_fprintf(std_err,
+                                   "Reentrant thread joined %s\n",
+                                   (status == PR_SUCCESS) ? "successfully" : "in error");
 
     PR_DestroyMonitor(ml);
     return 0;
@@ -283,8 +297,8 @@ static PRUint32 ContentiousMonitor(PRUint32 loops)
     contention->ml = PR_NewMonitor();
     contention->interval = contention_interval;
     thread = PR_CreateThread(
-        PR_USER_THREAD, MonitorContender, contention,
-        PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
+                 PR_USER_THREAD, MonitorContender, contention,
+                 PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
     PR_ASSERT(thread != NULL);
 
     overhead = PR_IntervalNow() - timein;
@@ -352,8 +366,8 @@ static PRIntervalTime ContentiousCMonitor(PRUint32 loops)
     contention->loops = loops;
     contention->interval = contention_interval;
     thread = PR_CreateThread(
-        PR_USER_THREAD, Contender, contention,
-        PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
+                 PR_USER_THREAD, Contender, contention,
+                 PR_PRIORITY_LOW, PR_LOCAL_THREAD, PR_JOINABLE_THREAD, 0);
     PR_ASSERT(thread != NULL);
 
     overhead = PR_IntervalNow() - timein;
@@ -382,7 +396,7 @@ static PRIntervalTime ContentiousCMonitor(PRUint32 loops)
 static PRIntervalTime Test(
     const char* msg, PRUint32 (*test)(PRUint32 loops),
     PRUint32 loops, PRIntervalTime overhead)
-{ 
+{
     
 
 
@@ -392,7 +406,7 @@ static PRIntervalTime Test(
 
 
     PRFloat64 elapsed;
-    PRIntervalTime accountable, duration;    
+    PRIntervalTime accountable, duration;
     PRUintn spaces = PL_strlen(msg);
     PRIntervalTime timeout, timein = PR_IntervalNow();
     PRIntervalTime predicted = test(loops);
@@ -405,11 +419,15 @@ static PRIntervalTime Test(
         accountable -= overhead;
         elapsed = (PRFloat64)PR_IntervalToMicroseconds(accountable);
         PR_fprintf(PR_STDOUT, "%s:", msg);
-        while (spaces++ < 50) PR_fprintf(PR_STDOUT, " ");
-        if ((PRInt32)accountable < 0)
+        while (spaces++ < 50) {
+            PR_fprintf(PR_STDOUT, " ");
+        }
+        if ((PRInt32)accountable < 0) {
             PR_fprintf(PR_STDOUT, "*****.** usecs/iteration\n");
-        else
+        }
+        else {
             PR_fprintf(PR_STDOUT, "%8.2f usecs/iteration\n", elapsed/loops);
+        }
     }
     return duration;
 }  
@@ -420,11 +438,11 @@ int main(int argc,  char **argv)
     PRIntervalTime duration;
     PRUint32 cpu, cpus = 2, loops = 100;
 
-	
+
     PR_STDIO_INIT();
     PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
     {
-    	
+        
 
 
 
@@ -432,50 +450,60 @@ int main(int argc,  char **argv)
 
 
 
-    	PLOptStatus os;
-    	PLOptState *opt = PL_CreateOptState(argc, argv, "dvl:c:");
-    	while (PL_OPT_EOL != (os = PL_GetNextOpt(opt)))
+        PLOptStatus os;
+        PLOptState *opt = PL_CreateOptState(argc, argv, "dvl:c:");
+        while (PL_OPT_EOL != (os = PL_GetNextOpt(opt)))
         {
-    		if (PL_OPT_BAD == os) continue;
+            if (PL_OPT_BAD == os) {
+                continue;
+            }
             switch (opt->option)
             {
-            case 'd':  
-    			debug_mode = PR_TRUE;
-                break;
-            case 'v':  
-    			verbosity = PR_TRUE;
-                break;
-            case 'l':  
-                loops = atoi(opt->value);
-                break;
-            case 'c':  
-                cpus = atoi(opt->value);
-                break;
-             default:
-                break;
+                case 'd':  
+                    debug_mode = PR_TRUE;
+                    break;
+                case 'v':  
+                    verbosity = PR_TRUE;
+                    break;
+                case 'l':  
+                    loops = atoi(opt->value);
+                    break;
+                case 'c':  
+                    cpus = atoi(opt->value);
+                    break;
+                default:
+                    break;
             }
         }
-    	PL_DestroyOptState(opt);
+        PL_DestroyOptState(opt);
     }
 
- 
+    
     PR_SetConcurrency(8);
 
-    if (loops == 0) loops = 100;
+    if (loops == 0) {
+        loops = 100;
+    }
     if (debug_mode)
     {
         std_err = PR_STDERR;
         PR_fprintf(std_err, "Lock: Using %d loops\n", loops);
     }
 
-    if (cpus == 0) cpus = 2;
-    if (debug_mode) PR_fprintf(std_err, "Lock: Using %d cpu(s)\n", cpus);
+    if (cpus == 0) {
+        cpus = 2;
+    }
+    if (debug_mode) {
+        PR_fprintf(std_err, "Lock: Using %d cpu(s)\n", cpus);
+    }
 
     (void)Sleeper(10);  
 
     for (cpu = 1; cpu <= cpus; ++cpu)
     {
-        if (debug_mode) PR_fprintf(std_err, "\nLock: Using %d CPU(s)\n", cpu);
+        if (debug_mode) {
+            PR_fprintf(std_err, "\nLock: Using %d CPU(s)\n", cpu);
+        }
         PR_SetConcurrency(cpu);
 
         duration = Test("Overhead of PR_Sleep", Sleeper, loops, 0);
@@ -498,20 +526,21 @@ int main(int argc,  char **argv)
         PR_fprintf(
             std_err, "%s: test %s\n", "Lock(mutex) test",
             ((rv) ? "passed" : "failed"));
-	else {
-		 if (!rv)
-			 failed_already=1;
-	}
+    else {
+        if (!rv) {
+            failed_already=1;
+        }
+    }
 
-	if(failed_already)	
-	{
-	    PR_fprintf(PR_STDOUT, "FAIL\n"); 
-		return 1;
-    } 
-	else
+    if(failed_already)
     {
-	    PR_fprintf(PR_STDOUT, "PASS\n"); 
-		return 0;
+        PR_fprintf(PR_STDOUT, "FAIL\n");
+        return 1;
+    }
+    else
+    {
+        PR_fprintf(PR_STDOUT, "PASS\n");
+        return 0;
     }
 
 }  

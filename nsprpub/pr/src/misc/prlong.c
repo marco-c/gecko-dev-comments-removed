@@ -10,10 +10,18 @@ static PRInt64 ll_maxint = PR_INT64(0x7fffffffffffffff);
 static PRInt64 ll_minint = PR_INT64(0x8000000000000000);
 static PRUint64 ll_maxuint = PR_UINT64(0xffffffffffffffff);
 
-PR_IMPLEMENT(PRInt64) LL_Zero(void) { return ll_zero; }
-PR_IMPLEMENT(PRInt64) LL_MaxInt(void) { return ll_maxint; }
-PR_IMPLEMENT(PRInt64) LL_MinInt(void) { return ll_minint; }
-PR_IMPLEMENT(PRUint64) LL_MaxUint(void) { return ll_maxuint; }
+PR_IMPLEMENT(PRInt64) LL_Zero(void) {
+    return ll_zero;
+}
+PR_IMPLEMENT(PRInt64) LL_MaxInt(void) {
+    return ll_maxint;
+}
+PR_IMPLEMENT(PRInt64) LL_MinInt(void) {
+    return ll_minint;
+}
+PR_IMPLEMENT(PRUint64) LL_MaxUint(void) {
+    return ll_maxuint;
+}
 
 #ifndef HAVE_LONG_LONG
 
@@ -32,10 +40,10 @@ static void norm_udivmod32(PRUint32 *qp, PRUint32 *rp, PRUint64 a, PRUint32 b)
     r1 = (r1 << 16) | _hi16(a.lo);
     if (r1 < m) {
         q1--, r1 += b;
-        if (r1 >= b	
-	    && r1 < m) {
-	    q1--, r1 += b;
-	}
+        if (r1 >= b 
+            && r1 < m) {
+            q1--, r1 += b;
+        }
     }
     r1 -= m;
     r0 = r1 % d1;
@@ -45,9 +53,9 @@ static void norm_udivmod32(PRUint32 *qp, PRUint32 *rp, PRUint64 a, PRUint32 b)
     if (r0 < m) {
         q0--, r0 += b;
         if (r0 >= b
-	    && r0 < m) {
-	    q0--, r0 += b;
-	}
+            && r0 < m) {
+            q0--, r0 += b;
+        }
     }
     *qp = (q1 << 16) | q0;
     *rp = r0 - m;
@@ -58,18 +66,24 @@ static PRUint32 CountLeadingZeros(PRUint32 a)
     PRUint32 t;
     PRUint32 r = 32;
 
-    if ((t = a >> 16) != 0)
-	r -= 16, a = t;
-    if ((t = a >> 8) != 0)
-	r -= 8, a = t;
-    if ((t = a >> 4) != 0)
-	r -= 4, a = t;
-    if ((t = a >> 2) != 0)
-	r -= 2, a = t;
-    if ((t = a >> 1) != 0)
-	r -= 1, a = t;
-    if (a & 1)
-	r--;
+    if ((t = a >> 16) != 0) {
+        r -= 16, a = t;
+    }
+    if ((t = a >> 8) != 0) {
+        r -= 8, a = t;
+    }
+    if ((t = a >> 4) != 0) {
+        r -= 4, a = t;
+    }
+    if ((t = a >> 2) != 0) {
+        r -= 2, a = t;
+    }
+    if ((t = a >> 1) != 0) {
+        r -= 1, a = t;
+    }
+    if (a & 1) {
+        r--;
+    }
     return r;
 }
 
@@ -83,94 +97,93 @@ PR_IMPLEMENT(void) ll_udivmod(PRUint64 *qp, PRUint64 *rp, PRUint64 a, PRUint64 b
     n1 = a.hi;
 
     if (b.hi == 0) {
-	if (b.lo > n1) {
-	    
+        if (b.lo > n1) {
+            
 
-	    lsh = CountLeadingZeros(b.lo);
+            lsh = CountLeadingZeros(b.lo);
 
-	    if (lsh) {
-		
-
-
-
-		b.lo = b.lo << lsh;
-		n1 = (n1 << lsh) | (n0 >> (32 - lsh));
-		n0 = n0 << lsh;
-	    }
-
-	    a.lo = n0, a.hi = n1;
-	    norm_udivmod32(&q0, &n0, a, b.lo);
-	    q1 = 0;
-
-	    
-	} else {
-	    
-
-	    if (b.lo == 0)		
-		b.lo = 1 / b.lo;	
-
-	    lsh = CountLeadingZeros(b.lo);
-
-	    if (lsh == 0) {
-		
+            if (lsh) {
+                
 
 
 
+                b.lo = b.lo << lsh;
+                n1 = (n1 << lsh) | (n0 >> (32 - lsh));
+                n0 = n0 << lsh;
+            }
+
+            a.lo = n0, a.hi = n1;
+            norm_udivmod32(&q0, &n0, a, b.lo);
+            q1 = 0;
+
+            
+        } else {
+            
+
+            if (b.lo == 0) {    
+                b.lo = 1 / b.lo;    
+            }
+
+            lsh = CountLeadingZeros(b.lo);
+
+            if (lsh == 0) {
+                
 
 
 
 
 
 
-		n1 -= b.lo;
-		q1 = 1;
-	    } else {
-		
 
 
-		rsh = 32 - lsh;
 
-		b.lo = b.lo << lsh;
-		n2 = n1 >> rsh;
-		n1 = (n1 << lsh) | (n0 >> rsh);
-		n0 = n0 << lsh;
+                n1 -= b.lo;
+                q1 = 1;
+            } else {
+                
 
-		a.lo = n1, a.hi = n2;
-		norm_udivmod32(&q1, &n1, a, b.lo);
-	    }
 
-	    
+                rsh = 32 - lsh;
 
-	    a.lo = n0, a.hi = n1;
-	    norm_udivmod32(&q0, &n0, a, b.lo);
+                b.lo = b.lo << lsh;
+                n2 = n1 >> rsh;
+                n1 = (n1 << lsh) | (n0 >> rsh);
+                n0 = n0 << lsh;
 
-	    
-	}
+                a.lo = n1, a.hi = n2;
+                norm_udivmod32(&q1, &n1, a, b.lo);
+            }
 
-	if (rp) {
-	    rp->lo = n0 >> lsh;
-	    rp->hi = 0;
-	}
+            
+
+            a.lo = n0, a.hi = n1;
+            norm_udivmod32(&q0, &n0, a, b.lo);
+
+            
+        }
+
+        if (rp) {
+            rp->lo = n0 >> lsh;
+            rp->hi = 0;
+        }
     } else {
-	if (b.hi > n1) {
-	    
+        if (b.hi > n1) {
+            
 
-	    q0 = 0;
-	    q1 = 0;
+            q0 = 0;
+            q1 = 0;
 
-	    
-	    if (rp) {
-		rp->lo = n0;
-		rp->hi = n1;
-	    }
-	} else {
-	    
+            
+            if (rp) {
+                rp->lo = n0;
+                rp->hi = n1;
+            }
+        } else {
+            
 
-	    lsh = CountLeadingZeros(b.hi);
-	    if (lsh == 0) {
-		
-
-
+            lsh = CountLeadingZeros(b.hi);
+            if (lsh == 0) {
+                
 
 
 
@@ -178,62 +191,64 @@ PR_IMPLEMENT(void) ll_udivmod(PRUint64 *qp, PRUint64 *rp, PRUint64 a, PRUint64 b
 
 
 
-		
+
+
+                
 
 
 
-		if (n1 > b.hi || n0 >= b.lo) {
-		    q0 = 1;
-		    a.lo = n0, a.hi = n1;
-		    LL_SUB(a, a, b);
-		} else {
-		    q0 = 0;
-		}
-		q1 = 0;
+                if (n1 > b.hi || n0 >= b.lo) {
+                    q0 = 1;
+                    a.lo = n0, a.hi = n1;
+                    LL_SUB(a, a, b);
+                } else {
+                    q0 = 0;
+                }
+                q1 = 0;
 
-		if (rp) {
-		    rp->lo = n0;
-		    rp->hi = n1;
-		}
-	    } else {
-		PRInt64 m;
+                if (rp) {
+                    rp->lo = n0;
+                    rp->hi = n1;
+                }
+            } else {
+                PRInt64 m;
 
-		
+                
 
 
-		rsh = 32 - lsh;
+                rsh = 32 - lsh;
 
-		b.hi = (b.hi << lsh) | (b.lo >> rsh);
-		b.lo = b.lo << lsh;
-		n2 = n1 >> rsh;
-		n1 = (n1 << lsh) | (n0 >> rsh);
-		n0 = n0 << lsh;
+                b.hi = (b.hi << lsh) | (b.lo >> rsh);
+                b.lo = b.lo << lsh;
+                n2 = n1 >> rsh;
+                n1 = (n1 << lsh) | (n0 >> rsh);
+                n0 = n0 << lsh;
 
-		a.lo = n1, a.hi = n2;
-		norm_udivmod32(&q0, &n1, a, b.hi);
-		LL_MUL32(m, q0, b.lo);
+                a.lo = n1, a.hi = n2;
+                norm_udivmod32(&q0, &n1, a, b.hi);
+                LL_MUL32(m, q0, b.lo);
 
-		if ((m.hi > n1) || ((m.hi == n1) && (m.lo > n0))) {
-		    q0--;
-		    LL_SUB(m, m, b);
-		}
+                if ((m.hi > n1) || ((m.hi == n1) && (m.lo > n0))) {
+                    q0--;
+                    LL_SUB(m, m, b);
+                }
 
-		q1 = 0;
+                q1 = 0;
 
-		
-		if (rp) {
-		    a.lo = n0, a.hi = n1;
-		    LL_SUB(a, a, m);
-		    rp->lo = (a.hi << rsh) | (a.lo >> lsh);
-		    rp->hi = a.hi >> lsh;
-		}
-	    }
-	}
+                
+                if (rp) {
+                    a.lo = n0, a.hi = n1;
+                    LL_SUB(a, a, m);
+                    rp->lo = (a.hi << rsh) | (a.lo >> lsh);
+                    rp->hi = a.hi >> lsh;
+                }
+            }
+        }
     }
 
     if (qp) {
-	qp->lo = q0;
-	qp->hi = q1;
+        qp->lo = q0;
+        qp->hi = q1;
     }
 }
 #endif 

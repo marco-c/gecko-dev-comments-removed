@@ -35,13 +35,16 @@ static void PrintVersion(
     static const char *tabs = {"                    "};
 
     tab *= 2;
-    if (tab > len) tab = len;
+    if (tab > len) {
+        tab = len;
+    }
     printf("%s", &tabs[len - tab]);
     printf("%s ", msg);
     printf("%s ", info->id);
     printf("%d.%d", info->major, info->minor);
-    if (0 != info->patch)
+    if (0 != info->patch) {
         printf(".p%d", info->patch);
+    }
     printf("\n");
 }  
 
@@ -77,9 +80,15 @@ static const PRVersionInfo *HackExportInfo(void)
 static const PRDependencyInfo *DummyImports(
     const PRDependencyInfo *previous)
 {
-    if (NULL == previous) return &dummy_imports[0];
-    else if (&dummy_imports[0] == previous) return &dummy_imports[1];
-    else if (&dummy_imports[1] == previous) return NULL;
+    if (NULL == previous) {
+        return &dummy_imports[0];
+    }
+    else if (&dummy_imports[0] == previous) {
+        return &dummy_imports[1];
+    }
+    else if (&dummy_imports[1] == previous) {
+        return NULL;
+    }
 }  
 
 static const PRVersionInfo *DummyLibVersion(void)
@@ -112,8 +121,10 @@ int main(int argc, char **argv)
     const char *buildDate = __DATE__, *buildTime = __TIME__;
 
     printf("Depend.c build time is %s %s\n", buildDate, buildTime);
-    
-    if (NULL != info) ChaseDependents(info, tab);
+
+    if (NULL != info) {
+        ChaseDependents(info, tab);
+    }
 
     return 0;
 }  

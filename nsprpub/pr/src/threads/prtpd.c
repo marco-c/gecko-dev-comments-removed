@@ -51,7 +51,7 @@
 static PRInt32 _pr_tpd_length = 0;      
 static PRInt32 _pr_tpd_highwater = 0;   
 static PRThreadPrivateDTOR *_pr_tpd_destructors = NULL;
-                                        
+
 
 
 
@@ -61,7 +61,7 @@ static PRThreadPrivateDTOR *_pr_tpd_destructors = NULL;
 void _PR_InitTPD(void)
 {
     _pr_tpd_destructors = (PRThreadPrivateDTOR*)
-        PR_CALLOC(_PR_TPD_LIMIT * sizeof(PRThreadPrivateDTOR*));
+                          PR_CALLOC(_PR_TPD_LIMIT * sizeof(PRThreadPrivateDTOR*));
     PR_ASSERT(NULL != _pr_tpd_destructors);
     _pr_tpd_length = _PR_TPD_LIMIT;
 }
@@ -99,7 +99,9 @@ PR_IMPLEMENT(PRStatus) PR_NewThreadPrivateIndex(
     PRStatus rv;
     PRInt32 index;
 
-    if (!_pr_initialized) _PR_ImplicitInitialization();
+    if (!_pr_initialized) {
+        _PR_ImplicitInitialization();
+    }
 
     PR_ASSERT(NULL != newIndex);
     PR_ASSERT(NULL != _pr_tpd_destructors);
@@ -149,7 +151,7 @@ PR_IMPLEMENT(PRStatus) PR_SetThreadPrivate(PRUintn index, void *priv)
     }
 
     PR_ASSERT(((NULL == self->privateData) && (0 == self->tpdLength))
-        || ((NULL != self->privateData) && (0 != self->tpdLength)));
+              || ((NULL != self->privateData) && (0 != self->tpdLength)));
 
     
 
@@ -202,7 +204,7 @@ PR_IMPLEMENT(void*) PR_GetThreadPrivate(PRUintn index)
 {
     PRThread *self = PR_GetCurrentThread();
     void *tpd = ((NULL == self->privateData) || (index >= self->tpdLength)) ?
-        NULL : self->privateData[index];
+                NULL : self->privateData[index];
 
     return tpd;
 }

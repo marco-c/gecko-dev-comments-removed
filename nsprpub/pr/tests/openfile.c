@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     PRInt32 nbytes;
     PRFileDesc *fd;
 
-    
+
     
     template = fopen(TEMPLATE_FILE_NAME, "w");
     fputs("line 1\nline 2\n", template);

@@ -9,7 +9,7 @@
 
 #include "primpl.h"
 
-PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np) 
+PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np)
 {
     CONTEXTRECORD context;
     context.ContextFlags = CONTEXT_INTEGER;
@@ -53,6 +53,6 @@ GetMyFiberID()
         mov    [fiberData], EAX
     }
 #endif
-  
+
     return fiberData;
 }

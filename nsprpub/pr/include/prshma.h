@@ -134,9 +134,9 @@ PR_BEGIN_EXTERN_C
 NSPR_API( PRFileMap *)
 PR_OpenAnonFileMap(
     const char *dirName,
-    PRSize      size, 
+    PRSize      size,
     PRFileMapProtect prot
-);  
+);
 
 
 
@@ -159,10 +159,10 @@ PR_OpenAnonFileMap(
 
 
 
-NSPR_API(PRStatus) 
-PR_ProcessAttrSetInheritableFileMap( 
+NSPR_API(PRStatus)
+PR_ProcessAttrSetInheritableFileMap(
     PRProcessAttr   *attr,
-    PRFileMap       *fm, 
+    PRFileMap       *fm,
     const char      *shmname
 );
 
@@ -185,8 +185,8 @@ PR_ProcessAttrSetInheritableFileMap(
 
 
 NSPR_API( PRFileMap *)
-PR_GetInheritedFileMap( 
-    const char *shmname 
+PR_GetInheritedFileMap(
+    const char *shmname
 );
 
 
@@ -209,7 +209,7 @@ PR_GetInheritedFileMap(
 
 
 NSPR_API( PRStatus )
-PR_ExportFileMapAsString( 
+PR_ExportFileMapAsString(
     PRFileMap *fm,
     PRSize    bufsize,
     char      *buf
@@ -231,7 +231,7 @@ PR_ExportFileMapAsString(
 
 
 NSPR_API( PRFileMap * )
-PR_ImportFileMapFromString( 
+PR_ImportFileMapFromString(
     const char *fmstring
 );
 

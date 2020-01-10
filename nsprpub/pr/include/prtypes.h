@@ -515,7 +515,7 @@ typedef unsigned long PRUword;
 
 
 
-#define PR_PUBLIC_API		PR_IMPLEMENT
+#define PR_PUBLIC_API       PR_IMPLEMENT
 
 
 

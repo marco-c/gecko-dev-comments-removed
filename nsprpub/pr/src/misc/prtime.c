@@ -204,14 +204,14 @@ ComputeGMT(PRTime time, PRExplodedTime *gmt)
 
 PR_IMPLEMENT(void)
 PR_ExplodeTime(
-        PRTime usecs,
-        PRTimeParamFn params,
-        PRExplodedTime *exploded)
+    PRTime usecs,
+    PRTimeParamFn params,
+    PRExplodedTime *exploded)
 {
     ComputeGMT(usecs, exploded);
     exploded->tm_params = params(exploded);
     ApplySecOffset(exploded, exploded->tm_params.tp_gmt_offset
-            + exploded->tm_params.tp_dst_offset);
+                   + exploded->tm_params.tp_dst_offset);
 }
 
 
@@ -241,9 +241,9 @@ PR_ImplodeTime(const PRExplodedTime *exploded)
     PR_NormalizeTime(&copy, PR_GMTParameters);
 
     numDays = DAYS_BETWEEN_YEARS(1970, copy.tm_year);
-    
+
     numSecs = copy.tm_yday * 86400 + copy.tm_hour * 3600
-            + copy.tm_min * 60 + copy.tm_sec;
+              + copy.tm_min * 60 + copy.tm_sec;
 
     LL_I2L(temp, numDays);
     LL_I2L(secPerDay, 86400);
@@ -277,8 +277,9 @@ PR_ImplodeTime(const PRExplodedTime *exploded)
 
 static int IsLeapYear(PRInt16 year)
 {
-    if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)
+    if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
         return 1;
+    }
     return 0;
 }
 
@@ -321,23 +322,26 @@ ApplySecOffset(PRExplodedTime *time, PRInt32 secOffset)
             if (time->tm_month < 0) {
                 time->tm_month = 11;
                 time->tm_year--;
-                if (IsLeapYear(time->tm_year))
+                if (IsLeapYear(time->tm_year)) {
                     time->tm_yday = 365;
-                else
+                }
+                else {
                     time->tm_yday = 364;
+                }
             }
             time->tm_mday = nDays[IsLeapYear(time->tm_year)][time->tm_month];
         }
         time->tm_wday--;
-        if (time->tm_wday < 0)
+        if (time->tm_wday < 0) {
             time->tm_wday = 6;
+        }
     } else if (time->tm_hour > 23) {
         
         time->tm_hour -= 24;
         time->tm_mday++;
         time->tm_yday++;
         if (time->tm_mday >
-                nDays[IsLeapYear(time->tm_year)][time->tm_month]) {
+            nDays[IsLeapYear(time->tm_year)][time->tm_month]) {
             time->tm_mday = 1;
             time->tm_month++;
             if (time->tm_month > 11) {
@@ -347,8 +351,9 @@ ApplySecOffset(PRExplodedTime *time, PRInt32 secOffset)
             }
         }
         time->tm_wday++;
-        if (time->tm_wday > 6)
+        if (time->tm_wday > 6) {
             time->tm_wday = 0;
+        }
     }
 }
 
@@ -360,7 +365,7 @@ PR_NormalizeTime(PRExplodedTime *time, PRTimeParamFn params)
 
     
     time->tm_sec -= time->tm_params.tp_gmt_offset
-            + time->tm_params.tp_dst_offset;
+                    + time->tm_params.tp_dst_offset;
     time->tm_params.tp_gmt_offset = 0;
     time->tm_params.tp_dst_offset = 0;
 
@@ -442,8 +447,8 @@ PR_NormalizeTime(PRExplodedTime *time, PRTimeParamFn params)
 
     
     time->tm_yday = time->tm_mday +
-            lastDayOfMonth[IsLeapYear(time->tm_year)][time->tm_month];
-	    
+                    lastDayOfMonth[IsLeapYear(time->tm_year)][time->tm_month];
+
     numDays = DAYS_BETWEEN_YEARS(1970, time->tm_year) + time->tm_yday;
     time->tm_wday = (numDays + 4) % 7;
     if (time->tm_wday < 0) {
@@ -455,7 +460,7 @@ PR_NormalizeTime(PRExplodedTime *time, PRTimeParamFn params)
     time->tm_params = params(time);
 
     ApplySecOffset(time, time->tm_params.tp_gmt_offset
-            + time->tm_params.tp_dst_offset);
+                   + time->tm_params.tp_dst_offset);
 }
 
 
@@ -521,7 +526,9 @@ static struct tm *MT_safe_localtime(const time_t *clock, struct tm *result)
 
 
 
-    if (needLock) PR_Lock(monitor);
+    if (needLock) {
+        PR_Lock(monitor);
+    }
 
     
 
@@ -538,15 +545,17 @@ static struct tm *MT_safe_localtime(const time_t *clock, struct tm *result)
 
 
 
-    
+
     tmPtr = localtime(clock);
 
 #if defined(WIN16) || defined(XP_OS2)
     if ( (PRInt32) *clock < 0 ||
-         ( (PRInt32) *clock == 0 && tmPtr->tm_year != 70))
+         ( (PRInt32) *clock == 0 && tmPtr->tm_year != 70)) {
         result = NULL;
-    else
+    }
+    else {
         *result = *tmPtr;
+    }
 #else
     if (tmPtr) {
         *result = *tmPtr;
@@ -555,7 +564,9 @@ static struct tm *MT_safe_localtime(const time_t *clock, struct tm *result)
     }
 #endif 
 
-    if (needLock) PR_Unlock(monitor);
+    if (needLock) {
+        PR_Unlock(monitor);
+    }
 
     return result;
 }
@@ -629,10 +640,10 @@ PR_LocalTimeParameters(const PRExplodedTime *gmt)
 
     
 
-    offset2Jan1970 = (PRInt32)localTime.tm_sec 
-            + 60L * (PRInt32)localTime.tm_min
-            + 3600L * (PRInt32)localTime.tm_hour
-            + 86400L * (PRInt32)((PRInt32)localTime.tm_mday - 2L);
+    offset2Jan1970 = (PRInt32)localTime.tm_sec
+                     + 60L * (PRInt32)localTime.tm_min
+                     + 3600L * (PRInt32)localTime.tm_hour
+                     + 86400L * (PRInt32)((PRInt32)localTime.tm_mday - 2L);
 
     isdst2Jan1970 = localTime.tm_isdst;
 
@@ -704,9 +715,9 @@ PR_LocalTimeParameters(const PRExplodedTime *gmt)
     }
 
     offsetNew = (PRInt32)localTime.tm_sec - gmt->tm_sec
-            + 60L * ((PRInt32)localTime.tm_min - gmt->tm_min)
-            + 3600L * ((PRInt32)localTime.tm_hour - gmt->tm_hour)
-            + 86400L * (PRInt32)dayOffset;
+                + 60L * ((PRInt32)localTime.tm_min - gmt->tm_min)
+                + 3600L * ((PRInt32)localTime.tm_hour - gmt->tm_hour)
+                + 86400L * (PRInt32)dayOffset;
 
     if (localTime.tm_isdst <= 0) {
         
@@ -732,7 +743,7 @@ PR_LocalTimeParameters(const PRExplodedTime *gmt)
             retVal.tp_dst_offset = 3600;
         }
     }
-    
+
     return retVal;
 }
 
@@ -765,13 +776,14 @@ PR_LocalTimeParameters(const PRExplodedTime *gmt)
 
 
 
-static PRInt32 
-NthSunday(PRInt32 mday, PRInt32 wday, PRInt32 N, PRInt32 ndays) 
+static PRInt32
+NthSunday(PRInt32 mday, PRInt32 wday, PRInt32 N, PRInt32 ndays)
 {
     PRInt32 firstSun = firstSunday(mday, wday);
 
-    if (N < 0) 
+    if (N < 0) {
         N = (ndays - firstSun) / 7;
+    }
     return firstSun + (7 * N);
 }
 
@@ -825,9 +837,9 @@ PR_USPacificTimeParameters(const PRExplodedTime *gmt)
     ApplySecOffset(&st, retVal.tp_gmt_offset);
 
     if (st.tm_year < 2007) { 
-	dst = &dstParams[0];
+        dst = &dstParams[0];
     } else {                 
-	dst = &dstParams[1];
+        dst = &dstParams[1];
     }
 
     
@@ -837,38 +849,38 @@ PR_USPacificTimeParameters(const PRExplodedTime *gmt)
     if (st.tm_month < dst->dst_start_month) {
         retVal.tp_dst_offset = 0L;
     } else if (st.tm_month == dst->dst_start_month) {
-	int NthSun = NthSunday(st.tm_mday, st.tm_wday, 
-			       dst->dst_start_Nth_Sunday, 
-			       dst->dst_start_month_ndays);
-	if (st.tm_mday < NthSun) {              
-	    retVal.tp_dst_offset = 0L;
+        int NthSun = NthSunday(st.tm_mday, st.tm_wday,
+                               dst->dst_start_Nth_Sunday,
+                               dst->dst_start_month_ndays);
+        if (st.tm_mday < NthSun) {              
+            retVal.tp_dst_offset = 0L;
         } else if (st.tm_mday == NthSun) {      
-	    
-	    if (st.tm_hour < 2) {
-		retVal.tp_dst_offset = 0L;
-	    } else {
-		retVal.tp_dst_offset = 3600L;
-	    }
-	} else {                                
-	    retVal.tp_dst_offset = 3600L;
+            
+            if (st.tm_hour < 2) {
+                retVal.tp_dst_offset = 0L;
+            } else {
+                retVal.tp_dst_offset = 3600L;
+            }
+        } else {                                
+            retVal.tp_dst_offset = 3600L;
         }
     } else if (st.tm_month < dst->dst_end_month) {
         retVal.tp_dst_offset = 3600L;
     } else if (st.tm_month == dst->dst_end_month) {
-	int NthSun = NthSunday(st.tm_mday, st.tm_wday, 
-			       dst->dst_end_Nth_Sunday, 
-			       dst->dst_end_month_ndays);
-	if (st.tm_mday < NthSun) {              
-	    retVal.tp_dst_offset = 3600L;
+        int NthSun = NthSunday(st.tm_mday, st.tm_wday,
+                               dst->dst_end_Nth_Sunday,
+                               dst->dst_end_month_ndays);
+        if (st.tm_mday < NthSun) {              
+            retVal.tp_dst_offset = 3600L;
         } else if (st.tm_mday == NthSun) {      
-	    
-	    if (st.tm_hour < 1) {
-		retVal.tp_dst_offset = 3600L;
-	    } else {
-		retVal.tp_dst_offset = 0L;
-	    }
-	} else {                                
-	    retVal.tp_dst_offset = 0L;
+            
+            if (st.tm_hour < 1) {
+                retVal.tp_dst_offset = 3600L;
+            } else {
+                retVal.tp_dst_offset = 0L;
+            }
+        } else {                                
+            retVal.tp_dst_offset = 0L;
         }
     } else {
         retVal.tp_dst_offset = 0L;
@@ -918,15 +930,15 @@ PR_GMTParameters(const PRExplodedTime *gmt)
 
 typedef enum
 {
-  TT_UNKNOWN,
+    TT_UNKNOWN,
 
-  TT_SUN, TT_MON, TT_TUE, TT_WED, TT_THU, TT_FRI, TT_SAT,
+    TT_SUN, TT_MON, TT_TUE, TT_WED, TT_THU, TT_FRI, TT_SAT,
 
-  TT_JAN, TT_FEB, TT_MAR, TT_APR, TT_MAY, TT_JUN,
-  TT_JUL, TT_AUG, TT_SEP, TT_OCT, TT_NOV, TT_DEC,
+    TT_JAN, TT_FEB, TT_MAR, TT_APR, TT_MAY, TT_JUN,
+    TT_JUL, TT_AUG, TT_SEP, TT_OCT, TT_NOV, TT_DEC,
 
-  TT_PST, TT_PDT, TT_MST, TT_MDT, TT_CST, TT_CDT, TT_EST, TT_EDT,
-  TT_AST, TT_NST, TT_GMT, TT_BST, TT_MET, TT_EET, TT_JST
+    TT_PST, TT_PDT, TT_MST, TT_MDT, TT_CST, TT_CDT, TT_EST, TT_EDT,
+    TT_AST, TT_NST, TT_GMT, TT_BST, TT_MET, TT_EET, TT_JST
 } TIME_TOKEN;
 
 
@@ -962,613 +974,745 @@ typedef enum
 
 PR_IMPLEMENT(PRStatus)
 PR_ParseTimeStringToExplodedTime(
-        const char *string,
-        PRBool default_to_gmt,
-        PRExplodedTime *result)
+    const char *string,
+    PRBool default_to_gmt,
+    PRExplodedTime *result)
 {
-  TIME_TOKEN dotw = TT_UNKNOWN;
-  TIME_TOKEN month = TT_UNKNOWN;
-  TIME_TOKEN zone = TT_UNKNOWN;
-  int zone_offset = -1;
-  int dst_offset = 0;
-  int date = -1;
-  PRInt32 year = -1;
-  int hour = -1;
-  int min = -1;
-  int sec = -1;
-  struct tm *localTimeResult;
+    TIME_TOKEN dotw = TT_UNKNOWN;
+    TIME_TOKEN month = TT_UNKNOWN;
+    TIME_TOKEN zone = TT_UNKNOWN;
+    int zone_offset = -1;
+    int dst_offset = 0;
+    int date = -1;
+    PRInt32 year = -1;
+    int hour = -1;
+    int min = -1;
+    int sec = -1;
+    struct tm *localTimeResult;
 
-  const char *rest = string;
+    const char *rest = string;
 
-  int iterations = 0;
+    int iterations = 0;
 
-  PR_ASSERT(string && result);
-  if (!string || !result) return PR_FAILURE;
+    PR_ASSERT(string && result);
+    if (!string || !result) {
+        return PR_FAILURE;
+    }
 
-  while (*rest)
+    while (*rest)
+    {
+
+        if (iterations++ > 1000)
         {
-
-          if (iterations++ > 1000)
-                {
-                  return PR_FAILURE;
-                }
-
-          switch (*rest)
-                {
-                case 'a': case 'A':
-                  if (month == TT_UNKNOWN &&
-                          (rest[1] == 'p' || rest[1] == 'P') &&
-                          (rest[2] == 'r' || rest[2] == 'R'))
-                        month = TT_APR;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 's' || rest[1] == 'S') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_AST;
-                  else if (month == TT_UNKNOWN &&
-                                   (rest[1] == 'u' || rest[1] == 'U') &&
-                                   (rest[2] == 'g' || rest[2] == 'G'))
-                        month = TT_AUG;
-                  break;
-                case 'b': case 'B':
-                  if (zone == TT_UNKNOWN &&
-                          (rest[1] == 's' || rest[1] == 'S') &&
-                          (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_BST;
-                  break;
-                case 'c': case 'C':
-                  if (zone == TT_UNKNOWN &&
-                          (rest[1] == 'd' || rest[1] == 'D') &&
-                          (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_CDT;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 's' || rest[1] == 'S') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_CST;
-                  break;
-                case 'd': case 'D':
-                  if (month == TT_UNKNOWN &&
-                          (rest[1] == 'e' || rest[1] == 'E') &&
-                          (rest[2] == 'c' || rest[2] == 'C'))
-                        month = TT_DEC;
-                  break;
-                case 'e': case 'E':
-                  if (zone == TT_UNKNOWN &&
-                          (rest[1] == 'd' || rest[1] == 'D') &&
-                          (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_EDT;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 'e' || rest[1] == 'E') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_EET;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 's' || rest[1] == 'S') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_EST;
-                  break;
-                case 'f': case 'F':
-                  if (month == TT_UNKNOWN &&
-                          (rest[1] == 'e' || rest[1] == 'E') &&
-                          (rest[2] == 'b' || rest[2] == 'B'))
-                        month = TT_FEB;
-                  else if (dotw == TT_UNKNOWN &&
-                                   (rest[1] == 'r' || rest[1] == 'R') &&
-                                   (rest[2] == 'i' || rest[2] == 'I'))
-                        dotw = TT_FRI;
-                  break;
-                case 'g': case 'G':
-                  if (zone == TT_UNKNOWN &&
-                          (rest[1] == 'm' || rest[1] == 'M') &&
-                          (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_GMT;
-                  break;
-                case 'j': case 'J':
-                  if (month == TT_UNKNOWN &&
-                          (rest[1] == 'a' || rest[1] == 'A') &&
-                          (rest[2] == 'n' || rest[2] == 'N'))
-                        month = TT_JAN;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 's' || rest[1] == 'S') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_JST;
-                  else if (month == TT_UNKNOWN &&
-                                   (rest[1] == 'u' || rest[1] == 'U') &&
-                                   (rest[2] == 'l' || rest[2] == 'L'))
-                        month = TT_JUL;
-                  else if (month == TT_UNKNOWN &&
-                                   (rest[1] == 'u' || rest[1] == 'U') &&
-                                   (rest[2] == 'n' || rest[2] == 'N'))
-                        month = TT_JUN;
-                  break;
-                case 'm': case 'M':
-                  if (month == TT_UNKNOWN &&
-                          (rest[1] == 'a' || rest[1] == 'A') &&
-                          (rest[2] == 'r' || rest[2] == 'R'))
-                        month = TT_MAR;
-                  else if (month == TT_UNKNOWN &&
-                                   (rest[1] == 'a' || rest[1] == 'A') &&
-                                   (rest[2] == 'y' || rest[2] == 'Y'))
-                        month = TT_MAY;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 'd' || rest[1] == 'D') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_MDT;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 'e' || rest[1] == 'E') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_MET;
-                  else if (dotw == TT_UNKNOWN &&
-                                   (rest[1] == 'o' || rest[1] == 'O') &&
-                                   (rest[2] == 'n' || rest[2] == 'N'))
-                        dotw = TT_MON;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 's' || rest[1] == 'S') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_MST;
-                  break;
-                case 'n': case 'N':
-                  if (month == TT_UNKNOWN &&
-                          (rest[1] == 'o' || rest[1] == 'O') &&
-                          (rest[2] == 'v' || rest[2] == 'V'))
-                        month = TT_NOV;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 's' || rest[1] == 'S') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_NST;
-                  break;
-                case 'o': case 'O':
-                  if (month == TT_UNKNOWN &&
-                          (rest[1] == 'c' || rest[1] == 'C') &&
-                          (rest[2] == 't' || rest[2] == 'T'))
-                        month = TT_OCT;
-                  break;
-                case 'p': case 'P':
-                  if (zone == TT_UNKNOWN &&
-                          (rest[1] == 'd' || rest[1] == 'D') &&
-                          (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_PDT;
-                  else if (zone == TT_UNKNOWN &&
-                                   (rest[1] == 's' || rest[1] == 'S') &&
-                                   (rest[2] == 't' || rest[2] == 'T'))
-                        zone = TT_PST;
-                  break;
-                case 's': case 'S':
-                  if (dotw == TT_UNKNOWN &&
-                          (rest[1] == 'a' || rest[1] == 'A') &&
-                          (rest[2] == 't' || rest[2] == 'T'))
-                        dotw = TT_SAT;
-                  else if (month == TT_UNKNOWN &&
-                                   (rest[1] == 'e' || rest[1] == 'E') &&
-                                   (rest[2] == 'p' || rest[2] == 'P'))
-                        month = TT_SEP;
-                  else if (dotw == TT_UNKNOWN &&
-                                   (rest[1] == 'u' || rest[1] == 'U') &&
-                                   (rest[2] == 'n' || rest[2] == 'N'))
-                        dotw = TT_SUN;
-                  break;
-                case 't': case 'T':
-                  if (dotw == TT_UNKNOWN &&
-                          (rest[1] == 'h' || rest[1] == 'H') &&
-                          (rest[2] == 'u' || rest[2] == 'U'))
-                        dotw = TT_THU;
-                  else if (dotw == TT_UNKNOWN &&
-                                   (rest[1] == 'u' || rest[1] == 'U') &&
-                                   (rest[2] == 'e' || rest[2] == 'E'))
-                        dotw = TT_TUE;
-                  break;
-                case 'u': case 'U':
-                  if (zone == TT_UNKNOWN &&
-                          (rest[1] == 't' || rest[1] == 'T') &&
-                          !(rest[2] >= 'A' && rest[2] <= 'Z') &&
-                          !(rest[2] >= 'a' && rest[2] <= 'z'))
-                        
-                        zone = TT_GMT;
-                  break;
-                case 'w': case 'W':
-                  if (dotw == TT_UNKNOWN &&
-                          (rest[1] == 'e' || rest[1] == 'E') &&
-                          (rest[2] == 'd' || rest[2] == 'D'))
-                        dotw = TT_WED;
-                  break;
-
-                case '+': case '-':
-                  {
-                        const char *end;
-                        int sign;
-                        if (zone_offset != -1)
-                          {
-                                
-                                rest++;
-                                break;
-                          }
-                        if (zone != TT_UNKNOWN && zone != TT_GMT)
-                          {
-                                
-                                rest++;
-                                break;
-                          }
-
-                        sign = ((*rest == '+') ? 1 : -1);
-                        rest++; 
-                        end = rest;
-                        while (*end >= '0' && *end <= '9')
-                          end++;
-                        if (rest == end) 
-                          break;
-
-                        if ((end - rest) == 4)
-                          
-                          zone_offset = (((((rest[0]-'0')*10) + (rest[1]-'0')) * 60) +
-                                                         (((rest[2]-'0')*10) + (rest[3]-'0')));
-                        else if ((end - rest) == 2)
-                          
-                          zone_offset = (((rest[0]-'0')*10) + (rest[1]-'0')) * 60;
-                        else if ((end - rest) == 1)
-                          
-                          zone_offset = (rest[0]-'0') * 60;
-                        else
-                          
-                          break;
-
-                        zone_offset *= sign;
-                        zone = TT_GMT;
-                        break;
-                  }
-
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                  {
-                        int tmp_hour = -1;
-                        int tmp_min = -1;
-                        int tmp_sec = -1;
-                        const char *end = rest + 1;
-                        while (*end >= '0' && *end <= '9')
-                          end++;
-
-                        
-
-                        if (*end == ':')
-                          {
-                                if (hour >= 0 && min >= 0) 
-                                  break;
-
-                                
-                                if ((end - rest) > 2)
-                                  
-                                  break;
-                                if ((end - rest) == 2)
-                                  tmp_hour = ((rest[0]-'0')*10 +
-                                                          (rest[1]-'0'));
-                                else
-                                  tmp_hour = (rest[0]-'0');
-
-                                
-
-                                rest = ++end;
-                                while (*end >= '0' && *end <= '9')
-                                  end++;
-
-                                if (end == rest)
-                                  
-                                  break;
-                                if ((end - rest) > 2)
-                                  
-                                  break;
-                                if ((end - rest) == 2)
-                                  tmp_min = ((rest[0]-'0')*10 +
-                                             (rest[1]-'0'));
-                                else
-                                  tmp_min = (rest[0]-'0');
-
-                                
-                                rest = end;
-                                if (*rest == ':')
-                                  rest++;
-                                end = rest;
-                                while (*end >= '0' && *end <= '9')
-                                  end++;
-
-                                if (end == rest)
-                                  
-                                  ;
-                                else if ((end - rest) > 2)
-                                  
-                                  break;
-                                if ((end - rest) == 2)
-                                  tmp_sec = ((rest[0]-'0')*10 +
-                                                         (rest[1]-'0'));
-                                else
-                                  tmp_sec = (rest[0]-'0');
-
-                                
-
-
-                                
-
-
-                                if (tmp_hour <= 12)
-                                  {
-                                        const char *s = end;
-                                        while (*s && (*s == ' ' || *s == '\t'))
-                                          s++;
-                                        if ((s[0] == 'p' || s[0] == 'P') &&
-                                                (s[1] == 'm' || s[1] == 'M'))
-                                          
-                                          tmp_hour = (tmp_hour == 12 ? 12 : tmp_hour + 12);
-                                        else if (tmp_hour == 12 &&
-                                                         (s[0] == 'a' || s[0] == 'A') &&
-                                                         (s[1] == 'm' || s[1] == 'M'))
-                                          
-                                          tmp_hour = 0;
-                                  }
-
-                                hour = tmp_hour;
-                                min = tmp_min;
-                                sec = tmp_sec;
-                                rest = end;
-                                break;
-                          }
-                        if ((*end == '/' || *end == '-') &&
-                                         end[1] >= '0' && end[1] <= '9')
-                          {
-                                
-
-
-
-                                int n1, n2, n3;
-                                const char *s;
-
-                                if (month != TT_UNKNOWN)
-                                  
-                                  break;
-
-                                s = rest;
-
-                                n1 = (*s++ - '0');                                
-                                if (*s >= '0' && *s <= '9')
-                                  n1 = n1*10 + (*s++ - '0');
-
-                                if (*s != '/' && *s != '-')                
-                                  break;
-                                s++;
-
-                                if (*s < '0' || *s > '9')                
-                                  break;
-                                n2 = (*s++ - '0');
-                                if (*s >= '0' && *s <= '9')
-                                  n2 = n2*10 + (*s++ - '0');
-
-                                if (*s != '/' && *s != '-')                
-                                  break;
-                                s++;
-
-                                if (*s < '0' || *s > '9')                
-                                  break;
-                                n3 = (*s++ - '0');
-                                if (*s >= '0' && *s <= '9')
-                                  n3 = n3*10 + (*s++ - '0');
-
-                                if (*s >= '0' && *s <= '9')            
-                                  {
-                                        n3 = n3*10 + (*s++ - '0');
-                                        if (*s < '0' || *s > '9')
-                                          break;
-                                        n3 = n3*10 + (*s++ - '0');
-                                        if (*s >= '0' && *s <= '9')
-                                          n3 = n3*10 + (*s++ - '0');
-                                  }
-
-                                if ((*s >= '0' && *s <= '9') ||        
-                                        (*s >= 'A' && *s <= 'Z') ||
-                                        (*s >= 'a' && *s <= 'z'))
-                                  break;
-
-                                
-
-
-
-
-                                if (n1 > 31 || n1 == 0)  
-                                  {
-                                        if (n2 > 12) break;
-                                        if (n3 > 31) break;
-                                        year = n1;
-                                        if (year < 70)
-                                            year += 2000;
-                                        else if (year < 100)
-                                            year += 1900;
-                                        month = (TIME_TOKEN)(n2 + ((int)TT_JAN) - 1);
-                                        date = n3;
-                                        rest = s;
-                                        break;
-                                  }
-
-                                if (n1 > 12 && n2 > 12)  
-                                  {
-                                        rest = s;
-                                        break;
-                                  }
-
-                                if (n3 < 70)
-                                    n3 += 2000;
-                                else if (n3 < 100)
-                                    n3 += 1900;
-
-                                if (n1 > 12)  
-                                  {
-                                        date = n1;
-                                        month = (TIME_TOKEN)(n2 + ((int)TT_JAN) - 1);
-                                        year = n3;
-                                  }
-                                else                  
-                                  {
-                                        
-
-                                        month = (TIME_TOKEN)(n1 + ((int)TT_JAN) - 1);
-                                        date = n2;
-                                        year = n3;
-                                  }
-                                rest = s;
-                          }
-                        else if ((*end >= 'A' && *end <= 'Z') ||
-                                         (*end >= 'a' && *end <= 'z'))
-                          
-                          ;
-                        else if ((end - rest) == 5)                
-                          year = (year < 0
-                                          ? ((rest[0]-'0')*10000L +
-                                                 (rest[1]-'0')*1000L +
-                                                 (rest[2]-'0')*100L +
-                                                 (rest[3]-'0')*10L +
-                                                 (rest[4]-'0'))
-                                          : year);
-                        else if ((end - rest) == 4)                
-                          year = (year < 0
-                                          ? ((rest[0]-'0')*1000L +
-                                                 (rest[1]-'0')*100L +
-                                                 (rest[2]-'0')*10L +
-                                                 (rest[3]-'0'))
-                                          : year);
-                        else if ((end - rest) == 2)                
-                          {
-                                int n = ((rest[0]-'0')*10 +
-                                                 (rest[1]-'0'));
-                                
-
-
-
-
-
-
-
-
-
-                                if (date < 0 && n < 32)
-                                  date = n;
-                                else if (year < 0)
-                                  {
-                                        if (n < 70)
-                                          year = 2000 + n;
-                                        else if (n < 100)
-                                          year = 1900 + n;
-                                        else
-                                          year = n;
-                                  }
-                                
-                          }
-                        else if ((end - rest) == 1)                
-                          date = (date < 0 ? (rest[0]-'0') : date);
-                        
-
-                        break;
-                  }
-                }
-
-          
-
-
-
-          while (*rest &&
-                         *rest != ' ' && *rest != '\t' &&
-                         *rest != ',' && *rest != ';' &&
-                         *rest != '-' && *rest != '+' &&
-                         *rest != '/' &&
-                         *rest != '(' && *rest != ')' && *rest != '[' && *rest != ']')
-                rest++;
-          
-        SKIP_MORE:
-          while (*rest &&
-                         (*rest == ' ' || *rest == '\t' ||
-                          *rest == ',' || *rest == ';' || *rest == '/' ||
-                          *rest == '(' || *rest == ')' || *rest == '[' || *rest == ']'))
-                rest++;
-
-          
-
-         
-          if (*rest == '-' && ((rest > string &&
-              isalpha((unsigned char)rest[-1]) && year < 0) ||
-              rest[1] < '0' || rest[1] > '9'))
-                {
-                  rest++;
-                  goto SKIP_MORE;
-                }
-
+            return PR_FAILURE;
         }
 
-  if (zone != TT_UNKNOWN && zone_offset == -1)
+        switch (*rest)
         {
-          switch (zone)
-                {
-                case TT_PST: zone_offset = -8 * 60; break;
-                case TT_PDT: zone_offset = -8 * 60; dst_offset = 1 * 60; break;
-                case TT_MST: zone_offset = -7 * 60; break;
-                case TT_MDT: zone_offset = -7 * 60; dst_offset = 1 * 60; break;
-                case TT_CST: zone_offset = -6 * 60; break;
-                case TT_CDT: zone_offset = -6 * 60; dst_offset = 1 * 60; break;
-                case TT_EST: zone_offset = -5 * 60; break;
-                case TT_EDT: zone_offset = -5 * 60; dst_offset = 1 * 60; break;
-                case TT_AST: zone_offset = -4 * 60; break;
-                case TT_NST: zone_offset = -3 * 60 - 30; break;
-                case TT_GMT: zone_offset =  0 * 60; break;
-                case TT_BST: zone_offset =  0 * 60; dst_offset = 1 * 60; break;
-                case TT_MET: zone_offset =  1 * 60; break;
-                case TT_EET: zone_offset =  2 * 60; break;
-                case TT_JST: zone_offset =  9 * 60; break;
-                default:
-                  PR_ASSERT (0);
-                  break;
+            case 'a': case 'A':
+                if (month == TT_UNKNOWN &&
+                    (rest[1] == 'p' || rest[1] == 'P') &&
+                    (rest[2] == 'r' || rest[2] == 'R')) {
+                    month = TT_APR;
                 }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 's' || rest[1] == 'S') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_AST;
+                }
+                else if (month == TT_UNKNOWN &&
+                         (rest[1] == 'u' || rest[1] == 'U') &&
+                         (rest[2] == 'g' || rest[2] == 'G')) {
+                    month = TT_AUG;
+                }
+                break;
+            case 'b': case 'B':
+                if (zone == TT_UNKNOWN &&
+                    (rest[1] == 's' || rest[1] == 'S') &&
+                    (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_BST;
+                }
+                break;
+            case 'c': case 'C':
+                if (zone == TT_UNKNOWN &&
+                    (rest[1] == 'd' || rest[1] == 'D') &&
+                    (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_CDT;
+                }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 's' || rest[1] == 'S') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_CST;
+                }
+                break;
+            case 'd': case 'D':
+                if (month == TT_UNKNOWN &&
+                    (rest[1] == 'e' || rest[1] == 'E') &&
+                    (rest[2] == 'c' || rest[2] == 'C')) {
+                    month = TT_DEC;
+                }
+                break;
+            case 'e': case 'E':
+                if (zone == TT_UNKNOWN &&
+                    (rest[1] == 'd' || rest[1] == 'D') &&
+                    (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_EDT;
+                }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 'e' || rest[1] == 'E') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_EET;
+                }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 's' || rest[1] == 'S') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_EST;
+                }
+                break;
+            case 'f': case 'F':
+                if (month == TT_UNKNOWN &&
+                    (rest[1] == 'e' || rest[1] == 'E') &&
+                    (rest[2] == 'b' || rest[2] == 'B')) {
+                    month = TT_FEB;
+                }
+                else if (dotw == TT_UNKNOWN &&
+                         (rest[1] == 'r' || rest[1] == 'R') &&
+                         (rest[2] == 'i' || rest[2] == 'I')) {
+                    dotw = TT_FRI;
+                }
+                break;
+            case 'g': case 'G':
+                if (zone == TT_UNKNOWN &&
+                    (rest[1] == 'm' || rest[1] == 'M') &&
+                    (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_GMT;
+                }
+                break;
+            case 'j': case 'J':
+                if (month == TT_UNKNOWN &&
+                    (rest[1] == 'a' || rest[1] == 'A') &&
+                    (rest[2] == 'n' || rest[2] == 'N')) {
+                    month = TT_JAN;
+                }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 's' || rest[1] == 'S') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_JST;
+                }
+                else if (month == TT_UNKNOWN &&
+                         (rest[1] == 'u' || rest[1] == 'U') &&
+                         (rest[2] == 'l' || rest[2] == 'L')) {
+                    month = TT_JUL;
+                }
+                else if (month == TT_UNKNOWN &&
+                         (rest[1] == 'u' || rest[1] == 'U') &&
+                         (rest[2] == 'n' || rest[2] == 'N')) {
+                    month = TT_JUN;
+                }
+                break;
+            case 'm': case 'M':
+                if (month == TT_UNKNOWN &&
+                    (rest[1] == 'a' || rest[1] == 'A') &&
+                    (rest[2] == 'r' || rest[2] == 'R')) {
+                    month = TT_MAR;
+                }
+                else if (month == TT_UNKNOWN &&
+                         (rest[1] == 'a' || rest[1] == 'A') &&
+                         (rest[2] == 'y' || rest[2] == 'Y')) {
+                    month = TT_MAY;
+                }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 'd' || rest[1] == 'D') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_MDT;
+                }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 'e' || rest[1] == 'E') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_MET;
+                }
+                else if (dotw == TT_UNKNOWN &&
+                         (rest[1] == 'o' || rest[1] == 'O') &&
+                         (rest[2] == 'n' || rest[2] == 'N')) {
+                    dotw = TT_MON;
+                }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 's' || rest[1] == 'S') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_MST;
+                }
+                break;
+            case 'n': case 'N':
+                if (month == TT_UNKNOWN &&
+                    (rest[1] == 'o' || rest[1] == 'O') &&
+                    (rest[2] == 'v' || rest[2] == 'V')) {
+                    month = TT_NOV;
+                }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 's' || rest[1] == 'S') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_NST;
+                }
+                break;
+            case 'o': case 'O':
+                if (month == TT_UNKNOWN &&
+                    (rest[1] == 'c' || rest[1] == 'C') &&
+                    (rest[2] == 't' || rest[2] == 'T')) {
+                    month = TT_OCT;
+                }
+                break;
+            case 'p': case 'P':
+                if (zone == TT_UNKNOWN &&
+                    (rest[1] == 'd' || rest[1] == 'D') &&
+                    (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_PDT;
+                }
+                else if (zone == TT_UNKNOWN &&
+                         (rest[1] == 's' || rest[1] == 'S') &&
+                         (rest[2] == 't' || rest[2] == 'T')) {
+                    zone = TT_PST;
+                }
+                break;
+            case 's': case 'S':
+                if (dotw == TT_UNKNOWN &&
+                    (rest[1] == 'a' || rest[1] == 'A') &&
+                    (rest[2] == 't' || rest[2] == 'T')) {
+                    dotw = TT_SAT;
+                }
+                else if (month == TT_UNKNOWN &&
+                         (rest[1] == 'e' || rest[1] == 'E') &&
+                         (rest[2] == 'p' || rest[2] == 'P')) {
+                    month = TT_SEP;
+                }
+                else if (dotw == TT_UNKNOWN &&
+                         (rest[1] == 'u' || rest[1] == 'U') &&
+                         (rest[2] == 'n' || rest[2] == 'N')) {
+                    dotw = TT_SUN;
+                }
+                break;
+            case 't': case 'T':
+                if (dotw == TT_UNKNOWN &&
+                    (rest[1] == 'h' || rest[1] == 'H') &&
+                    (rest[2] == 'u' || rest[2] == 'U')) {
+                    dotw = TT_THU;
+                }
+                else if (dotw == TT_UNKNOWN &&
+                         (rest[1] == 'u' || rest[1] == 'U') &&
+                         (rest[2] == 'e' || rest[2] == 'E')) {
+                    dotw = TT_TUE;
+                }
+                break;
+            case 'u': case 'U':
+                if (zone == TT_UNKNOWN &&
+                    (rest[1] == 't' || rest[1] == 'T') &&
+                    !(rest[2] >= 'A' && rest[2] <= 'Z') &&
+                    !(rest[2] >= 'a' && rest[2] <= 'z'))
+                    
+                {
+                    zone = TT_GMT;
+                }
+                break;
+            case 'w': case 'W':
+                if (dotw == TT_UNKNOWN &&
+                    (rest[1] == 'e' || rest[1] == 'E') &&
+                    (rest[2] == 'd' || rest[2] == 'D')) {
+                    dotw = TT_WED;
+                }
+                break;
+
+            case '+': case '-':
+            {
+                const char *end;
+                int sign;
+                if (zone_offset != -1)
+                {
+                    
+                    rest++;
+                    break;
+                }
+                if (zone != TT_UNKNOWN && zone != TT_GMT)
+                {
+                    
+                    rest++;
+                    break;
+                }
+
+                sign = ((*rest == '+') ? 1 : -1);
+                rest++; 
+                end = rest;
+                while (*end >= '0' && *end <= '9') {
+                    end++;
+                }
+                if (rest == end) { 
+                    break;
+                }
+
+                if ((end - rest) == 4)
+                    
+                    zone_offset = (((((rest[0]-'0')*10) + (rest[1]-'0')) * 60) +
+                                   (((rest[2]-'0')*10) + (rest[3]-'0')));
+                else if ((end - rest) == 2)
+                    
+                {
+                    zone_offset = (((rest[0]-'0')*10) + (rest[1]-'0')) * 60;
+                }
+                else if ((end - rest) == 1)
+                    
+                {
+                    zone_offset = (rest[0]-'0') * 60;
+                }
+                else
+                    
+                {
+                    break;
+                }
+
+                zone_offset *= sign;
+                zone = TT_GMT;
+                break;
+            }
+
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
+            {
+                int tmp_hour = -1;
+                int tmp_min = -1;
+                int tmp_sec = -1;
+                const char *end = rest + 1;
+                while (*end >= '0' && *end <= '9') {
+                    end++;
+                }
+
+                
+
+                if (*end == ':')
+                {
+                    if (hour >= 0 && min >= 0) { 
+                        break;
+                    }
+
+                    
+                    if ((end - rest) > 2)
+                        
+                    {
+                        break;
+                    }
+                    if ((end - rest) == 2)
+                        tmp_hour = ((rest[0]-'0')*10 +
+                                    (rest[1]-'0'));
+                    else {
+                        tmp_hour = (rest[0]-'0');
+                    }
+
+                    
+
+                    rest = ++end;
+                    while (*end >= '0' && *end <= '9') {
+                        end++;
+                    }
+
+                    if (end == rest)
+                        
+                    {
+                        break;
+                    }
+                    if ((end - rest) > 2)
+                        
+                    {
+                        break;
+                    }
+                    if ((end - rest) == 2)
+                        tmp_min = ((rest[0]-'0')*10 +
+                                   (rest[1]-'0'));
+                    else {
+                        tmp_min = (rest[0]-'0');
+                    }
+
+                    
+                    rest = end;
+                    if (*rest == ':') {
+                        rest++;
+                    }
+                    end = rest;
+                    while (*end >= '0' && *end <= '9') {
+                        end++;
+                    }
+
+                    if (end == rest)
+                        
+                        ;
+                    else if ((end - rest) > 2)
+                        
+                    {
+                        break;
+                    }
+                    if ((end - rest) == 2)
+                        tmp_sec = ((rest[0]-'0')*10 +
+                                   (rest[1]-'0'));
+                    else {
+                        tmp_sec = (rest[0]-'0');
+                    }
+
+                    
+
+
+                    
+
+
+                    if (tmp_hour <= 12)
+                    {
+                        const char *s = end;
+                        while (*s && (*s == ' ' || *s == '\t')) {
+                            s++;
+                        }
+                        if ((s[0] == 'p' || s[0] == 'P') &&
+                            (s[1] == 'm' || s[1] == 'M'))
+                            
+                        {
+                            tmp_hour = (tmp_hour == 12 ? 12 : tmp_hour + 12);
+                        }
+                        else if (tmp_hour == 12 &&
+                                 (s[0] == 'a' || s[0] == 'A') &&
+                                 (s[1] == 'm' || s[1] == 'M'))
+                            
+                        {
+                            tmp_hour = 0;
+                        }
+                    }
+
+                    hour = tmp_hour;
+                    min = tmp_min;
+                    sec = tmp_sec;
+                    rest = end;
+                    break;
+                }
+                if ((*end == '/' || *end == '-') &&
+                    end[1] >= '0' && end[1] <= '9')
+                {
+                    
+
+
+
+                    int n1, n2, n3;
+                    const char *s;
+
+                    if (month != TT_UNKNOWN)
+                        
+                    {
+                        break;
+                    }
+
+                    s = rest;
+
+                    n1 = (*s++ - '0');                                
+                    if (*s >= '0' && *s <= '9') {
+                        n1 = n1*10 + (*s++ - '0');
+                    }
+
+                    if (*s != '/' && *s != '-') {              
+                        break;
+                    }
+                    s++;
+
+                    if (*s < '0' || *s > '9') {              
+                        break;
+                    }
+                    n2 = (*s++ - '0');
+                    if (*s >= '0' && *s <= '9') {
+                        n2 = n2*10 + (*s++ - '0');
+                    }
+
+                    if (*s != '/' && *s != '-') {              
+                        break;
+                    }
+                    s++;
+
+                    if (*s < '0' || *s > '9') {              
+                        break;
+                    }
+                    n3 = (*s++ - '0');
+                    if (*s >= '0' && *s <= '9') {
+                        n3 = n3*10 + (*s++ - '0');
+                    }
+
+                    if (*s >= '0' && *s <= '9')            
+                    {
+                        n3 = n3*10 + (*s++ - '0');
+                        if (*s < '0' || *s > '9') {
+                            break;
+                        }
+                        n3 = n3*10 + (*s++ - '0');
+                        if (*s >= '0' && *s <= '9') {
+                            n3 = n3*10 + (*s++ - '0');
+                        }
+                    }
+
+                    if ((*s >= '0' && *s <= '9') ||        
+                        (*s >= 'A' && *s <= 'Z') ||
+                        (*s >= 'a' && *s <= 'z')) {
+                        break;
+                    }
+
+                    
+
+
+
+
+                    if (n1 > 31 || n1 == 0)  
+                    {
+                        if (n2 > 12) {
+                            break;
+                        }
+                        if (n3 > 31) {
+                            break;
+                        }
+                        year = n1;
+                        if (year < 70) {
+                            year += 2000;
+                        }
+                        else if (year < 100) {
+                            year += 1900;
+                        }
+                        month = (TIME_TOKEN)(n2 + ((int)TT_JAN) - 1);
+                        date = n3;
+                        rest = s;
+                        break;
+                    }
+
+                    if (n1 > 12 && n2 > 12)  
+                    {
+                        rest = s;
+                        break;
+                    }
+
+                    if (n3 < 70) {
+                        n3 += 2000;
+                    }
+                    else if (n3 < 100) {
+                        n3 += 1900;
+                    }
+
+                    if (n1 > 12)  
+                    {
+                        date = n1;
+                        month = (TIME_TOKEN)(n2 + ((int)TT_JAN) - 1);
+                        year = n3;
+                    }
+                    else                  
+                    {
+                        
+
+                        month = (TIME_TOKEN)(n1 + ((int)TT_JAN) - 1);
+                        date = n2;
+                        year = n3;
+                    }
+                    rest = s;
+                }
+                else if ((*end >= 'A' && *end <= 'Z') ||
+                         (*end >= 'a' && *end <= 'z'))
+                    
+                    ;
+                else if ((end - rest) == 5)                
+                    year = (year < 0
+                            ? ((rest[0]-'0')*10000L +
+                               (rest[1]-'0')*1000L +
+                               (rest[2]-'0')*100L +
+                               (rest[3]-'0')*10L +
+                               (rest[4]-'0'))
+                            : year);
+                else if ((end - rest) == 4)                
+                    year = (year < 0
+                            ? ((rest[0]-'0')*1000L +
+                               (rest[1]-'0')*100L +
+                               (rest[2]-'0')*10L +
+                               (rest[3]-'0'))
+                            : year);
+                else if ((end - rest) == 2)                
+                {
+                    int n = ((rest[0]-'0')*10 +
+                             (rest[1]-'0'));
+                    
+
+
+
+
+
+
+
+
+
+                    if (date < 0 && n < 32) {
+                        date = n;
+                    }
+                    else if (year < 0)
+                    {
+                        if (n < 70) {
+                            year = 2000 + n;
+                        }
+                        else if (n < 100) {
+                            year = 1900 + n;
+                        }
+                        else {
+                            year = n;
+                        }
+                    }
+                    
+                }
+                else if ((end - rest) == 1) {              
+                    date = (date < 0 ? (rest[0]-'0') : date);
+                }
+                
+
+                break;
+            }
         }
 
-  
+        
 
 
 
-  if (month == TT_UNKNOWN || date == -1 || year == -1 || year > PR_INT16_MAX)
-      return PR_FAILURE;
+        while (*rest &&
+               *rest != ' ' && *rest != '\t' &&
+               *rest != ',' && *rest != ';' &&
+               *rest != '-' && *rest != '+' &&
+               *rest != '/' &&
+               *rest != '(' && *rest != ')' && *rest != '[' && *rest != ']') {
+            rest++;
+        }
+        
+SKIP_MORE:
+        while (*rest &&
+               (*rest == ' ' || *rest == '\t' ||
+                *rest == ',' || *rest == ';' || *rest == '/' ||
+                *rest == '(' || *rest == ')' || *rest == '[' || *rest == ']')) {
+            rest++;
+        }
 
-  memset(result, 0, sizeof(*result));
-  if (sec != -1)
+        
+
+
+        if (*rest == '-' && ((rest > string &&
+                              isalpha((unsigned char)rest[-1]) && year < 0) ||
+                             rest[1] < '0' || rest[1] > '9'))
+        {
+            rest++;
+            goto SKIP_MORE;
+        }
+
+    }
+
+    if (zone != TT_UNKNOWN && zone_offset == -1)
+    {
+        switch (zone)
+        {
+            case TT_PST: zone_offset = -8 * 60; break;
+            case TT_PDT: zone_offset = -8 * 60; dst_offset = 1 * 60; break;
+            case TT_MST: zone_offset = -7 * 60; break;
+            case TT_MDT: zone_offset = -7 * 60; dst_offset = 1 * 60; break;
+            case TT_CST: zone_offset = -6 * 60; break;
+            case TT_CDT: zone_offset = -6 * 60; dst_offset = 1 * 60; break;
+            case TT_EST: zone_offset = -5 * 60; break;
+            case TT_EDT: zone_offset = -5 * 60; dst_offset = 1 * 60; break;
+            case TT_AST: zone_offset = -4 * 60; break;
+            case TT_NST: zone_offset = -3 * 60 - 30; break;
+            case TT_GMT: zone_offset =  0 * 60; break;
+            case TT_BST: zone_offset =  0 * 60; dst_offset = 1 * 60; break;
+            case TT_MET: zone_offset =  1 * 60; break;
+            case TT_EET: zone_offset =  2 * 60; break;
+            case TT_JST: zone_offset =  9 * 60; break;
+            default:
+                PR_ASSERT (0);
+                break;
+        }
+    }
+
+    
+
+
+
+    if (month == TT_UNKNOWN || date == -1 || year == -1 || year > PR_INT16_MAX) {
+        return PR_FAILURE;
+    }
+
+    memset(result, 0, sizeof(*result));
+    if (sec != -1) {
         result->tm_sec = sec;
-  if (min != -1)
+    }
+    if (min != -1) {
         result->tm_min = min;
-  if (hour != -1)
+    }
+    if (hour != -1) {
         result->tm_hour = hour;
-  if (date != -1)
+    }
+    if (date != -1) {
         result->tm_mday = date;
-  if (month != TT_UNKNOWN)
+    }
+    if (month != TT_UNKNOWN) {
         result->tm_month = (((int)month) - ((int)TT_JAN));
-  if (year != -1)
+    }
+    if (year != -1) {
         result->tm_year = year;
-  if (dotw != TT_UNKNOWN)
+    }
+    if (dotw != TT_UNKNOWN) {
         result->tm_wday = (((int)dotw) - ((int)TT_SUN));
-  
+    }
+    
 
 
 
-  PR_NormalizeTime(result, PR_GMTParameters);
-  
+    PR_NormalizeTime(result, PR_GMTParameters);
+    
 
-  if (zone == TT_UNKNOWN && default_to_gmt)
+    if (zone == TT_UNKNOWN && default_to_gmt)
+    {
+        
+        zone = TT_GMT;
+        zone_offset = 0;
+    }
+
+    if (zone_offset == -1)
+    {
+        
+
+        struct tm localTime;
+        time_t secs;
+
+        PR_ASSERT(result->tm_month > -1 &&
+                  result->tm_mday > 0 &&
+                  result->tm_hour > -1 &&
+                  result->tm_min > -1 &&
+                  result->tm_sec > -1);
+
+        
+
+
+
+
+
+
+
+
+
+
+        
+
+        if(result->tm_year >= 1970)
         {
-          
-          zone = TT_GMT;
-          zone_offset = 0;
-        }
+            PRInt64 usec_per_sec;
 
-  if (zone_offset == -1)
-         {
-           
+            localTime.tm_sec = result->tm_sec;
+            localTime.tm_min = result->tm_min;
+            localTime.tm_hour = result->tm_hour;
+            localTime.tm_mday = result->tm_mday;
+            localTime.tm_mon = result->tm_month;
+            localTime.tm_year = result->tm_year - 1900;
+            
 
-          struct tm localTime;
-          time_t secs;
 
-          PR_ASSERT(result->tm_month > -1 &&
-                    result->tm_mday > 0 &&
-                    result->tm_hour > -1 &&
-                    result->tm_min > -1 &&
-                    result->tm_sec > -1);
 
+            localTime.tm_isdst = -1;
+
+#if _MSC_VER == 1400  
             
 
 
@@ -1580,98 +1724,69 @@ PR_ParseTimeStringToExplodedTime(
 
 
 
-          
-  
-          if(result->tm_year >= 1970)
-                {
-                  PRInt64 usec_per_sec;
-
-                  localTime.tm_sec = result->tm_sec;
-                  localTime.tm_min = result->tm_min;
-                  localTime.tm_hour = result->tm_hour;
-                  localTime.tm_mday = result->tm_mday;
-                  localTime.tm_mon = result->tm_month;
-                  localTime.tm_year = result->tm_year - 1900;
-                  
 
 
 
-                  localTime.tm_isdst = -1;
-
-#if _MSC_VER == 1400  
-                  
-
-
-
-
-
-
-
-
-
-
-
-
-
-                  if (result->tm_year >= 3000) {
-                      
-                      errno = EINVAL;
-                      secs = (time_t) -1;
-                  } else {
-                      secs = mktime(&localTime);
-                  }
+            if (result->tm_year >= 3000) {
+                
+                errno = EINVAL;
+                secs = (time_t) -1;
+            } else {
+                secs = mktime(&localTime);
+            }
 #else
-                  secs = mktime(&localTime);
+            secs = mktime(&localTime);
 #endif
-                  if (secs != (time_t) -1)
-                    {
-                      PRTime usecs64;
-                      LL_I2L(usecs64, secs);
-                      LL_I2L(usec_per_sec, PR_USEC_PER_SEC);
-                      LL_MUL(usecs64, usecs64, usec_per_sec);
-                      PR_ExplodeTime(usecs64, PR_LocalTimeParameters, result);
-                      return PR_SUCCESS;
-                    }
-                }
-                
-                
-
-
-                secs = 86400;
-                localTimeResult = MT_safe_localtime(&secs, &localTime);
-                PR_ASSERT(localTimeResult != NULL);
-                if (localTimeResult == NULL) {
-                    return PR_FAILURE;
-                }
-                zone_offset = localTime.tm_min
-                              + 60 * localTime.tm_hour
-                              + 1440 * (localTime.tm_mday - 2);
+            if (secs != (time_t) -1)
+            {
+                PRTime usecs64;
+                LL_I2L(usecs64, secs);
+                LL_I2L(usec_per_sec, PR_USEC_PER_SEC);
+                LL_MUL(usecs64, usecs64, usec_per_sec);
+                PR_ExplodeTime(usecs64, PR_LocalTimeParameters, result);
+                return PR_SUCCESS;
+            }
         }
 
-  result->tm_params.tp_gmt_offset = zone_offset * 60;
-  result->tm_params.tp_dst_offset = dst_offset * 60;
+        
 
-  return PR_SUCCESS;
+
+        secs = 86400;
+        localTimeResult = MT_safe_localtime(&secs, &localTime);
+        PR_ASSERT(localTimeResult != NULL);
+        if (localTimeResult == NULL) {
+            return PR_FAILURE;
+        }
+        zone_offset = localTime.tm_min
+                      + 60 * localTime.tm_hour
+                      + 1440 * (localTime.tm_mday - 2);
+    }
+
+    result->tm_params.tp_gmt_offset = zone_offset * 60;
+    result->tm_params.tp_dst_offset = dst_offset * 60;
+
+    return PR_SUCCESS;
 }
 
 PR_IMPLEMENT(PRStatus)
 PR_ParseTimeString(
-        const char *string,
-        PRBool default_to_gmt,
-        PRTime *result)
+    const char *string,
+    PRBool default_to_gmt,
+    PRTime *result)
 {
-  PRExplodedTime tm;
-  PRStatus rv;
+    PRExplodedTime tm;
+    PRStatus rv;
 
-  rv = PR_ParseTimeStringToExplodedTime(string,
-                                        default_to_gmt,
-                                        &tm);
-  if (rv != PR_SUCCESS)
+    rv = PR_ParseTimeStringToExplodedTime(string,
+                                          default_to_gmt,
+                                          &tm);
+    if (rv != PR_SUCCESS) {
         return rv;
+    }
 
-  *result = PR_ImplodeTime(&tm);
+    *result = PR_ImplodeTime(&tm);
 
-  return PR_SUCCESS;
+    return PR_SUCCESS;
 }
 
 
@@ -1750,22 +1865,22 @@ PR_FormatTime(char *buf, int buflen, const char *fmt,
 
 static const char* abbrevDays[] =
 {
-   "Sun","Mon","Tue","Wed","Thu","Fri","Sat"
+    "Sun","Mon","Tue","Wed","Thu","Fri","Sat"
 };
 
 static const char* days[] =
 {
-   "Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"
+    "Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"
 };
 
 static const char* abbrevMonths[] =
 {
-   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
 static const char* months[] =
-{ 
+{
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
 };
@@ -1813,7 +1928,7 @@ while(0)
 
 
 static unsigned int  pr_WeekOfYear(const PRExplodedTime* time,
-        unsigned int firstDayOfWeek);
+                                   unsigned int firstDayOfWeek);
 
 
 
@@ -1824,169 +1939,169 @@ static unsigned int  pr_WeekOfYear(const PRExplodedTime* time,
 
 
 
-             
+
 PR_IMPLEMENT(PRUint32)
 PR_FormatTimeUSEnglish( char* buf, PRUint32 bufSize,
                         const char* format, const PRExplodedTime* time )
 {
-   char*         bufPtr = buf;
-   const char*   fmtPtr;
-   char          tmpBuf[ 40 ];        
-   const int     tmpBufSize = sizeof( tmpBuf );
-
-   
-   for( fmtPtr=format; *fmtPtr != '\0'; fmtPtr++ )
-   {
-      if( *fmtPtr != '%' )
-      {
-         ADDCHAR( bufPtr, bufSize, *fmtPtr );
-      }
-      else
-      {
-         switch( *(++fmtPtr) )
-         {
-         case '%':
-            
-            ADDCHAR( bufPtr, bufSize, '%' );
-            break;
-            
-         case 'a':
-            
-            ADDSTR( bufPtr, bufSize, abbrevDays[ time->tm_wday ] );
-            break;
-               
-         case 'A':
-            
-            ADDSTR( bufPtr, bufSize, days[ time->tm_wday ] );
-            break;
-        
-         case 'b':
-            
-            ADDSTR( bufPtr, bufSize, abbrevMonths[ time->tm_month ] );
-            break;
-        
-         case 'B':
-            
-            ADDSTR(bufPtr, bufSize,  months[ time->tm_month ] );
-            break;
-        
-         case 'c':
-            
-            PR_FormatTimeUSEnglish( tmpBuf, tmpBufSize, "%a %b %d %H:%M:%S %Y", time );
-            ADDSTR( bufPtr, bufSize, tmpBuf );
-            break;
-        
-         case 'd':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_mday );
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-
-         case 'H':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_hour );
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-        
-         case 'I':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",
-                        (time->tm_hour%12) ? time->tm_hour%12 : (PRInt32) 12 );
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-        
-         case 'j':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.3d",time->tm_yday + 1);
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-        
-         case 'm':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_month+1);
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-        
-         case 'M':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_min );
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-       
-         case 'p':
-            
-            ADDSTR( bufPtr, bufSize, (time->tm_hour<12)?"AM":"PM" ); 
-            break;
-        
-         case 'S':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_sec );
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-     
-         case 'U':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.2d", pr_WeekOfYear( time, 0 ) );
-            ADDSTR( bufPtr, bufSize, tmpBuf );
-            break;
-        
-         case 'w':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%d",time->tm_wday );
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-        
-         case 'W':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.2d", pr_WeekOfYear( time, 1 ) );
-            ADDSTR( bufPtr, bufSize, tmpBuf );
-            break;
-        
-         case 'x':
-            
-            PR_FormatTimeUSEnglish( tmpBuf, tmpBufSize, "%m/%d/%y", time );
-            ADDSTR( bufPtr, bufSize, tmpBuf );
-            break;
-        
-         case 'X':
-            
-            PR_FormatTimeUSEnglish( tmpBuf, tmpBufSize, "%H:%M:%S", time );
-            ADDSTR( bufPtr, bufSize, tmpBuf );
-            break;
-        
-         case 'y':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.2d",time->tm_year % 100 );
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-        
-         case 'Y':
-            
-            PR_snprintf(tmpBuf,tmpBufSize,"%.4d",time->tm_year );
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-        
-         case 'Z':
-            
+    char*         bufPtr = buf;
+    const char*   fmtPtr;
+    char          tmpBuf[ 40 ];
+    const int     tmpBufSize = sizeof( tmpBuf );
 
 
-
-            PR_FormatTime( tmpBuf, tmpBufSize, "%Z", time );
-            ADDSTR( bufPtr, bufSize, tmpBuf ); 
-            break;
-
-         default:
-            
-            ADDCHAR( bufPtr, bufSize, '%' );
+    for( fmtPtr=format; *fmtPtr != '\0'; fmtPtr++ )
+    {
+        if( *fmtPtr != '%' )
+        {
             ADDCHAR( bufPtr, bufSize, *fmtPtr );
-            break;
-            
-         }
-      }
-   }
+        }
+        else
+        {
+            switch( *(++fmtPtr) )
+            {
+                case '%':
+                    
+                    ADDCHAR( bufPtr, bufSize, '%' );
+                    break;
 
-   ADDCHAR( bufPtr, bufSize, '\0' );
-   return (PRUint32)(bufPtr - buf - 1);
+                case 'a':
+                    
+                    ADDSTR( bufPtr, bufSize, abbrevDays[ time->tm_wday ] );
+                    break;
+
+                case 'A':
+                    
+                    ADDSTR( bufPtr, bufSize, days[ time->tm_wday ] );
+                    break;
+
+                case 'b':
+                    
+                    ADDSTR( bufPtr, bufSize, abbrevMonths[ time->tm_month ] );
+                    break;
+
+                case 'B':
+                    
+                    ADDSTR(bufPtr, bufSize,  months[ time->tm_month ] );
+                    break;
+
+                case 'c':
+                    
+                    PR_FormatTimeUSEnglish( tmpBuf, tmpBufSize, "%a %b %d %H:%M:%S %Y", time );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'd':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_mday );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'H':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_hour );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'I':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",
+                                (time->tm_hour%12) ? time->tm_hour%12 : (PRInt32) 12 );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'j':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.3d",time->tm_yday + 1);
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'm':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_month+1);
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'M':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_min );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'p':
+                    
+                    ADDSTR( bufPtr, bufSize, (time->tm_hour<12)?"AM":"PM" );
+                    break;
+
+                case 'S':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.2ld",time->tm_sec );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'U':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.2d", pr_WeekOfYear( time, 0 ) );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'w':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%d",time->tm_wday );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'W':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.2d", pr_WeekOfYear( time, 1 ) );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'x':
+                    
+                    PR_FormatTimeUSEnglish( tmpBuf, tmpBufSize, "%m/%d/%y", time );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'X':
+                    
+                    PR_FormatTimeUSEnglish( tmpBuf, tmpBufSize, "%H:%M:%S", time );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'y':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.2d",time->tm_year % 100 );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'Y':
+                    
+                    PR_snprintf(tmpBuf,tmpBufSize,"%.4d",time->tm_year );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                case 'Z':
+                    
+
+
+
+                    PR_FormatTime( tmpBuf, tmpBufSize, "%Z", time );
+                    ADDSTR( bufPtr, bufSize, tmpBuf );
+                    break;
+
+                default:
+                    
+                    ADDCHAR( bufPtr, bufSize, '%' );
+                    ADDCHAR( bufPtr, bufSize, *fmtPtr );
+                    break;
+
+            }
+        }
+    }
+
+    ADDCHAR( bufPtr, bufSize, '\0' );
+    return (PRUint32)(bufPtr - buf - 1);
 }
 
 
@@ -2004,31 +2119,32 @@ PR_FormatTimeUSEnglish( char* buf, PRUint32 bufSize,
 static unsigned int
 pr_WeekOfYear(const PRExplodedTime* time, unsigned int firstDayOfWeek)
 {
-   int dayOfWeek;
-   int dayOfYear;
+    int dayOfWeek;
+    int dayOfYear;
 
-  
-
-
-  dayOfWeek = time->tm_wday - firstDayOfWeek;
-  if (dayOfWeek < 0)
-    dayOfWeek += 7;
-
-  dayOfYear = time->tm_yday - dayOfWeek;
-
-  if( dayOfYear <= 0 )
-  {
-     
-     return 0;
-  }
-
-  
+    
 
 
+    dayOfWeek = time->tm_wday - firstDayOfWeek;
+    if (dayOfWeek < 0) {
+        dayOfWeek += 7;
+    }
+
+    dayOfYear = time->tm_yday - dayOfWeek;
+
+    if( dayOfYear <= 0 )
+    {
+        
+        return 0;
+    }
+
+    
 
 
 
-  return (dayOfYear / 7) + ( (dayOfYear % 7) == 0 ? 0 : 1 );
+
+
+    return (dayOfYear / 7) + ( (dayOfYear % 7) == 0 ? 0 : 1 );
 
 }
 

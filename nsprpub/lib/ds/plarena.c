@@ -35,34 +35,40 @@ PR_IMPLEMENT(void) PL_InitArenaPool(
 
 
     static const PRUint8 pmasks[33] = {
-         0,                                               
-         0, 1, 3, 3, 7, 7, 7, 7,15,15,15,15,15,15,15,15,  
-        31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31}; 
+        0,                                               
+        0, 1, 3, 3, 7, 7, 7, 7,15,15,15,15,15,15,15,15,  
+        31,31,31,31,31,31,31,31,31,31,31,31,31,31,31,31   
+    };
 
-    if (align == 0)
+    if (align == 0) {
         align = PL_ARENA_DEFAULT_ALIGN;
+    }
 
-    if (align < sizeof(pmasks)/sizeof(pmasks[0]))
+    if (align < sizeof(pmasks)/sizeof(pmasks[0])) {
         pool->mask = pmasks[align];
-    else
+    }
+    else {
         pool->mask = PR_BITMASK(PR_CeilingLog2(align));
+    }
 
     pool->first.next = NULL;
     
 
 
     pool->first.base = pool->first.avail = pool->first.limit =
-        (PRUword)PL_ARENA_ALIGN(pool, &pool->first + 1);
+            (PRUword)PL_ARENA_ALIGN(pool, &pool->first + 1);
     pool->current = &pool->first;
     
 
 
 
 
-    if (size > sizeof(PLArena) + pool->mask)
+    if (size > sizeof(PLArena) + pool->mask) {
         pool->arenasize = size - (sizeof(PLArena) + pool->mask);
-    else
+    }
+    else {
         pool->arenasize = size;
+    }
 #ifdef PL_ARENAMETER
     memset(&pool->stats, 0, sizeof pool->stats);
     pool->stats.name = strdup(name);
@@ -93,16 +99,17 @@ PR_IMPLEMENT(void) PL_InitArenaPool(
 
 PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
 {
-    PLArena *a;   
+    PLArena *a;
     char *rp;     
     PRUint32 nbOld;
 
     PR_ASSERT((nb & pool->mask) == 0);
-    
+
     nbOld = nb;
     nb = (PRUword)PL_ARENA_ALIGN(pool, nb); 
-    if (nb < nbOld)
+    if (nb < nbOld) {
         return NULL;
+    }
 
     
     {
@@ -117,8 +124,8 @@ PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
         } while( NULL != (a = a->next) );
     }
 
-     
-    {  
+    
+    {
         PRUint32 sz = PR_MAX(pool->arenasize, nb);
         if (PR_UINT32_MAX - sz < sizeof *a + pool->mask) {
             a = NULL;
@@ -138,8 +145,9 @@ PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
             a->next = pool->current->next;
             pool->current->next = a;
             pool->current = a;
-            if ( NULL == pool->first.next )
+            if ( NULL == pool->first.next ) {
                 pool->first.next = a;
+            }
             PL_COUNT_ARENA(pool,++);
             COUNT(pool, nmallocs);
             return(rp);
@@ -155,11 +163,13 @@ PR_IMPLEMENT(void *) PL_ArenaGrow(
 {
     void *newp;
 
-    if (PR_UINT32_MAX - size < incr)
+    if (PR_UINT32_MAX - size < incr) {
         return NULL;
+    }
     PL_ARENA_ALLOCATE(newp, pool, size + incr);
-    if (newp)
+    if (newp) {
         memcpy(newp, p, size);
+    }
     return newp;
 }
 
@@ -182,8 +192,9 @@ PR_IMPLEMENT(void) PL_ClearArenaPool(PLArenaPool *pool, PRInt32 pattern)
 static void FreeArenaList(PLArenaPool *pool, PLArena *head)
 {
     PLArena *a = head->next;
-    if (!a)
+    if (!a) {
         return;
+    }
 
     head->next = NULL;
 
@@ -224,8 +235,9 @@ PR_IMPLEMENT(void) PL_FinishArenaPool(PLArenaPool *pool)
     {
         PLArenaStats *stats, **statsp;
 
-        if (pool->stats.name)
+        if (pool->stats.name) {
             PR_DELETE(pool->stats.name);
+        }
         for (statsp = &arena_stats_list; (stats = *statsp) != 0;
              statsp = &stats->next) {
             if (stats == &pool->stats) {
@@ -266,8 +278,9 @@ PR_IMPLEMENT(void) PL_ArenaCountAllocation(PLArenaPool *pool, PRUint32 nb)
 {
     pool->stats.nallocs++;
     pool->stats.nbytes += nb;
-    if (nb > pool->stats.maxalloc)
+    if (nb > pool->stats.maxalloc) {
         pool->stats.maxalloc = nb;
+    }
     pool->stats.variance += nb * nb;
 }
 
@@ -284,8 +297,9 @@ PR_IMPLEMENT(void) PL_ArenaCountGrowth(
     pool->stats.nbytes += incr;
     pool->stats.variance -= size * size;
     size += incr;
-    if (size > pool->stats.maxalloc)
+    if (size > pool->stats.maxalloc) {
         pool->stats.maxalloc = size;
+    }
     pool->stats.variance += size * size;
 }
 

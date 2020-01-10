@@ -51,7 +51,7 @@ NSPR_API(const PRIOMethods*)    PR_GetPipeMethods(void);
 NSPR_API(PROsfd)       PR_FileDesc2NativeHandle(PRFileDesc *);
 NSPR_API(void)         PR_ChangeFileDescNativeHandle(PRFileDesc *, PROsfd);
 NSPR_API(PRFileDesc*)  PR_AllocFileDesc(PROsfd osfd,
-                                         const PRIOMethods *methods);
+                                        const PRIOMethods *methods);
 NSPR_API(void)         PR_FreeFileDesc(PRFileDesc *fd);
 
 
@@ -80,7 +80,7 @@ NSPR_API(PRFileDesc*)  PR_ImportUDPSocket(PROsfd osfd);
 
 
 
-NSPR_API(PRFileDesc*)	PR_CreateSocketPollFd(PROsfd osfd);
+NSPR_API(PRFileDesc*)   PR_CreateSocketPollFd(PROsfd osfd);
 
 
 
@@ -122,7 +122,7 @@ NSPR_API(PRStatus) PR_DestroySocketPollFd(PRFileDesc *fd);
 
 
 
-NSPR_API(PRFileDesc*)	PR_Socket(PRInt32 domain, PRInt32 type, PRInt32 proto);
+NSPR_API(PRFileDesc*)   PR_Socket(PRInt32 domain, PRInt32 type, PRInt32 proto);
 
 
 
@@ -157,7 +157,7 @@ NSPR_API(PRStatus) PR_UnlockFile(PRFileDesc *fd);
 
 
 NSPR_API(PRInt32) PR_EmulateAcceptRead(PRFileDesc *sd, PRFileDesc **nd,
-    PRNetAddr **raddr, void *buf, PRInt32 amount, PRIntervalTime timeout);
+                                       PRNetAddr **raddr, void *buf, PRInt32 amount, PRIntervalTime timeout);
 
 
 
@@ -177,7 +177,7 @@ NSPR_API(PRInt32) PR_EmulateSendFile(
 
 
 NSPR_API(PRInt32) PR_NTFast_AcceptRead(PRFileDesc *sd, PRFileDesc **nd,
-              PRNetAddr **raddr, void *buf, PRInt32 amount, PRIntervalTime t);
+                                       PRNetAddr **raddr, void *buf, PRInt32 amount, PRIntervalTime t);
 
 typedef void (*_PR_AcceptTimeoutCallback)(void *);
 
@@ -196,14 +196,14 @@ typedef void (*_PR_AcceptTimeoutCallback)(void *);
 
 
 NSPR_API(PRInt32) PR_NTFast_AcceptRead_WithTimeoutCallback(
-              PRFileDesc *sd, 
-              PRFileDesc **nd,
-              PRNetAddr **raddr, 
-              void *buf, 
-              PRInt32 amount, 
-              PRIntervalTime t,
-              _PR_AcceptTimeoutCallback callback, 
-              void *callback_arg);
+    PRFileDesc *sd,
+    PRFileDesc **nd,
+    PRNetAddr **raddr,
+    void *buf,
+    PRInt32 amount,
+    PRIntervalTime t,
+    _PR_AcceptTimeoutCallback callback,
+    void *callback_arg);
 
 
 
@@ -213,8 +213,8 @@ NSPR_API(PRInt32) PR_NTFast_AcceptRead_WithTimeoutCallback(
 
 
 
-NSPR_API(PRFileDesc*)	PR_NTFast_Accept(PRFileDesc *fd, PRNetAddr *addr,
-                                                PRIntervalTime timeout);
+NSPR_API(PRFileDesc*)   PR_NTFast_Accept(PRFileDesc *fd, PRNetAddr *addr,
+        PRIntervalTime timeout);
 
 
 
@@ -224,8 +224,8 @@ NSPR_API(PRFileDesc*)	PR_NTFast_Accept(PRFileDesc *fd, PRNetAddr *addr,
 
 
 
-NSPR_API(void) PR_NTFast_UpdateAcceptContext(PRFileDesc *acceptSock, 
-                                        PRFileDesc *listenSock);
+NSPR_API(void) PR_NTFast_UpdateAcceptContext(PRFileDesc *acceptSock,
+        PRFileDesc *listenSock);
 
 
 

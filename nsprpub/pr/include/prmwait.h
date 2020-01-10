@@ -105,7 +105,7 @@ typedef struct PRMWaitClientData PRMWaitClientData;
 
 
 
-typedef struct PRRecvWait 
+typedef struct PRRecvWait
 {
     PRCList internal;           
 
@@ -372,7 +372,7 @@ NSPR_API(PRStatus) PR_DestroyMWaitEnumerator(PRMWaitEnumerator* enumerator);
 
 NSPR_API(PRRecvWait*) PR_EnumerateWaitGroup(
     PRMWaitEnumerator *enumerator, const PRRecvWait *previous);
-   
+
 PR_END_EXTERN_C
 
 #endif 

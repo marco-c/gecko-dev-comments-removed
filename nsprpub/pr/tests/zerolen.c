@@ -124,8 +124,8 @@ int main()
 
 
     clientThread = PR_CreateThread(PR_USER_THREAD,
-            ClientThread, (void *) PR_ntohs(PR_NetAddrInetPort(&addr)),
-            PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+                                   ClientThread, (void *) PR_ntohs(PR_NetAddrInetPort(&addr)),
+                                   PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
     if (NULL == clientThread) {
         fprintf(stderr, "PR_CreateThread failed\n");
         exit(1);
@@ -165,8 +165,8 @@ int main()
 
 
     clientThread = PR_CreateThread(PR_USER_THREAD,
-            ClientThread, (void *) PR_ntohs(PR_NetAddrInetPort(&addr)),
-            PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+                                   ClientThread, (void *) PR_ntohs(PR_NetAddrInetPort(&addr)),
+                                   PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
     if (NULL == clientThread) {
         fprintf(stderr, "PR_CreateThread failed\n");
         exit(1);
@@ -204,8 +204,8 @@ int main()
 
 
     clientThread = PR_CreateThread(PR_USER_THREAD,
-            ClientThread, (void *) PR_ntohs(PR_NetAddrInetPort(&addr)),
-            PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+                                   ClientThread, (void *) PR_ntohs(PR_NetAddrInetPort(&addr)),
+                                   PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
     if (NULL == clientThread) {
         fprintf(stderr, "PR_CreateThread failed\n");
         exit(1);

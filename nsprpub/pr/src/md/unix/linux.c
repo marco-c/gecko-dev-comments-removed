@@ -13,13 +13,13 @@ PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np)
 {
 #ifndef _PR_PTHREADS
     if (isCurrent) {
-	(void) setjmp(CONTEXT(t));
+        (void) setjmp(CONTEXT(t));
     }
     *np = sizeof(CONTEXT(t)) / sizeof(PRWord);
     return (PRWord *) CONTEXT(t);
 #else
-	*np = 0;
-	return NULL;
+    *np = 0;
+    return NULL;
 #endif
 }
 
@@ -43,13 +43,13 @@ _MD_SET_PRIORITY(_MDThread *thread, PRUintn newPri)
 PRStatus
 _MD_InitializeThread(PRThread *thread)
 {
-	
+    
 
 
 
-	thread->md.sp = _MD_GET_SP_PTR(thread);
-	thread->md.fp = _MD_GET_FP_PTR(thread);
-	return PR_SUCCESS;
+    thread->md.sp = _MD_GET_SP_PTR(thread);
+    thread->md.fp = _MD_GET_FP_PTR(thread);
+    return PR_SUCCESS;
 }
 
 PRStatus
@@ -64,7 +64,7 @@ PRStatus
 _MD_WAKEUP_WAITER(PRThread *thread)
 {
     if (thread) {
-	PR_ASSERT(!(thread->flags & _PR_GLOBAL_SCOPE));
+        PR_ASSERT(!(thread->flags & _PR_GLOBAL_SCOPE));
     }
     return PR_SUCCESS;
 }
@@ -86,6 +86,6 @@ _MD_CREATE_THREAD(
     PRUint32 stackSize)
 {
     PR_NOT_REACHED("_MD_CREATE_THREAD should not be called for Linux.");
-	return PR_FAILURE;
+    return PR_FAILURE;
 }
 #endif 

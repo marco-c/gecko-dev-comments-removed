@@ -61,7 +61,7 @@ void _MD_win32_map_default_error(PRInt32 err)
             prError = PR_NOT_IMPLEMENTED_ERROR;
             break;
         case ERROR_DISK_CORRUPT:
-            prError = PR_IO_ERROR; 
+            prError = PR_IO_ERROR;
             break;
         case ERROR_DISK_FULL:
             prError = PR_NO_DEVICE_SPACE_ERROR;

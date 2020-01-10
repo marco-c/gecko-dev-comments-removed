@@ -25,7 +25,7 @@ PR_BEGIN_EXTERN_C
 
 
 
-NSPR_API(PRInt32)	PR_AtomicIncrement(PRInt32 *val);
+NSPR_API(PRInt32)   PR_AtomicIncrement(PRInt32 *val);
 
 
 
@@ -36,7 +36,7 @@ NSPR_API(PRInt32)	PR_AtomicIncrement(PRInt32 *val);
 
 
 
-NSPR_API(PRInt32)	PR_AtomicDecrement(PRInt32 *val);
+NSPR_API(PRInt32)   PR_AtomicDecrement(PRInt32 *val);
 
 
 
@@ -60,7 +60,7 @@ NSPR_API(PRInt32) PR_AtomicSet(PRInt32 *val, PRInt32 newval);
 
 
 
-NSPR_API(PRInt32)	PR_AtomicAdd(PRInt32 *ptr, PRInt32 val);
+NSPR_API(PRInt32)   PR_AtomicAdd(PRInt32 *ptr, PRInt32 val);
 
 
 
@@ -137,7 +137,7 @@ NSPR_API(PRInt32)	PR_AtomicAdd(PRInt32 *ptr, PRInt32 val);
 typedef struct PRStackElemStr PRStackElem;
 
 struct PRStackElemStr {
-    PRStackElem	*prstk_elem_next;	
+    PRStackElem *prstk_elem_next;   
 
 };
 
@@ -152,7 +152,7 @@ typedef struct PRStackStr PRStack;
 
 
 
-NSPR_API(PRStack *)	PR_CreateStack(const char *stack_name);
+NSPR_API(PRStack *) PR_CreateStack(const char *stack_name);
 
 
 
@@ -164,20 +164,7 @@ NSPR_API(PRStack *)	PR_CreateStack(const char *stack_name);
 
 
 
-NSPR_API(void)			PR_StackPush(PRStack *stack, PRStackElem *stack_elem);
-
-
-
-
-
-
-
-
-
-
-
-
-NSPR_API(PRStackElem *)	PR_StackPop(PRStack *stack);
+NSPR_API(void)          PR_StackPush(PRStack *stack, PRStackElem *stack_elem);
 
 
 
@@ -190,8 +177,21 @@ NSPR_API(PRStackElem *)	PR_StackPop(PRStack *stack);
 
 
 
+NSPR_API(PRStackElem *) PR_StackPop(PRStack *stack);
 
-NSPR_API(PRStatus)		PR_DestroyStack(PRStack *stack);
+
+
+
+
+
+
+
+
+
+
+
+
+NSPR_API(PRStatus)      PR_DestroyStack(PRStack *stack);
 
 PR_END_EXTERN_C
 

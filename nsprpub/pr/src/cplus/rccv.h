@@ -41,7 +41,7 @@ public:
     virtual PRStatus Broadcast();   
 
     virtual PRStatus SetTimeout(const RCInterval&);
-                                    
+    
 
 private:
     PRCondVar *cv;

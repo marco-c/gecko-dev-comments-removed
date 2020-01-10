@@ -95,7 +95,7 @@ typedef enum PRLibSpecType {
     PR_LibSpec_Pathname,
     PR_LibSpec_MacNamedFragment,   
     PR_LibSpec_MacIndexedFragment, 
-    PR_LibSpec_PathnameU            
+    PR_LibSpec_PathnameU           
 } PRLibSpecType;
 
 struct FSSpec; 
@@ -134,7 +134,7 @@ typedef struct PRLibSpec {
 #define PR_LD_GLOBAL 0x4  /* equivalent to RTLD_GLOBAL on Unix */
 #define PR_LD_LOCAL  0x8  /* equivalent to RTLD_LOCAL on Unix */
 
-#define PR_LD_ALT_SEARCH_PATH  0x10  
+#define PR_LD_ALT_SEARCH_PATH  0x10
 
 
 
@@ -190,7 +190,7 @@ NSPR_API(PRFuncPtr) PR_FindFunctionSymbol(PRLibrary *lib, const char *name);
 
 
 NSPR_API(void*) PR_FindSymbolAndLibrary(const char *name,
-						      PRLibrary* *lib);
+                                        PRLibrary* *lib);
 
 
 
@@ -201,7 +201,7 @@ NSPR_API(void*) PR_FindSymbolAndLibrary(const char *name,
 
 
 NSPR_API(PRFuncPtr) PR_FindFunctionSymbolAndLibrary(const char *name,
-						      PRLibrary* *lib);
+        PRLibrary* *lib);
 
 
 

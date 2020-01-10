@@ -28,16 +28,16 @@ public:
     RCNetAddr(const RCNetAddr&);        
     RCNetAddr(HostValue, PRUint16 port);
     RCNetAddr(const RCNetAddr&, PRUint16 port);
-                                        
+    
 
     virtual ~RCNetAddr();
 
     void operator=(const RCNetAddr&);
 
     virtual PRBool operator==(const RCNetAddr&) const;
-                                        
+    
     virtual PRBool EqualHost(const RCNetAddr&) const;
-                                        
+    
 
 
 public:
@@ -45,9 +45,9 @@ public:
     void operator=(const PRNetAddr*);   
     operator const PRNetAddr*() const;  
     virtual PRStatus FromString(const char* string);
-                                        
+    
     virtual PRStatus ToString(char *string, PRSize size) const;
-                                        
+    
 
 private:
 
@@ -87,7 +87,9 @@ private:
 };
 
 inline RCNetAddr::RCNetAddr(): RCBase() { }
-inline RCNetAddr::operator const PRNetAddr*() const { return &address; }
+inline RCNetAddr::operator const PRNetAddr*() const {
+    return &address;
+}
 
 
 #endif 

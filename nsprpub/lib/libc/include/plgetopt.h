@@ -16,13 +16,13 @@
 
 PR_BEGIN_EXTERN_C
 
-typedef struct PLOptionInternal PLOptionInternal; 
+typedef struct PLOptionInternal PLOptionInternal;
 
 typedef enum
 {
-        PL_OPT_OK,              
-        PL_OPT_EOL,             
-        PL_OPT_BAD              
+    PL_OPT_OK,              
+    PL_OPT_EOL,             
+    PL_OPT_BAD              
 } PLOptStatus;
 
 typedef struct PLLongOpt
@@ -30,7 +30,7 @@ typedef struct PLLongOpt
     const char * longOptName;   
     PRIntn       longOption;    
     PRBool       valueRequired; 
-                                
+    
 } PLLongOpt;
 
 typedef struct PLOptState
@@ -52,7 +52,7 @@ typedef struct PLOptState
 
 
 PR_EXTERN(PLOptState*) PL_CreateOptState(
-        PRIntn argc, char **argv, const char *options);
+    PRIntn argc, char **argv, const char *options);
 
 
 
@@ -66,8 +66,8 @@ PR_EXTERN(PLOptState*) PL_CreateOptState(
 
 
 PR_EXTERN(PLOptState*) PL_CreateLongOptState(
-        PRIntn argc, char **argv, const char *options, 
-        const PLLongOpt *longOpts);
+    PRIntn argc, char **argv, const char *options,
+    const PLLongOpt *longOpts);
 
 
 

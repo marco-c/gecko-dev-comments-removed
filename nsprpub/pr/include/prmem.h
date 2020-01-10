@@ -119,7 +119,7 @@ NSPR_API(void) PR_Free(void *ptr);
 
 
 
-#define PR_FREEIF(_ptr)	if (_ptr) PR_DELETE(_ptr)
+#define PR_FREEIF(_ptr) if (_ptr) PR_DELETE(_ptr)
 
 PR_END_EXTERN_C
 

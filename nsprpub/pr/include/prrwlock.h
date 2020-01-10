@@ -26,7 +26,7 @@ PR_BEGIN_EXTERN_C
 
 typedef struct PRRWLock PRRWLock;
 
-#define	PR_RWLOCK_RANK_NONE	0
+#define PR_RWLOCK_RANK_NONE 0
 
 
 

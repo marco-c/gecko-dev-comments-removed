@@ -34,7 +34,7 @@
 
 #if defined(XP_UNIX) || defined(XP_OS2)
 #include <sys/types.h>
-#include <sys/socket.h>		
+#include <sys/socket.h>     
 #include <netinet/in.h>         
 #ifdef XP_OS2
 #include <sys/ioctl.h>

@@ -31,7 +31,7 @@ class PR_IMPLEMENT(RCThread): public RCBase
 {
 public:
 
-    typedef enum 
+    typedef enum
     {
         local = PR_LOCAL_THREAD, global = PR_GLOBAL_THREAD
     } Scope;
@@ -68,12 +68,12 @@ public:
 
 
     virtual PRStatus Join();
+
     
-    
 
 
 
-   
+
     virtual void SetPriority(Priority newPriority);
 
 
@@ -82,14 +82,14 @@ public:
 
 
     virtual PRStatus Interrupt();
-    
+
     
 
 
 
 
     static void ClearInterrupt();
-    
+
     
 
 
@@ -150,15 +150,15 @@ private:
     
     RCThread();
     RCThread(const RCThread&);
-    
+
     
     void operator=(const RCThread&);
 
 public:
-    static RCPrimordialThread *WrapPrimordialThread();    
+    static RCPrimordialThread *WrapPrimordialThread();
 
- };
- 
+};
+
 
 
 
@@ -180,7 +180,7 @@ public:
 
     static PRStatus SetVirtualProcessors(PRIntn count=10);
 
-friend class RCThread;
+    friend class RCThread;
 private:
     
 
@@ -192,4 +192,4 @@ private:
     void RootFunction();
 };  
 
- #endif 
+#endif 

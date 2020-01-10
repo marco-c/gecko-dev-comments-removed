@@ -12,7 +12,7 @@
 
 
 
- 
+
 
 #include "primpl.h"
 
@@ -32,7 +32,7 @@ _PR_MD_SOCKET(int domain, int type, int flags)
 
     osfd = socket(domain, type, flags);
 
-    if (osfd == -1) 
+    if (osfd == -1)
     {
         err = sock_errno();
         _PR_MD_MAP_SOCKET_ERROR(err);
@@ -101,19 +101,23 @@ socket_io_wait( PRInt32 osfd, PRInt32 fd_type, PRIntervalTime timeout )
             FD_ZERO(&rd_wr);
             do {
                 FD_SET(osfd, &rd_wr);
-                if (fd_type == READ_FD)
+                if (fd_type == READ_FD) {
                     rv = bsdselect(osfd + 1, &rd_wr, NULL, NULL, &tv);
-                else
+                }
+                else {
                     rv = bsdselect(osfd + 1, NULL, &rd_wr, NULL, &tv);
+                }
 #else
-            lTimeout = _PR_INTERRUPT_CHECK_INTERVAL_SECS * 1000; 
+            lTimeout = _PR_INTERRUPT_CHECK_INTERVAL_SECS * 1000;
             do {
                 socks[0] = osfd;
-                if (fd_type == READ_FD)
+                if (fd_type == READ_FD) {
                     rv = os2_select(socks, 1, 0, 0, lTimeout);
-                else
+                }
+                else {
                     rv = os2_select(socks, 0, 1, 0, lTimeout);
-#endif                    
+                }
+#endif
                 if (rv == -1 && (syserror = sock_errno()) != EINTR) {
                     _PR_MD_MAP_SELECT_ERROR(syserror);
                     break;
@@ -148,14 +152,16 @@ socket_io_wait( PRInt32 osfd, PRInt32 fd_type, PRIntervalTime timeout )
                     tv.tv_usec = 0;
                 } else {
                     tv.tv_usec = PR_IntervalToMicroseconds(
-                        remaining -
-                        PR_SecondsToInterval(tv.tv_sec));
+                                     remaining -
+                                     PR_SecondsToInterval(tv.tv_sec));
                 }
                 FD_SET(osfd, &rd_wr);
-                if (fd_type == READ_FD)
+                if (fd_type == READ_FD) {
                     rv = bsdselect(osfd + 1, &rd_wr, NULL, NULL, &tv);
-                else
+                }
+                else {
                     rv = bsdselect(osfd + 1, NULL, &rd_wr, NULL, &tv);
+                }
 #else
                 wait_for_remaining = PR_TRUE;
                 lTimeout = PR_IntervalToMilliseconds(remaining);
@@ -164,10 +170,12 @@ socket_io_wait( PRInt32 osfd, PRInt32 fd_type, PRIntervalTime timeout )
                     lTimeout = _PR_INTERRUPT_CHECK_INTERVAL_SECS * 1000;
                 }
                 socks[0] = osfd;
-                if (fd_type == READ_FD)
+                if (fd_type == READ_FD) {
                     rv = os2_select(socks, 1, 0, 0, lTimeout);
-                else
+                }
+                else {
                     rv = os2_select(socks, 0, 1, 0, lTimeout);
+                }
 #endif
                 
 
@@ -198,7 +206,7 @@ socket_io_wait( PRInt32 osfd, PRInt32 fd_type, PRIntervalTime timeout )
                         } else {
 #ifdef BSD_SELECT
                             now += PR_SecondsToInterval(tv.tv_sec)
-                                + PR_MicrosecondsToInterval(tv.tv_usec);
+                                   + PR_MicrosecondsToInterval(tv.tv_usec);
 #else
                             now += PR_MillisecondsToInterval(lTimeout);
 #endif
@@ -217,7 +225,7 @@ socket_io_wait( PRInt32 osfd, PRInt32 fd_type, PRIntervalTime timeout )
                 }
             } while (rv == 0 || (rv == -1 && syserror == EINTR));
             break;
-        }
+    }
     return(rv);
 }
 
@@ -237,9 +245,10 @@ _MD_Accept(PRFileDesc *fd, PRNetAddr *addr,
             if (fd->secret->nonblocking) {
                 break;
             }
-                if ((rv = socket_io_wait(osfd, READ_FD, timeout)) < 0)
-                    goto done;
-        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))){
+            if ((rv = socket_io_wait(osfd, READ_FD, timeout)) < 0) {
+                goto done;
+            }
+        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))) {
             continue;
         } else {
             break;
@@ -253,7 +262,7 @@ done:
 }
 
 PRInt32
-_PR_MD_CONNECT(PRFileDesc *fd, const PRNetAddr *addr, PRUint32 addrlen, 
+_PR_MD_CONNECT(PRFileDesc *fd, const PRNetAddr *addr, PRUint32 addrlen,
                PRIntervalTime timeout)
 {
     PRInt32 rv, err;
@@ -263,7 +272,7 @@ _PR_MD_CONNECT(PRFileDesc *fd, const PRNetAddr *addr, PRUint32 addrlen,
 
 
 
-     
+    
 
 
 
@@ -313,7 +322,7 @@ retry:
             }
             return 0;
         }
-        
+
         _PR_MD_MAP_CONNECT_ERROR(err);
     }
 
@@ -347,7 +356,7 @@ _PR_MD_LISTEN(PRFileDesc *fd, PRIntn backlog)
 
 
 PRInt32
-_PR_MD_RECV(PRFileDesc *fd, void *buf, PRInt32 amount, PRIntn flags, 
+_PR_MD_RECV(PRFileDesc *fd, void *buf, PRInt32 amount, PRIntn flags,
             PRIntervalTime timeout)
 {
     PRInt32 osfd = fd->secret->md.osfd;
@@ -361,9 +370,10 @@ _PR_MD_RECV(PRFileDesc *fd, void *buf, PRInt32 amount, PRIntn flags,
             if (fd->secret->nonblocking) {
                 break;
             }
-            if ((rv = socket_io_wait(osfd, READ_FD, timeout)) < 0)
+            if ((rv = socket_io_wait(osfd, READ_FD, timeout)) < 0) {
                 goto done;
-        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))){
+            }
+        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))) {
             continue;
         } else {
             break;
@@ -391,16 +401,17 @@ _PR_MD_SEND(PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
             if (fd->secret->nonblocking) {
                 break;
             }
-            if ((rv = socket_io_wait(osfd, WRITE_FD, timeout)) < 0)
+            if ((rv = socket_io_wait(osfd, WRITE_FD, timeout)) < 0) {
                 goto done;
-        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))){
+            }
+        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))) {
             continue;
         } else {
             break;
         }
     }
 
-     
+    
 
 
 
@@ -428,7 +439,7 @@ _PR_MD_SENDTO(PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
     PRInt32 rv, err;
     PRThread *me = _PR_MD_CURRENT_THREAD();
     while ((rv = sendto(osfd, buf, amount, flags,
-           (struct sockaddr *) addr, addrlen)) == -1)
+                        (struct sockaddr *) addr, addrlen)) == -1)
     {
         err = sock_errno();
         if ((err == EWOULDBLOCK))
@@ -436,9 +447,10 @@ _PR_MD_SENDTO(PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
             if (fd->secret->nonblocking) {
                 break;
             }
-            if ((rv = socket_io_wait(osfd, WRITE_FD, timeout)) < 0)
+            if ((rv = socket_io_wait(osfd, WRITE_FD, timeout)) < 0) {
                 goto done;
-        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))){
+            }
+        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))) {
             continue;
         } else {
             break;
@@ -461,16 +473,17 @@ _PR_MD_RECVFROM(PRFileDesc *fd, void *buf, PRInt32 amount, PRIntn flags,
 
     while( (*addrlen = PR_NETADDR_SIZE(addr)),
            ((rv = recvfrom(osfd, buf, amount, flags,
-             (struct sockaddr *) addr, (int *)addrlen)) == -1))
+                           (struct sockaddr *) addr, (int *)addrlen)) == -1))
     {
         err = sock_errno();
         if ((err == EWOULDBLOCK)) {
             if (fd->secret->nonblocking) {
                 break;
             }
-            if ((rv = socket_io_wait(osfd, READ_FD, timeout)) < 0)
+            if ((rv = socket_io_wait(osfd, READ_FD, timeout)) < 0) {
                 goto done;
-        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))){
+            }
+        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))) {
             continue;
         } else {
             break;
@@ -506,7 +519,7 @@ _PR_MD_WRITEV(PRFileDesc *fd, const PRIOVec *iov, PRInt32 iov_size,
         osiov[index].iov_len = iov[index].iov_len;
     }
 
-     
+    
 
 
 
@@ -525,22 +538,23 @@ _PR_MD_WRITEV(PRFileDesc *fd, const PRIOVec *iov, PRInt32 iov_size,
             if (fd->secret->nonblocking) {
                 break;
             }
-            if ((rv = socket_io_wait(osfd, WRITE_FD, timeout))<0)
+            if ((rv = socket_io_wait(osfd, WRITE_FD, timeout))<0) {
                 goto done;
-        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))){
+            }
+        } else if ((err == EINTR) && (!_PR_PENDING_INTERRUPT(me))) {
             continue;
         } else {
             break;
         }
     }
 
-     
+    
 
 
 
 
     if ((!fd->secret->nonblocking) && (rv > 0) && (rv < amount)
-          && (timeout != PR_INTERVAL_NO_WAIT)) {
+        && (timeout != PR_INTERVAL_NO_WAIT)) {
         if (socket_io_wait(osfd, WRITE_FD, timeout) < 0) {
             rv = -1;
             goto done;
@@ -559,8 +573,9 @@ _PR_MD_SHUTDOWN(PRFileDesc *fd, PRIntn how)
     PRInt32 rv;
 
     rv = shutdown(fd->secret->md.osfd, how);
-    if (rv < 0)
+    if (rv < 0) {
         _PR_MD_MAP_SHUTDOWN_ERROR(sock_errno());
+    }
     return rv;
 }
 
@@ -639,7 +654,7 @@ _MD_MakeNonblock(PRFileDesc *fd)
     PRInt32 osfd = fd->secret->md.osfd;
     PRInt32 err;
     PRUint32  one = 1;
-    
+
     if (osfd <= 2) {
         
         return;

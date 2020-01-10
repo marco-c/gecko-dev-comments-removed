@@ -67,7 +67,7 @@ PR_IMPLEMENT(char) PR_GetDirectorySepartor(void)
     static PRBool warn = PR_TRUE;
     if (warn) {
         warn = _PR_Obsolete("PR_GetDirectorySepartor()",
-                "PR_GetDirectorySeparator()");
+                            "PR_GetDirectorySeparator()");
     }
 #endif
     return PR_GetDirectorySeparator();
@@ -82,77 +82,83 @@ PR_IMPLEMENT(PRStatus) PR_GetSystemInfo(PRSysInfo cmd, char *buf, PRUint32 bufle
 {
     PRUintn len = 0;
 
-    if (!_pr_initialized) _PR_ImplicitInitialization();
+    if (!_pr_initialized) {
+        _PR_ImplicitInitialization();
+    }
 
     switch(cmd)
     {
-      case PR_SI_HOSTNAME:
-      case PR_SI_HOSTNAME_UNTRUNCATED:
-        if (PR_FAILURE == _PR_MD_GETHOSTNAME(buf, (PRUintn)buflen))
-            return PR_FAILURE;
+        case PR_SI_HOSTNAME:
+        case PR_SI_HOSTNAME_UNTRUNCATED:
+            if (PR_FAILURE == _PR_MD_GETHOSTNAME(buf, (PRUintn)buflen)) {
+                return PR_FAILURE;
+            }
 
-        if (cmd == PR_SI_HOSTNAME_UNTRUNCATED)
-            break;
-        
+            if (cmd == PR_SI_HOSTNAME_UNTRUNCATED) {
+                break;
+            }
+            
 
 
 
 
 #ifndef _PR_GET_HOST_ADDR_AS_NAME
-        
+            
             while (buf[len] && (len < buflen)) {
                 if (buf[len] == '.') {
                     buf[len] = '\0';
                     break;
                 }
                 len += 1;
-            }    
+            }
 #endif
-         break;
+            break;
 
-      case PR_SI_SYSNAME:
-        
+        case PR_SI_SYSNAME:
+            
 #if defined(XP_UNIX) || defined(WIN32)
-        if (PR_FAILURE == _PR_MD_GETSYSINFO(cmd, buf, (PRUintn)buflen))
-            return PR_FAILURE;
+            if (PR_FAILURE == _PR_MD_GETSYSINFO(cmd, buf, (PRUintn)buflen)) {
+                return PR_FAILURE;
+            }
 #else
-        (void)PR_snprintf(buf, buflen, _PR_SI_SYSNAME);
+            (void)PR_snprintf(buf, buflen, _PR_SI_SYSNAME);
 #endif
-        break;
+            break;
 
-      case PR_SI_RELEASE:
-        
+        case PR_SI_RELEASE:
+            
 #if defined(XP_UNIX) || defined(WIN32)
-        if (PR_FAILURE == _PR_MD_GETSYSINFO(cmd, buf, (PRUintn)buflen))
-            return PR_FAILURE;
+            if (PR_FAILURE == _PR_MD_GETSYSINFO(cmd, buf, (PRUintn)buflen)) {
+                return PR_FAILURE;
+            }
 #endif
 #if defined(XP_OS2)
-        {
-            ULONG os2ver[2] = {0};
-            DosQuerySysInfo(QSV_VERSION_MINOR, QSV_VERSION_REVISION,
-                            &os2ver, sizeof(os2ver));
-            
+            {
+                ULONG os2ver[2] = {0};
+                DosQuerySysInfo(QSV_VERSION_MINOR, QSV_VERSION_REVISION,
+                                &os2ver, sizeof(os2ver));
+                
 
-            if (os2ver[0] < 30)
-              (void)PR_snprintf(buf, buflen, "%s%lu",
-                                "2.", os2ver[0]);
-            else if (os2ver[0] < 45)
-              (void)PR_snprintf(buf, buflen, "%lu%s%lu",
-                                os2ver[0]/10, ".", os2ver[1]);
-            else
-              (void)PR_snprintf(buf, buflen, "%.1f",
-                                os2ver[0]/10.0);
-        }
+                if (os2ver[0] < 30)
+                    (void)PR_snprintf(buf, buflen, "%s%lu",
+                                      "2.", os2ver[0]);
+                else if (os2ver[0] < 45)
+                    (void)PR_snprintf(buf, buflen, "%lu%s%lu",
+                                      os2ver[0]/10, ".", os2ver[1]);
+                else
+                    (void)PR_snprintf(buf, buflen, "%.1f",
+                                      os2ver[0]/10.0);
+            }
 #endif 
-        break;
+            break;
 
-      case PR_SI_ARCHITECTURE:
-        
-        (void)PR_snprintf(buf, buflen, _PR_SI_ARCHITECTURE);
-        break;
-	  default:
-			PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
-			return PR_FAILURE;
+        case PR_SI_ARCHITECTURE:
+            
+            (void)PR_snprintf(buf, buflen, _PR_SI_ARCHITECTURE);
+            break;
+        default:
+            PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
+            return PR_FAILURE;
     }
     return PR_SUCCESS;
 }
@@ -261,8 +267,9 @@ PR_IMPLEMENT(PRUint64) PR_GetPhysicalMemorySize(void)
 
     long pageSize = sysconf(_SC_PAGESIZE);
     long pageCount = sysconf(_SC_PHYS_PAGES);
-    if (pageSize >= 0 && pageCount >= 0)
+    if (pageSize >= 0 && pageCount >= 0) {
         bytes = (PRUint64) pageSize * pageCount;
+    }
 
 #elif defined(NETBSD) || defined(OPENBSD) \
     || defined(FREEBSD) || defined(DRAGONFLY)
@@ -291,8 +298,9 @@ PR_IMPLEMENT(PRUint64) PR_GetPhysicalMemorySize(void)
 
     struct pst_static info;
     int result = pstat_getstatic(&info, sizeof(info), 1, 0);
-    if (result == 1)
+    if (result == 1) {
         bytes = (PRUint64) info.physical_memory * info.page_size;
+    }
 
 #elif defined(DARWIN)
 
@@ -305,15 +313,17 @@ PR_IMPLEMENT(PRUint64) PR_GetPhysicalMemorySize(void)
                            (host_info_t) &hInfo,
                            &count);
     mach_port_deallocate(mach_task_self(), mach_host);
-    if (result == KERN_SUCCESS)
+    if (result == KERN_SUCCESS) {
         bytes = hInfo.max_mem;
+    }
 
 #elif defined(WIN32)
 
     MEMORYSTATUSEX memStat;
     memStat.dwLength = sizeof(memStat);
-    if (GlobalMemoryStatusEx(&memStat))
+    if (GlobalMemoryStatusEx(&memStat)) {
         bytes = memStat.ullTotalPhys;
+    }
 
 #elif defined(OS2)
 

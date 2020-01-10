@@ -10,7 +10,7 @@
 #include <windows.h>
 #include "primpl.h"
 
-PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np) 
+PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np)
 {
 #if defined(_X86_)
     CONTEXT context;
@@ -89,7 +89,7 @@ GetMyFiberID()
         mov    EAX, DWORD PTR [EDX+10h]
         mov    [fiberData], EAX
     }
-  
+
     return fiberData;
 #else
     PR_NOT_REACHED("not implemented");

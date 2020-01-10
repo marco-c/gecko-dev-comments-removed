@@ -20,7 +20,7 @@ void _MD_EarlyInit(void)
 PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np)
 {
     if (isCurrent) {
-	(void) setjmp(CONTEXT(t));
+        (void) setjmp(CONTEXT(t));
     }
     *np = sizeof(CONTEXT(t)) / sizeof(PRWord);
     return (PRWord *) CONTEXT(t);
@@ -29,7 +29,7 @@ PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np)
 #ifdef ALARMS_BREAK_TCP 
 
 PRInt32 _MD_connect(PRInt32 osfd, const PRNetAddr *addr, PRInt32 addrlen,
-                        PRIntervalTime timeout)
+                    PRIntervalTime timeout)
 {
     PRInt32 rv;
 
@@ -39,7 +39,7 @@ PRInt32 _MD_connect(PRInt32 osfd, const PRNetAddr *addr, PRInt32 addrlen,
 }
 
 PRInt32 _MD_accept(PRInt32 osfd, PRNetAddr *addr, PRInt32 addrlen,
-                        PRIntervalTime timeout)
+                   PRIntervalTime timeout)
 {
     PRInt32 rv;
 
@@ -64,8 +64,9 @@ void
 _MD_INIT_ATOMIC(void)
 {
     
-    if ((_uw_semf = tmpfile()) == NULL)
+    if ((_uw_semf = tmpfile()) == NULL) {
         PR_ASSERT(0);
+    }
 
     return;
 }
@@ -112,7 +113,7 @@ _MD_SET_PRIORITY(_MDThread *thread, PRUintn newPri)
 PRStatus
 _MD_InitializeThread(PRThread *thread)
 {
-	return PR_SUCCESS;
+    return PR_SUCCESS;
 }
 
 PRStatus
@@ -127,7 +128,7 @@ PRStatus
 _MD_WAKEUP_WAITER(PRThread *thread)
 {
     if (thread) {
-	PR_ASSERT(!(thread->flags & _PR_GLOBAL_SCOPE));
+        PR_ASSERT(!(thread->flags & _PR_GLOBAL_SCOPE));
     }
     return PR_SUCCESS;
 }
@@ -230,30 +231,31 @@ void _MD_EarlyInit(void)
     sigaddset(&set, SIGALRM);
 }
 
-PRStatus _MD_CREATE_THREAD(PRThread *thread, 
-					void (*start)(void *), 
-					PRThreadPriority priority,
-					PRThreadScope scope, 
-					PRThreadState state, 
-					PRUint32 stackSize) 
+PRStatus _MD_CREATE_THREAD(PRThread *thread,
+                           void (*start)(void *),
+                           PRThreadPriority priority,
+                           PRThreadScope scope,
+                           PRThreadState state,
+                           PRUint32 stackSize)
 {
-	long flags;
-	
-    
-    thr_sigsetmask(SIG_BLOCK, &set, &oldset); 
+    long flags;
 
-    flags = (state == PR_JOINABLE_THREAD ? THR_SUSPENDED 
-			   : THR_SUSPENDED|THR_DETACHED);
-	if (_PR_IS_GCABLE_THREAD(thread) ||
-							(scope == PR_GLOBAL_BOUND_THREAD))
-		flags |= THR_BOUND;
+    
+    thr_sigsetmask(SIG_BLOCK, &set, &oldset);
+
+    flags = (state == PR_JOINABLE_THREAD ? THR_SUSPENDED
+             : THR_SUSPENDED|THR_DETACHED);
+    if (_PR_IS_GCABLE_THREAD(thread) ||
+        (scope == PR_GLOBAL_BOUND_THREAD)) {
+        flags |= THR_BOUND;
+    }
 
     if (thr_create(NULL, thread->stack->stackSize,
-                  (void *(*)(void *)) start, (void *) thread, 
-				  flags,
-                  &thread->md.handle)) {
-        thr_sigsetmask(SIG_SETMASK, &oldset, NULL); 
-	return PR_FAILURE;
+                   (void *(*)(void *)) start, (void *) thread,
+                   flags,
+                   &thread->md.handle)) {
+        thr_sigsetmask(SIG_SETMASK, &oldset, NULL);
+        return PR_FAILURE;
     }
 
 
@@ -262,11 +264,11 @@ PRStatus _MD_CREATE_THREAD(PRThread *thread,
 
 
     thread->md.lwpid = -1;
-    thr_sigsetmask(SIG_SETMASK, &oldset, NULL); 
+    thr_sigsetmask(SIG_SETMASK, &oldset, NULL);
     _MD_NEW_SEM(&thread->md.waiter_sem, 0);
 
-	if ((scope == PR_GLOBAL_THREAD) || (scope == PR_GLOBAL_BOUND_THREAD)) {
-		thread->flags |= _PR_GLOBAL_SCOPE;
+    if ((scope == PR_GLOBAL_THREAD) || (scope == PR_GLOBAL_BOUND_THREAD)) {
+        thread->flags |= _PR_GLOBAL_SCOPE;
     }
 
     
@@ -277,19 +279,19 @@ PRStatus _MD_CREATE_THREAD(PRThread *thread,
 
 
     {
-    int pri;
-    pri = thread->priority;
-    thread->priority = 100;
-    PR_SetThreadPriority( thread, pri );
+        int pri;
+        pri = thread->priority;
+        thread->priority = 100;
+        PR_SetThreadPriority( thread, pri );
 
-    PR_LOG(_pr_thread_lm, PR_LOG_MIN, 
-            ("(0X%x)[Start]: on to runq at priority %d",
-            thread, thread->priority));
+        PR_LOG(_pr_thread_lm, PR_LOG_MIN,
+               ("(0X%x)[Start]: on to runq at priority %d",
+                thread, thread->priority));
     }
 
     
     if (thr_continue( thread->md.handle ) ) {
-	return PR_FAILURE;
+        return PR_FAILURE;
     }
     return PR_SUCCESS;
 }
@@ -310,17 +312,17 @@ void _MD_cleanup_thread(PRThread *thread)
         thr_suspend(hdl);
     }
     PR_LOG(_pr_thread_lm, PR_LOG_MIN,
-            ("(0X%x)[DestroyThread]\n", thread));
+           ("(0X%x)[DestroyThread]\n", thread));
 
     _MD_DESTROY_SEM(&thread->md.waiter_sem);
 }
 
 void _MD_SET_PRIORITY(_MDThread *md_thread, PRUintn newPri)
 {
-	if(thr_setprio((thread_t)md_thread->handle, newPri)) {
-		PR_LOG(_pr_thread_lm, PR_LOG_MIN,
-		   ("_PR_SetThreadPriority: can't set thread priority\n"));
-	}
+    if(thr_setprio((thread_t)md_thread->handle, newPri)) {
+        PR_LOG(_pr_thread_lm, PR_LOG_MIN,
+               ("_PR_SetThreadPriority: can't set thread priority\n"));
+    }
 }
 
 void _MD_WAIT_CV(
@@ -373,18 +375,18 @@ PRThread *_pr_current_thread_tls()
 PRStatus
 _MD_WAIT(PRThread *thread, PRIntervalTime ticks)
 {
-        _MD_WAIT_SEM(&thread->md.waiter_sem);
-        return PR_SUCCESS;
+    _MD_WAIT_SEM(&thread->md.waiter_sem);
+    return PR_SUCCESS;
 }
 
 PRStatus
 _MD_WAKEUP_WAITER(PRThread *thread)
 {
-	if (thread == NULL) {
-		return PR_SUCCESS;
-	}
-	_MD_POST_SEM(&thread->md.waiter_sem);
-	return PR_SUCCESS;
+    if (thread == NULL) {
+        return PR_SUCCESS;
+    }
+    _MD_POST_SEM(&thread->md.waiter_sem);
+    return PR_SUCCESS;
 }
 
 _PRCPU *_pr_current_cpu_tls()
@@ -412,39 +414,40 @@ void _MD_INIT_IO (void)
 
 PRStatus _MD_InitializeThread(PRThread *thread)
 {
-    if (!_PR_IS_NATIVE_THREAD(thread))
+    if (!_PR_IS_NATIVE_THREAD(thread)) {
         return;
-		
+    }
+    
 
 
     thread->md.sp = (uint_t) thread->stack->allocBase - sizeof(long);
     thread->md.lwpid = _lwp_self();
     thread->md.handle = THR_SELF();
 
-	
+    
 
 
     thread->flags |= _PR_GLOBAL_SCOPE;
 
- 	
+    
 
 
 
 
-	if (thread->flags & (_PR_PRIMORDIAL | _PR_ATTACHED)) {
-	    _MD_NEW_SEM(&thread->md.waiter_sem, 0);
-	    _MD_SET_PRIORITY(&(thread->md), thread->priority);
-	}
-	return PR_SUCCESS;
+    if (thread->flags & (_PR_PRIMORDIAL | _PR_ATTACHED)) {
+        _MD_NEW_SEM(&thread->md.waiter_sem, 0);
+        _MD_SET_PRIORITY(&(thread->md), thread->priority);
+    }
+    return PR_SUCCESS;
 }
 
-static sigset_t old_mask;	
-static int gcprio;		
-static lwpid_t *all_lwps=NULL;	
+static sigset_t old_mask;   
+static int gcprio;      
+static lwpid_t *all_lwps=NULL;  
 static int num_lwps ;
 static int suspendAllOn = 0;
 
-#define VALID_SP(sp, bottom, top)	\
+#define VALID_SP(sp, bottom, top)   \
        (((uint_t)(sp)) > ((uint_t)(bottom)) && ((uint_t)(sp)) < ((uint_t)(top)))
 
 void unixware_preempt_off()
@@ -456,7 +459,7 @@ void unixware_preempt_off()
 
 void unixware_preempt_on()
 {
-    sigprocmask (SIG_SETMASK, &old_mask, NULL);      
+    sigprocmask (SIG_SETMASK, &old_mask, NULL);
 }
 
 void _MD_Begin_SuspendAll()
@@ -466,7 +469,7 @@ void _MD_Begin_SuspendAll()
     PR_LOG(_pr_gc_lm, PR_LOG_ALWAYS, ("Begin_SuspendAll\n"));
     
     thr_getprio(thr_self(), &gcprio);
-    thr_setprio(thr_self(), 0x7fffffff); 
+    thr_setprio(thr_self(), 0x7fffffff);
     suspendAllOn = 1;
 }
 
@@ -484,12 +487,13 @@ void _MD_End_ResumeAll()
 
 void _MD_Suspend(PRThread *thr)
 {
-   int lwp_fd, result;
-   int lwp_main_proc_fd = 0;
+    int lwp_fd, result;
+    int lwp_main_proc_fd = 0;
 
     thr_suspend(thr->md.handle);
-    if (!_PR_IS_GCABLE_THREAD(thr))
-      return;
+    if (!_PR_IS_GCABLE_THREAD(thr)) {
+        return;
+    }
     
 
 
@@ -497,42 +501,46 @@ void _MD_Suspend(PRThread *thr)
 
 
 
-    if (thr->flags & _PR_PRIMORDIAL)
-      return;
+    if (thr->flags & _PR_PRIMORDIAL) {
+        return;
+    }
 
     
-    if (!suspendAllOn || thr->md.lwpid == -1)
-      return;
+    if (!suspendAllOn || thr->md.lwpid == -1) {
+        return;
+    }
 
 }
 void _MD_Resume(PRThread *thr)
 {
-   if (!_PR_IS_GCABLE_THREAD(thr) || !suspendAllOn){
-     
+    if (!_PR_IS_GCABLE_THREAD(thr) || !suspendAllOn) {
+        
 
 
 
-      PR_ASSERT(!suspendAllOn);
-      thr_continue(thr->md.handle);
-      return;
-   }
-   if (thr->md.lwpid == -1)
-     return;
- 
-   if ( _lwp_continue(thr->md.lwpid) < 0) {
-      PR_ASSERT(0);  
-   }
+        PR_ASSERT(!suspendAllOn);
+        thr_continue(thr->md.handle);
+        return;
+    }
+    if (thr->md.lwpid == -1) {
+        return;
+    }
+
+    if ( _lwp_continue(thr->md.lwpid) < 0) {
+        PR_ASSERT(0);  
+    }
 }
 
 
 PRWord *_MD_HomeGCRegisters(PRThread *t, int isCurrent, int *np)
 {
     if (isCurrent) {
-	(void) getcontext(CONTEXT(t));	
+        (void) getcontext(CONTEXT(t));  
     }
     *np = NGREG;
-    if (t->md.lwpid == -1)
-      memset(&t->md.context.uc_mcontext.gregs[0], 0, NGREG * sizeof(PRWord));
+    if (t->md.lwpid == -1) {
+        memset(&t->md.context.uc_mcontext.gregs[0], 0, NGREG * sizeof(PRWord));
+    }
     return (PRWord*) &t->md.context.uc_mcontext.gregs[0];
 }
 
@@ -540,7 +548,7 @@ int
 _pr_unixware_clock_gettime (struct timespec *tp)
 {
     struct timeval tv;
- 
+
     gettimeofday(&tv, NULL);
     tp->tv_sec = tv.tv_sec;
     tp->tv_nsec = tv.tv_usec * 1000;
