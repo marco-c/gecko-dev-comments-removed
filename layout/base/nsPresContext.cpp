@@ -331,15 +331,6 @@ bool nsPresContext::IsChrome() const {
   return Document()->IsInChromeDocShell();
 }
 
-bool nsPresContext::IsChromeOriginImage() const {
-  return Document()->IsBeingUsedAsImage() &&
-         Document()->IsDocumentURISchemeChrome();
-}
-
-void nsPresContext::GetDocumentColorPreferences() {
-  PreferenceSheet::EnsureInitialized();
-}
-
 void nsPresContext::GetUserPreferences() {
   if (!GetPresShell()) {
     
@@ -350,8 +341,7 @@ void nsPresContext::GetUserPreferences() {
   mAutoQualityMinFontSizePixelsPref =
       Preferences::GetInt("browser.display.auto_quality_min_font_size");
 
-  
-  GetDocumentColorPreferences();
+  PreferenceSheet::EnsureInitialized();
 
   mSendAfterPaintToContent = Preferences::GetBool(
       "dom.send_after_paint_to_content", mSendAfterPaintToContent);
@@ -1336,11 +1326,9 @@ void nsPresContext::SysColorChangedInternal() {
   
   RefreshSystemMetrics();
 
+  
+  
   PreferenceSheet::Refresh();
-
-  
-  
-  GetDocumentColorPreferences();
 
   
   

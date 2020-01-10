@@ -806,7 +806,6 @@ class nsPresContext : public nsISupports,
 
   
   bool IsChrome() const;
-  bool IsChromeOriginImage() const;
 
   
   bool HasAuthorSpecifiedRules(const nsIFrame* aFrame,
@@ -1041,7 +1040,6 @@ class nsPresContext : public nsISupports,
   void SetImgAnimations(nsIContent* aParent, uint16_t aMode);
   void SetSMILAnimations(mozilla::dom::Document* aDoc, uint16_t aNewMode,
                          uint16_t aOldMode);
-  void GetDocumentColorPreferences();
 
   void PreferenceChanged(const char* aPrefName);
 
