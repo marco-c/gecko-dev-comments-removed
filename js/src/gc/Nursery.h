@@ -183,9 +183,7 @@ class Nursery {
   explicit Nursery(JSRuntime* rt);
   ~Nursery();
 
-  MOZ_MUST_USE bool init(uint32_t maxNurseryBytes, AutoLockGCBgAlloc& lock);
-
-  unsigned chunkCountLimit() const { return chunkCountLimit_; }
+  MOZ_MUST_USE bool init(AutoLockGCBgAlloc& lock);
 
   
   unsigned allocatedChunkCount() const { return chunks_.length(); }
@@ -435,10 +433,6 @@ class Nursery {
   
   
   size_t capacity_;
-
-  
-  
-  unsigned chunkCountLimit_;
 
   mozilla::TimeDuration timeInChunkAlloc_;
 
