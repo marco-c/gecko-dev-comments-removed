@@ -246,10 +246,7 @@ var gSync = {
   showSendToDeviceView(anchor) {
     PanelUI.showSubView("PanelUI-sendTabToDevice", anchor);
     let panelViewNode = document.getElementById("PanelUI-sendTabToDevice");
-    this.populateSendTabToDevicesView(
-      panelViewNode,
-      this.populateSendTabToDevicesView.bind(this)
-    );
+    this.populateSendTabToDevicesView(panelViewNode);
   },
 
   showSendToDeviceViewFromFxaMenu(anchor) {
@@ -278,7 +275,7 @@ var gSync = {
     this.emitFxaToolbarTelemetry("sync_tabs_sidebar", panel);
   },
 
-  populateSendTabToDevicesView(panelViewNode, reloadFunc) {
+  populateSendTabToDevicesView(panelViewNode, reloadDevices = true) {
     let bodyNode = panelViewNode.querySelector(".panel-subview-body");
     let panelNode = panelViewNode.closest("panel");
     let browser = gBrowser.selectedBrowser;
@@ -330,13 +327,14 @@ var gSync = {
     
     if (gSync.sendTabConfiguredAndLoading) {
       bodyNode.setAttribute("state", "notready");
+    }
+    if (reloadDevices) {
       
       Services.tm.dispatchToMainThread(async () => {
-        await Weave.Service.sync({ why: "pageactions", engines: [] }); 
         
-        
-        if (!window.closed && !gSync.sendTabConfiguredAndLoading) {
-          reloadFunc(panelViewNode);
+        await Weave.Service.sync({ why: "pageactions", engines: [] });
+        if (!window.closed) {
+          this.populateSendTabToDevicesView(panelViewNode, false);
         }
       });
     }
