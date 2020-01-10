@@ -10,17 +10,22 @@ wpt_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os
 
 
 
+EXCLUDES = [
+    "!tools/",
+    "!docs/",
+    "!conformance-checkers/",
+    "!.*/OWNERS",
+    "!.*/META.yml",
+    "!.*/tools/",
+    "!.*/README",
+    "!css/[^/]*$"
+]
+
+
+
 job_path_map = {
-    "stability": [".*/.*",
-                  "!tools/",
-                  "!docs/",
-                  "!resources/*",
-                  "!conformance-checkers/",
-                  "!.*/OWNERS",
-                  "!.*/META.yml",
-                  "!.*/tools/",
-                  "!.*/README",
-                  "!css/[^/]*$"],
+    "affected_tests": [".*/.*", "!resources/(?!idlharness.js)"] + EXCLUDES,
+    "stability": [".*/.*", "!resources/.*"] + EXCLUDES,
     "lint": [".*"],
     "manifest_upload": [".*"],
     "resources_unittest": ["resources/", "tools/"],
