@@ -137,7 +137,7 @@ const startupPhases = {
       name: "PCompositorBridge::Msg_WillClose",
       condition: WIN,
       ignoreIfUnused: true, 
-      maxCount: 1,
+      maxCount: 2,
     },
     {
       name: "PCompositorBridge::Msg_MakeSnapshot",
