@@ -37,8 +37,8 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
-  "LoginManagerContent",
-  "resource://gre/modules/LoginManagerContent.jsm"
+  "LoginManagerChild",
+  "resource://gre/modules/LoginManagerChild.jsm"
 );
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -505,7 +505,7 @@ LoginAutoComplete.prototype = {
       previousResult = null;
     }
 
-    let loginManager = LoginManagerContent.forWindow(aElement.ownerGlobal);
+    let loginManager = LoginManagerChild.forWindow(aElement.ownerGlobal);
     let acLookupPromise = (this._autoCompleteLookupPromise = loginManager._autoCompleteSearchAsync(
       aSearchString,
       previousResult,

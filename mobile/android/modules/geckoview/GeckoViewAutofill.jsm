@@ -16,7 +16,7 @@ const { GeckoViewUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   FormLikeFactory: "resource://gre/modules/FormLikeFactory.jsm",
-  LoginManagerContent: "resource://gre/modules/LoginManagerContent.jsm",
+  LoginManagerChild: "resource://gre/modules/LoginManagerChild.jsm",
 });
 
 const { debug, warn } = GeckoViewUtils.initLogging("Autofill"); 
@@ -152,7 +152,7 @@ class GeckoViewAutofill {
       }
     }
 
-    const [usernameField] = LoginManagerContent.forWindow(
+    const [usernameField] = LoginManagerChild.forWindow(
       window
     ).getUserNameAndPasswordFields(passwordField || aFormLike.elements[0]);
 
