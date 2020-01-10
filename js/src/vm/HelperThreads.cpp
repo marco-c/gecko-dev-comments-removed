@@ -1127,38 +1127,43 @@ bool GlobalHelperThreadState::ensureInitialized() {
   MOZ_ASSERT(CanUseExtraThreads());
 
   MOZ_ASSERT(this == &HelperThreadState());
-  AutoLockHelperThreadState lock;
 
-  if (threads) {
-    return true;
-  }
+  {
+    
+    AutoLockHelperThreadState lock;
 
-  threads = js::MakeUnique<HelperThreadVector>();
-  if (!threads || !threads->initCapacity(threadCount)) {
-    return false;
-  }
+    if (threads) {
+      return true;
+    }
 
-  for (size_t i = 0; i < threadCount; i++) {
-    threads->infallibleEmplaceBack();
-    HelperThread& helper = (*threads)[i];
-
-    helper.thread = mozilla::Some(
-        Thread(Thread::Options().setStackSize(HELPER_STACK_SIZE)));
-    if (!helper.thread->init(HelperThread::ThreadMain, &helper)) {
+    threads = js::MakeUnique<HelperThreadVector>();
+    if (!threads) {
+      return false;
+    }
+    if (!threads->initCapacity(threadCount)) {
       goto error;
     }
 
-    continue;
+    for (size_t i = 0; i < threadCount; i++) {
+      threads->infallibleEmplaceBack();
+      HelperThread& helper = (*threads)[i];
 
-  error:
-    
-    
-    threads->popBack();
-    finishThreads();
-    return false;
+      helper.thread = mozilla::Some(
+          Thread(Thread::Options().setStackSize(HELPER_STACK_SIZE)));
+      if (!helper.thread->init(HelperThread::ThreadMain, &helper)) {
+        
+        
+        threads->popBack();
+        goto error;
+      }
+    }
   }
 
   return true;
+
+error:
+  finishThreads();
+  return false;
 }
 
 GlobalHelperThreadState::GlobalHelperThreadState()
