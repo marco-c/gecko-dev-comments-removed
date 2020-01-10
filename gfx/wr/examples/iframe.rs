@@ -41,7 +41,7 @@ impl Example for App {
         sub_builder.push_simple_stacking_context(
             sub_bounds.origin,
             space_and_clip.spatial_id,
-            PrimitiveFlags::IS_BACKFACE_VISIBLE,
+            true,
         );
 
         
@@ -73,7 +73,7 @@ impl Example for App {
         builder.push_simple_stacking_context(
             sub_bounds.origin,
             space_and_clip.spatial_id,
-            PrimitiveFlags::IS_BACKFACE_VISIBLE,
+            true,
         );
 
         
