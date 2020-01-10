@@ -116,16 +116,21 @@ function loadSourceMap(cx: Context, sourceId: SourceId) {
     try {
       
       
-      const urlInfo: Source = { ...(source: any) };
-      if (!urlInfo.url && typeof urlInfo.introductionUrl === "string") {
+      let url = source.url;
+      if (!source.url && typeof source.introductionUrl === "string") {
         
         
         
         
         
-        (urlInfo: any).url = urlInfo.introductionUrl;
+        url = source.introductionUrl;
       }
-      data = await sourceMaps.getOriginalURLs(urlInfo);
+      data = await sourceMaps.getOriginalURLs({
+        id: source.id,
+        url,
+        sourceMapURL: source.sourceMapURL || "",
+        isWasm: source.isWasm,
+      });
     } catch (e) {
       console.error(e);
     }

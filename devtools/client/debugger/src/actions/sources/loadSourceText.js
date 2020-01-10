@@ -63,7 +63,7 @@ async function loadSource(
   }
 
   if (isOriginal(source)) {
-    const result = await sourceMaps.getOriginalSourceText(source);
+    const result = await sourceMaps.getOriginalSourceText(source.id);
     if (!result) {
       
       
