@@ -935,6 +935,3 @@ add_task(async function test_showPasswordOn1stOpenOfDismissedByDefault() {
     await cleanupDoorhanger(notif);
   });
 });
-
-
-
