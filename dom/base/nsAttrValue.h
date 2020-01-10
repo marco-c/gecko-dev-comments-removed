@@ -423,12 +423,6 @@ class nsAttrValue {
 
 
 
-  bool ParseLazyURIValue(const nsAString& aString);
-
-  
-
-
-
 
 
 
