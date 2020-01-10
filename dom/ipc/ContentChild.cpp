@@ -962,16 +962,17 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   RefPtr<TabGroup> tabGroup;
+  RefPtr<BrowsingContext> openerBC;
   if (aTabOpener && !aForceNoOpener) {
     
     tabGroup = aTabOpener->TabGroup();
+    if (aParent) {
+      openerBC = nsPIDOMWindowOuter::From(aParent)->GetBrowsingContext();
+    }
   } else {
     tabGroup = new TabGroup();
   }
 
-  RefPtr<BrowsingContext> openerBC =
-      aParent ? nsPIDOMWindowOuter::From(aParent)->GetBrowsingContext()
-              : nullptr;
   RefPtr<BrowsingContext> browsingContext = BrowsingContext::Create(
       nullptr, openerBC, aName, BrowsingContext::Type::Content);
 
