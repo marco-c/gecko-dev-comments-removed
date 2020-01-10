@@ -6495,8 +6495,6 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
 
 nsresult nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
   
-  nsresult rv;
-
   if (mLoadGroup) mLoadGroup->AddRequest(this, nullptr);
 
   
@@ -6511,6 +6509,39 @@ nsresult nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
   
   mCustomAuthHeader = mRequestHead.HasHeader(nsHttp::Authorization);
 
+  if (!NS_ShouldClassifyChannel(this)) {
+    return MaybeResolveProxyAndBeginConnect();
+  }
+
+  
+  
+  
+  
+  RefPtr<nsHttpChannel> self = this;
+  bool willCallback = NS_SUCCEEDED(
+      AsyncUrlChannelClassifier::CheckChannel(this, [self]() -> void {
+        nsresult rv = self->MaybeResolveProxyAndBeginConnect();
+        if (NS_FAILED(rv)) {
+          
+          
+          
+          self->CloseCacheEntry(false);
+          Unused << self->AsyncAbort(rv);
+        }
+      }));
+
+  if (!willCallback) {
+    
+    
+    
+    
+    return MaybeResolveProxyAndBeginConnect();
+  }
+
+  return NS_OK;
+}
+
+nsresult nsHttpChannel::MaybeResolveProxyAndBeginConnect() {
   
   
   
@@ -6521,7 +6552,7 @@ nsresult nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
     return NS_OK;
   }
 
-  rv = BeginConnect();
+  nsresult rv = BeginConnect();
   if (NS_FAILED(rv)) {
     CloseCacheEntry(false);
     Unused << AsyncAbort(rv);
@@ -6739,56 +6770,29 @@ nsresult nsHttpChannel::BeginConnect() {
     return mStatus;
   }
 
-  if (!NS_ShouldClassifyChannel(this)) {
-    MaybeStartDNSPrefetch();
-    return ContinueBeginConnectWithResult();
+  if (mChannelClassifierCancellationPending) {
+    LOG(
+        ("Waiting for safe-browsing protection cancellation in BeginConnect "
+         "[this=%p]\n",
+         this));
+    return NS_OK;
+  }
+
+  ReEvaluateReferrerAfterTrackingStatusIsKnown();
+
+  MaybeStartDNSPrefetch();
+
+  rv = ContinueBeginConnectWithResult();
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   
-  
-  
-  
-  RefPtr<nsHttpChannel> self = this;
-  bool willCallback = NS_SUCCEEDED(
-      AsyncUrlChannelClassifier::CheckChannel(this, [self]() -> void {
-        auto nextFunc = [self]() -> void {
-          nsresult rv = self->BeginConnectActual();
-          if (NS_FAILED(rv)) {
-            
-            
-            
-            self->CloseCacheEntry(false);
-            Unused << self->AsyncAbort(rv);
-          }
-        };
-
-        uint32_t delayMillisec = StaticPrefs::network_delay_tracking_load();
-        if (self->IsThirdPartyTrackingResource() && delayMillisec) {
-          nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-              "nsHttpChannel::BeginConnect-delayed", nextFunc);
-          nsresult rv = NS_DelayedDispatchToCurrentThread(runnable.forget(),
-                                                          delayMillisec);
-          if (NS_SUCCEEDED(rv)) {
-            LOG(
-                ("nsHttpChannel::BeginConnect delaying 3rd-party tracking "
-                 "resource for %u ms [this=%p]",
-                 delayMillisec, self.get()));
-            return;
-          }
-          LOG(("nsHttpChannel::BeginConnect unable to delay loading. [this=%p]",
-               self.get()));
-        }
-
-        nextFunc();
-      }));
-
-  if (!willCallback) {
-    
-    
-    
-    
-    return BeginConnectActual();
-  }
+  RefPtr<nsChannelClassifier> channelClassifier =
+      GetOrCreateChannelClassifier();
+  LOG(("nsHttpChannel::Starting nsChannelClassifier %p [this=%p]",
+       channelClassifier.get(), this));
+  channelClassifier->Start();
 
   return NS_OK;
 }
@@ -6817,40 +6821,6 @@ void nsHttpChannel::MaybeStartDNSPrefetch() {
         new nsDNSPrefetch(mURI, originAttributes, this, mTimingEnabled);
     mDNSPrefetch->PrefetchHigh(mCaps & NS_HTTP_REFRESH_DNS);
   }
-}
-
-nsresult nsHttpChannel::BeginConnectActual() {
-  if (mCanceled) {
-    return mStatus;
-  }
-
-  AUTO_PROFILER_LABEL("nsHttpChannel::BeginConnectActual", NETWORK);
-
-  if (mChannelClassifierCancellationPending) {
-    LOG(
-        ("Waiting for safe-browsing protection cancellation in "
-         "BeginConnectActual [this=%p]\n",
-         this));
-    return NS_OK;
-  }
-
-  ReEvaluateReferrerAfterTrackingStatusIsKnown();
-
-  MaybeStartDNSPrefetch();
-
-  nsresult rv = ContinueBeginConnectWithResult();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  RefPtr<nsChannelClassifier> channelClassifier =
-      GetOrCreateChannelClassifier();
-  LOG(("nsHttpChannel::Starting nsChannelClassifier %p [this=%p]",
-       channelClassifier.get(), this));
-  channelClassifier->Start();
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP
