@@ -136,6 +136,10 @@ pub struct PictureCacheState {
     pub tiles: FastHashMap<TileOffset, Tile>,
     
     fract_offset: PictureVector2D,
+    
+    spatial_nodes: FastHashMap<SpatialNodeIndex, SpatialNodeDependency>,
+    
+    opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
 }
 
 
@@ -224,7 +228,16 @@ impl From<PropertyBinding<f32>> for OpacityBinding {
 }
 
 
-struct TilePreUpdateContext<'a> {
+#[derive(Debug)]
+pub struct SpatialNodeDependency {
+    
+    value: TransformKey,
+    
+    changed: bool,
+}
+
+
+struct TilePreUpdateContext {
     
     local_rect: PictureRect,
 
@@ -234,9 +247,6 @@ struct TilePreUpdateContext<'a> {
     
     
     fract_changed: bool,
-
-    
-    opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,
 }
 
 
@@ -251,13 +261,13 @@ struct TilePostUpdateContext<'a> {
     global_screen_world_rect: WorldRect,
 
     
-    clip_scroll_tree: &'a ClipScrollTree,
-
-    
     backdrop: BackdropInfo,
 
     
-    cache_spatial_node_index: SpatialNodeIndex,
+    spatial_nodes: &'a FastHashMap<SpatialNodeIndex, SpatialNodeDependency>,
+
+    
+    opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,
 }
 
 
@@ -383,10 +393,6 @@ pub struct Tile {
     pub id: TileId,
     
     
-    
-    transforms: FastHashSet<SpatialNodeIndex>,
-    
-    
     pub is_opaque: bool,
 }
 
@@ -403,7 +409,6 @@ impl Tile {
             descriptor: TileDescriptor::new(),
             is_same_content: false,
             is_valid: false,
-            transforms: FastHashSet::default(),
             id,
             is_opaque: false,
         }
@@ -444,22 +449,7 @@ impl Tile {
         self.is_same_content = !ctx.fract_changed;
 
         
-        for binding in self.descriptor.opacity_bindings.items() {
-            if let OpacityBinding::Binding(id) = binding {
-                let changed = match ctx.opacity_bindings.get(id) {
-                    Some(info) => info.changed,
-                    None => true,
-                };
-                if changed {
-                    self.is_same_content = false;
-                    break;
-                }
-            }
-        }
-
         
-        
-        self.transforms.clear();
         self.descriptor.clear();
     }
 
@@ -468,15 +458,58 @@ impl Tile {
         &mut self,
         info: &PrimitiveDependencyInfo,
         cache_spatial_node_index: SpatialNodeIndex,
+        used_spatial_nodes: &mut FastHashSet<SpatialNodeIndex>,
     ) {
         
         self.is_same_content &= info.is_cacheable;
 
-        
-        self.descriptor.image_keys.extend_from_slice(&info.image_keys);
+        let initial_extra_dep_count = self.descriptor.extra_dependencies.len();
 
         
-        self.descriptor.opacity_bindings.extend_from_slice(&info.opacity_bindings);
+        if !info.image_keys.is_empty() {
+            self.descriptor.image_keys.extend_from_slice(&info.image_keys);
+            self.descriptor.extra_dependencies.push(PrimitiveDependency {
+                kind: PrimitiveDependencyKind::ImageKey,
+                count: info.image_keys.len() as u16,
+            });
+        }
+
+        
+        if !info.opacity_bindings.is_empty() {
+            self.descriptor.opacity_bindings.extend_from_slice(&info.opacity_bindings);
+            self.descriptor.extra_dependencies.push(PrimitiveDependency {
+                kind: PrimitiveDependencyKind::OpacityBinding,
+                count: info.opacity_bindings.len() as u16,
+            });
+        }
+
+        
+        if !info.clips.is_empty() {
+            self.descriptor.clips.extend_from_slice(&info.clips);
+            self.descriptor.extra_dependencies.push(PrimitiveDependency {
+                kind: PrimitiveDependencyKind::Clip,
+                count: info.clips.len() as u16,
+            });
+        }
+
+        
+        
+        let current_transform_count = self.descriptor.transforms.len();
+        if info.prim_spatial_node_index != cache_spatial_node_index {
+            self.descriptor.transforms.push(info.prim_spatial_node_index);
+            used_spatial_nodes.insert(info.prim_spatial_node_index);
+        }
+        for spatial_node_index in &info.clip_spatial_nodes {
+            self.descriptor.transforms.push(*spatial_node_index);
+            used_spatial_nodes.insert(*spatial_node_index);
+        }
+        let transform_dep_count = self.descriptor.transforms.len() - current_transform_count;
+        if transform_dep_count != 0 {
+            self.descriptor.extra_dependencies.push(PrimitiveDependency {
+                kind: PrimitiveDependencyKind::Transform,
+                count: transform_dep_count as u16,
+            });
+        }
 
         
         
@@ -516,21 +549,9 @@ impl Tile {
         self.descriptor.prims.push(PrimitiveDescriptor {
             prim_uid: info.prim_uid,
             origin: prim_origin.into(),
-            first_clip: self.descriptor.clips.len() as u16,
-            clip_count: info.clips.len() as u16,
             prim_clip_rect: prim_clip_rect.into(),
+            extra_dep_count: (self.descriptor.extra_dependencies.len() - initial_extra_dep_count) as u16,
         });
-
-        self.descriptor.clips.extend_from_slice(&info.clips);
-
-        
-        
-        if info.prim_spatial_node_index != cache_spatial_node_index {
-            self.transforms.insert(info.prim_spatial_node_index);
-        }
-        for spatial_node_index in &info.clip_spatial_nodes {
-            self.transforms.insert(*spatial_node_index);
-        }
     }
 
     
@@ -544,35 +565,40 @@ impl Tile {
         self.is_opaque = ctx.backdrop.rect.contains_rect(&self.clipped_rect);
 
         
-        let mut transform_spatial_nodes: Vec<SpatialNodeIndex> = self.transforms.drain().collect();
-        transform_spatial_nodes.sort();
-        for spatial_node_index in transform_spatial_nodes {
-            
-            
-            let transform = if ctx.cache_spatial_node_index >= spatial_node_index {
-                ctx.clip_scroll_tree
-                    .get_relative_transform(
-                        ctx.cache_spatial_node_index,
-                        spatial_node_index,
-                    )
-            } else {
-                ctx.clip_scroll_tree
-                    .get_relative_transform(
-                        spatial_node_index,
-                        ctx.cache_spatial_node_index,
-                    )
-            };
-            self.descriptor.transforms.push(transform.into());
+        if self.is_same_content {
+            for binding in self.descriptor.opacity_bindings.items() {
+                if let OpacityBinding::Binding(id) = binding {
+                    let changed = ctx.opacity_bindings
+                        .get(id)
+                        .map_or(true, |info| info.changed);
+                    if changed {
+                        self.is_same_content = false;
+                        break;
+                    }
+                }
+            }
         }
 
         
         
         
         
-        for image_key in self.descriptor.image_keys.items() {
-            if state.resource_cache.is_image_dirty(*image_key) {
-                self.is_same_content = false;
-                break;
+        if self.is_same_content {
+            for image_key in self.descriptor.image_keys.items() {
+                if state.resource_cache.is_image_dirty(*image_key) {
+                    self.is_same_content = false;
+                    break;
+                }
+            }
+        }
+
+        
+        if self.is_same_content {
+            for spatial_node_index in self.descriptor.transforms.items() {
+                if ctx.spatial_nodes[spatial_node_index].changed {
+                    self.is_same_content = false;
+                    break;
+                }
             }
         }
 
@@ -719,6 +745,23 @@ impl Tile {
 }
 
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(u16)]
+enum PrimitiveDependencyKind {
+    Clip,
+    ImageKey,
+    OpacityBinding,
+    Transform,
+}
+
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct PrimitiveDependency {
+    kind: PrimitiveDependencyKind,
+    count: u16,
+}
+
+
 #[derive(Debug, Clone)]
 pub struct PrimitiveDescriptor {
     
@@ -730,9 +773,7 @@ pub struct PrimitiveDescriptor {
     
     prim_clip_rect: RectangleKey,
     
-    first_clip: u16,
-    
-    clip_count: u16,
+    extra_dep_count: u16,
 }
 
 impl PartialEq for PrimitiveDescriptor {
@@ -742,10 +783,7 @@ impl PartialEq for PrimitiveDescriptor {
         if self.prim_uid != other.prim_uid {
             return false;
         }
-        if self.first_clip != other.first_clip {
-            return false;
-        }
-        if self.clip_count != other.clip_count {
+        if self.extra_dep_count != other.extra_dep_count {
             return false;
         }
 
@@ -823,7 +861,11 @@ pub struct TileDescriptor {
 
     
     
-    transforms: ComparableVec<TransformKey>,
+    transforms: ComparableVec<SpatialNodeIndex>,
+
+    
+    
+    extra_dependencies: ComparableVec<PrimitiveDependency>,
 }
 
 impl TileDescriptor {
@@ -834,6 +876,7 @@ impl TileDescriptor {
             opacity_bindings: ComparableVec::new(),
             image_keys: ComparableVec::new(),
             transforms: ComparableVec::new(),
+            extra_dependencies: ComparableVec::new(),
         }
     }
 
@@ -845,6 +888,7 @@ impl TileDescriptor {
         self.opacity_bindings.reset();
         self.image_keys.reset();
         self.transforms.reset();
+        self.extra_dependencies.reset();
     }
 
     
@@ -864,6 +908,9 @@ impl TileDescriptor {
             return false;
         }
         if !self.transforms.is_valid() {
+            return false;
+        }
+        if !self.extra_dependencies.is_valid() {
             return false;
         }
 
@@ -1027,6 +1074,14 @@ pub struct TileCacheInstance {
     
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
     
+    
+    spatial_nodes: FastHashMap<SpatialNodeIndex, SpatialNodeDependency>,
+    
+    
+    
+    
+    used_spatial_nodes: FastHashSet<SpatialNodeIndex>,
+    
     pub dirty_region: DirtyRegion,
     
     tile_size: PictureSize,
@@ -1077,6 +1132,8 @@ impl TileCacheInstance {
                 PictureRect::zero(),
             ),
             opacity_bindings: FastHashMap::default(),
+            spatial_nodes: FastHashMap::default(),
+            used_spatial_nodes: FastHashSet::default(),
             dirty_region: DirtyRegion::new(),
             tile_size: PictureSize::zero(),
             tile_rect: TileRect::zero(),
@@ -1162,6 +1219,8 @@ impl TileCacheInstance {
         if let Some(prev_state) = frame_state.retained_tiles.caches.remove(&self.slice) {
             self.tiles.extend(prev_state.tiles);
             self.fract_offset = prev_state.fract_offset;
+            self.spatial_nodes = prev_state.spatial_nodes;
+            self.opacity_bindings = prev_state.opacity_bindings;
         }
 
         
@@ -1328,7 +1387,6 @@ impl TileCacheInstance {
             local_rect: self.local_rect,
             pic_to_world_mapper,
             fract_changed,
-            opacity_bindings: &self.opacity_bindings,
         };
 
         for y in y0 .. y1 {
@@ -1582,6 +1640,7 @@ impl TileCacheInstance {
                 tile.add_prim_dependency(
                     &prim_info,
                     self.spatial_node_index,
+                    &mut self.used_spatial_nodes,
                 );
             }
         }
@@ -1602,13 +1661,46 @@ impl TileCacheInstance {
         self.tiles_to_draw.clear();
         self.dirty_region.clear();
 
+        
+        let mut old_spatial_nodes = mem::replace(&mut self.spatial_nodes, FastHashMap::default());
+
+        
+        
+        for spatial_node_index in self.used_spatial_nodes.drain() {
+            
+            let mut value = get_transform_key(
+                spatial_node_index,
+                self.spatial_node_index,
+                frame_context.clip_scroll_tree,
+            );
+
+            
+            let mut changed = true;
+            if let Some(old_info) = old_spatial_nodes.remove(&spatial_node_index) {
+                if old_info.value == value {
+                    
+                    
+                    
+                    
+                    
+                    value = old_info.value;
+                    changed = false;
+                }
+            }
+
+            self.spatial_nodes.insert(spatial_node_index, SpatialNodeDependency {
+                changed,
+                value,
+            });
+        }
+
         let ctx = TilePostUpdateContext {
             debug_flags: frame_context.debug_flags,
             global_device_pixel_scale: frame_context.global_device_pixel_scale,
             global_screen_world_rect: frame_context.global_screen_world_rect,
             backdrop: self.backdrop,
-            cache_spatial_node_index: self.spatial_node_index,
-            clip_scroll_tree: frame_context.clip_scroll_tree,
+            spatial_nodes: &self.spatial_nodes,
+            opacity_bindings: &self.opacity_bindings,
         };
 
         let mut state = TilePostUpdateState {
@@ -2402,6 +2494,8 @@ impl PicturePrimitive {
                     tile_cache.slice,
                     PictureCacheState {
                         tiles: tile_cache.tiles,
+                        spatial_nodes: tile_cache.spatial_nodes,
+                        opacity_bindings: tile_cache.opacity_bindings,
                         fract_offset: tile_cache.fract_offset,
                     },
                 );
@@ -3606,4 +3700,27 @@ fn create_raster_mappers(
     );
 
     (map_raster_to_world, map_pic_to_raster)
+}
+
+fn get_transform_key(
+    spatial_node_index: SpatialNodeIndex,
+    cache_spatial_node_index: SpatialNodeIndex,
+    clip_scroll_tree: &ClipScrollTree,
+) -> TransformKey {
+    
+    
+    let transform = if cache_spatial_node_index >= spatial_node_index {
+        clip_scroll_tree
+            .get_relative_transform(
+                cache_spatial_node_index,
+                spatial_node_index,
+            )
+    } else {
+        clip_scroll_tree
+            .get_relative_transform(
+                spatial_node_index,
+                cache_spatial_node_index,
+            )
+    };
+    transform.into()
 }
