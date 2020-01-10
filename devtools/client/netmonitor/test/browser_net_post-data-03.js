@@ -7,6 +7,7 @@
 
 
 
+
 add_task(async function() {
   const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
@@ -75,7 +76,7 @@ add_task(async function() {
   );
 
   
-  wait = waitForDOM(document, "#params-panel .tree-section", 2);
+  wait = waitForDOM(document, "#params-panel .tree-section");
   EventUtils.sendMouseEvent(
     { type: "click" },
     document.querySelector("#params-tab")
