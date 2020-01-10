@@ -300,10 +300,6 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
 
   void UnsuppressEventHandlingAndResume();
 
-  
-  
-  static bool IsMappedArrayBufferEnabled();
-
   void MaybeLowerChannelPriority();
 
  public:

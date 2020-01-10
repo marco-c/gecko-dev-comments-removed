@@ -5036,9 +5036,6 @@ pref("captivedetect.pollingTime", 3000);
 pref("captivedetect.maxRetryCount", 5);
 
 
-pref("dom.mapped_arraybuffer.enabled", true);
-
-
 pref("urlclassifier.malwareTable", "goog-malware-proto,goog-unwanted-proto,moztest-harmful-simple,moztest-malware-simple,moztest-unwanted-simple");
 #ifdef MOZILLA_OFFICIAL
   
