@@ -509,6 +509,15 @@ function promiseOneObserver(topic, callback) {
   });
 }
 
+
+
+
+
+Utils._orig_getDefaultDeviceName = Utils.getDefaultDeviceName;
+Utils.getDefaultDeviceName = function() {
+  return "Test device name";
+};
+
 async function registerRotaryEngine() {
   let { RotaryEngine } = ChromeUtils.import(
     "resource://testing-common/services/sync/rotaryengine.js"

@@ -234,14 +234,21 @@ ClientEngine.prototype = {
   },
 
   get localName() {
-    return this.fxAccounts.device.getLocalName();
+    return Utils.getDeviceName();
   },
   set localName(value) {
-    this.fxAccounts.device.setLocalName(value);
+    Svc.Prefs.set("client.name", value);
+    
+    this.fxAccounts.updateDeviceRegistration().catch(error => {
+      this._log.warn("failed to update fxa device registration", error);
+    });
   },
 
   get localType() {
-    return this.fxAccounts.device.getLocalType();
+    return Utils.getDeviceType();
+  },
+  set localType(value) {
+    Svc.Prefs.set("client.type", value);
   },
 
   getClientName(id) {
@@ -356,7 +363,7 @@ ClientEngine.prototype = {
     this._log.debug("Updating the known stale clients");
     
     await this._fetchFxADevices();
-    let localFxADeviceId = await fxAccounts.device.getLocalId();
+    let localFxADeviceId = await fxAccounts.getDeviceId();
     
     
     let clientList = Object.values(this._store._remoteClients).sort(
@@ -445,7 +452,7 @@ ClientEngine.prototype = {
           await this._removeRemoteClient(id);
         }
       }
-      let localFxADeviceId = await fxAccounts.device.getLocalId();
+      let localFxADeviceId = await fxAccounts.getDeviceId();
       
       
       
@@ -615,7 +622,7 @@ ClientEngine.prototype = {
     };
     let excludedIds = null;
     if (!ids) {
-      const localFxADeviceId = await fxAccounts.device.getLocalId();
+      const localFxADeviceId = await fxAccounts.getDeviceId();
       excludedIds = [localFxADeviceId];
     }
     try {
@@ -1103,7 +1110,7 @@ ClientStore.prototype = {
     
     if (id == this.engine.localID) {
       try {
-        record.fxaDeviceId = await this.engine.fxAccounts.device.getLocalId();
+        record.fxaDeviceId = await this.engine.fxAccounts.getDeviceId();
       } catch (error) {
         this._log.warn("failed to get fxa device id", error);
       }
