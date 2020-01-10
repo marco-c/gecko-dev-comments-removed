@@ -502,7 +502,7 @@ async function openExtensionContextMenu(selector = "#img1") {
   );
 
   
-  if (topLevelMenu.length == 0) {
+  if (!topLevelMenu.length) {
     return null;
   }
 

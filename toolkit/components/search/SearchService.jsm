@@ -1814,7 +1814,7 @@ SearchService.prototype = {
         e => !ignoredJAREngines.includes(e)
       );
       
-      if (filteredEngineNames.length > 0) {
+      if (filteredEngineNames.length) {
         engineNames = filteredEngineNames;
       }
     }

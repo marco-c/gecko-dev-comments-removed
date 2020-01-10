@@ -238,7 +238,7 @@ var PromiseTestUtils = {
     JSMPromise.Debugging.flushUncaughtErrors();
 
     
-    while (this._rejections.length > 0) {
+    while (this._rejections.length) {
       let rejection = this._rejections.shift();
 
       
@@ -277,7 +277,7 @@ var PromiseTestUtils = {
 
   assertNoMoreExpectedRejections() {
     
-    if (this._rejectionIgnoreFns.length > 0) {
+    if (this._rejectionIgnoreFns.length) {
       Assert.equal(
         this._rejectionIgnoreFns.length,
         0,

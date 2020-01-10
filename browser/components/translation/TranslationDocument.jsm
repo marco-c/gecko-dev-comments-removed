@@ -72,7 +72,7 @@ this.TranslationDocument.prototype = {
     
 
     for (let root of this.roots) {
-      if (root.children.length == 0 && root.nodeRef.childElementCount == 0) {
+      if (!root.children.length && root.nodeRef.childElementCount == 0) {
         root.isSimpleRoot = true;
       }
     }
@@ -497,7 +497,7 @@ function swapTextForItem(item, target) {
   
   let visitStack = [item];
 
-  while (visitStack.length > 0) {
+  while (visitStack.length) {
     let curItem = visitStack.shift();
 
     let domNode = curItem.nodeRef;

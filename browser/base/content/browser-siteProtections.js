@@ -416,7 +416,7 @@ var TrackingProtection = {
     
     
     
-    if (fragment.childNodes.length == 0) {
+    if (!fragment.childNodes.length) {
       let emptyBox = document.createXULElement("vbox");
       let emptyImage = document.createXULElement("image");
       emptyImage.classList.add("protections-popup-trackersView-empty-image");

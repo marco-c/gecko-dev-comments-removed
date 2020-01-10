@@ -820,7 +820,7 @@ const PanelUI = {
       if (!notifications[0].options.badgeOnly) {
         this._showBannerItem(notifications[0]);
       }
-    } else if (doorhangers.length > 0) {
+    } else if (doorhangers.length) {
       
       if (
         (window.fullScreen && this.autoHideToolbarInFullScreen) ||

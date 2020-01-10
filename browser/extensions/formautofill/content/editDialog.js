@@ -132,9 +132,7 @@ class AutofillEditDialog {
   updateSaveButtonState() {
     
     
-    if (
-      Object.keys(this._elements.fieldContainer.buildFormObject()).length == 0
-    ) {
+    if (!Object.keys(this._elements.fieldContainer.buildFormObject()).length) {
       this._elements.save.setAttribute("disabled", true);
     } else {
       this._elements.save.removeAttribute("disabled");

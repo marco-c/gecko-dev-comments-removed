@@ -546,7 +546,7 @@ function createObserveAllPromise(observances) {
           return;
         }
 
-        if (observances.length == 0) {
+        if (!observances.length) {
           
           
           return;
@@ -576,7 +576,7 @@ function createObserveAllPromise(observances) {
           );
         }
 
-        if (observances.length == 0) {
+        if (!observances.length) {
           Services.obs.removeObserver(permObserver, "perm-changed");
           executeSoon(resolve);
         }

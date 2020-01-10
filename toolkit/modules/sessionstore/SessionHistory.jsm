@@ -115,10 +115,7 @@ var SessionHistoryInternal = {
     
     
     
-    if (
-      data.entries.length == 0 &&
-      (skippedCount != entryCount || aFromIdx < 0)
-    ) {
+    if (!data.entries.length && (skippedCount != entryCount || aFromIdx < 0)) {
       let uri = webNavigation.currentURI.displaySpec;
       let body = webNavigation.document.body;
       
@@ -233,7 +230,7 @@ var SessionHistoryInternal = {
               Object.getOwnPropertyNames(presState).length > 1
           );
 
-        if (presStates.length > 0) {
+        if (presStates.length) {
           entry.presState = presStates;
         }
       }

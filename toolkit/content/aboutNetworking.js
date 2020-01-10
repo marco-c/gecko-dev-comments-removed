@@ -302,7 +302,7 @@ function updateLogFile() {
 
   
   
-  if (logPath.length > 0) {
+  if (logPath.length) {
     currentLogFile.innerText = logPath;
     setLogFileButton.disabled = true;
   } else {
@@ -319,7 +319,7 @@ function updateLogModules() {
     gEnv.get("NSPR_LOG_MODULES");
   let currentLogModules = document.getElementById("current-log-modules");
   let setLogModulesButton = document.getElementById("set-log-modules-button");
-  if (logModules.length > 0) {
+  if (logModules.length) {
     currentLogModules.innerText = logModules;
     
     

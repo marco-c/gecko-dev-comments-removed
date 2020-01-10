@@ -78,7 +78,7 @@ AppPicker.prototype = {
 
     var primaryCount = 0;
 
-    if (!fileList || fileList.length == 0) {
+    if (!fileList || !fileList.length) {
       
       document.getElementById("app-picker-notfound").removeAttribute("hidden");
       return;

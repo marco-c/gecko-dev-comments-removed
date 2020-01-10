@@ -888,7 +888,7 @@ function eventMatchesKey(aEvent, aKey) {
     aEvent.getModifierState(modifier)
   );
   
-  if (eventModifiers.length > 0 && keyModifiers.length == 0) {
+  if (eventModifiers.length && !keyModifiers.length) {
     return false;
   }
   

@@ -231,7 +231,7 @@ class UrlbarEventBufferer {
     
     
     
-    if (this._eventsQueue.length > 0) {
+    if (this._eventsQueue.length) {
       return true;
     }
 

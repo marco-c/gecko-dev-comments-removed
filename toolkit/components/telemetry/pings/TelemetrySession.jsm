@@ -721,7 +721,7 @@ var Impl = {
 
       if (
         this._slowSQLStartup &&
-        Object.keys(this._slowSQLStartup).length != 0 &&
+        !!Object.keys(this._slowSQLStartup).length &&
         (Object.keys(this._slowSQLStartup.mainThread).length ||
           Object.keys(this._slowSQLStartup.otherThreads).length)
       ) {
@@ -740,7 +740,7 @@ var Impl = {
       
       
       let stacks = protect(() => Telemetry.snapshotCapturedStacks(true));
-      if (stacks && "captures" in stacks && stacks.captures.length > 0) {
+      if (stacks && "captures" in stacks && stacks.captures.length) {
         payloadObj.processes.parent.capturedStacks = stacks;
       }
     }
@@ -1107,7 +1107,7 @@ var Impl = {
     reason = reason || REASON_GATHER_PAYLOAD;
     
     
-    if (Object.keys(this._slowSQLStartup).length == 0) {
+    if (!Object.keys(this._slowSQLStartup).length) {
       this._slowSQLStartup = Telemetry.slowSQL;
     }
     Services.telemetry.gatherMemory();

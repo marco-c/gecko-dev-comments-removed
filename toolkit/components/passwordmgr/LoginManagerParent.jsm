@@ -611,7 +611,7 @@ this.LoginManagerParent = {
     
     
     
-    if (!usernameField && oldPasswordField && logins.length > 0) {
+    if (!usernameField && oldPasswordField && logins.length) {
       let prompter = this._getPrompter(browser, openerTopWindowID);
 
       if (logins.length == 1) {

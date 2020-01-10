@@ -1963,7 +1963,7 @@ function getDroppableData(event) {
   }
   
   
-  if (links.length > 0 && links[0].url) {
+  if (links.length && links[0].url) {
     event.preventDefault();
     let href = links[0].url;
     if (UrlbarUtils.stripUnsafeProtocolOnPaste(href) != href) {

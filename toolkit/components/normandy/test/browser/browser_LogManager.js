@@ -14,7 +14,7 @@ add_task(async function() {
   
   LogManager.configure(Log.Level.Warn);
   const logger = LogManager.getLogger("test");
-  ok(logger.appenders.length > 0, "Loggers have at least one appender.");
+  ok(!!logger.appenders.length, "Loggers have at least one appender.");
 
   
   await new Promise(resolve => {

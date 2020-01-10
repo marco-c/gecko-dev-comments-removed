@@ -2069,7 +2069,7 @@ var SessionStoreInternal = {
           }
         }
       }
-      if (openTabs.length == 0) {
+      if (!openTabs.length) {
         this._closedWindows.splice(ix, 1);
       } else if (openTabs.length != openTabCount) {
         
@@ -3822,7 +3822,7 @@ var SessionStoreInternal = {
     var hidden = WINDOW_HIDEABLE_FEATURES.filter(function(aItem) {
       return aWindow[aItem] && !aWindow[aItem].visible;
     });
-    if (hidden.length != 0) {
+    if (hidden.length) {
       winData.hidden = hidden.join(",");
     } else if (winData.hidden) {
       delete winData.hidden;
@@ -3913,14 +3913,14 @@ var SessionStoreInternal = {
       
       if (
         nonPopupCount == 0 &&
-        lastClosedWindowsCopy.length > 0 &&
+        !!lastClosedWindowsCopy.length &&
         RunState.isQuitting
       ) {
         
         
         do {
           total.unshift(lastClosedWindowsCopy.shift());
-        } while (total[0].isPopup && lastClosedWindowsCopy.length > 0);
+        } while (total[0].isPopup && lastClosedWindowsCopy.length);
       }
     }
 
@@ -4085,7 +4085,7 @@ var SessionStoreInternal = {
       firstWindow &&
       !overwriteTabs &&
       winData.tabs.length == 1 &&
-      (!winData.tabs[0].entries || winData.tabs[0].entries.length == 0)
+      (!winData.tabs[0].entries || !winData.tabs[0].entries.length)
     ) {
       winData.tabs = [];
     }
@@ -5299,7 +5299,7 @@ var SessionStoreInternal = {
 
     
     let winData = aState.windows || null;
-    if (!winData || winData.length == 0) {
+    if (!winData || !winData.length) {
       return false;
     }
 

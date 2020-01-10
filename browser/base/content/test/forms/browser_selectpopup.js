@@ -797,7 +797,7 @@ async function performLargePopupTests(win) {
     );
 
     
-    if (positions.length > 0) {
+    if (positions.length) {
       let cs = win.getComputedStyle(selectPopup);
       let bpBottom =
         parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth);

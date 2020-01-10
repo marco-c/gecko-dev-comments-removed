@@ -50,9 +50,9 @@ function check_results_callback(aSequence) {
     if (!includeHidden && isHidden(aVisit)) {
       
       if (
-        visits.filter(function(refVisit) {
+        !visits.filter(function(refVisit) {
           return refVisit.uri == aVisit.uri && !isHidden(refVisit);
-        }).length == 0
+        }).length
       ) {
         return false;
       }

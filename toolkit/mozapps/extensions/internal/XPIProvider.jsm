@@ -2914,7 +2914,7 @@ var XPIProvider = {
       let extensionListChanged = false;
       
       
-      if (updateReasons.length > 0) {
+      if (updateReasons.length) {
         AddonManagerPrivate.recordSimpleMeasure(
           "XPIDB_startup_load_reasons",
           updateReasons

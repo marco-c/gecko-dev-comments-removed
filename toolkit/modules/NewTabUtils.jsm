@@ -542,7 +542,7 @@ var BlockedLinks = {
 
 
   isEmpty: function BlockedLinks_isEmpty() {
-    return Object.keys(this.links).length == 0;
+    return !Object.keys(this.links).length;
   },
 
   

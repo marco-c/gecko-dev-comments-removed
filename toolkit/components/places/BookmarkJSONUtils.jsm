@@ -249,11 +249,7 @@ BookmarkImporter.prototype = {
       PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER
     );
 
-    if (
-      nodes.length == 0 ||
-      !nodes[0].children ||
-      nodes[0].children.length == 0
-    ) {
+    if (!nodes.length || !nodes[0].children || !nodes[0].children.length) {
       return;
     }
 
@@ -276,7 +272,7 @@ BookmarkImporter.prototype = {
     
     
     for (let node of nodes) {
-      if (!node.children || node.children.length == 0) {
+      if (!node.children || !node.children.length) {
         continue;
       } 
 
@@ -292,7 +288,7 @@ BookmarkImporter.prototype = {
     
     for (let node of nodes) {
       
-      if (!node.children || node.children.length == 0) {
+      if (!node.children || !node.children.length) {
         continue;
       }
 
@@ -478,7 +474,7 @@ function translateTreeTypes(node) {
       .split(",")
       .filter(
         aTag =>
-          aTag.length > 0 && aTag.length <= PlacesUtils.bookmarks.MAX_TAG_LENGTH
+          !!aTag.length && aTag.length <= PlacesUtils.bookmarks.MAX_TAG_LENGTH
       );
 
     

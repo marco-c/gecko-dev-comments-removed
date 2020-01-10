@@ -80,7 +80,7 @@ async function setupBackgroundTabs(testFn) {
 
 
 async function crashBackgroundTabs(tabs) {
-  Assert.ok(tabs.length > 0, "Need to crash at least one tab.");
+  Assert.ok(!!tabs.length, "Need to crash at least one tab.");
   for (let tab of tabs) {
     Assert.ok(tab.linkedBrowser.isRemoteBrowser, "tab is remote");
   }

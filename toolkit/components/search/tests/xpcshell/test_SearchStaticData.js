@@ -25,7 +25,7 @@ function run_test() {
       d.startsWith("www.google.")
     )
   );
-  Assert.ok(SearchStaticData.getAlternateDomains("google.com").length == 0);
+  Assert.ok(!SearchStaticData.getAlternateDomains("google.com").length);
 
   
   

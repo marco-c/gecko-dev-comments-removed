@@ -669,7 +669,7 @@ Cookies.prototype = {
     
     let records = [];
     let lines = aTextBuffer.split("\n");
-    while (lines.length > 0) {
+    while (lines.length) {
       let record = lines.splice(0, 9);
       
       if (record.length > 1) {
@@ -680,7 +680,7 @@ Cookies.prototype = {
       let [name, value, hostpath, flags, expireTimeLo, expireTimeHi] = record;
 
       
-      if (value.length == 0) {
+      if (!value.length) {
         continue;
       }
 
@@ -696,7 +696,7 @@ Cookies.prototype = {
 
       
       
-      if (host.length > 0) {
+      if (host.length) {
         
         Services.cookies.remove(host, name, path, false, {});
         
@@ -970,7 +970,7 @@ WindowsVaultFormPasswords.prototype = {
         }
       }
 
-      if (logins.length > 0) {
+      if (logins.length) {
         await MigrationUtils.insertLoginsWrapper(logins);
       }
     } catch (e) {

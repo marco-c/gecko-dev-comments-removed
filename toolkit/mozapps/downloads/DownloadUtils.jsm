@@ -453,7 +453,7 @@ var DownloadUtils = {
       
       displayHost = gBundle.GetStringFromName(gStr.doneFileScheme);
       fullHost = displayHost;
-    } else if (displayHost.length == 0) {
+    } else if (!displayHost.length) {
       
       displayHost = gBundle.formatStringFromName(gStr.doneScheme, [uri.scheme]);
       fullHost = displayHost;

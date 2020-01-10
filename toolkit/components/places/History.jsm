@@ -355,7 +355,7 @@ var History = Object.freeze({
   remove(pages, onResult = null) {
     
     if (Array.isArray(pages)) {
-      if (pages.length == 0) {
+      if (!pages.length) {
         throw new TypeError("Expected at least one page");
       }
     } else {
@@ -847,7 +847,7 @@ function sqlBindPlaceholders(values, prefix = "", suffix = "") {
 
 
 var invalidateFrecencies = async function(db, idList) {
-  if (idList.length == 0) {
+  if (!idList.length) {
     return;
   }
   await db.execute(
@@ -946,7 +946,7 @@ var cleanupPages = async function(db, pages) {
   );
 
   let pagesToRemove = pages.filter(p => !p.hasForeign && !p.hasVisits);
-  if (pagesToRemove.length == 0) {
+  if (!pagesToRemove.length) {
     return;
   }
 
@@ -1273,7 +1273,7 @@ var removeVisitsByFilter = async function(db, filter, onResult = null) {
   );
 
   try {
-    if (visitsToRemove.length == 0) {
+    if (!visitsToRemove.length) {
       
       return false;
     }
@@ -1320,7 +1320,7 @@ var removeVisitsByFilter = async function(db, filter, onResult = null) {
     PlacesUtils.history.clearEmbedVisits();
   }
 
-  return visitsToRemove.length != 0;
+  return !!visitsToRemove.length;
 };
 
 
@@ -1472,7 +1472,7 @@ var remove = async function(db, { guids, urls }, onResult = null) {
   });
 
   try {
-    if (pages.length == 0) {
+    if (!pages.length) {
       
       return false;
     }
@@ -1626,7 +1626,7 @@ var update = async function(db, pageInfo) {
       ? pageInfo.previewImageURL.href
       : null;
   }
-  if (updateFragments.length > 0) {
+  if (updateFragments.length) {
     
     
     await db.execute(

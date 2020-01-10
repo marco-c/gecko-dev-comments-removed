@@ -892,7 +892,7 @@ this.MessageChannel = {
 
     
     
-    if (handlers.length == 0 && responseType != this.RESPONSE_ALL) {
+    if (!handlers.length && responseType != this.RESPONSE_ALL) {
       return Promise.reject({
         result: MessageChannel.RESULT_NO_HANDLER,
         message: "No matching message handler",
@@ -927,7 +927,7 @@ this.MessageChannel = {
 
     switch (responseType) {
       case this.RESPONSE_FIRST:
-        if (responses.length == 0) {
+        if (!responses.length) {
           return Promise.reject({
             result: MessageChannel.RESULT_NO_RESPONSE,
             message: "No handler returned a response",

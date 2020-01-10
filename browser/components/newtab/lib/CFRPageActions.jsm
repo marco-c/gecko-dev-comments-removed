@@ -257,7 +257,7 @@ class PageAction {
   }
 
   _clearScheduledStateChanges() {
-    while (this.stateTransitionTimeoutIDs.length > 0) {
+    while (this.stateTransitionTimeoutIDs.length) {
       
       this.window.clearTimeout(this.stateTransitionTimeoutIDs.pop());
     }

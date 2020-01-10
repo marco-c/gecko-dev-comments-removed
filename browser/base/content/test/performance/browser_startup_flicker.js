@@ -16,7 +16,7 @@ add_task(async function() {
   
   
   let frames = Cu.cloneInto(startupRecorder.data.frames, {});
-  ok(frames.length > 0, "Should have captured some frames.");
+  ok(!!frames.length, "Should have captured some frames.");
 
   let unexpectedRects = 0;
   let alreadyFocused = false;

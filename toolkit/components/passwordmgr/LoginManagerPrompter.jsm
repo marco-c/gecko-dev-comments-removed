@@ -450,7 +450,7 @@ LoginManagerPrompter.prototype = {
 
       
       
-      if (foundLogins.length > 0) {
+      if (foundLogins.length) {
         selectedLogin = foundLogins[0];
 
         
@@ -687,7 +687,7 @@ LoginManagerPrompter.prototype = {
       this.log(foundLogins.length, "matching logins remain after deduping");
 
       
-      if (foundLogins.length > 0) {
+      if (foundLogins.length) {
         selectedLogin = foundLogins[0];
         this._SetAuthInfo(
           aAuthInfo,
@@ -1035,7 +1035,7 @@ LoginManagerPrompter.prototype = {
     let updateButtonStatus = element => {
       let mainActionButton = element.button;
       
-      if (login.password.length == 0) {
+      if (!login.password.length) {
         mainActionButton.setAttribute("disabled", true);
         chromeDoc
           .getElementById("password-notification-password")
@@ -1064,7 +1064,7 @@ LoginManagerPrompter.prototype = {
         foundLogins,
         autoSavedLoginGuid
       );
-      let msgNames = logins.length == 0 ? saveMsgNames : changeMsgNames;
+      let msgNames = !logins.length ? saveMsgNames : changeMsgNames;
 
       
       let label = this._getLocalizedString(msgNames.buttonLabel);

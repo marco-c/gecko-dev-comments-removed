@@ -732,7 +732,7 @@ add_task(async function test_checkSubsessionScalars() {
   }
   
   Assert.ok(
-    Object.keys(classic.processes.parent.scalars).length == 0,
+    !Object.keys(classic.processes.parent.scalars).length,
     "Scalars must not be reported in a classic ping."
   );
 

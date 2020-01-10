@@ -3320,11 +3320,7 @@
         
         
         
-        if (
-          closeWindow &&
-          closeWindowFastpath &&
-          this._removingTabs.length == 0
-        ) {
+        if (closeWindow && closeWindowFastpath && !this._removingTabs.length) {
           
           
           this._windowIsClosing = window.closeWindow(
@@ -6279,8 +6275,9 @@ var TabContextMenu = {
 
     
     
-    document.getElementById("context_closeTabsToTheEnd").disabled =
-      gBrowser.getTabsToTheEndFrom(this.contextTab).length == 0;
+    document.getElementById(
+      "context_closeTabsToTheEnd"
+    ).disabled = !gBrowser.getTabsToTheEndFrom(this.contextTab).length;
 
     
     let unpinnedTabsToClose = multiselectionContext

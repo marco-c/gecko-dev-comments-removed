@@ -737,7 +737,7 @@ this.PromiseWalker = {
     
     aPromise[N_INTERNALS].status = aStatus;
     aPromise[N_INTERNALS].value = aValue;
-    if (aPromise[N_INTERNALS].handlers.length > 0) {
+    if (aPromise[N_INTERNALS].handlers.length) {
       this.schedulePromise(aPromise);
     } else if (Cu && aStatus == STATUS_REJECTED) {
       
@@ -841,7 +841,7 @@ this.PromiseWalker = {
     }
 
     
-    while (this.handlers.length > 0) {
+    while (this.handlers.length) {
       this.handlers.shift().process();
     }
   },

@@ -63,7 +63,7 @@ async function setupToolboxTest(extensionId) {
       filterRequest
     );
 
-    return requests.length > 0;
+    return !!requests.length;
   });
 
   

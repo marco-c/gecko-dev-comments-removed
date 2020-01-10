@@ -983,7 +983,7 @@ const DownloadsViewPrototype = {
 
   addView(aView) {
     
-    if (this._views.length == 0) {
+    if (!this._views.length) {
       if (this._isPrivate) {
         PrivateDownloadsData.addView(this);
       } else {
@@ -1021,7 +1021,7 @@ const DownloadsViewPrototype = {
     }
 
     
-    if (this._views.length == 0) {
+    if (!this._views.length) {
       if (this._isPrivate) {
         PrivateDownloadsData.removeView(this);
       } else {
@@ -1175,7 +1175,7 @@ DownloadsIndicatorDataCtor.prototype = {
   removeView(aView) {
     DownloadsViewPrototype.removeView.call(this, aView);
 
-    if (this._views.length == 0) {
+    if (!this._views.length) {
       this._itemCount = 0;
     }
   },
@@ -1393,7 +1393,7 @@ DownloadsSummaryData.prototype = {
   removeView(aView) {
     DownloadsViewPrototype.removeView.call(this, aView);
 
-    if (this._views.length == 0) {
+    if (!this._views.length) {
       
       
       this._downloads = [];
@@ -1448,7 +1448,7 @@ DownloadsSummaryData.prototype = {
 
 
   *_downloadsForSummary() {
-    if (this._downloads.length > 0) {
+    if (this._downloads.length) {
       for (let i = this._numToExclude; i < this._downloads.length; ++i) {
         yield this._downloads[i];
       }

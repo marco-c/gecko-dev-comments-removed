@@ -71,7 +71,7 @@ function shortURL({ url }) {
 
   
   const eTLD = getETLD(hostname);
-  const eTLDExtra = eTLD.length > 0 ? -(eTLD.length + 1) : Infinity;
+  const eTLDExtra = eTLD.length ? -(eTLD.length + 1) : Infinity;
 
   
   return (

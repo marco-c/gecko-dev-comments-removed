@@ -355,7 +355,7 @@ class Script {
   }
 
   get requiresCleanup() {
-    return !this.removeCSS && (this.css.length > 0 || this.cssCodeHash);
+    return !this.removeCSS && (!!this.css.length || this.cssCodeHash);
   }
 
   async addCSSCode(cssCode) {
@@ -531,7 +531,7 @@ class Script {
         
         
         
-        if (this.css.length > 0) {
+        if (this.css.length) {
           context.contentWindow.document.blockParsing(cssPromise, {
             blockScriptCreated: false,
           });

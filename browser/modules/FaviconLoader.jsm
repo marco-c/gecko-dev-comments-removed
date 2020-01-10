@@ -426,7 +426,7 @@ function guessType(icon) {
 
 
 function selectIcons(iconInfos, preferredWidth) {
-  if (iconInfos.length == 0) {
+  if (!iconInfos.length) {
     return {
       richIcon: null,
       tabIcon: null,
@@ -598,7 +598,7 @@ class FaviconLoader {
     
     
     
-    if (this.iconInfos.length == 0) {
+    if (!this.iconInfos.length) {
       return;
     }
 

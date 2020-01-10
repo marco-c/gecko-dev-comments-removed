@@ -307,7 +307,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
       });
       
       if (!hasMatch) {
-        const initialized = !!(action.data.rows && action.data.rows.length > 0);
+        const initialized = !!(action.data.rows && !!action.data.rows.length);
         const section = Object.assign(
           { title: "", rows: [], enabled: false },
           action.data,
@@ -327,7 +327,7 @@ function Sections(prevState = INITIAL_STATE.Sections, action) {
           
           if (
             action.data.rows &&
-            action.data.rows.length > 0 &&
+            !!action.data.rows.length &&
             section.rows.find(card => card.pinned)
           ) {
             const rows = Array.from(action.data.rows);

@@ -63,7 +63,7 @@ this.LoginImport.prototype = {
     
     
     
-    if (this.store.data.logins.length > 0) {
+    if (this.store.data.logins.length) {
       throw new Error(
         "Unable to import saved passwords because some data " +
           "has already been imported or saved."

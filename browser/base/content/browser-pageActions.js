@@ -1309,7 +1309,7 @@ BrowserPageActions.shareURL = {
 
     
     
-    if (this._cached && bodyNode.children.length > 0) {
+    if (this._cached && bodyNode.children.length) {
       return;
     }
 

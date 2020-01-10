@@ -69,7 +69,7 @@ History.prototype = {
 
       let title = entry.get("title");
       
-      if (title.length == 0) {
+      if (!title.length) {
         continue;
       }
 
@@ -93,7 +93,7 @@ History.prototype = {
     }
 
     
-    if (pageInfos.length == 0) {
+    if (!pageInfos.length) {
       aCallback(true);
       return;
     }
@@ -235,7 +235,7 @@ IE7FormPasswords.prototype = {
       }
     }
 
-    if (logins.length > 0) {
+    if (logins.length) {
       await MigrationUtils.insertLoginsWrapper(logins);
     }
 

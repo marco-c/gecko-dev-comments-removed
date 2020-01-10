@@ -618,7 +618,7 @@ var gSubDialog = {
   _nextDialogID: 0,
   _preloadDialog: null,
   get _topDialog() {
-    return this._dialogs.length > 0
+    return this._dialogs.length
       ? this._dialogs[this._dialogs.length - 1]
       : undefined;
   },
@@ -639,7 +639,7 @@ var gSubDialog = {
       return;
     }
 
-    if (this._dialogs.length == 0) {
+    if (!this._dialogs.length) {
       
       
       this._dialogStack.hidden = false;

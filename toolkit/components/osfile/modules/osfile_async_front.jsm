@@ -355,11 +355,11 @@ var Scheduler = (this.Scheduler = {
           
 
           let msg = "";
-          if (openedFiles.length > 0) {
+          if (openedFiles.length) {
             msg +=
               "The following files are still open:\n" + openedFiles.join("\n");
           }
-          if (openedDirectoryIterators.length > 0) {
+          if (openedDirectoryIterators.length) {
             msg +=
               "The following directory iterators are still open:\n" +
               openedDirectoryIterators.join("\n");

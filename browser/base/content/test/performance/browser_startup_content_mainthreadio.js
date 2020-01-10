@@ -400,7 +400,7 @@ add_task(async function() {
     
     
     is(
-      markers.length > 0,
+      !!markers.length,
       !AppConstants.RELEASE_OR_BETA,
       procName +
         " startup profiles should have IO markers in builds that are not RELEASE_OR_BETA"

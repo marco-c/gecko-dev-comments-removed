@@ -169,7 +169,7 @@ function backgroundScript() {
         
         
         
-        if (expected.length == 0) {
+        if (!expected.length) {
           events = remaining;
           eventWaiter = null;
           resolve();

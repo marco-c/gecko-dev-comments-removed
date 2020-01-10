@@ -94,7 +94,7 @@ add_task(async function test_BHRObserver() {
 
     
     ok(Array.isArray(hang.stack));
-    ok(hang.stack.length > 0);
+    ok(!!hang.stack.length);
     hang.stack.forEach(entry => {
       
       
@@ -141,7 +141,7 @@ add_task(async function test_BHRObserver() {
 
     
     ok(Array.isArray(hang.stack));
-    ok(hang.stack.length > 0);
+    ok(!!hang.stack.length);
     hang.stack.forEach(entry => {
       
       

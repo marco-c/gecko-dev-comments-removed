@@ -158,7 +158,7 @@ var UrlbarTokenizer = {
 
 
   looksLikeOrigin(token) {
-    if (token.length == 0) {
+    if (!token.length) {
       return false;
     }
     let atIndex = token.indexOf("@");
@@ -312,7 +312,7 @@ function filterTokens(tokens) {
   }
 
   
-  if (restrictions.length > 0) {
+  if (restrictions.length) {
     
     
     

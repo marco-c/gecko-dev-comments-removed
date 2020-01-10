@@ -564,7 +564,7 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
   log("update request: " + JSON.stringify(streamerMap, undefined, 2) + "\n");
 
   
-  if (streamerMap.requestPayload.length > 0) {
+  if (streamerMap.requestPayload.length) {
     this.makeUpdateRequestForEntry_(
       updateUrl,
       streamerMap.tableList,

@@ -292,7 +292,7 @@ HashCompleter.prototype = {
 
     
     let pendingUrls = Object.keys(this._pendingRequests);
-    if (!this._currentRequest && pendingUrls.length > 0) {
+    if (!this._currentRequest && pendingUrls.length) {
       let nextUrl = pendingUrls[0];
       this._currentRequest = this._pendingRequests[nextUrl];
       delete this._pendingRequests[nextUrl];
