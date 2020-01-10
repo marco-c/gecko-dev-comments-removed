@@ -2432,7 +2432,6 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::matchInteger(
     if (isIntegerUnit(unit)) {
       continue;
     }
-#ifdef NIGHTLY_BUILD
     if (unit != '_') {
       break;
     }
@@ -2441,9 +2440,6 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::matchInteger(
       error(JSMSG_MISSING_DIGIT_AFTER_SEPARATOR);
       return false;
     }
-#else
-    break;
-#endif 
   }
 
   *nextUnit = unit;
@@ -2695,12 +2691,10 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::bigIntLiteral(
     
     
     MOZ_ASSERT(isAsciiCodePoint(unit));
-#ifdef NIGHTLY_BUILD
     
     if (unit == '_') {
       continue;
     }
-#endif
     if (!this->appendCodePointToCharBuffer(unit)) {
       return false;
     }
@@ -2965,23 +2959,19 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(
           unit = getCodeUnit();
         } while (IsAsciiDigit(unit));
 
-#ifdef NIGHTLY_BUILD
         if (unit == '_') {
           error(JSMSG_SEPARATOR_IN_ZERO_PREFIXED_NUMBER);
           return badToken();
         }
-#endif 
 
         if (nonOctalDecimalIntegerLiteral) {
           
           return decimalNumber(unit, start, numStart, modifier, ttp);
         }
-#ifdef NIGHTLY_BUILD
       } else if (unit == '_') {
         
         error(JSMSG_SEPARATOR_IN_ZERO_PREFIXED_NUMBER);
         return badToken();
-#endif
       } else {
         
         numStart = this->sourceUnits.addressOfNextCodeUnit() - 1;
