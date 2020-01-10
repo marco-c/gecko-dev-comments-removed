@@ -11,6 +11,7 @@
 
 #include <string.h>  
 
+#include "ds/Sort.h"                 
 #include "frontend/BinAST-macros.h"  
 #include "gc/Rooting.h"              
 #include "js/AllocPolicy.h"          
@@ -109,7 +110,7 @@ class HuffmanPreludeReader {
         reader(reader),
         dictionary(dictionary),
         stack(cx_),
-        auxStorageBitLengths(cx_) {}
+        auxStorageLength(cx_) {}
 
   
   MOZ_MUST_USE JS::Result<Ok> run(size_t initialCapacity);
@@ -158,46 +159,57 @@ class HuffmanPreludeReader {
   
   
   struct EntryIndexed : EntryBase {
+    
+    
+    using Indexed = Ok;
     explicit EntryIndexed(const NormalizedInterfaceAndField identity)
+        : EntryBase(identity) {}
+  };
+
+  struct EntryExplicit : EntryBase {
+    
+    
+    using Explicit = Ok;
+    explicit EntryExplicit(const NormalizedInterfaceAndField identity)
         : EntryBase(identity) {}
   };
 
   
   
-  struct String : EntryBase {
+  struct String : EntryExplicit {
     using SymbolType = JSAtom*;
     using Table = HuffmanTableIndexedSymbolsLiteralString;
     explicit String(const NormalizedInterfaceAndField identity)
-        : EntryBase(identity) {}
+        : EntryExplicit(identity) {}
   };
   using IdentifierName = String;
   using PropertyKey = String;
 
   
   
-  struct MaybeString : EntryBase {
+  struct MaybeString : EntryExplicit {
     using SymbolType = JSAtom*;
     using Table = HuffmanTableIndexedSymbolsOptionalLiteralString;
     explicit MaybeString(const NormalizedInterfaceAndField identity)
-        : EntryBase(identity) {}
+        : EntryExplicit(identity) {}
   };
   using MaybeIdentifierName = MaybeString;
   using MaybePropertyKey = MaybeString;
 
   
-  struct Number : EntryBase {
+  struct Number : EntryExplicit {
     using SymbolType = double;
     using Table = HuffmanTableExplicitSymbolsF64;
     explicit Number(const NormalizedInterfaceAndField identity)
-        : EntryBase(identity) {}
+        : EntryExplicit(identity) {}
   };
 
   
-  struct UnsignedLong : EntryBase {
+  struct UnsignedLong : EntryExplicit {
     using SymbolType = uint32_t;
     using Table = HuffmanTableExplicitSymbolsU32;
     explicit UnsignedLong(const NormalizedInterfaceAndField identity)
-        : EntryBase(identity) {}
+        : EntryExplicit(identity) {}
   };
 
   
@@ -210,17 +222,17 @@ class HuffmanPreludeReader {
   };
 
   
-  struct Lazy : EntryBase {
+  struct Lazy : EntryExplicit {
     explicit Lazy(const NormalizedInterfaceAndField identity)
-        : EntryBase(identity) {}
+        : EntryExplicit(identity) {}
   };
 
   
-  struct Interface : EntryBase {
+  struct Interface : EntryIndexed {
     
     const BinASTKind kind;
     Interface(const NormalizedInterfaceAndField identity, BinASTKind kind)
-        : EntryBase(identity), kind(kind) {}
+        : EntryIndexed(identity), kind(kind) {}
 
     
     
@@ -262,7 +274,7 @@ class HuffmanPreludeReader {
   
   
   
-  struct List : EntryBase {
+  struct List : EntryExplicit {
     
     using SymbolType = uint32_t;
 
@@ -274,7 +286,7 @@ class HuffmanPreludeReader {
     const BinASTList contents;
 
     List(const NormalizedInterfaceAndField identity, const BinASTList contents)
-        : EntryBase(identity), contents(contents) {}
+        : EntryExplicit(identity), contents(contents) {}
 
     
     
@@ -326,7 +338,7 @@ class HuffmanPreludeReader {
   };
 
   
-  struct MaybeSum : EntryBase {
+  struct MaybeSum : EntryIndexed {
     
     
     using SymbolType = BinASTKind;
@@ -339,7 +351,7 @@ class HuffmanPreludeReader {
 
     MaybeSum(const NormalizedInterfaceAndField identity,
              const BinASTSum contents)
-        : EntryBase(identity), contents(contents) {}
+        : EntryIndexed(identity), contents(contents) {}
 
     size_t maxNumberOfSymbols() const {
       return SUM_LIMITS[static_cast<size_t>(contents)] + 1;
@@ -365,7 +377,7 @@ class HuffmanPreludeReader {
   };
 
   
-  struct StringEnum : EntryBase {
+  struct StringEnum : EntryIndexed {
     using SymbolType = BinASTVariant;
     using Table = HuffmanTableIndexedSymbolsStringEnum;
 
@@ -373,7 +385,7 @@ class HuffmanPreludeReader {
     const BinASTStringEnum contents;
     StringEnum(const NormalizedInterfaceAndField identity,
                const BinASTStringEnum contents)
-        : EntryBase(identity), contents(contents) {}
+        : EntryIndexed(identity), contents(contents) {}
 
     size_t maxNumberOfSymbols() const {
       return STRING_ENUM_LIMITS[static_cast<size_t>(contents)];
@@ -524,58 +536,52 @@ class HuffmanPreludeReader {
       return Ok();
     }
 
+    MOZ_TRY(readMultipleValuesTableAndAssignCode<Entry>(table, entry,
+                                                        numberOfSymbols));
+
+    
+    
+    return Ok();
+  }
+
+  template <typename Entry>
+  MOZ_MUST_USE JS::Result<typename Entry::Explicit>
+  readMultipleValuesTableAndAssignCode(typename Entry::Table& table,
+                                       Entry entry, uint32_t numberOfSymbols) {
+    
+    
+    
+    
+    
+
     
     
     
     MOZ_ASSERT(
-        auxStorageBitLengths.empty());  
-    BINJS_TRY(auxStorageBitLengths.reserve(numberOfSymbols + 1));
+        auxStorageLength.empty());  
+    BINJS_TRY(auxStorageLength.reserve(numberOfSymbols + 1));
 
     
     for (size_t i = 0; i < numberOfSymbols; ++i) {
       BINJS_MOZ_TRY_DECL(bitLength, reader.readByte<Compression::No>());
-      BINJS_TRY(auxStorageBitLengths.append(bitLength));
+      if (bitLength == 0) {
+        return raiseInvalidTableData(entry.identity);
+      }
+      BINJS_TRY(auxStorageLength.append(BitLengthAndIndex(bitLength, i)));
     }
     
-    BINJS_TRY(auxStorageBitLengths.append(MAX_CODE_BIT_LENGTH));
+    BINJS_TRY(auxStorageLength.append(
+        BitLengthAndIndex(MAX_CODE_BIT_LENGTH, numberOfSymbols)));
 
     
     uint32_t code = 0;
     MOZ_TRY(table.impl.init(cx_, numberOfSymbols));
 
-    
-    
-    
-    
-    
-    
-
-    
-    
-    size_t i;
-    for (i = 0; i < numberOfSymbols && auxStorageBitLengths[i] == 0; ++i) {
-      MOZ_TRY(readSymbol<Entry>(entry, i));  
-    }
-
-    while (i < numberOfSymbols) {
-      fprintf(stderr,
-              "readMultipleValuesTable (reading non-0 entry at index %zu)\n",
-              i);
-      
-      BINJS_MOZ_TRY_DECL(symbol, readSymbol<Entry>(entry, i));
-
-      
-      
-      size_t j;
-      for (j = i + 1; j <= numberOfSymbols && auxStorageBitLengths[j] == 0;
-           ++j) {
-        MOZ_TRY(readSymbol<Entry>(entry, j));  
-      }
-
-      const auto bitLength = auxStorageBitLengths[i];
-      const auto nextBitLength = auxStorageBitLengths[j];
-      MOZ_ASSERT(bitLength != 0);
-      MOZ_ASSERT(nextBitLength != 0);
+    for (size_t i = 0; i < numberOfSymbols; ++i) {
+      const auto bitLength = auxStorageLength[i].bitLength;
+      const auto nextBitLength =
+          auxStorageLength[i + 1]
+              .bitLength;  
 
       if (bitLength > nextBitLength) {
         
@@ -584,21 +590,86 @@ class HuffmanPreludeReader {
       }
 
       
+      BINJS_MOZ_TRY_DECL(
+          symbol, readSymbol<Entry>(entry, i));  
       MOZ_TRY(table.impl.addSymbol(code, bitLength, std::move(symbol)));
 
       
       code = (code + 1) << (nextBitLength - bitLength);
-
-      i = j;
     }
 
-    fprintf(stderr,
-            "readMultipleValuesTable (finally, the table has %lu elements)\n",
-            table.impl.length());
+    auxStorageLength.clear();
+    return Ok();
+  }
+
+  template <typename Entry>
+  MOZ_MUST_USE JS::Result<typename Entry::Indexed>
+  readMultipleValuesTableAndAssignCode(typename Entry::Table& table,
+                                       Entry entry, uint32_t numberOfSymbols) {
+    
+    
+    
+    MOZ_ASSERT(
+        auxStorageLength.empty());  
+    BINJS_TRY(auxStorageLength.reserve(numberOfSymbols + 1));
 
     
     
-    auxStorageBitLengths.clear();
+    
+    
+
+    
+    for (size_t i = 0; i < numberOfSymbols; ++i) {
+      BINJS_MOZ_TRY_DECL(bitLength, reader.readByte<Compression::No>());
+      if (bitLength > 0) {
+        BINJS_TRY(auxStorageLength.append(BitLengthAndIndex(bitLength, i)));
+      }
+    }
+    
+    BINJS_TRY(auxStorageLength.append(
+        BitLengthAndIndex(MAX_CODE_BIT_LENGTH, numberOfSymbols)));
+
+    
+    std::sort(
+        auxStorageLength.begin(), auxStorageLength.end(),
+        [](const BitLengthAndIndex& a, const BitLengthAndIndex& b) -> bool {
+          MOZ_ASSERT(a.index != b.index);
+          if (a.bitLength < b.bitLength) {
+            return true;
+          }
+          if (a.index < b.index) {
+            return true;
+          }
+          return false;
+        });
+    MOZ_ASSERT(
+        auxStorageLength[auxStorageLength.length() - 1].bitLength ==
+        MAX_CODE_BIT_LENGTH);  
+
+    
+    uint32_t code = 0;
+    MOZ_TRY(table.impl.init(cx_, auxStorageLength.length()));
+
+    for (size_t i = 0; i < auxStorageLength.length() - 1; ++i) {
+      const auto bitLength = auxStorageLength[i].bitLength;
+      const auto nextBitLength =
+          auxStorageLength[i + 1].bitLength;  
+                                              
+      MOZ_ASSERT(bitLength <= nextBitLength);
+
+      
+      BINJS_MOZ_TRY_DECL(
+          symbol,
+          readSymbol<Entry>(
+              entry,
+              auxStorageLength[i].index));  
+      MOZ_TRY(table.impl.addSymbol(code, bitLength, std::move(symbol)));
+
+      
+      code = (code + 1) << (nextBitLength - bitLength);
+    }
+
+    auxStorageLength.clear();
     return Ok();
   }
 
@@ -616,6 +687,7 @@ class HuffmanPreludeReader {
   template <typename HuffmanTable, typename Entry>
   MOZ_MUST_USE JS::Result<Ok> readTable(HuffmanTable& table, Entry entry) {
     if (!table.template is<HuffmanTableInitializing>()) {
+      
       
       return raiseDuplicateTableError(entry.identity);
     }
@@ -656,7 +728,17 @@ class HuffmanPreludeReader {
   
   
   
-  Vector<uint8_t> auxStorageBitLengths;
+  struct BitLengthAndIndex {
+    BitLengthAndIndex(uint8_t bitLength, size_t index)
+        : bitLength(bitLength), index(index) {}
+
+    
+    uint8_t bitLength;
+
+    
+    size_t index;
+  };
+  Vector<BitLengthAndIndex> auxStorageLength;
 
   
 
@@ -925,13 +1007,13 @@ class HuffmanPreludeReader {
 
   MOZ_MUST_USE ErrorResult<JS::Error&> raiseDuplicateTableError(
       const NormalizedInterfaceAndField identity) {
-    MOZ_CRASH("FIXME: Implement");
+    MOZ_CRASH("Duplicate table.");
     return reader.raiseError("Duplicate table.");
   }
 
   MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidTableData(
       const NormalizedInterfaceAndField identity) {
-    MOZ_CRASH("FIXME: Implement");
+    MOZ_CRASH("Invalid data while reading table.");
     return reader.raiseError("Invalid data while reading table.");
   }
 };
@@ -1285,7 +1367,7 @@ BinASTTokenReaderContext::readFieldFromTable(const Context& context) {
   }
   BINJS_MOZ_TRY_DECL(bits, bitBuffer.getHuffmanLookup<Compression::No>(*this));
   const auto lookup = table.as<Table>().impl.lookup(bits);
-  
+
   bitBuffer.advanceBitBuffer<Compression::No>(lookup.key.bitLength);
   if (!lookup.value) {
     return raiseInvalidValue(context);
@@ -1396,6 +1478,7 @@ JS::Result<Ok> BinASTTokenReaderContext::enterList(uint32_t& items,
     return raiseInvalidValue(context);
   }
   items = *lookup.value;
+  fprintf(stderr, "enterList: %d elements\n", items);
   return Ok();
 }
 
