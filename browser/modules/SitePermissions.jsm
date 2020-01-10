@@ -292,9 +292,7 @@ var SitePermissions = {
     }
 
     let permissions = Services.perms.getAllForPrincipal(principal);
-    while (permissions.hasMoreElements()) {
-      let permission = permissions.getNext();
-
+    for (let permission of permissions) {
       
       if (gPermissionObject[permission.type]) {
         
