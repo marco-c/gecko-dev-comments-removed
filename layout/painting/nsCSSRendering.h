@@ -343,9 +343,11 @@ struct nsCSSRendering {
   
 
 
-  static nscolor DetermineBackgroundColor(
-      nsPresContext* aPresContext, mozilla::ComputedStyle* aStyle,
-      nsIFrame* aFrame, bool& aDrawBackgroundImage, bool& aDrawBackgroundColor);
+  static nscolor DetermineBackgroundColor(nsPresContext* aPresContext,
+                                          mozilla::ComputedStyle* aStyle,
+                                          nsIFrame* aFrame,
+                                          bool& aDrawBackgroundImage,
+                                          bool& aDrawBackgroundColor);
 
   static nsRect ComputeImageLayerPositioningArea(
       nsPresContext* aPresContext, nsIFrame* aForFrame,

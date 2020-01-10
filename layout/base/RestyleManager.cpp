@@ -2718,8 +2718,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     
     
     
-    if (wasRestyled &&
-        styleFrame->StyleDisplay()->IsListItem() &&
+    if (wasRestyled && styleFrame->StyleDisplay()->IsListItem() &&
         styleFrame->IsBlockFrameOrSubclass() &&
         !nsLayoutUtils::GetMarkerPseudo(aElement)) {
       RefPtr<ComputedStyle> pseudoStyle =
