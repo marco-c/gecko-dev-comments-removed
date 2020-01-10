@@ -7,7 +7,6 @@
 
 use crate::{Atom, Zero};
 use crate::parser::{Parse, ParserContext};
-use crate::values::computed::{Context, ToComputedValue};
 use crate::values::specified;
 use crate::values::specified::grid::parse_line_names;
 use crate::values::{CSSFloat, CustomIdent};
@@ -180,33 +179,12 @@ impl Parse for GridLine<specified::Integer> {
     }
 }
 
-#[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(
-    Animate,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-pub enum TrackKeyword {
-    Auto,
-    MaxContent,
-    MinContent,
-}
 
 
 
 
 
+/// cbindgen:derive-tagged-enum-copy-constructor=true
 #[derive(
     Animate,
     Clone,
@@ -219,15 +197,22 @@ pub enum TrackKeyword {
     ToResolvedValue,
     ToShmem,
 )]
-pub enum TrackBreadth<L> {
+#[repr(C, u8)]
+pub enum GenericTrackBreadth<L> {
     
     Breadth(L),
     
     #[css(dimension)]
     Fr(CSSFloat),
     
-    Keyword(TrackKeyword),
+    Auto,
+    
+    MinContent,
+    
+    MaxContent,
 }
+
+pub use self::GenericTrackBreadth as TrackBreadth;
 
 impl<L> TrackBreadth<L> {
     
@@ -243,22 +228,30 @@ impl<L> TrackBreadth<L> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToResolvedValue, ToShmem)]
-pub enum TrackSize<L> {
+
+/// cbindgen:derive-tagged-enum-copy-constructor=true
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem)]
+#[repr(C, u8)]
+pub enum GenericTrackSize<L> {
     
-    Breadth(TrackBreadth<L>),
+    Breadth(GenericTrackBreadth<L>),
+    
+    
+    
+    
+    #[css(function)]
+    Minmax(GenericTrackBreadth<L>, GenericTrackBreadth<L>),
+    
+    
     
     
     
     
     #[css(function)]
-    Minmax(TrackBreadth<L>, TrackBreadth<L>),
-    
-    
-    
-    #[css(function)]
-    FitContent(L),
+    FitContent(GenericTrackBreadth<L>),
 }
+
+pub use self::GenericTrackSize as TrackSize;
 
 impl<L> TrackSize<L> {
     
@@ -288,7 +281,7 @@ impl<L> TrackSize<L> {
 
 impl<L> Default for TrackSize<L> {
     fn default() -> Self {
-        TrackSize::Breadth(TrackBreadth::Keyword(TrackKeyword::Auto))
+        TrackSize::Breadth(TrackBreadth::Auto)
     }
 }
 
@@ -309,7 +302,7 @@ impl<L: ToCss> ToCss for TrackSize<L> {
             TrackSize::Minmax(ref min, ref max) => {
                 
                 
-                if let TrackBreadth::Keyword(TrackKeyword::Auto) = *min {
+                if let TrackBreadth::Auto = *min {
                     if let TrackBreadth::Fr(_) = *max {
                         return max.to_css(dest);
                     }
@@ -325,48 +318,6 @@ impl<L: ToCss> ToCss for TrackSize<L> {
                 dest.write_str("fit-content(")?;
                 lp.to_css(dest)?;
                 dest.write_str(")")
-            },
-        }
-    }
-}
-
-impl<L: ToComputedValue> ToComputedValue for TrackSize<L> {
-    type ComputedValue = TrackSize<L::ComputedValue>;
-
-    #[inline]
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        match *self {
-            TrackSize::Breadth(TrackBreadth::Fr(ref f)) => {
-                
-                
-                
-                
-                
-                TrackSize::Minmax(
-                    TrackBreadth::Keyword(TrackKeyword::Auto),
-                    TrackBreadth::Fr(f.to_computed_value(context)),
-                )
-            },
-            TrackSize::Breadth(ref b) => TrackSize::Breadth(b.to_computed_value(context)),
-            TrackSize::Minmax(ref b1, ref b2) => {
-                TrackSize::Minmax(b1.to_computed_value(context), b2.to_computed_value(context))
-            },
-            TrackSize::FitContent(ref lp) => TrackSize::FitContent(lp.to_computed_value(context)),
-        }
-    }
-
-    #[inline]
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        match *computed {
-            TrackSize::Breadth(ref b) => {
-                TrackSize::Breadth(ToComputedValue::from_computed_value(b))
-            },
-            TrackSize::Minmax(ref b1, ref b2) => TrackSize::Minmax(
-                ToComputedValue::from_computed_value(b1),
-                ToComputedValue::from_computed_value(b2),
-            ),
-            TrackSize::FitContent(ref lp) => {
-                TrackSize::FitContent(ToComputedValue::from_computed_value(lp))
             },
         }
     }
