@@ -598,6 +598,11 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
   
   nsSize containerSize = aReflowInput.ComputedSizeAsContainerIfConstrained();
 
+  LogicalSize computedSize =
+      StaticPrefs::layout_css_column_span_enabled()
+          ? aReflowInput.mCBReflowInput->ComputedSize(wm)
+          : aReflowInput.ComputedSize(wm);
+
   
   
   
@@ -641,8 +646,16 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
                            !NS_SUBTREE_DIRTY(child->GetNextSibling());
     
     
+    
+    
+    
+    
+    
+    
+    
     if (skipIncremental && changingBSize &&
-        StyleColumn()->mColumnFill == StyleColumnFill::Auto) {
+        (StyleColumn()->mColumnFill == StyleColumnFill::Auto ||
+         computedSize.BSize(wm) != NS_UNCONSTRAINEDSIZE)) {
       skipIncremental = false;
     }
     
@@ -705,11 +718,6 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       if (aUnboundedLastColumn && columnCount == aConfig.mBalanceColCount - 1) {
         availSize.BSize(wm) = GetAvailableContentBSize(aReflowInput);
       }
-
-      LogicalSize computedSize =
-          StaticPrefs::layout_css_column_span_enabled()
-              ? aReflowInput.mCBReflowInput->ComputedSize(wm)
-              : aReflowInput.ComputedSize(wm);
 
       if (reflowNext) {
         child->MarkSubtreeDirty();
