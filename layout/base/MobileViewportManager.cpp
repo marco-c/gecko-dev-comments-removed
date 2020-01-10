@@ -147,7 +147,23 @@ MobileViewportManager::HandleEvent(dom::Event* event) {
 
 void MobileViewportManager::HandleDOMMetaAdded() {
   MVM_LOG("%p: got a dom-meta-added event\n", this);
-  RefreshViewportSize(mPainted);
+  if (mPainted && mContext->IsDocumentLoading()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SetInitialViewport();
+  } else {
+    RefreshViewportSize(mPainted);
+  }
 }
 
 NS_IMETHODIMP
