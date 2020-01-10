@@ -17,10 +17,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const PLAYER_URI = "chrome://global/content/pictureinpicture/player.xhtml";
-var PLAYER_FEATURES = "chrome,titlebar=no,alwaysontop,lockaspectratio,resizable";
+var PLAYER_FEATURES =
+  "chrome,titlebar=no,alwaysontop,lockaspectratio,resizable";
 
 if (!AppConstants.MOZ_WIDGET_GTK) {
-    PLAYER_FEATURES += ",dialog";
+  PLAYER_FEATURES += ",dialog";
 }
 const WINDOW_TYPE = "Toolkit:PictureInPicture";
 const TOGGLE_ENABLED_PREF =
