@@ -8,31 +8,39 @@ ChromeUtils.import(
   this
 );
 
+add_task(async function setup() {
+  
+  
+  SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.contentblocking.report.monitor.enabled", false],
+      ["browser.contentblocking.report.lockwise.enabled", false],
+      ["browser.contentblocking.report.proxy.enabled", false],
+    ],
+  });
+});
 
-add_task(async function testPreferencesButton() {
+
+add_task(async function testProtectionsButton() {
   let cuiTestUtils = new CustomizableUITestUtils(window);
 
   await BrowserTestUtils.withNewTab(gBrowser, async function(browser) {
     await cuiTestUtils.openMainMenu();
 
     let loaded = TestUtils.waitForCondition(
-      () => gBrowser.currentURI.spec == "about:preferences#privacy",
-      "Should open about:preferences."
+      () => gBrowser.currentURI.spec == "about:protections",
+      "Should open about:protections"
     );
-    document.getElementById("appMenu-tp-label").click();
+    document.getElementById("appMenu-protection-report-button").click();
     await loaded;
 
+    
+    
     await ContentTask.spawn(browser, {}, async function() {
-      let doc = content.document;
-      let section = await ContentTaskUtils.waitForCondition(
-        () => doc.querySelector(".spotlight"),
-        "The spotlight should appear."
-      );
-      is(
-        section.getAttribute("data-subcategory"),
-        "trackingprotection",
-        "The trackingprotection section is spotlighted."
-      );
+      await ContentTaskUtils.waitForCondition(() => {
+        let bars = content.document.querySelectorAll(".graph-bar");
+        return bars.length;
+      }, "The graph has been built");
     });
   });
 });
