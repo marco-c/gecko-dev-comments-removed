@@ -969,22 +969,16 @@ LoginManagerPrompter.prototype = {
 
 
 
-
-
-
   _showLoginCaptureDoorhanger(
     login,
     type,
     showOptions = {},
-    { notifySaved = false, messageStringID, autoSavedLoginGuid = "" } = {}
+    { notifySaved = false, messageStringID } = {}
   ) {
     let { browser } = this._getNotifyWindow();
     if (!browser) {
       return;
     }
-    this.log(
-      `_showLoginCaptureDoorhanger, got autoSavedLoginGuid: ${autoSavedLoginGuid}`
-    );
 
     let saveMsgNames = {
       prompt: login.username === "" ? "saveLoginMsgNoUser" : "saveLoginMsg",
@@ -1050,9 +1044,6 @@ LoginManagerPrompter.prototype = {
     };
 
     let updateButtonLabel = () => {
-      if (!currentNotification) {
-        Cu.reportError("updateButtonLabel, no currentNotification");
-      }
       let foundLogins = LoginHelper.searchLoginsWithObject({
         formActionOrigin: login.formActionOrigin,
         origin: login.origin,
@@ -1060,11 +1051,7 @@ LoginManagerPrompter.prototype = {
         schemeUpgrades: LoginHelper.schemeUpgrades,
       });
 
-      let logins = this._filterUpdatableLogins(
-        login,
-        foundLogins,
-        autoSavedLoginGuid
-      );
+      let logins = this._filterUpdatableLogins(login, foundLogins);
       let msgNames = logins.length == 0 ? saveMsgNames : changeMsgNames;
 
       
@@ -1152,11 +1139,7 @@ LoginManagerPrompter.prototype = {
         schemeUpgrades: LoginHelper.schemeUpgrades,
       });
 
-      let logins = this._filterUpdatableLogins(
-        login,
-        foundLogins,
-        autoSavedLoginGuid
-      );
+      let logins = this._filterUpdatableLogins(login, foundLogins);
       let resolveBy = ["scheme", "timePasswordChanged"];
       logins = LoginHelper.dedupeLogins(
         logins,
@@ -1164,28 +1147,8 @@ LoginManagerPrompter.prototype = {
         resolveBy,
         login.origin
       );
-      
-      logins.sort(l => (l.username == login.username ? -1 : 1));
 
-      this.log(`persistData: Matched ${logins.length} logins`);
-
-      let loginToRemove;
-      let loginToUpdate = logins.shift();
-
-      if (logins.length && logins[0].guid == autoSavedLoginGuid) {
-        loginToRemove = logins.shift();
-      }
-      if (logins.length) {
-        this.log(
-          "multiple logins, loginToRemove:",
-          loginToRemove && loginToRemove.guid
-        );
-        Cu.reportError("Unexpected match of multiple logins.");
-        return;
-      }
-
-      if (!loginToUpdate) {
-        
+      if (logins.length == 0) {
         
         
         Services.logins.addLogin(
@@ -1199,21 +1162,18 @@ LoginManagerPrompter.prototype = {
             login.passwordField
           )
         );
-      } else if (
-        loginToUpdate.password == login.password &&
-        loginToUpdate.username == login.username
-      ) {
-        
-        this.log("persistData: Touch matched login", loginToUpdate.guid);
-        this._updateLogin(loginToUpdate);
+      } else if (logins.length == 1) {
+        if (
+          logins[0].password == login.password &&
+          logins[0].username == login.username
+        ) {
+          
+          this._updateLogin(logins[0]);
+        } else {
+          this._updateLogin(logins[0], login);
+        }
       } else {
-        this.log("persistData: Update matched login", loginToUpdate.guid);
-        this._updateLogin(loginToUpdate, login);
-      }
-
-      if (loginToRemove) {
-        this.log("persistData: removing login", loginToRemove.guid);
-        Services.logins.removeLogin(loginToRemove);
+        Cu.reportError("Unexpected match of multiple logins.");
       }
     };
 
@@ -1461,14 +1421,8 @@ LoginManagerPrompter.prototype = {
 
 
 
-
-  promptToChangePassword(
-    aOldLogin,
-    aNewLogin,
-    dismissed = false,
-    notifySaved = false,
-    autoSavedLoginGuid = ""
-  ) {
+  promptToChangePassword(aOldLogin, aNewLogin, dismissed, notifySaved) {
+    this.log("promptToChangePassword");
     let notifyObj = this._getPopupNote();
 
     if (notifyObj) {
@@ -1477,8 +1431,7 @@ LoginManagerPrompter.prototype = {
         aOldLogin,
         aNewLogin,
         dismissed,
-        notifySaved,
-        autoSavedLoginGuid
+        notifySaved
       );
     } else {
       this._showChangeLoginDialog(aOldLogin, aNewLogin);
@@ -1508,8 +1461,7 @@ LoginManagerPrompter.prototype = {
     aOldLogin,
     aNewLogin,
     dismissed = false,
-    notifySaved = false,
-    autoSavedLoginGuid = ""
+    notifySaved = false
   ) {
     let login = aOldLogin.clone();
     login.origin = aNewLogin.origin;
@@ -1539,7 +1491,6 @@ LoginManagerPrompter.prototype = {
       {
         notifySaved,
         messageStringID,
-        autoSavedLoginGuid,
       }
     );
 
@@ -1941,16 +1892,11 @@ LoginManagerPrompter.prototype = {
 
 
 
-
-
-
-
-  _filterUpdatableLogins(aLogin, aLoginList, includeGUID) {
+  _filterUpdatableLogins(aLogin, aLoginList) {
     return aLoginList.filter(
       l =>
         l.username == aLogin.username ||
-        (l.password == aLogin.password && !l.username) ||
-        (includeGUID && includeGUID == l.guid)
+        (l.password == aLogin.password && !l.username)
     );
   },
 }; 
