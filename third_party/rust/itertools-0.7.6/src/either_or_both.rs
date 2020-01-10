@@ -1,0 +1,10 @@
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum EitherOrBoth<A, B> {
+    
+    Both(A, B),
+    
+    Left(A),
+    
+    Right(B),
+}

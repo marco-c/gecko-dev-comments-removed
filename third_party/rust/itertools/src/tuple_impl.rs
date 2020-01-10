@@ -6,6 +6,7 @@ use std::iter::Fuse;
 
 
 
+#[derive(Debug)]
 pub struct TupleBuffer<T>
     where T: TupleCollect
 {
@@ -116,6 +117,7 @@ impl<I, T> Tuples<I, T>
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+#[derive(Debug)]
 pub struct TupleWindows<I, T>
     where I: Iterator<Item = T::Item>,
           T: TupleCollect

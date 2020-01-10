@@ -103,23 +103,21 @@ fn zip_default_zip3(b: &mut test::Bencher)
     })
 }
 
+#[bench]
+fn zip_slices_ziptuple(b: &mut test::Bencher)
+{
+    let xs = vec![0; 1024];
+    let ys = vec![0; 768];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    b.iter(|| {
+        let xs = black_box(&xs);
+        let ys = black_box(&ys);
+        for (&x, &y) in itertools::multizip((xs, ys)) {
+            test::black_box(x);
+            test::black_box(y);
+        }
+    })
+}
 
 #[bench]
 fn zipslices(b: &mut test::Bencher)

@@ -7,6 +7,9 @@
 use std::fmt::Display;
 use std::iter::{self, Zip};
 #[cfg(feature = "use_std")]
+type VecIntoIter<T> = ::std::vec::IntoIter<T>;
+
+#[cfg(feature = "use_std")]
 use Itertools;
 
 pub use adaptors::{
@@ -221,8 +224,10 @@ pub fn join<I>(iterable: I, sep: &str) -> String
 
 
 
+
+
 #[cfg(feature = "use_std")]
-pub fn sorted<I>(iterable: I) -> Vec<I::Item>
+pub fn sorted<I>(iterable: I) -> VecIntoIter<I::Item>
     where I: IntoIterator,
           I::Item: Ord
 {

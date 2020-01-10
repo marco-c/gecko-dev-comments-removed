@@ -4,6 +4,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 
+#[derive(Debug)]
 pub struct RcIter<I> {
     
     pub rciter: Rc<RefCell<I>>,

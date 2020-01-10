@@ -13,7 +13,6 @@ use std::mem::replace;
 use std::iter::{Fuse, Peekable, FromIterator};
 use std::marker::PhantomData;
 use size_hint;
-use fold;
 
 macro_rules! clone_fields {
     ($name:ident, $base:expr, $($field:ident),+) => (
@@ -408,6 +407,8 @@ impl<B, F, I> Iterator for Batching<I, F>
 
 
 
+#[deprecated(note="Use std .step_by() instead", since="0.8")]
+#[allow(deprecated)]
 #[derive(Clone, Debug)]
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct Step<I> {
@@ -418,6 +419,7 @@ pub struct Step<I> {
 
 
 
+#[allow(deprecated)]
 pub fn step<I>(iter: I, step: usize) -> Step<I>
     where I: Iterator
 {
@@ -428,6 +430,7 @@ pub fn step<I>(iter: I, step: usize) -> Step<I>
     }
 }
 
+#[allow(deprecated)]
 impl<I> Iterator for Step<I>
     where I: Iterator
 {
@@ -455,6 +458,7 @@ impl<I> Iterator for Step<I>
 }
 
 
+#[allow(deprecated)]
 impl<I> ExactSizeIterator for Step<I>
     where I: ExactSizeIterator
 {}
@@ -1037,57 +1041,59 @@ impl_tuple_combination!(Tuple4Combination Tuple3Combination ; A, A, A, A, A; a b
 
 
 
-
-#[derive(Clone, Debug)]
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
-pub struct Flatten<I, J> {
+pub struct MapInto<I, R> {
     iter: I,
-    front: Option<J>,
+    _res: PhantomData<fn() -> R>,
 }
 
 
-pub fn flatten<I, J>(iter: I) -> Flatten<I, J> {
-    Flatten {
+pub fn map_into<I, R>(iter: I) -> MapInto<I, R> {
+    MapInto {
         iter: iter,
-        front: None,
+        _res: PhantomData,
     }
 }
 
-impl<I, J> Iterator for Flatten<I, J>
+impl<I, R> Iterator for MapInto<I, R>
     where I: Iterator,
-          I::Item: IntoIterator<IntoIter=J, Item=J::Item>,
-          J: Iterator,
+          I::Item: Into<R>,
 {
-    type Item = J::Item;
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if let Some(ref mut f) = self.front {
-                match f.next() {
-                    elt @ Some(_) => return elt,
-                    None => { }
-                }
-            }
-            if let Some(next_front) = self.iter.next() {
-                self.front = Some(next_front.into_iter());
-            } else {
-                break;
-            }
-        }
-        None
+    type Item = R;
+
+    fn next(&mut self) -> Option<R> {
+        self.iter
+            .next()
+            .map(|i| i.into())
     }
 
-    
-    fn fold<Acc, G>(self, init: Acc, mut f: G) -> Acc
-        where G: FnMut(Acc, Self::Item) -> Acc,
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
+    fn fold<Acc, Fold>(self, init: Acc, mut fold_f: Fold) -> Acc
+        where Fold: FnMut(Acc, Self::Item) -> Acc,
     {
-        let mut accum = init;
-        if let Some(iter) = self.front {
-            accum = fold(iter, accum, &mut f);
-        }
-        self.iter.fold(accum, move |accum, iter| fold(iter, accum, &mut f))
+        self.iter.fold(init, move |acc, v| fold_f(acc, v.into()))
     }
-
 }
+
+impl<I, R> DoubleEndedIterator for MapInto<I, R>
+    where I: DoubleEndedIterator,
+          I::Item: Into<R>,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter
+            .next_back()
+            .map(|i| i.into())
+    }
+}
+
+impl<I, R> ExactSizeIterator for MapInto<I, R>
+where
+    I: ExactSizeIterator,
+    I::Item: Into<R>,
+{}
 
 
 

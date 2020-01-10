@@ -11,6 +11,7 @@ use super::size_hint;
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+#[derive(Debug)]
 pub struct Intersperse<I>
     where I: Iterator
 {

@@ -6,8 +6,7 @@ extern crate itertools;
 
 #[macro_use]
 extern crate log;
-extern crate webidl;
-
+extern crate weedle;
 
 
 pub mod export;

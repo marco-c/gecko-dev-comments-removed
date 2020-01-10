@@ -22,7 +22,30 @@
 
 
 
-#![doc(html_root_url="https://docs.rs/itertools/0.7/")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url="https://docs.rs/itertools/0.8/")]
 
 extern crate either;
 
@@ -31,6 +54,8 @@ extern crate core as std;
 
 pub use either::Either;
 
+#[cfg(feature = "use_std")]
+use std::collections::HashMap;
 use std::iter::{IntoIterator};
 use std::cmp::Ordering;
 use std::fmt;
@@ -38,6 +63,10 @@ use std::fmt;
 use std::hash::Hash;
 #[cfg(feature = "use_std")]
 use std::fmt::Write;
+#[cfg(feature = "use_std")]
+type VecIntoIter<T> = ::std::vec::IntoIter<T>;
+#[cfg(feature = "use_std")]
+use std::iter::FromIterator;
 
 #[macro_use]
 mod impl_macros;
@@ -55,7 +84,7 @@ pub mod structs {
         Product,
         PutBack,
         Batching,
-        Step,
+        MapInto,
         MapResults,
         Merge,
         MergeBy,
@@ -63,10 +92,11 @@ pub mod structs {
         WhileSome,
         Coalesce,
         TupleCombinations,
-        Flatten,
         Positions,
         Update,
     };
+    #[allow(deprecated)]
+    pub use adaptors::Step;
     #[cfg(feature = "use_std")]
     pub use adaptors::MultiProduct;
     #[cfg(feature = "use_std")]
@@ -89,6 +119,7 @@ pub mod structs {
     #[cfg(feature = "use_std")]
     pub use rciter_impl::RcIter;
     pub use repeatn::RepeatN;
+    #[allow(deprecated)]
     pub use sources::{RepeatCall, Unfold, Iterate};
     #[cfg(feature = "use_std")]
     pub use tee::Tee;
@@ -100,6 +131,7 @@ pub mod structs {
     pub use zip_longest::ZipLongest;
     pub use ziptuple::Zip;
 }
+#[allow(deprecated)]
 pub use structs::*;
 pub use concat_impl::concat;
 pub use cons_tuples_impl::cons_tuples;
@@ -111,6 +143,7 @@ pub use minmax::MinMaxResult;
 pub use peeking_take_while::PeekingNext;
 pub use process_results_impl::process_results;
 pub use repeatn::repeat_n;
+#[allow(deprecated)]
 pub use sources::{repeat_call, unfold, iterate};
 pub use with_position::Position;
 pub use ziptuple::multizip;
@@ -127,6 +160,8 @@ mod cons_tuples_impl;
 mod combinations;
 mod diff;
 mod format;
+#[cfg(feature = "use_std")]
+mod group_map;
 #[cfg(feature = "use_std")]
 mod groupbylazy;
 mod intersperse;
@@ -239,6 +274,9 @@ macro_rules! iproduct {
 
 
 
+
+
+
 macro_rules! izip {
     
     
@@ -252,8 +290,20 @@ macro_rules! izip {
         izip!(@closure ($p, b) => ( $($tup)*, b ) $( , $tail )*)
     };
 
-    ( $first:expr $( , $rest:expr )* $(,)* ) => {
+    
+    ($first:expr $(,)*) => {
         $crate::__std_iter::IntoIterator::into_iter($first)
+    };
+
+    
+    ($first:expr, $second:expr $(,)*) => {
+        izip!($first)
+            .zip($second)
+    };
+
+    
+    ( $first:expr $( , $rest:expr )* $(,)* ) => {
+        izip!($first)
             $(
                 .zip($rest)
             )*
@@ -262,6 +312,9 @@ macro_rules! izip {
             )
     };
 }
+
+
+
 
 
 
@@ -606,10 +659,26 @@ pub trait Itertools : Iterator {
     
     
     
+    #[deprecated(note="Use std .step_by() instead", since="0.8")]
+    #[allow(deprecated)]
     fn step(self, n: usize) -> Step<Self>
         where Self: Sized
     {
         adaptors::step(self, n)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fn map_into<R>(self) -> MapInto<Self, R>
+        where Self: Sized,
+              Self::Item: Into<R>,
+    {
+        adaptors::map_into(self)
     }
 
     
@@ -1097,26 +1166,6 @@ pub trait Itertools : Iterator {
     
     
     
-    fn flatten(self) -> Flatten<Self, <Self::Item as IntoIterator>::IntoIter>
-        where Self: Sized,
-              Self::Item: IntoIterator
-    {
-        adaptors::flatten(self)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1330,11 +1379,12 @@ pub trait Itertools : Iterator {
     
     
     
-    fn foreach<F>(self, mut f: F)
+    #[deprecated(note="Use .for_each() instead", since="0.8")]
+    fn foreach<F>(self, f: F)
         where F: FnMut(Self::Item),
               Self: Sized,
     {
-        self.fold((), move |(), element| f(element))
+        self.for_each(f)
     }
 
     
@@ -1632,6 +1682,115 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn tree_fold1<F>(mut self, mut f: F) -> Option<Self::Item>
+        where F: FnMut(Self::Item, Self::Item) -> Self::Item,
+              Self: Sized,
+    {
+        type State<T> = Result<T, Option<T>>;
+
+        fn inner0<T, II, FF>(it: &mut II, f: &mut FF) -> State<T>
+            where
+                II: Iterator<Item = T>,
+                FF: FnMut(T, T) -> T
+        {
+            
+            
+            
+
+            let a =
+                if let Some(v) = it.next() { v }
+                else { return Err(None) };
+            let b =
+                if let Some(v) = it.next() { v }
+                else { return Err(Some(a)) };
+            Ok(f(a, b))
+        }
+
+        fn inner<T, II, FF>(stop: usize, it: &mut II, f: &mut FF) -> State<T>
+            where
+                II: Iterator<Item = T>,
+                FF: FnMut(T, T) -> T
+        {
+            let mut x = try!(inner0(it, f));
+            for height in 0..stop {
+                
+                
+                let next =
+                    if height == 0 {
+                        inner0(it, f)
+                    } else {
+                        inner(height, it, f)
+                    };
+                match next {
+                    Ok(y) => x = f(x, y),
+
+                    
+                    
+                    
+                    
+                    Err(None) => return Err(Some(x)),
+                    Err(Some(y)) => return Err(Some(f(x, y))),
+                }
+            }
+            Ok(x)
+        }
+
+        match inner(usize::max_value(), &mut self, &mut f) {
+            Err(x) => x,
+            _ => unreachable!(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[deprecated(note="Use .try_fold() instead", since="0.8")]
     fn fold_while<B, F>(&mut self, init: B, mut f: F) -> FoldWhile<B>
         where Self: Sized,
               F: FnMut(B, Self::Item) -> FoldWhile<B>
@@ -1659,12 +1818,20 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
+    
     #[cfg(feature = "use_std")]
-    fn sorted(self) -> Vec<Self::Item>
+    fn sorted(self) -> VecIntoIter<Self::Item>
         where Self: Sized,
               Self::Item: Ord
     {
-        self.sorted_by(Ord::cmp)
+        
+        
+        let mut v = Vec::from_iter(self);
+        v.sort();
+        v.into_iter()
     }
 
     
@@ -1687,15 +1854,17 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
     #[cfg(feature = "use_std")]
-    fn sorted_by<F>(self, cmp: F) -> Vec<Self::Item>
+    fn sorted_by<F>(self, cmp: F) -> VecIntoIter<Self::Item>
         where Self: Sized,
               F: FnMut(&Self::Item, &Self::Item) -> Ordering,
     {
-        let mut v: Vec<Self::Item> = self.collect();
-
+        let mut v = Vec::from_iter(self);
         v.sort_by(cmp);
-        v
+        v.into_iter()
     }
 
     
@@ -1718,16 +1887,18 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
     #[cfg(feature = "use_std")]
-    fn sorted_by_key<K, F>(self, f: F) -> Vec<Self::Item>
+    fn sorted_by_key<K, F>(self, f: F) -> VecIntoIter<Self::Item>
         where Self: Sized,
               K: Ord,
               F: FnMut(&Self::Item) -> K,
     {
-        let mut v: Vec<Self::Item> = self.collect();
-
+        let mut v = Vec::from_iter(self);
         v.sort_by_key(f);
-        v
+        v.into_iter()
     }
 
     
@@ -1768,6 +1939,28 @@ pub trait Itertools : Iterator {
         }
 
         (left, right)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn into_group_map<K, V>(self) -> HashMap<K, Vec<V>>
+        where Self: Iterator<Item=(K, V)> + Sized,
+              K: Hash + Eq,
+    {
+        group_map::into_group_map(self)
     }
 
     
@@ -1957,7 +2150,7 @@ pub fn partition<'a, A: 'a, I, F>(iter: I, mut pred: F) -> usize
 
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum FoldWhile<T> {
     
     Continue(T),

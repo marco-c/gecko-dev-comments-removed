@@ -1,7 +1,7 @@
 use super::size_hint;
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 pub struct Zip<T> {
     t: T,

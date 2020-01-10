@@ -5,6 +5,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 
+#[derive(Debug)]
 struct TeeBuffer<A, I> {
     backlog: VecDeque<A>,
     iter: I,
@@ -16,6 +17,7 @@ struct TeeBuffer<A, I> {
 
 
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
+#[derive(Debug)]
 pub struct Tee<I>
     where I: Iterator
 {

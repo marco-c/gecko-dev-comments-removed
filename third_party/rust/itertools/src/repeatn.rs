@@ -3,6 +3,7 @@
 
 
 #[must_use = "iterators are lazy and do nothing unless consumed"]
+#[derive(Debug)]
 pub struct RepeatN<A> {
     elt: Option<A>,
     n: usize,

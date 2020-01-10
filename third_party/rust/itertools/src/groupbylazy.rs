@@ -19,6 +19,7 @@ impl<'a, A, K, F: ?Sized> KeyFunction<A> for F
 
 
 
+#[derive(Debug)]
 struct ChunkIndex {
     size: usize,
     index: usize,
