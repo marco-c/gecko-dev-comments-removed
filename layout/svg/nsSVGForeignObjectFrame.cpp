@@ -357,9 +357,9 @@ void nsSVGForeignObjectFrame::ReflowSVG() {
     InvalidateFrame();
   }
 
-  
-  
-  nsRect overflow = nsRect(nsPoint(0, 0), mRect.Size());
+  auto* anonKid = PrincipalChildList().FirstChild();
+  nsRect overflow = anonKid->GetVisualOverflowRect();
+
   nsOverflowAreas overflowAreas(overflow, overflow);
   FinishAndStoreOverflow(overflowAreas, mRect.Size());
 
