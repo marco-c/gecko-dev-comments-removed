@@ -262,7 +262,7 @@ add_task(async function() {
     });
   }
 
-  let tmpPath = expandWhitelistPath("TmpD:").toLowerCase();
+  let tmpPath = expandWhitelistPath(MAC ? "TmpD:" : "/dev/shm").toLowerCase();
   let shouldPass = true;
   for (let procName in processes) {
     let whitelist = processes[procName];
@@ -311,22 +311,15 @@ add_task(async function() {
         continue;
       }
 
-      if (!WIN && filename == "/dev/urandom") {
-        continue;
-      }
+      if (!WIN) {
+        if (filename == "/dev/urandom") {
+          continue;
+        }
 
-      
-      
-      if (LINUX && filename.startsWith("/dev/shm/")) {
-        continue;
-      }
-
-      
-      
-      
-      
-      if (MAC && filename.startsWith(tmpPath + "/org.mozilla.ipc.")) {
-        continue;
+        
+        if (filename.startsWith(tmpPath + "/org.chromium.")) {
+          continue;
+        }
       }
 
       let expected = false;
