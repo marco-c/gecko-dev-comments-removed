@@ -1917,7 +1917,9 @@ HttpBaseChannel::RedirectTo(nsIURI* targetURI) {
   
   
   
+  
   if (mLoadInfo) {
+    mLoadInfo->SetBypassCORSChecks(false);
     mLoadInfo->SetAllowInsecureRedirectToDataURI(false);
   }
   return NS_OK;

@@ -838,12 +838,21 @@ HttpObserverManager = {
             
             
             
-            
-            
-            
-            
-            
             channel.loadInfo.allowInsecureRedirectToDataURI = true;
+
+            
+            
+            
+            
+            
+            
+            channel.loadInfo.bypassCORSChecks = true;
+
+            
+            
+            
+            
+            
             return;
           } catch (e) {
             Cu.reportError(e);
