@@ -1,5 +1,7 @@
 "use strict";
 
+PromiseTestUtils.whitelistRejectionsGlobally(/packaging errors/);
+
 
 
 
