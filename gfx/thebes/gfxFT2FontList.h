@@ -87,6 +87,8 @@ class FT2FontEntry : public gfxFontEntry {
 
   FT_MM_Var* GetMMVar() override;
 
+  void AppendToFaceList(nsCString& aFaceList, nsACString& aFamilyName);
+
   void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontListSizes* aSizes) const override;
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
@@ -162,7 +164,8 @@ class gfxFT2FontList : public gfxPlatformFontList {
                                    FontNameCache* aCache, bool aJarChanged);
 
   
-  void AppendFacesFromCachedFaceList(const nsCString& aFileName,
+  
+  bool AppendFacesFromCachedFaceList(const nsCString& aFileName,
                                      const nsCString& aFaceList,
                                      StandardFile aStdFile = kStandard);
 
