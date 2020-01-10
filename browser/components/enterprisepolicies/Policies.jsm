@@ -877,9 +877,8 @@ var Policies = {
             true
           );
         } else {
-          runOncePerModification("setHomepage", homepages, () => {
-            Services.prefs.clearUserPref("browser.startup.homepage");
-          });
+          
+          clearRunOnceModification("setHomepage");
         }
       }
       if (param.StartPage) {
