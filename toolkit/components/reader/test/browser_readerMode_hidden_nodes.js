@@ -38,17 +38,14 @@ add_task(async function test_reader_button() {
   );
   
   let url = TEST_PATH + "readerModeArticleHiddenNodes.html";
-  let paintPromise = ContentTask.spawn(tab.linkedBrowser, "", function() {
-    return new Promise(resolve => {
-      addEventListener("DOMContentLoaded", function onDCL() {
-        removeEventListener("DOMContentLoaded", onDCL);
-        addEventListener("MozAfterPaint", function onPaint() {
-          removeEventListener("MozAfterPaint", onPaint);
-          resolve();
-        });
-      });
-    });
-  });
+  let paintPromise = BrowserTestUtils.waitForContentEvent(
+    tab.linkedBrowser,
+    "MozAfterPaint",
+    false,
+    e =>
+      e.originalTarget.location.href.endsWith("HiddenNodes.html") &&
+      e.originalTarget.document.readyState == "complete"
+  );
   BrowserTestUtils.loadURI(tab.linkedBrowser, url);
   await paintPromise;
 
