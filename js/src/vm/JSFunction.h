@@ -129,11 +129,19 @@ class JSFunction : public js::NativeObject {
                 "FunctionKind doesn't fit into flags_");
 
  private:
-  uint16_t
-      nargs_;      
+  
 
-  uint16_t flags_; 
 
+
+  uint16_t nargs_;
+
+  
+
+
+
+
+
+  uint16_t flags_;
   union U {
     class {
       friend class JSFunction;
@@ -821,6 +829,20 @@ class JSFunction : public js::NativeObject {
   inline const js::Value& getExtendedSlot(size_t which) const;
 
   
+
+
+
+
+
+
+
+
+
+  inline js::FunctionExtended* toExtendedOffMainThread();
+  inline const js::FunctionExtended* toExtendedOffMainThread() const;
+  inline const js::Value& getExtendedSlotOffMainThread(size_t which) const;
+
+  
   static bool setTypeForScriptedFunction(JSContext* cx, js::HandleFunction fun,
                                          bool singleton = false);
 
@@ -1008,6 +1030,14 @@ inline const js::FunctionExtended* JSFunction::toExtended() const {
   return static_cast<const js::FunctionExtended*>(this);
 }
 
+inline js::FunctionExtended* JSFunction::toExtendedOffMainThread() {
+  return static_cast<js::FunctionExtended*>(this);
+}
+
+inline const js::FunctionExtended* JSFunction::toExtendedOffMainThread() const {
+  return static_cast<const js::FunctionExtended*>(this);
+}
+
 inline void JSFunction::initializeExtended() {
   MOZ_ASSERT(isExtended());
 
@@ -1031,6 +1061,13 @@ inline void JSFunction::setExtendedSlot(size_t which, const js::Value& val) {
 inline const js::Value& JSFunction::getExtendedSlot(size_t which) const {
   MOZ_ASSERT(which < mozilla::ArrayLength(toExtended()->extendedSlots));
   return toExtended()->extendedSlots[which];
+}
+
+inline const js::Value& JSFunction::getExtendedSlotOffMainThread(
+    size_t which) const {
+  MOZ_ASSERT(which <
+             mozilla::ArrayLength(toExtendedOffMainThread()->extendedSlots));
+  return toExtendedOffMainThread()->extendedSlots[which];
 }
 
 namespace js {

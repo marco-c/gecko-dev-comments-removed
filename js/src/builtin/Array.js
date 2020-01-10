@@ -789,10 +789,12 @@ function ArrayIteratorNext() {
     return result;
 }
 
-function ArrayValues() {
+
+
+function $ArrayValues() {
     return CreateArrayIterator(this, ITEM_KIND_VALUE);
 }
-_SetCanonicalName(ArrayValues, "values");
+_SetCanonicalName($ArrayValues, "values");
 
 function ArrayEntries() {
     return CreateArrayIterator(this, ITEM_KIND_KEY_AND_VALUE);
@@ -973,11 +975,11 @@ function ArrayToLocaleString(locales, options) {
 }
 
 
-function ArraySpecies() {
+function $ArraySpecies() {
     
     return this;
 }
-_SetCanonicalName(ArraySpecies, "get [Symbol.species]");
+_SetCanonicalName($ArraySpecies, "get [Symbol.species]");
 
 
 function ArraySpeciesCreate(originalArray, length) {

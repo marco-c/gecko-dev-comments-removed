@@ -1445,7 +1445,10 @@ function TypedArraySubarray(begin, end) {
 }
 
 
-function TypedArrayValues() {
+
+
+
+function $TypedArrayValues() {
     
     var O = this;
 
@@ -1455,7 +1458,7 @@ function TypedArrayValues() {
     
     return CreateArrayIterator(O, ITEM_KIND_VALUE);
 }
-_SetCanonicalName(TypedArrayValues, "values");
+_SetCanonicalName($TypedArrayValues, "values");
 
 
 
@@ -1551,7 +1554,7 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
         
         if (!mapping && IsTypedArrayConstructor(C) && IsObject(source)) {
             
-            if (usingIterator === TypedArrayValues && IsTypedArray(source) &&
+            if (usingIterator === $TypedArrayValues && IsTypedArray(source) &&
                 ArrayIteratorPrototypeOptimizable())
             {
                 
@@ -1574,7 +1577,7 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
             }
 
             
-            if (usingIterator === ArrayValues && IsPackedArray(source) &&
+            if (usingIterator === $ArrayValues && IsPackedArray(source) &&
                 ArrayIteratorPrototypeOptimizable())
             {
                 
@@ -1674,11 +1677,11 @@ function TypedArrayStaticOf() {
 }
 
 
-function TypedArraySpecies() {
+function $TypedArraySpecies() {
     
     return this;
 }
-_SetCanonicalName(TypedArraySpecies, "get [Symbol.species]");
+_SetCanonicalName($TypedArraySpecies, "get [Symbol.species]");
 
 
 
@@ -1806,18 +1809,18 @@ function IsDetachedBufferThis() {
 }
 
 
-function ArrayBufferSpecies() {
+function $ArrayBufferSpecies() {
     
     return this;
 }
-_SetCanonicalName(ArrayBufferSpecies, "get [Symbol.species]");
+_SetCanonicalName($ArrayBufferSpecies, "get [Symbol.species]");
 
 
-function SharedArrayBufferSpecies() {
+function $SharedArrayBufferSpecies() {
     
     return this;
 }
-_SetCanonicalName(SharedArrayBufferSpecies, "get [Symbol.species]");
+_SetCanonicalName($SharedArrayBufferSpecies, "get [Symbol.species]");
 
 
 

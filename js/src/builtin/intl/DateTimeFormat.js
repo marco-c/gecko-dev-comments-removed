@@ -791,13 +791,15 @@ function dateTimeFormatFormatToBind(date) {
 
 
 
-function Intl_DateTimeFormat_format_get() {
+
+
+function $Intl_DateTimeFormat_format_get() {
     
     var thisArg = UnwrapDateTimeFormat(this);
     var dtf = thisArg;
     if (!IsObject(dtf) || (dtf = GuardToDateTimeFormat(dtf)) === null) {
         return callFunction(CallDateTimeFormatMethodIfWrapped, thisArg,
-                            "Intl_DateTimeFormat_format_get");
+                            "$Intl_DateTimeFormat_format_get");
     }
 
     var internals = getDateTimeFormatInternals(dtf);
@@ -814,7 +816,7 @@ function Intl_DateTimeFormat_format_get() {
     
     return internals.boundFormat;
 }
-_SetCanonicalName(Intl_DateTimeFormat_format_get, "get format");
+_SetCanonicalName($Intl_DateTimeFormat_format_get, "get format");
 
 
 

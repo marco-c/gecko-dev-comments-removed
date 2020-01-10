@@ -63,10 +63,12 @@ function MapForEach(callbackfn, thisArg = undefined) {
     }
 }
 
-function MapEntries() {
+
+
+function $MapEntries() {
     return callFunction(std_Map_iterator, this);
 }
-_SetCanonicalName(MapEntries, "entries");
+_SetCanonicalName($MapEntries, "entries");
 
 var iteratorTemp = { mapIterationResultPair: null };
 
@@ -121,8 +123,8 @@ function MapIteratorNext() {
 }
 
 
-function MapSpecies() {
+function $MapSpecies() {
     
     return this;
 }
-_SetCanonicalName(MapSpecies, "get [Symbol.species]");
+_SetCanonicalName($MapSpecies, "get [Symbol.species]");

@@ -418,13 +418,15 @@ function numberFormatFormatToBind(value) {
 
 
 
-function Intl_NumberFormat_format_get() {
+
+
+function $Intl_NumberFormat_format_get() {
     
     var thisArg = UnwrapNumberFormat(this);
     var nf = thisArg;
     if (!IsObject(nf) || (nf = GuardToNumberFormat(nf)) === null) {
         return callFunction(CallNumberFormatMethodIfWrapped, thisArg,
-                            "Intl_NumberFormat_format_get");
+                            "$Intl_NumberFormat_format_get");
     }
 
     var internals = getNumberFormatInternals(nf);
@@ -441,7 +443,7 @@ function Intl_NumberFormat_format_get() {
     
     return internals.boundFormat;
 }
-_SetCanonicalName(Intl_NumberFormat_format_get, "get format");
+_SetCanonicalName($Intl_NumberFormat_format_get, "get format");
 
 
 

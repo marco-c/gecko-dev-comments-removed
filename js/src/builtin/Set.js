@@ -53,17 +53,19 @@ function SetForEach(callbackfn, thisArg = undefined) {
     }
 }
 
-function SetValues() {
+
+
+function $SetValues() {
     return callFunction(std_Set_iterator, this);
 }
-_SetCanonicalName(SetValues, "values");
+_SetCanonicalName($SetValues, "values");
 
 
-function SetSpecies() {
+function $SetSpecies() {
     
     return this;
 }
-_SetCanonicalName(SetSpecies, "get [Symbol.species]");
+_SetCanonicalName($SetSpecies, "get [Symbol.species]");
 
 
 var setIteratorTemp = { setIterationResult: null };

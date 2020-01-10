@@ -26,6 +26,7 @@ bool IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name);
 
 
 
+JSAtom* GetClonedSelfHostedFunctionName(JSFunction* fun);
 
 
 
@@ -33,7 +34,17 @@ bool IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name);
 
 
 
-JSAtom* GetSelfHostedFunctionName(JSFunction* fun);
+
+
+
+
+JSAtom* GetClonedSelfHostedFunctionNameOffMainThread(JSFunction* fun);
+
+
+
+
+
+bool IsExtendedUnclonedSelfHostedFunctionName(JSAtom* name);
 
 bool IsCallSelfHostedNonGenericMethod(NativeImpl impl);
 

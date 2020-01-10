@@ -65,6 +65,10 @@
 
 
 
+#define ORIGINAL_FUNCTION_NAME_SLOT 0
+
+
+
 #define LAZY_FUNCTION_NAME_SLOT 0
 
 

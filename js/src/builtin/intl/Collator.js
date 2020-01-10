@@ -348,13 +348,15 @@ function collatorCompareToBind(x, y) {
 
 
 
-function Intl_Collator_compare_get() {
+
+
+function $Intl_Collator_compare_get() {
     
     var collator = this;
 
     
     if (!IsObject(collator) || (collator = GuardToCollator(collator)) === null)
-        return callFunction(CallCollatorMethodIfWrapped, this, "Intl_Collator_compare_get");
+        return callFunction(CallCollatorMethodIfWrapped, this, "$Intl_Collator_compare_get");
 
     var internals = getCollatorInternals(collator);
 
@@ -370,7 +372,7 @@ function Intl_Collator_compare_get() {
     
     return internals.boundCompare;
 }
-_SetCanonicalName(Intl_Collator_compare_get, "get compare");
+_SetCanonicalName($Intl_Collator_compare_get, "get compare");
 
 
 

@@ -3,7 +3,9 @@
 
 
 
-function RegExpFlagsGetter() {
+
+
+function $RegExpFlagsGetter() {
     
     var R = this;
     if (!IsObject(R))
@@ -35,10 +37,10 @@ function RegExpFlagsGetter() {
     
     return result;
 }
-_SetCanonicalName(RegExpFlagsGetter, "get flags");
+_SetCanonicalName($RegExpFlagsGetter, "get flags");
 
 
-function RegExpToString()
+function $RegExpToString()
 {
     
     var R = this;
@@ -56,7 +58,7 @@ function RegExpToString()
     
     return "/" + pattern + "/" + flags;
 }
-_SetCanonicalName(RegExpToString, "toString");
+_SetCanonicalName($RegExpToString, "toString");
 
 
 function AdvanceStringIndex(S, index) {
@@ -1070,11 +1072,11 @@ function RegExpTest(string) {
 }
 
 
-function RegExpSpecies() {
+function $RegExpSpecies() {
     
     return this;
 }
-_SetCanonicalName(RegExpSpecies, "get [Symbol.species]");
+_SetCanonicalName($RegExpSpecies, "get [Symbol.species]");
 
 function IsRegExpMatchAllOptimizable(rx, C) {
     if (!IsRegExpObject(rx))
