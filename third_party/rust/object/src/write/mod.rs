@@ -29,6 +29,8 @@ pub struct Object {
     symbol_map: HashMap<Vec<u8>, SymbolId>,
     stub_symbols: HashMap<SymbolId, SymbolId>,
     subsection_via_symbols: bool,
+    
+    pub mangling: Mangling,
 }
 
 impl Object {
@@ -43,6 +45,7 @@ impl Object {
             symbol_map: HashMap::new(),
             stub_symbols: HashMap::new(),
             subsection_via_symbols: false,
+            mangling: Mangling::default(format, architecture),
         }
     }
 
@@ -56,6 +59,18 @@ impl Object {
     #[inline]
     pub fn architecture(&self) -> Architecture {
         self.architecture
+    }
+
+    
+    #[inline]
+    pub fn mangling(&self) -> Mangling {
+        self.mangling
+    }
+
+    
+    #[inline]
+    pub fn set_mangling(&mut self, mangling: Mangling) {
+        self.mangling = mangling;
     }
 
     
@@ -210,15 +225,20 @@ impl Object {
     }
 
     
-    pub fn add_symbol(&mut self, symbol: Symbol) -> SymbolId {
+    pub fn add_symbol(&mut self, mut symbol: Symbol) -> SymbolId {
         
         debug_assert!(symbol.is_undefined() || symbol.scope != SymbolScope::Unknown);
         if symbol.kind == SymbolKind::Section {
             return self.section_symbol(symbol.section.unwrap());
         }
         let symbol_id = SymbolId(self.symbols.len());
-        if !symbol.name.is_empty() {
+        if !symbol.name.is_empty()
+            && (symbol.kind == SymbolKind::Text || symbol.kind == SymbolKind::Data)
+        {
             self.symbol_map.insert(symbol.name.clone(), symbol_id);
+            if let Some(prefix) = self.mangling.global_prefix() {
+                symbol.name.insert(0, prefix);
+            }
         }
         self.symbols.push(symbol);
         symbol_id
@@ -529,4 +549,37 @@ pub struct Relocation {
     
     
     pub addend: i64,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Mangling {
+    
+    None,
+    
+    Coff,
+    
+    Elf,
+    
+    Macho,
+}
+
+impl Mangling {
+    
+    pub fn default(format: BinaryFormat, _architecture: Architecture) -> Self {
+        match format {
+            BinaryFormat::Coff => Mangling::Coff,
+            BinaryFormat::Elf => Mangling::Elf,
+            BinaryFormat::Macho => Mangling::Macho,
+            _ => Mangling::None,
+        }
+    }
+
+    
+    pub fn global_prefix(self) -> Option<u8> {
+        match self {
+            Mangling::None | Mangling::Elf => None,
+            Mangling::Coff | Mangling::Macho => Some(b'_'),
+        }
+    }
 }
