@@ -921,6 +921,7 @@ impl UniformLocation {
     pub const INVALID: Self = UniformLocation(-1);
 }
 
+#[derive(Debug)]
 pub struct Capabilities {
     
     pub supports_multisampling: bool,
@@ -1041,7 +1042,7 @@ pub struct Device {
 }
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum DrawTarget {
     
     
@@ -1168,7 +1169,7 @@ impl DrawTarget {
 }
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ReadTarget {
     
     Default,
