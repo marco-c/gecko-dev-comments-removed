@@ -428,6 +428,7 @@ class PageAction {
     }
   }
 
+  
   async _renderPopup(message, browser) {
     const { id, content } = message;
 
@@ -451,12 +452,6 @@ class PageAction {
     let options = {};
     let panelTitle;
 
-    
-    
-    this.window.document
-      .getElementById("contextual-feature-recommendation-notification")
-      .setAttribute("data-notification-category", message.content.category);
-
     headerLabel.value = await this.getStrings(content.heading_text);
     headerLink.setAttribute(
       "href",
@@ -473,76 +468,108 @@ class PageAction {
         bucket_id: content.bucket_id,
         event: "RATIONALE",
       });
+    
+    
+    this.window.document
+      .getElementById("contextual-feature-recommendation-notification")
+      .setAttribute("data-notification-category", content.layout);
 
-    footerText.textContent = await this.getStrings(content.text);
-
-    if (content.addon) {
-      await this._setAddonAuthorAndRating(this.window.document, content);
-      panelTitle = await this.getStrings(content.addon.title);
-      options = { popupIconURL: content.addon.icon };
-
-      footerLink.value = await this.getStrings({
-        string_id: "cfr-doorhanger-extension-learn-more-link",
-      });
-      footerLink.setAttribute("href", content.addon.amo_url);
-      footerLink.onclick = () =>
-        this._sendTelemetry({
-          message_id: id,
-          bucket_id: content.bucket_id,
-          event: "LEARN_MORE",
-        });
-
-      primaryActionCallback = async () => {
-        
-        primary.action.data.url = await CFRPageActions._fetchLatestAddonVersion(
-          content.addon.id
+    switch (content.layout) {
+      case "icon_and_message":
+        const author = this.window.document.getElementById(
+          "cfr-notification-author"
         );
-        this._blockMessage(id);
-        this.dispatchUserAction(primary.action);
-        this.hideAddressBarNotifier();
-        this._sendTelemetry({
-          message_id: id,
-          bucket_id: content.bucket_id,
-          event: "INSTALL",
-        });
-        RecommendationMap.delete(browser);
-      };
-    } else {
-      const stepsContainerId = "cfr-notification-feature-steps";
-      let stepsContainer = this.window.document.getElementById(
-        stepsContainerId
-      );
-      primaryActionCallback = () => {
-        this._blockMessage(id);
-        this.dispatchUserAction(primary.action);
-        this.hideAddressBarNotifier();
-        this._sendTelemetry({
-          message_id: id,
-          bucket_id: content.bucket_id,
-          event: "PIN",
-        });
-        RecommendationMap.delete(browser);
-      };
-      panelTitle = await this.getStrings(content.heading_text);
+        author.textContent = await this.getStrings(content.text);
+        primaryActionCallback = () => {
+          this._blockMessage(id);
+          this.dispatchUserAction(primary.action);
+          this.hideAddressBarNotifier();
+          this._sendTelemetry({
+            message_id: id,
+            bucket_id: content.bucket_id,
+            event: "ENABLE",
+          });
+          RecommendationMap.delete(browser);
+        };
+        panelTitle = await this.getStrings(content.heading_text);
+        options = {
+          popupIconURL: content.icon,
+          popupIconClass: "cfr-doorhanger-large-icon",
+        };
+        break;
+      case "message_and_animation":
+        footerText.textContent = await this.getStrings(content.text);
+        const stepsContainerId = "cfr-notification-feature-steps";
+        let stepsContainer = this.window.document.getElementById(
+          stepsContainerId
+        );
+        primaryActionCallback = () => {
+          this._blockMessage(id);
+          this.dispatchUserAction(primary.action);
+          this.hideAddressBarNotifier();
+          this._sendTelemetry({
+            message_id: id,
+            bucket_id: content.bucket_id,
+            event: "PIN",
+          });
+          RecommendationMap.delete(browser);
+        };
+        panelTitle = await this.getStrings(content.heading_text);
 
-      if (stepsContainer) {
-        
-        stepsContainer.remove();
-        stepsContainer = stepsContainer.cloneNode(false);
-      } else {
-        stepsContainer = this.window.document.createXULElement("vbox");
-        stepsContainer.setAttribute("id", stepsContainerId);
-      }
-      footerText.parentNode.appendChild(stepsContainer);
-      for (let step of content.descriptionDetails.steps) {
-        
-        const li = this.window.document.createXULElement("li");
-        this._l10n.setAttributes(li, step.string_id);
-        stepsContainer.appendChild(li);
-      }
-      await this._l10n.translateElements([...stepsContainer.children]);
+        if (content.descriptionDetails) {
+          if (stepsContainer) {
+            
+            stepsContainer.remove();
+            stepsContainer = stepsContainer.cloneNode(false);
+          } else {
+            stepsContainer = this.window.document.createXULElement("vbox");
+            stepsContainer.setAttribute("id", stepsContainerId);
+          }
+          footerText.parentNode.appendChild(stepsContainer);
+          for (let step of content.descriptionDetails.steps) {
+            
+            const li = this.window.document.createXULElement("li");
+            this._l10n.setAttributes(li, step.string_id);
+            stepsContainer.appendChild(li);
+          }
+          await this._l10n.translateElements([...stepsContainer.children]);
+        }
 
-      await this._renderPinTabAnimation();
+        await this._renderPinTabAnimation();
+        break;
+      default:
+        panelTitle = await this.getStrings(content.addon.title);
+        await this._setAddonAuthorAndRating(this.window.document, content);
+        
+        footerText.textContent = await this.getStrings(content.text);
+        options = { popupIconURL: content.addon.icon };
+
+        footerLink.value = await this.getStrings({
+          string_id: "cfr-doorhanger-extension-learn-more-link",
+        });
+        footerLink.setAttribute("href", content.addon.amo_url);
+        footerLink.onclick = () =>
+          this._sendTelemetry({
+            message_id: id,
+            bucket_id: content.bucket_id,
+            event: "LEARN_MORE",
+          });
+
+        primaryActionCallback = async () => {
+          
+          primary.action.data.url = await CFRPageActions._fetchLatestAddonVersion(
+            content.addon.id
+          );
+          this._blockMessage(id);
+          this.dispatchUserAction(primary.action);
+          this.hideAddressBarNotifier();
+          this._sendTelemetry({
+            message_id: id,
+            bucket_id: content.bucket_id,
+            event: "INSTALL",
+          });
+          RecommendationMap.delete(browser);
+        };
     }
 
     const primaryBtnStrings = await this.getStrings(primary.label);
@@ -749,7 +776,8 @@ const CFRPageActions = {
     }
     if (
       browser !== win.gBrowser.selectedBrowser ||
-      !isHostMatch(browser, host)
+      
+      (host && !isHostMatch(browser, host))
     ) {
       return false;
     }
