@@ -6,7 +6,7 @@
 
 #include "WorkletPrincipals.h"
 
-#include "nsJSPrincipals.h"
+#include "mozilla/Assertions.h"
 
 namespace mozilla {
 namespace dom {
@@ -20,11 +20,8 @@ WorkletPrincipals::~WorkletPrincipals() = default;
 
 bool WorkletPrincipals::write(JSContext* aCx,
                               JSStructuredCloneWriter* aWriter) {
-  
-  
-  
-  return nsJSPrincipals::WritePrincipalInfo(aWriter,
-                                            mWorkletImpl->PrincipalInfo());
+  MOZ_CRASH("WorkletPrincipals::write not implemented");
+  return false;
 }
 
 void WorkletPrincipals::Destroy(JSPrincipals* aPrincipals) {

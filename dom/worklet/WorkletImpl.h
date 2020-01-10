@@ -9,7 +9,6 @@
 
 #include "MainThreadUtils.h"
 #include "mozilla/OriginAttributes.h"
-#include "mozilla/ipc/PBackgroundSharedTypes.h"
 
 class nsPIDOMWindowInner;
 class nsIPrincipal;
@@ -27,15 +26,31 @@ class WorkletThread;
 
 class WorkletLoadInfo {
  public:
-  explicit WorkletLoadInfo(nsPIDOMWindowInner* aWindow);
+  WorkletLoadInfo(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
+  ~WorkletLoadInfo();
 
   uint64_t OuterWindowID() const { return mOuterWindowID; }
   uint64_t InnerWindowID() const { return mInnerWindowID; }
+
+  const OriginAttributes& OriginAttributesRef() const {
+    return mOriginAttributes;
+  }
+
+  nsIPrincipal* Principal() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mPrincipal;
+  }
 
  private:
   
   uint64_t mOuterWindowID;
   const uint64_t mInnerWindowID;
+  const OriginAttributes mOriginAttributes;
+  
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+
+  friend class WorkletImpl;
+  friend class WorkletThread;
 };
 
 
@@ -56,11 +71,6 @@ class WorkletImpl {
 
   virtual nsresult SendControlMessage(already_AddRefed<nsIRunnable> aRunnable);
 
-  nsIPrincipal* Principal() const {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mPrincipal;
-  }
-
   void NotifyWorkletFinished();
 
   
@@ -69,10 +79,6 @@ class WorkletImpl {
   
 
   const WorkletLoadInfo& LoadInfo() const { return mWorkletLoadInfo; }
-  const OriginAttributes& OriginAttributesRef() const {
-    return mPrincipalInfo.get_NullPrincipalInfo().attrs();
-  }
-  const ipc::PrincipalInfo& PrincipalInfo() const { return mPrincipalInfo; }
 
  protected:
   WorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
@@ -81,11 +87,8 @@ class WorkletImpl {
   virtual already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope() = 0;
 
   
-  ipc::PrincipalInfo mPrincipalInfo;
   
-  nsCOMPtr<nsIPrincipal> mPrincipal;
-
-  const WorkletLoadInfo mWorkletLoadInfo;
+  WorkletLoadInfo mWorkletLoadInfo;
 
   
   RefPtr<dom::WorkletThread> mWorkletThread;
