@@ -139,6 +139,7 @@ static_assert(MAX_WORKERS_PER_DOMAIN >= 1,
 #define GC_REQUEST_OBSERVER_TOPIC "child-gc-request"
 #define CC_REQUEST_OBSERVER_TOPIC "child-cc-request"
 #define MEMORY_PRESSURE_OBSERVER_TOPIC "memory-pressure"
+#define MEMORY_PRESSURE_ONGOING_DATA "low-memory-ongoing"
 
 #define BROADCAST_ALL_WORKERS(_func, ...)                         \
   PR_BEGIN_MACRO                                                  \
@@ -2199,9 +2200,13 @@ RuntimeService::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
   }
   if (!strcmp(aTopic, MEMORY_PRESSURE_OBSERVER_TOPIC)) {
-    GarbageCollectAllWorkers( true);
-    CycleCollectAllWorkers();
-    MemoryPressureAllWorkers();
+    
+    
+    if (!nsDependentString(aData).EqualsLiteral(MEMORY_PRESSURE_ONGOING_DATA)) {
+      GarbageCollectAllWorkers( true);
+      CycleCollectAllWorkers();
+      MemoryPressureAllWorkers();
+    }
     return NS_OK;
   }
   if (!strcmp(aTopic, NS_IOSERVICE_OFFLINE_STATUS_TOPIC)) {
