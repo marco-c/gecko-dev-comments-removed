@@ -70,7 +70,7 @@ void SetFrameArgumentsObject(JSContext* cx, AbstractFramePtr frame,
 }  
 
 inline JSFunction* JSScript::functionDelazifying() const {
-  JSFunction* fun = function();
+  JSFunction* fun = functionNonDelazifying();
   if (fun && fun->isInterpretedLazy()) {
     fun->setUnlazifiedScript(const_cast<JSScript*>(this));
     
@@ -84,7 +84,7 @@ inline JSFunction* JSScript::functionDelazifying() const {
 
 inline void JSScript::ensureNonLazyCanonicalFunction() {
   
-  JSFunction* fun = function();
+  JSFunction* fun = functionNonDelazifying();
   if (fun && fun->isInterpretedLazy()) {
     functionDelazifying();
   }

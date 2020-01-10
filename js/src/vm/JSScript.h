@@ -1638,6 +1638,13 @@ class BaseScript : public gc::TenuredCell {
   }
   JS::Compartment* maybeCompartment() const { return compartment(); }
 
+  JSFunction* functionNonDelazifying() const {
+    if (functionOrGlobal_->is<JSFunction>()) {
+      return &functionOrGlobal_->as<JSFunction>();
+    }
+    return nullptr;
+  }
+
   ScriptSourceObject* sourceObject() const { return sourceObject_; }
   ScriptSource* scriptSource() const { return sourceObject()->source(); }
   ScriptSource* maybeForwardedScriptSource() const;
@@ -2678,12 +2685,6 @@ class JSScript : public js::BaseScript {
 
 
   inline JSFunction* functionDelazifying() const;
-  JSFunction* functionNonDelazifying() const {
-    if (bodyScope()->is<js::FunctionScope>()) {
-      return bodyScope()->as<js::FunctionScope>().canonicalFunction();
-    }
-    return nullptr;
-  }
   
 
 
@@ -3013,13 +3014,6 @@ class JSScript : public js::BaseScript {
   inline JSFunction* getFunction(size_t index);
   inline JSFunction* getFunction(jsbytecode* pc);
 
-  JSFunction* function() const {
-    if (functionNonDelazifying()) {
-      return functionNonDelazifying();
-    }
-    return nullptr;
-  }
-
   inline js::RegExpObject* getRegExp(size_t index);
   inline js::RegExpObject* getRegExp(jsbytecode* pc);
 
@@ -3295,10 +3289,6 @@ class LazyScript : public BaseScript {
 
   static inline JSFunction* functionDelazifying(JSContext* cx,
                                                 Handle<LazyScript*>);
-  JSFunction* functionNonDelazifying() const {
-    return &functionOrGlobal_->as<JSFunction>();
-  }
-
   void initScript(JSScript* script);
 
   JSScript* maybeScript() { return script_; }
