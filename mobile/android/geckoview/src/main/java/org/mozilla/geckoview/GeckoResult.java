@@ -12,6 +12,7 @@ import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 
 
@@ -292,6 +293,64 @@ public class GeckoResult<T> {
 
     public @NonNull <U> GeckoResult<U> exceptionally(@NonNull final OnExceptionListener<U> exceptionListener) {
         return then(null, exceptionListener);
+    }
+
+    
+
+
+
+
+    
+    public interface Consumer<T> {
+        
+
+
+
+
+        @AnyThread
+        void accept(@Nullable T t);
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull GeckoResult<Void> accept(@Nullable final Consumer<T> valueListener) {
+        return accept(valueListener, null);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull GeckoResult<Void> accept(@Nullable final Consumer<T> valueConsumer,
+                                             @Nullable final Consumer<Throwable> exceptionConsumer) {
+        final OnValueListener<T, Void> valueListener = valueConsumer == null ? null :
+            value -> {
+                valueConsumer.accept(value);
+                return null;
+            };
+
+        final OnExceptionListener<Void> exceptionListener = exceptionConsumer == null ? null :
+            value -> {
+                exceptionConsumer.accept(value);
+                return null;
+            };
+
+        return then(valueListener, exceptionListener);
     }
 
     
