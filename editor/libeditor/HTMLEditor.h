@@ -2059,6 +2059,19 @@ class HTMLEditor final : public TextEditor,
   TryToJoinBlocksWithTransaction(nsIContent& aLeftContentInBlock,
                                  nsIContent& aRightContentInBlock);
 
+  
+
+
+
+
+
+
+
+
+
+  EditorDOMPoint GetGoodCaretPointFor(
+      nsIContent& aContent, nsIEditor::EDirection aDirectionAndAmount);
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;

@@ -149,19 +149,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  EditorDOMPoint GetGoodSelPointForNode(nsINode& aNode,
-                                        nsIEditor::EDirection aAction);
-
-  
-
-
-
-
-
-
-
-
-
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
   DeleteElementsExceptTableRelatedElements(nsINode& aNode);
