@@ -29,6 +29,8 @@ add_task(async function() {
     libraryButton.parentNode.id,
     "Should be next to library button"
   );
+  
+  await waitForElementShown(skippedItem);
   simulateItemDrag(libraryButton, skippedItem, "start");
   let libraryWrapper = libraryButton.parentNode;
   is(
