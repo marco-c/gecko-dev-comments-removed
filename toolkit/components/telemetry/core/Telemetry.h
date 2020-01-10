@@ -427,15 +427,6 @@ void RecordSlowSQLStatement(const nsACString& statement,
 
 
 
-
-void RecordWebrtcIceCandidates(const uint32_t iceCandidateBitmask,
-                               const bool success);
-
-
-
-
-
-
 void InitIOReporting(nsIFile* aXreDir);
 
 

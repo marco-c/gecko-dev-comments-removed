@@ -628,7 +628,6 @@ var Impl = {
     
     if (Telemetry.canRecordExtended) {
       payloadObj.log = [];
-      payloadObj.webrtc = protect(() => Telemetry.webrtcStats);
     }
 
     if (Utils.isContentProcess) {
