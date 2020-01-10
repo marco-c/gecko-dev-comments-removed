@@ -4103,6 +4103,13 @@ void nsCSSRendering::PaintDecorationLine(
         mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT) {
       
       
+      
+      
+      textPos.fX +=
+          textRun->GetAdvanceWidth(
+              gfxTextRun::Range(iter.GetStringStart(), iter.GetStringEnd()),
+              aParams.provider) /
+          appUnitsPerDevPixel;
       continue;
     }
 
@@ -4113,6 +4120,7 @@ void nsCSSRendering::PaintDecorationLine(
       return;
     }
 
+    
     
     sk_sp<const SkTextBlob> textBlob =
         CreateTextBlob(textRun, characterGlyphs, font, spacing.Elements(),
