@@ -157,30 +157,6 @@ parentProcessTargetPrototype._detach = function() {
   return BrowsingContextTargetActor.prototype._detach.call(this);
 };
 
-
-
-
-
-
-parentProcessTargetPrototype.preNest = function() {
-  
-  for (const { windowUtils } of Services.wm.getEnumerator(null)) {
-    windowUtils.suppressEventHandling(true);
-    windowUtils.suspendTimeouts();
-  }
-};
-
-
-
-
-parentProcessTargetPrototype.postNest = function(nestData) {
-  
-  for (const { windowUtils } of Services.wm.getEnumerator(null)) {
-    windowUtils.resumeTimeouts();
-    windowUtils.suppressEventHandling(false);
-  }
-};
-
 exports.parentProcessTargetPrototype = parentProcessTargetPrototype;
 exports.ParentProcessTargetActor = ActorClassWithSpec(
   parentProcessTargetSpec,

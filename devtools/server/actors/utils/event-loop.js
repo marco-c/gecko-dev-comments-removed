@@ -7,8 +7,6 @@
 "use strict";
 
 const xpcInspector = require("xpcInspector");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { dumpn } = DevToolsUtils;
 
 
 
@@ -19,14 +17,7 @@ const { dumpn } = DevToolsUtils;
 
 
 
-
-
-
-
-
-
-function EventLoopStack({ thread, connection, hooks }) {
-  this._hooks = hooks;
+function EventLoopStack({ thread, connection }) {
   this._thread = thread;
   this._connection = connection;
 }
@@ -73,7 +64,6 @@ EventLoopStack.prototype = {
     return new EventLoop({
       thread: this._thread,
       connection: this._connection,
-      hooks: this._hooks,
     });
   },
 };
@@ -87,12 +77,8 @@ EventLoopStack.prototype = {
 
 
 
-
-
-
-function EventLoop({ thread, connection, hooks }) {
+function EventLoop({ thread, connection }) {
   this._thread = thread;
-  this._hooks = hooks;
   this._connection = connection;
 
   this.enter = this.enter.bind(this);
@@ -103,14 +89,14 @@ EventLoop.prototype = {
   entered: false,
   resolved: false,
   get url() {
-    return this._hooks.url;
+    return this._thread._parent.url;
   },
 
   
 
 
   enter: function() {
-    const nestData = this._hooks.preNest ? this._hooks.preNest() : null;
+    const preNestData = this.preNest();
 
     this.entered = true;
     xpcInspector.enterNestedEventLoop(this);
@@ -123,9 +109,7 @@ EventLoop.prototype = {
       }
     }
 
-    if (this._hooks.postNest) {
-      this._hooks.postNest(nestData);
-    }
+    this.postNest(preNestData);
   },
 
   
@@ -151,6 +135,55 @@ EventLoop.prototype = {
       return true;
     }
     return false;
+  },
+
+  
+
+
+  getAllWindowDebuggees() {
+    return (
+      this._thread.dbg
+        .getDebuggees()
+        .filter(debuggee => {
+          
+          
+          return debuggee.class == "Window";
+        })
+        .map(debuggee => {
+          
+          return debuggee.unsafeDereference();
+        })
+        
+        
+        .filter(window => window.top === window)
+    );
+  },
+
+  
+
+
+  preNest() {
+    const windows = [];
+    
+    for (const window of this.getAllWindowDebuggees()) {
+      const { windowUtils } = window;
+      windowUtils.suppressEventHandling(true);
+      windowUtils.suspendTimeouts();
+      windows.push(window);
+    }
+    return windows;
+  },
+
+  
+
+
+  postNest(pausedWindows) {
+    
+    for (const window of pausedWindows) {
+      const { windowUtils } = window;
+      windowUtils.resumeTimeouts();
+      windowUtils.suppressEventHandling(false);
+    }
   },
 };
 

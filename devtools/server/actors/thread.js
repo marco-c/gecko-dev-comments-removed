@@ -347,7 +347,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     this._nestedEventLoops = new EventLoopStack({
-      hooks: this._parent,
       connection: this.conn,
       thread: this,
     });

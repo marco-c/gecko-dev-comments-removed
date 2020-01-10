@@ -183,14 +183,6 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
       this._workerList.onListChanged = null;
     }
   },
-
-  preNest: function() {
-    
-    
-    
-  },
-
-  postNest: function() {},
 });
 
 exports.ContentProcessTargetActor = ContentProcessTargetActor;

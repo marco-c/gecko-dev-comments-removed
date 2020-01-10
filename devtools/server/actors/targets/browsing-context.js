@@ -1264,33 +1264,6 @@ const browsingContextTargetPrototype = {
     return windowUtils.serviceWorkersTestingEnabled;
   },
 
-  
-
-
-  preNest() {
-    if (!this.window) {
-      
-      return;
-    }
-    const windowUtils = this.window.windowUtils;
-
-    windowUtils.suppressEventHandling(true);
-    windowUtils.suspendTimeouts();
-  },
-
-  
-
-
-  postNest(nestData) {
-    if (!this.window) {
-      
-      return;
-    }
-    const windowUtils = this.window.windowUtils;
-    windowUtils.resumeTimeouts();
-    windowUtils.suppressEventHandling(false);
-  },
-
   _changeTopLevelDocument(window) {
     
     
