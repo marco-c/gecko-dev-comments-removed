@@ -149,12 +149,7 @@ var UI = {
     );
 
     
-    
-    if (
-      Services.prefs.getBoolPref("devtools.aboutdebugging.new-enabled", false)
-    ) {
-      this.showDeprecationMessage();
-    }
+    this.showDeprecationMessage();
 
     gDevToolsBrowser.isWebIDEInitialized.resolve();
   },

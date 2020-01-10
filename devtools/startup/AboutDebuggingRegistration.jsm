@@ -6,8 +6,6 @@
 
 
 
-
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const { nsIAboutModule } = Ci;
@@ -22,14 +20,10 @@ AboutDebugging.prototype = {
   QueryInterface: ChromeUtils.generateQI([nsIAboutModule]),
 
   newChannel: function(_, loadInfo) {
-    const uri = Services.prefs.getBoolPref(
-      "devtools.aboutdebugging.new-enabled"
-    )
-      ? "chrome://devtools/content/aboutdebugging-new/index.html"
-      : "chrome://devtools/content/aboutdebugging/aboutdebugging.xhtml";
-
     const chan = Services.io.newChannelFromURIWithLoadInfo(
-      Services.io.newURI(uri),
+      Services.io.newURI(
+        "chrome://devtools/content/aboutdebugging-new/index.html"
+      ),
       loadInfo
     );
     chan.owner = Services.scriptSecurityManager.getSystemPrincipal();

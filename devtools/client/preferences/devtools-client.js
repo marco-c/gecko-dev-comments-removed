@@ -358,9 +358,6 @@ pref("devtools.responsive.showUserAgentInput", false);
 #endif
 
 
-pref("devtools.aboutdebugging.new-enabled", true);
-
-
 #ifdef MOZILLA_OFFICIAL
   pref("devtools.aboutdebugging.local-tab-debugging", false);
 #else
