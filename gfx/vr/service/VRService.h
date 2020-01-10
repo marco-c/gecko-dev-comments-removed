@@ -18,6 +18,7 @@ namespace mozilla {
 namespace gfx {
 
 class VRSession;
+class VRShMem;
 
 static const int kVRFrameTimingHistoryDepth = 100;
 
@@ -53,20 +54,16 @@ class VRService {
 
 
   VRBrowserState mBrowserState;
-  int64_t mBrowserGeneration;
 
   UniquePtr<VRSession> mSession;
   base::Thread* mServiceThread;
   bool mShutdownRequested;
 
-  volatile VRExternalShmem* MOZ_OWNING_REF mAPIShmem;
-  base::ProcessHandle mTargetShmemFile;
+  
+  
+  VRShMem* mShmem;
   VRHapticState mLastHapticState[kVRHapticsMaxCount];
   TimeStamp mFrameStartTime[kVRFrameTimingHistoryDepth];
-#if defined(XP_WIN)
-  HANDLE mMutex;
-#endif
-  bool mVRProcessEnabled;
 
   bool IsInServiceThread();
   void UpdateHaptics();
