@@ -487,6 +487,9 @@ function BuildConditionSandbox(aURL) {
         
         
         sandbox.AndroidVersion = sysInfo.getPropertyAsInt32("version");
+
+        sandbox.emulator = readGfxInfo(gfxInfo, "adapterDeviceID").includes("Android Emulator");
+        sandbox.device = !sandbox.emulator;
     }
 
 #if MOZ_ASAN
