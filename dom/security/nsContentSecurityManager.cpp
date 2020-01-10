@@ -517,9 +517,6 @@ nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
   
   
   
-  if (!mozilla::net::nsIOService::BlockFTPSubresources()) {
-    return NS_OK;
-  }
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   nsContentPolicyType type = loadInfo->GetExternalContentPolicyType();
@@ -547,13 +544,6 @@ nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
 
   bool isFtpURI = uri->SchemeIs("ftp");
   if (!isFtpURI) {
-    return NS_OK;
-  }
-
-  
-  nsCOMPtr<nsIURI> triggeringURI;
-  triggeringPrincipal->GetURI(getter_AddRefs(triggeringURI));
-  if (triggeringURI && nsContentUtils::SchemeIs(triggeringURI, "ftp")) {
     return NS_OK;
   }
 

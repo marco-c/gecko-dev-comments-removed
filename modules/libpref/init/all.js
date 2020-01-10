@@ -5531,9 +5531,6 @@ pref("security.data_uri.unique_opaque_origin", true);
 
 pref("security.data_uri.block_toplevel_data_uri_navigations", true);
 
-
-pref("security.block_ftp_subresources", true);
-
 pref("dom.storageManager.prompt.testing", false);
 pref("dom.storageManager.prompt.testing.allow", false);
 

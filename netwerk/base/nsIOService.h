@@ -102,8 +102,6 @@ class nsIOService final : public nsIIOService,
   static bool IsDataURIUniqueOpaqueOrigin();
   static bool BlockToplevelDataUriNavigations();
 
-  static bool BlockFTPSubresources();
-
   
   void IncrementRequestNumber() { mTotalRequests++; }
   uint32_t GetTotalRequestNumber() { return mTotalRequests; }
@@ -222,8 +220,6 @@ class nsIOService final : public nsIIOService,
 
   static bool sIsDataURIUniqueOpaqueOrigin;
   static bool sBlockToplevelDataUriNavigations;
-
-  static bool sBlockFTPSubresources;
 
   uint32_t mTotalRequests;
   uint32_t mCacheWon;

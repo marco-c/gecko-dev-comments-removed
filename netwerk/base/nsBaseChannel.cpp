@@ -776,7 +776,10 @@ NS_IMETHODIMP
 nsBaseChannel::OnStartRequest(nsIRequest* request) {
   MOZ_ASSERT_IF(mRequest, request == mRequest);
 
-  if (mPump) {
+  nsAutoCString scheme;
+  mURI->GetScheme(scheme);
+
+  if (mPump && !scheme.EqualsLiteral("ftp")) {
     
     
     
