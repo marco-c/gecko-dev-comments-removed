@@ -1503,30 +1503,32 @@ History::NotifyVisited(nsIURI* aURI) {
 
   nsAutoScriptBlocker scriptBlocker;
 
-  
-  KeyClass* key = mObservers.GetEntry(aURI);
-  if (!key) {
+  auto entry = mTrackedURIs.Lookup(aURI);
+  if (!entry) {
+    
     return NS_OK;
   }
-  key->mVisited = true;
+
+  TrackedURI& trackedURI = entry.Data();
+  trackedURI.mVisited = true;
 
   
-  MOZ_ASSERT(!key->array.IsEmpty());
+  MOZ_ASSERT(!trackedURI.mLinks.IsEmpty());
 
   
   
-  {
-    nsTArray<Document*> seen;  
-    ObserverArray::BackwardIterator iter(key->array);
-    while (iter.HasMore()) {
-      Link* link = iter.GetNext();
-      Document* doc = GetLinkDocument(link);
-      if (seen.Contains(doc)) {
-        continue;
-      }
-      seen.AppendElement(doc);
-      DispatchNotifyVisited(aURI, doc);
+
+  
+  nsTArray<Document*> seen;  
+  ObserverArray::BackwardIterator iter(trackedURI.mLinks);
+  while (iter.HasMore()) {
+    Link* link = iter.GetNext();
+    Document* doc = GetLinkDocument(link);
+    if (seen.Contains(doc)) {
+      continue;
     }
+    seen.AppendElement(doc);
+    DispatchNotifyVisited(aURI, doc);
   }
 
   return NS_OK;
@@ -1539,32 +1541,29 @@ void History::NotifyVisitedForDocument(nsIURI* aURI, Document* aDocument) {
   nsAutoScriptBlocker scriptBlocker;
 
   
-  KeyClass* key = mObservers.GetEntry(aURI);
-  if (!key) {
+  auto entry = mTrackedURIs.Lookup(aURI);
+  if (!entry) {
     return;
   }
+
+  TrackedURI& trackedURI = entry.Data();
 
   {
     
     
-    ObserverArray::BackwardIterator iter(key->array);
+    ObserverArray::BackwardIterator iter(trackedURI.mLinks);
     while (iter.HasMore()) {
       Link* link = iter.GetNext();
-      Document* doc = GetLinkDocument(link);
-      if (doc == aDocument) {
+      if (GetLinkDocument(link) == aDocument) {
         link->SetLinkState(eLinkState_Visited);
         iter.Remove();
       }
-
-      
-      
-      MOZ_ASSERT(key == mObservers.GetEntry(aURI), "The URIs hash mutated!");
     }
   }
 
   
-  if (key->array.IsEmpty()) {
-    mObservers.RemoveEntry(key);
+  if (trackedURI.mLinks.IsEmpty()) {
+    entry.Remove();
   }
 }
 
@@ -1908,9 +1907,13 @@ History::CollectReports(nsIHandleReportCallback* aHandleReport,
   return NS_OK;
 }
 
-size_t History::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOfThis) {
-  return aMallocSizeOfThis(this) +
-         mObservers.SizeOfExcludingThis(aMallocSizeOfThis);
+size_t History::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
+  size_t size = aMallocSizeOf(this);
+  size += mTrackedURIs.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (const auto& entry : mTrackedURIs) {
+    size += entry.GetData().SizeOfExcludingThis(aMallocSizeOf);
+  }
+  return size;
 }
 
 
@@ -2142,17 +2145,10 @@ History::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   }
 
   
-#ifdef DEBUG
-  bool keyAlreadyExists = !!mObservers.GetEntry(aURI);
-#endif
-  KeyClass* key = mObservers.PutEntry(aURI);
-  NS_ENSURE_TRUE(key, NS_ERROR_OUT_OF_MEMORY);
-  ObserverArray& observers = key->array;
-
-  if (observers.IsEmpty()) {
-    MOZ_ASSERT(!keyAlreadyExists,
-               "An empty key was kept around in our hashtable!");
-
+  auto entry = mTrackedURIs.LookupForAdd(aURI);
+  MOZ_DIAGNOSTIC_ASSERT(!entry || !entry.Data().mLinks.IsEmpty(),
+                        "An empty key was kept around in our hashtable!");
+  if (!entry) {
     
     
     
@@ -2163,19 +2159,7 @@ History::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
     
     
     if (NS_FAILED(rv) || !aLink) {
-      
-      MOZ_DIAGNOSTIC_ASSERT(key == mObservers.GetEntry(aURI),
-                            "The URIs hash mutated!");
-
-      
-      
-      
-      
-      
-      
-      
-      
-      mObservers.RemoveEntry(aURI);
+      entry.OrRemove();
       return rv;
     }
   }
@@ -2183,23 +2167,26 @@ History::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   
   
   else if (!aLink) {
-    NS_ASSERTION(XRE_IsParentProcess(),
-                 "We should only ever get a null Link in the default process!");
+    MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(),
+                          "We should only ever get a null Link "
+                          "in the parent process!");
     return NS_OK;
   }
 
+  TrackedURI& trackedURI = entry.OrInsert([] { return TrackedURI {}; });
+
   
   
-  MOZ_DIAGNOSTIC_ASSERT(!observers.Contains(aLink),
+  MOZ_DIAGNOSTIC_ASSERT(!trackedURI.mLinks.Contains(aLink),
                         "Already tracking this Link object!");
 
   
-  observers.AppendElement(aLink);
+  trackedURI.mLinks.AppendElement(aLink);
 
   
   
   
-  if (key->mVisited) {
+  if (trackedURI.mVisited) {
     DispatchNotifyVisited(aURI, GetLinkDocument(aLink));
   }
 
@@ -2214,21 +2201,20 @@ History::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   NS_ASSERTION(aLink, "Must pass a non-null Link object!");
 
   
-  KeyClass* key = mObservers.GetEntry(aURI);
-  if (!key) {
-    NS_ERROR("Trying to unregister for a URI that wasn't registered!");
+  auto entry = mTrackedURIs.Lookup(aURI);
+  if (!entry) {
+    MOZ_ASSERT_UNREACHABLE("Trying to unregister URI that wasn't registered!");
     return NS_ERROR_UNEXPECTED;
   }
-  ObserverArray& observers = key->array;
+  ObserverArray& observers = entry.Data().mLinks;
   if (!observers.RemoveElement(aLink)) {
-    NS_ERROR("Trying to unregister a node that wasn't registered!");
+    MOZ_ASSERT_UNREACHABLE("Trying to unregister node that wasn't registered!");
     return NS_ERROR_UNEXPECTED;
   }
 
   
   if (observers.IsEmpty()) {
-    MOZ_ASSERT(key == mObservers.GetEntry(aURI), "The URIs hash mutated!");
-    mObservers.RemoveEntry(key);
+    entry.Remove();
   }
 
   return NS_OK;
