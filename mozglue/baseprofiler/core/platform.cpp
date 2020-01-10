@@ -2337,8 +2337,6 @@ void profiler_init(void* aStackTop) {
   
   
   
-  
-  
 }
 
 static void locked_profiler_save_profile_to_file(PSLockRef aLock,
@@ -2693,8 +2691,6 @@ void profiler_start(PowerOfTwo32 aCapacity, double aInterval,
   
   
   
-  
-  
 
   
   
@@ -2725,13 +2721,6 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
                             aFilters, aFilterCount)) {
         
         samplerThread = locked_profiler_stop(lock);
-        
-        
-        
-        
-        
-        
-        
         locked_profiler_start(lock, aCapacity, aInterval, aFeatures, aFilters,
                               aFilterCount, aDuration);
         
@@ -2744,8 +2733,6 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
     }
   }
 
-  
-  
   
   
   

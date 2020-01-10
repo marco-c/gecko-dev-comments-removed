@@ -3009,11 +3009,9 @@ void profiler_init(void* aStackTop) {
   }
 
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  if (ProfilerFeature::HasMemory(features)) {
-    
-    
-    mozilla::profiler::install_memory_counter(true);
-  }
+  
+  
+  mozilla::profiler::install_memory_counter(true);
 #endif
 
   
@@ -3497,11 +3495,9 @@ void profiler_start(PowerOfTwo32 aCapacity, double aInterval,
   }
 
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  if (ProfilerFeature::HasMemory(aFeatures)) {
-    
-    
-    mozilla::profiler::install_memory_counter(true);
-  }
+  
+  
+  mozilla::profiler::install_memory_counter(true);
 #endif
 
   
@@ -3537,12 +3533,6 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
                             aFilters, aFilterCount)) {
         
         samplerThread = locked_profiler_stop(lock);
-#if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-        if (!ProfilerFeature::HasMemory(aFeatures)) {
-          
-          mozilla::profiler::install_memory_counter(false);
-        }
-#endif
         locked_profiler_start(lock, aCapacity, aInterval, aFeatures, aFilters,
                               aFilterCount, aDuration);
         startedProfiler = true;
@@ -3556,12 +3546,10 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
   }
 
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-  if (startedProfiler && ProfilerFeature::HasMemory(aFeatures)) {
-    
-    
-    
-    mozilla::profiler::install_memory_counter(true);
-  }
+  
+  
+  
+  mozilla::profiler::install_memory_counter(true);
 #endif
 
   
