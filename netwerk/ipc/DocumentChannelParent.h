@@ -38,7 +38,8 @@ class DocumentChannelParent : public nsIInterfaceRequestor,
                               public nsIParentChannel,
                               public nsIChannelEventSink,
                               public nsICrossProcessSwitchChannel,
-                              public HttpChannelSecurityWarningReporter {
+                              public HttpChannelSecurityWarningReporter,
+                              public nsIProcessSwitchRequestor {
  public:
   explicit DocumentChannelParent(const dom::PBrowserOrId& iframeEmbedding,
                                  nsILoadContext* aLoadContext,
@@ -54,6 +55,7 @@ class DocumentChannelParent : public nsIInterfaceRequestor,
   NS_DECL_NSIASYNCVERIFYREDIRECTREADYCALLBACK
   NS_DECL_NSICHANNELEVENTSINK
   NS_DECL_NSICROSSPROCESSSWITCHCHANNEL
+  NS_DECL_NSIPROCESSSWITCHREQUESTOR
 
   NS_DECLARE_STATIC_IID_ACCESSOR(DOCUMENT_CHANNEL_PARENT_IID)
 
@@ -111,11 +113,7 @@ class DocumentChannelParent : public nsIInterfaceRequestor,
 
   void FinishReplacementChannelSetup(bool aSucceeded);
 
-  typedef MozPromise<uint64_t, nsresult, true >
-      ContentProcessIdPromise;
-  void TriggerCrossProcessSwitch(
-      already_AddRefed<ContentProcessIdPromise> aPromise, uint64_t aIdentifier,
-      nsHttpChannel* aChannel);
+  void TriggerCrossProcessSwitch();
 
   
   
@@ -216,6 +214,18 @@ class DocumentChannelParent : public nsIInterfaceRequestor,
   
   
   bool mOldApplyConversion = false;
+
+  typedef MozPromise<uint64_t, nsresult, true >
+      ContentProcessIdPromise;
+  
+  
+  
+  RefPtr<ContentProcessIdPromise> mRedirectContentProcessIdPromise;
+  
+  
+  
+  
+  uint64_t mCrossProcessRedirectIdentifier = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DocumentChannelParent,
