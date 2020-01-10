@@ -17,7 +17,7 @@
 #include "nsIContentPolicy.h"
 
 class nsIURI;
-class nsIContent;
+class nsINode;
 class nsIPrincipal;
 class imgRequestProxy;
 
@@ -25,7 +25,7 @@ class nsIconLoaderService : public imgINotificationObserver {
  public:
   
   
-  nsIconLoaderService(nsIContent* aContent, nsIntRect* aImageRegionRect,
+  nsIconLoaderService(nsINode* aContent, nsIntRect* aImageRegionRect,
                       RefPtr<nsIconLoaderObserver> aObserver, uint32_t aIconHeight,
                       uint32_t aIconWidth, CGFloat aScaleFactor = 0.0f);
 
@@ -37,10 +37,8 @@ class nsIconLoaderService : public imgINotificationObserver {
   
   nsresult LoadIcon(nsIURI* aIconURI);
 
-  
-  
-  
-  
+  NSImage* GetNativeIconImage();
+
   void Destroy();
 
  protected:
@@ -49,7 +47,7 @@ class nsIconLoaderService : public imgINotificationObserver {
  private:
   nsresult OnFrameComplete(imgIRequest* aRequest);
 
-  nsCOMPtr<nsIContent> mContent;
+  nsCOMPtr<nsINode> mContent;
   nsContentPolicyType mContentType;
   RefPtr<imgRequestProxy> mIconRequest;
   nsIntRect* mImageRegionRect;
@@ -60,5 +58,4 @@ class nsIconLoaderService : public imgINotificationObserver {
   CGFloat mScaleFactor;
   RefPtr<nsIconLoaderObserver> mCompletionHandler;
 };
-
 #endif  
