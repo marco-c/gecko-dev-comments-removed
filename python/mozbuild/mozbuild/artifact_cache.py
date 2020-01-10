@@ -41,10 +41,10 @@ from dlmanager import (
 
 
 
-MIN_CACHED_ARTIFACTS = 6
+MIN_CACHED_ARTIFACTS = 12
 
 
-MAX_CACHED_ARTIFACTS_SIZE = 1024 * 1024 * 1024
+MAX_CACHED_ARTIFACTS_SIZE = 2 * 1024 * 1024 * 1024
 
 
 class ArtifactPersistLimit(PersistLimit):
