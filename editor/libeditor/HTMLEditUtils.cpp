@@ -5,7 +5,6 @@
 
 #include "HTMLEditUtils.h"
 
-#include "TextEditUtils.h"        
 #include "mozilla/ArrayUtils.h"   
 #include "mozilla/Assertions.h"   
 #include "mozilla/EditAction.h"   

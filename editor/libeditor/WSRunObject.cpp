@@ -5,8 +5,6 @@
 
 #include "WSRunObject.h"
 
-#include "TextEditUtils.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
 #include "mozilla/EditorDOMPoint.h"
@@ -765,7 +763,7 @@ nsresult WSRunScanner::GetWSNodes() {
         
         mStartNode = start.GetContainer();
         mStartOffset = start.Offset();
-        if (TextEditUtils::IsBreak(priorNode)) {
+        if (priorNode->IsHTMLElement(nsGkAtoms::br)) {
           mStartReason = WSType::br;
         } else {
           mStartReason = WSType::special;
@@ -872,7 +870,7 @@ nsresult WSRunScanner::GetWSNodes() {
         
         mEndNode = end.GetContainer();
         mEndOffset = end.Offset();
-        if (TextEditUtils::IsBreak(nextNode)) {
+        if (nextNode->IsHTMLElement(nsGkAtoms::br)) {
           mEndReason = WSType::br;
         } else {
           mEndReason = WSType::special;
