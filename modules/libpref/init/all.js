@@ -4632,12 +4632,6 @@ pref("image.webp.enabled", true);
 pref("canvas.image.cache.limit", 0);
 
 
-#ifdef ANDROID
-
-pref("gl.msaa-level", 0);
-#else
-pref("gl.msaa-level", 2);
-#endif
 pref("gl.require-hardware", false);
 #ifdef XP_MACOSX
 pref("gl.multithreaded", true);
