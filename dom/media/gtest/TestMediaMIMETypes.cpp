@@ -154,30 +154,6 @@ TEST(MediaMIMETypes, MediaCodecs)
   EXPECT_TRUE(two.ContainsAll(two));
   EXPECT_TRUE(two.ContainsAll(one));
   EXPECT_FALSE(one.ContainsAll(two));
-
-  
-  
-  
-  
-  MediaCodecs euroSign(u8" € ");  
-  EXPECT_FALSE(euroSign.IsEmpty());
-  EXPECT_TRUE(euroSign.AsString().Equals(NS_LITERAL_STRING(" € ")));
-  EXPECT_FALSE(euroSign.Contains(NS_LITERAL_STRING("")));
-  EXPECT_TRUE(euroSign.Contains(NS_LITERAL_STRING("€")));
-  EXPECT_FALSE(euroSign.Contains(NS_LITERAL_STRING("€€")));
-  EXPECT_TRUE(euroSign.ContainsPrefix(NS_LITERAL_STRING("")));
-  EXPECT_TRUE(euroSign.ContainsPrefix(NS_LITERAL_STRING("€")));
-  EXPECT_FALSE(euroSign.ContainsPrefix(
-      NS_LITERAL_STRING("₭")));  
-  EXPECT_FALSE(euroSign.ContainsPrefix(
-      NS_LITERAL_STRING("↬")));  
-  EXPECT_FALSE(euroSign.ContainsPrefix(NS_LITERAL_STRING("€ ")));
-  iterations = 0;
-  for (const auto& codec : euroSign.Range()) {
-    ++iterations;
-    EXPECT_TRUE(codec.Equals(NS_LITERAL_STRING("€")));
-  }
-  EXPECT_EQ(1, iterations);
 }
 
 TEST(MediaMIMETypes, MakeMediaExtendedMIMEType_bad)
