@@ -1213,87 +1213,92 @@ class BrowsertimeOutput(PerftestOutput):
         """
         LOG.info("preparing browsertime results for output")
 
-        suites = []
-        test_results = {
-            'framework': {
-                'name': 'browsertime',
-            },
-            'suites': suites,
-        }
-
         
         if len(self.results) == 0:
             LOG.error("no browsertime test results found for %s" %
                       ', '.join(test_names))
             return
 
-        for test in self.results:
-            vals = []
-            subtests = []
-            suite = {
-                'name': test['name'],
-                'type': test['type'],
-                'extraOptions': test['extra_options'],
-                'subtests': subtests,
-                'lowerIsBetter': test['lower_is_better'],
-                'unit': test['unit'],
-                'alertThreshold': float(test['alert_threshold'])
+        test_results = {
+            'framework': {
+                'name': 'browsertime',
             }
+        }
 
-            
-            if hasattr(test, "alert_change_type"):
-                suite['alertChangeType'] = test['alert_change_type']
+        
+        suites = {}
 
+        for test in self.results:
             
             if test["type"] != "browsertime-pageload":
                 LOG.error("output.summarize received unsupported test results type for %s" %
                           test['name'])
                 continue
 
-            suites.append(suite)
+            if test['name'] not in suites:
+                suite = {
+                    'name': test['name'],
+                    'type': test['type'],
+                    'extraOptions': test['extra_options'],
+                    'lowerIsBetter': test['lower_is_better'],
+                    'unit': test['unit'],
+                    'alertThreshold': float(test['alert_threshold']),
+                    
+                    'subtests': {}
+                }
+
+                
+                if 'alert_change_type' in test:
+                    suite['alertChangeType'] = test['alert_change_type']
+
+                suites[test['name']] = suite
+            else:
+                suite = suites[test['name']]
 
             for measurement_name, replicates in test['measurements'].iteritems():
-                new_subtest = {}
-                new_subtest['name'] = measurement_name
-                new_subtest['replicates'] = replicates
-                new_subtest['lowerIsBetter'] = test['subtest_lower_is_better']
-                new_subtest['alertThreshold'] = float(test['alert_threshold'])
-                new_subtest['value'] = 0
-                new_subtest['unit'] = test['subtest_unit']
+                if measurement_name not in suite['subtests']:
+                    subtest = {}
+                    subtest['name'] = measurement_name
+                    subtest['lowerIsBetter'] = test['subtest_lower_is_better']
+                    subtest['alertThreshold'] = float(test['alert_threshold'])
+                    subtest['unit'] = test['subtest_unit']
 
-                
-                
-                if self.subtest_alert_on is not None:
-                    if measurement_name in self.subtest_alert_on:
-                        LOG.info("turning on subtest alerting for measurement type: %s"
-                                 % measurement_name)
-                        new_subtest['shouldAlert'] = True
+                    
+                    
+                    if self.subtest_alert_on is not None:
+                        if measurement_name in self.subtest_alert_on:
+                            LOG.info("turning on subtest alerting for measurement type: %s"
+                                     % measurement_name)
+                            subtest['shouldAlert'] = True
+                    subtest['replicates'] = []
+                    suite['subtests'][measurement_name] = subtest
+                else:
+                    subtest = suite['subtests'][measurement_name]
 
-                
-                
-                
-                
-                bt_measurement_median = test['statistics'][measurement_name]['median']
-                new_subtest['value'] = bt_measurement_median
+                subtest['replicates'].extend(replicates)
 
-                
-                
-                
-                vals.append([new_subtest['value'], new_subtest['name']])
-                subtests.append(new_subtest)
+        
+        def _process(subtest):
+            subtest['value'] = filters.median(filters.ignore_first(subtest['replicates'], 1))
+            return subtest
 
+        def _process_suite(suite):
+            suite['subtests'] = [_process(subtest) for subtest in suite['subtests'].values()]
+            suite['subtests'].sort(key=lambda subtest: subtest['name'])
+
+            
             
             
             
             
-
-            
-            if len(subtests) > 1:
+            if len(suite['subtests']) > 1:
+                vals = [[subtest['value'], subtest['name']] for subtest in suite['subtests']]
                 suite['value'] = self.construct_summary(vals,
                                                         testname=test['name'])
+            return suite
 
-            subtests.sort(key=lambda subtest: subtest['name'])
-
+        suites = [_process_suite(s) for s in suites.values()]
         suites.sort(key=lambda suite: suite['name'])
 
+        test_results['suites'] = suites
         self.summarized_results = test_results

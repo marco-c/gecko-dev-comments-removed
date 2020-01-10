@@ -302,39 +302,37 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
         LOG.info("parsing results from browsertime json")
 
         
-        if len(raw_btresults) != 1:
-            raise ValueError("Browsertime did not measure exactly one site.")
-        (_raw_bt_results,) = raw_btresults
-
-        if not _raw_bt_results['browserScripts']:
-            raise ValueError("Browsertime produced no measurements.")
-        bt_browser = _raw_bt_results['browserScripts'][0]['browser']
-
-        bt_ver = _raw_bt_results['info']['browsertime']['version']
-        bt_url = _raw_bt_results['info']['url'],
-        bt_result = {'bt_ver': bt_ver,
-                     'browser': bt_browser,
-                     'url': bt_url,
-                     'measurements': {},
-                     'statistics': {}}
-
-        
         conversion = (('fnbpaint', 'firstPaint'),
                       ('fcp', 'timeToContentfulPaint'),
                       ('dcf', 'timeToDomContentFlushed'),
                       ('loadtime', 'loadEventEnd'))
 
-        
-        for bt, raptor in conversion:
-            
-            bt_result['measurements'][bt] = [cycle['timings'][raptor] for cycle in
-                                             _raw_bt_results['browserScripts']]
+        results = []
 
-            
-            
-            bt_result['statistics'][bt] = _raw_bt_results['statistics']['timings'][raptor]
+        for raw_result in raw_btresults:
+            if not raw_result['browserScripts']:
+                raise ValueError("Browsertime produced no measurements.")
 
-        return bt_result
+            bt_browser = raw_result['browserScripts'][0]['browser']
+            bt_ver = raw_result['info']['browsertime']['version']
+            bt_url = raw_result['info']['url'],
+            bt_result = {'bt_ver': bt_ver,
+                         'browser': bt_browser,
+                         'url': bt_url,
+                         'measurements': {},
+                         'statistics': {}}
+            
+            for bt, raptor in conversion:
+                
+                bt_result['measurements'][bt] = [cycle['timings'][raptor] for cycle in
+                                                 raw_result['browserScripts']]
+                
+                
+                bt_result['statistics'][bt] = raw_result['statistics']['timings'][raptor]
+
+            results.append(bt_result)
+
+        return results
 
     def summarize_and_output(self, test_config, tests, test_names):
         """
@@ -379,27 +377,26 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                 LOG.error("Exception: %s %s" % (type(e).__name__, str(e)))
                 raise
 
-            new_result = self.parse_browsertime_json(raw_btresults)
+            for new_result in self.parse_browsertime_json(raw_btresults):
+                
+                for field in ('name', 'unit', 'lower_is_better',
+                              'alert_threshold', 'cold'):
+                    new_result[field] = test[field]
 
-            
-            for field in ('name', 'unit', 'lower_is_better',
-                          'alert_threshold', 'cold'):
-                new_result[field] = test[field]
+                
+                
+                new_result['type'] = "browsertime-pageload"
 
-            
-            
-            new_result['type'] = "browsertime-pageload"
+                
+                new_result['subtest_lower_is_better'] = True
+                new_result['subtest_unit'] = 'ms'
+                LOG.info("parsed new result: %s" % str(new_result))
 
-            
-            new_result['subtest_lower_is_better'] = True
-            new_result['subtest_unit'] = 'ms'
-            LOG.info("parsed new result: %s" % str(new_result))
+                
+                
+                new_result['extra_options'] = []
 
-            
-            
-            new_result['extra_options'] = []
-
-            self.results.append(new_result)
+                self.results.append(new_result)
 
         
         output = BrowsertimeOutput(self.results,

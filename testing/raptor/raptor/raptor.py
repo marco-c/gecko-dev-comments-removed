@@ -400,15 +400,10 @@ class Browsertime(Perftest):
 
         self.run_test_setup(test)
 
-        cmd = ([self.browsertime_node, self.browsertime_browsertimejs] +
-               self.driver_paths +
-               self.browsertime_args +
-               ['--skipHar',
-                '--video', 'true',
-                '--visualMetrics', 'false',
-                '-vv',
-                '--resultDir', self.results_handler.result_dir_for_test(test),
-                '-n', str(test.get('browser_cycles', 1)), test['test_url']])
+        browsertime_script = [os.path.join(os.path.dirname(__file__), "..",
+                              "browsertime", "browsertime_pageload.js")]
+
+        browsertime_script.extend(self.browsertime_args)
 
         
         
@@ -421,6 +416,33 @@ class Browsertime(Perftest):
         
         if self.config['gecko_profile'] is True:
             timeout += 5 * 60
+
+        
+        
+        timeout = timeout * int(test.get("page_cycles", 1))
+
+        
+        
+        browsertime_script.extend(["--browsertime.page_cycles",
+                                  str(test.get("page_cycles", 1))])
+        browsertime_script.extend(["--browsertime.url", test["test_url"]])
+
+        
+        browsertime_script.extend(["--browsertime.page_cycle_delay", "1000"])
+        
+        browsertime_script.extend(["--browsertime.foreground_delay", "5000"])
+
+        
+        
+        cmd = ([self.browsertime_node, self.browsertime_browsertimejs] +
+               self.driver_paths +
+               browsertime_script +
+               ['--skipHar',
+                '--video', 'false',
+                '--visualMetrics', 'false',
+                '-vv',
+                '--resultDir', self.results_handler.result_dir_for_test(test),
+                '-n', str(test.get('browser_cycles', 1))])
 
         LOG.info('timeout (s): {}'.format(timeout))
         LOG.info('browsertime cwd: {}'.format(os.getcwd()))
@@ -1315,7 +1337,6 @@ class RaptorAndroid(Raptor):
         
         if self.debug_mode and self.config['run_local']:
             LOG.info("* debug-mode enabled - please shutdown the browser manually...")
-            self.runner.wait(timeout=None)
 
     def check_for_crashes(self):
         super(RaptorAndroid, self).check_for_crashes()
