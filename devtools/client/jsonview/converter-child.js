@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Ci, Cu, CC } = require("chrome");
+const { components, Ci, Cr, Cu, CC } = require("chrome");
 const ChromeUtils = require("ChromeUtils");
 const Services = require("Services");
 
@@ -121,6 +121,19 @@ Converter.prototype = {
 
     
     const win = NetworkHelper.getWindowForRequest(request);
+    if (!win || !components.isSuccessCode(request.status)) {
+      return;
+    }
+
+    
+    
+    
+    if (win.document.nodePrincipal != request.loadInfo.principalToInherit) {
+      
+      request.cancel(Cr.NS_BINDING_ABORTED);
+      return;
+    }
+
     this.data = exportData(win, headers);
     insertJsonData(win, this.data.json);
     win.addEventListener("contentMessage", onContentMessage, false, true);
@@ -134,7 +147,9 @@ Converter.prototype = {
 
   onStopRequest: function(request, statusCode) {
     
-    this.decodeAndInsertBuffer(new ArrayBuffer(0), true);
+    if (components.isSuccessCode(statusCode)) {
+      this.decodeAndInsertBuffer(new ArrayBuffer(0), true);
+    }
 
     
     this.listener.onStopRequest(request, statusCode);
