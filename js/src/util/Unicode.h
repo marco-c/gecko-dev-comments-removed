@@ -80,7 +80,6 @@ constexpr char16_t GREEK_SMALL_LETTER_SIGMA = 0x03C3;
 constexpr char16_t LINE_SEPARATOR = 0x2028;
 constexpr char16_t PARA_SEPARATOR = 0x2029;
 constexpr char16_t REPLACEMENT_CHARACTER = 0xFFFD;
-constexpr char16_t BYTE_ORDER_MARK2 = 0xFFFE;
 
 const char16_t LeadSurrogateMin = 0xD800;
 const char16_t LeadSurrogateMax = 0xDBFF;
@@ -204,19 +203,28 @@ inline bool IsUnicodeIDStart(uint32_t codePoint) {
   return IsUnicodeIDStart(char16_t(codePoint));
 }
 
+
+
+
+
+
 inline bool IsSpace(char16_t ch) {
   
+  
+  if (ch < 128) {
+    return js_isspace[ch];
+  }
 
+  
+  
+  if (ch == NO_BREAK_SPACE) {
+    return true;
+  }
 
+  return CharInfo(ch).isSpace();
+}
 
-
-
-
-
-
-
-
-
+inline bool IsSpace(JS::Latin1Char ch) {
   if (ch < 128) {
     return js_isspace[ch];
   }
@@ -225,16 +233,20 @@ inline bool IsSpace(char16_t ch) {
     return true;
   }
 
-  return CharInfo(ch).isSpace();
+  MOZ_ASSERT(!CharInfo(ch).isSpace());
+  return false;
 }
 
-inline bool IsSpaceOrBOM2(char32_t ch) {
+inline bool IsSpace(char ch) {
+  return IsSpace(static_cast<JS::Latin1Char>(ch));
+}
+
+inline bool IsSpace(char32_t ch) {
   if (ch < 128) {
     return js_isspace[ch];
   }
 
-  
-  if (ch == NO_BREAK_SPACE || ch == BYTE_ORDER_MARK2) {
+  if (ch == NO_BREAK_SPACE) {
     return true;
   }
 

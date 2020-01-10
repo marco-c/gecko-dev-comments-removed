@@ -1992,7 +1992,7 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getDirective(
     }
 
     if (MOZ_LIKELY(isAsciiCodePoint(unit))) {
-      if (unicode::IsSpaceOrBOM2(unit)) {
+      if (unicode::IsSpace(AssertedCast<Latin1Char>(unit))) {
         break;
       }
 
@@ -2016,13 +2016,13 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getDirective(
     
     
     PeekedCodePoint<Unit> peeked = this->sourceUnits.peekCodePoint();
-    if (peeked.isNone() || unicode::IsSpaceOrBOM2(peeked.codePoint())) {
+    if (peeked.isNone() || unicode::IsSpace(peeked.codePoint())) {
       break;
     }
 
     MOZ_ASSERT(!IsLineTerminator(peeked.codePoint()),
-               "!IsSpaceOrBOM2 must imply !IsLineTerminator or else we'll "
-               "fail to maintain line-info/flags for EOL");
+               "!IsSpace must imply !IsLineTerminator or else we'll fail to "
+               "maintain line-info/flags for EOL");
     this->sourceUnits.consumeKnownCodePoint(peeked);
 
     if (!appendCodePointToCharBuffer(peeked.codePoint())) {
@@ -2748,7 +2748,6 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(
       
       
       
-      
       TokenStart start(this->sourceUnits, 0);
       const Unit* identStart = this->sourceUnits.addressOfNextCodeUnit();
 
@@ -2760,7 +2759,7 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(
       }
 
       char32_t cp = peeked.codePoint();
-      if (unicode::IsSpaceOrBOM2(cp)) {
+      if (unicode::IsSpace(cp)) {
         this->sourceUnits.consumeKnownCodePoint(peeked);
         if (IsLineTerminator(cp)) {
           if (!updateLineInfoForEOL()) {
