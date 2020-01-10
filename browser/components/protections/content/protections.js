@@ -4,6 +4,8 @@
 
 
 
+import LockwiseCard from "./lockwise-card.js";
+
 document.addEventListener("DOMContentLoaded", e => {
   let dataTypes = [
     "cryptominer",
@@ -143,6 +145,11 @@ document.addEventListener("DOMContentLoaded", e => {
       });
     }
   };
+
   createGraph();
   addListeners();
+
+  
+  const lockwiseCard = new LockwiseCard(document);
+  lockwiseCard.init();
 });
