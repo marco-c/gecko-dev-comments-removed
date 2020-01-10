@@ -89,6 +89,13 @@ export default class ColumnBreakpoint extends PureComponent<Props> {
     event.stopPropagation();
     event.preventDefault();
     const { cx, columnBreakpoint, breakpointActions } = this.props;
+
+    
+    if (event.shiftKey) {
+      const breakpoint: breakpoint = columnBreakpoint.breakpoint;
+      return breakpointActions.toggleDisabledBreakpoint(cx, breakpoint);
+    }
+
     if (columnBreakpoint.breakpoint) {
       breakpointActions.removeBreakpoint(cx, columnBreakpoint.breakpoint);
     } else {
