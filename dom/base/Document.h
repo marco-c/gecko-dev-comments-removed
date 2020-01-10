@@ -66,6 +66,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/FailedCertSecurityInfoBinding.h"
+#include "mozilla/dom/NetErrorInfoBinding.h"
 #include <bitset>  
 
 
@@ -2499,6 +2500,18 @@ class Document : public nsINode,
 
 
   nsIChannel* GetFailedChannel() const { return mFailedChannel; }
+
+  
+
+
+
+  static bool CallerIsTrustedAboutNetError(JSContext* aCx, JSObject* aObject);
+
+  
+
+
+
+  void GetNetErrorInfo(mozilla::dom::NetErrorInfo& aInfo, ErrorResult& aRv);
 
   
 
