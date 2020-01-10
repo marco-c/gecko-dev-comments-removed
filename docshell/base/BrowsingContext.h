@@ -396,6 +396,10 @@ class BrowsingContext : public nsWrapperCache, public BrowsingContextBase {
  private:
   
   
+  static bool IsSpecialName(const nsAString& aName);
+
+  
+  
   BrowsingContext* FindWithSpecialName(const nsAString& aName,
                                        BrowsingContext& aRequestingContext);
 

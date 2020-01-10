@@ -468,13 +468,12 @@ BrowsingContext* BrowsingContext::FindWithName(
   if (aName.IsEmpty()) {
     
     found = nullptr;
-  } else if (BrowsingContext* special =
-                 FindWithSpecialName(aName, aRequestingContext)) {
-    found = special;
   } else if (aName.LowerCaseEqualsLiteral("_blank")) {
     
     
     found = nullptr;
+  } else if (IsSpecialName(aName)) {
+    found = FindWithSpecialName(aName, aRequestingContext);
   } else if (BrowsingContext* child =
                  FindWithNameInSubtree(aName, aRequestingContext)) {
     found = child;
@@ -538,6 +537,14 @@ BrowsingContext* BrowsingContext::FindChildWithName(
   }
 
   return nullptr;
+}
+
+
+bool BrowsingContext::IsSpecialName(const nsAString& aName) {
+  return (aName.LowerCaseEqualsLiteral("_self") ||
+          aName.LowerCaseEqualsLiteral("_parent") ||
+          aName.LowerCaseEqualsLiteral("_top") ||
+          aName.LowerCaseEqualsLiteral("_blank"));
 }
 
 BrowsingContext* BrowsingContext::FindWithSpecialName(
