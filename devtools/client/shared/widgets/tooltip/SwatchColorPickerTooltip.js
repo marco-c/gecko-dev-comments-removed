@@ -236,34 +236,34 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
   }
 
   _openEyeDropper() {
-    const { inspector, toolbox, telemetry } = this.inspector;
+    const { inspectorFront, toolbox, telemetry } = this.inspector;
 
     telemetry
       .getHistogramById(TELEMETRY_PICKER_EYEDROPPER_OPEN_COUNT)
       .add(true);
 
     
-    inspector.nodePicker.cancel();
+    inspectorFront.nodePicker.cancel();
 
     
     
     
     this.eyedropperOpen = true;
 
-    inspector.pickColorFromPage({ copyOnSelect: false }).then(() => {
+    inspectorFront.pickColorFromPage({ copyOnSelect: false }).then(() => {
       
       this.hide();
 
       this.tooltip.emit("eyedropper-opened");
     }, console.error);
 
-    inspector.once("color-picked", color => {
+    inspectorFront.once("color-picked", color => {
       toolbox.win.focus();
       this._selectColor(color);
       this._onEyeDropperDone();
     });
 
-    inspector.once("color-pick-canceled", () => {
+    inspectorFront.once("color-pick-canceled", () => {
       this._onEyeDropperDone();
     });
   }
