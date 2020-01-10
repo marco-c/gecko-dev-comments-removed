@@ -29,16 +29,9 @@ const FXA_LOGIN_UNVERIFIED = 1;
 
 const FXA_LOGIN_FAILED = 2;
 
-Preferences.addAll([
-  { id: "services.sync.engine.addons", type: "bool" },
-  { id: "services.sync.engine.bookmarks", type: "bool" },
-  { id: "services.sync.engine.history", type: "bool" },
-  { id: "services.sync.engine.tabs", type: "bool" },
-  { id: "services.sync.engine.prefs", type: "bool" },
-  { id: "services.sync.engine.passwords", type: "bool" },
-  { id: "services.sync.engine.addresses", type: "bool" },
-  { id: "services.sync.engine.creditcards", type: "bool" },
-]);
+
+const SYNC_DISCONNECTED = 0;
+const SYNC_CONNECTED = 1;
 
 var gSyncPane = {
   get page() {
@@ -51,7 +44,7 @@ var gSyncPane = {
 
   init() {
     this._setupEventListeners();
-    this._adjustForPrefs();
+    this.setupEnginesUI();
 
     document
       .getElementById("weavePrefsDeck")
@@ -89,65 +82,26 @@ var gSyncPane = {
     xps.ensureLoaded();
   },
 
-  
-  _adjustForPrefs() {
-    
-    
-    let enginePrefs = [
-      [
-        "services.sync.engine.addresses.available",
-        "services.sync.engine.addresses",
-      ],
-      [
-        "services.sync.engine.creditcards.available",
-        "services.sync.engine.creditcards",
-      ],
-    ];
-    let numHidden = 0;
-    for (let [availablePref, prefName] of enginePrefs) {
-      if (!Services.prefs.getBoolPref(availablePref)) {
-        let checkbox = document.querySelector(
-          '[preference="' + prefName + '"]'
-        );
-        checkbox.hidden = true;
-        numHidden += 1;
-      }
-    }
-    
-    
-    
-    if (numHidden == 2) {
-      let history = document.querySelector(
-        '[preference="services.sync.engine.history"]'
-      );
-      let addons = document.querySelector(
-        '[preference="services.sync.engine.addons"]'
-      );
-      addons.parentNode.insertBefore(history, addons);
-    }
-  },
-
   _showLoadPage(xps) {
+    let maybeAcct = false;
     let username = Services.prefs.getCharPref("services.sync.username", "");
-    if (!username) {
-      this.page = FXA_PAGE_LOGGED_OUT;
-      return;
+    if (username) {
+      document.getElementById("fxaEmailAddress").textContent = username;
+      maybeAcct = true;
     }
 
-    
-    let cachedComputerName = Services.prefs.getCharPref(
-      "services.sync.client.name",
-      ""
+    let cachedComputerName = Services.prefs.getStringPref(
+      "identity.fxaccounts.account.device.name",
+      undefined
     );
-    document.getElementById("fxaEmailAddress").textContent = username;
-    this._populateComputerName(cachedComputerName);
-    this.page = FXA_PAGE_LOGGED_IN;
+    if (cachedComputerName) {
+      maybeAcct = true;
+      this._populateComputerName(cachedComputerName);
+    }
+    this.page = maybeAcct ? FXA_PAGE_LOGGED_IN : FXA_PAGE_LOGGED_OUT;
   },
 
   _init() {
-    
-    
-    
     Weave.Svc.Obs.add(UIState.ON_UPDATE, this.updateWeavePrefs, this);
 
     window.addEventListener("unload", () => {
@@ -161,39 +115,16 @@ var gSyncPane = {
     });
 
     
-    let url =
-      Services.prefs.getCharPref("identity.mobilepromo.android") +
-      "sync-preferences";
-    document.getElementById("fxaMobilePromo-android").setAttribute("href", url);
-    url =
-      Services.prefs.getCharPref("identity.mobilepromo.ios") +
-      "sync-preferences";
-    document.getElementById("fxaMobilePromo-ios").setAttribute("href", url);
-
-    
-    FxAccounts.config
-      .promiseConnectDeviceURI(this._getEntryPoint())
-      .then(connectURI => {
-        document
-          .getElementById("connect-another-device")
-          .setAttribute("href", connectURI);
-      });
-
-    FxAccounts.config
-      .promiseManageDevicesURI(this._getEntryPoint())
-      .then(manageURI => {
-        document
-          .getElementById("manage-devices")
-          .setAttribute("href", manageURI);
-      });
-
-    FxAccounts.config.promiseLegalTermsURI().then(uri => {
-      document.getElementById("tosPP-small-ToS").setAttribute("href", uri);
-    });
-
-    FxAccounts.config.promiseLegalPrivacyURI().then(uri => {
-      document.getElementById("tosPP-small-PP").setAttribute("href", uri);
-    });
+    for (let platform of ["android", "ios"]) {
+      let url =
+        Services.prefs.getCharPref(`identity.mobilepromo.${platform}`) +
+        "sync-preferences";
+      for (let elt of document.querySelectorAll(
+        `.fxaMobilePromo-${platform}`
+      )) {
+        elt.setAttribute("href", url);
+      }
+    }
 
     FxAccounts.config
       .promiseSignUpURI(this._getEntryPoint())
@@ -318,6 +249,71 @@ var gSyncPane = {
         document.getElementById("fxaCancelChangeDeviceName").click();
       }
     });
+    setEventListener("syncSetup", "command", function() {
+      this._chooseWhatToSync(false);
+    });
+    setEventListener("syncChangeOptions", "command", function() {
+      this._chooseWhatToSync(true);
+    });
+    setEventListener("syncNow", "command", function() {
+      
+      
+      this._updateSyncNow(true);
+      Weave.Service.sync({ why: "aboutprefs" });
+    });
+    setEventListener("syncNow", "mouseover", function() {
+      const state = UIState.get();
+      
+      
+      let tooltiptext = state.syncing
+        ? document.getElementById("syncNow").getAttribute("label")
+        : window.docShell.rootTreeItem.domWindow.gSync.formatLastSyncDate(
+            state.lastSync
+          );
+      document
+        .getElementById("syncNow")
+        .setAttribute("tooltiptext", tooltiptext);
+    });
+  },
+
+  _chooseWhatToSync(isAlreadySyncing) {
+    let params = {};
+    if (isAlreadySyncing) {
+      
+      params.disconnectFun = () => this.disconnectSync();
+    }
+    gSubDialog.open(
+      "chrome://browser/content/preferences/in-content/syncChooseWhatToSync.xul",
+      "" ,
+      params ,
+      event => {
+        
+        if (!isAlreadySyncing && event.detail.button == "accept") {
+          
+          
+          Weave.Service.configure();
+        }
+      }
+    );
+  },
+
+  _updateSyncNow(syncing) {
+    let butSyncNow = document.getElementById("syncNow");
+    if (syncing) {
+      butSyncNow.setAttribute("label", butSyncNow.getAttribute("labelsyncing"));
+      butSyncNow.removeAttribute("accesskey");
+      butSyncNow.disabled = true;
+    } else {
+      butSyncNow.setAttribute(
+        "label",
+        butSyncNow.getAttribute("labelnotsyncing")
+      );
+      butSyncNow.setAttribute(
+        "accesskey",
+        butSyncNow.getAttribute("accesskeynotsyncing")
+      );
+      butSyncNow.disabled = false;
+    }
   },
 
   updateWeavePrefs() {
@@ -362,11 +358,9 @@ var gSyncPane = {
     document.getElementById("fxaEmailAddress").textContent = state.email;
 
     this._populateComputerName(Weave.Service.clientsEngine.localName);
-    let engines = document.getElementById("fxaSyncEngines");
-    for (let checkbox of engines.querySelectorAll("checkbox")) {
-      checkbox.disabled = !syncReady;
+    for (let elt of document.querySelectorAll("needs-account-ready")) {
+      elt.disabled = !syncReady;
     }
-    document.getElementById("fxaChangeDeviceName").disabled = !syncReady;
 
     
     document
@@ -407,12 +401,13 @@ var gSyncPane = {
           .getElementById("verifiedManage")
           .setAttribute("href", accountsManageURI);
       });
-    let isUnverified = state.status == UIState.STATUS_NOT_VERIFIED;
     
-    let isMultiDevice = Weave.Service.clientsEngine.stats.numClients > 1;
-    document.getElementById("connect-another-device").hidden = isUnverified;
-    document.getElementById("manage-devices").hidden =
-      isUnverified || !isMultiDevice;
+    let eltSyncStatus = document.getElementById("syncStatus");
+    eltSyncStatus.hidden = !syncReady;
+    eltSyncStatus.selectedIndex = state.syncEnabled
+      ? SYNC_CONNECTED
+      : SYNC_DISCONNECTED;
+    this._updateSyncNow(state.syncing);
   },
 
   _getEntryPoint() {
@@ -535,8 +530,17 @@ var gSyncPane = {
       .then(onSuccess, onError);
   },
 
+  
   unlinkFirefoxAccount(confirm) {
     window.docShell.rootTreeItem.domWindow.gSync.disconnect({ confirm });
+  },
+
+  
+  disconnectSync() {
+    return window.docShell.rootTreeItem.domWindow.gSync.disconnect({
+      confirm: true,
+      disconnectAccount: false,
+    });
   },
 
   pairAnotherDevice() {
@@ -557,5 +561,28 @@ var gSyncPane = {
       );
     }
     textbox.value = value;
+  },
+
+  
+  
+  setupEnginesUI() {
+    let observe = (elt, prefName) => {
+      let enabled = Services.prefs.getBoolPref(prefName, false);
+      if (enabled) {
+        elt.removeAttribute("hidden");
+      } else {
+        elt.setAttribute("hidden", "true");
+      }
+    };
+
+    for (let elt of document.querySelectorAll("[engine_preference]")) {
+      let prefName = elt.getAttribute("engine_preference");
+      let obs = observe.bind(null, elt, prefName);
+      obs();
+      Services.prefs.addObserver(prefName, obs);
+      window.addEventListener("unload", () => {
+        Services.prefs.removeObserver(prefName, obs);
+      });
+    }
   },
 };
