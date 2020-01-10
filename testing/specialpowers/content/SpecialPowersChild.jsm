@@ -1613,6 +1613,17 @@ class SpecialPowersChild extends JSWindowActorChild {
     return BrowsingContext.getFromWindow(target);
   }
 
+  getBrowsingContextID(target) {
+    return this._browsingContextForTarget(target).id;
+  }
+
+  *getGroupTopLevelWindows(target) {
+    let { group } = this._browsingContextForTarget(target);
+    for (let bc of group.getToplevels()) {
+      yield bc.window;
+    }
+  }
+
   
 
 
