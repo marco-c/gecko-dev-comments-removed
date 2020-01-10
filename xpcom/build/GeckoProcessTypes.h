@@ -21,7 +21,6 @@
 
 
 
-
 GECKO_PROCESS_TYPE(Default, "default", Parent, Self)
 GECKO_PROCESS_TYPE(Plugin, "plugin", Plugin, PluginContainer)
 GECKO_PROCESS_TYPE(Content, "tab", Content, Self)
