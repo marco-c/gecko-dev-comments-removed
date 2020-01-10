@@ -353,11 +353,7 @@ browser.Context = class {
           subject => subject == win
         );
 
-        
-        
-        
-        win.setTimeout(() => win.focus(), 0);
-
+        win.focus();
         await Promise.all([activated, focused, startup]);
 
         
