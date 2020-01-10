@@ -15,8 +15,10 @@ namespace mozilla {
 
 class DecoderDoctorDiagnostics;
 class MediaContainerType;
+class MediaDataDemuxer;
 struct MediaFormatReaderInit;
 class MediaFormatReader;
+class MediaResource;
 class TrackInfo;
 
 enum CanPlayStatus { CANPLAY_NO, CANPLAY_MAYBE, CANPLAY_YES };
@@ -34,6 +36,11 @@ class DecoderTraits {
   
   static bool ShouldHandleMediaType(const char* aMIMEType,
                                     DecoderDoctorDiagnostics* aDiagnostics);
+
+  
+  
+  static already_AddRefed<MediaDataDemuxer> CreateDemuxer(
+      const MediaContainerType& aType, MediaResource* aResource);
 
   
   
