@@ -40,7 +40,6 @@ namespace dom {
 
 class AudioStreamTrack;
 class VideoStreamTrack;
-class TrackSink;
 enum class CallerType : uint32_t;
 
 
@@ -97,6 +96,12 @@ class MediaStreamTrackSource : public nsISupports {
 
 
     virtual void MutedChanged(bool aNewState) = 0;
+
+    
+
+
+
+    virtual void OverrideEnded() = 0;
 
    protected:
     virtual ~Sink() = default;
@@ -286,6 +291,23 @@ class MediaStreamTrackSource : public nsISupports {
   }
 
   
+
+
+
+  void OverrideEnded() {
+    MOZ_ASSERT(NS_IsMainThread());
+    nsTArray<WeakPtr<Sink>> sinks(mSinks);
+    for (auto& sink : sinks) {
+      if (!sink) {
+        MOZ_ASSERT_UNREACHABLE("Sink was not explicitly removed");
+        mSinks.RemoveElement(sink);
+        continue;
+      }
+      sink->OverrideEnded();
+    }
+  }
+
+  
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
@@ -342,12 +364,42 @@ class MediaStreamTrackConsumer
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MediaStreamTrack : public DOMEventTargetHelper,
                          public SupportsWeakPtr<MediaStreamTrack> {
-  
-  
-  friend class mozilla::DOMMediaStream;
-
   
   friend class mozilla::PeerConnectionImpl;
   friend class mozilla::PeerConnectionMedia;
@@ -355,14 +407,14 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   friend class mozilla::RemoteSourceStreamInfo;
 
   class MSGListener;
+  class TrackSink;
 
  public:
   
 
 
-
   MediaStreamTrack(
-      DOMMediaStream* aStream, TrackID aTrackID, TrackID aInputTrackID,
+      nsPIDOMWindowInner* aWindow, MediaStream* aInputStream, TrackID aTrackID,
       MediaStreamTrackSource* aSource,
       const MediaTrackConstraints& aConstraints = MediaTrackConstraints());
 
@@ -372,7 +424,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaStreamTrack)
 
-  nsPIDOMWindowInner* GetParentObject() const;
+  nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
@@ -413,35 +465,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   
 
 
-
-  void SetReadyState(MediaStreamTrackState aState);
-
-  
-
-
-
-
-
-
-  void OverrideEnded();
-
-  
-
-
   nsIPrincipal* GetPrincipal() const { return mPrincipal; }
-
-  
-
-
-
-
-  void NotifyPrincipalHandleChanged(const PrincipalHandle& aPrincipalHandle);
-
-  
-
-
-
-  void NotifyEnded();
 
   
 
@@ -450,8 +474,9 @@ class MediaStreamTrack : public DOMEventTargetHelper,
     return GetSource().GetPeerIdentity();
   }
 
-  MediaStreamGraph* Graph();
-  MediaStreamGraphImpl* GraphImpl();
+  ProcessedMediaStream* GetStream() const;
+  MediaStreamGraph* Graph() const;
+  MediaStreamGraphImpl* GraphImpl() const;
 
   MediaStreamTrackSource& GetSource() const {
     MOZ_RELEASE_ASSERT(mSource,
@@ -462,16 +487,6 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   
   
   void AssignId(const nsAString& aID) { mID = aID; }
-
-  
-
-
-  void PrincipalChanged();
-
-  
-
-
-  void MutedChanged(bool aNewState);
 
   
 
@@ -530,20 +545,9 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
 
   already_AddRefed<MediaInputPort> ForwardTrackContentsTo(
-      ProcessedMediaStream* aStream, TrackID aDestinationTrackID = TRACK_ANY);
+      ProcessedMediaStream* aStream);
 
-  
-
-
-
-  bool IsForwardedThrough(MediaInputPort* aPort);
-
-  void SetMediaStreamSizeListener(DirectMediaStreamTrackListener* aListener);
-
-  
-  MediaStream* GetInputStream();
-
-  TrackID GetInputTrackId() const { return mInputTrackID; }
+  TrackID GetTrackID() const { return mTrackID; }
 
  protected:
   virtual ~MediaStreamTrack();
@@ -551,16 +555,47 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   
 
 
+
+  void SetReadyState(MediaStreamTrackState aState);
+
+  
+
+
+
+
+
+
+  void OverrideEnded();
+
+  
+
+
+
+
+  void NotifyPrincipalHandleChanged(const PrincipalHandle& aNewPrincipalHandle);
+
+  
+
+
+
+  void NotifyEnded();
+
+  
+
+
+  void PrincipalChanged();
+
+  
+
+
+  void MutedChanged(bool aNewState);
+
+  
+
+
   void SetMuted(bool aMuted) { mMuted = aMuted; }
 
   virtual void Destroy();
-
-  
-  ProcessedMediaStream* GetOwnedStream();
-
-  
-  
-  DOMMediaStream* GetInputDOMStream();
 
   
 
@@ -571,21 +606,29 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
 
 
-
-  virtual already_AddRefed<MediaStreamTrack> CloneInternal(
-      DOMMediaStream* aOwningStream, TrackID aTrackID) = 0;
+  virtual already_AddRefed<MediaStreamTrack> CloneInternal() = 0;
 
   nsTArray<PrincipalChangeObserver<MediaStreamTrack>*>
       mPrincipalChangeObservers;
 
   nsTArray<WeakPtr<MediaStreamTrackConsumer>> mConsumers;
 
-  RefPtr<DOMMediaStream> mOwningStream;
-  TrackID mTrackID;
-  TrackID mInputTrackID;
+  
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
+
+  
+  
+  RefPtr<MediaStream> mInputStream;
+  
+  
+  RefPtr<ProcessedMediaStream> mStream;
+  
+  
+  RefPtr<MediaInputPort> mPort;
+  
+  const TrackID mTrackID;
   RefPtr<MediaStreamTrackSource> mSource;
   const UniquePtr<TrackSink> mSink;
-  RefPtr<MediaStreamTrack> mOriginalTrack;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIPrincipal> mPendingPrincipal;
   RefPtr<MSGListener> mMSGListener;

@@ -16,10 +16,8 @@
 #  include "MediaPromiseDefs.h"
 #  include "MediaResource.h"
 #  include "MediaStatistics.h"
-#  include "MediaStreamGraph.h"
 #  include "SeekTarget.h"
 #  include "TimeUnits.h"
-#  include "TrackID.h"
 #  include "mozilla/Atomics.h"
 #  include "mozilla/CDMProxy.h"
 #  include "mozilla/MozPromise.h"
@@ -33,6 +31,7 @@
 #  include "nsISupports.h"
 #  include "nsITimer.h"
 
+class AudioDeviceInfo;
 class nsIPrincipal;
 
 namespace mozilla {
@@ -48,6 +47,7 @@ class VideoFrameContainer;
 class MediaFormatReader;
 class MediaDecoderStateMachine;
 struct MediaPlaybackEvent;
+class MediaStreamGraphImpl;
 
 enum class Visibility : uint8_t;
 
@@ -175,16 +175,9 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   
-  void AddOutputStream(DOMMediaStream* aStream);
+  void AddOutputStream(DOMMediaStream* aStream, MediaStreamGraphImpl* aGraph);
   
   void RemoveOutputStream(DOMMediaStream* aStream);
-
-  
-  
-  void SetNextOutputStreamTrackID(TrackID aNextTrackID);
-  
-  
-  TrackID GetNextOutputStreamTrackID();
 
   
   void SetOutputStreamPrincipal(nsIPrincipal* aPrincipal);

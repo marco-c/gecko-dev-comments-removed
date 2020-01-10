@@ -8,8 +8,9 @@
 #define MediaStreamAudioSourceNode_h_
 
 #include "AudioNode.h"
-#include "DOMMediaStream.h"
 #include "AudioNodeEngine.h"
+#include "DOMMediaStream.h"
+#include "PrincipalChangeObserver.h"
 
 namespace mozilla {
 
@@ -77,7 +78,7 @@ class MediaStreamAudioSourceNode
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
   
-  void AttachToTrack(const RefPtr<MediaStreamTrack>& aTrack);
+  void AttachToTrack(const RefPtr<MediaStreamTrack>& aTrack, ErrorResult& aRv);
 
   
   void DetachFromTrack();

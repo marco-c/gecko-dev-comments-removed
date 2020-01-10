@@ -54,14 +54,17 @@ class MediaDecoder;
 class MediaInputPort;
 class MediaStream;
 class MediaStreamGraph;
+class MediaStreamGraphImpl;
+class MediaStreamWindowCapturer;
 class VideoFrameContainer;
 namespace dom {
 class MediaKeys;
 class TextTrack;
 class TimeRanges;
 class WakeLock;
-class MediaTrack;
 class MediaStreamTrack;
+class MediaStreamTrackSource;
+class MediaTrack;
 class VideoStreamTrack;
 }  
 }  
@@ -98,7 +101,7 @@ enum class StreamCaptureBehavior : uint8_t {
 
 class HTMLMediaElement : public nsGenericHTMLElement,
                          public MediaDecoderOwner,
-                         public PrincipalChangeObserver<DOMMediaStream>,
+                         public PrincipalChangeObserver<MediaStreamTrack>,
                          public SupportsWeakPtr<HTMLMediaElement>,
                          public nsStubMutationObserver {
  public:
@@ -230,7 +233,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void NotifyOwnerDocumentActivityChanged();
 
   
-  void PrincipalChanged(DOMMediaStream* aStream) override;
+  void PrincipalChanged(MediaStreamTrack* aTrack) override;
 
   void UpdateSrcStreamVideoPrincipal(const PrincipalHandle& aPrincipalHandle);
 
@@ -296,8 +299,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   void GetEMEInfo(dom::EMEDebugInfo& aInfo);
 
-  class StreamCaptureTrackSource;
-
   
   
   virtual void UpdateMediaSize(const nsIntSize& aSize);
@@ -336,13 +337,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
   void NotifyMediaTrackDisabled(MediaTrack* aTrack);
-
-  
-
-
-
-  void NotifyOutputTrackStopped(DOMMediaStream* aOwningStream,
-                                TrackID aDestinationTrackID);
 
   
 
@@ -391,13 +385,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
   void FireTimeUpdate(bool aPeriodic) final;
-
-  
-
-
-
-
-  MediaStream* GetSrcMediaStream() const;
 
   
 
@@ -752,13 +739,24 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   class ChannelLoader;
   class ErrorSink;
   class MediaLoadListener;
+  class MediaStreamRenderer;
   class MediaStreamTrackListener;
   class FirstFrameListener;
   class ShutdownObserver;
+  class StreamCaptureTrackSource;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
 
   void SetDecoder(MediaDecoder* aDecoder);
+
+  struct SharedDummyStream {
+    NS_INLINE_DECL_REFCOUNTING(SharedDummyStream)
+    explicit SharedDummyStream(MediaStream* aStream);
+    const RefPtr<MediaStream> mStream;
+
+   private:
+    ~SharedDummyStream();
+  };
 
   
   
@@ -767,14 +765,18 @@ class HTMLMediaElement : public nsGenericHTMLElement,
     ~OutputMediaStream();
 
     RefPtr<DOMMediaStream> mStream;
-    TrackID mNextAvailableTrackID;
+    RefPtr<MediaStreamGraphImpl> mGraph;
+    
+    
+    
+    RefPtr<SharedDummyStream> mGraphKeepAliveDummyStream;
     bool mFinishWhenEnded;
     bool mCapturingAudioOnly;
     bool mCapturingDecoder;
     bool mCapturingMediaStream;
 
     
-    nsTArray<Pair<nsString, RefPtr<MediaInputPort>>> mTrackPorts;
+    nsTArray<Pair<nsString, RefPtr<MediaStreamTrackSource>>> mTracks;
   };
 
   void PlayInternal(bool aHandlingUserInput);
@@ -1332,29 +1334,23 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   RefPtr<DOMMediaStream> mSrcStream;
 
   
+  
+  RefPtr<MediaStreamRenderer> mMediaStreamRenderer;
+
+  
   bool mSrcStreamTracksAvailable = false;
-
-  
-  
-  Maybe<GraphTime> mSrcStreamPausedGraphTime;
-
-  
-  
-  GraphTime mSrcStreamGraphTimeOffset = 0;
 
   
   
   bool mSrcStreamPlaybackEnded = false;
 
   
-  RefPtr<MediaInputPort> mCaptureStreamPort;
+  
+  UniquePtr<MediaStreamWindowCapturer> mStreamWindowCapturer;
 
   
   
   nsTArray<OutputMediaStream> mOutputStreams;
-
-  
-  TrackID mNextAvailableMediaDecoderOutputTrackID = 1;
 
   
   

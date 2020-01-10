@@ -188,7 +188,7 @@ class MediaDecoderStateMachine
 
   void SetOutputStreamPrincipal(nsIPrincipal* aPrincipal);
   
-  void EnsureOutputStreamManager(MediaStreamGraph* aGraph);
+  void EnsureOutputStreamManager(MediaStreamGraphImpl* aGraph);
   
   
   void EnsureOutputStreamManagerHasTracks(const MediaInfo& aLoadedInfo);
@@ -198,12 +198,6 @@ class MediaDecoderStateMachine
   
   
   void RemoveOutputStream(DOMMediaStream* aStream);
-  
-  
-  void SetNextOutputStreamTrackID(TrackID aNextTrackID);
-  
-  
-  TrackID GetNextOutputStreamTrackID();
 
   
   RefPtr<MediaDecoder::SeekPromise> InvokeSeek(const SeekTarget& aTarget);
@@ -684,10 +678,6 @@ class MediaDecoderStateMachine
 
   
   nsCOMPtr<nsIPrincipal> mOutputStreamPrincipal;
-
-  
-  
-  TrackID mNextOutputStreamTrackID = 1;
 
   
   VideoDecodeMode mVideoDecodeMode;

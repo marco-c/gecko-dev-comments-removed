@@ -28,7 +28,8 @@ class nsPIDOMWindowInner;
 
 namespace mozilla {
 class AsyncLogger;
-};
+class AudioCaptureStream;
+};  
 
 extern mozilla::AsyncLogger gMSGTraceLogger;
 
@@ -366,16 +367,7 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
 
   
   
-  
-  
   virtual void Destroy();
-  
-  
-  
-  void RegisterUser();
-  
-  
-  void UnregisterUser();
 
   
   
@@ -618,7 +610,6 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   bool mMainThreadFinished;
   bool mFinishedNotificationSent;
   bool mMainThreadDestroyed;
-  int mNrOfMainThreadUsers;
 
   
   MediaStreamGraphImpl* mGraph;
@@ -1226,7 +1217,7 @@ class MediaStreamGraph {
   
 
 
-  ProcessedMediaStream* CreateAudioCaptureStream(TrackID aTrackId);
+  AudioCaptureStream* CreateAudioCaptureStream(TrackID aTrackId);
 
   
 

@@ -38,26 +38,19 @@ class OutputStreamData {
   
   
   
-  void AddTrack(TrackID aTrackID, MediaSegment::Type aType,
+  void AddTrack(SourceMediaStream* aStream, MediaSegment::Type aType,
                 nsIPrincipal* aPrincipal, bool aAsyncAddTrack);
   
-  
-  void RemoveTrack(TrackID aTrackID);
+  void RemoveTrack(SourceMediaStream* aStream);
 
   void SetPrincipal(nsIPrincipal* aPrincipal);
 
-  
   const RefPtr<OutputStreamManager> mManager;
   const RefPtr<AbstractThread> mAbstractMainThread;
   
   const WeakPtr<DOMMediaStream> mDOMStream;
-  
-  const RefPtr<ProcessedMediaStream> mInputStream;
 
  private:
-  
-  const RefPtr<MediaInputPort> mPort;
-
   
   nsTArray<WeakPtr<dom::MediaStreamTrack>> mTracks;
 };
@@ -66,9 +59,8 @@ class OutputStreamManager {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OutputStreamManager);
 
  public:
-  explicit OutputStreamManager(SourceMediaStream* aSourceStream,
-                               TrackID aNextTrackID, nsIPrincipal* aPrincipal,
-                               AbstractThread* aAbstractMainThread);
+  OutputStreamManager(MediaStreamGraphImpl* aGraph, nsIPrincipal* aPrincipal,
+                      AbstractThread* aAbstractMainThread);
   
   void Add(DOMMediaStream* aDOMStream);
   
@@ -77,11 +69,16 @@ class OutputStreamManager {
   bool HasTrackType(MediaSegment::Type aType);
   
   
-  bool HasTracks(TrackID aAudioTrack, TrackID aVideoTrack);
+  bool HasTracks(SourceMediaStream* aAudioStream,
+                 SourceMediaStream* aVideoStream);
+  
+  
+  SourceMediaStream* GetPrecreatedTrackOfType(MediaSegment::Type aType) const;
   
   size_t NumberOfTracks();
   
-  void AddTrack(MediaSegment::Type aType);
+  
+  already_AddRefed<SourceMediaStream> AddTrack(MediaSegment::Type aType);
   
   void RemoveTracks();
   
@@ -91,11 +88,6 @@ class OutputStreamManager {
   
   void SetPrincipal(nsIPrincipal* aPrincipal);
   
-  TrackID NextTrackID() const;
-  
-  
-  TrackID GetLiveTrackIDFor(MediaSegment::Type aType) const;
-  
   
   void SetPlaying(bool aPlaying);
   
@@ -104,36 +96,54 @@ class OutputStreamManager {
     return mStreams.IsEmpty();
   }
 
-  
-  
-  const RefPtr<SourceMediaStream> mSourceStream;
+  static const TrackID sTrackID = 1;
+
   const RefPtr<AbstractThread> mAbstractMainThread;
 
  private:
-  ~OutputStreamManager() = default;
+  ~OutputStreamManager();
+
+  class LiveTrack {
+   public:
+    LiveTrack(SourceMediaStream* aSourceStream, MediaSegment::Type aType)
+        : mSourceStream(aSourceStream), mType(aType) {}
+    ~LiveTrack();
+
+    const RefPtr<SourceMediaStream> mSourceStream;
+    const MediaSegment::Type mType;
+    bool mEverPlayed = false;
+  };
+
   struct StreamComparator {
     static bool Equals(const UniquePtr<OutputStreamData>& aData,
                        DOMMediaStream* aStream) {
       return aData->mDOMStream == aStream;
     }
   };
-  struct TrackIDComparator {
-    static bool Equals(const Pair<TrackID, MediaSegment::Type>& aLiveTrack,
-                       TrackID aTrackID) {
-      return aLiveTrack.first() == aTrackID;
+  struct TrackStreamComparator {
+    static bool Equals(const UniquePtr<LiveTrack>& aLiveTrack,
+                       SourceMediaStream* aStream) {
+      return aLiveTrack->mSourceStream == aStream;
     }
   };
   struct TrackTypeComparator {
-    static bool Equals(const Pair<TrackID, MediaSegment::Type>& aLiveTrack,
+    static bool Equals(const UniquePtr<LiveTrack>& aLiveTrack,
                        MediaSegment::Type aType) {
-      return aLiveTrack.second() == aType;
+      return aLiveTrack->mType == aType;
+    }
+  };
+  struct PrecreatedTrackTypeComparator {
+    static bool Equals(const UniquePtr<LiveTrack>& aLiveTrack,
+                       MediaSegment::Type aType) {
+      return !aLiveTrack->mEverPlayed && aLiveTrack->mType == aType;
     }
   };
   struct TrackComparator {
-    static bool Equals(const Pair<TrackID, MediaSegment::Type>& aLiveTrack,
-                       const Pair<TrackID, MediaSegment::Type>& aOther) {
-      return aLiveTrack.first() == aOther.first() &&
-             aLiveTrack.second() == aOther.second();
+    static bool Equals(
+        const UniquePtr<LiveTrack>& aLiveTrack,
+        const Pair<SourceMediaStream*, MediaSegment::Type>& aOther) {
+      return aLiveTrack->mSourceStream == aOther.first() &&
+             aLiveTrack->mType == aOther.second();
     }
   };
 
@@ -141,14 +151,14 @@ class OutputStreamManager {
   void AutoRemoveDestroyedStreams();
 
   
-  void RemoveTrack(TrackID aTrackID);
+  void RemoveTrack(SourceMediaStream* aStream);
 
+  const RefPtr<MediaStreamGraphImpl> mGraph;
   nsTArray<UniquePtr<OutputStreamData>> mStreams;
-  nsTArray<Pair<TrackID, MediaSegment::Type>> mLiveTracks;
+  nsTArray<UniquePtr<LiveTrack>> mLiveTracks;
   Canonical<PrincipalHandle> mPrincipalHandle;
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  TrackID mNextTrackID;
-  bool mPlaying;
+  bool mPlaying = false;
 };
 
 }  

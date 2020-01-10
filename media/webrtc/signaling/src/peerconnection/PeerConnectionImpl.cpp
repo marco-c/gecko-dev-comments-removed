@@ -35,6 +35,7 @@
 
 #include "AudioConduit.h"
 #include "VideoConduit.h"
+#include "MediaStreamGraph.h"
 #include "runnable_utils.h"
 #include "PeerConnectionCtx.h"
 #include "PeerConnectionImpl.h"
@@ -1797,17 +1798,6 @@ OwningNonNull<dom::MediaStreamTrack> PeerConnectionImpl::CreateReceiveTrack(
     SdpMediaSection::MediaType type) {
   bool audio = (type == SdpMediaSection::MediaType::kAudio);
 
-  MediaStreamGraph* graph = MediaStreamGraph::GetInstance(
-      audio ? MediaStreamGraph::AUDIO_THREAD_DRIVER
-            : MediaStreamGraph::SYSTEM_THREAD_DRIVER,
-      GetWindow(), MediaStreamGraph::REQUEST_DEFAULT_SAMPLE_RATE);
-
-  RefPtr<DOMMediaStream> stream =
-      DOMMediaStream::CreateSourceStreamAsInput(GetWindow(), graph);
-
-  CSFLogDebug(LOGTAG, "Created media stream %p, inner: %p", stream.get(),
-              stream->GetInputStream());
-
   
   
   
@@ -1823,23 +1813,33 @@ OwningNonNull<dom::MediaStreamTrack> PeerConnectionImpl::CreateReceiveTrack(
         NullPrincipal::CreateWithInheritedAttributes(doc->NodePrincipal());
   }
 
+  MediaStreamGraph* graph = MediaStreamGraph::GetInstance(
+      audio ? MediaStreamGraph::AUDIO_THREAD_DRIVER
+            : MediaStreamGraph::SYSTEM_THREAD_DRIVER,
+      GetWindow(), MediaStreamGraph::REQUEST_DEFAULT_SAMPLE_RATE);
+
   RefPtr<MediaStreamTrack> track;
   RefPtr<RemoteTrackSource> trackSource;
+  RefPtr<SourceMediaStream> source = graph->CreateSourceStream();
   if (audio) {
-    trackSource = new RemoteTrackSource(principal,
+    trackSource = new RemoteTrackSource(source, principal,
                                         NS_ConvertASCIItoUTF16("remote audio"));
-    track = stream->CreateDOMTrack(333,  
-                                         
-                                   MediaSegment::AUDIO, trackSource);
+    track = new AudioStreamTrack(GetWindow(), source,
+                                 333,  
+                                       
+                                 trackSource);
   } else {
-    trackSource = new RemoteTrackSource(principal,
+    trackSource = new RemoteTrackSource(source, principal,
                                         NS_ConvertASCIItoUTF16("remote video"));
-    track = stream->CreateDOMTrack(666,  
-                                         
-                                   MediaSegment::VIDEO, trackSource);
+    track = new VideoStreamTrack(GetWindow(), source,
+                                 666,  
+                                       
+                                 trackSource);
   }
 
-  stream->AddTrackInternal(track);
+  CSFLogDebug(LOGTAG, "Created %s track %p, inner: %p",
+              audio ? "audio" : "video", track.get(), track->GetStream());
+
   
   trackSource->SetMuted(true);
 
