@@ -21,6 +21,7 @@ add_task(async function() {
       </html>`,
     },
     async function(browser) {
+      await loadContentScripts(browser, "Common.jsm");
       info(
         "Creating a service in parent and waiting for service to be created " +
           "in content"
@@ -61,12 +62,9 @@ add_task(async function() {
         a11yConsumersChangedPromise
       );
       
-      loadFrameScripts(
-        browser,
-        `var accService = Components.classes[
-      '@mozilla.org/accessibilityService;1'].getService(
-        Components.interfaces.nsIAccessibilityService);`
-      );
+      await ContentTask.spawn(browser, {}, () => {
+        content.CommonUtils.accService;
+      });
       await contentConsumersChanged.then(data =>
         Assert.deepEqual(
           data,
@@ -80,7 +78,7 @@ add_task(async function() {
       );
 
       const contentConsumers = await ContentTask.spawn(browser, {}, () =>
-        accService.getConsumers()
+        content.CommonUtils.accService.getConsumers()
       );
       Assert.deepEqual(
         JSON.parse(contentConsumers),
@@ -121,7 +119,9 @@ add_task(async function() {
       
       
       forceGC();
-      loadFrameScripts(browser, `Components.utils.forceGC();`);
+      await SpecialPowers.spawn(browser, [], () => {
+        SpecialPowers.Cu.forceGC();
+      });
       await parentA11yShutdown;
       await contentConsumersChanged.then(data =>
         Assert.deepEqual(
@@ -148,10 +148,9 @@ add_task(async function() {
       );
       
       
-      loadFrameScripts(
-        browser,
-        `accService = null; Components.utils.forceGC();`
-      );
+      await ContentTask.spawn(browser, {}, () => {
+        content.CommonUtils.clearAccService();
+      });
       await contentA11yShutdown;
       await contentConsumersChanged.then(data =>
         Assert.deepEqual(
