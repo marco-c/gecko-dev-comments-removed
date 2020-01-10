@@ -768,9 +768,6 @@ class JS::Realm : public JS::shadow::Realm {
   
   bool ensureDelazifyScriptsForDebugger(JSContext* cx);
 
-  void clearBreakpointsIn(js::FreeOp* fop, js::Debugger* dbg,
-                          JS::HandleObject handler);
-
   
   mozilla::non_crypto::XorShift128PlusRNG& getOrCreateRandomNumberGenerator();
 

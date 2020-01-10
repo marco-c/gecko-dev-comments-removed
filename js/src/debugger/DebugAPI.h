@@ -65,6 +65,9 @@ enum class ResumeMode {
   Return,
 };
 
+class DebugScript;
+class DebuggerVector;
+
 class DebugAPI {
  public:
   friend class Debugger;
@@ -91,6 +94,19 @@ class DebugAPI {
   static void traceAllForMovingGC(JSTracer* trc);
   static void sweepAll(FreeOp* fop);
   static MOZ_MUST_USE bool findSweepGroupEdges(JSRuntime* rt);
+  static inline void sweepBreakpoints(FreeOp* fop, JSScript* script);
+  static void destroyDebugScript(FreeOp* fop, JSScript* script);
+#ifdef JSGC_HASH_TABLE_CHECKS
+  static void checkDebugScriptAfterMovingGC(DebugScript* ds);
+#endif
+
+  
+
+  static inline bool stepModeEnabled(JSScript* script);
+
+  static inline bool hasBreakpointsAt(JSScript* script, jsbytecode* pc);
+
+  static inline bool hasAnyBreakpointsOrStepMode(JSScript* script);
 
   
 
@@ -214,6 +230,15 @@ class DebugAPI {
                                       Handle<PromiseObject*> promise);
 
   
+  static bool debuggerObservesAllExecution(GlobalObject* global);
+
+  
+  static bool debuggerObservesCoverage(GlobalObject* global);
+
+  
+  static bool debuggerObservesAsmJS(GlobalObject* global);
+
+  
 
 
 
@@ -238,10 +263,36 @@ class DebugAPI {
   static bool isObservedByDebuggerTrackingAllocations(
       const GlobalObject& debuggee);
 
+  
+  
+  static inline void notifyParticipatesInGC(GlobalObject* global,
+                                            uint64_t majorGCNumber);
+
+  static mozilla::Maybe<double> allocationSamplingProbability(
+      GlobalObject* global);
+
+  
+  static JSObject* newGlobalDebuggersHolder(JSContext* cx);
+
+  
+  
+  static GlobalObject::DebuggerVector* getGlobalDebuggers(JSObject* holder);
+
+  
+  static bool hasExceptionUnwindHook(GlobalObject* global);
+
+  
+  static bool hasDebuggerStatementHook(GlobalObject* global);
+
  private:
+  static bool stepModeEnabledSlow(JSScript* script);
+  static bool hasBreakpointsAtSlow(JSScript* script, jsbytecode* pc);
+  static void sweepBreakpointsSlow(FreeOp* fop, JSScript* script);
   static void slowPathOnNewScript(JSContext* cx, HandleScript script);
   static void slowPathOnNewGlobalObject(JSContext* cx,
                                         Handle<GlobalObject*> global);
+  static void slowPathNotifyParticipatesInGC(
+      uint64_t majorGCNumber, GlobalObject::DebuggerVector& dbgs);
   static MOZ_MUST_USE bool slowPathOnLogAllocationSite(
       JSContext* cx, HandleObject obj, HandleSavedFrame frame,
       mozilla::TimeStamp when, GlobalObject::DebuggerVector& dbgs);
