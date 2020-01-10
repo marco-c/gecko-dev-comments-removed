@@ -68,14 +68,14 @@ class JitScript;
 #define BASELINE_DISABLED_SCRIPT ((js::jit::BaselineScript*)0x1)
 
 class AutoSweepJitScript;
+class BreakpointSite;
+class Debugger;
 class GCParallelTask;
 class LazyScript;
 class ModuleObject;
 class RegExpObject;
 class SourceCompressionTask;
 class Shape;
-class DebugAPI;
-class DebugScript;
 
 namespace frontend {
 struct BytecodeEmitter;
@@ -252,6 +252,58 @@ using ScriptNameMap = HashMap<JSScript*, JS::UniqueChars,
 using ScriptVTuneIdMap =
     HashMap<JSScript*, uint32_t, DefaultHasher<JSScript*>, SystemAllocPolicy>;
 #endif
+
+class DebugScript {
+  friend class ::JSScript;
+  friend class JS::Realm;
+
+  
+
+
+
+
+
+
+
+
+
+  uint32_t generatorObserverCount;
+
+  
+
+
+
+
+
+  uint32_t stepperCount;
+
+  
+
+
+
+  uint32_t numSites;
+
+  
+
+
+
+
+
+  BreakpointSite* breakpoints[1];
+
+  
+
+
+
+  bool needed() const {
+    return generatorObserverCount > 0 || stepperCount > 0 || numSites > 0;
+  }
+
+  static size_t allocSize(size_t codeLength) {
+    return offsetof(DebugScript, breakpoints) +
+           codeLength * sizeof(BreakpointSite*);
+  }
+};
 
 using UniqueDebugScript = js::UniquePtr<DebugScript, JS::FreePolicy>;
 using DebugScriptMap = HashMap<JSScript*, UniqueDebugScript,
@@ -3052,14 +3104,65 @@ class JSScript : public js::BaseScript {
   bool formalIsAliased(unsigned argSlot);
   bool formalLivesInArgumentsObject(unsigned argSlot);
 
+ private:
+  
+  void setNewStepMode(js::FreeOp* fop, uint32_t newValue);
+
+  js::DebugScript* getOrCreateDebugScript(JSContext* cx);
+  js::DebugScript* debugScript();
+  js::DebugScript* releaseDebugScript();
+  void destroyDebugScript(js::FreeOp* fop);
+  void freeDebugScript(js::FreeOp* fop);
+
+  bool hasDebugScript() const { return hasFlag(MutableFlags::HasDebugScript); }
+
+ public:
+  bool hasBreakpointsAt(jsbytecode* pc);
+  bool hasAnyBreakpointsOrStepMode() { return hasDebugScript(); }
+
   
   
   inline bool isDebuggee() const;
 
+  js::BreakpointSite* getBreakpointSite(jsbytecode* pc) {
+    return hasDebugScript() ? debugScript()->breakpoints[pcToOffset(pc)]
+                            : nullptr;
+  }
+
+  js::BreakpointSite* getOrCreateBreakpointSite(JSContext* cx, jsbytecode* pc);
+
+  void destroyBreakpointSite(js::FreeOp* fop, jsbytecode* pc);
+
+  void clearBreakpointsIn(js::FreeOp* fop, js::Debugger* dbg,
+                          JSObject* handler);
+
   
+
+
+
+
+
+  bool incrementStepperCount(JSContext* cx);
+  void decrementStepperCount(js::FreeOp* fop);
+
+  bool stepModeEnabled() {
+    return hasDebugScript() && debugScript()->stepperCount > 0;
+  }
+
+#ifdef DEBUG
+  uint32_t stepperCount() {
+    return hasDebugScript() ? debugScript()->stepperCount : 0;
+  }
+#endif
+
   
-  bool hasDebugScript() const { return hasFlag(MutableFlags::HasDebugScript); }
-  void setHasDebugScript(bool b) { setFlag(MutableFlags::HasDebugScript, b); }
+
+
+
+
+
+  bool incrementGeneratorObserverCount(JSContext* cx);
+  void decrementGeneratorObserverCount(js::FreeOp* fop);
 
   void finalize(js::FreeOp* fop);
 
