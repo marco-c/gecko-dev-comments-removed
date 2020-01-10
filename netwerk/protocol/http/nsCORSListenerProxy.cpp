@@ -44,6 +44,7 @@
 #include "mozilla/NullPrincipal.h"
 #include "nsIHttpHeaderVisitor.h"
 #include "nsQueryObject.h"
+#include "mozilla/StaticPrefs_network.h"
 #include <algorithm>
 
 using namespace mozilla;
@@ -964,7 +965,7 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   NS_ENSURE_TRUE(http, NS_ERROR_FAILURE);
 
   
-  if (dom::ReferrerInfo::HideOnionReferrerSource()) {
+  if (StaticPrefs::network_http_referer_hideOnionSource()) {
     nsCOMPtr<nsIURI> potentialOnionUri;  
     rv = mOriginHeaderPrincipal->GetURI(getter_AddRefs(potentialOnionUri));
     NS_ENSURE_SUCCESS(rv, rv);

@@ -164,12 +164,6 @@ class ReferrerInfo : public nsIReferrerInfo {
   
 
 
-
-  static bool HideOnionReferrerSource();
-
-  
-
-
   static nsresult HandleSecureToInsecureReferral(nsIURI* aOriginalURI,
                                                  nsIURI* aURI,
                                                  ReferrerPolicyEnum aPolicy,
