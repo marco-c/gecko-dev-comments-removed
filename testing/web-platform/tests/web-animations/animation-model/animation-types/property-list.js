@@ -1305,7 +1305,7 @@ const gCSSProperties = {
   'text-emphasis-style': {
     
     types: [
-      { type: 'discrete', options: [ [ 'filled circle', 'open dot' ] ] }
+      { type: 'discrete', options: [ [ 'circle', 'open dot' ] ] }
     ]
   },
   'text-indent': {
