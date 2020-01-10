@@ -120,6 +120,10 @@ public final class NotificationHelper implements BundleEventListener {
 
 
         SITE_NOTIFICATIONS,
+        
+
+
+        CRASH_HANDLER,
     }
 
     
@@ -150,6 +154,9 @@ public final class NotificationHelper implements BundleEventListener {
 
         final String SITE_NOTIFICATIONS_CHANNEL_TAG = "site-notifications";
         put(Channel.SITE_NOTIFICATIONS, SITE_NOTIFICATIONS_CHANNEL_TAG);
+
+        final String CRASH_HANDLER_CHANNEL_TAG = "crash-handler";
+        put(Channel.CRASH_HANDLER, CRASH_HANDLER_CHANNEL_TAG);
     }};
 
     
@@ -272,6 +279,13 @@ public final class NotificationHelper implements BundleEventListener {
                     channel = new NotificationChannel(mDefinedNotificationChannels.get(definedChannel),
                             mContext.getString(R.string.site_notifications_channel),
                             NotificationManager.IMPORTANCE_DEFAULT);
+                }
+                break;
+
+                case CRASH_HANDLER: {
+                    channel = new NotificationChannel(mDefinedNotificationChannels.get(definedChannel),
+                            mContext.getString(R.string.crash_handler_notifications_channel),
+                            NotificationManager.IMPORTANCE_HIGH);
                 }
                 break;
 
