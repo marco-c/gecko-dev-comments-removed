@@ -736,7 +736,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   class ErrorSink;
   class MediaLoadListener;
   class MediaStreamTrackListener;
-  class VideoFrameListener;
+  class FirstFrameListener;
   class ShutdownObserver;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
@@ -1336,7 +1336,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  RefPtr<VideoFrameListener> mVideoFrameListener;
+  RefPtr<FirstFrameListener> mFirstFrameListener;
   
   RefPtr<VideoStreamTrack> mSelectedVideoStreamTrack;
 
