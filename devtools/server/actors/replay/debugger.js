@@ -285,6 +285,14 @@ ReplayDebugger.prototype = {
           }
         }
       }
+
+      if (
+        this._control.isPausedAtDebuggerStatement() &&
+        this.onDebuggerStatement
+      ) {
+        this._capturePauseData();
+        this.onDebuggerStatement(this.getNewestFrame());
+      }
     }
 
     

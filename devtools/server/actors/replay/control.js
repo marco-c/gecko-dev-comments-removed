@@ -265,8 +265,11 @@ ChildProcess.prototype = {
   
   
   timeToReachPoint(point) {
-    let startDelay = 0,
-      startPoint = this.lastPausePoint;
+    let startDelay = 0;
+    let startPoint = this.lastPausePoint;
+    if (!startPoint) {
+      startPoint = checkpointExecutionPoint(FirstCheckpointId);
+    }
     if (!this.paused) {
       if (this.manifest.expectedDuration) {
         const elapsed = Date.now() - this.manifestSendTime;
@@ -493,6 +496,9 @@ function CheckpointInfo() {
 
   
   this.scanDuration = null;
+
+  
+  this.debuggerStatements = [];
 }
 
 function getCheckpointInfo(id) {
@@ -1169,6 +1175,9 @@ async function finishResume() {
       );
     }
 
+    
+    hits = hits.concat(getCheckpointInfo(checkpoint).debuggerStatements);
+
     const hit = findClosestPoint(
       hits,
       gPausePoint,
@@ -1442,6 +1451,7 @@ function handleResumeManifestResponse({
   duration,
   consoleMessages,
   scripts,
+  debuggerStatements,
 }) {
   if (!point.position) {
     addCheckpoint(point.checkpoint - 1, duration);
@@ -1461,6 +1471,11 @@ function handleResumeManifestResponse({
       queuePauseData(msg.executionPoint,  true);
     }
   });
+
+  for (const point of debuggerStatements) {
+    const checkpoint = getSavedCheckpoint(point.checkpoint);
+    getCheckpointInfo(checkpoint).debuggerStatements.push(point);
+  }
 }
 
 
@@ -1486,7 +1501,11 @@ function maybeResumeRecording() {
     return;
   }
   gMainChild.sendManifest({
-    contents: { kind: "resume", breakpoints: gBreakpoints },
+    contents: {
+      kind: "resume",
+      breakpoints: gBreakpoints,
+      pauseOnDebuggerStatement: true,
+    },
     onFinished(response) {
       handleResumeManifestResponse(response);
 
@@ -1750,7 +1769,11 @@ const gControl = {
         
         
         gMainChild.sendManifest({
-          contents: { kind: "resume", breakpoints: [] },
+          contents: {
+            kind: "resume",
+            breakpoints: [],
+            pauseOnDebuggerStatement: false,
+          },
           onFinished(response) {
             handleResumeManifestResponse(response);
           },
@@ -1871,6 +1894,16 @@ const gControl = {
         RecordReplayControl.clearGraphics();
       }
     }
+  },
+
+  isPausedAtDebuggerStatement() {
+    const point = gControl.pausePoint();
+    if (point) {
+      const checkpoint = getSavedCheckpoint(point.checkpoint);
+      const { debuggerStatements } = getCheckpointInfo(checkpoint);
+      return pointArrayIncludes(debuggerStatements, point);
+    }
+    return false;
   },
 };
 
