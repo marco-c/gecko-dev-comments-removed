@@ -114,6 +114,7 @@ var UrlbarUtils = {
   ICON: {
     
     SEARCH_GLASS: "chrome://browser/skin/search-glass.svg",
+    TIP: "chrome://browser/skin/tip.svg",
   },
 
   
