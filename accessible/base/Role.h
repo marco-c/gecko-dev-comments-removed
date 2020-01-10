@@ -1045,7 +1045,13 @@ enum Role {
 
   FORM_LANDMARK = 178,
 
-  LAST_ROLE = FORM_LANDMARK
+  
+
+
+
+  MARK = 179,
+
+  LAST_ROLE = MARK
 };
 
 }  

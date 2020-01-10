@@ -1631,3 +1631,12 @@ ROLE(FORM_LANDMARK,
      java::SessionAccessibility::CLASSNAME_VIEW,
      eNoNameRule)
 
+ROLE(MARK,
+     "mark",
+     ATK_ROLE_STATIC,
+     NSAccessibilityGroupRole,
+     USE_ROLE_STRING,
+     IA2_ROLE_TEXT_FRAME,
+     java::SessionAccessibility::CLASSNAME_VIEW,
+     eNameFromSubtreeIfReqRule)
+
