@@ -23,3 +23,9 @@ function checkRect(entry, expected, description="") {
   assert_equals(entry.intersectionRect.bottom, expected[3],
     'bottom of rect ' + description);
 }
+
+
+function checkNaturalSize(entry, width, height) {
+  assert_equals(entry.naturalWidth, width);
+  assert_equals(entry.naturalHeight, height);
+}
