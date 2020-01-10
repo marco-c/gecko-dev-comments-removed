@@ -138,7 +138,7 @@ function getPromptState(ui) {
     
     
     
-    let flags = treeOwner.getInterface(Ci.nsIAppWindow).chromeFlags;
+    let flags = treeOwner.getInterface(Ci.nsIXULWindow).chromeFlags;
     state.chrome = (flags & Ci.nsIWebBrowserChrome.CHROME_OPENAS_CHROME) != 0;
     state.dialog = (flags & Ci.nsIWebBrowserChrome.CHROME_OPENAS_DIALOG) != 0;
     state.chromeDependent =

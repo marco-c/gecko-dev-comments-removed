@@ -45,7 +45,7 @@
 #include "nsGlobalWindow.h"
 
 #ifdef MOZ_XUL
-#  include "nsIAppWindow.h"
+#  include "nsIXULWindow.h"
 #endif
 
 using namespace mozilla;
@@ -103,12 +103,12 @@ uint32_t RootAccessible::GetChromeFlags() const {
   nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
   docShell->GetTreeOwner(getter_AddRefs(treeOwner));
   NS_ENSURE_TRUE(treeOwner, 0);
-  nsCOMPtr<nsIAppWindow> appWin(do_GetInterface(treeOwner));
-  if (!appWin) {
+  nsCOMPtr<nsIXULWindow> xulWin(do_GetInterface(treeOwner));
+  if (!xulWin) {
     return 0;
   }
   uint32_t chromeFlags;
-  appWin->GetChromeFlags(&chromeFlags);
+  xulWin->GetChromeFlags(&chromeFlags);
   return chromeFlags;
 }
 #endif

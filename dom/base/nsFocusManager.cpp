@@ -24,7 +24,7 @@
 #include "nsIWebNavigation.h"
 #include "nsCaret.h"
 #include "nsIBaseWindow.h"
-#include "nsIAppWindow.h"
+#include "nsIXULWindow.h"
 #include "nsViewManager.h"
 #include "nsFrameSelection.h"
 #include "mozilla/dom/Document.h"
@@ -702,8 +702,8 @@ nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow) {
 
   
   
-  nsCOMPtr<nsIAppWindow> appWin(do_GetInterface(baseWindow));
-  Focus(currentWindow, currentFocus, 0, true, false, appWin != nullptr, true);
+  nsCOMPtr<nsIXULWindow> xulWin(do_GetInterface(baseWindow));
+  Focus(currentWindow, currentFocus, 0, true, false, xulWin != nullptr, true);
 
   return NS_OK;
 }

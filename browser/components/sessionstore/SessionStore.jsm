@@ -5298,13 +5298,13 @@ var SessionStoreInternal = {
         }
         
         
-        let appWin = aWindow.docShell.treeOwner
+        let xulWin = aWindow.docShell.treeOwner
           .QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(Ci.nsIAppWindow);
+          .getInterface(Ci.nsIXULWindow);
         let diff =
           aAttribute == "width"
-            ? appWin.outerToInnerWidthDifferenceInCSSPixels
-            : appWin.outerToInnerHeightDifferenceInCSSPixels;
+            ? xulWin.outerToInnerWidthDifferenceInCSSPixels
+            : xulWin.outerToInnerHeightDifferenceInCSSPixels;
         return attr + diff;
       }
     }

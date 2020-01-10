@@ -71,7 +71,7 @@
 #include "mozilla/dom/BrowserHost.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/TabGroup.h"
-#include "nsIAppWindow.h"
+#include "nsIXULWindow.h"
 #include "nsIXULBrowserWindow.h"
 #include "nsGlobalWindow.h"
 #include "ReferrerInfo.h"
@@ -911,10 +911,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       }
 
       if (newChrome) {
-        nsCOMPtr<nsIAppWindow> appWin = do_GetInterface(newChrome);
-        if (appWin) {
+        nsCOMPtr<nsIXULWindow> xulWin = do_GetInterface(newChrome);
+        if (xulWin) {
           nsCOMPtr<nsIXULBrowserWindow> xulBrowserWin;
-          appWin->GetXULBrowserWindow(getter_AddRefs(xulBrowserWin));
+          xulWin->GetXULBrowserWindow(getter_AddRefs(xulBrowserWin));
           if (xulBrowserWin) {
             nsPIDOMWindowOuter* openerWindow =
                 aForceNoOpener ? nullptr : parentWindow.get();
@@ -2372,9 +2372,9 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
   }
 
   if (aIsCallerChrome) {
-    nsCOMPtr<nsIAppWindow> appWin = do_GetInterface(treeOwnerAsWin);
-    if (appWin && aSizeSpec.mLockAspectRatio) {
-      appWin->LockAspectRatio(true);
+    nsCOMPtr<nsIXULWindow> xulWin = do_GetInterface(treeOwnerAsWin);
+    if (xulWin && aSizeSpec.mLockAspectRatio) {
+      xulWin->LockAspectRatio(true);
     }
   }
 
