@@ -174,7 +174,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
   
   static void GetAll(const GeckoProcessCallback& aCallback);
 
-  friend class ProcessLauncher;
+  friend class BaseProcessLauncher;
 
  protected:
   ~GeckoChildProcessHost();
