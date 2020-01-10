@@ -875,6 +875,9 @@ class RaptorDesktop(Raptor):
                 
                 self.build_browser_profile()
 
+                
+                self.runner.profile = self.profile
+
                 self.run_test_setup(test)
 
             
