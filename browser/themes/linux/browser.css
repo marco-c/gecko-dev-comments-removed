@@ -104,11 +104,6 @@ menuitem.bookmark-item {
   color: HighlightText !important;
 }
 
-
-#PlacesToolbarDropIndicator {
-  list-style-image: url(chrome://browser/skin/places/toolbarDropMarker.png);
-}
-
 .bookmark-item[cutting] > .toolbarbutton-icon,
 .bookmark-item[cutting] > .menu-iconic-left > .menu-iconic-icon {
   opacity: 0.5;
@@ -371,15 +366,6 @@ notification[value="translation"] menulist > .menulist-dropmarker {
 
 #context_closeTab {
   list-style-image: url("moz-icon://stock/gtk-close?size=menu");
-}
-
-
-.tab-drop-indicator {
-  list-style-image: url(chrome://browser/skin/tabbrowser/tabDragIndicator.png);
-  margin-bottom: -9px;
-  
-
-  z-index: 4;
 }
 
 
