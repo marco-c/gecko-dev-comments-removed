@@ -202,6 +202,9 @@ nsresult TextEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
 
   
   switch (aInfo.mEditSubAction) {
+    case EditSubAction::eSetText:
+      TextEditorRef().UndefineCaretBidiLevel();
+      return WillSetText(aCancel, aHandled, aInfo.inString, aInfo.maxLength);
     case EditSubAction::eInsertQuotedText: {
       CANCEL_OPERATION_IF_READONLY_OR_DISABLED
 
@@ -221,7 +224,6 @@ nsresult TextEditRules::WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
     case EditSubAction::eInsertLineBreak:
     case EditSubAction::eInsertText:
     case EditSubAction::eInsertTextComingFromIME:
-    case EditSubAction::eSetText:
     case EditSubAction::eUndo:
     case EditSubAction::eRedo:
       MOZ_ASSERT_UNREACHABLE("This path should've been dead code");
@@ -244,7 +246,6 @@ nsresult TextEditRules::DidDoAction(EditSubActionInfo& aInfo,
     case EditSubAction::eInsertLineBreak:
     case EditSubAction::eInsertText:
     case EditSubAction::eInsertTextComingFromIME:
-    case EditSubAction::eSetText:
     case EditSubAction::eUndo:
     case EditSubAction::eRedo:
       MOZ_ASSERT_UNREACHABLE("This path should've been dead code");
@@ -678,31 +679,41 @@ EditActionResult TextEditor::HandleInsertText(
   return EditActionHandled();
 }
 
-EditActionResult TextEditor::SetTextWithoutTransaction(
-    const nsAString& aValue) {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(!AsTextEditor());
-  MOZ_ASSERT(IsPlaintextEditor());
-  MOZ_ASSERT(!IsIMEComposing());
-  MOZ_ASSERT(!IsUndoRedoEnabled());
-  MOZ_ASSERT(GetEditAction() != EditAction::eReplaceText);
-  MOZ_ASSERT(mMaxTextLength < 0);
-  MOZ_ASSERT(aValue.FindChar(static_cast<char16_t>('\r')) == kNotFound);
-
-  UndefineCaretBidiLevel();
+nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
+                                    const nsAString* aString,
+                                    int32_t aMaxLength) {
+  MOZ_ASSERT(IsEditorDataAvailable());
+  MOZ_ASSERT(!mIsHTMLEditRules);
+  MOZ_ASSERT(aCancel);
+  MOZ_ASSERT(aHandled);
+  MOZ_ASSERT(aString);
+  MOZ_ASSERT(aString->FindChar(static_cast<char16_t>('\r')) == kNotFound);
 
   
-  CANCEL_OPERATION_AND_RETURN_EDIT_ACTION_RESULT_IF_READONLY_OF_DISABLED
+  CANCEL_OPERATION_IF_READONLY_OR_DISABLED
 
-  MaybeDoAutoPasswordMasking();
+  *aHandled = false;
+  *aCancel = false;
 
-  nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditActionResult(rv);
+  if (!IsPlaintextEditor() || TextEditorRef().IsIMEComposing() ||
+      TextEditorRef().IsUndoRedoEnabled() ||
+      TextEditorRef().GetEditAction() == EditAction::eReplaceText ||
+      aMaxLength != -1) {
+    
+    
+    return NS_OK;
   }
 
-  RefPtr<Element> anonymousDivElement = GetRoot();
-  nsIContent* firstChild = anonymousDivElement->GetFirstChild();
+  TextEditorRef().MaybeDoAutoPasswordMasking();
+
+  nsresult rv =
+      MOZ_KnownLive(TextEditorRef()).EnsureNoPaddingBRElementForEmptyEditor();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  RefPtr<Element> rootElement = TextEditorRef().GetRoot();
+  nsIContent* firstChild = rootElement->GetFirstChild();
 
   
   
@@ -715,73 +726,82 @@ EditActionResult TextEditor::SetTextWithoutTransaction(
     
     
     
-    if (firstChild && (!firstChild->IsText() || firstChild->GetNextSibling())) {
-      return EditActionIgnored();
+    if (firstChild &&
+        (!EditorBase::IsTextNode(firstChild) || firstChild->GetNextSibling())) {
+      return NS_OK;
     }
   } else {
     
     
     
     if (!firstChild) {
-      return EditActionIgnored();
+      return NS_OK;
     }
-    if (firstChild->IsText()) {
+    if (EditorBase::IsTextNode(firstChild)) {
       if (!firstChild->GetNextSibling() ||
           !EditorBase::IsPaddingBRElementForEmptyLastLine(
               *firstChild->GetNextSibling())) {
-        return EditActionIgnored();
+        return NS_OK;
       }
     } else if (!EditorBase::IsPaddingBRElementForEmptyLastLine(*firstChild)) {
-      return EditActionIgnored();
+      return NS_OK;
     }
   }
 
   
   
-  nsAutoString sanitizedValue(aValue);
+  nsAutoString tString(*aString);
   if (IsSingleLineEditor() && !IsPasswordEditor()) {
-    HandleNewLinesInStringForSingleLineEditor(sanitizedValue);
+    TextEditorRef().HandleNewLinesInStringForSingleLineEditor(tString);
   }
 
-  if (!firstChild || !firstChild->IsText()) {
-    if (sanitizedValue.IsEmpty()) {
-      return EditActionHandled();
+  if (!firstChild || !EditorBase::IsTextNode(firstChild)) {
+    if (tString.IsEmpty()) {
+      *aHandled = true;
+      return NS_OK;
     }
-    RefPtr<Document> document = GetDocument();
-    if (NS_WARN_IF(!document)) {
-      return EditActionIgnored();
+    RefPtr<Document> doc = TextEditorRef().GetDocument();
+    if (NS_WARN_IF(!doc)) {
+      return NS_OK;
     }
-    RefPtr<nsTextNode> newTextNode = CreateTextNode(sanitizedValue);
-    if (NS_WARN_IF(!newTextNode)) {
-      return EditActionIgnored();
+    RefPtr<nsTextNode> newNode = TextEditorRef().CreateTextNode(tString);
+    if (NS_WARN_IF(!newNode)) {
+      return NS_OK;
     }
-    nsresult rv = InsertNodeWithTransaction(
-        *newTextNode, EditorDOMPoint(anonymousDivElement, 0));
-    if (NS_WARN_IF(Destroyed())) {
-      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+    nsresult rv = MOZ_KnownLive(TextEditorRef())
+                      .InsertNodeWithTransaction(
+                          *newNode, EditorDOMPoint(rootElement, 0));
+    if (NS_WARN_IF(!CanHandleEditAction())) {
+      return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditActionResult(rv);
+      return rv;
     }
-    return EditActionHandled();
+    *aHandled = true;
+    return NS_OK;
   }
 
+  
   
   RefPtr<Text> textNode = firstChild->GetAsText();
   if (MOZ_UNLIKELY(NS_WARN_IF(!textNode))) {
-    return EditActionIgnored();
+    return NS_OK;
   }
-  rv = SetTextNodeWithoutTransaction(sanitizedValue, *textNode);
+  rv = MOZ_KnownLive(TextEditorRef()).SetTextImpl(tString, *textNode);
+  if (NS_WARN_IF(!CanHandleEditAction())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditActionResult(rv);
+    return rv;
   }
 
   
   
-  if (sanitizedValue.IsEmpty() && !textNode->Length()) {
-    nsresult rv = DeleteNodeWithTransaction(*textNode);
+  if (tString.IsEmpty() && !textNode->Length()) {
+    nsresult rv =
+        MOZ_KnownLive(TextEditorRef()).DeleteNodeWithTransaction(*textNode);
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+      return NS_ERROR_EDITOR_DESTROYED;
     }
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "DeleteNodeWithTransaction() failed, but ignored");
@@ -794,7 +814,8 @@ EditActionResult TextEditor::SetTextWithoutTransaction(
                          "Selection::SetInterlinePoisition() failed");
   }
 
-  return EditActionHandled();
+  *aHandled = true;
+  return NS_OK;
 }
 
 EditActionResult TextEditor::HandleDeleteSelection(

@@ -109,6 +109,22 @@ class TextEditRules {
   
 
 
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  MOZ_MUST_USE nsresult WillSetText(bool* aCancel, bool* aHandled,
+                                    const nsAString* inString,
+                                    int32_t aMaxLength);
+
+  
+
+
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult CreateTrailingBRIfNeeded();
 
   

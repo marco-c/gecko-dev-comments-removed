@@ -457,8 +457,7 @@ class TextEditor : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  SetTextAsSubAction(const nsAString& aString);
+  MOZ_CAN_RUN_SCRIPT nsresult SetTextAsSubAction(const nsAString& aString);
 
   
 
@@ -660,14 +659,6 @@ class TextEditor : public EditorBase,
 
   EditActionResult ComputeValueFromTextNodeAndPaddingBRElement(
       nsAString& aValue) const;
-
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
-  SetTextWithoutTransaction(const nsAString& aValue);
 
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(

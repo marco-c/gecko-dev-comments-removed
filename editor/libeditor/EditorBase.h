@@ -1144,13 +1144,8 @@ class EditorBase : public nsIEditor,
       const nsAString& aStringToInsert, Text& aTextNode, int32_t aOffset,
       bool aSuppressIME = false);
 
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
-  SetTextNodeWithoutTransaction(const nsAString& aString, Text& aTextNode);
+  MOZ_CAN_RUN_SCRIPT nsresult SetTextImpl(const nsAString& aString,
+                                          Text& aTextNode);
 
   
 
