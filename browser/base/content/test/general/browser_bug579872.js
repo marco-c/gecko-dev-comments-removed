@@ -2,27 +2,22 @@
 
 
 
-function test() {
-  let newTab = BrowserTestUtils.addTab(gBrowser);
-  waitForExplicitFinish();
-  BrowserTestUtils.browserLoaded(newTab.linkedBrowser).then(mainPart);
+add_task(async function() {
+  let newTab = BrowserTestUtils.addTab(gBrowser, "http://example.com");
+  await BrowserTestUtils.browserLoaded(newTab.linkedBrowser);
 
-  function mainPart() {
-    gBrowser.pinTab(newTab);
-    gBrowser.selectedTab = newTab;
+  gBrowser.pinTab(newTab);
+  gBrowser.selectedTab = newTab;
 
-    openTrustedLinkIn("javascript:var x=0;", "current");
-    is(gBrowser.tabs.length, 2, "Should open in current tab");
+  openTrustedLinkIn("javascript:var x=0;", "current");
+  is(gBrowser.tabs.length, 2, "Should open in current tab");
 
-    openTrustedLinkIn("http://example.com/1", "current");
-    is(gBrowser.tabs.length, 2, "Should open in current tab");
+  openTrustedLinkIn("http://example.com/1", "current");
+  is(gBrowser.tabs.length, 2, "Should open in current tab");
 
-    openTrustedLinkIn("http://example.org/", "current");
-    is(gBrowser.tabs.length, 3, "Should open in new tab");
+  openTrustedLinkIn("http://example.org/", "current");
+  is(gBrowser.tabs.length, 3, "Should open in new tab");
 
-    gBrowser.removeTab(newTab);
-    gBrowser.removeTab(gBrowser.tabs[1]); 
-    finish();
-  }
-  BrowserTestUtils.loadURI(newTab.linkedBrowser, "http://example.com");
-}
+  await BrowserTestUtils.removeTab(newTab);
+  await BrowserTestUtils.removeTab(gBrowser.tabs[1]); 
+});
