@@ -12,6 +12,7 @@ class Domain {
     this.name = this.constructor.name;
 
     this.eventListeners_ = new Set();
+    this._requestCounter = 0;
   }
 
   destructor() {}
@@ -28,6 +29,29 @@ class Domain {
         Cu.reportError(e);
       }
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  executeInChild(method, params) {
+    if (!this.session.executeInChild) {
+      throw new Error(
+        "executeInChild can only be used in Domains managed by a TabSession"
+      );
+    }
+    this._requestCounter++;
+    const id = this.name + "-" + this._requestCounter;
+    return this.session.executeInChild(id, this.name, method, params);
   }
 
   addEventListener(listener) {
