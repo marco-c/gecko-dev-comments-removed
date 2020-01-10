@@ -2147,10 +2147,25 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       return;
     }
 
+    
+    
+    const nextWalkerSibling = this._getNextTraversalSibling(targetNode);
+
     const walker = this.getDocumentWalker(targetNode);
     do {
       this._updateMutationBreakpointState("detach", walker.currentNode, null);
-    } while (walker.nextNode());
+    } while (
+      walker.nextNode() &&
+      !(nextWalkerSibling || walker.currentNode !== nextWalkerSibling)
+    );
+  },
+
+  _getNextTraversalSibling(targetNode) {
+    let current = targetNode;
+    while (current && !current.nextSibling) {
+      current = current.parentNode;
+    }
+    return current ? current.nextSibling : null;
   },
 
   
