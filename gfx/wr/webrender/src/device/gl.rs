@@ -1313,8 +1313,12 @@ impl Device {
             ext_framebuffer_fetch &&
             ext_pixel_local_storage;
 
+        
+        
+        
         let supports_advanced_blend_equation =
-            supports_extension(&extensions, "GL_KHR_blend_equation_advanced");
+            supports_extension(&extensions, "GL_KHR_blend_equation_advanced") &&
+            !renderer_name.starts_with("Adreno");
 
         
         
