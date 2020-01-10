@@ -107,9 +107,9 @@ nsresult TextEditRules::Init(TextEditor* aTextEditor) {
     }
   }
 
-  if (IsPlaintextEditor()) {
-    
-    rv = CreateTrailingBRIfNeeded();
+  if (IsPlaintextEditor() && !IsSingleLineEditor()) {
+    nsresult rv = MOZ_KnownLive(TextEditorRef())
+                      .EnsurePaddingBRElementInMultilineEditor();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -138,6 +138,8 @@ nsresult TextEditRules::BeforeEdit() {
 }
 
 nsresult TextEditRules::AfterEdit() {
+  MOZ_ASSERT(IsPlaintextEditor());
+
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -162,21 +164,20 @@ nsresult TextEditRules::AfterEdit() {
     return rv;
   }
 
-  
-  rv = CreateTrailingBRIfNeeded();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (!IsSingleLineEditor()) {
+    nsresult rv = MOZ_KnownLive(TextEditorRef())
+                      .EnsurePaddingBRElementInMultilineEditor();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
-  
-  
-  rv = CollapseSelectionToTrailingBRIfNeeded();
+  rv = MOZ_KnownLive(TextEditorRef()).EnsureCaretNotAtEndOfTextNode();
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "Failed to selection to after the text node in TextEditor");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EnsureCaretNotAtEndOfTextNode() failed, but ignored");
   return NS_OK;
 }
 
@@ -287,23 +288,16 @@ EditActionResult TextEditor::InsertLineFeedCharacterAtSelection() {
   return EditActionHandled();
 }
 
-nsresult TextEditRules::CollapseSelectionToTrailingBRIfNeeded() {
-  MOZ_ASSERT(IsEditorDataAvailable());
-
-  
-  
-  
-  
-  if (!IsPlaintextEditor()) {
-    return NS_OK;
-  }
+nsresult TextEditor::EnsureCaretNotAtEndOfTextNode() {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(IsPlaintextEditor());
 
   
   
   
   if (!SelectionRefPtr()->RangeCount()) {
-    TextEditorRef().CollapseSelectionToEnd();
-    if (NS_WARN_IF(!CanHandleEditAction())) {
+    CollapseSelectionToEnd();
+    if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
   }
@@ -323,12 +317,12 @@ nsresult TextEditRules::CollapseSelectionToTrailingBRIfNeeded() {
     return NS_OK;
   }
 
-  Element* rootElement = TextEditorRef().GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
+  Element* anonymousDivElement = GetRoot();
+  if (NS_WARN_IF(!anonymousDivElement)) {
     return NS_ERROR_NULL_POINTER;
   }
   nsINode* parentNode = selectionStartPoint.GetContainer()->GetParentNode();
-  if (parentNode != rootElement) {
+  if (parentNode != anonymousDivElement) {
     return NS_OK;
   }
 
@@ -343,14 +337,12 @@ nsresult TextEditRules::CollapseSelectionToTrailingBRIfNeeded() {
   }
   ErrorResult error;
   SelectionRefPtr()->Collapse(afterStartContainer, error);
-  if (NS_WARN_IF(!CanHandleEditAction())) {
+  if (NS_WARN_IF(Destroyed())) {
     error.SuppressException();
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+  return error.StealNSResult();
 }
 
 void TextEditor::HandleNewLinesInStringForSingleLineEditor(
@@ -875,16 +867,13 @@ EditActionResult TextEditor::ComputeValueFromTextNodeAndPaddingBRElement(
   return EditActionHandled();
 }
 
-nsresult TextEditRules::CreateTrailingBRIfNeeded() {
-  MOZ_ASSERT(IsEditorDataAvailable());
+nsresult TextEditor::EnsurePaddingBRElementInMultilineEditor() {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(IsPlaintextEditor());
+  MOZ_ASSERT(!IsSingleLineEditor());
 
-  
-  if (IsSingleLineEditor()) {
-    return NS_OK;
-  }
-
-  Element* rootElement = TextEditorRef().GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
+  Element* anonymousDivElement = GetRoot();
+  if (NS_WARN_IF(!anonymousDivElement)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -893,23 +882,23 @@ nsresult TextEditRules::CreateTrailingBRIfNeeded() {
   
   
   
-  if (NS_WARN_IF(!rootElement->GetLastChild())) {
+  if (NS_WARN_IF(!anonymousDivElement->GetLastChild())) {
     return NS_ERROR_FAILURE;
   }
 
   RefPtr<HTMLBRElement> brElement =
-      HTMLBRElement::FromNode(rootElement->GetLastChild());
+      HTMLBRElement::FromNode(anonymousDivElement->GetLastChild());
   if (!brElement) {
-    AutoTransactionsConserveSelection dontChangeMySelection(TextEditorRef());
-    EditorDOMPoint endOfRoot;
-    endOfRoot.SetToEndOf(rootElement);
+    AutoTransactionsConserveSelection dontChangeMySelection(*this);
+    EditorDOMPoint endOfAnonymousDiv(
+        EditorDOMPoint::AtEndOf(*anonymousDivElement));
     CreateElementResult createPaddingBRResult =
-        MOZ_KnownLive(TextEditorRef())
-            .InsertPaddingBRElementForEmptyLastLineWithTransaction(endOfRoot);
-    if (NS_WARN_IF(createPaddingBRResult.Failed())) {
-      return createPaddingBRResult.Rv();
-    }
-    return NS_OK;
+        InsertPaddingBRElementForEmptyLastLineWithTransaction(
+            endOfAnonymousDiv);
+    NS_WARNING_ASSERTION(
+        createPaddingBRResult.Succeeded(),
+        "InsertPaddingBRElementForEmptyLastLineWithTransaction() failed");
+    return createPaddingBRResult.Rv();
   }
 
   

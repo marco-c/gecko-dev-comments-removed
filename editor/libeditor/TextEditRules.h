@@ -93,21 +93,6 @@ class TextEditRules {
 
   
 
-  
-
-
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult CreateTrailingBRIfNeeded();
-
-  
-
-
-
-
-
-
-
-  MOZ_MUST_USE nsresult CollapseSelectionToTrailingBRIfNeeded();
-
   bool IsSingleLineEditor() const;
   bool IsPlaintextEditor() const;
 

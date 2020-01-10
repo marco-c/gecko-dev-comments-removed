@@ -669,6 +669,20 @@ class TextEditor : public EditorBase,
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
   SetTextWithoutTransaction(const nsAString& aValue);
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  EnsurePaddingBRElementInMultilineEditor();
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult EnsureCaretNotAtEndOfTextNode();
+
  protected:  
   virtual void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
