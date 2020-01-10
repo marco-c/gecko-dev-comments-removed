@@ -25,6 +25,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "mozilla/gfx/MacIOSurface.h"
 
 #include "nsString.h"
 #include "nsIDragService.h"
@@ -676,6 +677,11 @@ class nsChildView final : public nsBaseWidget {
   
   
   RefPtr<mozilla::layers::NativeLayerCA> mContentLayer;
+
+  
+  
+  
+  RefPtr<MacIOSurface> mBasicCompositorIOSurface;
 
   mozilla::UniquePtr<mozilla::VibrancyManager> mVibrancyManager;
   RefPtr<mozilla::SwipeTracker> mSwipeTracker;
