@@ -74,11 +74,11 @@ def _parse_ifconfig():
 
     
     default_iface = _proc_matches(['route', '-n', 'get', 'default'],
-                                  'interface: (\w+)')
+                                  r'interface: (\w+)')
 
     if default_iface:
         addr_list = _proc_matches(['ifconfig', default_iface[0]],
-                                  'inet (\d+.\d+.\d+.\d+)')
+                                  r'inet (\d+.\d+.\d+.\d+)')
         if addr_list:
             logger.debug('Default interface: [%s] %s' % (default_iface[0],
                                                          addr_list[0]))
@@ -88,7 +88,7 @@ def _parse_ifconfig():
     
     for iface in ['en%s' % i for i in range(10)]:
         addr_list = _proc_matches(['ifconfig', iface],
-                                  'inet (\d+.\d+.\d+.\d+)')
+                                  r'inet (\d+.\d+.\d+.\d+)')
         if addr_list:
             logger.debug('Interface: [%s] %s' % (iface, addr_list[0]))
             if not addr_list[0].startswith('127.'):
@@ -97,7 +97,7 @@ def _parse_ifconfig():
     
     
     addrs = _proc_matches(['ifconfig'],
-                          'inet (\d+.\d+.\d+.\d+)')
+                          r'inet (\d+.\d+.\d+.\d+)')
     try:
         return [addr for addr in addrs if not addr.startswith('127.')][0]
     except IndexError:
