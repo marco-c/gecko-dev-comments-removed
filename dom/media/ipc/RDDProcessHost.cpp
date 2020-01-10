@@ -147,7 +147,6 @@ void RDDProcessHost::InitAfterConnect(bool aSucceeded) {
   MOZ_ASSERT(!mRDDChild);
 
   mLaunchPhase = LaunchPhase::Complete;
-  mPrefSerializer = nullptr;
 
   if (aSucceeded) {
     mProcessToken = ++sRDDProcessTokenCounter;
@@ -155,6 +154,12 @@ void RDDProcessHost::InitAfterConnect(bool aSucceeded) {
     DebugOnly<bool> rv =
         mRDDChild->Open(GetChannel(), base::GetProcId(GetChildProcessHandle()));
     MOZ_ASSERT(rv);
+
+    
+    
+    
+    
+    mPrefSerializer = nullptr;
 
     bool startMacSandbox = false;
 
