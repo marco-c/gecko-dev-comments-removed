@@ -35,8 +35,7 @@ add_task(async function run_test() {
 
   await promiseSaveCacheData(data);
 
-  Services.search.reset();
-  await Services.search.init();
+  await asyncReInit();
 
   
   let engine = Services.search.getEngineByName("bug645970");

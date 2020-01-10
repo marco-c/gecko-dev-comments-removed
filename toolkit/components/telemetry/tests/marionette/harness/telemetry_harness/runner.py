@@ -26,13 +26,9 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
         prefs.update(
             {
                 
-                "browser.search.region": "DE",
-                "browser.search.geoSpecificDefaults": False,
                 
-                "browser.search.addonLoadTimeout": 0,
-                "browser.search.log": True,
                 
-                "browser.search.geoip.url": "",
+                "browser.search.geoip.url": "data:application/json,{\"country_code\": \"DE\"}",
                 
                 "browser.cache.disk.smart_size.enabled": False,
                 "toolkit.telemetry.server": "{}/pings".format(SERVER_URL),
