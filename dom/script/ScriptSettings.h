@@ -36,7 +36,6 @@ class Document;
 
 void InitScriptSettings();
 void DestroyScriptSettings();
-bool ScriptSettingsInitialized();
 
 
 
