@@ -722,6 +722,12 @@
       
       
       
+      
+      if (ctypes.errno != Const.EXDEV || options.noCopy) {
+        throw new File.Error("move", ctypes.errno, sourcePath);
+      }
+
+      
       File.copy(sourcePath, destPath, options);
       
       File.remove(sourcePath);
