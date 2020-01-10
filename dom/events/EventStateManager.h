@@ -1051,9 +1051,12 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
+
+
   void DetermineDragTargetAndDefaultData(
       nsPIDOMWindowOuter* aWindow, nsIContent* aSelectionTarget,
-      dom::DataTransfer* aDataTransfer, dom::Selection** aSelection,
+      dom::DataTransfer* aDataTransfer, bool* aAllowEmptyDataTransfer,
+      dom::Selection** aSelection,
       dom::RemoteDragStartData** aRemoteDragStartData, nsIContent** aTargetNode,
       nsIPrincipal** aPrincipal, nsIContentSecurityPolicy** aCsp);
 
@@ -1070,10 +1073,13 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
+
+
   MOZ_CAN_RUN_SCRIPT
   bool DoDefaultDragStart(nsPresContext* aPresContext,
                           WidgetDragEvent* aDragEvent,
                           dom::DataTransfer* aDataTransfer,
+                          bool aAllowEmptyDataTransfer,
                           nsIContent* aDragTarget, dom::Selection* aSelection,
                           dom::RemoteDragStartData* aDragStartData,
                           nsIPrincipal* aPrincipal,
