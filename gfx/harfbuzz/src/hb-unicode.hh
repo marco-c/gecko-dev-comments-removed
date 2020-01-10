@@ -106,9 +106,6 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
   modified_combining_class (hb_codepoint_t u)
   {
     
-    if (unlikely (u == 0x1037u)) u = 0x103Au;
-
-    
 
     if (unlikely (u == 0x1A60u)) return 254;
 
@@ -393,6 +390,9 @@ struct hb_unicode_range_t
 
 HB_INTERNAL bool
 _hb_unicode_is_emoji_Extended_Pictographic (hb_codepoint_t cp);
+
+
+extern "C" HB_INTERNAL hb_unicode_funcs_t *hb_ucd_get_unicode_funcs ();
 
 
 #endif 

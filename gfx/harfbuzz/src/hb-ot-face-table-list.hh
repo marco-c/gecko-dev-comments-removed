@@ -50,9 +50,10 @@ HB_OT_TABLE (OT, head)
 #if !defined(HB_NO_FACE_COLLECT_UNICODES) || !defined(HB_NO_OT_FONT)
 HB_OT_ACCELERATOR (OT, cmap)
 #endif
+HB_OT_TABLE (OT, hhea)
 HB_OT_ACCELERATOR (OT, hmtx)
 HB_OT_TABLE (OT, OS2)
-#ifndef HB_NO_OT_FONT_GLYPH_NAMES
+#if !defined(HB_NO_OT_FONT_GLYPH_NAMES) || !defined(HB_NO_METRICS)
 HB_OT_ACCELERATOR (OT, post)
 #endif
 #ifndef HB_NO_NAME
@@ -61,8 +62,12 @@ HB_OT_ACCELERATOR (OT, name)
 #ifndef HB_NO_STAT
 HB_OT_TABLE (OT, STAT)
 #endif
+#ifndef HB_NO_META
+HB_OT_ACCELERATOR (OT, meta)
+#endif
 
 
+HB_OT_TABLE (OT, vhea)
 HB_OT_ACCELERATOR (OT, vmtx)
 
 
@@ -88,11 +93,17 @@ HB_OT_TABLE (OT, kern)
 #endif
 
 
+#ifndef HB_NO_OT_LAYOUT
 HB_OT_ACCELERATOR (OT, GDEF)
 HB_OT_ACCELERATOR (OT, GSUB)
 HB_OT_ACCELERATOR (OT, GPOS)
 
+#endif
 
+
+#ifndef HB_NO_BASE
+HB_OT_TABLE (OT, BASE)
+#endif
 
 
 #ifndef HB_NO_AAT
@@ -104,6 +115,7 @@ HB_OT_TABLE (AAT, trak)
 HB_OT_TABLE (AAT, lcar)
 HB_OT_TABLE (AAT, ltag)
 HB_OT_TABLE (AAT, feat)
+
 #endif
 
 

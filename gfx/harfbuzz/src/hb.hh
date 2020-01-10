@@ -98,6 +98,7 @@
 #ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_WARNING
 #pragma GCC diagnostic warning "-Wbuiltin-macro-redefined"
 #pragma GCC diagnostic warning "-Wdeprecated"
+#pragma GCC diagnostic warning "-Wdeprecated-declarations"
 #pragma GCC diagnostic warning "-Wdisabled-optimization"
 #pragma GCC diagnostic warning "-Wdouble-promotion"
 #pragma GCC diagnostic warning "-Wformat=2"
@@ -317,7 +318,8 @@ extern "C" void  hb_free_impl(void *ptr);
 #  define HB_FALLTHROUGH
 #endif
 
-#ifdef __clang__
+
+#if defined(__clang__) && !(defined(_AIX) && (defined(__IBMCPP__) || defined(__ibmxl__)))
 
 
 #define HB_NO_SANITIZE_SIGNED_INTEGER_OVERFLOW __attribute__((no_sanitize("signed-integer-overflow")))
@@ -475,6 +477,11 @@ static_assert ((sizeof (hb_var_int_t) == 4), "");
 
 #define VAR 1
 
+
+static inline uint16_t hb_uint16_swap (const uint16_t v)
+{ return (v >> 8) | (v << 8); }
+static inline uint32_t hb_uint32_swap (const uint32_t v)
+{ return (hb_uint16_swap (v) << 16) | hb_uint16_swap (v >> 16); }
 
 
 

@@ -14,6 +14,10 @@
 
 
 
+#include "hb.hh"
+
+#ifndef HB_NO_OT_SHAPE
+
 #include "hb-ot-shape-complex-indic.hh"
 
 #pragma GCC diagnostic push
@@ -487,4 +491,6 @@ hb_indic_get_categories (hb_codepoint_t u)
 #undef IMC_TR
 #undef IMC_VOL
 
+
+#endif
 

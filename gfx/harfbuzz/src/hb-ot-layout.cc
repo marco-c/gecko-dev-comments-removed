@@ -28,6 +28,14 @@
 
 
 
+#include "hb.hh"
+
+#ifndef HB_NO_OT_LAYOUT
+
+#ifdef HB_NO_OT_TAG
+#error "Cannot compile hb-ot-layout.cc with HB_NO_OT_TAG."
+#endif
+
 #include "hb-open-type.hh"
 #include "hb-ot-layout.hh"
 #include "hb-ot-face.hh"
@@ -35,7 +43,6 @@
 #include "hb-map.hh"
 
 #include "hb-ot-kern-table.hh"
-#include "hb-ot-gasp-table.hh" 
 #include "hb-ot-layout-gdef-table.hh"
 #include "hb-ot-layout-gsub-table.hh"
 #include "hb-ot-layout-gpos-table.hh"
@@ -47,6 +54,7 @@
 #include "hb-aat-layout-lcar-table.hh"
 #include "hb-aat-layout-morx-table.hh"
 
+#include "hb-aat-layout-opbd-table.hh" 
 
 
 
@@ -388,7 +396,7 @@ OT::GSUB::is_blacklisted (hb_blob_t *blob HB_UNUSED,
   return false;
 #endif
 
-#ifndef HB_NO_SHAPE_AAT
+#ifndef HB_NO_AAT_SHAPE
   
 
 
@@ -1933,70 +1941,36 @@ hb_ot_layout_substitute_lookup (OT::hb_ot_apply_context_t *c,
   apply_string<GSUBProxy> (c, lookup, accel);
 }
 
-#if 0
+#ifndef HB_NO_BASE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 hb_bool_t
-hb_ot_layout_get_baseline (hb_font_t               *font,
-			   hb_ot_layout_baseline_t  baseline,
-			   hb_direction_t           direction,
-			   hb_tag_t                 script_tag,
-			   hb_tag_t                 language_tag,
-			   hb_position_t           *coord        )
+hb_ot_layout_get_baseline (hb_font_t                   *font,
+			   hb_ot_layout_baseline_tag_t  baseline_tag,
+			   hb_direction_t               direction,
+			   hb_tag_t                     script_tag,
+			   hb_tag_t                     language_tag,
+			   hb_position_t               *coord        )
 {
-  bool result = font->face->table.BASE->get_baseline (font, baseline, direction, script_tag,
-						      language_tag, coord);
+  bool result = font->face->table.BASE->get_baseline (font, baseline_tag, direction, script_tag, language_tag, coord);
 
-  
-  if (!result && coord) *coord = 0;
-
-  if (coord) *coord = font->em_scale_dir (*coord, direction);
+  if (result && coord)
+    *coord = HB_DIRECTION_IS_HORIZONTAL (direction) ? font->em_scale_y (*coord) : font->em_scale_x (*coord);
 
   return result;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef enum {
-  HB_OT_LAYOUT_BASELINE_HANG = HB_TAG('h','a','n','g'),
-  HB_OT_LAYOUT_BASELINE_ICFB = HB_TAG('i','c','f','b'),
-  HB_OT_LAYOUT_BASELINE_ICFT = HB_TAG('i','c','f','t'),
-  HB_OT_LAYOUT_BASELINE_IDEO = HB_TAG('i','d','e','o'),
-  HB_OT_LAYOUT_BASELINE_IDTB = HB_TAG('i','d','t','b'),
-  HB_OT_LAYOUT_BASELINE_MATH = HB_TAG('m','a','t','h'),
-  HB_OT_LAYOUT_BASELINE_ROMN = HB_TAG('r','o','m','n')
-} hb_ot_layout_baseline_t;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-HB_EXTERN hb_bool_t
-hb_ot_layout_get_baseline (hb_font_t               *font,
-			   hb_ot_layout_baseline_t  baseline,
-			   hb_direction_t           direction,
-			   hb_tag_t                 script_tag,
-			   hb_tag_t                 language_tag,
-			   hb_position_t           *coord        );
-
+#endif
 #endif

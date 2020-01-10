@@ -75,7 +75,6 @@ AAT::hb_aat_apply_context_t::set_ankr_table (const AAT::ankr *ankr_table_)
 #endif
 
 
-#ifndef HB_NO_AAT
 
 
 
@@ -86,7 +85,7 @@ AAT::hb_aat_apply_context_t::set_ankr_table (const AAT::ankr *ankr_table_)
 
 
 
-
+#if !defined(HB_NO_AAT) || defined(HAVE_CORETEXT)
 
 
 
@@ -179,7 +178,10 @@ hb_aat_layout_find_feature_mapping (hb_tag_t tag)
 							sizeof (feature_mappings[0]),
 							hb_aat_feature_mapping_t::cmp);
 }
+#endif
 
+
+#ifndef HB_NO_AAT
 
 
 
