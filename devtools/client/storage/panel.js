@@ -52,22 +52,22 @@ class StoragePanel {
 
 
   destroy() {
-    if (this._destroyed) {
-      return;
+    if (!this._destroyed) {
+      this.UI.destroy();
+      this.UI = null;
+
+      
+      this._front.destroy();
+      this._front = null;
+      this._destroyed = true;
+
+      this._target.off("close", this.destroy);
+      this._target = null;
+      this._toolbox = null;
+      this._panelWin = null;
     }
-    this._destroyed = true;
 
-    this.UI.destroy();
-    this.UI = null;
-
-    
-    this._front.destroy();
-    this._front = null;
-
-    this._target.off("close", this.destroy);
-    this._target = null;
-    this._toolbox = null;
-    this._panelWin = null;
+    return Promise.resolve(null);
   }
 }
 

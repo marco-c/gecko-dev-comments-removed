@@ -30,12 +30,6 @@ add_task(async function() {
   Services.prefs.setCharPref("devtools.toolbox.selectedTool", "memory");
   const toolbox = await gDevToolsBrowser.openContentProcessToolbox(gBrowser);
 
-  
-  
-  
-  
-  await waitForDOM(toolbox.win.document, "#toolbox-meatball-menu-noautohide");
-
   info(
     "Check whether the value of devtools.toolbox.tabsOrder was not affected after closed"
   );

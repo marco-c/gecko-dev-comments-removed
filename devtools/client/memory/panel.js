@@ -52,22 +52,25 @@ MemoryPanel.prototype = {
     return this._toolbox.target;
   },
 
-  destroy() {
+  async destroy() {
     
-    if (this._destroyed) {
-      return;
+    if (this._destroyer) {
+      return this._destroyer;
     }
-    this._destroyed = true;
 
-    this.initializer.destroy();
+    await this.panelWin.gFront.detach();
 
-    
-    this.panelWin.gFront.destroy();
-    this.panelWin.gHeapAnalysesClient.destroy();
-    this.panelWin = null;
-    this._opening = null;
-    this.isReady = false;
-    this.emit("destroyed");
+    this._destroyer = this.initializer.destroy().then(() => {
+      
+      this.panelWin.gFront.destroy();
+      this.panelWin.gHeapAnalysesClient.destroy();
+      this.panelWin = null;
+      this._opening = null;
+      this.isReady = false;
+      this.emit("destroyed");
+    });
+
+    return this._destroyer;
   },
 };
 
