@@ -609,6 +609,54 @@ SearchService.prototype = {
   _engines: null,
 
   
+
+
+  __sortedEngines: null,
+
+  
+
+
+
+
+
+
+  _visibleDefaultEngines: [],
+
+  
+
+
+  _searchDefault: null,
+
+  
+
+
+  _searchOrder: [],
+
+  
+
+
+
+
+  _startupExtensions: new Set(),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _metaData: {},
+
+  
   
   
   _ensureInitialized() {
@@ -829,7 +877,6 @@ SearchService.prototype = {
     return false;
   },
 
-  _metaData: {},
   setGlobalAttr(name, val) {
     this._metaData[name] = val;
     this.batchTask.disarm();
@@ -856,15 +903,6 @@ SearchService.prototype = {
     (AppConstants.platform == "android"
       ? APP_SEARCH_PREFIX
       : EXT_SEARCH_PREFIX) + "list.json",
-
-  __sortedEngines: null,
-  _visibleDefaultEngines: [],
-  _searchDefault: null,
-  _searchOrder: [],
-  
-  
-  
-  _startupExtensions: new Set(),
 
   get _sortedEngines() {
     if (!this.__sortedEngines) {
