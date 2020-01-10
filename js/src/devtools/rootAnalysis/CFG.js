@@ -4,9 +4,12 @@
 
 
 
+
+
 "use strict";
 
-var functionBodies;
+
+
 
 function findAllPoints(bodies, blockId, limits)
 {
@@ -31,6 +34,8 @@ function findAllPoints(bodies, blockId, limits)
 
     return points;
 }
+
+
 
 function isMatchingDestructor(constructor, edge)
 {
@@ -129,7 +134,7 @@ function isMatchingConstructor(destructor, edge)
     return sameVariable(constructExp.Variable, destructExp.Variable);
 }
 
-function findMatchingConstructor(destructorEdge, body)
+function findMatchingConstructor(destructorEdge, body, warnIfNotFound=true)
 {
     var worklist = [destructorEdge];
     var predecessors = getPredecessors(body);
@@ -142,8 +147,9 @@ function findMatchingConstructor(destructorEdge, body)
                 worklist.push(e);
         }
     }
-    printErr("Could not find matching constructor!");
-    debugger;
+    if (warnIfNotFound)
+        printErr("Could not find matching constructor!");
+    return undefined;
 }
 
 function pointsInRAIIScope(bodies, body, constructorEdge, limits) {

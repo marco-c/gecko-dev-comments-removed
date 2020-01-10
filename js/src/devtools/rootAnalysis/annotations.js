@@ -255,6 +255,10 @@ var ignoreFunctions = {
     "uint8 nsContentUtils::IsExpandedPrincipal(nsIPrincipal*)" : true,
 
     "void mozilla::AutoProfilerLabel::~AutoProfilerLabel(int32)" : true,
+
+    
+    
+    "void mozilla::ProfilerLabelEnd(mozilla::Tuple<void*, unsigned int>*)" : true,
 };
 
 function extraGCFunctions() {
@@ -319,6 +323,7 @@ function ignoreGCFunction(mangled)
     
     if (/refillFreeList|tryNew/.test(fun) && /\(js::AllowGC\)0u/.test(fun))
         return true;
+
     return false;
 }
 
@@ -396,7 +401,7 @@ function isLimitConstructor(typeInfo, edgeType, varName)
 
 
 
-function isOverridableField(initialCSU, csu, field)
+function isOverridableField(staticCSU, csu, field)
 {
     if (csu != 'nsISupports')
         return false;
@@ -421,19 +426,19 @@ function isOverridableField(initialCSU, csu, field)
         return false;
     if (field == "ConstructUbiNode")
         return false;
-    if (initialCSU == 'nsIXPCScriptable' && field == "GetScriptableFlags")
+    if (staticCSU == 'nsIXPCScriptable' && field == "GetScriptableFlags")
         return false;
-    if (initialCSU == 'nsIXPConnectJSObjectHolder' && field == 'GetJSObject')
+    if (staticCSU == 'nsIXPConnectJSObjectHolder' && field == 'GetJSObject')
         return false;
-    if (initialCSU == 'nsIXPConnect' && field == 'GetSafeJSContext')
+    if (staticCSU == 'nsIXPConnect' && field == 'GetSafeJSContext')
         return false;
 
     
     
-    if (initialCSU == 'nsIScriptSecurityManager' && field == 'IsSystemPrincipal')
+    if (staticCSU == 'nsIScriptSecurityManager' && field == 'IsSystemPrincipal')
         return false;
 
-    if (initialCSU == 'nsIScriptContext') {
+    if (staticCSU == 'nsIScriptContext') {
         if (field == 'GetWindowProxy' || field == 'GetWindowProxyPreserveColor')
             return false;
     }

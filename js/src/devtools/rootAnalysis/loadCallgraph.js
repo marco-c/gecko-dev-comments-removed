@@ -31,6 +31,7 @@ loadRelativeToScript('utility.js');
 
 
 
+
 var readableNames = {}; 
 var calleesOf = {}; 
 var callersOf; 
@@ -279,7 +280,7 @@ function loadCallgraph(file)
     
     while (worklist.length) {
         name = worklist.shift();
-        assert(name in gcFunctions);
+        assert(name in gcFunctions, "gcFunctions does not contain " + name);
         if (!(name in callersOf))
             continue;
         for (const {caller, limits} of callersOf[name]) {
