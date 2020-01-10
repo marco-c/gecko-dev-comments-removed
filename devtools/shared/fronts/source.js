@@ -19,11 +19,17 @@ const { ArrayBufferFront } = require("devtools/shared/fronts/array-buffer");
 class SourceFront extends FrontClassWithSpec(sourceSpec) {
   constructor(client, form) {
     super(client);
-    this._url = form.url;
-    
-    
-    this.actorID = form.actor;
-    this.manage(this);
+    if (form) {
+      this._url = form.url;
+      
+      
+      this.actorID = form.actor;
+      this.manage(this);
+    }
+  }
+
+  form(json) {
+    this._url = json.url;
   }
 
   get actor() {
