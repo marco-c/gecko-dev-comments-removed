@@ -1015,9 +1015,5 @@ class PluginChild extends ActorChild {
     this.mm.sendAsyncMessage("PluginContent:ShowPluginCrashedNotification",
                                  { messageString, pluginID });
 
-    
-    doc.defaultView.top.addEventListener("unload", event => {
-      this.hideNotificationBar("plugin-crashed");
-    });
   }
 }
