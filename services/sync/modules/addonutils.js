@@ -331,7 +331,7 @@ AddonUtilsInternal.prototype = {
     
     if (!addon.sourceURI) {
       this._log.info(
-        "Skipping install of add-on because missing " + "sourceURI: " + addon.id
+        "Skipping install of add-on because missing sourceURI: " + addon.id
       );
       return false;
     }

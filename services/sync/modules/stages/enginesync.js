@@ -187,7 +187,7 @@ EngineSynchronizer.prototype = {
       
       if (!this.service.clusterURL) {
         this._log.debug(
-          "Aborting sync, no cluster URL: " + "not uploading new meta/global."
+          "Aborting sync, no cluster URL: not uploading new meta/global."
         );
         return;
       }
