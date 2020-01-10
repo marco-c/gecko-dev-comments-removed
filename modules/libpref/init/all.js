@@ -219,12 +219,7 @@ pref("dom.inputevent.inputtype.enabled", true);
 
 #ifdef JS_BUILD_BINAST
 pref("dom.script_loader.binast_encoding.enabled", false);
-
-
-
-
-
-pref("dom.script_loader.binast_encoding.domain.restrict.list", "*.facebook.com,static.xx.fbcdn.net,*.cloudflare.com,*.cloudflarestream.com,unpkg.com");
+pref("dom.script_loader.binast_encoding.domain.restrict.list", "*.facebook.com,static.xx.fbcdn.net");
 #endif
 
 
@@ -844,6 +839,7 @@ pref("gfx.font_ahem_antialias_none", false);
 
 pref("gfx.canvas.azure.backends", "direct2d1.1,skia,cairo");
 pref("gfx.content.azure.backends", "direct2d1.1,skia,cairo");
+pref("gfx.canvas.remote", false);
 #else
 #ifdef XP_MACOSX
 pref("gfx.content.azure.backends", "skia");
@@ -2635,7 +2631,7 @@ pref("security.dialog_enable_delay", 1000);
 pref("security.notification_enable_delay", 500);
 
 #if defined(DEBUG) && !defined(ANDROID)
-pref("csp.about_uris_without_csp", "blank,printpreview,srcdoc,addons,cache-entry,config,debugging,devtools,downloads,home,networking,newtab,performance,plugins,profiles,restartrequired,serviceworkers,sessionrestore,support,sync-log,telemetry,url-classifier,welcomeback");
+pref("csp.about_uris_without_csp", "blank,printpreview,srcdoc,addons,cache-entry,config,crashes,debugging,devtools,downloads,home,networking,newtab,performance,plugins,profiles,restartrequired,serviceworkers,sessionrestore,support,sync-log,telemetry,url-classifier,welcomeback");
 
 pref("csp.overrule_about_uris_without_csp_whitelist", false);
 pref("csp.skip_about_page_has_csp_assert", false);

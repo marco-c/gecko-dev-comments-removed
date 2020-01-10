@@ -862,8 +862,7 @@ ClientLayerManager::CreatePersistentBufferProvider(const gfx::IntSize& aSize,
   
   
   
-  if (IsCompositingCheap() &&
-      StaticPrefs::PersistentBufferProviderSharedEnabled()) {
+  if (IsCompositingCheap()) {
     RefPtr<PersistentBufferProvider> provider =
         PersistentBufferProviderShared::Create(aSize, aFormat,
                                                AsShadowForwarder());
