@@ -1372,7 +1372,7 @@ EnvironmentCache.prototype = {
     this._log.trace("observe - aTopic: " + aTopic + ", aData: " + aData);
     switch (aTopic) {
       case SEARCH_ENGINE_MODIFIED_TOPIC:
-        if (aData != "engine-default") {
+        if (aData != "engine-default" && aData != "engine-default-private") {
           return;
         }
         
@@ -1428,31 +1428,6 @@ EnvironmentCache.prototype = {
   
 
 
-
-
-  _getDefaultSearchEngine() {
-    let engine;
-    try {
-      engine = Services.search.defaultEngine;
-    } catch (e) {}
-
-    let name;
-    if (!engine) {
-      name = "NONE";
-    } else if (engine.identifier) {
-      name = engine.identifier;
-    } else if (engine.name) {
-      name = "other-" + engine.name;
-    } else {
-      name = "UNDEFINED";
-    }
-
-    return name;
-  },
-
-  
-
-
   async _updateSearchEngine() {
     if (!this._canQuerySearch) {
       this._log.trace("_updateSearchEngine - ignoring early call");
@@ -1473,9 +1448,23 @@ EnvironmentCache.prototype = {
 
     
     this._currentEnvironment.settings = this._currentEnvironment.settings || {};
+
     
-    this._currentEnvironment.settings.defaultSearchEngine = this._getDefaultSearchEngine();
-    this._currentEnvironment.settings.defaultSearchEngineData = await Services.search.getDefaultEngineInfo();
+    const defaultEngineInfo = await Services.search.getDefaultEngineInfo();
+    this._currentEnvironment.settings.defaultSearchEngine =
+      defaultEngineInfo.defaultSearchEngine;
+    this._currentEnvironment.settings.defaultSearchEngineData = {
+      ...defaultEngineInfo.defaultSearchEngineData,
+    };
+    if ("defaultPrivateSearchEngine" in defaultEngineInfo) {
+      this._currentEnvironment.settings.defaultPrivateSearchEngine =
+        defaultEngineInfo.defaultPrivateSearchEngine;
+    }
+    if ("defaultPrivateSearchEngineData" in defaultEngineInfo) {
+      this._currentEnvironment.settings.defaultPrivateSearchEngineData = {
+        ...defaultEngineInfo.defaultPrivateSearchEngineData,
+      };
+    }
 
     
     if (Services.prefs.prefHasUserValue(PREF_SEARCH_COHORT)) {
