@@ -1409,10 +1409,11 @@ already_AddRefed<mozilla::layers::Layer> nsDisplayRemote::BuildLayer(
     
     nsRect visibleRect;
     if (aContainerParameters.mItemVisibleRect) {
-      visibleRect = *aContainerParameters.mItemVisibleRect - ToReferenceFrame();
+      visibleRect = *aContainerParameters.mItemVisibleRect;
     } else {
-      visibleRect = mFrame->GetContentRectRelativeToSelf();
+      visibleRect = GetBuildingRect();
     }
+    visibleRect -= ToReferenceFrame();
 
     
     aBuilder->AddEffectUpdate(remoteBrowser,
@@ -1479,9 +1480,12 @@ bool nsDisplayRemote::CreateWebRenderCommands(
           GetFrameLoader()->GetRemoteBrowser()) {
     
     
+    nsRect visibleRect = GetBuildingRect() - ToReferenceFrame();
+
+    
+    
     aDisplayListBuilder->AddEffectUpdate(
-        remoteBrowser, EffectsInfo::VisibleWithinRect(
-                           mFrame->GetContentRectRelativeToSelf(), 1.0f, 1.0f));
+        remoteBrowser, EffectsInfo::VisibleWithinRect(visibleRect, 1.0f, 1.0f));
 
     
     
