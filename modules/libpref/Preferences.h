@@ -177,8 +177,6 @@ class Preferences final : public nsIPrefService,
   
   static void InitializeUserPrefs();
 
-  static void RefreshStaticPrefsValues();
-
   
   static already_AddRefed<Preferences> GetInstanceForService();
 
