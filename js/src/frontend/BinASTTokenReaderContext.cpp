@@ -487,9 +487,111 @@ class HuffmanPreludeReader {
   Vector<Entry> stack;
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  MOZ_MUST_USE JS::Result<Ok> pushValue(NormalizedInterfaceAndField identity,
+                                        const List& list) {
+    auto& table = dictionary.tableForListLength(list.contents);
+    if (table.is<HuffmanTableUnreachable>()) {
+      
+      
+      table = {mozilla::VariantType<HuffmanTableInitializing>{}};
+
+      
+      MOZ_TRY((readTable<HuffmanTableListLength, List>(table, list)));
+    }
+
+    
+    
+    
+    
+    auto& lengthTable = table.as<HuffmanTableExplicitSymbolsListLength>();
+    bool empty = true;
+    for (auto iter : lengthTable) {
+      if (*iter > 0) {
+        empty = false;
+        break;
+      }
+    }
+    if (empty) {
+      return Ok();
+    }
+
+    
+    
+    
+    
+
+    
+    
+    switch (list.contents) {
+#define WRAP_LIST_2(_, CONTENT) CONTENT
+#define EMIT_CASE(LIST_NAME, _CONTENT_TYPE, _HUMAN_NAME, TYPE) \
+  case BinASTList::LIST_NAME:                                  \
+    return pushValue(list.identity, TYPE(list.identity));
+
+      FOR_EACH_BIN_LIST(EMIT_CASE, WRAP_PRIMITIVE, WRAP_INTERFACE,
+                        WRAP_MAYBE_INTERFACE, WRAP_LIST_2, WRAP_SUM,
+                        WRAP_MAYBE_SUM, WRAP_STRING_ENUM,
+                        WRAP_MAYBE_STRING_ENUM)
+#undef EMIT_CASE
+#undef WRAP_LIST_2
+    }
+    return Ok();
+  }
+
+  MOZ_MUST_USE JS::Result<Ok> pushValue(NormalizedInterfaceAndField identity,
+                                        const Interface& interface) {
+    
+    
+    auto& table = dictionary.tableForField(identity);
+    if (table.is<HuffmanTableUnreachable>()) {
+      
+      HuffmanTableIndexedSymbolsSum sum(cx_);
+      MOZ_TRY(sum.initWithSingleValue(cx_, BinASTKind(interface.kind)));
+      table = {mozilla::VariantType<HuffmanTableIndexedSymbolsSum>{},
+               std::move(sum)};
+    }
+
+    
+    
+    
+    return pushFields(interface.kind);
+  }
+
+  
+  template <class Entry>
   MOZ_MUST_USE JS::Result<Ok> pushValue(NormalizedInterfaceAndField identity,
                                         const Entry& entry) {
-    return entry.match(PushEntryMatcher(cx_, *this, identity));
+    
+    
+    auto& table = dictionary.tableForField(identity);
+    if (!table.is<HuffmanTableUnreachable>()) {
+      
+      return Ok();
+    }
+
+    
+    
+    table = {mozilla::VariantType<HuffmanTableInitializing>{}};
+
+    
+    
+    BINJS_TRY(stack.append(entry));
+    return Ok();
   }
 
   
@@ -509,12 +611,11 @@ class HuffmanPreludeReader {
 
 
     switch (tag) {
-#define EMIT_FIELD(TAG_NAME, FIELD_NAME, FIELD_INDEX, FIELD_TYPE, _)    \
-  MOZ_TRY(                                                              \
-      pushValue(NormalizedInterfaceAndField(                            \
-                    BinASTInterfaceAndField::TAG_NAME##__##FIELD_NAME), \
-                Entry(FIELD_TYPE(NormalizedInterfaceAndField(           \
-                    BinASTInterfaceAndField::TAG_NAME##__##FIELD_NAME)))));
+#define EMIT_FIELD(TAG_NAME, FIELD_NAME, FIELD_INDEX, FIELD_TYPE, _)        \
+  MOZ_TRY(pushValue(NormalizedInterfaceAndField(                            \
+                        BinASTInterfaceAndField::TAG_NAME##__##FIELD_NAME), \
+                    FIELD_TYPE(NormalizedInterfaceAndField(                 \
+                        BinASTInterfaceAndField::TAG_NAME##__##FIELD_NAME))));
 #define EMIT_CASE(TAG_ENUM_NAME, _2, TAG_MACRO_NAME)                      \
   case BinASTKind::TAG_ENUM_NAME: {                                       \
     FOR_EACH_BIN_FIELD_IN_INTERFACE_##TAG_MACRO_NAME(                     \
@@ -802,122 +903,6 @@ class HuffmanPreludeReader {
   Vector<BitLengthAndIndex> auxStorageLength;
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-  struct PushEntryMatcher {
-    JSContext* cx_;
-
-    
-    HuffmanPreludeReader& owner;
-
-    const NormalizedInterfaceAndField identity;
-
-    PushEntryMatcher(JSContext* cx_, HuffmanPreludeReader& owner,
-                     NormalizedInterfaceAndField identity)
-        : cx_(cx_), owner(owner), identity(identity) {}
-
-    MOZ_MUST_USE JS::Result<Ok> operator()(const List& list) {
-      auto& table = owner.dictionary.tableForListLength(list.contents);
-      if (table.is<HuffmanTableUnreachable>()) {
-        
-        
-        table = {mozilla::VariantType<HuffmanTableInitializing>{}};
-
-        
-        MOZ_TRY((owner.readTable<HuffmanTableListLength, List>(table, list)));
-      }
-
-      
-      
-      
-      
-      auto& lengthTable = table.as<HuffmanTableExplicitSymbolsListLength>();
-      bool empty = true;
-      for (auto iter : lengthTable) {
-        if (*iter > 0) {
-          empty = false;
-          break;
-        }
-      }
-      if (empty) {
-        return Ok();
-      }
-
-      
-      
-      
-      
-
-      
-      
-      switch (list.contents) {
-#define WRAP_LIST_2(_, CONTENT) CONTENT
-#define EMIT_CASE(LIST_NAME, _CONTENT_TYPE, _HUMAN_NAME, TYPE) \
-  case BinASTList::LIST_NAME:                                  \
-    return owner.pushValue(list.identity, Entry(TYPE(list.identity)));
-
-        FOR_EACH_BIN_LIST(EMIT_CASE, WRAP_PRIMITIVE, WRAP_INTERFACE,
-                          WRAP_MAYBE_INTERFACE, WRAP_LIST_2, WRAP_SUM,
-                          WRAP_MAYBE_SUM, WRAP_STRING_ENUM,
-                          WRAP_MAYBE_STRING_ENUM)
-#undef EMIT_CASE
-#undef WRAP_LIST_2
-      }
-      return Ok();
-    }
-
-    MOZ_MUST_USE JS::Result<Ok> operator()(const Interface& interface) {
-      
-      
-      auto& table = owner.dictionary.tableForField(identity);
-      if (table.is<HuffmanTableUnreachable>()) {
-        
-        HuffmanTableIndexedSymbolsSum sum(cx_);
-        MOZ_TRY(sum.initWithSingleValue(cx_, BinASTKind(interface.kind)));
-        table = {mozilla::VariantType<HuffmanTableIndexedSymbolsSum>{},
-                 std::move(sum)};
-      }
-
-      
-      
-      
-      return owner.pushFields(interface.kind);
-    }
-
-    
-    template <class Entry>
-    MOZ_MUST_USE JS::Result<Ok> operator()(const Entry& entry) {
-      
-      
-      auto& table = owner.dictionary.tableForField(identity);
-      if (!table.is<HuffmanTableUnreachable>()) {
-        
-        return Ok();
-      }
-
-      
-      
-      table = {mozilla::VariantType<HuffmanTableInitializing>{}};
-
-      
-      
-      BINJS_TRY(owner.stack.append(entry));
-      return Ok();
-    }
-  };
-
-  
   struct ReadPoppedEntryMatcher {
     
     HuffmanPreludeReader& owner;
@@ -984,9 +969,8 @@ class HuffmanPreludeReader {
       const auto& tableRef = table.as<HuffmanTableIndexedSymbolsSum>();
 
       for (auto iter : tableRef) {
-        MOZ_TRY(owner.pushValue(
-            entry.identity,
-            {mozilla::VariantType<Interface>(), entry.identity, *iter}));
+        MOZ_TRY(
+            owner.pushValue(entry.identity, Interface(entry.identity, *iter)));
       }
       return Ok();
     }
@@ -1009,9 +993,8 @@ class HuffmanPreludeReader {
       const auto& tableRef = table.as<HuffmanTableIndexedSymbolsSum>();
 
       for (auto iter : tableRef) {
-        MOZ_TRY(owner.pushValue(
-            entry.identity,
-            {mozilla::VariantType<Interface>(), entry.identity, *iter}));
+        MOZ_TRY(
+            owner.pushValue(entry.identity, Interface(entry.identity, *iter)));
       }
       return Ok();
     }
