@@ -3397,29 +3397,18 @@ Toolbox.prototype = {
 
 
   destroyInspector: function() {
-    if (this._destroyingInspector) {
-      return this._destroyingInspector;
+    if (!this._inspector) {
+      return;
     }
 
-    this._destroyingInspector = async function() {
-      if (!this._inspector && !this._initInspector) {
-        return;
-      }
+    
+    
+    this._inspector.destroy();
 
-      
-      
-      await this._initInspector;
-
-      
-      
-      this._inspector.destroy();
-
-      this._inspector = null;
-      this._highlighter = null;
-      this._selection = null;
-      this._walker = null;
-    }.bind(this)();
-    return this._destroyingInspector;
+    this._inspector = null;
+    this._highlighter = null;
+    this._selection = null;
+    this._walker = null;
   },
 
   
