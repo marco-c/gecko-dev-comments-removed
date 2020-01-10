@@ -6,18 +6,6 @@
 
 const EventEmitter = require("devtools/shared/event-emitter");
 
-
-
-
-
-
-
-
-
-
-
-
-
 function ToolSidebar(tabbox, panel, uid, options = {}) {
   EventEmitter.decorate(this);
 
