@@ -380,57 +380,17 @@ nsresult TLSFilterTransaction::WriteSegmentsAgain(nsAHttpSegmentWriter* aWriter,
     return mCloseReason;
   }
 
-  bool againBeforeWriteSegmentsCall = *again;
-
   mSegmentWriter = aWriter;
 
-  
+  nsresult rv = mTransaction->WriteSegmentsAgain(this, aCount, outCountWritten,
+                                                 again);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult rv =
-      gHttpHandler->Bug1562315()
-          ? mTransaction->WriteSegmentsAgain(this, aCount, outCountWritten,
-                                             again)
-          : mTransaction->WriteSegments(this, aCount, outCountWritten);
-
-  if (NS_SUCCEEDED(rv) && !(*outCountWritten)) {
-    if (NS_FAILED(mFilterReadCode)) {
+  if (NS_SUCCEEDED(rv) && !(*outCountWritten) && NS_FAILED(mFilterReadCode)) {
       
       rv = mFilterReadCode;
       if (Connection() && (mFilterReadCode == NS_BASE_STREAM_WOULD_BLOCK)) {
         Unused << Connection()->ResumeRecv();
       }
-    }
-    if (againBeforeWriteSegmentsCall && !*again) {
-      
-      LOG(
-          ("TLSFilterTransaction %p called trans->WriteSegments which dropped "
-           "the 'again' flag",
-           this));
-      
-      
-      
-      
-      
-      
-      
-      
-      if (Connection()) {
-        Unused << Connection()->ForceRecv();
-      }
-    }
   }
   LOG(("TLSFilterTransaction %p called trans->WriteSegments rv=%" PRIx32
        " %d\n",
@@ -544,6 +504,17 @@ nsresult TLSFilterTransaction::StartTimerCallback() {
     return cb->OnTunnelNudged(this);
   }
   return NS_OK;
+}
+
+bool TLSFilterTransaction::HasDataToRecv() {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  if (!mFD) {
+    return false;
+  }
+  int32_t n = 0;
+  char c;
+  n = PR_Recv(mFD, &c, 1, PR_MSG_PEEK, 0);
+  return n > 0;
 }
 
 PRStatus TLSFilterTransaction::GetPeerName(PRFileDesc* aFD, PRNetAddr* addr) {
