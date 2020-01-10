@@ -584,7 +584,8 @@ class Nursery {
 
 
 
-  void setCurrentChunk(unsigned chunkno, bool fullPoison = false);
+  void setCurrentChunk(unsigned chunkno);
+  void poisonAndInitCurrentChunk(bool fullPoison = false);
   void setCurrentEnd();
   void setStartPosition();
 
