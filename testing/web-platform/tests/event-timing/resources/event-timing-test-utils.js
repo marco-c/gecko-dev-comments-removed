@@ -40,11 +40,11 @@ function verifyClickEvent(entry, is_first=false) {
   assert_greater_than_equal(entry.duration + 4, entry.processingEnd - entry.startTime,
       "The entry's duration must be at least as large as processingEnd - startTime.");
   if (is_first) {
-    let firstInputs = performance.getEntriesByType('firstInput');
-    assert_equals(firstInputs.length, 1, 'There should be a single firstInput entry');
+    let firstInputs = performance.getEntriesByType('first-input');
+    assert_equals(firstInputs.length, 1, 'There should be a single first-input entry');
     let firstInput = firstInputs[0];
     assert_equals(firstInput.name, entry.name);
-    assert_equals(firstInput.entryType, 'firstInput');
+    assert_equals(firstInput.entryType, 'first-input');
     assert_equals(firstInput.startTime, entry.startTime);
     assert_equals(firstInput.duration, entry.duration);
     assert_equals(firstInput.processingStart, entry.processingStart);
