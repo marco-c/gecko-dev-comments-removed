@@ -7439,15 +7439,14 @@ void nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
         aStatus->SetInlineLineBreakBeforeAndReset();
         return;
       }
+
       
       
       
-      
-      
-      aFinalSize.BSize(wm) =
-          std::max(aReflowInput.AvailableBSize(), aContentBSize);
       aStatus->SetIncomplete();
-      if (!GetNextInFlow()) aStatus->SetNextInFlowNeedsReflow();
+      if (!GetNextInFlow()) {
+        aStatus->SetNextInFlowNeedsReflow();
+      }
     }
   }
 
