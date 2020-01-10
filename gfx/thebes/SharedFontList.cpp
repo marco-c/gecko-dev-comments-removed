@@ -757,7 +757,16 @@ Family* FontList::FindFamily(const nsCString& aName) {
   
   
   
-  if (!header.mAliasCount && aName.Contains(' ')) {
+  if (aName.Contains(' ')) {
+    auto pfl = gfxPlatformFontList::PlatformFontList();
+    if (header.mAliasCount) {
+      
+      
+      
+      pfl->mAliasTable.Clear();
+      pfl->mLocalNameTable.Clear();
+      return nullptr;
+    }
     const nsLiteralCString kStyleSuffixes[] = {
         nsLiteralCString(" book"),   nsLiteralCString(" medium"),
         nsLiteralCString(" normal"), nsLiteralCString(" regular"),
@@ -776,10 +785,14 @@ Family* FontList::FindFamily(const nsCString& aName) {
           
           
           Family* candidateFamily = &families[match];
-          auto pfl = gfxPlatformFontList::PlatformFontList();
           if (pfl->mAliasTable.Lookup(aName)) {
             return candidateFamily;
           }
+          
+          
+          
+          
+          
           pfl->ReadFaceNamesForFamily(candidateFamily, false);
           if (pfl->mAliasTable.Lookup(aName)) {
             return candidateFamily;
