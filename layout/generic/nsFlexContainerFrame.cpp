@@ -1794,8 +1794,21 @@ const CachedMeasuringReflowResult&
 nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
     FlexItem& aItem, nsPresContext* aPresContext,
     ReflowInput& aChildReflowInput) {
-  if (const auto* cachedResult =
-          aItem.Frame()->GetProperty(CachedFlexMeasuringReflow())) {
+  if (HasAnyStateBits(NS_STATE_FLEX_MEASUREMENTS_INTERRUPTED) &&
+      !aPresContext->HasPendingInterrupt()) {
+    
+    
+    
+    
+    for (nsIFrame* frame : mFrames) {
+      frame->DeleteProperty(CachedFlexMeasuringReflow());
+    }
+    RemoveStateBits(NS_STATE_FLEX_MEASUREMENTS_INTERRUPTED);
+    MOZ_LOG(gFlexContainerLog, LogLevel::Debug,
+            ("[perf] MeasureAscentAndBSizeForFlexItem purged all "
+             "cached values\n"));
+  } else if (const auto* cachedResult =
+                 aItem.Frame()->GetProperty(CachedFlexMeasuringReflow())) {
     if (cachedResult->IsValidFor(aChildReflowInput)) {
       return *cachedResult;
     }
@@ -4299,10 +4312,11 @@ void nsFlexContainerFrame::DidReflow(nsPresContext* aPresContext,
   
   
   
+  
+  
+  
   if (aPresContext->HasPendingInterrupt()) {
-    for (nsIFrame* frame : mFrames) {
-      frame->DeleteProperty(CachedFlexMeasuringReflow());
-    }
+    AddStateBits(NS_STATE_FLEX_MEASUREMENTS_INTERRUPTED);
   }
   nsContainerFrame::DidReflow(aPresContext, aReflowInput);
 }
