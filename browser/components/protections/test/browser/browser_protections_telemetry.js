@@ -14,6 +14,7 @@ add_task(async function setup() {
       ["browser.contentblocking.report.proxy.enabled", true],
       
       ["browser.contentblocking.report.monitor.url", ""],
+      ["browser.contentblocking.report.monitor.sign_in_url", ""],
       ["browser.contentblocking.report.lockwise.url", ""],
     ],
   });
