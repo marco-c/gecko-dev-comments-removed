@@ -11,6 +11,7 @@ from .sourcefile import SourceFile
 
 MYPY = False
 if MYPY:
+    
     from typing import Dict, Optional
 
 
