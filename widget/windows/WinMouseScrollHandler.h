@@ -69,7 +69,7 @@ class MouseScrollHandler {
 
 
   static void InitEvent(nsWindowBase* aWidget, WidgetGUIEvent& aEvent,
-                        LayoutDeviceIntPoint* aPoint = nullptr);
+                        LPARAM* aPoint);
 
   
 
@@ -236,7 +236,7 @@ class MouseScrollHandler {
 
 
     bool InitWheelEvent(nsWindowBase* aWidget, WidgetWheelEvent& aWheelEvent,
-                        const ModifierKeyState& aModKeyState);
+                        const ModifierKeyState& aModKeyState, LPARAM aLParam);
 
    private:
     static int32_t RoundDelta(double aDelta);

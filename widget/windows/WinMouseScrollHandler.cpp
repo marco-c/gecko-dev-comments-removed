@@ -20,6 +20,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/WheelEventBinding.h"
+#include "mozilla/StaticPrefs_mousewheel.h"
 
 #include <psapi.h>
 
@@ -303,21 +304,28 @@ nsresult MouseScrollHandler::SynthesizeNativeMouseScrollEvent(
 
 
 void MouseScrollHandler::InitEvent(nsWindowBase* aWidget,
-                                   WidgetGUIEvent& aEvent,
-                                   LayoutDeviceIntPoint* aPoint) {
+                                   WidgetGUIEvent& aEvent, LPARAM* aPoint) {
   NS_ENSURE_TRUE_VOID(aWidget);
-  LayoutDeviceIntPoint point;
-  if (aPoint) {
-    point = *aPoint;
+
+  
+  
+  POINTS pointOnScreen;
+  if (aPoint != nullptr) {
+    pointOnScreen = MAKEPOINTS(*aPoint);
   } else {
-    POINTS pts = GetCurrentMessagePos();
-    POINT pt;
-    pt.x = pts.x;
-    pt.y = pts.y;
-    ::ScreenToClient(aWidget->GetWindowHandle(), &pt);
-    point.x = pt.x;
-    point.y = pt.y;
+    pointOnScreen = GetCurrentMessagePos();
   }
+
+  
+  
+  POINT pointOnWindow;
+  POINTSTOPOINT(pointOnWindow, pointOnScreen);
+  ::ScreenToClient(aWidget->GetWindowHandle(), &pointOnWindow);
+
+  LayoutDeviceIntPoint point;
+  point.x = pointOnWindow.x;
+  point.y = pointOnWindow.y;
+
   aWidget->InitEvent(aEvent, &point);
 }
 
@@ -622,7 +630,8 @@ void MouseScrollHandler::HandleMouseWheelMessage(nsWindowBase* aWidget,
   RefPtr<nsWindowBase> kungFuDethGrip(aWidget);
 
   WidgetWheelEvent wheelEvent(true, eWheel, aWidget);
-  if (mLastEventInfo.InitWheelEvent(aWidget, wheelEvent, modKeyState)) {
+  if (mLastEventInfo.InitWheelEvent(aWidget, wheelEvent, modKeyState,
+                                    aLParam)) {
     MOZ_LOG(gMouseScrollLog, LogLevel::Info,
             ("MouseScroll::HandleMouseWheelMessage: dispatching "
              "eWheel event"));
@@ -680,10 +689,12 @@ void MouseScrollHandler::HandleScrollMessageAsMouseWheelMessage(
       return;
   }
   modKeyState.InitInputEvent(wheelEvent);
+
   
   
   
-  InitEvent(aWidget, wheelEvent);
+  
+  InitEvent(aWidget, wheelEvent, nullptr);
 
   MOZ_LOG(
       gMouseScrollLog, LogLevel::Info,
@@ -789,13 +800,14 @@ int32_t MouseScrollHandler::LastEventInfo::RoundDelta(double aDelta) {
 
 bool MouseScrollHandler::LastEventInfo::InitWheelEvent(
     nsWindowBase* aWidget, WidgetWheelEvent& aWheelEvent,
-    const ModifierKeyState& aModKeyState) {
+    const ModifierKeyState& aModKeyState, LPARAM aLParam) {
   MOZ_ASSERT(aWheelEvent.mMessage == eWheel);
 
-  
-  
-  
-  InitEvent(aWidget, aWheelEvent);
+  if (StaticPrefs::mousewheel_ignore_cursor_position_in_lparam()) {
+    InitEvent(aWidget, aWheelEvent, nullptr);
+  } else {
+    InitEvent(aWidget, aWheelEvent, &aLParam);
+  }
 
   aModKeyState.InitInputEvent(aWheelEvent);
 
@@ -1324,7 +1336,11 @@ bool MouseScrollHandler::Device::Elantech::HandleKeyMessage(
       WidgetCommandEvent appCommandEvent(
           true, (aWParam == VK_NEXT) ? nsGkAtoms::Forward : nsGkAtoms::Back,
           aWidget);
-      InitEvent(aWidget, appCommandEvent);
+
+      
+      
+      
+      InitEvent(aWidget, appCommandEvent, nullptr);
       aWidget->DispatchWindowEvent(&appCommandEvent);
     } else {
       MOZ_LOG(gMouseScrollLog, LogLevel::Info,
