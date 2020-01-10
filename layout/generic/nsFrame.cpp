@@ -112,6 +112,7 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/css/ImageLoader.h"
+#include "mozilla/dom/SVGPathData.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/gfx/Tools.h"
 #include "mozilla/layers/WebRenderUserData.h"
@@ -1333,6 +1334,30 @@ void nsFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   
   if (StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL) {
     PresContext()->SetBidiEnabled();
+  }
+
+  
+  
+  
+  const StyleOffsetPath* oldPath =
+      aOldComputedStyle ? &aOldComputedStyle->StyleDisplay()->mOffsetPath
+                        : nullptr;
+  const StyleOffsetPath& newPath = StyleDisplay()->mOffsetPath;
+  if (!oldPath || *oldPath != newPath) {
+    if (newPath.IsPath()) {
+      
+      
+      
+      
+      RefPtr<gfx::PathBuilder> builder =
+          gfxPlatform::GetPlatform()
+              ->ScreenReferenceDrawTarget()
+              ->CreatePathBuilder(gfx::FillRule::FILL_WINDING);
+      SetProperty(nsIFrame::OffsetPathCache(),
+                  MotionPathUtils::BuildPath(newPath.AsPath(), builder).take());
+    } else if (oldPath) {
+      DeleteProperty(nsIFrame::OffsetPathCache());
+    }
   }
 
   RemoveStateBits(NS_FRAME_SIMPLE_EVENT_REGIONS | NS_FRAME_SIMPLE_DISPLAYLIST);

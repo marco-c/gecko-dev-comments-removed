@@ -439,17 +439,10 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
   const StyleOffsetPath& path = aFrame->StyleDisplay()->mOffsetPath;
   switch (path.tag) {
     case StyleOffsetPath::Tag::Path: {
-      
-      
-      
-      
-      
-      RefPtr<gfx::PathBuilder> builder =
-          gfxPlatform::GetPlatform()
-              ->ScreenReferenceDrawTarget()
-              ->CreatePathBuilder(gfx::FillRule::FILL_WINDING);
       RefPtr<gfx::Path> gfxPath =
-          MotionPathUtils::BuildPath(path.AsPath(), builder);
+          aFrame->GetProperty(nsIFrame::OffsetPathCache());
+      MOZ_ASSERT(gfxPath,
+                 "Should have a valid cached gfx::Path for offset-path");
       return OffsetPathData::Path(path.AsPath(), gfxPath.forget());
     }
     case StyleOffsetPath::Tag::Ray:
