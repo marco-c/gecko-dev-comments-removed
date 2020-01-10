@@ -87,6 +87,11 @@
             return;
           }
 
+          
+          if (event.shiftKey) {
+            return;
+          }
+
           if (event.defaultPrevented || !event.isTrusted) {
             return;
           }
