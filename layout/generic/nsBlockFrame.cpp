@@ -7410,6 +7410,21 @@ nscoord nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
     return finalBSize;
   }
 
+  if (FirstInFlow()->GetProperty(nsIFrame::HasColumnSpanSiblings())) {
+    MOZ_ASSERT(LastInFlow()->GetNextContinuation(),
+               "Frame constructor should've created column-span siblings!");
+
+    
+    
+    
+    
+    
+    
+    
+    
+    return std::min(finalBSize, aBEndEdgeOfChildren);
+  }
+
   if (statusFromChildren.IsComplete()) {
     if (computedBSizeLeftOver > 0 && NS_UNCONSTRAINEDSIZE != availBSize &&
         finalBSize > availBSize) {
