@@ -109,7 +109,7 @@ def get_parser():
 def start_userspace_oom_killer():
     
     
-    start(["sudo", "earlyoom", "-p", "-r", "60" "--prefer=(chrome|firefox)", "--avoid=python"])
+    start(["sudo", "earlyoom", "-p", "-r", "60", "--prefer=(chrome|firefox)", "--avoid=python"])
 
 
 def make_hosts_file():
