@@ -560,6 +560,12 @@ struct nsCSSRendering {
     
     Size lineSize;
     
+    
+    
+    
+    
+    Float defaultLineThickness = 0.0f;
+    
     Float ascent = 0.0f;
     
     

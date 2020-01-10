@@ -4062,6 +4062,8 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
 
   gfxFloat lineThickness = NS_round(aParams.lineSize.height);
   lineThickness = std::max(lineThickness, 1.0);
+  gfxFloat defaultLineThickness = NS_round(aParams.defaultLineThickness);
+  defaultLineThickness = std::max(defaultLineThickness, 1.0);
 
   gfxFloat ascent = NS_round(aParams.ascent);
   gfxFloat descentLimit = floor(aParams.descentLimit);
@@ -4159,13 +4161,17 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
     
     
     
-    offset = aParams.offset - lineThickness + r.Height();
+    offset = aParams.offset - defaultLineThickness + r.Height();
   } else if (aParams.decoration == StyleTextDecorationLine_LINE_THROUGH) {
     
     
     gfxFloat extra = floor(r.Height() / 2.0 + 0.5);
     extra = std::max(extra, lineThickness);
-    offset = aParams.offset - lineThickness + extra;
+    
+    
+    gfxFloat decorationWidthOffset =
+        (lineThickness - defaultLineThickness) / 2.0;
+    offset = aParams.offset - lineThickness + extra + decorationWidthOffset;
   } else {
     MOZ_ASSERT_UNREACHABLE("Invalid text decoration value");
   }
