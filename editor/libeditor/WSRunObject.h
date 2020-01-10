@@ -132,7 +132,244 @@ inline const WSType operator|(const WSType::Enum& aLeft,
   return WSType(aLeft) | WSType(aRight);
 }
 
-class MOZ_STACK_CLASS WSRunObject final {
+class MOZ_STACK_CLASS WSRunScanner {
+ public:
+  
+
+
+
+
+
+
+
+  template <typename PT, typename CT>
+  WSRunScanner(const HTMLEditor* aHTMLEditor,
+               const EditorDOMPointBase<PT, CT>& aScanStartPoint,
+               const EditorDOMPointBase<PT, CT>& aScanEndPoint);
+  template <typename PT, typename CT>
+  WSRunScanner(const HTMLEditor* aHTMLEditor,
+               const EditorDOMPointBase<PT, CT>& aScanStartPoint)
+      : WSRunScanner(aHTMLEditor, aScanStartPoint, aScanStartPoint) {}
+  WSRunScanner(const HTMLEditor* aHTMLEditor, nsINode* aScanStartNode,
+               int32_t aScanStartOffset, nsINode* aScanEndNode,
+               int32_t aScanEndOffset)
+      : WSRunScanner(aHTMLEditor,
+                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
+                     EditorRawDOMPoint(aScanEndNode, aScanEndOffset)) {}
+  WSRunScanner(const HTMLEditor* aHTMLEditor, nsINode* aScanStartNode,
+               int32_t aScanStartOffset)
+      : WSRunScanner(aHTMLEditor,
+                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
+                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset)) {}
+  ~WSRunScanner();
+
+  
+  
+  
+  
+  
+  
+  template <typename PT, typename CT>
+  void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
+                       nsCOMPtr<nsINode>* outVisNode, int32_t* outVisOffset,
+                       WSType* outType) const;
+
+  template <typename PT, typename CT>
+  void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
+                       WSType* outType) const {
+    NextVisibleNode(aPoint, nullptr, nullptr, outType);
+  }
+
+  
+  
+  
+  
+  
+  
+  template <typename PT, typename CT>
+  void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
+                        nsCOMPtr<nsINode>* outVisNode, int32_t* outVisOffset,
+                        WSType* outType) const;
+
+  template <typename PT, typename CT>
+  void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
+                        WSType* outType) const {
+    PriorVisibleNode(aPoint, nullptr, nullptr, outType);
+  }
+
+ protected:
+  
+  
+  
+  struct WSFragment final {
+    nsCOMPtr<nsINode> mStartNode;  
+    nsCOMPtr<nsINode> mEndNode;    
+    int32_t mStartOffset;          
+    int32_t mEndOffset;            
+    
+    WSType mType, mLeftType, mRightType;
+    
+    WSFragment *mLeft, *mRight;
+
+    WSFragment()
+        : mStartOffset(0), mEndOffset(0), mLeft(nullptr), mRight(nullptr) {}
+
+    EditorRawDOMPoint StartPoint() const {
+      return EditorRawDOMPoint(mStartNode, mStartOffset);
+    }
+    EditorRawDOMPoint EndPoint() const {
+      return EditorRawDOMPoint(mEndNode, mEndOffset);
+    }
+  };
+
+  
+  
+  
+  
+  struct MOZ_STACK_CLASS WSPoint final {
+    RefPtr<dom::Text> mTextNode;
+    uint32_t mOffset;
+    char16_t mChar;
+
+    WSPoint() : mTextNode(nullptr), mOffset(0), mChar(0) {}
+
+    WSPoint(dom::Text* aTextNode, int32_t aOffset, char16_t aChar)
+        : mTextNode(aTextNode), mOffset(aOffset), mChar(aChar) {}
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename PT, typename CT>
+  WSFragment* FindNearestRun(const EditorDOMPointBase<PT, CT>& aPoint,
+                             bool aForward) const;
+
+  
+
+
+
+  template <typename PT, typename CT>
+  WSPoint GetNextCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
+  WSPoint GetNextCharPoint(const WSPoint& aPoint) const;
+
+  
+
+
+
+
+
+
+
+
+  template <typename PT, typename CT>
+  WSPoint GetNextCharPointInternal(
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
+  template <typename PT, typename CT>
+  WSPoint GetPreviousCharPointInternal(
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
+
+  nsresult GetWSNodes();
+
+  
+
+
+
+
+  nsINode* GetWSBoundingParent() const;
+
+  static bool IsBlockNode(nsINode* aNode);
+
+  nsIContent* GetPreviousWSNodeInner(nsINode* aStartNode,
+                                     nsINode* aBlockParent) const;
+  nsIContent* GetPreviousWSNode(const EditorDOMPoint& aPoint,
+                                nsINode* aBlockParent) const;
+  nsIContent* GetNextWSNodeInner(nsINode* aStartNode,
+                                 nsINode* aBlockParent) const;
+  nsIContent* GetNextWSNode(const EditorDOMPoint& aPoint,
+                            nsINode* aBlockParent) const;
+
+  
+
+
+
+  template <typename PT, typename CT>
+  WSPoint GetPreviousCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
+  WSPoint GetPreviousCharPoint(const WSPoint& aPoint) const;
+
+  char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset) const;
+
+  void GetRuns();
+  void ClearRuns();
+  void MakeSingleWSRun(WSType aType);
+
+  
+  nsTArray<RefPtr<dom::Text>> mNodeArray;
+
+  
+  EditorDOMPoint mScanStartPoint;
+  EditorDOMPoint mScanEndPoint;
+  
+  
+
+  
+  RefPtr<Element> mEditingHost;
+
+  
+  bool mPRE;
+
+  
+  nsCOMPtr<nsINode> mStartNode;
+  int32_t mStartOffset;
+  
+  WSType mStartReason;
+  
+  nsCOMPtr<nsINode> mStartReasonNode;
+
+  
+  nsCOMPtr<nsINode> mEndNode;
+  int32_t mEndOffset;
+  
+  WSType mEndReason;
+  
+  nsCOMPtr<nsINode> mEndReasonNode;
+
+  
+  RefPtr<dom::Text> mFirstNBSPNode;
+  int32_t mFirstNBSPOffset;
+
+  
+  RefPtr<dom::Text> mLastNBSPNode;
+  int32_t mLastNBSPOffset;
+
+  
+  WSFragment* mStartRun;
+
+  
+  WSFragment* mEndRun;
+
+  
+  const HTMLEditor* mHTMLEditor;
+};
+
+class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
  protected:
   typedef EditorBase::AutoTransactionsConserveSelection
       AutoTransactionsConserveSelection;
@@ -173,7 +410,6 @@ class MOZ_STACK_CLASS WSRunObject final {
       : WSRunObject(aHTMLEditor,
                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset)) {}
-  ~WSRunObject();
 
   
   
@@ -280,103 +516,13 @@ class MOZ_STACK_CLASS WSRunObject final {
 
   
   
-  
-  
-  
-  
-  template <typename PT, typename CT>
-  void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                        nsCOMPtr<nsINode>* outVisNode, int32_t* outVisOffset,
-                        WSType* outType) const;
-
-  template <typename PT, typename CT>
-  void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                        WSType* outType) const {
-    PriorVisibleNode(aPoint, nullptr, nullptr, outType);
-  }
-
-  
-  
-  
-  
-  
-  
-  template <typename PT, typename CT>
-  void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                       nsCOMPtr<nsINode>* outVisNode, int32_t* outVisOffset,
-                       WSType* outType) const;
-
-  template <typename PT, typename CT>
-  void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                       WSType* outType) const {
-    NextVisibleNode(aPoint, nullptr, nullptr, outType);
-  }
-
-  
-  
   MOZ_CAN_RUN_SCRIPT nsresult AdjustWhitespace();
 
   Element* GetEditingHost() const { return mEditingHost; }
 
  protected:
-  
-  
-  
-  struct WSFragment final {
-    nsCOMPtr<nsINode> mStartNode;  
-    nsCOMPtr<nsINode> mEndNode;    
-    int32_t mStartOffset;          
-    int32_t mEndOffset;            
-    
-    WSType mType, mLeftType, mRightType;
-    
-    WSFragment *mLeft, *mRight;
+  using WSPoint = WSRunScanner::WSPoint;
 
-    WSFragment()
-        : mStartOffset(0), mEndOffset(0), mLeft(nullptr), mRight(nullptr) {}
-
-    EditorRawDOMPoint StartPoint() const {
-      return EditorRawDOMPoint(mStartNode, mStartOffset);
-    }
-    EditorRawDOMPoint EndPoint() const {
-      return EditorRawDOMPoint(mEndNode, mEndOffset);
-    }
-  };
-
-  
-  
-  
-  
-  struct MOZ_STACK_CLASS WSPoint final {
-    RefPtr<dom::Text> mTextNode;
-    uint32_t mOffset;
-    char16_t mChar;
-
-    WSPoint() : mTextNode(nullptr), mOffset(0), mChar(0) {}
-
-    WSPoint(dom::Text* aTextNode, int32_t aOffset, char16_t aChar)
-        : mTextNode(aTextNode), mOffset(aOffset), mChar(aChar) {}
-  };
-
-  
-
-
-
-
-  nsINode* GetWSBoundingParent() const;
-
-  nsresult GetWSNodes();
-  void GetRuns();
-  void ClearRuns();
-  void MakeSingleWSRun(WSType aType);
-  nsIContent* GetPreviousWSNodeInner(nsINode* aStartNode,
-                                     nsINode* aBlockParent) const;
-  nsIContent* GetPreviousWSNode(const EditorDOMPoint& aPoint,
-                                nsINode* aBlockParent) const;
-  nsIContent* GetNextWSNodeInner(nsINode* aStartNode,
-                                 nsINode* aBlockParent) const;
-  nsIContent* GetNextWSNode(const EditorDOMPoint& aPoint,
-                            nsINode* aBlockParent) const;
   MOZ_CAN_RUN_SCRIPT nsresult PrepareToDeleteRangePriv(WSRunObject* aEndObject);
   MOZ_CAN_RUN_SCRIPT nsresult PrepareToSplitAcrossBlocksPriv();
 
@@ -391,38 +537,6 @@ class MOZ_STACK_CLASS WSRunObject final {
 
   MOZ_CAN_RUN_SCRIPT nsresult DeleteRange(const EditorDOMPoint& aStartPoint,
                                           const EditorDOMPoint& aEndPoint);
-
-  
-
-
-
-  template <typename PT, typename CT>
-  WSPoint GetNextCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
-  WSPoint GetNextCharPoint(const WSPoint& aPoint) const;
-
-  
-
-
-
-  template <typename PT, typename CT>
-  WSPoint GetPreviousCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
-  WSPoint GetPreviousCharPoint(const WSPoint& aPoint) const;
-
-  
-
-
-
-
-
-
-
-
-  template <typename PT, typename CT>
-  WSPoint GetNextCharPointInternal(
-      const EditorDOMPointBase<PT, CT>& aPoint) const;
-  template <typename PT, typename CT>
-  WSPoint GetPreviousCharPointInternal(
-      const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   
 
@@ -457,32 +571,6 @@ class MOZ_STACK_CLASS WSRunObject final {
                                  dom::Text** outEndNode,
                                  int32_t* outEndOffset) const;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  template <typename PT, typename CT>
-  WSFragment* FindNearestRun(const EditorDOMPointBase<PT, CT>& aPoint,
-                             bool aForward) const;
-
-  char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset) const;
   MOZ_CAN_RUN_SCRIPT nsresult CheckTrailingNBSPOfRun(WSFragment* aRun);
 
   
@@ -500,7 +588,6 @@ class MOZ_STACK_CLASS WSRunObject final {
   nsresult CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode, int32_t aOffset);
 
   MOZ_CAN_RUN_SCRIPT nsresult Scrub();
-  static bool IsBlockNode(nsINode* aNode);
 
   EditorDOMPoint StartPoint() const {
     return EditorDOMPoint(mStartNode, mStartOffset);
@@ -508,50 +595,6 @@ class MOZ_STACK_CLASS WSRunObject final {
   EditorDOMPoint EndPoint() const {
     return EditorDOMPoint(mEndNode, mEndOffset);
   }
-
-  
-  EditorDOMPoint mScanStartPoint;
-  EditorDOMPoint mScanEndPoint;
-
-  
-  RefPtr<Element> mEditingHost;
-
-  
-  
-
-  
-  bool mPRE;
-  
-  nsCOMPtr<nsINode> mStartNode;
-  int32_t mStartOffset;
-  
-  WSType mStartReason;
-  
-  nsCOMPtr<nsINode> mStartReasonNode;
-
-  
-  nsCOMPtr<nsINode> mEndNode;
-  int32_t mEndOffset;
-  
-  WSType mEndReason;
-  
-  nsCOMPtr<nsINode> mEndReasonNode;
-
-  
-  RefPtr<dom::Text> mFirstNBSPNode;
-  int32_t mFirstNBSPOffset;
-
-  
-  RefPtr<dom::Text> mLastNBSPNode;
-  int32_t mLastNBSPOffset;
-
-  
-  nsTArray<RefPtr<dom::Text>> mNodeArray;
-
-  
-  WSFragment* mStartRun;
-  
-  WSFragment* mEndRun;
 
   
   HTMLEditor* mHTMLEditor;
