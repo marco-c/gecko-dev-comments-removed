@@ -41,13 +41,16 @@ let gSyncChooseWhatToSync = {
     
     
     let enginePrefs = [
-      ["services.sync.engine.addresses.available", ".sync-engine-addresses"],
-      [
-        "services.sync.engine.creditcards.available",
-        ".sync-engine-creditcards",
-      ],
+      ["services.sync.engine.addresses", ".sync-engine-addresses"],
+      ["services.sync.engine.creditcards", ".sync-engine-creditcards"],
     ];
-    for (let [availablePref, className] of enginePrefs) {
+    for (let [enabledPref, className] of enginePrefs) {
+      let availablePref = enabledPref + ".available";
+      
+      
+      if (Services.prefs.getBoolPref(enabledPref, false)) {
+        Services.prefs.setBoolPref(availablePref, true);
+      }
       if (!Services.prefs.getBoolPref(availablePref)) {
         let elt = document.querySelector(className);
         elt.hidden = true;
