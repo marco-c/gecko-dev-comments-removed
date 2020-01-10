@@ -426,8 +426,8 @@ class SimdConstant {
 enum class IntConversionBehavior {
   
   
-  Normal,
-  NegativeZeroCheck,
+  Normal,             
+  NegativeZeroCheck,  
   
   Truncate,
   ClampToUint8,

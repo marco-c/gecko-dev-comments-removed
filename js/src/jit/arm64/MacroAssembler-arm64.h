@@ -530,26 +530,55 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
   void convertDoubleToInt32(FloatRegister src, Register dest, Label* fail,
                             bool negativeZeroCheck = true) {
-    vixl::UseScratchRegisterScope temps(this);
-    const ARMFPRegister scratch64 = temps.AcquireD();
-
-    ARMFPRegister fsrc(src, 64);
+    ARMFPRegister fsrc64(src, 64);
     ARMRegister dest32(dest, 32);
-    ARMRegister dest64(dest, 64);
 
-    MOZ_ASSERT(!scratch64.Is(fsrc));
+    
+    
+    if (CPUHas(vixl::CPUFeatures::kFP, vixl::CPUFeatures::kJSCVT)) {
+      
+      
+      Fjcvtzs(dest32, fsrc64);
 
-    Fcvtzs(dest32, fsrc);      
-    Scvtf(scratch64, dest32);  
-    Fcmp(scratch64, fsrc);
-    B(fail, Assembler::NotEqual);
+      if (negativeZeroCheck) {
+        B(fail, Assembler::NonZero);
+      } else {
+        Label done;
+        B(&done, Assembler::Zero);  
 
-    if (negativeZeroCheck) {
-      Label nonzero;
-      Cbnz(dest32, &nonzero);
-      Fmov(dest64, fsrc);
-      Cbnz(dest64, fail);
-      bind(&nonzero);
+        
+        vixl::UseScratchRegisterScope temps(this);
+        const ARMFPRegister scratch64 = temps.AcquireD();
+        MOZ_ASSERT(!scratch64.Is(fsrc64));
+
+        
+        
+        Fmov(scratch64, xzr);
+        Fcmp(scratch64, fsrc64);
+        B(fail, Assembler::NotEqual);  
+
+        bind(&done);
+      }
+    } else {
+      
+      ARMRegister dest64(dest, 64);
+
+      vixl::UseScratchRegisterScope temps(this);
+      const ARMFPRegister scratch64 = temps.AcquireD();
+      MOZ_ASSERT(!scratch64.Is(fsrc64));
+
+      Fcvtzs(dest32, fsrc64);    
+      Scvtf(scratch64, dest32);  
+      Fcmp(scratch64, fsrc64);
+      B(fail, Assembler::NotEqual);
+
+      if (negativeZeroCheck) {
+        Label nonzero;
+        Cbnz(dest32, &nonzero);
+        Fmov(dest64, fsrc64);
+        Cbnz(dest64, fail);
+        bind(&nonzero);
+      }
     }
   }
   void convertFloat32ToInt32(FloatRegister src, Register dest, Label* fail,

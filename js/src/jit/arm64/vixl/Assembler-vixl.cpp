@@ -477,6 +477,8 @@ Assembler::Assembler(PositionIndependentCodeOption pic)
     : pic_(pic),
       cpu_features_(CPUFeatures::AArch64LegacyBaseline())
 {
+  
+  cpu_features_.Combine(CPUFeatures::InferFromOS());
 }
 
 
