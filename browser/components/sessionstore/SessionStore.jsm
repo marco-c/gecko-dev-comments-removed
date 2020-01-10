@@ -718,6 +718,14 @@ var SessionStoreInternal = {
           this._updateSessionStartTime(state);
 
           
+          delete state.windows[0].hidden;
+          
+          delete state.windows[0].isPopup;
+          
+          if (state.windows[0].sizemode == "minimized")
+            state.windows[0].sizemode = "normal";
+
+          
           
           state.windows.forEach(function(aWindow) {
             delete aWindow.__lastSessionWindowID;
