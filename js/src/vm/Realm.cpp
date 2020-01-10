@@ -62,16 +62,12 @@ Realm::Realm(Compartment* comp, const JS::RealmOptions& options)
 
 Realm::~Realm() {
   MOZ_ASSERT(!hasBeenEnteredIgnoringJit());
+  MOZ_ASSERT(!isDebuggee());
 
   
   if (coverage::IsLCovEnabled()) {
     runtime_->lcovOutput().writeLCovResult(lcovOutput);
   }
-
-  
-  
-  MOZ_ASSERT_IF(runtime_->gc.shutdownCollectedEverything(), !isDebuggee());
-  unsetIsDebuggee();
 
   MOZ_ASSERT(runtime_->numRealms > 0);
   runtime_->numRealms--;
