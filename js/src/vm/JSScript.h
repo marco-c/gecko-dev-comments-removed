@@ -2744,11 +2744,6 @@ class JSScript : public js::BaseScript {
     }
     return nullptr;
   }
-  
-
-
-
-  inline void ensureNonLazyCanonicalFunction();
 
   bool isModule() const {
     MOZ_ASSERT(hasFlag(ImmutableFlags::IsModule) ==

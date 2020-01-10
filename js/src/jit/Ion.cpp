@@ -1746,10 +1746,6 @@ static AbortReason IonCompile(JSContext* cx, JSScript* script,
 
   cx->check(script);
 
-  
-  
-  script->ensureNonLazyCanonicalFunction();
-
   auto alloc =
       cx->make_unique<LifoAlloc>(TempAllocator::PreferredLifoChunkSize);
   if (!alloc) {
