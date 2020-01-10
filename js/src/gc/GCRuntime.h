@@ -479,6 +479,10 @@ class GCRuntime {
   bool isVerifyPreBarriersEnabled() const { return false; }
 #endif
 
+#ifdef JSGC_HASH_TABLE_CHECKS
+  void checkHashTablesAfterMovingGC();
+#endif
+
   
   void queueUnusedLifoBlocksForFree(LifoAlloc* lifo);
   void queueAllLifoBlocksForFree(LifoAlloc* lifo);
@@ -568,6 +572,8 @@ class GCRuntime {
   IncrementalResult budgetIncrementalGC(bool nonincrementalByAPI,
                                         JS::GCReason reason,
                                         SliceBudget& budget);
+  void checkZoneIsScheduled(Zone* zone, JS::GCReason reason,
+                            const char* trigger);
   IncrementalResult resetIncrementalGC(AbortReason reason);
 
   
@@ -615,7 +621,11 @@ class GCRuntime {
   bool shouldPreserveJITCode(JS::Realm* realm,
                              const mozilla::TimeStamp& currentTime,
                              JS::GCReason reason, bool canAllocateMoreCode);
+  void discardJITCodeForGC();
   void startBackgroundFreeAfterMinorGC();
+  void relazifyFunctionsForShrinkingGC();
+  void purgeShapeCachesForShrinkingGC();
+  void purgeSourceURLsForShrinkingGC();
   void traceRuntimeForMajorGC(JSTracer* trc, AutoGCSession& session);
   void traceRuntimeAtoms(JSTracer* trc, const AutoAccessAtomsZone& atomsAccess);
   void traceKeptAtoms(JSTracer* trc);
@@ -638,6 +648,7 @@ class GCRuntime {
   void markAllGrayReferences(gcstats::PhaseKind phase);
 
   void beginSweepPhase(JS::GCReason reason, AutoGCSession& session);
+  void dropStringWrappers();
   void groupZonesForSweeping(JS::GCReason reason);
   MOZ_MUST_USE bool findSweepGroupEdges();
   void getNextSweepGroup();
@@ -647,6 +658,7 @@ class GCRuntime {
   void markIncomingCrossCompartmentPointers(MarkColor color);
   IncrementalProgress beginSweepingSweepGroup(JSFreeOp* fop,
                                               SliceBudget& budget);
+  void updateAtomsBitmap();
   void sweepDebuggerOnMainThread(JSFreeOp* fop);
   void sweepJitDataOnMainThread(JSFreeOp* fop);
   IncrementalProgress endSweepingSweepGroup(JSFreeOp* fop, SliceBudget& budget);
@@ -660,7 +672,7 @@ class GCRuntime {
   IncrementalProgress finalizeAllocKind(JSFreeOp* fop, SliceBudget& budget);
   IncrementalProgress sweepShapeTree(JSFreeOp* fop, SliceBudget& budget);
   void endSweepPhase(bool lastGC);
-  bool allCCVisibleZonesWereCollected() const;
+  bool allCCVisibleZonesWereCollected();
   void sweepZones(JSFreeOp* fop, bool destroyingRuntime);
   void decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock);
   void startDecommit();
@@ -814,7 +826,7 @@ class GCRuntime {
   }
 
   
-  void resetBufferedGrayRoots() const;
+  void resetBufferedGrayRoots();
 
   
   void clearBufferedGrayRoots() {
