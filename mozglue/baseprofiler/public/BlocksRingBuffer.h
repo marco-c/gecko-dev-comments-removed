@@ -117,15 +117,42 @@ class BlocksRingBuffer {
 
   
   
+
+  
   explicit BlocksRingBuffer(PowerOfTwo<Length> aLength) : mBuffer(aLength) {}
+
+  
+  BlocksRingBuffer(UniquePtr<Buffer::Byte[]> aExistingBuffer,
+                   PowerOfTwo<Length> aLength)
+      : mBuffer(std::move(aExistingBuffer), aLength) {}
+
+  
+  BlocksRingBuffer(Buffer::Byte* aExternalBuffer, PowerOfTwo<Length> aLength)
+      : mBuffer(aExternalBuffer, aLength) {}
 
   
   
   
   
+
+  
   template <typename Deleter>
   explicit BlocksRingBuffer(PowerOfTwo<Length> aLength, Deleter&& aDeleter)
       : mBuffer(aLength), mDeleter(std::forward<Deleter>(aDeleter)) {}
+
+  
+  template <typename Deleter>
+  explicit BlocksRingBuffer(UniquePtr<Buffer::Byte[]> aExistingBuffer,
+                            PowerOfTwo<Length> aLength, Deleter&& aDeleter)
+      : mBuffer(std::move(aExistingBuffer), aLength),
+        mDeleter(std::forward<Deleter>(aDeleter)) {}
+
+  
+  template <typename Deleter>
+  explicit BlocksRingBuffer(Buffer::Byte* aExternalBuffer,
+                            PowerOfTwo<Length> aLength, Deleter&& aDeleter)
+      : mBuffer(aExternalBuffer, aLength),
+        mDeleter(std::forward<Deleter>(aDeleter)) {}
 
   
   

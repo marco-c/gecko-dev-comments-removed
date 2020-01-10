@@ -50,8 +50,29 @@ class ModuloBuffer {
   static_assert(sizeof(Index) >= sizeof(Offset),
                 "ModuloBuffer::Index size must >= Offset");
 
+  
   explicit ModuloBuffer(PowerOfTwo<Length> aLength)
-      : mMask(aLength.Mask()), mBuffer(new Byte[aLength.Value()]) {}
+      : mMask(aLength.Mask()),
+        mBuffer(WrapNotNull(new Byte[aLength.Value()])),
+        mBufferDeleter([](Byte* aBuffer) { delete[] aBuffer; }) {}
+
+  
+  
+  
+  ModuloBuffer(UniquePtr<Byte[]> aExistingBuffer, PowerOfTwo<Length> aLength)
+      : mMask(aLength.Mask()),
+        mBuffer(WrapNotNull(aExistingBuffer.release())),
+        mBufferDeleter([](Byte* aBuffer) { delete[] aBuffer; }) {}
+
+  
+  ModuloBuffer(Byte* aExternalBuffer, PowerOfTwo<Length> aLength)
+      : mMask(aLength.Mask()), mBuffer(WrapNotNull(aExternalBuffer)) {}
+
+  ~ModuloBuffer() {
+    if (mBufferDeleter) {
+      mBufferDeleter(mBuffer);
+    }
+  }
 
   PowerOfTwo<Length> BufferLength() const {
     return PowerOfTwo<Length>(mMask.MaskValue() + 1);
@@ -408,7 +429,10 @@ class ModuloBuffer {
   const PowerOfTwoMask<Offset> mMask;
 
   
-  UniquePtr<Byte[]> mBuffer;
+  NotNull<Byte*> mBuffer;
+
+  
+  std::function<void(Byte*)> mBufferDeleter;
 };
 
 }  
