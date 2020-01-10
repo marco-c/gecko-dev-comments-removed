@@ -379,8 +379,6 @@ class nsDocumentViewer final : public nsIContentViewer,
                                    bool aIsPrintingOrPP, bool aStartAtTop);
 #endif  
 
-  void ReturnToGalleyPresentation();
-
   
   
   
@@ -3762,14 +3760,67 @@ nsDocumentViewer::Cancel() {
   return mPrintJob->Cancel();
 }
 
+#  if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
+
+static void ResetFocusState(nsIDocShell* aDocShell) {
+  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+  if (!fm) {
+    return;
+  }
+
+  nsCOMPtr<nsISimpleEnumerator> docShellEnumerator;
+  aDocShell->GetDocShellEnumerator(nsIDocShellTreeItem::typeContent,
+                                   nsIDocShell::ENUMERATE_FORWARDS,
+                                   getter_AddRefs(docShellEnumerator));
+
+  nsCOMPtr<nsISupports> currentContainer;
+  bool hasMoreDocShells;
+  while (NS_SUCCEEDED(docShellEnumerator->HasMoreElements(&hasMoreDocShells)) &&
+         hasMoreDocShells) {
+    docShellEnumerator->GetNext(getter_AddRefs(currentContainer));
+    nsCOMPtr<nsPIDOMWindowOuter> win = do_GetInterface(currentContainer);
+    if (win) {
+      fm->ClearFocus(win);
+    }
+  }
+}
+#  endif  
+
 NS_IMETHODIMP
 nsDocumentViewer::ExitPrintPreview() {
-  if (GetIsPrinting()) return NS_ERROR_FAILURE;
   NS_ENSURE_TRUE(mPrintJob, NS_ERROR_FAILURE);
 
-  if (GetIsPrintPreview()) {
-    ReturnToGalleyPresentation();
+  if (GetIsPrinting()) {
+    
+    
+    return NS_ERROR_FAILURE;
   }
+
+  if (!GetIsPrintPreview()) {
+    NS_ERROR("Wow, we should never get here!");
+    return NS_OK;
+  }
+
+#  if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
+  mPrintJob->TurnScriptingOn(true);
+  mPrintJob->Destroy();
+  mPrintJob = nullptr;
+
+  
+  
+  
+
+  SetIsPrintPreview(false);
+
+  nsCOMPtr<nsIDocShell> docShell(mContainer);
+  ResetFocusState(docShell);
+
+  SetTextZoom(mTextZoom);
+  SetFullZoom(mPageZoom);
+  SetOverrideDPPX(mOverrideDPPX);
+  Show();
+#  endif  
+
   return NS_OK;
 }
 
@@ -3973,55 +4024,6 @@ void nsDocumentViewer::IncrementDestroyBlockedCount() {
 
 void nsDocumentViewer::DecrementDestroyBlockedCount() {
   --mDestroyBlockedCount;
-}
-
-
-
-#if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
-
-
-static void ResetFocusState(nsIDocShell* aDocShell) {
-  nsIFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (!fm) return;
-
-  nsCOMPtr<nsISimpleEnumerator> docShellEnumerator;
-  aDocShell->GetDocShellEnumerator(nsIDocShellTreeItem::typeContent,
-                                   nsIDocShell::ENUMERATE_FORWARDS,
-                                   getter_AddRefs(docShellEnumerator));
-
-  nsCOMPtr<nsISupports> currentContainer;
-  bool hasMoreDocShells;
-  while (NS_SUCCEEDED(docShellEnumerator->HasMoreElements(&hasMoreDocShells)) &&
-         hasMoreDocShells) {
-    docShellEnumerator->GetNext(getter_AddRefs(currentContainer));
-    nsCOMPtr<nsPIDOMWindowOuter> win = do_GetInterface(currentContainer);
-    if (win) fm->ClearFocus(win);
-  }
-}
-#endif  
-
-void nsDocumentViewer::ReturnToGalleyPresentation() {
-#if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
-  if (!GetIsPrintPreview()) {
-    NS_ERROR("Wow, we should never get here!");
-    return;
-  }
-
-  SetIsPrintPreview(false);
-
-  mPrintJob->TurnScriptingOn(true);
-  mPrintJob->Destroy();
-  mPrintJob = nullptr;
-
-  nsCOMPtr<nsIDocShell> docShell(mContainer);
-  ResetFocusState(docShell);
-
-  SetTextZoom(mTextZoom);
-  SetFullZoom(mPageZoom);
-  SetOverrideDPPX(mOverrideDPPX);
-  Show();
-
-#endif  
 }
 
 
