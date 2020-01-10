@@ -25,12 +25,17 @@ import android.util.Log;
 import org.mozilla.apache.commons.codec.digest.DigestUtils;
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
+import org.mozilla.gecko.fxa.login.Cohabiting;
 import org.mozilla.gecko.fxa.login.Married;
 import org.mozilla.gecko.fxa.login.State;
+import org.mozilla.gecko.fxa.login.TokensAndKeysState;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+
+
 
 
 
@@ -107,11 +112,18 @@ public class AuthStateProvider extends ContentProvider {
                 
                 
                 
-                if (accountState instanceof Married) {
-                    final Married marriedState = (Married) accountState;
-                    final byte[] sessionToken = marriedState.getSessionToken();
-                    final byte[] kSync = marriedState.getKSync();
-                    final String kXSCS = marriedState.getKXCS();
+                
+                
+                
+                
+                
+                
+                
+                if (accountState instanceof Cohabiting || accountState instanceof Married) {
+                    final TokensAndKeysState tokensAndKeysState = (TokensAndKeysState) accountState;
+                    final byte[] sessionToken = tokensAndKeysState.getSessionToken();
+                    final byte[] kSync = tokensAndKeysState.getKSync();
+                    final String kXSCS = tokensAndKeysState.getKXCS();
 
                     cursor.addRow(new Object[] { email, sessionToken, kSync, kXSCS });
                 } else {
