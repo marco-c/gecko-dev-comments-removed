@@ -322,8 +322,8 @@ DevToolsStartup.prototype = {
       cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
     if (isInitialLaunch) {
       
-      const hasDevToolsFlag = flags.console || flags.devtools || flags.debugger;
-      this.setupEnabledPref(hasDevToolsFlag);
+      
+      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
 
       
       this.devtoolsFlag = flags.devtools;
@@ -664,51 +664,6 @@ DevToolsStartup.prototype = {
   isDevToolsUser() {
     const selfXssCount = Services.prefs.getIntPref("devtools.selfxss.count", 0);
     return selfXssCount > 0;
-  },
-
-  
-
-
-
-
-
-
-  setupEnabledPref(hasDevToolsFlag) {
-    
-    const experimentState = Services.prefs.getCharPref(
-      "devtools.onboarding.experiment"
-    );
-    const isRegularExperiment = experimentState == "on";
-    const isForcedExperiment = experimentState == "force";
-    const isInExperiment = isRegularExperiment || isForcedExperiment;
-
-    
-    if (!isInExperiment) {
-      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
-      return;
-    }
-
-    
-    if (!Services.prefs.getBoolPref("devtools.onboarding.experiment.flipped")) {
-      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, false);
-      Services.prefs.setBoolPref(
-        "devtools.onboarding.experiment.flipped",
-        true
-      );
-    }
-
-    if (Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
-      
-      return;
-    }
-
-    
-    
-    const isDevToolsUser = isRegularExperiment && this.isDevToolsUser();
-
-    if (hasDevToolsFlag || isDevToolsUser) {
-      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
-    }
   },
 
   hookKeyShortcuts(window) {

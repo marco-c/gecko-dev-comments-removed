@@ -16,18 +16,6 @@ pref("devtools.theme", "light", sticky);
 #endif
 
 
-
-
-
-
-pref("devtools.onboarding.experiment", "off");
-
-
-
-
-pref("devtools.onboarding.experiment.flipped", false);
-
-
 pref("devtools.onboarding.telemetry.logged", false);
 
 
