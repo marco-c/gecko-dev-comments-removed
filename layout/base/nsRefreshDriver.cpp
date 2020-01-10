@@ -1790,14 +1790,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     return;
   }
 
-#if defined(MOZ_WIDGET_ANDROID)
-  gfx::VRManager* vm = gfx::VRManager::Get();
-  if (vm->IsPresenting()) {
-    RunFrameRequestCallbacks(aNowTime);
-    return;
-  }
-#endif  
-
   AUTO_PROFILER_LABEL("nsRefreshDriver::Tick", LAYOUT);
 
   
@@ -2133,7 +2125,12 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
 
     mViewManagerFlushIsPending = false;
     RefPtr<nsViewManager> vm = mPresContext->GetPresShell()->GetViewManager();
-    {
+    bool skipPaint = false;
+#if defined(MOZ_WIDGET_ANDROID)
+    gfx::VRManager* vrm = gfx::VRManager::Get();
+    skipPaint = vrm->IsPresenting();
+#endif 
+    if (!skipPaint) {
       PaintTelemetry::AutoRecordPaint record;
       vm->ProcessPendingUpdates();
     }
