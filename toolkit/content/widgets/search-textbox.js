@@ -151,6 +151,9 @@
         this.setAttribute("searchbutton", "true");
         this.removeAttribute("aria-autocomplete");
         
+        
+        
+        
         this._searchButtonIcon.setAttribute("onclick", "true");
       } else {
         this.removeAttribute("searchbutton");
