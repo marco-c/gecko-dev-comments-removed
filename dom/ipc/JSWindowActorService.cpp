@@ -243,8 +243,8 @@ NS_IMETHODIMP JSWindowActorProtocol::Observe(nsISupports* aSubject,
   return NS_OK;
 }
 
-void JSWindowActorProtocol::RegisterListenersFor(EventTarget* aRoot) {
-  EventListenerManager* elm = aRoot->GetOrCreateListenerManager();
+void JSWindowActorProtocol::RegisterListenersFor(EventTarget* aTarget) {
+  EventListenerManager* elm = aTarget->GetOrCreateListenerManager();
 
   for (auto& event : mChild.mEvents) {
     elm->AddEventListenerByType(EventListenerHolder(this), event.mName,
@@ -252,8 +252,8 @@ void JSWindowActorProtocol::RegisterListenersFor(EventTarget* aRoot) {
   }
 }
 
-void JSWindowActorProtocol::UnregisterListenersFor(EventTarget* aRoot) {
-  EventListenerManager* elm = aRoot->GetOrCreateListenerManager();
+void JSWindowActorProtocol::UnregisterListenersFor(EventTarget* aTarget) {
+  EventListenerManager* elm = aTarget->GetOrCreateListenerManager();
 
   for (auto& event : mChild.mEvents) {
     elm->RemoveEventListenerByType(EventListenerHolder(this), event.mName,
@@ -389,8 +389,8 @@ void JSWindowActorService::RegisterWindowActor(
   }
 
   
-  for (EventTarget* root : mRoots) {
-    proto->RegisterListenersFor(root);
+  for (EventTarget* target : mChromeEventTargets) {
+    proto->RegisterListenersFor(target);
   }
 
   
@@ -411,8 +411,8 @@ void JSWindowActorService::UnregisterWindowActor(const nsAString& aName) {
     }
 
     
-    for (EventTarget* root : mRoots) {
-      proto->UnregisterListenersFor(root);
+    for (EventTarget* target : mChromeEventTargets) {
+      proto->UnregisterListenersFor(target);
     }
 
     
@@ -432,8 +432,8 @@ void JSWindowActorService::LoadJSWindowActorInfos(
     mDescriptors.Put(aInfos[i].name(), proto);
 
     
-    for (EventTarget* root : mRoots) {
-      proto->RegisterListenersFor(root);
+    for (EventTarget* target : mChromeEventTargets) {
+      proto->RegisterListenersFor(target);
     }
 
     
@@ -451,21 +451,21 @@ void JSWindowActorService::GetJSWindowActorInfos(
   }
 }
 
-void JSWindowActorService::RegisterWindowRoot(EventTarget* aRoot) {
-  MOZ_ASSERT(!mRoots.Contains(aRoot));
-  mRoots.AppendElement(aRoot);
+void JSWindowActorService::RegisterChromeEventTarget(EventTarget* aTarget) {
+  MOZ_ASSERT(!mChromeEventTargets.Contains(aTarget));
+  mChromeEventTargets.AppendElement(aTarget);
 
   
   for (auto iter = mDescriptors.Iter(); !iter.Done(); iter.Next()) {
-    iter.Data()->RegisterListenersFor(aRoot);
+    iter.Data()->RegisterListenersFor(aTarget);
   }
 }
 
 
-void JSWindowActorService::UnregisterWindowRoot(EventTarget* aRoot) {
+void JSWindowActorService::UnregisterChromeEventTarget(EventTarget* aTarget) {
   if (gJSWindowActorService) {
     
-    gJSWindowActorService->mRoots.RemoveElement(aRoot);
+    gJSWindowActorService->mChromeEventTargets.RemoveElement(aTarget);
   }
 }
 
