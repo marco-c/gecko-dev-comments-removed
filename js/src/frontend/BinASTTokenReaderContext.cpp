@@ -194,6 +194,8 @@ class HuffmanPreludeReader {
 
   
   struct UnsignedLong : EntryBase {
+    using SymbolType = uint32_t;
+    using Table = HuffmanTableExplicitSymbolsU32;
     explicit UnsignedLong(const NormalizedInterfaceAndField identity)
         : EntryBase(identity) {}
   };
@@ -909,10 +911,7 @@ class HuffmanPreludeReader {
     }
 
     MOZ_MUST_USE JS::Result<Ok> operator()(const UnsignedLong& entry) {
-      
-      
-      MOZ_CRASH("Unimplemented");
-      return Ok();
+      return owner.readTable<UnsignedLong>(entry);
     }
 
     MOZ_MUST_USE JS::Result<Ok> operator()(const List&) {
@@ -947,6 +946,7 @@ using Number = HuffmanPreludeReader::Number;
 using String = HuffmanPreludeReader::String;
 using StringEnum = HuffmanPreludeReader::StringEnum;
 using Sum = HuffmanPreludeReader::Sum;
+using UnsignedLong = HuffmanPreludeReader::UnsignedLong;
 
 BinASTTokenReaderContext::BinASTTokenReaderContext(JSContext* cx,
                                                    ErrorReporter* er,
@@ -1753,7 +1753,6 @@ template <>
 MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readNumberOfSymbols(
     const List& list) {
   BINJS_MOZ_TRY_DECL(length, reader.readVarU32<Compression::No>());
-  
   if (length > MAX_NUMBER_OF_SYMBOLS) {
     return raiseInvalidTableData(list.identity);
   }
@@ -1904,6 +1903,41 @@ HuffmanPreludeReader::readSingleValueTable<StringEnum>(
   MOZ_TRY(table.impl.initWithSingleValue(
       cx_,
        std::move(symbol)));
+  return Ok();
+}
+
+
+
+
+
+template <>
+MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readNumberOfSymbols(
+    const UnsignedLong& entry) {
+  BINJS_MOZ_TRY_DECL(length, reader.readVarU32<Compression::No>());
+  if (length > MAX_NUMBER_OF_SYMBOLS) {
+    return raiseInvalidTableData(entry.identity);
+  }
+  return length;
+}
+
+
+template <>
+MOZ_MUST_USE JS::Result<uint32_t> HuffmanPreludeReader::readSymbol(
+    const UnsignedLong& entry, size_t) {
+  return reader.readUnpackedLong();
+}
+
+
+template <>
+MOZ_MUST_USE JS::Result<Ok>
+HuffmanPreludeReader::readSingleValueTable<UnsignedLong>(
+    HuffmanTableExplicitSymbolsU32& table, const UnsignedLong& entry) {
+  BINJS_MOZ_TRY_DECL(index, reader.readUnpackedLong());
+  
+  
+  MOZ_TRY(table.impl.initWithSingleValue(
+      cx_,
+       std::move(index)));
   return Ok();
 }
 
