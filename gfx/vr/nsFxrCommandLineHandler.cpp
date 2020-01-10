@@ -50,7 +50,7 @@ nsFxrCommandLineHandler::Handle(nsICommandLine* aCmdLine) {
     MOZ_ASSERT(result == NS_OK);
 
     
-    mozilla::gfx::VRShMem shmem(nullptr, true );
+    mozilla::gfx::VRShMem shmem(nullptr, true, false);
     if (shmem.JoinShMem()) {
       mozilla::gfx::VRWindowState windowState = {0};
       shmem.PullWindowState(windowState);

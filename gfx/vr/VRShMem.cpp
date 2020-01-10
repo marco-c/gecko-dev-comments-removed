@@ -8,7 +8,6 @@
 
 #ifdef MOZILLA_INTERNAL_API
 #  include "nsString.h"
-#  include "nsXULAppAPI.h"
 #endif
 
 #include "gfxVRMutex.h"
@@ -51,12 +50,13 @@ void YieldThread() {
 }  
 #endif  
 
-VRShMem::VRShMem(volatile VRExternalShmem* aShmem, bool aRequiresMutex)
+VRShMem::VRShMem(volatile VRExternalShmem* aShmem, bool aVRProcessEnabled,
+                 bool aIsParentProcess)
     : mExternalShmem(aShmem),
-      mIsSharedExternalShmem(aShmem != nullptr)
+      mVRProcessEnabled(aVRProcessEnabled)
 #if defined(XP_WIN)
       ,
-      mRequiresMutex(aRequiresMutex)
+      mIsParentProcess(aIsParentProcess)
 #endif
 #if defined(XP_MACOSX)
       ,
@@ -70,6 +70,7 @@ VRShMem::VRShMem(volatile VRExternalShmem* aShmem, bool aRequiresMutex)
   
   
   
+  MOZ_ASSERT(aShmem == nullptr || !aVRProcessEnabled);
 }
 
 
@@ -78,6 +79,7 @@ VRShMem::VRShMem(volatile VRExternalShmem* aShmem, bool aRequiresMutex)
 
 
 volatile VRExternalShmem* VRShMem::GetExternalShmem() const {
+  MOZ_ASSERT(!mVRProcessEnabled);
 #if defined(XP_MACOSX)
   MOZ_ASSERT(mShmemFD == 0);
 #elif defined(XP_WIN)
@@ -94,25 +96,8 @@ bool VRShMem::IsDisplayStateShutdown() const {
 }
 
 
-
-
-
-bool VRShMem::IsCreatedOnSharedMemory() const {
-  return HasExternalShmem() &&
-#if defined(XP_MACOSX)
-         (mShmemFD != 0)
-#elif defined(XP_WIN)
-         (mShmemFile != nullptr)
-#else
-         false
-#endif
-      ;
-}
-
-
-void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
-  if (HasExternalShmem()) {
-    MOZ_ASSERT(mIsSharedExternalShmem && !IsCreatedOnSharedMemory());
+void VRShMem::CreateShMem() {
+  if (mExternalShmem) {
     return;
   }
 #if defined(XP_WIN)
@@ -142,8 +127,7 @@ void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
   
   
   
-  if (!aCreateOnSharedMemory) {
-    MOZ_ASSERT(mExternalShmem == nullptr);
+  if (!mVRProcessEnabled) {
     
     
     mExternalShmem = new VRExternalShmem();
@@ -151,8 +135,6 @@ void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
     return;
   }
 #endif
-
-  MOZ_ASSERT(aCreateOnSharedMemory);
 
 #if defined(XP_MACOSX)
   if (mShmemFD == 0) {
@@ -195,7 +177,6 @@ void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
       return;
     }
   }
-
   LARGE_INTEGER length;
   length.QuadPart = sizeof(VRExternalShmem);
   mExternalShmem = (VRExternalShmem*)MapViewOfFile(
@@ -249,7 +230,7 @@ void VRShMem::ClearShMem() {
 
 void VRShMem::CloseShMem() {
 #if !defined(MOZ_WIDGET_ANDROID)
-  if (!IsCreatedOnSharedMemory()) {
+  if (!mVRProcessEnabled) {
     if (mExternalShmem) {
       delete mExternalShmem;
       mExternalShmem = nullptr;
@@ -280,8 +261,8 @@ void VRShMem::CloseShMem() {
 #endif
 
 #if defined(XP_WIN)
+  
   if (mMutex) {
-    MOZ_ASSERT(mRequiresMutex);
     CloseHandle(mMutex);
     mMutex = nullptr;
   }
@@ -290,19 +271,13 @@ void VRShMem::CloseShMem() {
 
 
 
+
 bool VRShMem::JoinShMem() {
 #if defined(XP_WIN)
   
   
   
-  if (!mMutex && mRequiresMutex) {
-#  ifdef MOZILLA_INTERNAL_API
-    MOZ_ASSERT(!XRE_IsParentProcess());
-#  endif
-
-    
-    MOZ_ASSERT(GetLastError() == 0);
-
+  if (!mMutex && !mIsParentProcess) {
     mMutex = OpenMutex(MUTEX_ALL_ACCESS,  
                        false,             
                        kMutexName);       
@@ -319,8 +294,7 @@ bool VRShMem::JoinShMem() {
   }
 #endif
 
-  if (HasExternalShmem()) {
-    
+  if (!mVRProcessEnabled) {
     return true;
   }
 
@@ -341,7 +315,6 @@ bool VRShMem::JoinShMem() {
       FILE_MAP_ALL_ACCESS,  
       0, 0, length.QuadPart);
   MOZ_ASSERT(GetLastError() == 0);
-
   
   mShmemFile = targetHandle;
   if (!mExternalShmem) {
@@ -361,30 +334,20 @@ bool VRShMem::JoinShMem() {
 
 void VRShMem::LeaveShMem() {
 #if defined(XP_WIN)
-  
-  MOZ_ASSERT(GetLastError() == 0);
-
   if (mShmemFile) {
     ::CloseHandle(mShmemFile);
     mShmemFile = nullptr;
   }
 #endif
 
-  if (mExternalShmem != nullptr) {
+  if (mExternalShmem != nullptr && mVRProcessEnabled) {
 #if defined(XP_WIN)
-    if (IsCreatedOnSharedMemory()) {
-      UnmapViewOfFile((void*)mExternalShmem);
-      MOZ_ASSERT(GetLastError() == 0);
-    }
-    
-    
-    
+    UnmapViewOfFile((void*)mExternalShmem);
 #endif
     mExternalShmem = nullptr;
   }
 #if defined(XP_WIN)
   if (mMutex) {
-    MOZ_ASSERT(mRequiresMutex);
     CloseHandle(mMutex);
     mMutex = nullptr;
   }
@@ -448,7 +411,7 @@ void VRShMem::PullBrowserState(mozilla::gfx::VRBrowserState& aState) {
 #else
   bool status = true;
 #  if defined(XP_WIN)
-  if (mRequiresMutex) {
+  if (!mIsParentProcess) {
     
     
     WaitForMutex lock(mMutex);
@@ -500,7 +463,7 @@ void VRShMem::PushSystemState(const mozilla::gfx::VRSystemState& aState) {
 #else
   bool lockState = true;
 #  if defined(XP_WIN)
-  if (mRequiresMutex) {
+  if (!mIsParentProcess) {
     
     
     WaitForMutex lock(mMutex);

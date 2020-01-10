@@ -22,10 +22,11 @@ namespace mozilla {
 namespace gfx {
 class VRShMem final {
  public:
-  VRShMem(volatile VRExternalShmem* aShmem, bool aIsMultiThreadOrProc);
+  VRShMem(volatile VRExternalShmem* aShmem, bool aVRProcessEnabled,
+          bool aIsParentProcess);
   ~VRShMem() = default;
 
-  void CreateShMem(bool aCreateOnSharedMemory);
+  void CreateShMem();
   void ClearShMem();
   void CloseShMem();
 
@@ -46,32 +47,15 @@ class VRShMem final {
   void PullWindowState(VRWindowState& aState);
 
   bool HasExternalShmem() const { return mExternalShmem != nullptr; }
-  bool IsSharedExternalShmem() const { return mIsSharedExternalShmem; }
   volatile VRExternalShmem* GetExternalShmem() const;
   bool IsDisplayStateShutdown() const;
 
  private:
-  bool IsCreatedOnSharedMemory() const;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   volatile VRExternalShmem* mExternalShmem = nullptr;
-  
-  
-  bool mIsSharedExternalShmem;
+  bool mVRProcessEnabled;
 
 #if defined(XP_WIN)
-  bool mRequiresMutex;
+  bool mIsParentProcess = false;
 #endif
 
 #if defined(XP_MACOSX)

@@ -138,8 +138,8 @@ void CreateVRWindow(char* firefoxFolderPath, char* firefoxProfilePath,
 
     if (hEvent != nullptr) {
       
-      mozilla::gfx::VRShMem shmem(nullptr, true );
-      shmem.CreateShMem(true );
+      mozilla::gfx::VRShMem shmem(nullptr, true, false);
+      shmem.CreateShMem();
       shmem.PushWindowState(windowState);
 
       

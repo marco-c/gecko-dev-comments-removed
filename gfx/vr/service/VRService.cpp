@@ -70,13 +70,13 @@ VRService::VRService(volatile VRExternalShmem* aShmem)
   
   
   
-  mShmem = new VRShMem(aShmem, aShmem == nullptr );
+  mShmem = new VRShMem(aShmem, aShmem == nullptr, XRE_IsParentProcess());
 }
 
 VRService::~VRService() {
   
   
-  StopInternal(true );
+  Stop();
 }
 
 void VRService::Refresh() {
@@ -121,9 +121,7 @@ void VRService::Start() {
   }
 }
 
-void VRService::Stop() { StopInternal(false ); }
-
-void VRService::StopInternal(bool aFromDtor) {
+void VRService::Stop() {
   if (mServiceThread) {
     mShutdownRequested = true;
     mServiceThread->Stop();
@@ -131,10 +129,7 @@ void VRService::StopInternal(bool aFromDtor) {
     mServiceThread = nullptr;
   }
 
-  if (mShmem != nullptr && (aFromDtor || !mShmem->IsSharedExternalShmem())) {
-    
-    
-    
+  if (mShmem != nullptr) {
     mShmem->LeaveShMem();
     delete mShmem;
     mShmem = nullptr;
