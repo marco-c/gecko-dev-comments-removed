@@ -15,8 +15,6 @@ var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 Services.scriptloader.loadSubScript("resource://specialpowers/MozillaLogger.js", this);
 
-ChromeUtils.defineModuleGetter(this, "setTimeout",
-                               "resource://gre/modules/Timer.jsm");
 ChromeUtils.defineModuleGetter(this, "MockFilePicker",
                                "resource://specialpowers/MockFilePicker.jsm");
 ChromeUtils.defineModuleGetter(this, "MockColorPicker",
@@ -470,8 +468,8 @@ SpecialPowersAPI.prototype = {
 
   _setTimeout(callback) {
     
-    if (typeof window != "undefined")
-      setTimeout(callback, 0);
+    if (typeof this.chromeWindow != "undefined")
+      this.chromeWindow.setTimeout(callback, 0);
     
     else
       this.mm.content.setTimeout(callback, 0);
@@ -484,11 +482,7 @@ SpecialPowersAPI.prototype = {
          
          
          
-         if (typeof window != "undefined")
-           setTimeout(aCallback, 0);
-         
-         else
-           this.mm.content.setTimeout(aCallback, 0);
+         this._setTimeout(aCallback);
        };
        delayAgain(delayAgain.bind(this, callback));
      };
@@ -1493,10 +1487,7 @@ SpecialPowersAPI.prototype = {
 
     var xferable = Cc["@mozilla.org/widget/transferable;1"].
                    createInstance(Ci.nsITransferable);
-    
-    
-    
-    xferable.init(this._getDocShell(typeof(window) == "undefined" ? this.mm.content.window : window)
+    xferable.init(this._getDocShell(this.chromeWindow || this.mm.content.window)
                       .QueryInterface(Ci.nsILoadContext));
     xferable.addDataFlavor(flavor);
     Services.clipboard.getData(xferable, whichClipboard);
