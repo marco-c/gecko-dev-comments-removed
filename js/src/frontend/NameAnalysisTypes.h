@@ -330,6 +330,11 @@ class NameLocation {
 
 using AtomVector = Vector<JSAtom*, 24, SystemAllocPolicy>;
 
+class FunctionBox;
+
+
+using FunctionBoxVector = Vector<const FunctionBox*, 8>;
+
 }  
 }  
 

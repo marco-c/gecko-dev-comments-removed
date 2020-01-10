@@ -248,6 +248,7 @@ class ParseContext : public Nestable<ParseContext> {
     
     
     
+    using FunctionBoxVector = Vector<FunctionBox*, 24, SystemAllocPolicy>;
     PooledVectorPtr<FunctionBoxVector> possibleAnnexBFunctionBoxes_;
 
     
@@ -446,7 +447,7 @@ class ParseContext : public Nestable<ParseContext> {
   
   
   
-  Vector<const FunctionBox*, 8> innerFunctionBoxesForLazy;
+  FunctionBoxVector innerFunctionBoxesForLazy;
 
   
   
