@@ -64,6 +64,14 @@ class DocProxyAccessibleWrap : public HyperTextProxyAccessibleWrap {
     return mIDToAccessibleMap.Get(aID);
   }
 
+  virtual nsIntRect Bounds() const override {
+    
+    
+    
+    
+    return nsIntRect();
+  }
+
  private:
   
 
@@ -103,6 +111,14 @@ class RemoteIframeDocProxyAccessibleWrap : public HyperTextAccessibleWrap {
   virtual void GetNativeInterface(void** aOutAccessible) override {
     RefPtr<IDispatch> addRefed = mCOMProxy;
     addRefed.forget(aOutAccessible);
+  }
+
+  virtual nsIntRect Bounds() const override {
+    
+    
+    
+    
+    return nsIntRect();
   }
 
  private:
