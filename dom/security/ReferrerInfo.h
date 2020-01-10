@@ -89,6 +89,15 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
+  static already_AddRefed<nsIReferrerInfo> CreateFromOtherAndPolicyOverride(
+      nsIReferrerInfo* aOther, uint32_t aPolicyOverride);
+
+  
+
+
+
+
+
 
 
   static already_AddRefed<nsIReferrerInfo> CreateFromDocumentAndPolicyOverride(

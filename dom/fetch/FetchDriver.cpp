@@ -1327,13 +1327,6 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
     SetRequestHeaders(httpChannel);
   }
 
-  nsCOMPtr<nsIHttpChannel> oldHttpChannel = do_QueryInterface(aOldChannel);
-  nsAutoCString tRPHeaderCValue;
-  if (oldHttpChannel) {
-    Unused << oldHttpChannel->GetResponseHeader(
-        NS_LITERAL_CSTRING("referrer-policy"), tRPHeaderCValue);
-  }
-
   
   
   
@@ -1365,20 +1358,27 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
     mRequest->SetURLForInternalRedirect(aFlags, spec, fragment);
   }
 
-  NS_ConvertUTF8toUTF16 tRPHeaderValue(tRPHeaderCValue);
   
   
-  if (!tRPHeaderValue.IsEmpty()) {
-    net::ReferrerPolicy net_referrerPolicy =
-        nsContentUtils::GetReferrerPolicyFromHeader(tRPHeaderValue);
-    if (net_referrerPolicy != net::RP_Unset) {
-      mRequest->SetReferrerPolicy(net_referrerPolicy);
-      
-      if (httpChannel) {
-        nsresult rv = FetchUtil::SetRequestReferrer(mPrincipal, mDocument,
-                                                    httpChannel, mRequest);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+  if (httpChannel) {
+    nsCOMPtr<nsIURI> computedReferrer;
+    nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo();
+    if (referrerInfo) {
+      mRequest->SetReferrerPolicy(
+          static_cast<net::ReferrerPolicy>(referrerInfo->GetReferrerPolicy()));
+      computedReferrer = referrerInfo->GetComputedReferrer();
+    }
+
+    
+    
+    
+    if (computedReferrer) {
+      nsAutoCString spec;
+      rv = computedReferrer->GetSpec(spec);
+      NS_ENSURE_SUCCESS(rv, rv);
+      mRequest->SetReferrer(NS_ConvertUTF8toUTF16(spec));
+    } else {
+      mRequest->SetReferrer(EmptyString());
     }
   }
 
