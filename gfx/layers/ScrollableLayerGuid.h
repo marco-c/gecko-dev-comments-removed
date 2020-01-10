@@ -27,6 +27,7 @@ namespace layers {
 struct ScrollableLayerGuid {
   
   typedef uint64_t ViewID;
+  typedef nsUint64HashKey ViewIDHashKey;
   static const ViewID NULL_SCROLL_ID;  
   static const ViewID START_SCROLL_ID = 2;  
                                             
