@@ -3154,7 +3154,13 @@ pref("dom.largeAllocationHeader.enabled", true);
 pref("browser.tabs.remote.autostart", false);
 
 
+
+
+#ifdef RELEASE_OR_BETA
+pref("fission.autostart", false, locked);
+#else
 pref("fission.autostart", false);
+#endif
 
 
 
