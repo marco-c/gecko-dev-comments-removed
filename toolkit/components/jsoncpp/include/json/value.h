@@ -26,19 +26,6 @@
 
 
 
-
-#if !defined(JSONCPP_NORETURN)
-#if defined(_MSC_VER)
-#define JSONCPP_NORETURN __declspec(noreturn)
-#elif defined(__GNUC__)
-#define JSONCPP_NORETURN __attribute__((__noreturn__))
-#else
-#define JSONCPP_NORETURN
-#endif
-#endif
-
-
-
 #if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING)
 #pragma warning(push)
 #pragma warning(disable : 4251)
@@ -89,9 +76,9 @@ public:
 #endif
 
 
-JSONCPP_NORETURN void throwRuntimeError(String const& msg);
+[[noreturn]] void throwRuntimeError(String const& msg);
 
-JSONCPP_NORETURN void throwLogicError(String const& msg);
+[[noreturn]] void throwLogicError(String const& msg);
 
 
 
@@ -206,11 +193,14 @@ public:
   
   typedef std::string value_type;
 
-  static const Value& null; 
-                            
-  static const Value& nullRef; 
-                               
-  static Value const& nullSingleton(); 
+#if JSON_USE_NULLREF
+  
+  static const Value& null;
+  static const Value& nullRef;
+#endif
+
+  
+  static Value const& nullSingleton();
 
   
   static const LargestInt minLargestInt;

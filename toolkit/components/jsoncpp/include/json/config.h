@@ -31,6 +31,11 @@
 #endif
 
 
+#ifndef JSON_USE_NULLREF
+#define JSON_USE_NULLREF 1
+#endif
+
+
 
 
 
