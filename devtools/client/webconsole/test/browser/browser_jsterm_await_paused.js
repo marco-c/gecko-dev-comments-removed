@@ -16,7 +16,7 @@ add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   const pauseExpression = `(() => {
-    var foo = ["bar"];
+    var inPausedExpression = ["bar"];
     /* Will pause the script and open the debugger panel */
     debugger;
     return "pauseExpression-res";
@@ -34,7 +34,8 @@ add_task(async function() {
   await toolbox.openSplitConsole();
 
   const awaitExpression = `await new Promise(res => {
-    setTimeout(() => res(["res", ...foo]), 1000);
+    const result = ["res", ...inPausedExpression];
+    setTimeout(() => res(result), 1000);
   })`;
 
   const onAwaitResultMessage = waitForMessage(
@@ -43,6 +44,7 @@ add_task(async function() {
     ".message.result"
   );
   execute(hud, awaitExpression);
+
   
   
   
@@ -53,6 +55,9 @@ add_task(async function() {
 
   
   await resume(dbg);
+
+  info("Wait for the paused expression result to be displayed");
+  await waitFor(() => findMessage(hud, "pauseExpression-res", ".result"));
 
   await onAwaitResultMessage;
   const messages = hud.ui.outputNode.querySelectorAll(
