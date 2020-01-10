@@ -1606,7 +1606,7 @@ pub struct OrderedPictureChild {
 
 
 
-#[derive(Hash, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
 struct PrimitiveClusterKey {
     
     
@@ -1788,6 +1788,10 @@ impl PrimitiveList {
                     index
                 }
             );
+
+            if prim_instance.is_chased() {
+                println!("\tcluster {} with {:?}", cluster_index, key);
+            }
 
             
             

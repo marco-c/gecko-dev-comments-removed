@@ -103,6 +103,7 @@ impl TextRunTemplate {
         &mut self,
         frame_state: &mut FrameBuildingState,
     ) {
+        
         if let Some(mut request) = frame_state.gpu_cache.request(&mut self.common.gpu_cache_handle) {
             request.push(ColorF::from(self.font.color).premultiplied());
             
@@ -237,16 +238,13 @@ impl TextRunPrimitive {
 
         
         
-        let transform_glyphs = if transform.has_perspective_component() ||
-           !transform.has_2d_inverse() ||
-           
-           transform.exceeds_2d_scale(FONT_SIZE_LIMIT / device_font_size.to_f64_px()) ||
-           
-           raster_space != RasterSpace::Screen {
-            false
-        } else {
-            true
-        };
+        let transform_glyphs =
+            !transform.has_perspective_component() &&
+            transform.has_2d_inverse() &&
+            
+            !transform.exceeds_2d_scale(FONT_SIZE_LIMIT / device_font_size.to_f64_px()) &&
+            
+            raster_space == RasterSpace::Screen;
 
         
         let font_transform = if transform_glyphs {
@@ -276,7 +274,8 @@ impl TextRunPrimitive {
         
         if (subpixel_mode == SubpixelMode::Deny && self.used_font.bg_color.a == 0) ||
             
-            !transform_glyphs {
+            !transform_glyphs
+        {
             self.used_font.disable_subpixel_aa();
         }
 
