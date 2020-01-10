@@ -224,6 +224,12 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
       return !mContent.mValue.IsEmpty() || !mIndentation.mHeader.IsEmpty();
     }
 
+    
+    uint32_t DeterminePrefixWidth() const {
+      
+      return (mCiteQuoteLevel > 0 ? mCiteQuoteLevel + 1 : 0) + mIndentation.mWidth;
+    }
+
     Indentation mIndentation;
 
     

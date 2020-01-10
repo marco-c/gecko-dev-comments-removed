@@ -1176,10 +1176,7 @@ static bool IsSpaceStuffable(const char16_t* s) {
 
 void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
                                       int32_t aLineFragmentLength) {
-  const uint32_t prefixwidth =
-      (mCurrentLine.mCiteQuoteLevel > 0 ? mCurrentLine.mCiteQuoteLevel + 1
-                                        : 0) +
-      mCurrentLine.mIndentation.mWidth;
+  const uint32_t prefixwidth = mCurrentLine.DeterminePrefixWidth();
 
   if (mLineBreakDue) EnsureVerticalSpace(mFloatingLines);
 
@@ -1233,7 +1230,6 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
     
     uint32_t bonuswidth = (mWrapColumn > 20) ? 4 : 0;
 
-    
     while (mCurrentLine.mContent.mWidth + prefixwidth >
            mWrapColumn + bonuswidth) {
       
