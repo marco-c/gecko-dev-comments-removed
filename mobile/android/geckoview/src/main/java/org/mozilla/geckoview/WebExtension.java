@@ -406,6 +406,7 @@ public class WebExtension {
 
         public final @Nullable GeckoSession session;
 
+        @Retention(RetentionPolicy.SOURCE)
         @IntDef({ENV_TYPE_UNKNOWN, ENV_TYPE_EXTENSION, ENV_TYPE_CONTENT_SCRIPT})
          @interface EnvType {}
          static final int ENV_TYPE_UNKNOWN = 0;
