@@ -20,7 +20,6 @@
 #include "nsXULAppAPI.h"
 
 using namespace mozilla;
-using namespace std;
 
 
 
