@@ -851,6 +851,22 @@ struct GenericHuffmanTable {
   
   HuffmanLookupResult lookup(HuffmanLookup key) const;
 
+  
+  
+  
+  bool isMaybeInterfaceAlwaysNull() const {
+    MOZ_ASSERT(length() == 1 || length() == 2);
+
+    
+    
+    if (length() == 2) {
+      return false;
+    }
+
+    
+    return begin()->toKind() == BinASTKind::_Null;
+  }
+
  private:
   mozilla::Variant<SingleEntryHuffmanTable, TwoEntriesHuffmanTable,
                    SingleLookupHuffmanTable, TwoLookupsHuffmanTable,
@@ -873,27 +889,7 @@ using HuffmanTableExplicitSymbolsF64 = GenericHuffmanTable;
 using HuffmanTableExplicitSymbolsU32 = GenericHuffmanTable;
 using HuffmanTableIndexedSymbolsSum = GenericHuffmanTable;
 using HuffmanTableIndexedSymbolsBool = GenericHuffmanTable;
-
-
-
-struct HuffmanTableIndexedSymbolsMaybeInterface : GenericHuffmanTable {
-  HuffmanTableIndexedSymbolsMaybeInterface() : GenericHuffmanTable() {}
-
-  
-  bool isAlwaysNull() const {
-    MOZ_ASSERT(length() == 1 || length() == 2);
-
-    
-    
-    if (length() == 2) {
-      return false;
-    }
-
-    
-    return begin()->toKind() == BinASTKind::_Null;
-  }
-};
-
+using HuffmanTableIndexedSymbolsMaybeInterface = GenericHuffmanTable;
 using HuffmanTableIndexedSymbolsStringEnum = GenericHuffmanTable;
 using HuffmanTableIndexedSymbolsLiteralString = GenericHuffmanTable;
 using HuffmanTableIndexedSymbolsOptionalLiteralString = GenericHuffmanTable;
@@ -901,8 +897,7 @@ using HuffmanTableIndexedSymbolsOptionalLiteralString = GenericHuffmanTable;
 
 using HuffmanTableValue =
     mozilla::Variant<HuffmanTableUnreachable,  
-                     HuffmanTableInitializing, GenericHuffmanTable,
-                     HuffmanTableIndexedSymbolsMaybeInterface>;
+                     HuffmanTableInitializing, GenericHuffmanTable>;
 
 struct HuffmanTableExplicitSymbolsListLength : GenericHuffmanTable {
   HuffmanTableExplicitSymbolsListLength() : GenericHuffmanTable() {}

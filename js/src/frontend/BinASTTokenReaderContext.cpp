@@ -939,7 +939,7 @@ class HuffmanPreludeReader {
       }
       const auto& tableRef =
           table.as<HuffmanTableIndexedSymbolsMaybeInterface>();
-      if (!tableRef.isAlwaysNull()) {
+      if (!tableRef.isMaybeInterfaceAlwaysNull()) {
         MOZ_TRY(owner.pushFields(entry.kind_));
       }
       return Ok();
@@ -1357,21 +1357,8 @@ JS::Result<BinASTKind> BinASTTokenReaderContext::readTagFromTable(
   BINJS_MOZ_TRY_DECL(bits_,
                      (bitBuffer.getHuffmanLookup<Compression::No>(*this)));
 
-  if (table.is<HuffmanTableIndexedSymbolsSum>()) {
-    const auto& specialized = table.as<HuffmanTableIndexedSymbolsSum>();
+  const auto& specialized = table.as<GenericHuffmanTable>();
 
-    
-    const auto result = specialized.lookup(bits_);
-    if (MOZ_UNLIKELY(!result.isFound())) {
-      return raiseInvalidValue();
-    }
-    bitBuffer.advanceBitBuffer<Compression::No>(result.bitLength());
-    return result.value().toKind();
-  }
-
-  MOZ_ASSERT(table.is<HuffmanTableIndexedSymbolsMaybeInterface>());
-  const auto& specialized =
-      table.as<HuffmanTableIndexedSymbolsMaybeInterface>();
   
   const auto result = specialized.lookup(bits_);
   if (MOZ_UNLIKELY(!result.isFound())) {
