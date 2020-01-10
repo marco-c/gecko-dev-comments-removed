@@ -5351,6 +5351,14 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_NCMOUSEMOVE: {
       LPARAM lParamClient = lParamToClient(lParam);
       if (WithinDraggableRegion(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam))) {
+        if (!sIsInMouseCapture) {
+          TRACKMOUSEEVENT mTrack;
+          mTrack.cbSize = sizeof(TRACKMOUSEEVENT);
+          mTrack.dwFlags = TME_LEAVE | TME_NONCLIENT;
+          mTrack.dwHoverTime = 0;
+          mTrack.hwndTrack = mWnd;
+          TrackMouseEvent(&mTrack);
+        }
         
         
         SendMessage(mWnd, WM_MOUSEMOVE, 0, lParamClient);
@@ -5377,6 +5385,30 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       DispatchPendingEvents();
     } break;
 
+    case WM_NCMOUSELEAVE: {
+      mMouseInDraggableArea = false;
+
+      if (WindowAtMouse() == mWnd) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        TRACKMOUSEEVENT mTrack;
+        mTrack.cbSize = sizeof(TRACKMOUSEEVENT);
+        mTrack.dwFlags = TME_LEAVE;
+        mTrack.dwHoverTime = 0;
+        mTrack.hwndTrack = mWnd;
+        TrackMouseEvent(&mTrack);
+        break;
+      }
+      
+      
+    }
     case WM_MOUSELEAVE: {
       if (!mMousePresent) break;
       if (mMouseInDraggableArea) break;
