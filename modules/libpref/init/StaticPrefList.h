@@ -4764,7 +4764,7 @@ VARCACHE_PREF(
   Live,
   "layout.css.DOMMatrix.enabled",
   layout_css_DOMMatrix_enabled,
-  bool, true
+  RelaxedAtomicBool, true
 )
 
 
@@ -4772,7 +4772,7 @@ VARCACHE_PREF(
   Live,
   "layout.css.DOMQuad.enabled",
   layout_css_DOMQuad_enabled,
-  bool, true
+  RelaxedAtomicBool, true
 )
 
 
@@ -4780,7 +4780,7 @@ VARCACHE_PREF(
   Live,
   "layout.css.DOMPoint.enabled",
   layout_css_DOMPoint_enabled,
-  bool, true
+  RelaxedAtomicBool, true
 )
 
 
