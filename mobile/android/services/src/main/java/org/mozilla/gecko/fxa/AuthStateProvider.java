@@ -180,10 +180,20 @@ public class AuthStateProvider extends ContentProvider {
 
         
         
+        
+        
+        
+
+        
+        
         final HashMap<String, String> packageToSignatureWhitelist = new HashMap<>();
         
         packageToSignatureWhitelist.put(
             "org.mozilla.fenix", "5004779088e7f988d5bc5cc5f8798febf4f8cd084a1b2a46efd4c8ee4aeaf211"
+        );
+        
+        packageToSignatureWhitelist.put(
+            "org.mozilla.fenix.nightly", "77eac4ceed36afefba76179931dd4cc195ab0cd54baf355d215e7bbdd28e402a"
         );
         
         packageToSignatureWhitelist.put(
