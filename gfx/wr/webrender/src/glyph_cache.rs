@@ -6,7 +6,6 @@
 use crate::api::units::DeviceIntPoint;
 use crate::glyph_rasterizer::{FontInstance, GlyphFormat, GlyphKey, GlyphRasterizer};
 use crate::internal_types::FastHashMap;
-use crate::render_backend::{FrameId, FrameStamp};
 use crate::render_task::RenderTaskCache;
 #[cfg(feature = "pathfinder")]
 use crate::render_task::RenderTaskCacheKey;
@@ -44,41 +43,29 @@ pub enum GlyphCacheEntry {
 
 impl GlyphCacheEntry {
     #[cfg(feature = "pathfinder")]
-    fn get_allocated_size(&self, texture_cache: &TextureCache, render_task_cache: &RenderTaskCache)
-                          -> Option<usize> {
+    fn is_allocated(&self, texture_cache: &TextureCache, render_task_cache: &RenderTaskCache)
+                    -> bool {
         match *self {
             GlyphCacheEntry::Cached(ref glyph) => {
                 let render_task_cache_key = &glyph.render_task_cache_key;
-                render_task_cache.get_allocated_size_for_render_task(texture_cache,
-                                                                     &render_task_cache_key)
+                render_task_cache.cache_item_is_allocated_for_render_task(texture_cache,
+                                                                          &render_task_cache_key)
             }
-            GlyphCacheEntry::Pending => Some(0),
+            GlyphCacheEntry::Pending => true,
             
-            GlyphCacheEntry::Blank => None,
+            GlyphCacheEntry::Blank => false,
         }
     }
 
-    #[cfg(feature = "pathfinder")]
-    fn mark_unused(&self, _: &mut TextureCache) {
-    }
-
     #[cfg(not(feature = "pathfinder"))]
-    fn get_allocated_size(&self, texture_cache: &TextureCache, _: &RenderTaskCache)
-                          -> Option<usize> {
+    fn is_allocated(&self, texture_cache: &TextureCache, _: &RenderTaskCache) -> bool {
         match *self {
             GlyphCacheEntry::Cached(ref glyph) => {
-                texture_cache.get_allocated_size(&glyph.texture_cache_handle)
+                texture_cache.is_allocated(&glyph.texture_cache_handle)
             }
-            GlyphCacheEntry::Pending => Some(0),
+            GlyphCacheEntry::Pending => true,
             
-            GlyphCacheEntry::Blank => None,
-        }
-    }
-
-    #[cfg(not(feature = "pathfinder"))]
-    fn mark_unused(&self, texture_cache: &mut TextureCache) {
-        if let GlyphCacheEntry::Cached(ref glyph) = *self {
-            texture_cache.mark_unused(&glyph.texture_cache_handle);
+            GlyphCacheEntry::Blank => false,
         }
     }
 }
@@ -92,53 +79,11 @@ pub enum CachedGlyphData {
     Gpu,
 }
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Default)]
-pub struct GlyphKeyCacheInfo {
-    eviction_notice: EvictionNotice,
-    last_frame_used: FrameId,
-    bytes_used: usize,
-}
-
-pub type GlyphKeyCache = ResourceClassCache<GlyphKey, GlyphCacheEntry, GlyphKeyCacheInfo>;
+pub type GlyphKeyCache = ResourceClassCache<GlyphKey, GlyphCacheEntry, EvictionNotice>;
 
 impl GlyphKeyCache {
-    const DIRTY: usize = !0;
-
     pub fn eviction_notice(&self) -> &EvictionNotice {
-        &self.user_data.eviction_notice
-    }
-
-    fn clear_glyphs(&mut self, texture_cache: &mut TextureCache) {
-        for (_, entry) in self.iter() {
-            entry.mark_unused(texture_cache);
-        }
-        self.clear();
-        self.user_data.bytes_used = 0;
-    }
-
-    pub fn add_glyph(&mut self, key: GlyphKey, value: GlyphCacheEntry) {
-        self.insert(key, value);
-        self.user_data.bytes_used = Self::DIRTY;
-    }
-
-    fn clear_evicted(
-        &mut self,
-        texture_cache: &TextureCache,
-        render_task_cache: &RenderTaskCache,
-    ) {
-        if self.eviction_notice().check() || self.user_data.bytes_used == Self::DIRTY {
-            
-            
-            let mut usage = 0;
-            self.retain(|_, entry| {
-                let size = entry.get_allocated_size(texture_cache, render_task_cache);
-                usage += size.unwrap_or(0);
-                size.is_some()
-            });
-            self.user_data.bytes_used = usage;
-        }
+        &self.user_data
     }
 }
 
@@ -146,30 +91,19 @@ impl GlyphKeyCache {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GlyphCache {
     glyph_key_caches: FastHashMap<FontInstance, GlyphKeyCache>,
-    current_frame: FrameId,
-    bytes_used: usize,
-    max_bytes_used: usize,
 }
 
 impl GlyphCache {
-    
-    pub const DEFAULT_MAX_BYTES_USED: usize = 5 * 1024 * 1024;
-
-    pub fn new(max_bytes_used: usize) -> Self {
+    pub fn new() -> Self {
         GlyphCache {
             glyph_key_caches: FastHashMap::default(),
-            current_frame: Default::default(),
-            bytes_used: 0,
-            max_bytes_used,
         }
     }
 
     pub fn get_glyph_key_cache_for_font_mut(&mut self, font: FontInstance) -> &mut GlyphKeyCache {
-        let cache = self.glyph_key_caches
-                        .entry(font)
-                        .or_insert_with(GlyphKeyCache::new);
-        cache.user_data.last_frame_used = self.current_frame;
-        cache
+        self.glyph_key_caches
+            .entry(font)
+            .or_insert_with(GlyphKeyCache::new)
     }
 
     pub fn get_glyph_key_cache_for_font(&self, font: &FontInstance) -> &GlyphKeyCache {
@@ -187,7 +121,7 @@ impl GlyphCache {
         self.glyph_key_caches = FastHashMap::default();
     }
 
-    pub fn clear_fonts<F>(&mut self, texture_cache: &mut TextureCache, key_fun: F)
+    pub fn clear_fonts<F>(&mut self, key_fun: F)
     where
         for<'r> F: Fn(&'r &FontInstance) -> bool,
     {
@@ -197,70 +131,45 @@ impl GlyphCache {
                 return true;
             }
 
-            cache.clear_glyphs(texture_cache);
+            cache.clear();
             false
         })
     }
 
     
+    
     fn clear_evicted(
         &mut self,
         texture_cache: &TextureCache,
         render_task_cache: &RenderTaskCache,
+        glyph_rasterizer: &mut GlyphRasterizer,
     ) {
-        let mut usage = 0;
-        for cache in self.glyph_key_caches.values_mut() {
-            
-            cache.clear_evicted(texture_cache, render_task_cache);
-            usage += cache.user_data.bytes_used;
-        }
-        self.bytes_used = usage;
-    }
-
-    
-    fn clear_empty_caches(&mut self, glyph_rasterizer: &mut GlyphRasterizer) {
         self.glyph_key_caches.retain(|key, cache| {
             
-            if cache.is_empty() {
-                glyph_rasterizer.delete_font_instance(key);
-                false
+            if cache.eviction_notice().check() {
+                
+                
+                let mut keep_cache = false;
+                cache.retain(|_, entry| {
+                    let keep_glyph = entry.is_allocated(texture_cache, render_task_cache);
+                    keep_cache |= keep_glyph;
+                    keep_glyph
+                });
+                if !keep_cache {
+                    glyph_rasterizer.delete_font_instance(key);
+                }
+                
+                keep_cache
             } else {
                 true
             }
         });
     }
 
-    
-    
-    fn prune_excess_usage(&mut self, texture_cache: &mut TextureCache) {
-        if self.bytes_used < self.max_bytes_used {
-            return;
-        }
-        
-        let mut caches: Vec<_> = self.glyph_key_caches.values_mut().collect();
-        caches.sort_unstable_by(|a, b| {
-            a.user_data.last_frame_used.cmp(&b.user_data.last_frame_used)
-        });
-        
-        for cache in caches {
-            self.bytes_used -= cache.user_data.bytes_used;
-            cache.clear_glyphs(texture_cache);
-            if self.bytes_used < self.max_bytes_used {
-                break;
-            }
-        }
-    }
-
     pub fn begin_frame(&mut self,
-                       stamp: FrameStamp,
-                       texture_cache: &mut TextureCache,
+                       texture_cache: &TextureCache,
                        render_task_cache: &RenderTaskCache,
                        glyph_rasterizer: &mut GlyphRasterizer) {
-        self.current_frame = stamp.frame_id();
-        self.clear_evicted(texture_cache, render_task_cache);
-        self.prune_excess_usage(texture_cache);
-        
-        
-        self.clear_empty_caches(glyph_rasterizer);
+        self.clear_evicted(texture_cache, render_task_cache, glyph_rasterizer);
     }
 }

@@ -20,6 +20,7 @@ use crate::texture_cache::{TextureCache, TextureCacheHandle, Eviction};
 use crate::gpu_cache::GpuCache;
 use crate::render_task::{RenderTaskGraph, RenderTaskCache};
 use crate::profiler::TextureCacheProfileCounters;
+use std::collections::hash_map::Entry;
 
 impl FontContexts {
     
@@ -56,23 +57,32 @@ impl GlyphRasterizer {
 
         
         for key in glyph_keys {
-            if let Some(entry) = glyph_key_cache.try_get(key) {
-                match entry {
-                    GlyphCacheEntry::Cached(ref glyph) => {
-                        
-                        if !texture_cache.request(&glyph.texture_cache_handle, gpu_cache) {
-                            continue;
+            match glyph_key_cache.entry(key.clone()) {
+                Entry::Occupied(entry) => {
+                    let value = entry.into_mut();
+                    match *value {
+                        GlyphCacheEntry::Cached(ref glyph) => {
+                            
+                            if !texture_cache.request(&glyph.texture_cache_handle, gpu_cache) {
+                                continue;
+                            }
                         }
                         
-                        
-                        
+                        GlyphCacheEntry::Blank | GlyphCacheEntry::Pending => continue,
                     }
+
                     
-                    GlyphCacheEntry::Blank | GlyphCacheEntry::Pending => continue,
+                    
+                    
+                    *value = GlyphCacheEntry::Pending;
+                    new_glyphs.push((*key).clone());
+                }
+                Entry::Vacant(entry) => {
+                    
+                    entry.insert(GlyphCacheEntry::Pending);
+                    new_glyphs.push((*key).clone());
                 }
             }
-            new_glyphs.push(key.clone());
-            glyph_key_cache.add_glyph(key.clone(), GlyphCacheEntry::Pending);
         }
 
         if new_glyphs.is_empty() {
@@ -187,7 +197,7 @@ impl GlyphRasterizer {
                         })
                     }
                 };
-                glyph_key_cache.add_glyph(key, glyph_info);
+                glyph_key_cache.insert(key, glyph_info);
             }
         }
 
