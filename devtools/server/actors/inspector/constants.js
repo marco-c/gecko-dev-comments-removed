@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+const EXCLUDED_LISTENER = Symbol("event-collector-excluded-listener");
+
+exports.EXCLUDED_LISTENER = EXCLUDED_LISTENER;
