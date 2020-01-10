@@ -219,26 +219,23 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             
             self.app = "firefox"
             if 'raptor_cmd_line_args' in self.config:
-                for app in ['chrome', 'geckoview', 'fennec', 'refbrow', 'fenix']:
-                    for next_arg in self.config['raptor_cmd_line_args']:
-                        if app in next_arg:
-                            self.app = app
-                            break
+                sub_parser = argparse.ArgumentParser()
                 
-                for activity in ['GeckoViewActivity',
-                                 'BrowserTestActivity',
-                                 'browser.BrowserPerformanceTestActivity']:
-                    for next_arg in self.config['raptor_cmd_line_args']:
-                        if activity in next_arg:
-                            self.activity = activity
-                            break
                 
-                for intent in ['android.intent.action.MAIN',
-                               'android.intent.action.VIEW']:
-                    for next_arg in self.config['raptor_cmd_line_args']:
-                        if intent in next_arg:
-                            self.intent = intent
-                            break
+                sub_parser.add_argument('--app', default=None, dest='app')
+                sub_parser.add_argument('-i', '--intent', default=None, dest='intent')
+                sub_parser.add_argument('-a', '--activity', default=None, dest='activity')
+
+                
+                
+                known, unknown = sub_parser.parse_known_args(self.config['raptor_cmd_line_args'])
+
+                if known.app:
+                    self.app = known.app
+                if known.intent:
+                    self.intent = known.intent
+                if known.activity:
+                    self.activity = known.activity
         else:
             
             self.test = self.config['test']
