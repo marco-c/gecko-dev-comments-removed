@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["GeckoViewTab"];
+var EXPORTED_SYMBOLS = ["GeckoViewTab", "GeckoViewTabBridge"];
 
 const { GeckoViewModule } = ChromeUtils.import(
   "resource://gre/modules/GeckoViewModule.jsm"
@@ -33,16 +33,12 @@ class Tab {
 
 class BrowserAppShim {
   constructor(window) {
-    
-    
-    const tabId = 10000 + window.windowUtils.outerWindowID;
+    const tabId = GeckoViewTabBridge.windowIdToTabId(
+      window.windowUtils.outerWindowID
+    );
     this.selectedBrowser = window.browser;
     this.selectedTab = new Tab(tabId, this.selectedBrowser);
     this.tabs = [this.selectedTab];
-  }
-
-  closeTab(aTab) {
-    
   }
 
   getTabForId(aId) {
@@ -70,6 +66,56 @@ class BrowserAppShim {
   }
 
   
+  
+  get deck() {
+    return {
+      addEventListener() {},
+      removeEventListener() {},
+    };
+  }
+
+  static getBrowserApp(window) {
+    let { BrowserApp } = window;
+
+    if (!BrowserApp) {
+      BrowserApp = window.gBrowser = window.BrowserApp = new BrowserAppShim(
+        window
+      );
+    }
+
+    return BrowserApp;
+  }
+}
+
+
+
+const TAB_ID_BASE = 10000;
+
+const GeckoViewTabBridge = {
+  
+
+
+
+
+
+
+  windowIdToTabId(windowId) {
+    return TAB_ID_BASE + windowId;
+  },
+
+  
+
+
+
+
+
+
+
+  tabIdToWindowId(tabId) {
+    return tabId - TAB_ID_BASE;
+  },
+
+  
 
 
 
@@ -83,8 +129,8 @@ class BrowserAppShim {
 
 
 
-  async createNewTab(url, options) {
-    url = url || "about:blank";
+  async createNewTab(options = {}) {
+    const url = options.url || "about:blank";
 
     if (!options.extensionId) {
       throw new Error("options.extensionId missing");
@@ -133,29 +179,36 @@ class BrowserAppShim {
     });
 
     return BrowserAppShim.getBrowserApp(window).selectedTab;
-  }
+  },
 
   
-  
-  get deck() {
-    return {
-      addEventListener() {},
-      removeEventListener() {},
-    };
-  }
 
-  static getBrowserApp(window) {
-    let { BrowserApp } = window;
 
-    if (!BrowserApp) {
-      BrowserApp = window.gBrowser = window.BrowserApp = new BrowserAppShim(
-        window
-      );
+
+
+
+
+
+
+
+
+
+
+  async closeTab({ window, extensionId } = {}) {
+    if (!extensionId) {
+      throw new Error("extensionId is required");
     }
 
-    return BrowserApp;
-  }
-}
+    if (!window) {
+      throw new Error("window is required");
+    }
+
+    await window.WindowEventDispatcher.sendRequestForResult({
+      type: "GeckoView:WebExtension:CloseTab",
+      extensionId: extensionId,
+    });
+  },
+};
 
 class GeckoViewTab extends GeckoViewModule {
   onInit() {
