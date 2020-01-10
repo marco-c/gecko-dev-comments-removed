@@ -13,7 +13,6 @@
 namespace js {
 namespace jit {
 
-struct BaselineDebugModeOSRInfo;
 class ICEntry;
 
 
@@ -53,26 +52,22 @@ class BaselineFrame {
 
     
     
-    HAS_DEBUG_MODE_OSR_INFO = 1 << 7,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    HAS_OVERRIDE_PC = 1 << 7,
 
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    HAS_OVERRIDE_PC = 1 << 8,
-
-    
-    
-    
-    HANDLING_EXCEPTION = 1 << 9,
+    HANDLING_EXCEPTION = 1 << 8,
   };
 
  protected:  
@@ -86,14 +81,8 @@ class BaselineFrame {
 
   
   
-  union {
-    struct {
-      uint32_t loScratchValue_;
-      uint32_t hiScratchValue_;
-    };
-    BaselineDebugModeOSRInfo* debugModeOSRInfo_;
-  };
-
+  uint32_t loScratchValue_;
+  uint32_t hiScratchValue_;
   uint32_t flags_;
   uint32_t frameSize_;
   uint32_t loReturnValue_;  
@@ -240,6 +229,16 @@ class BaselineFrame {
     interpreterICEntry_ = nullptr;
   }
 
+  
+  
+  
+  void switchFromJitToInterpreter(jsbytecode* pc) {
+    MOZ_ASSERT(!runningInInterpreter());
+    flags_ |= RUNNING_IN_INTERPRETER;
+    interpreterScript_ = script();
+    setInterpreterPC(pc);
+  }
+
   bool runningInInterpreter() const { return flags_ & RUNNING_IN_INTERPRETER; }
 
   JSScript* interpreterScript() const {
@@ -309,25 +308,6 @@ class BaselineFrame {
   bool isHandlingException() const { return flags_ & HANDLING_EXCEPTION; }
   void setIsHandlingException() { flags_ |= HANDLING_EXCEPTION; }
   void unsetIsHandlingException() { flags_ &= ~HANDLING_EXCEPTION; }
-
-  BaselineDebugModeOSRInfo* debugModeOSRInfo() {
-    MOZ_ASSERT(flags_ & HAS_DEBUG_MODE_OSR_INFO);
-    return debugModeOSRInfo_;
-  }
-
-  BaselineDebugModeOSRInfo* getDebugModeOSRInfo() {
-    if (flags_ & HAS_DEBUG_MODE_OSR_INFO) {
-      return debugModeOSRInfo();
-    }
-    return nullptr;
-  }
-
-  void setDebugModeOSRInfo(BaselineDebugModeOSRInfo* info) {
-    flags_ |= HAS_DEBUG_MODE_OSR_INFO;
-    debugModeOSRInfo_ = info;
-  }
-
-  void deleteDebugModeOSRInfo();
 
   
   bool hasOverridePc() const { return flags_ & HAS_OVERRIDE_PC; }

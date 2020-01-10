@@ -634,13 +634,6 @@ void JSJitProfilingFrameIterator::fixBaselineReturnAddress() {
 
   
   
-  if (BaselineDebugModeOSRInfo* info = bl->getDebugModeOSRInfo()) {
-    resumePCinCurrentFrame_ = info->resumeAddr;
-    return;
-  }
-
-  
-  
   
   
   if (jsbytecode* overridePC = bl->maybeOverridePc()) {

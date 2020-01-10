@@ -701,13 +701,6 @@ void HandleException(ResumeFromException* rfe) {
 
       HandleExceptionBaseline(cx, frame, rfe, pc);
 
-      
-      
-      
-      
-      auto deleteDebugModeOSRInfo = mozilla::MakeScopeExit(
-          [=] { frame.baselineFrame()->deleteDebugModeOSRInfo(); });
-
       if (rfe->kind != ResumeFromException::RESUME_ENTRY_FRAME &&
           rfe->kind != ResumeFromException::RESUME_FORCED_RETURN) {
         return;

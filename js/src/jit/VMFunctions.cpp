@@ -916,7 +916,6 @@ bool DebugEpilogue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc,
   if (!ok) {
     
     
-    frame->deleteDebugModeOSRInfo();
     JitFrameLayout* prefix = frame->framePrefix();
     EnsureBareExitFrame(cx->activation()->asJit(), prefix);
     return false;

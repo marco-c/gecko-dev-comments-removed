@@ -288,14 +288,6 @@ class BaselineCodeGen {
   
   CodeOffset warmUpCheckPrologueOffset_;
 
-  
-  
-  CodeOffset debugOsrPrologueOffset_;
-
-  
-  
-  CodeOffset debugOsrEpilogueOffset_;
-
   uint32_t pushedBeforeCall_;
 #ifdef DEBUG
   bool inCall_;
@@ -585,8 +577,8 @@ class BaselineCompilerHandler {
 
   RetAddrEntryVector& retAddrEntries() { return retAddrEntries_; }
 
-  MOZ_MUST_USE bool appendRetAddrEntry(JSContext* cx, RetAddrEntry::Kind kind,
-                                       uint32_t retOffset);
+  MOZ_MUST_USE bool recordCallRetAddr(JSContext* cx, RetAddrEntry::Kind kind,
+                                      uint32_t retOffset);
 
   
   
@@ -678,6 +670,9 @@ class BaselineInterpreterHandler {
   Label codeCoverageAtPrologueLabel_;
   Label codeCoverageAtPCLabel_;
 
+  
+  BaselineInterpreter::CallVMOffsets callVMOffsets_;
+
  public:
   using FrameInfoT = InterpreterFrameInfo;
 
@@ -706,12 +701,12 @@ class BaselineInterpreterHandler {
     return debugInstrumentationOffsets_.append(offset.offset());
   }
 
-  
-  
-  MOZ_MUST_USE bool appendRetAddrEntry(JSContext* cx, RetAddrEntry::Kind kind,
-                                       uint32_t retOffset) {
-    return true;
+  const BaselineInterpreter::CallVMOffsets& callVMOffsets() const {
+    return callVMOffsets_;
   }
+
+  MOZ_MUST_USE bool recordCallRetAddr(JSContext* cx, RetAddrEntry::Kind kind,
+                                      uint32_t retOffset);
 
   bool maybeIonCompileable() const { return true; }
 
