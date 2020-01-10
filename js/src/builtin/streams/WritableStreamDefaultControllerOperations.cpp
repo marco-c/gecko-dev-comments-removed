@@ -431,6 +431,81 @@ MOZ_MUST_USE bool js::WritableStreamDefaultControllerClose(
 
 
 
+bool js::WritableStreamDefaultControllerGetChunkSize(
+    JSContext* cx, Handle<WritableStreamDefaultController*> unwrappedController,
+    Handle<Value> chunk, MutableHandle<Value> returnValue) {
+  cx->check(chunk);
+
+  
+  
+  
+
+  
+  
+  
+  Rooted<Value> unwrappedStrategySize(cx, unwrappedController->strategySize());
+  if (unwrappedStrategySize.isUndefined()) {
+    
+    
+    
+    returnValue.setInt32(1);
+    return true;
+  }
+
+  MOZ_ASSERT(IsCallable(unwrappedStrategySize));
+
+  {
+    bool success;
+    {
+      AutoRealm ar(cx, unwrappedController);
+      cx->check(unwrappedStrategySize);
+
+      Rooted<Value> wrappedChunk(cx, chunk);
+      if (!cx->compartment()->wrap(cx, &wrappedChunk)) {
+        return false;
+      }
+
+      
+      
+      
+      
+      success = Call(cx, unwrappedStrategySize, UndefinedHandleValue,
+                     wrappedChunk, returnValue);
+    }
+
+    
+    
+    if (success) {
+      return cx->compartment()->wrap(cx, returnValue);
+    }
+  }
+
+  
+  if (!cx->isExceptionPending() || !cx->getPendingException(returnValue)) {
+    
+    return false;
+  }
+  cx->check(returnValue);
+
+  cx->clearPendingException();
+
+  
+  
+  
+  if (!WritableStreamDefaultControllerErrorIfNeeded(cx, unwrappedController,
+                                                    returnValue)) {
+    return false;
+  }
+
+  
+  returnValue.setInt32(1);
+  return true;
+}
+
+
+
+
+
 double js::WritableStreamDefaultControllerGetDesiredSize(
     const WritableStreamDefaultController* controller) {
   return controller->strategyHWM() - controller->queueTotalSize();
@@ -482,6 +557,26 @@ MOZ_MUST_USE bool WritableStreamDefaultControllerAdvanceQueueIfNeeded(
   
   JS_ReportErrorASCII(cx, "nope");
   return false;
+}
+
+
+
+
+
+bool js::WritableStreamDefaultControllerErrorIfNeeded(
+    JSContext* cx, Handle<WritableStreamDefaultController*> unwrappedController,
+    Handle<Value> error) {
+  cx->check(error);
+
+  
+  
+  if (unwrappedController->stream()->writable()) {
+    if (!WritableStreamDefaultControllerError(cx, unwrappedController, error)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 
