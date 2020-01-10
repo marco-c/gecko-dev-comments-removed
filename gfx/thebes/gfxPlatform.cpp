@@ -1330,9 +1330,7 @@ void gfxPlatform::WillShutdown() {
   
   mScreenReferenceSurface = nullptr;
   mScreenReferenceDrawTarget = nullptr;
-}
 
-gfxPlatform::~gfxPlatform() {
   
   
   
@@ -1351,6 +1349,9 @@ gfxPlatform::~gfxPlatform() {
   cairo_debug_reset_static_data();
 #  endif
 #endif
+}
+
+gfxPlatform::~gfxPlatform() {
 }
 
 
