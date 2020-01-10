@@ -49,17 +49,19 @@ using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
 
-const ClassOps DebuggerSource::classOps_ = {nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            trace};
+const ClassOps DebuggerSource::classOps_ = {
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    CallTraceMethod<DebuggerSource>, 
+};
 
 const Class DebuggerSource::class_ = {
     "Source", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS),
@@ -105,15 +107,14 @@ DebuggerSourceReferent DebuggerSource::getReferent() const {
   return AsVariant(static_cast<ScriptSourceObject*>(nullptr));
 }
 
-
-void DebuggerSource::trace(JSTracer* trc, JSObject* obj) {
-  DebuggerSource* sourceObj = &obj->as<DebuggerSource>();
+void DebuggerSource::trace(JSTracer* trc) {
   
   
-  if (JSObject* referent = sourceObj->getReferentRawObject()) {
-    TraceManuallyBarrieredCrossCompartmentEdge(trc, sourceObj, &referent,
-                                               "Debugger.Source referent");
-    sourceObj->setPrivateUnbarriered(referent);
+  if (JSObject* referent = getReferentRawObject()) {
+    TraceManuallyBarrieredCrossCompartmentEdge(
+        trc, static_cast<JSObject*>(this), &referent,
+        "Debugger.Source referent");
+    setPrivateUnbarriered(referent);
   }
 }
 

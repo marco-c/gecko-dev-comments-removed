@@ -1118,6 +1118,19 @@ inline bool IsObjectValueInCompartment(const Value& v, JS::Compartment* comp) {
 }
 #endif
 
+
+
+
+
+
+
+
+
+template <typename ObjectSubclass>
+void CallTraceMethod(JSTracer* trc, JSObject* obj) {
+  obj->as<ObjectSubclass>().trace(trc);
+}
+
 } 
 
 #endif 

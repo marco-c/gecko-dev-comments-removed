@@ -57,44 +57,45 @@ using namespace js;
 using mozilla::Maybe;
 using mozilla::Some;
 
-const ClassOps DebuggerScript::classOps_ = {nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            nullptr, 
-                                            trace};
+const ClassOps DebuggerScript::classOps_ = {
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    CallTraceMethod<DebuggerScript>, 
+};
 
 const Class DebuggerScript::class_ = {
     "Script", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS),
     &classOps_};
 
-
-void DebuggerScript::trace(JSTracer* trc, JSObject* obj) {
-  DebuggerScript* self = &obj->as<DebuggerScript>();
+void DebuggerScript::trace(JSTracer* trc) {
+  JSObject* upcast = this;
   
-  gc::Cell* cell = self->getReferentCell();
+  gc::Cell* cell = getReferentCell();
   if (cell) {
     if (cell->is<JSScript>()) {
       JSScript* script = cell->as<JSScript>();
       TraceManuallyBarrieredCrossCompartmentEdge(
-          trc, self, &script, "Debugger.Script script referent");
-      self->setPrivateUnbarriered(script);
+          trc, upcast, &script, "Debugger.Script script referent");
+      setPrivateUnbarriered(script);
     } else if (cell->is<LazyScript>()) {
       LazyScript* lazyScript = cell->as<LazyScript>();
       TraceManuallyBarrieredCrossCompartmentEdge(
-          trc, self, &lazyScript, "Debugger.Script lazy script referent");
-      self->setPrivateUnbarriered(lazyScript);
+          trc, upcast, &lazyScript, "Debugger.Script lazy script referent");
+      setPrivateUnbarriered(lazyScript);
     } else {
       JSObject* wasm = cell->as<JSObject>();
       TraceManuallyBarrieredCrossCompartmentEdge(
-          trc, self, &wasm, "Debugger.Script wasm referent");
+          trc, upcast, &wasm, "Debugger.Script wasm referent");
       MOZ_ASSERT(wasm->is<WasmInstanceObject>());
-      self->setPrivateUnbarriered(wasm);
+      setPrivateUnbarriered(wasm);
     }
   }
 }

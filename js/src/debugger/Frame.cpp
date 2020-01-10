@@ -173,17 +173,17 @@ inline js::Debugger* js::DebuggerFrame::owner() const {
 }
 
 const ClassOps DebuggerFrame::classOps_ = {
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    finalize, 
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    trace,    
+    nullptr,                        
+    nullptr,                        
+    nullptr,                        
+    nullptr,                        
+    nullptr,                        
+    nullptr,                        
+    finalize,                       
+    nullptr,                        
+    nullptr,                        
+    nullptr,                        
+    CallTraceMethod<DebuggerFrame>, 
 };
 
 const Class DebuggerFrame::class_ = {
@@ -1075,20 +1075,18 @@ void DebuggerFrame::finalize(JSFreeOp* fop, JSObject* obj) {
   }
 }
 
-
-void DebuggerFrame::trace(JSTracer* trc, JSObject* obj) {
-  OnStepHandler* onStepHandler = obj->as<DebuggerFrame>().onStepHandler();
+void DebuggerFrame::trace(JSTracer* trc) {
+  OnStepHandler* onStepHandler = this->onStepHandler();
   if (onStepHandler) {
     onStepHandler->trace(trc);
   }
-  OnPopHandler* onPopHandler = obj->as<DebuggerFrame>().onPopHandler();
+  OnPopHandler* onPopHandler = this->onPopHandler();
   if (onPopHandler) {
     onPopHandler->trace(trc);
   }
 
-  DebuggerFrame& frameObj = obj->as<DebuggerFrame>();
-  if (frameObj.hasGenerator()) {
-    frameObj.generatorInfo()->trace(trc, frameObj);
+  if (hasGenerator()) {
+    generatorInfo()->trace(trc, *this);
   }
 }
 

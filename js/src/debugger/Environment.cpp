@@ -51,17 +51,19 @@ using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
 
-const ClassOps DebuggerEnvironment::classOps_ = {nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 nullptr, 
-                                                 trace};
+const ClassOps DebuggerEnvironment::classOps_ = {
+    nullptr,                              
+    nullptr,                              
+    nullptr,                              
+    nullptr,                              
+    nullptr,                              
+    nullptr,                              
+    nullptr,                              
+    nullptr,                              
+    nullptr,                              
+    nullptr,                              
+    CallTraceMethod<DebuggerEnvironment>, 
+};
 
 const Class DebuggerEnvironment::class_ = {
     "Environment",
@@ -69,13 +71,14 @@ const Class DebuggerEnvironment::class_ = {
         JSCLASS_HAS_RESERVED_SLOTS(DebuggerEnvironment::RESERVED_SLOTS),
     &classOps_};
 
-void DebuggerEnvironment::trace(JSTracer* trc, JSObject* obj) {
+void DebuggerEnvironment::trace(JSTracer* trc) {
   
   
-  if (Env* referent = (JSObject*)obj->as<NativeObject>().getPrivate()) {
-    TraceManuallyBarrieredCrossCompartmentEdge(trc, obj, &referent,
-                                               "Debugger.Environment referent");
-    obj->as<NativeObject>().setPrivateUnbarriered(referent);
+  if (Env* referent = (JSObject*)getPrivate()) {
+    TraceManuallyBarrieredCrossCompartmentEdge(
+        trc, static_cast<JSObject*>(this), &referent,
+        "Debugger.Environment referent");
+    setPrivateUnbarriered(referent);
   }
 }
 
