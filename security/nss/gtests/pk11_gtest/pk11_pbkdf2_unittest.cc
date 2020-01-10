@@ -22,53 +22,102 @@ class Pkcs11Pbkdf2Test : public ::testing::Test {
  public:
   void Derive(std::vector<uint8_t>& derived, SECOidTag hash_alg) {
     
-    const unsigned int iterations = 4096;
+    const unsigned int kIterations = 4096;
     std::string pass("passwordPASSWORDpassword");
     std::string salt("saltSALTsaltSALTsaltSALTsaltSALTsalt");
 
     
-    EXPECT_TRUE(DeriveBytes(pass, salt, derived, hash_alg, iterations));
+    EXPECT_TRUE(DeriveBytes(pass, salt, derived, hash_alg, kIterations));
 
     
-    std::string bogusPass("PasswordPASSWORDpassword");
-    EXPECT_FALSE(DeriveBytes(bogusPass, salt, derived, hash_alg, iterations));
+    std::string bogus_pass("PasswordPASSWORDpassword");
+    EXPECT_FALSE(DeriveBytes(bogus_pass, salt, derived, hash_alg, kIterations));
 
     
-    std::string bogusSalt("SaltSALTsaltSALTsaltSALTsaltSALTsalt");
-    EXPECT_FALSE(DeriveBytes(pass, bogusSalt, derived, hash_alg, iterations));
+    std::string bogus_salt("SaltSALTsaltSALTsaltSALTsaltSALTsalt");
+    EXPECT_FALSE(DeriveBytes(pass, bogus_salt, derived, hash_alg, kIterations));
 
     
     SECOidTag next_hash_alg = static_cast<SECOidTag>(hash_alg + 1);
-    EXPECT_FALSE(DeriveBytes(pass, salt, derived, next_hash_alg, iterations));
+    EXPECT_FALSE(DeriveBytes(pass, salt, derived, next_hash_alg, kIterations));
 
     
-    EXPECT_FALSE(DeriveBytes(pass, salt, derived, hash_alg, iterations + 1));
+    EXPECT_FALSE(DeriveBytes(pass, salt, derived, hash_alg, kIterations + 1));
+  }
+
+  void KeySizes(SECOidTag hash_alg) {
+    
+    
+    const unsigned int kIterations = 10;
+    std::string pass("passwordPASSWORDpassword");
+    std::string salt("saltSALTsaltSALTsaltSALTsaltSALTsalt");
+
+    
+    const int big_key_size = 768;
+    EXPECT_FALSE(KeySizeParam(pass, salt, big_key_size, hash_alg, kIterations));
+
+    
+    const int zero_key_size = 0;
+    EXPECT_TRUE(KeySizeParam(pass, salt, zero_key_size, hash_alg, kIterations));
+
+    
+    
+    
+    const int minus_key_size = -1;
+    EXPECT_FALSE(
+        KeySizeParam(pass, salt, minus_key_size, hash_alg, kIterations));
+
+    
+    const int negative_key_size = -10;
+    EXPECT_FALSE(
+        KeySizeParam(pass, salt, negative_key_size, hash_alg, kIterations));
   }
 
  private:
   bool DeriveBytes(std::string& pass, std::string& salt,
                    std::vector<uint8_t>& derived, SECOidTag hash_alg,
-                   unsigned int iterations) {
-    SECItem passItem = {siBuffer, ToUcharPtr(pass),
-                        static_cast<unsigned int>(pass.length())};
-    SECItem saltItem = {siBuffer, ToUcharPtr(salt),
-                        static_cast<unsigned int>(salt.length())};
+                   unsigned int kIterations) {
+    SECItem pass_item = {siBuffer, ToUcharPtr(pass),
+                         static_cast<unsigned int>(pass.length())};
+    SECItem salt_item = {siBuffer, ToUcharPtr(salt),
+                         static_cast<unsigned int>(salt.length())};
 
     
     ScopedSECAlgorithmID alg_id(
         PK11_CreatePBEV2AlgorithmID(SEC_OID_PKCS5_PBKDF2, hash_alg, hash_alg,
-                                    derived.size(), iterations, &saltItem));
+                                    derived.size(), kIterations, &salt_item));
 
     
     ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
-    ScopedPK11SymKey symKey(
-        PK11_PBEKeyGen(slot.get(), alg_id.get(), &passItem, false, nullptr));
+    ScopedPK11SymKey sym_key(
+        PK11_PBEKeyGen(slot.get(), alg_id.get(), &pass_item, false, nullptr));
 
-    SECStatus rv = PK11_ExtractKeyValue(symKey.get());
+    SECStatus rv = PK11_ExtractKeyValue(sym_key.get());
     EXPECT_EQ(rv, SECSuccess);
 
-    SECItem* keyData = PK11_GetKeyData(symKey.get());
-    return !memcmp(&derived[0], keyData->data, keyData->len);
+    SECItem* key_data = PK11_GetKeyData(sym_key.get());
+    return !memcmp(&derived[0], key_data->data, key_data->len);
+  }
+
+  bool KeySizeParam(std::string& pass, std::string& salt, const int key_size,
+                    SECOidTag hash_alg, unsigned int kIterations) {
+    SECItem pass_item = {siBuffer, ToUcharPtr(pass),
+                         static_cast<unsigned int>(pass.length())};
+    SECItem salt_item = {siBuffer, ToUcharPtr(salt),
+                         static_cast<unsigned int>(salt.length())};
+
+    
+    ScopedSECAlgorithmID alg_id(
+        PK11_CreatePBEV2AlgorithmID(SEC_OID_PKCS5_PBKDF2, hash_alg, hash_alg,
+                                    key_size, kIterations, &salt_item));
+
+    
+    ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
+    ScopedPK11SymKey sym_key(
+        PK11_PBEKeyGen(slot.get(), alg_id.get(), &pass_item, false, nullptr));
+
+    
+    return sym_key.get();
   }
 };
 
@@ -91,6 +140,11 @@ TEST_F(Pkcs11Pbkdf2Test, DeriveKnown2) {
       0x53, 0xe1, 0xc6, 0x35, 0x51, 0x8c, 0x7d, 0xac, 0x47, 0xe9};
 
   Derive(derived, SEC_OID_HMAC_SHA256);
+}
+
+TEST_F(Pkcs11Pbkdf2Test, KeyLenSizes) {
+  
+  KeySizes(SEC_OID_HMAC_SHA256);
 }
 
 }  

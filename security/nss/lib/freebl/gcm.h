@@ -30,6 +30,28 @@
 #include <arm_neon.h>
 #endif
 
+#ifdef __powerpc64__
+#include "altivec-types.h"
+
+
+#ifdef __cplusplus
+#undef pixel
+#undef vector
+#undef bool
+#endif
+
+
+
+
+
+
+#if (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 5)) && \
+    defined(IS_LITTLE_ENDIAN)
+#define USE_PPC_CRYPTO
+#endif
+
+#endif
+
 SEC_BEGIN_PROTOS
 
 #ifdef HAVE_INT128_SUPPORT
@@ -67,6 +89,8 @@ pre_align struct gcmHashContextStr {
     __m128i x, h;
 #elif defined(__aarch64__)
     uint64x2_t x, h;
+#elif defined(USE_PPC_CRYPTO)
+    vec_u64 x, h;
 #endif
     uint64_t x_low, x_high, h_high, h_low;
     unsigned char buffer[MAX_BLOCK_SIZE];
