@@ -1077,7 +1077,7 @@ var gMainPane = {
     if (value) {
       
       if (startupPref.value === this.STARTUP_PREF_BLANK) {
-        HomePage.set("about:blank");
+        HomePage.safeSet("about:blank");
       }
       newValue = this.STARTUP_PREF_RESTORE_SESSION;
       let warnOnQuitPref = Preferences.get("browser.sessionstore.warnOnQuit");

@@ -167,7 +167,30 @@ let HomePage = {
 
 
 
-  set(value) {
+  async set(value) {
+    await this.init();
+
+    if (await this.shouldIgnore(value)) {
+      Cu.reportError(
+        `Ignoring homepage setting for ${value} as it is on the ignore list.`
+      );
+      return false;
+    }
+    Services.prefs.setStringPref(kPrefName, value);
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  safeSet(value) {
     Services.prefs.setStringPref(kPrefName, value);
   },
 
@@ -193,7 +216,22 @@ let HomePage = {
 
 
 
-  _handleIgnoreListUpdated({ data: { current } }) {
+
+  async shouldIgnore(url) {
+    await this.init();
+
+    const lowerURL = url.toLowerCase();
+    return this._ignoreList.some(code => lowerURL.includes(code));
+  },
+
+  
+
+
+
+
+
+
+  async _handleIgnoreListUpdated({ data: { current } }) {
     for (const entry of current) {
       if (entry.id == kHomePageIgnoreListId) {
         this._ignoreList = [...entry.matches];
