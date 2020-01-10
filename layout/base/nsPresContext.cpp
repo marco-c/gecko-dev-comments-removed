@@ -1015,7 +1015,6 @@ static bool CheckOverflow(ComputedStyle* aComputedStyle,
                           ScrollStyles* aStyles) {
   const nsStyleDisplay* display = aComputedStyle->StyleDisplay();
   if (display->mOverflowX == StyleOverflow::Visible &&
-      display->mScrollBehavior == NS_STYLE_SCROLL_BEHAVIOR_AUTO &&
       display->mOverscrollBehaviorX == StyleOverscrollBehavior::Auto &&
       display->mOverscrollBehaviorY == StyleOverscrollBehavior::Auto &&
       display->mScrollSnapType.strictness == StyleScrollSnapStrictness::None) {
@@ -2709,33 +2708,10 @@ void nsRootPresContext::CollectPluginGeometryUpdates(
 #endif  
 }
 
-void nsRootPresContext::AddWillPaintObserver(nsIRunnable* aRunnable) {
-  if (!mWillPaintFallbackEvent.IsPending()) {
-    mWillPaintFallbackEvent = new RunWillPaintObservers(this);
-    Document()->Dispatch(TaskCategory::Other,
-                         do_AddRef(mWillPaintFallbackEvent));
-  }
-  mWillPaintObservers.AppendElement(aRunnable);
-}
-
-
-
-
-void nsRootPresContext::FlushWillPaintObservers() {
-  mWillPaintFallbackEvent = nullptr;
-  nsTArray<nsCOMPtr<nsIRunnable>> observers;
-  observers.SwapElements(mWillPaintObservers);
-  for (uint32_t i = 0; i < observers.Length(); ++i) {
-    observers[i]->Run();
-  }
-}
-
 size_t nsRootPresContext::SizeOfExcludingThis(
     MallocSizeOf aMallocSizeOf) const {
   return nsPresContext::SizeOfExcludingThis(aMallocSizeOf);
 
-  
-  
   
   
   
