@@ -4,6 +4,9 @@
 
 
 
+#ifndef mozilla_IntentionalCrash_h
+#define mozilla_IntentionalCrash_h
+
 #include <string>
 #include <sstream>
 #include <stdlib.h>
@@ -16,16 +19,13 @@
 #  include <unistd.h>
 #endif
 
-#ifndef mozilla_IntentionalCrash_h
-#  define mozilla_IntentionalCrash_h
-
 namespace mozilla {
 
 inline void NoteIntentionalCrash(const char* aProcessType) {
 
 
 
-#  ifdef MOZ_DEBUG
+#ifdef MOZ_DEBUG
   char* f = getenv("XPCOM_MEM_BLOAT_LOG");
   if (!f) {
     return;
@@ -55,7 +55,7 @@ inline void NoteIntentionalCrash(const char* aProcessType) {
     fprintf(processfd, "==> process %d will purposefully crash\n", getpid());
     fclose(processfd);
   }
-#  endif
+#endif
 }
 
 }  
