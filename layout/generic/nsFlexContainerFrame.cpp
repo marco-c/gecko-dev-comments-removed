@@ -2118,28 +2118,16 @@ nscoord FlexItem::GetBaselineOffsetFromOuterCrossEdge(
              "cross axis is the block axis");
 
   AxisOrientationType crossAxis = aAxisTracker.GetCrossAxis();
-  mozilla::Side sideToMeasureFrom =
+  mozilla::Side physSideMeasuringFrom =
       kAxisOrientationToSidesMap[crossAxis][aEdge];
+  mozilla::Side itemBlockStartSide = mWM.PhysicalSide(eLogicalSideBStart);
 
-  
-  
-  nscoord marginTopToBaseline =
-      ResolvedAscent(aUseFirstLineBaseline) + mMargin.top;
+  nscoord marginBStartToBaseline =
+      ResolvedAscent(aUseFirstLineBaseline) + mMargin.Side(itemBlockStartSide);
 
-  if (sideToMeasureFrom == eSideTop) {
-    
-    
-    return marginTopToBaseline;
-  }
-
-  MOZ_ASSERT(sideToMeasureFrom == eSideBottom,
-             "We already checked that we're dealing with a vertical axis, and "
-             "we're not using the top side, so that only leaves the bottom...");
-
-  
-  
-  
-  return GetOuterCrossSize(crossAxis) - marginTopToBaseline;
+  return (physSideMeasuringFrom == itemBlockStartSide) ?
+      marginBStartToBaseline :
+      GetOuterCrossSize(crossAxis) - marginBStartToBaseline;
 }
 
 bool FlexItem::IsCrossSizeAuto() const {
