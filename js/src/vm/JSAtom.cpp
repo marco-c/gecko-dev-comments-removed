@@ -1039,10 +1039,36 @@ template JSAtom* js::AtomizeChars(JSContext* cx, const char16_t* chars,
 template <typename CharsT>
 JSAtom* AtomizeUTF8OrWTF8Chars(JSContext* cx, const char* utf8Chars,
                                size_t utf8ByteLength) {
-  
-  
-  if (JSAtom* s = cx->staticStrings().lookup(utf8Chars, utf8ByteLength)) {
-    return s;
+  {
+    StaticStrings& statics = cx->staticStrings();
+
+    
+    
+    
+    
+
+    
+    if (JSAtom* s = statics.lookup(utf8Chars, utf8ByteLength)) {
+      return s;
+    }
+
+    
+    
+    
+    
+    if (utf8ByteLength == 2 && !mozilla::IsAscii(utf8Chars[0])) {
+      MOZ_ASSERT(
+          (static_cast<uint8_t>(utf8Chars[0]) & 0b1110'0000) == 0b1100'0000,
+          "expected length-2 leading UTF-8 unit");
+      MOZ_ASSERT(mozilla::IsTrailingUnit(mozilla::Utf8Unit(utf8Chars[1])),
+                 "expected UTF-8 trailing unit");
+      char16_t unit =
+          ((static_cast<uint8_t>(utf8Chars[0]) & 0b0001'1111) << 6) |
+          (static_cast<uint8_t>(utf8Chars[1]) & 0b0011'1111);
+      if (StaticStrings::hasUnit(unit)) {
+        return statics.getUnit(unit);
+      }
+    }
   }
 
   size_t length;
