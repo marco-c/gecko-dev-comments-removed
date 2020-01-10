@@ -1690,7 +1690,7 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
   
   if (pc_->closedOverBindingsForLazy().length() >=
           LazyScript::NumClosedOverBindingsLimit ||
-      pc_->innerFunctionsForLazy.length() >=
+      pc_->innerFunctionBoxesForLazy.length() >=
           LazyScript::NumInnerFunctionsLimit) {
     MOZ_ALWAYS_FALSE(abortIfSyntaxParser());
     return false;
@@ -1701,9 +1701,9 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
   RootedFunction fun(cx_, funbox->function());
   LazyScript* lazy = LazyScript::Create(
       cx_, fun, sourceObject_, pc_->closedOverBindingsForLazy(),
-      pc_->innerFunctionsForLazy, funbox->bufStart, funbox->bufEnd,
-      funbox->toStringStart, funbox->toStringEnd, funbox->startLine, funbox->startColumn,
-      parseGoal());
+      pc_->innerFunctionBoxesForLazy, funbox->bufStart, funbox->bufEnd,
+      funbox->toStringStart, funbox->toStringEnd, funbox->startLine,
+      funbox->startColumn, parseGoal());
   if (!lazy) {
     return false;
   }
@@ -2102,7 +2102,7 @@ bool ParserBase::leaveInnerFunction(ParseContext* outerpc) {
   
   
   
-  if (!outerpc->innerFunctionsForLazy.append(pc_->functionBox()->function())) {
+  if (!outerpc->innerFunctionBoxesForLazy.append(pc_->functionBox())) {
     return false;
   }
 

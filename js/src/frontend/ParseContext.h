@@ -444,7 +444,9 @@ class ParseContext : public Nestable<ParseContext> {
 
  public:
   
-  Rooted<GCVector<JSFunction*, 8>> innerFunctionsForLazy;
+  
+  
+  Vector<const FunctionBox*, 8> innerFunctionBoxesForLazy;
 
   
   
