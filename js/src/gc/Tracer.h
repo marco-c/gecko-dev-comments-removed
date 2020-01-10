@@ -210,8 +210,9 @@ void TraceRootRange(JSTracer* trc, size_t len, T* vec, const char* name) {
 
 
 
+template <typename T>
 void TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src,
-                               WriteBarriered<Value>* dst, const char* name);
+                               WriteBarriered<T>* dst, const char* name);
 
 
 template <typename T>
