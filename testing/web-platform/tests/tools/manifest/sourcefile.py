@@ -2,26 +2,39 @@ import hashlib
 import re
 import os
 from collections import deque
-from six import binary_type
+from six import binary_type, PY3
 from six.moves.urllib.parse import urljoin
 from fnmatch import fnmatch
 
 MYPY = False
 if MYPY:
     
-    from types import ModuleType
+    from typing import Any
+    from typing import AnyStr
+    from typing import BinaryIO
+    from typing import Callable
+    from typing import Deque
+    from typing import Dict
+    from typing import Iterable
+    from typing import List
+    from typing import Optional
+    from typing import Pattern
+    from typing import Set
+    from typing import Text
+    from typing import Tuple
+    from typing import Union
+    from typing import cast
 
 try:
-    from xml.etree import cElementTree
-    ElementTree = cElementTree  
+    from xml.etree import cElementTree as ElementTree
 except ImportError:
-    from xml.etree import ElementTree as _ElementTree
-    ElementTree = _ElementTree
+    from xml.etree import ElementTree as ElementTree  
 
 import html5lib
 
 from . import XMLParser
-from .item import Stub, ManualTest, WebDriverSpecTest, RefTestNode, TestharnessTest, SupportFile, ConformanceCheckerTest, VisualTest
+from .item import (ManifestItem, Stub, ManualTest, WebDriverSpecTest, RefTestNode, TestharnessTest,
+                   SupportFile, ConformanceCheckerTest, VisualTest)
 from .utils import ContextManagerBytesIO, cached_property
 
 wd_pattern = "*.py"
@@ -30,9 +43,10 @@ python_meta_re = re.compile(br"#\s*META:\s*(\w*)=(.*)$")
 
 reference_file_re = re.compile(r'(^|[\-_])(not)?ref[0-9]*([\-_]|$)')
 
-space_chars = u"".join(html5lib.constants.spaceCharacters)
+space_chars = u"".join(html5lib.constants.spaceCharacters)  
 
 def replace_end(s, old, new):
+    
     """
     Given a string `s` that ends with `old`, replace that occurrence of `old`
     with `new`.
@@ -42,6 +56,7 @@ def replace_end(s, old, new):
 
 
 def read_script_metadata(f, regexp):
+    
     """
     Yields any metadata (pairs of bytestrings) from the file-like object `f`,
     as specified according to a supplied regexp.
@@ -66,10 +81,11 @@ _any_variants = {
     b"dedicatedworker": {"suffix": ".any.worker.html"},
     b"worker": {"longhand": {b"dedicatedworker", b"sharedworker", b"serviceworker"}},
     b"jsshell": {"suffix": ".any.js"},
-}
+}  
 
 
 def get_any_variants(item):
+    
     """
     Returns a set of variants (bytestrings) defined by the given keyword.
     """
@@ -84,6 +100,7 @@ def get_any_variants(item):
 
 
 def get_default_any_variants():
+    
     """
     Returns a set of variants (bytestrings) that will be used by default.
     """
@@ -91,6 +108,7 @@ def get_default_any_variants():
 
 
 def parse_variants(value):
+    
     """
     Returns a set of variants (bytestrings) defined by a comma-separated value.
     """
@@ -109,6 +127,7 @@ def parse_variants(value):
 
 
 def global_suffixes(value):
+    
     """
     Yields tuples of the relevant filename suffix (a string) and whether the
     variant is intended to run in a JS shell, for the variants defined by the
@@ -128,6 +147,7 @@ def global_suffixes(value):
 
 
 def global_variant_url(url, suffix):
+    
     """
     Returns a url created from the given url and suffix (all strings).
     """
@@ -139,20 +159,28 @@ def global_variant_url(url, suffix):
     return replace_end(url, ".js", suffix)
 
 
+def _parse_html(f):
+    
+    doc = html5lib.parse(f, treebuilder="etree", useChardet=False)
+    if MYPY:
+        return cast(ElementTree.ElementTree, doc)
+    return doc
+
 def _parse_xml(f):
+    
     try:
         
         
         return ElementTree.parse(f)
     except (ValueError, ElementTree.ParseError):
         f.seek(0)
-        return ElementTree.parse(f, XMLParser.XMLParser())
+        return ElementTree.parse(f, XMLParser.XMLParser())  
 
 
 class SourceFile(object):
-    parsers = {"html":lambda x:html5lib.parse(x, treebuilder="etree", useChardet=False),
+    parsers = {"html":_parse_html,
                "xhtml":_parse_xml,
-               "svg":_parse_xml}
+               "svg":_parse_xml}  
 
     root_dir_non_test = {"common"}
 
@@ -162,9 +190,10 @@ class SourceFile(object):
 
     dir_path_non_test = {("css21", "archive"),
                          ("css", "CSS2", "archive"),
-                         ("css", "common")}
+                         ("css", "common")}  
 
     def __init__(self, tests_root, rel_path, url_base, hash=None, contents=None):
+        
         """Object representing a file in a source tree.
 
         :param tests_root: Path to the root of the source tree
@@ -175,31 +204,37 @@ class SourceFile(object):
 
         assert not os.path.isabs(rel_path), rel_path
 
-        self.tests_root = tests_root
         if os.name == "nt":
             
             if isinstance(rel_path, binary_type):
-                self.rel_path = rel_path.replace(b"/", b"\\")
+                rel_path = rel_path.replace(b"/", b"\\")
             else:
-                self.rel_path = rel_path.replace(u"/", u"\\")
-        else:
-            self.rel_path = rel_path
+                rel_path = rel_path.replace(u"/", u"\\")
+
+        dir_path, filename = os.path.split(rel_path)
+        name, ext = os.path.splitext(filename)
+
+        type_flag = None
+        if "-" in name:
+            type_flag = name.rsplit("-", 1)[1].split(".")[0]
+
+        meta_flags = name.split(".")[1:]
+
+        self.tests_root = tests_root  
+        self.rel_path = rel_path  
+        self.dir_path = dir_path  
+        self.filename = filename  
+        self.name = name  
+        self.ext = ext  
+        self.type_flag = type_flag  
+        self.meta_flags = meta_flags  
         self.url_base = url_base
         self.contents = contents
-
-        self.dir_path, self.filename = os.path.split(self.rel_path)
-        self.name, self.ext = os.path.splitext(self.filename)
-
-        self.type_flag = None
-        if "-" in self.name:
-            self.type_flag = self.name.rsplit("-", 1)[1].split(".")[0]
-
-        self.meta_flags = self.name.split(".")[1:]
-
-        self.items_cache = None
+        self.items_cache = None  
         self._hash = hash
 
     def __getstate__(self):
+        
         
         rv = self.__dict__.copy()
 
@@ -212,12 +247,14 @@ class SourceFile(object):
         return rv
 
     def name_prefix(self, prefix):
+        
         """Check if the filename starts with a given prefix
 
         :param prefix: The prefix to check"""
         return self.name.startswith(prefix)
 
     def is_dir(self):
+        
         """Return whether this file represents a directory."""
         if self.contents is not None:
             return False
@@ -225,6 +262,7 @@ class SourceFile(object):
         return os.path.isdir(self.rel_path)
 
     def open(self):
+        
         """
         Return either
         * the contents specified in the constructor, if any;
@@ -232,34 +270,49 @@ class SourceFile(object):
         """
 
         if self.contents is not None:
-            file_obj = ContextManagerBytesIO(self.contents)
+            wrapped = ContextManagerBytesIO(self.contents)
+            if MYPY:
+                file_obj = cast(BinaryIO, wrapped)
+            else:
+                file_obj = wrapped
         else:
             file_obj = open(self.path, 'rb')
         return file_obj
 
     @cached_property
     def path(self):
+        
         return os.path.join(self.tests_root, self.rel_path)
 
     @cached_property
     def rel_url(self):
+        
         assert not os.path.isabs(self.rel_path), self.rel_path
         return self.rel_path.replace(os.sep, "/")
 
     @cached_property
     def url(self):
+        
         return urljoin(self.url_base, self.rel_url)
 
     @cached_property
     def hash(self):
+        
         if not self._hash:
             with self.open() as f:
                 content = f.read()
-            data = "".join(("blob ", str(len(content)), "\0", content))
-            self._hash = hashlib.sha1(data).hexdigest()
+
+            data = b"".join((b"blob ", b"%d" % len(content), b"\0", content))
+            hash_str = hashlib.sha1(data).hexdigest()  
+            if PY3:
+                self._hash = hash_str.encode("ascii")
+            else:
+                self._hash = hash_str
+
         return self._hash
 
     def in_non_test_dir(self):
+        
         if self.dir_path == "":
             return True
 
@@ -272,11 +325,13 @@ class SourceFile(object):
         return False
 
     def in_conformance_checker_dir(self):
+        
         return (self.dir_path == "conformance-checkers" or
                 self.dir_path.startswith("conformance-checkers" + os.path.sep))
 
     @property
     def name_is_non_test(self):
+        
         """Check if the file name matches the conditions for the file to
         be a non-test file"""
         return (self.is_dir() or
@@ -289,51 +344,60 @@ class SourceFile(object):
 
     @property
     def name_is_conformance(self):
+        
         return (self.in_conformance_checker_dir() and
                 self.type_flag in ("is-valid", "no-valid"))
 
     @property
     def name_is_conformance_support(self):
+        
         return self.in_conformance_checker_dir()
 
     @property
     def name_is_stub(self):
+        
         """Check if the file name matches the conditions for the file to
         be a stub file"""
         return self.name_prefix("stub-")
 
     @property
     def name_is_manual(self):
+        
         """Check if the file name matches the conditions for the file to
         be a manual test file"""
         return self.type_flag == "manual"
 
     @property
     def name_is_visual(self):
+        
         """Check if the file name matches the conditions for the file to
         be a visual test file"""
         return self.type_flag == "visual"
 
     @property
     def name_is_multi_global(self):
+        
         """Check if the file name matches the conditions for the file to
         be a multi-global js test file"""
         return "any" in self.meta_flags and self.ext == ".js"
 
     @property
     def name_is_worker(self):
+        
         """Check if the file name matches the conditions for the file to
         be a worker js test file"""
         return "worker" in self.meta_flags and self.ext == ".js"
 
     @property
     def name_is_window(self):
+        
         """Check if the file name matches the conditions for the file to
         be a window js test file"""
         return "window" in self.meta_flags and self.ext == ".js"
 
     @property
     def name_is_webdriver(self):
+        
         """Check if the file name matches the conditions for the file to
         be a webdriver spec test file"""
         
@@ -347,12 +411,14 @@ class SourceFile(object):
 
     @property
     def name_is_reference(self):
+        
         """Check if the file name matches the conditions for the file to
         be a reference file (not a reftest)"""
         return "/reference/" in self.url or bool(reference_file_re.search(self.name))
 
     @property
     def markup_type(self):
+        
         """Return the type of markup contained in a file, based on its extension,
         or None if it doesn't contain markup"""
         ext = self.ext
@@ -371,6 +437,7 @@ class SourceFile(object):
 
     @cached_property
     def root(self):
+        
         """Return an ElementTree Element for the root node of the file if it contains
         markup, or None if it does not"""
         if not self.markup_type:
@@ -385,7 +452,7 @@ class SourceFile(object):
                 return None
 
         if hasattr(tree, "getroot"):
-            root = tree.getroot()
+            root = tree.getroot()  
         else:
             root = tree
 
@@ -393,12 +460,15 @@ class SourceFile(object):
 
     @cached_property
     def timeout_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes in a test that
         specify timeouts"""
+        assert self.root is not None
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}meta[@name='timeout']")
 
     @cached_property
     def script_metadata(self):
+        
         if self.name_is_worker or self.name_is_multi_global or self.name_is_window:
             regexp = js_meta_re
         elif self.name_is_webdriver:
@@ -411,6 +481,7 @@ class SourceFile(object):
 
     @cached_property
     def timeout(self):
+        
         """The timeout of a test or reference file. "long" if the file has an extended timeout
         or None otherwise"""
         if self.script_metadata:
@@ -421,7 +492,7 @@ class SourceFile(object):
             return None
 
         if self.timeout_nodes:
-            timeout_str = self.timeout_nodes[0].attrib.get("content", None)
+            timeout_str = self.timeout_nodes[0].attrib.get("content", None)  
             if timeout_str and timeout_str.lower() == "long":
                 return "long"
 
@@ -429,12 +500,15 @@ class SourceFile(object):
 
     @cached_property
     def viewport_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes in a test that
         specify viewport sizes"""
+        assert self.root is not None
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}meta[@name='viewport-size']")
 
     @cached_property
     def viewport_size(self):
+        
         """The viewport size of a test or reference file"""
         if self.root is None:
             return None
@@ -446,12 +520,15 @@ class SourceFile(object):
 
     @cached_property
     def dpi_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes in a test that
         specify device pixel ratios"""
+        assert self.root is not None
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}meta[@name='device-pixel-ratio']")
 
     @cached_property
     def dpi(self):
+        
         """The device pixel ratio of a test or reference file"""
         if self.root is None:
             return None
@@ -463,55 +540,58 @@ class SourceFile(object):
 
     @cached_property
     def fuzzy_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes in a test that
         specify reftest fuzziness"""
+        assert self.root is not None
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}meta[@name='fuzzy']")
 
     @cached_property
     def fuzzy(self):
-        rv = {}
+        
+        rv = {}  
         if self.root is None:
             return rv
 
         if not self.fuzzy_nodes:
             return rv
 
-        args = ["maxDifference", "totalPixels"]
+        args = [u"maxDifference", u"totalPixels"]
 
         for node in self.fuzzy_nodes:
-            item = node.attrib.get("content", "")
+            item = node.attrib.get(u"content", u"")  
 
-            parts = item.rsplit(":", 1)
+            parts = item.rsplit(u":", 1)
             if len(parts) == 1:
-                key = None
+                key = None  
                 value = parts[0]
             else:
-                key = urljoin(self.url, parts[0])
+                key_part = urljoin(self.url, parts[0])
                 reftype = None
-                for ref in self.references:
-                    if ref[0] == key:
+                for ref in self.references:  
+                    if ref[0] == key_part:
                         reftype = ref[1]
                         break
-                if reftype not in ("==", "!="):
-                    raise ValueError("Fuzzy key %s doesn't correspond to a references" % key)
-                key = (self.url, key, reftype)
+                if reftype not in (u"==", u"!="):
+                    raise ValueError("Fuzzy key %s doesn't correspond to a references" % key_part)
+                key = (self.url, key_part, reftype)
                 value = parts[1]
-            ranges = value.split(";")
+            ranges = value.split(u";")
             if len(ranges) != 2:
                 raise ValueError("Malformed fuzzy value %s" % item)
-            arg_values = {None: deque()}
-            for range_str_value in ranges:
-                if "=" in range_str_value:
+            arg_values = {}  
+            positional_args = deque()  
+            for range_str_value in ranges:  
+                name = None  
+                if u"=" in range_str_value:
                     name, range_str_value = [part.strip()
-                                             for part in range_str_value.split("=", 1)]
+                                             for part in range_str_value.split(u"=", 1)]
                     if name not in args:
                         raise ValueError("%s is not a valid fuzzy property" % name)
                     if arg_values.get(name):
                         raise ValueError("Got multiple values for argument %s" % name)
-                else:
-                    name = None
-                if "-" in range_str_value:
-                    range_min, range_max = range_str_value.split("-")
+                if u"-" in range_str_value:
+                    range_min, range_max = range_str_value.split(u"-")
                 else:
                     range_min = range_str_value
                     range_max = range_str_value
@@ -521,27 +601,30 @@ class SourceFile(object):
                     raise ValueError("Fuzzy value %s must be a range of integers" %
                                      range_str_value)
                 if name is None:
-                    arg_values[None].append(range_value)
+                    positional_args.append(range_value)
                 else:
                     arg_values[name] = range_value
             rv[key] = []
             for arg_name in args:
                 if arg_values.get(arg_name):
-                    value = arg_values.pop(arg_name)
+                    arg_value = arg_values.pop(arg_name)
                 else:
-                    value = arg_values[None].popleft()
-                rv[key].append(value)
-            assert list(arg_values.keys()) == [None] and len(arg_values[None]) == 0
+                    arg_value = positional_args.popleft()
+                rv[key].append(arg_value)
+            assert len(arg_values) == 0 and len(positional_args) == 0
         return rv
 
     @cached_property
     def testharness_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes representing a
         testharness.js script"""
+        assert self.root is not None
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}script[@src='/resources/testharness.js']")
 
     @cached_property
     def content_is_testharness(self):
+        
         """Boolean indicating whether the file content represents a
         testharness.js test"""
         if self.root is None:
@@ -550,21 +633,26 @@ class SourceFile(object):
 
     @cached_property
     def variant_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes representing a
         test variant"""
+        assert self.root is not None
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}meta[@name='variant']")
 
     @cached_property
     def test_variants(self):
-        rv = []
+        
+        rv = []  
         if self.ext == ".js":
-            for (key, value) in self.script_metadata:
+            script_metadata = self.script_metadata
+            assert script_metadata is not None
+            for (key, value) in script_metadata:
                 if key == b"variant":
                     rv.append(value.decode("utf-8"))
         else:
             for element in self.variant_nodes:
                 if "content" in element.attrib:
-                    variant = element.attrib["content"]
+                    variant = element.attrib["content"]  
                     rv.append(variant)
 
         for variant in rv:
@@ -577,12 +665,15 @@ class SourceFile(object):
 
     @cached_property
     def testdriver_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes representing a
         testdriver.js script"""
+        assert self.root is not None
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}script[@src='/resources/testdriver.js']")
 
     @cached_property
     def has_testdriver(self):
+        
         """Boolean indicating whether the file content represents a
         testharness.js test"""
         if self.root is None:
@@ -591,6 +682,7 @@ class SourceFile(object):
 
     @cached_property
     def reftest_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes representing a
         to a reftest <link>"""
         if self.root is None:
@@ -602,9 +694,10 @@ class SourceFile(object):
 
     @cached_property
     def references(self):
+        
         """List of (ref_url, relation) tuples for any reftest references specified in
         the file"""
-        rv = []
+        rv = []  
         rel_map = {"match": "==", "mismatch": "!="}
         for item in self.reftest_nodes:
             if "href" in item.attrib:
@@ -615,12 +708,14 @@ class SourceFile(object):
 
     @cached_property
     def content_is_ref_node(self):
+        
         """Boolean indicating whether the file is a non-leaf node in a reftest
         graph (i.e. if it contains any <link rel=[mis]match>"""
         return bool(self.references)
 
     @cached_property
     def css_flag_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes representing a
         flag <meta>"""
         if self.root is None:
@@ -629,8 +724,9 @@ class SourceFile(object):
 
     @cached_property
     def css_flags(self):
+        
         """Set of flags specified in the file"""
-        rv = set()
+        rv = set()  
         for item in self.css_flag_nodes:
             if "content" in item.attrib:
                 for flag in item.attrib["content"].split():
@@ -639,6 +735,7 @@ class SourceFile(object):
 
     @cached_property
     def content_is_css_manual(self):
+        
         """Boolean indicating whether the file content represents a
         CSS WG-style manual test"""
         if self.root is None:
@@ -648,6 +745,7 @@ class SourceFile(object):
 
     @cached_property
     def spec_link_nodes(self):
+        
         """List of ElementTree Elements corresponding to nodes representing a
         <link rel=help>, used to point to specs"""
         if self.root is None:
@@ -656,8 +754,9 @@ class SourceFile(object):
 
     @cached_property
     def spec_links(self):
+        
         """Set of spec links specified in the file"""
-        rv = set()
+        rv = set()  
         for item in self.spec_link_nodes:
             if "href" in item.attrib:
                 rv.add(item.attrib["href"].strip(space_chars))
@@ -665,6 +764,7 @@ class SourceFile(object):
 
     @cached_property
     def content_is_css_visual(self):
+        
         """Boolean indicating whether the file content represents a
         CSS WG-style visual test"""
         if self.root is None:
@@ -674,10 +774,12 @@ class SourceFile(object):
 
     @property
     def type(self):
+        
         rv, _ = self.manifest_items()
         return rv
 
     def manifest_items(self):
+        
         """List of manifest items corresponding to the file. There is typically one
         per test, but in the case of reftests a node may have corresponding manifest
         items without being a test itself."""
@@ -690,7 +792,7 @@ class SourceFile(object):
                 SupportFile(
                     self.tests_root,
                     self.rel_path
-                )]
+                )]  
 
         elif self.name_is_stub:
             rv = Stub.item_type, [
@@ -737,7 +839,9 @@ class SourceFile(object):
 
         elif self.name_is_multi_global:
             globals = b""
-            for (key, value) in self.script_metadata:
+            script_metadata = self.script_metadata
+            assert script_metadata is not None
+            for (key, value) in script_metadata:
                 if key == b"global":
                     globals = value
                     break
@@ -754,7 +858,7 @@ class SourceFile(object):
                 )
                 for (suffix, jsshell) in sorted(global_suffixes(globals))
                 for variant in self.test_variants
-            ]
+            ]   
             rv = TestharnessTest.item_type, tests
 
         elif self.name_is_worker:

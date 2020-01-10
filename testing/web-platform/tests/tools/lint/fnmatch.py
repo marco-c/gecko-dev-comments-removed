@@ -3,17 +3,26 @@ from __future__ import absolute_import
 import fnmatch as _stdlib_fnmatch
 import os
 
+MYPY = False
+if MYPY:
+    
+    from typing import AnyStr
+    from typing import Iterable
+    from typing import List
+
 
 __all__ = ["fnmatch", "fnmatchcase", "filter", "translate"]
 
 
 def fnmatch(name, pat):
+    
     name = os.path.normcase(name)
     pat = os.path.normcase(pat)
     return fnmatchcase(name, pat)
 
 
 def fnmatchcase(name, pat):
+    
     if '?' not in pat and '[' not in pat:
         wildcards = pat.count("*")
         if wildcards == 0:
@@ -26,6 +35,7 @@ def fnmatchcase(name, pat):
 
 
 def filter(names, pat):
+    
     return [n for n in names if fnmatch(n, pat)]
 
 

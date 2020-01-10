@@ -9,7 +9,8 @@ import six
 MYPY = False
 if MYPY:
     
-    from typing import List, Optional, Pattern, Text, Match
+    from typing import Any, List, Match, Optional, Pattern, Text, Tuple, cast
+    Error = Tuple[Text, Text, Text, Optional[int]]
 
 
 class Rule(six.with_metaclass(abc.ABCMeta)):
@@ -27,8 +28,15 @@ class Rule(six.with_metaclass(abc.ABCMeta)):
 
     @classmethod
     def error(cls, path, context=(), line_no=None):
-        description = cls.description % context
-        return (cls.name, description, path, line_no)
+        
+        if MYPY:
+            name = cast(Text, cls.name)
+            description = cast(Text, cls.description)
+        else:
+            name = cls.name
+            description = cls.description
+        description = description % context
+        return (name, description, path, line_no)
 
 
 class MissingLink(Rule):
@@ -253,6 +261,11 @@ class BrokenMetadata(Rule):
 class Regexp(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractproperty
     def pattern(self):
+        
+        pass
+
+    @abc.abstractproperty
+    def name(self):
         
         pass
 

@@ -19,6 +19,14 @@ from .utils import git
 
 from . import log
 
+MYPY = False
+if MYPY:
+    
+    from typing import Any
+    from typing import Callable
+    from typing import List
+    from typing import Optional
+
 here = os.path.dirname(__file__)
 
 wpt_root = os.path.abspath(os.path.join(here, os.pardir, os.pardir))
@@ -26,10 +34,12 @@ logger = log.get_logger()
 
 
 def abs_path(path):
+    
     return os.path.abspath(os.path.expanduser(path))
 
 
 def should_download(manifest_path, rebuild_time=timedelta(days=5)):
+    
     if not os.path.exists(manifest_path):
         return True
     mtime = datetime.fromtimestamp(os.path.getmtime(manifest_path))
@@ -40,8 +50,11 @@ def should_download(manifest_path, rebuild_time=timedelta(days=5)):
 
 
 def merge_pr_tags(repo_root, max_count=50):
+    
     gitfunc = git(repo_root)
-    tags = []
+    tags = []  
+    if gitfunc is None:
+        return tags
     for line in gitfunc("log", "--format=%D", "--max-count=%s" % max_count).split("\n"):
         for ref in line.split(", "):
             if ref.startswith("tag: merge_pr_"):
@@ -50,6 +63,7 @@ def merge_pr_tags(repo_root, max_count=50):
 
 
 def score_name(name):
+    
     """Score how much we like each filename, lower wins, None rejects"""
 
     
@@ -65,6 +79,7 @@ def score_name(name):
 
 
 def github_url(tags):
+    
     for tag in tags:
         url = "https://api.github.com/repos/web-platform-tests/wpt/releases/tags/%s" % tag
         try:
@@ -94,7 +109,13 @@ def github_url(tags):
     return None
 
 
-def download_manifest(manifest_path, tags_func, url_func, force=False):
+def download_manifest(
+        manifest_path,  
+        tags_func,  
+        url_func,  
+        force=False  
+):
+    
     if not force and not should_download(manifest_path):
         return False
 
@@ -137,7 +158,7 @@ def download_manifest(manifest_path, tags_func, url_func, force=False):
             fileobj = io.BytesIO(resp.read())
             try:
                 with gzip.GzipFile(fileobj=fileobj) as gzf:
-                    decompressed = gzf.read()
+                    decompressed = gzf.read()  
             except IOError:
                 logger.warning("Failed to decompress downloaded file")
                 continue
@@ -159,6 +180,7 @@ def download_manifest(manifest_path, tags_func, url_func, force=False):
 
 
 def create_parser():
+    
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-p", "--path", type=abs_path, help="Path to manifest file.")
@@ -171,11 +193,13 @@ def create_parser():
 
 
 def download_from_github(path, tests_root, force=False):
+    
     return download_manifest(path, lambda: merge_pr_tags(tests_root), github_url,
                              force=force)
 
 
 def run(**kwargs):
+    
     if kwargs["path"] is None:
         path = os.path.join(kwargs["tests_root"], "MANIFEST.json")
     else:

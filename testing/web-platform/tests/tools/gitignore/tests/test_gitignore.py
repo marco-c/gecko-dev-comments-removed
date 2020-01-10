@@ -2,6 +2,13 @@ import pytest
 
 from ..gitignore import fnmatch_translate, PathFilter
 
+MYPY = False
+if MYPY:
+    
+    from typing import Tuple
+    from typing import Iterable
+    from typing import Sequence
+
 match_data = [
     ("foo", True, ["a/foo", "foo"]),
     ("*.a", True, ["foo.a", "a/foo.a", "a/b/foo.a", "a.a/foo.a"]),
@@ -21,7 +28,7 @@ match_data = [
     ("a[b-c]c", True, ["abc", "acc"]),
     ("a[^]c", True, ["ac"]),  
     ("a[^]c", True, ["ac"]),  
-]
+]  
 
 mismatch_data = [
     ("foo", True, ["foob", "afoo"]),
@@ -31,7 +38,7 @@ mismatch_data = [
     ("a?c", True, ["ac", "abbc"]),
     ("a[^b]c", True, ["abc"]),
     ("a[b-c]c", True, ["adc"]),
-]
+]  
 
 invalid_data = [
     "[a",
@@ -58,6 +65,7 @@ filter_data = [
 
 
 def expand_data(compact_data):
+    
     for pattern, name_only, inputs in compact_data:
         for input in inputs:
             yield pattern, name_only, input
