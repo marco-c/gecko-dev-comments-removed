@@ -34,8 +34,6 @@ class JSString;
 
 namespace js {
 
-class StringBuffer;
-
 namespace intl {
 
 #ifdef DEBUG
@@ -376,8 +374,7 @@ class MOZ_STACK_CLASS LanguageTag final {
   
 
 
-
-  bool appendTo(JSContext* cx, StringBuffer& sb) const;
+  JSString* toString(JSContext* cx) const;
 
   
 
