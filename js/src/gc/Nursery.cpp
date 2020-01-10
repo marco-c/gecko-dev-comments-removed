@@ -913,8 +913,19 @@ void js::Nursery::collect(JS::GCReason reason) {
 
   
   maybeResizeNursery(reason);
+
+  
   if (isEnabled() && previousGC.nurseryUsedBytes) {
-    poisonAndInitCurrentChunk();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    poisonAndInitCurrentChunk(previousGC.nurseryUsedBytes);
   }
 
   const float promotionRate = doPretenuring(rt, reason, tenureCounts);
@@ -1278,12 +1289,13 @@ MOZ_ALWAYS_INLINE void js::Nursery::setCurrentChunk(unsigned chunkno) {
   setCurrentEnd();
 }
 
-void js::Nursery::poisonAndInitCurrentChunk() {
+void js::Nursery::poisonAndInitCurrentChunk(size_t extent) {
   if (runtime()->hasZealMode(ZealMode::GenerationalGC) || !isSubChunkMode()) {
     chunk(currentChunk_).poisonAndInit(runtime());
   } else {
-    MOZ_ASSERT(capacity_ <= NurseryChunkUsableSize);
-    chunk(currentChunk_).poisonAndInit(runtime(), capacity_);
+    extent = Min(capacity_, extent);
+    MOZ_ASSERT(extent <= NurseryChunkUsableSize);
+    chunk(currentChunk_).poisonAndInit(runtime(), extent);
   }
 }
 
@@ -1454,10 +1466,21 @@ size_t js::Nursery::roundSize(size_t size) const {
 void js::Nursery::growAllocableSpace(size_t newCapacity) {
   MOZ_ASSERT_IF(!isSubChunkMode(), newCapacity > currentChunk_ * ChunkSize);
   MOZ_ASSERT(newCapacity <= chunkCountLimit_ * ChunkSize);
+  MOZ_ASSERT(newCapacity > capacity());
 
-  if (isSubChunkMode() && CanUseExtraThreads()) {
+  if (isSubChunkMode()) {
     
     decommitTask.join();
+
+    
+    
+    
+    size_t poisonSize = Min(newCapacity, NurseryChunkUsableSize) - capacity();
+    
+    MOZ_ASSERT(capacity() + poisonSize <= NurseryChunkUsableSize);
+    MOZ_ASSERT(currentChunk_ == 0);
+    chunk(0).poisonRange(capacity(), poisonSize, JS_FRESH_NURSERY_PATTERN,
+                         MemCheckKind::MakeUndefined);
   }
 
   capacity_ = newCapacity;

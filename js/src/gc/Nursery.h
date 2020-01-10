@@ -594,7 +594,11 @@ class Nursery {
 
 
   void setCurrentChunk(unsigned chunkno);
-  void poisonAndInitCurrentChunk();
+
+  
+  
+  void poisonAndInitCurrentChunk(size_t extent = NurseryChunkUsableSize);
+
   void setCurrentEnd();
   void setStartPosition();
 
