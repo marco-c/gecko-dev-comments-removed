@@ -725,6 +725,11 @@ class _ASRouter {
     let triplet;
 
     
+    if (await this._hasAddonAttributionData()) {
+      return {experiment, interrupt: "control", triplet: ""};
+    }
+
+    
     const overrideValue = Services.prefs.getStringPref(TRAILHEAD_CONFIG.OVERRIDE_PREF, "");
     if (overrideValue) {
       [interrupt, triplet] = overrideValue.split("-");
@@ -733,7 +738,7 @@ class _ASRouter {
 
     const locale = Services.locale.appLocaleAsLangTag;
 
-    if (TRAILHEAD_CONFIG.LOCALES.includes(locale) && !(await this._hasAddonAttributionData())) {
+    if (TRAILHEAD_CONFIG.LOCALES.includes(locale)) {
       const {userId} = ClientEnvironment;
       experiment = await chooseBranch(`${userId}-trailhead-experiments`, TRAILHEAD_CONFIG.EXPERIMENT_RATIOS);
 
