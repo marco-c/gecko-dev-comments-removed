@@ -192,6 +192,7 @@ add_task(async function test_simpleQuery() {
   );
 
   
+  
   TelemetryTestUtils.assertKeyedHistogramSum(
     search_hist,
     "other-MozSearch.urlbar",
@@ -288,6 +289,7 @@ add_task(async function test_searchAlias() {
   );
 
   
+  
   TelemetryTestUtils.assertKeyedHistogramSum(
     search_hist,
     "other-MozSearch.urlbar",
@@ -354,10 +356,12 @@ add_task(async function test_internalSearchAlias() {
   EventUtils.synthesizeKey("KEY_Enter");
   await p;
 
+  
+  
   TelemetryTestUtils.assertKeyedHistogramSum(
     search_hist,
     "other-MozSearch.urlbar",
-    1
+    undefined
   );
   TelemetryTestUtils.assertKeyedHistogramSum(
     search_hist,
@@ -374,7 +378,7 @@ add_task(async function test_internalSearchAlias() {
   TelemetryTestUtils.assertKeyedHistogramSum(
     search_hist,
     "other-MozSearch.urlbar",
-    2
+    undefined
   );
   TelemetryTestUtils.assertKeyedHistogramSum(
     search_hist,
@@ -435,6 +439,7 @@ add_task(async function test_oneOff_enter() {
     "This search must only increment one entry in the scalar."
   );
 
+  
   
   TelemetryTestUtils.assertKeyedHistogramSum(
     search_hist,
