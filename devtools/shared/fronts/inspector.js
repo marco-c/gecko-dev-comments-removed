@@ -19,7 +19,8 @@ const TELEMETRY_EYEDROPPER_OPENED_MENU =
 const SHOW_ALL_ANONYMOUS_CONTENT_PREF =
   "devtools.inspector.showAllAnonymousContent";
 const SHOW_UA_SHADOW_ROOTS_PREF = "devtools.inspector.showUserAgentShadowRoots";
-const FISSION_ENABLED_PREF = "devtools.browsertoolbox.fission";
+const BROWSER_FISSION_ENABLED_PREF = "devtools.browsertoolbox.fission";
+const CONTENT_FISSION_ENABLED_PREF = "devtools.contenttoolbox.fission";
 const USE_NEW_BOX_MODEL_HIGHLIGHTER_PREF =
   "devtools.inspector.use-new-box-model-highlighter";
 
@@ -47,6 +48,26 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
       this._getHighlighter(),
       this._getPageStyle(),
     ]);
+  }
+
+  get isBrowserFissionEnabled() {
+    if (this._isBrowserFissionEnabled === undefined) {
+      this._isBrowserFissionEnabled = Services.prefs.getBoolPref(
+        BROWSER_FISSION_ENABLED_PREF
+      );
+    }
+
+    return this._isBrowserFissionEnabled;
+  }
+
+  get isContentFissionEnabled() {
+    if (this._isContentFissionEnabled === undefined) {
+      this._isContentFissionEnabled = Services.prefs.getBoolPref(
+        CONTENT_FISSION_ENABLED_PREF
+      );
+    }
+
+    return this._isContentFissionEnabled;
   }
 
   async _getWalker() {
@@ -140,11 +161,11 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
 
 
   async getChildInspectors() {
-    const fissionEnabled = Services.prefs.getBoolPref(FISSION_ENABLED_PREF);
     const childInspectors = [];
     const target = this.targetFront;
+
     
-    if (fissionEnabled && target.chrome && !target.isAddon) {
+    if (this.isBrowserFissionEnabled && target.chrome && !target.isAddon) {
       const { frames } = await target.listRemoteFrames();
       
       for (const descriptor of frames) {
@@ -182,7 +203,7 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
   async getNodeFrontFromNodeGrip(grip) {
     const gripHasContentDomReference = "contentDomReference" in grip;
 
-    if (!gripHasContentDomReference) {
+    if (!this.isContentFissionEnabled || !gripHasContentDomReference) {
       
       
       
