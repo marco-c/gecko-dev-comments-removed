@@ -38,10 +38,34 @@ function logThreadEvents(dbg, event) {
   });
 }
 
-async function waitFor(condition) {
-  await BrowserTestUtils.waitForCondition(condition, "waitFor", 10, 500);
-  return condition();
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitFor(
+  condition,
+  message = "waitFor",
+  interval = 10,
+  maxTries = 500
+) {
+  await BrowserTestUtils.waitForCondition(
+    condition,
+    message,
+    interval,
+    maxTries
+  );
+   return condition();
+ }
 
 
 
