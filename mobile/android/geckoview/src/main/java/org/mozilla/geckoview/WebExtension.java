@@ -230,8 +230,11 @@ public class WebExtension {
 
 
 
+
+
         @Nullable
-        default GeckoResult<Object> onMessage(final @NonNull Object message,
+        default GeckoResult<Object> onMessage(final @NonNull String nativeApp,
+                                              final @NonNull Object message,
                                               final @NonNull MessageSender sender) {
             return null;
         }
@@ -473,9 +476,10 @@ public class WebExtension {
 
     private static final MessageDelegate NULL_MESSAGE_DELEGATE = new MessageDelegate() {
         @Override
-        public GeckoResult<Object> onMessage(final @NonNull Object message,
+        public GeckoResult<Object> onMessage(final @NonNull String nativeApp,
+                                             final @NonNull Object message,
                                              final @NonNull MessageSender sender) {
-            Log.d(LOGTAG, "Unhandled message from " +
+            Log.d(LOGTAG, "Unhandled message from " + nativeApp + " id=" +
                     sender.webExtension.id + ": " + message.toString());
             return null;
         }
