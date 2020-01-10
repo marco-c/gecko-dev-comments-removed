@@ -889,13 +889,7 @@ bool MaybeWrapObjectValue(JSContext* cx, JS::MutableHandle<JS::Value> rval) {
 
   
   
-  if (IsDOMObject(obj)) {
-    return TryToOuterize(rval);
-  }
-
-  
-  
-  return true;
+  return TryToOuterize(rval);
 }
 
 
@@ -908,13 +902,7 @@ bool MaybeWrapObject(JSContext* cx, JS::MutableHandle<JSObject*> obj) {
 
   
   
-  if (IsDOMObject(obj)) {
-    return TryToOuterize(obj);
-  }
-
-  
-  
-  return true;
+  return TryToOuterize(obj);
 }
 
 
