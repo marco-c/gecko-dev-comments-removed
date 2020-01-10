@@ -834,13 +834,15 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   LogicalSize lcbSize(frameWM, cbSize);
   ReflowInput reflowInput(aFrame->PresContext(), parentReflowInput, aFrame,
                           availSize, Some(lcbSize));
-  nsSize computedSize(reflowInput.ComputedWidth(),
-                      reflowInput.ComputedHeight());
-  computedSize.width += reflowInput.ComputedPhysicalBorderPadding().LeftRight();
-  if (computedSize.height != NS_UNCONSTRAINEDSIZE) {
-    computedSize.height +=
-        reflowInput.ComputedPhysicalBorderPadding().TopBottom();
+  nscoord computedISize = reflowInput.ComputedISize();
+  nscoord computedBSize = reflowInput.ComputedBSize();
+  computedISize +=
+      reflowInput.ComputedLogicalBorderPadding().IStartEnd(frameWM);
+  if (computedBSize != NS_UNCONSTRAINEDSIZE) {
+    computedBSize +=
+        reflowInput.ComputedLogicalBorderPadding().BStartEnd(frameWM);
   }
+  LogicalSize logicalSize = aFrame->GetLogicalSize(frameWM);
   nsSize size = aFrame->GetSize();
   
   
@@ -848,9 +850,12 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   
   
   
-  if (computedSize.width == size.width &&
-      (computedSize.height == NS_UNCONSTRAINEDSIZE ||
-       computedSize.height == size.height)) {
+  if (computedISize == logicalSize.ISize(frameWM) &&
+      (computedBSize == NS_UNCONSTRAINEDSIZE ||
+       computedBSize == logicalSize.BSize(frameWM))) {
+    
+    
+    
     
     
     if (NS_AUTOOFFSET == reflowInput.ComputedPhysicalOffsets().left) {
