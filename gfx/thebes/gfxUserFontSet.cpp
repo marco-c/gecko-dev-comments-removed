@@ -1349,9 +1349,7 @@ void gfxUserFontSet::UserFontCache::Entry::ReportMemory(
       spec.ReplaceChar('/', '\\');
       
       
-      bool isData;
-      if (NS_SUCCEEDED(mURI->get()->SchemeIs("data", &isData)) && isData &&
-          spec.Length() > 255) {
+      if (mURI->get()->SchemeIs("data") && spec.Length() > 255) {
         spec.Truncate(252);
         spec.AppendLiteral("...");
       }

@@ -20,8 +20,7 @@ nsSoundProxy::Play(nsIURL* aURL) {
   nsCOMPtr<nsIURI> soundURI(aURL);
   bool isChrome = false;
   
-  if (!soundURI || NS_FAILED(soundURI->SchemeIs("chrome", &isChrome)) ||
-      !isChrome) {
+  if (!soundURI || !soundURI->SchemeIs("chrome")) {
     return NS_ERROR_FAILURE;
   }
 
