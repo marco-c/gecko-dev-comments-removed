@@ -714,9 +714,7 @@ DevTools.prototype = {
 
 
 
-
-
-  async inspectNode(tab, nodeSelectors, startTime) {
+  async inspectNode(tab, domReference, startTime) {
     const target = await TargetFactory.forTab(tab);
 
     const toolbox = await gDevTools.showToolbox(
@@ -733,7 +731,10 @@ DevTools.prototype = {
     
     const onNewNode = inspector.selection.once("new-node-front");
 
-    const nodeFront = await inspector.walker.findNodeFront(nodeSelectors);
+    const nodeFront = await inspector.walker.getNodeActorFromContentDomReference(
+      domReference
+    );
+
     
     inspector.selection.setNodeFront(nodeFront, {
       reason: "browser-context-menu",
@@ -759,8 +760,7 @@ DevTools.prototype = {
 
 
 
-
-  async inspectA11Y(tab, nodeSelectors, startTime) {
+  async inspectA11Y(tab, domReference, startTime) {
     const target = await TargetFactory.forTab(tab);
 
     const toolbox = await gDevTools.showToolbox(
@@ -771,7 +771,9 @@ DevTools.prototype = {
       startTime
     );
     const inspectorFront = await toolbox.target.getFront("inspector");
-    const nodeFront = await inspectorFront.walker.findNodeFront(nodeSelectors);
+    const nodeFront = await inspectorFront.walker.getNodeActorFromContentDomReference(
+      domReference
+    );
     
     
     const a11yPanel = toolbox.getCurrentPanel();

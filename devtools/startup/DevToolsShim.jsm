@@ -204,8 +204,7 @@ this.DevToolsShim = {
 
 
 
-
-  inspectA11Y: function(tab, selectors) {
+  inspectA11Y: function(tab, domReference) {
     if (!this.isEnabled()) {
       if (!this.isDisabledByPolicy()) {
         DevtoolsStartup.openInstallPage("ContextMenu");
@@ -220,7 +219,7 @@ this.DevToolsShim = {
 
     this.initDevTools("ContextMenu");
 
-    return this._gDevTools.inspectA11Y(tab, selectors, startTime);
+    return this._gDevTools.inspectA11Y(tab, domReference, startTime);
   },
 
   
@@ -235,9 +234,7 @@ this.DevToolsShim = {
 
 
 
-
-
-  inspectNode: function(tab, selectors) {
+  inspectNode: function(tab, domReference) {
     if (!this.isEnabled()) {
       if (!this.isDisabledByPolicy()) {
         DevtoolsStartup.openInstallPage("ContextMenu");
@@ -252,7 +249,7 @@ this.DevToolsShim = {
 
     this.initDevTools("ContextMenu");
 
-    return this._gDevTools.inspectNode(tab, selectors, startTime);
+    return this._gDevTools.inspectNode(tab, domReference, startTime);
   },
 
   _onDevToolsRegistered: function() {
