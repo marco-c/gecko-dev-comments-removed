@@ -106,13 +106,6 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
-  static bool ShouldSetNullOriginHeader(net::HttpBaseChannel* aChannel,
-                                        nsIURI* aOriginURI);
-
-  
-
-
-
 
 
 
