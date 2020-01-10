@@ -1612,12 +1612,6 @@ var gProtectionsHandler = {
     if (event.target == this._protectionsPopup) {
       window.removeEventListener("focus", this, true);
       gIdentityHandler._trackingProtectionIconContainer.removeAttribute("open");
-
-      
-      this._protectionsPopupTrackersCounterBox.toggleAttribute(
-        "showing",
-        false
-      );
     }
   },
 
@@ -1908,12 +1902,6 @@ var gProtectionsHandler = {
           host,
         ])
       );
-    }
-
-    
-    
-    if (!this._updatingFooter) {
-      this._protectionsPopupTrackersCounterBox.toggleAttribute("showing", true);
     }
 
     
