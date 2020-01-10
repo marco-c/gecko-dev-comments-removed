@@ -200,7 +200,7 @@ typedef int mdb_filehandle_t;
 
 #define MDB_VERSION_MINOR	9
 
-#define MDB_VERSION_PATCH	23
+#define MDB_VERSION_PATCH	24
 
 
 #define MDB_VERINT(a,b,c)	(((a) << 24) | ((b) << 16) | (c))
@@ -210,7 +210,7 @@ typedef int mdb_filehandle_t;
 	MDB_VERINT(MDB_VERSION_MAJOR,MDB_VERSION_MINOR,MDB_VERSION_PATCH)
 
 
-#define MDB_VERSION_DATE	"December 19, 2018"
+#define MDB_VERSION_DATE	"July 24, 2019"
 
 
 #define MDB_VERSTR(a,b,c,d)	"LMDB " #a "." #b "." #c ": (" d ")"
