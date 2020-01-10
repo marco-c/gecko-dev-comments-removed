@@ -77,6 +77,16 @@ class PageAction {
 
     
     this.stateTransitionTimeoutIDs = [];
+
+    XPCOMUtils.defineLazyGetter(this, "isDarkTheme", () => {
+      try {
+        return this.window.document.documentElement.hasAttribute(
+          "lwt-toolbar-field-brighttext"
+        );
+      } catch (e) {
+        return false;
+      }
+    });
   }
 
   addImpression(recommendation) {
@@ -477,6 +487,9 @@ class PageAction {
     this.window.document
       .getElementById("contextual-feature-recommendation-notification")
       .setAttribute("data-notification-category", content.layout);
+    this.window.document
+      .getElementById("contextual-feature-recommendation-notification")
+      .setAttribute("data-notification-bucket", content.bucket_id);
 
     switch (content.layout) {
       case "icon_and_message":
@@ -495,10 +508,23 @@ class PageAction {
           });
           RecommendationMap.delete(browser);
         };
+
+        let getIcon = () => {
+          if (content.icon_dark_theme && this.isDarkTheme) {
+            return content.icon_dark_theme;
+          }
+          return content.icon;
+        };
+
+        let learnMoreURL = content.learn_more
+          ? SUMO_BASE_URL + content.learn_more
+          : null;
+
         panelTitle = await this.getStrings(content.heading_text);
         options = {
-          popupIconURL: content.icon,
-          popupIconClass: "cfr-doorhanger-large-icon",
+          popupIconURL: getIcon(),
+          popupIconClass: content.icon_class,
+          learnMoreURL,
         };
         break;
       case "message_and_animation":
@@ -663,7 +689,8 @@ class PageAction {
 
     
     
-    browser.cfrpopupnotificationanchor = this.container;
+    browser.cfrpopupnotificationanchor =
+      this.window.document.getElementById(content.anchor_id) || this.container;
 
     this._sendTelemetry({
       message_id: id,
@@ -699,10 +726,11 @@ const CFRPageActions = {
     if (RecommendationMap.has(browser)) {
       const recommendation = RecommendationMap.get(browser);
       if (
-        isHostMatch(browser, recommendation.host) ||
-        
-        
-        !recommendation.host
+        !recommendation.content.skip_address_bar_notifier &&
+        (isHostMatch(browser, recommendation.host) ||
+          
+          
+          !recommendation.host)
       ) {
         
         
@@ -762,7 +790,13 @@ const CFRPageActions = {
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
     }
-    await PageActionMap.get(win).showAddressBarNotifier(recommendation, true);
+
+    if (content.skip_address_bar_notifier) {
+      await PageActionMap.get(win).showPopup();
+      PageActionMap.get(win).addImpression(recommendation);
+    } else {
+      await PageActionMap.get(win).showAddressBarNotifier(recommendation, true);
+    }
     return true;
   },
 
@@ -795,7 +829,13 @@ const CFRPageActions = {
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
     }
-    await PageActionMap.get(win).showAddressBarNotifier(recommendation, true);
+
+    if (content.skip_address_bar_notifier) {
+      await PageActionMap.get(win).showPopup();
+      PageActionMap.get(win).addImpression(recommendation);
+    } else {
+      await PageActionMap.get(win).showAddressBarNotifier(recommendation, true);
+    }
     return true;
   },
 
