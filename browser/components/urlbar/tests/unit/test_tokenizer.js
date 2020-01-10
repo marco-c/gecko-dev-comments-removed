@@ -375,6 +375,18 @@ add_task(async function test_tokenizer() {
         { value: "eXaMpLe", type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN },
       ],
     },
+    
+    
+    
+    
+    
+    {
+      desc: "plain number",
+      searchString: "1001",
+      expectedTokens: [
+        { value: "1001", type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN },
+      ],
+    },
   ];
 
   for (let queryContext of testContexts) {
